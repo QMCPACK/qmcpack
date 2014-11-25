@@ -1792,7 +1792,7 @@ diff -aruN espresso-5.1_original/PP/src/pw2qmcpack.f90 espresso-5.1_with_pw2qmcp
 +     DO ik = 1, nkstot
 +        CALL gk_sort (xk (1, ik), ngm, g, ecutwfc / tpiba2, npw, igk, g2kin)
 +        ! MAM: is this needed here, don't think so...
-+         CALL davcio (evc, nwordwfc, iunwfc, ik, - 1)
++         CALL davcio (evc, 2*nwordwfc, iunwfc, ik, - 1)
 +
 +        DO ig =1, npw
 +           IF( igk(ig) > 4*npwx ) & 
@@ -1818,7 +1818,7 @@ diff -aruN espresso-5.1_original/PP/src/pw2qmcpack.f90 espresso-5.1_with_pw2qmcp
 +     DO ik = 1, nks
 +        CALL gk_sort (xk (1, ik), ngm, g, ecutwfc / tpiba2, npw, igk, g2kin)
 +        ! MAM: is this needed here, don't think so...
-+         CALL davcio (evc, nwordwfc, iunwfc, ik, - 1)
++         CALL davcio (evc, 2*nwordwfc, iunwfc, ik, - 1)
 +     enddo
 +  endif !! ionode
 +
@@ -2365,7 +2365,7 @@ diff -aruN espresso-5.1_original/PP/src/pw2qmcpack.f90 espresso-5.1_with_pw2qmcp
 +        !!!      can I switch the order of esh5_open_spin and
 +        !!!      esh5_open_kpoint??? 
 +        CALL gk_sort (xk (1:3, ik), ngm, g, ecutwfc / tpiba2, npw, igk, g2kin)
-+        CALL davcio (evc, nwordwfc, iunwfc, ik, - 1)
++        CALL davcio (evc, 2*nwordwfc, iunwfc, ik, - 1)
 +        CALL gk_sort (xk_full_list (1:3, jks), ngm, g, ecutwfc / tpiba2, npw_sym, igk_sym, g2kin_sym)
 +        if(npw .ne. npw_sym )  then
 +          write(*,*) 'Warning!!!: npw != npw_sym: ',npw,npw_sym
