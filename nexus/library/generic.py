@@ -208,6 +208,25 @@ class obj(AllAbilities):
         self.transfer_to(other,keys,copy=deep)
     #end def copy_to
 
+    def delete(self,*names):
+        if len(names)==1:
+            name = names[0]
+            value = self[name]
+            del self[name]
+            return value
+        else:
+            if len(names)==0:
+                names = sorted(obj.keys(self))
+            #end if
+            values = []
+            for name in names:
+                values.append(self[name])
+                del self[name]
+            #end for
+            return values
+        #end if
+    #end def delete
+
 #end class obj
 
 
@@ -450,9 +469,28 @@ class generic(genbase):
         self.transfer_to(other,keys,copy=deep)
     #end def copy_to
 
+    def delete(self,*names):
+        if len(names)==1:
+            name = names[0]
+            value = self[name]
+            del self[name]
+            return value
+        else:
+            if len(names)==0:
+                names = sorted(generic.keys(self))
+            #end if
+            values = []
+            for name in names:
+                values.append(self[name])
+                del self[name]
+            #end for
+            return values
+        #end if
+    #end def delete
+
     def list(self,*names):
         if len(names)==0:
-            names = list(self.keys())
+            names = list(generic.keys(self))
             names.sort()
         #end if
         values = []
@@ -589,6 +627,8 @@ class generic(genbase):
         generic.copy_from(self,*args,**kwargs)
     def _copy_to(self,*args,**kwargs):
         generic.copy_to(self,*args,**kwargs)
+    def _delete(self,*args,**kwargs):
+        generic.delete(self,*args,**kwargs)
     def _list(self,*args,**kwargs):
         return generic.list(self,*args,**kwargs)
     def _tuple(self,*args,**kwargs):

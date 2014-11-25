@@ -1,5 +1,5 @@
 import os
-import types
+import types as pytypes
 from copy import deepcopy
 from superstring import string2val
 from numpy import fromstring,empty,array,float64,ones,pi,dot
@@ -113,17 +113,23 @@ class PwscfInputBase(Pobj):
     strs=['calculation','title','verbosity','restart_mode','outdir','wfcdir','prefix','disk_io','pseudo_dir','occupations','smearing','input_dft','U_projection_type','constrained_magnetization','mixing_mode','diagonalization','startingpot','startingwfc','ion_dynamics','ion_positions','phase_space','pot_extrapolation','wfc_extrapolation','ion_temperature','opt_scheme','CI_scheme','cell_dynamics','cell_dofree','which_compensation','assume_isolated','exxdiv_treatment']
     bools=['wf_collect','tstress','tprnfor','lkpoint_dir','tefield','dipfield','lelfield','lberry','nosym','nosym_evc','noinv','force_symmorphic','noncolin','lda_plus_u','lspinorb','do_ee','london','diago_full_acc','tqr','remove_rigid_rot','refold_pos','first_last_opt','use_masses','use_freezing']
 
+    all_variables = set(ints+floats+strs+bools)
+
     section_aliases = dict(celldm1='celldm(1)',celldm2='celldm(2)',celldm3='celldm(3)',celldm4='celldm(4)',celldm5='celldm(5)',celldm6='celldm(6)')
 
     var_types = dict()
     for v in ints:
         var_types[v]=int
+    #end for
     for v in floats:
         var_types[v]=float
+    #end for
     for v in strs:
         var_types[v]=str
+    #end for
     for v in bools:
         var_types[v]=bool
+    #end for
 #end class PwscfInputBase
 
 
@@ -152,6 +158,10 @@ class Element(PwscfInputBase):
 
 
 class Section(Element):
+    def assign(self,**variables):
+        self.transfer_from(variables)
+    #end def assign
+
     def read(self,lines):
         for l in lines:
             tokens = l.split(',')
@@ -425,6 +435,33 @@ class ee(Section):
 #end class ee
 
 
+def check_section_classes(*sections):
+    all_variables = PwscfInputBase.all_variables
+    global_missing = set(all_variables)
+    local_missing = obj()
+    locs_missing = False
+    for section in sections:
+        variables = section.variables
+        global_missing -= variables
+        loc_missing = variables - all_variables
+        local_missing[section.name] = loc_missing
+        locs_missing |= len(loc_missing)>0
+    #end for
+    if len(global_missing)>0 or locs_missing:
+        msg = 'PwscfInput: variable information is not consistent for section classes\n'
+        if len(global_missing)>0:
+            msg+='  some typed variables have not been assigned to a section:\n    {0}\n'.format(sorted(global_missing))
+        #end if
+        if locs_missing:
+            for name in sorted(locs_missing.keys()):
+                msg+='  some variables in section {0} have not been assigned a type:\n    {1}\n'.format(name,sorted(locs_missing[name]))
+            #end for
+        #end if
+        PwscfInput.class_error(msg)
+    #end if
+    ci(ls(),gs())
+#end def check_section_classes
+#check_section_classes(control,system,electrons,ions,cell,phonon,ee)
 
 
 class atomic_species(Card):
@@ -563,7 +600,7 @@ class k_points(Card):
 
     def write_contents(self):
         c = ''        
-        if self.specifier in ['tpiba','crystal','tpiba_b','crystal_b','']:
+        if self.specifier in ('tpiba','crystal','tpiba_b','crystal_b',''):
             self.nkpoints = len(self.kpoints)
             c+='   '+str(self.nkpoints)+'\n'
             a = empty((self.nkpoints,4))
@@ -574,6 +611,8 @@ class k_points(Card):
             c+='   '
             c+=array_to_string(array(self.grid),pad='',format='{0}',converter=int,rowsep='')
             c+=array_to_string(array(self.shift),pad=' ',format='{0}',converter=int)
+        elif self.specifier == 'gamma':
+            None
         else:
             self.error('k_points specifier '+self.specifier+' is unrecognized')
         #end if
@@ -954,14 +993,25 @@ class PwscfInput(SimulationInput):
         self.cell_parameters.specifier = 'cubic'
         self.cell_parameters.vectors   = s.axes.copy()
 
-        kpoints = s.kpoints/(2*pi)
-        nkpoints = len(kpoints)
+        self.k_points.clear()
+        nkpoints = len(s.kpoints)
         if nkpoints>0:
-            self.k_points.specifier = 'tpiba'
-            self.k_points.nkpoints  = nkpoints
-            self.k_points.kpoints   = kpoints
-            self.k_points.weights   = s.kweights.copy()
-            self.k_points.change_specifier('crystal',self) #added to make debugging easier
+            if s.at_Gpoint():
+                self.k_points.specifier = 'gamma'
+            elif s.at_Lpoint():
+                self.k_points.set(
+                    specifier = 'automatic',
+                    grid  = (1,1,1),
+                    shift = (1,1,1)
+                    )
+            else:
+                kpoints = s.kpoints/(2*pi)
+                self.k_points.specifier = 'tpiba'
+                self.k_points.nkpoints  = nkpoints
+                self.k_points.kpoints   = kpoints
+                self.k_points.weights   = s.kweights.copy()
+                self.k_points.change_specifier('crystal',self) #added to make debugging easier
+            #end if
         #end if
 
         atoms = p.get_ions()
@@ -1096,6 +1146,8 @@ def generate_pwscf_input(selector,**kwargs):
             system.update_particles()
         #end if
     #end if
+    if selector=='generic':
+        return generate_any_pwscf_input(**kwargs)
     if selector=='scf':
         return generate_scf_input(**kwargs)
     elif selector=='nscf':
@@ -1106,6 +1158,158 @@ def generate_pwscf_input(selector,**kwargs):
         PwscfInput.class_error('selection '+str(selector)+' has not been implemented for pwscf input generation')
     #end if
 #end def generate_pwscf_input
+
+
+
+generate_any_defaults = obj(
+    prefix     = 'pwscf',
+    outdir     = 'pwscf_output',
+    pseudo_dir = './',
+    pseudos    = list,
+    kgrid      = None,
+    kshift     = (0,0,0),
+    system     = None,
+    use_folded = True,
+    spin_polarized = None, # these are provisional and may be removed/changed at any time
+    hubbard_u  = None,
+    start_mag  = None
+    )
+def generate_any_pwscf_input(**kwargs):
+    #move values into a more convenient representation
+    kwargs = obj(**kwargs)
+
+    #assign default values
+    if 'defaults' in kwargs:
+        defaults = kwargs.defaults
+        del kwargs.defaults
+    else:
+        defaults = generate_any_defaults
+    #end if
+    for name,default in defaults.iteritems():
+        if not name in kwargs:
+            deftype = type(default)
+            if deftype==pytypes.ClassType or deftype==pytypes.FunctionType:
+                kwargs[name] = default()
+            else:
+                kwargs[name] = default
+            #end if
+        #end if
+    #end for
+
+    #make an empty input file
+    pw = PwscfInput()
+
+    #pull out section keywords
+    section_keywords = obj()
+    for section_name,section_type in PwscfInput.section_types.iteritems():
+        keys = set(kwargs.keys()) & section_type.variables
+        if len(keys)>0:
+            kw = obj()
+            kw.move_from(kwargs,keys)
+            section = section_type()
+            section.assign(**kw)
+            pw[section_name] = section
+        #end if
+    #end for
+
+    #process other keywords
+    pseudos    = kwargs.delete('pseudos')
+    system     = kwargs.delete('system')
+    use_folded = kwargs.delete('use_folded')
+    spinpol    = kwargs.delete('spin_polarized')
+    hubbard_u  = kwargs.delete('hubbard_u')
+    start_mag  = kwargs.delete('start_mag')
+    kgrid      = kwargs.delete('kgrid')
+    kshift     = kwargs.delete('kshift')
+    if start_mag!=None:
+        spinpol=True
+    #end if
+    #  pseudopotentials
+    pseudopotentials = obj()
+    atoms = []
+    for ppname in pseudos:
+        element = ppname[0:2].strip('.')
+        atoms.append(element)
+        pseudopotentials[element] = ppname
+    #end for
+    pw.atomic_species.set(
+        atoms            = atoms,
+        pseudopotentials = pseudopotentials
+        )
+    #  physical system information
+    if system is None:
+        PwscfInput.class_error('system must be provided','generate_pwscf_input')
+    else:
+        system.check_folded_system()
+        system.change_units('B')
+        s = system.structure
+        #setting the 'lattice' (cell axes) requires some delicate care
+        #  qmcpack will fail if this is even 1e-10 off of what is in 
+        #  the wavefunction hdf5 file from pwscf
+        if s.folded_structure!=None:
+            fs = s.folded_structure
+            axes = array(array_to_string(fs.axes).split(),dtype=float)
+            axes.shape = fs.axes.shape
+            axes = dot(s.tmatrix,axes)
+            if abs(axes-s.axes).sum()>1e-5:
+                PwscfInput.class_error('supercell axes do not match tiled version of folded cell axes\n  you may have changed one set of axes (super/folded) and not the other\n  folded cell axes:\n'+str(fs.axes)+'\n  supercell axes:\n'+str(s.axes)+'\n  folded axes tiled:\n'+str(axes),'generate_pwscf_input')
+            #end if
+        else:
+            axes = array(array_to_string(s.axes).split(),dtype=float)
+            axes.shape = s.axes.shape
+        #end if
+        s.adjust_axes(axes)
+        if use_folded:
+            system = system.get_primitive()
+        #end if
+        pw.incorporate_system(system,spin_polarized=spinpol)
+    #end if
+    #  Hubbard U
+    if hubbard_u!=None:
+        if not isinstance(hubbard_u,(dict,obj)):
+            PwscfInput.class_error('input hubbard_u must be of type dict or obj','generate_pwscf_input')
+        #end if
+        pw.system.hubbard_u = deepcopy(hubbard_u)
+        pw.system.lda_plus_u = True
+    #end if
+    #  starting magnetization
+    if start_mag!=None:
+        if not isinstance(start_mag,(dict,obj)):
+            PwscfInput.class_error('input start_mag must be of type dict or obj','generate_pwscf_input')
+        #end if
+        pw.system.start_mag = deepcopy(start_mag)
+        if 'multiplicity' in pw.system:
+            del pw.system.multiplicity
+        #end if
+    #end if
+    #  kpoints
+    zero_shift = tuple(kshift)==(0,0,0)
+    if zero_shift and (kgrid!=None and tuple(kgrid)==(1,1,1) or kgrid is None and system is None):
+        pw.k_points.clear()
+        pw.k_points.specifier = 'gamma'
+    elif kgrid!=None:
+        pw.k_points.clear()
+        pw.k_points.set(
+            specifier = 'automatic',
+            grid      = kgrid,
+            shift     = kshift
+            )
+    elif not zero_shift:
+        pw.k_points.clear()
+        pw.k_points.set(
+            specifier = 'automatic',
+            grid      = (1,1,1),
+            shift     = kshift
+            )
+    #end if
+
+    # check for leftover keywords
+    if len(kwargs)>0:
+        PwscfInput.class_error('unrecognized keywords: {0}\nthese keywords are not known to belong to any namelist for PWSCF'.format(sorted(kwargs.keys())),'generate_pwscf_input')
+    #end if  
+    
+    return pw
+#end def generate_any_pwscf_input
 
 
 
