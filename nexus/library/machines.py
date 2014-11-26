@@ -1159,7 +1159,7 @@ class Supercomputer(Machine):
                 job.run_options.add(n='-n '+str(job.processes))
             #end if
             if 'd' in self.aprun_options and job.threads>1:
-                job.run_options.add('-d '+str(job.threads))
+                job.run_options.add(d='-d '+str(job.threads))
             #end if
             if 'N' in self.aprun_options and job.processes_per_node!=None:
                 job.run_options.add(N='-N '+str(job.processes_per_node))

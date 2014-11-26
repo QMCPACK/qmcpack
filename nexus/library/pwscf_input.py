@@ -1317,6 +1317,7 @@ def generate_scf_input(prefix       = 'pwscf',
                        outdir       = 'pwscf_output',
                        input_dft    = None,
                        exx_fraction = None,
+                       exxdiv_treatment = None,
                        ecut         = 200.,
                        ecutrho      = None,
                        ecutfock     = None,
@@ -1412,6 +1413,9 @@ def generate_scf_input(prefix       = 'pwscf',
     #end if
     if exx_fraction!=None:
         pw.system.exx_fraction = exx_fraction
+    #end if
+    if exxdiv_treatment!=None:
+        pw.system.exxdiv_treatment = exxdiv_treatment
     #end if
     if ecutfock!=None:
         pw.system.ecutfock = ecutfock
