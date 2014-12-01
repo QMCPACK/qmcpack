@@ -2598,7 +2598,8 @@ class QmcpackInput(SimulationInput,Names):
         system = system.copy()
         system.check_folded_system()
         system.change_units('B')
-        system.structure.group_atoms()
+        #system.structure.group_atoms()
+        system.structure.order_by_species()
         particles  = system.particles
         structure  = system.structure
         net_charge = system.net_charge

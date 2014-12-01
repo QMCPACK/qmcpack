@@ -296,10 +296,8 @@ class Qmcpack(Simulation):
         elif result_name=='structure':
             structure = self.system.structure
             relstruct = result.structure
-            structure.set(
-                pos   = relstruct.positions,
-                atoms = relstruct.atoms
-                )
+            structure.pos = relstruct.positions.copy()
+            structure.set_elem(relstruct.atoms)
             self.input.incorporate_system(self.system)
         else:
             self.error('ability to incorporate result '+result_name+' has not been implemented')
