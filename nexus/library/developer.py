@@ -1,6 +1,50 @@
 
-
+import sys
+import traceback
 from generic import obj
+
+exit_call = exit
+devlog    = sys.stdout
+
+def log(self,*items):
+    s=''
+    for item in items:
+        s+=str(item)+' '
+    #end for
+    s+='\n'
+    devlog.write(s)
+#end def log
+
+
+def warn(self,message,location,header=None,post_header=' Warning:'):
+    pad = 4*' '
+    if location is None:
+        header = 'warning:'
+    else:
+        header = location+' warning:'
+    #end if
+    log(header)
+    log(pad+message.replace('\n','\n'+pad))
+#end def warn
+
+
+def error(message,location=None,exit=True,trace=True):
+    pad = 4*' '
+    if location is None:
+        header = 'error:'
+    else:
+        header = location+' error:'
+    #end if
+    log(header)
+    log(pad+message.replace('\n','\n'+pad))
+    if exit:
+        log('  exiting.\n')
+        if trace:
+            traceback.print_stack()
+        #end if
+        exit_call()
+    #end if
+#end def error
 
 
 class DevBase(obj):

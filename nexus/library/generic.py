@@ -127,7 +127,7 @@ class obj(AllAbilities):
         #end if
         self.log(header+post_header)
         self.log(pad+message.replace('\n','\n'+pad))
-    #end def error
+    #end def warn
 
     @classmethod
     def class_error(cls,message,header=None,exit=True,trace=True,post_header=' Error:'):
