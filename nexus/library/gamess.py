@@ -50,7 +50,7 @@ class Gamess(Simulation):
     def check_result(self,result_name,sim):
         input = self.input 
         if result_name=='orbitals':
-            calculating_result = 'contrl' in input and 'scftyp' in input.contrl and input.contrl.scftyp in ('rhf','rohf','uhf')
+            calculating_result = 'contrl' in input and 'scftyp' in input.contrl and input.contrl.scftyp.lower() in ('rhf','rohf','uhf','mcscf')
         else:
             calculating_result = False
         #end if
@@ -60,14 +60,16 @@ class Gamess(Simulation):
 
     def get_result(self,result_name,sim):
         result = obj()
+        input    = self.input
         analyzer = self.load_analyzer_image()
         if result_name=='orbitals':
-            result.location = os.path.join(self.locdir,self.outfile)
-            result.vec = None
+            result.location  = os.path.join(self.locdir,self.outfile)
+            result.vec       = None
             result.norbitals = 0
+            result.scftyp    = input.contrl.scftyp.lower()
             if 'punch' in analyzer and 'vec' in analyzer.punch:
                 result.norbitals = analyzer.punch.norbitals
-                result.vec = analyzer.punch.vec
+                result.vec       = analyzer.punch.vec
             #end if
         else:
             self.error('ability to get result '+result_name+' has not been implemented')
@@ -85,9 +87,11 @@ class Gamess(Simulation):
             if not 'guess' in input:
                 input.guess = GuessGroup()
             #end if
+            input.guess.clear()
             input.guess.set(
                 guess = 'moread',
-                norb  = result.norbitals
+                norb  = result.norbitals,
+                prtmo = True
                 )
             input.vec = FormattedGroup(result.vec)
         else:

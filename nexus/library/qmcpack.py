@@ -206,10 +206,9 @@ class Qmcpack(Simulation):
             elif isinstance(sim,Convert4qmc):
 
                 res = QmcpackInput(result.location)
-                wfn = res.qmcsystem.wavefunction
-                qs = input.simulation.qmcsystem
+                qs  = input.simulation.qmcsystem
                 oldwfn = qs.wavefunction
-                newwfn = wfn.copy()
+                newwfn = res.qmcsystem.wavefunction
                 if 'jastrows' in newwfn:
                     del newwfn.jastrows
                 #end if

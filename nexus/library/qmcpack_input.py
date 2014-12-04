@@ -140,36 +140,41 @@ class collection(hidden):
         #self.add(value)
     #end def __setitem__
 
-    def add(self,element,strict=True):
-        identifier = element.identifier
-        public = self.public()
-        missing_identifier = False
-        if not element.tag in plurals_inv and element.collection_id is None:
-            self.error('collection cannot be formed\n  encountered non-plural element\n  element class: {0}\n  element tag: {1}\n  tags allowed in a collection: {2}'.format(element.__class__.__name__,element.tag,sorted(plurals_inv.keys())))
-        elif identifier is None:
-            key = len(public)
-        elif isinstance(identifier,str):
-            if identifier in element:
-                key = element[identifier]
-            else:
-                missing_identifier = True
-            #end if
-        else:
-            key = ''
-            for ident in identifier:
-                if ident in element:
-                    key+=element[ident]
+    def add(self,element,strict=True,key=None):
+        if key is None:
+            identifier = element.identifier
+            public = self.public()
+            missing_identifier = False
+            if not element.tag in plurals_inv and element.collection_id is None:
+                self.error('collection cannot be formed\n  encountered non-plural element\n  element class: {0}\n  element tag: {1}\n  tags allowed in a collection: {2}'.format(element.__class__.__name__,element.tag,sorted(plurals_inv.keys())))
+            elif identifier is None:
+                key = len(public)
+            elif isinstance(identifier,str):
+                if identifier in element:
+                    key = element[identifier]
+                else:
+                    missing_identifier = True
                 #end if
-            #end for
-            missing_identifier = key==''
+            else:
+                key = ''
+                for ident in identifier:
+                    if ident in element:
+                        key+=element[ident]
+                    #end if
+                #end for
+                missing_identifier = key==''
+            #end if
+            if missing_identifier:
+                key = len(public)
+                #if strict:
+                #    self.error('collection cannot be formed\n  element is missing an identifier\n  element class: {0}\n  element tag: {1}\n  identifier looked for: {2}\n  element contents:\n{3}'.format(element.__class__.__name__,element.tag,identifier,str(element)))
+                #else:
+                #    return False
+                ##end if
+            #end if
         #end if
-        if missing_identifier:
-            key = len(public)
-            #if strict:
-            #    self.error('collection cannot be formed\n  element is missing an identifier\n  element class: {0}\n  element tag: {1}\n  identifier looked for: {2}\n  element contents:\n{3}'.format(element.__class__.__name__,element.tag,identifier,str(element)))
-            #else:
-            #    return False
-            ##end if
+        if key in public:
+            self.error('attempted to add duplicate key to collection: {0}\n keys present: {1}'.format(key,sorted(public.keys())))
         #end if
         public[key] = element
         self.hidden().order.append(key)
@@ -196,6 +201,14 @@ class collection(hidden):
         #end for
         return lst
     #end def list
+
+    def pairlist(self):
+        pairs = []
+        for key in self.hidden().order:
+            pairs.append((key,self[key]))
+        #end for
+        return pairs
+    #end def pairlist
 #end class collection
 
 
@@ -1359,7 +1372,7 @@ param = Param()
 
 
 class simulation(QIxml):
-    elements   = ['project','random','qmcsystem','particleset','wavefunction','hamiltonian','init','traces','qmc','loop']
+    elements   = ['project','random','include','qmcsystem','particleset','wavefunction','hamiltonian','init','traces','qmc','loop']
     write_types = obj(random=yesno)
 #end class simulation
 
@@ -1373,11 +1386,14 @@ class application(QIxml):
     attributes = ['name','role','class','version']
 #end class application
 
-
 class random(QIxml):
     attributes = ['seed','parallel']
     write_types= obj(parallel=truefalse)
 #end class random
+
+class include(QIxml):
+    attributes = ['href']
+#end def include
 
 
 class qmcsystem(QIxml):
@@ -1729,7 +1745,7 @@ class traces(QIxml):
     write_types = obj(write_=yesno,verbose=yesno,scalar=yesno,array=yesno,
                       scalar_defaults=yesno,array_defaults=yesno,
                       particle=yesno,particle_defaults=yesno)
-#end class
+#end class traces
 
 
 class loop(QIxml):
@@ -1822,7 +1838,7 @@ classes = [   #standard classes
     atomicbasisset,basisgroup,init,var,traces,scalar_traces,particle_traces,array_traces,
     reference_points,nearestneighbors,neighbor_trace,dm1b,
     coefficient,radfunc,spindensity,structurefactor,
-    sposet,bspline_builder,composite_builder,heg_builder
+    sposet,bspline_builder,composite_builder,heg_builder,include
     ]
 types = dict( #simple types and factories
     host           = param,
@@ -1854,7 +1870,8 @@ plurals = obj(
     neighbor_traces = 'neighbor_trace',
     sposet_builders = 'sposet_builder',
     sposets         = 'sposet',
-    radfuncs        = 'radfunc'
+    radfuncs        = 'radfunc',
+    qmcsystems      = 'qmcsystem'
     )
 plurals_inv = plurals.inverse()
 plural_names = set(plurals.keys())
@@ -2399,6 +2416,146 @@ class QmcpackInput(SimulationInput,Names):
         #end for
         Param.metadata = None
     #end def include_xml
+
+    # This include functionality is currently not being used
+    # The rationale is essentially this:
+    #   -Having includes explicitly represented in the input file object
+    #    makes it very difficult to search for various components
+    #    i.e. where is the particleset? the wavefunction? a particular determinant?
+    #   -Difficulty in locating components makes it difficult to modify them
+    #   -Includes necessarily introduce greater variability in input file structure
+    #    and it is difficult to ensure every possible form is preserved each and 
+    #    every time a modification is made
+    #   -The only time it is undesirable to incorporate the contents of an
+    #    include directly into the input file object is if the data is large
+    #    e.g. for an xml wavefunction or pseudopotential.
+    #    In these cases, an external file should be provided that contains
+    #    only the large object in question (pseudo or wavefunction).
+    #    This is already done for pseudopotentials and should be done for 
+    #    wavefunctions, e.g. multideterminants.
+    #    Until that time, wavefunctions will be explicitly read into the full
+    #    input file.
+    def add_include(self,element_type,href,placement='on'):
+        # check the element type
+        elems = ['cell','ptcl','wfs','ham']
+        emap  = obj(
+            simulationcell = 'cell',
+            particleset    = 'ptcl',
+            wavefunction   = 'wfs',
+            hamiltonian    = 'ham'
+            )
+        if not element_type in elems:
+            self.error('cannot add include for element of type {0}\n  valid element types are {1}'.format(element_type,elems))
+        #end if
+        # check the requested placement
+        placements = ('before','on','after')
+        if not placement in placements:
+            self.error('cannot add include for element with placement {0}\n  valid placements are {1}'.format(placement,list(placements)))
+        #end if
+        # check that the base element is a simulation
+        base = self.get_base()
+        if not isinstance(base,simulation):
+            self.error('an include can only be added to simulation\n  attempted to add to {0}'.format(base.__class__.__name__))
+        #end if
+        # gather a list of current qmcsystems
+        if 'qmcsystem' in base:
+            qslist = [(0,base.qmcsystem)]
+            del base.qmcsystem
+        elif 'qmcsystems' in base:
+            qslist = base.qmcsystems.pairlist()
+            del base.qmcsystems
+        else:
+            qslist = []
+        #end if
+        # organize the elements of the qmcsystems
+        cur_elems = obj()
+        for elem in elems:
+            for place in placements:
+                cur_elems[elem,place] = None
+            #end for
+        #end for
+        for qskey,qs in qslist:
+            if isinstance(qs,include):
+                inc = qs
+                ekey = qskey.split('_')[1]
+                if not ekey in elems:
+                    self.error('encountered invalid element key: {0}\n  valid keys are: {1}'.format(ekey,elems))
+                #end if
+                if cur_elems[ekey,'on'] is None:
+                    cur_elems[ekey,'before'] = ekey,inc
+                else:
+                    cur_elems[ekey,'after' ] = ekey,inc
+                #end if
+            elif not isinstance(qs,qmcsystem):
+                self.error('expected qmcsystem element, got {0}'.format(qs.__class__.__name__))
+            else:
+                for elem in qmcsystem.elements:
+                    elem_plural = elem+'s'
+                    name  = None
+                    if elem in qs:
+                        name = elem
+                    elif elem_plural in qs:
+                        name = elem_plural
+                    #end if
+                    if name!=None:
+                        cur_elems[emap[elem],'on'] = name,qs[name]
+                        del qs[name]
+                    #end if
+                #end for
+                residue = qs.keys()
+                if len(residue)>0:
+                    self.error('extra keys found in qmcsystem: {0}'.format(sorted(residue)))
+                #end if
+            #end if
+        #end for
+        for elem in elems:
+            pbef = cur_elems[elem,'before']
+            pon  = cur_elems[elem,'on'    ]
+            paft = cur_elems[elem,'after' ] 
+            if pon is None:
+                if not pbef is None and paft is None:
+                    cur_elems[elem,'on'    ] = pbef
+                    cur_elems[elem,'before'] = None
+                elif not paft is None and pbef is None:
+                    cur_elems[elem,'on'    ] = paft
+                    cur_elems[elem,'after' ] = None
+                #end if
+            #end if
+        #end for
+        # insert the new include
+        inc_name  = 'include_'+element_type
+        inc_value = include(href=href)
+        cur_elems[element_type,placement] = inc_name,inc_value
+        # create a collection of qmcsystems
+        qmcsystems = collection()
+        qskey = ''
+        qs    = qmcsystem()
+        for elem in elems:
+            for place in placements:
+                cur_elem = cur_elems[elem,place]
+                if cur_elem!=None:
+                    name,value = cur_elem
+                    if isinstance(value,include):
+                        if len(qskey)>0:
+                            qmcsystems.add(qs,key=qskey)
+                            qskey = ''
+                            qs    = qmcsystem()
+                        #end if
+                        qmcsystems.add(value,key=name)
+                    else:
+                        qskey += elem[0]
+                        qs[name] = value
+                    #end if
+                #end if
+            #end for
+        #end for
+        if len(qskey)>0:
+            qmcsystems.add(qs,key=qskey)
+        #end if
+        # attach the collection to the input file
+        base.qmcsystems = qmcsystems
+    #end def add_include
+
 
     def get_output_info(self,*requests):
         project = self.simulation.project

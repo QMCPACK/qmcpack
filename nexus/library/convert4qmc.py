@@ -146,7 +146,13 @@ class Convert4qmc(Simulation):
 
     def incorporate_result(self,result_name,result,sim):
         if result_name=='orbitals':
-            self.input.gamess_ascii = os.path.relpath(result.location,self.locdir)
+            orbpath = os.path.relpath(result.location,self.locdir)
+            if result.scftyp=='mcscf':
+                self.input.gamess_ascii = orbpath
+                self.input.ci           = orbpath
+            else:
+                self.input.gamess_ascii = orbpath
+            #end if
             self.job.app_command = self.input.app_command()
         else:
             self.error('ability to incorporate result '+result_name+' has not been implemented')
@@ -184,6 +190,9 @@ class Convert4qmc(Simulation):
 
 def generate_convert4qmc(**kwargs):
     sim_args,inp_args = Simulation.separate_inputs(kwargs)
+    if 'identifier' in sim_args and not 'prefix' in inp_args:
+        inp_args.prefix = sim_args.identifier
+    #end if
 
     if not 'input' in sim_args:
         sim_args.input = generate_convert4qmc_input(**inp_args)
