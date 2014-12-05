@@ -206,7 +206,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     i+=1
                     tokens = lines[i].split()
 
-                    while len(tokens)>0 and tokens[0] in elements and (len(tokens)==4 or (len(tokens)==7 and tokens[-1] in '01')):
+                    while len(tokens)>0 and tokens[0].lower()!='end' and (len(tokens)==4 or (len(tokens)==7 and tokens[-1] in '01')):
                         atoms.append(tokens[0])
                         positions.append(array(tokens[1:4],dtype=float))
                         i+=1

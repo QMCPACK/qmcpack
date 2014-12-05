@@ -962,7 +962,7 @@ class PwscfInput(SimulationInput):
     #end def get_common_vars
 
 
-    def incorporate_system(self,system,spin_polarized=None):
+    def incorporate_system(self,system):
         system.check_folded_system()
         system.update_particles()
         system.change_units('B')
@@ -979,13 +979,7 @@ class PwscfInput(SimulationInput):
         nions,nspecies = p.count_ions(species=True)
         self.system.nat          = nions
         self.system.ntyp         = nspecies
-        #self.system.nelec        = nup+ndn
         self.system.tot_charge   = nc
-        mag = nup-ndn
-        if (mag!=0 and spin_polarized!=False) or spin_polarized==True:
-            self.system.nspin = 2
-            self.system.tot_magnetization = mag
-        #end if
 
         if not 'cell_parameters' in self:
             self.cell_parameters = self.element_types['cell_parameters']()
@@ -1050,6 +1044,97 @@ class PwscfInput(SimulationInput):
             self.atomic_positions.relax_directions = relax_directions
         #end if                    
     #end def incorporate_system
+
+
+    def incorporate_system_old(self,system,spin_polarized=None):
+        system.check_folded_system()
+        system.update_particles()
+        system.change_units('B')
+        p  = system.particles
+        s  = system.structure
+        nc = system.net_charge
+        ns = system.net_spin
+
+        nup = p.up_electron.count
+        ndn = p.down_electron.count
+
+        self.system.ibrav        = 0
+        self.system['celldm(1)'] = 1.0e0
+        nions,nspecies = p.count_ions(species=True)
+        self.system.nat          = nions
+        self.system.ntyp         = nspecies
+        #self.system.nelec        = nup+ndn
+        self.system.tot_charge   = nc
+        mag = nup-ndn
+        if (mag!=0 and spin_polarized!=False) or spin_polarized==True:
+            self.system.nspin = 2
+            self.system.tot_magnetization = mag
+        #end if
+
+        if not 'cell_parameters' in self:
+            self.cell_parameters = self.element_types['cell_parameters']()
+        #end if
+        self.cell_parameters.specifier = 'cubic'
+        self.cell_parameters.vectors   = s.axes.copy()
+
+        self.k_points.clear()
+        nkpoints = len(s.kpoints)
+        if nkpoints>0:
+            if s.at_Gpoint():
+                self.k_points.specifier = 'gamma'
+            elif s.at_Lpoint():
+                self.k_points.set(
+                    specifier = 'automatic',
+                    grid  = (1,1,1),
+                    shift = (1,1,1)
+                    )
+            else:
+                kpoints = s.kpoints/(2*pi)
+                self.k_points.specifier = 'tpiba'
+                self.k_points.nkpoints  = nkpoints
+                self.k_points.kpoints   = kpoints
+                self.k_points.weights   = s.kweights.copy()
+                self.k_points.change_specifier('crystal',self) #added to make debugging easier
+
+            #end if
+        #end if
+
+        atoms = p.get_ions()
+        masses = obj()
+        for name,a in atoms.iteritems():
+            masses[name] = convert(a.mass,'me','amu')
+        #end for
+        self.atomic_species.atoms  = list(atoms.keys())
+        self.atomic_species.masses = masses
+        # set pseudopotentials for renamed atoms (e.g. Cu3 is same as Cu)
+        pp = self.atomic_species.pseudopotentials
+        for atom in self.atomic_species.atoms:
+            if not atom in pp:
+                iselem,symbol = p.is_element(atom,symbol=True)
+                if iselem and symbol in pp:
+                    pp[atom] = str(pp[symbol])
+                #end if
+            #end if
+        #end for
+
+        self.atomic_positions.specifier = 'alat'
+        self.atomic_positions.positions = s.pos.copy()
+        self.atomic_positions.atoms     = list(s.elem)
+        if 'frozen' in s:
+            frozen = s.frozen
+            if 'relax_directions' in self.atomic_positions:
+                relax_directions = self.atomic_positions.relax_directions
+            else:
+                relax_directions = ones(s.pos.shape,dtype=int)
+            #end if
+            for i in xrange(len(s.pos)):
+                relax_directions[i,0] = int(not frozen[i,0] and relax_directions[i,0])
+                relax_directions[i,1] = int(not frozen[i,1] and relax_directions[i,1])
+                relax_directions[i,2] = int(not frozen[i,2] and relax_directions[i,2])
+            #end for
+            self.atomic_positions.relax_directions = relax_directions
+        #end if                    
+    #end def incorporate_system_old
 
         
     def return_system(self,**valency):
@@ -1162,18 +1247,82 @@ def generate_pwscf_input(selector,**kwargs):
 
 
 generate_any_defaults = obj(
-    prefix     = 'pwscf',
-    outdir     = 'pwscf_output',
-    pseudo_dir = './',
-    pseudos    = list,
-    kgrid      = None,
-    kshift     = (0,0,0),
-    system     = None,
-    use_folded = True,
-    spin_polarized = None, # these are provisional and may be removed/changed at any time
-    hubbard_u  = None,
-    start_mag  = None
+    standard = obj(
+        prefix     = 'pwscf',
+        outdir     = 'pwscf_output',
+        pseudo_dir = './',
+        pseudos    = list,
+        kgrid      = None,
+        kshift     = (0,0,0),
+        system     = None,
+        use_folded = True,
+        hubbard_u  = None,  # these are provisional and may be removed/changed at any time
+        start_mag  = None
+        ),
+    oldscf   = obj(
+        calculation  = 'scf',
+        prefix       = 'pwscf',
+        outdir       = 'pwscf_output',
+        pseudo_dir   = './',
+        ecutwfc      = 200.,
+        occupations  = 'smearing',
+        smearing     = 'fermi-dirac',
+        degauss      = 0.0001,
+        nosym        = False,
+        wf_collect   = True,
+        hubbard_u    = None,
+        start_mag    = None,
+        restart_mode = 'from_scratch',
+        tstress      = True,
+        tprnfor      = True,
+        disk_io      = 'low',
+        verbosity    = 'high',
+        ibrav        = 0,
+        conv_thr     = 1e-10,
+        electron_maxstep = 1000,
+        mixing_mode  = 'plain',
+        mixing_beta  = .7,
+        diagonalization = 'david',
+        kgrid        = None,
+        kshift       = None,
+        pseudos      = None,
+        system       = None,
+        use_folded   = True,
+        ),
+    oldrelax = obj(
+        calculation  = 'relax',
+        prefix       = 'pwscf',
+        outdir       = 'pwscf_output',
+        pseudo_dir      = './',
+        ecutwfc      = 50.,
+        occupations  = 'smearing',
+        smearing     = 'fermi-dirac',
+        degauss      = 0.0001,
+        nosym        = True,
+        wf_collect   = False,
+        hubbard_u    = None,
+        start_mag    = None,
+        restart_mode = 'from_scratch',
+        disk_io      = 'low',
+        verbosity    = 'high',
+        ibrav        = 0,
+        conv_thr     = 1e-6,
+        electron_maxstep = 1000,
+        mixing_mode  = 'plain',
+        mixing_beta  = .7,
+        diagonalization = 'david',
+        ion_dynamics    = 'bfgs',
+        upscale      = 100,
+        pot_extrapolation = 'second_order',
+        wfc_extrapolation = 'second_order',
+        kgrid        = None,
+        kshift       = None,
+        pseudos      = None,
+        system       = None,
+        use_folded   = False,
+        ),
     )
+
 def generate_any_pwscf_input(**kwargs):
     #move values into a more convenient representation
     kwargs = obj(**kwargs)
@@ -1182,8 +1331,15 @@ def generate_any_pwscf_input(**kwargs):
     if 'defaults' in kwargs:
         defaults = kwargs.defaults
         del kwargs.defaults
+        if isinstance(defaults,str):
+            if defaults in generate_any_defaults:
+                defaults = generate_any_defaults[defaults]
+            else:
+                PwscfInput.class_error('invalid default set requested: {0}\n  valid options are {1}'.format(defaults,sorted(generate_any_defaults.keys())))
+            #end if
+        #end if
     else:
-        defaults = generate_any_defaults
+        defaults = generate_any_defaults.standard
     #end if
     for name,default in defaults.iteritems():
         if not name in kwargs:
@@ -1216,14 +1372,11 @@ def generate_any_pwscf_input(**kwargs):
     pseudos    = kwargs.delete('pseudos')
     system     = kwargs.delete('system')
     use_folded = kwargs.delete('use_folded')
-    spinpol    = kwargs.delete('spin_polarized')
     hubbard_u  = kwargs.delete('hubbard_u')
     start_mag  = kwargs.delete('start_mag')
     kgrid      = kwargs.delete('kgrid')
     kshift     = kwargs.delete('kshift')
-    if start_mag!=None:
-        spinpol=True
-    #end if
+
     #  pseudopotentials
     pseudopotentials = obj()
     atoms = []
@@ -1236,6 +1389,7 @@ def generate_any_pwscf_input(**kwargs):
         atoms            = atoms,
         pseudopotentials = pseudopotentials
         )
+
     #  physical system information
     if system is None:
         PwscfInput.class_error('system must be provided','generate_pwscf_input')
@@ -1262,8 +1416,16 @@ def generate_any_pwscf_input(**kwargs):
         if use_folded:
             system = system.get_primitive()
         #end if
-        pw.incorporate_system(system,spin_polarized=spinpol)
+        pw.incorporate_system(system)
     #end if
+
+    # set the number of spins
+    if start_mag is None and (not 'tot_magnetization' in kwargs or kwargs['tot_magnetization']==0):
+        pw.system.nspin = 1
+    else:
+        pw.system.nspin = 2
+    #end if
+
     #  Hubbard U
     if hubbard_u!=None:
         if not isinstance(hubbard_u,(dict,obj)):
@@ -1272,29 +1434,32 @@ def generate_any_pwscf_input(**kwargs):
         pw.system.hubbard_u = deepcopy(hubbard_u)
         pw.system.lda_plus_u = True
     #end if
+
     #  starting magnetization
     if start_mag!=None:
         if not isinstance(start_mag,(dict,obj)):
             PwscfInput.class_error('input start_mag must be of type dict or obj','generate_pwscf_input')
         #end if
         pw.system.start_mag = deepcopy(start_mag)
-        if 'multiplicity' in pw.system:
-            del pw.system.multiplicity
-        #end if
     #end if
+
     #  kpoints
-    zero_shift = tuple(kshift)==(0,0,0)
+    if kshift is None:
+        zero_shift = False
+    else:
+        zero_shift = tuple(kshift)==(0,0,0)
+    #end if
     if zero_shift and (kgrid!=None and tuple(kgrid)==(1,1,1) or kgrid is None and system is None):
         pw.k_points.clear()
         pw.k_points.specifier = 'gamma'
-    elif kgrid!=None:
+    elif kgrid!=None and kshift!=None:
         pw.k_points.clear()
         pw.k_points.set(
             specifier = 'automatic',
             grid      = kgrid,
             shift     = kshift
             )
-    elif not zero_shift:
+    elif not zero_shift and kshift!=None:
         pw.k_points.clear()
         pw.k_points.set(
             specifier = 'automatic',
@@ -1450,7 +1615,7 @@ def generate_scf_input(prefix       = 'pwscf',
     #end if
 
     if system!=None:
-        pw.incorporate_system(system,spin_polarized=spin_polarized)
+        pw.incorporate_system_old(system,spin_polarized=spin_polarized)
     #end if
 
     if hubbard_u!=None:
@@ -1643,7 +1808,7 @@ def generate_relax_input(prefix       = 'pwscf',
         if use_folded:
             system = system.get_primitive()
         #end if
-        pw.incorporate_system(system,spin_polarized=spin_polarized)
+        pw.incorporate_system_old(system,spin_polarized=spin_polarized)
     #end if
 
     if hubbard_u!=None:
