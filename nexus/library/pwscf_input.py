@@ -1326,10 +1326,10 @@ def generate_scf_input(prefix       = 'pwscf',
                        degauss      = 0.0001,
                        nosym        = False,
                        spin_polarized = None,
-                       hubbard_u    = None,
-                       start_mag    = None,
                        assume_isolated = None,
                        wf_collect   = True,
+                       hubbard_u    = None,
+                       start_mag    = None,
                        restart_mode = 'from_scratch',
                        tstress      = True,
                        tprnfor      = True,
@@ -1556,6 +1556,9 @@ def generate_relax_input(prefix       = 'pwscf',
                          upscale      = 100,
                          pot_extrapolation = 'second_order',
                          wfc_extrapolation = 'second_order',
+                         hubbard_u    = None,
+                         start_mag    = None,
+                         restart_mode = 'from_scratch',
                          kgrid        = None,
                          kshift       = None,
                          pseudos      = None,
@@ -1641,6 +1644,26 @@ def generate_relax_input(prefix       = 'pwscf',
             system = system.get_primitive()
         #end if
         pw.incorporate_system(system,spin_polarized=spin_polarized)
+    #end if
+
+    if hubbard_u!=None:
+        if not isinstance(hubbard_u,(dict,obj)):
+            PwscfInput.class_error('input hubbard_u must be of type dict or obj')
+        #end if
+        pw.system.hubbard_u = deepcopy(hubbard_u)
+        pw.system.lda_plus_u = True
+    #end if
+    if start_mag!=None:
+        if not isinstance(start_mag,(dict,obj)):
+            PwscfInput.class_error('input start_mag must be of type dict or obj')
+        #end if
+        pw.system.start_mag = deepcopy(start_mag)
+        #if 'tot_magnetization' in pw.system:
+        #    del pw.system.tot_magnetization
+        ##end if
+        if 'multiplicity' in pw.system:
+            del pw.system.multiplicity
+        #end if
     #end if
 
     if kshift==None:

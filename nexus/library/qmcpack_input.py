@@ -173,9 +173,9 @@ class collection(hidden):
                 ##end if
             #end if
         #end if
-        if key in public:
-            self.error('attempted to add duplicate key to collection: {0}\n keys present: {1}'.format(key,sorted(public.keys())))
-        #end if
+        #if key in public:
+        #    self.error('attempted to add duplicate key to collection: {0}\n keys present: {1}'.format(key,sorted(public.keys())))
+        ##end if
         public[key] = element
         self.hidden().order.append(key)
         return True
