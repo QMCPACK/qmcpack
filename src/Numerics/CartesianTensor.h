@@ -568,203 +568,196 @@ void CartesianTensor<T,Point_t, Tensor_t, GGG_t>::evaluateWithThirdDeriv(const P
     XYZ[20]=x2*x2;
     gradXYZ[20][0]= 4.0*x3;
     hessXYZ[20](0,0)= 12.0*x2;
-    (gggXYZ[20][0])(0,0)= 24.0*x;
     XYZ[21]=y2*y2;
     gradXYZ[21][1]= 4.0*y3;
     hessXYZ[21](1,1)= 12.0*y2;
-    (gggXYZ[21][1])(1,1)= 24.0*z;
     XYZ[22]=z2*z2;
     gradXYZ[22][2]= 4.0*z3;
     hessXYZ[22](2,2)= 12.0*z2;
-    (gggXYZ[22][2])(2,2)= 24.0*z;
     XYZ[23]=x3*y;
     gradXYZ[23][0]= 3.0*x2*y;
     gradXYZ[23][1]= x3;
     hessXYZ[23](0,0)= 6.0*x*y;
-    (gggXYZ[23][0])(0,0)= 6.0*y;
-    (gggXYZ[23][1])(0,0)= 6.0*x;
     hessXYZ[23](0,1)= hessXYZ[23](1,0) = 3.0*x2;
-    (gggXYZ[23][0])(0,1) = (gggXYZ[23][0])(1,0)= 6.0*x;
     XYZ[24]=x3*z;
     gradXYZ[24][0]= 3.0*x2*z;
     gradXYZ[24][2]= x3;
     hessXYZ[24](0,0)= 6.0*x*z;
-    (gggXYZ[24][0])(0,0)= 6.0*z;
-    (gggXYZ[24][2])(0,0)= 6.0*x;
     hessXYZ[24](0,2)= hessXYZ[24](2,0) = 3.0*x2;
-    (gggXYZ[24][0])(0,2) = (gggXYZ[24][0])(2,0)= 6.0*x;
     XYZ[25]=y3*x;
     gradXYZ[25][1]= 3.0*y2*x;
     gradXYZ[25][0]= y3;
     hessXYZ[25](1,1)= 6.0*x*y;
-    (gggXYZ[25][0])(1,1)= 6.0*y;
-    (gggXYZ[25][1])(1,1)= 6.0*x;
     hessXYZ[25](0,1)= hessXYZ[25](1,0) = 3.0*y2;
-    (gggXYZ[25][1])(0,1) = (gggXYZ[25][1])(1,0)= 6.0*y;
     XYZ[26]=y3*z;
     gradXYZ[26][1]= 3.0*y2*z;
     gradXYZ[26][2]= y3;
     hessXYZ[26](1,1)= 6.0*z*y;
-    (gggXYZ[26][2])(1,1)= 6.0*y;
-    (gggXYZ[26][1])(1,1)= 6.0*z;
     hessXYZ[26](2,1)= hessXYZ[26](1,2) = 3.0*y2;
-    (gggXYZ[26][1])(2,1) = (gggXYZ[26][1])(1,2)= 6.0*y;
     XYZ[27]=z3*x;
     gradXYZ[27][2]= 3.0*z2*x;
     gradXYZ[27][0]= z3;
     hessXYZ[27](2,2)= 6.0*z*x;
-    (gggXYZ[27][0])(2,2)= 6.0*z;
-    (gggXYZ[27][2])(2,2)= 6.0*x;
     hessXYZ[27](2,0)= hessXYZ[27](0,2) = 3.0*z2;
-    (gggXYZ[27][2])(2,0) = (gggXYZ[27][2])(0,2)= 6.0*z;
     XYZ[28]=z3*y;
     gradXYZ[28][2]= 3.0*z2*y;
     gradXYZ[28][1]= z3;
     hessXYZ[28](2,2)= 6.0*z*y;
-    (gggXYZ[28][2])(2,2)= 6.0*y;
-    (gggXYZ[28][1])(2,2)= 6.0*z;
     hessXYZ[28](2,1)= hessXYZ[28](1,2) = 3.0*z2;
-    (gggXYZ[28][2])(2,1) = (gggXYZ[28][2])(1,2)= 6.0*z;
     XYZ[29]=x2*y2;
     gradXYZ[29][0]= 2.0*x*y2;
     gradXYZ[29][1]= 2.0*x2*y;
     hessXYZ[29](0,0)= 2.0*y2;
-    (gggXYZ[29][1])(0,0)= 4.0*y;
     hessXYZ[29](1,1)= 2.0*x2;
-    (gggXYZ[29][0])(1,1)= 4.0*x;
     hessXYZ[29](0,1)= hessXYZ[29](1,0) = 4.0*x*y;
-    (gggXYZ[29][0])(0,1) = (gggXYZ[29][0])(1,0)= 4.0*y;
-    (gggXYZ[29][1])(0,1) = (gggXYZ[29][1])(1,0)= 4.0*x;
     XYZ[30]=x2*z2;
     gradXYZ[30][0]= 2.0*x*z2;
     gradXYZ[30][2]= 2.0*x2*z;
     hessXYZ[30](0,0)= 2.0*z2;
-    (gggXYZ[30][2])(0,0)= 4.0*z;
     hessXYZ[30](2,2)= 2.0*x2;
-    (gggXYZ[30][0])(2,2)= 4.0*x;
     hessXYZ[30](0,2)= hessXYZ[30](2,0) = 4.0*x*z;
-    (gggXYZ[30][0])(0,2) = (gggXYZ[30][0])(2,0)= 4.0*z;
-    (gggXYZ[30][2])(0,2) = (gggXYZ[30][2])(2,0)= 4.0*x;
     XYZ[31]=y2*z2;
     gradXYZ[31][1]= 2.0*y*z2;
     gradXYZ[31][2]= 2.0*y2*z;
     hessXYZ[31](2,2)= 2.0*y2;
-    (gggXYZ[31][1])(2,2)= 4.0*y;
     hessXYZ[31](1,1)= 2.0*z2;
-    (gggXYZ[31][2])(1,1)= 4.0*z;
     hessXYZ[31](1,2)= hessXYZ[31](2,1) = 4.0*z*y;
-    (gggXYZ[31][1])(1,2) = (gggXYZ[31][1])(2,1)= 4.0*z;
-    (gggXYZ[31][2])(1,2) = (gggXYZ[31][2])(2,1)= 4.0*y;
     XYZ[32]=x2*y*z;
     gradXYZ[32][0]= 2.0*x*y*z;
     gradXYZ[32][1]= x2*z;
     gradXYZ[32][2]= x2*y;
     hessXYZ[32](0,0)= 2.0*y*z;
-    (gggXYZ[32][1])(0,0) = (gggXYZ[32][1])(0,0)= 2.0*z;
-    (gggXYZ[32][2])(0,0) = (gggXYZ[32][2])(0,0)= 2.0*y;
     hessXYZ[32](0,1)= hessXYZ[32](1,0) = 2.0*x*z;
-    (gggXYZ[32][0])(1,0) = (gggXYZ[32][0])(0,1)= 2.0*z;
-    (gggXYZ[32][2])(1,0) = (gggXYZ[32][2])(0,1)= 2.0*x;
     hessXYZ[32](0,2)= hessXYZ[32](2,0) = 2.0*x*y;
-    (gggXYZ[32][1])(0,2) = (gggXYZ[32][1])(2,0)= 2.0*x;
-    (gggXYZ[32][0])(0,2) = (gggXYZ[32][0])(2,0)= 2.0*y;
     hessXYZ[32](1,2)= hessXYZ[32](2,1) = x*x;
-    (gggXYZ[32][0])(1,2) = (gggXYZ[32][0])(2,1)= 2.0*x;
     XYZ[33]=x*y2*z;
     gradXYZ[33][1]= 2.0*x*y*z;
     gradXYZ[33][0]= y2*z;
     gradXYZ[33][2]= y2*x;
     hessXYZ[33](1,1)= 2.0*x*z;
-    (gggXYZ[33][0])(1,1) = (gggXYZ[33][0])(1,1)= 2.0*z;
-    (gggXYZ[33][2])(1,1) = (gggXYZ[33][2])(1,1)= 2.0*x;
     hessXYZ[33](0,1)= hessXYZ[33](1,0) = 2.0*y*z;
-    (gggXYZ[33][1])(0,1) = (gggXYZ[33][1])(1,0)= 2.0*z;
-    (gggXYZ[33][2])(0,1) = (gggXYZ[33][2])(1,0)= 2.0*y;
     hessXYZ[33](0,2)= hessXYZ[33](2,0) = y*y;
-    (gggXYZ[33][1])(0,2) = (gggXYZ[33][1])(2,0)= 2.0*y;
     hessXYZ[33](1,2)= hessXYZ[33](2,1) = 2.0*x*y;
-    (gggXYZ[33][1])(2,1) = (gggXYZ[33][1])(1,2)= 2.0*x;
-    (gggXYZ[33][0])(2,1) = (gggXYZ[33][0])(1,2)= 2.0*y;
     XYZ[34]=x*y*z2;
     gradXYZ[34][2]= 2.0*x*y*z;
     gradXYZ[34][1]= z2*x;
     gradXYZ[34][0]= z2*y;
     hessXYZ[34](2,2)= 2.0*y*x;
-    (gggXYZ[34][1])(2,2) = (gggXYZ[34][1])(2,2)= 2.0*x;
-    (gggXYZ[34][0])(2,2) = (gggXYZ[34][0])(2,2)= 2.0*y;
     hessXYZ[34](0,1)= hessXYZ[34](1,0) = z*z;
-    (gggXYZ[34][2])(1,0) = (gggXYZ[34][2])(0,1)= 2.0*z;
     hessXYZ[34](0,2)= hessXYZ[34](2,0) = 2.0*z*y;
-    (gggXYZ[34][2])(2,0) = (gggXYZ[34][2])(0,2)= 2.0*y;
-    (gggXYZ[34][1])(2,0) = (gggXYZ[34][1])(0,2)= 2.0*z;
     hessXYZ[34](1,2)= hessXYZ[34](2,1) = 2.0*z*x;
-    (gggXYZ[34][2])(2,1) = (gggXYZ[34][2])(1,2)= 2.0*x;
-    (gggXYZ[34][0])(2,1) = (gggXYZ[34][0])(1,2)= 2.0*z;
+ ////// Autogenerated cartesian 3rd derivative tensor components /////
+    (gggXYZ[20][0])(0,0) = 24.0*x;
+ 
+    (gggXYZ[21][1])(1,1) = 24.0*y;
+ 
+    (gggXYZ[22][2])(2,2) = 24.0*z;
+ 
+    (gggXYZ[23][0])(0,0) = 6.0*y;
+    (gggXYZ[23][1])(0,0) = (gggXYZ[23][0])(1,0) = (gggXYZ[23][0])(0,1) = 6.0*x;
+ 
+    (gggXYZ[24][0])(0,0) = 6.0*z;
+    (gggXYZ[24][0])(2,0) = (gggXYZ[24][0])(0,2) = (gggXYZ[24][2])(0,0) = 6.0*x;
+ 
+    (gggXYZ[25][0])(1,1) = (gggXYZ[25][1])(1,0) = (gggXYZ[25][1])(0,1) = 6.0*y;
+    (gggXYZ[25][1])(1,1) = 6.0*x;
+ 
+    (gggXYZ[26][1])(1,1) = 6.0*z;
+    (gggXYZ[26][1])(2,1) = (gggXYZ[26][2])(1,1) = (gggXYZ[26][1])(1,2) = 6.0*y;
+ 
+    (gggXYZ[27][2])(0,2) = (gggXYZ[27][2])(2,0) = (gggXYZ[27][0])(2,2) = 6.0*z;
+    (gggXYZ[27][2])(2,2) = 6.0*x;
+ 
+    (gggXYZ[28][1])(2,2) = (gggXYZ[28][2])(2,1) = (gggXYZ[28][2])(1,2) = 6.0*z;
+    (gggXYZ[28][2])(2,2) = 6.0*y;
+ 
+    (gggXYZ[29][1])(0,0) = (gggXYZ[29][0])(1,0) = (gggXYZ[29][0])(0,1) = 4.0*y;
+    (gggXYZ[29][0])(1,1) = (gggXYZ[29][1])(1,0) = (gggXYZ[29][1])(0,1) = 4.0*x;
+ 
+    (gggXYZ[30][0])(2,0) = (gggXYZ[30][0])(0,2) = (gggXYZ[30][2])(0,0) = 4.0*z;
+    (gggXYZ[30][2])(0,2) = (gggXYZ[30][2])(2,0) = (gggXYZ[30][0])(2,2) = 4.0*x;
+ 
+    (gggXYZ[31][1])(2,1) = (gggXYZ[31][2])(1,1) = (gggXYZ[31][1])(1,2) = 4.0*z;
+    (gggXYZ[31][1])(2,2) = (gggXYZ[31][2])(2,1) = (gggXYZ[31][2])(1,2) = 4.0*y;
+ 
+    (gggXYZ[32][1])(0,0) = (gggXYZ[32][0])(1,0) = (gggXYZ[32][0])(0,1) = 2.0*z;
+    (gggXYZ[32][0])(2,0) = (gggXYZ[32][0])(0,2) = (gggXYZ[32][2])(0,0) = 2.0*y;
+    (gggXYZ[32][2])(1,0) = (gggXYZ[32][0])(1,2) = (gggXYZ[32][1])(0,2) = (gggXYZ[32][2])(0,1) = (gggXYZ[32][0])(2,1) = (gggXYZ[32][1])(2,0) = 2.0*x;
+ 
+    (gggXYZ[33][0])(1,1) = (gggXYZ[33][1])(1,0) = (gggXYZ[33][1])(0,1) = 2.0*z;
+    (gggXYZ[33][2])(1,0) = (gggXYZ[33][0])(1,2) = (gggXYZ[33][1])(0,2) = (gggXYZ[33][2])(0,1) = (gggXYZ[33][0])(2,1) = (gggXYZ[33][1])(2,0) = 2.0*y;
+    (gggXYZ[33][1])(2,1) = (gggXYZ[33][2])(1,1) = (gggXYZ[33][1])(1,2) = 2.0*x;
+ 
+    (gggXYZ[34][2])(1,0) = (gggXYZ[34][0])(1,2) = (gggXYZ[34][1])(0,2) = (gggXYZ[34][2])(0,1) = (gggXYZ[34][0])(2,1) = (gggXYZ[34][1])(2,0) = 2.0*z;
+    (gggXYZ[34][2])(0,2) = (gggXYZ[34][2])(2,0) = (gggXYZ[34][0])(2,2) = 2.0*y;
+    (gggXYZ[34][1])(2,2) = (gggXYZ[34][2])(2,1) = (gggXYZ[34][2])(1,2) = 2.0*x;
   case 3:
     XYZ[10]=x3;
     gradXYZ[10][0]= 3.0*x2;
     hessXYZ[10](0,0)= 6.0*x;
-    (gggXYZ[10][0])(0,0)= 6.0;
     XYZ[11]=y3;
     gradXYZ[11][1]= 3.0*y2;
     hessXYZ[11](1,1)= 6.0*y;
-    (gggXYZ[11][1])(1,1)= 6.0;
     XYZ[12]=z3;
     gradXYZ[12][2]= 3.0*z2;
     hessXYZ[12](2,2)= 6.0*z;
-    (gggXYZ[12][2])(2,2)= 6.0;
     XYZ[13]=x2*y;
     gradXYZ[13][0]= 2.0*x*y;
     gradXYZ[13][1]= x2;
     hessXYZ[13](0,0)= 2.0*y;
-    (gggXYZ[13][1])(0,0)= 2.0;
     hessXYZ[13](0,1)=hessXYZ[13](1,0)= 2.0*x;
-    (gggXYZ[13][0])(0,1) = (gggXYZ[13][0])(1,0)= 2.0;
     XYZ[14]=x2*z;
     gradXYZ[14][0]= 2.0*x*z;
     gradXYZ[14][2]= x2;
     hessXYZ[14](0,0)= 2.0*z;
-    (gggXYZ[14][2])(0,0)= 2.0;
     hessXYZ[14](0,2)=hessXYZ[14](2,0)= 2.0*x;
-    (gggXYZ[14][0])(0,2) = (gggXYZ[14][0])(2,0)= 2.0;
     XYZ[15]=y2*x;
     gradXYZ[15][1]= 2.0*x*y;
     gradXYZ[15][0]= y2;
     hessXYZ[15](1,1)= 2.0*x;
-    (gggXYZ[15][0])(1,1)= 2.0;
     hessXYZ[15](0,1)=hessXYZ[15](1,0)= 2.0*y;
-    (gggXYZ[15][1])(0,1) = (gggXYZ[15][1])(1,0)= 2.0;
     XYZ[16]=y2*z;
     gradXYZ[16][1]= 2.0*z*y;
     gradXYZ[16][2]= y2;
     hessXYZ[16](1,1)= 2.0*z;
-    (gggXYZ[16][2])(1,1)= 2.0;
     hessXYZ[16](2,1)=hessXYZ[16](1,2)= 2.0*y;
-    (gggXYZ[16][1])(1,2) = (gggXYZ[16][1])(2,1)= 2.0;
     XYZ[17]=z2*x;
     gradXYZ[17][2]= 2.0*x*z;
     gradXYZ[17][0]= z2;
     hessXYZ[17](2,2)= 2.0*x;
-    (gggXYZ[17][0])(2,2)= 2.0;
     hessXYZ[17](0,2)=hessXYZ[17](2,0)= 2.0*z;
-    (gggXYZ[17][2])(0,2) = (gggXYZ[17][2])(2,0)= 2.0;
     XYZ[18]=z2*y;
     gradXYZ[18][2]= 2.0*z*y;
     gradXYZ[18][1]= z2;
     hessXYZ[18](2,2)= 2.0*y;
-    (gggXYZ[18][1])(2,2)= 2.0;
     hessXYZ[18](2,1)=hessXYZ[18](1,2)= 2.0*z;
-    (gggXYZ[18][2])(1,2) = (gggXYZ[18][2])(2,1)= 2.0;
     XYZ[19]=x*y*z;
     gradXYZ[19][0]= y*z;
     gradXYZ[19][1]= x*z;
     gradXYZ[19][2]= x*y;
     hessXYZ[19](0,1)=hessXYZ[19](1,0)=z;
-    (gggXYZ[19][2])(0,1)=(gggXYZ[19][2])(1,0)= 1.0;
     hessXYZ[19](0,2)=hessXYZ[19](2,0)=y;
-    (gggXYZ[19][1])(0,2)=(gggXYZ[19][1])(2,0)= 1.0;
     hessXYZ[19](2,1)=hessXYZ[19](1,2)=x;
-    (gggXYZ[19][0])(2,1)=(gggXYZ[19][0])(1,2)= 1.0;
+ ////// Autogenerated cartesian 3rd derivative tensor components /////
+    (gggXYZ[10][0])(0,0) = 6.0;
+ 
+    (gggXYZ[11][1])(1,1) = 6.0;
+ 
+    (gggXYZ[12][2])(2,2) = 6.0;
+ 
+    (gggXYZ[13][1])(0,0) = (gggXYZ[13][0])(1,0) = (gggXYZ[13][0])(0,1) = 2.0;
+ 
+    (gggXYZ[14][0])(2,0) = (gggXYZ[14][0])(0,2) = (gggXYZ[14][2])(0,0) = 2.0;
+ 
+    (gggXYZ[15][0])(1,1) = (gggXYZ[15][1])(1,0) = (gggXYZ[15][1])(0,1) = 2.0;
+ 
+    (gggXYZ[16][1])(2,1) = (gggXYZ[16][2])(1,1) = (gggXYZ[16][1])(1,2) = 2.0;
+ 
+    (gggXYZ[17][2])(0,2) = (gggXYZ[17][2])(2,0) = (gggXYZ[17][0])(2,2) = 2.0;
+ 
+    (gggXYZ[18][1])(2,2) = (gggXYZ[18][2])(2,1) = (gggXYZ[18][2])(1,2) = 2.0;
+ 
+    (gggXYZ[19][2])(1,0) = (gggXYZ[19][0])(1,2) = (gggXYZ[19][1])(0,2) = (gggXYZ[19][2])(0,1) = (gggXYZ[19][0])(2,1) = (gggXYZ[19][1])(2,0) = 1.0;
   case 2:
     XYZ[4]=x*x;
     gradXYZ[4][0]= 2.0*x;
@@ -827,79 +820,74 @@ void CartesianTensor<T,Point_t, Tensor_t, GGG_t>::evaluateThirdDerivOnly(const P
   switch(Lmax)
   {
   case 4:
-    (gggXYZ[20][0])(0,0)= 24.0*x;
-    (gggXYZ[21][1])(1,1)= 24.0*z;
-    (gggXYZ[22][2])(2,2)= 24.0*z;
-    (gggXYZ[23][0])(0,0)= 6.0*y;
-    (gggXYZ[23][1])(0,0)= 6.0*x;
-    (gggXYZ[23][0])(0,1) = (gggXYZ[23][0])(1,0)= 6.0*x;
-    (gggXYZ[24][0])(0,0)= 6.0*z;
-    (gggXYZ[24][2])(0,0)= 6.0*x;
-    (gggXYZ[24][0])(0,2) = (gggXYZ[24][0])(2,0)= 6.0*x;
-    (gggXYZ[25][0])(1,1)= 6.0*y;
-    (gggXYZ[25][1])(1,1)= 6.0*x;
-    (gggXYZ[25][1])(0,1) = (gggXYZ[25][1])(1,0)= 6.0*y;
-    (gggXYZ[26][2])(1,1)= 6.0*y;
-    (gggXYZ[26][1])(1,1)= 6.0*z;
-    (gggXYZ[26][1])(2,1) = (gggXYZ[26][1])(1,2)= 6.0*y;
-    (gggXYZ[27][0])(2,2)= 6.0*z;
-    (gggXYZ[27][2])(2,2)= 6.0*x;
-    (gggXYZ[27][2])(2,0) = (gggXYZ[27][2])(0,2)= 6.0*z;
-    (gggXYZ[28][2])(2,2)= 6.0*y;
-    (gggXYZ[28][1])(2,2)= 6.0*z;
-    (gggXYZ[28][2])(2,1) = (gggXYZ[28][2])(1,2)= 6.0*z;
-    (gggXYZ[29][1])(0,0)= 4.0*y;
-    (gggXYZ[29][0])(1,1)= 4.0*x;
-    (gggXYZ[29][0])(0,1) = (gggXYZ[29][0])(1,0)= 4.0*y;
-    (gggXYZ[29][1])(0,1) = (gggXYZ[29][1])(1,0)= 4.0*x;
-    (gggXYZ[30][2])(0,0)= 4.0*z;
-    (gggXYZ[30][0])(2,2)= 4.0*x;
-    (gggXYZ[30][0])(0,2) = (gggXYZ[30][0])(2,0)= 4.0*z;
-    (gggXYZ[30][2])(0,2) = (gggXYZ[30][2])(2,0)= 4.0*x;
-    (gggXYZ[31][1])(2,2)= 4.0*y;
-    (gggXYZ[31][2])(1,1)= 4.0*z;
-    (gggXYZ[31][1])(1,2) = (gggXYZ[31][1])(2,1)= 4.0*z;
-    (gggXYZ[31][2])(1,2) = (gggXYZ[31][2])(2,1)= 4.0*y;
-    (gggXYZ[32][1])(0,0) = (gggXYZ[32][1])(0,0)= 2.0*z;
-    (gggXYZ[32][2])(0,0) = (gggXYZ[32][2])(0,0)= 2.0*y;
-    (gggXYZ[32][0])(1,0) = (gggXYZ[32][0])(0,1)= 2.0*z;
-    (gggXYZ[32][2])(1,0) = (gggXYZ[32][2])(0,1)= 2.0*x;
-    (gggXYZ[32][1])(0,2) = (gggXYZ[32][1])(2,0)= 2.0*x;
-    (gggXYZ[32][0])(0,2) = (gggXYZ[32][0])(2,0)= 2.0*y;
-    (gggXYZ[32][0])(1,2) = (gggXYZ[32][0])(2,1)= 2.0*x;
-    (gggXYZ[33][0])(1,1) = (gggXYZ[33][0])(1,1)= 2.0*z;
-    (gggXYZ[33][2])(1,1) = (gggXYZ[33][2])(1,1)= 2.0*x;
-    (gggXYZ[33][1])(0,1) = (gggXYZ[33][1])(1,0)= 2.0*z;
-    (gggXYZ[33][2])(0,1) = (gggXYZ[33][2])(1,0)= 2.0*y;
-    (gggXYZ[33][1])(0,2) = (gggXYZ[33][1])(2,0)= 2.0*y;
-    (gggXYZ[33][1])(2,1) = (gggXYZ[33][1])(1,2)= 2.0*x;
-    (gggXYZ[33][0])(2,1) = (gggXYZ[33][0])(1,2)= 2.0*y;
-    (gggXYZ[34][1])(2,2) = (gggXYZ[34][1])(2,2)= 2.0*x;
-    (gggXYZ[34][0])(2,2) = (gggXYZ[34][0])(2,2)= 2.0*y;
-    (gggXYZ[34][2])(1,0) = (gggXYZ[34][2])(0,1)= 2.0*z;
-    (gggXYZ[34][2])(2,0) = (gggXYZ[34][2])(0,2)= 2.0*y;
-    (gggXYZ[34][1])(2,0) = (gggXYZ[34][1])(0,2)= 2.0*z;
-    (gggXYZ[34][2])(2,1) = (gggXYZ[34][2])(1,2)= 2.0*x;
-    (gggXYZ[34][0])(2,1) = (gggXYZ[34][0])(1,2)= 2.0*z;
+ ////// Autogenerated cartesian 3rd derivative tensor components /////
+    (gggXYZ[20][0])(0,0) = 24.0*x;
+ 
+    (gggXYZ[21][1])(1,1) = 24.0*y;
+ 
+    (gggXYZ[22][2])(2,2) = 24.0*z;
+ 
+    (gggXYZ[23][0])(0,0) = 6.0*y;
+    (gggXYZ[23][1])(0,0) = (gggXYZ[23][0])(1,0) = (gggXYZ[23][0])(0,1) = 6.0*x;
+ 
+    (gggXYZ[24][0])(0,0) = 6.0*z;
+    (gggXYZ[24][0])(2,0) = (gggXYZ[24][0])(0,2) = (gggXYZ[24][2])(0,0) = 6.0*x;
+ 
+    (gggXYZ[25][0])(1,1) = (gggXYZ[25][1])(1,0) = (gggXYZ[25][1])(0,1) = 6.0*y;
+    (gggXYZ[25][1])(1,1) = 6.0*x;
+ 
+    (gggXYZ[26][1])(1,1) = 6.0*z;
+    (gggXYZ[26][1])(2,1) = (gggXYZ[26][2])(1,1) = (gggXYZ[26][1])(1,2) = 6.0*y;
+ 
+    (gggXYZ[27][2])(0,2) = (gggXYZ[27][2])(2,0) = (gggXYZ[27][0])(2,2) = 6.0*z;
+    (gggXYZ[27][2])(2,2) = 6.0*x;
+ 
+    (gggXYZ[28][1])(2,2) = (gggXYZ[28][2])(2,1) = (gggXYZ[28][2])(1,2) = 6.0*z;
+    (gggXYZ[28][2])(2,2) = 6.0*y;
+ 
+    (gggXYZ[29][1])(0,0) = (gggXYZ[29][0])(1,0) = (gggXYZ[29][0])(0,1) = 4.0*y;
+    (gggXYZ[29][0])(1,1) = (gggXYZ[29][1])(1,0) = (gggXYZ[29][1])(0,1) = 4.0*x;
+ 
+    (gggXYZ[30][0])(2,0) = (gggXYZ[30][0])(0,2) = (gggXYZ[30][2])(0,0) = 4.0*z;
+    (gggXYZ[30][2])(0,2) = (gggXYZ[30][2])(2,0) = (gggXYZ[30][0])(2,2) = 4.0*x;
+ 
+    (gggXYZ[31][1])(2,1) = (gggXYZ[31][2])(1,1) = (gggXYZ[31][1])(1,2) = 4.0*z;
+    (gggXYZ[31][1])(2,2) = (gggXYZ[31][2])(2,1) = (gggXYZ[31][2])(1,2) = 4.0*y;
+ 
+    (gggXYZ[32][1])(0,0) = (gggXYZ[32][0])(1,0) = (gggXYZ[32][0])(0,1) = 2.0*z;
+    (gggXYZ[32][0])(2,0) = (gggXYZ[32][0])(0,2) = (gggXYZ[32][2])(0,0) = 2.0*y;
+    (gggXYZ[32][2])(1,0) = (gggXYZ[32][0])(1,2) = (gggXYZ[32][1])(0,2) = (gggXYZ[32][2])(0,1) = (gggXYZ[32][0])(2,1) = (gggXYZ[32][1])(2,0) = 2.0*x;
+ 
+    (gggXYZ[33][0])(1,1) = (gggXYZ[33][1])(1,0) = (gggXYZ[33][1])(0,1) = 2.0*z;
+    (gggXYZ[33][2])(1,0) = (gggXYZ[33][0])(1,2) = (gggXYZ[33][1])(0,2) = (gggXYZ[33][2])(0,1) = (gggXYZ[33][0])(2,1) = (gggXYZ[33][1])(2,0) = 2.0*y;
+    (gggXYZ[33][1])(2,1) = (gggXYZ[33][2])(1,1) = (gggXYZ[33][1])(1,2) = 2.0*x;
+ 
+    (gggXYZ[34][2])(1,0) = (gggXYZ[34][0])(1,2) = (gggXYZ[34][1])(0,2) = (gggXYZ[34][2])(0,1) = (gggXYZ[34][0])(2,1) = (gggXYZ[34][1])(2,0) = 2.0*z;
+    (gggXYZ[34][2])(0,2) = (gggXYZ[34][2])(2,0) = (gggXYZ[34][0])(2,2) = 2.0*y;
+    (gggXYZ[34][1])(2,2) = (gggXYZ[34][2])(2,1) = (gggXYZ[34][2])(1,2) = 2.0*x;
+
   case 3:
-    (gggXYZ[10][0])(0,0)= 6.0;
-    (gggXYZ[11][1])(1,1)= 6.0;
-    (gggXYZ[12][2])(2,2)= 6.0;
-    (gggXYZ[13][1])(0,0)= 2.0;
-    (gggXYZ[13][0])(0,1) = (gggXYZ[13][0])(1,0)= 2.0;
-    (gggXYZ[14][2])(0,0)= 2.0;
-    (gggXYZ[14][0])(0,2) = (gggXYZ[14][0])(2,0)= 2.0;
-    (gggXYZ[15][0])(1,1)= 2.0;
-    (gggXYZ[15][1])(0,1) = (gggXYZ[15][1])(1,0)= 2.0;
-    (gggXYZ[16][2])(1,1)= 2.0;
-    (gggXYZ[16][1])(1,2) = (gggXYZ[16][1])(2,1)= 2.0;
-    (gggXYZ[17][0])(2,2)= 2.0;
-    (gggXYZ[17][2])(0,2) = (gggXYZ[17][2])(2,0)= 2.0;
-    (gggXYZ[18][1])(2,2)= 2.0;
-    (gggXYZ[18][2])(1,2) = (gggXYZ[18][2])(2,1)= 2.0;
-    (gggXYZ[19][2])(0,1)=(gggXYZ[19][2])(1,0)= 1.0;
-    (gggXYZ[19][1])(0,2)=(gggXYZ[19][1])(2,0)= 1.0;
-    (gggXYZ[19][0])(2,1)=(gggXYZ[19][0])(1,2)= 1.0;
+ ////// Autogenerated cartesian 3rd derivative tensor components /////
+    (gggXYZ[10][0])(0,0) = 6.0;
+ 
+    (gggXYZ[11][1])(1,1) = 6.0;
+ 
+    (gggXYZ[12][2])(2,2) = 6.0;
+ 
+    (gggXYZ[13][1])(0,0) = (gggXYZ[13][0])(1,0) = (gggXYZ[13][0])(0,1) = 2.0;
+ 
+    (gggXYZ[14][0])(2,0) = (gggXYZ[14][0])(0,2) = (gggXYZ[14][2])(0,0) = 2.0;
+ 
+    (gggXYZ[15][0])(1,1) = (gggXYZ[15][1])(1,0) = (gggXYZ[15][1])(0,1) = 2.0;
+ 
+    (gggXYZ[16][1])(2,1) = (gggXYZ[16][2])(1,1) = (gggXYZ[16][1])(1,2) = 2.0;
+ 
+    (gggXYZ[17][2])(0,2) = (gggXYZ[17][2])(2,0) = (gggXYZ[17][0])(2,2) = 2.0;
+ 
+    (gggXYZ[18][1])(2,2) = (gggXYZ[18][2])(2,1) = (gggXYZ[18][2])(1,2) = 2.0;
+ 
+    (gggXYZ[19][2])(1,0) = (gggXYZ[19][0])(1,2) = (gggXYZ[19][1])(0,2) = (gggXYZ[19][2])(0,1) = (gggXYZ[19][0])(2,1) = (gggXYZ[19][1])(2,0) = 1.0;
+ 
   }
   for (int i=0; i<ntot; i++)
   {
