@@ -338,7 +338,12 @@ class QIxml(Names):
 
     def init_from_args(self,args):
         print
-        print 'in init from args (not implemented), args:'
+        print 'In init from args (not implemented).'
+        print 'Possible reasons for incorrect entry:  '
+        print '  Is xml element {0} meant to be plural?'.format(self.__class__.__name__)
+        print '    If so, add it to the plurals object.'
+        print
+        print 'Arguments received:'
         print args
         print
         self.not_implemented()
@@ -360,6 +365,8 @@ class QIxml(Names):
                          h5tags      = [],
                          types       = obj(),
                          write_types = obj(),
+                         attr_types  = None,
+                         precision   = None,
                          defaults    = obj(),
                          collection_id = None
                          )
@@ -388,6 +395,7 @@ class QIxml(Names):
 
 
     def write(self,indent_level=0,pad='   ',first=False):
+        param.set_precision(self.precision)
         self.check_junk(exit=True)
         indent  = indent_level*pad
         ip = indent+pad
@@ -485,6 +493,7 @@ class QIxml(Names):
             #end if
             c+=indent+'</'+expanded_tag+'>\n'
         #end if
+        param.reset_precision()
         return c
     #end def write
 
@@ -546,6 +555,13 @@ class QIxml(Names):
         #end for
         junk = junk | set(junk_elem)
         self.check_junk(junk)
+        if self.attr_types!=None:
+            typed_attr = attr & set(self.attr_types.keys())
+            attr -= typed_attr
+            for a in typed_attr:
+                self[a] = self.attr_types[a](xml._attributes[al[a]])
+            #end for
+        #end if
         for a in attr:
             if a in self.write_types and self.write_types[a] in bool_write_types:
                 aval = xml._attributes[al[a]]
@@ -1220,6 +1236,26 @@ class QIxmlFactory(Names):
 class Param(Names):        
     metadata = None
 
+    def __init__(self):
+        self.reset_precision()
+    #end def __init__
+
+    def reset_precision(self):
+        self.precision   = None
+        self.prec_format = None
+    #end def reset_precision
+
+    def set_precision(self,precision):
+        if precision is None:
+            self.reset_precision()
+        elif not isinstance(precision,str):
+            self.error('attempted to set precision with non-string: {0}'.format(precision))
+        else:
+            self.precision   = precision
+            self.prec_format = '{0:'+precision+'}'
+        #end if
+    #end def set_precision
+
     def __call__(self,*args,**kwargs):
         if len(args)==0:
             self.error('no arguments provided, should have recieved one XMLelement')
@@ -1271,7 +1307,7 @@ class Param(Names):
     def write(self,value,mode='attr',tag='parameter',name=None,pad='   ',write_type=None,normal_elem=False):
         c = ''
         attr_mode = mode=='attr'
-        elem_mode  = mode=='elem'
+        elem_mode = mode=='elem'
         if not attr_mode and not elem_mode:
             self.error(mode+' is not a valid mode.  Options are attr,elem.')
         #end if
@@ -1282,11 +1318,11 @@ class Param(Names):
             if isinstance(value,ndarray):
                 arr = value.ravel()
                 for v in arr:
-                    c+=str(v)+' '
+                    c+=self.write_val(v)+' '
                 #end for
                 c=c[:-1]
             else:
-                c = str(value)
+                c = self.write_val(value)
             #end if
         elif elem_mode:
             c+=pad
@@ -1302,7 +1338,7 @@ class Param(Names):
                 other=''
                 if name in self.metadata:
                     for a,v in self.metadata[name].iteritems():
-                        other +=' '+self.expand_name(a)+'="'+str(v)+'"'
+                        other +=' '+self.expand_name(a)+'="'+self.write_val(v)+'"'
                     #end for
                 #end if
                 c+='<'+tag+' name="'+name+'"'+other+rem_len*' '+'>'
@@ -1323,19 +1359,23 @@ class Param(Names):
                         c+=pp
                     #end if
                     for v in value:
-                        c+=str(v)+' '
+                        c+=self.write_val(v)+' '
                     #end for
                     c=c[:-1]+'\n'
                 elif ndim==2:
                     nrows,ncols = value.shape
                     fmt=pp
                     if value.dtype == dtype(float):
-                        vfmt = ':16.8f' # must have 8 digits of post decimal accuracy to meet qmcpack tolerance standards
-                        #vfmt = ':16.8e'
+                        if self.precision is None:
+                            vfmt = ':16.8f' # must have 8 digits of post decimal accuracy to meet qmcpack tolerance standards
+                            #vfmt = ':16.8e'
+                        else:
+                            vfmt = ': '+self.precision
+                        #end if
                     else:
                         vfmt = ''
                     #end if
-                    for nc in range(ncols):
+                    for nc in xrange(ncols):
                         fmt+='{'+str(nc)+vfmt+'}  '
                     #end for
                     fmt = fmt[:-2]+'\n'
@@ -1352,7 +1392,7 @@ class Param(Names):
                     val = value
                 #end if
                 #c += '    '+str(val)
-                c += '    {0:<10}'.format(str(val))
+                c += '    {0:<10}'.format(self.write_val(val))
             #end if
             if tag!=None:
                 c+=pad+'</'+tag+'>\n'
@@ -1361,6 +1401,14 @@ class Param(Names):
         return c
     #end def write
             
+
+    def write_val(self,val):
+        if self.precision!=None and isinstance(val,float):
+            return self.prec_format.format(val)
+        else:
+            return str(val)
+        #end if
+    #end def write_val
 
     def init_class(self):
         None
@@ -1425,9 +1473,10 @@ class group(QIxml):
 
 
 class sposet(QIxml):
-    attributes = ['type','name','group','size',
+    attributes = ['basisset','type','name','group','size',
                   'index_min','index_max','energy_min','energy_max',
-                  'spindataset']
+                  'spindataset','cuspinfo']
+    elements   = ['occupation','coefficient']
     text       = 'spos'
     identifier = 'name'
 #end class sposet
@@ -1473,10 +1522,10 @@ class wavefunction(QIxml):
 #end class wavefunction
 
 class determinantset(QIxml):
-    attributes = ['type','href','sort','tilematrix','twistnum','twist','source','version','meshfactor','gpu','transform','precision','truncate','lr_dim_cutoff','shell','randomize','key','rmax_core','dilation','name']
-    elements   = ['basisset','slaterdeterminant']
+    attributes = ['type','href','sort','tilematrix','twistnum','twist','source','version','meshfactor','gpu','transform','precision','truncate','lr_dim_cutoff','shell','randomize','key','rmax_core','dilation','name','cuspcorrection']
+    elements   = ['basisset','sposet','slaterdeterminant','multideterminant']
     h5tags     = ['twistindex','twistangle']
-    write_types = obj(gpu=yesno,sort=onezero,transform=yesno,truncate=yesno,randomize=truefalse)
+    write_types = obj(gpu=yesno,sort=onezero,transform=yesno,truncate=yesno,randomize=truefalse,cuspcorrection=yesno)
 #end class determinantset
 
 class basisset(QIxml):
@@ -1498,10 +1547,12 @@ class atomicbasisset(QIxml):
 class basisgroup(QIxml):
     attributes = ['rid','ds','n','l','m','zeta','type']
     elements   = ['radfunc']
+    #identifier = 'rid'
 #end class basisgroup
 
 class radfunc(QIxml):
     attributes = ['exponent','node','contraction']
+    precision  = '16.12e'
 #end class radfunc
 
 class slaterdeterminant(QIxml):
@@ -1517,6 +1568,23 @@ class determinant(QIxml):
 class occupation(QIxml):
     attributes = ['mode','spindataset']
 #end class occupation
+
+class multideterminant(QIxml):
+    attributes = ['optimize','spo_up','spo_dn']
+    elements   = ['detlist']
+#end class multideterminant
+
+class detlist(QIxml):
+    attributes = ['size','type','nca','ncb','nea','neb','nstates','cutoff']
+    elements   = ['ci']
+#end class detlist
+
+class ci(QIxml):
+    attributes = ['id','coeff','qc_coeff','alpha','beta']
+    #identifier = 'id'
+    attr_types = obj(alpha=str,beta=str)
+    precision  = '16.12e'
+#end class ci
 
 class jastrow1(QIxml):
     tag = 'jastrow'
@@ -1562,9 +1630,10 @@ class coefficients(QIxml):
     write_types= obj(optimize=yesno)
 #end class coefficients
 
-class coefficient(QIxml):  # this is bad!! coefficients/coefficient
+class coefficient(QIxml):  # this is bad!!! coefficients/coefficient
     attributes = ['id','type','size']
     text       = 'coeff'
+    precision  = '16.12e'
 #end class coefficient
 
 jastrow = QIxmlFactory(
@@ -1838,7 +1907,8 @@ classes = [   #standard classes
     atomicbasisset,basisgroup,init,var,traces,scalar_traces,particle_traces,array_traces,
     reference_points,nearestneighbors,neighbor_trace,dm1b,
     coefficient,radfunc,spindensity,structurefactor,
-    sposet,bspline_builder,composite_builder,heg_builder,include
+    sposet,bspline_builder,composite_builder,heg_builder,include,
+    multideterminant,detlist,ci
     ]
 types = dict( #simple types and factories
     host           = param,
@@ -1871,7 +1941,8 @@ plurals = obj(
     sposet_builders = 'sposet_builder',
     sposets         = 'sposet',
     radfuncs        = 'radfunc',
-    qmcsystems      = 'qmcsystem'
+    qmcsystems      = 'qmcsystem',
+    cis             = 'ci'
     )
 plurals_inv = plurals.inverse()
 plural_names = set(plurals.keys())
@@ -1906,7 +1977,9 @@ Names.set_expanded_names(
     expandylm        = 'expandYlm',
     mo               = 'MO',
     numerical        = 'Numerical',
-    nearestneighbors = 'NearestNeighbors' 
+    nearestneighbors = 'NearestNeighbors',
+    cuspcorrection   = 'cuspCorrection',
+    cuspinfo         = 'cuspInfo'
    )
 for c in classes:
     c.init_class()
@@ -3126,6 +3199,14 @@ class QmcpackInput(SimulationInput,Names):
         #end for
         self.replace('ion0','i')
     #end def remove_physical_system
+
+        
+    def cusp_correction(self):
+        ds = self.get('determinantset')
+        cc_var = ds!=None and 'cuspcorrection' in ds and ds.cuspcorrection==True
+        cc_run = len(self.simulation.calculations)==0
+        return cc_var and cc_run
+    #end def cusp_correction
 
 
     def bundle(self,inputs,filenames):
