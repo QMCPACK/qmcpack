@@ -82,6 +82,48 @@ SlaterDetWithBackflow::evaluateLog(ParticleSet& P,
   return LogValue;
 }
 
+SlaterDetWithBackflow::RealType
+SlaterDetWithBackflow::evaluateLog(ParticleSet& P,
+                       ParticleSet::ParticleGradient_t& G,
+                       ParticleSet::ParticleLaplacian_t& L,
+                       PooledData<RealType>& buf,
+                       bool fillBuffer)
+{
+  BFTrans->evaluate(P);
+  LogValue=0.0;
+  PhaseValue=0.0;
+  for(int i=0; i<Dets.size(); ++i)
+  {
+    LogValue+=Dets[i]->evaluateLog(P,G,L);
+    PhaseValue += Dets[i]->PhaseValue;
+  }
+  return LogValue;
+
+/*   From SlaterDet, finish implementing this later!!!
+  LogValue = 0.0;
+  PhaseValue = 0.0;
+  if(fillBuffer)
+  {
+    for (int i = 0; i < Dets.size(); ++i)
+    {
+      LogValue +=Dets[i]->evaluateLogForDerivativeBuffer(P, buf);
+      Dets[i]->copyToDerivativeBuffer(P, buf);
+      PhaseValue += Dets[i]->PhaseValue;
+    }
+  }
+  else
+  {
+    for (int i = 0; i < Dets.size(); ++i)
+    {
+      Dets[i]->copyFromDerivativeBuffer(P,buf);
+      LogValue += Dets[i]->evaluateLogFromDerivativeBuffer(P, buf);
+      PhaseValue += Dets[i]->PhaseValue;
+    }
+  }
+  return LogValue;
+*/
+}
+
 SlaterDetWithBackflow::RealType SlaterDetWithBackflow::registerData(ParticleSet& P, PooledData<RealType>& buf)
 {
   BFTrans->registerData(P,buf);

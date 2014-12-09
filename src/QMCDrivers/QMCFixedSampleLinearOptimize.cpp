@@ -156,14 +156,14 @@ bool QMCFixedSampleLinearOptimize::run()
       for (int j=0; j<N; j++)
         od_largest=std::max( std::max(od_largest,std::abs(Left(i,j))-std::abs(Left(i,i))), std::abs(Left(i,j))-std::abs(Left(j,j)));
     app_log()<<"od_largest "<<od_largest<<endl;
-    if(od_largest>0)
-      od_largest = std::log(od_largest);
-    else
-      od_largest = -1e16;
-    if (od_largest<stabilityBase)
-      stabilityBase=od_largest;
-    else
-      stabilizerScale = max( 0.2*(od_largest-stabilityBase)/nstabilizers, stabilizerScale);
+    //if(od_largest>0)
+    //  od_largest = std::log(od_largest);
+    //else
+    //  od_largest = -1e16;
+    //if (od_largest<stabilityBase)
+    //  stabilityBase=od_largest;
+    //else
+    //  stabilizerScale = max( 0.2*(od_largest-stabilityBase)/nstabilizers, stabilizerScale);
     app_log()<<"  stabilityBase "<<stabilityBase<<endl;
     app_log()<<"  stabilizerScale "<<stabilizerScale<<endl;
     int failedTries(0);
@@ -258,6 +258,7 @@ bool QMCFixedSampleLinearOptimize::run()
         //                 quit if newcost is greater than lastcost. E(Xs) looks quadratic (between steepest descent and parabolic)
         // mmorales
         Valid=optTarget->IsValid;
+        //if (MinMethod!="rescale" && !ValidCostFunction(Valid))
         if (!ValidCostFunction(Valid))
         {
           goodStep=false;
@@ -268,7 +269,7 @@ bool QMCFixedSampleLinearOptimize::run()
           else
             stability--;
         }
-        if (newCost < lastCost)
+        if (newCost < lastCost && goodStep)
         {
           //Move was acceptable
           for (int i=0; i<numParams; i++)
