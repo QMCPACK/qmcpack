@@ -150,7 +150,7 @@ class Simulation(Pobj):
         inp_args = obj()
         sim_args.transfer_from(kwargs,sim_kw)
         inp_args.transfer_from(kwargs,inp_kw)
-        if 'pseudos' in inp_args:
+        if 'pseudos' in inp_args and inp_args.pseudos!=None:
             pseudos = inp_args.pseudos
             if copy_pseudos:
                 if 'files' in sim_args:
