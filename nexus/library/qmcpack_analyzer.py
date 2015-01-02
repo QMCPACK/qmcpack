@@ -58,7 +58,7 @@ class QmcpackAnalyzerCapabilities(QAobject):
 
         self.methods=set(['opt','vmc','dmc','rmc'])
         self.data_sources = set(['scalar','stat','dmc','storeconfig','opt','traces'])
-        self.scalars=set(['localenergy','localpotential','kinetic','elecelec','localecp','nonlocalecp','ionion','localenergy_sq','acceptratio','blockcpu','blockweight'])
+        self.scalars=set(['localenergy','localpotential','kinetic','elecelec','localecp','nonlocalecp','ionion','localenergy_sq','acceptratio','blockcpu','blockweight','mpc','kecorr'])
         self.fields=set(['energydensity','density','dm1b','spindensity','structurefactor'])
 
         hdf_data_sources = set(['stat','storeconfig','traces'])
@@ -78,7 +78,7 @@ class QmcpackAnalyzerCapabilities(QAobject):
             spindensity     = SpinDensityAnalyzer,
             structurefactor = StructureFactorAnalyzer,
             density         = DensityAnalyzer
-        )
+            )
 
         self.quantities = self.scalars | self.fields
 
