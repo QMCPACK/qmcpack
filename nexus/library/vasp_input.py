@@ -3,6 +3,8 @@ import os
 from numpy import array,abs,empty,ndarray
 from generic import obj
 from simulation import SimulationInput
+from structure import interpolate_structures,Structure
+from physical_system import PhysicalSystem
 from developer import DevBase
 from debug import *
 lcs = ls
@@ -218,7 +220,24 @@ assign_value_functions = obj(
 
 
 
-class VFile(DevBase):
+
+class Vobj(DevBase):
+    def get_path(self,filepath):
+        if os.path.exists(filepath) and os.path.isdir(filepath):
+            path = filepath
+        else:
+            path,tmp = os.path.split(filepath)
+            if len(path)>0 and not os.path.exists(path):
+                self.error('path {0} does not exist'.format(path))
+            #end if
+        #end if
+        return path
+    #end def get_path
+#end class Vobj
+
+
+
+class VFile(Vobj):
     def __init__(self,filepath=None):
         if filepath!=None:
             self.read(filepath)
@@ -456,161 +475,6 @@ class VFormattedFile(VFile):
         return is_empty
     #end def is_empty
 #end class VFormattedFile
-
-
-# Dimension of arrays:
-#   k-points           NKPTS =     27   k-points in BZ     NKDIM =     27   number of bands    NBANDS=    378
-#   number of dos      NEDOS =    301   number of ions     NIONS =     40
-#   non local maximal  LDIM  =      6   non local SUM 2l+1 LMDIM =     18
-#   total plane-waves  NPLWV = 201600
-#   max r-space proj   IRMAX =      1   max aug-charges    IRDMAX= 149001
-#   dimension x,y,z NGX =    60 NGY =   60 NGZ =   56
-#   dimension x,y,z NGXF=   120 NGYF=  120 NGZF=  112
-#   support grid    NGXF=   240 NGYF=  240 NGZF=  224
-#   ions per type =               8   2   6  24
-# NGX,Y,Z   is equivalent  to a cutoff of  12.66, 12.66, 12.06 a.u.
-# NGXF,Y,Z  is equivalent  to a cutoff of  25.33, 25.33, 24.12 a.u.
-#
-#
-# I would recommend the setting:
-#   dimension x,y,z NGX =    57 NGY =   57 NGZ =   56
-# SYSTEM =  BFO                                     
-# POSCAR =   O    Fe   Bi                           
-#
-# Startparameter for this run:
-#   NWRITE =      2    write-flag & timer
-#   PREC   = accura    normal or accurate (medium, high low for compatibility)
-#   ISTART =      0    job   : 0-new  1-cont  2-samecut
-#   ICHARG =      2    charge: 1-file 2-atom 10-const
-#   ISPIN  =      1    spin polarized calculation?
-#   LNONCOLLINEAR =      T non collinear calculations
-#   LSORBIT =      T    spin-orbit coupling
-#   INIWAV =      1    electr: 0-lowe 1-rand  2-diag
-#   LASPH  =      F    aspherical Exc in radial PAW
-#   METAGGA=      F    non-selfconsistent MetaGGA calc.
-#
-# Electronic Relaxation 1
-#   ENCUT  =  500.0 eV  36.75 Ry    6.06 a.u.  14.36 14.36 14.07*2*pi/ulx,y,z
-#   ENINI  =  500.0     initial cutoff
-#   ENAUG  =  605.4 eV  augmentation charge cutoff
-#   NELM   =    300;   NELMIN=  2; NELMDL= -5     # of ELM steps 
-#   EDIFF  = 0.1E-07   stopping-criterion for ELM
-#   LREAL  =      F    real-space projection
-#   NLSPLINE    = F    spline interpolate recip. space projectors
-#   LCOMPAT=      F    compatible to vasp.4.4
-#   GGA_COMPAT  = T    GGA compatible to vasp.4.4-vasp.4.6
-#   LMAXPAW     = -100 max onsite density
-#   LMAXMIX     =    4 max onsite mixed and CHGCAR
-#   VOSKOWN=      0    Vosko Wilk Nusair interpolation
-#   ROPT   =    0.00000   0.00000   0.00000   0.00000
-# Ionic relaxation
-#   EDIFFG = 0.1E-06   stopping-criterion for IOM
-#   NSW    =      0    number of steps for IOM
-#   NBLOCK =      1;   KBLOCK =      1    inner block; outer block 
-#   IBRION =     -1    ionic relax: 0-MD 1-quasi-New 2-CG
-#   NFREE  =      0    steps in history (QN), initial steepest desc. (CG)
-#   ISIF   =      2    stress and relaxation
-#   IWAVPR =     10    prediction:  0-non 1-charg 2-wave 3-comb
-#   ISYM   =      0    0-nonsym 1-usesym 2-fastsym
-#   LCORR  =      T    Harris-Foulkes like correction to forces
-#
-#   POTIM  = 0.5000    time-step for ionic-motion
-#   TEIN   =    0.0    initial temperature
-#   TEBEG  =    0.0;   TEEND  =   0.0 temperature during run
-#   SMASS  =  -3.00    Nose mass-parameter (am)
-#   estimated Nose-frequenzy (Omega)   =  0.10E-29 period in steps =****** mass=  -0.142E-26a.u.
-#   SCALEE = 1.0000    scale energy and forces
-#   NPACO  =    256;   APACO  = 16.0  distance and # of slots for P.C.
-#   PSTRESS=    0.0 pullay stress
-#
-#  Mass of Ions in am
-#   POMASS = 208.98 55.85 26.98 16.00
-#  Ionic Valenz
-#   ZVAL   =  15.00 14.00  3.00  6.00
-#  Atomic Wigner-Seitz radii
-#   RWIGS  =   1.97  1.97  1.97  1.97
-#  virtual crystal weights 
-#   VCA    =   1.00  1.00  1.00  1.00
-#   NELECT =     310.0000    total number of electrons
-#   NUPDOWN=      -1.0000    fix difference up-down
-#
-# DOS related values:
-#   EMIN   =  10.00;   EMAX   =-10.00  energy-range for DOS
-#   EFERMI =   0.00
-#   ISMEAR =    -5;   SIGMA  =   0.05  broadening in eV -4-tet -1-fermi 0-gaus
-#
-# Electronic relaxation 2 (details)
-#   IALGO  =     38    algorithm
-#   LDIAG  =      T    sub-space diagonalisation (order eigenvalues)
-#   LSUBROT=      F    optimize rotation matrix (better conditioning)
-#   TURBO    =      0    0=normal 1=particle mesh
-#   IRESTART =      0    0=no restart 2=restart with 2 vectors
-#   NREBOOT  =      0    no. of reboots
-#   NMIN     =      0    reboot dimension
-#   EREF     =   0.00    reference energy to select bands
-#   IMIX   =      4    mixing-type and parameters
-#     AMIX     =   0.40;   BMIX     =  1.00
-#     AMIX_MAG =   1.60;   BMIX_MAG =  1.00
-#     AMIN     =   0.10
-#     WC   =   100.;   INIMIX=   1;  MIXPRE=   1;  MAXMIX= -45
-#
-# Intra band minimization:
-#   WEIMIN = 0.0000     energy-eigenvalue tresh-hold
-#   EBREAK =  0.66E-11  absolut break condition
-#   DEPER  =   0.30     relativ break condition  
-#
-#   TIME   =   0.40     timestep for ELM
-#
-#  volume/ion in A,a.u.               =      11.97        80.80
-#  Fermi-wavevector in a.u.,A,eV,Ry     =   1.416120  2.676079 27.285078  2.005397
-#  Thomas-Fermi vector in A             =   2.537488
-# 
-# Write flags
-#   LWAVE  =      F    write WAVECAR
-#   LCHARG =      T    write CHGCAR
-#   LVTOT  =      F    write LOCPOT, total local potential
-#   LVHAR  =      F    write LOCPOT, Hartree potential only
-#   LELF   =      F    write electronic localiz. function (ELF)
-#   LORBIT =     11    0 simple, 1 ext, 2 COOP (PROOUT)
-#
-#
-# Dipole corrections
-#   LMONO  =      F    monopole corrections only (constant potential shift)
-#   LDIPOL =      F    correct potential (dipole corrections)
-#   IDIPOL =      0    1-x, 2-y, 3-z, 4-all directions 
-#   EPSILON=  1.0000000 bulk dielectric constant
-#
-# LDA+U is selected, type is set to LDAUTYPE =  1
-#   angular momentum for each species LDAUL =    -1    2   -1   -1
-#   U (eV)           for each species LDAUU =   0.0  2.0  0.0  0.0
-#   J (eV)           for each species LDAUJ =   0.0  0.0  0.0  0.0
-# Exchange correlation treatment:
-#   GGA     =    --    GGA type
-#   LEXCH   =     2    internal setting for exchange type
-#   VOSKOWN=      0    Vosko Wilk Nusair interpolation
-#   LHFCALC =     F    Hartree Fock is set to
-#   LHFONE  =     F    Hartree Fock one center treatment
-#   AEXX    =    0.0000 exact exchange contribution
-#
-# Linear response parameters
-#   LEPSILON=     F    determine dielectric tensor
-#   LRPA    =     F    only Hartree local field effects (RPA)
-#   LNABLA  =     F    use nabla operator in PAW spheres
-#   LVEL    =     F    velocity operator in full k-point grid
-#   LINTERFAST=   F  fast interpolation
-#   KINTER  =     0    interpolate to denser k-point grid
-#   CSHIFT  =0.1000    complex shift for real part using Kramers Kronig
-#   OMEGAMAX=  -1.0    maximum frequency
-#   DEG_THRESHOLD= 0.2000000E-02 threshold for treating states as degnerate
-#   RTIME   =    0.100 relaxation time in fs
-#
-# Orbital magnetization related:
-#   ORBITALMAG=     F  switch on orbital magnetization
-#   LCHIMAG   =     F  perturbation theory with respect to B field
-#   DQ        =  0.001000  dq finite difference perturbation B field
-
-
-
 
 
  
@@ -1105,6 +969,9 @@ class Poscar(VFormattedFile):
             text += ' {0}'.format(ec)
         #end for
         text += '\n'
+        if self.dynamic!=None:
+            text += 'selective dynamics\n'
+        #end if
         text += self.coord+'\n'
         if self.dynamic is None:
             for p in self.pos:
@@ -1154,6 +1021,36 @@ class Poscar(VFormattedFile):
         return msg
     #end def check_complete
 #end class Poscar
+
+
+
+class NebPoscars(Vobj):
+    def read(self,filepath):
+        path = self.get_path(filepath)
+        dirs = os.listdir(path)
+        for d in dirs:
+            dpath = os.path.join(path,d)
+            if len(d)==2 and d.isdigit() and os.path.isdir(dpath):
+                n = int(d)
+                poscar = Poscar()
+                poscar.read(os.path.join(dpath,'POSCAR'))
+                self[n] = poscar
+            #end if
+        #end for
+    #end def read
+
+    def write(self,filepath):
+        path = self.get_path(filepath)
+        for n in xrange(len(self)):
+            neb_path = os.path.join(path,str(n).zfill(2))
+            if not os.path.exists(neb_path):
+                os.mkdir(neb_path)
+            #end if
+            poscar = self[n]
+            poscar.write(os.path.join(neb_path,'POSCAR'))
+        #end for
+    #end def write
+#end class NebPoscars
 
 
 
@@ -1259,8 +1156,7 @@ class Exhcar(VFormattedFile):
 
 
 
-
-class VaspInput(SimulationInput):
+class VaspInput(SimulationInput,Vobj):
 
     all_inputs  = '''
       EXHCAR   ICONST  INCAR  KPOINTS  PENALTYPOT  POSCAR  POTCAR  
@@ -1299,10 +1195,7 @@ class VaspInput(SimulationInput):
 
 
     def read(self,filepath,prefix='',postfix=''):
-        path,tmp = os.path.split(filepath)
-        if len(path)>0 and not os.path.exists(path):
-            self.error('path {0} does not exist'.format(path))
-        #end if
+        path = self.get_path(filepath)
         for file in os.listdir(path):
             name = file.lower()
             if name in self.input_files:
@@ -1314,10 +1207,7 @@ class VaspInput(SimulationInput):
 
 
     def write(self,filepath,prefix='',postfix=''):
-        path,tmp = os.path.split(filepath)
-        if len(path)>0 and not os.path.exists(path):
-            self.error('path {0} does not exist'.format(path))
-        #end if
+        path = self.get_path(filepath)
         for name,vfile in self.iteritems():
             filepath = os.path.join(path,prefix+name.upper()+postfix)
             vfile.write(filepath)
@@ -1342,6 +1232,7 @@ class VaspInput(SimulationInput):
         species = None
         if len(structure.elem)>0:
             s = structure.copy()
+            s.change_units('A')
             species,species_count = s.order_by_species()
             poscar = Poscar()
             poscar.scale      = 1.0
@@ -1350,7 +1241,7 @@ class VaspInput(SimulationInput):
             poscar.elem_count = species_count
             poscar.coord      = 'cartesian'
             poscar.pos        = s.pos
-            if 'frozen' in structure:
+            if s.frozen!=None:
                 poscar.dynamic = s.frozen==False
             #end if
             self.poscar = poscar
@@ -1383,6 +1274,89 @@ class VaspInput(SimulationInput):
         #end if
         self.potcar = Potcar(VaspInput.pseudo_dir,ordered_pseudos)
     #end def set_potcar
+
+
+    def setup_neb(self,*structures,**interp_args):
+        # check input types
+        if len(structures)==1 and isinstance(structures[0],(list,tuple)):
+            structures = structures[0]
+        #end if
+        for s in structures:
+            if not isinstance(s,(Structure,PhysicalSystem)):
+                self.error('arguments to setup NEB must either be structure or system objects\n  received an object of type: {0}'.format(s.__class__.__name__))
+            #end if
+        #end for
+        interp_args['repackage'] = False
+
+        # generate NEB image structures
+        if len(structures)<2:
+            self.error('must provide at least two structures to setup NEB\n  you provided: {0}'.format(len(structures)))
+        elif len(structures)==2:
+            incar_images = 'images' in self.incar
+            kwarg_images = 'images' in interp_args
+            if incar_images and kwarg_images and self.incar.images!=interp_args['images']:
+                self.error('images provided in incar and setup_neb do not match\n  please ensure they match to remove ambiguity\n  incar images: {0}\n  setup_neb images: {1}'.format(self.incar.images,interp_args['images']))
+            elif incar_images:
+                interp_args['images'] = self.incar.images
+            elif kwarg_images:
+                self.incar.images = interp_args['images']
+            else:
+                self.error('images must be provided in INCAR to setup NEB')
+            #end if
+            struct1,struct2 = structures
+            neb_structures = interpolate_structures(struct1,struct2,**interp_args)
+        else:
+            if 'images' in interp_args:
+                neb_structures = interpolate_structures(structures,**interp_args)
+            else:
+                neb_structures = structures
+            #end if
+            if 'images' in self.incar and len(neb_structures)!=self.incar.images+2:
+                self.error('number of structures provided to setup_neb must be consistent with number of images in INCAR\n  INCAR images: {0}\n  structures provided {1}'.format(self.incar.images,len(neb_structures)))
+            #end if
+            self.incar.images = len(neb_structures)-2
+        #end if
+        
+        # create a poscar for each structure and include in input file
+        neb_poscars = NebPoscars()
+        for n in xrange(len(neb_structures)):
+            neb_poscars[n] = generate_poscar(neb_structures[n])
+        #end for
+        self.poscar = neb_poscars
+    #end def setup_neb
+
+
+    def run_type(self):
+        incar = self.incar
+        # check for neb
+        if 'images' in incar:
+            run_type = 'neb'
+        elif 'ibrion' in incar and incar.ibrion>0.5:
+            run_type = 'relax'
+        elif 'ibrion' in incar and incar.ibrion==0:
+            run_type = 'md'
+        elif 'nsw' in incar and incar.nsw>1.5:
+            run_type = 'md'
+        else:
+            run_type = 'unknown'
+        #end if
+        return run_type
+    #end def run_type
+
+
+    def producing_structure(self):
+        return self.run_type()=='relax'
+    #end def producing_structure
+
+
+    def performing_relax(self):
+        return self.run_type()=='relax'
+    #end def producing_structure
+
+
+    def performing_neb(self):
+        return self.run_type()=='neb'
+    #end def performing_neb
 #end class VaspInput
 
 
@@ -1414,7 +1388,9 @@ generate_any_defaults = obj(
     kshift   = (0,0,0),
     kcoord   = 'cartesian',
     system   = None,
-    pseudos  = None
+    pseudos  = None,
+    neb      = None,
+    neb_args = obj()
     )
 
 def generate_any_vasp_input(**kwargs):
@@ -1428,6 +1404,7 @@ def generate_any_vasp_input(**kwargs):
             vf[name] = default
         #end if
     #end for
+    gen_kpoints = not 'kspacing' in kwargs
 
     # create an empty input file
     vi = VaspInput()
@@ -1449,8 +1426,6 @@ def generate_any_vasp_input(**kwargs):
     if len(kwargs)>0:
         VaspInput.class_error('unrecognized keywords: {0}'.format(sorted(kwargs.keys())),'generate_vasp_input')
     #end if
-
-    gen_kpoints = not 'kspacing' in vf
 
     # incorporate system information
     species = None
@@ -1491,5 +1466,30 @@ def generate_any_vasp_input(**kwargs):
         #end if
     #end if
 
+    # create many poscars if doing nudged elastic band
+    if vf.neb!=None:
+        vi.setup_neb(*vf.neb,**vf.neb_args)
+    #end if
+
     return vi
 #end def generate_any_vasp_input
+
+
+
+
+def generate_poscar(structure):
+    s = structure.copy()
+    s.change_units('A')
+    species,species_count = s.order_by_species()
+    poscar = Poscar()
+    poscar.scale      = 1.0
+    poscar.axes       = s.axes
+    poscar.elem       = species
+    poscar.elem_count = species_count
+    poscar.coord      = 'cartesian'
+    poscar.pos        = s.pos
+    if s.frozen!=None:
+        poscar.dynamic = s.frozen==False
+    #end if
+    return poscar
+#end def generate_poscar

@@ -1660,7 +1660,7 @@ class QBase(DevBase):
         bc  = 'BlockCPU',       ar = 'AcceptRatio',    eff  = 'Efficiency',
         te  = 'TrialEnergy',    de = 'DiffEff',        w    = 'Weight',
         nw  = 'NumOfWalkers',   sw = 'AvgSentWalkers', tt   = 'TotalTime', 
-        ts  = 'TotalSamples',
+        ts  = 'TotalSamples',   le2 = 'LocalEnergy_sq'
         )
 
     def log(self,*texts,**kwargs):
@@ -2483,20 +2483,24 @@ QMCA examples:
             for filetype,ext in allowed_extensions.iteritems():
                 if file.endswith(ext):
                     isdat = True
-                    d=DatAnalyzer(
-                        filepath = file,
-                        index    = ifile,
-                        type     = filetype,
-                        units    = opt.units
-                        )
-                    self.file_map[file] = d
-                    prefix = d.info.prefix
-                    series = d.info.series
-                    seriesset.add(series)
-                    if not prefix in data:
-                        data[prefix]=obj()
-                    #end if
-                    data[prefix][series] = d
+                    try:
+                        d=DatAnalyzer(
+                            filepath = file,
+                            index    = ifile,
+                            type     = filetype,
+                            units    = opt.units
+                            )
+                        self.file_map[file] = d
+                        prefix = d.info.prefix
+                        series = d.info.series
+                        seriesset.add(series)
+                        if not prefix in data:
+                            data[prefix]=obj()
+                        #end if
+                        data[prefix][series] = d
+                    except:
+                        self.log('problem encountered for {0}, results unavailable '.format(file))
+                    #end try
                     break
                 #end if
             #end for

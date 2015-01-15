@@ -208,7 +208,7 @@ class Structure(Sobj):
                  center=None,kpoints=None,kweights=None,kgrid=None,kshift=None,
                  permute=None,units=None,tiling=None,rescale=True,dim=3,
                  magnetization=None,magnetic_order=None,magnetic_prim=True,
-                 operations=None,background_charge=0):
+                 operations=None,background_charge=0,frozen=None):
         if center is None:
             if axes !=None:
                 center = array(axes).sum(0)/2
@@ -238,6 +238,7 @@ class Structure(Sobj):
         self.axes   = array(axes)
         self.set_elem(elem)
         self.pos    = array(pos)
+        self.frozen = None
         self.mag    = array(mag,dtype=object)
         self.kpoints  = empty((0,dim))            
         self.kweights = empty((0,))         
@@ -247,6 +248,12 @@ class Structure(Sobj):
             self.kaxes=array([])
         else:
             self.kaxes=2*pi*inv(self.axes).T
+        #end if
+        if frozen!=None:
+            self.frozen = array(frozen,dtype=bool)
+            if self.frozen.shape!=self.pos.shape:
+                self.error('frozen directions must have the same shape as positions\n  positions shape: {0}\n  frozen directions shape: {1}'.format(self.pos.shape,self.frozen.shape))
+            #end if
         #end if
         self.magnetize(magnetization)
         if tiling!=None:
@@ -651,6 +658,7 @@ class Structure(Sobj):
 
 
     def translate(self,v):
+        v = array(v)
         pos = self.pos
         for i in range(len(pos)):
             pos[i]+=v
@@ -754,6 +762,15 @@ class Structure(Sobj):
 
     
     def freeze(self,identifiers,radii=None,exterior=False,negate=False,directions='xyz'):
+        if isinstance(identifiers,ndarray) and identifiers.shape==self.pos.shape and identifiers.dtype==bool:
+            if negate:
+                self.frozen = ~identifiers
+            else:
+                self.frozen = identifiers.copy()
+            #end if
+            return
+        #end if
+                
         indices = self.locate(identifiers,radii,exterior)
         if len(indices)==0:
             self.error('failed to select any atoms to freeze')
@@ -767,7 +784,7 @@ class Structure(Sobj):
         else:
             directions = array(directions,dtype=bool)
         #end if
-        if not 'frozen' in self:
+        if self.frozen is None:
             self.frozen = zeros(self.pos.shape,dtype=bool)
         #end if
         frozen = self.frozen
@@ -1031,7 +1048,7 @@ class Structure(Sobj):
     #end def point_defect
 
 
-    def order_by_species(self):
+    def order_by_species(self,folded=False):
         species        = []
         species_counts = []
         elem_indices   = []
@@ -1055,6 +1072,10 @@ class Structure(Sobj):
             elem_order.extend(elem_inds)
         #end for
         self.reorder(elem_order)
+
+        if folded and self.folded_structure!=None:
+            self.folded_structure.order_by_species(folded)
+        #end if
 
         return species,species_counts
     #end def order_by_species
@@ -1129,7 +1150,11 @@ class Structure(Sobj):
     #end def shells
 
     
-    def min_image_vectors(self,points,points2=None,axes=None):
+    def min_image_vectors(self,points,points2=None,axes=None,pairs=True):
+        if axes is None:
+            axes  = self.axes
+        #end if
+        axinv = inv(axes)
         points = array(points)
         single = points.shape==(self.dim,)
         if single:
@@ -1142,30 +1167,40 @@ class Structure(Sobj):
         #end if
         npoints  = len(points)
         npoints2 = len(points2)
-        vtable = empty((npoints,npoints2,self.dim))
-        if axes is None:
-            axes  = self.axes
-        #end if
-        axinv = inv(axes)
-        i=-1
-        for p in points:
-            i+=1
-            j=-1
-            for pp in points2:
-                j+=1
-                u = dot(pp-p,axinv)
-                vtable[i,j] = dot(u-floor(u+.5),axes)
+        if pairs:
+            vtable = empty((npoints,npoints2,self.dim),dtype=float)
+            i=-1
+            for p in points:
+                i+=1
+                j=-1
+                for pp in points2:
+                    j+=1
+                    u = dot(pp-p,axinv)
+                    vtable[i,j] = dot(u-floor(u+.5),axes)
+                #end for
             #end for
-        #end for
-        #if single:
-        #    vtable = vtable[0]
-        ##end if
-        return vtable
+            result = vtable
+        else:
+            if npoints!=npoints2:
+                self.error('cannot create one to one minimum image vectors, point sets differ in length\n  npoints1 = {0}\n  npoints2 = {1}'.format(npoints,npoints2))
+            #end if
+            vectors = empty((npoints,self.dim),dtype=float)
+            n = 0
+            for p in points:
+                pp = points2[n]
+                u = dot(pp-p,axinv)
+                vectors[n] = dot(u-floor(u+.5),axes)
+                n+=1
+            #end for
+            result = vectors
+        #end if
+                
+        return result
     #end def min_image_vectors
 
 
-    def min_image_distances(self,points,points2=None,axes=None,vectors=False):
-        vtable = self.min_image_vectors(points,points2,axes)
+    def min_image_distances(self,points,points2=None,axes=None,vectors=False,pairs=True):
+        vtable = self.min_image_vectors(points,points2,axes,pairs=pairs)
         rdim = len(vtable.shape)-1
         dtable = sqrt((vtable**2).sum(rdim))
         if not vectors:
@@ -1751,6 +1786,11 @@ class Structure(Sobj):
     #end def pos_unit
 
 
+    def pos_to_cartesian(self):
+        self.pos = dot(self.pos,self.axes)
+    #end def pos_to_cartesian
+
+
     def at_Gpoint(self):
         kpu = self.kpoints_unit()
         kg = array([0,0,0])
@@ -2014,6 +2054,60 @@ class Structure(Sobj):
     #end def shell
 
 
+    def interpolate(self,other,images,min_image=True,recenter=True,match_com=False,chained=False):
+        s1 = self.copy()
+        s2 = other.copy()
+        s1.remove_folded()
+        s2.remove_folded()
+        if s2.units!=s1.units:
+            s2.change_units(s1.units)
+        #end if
+        if (s1.elem!=s2.elem).any():
+            self.error('cannot interpolate structures, atoms do not match\n  atoms1: {0}\n  atoms2: {1}'.format(s1.elem,s2.elem))
+        #end if
+        structures = []
+        npath = images+2
+        c1   = s1.center
+        c2   = s2.center
+        ax1  = s1.axes
+        ax2  = s2.axes
+        pos1 = s1.pos
+        pos2 = s2.pos
+        min_image &= abs(ax1-ax2).max()<1e-6
+        if min_image:
+            dp = self.min_image_vectors(pos1,pos2,ax1,pairs=False)
+            pos2 = pos1 + dp
+        #end if
+        if match_com:
+            com1 = pos1.mean(axis=0)
+            com2 = pos2.mean(axis=1)
+            dcom = com1-com2
+            for n in xrange(len(pos2)):
+                pos2[n] += dcom
+            #end for
+            if chained:
+                other.pos = pos2
+            #end if
+        #end if
+        for n in xrange(npath):
+            f1 = 1.-float(n)/(npath-1)
+            f2 = 1.-f1
+            center = f1*c1   + f2*c2
+            axes   = f1*ax1  + f2*ax2
+            pos    = f1*pos1 + f2*pos2
+            s = s1.copy()
+            s.reset_axes(axes)
+            s.center = center
+            s.pos    = pos
+            if recenter:
+                s.recenter()
+            #end if
+            structures.append(s)
+        #end for
+        return structures
+    #end def interpolate
+
+
     def madelung(self,axes=None,tol=1e-10):
         if self.dim!=3:
             self.error('madelung is currently only implemented for 3 dimensions')
@@ -2223,7 +2317,7 @@ class Structure(Sobj):
         self.reset_axes(axes)
 
         if lcur<len(lines) and len(lines[lcur])>0:
-            c = lines[lcur].lower()[0]
+            c = lines[lcur].lower().strip()[0]
             lcur+=1
         else:
             return
@@ -2231,7 +2325,7 @@ class Structure(Sobj):
         selective_dynamics = c=='s'
         if selective_dynamics: # Selective dynamics
             if lcur<len(lines) and len(lines[lcur])>0:
-                c = lines[lcur].lower()[0]
+                c = lines[lcur].lower().strip()[0]
                 lcur+=1
             else:
                 return
@@ -2255,7 +2349,7 @@ class Structure(Sobj):
         #end if
         self.set_elem(elem)
         self.pos = pos
-        if selective_dynamics:
+        if selective_dynamics or spos.shape[1]>3:
             move = array(spos[:,3:6],dtype=str)
             self.freeze(range(self.size()),directions=move=='F')
         #end if
@@ -2320,6 +2414,72 @@ class Structure(Sobj):
     #end def show
 #end class Structure
 Structure.set_operations()
+
+
+def interpolate_structures(struct1,struct2=None,images=None,min_image=True,recenter=True,match_com=False,repackage=False,chained=False):
+    if images is None:
+        Structure.class_error('images must be provided','interpolate_structures')
+    #end if
+
+    # if a list of structures is provided,
+    # interpolate between pairs in the chain of structures
+    if isinstance(struct1,(list,tuple)): 
+        structures_in = struct1
+        structures = []
+        for n in xrange(len(structures_in)-1):
+            struct1 = structures_in[n]
+            struct2 = structures_in[n+1]
+            structs = interpolate_structures(struct1,struct2,images,min_image,recenter,match_com,repackage,chained=True)
+            if n==0:
+                structures.append(structs[0])
+            #end if
+            structures.extend(structs[1:-1])
+            if n==len(structures_in)-2:
+                structures.append(structs[-1])
+            #end if
+        #end for
+        return structures
+    #end if
+
+    # handle PhysicalSystem objects indirectly
+    system1 = None
+    system2 = None
+    if not isinstance(struct1,Structure):
+        system1 = struct1.copy()
+        system1.remove_folded()
+        struct1 = system1.structure
+    #end if
+    if not isinstance(struct2,Structure):
+        system2 = struct2.copy()
+        system2.remove_folded()
+        struct2 = system2.structure
+    #end if
+
+    # perform the interpolation
+    structures = struct1.interpolate(struct2,images,min_image,recenter,match_com)
+
+    # repackage into physical system objects if requested
+    if repackage:
+        if system1!=None:
+            system = system1
+        elif system2!=None:
+            system = system2
+        else:
+            Structure.class_error('cannot repackage into physical systems since no system object was provided in place of a structure','interpolate_structures')
+        #end if
+        systems = []
+        for s in structures:
+            ps = system.copy()
+            ps.structure = s
+            systems.append(ps)
+        #end for
+        result = systems
+    else:
+        result = structures
+    #end if
+
+    return result
+#end def interpolate_structures
 
 
 class DefectStructure(Structure):
@@ -2745,6 +2905,7 @@ class Crystal(Structure):
                  angular_units  = 'degrees',
                  kpoints        = None,
                  kgrid          = None,
+                 frozen         = None,
                  magnetization  = None,
                  magnetic_order = None,
                  magnetic_prim  = True,
@@ -2773,6 +2934,7 @@ class Crystal(Structure):
             axes           = axes          ,
             units          = units         ,
             angular_units  = angular_units ,
+            frozen         = frozen        ,
             magnetization  = magnetization ,
             magnetic_order = magnetic_order,
             magnetic_prim  = magnetic_prim ,
@@ -3059,6 +3221,7 @@ class Crystal(Structure):
             pos            = pos,
             center         = axes.sum(0)/2,
             units          = units,
+            frozen         = frozen,
             magnetization  = magnetization,
             magnetic_order = magnetic_order,
             magnetic_prim  = magnetic_prim,
@@ -3160,6 +3323,10 @@ def generate_structure(type='crystal',*args,**kwargs):
         return generate_dimer_structure(*args,**kwargs)
     elif type=='jellium':
         return generate_jellium_structure(*args,**kwargs)
+    elif type=='empty':
+        return Structure()
+    elif type=='basic':
+        return Structure(*args,**kwargs)
     else:
         Structure.class_error(str(type)+' is not a valid structure type\n  options are crystal, defect, or atom')
     #end if
@@ -3182,17 +3349,26 @@ def generate_atom_structure(atom=None,units='A',Lbox=None,skew=0,axes=None,kgrid
 #end def generate_atom_structure
 
 
-def generate_dimer_structure(dimer=None,units='A',separation=None,Lbox=None,skew=0,axes=None,kgrid=(1,1,1),kshift=(0,0,0),struct_type=Structure):
+def generate_dimer_structure(dimer=None,units='A',separation=None,Lbox=None,skew=0,axes=None,kgrid=(1,1,1),kshift=(0,0,0),struct_type=Structure,axis='x'):
     if separation is None:
         Structure.class_error('separation must be provided to construct dimer','generate_dimer_structure')
     #end if
     if Lbox!=None:
         axes = [[Lbox*(1-skew),0,0],[0,Lbox,0],[0,0,Lbox*(1+skew)]]
     #end if
-    if axes is None:
-        s = Structure(elem=dimer,pos=[[0,0,0],[separation,0,0]],units=units)
+    if axis=='x':
+        p2 = [separation,0,0]
+    elif axis=='y':
+        p2 = [0,separation,0]
+    elif axis=='z':
+        p2 = [0,0,separation]
     else:
-        s = Structure(elem=dimer,pos=[[0,0,0],[separation,0,0]],axes=axes,kgrid=kgrid,kshift=kshift,units=units)
+        Structure.class_error('dimer orientation axis must be x,y,z\n  you provided: {0}'.format(axis),'generate_dimer_structure')
+    #end if
+    if axes is None:
+        s = Structure(elem=dimer,pos=[[0,0,0],p2],units=units)
+    else:
+        s = Structure(elem=dimer,pos=[[0,0,0],p2],axes=axes,kgrid=kgrid,kshift=kshift,units=units)
         s.center_molecule()
     #end if
     return s
@@ -3214,7 +3390,7 @@ def generate_crystal_structure(lattice=None,cell=None,centering=None,
                                kpoints=None,kgrid=None,kshift=(0,0,0),permute=None,
                                structure=None,shape=None,element=None,scale=None, #legacy inputs
                                operations=None,
-                               struct_type=Crystal,elem=None,pos=None):    
+                               struct_type=Crystal,elem=None,pos=None,frozen=None):    
 
     if structure!=None:
         lattice = structure
@@ -3237,6 +3413,7 @@ def generate_crystal_structure(lattice=None,cell=None,centering=None,
             elem           = elem,
             pos            = pos,
             units          = units,
+            frozen         = frozen,
             magnetization  = magnetization,
             magnetic_order = magnetic_order,
             magnetic_prim  = magnetic_prim,
@@ -3265,6 +3442,7 @@ def generate_crystal_structure(lattice=None,cell=None,centering=None,
         axes           = axes          ,
         units          = units         ,
         angular_units  = angular_units ,
+        frozen         = frozen        ,
         magnetization  = magnetization ,
         magnetic_order = magnetic_order,
         magnetic_prim  = magnetic_prim ,

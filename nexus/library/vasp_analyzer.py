@@ -3,7 +3,7 @@ import os
 from numpy import array,zeros
 from generic import obj
 from simulation import Simulation,SimulationAnalyzer
-from vasp_input import VaspInput
+from vasp_input import VaspInput,Incar
 from developer import DevBase
 from debug import *
 
@@ -729,7 +729,7 @@ class VaspAnalyzer(SimulationAnalyzer):
         prefix  = None
         incar   = None
         outcar  = None
-        xmlfile = None
+        xml_file = None
         if isinstance(arg0,Simulation):
             sim = arg0
             file = sim.infile
@@ -738,6 +738,7 @@ class VaspAnalyzer(SimulationAnalyzer):
             path,file = os.path.split(arg0)
         else:
             file = ''
+            path = ''
             xml  = False
         #end if
         if len(file)>0:
@@ -749,31 +750,59 @@ class VaspAnalyzer(SimulationAnalyzer):
             else:
                 self.error('please provide the path to an INCAR or OUTCAR file')
             #end if
+            incar   = prefix+'INCAR'
             outcar  = prefix+'OUTCAR'
-            xmlfile = prefix+'vasprun.xml'
+            xml_file = prefix+'vasprun.xml'
             if prefix=='':
                 prefix=None
             #end if
         #end if
+        incar_file  = incar
+        outcar_file = outcar
+        incar = None
+        incar_path = os.path.join(path,incar_file)
+        neb = False
+        if incar_file!=None and os.path.exists(incar_path):
+            incar = Incar(incar_path)
+            if 'images' in incar:
+                neb = True
+            #end if
+        #end if
         self.info = obj(
-            path    = path,
-            prefix  = prefix,
-            incar   = incar,
-            outcar  = outcar,
-            xmlfile = xmlfile,
-            xml     = xml
+            path         = path,
+            prefix       = prefix,
+            incar_file   = incar_file,
+            outcar_file  = outcar_file,
+            incar        = incar,
+            xml_file     = xml_file,
+            xml          = xml,
+            neb          = neb
             )
         if analyze:
             self.analyze()
         #end if
     #end def __init__
 
+
     def analyze(self,outcar=None):
-        if outcar is None and self.info.outcar!=None:
-            outcar = os.path.join(self.info.path,self.info.outcar)
+        if self.info.neb:
+            self.neb_analyzers = obj()
+            for i in range(self.info.incar.images):
+                n = i+1
+                self.neb_analyzers[n] = VaspAnalyzer(
+                    arg0    =  os.path.join(self.info.path,str(n).zfill(2),'OUTCAR'),
+                    xml     = self.info.xml,
+                    analyze = True
+                    )
+            #end for
+            return
+        #end if
+            
+        if outcar is None and self.info.outcar_file!=None:
+            outcar = os.path.join(self.info.path,self.info.outcar_file)
         #ned if
         if self.info.xml:
-            self.xmldata = read_vxml(os.path.join(self.info.path,self.info.xmlfile))
+            self.xmldata = read_vxml(os.path.join(self.info.path,self.info.xml_file))
         #end if
         if outcar!=None:
             self.analyze_outcar(outcar)

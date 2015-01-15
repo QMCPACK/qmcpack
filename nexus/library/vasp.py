@@ -2,9 +2,10 @@
 import os
 from generic import obj
 from simulation import Simulation,SimulationInput,SimulationAnalyzer
-from vasp_input import VaspInput,generate_vasp_input
+from vasp_input import VaspInput,generate_vasp_input,generate_poscar,Poscar
 from vasp_analyzer import VaspAnalyzer
-
+from structure import Structure
+from debug import *
 
 
 
@@ -14,7 +15,7 @@ class Vasp(Simulation):
     generic_identifier = 'vasp'
     application        = 'vasp' 
     application_properties = set(['serial','mpi'])
-    application_results    = set([]) 
+    application_results    = set(['structure']) 
 
     allow_overlapping_files = True
 
@@ -28,17 +29,83 @@ class Vasp(Simulation):
 
 
     def check_result(self,result_name,sim):
-        return False
+        input = self.input
+        if result_name=='structure':
+            calculating_result = input.producing_structure()
+        else:
+            calculating_result = False
+        #end if
+        return calculating_result
     #end def check_result
 
 
     def get_result(self,result_name,sim):
-        self.not_implemented()
+        result = obj()
+        input = self.input
+        if result_name=='structure':
+            # OUTCAR structure is not as precise as CONTCAR structure
+            #pa = self.load_analyzer_image()
+            #elem       = input.poscar.elem
+            #elem_count = input.poscar.elem_count
+            #atoms = []
+            #for i in range(len(elem)):
+            #    atoms += elem_count[i]*[elem[i]]
+            ##end for
+            #structure = Structure(
+            #    units = 'A',
+            #    axes  = pa.lattice_vectors.copy(),
+            #    elem  = atoms,
+            #    pos   = pa.position.copy()
+            #    )
+
+            # get structure from CONTCAR
+            ccfile = os.path.join(self.locdir,self.identifier+'.CONTCAR')
+            if not os.path.exists(ccfile):
+                self.error('CONTCAR file does not exist for relax simulation at '+self.locdir)
+            #end if
+            contcar = Poscar(ccfile)
+            structure = Structure()
+            if contcar.elem!=None:
+                structure.read_poscar(ccfile)
+            else:
+                elem,elem_count = self.system.structure.order_by_species()
+                structure.read_poscar(ccfile,elem=elem)
+            #end if
+            if input.poscar.dynamic!=None:
+                structure.freeze(
+                    input.poscar.dynamic,
+                    negate = True
+                    )
+            #end if
+            result.structure = structure
+        else:
+            self.error('ability to get result '+result_name+' has not been implemented')
+        #end if
+        return result
     #end def get_result
 
 
     def incorporate_result(self,result_name,result,sim):
-        self.not_implemented()
+        input = self.input
+        if result_name=='structure':
+            if input.performing_neb():
+                if 'neb_structures' not in self.temp:
+                    self.temp.neb_structures = []
+                #end if
+                neb_structures = self.temp.neb_structures
+                if len(neb_structures)>1:
+                    self.error('NEB simulation at {0} depends on more than two structures\n  please check your inputs'.format(self.locdir))
+                #end if
+                neb_structures.append(result.structure)
+                if len(neb_structures)==2:
+                    input.setup_neb(*neb_structures,images=input.incar.images)
+                #end if
+            else:
+                input.poscar = generate_poscar(result.structure)
+            #end if
+        else:
+            self.error('ability to incorporate result '+result_name+' has not been implemented')
+        #end if  
     #end def incorporate_result
 
 
@@ -48,16 +115,30 @@ class Vasp(Simulation):
 
 
     def check_sim_status(self):
-        success = False
-        outpath = os.path.join(self.locdir,self.identifier+'.OUTCAR')
-        exists  = os.path.exists(outpath)
-        if not exists:
-            outpath = os.path.join(self.locdir,'OUTCAR')
+        outpaths = []
+        if not self.input.performing_neb():
+            outpath = os.path.join(self.locdir,self.identifier+'.OUTCAR')
             exists  = os.path.exists(outpath)
+            if not exists:
+                outpath = os.path.join(self.locdir,'OUTCAR')
+            #end if
+            outpaths.append(outpath)
+        else:
+            for i in range(self.input.incar.images):
+                outpaths.append(os.path.join(self.locdir,str(i+1).zfill(2),'OUTCAR'))
+            #end for
         #end if
-        if exists:
-            outcar = open(outpath,'r').read()
-            success = 'General timing and accounting' in outcar
+        success = False
+        all_exist = True
+        for outpath in outpaths:
+            all_exist &= os.path.exists(outpath)
+        #end for
+        if all_exist:
+            success = True
+            for outpath in outpaths:
+                outcar = open(outpath,'r').read()
+                success &= 'General timing and accounting' in outcar
+            #end for
         #end if
         self.finished = success
     #end def check_sim_status

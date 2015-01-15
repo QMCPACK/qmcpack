@@ -129,7 +129,7 @@ class Simulation(Pobj):
                      'ordered_dependencies','dependents','dependency_ids',
                      'wait_ids','input','locdir','remdir','resdir',
                      'imlocdir','imremdir','imresdir',
-                     'skip_submit','job','system'])
+                     'skip_submit','job','system','temp'])
     sim_count = 0
 
 
@@ -228,6 +228,8 @@ class Simulation(Pobj):
         #variables determined by derived classes
         self.outputs = None  #object representing output data 
                              # accessed by dependents when calling get_dependencies
+
+        self.temp = obj() # temporary storage, not saved
 
         self.set(**kwargs)
         self.set_directories()

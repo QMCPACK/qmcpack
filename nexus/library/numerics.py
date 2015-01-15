@@ -149,6 +149,10 @@ def morse_spect_fit(re,w,wX,m1,m2=None):
 #  jackknife statistical fits, E is two dimensional with blocks as first dimension
 #    pf,pmean,perror = morse_fit(r,E,jackknife=True)  returns jackknife estimates of parameters
 def morse_fit(r,E,p0=None,jackknife=False,minimizer=least_squares,auxfuncs=None,auxres=None,capture=None):
+    if isinstance(E,(list,tuple)):
+        E = array(E,dtype=float)
+    #end if
+
     Edata = None
     if len(E)!=E.size and len(E.shape)==2:
         Edata = E
@@ -246,7 +250,7 @@ def morse_fit_fine(r,E,p0=None,rfine=None,both=False,jackknife=False,minimizer=l
 
     res = morse_fit(r,E,p0,jackknife,minimizer,auxfuncs,auxres,capture)
 
-    if not jacknife:
+    if not jackknife:
         pf = res
     else:
         pf,pmean,perror = res
@@ -480,9 +484,6 @@ def check_jackknife_inputs(args,kwargs,position):
     #end if
     if args is None:
         args = []
-    #end if
-    if kwargs is None:
-        kwargs = dict()
     #end if
     if kwargs is None:
         kwargs = dict()

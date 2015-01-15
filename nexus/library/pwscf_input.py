@@ -1029,7 +1029,7 @@ class PwscfInput(SimulationInput):
         self.atomic_positions.specifier = 'alat'
         self.atomic_positions.positions = s.pos.copy()
         self.atomic_positions.atoms     = list(s.elem)
-        if 'frozen' in s:
+        if s.frozen!=None:
             frozen = s.frozen
             if 'relax_directions' in self.atomic_positions:
                 relax_directions = self.atomic_positions.relax_directions
@@ -1120,7 +1120,7 @@ class PwscfInput(SimulationInput):
         self.atomic_positions.specifier = 'alat'
         self.atomic_positions.positions = s.pos.copy()
         self.atomic_positions.atoms     = list(s.elem)
-        if 'frozen' in s:
+        if s.frozen!=None:
             frozen = s.frozen
             if 'relax_directions' in self.atomic_positions:
                 relax_directions = self.atomic_positions.relax_directions

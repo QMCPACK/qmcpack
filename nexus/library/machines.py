@@ -676,7 +676,7 @@ class Machine(Pobj):
     #end def add_job
 
 
-    def requeue_job(self):
+    def requeue_job(self,job):
         None
     #end def requeue_job
 

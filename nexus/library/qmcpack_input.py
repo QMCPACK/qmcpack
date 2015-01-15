@@ -395,7 +395,7 @@ class QIxml(Names):
 
 
     def write(self,indent_level=0,pad='   ',first=False):
-        param.set_precision(self.precision)
+        param.set_precision(self.get_precision())
         self.check_junk(exit=True)
         indent  = indent_level*pad
         ip = indent+pad
@@ -1173,6 +1173,10 @@ class QIxml(Names):
     def get_host(self,names):
         return self.get(names,host=True)
     #end def get_host
+
+    def get_precision(self):
+        return self.__class__.__dict__['precision']
+    #end def get_precision
 #end class QIxml
 
 

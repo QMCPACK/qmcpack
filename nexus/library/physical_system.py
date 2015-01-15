@@ -470,6 +470,11 @@ class PhysicalSystem(Matter):
     #end def remove_folded_system
 
 
+    def remove_folded(self):
+        self.remove_folded_system()
+    #end def remove_folded
+
+
     def get_primitive(self):
         if self.folded_system is None:
             fs = self

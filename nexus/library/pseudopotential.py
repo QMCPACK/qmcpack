@@ -832,7 +832,11 @@ class GaussianPP(SemilocalPP):
         #end if
         Zatom = pt[element].atomic_number
         Zval = Zatom-Zcore
-        core = pt.simple_elements[Zcore].symbol
+        if Zcore==0:
+            core = None
+        else:
+            core = pt.simple_elements[Zcore].symbol
+        #end if
         self.set(
             core    = core,
             Zval    = Zval,
