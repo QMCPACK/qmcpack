@@ -495,6 +495,15 @@ ENDIF(QMC_CUDA)
 #  endif(ENABLE_OPENMP)
 #ENDIF(FOUND_TAU)
 
+###############################################################
+# for specific linker in the case of profiling like hpctoolkit.
+###############################################################
+if(CMAKE_CXX_LINKER)
+  set(CMAKE_CXX_LINK_EXECUTABLE
+  "${CMAKE_CXX_LINKER} <FLAGS> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS>  <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
+  MESSAGE(STATUS "Linker is specified as '${CMAKE_CXX_LINKER}' instead of '${CMAKE_CXX_COMPILER}'")
+endif()
+
 ######################################################
 # Add optional macros
 ######################################################

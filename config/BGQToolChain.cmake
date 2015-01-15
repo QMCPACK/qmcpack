@@ -15,6 +15,9 @@ set(HAVE_ADIOS 0)
 set(CMAKE_C_COMPILER mpixlc_r)
 set(CMAKE_CXX_COMPILER mpixlcxx_r)
 
+# set the linker if extra wrapper is needed for profiling tools like hpctoolkit.
+# set(CMAKE_CXX_LINKER "hpclink mpixlcxx_r")
+
 set(AIX_ARCH "qp")
 SET(AIX_ARCH_FLAGS "-qarch=${AIX_ARCH} -qsmp=omp -DINLINE_ALL=inline -qthreaded -qstrict -qhot=level=1 -qtune=qp -qsimd=auto  -DHAVE_MASS -DHAVE_MASSV -DBGQPX -DSPLINEFLOAT -DUSE_REAL_STRUCT_FACTOR")
 
@@ -47,14 +50,14 @@ FOREACH(type SHARED_LIBRARY SHARED_MODULE EXE)
 ENDFOREACH(type)
 
 set(LAPACK_LIBRARY /soft/libraries/alcf/current/xl/LAPACK/lib/liblapack.a)
-set(BLAS_LIBRARY /soft/libraries/essl/5.1.1-0/essl/5.1/lib64/libesslsmpbg.a)
+set(BLAS_LIBRARY /soft/libraries/essl/current/essl/5.1/lib64/libesslsmpbg.a)
 SET(FORTRAN_LIBRARIES
-/soft/compilers/ibmcmp-nov2013/xlf/bg/14.1/bglib64/libxlf90_r.a
-/soft/compilers/ibmcmp-nov2013/xlf/bg/14.1/bglib64/libxlopt.a
+/soft/compilers/ibmcmp-aug2014/xlf/bg/14.1/bglib64/libxlf90_r.a
+/soft/compilers/ibmcmp-aug2014/xlf/bg/14.1/bglib64/libxlopt.a
 )
 link_libraries(
-/soft/compilers/ibmcmp-nov2013/xlmass/bg/7.3/bglib64/libmass.a 
-/soft/compilers/ibmcmp-nov2013/xlmass/bg/7.3/bglib64/libmassv.a 
+/soft/compilers/ibmcmp-aug2014/xlmass/bg/7.3/bglib64/libmass.a 
+/soft/compilers/ibmcmp-aug2014/xlmass/bg/7.3/bglib64/libmassv.a 
 #/soft/perftools/hpctw/libmpihpm_smp.a
 #/bgsys/drivers/ppcfloor/bgpm/lib/libbgpm.a
 #/bgsys/drivers/ppcfloor/spi/lib/libSPI_upci_cnk.a
