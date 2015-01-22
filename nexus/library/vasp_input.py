@@ -480,6 +480,9 @@ class VFormattedFile(VFile):
  
 class Incar(VKeywordFile):
 
+    # VTST extensions:  http://theory.cm.utexas.edu/vtsttools/index.html
+    #   lclimb, timestep, lnebcell
+
     keywords = set('''
       addgrid aexx aggac aggax aldac algo amin amix amix_mag andersen_prob apaco 
       bmix bmix_mag 
@@ -495,10 +498,10 @@ class Incar(VKeywordFile):
       isym ivdw iwavpr 
       kblock kgamma kpar kpuse kspacing 
       lambda langevin_gamma langevin_gamma_l lasph lasync lattice_constraints 
-      lberry lblueout lcalceps lcalcpol lcharg lchimag lcorr ldau ldauj ldaul 
+      lberry lblueout lcalceps lcalcpol lcharg lchimag lclimb lcorr ldau ldauj ldaul 
       ldauprint ldautype ldauu ldiag ldipol lefg lelf lepsilon lhfcalc lhyperfine 
       lkproj lmaxfock lmaxfockae lmaxfockmp2 lmaxmix lmaxmp2 lmaxpaw lmaxtau 
-      lmixtau lmono lnabla lnmr_sym_red lnoncollinear loptics lorbit lpard 
+      lmixtau lmono lnabla lnebcell lnmr_sym_red lnoncollinear loptics lorbit lpard 
       lpead lplane lreal lrpa lscalapack lscaler0 lscalu lscsgrad lselfenergy 
       lsepb lsepk lspectral lsorbit lthomas luse_vdw lvdw lvdw_ewald lvdwscs 
       lvhar lvtot lwave 
@@ -513,7 +516,7 @@ class Incar(VKeywordFile):
       random_seed ropt rwigs 
       saxis scsrad shakemaxiter shaketol sigma skip_edotp smass spring step_max 
       step_size symprec system 
-      tebeg teend time tsubsys
+      tebeg teend time timestep tsubsys
       value_max value_min vdw_a1 vdw_a2 vdw_alpha vdw_cnradius vdw_c6 vdw_c6au 
       vdw_d vdw_radius vdw_r0 vdw_r0au vdw_scaling vdw_sr vdw_s6 vdw_s8 voskown 
       wc weimin 
@@ -557,7 +560,7 @@ class Incar(VKeywordFile):
       ofield_a ofield_kappa ofield_q6_far ofield_q6_near omegamax omegamin omegatl
       param1 param2 pmass pomass potim pstress 
       scsrad shaketol sigma step_max step_size symprec 
-      tebeg teend time 
+      tebeg teend time timestep
       vdw_a1 vdw_a2 vdw_cnradius vdw_d vdw_radius vdw_scaling vdw_sr vdw_s6 vdw_s8
       wc weimin 
       zab_vdw zval 
@@ -567,9 +570,9 @@ class Incar(VKeywordFile):
       addgrid
       evenonly evenonlygw
       gga_compat 
-      lasph lasync lberry lblueout lcalceps lcalcpol lcharg lchimag lcorr 
+      lasph lasync lberry lblueout lcalceps lcalcpol lcharg lchimag lclimb lcorr 
       ldau ldiag ldipol lefg lelf lepsilon lhfcalc lhyperfine lkproj lmaxtau 
-      lmixtau lmono lnabla lnmr_sym_red lnoncollinear loptics lpard lpead 
+      lmixtau lmono lnabla lnebcell lnmr_sym_red lnoncollinear loptics lpard lpead 
       lplane lrpa lscalapack lscaler0 lscalu lscsgrad lselfenergy lsepb 
       lsepk lsorbit lspectral lthomas luse_vdw lvdw lvdw_ewald lvdwscs lvhar 
       lvtot lwave 

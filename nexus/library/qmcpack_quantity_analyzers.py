@@ -12,6 +12,7 @@ from generic import obj
 from hdfreader import HDFreader
 from qaobject import QAobject
 from qmcpack_analyzer_base import QAanalyzer,QAdata,QAHDFdata
+from fileio import XsfFile
 from debug import *
 
 
@@ -127,7 +128,7 @@ class ScalarsDatAnalyzer(DatAnalyzer):
                 kappa           = kappa
                 )
         #end if            
-    #end def load_data_local
+    #end def analyze_data_local
 #end class ScalarsDatAnalyzer
 
 
@@ -1747,14 +1748,68 @@ class DensityMatricesAnalyzer(HDFAnalyzer):
 
 
 
-
-class SpinDensityAnalyzer(HDFAnalyzer):
+class DensityAnalyzerBase(HDFAnalyzer):
     def __init__(self,name,nindent=0):
         HDFAnalyzer.__init__(self)
-        self.info.name = name
+        self.info.set(
+            name        = name,
+            structure   = self.run_info.system.structure,
+            file_prefix = self.run_info.file_prefix,
+            source_path = self.run_info.source_path,
+            series      = self.method_info.series
+            )
+        try:
+            self.info.xml  = self.run_info.input.get(self.info.name)
+        except:
+            self.info.xml = None
+        #end try
     #end def __init__
 
+            
+    def write_single_density(self,name,density,density_err,format='xsf'):
+        if format!='xsf':
+            self.error('sorry, the density can only be written in xsf format for now\n  you requested: {0}'.format(format))
+        #end if
 
+        s = self.info.structure.copy()
+        p = s.pos.ravel()
+        if p.min()>0 and p.max()<1.0:
+            s.pos_to_cartesian()
+        #end if
+        s.change_units('A')
+        cell   = s.axes
+
+        f = XsfFile()
+        f.incorporate_structure(s)
+        
+        prefix = '{0}.s{1}.{2}'.format(self.info.file_prefix,str(self.info.series).zfill(3),name)
+
+        c = 1
+        g = 1
+        t = 1
+
+        # mean
+        f.add_density(cell,density,centered=c,add_ghost=g,transpose=t)
+        f.write(os.path.join(self.info.source_path,prefix+'.xsf'))
+
+        # mean + errorbar
+        f.add_density(cell,density+density_err,centered=c,add_ghost=g,transpose=t)
+        f.write(os.path.join(self.info.source_path,prefix+'+err.xsf'))
+
+        # mean - errorbar
+        f.add_density(cell,density-density_err,centered=c,add_ghost=g,transpose=t)
+        f.write(os.path.join(self.info.source_path,prefix+'-err.xsf'))
+    #end def write_single_density
+
+
+    def write_density(self,format='xsf'):
+        self.not_implemented()
+    #end def write_density
+#end class DensityAnalyzerBase
+
+
+
+class SpinDensityAnalyzer(DensityAnalyzerBase):
     def load_data_local(self,data=None):
         if data==None:
             self.error('attempted load without data')
@@ -1769,6 +1824,12 @@ class SpinDensityAnalyzer(HDFAnalyzer):
         else:
             self.info.should_remove = True
         #end if
+        g = self.info.xml.grid
+        for d in self.data:
+            b = len(d.value)
+            d.value.shape = (b,g[0],g[1],g[2])
+            d.value_squared.shape = (b,g[0],g[1],g[2])
+        #end for
     #end def load_data_local
 
 
@@ -1796,6 +1857,26 @@ class SpinDensityAnalyzer(HDFAnalyzer):
             savetxt(filepath,concatenate((mean,error)))
         #end for
     #end def write_files
+
+
+    def write_density(self,format='xsf'):
+        nbe = self.info.nblocks_exclude
+        umean = self.u.mean
+        uerr  = self.u.error
+        dmean = self.d.mean
+        derr  = self.d.error
+
+        upd_data = self.data.u.value + self.data.d.value
+        umd_data = self.data.u.value - self.data.d.value
+
+        upd_mean,upd_err = simplestats(upd_data[nbe:,...],dim=0)
+        umd_mean,umd_err = simplestats(umd_data[nbe:,...],dim=0)
+
+        self.write_single_density('spindensity_u'  ,umean   ,uerr   ,format)
+        self.write_single_density('spindensity_d'  ,dmean   ,derr   ,format)
+        self.write_single_density('spindensity_u+d',upd_mean,upd_err,format)
+        self.write_single_density('spindensity_u-d',umd_mean,umd_err,format)
+    #end def write_density
 #end class SpinDensityAnalyzer
 
 
@@ -1856,13 +1937,7 @@ class StructureFactorAnalyzer(HDFAnalyzer):
 
 
 
-
-class DensityAnalyzer(HDFAnalyzer):
-    def __init__(self,name,nindent=0):
-        HDFAnalyzer.__init__(self)
-        self.info.name = name
-    #end def __init__
-
+class DensityAnalyzer(DensityAnalyzerBase):
 
     def load_data_local(self,data=None):
         if data==None:
@@ -1886,5 +1961,10 @@ class DensityAnalyzer(HDFAnalyzer):
         self.mean,self.error = simplestats(self.data.value[nbe:,...],dim=0)
         self.info.nblocks_exclude = nbe
     #end def analyze_local
+
+
+    def write_density(self,format='xsf'):
+        self.write_single_density('density',self.mean,self.error,format)
+    #end def write_density
 #end class DensityAnalyzer
  

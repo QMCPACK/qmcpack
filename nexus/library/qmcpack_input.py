@@ -14,6 +14,7 @@ from physical_system import PhysicalSystem
 from simulation import SimulationInput,SimulationInputTemplate
 from pwscf_input import array_to_string as pwscf_array_string
 from debug import *
+from debug import ci as interact
 
 
 yesno_dict     = {True:'yes' ,False:'no'}
@@ -1424,7 +1425,7 @@ param = Param()
 
 
 class simulation(QIxml):
-    elements   = ['project','random','include','qmcsystem','particleset','wavefunction','hamiltonian','init','traces','qmc','loop']
+    elements   = ['project','random','include','qmcsystem','particleset','wavefunction','hamiltonian','init','traces','qmc','loop','mcwalkerset']
     write_types = obj(random=yesno)
 #end class simulation
 
@@ -1446,6 +1447,11 @@ class random(QIxml):
 class include(QIxml):
     attributes = ['href']
 #end def include
+
+class mcwalkerset(QIxml):
+    attributes = ['fileroot','version','collected']
+    write_types = obj(collected=yesno)
+#end class mcwalkerset
 
 
 class qmcsystem(QIxml):
@@ -1883,8 +1889,8 @@ class dmc(QIxml):
     tag = 'qmc'
     attributes = ['method','move','gpu','multiple','warp','checkpoint','trace']
     elements   = ['estimator']
-    parameters = ['walkers','blocks','steps','timestep','nonlocalmove','nonlocalmoves','warmupsteps','pop_control']
-    write_types = obj(gpu=yesno,nonlocalmoves=yesno)
+    parameters = ['walkers','blocks','steps','timestep','nonlocalmove','nonlocalmoves','warmupsteps','pop_control','reconfiguration','targetwalkers']
+    write_types = obj(gpu=yesno,nonlocalmoves=yesno,reconfiguration=yesno)
 #end class dmc
 
 qmc = QIxmlFactory(
@@ -1912,7 +1918,7 @@ classes = [   #standard classes
     reference_points,nearestneighbors,neighbor_trace,dm1b,
     coefficient,radfunc,spindensity,structurefactor,
     sposet,bspline_builder,composite_builder,heg_builder,include,
-    multideterminant,detlist,ci
+    multideterminant,detlist,ci,mcwalkerset
     ]
 types = dict( #simple types and factories
     host           = param,

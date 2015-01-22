@@ -2482,6 +2482,24 @@ def interpolate_structures(struct1,struct2=None,images=None,min_image=True,recen
 #end def interpolate_structures
 
 
+def structure_animation(filepath,structures,tiling=None):
+    path,file = os.path.split(filepath)
+    if not file.endswith('xyz'):
+        Structure.class_error('only xyz files are supported for now','structure_animation')
+    #end if
+    anim = ''
+    for s in structures:
+        if tiling is None:
+            anim += s.write_xyz()
+        else:
+            anim += s.tile(tiling).write_xyz()
+        #end if
+    #end for
+    open(filepath,'w').write(anim)
+#end def structure_animation
+
+
+
 class DefectStructure(Structure):
     def __init__(self,*args,**kwargs):
         if len(args)>0 and isinstance(args[0],Structure):
