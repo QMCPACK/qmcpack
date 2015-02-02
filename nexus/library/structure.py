@@ -5,7 +5,6 @@ from copy import deepcopy
 from numpy import array,floor,empty,dot,diag,sqrt,pi,mgrid,exp,append,arange,ceil,cross,cos,sin,identity,ndarray,atleast_2d,around,ones,zeros,logical_not,flipud
 from numpy.linalg import inv,det,norm
 from types import NoneType
-import matplotlib.pyplot as plt
 from unit_converter import convert
 from extended_numpy import nearest_neighbors,convex_hull,voronoi_neighbors
 from periodic_table import pt
@@ -20,9 +19,10 @@ except ImportError:
     erfc = unavailable('scipy.special','erfc')
 #end try
 try:
+    import matplotlib.pyplot as plt
     from matplotlib.pyplot import plot,subplot,title,xlabel,ylabel
 except (ImportError,RuntimeError):
-    plot,subplot,title,xlabel,ylabel = unavailable('matplotlib.pyplot','plot','subplot','title','xlabel','ylabel')
+    plot,subplot,title,xlabel,ylabel,plt = unavailable('matplotlib.pyplot','plot','subplot','title','xlabel','ylabel','plt')
 #end try
 
 
@@ -682,30 +682,34 @@ class Structure(Sobj):
     #end def change_units
                               
         
+    # insert sep space at loc along axis
+    #   if sep<0, space is removed instead
     def cleave(self,axis,loc,sep=None,remove=False,tol=1e-6):
         self.remove_folded_structure()
         if isinstance(axis,int):
             if sep is None:
                 self.error('separation induced by cleave must be provided')
             #end if
-            a = self.face_vectors()[axis]
-            u = a/norm(a)
-            v = sep*u
+            v = self.face_vectors()[axis]
             if isinstance(loc,float):
-                c = loc*u
+                c = loc*v/norm(v)
             #end if
         else:
-            v = array(axis)
-            if sep!=None:
-                v = sep*v/norm(v)
-            #end if
+            v = axis
         #end if
         c = array(c)  # point on cleave plane
         v = array(v)  # normal vector to cleave plane, norm is cleave separation
+        if sep!=None:
+            v = abs(sep)*v/norm(v)
+        #end if
         if norm(v)<tol:
             return
         #end if
-        vn = v/norm(v)
+        vn = array(v/norm(v))
+        if sep!=None and sep<0:
+            v = -v # preserve the normal direction for atom identification, but reverse the shift direction
+        #end if
+        self.recorner()  # want box contents to be static
         if len(self.axes)>0:
             components = 0
             dim = self.dim
@@ -726,13 +730,9 @@ class Structure(Sobj):
                 self.error('cannot insert vacuum because cleave is incommensurate with the cell\n  cleave plane must be parallel to a cell face')
             #end if
             a = self.axes[iaxis]
-            self.axes[iaxis] = (1.+dot(v,a)/dot(a,a))*a
+            #self.axes[iaxis] = (1.+dot(v,a)/dot(a,a))*a
+            self.axes[iaxis] = (1.+dot(v,v)/dot(v,a))*a
         #end if
-        self.cell_image(c)
-
-        #self.recenter()
-        self.recorner()  # want box contents to be static
-
         indices = []
         pos = self.pos
         for i in xrange(len(pos)):
