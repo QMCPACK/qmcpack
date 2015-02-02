@@ -7,13 +7,12 @@ from developer import unavailable
 try:
     from scipy.special import betainc
     from scipy.optimize import fmin
-    from scipy.spatial import KDTree,Delaunay
+    from scipy.spatial import KDTree,Delaunay,Voronoi
     scipy_unavailable = False
 except ImportError:
     betainc = unavailable('scipy.special' ,'betainc')
     fmin    = unavailable('scipy.optimize','fmin')
-    KDTree  = unavailable('scipy.special' ,'KDTree')
-    Delaunay  = unavailable('scipy.special' ,'Delaunay')
+    KDTree,Delaunay,Voronoi  = unavailable('scipy.spatial' ,'KDTree','Delaunay','Voronoi')
     scipy_unavailable = True
 #end try
 
@@ -596,6 +595,13 @@ def nearest_neighbors(n,points,qpoints=None,return_distances=False,slow=False):
         return nn,dist
     #end if
 #end def nearest_neighbors
+
+
+def voronoi_neighbors(points):
+    vor = Voronoi(points)
+    neighbor_pairs = vor.ridge_points
+    return neighbor_pairs
+#end def voronoi_neighbors
 
 
 def convex_hull(points,dimension=None,tol=None):

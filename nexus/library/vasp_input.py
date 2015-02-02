@@ -481,7 +481,7 @@ class VFormattedFile(VFile):
 class Incar(VKeywordFile):
 
     # VTST extensions:  http://theory.cm.utexas.edu/vtsttools/index.html
-    #   lclimb, timestep, lnebcell
+    #   ichain lclimb ltangentold ldneb lnebcell jacobian timestep
 
     keywords = set('''
       addgrid aexx aggac aggax aldac algo amin amix amix_mag andersen_prob apaco 
@@ -493,17 +493,18 @@ class Incar(VKeywordFile):
       ferdo ferwe findiff
       gga gga_compat
       hfscreen hflmaxf hills_bin hills_h hills_w 
-      ialgo iband ibrion icharg ichibare i_constrained_m icorelevel idipol 
+      ialgo iband ibrion ichain icharg ichibare i_constrained_m icorelevel idipol 
       igpar images imix increm inimix iniwav ipead isif ismear ispin istart 
       isym ivdw iwavpr 
+      jacobian
       kblock kgamma kpar kpuse kspacing 
       lambda langevin_gamma langevin_gamma_l lasph lasync lattice_constraints 
       lberry lblueout lcalceps lcalcpol lcharg lchimag lclimb lcorr ldau ldauj ldaul 
-      ldauprint ldautype ldauu ldiag ldipol lefg lelf lepsilon lhfcalc lhyperfine 
+      ldauprint ldautype ldauu ldiag ldipol ldneb lefg lelf lepsilon lhfcalc lhyperfine 
       lkproj lmaxfock lmaxfockae lmaxfockmp2 lmaxmix lmaxmp2 lmaxpaw lmaxtau 
       lmixtau lmono lnabla lnebcell lnmr_sym_red lnoncollinear loptics lorbit lpard 
       lpead lplane lreal lrpa lscalapack lscaler0 lscalu lscsgrad lselfenergy 
-      lsepb lsepk lspectral lsorbit lthomas luse_vdw lvdw lvdw_ewald lvdwscs 
+      lsepb lsepk lspectral lsorbit ltangentold lthomas luse_vdw lvdw lvdw_ewald lvdwscs 
       lvhar lvtot lwave 
       magmom maxmem maxmix mbja mbjb m_constr mdalgo metagga minrot mixpre 
       nbands nbandsgw nblk nblock nbmod ncore nedos nelect nelm nelmdl nelmin 
@@ -532,7 +533,7 @@ class Incar(VKeywordFile):
       elmin
       findiff
       hflmaxf hills_bin
-      ialgo ibrion icharg ichibare i_constrained_m icorelevel idipol igpar 
+      ialgo ibrion ichain icharg ichibare i_constrained_m icorelevel idipol igpar 
       images imix inimix iniwav ipead isif ismear ispin istart isym ivdw iwavpr 
       kblock kpar 
       ldauprint ldautype lmaxfock lmaxfockae lmaxfockmp2 lmaxmix lmaxmp2 
@@ -553,6 +554,7 @@ class Incar(VKeywordFile):
       ebreak ediff ediffg efield emax emin enaug encut encutfock encutgw 
       encutgwsoft enmax enmin epsilon
       hfscreen hills_h hills_w
+      jacobian
       kspacing 
       lambda langevin_gamma_l
       mbja mbjb minrot
@@ -571,11 +573,11 @@ class Incar(VKeywordFile):
       evenonly evenonlygw
       gga_compat 
       lasph lasync lberry lblueout lcalceps lcalcpol lcharg lchimag lclimb lcorr 
-      ldau ldiag ldipol lefg lelf lepsilon lhfcalc lhyperfine lkproj lmaxtau 
+      ldau ldiag ldipol ldneb lefg lelf lepsilon lhfcalc lhyperfine lkproj lmaxtau 
       lmixtau lmono lnabla lnebcell lnmr_sym_red lnoncollinear loptics lpard lpead 
       lplane lrpa lscalapack lscaler0 lscalu lscsgrad lselfenergy lsepb 
-      lsepk lsorbit lspectral lthomas luse_vdw lvdw lvdw_ewald lvdwscs lvhar 
-      lvtot lwave 
+      lsepk lsorbit lspectral ltangentold lthomas luse_vdw lvdw lvdw_ewald lvdwscs 
+      lvhar lvtot lwave 
       kgamma 
       nlspline
       oddonly oddonlygw

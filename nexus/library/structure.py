@@ -5,8 +5,9 @@ from copy import deepcopy
 from numpy import array,floor,empty,dot,diag,sqrt,pi,mgrid,exp,append,arange,ceil,cross,cos,sin,identity,ndarray,atleast_2d,around,ones,zeros,logical_not,flipud
 from numpy.linalg import inv,det,norm
 from types import NoneType
+import matplotlib.pyplot as plt
 from unit_converter import convert
-from extended_numpy import nearest_neighbors,convex_hull
+from extended_numpy import nearest_neighbors,convex_hull,voronoi_neighbors
 from periodic_table import pt
 from generic import obj
 from developer import DevBase,unavailable
@@ -208,7 +209,7 @@ class Structure(Sobj):
                  center=None,kpoints=None,kweights=None,kgrid=None,kshift=None,
                  permute=None,units=None,tiling=None,rescale=True,dim=3,
                  magnetization=None,magnetic_order=None,magnetic_prim=True,
-                 operations=None,background_charge=0,frozen=None):
+                 operations=None,background_charge=0,frozen=None,bconds=None):
         if center is None:
             if axes !=None:
                 center = array(axes).sum(0)/2
@@ -216,8 +217,12 @@ class Structure(Sobj):
                 center = dim*[0]
             #end if
         #end if
+        if bconds is None:
+            bconds = dim*['p']
+        #end if
         if axes is None:
-            axes = []
+            axes   = []
+            bconds = []
         #end if
         if elem is None:
             elem = []
@@ -236,6 +241,7 @@ class Structure(Sobj):
         self.dim    = dim
         self.center = array(center)
         self.axes   = array(axes)
+        self.bconds = array(bconds,dtype=str)
         self.set_elem(elem)
         self.pos    = array(pos)
         self.frozen = None
@@ -558,6 +564,63 @@ class Structure(Sobj):
         return self.rinscribe()
     #end def rcell
 
+    
+    # apply volume preserving shear-removing transformations to cell axes
+    #   resulting unsheared cell has orthogonal axes
+    #    while remaining periodically correct
+    #   note that the unshearing procedure is not unique
+    #   it depends on the order of unshearing operations
+    def unsheared_axes(self,distances=False):
+        if self.dim!=3:
+            self.error('rinscribe is currently only implemented for 3 dimensions')
+        #end if
+        dim=3
+        axbar = identity(dim)
+        axnew = array(axes,dtype=float)
+        dists = empty((dim,))
+        for d in range(dim):
+            d2 = (d+1)%dim
+            d3 = (d+2)%dim
+            n = cross(axnew[d2],axnew[d3])  #vector normal to 2 cell faces
+            axdist = dot(n,axes[d])/dot(n,axbar[d])
+            axnew[d]  = axdist*axbar[d]
+            dists[d] = axdist
+        #end for
+        if not distances:
+            return axnew
+        else:
+            return axnew,dists
+        #end if
+    #end def unsheared_axes
+
+
+    # vectors parallel to cell faces
+    #   length of vectors is distance between parallel face planes
+    #   note that the product of distances is not the cell volume in general
+    #   see "unsheared_axes" function
+    #   (e.g. a volume preserving shear may bring two face planes arbitrarily close)
+    def face_vectors(self,axes=None,distances=False):
+        if axes is None:
+            axes = self.axes
+        #end if
+        fv = inv(axes).T
+        for d in range(len(fv)): 
+            fv[d] /= norm(fv[d]) # face normals
+        #end for
+        dv = dot(axes,fv.T) # axis projections onto face normals
+        fv = dot(dv,fv)     # face normals lengthened by plane separation
+        if not distances:
+            return fv
+        else:
+            return fv,diag(dv)
+        #end if
+    #end def face_vectors
+
+
+    def face_distances(self):
+        return self.face_vectors(distances=True)[1]
+    #end def face_distances
+
 
     def set_orig(self):
         self.orig_pos = pos.copy()
@@ -619,26 +682,41 @@ class Structure(Sobj):
     #end def change_units
                               
         
-    def cleave(self,c,v,remove=False,insert=True):
-        c = array(c)
-        v = array(v)
-        self.cell_image(c)
-        self.recenter()
-        indices = []
-        for i in range(len(self.pos)):
-            if dot(pos[i,:]-c[:],v[:])>0:
-                pos[i,:] = pos[i,:] + v[:]
-                indices.append(i)
+    def cleave(self,axis,loc,sep=None,remove=False,tol=1e-6):
+        self.remove_folded_structure()
+        if isinstance(axis,int):
+            if sep is None:
+                self.error('separation induced by cleave must be provided')
             #end if
-        #end for
-        if insert:
-            dist_scale = self.rinscribe()
+            a = self.face_vectors()[axis]
+            u = a/norm(a)
+            v = sep*u
+            if isinstance(loc,float):
+                c = loc*u
+            #end if
+        else:
+            v = array(axis)
+            if sep!=None:
+                v = sep*v/norm(v)
+            #end if
+        #end if
+        c = array(c)  # point on cleave plane
+        v = array(v)  # normal vector to cleave plane, norm is cleave separation
+        if norm(v)<tol:
+            return
+        #end if
+        vn = v/norm(v)
+        if len(self.axes)>0:
             components = 0
-            for i in range(self.dim):
-                axis = self.axes[i]
-                a = axis/norm(axis)
-                comp = abs(dot(a,v))
-                if comp > dist_scale*1e-6:
+            dim = self.dim
+            axes = self.axes
+            for i in xrange(dim):
+                i2 = (i+1)%dim
+                i3 = (i+2)%dim
+                a2 = axes[i2]/norm(axes[i2])
+                a3 = axes[i3]/norm(axes[i3])
+                comp = abs(dot(a2,vn))+abs(dot(a3,vn))
+                if comp < 1e-6:
                     components+=1
                     iaxis = i
                 #end if
@@ -647,13 +725,27 @@ class Structure(Sobj):
             if not commensurate:
                 self.error('cannot insert vacuum because cleave is incommensurate with the cell\n  cleave plane must be parallel to a cell face')
             #end if
-            a = self.axes[i]
-            self.axes[i] = (1+dot(v,v)/dot(v,a))*a
+            a = self.axes[iaxis]
+            self.axes[iaxis] = (1.+dot(v,a)/dot(a,a))*a
         #end if
+        self.cell_image(c)
+
+        #self.recenter()
+        self.recorner()  # want box contents to be static
+
+        indices = []
+        pos = self.pos
+        for i in xrange(len(pos)):
+            p = pos[i]
+            comp = dot(p-c,vn)
+            if comp>0 or abs(comp)<tol:
+                pos[i] += v
+                indices.append(i)
+            #end if
+        #end for
         if remove:
             self.remove(indices)
         #end if
-        self.remove_folded_structure()
     #end def cleave
 
 
@@ -1087,8 +1179,129 @@ class Structure(Sobj):
         self.pos  = self.pos[order]
     #end def reorder
 
+    
+    # find layers parallel to a particular cell face
+    #   layers are found by scanning a window of width dtol along the axis and counting
+    #     the number of atoms within the window.  window position w/ max number of atoms
+    #     defines the layer.  layer distance is the window position.
+    #   the resolution of the scan is determined by dbin
+    #   (axis length)/dbin is the number of fine bins
+    #   dtol/dbin is the number of fine bins in the moving (boxcar) window
+    #   plot=True: plot the layer histogram (fine hist and moving average)
+    #   composition=True: return the composition of each layer (count of each species)
+    # returns an object containing indices of atoms in each layer by distance along axis
+    #   example: structure w/ 3 layers of 4 atoms each at distances 3.0, 6.0, and 9.0 Angs.
+    #   layers
+    #     3.0 = [ 0, 1, 2, 3 ]
+    #     6.0 = [ 4, 5, 6, 7 ]
+    #     9.0 = [ 8, 9,10,11 ]
+    def layers(self,axis=0,dtol=0.03,dbin=0.01,plot=False,composition=False):
+        nbox = int(dtol/dbin)
+        if nbox%2==0:
+            nbox+=1
+        #end if
+        nwind = (nbox-1)/2
+        s = self.copy()
+        s.recenter()
+        vaxis = s.axes[axis]
+        daxis = norm(vaxis)
+        naxis = vaxis/daxis
+        dbin  = dtol/nbox
+        nbins = int(ceil(daxis/dbin))
+        dbin  = daxis/nbins
+        dbins = daxis*(arange(nbins)+.5)/nbins
+        dists = daxis*s.pos_unit()[:,axis]
+        hist  = zeros((nbins,),dtype=int)
+        boxhist = zeros((nbins,),dtype=int)
+        ihist = obj()
+        iboxhist = obj()
+        index = 0
+        for d in dists:
+            ibin = int(floor(d/dbin))
+            hist[ibin]+=1
+            if not ibin in ihist:
+                ihist[ibin] = []
+            #end if
+            ihist[ibin].append(index)
+            index+=1
+        #end for
+        for ib in xrange(nbins):
+            for i in xrange(ib-nwind,ib+nwind+1):
+                n = hist[i%nbins]
+                if n>0:
+                    boxhist[ib]+=n
+                    if not ib in iboxhist:
+                        iboxhist[ib] = []
+                    #end if
+                    iboxhist[ib].extend(ihist[i%nbins])
+                #end if
+            #end for
+        #end for
+        peaks = []
+        nlast=0
+        for ib in xrange(nbins):
+            n = boxhist[ib]
+            if nlast==0 and n>0:
+                pcur = []
+                peaks.append(pcur)
+            #end if
+            if n>0:
+                pcur.append(ib)
+            #end if
+            nlast = n
+        #end for
+        if boxhist[0]>0 and boxhist[-1]>0:
+            peaks[0].extend(peaks[-1])
+            peaks.pop()
+        #end if
+        layers = obj()
+        ip = []
+        for peak in peaks:
+            ib = peak[boxhist[peak].argmax()]
+            ip.append(ib)
+            pindices = iboxhist[ib]
+            ldist = dbins[ib] # distance is along an axis vector
+            faxis = self.face_vectors()[axis]
+            ldist = dot(ldist*naxis,faxis/norm(faxis))
+            layers[ldist] = array(pindices,dtype=int)
+        #end for
+        if plot:
+            plt.plot(dbins,boxhist,'b.-',label='boxcar histogram')
+            plt.plot(dbins,hist,'r.-',label='fine histogram')
+            plt.plot(dbins[ip],boxhist[ip],'rv',markersize=20)
+            plt.show()
+            plt.legend()
+        #end if
+        if not composition:
+            return layers
+        else:
+            return layers,self.layer_composition(layers)
+        #end if
+    #end def layers
+
+
+    def layer_composition(self,layers):
+        lcomp = obj()
+        for d,ind in layers.iteritems():
+            comp = obj()
+            elem = self.elem[ind]
+            for e in elem:
+                if e not in comp:
+                    comp[e] = 1
+                else:
+                    comp[e] += 1
+                #end if
+            #end for
+            lcomp[d]=comp
+        #end for
+        return lcomp
+    #end def layer_composition
+
 
     def shells(self,identifiers,radii=None,exterior=False,cumshells=False,distances=False,dtol=1e-6):
+        # get indices for 'core' and 'bulk'
+        #   core is selected by identifiers, forms core for shells to be built around
+        #   bulk is all atoms except for core
         if identifiers=='point_defects':
             if not 'point_defects' in self:
                 self.error('requested shells around point defects, but structure has no point defects')
@@ -1107,39 +1320,51 @@ class Structure(Sobj):
             core = self.pos[core_ind]
             bulk = self.pos[bulk_ind]
         #end if
-        bulk_ind = array(bulk_ind)
+        bulk_ind = array(bulk_ind,dtype=int)
+        # build distance table between bulk and core
         dtable = self.distance_table(bulk,core)
+        # find shortest distance for each bulk atom to any core atom and order by distance
         dist   = dtable.min(1)
         ind    = arange(len(bulk))
         order  = dist.argsort()
         dist   = dist[order]
         ind    = bulk_ind[ind[order]]
+        # find shells around the core
+        #   the closest atom to the core starts the first shell and defines a shell distance
+        #   other atoms are in the shell if within dtol distance of the first atom
+        #   otherwise a new shell is started
         ns = 0
         ds = -1
         shells = obj()
-        shells[ns] = list(core_ind)
+        shells[ns] = list(core_ind)  # first shell is all core atoms
         dshells = [0.]
         for n in xrange(len(dist)):
             if abs(dist[n]-ds)>dtol:
-                shell = [ind[n]]
+                shell = [ind[n]]   # new shell starts with single atom
                 ns+=1
                 shells[ns] = shell
-                ds = dist[n]
+                ds = dist[n]       # shell distance is distance of this atom from core
                 dshells.append(ds)
             else:
                 shell.append(ind[n])
             #end if
         #end for
-        dshells = array(dshells)
+        dshells = array(dshells,dtype=float)
         results = [shells]
         if cumshells:
+            # assemble cumulative shells, ie cumshell[ns] = sum(shells[n],n=0 to ns)
             cumshells = obj()
             cumshells[0] = list(shells[0])
             for ns in xrange(1,len(shells)):
                 cumshells[ns] = cumshells[ns-1]+shells[ns]
             #end for
+            for ns,cshell in cumshells.iteritems():
+                cumshells[ns] = array(cshell,dtype=int)
+            #end for
             results.append(cumshells)
         #end if
+        for ns,shell in shells.iteritems():
+            shells[ns] = array(shell,dtype=int)
         if distances:
             results.append(dshells)
         #end if
@@ -1149,8 +1374,158 @@ class Structure(Sobj):
         return results
     #end def shells
 
+
+    # find connected sets of atoms.
+    #   indices is a list of atomic indices to consider (self.pos[indices] are their positions)
+    #   atoms are considered connected if they are within rmax of each other
+    #   order sets the maximum number of atoms in any connected graph
+    #     order = 1 returns single atoms
+    #     order = 2 returns dimers + order=1 results
+    #     order = 3 returns trimers + order=2 results
+    #     ...
+    #   degree is explained w/ an example: a triangle of atoms 0,1,2  and a line of atoms 3,4,5 (3 & 5 are not neighbors)
+    #     degree = False : returned object (cgraphs) has following structure:
+    #       cgraphs[1] = [ (0,), (1,), (2,), (3,), (4,), (5,) ]  # first  order connected graphs (atoms)
+    #       cgraphs[2] = [ (0,1), (0,2), (1,2), (3,4), (4,5) ]   # second order connected graphs (dimers)
+    #       cgraphs[3] = [ (0,1,2), (3,4,5) ]                    # third  order connected graphs (trimers)
+    #     degree = True : returned object (cgraphs) has following structure:
+    #       cgraphs
+    #         1      # first  order connected graphs (atoms)
+    #           0    #   sum of vertex degrees is 0 (a single atom has no neighbors)
+    #             (0,) = [ (0,), (1,), (2,), (3,), (4,), (5,) ]   # graphs with vertex degree (0,)
+    #         2      # second order connected graphs (dimers)
+    #           2    #   sum of vertex degrees is 2 (each atom is connected to 1 neighbor)
+    #             (1,1) = [ (0,1), (0,2), (1,2), (3,4), (4,5) ]   # graphs with vertex degree (1,1)
+    #         3      # third  order connected graphs (trimers)
+    #           4    #   sum of vertex degrees is 4 (2 atoms have 1 neighbor and 1 atom has 2)
+    #             (1,1,2) = [ (3,5,4) ]
+    #           6    #   sum of vertex degrees is 6 (each atom is connected to 2 others)
+    #             (2,2,2) = [ (0,1,2) ]           # graphs with vertex degree (2,2,2)  
+    def connected_graphs(self,order,indices=None,rmax=None,nmax=None,degree=False,**spec_max):
+        if indices is None:
+            indices = arange(len(self.pos),dtype=int)
+            pos = self.pos
+        else:
+            pos = self.pos[indices]
+        #end if
+        elem = set(self.elem[indices])
+        spec = set(spec_max.keys())
+        if spec==elem or rmax!=None:
+            None
+        elif spec<elem and nmax!=None:
+            for e in elem:
+                if e not in spec:
+                    spec_max[e] = nmax
+                #end if
+            #end for
+        #end if
+        np = len(indices)
+        # get neighbor table for subset of atoms specified by indices
+        nt,dt = self.neighbor_table(pos,pos,distances=True)
+        # determine how many neighbors to consider based on rmax (all are neighbors if rmax is None)
+        nneigh = zeros((np,),dtype=int)
+        if len(spex_max)>0:
+            for n in xrange(np):
+                neigh[n] = min(spec_max[elem[n]],len(nt[n]))
+            #end for
+        elif rmax is None:
+            nneigh[:] = np
+        else:
+            nneigh = (dt<rmax).sum(1)                    
+        #end if
+        # record which atoms are neighbors to each other
+        neigh_pairs = set()
+        for i in xrange(np):
+            for ni in nt[i,1:nneigh[i]]:
+                ii = indices[i]
+                jj = indices[ni]
+                neigh_pairs.add((ii,jj))
+                neigh_pairs.add((jj,ii))
+            #end for
+        #end for
+        # find the connected graphs
+        graphs_found = set()  # map to contain tuples of connected atom's indices
+        cgraphs = obj()
+        for o in range(1,order+1): # organize by order
+            cgraphs[o] = []
+        #end for
+        if order>0:
+            cg = cgraphs[1]
+            for i in xrange(np):  # list of single atoms
+                gi = (i,)
+                cg.append(gi)
+                graphs_found.add(gi)
+            #end for
+            for o in range(2,order+1): # graphs of order o are found by adding all
+                cglast = cgraphs[o-1]  # possible single neighbors to each graph of order o-1 
+                cg     = cgraphs[o]
+                for gilast in cglast:
+                    for i in gilast:
+                        for ni in nt[i,1:nneigh[i]]:
+                            gi = tuple(sorted(gilast+(ni,)))
+                            if gi not in graphs_found and len(set(gi))==o:
+                                graphs_found.add(gi)
+                                cg.append(gi)
+                            #end if
+                        #end for
+                    #end for
+                #end for
+            #end for
+        #end if
+        # map indices back to actual atomic indices
+        for o,cg in cgraphs.iteritems():
+            cgmap = []
+            for gi in cg:
+                gi = array(gi)
+                gimap = tuple(indices[array(gi)])
+                cgmap.append(gimap)
+            #end for
+            cgraphs[o] = cgmap
+        #end for
+        # reorganize the graph listing by cluster and vertex degree, if desired
+        if degree:
+            #degree_map = obj()
+            cgraphs_deg = obj()
+            for o,cg in cgraphs.iteritems():
+                dgo = obj()
+                cgraphs_deg[o] = dgo
+                for gi in cg:
+                    di = zeros((o,),dtype=int)
+                    for m in xrange(o):
+                        i = gi[m]
+                        for n in xrange(m+1,o):
+                            j = gi[n]
+                            if (i,j) in neigh_pairs:
+                                di[m]+=1
+                                di[n]+=1
+                            #end if
+                        #end for
+                    #end for
+                    d = int(di.sum())
+                    dorder = di.argsort()
+                    di = tuple(di[dorder])
+                    gi = tuple(array(gi)[dorder])
+                    if not d in dgo:
+                        dgo[d]=obj()
+                    #end if
+                    dgd = dgo[d]
+                    if not di in dgd:
+                        dgd[di] = []
+                    #end if
+                    dgd[di].append(gi)
+                    #degree_map[gi] = d,di
+                #end for
+            #end for
+            cgraphs = cgraphs_deg
+        #end if
+        return cgraphs
+    #end def connected_graphs
+
     
-    def min_image_vectors(self,points,points2=None,axes=None,pairs=True):
+    def min_image_vectors(self,points=None,points2=None,axes=None,pairs=True):
+        if points is None:
+            points = self.pos
+        #end if
         if axes is None:
             axes  = self.axes
         #end if
@@ -1199,7 +1574,7 @@ class Structure(Sobj):
     #end def min_image_vectors
 
 
-    def min_image_distances(self,points,points2=None,axes=None,vectors=False,pairs=True):
+    def min_image_distances(self,points=None,points2=None,axes=None,vectors=False,pairs=True):
         vtable = self.min_image_vectors(points,points2,axes,pairs=pairs)
         rdim = len(vtable.shape)-1
         dtable = sqrt((vtable**2).sum(rdim))
@@ -1211,17 +1586,17 @@ class Structure(Sobj):
     #end def min_image_distances
 
 
-    def distance_table(self,points,points2=None,axes=None,vectors=False):
+    def distance_table(self,points=None,points2=None,axes=None,vectors=False):
         return self.min_image_distances(points,points2,axes,vectors)
     #end def distance_table
 
 
-    def vector_table(self,points,points2=None,axes=None):
+    def vector_table(self,points=None,points2=None,axes=None):
         return self.min_image_vectors(points,points2,axes)
     #end def vector_table
 
     
-    def neighbor_table(self,points,points2=None,axes=None,distances=False,vectors=False):
+    def neighbor_table(self,points=None,points2=None,axes=None,distances=False,vectors=False):
         dtable,vtable = self.min_image_distances(points,points2,axes,vectors=True)
         ntable = empty(dtable.shape,dtype=int)
         for i in range(len(dtable)):
@@ -1262,6 +1637,141 @@ class Structure(Sobj):
         #end if
         return nout
     #end def min_image_norms
+
+    # get all neighbors according to contacting voronoi polyhedra in PBC
+    def voronoi_neighbors(self,indices=None,restrict=False):
+        if indices is None:
+            indices = arange(len(self.pos))
+        #end if
+        # make a new version of this (small cell)
+        sn = self.copy()
+        sn.recenter()
+        # tile a large cell periodically
+        d = 3
+        t = tuple(zeros((d,),dtype=int)+3)
+        ss = sn.tile(t)
+        ss.recenter(sn.center)
+        # get nearest neighbor index pairs in the large cell
+        neigh_pairs = voronoi_neighbors(ss.pos)
+        # create a mapping from large to small indices
+        large_to_small = 3**d*range(len(self.pos))
+        # find the neighbor pairs in the small cell
+        neighbors = obj()
+        small_inds = set(ss.locate(sn.pos))
+        for n in xrange(len(neigh_pairs)):
+            i,j = neigh_pairs[n,:]
+            if i in small_inds or j in small_inds: # pairs w/ at least one in cell image
+                i = large_to_small[i]  # mapping to small cell indices
+                j = large_to_small[j]
+                if not restrict or (i in indices and j in indices): # restrict to orig index set
+                    if not i in neighbors:
+                        neighbors[i] = [j]
+                    else:
+                        neighbors[i].append(j)
+                    #ned if
+                    if not j in neighbors:
+                        neighbors[j] = [i]
+                    else:
+                        neighbors[j].append(i)
+                    #end if
+                #end if
+            #end if
+        #end for
+        # remove any duplicates and order by distance
+        dt = self.distance_table()
+        for i,ni in neighbors.iteritems():
+            ni = array(list(set(ni)),dtype=int)
+            di = dt[i,ni]
+            order = di.argsort()
+            neighbors[i] = ni[order]
+        #end for
+        return neighbors
+    #end def voronoi_neighbors
+
+
+    # get nearest neighbors according to constrants (voronoi, max distance, coord. number)
+    def nearest_neighbors(self,indices=None,rmax=None,nmax=None,restrict=False,voronoi=False,**spec_max):
+        if indices is None:
+            indices = arange(len(self.pos))
+        #end if
+        elem = set(self.elem[indices])
+        spec = set(spec_max.keys())
+        if spec==elem or rmax!=None or voronoi:
+            None
+        elif spec<elem and nmax!=None:
+            for e in elem:
+                if e not in spec:
+                    spec_max[e] = nmax
+                #end if
+            #end for
+        else:
+            self.error('must specify nmax for all species\n  species present: {0}\n  you only provided nmax for these species: {1}'.format(sorted(elem),sorted(spec)))
+        #end if
+        pos = self.pos[indices]
+        if not restrict:
+            pos2 = self.pos
+        else:
+            pos2 = pos
+        #end if
+        if voronoi:
+            neighbors = self.voronoi_neighbors(indices=indices,restrict=restrict)
+            dt = self.distance_table(pos,pos2)
+        else:
+            nt,dt = self.neighbor_table(pos,pos2,distances=True)
+            neighbors = list(nt)
+        #end if
+        if rmax is None:
+            for i in xrange(len(indices)):
+                nn = neighbors[i]
+                smax = spec_max[elem[i]]
+                if len(nn)>smax:
+                    neighbors[i] = nn[:smax]
+                #end if
+            #end for
+        else:
+            for i in xrange(len(indices)):
+                neighbors.append(nt[i][dt[i]<rmax])
+            #end for
+        #end if
+        return neighbors
+    #end def nearest_neighbors
+
+
+    # determine local chemical coordination limited by constraints
+    def chemical_coordination(self,indices=None,nmax=None,rmax=None,restrict=False,voronoi=False,neighbors=False,**spec_max):
+        if indices is None:
+            indices = arange(len(self.pos))
+        #end if
+        neigh = self.nearest_neighbors(indices=indices,nmax=nmax,rmax=rmax,restrict=restrict,voronoi=voronoi,**spec_max)
+        neigh_elem = []
+        for i in xrange(len(indices)):
+            neigh_elem.append(self.elem(neigh[i]))
+        #end for
+        chem_key = tuple(sorted(set(neigh_elem)))
+        chem_coord = zeros((len(indices),len(chem_key)),dtype=int)
+        for i in xrange(len(indices)):
+            counts = zeros((len(chem_key),),dtype=int)
+            nn = list(neigh[i])
+            for n in xrange(len(counts)):
+                chem_coord[i,n] = nn.count(chem_key[n])
+            #end for
+        #end for
+        chem_map = obj()
+        i=0
+        for coord in chem_coord:
+            if not coord in chem_map:
+                chem_map[coord] = [indices[i]]
+            else:
+                chem_map[coord].append(indices[i])
+            #end if
+            i+=1
+        #end for
+        results = [chem_key,chem_coord,chem_map]
+        if neighbors:
+            results.append(neigh)
+        #end if
+        return results
+    #end def chemical_coordination
 
 
     def rcore_max(self,units=None):
@@ -1319,6 +1829,17 @@ class Structure(Sobj):
         #end for
         self.recenter_k()
     #end def recenter
+
+
+    def recorner(self):
+        pos = self.pos
+        axes = self.axes
+        axinv = inv(axes)
+        for i in range(len(pos)):
+            u = dot(pos[i],axinv)
+            pos[i] = dot(u-floor(u),axes)
+        #end for
+    #end def recorner
 
     
     def recenter_k(self,kpoints=None,kaxes=None,kcenter=None,remove_duplicates=False):
