@@ -766,6 +766,10 @@ class Kpoints(VFormattedFile):
         text = ''
         if self.mode=='auto':
             text+='{0} mesh\n 0\n'.format(self.centering)
+            cent = self.centering.lower()
+            if len(cent)>0 and cent[0] in Kpoints.centering_options:
+                self.centering = Kpoints.centering_options[cent[0]]
+            #end if
             if self.centering=='auto':
                 text+='auto\n'
                 text+=' {0:d}\n'.format(self.kgrid)
@@ -1373,7 +1377,7 @@ def generate_vasp_input(**kwargs):
     else:
         input_type = 'general'
     #end if
-    if input_type=='general':
+    if input_type=='general' or input_type=='generic':
         vi = generate_any_vasp_input(**kwargs)
     else:
         VaspInput.class_error('input_type {0} is unrecognized\nvalid options are: general'.format(input_type))
