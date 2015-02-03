@@ -88,14 +88,23 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
     
     def analyze(self):
+        path = self.path
+        infile_name = self.infile_name
+        outfile_name = self.outfile_name
+        pw2c_outfile_name = self.pw2c_outfile_name
+
+        nx=0
+
         try:
-            path = self.path
-            infile_name = self.infile_name
-            outfile_name = self.outfile_name
-            pw2c_outfile_name = self.pw2c_outfile_name
-
             lines = open(os.path.join(path,outfile_name),'r').read().splitlines()
+        except:
+            nx+=1
+            if self.info.warn:
+                self.warn('file read failed')
+            #end if
+        #end try
 
+        try:
             energies = []
             for l in lines:
                 if l.find('!  ')!=-1:
@@ -108,11 +117,18 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 self.E = energies[-1]
             #end if
             self.energies = array(energies)
+        except:
+            nx+=1
+            if self.info.warn:
+                self.warn('energy read failed')
+            #end if
+        #end try
 
+        try:
             # get bands and occupations
             nfound = 0
             bands = obj()
-            for i in range(len(lines)):
+            for i in xrange(len(lines)):
                 l = lines[i]
                 if 'bands (ev)' in l:
                     nfound+=1
@@ -124,27 +140,18 @@ class PwscfAnalyzer(SimulationAnalyzer):
                             i_occ = j
                         #end if
                     #end while
-                    try:
-                        seigs = ''
-                        for j in range(i+1,i_occ):
-                            seigs+=lines[j]
-                        #end for
-                        seigs = seigs.strip()
-                        eigs = array(seigs.split(),dtype=float)
+                    seigs = ''
+                    for j in range(i+1,i_occ):
+                        seigs+=lines[j]
+                    #end for
+                    seigs = seigs.strip()
+                    eigs = array(seigs.split(),dtype=float)
 
-                        soccs = ''
-                        for j in range(i_occ+1,i_occ+1+(i_occ-i)-2):
-                            soccs+= lines[j]
-                        #end for
-                        occs = array(soccs.split(),dtype=float)
-                    except Exception:
-                        eigs = array([])
-                        occs = array([])
-                        if self.info.warn:
-                            self.warn('band read failed, line: '+l)
-                        #end if
-                    #end try
-                    
+                    soccs = ''
+                    for j in range(i_occ+1,i_occ+1+(i_occ-i)-2):
+                        soccs+= lines[j]
+                    #end for
+                    occs = array(soccs.split(),dtype=float)
 
                     if nfound==1:
                         bands.up = obj(
@@ -158,41 +165,18 @@ class PwscfAnalyzer(SimulationAnalyzer):
                             )
                     #end if
                 #end if
-                #try:
-                #    seigs = ''
-                #    for j in range(i+1,i_occ):
-                #        seigs+=lines[j]
-                #    #end for
-                #    seigs = seigs.strip()
-                #    eigs = array(seigs.split(),dtype=float)
-                #
-                #    soccs = ''
-                #    for j in range(i_occ+1,i_occ+1+(i_occ-i)-2):
-                #        soccs+= lines[j]
-                #    #end for
-                #    occs = array(soccs.split(),dtype=float)
-                #except Exception:
-                #    eigs = array([])
-                #    occs = array([])
-                ##end try
-
-                if nfound==1:
-                    bands.up = obj(
-                        eigs = eigs,
-                        occs = occs
-                        )
-                elif nfound==2:
-                    bands.down = obj(
-                        eigs = eigs,
-                        occs = occs
-                        )
-                #end if
             #end for
             if nfound>0:
                 self.bands = bands
             #end if
+        except:
+            nx+=1
+            if self.info.warn:
+                self.warn('band read failed')
+            #end if
+        #end try
 
-
+        try:
             structures = obj()
             i=0
             found = False
@@ -222,7 +206,14 @@ class PwscfAnalyzer(SimulationAnalyzer):
             if found:
                 self.structures = structures
             #end if
+        except:
+            nx+=1
+            if self.info.warn:
+                self.warn('structure read failed')
+            #end if
+        #end try
 
+        try:
             forces = []
             tot_forces = []
             i=0
@@ -272,7 +263,14 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 #end for
                 self.max_forces = array(max_forces)
             #end if
+        except:
+            nx+=1
+            if self.info.warn:
+                self.warn('force read failed')
+            #end if
+        #end try
 
+        try:
             tc= 0.
             tw= 0.
             for l in lines:
@@ -285,7 +283,14 @@ class PwscfAnalyzer(SimulationAnalyzer):
             #end for
             self.cputime = tc
             self.walltime= tw
+        except:
+            nx+=1
+            if self.info.warn:
+                self.warn('time read failed')
+            #end if
+        #end try
 
+        try:
             if pw2c_outfile_name!=None:
                 lines = open(os.path.join(path,pw2c_outfile_name),'r').readlines()
                 for l in lines:
@@ -296,7 +301,14 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     #end if
                 #end for
             #end if        
-        except Exception:
+        except:
+            nx+=1
+            if self.info.warn:
+                self.warn('pw2casino read failed')
+            #end if
+        #end try
+
+        if nx>0 and self.info.warn:
             self.warn('encountered an exception, some quantities will not be available')
         #end try
 

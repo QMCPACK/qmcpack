@@ -96,7 +96,7 @@ class Vasp(Simulation):
                 if len(neb_structures)>1:
                     self.error('NEB simulation at {0} depends on more than two structures\n  please check your inputs'.format(self.locdir))
                 #end if
-                neb_structures.append(result.structure)
+                neb_structures.append(result.structure.copy())
                 if len(neb_structures)==2:
                     input.setup_neb(*neb_structures,images=input.incar.images)
                 #end if
