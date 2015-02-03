@@ -592,6 +592,8 @@ class k_points(Card):
             a = fromstring(lines[0],sep=' ')
             self.grid  = a[0:3]
             self.shift = a[3:]
+        elif self.specifier == 'gamma':
+            None
         else:
             self.error('k_points specifier '+self.specifier+' is unrecognized')
         #end if

@@ -7,7 +7,7 @@ from project_base import Pobj,modes
 from project_manager import ProjectManager
 from machines import Job,Machine,Supercomputer,get_machine
 
-from structure import Structure,generate_structure,generate_cell
+from structure import Structure,generate_structure,generate_cell,read_structure
 from physical_system import PhysicalSystem,generate_physical_system
 from pseudopotential import Pseudopotential,Pseudopotentials
 from bundle import bundle
@@ -25,6 +25,8 @@ from qmcpack import loop,linear,cslinear,vmc,dmc
 from qmcpack import generate_jastrows,generate_jastrow,generate_jastrow1,generate_jastrow2,generate_jastrow3,generate_opt,generate_opts
 from qmcpack import generate_cusp_correction
 from auxiliary import *
+from debug import *
+from plotting import *
 
 
 #set the machine if known, otherwise user will provide

@@ -9,7 +9,7 @@ from unit_converter import convert
 from extended_numpy import nearest_neighbors,convex_hull,voronoi_neighbors
 from periodic_table import pt
 from generic import obj
-from developer import DevBase,unavailable
+from developer import DevBase,unavailable,error,warn
 from debug import ci,ls,gs
 
 
@@ -2793,8 +2793,36 @@ class Structure(Sobj):
     #end def write_xsf
 
 
-    def read_poscar(self,filepath,elem=None):
-        if os.path.exists(filepath):
+    def read(self,filepath,format=None,elem=None):
+        if not os.path.exists(filepath):
+            self.error('file {0} does not exist'.format(filepath))
+        #end if
+        path,file = os.path.split(filepath)
+        if format is None:
+            if '.' in file:
+                name,format = file.rsplit('.',1)
+            else:
+                self.error('file does not have a format extension: {0}'.format(filepath))
+            #end if
+        #end if
+        c = open(filepath,'r').read()
+        self.read_contents(c,format,elem=elem)
+        return c
+    #end def read
+
+
+    def read_contents(self,contents,format,elem=None):
+        format = format.lower()
+        if format=='poscar':
+            self.read_poscar(contents,elem=elem,contents=True)
+        else:
+            self.error('unrecognized file format: {0}'.format(format))
+        #end if
+    #end def read_contents
+
+
+    def read_poscar(self,filepath,elem=None,contents=False):
+        if not contents:
             lines = open(filepath,'r').read().splitlines()
         else:
             lines = filepath.splitlines()
@@ -3853,22 +3881,23 @@ def generate_cell(shape,tiling=None,scale=1.,units=None,struct_type=Structure):
 
 def generate_structure(type='crystal',*args,**kwargs):
     if type=='crystal':
-        return generate_crystal_structure(*args,**kwargs)
+        s = generate_crystal_structure(*args,**kwargs)
     elif type=='defect':
-        return generate_defect_structure(*args,**kwargs)
+        s = generate_defect_structure(*args,**kwargs)
     elif type=='atom':
-        return generate_atom_structure(*args,**kwargs)
+        s = generate_atom_structure(*args,**kwargs)
     elif type=='dimer':
-        return generate_dimer_structure(*args,**kwargs)
+        s = generate_dimer_structure(*args,**kwargs)
     elif type=='jellium':
-        return generate_jellium_structure(*args,**kwargs)
+        s = generate_jellium_structure(*args,**kwargs)
     elif type=='empty':
-        return Structure()
+        s = Structure()
     elif type=='basic':
-        return Structure(*args,**kwargs)
+        s = Structure(*args,**kwargs)
     else:
         Structure.class_error(str(type)+' is not a valid structure type\n  options are crystal, defect, or atom')
     #end if
+    return s
 #end def generate_structure
 
 
@@ -3964,6 +3993,12 @@ def generate_crystal_structure(lattice=None,cell=None,centering=None,
             rescale        = False,
             operations     = operations)
     elif isinstance(structure,Structure):
+        if kpoints!=None:
+            structure.add_kpoints(kpoints,kweights)
+        #end if
+        if kgrid!=None:
+            structure.add_kmesh(kgrid,kshift)
+        #end if        
         return structure
     #end if
 
@@ -4061,6 +4096,11 @@ def generate_defect_structure(defect,structure,shape=None,element=None,
 #end def generate_defect_structure
 
 
+def read_structure(filepath):
+    s = generate_structure('empty')
+    s.read(filepath)
+    return s
+#end def read_structure
 
 
 #if __name__=='__main__':

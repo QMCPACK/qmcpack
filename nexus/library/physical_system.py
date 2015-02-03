@@ -541,8 +541,8 @@ class PhysicalSystem(Matter):
 #end class PhysicalSystem
 
 
-
-from structure import generate_structure
+import os
+from structure import generate_structure,read_structure
 from copy import deepcopy
 ps_defaults = dict(
     type='crystal',
@@ -555,7 +555,6 @@ ps_defaults = dict(
     extensive=True
     )
 def generate_physical_system(**kwargs):
-
     for var,val in ps_defaults.iteritems():
         if not var in kwargs:
             kwargs[var] = val
@@ -571,6 +570,13 @@ def generate_physical_system(**kwargs):
         tiling = None
     else:
         tiling = kwargs['tiling']
+    #end if
+
+    if 'structure' in kwargs:
+        s = kwargs['structure']
+        if isinstance(s,str) and os.path.exists(s) and '.' in os.path.split(s)[1]:
+            kwargs['structure'] = read_structure(s)
+        #end if
     #end if
 
     generation_info = obj()
