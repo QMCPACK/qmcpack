@@ -1,3 +1,7 @@
+##################################################################
+##  (c) Copyright 2015-  by Jaron T. Krogel                     ##
+##################################################################
+
 #! /usr/bin/env python
 
 from types import FunctionType,StringType,DictType

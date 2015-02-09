@@ -1,3 +1,7 @@
+##################################################################
+##  (c) Copyright 2015-  by Jaron T. Krogel                     ##
+##################################################################
+
 import re
 import copy
 from numpy import array,floor,sqrt,zeros,prod,dot,ones,empty,min,max

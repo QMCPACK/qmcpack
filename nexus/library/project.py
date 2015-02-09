@@ -1,3 +1,7 @@
+##################################################################
+##  (c) Copyright 2015-  by Jaron T. Krogel                     ##
+##################################################################
+
 
 import os
 
@@ -26,7 +30,6 @@ from qmcpack import generate_jastrows,generate_jastrow,generate_jastrow1,generat
 from qmcpack import generate_cusp_correction
 from auxiliary import *
 from debug import *
-from plotting import *
 
 
 #set the machine if known, otherwise user will provide

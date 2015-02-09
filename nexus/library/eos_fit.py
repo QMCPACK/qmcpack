@@ -1,3 +1,7 @@
+##################################################################
+##  (c) Copyright 2015-  by Jaron T. Krogel                     ##
+##################################################################
+
 
 from numpy import exp
 from developer import unavailable

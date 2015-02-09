@@ -1,3 +1,7 @@
+##################################################################
+##  (c) Copyright 2015-  by Jaron T. Krogel                     ##
+##################################################################
+
 
 import types as pytypes
 from numpy import array,ndarray,zeros,linspace,pi,exp,sqrt,polyfit,polyval

@@ -1,3 +1,7 @@
+##################################################################
+##  (c) Copyright 2015-  by Jaron T. Krogel                     ##
+##################################################################
+
 
 from machines import Workstation,Job
 from simulation import Simulation,NullSimulationInput,NullSimulationAnalyzer

@@ -1,3 +1,7 @@
+##################################################################
+##  (c) Copyright 2015-  by Jaron T. Krogel                     ##
+##################################################################
+
 
 from numpy import array,ndarray,minimum,abs,ix_,resize
 import sys
