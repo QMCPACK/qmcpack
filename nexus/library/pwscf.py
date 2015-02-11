@@ -57,7 +57,7 @@ class Pwscf(Simulation):
         elif result_name=='orbitals':
             calculating_result = 'wf_collect' in control and control.wf_collect
         elif result_name=='structure':
-            calculating_result = control.calculation.lower() == 'relax'
+            calculating_result = 'relax' in control.calculation.lower()
         else:
             calculating_result = False
         #end if
