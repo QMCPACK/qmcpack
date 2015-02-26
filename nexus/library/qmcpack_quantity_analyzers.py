@@ -168,7 +168,8 @@ class DmcDatAnalyzer(DatAnalyzer):
         series      = self.method_info.series
         ndmc_blocks = self.run_info.request.ndmc_blocks
 
-        qmc    = input.simulation.calculations[series]
+        #qmc    = input.simulation.calculations[series]
+        qmc    = input.get_qmc(series)
         blocks = qmc.blocks
         steps  = qmc.steps
         nse    = nbe*steps

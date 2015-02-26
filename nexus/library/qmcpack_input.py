@@ -1893,7 +1893,7 @@ class dmc(QIxml):
     tag = 'qmc'
     attributes = ['method','move','gpu','multiple','warp','checkpoint','trace']
     elements   = ['estimator']
-    parameters = ['walkers','blocks','steps','timestep','nonlocalmove','nonlocalmoves','warmupsteps','pop_control','reconfiguration','targetwalkers']
+    parameters = ['walkers','blocks','steps','timestep','nonlocalmove','nonlocalmoves','warmupsteps','pop_control','reconfiguration','targetwalkers','minimumtargetwalkers']
     write_types = obj(gpu=yesno,nonlocalmoves=yesno,reconfiguration=yesno)
 #end class dmc
 
@@ -3221,6 +3221,21 @@ class QmcpackInput(SimulationInput,Names):
         cc_run = len(self.simulation.calculations)==0
         return cc_var and cc_run
     #end def cusp_correction
+
+
+    def get_qmc(self,series):
+        qmc = None
+        calcs        = self.get('calculations')
+        series_start = self.get('series')
+        if calcs!=None:
+            if series_start is None:
+                qmc = calcs[series]
+            else:
+                qmc = calcs[series-series_start]
+            #end if
+        #end if
+        return qmc
+    #end def get_qmc
 
 
     def bundle(self,inputs,filenames):
