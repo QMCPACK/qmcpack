@@ -6,6 +6,7 @@
 import sys
 import traceback
 from copy import deepcopy
+from random import randint
 from abilities import AllAbilities,genbase
 
 exit_call = exit
@@ -231,6 +232,20 @@ class obj(AllAbilities):
         #end if
     #end def delete
 
+    def add_attribute_path(self,path,value=None):
+        o = self
+        for p in path[0:-1]:
+            if not p in o:
+                o[p] = obj()
+            #end if
+            o = o[p]
+        #end for
+        o[path[-1]] = value
+    #end def add_attribute_path
+
+    def select_random(self): # intended for list-like objects
+        return self[randint(0,len(self)-1)]
+    #end def select_random
 #end class obj
 
 

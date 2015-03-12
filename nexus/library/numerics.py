@@ -126,14 +126,14 @@ def morse_harmfreq(p,m1,m2=None):
 # morse_harmonic evaluates the harmonic oscillator fit to the morse potential
 def morse_harmonic_potential(p,r):
     return .5*morse_k(p)*(r-morse_re(p))**2 - morse_De(p)
-#end def morse_harmonic
+#end def morse_harmonic_potential
 
 # morse_spect_fit returns the morse fit starting from spectroscopic parameters
 #   spect. params. are equilibrium bond length, vibration frequency, and wX parameter
 #   input units are Angstrom for re and 1/cm for w and wX
 #   m1 and m2 are masses in Hartree units, only one need be provided
 #   outputted fit is in Hartree units
-def morse_spect_fit(re,w,wX,m1,m2=None):
+def morse_spect_fit(re,w,wX,m1,m2=None,Einf=0.0):
     alpha = 7.2973525698e-3            # fine structure constant
     m     = morse_reduced_mass(m1,m2)  # reduced mass
     ocm_to_oB = 1./convert(.01,'m','B')# conversion from 1/cm to 1/Bohr
@@ -142,10 +142,24 @@ def morse_spect_fit(re,w,wX,m1,m2=None):
     re    = convert(re,'A','B')        # convert from Angstrom to Bohr
     a     = sqrt(4*pi*m*wX/alpha)      # get the 'a' parameter
     De    = (pi*w**2)/(2*alpha*wX)     # get the 'De' parameter
-    Einf  = 0.0                        # zero potential at infinity
     p     = morse_params(re,a,De,Einf) # get the internal fit parameters
     return p
 #end def morse_spect_fit
+
+
+def morse_rDw_fit(re,De,w,m1,m2=None,Einf=0.0,Dunit='eV'):
+    alpha = 7.2973525698e-3            # fine structure constant
+    m     = morse_reduced_mass(m1,m2)  # reduced mass
+    ocm_to_oB = 1./convert(.01,'m','B')# conversion from 1/cm to 1/Bohr
+    w    *= ocm_to_oB                  # convert from 1/cm to 1/Bohr
+    re    = convert(re,'A','B')        # convert from Angstrom to Bohr
+    De    = convert(De,Dunit,'Ha')     # convert from input energy unit
+    wX    = (pi*w**2)/(2*alpha*De)     # get wX
+    a     = sqrt(4*pi*m*wX/alpha)      # get the 'a' parameter
+    p     = morse_params(re,a,De,Einf) # get the internal fit parameters
+    return p
+#end def morse_rDw_fit
+
 
 # morse_fit computes a morse potential fit to r,E data
 #  fitting through means, E is one dimensional

@@ -1405,7 +1405,7 @@ class Structure(Sobj):
     #             (1,1,2) = [ (3,5,4) ]
     #           6    #   sum of vertex degrees is 6 (each atom is connected to 2 others)
     #             (2,2,2) = [ (0,1,2) ]           # graphs with vertex degree (2,2,2)  
-    def connected_graphs(self,order,indices=None,rmax=None,nmax=None,degree=False,**spec_max):
+    def connected_graphs(self,order,indices=None,rmax=None,nmax=None,degree=False,site_maps=False,**spec_max):
         if indices is None:
             indices = arange(len(self.pos),dtype=int)
             pos = self.pos
@@ -1428,9 +1428,9 @@ class Structure(Sobj):
         nt,dt = self.neighbor_table(pos,pos,distances=True)
         # determine how many neighbors to consider based on rmax (all are neighbors if rmax is None)
         nneigh = zeros((np,),dtype=int)
-        if len(spex_max)>0:
+        if len(spec_max)>0:
             for n in xrange(np):
-                neigh[n] = min(spec_max[elem[n]],len(nt[n]))
+                nneigh[n] = min(spec_max[self.elem[n]],len(nt[n]))
             #end for
         elif rmax is None:
             nneigh[:] = np
@@ -1481,10 +1481,10 @@ class Structure(Sobj):
             cgmap = []
             for gi in cg:
                 gi = array(gi)
-                gimap = tuple(indices[array(gi)])
+                gimap = tuple(sorted(indices[array(gi)]))
                 cgmap.append(gimap)
             #end for
-            cgraphs[o] = cgmap
+            cgraphs[o] = array(sorted(cgmap),dtype=int)
         #end for
         # reorganize the graph listing by cluster and vertex degree, if desired
         if degree:
@@ -1519,10 +1519,58 @@ class Structure(Sobj):
                     dgd[di].append(gi)
                     #degree_map[gi] = d,di
                 #end for
+                for dgd in dgo:
+                    for di,dgi in dgd.iteritems():
+                        dgd[di]=array(dgi,dtype=int)
+                    #end for
+                #end for
             #end for
             cgraphs = cgraphs_deg
         #end if
-        return cgraphs
+
+        if not site_maps:
+            return cgraphs
+        else:
+            cmaps = obj()
+            if not degree:
+                for order,og in cgraphs.iteritems():
+                    cmap = obj()
+                    for slist in og:
+                        for s in slist:
+                            if not s in cmap:
+                                cmap[s] = obj()
+                            #end if
+                            cmap[s].append(slist)
+                        #end for
+                    #end for
+                    cmaps[order] = cmap
+                #end for
+            else:
+                for order,og in cgraphs.iteritems():
+                    for total_degree,tg in og.iteritems():
+                        for local_degree,lg in tg.iteritems():
+                            cmap = obj()
+                            for slist in lg:
+                                n=0
+                                for s in slist:
+                                    d = local_degree[n]
+                                    if not s in cmap:
+                                        cmap[s] = obj()
+                                    #end if
+                                    if not d in cmap[s]:
+                                        cmap[s][d] = obj()
+                                    #end if
+                                    cmap[s][d].append(slist)
+                                    n+=1
+                                #end for
+                            #end for
+                            cmaps.add_attribute_path((order,total_degree,local_degree),cmap)
+                        #end for
+                    #end for
+                #end for
+            #end if
+            return cgraphs,cmaps
+        #end if
     #end def connected_graphs
 
     
@@ -1694,7 +1742,7 @@ class Structure(Sobj):
 
 
     # get nearest neighbors according to constrants (voronoi, max distance, coord. number)
-    def nearest_neighbors(self,indices=None,rmax=None,nmax=None,restrict=False,voronoi=False,**spec_max):
+    def nearest_neighbors(self,indices=None,rmax=None,nmax=None,restrict=False,voronoi=False,distances=False,**spec_max):
         if indices is None:
             indices = arange(len(self.pos))
         #end if
@@ -1719,43 +1767,59 @@ class Structure(Sobj):
         #end if
         if voronoi:
             neighbors = self.voronoi_neighbors(indices=indices,restrict=restrict)
-            dt = self.distance_table(pos,pos2)
+            dt = self.distance_table(pos,pos2)[:,1:]
         else:
             nt,dt = self.neighbor_table(pos,pos2,distances=True)
+            dt=dt[:,1:]
+            nt=nt[:,1:]
             neighbors = list(nt)
         #end if
+        for i in xrange(len(indices)):
+            neighbors[i] = indices[neighbors[i]]
+        #end for
+        dist = list(dt)
         if rmax is None:
             for i in xrange(len(indices)):
                 nn = neighbors[i]
-                smax = spec_max[elem[i]]
+                dn = dist[i]
+                smax = spec_max[self.elem[indices[i]]]
                 if len(nn)>smax:
                     neighbors[i] = nn[:smax]
+                    dist[i]      = dn[:smax]
                 #end if
             #end for
         else:
             for i in xrange(len(indices)):
-                neighbors.append(nt[i][dt[i]<rmax])
+                neighbors[i] = neighbors[i][dt[i]<rmax]
             #end for
         #end if
-        return neighbors
+        if not distances:
+            return neighbors
+        else:
+            return neighbors,dist
+        #end if
     #end def nearest_neighbors
 
 
     # determine local chemical coordination limited by constraints
-    def chemical_coordination(self,indices=None,nmax=None,rmax=None,restrict=False,voronoi=False,neighbors=False,**spec_max):
+    def chemical_coordination(self,indices=None,nmax=None,rmax=None,restrict=False,voronoi=False,neighbors=False,distances=False,**spec_max):
         if indices is None:
             indices = arange(len(self.pos))
         #end if
-        neigh = self.nearest_neighbors(indices=indices,nmax=nmax,rmax=rmax,restrict=restrict,voronoi=voronoi,**spec_max)
+        if not distances:
+            neigh = self.nearest_neighbors(indices=indices,nmax=nmax,rmax=rmax,restrict=restrict,voronoi=voronoi,**spec_max)
+        else:
+            neigh,dist = self.nearest_neighbors(indices=indices,nmax=nmax,rmax=rmax,restrict=restrict,voronoi=voronoi,distances=True,**spec_max)
+        #end if
         neigh_elem = []
         for i in xrange(len(indices)):
-            neigh_elem.append(self.elem(neigh[i]))
+            neigh_elem.extend(self.elem[neigh[i]])
         #end for
         chem_key = tuple(sorted(set(neigh_elem)))
         chem_coord = zeros((len(indices),len(chem_key)),dtype=int)
         for i in xrange(len(indices)):
             counts = zeros((len(chem_key),),dtype=int)
-            nn = list(neigh[i])
+            nn = list(self.elem[neigh[i]])
             for n in xrange(len(counts)):
                 chem_coord[i,n] = nn.count(chem_key[n])
             #end for
@@ -1763,6 +1827,7 @@ class Structure(Sobj):
         chem_map = obj()
         i=0
         for coord in chem_coord:
+            coord = tuple(coord)
             if not coord in chem_map:
                 chem_map[coord] = [indices[i]]
             else:
@@ -1770,9 +1835,15 @@ class Structure(Sobj):
             #end if
             i+=1
         #end for
+        for coord,ind in chem_map.iteritems():
+            chem_map[coord] = array(ind,dtype=int)
+        #end for
         results = [chem_key,chem_coord,chem_map]
         if neighbors:
             results.append(neigh)
+        #end if
+        if distances:
+            results.append(dist)
         #end if
         return results
     #end def chemical_coordination

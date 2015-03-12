@@ -4501,7 +4501,7 @@ def generate_basic_input(id             = 'qmc',
                          series         = 0,
                          purpose        = '',
                          seed           = None,
-                         bconds         = 'ppp',
+                         bconds         = None,
                          truncate       = False,
                          buffer         = None,
                          lr_dim_cutoff  = 15,
@@ -4546,6 +4546,9 @@ def generate_basic_input(id             = 'qmc',
     #end if
     if spin_polarized is None:
         spin_polarized = system.net_spin>0
+    #end if
+    if bconds is None:
+        bconds = 'ppp'
     #end if
 
     metadata = QmcpackInput.default_metadata.copy()
