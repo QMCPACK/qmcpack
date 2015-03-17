@@ -1,8 +1,16 @@
 SET(CMAKE_SYSTEM_PROCESSOR "XK7")
-# Last updated: Nov 7, 2014
+# Last updated: Mar 16, 2015
+# NEED THESES + defaults
+#  module swap PrgEnv-pgi PrgEnv-gnu
+#  module load cray-hdf5
+#  module load fftw
+#  module load boost
+#  module load subversion
+#  module load cmake
 
 set(CMAKE_C_COMPILER  cc)
 set(CMAKE_CXX_COMPILER  CC)
+
 set(GNU_OPTS "-DADD_ -DINLINE_ALL=inline -DDISABLE_TIMER=1 -DUSE_REAL_STRUCT_FACTOR") 
 #set(GNU_OPTS "-DADD_ -DINLINE_ALL=inline -DUSE_REAL_STRUCT_FACTOR -DDISABLE_TIMER=1 -DHAVE_FMA4=1 -DHAVE_AMDLIBM=1")
 set(GNU_FLAGS "-malign-double -fomit-frame-pointer -ffast-math -fopenmp -O3 -Drestrict=__restrict__ -finline-limit=1000 -fstrict-aliasing -funroll-all-loops -Wno-deprecated ")
@@ -29,9 +37,9 @@ set(CMAKE_SHARED_LINKER_FLAGS "")
 
 FOREACH(type SHARED_LIBRARY SHARED_MODULE EXE)
   SET(CMAKE_${type}_LINK_STATIC_C_FLAGS "-Wl,-Bstatic")
-  SET(CMAKE_${type}_LINK_DYNAMIC_C_FLAGS "")
+  SET(CMAKE_${type}_LINK_DYNAMIC_C_FLAGS "-static")
   SET(CMAKE_${type}_LINK_STATIC_CXX_FLAGS "-Wl,-Bstatic")
-  SET(CMAKE_${type}_LINK_DYNAMIC_CXX_FLAGS "")
+  SET(CMAKE_${type}_LINK_DYNAMIC_CXX_FLAGS "-static")
 ENDFOREACH(type)
 
 set(CMAKE_FIND_ROOT_PATH
