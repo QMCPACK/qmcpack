@@ -41,7 +41,7 @@ set(CMAKE_SHARED_LINKER_FLAGS "")
 
 set(CMAKE_FIND_ROOT_PATH
   $ENV{HDF5_DIR}
-  $ENV{CRAY_FFTW_DIR}/interlagos
+  $ENV{FFTW_DIR}/..
   $ENV{BOOST_DIR}
   /sw/xk7/libxml2
 )
