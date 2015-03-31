@@ -204,39 +204,43 @@ class WavefunctionAnalyzer(PropertyAnalyzer):
             rcut_cell = 10
         #end if
 
-        J1,J2,J3 = self.info.wfn_xml.get(['J1','J2','J3'])
-        if J1!=None:
-            jname = 'J1'
-            func = J1.function.lower()
-            if func=='bspline':
-                for jn,corr in J1.correlations.iteritems():
-                    if 'rcut' in corr:
-                        rcut = corr.rcut
-                    else:
-                        rcut = rcut_cell
-                    #end if
-                    coeff = corr.coefficients.coeff
-                    jastrows[jname][jn] = Jastrow1B(func,coeff,rcut)
-                #end for
+        try:
+            J1,J2,J3 = self.info.wfn_xml.get(['J1','J2','J3'])
+            if J1!=None:
+                jname = 'J1'
+                func = J1.function.lower()
+                if func=='bspline':
+                    for jn,corr in J1.correlations.iteritems():
+                        if 'rcut' in corr:
+                            rcut = corr.rcut
+                        else:
+                            rcut = rcut_cell
+                        #end if
+                        coeff = corr.coefficients.coeff
+                        jastrows[jname][jn] = Jastrow1B(func,coeff,rcut)
+                    #end for
+                #end if
             #end if
-        #end if
-        if J2!=None:
-            jname = 'J2'
-            func = J2.function.lower()
-            if func=='bspline':
-                for jn,corr in J2.correlations.iteritems():
-                    if 'rcut' in corr:
-                        rcut = corr.rcut
-                    else:
-                        rcut = rcut_cell
-                    #end if
-                    s1 = corr.speciesa
-                    s2 = corr.speciesb
-                    coeff = corr.coefficients.coeff
-                    jastrows[jname][jn] = Jastrow2B(func,coeff,s1,s2,rcut)
-                #end for
+            if J2!=None:
+                jname = 'J2'
+                func = J2.function.lower()
+                if func=='bspline':
+                    for jn,corr in J2.correlations.iteritems():
+                        if 'rcut' in corr:
+                            rcut = corr.rcut
+                        else:
+                            rcut = rcut_cell
+                        #end if
+                        s1 = corr.speciesa
+                        s2 = corr.speciesb
+                        coeff = corr.coefficients.coeff
+                        jastrows[jname][jn] = Jastrow2B(func,coeff,s1,s2,rcut)
+                    #end for
+                #end if
             #end if
-        #end if
+        except:
+            self.warn('Jastrow read failed, some data will not be available')
+        #end try
         self._transfer_from(jastrows)
     #end def analyze_local
 

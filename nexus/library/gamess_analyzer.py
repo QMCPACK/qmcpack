@@ -7,9 +7,17 @@ import os
 from numpy import array,ndarray,abs
 from generic import obj
 from developer import DevBase
+from fileio import TextFile
 from debug import *
 from simulation import SimulationAnalyzer,Simulation
 from gamess_input import GamessInput
+
+
+def assign_value(host,dest,file,string):
+    if file.seek(string)!=-1:
+        host[dest] = float(file.readtokens()[-1])
+    #end if
+#end def assign_value
 
 
 class GamessAnalyzer(SimulationAnalyzer):
@@ -60,88 +68,95 @@ class GamessAnalyzer(SimulationAnalyzer):
 
 
     def analyze(self):
-        info = self.info
-        if not info.initialized:
+        if not self.info.initialized:
             self.error('cannot perform analysis\nGamessAnalyzer has not been initialized')
         #end if
-        files = info.files
+        self.analyze_log()
+        self.analyze_punch()
+    #end def analyze
 
-        # read the log file
+
+    def get_output(self,filetag):
+        filename = self.info.files[filetag]
+        outfile = os.path.join(self.info.path,filename)
+        if os.path.exists(outfile):
+            filepath = outfile
+        elif os.path.exists(filename):
+            filepath = filename
+        elif self.info.exit:
+            self.error('output file does not exist at either of the locations below:\n  {0}\n  {1}'.format(outfile,filename))
+        else:
+            return None
+        #end if
         try:
-            output = self.get_output(files.output)
-            if output!=None:
-                sections = obj()
-                insection = False
-                sec = None
-                prev=''
-                lm2 = False
-                lm1 = False
-                for line in output.splitlines():
-                    if insection:
-                        sec.append(line)
-                    #end if
-                    ls = line.strip()
-                    chars = list(set(ls))
-                    lm0 = len(chars)==1 and chars[0]=='-'
-                    if lm0 and lm2:
-                        secname = ''
-                        tokens = prev.split()
+            return TextFile(filepath)
+        except:
+            return None
+        #end try
+    #end def get_output
+
+
+    def analyze_log(self):
+        # read the log file
+        log = self.get_output('output')
+        # try to get the energy components
+        energy = obj()
+        try:
+            if log!=None and log.seek('ENERGY COMPONENTS',0)!=-1:
+                for n in xrange(18):
+                    line = log.readline()
+                    if '=' in line and 'ENERGY' in line:
+                        nameline,value = line.split('=')
+                        tokens = nameline.lower().split()
+                        name = ''
                         for token in tokens:
-                            secname+=token+'_'
+                            if token!='energy':
+                                name += token.replace('-','_')+'_'
+                            #end if
                         #end for
-                        secname = secname.replace('-','_').lower().split(',')[0].split('=')[0].split('(')[0].rstrip('_').replace('2','two')
-                        insection = secname!=''
-                        if insection:
-                            sec = []
-                            sections[secname] = sec
-                        #end if
+                        name = name[:-1]
+                        value = float(value.strip())
+                        energy[name]=value
                     #end if
-                    lm2=lm1
-                    lm1=lm0
-                    prev = ls
                 #end for
-                #for secname in list(sections.keys()):
-                #    sec = ''
-                #    for line in sections[secname]:
-                #        sec+=line+'\n'
-                #    #end for
-                #    sections[secname]=sec
-                ##end for
-                if 'energy_components' in sections:
-                    energies = obj()
-                    for line in sections.energy_components:
-                        if '=' in line and 'ENERGY' in line:
-                            nameline,value = line.split('=')
-                            tokens = nameline.lower().split()
-                            name = ''
-                            for token in tokens:
-                                if token!='energy':
-                                    name += token.replace('-','_')+'_'
-                                #end if
-                            #end for
-                            name = name[:-1]
-                            value = float(value.strip())
-                            energies[name]=value
-                        #end if
-                    #end for
-                    self.energy_components = energies
-                #end if
             #end if
         except:
             if self.info.exit:
-                self.error('log file analysis failed')
+                self.error('log file analysis failed (energy components)')
             #end if
         #end try
+        if len(energy)>0:
+            self.energy = energy
+        #end if
+        # try to get the orbital count from the log file
+        counts = obj()
+        try:
+            if log.seek('TOTAL NUMBER OF MOS IN VARIATION SPACE',0)!=-1:
+                counts.mos = int(log.readtokens()[-1])
+            #end if
+        except:
+            if self.info.exit:
+                self.error('log file analysis failed (mo count)')
+            #end if
+        #end try
+        if len(counts)>0:
+            self.counts = counts
+        #end if
+    #end def analyze_log
 
+
+    def analyze_punch(self):
         # read the punch file
         try:
-            text = self.get_output(files.punch)
+            text = self.get_output('punch')
             if text!=None:
+                #text = text.read()
                 punch = obj(norbitals=0)
                 group_name = None
                 group_text = ''
                 new = False
-                for line in text.splitlines():
+                #for line in text.splitlines():
+                for line in text:
                     ls = line.strip()
                     if len(ls)>0 and ls[0]=='$':
                         if ls=='$END':
@@ -155,7 +170,7 @@ class GamessAnalyzer(SimulationAnalyzer):
                         #end if
                     #end if
                     if group_name!=None and not new:
-                        group_text += line+'\n'
+                        group_text += line#+'\n'
                     #end if
                     new = False
                 #end for
@@ -163,10 +178,30 @@ class GamessAnalyzer(SimulationAnalyzer):
                     self.punch=punch
                 #end if
                 if 'vec' in punch:
+                    # count the orbitals in vec
                     norbs = 0
+                    ind_counts = dict()
+                    nbasis = 0
                     for line in punch.vec.splitlines()[1:-1]:
-                        norbs = max(norbs,int(line[:2]))
+                        ind = int(line[:2])
+                        iln = int(line[2:5])
+                        nln = max(nbasis,iln)
+                        if ind not in ind_counts:
+                            ind_counts[ind] = 1
+                        else:
+                            ind_counts[ind] += 1
+                        #end if
                     #end for
+                    all_double = True
+                    norbs = 0
+                    for ind,cnt in ind_counts.iteritems():
+                        count = cnt/nln
+                        norbs+=count
+                        all_double = all_double and count%2==0
+                    #end for
+                    if all_double:
+                        norbs/=2
+                    #end if
                     punch.norbitals = norbs
                 #end if
             #end if
@@ -175,19 +210,5 @@ class GamessAnalyzer(SimulationAnalyzer):
                 self.error('punch file analysis failed')
             #end if
         #end try
-    #end def analyze
-
-
-    def get_output(self,filename):
-        outfile = os.path.join(self.info.path,filename)
-        if os.path.exists(outfile):
-            return open(outfile,'r').read()
-        elif os.path.exists(filename):
-            return open(filename,'r').read()
-        elif self.info.exit:
-            self.error('output file does not exist at either of the locations below:\n  {0}\n  {1}'.format(outfile,filename))
-        else:
-            return None
-        #end if
-    #end def get_output
+    #end def analyze_punch
 #end class GamessAnalyzer

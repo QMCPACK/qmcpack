@@ -54,7 +54,7 @@ class Gamess(Simulation):
     def check_result(self,result_name,sim):
         input = self.input 
         if result_name=='orbitals':
-            calculating_result = 'contrl' in input and 'scftyp' in input.contrl and input.contrl.scftyp.lower() in ('rhf','rohf','uhf','mcscf')
+            calculating_result = 'contrl' in input and 'scftyp' in input.contrl and input.contrl.scftyp.lower() in ('rhf','rohf','uhf','mcscf','none')
         else:
             calculating_result = False
         #end if
@@ -68,9 +68,13 @@ class Gamess(Simulation):
         analyzer = self.load_analyzer_image()
         if result_name=='orbitals':
             result.location  = os.path.join(self.locdir,self.outfile)
-            result.vec       = None
-            result.norbitals = 0
+            result.vec       = None # vec from punch
+            result.norbitals = 0    # orbital count in punch
+            result.mos       = 0    # orbital count (MO's) from log file
             result.scftyp    = input.contrl.scftyp.lower()
+            if 'counts' in analyzer and 'mos' in analyzer.counts:
+                result.mos = analyzer.counts.mos
+            #end if
             if 'punch' in analyzer and 'vec' in analyzer.punch:
                 result.norbitals = analyzer.punch.norbitals
                 result.vec       = analyzer.punch.vec

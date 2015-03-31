@@ -1,7 +1,3 @@
-##################################################################
-##  (c) Copyright 2015-  by Jaron T. Krogel                     ##
-##################################################################
-
 import os
 import types as pytypes
 import keyword
@@ -1364,12 +1360,21 @@ class Param(Names):
                 #end if
                 ndim = len(value.shape)
                 if ndim==1:
+                    line_len = 70
                     if tag!=None:
                         c+=pp
                     #end if
+                    line = ''
                     for v in value:
-                        c+=self.write_val(v)+' '
+                        line+=self.write_val(v)+' '
+                        if len(line)>line_len:
+                            c+=line+'\n'
+                            line = ''
+                        #end if
                     #end for
+                    if len(line)>0:
+                        c+=line
+                    #end if
                     c=c[:-1]+'\n'
                 elif ndim==2:
                     nrows,ncols = value.shape
@@ -1456,7 +1461,6 @@ class mcwalkerset(QIxml):
     attributes = ['fileroot','version','collected']
     write_types = obj(collected=yesno)
 #end class mcwalkerset
-
 
 class qmcsystem(QIxml):
     elements = ['simulationcell','particleset','wavefunction','hamiltonian']
@@ -1555,6 +1559,7 @@ class grid(QIxml):
 class atomicbasisset(QIxml):
     attributes = ['type','elementtype','expandylm','href','normalized','name','angular']
     elements   = ['grid','basisgroup']
+    identifier = 'elementtype'
     write_types= obj(expandylm=yesno,normalized=yesno)
 #end class atomicbasisset
 
@@ -1590,7 +1595,7 @@ class multideterminant(QIxml):
 
 class detlist(QIxml):
     attributes = ['size','type','nca','ncb','nea','neb','nstates','cutoff']
-    elements   = ['ci']
+    elements   = ['ci','csf']
 #end class detlist
 
 class ci(QIxml):
@@ -1599,6 +1604,17 @@ class ci(QIxml):
     attr_types = obj(alpha=str,beta=str)
     precision  = '16.12e'
 #end class ci
+
+class csf(QIxml):
+    attributes = ['id','exctlvl','coeff','qchem_coeff','occ']
+    elements   = ['det']
+    attr_types = obj(occ=str)
+#end class csf
+
+class det(QIxml):
+    attributes = ['id','coeff','alpha','beta']
+    attr_types = obj(alpha=str,beta=str)
+#end class det
 
 class jastrow1(QIxml):
     tag = 'jastrow'
@@ -1922,7 +1938,7 @@ classes = [   #standard classes
     reference_points,nearestneighbors,neighbor_trace,dm1b,
     coefficient,radfunc,spindensity,structurefactor,
     sposet,bspline_builder,composite_builder,heg_builder,include,
-    multideterminant,detlist,ci,mcwalkerset
+    multideterminant,detlist,ci,mcwalkerset,csf,det
     ]
 types = dict( #simple types and factories
     host           = param,
@@ -1956,7 +1972,10 @@ plurals = obj(
     sposets         = 'sposet',
     radfuncs        = 'radfunc',
     qmcsystems      = 'qmcsystem',
-    cis             = 'ci'
+    atomicbasissets = 'atomicbasisset',
+    cis             = 'ci',
+    csfs            = 'csf',
+    dets            = 'det',
     )
 plurals_inv = plurals.inverse()
 plural_names = set(plurals.keys())
@@ -1993,7 +2012,8 @@ Names.set_expanded_names(
     numerical        = 'Numerical',
     nearestneighbors = 'NearestNeighbors',
     cuspcorrection   = 'cuspCorrection',
-    cuspinfo         = 'cuspInfo'
+    cuspinfo         = 'cuspInfo',
+    exctlvl          = 'exctLvl',
    )
 for c in classes:
     c.init_class()
@@ -3498,7 +3518,18 @@ def generate_particlesets(electrons = 'e',
     net_charge = system.net_charge
     net_spin   = system.net_spin
 
-    structure.group_atoms()
+    # not ordered consistently
+    #structure.group_atoms()
+    #elem = structure.elem
+    #pos  = structure.pos
+    #
+    #elns = particles.get_electrons()
+    #ions = particles.get_ions()
+    #eup  = elns.up_electron
+    #edn  = elns.down_electron
+
+    # maintain consistent order
+    ion_species,ion_counts = structure.order_by_species()
     elem = structure.elem
     pos  = structure.pos
 
@@ -3523,7 +3554,8 @@ def generate_particlesets(electrons = 'e',
         #end if
         ips = particleset(name=iname)
         groups = []
-        for ion in ions:
+        for ion_spec in ion_species:
+            ion = ions[ion_spec]
             gpos = pos[elem==ion.name]
             g = group(
                 name         = ion.name,
@@ -4501,7 +4533,7 @@ def generate_basic_input(id             = 'qmc',
                          series         = 0,
                          purpose        = '',
                          seed           = None,
-                         bconds         = None,
+                         bconds         = 'ppp',
                          truncate       = False,
                          buffer         = None,
                          lr_dim_cutoff  = 15,
@@ -4546,9 +4578,6 @@ def generate_basic_input(id             = 'qmc',
     #end if
     if spin_polarized is None:
         spin_polarized = system.net_spin>0
-    #end if
-    if bconds is None:
-        bconds = 'ppp'
     #end if
 
     metadata = QmcpackInput.default_metadata.copy()

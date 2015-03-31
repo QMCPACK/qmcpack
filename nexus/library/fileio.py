@@ -4,11 +4,154 @@
 
 
 import os
+import mmap
 from numpy import array,zeros,ndarray,around,arange,dot
 from generic import obj
 from developer import DevBase
 from periodic_table import pt as ptable
 from debug import *
+
+
+class TextFile(DevBase):
+    # interface to mmap files
+    # see Python 2 documentation for mmap
+
+    def __init__(self,filepath=None):
+        self.mm = None
+        self.f  = None
+        if filepath!=None:
+            self.open(filepath)
+        #end if
+    #end def __init__
+
+    def open(self,filepath):
+        if not os.path.exists(filepath):
+            self.error('cannot open non-existent file: {0}'.format(filepath))
+        #end if
+        f = open(filepath,'r')
+        fno = f.fileno()
+        #fno = os.open(filepath,os.O_RDONLY)
+        self.f = f
+        self.mm = mmap.mmap(fno,0,prot=mmap.PROT_READ)
+    #end def open
+
+    def __iter__(self):
+        for line in self.f:
+            yield line
+        #end for
+    #end def __iter__
+
+    def lines(self):
+        return self.read().splitlines()
+    #end def lines
+
+    def tokens(self):
+        return self.read().split()
+    #end def tokens
+
+    def readtokens(self,s=None):
+        return self.readline(s).split()
+    #end def readtokens
+    
+
+    # extended mmap interface below
+    def close(self):
+        r = self.mm.close()
+        self.f.close()
+        return r
+    #end def close
+
+    def seek(self,pos,whence=0,start=None,end=None):
+        if isinstance(pos,str):
+            if whence!=2 and start is None:
+                if whence==0:
+                    start = 0
+                elif whence==1:
+                    start = self.mm.tell()
+                else:
+                    self.error('relative positioning must be either 0 (begin), 1 (current), or 2 (end)\nyou provided: {0}'.format(whence))
+                #end if
+            #end if
+            if whence!=2:
+                if end!=None:
+                    pos = self.mm.find(pos,start,end)
+                else:
+                    pos = self.mm.find(pos,start)
+                #end if
+            else:
+                if end!=None:
+                    pos = self.mm.rfind(pos,start,end)
+                else:
+                    pos = self.mm.rfind(pos,start)
+                #end if
+            #end if
+            if pos!=-1:
+                return self.mm.seek(pos,0)
+            else:
+                return None
+            #end if
+        else:
+            return self.mm.seek(pos,whence)
+        #end if
+    #end def seek
+
+    def readline(self,s=None):
+        if s!=None:
+            self.seek(s)
+        #end if
+        return self.mm.readline()
+    #end def readline
+
+    def read(self,num=None):
+        if num is None:
+            return self.mm[:]
+        else:
+            return self.mm.read(num)
+        #end if
+    #end def read
+
+
+    # unchanged mmap interface below
+    def find(self,*a,**kw):
+        return self.mm.find(*a,**kw)
+    #end def find
+
+    def flush(self,*a,**kw):
+        return self.mm(*a,**kw)
+    #end def flush
+
+    def move(self,dest,src,count):
+        return self.mm.move(dest,src,count)
+    #end def move
+
+    def read_byte(self):
+        return self.mm.read_byte()
+    #end def read_byte
+
+    def resize(self,newsize):
+        return self.mm.resize(newsize)
+    #end def resize
+
+    def rfind(self,*a,**kw):
+        return self.mm.rfind(*a,**kw)
+    #end def rfind
+
+    def size(self):
+        return self.mm.size()
+    #end def size
+
+    def tell(self):
+        return self.mm.tell()
+    #end def tell
+
+    def write(self,string):
+        return self.mm.write(string)
+    #end def write
+
+    def write_byte(self,byte):
+        return self.mm.write_byte(byte)
+    #end def write_byte
+#end class TextFile
 
 
 

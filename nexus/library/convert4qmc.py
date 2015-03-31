@@ -154,6 +154,14 @@ class Convert4qmc(Simulation):
             if result.scftyp=='mcscf':
                 self.input.gamess_ascii = orbpath
                 self.input.ci           = orbpath
+            elif result.scftyp=='none': # cisd, etc
+                self.input.gamess_ascii = orbpath
+                self.input.ci           = orbpath
+                if result.mos>0:
+                    self.input.read_initial_guess = result.mos
+                elif result.norbitals>0:
+                    self.input.read_initial_guess = result.norbitals
+                #end if
             else:
                 self.input.gamess_ascii = orbpath
             #end if
