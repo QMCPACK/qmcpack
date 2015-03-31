@@ -213,7 +213,8 @@ class Structure(Sobj):
                  center=None,kpoints=None,kweights=None,kgrid=None,kshift=None,
                  permute=None,units=None,tiling=None,rescale=True,dim=3,
                  magnetization=None,magnetic_order=None,magnetic_prim=True,
-                 operations=None,background_charge=0,frozen=None,bconds=None):
+                 operations=None,background_charge=0,frozen=None,bconds=None,
+                 posu=None):
         if center is None:
             if axes !=None:
                 center = array(axes).sum(0)/2
@@ -230,6 +231,9 @@ class Structure(Sobj):
         #end if
         if elem is None:
             elem = []
+        #end if
+        if posu!=None:
+            pos = posu
         #end if
         if pos is None:
             pos = empty((0,dim))
@@ -258,6 +262,9 @@ class Structure(Sobj):
             self.kaxes=array([])
         else:
             self.kaxes=2*pi*inv(self.axes).T
+        #end if
+        if posu!=None:
+            self.pos_to_cartesian()
         #end if
         if frozen!=None:
             self.frozen = array(frozen,dtype=bool)
@@ -3557,8 +3564,6 @@ class Crystal(Structure):
                  elem           = None, 
                  pos            = None):
 
-
-
         if lattice is None and cell is None and atoms is None and units is None:
             return
         #end if
@@ -3584,7 +3589,7 @@ class Crystal(Structure):
             kgrid          = kgrid         ,
             kshift         = kshift        ,
             permute        = permute       ,
-            operations     = operations
+            operations     = operations    ,
             )
         generation_info = gi.copy()
 
@@ -3841,14 +3846,6 @@ class Crystal(Structure):
         #end for
         pos = array(pos)
 
-        ao,eo,po = axes,elem,pos
-
-        #ncells = tiling.prod()
-        #if ncells>1:
-        #    elem = array(ncells*elem)
-        #    pos,axes = tile_points(pos,tiling,axes)
-        ##end if
-
         self.set(
             constants = array([a,b,c]),
             angles    = array([alpha,beta,gamma]),
@@ -3874,6 +3871,7 @@ class Crystal(Structure):
             permute        = permute,
             rescale        = False,
             operations     = operations)
+
     #end def __init__
 #end class Crystal
 
@@ -4033,7 +4031,8 @@ def generate_crystal_structure(lattice=None,cell=None,centering=None,
                                kpoints=None,kgrid=None,kshift=(0,0,0),permute=None,
                                structure=None,shape=None,element=None,scale=None, #legacy inputs
                                operations=None,
-                               struct_type=Crystal,elem=None,pos=None,frozen=None):    
+                               struct_type=Crystal,elem=None,pos=None,frozen=None,
+                               posu=None):    
 
     if structure!=None:
         lattice = structure
@@ -4050,7 +4049,7 @@ def generate_crystal_structure(lattice=None,cell=None,centering=None,
 
     #interface for total manual specification
     # this is only here because 'crystal' is default and must handle other cases
-    if elem!=None and pos!=None:  
+    if elem!=None and (pos!=None or posu!=None):  
         return Structure(
             axes           = axes,
             elem           = elem,
@@ -4066,7 +4065,8 @@ def generate_crystal_structure(lattice=None,cell=None,centering=None,
             kshift         = kshift,
             permute        = permute,
             rescale        = False,
-            operations     = operations)
+            operations     = operations,
+            posu           = posu)
     elif isinstance(structure,Structure):
         if kpoints!=None:
             structure.add_kpoints(kpoints,kweights)

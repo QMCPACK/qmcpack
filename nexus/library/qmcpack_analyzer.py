@@ -304,7 +304,8 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
             #end if
         elif self.info.type=='single':
             resdir,infile = os.path.split(request.source)
-            ifprefix = infile.replace('.xml','')
+            #ifprefix = infile.replace('.xml','')
+            ifprefix = infile.replace('.xml','.')
             ls = os.listdir(resdir)
             for filename in ls:
                 if filename.startswith(ifprefix) and filename.endswith('.qmc'):

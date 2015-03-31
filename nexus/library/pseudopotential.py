@@ -278,9 +278,9 @@ class Pseudopotential(DevBase):
 
 
 class SemilocalPP(Pseudopotential):
-    l_channels   = tuple('spdfg')
+    l_channels   = tuple('spdfgh')
     all_channels = ['loc']+list(l_channels)
-    channel_colors = obj(s='g',p='r',d='b',f='m',g='c')
+    channel_colors = obj(s='g',p='r',d='b',f='m',g='c',h='k')
 
     numeric        = False
     interpolatable = True

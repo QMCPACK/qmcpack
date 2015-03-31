@@ -665,9 +665,9 @@ class Kpoints(VFormattedFile):
     #    tetrahedra = optional list of tetra objects (volume, degeneracy, corners)
     #
     #  mode == line
-    #    coord    = cartesian/reciprocal
-    #    ninsert   = number of points inserted between each set of endpoints
-    #    endpoints = kpoint pairs forming line endpoints
+    #    coord      = cartesian/reciprocal
+    #    kinsert    = number of points inserted between each pair of endpoints
+    #    kendpoints = kpoint pairs forming line endpoints
     #
     #  mode == auto
     #    centering = auto/gamma/monkhorst-pack
@@ -728,13 +728,13 @@ class Kpoints(VFormattedFile):
                 #end if
             elif cselect=='l': # line mode (band structure)
                 self.mode    = 'line'
-                self.ninsert = iselect
+                self.kinsert = iselect
                 self.coord   = self.coord_options(lines[3].lower()[0])
                 endpoints = []
                 for line in lines[4:]:
                     endpoints.append(line.split())
                 #end for
-                self.endpoints = array(endpoints,dtype=float)
+                self.kendpoints = array(endpoints,dtype=float)
             else: # explicit kpoints
                 self.mode  = 'explicit'
                 self.coord = self.coord_options(cselect)
@@ -794,11 +794,11 @@ class Kpoints(VFormattedFile):
             #end for
             text+=' {0:18.14f} {1:18.14f} {2:18.14f}\n'.format(*self.kshift)
         elif self.mode=='line':
-            text+='kpoints along lines\n {0}\nline-mode\n'.format(self.ninsert)
+            text+='bandstructure\n {0}\nline-mode\n'.format(self.kinsert)
             text+='{0}\n'.format(self.coord)
-            npoints = len(self.endpoints)
+            npoints = len(self.kendpoints)
             for n in xrange(npoints):
-                text+=' {0:18.14f} {1:18.14f} {2:18.14f}\n'.format(*self.endpoints[n])
+                text+=' {0:18.14f} {1:18.14f} {2:18.14f}   1\n'.format(*self.kendpoints[n])
                 if n!=npoints-1 and n%2==1:
                     text+='\n'
                 #end if
@@ -1137,6 +1137,9 @@ class Potcar(VFormattedFile):
             pot = pots[i]
 
             n1 = pot.find('\n')
+
+            label = pot[0:n1].strip()
+
             n2 = pot.find('\n',n1+1)
             Zval = int(float(pot[n1:n2].strip()))
 
@@ -1145,10 +1148,21 @@ class Potcar(VFormattedFile):
             n2 = pot.find(':',n1+1)
             element = pot[n1:n2].strip()
 
-            pot_info.append(obj(Zval=Zval,element=element))
+            pot_info.append(obj(label=label,Zval=Zval,element=element))
         #end for
         return pot_info
     #end def pot_info
+
+    
+    def label_to_potcar_name(self,label):
+        func,elem = label.split()[0:2]
+        tag = ''
+        if '_' in elem:
+            elem,tag = elem.split('_',1)
+            tag = '_'+tag
+        #end if
+        return elem+'.'+func+tag+'.POTCAR'
+    #end def label_to_potcar_name
 
 
     def load(self):
@@ -1393,20 +1407,29 @@ def generate_vasp_input(**kwargs):
 
 
 generate_any_defaults = obj(
-    kcenter  = None,
-    kpoints  = None,
-    kweights = None,
-    kbasis   = None,
-    kgrid    = None,
-    kshift   = (0,0,0),
-    kcoord   = 'cartesian',
-    system   = None,
-    pseudos  = None,
-    neb      = None,
-    neb_args = obj()
+    kcenter    = None,
+    kpoints    = None,
+    kweights   = None,
+    kbasis     = None,
+    kgrid      = None,
+    kshift     = (0,0,0),
+    kcoord     = 'cartesian',
+    kendpoints = None,
+    kinsert    = 10,
+    system     = None,
+    pseudos    = None,
+    neb        = None,
+    neb_args   = obj()
     )
 
 def generate_any_vasp_input(**kwargs):
+    # handle 'system' name collision
+    system_str = None
+    if 'title' in kwargs:
+        system_str = kwargs['title']
+        del kwargs['title']
+    #end if
+
     # remove keywords associated with kpoints, poscar, and any other formatted files
     vf = obj()
     for name,default in generate_any_defaults.iteritems():
@@ -1452,7 +1475,7 @@ def generate_any_vasp_input(**kwargs):
     #end if
 
     # add kpoints information (override anything provided by system)
-    if gen_kpoints and (vf.kpoints!=None or vf.kweights!=None or vf.kbasis!=None or vf.kgrid!=None or vf.kcenter!=None):
+    if gen_kpoints and (vf.kpoints!=None or vf.kweights!=None or vf.kbasis!=None or vf.kgrid!=None or vf.kcenter!=None or vf.kendpoints!=None):
         if 'kpoints' in vi:
             kp = vi.kpoints
             kp.clear()
@@ -1474,6 +1497,11 @@ def generate_any_vasp_input(**kwargs):
             if vf.kshift!=None:
                 kp.kshift = vf.kshift
             #end if
+        elif vf.kendpoints!=None:
+            kp.mode       = 'line'
+            kp.coord      = vf.kcoord
+            kp.kinsert    = vf.kinsert
+            kp.kendpoints = vf.kendpoints
         else:
             VaspInput.class_error('could not set kpoints from user inputs','generate_vasp_input')
         #end if
@@ -1482,6 +1510,11 @@ def generate_any_vasp_input(**kwargs):
     # create many poscars if doing nudged elastic band
     if vf.neb!=None:
         vi.setup_neb(*vf.neb,**vf.neb_args)
+    #end if
+
+    # handle 'system' name collision
+    if system_str!=None:
+        vi.incar.system = system_str
     #end if
 
     return vi

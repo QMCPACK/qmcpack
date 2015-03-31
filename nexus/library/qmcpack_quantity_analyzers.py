@@ -1793,6 +1793,8 @@ class DensityAnalyzerBase(HDFAnalyzer):
         g = 1
         t = 1
 
+        print 'writing to ',self.info.source_path,prefix
+
         # mean
         f.add_density(cell,density,centered=c,add_ghost=g,transpose=t)
         f.write(os.path.join(self.info.source_path,prefix+'.xsf'))
