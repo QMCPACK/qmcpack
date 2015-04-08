@@ -63,6 +63,8 @@ public:
     b.resize(numElem,0.0);
     cnk.resize(numElem,KList.size());
     // Fill in cnk.
+    // app_log() << "Check OMP size : numElem, KList.size : " << numElem << " , " << KList.size() << endl;
+    #pragma omp parallel for shared(cnk)
     for (int n=0; n<numElem; n++)
     {
       for (int ki=0; ki<KList.size(); ki++)

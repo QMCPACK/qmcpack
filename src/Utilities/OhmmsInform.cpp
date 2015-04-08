@@ -126,7 +126,7 @@ void OhmmsInform::setStdError()
 void OhmmsInform::turnoff()
 {
   bgStream=myStream;
-  myStream = new ostringstream();
+  myStream = new ostream(0);
 }
 
 void OhmmsInform::reset()

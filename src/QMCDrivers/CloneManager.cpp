@@ -84,6 +84,7 @@ void CloneManager::makeClones(MCWalkerConfiguration& w,
   qmc_common.io_node=false;
 
   char pname[16];
+  #pragma omp parallel for shared(w,psi,ham)
   for(int ip=1; ip<NumThreads; ++ip)
   {
 #if defined(USE_PARTCILESET_CLONE)
