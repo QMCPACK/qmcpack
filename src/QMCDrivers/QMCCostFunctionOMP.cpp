@@ -464,10 +464,11 @@ void QMCCostFunctionOMP::resetPsi(bool final_reset)
       OptVariablesForPsi[i]=OptVariables[i];
   if (final_reset)
   {
-    for (int i=0; i<psiClones.size(); ++i)
-      psiClones[i]->stopOptimization();
     #pragma omp parallel
     {
+      #pragma omp for
+      for (int i=0; i<psiClones.size(); ++i)
+        psiClones[i]->stopOptimization();
       int ip = omp_get_thread_num();
       MCWalkerConfiguration& wRef(*wClones[ip]);
       MCWalkerConfiguration::iterator it(wRef.begin());
