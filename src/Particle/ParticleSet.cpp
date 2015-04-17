@@ -115,9 +115,11 @@ void ParticleSet::set_quantum_domain(quantum_domains qdomain)
 
 void ParticleSet::initParticleSet()
 {
-  ObjectTag = PtclObjectCounter;
-  #pragma omp atomic
-  PtclObjectCounter++;
+  #pragma omp critical (PtclObjectCounter)
+  {
+    ObjectTag = PtclObjectCounter;
+    PtclObjectCounter++;
+  }
 #if defined(QMC_COMPLEX)
   G.setTypeName(ParticleTags::gradtype_tag);
   L.setTypeName(ParticleTags::laptype_tag);

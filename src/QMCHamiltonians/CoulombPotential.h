@@ -42,7 +42,7 @@ struct CoulombPotential: public QMCHamiltonianBase
    *
    * if t==0, t=s and AA interaction is used.
    */
-  inline CoulombPotential(ParticleSet* s, ParticleSet* t, bool active)
+  inline CoulombPotential(ParticleSet* s, ParticleSet* t, bool active, bool copy=false)
     : Pa(s),Pb(t),is_active(active)
   {
     set_energy_domain(potential);
@@ -57,7 +57,7 @@ struct CoulombPotential: public QMCHamiltonianBase
       myTableIndex=s->addTable(*s);
     if(!is_active) //precompute the value
     {
-      s->DistTables[0]->evaluate(*s);
+      if(!copy) s->DistTables[0]->evaluate(*s);
       Value=evaluateAA(s->DistTables[0],s->Z.first_address());
     }
   }
@@ -317,7 +317,9 @@ struct CoulombPotential: public QMCHamiltonianBase
       if(is_active)
         return new CoulombPotential(&qp,0,true);
       else
-        return new CoulombPotential(Pa,0,false);
+        // Ye Luo April 16th, 2015
+        // avoid recomputing ion-ion DistanceTable when reusing ParticleSet 
+        return new CoulombPotential(Pa,0,false,true);
     }
   }
 };
