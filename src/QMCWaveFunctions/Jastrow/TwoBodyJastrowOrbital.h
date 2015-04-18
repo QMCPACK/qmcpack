@@ -75,6 +75,7 @@ public:
     PtclRef = &p;
     init(p);
     FirstTime = true;
+    OrbitalName = "TwoBodyJastrow";
   }
 
   ~TwoBodyJastrowOrbital() { }
@@ -704,7 +705,7 @@ public:
   OrbitalBasePtr makeClone(ParticleSet& tqp) const
   {
     //TwoBodyJastrowOrbital<FT>* j2copy=new TwoBodyJastrowOrbital<FT>(tqp,Write_Chiesa_Correction);
-    TwoBodyJastrowOrbital<FT>* j2copy=new TwoBodyJastrowOrbital<FT>(tqp,TaskID);
+    TwoBodyJastrowOrbital<FT>* j2copy=new TwoBodyJastrowOrbital<FT>(tqp,-1);
     if (dPsi)
       j2copy->dPsi = dPsi->makeClone(tqp);
     map<const FT*,FT*> fcmap;

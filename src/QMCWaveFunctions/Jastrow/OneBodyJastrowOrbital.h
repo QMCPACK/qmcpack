@@ -99,6 +99,7 @@ public:
     //allocate vector of proper size  and set them to 0
     Funique.resize(CenterRef.getSpeciesSet().getTotalNum(),0);
     Fs.resize(CenterRef.getTotalNum(),0);
+    OrbitalName = "OneBodyJastrow";
   }
 
   ~OneBodyJastrowOrbital() { }

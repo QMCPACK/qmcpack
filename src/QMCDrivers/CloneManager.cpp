@@ -80,10 +80,6 @@ void CloneManager::makeClones(MCWalkerConfiguration& w,
   OhmmsInfo::Log->turnoff();
   OhmmsInfo::Warn->turnoff();
 
-  bool io_node=qmc_common.io_node;
-  qmc_common.io_node=false;
-
-  char pname[16];
   #pragma omp parallel for shared(w,psi,ham)
   for(int ip=1; ip<NumThreads; ++ip)
   {
@@ -97,7 +93,6 @@ void CloneManager::makeClones(MCWalkerConfiguration& w,
   }
   OhmmsInfo::Log->reset();
   OhmmsInfo::Warn->reset();
-  qmc_common.io_node=io_node;
 }
 
 void CloneManager::makeClones(vector<MCWalkerConfiguration*>& wpool,
