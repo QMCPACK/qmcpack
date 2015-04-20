@@ -84,7 +84,13 @@ void DiracDeterminantBase::resize(int nel, int morb)
   LastIndex = FirstIndex + nel;
   NumPtcls=nel;
   NumOrbitals=norb;
+
   // For forces
+  /* Ye Luo, Apr 18th 2015
+   * To save the memory used by every walker, the resizing the following giant matrices are commented.
+   * When ZVZB forces and stresses are ready for deployment, R. Clay will take care of those matrices.
+   */
+  /*
   grad_source_psiM.resize(nel,norb);
   grad_lapl_source_psiM.resize(nel,norb);
   grad_grad_source_psiM.resize(nel,norb);
@@ -92,6 +98,7 @@ void DiracDeterminantBase::resize(int nel, int morb)
   grad_phi_Minv.resize(nel,norb);
   lapl_phi_Minv.resize(nel,norb);
   grad_phi_alpha_Minv.resize(nel,norb);
+  */
 }
 
 DiracDeterminantBase::RealType
