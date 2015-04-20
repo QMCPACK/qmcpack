@@ -49,7 +49,7 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
     TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool):
   QMCLinearOptimize(w,psi,h,hpool,ppool), Max_iterations(1), exp0(-16), nstabilizers(3),
   stabilizerScale(2.0), bigChange(50), w_beta(0.0),  MinMethod("quartic"), GEVtype("mixed"),
-  StabilizerMethod("best"), GEVSplit("no")
+  StabilizerMethod("best"), GEVSplit("no"), stepsize(0.25)
 {
   IsQMCDriver=false;
   //set the optimization flag
@@ -64,7 +64,6 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
   m_param.add(bigChange,"bigchange","double");
   m_param.add(MinMethod,"MinMethod","string");
   m_param.add(exp0,"exp0","double");
-  stepsize=0.25;
 //   stale parameters
 //   m_param.add(eigCG,"eigcg","int");
 //   m_param.add(TotalCGSteps,"cgsteps","int");
@@ -329,6 +328,8 @@ QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   oAttrib.add(useGPU,"gpu");
   oAttrib.add(vmcMove,"move");
   oAttrib.put(q);
+  m_param.put(q);
+
   xmlNodePtr qsave=q;
   xmlNodePtr cur=qsave->children;
   int pid=OHMMS::Controller->rank();

@@ -203,6 +203,20 @@ struct CrystalLattice
 #endif
   }
 
+  template<class T1>
+  inline SingleParticlePos_t toUnit_floor(const TinyVector<T1,D> &r) const
+  {
+    SingleParticlePos_t val_dot;
+#ifdef OHMMS_LATTICEOPERATORS_H
+    val_dot = DotProduct<TinyVector<T1,D>,Tensor<T,D>,ORTHO>::apply(r,G);
+#else
+    val_dot = dot(r,G);
+#endif
+    for (int i=0; i<D; i++)
+      val_dot[i] -= std::floor (val_dot[i]);
+    return val_dot;
+  }
+
   /** Convert a unit vector to a cartesian vector.
    * Boundary conditions are not applied.
    */
