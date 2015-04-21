@@ -301,6 +301,7 @@ struct SplineC2RPackedAdoptor: public SplineAdoptorBase<ST,D>
   template<typename GT, typename BCT>
   void create_spline(GT& xyz_g, BCT& xyz_bc)
   {
+    resize_kk();
     MultiSpline=einspline::create(MultiSpline,xyz_g,xyz_bc,myV.size());
     for(int i=0; i<D; ++i)
     {
@@ -322,14 +323,14 @@ struct SplineC2RPackedAdoptor: public SplineAdoptorBase<ST,D>
 
   void set_spline(ST* restrict psi_r, ST* restrict psi_i, int twist, int ispline, int level)
   {
-    if(mKK.empty()) resize_kk();
+    //if(mKK.empty()) resize_kk();
     einspline::set(MultiSpline, 2*ispline, psi_r);
     einspline::set(MultiSpline, 2*ispline+1, psi_i);
   }
 
   inline void set_spline(SingleSplineType* spline_r, SingleSplineType* spline_i, int twist, int ispline, int level)
   {
-    if(mKK.empty()) resize_kk();
+    //if(mKK.empty()) resize_kk();
     einspline::set(MultiSpline, 2*ispline,spline_r, BaseOffset, BaseN);
     einspline::set(MultiSpline, 2*ispline+1,spline_i, BaseOffset, BaseN);
   }
@@ -395,8 +396,8 @@ struct SplineC2RPackedAdoptor: public SplineAdoptorBase<ST,D>
       myG[j] = dot(PrimLattice.G, myG[j]);
     for (int j=0; j<2*N; j++)
       myL[j] = trace(myH[j],GGt);
-    const ST zero=0.0;
-    const ST two=2.0;
+    const ST zero(0);
+    const ST two(2);
     for(int j=0; j<N; ++j)
       KdotR[j]=-dot(r,kPoints[j]);
     eval_e2iphi(N,KdotR.data(),CosV.data(),SinV.data());
