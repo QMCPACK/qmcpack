@@ -7,6 +7,7 @@
 #include <vector>
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsData/OhmmsElementBase.h"
+#include "OhmmsPETE/OhmmsMatrix.h"
 
 class GamesAsciiParser: public QMCGaussianParserBase,
   public OhmmsAsciiParser
@@ -33,6 +34,8 @@ public:
   void getGaussianCenters(std::istream& is);
 
   void getMO(std::istream& is);
+
+  void getMO_single_set(std::istream& is, Matrix<double> &CartMat, std::vector<value_type>& EigVal_alpha);
 
   void getCI(std::istream& is);
 

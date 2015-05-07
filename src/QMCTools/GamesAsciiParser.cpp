@@ -1,5 +1,4 @@
 #include "QMCTools/GamesAsciiParser.h"
-#include "OhmmsPETE/OhmmsMatrix.h"
 #include <fstream>
 #include <iterator>
 #include <algorithm>
@@ -31,6 +30,7 @@ GamesAsciiParser::GamesAsciiParser(int argc, char** argv):
   BohrUnit=true;
   MOtype="Canonical";
   angular_type="cartesian";
+  SpinRestricted=true;
   readtype=0;
   NFZC=0;
 }
@@ -52,6 +52,15 @@ void GamesAsciiParser::parse(const std::string& fname)
   parsewords(aline.c_str(),currentWords);
   NumberOfAtoms = atoi(currentWords[4].c_str());
   cout<<"NUMBER OF ATOMS: " <<NumberOfAtoms <<endl;
+  if(lookFor(fin,"SCFTYP=UHF",aline))
+  {
+    SpinRestricted=false;
+    cout<<"Spin Unrestricted MOs" <<endl;
+  }
+  else
+  {
+    cout<<"Spin Restricted MOs" <<endl;
+  }
   if(lookFor(fin,"TOTAL NUMBER OF MOS IN VARIATION SPACE=",aline))
   {
     parsewords(aline.c_str(),currentWords);
@@ -714,9 +723,6 @@ void GamesAsciiParser::getMO(std::istream& is)
   getwords(currentWords,is);  // empty line
   vector<double> dummy(50);
   Matrix<double> CartMat(numMO,SizeOfBasisSet);
-  int nq = numMO/5;
-  int rem = numMO%5;
-  int cnt=0;
   streampos pivot;
   pivot= is.tellg();
   std::vector<std::string> CartLabels(SizeOfBasisSet);
@@ -740,18 +746,45 @@ void GamesAsciiParser::getMO(std::istream& is)
     }
 //cout<<"label: " <<k <<"  " <<CartLabels[k] <<endl; cout.flush();
   }
+
   is.seekg(pivot);
+  getMO_single_set(is, CartMat, EigVal_alpha);
+  int cnt=0;
+  for(int i=0; i<numMO; i++)
+    for(int k=0; k<SizeOfBasisSet; k++)
+      EigVec[cnt++] = CartMat[i][k];
+
+// beta states for now
+  if(!SpinRestricted)
+  {
+    search(is,"   EIGENVECTORS");
+    getwords(currentWords,is);  // ----------------------
+    getwords(currentWords,is);  // empty line
+    getMO_single_set(is, CartMat, EigVal_beta);
+  }
+    
+  for(int i=0; i<numMO; i++)
+    for(int k=0; k<SizeOfBasisSet; k++)
+      EigVec[cnt++] = CartMat[i][k];
+  cout<<"Finished reading MO." <<endl;
+}
+
+void GamesAsciiParser::getMO_single_set(std::istream& is, Matrix<double> &CartMat, std::vector<value_type>& EigVal)
+{
+  int nq = numMO/5;
+  int rem = numMO%5;
+  int cnt=0;
   for(int i=0; i<nq; i++)
   {
     getwords(currentWords,is);
     if(readtype==2)
       getwords(currentWords,is);
     getwords(currentWords,is);
-    EigVal_alpha[cnt] = atof(currentWords[0].c_str()) ;
-    EigVal_alpha[cnt+1] = atof(currentWords[1].c_str()) ;
-    EigVal_alpha[cnt+2] = atof(currentWords[2].c_str()) ;
-    EigVal_alpha[cnt+3] = atof(currentWords[3].c_str()) ;
-    EigVal_alpha[cnt+4] = atof(currentWords[4].c_str()) ;
+    EigVal[cnt] = atof(currentWords[0].c_str()) ;
+    EigVal[cnt+1] = atof(currentWords[1].c_str()) ;
+    EigVal[cnt+2] = atof(currentWords[2].c_str()) ;
+    EigVal[cnt+3] = atof(currentWords[3].c_str()) ;
+    EigVal[cnt+4] = atof(currentWords[4].c_str()) ;
     getwords(currentWords,is);
     for(int k=0; k<SizeOfBasisSet; k++)
     {
@@ -788,7 +821,7 @@ void GamesAsciiParser::getMO(std::istream& is)
     getwords(currentWords,is);
     for(int i=0; i<rem; i++)
     {
-      EigVal_alpha[cnt+i] = atof(currentWords[i].c_str()) ;
+      EigVal[cnt+i] = atof(currentWords[i].c_str()) ;
     }
     getwords(currentWords,is);
     for(int k=0; k<SizeOfBasisSet; k++)
@@ -813,15 +846,6 @@ void GamesAsciiParser::getMO(std::istream& is)
     getwords(currentWords,is);
   }
 //cout<<"done with rem block, writing eigV: " <<endl; cout.flush();
-  cout<<"Finished reading MO." <<endl;
-  cnt=0;
-  for(int i=0; i<numMO; i++)
-    for(int k=0; k<SizeOfBasisSet; k++)
-      EigVec[cnt++] = CartMat[i][k];
-// beta states for now
-  for(int i=0; i<numMO; i++)
-    for(int k=0; k<SizeOfBasisSet; k++)
-      EigVec[cnt++] = CartMat[i][k];
 }
 
 void Cartesian2Spherical(int n, double* Cart, double* Sphe)
