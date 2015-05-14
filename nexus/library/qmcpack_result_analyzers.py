@@ -52,6 +52,10 @@ class OptimizationAnalyzer(ResultAnalyzer):
             #end if
         #end if
 
+        if self.optimize=='lastcost':
+            self.optimize = ew,vw
+        #end if
+
     #end def __init__
 
 

@@ -1062,6 +1062,30 @@ class NullSimulationAnalyzer(SimulationAnalyzer):
 
 
 
+class GenericSimulation(Simulation):
+    preserve = set(list(Simulation.preserve)+['input_type','analyzer_type'])
+    def __init__(self,**kwargs):
+        self.input_type    = NullSimulationInput
+        self.analyzer_type = NullSimulationAnalyzer
+        if 'input_type' in kwargs:
+            self.input_type = kwargs['input_type']
+            del kwargs['input_type']
+        #end if
+        if 'analyzer_type' in kwargs:
+            self.input_type = kwargs['analyzer_type']
+            del kwargs['analyzer_type']
+        #end if
+        if 'input' in kwargs:
+            self.input_type = kwargs['input'].__class__
+        #end if
+        if 'analyzer' in kwargs:
+            self.input_type = kwargs['analyzer'].__class__
+        #end if
+        Simulation.__init__(self,**kwargs)
+    #end def __init__
+#end class GenericSimulation
+
+
 
 class SimulationInputTemplate(SimulationInput):
     name_chars = string.ascii_letters+string.digits+'_'
@@ -1371,5 +1395,13 @@ def input_template(*args,**kwargs):
 
 def multi_input_template(*args,**kwargs):
     return SimulationInputMultiTemplate(*args,**kwargs)
-#end def input_template
+#end def multi_input_template
 
+
+def generate_simulation(sim_type,*args,**kwargs):
+    if sim_type=='generic':
+        return GenericSimulation(*args,**kwargs)
+    else:
+        Simulation.class_error('sim_type {0} is unrecognized'.format(sim_type),'generate_simulation')
+    #end if
+#end def generate_simulation

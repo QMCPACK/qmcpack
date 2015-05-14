@@ -38,7 +38,7 @@ class Qmcpack(Simulation):
     #application   = 'qmcapp'
     application   = 'qmcapp_complex' # always use complex version until kpoint handling is fixed
     application_properties = set(['serial','omp','mpi'])
-    application_results    = set(['jastrow','cuspcorr'])
+    application_results    = set(['jastrow','cuspcorr','wavefunction'])
     preserve = Simulation.preserve | set(['should_twist_average'])
 
 
@@ -78,7 +78,7 @@ class Qmcpack(Simulation):
 
     def check_result(self,result_name,sim):
         calculating_result = False
-        if result_name=='jastrow':
+        if result_name=='jastrow' or result_name=='wavefunction':
             calctypes = self.input.get_output_info('calctypes')
             calculating_result = 'opt' in calctypes
         elif result_name=='cuspcorr':
@@ -93,7 +93,7 @@ class Qmcpack(Simulation):
     def get_result(self,result_name,sim):
         result = obj()
         analyzer = self.load_analyzer_image()
-        if result_name=='jastrow':
+        if result_name=='jastrow' or result_name=='wavefunction':
             if not 'results' in analyzer or not 'optimization' in analyzer.results:
                 self.error('analyzer did not compute results required to determine jastrow')
             #end if
@@ -320,6 +320,14 @@ class Qmcpack(Simulation):
             ds.sposets['spo-up'].cuspinfo = os.path.relpath(result.spo_up_cusps,self.locdir)
             ds.sposets['spo-dn'].cuspinfo = os.path.relpath(result.spo_dn_cusps,self.locdir)
 
+        elif result_name=='wavefunction':
+            if not isinstance(sim,Qmcpack):
+                self.error('incorporating wavefunction from '+sim.__class__.__name__+' has not been implemented')
+            #end if
+            print '        getting optimal wavefunction from: '+result.opt_file
+            opt = QmcpackInput(result.opt_file)
+            qs = input.get('qmcsystem')
+            qs.wavefunction = opt.qmcsystem.wavefunction.copy()
         else:
             self.error('ability to incorporate result '+result_name+' has not been implemented')
         #end if        

@@ -55,7 +55,8 @@ class QAobject(QAobj_base):
 
     _allowed_settings = set(['optimize'])
     _default_settings = obj(
-        optimize = 'variance'
+        #optimize = 'variance'
+        optimize = 'lastcost'
         )
     for var,val in _default_settings.iteritems():
         QAobj_base.__dict__[var] = val

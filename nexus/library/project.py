@@ -14,6 +14,7 @@ from machines import Job,Machine,Supercomputer,get_machine
 from structure import Structure,generate_structure,generate_cell,read_structure
 from physical_system import PhysicalSystem,generate_physical_system
 from pseudopotential import Pseudopotential,Pseudopotentials
+from simulation import generate_simulation,input_template,multi_input_template
 from bundle import bundle
 from opium       import Opium      , OpiumInput      , OpiumAnalyzer
 from sqd         import Sqd        , SqdInput        , SqdAnalyzer        , generate_sqd_input        , generate_sqd, hunds_rule_filling

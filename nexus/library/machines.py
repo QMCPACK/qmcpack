@@ -324,10 +324,12 @@ class Job(Pobj):
         self.set(
             name        = sim.identifier,
             simid       = sim.simid,
-            app_command = sim.app_command(),
             outfile     = sim.outfile,
             errfile     = sim.errfile
             )
+        if self.app_command is None:
+            self.app_command = sim.app_command()
+        #end if
         if self.app_props==None:
             self.app_props   = list(sim.app_props)
         #end if
