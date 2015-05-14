@@ -1064,6 +1064,7 @@ class NullSimulationAnalyzer(SimulationAnalyzer):
 
 class GenericSimulation(Simulation):
     preserve = set(list(Simulation.preserve)+['input_type','analyzer_type'])
+
     def __init__(self,**kwargs):
         self.input_type    = NullSimulationInput
         self.analyzer_type = NullSimulationAnalyzer
@@ -1083,6 +1084,14 @@ class GenericSimulation(Simulation):
         #end if
         Simulation.__init__(self,**kwargs)
     #end def __init__
+
+    def check_sim_status(self):
+        self.finished = True
+    #end def check_sim_status
+
+    def get_output_files(self):
+        return []
+    #end def get_output_files
 #end class GenericSimulation
 
 
