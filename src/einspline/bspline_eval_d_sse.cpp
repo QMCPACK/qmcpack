@@ -18,15 +18,16 @@
 //  Boston, MA  02110-1301  USA                                            //
 /////////////////////////////////////////////////////////////////////////////
 
-#ifndef BSPLINE_EVAL_SSE_D_H
-#define BSPLINE_EVAL_SSE_D_H
-
+#include <config.h>
 #include <xmmintrin.h>
 #include <emmintrin.h>
 #ifdef HAVE_SSE3
 #include <pmmintrin.h>
 #endif
 #include <math.h>
+#include "bspline_base.h"
+#include "bspline_structs.h"
+#include "bspline_eval_d.h"
 
 // extern __m128d
 //     A0_01,   A0_23,   A1_01,   A1_23,   A2_01,   A2_23,   A3_01,   A3_23,
@@ -82,7 +83,7 @@ do {                                                                  \
 /************************************************************/
 
 /* Value only */
-inline void
+void
 eval_UBspline_1d_d (UBspline_1d_d * restrict spline,
                     double x, double* restrict val)
 {
@@ -105,7 +106,7 @@ eval_UBspline_1d_d (UBspline_1d_d * restrict spline,
 }
 
 /* Value and first derivative */
-inline void
+void
 eval_UBspline_1d_d_vg (UBspline_1d_d * restrict spline, double x,
                        double* restrict val, double* restrict grad)
 {
@@ -133,7 +134,7 @@ eval_UBspline_1d_d_vg (UBspline_1d_d * restrict spline, double x,
 }
 
 /* Value, first derivative, and second derivative */
-inline void
+void
 eval_UBspline_1d_d_vgl (UBspline_1d_d * restrict spline, double x,
                         double* restrict val, double* restrict grad,
                         double* restrict lapl)
@@ -166,7 +167,7 @@ eval_UBspline_1d_d_vgl (UBspline_1d_d * restrict spline, double x,
            coefs[i+3]*(d2Ad[14]*tp[2] + d2Ad[15]*tp[3]));
 }
 
-inline void
+void
 eval_UBspline_1d_d_vgh (UBspline_1d_d * restrict spline, double x,
                         double* restrict val, double* restrict grad,
                         double* restrict hess)
@@ -179,7 +180,7 @@ eval_UBspline_1d_d_vgh (UBspline_1d_d * restrict spline, double x,
 /************************************************************/
 
 /* Value only */
-inline void
+void
 eval_UBspline_2d_d (UBspline_2d_d * restrict spline,
                     double x, double y, double* restrict val)
 {
@@ -233,7 +234,7 @@ eval_UBspline_2d_d (UBspline_2d_d * restrict spline,
 
 
 /* Value and gradient */
-inline void
+void
 eval_UBspline_2d_d_vg (UBspline_2d_d * restrict spline,
                        double x, double y,
                        double* restrict val, double* restrict grad)
@@ -302,7 +303,7 @@ eval_UBspline_2d_d_vg (UBspline_2d_d * restrict spline,
 }
 
 /* Value, gradient, and laplacian */
-inline void
+void
 eval_UBspline_2d_d_vgl (UBspline_2d_d * restrict spline,
                         double x, double y, double* restrict val,
                         double* restrict grad, double* restrict lapl)
@@ -386,7 +387,7 @@ eval_UBspline_2d_d_vgl (UBspline_2d_d * restrict spline,
 }
 
 /* Value, gradient, and Hessian */
-inline void
+void
 eval_UBspline_2d_d_vgh (UBspline_2d_d * restrict spline,
                         double x, double y, double* restrict val,
                         double* restrict grad, double* restrict hess)
@@ -484,7 +485,7 @@ eval_UBspline_2d_d_vgh (UBspline_2d_d * restrict spline,
 /************************************************************/
 
 /* Value only */
-inline void
+void
 eval_UBspline_3d_d (UBspline_3d_d * restrict spline,
                     double x, double y, double z,
                     double* restrict val)
@@ -639,7 +640,7 @@ eval_UBspline_3d_d (UBspline_3d_d * restrict spline,
 }
 
 /* Value and gradient */
-inline void
+void
 eval_UBspline_3d_d_vg (UBspline_3d_d * restrict spline,
                        double x, double y, double z,
                        double* restrict val, double* restrict grad)
@@ -832,7 +833,7 @@ eval_UBspline_3d_d_vg (UBspline_3d_d * restrict spline,
 
 
 /* Value, gradient, and laplacian */
-inline void
+void
 eval_UBspline_3d_d_vgl (UBspline_3d_d * restrict spline,
                         double x, double y, double z,
                         double* restrict val, double* restrict grad, double* restrict lapl)
@@ -1064,7 +1065,7 @@ eval_UBspline_3d_d_vgl (UBspline_3d_d * restrict spline,
 
 
 /* Value, gradient, and Hessian */
-inline void
+void
 eval_UBspline_3d_d_vgh (UBspline_3d_d * restrict spline,
                         double x, double y, double z,
                         double* restrict val, double* restrict grad,
@@ -1374,7 +1375,3 @@ eval_UBspline_3d_d_vgh (UBspline_3d_d * restrict spline,
 //   d2c01  = _mm_hadd_pd(tmp0, tmp1);
 //   d2c23  = _mm_hadd_pd(tmp2, tmp3);
 
-
-
-
-#endif

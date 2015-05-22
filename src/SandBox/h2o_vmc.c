@@ -20,8 +20,6 @@
 
 #include "einspline/multi_bspline.h"
 #include "einspline/multi_nubspline.h"
-#include "einspline/bspline.h"
-#include "einspline/nubspline.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>

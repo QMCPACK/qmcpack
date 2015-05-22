@@ -33,8 +33,7 @@ namespace qmcplusplus
 ////std::map<H5OrbSet,multi_UBspline_3d_d*,H5OrbSet> EinsplineSetBuilder::ExtendedMap_d;
 
 EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, xmlNodePtr cur)
-  : TargetPtcl(p),ParticleSets(psets), 
-  OrbitalSet(0),LastOrbitalSet(0), MixedSplineReader(0), XMLRoot(cur), Format(QMCPACK),
+  : TargetPtcl(p),ParticleSets(psets), MixedSplineReader(0), XMLRoot(cur), Format(QMCPACK),
   TileFactor(1,1,1), TwistNum(0), LastSpinSet(-1),
   NumOrbitalsRead(-1), NumMuffinTins(0), NumCoreStates(0),
   NumBands(0), NumElectrons(0), NumSpins(0), NumTwists(0),
@@ -209,8 +208,6 @@ EinsplineSetBuilder::BroadcastOrbitalInfo()
   if (TwistWeight.size() != NumTwists)
     TwistWeight.resize(NumTwists);
   bibuffer.add(&TwistWeight[0],&TwistWeight[0]+NumTwists);
-  bibuffer.add(HaveLocalizedOrbs);
-  //myComm->bcast(HaveLocalizedOrbs);
   bbuffer.add(MT_APW_radii.begin(), MT_APW_radii.end());
   bibuffer.add(MT_APW_lmax.begin(),  MT_APW_lmax.end());
   bibuffer.add(MT_APW_num_radial_points.begin(),
@@ -246,7 +243,6 @@ EinsplineSetBuilder::BroadcastOrbitalInfo()
     bbuffer.get(&TwistAngles[0][0],&TwistAngles[0][0]+OHMMS_DIM*NumTwists);
     bibuffer.get(&TwistSymmetry[0],&TwistSymmetry[0]+NumTwists);
     bibuffer.get(&TwistWeight[0],&TwistWeight[0]+NumTwists);
-    bibuffer.get(HaveLocalizedOrbs);
     bbuffer.get(MT_APW_radii.begin(), MT_APW_radii.end());
     bibuffer.get(MT_APW_lmax.begin(),  MT_APW_lmax.end());
     bibuffer.get(MT_APW_num_radial_points.begin(),
@@ -758,13 +754,13 @@ EinsplineSetBuilder::AnalyzeTwists()
 
 
 void
-EinsplineSetBuilder::OccupyBands(int spin, int sortBands)
+EinsplineSetBuilder::OccupyBands(int spin, int sortBands, int numOrbs)
 {
   update_token(__FILE__,__LINE__, "OccupyBands");
   if (myComm->rank() != 0) return;
   if (Format == ESHDF)
   {
-    OccupyBands_ESHDF (spin, sortBands);
+    OccupyBands_ESHDF (spin, sortBands, numOrbs);
     return;
   }
   string eigenstatesGroup;
@@ -839,15 +835,15 @@ EinsplineSetBuilder::OccupyBands(int spin, int sortBands)
     }
   }
   int orbIndex = 0;
-  int numOrbs = 0;
+  int numOrbs_counter = 0;
   NumValenceOrbs=0;
   NumCoreOrbs=0;
-  while (numOrbs < OrbitalSet->getOrbitalSetSize())
+  while (numOrbs_counter < numOrbs)
   {
     if (SortBands[orbIndex].MakeTwoCopies)
-      numOrbs += 2;
+      numOrbs_counter += 2;
     else
-      numOrbs++;
+      numOrbs_counter++;
     if (SortBands[orbIndex].IsCoreState)
       NumCoreOrbs++;
     else
@@ -883,22 +879,6 @@ EinsplineSetBuilder::OccupyBands(int spin, int sortBands)
 //       }
 //     }
 }
-
-void
-EinsplineSetBuilder::CopyBands(int numOrbs)
-{
-  if (dynamic_cast<EinsplineSetLocal*>(OrbitalSet))
-  {
-    EinsplineSetLocal *restrict locOrbitalSet =
-      dynamic_cast<EinsplineSetLocal*>(OrbitalSet);
-    EinsplineSetLocal *restrict lastOrbitalSet =
-      dynamic_cast<EinsplineSetLocal*>(LastOrbitalSet);
-    locOrbitalSet->Orbitals.resize(numOrbs);
-    for (int i=0; i<numOrbs; i++)
-      locOrbitalSet->Orbitals[i] = lastOrbitalSet->Orbitals[i];
-  }
-}
-
 
 }
 

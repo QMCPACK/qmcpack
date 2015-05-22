@@ -21,6 +21,7 @@
 namespace qmcplusplus
 {
 
+#ifdef QMC_CUDA
 void EinsplineSetBuilder::ReadBands_ESHDF(int spin, EinsplineSetExtended<complex<double > >* orbitalSet)
 {
   update_token(__FILE__,__LINE__,"ReadBands_ESHDF:complex");
@@ -276,7 +277,7 @@ void EinsplineSetBuilder::ReadBands_ESHDF(int spin, EinsplineSetExtended<complex
       myComm->bcast(du_lm_dr);
       myComm->bcast(k);
       double Z = (double)IonTypes(tin);
-      OrbitalSet->MuffinTins[tin].set_APW (ival, k, u_lm_r, du_lm_dr, Z);
+      orbitalSet->MuffinTins[tin].set_APW (ival, k, u_lm_r, du_lm_dr, Z);
     }
   }
   orbitalSet->AtomicOrbitals = AtomicOrbitals;
@@ -580,7 +581,7 @@ void EinsplineSetBuilder::ReadBands_ESHDF(int spin, EinsplineSetExtended<double>
       myComm->bcast(du_lm_dr);
       myComm->bcast(k);
       double Z = (double)IonTypes(tin);
-      OrbitalSet->MuffinTins[tin].set_APW (ival, k, u_lm_r, du_lm_dr, Z);
+      orbitalSet->MuffinTins[tin].set_APW (ival, k, u_lm_r, du_lm_dr, Z);
     }
   }
   //FIX HaveOrbDerivs after debugging
@@ -652,6 +653,7 @@ void EinsplineSetBuilder::ReadBands_ESHDF(int spin, EinsplineSetExtended<double>
     orbitalSet->AtomicOrbitals[i].registerTimers();
   //ExtendedMap_d[set] = orbitalSet->MultiSpline;
 }
+#endif
 
 bool EinsplineSetBuilder::ReadGvectors_ESHDF()
 {

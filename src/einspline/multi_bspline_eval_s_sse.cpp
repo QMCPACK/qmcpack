@@ -18,9 +18,6 @@
 //  Boston, MA  02110-1301  USA                                            //
 /////////////////////////////////////////////////////////////////////////////
 
-#ifndef MULTI_BSPLINE_EVAL_SSE_S_IMPL_H
-#define MULTI_BSPLINE_EVAL_SSE_S_IMPL_H
-
 #include <config.h>
 #include <xmmintrin.h>
 #include <emmintrin.h>
@@ -30,10 +27,14 @@
 #ifdef HAVE_SSE41
 #include <smmintrin.h>
 #endif
+#include <stdio.h>
 #include <math.h>
 #include "bspline_base.h"
 #include "multi_bspline_structs.h"
-#include <stdio.h>
+#include "multi_bspline_eval_s.h"
+
+using std::min;
+using std::max;
 
 extern __m128 *restrict A_s;
 extern const float* restrict   Af;
@@ -1789,4 +1790,3 @@ eval_multi_UBspline_3d_s_vghgh (const multi_UBspline_3d_s *spline,
     gradhess [27*n+21 ] = gradhess [27*n+19 ] = gradhess [27*n+15] = gradhess [27*n+11 ] = gradhess [27*n+7 ] = gradhess [27*n+5];
   }
 }
-#endif

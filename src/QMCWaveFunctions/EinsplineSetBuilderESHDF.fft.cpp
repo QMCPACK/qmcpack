@@ -298,12 +298,11 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
   {
     app_log() << "   Skip initialization of the density" << endl;
   }
-  HaveLocalizedOrbs = false;
   return true;
 }
 
 
-void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands)
+void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs)
 {
   update_token(__FILE__,__LINE__,"OccupyBands_ESHDF");
   if (myComm->rank() != 0)
@@ -368,7 +367,7 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands)
   }
 
   vector<int> gsOcc(maxOrbs);
-  int N_gs_orbs=OrbitalSet->getOrbitalSetSize();
+  int N_gs_orbs=numOrbs;
   int nocced(0), ntoshift(0);
   for (int ti=0; ti<SortBands.size(); ti++)
   {
@@ -574,15 +573,15 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands)
   //  SortBands[Added[sw]-1] = tempband;
   //}
   int orbIndex = 0;
-  int numOrbs = 0;
+  int numOrbs_counter = 0;
   NumValenceOrbs=0;
   NumCoreOrbs=0;
-  while (numOrbs < OrbitalSet->getOrbitalSetSize())
+  while (numOrbs_counter < numOrbs)
   {
     if (SortBands[orbIndex].MakeTwoCopies)
-      numOrbs += 2;
+      numOrbs_counter += 2;
     else
-      numOrbs++;
+      numOrbs_counter++;
     if (SortBands[orbIndex].IsCoreState)
       NumCoreOrbs++;
     else
@@ -596,6 +595,7 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands)
 }
 
 
+#ifdef QMC_CUDA
 /** TODO: FIXME RotateBands_ESHDF need psi_r */
 void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<complex<double > >* orbitalSet)
 {
@@ -948,6 +948,7 @@ void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<doub
       app_log()<<" No rotations defined"<<endl;
   }
 }
+#endif
 }
 
 /***************************************************************************

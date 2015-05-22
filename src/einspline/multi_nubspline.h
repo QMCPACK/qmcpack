@@ -24,10 +24,9 @@
 #include "bspline_base.h"
 #include "multi_nubspline_structs.h"
 
-// Currently, some of the single-precision routines use SSE2 instructions
-#include "multi_nubspline_eval_s.h"
-#include "multi_nubspline_eval_c.h"
-#include "multi_nubspline_eval_d.h"
+// #include "multi_nubspline_eval_s.h"
+// #include "multi_nubspline_eval_c.h"
+// #include "multi_nubspline_eval_d.h"
 #include "multi_nubspline_eval_z.h"
 
 #include "nubspline_create.h"

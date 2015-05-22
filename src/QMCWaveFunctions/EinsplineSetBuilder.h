@@ -18,8 +18,10 @@
 
 #include "QMCWaveFunctions/BasisSetBase.h"
 #include "QMCWaveFunctions/BandInfo.h"
+#include "QMCWaveFunctions/AtomicOrbital.h"
+#ifdef QMC_CUDA
 #include "QMCWaveFunctions/EinsplineSet.h"
-#include "QMCWaveFunctions/EinsplineSetLocal.h"
+#endif
 #include "Numerics/HDFNumericAttrib.h"
 #include <map>
 
@@ -133,10 +135,6 @@ public:
   //std::vector<BandInfo> SortBands;
   vector<std::vector<BandInfo>*> FullBands;
 
-  /// The actual orbital set we're building
-  EinsplineSet *OrbitalSet;
-  /// The last orbitalset 
-  EinsplineSet *LastOrbitalSet;
   /// reader to use BsplineReaderBase
   BsplineReaderBase *MixedSplineReader;
 
@@ -144,12 +142,6 @@ public:
   bool HaveOrbDerivs;
   ///root XML node with href, sort, tilematrix, twistnum, source, precision,truncate,version
   xmlNodePtr XMLRoot;
-
-  ///typedef to manage state ordering
-  typedef EinsplineOrb<complex<double>,OHMMS_DIM> OrbType;
-  /// The map key is (spin, twist, band, center)
-  //static std::map<TinyVector<int,4>,OrbType*,Int4less> OrbitalMap;
-  std::map<TinyVector<int,4>,OrbType*,Int4less> OrbitalMap;
 
   ////static std::map<H5OrbSet,multi_UBspline_3d_d*,H5OrbSet> ExtendedMap_d;
   ////static std::map<H5OrbSet,multi_UBspline_3d_z*,H5OrbSet> ExtendedMap_z;
@@ -185,7 +177,6 @@ public:
   TinyVector<int,3> Version;
   string parameterGroup, ionsGroup, eigenstatesGroup;
   vector<int> Occ;
-  bool HaveLocalizedOrbs;
   bool HasCoreOrbs;
   bool ReadOrbitalInfo ();
   bool ReadOrbitalInfo_ESHDF ();
@@ -212,7 +203,6 @@ public:
     oset->GGt=GGt;
     oset->setOrbitalSetSize (numOrbs);
     oset->BasisSetSize   = numOrbs;
-    TileIons();
   }
 
 
@@ -262,14 +252,15 @@ public:
   void AnalyzeTwists();
   void AnalyzeTwists2();
   void TileIons();
-  void OccupyBands(int spin, int sortBands);
-  void OccupyBands_ESHDF(int spin, int sortBands);
-  void ReadBands      (int spin, EinsplineSetLocal* orbitalSet);
-  void ReadBands_ESHDF(int spin, EinsplineSetLocal* orbitalSet);
+  void OccupyBands(int spin, int sortBands, int numOrbs);
+  void OccupyBands_ESHDF(int spin, int sortBands, int numOrbs);
+
+#ifdef QMC_CUDA
   void ReadBands      (int spin, EinsplineSetExtended<complex<double> >* orbitalSet);
   void ReadBands_ESHDF(int spin, EinsplineSetExtended<complex<double> >* orbitalSet);
   void ReadBands      (int spin, EinsplineSetExtended<        double  >* orbitalSet);
   void ReadBands_ESHDF(int spin, EinsplineSetExtended<        double  >* orbitalSet);
+#endif
 
   void CopyBands(int numOrbs);
 
@@ -307,8 +298,10 @@ public:
   bool makeRotations;
   std::vector<RealType> rotationMatrix;
   std::vector<int> rotatedOrbitals;
+#ifdef QMC_CUDA
   void RotateBands_ESHDF(int spin, EinsplineSetExtended<complex<double > >* orbitalSet);
   void RotateBands_ESHDF(int spin, EinsplineSetExtended<double>* orbitalSet);
+#endif
 
   /** broadcast SortBands
    * @param N number of state

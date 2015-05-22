@@ -171,33 +171,6 @@ EinsplineSetBuilder::ReadOrbitalInfo()
               TwistAngles[ti][0], TwistAngles[ti][1], TwistAngles[ti][2]);
     app_log() << buff;
   }
-  /////////////////////////////////////////////////////////
-  // Determine whether we need to use localized orbitals //
-  /////////////////////////////////////////////////////////
-  HaveLocalizedOrbs = false;
-  for (int ti=0; ti<NumTwists; ti++)
-  {
-    for (int bi=0; bi<NumBands; bi++)
-    {
-      double radius = 0.0;
-      ostringstream path;
-      if ((Version[0]==0 && Version[1]==11)
-          || NumTwists > 1)
-        path << eigenstatesGroup << "/twist_" << ti << "/band_"
-             << bi << "/radius";
-      else
-      {
-        if (NumBands > 1)
-          path << eigenstatesGroup << "/twist/band_" << bi << "/radius";
-        else
-          path << eigenstatesGroup << "/twist/band/radius";
-      }
-      cerr << "path = " << path.str() << endl;
-      HDFAttribIO<double>  h_radius(radius);
-      h_radius.read(H5FileID, path.str().c_str());
-      HaveLocalizedOrbs = HaveLocalizedOrbs || (radius > 0.0);
-    }
-  }
   //////////////////////////////////////////////////////////
   // If the density has not been set in TargetPtcl, and   //
   // the density is available, read it in and save it     //
@@ -287,6 +260,7 @@ EinsplineSetBuilder::MuffinTinPath(int ti, int bi, int tin)
   return groupPath.str();
 }
 
+#ifdef QMC_CUDA
 void
 EinsplineSetBuilder::ReadBands
 (int spin, EinsplineSetExtended<complex<double> >* orbitalSet)
@@ -464,7 +438,7 @@ EinsplineSetBuilder::ReadBands
       myComm->bcast (g);
       myComm->bcast (r);
       double Z = (double)IonTypes(atom);
-      OrbitalSet->MuffinTins[atom].addCore (l, m, r, g, k, Z);
+      orbitalSet->MuffinTins[atom].addCore (l, m, r, g, k, Z);
       icore++;
     }
     else
@@ -528,7 +502,7 @@ EinsplineSetBuilder::ReadBands
         myComm->bcast(du_lm_dr);
         myComm->bcast(k);
         double Z = (double)IonTypes(tin);
-        OrbitalSet->MuffinTins[tin].set_APW (ival, k, u_lm_r, du_lm_dr, Z);
+        orbitalSet->MuffinTins[tin].set_APW (ival, k, u_lm_r, du_lm_dr, Z);
       }
       ival++;
     } // valence state
@@ -536,92 +510,6 @@ EinsplineSetBuilder::ReadBands
   }
   //ExtendedMap_z[set] = orbitalSet->MultiSpline;
 }
-
-void
-EinsplineSetBuilder::ReadBands (int spin, EinsplineSetLocal* orbitalSet)
-{
-  update_token(__FILE__,__LINE__,"ReadBands:EinspineSetLocal");
-#if defined(__xlC__)
-  APP_ABORT("EinsplineSetBuilder::ReadBands EinsplineSetLocal cannot be used with IBM XL compilers");
-#else
-  vector<BandInfo>& SortBands(*FullBands[spin]);
-  string eigenstatesGroup;
-  if (Version[0]==0 && Version[1]== 11)
-    eigenstatesGroup = "/eigenstates_3";
-  else
-    if (Version[0]==0 && Version[1]==20)
-      eigenstatesGroup = "/eigenstates";
-  // Read in the occupied bands
-  orbitalSet->Orbitals.resize(orbitalSet->getOrbitalSetSize());
-  int iorb  = 0;
-  int iband = 0;
-  while (iorb < orbitalSet->getOrbitalSetSize())
-  {
-    int ti   = SortBands[iband].TwistIndex;
-    int bi   = SortBands[iband].BandIndex;
-    double e = SortBands[iband].Energy;
-    PosType twist, k;
-    twist = TwistAngles[ti];
-    Tensor<double,3> G = orbitalSet->PrimLattice.G;
-    k = orbitalSet->PrimLattice.k_cart(twist);
-    fprintf (stderr, "  ti=%3d  bi=%3d energy=%8.5f k=(%7.4f, %7.4f, %7.4f)\n",
-             ti, bi, e, k[0], k[1], k[2]);
-    EinsplineOrb<complex<double>,OHMMS_DIM> *orb;
-    // Check to see if we have already read this orbital, perhaps on
-    // another processor in this OpenMP node.
-    std::map<TinyVector<int,4>,OrbType*,Int4less>::iterator iter =
-      OrbitalMap.find(TinyVector<int,4>(spin,ti,bi,0));
-    if (iter != OrbitalMap.end())
-      orb = iter->second;
-    else
-      // The orbital has not yet been read, so read it now
-    {
-      orb = new EinsplineOrb<complex<double>,OHMMS_DIM>;
-      OrbitalMap[TinyVector<int,4>(spin, ti, bi, 0)] = orb;
-      orb->kVec = k;
-      orb->Lattice = SuperLattice;
-      ostringstream groupPath;
-      if ((Version[0]==0 && Version[1]==11) || NumTwists > 1)
-        groupPath << eigenstatesGroup << "/twist_"
-                  << ti << "/band_" << bi << "/";
-      else
-        if (NumBands > 1)
-          groupPath << eigenstatesGroup << "/twist/band_" << bi << "/";
-        else
-          groupPath << eigenstatesGroup << "/twist/band/";
-      orb->read(H5FileID, groupPath.str());
-    }
-    orbitalSet->Orbitals[iorb] = orb;
-    iorb++;
-    if (orb->uCenters.size() > 1)
-      app_log() << "Making " << orb->uCenters.size() << " copies of band "
-                << iband << endl;
-    // If the orbital has more than one center associated with it,
-    // make copies of the orbital, changing only the center
-    // associated with it.
-    for (int icopy=1; icopy<orb->uCenters.size(); icopy++)
-    {
-      iter = OrbitalMap.find(TinyVector<int,4>(spin,ti,bi,icopy));
-      EinsplineOrb<complex<double>,OHMMS_DIM> *orbCopy;
-      if (iter != OrbitalMap.end())
-        orbCopy = iter->second;
-      else
-      {
-        orbCopy = new EinsplineOrb<complex<double>,OHMMS_DIM>(*orb);
-        OrbitalMap[TinyVector<int,4>(spin, ti, bi, icopy)] = orbCopy;
-        orbCopy->uCenter = orbCopy->uCenters[icopy];
-        if (orb->Reflections.size() > icopy)
-          orbCopy->Reflection = orbCopy->Reflections[icopy];
-        orbCopy->Center  = orb->Lattice.toCart(orbCopy->uCenter);
-      }
-      orbitalSet->Orbitals[iorb] = orbCopy;
-      iorb++;
-    }
-    iband++;
-  }
-#endif
-}
-
 
 void
 EinsplineSetBuilder::ReadBands
@@ -837,7 +725,7 @@ EinsplineSetBuilder::ReadBands
       myComm->bcast (g);
       myComm->bcast (r);
       double Z = (double)IonTypes(atom);
-      OrbitalSet->MuffinTins[atom].addCore (l, m, r, g, k, Z);
+      orbitalSet->MuffinTins[atom].addCore (l, m, r, g, k, Z);
       icore++;
     }
     else
@@ -913,7 +801,7 @@ EinsplineSetBuilder::ReadBands
         myComm->bcast(du_lm_dr);
         myComm->bcast(k);
         double Z = (double)IonTypes(tin);
-        OrbitalSet->MuffinTins[tin].set_APW (ival, k, u_lm_r, du_lm_dr, Z);
+        orbitalSet->MuffinTins[tin].set_APW (ival, k, u_lm_r, du_lm_dr, Z);
       }
       ival++;
     } // valence state
@@ -921,7 +809,7 @@ EinsplineSetBuilder::ReadBands
   }
   //ExtendedMap_d[set] = orbitalSet->MultiSpline;
 }
-
+#endif
 
 }
 

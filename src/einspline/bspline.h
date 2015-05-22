@@ -30,28 +30,10 @@
 #include "bspline_structs.h"
 #include "multi_bspline_structs.h"
 
-// Currently, some of the single-precision routines use SSE2 instructions
-#ifdef HAVE_SSE2
-#include "bspline_eval_sse_s.h"
-#include "bspline_eval_sse_c.h"
-#include "bspline_eval_sse_d.h"
-#include "bspline_eval_sse_z.h"
-#elif defined HAVE_SSE
-#include "bspline_eval_sse_s.h"
-#include "bspline_eval_sse_c.h"
-#include "bspline_eval_std_d.h"
-#include "bspline_eval_std_z.h"
-#elif defined USE_ALTIVEC
-#include "bspline_eval_altivec_s.h"
-#include "bspline_eval_std_c.h"
-#include "bspline_eval_std_d.h"
-#include "bspline_eval_std_z.h"
-#else
-#include "bspline_eval_std_s.h"
-#include "bspline_eval_std_c.h"
-#include "bspline_eval_std_d.h"
-#include "bspline_eval_std_z.h"
-#endif
+// #include "bspline_eval_s.h"
+// #include "bspline_eval_c.h"
+#include "bspline_eval_d.h"
+// #include "bspline_eval_z.h"
 
 #include "bspline_create.h"
 #include "multi_bspline_create.h"
