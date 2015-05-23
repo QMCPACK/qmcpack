@@ -1,0 +1,46 @@
+\documentclass[11pt]{report}
+\usepackage{amsmath}
+\usepackage{makeidx}
+\usepackage{ifpdf}
+\usepackage{fancyhdr}
+%\usepackage{hyperref} %for urls
+\usepackage{url}
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+
+\begin{document}
+\input{title.tex}
+\newpage
+\tableofcontents
+\newpage
+
+\input{introduction}
+\input{installation}
+\input{running}
+
+\chapter{Specifying the system to be simulated}
+\input{simulationcell}
+\input{particleset}
+\chapter{Trial wavefunction specification}
+\input{spo}
+\input{jastrow}
+\input{multideterminants}
+\input{backflow}
+
+\input{hamiltonianobservable}
+
+\input{qmc_methods}
+\input{vmc}
+\input{opt}
+\input{dmc}
+\input{reptation}
+\input{analysis}
+
+\newpage
+\chapter{References}
+%\begingroup  % Avoid "References" section title
+%\renewcommand{\section}[2]{}%
+\bibliographystyle{ieeetr}
+\bibliography{qmc}
+%\endgroup
+
+\end{document}
