@@ -18,19 +18,18 @@
 //  Boston, MA  02110-1301  USA                                            //
 /////////////////////////////////////////////////////////////////////////////
 
-#ifndef NUBSPLINE_EVAL_STD_D_H
-#define NUBSPLINE_EVAL_STD_D_H
-
 #include <math.h>
 #include <stdio.h>
+#include "bspline_base.h"
 #include "nubspline_structs.h"
+#include "nubspline_eval_d.h"
 
 /************************************************************/
 /* 1D single-precision, real evaulation functions           */
 /************************************************************/
 
 /* Value only */
-inline void
+void
 eval_NUBspline_1d_d (NUBspline_1d_d * restrict spline,
                      double x, double* restrict val)
 {
@@ -42,7 +41,7 @@ eval_NUBspline_1d_d (NUBspline_1d_d * restrict spline,
 }
 
 /* Value and first derivative */
-inline void
+void
 eval_NUBspline_1d_d_vg (NUBspline_1d_d * restrict spline, double x,
                         double* restrict val, double* restrict grad)
 {
@@ -56,7 +55,7 @@ eval_NUBspline_1d_d_vg (NUBspline_1d_d * restrict spline, double x,
 }
 
 /* Value, first derivative, and second derivative */
-inline void
+void
 eval_NUBspline_1d_d_vgl (NUBspline_1d_d * restrict spline, double x,
                          double* restrict val, double* restrict grad,
                          double* restrict lapl)
@@ -72,7 +71,7 @@ eval_NUBspline_1d_d_vgl (NUBspline_1d_d * restrict spline, double x,
            coefs[i+2]*d2bfuncs[2] + coefs[i+3]*d2bfuncs[3]);
 }
 
-inline void
+void
 eval_NUBspline_1d_d_vgh (NUBspline_1d_d * restrict spline, double x,
                          double* restrict val, double* restrict grad,
                          double* restrict hess)
@@ -85,7 +84,7 @@ eval_NUBspline_1d_d_vgh (NUBspline_1d_d * restrict spline, double x,
 /************************************************************/
 
 /* Value only */
-inline void
+void
 eval_NUBspline_2d_d (NUBspline_2d_d * restrict spline,
                      double x, double y, double* restrict val)
 {
@@ -104,7 +103,7 @@ eval_NUBspline_2d_d (NUBspline_2d_d * restrict spline,
 
 
 /* Value and gradient */
-inline void
+void
 eval_NUBspline_2d_d_vg (NUBspline_2d_d * restrict spline,
                         double x, double y,
                         double* restrict val, double* restrict grad)
@@ -131,7 +130,7 @@ eval_NUBspline_2d_d_vg (NUBspline_2d_d * restrict spline,
 }
 
 /* Value, gradient, and laplacian */
-inline void
+void
 eval_NUBspline_2d_d_vgl (NUBspline_2d_d * restrict spline,
                          double x, double y, double* restrict val,
                          double* restrict grad, double* restrict lapl)
@@ -161,7 +160,7 @@ eval_NUBspline_2d_d_vgl (NUBspline_2d_d * restrict spline,
 }
 
 /* Value, gradient, and Hessian */
-inline void
+void
 eval_NUBspline_2d_d_vgh (NUBspline_2d_d * restrict spline,
                          double x, double y, double* restrict val,
                          double* restrict grad, double* restrict hess)
@@ -201,7 +200,7 @@ eval_NUBspline_2d_d_vgh (NUBspline_2d_d * restrict spline,
 /************************************************************/
 
 /* Value only */
-inline void
+void
 eval_NUBspline_3d_d (NUBspline_3d_d * restrict spline,
                      double x, double y, double z,
                      double* restrict val)
@@ -234,7 +233,7 @@ eval_NUBspline_3d_d (NUBspline_3d_d * restrict spline,
 }
 
 /* Value and gradient */
-inline void
+void
 eval_NUBspline_3d_d_vg (NUBspline_3d_d * restrict spline,
                         double x, double y, double z,
                         double* restrict val, double* restrict grad)
@@ -298,7 +297,7 @@ eval_NUBspline_3d_d_vg (NUBspline_3d_d * restrict spline,
 
 
 /* Value, gradient, and laplacian */
-inline void
+void
 eval_NUBspline_3d_d_vgl (NUBspline_3d_d * restrict spline,
                          double x, double y, double z,
                          double* restrict val, double* restrict grad, double* restrict lapl)
@@ -394,7 +393,7 @@ eval_NUBspline_3d_d_vgl (NUBspline_3d_d * restrict spline,
 
 
 /* Value, gradient, and Hessian */
-inline void
+void
 eval_NUBspline_3d_d_vgh (NUBspline_3d_d * restrict spline,
                          double x, double y, double z,
                          double* restrict val, double* restrict grad, double* restrict hess)
@@ -502,5 +501,3 @@ eval_NUBspline_3d_d_vgh (NUBspline_3d_d * restrict spline,
   hess[8] = (a[0]*bd2cP[0] + a[1]*bd2cP[1] + a[2]*bd2cP[2] + a[3]*bd2cP[3]);
 #undef P
 }
-
-#endif

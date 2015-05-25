@@ -18,7 +18,6 @@
 #define QMCPLUSPLUS_BSPLINE_TRAITS_H
 
 #include <complex>
-#include <einspline/bspline.h>
 #include <einspline/multi_bspline.h>
 namespace qmcplusplus
 {

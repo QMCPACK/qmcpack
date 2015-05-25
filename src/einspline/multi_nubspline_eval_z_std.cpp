@@ -18,13 +18,11 @@
 //  Boston, MA  02110-1301  USA                                            //
 /////////////////////////////////////////////////////////////////////////////
 
-#ifndef MULTI_BSPLINE_EVAL_STD_Z_IMPL_H
-#define MULTI_BSPLINE_EVAL_STD_Z_IMPL_H
-
 #include <stdio.h>
 #include <math.h>
 #include "bspline_base.h"
 #include "multi_nubspline_structs.h"
+#include "multi_nubspline_eval_z.h"
 
 /************************************************************/
 /* 1D double-precision, complex evaulation functions        */
@@ -1234,5 +1232,3 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 // //     hess[9*n+7] = hess[9*n+5];
 //   }
 // }
-
-#endif

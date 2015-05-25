@@ -2,7 +2,6 @@
 #define ATOMIC_ORBITAL_H
 
 #include <config/stdlib/math.h>
-#include <einspline/bspline.h>
 #include <einspline/multi_bspline.h>
 #include <QMCWaveFunctions/SPOSetBase.h>
 #include <Lattice/CrystalLattice.h>
