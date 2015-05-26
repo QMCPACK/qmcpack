@@ -20,6 +20,8 @@
 #include <OhmmsPETE/OhmmsVector.h>
 #include <OhmmsPETE/OhmmsArray.h>
 #include <mpi/collectives.h>
+#include <simd/simd.hpp>
+
 namespace qmcplusplus
 {
 
