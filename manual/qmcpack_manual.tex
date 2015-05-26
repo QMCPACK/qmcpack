@@ -1,4 +1,4 @@
-\documentclass[11pt]{report}
+\documentclass[11pt,usletter]{report}
 \usepackage{amsmath}
 \usepackage{makeidx}
 \usepackage{ifpdf}
@@ -9,12 +9,17 @@
 \lstloadlanguages{C++,XML}
 \newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
 
+\oddsidemargin 0cm
+\evensidemargin 0cm
+\textwidth 6.5in
+
 \begin{document}
 \lstset{basicstyle=\footnotesize,
 keywordstyle=\color{black}\bfseries,
 frame=single,
 breaklines=true,
-language=xml
+language=xml,
+escapeinside={<:}{:>}
 }
 
 \input{title.tex}
