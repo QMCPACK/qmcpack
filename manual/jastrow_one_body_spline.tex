@@ -1,0 +1,67 @@
+\subsection{One-body spline form}
+
+\textbf{The text below is an incomplete and hurriedly written example, to be replaced with a complete and accurate description!}
+
+The one-body spline Jastrow function is the most commonly used one-body Jastrow for solids. This form was first described and used in \cite{spline_jastrow}. 
+\begin{equation}
+J1=\sum_I^{ion0}\sum_i^e u_{ab}(|r_r-R_I|)
+\end{equation}
+where $u_{ab}$ is an interpolating spline between zero distance and $r_{cut}$. In 3D periodic systems the default cutoff distance is the Wigner Seitz cell radius. For other periodicities including isolated molecules the $r_{cut}$ must be specified. The gradient at zero distance is...  cusp can be set....  $r_i$ and $R_I$ are most commonly the electron and ion positions, but any particlesets that can 
+provide the needed centers can be used.
+
+The jastrow function is defined within a \texttt{wavefunction} element and must contain one of more \texttt{correlation} elements specifying additional parameters as well as the actual coefficients.
+
+\subsubsection{Jastrow required parameters}
+\begin{itemize}
+\item \texttt{type="One-Body" function="Bspline"} \\
+Specifies a one-body bspline jastrow.
+\item \texttt{name="J1"}\\
+Unique name for this Jastrow function, e.g. J1.
+\item \texttt{source}
+\item \ldots
+\end{itemize}
+\subsubsection{Jastrow optional parameters}
+\begin{itemize}
+\item \texttt{print}
+\item \ldots
+\end{itemize}
+\subsubsection{Correlation required parameters}
+\begin{itemize}
+\item \texttt{elementType="name"}\\
+...followed by a coefficients array...
+\item \texttt{size}
+\item \ldots
+\end{itemize}
+\subsubsection{Correlation optional parameters}
+\begin{itemize}
+\item \texttt{rcut}. The cutoff distance for the function in atomic units. For 3D fully periodic systems this parameter is optional and a default of the Wigner Seitz cell radius is used. Otherwise this parameter is required
+\item \texttt{spin}
+\item \texttt{cusp}
+\item \ldots
+\end{itemize}
+
+\subsubsection{Example use cases}
+Specify a spin-independent function with four parameters. Because rcut  is not specified, the default cutoff of the Wigner Seitz cell radius is used; this Jastrow must be used with a 3D periodic system such as a bulk solid. The source of the ionic positions is set "i".
+\begin{lstlisting}
+<jastrow name="J1" type="One-Body" function="Bspline" print="yes" source="i">
+ <correlation elementType="C" cusp="0.0" size="4">
+   <coefficients id="C" type="Array"> 0  0  0  0  </coefficients>
+ </correlation>
+</jastrow>
+\end{lstlisting}
+
+Specify a spin-dependent function with seven upspin and seven downspin parameters. The cutoff distance is set to 6 atomic units.
+\begin{lstlisting}[language=xml]
+<jastrow name="J1" type="One-Body" function="Bspline" source="ion0" spin="yes">
+  <correlation speciesA="C" speciesB="u" size="7" rcut="6">
+    <coefficients id="eCu" type="Array"> 
+    0.0 0.0 0.0 0.0 0.0 0.0 0.0
+    </coefficients>
+  </correlation>
+  <correlation speciesA="C" speciesB="d" size="7" rcut="6">
+    <coefficients id="eCd" type="Array"> 
+    0.0 0.0 0.0 0.0 0.0 0.0 0.0
+    </coefficients>
+  </correlation>
+</jastrow>
+\end{lstlisting}

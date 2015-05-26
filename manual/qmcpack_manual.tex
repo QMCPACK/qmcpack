@@ -3,11 +3,19 @@
 \usepackage{makeidx}
 \usepackage{ifpdf}
 \usepackage{fancyhdr}
-%\usepackage{hyperref} %for urls
-\usepackage{url}
+\usepackage{hyperref} %for urls
+%\usepackage{url}
+\usepackage{listings}
+\lstloadlanguages{C++,XML}
 \newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
 
 \begin{document}
+\lstset{basicstyle=\footnotesize,
+keywordstyle=\color{black}\bfseries,
+breaklines=true,
+language=xml
+}
+
 \input{title.tex}
 \newpage
 \tableofcontents
@@ -17,9 +25,12 @@
 \input{installation}
 \input{running}
 
+\input{units}
+
 \chapter{Specifying the system to be simulated}
 \input{simulationcell}
 \input{particleset}
+
 \chapter{Trial wavefunction specification}
 \input{spo}
 \input{jastrow}
@@ -28,12 +39,14 @@
 
 \input{hamiltonianobservable}
 
-\input{qmc_methods}
+\input{methods}
 \input{vmc}
 \input{opt}
 \input{dmc}
 \input{reptation}
+
 \input{analysis}
+
 \input{examples}
 
 \newpage
