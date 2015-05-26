@@ -26,28 +26,41 @@ message("Attempting to add tests for QMCAPP")
 
 set(QMCAPP_ERR "")
 if((NOT ${TEST_MAX_PROCS}) OR (${TEST_MAX_PROCS} STREQUAL ""))
-  set(QMCAPP_ERR "${QMCAPP_ERR}  TEST_MAX_PROCS not set: '${TEST_MAX_PROCS}'\n")
+    set(QMCAPP_ERR "${QMCAPP_ERR}  TEST_MAX_PROCS not set: '${TEST_MAX_PROCS}'\n")
 endif()
 
 
 if(NOT ${QMCAPP_ERR} STREQUAL "")
-  message("${QMCAPP_ERR}  skipping tests")
+    message("${QMCAPP_ERR}  skipping tests")
 else()
-  INCLUDE( "${qmcpack_SOURCE_DIR}/CMake/macros.cmake" )
-  IF ( NOT QMC_DATA ) 
-      MESSAGE( WARNING "QMC_DATA is not set, some tests will fail")
-  ENDIF()
-  
-  # Add a simple hello world test
-  ADD_QMC_TEST_1_2_4( HelloWorld )
-  
-  # Run the deterministic tests (sucess is running without errors)
-  COPY_DIRECTORY( "${QMC_DATA}/dft" "${CMAKE_CURRENT_BINARY_DIR}/dft" )
-  RUN_QMC_APP( deterministic-1-1 "${QMC_DATA}/deterministic" 1 1 qmc.in.xml )
-  RUN_QMC_APP( deterministic-4-1 "${QMC_DATA}/deterministic" 4 1 qmc.in.xml )
-  RUN_QMC_APP( deterministic-1-4 "${QMC_DATA}/deterministic" 1 4 qmc.in.xml )
-  
-  # Run the statistical tests
-  RUN_QMC_APP( statistical_vmc-1-4 "${QMC_DATA}/statistical_vmc" 4 1 qmc.in.xml )
-  RUN_QMC_APP( statistical_vmc-4-4 "${QMC_DATA}/statistical_vmc" 1 4 qmc.in.xml )
+    INCLUDE( "${qmcpack_SOURCE_DIR}/CMake/macros.cmake" )
+    IF ( NOT QMC_DATA ) 
+        MESSAGE( WARNING "QMC_DATA is not set, some tests will fail")
+    ENDIF()
+
+    # Add a simple hello world test
+    ADD_QMC_TEST_1_2_4( HelloWorld )
+
+    # Run the deterministic tests (sucess is running without errors)
+    COPY_DIRECTORY( "${QMC_DATA}/dft" "${CMAKE_CURRENT_BINARY_DIR}/dft" )
+    RUN_QMC_APP( deterministic-1-1 "${QMC_DATA}/deterministic" 1 1 qmc.in.xml )
+    RUN_QMC_APP( deterministic-4-1 "${QMC_DATA}/deterministic" 4 1 qmc.in.xml )
+    RUN_QMC_APP( deterministic-1-4 "${QMC_DATA}/deterministic" 1 4 qmc.in.xml )
+
+    # Run the statistical tests
+    RUN_QMC_APP( statistical_vmc-1-4 "${QMC_DATA}/statistical_vmc" 4 1 qmc.in.xml )
+    RUN_QMC_APP( statistical_vmc-4-4 "${QMC_DATA}/statistical_vmc" 1 4 qmc.in.xml )
+
+    # Add the example dmc test:
+    #   mpirun -np 16 qmcapp dmc.xml >& test.out
+    #   check_scalars.py  --ns 2  -p Li  -s '1 3' -e 10  --le '-7.478011 0.000035 -7.478059 0.000035'
+    RUN_QMC_APP( dmc-16 "${QMC_DATA}/dmc" 16 1 dmc.xml )
+    ADD_TEST( NAME dmc-16-check 
+        COMMAND check_scalars.py --ns 2 -p Li -s "1 3" -e 10 --le "-7.478011 0.000035 -7.478059 0.000035"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/dmc-16"
+    )
+    SET_PROPERTY( TEST dmc-16-check APPEND PROPERTY DEPENDS dmc-16 )
+
 endif()
+
+
