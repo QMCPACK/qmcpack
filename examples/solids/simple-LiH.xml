@@ -1,0 +1,111 @@
+<?xml version="1.0"?>
+<simulation xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.mcc.uiuc.edu/qmc/schema/molecu.xsd">
+  <project id="LiH" series="1">
+    <application name="qmcapp" role="molecu" class="serial" version="0.2">
+      Simple Example of solid LiH
+    </application>
+  </project>
+
+  <random seed="49154"/>
+  <qmcsystem>
+  <simulationcell>
+    <parameter name="lattice">
+        -3.55   0.00   3.55
+         0.00   3.55   3.55
+        -3.55   3.55   0.00
+      </parameter>
+      <parameter name="bconds">p p p</parameter>
+      <parameter name="LR_dim_cutoff">15</parameter>
+  </simulationcell>
+  </qmcsystem>
+  <particleset name="i" size="2">
+    <group name="Li">
+      <parameter name="charge">3.000000</parameter>
+      <parameter name="valence">3.000000</parameter>
+      <parameter name="atomicnumber">3.000000</parameter>
+    </group>
+    <group name="H">
+      <parameter name="charge">1.000000</parameter>
+      <parameter name="valence">1.000000</parameter>
+      <parameter name="atomicnumber">1.000000</parameter>
+    </group>
+    <attrib name="position" datatype="posArray" condition="1">
+    0.0   0.0   0.0
+    0.5   0.5   0.5
+    </attrib>
+    <attrib name="ionid" datatype="stringArray">
+       Li H
+    </attrib>
+  </particleset>
+  <particleset name="e" random="yes" randomsrc="i">
+    <group name="u" size="2">
+      <parameter name="charge">-1</parameter>
+    </group>
+    <group name="d" size="2">
+      <parameter name="charge">-1</parameter>
+    </group>
+  </particleset>
+  <wavefunction name="psi0" target="e">
+    <determinantset type="einspline" href="LiH.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="-1" twist="0.0 0.0 0.0" gpu="yes" meshfactor="1.0" source="i"  precision="single">
+      <slaterdeterminant>
+        <determinant id="updet" size="2" ref="updet">
+          <occupation mode="ground" spindataset="0">
+          </occupation>
+        </determinant>
+        <determinant id="downdet" size="2" ref="downdet">
+          <occupation mode="ground" spindataset="0">
+          </occupation>
+        </determinant>
+      </slaterdeterminant>
+    </determinantset>
+    <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">
+      <correlation speciesA="u" speciesB="u" size="8" rcut="2.0">
+        <coefficients id="uu" type="Array"> 0.2309049836 0.1850005701 0.1312646071 0.08898145999 0.05464141356 0.02995184802 0.01306231516 0.00515269778</coefficients>
+      </correlation>
+      <correlation speciesA="u" speciesB="d" size="8" rcut="2.0">
+        <coefficients id="ud" type="Array"> 0.4351561096 0.3247203462 0.2377951747 0.1683859417 0.1129144262 0.06948677091 0.0356789236 0.01593059439</coefficients>
+      </correlation>
+    </jastrow>
+    <jastrow name="J1" type="One-Body" function="Bspline" print="yes" source="i">
+      <correlation elementType="Li" cusp="0.0" size="8" rcut="2.0">
+        <coefficients id="Li" type="Array"> -0.2591950735 -0.2473108328 -0.2171293454 -0.1768923231 -0.1333262224 -0.09084400735 -0.05101387636 -0.02618850994</coefficients>
+      </correlation>
+      <correlation elementType="H" cusp="0.0" size="8" rcut="2.0">
+        <coefficients id="H" type="Array"> -0.03140498467 -0.03096099346 -0.02985062841 -0.02663538537 -0.02089837558 -0.01445900553 -0.00780163164 -0.003289258186</coefficients>
+      </correlation>
+    </jastrow>
+  </wavefunction>
+  <hamiltonian name="h0" type="generic" target="e">
+    <pairpot type="pseudo" name="PseudoPot" source="i" wavefunction="psi0" format="xml">
+      <pseudo elementType="Li" href="Li.xml"/>
+      <pseudo elementType="H" href="H.xml"/>
+    </pairpot>
+    <constant name="IonIon" type="coulomb" source="i" target="i"/>
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>
+  </hamiltonian>
+
+  <qmc method="vmc" move="pbyp" gpu="yes">
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="walkers">    1 </parameter>
+    <parameter name="samplesperthread">      64 </parameter>
+    <parameter name="stepsbetweensamples">    1 </parameter>
+    <parameter name="substeps">  5 </parameter>
+    <parameter name="warmupSteps">  100 </parameter>
+    <parameter name="blocks">  1 </parameter>
+    <parameter name="timestep">  1.0 </parameter>
+    <parameter name="usedrift">   no </parameter>
+  </qmc>
+  <qmc method="dmc" move="pbyp" checkpoint="-1" gpu="yes">
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="minimumtargetwalkers"> 128 </parameter>
+    <parameter name="reconfiguration">   no </parameter>
+    <parameter name="warmupSteps">  100 </parameter>
+    <parameter name="timestep">  0.005 </parameter>
+    <parameter name="steps">   10 </parameter>
+    <parameter name="blocks">  200 </parameter>
+    <parameter name="nonlocalmoves">  yes </parameter>
+  </qmc>
+
+
+
+</simulation>
