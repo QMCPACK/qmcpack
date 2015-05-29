@@ -1,0 +1,86 @@
+<?xml version="1.0"?>
+<simulation>
+  <project id="H2O" series="1">
+    <application name="qmcapp" role="molecu" class="serial" version="0.2">
+      Simple Example of moleculear H2O
+    </application>
+  </project>
+
+  <particleset name="e">
+    <group name="u" size="4">
+      <parameter name="charge">-1</parameter>
+      <attrib name="position" datatype="posArray">
+	2.9151687332e-01 -6.5123272502e-01 -1.2188463918e-01
+	5.8423636048e-01  4.2730406357e-01 -4.5964306231e-03
+	3.5228575807e-01 -3.5027014639e-01  5.2644808295e-01
+       -5.1686250912e-01 -1.6648002292e+00  6.5837023441e-01
+      </attrib>
+    </group>
+    <group name="d" size="4">
+      <parameter name="charge">-1</parameter>
+      <attrib name="position" datatype="posArray">
+	3.1443445436e-01  6.5068682609e-01 -4.0983449009e-02
+       -3.8686061749e-01 -9.3744432997e-02 -6.0456005388e-01
+	2.4978241724e-02 -3.2862514649e-02 -7.2266047173e-01
+       -4.0352404772e-01  1.1927734805e+00  5.5610824921e-01
+      </attrib>
+    </group>
+  </particleset>
+  <particleset name="ion0" size="3">
+    <group name="O">
+      <parameter name="charge">6</parameter>
+      <parameter name="valence">4</parameter>
+      <parameter name="atomicnumber">8</parameter>
+    </group>
+    <group name="H">
+      <parameter name="charge">1</parameter>
+      <parameter name="valence">1</parameter>
+      <parameter name="atomicnumber">1</parameter>
+    </group>
+    <attrib name="position" datatype="posArray">
+      0.0000000000e+00  0.0000000000e+00  0.0000000000e+00
+      0.0000000000e+00 -1.4308249289e+00  1.1078707576e+00
+      0.0000000000e+00  1.4308249289e+00  1.1078707576e+00
+    </attrib>
+    <attrib name="ionid" datatype="stringArray">
+      O H H 
+    </attrib>
+  </particleset>
+
+  <include href="H2O.HF.wfs.xml"/>
+
+  <!--  Hamiltonian -->
+  <hamiltonian name="h0" type="generic" target="e">
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e"/>
+    <pairpot name="ELEMENT-ECP" type="pseudo" source="ion0" target="e" format="xml" wavefunction="psi0" >
+       <pseudo elementType="O" format="xml" href="O.BFD.xml" />
+       <pseudo elementType="H" format="xml" href="H.BFD.xml" />
+    </pairpot>
+    <constant name="IonIon" type="coulomb" source="ion0" target="ion0"/>
+  </hamiltonian>
+
+ <init source="ion0" target="e"/>
+
+  <qmc method="vmc" move="pbyp" gpu="yes">
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="walkers">    1 </parameter>
+    <parameter name="samplesperthread">      64 </parameter>
+    <parameter name="stepsbetweensamples">    1 </parameter>
+    <parameter name="substeps">  5 </parameter>
+    <parameter name="warmupSteps">  100 </parameter>
+    <parameter name="blocks">  1 </parameter>
+    <parameter name="timestep">  0.3 </parameter>
+    <parameter name="usedrift">   no </parameter>
+  </qmc>
+  <qmc method="dmc" move="pbyp" checkpoint="-1" gpu="yes">
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="minimumtargetwalkers"> 128 </parameter>
+    <parameter name="reconfiguration">   no </parameter>
+    <parameter name="warmupSteps">  100 </parameter>
+    <parameter name="timestep">  0.005 </parameter>
+    <parameter name="steps">   10 </parameter>
+    <parameter name="blocks">  200 </parameter>
+    <parameter name="nonlocalmoves">  yes </parameter>
+  </qmc>
+
+</simulation>
