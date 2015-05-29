@@ -1,2 +1,114 @@
 \chapter{Hamiltonian and Observables}
 
+
+
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l l }
+\hline
+\multicolumn{6}{l}{\texttt{generic} element} \\
+\hline
+\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{parent1 parent2}}\\
+\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\texttt{child1 child2 child3 ...}}\\
+\multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
+   &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
+   &   \texttt{attr1}     &  text              &                  &                     &                       \\
+   &   \texttt{attr2}     &  integer           &                  &                     &                       \\
+   &   \texttt{attr3}     &  real              &                  &                     &                       \\
+   &   \texttt{attr4}     &  boolean           &                  &                     &                       \\
+   &   \texttt{attr4}     &  text array        &                  &                     &                       \\
+   &   \texttt{attr4}     &  integer array     &                  &                     &                       \\
+   &   \texttt{attr4}     &  real array        &                  &                     &                       \\
+   &   \texttt{attr4}     &  boolean array     &                  &                     &                       \\
+\multicolumn{2}{l}{parameters}  & \multicolumn{4}{l}{}\\
+   &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
+   &   \texttt{attr1}     &  text              &                  &                     &                       \\
+   &   \texttt{attr2}     &  integer           &                  &                     &                       \\
+   &   \texttt{attr3}     &  real              &                  &                     &                       \\
+   &   \texttt{attr4}     &  boolean           &                  &                     &                       \\
+   &   \texttt{attr4}     &  text array        &                  &                     &                       \\
+   &   \texttt{attr4}     &  integer array     &                  &                     &                       \\
+   &   \texttt{attr4}     &  real array        &                  &                     &                       \\
+   &   \texttt{attr4}     &  boolean array     &                  &                     &                       \\
+  \hline
+\end{tabularx}
+\end{center}
+\end{table}
+
+
+
+
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l l }
+\hline
+\multicolumn{6}{l}{\texttt{factory} element} \\
+\hline
+\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{parent1 parent2}}\\
+\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\texttt{child1 child2 child3 ...}}\\
+\multicolumn{2}{l}{type   selector:} & \multicolumn{4}{l}{\texttt{some} attribute}\\
+\multicolumn{2}{l}{type   options :} & \multicolumn{4}{l}{Selection1}\\
+\multicolumn{2}{l}{                } & \multicolumn{4}{l}{Selection2}\\
+\multicolumn{2}{l}{                } & \multicolumn{4}{l}{Selection3}\\
+\multicolumn{2}{l}{                } & \multicolumn{4}{l}{...}\\
+  \hline
+\end{tabularx}
+\end{center}
+\end{table}
+
+
+
+
+\subsection{Input Specification}
+
+
+%  Hamiltonian element read
+%    HamiltonianPool::put
+%      reads attributes: id name role target 
+%        id/name is passed to QMCHamiltonian
+%        role selects the primary hamiltonian
+%        target associates to quantum particleset
+%    HamiltonianFactory::build
+%      reads attributes: type source default
+
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l l }
+\hline
+\multicolumn{6}{l}{\texttt{hamiltonian} element} \\
+\hline
+\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{qmcsystem}}\\
+\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\texttt{pairpot estimator}}\\
+\multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
+   &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
+   &   \texttt{name/id}   &  text              & \textit{anything}& h0                  & A unique id for this Hamiltonian instance.                      \\
+   &   \texttt{type   }   &  text              &                  & generic             & \textit{No current function.}                      \\
+   &   \texttt{role   }   &  text              & primary/extra    & extra               & Designate as primary Hamiltonian or not.                      \\
+   &   \texttt{source }   &  text              & \texttt{particleset.name} & i          & Identify classical particleset.                      \\
+   &   \texttt{target }   &  text              & \texttt{particleset.name} & e          & Identify quantum particlset.                      \\
+   &   \texttt{default}   &  boolean           & yes/no           & yes                 & Include kinetic energy term implicitly.                      \\
+  \hline
+\end{tabularx}
+\end{center}
+\end{table}
+
+
+
+
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l l }
+\hline
+\multicolumn{6}{l}{\texttt{estimator} element} \\
+\hline
+\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{parent1 parent2}}\\
+\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\texttt{child1 child2 child3 ...}}\\
+\multicolumn{2}{l}{type   selector:} & \multicolumn{4}{l}{\texttt{type} attribute}\\
+\multicolumn{2}{l}{type   options :} & \multicolumn{4}{l}{}\\
+  \hline
+\end{tabularx}
+\end{center}
+\end{table}
+
+
+
