@@ -69,16 +69,22 @@
 
 
 % hamiltonian element
+%  dev notes
+%    Hamiltonian element read
+%      HamiltonianPool::put
+%        reads attributes: id name role target 
+%          id/name is passed to QMCHamiltonian
+%          role selects the primary hamiltonian
+%          target associates to quantum particleset
+%      HamiltonianFactory::build
+%        reads attributes: type source default
+%    HamiltonianFactory cloning may be flawed for non-electron systems
+%      see HamiltonianFactory::clone
+%        aCopy->renameProperty(``e'',qp->getName());
+%        aCopy->renameProperty(psiName,psi->getName());
+%      the renaming may not work if dynamic particleset.name!=''e''
 
-%  Hamiltonian element read
-%    HamiltonianPool::put
-%      reads attributes: id name role target 
-%        id/name is passed to QMCHamiltonian
-%        role selects the primary hamiltonian
-%        target associates to quantum particleset
-%    HamiltonianFactory::build
-%      reads attributes: type source default
-
+\FloatBarrier
 \begin{table}[h]
 \begin{center}
 \begin{tabularx}{\textwidth}{l l l l l l }
@@ -86,7 +92,7 @@
 \multicolumn{6}{l}{\texttt{hamiltonian} element} \\
 \hline
 \multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{qmcsystem}}\\
-\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\texttt{pairpot estimator constant}(deprecated)}\\
+\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\texttt{pairpot extpot estimator constant}(deprecated)}\\
 \multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
    &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
    &   \texttt{name/id}$^o$ &  text              & \textit{anything}& h0                  & A unique id for this Hamiltonian instance.                      \\
@@ -99,11 +105,33 @@
 \end{tabularx}
 \end{center}
 \end{table}
+\FloatBarrier
 
+% All-electron hamiltonian element
+\begin{lstlisting}[caption=All electron Hamiltonian XML element.]
+<hamiltonian target="e">
+  <pairpot name="ElecElec" type="coulomb" source="e" target="e"/>
+  <pairpot name="ElecIon"  type="coulomb" source="i" target="e"/>
+  <pairpot name="IonIon"   type="coulomb" source="i" target="i"/>
+</hamiltonian>
+\end{lstlisting}
+
+
+% Pseudopotential hamiltonian element
+\begin{lstlisting}[caption=Pseudopotential Hamiltonian XML element.]
+<hamiltonian target="e">
+  <pairpot name="ElecElec"  type="coulomb" source="e" target="e"/>
+  <pairpot name="PseudoPot" type="pseudo"  source="i" wavefunction="psi0" format="xml">
+    <pseudo elementType="Li" href="Li.xml"/>
+    <pseudo elementType="H" href="H.xml"/>
+  </pairpot>
+  <pairpot name="IonIon"    type="coulomb" source="i" target="i"/>
+</hamiltonian>
+\end{lstlisting}
 
 
 % pairpot element
-
+\FloatBarrier
 \begin{table}[h]
 \begin{center}
 \begin{tabularx}{\textwidth}{l l l l l l }
@@ -133,29 +161,26 @@
 \multicolumn{2}{l}{                } & \multicolumn{4}{l}{HFDHE2}\\
 \multicolumn{2}{l}{shared attributes:} & \multicolumn{4}{l}{}\\
    &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
-   &   \texttt{type}          &  text              &                  & 0                   &                       \\
-   &   \texttt{name}          &  text              &                  & any                 &                       \\
-   &   \texttt{source}        &  text              &                  &\texttt{hamiltonian.target}&                       \\
-   &   \texttt{target}        &  text              &                  &\texttt{hamiltonian.target}&                       \\
-   &   \texttt{units}         &  text              &                  & hartree             & \textit{No current function.}  \\
+   &   \texttt{type}$^r$      &  text              & \textit{See above} & 0                   & Select pairpot type.         \\
+   &   \texttt{name}$^r$      &  text              & \textit{anything}                 & any                 & Unique name for this pairpot.\\
+   &   \texttt{source}$^r$    &  text              & \texttt{particleset.name} &\texttt{hamiltonian.target}& Identify interacting particles.\\
+   &   \texttt{target}$^r$    &  text              & \texttt{particleset.name} &\texttt{hamiltonian.target}& Identify interacting particles.  \\
+   &   \texttt{units}$^o$     &  text              &                  & hartree             & \textit{No current function.}  \\
 \hline
 \end{tabularx}
 \end{center}
 \end{table}
+\FloatBarrier
 
-%Remarks
-%\begin{itemize}
-%
-%\end{itemize}
+Remarks
+\begin{itemize}
+  \item{If an interaction is between classical (e.g. ions) and quantum (e.g. electrons), \texttt{source}/\texttt{target} should be the name of the classical/quantum particleset.}
+  \item{Only \texttt{coulomb, pseudo, mpc} are described in detail below.  The older or less used types (\texttt{cpp, numerical, jellium, hardsphere, gaussian, huse, modpostel, oscillatory, skpot, vhxc, modInsKE, LJP\_smoothed, HeSAPT\_smoothed, HFDHE2\_Moroni1995, eHe, HFDHE2}) are not covered.}
+  \item{Available only if \texttt{QMC\_BUILD\_LEVEL>2} and \texttt{QMC\_CUDA} is not defined: \texttt{hardsphere, gaussian, huse, modpostel, oscillatory, skpot}.}
+  \item{Available only if \texttt{OHMMS\_DIM==3}: \texttt{mpc, vhxc, pseudo}.}
+  \item{Available only if \texttt{OHMMS\_DIM==3} and \texttt{QMC\_BUILD\_LEVEL>2} and \texttt{QMC\_CUDA} is not defined: \texttt{cpp, LJP\_smoothed, HeSAPT\_smoothed, HFDHE2\_Moroni1995, eHe, jellium, HFDHE2, modInsKE}.}
+\end{itemize}
 
-% always available
-%   coulomb numerical
-% available only if QMC_BUILD_LEVEL>2 and QMC_CUDA is not defined
-%   hardsphere, gaussian, huse, modpostel, oscillatory, skpot 
-% available only if OHMMS_DIM==3
-%   mpc, vhxc, pseudo
-% available only if OHMMS_DIM==3 and QMC_BUILD_LEVEL>2 and QMC_CUDA is not defined
-%   cpp, LJP_smoothed, HeSAPT_smoothed, HFDHE2_Moroni1995, eHe, jellium, HFDHE2, modInsKE
 
 % physical read by coulomb potentials
 % potential is only for pressure estimator
@@ -164,39 +189,171 @@
 
 % pairpot instances
 
+%   do coulomb, pseudo, mpc
 
+\FloatBarrier
 \begin{table}[h]
 \begin{center}
 \begin{tabularx}{\textwidth}{l l l l l l }
 \hline
-\multicolumn{6}{l}{\texttt{generic} element} \\
+\multicolumn{6}{l}{\texttt{pairpot type=coulomb} element} \\
 \hline
-\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{parent1 parent2}}\\
-\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\texttt{child1 child2 child3 ...}}\\
+\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{hamiltonian}}\\
+\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\textit{None}}\\
 \multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
    &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
-   &   \texttt{attr1}     &  text              &                  &                     &                       \\
-   &   \texttt{attr2}     &  integer           &                  &                     &                       \\
-   &   \texttt{attr3}     &  real              &                  &                     &                       \\
-   &   \texttt{attr4}     &  boolean           &                  &                     &                       \\
-   &   \texttt{attr4}     &  text array        &                  &                     &                       \\
-   &   \texttt{attr4}     &  integer array     &                  &                     &                       \\
-   &   \texttt{attr4}     &  real array        &                  &                     &                       \\
-   &   \texttt{attr4}     &  boolean array     &                  &                     &                       \\
-\multicolumn{2}{l}{parameters}  & \multicolumn{4}{l}{}\\
-   &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
-   &   \texttt{attr1}     &  text              &                  &                     &                       \\
-   &   \texttt{attr2}     &  integer           &                  &                     &                       \\
-   &   \texttt{attr3}     &  real              &                  &                     &                       \\
-   &   \texttt{attr4}     &  boolean           &                  &                     &                       \\
-   &   \texttt{attr4}     &  text array        &                  &                     &                       \\
-   &   \texttt{attr4}     &  integer array     &                  &                     &                       \\
-   &   \texttt{attr4}     &  real array        &                  &                     &                       \\
-   &   \texttt{attr4}     &  boolean array     &                  &                     &                       \\
+   & \texttt{type}$^r$    &  text              & \textbf{coulomb} &                     & Must be coulomb.         \\
+   & \texttt{name/id}$^r$ &  text              & \textit{anything}&  ElecElec           & Unique name for interaction. \\
+   & \texttt{source}$^r$  &  text              & \texttt{particleset.name} &\texttt{hamiltonian.target}& Identify interacting particles.\\
+   & \texttt{target}$^r$  &  text              & \texttt{particleset.name} &\texttt{hamiltonian.target}& Identify interacting particles.  \\
+   & \texttt{pbc}$^o$     &  boolean           & yes/no           & yes$^*$             & Use Ewald summation.  \\
+   & \texttt{physical}$^o$&  boolean           & yes/no           & yes                 & Hamiltonian(yes)/observable(no). \\
+   & \texttt{forces}      &  boolean           & yes/no           & no                  & \textit{Deprecated.}             \\
   \hline
 \end{tabularx}
 \end{center}
 \end{table}
+\FloatBarrier
+
+Remarks
+\begin{itemize}
+  \item{Ewald summation will not be performed if \texttt{simulationcell.bconds== n n n}, regardless of the value of \texttt{pbc}.  Similarly, the \texttt{pbc} attribute can only be used to turn off Ewald summation if \texttt{simulationcell.bconds!= n n n}.}
+  \item{Note: traditional names for electron-electron, electron-ion, and ion-ion terms are \texttt{ElecElec}, \texttt{ElecIon}, and \texttt{IonIon}, respectively.  While any choice can be used, the data analysis tools expect to find columns in \texttt{*.scalar.dat} with these names.}
+\end{itemize}
+
+
+% pseudopotential element
+%   dev notes
+%     attributes name, source, wavefunction, format are read in CoulombFactory.cpp  HamiltonianFactory::addPseudoPotential
+%     format==''old'' refers to an old table format that is no longer supported
+%     read continues in ECPotentialBuilder::put()
+%       if format!=xml/old (i.e. table) qmcpack will attempt to read from *.psf files
+%         in this case, <pairpot type=''pseudo'' format=''table''/>, ie there are no elements
+%         if particlset groups are Li H (in order), then it looks for Li.psf and H.psf
+%         what is the psf format?
+%       if format==xml, normal read continues, i.e. <pseudo/> child elements are expected
+%         read is not sensitive to particleset group/species ordering
+%         child elements not names <pseudo/> are simply ignored (FIX!)
+\FloatBarrier
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l l }
+\hline
+\multicolumn{6}{l}{\texttt{pairpot type=pseudo} element} \\
+\hline
+\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{hamiltonian}}\\
+\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\texttt{pseudo}}\\
+\multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
+   &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
+   & \texttt{type}$^r$    &  text              & \textbf{pseudo} &                      & Must be pseudo.         \\
+   & \texttt{name/id}$^r$ &  text              & \textit{anything}&  PseudoPot          & \textit{No current function.}\\
+   & \texttt{source}$^r$  &  text              & \texttt{particleset.name} &  i                  & Ion particleset name.\\
+   & \texttt{target}$^r$  &  text              & \texttt{particleset.name} &\texttt{hamiltonian.target}& Electron particleset name.  \\
+   & \texttt{pbc}$^o$     &  boolean           & yes/no           & yes$^*$             & Use Ewald summation.  \\
+   & \texttt{forces}      &  boolean           & yes/no           & no                  & \textit{Deprecated.}             \\
+   &\texttt{wavefunction}$^r$ &  text          & \texttt{wavefunction.name}& invalid    & Identify wavefunction. \\
+   &   \texttt{format}$^r$    &  text          & xml/table        & table               & Select file format.   \\
+  \hline
+\end{tabularx}
+\end{center}
+\end{table}
+\FloatBarrier
+
+Remarks
+\begin{itemize}
+  \item{Ewald summation will not be performed if \texttt{simulationcell.bconds== n n n}, regardless of the value of \texttt{pbc}.  Similarly, the \texttt{pbc} attribute can only be used to turn off Ewald summation if \texttt{simulationcell.bconds!= n n n}.}
+  \item{Additional fields will be present in \texttt{*scalar.dat} output files when pseudopotentials are used.  The field \texttt{LocalECP} refers to the local part of the pseudopotential.  If non-local channels are present, a \texttt{NonLocalECP} field will be added that contains the non-local energy summed over all angular momentum channels.}
+  \item{If \texttt{format}==table}, QMCPACK looks for \texttt{*.psf} files containing pseudopotential data in a tabular format.  The files must be named after the ionic species provided in \texttt{particleset} (\emph{e.g.} \texttt{Li.psf} and \texttt{H.psf}). 
+  \item{If \texttt{format}==xml, additional \texttt{pseudo} child XML elements must be provided (see below).  These elements specify individual file names and formats (both the FSAtom XML and CASINO tabular data formats are supported).}
+\end{itemize}
+
+
+
+% pseudo element
+%   dev notes
+%     initial read of href elementType/symbol attributes at ECPotentialBuilder::useXmlFormat()
+%     read continues in ECPComponentBuilder
+%       format==xml and href==none (not provided) => ECPComponentBuilder::put(cur)
+%       format==xml and href==a file => ECPComponentBuilder::parse(href,cur)
+%       format==casino => ECPComponentBuilder::parseCasino(href,cur)
+%         this reader is tucked away in ECPComponentBuilder.2.cpp
+%         nice demonstration of OhmmsAsciiParser here
+%         maximum cutoff defined by a 1.e-5 (Ha?) spread in the nonlocal potentials
+%     quadrature rules (1-7) set as in J. Chem. Phys. 95 (3467) (1991), see below
+%       Rule     # points     lexact
+%        1           1          0
+%        2           4          2
+%        3           6          3
+%        4          12          5
+%        5          18          5
+%        6          26          7
+%        7          50         11
+%     looks like channels only go from s-g (see ECPComponentBuilder constructor)
+%       perhaps not, quadrature rules really do go up to 7 (lexact==11), see SetQuadratureRule()
+\FloatBarrier
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l l }
+\hline
+\multicolumn{6}{l}{\texttt{pseudo} element} \\
+\hline
+\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{pairpot type=pseudo}}\\
+\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\texttt{header local grid}}\\
+\multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
+   &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
+   & \texttt{elementType/symbol}$^r$&  text           &\texttt{group.name}& none               & Identify ionic species.         \\
+   & \texttt{href}$^r$    &  text              & \textit{filepath}& none                & \textit{Pseudopotential file path.}\\
+   & \texttt{format}$^r$  &  text              & xml/casino       & xml                 & Specify file format.\\
+   & \texttt{cutoff}$^o$  &  real              &                  &                     & Non-local cutoff radius.  \\
+   & \texttt{lmax}$^o$    &  integer           &                  &                     & Largest angular momentum.  \\
+   & \texttt{nrule}$^o$   &  integer           &                  &                     & Integration grid order.             \\
+  \hline
+\end{tabularx}
+\end{center}
+\end{table}
+\FloatBarrier
+
+
+
+
+% mpc element
+%  dev notes
+%    most attributes are read in CoulombPotentialFactory.cpp  HamiltonianFactory::addMPCPotential()
+%    user input for the name attribute is ignored and the name is always MPC
+%    density G-vectors are stored in ParticleSet: Density_G and DensityReducedGvecs members
+%    check the Linear Extrap and Quadratic Extrap output in some real examples (see MPC::init_f_G())
+%      what are acceptable values for the discrepancies?
+%      check that these decrease as cutoff is increased 
+%    commented out code for MPC.dat creation in MPC::initBreakup()
+%    short range part is 1/r, MPC::evalSR()
+%    long range part is on a spline (VlongSpline), MPC::evalLR()
+\FloatBarrier
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l l }
+\hline
+\multicolumn{6}{l}{\texttt{pairpot type=mpc} element} \\
+\hline
+\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{hamiltonian}}\\
+\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\textit{None}}\\
+\multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
+   &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
+   & \texttt{type}$^r$    &  text              & \textbf{mpc}     &                     & Must be mpc.         \\
+   & \texttt{name/id}$^r$ &  text              & \textit{anything}&  MPC                & Unique name for interaction. \\
+   & \texttt{source}$^r$  &  text              & particleset.name &\texttt{hamiltonian.target}& Identify interacting particles.\\
+   & \texttt{target}$^r$  &  text              & particleset.name &\texttt{hamiltonian.target}& Identify interacting particles.  \\
+   & \texttt{physical}$^o$&  boolean           & yes/no           & no                  & Hamiltonian(yes)/observable(no). \\
+   &   \texttt{cutoff}    &  real              & \textit{positive real}& 30.0           & Kinetic energy cutoff. \\
+  \hline
+\end{tabularx}
+\end{center}
+\end{table}
+\FloatBarrier
+Remarks
+\begin{itemize}
+  \item{Note the meaning of the \texttt{physical} attribute.  Typically it is set to \texttt{no}, meaning the standard Ewald interaction will be used during sampling and MPC will be measured as an observable for finite-size post correction.  If \texttt{physical==yes}, the MPC interaction will be used during sampling.  In this case an electron-electron Coulomb \texttt{pairpot} element should not be supplied.}
+  \item{Developer note: Currently the \texttt{name} attribute for the mpc interaction is ignored.  The name is always \texttt{MPC}.}
+\end{itemize}
 
 
 
