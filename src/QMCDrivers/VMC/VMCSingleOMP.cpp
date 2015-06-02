@@ -57,7 +57,6 @@ bool VMCSingleOMP::run()
   const bool has_collectables=W.Collectables.size();
   for (int block=0; block<nBlocks; ++block)
   {
-    double comp_start = MPI_Wtime(); 
     #pragma omp parallel
     {
       int ip=omp_get_thread_num();
@@ -89,7 +88,6 @@ bool VMCSingleOMP::run()
     //Estimators->accumulateCollectables(wClones,nSteps);
     CurrentStep+=nSteps;
     Estimators->stopBlock(estimatorClones);
-    app_log()<<block<<" comp time "<<MPI_Wtime() - comp_start<<endl; 
     Traces->write_buffers(traceClones, block);
     if(storeConfigs)
       recordBlock(block);

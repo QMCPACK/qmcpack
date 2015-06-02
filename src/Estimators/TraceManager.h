@@ -2065,7 +2065,7 @@ public:
     {
       if(writing_traces)
       {
-        double tstart = MPI_Wtime();
+        //double tstart = MPI_Wtime();
         if(verbose)
           app_log()<<"TraceManager::write_buffers "<<master_copy<<endl;
         if(hdf_format)
@@ -2080,7 +2080,7 @@ public:
           APP_ABORT("TraceManager::write_buffers (adios) ADIOS is not found");
 #endif
           //app_log()<<"TraceManager::write_buffers (adios) has not yet been implemented"<<endl;
-          app_log()<<" write_buffers() total time "<<MPI_Wtime()-tstart<<endl;
+          //app_log()<<" write_buffers() total time "<<MPI_Wtime()-tstart<<endl;
         }
       }
     }
@@ -2357,7 +2357,7 @@ public:
     {
         TraceManager& tm = *clones[0];
 
-        double tstart = MPI_Wtime();
+        //double tstart = MPI_Wtime();
         if(verbose)
             app_log()<<"TraceManager::initialize_adios "<<master_copy<<endl;
 
@@ -2365,7 +2365,7 @@ public:
 
         tm.int_buffer.register_adios_data(*adios_trace);
         tm.real_buffer.register_adios_data(*adios_trace);
-        app_log()<<"TraceManager::initialize_adios() total time="<<MPI_Wtime()-tstart<<endl;
+        //app_log()<<"TraceManager::initialize_adios() total time="<<MPI_Wtime()-tstart<<endl;
     }
 
 
@@ -2380,9 +2380,9 @@ public:
          * buffering concurrently */
         string s = boost::lexical_cast<std::string>(block);
         string file_name = file_root+".b"+s+".bp";
-        double io_open_start = MPI_Wtime();
+        //double io_open_start = MPI_Wtime();
         adios_trace->open (file_name);
-        app_log()<<" io open time on rank 0: "<<MPI_Wtime()-io_open_start<<endl;
+        //app_log()<<" io open time on rank 0: "<<MPI_Wtime()-io_open_start<<endl;
 
         int actual_nrows_local = 0; // number of rows in this process' tables
         int max_nrows = 0;          // max of local nrows numbers
@@ -2404,20 +2404,20 @@ public:
                     <<" real_nrows="<<tmc.real_buffer.buffer.size(0)<<endl;
             }
         }
-        double comm_start = MPI_Wtime();
+        //double comm_start = MPI_Wtime();
         MPI_Allreduce(&actual_nrows_local, &max_nrows, 1, MPI_INT, MPI_MAX, comm);
-        app_log()<<" Allreduce comm time for nrows "<<MPI_Wtime()-comm_start<<endl;
+        //app_log()<<" Allreduce comm time for nrows "<<MPI_Wtime()-comm_start<<endl;
 
         nrows_total = max_nrows * communicator->size();
         offset      = max_nrows * communicator->rank();
 
         /* III. Calculate adios group size */
-        double io_group_start = MPI_Wtime();
+        //double io_group_start = MPI_Wtime();
         adios_trace->set_group_size (max_nrows);
-        app_log()<<" io group time on rank 0: "<<MPI_Wtime()-io_group_start<<endl;
+        //app_log()<<" io group time on rank 0: "<<MPI_Wtime()-io_group_start<<endl;
 
         /* IV. Write known adios scalars */
-        double io_write_start = MPI_Wtime();
+        //double io_write_start = MPI_Wtime();
         adios_trace->write("/aux/max_nrows", &max_nrows);
         adios_trace->write("/aux/actual_nrows_local", &actual_nrows_local);
         adios_trace->write("/aux/offset", &offset);
@@ -2490,10 +2490,10 @@ public:
         }
 
 
-        app_log()<<" io write time on rank 0: "<<MPI_Wtime()-io_write_start<<endl;
-        double io_close_start = MPI_Wtime();
+        //app_log()<<" io write time on rank 0: "<<MPI_Wtime()-io_write_start<<endl;
+        //double io_close_start = MPI_Wtime();
         adios_trace->close();
-        app_log()<<" io close time on rank 0: "<<MPI_Wtime()-io_close_start<<endl;
+        //app_log()<<" io close time on rank 0: "<<MPI_Wtime()-io_close_start<<endl;
 
     }
 
@@ -2554,10 +2554,10 @@ public:
           }
           int allreduced_rows[2];
           int total_rows[2];
-          double comm_start = MPI_Wtime();
+          //double comm_start = MPI_Wtime();
           MPI_Allreduce(rows, allreduced_rows, 2, MPI_INT, MPI_MAX, comm);
-          app_log()<<" comm time "<<MPI_Wtime()-comm_start<<endl;
-          double prep_start = MPI_Wtime();
+          //app_log()<<" comm time "<<MPI_Wtime()-comm_start<<endl;
+          //double prep_start = MPI_Wtime();
 
           int int_max_rows = allreduced_rows[0];
           int int_rows_total = int_max_rows*communicator->size();
@@ -2602,7 +2602,7 @@ public:
                   row_count++;
               }
           }
-          app_log()<<" preparation time "<<MPI_Wtime()-prep_start<<endl;
+          //app_log()<<" preparation time "<<MPI_Wtime()-prep_start<<endl;
 
           //open adios file, create adios group, write out variable, close adios file
           int         err;
@@ -2615,7 +2615,7 @@ public:
           /* Current trunk */
           //string s = boost::lexical_cast<std::string>(block);
           //file_name = file_name + ".b"+s+".trace.bp";
-          double io_open_start = MPI_Wtime();
+          //double io_open_start = MPI_Wtime();
           if(ADIOS::getFirstOpen())
           {
               if(!ADIOS::get_adios_init()){
@@ -2632,17 +2632,17 @@ public:
           /* Norbert */
           string s = boost::lexical_cast<std::string>(block);
           file_name = "trace."+s+".bp";
-          double io_open_start = MPI_Wtime();
+          //double io_open_start = MPI_Wtime();
           adios_open(&handle, "Traces-global", file_name.c_str(), "w", comm);
 #  endif
-          app_log()<<" io open time "<<MPI_Wtime()-io_open_start<<endl;
+          //app_log()<<" io open time "<<MPI_Wtime()-io_open_start<<endl;
 
-          double io_group_start = MPI_Wtime();
+          //double io_group_start = MPI_Wtime();
           group_size = strlen(fileName) + 8*sizeof(int) + int_max_rows*int_cols*sizeof(int)+real_max_rows*real_cols*sizeof(double);
           adios_group_size (handle, group_size, &total_size);
-          app_log()<<" io group time "<<MPI_Wtime()-io_group_start<<endl;
+          //app_log()<<" io group time "<<MPI_Wtime()-io_group_start<<endl;
 
-          double io_write_start = MPI_Wtime();
+          //double io_write_start = MPI_Wtime();
           adios_write(handle, "filename", fileName);
           adios_write(handle, "int_rows_total", &int_rows_total);
           adios_write(handle, "int_max_rows", &int_max_rows);
@@ -2654,10 +2654,10 @@ public:
           adios_write(handle, "real_cols", &real_cols);
           adios_write(handle, "int_buffer", int_buffer);
           adios_write(handle, "real_buffer", real_buffer);
-          app_log()<<" io write time "<<MPI_Wtime()-io_write_start<<endl;
-          double io_close_start = MPI_Wtime();
+          //app_log()<<" io write time "<<MPI_Wtime()-io_write_start<<endl;
+          //double io_close_start = MPI_Wtime();
           adios_close(handle);
-          app_log()<<" io close time "<<MPI_Wtime()-io_close_start<<endl;
+          //app_log()<<" io close time "<<MPI_Wtime()-io_close_start<<endl;
 
 
           free(int_buffer);
