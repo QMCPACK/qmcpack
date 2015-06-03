@@ -177,11 +177,15 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     for (int i=0; i<3; i++)
       for (int j=0; j<3; j++)
         TileMatrix(i,j) = (i==j) ? TileFactor(i) : 0;
+  char buff[1000];
   if (myComm->rank() == 0)
-    fprintf (stderr, " [ %2d %2d %2d\n   %2d %2d %2d\n   %2d %2d %2d ]\n",
+  {
+    snprintf (buff, 1000, "  TileMatrix = \n [ %2d %2d %2d\n   %2d %2d %2d\n   %2d %2d %2d ]\n",
              TileMatrix(0,0), TileMatrix(0,1), TileMatrix(0,2),
              TileMatrix(1,0), TileMatrix(1,1), TileMatrix(1,2),
              TileMatrix(2,0), TileMatrix(2,1), TileMatrix(2,2));
+    app_log() << buff;
+  }  
   if (numOrbs == 0)
   {
     app_error() << "You must specify the number of orbitals in the input file.\n";
