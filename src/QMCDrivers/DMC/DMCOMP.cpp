@@ -222,7 +222,7 @@ void DMCOMP::resetUpdateEngines()
       o << "  Fixed population using reconfiguration method\n";
     else
       o << "  Fluctuating population\n";
-    o << "  Persisent walkers are killed after " << mxage << " MC sweeps\n";
+    o << "  Persistent walkers are killed after " << mxage << " MC sweeps\n";
     o << "  BranchInterval = " << BranchInterval << "\n";
     o << "  Steps per block = " << nSteps << "\n";
     o << "  Number of blocks = " << nBlocks << "\n";
