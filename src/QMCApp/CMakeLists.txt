@@ -24,7 +24,7 @@ SET(QMCSRCS qmcapp)
 FOREACH(p ${QMCSRCS})
 
   ADD_EXECUTABLE(${p} ${p}.cpp)
-  TARGET_LINK_LIBRARIES(${p} qmc qmcdriver qmcham qmcwfs qmcbase qmcutil adios_config)
+  TARGET_LINK_LIBRARIES(${p} interface qmc qmcdriver qmcham qmcwfs qmcbase qmcutil adios_config)
 
   FOREACH(l ${QMC_UTIL_LIBS})
     TARGET_LINK_LIBRARIES(${p} ${l})

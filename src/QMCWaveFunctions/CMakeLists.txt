@@ -106,6 +106,7 @@ IF(OHMMS_DIM MATCHES 3)
       EinsplineSetBuilder_createSPOs.cpp
       BandInfo.cpp
       BsplineReaderBase.cpp
+      EinsplineSetBuilder_Interface.cpp
       )
   ENDIF(HAVE_EINSPLINE)
 

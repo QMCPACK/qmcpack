@@ -752,7 +752,8 @@ EinsplineSetBuilder::AnalyzeTwists()
       }
 }
 
-
+//Ray:  Currently, if interface functionality is enabled, this function will be entirely bypassed.  
+//Check EinsplineSetBuilder::createSPOSetFromInterface for info.  
 void
 EinsplineSetBuilder::OccupyBands(int spin, int sortBands, int numOrbs)
 {
