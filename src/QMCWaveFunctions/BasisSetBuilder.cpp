@@ -40,15 +40,10 @@ namespace qmcplusplus
     // process general sposet construction requests
     //   and preserve legacy interface 
     SPOSetBase* sposet = 0;
-
-#if defined(USE_INTERFACE)
-    sposet = createSPOSetFromInterface(cur);
-#else
     if(legacy && input_info.legacy_request)
       sposet = createSPOSetFromXML(cur);
     else
       sposet = createSPOSet(cur,input_info);
-#endif
 
     // remember created sposets
     if(sposet)

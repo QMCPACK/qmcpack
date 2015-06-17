@@ -12,7 +12,7 @@ ENDFUNCTION()
 # Macro to add the dependencies and libraries to an executable
 MACRO( ADD_QMC_EXE_DEP EXE )
     # Add the package dependencies
-    TARGET_LINK_LIBRARIES(${EXE} qmc qmcdriver qmcham qmcwfs interface qmcbase qmcutil adios_config)
+    TARGET_LINK_LIBRARIES(${EXE} qmc qmcdriver qmcham qmcwfs qmcbase qmcutil adios_config)
     FOREACH(l ${QMC_UTIL_LIBS})
         TARGET_LINK_LIBRARIES(${EXE} ${l})
     ENDFOREACH(l ${QMC_UTIL_LIBS})

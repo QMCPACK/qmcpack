@@ -39,10 +39,6 @@ namespace qmcplusplus
 SPOSetBase*
 EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
-  app_log()<<"Dropping into createSPOSetfromXML.  hijacking..."<<endl;
-  return createSPOSetFromInterface(cur);
-
-
   update_token(__FILE__,__LINE__,"createSPOSetFromXML");
   //use 2 bohr as the default when truncated orbitals are used based on the extend of the ions
   BufferLayer=2.0;

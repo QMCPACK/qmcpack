@@ -166,7 +166,7 @@ struct BsplineReaderBase
    * @param ib band index
    * @param cG psi_g as stored in hdf5
    */
-  virtual void get_psi_g(int ti, int spin, int ib, Vector<complex<double> >& cG);
+  void get_psi_g(int ti, int spin, int ib, Vector<complex<double> >& cG);
 
   /** create the actual spline sets
    */

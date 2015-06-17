@@ -32,7 +32,7 @@ namespace qmcplusplus
 
 ///forward declaraton of BsplineReaderBase
 class BsplineReaderBase;
-class ESInterfaceBase;
+
 // Helper needed for TwistMap
 struct Int3less
 {
@@ -182,13 +182,6 @@ public:
   bool ReadOrbitalInfo_ESHDF ();
   void BroadcastOrbitalInfo();
   bool CheckLattice();
-
-//#if defined(USE_INTERFACE)
-  bool ReadOrbitalInfo_Interface(ESInterfaceBase* interface);
-  bool ReadGvectors_Interface(ESInterfaceBase* interface);
-  SPOSetBase* createSPOSetFromInterface(xmlNodePtr cur);
-  void OccupyBands_Interface(ESInterfaceBase* interface, int spin, int sortBands, int numOrbs);
-//#endif
 
   /** read gvectors for each twist
    * @return true, if psi_g is found

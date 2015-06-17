@@ -159,12 +159,12 @@ else()
   #endif(HAVE_ADIOS)
 
   ADD_LIBRARY(adios_config ${ADIOS})
-  SUBDIRS(Interfaces)
 
   SUBDIRS(QMCWaveFunctions)
   SUBDIRS(QMCHamiltonians)
   SUBDIRS(QMCDrivers)
   SUBDIRS(QMCApp)
+
   #IF(BUILD_QMCTOOLS)
   SUBDIRS(QMCTools)
   #ENDIF(BUILD_QMCTOOLS)
