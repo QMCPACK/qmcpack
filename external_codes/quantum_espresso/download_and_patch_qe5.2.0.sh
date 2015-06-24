@@ -31,7 +31,7 @@ echo --- Also check $qeurl is valid - perhaps the files have moved online.
 echo --- Please advise QMCPACK Developers via Google Groups if this problem persists
 else
 cd ${codename}
-patch -p1 -i ../add_pw2qmcpack_to_espresso-5.1.diff
+patch -p1 -i ../add_pw2qmcpack_to_espresso-5.2.0.diff
 cd ..
 echo --- SUCCESS: ${codename} patched for pw2qmcpack converter
 echo "--- Configure using ./configure --with-hdf5 HDF5_DIR=(HDF5 base directory)"
