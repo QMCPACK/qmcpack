@@ -54,31 +54,18 @@ bool VMCcuda::checkBounds (vector<PosType> &newpos,
   return true;
 }
 
-bool VMCcuda::run()
+void VMCcuda::advanceWalkers()
 {
-  if (UseDrift == "yes")
-    return runWithDrift();
-  resetRun();
-  IndexType block = 0;
-  IndexType nAcceptTot = 0;
-  IndexType nRejectTot = 0;
-  IndexType updatePeriod= (QMCDriverMode[QMC_UPDATE_MODE])
-                          ? Period4CheckProperties
-                          : (nBlocks+1)*nSteps;
   int nat = W.getTotalNum();
   int nw  = W.getActiveWalkers();
-  vector<RealType>  LocalEnergy(nw);
   vector<PosType>   delpos(nw);
   vector<PosType>   newpos(nw);
   vector<ValueType> ratios(nw);
-  vector<GradType>  oldG(nw), newG(nw);
-  vector<ValueType> oldL(nw), newL(nw);
+  vector<GradType>  newG(nw);
+  vector<ValueType> newL(nw);
   vector<Walker_t*> accepted(nw);
-  Matrix<ValueType> lapl(nw, nat);
-  Matrix<GradType>  grad(nw, nat);
-  double Esum;
-  // First do warmup steps
-  for (int step=0; step<nWarmupSteps; step++)
+
+  for (int isub=0; isub<nSubSteps; isub++)
   {
     for(int iat=0; iat<nat; ++iat)
     {
@@ -116,6 +103,31 @@ bool VMCcuda::run()
         Psi.update(accepted,iat);
     }
   }
+}
+
+bool VMCcuda::run()
+{
+  if (UseDrift == "yes")
+    return runWithDrift();
+  resetRun();
+  IndexType block = 0;
+  IndexType nAcceptTot = 0;
+  IndexType nRejectTot = 0;
+  IndexType updatePeriod= (QMCDriverMode[QMC_UPDATE_MODE])
+                          ? Period4CheckProperties
+                          : (nBlocks+1)*nSteps;
+  int nat = W.getTotalNum();
+  int nw  = W.getActiveWalkers();
+  vector<RealType>  LocalEnergy(nw);
+  Matrix<ValueType> lapl(nw, nat);
+  Matrix<GradType>  grad(nw, nat);
+  double Esum;
+
+  // First do warmup steps
+  for (int step=0; step<nWarmupSteps; step++)
+    advanceWalkers();
+
+  // Then accumulate statistics
   do
   {
     IndexType step = 0;
@@ -126,44 +138,7 @@ bool VMCcuda::run()
     {
       ++step;
       ++CurrentStep;
-      for (int isub=0; isub<nSubSteps; isub++)
-      {
-        for(int iat=0; iat<nat; ++iat)
-        {
-          //create a 3N-Dimensional Gaussian with variance=1
-          makeGaussRandomWithEngine(delpos,Random);
-          for(int iw=0; iw<nw; ++iw)
-          {
-            PosType G = W[iw]->G[iat];
-            newpos[iw]=W[iw]->R[iat] + m_sqrttau*delpos[iw];
-            ratios[iw] = 1.0;
-          }
-          W.proposeMove_GPU(newpos, iat);
-          Psi.ratio(W,iat,ratios,newG, newL);
-          accepted.clear();
-          vector<bool> acc(nw, true);
-          if (W.UseBoundBox)
-            checkBounds (newpos, acc);
-          for(int iw=0; iw<nw; ++iw)
-          {
-            if(acc[iw] && ratios[iw]*ratios[iw] > Random())
-            {
-              accepted.push_back(W[iw]);
-              nAccept++;
-              W[iw]->R[iat] = newpos[iw];
-              acc[iw] = true;
-            }
-            else
-            {
-              acc[iw]=false;
-              nReject++;
-            }
-          }
-          W.acceptMove_GPU(acc);
-          if (accepted.size())
-            Psi.update(accepted,iat);
-        }
-      }
+      advanceWalkers();
       Psi.gradLapl(W, grad, lapl);
       H.evaluate (W, LocalEnergy);
       if (myPeriod4WalkerDump && (CurrentStep % myPeriod4WalkerDump)==0)
@@ -229,31 +204,28 @@ bool VMCcuda::run()
   while(block<nBlocks);
   //Mover->stopRun();
   //finalize a qmc section
+  if (!myComm->rank())
+  {
+    cerr << "At the end of VMC" << endl;
+    gpu::cuda_memory_manager.report();
+  }
   return finalize(block);
 }
 
-
-
-bool VMCcuda::runWithDrift()
+void VMCcuda::advanceWalkersWithDrift()
 {
-  resetRun();
-  IndexType block = 0;
-  IndexType nAcceptTot = 0;
-  IndexType nRejectTot = 0;
   int nat = W.getTotalNum();
   int nw  = W.getActiveWalkers();
-  vector<RealType>  LocalEnergy(nw), oldScale(nw), newScale(nw);
+  vector<RealType>  oldScale(nw), newScale(nw);
   vector<PosType>   delpos(nw);
   vector<PosType>   dr(nw);
   vector<PosType>   newpos(nw);
-  vector<ValueType> ratios(nw), rplus(nw), rminus(nw);
-  vector<PosType>  oldG(nw), newG(nw);
+  vector<ValueType> ratios(nw);
+  vector<PosType>   oldG(nw), newG(nw);
   vector<ValueType> oldL(nw), newL(nw);
   vector<Walker_t*> accepted(nw);
-  Matrix<ValueType> lapl(nw, nat);
-  Matrix<GradType>  grad(nw, nat);
-  // First, do warmup steps
-  for (int step=0; step<nWarmupSteps; step++)
+
+  for (int isub=0; isub<nSubSteps; isub++)
   {
     for(int iat=0; iat<nat; iat++)
     {
@@ -283,12 +255,14 @@ bool VMCcuda::runWithDrift()
         logGf_v[iw] = -m_oneover2tau * dot(drOld, drOld);
         rand_v[iw] = Random();
       }
-      Psi.addRatio(W,iat,ratios,newG, newL);
+      Psi.addRatio(W, iat, ratios, newG, newL);
       for(int iw=0; iw<nw; ++iw)
       {
         newScale[iw]   = getDriftScale(m_tauovermass,newG[iw]);
         PosType drNew  =
           (newpos[iw] + newScale[iw]*newG[iw]) - W[iw]->R[iat];
+        // if (dot(drNew, drNew) > 25.0)
+        //   cerr << "Large drift encountered!  Drift = " << drNew << endl;
         RealType logGb =  -m_oneover2tau * dot(drNew, drNew);
         RealType x = logGb - logGf_v[iw];
         RealType prob = ratios[iw]*ratios[iw]*std::exp(x);
@@ -310,6 +284,24 @@ bool VMCcuda::runWithDrift()
         Psi.update(accepted,iat);
     }
   }
+}
+
+bool VMCcuda::runWithDrift()
+{
+  resetRun();
+  IndexType block = 0;
+  IndexType nAcceptTot = 0;
+  IndexType nRejectTot = 0;
+  int nat = W.getTotalNum();
+  int nw  = W.getActiveWalkers();
+  vector<RealType>  LocalEnergy(nw);
+  Matrix<ValueType> lapl(nw, nat);
+  Matrix<GradType>  grad(nw, nat);
+
+  // First, do warmup steps
+  for (int step=0; step<nWarmupSteps; step++)
+    advanceWalkersWithDrift();
+
   // Now do data collection steps
   do
   {
@@ -320,67 +312,7 @@ bool VMCcuda::runWithDrift()
     {
       step++;
       CurrentStep++;
-      for (int isub=0; isub<nSubSteps; isub++)
-      {
-        for(int iat=0; iat<nat; iat++)
-        {
-          Psi.calcGradient (W, iat, oldG);
-          //create a 3N-Dimensional Gaussian with variance=1
-          makeGaussRandomWithEngine(delpos,Random);
-          Psi.addGradient(W, iat, oldG);
-          for(int iw=0; iw<nw; iw++)
-          {
-            oldScale[iw] = getDriftScale(m_tauovermass,oldG[iw]);
-            dr[iw] = (m_sqrttau*delpos[iw]) + (oldScale[iw]*oldG[iw]);
-            newpos[iw]=W[iw]->R[iat] + dr[iw];
-            ratios[iw] = 1.0;
-          }
-          W.proposeMove_GPU(newpos, iat);
-          Psi.calcRatio(W,iat,ratios,newG, newL);
-          accepted.clear();
-          vector<bool> acc(nw, true);
-          if (W.UseBoundBox)
-            checkBounds (newpos, acc);
-          std::vector<RealType> logGf_v(nw);
-          std::vector<RealType> rand_v(nw);
-          for(int iw=0; iw<nw; ++iw)
-          {
-            PosType drOld =
-              newpos[iw] - (W[iw]->R[iat] + oldScale[iw]*oldG[iw]);
-            logGf_v[iw] = -m_oneover2tau * dot(drOld, drOld);
-            rand_v[iw] = Random();
-          }
-          Psi.addRatio(W, iat, ratios, newG, newL);
-          for(int iw=0; iw<nw; ++iw)
-          {
-            newScale[iw]   = getDriftScale(m_tauovermass,newG[iw]);
-            PosType drNew  =
-              (newpos[iw] + newScale[iw]*newG[iw]) - W[iw]->R[iat];
-            // if (dot(drNew, drNew) > 25.0)
-            //   cerr << "Large drift encountered!  Drift = " << drNew << endl;
-            RealType logGb =  -m_oneover2tau * dot(drNew, drNew);
-            RealType x = logGb - logGf_v[iw];
-            RealType prob = ratios[iw]*ratios[iw]*std::exp(x);
-            if(acc[iw] && rand_v[iw] < prob)
-            {
-              accepted.push_back(W[iw]);
-              nAccept++;
-              W[iw]->R[iat] = newpos[iw];
-              acc[iw] = true;
-            }
-            else
-            {
-              acc[iw] = false;
-              nReject++;
-            }
-          }
-          W.acceptMove_GPU(acc);
-          if (accepted.size())
-            Psi.update(accepted,iat);
-        }
-        // cerr << "Rank = " << myComm->rank() <<
-        //   "  CurrentStep = " << CurrentStep << "  isub = " << isub << endl;
-      }
+      advanceWalkersWithDrift();
       Psi.gradLapl(W, grad, lapl);
       H.evaluate (W, LocalEnergy);
       if (myPeriod4WalkerDump && (CurrentStep % myPeriod4WalkerDump)==0)
@@ -447,7 +379,10 @@ bool VMCcuda::runWithDrift()
   while(block<nBlocks);
   //finalize a qmc section
   if (!myComm->rank())
+  {
+    cerr << "At the end of VMC with drift" << endl;
     gpu::cuda_memory_manager.report();
+  }
   return finalize(block);
 }
 
@@ -465,6 +400,11 @@ void VMCcuda::resetRun()
   m_oneover2tau = 0.5*mass/Tau;
   m_sqrttau = std::sqrt(Tau/mass);
   m_tauovermass = Tau/mass;
+  if (!myComm->rank())
+  {
+    cerr << "Before allocating GPU buffer" << endl;
+    gpu::cuda_memory_manager.report();
+  }
   // Compute the size of data needed for each walker on the GPU card
   PointerPool<Walker_t::cuda_Buffer_t > pool;
   app_log() << "Starting VMCcuda::resetRun() " << endl;
@@ -478,6 +418,11 @@ void VMCcuda::resetRun()
   //   // pool.allocate(walker.cuda_DataSet);
   // }
   W.allocateGPU(pool.getTotalSize());
+  if (!myComm->rank())
+  {
+    cerr << "After allocating GPU buffer" << endl;
+    gpu::cuda_memory_manager.report();
+  }
   app_log() << "Successfully allocated walkers.\n";
   W.copyWalkersToGPU();
   W.updateLists_GPU();

@@ -30,8 +30,15 @@ class VMCcuda: public QMCDriver
 public:
   /// Constructor.
   VMCcuda(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,WaveFunctionPool& ppool);
+
   bool run();
   bool runWithDrift();
+
+  /// advance walkers without drift
+  void advanceWalkers();
+  /// advance walkers with drift
+  void advanceWalkersWithDrift();
+
   bool put(xmlNodePtr cur);
   RealType fillOverlapHamiltonianMatrices(Matrix<RealType>& LeftM, Matrix<RealType>& RightM);
   inline void setOpt(bool o)
