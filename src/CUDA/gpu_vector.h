@@ -649,7 +649,7 @@ public:
 
   inline void fill (T val)
   {
-    fill (CPU.begin(), CPU.end(), val);
+    std::fill(CPU.begin(), CPU.end(), val);
     host_to_device();
   }
 
