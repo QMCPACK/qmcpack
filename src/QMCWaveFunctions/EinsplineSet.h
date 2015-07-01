@@ -189,6 +189,10 @@ template<> struct StorageTypeConverter<complex<double>,complex<double> >
 {
   typedef complex<double> CudaStorageType;
 };
+template<> struct StorageTypeConverter<complex<double>,double>
+{
+  typedef complex<double> CudaStorageType;
+};
 #endif
 
 

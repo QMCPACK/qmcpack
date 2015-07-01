@@ -83,7 +83,7 @@ void phase_factor_kernel (T *kPoints, int *makeTwoCopies,
         T phase = -(pos_s[i][0]*kPoints_s[tid][0] +
                     pos_s[i][1]*kPoints_s[tid][1] +
                     pos_s[i][2]*kPoints_s[tid][2]);
-        sincosf(phase, &s, &c);
+        sincos(phase, &s, &c);
         T phi_real = in_shared[2*tid]*c - in_shared[2*tid+1]*s;
         T phi_imag = in_shared[2*tid]*s + in_shared[2*tid+1]*c;
         out_shared[outIndex] = phi_real;
@@ -226,7 +226,7 @@ void phase_factor_kernel (T *kPoints, int *makeTwoCopies,
                 pos_s[1]*kPoints_s[tid][1] +
                 pos_s[2]*kPoints_s[tid][2]);
     T s, c;
-    sincosf (phase, &s, &c);
+    sincos (phase, &s, &c);
     T u_re, u_im, gradu_re[3], gradu_im[3], laplu_re, laplu_im;
     u_re        = in_shared[0][2*tid+0];
     u_im        = in_shared[0][2*tid+1];
@@ -433,6 +433,31 @@ void apply_phase_factors(float kPoints[], int makeTwoCopies[],
   dim3 dimBlock(BS);
   dim3 dimGrid (num_walkers);
   phase_factor_kernel<float,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
+  (kPoints, makeTwoCopies, pos, phi_in, phi_out,
+   GL_in, GL_out, num_splines, num_walkers, row_stride);
+}
+
+void apply_phase_factors(double kPoints[], int makeTwoCopies[],
+                         double pos[], double *phi_in[], double *phi_out[],
+                         int num_splines, int num_walkers)
+{
+  const int BS = 32;
+  dim3 dimBlock(BS);
+  dim3 dimGrid ((num_walkers+BS-1)/BS);
+  phase_factor_kernel<double,BS><<<dimGrid,dimBlock>>>
+  (kPoints, makeTwoCopies, pos, phi_in, phi_out, num_splines, num_walkers);
+}
+
+
+void apply_phase_factors(double kPoints[], int makeTwoCopies[],
+                         double pos[], double *phi_in[], double *phi_out[],
+                         double *GL_in[], double *GL_out[],
+                         int num_splines, int num_walkers, int row_stride)
+{
+  const int BS = 32;
+  dim3 dimBlock(BS);
+  dim3 dimGrid (num_walkers);
+  phase_factor_kernel<double,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
   (kPoints, makeTwoCopies, pos, phi_in, phi_out,
    GL_in, GL_out, num_splines, num_walkers, row_stride);
 }

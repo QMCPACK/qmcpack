@@ -184,13 +184,18 @@ cublas_inverse (cublasHandle_t handle,
   err = cudaMalloc((void**) &infoArray, numMats * sizeof(int));
   checkCUDAError(err, "Failed to allocate memory for infoArray in cublas_inverse (cudaMalloc)");
 
-  // Call cublas functions to do inversion
-  // LU decomposition
-  status = cublasDgetrfBatched(handle, N, Alist_d, rowStride, NULL, infoArray, numMats);
+  // (i)   copy all the elements of Alist to AWorklist
+  dim3 dimBlockConvert (CONVERT_BS);
+  dim3 dimGridConvert ((N*rowStride + (CONVERT_BS-1)) / CONVERT_BS, numMats);
+  convert <<< dimGridConvert, dimBlockConvert >>> (AWorklist_d, Alist_d, N*rowStride);
+  
+  // (ii)  call cublas to do matrix inversion
+  //       LU decomposition
+  status = cublasDgetrfBatched(handle, N, AWorklist_d, rowStride, NULL, infoArray, numMats);
   checkCublasError(status, "Problem in LU factorization (cublasDgetrfBatched)");
 
-  // Inversion
-  status = cublasDgetriBatched(handle, N, (const double **)Alist_d, rowStride, NULL,
+  //       Inversion
+  status = cublasDgetriBatched(handle, N, (const double**)AWorklist_d, rowStride, NULL, 
                                Ainvlist_d, rowStride, infoArray, numMats);
   checkCublasError(status, "Problem in matrix inversion (cublasDgetriBatched)");
 

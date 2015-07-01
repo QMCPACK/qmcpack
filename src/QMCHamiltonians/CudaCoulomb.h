@@ -22,6 +22,9 @@ void
 CoulombAA_Sum(float *R[], int N, float sum[], int numWalkers);
 
 void
+CoulombAA_Sum(double *R[], int N, double sum[], int numWalkers);
+
+void
 CoulombAA_SR_Sum(float *R[], int N, float rMax, int Ntex, int texNum,
                  float lattice[], float latticeInv[], float sum[],
                  int numWalkers);

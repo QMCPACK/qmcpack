@@ -31,6 +31,15 @@ void apply_phase_factors(float kPoints[], int makeTwoCopies[],
                          float *GL_in[], float *GL_out[],
                          int num_splines, int num_walkers, int row_stride);
 
+void apply_phase_factors(double kPoints[], int makeTwoCopies[],
+                         double pos[], double *phi_in[], double *phi_out[],
+                         int num_splines, int num_walkers);
+
+void apply_phase_factors(double kPoints[], int makeTwoCopies[],
+                         double pos[], double *phi_in[], double *phi_out[],
+                         double *GL_in[], double *GL_out[],
+                         int num_splines, int num_walkers, int row_stride);
+
 namespace qmcplusplus
 {
 inline void create_multi_UBspline_3d_cuda (multi_UBspline_3d_d *in,
@@ -140,6 +149,16 @@ eval_multi_multi_UBspline_3d_cuda (multi_UBspline_3d_s_cuda *spline,
 
 inline void
 eval_multi_multi_UBspline_3d_cuda (multi_UBspline_3d_d_cuda *spline,
+                                   double *pos, double *sign, double *phi[], int N)
+{
+  app_error() << "eval_multi_multi_UBspline_3d_cuda (multi_UBspline_3d_d_cuda *spline,"
+              << "double *pos, double *sign, double *phi[], int N) not implemented" << endl;
+  abort();
+}
+
+
+inline void
+eval_multi_multi_UBspline_3d_cuda (multi_UBspline_3d_d_cuda *spline,
                                    double *pos, double *phi[], int N)
 {
   eval_multi_multi_UBspline_3d_d_cuda  (spline, pos, phi, N);
@@ -151,6 +170,17 @@ inline void eval_multi_multi_UBspline_3d_vgl_cuda
 {
   eval_multi_multi_UBspline_3d_s_vgl_sign_cuda
   (spline, pos, sign, Linv, phi, grad_lapl, N, row_stride);
+}
+
+
+inline void eval_multi_multi_UBspline_3d_vgl_cuda
+(multi_UBspline_3d_d_cuda *spline, double *pos, double *sign, double Linv[],
+ double *phi[], double *grad_lapl[], int N, int row_stride)
+{
+  app_error() << "eval_multi_multi_UBspline_3d_vgl_cuda"
+              << "(multi_UBspline_3d_d_cuda *spline, double *pos, double *sign, double Linv[],"
+              << " double *phi[], double *grad_lapl[], int N, int row_stride) not implemented" << endl;
+  abort();
 }
 
 
@@ -263,15 +293,15 @@ EinsplineSetExtended<complex<double> >::evaluate
   }
   cudapos = hostPos;
   eval_multi_multi_UBspline_3d_cuda
-  (CudaMultiSpline, (float*)cudapos.data(), CudaValuePointers.data(), N);
+  (CudaMultiSpline, (CudaRealType*)cudapos.data(), CudaValuePointers.data(), N);
   // Now, add on phases
   for (int iw=0; iw < N; iw++)
     hostPos[iw] = walkers[iw]->R[iat];
   cudapos = hostPos;
-  apply_phase_factors ((CUDA_PRECISION*) CudakPoints.data(),
+  apply_phase_factors ((CudaRealType*) CudakPoints.data(),
                        CudaMakeTwoCopies.data(),
-                       (CUDA_PRECISION*)cudapos.data(),
-                       (CUDA_PRECISION**)CudaValuePointers.data(),
+                       (CudaRealType*)cudapos.data(),
+                       (CudaRealType**)CudaValuePointers.data(),
                        phi.data(), CudaMultiSpline->num_splines,
                        walkers.size());
 }
@@ -387,15 +417,15 @@ EinsplineSetExtended<complex<double> >::evaluate
   }
   cudapos = hostPos;
   eval_multi_multi_UBspline_3d_cuda
-  (CudaMultiSpline, (float*)cudapos.data(), CudaValuePointers.data(), N);
+  (CudaMultiSpline, (CudaRealType*)cudapos.data(), CudaValuePointers.data(), N);
   // Now, add on phases
   for (int iw=0; iw < N; iw++)
     hostPos[iw] = newpos[iw];
   cudapos = hostPos;
-  apply_phase_factors ((CUDA_PRECISION*) CudakPoints.data(),
+  apply_phase_factors ((CudaRealType*) CudakPoints.data(),
                        CudaMakeTwoCopies.data(),
-                       (CUDA_PRECISION*)cudapos.data(),
-                       (CUDA_PRECISION**)CudaValuePointers.data(),
+                       (CudaRealType*)cudapos.data(),
+                       (CudaRealType**)CudaValuePointers.data(),
                        phi.data(), CudaMultiSpline->num_splines,
                        walkers.size());
 }
@@ -472,38 +502,38 @@ EinsplineSetExtended<complex<double> >::evaluate
     hostPos[iw] = ru;
   }
   cudapos = hostPos;
-  eval_multi_multi_UBspline_3d_c_vgl_cuda
-  (CudaMultiSpline, (float*)cudapos.data(),  Linv_cuda.data(), CudaValuePointers.data(),
+  eval_multi_multi_UBspline_3d_vgl_cuda
+  (CudaMultiSpline, (CudaRealType*)cudapos.data(),  Linv_cuda.data(), CudaValuePointers.data(),
    CudaGradLaplPointers.data(), N, CudaMultiSpline->num_splines);
   // DEBUG
-  //   TinyVector<double,OHMMS_DIM> r(hostPos[0][0], hostPos[0][1], hostPos[0][2]);
-  //   Vector<complex<double > > psi(M);
-  //   Vector<TinyVector<complex<double>,3> > grad(M);
-  //   Vector<Tensor<complex<double>,3> > hess(M);
-  //   EinsplineMultiEval (MultiSpline, r, psi, grad, hess);
-  //   // complex<double> cpuSpline[M];
-  //   // TinyVector<complex<double>,OHMMS_DIM> complex<double> cpuGrad[M];
-  //   // Tensor cpuHess[M];
-  //   // eval_multi_UBspline_3d_z_vgh (MultiSpline, hostPos[0][0], hostPos[0][1], hostPos[0][2],
-  //   // 				  cpuSpline);
-  //   gpu::host_vector<CudaStorageType*> pointers;
-  //   pointers = CudaGradLaplPointers;
-  //   complex<float> gpuSpline[4*M];
-  //   cudaMemcpy(gpuSpline, pointers[0],
-  // 	       4*M * sizeof(complex<float>), cudaMemcpyDeviceToHost);
-  // for (int i=0; i<M; i++)
-  //   fprintf (stderr, "%10.6f %10.6f   %10.6f %10.6f\n",
-  // 	     trace(hess[i],GGt).real(), gpuSpline[3*M+i].real(),
-  // 	     trace(hess[i], GGt).imag(), gpuSpline[3*M+i].imag());
+  //  TinyVector<double,OHMMS_DIM> r(hostPos[0][0], hostPos[0][1], hostPos[0][2]);
+  //  Vector<complex<double > > psi(M);
+  //  Vector<TinyVector<complex<double>,3> > grad(M);
+  //  Vector<Tensor<complex<double>,3> > hess(M);
+  //  EinsplineMultiEval (MultiSpline, r, psi, grad, hess);
+  //  // complex<double> cpuSpline[M];
+  //  // TinyVector<complex<double>,OHMMS_DIM> complex<double> cpuGrad[M];
+  //  // Tensor cpuHess[M];
+  //  // eval_multi_UBspline_3d_z_vgh (MultiSpline, hostPos[0][0], hostPos[0][1], hostPos[0][2],
+  //  // 				  cpuSpline);
+  //  gpu::host_vector<CudaStorageType*> pointers;
+  //  pointers = CudaGradLaplPointers;
+  //  complex<CudaRealType> gpuSpline[4*M];
+  //  cudaMemcpy(gpuSpline, pointers[10], 4*M * sizeof(complex<CudaRealType>), cudaMemcpyDeviceToHost);
+  //  for (int i=0; i<M; i++)
+  //    fprintf (stderr, "real: %10.6e %10.6e %10.6e , imag: %10.6e %10.6e %10.6e .\n",
+  //             trace(hess[i],GGt).real(), gpuSpline[3*M+i].real(), trace(hess[i],GGt).real() - gpuSpline[3*M+i].real(),
+  //             trace(hess[i], GGt).imag(), gpuSpline[3*M+i].imag(), trace(hess[i], GGt).imag() - gpuSpline[3*M+i].imag());
+  //  fprintf (stderr, "\n");
   // Now, add on phases
   for (int iw=0; iw < N; iw++)
     hostPos[iw] = newpos[iw];
   cudapos = hostPos;
-  apply_phase_factors ((CUDA_PRECISION*) CudakPoints.data(),
+  apply_phase_factors ((CudaRealType*) CudakPoints.data(),
                        CudaMakeTwoCopies.data(),
-                       (CUDA_PRECISION*)cudapos.data(),
-                       (CUDA_PRECISION**)CudaValuePointers.data(), phi.data(),
-                       (CUDA_PRECISION**)CudaGradLaplPointers.data(), grad_lapl.data(),
+                       (CudaRealType*)cudapos.data(),
+                       (CudaRealType**)CudaValuePointers.data(), phi.data(),
+                       (CudaRealType**)CudaGradLaplPointers.data(), grad_lapl.data(),
                        CudaMultiSpline->num_splines,  walkers.size(), row_stride);
 }
 
@@ -580,16 +610,16 @@ EinsplineSetExtended<complex<double> >::evaluate
   }
   cudapos = hostPos;
   eval_multi_multi_UBspline_3d_cuda
-  (CudaMultiSpline, (CUDA_PRECISION*) cudapos.data(),
+  (CudaMultiSpline, (CudaRealType*) cudapos.data(),
    CudaValuePointers.data(), N);
   // Now, add on phases
   for (int iw=0; iw < N; iw++)
     hostPos[iw] = pos[iw];
   cudapos = hostPos;
-  apply_phase_factors ((CUDA_PRECISION*) CudakPoints.data(),
+  apply_phase_factors ((CudaRealType*) CudakPoints.data(),
                        CudaMakeTwoCopies.data(),
-                       (CUDA_PRECISION*)cudapos.data(),
-                       (CUDA_PRECISION**)CudaValuePointers.data(),
+                       (CudaRealType*)cudapos.data(),
+                       (CudaRealType**)CudaValuePointers.data(),
                        phi.data(), CudaMultiSpline->num_splines, N);
 }
 
@@ -831,7 +861,9 @@ EinsplineSetHybrid<double>::evaluate (vector<Walker_t*> &walkers, vector<PosType
   // cerr << "Linv_cuda.size()      = " << Linv_cuda.size() << endl;
   // cerr << "HybridJobs_GPU.size() = " << HybridJobs_GPU.size() << endl;
   // cerr << "rhats_GPU.size()      = " << rhats_GPU.size() << endl;
-  MakeHybridJobList ((float*) cudapos.data(), N, IonPos_GPU.data(),
+
+#ifndef CUDA_DP
+ MakeHybridJobList ((float*) cudapos.data(), N, IonPos_GPU.data(),
                      PolyRadii_GPU.data(), CutoffRadii_GPU.data(),
                      AtomicOrbitals.size(), L_cuda.data(), Linv_cuda.data(),
                      HybridJobs_GPU.data(), rhats_GPU.data(),
@@ -849,6 +881,7 @@ EinsplineSetHybrid<double>::evaluate (vector<Walker_t*> &walkers, vector<PosType
                             (CudaRealType*)CudakPoints_reduced.data(),
                             phi.data(), grad_lapl.data(),
                             row_stride, NumOrbitals, newpos.size(), lMax);
+#endif
 #ifdef HYBRID_DEBUG
   gpu::host_vector<CudaRealType*> phi_CPU (phi.size()), grad_lapl_CPU(phi.size());
   phi_CPU = phi;
@@ -1142,6 +1175,8 @@ EinsplineSetHybrid<double>::evaluate
   for (int iw=0; iw < N; iw++)
     hostPos[iw] = pos[iw];
   cudapos = hostPos;
+
+#ifndef CUDA_DP
   MakeHybridJobList ((float*) cudapos.data(), N, IonPos_GPU.data(),
                      PolyRadii_GPU.data(), CutoffRadii_GPU.data(),
                      AtomicOrbitals.size(), L_cuda.data(), Linv_cuda.data(),
@@ -1157,6 +1192,7 @@ EinsplineSetHybrid<double>::evaluate
   evaluate3DSplineReal (HybridJobs_GPU.data(), (float*)cudapos.data(),
                         (CudaRealType*)CudakPoints_reduced.data(),CudaMultiSpline,
                         Linv_cuda.data(), phi.data(), NumOrbitals, pos.size());
+#endif
 }
 
 template<> void
@@ -1224,6 +1260,8 @@ EinsplineSetHybrid<complex<double> >::evaluate
   for (int iw=0; iw < N; iw++)
     hostPos[iw] = newpos[iw];
   cudapos = hostPos;
+
+#ifndef CUDA_DP
   MakeHybridJobList ((float*) cudapos.data(), N, IonPos_GPU.data(),
                      PolyRadii_GPU.data(), CutoffRadii_GPU.data(),
                      AtomicOrbitals.size(), L_cuda.data(), Linv_cuda.data(),
@@ -1250,6 +1288,7 @@ EinsplineSetHybrid<complex<double> >::evaluate
    CudaMakeTwoCopies.data(), (CudaRealType**)phi.data(),
    grad_lapl.data(), row_stride,
    CudaMakeTwoCopies.size(), newpos.size(), lMax);
+#endif
 #ifdef HYBRID_DEBUG
   // gpu::host_vector<HybridJobType> HybridJobs_CPU(HybridJobs_GPU.size());
   // HybridJobs_CPU = HybridJobs_GPU;
@@ -1531,6 +1570,7 @@ EinsplineSetHybrid<complex<double> >::evaluate
   for (int iw=0; iw < N; iw++)
     hostPos[iw] = pos[iw];
   cudapos = hostPos;
+#ifndef CUDA_DP
   MakeHybridJobList ((float*) cudapos.data(), N, IonPos_GPU.data(),
                      PolyRadii_GPU.data(), CutoffRadii_GPU.data(),
                      AtomicOrbitals.size(), L_cuda.data(), Linv_cuda.data(),
@@ -1551,6 +1591,7 @@ EinsplineSetHybrid<complex<double> >::evaluate
    (CudaRealType*)CudakPoints_reduced.data(),
    CudaMakeTwoCopies.data(), (CudaRealType**)phi.data(),
    CudaMakeTwoCopies.size(), pos.size(), lMax);
+#endif
   // gpu::host_vector<HybridJobType> HybridJobs_CPU(HybridJobs_GPU.size());
   // HybridJobs_CPU = HybridJobs_GPU;
   // int M = CudaMakeTwoCopies.size();
@@ -1675,7 +1716,7 @@ EinsplineSetHybrid<double>::initGPU()
     atom_cuda.spline_dr_inv = cpu_spline.x_grid.delta_inv;
     int Ngrid = cpu_spline.x_grid.num;
     int spline_size = 2*atom_cuda.spline_stride * (Ngrid+2);
-    gpu::host_vector<float> spline_coefs(spline_size);
+    gpu::host_vector<CudaRealType> spline_coefs(spline_size);
     AtomicSplineCoefs_GPU[iat].resize(spline_size);
     atom_cuda.spline_coefs = AtomicSplineCoefs_GPU[iat].data();
     // Reorder and copy splines to GPU memory
@@ -1703,7 +1744,7 @@ EinsplineSetHybrid<double>::initGPU()
     atom_cuda.poly_stride = numlm*atom_cuda.lm_stride;
     atom_cuda.poly_order = atom.PolyOrder;
     int poly_size = (atom.PolyOrder+1)*atom_cuda.poly_stride;
-    gpu::host_vector<float> poly_coefs(poly_size);
+    gpu::host_vector<CudaRealType> poly_coefs(poly_size);
     AtomicPolyCoefs_GPU[iat].resize(poly_size);
     atom_cuda.poly_coefs = AtomicPolyCoefs_GPU[iat].data();
     for (int lm=0; lm<numlm; lm++)
@@ -1752,7 +1793,7 @@ EinsplineSetHybrid<complex<double> >::initGPU()
     atom_cuda.spline_dr_inv = cpu_spline.x_grid.delta_inv;
     int Ngrid = cpu_spline.x_grid.num;
     int spline_size = 2*atom_cuda.spline_stride * (Ngrid+2);
-    gpu::host_vector<float> spline_coefs(spline_size);
+    gpu::host_vector<CudaRealType> spline_coefs(spline_size);
     AtomicSplineCoefs_GPU[iat].resize(spline_size);
     atom_cuda.spline_coefs = AtomicSplineCoefs_GPU[iat].data();
     // Reorder and copy splines to GPU memory
@@ -1784,7 +1825,7 @@ EinsplineSetHybrid<complex<double> >::initGPU()
     atom_cuda.poly_stride = numlm*atom_cuda.lm_stride;
     atom_cuda.poly_order = atom.PolyOrder;
     int poly_size = (atom.PolyOrder+1)*atom_cuda.poly_stride;
-    gpu::host_vector<float> poly_coefs(poly_size);
+    gpu::host_vector<CudaRealType> poly_coefs(poly_size);
     AtomicPolyCoefs_GPU[iat].resize(poly_size);
     atom_cuda.poly_coefs = &AtomicPolyCoefs_GPU[iat].data()[0];
     for (int lm=0; lm<numlm; lm++)

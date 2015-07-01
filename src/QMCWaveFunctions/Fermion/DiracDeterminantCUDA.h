@@ -168,8 +168,13 @@ public:
     AinvDeltaOffset   = pool.reserve((size_t)1            * RowStride);
     AinvColkOffset    = pool.reserve((size_t)1            * RowStride);
     newGradLaplOffset = pool.reserve((size_t)4            * RowStride);
+#ifdef CUDA_DP
+    AWorkOffset       = pool.reserve((size_t)    NumPtcls * RowStride);
+    AinvWorkOffset    = 0; // not needed for inversion
+#else
     AWorkOffset       = pool.reserve((size_t)2 * NumPtcls * RowStride);
     AinvWorkOffset    = pool.reserve((size_t)2 * NumPtcls * RowStride);
+#endif
     Phi->reserve(pool);
   }
 

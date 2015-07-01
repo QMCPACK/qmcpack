@@ -354,7 +354,7 @@ void OneBodyJastrowOrbitalBspline::calcGradient
       if (UsePBC)
         one_body_gradient_PBC (W.RList_GPU.data(), iat, C.data(), first, last,
                                spline.coefs.data(), spline.coefs.size(),
-                               spline.rMax, L.data(), Linv.data(), sim_cell_radius,
+                               spline.rMax, L.data(), Linv.data(),
                                zero, OneGradGPU.data(), walkers.size());
       else
         one_body_gradient (W.RList_GPU.data(), iat, C.data(), first, last,

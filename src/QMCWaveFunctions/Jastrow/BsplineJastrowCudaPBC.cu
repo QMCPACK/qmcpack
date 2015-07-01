@@ -990,7 +990,8 @@ two_body_ratio_grad_PBC(double *R[], int first, int last,
                         double  Rnew[], int inew,
                         double spline_coefs[], int numCoefs, double rMax,
                         double lattice[], double latticeInv[], bool zero,
-                        double ratio_grad[], int numWalkers)
+                        double ratio_grad[], int numWalkers,
+                        bool use_fast_image)
 {
   if (!AisInitializedPBC)
     cuda_spline_init_PBC();
@@ -1511,7 +1512,7 @@ void
 two_body_grad_lapl_PBC(double *R[], int e1_first, int e1_last,
                        int e2_first, int e2_last,
                        double spline_coefs[], int numCoefs, double rMax,
-                       double lattice[], double latticeInv[],
+                       double lattice[], double latticeInv[], double sim_cell_radius,
                        double gradLapl[], int row_stride, int numWalkers)
 {
   if (!AisInitializedPBC)
@@ -1723,7 +1724,8 @@ two_body_gradient_PBC (float *R[], int first, int last, int iat,
 void
 two_body_gradient_PBC (double *R[], int first, int last, int iat,
                        double spline_coefs[], int numCoefs, double rMax,
-                       double lattice[], double latticeInv[], bool zeroOut,
+                       double lattice[], double latticeInv[],
+                       double sim_cell_radius, bool zeroOut,
                        double grad[], int numWalkers)
 {
   if (!AisInitializedPBC)
@@ -2977,7 +2979,8 @@ one_body_NLratios_PBC(NLjobGPU<float> jobs[], float C[], int first, int last,
 void
 one_body_NLratios_PBC(NLjobGPU<double> jobs[], double C[], int first, int last,
                       double spline_coefs[], int numCoefs, double rMax,
-                      double lattice[], double latticeInv[], int numjobs)
+                      double lattice[], double latticeInv[], double sim_cell_radius,
+                      int numjobs)
 {
   if (!AisInitializedPBC)
     cuda_spline_init_PBC();
@@ -3180,8 +3183,8 @@ one_body_grad_PBC_kernel_fast(T **R, int iat, T *C, int first, int last,
 void
 one_body_gradient_PBC (float *Rlist[], int iat, float C[], int first, int last,
                        float spline_coefs[], int num_coefs, float rMax,
-                       float lattice[], float latticeInv[], float sim_cell_radius,
-                       bool zeroSum, float grad[], int numWalkers)
+                       float lattice[], float latticeInv[], bool zeroSum,
+                       float grad[], int numWalkers)
 {
   if (!AisInitializedPBC)
     cuda_spline_init_PBC();
