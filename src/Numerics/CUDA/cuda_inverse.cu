@@ -136,7 +136,7 @@ cublas_inverse (cublasHandle_t handle,
     checkCublasError(status, "Problem in LU factorization (cublasDgetrfBatched)");
   
     //       Inversion
-    status = cublasDgetriBatched(handle, N, (double**)AWorklist_d, rowStride, NULL, 
+    status = cublasDgetriBatched(handle, N, (const double**)AWorklist_d, rowStride, NULL, 
                                  (double**)AinvWorklist_d, rowStride, infoArray, numMats);
     checkCublasError(status, "Problem in matrix inversion (cublasDgetriBatched)");
 
@@ -153,7 +153,7 @@ cublas_inverse (cublasHandle_t handle,
     checkCublasError(status, "Problem in LU factorization (cublasSgetrfBatched)");
   
     // Inversion
-    status = cublasSgetriBatched(handle, N, Alist_d, rowStride, NULL,
+    status = cublasSgetriBatched(handle, N, (const float**)Alist_d, rowStride, NULL,
                                  Ainvlist_d, rowStride, infoArray, numMats);
     checkCublasError(status, "Problem in matrix inversion (cublasSgetriBatched)");
   }
@@ -190,7 +190,7 @@ cublas_inverse (cublasHandle_t handle,
   checkCublasError(status, "Problem in LU factorization (cublasDgetrfBatched)");
 
   // Inversion
-  status = cublasDgetriBatched(handle, N, Alist_d, rowStride, NULL,
+  status = cublasDgetriBatched(handle, N, (const double **)Alist_d, rowStride, NULL,
                                Ainvlist_d, rowStride, infoArray, numMats);
   checkCublasError(status, "Problem in matrix inversion (cublasDgetriBatched)");
 
