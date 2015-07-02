@@ -16,7 +16,6 @@
 #include "QMCHamiltonians/CoulombPBCAA.h"
 #include "QMCHamiltonians/CudaCoulomb.h"
 
-
 namespace qmcplusplus
 {
 struct CoulombPBCAA_CUDA : public CoulombPBCAA
@@ -30,20 +29,20 @@ struct CoulombPBCAA_CUDA : public CoulombPBCAA
   ParticleSet &PtclRef;
   //// Short-range part
   TextureSpline *SRSpline;
-  gpu::device_vector<CUDA_PRECISION>  SumGPU;
-  gpu::host_vector<CUDA_PRECISION>  SumHost;
-  gpu::device_vector<CUDA_PRECISION>  L, Linv;
+  gpu::device_vector<CUDA_AA_PRECISION>  SumGPU;
+  gpu::host_vector<CUDA_AA_PRECISION>  SumHost;
+  gpu::device_vector<CUDA_AA_PRECISION>  L, Linv;
   //// Long-range part
   int Numk;
-  gpu::device_vector<CUDA_PRECISION> kpointsGPU;
+  gpu::device_vector<CUDA_AA_PRECISION> kpointsGPU;
   gpu::device_vector<int>            kshellGPU;
   // This has the same lengths as KshellGPU
-  gpu::device_vector<CUDA_PRECISION> FkGPU;
+  gpu::device_vector<CUDA_AA_PRECISION> FkGPU;
   // The first vector index is the species number
   // Complex, stored as float2
-  vector<gpu::device_vector<CUDA_PRECISION*> > RhoklistsGPU;
-  vector<gpu::host_vector<CUDA_PRECISION*> > RhoklistsHost;
-  gpu::device_vector<CUDA_PRECISION> RhokGPU;
+  vector<gpu::device_vector<CUDA_AA_PRECISION*> > RhoklistsGPU;
+  vector<gpu::host_vector<CUDA_AA_PRECISION*> > RhoklistsHost;
+  gpu::device_vector<CUDA_AA_PRECISION> RhokGPU;
   void setupLongRangeGPU(ParticleSet &P);
   void addEnergy(MCWalkerConfiguration &W,
                  vector<RealType> &LocalEnergy);

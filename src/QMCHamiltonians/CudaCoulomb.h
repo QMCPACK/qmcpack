@@ -67,6 +67,16 @@ eval_vk_sum_cuda (float *rhok1[], float rhok2[],
                   int numWalkers);
 
 
+// mixed-precision
+void
+CoulombAA_SR_Sum(float *R[], int N, double rMax, int Ntex, int texNum,
+                 double lattice[], double latticeInv[], double sum[],
+                 int numWalkers);
+
+void
+eval_rhok_cuda(float *R[], int first, int last, double kpoints[],
+               int numk, double* rhok[], int numWalkers);
+
 
 // Double-precision
 void

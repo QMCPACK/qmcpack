@@ -264,13 +264,13 @@ __device__  double recipSqrt (double x)
 }
 
 
-template<typename T, int BS>
+template<typename TR, typename T, int BS>
 __global__ void
-coulomb_AA_PBC_kernel(T **R, int N, T rMax, int Ntex,
+coulomb_AA_PBC_kernel(TR **R, int N, T rMax, int Ntex,
                       int textureNum, T *lattice, T *latticeInv, T *sum)
 {
   int tid = threadIdx.x;
-  __shared__ T *myR;
+  __shared__ TR *myR;
   if (tid == 0)
     myR = R[blockIdx.x];
   __shared__ T L[3][3], Linv[3][3];
@@ -445,7 +445,20 @@ CoulombAA_SR_Sum(float *R[], int N, float rMax, int Ntex,
   const int BS=32;
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
-  coulomb_AA_PBC_kernel<float,BS><<<dimGrid,dimBlock>>>
+  coulomb_AA_PBC_kernel<float,float,BS><<<dimGrid,dimBlock>>>
+  (R, N, rMax, Ntex, textureNum, lattice, latticeInv, sum);
+}
+
+
+void
+CoulombAA_SR_Sum(float *R[], int N, double rMax, int Ntex,
+                 int textureNum, double lattice[], double latticeInv[],
+                 double sum[], int numWalkers)
+{
+  const int BS=32;
+  dim3 dimBlock(BS);
+  dim3 dimGrid(numWalkers);
+  coulomb_AA_PBC_kernel<float,double,BS><<<dimGrid,dimBlock>>>
   (R, N, rMax, Ntex, textureNum, lattice, latticeInv, sum);
 }
 
@@ -458,7 +471,7 @@ CoulombAA_SR_Sum(double *R[], int N, double rMax, int Ntex,
   const int BS=32;
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
-  coulomb_AA_PBC_kernel<double,BS><<<dimGrid,dimBlock>>>
+  coulomb_AA_PBC_kernel<double,double,BS><<<dimGrid,dimBlock>>>
   (R, N, rMax, Ntex, textureNum, lattice, latticeInv, sum);
 }
 
@@ -1065,14 +1078,15 @@ eval_rhok_kernel (T **R, int numr,
 }
 
 
-template<typename T, int BS>
+template<typename TR, typename T, int BS>
 __global__ void
-eval_rhok_kernel (T **R, int first, int last,
+eval_rhok_kernel (TR **R, int first, int last,
                   T *kpoints, int numk, T **rhok)
 {
   int tid = threadIdx.x;
   int numr = last-first+1;
-  __shared__ T r[BS][3], k[BS][3], *myR, *myrhok;
+  __shared__ TR *myR;
+  __shared__ T r[BS][3], k[BS][3], *myrhok;
   if (tid == 0)
   {
     myR    =    R[blockIdx.x];
@@ -1148,7 +1162,18 @@ eval_rhok_cuda(float *R[], int first, int last, float kpoints[],
   const int BS=32;
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
-  eval_rhok_kernel<float,BS><<<dimGrid,dimBlock>>>
+  eval_rhok_kernel<float,float,BS><<<dimGrid,dimBlock>>>
+  (R, first, last, kpoints, numk, rhok);
+}
+
+void
+eval_rhok_cuda(float *R[], int first, int last, double kpoints[],
+               int numk, double* rhok[], int numWalkers)
+{
+  const int BS=32;
+  dim3 dimBlock(BS);
+  dim3 dimGrid(numWalkers);
+  eval_rhok_kernel<float,double,BS><<<dimGrid,dimBlock>>>
   (R, first, last, kpoints, numk, rhok);
 }
 
@@ -1159,7 +1184,7 @@ eval_rhok_cuda(double *R[], int first, int last, double kpoints[],
   const int BS=32;
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
-  eval_rhok_kernel<double,BS><<<dimGrid,dimBlock>>>
+  eval_rhok_kernel<double,double,BS><<<dimGrid,dimBlock>>>
   (R, first, last, kpoints, numk, rhok);
 }
 

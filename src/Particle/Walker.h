@@ -128,7 +128,8 @@ struct Walker
   // Note that R_GPU has size N+1.  The last element contains the
   // proposed position for single-particle moves.
   gpu::device_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > R_GPU, Grad_GPU;
-  gpu::device_vector<CUDA_PRECISION> Lap_GPU, Rhok_GPU;
+  gpu::device_vector<CUDA_PRECISION> Lap_GPU;
+  gpu::device_vector<CUDA_AA_PRECISION> Rhok_GPU;
   int k_species_stride;
   inline void resizeCuda(int size, int num_species, int num_k)
   {
@@ -143,11 +144,11 @@ struct Walker
     if (num_k)
       Rhok_GPU.resize (num_species * k_species_stride);
   }
-  inline CUDA_PRECISION* get_rhok_ptr ()
+  inline CUDA_AA_PRECISION* get_rhok_ptr ()
   {
     return Rhok_GPU.data();
   }
-  inline CUDA_PRECISION* get_rhok_ptr (int isp)
+  inline CUDA_AA_PRECISION* get_rhok_ptr (int isp)
   {
     return Rhok_GPU.data() + k_species_stride * isp;
   }
@@ -433,7 +434,8 @@ struct Walker
     m.Pack(&(PHindex[0]),PHindex.size());
 #ifdef QMC_CUDA
     // Pack GPU data
-    std::vector<CUDA_PRECISION> host_data, host_rhok;
+    std::vector<CUDA_PRECISION> host_data;
+    std::vector<CUDA_AA_PRECISION> host_rhok;
     std::vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > R_host;
     std::vector<CUDA_PRECISION> host_lapl;
     cuda_DataSet.copyFromGPU(host_data);
@@ -478,7 +480,8 @@ struct Walker
     m.Unpack(&(PHindex[0]),PHindex.size());
 #ifdef QMC_CUDA
     // Pack GPU data
-    std::vector<CUDA_PRECISION> host_data, host_rhok;
+    std::vector<CUDA_PRECISION> host_data;
+    std::vector<CUDA_AA_PRECISION> host_rhok;
     std::vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > R_host;
     std::vector<CUDA_PRECISION> host_lapl;
     int size, N;

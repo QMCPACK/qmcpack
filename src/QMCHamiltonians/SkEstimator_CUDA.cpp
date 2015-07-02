@@ -22,7 +22,7 @@ SkEstimator_CUDA::addEnergy(MCWalkerConfiguration &W,
                             vector<RealType> &LocalEnergy)
 {
   int nw = W.WalkerList.size();
-  gpu::host_vector<CUDA_PRECISION> rhok_host;
+  gpu::host_vector<CUDA_AA_PRECISION> rhok_host;
   int stride = (int)(W.WalkerList[0]->get_rhok_ptr(1) -
                      W.WalkerList[0]->get_rhok_ptr(0));
   RealType OneOverNW = 1.0/(RealType)nw;

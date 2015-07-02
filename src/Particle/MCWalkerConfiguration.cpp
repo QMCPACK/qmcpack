@@ -558,6 +558,7 @@ void MCWalkerConfiguration::updateLists_GPU()
     DataList_GPU.resize(nw);
   }
   hostlist.resize(nw);
+  hostlist_AA.resize(nw);
   for (int iw=0; iw<nw; iw++)
   {
     if (WalkerList[iw]->R_GPU.size() != R.size())
@@ -585,8 +586,8 @@ void MCWalkerConfiguration::updateLists_GPU()
   for (int isp=0; isp<NumSpecies; isp++)
   {
     for (int iw=0; iw<nw; iw++)
-      hostlist[iw] = WalkerList[iw]->get_rhok_ptr(isp);
-    RhokLists_GPU[isp] = hostlist;
+      hostlist_AA[iw] = WalkerList[iw]->get_rhok_ptr(isp);
+    RhokLists_GPU[isp] = hostlist_AA;
   }
 }
 

@@ -207,6 +207,12 @@
 /* Setting precision for CUDA core kernels */
 #cmakedefine CUDA_PRECISION @CUDA_PRECISION@
 
+/* Setting precision for CUDA CoulombPBCAA kernel */
+#cmakedefine CUDA_AA_PRECISION @CUDA_AA_PRECISION@
+#ifndef CUDA_AA_PRECISION
+#define CUDA_AA_PRECISION CUDA_PRECISION
+#endif
+
 #cmakedefine DEBUG_PSIBUFFER_ON @DEBUG_PSIBUFFER_ON@
 
 #endif // QMCPLUSPLUS_CONFIGURATION_H
