@@ -34,10 +34,6 @@ CoulombAB_Sum(float *R[], int Nelec, float I[], float Zion[], int Nion,
               float sum[], int numWalkers);
 
 void
-CoulombAB_Sum(double *R[], int Nelec, double I[], double Zion[], int Nion,
-              double sum[], int numWalkers);
-
-void
 CoulombAB_SR_Sum(float *R[], int Nelec, float I[], int Ifirst, int Ilast,
                  float rMax, int Ntex, int textureNum,
                  float lattice[], float latticeInv[],
@@ -74,6 +70,12 @@ CoulombAA_SR_Sum(float *R[], int N, double rMax, int Ntex, int texNum,
                  int numWalkers);
 
 void
+CoulombAB_SR_Sum(float *R[], int Nelec, float I[], int Ifirst, int Ilast,
+                 double rMax, int Ntex, int textureNum,
+                 double lattice[], double latticeInv[],
+                 double sum[], int numWalkers);
+
+void
 eval_rhok_cuda(float *R[], int first, int last, double kpoints[],
                int numk, double* rhok[], int numWalkers);
 
@@ -83,6 +85,10 @@ void
 CoulombAA_SR_Sum(double *R[], int N, double rMax, int Ntex, int texNum,
                  double lattice[], double latticeInv[], double sum[],
                  int numWalkers);
+
+void
+CoulombAB_Sum(double *R[], int Nelec, double I[], double Zion[], int Nion,
+              double sum[], int numWalkers);
 
 void
 CoulombAB_SR_Sum(double *R[], int Nelec, double I[], int Ifirst, int Ilast,

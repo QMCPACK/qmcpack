@@ -746,14 +746,14 @@ MPC_LR_Sum(double *R[], int N, UBspline_3d_d_cuda *spline,
 
 
 
-template<typename T, int BS>
+template<typename TR, typename T, int BS>
 __global__ void
-coulomb_AB_PBC_kernel(T **R, int Nelec, T *I, int Ifirst, int Ilast,
+coulomb_AB_PBC_kernel(TR **R, int Nelec, TR *I, int Ifirst, int Ilast,
                       T rMax, int Ntex, int textureNum,
                       T *lattice, T *latticeInv, T *sum)
 {
   int tid = threadIdx.x;
-  __shared__ T *myR;
+  __shared__ TR *myR;
   int Nion = Ilast - Ifirst + 1;
   if (tid == 0)
     myR = R[blockIdx.x];
@@ -828,7 +828,22 @@ CoulombAB_SR_Sum(float *R[], int Nelec, float I[],  int Ifirst, int Ilast,
   const int BS=64;
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
-  coulomb_AB_PBC_kernel<float,BS><<<dimGrid,dimBlock>>>
+  coulomb_AB_PBC_kernel<float,float,BS><<<dimGrid,dimBlock>>>
+  (R, Nelec, I, Ifirst, Ilast, rMax, Ntex, textureNum,
+   lattice, latticeInv, sum);
+}
+
+
+void
+CoulombAB_SR_Sum(float *R[], int Nelec, float I[],  int Ifirst, int Ilast,
+                 double rMax, int Ntex, int textureNum,
+                 double lattice[], double latticeInv[],
+                 double sum[], int numWalkers)
+{
+  const int BS=64;
+  dim3 dimBlock(BS);
+  dim3 dimGrid(numWalkers);
+  coulomb_AB_PBC_kernel<float,double,BS><<<dimGrid,dimBlock>>>
   (R, Nelec, I, Ifirst, Ilast, rMax, Ntex, textureNum,
    lattice, latticeInv, sum);
 }
@@ -843,7 +858,7 @@ CoulombAB_SR_Sum(double *R[], int Nelec, double I[],  int Ifirst, int Ilast,
   const int BS=64;
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
-  coulomb_AB_PBC_kernel<double,BS><<<dimGrid,dimBlock>>>
+  coulomb_AB_PBC_kernel<double,double,BS><<<dimGrid,dimBlock>>>
   (R, Nelec, I, Ifirst, Ilast, rMax, Ntex, textureNum,
    lattice, latticeInv, sum);
 }
