@@ -407,7 +407,7 @@ struct Walker
     bsize += R.size()        * OHMMS_DIM * sizeof(CUDA_PRECISION); // R_GPU
     bsize += R.size()        * OHMMS_DIM * sizeof(CUDA_PRECISION); // Grad_GPU
     bsize += R.size()        * 1         * sizeof(CUDA_PRECISION); // Lap_GPU
-    bsize += Rhok_GPU.size()             * sizeof(CUDA_PRECISION); // Lap_GPU
+    bsize += Rhok_GPU.size()             * sizeof(CUDA_COULOMB_PRECISION); // Rhok
 #endif
     return bsize;
   }
