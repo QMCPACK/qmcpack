@@ -2080,7 +2080,7 @@ Kraken(       9408,   2,     6,   16,  100,  'aprun',   'qsub',   'qstat',    'q
 Taub(          400,   2,     6,   24,   50, 'mpirun',   'qsub',   'qstat',    'qdel')
 OIC5(           28,   2,    16,  128, 1000, 'mpirun',   'qsub',   'qstat',    'qdel')
 Hopper(       6384,   2,    12,   64, 1000,  'aprun',   'qsub',   'qstat',    'qdel')
-Edison(        664,   2,     8,   64,  100,  'aprun',   'qsub',   'qstat',    'qdel')
+Edison(        664,   2,    12,   64,  100,  'aprun',   'qsub',   'qstat',    'qdel')
 BlueWatersXK( 3072,   1,    16,   32,  100,  'aprun',   'qsub',   'qstat',    'qdel')
 BlueWatersXE(22640,   2,    16,   64,  100,  'aprun',   'qsub',   'qstat',    'qdel')
 Titan(       18688,   1,    16,   32,  100,  'aprun',   'qsub',   'qstat',    'qdel')

@@ -37,7 +37,8 @@ class Matter(DevBase):
             nlen = len(name)
             if name.find('_')!=-1:
                 s,n = name.split('_',1)
-                iselem = n.isdigit() and s in self.elements
+                #iselem = n.isdigit() and s in self.elements
+                iselem = s in self.elements
             elif nlen>1 and name[1:].isdigit():
                 s = name[0:1]
                 iselem = s in self.elements

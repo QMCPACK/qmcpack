@@ -40,10 +40,10 @@ class obj(AllAbilities):
     #    self._transfer_to(other,copy)
     def append(self,value):
         self._append(value)
-    def save(self,fpath=None):
-        self._save(fpath)
-    def load(self,fpath):
-        self._load(fpath)
+    def save(self,fpath=None,fast=True):
+        self._save(fpath,fast)
+    def load(self,fpath,fast=True):
+        self._load(fpath,fast)
 
 
     def list(self,*names):

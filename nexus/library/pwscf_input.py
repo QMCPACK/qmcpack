@@ -1358,6 +1358,16 @@ def generate_any_pwscf_input(**kwargs):
         #end if
     #end for
 
+    #copy certain keywords
+    tot_magnetization = None
+    if 'tot_magnetization' in kwargs:
+        tot_magnetization = kwargs.tot_magnetization
+    #end if
+    nspin = None
+    if 'nspin' in kwargs:
+        nspin = kwargs.nspin
+    #end if
+
     #make an empty input file
     pw = PwscfInput()
 
@@ -1426,7 +1436,7 @@ def generate_any_pwscf_input(**kwargs):
     #end if
 
     # set the number of spins
-    if start_mag is None and (not 'tot_magnetization' in kwargs or kwargs['tot_magnetization']==0):
+    if start_mag is None and nspin is None and (tot_magnetization is None or tot_magnetization==0):
         pw.system.nspin = 1
     else:
         pw.system.nspin = 2

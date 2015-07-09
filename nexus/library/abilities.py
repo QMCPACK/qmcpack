@@ -301,28 +301,38 @@ class Logable:
 
 
 import cPickle
+import pickle
 class Savable:
-    def _save(self,fpath=None):
+    def _save(self,fpath=None,fast=True):
         #self._unlink_dynamic_methods(self)
         if fpath==None:
             fpath='./'+self.__class__.__name__+'.p'
         #end if
         #self._savepath=fpath
         fobj = open(fpath,'w')
-        binary = cPickle.HIGHEST_PROTOCOL
-        cPickle.dump(self,fobj,binary)
+        if fast:
+            binary = cPickle.HIGHEST_PROTOCOL
+            cPickle.dump(self,fobj,binary)
+        else:
+            binary = pickle.HIGHEST_PROTOCOL
+            pickle.dump(self,fobj,binary)
+        #end if
         fobj.close()
         del fobj
         del binary
         return
     #end def _save
 
-    def _load(self,fpath=None):
+    def _load(self,fpath=None,fast=True):
         if fpath==None:
             fpath='./'+self.__class__.__name__+'.p'
         #end if
         fobj = open(fpath,'r')
-        tmp = cPickle.load(fobj)
+        if fast:
+            tmp = cPickle.load(fobj)
+        else:
+            tmp = pickle.load(fobj)
+        #end if
         fobj.close()
         self.__dict__.clear()
         #self.__dict__=tmp.__dict__
@@ -341,7 +351,7 @@ class Savable:
     #            if type(v)==type(self._unlink_dynamic_methods):
     #                obj.__dict__[k]=None
     #            else:
-    #                self._unlink_dynamic_methods(v)
+    #                self._unlink_dynamic_methods(v) 
     #            #end if
     #        #end for
     #    elif hasattr(obj,'__iter__'):

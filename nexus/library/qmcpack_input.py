@@ -1585,7 +1585,7 @@ class determinant(QIxml):
 #end class determinant
 
 class occupation(QIxml):
-    attributes = ['mode','spindataset']
+    attributes = ['mode','spindataset','pairs','format']
 #end class occupation
 
 class multideterminant(QIxml):
