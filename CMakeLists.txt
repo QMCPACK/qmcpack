@@ -77,6 +77,7 @@ SET(OHMMS_INDEXTYPE int)
 SET(OHMMS_PRECISION double)
 SET(APP_PRECISION double)
 SET(CUDA_PRECISION float)
+SET(CUDA_COULOMB_PRECISION double)
 
 ######################################################################
 # enable MPI and OPNEMP  if possible

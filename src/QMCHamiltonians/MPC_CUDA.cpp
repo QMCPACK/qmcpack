@@ -102,6 +102,7 @@ MPC_CUDA::addEnergy(MCWalkerConfiguration &W,
         int nw_thread=(nw+np-1)/np;
         int first=nw_thread*(ip-1);
         int last=(ip<np)? nw_thread*ip:nw;
+        if(last>nw) last=nw;
         ParticleSet& p(*myPtcl[ip]);
         for(int iw=first; iw<last; ++iw)
         {

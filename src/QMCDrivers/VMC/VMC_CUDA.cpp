@@ -146,6 +146,7 @@ bool VMCcuda::run()
       Estimators->accumulate(W);
     }
     while(step<nSteps);
+    Psi.recompute(W);
     if(forOpt)
     {
       d_logpsi_dalpha=0.0;
@@ -193,7 +194,6 @@ bool VMCcuda::run()
     }
     // vector<RealType> logPsi(W.WalkerList.size(), 0.0);
     // Psi.evaluateLog(W, logPsi);
-    Psi.recompute(W);
     double accept_ratio = (double)nAccept/(double)(nAccept+nReject);
     Estimators->stopBlock(accept_ratio);
     nAcceptTot += nAccept;
