@@ -1,4 +1,45 @@
 \chapter{Quantum Monte Carlo Methods}
 \label{chap:qmcmethods}
 
-General description of which QMC methods are available and documented.
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l l }
+\hline
+\multicolumn{6}{l}{\texttt{qmc} factory element} \\
+\hline
+\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{simulation, loop}}\\
+\multicolumn{2}{l}{type   selector:} & \multicolumn{4}{l}{\texttt{method} attribute}\\
+\multicolumn{2}{l}{type   options: } & vmc           & \multicolumn{3}{l}{Variational Monte Carlo}\\
+%\multicolumn{2}{l}{                } & opt           & \multicolumn{3}{l}{}\\
+\multicolumn{2}{l}{                } & linear        & \multicolumn{3}{l}{Wavefunction optimization with linear method}\\
+%\multicolumn{2}{l}{                } & cslinear      & \multicolumn{3}{l}{}\\
+\multicolumn{2}{l}{                } & dmc           & \multicolumn{3}{l}{Diffusion Monte Carlo}\\
+\multicolumn{2}{l}{                } & rmc           & \multicolumn{3}{l}{Reptation Monte Carlo}\\
+%\multicolumn{2}{l}{                } & ptcl          & \multicolumn{3}{l}{}\\
+%\multicolumn{2}{l}{                } & mul           & \multicolumn{3}{l}{}\\
+%\multicolumn{2}{l}{                } & warp          & \multicolumn{3}{l}{}\\
+\multicolumn{2}{l}{shared attributes:} & \multicolumn{4}{l}{}\\
+   &   \bfseries name         & \bfseries datatype & \bfseries values & \bfseries default & \bfseries description \\
+   &   \texttt{method}        &  text              &   listed above   & invalid           & QMC driver            \\
+   &   \texttt{move}          &  text              &   pbyp, alle     & pbyp              & method used to move electrons \\
+   &   \texttt{gpu}           &  text              &   yes, no        & dep.              & use the GPU\\
+   &   \texttt{trace}         &  text              &                  & no                & ???                      \\
+   &   \texttt{checkpoints}   &  integer           &                  & -1                & checkpoint frequency \\
+   &   \texttt{target}        &  text              &                  &                   & ???  \\
+   &   \texttt{completed}     &  text              &                  &                   & ???  \\
+   &   \texttt{append}        &  text              &   yes, no        & yes               & ???  \\
+%   &   \texttt{multiple}      &  text              &   yes, no        & no                & ???  \\
+%   &   \texttt{warp}          &  text              &   yes, no        & no                & ???  \\
+\hline
+
+\end{tabularx}
+\end{center}
+\end{table}
+
+Additional information:
+\begin{itemize}
+\item \texttt{move}. There are two ways implemented to move electrons. The more used method is the particle-by-particle move. In this method, only one electron is moved for acception or rejection. The other method is the all-electron move, namely all the electrons are moved once for testing acception or rejection.
+
+\item \texttt{gpu}. When the executable is compiled with CUDA, the target computing device can be chosen by this switch. With a regular CPU only compilation, this option is not effective.
+
+\end{itemize}
