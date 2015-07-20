@@ -65,8 +65,7 @@
 
 
 
-\subsection{Input Specification}
-
+\section{The Hamiltonian}
 
 % hamiltonian element
 %  dev notes
@@ -83,6 +82,7 @@
 %        aCopy->renameProperty(``e'',qp->getName());
 %        aCopy->renameProperty(psiName,psi->getName());
 %      the renaming may not work if dynamic particleset.name!=''e''
+%   lots of xml inputs are simply ignored if do not explicitly match (fix! here and elsewhere in the build tree)
 
 \FloatBarrier
 \begin{table}[h]
@@ -95,12 +95,12 @@
 \multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\texttt{pairpot extpot estimator constant}(deprecated)}\\
 \multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
    &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
-   &   \texttt{name/id}$^o$ &  text              & \textit{anything}& h0                  & A unique id for this Hamiltonian instance.                      \\
-   &   \texttt{type}$^o$    &  text              &                  & generic             & \textit{No current function.}                      \\
-   &   \texttt{role}$^o$    &  text              & primary/extra    & extra               & Designate as primary Hamiltonian or not.                      \\
-   &   \texttt{source}$^o$  &  text              & \texttt{particleset.name} & i          & Identify classical particleset.                      \\
-   &   \texttt{target}$^r$  &  text              & \texttt{particleset.name} & e          & Identify quantum particlset.                      \\
-   &   \texttt{default}$^o$ &  boolean           & yes/no           & yes                 & Include kinetic energy term implicitly.                      \\
+   &   \texttt{name/id}$^o$ &  text              & \textit{anything}& h0                  & Unique id for this Hamiltonian instance                      \\
+   &   \texttt{type}$^o$    &  text              &                  & generic             & \textit{No current function}                      \\
+   &   \texttt{role}$^o$    &  text              & primary/extra    & extra               & Designate as primary Hamiltonian or not                      \\
+   &   \texttt{source}$^o$  &  text              & \texttt{particleset.name} & i          & Identify classical particleset                      \\
+   &   \texttt{target}$^r$  &  text              & \texttt{particleset.name} & e          & Identify quantum particlset                      \\
+   &   \texttt{default}$^o$ &  boolean           & yes/no           & yes                 & Include kinetic energy term implicitly                      \\
   \hline
 \end{tabularx}
 \end{center}
@@ -130,6 +130,8 @@
 \end{lstlisting}
 
 
+\section{Pair potentials}
+
 % pairpot element
 \FloatBarrier
 \begin{table}[h]
@@ -140,32 +142,32 @@
 \hline
 \multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{hamiltonian}}\\
 \multicolumn{2}{l}{type   selector:} & \multicolumn{4}{l}{\texttt{type} attribute}\\
-\multicolumn{2}{l}{type   options: } & \multicolumn{4}{l}{coulomb}\\
-\multicolumn{2}{l}{                } & \multicolumn{4}{l}{pseudo}\\
-\multicolumn{2}{l}{                } & \multicolumn{4}{l}{mpc}\\
-\multicolumn{2}{l}{                } & \multicolumn{4}{l}{cpp}\\
-\multicolumn{2}{l}{                } & \multicolumn{4}{l}{numerical/*num*}\\
-\multicolumn{2}{l}{                } & \multicolumn{4}{l}{jellium}\\
-\multicolumn{2}{l}{                } & \multicolumn{4}{l}{hardsphere}\\
-\multicolumn{2}{l}{                } & \multicolumn{4}{l}{gaussian}\\
-\multicolumn{2}{l}{                } & \multicolumn{4}{l}{huse}\\
-\multicolumn{2}{l}{                } & \multicolumn{4}{l}{modpostel}\\
-\multicolumn{2}{l}{                } & \multicolumn{4}{l}{oscillatory}\\
-\multicolumn{2}{l}{                } & \multicolumn{4}{l}{skpot}\\
-\multicolumn{2}{l}{                } & \multicolumn{4}{l}{vhxc}\\
-\multicolumn{2}{l}{                } & \multicolumn{4}{l}{modInsKE}\\
-\multicolumn{2}{l}{                } & \multicolumn{4}{l}{LJP\_smoothed}\\
-\multicolumn{2}{l}{                } & \multicolumn{4}{l}{HeSAPT\_smoothed}\\
-\multicolumn{2}{l}{                } & \multicolumn{4}{l}{HFDHE2\_Moroni1995}\\
-\multicolumn{2}{l}{                } & \multicolumn{4}{l}{eHe}\\
-\multicolumn{2}{l}{                } & \multicolumn{4}{l}{HFDHE2}\\
+\multicolumn{2}{l}{type   options: } & coulomb            & \multicolumn{3}{l}{Coulomb/Ewald potential}\\
+\multicolumn{2}{l}{                } & pseudo             & \multicolumn{3}{l}{Semilocal pseudopotential}\\
+\multicolumn{2}{l}{                } & mpc                & \multicolumn{3}{l}{Modified Periodic Coulomb interaction/correction}\\
+\multicolumn{2}{l}{                } & cpp                & \multicolumn{3}{l}{Core polarization potential}\\
+\multicolumn{2}{l}{                } & numerical/*num*    & \multicolumn{3}{l}{Numerical radial potential}\\
+\multicolumn{2}{l}{                } & skpot              & \multicolumn{3}{l}{\textit{Unknown}}\\
+\multicolumn{2}{l}{                } & vhxc               & \multicolumn{3}{l}{Exchange correlation potential (external)}\\
+\multicolumn{2}{l}{                } & jellium            & \multicolumn{3}{l}{Atom-centered spherical jellium potential}\\
+\multicolumn{2}{l}{                } & hardsphere         & \multicolumn{3}{l}{Hard sphere potential}\\
+\multicolumn{2}{l}{                } & gaussian           & \multicolumn{3}{l}{Gaussian potential}\\
+\multicolumn{2}{l}{                } & modpostel          & \multicolumn{3}{l}{Modified Poschl-Teller potential}\\
+\multicolumn{2}{l}{                } & huse               & \multicolumn{3}{l}{Huse quintic potential}\\
+\multicolumn{2}{l}{                } & modInsKE           & \multicolumn{3}{l}{Model insulator kinetic energy}\\
+\multicolumn{2}{l}{                } & oscillatory        & \multicolumn{3}{l}{\textit{Unknown}}\\
+\multicolumn{2}{l}{                } & LJP\_smoothed      & \multicolumn{3}{l}{Helium pair potential}\\
+\multicolumn{2}{l}{                } & HeSAPT\_smoothed   & \multicolumn{3}{l}{Helium pair potential}\\
+\multicolumn{2}{l}{                } & HFDHE2\_Moroni1995 & \multicolumn{3}{l}{Helium pair potential}\\
+\multicolumn{2}{l}{                } & HFDHE2             & \multicolumn{3}{l}{Helium pair potential}\\
+\multicolumn{2}{l}{                } & eHe                & \multicolumn{3}{l}{Helium-electron pair potential}\\
 \multicolumn{2}{l}{shared attributes:} & \multicolumn{4}{l}{}\\
    &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
-   &   \texttt{type}$^r$      &  text              & \textit{See above} & 0                   & Select pairpot type.         \\
-   &   \texttt{name}$^r$      &  text              & \textit{anything}                 & any                 & Unique name for this pairpot.\\
-   &   \texttt{source}$^r$    &  text              & \texttt{particleset.name} &\texttt{hamiltonian.target}& Identify interacting particles.\\
-   &   \texttt{target}$^r$    &  text              & \texttt{particleset.name} &\texttt{hamiltonian.target}& Identify interacting particles.  \\
-   &   \texttt{units}$^o$     &  text              &                  & hartree             & \textit{No current function.}  \\
+   &   \texttt{type}$^r$      &  text              & \textit{See above}        & 0                   & Select pairpot type         \\
+   &   \texttt{name}$^r$      &  text              & \textit{anything}         & any                 & Unique name for this pairpot\\
+   &   \texttt{source}$^r$    &  text              & \texttt{particleset.name} &\texttt{hamiltonian.target}& Identify interacting particles\\
+   &   \texttt{target}$^r$    &  text              & \texttt{particleset.name} &\texttt{hamiltonian.target}& Identify interacting particles  \\
+   &   \texttt{units}$^o$     &  text              &                           & hartree             & \textit{No current function}  \\
 \hline
 \end{tabularx}
 \end{center}
@@ -191,6 +193,8 @@ Remarks
 
 %   do coulomb, pseudo, mpc
 
+\subsection{Coulomb potentials}
+
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
@@ -202,13 +206,13 @@ Remarks
 \multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\textit{None}}\\
 \multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
    &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
-   & \texttt{type}$^r$    &  text              & \textbf{coulomb} &                     & Must be coulomb.         \\
-   & \texttt{name/id}$^r$ &  text              & \textit{anything}&  ElecElec           & Unique name for interaction. \\
-   & \texttt{source}$^r$  &  text              & \texttt{particleset.name} &\texttt{hamiltonian.target}& Identify interacting particles.\\
-   & \texttt{target}$^r$  &  text              & \texttt{particleset.name} &\texttt{hamiltonian.target}& Identify interacting particles.  \\
-   & \texttt{pbc}$^o$     &  boolean           & yes/no           & yes$^*$             & Use Ewald summation.  \\
-   & \texttt{physical}$^o$&  boolean           & yes/no           & yes                 & Hamiltonian(yes)/observable(no). \\
-   & \texttt{forces}      &  boolean           & yes/no           & no                  & \textit{Deprecated.}             \\
+   & \texttt{type}$^r$    &  text              & \textbf{coulomb} &                     & Must be coulomb     \\
+   & \texttt{name/id}$^r$ &  text              & \textit{anything}&  ElecElec           & Unique name for interaction\\
+   & \texttt{source}$^r$  &  text              & \texttt{particleset.name} &\texttt{hamiltonian.target}& Identify interacting particles\\
+   & \texttt{target}$^r$  &  text              & \texttt{particleset.name} &\texttt{hamiltonian.target}& Identify interacting particles\\
+   & \texttt{pbc}$^o$     &  boolean           & yes/no           & yes$^*$             & Use Ewald summation  \\
+   & \texttt{physical}$^o$&  boolean           & yes/no           & yes                 & Hamiltonian(yes)/observable(no) \\
+   & \texttt{forces}      &  boolean           & yes/no           & no                  & \textit{Deprecated}             \\
   \hline
 \end{tabularx}
 \end{center}
@@ -222,6 +226,8 @@ Remarks
 \end{itemize}
 
 
+\subsection{Pseudopotentials}
+
 % pseudopotential element
 %   dev notes
 %     attributes name, source, wavefunction, format are read in CoulombFactory.cpp  HamiltonianFactory::addPseudoPotential
@@ -233,7 +239,7 @@ Remarks
 %         what is the psf format?
 %       if format==xml, normal read continues, i.e. <pseudo/> child elements are expected
 %         read is not sensitive to particleset group/species ordering
-%         child elements not names <pseudo/> are simply ignored (FIX!)
+%         child elements not named <pseudo/> are simply ignored (FIX!)
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
@@ -245,14 +251,14 @@ Remarks
 \multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\texttt{pseudo}}\\
 \multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
    &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
-   & \texttt{type}$^r$    &  text              & \textbf{pseudo} &                      & Must be pseudo.         \\
-   & \texttt{name/id}$^r$ &  text              & \textit{anything}&  PseudoPot          & \textit{No current function.}\\
-   & \texttt{source}$^r$  &  text              & \texttt{particleset.name} &  i                  & Ion particleset name.\\
-   & \texttt{target}$^r$  &  text              & \texttt{particleset.name} &\texttt{hamiltonian.target}& Electron particleset name.  \\
-   & \texttt{pbc}$^o$     &  boolean           & yes/no           & yes$^*$             & Use Ewald summation.  \\
-   & \texttt{forces}      &  boolean           & yes/no           & no                  & \textit{Deprecated.}             \\
-   &\texttt{wavefunction}$^r$ &  text          & \texttt{wavefunction.name}& invalid    & Identify wavefunction. \\
-   &   \texttt{format}$^r$    &  text          & xml/table        & table               & Select file format.   \\
+   & \texttt{type}$^r$    &  text              & \textbf{pseudo} &                      & Must be pseudo         \\
+   & \texttt{name/id}$^r$ &  text              & \textit{anything}&  PseudoPot          & \textit{No current function}\\
+   & \texttt{source}$^r$  &  text              & \texttt{particleset.name} &  i                  & Ion particleset name\\
+   & \texttt{target}$^r$  &  text              & \texttt{particleset.name} &\texttt{hamiltonian.target}& Electron particleset name  \\
+   & \texttt{pbc}$^o$     &  boolean           & yes/no           & yes$^*$             & Use Ewald summation  \\
+   & \texttt{forces}      &  boolean           & yes/no           & no                  & \textit{Deprecated}             \\
+   &\texttt{wavefunction}$^r$ &  text          & \texttt{wavefunction.name}& invalid    & Identify wavefunction \\
+   &   \texttt{format}$^r$    &  text          & xml/table        & table               & Select file format   \\
   \hline
 \end{tabularx}
 \end{center}
@@ -301,12 +307,12 @@ Remarks
 \multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\texttt{header local grid}}\\
 \multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
    &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
-   & \texttt{elementType/symbol}$^r$&  text           &\texttt{group.name}& none               & Identify ionic species.         \\
-   & \texttt{href}$^r$    &  text              & \textit{filepath}& none                & \textit{Pseudopotential file path.}\\
-   & \texttt{format}$^r$  &  text              & xml/casino       & xml                 & Specify file format.\\
-   & \texttt{cutoff}$^o$  &  real              &                  &                     & Non-local cutoff radius.  \\
-   & \texttt{lmax}$^o$    &  integer           &                  &                     & Largest angular momentum.  \\
-   & \texttt{nrule}$^o$   &  integer           &                  &                     & Integration grid order.             \\
+   & \texttt{elementType/symbol}$^r$&  text    &\texttt{group.name}& none               & Identify ionic species   \\
+   & \texttt{href}$^r$    &  text              & \textit{filepath}& none                & Pseudopotential file path\\
+   & \texttt{format}$^r$  &  text              & xml/casino       & xml                 & Specify file format\\
+   & \texttt{cutoff}$^o$  &  real              &                  &                     & Non-local cutoff radius  \\
+   & \texttt{lmax}$^o$    &  integer           &                  &                     & Largest angular momentum  \\
+   & \texttt{nrule}$^o$   &  integer           &                  &                     & Integration grid order             \\
   \hline
 \end{tabularx}
 \end{center}
@@ -315,6 +321,7 @@ Remarks
 
 
 
+\subsection{Modified periodic coulomb interaction/correction}
 
 % mpc element
 %  dev notes
@@ -338,12 +345,12 @@ Remarks
 \multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\textit{None}}\\
 \multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
    &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
-   & \texttt{type}$^r$    &  text              & \textbf{mpc}     &                     & Must be mpc.         \\
-   & \texttt{name/id}$^r$ &  text              & \textit{anything}&  MPC                & Unique name for interaction. \\
-   & \texttt{source}$^r$  &  text              & particleset.name &\texttt{hamiltonian.target}& Identify interacting particles.\\
-   & \texttt{target}$^r$  &  text              & particleset.name &\texttt{hamiltonian.target}& Identify interacting particles.  \\
-   & \texttt{physical}$^o$&  boolean           & yes/no           & no                  & Hamiltonian(yes)/observable(no). \\
-   &   \texttt{cutoff}    &  real              & \textit{positive real}& 30.0           & Kinetic energy cutoff. \\
+   & \texttt{type}$^r$    &  text              & \textbf{mpc}     &                     & Must be mpc         \\
+   & \texttt{name/id}$^r$ &  text              & \textit{anything}&  MPC                & Unique name for interaction \\
+   & \texttt{source}$^r$  &  text              & \texttt{particleset.name} &\texttt{hamiltonian.target}& Identify interacting particles\\
+   & \texttt{target}$^r$  &  text              & \texttt{particleset.name} &\texttt{hamiltonian.target}& Identify interacting particles  \\
+   & \texttt{physical}$^o$&  boolean           & yes/no           & no                  & Hamiltonian(yes)/observable(no) \\
+   &  \texttt{cutoff}     &  real              & \textit{positive real}& 30.0           & Kinetic energy cutoff \\
   \hline
 \end{tabularx}
 \end{center}
@@ -355,26 +362,352 @@ Remarks
   \item{Developer note: Currently the \texttt{name} attribute for the mpc interaction is ignored.  The name is always \texttt{MPC}.}
 \end{itemize}
 
-
+% MPC correction
+\begin{lstlisting}[caption=Modified periodic coulomb for finite size post-correction.]
+  <pairpot type="MPC" name="MPC" source="e" target="e" ecut="60.0" physical="no"/>
+\end{lstlisting}
 
 
 
 % estimator element
+\section{General estimators}
 
+\FloatBarrier
 \begin{table}[h]
 \begin{center}
 \begin{tabularx}{\textwidth}{l l l l l l }
 \hline
-\multicolumn{6}{l}{\texttt{estimator} element} \\
+\multicolumn{6}{l}{\texttt{estimator} factory element} \\
 \hline
-\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{parent1 parent2}}\\
-\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\texttt{child1 child2 child3 ...}}\\
+\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{hamiltonian, qmc}}\\
 \multicolumn{2}{l}{type   selector:} & \multicolumn{4}{l}{\texttt{type} attribute}\\
-\multicolumn{2}{l}{type   options :} & \multicolumn{4}{l}{}\\
+\multicolumn{2}{l}{type   options: } & density            & \multicolumn{3}{l}{Density on a grid}\\
+\multicolumn{2}{l}{                } & spindensity        & \multicolumn{3}{l}{Spin density on a grid}\\
+\multicolumn{2}{l}{                } & gofr               & \multicolumn{3}{l}{Pair correlation function (quantum species)}\\
+\multicolumn{2}{l}{                } & sk                 & \multicolumn{3}{l}{Static structure factor}\\
+\multicolumn{2}{l}{                } & structurefactor    & \multicolumn{3}{l}{Species resolved structure factor}\\
+\multicolumn{2}{l}{                } & momentum           & \multicolumn{3}{l}{Momentum distribution}\\
+\multicolumn{2}{l}{                } & energydensity      & \multicolumn{3}{l}{Energy density on uniform or Voronoi grid}\\
+\multicolumn{2}{l}{                } & dm1b               & \multicolumn{3}{l}{One body density matrix in arbitrary basis}\\
+\multicolumn{2}{l}{                } & chiesa             & \multicolumn{3}{l}{Chiesa-Ceperley-Martin-Holzmann kinetic energy correction}\\
+\multicolumn{2}{l}{                } & Force              & \multicolumn{3}{l}{Family of ``force'' estimators (see \ref{sec:force_est})}\\
+\multicolumn{2}{l}{                } & ForwardWalking     & \multicolumn{3}{l}{Forward walking values for existing estimators}\\
+\multicolumn{2}{l}{                } & orbitalimages      & \multicolumn{3}{l}{Create image files for orbitals, then exit}\\
+\multicolumn{2}{l}{                } & flux               & \multicolumn{3}{l}{Checks sampling of kinetic energy}\\
+\multicolumn{2}{l}{                } & localmoment        & \multicolumn{3}{l}{Atomic spin polarization within cutoff radius}\\
+\multicolumn{2}{l}{                } & numberfluctuations & \multicolumn{3}{l}{Spatial number fluctuations}\\
+\multicolumn{2}{l}{                } & HFDHE2             & \multicolumn{3}{l}{Helium pressure}\\
+\multicolumn{2}{l}{                } & NearestNeighbors   & \multicolumn{3}{l}{Trace nearest neighbor indices}\\
+\multicolumn{2}{l}{                } & Kinetic            & \multicolumn{3}{l}{\textit{No current function}}\\
+\multicolumn{2}{l}{                } & Pressure           & \multicolumn{3}{l}{\textit{No current function}}\\
+\multicolumn{2}{l}{                } & ZeroVarObs         & \multicolumn{3}{l}{\textit{No current function}}\\
+\multicolumn{2}{l}{                } & DMCCorrection      & \multicolumn{3}{l}{\textit{No current function}}\\
+\multicolumn{2}{l}{shared attributes:} & \multicolumn{4}{l}{}\\
+   &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
+   &   \texttt{type}$^r$      &  text              & \textit{See above}        & 0                   & Select estimator type         \\
+   &   \texttt{name}$^r$      &  text              & \textit{anything}         & any                 & Unique name for this estimator\\
+   %&   \texttt{source}$^r$    &  text              & \texttt{particleset.name} &\texttt{hamiltonian.target}& Identify interacting particles\\
+   %&   \texttt{target}$^r$    &  text              & \texttt{particleset.name} &\texttt{hamiltonian.target}& Identify interacting particles  \\
+   %&   \texttt{units}$^o$     &  text              &                           & hartree             & \textit{No current function}  \\
+\hline
+\end{tabularx}
+\end{center}
+\end{table}
+\FloatBarrier
+
+Remarks
+\begin{itemize}
+  \item{When an \texttt{<estimator/>} element appears in \texttt{<hamiltonian/>}, it is evaluated for all applicable chained QMC runs (\emph{e.g.} VMC$\rightarrow$DMC$\rightarrow$DMC).  When provided in a particular \texttt{<qmc/>} element, an estimator is only evaluated for that specific sub-run.}
+  \item{Only \texttt{density, spindensity, gofr, sk, energydensity, dm1b, chiesa, Force} are described in detail below.  Other types (\texttt{structurefactor, momentum, ForwardWalking, orbitalimages, flux, localmoment, numberfluctuations, HFDHE2, NearestNeighbors}) are not yet covered.}
+\end{itemize}
+
+
+%  <estimator type="structurefactor" name="StructureFactor" report="yes"/>
+%  <estimator type="nofk" name="nofk" wavefunction="psi0"/>
+
+
+
+\FloatBarrier
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l l }
+\hline
+\multicolumn{6}{l}{\texttt{estimator type=X} element} \\
+\hline
+\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{hamiltonian, qmc}}\\
+\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\textit{None}}\\
+\multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
+   &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
+   & \texttt{type}$^r$    &  text              & \textbf{X}     &                     & Must be X         \\
+   & \texttt{name}$^r$    &  text              & \textit{anything}&                  & Unique name for estimator \\
+   & \texttt{source}$^o$  &  text              & \texttt{particleset.name} &\texttt{hamiltonian.target}& Identify particles\\
+   & \texttt{target}$^o$  &  text              & \texttt{particleset.name} &\texttt{hamiltonian.target}& Identify particles  \\
   \hline
 \end{tabularx}
 \end{center}
 \end{table}
+\FloatBarrier
+
+
+\subsection{Chiesa-Ceperley-Martin-Holzmann kinetic energy correction}
+
+
+\FloatBarrier
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l l }
+\hline
+\multicolumn{6}{l}{\texttt{estimator type=chiesa} element} \\
+\hline
+\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{hamiltonian, qmc}}\\
+\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\textit{None}}\\
+\multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
+   &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
+   & \texttt{type}$^r$    &  text              & \textbf{chiesa}            &        & Must be chiesa         \\
+   & \texttt{name}$^o$    &  text              & \textit{anything}          & KEcorr & Always reset to KEcorr \\
+   & \texttt{source}$^o$  &  text              & \texttt{particleset.name}  & e      & Identify quantum particles\\
+   & \texttt{psi}$^o$     &  text              & \texttt{wavefunction.name} & psi0   & Identify wavefunction  \\
+  \hline
+\end{tabularx}
+\end{center}
+\end{table}
+\FloatBarrier
+
+% kinetic energy correction
+\begin{lstlisting}[caption=``Chiesa'' kinetic energy finite size post-correction.]
+   <estimator name="KEcorr" type="chiesa" source="e" psi="psi0"/>
+\end{lstlisting}
 
 
 
+\subsection{Density estimator}
+
+
+\FloatBarrier
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l l }
+\hline
+\multicolumn{6}{l}{\texttt{estimator type=density} element} \\
+\hline
+\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{hamiltonian, qmc}}\\
+\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\textit{None}}\\
+\multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
+   &   \bfseries name     & \bfseries datatype & \bfseries values  & \bfseries default   & \bfseries description \\
+   & \texttt{type}$^r$      &  text              & \textbf{density}      &                     & Must be density         \\
+   & \texttt{name}$^r$      &  text              & \textit{anything}     &                     & Unique name for estimator \\
+   & \texttt{delta}$^o$     &  real array(3)     & $0\le \Delta_i \le 1$ & $\Delta_i=0.1$      & Grid cell spacing, unit coords\\
+   & \texttt{x\_min}$^o$    &  real              & $>0$                  & 0                   & \\
+   & \texttt{x\_max}$^o$    &  real              & $>0$                  & ${lattice_0}$  & \\
+   & \texttt{y\_min}$^o$    &  real              & $>0$                  & 0                   & \\
+   & \texttt{y\_max}$^o$    &  real              & $>0$                  & ${lattice_1}$  & \\
+   & \texttt{z\_min}$^o$    &  real              & $>0$                  & 0                   & \\
+   & \texttt{z\_max}$^o$    &  real              & $>0$                  & ${lattice_2}$  & \\
+   & \texttt{potential}$^o$ &  boolean           & yes/no                & no                  & \\
+   & \texttt{debug}$^o$     &  boolean           & yes/no                & no                  & \\
+  \hline
+\end{tabularx}
+\end{center}
+\end{table}
+\FloatBarrier
+
+
+Remarks
+\begin{itemize}
+  \item{Use of \texttt{x\_min, x\_max, y\_min, y\_max, z\_min, z\_max} is only appropriate for orthorhombic simulation cells with open boundary conditions.}
+\end{itemize}
+
+
+%  <estimator name="Density" type="density" delta="0.25 0.5 0.5"/>
+
+
+\subsection{Spin density estimator}
+
+%  <estimator type="spindensity" name="SpinDensity" report="yes">
+%    <parameter name="grid"> 40 40 40 </parameter>
+%  </estimator>
+%   
+%  <estimator type="spindensity" name="SpinDensity" report="yes">
+%    <parameter name="grid">
+%      20 20 20
+%    </parameter>
+%    <parameter name="center">
+%      0.0 0.0 0.0
+%    </parameter>
+%    <parameter name="cell">
+%      10.0  0.0  0.0
+%       0.0 10.0  0.0
+%       0.0  0.0 10.0
+%    </parameter>
+%  </estimator>
+
+
+\subsection{Pair correlation function, $g(r)$}
+%  <estimator type="gofr" name="gofr" num_bin="200" rmax="3.0" target="e" />
+%  <estimator type="gofr" name="gofr" num_bin="200" rmax="3.0" target="e" source="ion0" />
+
+
+\subsection{Static structure factor, $S(k)$}
+
+%  <estimator type="sk" hdf5="yes"/>
+
+
+\subsection{Energy density estimator}
+
+%  <estimator type="EnergyDensity" name="EDcell" dynamic="e" static="ion0">
+%    <reference_points coord="cartesian">
+%      r1 1 0 0 
+%      r2 0 1 0
+%      r3 0 0 1
+%    </reference_points>
+%    <spacegrid coord="cartesian">
+%      <origin p1="zero"/>
+%      <axis p1="a1" scale=".5" label="x" grid="-1 (.05) 1"/>
+%      <axis p1="a2" scale=".5" label="y" grid="-1 (.1) 1"/>
+%      <axis p1="a3" scale=".5" label="z" grid="-1 (.1) 1"/>
+%    </spacegrid>
+%  </estimator>
+%
+%  <estimator type="EnergyDensity" name="EDatom" dynamic="e" static="ion0">
+%    <reference_points coord="cartesian">
+%      r1 1 0 0 
+%      r2 0 1 0
+%      r3 0 0 1
+%    </reference_points>
+%    <spacegrid coord="spherical">
+%      <origin p1="ion01"/>
+%      <axis p1="r1" scale="6.9" label="r"     grid="0 1"/>
+%      <axis p1="r2" scale="6.9" label="phi"   grid="0 1"/>
+%      <axis p1="r3" scale="6.9" label="theta" grid="0 1"/>
+%    </spacegrid>
+%    <spacegrid coord="spherical">
+%      <origin p1="ion02"/>
+%      <axis p1="r1" scale="6.9" label="r"     grid="0 1"/>
+%      <axis p1="r2" scale="6.9" label="phi"   grid="0 1"/>
+%      <axis p1="r3" scale="6.9" label="theta" grid="0 1"/>
+%    </spacegrid>
+%  </estimator>
+%
+%  <estimator type="EnergyDensity" name="EDvoronoi" dynamic="e" static="ion0">
+%    <spacegrid coord="voronoi"/>
+%  </estimator>
+
+
+
+\subsection{One body density matrix}
+
+%  <estimator type="dm1b" name="DensityMatrices">
+%     <parameter name="energy_matrix"       >    yes                   </parameter>
+%     <parameter name="integrator"          >    uniform_grid            </parameter>
+%     <parameter name="points"              >    6                     </parameter>
+%     <parameter name="scale"               >    1.0                   </parameter>
+%     <parameter name="basis"               >
+%        spo_dm
+%     </parameter>
+%     <parameter name="evaluator"           >    matrix                </parameter>
+%     <parameter name="center">
+%        0 0 0
+%     </parameter>
+%     <parameter name="check_overlap"       >    no                    </parameter>
+%  </estimator>
+%
+%  <sposet_builder type="bspline" href="./dft/pwscf_output/pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" meshfactor="1.0" gpu="no" precision="single" sort="0">
+%    <sposet type="bspline" name="spo_u" size="4" spindataset="0"/>
+%    <sposet type="bspline" name="spo_d" size="2" spindataset="1"/>
+%    <sposet type="bspline" name="dm_basis" size="50" spindataset="0"/>
+%  </sposet_builder>
+%  <estimator type="dm1b" name="DensityMatrices">
+%    <parameter name="energy_matrix"       >    yes                   </parameter>
+%    <parameter name="integrator"          >    uniform_grid          </parameter>
+%    <parameter name="points"              >    10                    </parameter>
+%    <parameter name="scale"               >    1.0                   </parameter>
+%    <parameter name="basis"               >    dm_basis              </parameter>
+%    <parameter name="normalized"          >    no                    </parameter>
+%    <parameter name="evaluator"           >    matrix                </parameter>
+%    <parameter name="center"              >    0 0 0                 </parameter>
+%    <parameter name="check_overlap"       >    no                    </parameter>
+%    <parameter name="rstats"              >    no                    </parameter>
+%  </estimator>
+%
+%
+% found at /psi2/home/development/qmcpack/energy_density_matrix/tests/r6080_edm/02_atoms/runs/O/qmc/vmc.in.xml
+
+%
+%  <sposet_builder type="bspline" href="../dft/pwscf_output/pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" meshfactor="1.0" gpu="no" precision="single">
+%    <sposet type="bspline" name="spo_u"  group="0" size="4"/>
+%    <sposet type="bspline" name="spo_d"  group="0" size="2"/>
+%    <sposet type="bspline" name="spo_uv" group="0" index_min="4" index_max="10"/>
+%  </sposet_builder>
+%  <estimator type="dm1b" name="DensityMatrices">
+%    <parameter name="basis"        >  spo_u spo_uv  </parameter>
+%    <parameter name="energy_matrix">  yes           </parameter>
+%    <parameter name="evaluator"    >  matrix        </parameter>
+%    <parameter name="center"       >  0 0 0         </parameter>
+%    <parameter name="rstats"           >  no        </parameter>
+%    <parameter name="acceptance_ratio" >  no        </parameter>
+%    <parameter name="check_overlap"    >  no        </parameter>
+%    <parameter name="check_derivatives">  no        </parameter>
+%    
+%    <parameter name="integrator"   >  uniform_grid  </parameter>
+%    <parameter name="points"       >  20            </parameter>
+%    <parameter name="scale"        >  1.0           </parameter>
+% 
+%    <!--
+%    <parameter name="integrator"   >  uniform       </parameter>
+%    <parameter name="samples"      >  14          </parameter>
+%    <parameter name="scale"        >  1.0           </parameter>
+%    -->
+%    
+%    <!--
+%    <parameter name="integrator"   >  density       </parameter>
+%    <parameter name="timestep"     >  1.0           </parameter>
+%    <parameter name="use_drift"    >  no            </parameter>
+%    <parameter name="samples"      >  1000          </parameter>
+%    -->
+%    
+%    <!--
+%    <parameter name="integrator"   >  density       </parameter>
+%    <parameter name="timestep"     >  1.0           </parameter>
+%    <parameter name="use_drift"    >  yes           </parameter>
+%    <parameter name="samples"      >  1000          </parameter>
+%    -->
+%  </estimator>
+
+
+
+
+
+
+
+\section{``Force'' estimators} \label{sec:force_est}
+
+% Force estimators added in CoulombPotentialFactory.cpp, HamiltonianFactory::addForceHam
+
+\FloatBarrier
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l l }
+\hline
+\multicolumn{6}{l}{\texttt{estimator type=Force} factory element} \\
+\hline
+\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{hamiltonian, qmc}}\\
+\multicolumn{2}{l}{type   selector:} & \multicolumn{4}{l}{\texttt{mode} attribute}\\
+\multicolumn{2}{l}{type   options: } & bare           & \multicolumn{3}{l}{Bare force estimator}\\
+\multicolumn{2}{l}{                } & cep            & \multicolumn{3}{l}{Ceperley force estimator}\\
+\multicolumn{2}{l}{                } & pulay          & \multicolumn{3}{l}{Pulay force estimator}\\
+\multicolumn{2}{l}{                } & zero\_variance & \multicolumn{3}{l}{Zero variance force estimator}\\
+\multicolumn{2}{l}{                } & stress         & \multicolumn{3}{l}{Stress estimator}\\
+\multicolumn{2}{l}{shared attributes:} & \multicolumn{4}{l}{}\\
+   &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
+   &   \texttt{mode}$^o$      &  text              & \textit{See above}        & bare          & Select estimator type\\
+   &   \texttt{type}$^r$      &  text              & \textbf{Force}            &               & Must be Force         \\
+   &   \texttt{name}$^o$      &  text              & \textit{anything}         & ForceBase     & Unique name for this estimator\\
+   &   \texttt{source}$^o$    &  text              & \texttt{particleset.name} & ion0          & Identify classical particleset\\
+   &   \texttt{target}$^o$    &  text              & \texttt{particleset.name} & e             & Identify quantum particleset\\
+   &   \texttt{psi}$^o$       &  text              & \texttt{wavefunction.name}& psi0          & Identify wavefunction\\
+   &   \texttt{pbc}$^o$       &  boolean           & yes/no                    & yes           & Using periodic BC's\\
+\hline
+\end{tabularx}
+\end{center}
+\end{table}
+\FloatBarrier
