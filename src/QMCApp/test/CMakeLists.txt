@@ -24,12 +24,17 @@
 
 message("Adding tests for QMCAPP")
 
+IF (NOT TEST_MAX_PROCS )
+SET ( TEST_MAX_PROCS 16 )
+message ("TEST_MAX_PROCS was unset. Set to 16")
+ENDIF ()
+
 set(QMCAPP_ERR "")
 if((NOT ${TEST_MAX_PROCS}) OR (${TEST_MAX_PROCS} STREQUAL ""))
     set(QMCAPP_ERR "${QMCAPP_ERR}  TEST_MAX_PROCS not set: '${TEST_MAX_PROCS}'\n")
 endif()
-
-
+#
+#
 if(NOT ${QMCAPP_ERR} STREQUAL "")
     message("${QMCAPP_ERR}  skipping tests")
 else()
