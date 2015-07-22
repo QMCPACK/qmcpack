@@ -637,6 +637,28 @@ class DetGroup(KeywordSpecGroup):
 
 
 
+class BasisGroup(KeywordSpecGroup):
+    keywords = set([
+            'gbasis','ngauss','ndfunc','npfunc','diffsp','diffs',
+            'polar' ,'split2','split3','basnam','extfil'
+            ])
+
+    integers = set(['ngauss','ndfunc','nffunc'])
+    bools    = set(['diffsp','diffs','extfil'])
+    strings  = set(['gbasis','polar'])
+    arrays   = set(['split2','split3','basname'])
+
+    allowed_values = obj(
+        #gbasis = set(['sto','n21','n31','n311','g3l','g3lx','mini','midi','dzv',
+        #              'dh','tzv','mc']) # many others
+        ndfunc = set([0,1,2,3]),
+        nffunc = set([0,1]),
+        polar  = set(['common','popn31','popn311','dunning','huzinaga','hondo7']),
+        )
+#end class BasisGroup
+
+
+
 #class XGroup(KeywordSpecGroup):
 #    keywords = set([''])
 #    integers = set([''])
@@ -684,7 +706,7 @@ class GamessInput(SimulationInput,GIbase):
     all_groups = set(group_order)
 
     key_groups  = set(['contrl','system','guess','scf','mcscf','dft',
-                       'gugdia','drt','cidrt','det'])
+                       'gugdia','drt','cidrt','det','basis'])
 
     card_groups = set()
     #card_groups = set(['ecp','data','mcp','gcilst','points','stone','efrag',
@@ -704,7 +726,8 @@ class GamessInput(SimulationInput,GIbase):
         gugdia = GugdiaGroup,
         drt    = DrtGroup,
         cidrt  = CidrtGroup,
-        det    = DetGroup
+        det    = DetGroup,
+        basis  = BasisGroup
         )
     keyspec_group_order = []
     for gname in group_order:

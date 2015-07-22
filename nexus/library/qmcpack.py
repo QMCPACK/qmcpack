@@ -346,7 +346,15 @@ class Qmcpack(Simulation):
 
         cusp_run = self.input.cusp_correction()
         if cusp_run:
-            cuspfiles = ['spo-up.cuspInfo.xml','spo-dn.cuspInfo.xml']
+            sd = self.input.get('slaterdeterminant')
+            if sd!=None:
+                cuspfiles = []
+                for d in sd.determinants:
+                    cuspfiles.append(d.id+'.cuspInfo.xml')
+                #end for
+            else: # assume multideterminant sposet names
+                cuspfiles = ['spo-up.cuspInfo.xml','spo-dn.cuspInfo.xml']
+            #end if
             outfiles   = cuspfiles
         else:
             outfiles = self.input.get_output_info('outfiles')
