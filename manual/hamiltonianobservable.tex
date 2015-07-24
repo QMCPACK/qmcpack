@@ -17,20 +17,20 @@
    &   \texttt{attr2}     &  integer           &                  &                     &                       \\
    &   \texttt{attr3}     &  real              &                  &                     &                       \\
    &   \texttt{attr4}     &  boolean           &                  &                     &                       \\
-   &   \texttt{attr4}     &  text array        &                  &                     &                       \\
-   &   \texttt{attr4}     &  integer array     &                  &                     &                       \\
-   &   \texttt{attr4}     &  real array        &                  &                     &                       \\
-   &   \texttt{attr4}     &  boolean array     &                  &                     &                       \\
+   &   \texttt{attr5}     &  text array        &                  &                     &                       \\
+   &   \texttt{attr6}     &  integer array     &                  &                     &                       \\
+   &   \texttt{attr7}     &  real array        &                  &                     &                       \\
+   &   \texttt{attr8}     &  boolean array     &                  &                     &                       \\
 \multicolumn{2}{l}{parameters}  & \multicolumn{4}{l}{}\\
    &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
-   &   \texttt{attr1}     &  text              &                  &                     &                       \\
-   &   \texttt{attr2}     &  integer           &                  &                     &                       \\
-   &   \texttt{attr3}     &  real              &                  &                     &                       \\
-   &   \texttt{attr4}     &  boolean           &                  &                     &                       \\
-   &   \texttt{attr4}     &  text array        &                  &                     &                       \\
-   &   \texttt{attr4}     &  integer array     &                  &                     &                       \\
-   &   \texttt{attr4}     &  real array        &                  &                     &                       \\
-   &   \texttt{attr4}     &  boolean array     &                  &                     &                       \\
+   &   \texttt{param1}     &  text              &                  &                     &                       \\
+   &   \texttt{param2}     &  integer           &                  &                     &                       \\
+   &   \texttt{param3}     &  real              &                  &                     &                       \\
+   &   \texttt{param4}     &  boolean           &                  &                     &                       \\
+   &   \texttt{param5}     &  text array        &                  &                     &                       \\
+   &   \texttt{param6}     &  integer array     &                  &                     &                       \\
+   &   \texttt{param7}     &  real array        &                  &                     &                       \\
+   &   \texttt{param8}     &  boolean array     &                  &                     &                       \\
   \hline
 \end{tabularx}
 \end{center}
@@ -142,25 +142,25 @@
 \hline
 \multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{hamiltonian}}\\
 \multicolumn{2}{l}{type   selector:} & \multicolumn{4}{l}{\texttt{type} attribute}\\
-\multicolumn{2}{l}{type   options: } & coulomb            & \multicolumn{3}{l}{Coulomb/Ewald potential}\\
-\multicolumn{2}{l}{                } & pseudo             & \multicolumn{3}{l}{Semilocal pseudopotential}\\
-\multicolumn{2}{l}{                } & mpc                & \multicolumn{3}{l}{Modified Periodic Coulomb interaction/correction}\\
-\multicolumn{2}{l}{                } & cpp                & \multicolumn{3}{l}{Core polarization potential}\\
-\multicolumn{2}{l}{                } & numerical/*num*    & \multicolumn{3}{l}{Numerical radial potential}\\
-\multicolumn{2}{l}{                } & skpot              & \multicolumn{3}{l}{\textit{Unknown}}\\
-\multicolumn{2}{l}{                } & vhxc               & \multicolumn{3}{l}{Exchange correlation potential (external)}\\
-\multicolumn{2}{l}{                } & jellium            & \multicolumn{3}{l}{Atom-centered spherical jellium potential}\\
-\multicolumn{2}{l}{                } & hardsphere         & \multicolumn{3}{l}{Hard sphere potential}\\
-\multicolumn{2}{l}{                } & gaussian           & \multicolumn{3}{l}{Gaussian potential}\\
-\multicolumn{2}{l}{                } & modpostel          & \multicolumn{3}{l}{Modified Poschl-Teller potential}\\
-\multicolumn{2}{l}{                } & huse               & \multicolumn{3}{l}{Huse quintic potential}\\
-\multicolumn{2}{l}{                } & modInsKE           & \multicolumn{3}{l}{Model insulator kinetic energy}\\
-\multicolumn{2}{l}{                } & oscillatory        & \multicolumn{3}{l}{\textit{Unknown}}\\
-\multicolumn{2}{l}{                } & LJP\_smoothed      & \multicolumn{3}{l}{Helium pair potential}\\
-\multicolumn{2}{l}{                } & HeSAPT\_smoothed   & \multicolumn{3}{l}{Helium pair potential}\\
-\multicolumn{2}{l}{                } & HFDHE2\_Moroni1995 & \multicolumn{3}{l}{Helium pair potential}\\
-\multicolumn{2}{l}{                } & HFDHE2             & \multicolumn{3}{l}{Helium pair potential}\\
-\multicolumn{2}{l}{                } & eHe                & \multicolumn{3}{l}{Helium-electron pair potential}\\
+\multicolumn{2}{l}{type   options: } & \multicolumn{2}{l}{coulomb           } & \multicolumn{2}{l}{Coulomb/Ewald potential}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{pseudo            } & \multicolumn{2}{l}{Semilocal pseudopotential}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{mpc               } & \multicolumn{2}{l}{Modified Periodic Coulomb interaction/correction}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{cpp               } & \multicolumn{2}{l}{Core polarization potential}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{numerical/*num*   } & \multicolumn{2}{l}{Numerical radial potential}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{skpot             } & \multicolumn{2}{l}{\textit{Unknown}}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{vhxc              } & \multicolumn{2}{l}{Exchange correlation potential (external)}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{jellium           } & \multicolumn{2}{l}{Atom-centered spherical jellium potential}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{hardsphere        } & \multicolumn{2}{l}{Hard sphere potential}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{gaussian          } & \multicolumn{2}{l}{Gaussian potential}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{modpostel         } & \multicolumn{2}{l}{Modified Poschl-Teller potential}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{huse              } & \multicolumn{2}{l}{Huse quintic potential}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{modInsKE          } & \multicolumn{2}{l}{Model insulator kinetic energy}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{oscillatory       } & \multicolumn{2}{l}{\textit{Unknown}}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{LJP\_smoothed     } & \multicolumn{2}{l}{Helium pair potential}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{HeSAPT\_smoothed  } & \multicolumn{2}{l}{Helium pair potential}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{HFDHE2\_Moroni1995} & \multicolumn{2}{l}{Helium pair potential}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{HFDHE2            } & \multicolumn{2}{l}{Helium pair potential}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{eHe               } & \multicolumn{2}{l}{Helium-electron pair potential}\\
 \multicolumn{2}{l}{shared attributes:} & \multicolumn{4}{l}{}\\
    &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
    &   \texttt{type}$^r$      &  text              & \textit{See above}        & 0                   & Select pairpot type         \\
@@ -350,7 +350,7 @@ Remarks
    & \texttt{source}$^r$  &  text              & \texttt{particleset.name} &\texttt{hamiltonian.target}& Identify interacting particles\\
    & \texttt{target}$^r$  &  text              & \texttt{particleset.name} &\texttt{hamiltonian.target}& Identify interacting particles  \\
    & \texttt{physical}$^o$&  boolean           & yes/no           & no                  & Hamiltonian(yes)/observable(no) \\
-   &  \texttt{cutoff}     &  real              & \textit{positive real}& 30.0           & Kinetic energy cutoff \\
+   &  \texttt{cutoff}     &  real              & $>0$             & 30.0                & Kinetic energy cutoff \\
   \hline
 \end{tabularx}
 \end{center}
@@ -358,8 +358,8 @@ Remarks
 \FloatBarrier
 Remarks
 \begin{itemize}
-  \item{Note the meaning of the \texttt{physical} attribute.  Typically it is set to \texttt{no}, meaning the standard Ewald interaction will be used during sampling and MPC will be measured as an observable for finite-size post correction.  If \texttt{physical==yes}, the MPC interaction will be used during sampling.  In this case an electron-electron Coulomb \texttt{pairpot} element should not be supplied.}
-  \item{Developer note: Currently the \texttt{name} attribute for the mpc interaction is ignored.  The name is always \texttt{MPC}.}
+  \item{\texttt{physical}:  Typically set to \texttt{no}, meaning the standard Ewald interaction will be used during sampling and MPC will be measured as an observable for finite-size post correction.  If \texttt{physical} is \texttt{yes}, the MPC interaction will be used during sampling.  In this case an electron-electron Coulomb \texttt{pairpot} element should not be supplied.}
+  \item{Developer note: Currently the \texttt{name} attribute for the mpc interaction is ignored.  The name is always reset to \texttt{MPC}.}
 \end{itemize}
 
 % MPC correction
@@ -381,27 +381,27 @@ Remarks
 \hline
 \multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{hamiltonian, qmc}}\\
 \multicolumn{2}{l}{type   selector:} & \multicolumn{4}{l}{\texttt{type} attribute}\\
-\multicolumn{2}{l}{type   options: } & density            & \multicolumn{3}{l}{Density on a grid}\\
-\multicolumn{2}{l}{                } & spindensity        & \multicolumn{3}{l}{Spin density on a grid}\\
-\multicolumn{2}{l}{                } & gofr               & \multicolumn{3}{l}{Pair correlation function (quantum species)}\\
-\multicolumn{2}{l}{                } & sk                 & \multicolumn{3}{l}{Static structure factor}\\
-\multicolumn{2}{l}{                } & structurefactor    & \multicolumn{3}{l}{Species resolved structure factor}\\
-\multicolumn{2}{l}{                } & momentum           & \multicolumn{3}{l}{Momentum distribution}\\
-\multicolumn{2}{l}{                } & energydensity      & \multicolumn{3}{l}{Energy density on uniform or Voronoi grid}\\
-\multicolumn{2}{l}{                } & dm1b               & \multicolumn{3}{l}{One body density matrix in arbitrary basis}\\
-\multicolumn{2}{l}{                } & chiesa             & \multicolumn{3}{l}{Chiesa-Ceperley-Martin-Holzmann kinetic energy correction}\\
-\multicolumn{2}{l}{                } & Force              & \multicolumn{3}{l}{Family of ``force'' estimators (see \ref{sec:force_est})}\\
-\multicolumn{2}{l}{                } & ForwardWalking     & \multicolumn{3}{l}{Forward walking values for existing estimators}\\
-\multicolumn{2}{l}{                } & orbitalimages      & \multicolumn{3}{l}{Create image files for orbitals, then exit}\\
-\multicolumn{2}{l}{                } & flux               & \multicolumn{3}{l}{Checks sampling of kinetic energy}\\
-\multicolumn{2}{l}{                } & localmoment        & \multicolumn{3}{l}{Atomic spin polarization within cutoff radius}\\
-\multicolumn{2}{l}{                } & numberfluctuations & \multicolumn{3}{l}{Spatial number fluctuations}\\
-\multicolumn{2}{l}{                } & HFDHE2             & \multicolumn{3}{l}{Helium pressure}\\
-\multicolumn{2}{l}{                } & NearestNeighbors   & \multicolumn{3}{l}{Trace nearest neighbor indices}\\
-\multicolumn{2}{l}{                } & Kinetic            & \multicolumn{3}{l}{\textit{No current function}}\\
-\multicolumn{2}{l}{                } & Pressure           & \multicolumn{3}{l}{\textit{No current function}}\\
-\multicolumn{2}{l}{                } & ZeroVarObs         & \multicolumn{3}{l}{\textit{No current function}}\\
-\multicolumn{2}{l}{                } & DMCCorrection      & \multicolumn{3}{l}{\textit{No current function}}\\
+\multicolumn{2}{l}{type   options: } & \multicolumn{2}{l}{density           } & \multicolumn{2}{l}{Density on a grid}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{spindensity       } & \multicolumn{2}{l}{Spin density on a grid}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{gofr              } & \multicolumn{2}{l}{Pair correlation function (quantum species)}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{sk                } & \multicolumn{2}{l}{Static structure factor}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{structurefactor   } & \multicolumn{2}{l}{Species resolved structure factor}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{momentum          } & \multicolumn{2}{l}{Momentum distribution}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{energydensity     } & \multicolumn{2}{l}{Energy density on uniform or Voronoi grid}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{dm1b              } & \multicolumn{2}{l}{One body density matrix in arbitrary basis}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{chiesa            } & \multicolumn{2}{l}{Chiesa-Ceperley-Martin-Holzmann kinetic energy correction}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{Force             } & \multicolumn{2}{l}{Family of ``force'' estimators (see \ref{sec:force_est})}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{ForwardWalking    } & \multicolumn{2}{l}{Forward walking values for existing estimators}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{orbitalimages     } & \multicolumn{2}{l}{Create image files for orbitals, then exit}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{flux              } & \multicolumn{2}{l}{Checks sampling of kinetic energy}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{localmoment       } & \multicolumn{2}{l}{Atomic spin polarization within cutoff radius}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{numberfluctuations} & \multicolumn{2}{l}{Spatial number fluctuations}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{HFDHE2            } & \multicolumn{2}{l}{Helium pressure}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{NearestNeighbors  } & \multicolumn{2}{l}{Trace nearest neighbor indices}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{Kinetic           } & \multicolumn{2}{l}{\textit{No current function}}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{Pressure          } & \multicolumn{2}{l}{\textit{No current function}}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{ZeroVarObs        } & \multicolumn{2}{l}{\textit{No current function}}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{DMCCorrection     } & \multicolumn{2}{l}{\textit{No current function}}\\
 \multicolumn{2}{l}{shared attributes:} & \multicolumn{4}{l}{}\\
    &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
    &   \texttt{type}$^r$      &  text              & \textit{See above}        & 0                   & Select estimator type         \\
@@ -480,8 +480,8 @@ Remarks
 
 
 
-\subsection{Density estimator}
 
+\subsection{Density estimator}
 
 \FloatBarrier
 \begin{table}[h]
@@ -495,16 +495,16 @@ Remarks
 \multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
    &   \bfseries name     & \bfseries datatype & \bfseries values  & \bfseries default   & \bfseries description \\
    & \texttt{type}$^r$      &  text              & \textbf{density}      &                     & Must be density         \\
-   & \texttt{name}$^r$      &  text              & \textit{anything}     &                     & Unique name for estimator \\
-   & \texttt{delta}$^o$     &  real array(3)     & $0\le \Delta_i \le 1$ & $\Delta_i=0.1$      & Grid cell spacing, unit coords\\
-   & \texttt{x\_min}$^o$    &  real              & $>0$                  & 0                   & \\
-   & \texttt{x\_max}$^o$    &  real              & $>0$                  & ${lattice_0}$  & \\
-   & \texttt{y\_min}$^o$    &  real              & $>0$                  & 0                   & \\
-   & \texttt{y\_max}$^o$    &  real              & $>0$                  & ${lattice_1}$  & \\
-   & \texttt{z\_min}$^o$    &  real              & $>0$                  & 0                   & \\
-   & \texttt{z\_max}$^o$    &  real              & $>0$                  & ${lattice_2}$  & \\
-   & \texttt{potential}$^o$ &  boolean           & yes/no                & no                  & \\
-   & \texttt{debug}$^o$     &  boolean           & yes/no                & no                  & \\
+   & \texttt{name}$^r$      &  text              & \textit{anything}     & any                 & Unique name for estimator \\
+   & \texttt{delta}$^o$     &  real array(3)     & $0\le v_i \le 1$      & 0.1 0.1 0.1         & Grid cell spacing, unit coords\\
+   & \texttt{x\_min}$^o$    &  real              & $>0$                  & 0                   & Grid starting point in x (Bohr)\\
+   & \texttt{x\_max}$^o$    &  real              & $>0$                  &$|\texttt{lattice[0]}|$& Grid ending point in x (Bohr)\\
+   & \texttt{y\_min}$^o$    &  real              & $>0$                  & 0                   & Grid starting point in y (Bohr)\\
+   & \texttt{y\_max}$^o$    &  real              & $>0$                  &$|\texttt{lattice[1]}|$& Grid ending point in y (Bohr)\\
+   & \texttt{z\_min}$^o$    &  real              & $>0$                  & 0                   & Grid starting point in z (Bohr)\\
+   & \texttt{z\_max}$^o$    &  real              & $>0$                  &$|\texttt{lattice[2]}|$& Grid ending point in z (Bohr)\\
+   & \texttt{potential}$^o$ &  boolean           & yes/no                & no                  & Accumulate local potential, \textit{Deprecated}\\
+   & \texttt{debug}$^o$     &  boolean           & yes/no                & no                  & \textit{No current function}\\
   \hline
 \end{tabularx}
 \end{center}
@@ -512,34 +512,85 @@ Remarks
 \FloatBarrier
 
 
-Remarks
+Additional information:
 \begin{itemize}
-  \item{Use of \texttt{x\_min, x\_max, y\_min, y\_max, z\_min, z\_max} is only appropriate for orthorhombic simulation cells with open boundary conditions.}
+  \item{\texttt{name}: The name provided will be used as a label in the \texttt{stat.h5} file for the blocked output data.  Post-processing tools expect \texttt{name="Density"}.}
+  \item{\texttt{delta}:  This sets the histogram grid size used to accumulate the density: \texttt{delta="0.1 0.1 0.05"}$\rightarrow 10\times 10\times 20$ grid, \texttt{delta="0.01 0.01 0.01"}$\rightarrow 100\times 100\times 100$ grid.  The density grid is written to a \texttt{stat.h5} file at the end of each Monte Carlo block.  If you request many $blocks$ in a \texttt{<qmc/>} element, or select a large grid, the resulting \texttt{stat.h5} file may be many GB in size.}
+  \item{\texttt{*\_min/*\_max}: Can be used to select a subset of the simulation cell for the density histogram grid.  For example if a (cubic) simulation cell is 20 Bohr on a side, setting \texttt{*\_min=5.0} and \texttt{*\_max=15.0} will result in a density histogram grid spanning a $10\times 10\times 10$ Bohr cube about the center of the box.  Use of \texttt{x\_min, x\_max, y\_min, y\_max, z\_min, z\_max} is only appropriate for orthorhombic simulation cells with open boundary conditions.}
+  \item{When open boundary conditions are used, a \texttt{<simulationcell/>} element must be explicitly provided as the first sub-element of \texttt{<qmcsystem/>} for the density estimator to work.  In this case the molecule should be centered around the middle of the simulation cell ($L/2$) and not the origin ($0$} since the space within the cell, and hence the density grid, is defined from $0$ to $L$.
 \end{itemize}
 
 
-%  <estimator name="Density" type="density" delta="0.25 0.5 0.5"/>
+% density estimator
+\begin{lstlisting}[caption=Density estimator (uniform grid).]
+   <estimator name="Density" type="density" delta="0.05 0.05 0.05"/>
+\end{lstlisting}
 
 
 \subsection{Spin density estimator}
 
-%  <estimator type="spindensity" name="SpinDensity" report="yes">
-%    <parameter name="grid"> 40 40 40 </parameter>
-%  </estimator>
-%   
-%  <estimator type="spindensity" name="SpinDensity" report="yes">
-%    <parameter name="grid">
-%      20 20 20
-%    </parameter>
-%    <parameter name="center">
-%      0.0 0.0 0.0
-%    </parameter>
-%    <parameter name="cell">
-%      10.0  0.0  0.0
-%       0.0 10.0  0.0
-%       0.0  0.0 10.0
-%    </parameter>
-%  </estimator>
+\FloatBarrier
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l l }
+\hline
+\multicolumn{6}{l}{\texttt{estimator type=spindensity} element} \\
+\hline
+\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{hamiltonian, qmc}}\\
+\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\textit{None}}\\
+\multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
+   & \bfseries name       & \bfseries datatype & \bfseries values  & \bfseries default   & \bfseries description \\
+   & \texttt{type}$^r$    &  text              & \textbf{spindensity} &                  & Must be spindensity       \\
+   & \texttt{name}$^r$    &  text              & \textit{anything}    & any              & Unique name for estimator \\
+   & \texttt{report}$^o$  &  boolean           & yes/no               & no               & Write setup details to stdout \\
+\multicolumn{2}{l}{parameters}  & \multicolumn{4}{l}{}\\
+   & \bfseries name       & \bfseries datatype & \bfseries values  & \bfseries default   & \bfseries description \\
+   & \texttt{grid}$^o$      & integer array(3) & $v_i>0$           &                     & Grid cell count       \\
+   & \texttt{dr}$^o$        & real array(3)    & $v_i>0$           &                     & Grid cell spacing (Bohr) \\
+   & \texttt{cell}$^o$      & real array(3,3)  & \textit{anything} &                     & Volume grid exists in           \\
+   & \texttt{corner}$^o$    & real array(3)    & \textit{anything} &                     & Volume corner location  \\
+   & \texttt{center}$^o$    & real array(3)    & \textit{anything} &                     & Volume center/origin location \\
+   & \texttt{voronoi}$^o$   & text             &\texttt{particleset.name}&               & \textit{Under development}\\%Ion particleset for Voronoi centers\\
+   & \texttt{test\_moves}$^o$& integer         & $>=0$             & 0                   & Test estimator with random moves  \\
+  \hline
+\end{tabularx}
+\end{center}
+\end{table}
+\FloatBarrier
+
+Additional information:
+\begin{itemize}
+  \item{\texttt{name}:The name provided will be used as a label in the \texttt{stat.h5} file for the blocked output data.  Post-processing tools expect \texttt{name="SpinDensity"}.}
+  \item{\texttt{grid}: Sets the dimension of the histogram grid.  Input like \texttt{<parameter name="grid"> 40 40 40 </parameter>} requests a $40 \times 40\times 40$ grid.  The shape of individual grid cells is commensurate with the supercell shape.}
+  \item{\texttt{dr}: Real space dimensions of grid cell edges (Bohr units).  Input like \texttt{<parameter name="dr"> 0.5 0.5 0.5 </parameter>} in a supercell with axes of length 10 Bohr each (but of arbitrary shape) will produce a $20\times 20\times 20$ grid. The inputted \texttt{dr} values are rounded to produce an integer number of grid cells along each supercell axis.  Either \texttt{grid} or \texttt{dr} must be provided, but not both.}
+  \item{\texttt{cell}: When \texttt{cell} is provided, a user defined grid volume is used instead of the global supercell.  This must be provided if open boundary conditions are used.  Additionally, if \texttt{cell} is provided, the user must specify where the volume is located in space in addition to its size/shape (\texttt{cell}) using either the \texttt{corner} or \texttt{center} parameters.}
+  \item{\texttt{corner}:The grid volume is defined as $corner+\sum_{d=1}^3u_dcell_d$ with $0<u_d<1$ (``cell'' refers to either the supercell or user provided cell).}
+  \item{\texttt{center}:The grid volume is defined as $center+\sum_{d=1}^3u_dcell_d$ with $-1/2<u_d<1/2$ (``cell'' refers to either the supercell or user provided cell).  \texttt{corner/center} can be used to shift the grid even if \texttt{cell} is not specified.  Simultaneous use of \texttt{corner} and \texttt{center} will cause QMCPACK to abort.}
+\end{itemize}
+
+% spin density estimators
+\begin{lstlisting}[caption=Spin density estimator (uniform grid).]
+  <estimator type="spindensity" name="SpinDensity" report="yes">
+    <parameter name="grid"> 40 40 40 </parameter>
+  </estimator>
+\end{lstlisting}
+
+\begin{lstlisting}[caption=Spin density estimator (uniform grid centered about origin).]
+  <estimator type="spindensity" name="SpinDensity" report="yes">
+    <parameter name="grid">
+      20 20 20
+    </parameter>
+    <parameter name="center">
+      0.0 0.0 0.0
+    </parameter>
+    <parameter name="cell">
+      10.0  0.0  0.0
+       0.0 10.0  0.0
+       0.0  0.0 10.0
+    </parameter>
+  </estimator>
+\end{lstlisting}
+   
 
 
 \subsection{Pair correlation function, $g(r)$}
@@ -705,7 +756,7 @@ Remarks
    &   \texttt{source}$^o$    &  text              & \texttt{particleset.name} & ion0          & Identify classical particleset\\
    &   \texttt{target}$^o$    &  text              & \texttt{particleset.name} & e             & Identify quantum particleset\\
    &   \texttt{psi}$^o$       &  text              & \texttt{wavefunction.name}& psi0          & Identify wavefunction\\
-   &   \texttt{pbc}$^o$       &  boolean           & yes/no                    & yes           & Using periodic BC's\\
+   &   \texttt{pbc}$^o$       &  boolean           & yes/no                    & yes           & Using periodic BC's or not\\
 \hline
 \end{tabularx}
 \end{center}

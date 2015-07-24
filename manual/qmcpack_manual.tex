@@ -8,6 +8,7 @@
 \usepackage{listings}
 \usepackage{tabularx}
 \usepackage{placeins}
+
 \lstloadlanguages{C++,XML}
 \newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
 
@@ -16,12 +17,15 @@
 \textwidth 6.5in
 
 \begin{document}
-\lstset{basicstyle=\footnotesize,
+\lstset{
+basicstyle=\footnotesize\ttfamily,  % copy/paste from pdf w/o mangled quotes
 keywordstyle=\color{black}\bfseries,
 frame=single,
 breaklines=true,
 language=xml,
-escapeinside={<:}{:>}
+escapeinside={<:}{:>},
+columns=fullflexible,   % copy/paste from pdf w/o added spaces
+showstringspaces=false  % avoid showing underbrackets in quoted text
 }
 
 \input{title.tex}
