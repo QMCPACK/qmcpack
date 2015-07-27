@@ -2884,7 +2884,9 @@ class Structure(Sobj):
             if '.' in file:
                 name,format = file.rsplit('.',1)
             else:
-                self.error('file does not have a format extension: {0}'.format(filepath))
+                format = file
+            #else:
+            #    self.error('file does not have a format extension: {0}'.format(filepath))
             #end if
         #end if
         c = open(filepath,'r').read()
@@ -4171,9 +4173,9 @@ def generate_defect_structure(defect,structure,shape=None,element=None,
 #end def generate_defect_structure
 
 
-def read_structure(filepath):
+def read_structure(filepath,elem=None):
     s = generate_structure('empty')
-    s.read(filepath)
+    s.read(filepath,elem=elem)
     return s
 #end def read_structure
 

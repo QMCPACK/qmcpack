@@ -579,8 +579,16 @@ def generate_physical_system(**kwargs):
 
     if 'structure' in kwargs:
         s = kwargs['structure']
-        if isinstance(s,str) and os.path.exists(s) and '.' in os.path.split(s)[1]:
-            kwargs['structure'] = read_structure(s)
+        is_str = isinstance(s,str)
+        if is_str and os.path.exists(s):# and '.' in os.path.split(s)[1]:
+            if 'elem' in kwargs:
+                print 'system using elem'
+                kwargs['structure'] = read_structure(s,elem=kwargs['elem'])
+            else:
+                kwargs['structure'] = read_structure(s)
+            #end if
+        elif is_str and '/' in s:
+            PhysicalSystem.class_error('path provided for structure file does not exist: '+s,'generate_physical_system')
         #end if
     #end if
 
@@ -621,7 +629,7 @@ def generate_physical_system(**kwargs):
     else:
         for d in range(len(pretile)):
             if tiling[d]%pretile[d]!=0:
-                PhysicalSystem.class_error('pretile does not divide evenly into tiling\n  tiling provided: {0}\n  pretile provided: {1}'.format(tiling,pretile))
+                PhysicalSystem.class_error('pretile does not divide evenly into tiling\n  tiling provided: {0}\n  pretile provided: {1}'.format(tiling,pretile),'generate_physical_system')
             #end if
         #end for
         tiling = tuple(array(tiling)/array(pretile))
