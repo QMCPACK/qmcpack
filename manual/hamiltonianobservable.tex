@@ -594,8 +594,59 @@ Additional information:
 
 
 \subsection{Pair correlation function, $g(r)$}
-%  <estimator type="gofr" name="gofr" num_bin="200" rmax="3.0" target="e" />
-%  <estimator type="gofr" name="gofr" num_bin="200" rmax="3.0" target="e" source="ion0" />
+
+The functional form of the species resolved radial pair correlation function operator is
+\begin{align}
+  g_{ss'}(r) = \frac{V}{4\pi r^2N_sN_{s'}}\sum_{i_s=1}^{N_s}\sum_{j_{s'}=1}^{N_{s'}}\delta(r-|r_{i_s}-r_{j_{s'}}|).
+\end{align}
+Here $N_s$ is the number of particles of species $s$ and $V$ is the supercell volume.  If $s=s'$, then the sum is restricted so that $i_s\ne j_s$.
+
+In QMCPACK, an estimate of $g_{ss'}(r)$ is obtained as a radial histogram with a set of $N_b$ uniform bins of width $\delta r$.  This can be expressed analytically as
+\begin{align}
+  \tilde{g}_{ss'}(r) = \frac{V}{4\pi r^2N_sN_{s'}}\sum_{i_s=1}^{N_s}\sum_{j_{s'}=1}^{N_{s'}}\frac{1}{\delta r}\int_{r-\delta r/2}^{r+\delta r/2}dr'\delta(r'-|r_{i_s}-r_{j_{s'}}|),
+\end{align}
+where the radial coordinate $r$ is restricted to reside at the bin centers, $\delta r/2, 3 \delta r/2, 5 \delta r/2, \ldots$.
+
+\FloatBarrier
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l l }
+\hline
+\multicolumn{6}{l}{\texttt{estimator type=gofr} element} \\
+\hline
+\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{hamiltonian, qmc}}\\
+\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\textit{None}}\\
+\multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
+   & \bfseries name       & \bfseries datatype & \bfseries values  & \bfseries default   & \bfseries description \\
+   & \texttt{type}$^r$    &  text              & \textbf{gofr}     &                     & Must be gofr       \\
+   & \texttt{name}$^o$    &  text              & \textit{anything} & any                 & \textit{No current function} \\
+   & \texttt{num\_bin}$^r$&  integer           & $>1$              & 20                  & \# of histogram bins \\
+   & \texttt{rmax}$^o$    &  real              & $>0$              & 10                  & Histogram extent (Bohr) \\
+   & \texttt{dr}$^o$      &  real              & $>0$              & 0.5                 & \textit{No current function} \\%Histogram bin width (Bohr) \\
+   & \texttt{debug}$^o$   &  boolean           & yes/no            & no                  & \textit{No current function} \\
+   & \texttt{target}$^o$  &  text              &\texttt{particleset.name}&\texttt{hamiltonian.target}& Quantum particles \\   
+   & \texttt{source/sources}$^o$&  text array  &\texttt{particleset.name}&\texttt{hamiltonian.target}& Classical particles\\
+  \hline
+\end{tabularx}
+\end{center}
+\end{table}
+\FloatBarrier
+
+Additional information:
+\begin{itemize}
+  \item{\textbf{num\_bin:} The number of bins in each species pair radial histogram.}
+  \item{\textbf{rmax:} Maximum pair distance included in the histogram.  The uniform bin width is $\delta r=\texttt{rmax/num\_bin}$.  If periodic boundary conditions are used for any dimension of the simulation cell, then the default value of \texttt{rmax} is the simulation cell radius instead of 10 Bohr.  For open boundary conditions the volume ($V$) used is 1.0 Bohr$^3$.}
+  \item{\textbf{source/sources:} If unspecified, only pair correlations between each species of quantum particle will be measured.  For each classical particleset specified by \texttt{source/sources}, additional pair correlations between each quantum and classical species will be measured.  Typically there is only one classical particleset (\textit{e.g.} \texttt{source="ion0"}), but there can be several in principle (\textit{e.g.} \texttt{sources="ion0 ion1 ion2"}).}
+  \item{\textbf{target:} The default value is the preferred usage (\textit{i.e.} \texttt{target} does not need to be provided).}
+  \item{Data is outputted to the \texttt{stat.h5} for each QMC sub-run.  Individual histograms are named according to the quantum particleset and index of the pair.  For example, if the quantum particleset is named "e" and there are two species (up and down electrons, say), then there will be three sets of histogram data in each \texttt{stat.h5} file named \texttt{gofr\_e\_0\_0},  \texttt{gofr\_e\_0\_1}, and  \texttt{gofr\_e\_1\_1} for up-up, up-down, and down-down correlations, respectively.}
+\end{itemize}
+
+\begin{lstlisting}[caption=Pair correlation function estimator element.]
+  <estimator type="gofr" name="gofr" num_bin="200" rmax="3.0" />
+\end{lstlisting}
+\begin{lstlisting}[caption=Pair correlation function estimator element with additional electron-ion correlations.]
+  <estimator type="gofr" name="gofr" num_bin="200" rmax="3.0" source="ion0" />
+\end{lstlisting}
 
 
 \subsection{Static structure factor, $S(k)$}
