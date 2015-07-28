@@ -638,7 +638,8 @@ def generate_physical_system(**kwargs):
         pre.remove_folded_structure()
         structure = pre.tile(tiling)
     #end if
-    if tiling!=None:
+
+    if tiling!=None and tiling!=(1,1,1):
         fps = PhysicalSystem(
             structure  = structure.folded_structure,
             net_charge = net_charge,
