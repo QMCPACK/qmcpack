@@ -10,7 +10,7 @@ from generic import obj
 exit_call = exit
 devlog    = sys.stdout
 
-def log(self,*items):
+def log(*items):
     s=''
     for item in items:
         s+=str(item)+' '
@@ -20,7 +20,7 @@ def log(self,*items):
 #end def log
 
 
-def warn(self,message,location,header=None,post_header=' Warning:'):
+def warn(message,location,header=None,post_header=' Warning:'):
     pad = 4*' '
     if location is None:
         header = 'warning:'

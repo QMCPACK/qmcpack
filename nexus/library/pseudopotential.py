@@ -13,7 +13,7 @@ from superstring import string2val,split_delims
 from periodic_table import pt
 from unit_converter import convert
 from generic import obj
-from developer import DevBase,unavailable
+from developer import DevBase,unavailable,error
 from debug import *
 try:
     from matplotlib.pyplot import figure,plot,xlabel,ylabel,title,show,ylim,legend,xlim,rcParams,savefig,bar,xticks,subplot,grid,setp,errorbar,loglog,semilogx,semilogy
@@ -451,6 +451,8 @@ class SemilocalPP(Pseudopotential):
         #end if
         if r is None and self.numeric:
             r = self.r
+        elif r is None:
+            r = linspace(rmin,rmax,1000)
         #end if
         for c in channels:
             if c in self.channels: 
@@ -713,22 +715,8 @@ class GFit(DevBase):
 #end class GFit
  
 
-class GaussianPP(SemilocalPP):
-    requires_format = True
-    formats = SemilocalPP.formats + 'gaussian gamess'.split()
-
-    @staticmethod
-    def process_float(s):
-        return float(s.replace('D','e').replace('d','e'))
-    #end def process_float
-
-    def __init__(self,filepath=None,format=None,name=None,src=None):
-        self.basis = None
-        SemilocalPP.__init__(self,filepath,format,name,src)
-    #end def __init__
-
-
-    def read_text(self,text,format=None):
+def process_gaussian_text(text,format,pp=True,basis=True):
+    if format=='gamess' or format=='gaussian':
         rawlines = text.splitlines()
         sections = []
         last_empty = True
@@ -748,15 +736,472 @@ class GaussianPP(SemilocalPP):
         del lines
         if len(sections)==2:
             basis_lines = sections[0]
-            lines       = sections[1]
-        else:
+            pp_lines    = sections[1]
+        elif pp:
             basis_lines = None
-            lines       = sections[0]
+            pp_lines    = sections[0]
+        elif basis:
+            basis_lines = sections[0]
+            pp_lines    = None
         #end if
+    elif format=='crystal':
+        rawlines = text.splitlines()
+        pp_lines = []
+        basis_lines = []
+        foundpp = False
+        for line in rawlines:
+            if not foundpp:
+                foundpp = len(line.split())==5
+            #end if
+            if not foundpp:
+                pp_lines.append(line)
+            else:
+                basis_lines.append(line)
+            #end if
+        #end for
+        if len(pp_lines)==0:
+            pp_lines = None
+        #end if
+        if len(basis_lines)==0:
+            basis_lines = None
+        #end if
+    else:
+        error('{0} format is unknown'.format(format),'process_gaussian_text')
+    #end if
+    if pp and basis:
+        return pp_lines,basis_lines
+    elif pp:
+        return pp_lines
+    elif basis:
+        return basis_lines
+    else:
+        error('must request pp or basis')
+    #end if
+#end def process_gaussian_text
+
+
+class GaussianBasisSet(DevBase):
+    lset_full = tuple('spdfghijk')
+    lstyles = obj(s='g-',p='r-',d='b-',f='m-',g='c-',h='k-',i='g-.',j='r-.',k='b-.')
+    formats = 'gaussian gamess'.split()
+
+    crystal_lmap = {0:'s',1:'sp',2:'p',3:'d',4:'f'}
+
+    @staticmethod
+    def process_float(s):
+        return float(s.replace('D','e').replace('d','e'))
+    #end def process_float
+
+
+    def __init__(self,filepath=None,format=None):
+        self.name  = None
+        self.basis = obj()
+        if filepath!=None:
+            self.read(filepath,format)
+        #end if
+    #end def __init__
+
+
+    def read(self,filepath,format=None):
+        if format is None:
+            self.error('format keyword must be specified to read file {0}\nvalid options are: {1}'.format(filepath,self.formats))
+        elif not format in self.formats:
+            self.error('incorrect format requested: {0}\nvalid options are: {1}'.format(format,self.formats))
+        #end if
+        if not os.path.exists(filepath):
+            self.error('cannot read {0}, file does not exist'.format(filepath))
+        #end if
+        #self.name = split_delims(os.path.split(filepath)[1])[0]
+        self.name = os.path.split(filepath)[1].split('.')[0]
+        text = open(filepath,'r').read()
+        self.read_text(text,format)
+    #end def read
+
+        
+    def write(self,filepath=None,format=None):
+        if format is None:
+            self.error('format keyword must be specified to write file {0}\nvalid options are: {1}'.format(filepath,self.formats))
+        elif not format in self.formats:
+            self.error('incorrect format requested: {0}\nvalid options are: {1}'.format(format,self.formats))
+        #end if
+        text = self.write_text(format)
+        if filepath!=None:
+            open(filepath,'w').write(text)
+        #end if
+        return text
+    #end def write
+
+
+    def read_text(self,text,format=None):
+        basis_lines = process_gaussian_text(text,format,pp=False)
+        self.read_lines(basis_lines,format)
+    #end def read_text
+
+
+    def read_lines(self,basis_lines,format=None):
+        basis = self.basis
+        basis.clear()
+        if format=='gamess':
+            i=1
+            while i<len(basis_lines):
+                tokens = basis_lines[i].split(); i+=1
+                ltext = tokens[0].lower()
+                ngauss = int(tokens[1])
+                scale  = array(tokens[2:],dtype=float)
+                bterms = obj()
+                for j in xrange(ngauss):
+                    index,expon,coeff = basis_lines[i].split(); i+=1
+                    expon = GaussianBasisSet.process_float(expon)
+                    coeff = GaussianBasisSet.process_float(coeff)
+                    bterms.append(obj(expon=expon,coeff=coeff))
+                #end for
+                basis.append(obj(l=ltext,scale=scale,terms=bterms))
+            #end while
+        #end if
+        elif format=='gaussian':
+            i=1
+            while i<len(basis_lines):
+                tokens = basis_lines[i].split(); i+=1
+                ltext = tokens[0].lower()
+                ngauss = int(tokens[1])
+                scale  = array(tokens[2:],dtype=float)
+                bterms = obj()
+                for j in xrange(ngauss):
+                    expon,coeff = basis_lines[i].split(); i+=1
+                    expon = GaussianBasisSet.process_float(expon)
+                    coeff = GaussianBasisSet.process_float(coeff)
+                    bterms.append(obj(expon=expon,coeff=coeff))
+                #end for
+                basis.append(obj(l=ltext,scale=scale,terms=bterms))
+            #end while
+        elif format=='crystal':
+            i=0
+            while i<len(basis_lines):
+                tokens = basis_lines[i].split(); i+=1
+                if len(tokens)!=5:
+                    self.error('could not parse crystal basisset, input may be misformatted')
+                #end if
+                basis_type    =   int(tokens[0])
+                l_type        =   int(tokens[1])
+                ngauss        =   int(tokens[2])
+                formal_charge = float(tokens[3])
+                scale         = array([tokens[4]],dtype=float)
+                ltext = GaussianBasisSet.crystal_lmap[l_type]
+                if ltext!='sp':
+                    bterms = obj()
+                    for j in xrange(ngauss):
+                        expon,coeff = basis_lines[i].split(); i+=1
+                        expon = GaussianBasisSet.process_float(expon)
+                        coeff = GaussianBasisSet.process_float(coeff)
+                        bterms.append(obj(expon=expon,coeff=coeff))
+                    #end for
+                    basis.append(obj(l=ltext,scale=scale,terms=bterms))
+                else: # sp has shared exponent for s and p, split them now
+                    sterms = obj()
+                    pterms = obj()
+                    for j in xrange(ngauss):
+                        expon,scoeff,pcoeff = basis_lines[i].split(); i+=1
+                        expon = GaussianBasisSet.process_float(expon)
+                        scoeff = GaussianBasisSet.process_float(scoeff)
+                        pcoeff = GaussianBasisSet.process_float(pcoeff)
+                        sterms.append(obj(expon=expon,coeff=scoeff))
+                        pterms.append(obj(expon=expon,coeff=pcoeff))
+                    #end for
+                    basis.append(obj(l='s',scale=scale,terms=sterms))
+                    basis.append(obj(l='p',scale=scale,terms=pterms))
+                #end if
+            #end while
+        else:
+            self.error('ability to read file format {0} has not been implemented'.format(format))
+        #end if
+        # sort the basis in s,p,d,f,... order
+        self.lsort()
+    #end def read_lines
+
+
+    
+    def write_text(self,format=None):
+        text = ''
+        format = format.lower()
+        if format=='gamess':
+            #text += '{0} {1} 0. 0. 0.\n'.format(self.element,self.Zcore+self.Zval)
+            for ib in xrange(len(self.basis)):
+                b = self.basis[ib]
+                line = '{0} {1}'.format(b.l,len(b.terms))
+                for s in b.scale:
+                    line += ' {0}'.format(s)
+                #end for
+                text += line + '\n'
+                for it in xrange(len(b.terms)):
+                    t = b.terms[it]
+                    text += '{0} {1:12.8f} {2: 12.8f}\n'.format(it+1,t.expon,t.coeff)
+                #end for
+            #end for
+        elif format=='gaussian':
+            #text += '{0} 0\n'.format(self.element)
+            for ib in xrange(len(self.basis)):
+                b = self.basis[ib]
+                line = '{0} {1}'.format(b.l,len(b.terms))
+                for s in b.scale:
+                    line += ' {0}'.format(s)
+                #end for
+                text += line + '\n'
+                for it in xrange(len(b.terms)):
+                    t = b.terms[it]
+                    text += '{0:12.8f}{1: 12.8f}\n'.format(t.expon,t.coeff)
+                #end for
+            #end for
+        else:
+            self.error('ability to write file format {0} has not been implemented'.format(format))
+        #end if
+        return text
+    #end def write_text
+
+
+    def lset(self):
+        lset = set()
+        for bf in self.basis:
+            lset.add(bf.l)
+        #end for
+        return lset
+    #end def lset
+
+
+    def lcount(self):
+        return len(self.lset())
+    #end def lcount
+
+
+    def lbasis(self):
+        lbasis = obj()
+        for n in range(len(self.basis)):
+            bf = self.basis[n]
+            l  = bf.l
+            if l not in lbasis:
+                lbasis[l] = obj()
+            #end if
+            lbasis[l].append(bf)
+        #end for
+        return lbasis
+    #end def lbasis
+
+    
+    def lsort(self):
+        lbasis = self.lbasis()
+        self.basis.clear()
+        for l in self.lset_full:
+            if l in lbasis:
+                lbas = lbasis[l]
+                for n in range(len(lbas)):
+                    bf = lbas[n]
+                    self.basis.append(bf)
+                #end for
+            #end if
+        #end for
+    #end def lsort
+
+
+    def uncontracted(self):
+        all_uncon = True
+        for bf in self.basis:
+            all_uncon &= len(bf.terms)==1
+        #end for
+        return all_uncon
+    #end def uncontracted
+
+
+    def contracted(self):
+        return not self.uncontracted()
+    #end def contracted
+
+
+    def uncontract(self,tol=1e-3):
+        if self.uncontracted():
+            return
+        #end if
+        lbasis = self.lbasis()
+        self.basis.clear()
+        for l in self.lset_full:
+            if l in lbasis:
+                exponents = []
+                lbas = lbasis[l]
+                for n in xrange(len(lbas)):
+                    uterms = lbas[n].terms
+                    for i in xrange(len(uterms)):
+                        expon = uterms[i].expon
+                        if len(exponents)==0:
+                            exponents = array([expon],dtype=float)
+                        elif abs(exponents-expon).min()>tol:
+                            exponents = array(list(exponents)+[expon],dtype=float)
+                        #end if
+                    #end for
+                #end for
+                for expon in exponents:
+                    cterms = obj()
+                    cterms.append(obj(expon=expon,coeff=1.0))
+                    bf = obj(l=l,scale=array([1.0]),terms=cterms)
+                    self.basis.append(bf)
+                #end for
+            #end if
+        #end for
+    #end def uncontract
+
+
+    def contracted_basis_size(self):
+        bcount = obj()
+        for bf in self.basis:
+            l = bf.l
+            if l not in bcount:
+                bcount[l]=0
+            #end if
+            bcount[l] += 1
+        #end for
+        bs = ''
+        for l in self.lset_full:
+            if l in bcount:
+                bs += str(bcount[l])+l
+            #end if
+        #end for
+        return bs
+    #end def contracted_basis_size
+
+
+    def basis_size(self):
+        uc = self.copy()
+        uc.uncontract()
+        bs = self.contracted_basis_size()
+        ps = uc.contracted_basis_size()
+        return '({0})/[{1}]'.format(ps,bs)
+    #end def basis_size
+
+
+    def incorporate(self,other):
+        lbasis       = self.lbasis()
+        lbasis_other = other.lbasis()
+        self.basis.clear()
+        for l in self.lset_full:
+            if l in lbasis:
+                lbas = lbasis[l]
+                for n in range(len(lbas)):
+                    bf = lbas[n]
+                    self.basis.append(bf)
+                #end for
+            #end if
+            if l in lbasis_other:
+                lbas = lbasis_other[l]
+                for n in range(len(lbas)):
+                    bf = lbas[n]
+                    self.basis.append(bf)
+                #end for
+            #end if
+        #end for
+    #end def incorporate
+
+
+    def plot(self,r=None,rmin=0.01,rmax=8.0,show=True,fig=True,sep=False,prim=False,style=None,fmt=None,nsub=None):
+        if r is None:
+            r = linspace(rmin,rmax,1000)
+        #end if
+        if not prim:
+            ptitle = '{0} {1} basis'.format(self.name,self.basis_size())
+        else:
+            ptitle = '{0} {1} primitives'.format(self.name,self.basis_size())
+        #end if
+        if fig:
+            figure()
+        #end if
+        r2 = r**2
+        lcount = self.lcount()
+        if nsub!=None:
+            lcount = max(lcount,nsub)
+        #end if
+        lbasis = self.lbasis()
+        lc = 0
+        for l in self.lset_full:
+            if l in lbasis:
+                lc+=1
+                if sep:
+                    subplot(lcount,1,lc)
+                    ylabel(l)
+                    if lc==1:
+                        title(ptitle)
+                    #end if
+                #end if
+                lstyle=self.lstyles[l]
+                if style!=None:
+                    lstyle = lstyle[0]+style
+                #end if
+                if fmt!=None:
+                    lstyle=fmt
+                #end if
+                lbas = lbasis[l]
+                for n in range(len(lbas)):
+                    bf = lbas[n]
+                    br = zeros(r.shape)
+                    s  = bf.scale[0]
+                    for pf in bf.terms:
+                        c =  pf.coeff
+                        a = -pf.expon*s**2
+                        pr = exp(a*r2)
+                        if not prim:
+                            br += c*pr
+                        else:
+                            plot(r,pr,lstyle,label=l)
+                        #end if
+                    #end for
+                    if not prim:
+                        plot(r,br,lstyle,label=l)
+                    #end if
+                #end for
+            #end if
+        #end for
+        if fig:
+            if not sep:
+                if self.name!=None:
+                    title(ptitle)
+                #end if
+                ylabel('basis functions')
+                legend()
+            else:
+                xlabel('r')
+            #end if
+            if show:
+                show_plots()
+            #end if
+        #end if
+    #end def plot
+
+
+    def plot_primitives(self):
+        None
+    #end def plot_primitives
+
+#end class GaussianBasisSet
+
+
+
+class GaussianPP(SemilocalPP):
+    requires_format = True
+    formats = SemilocalPP.formats + 'gaussian gamess crystal'.split()
+
+    @staticmethod
+    def process_float(s):
+        return float(s.replace('D','e').replace('d','e'))
+    #end def process_float
+
+    def __init__(self,filepath=None,format=None,name=None,src=None):
+        self.basis = None
+        SemilocalPP.__init__(self,filepath,format,name,src)
+    #end def __init__
+
+
+    def read_text(self,text,format=None):
+        lines,basis_lines = process_gaussian_text(text,format)
 
         format=format.lower()
         channels = []
         basis    = None
+        # need lmax, element, and Zcore
         if format=='gamess':
             i=0
             name,type,Zcore,lmax = lines[i].split(); i+=1
@@ -772,24 +1217,6 @@ class GaussianPP(SemilocalPP):
                 #end for
                 channels.append(terms)
             #end while
-            if basis_lines!=None:
-                i=1
-                basis = obj()
-                while i<len(basis_lines):
-                    tokens = basis_lines[i].split(); i+=1
-                    ltext = tokens[0].lower()
-                    ngauss = int(tokens[1])
-                    scale  = array(tokens[2:],dtype=float)
-                    bterms = obj()
-                    for j in xrange(ngauss):
-                        index,expon,coeff = basis_lines[i].split(); i+=1
-                        expon = GaussianPP.process_float(expon)
-                        coeff = GaussianPP.process_float(coeff)
-                        bterms.append(obj(expon=expon,coeff=coeff))
-                    #end for
-                    basis.append(obj(l=ltext,scale=scale,terms=bterms))
-                #end while
-            #end if
         elif format=='gaussian':
             i=0
             element,token = lines[i].split(); i+=1
@@ -806,27 +1233,50 @@ class GaussianPP(SemilocalPP):
                 #end for
                 channels.append(terms)
             #end while
-            if basis_lines!=None:
-                i=1
-                basis = obj()
-                while i<len(basis_lines):
-                    tokens = basis_lines[i].split(); i+=1
-                    ltext = tokens[0].lower()
-                    ngauss = int(tokens[1])
-                    scale  = array(tokens[2:],dtype=float)
-                    bterms = obj()
-                    for j in xrange(ngauss):
-                        expon,coeff = basis_lines[i].split(); i+=1
-                        expon = GaussianPP.process_float(expon)
-                        coeff = GaussianPP.process_float(coeff)
-                        bterms.append(obj(expon=expon,coeff=coeff))
-                    #end for
-                    basis.append(obj(l=ltext,scale=scale,terms=bterms))
-                #end while
+        elif format=='crystal':
+            i = 0
+            conv_atomic_number,nshells = lines[i].split(); i+=1
+            if len(conv_atomic_number)==1:
+                atomic_number = int(conv_atomic_number)
+            else:
+                atomic_number = int(conv_atomic_number[-2:])
             #end if
+            element = pt.simple_elements[atomic_number].symbol
+            if 'input' not in lines[i].lower():
+                self.error('INPUT must be present for crystal pseudpotential read')
+            #end if
+            i+=1
+            tokens = lines[i].split()
+            Zval = int(float(tokens[0])); i+=1
+            Zcore = atomic_number-Zval
+            nterms = array(tokens[1:],dtype=int)
+            lmax = 0
+            first = True
+            for nt in nterms:
+                lmax += 1
+                if first:
+                    first = False
+                    terms = [(0.0,2,1.0)]
+                else:
+                    terms = []
+                #end if
+                for n in range(nt):
+                    expon,coeff,rpow = lines[i].split(); i+=1
+                    terms.append((float(coeff),int(rpow)+2,float(expon)))
+                #end for
+                channels.append(terms)
+            #end for
+            lmax-=1
         else:
             self.error('ability to read file format {0} has not been implemented'.format(format))
         #end if
+
+        if basis_lines!=None:
+            bs = GaussianBasisSet()
+            bs.read_lines(basis_lines,format)
+            basis = bs.basis
+        #end if
+
         if not element in pt:
             if not self.element in pt:
                 self.error('cannot identify element for pseudopotential file '+filepath)
@@ -882,21 +1332,16 @@ class GaussianPP(SemilocalPP):
                 channel_order.append(c)
             #end if
         #end for
+        basis = self.basis
+        if basis!=None:
+            bs = GaussianBasisSet()
+            bs.basis = basis
+            basis = bs
+        #end if
         if format=='gamess':
-            if self.basis!=None:
+            if basis!=None:
                 text += '{0} {1} 0. 0. 0.\n'.format(self.element,self.Zcore+self.Zval)
-                for ib in xrange(len(self.basis)):
-                    b = self.basis[ib]
-                    line = '{0} {1}'.format(b.l,len(b.terms))
-                    for s in b.scale:
-                        line += ' {0}'.format(s)
-                    #end for
-                    text += line + '\n'
-                    for it in xrange(len(b.terms)):
-                        t = b.terms[it]
-                        text += '{0} {1:12.8e} {2:12.8e}\n'.format(it+1,t.expon,t.coeff)
-                    #end for
-                #end for
+                text += basis.write_text(format)
                 text += '\n'
             #end if
             text += '{0}-PP GEN {1} {2}\n'.format(self.element,self.Zcore,self.lmax)
@@ -910,20 +1355,9 @@ class GaussianPP(SemilocalPP):
             #end for
             text += '\n'
         elif format=='gaussian':
-            text += '{0} 0\n'.format(self.element)
-            if self.basis!=None:
-                for ib in xrange(len(self.basis)):
-                    b = self.basis[ib]
-                    line = '{0} {1}'.format(b.l,len(b.terms))
-                    for s in b.scale:
-                        line += ' {0}'.format(s)
-                    #end for
-                    text += line + '\n'
-                    for it in xrange(len(b.terms)):
-                        t = b.terms[it]
-                        text += '{0:12.8e} {1:12.8e}\n'.format(t.expon,t.coeff)
-                    #end for
-                #end for
+            if basis!=None:
+                text += '{0} 0\n'.format(self.element)
+                text += basis.write_text(format)
                 text += '\n'
             #end if
             text += '{0} 0\n'.format(self.element)
@@ -944,6 +1378,39 @@ class GaussianPP(SemilocalPP):
         return text
     #end def write_text
 
+
+    def get_basis(self):
+        bs = None
+        if self.basis!=None:
+            bs = GaussianBasisSet()
+            bs.basis = self.basis.copy()
+        #end if
+        return bs
+    #end def get_basis
+
+    def write_basis(self,filepath=None,format=None):
+        basis = self.get_basis()
+        text = ''
+        if basis!=None:
+            if format=='gamess':
+                text += '{0} {1} 0. 0. 0.\n'.format(self.element,self.Zcore+self.Zval)
+                text += basis.write_text(format)
+                text += '\n'
+            elif format=='gaussian':
+                text += '{0} 0\n'.format(self.element)
+                text += basis.write_text(format)
+                text += '\n'
+            else:
+                self.error('ability to write basis for file format {0} has not been implemented'.format(format))
+            #end if
+        #end if
+        if filepath!=None:
+            fobj = open(filepath,'w')
+            fobj.write(text)
+            fobj.close()
+        #end if
+        return text
+    #end def write_basis
 
     def evaluate_rV(self,r,l=None):
         r = array(r)
@@ -977,6 +1444,8 @@ class GaussianPP(SemilocalPP):
 
 
 
+
+
 class QmcpackPP(SemilocalPP):
     requires_format = False
     numeric         = True
@@ -997,7 +1466,11 @@ class QmcpackPP(SemilocalPP):
         self.element = h.symbol
         self.Zval    = h.zval
         self.Zcore   = h.atomic_number-h.zval
-        self.core    = pt.simple_elements[self.Zcore].symbol
+        if self.Zcore==0:
+            self.core = '0'
+        else:
+            self.core    = pt.simple_elements[self.Zcore].symbol
+        #end if
 
         g = pp.grid
         if g.type=='linear':
