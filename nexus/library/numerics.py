@@ -28,7 +28,7 @@
 #      morse_harmfreq                                                #
 #      morse_harmonic_potential                                      #
 #                                                                    #
-#    jackknife                                                        #
+#    jackknife                                                       #
 #      Perform jack-knife statistical analysis accepting an          #
 #      arbitrary function of N-dimensional simulation data.          #
 #      Can be used to obtain error bars of fit parameters,           #
@@ -38,6 +38,23 @@
 #====================================================================#
 
 
+import types as pytypes
+from numpy import array,ndarray,zeros,linspace,pi,exp,sqrt,polyfit,polyval
+from generic import obj
+from developer import unavailable,warn,error
+from unit_converter import convert
+from periodic_table import pt as ptable
+from debug import *
+try:
+    from scipy.optimize import fmin
+except ImportError:
+    fmin = unavailable('scipy.optimize','fmin')
+#end try
+
+
+def numerics_error(*args,**kwargs):
+    error(*args,**kwargs)
+#end def numerics_error
 # minimizers
 least_squares = lambda p,x,y,f: ((f(p,x)-y)**2).sum()
 absmin        = lambda p,x,y,f: abs(f(p,x)-y).sum()
