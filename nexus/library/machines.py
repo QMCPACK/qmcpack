@@ -2097,4 +2097,7 @@ Amos(         5120,   1,    16,   16,  128,   'srun', 'sbatch',   'sacct', 'scan
 get_machine_name = Machine.get_hostname
 get_machine      = Machine.get
 
+#rename Job with lowercase
+job=Job
+
 

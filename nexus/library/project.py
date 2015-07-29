@@ -9,12 +9,12 @@ from generic import obj
 from project_base import Pobj,modes
 
 from project_manager import ProjectManager
-from machines import Job,Machine,Supercomputer,get_machine
+from machines import Job,job,Machine,Supercomputer,get_machine
 
 from structure import Structure,generate_structure,generate_cell,read_structure
 from physical_system import PhysicalSystem,generate_physical_system
 from pseudopotential import Pseudopotential,Pseudopotentials
-from simulation import generate_simulation,input_template,multi_input_template
+from simulation import generate_simulation,input_template,multi_input_template,generate_template_input,generate_multi_template_input
 from bundle import bundle
 from opium       import Opium      , OpiumInput      , OpiumAnalyzer
 from sqd         import Sqd        , SqdInput        , SqdAnalyzer        , generate_sqd_input        , generate_sqd, hunds_rule_filling

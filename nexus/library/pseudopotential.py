@@ -409,7 +409,7 @@ class SemilocalPP(Pseudopotential):
         vmin = None
         vmax = None
         for l in self.channels.keys():
-            rc,vc = self.numeric_channel(l,with_local=True)
+            rc,vc = self.numeric_channel(l,rmin=0.01,with_local=True)
             if r is None:
                 r = rc
                 vmin = array(vc)
@@ -786,6 +786,7 @@ class GaussianBasisSet(DevBase):
     formats = 'gaussian gamess'.split()
 
     crystal_lmap = {0:'s',1:'sp',2:'p',3:'d',4:'f'}
+    crystal_lmap_reverse = dict(s=0,sp=1,p=2,d=3,f=4)
 
     @staticmethod
     def process_float(s):
@@ -920,7 +921,7 @@ class GaussianBasisSet(DevBase):
 
 
     
-    def write_text(self,format=None):
+    def write_text(self,format=None,occ=None):
         text = ''
         format = format.lower()
         if format=='gamess':
@@ -951,11 +952,38 @@ class GaussianBasisSet(DevBase):
                     text += '{0:12.8f}{1: 12.8f}\n'.format(t.expon,t.coeff)
                 #end for
             #end for
+        elif format=='crystal':
+            if occ is not None:
+                lcounts = dict(s=0,p=0,d=0,f=0)
+            #end if
+            for ib in xrange(len(self.basis)):
+                b = self.basis[ib]
+                if b.l not in self.crystal_lmap_reverse:
+                    self.error('{0} channels cannot be handled by crystal'.format(b.l))
+                #end if
+                Zf = 0
+                if occ is not None and b.l in occ and lcounts[b.l]<len(occ[b.l]):
+                    Zf = occ[b.l][lcounts[b.l]]
+                    lcounts[b.l]+=1
+                #end if
+                lnum = self.crystal_lmap_reverse[b.l]
+                line = '0 {0} {1} {2} {3}'.format(lnum,len(b.terms),Zf,b.scale[0])
+                text += line + '\n'
+                for it in xrange(len(b.terms)):
+                    t = b.terms[it]
+                    text += '{0:12.8f}{1: 12.8f}\n'.format(t.expon,t.coeff)
+                #end for
+            #end for
         else:
             self.error('ability to write file format {0} has not been implemented'.format(format))
         #end if
         return text
     #end def write_text
+
+
+    def size(self):
+        return len(self.basis)
+    #end def size
 
 
     def lset(self):
@@ -1251,15 +1279,14 @@ class GaussianPP(SemilocalPP):
             Zcore = atomic_number-Zval
             nterms = array(tokens[1:],dtype=int)
             lmax = 0
-            first = True
+            if nterms[0]==0:
+                lmax+=1
+                channels.append([(0.0,2,1.0)])
+                nterms = nterms[1:]
+            #end if
             for nt in nterms:
                 lmax += 1
-                if first:
-                    first = False
-                    terms = [(0.0,2,1.0)]
-                else:
-                    terms = []
-                #end if
+                terms = []
                 for n in range(nt):
                     expon,coeff,rpow = lines[i].split(); i+=1
                     terms.append((float(coeff),int(rpow)+2,float(expon)))
@@ -1320,7 +1347,7 @@ class GaussianPP(SemilocalPP):
     #end def read_text
 
 
-    def write_text(self,format=None):
+    def write_text(self,format=None,occ=None):
         text = ''
         format = format.lower()
         if format=='qmcpack':
@@ -1372,6 +1399,37 @@ class GaussianPP(SemilocalPP):
                 #end for
             #end for
             text += '\n'
+        elif format=='crystal':
+            if basis!=None:
+                conv_atomic_number = 200 + pt[self.element].atomic_number
+                text+='{0} {1}\n'.format(conv_atomic_number,basis.size())
+                btext = basis.write_text(format,occ=occ)
+            else:
+                btext = ''
+            #end if
+            text += 'INPUT\n'
+            tline = '{0}'.format(int(self.Zval))
+            channels = []
+            cloc = self.channels[channel_order[0]]
+            if len(cloc)==1 and abs(cloc[0].coeff)<1e-8:
+                tline += ' 0'
+            else:
+                tline += ' {0}'.format(len(cloc))
+                channels.append(cloc)
+            #end if
+            for c in channel_order[1:]:
+                channel = self.channels[c]
+                tline += ' {0}'.format(len(channel))
+                channels.append(channel)
+            #end for
+            text += tline+'\n'
+            for channel in channels:
+                for i in sorted(channel.keys()):
+                    g = channel[i]
+                    text += '{0} {1} {2}\n'.format(g.expon,g.coeff,g.rpow-2)
+                #end for
+            #end for
+            text += btext
         else:
             self.error('ability to write file format {0} has not been implemented'.format(format))
         #end if

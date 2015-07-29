@@ -228,6 +228,9 @@ class Simulation(Pobj):
         self.loaded         = False
         self.ordered_dependencies = []
         self.process_id     = None
+        self.infile         = None
+        self.outfile        = None
+        self.errfile        = None
 
         #variables determined by derived classes
         self.outputs = None  #object representing output data 
@@ -323,9 +326,15 @@ class Simulation(Pobj):
 
 
     def set_files(self):
-        self.infile  = self.identifier + self.infile_extension
-        self.outfile = self.identifier + self.outfile_extension
-        self.errfile = self.identifier + self.errfile_extension
+        if self.infile is None:
+            self.infile  = self.identifier + self.infile_extension
+        #end if
+        if self.outfile is None:
+            self.outfile = self.identifier + self.outfile_extension
+        #end if
+        if self.errfile is None:
+            self.errfile = self.identifier + self.errfile_extension
+        #end if
     #end def set_files
 
 
@@ -1233,6 +1242,16 @@ class SimulationInputTemplate(SimulationInput):
         return contents
     #end def write_contents
 
+    
+    def read_text(self,*args,**kwargs):
+        return self.read_contents(*args,**kwargs)
+    #end def read_text
+
+
+    def write_text(self,*args,**kwargs):
+        return self.write_contents(*args,**kwargs)
+    #end def write_text
+
 
     def keywords_remaining(self):
         return set(self.keywords.values())-set(self.values.keys())
@@ -1407,9 +1426,24 @@ def multi_input_template(*args,**kwargs):
 #end def multi_input_template
 
 
-def generate_simulation(sim_type,*args,**kwargs):
+def generate_template_input(*args,**kwargs):
+    return SimulationInputTemplate(*args,**kwargs)
+#end def generate_template_input
+
+
+def generate_multi_template_input(*args,**kwargs):
+    return SimulationInputMultiTemplate(*args,**kwargs)
+#end def generate_multi_template_input
+
+
+def generate_simulation(**kwargs):
+    sim_type='generic'
+    if 'sim_type' in kwargs:
+        sim_type = kwargs['sim_type']
+        del kwargs['sim_type']
+    #end if
     if sim_type=='generic':
-        return GenericSimulation(*args,**kwargs)
+        return GenericSimulation(**kwargs)
     else:
         Simulation.class_error('sim_type {0} is unrecognized'.format(sim_type),'generate_simulation')
     #end if
