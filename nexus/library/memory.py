@@ -2,6 +2,24 @@
 ##  (c) Copyright 2015-  by Jaron T. Krogel                     ##
 ##################################################################
 
+
+#====================================================================#
+#  memory.py                                                         #
+#    Calculate memory used by the Nexus host process.                #
+#                                                                    #
+#  Content summary:                                                  #
+#    memory                                                          #
+#      Return memory usage of the current process.                   #
+#                                                                    #
+#    resident                                                        #
+#      Return resident memory usage.                                 #
+#                                                                    #
+#    stacksize                                                       #
+#      Return stack size.                                            #
+#                                                                    #                                        
+#====================================================================#
+
+
 import os
 _proc_status = '/proc/%d/status' % os.getpid()
 

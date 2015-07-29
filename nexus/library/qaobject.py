@@ -3,6 +3,25 @@
 ##################################################################
 
 
+#====================================================================#
+#  qaobject.py                                                       #
+#    Provides base class functionality for all classes associated    # 
+#    with the QmcpackAnalyzer class.  Maintains data global to       #
+#    these classes.                                                  #
+#                                                                    #
+#  Content summary:                                                  #
+#    QAobject                                                        #
+#      Base class for all QMCPACK analyzer components.               #
+#      Exposes settings options to the user.                         #
+#                                                                    #
+#    Checks                                                          #
+#      Class to assess overall validity based on stored results of   #
+#      many checks (boolean values). Only use so far is to validate  #
+#      the structure of Trace files. See qmcpack_method_analyzers.py.#
+#                                                                    #
+#====================================================================#
+
+
 from generic import obj
 from developer import DevBase
 from project_base import Pobj

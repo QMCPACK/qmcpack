@@ -3,6 +3,15 @@
 ##################################################################
 
 
+#====================================================================#
+#  qmc.py                                                            #
+#    Intended for eventual unified descriptions of QMC input files.  #
+#                                                                    #
+#    Implementation incomplete.                                      #
+#                                                                    # 
+#====================================================================#
+
+
 from project_base import Pobj
 import qmcpack
 

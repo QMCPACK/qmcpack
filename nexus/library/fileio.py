@@ -3,6 +3,23 @@
 ##################################################################
 
 
+#====================================================================#
+#  fileio.py                                                         #
+#    Support for I/O with various file formats.  Currently this only #
+#    contains a generic file I/O class for XSF files.  In the future #
+#    generic XML and HDF5 support should go here.  Input only        #
+#    interfaces to these formats can be found in hdfreader.py and    #
+#    xmlreader.py.                                                   #
+#                                                                    #
+#  Content summary:                                                  #
+#    XsfFile                                                         #
+#      Represents generic XSF, AXSF, and BXSF files.                 #
+#      Can read/write arbitrary files of these formats.              #
+#      Useful for atomic structure and electronic density I/O.       #       
+#                                                                    #
+#====================================================================#
+
+
 import os
 import mmap
 from numpy import array,zeros,ndarray,around,arange,dot

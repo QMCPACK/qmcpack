@@ -2,6 +2,16 @@
 ##  (c) Copyright 2015-  by Jaron T. Krogel                     ##
 ##################################################################
 
+
+#====================================================================#
+#  qmcpack_pp_validation.py                                          #
+#    Tool to test pseudopotentials with PWSCF and SQD.  Input format #
+#    is complicated and the tool will be superseded in the future.   #
+#    A usage example can be found at the end of the file.            #
+#                                                                    #
+#====================================================================#
+
+
 #! /usr/bin/env python
 
 

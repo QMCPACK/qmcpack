@@ -3,6 +3,29 @@
 ##################################################################
 
 
+#====================================================================#
+#  qmcpack_analyzer_base.py                                          #
+#    Data object and analyzer base classes for QmcpackAnalyzer.      #
+#                                                                    #
+#  Content summary:                                                  #
+#    QAdata                                                          #
+#      Represents stored data from QMCPACK's output files.           #
+#      Classification marks it as a target for potential merging,    #
+#      e.g. twist averaging.                                         #
+#                                                                    #
+#    QAHDFdata                                                       #
+#      Specialization of QAdata for data from HDF files.             #
+#                                                                    #
+#    QAanalyzer                                                      #
+#      Base class for analyzer classes.                              #
+#      Analyzers load and analyze data.                              #
+#      Base class functionality includes recursive traversal of      #
+#        nested analyzer object structures for loading and analyzing #
+#        data.                                                       #
+#                                                                    #
+#====================================================================#
+
+
 from numpy import minimum,resize
 from generic import obj
 from hdfreader import HDFgroup

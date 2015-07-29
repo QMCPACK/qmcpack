@@ -3,6 +3,29 @@
 ##################################################################
 
 
+#====================================================================#
+#  convert4qmc.py                                                    #
+#    Interface to convert4qmc tool (associated with QMCPACK).        #
+#                                                                    #
+#  Content summary:                                                  #
+#    Convert4qmcInput                                                #
+#      Class representing command line interface of convert4qmc.     #
+#                                                                    #
+#    Convert4qmcAnalyzer                                             #
+#      Placeholder class for output analysis.                        #
+#                                                                    #
+#    Convert4qmc                                                     #
+#      Class representing conver4qmc instance.                       #
+#                                                                    #
+#    generate_convert4qmc_input                                      #
+#      Function to generate arbitrary convert4qmc input.             #
+#                                                                    #
+#    generate_convert4qmc                                            #
+#      Function to generate Convert4qmc simulation object.           #
+#                                                                    #                                        
+#====================================================================#
+
+
 
 import os
 from generic import obj

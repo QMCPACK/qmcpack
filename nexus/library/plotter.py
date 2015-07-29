@@ -3,6 +3,19 @@
 ##################################################################
 
 
+#====================================================================#
+#  plotter.py                                                        #
+#    Interface with mayavi to plot isosurfaces and surfaces slices   #
+#    of volume data.  Used in the past to visualize energy densities.#
+#    See qmcpack_quantity_analyzers.py and spacegrid.py.             #
+#                                                                    #
+#  Content summary:                                                  #
+#    Plotter                                                         #
+#      Wrapper class for mayavi visualization.                       #
+#                                                                    #
+#====================================================================#
+
+
 from abilities import AllAbilities
 
 import numpy as np

@@ -2,6 +2,19 @@
 ##  (c) Copyright 2015-  by Jaron T. Krogel                     ##
 ##################################################################
 
+
+#====================================================================#
+#  generator.py                                                      #
+#    Generates database of objects with simple select and vary       #
+#    operations.                                                     #
+#                                                                    #
+#  Content summary:                                                  #
+#    Generator                                                       #
+#      Main class that manages and expands the object database.      #
+#                                                                    #                                        
+#====================================================================#
+
+
 #! /usr/bin/env python
 
 from types import FunctionType,StringType,DictType

@@ -3,6 +3,24 @@
 ##################################################################
 
 
+#====================================================================#
+#  qmcpack_analyzer.py                                               #
+#    Supports data analysis for QMCPACK output.                      #
+#                                                                    #
+#  Content summary:                                                  #
+#    QmcpackAnalyzer                                                 #
+#      SimulationAnalyzer class for QMCPACK.                         #
+#                                                                    #
+#    QmcpackCapabilities                                             #
+#      Class to pair QMCPACK output data with analyzer classes.      #
+#                                                                    #
+#    QmcpackAnalysisRequest                                          #
+#      Offers detailed control over analysis.                        #
+#      Serves as a record of requested analysis.                     #
+#                                                                    #
+#====================================================================#
+
+
 #
 # bugs
 #  -equilibration length algorithm incorrectly picks first crossing of

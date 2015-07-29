@@ -3,6 +3,40 @@
 ##################################################################
 
 
+#====================================================================#
+#  vasp_input.py                                                     #
+#    Supports I/O, generation, and manipulation of VASP input files. #
+#                                                                    #
+#  Content summary:                                                  #
+#    VaspInput                                                       #
+#      SimulationInput class for VASP.                               #
+#                                                                    #
+#    generate_vasp_input                                             #
+#      User-facing function to generate arbitrary VASP input files.  #
+#                                                                    #
+#    generate_poscar                                                 #
+#      Function to create a Poscar object from a Structure object.   #
+#                                                                    #
+#    Vobj                                                            #
+#      Base class for VASP input classes.                            #
+#                                                                    #
+#    VFile                                                           #
+#      Base class for a VASP file.                                   #
+#                                                                    #
+#    VKeywordFile                                                    #
+#      Base class for VASP input files in keyword format.            #
+#      I/O handled at base class level.                              #
+#      Derived classes contain the keyword spec. for each file.      #
+#      See Incar and Stopcar classes.                                #
+#                                                                    #
+#    VFormattedFile                                                  #
+#      Base class for VASP input files with strict formatting.       #
+#      Derived classes handle specialized I/O for each file.         #
+#      See Iconst, Kpoints, Penaltypot, Poscar, Potcar, and Exhcar.  #
+#                                                                    #
+#====================================================================#
+
+
 import os
 from numpy import array,abs,empty,ndarray
 from generic import obj

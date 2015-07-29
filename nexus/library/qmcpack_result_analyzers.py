@@ -3,6 +3,29 @@
 ##################################################################
 
 
+#====================================================================#
+#  qmcpack_result_analyzers.py                                       #
+#    Analyzer classes for results of multi-step processes carried    #
+#    out by QMCPACK.  This includes basic analysis of wavefunction   #
+#    optimization and DMC timestep studies.                          #
+#                                                                    #
+#  Content summary:                                                  #
+#    ResultAnalyzer                                                  #
+#      Empty base class to distinguish result analyzers from other   #
+#      types.                                                        #
+#                                                                    #
+#    OptimizationAnalyzer                                            #
+#      Supports analysis of optimization convergence, including      #
+#      plots of energy and variance vs. series and plots detailing   #
+#      the convergence of bspline Jastrows.                          #
+#                                                                    #
+#    TimestepStudyAnalyzer                                           #
+#      Supports basic plotting and reporting of DMC timestep study   #
+#      data.                                                         #
+#                                                                    #
+#====================================================================#
+
+
 from numpy import array,empty,zeros,sqrt
 from generic import obj
 from unit_converter import convert

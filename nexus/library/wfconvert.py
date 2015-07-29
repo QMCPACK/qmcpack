@@ -3,6 +3,26 @@
 ##################################################################
 
 
+#====================================================================#
+#  wfconvert.py                                                      #
+#    Nexus interface to the wfconvert tool packaged with QMCPACK.    #
+#                                                                    #
+#  Content summary:                                                  #
+#    WfconvertInput                                                  #
+#      SimulationInput class for wfconvert.                          #     
+#                                                                    #
+#    WfconvertAnalyzer                                               #
+#      SimulationAnalyzer class for wfconvert.                       #        
+#                                                                    #
+#    Wfconvert                                                       #
+#      Simulation class for wfconvert.                               #
+#                                                                    #
+#    generate_wfconvert                                              #
+#      User-facing function to generate wfconvert simulation objects.#
+#                                                                    #
+#====================================================================#
+
+
 
 import os
 from generic import obj

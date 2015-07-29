@@ -2,6 +2,21 @@
 ##  (c) Copyright 2015-  by Jaron T. Krogel                     ##
 ##################################################################
 
+
+#====================================================================#
+#  spacegrid.py                                                      #
+#    Component of QmcpackAnalyzer used specifically for energy       #
+#    density analysis.                                               #
+#                                                                    #
+#  Content summary:                                                  #
+#    SpaceGrid                                                       #
+#      Represents a grid of data in 3-dimensional space.             #
+#      Can represent rectilinear grids in Cartesian, cylindrical, or #
+#      or spherical coordinates as well as Voronoi grids.            #
+#                                                                    #
+#====================================================================#
+
+
 import re
 import copy
 from numpy import array,floor,sqrt,zeros,prod,dot,ones,empty,min,max

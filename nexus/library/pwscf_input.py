@@ -2,6 +2,48 @@
 ##  (c) Copyright 2015-  by Jaron T. Krogel                     ##
 ##################################################################
 
+
+#====================================================================#
+#  pwscf_input.py                                                    #
+#    Supports I/O for PWSCF input files.                             #
+#                                                                    #
+#  Content summary:                                                  #
+#    PwscfInput                                                      #
+#      SimulationInput class for PWSCF.                              #
+#      Can read/write most PWSCF input files.                        #
+#                                                                    #
+#    generate_pwscf_input                                            #
+#      User-facing function to create arbitrary input files.         #
+#                                                                    #
+#    PwscfInputBase                                                  #
+#      Base class for all other PWSCF input classes.                 #
+#      Contains a listing of all keyword variable names and types.   #
+#                                                                    #
+#    Element                                                         #
+#      Base class for two different types of PWSCF input sections:   #
+#      namelists (Section class) and 'cards' (Card class)            #
+#                                                                    #
+#    Section                                                         #
+#      Class representing keyword (namelist) input sections.         #
+#      Base class for other keyword input section classes.           #
+#      See control, system, electrons, ions, cell, phonon, and ee.   #
+#                                                                    #
+#    Card                                                            #
+#      Class representing formatted (card) input sections.           #
+#      Base class for other formatted section classes.               #
+#      See atomic_species, atomic_positions, k_points,               #
+#        cell_parameters, climbing_images, constraints,              #
+#        collective_vars, and occupations.                           #
+#                                                                    #
+#    QEXML                                                           #
+#      Class to represent an xml element.                            #
+#                                                                    #
+#    readval                                                         #
+#      Function converts an attribute value string to numeric form.  #
+#                                                                    #
+#====================================================================#
+
+
 import os
 import types as pytypes
 from copy import deepcopy

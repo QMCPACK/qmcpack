@@ -3,29 +3,40 @@
 ##################################################################
 
 
-import types as pytypes
-from numpy import array,ndarray,zeros,linspace,pi,exp,sqrt,polyfit,polyval
-from generic import obj
-from developer import unavailable,warn,error
-from unit_converter import convert
-from periodic_table import pt as ptable
-from debug import *
-try:
-    from scipy.optimize import fmin
-except ImportError:
-    fmin = unavailable('scipy.optimize','fmin')
-#end try
+#====================================================================#
+#  numerics.py                                                       #
+#    A collection of useful numerical functions, currently           #
+#    including specialized curve fitting and jack-knife statistical  #
+#    analysis.                                                       #
+#                                                                    #
+#  Content summary:                                                  #
+#    morse_spect_fit                                                 #
+#      Return a Morse potential fit from experimental data           #
+#      (eqm. radius, vib. frequency, w_eX_e).                        #
+#                                                                    #
+#    morse_fit                                                       #
+#      Perform a Morse potential fit of simulation data.             #
+#      If the data are stochastic, return fits with error bars.      #
+#                                                                    #
+#    For the morse-related functions listed, see documentation below #
+#      morse_freq                                                    #
+#      morse_w                                                       #
+#      morse_wX                                                      #
+#      morse_E0                                                      #
+#      morse_En                                                      #
+#      morse_zero_point                                              #
+#      morse_harmfreq                                                #
+#      morse_harmonic_potential                                      #
+#                                                                    #
+#    jackknife                                                        #
+#      Perform jack-knife statistical analysis accepting an          #
+#      arbitrary function of N-dimensional simulation data.          #
+#      Can be used to obtain error bars of fit parameters,           #
+#      eigenvalues, and other statistical results that depend on     #
+#      the input data in a non-linear fashion.                       #
+#                                                                    #                                        
+#====================================================================#
 
-
-def numerics_error(*args,**kwargs):
-    error(*args,**kwargs)
-#end def numerics_error
-
-
-
-#=================#
-#  Curve fitting  #
-#=================#
 
 # minimizers
 least_squares = lambda p,x,y,f: ((f(p,x)-y)**2).sum()

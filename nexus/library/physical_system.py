@@ -3,6 +3,36 @@
 ##################################################################
 
 
+#====================================================================#
+#  physical_system.py                                                #
+#    Representations of matter, particles, and particles collected   #
+#    together in complete systems.                                   #
+#                                                                    #
+#  Content summary:                                                  #
+#    PhysicalSystem                                                  #
+#      Class representing electrons+ions for a simulation.           #
+#                                                                    #
+#    generate_physical_system                                        #
+#      User function to create arbitrary physical systems.           #
+#                                                                    #
+#    Matter                                                          #
+#      Base class for all forms of matter.                           #
+#      Class contains a list of all matter known to Nexus.           #
+#                                                                    #
+#    Particle                                                        #
+#      Class representing a particular particle species.             #
+#                                                                    #
+#    Ion, PseudoIon                                                  #
+#      Specialized Particle classes for ion species and ions         #
+#      represented by pseudopotentials.                              #
+#                                                                    #
+#    Particles                                                       #
+#      A collection of particles.                                    #
+#      PhysicalSystem objects contain a Particles instance.          #
+#                                                                    #
+#====================================================================#
+
+
 from numpy import dot,array
 from numpy.linalg import inv
 from generic import obj

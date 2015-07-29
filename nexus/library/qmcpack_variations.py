@@ -2,6 +2,15 @@
 ##  (c) Copyright 2015-  by Jaron T. Krogel                     ##
 ##################################################################
 
+
+#====================================================================#
+#  qmcpack_variations.py                                             #
+#    Originally intended to support QMCPACK benchmark runs that      #
+#    require input variations.  Used for a short time, now obsolete. #
+#                                                                    #
+#====================================================================#
+
+
 import os
 from datetime import datetime
 # jtk library imports

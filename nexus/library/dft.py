@@ -3,6 +3,15 @@
 ##################################################################
 
 
+#====================================================================#
+#  dft.py                                                            #
+#    Intended for eventual unified descriptions of DFT input files.  #
+#                                                                    #
+#    Implementation incomplete.                                      #
+#                                                                    # 
+#====================================================================#
+
+
 
 from project_base import Pobj
 import pwscf

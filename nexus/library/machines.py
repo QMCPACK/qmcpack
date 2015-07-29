@@ -3,6 +3,46 @@
 ##################################################################
 
 
+#====================================================================#
+#  machines.py                                                       #
+#    Representations of local machine environments including         #
+#    workstations and supercomputers and the jobs that will be       #
+#    executed on them.                                               #
+#                                                                    #
+#  Content summary:                                                  #
+#    Job                                                             #
+#      Class to represent a generic simulation job.                  #
+#                                                                    #
+#    Machine                                                         #
+#      Represents a generic machine.                                 #
+#      Base class for specific machine types.                        #
+#                                                                    #
+#    Workstation                                                     #
+#      Represents a workstation with a fixed number of cores.        #
+#                                                                    #
+#    InteractiveCluster                                              #
+#      Represents a supercomputer in interactive mode.               #
+#      Similar to a workstation with many cores.                     #
+#                                                                    #
+#    Supercomputer                                                   #
+#      Represents a generic supercomputer with a batch queue.        #
+#      Base class for specific supercomputers.                       #
+#      See Jaguar, Kraken, Taub, OIC5, Hopper, Edison, BlueWatersXE, #
+#        BlueWatersXK, Titan, EOS, Vesta, Cetus, Mira, Lonestar,     #
+#        Matisse, Komodo, and Amos                                   #
+#                                                                    #
+#    cpu_count                                                       #
+#      Function to return the number of cores on the local machine.  #
+#                                                                    #
+#    Options                                                         #
+#      Class representing command line options for a simulation job, #
+#      including arguments to the simulation executable,             #
+#      the run launcher (aprun/mpirun, etc), and the job submitter   #
+#      (e.g. qsub).                                                  #
+#                                                                    #                                        
+#====================================================================#
+
+
 import os
 import time
 #from multiprocessing import cpu_count

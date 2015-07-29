@@ -2,6 +2,25 @@
 ##  (c) Copyright 2015-  by Jaron T. Krogel                     ##
 ##################################################################
 
+
+#====================================================================#
+#  periodic_table.py                                                 #
+#    Collected periodic table data.                                  #
+#                                                                    #
+#  Content summary:                                                  #
+#    PeriodicTable                                                   #
+#      Class representing the periodic table.                        #
+#                                                                    #
+#    periodic_table or pt                                            #
+#      References to a single, complete PeriodicTable instance.      #
+#      Used extensively by importing modules for data access.        #
+#                                                                    #
+#    Element                                                         #
+#      Class representing a single element.                          #
+#                                                                    #                                        
+#====================================================================#
+
+
 from generic import obj
 from developer import DevBase
 from unit_converter import UnitConverter

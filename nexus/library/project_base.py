@@ -3,6 +3,19 @@
 ##################################################################
 
 
+#====================================================================#
+#  project_base.py                                                   #
+#    Provides base class functionality and access to 'global' data   #
+#    for core Nexus classes.                                         #
+#                                                                    #
+#  Content summary:                                                  #
+#    Pobj                                                            #
+#      Base class for core Nexus classes.                            #
+#      'Global' data is assigned by the Settings class.              #
+#                                                                    #
+#====================================================================#
+
+
 import os
 import traceback
 import gc as garbage_collector

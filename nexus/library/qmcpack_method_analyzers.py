@@ -3,6 +3,20 @@
 ##################################################################
 
 
+#====================================================================#
+#  qmcpack_method_analyzers.py                                       #
+#    Analyzer classes at the level of QMC methods.  Instances        #
+#    contain all data outputted by VMC, Opt, DMC, etc. sub-runs      #
+#    carried out by QMCPACK.                                         #
+#                                                                    #
+#  Content summary:                                                  #
+#    MethodAnalyzer                                                  #
+#      Base class for specific method analyzers.                     #
+#      Derived classes are OptAnalyzer, VmcAnalyzer, DmcAnalyzer     #
+#                                                                    #
+#====================================================================#
+
+
 import os
 import re
 from generic import obj

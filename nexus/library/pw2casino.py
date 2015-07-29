@@ -3,6 +3,31 @@
 ##################################################################
 
 
+#====================================================================#
+#  pw2casino.py                                                      #
+#    Nexus interface for the pw2casino tool distributed with PWSCF.  #
+#    pseudopotentials between file formats.                          #
+#                                                                    #
+#  Content summary:                                                  #
+#    generate_pw2casino                                              #
+#      User-facing function to create pw2casino simulation objects.  #
+#                                                                    #
+#    generate_pw2casino_input                                        #
+#      User-facing funcion to create input for pw2casino.            #
+#                                                                    #
+#    Pw2casino                                                       #
+#      Simulation class for pw2casino.                               #
+#                                                                    #
+#    Pw2casinoInput                                                  #
+#      SimulationInput class for pw2casino.                          #
+#                                                                    #
+#    Pw2casinoAnalyzer                                               #
+#      SimulationAnalyzer class for pw2casino.                       #
+#      Reads data from pw2casino log output into numeric form.       #
+#                                                                    #
+#====================================================================#
+
+
 import os
 from generic import obj
 from simulation import Simulation,SimulationInput,SimulationAnalyzer

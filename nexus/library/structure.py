@@ -2,6 +2,28 @@
 ##  (c) Copyright 2015-  by Jaron T. Krogel                     ##
 ##################################################################
 
+
+#====================================================================#
+#  structure.py                                                      #
+#    Support for atomic structure I/O, generation, and manipulation. #
+#                                                                    #
+#  Content summary:                                                  #
+#    Structure                                                       #
+#      Represents a simulation cell containing a set of atoms.       #
+#      Many functions for manipulating structures or obtaining       #
+#        data regarding local atomic structure.                      #
+#                                                                    #
+#    generate_cell                                                   #
+#      User-facing function to generate an empty simulation cell.    #
+#                                                                    #
+#    generate_structure                                              #
+#      User-facing function to specify arbitrary atomic structures   #
+#      or generate structures corresponding to atoms, dimers, or     #
+#      crystals.                                                     #
+#                                                                    #
+#====================================================================#
+
+
 #! /usr/bin/env python
 
 import os

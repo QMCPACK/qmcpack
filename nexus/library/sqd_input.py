@@ -3,6 +3,25 @@
 ##################################################################
 
 
+#====================================================================#
+#  sqd_input.py                                                      #
+#    Supports input file I/O and manipulation for the SQD code.      #
+#    Essentially an early fork of qmcpack_input.py.                  #
+#                                                                    #
+#  Content summary:                                                  #
+#    SqdInput                                                        #
+#      SimulationInput class for the SQD code.                       #
+#                                                                    #
+#    generate_sqd_input                                              #
+#      User-facing function to generate SQD input files.             #
+#                                                                    #
+#    For descriptions of remaining contents, see the header of       #
+#      qmcpack_input.py.                                             #
+#                                                                    #
+#                                                                    #
+#====================================================================#
+
+
 import os
 import types as pytypes
 import keyword

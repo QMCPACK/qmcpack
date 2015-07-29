@@ -3,6 +3,33 @@
 ##################################################################
 
 
+#====================================================================#
+#  generic.py                                                        #
+#    Base class for all Nexus classes (obj).  Support for hidden     #
+#    data UI (hidden).                                               #
+#                                                                    #
+#  Content summary:                                                  # 
+#    obj                                                             #
+#      Base class for all Nexus classes.                             #
+#      Inherits from AllAbilities and wraps all functions for UI.    #
+#      Also basic working object/class for generic use.              #
+#      Can function like a standard dict, also mixes in parts of     #
+#        the list interface.                                         #
+#                                                                    #
+#    generic                                                         #
+#      More efficient implementation of AllAbilities+obj interface.  #
+#      Intended to allow for method namespace infringement without   #
+#        loss of access to functionality.                            #
+#      Limited use so far.                                           #
+#                                                                    #
+#    hidden                                                          #
+#      Like generic, but allows for hidden storage.                  #
+#      Can be used, e.g., to make an ordered object class.           #
+#      See use in qmcpack_input.py.                                  #
+#                                                                    #
+#====================================================================#
+
+
 import sys
 import traceback
 from copy import deepcopy

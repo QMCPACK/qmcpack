@@ -3,6 +3,27 @@
 ##################################################################
 
 
+#====================================================================#
+#  qmcpack.py                                                        #
+#    Nexus interface with the QMCPACK simulation code.               #
+#                                                                    #
+#                                                                    #
+#  Content summary:                                                  #
+#    Qmcpack                                                         #
+#      Simulation class for QMCPACK.                                 #
+#      Handles incorporation of structure, orbital, and Jastrow      #
+#        data from other completed simulations.                      #
+#                                                                    #
+#    generate_qmcpack                                                #
+#      User-facing function to create QMCPACK simulation objects.    #
+#                                                                    #
+#    generate_cusp_correction                                        #
+#      User-facing function to run QMCPACK as an intermediate tool   #
+#        to add cusps to Gaussian orbitals coming from GAMESS.       #
+#                                                                    #
+#====================================================================#
+
+
 import os
 from numpy import array,dot,pi
 from numpy.linalg import inv,norm

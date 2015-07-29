@@ -2,6 +2,21 @@
 ##  (c) Copyright 2015-  by Jaron T. Krogel                     ##
 ##################################################################
 
+
+#====================================================================#
+#  pwscf_analyzer.py                                                 #
+#    Supports data analysis for PWSCF output.  Can handle log file   #
+#    and XML output.                                                 #
+#                                                                    #
+#  Content summary:                                                  #
+#    PwscfAnalyzer                                                   #
+#      SimulationAnalyzer class for PWSCF.                           #
+#      Reads log output and converts data to numeric form.           #
+#      Can also read data-file.xml.  See pwscf_data_reader.py.       #
+#                                                                    #
+#====================================================================#
+
+
 import os
 from numpy import array,fromstring,sqrt
 from generic import obj

@@ -2,6 +2,69 @@
 ##  (c) Copyright 2015-  by Jaron T. Krogel                     ##
 ##################################################################
 
+
+#====================================================================#
+#  simulation.py                                                     #
+#    Provides base classes for simulation objects, including input   #
+#    and analysis.  The Simulation base class enables a large amount #
+#    of the functionality of Nexus, including workflow construction  #
+#    and monitoring, in tandem with the ProjectManager class.        #
+#                                                                    #
+#  Content summary:                                                  #
+#    SimulationInput                                                 #
+#      Abstract base class for simulation input.                     #
+#                                                                    #
+#    SimulationAnalyzer                                              #
+#      Abstract base class for simulation data analysis.             #
+#                                                                    #
+#    Simulation                                                      #
+#      Major Nexus class representing a simulation prior to, during, #
+#      and after execution.  Checks dependencies between simulations #
+#      connected in workflows, manages input file writing,           #
+#      participates in job submission, checks for successful         #
+#      simulation completion, and analyzes output data.  Saves state #
+#      image of simulation progress regularly.  Contains             #
+#      SimulationInput, SimulationAnalyzer, and Job objects (also    #
+#      optionally contains a PhysicalSystem object).  Derived        #
+#      classes tailor specific functions such as passing dependency  #
+#      data and checking simulation state to a target simulation     #
+#      code.  Derived classes include Qmcpack, Pwscf, Vasp, Gamess,  #
+#      Opium, Sqd, Convert4qmc, Wfconvert, Pw2qmcpack, Pw2casino,    #
+#      SimulationBundle, and TemplateSimulation.                     #
+#                                                                    #
+#    NullSimulationInput                                             #
+#      Simulation input class intended for codes that do not use an  #
+#      input file.                                                   #
+#                                                                    #
+#    NullSimulationAnalyzer                                          #
+#      Simulation input class intended for codes that do not produce #
+#      or need to analyze output data.                               #
+#                                                                    #
+#    SimulationInputTemplate                                         #
+#      Supports template input files.  A template input file is a    #
+#      standard text input file provided by the user that optionally #
+#      has specially marked keywords.  Using find and replace        #
+#      operations, Nexus can produce variations on the template      #
+#      input file (e.g. to scan over a parameter).  In this way      #
+#      Nexus can drive codes that do not have specialized classes    #
+#      derived from Simulation, SimulationInput, or                  #
+#      SimulationAnalyzer.                                           #
+#                                                                    #
+#    SimulationInputMultiTemplate                                    #
+#      Supports templated input files for codes that take many       #
+#      different files as input (VASP is an example of this).  The   #
+#      multi-template is essentially a collection of individual      #
+#      template input files.                                         #
+#                                                                    #
+#    input_template                                                  #
+#      User-facing function to create SimulationInputTemplate's.     #
+#                                                                    #
+#    multi_input_template                                            #
+#      User-facing function to create SimulationInputMultiTemplate's.#
+#                                                                    #
+#====================================================================#
+
+
 import os
 import shutil
 import string

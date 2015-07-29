@@ -3,6 +3,14 @@
 ##################################################################
 
 
+#====================================================================#
+#  opium.py                                                          #
+#    Nexus interface to the OPIUM pseudpotential generator.          #
+#    The interface is not yet complete.                              #
+#                                                                    #                                        
+#====================================================================#
+
+
 import os
 from generic import obj
 from developer import DevBase

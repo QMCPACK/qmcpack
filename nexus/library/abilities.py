@@ -3,6 +3,54 @@
 ##################################################################
 
 
+#====================================================================#
+#  abilities.py                                                      # 
+#    Base classes for all Nexus classes.  Defines abilities such as  #
+#    querying, printing, etc.  Lays the foundation for developer     #
+#    and user environments.                                          #
+#                                                                    #
+#  Content summary:                                                  #
+#    genbase                                                         #
+#      Essentially a forward declaration of the generic class.       #
+#      See generic.py.                                               #
+#                                                                    #
+#    Callable                                                        #
+#      Helper class to create 'static' methods.  Seldom used.        #
+#                                                                    #
+#    Copyable                                                        #
+#      Base class for copy abilities.                                #
+#                                                                    #
+#    Comparable                                                      #
+#      Base class for comparison abilities (=)                       #
+#                                                                    #
+#    Iterable                                                        #
+#      Base class for iteration abilities.                           #
+#      Allows derived classes to behave somewhat like dictionaries.  #
+#                                                                    #
+#    Queryable                                                       #
+#      Base class for query abilities.                               #
+#      Covers len, in, del, clear, etc.                              #
+#                                                                    #
+#    Logable                                                         #
+#      Base class for generic logging abilities.                     #
+#      Covers log, error, warn, etc.                                 #
+#      Functionality superceded by obj class in generic.py.          #
+#                                                                    #
+#    Saveable                                                        #
+#      Base class for generic save/load abilities.                   #
+#                                                                    #
+#    Validatable                                                     #
+#      Base class for validation abilities.  Seldom used.            #
+#                                                                    #
+#    AllAbilities                                                    #
+#      Summary base class of multiple abilities.                     #
+#      Starting base class for most Nexus classes.                   #
+#      Confluence of Copyable, Comparable, Queryable, Savable, and   #
+#        Validatable classes.                                        #
+#                                                                    # 
+#====================================================================#
+
+
 
 class genbase(object):
     None

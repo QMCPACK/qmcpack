@@ -3,6 +3,18 @@
 ##################################################################
 
 
+#====================================================================#
+#  gamess_analyzer.py                                                #
+#    Support for analysis of GAMESS output data.                     #
+#                                                                    #
+#  Content summary:                                                  #
+#    GamessAnalyzer                                                  #
+#      Analyzer class for the GAMESS code.                           #
+#      Reads numerical data from GAMESS output logs.                 #
+#                                                                    #                                        
+#====================================================================#
+
+
 import os
 from numpy import array,ndarray,abs
 from generic import obj

@@ -3,6 +3,19 @@
 ##################################################################
 
 
+#====================================================================#
+#  project_manager.py                                                #
+#    Supports the active management of simulation cascades           #
+#    (workflows) at the heart of Nexus functionality.                #
+#                                                                    #
+#  Content summary:                                                  #
+#    ProjectManager                                                  #
+#      Class actively manages simulation workflows.                  #
+#      Works closely with Simulation, Machine, and Job objects.      #
+#                                                                    #
+#====================================================================#
+
+
 import os
 import time
 import memory

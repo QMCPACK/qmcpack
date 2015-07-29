@@ -3,6 +3,22 @@
 ##################################################################
 
 
+#====================================================================#
+#  hdfreader.py                                                      #
+#    Support for reading HDF5 files into local structured format     #
+#    containing numpy arrays.                                        #
+#                                                                    #
+#  Content summary:                                                  #
+#    HDFreader                                                       #
+#      Main class to read HDF files and convert to object format.    #
+#                                                                    #
+#    HDFgroup                                                        #
+#      Class representing an HDF group.                              #
+#      Contains other HDFgroup's or named data as numpy arrays       #
+#                                                                    #                                        
+#====================================================================#
+
+
 from numpy import array,ndarray,minimum,abs,ix_,resize
 import sys
 import keyword

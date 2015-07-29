@@ -3,6 +3,23 @@
 ##################################################################
 
 
+#====================================================================#
+#  unit_converter.py                                                 #
+#    Support for physical unit conversion of scalars and arrays.     #
+#    Several distance, time, mass, energy, charge, pressure, and     #
+#    force units are supported.                                      #
+#                                                                    #
+#  Content summary:                                                  #
+#    convert                                                         #
+#      User-facing function to convert a scalar or array from one    #
+#      unit system to another.                                       #
+#                                                                    #
+#    UnitConverter                                                   #
+#      Class performs unit conversion.  Wrapped by convert function. #
+#                                                                    #
+#====================================================================#
+
+
 from abilities import Callable
 
 

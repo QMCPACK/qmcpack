@@ -3,6 +3,26 @@
 ##################################################################
 
 
+#====================================================================#
+#  xmlreader.py                                                      #
+#    Provides support for reading general XML files and converting   #
+#    contents to numeric form, where appropriate.  Based on the      #
+#    expat XML parser.                                               #
+#                                                                    #
+#  Content summary:                                                  #
+#    XMLreader                                                       #
+#      Class reads an XML file, converting it into a structured      #
+#      object format.                                                #
+#                                                                    #
+#    readxml                                                         #
+#      Function interface to XMLreader                               #
+#                                                                    #
+#    XMLelement                                                      #
+#      Class represents a single XML element                         #
+#                                                                    #
+#====================================================================#
+
+
 from xml.parsers import expat
 from numpy import array
 import sys

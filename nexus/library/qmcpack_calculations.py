@@ -3,6 +3,35 @@
 ##################################################################
 
 
+#====================================================================#
+#  qmcpack_calculations.py                                           #
+#    Provides compact interfaces to a few common QMCPACK             #
+#    workflows involving PWSCF and SQD.  While this code functions,  #
+#    this design route has not been developed further with the       #
+#    intent of preserving a common user interface for workflow       #
+#    generation regardless of what simulation codes are used.        #
+#                                                                    #
+#  Content summary:                                                  #
+#    basic_qmc                                                       #
+#      Function generates a basic QMC workflow including orbital     #
+#      generation with PWSCF, orbital conversion with pw2qmcpack,    #
+#      Jastrow optimization with QMCPACK, and diffusion Monte Carlo  #
+#      with QMCPACK.                                                 #
+#                                                                    #
+#    standard_qmc                                                    #
+#      Same as basic_qmc, except that PWSCF orbital generation       #
+#      starts with a charge density calculation (scf) followed by    #
+#      non-scf calculations to make the orbitals.                    #
+#                                                                    #
+#    sqd_qmc                                                         #
+#      Function generates a simple QMC workflow for an atom          #
+#      starting with Hartree-Fock orbital generation with the SQD    #
+#      code and followed by Jastrow optimization and DMC with        #
+#      QMCPACK.                                                      #
+#                                                                    #
+#====================================================================#
+
+
 import os
 from numpy import array,empty
 

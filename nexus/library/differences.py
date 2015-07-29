@@ -2,6 +2,20 @@
 ##  (c) Copyright 2015-  by Jaron T. Krogel                     ##
 ##################################################################
 
+
+#====================================================================#
+#  differences.py                                                    #
+#    Support for detailed comparisons (full diffs) of collections    #
+#    of files.  Useful for rapid integration of branch files into    #
+#    main trunk of Nexus, QMCPACK, etc.                              #
+#                                                                    #
+#  Content summary:                                                  #
+#    Differences                                                     #
+#      Class to find and summarize differences of a file collection. #
+#                                                                    #                                        
+#====================================================================#
+
+
 #! /usr/bin/env python
 
 import os

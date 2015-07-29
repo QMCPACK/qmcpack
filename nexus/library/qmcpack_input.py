@@ -1,3 +1,137 @@
+##################################################################
+##  (c) Copyright 2015-  by Jaron T. Krogel                     ##
+##################################################################
+
+
+#====================================================================#
+#  qmcpack_input.py                                                  #
+#    Supports I/O and manipulation of QMCPACK's xml input file.      #
+#                                                                    #
+#  Content summary:                                                  #
+#    QmcpackInput                                                    #
+#      SimulationInput class for QMCPACK.                            #
+#      Represents the QMCPACK input file as a nested collection of   #
+#        objects mirroring the structure of the XML input.           #
+#      XML attributes and <parameter/> elements are joined into      #
+#        a common keyword representation.                            #
+#      Full tranlations of test QMCPACK input files into executable  #
+#        Python code can be found at the end of this file for        #
+#        reference.                                                  #
+#                                                                    #
+#    BundledQmcpackInput                                             #
+#      Class represents QMCPACK input when provided in 'bundled'     #
+#        form, i.e. an input file containing a list of XML input     #
+#        files.                                                      #
+#      A BundledQmcpackInput object contains many QmcpackInput       #
+#        objects.                                                    #
+#                                                                    #
+#    QmcpackInputTemplate                                            #
+#      Class supports Nexus interaction with text input files        #
+#        provided by users as 'templates'.                           #
+#      Users can mark keywords in a template input file, generate    #
+#        variations on that input file through this class, and       #
+#        then use the resulting input files in Nexus workflows.      #
+#                                                                    #
+#    generate_qmcpack_input                                          #
+#      User-facing function to compose specific QMCPACK input files. #
+#      Though any QMCPACK input file can be composed directly with   #
+#        Python code, only a more limited selection can be           #
+#        generated directly.                                         #
+#      Calls many other functions to generate specific XML elements: #
+#        generate_simulationcell                                     #
+#        generate_particlesets                                       #
+#        generate_sposets                                            #
+#        generate_sposet_builder                                     #
+#        generate_bspline_builder                                    #
+#        generate_heg_builder                                        #
+#        generate_determinantset                                     #
+#        generate_determinantset_old                                 #
+#        generate_hamiltonian                                        #
+#        generate_jastrows                                           #
+#        generate_jastrow                                            #
+#        generate_jastrow1                                           #
+#        generate_bspline_jastrow2                                   #
+#        generate_pade_jastrow2                                      #
+#        generate_jastrow2                                           #
+#        generate_jastrow3                                           #
+#        generate_opt                                                #
+#        generate_opts                                               #
+#                                                                    #
+#   QIxml, Names                                                     #
+#     Class represents a generic XML element.                        #
+#     Supports read/write and setting default values.                #
+#     Derived classes represent specific elements and contain        #
+#       a keyword specification for each element.                    #
+#     Support for new XML elements is enabled by creating            #
+#       a corresponding class with the allowed keywords, etc.,       #
+#       and then adding it to the global 'classes' list below.       #
+#     See classes simulation, project, application, random, include, #
+#       mcwalkerset, qmcsystem, simulationcell, particleset, group,  #
+#       sposet, bspline_builder, heg_builder, composite_builder,     #
+#       wavefunction, determinantset, basisset, grid, atomicbasisset,# 
+#       basisgroup, radfunc, slaterdeterminant, determinant,         #
+#       occupation, multideterminant, detlist, ci, jastrow1,         #
+#       jastrow2, jastrow3, correlation, var, coefficients,          #
+#       coefficient, hamiltonian, coulomb, constant, pseudopotential,# 
+#       pseudo, mpc, localenergy, energydensity, reference_points,   #
+#       spacegrid, origin, axis, chiesa, density, nearestneighbors,  #
+#       neighbor_trace, dm1b, spindensity, structurefactor, init,    #
+#       scalar_traces, array_traces, particle_traces, traces, loop,  #
+#       linear, cslinear, vmc, dmc.                                  #
+#                                                                    #
+#   QIxmlFactory                                                     #
+#     Class supports comprehension of XML elements that share the    #
+#       same XML tag (e.g. <pairpot/>), but have many different      #
+#       and distinct realizations (e.g. coulomb, mpc, etc.).         #
+#     See QIxmlFactory instances pairpot, estimator,                 #
+#       sposet_builder, jastrow, and qmc.                            #
+#                                                                    #
+#   collection                                                       #
+#     Container class representing an ordered set of plural XML      #
+#       elements named according to an XML attribute (e.g. named     #
+#       particlesets).                                               #
+#     XML elements are listed by name in the collection to allow     #
+#       intuitive interactive navigation by the user.                #
+#                                                                    #
+#   Param (single global instance is param)                          #
+#     Handles all reads/writes of attributes and text contents       #
+#       of XML elements.                                             #
+#     Automatically distinguishes string, int, float, and array      #
+#       data of any of these types.                                  #
+#                                                                    #
+#   Note: those seeking to add new XML elements should be aware      #
+#     of the global data structures described below.                 #
+#                                                                    #
+#   classes                                                          #
+#     Global list of QIxml classes.                                  #
+#     Each new QIxml class must be added here.                       #
+#                                                                    #
+#   types                                                            #
+#     Global dict of elements that are actually simple types (to be  #
+#     interpreted the same way as <parameter/> elements) and also    #
+#     factory instances.                                             #
+#                                                                    #
+#   plurals                                                          #
+#     Global obj of elements that can be plural (i.e. multiple can   #
+#     be present with the same tag.  A QmcpackInput object will      #
+#     contain collection instances containing the related XML        #
+#     elements.  Each collection is named according to the keys in   #
+#     plurals.                                                       #
+#                                                                    #
+#   Names.set_expanded_names                                         #
+#     Function to specify mappings from all-lowercase names used     #
+#     in QmcpackInput objects to the names expected by QMCPACK in    #
+#     the actual XML input file.  QMCPACK does not follow any        #
+#     consistent naming convention (camel-case, hyphenation, and     #
+#     separation via underscore are all present in names) and some   #
+#     names are case-sensitive while others are not.  This function  #
+#     allows developers to cope with this diversity upon write,      #
+#     while preserving a uniform representation (all lowercase) in   #
+#     QmcpackInput objects.                                          #
+#                                                                    #
+#====================================================================#
+
+
 import os
 import types as pytypes
 import keyword

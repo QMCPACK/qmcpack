@@ -2,6 +2,21 @@
 ##  (c) Copyright 2015-  by Jaron T. Krogel                     ##
 ##################################################################
 
+
+#====================================================================#
+#  pwscf.py                                                          #
+#    Nexus interface to the PWSCF simulation code.                   #
+#                                                                    #
+#  Content summary:                                                  #
+#    Pwscf                                                           #
+#      Simulation class for PWSCF.                                   #
+#                                                                    #
+#    generate_pwscf                                                  #
+#      User-facing function to create Pwscf simulation objects.      #
+#                                                                    #
+#====================================================================#
+
+
 import os
 from numpy import array
 from generic import obj

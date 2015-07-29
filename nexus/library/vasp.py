@@ -3,6 +3,27 @@
 ##################################################################
 
 
+#====================================================================#
+#  vasp.py                                                           #
+#    Nexus interface for the VASP simulation code.                   #
+#                                                                    #
+#  Content summary:                                                  #
+#    Vasp                                                            #
+#      Simulation class for VASP.                                    #
+#      Handles passing of structure dependencies for relax and NEB.  #
+#                                                                    #
+#    generate_vasp                                                   #
+#      User-facing function to generate VASP simulation objects.     #
+#                                                                    #
+#    VaspHT                                                          #
+#      Original VASP interface supporting only template inputs.      #
+#                                                                    #
+#    generate_vasp_ht                                                #
+#      User interface to VaspHT.                                     #
+#                                                                    #
+#====================================================================#
+
+
 import os
 from generic import obj
 from simulation import Simulation,SimulationInput,SimulationAnalyzer

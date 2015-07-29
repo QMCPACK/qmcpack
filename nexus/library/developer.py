@@ -3,6 +3,34 @@
 ##################################################################
 
 
+#====================================================================#
+#  developer.py                                                      #
+#    Defines developer environment.  Supplies base class for generic #
+#    development (Nexus or beyond)                                   #
+#                                                                    #
+#  Content summary:                                                  #
+#    log, warn, error                                                #
+#      Function interface to logging and error handling.             #
+#                                                                    #
+#    DevBase                                                         #
+#      Base class inheriting generic abilities for obj, etc.         #
+#      Allows for unimplemented functions.                           #
+#                                                                    #
+#    Void                                                            #
+#      Class instances used to represent missing elements.           #
+#      Execution stops when any action is performed on a Void object.#
+#                                                                    #
+#    unavailable                                                     #
+#      Function to create named void objects.                        #
+#      Used when imported entities do not exist on the local machine.#
+#      Allows execution tp proceed normally so long as none of these #
+#        non-existent entities are used during runtime execution.    #
+#      This enables the maximum amount of Nexus functionality to be  #
+#        accessed given the available modules.                       #
+#                                                                    #                                        
+#====================================================================#
+
+
 import sys
 import traceback
 from generic import obj

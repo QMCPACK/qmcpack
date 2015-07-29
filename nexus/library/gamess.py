@@ -3,6 +3,34 @@
 ##################################################################
 
 
+#====================================================================#
+#  gamess.py                                                         #
+#    Nexus interface to the GAMESS simulation code.                  #
+#                                                                    #
+#  Content summary:                                                  #
+#    GamessInput                                                     #
+#      Input class for the GAMESS code.                              #
+#      Capable of reading/writing arbitrary GAMESS input files.      #
+#                                                                    #
+#    generate_gamess_input                                           #
+#      User function to create arbitrary GAMESS input.               #
+#                                                                    #
+#    KeywordGroup                                                    #
+#      Represents an arbitary keyword group in the input file.       #
+#                                                                    #
+#    KeywordSpecGroup                                                #
+#      Base class for specialized keyword groups.                    #
+#      Derived classes enforce the keyword specification.            #
+#      See ContrlGroup, SystemGroup, GuessGroup, ScfGroup,           #
+#        McscfGroup, DftGroup, GugdiaGroup, DrtGroup, CidrtGroup,    #
+#        and DetGroup                                                #
+#                                                                    #
+#    FormattedGroup                                                  #
+#      Represents strict machine-formatted input groups.             #
+#                                                                    #                                        
+#====================================================================#
+
+
 import os
 from numpy import array,ndarray,abs
 from generic import obj

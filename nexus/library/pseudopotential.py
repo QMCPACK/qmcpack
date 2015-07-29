@@ -2,6 +2,41 @@
 ##  (c) Copyright 2015-  by Jaron T. Krogel                     ##
 ##################################################################
 
+
+#====================================================================#
+#  pseudopotential.py                                                #
+#    Classes for reading pseudopotential data and converting         #
+#    pseudopotentials between file formats.                          #
+#                                                                    #
+#  Content summary:                                                  #
+#    Pseudopotentials                                                #
+#      Class contains a list of all pseudopotentials available if    #
+#      user provides pseudo_dir in settings.                         #
+#                                                                    #
+#    PseudoFile                                                      #
+#      Represents a single pseudopotential file.  No functionality.  #
+#                                                                    #
+#    gamessPPFile                                                    #
+#      Represents a pseudopotential file for GAMESS.                 #
+#      Used during Nexus execution to separate basis and channel     #
+#      information to fill in the input file.                        #
+#                                                                    #
+#    Classes below are user-facing, but are not used by Nexus itself.#
+#                                                                    #
+#    Pseudopotential                                                 #
+#      Represents a generic pseudopotential.                         #
+#                                                                    #
+#    SemilocalPP                                                     #
+#      Represents a semi-local pseudopotential.                      #
+#      Contains data for each non-local channel.                     #
+#      Supports plotting, gaussian fitting, and writing to QMCPACK's #
+#        grid-based file format.                                     #
+#      GaussianPP and QmcpackPP are derived classes to read/write    #
+#        GAMESS/Gaussian and QMCPACK pseudopotential files.          #
+#                                                                    #
+#====================================================================#
+
+
 #! /usr/bin/env python
 
 import os

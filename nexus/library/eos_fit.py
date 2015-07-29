@@ -3,6 +3,29 @@
 ##################################################################
 
 
+#====================================================================#
+#  eos_fit.py                                                        #
+#    Support for Equation of State (EOS) curve fitting.  Can perform #
+#    Murnaghan, Birch-Murnaghan, or Vinet fits of energy vs. volume  #
+#    or pressure vs. volume equation of state data.  To be merged    #
+#    with more advanced facilities contained in numerics.py.         #
+#                                                                    #
+#  Content summary:                                                  #
+#    energy_fit                                                      #
+#      Perform an energy vs. volume fit.                             #
+#                                                                    #
+#    energy_eval                                                     #
+#      Evaluate an E(V) fit at specified volumes.                    #
+#                                                                    #
+#    pressure_fit                                                    #
+#      Perform a pressure vs. volume fit                             #
+#                                                                    #
+#    pressure eval                                                   #
+#      Evaluate a P(V) fit at specified volumes.                     #
+#                                                                    #                                        
+#====================================================================#
+
+
 from numpy import exp
 from developer import unavailable
 try:

@@ -3,6 +3,25 @@
 ##################################################################
 
 
+#====================================================================#
+#  cascade.py                                                        #
+#    Enables workflow/cascade manipulation without resorting to      #
+#    user-side programming.  Users define a template workflow        #
+#    and then perform common database/tree operations to create      #
+#    complex and varied workflows.  For example, a node in a simple  #
+#    workflow can be selected and any input variable can be          #
+#    scanned over a range.  This will cause multiple independent     #
+#    subcascades to be generated.  Supports graph visualization of   #
+#    cascades/workflows.                                             #
+#                                                                    #
+#    Illustrative examples can be run by executing this file:        #
+#      python cascade.py                                             #
+#                                                                    #
+#    Implementation is incomplete.                                   #
+#                                                                    #                                        
+#====================================================================#
+
+
 import os
 import string
 from copy import deepcopy
