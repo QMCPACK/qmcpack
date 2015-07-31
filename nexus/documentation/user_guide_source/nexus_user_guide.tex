@@ -10,6 +10,7 @@
 
 \usepackage{makeidx}
 
+\usepackage{placeins}
 
 % to use minted
 %   install the pygments package for python
@@ -36,8 +37,8 @@
 
 \makeindex
 
-\chapterstyle{hangnum}
-%\chapterstyle{verville}
+%\chapterstyle{hangnum}
+\chapterstyle{verville}
 
 
 \numberwithin{equation}{section}
@@ -127,7 +128,7 @@
     \vspace{6cm}
     By Jaron T. Krogel \\
     \hspace{1cm}\\
-    22 May 2013
+    31 July 2015
   \end{center}
 \end{changemargin}
 \pagebreak
@@ -141,36 +142,24 @@
 \pagebreak
 \chapter{Using this document} \label{usedoc}
 
-The Nexus User Guide provides an overview of Nexus 
-(\ref{overview}), instructions on how to install it (\ref{installation}), 
-complete examples of electronic structure calculations using it 
-(\ref{examples}), a complete reference section (\ref{reference}), 
-a brief overview of Quantum Monte Carlo (QMC) from an applied perspective 
-(\ref{theory}), and directions on where to go to learn more (\ref{reading}).  
-If you are new to QMC, consider reading the
- ``QMC Practice in a Nutshell'' section (\ref{theory}) and the 
-review articles and online resources listed under
- ``Quantum Monte Carlo: Theory and Practice'' (\ref{learn_qmc}) 
-before proceeding to the overview (\ref{overview}) and the examples 
-(\ref{examples}).  For those more experienced in QMC, or the impatient, 
-quickly visit ``Nexus Installation'' (\ref{installation}) and see the 
-examples section (\ref{examples}) for template calculations to begin 
-using Nexus immediately.  For fine-grained information 
-about Nexus's many features, consult 
-the ``Nexus User Reference'' (\ref{reference}).
-If you cannot find what you need in this document, contact the main 
-developer of Nexus (Jaron Krogel), at krogeljt@ornl.gov 
-(but please make a thorough search first!).
+The Nexus User Guide provides an overview of Nexus (Sec. Sec. \ref{sec:overview}), instructions on how to install it (Sec. \ref{sec:installation}), an explanation of Nexus user scripts used to create simulation workflows (Sec. \ref{sec:user_scripts}), and complete examples of electronic structure calculations using Nexus (Sec. \ref{sec:examples}).  Reading all sections is recommended prior to beginning production work.  The impatient may quickly visit ``Nexus Installation'' (Sec. \ref{sec:installation}) and see the examples section (Sec. \ref{sec:examples}) for template calculations to begin using Nexus immediately. If you cannot find what you need in this document, contact the main developer of Nexus (Jaron Krogel), at krogeljt@ornl.gov (but please make a thorough search first!).
+
+Some basic understanding of Python is recommended for Nexus users.  For a very quick introduction to the basics, read Appendix \ref{app:python_basics}.  More information can be found under ``Brushing up on Python'' in the ``Recommended Reading'' Section (Sec. \ref{sec:learn_python}).
+
+This document also provides a brief overview of Quantum Monte Carlo (QMC) from an applied perspective (Appendix \ref{app:theory}) and directions on where to go to learn more (Sec. \ref{sec:reading}).  Consider reading ``QMC Practice in a Nutshell'' (Appendix \ref{app:theory}) and the review articles and online resources listed under ``Quantum Monte Carlo: Theory and Practice'' (Sec. \ref{sec:learn_qmc}) before proceeding to the overview (Sec. \ref{sec:overview}) and the examples (Sec. \ref{sec:examples}).  
+
+%For fine-grained information about Nexus's many features, consult the ``Nexus User Reference'' (\ref{sec:reference}).
 
 
 
 \pagebreak
-\chapter{Overview of Nexus} \label{overview}
+\chapter{Overview of Nexus} \label{sec:overview}
 \section{What Nexus is}
 Nexus is a collection of tools, written in Python, to perform 
 complex electronic structure calculations and analyze the results.  The main 
 focus is currently on performing arbitrary Quantum Monte Carlo (QMC) 
-calculations with QMCPACK.  A single QMC calculation typically requires several 
+calculations with QMCPACK, however VASP, Quantum Espresso, and GAMESS are
+also supported.  A single QMC calculation typically requires several 
 previous calculations with other codes to produce a starting guess for the 
 many-body wavefunction and convert it into a form that QMCPACK understands.  
 Managing the resulting array of calculations, and the flow of information 
@@ -181,14 +170,15 @@ automating the total simulation process.
 
 \section{What Nexus can do}
 The capabilities of Nexus currently include crystal structure 
-generation, standalone Density Functional Theory (DFT) calculations with PWSCF, 
+generation, standalone Density Functional Theory (DFT) calculations with 
+PWSCF (Quantum Espresso) or VASP,  quantum chemical calculations with GAMESS,  
 Hartree-Fock (HF) calculations of atoms with the SQD code (packaged with 
 QMCPACK), complete QMC calculations with QMCPACK (including wavefunction 
 optimization, Variational Monte Carlo (VMC), and Diffusion Monte Carlo (DMC) in 
 periodic or open boundary conditions), automated job management on workstations 
-(by acting as a virtual queue) and clusters/supercomputers (such as OIC5, 
-Edison, Blue Waters, with Titan coming) including handling of dependencies 
-between calculations and bundling of jobs,  and extraction of results from 
+(by acting as a virtual queue) and clusters/supercomputers  
+including handling of dependencies 
+between calculations and job bundling,  and extraction of results from 
 completed calculations for analysis.  The integration of these capabilities 
 permits the user to focus on the high-level tasks of problem formulation and 
 interpretation of the results without (in principle) becoming too involved 
@@ -204,42 +194,48 @@ simulation workflows (\emph{e.g.} an equation of state) can be constructed
 with if/else logic and for loops.  Knowledge of the Python programming language 
 is helpful to perform complex calculations, but not essential for use of  
 Nexus.  Starting from working ``input files'' such as those covered 
-in the ``Complete Examples'' section (\ref{examples}) is a good way to proceed. 
+in the ``Complete Examples'' section (\ref{sec:examples}) is a good way to proceed. 
+
+
 
 
 \pagebreak
-\chapter{Nexus Installation} \label{installation}
-Installation of Nexus can be accomplished by a single download 
-with Subversion (SVN) and setting a single environment variable provided a 
-working python environment exists. Follow the example below to download  
-Nexus:
-\begin{shaded}
-\begin{verbatim}
-cd /your_download_path
-svn co https://subversion.assembla.com/svn/qmcdev/trunk/nexus
-\end{verbatim}
-\end{shaded}
-If you do not have access to the Assembla SVN repository, please make an 
-account on assembla.com and email the lead developer of QMCPACK (Jeongnim Kim) 
-at jnkim@ornl.gov to obtain access.
+\chapter{Nexus Installation} \label{sec:installation}
+Installation of Nexus can be accomplished by 
+%a single download from \texttt{qmcpack.org} and 
+setting a single environment variable provided a 
+working python environment exists. 
 
+
+%\section{Downloading Nexus}
+%To download Nexus, go to \url{http://qmcpack.org/downloads/} and 
+%select the latest release of QMCPACK.  Save the \texttt{tar.gz} file 
+%to your hard drive and unpack it (\texttt{tar -xzf qmcpack*.tgz}.  
+%Nexus can be found in \texttt{./qmcpack/nexus/}.  Throughout this document, 
+%the path leading up to the \texttt{nexus} directory is referred to as \texttt{/your\_download\_path}.
+
+
+\section{Setting environment variables}
 To make your Python installation (must be Python 2.x as 3.x is not supported) 
-aware of Nexus, simply set the 
-PYTHONPATH environment variable.  For example, in bash this would look like:
+aware of Nexus, simply set the PYTHONPATH environment variable.  For example, in bash this would look like:
 \begin{shaded}
 \begin{verbatim}
 export PYTHONPATH=/your_download_path/nexus/library
 \end{verbatim}
 \end{shaded}
-If you want to use the command line tools, add them to your path:
-\begin{shaded}
-\begin{verbatim}
-export PATH=/your_download_path/nexus/executables:$PATH
-\end{verbatim}
-\end{shaded}
-Add these to \emph{e.g.} your .bashrc file to make Nexus available 
-to future sessions.
+\noindent
+Add this to \emph{e.g.} your .bashrc file to make Nexus available 
+in future sessions.
+%If you want to use the command line tools, add them to your path:
+%\begin{shaded}
+%\begin{verbatim}
+%export PATH=/your_download_path/nexus/executables:$PATH
+%\end{verbatim}
+%\end{shaded}
+%Add these to \emph{e.g.} your .bashrc file to make Nexus available 
+%to future sessions.
 
+\section{Installing Python dependencies}
 In addition to the standard Python installation, the \texttt{numpy} module must 
 be installed for Nexus to function at a basic level.  To realize 
 the full range of functionality available, it is recommended that the 
@@ -254,21 +250,467 @@ sudo apt-get install python-numpy
 sudo apt-get install python-scipy python-matplotlib python-h5py 
 \end{verbatim}
 \end{shaded}
-For installing the Python modules on other platforms, please see 
-``Helpful Links for Installing Python Modules'' (section \ref{install_python}).
+\noindent
+To install the Python modules on other platforms, please see 
+``Helpful Links for Installing Python Modules'' (section \ref{sec:install_python}).
 
 Of course, to run full calculations, the simulation codes and converters 
 involved must be installed as well.  These include a modified version of 
 Quantum Espresso (\texttt{pw.x}, \texttt{pw2qmcpack.x}, optionally 
-\texttt{pw2casino.x}), QMCPACK (\texttt{qmcapp}, \texttt{qmcapp\_complex}), 
-SQD (\texttt{sqd}, packaged with QMCPACK), and, optionally, \texttt{wfconvert}.  
+\texttt{pw2casino.x}), QMCPACK (\texttt{qmcapp}, \texttt{qmcapp\_complex}, \texttt{convert4qmc}, \texttt{wfconvert}, \texttt{ppconvert}), 
+SQD (\texttt{sqd}, packaged with QMCPACK), VASP, and/or GAMESS.  
 Complete coverage of this task is beyond the scope of the current document, but 
 please see ``Helpful Links for Installing Electronic Structure Codes'' 
-(section \ref{install_code}).
+(section \ref{sec:install_code}).
+
+
+
+
 
 
 \pagebreak
-\chapter{Complete Examples} \label{examples}
+\chapter{Nexus User Scripts} \label{sec:user_scripts}
+
+Users interact with Nexus by writing a Python script that often resembles an input file.  A Nexus user script typically consists of six main sections, as described below:
+
+\begin{description}
+  \item[Nexus imports:] functions unique to Nexus are drawn into the user environment.
+  \item[Nexus settings:] specify machine information and configure the runtime behavior of Nexus.
+  \item[Physical system specification:]  create a data description of the physical system.  Generate a crystal structure or import one from an external data file.  Physical system details can be shared among many simulations.
+  \item[Workflow specification:] describe the simulations to be performed.  Link simulations together by their data dependencies to form workflows.
+  \item[Workflow execution:] pass control to Nexus for active workflow management.  Simulation input files are generated, jobs are submitted and monitored, output files are collected and preprocessed for later analysis.
+  \item[Data analysis:] control returns to the user to extract preprocessed simulation output data for further analysis. 
+\end{description}
+
+
+Each of the six input sections is the subject of lengthier discussion: ``Nexus imports'' (Sec. \ref{sec:user_imports}), ``Nexus settings'' (\ref{sec:user_settings}), ``Physical system specification'' (\ref{sec:user_system}),  ``Workflow specification'' (\ref{sec:user_workflows}), ``Workflow execution'' (\ref{sec:user_execution}), ``Data analysis'' (\ref{sec:user_data_analysis}).  These sections are also illustrated in the abbreviated example script below.  For more complete examples and further discussion, please refer to the user walkthroughs in Sec. \ref{sec:examples}.
+
+
+
+\section{Nexus imports}\label{sec:user_imports}
+Each script begins with imports from the main Nexus module.  Items imported include the interface to provide settings to Nexus, helper functions to make objects representing atomic structures or simulations of particular types (\emph{e.g.} QMCPACK or VASP), and the interface to provide simulation workflows to Nexus for active management. 
+
+The import of all Nexus components is accomplished with the brief ``\texttt{from nexus import *}''.  Each component can also be imported separately by name, as in the example below.
+\begin{minted}{python}
+from nexus import settings                   # Nexus settings function
+from nexus import generate_physical_system   # for creating atomic structures
+from nexus import generate_pwscf             # for creating PWSCF sim. objects
+from nexus import Job                        # for creating job objects
+from nexus import run_project                # for active workflow management
+\end{minted}
+
+\noindent
+This has the advantage of avoided unwanted namespace collisions with user defined variables.
+The major Nexus components available for import are listed in Table \ref{tab:imports}.
+
+\FloatBarrier
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l}
+   \hline
+   \bfseries component                 & \bfseries description \\
+   \hline
+   \texttt{settings}                   & Alter runtime behavior.  Provide machine information.    \\
+   \texttt{generate\_physical\_system} & Create atomic structure including electronic information.  \\
+   \texttt{generate\_structure}        & Create atomic structure without electronic information.    \\
+   \texttt{generate\_simulation}       & Create generic simulation object.    \\
+   \texttt{generate\_pwscf}            & Create PWSCF simulation object.    \\
+   \texttt{generate\_vasp}             & Create VASP simulation object.    \\
+   \texttt{generate\_gamess}           & Create GAMESS simulation object.    \\
+   \texttt{generate\_qmcpack}          & Create QMCPACK simulation object.    \\
+   \texttt{generate\_sqd}              & Create SQD simulation object.    \\
+   \texttt{input\_template}            & Create generic input file object. \\
+   \texttt{multi\_input\_template}     & Create generic input file object representing multiple files.\\
+   \texttt{generate\_pwscf\_input}     & Create PWSCF input file object.    \\
+   \texttt{generate\_vasp\_input}      & Create VASP input file object.    \\
+   \texttt{generate\_gamess\_input}    & Create GAMESS input file object.    \\
+   \texttt{generate\_qmcpack\_input}   & Create QMCPACK input file object.    \\
+   \texttt{generate\_sqd\_input}       & Create SQD input file object.    \\
+   \texttt{Job}                        & Provide job information for simulation run.    \\
+   \texttt{run\_project}               & Initiate active workflow management.     \\
+   \texttt{obj}                        & Generic container object.  Store inputs for later use.  \\
+  \hline
+\end{tabularx}
+\end{center}
+\caption{Major Nexus components available for import.\label{tab:imports}}
+\end{table}
+\FloatBarrier
+
+
+
+\section{Nexus settings: global state and user-specific information}\label{sec:user_settings}
+Following imports, the next section of a Nexus script is dedicated to providing 
+information regarding the local machine, the location of various files, and 
+the desired runtime behavior.  This information is 
+communicated to Nexus through the \texttt{settings} function. 
+To make \texttt{settings} available in your project script, use the following import 
+statement:
+\newline
+\begin{minted}{python}
+from nexus import settings
+\end{minted}
+In most cases, it is sufficient to supply only four pieces of information 
+through the \texttt{settings} function: whether to run all jobs or just create 
+the input files, how often to check jobs for completion, the location of 
+pseudopotential files, and a description of the local machine.
+\begin{minted}{python}
+settings(
+    generate_only = True,                 # only write input files, do not run
+    sleep         = 3,                    # check on jobs every 3 seconds
+    pseudo_dir    = './pseudopotentials', # path to PP file collection
+    machine       = 'ws8'                 # local machine is an 8 core workstation
+    )
+\end{minted}
+
+A few additional parameters are available in \texttt{settings} to control where 
+runs are performed, where output data is gathered, and whether to print job 
+status information.  More detailed information about  
+machines can be provided, such as allocation account numbers, filesystem 
+structure, and where executables are located.
+\begin{minted}{python}
+settings(
+    status_only   = True,                 # only show job status, do not write or run
+    generate_only = True,                 # only write input files, do not run
+    sleep         = 3,                    # check on jobs every 3 seconds
+    pseudo_dir    = './pseudopotentials', # path to PP file collection
+    runs          = '',                   # base path for runs is local directory
+    results       = '/home/jtk/results/', # light output data copied elsewhere
+    machine       = 'titan',              # Titan supercomputer
+    account       = 'ABC123',             # user account number
+    )
+\end{minted}
+
+\section{Physical system specificaton}\label{sec:user_system}
+After providing settings information, the user often defines the atomic structure to be studied (whether generated or read in).  The same structure can be used to form input to various simulations (\emph{e.g.} DFT and QMC) performed on the same system.  The examples below illustrate the main options for structure input.
+\newline
+
+\vspace*{3mm}
+\noindent
+\textbf{Read structure from a file:}
+\begin{minted}{python}
+dia16 = generate_physical_system(
+    structure = './dia16.POSCAR',  # load a POSCAR file
+    C         = 4                  # pseudo-carbon (4 electrons)
+    )
+\end{minted}
+
+\noindent
+\textbf{Generate structure directly:}
+\begin{minted}{python}
+dia16 = generate_physical_system(
+    lattice   = 'cubic',           # cubic lattice
+    cell      = 'primitive',       # primitive cell
+    centering = 'F',               # face-centered
+    constants = 3.57,              # a = 3.57
+    units     = 'A',               # Angstrom units
+    atoms     = 'C',               # monoatomic C crystal
+    basis     = [[0,0,0],          # basis vectors
+                 [.25,.25,.25]],   #  in lattice units
+    tiling    = (2,2,2),           # tile from 2 to 16 atom cell
+    C         = 4                  # pseudo-carbon (4 electrons)
+    )
+\end{minted}
+
+\noindent
+\textbf{Provide cell, elements, and positions explicitly:}
+\begin{minted}{python}
+dia16 = generate_physical_system(
+    units  = 'A',                      # Angstrom units
+    axes   = [[1.785,1.785,0.   ],     # cell axes
+              [0.   ,1.785,1.785],
+              [1.785,0.   ,1.785]],
+    elem   = ['C','C'],                # atom labels
+    pos    = [[0.    ,0.    ,0.    ],  # atomic positions
+              [0.8925,0.8925,0.8925]],
+    tiling = (2,2,2),                  # tile from 2 to 16 atom cell
+    kgrid  = (4,4,4),                  # 4 by 4 by 4 k-point grid
+    kshift = (0,0,0),                  #  centered at gamma
+    C      = 4                         # pseudo-carbon (4 electrons)
+    )
+\end{minted}
+
+\noindent
+In each of these cases, the text ``\texttt{C = 4}'' refers to the number of electrons in the valence for a particular element.  Here a pseudopotential is being used for carbon and so it effectively has four valence electrons.  One line like this should be included for each element in the structure.
+
+
+
+\section{Workflow specification}\label{sec:user_workflows}
+The next section in a Nexus user script is the specification of simulation workflows.  This stage can be logically decomposed into two sub-stages: (1) specifying inputs to each simulation individually, and (2) specifying the data dependencies between simulations.
+
+\subsection{Generating simulation objects}
+Simulation objects are created through calls to ``\texttt{generate\_xxxxxx}'' functions, where ``\texttt{xxxxxx}'' represents the name of a particular simulation code, such as \texttt{pwscf}, \texttt{vasp}, or \texttt{qmcpack}.  Each \texttt{generate} function shares certain inputs, such as the path where the simulation will be performed, computational resources required by the simulation job, an identifier to differentiate between simulations (must be unique only for simulations occurring in the same directory), and the atomic/electronic structure to simulate:
+\begin{minted}{python}
+relax = generate_pwscf(      
+    identifier   = 'relax',                   # identifier for the run 
+    path         = 'diamond/relax',           # perform run at this location
+    job          = Job(cores=16,app='pw.x'),  # run on 16 cores using pw.x executable
+    system       = dia16,                     # 16 atom diamond cell made earlier
+    pseudos      = ['C.BFD.upf'],             # pseudopotential file
+    files        = [],                        # any other files to be copied in
+    ...                                       # PWSCF-specific inputs follow
+    )
+\end{minted}
+The simulation objects created in this way are just data.  They represent requests for particular simulations to be carried out at a later time.  No simulation runs are actually performed during the creation of these objects. A basic example of generation input for each of the four major codes currently supported by Nexus is given below. 
+
+\vspace*{3mm}
+\noindent
+\textbf{Quantum Espresso (PWSCF) generation:}
+\begin{minted}{python}
+scf = generate_pwscf(
+    identifier   = 'scf',
+    path         = 'diamond/scf',
+    job          = scf_job,
+    system       = dia16,
+    pseudos      = ['C.BFD.upf'], 
+    input_type   = 'generic',
+    calculation  = 'scf',
+    input_dft    = 'lda', 
+    ecutwfc      = 75,   
+    conv_thr     = 1e-7, 
+    kgrid        = (2,2,2),                
+    kshift       = (0,0,0),              
+    )
+\end{minted}
+
+\noindent
+The keywords \texttt{calculation}, \texttt{input\_dft}, \texttt{ecutwfc}, and \texttt{conv\_thr} will be familiar to the casual user of PWSCF.  Any input keyword that normally appears as part of a namelist in PWSCF input can be directly supplied here.  The \texttt{generate\_pwscf} function, like most of the others, actually takes an arbitrary number of keyword arguments.  These are later screened against known inputs to PWSCF to avoid errors.  The \texttt{kgrid} and \texttt{kshift} inputs inform the \texttt{KPOINTS} card in the PWSCF input file, overriding any similar information provided in \texttt{generate\_physical\_system}.
+
+\vspace*{3mm}
+\noindent
+\textbf{VASP generation:}
+\begin{minted}{python}
+relax = generate_vasp(      
+    identifier   = 'relax', 
+    path         = 'diamond/relax',
+    job          = relax_job,
+    system       = dia16,            
+    pseudos      = ['C.POTCAR'], 
+    input_type   = 'generic',
+    istart       = 0, 
+    icharg       = 2,
+    encut        = 450,
+    nsw          = 5,
+    ibrion       = 2,
+    isif         = 2,
+    kcenter      = 'monkhorst',
+    kgrid        = (2,2,2),                
+    kshift       = (0,0,0),              
+    )
+\end{minted}
+
+\noindent
+Similar to \texttt{generate\_pwscf},\texttt{generate\_vasp} accepts an arbitrary number of keyword arguments and any VASP input file keyword is accepted (the VASP keywords provided here are \texttt{istart}, \texttt{icharg}, \texttt{encut}, \texttt{nsw}, \texttt{ibrion}, and \texttt{isif}).  The \texttt{kcenter}, \texttt{kgrid}, and\texttt{kshift} keywords are used to form the \texttt{KPOINTS} input file.  Pseudopotentials provided through the \texttt{pseudos} keyword will fused into a single \texttt{POTCAR} file following the order of the atoms created by \texttt{generate\_physical\_system}.
+
+
+\vspace*{3mm}
+\noindent
+\textbf{GAMESS generation:}
+\begin{minted}{python}
+uhf = generate_gamess(  
+    identifier = 'uhf',
+    path       = 'water/uhf',
+    job        = Job(cores=16,app='gamess.x'),
+    system     = h2o,
+    pseudos    = [H.BFD.gms,O.BFD.gms],
+    symmetry   = 'Cnv  2',
+    scftyp     = 'uhf',
+    runtyp     = 'energy',
+    ispher     = 1,
+    exetyp     = 'run',
+    maxit      = 200,
+    memory     = 150000000,
+    guess      = 'hcore',
+    )
+\end{minted}
+
+\noindent
+The \texttt{generate\_gamess} function also accepts arbitrary GAMESS keywords (\texttt{symmetry}, \texttt{scftyp}, \texttt{runtyp}, \texttt{ispher}, \texttt{exetyp}, \texttt{maxit}, \texttt{memory}, and \texttt{guess} here).  The pseudopotential files \texttt{H.BFD.gms} and \texttt{O.BFD.gms} include the gaussian basis sets as well as the pseudopotential channels (the two parts are just concatenated into the same file, commented lines are properly ignored).  Nexus drives the GAMESS executable (\texttt{gamess.x} here) directly without the intermediate \texttt{rungms} script as is often done.  To do this, the \texttt{ericfmt} keyword must be provided in \texttt{settings} specifying the path to \texttt{ericfmt.dat}.    
+
+
+\vspace*{3mm}
+\noindent
+\textbf{QMCPACK generation:}
+\begin{minted}{python}
+qmc = generate_qmcpack(
+    identifier   = 'vmc',
+    path         = 'diamond/vmc',
+    job          = Job(cores=16,threads=4,app='qmcapp'),
+    input_type   = 'basic',
+    system       = dia16,
+    pseudos      = ['C.BFD.xml'],
+    jastrows     = [],
+    calculations = [
+        vmc(
+            walkers     =   1,
+            warmupsteps =  20,
+            blocks      = 200,
+            steps       =  10,
+            substeps    =   2,
+            timestep    =  .4
+            )
+        ],
+    dependencies = (conv,'orbitals')
+    )
+\end{minted}
+
+\noindent
+Unlike the other \texttt{generate} functions, \texttt{generate\_qmcpack} takes only selected inputs.  The reason for this is that QMCPACK's input file is highly structured (nested XML) and cannot be directly mapped to keyword-value pairs.  The full set of allowed keywords is beyond the scope of this section.  Please refer to the user walkthroughs provided in Sec. \ref{sec:examples} for further examples. 
+
+\FloatBarrier
+\begin{figure}
+  \includegraphics[trim={0 0 0 0},clip,width=\textwidth]{./figures/Nexus_workflow_example.pdf}
+  \caption{An example Nexus workflow/cascade involving QMCPACK and PWSCF.  The arrows and labels denote the flow of information between the simulation runs.\label{fig:example_workflow}}
+\end{figure}
+\FloatBarrier
+
+
+\subsection{Composing workflows from simulation objects}
+Simulation workflows are created by specifying the data dependencies between simulation runs.  An example workflow is shown in Figure \ref{fig:example_workflow}.  In this case, a single relaxation calculation performed with PWSCF is providing a relaxed structure to each of the subsequent simulations.  PWSCF is used to create a converged charge density (SCF) and then orbitals at specific k-points (NSCF).  These orbitals are used by each of the two QMCPACK runs; the first optimization run provides a Jastrow factor to the final DMC run.  
+
+Below is an example of how this workflow can be created with Nexus.  Most keywords to the \texttt{generate} functions have been omitted for brevity.  The \texttt{conv} step listed below is implicit in Figure \ref{fig:example_workflow}.
+\begin{minted}{python}
+relax = generate_pwscf(
+    ...
+    )
+
+scf = generate_pwscf(
+    dependencies = (relax,'structure'),
+    ...
+    )
+
+nscf = generate_pwscf(
+    dependencies = [(relax,'structure'     ),
+                    (scf  ,'charge_density')],
+    ...
+    )
+
+conv = generate_pw2qmcpack(
+    dependencies = (nscf ,'orbitals' ),
+    ...
+    )
+
+opt = generate_qmcpack(
+    dependencies = [(relax,'structure'),
+                    (conv ,'orbitals' )],
+    ...
+    )
+
+dmc = generate_qmcpack(
+    dependencies = [(relax,'structure'),
+                    (conv ,'orbitals' ),
+                    (opt  ,'jastrow'  )],
+    ...
+    )
+\end{minted}
+
+\noindent
+As suggested at the beginning of this section, workflow composition logically breaks into two parts: simulation generation and workflow dependency specification.  This type of breakup can also be performed explicity within a Nexus user script, if desired:
+\begin{minted}{python}
+# simulation generation
+relax = generate_pwscf(...)
+scf   = generate_pwscf(...)
+nscf  = generate_pwscf(...)
+conv  = generate_pw2qmcpack(...)
+opt   = generate_qmcpack(...)
+dmc   = generate_qmcpack(...)
+
+# workflow dependency specification
+scf.depends(relax,'structure')
+nscf.depends((relax,'structure'     ),
+             (scf  ,'charge_density'))
+conv.depends(nscf ,'orbitals' )
+opt.depends((relax,'structure'),
+            (conv ,'orbitals' ))
+dmc.depends((relax,'structure'),
+            (conv ,'orbitals' ),
+            (opt  ,'jastrow'  ))
+\end{minted}
+
+\noindent
+More complicated workflows or scans over parameters of interest can be created with for loops and if-else logic constructs.  This is fairly straightforward to accomplish because any keyword input can given a Python variable instead of a constant, as is mostly the case in the brief examples above.
+
+
+
+\section{Workflow execution}\label{sec:user_execution}
+Simulation jobs are actually executed when the corresponding simulation objects are passed to the \texttt{run\_project} function.  Within the \texttt{run\_project} function, most of the workflow management operations unique to Nexus are actually performed.  The details of the management process is not the purpose of this section.  This process is discussed in context in the example walkthroughs (Sec. \ref{sec:examples}).
+
+The \texttt{run\_project} function can be invoked in a couple of ways.  The most straightforward is simply to provide all simulation objects directly as arguments to this function:
+\begin{minted}{python}
+run_project(relax,scf,nscf,opt,dmc)
+\end{minted}
+
+\noindent
+When complex workflows are being created (\textit{e.g.} when the \texttt{generate} function appear in \texttt{for} loops and \texttt{if} statements), it is generally more convenient to accumulate a list of simulation objects and then pass the list to \texttt{run\_project} as follows:
+\begin{minted}{python}
+sims = []
+
+relax = generate_pwscf(...)
+sims.append(relax)
+
+scf   = generate_pwscf(...)
+sims.append(scf)
+
+nscf  = generate_pwscf(...)
+sims.append(nscf)
+
+conv  = generate_pw2qmcpack(...)
+sims.append(conv)
+
+opt   = generate_qmcpack(...)
+sims.append(opt)
+
+dmc   = generate_qmcpack(...)
+sims.append(dmc)
+
+run_project(sims)
+\end{minted}
+
+\noindent
+When the \texttt{run\_project} function returns, all simulation runs should be finished.  
+
+
+\section{Data analysis}\label{sec:user_data_analysis}
+Following the call to \texttt{run\_project}, the user can perform data analysis tasks, if desired, as the analyzer object associated with each simulation contains a collection of post-processed output data rendered in numeric form (ints, floats, numpy arrays) and stored in a structured format.  An interactive example for QMCPACK data analysis is shown below.  Note that all analysis objects are interactively browsable in a similar manner.
+\begin{shaded}
+\begin{verbatim}
+>>> qa=dmc.load_analyzer_image()
+
+>>> qa.qmc
+  0                     VmcAnalyzer
+  1                     DmcAnalyzer
+  2                     DmcAnalyzer
+
+>>> qa.qmc[2]
+  dmc                   DmcDatAnalyzer
+  info                  QAinformation
+  scalars               ScalarsDatAnalyzer
+  scalars_hdf           ScalarsHDFAnalyzer
+
+>>> qa.qmc[2].scalars_hdf
+  Coulomb               obj
+  ElecElec              obj
+  Kinetic               obj
+  LocalEnergy           obj
+  LocalEnergy_sq        obj
+  LocalPotential        obj
+  data                  QAHDFdata
+
+>>> print qa.qmc[2].scalars_hdf.LocalEnergy
+  error           = 0.0201256357883
+  kappa           = 12.5422841447
+  mean            = -75.0484800012
+  sample_variance = 0.00645881103012
+  variance        = 0.850521272106
+\end{verbatim}
+\end{shaded}
+
+
+
+
+
+
+\pagebreak
+\chapter{Complete Examples} \label{sec:examples}
 
 \bu{Disclaimer:} Please note that the examples given here do not generally qualify as production 
 calculations because the supercell size, optimization process, DMC timestep and 
@@ -278,8 +720,9 @@ other key parameters may not be converged.  Pseudopotentials are provided
 Complete examples of calculations performed with Nexus are provided 
 in the following sections.  These examples are intended to highlight basic 
 features of Nexus and act as templates for future calculations.  
-A complete description of the available features can be found in ``Nexus 
-User Reference'' (section \ref{reference}).  If there is an example you 
+%A complete description of the available features can be found in ``Nexus 
+%User Reference'' (section \ref{sec:reference}).  
+If there is an example you 
 would like to contribute, or if you feel an example on a particular topic is 
 needed, please contact the developer at krogeljt@ornl.gov to discuss the 
 possibilities.  
@@ -291,14 +734,22 @@ directory in your Nexus installation:
 /your_download_path/nexus/examples
 \end{verbatim}
 \end{shaded}
+\noindent
 The examples assume that you have working versions of \texttt{pw.x}, 
 \texttt{pw2qmcpack.x}, \texttt{qmcapp} (real version), and 
 \texttt{qmcapp\_complex} (complex version) installed and in your \texttt{PATH}. 
 A brief description of each example is given below.  
 
+
+%\section{Brief example descriptions}
 \begin{description}
+  \item[Bulk Diamond VMC] \hfill \\
+    A representative bulk calculation.  A simple workflow consisting 
+    of orbital generation with PWSCF, orbital conversion with pw2qmcpack, 
+    and a short VMC calculation with QMCPACK is performed.
+
   \item[Graphene Sheet DMC] \hfill \\
-    A representative bulk calculation.  The total DMC energy of a graphene 
+    A representative slab calculation.  The total DMC energy of a graphene 
     ``sheet'' consisting of 8 atoms is computed.  DFT is performed with 
     PWSCF on the primitive cell followed by Jastrow optimization by QMCPACK 
     and finally a supercell VMC+DMC calculation by QMCPACK.  
@@ -313,274 +764,441 @@ A brief description of each example is given below.
     artificial periodicity, the Kohn-Sham HOMO would be degenerate, and so a 
     production calculation would likely require more care in appropriately 
     setting up the wavefunction.)
+
+  \item[Oxygen Dimer DMC] \hfill \\
+    An example demonstrating automation of a simple parameter scan, in this 
+    case the interparticle spacing in an oxygen dimer.  The reader will gain 
+    some experience modifying Nexus user scripts to produce automated workflows.
 \end{description}
 
 
+
+
+
 %\pagebreak
-%\section{DFT Calculations with PWSCF}
+%\section{Demonstrated user script sections} \label{simple_qmc}
+%The simplest QMC calculations that can be performed with Nexus 
+%involve five main stages:
+%\begin{description}
+%  \item[Configure Nexus settings] \hfill \\
+%    The \texttt{settings} function allows you to specify where pseudopotentials 
+%    are located, whether to generate input files without running jobs, details 
+%    of the machine you are on, and how often to have Nexus check 
+%    on the status of running jobs.  \index{settings}
 %
-%\pagebreak
-%\subsection{Example: Converging Ge T interstitial structure w.r.t. k-points}
+%  \item[Describe the physical system] \hfill \\
+%    Generate a crystal structure with the \texttt{generate\_physical\_system} 
+%    convenience function (see ``Graphene Sheet DMC'' \ref{graphene_dmc}), 
+%    or load an XYZ file into a \texttt{Structure} object 
+%    (see ``C 20 Molecule DMC'' \ref{c20_dmc}).  This is where 
+%    information about k-points, net system charge, or net system spin are 
+%    recorded.\index{generate\_physical\_system}\index{Structure}
 %
-%  Pseudopotentials                                     # read in pseudopotentials
-%    reading pp:  ./pseudopotentials/Ge.pbe-kjpaw.UPF
-%upfPP Warning:                                         # ignore this warning
-%    ability to read new UPF format has not yet been implemented
-%      attempted to read ./pseudopotentials/Ge.pbe-kjpaw.UPF
+%  \item[Describe simulation workflows] \hfill \\
+%    Use the \texttt{standard\_qmc} (see ``Graphene Sheet DMC'' 
+%    \ref{graphene_dmc}) or \texttt{basic\_qmc} (see ``C 20 Molecule DMC'' 
+%    \ref{c20_dmc}) convenience functions 
+%    to select specific pseudopotentials, specify PWSCF and QMCPACK input 
+%    parameters, and job details, like how many nodes/cores/threads to use.
+%    \index{standard\_qmc}\index{basic\_qmc}
 %
-%Project starting                              # start the project
-%  checking for file collisions                # ensure files don't overlap   
-%  loading cascade images                      # load simulation cascades
-%    cascade 0 checking in
-%  checking cascade dependencies               # check simulation dependencies 
-%    all simulation dependencies satisfied
+%  \item[Run simulation workflows] \hfill \\
+%    Pass simulation objects created by \texttt{generate\_pwscf}, 
+%    \texttt{generate\_pw2qmcpack}, and \texttt{generate\_qmcpack} to 
+%    Nexus through the \texttt{run\_project} function for active management.
+%    \index{run\_project}
 %
-%  starting runs:                              # run all project jobs
-%  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-%  poll 0  memory 56.40 MB
-%    Entering ./runs/relax/kgrid_111 0         # 1x1x1 mesh relaxation starts
-%      writing input files  0 relax            # write input files
-%    Entering ./runs/relax/kgrid_111 0
-%      sending required files  0 relax         # copy PP files
-%      submitting job  0 relax
-%    Entering ./runs/relax/kgrid_111 0
-%      Executing:                              # run the job
-%        export OMP_NUM_THREADS=1              # with 1 thread
-%        mpirun -np 16 pw.x -input relax.in    # for each of 16 mpi tasks
-%
-%  poll 1  memory 56.51 MB                     # check on the jobs 
-%  poll 2  memory 56.52 MB                     # every 3 seconds
-%  poll 3  memory 56.52 MB                     # to see if they are finished
-%  ...
-%  ...
-%  poll 101  memory 56.77 MB                   # 1x1x1 mesh relaxation finishes
-%  poll 102  memory 56.77 MB                   # a couple of minutes later
-%    Entering ./runs/relax/kgrid_111 0
-%      copying results  0 relax                # save output files
-%    Entering ./runs/relax/kgrid_111 0
-%      analyzing  0 relax                      # get relaxed structure
-%
-%  poll 103  memory 57.54 MB
-%    Entering ./runs/relax/kgrid_222 1         # 2x2x2 mesh relaxation starts
-%      writing input files  1 relax            # write input files
-%    Entering ./runs/relax/kgrid_222 1
-%      sending required files  1 relax         # copy PP files
-%      submitting job  1 relax
-%    Entering ./runs/relax/kgrid_222 1
-%      Executing:                              # run the job on 16 cores
-%        export OMP_NUM_THREADS=1
-%        mpirun -np 16 pw.x -input relax.in
-%
-%  poll 104  memory 57.55 MB
-%  poll 105  memory 57.55 MB
-%  ...
-%  ...
-%  poll 373  memory 63.80 MB                   # 2x2x2 mesh relaxation finishes 
-%  poll 374  memory 63.80 MB                   # about 5 minutes later
-%    Entering ./runs/relax/kgrid_222 1
-%      copying results  1 relax                # save output files
-%    Entering ./runs/relax/kgrid_222 1
-%      analyzing  1 relax                      # get relaxed structure
-%
-%  poll 376  memory 63.80 MB
-%    Entering ./runs/relax/kgrid_444 2         # 4x4x4 mesh relaxation starts
-%      writing input files  2 relax
-%      ...
-%
-%  poll 377  memory 63.80 MB
-%  poll 378  memory 63.80 MB
-%  ...
-%  ...
-%  poll 1539  memory 63.80 MB                  # 4x4x4 mesh relaxation finishes
-%  poll 1540  memory 63.80 MB                  # about an hour later
-%    Entering ./runs/relax/kgrid_444 2
-%      copying results  2 relax
-%      ...
-%
-%  poll 1541  memory 63.80 MB
-%    Entering ./runs/relax/kgrid_666 3         # 6x6x6 mesh relaxation starts
-%      writing input files  3 relax
-%      ...
-%
-%  poll 1542  memory 63.80 MB
-%  poll 1543  memory 63.80 MB
-%  ...
-%  ...
-%  poll 2322  memory 63.80 MB                  # 6x6x6 mesh relaxation finishes
-%  poll 2323  memory 63.80 MB                  # about 40 minutes later
-%    Entering ./runs/relax/kgrid_666 3
-%      copying results  3 relax
-%    Entering ./runs/relax/kgrid_666 3
-%      analyzing  3 relax                      # final structure is obtained
-%
-%Project finished                              # all jobs in the project are done
+%  \item[Collect simulation results] \hfill \\
+%    Load results of simulation objects using the \texttt{load\_analyzer\_image} 
+%    function.  This gives you access to several/most (PWSCF/QMCPACK) physical 
+%    results produced by the simulation with statistical analysis already 
+%    performed (though the responsibility is still yours to verify absolute 
+%    correctness).
+%    \index{load\_analyzer\_image}
+%\end{description}
 %
 %
-%Relaxation results:                           # display relaxation results
-%-------------------
-%    kgrid     starting force   max force    # of cycles
-%  (1, 1, 1)     0.127915       0.127915        35
-%  (2, 2, 2)      0.09733        0.09733        34
-%  (4, 4, 4)     0.054516       0.143809        24
-%  (6, 6, 6)     0.005833       0.036184         5
-%
-%
-%The final structure is:                       # display the final structure
-%
-%[[  5.30732311   5.30835278   5.30189172]
-% [ -2.18761868  -2.18873545  -2.18155455]
-% [  1.57188665   1.57140679   1.57407291]
-% [  5.03674643   5.03702837   0.35598249]
-% [  8.79869042   8.79878175   2.76635262]
-% [  0.35901756   5.0430751    5.04141008]
-% [  2.76298517   8.79651294   8.79649574]
-% [  5.5816783   10.89440134   5.58336983]
-% [  8.2739258   13.61486785   8.27247705]
-% [  5.04404696   0.35961504   5.04266772]
-% [  8.79625105   2.76242822   8.79631982]
-% [ 10.8938261    5.58159787   5.58361909]
-% [ 13.61461938   8.27385039   8.27211794]
-% [  5.58357278   5.58324177  10.89167699]
-% [  8.27223497   8.27251628  13.6138305 ]
-% [ 10.96556729  10.96540859  10.96610725]
-% [ 13.63167079  13.63207444  13.62958692]]
-%
+%For more information about the functions/objects mentioned above, consider 
+%the examples in the following sections.
+%% or consult ``Nexus User Reference'' (section \ref{sec:reference}).
 
 
 \pagebreak
-\section{Simple QMC Calculations} \label{simple_qmc}
-The simplest QMC calculations that can be performed with Nexus 
-involve five main stages:
-\begin{description}
-  \item[Configure Nexus settings] \hfill \\
-    The \texttt{settings} function allows you to specify where pseudopotentials 
-    are located, whether to generate input files without running jobs, details 
-    of the machine you are on, and how often to have Nexus check 
-    on the status of running jobs.  \index{settings}
-
-  \item[Describe the physical system] \hfill \\
-    Generate a crystal structure with the \texttt{generate\_physical\_system} 
-    convenience function (see ``Graphene Sheet DMC'' \ref{graphene_dmc}), 
-    or load an XYZ file into a \texttt{Structure} object 
-    (see ``C 20 Molecule DMC'' \ref{c20_dmc}).  This is where 
-    information about k-points, net system charge, or net system spin are 
-    recorded.\index{generate\_physical\_system}\index{Structure}
-
-  \item[Describe the calculations] \hfill \\
-    Use the \texttt{standard\_qmc} (see ``Graphene Sheet DMC'' 
-    \ref{graphene_dmc}) or \texttt{basic\_qmc} (see ``C 20 Molecule DMC'' 
-    \ref{c20_dmc}) convenience functions 
-    to select specific pseudopotentials, specify PWSCF and QMCPACK input 
-    parameters, and job details, like how many nodes/cores/threads to use.
-    \index{standard\_qmc}\index{basic\_qmc}
-
-  \item[Run the simulations] \hfill \\
-    Pass simulation objects created by \texttt{standard\_qmc/basic\_qmc} to 
-    the \texttt{ProjectManager} and run the jobs by calling the 
-    \texttt{run\_project} function.
-    \index{run\_project}
-
-  \item[Collect simulation results] \hfill \\
-    Load results of simulation objects using the \texttt{load\_analyzer\_image} 
-    function.  This gives you access to several/most (PWSCF/QMCPACK) physical 
-    results produced by the simulation with statistical analysis already 
-    performed (though the responsibility is still yours to verify absolute 
-    correctness).
-    \index{load\_analyzer\_image}
-\end{description}
-
-
-For more information about the functions/objects mentioned above, consider 
-the examples in the following sections or consult ``Nexus User 
-Reference'' (section \ref{reference}).
-
-
-\pagebreak
-\subsection{Example: Graphene Sheet DMC} \label{graphene_dmc}
+\section{Example 1: Bulk Diamond VMC}\label{diamond_dmc}
 The files for this example are found in:
 \begin{shaded}
 \begin{verbatim}
-/your_download_path/nexus/examples/simple_qmc/graphene_example
+/your_download_path/nexus/examples/qmcpack/diamond
+\end{verbatim}
+\end{shaded}
+
+By following the instructions contained in this section the reader can execute a simple workflow with Nexus.  The workflow presented here is intended to illustrate basic Nexus usage.  The example workflow has three stages: (1) orbital generation in a primitive (2 atom) cell of diamond with PWSCF, (2) conversion of the orbitals from the native PWSCF format to the ESHDF format that QMCPACK reads, and (3) a minimal variational Monte Carlo (VMC) run of a 16 atom supercell of diamond with QMCPACK.  The Nexus input script corresponding to this workflow is shown below.  
+
+The script is similar to the one discussed in section \ref{sec:ui}, differing mainly in the name-by-name imports and the description of the physical system.  Instead of reading an external VASP POSCAR file, the structure is specified in a format native to Nexus.  The physical system is specified by providing the unit system (Angstrom in this case), the three vectors comprising the axes of the simulation cell, and the names and positions (Cartesian coordinates) of the atoms involved.  The use of ``\texttt{tiling=(2,2,2)}'' communicates the request that a $2\times2\times2$ supercell be constructed out of the specified 2 atom primitive cell.  The k-point grid applies to the supercell and is comprised of a single k-point.  The eight corresponding primitive cell images of this k-point are determined automatically by Nexus.  The text ``\texttt{C = 4}'' specifies the number of valence electrons for the carbon pseudopotential.  The pseudopotential files used in this example (\texttt{C.BFD.*}) have been adapted from an open access pseudopotential database (see \url{http://www.burkatzki.com/pseudos/index.2.html}) for use in PWSCF and QMCPACK.  Since the \texttt{PhysicalSystem} object, ``\texttt{dia16}'', contains both the supercell and its equivalent folded/primitive version, the PWSCF DFT calculation will be performed in the primitive cell to save memory for the subsequent VMC calculation of the full supercell performed with QMCPACK.
+
+%\begin{lstlisting}[caption={Nexus input script for the usage example (\texttt{diamond.py}).  DFT is performed in diamond primitive cell followed by VMC in a 16 atom supercell.},label={ex:d16}]
+\HRule
+\begin{minted}{python}
+#! /usr/bin/env python
+
+# nexus imports
+from nexus import settings,Job,run_project
+from nexus import generate_physical_system
+from nexus import generate_pwscf
+from nexus import generate_pw2qmcpack
+from nexus import generate_qmcpack,vmc
+
+# general settings for nexus
+settings(
+    pseudo_dir    = '../pseudopotentials',# directory with all pseudopotentials
+    status_only   = 0,                    # only show status of runs
+    generate_only = 0,                    # only make input files
+    sleep         = 3,                    # check on runs every 3 seconds
+    machine       = 'ws16'                # local machine is 16 core workstation
+    )
+
+# generate diamond structure
+dia16 = generate_physical_system(
+    units  = 'A',                      # Angstrom units
+    axes   = [[1.785,1.785,0.   ],     # cell axes
+              [0.   ,1.785,1.785],
+              [1.785,0.   ,1.785]],
+    elem   = ['C','C'],                # 2 C atoms
+    pos    = [[0.    ,0.    ,0.    ],  # atomic positions
+              [0.8925,0.8925,0.8925]],
+    tiling = (2,2,2),                  # tile to 16 atom cell
+    kgrid  = (1,1,1),                  # single supercell k-point
+    kshift = (0,0,0),                  #  at gamma
+    C      = 4                         # pseudo-C (4 val. elec.)
+    )
+              
+# scf run produces orbitals
+scf = generate_pwscf(
+    identifier   = 'scf',           # identifier/file prefix
+    path         = 'diamond/scf',   # directory for scf run
+    job          = Job(cores=16,app='pw.x'),
+    input_type   = 'generic',
+    calculation  = 'scf',           # perform scf calculation
+    input_dft    = 'lda',           # dft functional
+    ecutwfc      = 200,             # planewave energy cutoff
+    conv_thr     = 1e-8,            # scf convergence threshold
+    nosym        = True,            # don't use symmetry
+    wf_collect   = True,            # write orbitals
+    system       = dia16,           # run diamond system
+    pseudos      = ['C.BFD.upf'],   # pwscf PP for C
+    )
+
+# convert orbitals for qmcpack
+conv = generate_pw2qmcpack(
+    identifier   = 'conv',          # identifier/file prefix
+    path         = 'diamond/scf',   # directory for conv job
+    job          = Job(cores=1,app='pw2qmcpack.x'),
+    write_psir   = False,           # output in k-space
+    dependencies = (scf,'orbitals') # get orbitals from scf
+    )
+
+# vmc run
+qmc = generate_qmcpack(
+    identifier   = 'vmc',           # identifier/file prefix 
+    path         = 'diamond/vmc',   # directory for vmc run
+    job          = Job(cores=16,threads=4,app='qmcapp'),
+    input_type   = 'basic',
+    system       = dia16,           # run diamond system
+    pseudos      = ['C.BFD.xml'],   # qmcpack PP for C
+    jastrows     = [],              # no jastrows, test run
+    calculations = [
+        vmc(                        # vmc inputs
+            walkers     =   1,      #  one walker per core
+            warmupsteps =  20,      #  20 steps before measurement
+            blocks      = 200,      #  200 blocks
+            steps       =  10,      #   of 10 MC steps each
+            substeps    =   2,      #   2 substeps w/o measurement
+            timestep    =  .4       #  0.4/Ha timestep
+            )
+        ],
+    dependencies = (conv,'orbitals')# get orbitals from conv job
+    )
+
+# nexus monitors all runs
+run_project(scf,conv,qmc)
+\end{minted}
+\HRule
+%\end{lstlisting}
+
+
+To fully execute the usage example provided here, copies of PWSCF, QMCPACK, and the orbital converter pw2qmcpack will need to be installed on the local machine.  The example assumes that the executables are in the user's \texttt{PATH} and are named \texttt{pw.x}, \texttt{qmcapp}, and \texttt{pw2qmcpack.x}.  See Sec. \ref{sec:install_code} for download and installation instructions for these codes. A test of Nexus including the generation of input files, but without actual job submission, can be performed without installing these codes.  However, Python itself and NumPy are required to run Nexus (see Sec. \ref{install_python}).    The example also assumes the local machine is a workstation with 16 available cores (``\texttt{ws16}'').  If fewer than 16 cores are available, \emph{e.g.} 4, change the example files to reflect this: \texttt{ws16}$\rightarrow$\texttt{ws4}, \texttt{Job(cores=16,$\ldots$)}$\rightarrow$\texttt{Job(cores=4,$\ldots$)}. 
+
+In this example, we will run Nexus in three different modes:
+\begin{enumerate}
+  \item{status mode: print the status of each simulation and then exit (\texttt{status\_only=1}).}
+  \item{generate mode: generate input files but do not execute workflows (\texttt{generate\_only=1}).}
+  \item{execute mode: execute workflows by submitting jobs and monitoring simulation progress (\texttt{status\_only=0, generate\_only=0}).}
+\end{enumerate}
+Only the last mode requires executables for PWSCF and QMCPACK.
+
+First, run Nexus in status mode.  Enter the \texttt{examples/qmcpack/diamond} directory, open \texttt{diamond.py} with a text editor and set ``\texttt{status\_only}=1''.  Run the script by typing ``\texttt{./diamond.py}'' at the command line and inspect the output.  The output should be similar to the text below (without the comments):
+\begin{shaded}
+\begin{verbatim}
+       Pseudopotentials
+         reading pp:  ../pseudopotentials/C.BFD.upf  # dft PP found
+         reading pp:  ../pseudopotentials/C.BFD.xml  # qmc PP found
+     
+     Project starting 
+       checking for file collisions        # files do not overlap
+       loading cascade images              # load saved workflow state    
+         cascade 0 checking in             # only one workflow/cascade
+       checking cascade dependencies       # match producers/consumers
+         all simulation dependencies satisfied 
+       cascade status 
+         setup, sent_files, submitted, finished, got_output, analyzed 
+         000000  scf  ./runs/diamond/scf   # no work has been done yet
+         000000  conv  ./runs/diamond/scf  # for any of the
+         000000  vmc  ./runs/diamond/vmc   # three simulations
+         setup, sent_files, submitted, finished, got_output, analyzed 
+\end{verbatim}
+\end{shaded}
+
+{\flushleft
+The binary string ``000000'' indicates that none of the six stages of simulation progression have been completed.  These stages correpond to the following actions/states: writing input files (``\texttt{setup}''), copying pseudopotential files (``\texttt{sent\_files}''), submitting simulation jobs for execution (``\texttt{submitted}''), the completion of a simulation job (``\texttt{finished}''), collecting output files (``\texttt{got\_output}''), and preprocessing output files for later analysis (``\texttt{analyzed}'') .  In a production setting, this mode is useful for checking the status of current workflows/cascades prior to adding new ones.  It is also useful in general for detecting any problems with the Nexus input script itself.
+}
+
+Next, run the example in generate mode.  Set ``\texttt{status\_only}=0'' and ``\texttt{generate\_only}=1'', then run the example script again.  Instead of showing workflow status, Nexus will now perform a dry run of the workflows by generating all of the run directories and input files.  The output should contain text similar to what is shown below:
+\begin{shaded}
+\begin{verbatim}
+       starting runs:                      # start submitting jobs
+       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+       poll 0  memory 60.45 MB             # first poll cycle
+         Entering ./runs/diamond/scf 0     # scf job
+           writing input files  0 scf      # input file written
+         Entering ./runs/diamond/scf 0 
+           sending required files  0 scf   # PP files copied
+           submitting job  0 scf           # job is in virtual queue
+         Entering ./runs/diamond/scf 0 
+           Would have executed:            # shows submission command
+             export OMP_NUM_THREADS=1      # does not execute
+             mpirun -np 16 pw.x -input scf.in 
+     
+       poll 1  memory 60.72 MB 
+         Entering ./runs/diamond/scf 0 
+           copying results  0 scf          # output file copying stage
+         Entering ./runs/diamond/scf 0 
+           analyzing  0 scf                # output analysis stage
+     
+       poll 2  memory 60.73 MB             # third poll cycle
+         Entering ./runs/diamond/scf 1     # similar for conv job
+           writing input files  1 conv 
+         Entering ./runs/diamond/scf 1 
+           sending required files  1 conv 
+           submitting job  1 conv 
+         Entering ./runs/diamond/scf 1 
+           Would have executed:  
+             export OMP_NUM_THREADS=1
+             mpirun -np 1 pw2qmcpack.x<conv.in 
+     
+       poll 3  memory 60.73 MB 
+         Entering ./runs/diamond/scf 1 
+           copying results  1 conv 
+         Entering ./runs/diamond/scf 1 
+           analyzing  1 conv 
+     
+       poll 4  memory 60.73 MB             # fifth poll cycle
+         Entering ./runs/diamond/vmc 2     # similar for vmc job
+           writing input files  2 vmc 
+         Entering ./runs/diamond/vmc 2 
+           sending required files  2 vmc 
+           submitting job  2 vmc 
+         Entering ./runs/diamond/vmc 2 
+           Would have executed:  
+             export OMP_NUM_THREADS=4
+             mpirun -np 4 qmcapp vmc.in.xml 
+     
+       poll 5  memory 60.78 MB 
+         Entering ./runs/diamond/vmc 2 
+           copying results  2 vmc 
+         Entering ./runs/diamond/vmc 2 
+           analyzing  2 vmc 
+     
+     Project finished                      # jobs finished
+\end{verbatim}
+\end{shaded}
+
+{\flushleft
+The output describes the progress of each simulation.  The run submission commands are also clearly shown as well as the amount of memory used by Nexus.
+There should now be a ``\texttt{runs}'' directory containing the generated input files with the following structure:
+}
+\begin{shaded}
+\begin{verbatim}
+          runs/
+          \-- diamond               # main diamond directory
+              |-- scf               #  scf directory
+              |-- |-- C.BFD.upf     #   pwscf PP file
+              |-- |-- conv.in       #   conv job input file
+              |-- |-- pwscf_output  #   pwscf output directory
+              |-- |-- scf.in        #   scf job input file
+              |-- |-- sim_conv      #   nexus directory for conv
+              |-- |-- |-- input.p   #    stored input object
+              |-- |-- \-- sim.p     #    simulation status file
+              |-- \-- sim_scf       #   nexus directory for scf
+              |--     |-- input.p   #    stored input object
+              |--     \-- sim.p     #    simulation status file
+              \-- vmc               #  vmc directory
+                  |-- C.BFD.xml     #   qmcpack PP file
+                  |-- sim_vmc       #   nexus directory for vmc
+                  |-- |-- input.p   #    stored input object
+                  |-- \-- sim.p     #    simulation status file
+                  \-- vmc.in.xml    #   vmc job input file
+\end{verbatim}
+\end{shaded}
+{\flushleft
+The ``\texttt{sim.p}'' files record the state of each simulation.  Inspect the input files generated by Nexus (\texttt{scf.in}, \texttt{conv.in}, and \texttt{vmc.in.xml}).  Compare the files with the input provided to Nexus in \texttt{diamond.py}.
+}
+
+Finally, run the example in execute mode. Remove the ``\texttt{runs}'' and ``\texttt{results}'' directories, set ``\texttt{status\_only}=0'' and ``\texttt{generate\_only}=0'', and rerun the script.  The output shown should be similar to what was seen for generate mode, only now there may be multiple workflow polls while a particular simulation is running.  The ``\texttt{sleep}'' keyword controls how often the polls occur (every 3 seconds in this example).  Note that the Nexus host process sleeps in between polls so that a minimum of computational resources are occupied.  Once ``\texttt{Project finished}'' is displayed, all the simulation runs should be complete.  Confirm the success of the runs by checking the output files.  The text ``\texttt{JOB DONE.}'' should appear near the end of the PWSCF output file \texttt{scf.out}.  QMCPACK has completed successfully if ``\texttt{Total Execution time}'' appears near the end of the output in \texttt{vmc.out}.
+
+
+
+
+
+
+
+
+
+
+
+\pagebreak
+\section{Example 2: Graphene Sheet DMC} \label{graphene_dmc}
+The files for this example are found in:
+\begin{shaded}
+\begin{verbatim}
+/your_download_path/nexus/examples/qmcpack/graphene
 \end{verbatim}
 \end{shaded}
 
 Take a moment to study the ``input file'' script 
-(\texttt{graphene\_example.py}) and the attendant comments 
-(prefixed with \#). The five stages listed in section \ref{simple_qmc} should 
-be apparent.
+(\texttt{graphene.py}) and the attendant comments 
+(prefixed with \#). 
+%The five stages listed in section \ref{simple_qmc} should be apparent.
 
 
 \HRule
 \begin{minted}{python}
 #! /usr/bin/env python
 
-from nexus import settings,ProjectManager,Job
+from nexus import settings,Job,run_project
 from nexus import generate_physical_system
+from nexus import generate_pwscf
+from nexus import generate_pw2qmcpack
+from nexus import generate_qmcpack
 from nexus import loop,linear,vmc,dmc
-from qmcpack_calculations import standard_qmc
 
 
-#general settings for Nexus
+# general settings for nexus
 settings(
-    pseudo_dir    = './pseudopotentials',# directory with all pseudopotentials
-    sleep         = 3,                   # check on runs every 'sleep' seconds
-    generate_only = 0,                   # only make input files
-    status_only   = 0,                   # only show status of runs
-    machine       = 'node16',            # local machine is 16 core workstation
+    pseudo_dir    = '../pseudopotentials',# directory with all pseudopotentials
+    sleep         = 3,                    # check on runs every 'sleep' seconds
+    generate_only = 0,                    # only make input files
+    status_only   = 0,                    # only show status of runs
+    machine       = 'ws16',               # local machine is 16 core workstation
     )
 
 
 
-#generate the graphene physical system
+# generate the graphene physical system
 graphene = generate_physical_system(
-    structure = 'graphite_aa',  # graphite keyword
-    cell      = 'hex',          # hexagonal cell shape
-    tiling    = (2,2,1),        # tiling of primitive cell
-    constants = (2.462,10.0),   # a,c constants
-    units     = 'A',            # in Angstrom
-    kgrid     = (1,1,1),        # Monkhorst-Pack grid
-    kshift    = (.5,.5,.5),     # and shift
-    C         = 4               # C has 4 valence electrons
+    lattice   = 'hexagonal',      # hexagonal cell shape
+    cell      = 'primitive',      # primitive cell
+    centering = 'P',              # primitive basis centering
+    constants = (2.462,10.0),     # a,c constants
+    units     = 'A',              # in Angstrom
+    atoms     = ('C','C'),        # C primitive atoms
+    basis     = [[ 0  , 0  , 0],  # basis vectors
+                 [2./3,1./3, 0]],
+    tiling    = (2,2,1),          # tiling of primitive cell
+    kgrid     = (1,1,1),          # Monkhorst-Pack grid
+    kshift    = (.5,.5,.5),       # and shift
+    C         = 4                 # C has 4 valence electrons
     ) 
 
 
-#generate the simulations for the qmc workflow
-qsims = standard_qmc(
-    # subdirectory of runs 
-    directory       = 'graphene_test',
-    # description of the physical system
-    system          = graphene,
-    pseudos         = ['C.BFD.upf',  # pwscf PP file
-                       'C.BFD.xml'], # qmcpack PP file
-    # job parameters
-    scfjob          = Job(cores=16), # cores to run scf 
-    nscfjob         = Job(cores=16), # cores to run non-scf 
-    optjob          = Job(cores=16), # cores for optimization 
-    qmcjob          = Job(cores=16), # cores for qmc
-    # dft parameters (pwscf)
-    functional      = 'lda',         # dft functional
-    ecut            =  150 ,         # planewave energy cutoff (Ry)
-    conv_thr        =  1e-6,         # scf convergence threshold (Ry)
-    mixing_beta     =    .7,         # charge mixing factor
-    scf_kgrid       = (8,8,8),       # MP grid of primitive cell
-    scf_kshift      = (1,1,1),       #  to converge charge density
-    # qmc wavefunction parameters (qmcpack)
-    meshfactor      = 1.0,           # bspline grid spacing, larger is finer
-    jastrows        = [
-        dict(type     = 'J1',        # 1-body
-             function = 'bspline',   # bspline jastrow
-             size     = 8),          # with 8 knots
-        dict(type     = 'J2',        # 2-body
-             function = 'bspline',   # bspline jastrow
-             size     = 8)           # with 8 knots
-        ],
-    # opt parameters (qmcpack)
-    perform_opt     = True,     # produce optimal jastrows
-    block_opt       = False,    # if true, ignores opt and qmc
-    skip_submit_opt = False,    # if true, writes input files, does not run opt
-    opt_kpoint      = 'L',      # supercell k-point for the optimization
-    opt_calcs       = [         # qmcpack input parameters for opt
-        loop(max = 4,                        # No. of loop iterations
+# list of simulations in workflow
+sims = []
+
+# scf run produces charge density
+scf = generate_pwscf(
+    # nexus inputs
+    identifier   = 'scf',           # identifier/file prefix
+    path         = 'graphene/scf',  # directory for scf run
+    job          = Job(cores=16),   # run on 16 cores
+    pseudos      = ['C.BFD.upf'],   # pwscf PP file
+    system       = graphene,        # run graphene
+    # input format selector
+    input_type   = 'scf',           # scf, nscf, relax, or generic
+    # pwscf input parameters
+    input_dft    = 'lda',           # dft functional
+    ecut         =  150 ,           # planewave energy cutoff (Ry)
+    conv_thr     =  1e-6,           # scf convergence threshold (Ry)
+    mixing_beta  =    .7,           # charge mixing factor
+    kgrid        = (8,8,8),         # MP grid of primitive cell
+    kshift       = (1,1,1),         #  to converge charge density
+    wf_collect   = False,           # don't collect orbitals
+    use_folded   = True             # use primitive rep of graphene
+    )
+sims.append(scf)  
+
+# nscf run to produce orbitals for jastrow optimization
+nscf_opt = generate_pwscf(
+    # nexus inputs
+    identifier   = 'nscf',          # identifier/file prefix      
+    path         = 'graphene/nscf_opt', # directory for nscf run       
+    job          = Job(cores=16),   # run on 16 cores             
+    pseudos      = ['C.BFD.upf'],   # pwscf PP file               
+    system       = graphene,        # run graphene                
+    # input format selector                                      
+    input_type   = 'nscf',          # scf, nscf, relax, or generic
+    # pwscf input parameters
+    input_dft    = 'lda',           # dft functional
+    ecut         =  150 ,           # planewave energy cutoff (Ry)
+    conv_thr     =  1e-6,           # scf convergence threshold (Ry)
+    mixing_beta  =    .7,           # charge mixing factor
+    nosym        = True,            # don't symmetrize k-points
+    use_folded   = True,            # use primitive rep of graphene
+    wf_collect   = True,            # write out orbitals
+    kgrid        = (1,1,1),         # single k-point for opt
+    kshift       = (0,0,0),         # gamma point
+    # workflow dependencies
+    dependencies = (scf,'charge_density')
+    )
+sims.append(nscf_opt)
+
+# orbital conversion job for jastrow optimization
+p2q_opt = generate_pw2qmcpack(
+    # nexus inputs
+    identifier   = 'p2q',
+    path         = 'graphene/nscf_opt',
+    job          = Job(cores=1),
+    # pw2qmcpack input parameters
+    write_psir   = False,
+    # workflow dependencies
+    dependencies = (nscf_opt,'orbitals')
+    )
+sims.append(p2q_opt)
+
+# Jastrow optimization
+opt = generate_qmcpack(
+    # nexus inputs
+    identifier   = 'opt',           # identifier/file prefix
+    path         = 'graphene/opt',  # directory for opt run
+    job          = Job(cores=16,app='qmcapp'),
+    pseudos      = ['C.BFD.xml'],   # qmcpack PP file
+    system       = graphene,        # run graphene
+    # input format selector   
+    input_type   = 'basic',
+    # qmcpack input parameters
+    corrections  = [], 
+    jastrows     = [('J1','bspline',8),   # 1 body bspline jastrow
+                    ('J2','bspline',8)],  # 2 body bspline jastrow
+    calculations = [
+        loop(max = 6,                        # No. of loop iterations
              qmc = linear(                   # linearized optimization method
                 energy               =  0.0, # cost function
                 unreweightedvariance =  1.0, #   is all unreweighted variance
@@ -594,57 +1212,88 @@ qsims = standard_qmc(
                 bigchange            =  15.0,#  and this
                 alloweddifference    =  1e-4 #  and this, for now
                 )
-             ),
-        loop(max = 4,
-             qmc = linear(                   # same as above, except
-                energy               =  0.5, # cost function
-                unreweightedvariance =  0.0, #   is 50/50 energy and r.w. var.
-                reweightedvariance   =  0.5, 
-                timestep             =  0.5,  
-                warmupsteps          =  100, 
-                samples              = 64000,# and there are more samples 
-                stepsbetweensamples  =   10, 
-                blocks               =   10,   
-                minwalkers           =   0.1, 
-                bigchange            =  15.0,
-                alloweddifference    =  1.0e-4
-                )
-             )
+             )        
         ],
-    # qmc parameters (qmcpack)
-    block_qmc       = False,    # if true, ignores qmc
-    skip_submit_qmc = False,    # if true, writes input file, does not run qmc
-    qmc_calcs       = [         # qmcpack input parameters for qmc
-        vmc(                      # vmc parameters 
-            timestep      = 0.5,  # vmc timestep (1/Ha)
-            warmupsteps   = 100,  # No. of MC steps before data is collected
-            blocks        = 200,  # No. of data blocks recorded in scalar.dat
-            steps         =  10,  # No. of steps per block
-            substeps      =   3,  # MC steps taken w/o computing E_local
-            samplesperthread = 40 # No. of dmc walkers per thread
-            ),                    
-        dmc(                      # dmc parameters
-            timestep      = 0.01, # dmc timestep (1/Ha)
-            warmupsteps   =  50,  # No. of MC steps before data is collected
-            blocks        = 400,  # No. of data blocks recorded in scalar.dat
-            steps         =   5,  # No. of steps per block
-            nonlocalmoves = True  # use Casula's T-moves
-            ),                    #  (retains variational principle for NLPP's)
+    # workflow dependencies
+    dependencies = (p2q_opt,'orbitals')        
+    )
+sims.append(opt)
+
+
+# nscf run to produce orbitals for final dmc
+nscf = generate_pwscf(
+    # nexus inputs
+    identifier   = 'nscf',          # identifier/file prefix      
+    path         = 'graphene/nscf', # directory for nscf run       
+    job          = Job(cores=16),   # run on 16 cores             
+    pseudos      = ['C.BFD.upf'],   # pwscf PP file               
+    system       = graphene,        # run graphene                
+    # input format selector                                      
+    input_type   = 'nscf',          # scf, nscf, relax, or generic
+    # pwscf input parameters
+    input_dft    = 'lda',           # dft functional
+    ecut         =  150 ,           # planewave energy cutoff (Ry)
+    conv_thr     =  1e-6,           # scf convergence threshold (Ry)
+    mixing_beta  =    .7,           # charge mixing factor
+    nosym        = True,            # don't symmetrize k-points
+    use_folded   = True,            # use primitive rep of graphene
+    wf_collect   = True,            # write out orbitals
+    # workflow dependencies
+    dependencies = (scf,'charge_density')
+    )
+sims.append(nscf)
+
+# orbital conversion job for final dmc
+p2q = generate_pw2qmcpack(
+    # nexus inputs
+    identifier   = 'p2q',
+    path         = 'graphene/nscf',
+    job          = Job(cores=1),
+    # pw2qmcpack input parameters
+    write_psir   = False,
+    # workflow dependencies
+    dependencies = (nscf,'orbitals')
+    )
+sims.append(p2q)
+    
+# final dmc run
+qmc = generate_qmcpack( 
+    # nexus inputs
+    identifier   = 'qmc',           # identifier/file prefix       
+    path         = 'graphene/qmc',  # directory for dmc run       
+    job          = Job(cores=16,app='qmcapp'),
+    pseudos      = ['C.BFD.xml'],   # qmcpack PP file
+    system       = graphene,        # run graphene
+    # input format selector                                      
+    input_type   = 'basic',
+    # qmcpack input parameters
+    corrections  = [],              # no finite size corrections
+    jastrows     = [],              # overwritten from opt
+    calculations = [                # qmcpack input parameters for qmc
+        vmc(                        # vmc parameters 
+            timestep      = 0.5,    # vmc timestep (1/Ha)
+            warmupsteps   = 100,    # No. of MC steps before data is collected
+            blocks        = 200,    # No. of data blocks recorded in scalar.dat
+            steps         =  10,    # No. of steps per block
+            substeps      =   3,    # MC steps taken w/o computing E_local
+            samplesperthread = 40   # No. of dmc walkers per thread
+            ),                      
+        dmc(                        # dmc parameters
+            timestep      = 0.01,   # dmc timestep (1/Ha)
+            warmupsteps   =  50,    # No. of MC steps before data is collected
+            blocks        = 400,    # No. of data blocks recorded in scalar.dat
+            steps         =   5,    # No. of steps per block
+            nonlocalmoves = True    # use Casula's T-moves
+            ),                      #  (retains variational principle for NLPP's)
         ],
-    # return a list or object containing simulations
-    return_list = False
+    # workflow dependencies
+    dependencies = [(p2q,'orbitals'),
+                    (opt,'jastrow')]
     )
 
 
-#the project manager monitors all runs
-pm = ProjectManager()  
-
-# give it the simulation objects
-pm.add_simulations(qsims.list()) 
-
-# run all the simulations    
-pm.run_project()  
-
+# nexus monitors all runs
+run_project(sims)
 
 
 # print out the total energy
@@ -652,7 +1301,7 @@ performed_runs = not settings.generate_only and not settings.status_only
 if performed_runs:
     # get the qmcpack analyzer object
     # it contains all of the statistically analyzed data from the run
-    qa = qsims.qmc.load_analyzer_image()
+    qa = qmc.load_analyzer_image()
     # get the local energy from dmc.dat
     le = qa.dmc[1].dmc.LocalEnergy  # dmc series 1, dmc.dat, local energy
     #  print the total energy for the 8 atom system
@@ -665,13 +1314,13 @@ if performed_runs:
 To run the example, navigate to the example directory and type
 \begin{shaded}
 \begin{verbatim}
-./graphene_example.py
+./graphene.py
 \end{verbatim}
 \end{shaded}
 or, alternatively, 
 \begin{shaded}
 \begin{verbatim}
-python ./graphene_example.py
+python ./graphene.py
 \end{verbatim}
 \end{shaded}
 
@@ -679,8 +1328,8 @@ You should see output like this (without the added \# comments):
 \begin{shaded}
 \begin{verbatim}
   Pseudopotentials   # reading pseudopotential files
-    reading pp:  ./pseudopotentials/C.BFD.upf
-    reading pp:  ./pseudopotentials/C.BFD.xml
+    reading pp:  ../pseudopotentials/C.BFD.upf
+    reading pp:  ../pseudopotentials/C.BFD.xml
 
 Project starting 
   checking for file collisions  # ensure created files don't overlap
@@ -692,12 +1341,12 @@ Project starting
   starting runs:                # start submitting jobs
   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
   poll 0  memory 56.28 MB 
-    Entering ./runs/graphene_test/scf 0 # scf job
+    Entering ./runs/graphene/scf 0      # scf job
       writing input files  0 scf        # input file written 
-    Entering ./runs/graphene_test/scf 0 
+    Entering ./runs/graphene/scf 0 
       sending required files  0 scf     # PP files copied
       submitting job  0 scf             # job is in virtual queue
-    Entering ./runs/graphene_test/scf 0 
+    Entering ./runs/graphene/scf 0 
       Executing:                        # job executed on workstation
         export OMP_NUM_THREADS=1
         mpirun -np 16 pw.x -input scf.in 
@@ -706,9 +1355,9 @@ Project starting
   poll 2  memory 56.30 MB 
   poll 3  memory 56.30 MB 
   poll 4  memory 56.30 MB 
-    Entering ./runs/graphene_test/scf 0 
+    Entering ./runs/graphene/scf 0 
       copying results  0 scf            # job is finished, copy results
-    Entering ./runs/graphene_test/scf 0 
+    Entering ./runs/graphene/scf 0 
       analyzing  0 scf                  # analyze output data
 
                                         # now do the same for
@@ -718,33 +1367,33 @@ Project starting
                                         #   multiple k-points
 
   poll 5  memory 56.31 MB               
-    Entering ./runs/graphene_test/nscf 1 # nscf dmc 
+    Entering ./runs/graphene/nscf 1     # nscf dmc 
       writing input files  1 nscf 
       ...
-    Entering ./runs/graphene_test/nscfopt 4 # nscf opt 
+    Entering ./runs/graphene/nscfopt 4  # nscf opt 
       writing input files  4 nscf 
       ...
 
                                         # now convert KS orbitals
-                                        # from planewave to bspline
+                                        # to eshdf format
                                         # with pw2qmcpack.x
                                         # for nscf opt & nscf dmc
 
   poll 7  memory 56.32 MB 
-    Entering ./runs/graphene_test/nscf 2 # convert dmc orbitals
+    Entering ./runs/graphene/nscf 2     # convert dmc orbitals
       sending required files  2 p2q 
       ...
-    Entering ./runs/graphene_test/nscfopt 4 # convert opt orbitals
+    Entering ./runs/graphene/nscfopt 4  # convert opt orbitals
       copying results  4 nscf 
       ...
 
   poll 10  memory 56.32 MB 
-    Entering ./runs/graphene_test/opt 6 # submit jastrow opt
+    Entering ./runs/graphene/opt 6      # submit jastrow opt
       writing input files  6 opt        # write input file
-    Entering ./runs/graphene_test/opt 6 
+    Entering ./runs/graphene/opt 6 
       sending required files  6 opt     # copy PP files
       submitting job  6 opt             # job is in virtual queue
-    Entering ./runs/graphene_test/opt 6 
+    Entering ./runs/graphene/opt 6 
       Executing:                        # run qmcpack
         export OMP_NUM_THREADS=1        # w/ complex arithmetic
         mpirun -np 16 qmcapp_complex opt.in.xml 
@@ -758,18 +1407,18 @@ Project starting
   poll 793  memory 56.32 MB   # qmcpack opt finishes
   poll 794  memory 56.32 MB   # nearly an hour later
   poll 795  memory 56.32 MB 
-    Entering ./runs/graphene_test/opt 6 
+    Entering ./runs/graphene/opt 6 
       copying results  6 opt            # copy output files
-    Entering ./runs/graphene_test/opt 6 
+    Entering ./runs/graphene/opt 6 
       analyzing  6 opt                  # analyze the results
 
   poll 796  memory 56.41 MB 
-    Entering ./runs/graphene_test/qmc 3 # submit dmc
+    Entering ./runs/graphene/qmc 3      # submit dmc
       writing input files  3 qmc        # write input file
-    Entering ./runs/graphene_test/qmc 3 
+    Entering ./runs/graphene/qmc 3 
       sending required files  3 qmc     # copy PP files
       submitting job  3 qmc             # job is in virtual queue
-    Entering ./runs/graphene_test/qmc 3 
+    Entering ./runs/graphene/qmc 3 
       Executing:                        # run qmcpack
         export OMP_NUM_THREADS=1
         mpirun -np 16 qmcapp_complex qmc.in.xml 
@@ -783,9 +1432,9 @@ Project starting
   poll 1041  memory 57.31 MB   # qmcpack dmc finishes
   poll 1042  memory 57.31 MB   # about 15 minutes later
   poll 1043  memory 57.31 MB 
-    Entering ./runs/graphene_test/qmc 3 
+    Entering ./runs/graphene/qmc 3 
       copying results  3 qmc            # copy output files
-    Entering ./runs/graphene_test/qmc 3 
+    Entering ./runs/graphene/qmc 3 
       analyzing  3 qmc                  # analyze the results
 
 Project finished                        # all jobs are finished
@@ -796,10 +1445,10 @@ The DMC ground state energy for graphene is:
 \end{verbatim}
 \end{shaded}
 
-If successful, you have just performed a start-to-finish QMC calculation.  
+If successful, you have just performed a start-to-finish DMC calculation.  
 The total energy quoted above probably will not match the one you produce 
 due to different compilation environments and the probabilistic nature of 
-QMC.  They should not, however differ by three sigma.
+DMC.  They should not, however differ by three sigma.
 
 Take some time to inspect the input files generated by Nexus and 
 the output files from PWSCF and QMCPACK.  The runs were performed in 
@@ -863,12 +1512,16 @@ could be performed simply by changing \texttt{kgrid} in
 or similar.
  
 
+
+
+
+
 \pagebreak
-\subsection{Example: C 20 Molecule DMC}  \label{c20_dmc}
+\section{Example 3: C 20 Molecule DMC}  \label{c20_dmc}
 The files for this example are found in:
 \begin{shaded}
 \begin{verbatim}
-/your_download_path/nexus/examples/simple_qmc/c20_example
+/your_download_path/nexus/examples/qmcpack/c20
 \end{verbatim}
 \end{shaded}
 
@@ -877,30 +1530,30 @@ Take a moment to study the ``input file'' script
 (prefixed with \#). The relevant differences from the graphene example
 mostly involve how the structure is procured (it is read from an XYZ file
 rather than being generated), the boundary conditions (open BC's, see 
-\texttt{bconds} in the QMCPACK input parameters), and the workflow involved 
-(as opposed to \texttt{standard\_qmc}, \texttt{basic\_qmc} does not perform 
-non-self-consistent DFT calculations).
+\texttt{bconds} in the QMCPACK input parameters), and the workflow involved. 
+
 
 
 \HRule
 \begin{minted}{python}
 #! /usr/bin/env python
 
-from nexus import settings,ProjectManager,Job
+from nexus import settings,Job,run_project
 from nexus import Structure,PhysicalSystem
+from nexus import generate_pwscf
+from nexus import generate_pw2qmcpack
+from nexus import generate_qmcpack
 from nexus import loop,linear,vmc,dmc
-from qmcpack_calculations import basic_qmc
 
 
-#general settings for Nexus
+# general settings for nexus
 settings(
-    pseudo_dir    = './pseudopotentials',# directory with all pseudopotentials
-    sleep         = 3,                   # check on runs every 'sleep' seconds
-    generate_only = 0,                   # only make input files
-    status_only   = 0,                   # only show status of runs
-    machine       = 'node16',            # local machine is 16 core workstation
+    pseudo_dir    = '../pseudopotentials',# directory with all pseudopotentials
+    sleep         = 3,                    # check on runs every 'sleep' seconds
+    generate_only = 0,                    # only make input files
+    status_only   = 0,                    # only show status of runs
+    machine       = 'ws16',               # local machine is 16 core workstation
     )
-
 
 
 #generate the C20 physical system
@@ -929,44 +1582,59 @@ c20 = PhysicalSystem(
     ) 
 
 
-#generate the simulations for the qmc workflow
-qsims = basic_qmc(
-    # subdirectory of runs 
-    directory       = 'c20_test',
-    # description of the physical system
-    system          = c20,
-    pseudos         = ['C.BFD.upf',  # pwscf PP file
-                       'C.BFD.xml'], # qmcpack PP file
-    # job parameters
-    scfjob          = Job(cores=16), # cores to run scf 
-    optjob          = Job(cores    = 16,        # cores for optimization 
-                          app_name = 'qmcapp'), # use real-valued qmcpack
-    qmcjob          = Job(cores    = 16,        # cores for qmc
-                          app_name = 'qmcapp'), # use real-valued qmcpack
-    # dft parameters (pwscf)
-    functional      = 'lda',         # dft functional
-    ecut            =  150 ,         # planewave energy cutoff (Ry)
-    conv_thr        =  1e-6,         # scf convergence threshold (Ry)
-    mixing_beta     =    .7,         # charge mixing factor
-    # qmc wavefunction parameters (qmcpack)
-    bconds          = 'nnn',         # open boundary conditions
-    meshfactor      = 1.0,           # bspline grid spacing, larger is finer
-    jastrows        = [
-        dict(type     = 'J1',        # 1-body
-             function = 'bspline',   # bspline jastrow
-             size     = 8,           # with 8 knots
-             rcut     = 6.0),        # and a radial cutoff of 6 bohr
-        dict(type     = 'J2',        # 2-body
-             function = 'bspline',   # bspline jastrow
-             size     = 8,           # with 8 knots
-             rcut     = 8.0),        # and a radial cutoff of 8 bohr
-        ],
-    # opt parameters (qmcpack)
-    perform_opt     = True,     # produce optimal jastrows
-    block_opt       = False,    # if true, ignores opt and qmc
-    skip_submit_opt = False,    # if true, writes input files, does not run opt
-    opt_calcs       = [         # qmcpack input parameters for opt
-        loop(max = 4,                        # No. of loop iterations
+# list of simulations in workflow
+sims = []
+
+# scf run produces charge density
+scf = generate_pwscf(
+    # nexus inputs
+    identifier   = 'scf',           # identifier/file prefix
+    path         = 'c20/scf',       # directory for scf run
+    job          = Job(cores=16),   # run on 16 cores
+    pseudos      = ['C.BFD.upf'],   # pwscf PP file
+    system       = c20,             # run c20
+    # input format selector
+    input_type   = 'scf',           # scf, nscf, relax, or generic
+    # pwscf input parameters
+    input_dft    = 'lda',           # dft functional
+    ecut         =  150 ,           # planewave energy cutoff (Ry)
+    conv_thr     =  1e-6,           # scf convergence threshold (Ry)
+    mixing_beta  =    .7,           # charge mixing factor
+    nosym        = True,            # don't use symmetry
+    wf_collect   = True,            # write out orbitals
+    )
+sims.append(scf)  
+
+# orbital conversion job for opt and dmc
+p2q = generate_pw2qmcpack(
+    # nexus inputs
+    identifier   = 'p2q',
+    path         = 'c20/nscf',
+    job          = Job(cores=1),
+    # pw2qmcpack input parameters
+    write_psir   = False,
+    # workflow dependencies
+    dependencies = (scf,'orbitals')
+    )
+sims.append(p2q)
+
+
+# Jastrow optimization
+opt = generate_qmcpack(
+    # nexus inputs
+    identifier   = 'opt',           # identifier/file prefix
+    path         = 'c20/opt',       # directory for opt run
+    job          = Job(cores=16,app='qmcapp'),
+    pseudos      = ['C.BFD.xml'],   # qmcpack PP file
+    system       = c20,             # run c20
+    # input format selector   
+    input_type   = 'basic',
+    # qmcpack input parameters
+    corrections  = [], 
+    jastrows     = [('J1','bspline',8,6),   # 1 body bspline jastrow
+                    ('J2','bspline',8,8)],  # 2 body bspline jastrow
+    calculations = [
+        loop(max = 6,                        # No. of loop iterations
              qmc = linear(                   # linearized optimization method
                 energy               =  0.0, # cost function
                 unreweightedvariance =  1.0, #   is all unreweighted variance
@@ -980,43 +1648,53 @@ qsims = basic_qmc(
                 bigchange            =  15.0,#  and this
                 alloweddifference    =  1e-4 #  and this, for now
                 )
-             )
+             )        
         ],
-    # qmc parameters (qmcpack)
-    block_qmc       = False,    # if true, ignores qmc
-    skip_submit_qmc = False,    # if true, writes input file, does not run qmc
-    qmc_calcs       = [         # qmcpack input parameters for qmc
-        vmc(                      # vmc parameters 
-            timestep      = 0.5,  # vmc timestep (1/Ha)
-            warmupsteps   = 100,  # No. of MC steps before data is collected
-            blocks        = 200,  # No. of data blocks recorded in scalar.dat
-            steps         =  10,  # No. of steps per block
-            substeps      =   3,  # MC steps taken w/o computing E_local
-            samplesperthread = 40 # No. of dmc walkers per thread
-            ),                    
-        dmc(                      # dmc parameters
-            timestep      = 0.01, # dmc timestep (1/Ha)
-            warmupsteps   =  50,  # No. of MC steps before data is collected
-            blocks        = 400,  # No. of data blocks recorded in scalar.dat
-            steps         =   5,  # No. of steps per block
-            nonlocalmoves = True  # use Casula's T-moves
-            ),                    #  (retains variational principle for NLPP's)
+    # workflow dependencies
+    dependencies = (p2q,'orbitals')        
+    )
+sims.append(opt)
+
+    
+# final dmc run
+qmc = generate_qmcpack( 
+    # nexus inputs
+    identifier   = 'qmc',           # identifier/file prefix       
+    path         = 'c20/qmc',  # directory for dmc run       
+    job          = Job(cores=16,app='qmcapp'),
+    pseudos      = ['C.BFD.xml'],   # qmcpack PP file
+    system       = c20,             # run c20
+    # input format selector                                      
+    input_type   = 'basic',
+    # qmcpack input parameters
+    corrections  = [],              # no finite size corrections
+    jastrows     = [],              # overwritten from opt
+    calculations = [                # qmcpack input parameters for qmc
+        vmc(                        # vmc parameters 
+            timestep      = 0.5,    # vmc timestep (1/Ha)
+            warmupsteps   = 100,    # No. of MC steps before data is collected
+            blocks        = 200,    # No. of data blocks recorded in scalar.dat
+            steps         =  10,    # No. of steps per block
+            substeps      =   3,    # MC steps taken w/o computing E_local
+            samplesperthread = 40   # No. of dmc walkers per thread
+            ),                      
+        dmc(                        # dmc parameters
+            timestep      = 0.01,   # dmc timestep (1/Ha)
+            warmupsteps   =  50,    # No. of MC steps before data is collected
+            blocks        = 400,    # No. of data blocks recorded in scalar.dat
+            steps         =   5,    # No. of steps per block
+            nonlocalmoves = True    # use Casula's T-moves
+            ),                      #  (retains variational principle for NLPP's)
         ],
-    # return a list or object containing simulations
-    return_list = False
+    # workflow dependencies
+    dependencies = [(p2q,'orbitals'),
+                    (opt,'jastrow')]
     )
 
 
 
-
-#the project manager monitors all runs
-pm = ProjectManager()  
-
-# give it the simulation objects
-pm.add_simulations(qsims.list()) 
-
-# run all the simulations    
-pm.run_project()  
+# nexus monitors all runs
+run_project(sims)
 
 
 
@@ -1025,7 +1703,7 @@ performed_runs = not settings.generate_only and not settings.status_only
 if performed_runs:
     # get the qmcpack analyzer object
     # it contains all of the statistically analyzed data from the run
-    qa = qsims.qmc.load_analyzer_image()
+    qa = qmc.load_analyzer_image()
     # get the local energy from dmc.dat
     le = qa.dmc[1].dmc.LocalEnergy  # dmc series 1, dmc.dat, local energy
     #  print the total energy for the 20 atom system
@@ -1039,13 +1717,13 @@ if performed_runs:
 To run the example, navigate to the example directory and type
 \begin{shaded}
 \begin{verbatim}
-./c20_example.py
+./c20.py
 \end{verbatim}
 \end{shaded}
 or, alternatively, 
 \begin{shaded}
 \begin{verbatim}
-python ./c20_example.py
+python ./c20.py
 \end{verbatim}
 \end{shaded}
 
@@ -1053,8 +1731,8 @@ You should see output like this (without the added \# comments):
 \begin{shaded}
 \begin{verbatim}
   Pseudopotentials   # reading pseudopotential files
-    reading pp:  ./pseudopotentials/C.BFD.upf
-    reading pp:  ./pseudopotentials/C.BFD.xml
+    reading pp:  ../pseudopotentials/C.BFD.upf
+    reading pp:  ../pseudopotentials/C.BFD.xml
 
 Project starting 
   checking for file collisions  # ensure created files don't overlap 
@@ -1066,12 +1744,12 @@ Project starting
   starting runs:                # start submitting jobs
   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   poll 0  memory 56.21 MB 
-    Entering ./runs/c20_test/scf 0  # scf job
+    Entering ./runs/c20/scf 0       # scf job
       writing input files  0 scf    # input file written
-    Entering ./runs/c20_test/scf 0 
+    Entering ./runs/c20/scf 0 
       sending required files  0 scf # PP files copied
       submitting job  0 scf         # job is in the virtual queue
-    Entering ./runs/c20_test/scf 0 
+    Entering ./runs/c20/scf 0 
       Executing:                    # job executed on workstation
         export OMP_NUM_THREADS=1
         mpirun -np 16 pw.x -input scf.in 
@@ -1084,23 +1762,23 @@ Project starting
   poll 6  memory 56.23 MB 
   poll 7  memory 56.23 MB 
   poll 8  memory 56.23 MB 
-    Entering ./runs/c20_test/scf 0 
+    Entering ./runs/c20/scf 0 
       copying results  0 scf        # job is finished, copy results
-    Entering ./runs/c20_test/scf 0 
+    Entering ./runs/c20/scf 0 
       analyzing  0 scf              # analyze output data
                                     
   poll 9  memory 56.23 MB           # now convert KS orbitals
-    Entering ./runs/c20_test/scf 1  # from planewave to bspline
+    Entering ./runs/c20/scf 1       # to eshdf format
       writing input files  1 p2q    # with pw2qmcpack.x
       ...
 
   poll 12  memory 56.23 MB 
-    Entering ./runs/c20_test/opt 3  # submit jastrow opt
+    Entering ./runs/c20/opt 3       # submit jastrow opt
       writing input files  3 opt    # write input file
-    Entering ./runs/c20_test/opt 3 
+    Entering ./runs/c20/opt 3 
       sending required files  3 opt # copy PP files
       submitting job  3 opt         # job is in virtual queue
-    Entering ./runs/c20_test/opt 3 
+    Entering ./runs/c20/opt 3 
       Executing:                    # run qmcpack
         export OMP_NUM_THREADS=1    # w/ real arithmetic
         mpirun -np 16 qmcapp opt.in.xml 
@@ -1114,18 +1792,18 @@ Project starting
   poll 204  memory 56.24 MB   # qmcpack opt finishes
   poll 205  memory 56.24 MB   # about 10 minutes later
   poll 206  memory 56.24 MB 
-    Entering ./runs/c20_test/opt 3 
+    Entering ./runs/c20/opt 3 
       copying results  3 opt        # copy output files
-    Entering ./runs/c20_test/opt 3 
+    Entering ./runs/c20/opt 3 
       analyzing  3 opt              # analyze the results
 
   poll 207  memory 56.27 MB 
-    Entering ./runs/c20_test/qmc 2  # submit dmc
+    Entering ./runs/c20/qmc 2       # submit dmc
       writing input files  2 qmc    # write input file
-    Entering ./runs/c20_test/qmc 2 
+    Entering ./runs/c20/qmc 2 
       sending required files  2 qmc # copy PP files
       submitting job  2 qmc         # job is in virtual queue
-    Entering ./runs/c20_test/qmc 2 
+    Entering ./runs/c20/qmc 2 
       Executing:                    # run qmcpack
         export OMP_NUM_THREADS=1
         mpirun -np 16 qmcapp qmc.in.xml 
@@ -1139,9 +1817,9 @@ Project starting
   poll 598  memory 56.49 MB   # qmcpack dmc finishes
   poll 599  memory 56.49 MB   # about 20 minutes later
   poll 600  memory 56.49 MB 
-    Entering ./runs/c20_test/qmc 2 
+    Entering ./runs/c20/qmc 2 
       copying results  2 qmc        # copy output files
-    Entering ./runs/c20_test/qmc 2 
+    Entering ./runs/c20/qmc 2 
       analyzing  2 qmc              # analyze the results
 
 Project finished                    # all jobs are finished
@@ -1190,62 +1868,306 @@ results
 
 
 
+
+
 \pagebreak
-\chapter{Nexus User Reference} \label{reference}
-Pending.
+\section{Example 4: Automated oxygen dimer binding curve}
+The files for this example are found in:
+\begin{shaded}
+\begin{verbatim}
+/your_download_path/nexus/examples/qmcpack/oxygen_dimer
+\end{verbatim}
+\end{shaded}
 
-\section{Reading what you wrote}
+Enter the \texttt{examples/qmcpack/oxygen\_dimer} directory.  Open \texttt{oxygen\_dimer.py} with a text editor.  The overall format is similar to the example file shown in the prior sections.  The header material, including Nexus imports, settings, and the job parameters for QMC are nearly identical.  
+%The main difference is that optimization and DMC runs are being performed rather than a single VMC run.  
 
-\section{Nexus settings: global state and user-specific information}
-The first section of a project script is often dedicated to providing 
-information regarding the local machine, the location of various files, and 
-the desired behavior of the \texttt{ProjectManager}.  This information is 
-communicated to Nexus through the \texttt{settings} function. 
-The settings function is available in the \texttt{project} module.  To make 
-\texttt{settings} available in your project script, use the following import 
-statement:\newline
-\HRule
+Following the job parameters, inputs for the optimization method are given.  The keywords are identical to the parameters of QMCPACK's XML input file.
 \begin{minted}{python}
-from nexus import settings
-\end{minted}
-\HRule
-
-\subsection{\bu{How to use the \texttt{settings} function}}
-In most cases, it is sufficient to supply only four pieces of information 
-through the \texttt{settings} function: whether to run all jobs or just create 
-the input files, how often to check jobs for completion, the location of 
-pseudopotential files, and a description of the local machine.
-\HRule
-\begin{minted}{python}
-settings(
-    generate_only = True,                 # only write input files, do not run
-    sleep         = 3,                    # check on jobs every 3 seconds
-    pseudo_dir    = './pseudopotentials', # path to PP file collection
-    machine       = 'node8'               # local machine is an 8 core workstation
+linopt1 = linear(
+    energy               = 0.0,
+    unreweightedvariance = 1.0,
+    reweightedvariance   = 0.0,
+    timestep             = 0.4,
+    samples              = 5000, 
+    warmupsteps          = 50,
+    blocks               = 200,
+    substeps             = 1,
+    nonlocalpp           = True,
+    usebuffer            = True,
+    walkers              = 1,
+    minwalkers           = 0.5,
+    maxweight            = 1e9,
+    usedrift             = True,
+    minmethod            = 'quartic',
+    beta                 = 0.025,
+    exp0                 = -16,
+    bigchange            = 15.0,
+    alloweddifference    = 1e-4,
+    stepsize             = 0.2,
+    stabilizerscale      = 1.0,
+    nstabilizers         = 3
     )
 \end{minted}
-\HRule
-
-A few additional parameters are available in \texttt{settings} to control where 
-runs are performed, where output data is gathered, and whether to print job 
-status information.  More detailed information about both local and target 
-machines can be provided, such as allocation account numbers, filesystem 
-structure, and where executables are located.
-\HRule
+\noindent
+Requesting multiple loop's with different numbers of samples is more compact than in the native XML input file:
 \begin{minted}{python}
-settings(
-    generate_only = True,                 # only write input files, do not run
-    sleep         = 3,                    # check on jobs every 3 seconds
-    pseudo_dir    = './pseudopotentials', # path to PP file collection
-    machine       = 'node8'               # local machine is an 8 core workstation
+linopt1 = ...
+
+linopt2 = linopt1.copy()  
+linopt2.samples = 20000 # opt w/ 20000 samples
+
+linopt3 = linopt1.copy()
+linopt3.samples = 40000 # opt w/ 40000 samples
+
+opt_calcs = [loop(max=8,qmc=linopt1), # loops over opt's
+             loop(max=6,qmc=linopt2),
+             loop(max=4,qmc=linopt3)]
+\end{minted}
+\noindent
+The VMC/DMC method inputs also mirror the XML:
+\begin{minted}{python}
+qmc_calcs = [
+    vmc(
+        walkers     =   1,
+        warmupsteps =  30,
+        blocks      =  20,
+        steps       =  10,
+        substeps    =   2,
+        timestep    =  .4,
+        samples     = 2048
+        ),
+    dmc(
+        warmupsteps   = 100, 
+        blocks        = 400,
+        steps         =  32,
+        timestep      = 0.01,
+        nonlocalmoves = True
+        )
+    ]
+\end{minted}
+\noindent
+As in the prior examples, the oxygen dimer is generated with the \texttt{generate\_physical\_system} function:
+\begin{minted}{python}
+dimer = generate_physical_system(
+    type       = 'dimer',
+    dimer      = ('O','O'),
+    separation = 1.2074*scale,
+    Lbox       = 15.0,
+    units      = 'A',
+    net_spin   = 2,
+    O          = 6
     )
 \end{minted}
-\HRule
+\noindent
+Similar syntax can be used to generate crystal structures or to specify systems with arbitrary atomic configurations and simulation cells.  Notice that a ``\texttt{scale}'' variable has been introduced to stretch or compress the dimer.  
+
+Next, objects representing DFT calculations and orbital conversions are constructed with the \texttt{generate\_pwscf} and \texttt{generate\_pw2qmcpack} functions.
+\begin{minted}{python}
+scf = generate_pwscf(
+    identifier   = 'scf',
+    ...
+    )
+sims.append(scf)
+
+p2q = generate_pw2qmcpack(
+    identifier   = 'p2q',
+    ...
+    dependencies = (scf,'orbitals')
+    )
+sims.append(p2q)
+\end{minted}
+
+Finally, objects representing QMCPACK simulations are constructed with the \texttt{generate\_qmcpack} function:
+\begin{minted}{python}
+opt = generate_qmcpack(
+    identifier   = 'opt',
+    ...
+    jastrows     = [('J1','bspline',8,4.5), 
+                    ('J2','pade',0.5,0.5)],
+    calculations = opt_calcs,
+    dependencies = (p2q,'orbitals')
+    )
+sims.append(opt)
+
+qmc = generate_qmcpack(
+    identifier   = 'qmc',
+    ...
+    jastrows     = [],            
+    calculations = qmc_calcs,
+    dependencies = [(p2q,'orbitals'),
+                    (opt,'jastrow')]
+    )
+sims.append(qmc)
+\end{minted}
+\noindent
+Shared details such as the run directory, job, pseudopotentials, and orbital file have been omitted (\texttt{...}).  The ``\texttt{opt}'' run will optimize a 1-body B-spline Jastrow with 8 knots having a cutoff of 4.5 Bohr and a 2-body Pad\'{e} Jastrow with up-up and up-down ``\texttt{B}'' parameters set to 0.5 1/Bohr.  The Jastrow list for the DMC run is empty and a new keyword is present: \texttt{dependencies}.  The usage of \texttt{dependencies} above indicates that the DMC run depends on the optimization run for the Jastrow factor.  Nexus will submit the ``\texttt{opt}'' run first and upon completion it will scan the output, select the optimal set of parameters, pass the Jastrow information to the ``\texttt{qmc}'' run and then submit the DMC job.  Independent job workflows are submitted in parallel when permitted.  No input files are written or job submissions made until the ``\texttt{run\_project}'' function is reached.
+
+As written, \texttt{oxygen\_dimer.py} will only perform calculations at the equilibrium separation distance of 1.2074 Angstrom.  Modify the file now to perform DMC calculations across a range of separation distances with each DMC run using the Jastrow factor optimized at the equilibrium separation distance.  The necessary Python \texttt{for} loop syntax should look something like this:
+\begin{minted}{python}
+sims = []
+for scale in [1.00,0.90,0.95,1.05,1.10]:
+    ...
+    dimer = ...
+    if scale==1.00:
+        opt = ...
+        ...
+    #end if
+    qmc = ...
+    ...
+#end for
+run_project(sims)
+\end{minted}
+\noindent
+Note that the text inside the \texttt{for} loop and the \texttt{if} block must be indented by precisely four spaces.  If you use Emacs, changes in indentation can be performed easily with \texttt{Cntrl-C >} and \texttt{Cntrl-C <} after highlighting a block of text (other editors should have similar functionality).  
+
+Change the ``\texttt{status\_only}'' parameter in the ``\texttt{settings}'' function to \texttt{1} and type ``./oxygen\_dimer.py'' at the command line.  This will print the status of all simulations:
+\begin{shaded}
+\begin{verbatim}
+Project starting 
+  checking for file collisions 
+  loading cascade images 
+    cascade 0 checking in 
+  checking cascade dependencies 
+    all simulation dependencies satisfied 
+  cascade status 
+    setup, sent_files, submitted, finished, got_output, analyzed 
+    000000  scf  ./scale_1.0 
+    000000  scf  ./scale_0.9 
+    000000  scf  ./scale_0.95 
+    000000  scf  ./scale_1.05 
+    000000  scf  ./scale_1.1 
+    000000  p2q  ./scale_1.0 
+    000000  p2q  ./scale_0.9 
+    000000  p2q  ./scale_0.95 
+    000000  p2q  ./scale_1.05 
+    000000  p2q  ./scale_1.1 
+    000000  opt  ./scale_1.0 
+    000000  qmc  ./scale_1.0 
+    000000  qmc  ./scale_0.9 
+    000000  qmc  ./scale_0.95 
+    000000  qmc  ./scale_1.05 
+    000000  qmc  ./scale_1.1 
+    setup, sent_files, submitted, finished, got_output, analyzed 
+\end{verbatim}
+\end{shaded}
+\noindent
+In this case, a single independent simulation ``cascade'' (workflow) has been identified, containing one ``\texttt{opt}'' and five dependent ``\texttt{qmc}'' runs.  The six status flags (\texttt{setup}, \texttt{sent\_files}, \texttt{submitted}, \texttt{finished}, \texttt{got\_output}, \texttt{analyzed}) each show \texttt{0}, indicating that no work has been done yet.  
+
+Now change ``\texttt{status\_only}'' back to \texttt{0}, set ``\texttt{generate\_only}'' to \texttt{1}, and run \texttt{oxygen\_dimer.py} again.  This will perform a dry-run of all simulations.  The dry-run should finish in about 20 seconds:
+\begin{shaded}
+\begin{verbatim}
+Project starting 
+  checking for file collisions 
+  loading cascade images 
+    cascade 0 checking in 
+  checking cascade dependencies 
+    all simulation dependencies satisfied 
+  
+  starting runs:
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+  poll 0  memory 88.54 MB 
+    Entering ./scale_1.0 0 
+      writing input files  0 opt 
+    Entering ./scale_1.0 0 
+      sending required files  0 opt 
+      submitting job  0 opt 
+    Entering ./scale_1.0 1 
+      Would have executed:  qsub --mode script --env BG_SHAREDMEMSIZE=32 opt.qsub.in 
+
+  poll 1  memory 88.54 MB 
+    Entering ./scale_1.0 0 
+      copying results  0 opt 
+    Entering ./scale_1.0 0 
+      analyzing  0 opt 
+
+  poll 2  memory 88.87 MB 
+    Entering ./scale_1.0 1 
+      writing input files  1 qmc 
+    Entering ./scale_1.0 1 
+      sending required files  1 qmc 
+      submitting job  1 qmc 
+    ...
+    Entering ./scale_1.0 2 
+      Would have executed:  qsub --mode script --env BG_SHAREDMEMSIZE=32 qmc.qsub.in 
+    ...
+
+Project finished
+\end{verbatim}
+\end{shaded}
+\noindent
+Nexus polls the simulation status every 3 seconds and sleeps in between.  The ``scale\_*'' directories should now contain several files:
+\begin{shaded}
+\begin{verbatim}
+scale_1.0
+├── O2.pwscf.h5
+├── O.BFD.xml
+├── opt.in.xml
+├── opt.qsub.in
+├── qmc.in.xml
+├── qmc.qsub.in
+├── sim_opt
+│   ├── analyzer.p
+│   ├── input.p
+│   └── sim.p
+└── sim_qmc
+    ├── analyzer.p
+    ├── input.p
+    └── sim.p
+\end{verbatim}
+\end{shaded}
+\noindent
+Take a minute to inspect the generated input (\texttt{opt.in.xml}, \texttt{qmc.in.xml}) and submission (\texttt{opt.qsub.in}, \texttt{qmc.qsub.in}) files.  The pseudopotential file \texttt{O.BFD.xml} has been copied into each local directory. Two additional directories have been created: \texttt{sim\_opt} and \texttt{sim\_qmc}.  The \texttt{sim.p} files in each directory contain the current status of each simulation.  If you run \texttt{oxygen\_dimer.py} again, it should not attempt to rerun any of the simulations:   
+\begin{shaded}
+\begin{verbatim}
+Project starting 
+  checking for file collisions 
+  loading cascade images 
+    cascade 0 checking in 
+    cascade 8 checking in 
+    cascade 2 checking in 
+    cascade 4 checking in 
+    cascade 6 checking in 
+  checking cascade dependencies 
+    all simulation dependencies satisfied 
+  
+  starting runs:
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+  poll 0  memory 60.10 MB 
+Project finished
+\end{verbatim}
+\end{shaded}
+\noindent
+This way one can continue to add to the \texttt{oxygen\_dimer.py} file (\emph{e.g.} adding more separation distances) without worrying about duplicate job submissions.
+
+Now actually submit the optimization and DMC jobs.  Reset the state of the simulations by removing the \texttt{sim.p} files (``\texttt{rm ./scale*/sim*/sim.p}''), set ``\texttt{generate\_only}'' to \texttt{0}, and rerun \texttt{oxygen\_dimer.py}.  It should take about 15 minutes for all the jobs to complete.  You may wish to open another terminal to monitor the progress of the individual jobs while the current terminal runs \texttt{oxygen\_dimer.py} in the foreground.  
+
+After completion, try expanding to the full set of ``\texttt{scale}'' values:\newline \texttt{[0.90,0.925,0.95,0.975,1.00,1.025,1.05,1.075,1.10]}.  Nexus should only run the workflows that correspond to new values.  In this way, Nexus scripts can be expanded over time to include new aspects of growing projects. 
 
 
-\subsection{\bu{Accessing settings data}}
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+%\pagebreak
+%\chapter{Nexus User Reference} \label{sec:reference}
+%Pending.
+%
+%
+%\subsection{\bu{Accessing settings data}}
+%
+%
 %
 %\section{Making structures}
 %
@@ -1348,15 +2270,387 @@ settings(
 
 
 
+
+
+
 \pagebreak
-\chapter{QMC Practice \\in a Nutshell}\label{theory}
+\chapter{Recommended Reading} \label{sec:reading}
+The sections below contain information, or at least links to information, 
+that should be helpful for anyone who wants to use Nexus, but who 
+is not an expert in one of the following areas: installing python and related 
+modules, installing PWSCF and QMCPACK, the Python programming language, and 
+the theory and practice of Quantum Monte Carlo.  
+
+
+\section{Helpful Links for Installing Python Modules} \label{sec:install_python}
+\begin{description}
+  \item[Python itself] \hfill \\
+    Download: \url{http://www.python.org/download/}\\  
+    Be sure to get Python 2.x, not 3.x.
+  \item[Numpy and Scipy] \hfill \\
+    Download and installation: \url{http://www.scipy.org/Installing_SciPy}.
+  \item[Matplotlib] \hfill \\
+    Download: \url{http://matplotlib.org/downloads.html}\\
+    Installation: \url{http://matplotlib.org/users/installing.html}
+  \item[H5py] \hfill \\
+    Download and installation: \url{http://www.h5py.org/}
+\end{description}
+
+
+\section{Helpful Links for Installing Electronic Structure Codes} \label{sec:install_code}
+\subsection{PWSCF: pw.x, pw2qmcpack.x, pw2casino.x}
+  Download: \url{http://www.quantum-espresso.org/} , \url{http://qmcpack.org/downloads/} \\
+  Installation instructions: See the \texttt{README} file in \texttt{qmcpack/external\_codes/quantum\_espresso} for instructions on patching Quantum Espresso version 5.1.
+
+\subsection{QMCPACK: qmcapp, qmcapp\_complex, convert4qmc, ppconvert, sqd}
+  Download: \url{http://qmcpack.org/downloads/}\\ 
+  Install: \url{http://docs.qmcpack.org/ug/a00002.html}
+
+\subsection{Wfconvert: wfconvert}
+  Download: svn co http://qmctools.googlecode.com/svn/trunk/wfconvert \\
+  See also: \url{https://code.google.com/p/qmctools/}
+
+\subsection{VASP}
+  Download: Proprietary, see \url{https://www.vasp.at/} \\
+  Install: \url{http://cms.mpi.univie.ac.at/vasp/vasp/vasp.html}
+
+\subsection{GAMESS}
+  Download: \url{http://www.msg.ameslab.gov/gamess/License_Agreement.html}
+  Install: See the ``readme.unix'' file in the GAMESS source distribution (gamess/machines/readme.unix).
+
+
+\section{Brushing Up On Python}\label{sec:learn_python}
+\subsection{Python}
+Python is a flexible, multi-paradigm, interpreted programming language with 
+powerful intrinsic datatypes and a large library of modules that greatly expand 
+its functionality.  A good way to learn the language is through the extensive 
+Documentation provided on the python.org website. If you have never worked with 
+Python before, be sure to go through the Tutorial. To learn more about the 
+intrinsic data types and standard libraries look at Library Reference.
+A very short introduction to Python is in Appendix \ref{app:python_basics}.
+\begin{center}
+  \begin{tabular}{|l|l|}
+    \hline
+    Documentation      & \url{http://docs.python.org/2/}\\ \hline
+    Tutorial           & \url{http://docs.python.org/2/tutorial/index.html}\\ \hline
+    Library Reference  & \url{http://docs.python.org/2/library/index.html}\\ \hline
+  \end{tabular}
+\end{center}
+
+\subsection{NumPy}
+Other than the Python Standard Library, the main library/module Nexus 
+makes heavy use of is NumPy.  NumPy provides a convenient and fairly 
+fast implementation of multi-dimensional arrays and related functions, much like 
+MATLAB.  If you want to learn about NumPy arrays, the NumPy 
+Tutorial is recommended.  For more detailed information, see the NumPy User Guide 
+and the NumPy Reference Manual. If MATLAB is one of your native languages, check out 
+NumPy for MATLAB Users.
+\begin{center}
+  \begin{tabular}{|l|l|}
+    \hline
+    Tutorial   & \url{http://www.scipy.org/Tentative_NumPy_Tutorial}\\ \hline
+    User Guide & \url{http://docs.scipy.org/doc/numpy/user/index.html#user}\\ \hline
+    Reference  & \url{http://docs.scipy.org/doc/numpy/reference/}\\ \hline
+    MATLAB     & \url{http://www.scipy.org/NumPy_for_Matlab_Users}\\ \hline
+ \end{tabular}
+\end{center}
+
+\subsection{Matplotlib}
+Plotting in Nexus is currently handled by Matplotlib.  If you want 
+to learn more about plotting with Matplotlib, the Pyplot Tutorial is a good place 
+to start.  More detailed information is in the User's Guide.  Sometimes Examples 
+provide the fastest way to learn.
+\begin{center}
+  \begin{tabular}{|l|l|}
+    \hline
+    Tutorial     & \url{http://matplotlib.org/users/pyplot_tutorial.html}\\ \hline
+    User's Guide & \url{http://matplotlib.org/users/index.html}\\ \hline
+    Examples     & \url{http://matplotlib.org/examples/} \\ \hline
+  \end{tabular}
+\end{center}
+
+\subsection{Scipy and H5Py}
+Nexus also occasionally uses functionality from SciPy and H5Py.  
+Learning more about them is unlikely to help you interact with Nexus.  
+However, they are quite valuable on their own.  SciPy provides access to 
+special functions, numerical integration, optimization, interpolation, fourier 
+transforms, eigenvalue solvers, and statistical analysis.  To get an overview, 
+try the SciPy Tutorial.  More detailed material is found in the Scipy Reference.
+H5Py provides a NumPy-like interface to HDF5 data files, which QMCPACK creates.  
+To learn more about interacting with HDF5 files through H5Py, try the Quick Start 
+Guide.  For more information, see the General Documentation.
+\begin{center}
+  \begin{tabular}{|l|l|}
+    \hline
+    SciPy Tutorial    & \url{http://docs.scipy.org/doc/scipy/reference/tutorial/index.html}\\ \hline
+    SciPy Reference   & \url{http://docs.scipy.org/doc/scipy/reference/}\\ \hline
+    H5Py Quick Guide  & \url{http://www.h5py.org/docs/intro/quick.html#quick}\\ \hline
+    H5Py General Docs & \url{http://www.h5py.org/docs/}\\ \hline
+  \end{tabular}
+\end{center}
+
+
+
+\section{Quantum Monte Carlo: Theory and Practice}\label{sec:learn_qmc}
+Currently, review articles may be the best way to get an overview of Quantum 
+Monte Carlo methods and practices.  The review article by Foulkes, \emph{et al.} 
+from 2001 remains quite relevant and is lucidly written.  Other review articles 
+also provide a broader perspective on QMC, including more recent developments. 
+Another resource that can be useful for newcomers (and needs to be updated) 
+is the QMC Wiki.
+If you are aware of resources that fill a gap in the information presented 
+here (almost a certainty), please contact the developer at krogeljt@ornl.gov 
+to add your contribution.
+\begin{center}
+  \begin{tabular}{|l|l|}
+    \hline
+    \multicolumn{2}{|c|}{QMC Review Articles} \\ \hline
+    Foulkes,  2001  &  \url{http://rmp.aps.org/abstract/RMP/v73/i1/p33_1}  \\ \hline
+    Bajdich,  2009  &  \url{http://www.physics.sk/aps/pub.php?y=2009&pub=aps-09-02}  \\ \hline
+    Needs,    2010  &  \url{http://iopscience.iop.org/0953-8984/22/2/023201/}  \\ \hline
+    Kolorenc, 2011  &  \url{http://iopscience.iop.org/0034-4885/74/2/026502/}  \\ \hline
+
+    \multicolumn{2}{|c|}{Online Resources} \\ \hline
+    QMCWiki                &  \url{www.qmcwiki.org} \\ \hline
+    QMC Summer School 2012 & \url{http://www.mcc.uiuc.edu/summerschool/2012/program.html} \\ \hline
+  \end{tabular}
+\end{center}
+
+
+
+
+\appendix
+
+
+\chapter{Basic Python constructs\label{app:python_basics}}
+Basic Python data types (\texttt{int}, \texttt{float}, \texttt{str}, \texttt{tuple}, \texttt{list}, \texttt{array}, \texttt{dict}, \texttt{obj}) and programming constructs (\texttt{if} statements, \texttt{for} loops, functions w/ keyword arguments) are briefly overviewed below.  All examples can be executed interactively in Python.  To do this, type ``\texttt{python}'' at the command line and paste any of the shaded text below at the ``\texttt{>>>}'' prompt.  For more information about effective use of Python, consult the detailed online documentation: \href{https://docs.python.org/2/}{https://docs.python.org/2/}.
+
+\section{Intrinsic types: \texttt{int, float, str}}
+\begin{shaded}
+\begin{verbatim}
+#this is a comment
+i=5                     # integer
+f=3.6                   # float
+s='quantum/monte/carlo' # string
+n=None                  # represents "nothing"
+
+f+=1.4                  # add-assign (-,*,/ also): 5.0
+2**3                    # raise to a power: 8
+str(i)                  # int to string: '5'
+s+'/simulations'        # joining strings: 'quantum/monte/carlo/simulations'
+'i={0}'.format(i)       # format string: 'i=5'
+
+\end{verbatim}
+\end{shaded}
+
+ 
+\section{Container types: \texttt{tuple, list, array, dict, obj}}
+\begin{shaded}
+\begin{verbatim}
+from numpy import array  # get array from numpy module
+from generic import obj  # get obj from generic module
+
+t=('A',42,56,123.0)     # tuple
+
+l=['B',3.14,196]        # list
+
+a=array([1,2,3])        # array
+
+d={'a':5,'b':6}         # dict
+
+o=obj(a=5,b=6)          # obj
+
+                        # printing
+print t                 #  ('A', 42, 56, 123.0)
+print l                 #  ['B', 3.1400000000000001, 196]
+print a                 #  [1 2 3]
+print d                 #  {'a': 5, 'b': 6}
+print o                 #    a               = 5
+                        #    b               = 6
+
+len(t),len(l),len(a),len(d),len(o) #number of elements: (4, 3, 3, 2, 2)
+
+t[0],l[0],a[0],d['a'],o.a  #element access: ('A', 'B', 1, 5, 5)
+
+s = array([0,1,2,3,4])  # slices: works for tuple, list, array
+s[:]                    #   array([0, 1, 2, 3, 4])
+s[2:]                   #   array([2, 3, 4])
+s[:2]                   #   array([0, 1])
+s[1:4]                  #   array([1, 2, 3])
+s[0:5:2]                #   array([0, 2, 4])
+
+                        # list operations
+l2 = list(l)            #   make independent copy
+l.append(4)             #   add new element: ['B', 3.14, 196, 4]
+l+[5,6,7]               #   addition: ['B', 3.14, 196, 4, 5, 6, 7]
+3*[0,1]                 #   multiplication:  [0, 1, 0, 1, 0, 1]
+
+b=array([5,6,7])        # array operations
+a2 = a.copy()           #   make independent copy
+a+b                     #   addition: array([ 6, 8, 10])
+a+3                     #   addition: array([ 4, 5, 6])
+a*b                     #   multiplication: array([ 5, 12, 21])
+3*a                     #   multiplication: array([3, 6, 9])
+
+                        # dict/obj operations
+d2 = d.copy()           #   make independent copy
+d['c'] = 7              #   add/assign element 
+d.keys()                #   get element names: ['a', 'c', 'b']
+d.values()              #   get element values: [5, 7, 6]
+
+                        # obj-specific operations
+o.c = 7                 #   add/assign element
+o.set(c=7,d=8)          #   add/assign multiple elements
+
+\end{verbatim}
+\end{shaded}
+An important feature of Python to be aware of is that assignment is most often by reference, \emph{i.e.} new values are not always created.  This point is illustrated below with an \texttt{obj} instance, but it also holds for \texttt{list}, \texttt{array}, \texttt{dict}, and others.
+\begin{shaded}
+\begin{verbatim}
+>>> o = obj(a=5,b=6)
+>>> 
+>>> p=o
+>>> 
+>>> p.a=7
+>>> 
+>>> print o
+  a               = 7
+  b               = 6
+
+>>> q=o.copy()
+>>> 
+>>> q.a=9
+>>> 
+>>> print o
+  a               = 7
+  b               = 6
+\end{verbatim}
+\end{shaded}
+\noindent
+Here \texttt{p} is just another name for \texttt{o}, while \texttt{q} is a fully independent copy of it.
+
+
+\section{Conditional Statements: \texttt{if/elif/else}}
+\begin{shaded}
+\begin{verbatim}
+a = 5
+if a is None:
+    print 'a is None'
+elif a==4:
+    print 'a is 4'
+elif a<=6 and a>2:
+    print 'a is in the range (2,6]'
+elif a<-1 or a>26:
+    print 'a is not in the range [-1,26]'
+elif a!=10: 
+    print 'a is not 10'
+else:
+    print 'a is 10'
+#end if
+
+\end{verbatim}
+\end{shaded}
+The ``\texttt{\#end if}'' is not part of Python syntax, but you will see text like this throughout the Project Suite for clear encapsulation.
+
+\section{Iteration: \texttt{for}}
+\begin{shaded}
+\begin{verbatim}
+from generic import obj
+
+l = [1,2,3]              
+m = [4,5,6]
+s = 0
+for i in range(len(l)):  # loop over list indices
+    s += l[i] + m[i]
+#end for
+
+print s                  # s is 21
+
+s = 0                    
+for v in l:              # loop over list elements
+    s += v
+#end for
+
+print s                  # s is 6
+
+o = obj(a=5,b=6)
+s = 0
+for v in o:              # loop over obj elements
+    s += v
+#end for
+
+print s                  # s is 11
+
+d = {'a':5,'b':4}
+for n,v in o.iteritems():# loop over name/value pairs in obj
+    d[n] += v
+#end for
+
+print d                  # d is {'a': 10, 'b': 10}
+
+\end{verbatim}
+\end{shaded}
+
+
+\section{Functions: \texttt{def}, argument syntax}
+\begin{shaded}
+\begin{verbatim}
+def f(a,b,c=5):          # basic function, c has a default value
+    print a,b,c
+#end def f
+
+f(1,b=2)                 # prints: 1 2 5
+
+
+def f(*args,**kwargs):   # general function, returns nothing
+    print args           #     args: tuple of positional arguments
+    print kwargs         #   kwargs: dict of keyword arguments
+#end def f
+
+f('s',(1,2),a=3,b='t')   # 2 pos., 2 kw. args, prints:
+                         #   ('s', (1, 2))
+                         #   {'a': 3, 'b': 't'}
+
+l = [0,1,2]
+f(*l,a=6)                # pos. args from list, 1 kw. arg, prints:
+                         #   (0, 1, 2)
+                         #   {'a': 6}
+o = obj(a=5,b=6)
+f(*l,**o)                # pos./kw. args from list/obj, prints:
+                         #   (0, 1, 2)
+                         #   {'a': 5, 'b': 6}
+
+f(                       # indented kw. args, prints
+    blocks   = 200,      #   () 
+    steps    = 10,       #   {'steps': 10, 'blocks': 200, 'timestep': 0.01}
+    timestep = 0.01
+    )
+
+o = obj(                 # obj w/ indented kw. args
+    blocks   = 100,
+    steps    =  5,
+    timestep = 0.02
+    )
+
+f(**o)                   # kw. args from obj, prints:
+                         #   ()
+                         #   {'timestep': 0.02, 'blocks': 100, 'steps': 5}
+\end{verbatim}
+\end{shaded}
+
+
+
+
+
+\pagebreak
+\chapter{QMC Practice in a Nutshell}\label{app:theory}
 The aim of this section is to provide a very brief overview of the 
 essential concepts undergirding Quantum Monte Carlo calculations 
 of electronic structure with a particular focus on the key 
 approximations and quantities to converge to achieve high
 accuracy.  The discussion here is not intended to be comprehensive. 
 For deeper perspectives on QMC, please see the review articles 
-listed in the ``Recommended Reading'' section (\ref{learn_qmc}).
+listed in the ``Recommended Reading'' section (\ref{sec:learn_qmc}).
 
 
 \section{VMC and DMC in the abstract}
@@ -1729,154 +3023,11 @@ available within QMCPACK.
 
 
 
-\pagebreak
-\chapter{Recommended Reading} \label{reading}
-The sections below contain information, or at least links to information, 
-that should be helpful for anyone who wants to use Nexus, but who 
-is not an expert in one of the following areas: installing python and related 
-modules, installing PWSCF and QMCPACK, the Python programming language, and 
-the theory and practice of Quantum Monte Carlo.  
-
-
-\section{Helpful Links for Installing Python Modules} \label{install_python}
-\begin{description}
-  \item[Python itself] \hfill \\
-    Download: \url{http://www.python.org/download/}\\  
-    Be sure to get Python 2.x, not 3.x.
-  \item[Numpy and Scipy] \hfill \\
-    Download and installation: \url{http://www.scipy.org/Installing_SciPy}.
-  \item[Matplotlib] \hfill \\
-    Download: \url{http://matplotlib.org/downloads.html}\\
-    Installation: \url{http://matplotlib.org/users/installing.html}
-  \item[H5py] \hfill \\
-    Download and installation: \url{http://www.h5py.org/}
-\end{description}
-
-
-\section{Helpful Links for Installing Electronic Structure Codes} \label{install_code}
-\subsection{PWSCF: pw.x, pw2qmcpack.x, pw2casino.x}
-  \subsubsection{Publicly available version}
-  Download: svn co http://qmctools.googlecode.com/svn/dft/espresso-4.2 \\
-  See also: \url{http://qmcpack.cmscc.org/}\\
-  \subsubsection{Developer's version:} 
-  Download: svn co https://subversion.assembla.com/svn/qmcdev/qe4.3.2 \\
-  (QE 5.0 is not currently supported in Nexus)\\
-  Installation instructions: See section 2 of the User Guide (user\_guide.pdf) 
-  found in the Doc directory of the distribution.
-
-\subsection{Wfconvert: wfconvert}
-  Download: svn co http://qmctools.googlecode.com/svn/trunk/wfconvert \\
-  See also: \url{http://qmcpack.cmscc.org/}
-\subsection{QMCPACK: sqd, qmcapp, qmcapp\_complex}
-  Install: \url{http://users.nccs.gov/~jnkim/qmcpack/ug/a00001.html}\\
-  See also: \url{http://qmcpack.cmscc.org/getting-started}
-
-
-\section{Brushing Up On Python}\label{learn_python}
-\subsection{Python}
-Python is a flexible, multi-paradigm, interpreted programming language with 
-powerful intrinsic datatypes and a large library of modules that greatly expand 
-its functionality.  A good way to learn the language is through the extensive 
-Documentation provided on the python.org website. If you have never worked with 
-Python before, be sure to go through the Tutorial. To learn more about the 
-intrinsic data types and standard libraries look at Library Reference.
-\begin{center}
-  \begin{tabular}{|l|l|}
-    \hline
-    Documentation      & \url{http://docs.python.org/2/}\\ \hline
-    Tutorial           & \url{http://docs.python.org/2/tutorial/index.html}\\ \hline
-    Library Reference  & \url{http://docs.python.org/2/library/index.html}\\ \hline
-  \end{tabular}
-\end{center}
-
-\subsection{NumPy}
-Other than the Python Standard Library, the main library/module Nexus 
-makes heavy use of is NumPy.  NumPy provides a convenient and fairly 
-fast implementation of multi-dimensional arrays and related functions, much like 
-MATLAB.  If you want to learn about NumPy arrays, the NumPy 
-Tutorial is recommended.  For more detailed information, see the NumPy User Guide 
-and the NumPy Reference Manual. If MATLAB is one of your native languages, check out 
-NumPy for MATLAB Users.
-\begin{center}
-  \begin{tabular}{|l|l|}
-    \hline
-    Tutorial   & \url{http://www.scipy.org/Tentative_NumPy_Tutorial}\\ \hline
-    User Guide & \url{http://docs.scipy.org/doc/numpy/user/index.html#user}\\ \hline
-    Reference  & \url{http://docs.scipy.org/doc/numpy/reference/}\\ \hline
-    MATLAB     & \url{http://www.scipy.org/NumPy_for_Matlab_Users}\\ \hline
- \end{tabular}
-\end{center}
-
-\subsection{Matplotlib}
-Plotting in Nexus is currently handled by Matplotlib.  If you want 
-to learn more about plotting with Matplotlib, the Pyplot Tutorial is a good place 
-to start.  More detailed information is in the User's Guide.  Sometimes Examples 
-provide the fastest way to learn.
-\begin{center}
-  \begin{tabular}{|l|l|}
-    \hline
-    Tutorial     & \url{http://matplotlib.org/users/pyplot_tutorial.html}\\ \hline
-    User's Guide & \url{http://matplotlib.org/users/index.html}\\ \hline
-    Examples     & \url{http://matplotlib.org/examples/} \\ \hline
-  \end{tabular}
-\end{center}
-
-\subsection{Scipy and H5Py}
-Nexus also occasionally uses functionality from SciPy and H5Py.  
-Learning more about them is unlikely to help you interact with Nexus.  
-However, they are quite valuable on their own.  SciPy provides access to 
-special functions, numerical integration, optimization, interpolation, fourier 
-transforms, eigenvalue solvers, and statistical analysis.  To get an overview, 
-try the SciPy Tutorial.  More detailed material is found in the Scipy Reference.
-H5Py provides a NumPy-like interface to HDF5 data files, which QMCPACK creates.  
-To learn more about interacting with HDF5 files through H5Py, try the Quick Start 
-Guide.  For more information, see the General Documentation.
-\begin{center}
-  \begin{tabular}{|l|l|}
-    \hline
-    SciPy Tutorial    & \url{http://docs.scipy.org/doc/scipy/reference/tutorial/index.html}\\ \hline
-    SciPy Reference   & \url{http://docs.scipy.org/doc/scipy/reference/}\\ \hline
-    H5Py Quick Guide  & \url{http://www.h5py.org/docs/intro/quick.html#quick}\\ \hline
-    H5Py General Docs & \url{http://www.h5py.org/docs/}\\ \hline
-  \end{tabular}
-\end{center}
-
-
-
-\section{Quantum Monte Carlo: Theory and Practice}\label{learn_qmc}
-Currently, review articles may be the best way to get an overview of Quantum 
-Monte Carlo methods and practices.  The review article by Foulkes, \emph{et al.} 
-from 2001 remains quite relevant and is lucidly written.  Other review articles 
-also provide a broader perspective on QMC, including more recent developments. 
-Another resource that can be useful for newcomers (and needs to be updated) 
-is the QMC Wiki.
-If you are aware of resources that fill a gap in the information presented 
-here (almost a certainty), please contact the developer at krogeljt@ornl.gov 
-to add your contribution.
-\begin{center}
-  \begin{tabular}{|l|l|}
-    \hline
-    \multicolumn{2}{|c|}{QMC Review Articles} \\ \hline
-    Foulkes,  2001  &  \url{http://rmp.aps.org/abstract/RMP/v73/i1/p33_1}  \\ \hline
-    Bajdich,  2009  &  \url{http://www.physics.sk/aps/pub.php?y=2009&pub=aps-09-02}  \\ \hline
-    Needs,    2010  &  \url{http://iopscience.iop.org/0953-8984/22/2/023201/}  \\ \hline
-    Kolorenc, 2011  &  \url{http://iopscience.iop.org/0034-4885/74/2/026502/}  \\ \hline
-
-    \multicolumn{2}{|c|}{Online Resources} \\ \hline
-    QMCWiki                &  \url{www.qmcwiki.org} \\ \hline
-    QMC Summer School 2012 & \url{http://www.mcc.uiuc.edu/summerschool/2012/program.html} \\ \hline
-  \end{tabular}
-\end{center}
-
-
-
-
-
 
 \backmatter
 
 
-\printindex
+%\printindex
 
 
 \end{document}

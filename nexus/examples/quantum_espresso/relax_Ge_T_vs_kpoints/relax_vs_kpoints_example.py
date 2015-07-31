@@ -3,16 +3,16 @@
 from nexus import settings
 from nexus import Structure,PhysicalSystem
 from nexus import generate_pwscf,Job
-from nexus import ProjectManager
+from nexus import run_project
 
 
 
 # set global parameters of nexus
 settings(
-    pseudo_dir    = './pseudopotentials', # directory with pseudopotentials
+    pseudo_dir    = '../pseudopotentials',# directory with pseudopotentials
     generate_only = 0,                    # only generate input files, T/F
     status_only   = 0,                    # only show run status, T/F
-    machine       = 'node16'              # local machine is 16 core workstation
+    machine       = 'ws16'                # local machine is 16 core workstation
     )
 
 
@@ -70,11 +70,7 @@ for kgrid in supercell_kgrids:          # loop over supercell kgrids
 
 
 # perform the simulations
-pm = ProjectManager()                 # start the project manager  
-
-pm.add_simulations(relaxations)       # give it the relax calculations
-
-pm.run_project()                      # run all the jobs
+run_project(relaxations)
 
 
 
