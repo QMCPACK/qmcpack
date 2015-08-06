@@ -9,16 +9,12 @@ Test of the bibliography\cite{CeperleyAlderPRL1980}.
 If you are keen to get started this section describes how to quickly
 build and run QMCPACK on standard UNIX or Linux-like system. The
 autoconfiguring build system often works directly on these
-systems. For supercomputers, cross-compilation systems, and other computer
-clusters the build system often requires hints on the locations of
+systems. For a standard
+Linux system where C++, MPI, BLAS/LAPACK, FFTW, HDF5, and CMake are already installed,
+QMCPACK can be built and run within five minutes. For supercomputers, cross-compilation systems, and other computer
+clusters the build system may require hints on the locations of
 libraries and which versions to use,  see Chapter
 \ref{chap:obtaininginstalling}.
-
-For a standard
-Linux system where C++, MPI, BLAS/LAPACK, FFTW, HDF5, and CMake are already installed,
-QMCPACK can often be built and run within five minutes. However, if
-you are not used to building and installing software packages please
-follow the instructions in Chapter \ref{chap:obtaininginstalling} directly.
 
 To build QMCPACK:
 
@@ -47,19 +43,20 @@ of a water molecule:
 \item Go to the appropriate example directory: \texttt{cd
     ../examples/molecules}
 \item (Optional) Put the QMCPACK binary on your path:\\ \texttt{export PATH=\$PATH:location-of-qmcpack/build/bin}
-\item Run QMCPACK: \texttt{../../build/bin/qmcapp simple-H2O.xml}
+\item Run QMCPACK: \texttt{../../build/bin/qmcapp simple-H2O.xml} or
+  \texttt{qmcapp simple-H2O.xml} if you followed the step above.
 \item The run will output to the screen and generate a number of files:
 \begin{verbatim}
 $ls H2O*
-H2O.HF.wfs.xml        H2O.s001.scalar.dat   H2O.s002.cont.xml     H2O.s002.qmc.xml      H2O.s002.stat.h5
-H2O.s001.qmc.xml      H2O.s001.stat.h5      H2O.s002.dmc.dat      H2O.s002.scalar.dat
+H2O.HF.wfs.xml      H2O.s001.scalar.dat H2O.s002.cont.xml   H2O.s002.qmc.xml    H2O.s002.stat.h5
+H2O.s001.qmc.xml    H2O.s001.stat.h5    H2O.s002.dmc.dat    H2O.s002.scalar.dat
 \end{verbatim}
 \item The results are in files with suffixes scalar.dat and dmc.dat . They are viewable with any standard editor.
 \end{enumerate}
 
 If you have python with matplotlib installed, you can use the
 \texttt{qmca} analysis utility to produce statistics and plots of the
-data. See Chapter\ref{chap:analysing} for information on analysing
+data. See Chapter \ref{chap:analysing} for information on analysing
 QMCPACK data.
 \begin{verbatim}
 export PATH=$PATH:location-of-qmcpack/nexus/executables 
@@ -85,9 +82,9 @@ Congratulations, you have completed a DMC calculation with QMCPACK!
 
 \section{Authors and History}
 \label{sec:history}
-QMCPACK was initial written by Jeongnim Kim while in the group of
+QMCPACK was initially written by Jeongnim Kim while in the group of
 Prof. David Ceperley at the University of Illinois at
-Urbana-Champaign. Over the years, many others have contributed, particularly
+Urbana-Champaign, with later contributations at Oak Ridge National Laboratory. Over the years, many others have contributed, particularly
 students and researchers in the groups of Prof. David Ceperley
 and Prof. Richard M. Martin, as well as staff at Lawrence Livermore
 National Laboratory, Sandia National Laboratories, Argonne National
@@ -96,15 +93,14 @@ Laboratory, and Oak Ridge National Laboratory.
 The primary and original author of the code is Jeongnim
 Kim. Developers, contributors, and advisors include:
 
-Jeongnim Kim
-
-Ken Esler
-Anouar Benali
-Jaron T. Krogel
-Jeremy McMinis
-Miguel Morales
-Luke Shulenburger
-David M. Ceperley
+Anouar Benali,  
+David M. Ceperley, 
+Ken Esler,
+Jaron T. Krogel,
+Jeremy McMinis,
+Miguel Morales,
+Luke Shulenburger,
+Jordan E. Vincent,
 \ldots
 
 Please let us know if you wish to be listed!
