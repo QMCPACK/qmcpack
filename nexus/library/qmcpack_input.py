@@ -1692,7 +1692,7 @@ class mcwalkerset(QIxml):
 #end class mcwalkerset
 
 class qmcsystem(QIxml):
-    attributes = ['dim','wavefunction','hamiltonian']
+    attributes = ['dim'] #,'wavefunction','hamiltonian']  # breaks QmcpackInput
     elements = ['simulationcell','particleset','wavefunction','hamiltonian','random','init','mcwalkerset']
 #end class qmcsystem
 
@@ -2426,7 +2426,7 @@ types = dict( #simple types and factories
 plurals = obj(
     particlesets    = 'particleset',
     groups          = 'group',    
-    hamiltonians    = 'hamiltonian',
+    hamiltonians    = 'hamiltonian', 
     pairpots        = 'pairpot',
     pseudos         = 'pseudo',
     estimators      = 'estimator',
@@ -2444,14 +2444,14 @@ plurals = obj(
     sposet_builders = 'sposet_builder',
     sposets         = 'sposet',
     radfuncs        = 'radfunc',
-    qmcsystems      = 'qmcsystem',
+    #qmcsystems      = 'qmcsystem',  # not a good idea
     atomicbasissets = 'atomicbasisset',
     cis             = 'ci',
     csfs            = 'csf',
     dets            = 'det',
     observables     = 'observable',
     optimizes       = 'optimize',
-    coefficientss   = 'coefficients',
+    #coefficientss   = 'coefficients', # bad plurality of qmcpack
     constants       = 'constant',
     mcwalkersets    = 'mcwalkerset',
     transformations = 'transformation',
