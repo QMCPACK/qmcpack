@@ -395,7 +395,7 @@ evaluateHybridSplineReal (HybridJobType *job_types,
   {
     evaluateHybridSplineReal_kernel<float,BS,8><<<dimGrid,dimBlock>>>
     (job_types, Ylm_real, orbitals, data, k_reduced, vals, N);
-    evaluateHybridPolyReal_kernel<float,BS,9><<<dimGrid,dimBlock>>>
+    evaluateHybridPolyReal_kernel<float,BS,8><<<dimGrid,dimBlock>>>
     (job_types, Ylm_real, orbitals, data, k_reduced, vals, N);
   }
   else if (lMax == 9)
