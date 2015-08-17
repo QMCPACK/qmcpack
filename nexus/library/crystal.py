@@ -6,6 +6,7 @@
 from generic import obj
 from periodic_table import pt as ptable
 from pseudopotential import GaussianPP
+from developer import error
 
 
 molecule_symm_text = '''
@@ -140,13 +141,29 @@ def write_basis(pseudos,occupations,formats):
 #end def write_basis
 
 
-def write_hamiltonian(theory):
+def write_hamiltonian(theory          = None,
+                      system          = None,
+                      spinlock_cycles = 100,
+                      levshift        = None,
+                      levshift_lock   = 1,
+                      maxcycle        = None,
+                      ):
     s = ''
-    theory = theory.lower()
-    if theory=='uhf':
+    theory = theory.lower().strip()
+    known_theories = set(['rhf','uhf'])
+    if theory in known_theories:
         s+=theory.upper()+'\n'
     else:
-        error('unknown theory: '+theory)
+        error('unknown theory: '+theory,'write_hamiltonian')
+    #end if
+    if system!=None:
+        s+='SPINLOCK\n{0} {1}\n'.format(system.net_spin,spinlock_cycles)
+    #end if
+    if levshift!=None:
+        s+='LEVSHIFT\n{0} {1}\n'.format(levshift,levshift_lock)
+    #end if
+    if maxcycle!=None:
+        s+='MAXCYCLE\n{0}\n'.format(maxcycle)
     #end if
     s += 'END\n'
     return s

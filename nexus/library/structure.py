@@ -33,7 +33,7 @@ from numpy.linalg import inv,det,norm
 from types import NoneType
 from unit_converter import convert
 from extended_numpy import nearest_neighbors,convex_hull,voronoi_neighbors
-from periodic_table import pt
+from periodic_table import pt,is_element
 from generic import obj
 from developer import DevBase,unavailable,error,warn
 from debug import ci,ls,gs
@@ -1171,6 +1171,21 @@ class Structure(Sobj):
         self.pos  = array(plist)
         self.remove_folded_structure()
     #end def point_defect
+
+
+    def species(self,symbol=False):
+        if not symbol:
+            return set(self.elem)
+        else:
+            species_labels = set(self.elem)
+            species = set()
+            for e in species_labels:
+                is_elem,symbol = is_element(e,symbol=True)
+                species.add(symbol)
+            #end for
+            return species_labels,species
+        #end if
+    #end def species
 
 
     def order_by_species(self,folded=False):

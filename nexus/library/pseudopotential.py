@@ -42,10 +42,10 @@
 import os
 from subprocess import Popen
 from execute import execute
-from numpy import linspace,array,zeros,append,mgrid,empty,exp,minimum,maximum,sqrt
+from numpy import linspace,array,zeros,append,mgrid,empty,exp,minimum,maximum,sqrt,arange
 from xmlreader import readxml
 from superstring import string2val,split_delims
-from periodic_table import pt
+from periodic_table import pt,is_element
 from unit_converter import convert
 from generic import obj
 from developer import DevBase,unavailable,error
@@ -71,13 +71,21 @@ except:
 # basic interface for nexus, only gamess really needs this for now
 class PseudoFile(DevBase):
     def __init__(self,filepath=None):
-        self.element  = None
-        self.filename = None
-        self.location = None
+        self.element       = None
+        self.element_label = None
+        self.filename      = None
+        self.location      = None
         if filepath!=None:
             self.filename = os.path.basename(filepath)
             self.location = os.path.abspath(filepath)
-            self.element  = self.filename[0:2].strip('._-')
+            elem_label = self.filename.split('.')[0]
+            is_elem,symbol = is_element(elem_label,symbol=True)
+            if not is_elem:
+                self.error('cannot determine element for pseudopotential file: {0}\npseudopotential file names must be prefixed by an atomic symbol or label\n(e.g. Si, Si1, etc)'.format(filename))
+            #end if
+            self.element = symbol
+            self.element_label = elem_label
+            #self.element  = self.filename[0:2].strip('._-')
             self.read(filepath)
         #end if
     #end def __init__
@@ -210,7 +218,7 @@ class Pseudopotentials(DevBase):
         for ppfile in ppfiles:
             if ppfile in self:
                 pp = self[ppfile]
-                pps[pp.element] = pp
+                pps[pp.element_label] = pp
             #end if
         #end for
         return pps
@@ -1129,18 +1137,184 @@ class GaussianBasisSet(DevBase):
     #end def contracted_basis_size
 
 
-    def basis_size(self):
+    def uncontracted_basis_size(self):
+        if self.uncontracted():
+            return self.contracted_basis_size()
+        #end if
         uc = self.copy()
         uc.uncontract()
-        bs = self.contracted_basis_size()
-        ps = uc.contracted_basis_size()
-        return '({0})/[{1}]'.format(ps,bs)
+        return uc.contracted_basis_size()
+    #end def uncontracted_basis_size
+
+
+    def basis_size(self):
+        us = self.uncontracted_basis_size()
+        cs = self.contracted_basis_size()
+        return '({0})/[{1}]'.format(us,cs)
     #end def basis_size
 
 
-    def incorporate(self,other):
-        lbasis       = self.lbasis()
-        lbasis_other = other.lbasis()
+    def prim_expons(self):
+        if self.contracted():
+            self.error('cannot find primitive gaussian expons because basis is contracted')
+        #end if
+        lbasis = self.lbasis()
+        gexpon = obj()
+        for l,lbas in lbasis.iteritems():
+            e = []
+            for n in range(len(lbas)):
+                e.append(lbas[n].terms[0].expon)
+            #end for
+            gexpon[l] = array(e,dtype=float)
+        #end for
+        return gexpon
+    #end def prim_expons
+
+
+    def prim_widths(self):
+        if self.contracted():
+            self.error('cannot find primitive gaussian widths because basis is contracted')
+        #end if
+        lbasis = self.lbasis()
+        gwidth = obj()
+        for l,lbas in lbasis.iteritems():
+            w = []
+            for n in range(len(lbas)):
+                w.append(1./sqrt(2.*lbas[n].terms[0].expon))
+            #end for
+            gwidth[l] = array(w,dtype=float)
+        #end for
+        return gwidth
+    #end def prim_widths
+
+    
+    def remove_prims(self,comp=None,keep=None,**lselectors):
+        lbasis = self.lbasis()
+        if comp!=None:
+            gwidths = self.prim_widths()
+        #end if
+        for l,lsel in lselectors.iteritems():
+            if l not in lbasis:
+                self.error('cannot remove basis functions from channel {0}, channel not present'.format(l))
+            #end if
+            lbas = lbasis[l]
+            if isinstance(lsel,float):
+                rcut = lsel
+                less = False
+                if comp=='<':
+                    less = True
+                elif comp=='>':
+                    less = False
+                elif comp is None:
+                    self.error('comp argument must be provided (< or >)')
+                else:
+                    self.error('comp must be < or >, you provided: {0}'.format(comp))
+                #end if
+                gw = gwidths[l]
+                iw = arange(len(gw))
+                nkeep = 0
+                if keep!=None and l in keep:
+                    nkeep = keep[l]
+                #end if
+                if less:
+                    rem = iw[gw<rcut]
+                    for i in xrange(len(rem)-nkeep):
+                        del lbas[rem[i]]
+                    #end for
+                else:
+                    rem = iw[gw>rcut]
+                    for i in xrange(nkeep,len(rem)):
+                        del lbas[rem[i]]
+                    #end for
+                #end if
+            elif isinstance(lsel,int):                
+                if comp=='<':
+                    if lsel>len(lbas):
+                        self.error('cannot remove {0} basis functions from channel {1} as it only has {2}'.format(lsel,l,len(lbas)))
+                    #end if
+                    for i in xrange(lsel):
+                        del lbas[i]
+                    #end for
+                elif comp=='>':
+                    if lsel>len(lbas):
+                        self.error('cannot remove {0} basis functions from channel {1} as it only has {2}'.format(lsel,l,len(lbas)))
+                    #end if
+                    for i in xrange(len(lbas)-lsel,len(lbas)):
+                        del lbas[i]
+                    #end for
+                else:
+                    if lsel>=len(lbas):
+                        self.error('cannot remove basis function {0} from channel {1} as it only has {2}'.format(lsel,l,len(lbas)))
+                    #end if
+                    del lbas[lsel]
+                #end if
+            else:
+                for ind in lsel:
+                    del lbas[ind]
+                #end for
+            #end if
+        #end for
+        self.basis.clear()
+        for l in self.lset_full:
+            if l in lbasis:
+                lbas = lbasis[l]
+                for k in sorted(lbas.keys()):
+                    self.basis.append(lbas[k])
+                #end for
+            #end if
+        #end for
+    #end def remove_prims
+
+
+    def remove_small_prims(self,**keep):
+        lsel = obj()
+        for l,lbas in self.lbasis().iteritems():
+            if l in keep:
+                lsel[l] = len(lbas)-keep[l]
+            #end if
+        #end for
+        self.remove_prims(comp='<',**lsel)
+    #end def remove_small_prims
+
+
+    def remove_large_prims(self,**keep):
+        lsel = obj()
+        for l,lbas in self.lbasis().iteritems():
+            if l in keep:
+                lsel[l] = len(lbas)-keep[l]
+            #end if
+        #end for
+        self.remove_prims(comp='>',**lsel)
+    #end def remove_large_prims
+
+
+    def remove_small_prims_rel(self,other,**keep):
+        gwidths = other.prim_widths()
+        lsel = obj()
+        for l,gw in gwidths.iteritems():
+            lsel[l] = gw.min()
+        #end for
+        self.remove_prims(comp='<',keep=keep,**lsel)
+    #end def remove_small_prims_rel
+
+
+    def remove_large_prims_rel(self,other,**keep):
+        gwidths = other.prim_widths()
+        lsel = obj()
+        for l,gw in gwidths.iteritems():
+            lsel[l] = gw.max()
+        #end for
+        self.remove_prims(comp='>',keep=keep,**lsel)
+    #end def remove_large_prims_rel
+
+
+    def remove_channels(self,llist):
+        lbasis = self.lbasis()
+        for l in llist:
+            if l in lbasis:
+                del lbasis[l]
+            #end if
+        #end for
         self.basis.clear()
         for l in self.lset_full:
             if l in lbasis:
@@ -1150,14 +1324,63 @@ class GaussianBasisSet(DevBase):
                     self.basis.append(bf)
                 #end for
             #end if
-            if l in lbasis_other:
-                lbas = lbasis_other[l]
-                for n in range(len(lbas)):
-                    bf = lbas[n]
+        #end for
+    #end def remove_channels
+                
+
+    def incorporate(self,other,tol=1e-3):
+        uncontracted = self.uncontracted() and other.uncontracted()
+        lbasis       = self.lbasis()
+        lbasis_other = other.lbasis()
+        if uncontracted:
+            gwidths       = self.prim_widths()
+            gwidths_other = other.prim_widths()
+        #end if
+        self.basis.clear()
+        if not uncontracted: # simple, direct merge of basis sets
+            for l in self.lset_full:
+                if l in lbasis:
+                    lbas = lbasis[l]
+                    for n in range(len(lbas)):
+                        bf = lbas[n]
+                        self.basis.append(bf)
+                    #end for
+                #end if
+                if l in lbasis_other:
+                    lbas = lbasis_other[l]
+                    for n in range(len(lbas)):
+                        bf = lbas[n]
+                        self.basis.append(bf)
+                    #end for
+                #end if
+            #end for
+        else: # merge uncontracted basis sets preserving order
+            for l in self.lset_full:
+                primitives = []
+                widths     = []
+                orig_widths = array([])
+                if l in lbasis:
+                    primitives.extend(lbasis[l].list())
+                    widths.extend(gwidths[l])
+                    orig_widths = gwidths[l]
+                #end if
+                if l in lbasis_other:
+                    prims = lbasis_other[l].list()
+                    owidths = gwidths_other[l]
+                    for n in range(len(prims)):
+                        w = owidths[n]
+                        if len(orig_widths)==0 or abs(orig_widths-w).min()>tol:
+                            primitives.append(prims[n])
+                            widths.append(w)
+                        #end if
+                    #end if
+                #end if
+                primitives = array(primitives,dtype=object)[array(widths).argsort()]
+                for bf in primitives:
                     self.basis.append(bf)
                 #end for
-            #end if
-        #end for
+            #end for
+        #end if
     #end def incorporate
 
 
@@ -1452,10 +1675,15 @@ class GaussianPP(SemilocalPP):
                 tline += ' {0}'.format(len(cloc))
                 channels.append(cloc)
             #end if
+            ccount = 1
             for c in channel_order[1:]:
                 channel = self.channels[c]
                 tline += ' {0}'.format(len(channel))
                 channels.append(channel)
+                ccount += 1
+            #end for
+            for i in range(6-ccount): # crystal14 goes up to g (hence the 6)
+                tline += ' 0'
             #end for
             text += tline+'\n'
             for channel in channels:
@@ -1480,6 +1708,22 @@ class GaussianPP(SemilocalPP):
         #end if
         return bs
     #end def get_basis
+
+
+    def set_basis(self,bs):
+        self.basis = bs.basis
+    #end def set_basis
+
+
+    def uncontract(self):
+        if self.basis!=None:
+            bs = GaussianBasisSet()
+            bs.basis = self.basis.copy()
+            bs.uncontract()
+            self.basis = bs.basis
+        #end if
+    #end def uncontract
+
 
     def write_basis(self,filepath=None,format=None):
         basis = self.get_basis()

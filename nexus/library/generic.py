@@ -167,8 +167,8 @@ class obj(AllAbilities):
         if header==None:
             header = cls.__name__
         #end if
-        cls.logfile.write(header+post_header+'\n')
-        cls.logfile.write(('\n'+message).replace('\n','\n'+pad)+'\n')
+        cls.logfile.write('\n'+header+post_header+'\n')
+        cls.logfile.write((pad+message).replace('\n','\n'+pad)+'\n')
         if exit:
             cls.logfile.write('  exiting.\n\n')
             if trace:

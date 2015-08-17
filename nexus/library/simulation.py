@@ -69,6 +69,7 @@ import os
 import shutil
 import string
 from generic import obj
+from periodic_table import is_element
 from physical_system import PhysicalSystem
 from machines import Job
 from project_base import Pobj
@@ -232,13 +233,14 @@ class Simulation(Pobj):
                 if not isinstance(system,PhysicalSystem):
                     Simulation.class_error('system object must be of type PhysicalSystem')
                 #end if
+                species_labels,species = system.structure.species(symbol=True)
                 pseudopotentials = Simulation.pseudopotentials
                 for ppfile in pseudos:
                     if not ppfile in pseudopotentials:
                         Simulation.class_error('pseudopotential file {0} cannot be found'.format(ppfile))
                     #end if
                     pp = pseudopotentials[ppfile]
-                    if not pp.element in system.structure.elem:
+                    if not pp.element_label in species_labels and not pp.element in species:
                         Simulation.class_error('the element {0} for pseudopotential file {1} is not in the physical system provided'.format(pp.element,ppfile))
                     #end if
                 #end for

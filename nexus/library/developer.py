@@ -55,7 +55,7 @@ def warn(message,location,header=None,post_header=' Warning:'):
     else:
         header = location+' warning:'
     #end if
-    log(header)
+    log('\n  '+header)
     log(pad+message.replace('\n','\n'+pad))
 #end def warn
 
@@ -67,7 +67,7 @@ def error(message,location=None,exit=True,trace=True):
     else:
         header = location+' error:'
     #end if
-    log(header)
+    log('\n  '+header)
     log(pad+message.replace('\n','\n'+pad))
     if exit:
         log('  exiting.\n')

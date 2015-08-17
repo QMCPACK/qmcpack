@@ -1864,6 +1864,37 @@ class PeriodicTable(DevBase):
 
 pt = PeriodicTable()
 periodic_table = pt
+ptable = pt
+
+
+
+
+def is_element(name,symbol=False):
+    s      = name
+    iselem = False
+    if isinstance(name,str):
+        iselem = name in periodic_table.elements
+        if not iselem:
+            nlen = len(name)
+            if name.find('_')!=-1:
+                s,n = name.split('_',1)
+                #iselem = n.isdigit() and s in periodic_table.elements
+                iselem = s in periodic_table.elements
+            elif nlen>1 and name[1:].isdigit():
+                s = name[0:1]
+                iselem = s in periodic_table.elements
+            elif nlen>2 and name[2:].isdigit():
+                s = name[0:2]
+                iselem = s in periodic_table.elements
+            #end if
+        #end if
+    #end if
+    if symbol:
+        return iselem,s
+    else:
+        return iselem
+    #end if
+#end def is_element
 
 
 
