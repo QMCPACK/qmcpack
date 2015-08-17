@@ -66,15 +66,17 @@ else()
 #    )
 #    SET_PROPERTY( TEST dmc-16-check APPEND PROPERTY DEPENDS dmc-16 )
 
-#   COPY_DIRECTORY("${CMAKE_SOURCE_DIR}/examples/molecules/tests/LiH_dimer_ae" "${CMAKE_CURRENT_BINARY_DIR}/LiH_dimer_ae") 
+#   COPY_DIRECTORY("${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_ae" "${CMAKE_CURRENT_BINARY_DIR}/LiH_dimer_ae") 
 #    SET (USE_EXT_MPI_FOR_SERIAL_TESTS)
+
+IF(NOT QMC_CUDA)
 
 IF (NOT QMC_COMPLEX)
 #
 # LiH molecular dimer gaussian tests, all electron
 # Also check results for different number of mpi tasks and threads keeping total constant
 #
-    RUN_QMC_APP(LiH_dimer_ae-vmc_hf_noj-16-1 "${CMAKE_SOURCE_DIR}/examples/molecules/tests/LiH_dimer_ae" 16 1 vmc_hf_noj.in.xml) 
+    RUN_QMC_APP(LiH_dimer_ae-vmc_hf_noj-16-1 "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_ae" 16 1 vmc_hf_noj.in.xml) 
     ADD_TEST( NAME LiH_dimer_ae-vmc_hf_noj-16-1-kinetic
         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p vmc_hf_noj -e 2 --ke "7.9914014383 0.03"
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/LiH_dimer_ae-vmc_hf_noj-16-1"
@@ -91,21 +93,21 @@ IF (NOT QMC_COMPLEX)
     )
     SET_PROPERTY( TEST LiH_dimer_ae-vmc_hf_noj-16-1-totenergy APPEND PROPERTY DEPENDS LiH_dimer_ae-vmc_hf_noj-16-1 )
     
-    RUN_QMC_APP(LiH_dimer_ae-vmc_hf_noj-4-4 "${CMAKE_SOURCE_DIR}/examples/molecules/tests/LiH_dimer_ae" 4 4 vmc_hf_noj.in.xml) 
+    RUN_QMC_APP(LiH_dimer_ae-vmc_hf_noj-4-4 "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_ae" 4 4 vmc_hf_noj.in.xml) 
     ADD_TEST( NAME LiH_dimer_ae-vmc_hf_noj-4-4-totenergy
         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p vmc_hf_noj -e 2 --le "-7.9873236457 0.003"
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/LiH_dimer_ae-vmc_hf_noj-4-4"
     )
     SET_PROPERTY( TEST LiH_dimer_ae-vmc_hf_noj-4-4-totenergy APPEND PROPERTY DEPENDS LiH_dimer_ae-vmc_hf_noj-4-4 )
     
-    RUN_QMC_APP(LiH_dimer_ae-vmc_hf_noj-1-16 "${CMAKE_SOURCE_DIR}/examples/molecules/tests/LiH_dimer_ae" 1 16 vmc_hf_noj.in.xml) 
+    RUN_QMC_APP(LiH_dimer_ae-vmc_hf_noj-1-16 "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_ae" 1 16 vmc_hf_noj.in.xml) 
     ADD_TEST( NAME LiH_dimer_ae-vmc_hf_noj-1-16-totenergy
         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p vmc_hf_noj -e 2 --le "-7.9873236457 0.003"
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/LiH_dimer_ae-vmc_hf_noj-1-16"
     )
     SET_PROPERTY( TEST LiH_dimer_ae-vmc_hf_noj-1-16-totenergy APPEND PROPERTY DEPENDS LiH_dimer_ae-vmc_hf_noj-1-16 )
 
-   RUN_QMC_APP(LiH_dimer_ae-vmc_hf_noj_nodrift-16-1 "${CMAKE_SOURCE_DIR}/examples/molecules/tests/LiH_dimer_ae" 16 1 vmc_hf_noj_nodrift.in.xml) 
+   RUN_QMC_APP(LiH_dimer_ae-vmc_hf_noj_nodrift-16-1 "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_ae" 16 1 vmc_hf_noj_nodrift.in.xml) 
     ADD_TEST( NAME LiH_dimer_ae-vmc_hf_noj_nodrift-16-1-totenergy
         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p vmc_hf_noj_nodrift -e 2 --le "-7.9873236457 0.003"
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/LiH_dimer_ae-vmc_hf_noj_nodrift-16-1"
@@ -115,7 +117,7 @@ IF (NOT QMC_COMPLEX)
 #
 # LiH molecular dimer pseudopotential tests
 #
-   RUN_QMC_APP(LiH_dimer_pp-vmc_hf_noj-1-16 "${CMAKE_SOURCE_DIR}/examples/molecules/tests/LiH_dimer_pp" 1 16 vmc_hf_noj.in.xml) 
+   RUN_QMC_APP(LiH_dimer_pp-vmc_hf_noj-1-16 "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_pp" 1 16 vmc_hf_noj.in.xml) 
     ADD_TEST( NAME LiH_dimer_pp-vmc_hf_noj-1-16-totenergy
         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p vmc_hf_noj -e 2 --le "-0.7507264125 0.00043"
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/LiH_dimer_pp-vmc_hf_noj-1-16"
@@ -137,15 +139,17 @@ IF (NOT QMC_COMPLEX)
     )
     SET_PROPERTY( TEST LiH_dimer_pp-vmc_hf_noj-1-16-potential APPEND PROPERTY DEPENDS LiH_dimer_pp-vmc_hf_noj-1-16 )
 ELSE()
-    MESSAGE("Skipping all gaussian basis tests because they are not supported by complex build (QMC_COMPLEX=1)")
+    MESSAGE("Skipping all gaussian basis tests because they are not supported by complex build (QMC_COMPLEX=1)")  
 ENDIF()
-
+ELSE()
+    MESSAGE("Skipping all gaussian basis tests because they are not supported by CUDA build (QMC_CUDA=1)")  
+ENDIF()
 
 #
 # LiH solid einspline wavefunction tests for different k-points
 # Wavefunctions from quantum espresso. Reference energies obtained via pw2casino option
 #
-    RUN_QMC_APP(LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16 "${CMAKE_SOURCE_DIR}/examples/solids/tests/LiH_solid_1x1x1_pp" 1 16 hf_vmc_LiH-gamma.xml) 
+    RUN_QMC_APP(LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16 "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp" 1 16 hf_vmc_LiH-gamma.xml) 
     ADD_TEST( NAME LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16-kinetic
         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p hf_vmc_LiH-gamma -e 2 --ke "7.4145221704067854 0.024"
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16"
@@ -157,7 +161,7 @@ ENDIF()
     )
     SET_PROPERTY( TEST LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16-localpotential APPEND PROPERTY DEPENDS LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16 )
 
-   RUN_QMC_APP(LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16 "${CMAKE_SOURCE_DIR}/examples/solids/tests/LiH_solid_1x1x1_pp" 1 16 hf_vmc_LiH-x.xml) 
+   RUN_QMC_APP(LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16 "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp" 1 16 hf_vmc_LiH-x.xml) 
     ADD_TEST( NAME LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16-kinetic
         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p hf_vmc_LiH-x -e 2 --ke "7.3772282047321536 0.024"
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16"
@@ -170,7 +174,7 @@ ENDIF()
     SET_PROPERTY( TEST LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16-localpotential APPEND PROPERTY DEPENDS LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16 )
 
 # Arbitrary k-point requires complex build to run. Ensure fails with real/non-complex build
-    RUN_QMC_APP(LiH_solid_1x1x1_pp-arb-vmc_hf_noj-1-16 "${CMAKE_SOURCE_DIR}/examples/solids/tests/LiH_solid_1x1x1_pp" 1 16 hf_vmc_LiH-arb.xml) 
+    RUN_QMC_APP(LiH_solid_1x1x1_pp-arb-vmc_hf_noj-1-16 "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp" 1 16 hf_vmc_LiH-arb.xml) 
     IF (NOT QMC_COMPLEX)
        #message ("Not a complex build")
        SET_PROPERTY(TEST LiH_solid_1x1x1_pp-arb-vmc_hf_noj-1-16 APPEND PROPERTY WILL_FAIL TRUE)
