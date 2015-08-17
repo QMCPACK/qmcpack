@@ -152,6 +152,7 @@ class Particles(Matter):
         for old,new in name_pairs.iteritems():
             if old in self:
                 o = self[old]
+                o.name = new
                 del self[old]
                 if new in self:
                     self[new].count += o.count
