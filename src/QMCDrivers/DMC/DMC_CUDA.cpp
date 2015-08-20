@@ -532,7 +532,6 @@ void DMCcuda::resetUpdateEngine()
   branchEngine->checkParameters(W);
 
   //    Mover->updateWalkers(W.begin(),W.end());
-  app_log() << "  DMC PbyP Update with a fluctuating population" << endl;
   Mover->MaxAge=1;
   app_log() << "  Steps per block = " << nSteps << endl;
   app_log() << "  Number of blocks = " << nBlocks << endl;
