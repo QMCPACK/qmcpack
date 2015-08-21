@@ -60,6 +60,21 @@ inline void set_appropriate_device_num(int num)
   {
     cudaDeviceProp deviceProp;
     cudaGetDeviceProperties(&deviceProp, device);
+    if (deviceProp.unifiedAddressing == 1) {
+      cout << "GPU: unified virtual addressing enabled." << endl;
+#ifdef UnifiedVirtualAddressing
+      if (deviceProp.canMapHostMemory) {
+        cout << "GPU: can define mapped memory on host." << endl;
+        cudaSetDeviceFlags(cudaDeviceMapHost);
+        cout << "GPU: mapped memory enabled." << endl;
+      }
+      else 
+        cout << "GPU: cannot define mapped memory on host. No pinned, mapped memory to enable zero copy." << endl;
+#endif
+    }
+    else {
+      cout << "GPU: unified virtual addressing is NOT in effect." << endl;
+    }
     if (((deviceProp.major >= 1) && (deviceProp.minor >= 3)) ||
         deviceProp.major >= 2)
     {
