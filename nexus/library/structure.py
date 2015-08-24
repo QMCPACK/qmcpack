@@ -2978,6 +2978,20 @@ class Structure(Sobj):
             lcur = 7
         #end if
         species = elem
+        # relabel species that have multiple occurances
+        sset = set(species)
+        for spec in sset:
+            if species.count(spec)>1:
+                cnt=0
+                for n in range(len(species)):
+                    specn = species[n]
+                    if specn==spec:
+                        cnt+=1
+                        species[n] = specn+str(cnt)
+                    #end if
+                #end for
+            #end if
+        #end for
         elem = []
         for i in range(len(counts)):
             elem.extend(counts[i]*[species[i]])
@@ -4000,6 +4014,8 @@ def generate_structure(type='crystal',*args,**kwargs):
         s = generate_atom_structure(*args,**kwargs)
     elif type=='dimer':
         s = generate_dimer_structure(*args,**kwargs)
+    elif type=='trimer':
+        s = generate_trimer_structure(*args,**kwargs)
     elif type=='jellium':
         s = generate_jellium_structure(*args,**kwargs)
     elif type=='empty':
@@ -4007,7 +4023,7 @@ def generate_structure(type='crystal',*args,**kwargs):
     elif type=='basic':
         s = Structure(*args,**kwargs)
     else:
-        Structure.class_error(str(type)+' is not a valid structure type\n  options are crystal, defect, or atom')
+        Structure.class_error(str(type)+' is not a valid structure type\n  options are crystal, defect, atom, dimer, trimer, jellium, empty, or basic')
     #end if
     return s
 #end def generate_structure
@@ -4016,6 +4032,9 @@ def generate_structure(type='crystal',*args,**kwargs):
 
 
 def generate_atom_structure(atom=None,units='A',Lbox=None,skew=0,axes=None,kgrid=(1,1,1),kshift=(0,0,0),struct_type=Structure):
+    if atom is None:
+        Structure.class_error('atom must be provided','generate_atom_structure')
+    #end if
     if Lbox!=None:
         axes = [[Lbox*(1-skew),0,0],[0,Lbox,0],[0,0,Lbox*(1+skew)]]
     #end if
@@ -4030,6 +4049,9 @@ def generate_atom_structure(atom=None,units='A',Lbox=None,skew=0,axes=None,kgrid
 
 
 def generate_dimer_structure(dimer=None,units='A',separation=None,Lbox=None,skew=0,axes=None,kgrid=(1,1,1),kshift=(0,0,0),struct_type=Structure,axis='x'):
+    if dimer is None:
+        Structure.class_error('dimer atoms must be provided to construct dimer','generate_dimer_structure')
+    #end if
     if separation is None:
         Structure.class_error('separation must be provided to construct dimer','generate_dimer_structure')
     #end if
@@ -4053,6 +4075,69 @@ def generate_dimer_structure(dimer=None,units='A',separation=None,Lbox=None,skew
     #end if
     return s
 #end def generate_dimer_structure
+
+
+def generate_trimer_structure(trimer=None,units='A',separation=None,angle=None,Lbox=None,skew=0,axes=None,kgrid=(1,1,1),kshift=(0,0,0),struct_type=Structure,axis='x',axis2='y',angular_units='degrees'):
+    if trimer is None:
+        Structure.class_error('trimer atoms must be provided to construct trimer','generate_trimer_structure')
+    #end if
+    if separation is None:
+        Structure.class_error('separation must be provided to construct trimer','generate_trimer_structure')
+    #end if
+    if len(separation)!=2:
+        Structure.class_error('two separation distances (atom1-atom2,atom1-atom3) must be provided to construct trimer\nyou provided {0} separation distances'.format(len(separation)),'generate_trimer_structure')
+    #end if
+    if angle is None:
+        Structure.class_error('angle must be provided to construct trimer','generate_trimer_structure')
+    #end if
+    if angular_units=='degrees':
+        angle *= pi/180
+    elif not angle.startswith('rad'):
+        Structure.class_error('angular units must be degrees or radians\nyou provided: {0}'.format(angle),'generate_trimer_structure')
+    #end if
+    if axis==axis2:
+        Structure.class_error('axis and axis2 must be different to define the trimer plane\nyou provided {0} for both'.format(axis),'generate_trimer_structure')
+    #end if
+    if Lbox!=None:
+        axes = [[Lbox*(1-skew),0,0],[0,Lbox,0],[0,0,Lbox*(1+skew)]]
+    #end if
+    p1 = [0,0,0]
+    if axis=='x':
+        p2 = [separation[0],0,0]
+    elif axis=='y':
+        p2 = [0,separation[0],0]
+    elif axis=='z':
+        p2 = [0,0,separation[0]]
+    else:
+        Structure.class_error('trimer bond1 (atom2-atom1) orientation axis must be x,y,z\n  you provided: {0}'.format(axis),'generate_trimer_structure')
+    #end if
+    r = separation[1]
+    c = cos(angle)
+    s = sin(angle)
+    axpair = axis+axis2
+    if axpair=='xy':
+        p3 = [r*c,r*s,0]
+    elif axpair=='yx':
+        p3 = [r*s,r*c,0]
+    elif axpair=='yz':
+        p3 = [0,r*c,r*s]
+    elif axpair=='zy':
+        p3 = [0,r*s,r*c]
+    elif axpair=='zx':
+        p3 = [r*s,0,r*c]
+    elif axpair=='xz':
+        p3 = [r*c,0,r*s]
+    else:
+        Structure.class_error('trimer bond2 (atom3-atom1) orientation axis must be x,y,z\n  you provided: {0}'.format(axis2),'generate_trimer_structure')
+    #end if
+    if axes is None:
+        s = Structure(elem=trimer,pos=[p1,p2,p3],units=units)
+    else:
+        s = Structure(elem=trimer,pos=[p1,p2,p3],axes=axes,kgrid=kgrid,kshift=kshift,units=units)
+        s.center_molecule()
+    #end if
+    return s
+#end def generate_trimer_structure
 
 
 def generate_jellium_structure(*args,**kwargs):

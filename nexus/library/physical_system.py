@@ -585,12 +585,12 @@ def generate_physical_system(**kwargs):
         #end if
     #end for
     type = kwargs['type']
-    if type=='atom' or type=='dimer':
+    if type=='atom' or type=='dimer' or type=='trimer':
         del kwargs['kshift']
         del kwargs['tiling']
-        if not 'units' in kwargs:
-            kwargs['units'] = 'B'
-        #end if
+        #if not 'units' in kwargs:
+        #    kwargs['units'] = 'B'
+        ##end if
         tiling = None
     else:
         tiling = kwargs['tiling']

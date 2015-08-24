@@ -40,10 +40,11 @@
 import os
 from numpy import array,abs,empty,ndarray
 from generic import obj
+from periodic_table import is_element
 from simulation import SimulationInput
 from structure import interpolate_structures,Structure
 from physical_system import PhysicalSystem
-from developer import DevBase
+from developer import DevBase,error
 from debug import *
 lcs = ls
 
@@ -1008,7 +1009,11 @@ class Poscar(VFormattedFile):
         #end for
         if self.elem!=None:
             for e in self.elem:
-                text += e+' '
+                iselem,symbol = is_element(e,symbol=True)
+                if not iselem:
+                    self.error('{0} is not an element'.format(e))
+                #end if
+                text += symbol+' '
             #end for
             text += '\n'
         #end if
@@ -1276,7 +1281,7 @@ class VaspInput(SimulationInput,Vobj):
     #end def write
 
 
-    def incorporate_system(self,system,incorp_kpoints=True):
+    def incorporate_system(self,system,incorp_kpoints=True,coord='cartesian'):
         structure = system.structure
 
         # assign kpoints
@@ -1300,8 +1305,15 @@ class VaspInput(SimulationInput,Vobj):
             poscar.axes       = s.axes
             poscar.elem       = species
             poscar.elem_count = species_count
-            poscar.coord      = 'cartesian'
-            poscar.pos        = s.pos
+            if coord=='cartesian':
+                poscar.coord  = 'cartesian'
+                poscar.pos    = s.pos
+            elif coord=='direct':
+                poscar.coord  = 'direct'
+                poscar.pos    = s.pos_unit()
+            else:
+                self.error('coord must be either direct or cartesian\nyou provided: {0}'.format(coord))
+            #end if
             if s.frozen!=None:
                 poscar.dynamic = s.frozen==False
             #end if
@@ -1327,10 +1339,13 @@ class VaspInput(SimulationInput,Vobj):
             #end for
             ordered_pseudos = []
             for element in species:
-                if not element in pseudo_map:
-                    self.error('pseudopotential for element {0} not found\nelements present: {1}\n'.format(element,sorted(pseudo_map.keys())))
+                iselem,symbol = is_element(element,symbol=True)
+                if not iselem:
+                    self.error('{0} is not an element'.format(element))
+                elif not symbol in pseudo_map:
+                    self.error('pseudopotential for element {0} not found\nelements present: {1}'.format(symbol,sorted(pseudo_map.keys())))
                 #end if
-                ordered_pseudos.append(pseudo_map[element])
+                ordered_pseudos.append(pseudo_map[symbol])
             #end for
         #end if
         self.potcar = Potcar(VaspInput.pseudo_dir,ordered_pseudos)
@@ -1453,7 +1468,8 @@ generate_any_defaults = obj(
     system     = None,
     pseudos    = None,
     neb        = None,
-    neb_args   = obj()
+    neb_args   = obj(),
+    coord      = 'cartesian'
     )
 
 def generate_any_vasp_input(**kwargs):
@@ -1500,7 +1516,7 @@ def generate_any_vasp_input(**kwargs):
     # incorporate system information
     species = None
     if vf.system!=None:
-        species = vi.incorporate_system(vf.system,gen_kpoints)
+        species = vi.incorporate_system(vf.system,gen_kpoints,vf.coord)
     #end if
 
     # set potcar
@@ -1557,7 +1573,7 @@ def generate_any_vasp_input(**kwargs):
 
 
 
-def generate_poscar(structure):
+def generate_poscar(structure,coord='cartesian'):
     s = structure.copy()
     s.change_units('A')
     species,species_count = s.order_by_species()
@@ -1566,8 +1582,15 @@ def generate_poscar(structure):
     poscar.axes       = s.axes
     poscar.elem       = species
     poscar.elem_count = species_count
-    poscar.coord      = 'cartesian'
-    poscar.pos        = s.pos
+    if coord=='cartesian':
+        poscar.coord  = 'cartesian'
+        poscar.pos    = s.pos
+    elif coord=='direct':
+        poscar.coord  = 'direct'
+        poscar.pos    = s.pos_unit()
+    else:
+        error('coord must be either direct or cartesian\nyou provided: {0}'.format(coord),'generate_poscar')
+    #end if
     if s.frozen!=None:
         poscar.dynamic = s.frozen==False
     #end if

@@ -141,7 +141,7 @@ class obj(AllAbilities):
         if header==None:
             header = self.__class__.__name__
         #end if
-        self.log(header+post_header)
+        self.log('\n'+header+post_header)
         self.log(pad+message.replace('\n','\n'+pad))
         if exit:
             self.log('  exiting.\n')
@@ -157,7 +157,7 @@ class obj(AllAbilities):
         if header==None:
             header=self.__class__.__name__
         #end if
-        self.log(header+post_header)
+        self.log('\n'+header+post_header)
         self.log(pad+message.replace('\n','\n'+pad))
     #end def warn
 

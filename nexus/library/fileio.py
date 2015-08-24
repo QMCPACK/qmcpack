@@ -105,7 +105,7 @@ class TextFile(DevBase):
             if pos!=-1:
                 return self.mm.seek(pos,0)
             else:
-                return None
+                return -1
             #end if
         else:
             return self.mm.seek(pos,whence)
