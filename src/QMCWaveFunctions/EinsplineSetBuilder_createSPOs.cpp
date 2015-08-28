@@ -254,7 +254,8 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   }
 
   //set the internal parameters
-  if(spinSet==0) { setTiling(new_OrbitalSet,numOrbs); TileIons(); }
+  setTiling(new_OrbitalSet,numOrbs);
+  if(spinSet==0) TileIons();
 
   OrbitalSet = new_OrbitalSet;
 

@@ -129,10 +129,26 @@ public:
 
   bool setIdentity(bool useIdentity)
   {
-    Identity=useIdentity;
-    C.resize(OrbitalSetSize,BasisSetSize);
-    for(int i=0; i<OrbitalSetSize; i++)
-      C(i,i)=1.0;
+    Identity = useIdentity;
+
+    if ( (OrbitalSetSize > 0) && (BasisSetSize > 0) )
+      C.resize(OrbitalSetSize,BasisSetSize);
+    else {
+      app_error() << "either OrbitalSetSize or BasisSetSize has an invalid value !!\n";
+      app_error() << "OrbitalSetSize = " << OrbitalSetSize << endl;
+      app_error() << "BasisSetSize = " << BasisSetSize << endl;
+      abort();
+    }
+
+    if (OrbitalSetSize <= BasisSetSize) {
+      for (int i=0; i<OrbitalSetSize; i++)
+        C(i,i) = 1.0;
+    }
+    else {
+      for (int i=0; i<BasisSetSize; i++)
+        C(i,i) = 1.0;
+    }
+
     return true;
   }
 
