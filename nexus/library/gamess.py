@@ -27,7 +27,7 @@
 #                                                                    #
 #    FormattedGroup                                                  #
 #      Represents strict machine-formatted input groups.             #
-#                                                                    #                                        
+#                                                                    #
 #====================================================================#
 
 

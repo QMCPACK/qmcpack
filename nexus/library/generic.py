@@ -259,6 +259,14 @@ class obj(AllAbilities):
         #end if
     #end def delete
 
+    def delete_option(self,name,value=None):
+        if name in self:
+            value = self[name]
+            del self[name]
+        #end if
+        return value
+    #end def delete_option
+
     def add_attribute_path(self,path,value=None):
         o = self
         for p in path[0:-1]:

@@ -759,7 +759,7 @@ class GFit(DevBase):
  
 
 def process_gaussian_text(text,format,pp=True,basis=True):
-    if format=='gamess' or format=='gaussian':
+    if format=='gamess' or format=='gaussian' or format=='atomscf':
         rawlines = text.splitlines()
         sections = []
         last_empty = True
@@ -1552,6 +1552,32 @@ class GaussianPP(SemilocalPP):
                 channels.append(terms)
             #end for
             lmax-=1
+        elif format=='atomscf':
+            #i=0
+            #self.name = lines[i].strip(); i+=1
+            i=1 # skip title line
+            element = 'Rn' # text does not contain element (must be corrected downstream)
+            lmax    = -1   
+            Zcore = int(lines[i].strip()); i+=1
+            while i<len(lines):
+                n = int(lines[i]); i+=1
+                terms = []
+                for j in range(n):
+                    rpow,expon,coeff = lines[i].split(); i+=1
+                    terms.append((float(coeff),int(rpow),float(expon)))
+                #end for
+                channels.append(terms)
+                lmax+=1
+            #end while
+            # PPs in atomscf input are s,p,d,f, etc
+            #  rather than, e.g. f,s-f,p-f,d-f
+            #  so rearrange into form similar to f,s-f,p-f,d-f
+            loc = channels.pop()
+            for l in range(lmax):
+                c = channels[l]
+                channels[l] = c[0:len(c)-len(loc)]
+            #end for
+            channels = [loc] + channels
         else:
             self.error('ability to read file format {0} has not been implemented'.format(format))
         #end if
@@ -1693,6 +1719,32 @@ class GaussianPP(SemilocalPP):
                 #end for
             #end for
             text += btext
+        elif format=='atomscf':
+            text += '{0} core potential\n'.format(self.element)
+            text += '{0}\n'.format(self.Zcore)
+            local_channel = self.channels[self.local]
+            for c in self.all_channels:
+                if c in self.channels:
+                    channel = self.channels[c]
+                    if c!=self.local:
+                        text += '{0}\n'.format(len(channel)+len(local_channel)) 
+                    else:
+                        text += '{0}\n'.format(len(channel)) 
+                    #end if
+                    for i in sorted(channel.keys()):
+                        g = channel[i]
+                        text += '{0} {1:12.8f} {2:12.8f}\n'.format(g.rpow,g.expon,g.coeff)
+                    #end for
+                    if c!=self.local:
+                        channel = local_channel
+                        for i in sorted(channel.keys()):
+                            g = channel[i]
+                            text += '{0} {1:12.8f} {2:12.8f}\n'.format(g.rpow,g.expon,g.coeff)
+                        #end for
+                    #end if
+                #end if
+            #end for
+            text += '\n'
         else:
             self.error('ability to write file format {0} has not been implemented'.format(format))
         #end if
