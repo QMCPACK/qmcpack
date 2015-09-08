@@ -192,4 +192,82 @@ ENDIF()
        SET_PROPERTY( TEST LiH_solid_1x1x1_pp-arb-vmc_hf_noj-1-16-localpotential APPEND PROPERTY DEPENDS LiH_solid_1x1x1_pp-arb-vmc_hf_noj-1-16 )
     ENDIF() 
 
+#
+# Short tests, about 2-3 seconds on 16 cores
+#
+  RUN_QMC_APP(bccH_1x1x1_ae-vmc_sdj-1-16-short "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae" 1 16 qmc_short.in.xml) 
+  ADD_TEST( NAME bccH_1x1x1_ae-vmc_sdj-1-16-short-totenergy 
+         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p qmc_short -e 2 --le "-1.834032 0.0003"
+         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bccH_1x1x1_ae-vmc_sdj-1-16-short"
+     )
+  SET_PROPERTY( TEST bccH_1x1x1_ae-vmc_sdj-1-16-short-totenergy APPEND PROPERTY DEPENDS bccH_1x1x1_ae-vmc_sdj-1-16-short )
+  
+  RUN_QMC_APP(diamondC_1x1x1_pp-vmc_sdj-1-16-short "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp" 1 16 qmc_short.in.xml) 
+  ADD_TEST( NAME diamondC_1x1x1_pp-vmc_sdj-1-16-short-totenergy 
+         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p qmc_short -e 2 --le "-10.491445 0.002"
+         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/diamondC_1x1x1_pp-vmc_sdj-1-16-short"
+     )
+  SET_PROPERTY( TEST diamondC_1x1x1_pp-vmc_sdj-1-16-short-totenergy APPEND PROPERTY DEPENDS diamondC_1x1x1_pp-vmc_sdj-1-16-short )
+  
+  RUN_QMC_APP(diamondC_2x1x1_pp-vmc_sdj-1-16-short "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp" 1 16 qmc_short.in.xml) 
+  ADD_TEST( NAME diamondC_2x1x1_pp-vmc_sdj-1-16-short-totenergy 
+         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p qmc_short -e 2 --le "-21.668293 0.007"
+         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/diamondC_2x1x1_pp-vmc_sdj-1-16-short"
+     )
+  SET_PROPERTY( TEST diamondC_2x1x1_pp-vmc_sdj-1-16-short-totenergy APPEND PROPERTY DEPENDS diamondC_2x1x1_pp-vmc_sdj-1-16-short )
+  
+  RUN_QMC_APP(hcpBe_1x1x1_pp-vmc_sdj-1-16-short "${CMAKE_SOURCE_DIR}/tests/solids/hcpBe_1x1x1_pp" 1 16 qmc_short.in.xml) 
+  ADD_TEST( NAME hcpBe_1x1x1_pp-vmc_sdj-1-16-short-totenergy 
+         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p qmc_short -e 2 --le "-1.481656 0.0005"
+         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/hcpBe_1x1x1_pp-vmc_sdj-1-16-short"
+     )
+  SET_PROPERTY( TEST hcpBe_1x1x1_pp-vmc_sdj-1-16-short-totenergy APPEND PROPERTY DEPENDS hcpBe_1x1x1_pp-vmc_sdj-1-16-short )
+  
+  RUN_QMC_APP(monoO_1x1x1_pp-vmc_sdj-1-16-short "${CMAKE_SOURCE_DIR}/tests/solids/monoO_1x1x1_pp" 1 16 qmc_short.in.xml)
+  ADD_TEST( NAME monoO_1x1x1_pp-vmc_sdj-1-16-short-totenergy 
+         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p qmc_short -e 2 --le "-31.776596 0.006"
+         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/monoO_1x1x1_pp-vmc_sdj-1-16-short"
+     )
+  SET_PROPERTY( TEST monoO_1x1x1_pp-vmc_sdj-1-16-short-totenergy APPEND PROPERTY DEPENDS monoO_1x1x1_pp-vmc_sdj-1-16-short )
+
+
+#
+# Long variants of above, about 1/2 hour with 16 cores
+#
+  SET( CTEST_TEST_TIMEOUT 36000 )  # 10h Should make a macro to avoid changing global settings
+  RUN_QMC_APP(bccH_1x1x1_ae-vmc_sdj-1-16-long "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae" 1 16 qmc_long.in.xml) 
+  ADD_TEST( NAME bccH_1x1x1_ae-vmc_sdj-1-16-long-totenergy 
+         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p qmc_long -e 2 --le "-1.834032 0.00001"
+         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bccH_1x1x1_ae-vmc_sdj-1-16-long"
+     )
+  SET_PROPERTY( TEST bccH_1x1x1_ae-vmc_sdj-1-16-long-totenergy APPEND PROPERTY DEPENDS bccH_1x1x1_ae-vmc_sdj-1-16-long )
+  
+  RUN_QMC_APP(diamondC_1x1x1_pp-vmc_sdj-1-16-long "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp" 1 16 qmc_long.in.xml) 
+  ADD_TEST( NAME diamondC_1x1x1_pp-vmc_sdj-1-16-long-totenergy 
+         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p qmc_long -e 2 --le "-10.491445 0.000065"
+         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/diamondC_1x1x1_pp-vmc_sdj-1-16-long"
+     )
+  SET_PROPERTY( TEST diamondC_1x1x1_pp-vmc_sdj-1-16-long-totenergy APPEND PROPERTY DEPENDS diamondC_1x1x1_pp-vmc_sdj-1-16-long )
+  
+  RUN_QMC_APP(diamondC_2x1x1_pp-vmc_sdj-1-16-long "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp" 1 16 qmc_long.in.xml) 
+  ADD_TEST( NAME diamondC_2x1x1_pp-vmc_sdj-1-16-long-totenergy 
+         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p qmc_long -e 2 --le "-21.668293 0.00023"
+         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/diamondC_2x1x1_pp-vmc_sdj-1-16-long"
+     )
+  SET_PROPERTY( TEST diamondC_2x1x1_pp-vmc_sdj-1-16-long-totenergy APPEND PROPERTY DEPENDS diamondC_2x1x1_pp-vmc_sdj-1-16-long )
+  
+  RUN_QMC_APP(hcpBe_1x1x1_pp-vmc_sdj-1-16-long "${CMAKE_SOURCE_DIR}/tests/solids/hcpBe_1x1x1_pp" 1 16 qmc_long.in.xml) 
+  ADD_TEST( NAME hcpBe_1x1x1_pp-vmc_sdj-1-16-long-totenergy 
+         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p qmc_long -e 2 --le "-1.481656 0.000017"
+         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/hcpBe_1x1x1_pp-vmc_sdj-1-16-long"
+     )
+  SET_PROPERTY( TEST hcpBe_1x1x1_pp-vmc_sdj-1-16-long-totenergy APPEND PROPERTY DEPENDS hcpBe_1x1x1_pp-vmc_sdj-1-16-long )
+  
+  RUN_QMC_APP(monoO_1x1x1_pp-vmc_sdj-1-16-long "${CMAKE_SOURCE_DIR}/tests/solids/monoO_1x1x1_pp" 1 16 qmc_long.in.xml)
+  ADD_TEST( NAME monoO_1x1x1_pp-vmc_sdj-1-16-long-totenergy 
+         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p qmc_long -e 2 --le "-31.776596 0.0002"
+         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/monoO_1x1x1_pp-vmc_sdj-1-16-long"
+     )
+  SET_PROPERTY( TEST monoO_1x1x1_pp-vmc_sdj-1-16-long-totenergy APPEND PROPERTY DEPENDS monoO_1x1x1_pp-vmc_sdj-1-16-long )
+
 endif()
