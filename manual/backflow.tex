@@ -1,2 +1,98 @@
 \section{Backflow wavefunctions}
+
 \label{sec:backflow}
+
+One can perturb the nodal surface of a single-slater/multi-slater wavefunction through use of a backflow-transformation.  Specifically, if we have an antisymmetric function $D(\mathbf{x}_{0\uparrow},\cdots,\mathbf{x}_{N\uparrow}, \mathbf{x}_{0\downarrow},\cdots,\mathbf{x}_{N\downarrow})$, and if $i_\alpha$ is the $i$-th particle of species type $\alpha$, then the backflow transformation works by making the coordinate transformation $\mathbf{x}_{i_\alpha} \to \mathbf{x}'_{i_\alpha}$, and evaluating $D$ at these new ``quasiparticle" coordinates.  QMCPACK currently supports quasiparticle transformations given by:
+
+\begin{equation}\label{backflowdef}
+\mathbf{x}'_{i_\alpha}=\mathbf{x}_{i_\alpha}+\sum_{\alpha \leq \beta} \sum_{i_\alpha \neq j_\beta} \eta^{\alpha\beta}(|\mathbf{x}_{i_\alpha}-\mathbf{x}_{j_\beta}|)(\mathbf{x}_{i_\alpha}-\mathbf{x}_{j_\beta})
+\end{equation}
+
+Here, $\eta^{\alpha\beta}(|\mathbf{x}_{i_\alpha}-\mathbf{x}_{j_\beta}|)$ is a radially symmetric back flow transformation between species $\alpha$ and $\beta$.  In QMCPACK, particle $i_\alpha$ is known as the ``target" particle and $j_\beta$ is known as the ``source".  The main types of transformations we'll talk about are so called one-body terms, which are between an electron and an ion $\eta^{eI}(|\mathbf{x}_{i_e}-\mathbf{x}_{j_I}|)$, and two-body terms.  Two body terms are distinguished as those between like and opposite spin electrons:  $\eta^{e(\uparrow)e(\uparrow)}(|\mathbf{x}_{i_e(\uparrow)}-\mathbf{x}_{j_e(\uparrow)}|)$ and  $\eta^{e(\uparrow)e(\downarrow)}(|\mathbf{x}_{i_e(\uparrow)}-\mathbf{x}_{j_e(\downarrow)}|)$.  Henceforth, we will assume that $\eta^{e(\uparrow)e(\uparrow)}=\eta^{e(\downarrow)e(\downarrow)}$.
+
+In the following, I will explain how to describe general terms like Eq. \ref{backflowdef} in a QMCPACK XML file.  For specificity, I will consider a particle set consisting of H and He (in that order).  This ordering will be important when we build the XML file, so you can find this out either through your specific declaration of <particleset>, by looking at the hdf5 file in the case of plane waves, or by looking at the qmcpack output file in the section labelled "Summary of QMC systems".  
+\subsection{Input Specifications}
+All backflow declarations occur within a single \texttt{<backflow> ... </backflow>} block.  Backflow transformations occur in \texttt{<transformation>} blocks, and have the following input parameters
+
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{l c c c l }
+\hline
+\multicolumn{5}{l}{Transformation element} \\
+\hline
+\bfseries name & \bfseries datatype & \bfseries values & \bfseries defaults  & \bfseries description \\
+\hline
+name & text &  & (required) & Unique name for this Jastrow function \\
+type & text & ``e-I" & (required) & Define a one-body backflow transformation. \\ 
+        &          & ``e-e" & & Define a two-body backflow transformation. \\
+function & text & Bspline & (required) & B-spline type transformation. (No other types supported) \\
+source & text &  &  & "e" if two-body, ion particle set if one-body.\\ 
+  \hline
+\end{tabular}
+%\end{tabular*}
+\end{center}
+\end{table}
+
+Just like one and two-body jastrows, parameterization of the backflow transformations are specified within the \texttt{<transformation> } blocks by  \texttt{<correlation>} blocks.  Please refer to \ref{sec:onebodyjastrowspline} for more information.
+
+\subsection{Example Use Case}
+Having specified the general form, we present a general example of one-body and two-body backflow transformations in a hydrogen-helium mixture.  The H and He ions have independent backflow transformations, as do the like and unlike-spin two-body terms.  One caveat is in order:  ionic backflow transformations must be listed in the order that they appear in the particle set.  If in our example, He is listed first, and H is listed second, the following example would be correct.  However, switching backflow declaration to H first, then He, will result in an error.  Outside of this, declaration of one-body blocks and two-body blocks aren't sensitive to ordering.  
+
+\begin{lstlisting}
+<backflow>
+<!--The One-Body term with independent e-He and e-H terms. IN THAT ORDER -->
+<transformation name="eIonB" type="e-I" function="Bspline" source="ion0">
+    <correlation cusp="0.0" size="8" type="shortrange" init="no" elementType="He" rcut="3.0">
+        <coefficients id="eHeC" type="Array" optimize="yes"> 
+            0 0 0 0 0 0 0 0
+        </coefficients>
+    </correlation>
+    <correlation cusp="0.0" size="8" type="shortrange" init="no" elementType="H" rcut="3.0">
+        <coefficients id="eHC" type="Array" optimize="yes"> 
+            0 0 0 0 0 0 0 0
+        </coefficients>
+    </correlation>
+</transformation>
+
+<!--The Two-Body Term with Like and Unlike Spins -->
+<transformation name="eeB" type="e-e" function="Bspline" >
+    <correlation cusp="0.0" size="7" type="shortrange" init="no" speciesA="u" speciesB="u" rcut="1.2">
+        <coefficients id="uuB1" type="Array" optimize="yes"> 
+            0 0 0 0 0 0 0
+        </coefficients>
+    </correlation>
+    <correlation cusp="0.0" size="7" type="shortrange" init="no" speciesA="d" speciesB="u" rcut="1.2">
+        <coefficients id="udB1" type="Array" optimize="yes"> 
+            0 0 0 0 0 0 0
+        </coefficients>
+    </correlation>
+</transformation>
+</backflow>
+\end{lstlisting}  
+
+Currently, backflow only works with single-slater determinant wavefunctions.  When a backflow transformation has been declared, it should be placed within the \texttt{<determinantset>} block, but outside of the \texttt{<slaterdeterminant>} blocks, like so:
+
+\begin{lstlisting}
+<determinantset ... >
+    <!--basis set declarations go here, if there are any -->
+    
+    <backflow>
+        <transformation ...>
+          <!--Here's where discussed one and two-body terms are defined -->
+         </transformation>
+     </backflow>
+     
+     <slaterdeterminant>
+         <!--Usual determinant definitions -->
+     </slaterdeterminant>
+ </determinantset>
+\end{lstlisting}
+
+\subsection{Additional Information}
+\begin{itemize}
+\item \textbf{Optimization}:  Optimizable backflow transformation parameters are notoriously nonlinear, and so optimizing backflow wavefunctions can sometimes be difficult.   We direct the reader to our provided backflow tutorials for more information.  
+
+\end{itemize}
+
+
+
