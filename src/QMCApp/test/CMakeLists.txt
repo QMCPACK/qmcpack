@@ -201,7 +201,14 @@ ENDIF()
          WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bccH_1x1x1_ae-vmc_sdj-1-16-short"
      )
   SET_PROPERTY( TEST bccH_1x1x1_ae-vmc_sdj-1-16-short-totenergy APPEND PROPERTY DEPENDS bccH_1x1x1_ae-vmc_sdj-1-16-short )
-  
+#Sanity check weight (= number of walkers, threads) are consistent.
+ADD_TEST( NAME bccH_1x1x1_ae-vmc_sdj-1-16-short-weight
+         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 0 -p qmc_short -e 2 --bw "960 0.0"
+         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bccH_1x1x1_ae-vmc_sdj-1-16-short"
+     )
+  SET_PROPERTY( TEST bccH_1x1x1_ae-vmc_sdj-1-16-short-weight APPEND PROPERTY DEPENDS bccH_1x1x1_ae-vmc_sdj-1-16-short )
+
+
   RUN_QMC_APP(diamondC_1x1x1_pp-vmc_sdj-1-16-short "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp" 1 16 qmc_short.in.xml) 
   ADD_TEST( NAME diamondC_1x1x1_pp-vmc_sdj-1-16-short-totenergy 
          COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p qmc_short -e 2 --le "-10.491445 0.002"
