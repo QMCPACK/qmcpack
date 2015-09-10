@@ -239,7 +239,7 @@ class Structure(Sobj):
                  posu=None):
         if center is None:
             if axes !=None:
-                center = array(axes).sum(0)/2
+                center = array(axes,dtype=float).sum(0)/2
             else:
                 center = dim*[0]
             #end if
@@ -269,11 +269,11 @@ class Structure(Sobj):
         self.scale  = 1.
         self.units  = units
         self.dim    = dim
-        self.center = array(center)
-        self.axes   = array(axes)
+        self.center = array(center,dtype=float)
+        self.axes   = array(axes,dtype=float)
         self.bconds = array(bconds,dtype=str)
         self.set_elem(elem)
-        self.pos    = array(pos)
+        self.pos    = array(pos,dtype=float)
         self.frozen = None
         self.mag    = array(mag,dtype=object)
         self.kpoints  = empty((0,dim))            
