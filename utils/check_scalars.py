@@ -124,7 +124,8 @@ def read_command_line():
             lpp  = 'LocalECP',
             nlpp = 'NonLocalECP',
             mpc  = 'MPC',
-            kec  = 'KEcorr'
+            kec  = 'KEcorr',
+            bw   = 'BlockWeight'
             )
 
         for qshort in sorted(quantities.keys()):
@@ -240,7 +241,7 @@ def check_values(options,quants_check,values):
                 error_ref = ref[2*ns+1]
                 mean_comp,error_comp = values[s][q]
 
-                success &= abs(mean_comp-mean_ref) < options.nsigma*error_ref
+                success &= abs(mean_comp-mean_ref) <= options.nsigma*error_ref
             #end for
             ns+=1
         #end for
