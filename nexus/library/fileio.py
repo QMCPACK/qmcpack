@@ -58,6 +58,10 @@ class TextFile(DevBase):
         #end for
     #end def __iter__
 
+    def __getitem__(self,slc):
+        return self.mm[slc]
+    #end def __getitem__
+
     def lines(self):
         return self.read().splitlines()
     #end def lines

@@ -1266,7 +1266,7 @@ class VaspInput(SimulationInput,Vobj):
             name = file.lower()
             if name in self.input_files:
                 filepath = os.path.join(path,prefix+file+postfix)
-                self[name] = self.input_files(filepath)
+                self[name] = self.input_files[name](filepath)
             #end if
         #end for
     #end def read
@@ -1427,7 +1427,7 @@ class VaspInput(SimulationInput,Vobj):
 
     def performing_relax(self):
         return self.run_type()=='relax'
-    #end def producing_structure
+    #end def preforming_relax
 
 
     def performing_neb(self):
