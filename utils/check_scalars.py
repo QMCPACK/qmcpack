@@ -125,7 +125,8 @@ def read_command_line():
             nlpp = 'NonLocalECP',
             mpc  = 'MPC',
             kec  = 'KEcorr',
-            bw   = 'BlockWeight'
+            bw   = 'BlockWeight',
+            ts   = 'TotalSamples',
             )
 
         for qshort in sorted(quantities.keys()):
@@ -202,6 +203,11 @@ def process_scalar_files(options,quants_check):
                 if 'LocalEnergy_sq' in data and 'LocalEnergy' in data:
                     v = data['LocalEnergy_sq'] - data['LocalEnergy']**2
                     stats['Variance'] = simstats(v,equil)
+                #end if
+
+                if 'BlockWeight' in data:
+                    ts = data['BlockWeight'].sum()
+                    stats['TotalSamples'] = (ts,0.0,0.0,1.0) # mean, var, error, kappa
                 #end if
 
                 for q in quants_check:
