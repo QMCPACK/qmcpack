@@ -1187,6 +1187,36 @@ class Structure(Sobj):
         #end if
     #end def species
 
+        
+    def ordered_species(self,symbol=False):
+        speclab_set    = set()
+        species_labels = []
+        if not symbol:
+            for e in self.elem:
+                if e not in speclab_set:
+                    speclab_set.add(e)
+                    species_labels.append(e)
+                #end if
+            #end for
+            return species_labels
+        else:
+            species  = []
+            spec_set = set()
+            for e in self.elem:
+                is_elem,symbol = is_element(e,symbol=True)
+                if e not in speclab_set:
+                    speclab_set.add(e)
+                    species_labels.append(e)
+                #end if
+                if symbol not in spec_set:
+                    spec_set.add(symbol)
+                    species.append(symbol)
+                #end if
+            #end for
+            return species_labels,species
+        #end if
+    #end def ordered_species
+
 
     def order_by_species(self,folded=False):
         species        = []
