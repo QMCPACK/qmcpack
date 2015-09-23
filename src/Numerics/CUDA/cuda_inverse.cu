@@ -22,25 +22,25 @@
 
 
 void
-checkCUDAError (cudaError_t err, char *funcName)
+callAndCheckError (cudaError_t cudaFunc, const int line)
 {
-  if (err != cudaSuccess)
+  if (cudaFunc != cudaSuccess)
   {
-    fprintf(stderr, "CUDA error in %s \n", funcName); 
-    fprintf(stderr, "CUDA error message : %s \n", cudaGetErrorString(err));
+    fprintf(stderr, "CUDA error in %s, line %d \n", __FILE__, line); 
+    fprintf(stderr, "CUDA error message : %s \n", cudaGetErrorString(cudaFunc));
     fflush(stderr);
     abort();
   }
 }
 
 void
-checkCublasError(cublasStatus_t status, char *funcName)
+callAndCheckError(cublasStatus_t cublasFunc, const int line)
 {
-  if (status != CUBLAS_STATUS_SUCCESS)
+  if (cublasFunc != CUBLAS_STATUS_SUCCESS)
   {
-    fprintf(stderr, "CUBLAS error in %s \n", funcName);
+    fprintf(stderr, "CUBLAS error in %s, line %d \n", __FILE__, line);
     fprintf(stderr, "CUBLAS error message: ");
-    switch (status)
+    switch (cublasFunc)
     {
        case CUBLAS_STATUS_NOT_INITIALIZED:
          fprintf(stderr, "CUBLAS_STATUS_NOT_INITIALIZED\n");
@@ -111,15 +111,11 @@ cublas_inverse (cublasHandle_t handle,
                 bool useHigherPrecision)
 {
 
-  cudaError_t err;
-  cublasStatus_t status;
-
   // Info array tells if a matrix inversion is successful
   // = 0 : successful
   // = k : U(k,k) = 0; inversion failed 
   int *infoArray;
-  err = cudaMalloc((void**) &infoArray, numMats * sizeof(int));
-  checkCUDAError(err, "Failed to allocate memory for infoArray in cublas_inverse (cudaMalloc)");
+  callAndCheckError( cudaMalloc((void**) &infoArray, numMats * sizeof(int)), __LINE__ ); 
 
   // If double precision operations are desired...
   if (useHigherPrecision)
@@ -129,16 +125,20 @@ cublas_inverse (cublasHandle_t handle,
     dim3 dimBlockConvert (CONVERT_BS);
     dim3 dimGridConvert ((N*rowStride + (CONVERT_BS-1)) / CONVERT_BS, numMats);
     convert <<< dimGridConvert, dimBlockConvert >>> ((double**)AWorklist_d, Alist_d, N*rowStride);
-    
+
     // (ii)  call cublas to do matrix inversion
     //       LU decomposition
-    status = cublasDgetrfBatched(handle, N, (double**)AWorklist_d, rowStride, NULL, infoArray, numMats);
-    checkCublasError(status, "Problem in LU factorization (cublasDgetrfBatched)");
+    callAndCheckError( cublasDgetrfBatched( handle, N, (double**)AWorklist_d, rowStride, NULL, 
+                                            infoArray, numMats), __LINE__ );
   
     //       Inversion
-    status = cublasDgetriBatched(handle, N, (double**)AWorklist_d, rowStride, NULL, 
-                                 (double**)AinvWorklist_d, rowStride, infoArray, numMats);
-    checkCublasError(status, "Problem in matrix inversion (cublasDgetriBatched)");
+#if (CUDA_VERSION >= 6050)
+    callAndCheckError( cublasDgetriBatched( handle, N, (const double**)AWorklist_d, rowStride, NULL, 
+                                            (double**)AinvWorklist_d, rowStride, infoArray, numMats), __LINE__ );
+#else
+    callAndCheckError( cublasDgetriBatched( handle, N, (double**)AWorklist_d, rowStride, NULL, 
+                                            (double**)AinvWorklist_d, rowStride, infoArray, numMats), __LINE__ );
+#endif
 
     // (iii) convert results back to single precision
     convert <<< dimGridConvert, dimBlockConvert >>> (Ainvlist_d, (double**)AinvWorklist_d, N*rowStride);
@@ -149,13 +149,17 @@ cublas_inverse (cublasHandle_t handle,
   {
     // Call cublas to do matrix inversion
     // LU decomposition
-    status = cublasSgetrfBatched(handle, N, Alist_d, rowStride, NULL, infoArray, numMats);
-    checkCublasError(status, "Problem in LU factorization (cublasSgetrfBatched)");
+    callAndCheckError( cublasSgetrfBatched( handle, N, Alist_d, rowStride, NULL, 
+                                            infoArray, numMats), __LINE__ );
   
     // Inversion
-    status = cublasSgetriBatched(handle, N, Alist_d, rowStride, NULL,
-                                 Ainvlist_d, rowStride, infoArray, numMats);
-    checkCublasError(status, "Problem in matrix inversion (cublasSgetriBatched)");
+#if (CUDA_VERSION >= 6050)
+    callAndCheckError( cublasSgetriBatched( handle, N, (const float**) Alist_d, rowStride, NULL, 
+                                            Ainvlist_d, rowStride, infoArray, numMats), __LINE__ );
+#else
+    callAndCheckError( cublasSgetriBatched( handle, N, Alist_d, rowStride, NULL, 
+                                            Ainvlist_d, rowStride, infoArray, numMats), __LINE__ );
+#endif
   }
 
   cudaDeviceSynchronize();
@@ -174,25 +178,30 @@ cublas_inverse (cublasHandle_t handle,
                 bool useHigherPrecision)
 {
 
-  cudaError_t err;
-  cublasStatus_t status;
-
   // Info array tells if a matrix inversion is successful
   // = 0 : successful
   // = k : U(k,k) = 0; inversion failed 
   int *infoArray;
-  err = cudaMalloc((void**) &infoArray, numMats * sizeof(int));
-  checkCUDAError(err, "Failed to allocate memory for infoArray in cublas_inverse (cudaMalloc)");
+  callAndCheckError( cudaMalloc((void**) &infoArray, numMats * sizeof(int)), __LINE__ );
 
-  // Call cublas functions to do inversion
-  // LU decomposition
-  status = cublasDgetrfBatched(handle, N, Alist_d, rowStride, NULL, infoArray, numMats);
-  checkCublasError(status, "Problem in LU factorization (cublasDgetrfBatched)");
+  // (i)   copy all the elements of Alist to AWorklist
+  dim3 dimBlockConvert (CONVERT_BS);
+  dim3 dimGridConvert ((N*rowStride + (CONVERT_BS-1)) / CONVERT_BS, numMats);
+  convert <<< dimGridConvert, dimBlockConvert >>> (AWorklist_d, Alist_d, N*rowStride);
+  
+  // (ii)  call cublas functions to do inversion
+  //       LU decomposition
+  callAndCheckError( cublasDgetrfBatched( handle, N, Alist_d, rowStride, NULL, 
+                                          infoArray, numMats), __LINE__ );
 
-  // Inversion
-  status = cublasDgetriBatched(handle, N, Alist_d, rowStride, NULL,
-                               Ainvlist_d, rowStride, infoArray, numMats);
-  checkCublasError(status, "Problem in matrix inversion (cublasDgetriBatched)");
+  //       Inversion
+#if (CUDA_VERSION >= 6050)
+  callAndCheckError( cublasDgetriBatched( handle, N, (const double**) Alist_d, rowStride, NULL, 
+                                          Ainvlist_d, rowStride, infoArray, numMats), __LINE__ );
+#else
+  callAndCheckError( cublasDgetriBatched( handle, N, Alist_d, rowStride, NULL, 
+                                          Ainvlist_d, rowStride, infoArray, numMats), __LINE__ );
+#endif
 
   cudaDeviceSynchronize();
 
@@ -212,13 +221,9 @@ void
 test_cublas_inverse(int matSize, int numMats)
 {
 
-  cudaError_t err;
-
   // Initialize cublas
   cublasHandle_t handle;
-  cublasStatus_t status;
-  status = cublasCreate(&handle);
-  checkCublasError(status, "Failed to create cublas handle (cublasCreate)");
+  callAndCheckError( cublasCreate(&handle), __LINE__);
 
   srand48((long) 12394);
   int N = matSize;
@@ -232,20 +237,16 @@ test_cublas_inverse(int matSize, int numMats)
   // pointing to the starting address (on device) of each matrix and its buffer
   // (similar to DiracDeterminantCUDA)
   Alist = (T**) malloc(numMats * sizeof(T*));
-  err   = cudaMalloc((void**) &Alist_d, numMats * sizeof(T*));
-  checkCUDAError(err, "Failed to allocate memory for Alist_d in test_cublas_inverse (cudaMalloc)");
+  callAndCheckError( cudaMalloc((void**) &Alist_d, numMats * sizeof(T*)), __LINE__ );
 
   AWorklist = (T**) malloc(numMats * sizeof(T*));
-  err       = cudaMalloc((void**) &AWorklist_d, numMats * sizeof(T*));
-  checkCUDAError(err, "Failed to allocate memory for AWorklist_d in test_cublas_inverse (cudaMalloc)");
+  callAndCheckError( cudaMalloc((void**) &AWorklist_d, numMats * sizeof(T*)), __LINE__ );
 
   Clist = (T**) malloc(numMats * sizeof(T*));
-  err   = cudaMalloc((void**) &Clist_d, numMats * sizeof(T*));
-  checkCUDAError(err, "Failed to allocate memory for Clist_d in test_cublas_inverse (cudaMalloc)");
+  callAndCheckError( cudaMalloc((void**) &Clist_d, numMats * sizeof(T*)), __LINE__ );
 
   CWorklist = (T**) malloc(numMats * sizeof(T*));
-  err       = cudaMalloc((void**) &CWorklist_d, numMats * sizeof(T*));
-  checkCUDAError(err, "Failed to allocate memory for CWorklist_d in test_cublas_inverse (cudaMalloc)");
+  callAndCheckError( cudaMalloc((void**) &CWorklist_d, numMats * sizeof(T*)), __LINE__ );
 
   // Generate matrices filled with random numbers
   T* A = (T*) malloc(sizeof(T) * numMats * N * row_stride);
@@ -257,33 +258,31 @@ test_cublas_inverse(int matSize, int numMats)
   // Allocate memory on device for each matrix
   for (int mat=0; mat<numMats; mat++)
   {
-    err = cudaMalloc((void**) &(Alist[mat]), N * row_stride * sizeof(T));
-    checkCUDAError(err, "Failed to allocate memory for Alist[mat] in test_cublas_inverse (cudaMalloc)");
-    err = cudaMemcpyAsync(Alist[mat], &A[mat*N*row_stride], N * row_stride * sizeof(T), cudaMemcpyHostToDevice);
-    checkCUDAError(err, "Failed to copy from A to Alist[mat] (cudaMemcpyAsync, HostToDevice)");
+    callAndCheckError( cudaMalloc((void**) &(Alist[mat]), N * row_stride * sizeof(T)), __LINE__ );
 
-    err = cudaMalloc((void**) &(AWorklist[mat]), 2 * N * row_stride * sizeof(T));
-    checkCUDAError(err, "Failed to allocate memory for AWorklist[mat] in test_cublas_inverse (cudaMalloc)");
+    callAndCheckError( cudaMemcpyAsync(Alist[mat], &A[mat*N*row_stride],
+                                       N * row_stride * sizeof(T),
+                                       cudaMemcpyHostToDevice), __LINE__ );
 
-    err = cudaMalloc((void**) &(Clist[mat]), N * row_stride * sizeof(T));
-    checkCUDAError(err, "Failed to allocate memory for Clist[mat] in test_cublas_inverse (cudaMalloc)");
+    callAndCheckError( cudaMalloc((void**) &(AWorklist[mat]), 2 * N * row_stride * sizeof(T)), __LINE__ );
 
-    err = cudaMalloc((void**) &(CWorklist[mat]), 2 * N * row_stride * sizeof(T));
-    checkCUDAError(err, "Failed to allocate memory for CWorklist[mat] in test_cublas_inverse (cudaMalloc)");
+    callAndCheckError( cudaMalloc((void**) &(Clist[mat]), N * row_stride * sizeof(T)), __LINE__ );
+
+    callAndCheckError( cudaMalloc((void**) &(CWorklist[mat]), 2 * N * row_stride * sizeof(T)), __LINE__ );
   }
 
   // Copy the starting address of each matrix
-  err = cudaMemcpyAsync (Alist_d, Alist, numMats * sizeof(T*), cudaMemcpyHostToDevice);
-  checkCUDAError(err, "Failed to copy from Alist to Alist_d (cudaMemcpyAsync, HostToDevice)");
+  callAndCheckError( cudaMemcpyAsync (Alist_d, Alist, numMats * sizeof(T*),
+                                      cudaMemcpyHostToDevice), __LINE__ ); 
 
-  err = cudaMemcpyAsync (AWorklist_d, AWorklist, numMats * sizeof(T*), cudaMemcpyHostToDevice);
-  checkCUDAError(err, "Failed to copy from AWorklist to AWorklist_d (cudaMemcpyAsync, HostToDevice)");
+  callAndCheckError( cudaMemcpyAsync (AWorklist_d, AWorklist, numMats * sizeof(T*),
+                                      cudaMemcpyHostToDevice), __LINE__ );
 
-  err = cudaMemcpyAsync (Clist_d, Clist, numMats * sizeof(T*), cudaMemcpyHostToDevice);
-  checkCUDAError(err, "Failed to copy from Clist to Clist_d (cudaMemcpyAsync, HostToDevice)");
+  callAndCheckError( cudaMemcpyAsync (Clist_d, Clist, numMats * sizeof(T*),
+                                      cudaMemcpyHostToDevice), __LINE__ );
 
-  err = cudaMemcpyAsync (CWorklist_d, CWorklist, numMats * sizeof(T*), cudaMemcpyHostToDevice);
-  checkCUDAError(err, "Failed to copy from CWorklist to CWorklist_d (cudaMemcpyAsync, HostToDevice)");
+  callAndCheckError( cudaMemcpyAsync (CWorklist_d, CWorklist, numMats * sizeof(T*),
+                                      cudaMemcpyHostToDevice), __LINE__ );
 
   cudaDeviceSynchronize();
  
@@ -304,8 +303,8 @@ test_cublas_inverse(int matSize, int numMats)
   for (int mat=0; mat<numMats; mat++)
   {
     T Ainv[N*row_stride];
-    err = cudaMemcpy(Ainv, Clist[mat], N * row_stride * sizeof(T), cudaMemcpyDeviceToHost);
-    checkCUDAError(err, "Failed to copy from Clist[mat] to Ainv (cudaMemcpy, DeviceToHost)");
+    callAndCheckError( cudaMemcpy(Ainv, Clist[mat], N * row_stride * sizeof(T),
+                                  cudaMemcpyDeviceToHost), __LINE__ );
 
     double error = 0.0;
     for (int i=0; i<N; i++)
@@ -321,8 +320,7 @@ test_cublas_inverse(int matSize, int numMats)
   }
 
   // Finalize cublas
-  status = cublasDestroy(handle);
-  checkCublasError(status, "Failed to destroy cublas handle (cublasDestroy)");
+  callAndCheckError( cublasDestroy(handle), __LINE__ );
 
   // Free resources on both host and device
   for (int mat=0; mat<numMats; mat++)
