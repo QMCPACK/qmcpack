@@ -158,6 +158,7 @@ CHECK_INCLUDE_FILE(unistd.h HAVE_UNISTD_H)
 #SET(BUILD_QMCTOOLS 1)
 #SET(BUILD_SANDBOX 0)
 #SET(MPIP_PROFILE 0)
+#option(QMC_BUILD_STATIC "Link to static libraries" OFF)
 
 ######################################################################
 # Performance-related macros
@@ -246,6 +247,7 @@ ENDIF()
 INCLUDE(${CMAKE_ROOT}/Modules/TestCXXAcceptsFlag.cmake)
 INCLUDE(${CMAKE_ROOT}/Modules/CheckCCompilerFlag.cmake)
 
+
 ######################################################
 # DO NOT MODIFY BELOW
 # If you like to customize your build, create a toolchain as instructed
@@ -277,18 +279,31 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   # Try to identify CPU identity
   ######################################################
   SET(CPU_IDENTITY "generic")
-  INCLUDE(${PROJECT_CMAKE}/CheckProcessorID.cmake)
+  #INCLUDE(${PROJECT_CMAKE}/CheckProcessorID.cmake)
 
   #------------------------------------
-  # On Jaguar use CrayXT.cmake
+  # On Cray's machine use CrayXK.cmake
   #------------------------------------
-  IF($ENV{HOST} MATCHES "jaguar")
-    MESSAGE("  Working on jaguar. Using CMake/CrayXT.cmake")	 
-    SET(CPU_IDENTITY "barcelona")
-    INCLUDE(${PROJECT_CMAKE}/CrayXT.cmake)
-    SET(FOUND_CXXENV 1)
+  IF($ENV{CRAYOS_VERSION} MATCHES ".")
+    MESSAGE(STATUS "Running on a Cray machine. OS version : $ENV{CRAYOS_VERSION}")
+    #SET(CPU_IDENTITY "bulldozer")   
     SET(CMAKE_SKIP_RPATH TRUE)
-  ENDIF($ENV{HOST} MATCHES "jaguar")
+
+    IF(QMC_CUDA)
+      MESSAGE(STATUS "Building GPU code. Linking dynamically.")
+    ELSE(QMC_CUDA)
+      SET(QMC_BUILD_STATIC 1)
+      MESSAGE(STATUS "Building CPU code. Linking statically.")
+      SET(BUILD_SHARED_LIBS off)
+      SET(CMAKE_FIND_LIBRARY_SUFFIXES .a)
+      FOREACH(type SHARED_LIBRARY SHARED_MODULE EXE)
+        SET(CMAKE_${type}_LINK_STATIC_C_FLAGS "-Wl,-Bstatic")
+        SET(CMAKE_${type}_LINK_DYNAMIC_C_FLAGS "-static")
+        SET(CMAKE_${type}_LINK_STATIC_CXX_FLAGS "-Wl,-Bstatic")
+        SET(CMAKE_${type}_LINK_DYNAMIC_CXX_FLAGS "-static")
+      ENDFOREACH(type)
+    ENDIF(QMC_CUDA)
+  ENDIF($ENV{CRAYOS_VERSION} MATCHES ".")
 
   #------------------------------------
   # Check if using IBM compilers
@@ -314,6 +329,7 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   IF(NOT FOUND_CXXENV)
     IF(CMAKE_COMPILER_IS_GNUCXX)
       INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
+      SET(FOUND_CXXENV 1)
     ELSE(CMAKE_COMPILER_IS_GNUCXX)
       SET(CMAKE_TRY_INTEL_CXX_FLAGS "-restrict")
       CHECK_CXX_ACCEPTS_FLAG(${CMAKE_TRY_INTEL_CXX_FLAGS} INTEL_CXX_FLAGS)
@@ -340,9 +356,10 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
         FILE(WRITE ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/testmpi.cxx 
           "#include <mpi.h>"
           "int main(int argc, char** argv){MPI_Init(&argc,&argv); MPI_Finalize();return 0;}\n")
-        TRY_COMPILE(MPI_WORKS ${CMAKE_BINARY_DIR} 
-          ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/testmpi.cxx
-          OUTPUT_VARIABLE OUTPUT)
+        #TRY_COMPILE(MPI_WORKS ${CMAKE_BINARY_DIR} 
+        #${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/testmpi.cxx
+        #OUTPUT_VARIABLE OUTPUT)
+        set(MPI_WORKS 1)
         IF(MPI_WORKS)
           MESSAGE(STATUS "MPI is enabled")
           SET(HAVE_MPI 1)
@@ -360,7 +377,13 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   #-------------------------------------------------------------------
   # check lapack/blas
   #-------------------------------------------------------------------
-  INCLUDE(${PROJECT_CMAKE}/FindLapack.cmake)
+  #INCLUDE(${PROJECT_CMAKE}/FindLapack.cmake)
+  find_package(LAPACK)
+  if(LAPACK_FOUND)
+    MESSAGE(STATUS "LAPACK libraries: ${LAPACK_LIBRARIES}")
+    MESSAGE(STATUS "LAPACK linker flags: ${LAPACK_LINKER_FLAGS}")
+    link_libraries(${LAPACK_LIBRARIES} ${LAPACK_LINKER_FLAGS})
+  endif()
 
 
 ENDIF(CMAKE_TOOLCHAIN_FILE)
@@ -395,12 +418,91 @@ INCLUDE(${CMAKE_ROOT}/Modules/FindThreads.cmake)
 # installataions
 # list of libraries to be linked with the main applications using I/O
 SET(QMC_UTIL_LIBS )
+ 
+#INCLUDE(${PROJECT_CMAKE}/FindBoost.cmake)
+#INCLUDE(${PROJECT_CMAKE}/FindHDF5.cmake)
+IF(BGQ)
 
-INCLUDE(${PROJECT_CMAKE}/FindBoost.cmake)
-INCLUDE(${PROJECT_CMAKE}/FindHDF5.cmake)
-INCLUDE(${PROJECT_CMAKE}/FindZLIB.cmake)
-INCLUDE(${PROJECT_CMAKE}/FindSZLIB.cmake)
-INCLUDE(${PROJECT_CMAKE}/FindLibxml2.cmake)
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+set(CMAKE_SHARED_LINKER_FLAGS "")
+
+#########FFTW WORK AROUND; A. Benali
+SET(Libfftw fftw3)
+IF(QMC_BUILD_STATIC)
+  SET(Libfftw libfftw3.a)
+ENDIF(QMC_BUILD_STATIC)
+
+IF(FFTW_INCLUDE_DIRS)
+  FIND_PATH(FFTW_INCLUDE_DIR fftw3.h  ${FFTW_INCLUDE_DIRS})
+  FIND_LIBRARY(FFTW_LIBRARIES ${Libfftw} ${FFTW_LIBRARY_DIRS})
+ELSE(FFTW_INCLUDE_DIRS)
+  FIND_PATH(FFTW_INCLUDE_DIR fftw3.h ${FFTW_HOME}/include
+$ENV{FFTW_HOME}/include)
+  FIND_LIBRARY(FFTW_LIBRARIES ${Libfftw} ${FFTW_HOME}/lib $ENV{FFTW_HOME}/lib) 
+ENDIF(FFTW_INCLUDE_DIRS)
+SET(FFTW_FOUND FALSE)
+IF(FFTW_INCLUDE_DIR AND FFTW_LIBRARIES)
+  MESSAGE(STATUS "FFTW_INCLUDE_DIR=${FFTW_INCLUDE_DIR}")
+  MESSAGE(STATUS "FFTW_LIBRARIES=${FFTW_LIBRARIES}")
+  SET(FFTW_FOUND TRUE)
+ENDIF()
+
+MARK_AS_ADVANCED(
+   FFTW_INCLUDE_DIR
+   FFTW_LIBRARIES
+   FFTW_FOUND
+)
+
+IF(FFTW_FOUND)
+  SET(HAVE_LIBFFTW 1)
+  INCLUDE_DIRECTORIES(${FFTW_INCLUDE_DIR})
+  SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${FFTW_LIBRARIES})
+ELSE(FFTW_FOUND)
+    MESSAGE(STATUS "${FFTW_LIBRARIES} ${FFTW_INCLUDE_DIR}")
+    MESSAGE(FATAL_ERROR "Could not found FFTW ")
+ENDIF(FFTW_FOUND)
+###END DEFINITIONS FOR FFTW
+
+####DEFINITION FOR LIBXML2
+SET(Libxml2 xml2)
+if(QMC_BUILD_STATIC)
+  set(Libxml2 libxml2.a)
+endif(QMC_BUILD_STATIC)
+
+IF(Libxml2_INCLUDE_DIRS)
+
+  FIND_PATH(LIBXML2_INCLUDE_DIR libxml/xpath.h ${Libxml2_INCLUDE_DIRS})
+  FIND_LIBRARY(LIBXML2_LIBRARIES ${Libxml2} PATHS ${Libxml2_LIBRARY_DIRS})
+
+ELSE(Libxml2_INCLUDE_DIRS)
+
+  FIND_LIBRARY(LIBXML2_LIBRARIES ${Libxml2} PATHS $ENV{LIBXML2_HOME}/lib)
+
+  FIND_PATH(LIBXML_INCLUDE_DIR libxml2/libxml/xpath.h PATHS
+${LIBXML2_HOME}/include $ENV{LIBXML2_HOME}/include)
+  if(LIBXML_INCLUDE_DIR)
+    set(LIBXML2_INCLUDE_DIR ${LIBXML_INCLUDE_DIR}/libxml2)
+  else(LIBXML_INCLUDE_DIR)
+    FIND_PATH(LIBXML2_INCLUDE_DIR libxml/xpath.h $ENV{LIBXML2_HOME}/include)
+  endif(LIBXML_INCLUDE_DIR)
+
+ENDIF(Libxml2_INCLUDE_DIRS)
+
+SET(LIBXML2_FOUND FALSE)
+IF(LIBXML2_INCLUDE_DIR AND LIBXML2_LIBRARIES)
+  message( STATUS "LIBXML2_INCLUDE_DIR=${LIBXML2_INCLUDE_DIR}" )
+  message( STATUS "LIBXML2_LIBRARIES=${LIBXML2_LIBRARIES}" )
+  SET(LIBXML2_FOUND TRUE)
+ENDIF()
+
+
+MARK_AS_ADVANCED(
+  LIBXML2_INCLUDE_DIR 
+  LIBXML2_LIBRARIES 
+  LIBXML2_FOUND
+  )
 
 
 IF(LIBXML2_FOUND)
@@ -410,7 +512,50 @@ IF(LIBXML2_FOUND)
 ELSE()
   MESSAGE(FATAL_ERROR "Missing Libxml2")
 ENDIF(LIBXML2_FOUND)
+###END DEFINITIONS FOR LIBXML2
 
+###DEFINITION FOR ZLIB 
+set(Libz z)
+IF(QMC_BUILD_STATIC)
+  set(Libz libz.a)
+ENDIF(QMC_BUILD_STATIC)
+
+#FIND_PATH(ZLIB_INCLUDE_DIR zlib.h ${ZLIB_HOME}/include $ENV{ZLIB_HOME}/include)
+FIND_LIBRARY(ZLIB_LOC ${Libz} ${ZLIB_HOME}/lib64 ${ZLIB_HOME}/lib $ENV{ZLIB_HOME}/lib)
+
+IF(ZLIB_LOC)
+  set(ZLIB_LIBRARY ${ZLIB_LOC})
+  set(ZLIB_FOUND TRUE)
+ENDIF(ZLIB_LOC)
+
+SET(ZLIB_FOUND FALSE)
+IF(ZLIB_LIBRARY)
+  message( STATUS "ZLIB_LIBRARIES=${ZLIB_LIBRARY}" )
+  SET(ZLIB_FOUND TRUE)
+ENDIF()
+
+ELSE(BGQ)
+
+find_package(ZLIB)
+find_package(LibXml2)
+
+IF(LIBXML2_FOUND)
+  INCLUDE_DIRECTORIES(${LIBXML2_INCLUDE_DIR})
+  SET(HAVE_LIBXML2 1)
+  SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${LIBXML2_LIBRARIES})
+ELSE()
+  MESSAGE(FATAL_ERROR "Missing Libxml2")
+ENDIF(LIBXML2_FOUND)
+
+ENDIF(BGQ)
+
+
+set(HDF5_USE_STATIC_LIBRARIES off)
+if(QMC_BUILD_STATIC)
+  set(HDF5_USE_STATIC_LIBRARIES on)
+endif()
+
+find_package(HDF5)
 IF(HDF5_FOUND)
   SET(HAVE_LIBHDF5 1)
   INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
@@ -418,38 +563,45 @@ IF(HDF5_FOUND)
   if(ZLIB_LIBRARY)
     SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${ZLIB_LIBRARY})
   endif(ZLIB_LIBRARY)
-  #IF(ZLIB_FOUND)
-  #  SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${ZLIB_LIBRARIES})
-  #ENDIF(ZLIB_FOUND)
-  IF(SZLIB_FOUND)
-    SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${SZLIB_LIBRARIES})
-  ENDIF(SZLIB_FOUND)
+  #IF(SZLIB_FOUND)
+  #  SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${SZLIB_LIBRARIES})
+  #ENDIF(SZLIB_FOUND)
 ELSE(HDF5_FOUND)
   if(NOT QMC_PHI)
     MESSAGE(FATAL_ERROR "Require hdf5 1.6.4 or higher. Set HDF5_HOME")
   endif()
 ENDIF(HDF5_FOUND)
 
+#make sure we can find boost if it's not in /usr
+set(Boost_NO_BOOST_CMAKE on)
+find_package(Boost REQUIRED)
 IF(Boost_FOUND)
   SET(HAVE_LIBBOOST 1)
-  INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
-  MESSAGE(STATUS "Setting Boost_INCLUDE_DIR=${Boost_INCLUDE_DIR}")
+  INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
+  MESSAGE(STATUS "Setting Boost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS}")
 ELSE()
   MESSAGE(STATUS "Using MT engine in Utilities/MersenneTwister.h")
   #MESSAGE(FATAL_ERROR "Require boost 1.33.x or higher. Set BOOST_HOME")
 ENDIF()
 
-#set(HAVE_CUDA 0)
+SET(HAVE_CUDA 0)
 IF(QMC_CUDA)
   set(CUDA_PROPAGATE_HOST_FLAGS OFF)
+  FIND_PACKAGE(CUDA REQUIRED)
+  #set(CUDA_NVCC_FLAGS
+  #  "-arch=sm_20;-Drestrict=__restrict__;-DNO_CUDA_MAIN;-O3;-use_fast_math")
   if(CUDA_NVCC_FLAGS MATCHES "arch")
     MESSAGE(STATUS "Setting CUDA FLAGS=${CUDA_NVCC_FLAGS}")
-  else()
-    SET(CUDA_NVCC_FLAGS
-      "-arch=sm_13;-Drestrict=__restrict__;-DNO_CUDA_MAIN;-O3;-use_fast_math")#
-    MESSAGE(WARNING "Using outdated CUDA FLAGS=${CUDA_NVCC_FLAGS}")
-  endif()
-  FIND_PACKAGE(CUDA REQUIRED)
+  else(CUDA_NVCC_FLAGS MATCHES "arch")
+    if(CUDA_VERSION VERSION_GREATER 6.5 OR CUDA_VERSION VERSION_EQUAL 6.5)
+      SET(CUDA_NVCC_FLAGS
+          "-arch=sm_35;-Drestrict=__restrict__;-DNO_CUDA_MAIN;-O3;-use_fast_math")
+    else(CUDA_VERSION VERSION_GREATER 6.5 OR CUDA_VERSION VERSION_EQUAL 6.5)
+      SET(CUDA_NVCC_FLAGS
+          "-arch=sm_20;-Drestrict=__restrict__;-DNO_CUDA_MAIN;-O3;-use_fast_math")#
+      MESSAGE(WARNING "Using outdated CUDA FLAGS=${CUDA_NVCC_FLAGS}")
+    endif(CUDA_VERSION VERSION_GREATER 6.5 OR CUDA_VERSION VERSION_EQUAL 6.5)
+  endif(CUDA_NVCC_FLAGS MATCHES "arch")
   set(HAVE_CUDA 1)
 ENDIF(QMC_CUDA)
 
@@ -507,13 +659,16 @@ endif()
 ######################################################
 # Add optional macros
 ######################################################
-INCLUDE(${PROJECT_CMAKE}/FindFFTW.cmake)
+
+IF(BGQ)
+ELSE(BGQ)
+find_package(FFTW)
 IF(FFTW_FOUND)
   SET(HAVE_LIBFFTW 1)
   INCLUDE_DIRECTORIES(${FFTW_INCLUDE_DIR})
   SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${FFTW_LIBRARIES})
 ENDIF(FFTW_FOUND)
-
+ENDIF(BGQ)
 #include qmcpack/src build/src
 INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/src)
 

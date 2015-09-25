@@ -69,9 +69,11 @@ else()
       ${qmcpack_BINARY_DIR}/src/oompi-config.h)
     INCLUDE_DIRECTORIES(${qmcpack_SOURCE_DIR}/src/OOMPI)
     SUBDIRS(OOMPI)
-
-    set(MPI_LIBRARY oompi ${MPI_LIBRARY})
-
+    IF ( MPI_LIBRARY )
+       SET(MPI_LIBRARY oompi ${MPI_LIBRARY})
+    ELSE()
+       SET(MPI_LIBRARY oompi )
+    ENDIF()
   ENDIF(HAVE_OOMPI)
 
   IF(OHMMS_DIM MATCHES 3)
