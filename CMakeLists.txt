@@ -77,6 +77,7 @@ SET(OHMMS_INDEXTYPE int)
 SET(OHMMS_PRECISION double)
 SET(APP_PRECISION double)
 SET(CUDA_PRECISION float)
+#SET(CUDA_PRECISION double)
 
 ######################################################################
 # enable MPI and OPNEMP  if possible
@@ -281,13 +282,22 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   SET(CPU_IDENTITY "generic")
   #INCLUDE(${PROJECT_CMAKE}/CheckProcessorID.cmake)
 
-  #------------------------------------
-  # On Cray's machine use CrayXK.cmake
-  #------------------------------------
+  #------------------------
+  # On Cray's machine
+  #------------------------
   IF($ENV{CRAYOS_VERSION} MATCHES ".")
     MESSAGE(STATUS "Running on a Cray machine. OS version : $ENV{CRAYOS_VERSION}")
     #SET(CPU_IDENTITY "bulldozer")   
     SET(CMAKE_SKIP_RPATH TRUE)
+
+    # Flags for ctest
+    SET(USE_EXT_MPI_FOR_SERIAL_TESTS 1)
+    FIND_PROGRAM(MPIEXEC aprun)
+    SET(MPIEXEC_NUMPROC_FLAG "-n")
+
+    IF($ENV{HOST} MATCHES "eos")
+      SET(BOOST_ROOT $ENV{BOOST_DIR})
+    ENDIF($ENV{HOST} MATCHES "eos")
 
     IF(QMC_CUDA)
       MESSAGE(STATUS "Building GPU code. Linking dynamically.")
@@ -349,7 +359,11 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
       SET(HAVE_MPI 1)
       SET(HAVE_OOMPI 1)
       SET(MPI_FOUND TRUE)
-    else($ENV{CXX} MATCHES "mp")
+    elseif($ENV{CRAYOS_VERSION} MATCHES ".")
+      SET(HAVE_MPI 1)
+      SET(HAVE_OOMPI 1)
+      SET(MPI_FOUND TRUE)
+    else()
       include(FindMPI)
       IF(MPI_FOUND)
         MESSAGE(STATUS "Found mpi.h and libraries. Check for working mpi compiler ")
@@ -395,9 +409,11 @@ IF ( HAVE_MPI )
   IF ( NOT MPIEXEC )
     SET( MPIEXEC "mpirun" )
   ENDIF()
-  IF ( NOT MPIEXEC_NUMPROC_FLAG )
+
+  IF ( NOT DEFINED MPIEXEC_NUMPROC_FLAG )
     SET( MPIEXEC_NUMPROC_FLAG "-np" )
   ENDIF()
+
   IF ( NOT TEST_MAX_PROCS )
     SET( TEST_MAX_PROCS 100 )
   ENDIF()
@@ -419,8 +435,6 @@ INCLUDE(${CMAKE_ROOT}/Modules/FindThreads.cmake)
 # list of libraries to be linked with the main applications using I/O
 SET(QMC_UTIL_LIBS )
  
-#INCLUDE(${PROJECT_CMAKE}/FindBoost.cmake)
-#INCLUDE(${PROJECT_CMAKE}/FindHDF5.cmake)
 IF(BGQ)
 
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
@@ -603,6 +617,7 @@ IF(QMC_CUDA)
     endif(CUDA_VERSION VERSION_GREATER 6.5 OR CUDA_VERSION VERSION_EQUAL 6.5)
   endif(CUDA_NVCC_FLAGS MATCHES "arch")
   set(HAVE_CUDA 1)
+  MESSAGE("CUDA_PRECISION=${CUDA_PRECISION}")
 ENDIF(QMC_CUDA)
 
 #INCLUDE(${PROJECT_CMAKE}/FindPkgConfig.cmake)
