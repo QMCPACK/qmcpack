@@ -512,7 +512,7 @@ protected:
   gpu::device_vector<HybridJobType> HybridJobs_GPU;
   gpu::device_vector<CudaRealType>  IonPos_GPU;
   gpu::device_vector<CudaRealType>  CutoffRadii_GPU, PolyRadii_GPU;
-  gpu::device_vector<HybridDataFloat> HybridData_GPU;
+  gpu::device_vector<HybridData<CudaRealType> > HybridData_GPU;
 
   gpu::device_vector<CudaRealType> Ylm_GPU;
   gpu::device_vector<CudaRealType*> Ylm_ptr_GPU, dYlm_dtheta_ptr_GPU, dYlm_dphi_ptr_GPU;
