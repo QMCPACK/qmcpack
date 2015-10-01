@@ -1,8 +1,8 @@
 #ifndef ATOMIC_ORBITAL_CUDA_H
 #define ATOMIC_ORBITAL_CUDA_H
 
-#include <einspline/multi_bspline.h>
-#include <einspline/multi_bspline_create_cuda.h>
+#include "einspline/multi_bspline.h"
+#include "einspline/multi_bspline_create_cuda.h"
 #include <cuda.h>
 
 // type traits for cuda variable types
@@ -75,8 +75,9 @@ typedef enum { BSPLINE_3D_JOB, ATOMIC_POLY_JOB, ATOMIC_SPLINE_JOB } HybridJobTyp
 
 
 template<typename T>
-struct HybridData
+class HybridData
 {
+public:
   // Integer specifying which image of the ion this electron is near
   T img[3];
   // Minimum image distance to the ion;
@@ -110,13 +111,11 @@ MakeHybridJobList (T* elec_list, int num_elecs, T* ion_list,
                    HybridJobType *job_list, T *rhat_list,
                    HybridData<T> *data_list);
 
-
 template<typename T> void
 evaluateHybridSplineReal (HybridJobType *job_types, T **Ylm_real,
                           AtomicOrbitalCuda<T> *orbitals,
                           HybridData<T> *data, T *k_reduced,
                           T **vals, int N, int numWalkers, int lMax);
-
 
 template<typename T> void
 evaluateHybridSplineReal (HybridJobType *job_types, T *rhats,
@@ -126,22 +125,12 @@ evaluateHybridSplineReal (HybridJobType *job_types, T *rhats,
                           T **vals, T **grad_lapl,
                           int row_stride, int N, int numWalkers, int lMax);
 
-
 template<typename T> void
 evaluateHybridSplineComplexToReal
 (HybridJobType *job_types, T **Ylm_real,
  AtomicOrbitalCuda<T> *orbitals,
  HybridData<T> *data, T *k_reduced, int *make2copies,
  T **vals, int N, int numWalkers, int lMax);
-
-
-template<typename T> void
-evaluateHybridSplineComplexToRealNLPP
-(HybridJobType *job_types,
- T **Ylm_real, AtomicOrbitalCuda<T> *orbitals,
- HybridData<T> *data, T *k_reduced, int* make2copies,
- T **vals, int N, int numWalkers, int lMax);
-
 
 template<typename T> void
 evaluateHybridSplineComplexToReal
@@ -152,12 +141,10 @@ evaluateHybridSplineComplexToReal
  T **vals, T **grad_lapl,
  int row_stride, int N, int numWalkers, int lMax);
 
-
 template<typename T> void
 evaluate3DSplineReal (HybridJobType *job_types, T *pos, T *kpoints,
                       typename SplineTraits<T,3>::CudaSplineType *multispline, T *Linv,
                       T **vals, int N, int numWalkers);
-
 
 template<typename T> void
 evaluate3DSplineReal (HybridJobType *job_types, T *pos, T *kpoints,
@@ -165,13 +152,11 @@ evaluate3DSplineReal (HybridJobType *job_types, T *pos, T *kpoints,
                       T **vals, T **grad_lapl,
                       int row_stride, int N, int numWalkers);
 
-
 template<typename T> void
 evaluate3DSplineComplexToReal
 (HybridJobType *job_types, T *pos, T *kpoints, int *make2copies,
  typename SplineTraits<std::complex<T>,3>::CudaSplineType *multispline, T *Linv,
  T **vals, int N, int numWalkers);
-
 
 template<typename T> void
 evaluate3DSplineComplexToReal
@@ -180,12 +165,10 @@ evaluate3DSplineComplexToReal
  T **vals, T **grad_lapl,
  int row_stride, int N, int numWalkers);
 
-
 template<typename T> void
 CalcYlmRealCuda (T *rhats,  HybridJobType *job_type,
                  T **Ylm_ptr, T **dYlm_dtheta_ptr, T **dYlm_dphi_ptr,
                  int lMax, int N);
-
 
 template<typename T> void
 CalcYlmComplexCuda (T *rhats,  HybridJobType *job_type,
@@ -193,13 +176,22 @@ CalcYlmComplexCuda (T *rhats,  HybridJobType *job_type,
                     int lMax, int N);
 
 
+// YingWai: these seems to be unused  (Oct 1, 15)
+/*
+template<typename T> void
+evaluateHybridSplineComplexToRealNLPP
+(HybridJobType *job_types,
+ T **Ylm_real, AtomicOrbitalCuda<T> *orbitals,
+ HybridData<T> *data, T *k_reduced, int* make2copies,
+ T **vals, int N, int numWalkers, int lMax);
+
 template<typename T> void
 CalcYlmRealCuda (T *rhats,  HybridJobType *job_type,
                  T **Ylm_ptr, int lMax, int N);
 
-
 template<typename T> void
 CalcYlmComplexCuda (T *rhats,  HybridJobType *job_type,
                     T **Ylm_ptr, int lMax, int N);
+*/
 
 #endif
