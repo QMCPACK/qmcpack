@@ -9,16 +9,17 @@
 \hline
 \multicolumn{2}{l}{parameters}  & \multicolumn{4}{l}{}\\
    &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
-   &   \texttt{walkers             } &  integer  & $> 0$ & dep.   & number of walkers per node  \\
+   &   \texttt{walkers             } &  integer  & $> 0$   & dep.& number of walkers per node  \\
    &   \texttt{blocks              } &  integer  & $\ge 0$ & 1   & number of blocks            \\
    &   \texttt{steps               } &  integer  & $\ge 0$ & 1   & number of steps per block   \\
    &   \texttt{warmupsteps         } &  integer  & $\ge 0$ & 0   & number of steps for warming up\\
    &   \texttt{substeps            } &  integer  & $\ge 0$ & 1   & number of substeps per step \\
    &   \texttt{usedrift            } &  text     & yes, no & no  & use the algorithm with drift\\
-   &   \texttt{timestep            } &  real     & $> 0$ & 0.1 & time step for each electron move \\
+   &   \texttt{timestep            } &  real     & $> 0$   & 0.1 & time step for each electron move \\
    &   \texttt{samples             } &  integer  & $\ge 0$ & 0   & total number of samples \\
-   &   \texttt{stepsbetweensamples } &  integer  & $> 0$ & 1   & period of the sample accumulation\\
+   &   \texttt{stepsbetweensamples } &  integer  & $> 0$   & 1   & period of the sample accumulation\\
    &   \texttt{samplesperthread    } &  integer  & $\ge 0$ & 0   & number of samples per thread  \\
+   &   \texttt{storeconfigs        } &  integer  & all values & 0   & store configurations  \\
   \hline
 \end{tabularx}
 \end{center}
@@ -52,5 +53,22 @@ Because the local energy is evaluated not at each substep but at each step, incr
 \textrm{samplesperthread}=
 \frac{\textrm{blocks}\cdot\textrm{steps}}{\textrm{stepsbetweensamples}}
 \]
+\item \texttt{storeconfigs}. If storeconfigs is set to a non-zero value, then electron configurations during the VMC run will be saved to the files.
+
+The following is an example of VMC section.
+\begin{lstlisting}
+  <qmc method="vmc" move="pbyp" gpu="yes">
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="walkers">    256 </parameter>
+    <parameter name="samples">    2867200 </parameter>
+    <parameter name="stepsbetweensamples">    1 </parameter>
+    <parameter name="substeps">  5 </parameter>
+    <parameter name="warmupSteps">  5 </parameter>
+    <parameter name="blocks">  70 </parameter>
+    <parameter name="timestep">  1.0 </parameter>
+    <parameter name="usedrift">   no </parameter>
+  </qmc>
+\end{lstlisting}
+
 
 \end{itemize}

@@ -45,6 +45,7 @@
  %  &   \texttt{printderivs         } &  text  & $\ge 0$ & 0   & number of samples per  thread  \\
  %  &   \texttt{wlen                } &  integer  & $\ge 0$ & 0   & number of samples per  thread  \\
    &   \texttt{maxDisplSq      } &  real  & all values & -1   & maximum particle move  \\
+   &   \texttt{storeconfigs        } &  integer  & all values & 0   & store configurations  \\
   \hline
 \end{tabularx}
 \end{center}
@@ -112,7 +113,7 @@ where $N$ is the current population.
 
 %\item \texttt{rewind}. \textit{This input is recorded by QMCDriver.cpp, but is never used anywhere else.}
 
-\item \texttt{storeconfigs}. If storeconfigs is set to a non-zero value, then electron configurations during the DMC run will be saved. This option is disabled for the OpenMP version of DMC. \textit{This input is also available for VMC.}
+\item \texttt{storeconfigs}. If storeconfigs is set to a non-zero value, then electron configurations during the DMC run will be saved. This option is disabled for the OpenMP version of DMC.
 
 %\item \texttt{recordwalkers}. In VMC this is equivalent for \texttt{stepsbetweensamples}. \textit{This input is not used in DMC.}
 
