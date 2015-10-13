@@ -276,28 +276,6 @@ void EstimatorManager::stop()
 }
 
 
-void EstimatorManager::initialize_traces(TraceManager& tm)
-{
-  for(int i=0; i<Estimators.size(); ++i)
-  {
-    EstimatorType& estimator = *Estimators[i];
-    if(estimator.tracing)
-      estimator.initialize_traces(tm);
-  }
-}
-
-
-void EstimatorManager::finalize_traces()
-{
-  for(int i=0; i<Estimators.size(); ++i)
-  {
-    EstimatorType& estimator = *Estimators[i];
-    if(estimator.tracing)
-      estimator.finalize_traces();
-  }
-}
-
-
 void EstimatorManager::startBlock(int steps)
 {
   MyTimer.restart();

@@ -477,6 +477,7 @@ void VMCLinearOptOMP::resetRun()
 //       CSMovers.resize(NumThreads,0);
     branchClones.resize(NumThreads,0);
     estimatorClones.resize(NumThreads,0);
+    traceClones.resize(NumThreads,0);
     Rng.resize(NumThreads,0);
     int nwtot=(W.getActiveWalkers()/NumThreads)*NumThreads;
     FairDivideLow(nwtot,NumThreads,wPerNode);
@@ -490,6 +491,7 @@ void VMCLinearOptOMP::resetRun()
       estimatorClones[ip]= new EstimatorManager(*Estimators);//,*hClones[ip]);
       estimatorClones[ip]->resetTargetParticleSet(*wClones[ip]);
       estimatorClones[ip]->setCollectionMode(false);
+      traceClones[ip] = Traces->makeClone();
       Rng[ip]=new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
       hClones[ip]->setRandomGenerator(Rng[ip]);
       branchClones[ip] = new BranchEngineType(*branchEngine);
@@ -545,12 +547,22 @@ void VMCLinearOptOMP::resetRun()
         app_log() << os.str() << endl;
     }
   }
+  else
+  {
+#if !defined(BGP_BUG)
+    #pragma omp parallel for
+#endif
+    for(int ip=0; ip<NumThreads; ++ip)
+    {
+      traceClones[ip]->transfer_state_from(*Traces);
+    }
+  }
   #pragma omp parallel
   {
     int ip=omp_get_thread_num();
     Movers[ip]->put(qmcNode);
 //       CSMovers[ip]->put(qmcNode);
-    Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
+    Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip],traceClones[ip]);
 //       CSMovers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
     if (QMCDriverMode[QMC_UPDATE_MODE])
       Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
