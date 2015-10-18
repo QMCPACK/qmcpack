@@ -253,7 +253,7 @@ int WalkerControlBase::branch(int iter, MCWalkerConfiguration& W, RealType trigg
   return nw_tot;
 }
 
-void Write2XYZ(MCWalkerConfiguration& W)
+void WalkerControlBase::Write2XYZ(MCWalkerConfiguration& W)
 {
   ofstream fout("bad.xyz");
   MCWalkerConfiguration::iterator it(W.begin());
