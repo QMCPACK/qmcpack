@@ -32,7 +32,9 @@
 #include "QMCDrivers/QMCDriver.h"
 #include "Message/Communicate.h"
 #include "Message/OpenMP.h"
+#ifdef QMC_COMPLEX
 #include "Estimators/PostProcessor.h"
+#endif
 #include <queue>
 #include <cstring>
 #include "HDFVersion.h"
@@ -599,9 +601,11 @@ void QMCMain::postprocess(xmlNodePtr cur,int qacur)
   if(ptclPool==0)
     APP_ABORT("QMCMain::postprocess  ptclPool is null");
 
+#ifdef QMC_COMPLEX
   PostProcessor PP(id,series_start,series_end);
   PP.put(cur,*ptclPool,*psiPool,*hamPool);
   PP.postprocess();
+#endif
 
 }
 

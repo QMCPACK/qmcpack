@@ -32,16 +32,18 @@
 #include "QMCHamiltonians/EnergyDensityEstimator.h"
 #include "QMCHamiltonians/NearestNeighborsEstimator.h"
 #include "QMCHamiltonians/HarmonicExternalPotential.h"
-#include "QMCHamiltonians/SpinDensity.h"
 #include "QMCHamiltonians/StaticStructureFactor.h"
 #include "QMCHamiltonians/OrbitalImages.h"
-#include "QMCHamiltonians/DensityMatrices1B.h"
 #if OHMMS_DIM == 3
 #include "QMCHamiltonians/ChiesaCorrection.h"
 #if defined(HAVE_LIBFFTW_LS)
 #include "QMCHamiltonians/ModInsKineticEnergy.h"
 #include "QMCHamiltonians/MomentumDistribution.h"
 #include "QMCHamiltonians/DispersionRelation.h"
+#endif
+#ifdef QMC_COMPLEX
+#include "QMCHamiltonians/DensityMatrices1B.h"
+#include "QMCHamiltonians/SpinDensity.h"
 #endif
 #endif
 // #include "QMCHamiltonians/ZeroVarObs.h"
@@ -375,6 +377,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         apot->put(cur);
         targetH->addOperator(apot,"nearest_neighbors",false);
       }
+#ifdef QMC_COMPLEX
       else if(potType == "spindensity")
       {
         app_log()<<"  Adding SpinDensity"<<endl;
@@ -382,6 +385,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         apot->put(cur);
         targetH->addOperator(apot,potName,false);
       }
+#endif
       else if(potType == "structurefactor")
       {
         app_log()<<"  Adding StaticStructureFactor"<<endl;
@@ -396,6 +400,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         apot->put(cur);
         targetH->addOperator(apot,potName,false);
       }
+#ifdef QMC_COMPLEX
       else if(potType == "dm1b")
       {
         app_log()<<"  Adding DensityMatrices1B"<<endl;
@@ -417,6 +422,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         apot->put(cur);
         targetH->addOperator(apot,potName,false);
       }
+#endif
       else if(potType == "sk")
       {
         if(PBCType)//only if perioidic

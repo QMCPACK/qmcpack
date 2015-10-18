@@ -17,12 +17,8 @@ SET(HAMSRCS
   CoulombPotentialFactory.cpp
   ../Estimators/TraceManager.cpp
   HarmonicExternalPotential.cpp
-  SpinDensity.cpp
   StaticStructureFactor.cpp
-  ../Estimators/PostProcessor.cpp
-  ../Estimators/SpinDensityPostProcessor.cpp
   OrbitalImages.cpp
-  DensityMatrices1B.cpp
 )
 #  FSAtomPseudoPot.cpp
 
@@ -51,6 +47,13 @@ IF(OHMMS_DIM MATCHES 3)
     SpaceGrid.cpp
     EnergyDensityEstimator.cpp
     )
+
+  IF(QMC_COMPLEX)
+    SET(HAMSRCS ${HAMSRCS} DensityMatrices1B.cpp SpinDensity.cpp
+      ../Estimators/PostProcessor.cpp
+      ../Estimators/SpinDensityPostProcessor.cpp
+      )
+  ENDIF()
 
   IF(HAVE_LIBFFTW)
     SET(HAMSRCS ${HAMSRCS} MPC.cpp VHXC.cpp)

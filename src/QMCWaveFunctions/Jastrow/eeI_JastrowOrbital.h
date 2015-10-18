@@ -34,7 +34,8 @@ struct IonData
   double cutoff_radius;
   eListType elecs_inside;
   eListType::iterator current;
-  IonData() : cutoff_radius(0.0), current(0) { }
+  //IonData() : cutoff_radius(0.0), current(0) { }
+  IonData() : cutoff_radius(0.0) { }
 };
 
 
