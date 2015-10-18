@@ -28,9 +28,6 @@ set(PREFETCH_AHEAD 10)
 set(HAVE_MKL 1)
 set(HAVE_MKL_VML 1)
 
-set(BOOST_HOME /Users/jeongnim/share/boost)
-set(HDF5_HOME /Users/jeongnim/share/xe16)
-
 set(FFTW_INCLUDE_DIR $ENV{MKLROOT}/include/fftw)
 set(FFTW_LIBRARIES "")
 
