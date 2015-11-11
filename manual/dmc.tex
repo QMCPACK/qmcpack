@@ -166,11 +166,35 @@ on diffusion Monte Carlo.
 The flags checkpoint and dumpconfig instructs qmcpack to output walker configurations.  This also
 works in variational Monte Carlo.  This will output an h5 file with the project id and iteration number.
 To read in this file for a continuation run, specify the following:
-\begin{lstlisting}[caption=Restart command ]
+\begin{lstlisting}[caption=Restart (read wakers from previous run) ]
  <mcwalkerset fileroot="BH.s002" node="-1" nprocs="1" version="0 6" collected="yes"/>
 \end{lstlisting}
-where, BH is the project id and s002 is the calculation number to read in the walkers from the previous run.
+where, BH is the project id and s002 is the calculation number to read in the walkers from the previous run.\\
 
+Combining VMC and DMC in a single run (and wave function optimization can be combined in this way too) is the standard way in which QMCPACK is typical run.   There is no need to run two separate jobs, as method sections can be stacked, and walkers are transfered between them.
+
+\begin{lstlisting}[caption=Combined VMC and DMC run ]
+  <qmc method="vmc" move="pbyp" target="e">
+    <parameter name="blocks">100</parameter>
+    <parameter name="steps">4000</parameter>
+    <parameter name="warmupsteps">100</parameter>
+    <parameter name="samples">1920</parameter>
+    <parameter name="walkers">1</parameter>
+    <parameter name="timestep">0.5</parameter>
+  </qmc>
+  <qmc method="dmc" move="pbyp" target="e">
+    <parameter name="blocks">100</parameter>
+    <parameter name="steps">400</parameter>
+    <parameter name="timestep">0.010</parameter>
+    <parameter name="warmupsteps">100</parameter>
+  </qmc>
+  <qmc method="dmc" move="pbyp" target="e">
+    <parameter name="warmupsteps">500</parameter>
+    <parameter name="blocks">50</parameter>
+    <parameter name="steps">100</parameter>
+    <parameter name="timestep">0.005</parameter>
+  </qmc>
+\end{lstlisting}
 
 
 
