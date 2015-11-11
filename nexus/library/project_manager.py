@@ -20,7 +20,7 @@ import os
 import time
 import memory
 from generic import obj
-from project_base import Pobj
+from nexus_base import NexusCore,nexus_core
 from simulation import Simulation
 
 
@@ -29,10 +29,9 @@ def trivial(sim,*args,**kwargs):
 #end def trivial
 
 
-class ProjectManager(Pobj):
+class ProjectManager(NexusCore):
     def __init__(self):
-        #variables determined by self
-        modes = self.modes
+        modes = nexus_core.modes
         self.persistent_modes = set([modes.submit,modes.all])
         self.simulations = obj()
         self.cascades = obj()
@@ -63,7 +62,7 @@ class ProjectManager(Pobj):
         self.resolve_file_collisions()
         self.propagate_blockages()
         self.log('loading cascade images',n=1)
-        if self.load_images:
+        if nexus_core.load_images:
             self.load_cascades()
         else:
             self.log('cascades',n=1)
@@ -80,32 +79,29 @@ class ProjectManager(Pobj):
     def run_project(self,status=False,status_only=False):
         self.log('\nProject starting',n=0)
         self.init_cascades()
-        status_only = status_only or self.status_only
+        status_only = status_only or nexus_core.status_only
         status = status or status_only
         if status:
             self.write_simulation_status()
             if status_only:
+                NexusCore.write_end_splash()
                 return
             #end if
         #end if
         self.log('\nstarting runs:\n'+30*'~',n=1)
-        if self.dependent_modes <= self.stages_set:
-            if self.monitor:
+        if nexus_core.dependent_modes <= nexus_core.stages_set:
+            if nexus_core.monitor:
                 ipoll = 0
                 while len(self.progressing_cascades)>0:
-                    self.dlog('\n\n\n'+70*'=',n=1)
                     self.log('poll',ipoll,' memory %3.2f MB'%(memory.resident()/1e6),n=1)
-                    Pobj.wrote_something = False
-                    self.dlog('cascades',self.progressing_cascades.keys(),n=2)
+                    NexusCore.wrote_something = False
                     ipoll+=1
                     self.machine.query_queue()
                     self.progress_cascades()
                     self.machine.submit_jobs()
                     self.update_process_ids()
-                    self.dlog('sleeping',self.sleep,n=2)
-                    time.sleep(self.sleep)
-                    self.dlog('awake',n=2)
-                    if Pobj.wrote_something:
+                    time.sleep(nexus_core.sleep)
+                    if NexusCore.wrote_something:
                         self.log()
                     #end if
                 #end while
@@ -119,23 +115,20 @@ class ProjectManager(Pobj):
             self.progress_cascades()
         #end if
         self.log('Project finished\n')
+        NexusCore.write_end_splash()
     #end def run_project
 
     
     def load_cascades(self):
-        self.dlog('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~load cascades',n=1)
         cascades = obj()
         progressing_cascades = obj()
         for cid,cascade in self.cascades.iteritems():
-            self.dlog('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~reconstruct cascade',n=1)
             rc = cascade.reconstruct_cascade()
-            self.dlog('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~end reconstruct cascade',n=1)
             cascades[rc.simid] = rc 
             progressing_cascades[rc.simid] = rc
         #end for
         self.cascades = cascades
         self.progressing_cascades = progressing_cascades
-        self.dlog('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~end load cascades',n=1)
     #end def load_cascades
 
 
@@ -204,7 +197,7 @@ class ProjectManager(Pobj):
 
         
     def write_simulation_status(self):
-        self.log('cascade status',n=1)
+        self.log('\ncascade status',n=1)
         self.log('setup, sent_files, submitted, finished, got_output, analyzed',n=2)
         indicators = ('setup','sent_files','submitted','finished','got_output','analyzed')
         for isim in self.simulations.keys():
@@ -214,14 +207,14 @@ class ProjectManager(Pobj):
             for stat in stats:
                 status+=str(int(stat))
             #end for
-            self.log('{0}  {1}  {2}'.format(status,sim.identifier,sim.locdir),n=2)
+            self.log('{0}  {1:<6}  {2}'.format(status,sim.identifier,sim.locdir),n=2)
         #end for
         self.log('setup, sent_files, submitted, finished, got_output, analyzed',n=2)
     #end def write_simulation_status
 
 
     def write_cascade_status(self):
-        self.log('cascade status',n=1)
+        self.log('\ncascade status',n=1)
 
         self.log('setup, sent_files, submitted, finished, got_output, analyzed',n=2)
         def write_status(sim):
@@ -319,31 +312,22 @@ class ProjectManager(Pobj):
     #end def check_dependencies
 
     def progress_cascades(self):
-        self.dlog('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~progress cascades',n=1)
-        self.gc.collect()
+        NexusCore.gc.collect()
         finished = []
         progressing_cascades = self.progressing_cascades
-        self.dlog('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~reset wait ids',n=1)
         for cid,cascade in progressing_cascades.iteritems():
             cascade.reset_wait_ids()
         #end for
-        self.dlog('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~end reset wait ids',n=1)
         for cid,cascade in progressing_cascades.iteritems():
-            self.dlog('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~progress',n=1)
             cascade.progress()
-            self.dlog('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~end progress',n=1)
-            self.dlog('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~check subcascade',n=1)
             cascade.check_subcascade()
-            self.dlog('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~end check subcascade',n=1)
             if cascade.subcascade_finished:
                 finished.append(cid)
             #end if
         #end for
         for cid in finished:
-            self.dlog('removing cascade:',cid,n=1)
             del progressing_cascades[cid]
         #end for
-        self.dlog('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~end progress cascades',n=1)
     #end def progress_cascades
 
 

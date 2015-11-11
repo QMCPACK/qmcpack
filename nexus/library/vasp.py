@@ -28,7 +28,7 @@ import os
 from generic import obj
 from simulation import Simulation,SimulationInput,SimulationAnalyzer
 from vasp_input import VaspInput,generate_vasp_input,generate_poscar,Poscar
-from vasp_analyzer import VaspAnalyzer
+from vasp_analyzer import VaspAnalyzer,read_vxml
 from structure import Structure
 from debug import *
 
@@ -114,10 +114,10 @@ class Vasp(Simulation):
         input = self.input
         if result_name=='structure':
             if input.performing_neb():
-                if 'neb_structures' not in self.temp:
-                    self.temp.neb_structures = []
+                if 'neb_structures' not in self:
+                    self.neb_structures = []
                 #end if
-                neb_structures = self.temp.neb_structures
+                neb_structures = self.neb_structures
                 if len(neb_structures)>1:
                     self.error('NEB simulation at {0} depends on more than two structures\n  please check your inputs'.format(self.locdir))
                 #end if

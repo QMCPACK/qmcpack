@@ -38,11 +38,11 @@ from superstring import \
     valid_variable_name,\
     string2val
 
-#from abilities import AllAbilities
 from generic import obj
+from developer import DevBase
 
 
-class XMLelement(obj):
+class XMLelement(DevBase):
     def _escape_name(self,name):
         if name in self._escape_names:
             name=name+'_'
@@ -214,7 +214,7 @@ class XMLelement(obj):
   class XMLReader
     reads an xml file and creates a dynamic object out of its contents
 '''
-class XMLreader(obj):
+class XMLreader(DevBase):
     def __init__(self,fpath=None,element_joins=None,element_aliases=None,contract_names=False,strip_prefix=None,warn=True,xml=None):
         if element_joins is None:
             element_joins = []

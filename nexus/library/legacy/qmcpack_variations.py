@@ -16,7 +16,7 @@ from datetime import datetime
 # jtk library imports
 from generic import obj                                   # generic.py
 from project import Qmcpack,QmcpackInput,QmcpackAnalyzer  # project.py
-from project import Job,Pobj
+from project import Job,nexus_core
 from developer import DevBase                             # developer.py
 from debug import *                                       # debug.py
 
@@ -258,7 +258,7 @@ class QmcpackVariations(DevBase):
             input.assign(**assignments)
 
             #  add the relative path location of the wavefunction file
-            runpath = os.path.join(Pobj.local_directory,Pobj.runs,path)
+            runpath = os.path.join(nexus_core.local_directory,nexus_core.runs,path)
 
             wftmp  = os.path.join(source_path,wf_h5file)
             wfpath = os.path.relpath(wftmp,runpath)
@@ -270,7 +270,7 @@ class QmcpackVariations(DevBase):
 
             # check that the build exists
             app_loc = os.path.join(self.build_path,build_dir,self.app_loc)
-            if not os.path.exists(app_loc) and not self.generate_only:
+            if not os.path.exists(app_loc) and not nexus_core.generate_only:
                 print '    Error: no qmcapp at '+app_loc
                 error = True
             #end if

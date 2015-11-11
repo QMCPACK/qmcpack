@@ -3,9 +3,12 @@
 ##################################################################
 
 
+import os
 from generic import obj
 from periodic_table import pt as ptable
 from pseudopotential import GaussianPP
+from nexus_base import nexus_noncore
+from simulation import Simulation
 from developer import error
 
 
@@ -170,4 +173,179 @@ def write_hamiltonian(theory          = None,
 #end def write_hamiltonian
 
 
+class CrystalSim: None
+class PropertiesSim: None
 
+
+from simulation import GenericSimulation
+class Crystal_1(GenericSimulation,CrystalSim):
+    generic_identifier = 'crystal'
+    application = 'crystal'
+    infile_extension = '.d12'
+    application_results = set(['orbitals'])
+    
+    def check_result(self,result_name,sim):
+        return result_name=='orbitals'
+    #end def check_result
+
+    def get_result(self,result_name,sim):
+        result = obj() # its up to the other application how to handle crystal
+        if result_name!='orbitals':
+            self.error('ability to get result '+result_name+' has not been implemented')
+        #end if
+        return result
+    #end def get_result
+
+    def incorporate_result(self,result_name,result,sim):
+        self.error('ability to incorporate result '+result_name+' has not been implemented')
+    #end def incorporate_result
+
+    def app_command(self):
+        return self.app_name+'<'+self.infile
+    #end def app_command
+#end class Crystal_1
+
+
+
+from simulation import generate_simulation,input_template_dev
+def gen_crystal_molecule_sim(
+    identifier  = 'crystal',
+    path        = None,
+    job         = None,
+    title       = 'atom',
+    system      = None,
+    pseudos     = None,
+    occupations = None,
+    formats     = None,
+    theory      = None,
+    levshift    = None,
+    maxcycle    = None,
+    ):
+    required = obj(path=path,system=system,pseudos=pseudos,occupations=occupations,formats=formats,theory=theory,job=job)
+    for k,v in required.iteritems():
+        if v is None:
+            error(k+' is a required input','gen_crystal_molecule_sim')
+        #end if
+    #end for
+    pseudos_in = pseudos
+    pseudos = []
+    for pp in pseudos_in:
+        pseudos.append(os.path.join(nexus_noncore.pseudo_dir,pp))
+    #end for
+
+    crys_input = input_template_dev()
+    crys_input.read_text(
+        write_geometry(
+            title = title,
+            bcond = 'molecule',
+            system = system
+            )+
+        write_basis(
+            pseudos     = pseudos,
+            occupations = occupations,
+            formats     = formats,
+            )+
+        write_hamiltonian(
+            theory   = theory,
+            system   = system,
+            levshift = levshift,
+            maxcycle = maxcycle
+            )
+        )
+
+    #crys = generate_simulation(
+    #    identifier = identifier,
+    #    path       = path,
+    #    job        = job(cores=1,serial=True,app_command='crystal<{0}.d12>&{0}.out&'.format(identifier)),
+    #    input      = crys_input,
+    #    infile     = '{0}.d12'.format(identifier),
+    #    outfile    = '{0}.out'.format(identifier),
+    #    )
+
+
+    crys = Crystal_1(
+        identifier = identifier,
+        path       = path,
+        job        = job,
+        input      = crys_input,
+        )
+
+
+    return crys
+#end def gen_crystal_molecule_sim
+
+
+
+
+
+
+class Properties_1(GenericSimulation,PropertiesSim): # same implementation, not 'is a'
+    generic_identifier = 'properties'
+    application = 'properties'
+    infile_extension = '.d3'
+    application_results = set(['orbitals'])
+    
+    def check_result(self,result_name,sim):
+        return result_name=='orbitals'
+    #end def check_result
+
+    def get_result(self,result_name,sim):
+        result = obj() # its up to the other application how to handle crystal
+        if result_name!='orbitals':
+            self.error('ability to get result '+result_name+' has not been implemented')
+        #end if
+        return result
+    #end def get_result
+
+    def incorporate_result(self,result_name,result,sim):
+        if result_name!='orbitals' or not isinstance(sim,Crystal_1):
+            self.error('ability to incorporate result '+result_name+' has not been implemented')
+        #end if
+    #end def incorporate_result
+
+    def app_command(self):
+        return self.app_name+'<'+self.infile
+    #end def app_command
+#end class Properties_1
+
+
+molecule_text = '''
+NEWK
+1 0
+CRYAPI_OUT
+END
+'''
+periodic_text = '''
+NEWK
+0 0
+1 0
+CRYAPI_OUT
+END
+'''
+
+def gen_properties(**kwargs):
+
+    if 'systype' not in kwargs:
+        error('systype is a required input','gen_properties')
+    #end if
+    systype = kwargs['systype']
+    del kwargs['systype']
+
+    if systype=='molecule_qmc':
+        text = molecule_text
+    elif systype=='periodic_qmc':
+        text = periodic_text
+    else:
+        error('invalid systype encountered\nsystype provided: {0}\nvalid options are: molecule_qmc, periodic_qmc'.format(systype))
+    #end if
+
+    sim_args,inp_args = Simulation.separate_inputs(kwargs)
+    if len(inp_args)>0:
+        error('invalid arguments encountered\ninvalid keywords: {0}'.format(sorted(inp_args.keys())),'gen_properties')
+    #end if
+    if not 'input' in sim_args:
+        sim_args.input = input_template_dev(text=text.strip())
+    #end if
+    prop = Properties_1(**sim_args)
+    return prop
+#end def gen_properties

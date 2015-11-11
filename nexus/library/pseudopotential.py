@@ -43,22 +43,16 @@ import os
 from subprocess import Popen
 from execute import execute
 from numpy import linspace,array,zeros,append,mgrid,empty,exp,minimum,maximum,sqrt,arange
+from fileio import TextFile
 from xmlreader import readxml
 from superstring import string2val,split_delims
 from periodic_table import pt,is_element
 from unit_converter import convert
 from generic import obj
 from developer import DevBase,unavailable,error
+from basisset import process_gaussian_text,GaussianBasisSet
+from plotting import *
 from debug import *
-try:
-    from matplotlib.pyplot import figure,plot,xlabel,ylabel,title,show,ylim,legend,xlim,rcParams,savefig,bar,xticks,subplot,grid,setp,errorbar,loglog,semilogx,semilogy
-
-    params = {'legend.fontsize':14,'figure.facecolor':'white','figure.subplot.hspace':0.,
-          'axes.labelsize':16,'xtick.labelsize':14,'ytick.labelsize':14}
-    rcParams.update(params)
-except (ImportError,RuntimeError):
-   figure,plot,xlabel,ylabel,title,show,ylim,legend,xlim,rcParams,savefig,bar,xticks,subplot,grid,setp,errorbar,loglog,semilogx,semilogy = unavailable('matplotlib.pyplot','figure','plot','xlabel','ylabel','title','show','ylim','legend','xlim','rcParams','savefig','bar','xticks','subplot','grid','setp','errorbar','loglog','semilogx','semilogy')
-#end try
 try:
     from scipy.optimize import curve_fit
 except:
@@ -81,7 +75,7 @@ class PseudoFile(DevBase):
             elem_label = self.filename.split('.')[0]
             is_elem,symbol = is_element(elem_label,symbol=True)
             if not is_elem:
-                self.error('cannot determine element for pseudopotential file: {0}\npseudopotential file names must be prefixed by an atomic symbol or label\n(e.g. Si, Si1, etc)'.format(filename))
+                self.error('cannot determine element for pseudopotential file: {0}\npseudopotential file names must be prefixed by an atomic symbol or label\n(e.g. Si, Si1, etc)'.format(filepath))
             #end if
             self.element = symbol
             self.element_label = elem_label
@@ -159,7 +153,6 @@ class Pseudopotentials(DevBase):
         ppfiles = []
         pps     = []
         errors = False
-        print
         for pp in pseudopotentials:
             if isinstance(pp,PseudoFile):
                 pps.append(pp)
@@ -173,7 +166,6 @@ class Pseudopotentials(DevBase):
         if errors:
             self.error('cannot create Pseudopotentials object')
         #end if
-
         if len(pps)>0:
             self.addpp(pps)
         #end if
@@ -198,6 +190,7 @@ class Pseudopotentials(DevBase):
             ppfiles = ppfiles[0]
         #end if
         pps = []
+        print
         print '  Pseudopotentials'
         for filepath in ppfiles:
             print '    reading pp: ',filepath
@@ -209,6 +202,7 @@ class Pseudopotentials(DevBase):
             #end if
             pps.append(pp)
         #end for
+        print
         self.addpp(pps)
     #end def readpp
 
@@ -219,6 +213,8 @@ class Pseudopotentials(DevBase):
             if ppfile in self:
                 pp = self[ppfile]
                 pps[pp.element_label] = pp
+            else:
+                self.error('pseudopotential file not found\nmissing file: {0}'.format(ppfile))
             #end if
         #end for
         return pps
@@ -281,7 +277,7 @@ class Pseudopotential(DevBase):
         #end if
         self.element = split_delims(os.path.split(filepath)[1])[0]
         text = open(filepath,'r').read()
-        self.read_text(text,format)
+        self.read_text(text,format,filepath=filepath)
     #end def read
 
         
@@ -301,7 +297,7 @@ class Pseudopotential(DevBase):
     #end def write
 
 
-    def read_text(self,text,format=None):
+    def read_text(self,text,format=None,filepath=None):
         self.not_implemented()
     #end def read_text
 
@@ -321,7 +317,7 @@ class Pseudopotential(DevBase):
 
 
 class SemilocalPP(Pseudopotential):
-    l_channels   = tuple('spdfgh')
+    l_channels   = tuple('spdfghi')
     all_channels = ['loc']+list(l_channels)
     channel_colors = obj(s='g',p='r',d='b',f='m',g='c',h='k')
 
@@ -396,7 +392,7 @@ class SemilocalPP(Pseudopotential):
 
 
     def l_int_from_text(self,ltext):
-        lint = 'spdfgh'.find(ltext)
+        lint = 'spdfghi'.find(ltext)
         return lint
     #end def l_int_from_text
         
@@ -647,9 +643,9 @@ class SemilocalPP(Pseudopotential):
         symbol        = self.element
         atomic_number = self.Zcore+self.Zval
         zval          = self.Zval
-        creator       = 'nexus'
+        creator       = 'Nexus'
         npots_down    = len(self.channels)
-        l_local       = 'spdfg'.find(self.local)
+        l_local       = 'spdfgi'.find(self.local)
 
         rmin = 1e99
         rmax = -1e99
@@ -704,6 +700,67 @@ class SemilocalPP(Pseudopotential):
         #end if
         return text
     #end def write_qmcpack
+
+
+    def write_casino(self,filepath=None):
+        name          = self.name
+        symbol        = self.element
+        atomic_number = self.Zcore+self.Zval
+        zval          = float(self.Zval)
+        l_local       = 'spdfgi'.find(self.local)
+
+        if name is None:
+            name = '{0} pseudopotential converted by Nexus'.format(symbol)
+        #end if
+
+        rmin = 1e99
+        rmax = -1e99
+        npts = 0
+        vps = obj()
+        for l in self.channels.keys():
+            r,v = self.numeric_channel(l,rpow=1,with_local=True)
+            rmin   = min(rmin,r.min())
+            rmax   = max(rmax,r.max())
+            npts   = len(r)
+            vps[l] = v
+        #end for
+
+        header = '''{0}
+Atomic number and pseudo-charge
+  {1} {2}
+Energy units (rydberg/hartree/ev):
+  hartree
+Angular momentum of local component (0=s,1=p,2=d..)
+  {3}
+NLRULE override (1) VMC/DMC (2) config gen (0 ==> input/default value)
+  0 0
+Number of grid points
+  {4}
+'''.format(name,atomic_number,zval,l_local,npts)
+
+        grid = 'R(i) in atomic units\n'
+        for d in r:
+            grid += '  {0:20.14e}\n'.format(d)
+        #end for
+
+        channels = ''
+        for l in self.l_channels:
+            if l in vps:
+                channels += 'r*potential (L={0}) in Ha\n'.format('spdfgi'.find(l))
+                v = vps[l]
+                for d in v:
+                    channels += '  {0:20.14e}\n'.format(d)
+                #end for
+            #end if
+        #end for
+        text = header+grid+channels
+
+        if filepath!=None:
+            open(filepath,'w').write(text)
+        #end if
+        return text
+    #end def write_casino
+
 #end class SemilocalPP
 
 
@@ -756,713 +813,8 @@ class GFit(DevBase):
         #end if
     #end def report
 #end class GFit
- 
-
-def process_gaussian_text(text,format,pp=True,basis=True):
-    if format=='gamess' or format=='gaussian' or format=='atomscf':
-        rawlines = text.splitlines()
-        sections = []
-        last_empty = True
-        for rline in rawlines:
-            line = rline.strip()
-            if (not line.startswith('!')) and (not line.startswith('#')) and len(line)>0:
-                if last_empty:
-                    lines = []
-                    sections.append(lines)
-                #end if
-                lines.append(line)
-                last_empty = False
-            else:
-                last_empty = True
-            #end if
-        #end for
-        del lines
-        if len(sections)==2:
-            basis_lines = sections[0]
-            pp_lines    = sections[1]
-        elif pp:
-            basis_lines = None
-            pp_lines    = sections[0]
-        elif basis:
-            basis_lines = sections[0]
-            pp_lines    = None
-        #end if
-    elif format=='crystal':
-        rawlines = text.splitlines()
-        pp_lines = []
-        basis_lines = []
-        foundpp = False
-        for line in rawlines:
-            if not foundpp:
-                foundpp = len(line.split())==5
-            #end if
-            if not foundpp:
-                pp_lines.append(line)
-            else:
-                basis_lines.append(line)
-            #end if
-        #end for
-        if len(pp_lines)==0:
-            pp_lines = None
-        #end if
-        if len(basis_lines)==0:
-            basis_lines = None
-        #end if
-    else:
-        error('{0} format is unknown'.format(format),'process_gaussian_text')
-    #end if
-    if pp and basis:
-        return pp_lines,basis_lines
-    elif pp:
-        return pp_lines
-    elif basis:
-        return basis_lines
-    else:
-        error('must request pp or basis')
-    #end if
-#end def process_gaussian_text
 
 
-class GaussianBasisSet(DevBase):
-    lset_full = tuple('spdfghijk')
-    lstyles = obj(s='g-',p='r-',d='b-',f='m-',g='c-',h='k-',i='g-.',j='r-.',k='b-.')
-    formats = 'gaussian gamess'.split()
-
-    crystal_lmap = {0:'s',1:'sp',2:'p',3:'d',4:'f'}
-    crystal_lmap_reverse = dict(s=0,sp=1,p=2,d=3,f=4)
-
-    @staticmethod
-    def process_float(s):
-        return float(s.replace('D','e').replace('d','e'))
-    #end def process_float
-
-
-    def __init__(self,filepath=None,format=None):
-        self.name  = None
-        self.basis = obj()
-        if filepath!=None:
-            self.read(filepath,format)
-        #end if
-    #end def __init__
-
-
-    def read(self,filepath,format=None):
-        if format is None:
-            self.error('format keyword must be specified to read file {0}\nvalid options are: {1}'.format(filepath,self.formats))
-        elif not format in self.formats:
-            self.error('incorrect format requested: {0}\nvalid options are: {1}'.format(format,self.formats))
-        #end if
-        if not os.path.exists(filepath):
-            self.error('cannot read {0}, file does not exist'.format(filepath))
-        #end if
-        #self.name = split_delims(os.path.split(filepath)[1])[0]
-        self.name = os.path.split(filepath)[1].split('.')[0]
-        text = open(filepath,'r').read()
-        self.read_text(text,format)
-    #end def read
-
-        
-    def write(self,filepath=None,format=None):
-        if format is None:
-            self.error('format keyword must be specified to write file {0}\nvalid options are: {1}'.format(filepath,self.formats))
-        elif not format in self.formats:
-            self.error('incorrect format requested: {0}\nvalid options are: {1}'.format(format,self.formats))
-        #end if
-        text = self.write_text(format)
-        if filepath!=None:
-            open(filepath,'w').write(text)
-        #end if
-        return text
-    #end def write
-
-
-    def read_text(self,text,format=None):
-        basis_lines = process_gaussian_text(text,format,pp=False)
-        self.read_lines(basis_lines,format)
-    #end def read_text
-
-
-    def read_lines(self,basis_lines,format=None):
-        basis = self.basis
-        basis.clear()
-        if format=='gamess':
-            i=1
-            while i<len(basis_lines):
-                tokens = basis_lines[i].split(); i+=1
-                ltext = tokens[0].lower()
-                ngauss = int(tokens[1])
-                scale  = array(tokens[2:],dtype=float)
-                bterms = obj()
-                for j in xrange(ngauss):
-                    index,expon,coeff = basis_lines[i].split(); i+=1
-                    expon = GaussianBasisSet.process_float(expon)
-                    coeff = GaussianBasisSet.process_float(coeff)
-                    bterms.append(obj(expon=expon,coeff=coeff))
-                #end for
-                basis.append(obj(l=ltext,scale=scale,terms=bterms))
-            #end while
-        #end if
-        elif format=='gaussian':
-            i=1
-            while i<len(basis_lines):
-                tokens = basis_lines[i].split(); i+=1
-                ltext = tokens[0].lower()
-                ngauss = int(tokens[1])
-                scale  = array(tokens[2:],dtype=float)
-                bterms = obj()
-                for j in xrange(ngauss):
-                    expon,coeff = basis_lines[i].split(); i+=1
-                    expon = GaussianBasisSet.process_float(expon)
-                    coeff = GaussianBasisSet.process_float(coeff)
-                    bterms.append(obj(expon=expon,coeff=coeff))
-                #end for
-                basis.append(obj(l=ltext,scale=scale,terms=bterms))
-            #end while
-        elif format=='crystal':
-            i=0
-            while i<len(basis_lines):
-                tokens = basis_lines[i].split(); i+=1
-                if len(tokens)!=5:
-                    self.error('could not parse crystal basisset, input may be misformatted')
-                #end if
-                basis_type    =   int(tokens[0])
-                l_type        =   int(tokens[1])
-                ngauss        =   int(tokens[2])
-                formal_charge = float(tokens[3])
-                scale         = array([tokens[4]],dtype=float)
-                ltext = GaussianBasisSet.crystal_lmap[l_type]
-                if ltext!='sp':
-                    bterms = obj()
-                    for j in xrange(ngauss):
-                        expon,coeff = basis_lines[i].split(); i+=1
-                        expon = GaussianBasisSet.process_float(expon)
-                        coeff = GaussianBasisSet.process_float(coeff)
-                        bterms.append(obj(expon=expon,coeff=coeff))
-                    #end for
-                    basis.append(obj(l=ltext,scale=scale,terms=bterms))
-                else: # sp has shared exponent for s and p, split them now
-                    sterms = obj()
-                    pterms = obj()
-                    for j in xrange(ngauss):
-                        expon,scoeff,pcoeff = basis_lines[i].split(); i+=1
-                        expon = GaussianBasisSet.process_float(expon)
-                        scoeff = GaussianBasisSet.process_float(scoeff)
-                        pcoeff = GaussianBasisSet.process_float(pcoeff)
-                        sterms.append(obj(expon=expon,coeff=scoeff))
-                        pterms.append(obj(expon=expon,coeff=pcoeff))
-                    #end for
-                    basis.append(obj(l='s',scale=scale,terms=sterms))
-                    basis.append(obj(l='p',scale=scale,terms=pterms))
-                #end if
-            #end while
-        else:
-            self.error('ability to read file format {0} has not been implemented'.format(format))
-        #end if
-        # sort the basis in s,p,d,f,... order
-        self.lsort()
-    #end def read_lines
-
-
-    
-    def write_text(self,format=None,occ=None):
-        text = ''
-        format = format.lower()
-        if format=='gamess':
-            #text += '{0} {1} 0. 0. 0.\n'.format(self.element,self.Zcore+self.Zval)
-            for ib in xrange(len(self.basis)):
-                b = self.basis[ib]
-                line = '{0} {1}'.format(b.l,len(b.terms))
-                for s in b.scale:
-                    line += ' {0}'.format(s)
-                #end for
-                text += line + '\n'
-                for it in xrange(len(b.terms)):
-                    t = b.terms[it]
-                    text += '{0} {1:12.8f} {2: 12.8f}\n'.format(it+1,t.expon,t.coeff)
-                #end for
-            #end for
-        elif format=='gaussian':
-            #text += '{0} 0\n'.format(self.element)
-            for ib in xrange(len(self.basis)):
-                b = self.basis[ib]
-                line = '{0} {1}'.format(b.l,len(b.terms))
-                for s in b.scale:
-                    line += ' {0}'.format(s)
-                #end for
-                text += line + '\n'
-                for it in xrange(len(b.terms)):
-                    t = b.terms[it]
-                    text += '{0:12.8f}{1: 12.8f}\n'.format(t.expon,t.coeff)
-                #end for
-            #end for
-        elif format=='crystal':
-            if occ is not None:
-                lcounts = dict(s=0,p=0,d=0,f=0)
-            #end if
-            for ib in xrange(len(self.basis)):
-                b = self.basis[ib]
-                if b.l not in self.crystal_lmap_reverse:
-                    self.error('{0} channels cannot be handled by crystal'.format(b.l))
-                #end if
-                Zf = 0
-                if occ is not None and b.l in occ and lcounts[b.l]<len(occ[b.l]):
-                    Zf = occ[b.l][lcounts[b.l]]
-                    lcounts[b.l]+=1
-                #end if
-                lnum = self.crystal_lmap_reverse[b.l]
-                line = '0 {0} {1} {2} {3}'.format(lnum,len(b.terms),Zf,b.scale[0])
-                text += line + '\n'
-                for it in xrange(len(b.terms)):
-                    t = b.terms[it]
-                    text += '{0:12.8f}{1: 12.8f}\n'.format(t.expon,t.coeff)
-                #end for
-            #end for
-        else:
-            self.error('ability to write file format {0} has not been implemented'.format(format))
-        #end if
-        return text
-    #end def write_text
-
-
-    def size(self):
-        return len(self.basis)
-    #end def size
-
-
-    def lset(self):
-        lset = set()
-        for bf in self.basis:
-            lset.add(bf.l)
-        #end for
-        return lset
-    #end def lset
-
-
-    def lcount(self):
-        return len(self.lset())
-    #end def lcount
-
-
-    def lbasis(self):
-        lbasis = obj()
-        for n in range(len(self.basis)):
-            bf = self.basis[n]
-            l  = bf.l
-            if l not in lbasis:
-                lbasis[l] = obj()
-            #end if
-            lbasis[l].append(bf)
-        #end for
-        return lbasis
-    #end def lbasis
-
-    
-    def lsort(self):
-        lbasis = self.lbasis()
-        self.basis.clear()
-        for l in self.lset_full:
-            if l in lbasis:
-                lbas = lbasis[l]
-                for n in range(len(lbas)):
-                    bf = lbas[n]
-                    self.basis.append(bf)
-                #end for
-            #end if
-        #end for
-    #end def lsort
-
-
-    def uncontracted(self):
-        all_uncon = True
-        for bf in self.basis:
-            all_uncon &= len(bf.terms)==1
-        #end for
-        return all_uncon
-    #end def uncontracted
-
-
-    def contracted(self):
-        return not self.uncontracted()
-    #end def contracted
-
-
-    def uncontract(self,tol=1e-3):
-        if self.uncontracted():
-            return
-        #end if
-        lbasis = self.lbasis()
-        self.basis.clear()
-        for l in self.lset_full:
-            if l in lbasis:
-                exponents = []
-                lbas = lbasis[l]
-                for n in xrange(len(lbas)):
-                    uterms = lbas[n].terms
-                    for i in xrange(len(uterms)):
-                        expon = uterms[i].expon
-                        if len(exponents)==0:
-                            exponents = array([expon],dtype=float)
-                        elif abs(exponents-expon).min()>tol:
-                            exponents = array(list(exponents)+[expon],dtype=float)
-                        #end if
-                    #end for
-                #end for
-                for expon in exponents:
-                    cterms = obj()
-                    cterms.append(obj(expon=expon,coeff=1.0))
-                    bf = obj(l=l,scale=array([1.0]),terms=cterms)
-                    self.basis.append(bf)
-                #end for
-            #end if
-        #end for
-    #end def uncontract
-
-
-    def contracted_basis_size(self):
-        bcount = obj()
-        for bf in self.basis:
-            l = bf.l
-            if l not in bcount:
-                bcount[l]=0
-            #end if
-            bcount[l] += 1
-        #end for
-        bs = ''
-        for l in self.lset_full:
-            if l in bcount:
-                bs += str(bcount[l])+l
-            #end if
-        #end for
-        return bs
-    #end def contracted_basis_size
-
-
-    def uncontracted_basis_size(self):
-        if self.uncontracted():
-            return self.contracted_basis_size()
-        #end if
-        uc = self.copy()
-        uc.uncontract()
-        return uc.contracted_basis_size()
-    #end def uncontracted_basis_size
-
-
-    def basis_size(self):
-        us = self.uncontracted_basis_size()
-        cs = self.contracted_basis_size()
-        return '({0})/[{1}]'.format(us,cs)
-    #end def basis_size
-
-
-    def prim_expons(self):
-        if self.contracted():
-            self.error('cannot find primitive gaussian expons because basis is contracted')
-        #end if
-        lbasis = self.lbasis()
-        gexpon = obj()
-        for l,lbas in lbasis.iteritems():
-            e = []
-            for n in range(len(lbas)):
-                e.append(lbas[n].terms[0].expon)
-            #end for
-            gexpon[l] = array(e,dtype=float)
-        #end for
-        return gexpon
-    #end def prim_expons
-
-
-    def prim_widths(self):
-        if self.contracted():
-            self.error('cannot find primitive gaussian widths because basis is contracted')
-        #end if
-        lbasis = self.lbasis()
-        gwidth = obj()
-        for l,lbas in lbasis.iteritems():
-            w = []
-            for n in range(len(lbas)):
-                w.append(1./sqrt(2.*lbas[n].terms[0].expon))
-            #end for
-            gwidth[l] = array(w,dtype=float)
-        #end for
-        return gwidth
-    #end def prim_widths
-
-    
-    def remove_prims(self,comp=None,keep=None,**lselectors):
-        lbasis = self.lbasis()
-        if comp!=None:
-            gwidths = self.prim_widths()
-        #end if
-        for l,lsel in lselectors.iteritems():
-            if l not in lbasis:
-                self.error('cannot remove basis functions from channel {0}, channel not present'.format(l))
-            #end if
-            lbas = lbasis[l]
-            if isinstance(lsel,float):
-                rcut = lsel
-                less = False
-                if comp=='<':
-                    less = True
-                elif comp=='>':
-                    less = False
-                elif comp is None:
-                    self.error('comp argument must be provided (< or >)')
-                else:
-                    self.error('comp must be < or >, you provided: {0}'.format(comp))
-                #end if
-                gw = gwidths[l]
-                iw = arange(len(gw))
-                nkeep = 0
-                if keep!=None and l in keep:
-                    nkeep = keep[l]
-                #end if
-                if less:
-                    rem = iw[gw<rcut]
-                    for i in xrange(len(rem)-nkeep):
-                        del lbas[rem[i]]
-                    #end for
-                else:
-                    rem = iw[gw>rcut]
-                    for i in xrange(nkeep,len(rem)):
-                        del lbas[rem[i]]
-                    #end for
-                #end if
-            elif isinstance(lsel,int):                
-                if comp=='<':
-                    if lsel>len(lbas):
-                        self.error('cannot remove {0} basis functions from channel {1} as it only has {2}'.format(lsel,l,len(lbas)))
-                    #end if
-                    for i in xrange(lsel):
-                        del lbas[i]
-                    #end for
-                elif comp=='>':
-                    if lsel>len(lbas):
-                        self.error('cannot remove {0} basis functions from channel {1} as it only has {2}'.format(lsel,l,len(lbas)))
-                    #end if
-                    for i in xrange(len(lbas)-lsel,len(lbas)):
-                        del lbas[i]
-                    #end for
-                else:
-                    if lsel>=len(lbas):
-                        self.error('cannot remove basis function {0} from channel {1} as it only has {2}'.format(lsel,l,len(lbas)))
-                    #end if
-                    del lbas[lsel]
-                #end if
-            else:
-                for ind in lsel:
-                    del lbas[ind]
-                #end for
-            #end if
-        #end for
-        self.basis.clear()
-        for l in self.lset_full:
-            if l in lbasis:
-                lbas = lbasis[l]
-                for k in sorted(lbas.keys()):
-                    self.basis.append(lbas[k])
-                #end for
-            #end if
-        #end for
-    #end def remove_prims
-
-
-    def remove_small_prims(self,**keep):
-        lsel = obj()
-        for l,lbas in self.lbasis().iteritems():
-            if l in keep:
-                lsel[l] = len(lbas)-keep[l]
-            #end if
-        #end for
-        self.remove_prims(comp='<',**lsel)
-    #end def remove_small_prims
-
-
-    def remove_large_prims(self,**keep):
-        lsel = obj()
-        for l,lbas in self.lbasis().iteritems():
-            if l in keep:
-                lsel[l] = len(lbas)-keep[l]
-            #end if
-        #end for
-        self.remove_prims(comp='>',**lsel)
-    #end def remove_large_prims
-
-
-    def remove_small_prims_rel(self,other,**keep):
-        gwidths = other.prim_widths()
-        lsel = obj()
-        for l,gw in gwidths.iteritems():
-            lsel[l] = gw.min()
-        #end for
-        self.remove_prims(comp='<',keep=keep,**lsel)
-    #end def remove_small_prims_rel
-
-
-    def remove_large_prims_rel(self,other,**keep):
-        gwidths = other.prim_widths()
-        lsel = obj()
-        for l,gw in gwidths.iteritems():
-            lsel[l] = gw.max()
-        #end for
-        self.remove_prims(comp='>',keep=keep,**lsel)
-    #end def remove_large_prims_rel
-
-
-    def remove_channels(self,llist):
-        lbasis = self.lbasis()
-        for l in llist:
-            if l in lbasis:
-                del lbasis[l]
-            #end if
-        #end for
-        self.basis.clear()
-        for l in self.lset_full:
-            if l in lbasis:
-                lbas = lbasis[l]
-                for n in range(len(lbas)):
-                    bf = lbas[n]
-                    self.basis.append(bf)
-                #end for
-            #end if
-        #end for
-    #end def remove_channels
-                
-
-    def incorporate(self,other,tol=1e-3):
-        uncontracted = self.uncontracted() and other.uncontracted()
-        lbasis       = self.lbasis()
-        lbasis_other = other.lbasis()
-        if uncontracted:
-            gwidths       = self.prim_widths()
-            gwidths_other = other.prim_widths()
-        #end if
-        self.basis.clear()
-        if not uncontracted: # simple, direct merge of basis sets
-            for l in self.lset_full:
-                if l in lbasis:
-                    lbas = lbasis[l]
-                    for n in range(len(lbas)):
-                        bf = lbas[n]
-                        self.basis.append(bf)
-                    #end for
-                #end if
-                if l in lbasis_other:
-                    lbas = lbasis_other[l]
-                    for n in range(len(lbas)):
-                        bf = lbas[n]
-                        self.basis.append(bf)
-                    #end for
-                #end if
-            #end for
-        else: # merge uncontracted basis sets preserving order
-            for l in self.lset_full:
-                primitives = []
-                widths     = []
-                orig_widths = array([])
-                if l in lbasis:
-                    primitives.extend(lbasis[l].list())
-                    widths.extend(gwidths[l])
-                    orig_widths = gwidths[l]
-                #end if
-                if l in lbasis_other:
-                    prims = lbasis_other[l].list()
-                    owidths = gwidths_other[l]
-                    for n in range(len(prims)):
-                        w = owidths[n]
-                        if len(orig_widths)==0 or abs(orig_widths-w).min()>tol:
-                            primitives.append(prims[n])
-                            widths.append(w)
-                        #end if
-                    #end if
-                #end if
-                primitives = array(primitives,dtype=object)[array(widths).argsort()]
-                for bf in primitives:
-                    self.basis.append(bf)
-                #end for
-            #end for
-        #end if
-    #end def incorporate
-
-
-    def plot(self,r=None,rmin=0.01,rmax=8.0,show=True,fig=True,sep=False,prim=False,style=None,fmt=None,nsub=None):
-        if r is None:
-            r = linspace(rmin,rmax,1000)
-        #end if
-        if not prim:
-            ptitle = '{0} {1} basis'.format(self.name,self.basis_size())
-        else:
-            ptitle = '{0} {1} primitives'.format(self.name,self.basis_size())
-        #end if
-        if fig:
-            figure()
-        #end if
-        r2 = r**2
-        lcount = self.lcount()
-        if nsub!=None:
-            lcount = max(lcount,nsub)
-        #end if
-        lbasis = self.lbasis()
-        lc = 0
-        for l in self.lset_full:
-            if l in lbasis:
-                lc+=1
-                if sep:
-                    subplot(lcount,1,lc)
-                    ylabel(l)
-                    if lc==1:
-                        title(ptitle)
-                    #end if
-                #end if
-                lstyle=self.lstyles[l]
-                if style!=None:
-                    lstyle = lstyle[0]+style
-                #end if
-                if fmt!=None:
-                    lstyle=fmt
-                #end if
-                lbas = lbasis[l]
-                for n in range(len(lbas)):
-                    bf = lbas[n]
-                    br = zeros(r.shape)
-                    s  = bf.scale[0]
-                    for pf in bf.terms:
-                        c =  pf.coeff
-                        a = -pf.expon*s**2
-                        pr = exp(a*r2)
-                        if not prim:
-                            br += c*pr
-                        else:
-                            plot(r,pr,lstyle,label=l)
-                        #end if
-                    #end for
-                    if not prim:
-                        plot(r,br,lstyle,label=l)
-                    #end if
-                #end for
-            #end if
-        #end for
-        if fig:
-            if not sep:
-                if self.name!=None:
-                    title(ptitle)
-                #end if
-                ylabel('basis functions')
-                legend()
-            else:
-                xlabel('r')
-            #end if
-            if show:
-                show_plots()
-            #end if
-        #end if
-    #end def plot
-
-
-    def plot_primitives(self):
-        None
-    #end def plot_primitives
-
-#end class GaussianBasisSet
 
 
 
@@ -1481,7 +833,7 @@ class GaussianPP(SemilocalPP):
     #end def __init__
 
 
-    def read_text(self,text,format=None):
+    def read_text(self,text,format=None,filepath=None):
         lines,basis_lines = process_gaussian_text(text,format)
 
         format=format.lower()
@@ -1858,7 +1210,7 @@ class QmcpackPP(SemilocalPP):
         if self.Zcore==0:
             self.core = '0'
         else:
-            self.core    = pt.simple_elements[self.Zcore].symbol
+            self.core = pt.simple_elements[self.Zcore].symbol
         #end if
 
         g = pp.grid
@@ -1879,6 +1231,7 @@ class QmcpackPP(SemilocalPP):
         if not isinstance(vps,list):
             vps = [vps]
         #end if
+        self.lmax = len(vps)-1
         for vp in vps:
             self.channels[vp.l] = vp.radfunc.data.copy()
         #end for
@@ -1906,12 +1259,95 @@ class QmcpackPP(SemilocalPP):
 
 
     def v_at_zero(self,l):
-        r = self.r
-        v = self.get_channel(l)/r
-        vz = (v[1]*r[2]**2-v[2]*r[1]**2)/(r[2]**2-r[1]**2)
+        #r = self.r
+        #v = self.get_channel(l)/r
+        #vz = (v[1]*r[2]**2-v[2]*r[1]**2)/(r[2]**2-r[1]**2)
+        r = self.r[1:3]
+        v = self.get_channel(l)[1:3]/r
+        vz = (v[0]*r[1]**2-v[1]*r[0]**2)/(r[1]**2-r[0]**2)
         return vz
     #end def v_at_zero
 #end class QmcpackPP
+
+
+
+
+class CasinoPP(SemilocalPP):
+    requires_format = False
+    numeric         = True
+    interpolatable  = False
+
+    unitmap = dict(rydberg='Ry',hartree='Ha',ev='eV')
+
+    def read(self,filepath,format=None):
+        if not os.path.exists(filepath):
+            self.error('cannot read {0}, file does not exist'.format(filepath))
+        #end if
+        # open the file
+        file = TextFile(filepath)
+        # read scalar values at the top
+        Zatom,Z = file.readtokensf('Atomic number and pseudo-charge',int,float)
+        if Zatom>len(pt.simple_elements):
+            self.error('element {0} is not in the periodic table')
+        #end if
+        element = pt.simple_elements[Zatom].symbol
+        units = file.readtokensf('Energy units',str)
+        if not units in self.unitmap:
+            self.error('units {0} unrecognized from casino PP file {1}'.format(units,filepath))
+        #end if
+        lloc = file.readtokensf('Angular momentum of local component',int)
+        lloc = self.l_channels[lloc]
+        ngrid = file.readtokensf('Number of grid points',int)
+        # read the radial grid
+        file.seek('R(i)',1)
+        file.readline()
+        r = empty((ngrid,),dtype=float)
+        for ir in xrange(ngrid):
+            r[ir] = float(file.readline())
+        #end for
+        # read each channel, convert to hartree units
+        lmax  = -1
+        lvals = []
+        lpots = []
+        while(file.seek('pot',1)!=-1):
+            lmax += 1
+            potline = file.readline() # read the r*potential line
+            eqloc = potline.find('=')
+            if eqloc==-1:
+                self.error('"=" not found in potential line\nline: {0}'.format(potline))
+            #end if
+            l = self.l_channels[int(potline[eqloc+1])] # get the l value
+            lvals.append(l)
+            v = empty((ngrid,),dtype=float)
+            for ir in xrange(ngrid):
+                v[ir] = float(file.readline())
+            #end for
+            lpots.append(convert(v,self.unitmap[units],'Ha'))
+        #end while
+
+        # fill in SemilocalPP class data obtained from read
+        self.element = element
+        self.Zval    = int(Z)
+        self.Zcore   = Zatom-self.Zval
+        if self.Zcore==0:
+            self.core = '0'
+        else:
+            self.core = pt.simple_elements[self.Zcore].symbol
+        #end if
+        self.lmax  = lmax
+        self.local = lloc
+        self.r     = r
+        for i in range(len(lpots)):
+            self.channels[lvals[i]] = lpots[i]
+        #end for
+        for l in self.channels.keys():
+            if l!=self.local:
+                self.channels[l] -= self.channels[self.local]
+            #end if
+        #end for
+    #end def read_file
+#end class CasinoPP
+
 
 
 
@@ -1931,7 +1367,7 @@ def get_gf_channel(ns,np,params,Zval=None):
         nparam += 2
     #end if
     if nparam!=len(params):
-        raise RuntimeError('wrong number of parameters given to get_gf_coeff_rpow_expon\nparameters expected: {0}\nparameters given: {1}'.format(nparams,len(params)))
+        raise RuntimeError('wrong number of parameters given to get_gf_coeff_rpow_expon\nparameters expected: {0}\nparameters given: {1}'.format(nparam,len(params)))
     #end if
     pcur = 0
     if loc:

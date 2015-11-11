@@ -26,12 +26,12 @@
 #====================================================================#
 
 
-from numpy import array,empty,zeros,sqrt
+from numpy import array,empty,zeros,sqrt,arange
 from generic import obj
 from unit_converter import convert
 from qmcpack_input import QmcpackInput
-from qaobject import QAobject
-from qmcpack_analyzer_base import QAanalyzer
+from qmcpack_analyzer_base import QAobject,QAanalyzer
+from debug import *
 
 
 
@@ -94,43 +94,75 @@ class OptimizationAnalyzer(ResultAnalyzer):
         vw    = self.variance_weight
 
         Efail        = 1e6
-        EVratio_fail = 0.10
+        Vfail        = 1e3
+        EVratio_fail = 0.30
+        EVratio_soft_fail = 0.15
         
         #save the energies and variances of opt iterations
-        nopt = len(opts)
-        en    = zeros((nopt,))+1e99
-        enerr = zeros((nopt,))+1e99
-        va    = zeros((nopt,))+1e99
-        vaerr = zeros((nopt,))+1e99
+        res = obj()
         variance_present = False
         any_complete = False
         all_complete = True
         unstable = False
-        for i in range(nopt):
-            o = opts[i]
-            complete = o.info.complete
+        any_stable = False
+        for s,opt in opts.iteritems():
+            complete = opt.info.complete
             any_complete |= complete
             all_complete &= complete
             if complete:
-                le = o.scalars.LocalEnergy
-                en[i]     = le.mean
-                enerr[i]  = le.error
-                if 'LocalEnergyVariance' in o.scalars:
+                fail = False
+                le = opt.scalars.LocalEnergy
+                en     = le.mean
+                enerr  = le.error
+                fail |= abs(en)>Efail
+                if 'LocalEnergyVariance' in opt.scalars:
                     variance_present = True
-                    lev = o.scalars.LocalEnergyVariance
-                    va[i]     = lev.mean
-                    vaerr[i]  = lev.error
+                    lev = opt.scalars.LocalEnergyVariance
+                    va    = lev.mean
+                    vaerr = lev.error
+                    fail |= abs(va)>Vfail or abs(va/en)>EVratio_fail
                 #end if
-                unstable |= abs(le.mean)>Efail
+                if not fail:
+                    any_stable = True
+                    sres = obj()
+                    sres.en    = en
+                    sres.enerr = enerr
+                    if variance_present:
+                        sres.va    = va
+                        sres.vaerr = vaerr
+                    #end if
+                    res[s] = sres
+                #end if
+                unstable|=fail
             #end if
         #end for
         unstable |= not any_complete
 
+        nseries = len(res)
+        en    = zeros((nseries,),dtype=float)
+        enerr = zeros((nseries,),dtype=float)
+        va    = zeros((nseries,),dtype=float)
+        vaerr = zeros((nseries,),dtype=float)
+
+        series = array(sorted(res.keys()),dtype=int)
+        i = 0
+        for s in series:
+            sres = res[s]
+            en[i]    = sres.en
+            enerr[i] = sres.enerr
+            if variance_present:
+                va[i]    = sres.va
+                vaerr[i] = sres.vaerr
+            #end if
+            i+=1
+        #end for
+                
 
         self.set(
             any_complete   = any_complete,
             all_complete   = all_complete,
             unstable       = unstable,
+            series         = series,
             energy         = en,
             energy_error   = enerr,
             variance       = va,
@@ -146,44 +178,37 @@ class OptimizationAnalyzer(ResultAnalyzer):
         elif optimize=='energy':
             ew = 1.0
             vw = 0.0
+        elif optimize=='energy_within_variance_tol' or optimize=='ewvt':
+            None
         elif isinstance(optimize,(tuple,list)) and len(optimize)==2:
             ew,vw = optimize
         else:
-            self.error('selection for optimization is invalid\n  optimize setting: {0}\n  valid options are: energy, variance, or a length 2 tuple containing the cost of each, e.g. (.5,.5)'.format(optimize))
+            self.error('selection for optimization is invalid\noptimize setting: {0}\nvalid options are: energy, variance, energy_within_variance_tol, or a length 2 tuple containing the cost of energy and variance, e.g. (.5,.5)'.format(optimize))
         #end if
 
         self.failed = True
         self.optimal_series = None
         self.optimal_file   = None
         self.optimal_wavefunction = None
-        if any_complete:
-            mincost = 1e99
-            index   = -1
-            for i,opt in opts.iteritems():
-                if opt.info.complete:
-                    s = opt.scalars
-                    e = s.LocalEnergy.mean
-                    if 'LocalEnergyVariance' in s:
-                        v = s.LocalEnergyVariance.mean
-                    else:
-                        v = 0
-                    #end if
-                    cost = ew*e+vw*v
-                    if cost<mincost:
-                        mincost = cost
-                        index   = i
-                    #end if
-                #end if
-            #end for
-
-            if index!=-1:
-                failed = abs(en[index])>Efail or (va[index]<1e98 and abs(va[index]/en[index])>EVratio_fail) 
-                
-                self.failed = failed
-                self.optimal_series = index
-                self.optimal_file = opts[index].info.files.opt
-                self.optimal_wavefunction = opts[index].wavefunction.info.wfn_xml.copy()
+        if any_stable:
+            if optimize=='energy_within_variance_tol' or optimize=='ewvt':
+                indices = arange(len(series),dtype=int)
+                vartol  = 0.2
+                vmin    = va.min()
+                vind    = indices[abs(va-vmin)/vmin<vartol]
+                index   = vind[en[vind].argmin()]
+                opt_series = series[index]
+            else:
+                cost = en*ew+va*vw
+                index = cost.argmin()
+                opt_series = series[index]
             #end if
+            failed = abs(en[index])>Efail or abs(va[index])>Vfail or abs(va[index]/en[index])>EVratio_soft_fail 
+
+            self.failed = failed
+            self.optimal_series = opt_series
+            self.optimal_file = opts[opt_series].info.files.opt
+            self.optimal_wavefunction = opts[opt_series].wavefunction.info.wfn_xml.copy()
         #end if
     #end def analyze_local
 

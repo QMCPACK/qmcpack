@@ -46,9 +46,6 @@ class SimulationBundle(Simulation):
     generic_identifier = 'bundle'
     image_directory    = 'bundle'
 
-    preserve = Simulation.preserve & set(['sims'])
-
-
     def __init__(self,*sims,**kwargs):
         if len(sims)==1 and isinstance(sims[0],list):
             sims = sims[0]

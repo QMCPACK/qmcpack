@@ -23,8 +23,15 @@
 
 
 import code
+import inspect
 
-def ci(locs,globs):
+def ci(locs=None,globs=None):
+    if locs is None or globs is None:
+        cur_frame = inspect.currentframe()
+        caller_frame = cur_frame.f_back
+        locs  = caller_frame.f_locals
+        globs = caller_frame.f_globals
+    #end if
     code.interact(local=dict(globs,**locs))
 #end def ci
 

@@ -21,18 +21,6 @@
 #====================================================================#
 
 
-#
-# bugs
-#  -equilibration length algorithm incorrectly picks first crossing of
-#    mean+sigma as starting place
-#   it should be the last crossing of mean+sigma preceeding the first 
-#    crossing of mean-sigma
-#  -twist averaging energy density gets information from the first twist only
-#    -integral(Edens) /= E_tot  for twist
-#    -generalized data averaging algorithm must not be finding all the data
-#   see /oahu/home/projects/project6_germanium/ed_paper_wrapup/final_analysis/data/pure/tile611_kg133/qmc/*
-#
-# 
 
 from time import time
 
@@ -48,8 +36,7 @@ from developer import unavailable
 from xmlreader import XMLreader
 from plotting import *
 #QmcpackAnalyzer classes imports
-from qaobject  import QAobject
-from qmcpack_analyzer_base import QAanalyzer,QAanalyzerCollection
+from qmcpack_analyzer_base import QAobject,QAanalyzer,QAanalyzerCollection
 from qmcpack_property_analyzers \
     import WavefunctionAnalyzer
 from qmcpack_quantity_analyzers \

@@ -185,7 +185,6 @@ class GamessAnalyzer(SimulationAnalyzer):
         # try to get the mulliken/lowdin populations in each ao
         if 'counts' in self:
             ao_populations = obj()
-            self.read_ao_populations(log,ao_populations)
             try:
                 self.read_ao_populations(log,ao_populations)
             except:

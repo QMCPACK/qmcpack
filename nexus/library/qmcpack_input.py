@@ -133,7 +133,7 @@
 
 
 import os
-import types as pytypes
+import inspect
 import keyword
 from numpy import fromstring,empty,array,float64,\
     loadtxt,ndarray,dtype,sqrt,pi,arange,exp,eye,\
@@ -142,12 +142,11 @@ from StringIO import StringIO
 from superstring import string2val
 from generic import obj,hidden
 from xmlreader import XMLreader,XMLelement
-from project_base import Pobj
+from developer import DevBase
 from structure import Structure,Jellium
 from physical_system import PhysicalSystem
 from simulation import SimulationInput,SimulationInputTemplate
 from pwscf_input import array_to_string as pwscf_array_string
-from debug import *
 from debug import ci as interact
 
 
@@ -238,7 +237,7 @@ bool_write_types = set([yesno,onezero,truefalse])
 
 
 
-class QIobj(Pobj):
+class QIobj(DevBase):
     None
 #end class QIobj
 
@@ -488,30 +487,25 @@ class QIxml(Names):
 
     @classmethod
     def init_class(cls):
-        vars = cls.__dict__.keys()
-        init_vars = dict(tag         = cls.__name__,
-                         identifier  = None,
-                         attributes  = [],
-                         elements    = [],
-                         text        = None,
-                         parameters  = [],
-                         attribs     = [],
-                         costs       = [],
-                         h5tags      = [],
-                         types       = obj(),
-                         write_types = obj(),
-                         attr_types  = None,
-                         precision   = None,
-                         defaults    = obj(),
-                         collection_id = None
-                         )
-        for var,val in init_vars.iteritems():
-            if not var in vars:
-                cls.__dict__[var] = val
-            #end if
-        #end for
+        cls.class_set_optional(
+            tag         = cls.__name__,
+            identifier  = None,
+            attributes  = [],
+            elements    = [],
+            text        = None,
+            parameters  = [],
+            attribs     = [],
+            costs       = [],
+            h5tags      = [],
+            types       = obj(),
+            write_types = obj(),
+            attr_types  = None,
+            precision   = None,
+            defaults    = obj(),
+            collection_id = None
+            )
         for v in ['attributes','elements','parameters','attribs','costs','h5tags']:
-            names = cls.__dict__[v]
+            names = cls.class_get(v)
             for i in range(len(names)):
                 if names[i] in cls.escape_names:
                     names[i]+='_'
@@ -599,7 +593,7 @@ class QIxml(Names):
                 if e in self:
                     elem = self[e]
                     if isinstance(elem,QIxml):
-                        c += self[e].write(indent_level+1)
+                        c += elem.write(indent_level+1)
                     else:
                         begin = '<'+e+'>'                        
                         contents = param.write(elem)
@@ -629,6 +623,7 @@ class QIxml(Names):
             c+=indent+'</'+expanded_tag+'>\n'
         #end if
         param.reset_precision()
+
         return c
     #end def write
 
@@ -797,7 +792,6 @@ class QIxml(Names):
 
     def incorporate_defaults(self,elements=False,overwrite=False,propagate=True):
         for name,value in self.defaults.iteritems():
-            valtype = type(value)
             defval=None
             if isinstance(value,classcollection):
                 if elements:
@@ -809,11 +803,11 @@ class QIxml(Names):
                     #end for
                     defval = make_collection(coll)
                 #end if
-            elif valtype==pytypes.ClassType:
+            elif inspect.isclass(value):
                 if elements:
                     defval = value()
                 #end if
-            elif valtype==pytypes.FunctionType:
+            elif inspect.isfunction(value):
                 defval = value()
             else:
                 defval = value
@@ -1393,7 +1387,7 @@ class QIxml(Names):
     #end def get_host
 
     def get_precision(self):
-        return self.__class__.__dict__['precision']
+        return self.__class__.class_get('precision')
     #end def get_precision
 #end class QIxml
 
@@ -2825,7 +2819,7 @@ class QmcpackInput(SimulationInput,Names):
     #end def read
 
 
-    def write_contents(self):
+    def write_text(self,filepath=None):
         c = ''
         header = '''<?xml version="1.0"?>
 '''
@@ -2839,7 +2833,7 @@ class QmcpackInput(SimulationInput,Names):
         c+=base.write(first=True)
         Param.metadata = None
         return c
-    #end def write_contents
+    #end def write_text
 
 
     def unroll_calculations(self,modify=True):
@@ -3757,6 +3751,8 @@ class QmcpackInput(SimulationInput,Names):
 
 
 
+# base class for bundled qmcpack input
+#  not used on its own
 class BundledQmcpackInput(SimulationInput):
     
     def __init__(self,inputs,filenames):
@@ -3799,8 +3795,8 @@ class BundledQmcpackInput(SimulationInput):
     #end def get_output_info
 
         
-    def generate_filenames(self):
-        None
+    def generate_filenames(self,infile):
+        self.not_implemented()
     #end def generate_filenames
         
 
@@ -3845,6 +3841,7 @@ class TracedQmcpackInput(BundledQmcpackInput):
         self.quantities = obj()
         self.variables = obj()
         self.inputs = obj()
+        self.filenames = None
         if quantity!=None and values!=None and input!=None:
             self.bundle_inputs(quantity,values,input)
         #end if

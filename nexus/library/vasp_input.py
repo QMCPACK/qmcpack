@@ -41,6 +41,7 @@ import os
 from numpy import array,abs,empty,ndarray
 from generic import obj
 from periodic_table import is_element
+from nexus_base import nexus_noncore
 from simulation import SimulationInput
 from structure import interpolate_structures,Structure
 from physical_system import PhysicalSystem
@@ -339,18 +340,18 @@ class VKeywordFile(VFile):
     @classmethod
     def class_init(cls):
         for kw_field in cls.kw_fields:
-            if not kw_field in cls.__dict__:
-                cls.__dict__[kw_field] = set()
+            if not cls.class_has(kw_field):
+                cls.class_set_single(kw_field,set())
             #end if
         #end for
         #cls.check_consistency()
         cls.scalar_keywords = set()
         for scalar_field in cls.kw_scalars:
-            cls.scalar_keywords |= cls.__dict__[scalar_field]
+            cls.scalar_keywords |= cls.class_get(scalar_field)
         #end for
         cls.array_keywords = set()
         for array_field in cls.kw_arrays:
-            cls.array_keywords |= cls.__dict__[array_field]
+            cls.array_keywords |= cls.class_get(array_field)
         #end for
         cls.keywords = cls.scalar_keywords | cls.array_keywords
         cls.type = obj()
@@ -358,7 +359,7 @@ class VKeywordFile(VFile):
         cls.write_value  = obj()
         cls.assign_value = obj()
         for type in cls.kw_scalars + cls.kw_arrays:
-            for name in cls.__dict__[type]:
+            for name in cls.class_get(type):
                 cls.type[name] = type
                 cls.read_value[name]   = read_value_functions[type]
                 cls.write_value[name]  = write_value_functions[type]
@@ -374,14 +375,14 @@ class VKeywordFile(VFile):
         types = cls.kw_scalars+cls.kw_arrays
         untyped = cls.keywords 
         for type in types:
-            untyped -= cls.__dict__[type]
+            untyped -= cls.class_get(type)
         #end for
         if len(untyped)>0:
             fail = True
             msg += 'variables without a type: {0}\n'.format(sorted(untyped))
         #end if
         for type in types:
-            unknown = cls.__dict__[type]-cls.keywords
+            unknown = cls.class_get(type)-cls.keywords
             if len(unknown)>0:
                 fail = True
                 msg += 'unknown {0}: {1}\n'.format(type,sorted(unknown))
@@ -1348,7 +1349,7 @@ class VaspInput(SimulationInput,Vobj):
                 ordered_pseudos.append(pseudo_map[symbol])
             #end for
         #end if
-        self.potcar = Potcar(VaspInput.pseudo_dir,ordered_pseudos)
+        self.potcar = Potcar(nexus_noncore.pseudo_dir,ordered_pseudos)
     #end def set_potcar
 
 

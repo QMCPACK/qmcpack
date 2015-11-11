@@ -96,6 +96,7 @@ class Gamess(Simulation):
         analyzer = self.load_analyzer_image()
         if result_name=='orbitals':
             result.location  = os.path.join(self.locdir,self.outfile)
+            result.outfile   = result.location
             result.vec       = None # vec from punch
             result.norbitals = 0    # orbital count in punch
             result.mos       = 0    # orbital count (MO's) from log file
@@ -154,6 +155,25 @@ class Gamess(Simulation):
         output_files = []
         return output_files
     #end def get_output_files
+
+
+    def output_filename(self,name):
+        name = name.upper()
+        if name not in GamessInput.file_units:
+            self.error('gamess does not produce a file matching the requested description: {0}'.format(name))
+        #end if
+        unit = GamessInput.file_units[name]
+        filename = '{0}.F{1}'.format(self.identifier,str(unit).zfill(2))
+        return filename
+    #end def output_filename
+
+
+    def output_filepath(self,name):
+        filename = self.output_filename(name)
+        filepath = os.path.join(self.locdir,filename)
+        filepath = os.path.abspath(filepath)
+        return filepath
+    #end def
 #end class Gamess
 
 

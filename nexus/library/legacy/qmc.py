@@ -4,22 +4,29 @@
 
 
 #====================================================================#
-#  dft.py                                                            #
-#    Intended for eventual unified descriptions of DFT input files.  #
+#  qmc.py                                                            #
+#    Intended for eventual unified descriptions of QMC input files.  #
 #                                                                    #
 #    Implementation incomplete.                                      #
 #                                                                    # 
 #====================================================================#
 
 
+from developer import DevBase
+import qmcpack
 
-from project_base import Pobj
-import pwscf
 
-
-class DFTDescriptor(Pobj):
-    #general description of a dft simulation
-    #  information transferred to pwscf or abinit input
+class HamiltonianDescriptor(DevBase):
     None
-#end class DFTDescriptor
+#end class HamiltonianDescriptor
+
+class WavefunctionDescriptor(DevBase):
+    None
+#end class WavefunctionDescriptor
+
+class QMCDescriptor(DevBase):
+    #general description of a qmc simulation
+    #  information transferred to qmcpack or casino input
+    None
+#end class QMCDescriptor
 

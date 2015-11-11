@@ -1329,7 +1329,7 @@ class AtomscfInput(SimulationInput):
     #end def __init__
 
 
-    def read_contents(self,text):
+    def read_text(self,text,filepath=None):
         raw_lines = text.splitlines()
         lines = []
         for rline in raw_lines:
@@ -1447,10 +1447,10 @@ class AtomscfInput(SimulationInput):
         del self.lines
         del self.n
         del self.cur_section
-    #end def read_contents
+    #end def read_text
 
 
-    def write_contents(self):
+    def write_text(self,filepath=None):
         self.text = ''
         self.cur_section = None
         self.text += '{0}\n'.format(self.lim)
@@ -1546,7 +1546,7 @@ class AtomscfInput(SimulationInput):
         del self.text
         del self.cur_section
         return text
-    #end def write_contents
+    #end def write_text
 
 
     def nonzero(self,name):
@@ -1688,21 +1688,21 @@ class AtomscfInput(SimulationInput):
         if len(kwargs)>0:
             kw = obj(**kwargs)
 
-            element  = kw.delete_option('element')
-            state    = kw.delete_option('state')
-            jcoeff   = kw.delete_option('jcoeff')
-            kcoeff   = kw.delete_option('kcoeff')
-            coeff    = kw.delete_option('coeff')
-            pseudo   = kw.delete_option('pseudo')
-            ppformat = kw.delete_option('ppformat')
-            basis    = kw.delete_option('basis')
-            guess    = kw.delete_option('guess')
+            element  = kw.delete_optional('element')
+            state    = kw.delete_optional('state')
+            jcoeff   = kw.delete_optional('jcoeff')
+            kcoeff   = kw.delete_optional('kcoeff')
+            coeff    = kw.delete_optional('coeff')
+            pseudo   = kw.delete_optional('pseudo')
+            ppformat = kw.delete_optional('ppformat')
+            basis    = kw.delete_optional('basis')
+            guess    = kw.delete_optional('guess')
 
-            use_none     = kw.delete_option('use_none'    ,False)
-            use_defaults = kw.delete_option('use_defaults',True)
-            use_state    = kw.delete_option('use_state'   ,True)
-            use_pseudo   = kw.delete_option('use_pseudo'  ,True)
-            use_basis    = kw.delete_option('use_basis'   ,True)
+            use_none     = kw.delete_optional('use_none'    ,False)
+            use_defaults = kw.delete_optional('use_defaults',True)
+            use_state    = kw.delete_optional('use_state'   ,True)
+            use_pseudo   = kw.delete_optional('use_pseudo'  ,True)
+            use_basis    = kw.delete_optional('use_basis'   ,True)
             if use_none:
                 use_defaults = False
                 use_state    = False

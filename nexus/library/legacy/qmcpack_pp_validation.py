@@ -26,7 +26,7 @@ from project import generate_pw2casino,generate_pw2qmcpack
 from project import generate_sqd
 from project import generate_qmcpack,generate_jastrow
 from project import loop,vmc,dmc,linear,cslinear
-from project import settings,ProjectManager,Job,Pobj
+from project import settings,ProjectManager,Job,Settings
 
 from qmcpack_calculations import basic_qmc,standard_qmc
 
@@ -2778,8 +2778,8 @@ class ValidatePPs(ValidatePPBase):
     test_order = ['atoms','dimers']
 
     def __init__(self,settings=None,atoms=None,dimers=None):
-        if not isinstance(settings,Pobj):
-            self.error('input variable settings must be the settings object from the Project Suite')
+        if not isinstance(settings,Settings):
+            self.error('input variable settings must be the settings object from Nexus')
         #end if
         ValidatePPBase.settings = settings
         if atoms!=None:

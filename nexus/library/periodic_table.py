@@ -1878,15 +1878,17 @@ def is_element(name,symbol=False):
             nlen = len(name)
             if name.find('_')!=-1:
                 s,n = name.split('_',1)
-                #iselem = n.isdigit() and s in periodic_table.elements
-                iselem = s in periodic_table.elements
             elif nlen>1 and name[1:].isdigit():
                 s = name[0:1]
-                iselem = s in periodic_table.elements
             elif nlen>2 and name[2:].isdigit():
                 s = name[0:2]
-                iselem = s in periodic_table.elements
             #end if
+            if len(s)==1:
+                s = s.upper()
+            elif len(s)==2:
+                s = s[0].upper()+s[1].lower()
+            #end if
+            iselem = s in periodic_table.elements
         #end if
     #end if
     if symbol:

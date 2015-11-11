@@ -73,7 +73,37 @@ class TextFile(DevBase):
     def readtokens(self,s=None):
         return self.readline(s).split()
     #end def readtokens
-    
+
+    def readtokensf(self,s=None,*formats):
+        if s!=None:
+            self.seek(s)
+        #end if
+        self.mm.readline()
+        line = self.mm.readline()
+        stokens = line.split()
+        all_same = False
+        if len(formats)==1 and len(stokens)>1:
+            format = formats[0]
+            all_same = True
+        elif len(formats)>len(stokens):
+            self.error('formatted line read failed\nnumber of tokens and provided number of formats do not match\nline: {0}\nnumber of tokens: {1}\nnumber of formats provided: {2}'.format(line,len(stokens),len(formats)))
+        #end if
+        tokens = []
+        if all_same:
+            for stoken in stokens:
+                tokens.append(format(stoken))
+            #end for
+        else:
+            for i in xrange(len(formats)):
+                tokens.append(formats[i](stokens[i]))
+            #end for
+        #end if
+        if len(tokens)==1:
+            return tokens[0]
+        else:
+            return tokens
+        #end if
+    #end def readtokensf
 
     # extended mmap interface below
     def close(self):
@@ -464,7 +494,7 @@ class XsfFile(DevBase):
             i+=1
         #end while
         if check and not self.is_valid():
-            self.error('read failed, not a valid xsf file'.format(filepath))
+            self.error('read failed, not a valid xsf file')
         #end if
     #end def read_text
 

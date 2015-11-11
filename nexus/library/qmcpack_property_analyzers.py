@@ -38,8 +38,7 @@
 import os
 from numpy import loadtxt,array,ones,dot,floor,zeros
 from qmcpack_input import QmcpackInput
-from qaobject import QAobject
-from qmcpack_analyzer_base import QAanalyzer
+from qmcpack_analyzer_base import QAobject,QAanalyzer
 from developer import unavailable
 from debug import *
 try:

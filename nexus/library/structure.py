@@ -32,7 +32,7 @@ from numpy import array,floor,empty,dot,diag,sqrt,pi,mgrid,exp,append,arange,cei
 from numpy.linalg import inv,det,norm
 from types import NoneType
 from unit_converter import convert
-from extended_numpy import nearest_neighbors,convex_hull,voronoi_neighbors
+from numerics import nearest_neighbors,convex_hull,voronoi_neighbors
 from periodic_table import pt,is_element
 from generic import obj
 from developer import DevBase,unavailable,error,warn
@@ -603,9 +603,12 @@ class Structure(Sobj):
     #    while remaining periodically correct
     #   note that the unshearing procedure is not unique
     #   it depends on the order of unshearing operations
-    def unsheared_axes(self,distances=False):
+    def unsheared_axes(self,axes=None,distances=False):
         if self.dim!=3:
-            self.error('rinscribe is currently only implemented for 3 dimensions')
+            self.error('unsheared_axes is currently only implemented for 3 dimensions')
+        #end if
+        if axes is None:
+            axes = self.axes
         #end if
         dim=3
         axbar = identity(dim)
@@ -653,11 +656,6 @@ class Structure(Sobj):
     def face_distances(self):
         return self.face_vectors(distances=True)[1]
     #end def face_distances
-
-
-    def set_orig(self):
-        self.orig_pos = pos.copy()
-    #end def set_orig
 
     
     def rescale(self,scale):
@@ -2957,19 +2955,19 @@ class Structure(Sobj):
             #end if
         #end if
         c = open(filepath,'r').read()
-        self.read_contents(c,format,elem=elem)
+        self.read_text(c,format,elem=elem)
         return c
     #end def read
 
 
-    def read_contents(self,contents,format,elem=None):
+    def read_text(self,contents,format,elem=None):
         format = format.lower()
         if format=='poscar':
             self.read_poscar(contents,elem=elem,contents=True)
         else:
             self.error('unrecognized file format: {0}'.format(format))
         #end if
-    #end def read_contents
+    #end def read_text
 
 
     def read_poscar(self,filepath,elem=None,contents=False):
@@ -4182,7 +4180,7 @@ def generate_crystal_structure(lattice=None,cell=None,centering=None,
                                basis_vectors=None,tiling=None,cscale=None,
                                axes=None,units=None,angular_units='degrees',
                                magnetization=None,magnetic_order=None,magnetic_prim=True,
-                               kpoints=None,kgrid=None,kshift=(0,0,0),permute=None,
+                               kpoints=None,kweights=None,kgrid=None,kshift=(0,0,0),permute=None,
                                structure=None,shape=None,element=None,scale=None, #legacy inputs
                                operations=None,
                                struct_type=Crystal,elem=None,pos=None,frozen=None,

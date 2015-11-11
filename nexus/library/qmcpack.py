@@ -32,14 +32,12 @@ from periodic_table import periodic_table
 from physical_system import PhysicalSystem
 from simulation import Simulation
 from qmcpack_input import QmcpackInput,generate_qmcpack_input
-from qmcpack_input import BundledQmcpackInput,TracedQmcpackInput
-from qmcpack_input import QmcpackInputTemplate
+from qmcpack_input import TracedQmcpackInput
 from qmcpack_input import loop,linear,cslinear,vmc,dmc,collection,determinantset,hamiltonian,init,pairpot,bspline_builder
 from qmcpack_input import generate_jastrows,generate_jastrow,generate_jastrow1,generate_jastrow2,generate_jastrow3
 from qmcpack_input import generate_opt,generate_opts
 from qmcpack_analyzer import QmcpackAnalyzer
-from converters import Pw2qmcpack,Wfconvert
-from convert4qmc import Convert4qmc
+from qmcpack_converters import Pw2qmcpack,Wfconvert,Convert4qmc
 from sqd import Sqd
 from debug import ci,ls,gs
 from developer import unavailable
@@ -60,7 +58,6 @@ class Qmcpack(Simulation):
     application   = 'qmcapp_complex' # always use complex version until kpoint handling is fixed
     application_properties = set(['serial','omp','mpi'])
     application_results    = set(['jastrow','cuspcorr','wavefunction'])
-    preserve = Simulation.preserve | set(['should_twist_average'])
 
 
     def post_init(self):
@@ -71,12 +68,19 @@ class Qmcpack(Simulation):
         #if self.system is None:
         #    self.error('system must be specified to determine type of run')
         ##end if
+
+        generic_input = self.has_generic_input()
+
         if self.system is None:
-            if not isinstance(self.input,QmcpackInputTemplate):
+            if not generic_input:
                 self.warn('system must be specified to determine whether to twist average\n  proceeding under the assumption of no twist averaging')
             #end if
             self.should_twist_average = False
         else:
+            if generic_input:
+                cls = self.__class__
+                self.error('cannot twist average generic or templated input\nplease provide {0} instead of {1} for input'.format(cls.input_type.__class__.__name__,self.input.__class__.__name__))
+            #end if
             self.system.group_atoms()
             self.system.change_units('B')
             twh = self.input.get_host('twist')
@@ -91,7 +95,7 @@ class Qmcpack(Simulation):
 
 
     def propagate_identifier(self):
-        if not isinstance(self.input,QmcpackInputTemplate):
+        if not self.has_generic_input():
             self.input.simulation.project.id = self.identifier
         #end if
     #end def propagate_identifier
@@ -356,45 +360,43 @@ class Qmcpack(Simulation):
 
 
     def check_sim_status(self):
-        outfile = os.path.join(self.locdir,self.outfile)
-        errfile = os.path.join(self.locdir,self.errfile)
-        fobj = open(outfile,'r')
-        output = fobj.read()
-        fobj.close()
-        fobj = open(errfile,'r')
-        errors = fobj.read()
-        fobj.close()
-
-        cusp_run = self.input.cusp_correction()
-        if cusp_run:
-            sd = self.input.get('slaterdeterminant')
-            if sd!=None:
-                cuspfiles = []
-                for d in sd.determinants:
-                    cuspfiles.append(d.id+'.cuspInfo.xml')
-                #end for
-            else: # assume multideterminant sposet names
-                cuspfiles = ['spo-up.cuspInfo.xml','spo-dn.cuspInfo.xml']
-            #end if
-            outfiles   = cuspfiles
-        else:
-            outfiles = self.input.get_output_info('outfiles')
-        #end if
+        output = self.outfile_text()
+        errors = self.errfile_text()
 
         ran_to_end  = 'Total Execution' in output
+        aborted     = 'Fatal Error' in errors
         files_exist = True
-        for file in outfiles:
-            file_loc = os.path.join(self.locdir,file)
-            files_exist = files_exist and os.path.exists(file_loc)
-        #end for
-            
-        if ran_to_end and not files_exist:
-            self.warn('run finished successfully, but output files do not seem to exist')
-            print outfiles
-            print os.listdir(self.locdir)
+        cusp_run    = False
+
+        if not self.has_generic_input():
+            cusp_run = self.input.cusp_correction()
+            if cusp_run:
+                sd = self.input.get('slaterdeterminant')
+                if sd!=None:
+                    cuspfiles = []
+                    for d in sd.determinants:
+                        cuspfiles.append(d.id+'.cuspInfo.xml')
+                    #end for
+                else: # assume multideterminant sposet names
+                    cuspfiles = ['spo-up.cuspInfo.xml','spo-dn.cuspInfo.xml']
+                #end if
+                outfiles   = cuspfiles
+            else:
+                outfiles = self.input.get_output_info('outfiles')
+            #end if
+
+            for file in outfiles:
+                file_loc = os.path.join(self.locdir,file)
+                files_exist = files_exist and os.path.exists(file_loc)
+            #end for
+
+            if ran_to_end and not files_exist:
+                self.warn('run finished successfully, but output files do not seem to exist')
+                print outfiles
+                print os.listdir(self.locdir)
+            #end if
         #end if
 
-        aborted = 'Fatal Error' in errors
 
         self.succeeded = ran_to_end
         self.failed    = aborted
@@ -408,30 +410,22 @@ class Qmcpack(Simulation):
             #end for
         #end if
 
-        #print
-        #print self.__class__.__name__
-        #print 'identifier ',self.identifier
-        #print 'ran_to_end ',ran_to_end
-        #print 'files_exist',files_exist
-        #print 'aborted    ',aborted
-        #print 'job done   ',self.job.finished
-        #print 'finished   ',self.finished
-        #print
-
     #end def check_sim_status
 
 
     def get_output_files(self):
-        if self.should_twist_average and not isinstance(self.input,TracedQmcpackInput):
-            self.twist_average(range(len(self.system.structure.kpoints)))
-            br = self.bundle_request
-            input = self.input.trace(br.quantity,br.values)
-            input.generate_filenames(self.infile)
-            self.input = input
+        if self.has_generic_input():
+            output_files = []
+        else:
+            if self.should_twist_average and not isinstance(self.input,TracedQmcpackInput):
+                self.twist_average(range(len(self.system.structure.kpoints)))
+                br = self.bundle_request
+                input = self.input.trace(br.quantity,br.values)
+                input.generate_filenames(self.infile)
+                self.input = input
+            #end if
+            output_files = self.input.get_output_info('outfiles')
         #end if
-
-        output_files = self.input.get_output_info('outfiles')
-
         return output_files
     #end def get_output_files
 
@@ -446,16 +440,14 @@ class Qmcpack(Simulation):
         br.quantity = 'twistnum'
         br.values   = list(twistnums)
         self.bundle_request = br
-        #self.app_name = 'qmcapp_complex'
-        #print 'twist_average'
-        #print '  setting bundle request:'
-        #print self.bundle_request
     #end def twist_average
 
 
     def write_prep(self):
         if self.got_dependencies:
-            if 'bundle_request' in self and not isinstance(self.input,TracedQmcpackInput):
+            traced_input  = isinstance(self.input,TracedQmcpackInput)
+            generic_input = self.has_generic_input()
+            if 'bundle_request' in self and not traced_input and not generic_input:
                 br = self.bundle_request
                 input = self.input.trace(br.quantity,br.values)
                 input.generate_filenames(self.infile)
@@ -472,124 +464,6 @@ class Qmcpack(Simulation):
         #end if
     #end def write_prep
 #end class Qmcpack
-
-
-
-
-class BundledQmcpack(Qmcpack):
-    infile_extension = '.in'
-    application_results = set([])
-
-    preserve = set(Simulation.preserve)
-    preserve.add('sims')
-
-    def __init__(self,**kwargs):
-        if not 'sims' in kwargs:
-            self.error('sims must be provided')
-        #end if
-        sims = kwargs['sims']
-        self.sims = sims
-        del kwargs['sims']
-        files = set()
-        for sim in sims:
-            files = files | sim.files
-        #end for
-        kwargs['files'] = files
-
-        inputs = []
-        filenames = []
-        for sim in sims:
-            inputs.append(sim.input)
-            filenames.append(sim.infile)
-        #end for
-        kwargs['input'] = BundledQmcpackInput(inputs=inputs,filenames=filenames)
-
-        Simulation.__init__(self,**kwargs)
-        deps = []
-        for sim in sims:
-            for dep in sim.dependencies:
-                deps.append((dep.sim,'other'))
-            #end for
-        #end for
-        self.depends(*deps)
-    #end def __init__
-
-    def propagate_identifier(self):
-        for sim in self.sims:
-            sim.propagate_identifier()
-        #end for
-    #end def propagate_identifier
-
-    def check_result(self,result_name,sim):
-        return False
-    #end def check_result
-
-    def get_result(self,result_name,sim):
-        self.error(result_name+' is not calculated by BundledQmcpack')
-    #end def get_result
-
-    def check_dependencies(self,result):
-        for sim in self.sims:
-            sim.check_dependencies(results)
-        #end for
-        Simulation.check_dependencies(self,result)
-    #end def check_dependencies
-
-    def get_dependencies(self):
-        for sim in self.sims:
-            sim.get_dependencies()
-        #end for
-        Simulation.get_dependencies(self)
-    #end def get_dependencies
-
-
-
-    def check_sim_status(self):
-        outfile = os.path.join(self.locdir,self.outfile)
-        errfile = os.path.join(self.locdir,self.errfile)
-        fobj = open(outfile,'r')
-        output = fobj.read()
-        fobj.close()
-        fobj = open(errfile,'r')
-        errors = fobj.read()
-        fobj.close()
-
-        ran_to_end  = 'Total Execution' in output
-        files_exist = True
-        outfiles = self.input.get_output_info('outfiles')
-        for file in outfiles:
-            file_loc = os.path.join(self.locdir,file)
-            files_exist = files_exist and os.path.exists(file_loc)
-        #end for
-            
-        if ran_to_end and not files_exist:
-            self.warn('run finished successfully, but output files do not seem to exist')
-            print outfiles
-            print os.listdir(self.locdir)
-        #end if
-
-        aborted = 'Fatal Error' in errors
-
-        self.failed   = aborted
-        self.finished = files_exist and self.job.finished and not aborted 
-
-        #print
-        #print self.__class__.__name__
-        #print 'identifier ',self.identifier
-        #print 'ran_to_end ',ran_to_end
-        #print 'files_exist',files_exist
-        #print 'aborted    ',aborted
-        #print 'job done   ',self.job.finished
-        #print 'finished   ',self.finished
-        #print
-        #
-        #import code
-        #code.interact(local=dict(locals(),**globals()))
-
-    #end def check_sim_status
-
-#end class BundledQmcpack
-
 
 
 

@@ -45,7 +45,7 @@
 
 
 import os
-import types as pytypes
+import inspect
 from copy import deepcopy
 from superstring import string2val
 from numpy import fromstring,empty,array,float64,ones,pi,dot
@@ -54,7 +54,7 @@ from unit_converter import convert
 from generic import obj
 from structure import Structure,kmesh
 from physical_system import PhysicalSystem
-from project_base import Pobj
+from developer import DevBase,warn
 from simulation import SimulationInput
 from debug import *
 
@@ -153,7 +153,7 @@ def array_to_string(a,pad='   ',format=pwscf_array_format,converter=noconv,rowse
 
             
 
-class PwscfInputBase(Pobj):
+class PwscfInputBase(DevBase):
     ints=['nstep','iprint','gdir','nppstr','nberrycyc','ibrav','nat','ntyp','nbnd','tot_charge','nr1','nr2','nr3','nr1s','nr2s','nr3s','nspin','multiplicity','tot_magnetization','edir','report','electron_maxstep','mixing_ndim','mixing_fixed_ns','ortho_para','diago_cg_maxiter','diago_david_ndim','nraise','bfgs_ndim','num_of_images','fe_nstep','sw_nstep','modenum','n_charge_compensation','nlev','lda_plus_u_kind']
     floats=['dt','max_seconds','etot_conv_thr','forc_conv_thr','celldm','A','B','C','cosAB','cosAC','cosBC','nelec','ecutwfc','ecutrho','degauss','starting_magnetization','nelup','neldw','ecfixed','qcutz','q2sigma','Hubbard_alpha','Hubbard_U','Hubbard_J','starting_ns_eigenvalue','emaxpos','eopreg','eamp','angle1','angle2','fixed_magnetization','lambda','london_s6','london_rcut','conv_thr','mixing_beta','diago_thr_init','efield','tempw','tolp','delta_t','upscale','trust_radius_max','trust_radius_min','trust_radius_ini','w_1','w_2','temp_req','ds','k_max','k_min','path_thr','fe_step','g_amplitude','press','wmass','cell_factor','press_conv_thr','xqq','ecutcoarse','mixing_charge_compensation','comp_thr','exx_fraction','ecutfock']
     strs=['calculation','title','verbosity','restart_mode','outdir','wfcdir','prefix','disk_io','pseudo_dir','occupations','smearing','input_dft','U_projection_type','constrained_magnetization','mixing_mode','diagonalization','startingpot','startingwfc','ion_dynamics','ion_positions','phase_space','pot_extrapolation','wfc_extrapolation','ion_temperature','opt_scheme','CI_scheme','cell_dynamics','cell_dofree','which_compensation','assume_isolated','exxdiv_treatment']
@@ -285,22 +285,22 @@ class Card(Element):
 
     def read(self,lines):
         self.get_specifier(lines[0])
-        self.read_contents(lines[1:])
+        self.read_text(lines[1:])
     #end def read
 
     def write(self,parent):
         c = self.name.upper()+' '+self.specifier+'\n'
-        c += self.write_contents()+'\n'
+        c += self.write_text()+'\n'
         return c
     #end def write
 
-    def read_contents(self,lines):
+    def read_text(self,lines):
         self.not_implemented()
-    #end def read_contents
+    #end def read_text
 
-    def write_contents(self):
+    def write_text(self):
         self.not_implemented()
-    #end def write_contents
+    #end def write_text
 
     def change_specifier(self,new_specifier):
         self.not_implemented()
@@ -513,7 +513,7 @@ def check_section_classes(*sections):
 class atomic_species(Card):
     name = 'atomic_species'
 
-    def read_contents(self,lines):
+    def read_text(self,lines):
         atoms = []
         masses   = obj()
         pseudopotentials = obj()
@@ -525,22 +525,22 @@ class atomic_species(Card):
             pseudopotentials[atom] = tokens[2]
         #end for
         self.add(atoms=atoms,masses=masses,pseudopotentials=pseudopotentials)
-    #end def read_contents
+    #end def read_text
 
-    def write_contents(self):
+    def write_text(self):
         c = ''
         for at in self.atoms:
             c += '   '+'{0:2}'.format(at)+' '+str(self.masses[at])+' '+self.pseudopotentials[at]+'\n'
         #end for
         return c
-    #end def write_contents
+    #end def write_text
 #end class atomic_species
 
 
 class atomic_positions(Card):
     name = 'atomic_positions'
 
-    def read_contents(self,lines):
+    def read_text(self,lines):
         npos = len(lines)
         dim = 3
         atoms = []
@@ -562,10 +562,10 @@ class atomic_positions(Card):
         if has_relax_directions:
             self.add(relax_directions=relax_directions)
         #end if
-    #end def read_contents
+    #end def read_text
 
 
-    def write_contents(self):
+    def write_text(self):
         c = ''
         has_relax_directions = 'relax_directions' in self
         if has_relax_directions:
@@ -581,7 +581,7 @@ class atomic_positions(Card):
             #end if
         #end for
         return c
-    #end def write_contents
+    #end def write_text
 
 
     def change_specifier(self,new_specifier,pwi):
@@ -627,7 +627,7 @@ class atomic_positions(Card):
 class k_points(Card):
     name = 'k_points'
 
-    def read_contents(self,lines):
+    def read_text(self,lines):
         if self.specifier in ['tpiba','crystal','tpiba_b','crystal_b','']:
             self.nkpoints = int(lines[0])
             a = array_from_lines(lines[1:])
@@ -643,10 +643,10 @@ class k_points(Card):
         else:
             self.error('k_points specifier '+self.specifier+' is unrecognized')
         #end if
-    #end def read_contents
+    #end def read_text
 
 
-    def write_contents(self):
+    def write_text(self):
         c = ''        
         if self.specifier in ('tpiba','crystal','tpiba_b','crystal_b',''):
             self.nkpoints = len(self.kpoints)
@@ -665,7 +665,7 @@ class k_points(Card):
             self.error('k_points specifier '+self.specifier+' is unrecognized')
         #end if
         return c
-    #end def write_contents
+    #end def write_text
 
 
     def change_specifier(self,new_specifier,pwi):
@@ -716,13 +716,13 @@ class k_points(Card):
 class cell_parameters(Card):
     name = 'cell_parameters'
 
-    def read_contents(self,lines):
+    def read_text(self,lines):
         self.vectors = array_from_lines(lines)
-    #end def read_contents
+    #end def read_text
 
-    def write_contents(self):
+    def write_text(self):
         return array_to_string(self.vectors)
-    #end def write_contents
+    #end def write_text
 #end class cell_parameters
 
 
@@ -731,17 +731,17 @@ class cell_parameters(Card):
 class climbing_images(Card):
     name = 'climbing_images'
 
-    def read_contents(self,lines):
+    def read_text(self,lines):
         self.images = array_from_lines(lines)
-    #end def read_contents
+    #end def read_text
 
-    def write_contents(self):
+    def write_text(self):
         c='   '
         for n in self.images:
             c+=str(int(n))+' '
         #end for
         return c
-    #end def write_contents
+    #end def write_text
 #end class climbing_images
 
 
@@ -750,7 +750,7 @@ class climbing_images(Card):
 class constraints(Card):
     name = 'constraints'
 
-    def read_contents(self,lines):
+    def read_text(self,lines):
         tokens = lines[0].split()
         self.ncontraints = int(tokens[0])
         if len(tokens)>1:
@@ -764,9 +764,9 @@ class constraints(Card):
             cons.parameters = array(tokens[1:],dtype=float64)
             self.constraints[i] = cons
         #end for
-    #end def read_contents
+    #end def read_text
 
-    def write_contents(self):
+    def write_text(self):
         c = '   '+str(self.nconstraints)
         if 'tolerance' in self:
             c+=' '+str(self.tolerance)
@@ -775,7 +775,7 @@ class constraints(Card):
             c+='   '+cons.type+' '+array_to_string(cons.parameters,pad='')
         #end for
         return c
-    #end def write_contents
+    #end def write_text
 #end class constraints
 
 
@@ -784,7 +784,7 @@ class constraints(Card):
 class collective_vars(Card):
     name = 'collective_vars'
 
-    def read_contents(self,lines):
+    def read_text(self,lines):
         tokens = lines[0].split()
         self.ncontraints = int(tokens[0])
         if len(tokens)>1:
@@ -798,9 +798,9 @@ class collective_vars(Card):
             collv.parameters = array(tokens[1:],dtype=float64)
             self.collective_vars[i] = collv
         #end for
-    #end def read_contents
+    #end def read_text
 
-    def write_contents(self):
+    def write_text(self):
         c= '   '+str(self.ncollective_vars)
         if 'tolerance' in self:
             c+=' '+str(self.tolerance)
@@ -809,7 +809,7 @@ class collective_vars(Card):
             c+='   '+collv.type+' '+array_to_string(collv.parameters,pad='')
         #end for        
         return c
-    #end def write_contents
+    #end def write_text
 #end class collective_vars
 
 
@@ -818,13 +818,13 @@ class collective_vars(Card):
 class occupations(Card):
     name = 'occupations'
 
-    def read_contents(self,lines):
+    def read_text(self,lines):
         self.occupations = array_from_lines(lines)
-    #end def read_contents
+    #end def read_text
  
-    def write_contents(self):
+    def write_text(self):
         return array_to_string(self.occupations)
-    #end def write_contents
+    #end def write_text
 #end class occupations
 
 
@@ -893,7 +893,7 @@ class PwscfInput(SimulationInput):
     #end def __init__
 
 
-    def read_contents(self,contents):
+    def read_text(self,contents,filepath=None):
         lines = contents.splitlines()
         in_element = False
         elem_type = None
@@ -948,10 +948,10 @@ class PwscfInput(SimulationInput):
         for element in self:
             element.post_process_read(self)
         #end for
-    #end def read_contents
+    #end def read_text
 
 
-    def write_contents(self):
+    def write_text(self,filepath=None):
         contents = ''
         for s in self.sections:
             if s in self:
@@ -966,7 +966,7 @@ class PwscfInput(SimulationInput):
         #end for
         contents+='\n'
         return contents
-    #end def write_contents
+    #end def write_text
 
 
     def get_common_vars(self,*vars):
@@ -1225,22 +1225,6 @@ class PwscfInput(SimulationInput):
             ion_charge += atoms.count(atom)*valency[atom]
         #end for
 
-        #ion_charge = 0
-        #valency = dict()
-        #atoms   = list(self.atomic_positions.atoms)
-        #for atom in self.atomic_species.atoms:
-        #    pseudo_file = self.atomic_species.pseudopotentials[atom]
-        #    if self.pseudopotentials!=None and pseudo_file in self.pseudopotentials:                
-        #        pseudopot = self.pseudopotentials[pseudo_file]
-        #        element = pseudopot.element
-        #        valence = int(pseudopot.Z)
-        #        ion_charge += atoms.count(atom)*valence
-        #        valency[atom] = valence
-        #    else:
-        #        self.error('file '+pseudo_file+' was not listed in Pseudopotentials object\n  please specify pseudopotentials with the settings function',trace=False)
-        #    #end if
-        ##end for
-
         if 'nelup' in self.system:
             nup = self.system.nelup
             ndn = self.system.neldw
@@ -1392,7 +1376,7 @@ def generate_any_pwscf_input(**kwargs):
     for name,default in defaults.iteritems():
         if not name in kwargs:
             deftype = type(default)
-            if deftype==pytypes.ClassType or deftype==pytypes.FunctionType:
+            if inspect.isclass(default) or inspect.isfunction(default):
                 kwargs[name] = default()
             else:
                 kwargs[name] = default
@@ -1427,13 +1411,14 @@ def generate_any_pwscf_input(**kwargs):
     #end for
 
     #process other keywords
-    pseudos    = kwargs.delete('pseudos')
-    system     = kwargs.delete('system')
-    use_folded = kwargs.delete('use_folded')
-    hubbard_u  = kwargs.delete('hubbard_u')
-    start_mag  = kwargs.delete('start_mag')
-    kgrid      = kwargs.delete('kgrid')
-    kshift     = kwargs.delete('kshift')
+    pseudos    = kwargs.delete_required('pseudos')
+    system     = kwargs.delete_required('system')
+    use_folded = kwargs.delete_required('use_folded')
+    hubbard_u  = kwargs.delete_required('hubbard_u')
+    start_mag  = kwargs.delete_required('start_mag')
+    kgrid      = kwargs.delete_required('kgrid')
+    kshift     = kwargs.delete_required('kshift')
+    nogamma    = kwargs.delete_optional('nogamma',False)
 
     #  pseudopotentials
     pseudopotentials = obj()
@@ -1507,17 +1492,32 @@ def generate_any_pwscf_input(**kwargs):
     else:
         zero_shift = tuple(kshift)==(0,0,0)
     #end if
-    if zero_shift and (kgrid!=None and tuple(kgrid)==(1,1,1) or kgrid is None and system is None):
+
+    single_point = kgrid != None and tuple(kgrid)==(1,1,1)
+    no_info      = kgrid is None and system is None
+    at_gamma = zero_shift and (single_point or no_info)
+    at_gamma |= 'specifier' in pw.k_points and pw.k_points.specifier=='gamma'
+    auto     = kgrid!=None and kshift!=None
+    shifted  = not zero_shift and kshift!=None
+
+    if at_gamma and not nogamma:
         pw.k_points.clear()
         pw.k_points.specifier = 'gamma'
-    elif kgrid!=None and kshift!=None:
+    elif at_gamma and nogamma:
+        pw.k_points.clear()
+        pw.k_points.set(
+            specifier = 'automatic',
+            grid      = (1,1,1),
+            shift     = (0,0,0)
+            )
+    elif auto:
         pw.k_points.clear()
         pw.k_points.set(
             specifier = 'automatic',
             grid      = kgrid,
             shift     = kshift
             )
-    elif not zero_shift and kshift!=None:
+    elif shifted:
         pw.k_points.clear()
         pw.k_points.set(
             specifier = 'automatic',
@@ -1897,7 +1897,7 @@ def generate_relax_input(prefix       = 'pwscf',
     if system is not None:
         structure = system.structure
         if group_atoms:
-            self.warn('requested grouping by atomic species, but pwscf does not group atoms anymore!')
+            warn('requested grouping by atomic species, but pwscf does not group atoms anymore!','generate_relax_input')
         #end if
         #if group_atoms: #don't group atoms for pwscf, any downstream consequences?
         #    structure.group_atoms()
