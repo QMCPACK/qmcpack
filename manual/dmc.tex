@@ -164,7 +164,8 @@ on diffusion Monte Carlo.
   </qmc>
 \end{lstlisting}
 The flags checkpoint and dumpconfig instructs qmcpack to output walker configurations.  This also
-works in variational Monte Carlo.  This will output an h5 file with the project id and iteration number.
+works in variational Monte Carlo.  This will output an h5 file with the name "projectid"."run-number".config.h5.
+Check that this file exists before attempting a restart.
 To read in this file for a continuation run, specify the following:
 \begin{lstlisting}[caption=Restart (read wakers from previous run) ]
  <mcwalkerset fileroot="BH.s002" node="-1" nprocs="1" version="0 6" collected="yes"/>
