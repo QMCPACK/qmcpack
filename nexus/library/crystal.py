@@ -153,9 +153,14 @@ def write_hamiltonian(theory          = None,
                       ):
     s = ''
     theory = theory.lower().strip()
-    known_theories = set(['rhf','uhf'])
+    dft_functionals = set(['pbe0'])
+    known_theories = set(['rhf','uhf']) | dft_functionals
     if theory in known_theories:
-        s+=theory.upper()+'\n'
+        if theory not in dft_functionals:
+            s+=theory.upper()+'\n'
+        else:
+            s+='DFT\n'+theory.upper()+'\nSPIN\nEND\n'
+        #end if
     else:
         error('unknown theory: '+theory,'write_hamiltonian')
     #end if
