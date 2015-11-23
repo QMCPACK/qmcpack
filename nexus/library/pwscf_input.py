@@ -184,7 +184,7 @@ class PwscfInputBase(DevBase):
 class Element(PwscfInputBase):
     name = None
     def add(self,**variables):
-        self._add_attributes(**variables)
+        self._set(**variables)
     #end def add
 
     def read(self,lines):
