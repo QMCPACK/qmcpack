@@ -1,18 +1,10 @@
-#GNU compilers
-IF(CMAKE_COMPILER_IS_GNUCXX) 
+# GNU compilers
+IF ( NOT CMAKE_COMPILER_IS_GNUCXX )
 
-  exec_program(${CMAKE_C_COMPILER} ARGS "-dumpversion" OUTPUT_VARIABLE _gcc_version_info)
-  string(REGEX REPLACE "^([0-9]+).*$"                   "\\1" GCC_MAJOR ${_gcc_version_info})
-  string(REGEX REPLACE "^[0-9]+\\.([0-9]+).*$"          "\\1" GCC_MINOR ${_gcc_version_info})
-  string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.([0-9]+).*$" "\\1" GCC_PATCH ${_gcc_version_info})
-
-
-  if(${GCC_MAJOR} LESS 4)
-    MESSAGE(FATAL_ERROR "Require gcc 4.4 or higher ")
-  endif()
-  if(${GCC_MINOR} LESS 4)
-    MESSAGE(FATAL_ERROR "Require gcc 4.4 or higher ")
-  endif()
+  # Check compiler version
+  IF ( CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.4 )
+     MESSAGE(FATAL_ERROR "Require gcc 4.4 or higher ")
+  ENDIF()
 
   SET(ENABLE_OPENMP 1)
 
@@ -64,21 +56,6 @@ IF(CMAKE_COMPILER_IS_GNUCXX)
     SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse4.1")
   ENDIF(GNU_CC_FLAGS)
   ENDIF(HAVE_POSIX_MEMALIGN)
-
-
-
-  #  SET(CMAKE_CXX_FLAGS "-O6 -ftemplate-depth-60 -Drestrict=__restrict__ -fstrict-aliasing -funroll-all-loops   -finline-limit=1000 -ffast-math -Wno-deprecated -pg")
-  #  SET(CMAKE_CXX_FLAGS "-g -ftemplate-depth-60 -Drestrict=__restrict__ -fstrict-aliasing -Wno-deprecated")
-
-  IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  # SET(CMAKE_SHARED_LIBRARY_CXX_FLAGS "${CMAKE_SHARED_LIBRARY_CXX_FLAGS} -faltivec -framework Accelerate -bind_at_load")
-    SET(F77 xlf)
-    SET(F77FLAGS -O3)
-  ELSE(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  #  SET(FORTRAN_LIBS "-lg2c")
-    SET(F77 g77)
-    SET(F77FLAGS  -funroll-loops -O3)
-  ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
   IF(QMC_BUILD_STATIC)
     SET(CMAKE_CXX_LINK_FLAGS " -static")

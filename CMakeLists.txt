@@ -1,19 +1,11 @@
 PROJECT(qmcpack)
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
 #####################################################
-SET(CMAKE_FALLBACK FALSE)
-if(${CMAKE_MAJOR_VERSION} VERSION_LESS "3") 
-if(${CMAKE_MINOR_VERSION} VERSION_LESS "8") 
-  MESSAGE(WARNING ">>>> Recommend using cmake version 2.8.0 and higher. Using old cmake scripts. <<<< ")
-  SET(CMAKE_FALLBACK TRUE)
-endif(${CMAKE_MINOR_VERSION} VERSION_LESS "8")
-endif(${CMAKE_MAJOR_VERSION} VERSION_LESS "3") 
-
-if(COMMAND cmake_policy)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8.10)
+IF(COMMAND cmake_policy)
   cmake_policy(SET CMP0003 NEW)
-endif(COMMAND cmake_policy)
+ENDIF(COMMAND cmake_policy)
 
 
 ######################################################################

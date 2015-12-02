@@ -158,11 +158,6 @@ endif(CPU_FLAGS MATCHES "sse2")
 set(CMAKE_CXX_FLAGS "${INTEL_OPTS} $ENV{CXX_FLAGS} -Wno-deprecated")
 set(CMAKE_C_FLAGS "${INTEL_OPTS} $ENV{CC_FLAGS} -std=c99 -Wno-deprecated")
 
-#ifc -> ifort
-#set(FORTRAN_LIBS " -lifcore -lifport")
-set(F77 ifort)
-set(F77OPTFLAGS  -fpp2 -O3)
-set(F77FLAGS ${F77OPTFLAGS})
 
 ######################################################
 #KCC needs to be used to build static libraries
