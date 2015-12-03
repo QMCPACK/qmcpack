@@ -32,8 +32,8 @@ is given below:
    CC               C Compiler
    MKL_HOME         Path for MKL
    LIBXML2_HOME     Path for libxml2
-   HDF5_HOME        Path for HDF5
-   BOOST_HOME       Path for Boost
+   HDF5_ROOT        Path for HDF5
+   BOOST_ROOT       Path for Boost
    EINSPLINE_HOME   Path for EINSPLINE
    FFTW_HOME        Path for FFTW
 
@@ -88,8 +88,8 @@ h3.4. Example configure and build
   export CC=icc
   export MKL_HOME=/usr/local/intel/mkl/10.0.3.020
   export LIBXML2_HOME=/usr/local
-  export HDF5_HOME=/usr/local
-  export BOOST_HOME=/usr/local/boost
+  export HDF5_ROOT=/usr/local
+  export BOOST_ROOT=/usr/local/boost
   export EINSPLINE_HOME=/usr/local/einspline
   export FFTW_HOME=/usr/local/fftw
 
@@ -113,7 +113,7 @@ and example script is given below:
    export CC=mpicc
    export ACML_HOME=/opt/acml-5.3.1/gfortran64
    export HDF5_ROOT=/opt/hdf5
-   export BOOST_HOME=/opt/boost
+   export BOOST_ROOT=/opt/boost
 
    rm -rf CMake*
 

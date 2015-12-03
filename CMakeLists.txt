@@ -580,9 +580,6 @@ ENDIF(HDF5_FOUND)
 
 #make sure we can find boost if it's not in /usr
 set(Boost_NO_BOOST_CMAKE on)
-IF($ENV{BOOST_HOME} MATCHES ".")
-  set(BOOST_ROOT $ENV{BOOST_HOME})
-ENDIF()
 find_package(Boost REQUIRED)
 IF(Boost_FOUND)
   SET(HAVE_LIBBOOST 1)
