@@ -32,6 +32,9 @@ INCLUDE( CTest )
 ######################################################################
 SET(QMC_BUILD_LEVEL 3 CACHE INTEGER 
   "QMC Build Level: 1=bare, 2=developer, 3=experimental, 4=minimal")
+IF ( NOT DEFINED CMAKE_BUILD_TYPE )
+  SET( CMAKE_BUILD_TYPE Release )
+ENDIF()
 
 ######################################################################
 #define the paths for library and executable for out-of-soruce compilation
