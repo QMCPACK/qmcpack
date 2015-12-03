@@ -33,8 +33,7 @@ struct IonData
   typedef std::vector<int> eListType;
   double cutoff_radius;
   eListType elecs_inside;
-  eListType::iterator current;
-  IonData() : cutoff_radius(0.0), current(0) { }
+  IonData() : cutoff_radius(0.0) { }
 };
 
 
@@ -65,13 +64,15 @@ class eeI_JastrowOrbital: public OrbitalBase
   ParticleAttrib<PosType> dU,curGrad_i, curGrad_j;
   ParticleAttrib<PosType> curGrad0;
   ParticleAttrib<RealType> refVal;
+  ParticleSet *eRef, *IRef;
   // The first index is the ion, the second two are
   // the electrons
-  Array<int,3> TripletID;
-  Array<int,3> J3UniqueIndex;
+  int TripletID(int i, int j, int k) {
+    return (IRef->GroupID[i]*eRef->groups() + eRef->GroupID[j])*eRef->groups() + eRef->GroupID[k];
+  }
 
   std::map<std::string,FT*> J3Unique;
-  ParticleSet *eRef, *IRef;
+  std::map<FT*,int> J3UniqueIndex;
   bool FirstTime;
   RealType KEcorr;
 
@@ -132,14 +133,8 @@ public:
     curVal.resize(Nelec);
     FirstAddressOfdU = &(dU[0][0]);
     LastAddressOfdU = FirstAddressOfdU + dU.size()*DIM;
-    TripletID.resize(Nion,Nelec,Nelec);
     int nisp=iGroups=IRef->getSpeciesSet().getTotalNum();
     int nesp=eGroups=p.groups();
-    for (int i=0; i<Nion; i++)
-      for(int j=0; j<Nelec; j++)
-        for(int k=0; k<Nelec; k++)
-          TripletID(i,j,k) = IRef->GroupID[i]*nesp*nesp +
-                             p.GroupID[j]*nesp + p.GroupID[k];
     F.resize(nisp,nesp,nesp);
     F = 0;
     IonDataList.resize(Nion);
@@ -151,19 +146,11 @@ public:
     du_dalpha.resize(J3Unique.size());
     dgrad_dalpha.resize(J3Unique.size());
     dhess_dalpha.resize(J3Unique.size());
-    J3UniqueIndex.resize(Nion,Nelec,Nelec);
     int ifunc=0;
     while(it != it_end)
     {
+      J3UniqueIndex[it->second]=ifunc;
       FT &functor = *(it->second);
-      for (int i=0; i<Nion; i++)
-        for(int j=0; j<Nelec; j++)
-          for(int k=0; k<Nelec; k++)
-          {
-            FT &func_ijk = *F.data()[TripletID(i, j, k)];
-            if (&func_ijk == &functor)
-              J3UniqueIndex(i,j,k) = ifunc;
-          }
       int numParams = functor.getNumParameters();
       du_dalpha[ifunc].resize(numParams);
       dgrad_dalpha[ifunc].resize(numParams);
@@ -1443,7 +1430,7 @@ public:
             RealType r_jk     = ee_table->r(ee0+kel);
             RealType r_jk_inv = ee_table->rinv(ee0+kel);
             FT &func = *F.data()[TripletID(i, jel, kel)];
-            int idx = J3UniqueIndex(i,jel,kel);
+            int idx = J3UniqueIndex[F.data()[TripletID(i, jel, kel)]];
             func.evaluateDerivatives(r_jk, r_Ij, r_Ik, du_dalpha[idx],
                                      dgrad_dalpha[idx], dhess_dalpha[idx]);
             u = func.evaluate (r_jk, r_Ij, r_Ik, gradF, hessF);

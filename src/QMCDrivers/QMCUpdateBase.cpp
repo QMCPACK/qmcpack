@@ -130,10 +130,13 @@ void QMCUpdateBase::resetEtrial(RealType et)
 }
 
 void QMCUpdateBase::startRun(int blocks, bool record)
-{
+{ 
+  if(!Traces)
+  {
+    APP_ABORT("QMCUpdateBase::startRun\n  derived QMCDriver class has not setup trace clones properly\n  null TraceManager pointer encountered in derived QMCUpdateBase class\n  see VMCLinearOptOMP.cpp for a correct minimal interface (search on 'trace')\n  refer to changes made in SVN revision 6597 for further guidance");
+  }
   Estimators->start(blocks,record);
   H.initialize_traces(*Traces,W);
-  Estimators->initialize_traces(*Traces);
   Traces->initialize_traces();
 }
 
@@ -147,7 +150,6 @@ void QMCUpdateBase::stopRun()
 void QMCUpdateBase::stopRun2()
 {
   H.finalize_traces();
-  Estimators->finalize_traces();
   Traces->finalize_traces();
 }
 

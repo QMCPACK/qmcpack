@@ -3,8 +3,27 @@
 ##################################################################
 
 
+#====================================================================#
+#  sqd_input.py                                                      #
+#    Supports input file I/O and manipulation for the SQD code.      #
+#    Essentially an early fork of qmcpack_input.py.                  #
+#                                                                    #
+#  Content summary:                                                  #
+#    SqdInput                                                        #
+#      SimulationInput class for the SQD code.                       #
+#                                                                    #
+#    generate_sqd_input                                              #
+#      User-facing function to generate SQD input files.             #
+#                                                                    #
+#    For descriptions of remaining contents, see the header of       #
+#      qmcpack_input.py.                                             #
+#                                                                    #
+#                                                                    #
+#====================================================================#
+
+
 import os
-import types as pytypes
+import inspect
 import keyword
 from numpy import fromstring,empty,array,float64,\
     loadtxt,ndarray,dtype,sqrt,pi,arange,exp,eye,ceil,mod
@@ -13,7 +32,7 @@ from superstring import string2val
 from generic import obj
 from xmlreader import XMLreader,XMLelement
 from periodic_table import pt as periodic_table
-from project_base import Pobj
+from developer import DevBase
 from structure import Structure
 from physical_system import PhysicalSystem
 from simulation import SimulationInput
@@ -108,7 +127,7 @@ def string_to_val(s):
 #end def string_to_val
 
 
-class SQDobj(Pobj):
+class SQDobj(DevBase):
     None
 #end class SQDobj
 
@@ -293,24 +312,19 @@ class SQDxml(Names):
 
     @classmethod
     def init_class(cls):
-        vars = cls.__dict__.keys()
-        init_vars = dict(tag        = cls.__name__,
-                         attributes = [],
-                         elements   = [],
-                         text       = None,
-                         parameters = [],
-                         attribs    = [],
-                         costs      = [],
-                         h5tags     = [],
-                         defaults   = obj()
-                         )
-        for var,val in init_vars.iteritems():
-            if not var in vars:
-                cls.__dict__[var] = val
-            #end if
-        #end for
+        cls.class_set_optional(
+            tag        = cls.__name__,
+            attributes = [],
+            elements   = [],
+            text       = None,
+            parameters = [],
+            attribs    = [],
+            costs      = [],
+            h5tags     = [],
+            defaults   = obj()
+            )
         for v in ['attributes','elements','parameters','attribs','costs','h5tags']:
-            names = cls.__dict__[v]
+            names = cls.class_get(v)
             for i in range(len(names)):
                 if names[i] in cls.escape_names:
                     names[i]+='_'
@@ -581,7 +595,6 @@ class SQDxml(Names):
 
     def incorporate_defaults(self,elements=False,overwrite=False,propagate=True):
         for name,value in self.defaults.iteritems():
-            valtype = type(value)
             defval=None
             if isinstance(value,classcollection):
                 if elements:
@@ -593,11 +606,11 @@ class SQDxml(Names):
                     #end for
                     defval = make_collection(coll)
                 #end if
-            elif valtype==pytypes.ClassType:
+            elif inspect.isclass(value):
                 if elements:
                     defval = value()
                 #end if
-            elif valtype==pytypes.FunctionType:
+            elif inspect.isfunction(value):
                 defval = value()
             else:
                 defval = value
@@ -1464,7 +1477,7 @@ class SqdInput(SimulationInput,Names):
     #end def read
 
 
-    def write_contents(self):
+    def write_text(self,filepath=None):
         c = ''
         header = '''<?xml version="1.0"?>
 '''
@@ -1478,7 +1491,7 @@ class SqdInput(SimulationInput,Names):
         c+=base.write(first=True)
         Param.metadata = None
         return c
-    #end def write_contents
+    #end def write_text
 
     def unroll_calculations(self,modify=True):
         qmc = []
@@ -1686,7 +1699,7 @@ class SqdInput(SimulationInput,Names):
 
 
 
-class Shells(Pobj):
+class Shells(DevBase):
     channel_names = tuple('spdfghik')
     channels = obj()
     for l in range(len(channel_names)):
@@ -1879,7 +1892,7 @@ class Shells(Pobj):
                 self.error('unexpected key values for shells\n  expected values: '+str(shells.keys())+'\n  you provided '+str(self.all_shells.keys()))
             #end if
         else:
-            self.error('must provide a string, dict, or obj describing atomic shells\n  you provided '+str(shell_str))
+            self.error('must provide a string, dict, or obj describing atomic shells\n  you provided '+str(shells))
         #end if
         self.check_shells()
     #end def __init__
@@ -1939,7 +1952,7 @@ class Shells(Pobj):
                             m=v1
                             ma = abs(array(m))
                             if ma.max()>self.channel_indices[l]:
-                                self.error('maximum |m| for {0} channel is {1}\n  you requested {2}: {3}'.format(l,channel_indices[l],ma.max(),m))
+                                self.error('maximum |m| for {0} channel is {1}\n  you requested {2}: {3}'.format(l,self.channel_indices[l],ma.max(),m))
                             #end if
                             channel = m
                             m=None
@@ -2063,11 +2076,6 @@ class Shells(Pobj):
         #end for
         return orbitals
     #end def orbitals
-
-
-    def error(self,msg,exit=True):
-        Pobj.error(self,msg,self.location,exit=exit)
-    #end def error
 #end class Shells
 hunds_rule_filling = Shells.hunds_rule_filling
 

@@ -2,11 +2,26 @@
 ##  (c) Copyright 2015-  by Jaron T. Krogel                     ##
 ##################################################################
 
+
+#====================================================================#
+#  pwscf.py                                                          #
+#    Nexus interface to the PWSCF simulation code.                   #
+#                                                                    #
+#  Content summary:                                                  #
+#    Pwscf                                                           #
+#      Simulation class for PWSCF.                                   #
+#                                                                    #
+#    generate_pwscf                                                  #
+#      User-facing function to create Pwscf simulation objects.      #
+#                                                                    #
+#====================================================================#
+
+
 import os
 from numpy import array
 from generic import obj
 from physical_system import PhysicalSystem
-from converters import Pw2qmcpack
+from qmcpack_converters import Pw2qmcpack
 from simulation import Simulation
 from pwscf_input import PwscfInput,generate_pwscf_input
 from pwscf_analyzer import PwscfAnalyzer

@@ -160,18 +160,18 @@ struct SplineAdoptorReader: public BsplineReaderBase
         //initialize_spline_pio_bcast(spin);
         //app_log() << "  SplineAdoptorReader initialize_spline_pio_bcast " << now.elapsed() << " sec" << endl;
         size_t ntot=size_t(nx*ny*nz)*size_t(N);
-        if(ntot>>22) //Using 4M as the cutoff, candidate for autotuning
+        //if(ntot>>22) //Using 4M as the cutoff, candidate for autotuning
         {
           now.restart();
           initialize_spline_pio(spin,bandgroup);
           app_log() << "  SplineAdoptorReader initialize_spline_pio " << now.elapsed() << " sec" << endl;
         }
-        else
-        {
-          now.restart();
-          initialize_spline_slow(spin,bandgroup);
-          app_log() << "  SplineAdoptorReader initialize_spline_slow " << now.elapsed() << " sec" << endl;
-        }
+        //else //avoid this buggy branch.
+        //{
+        //  now.restart();
+        //  initialize_spline_slow(spin,bandgroup);
+        //  app_log() << "  SplineAdoptorReader initialize_spline_slow " << now.elapsed() << " sec" << endl;
+        //}
         fftw_destroy_plan(FFTplan);
         FFTplan=NULL;
       }

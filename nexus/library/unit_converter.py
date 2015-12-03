@@ -3,31 +3,61 @@
 ##################################################################
 
 
-from abilities import Callable
+#====================================================================#
+#  unit_converter.py                                                 #
+#    Support for physical unit conversion of scalars and arrays.     #
+#    Several distance, time, mass, energy, charge, pressure, and     #
+#    force units are supported.                                      #
+#                                                                    #
+#  Content summary:                                                  #
+#    convert                                                         #
+#      User-facing function to convert a scalar or array from one    #
+#      unit system to another.                                       #
+#                                                                    #
+#    UnitConverter                                                   #
+#      Class performs unit conversion.  Wrapped by convert function. #
+#                                                                    #
+#====================================================================#
 
 
-class Unit:
-    def __init__(self,name,symbol,type,value,shift=0):
-        self.name = name
+from numpy import dot,zeros
+from numpy.linalg import inv
+from generic import obj
+from developer import DevBase
+
+
+class Unit(DevBase):
+
+    unit_dicts = obj(all=obj())
+
+    def __init__(self,type,name,symbol,value,shift=0):
+        self.type   = type
+        self.name   = name
         self.symbol = symbol
-        self.type = type
-        self.value = value
-        self.shift = shift
+        self.value  = value
+        self.shift  = shift
+
+        ud = Unit.unit_dicts
+        if type not in ud:
+            ud[type] = obj()
+        #end if
+        td = ud[type]
+        td[symbol] = self
+        ud.all[symbol] = self
     #end def __init__
 #end class Unit
 
 
-class UnitConverter:
+class UnitConverter(DevBase):
 
     unassigned = None
 
-
     kb = 1.3806503e-23 #J/K
 
-    count_set = set(['mol'])
+    # count
     mol = 6.0221415e23
 
-    distance_set = set(['m','A','B','nm','pm','fm','a','b','c'])
+    # distance
     m  = 1.e0
     A  = 1.e-10*m
     B  = .52917720859e-10*m
@@ -35,21 +65,21 @@ class UnitConverter:
     pm = 1.e-12*m
     fm = 1.e-15*m
 
-    time_set = set(['s','ms','ns','ps','fs'])
+    # time
     s = 1.e0
     ms = 1.e-3*s
     ns = 1.e-9*s
     ps = 1.e-12*s
     fs = 1.e-15*s
 
-    mass_set = set(['kg','me','mp','amu','Da'])
+    # mass
     kg  = 1.e0
     me  = 9.10938291e-31*kg
     mp  = 1.672621777e-27*kg
     amu = 1.660538921e-27*kg
     Da  = amu
 
-    energy_set = set(['J','eV','Ry','Ha','kJ_mol','K','degC','degF','kcal_mol'])
+    # energy
     J      = 1.e0
     eV     = 1.60217646e-19*J
     Ry     = 13.6056923*eV
@@ -63,166 +93,85 @@ class UnitConverter:
     degC_shift = -273.15
     degF_shift = -459.67 
 
-    charge_set = set(['C','e'])
+    # charge
     C = 1.e0
     e = 1.60217646e-19*C
 
-    pressure_set = set(['Pa','bar','Mbar','GPa','atm'])
+    # pressure
     Pa   = 1.e0
     bar  = 1.e5*Pa
     Mbar = 1.e6*bar
     GPa  = 1.e9*Pa
     atm  = 1.01325e5*Pa
 
-    force_set = set(['N','pN'])
+    # force
     N  = 1.e0
     pN = 1e-12*N
 
-    therm_cond_set = set(['W_mK'])
+    # thermal conductivity
     W_mK = 1.0
 
-    alatt = unassigned
-    blatt = unassigned
-    clatt = unassigned
 
-    meter      = Unit('meter'     ,'m' ,'distance',m)
-    angstrom   = Unit('Angstrom'  ,'A' ,'distance',A)
-    bohr       = Unit('Bohr'      ,'B' ,'distance',B)
-    nanometer  = Unit('nanometer' ,'nm','distance',nm)
-    picometer  = Unit('picometer' ,'pm','distance',pm)
-    femtometer = Unit('femtometer','pm','distance',fm)
-    a          = Unit('a'         ,'a' ,'distance',alatt)
-    b          = Unit('b'         ,'b' ,'distance',blatt)
-    c          = Unit('c'         ,'c' ,'distance',clatt)
-
-    second      = Unit('second'     ,'s' ,'time',s )
-    millisecond = Unit('millisecond','ms','time',ms)
-    nanosecond  = Unit('nanosecond' ,'ns','time',ns)
-    picosecond  = Unit('picosecond' ,'ps','time',ps)
-    femtosecond = Unit('femtosecond','fs','time',fs)
-
-    kilogram         = Unit('kilogram'        ,'kg' ,'mass',kg)
-    electron_mass    = Unit('electron mass'   ,'me' ,'mass',me)
-    proton_mass      = Unit('proton mass'     ,'mp' ,'mass',mp)
-    atomic_mass_unit = Unit('atomic mass unit','amu','mass',amu)
-    dalton           = Unit('Dalton'          ,'Da' ,'mass',Da)
+    meter            = Unit('distance'  ,'meter'           ,'m'       ,m              )
+    angstrom         = Unit('distance'  ,'Angstrom'        ,'A'       ,A              )
+    bohr             = Unit('distance'  ,'Bohr'            ,'B'       ,B              )
+    nanometer        = Unit('distance'  ,'nanometer'       ,'nm'      ,nm             )
+    picometer        = Unit('distance'  ,'picometer'       ,'pm'      ,pm             )
+    femtometer       = Unit('distance'  ,'femtometer'      ,'pm'      ,fm             )
+                                                                      
+    second           = Unit('time'      ,'second'          ,'s'       ,s              )
+    millisecond      = Unit('time'      ,'millisecond'     ,'ms'      ,ms             )
+    nanosecond       = Unit('time'      ,'nanosecond'      ,'ns'      ,ns             )
+    picosecond       = Unit('time'      ,'picosecond'      ,'ps'      ,ps             )
+    femtosecond      = Unit('time'      ,'femtosecond'     ,'fs'      ,fs             )
+                                                                      
+    kilogram         = Unit('mass'      ,'kilogram'        ,'kg'      ,kg             )
+    electron_mass    = Unit('mass'      ,'electron mass'   ,'me'      ,me             )
+    proton_mass      = Unit('mass'      ,'proton mass'     ,'mp'      ,mp             )
+    atomic_mass_unit = Unit('mass'      ,'atomic mass unit','amu'     ,amu            )
+    dalton           = Unit('mass'      ,'Dalton'          ,'Da'      ,Da             )
         
-    joule         = Unit('Joule'        ,'J'     ,'energy',J)
-    electron_volt = Unit('electron Volt','eV'    ,'energy',eV)
-    rydberg       = Unit('Rydberg'      ,'Ry'    ,'energy',Ry)
-    hartree       = Unit('Hartree'      ,'Ha'    ,'energy',Ha)
-    kJ_mole       = Unit('kJ_mole'      ,'kJ_mol','energy',kJ_mol)
-    kcal_mole     = Unit('kcal_mole'    ,'kcal_mol','energy',kcal_mol)
-    kelvin        = Unit('Kelvin'       ,'K'     ,'energy',K)
-    celcius       = Unit('Celcius'      ,'degC'  ,'energy',degC,degC_shift)
-    fahrenheit    = Unit('Fahrenheit'   ,'degF'  ,'energy',degF,degF_shift)
+    joule            = Unit('energy'    ,'Joule'           ,'J'       ,J              )
+    electron_volt    = Unit('energy'    ,'electron Volt'   ,'eV'      ,eV             )
+    rydberg          = Unit('energy'    ,'Rydberg'         ,'Ry'      ,Ry             )
+    hartree          = Unit('energy'    ,'Hartree'         ,'Ha'      ,Ha             )
+    kJ_mole          = Unit('energy'    ,'kJ_mole'         ,'kJ_mol'  ,kJ_mol         )
+    kcal_mole        = Unit('energy'    ,'kcal_mole'       ,'kcal_mol',kcal_mol       )
+    kelvin           = Unit('energy'    ,'Kelvin'          ,'K'       ,K              )
+    celcius          = Unit('energy'    ,'Celcius'         ,'degC'    ,degC,degC_shift)
+    fahrenheit       = Unit('energy'    ,'Fahrenheit'      ,'degF'    ,degF,degF_shift)
+                                                           
+    coulomb          = Unit('charge'    ,'Coulomb'         ,'C'       ,C              )
+    electron_charge  = Unit('charge'    ,'electron charge' ,'e'       ,e              )
 
-    coulomb         = Unit('Coulomb'        ,'C','charge',C)
-    electron_charge = Unit('electron charge','e','charge',e)
-
-    pascal     = Unit('Pascal'    ,'Pa'  ,'pressure',Pa)
-    bar        = Unit('bar'       ,'bar' ,'pressure',bar)
-    megabar    = Unit('megabar'   ,'Mbar','pressure',Mbar)
-    gigapascal = Unit('gigaPascal','Gpa' ,'pressure',GPa)
-    atmosphere = Unit('atmosphere','atm' ,'pressure',atm)
-
-    newton     = Unit('Newton'    ,'N' ,'force',N)
-    piconewton = Unit('picoNewton','pN','force',pN)
-
-    W_per_mK = Unit('W/(m*K)','W_mK','thermal_cond',W_mK)
-
-
-    distance_dict = dict([('A',angstrom),\
-                          ('B',bohr),\
-                          ('a',a),\
-                          ('b',b),\
-                          ('c',c),\
-                          ('m',meter),\
-                          ('nm',nanometer),\
-                          ('pm',picometer),\
-                          ('fm',femtometer),\
-                          ])
-
-    mass_dict = dict([    ('kg',kilogram),\
-                          ('me',electron_mass),\
-                          ('mp',proton_mass),\
-                          ('amu',atomic_mass_unit),\
-                          ('Da',dalton),\
-                          ])
-    energy_dict = dict([\
-                          ('J',joule),\
-                          ('eV',electron_volt),\
-                          ('Ry',rydberg),\
-                          ('Ha',hartree),\
-                          ('kJ_mol',kJ_mole),\
-                          ('kcal_mol',kcal_mole),\
-                          ('K',kelvin),\
-                          ('degC',celcius),\
-                          ('degF',fahrenheit),\
-                          ])
-
-    charge_dict = dict([\
-                          ('C',coulomb),\
-                          ('e',electron_charge),\
-                          ])
-
-    pressure_dict = dict([\
-                          ('Pa',pascal),\
-                          ('bar',bar),\
-                          ('Mbar',megabar),\
-                          ('GPa',gigapascal),\
-                          ('atm',atmosphere),\
-                              ])
-
-    force_dict = dict([\
-                          ('N',newton),\
-                          ('pN',piconewton),\
-                              ])
-
-    therm_cond_dict = dict([\
-                          ('W_mK',W_per_mK),\
-                          ])
+    pascal           = Unit('pressure'  ,'Pascal'          ,'Pa'      ,Pa             )
+    bar              = Unit('pressure'  ,'bar'             ,'bar'     ,bar            )
+    megabar          = Unit('pressure'  ,'megabar'         ,'Mbar'    ,Mbar           )
+    gigapascal       = Unit('pressure'  ,'gigaPascal'      ,'Gpa'     ,GPa            )
+    atmosphere       = Unit('pressure'  ,'atmosphere'      ,'atm'     ,atm            )
+                                                                      
+    newton           = Unit('force'     ,'Newton'          ,'N'       ,N              )
+    piconewton       = Unit('force'     ,'picoNewton'      ,'pN'      ,pN             )
+                                                                      
+    W_per_mK         = Unit('therm_cond','W/(m*K)'         ,'W_mK'    ,W_mK           )
 
 
-    unit_dict = dict([    ('A',angstrom),\
-                          ('B',bohr),\
-                          ('a',a),\
-                          ('b',b),\
-                          ('c',c),\
-                          ('m',meter),\
-                          ('nm',nanometer),\
-                          ('pm',picometer),\
-                          ('fm',femtometer),\
-                          ('kg',kilogram),\
-                          ('me',electron_mass),\
-                          ('mp',proton_mass),\
-                          ('amu',atomic_mass_unit),\
-                          ('J',joule),\
-                          ('eV',electron_volt),\
-                          ('Ry',rydberg),\
-                          ('Ha',hartree),\
-                          ('kJ_mol',kJ_mole),\
-                          ('kcal_mol',kcal_mole),\
-                          ('K',kelvin),\
-                          ('degC',celcius),\
-                          ('degF',fahrenheit),\
-                          ('C',coulomb),\
-                          ('e',electron_charge),\
-                          ('Pa',pascal),\
-                          ('bar',bar),\
-                          ('Mbar',megabar),\
-                          ('GPa',gigapascal),\
-                          ('atm',atmosphere),\
-                          ('N',newton),\
-                          ('pN',piconewton),\
-                          ('W_mK',W_per_mK),\
-                          ])
+    distance_dict   = Unit.unit_dicts.distance
+    mass_dict       = Unit.unit_dicts.mass
+    energy_dict     = Unit.unit_dicts.energy
+    charge_dict     = Unit.unit_dicts.charge
+    pressure_dict   = Unit.unit_dicts.pressure
+    force_dict      = Unit.unit_dicts.force
+    therm_cond_dict = Unit.unit_dicts.therm_cond
+
+    unit_dict = Unit.unit_dicts.all
 
 
     def __init(self):
-        None
+        self.error('UnitConverter should not be instantiated')
     #def __init__
 
+    @staticmethod
     def convert(value,source_unit,target_unit):
         ui  = UnitConverter.unit_dict[source_unit]
         uo = UnitConverter.unit_dict[target_unit]
@@ -236,11 +185,9 @@ class UnitConverter:
         #end if
 
         return (value_out,target_unit)
-
     #end def convert
-    convert = Callable(convert)
 
-
+    @staticmethod
     def convert_scalar_to_all(units,value_orig):
         unit_type = UnitConverter.unit_dict[units].type
 
@@ -255,11 +202,10 @@ class UnitConverter:
 
         return value
     #end def convert_scalar_to_all
-    convert_scalar_to_all = Callable(convert_scalar_to_all)
 
     
+    @staticmethod
     def convert_array_to_all(units,arr,vectors=None):
-
         A = dict()
         A['orig'] = arr.copy()
 
@@ -276,7 +222,7 @@ class UnitConverter:
             arr_use = arr
             ui = UnitConverter.unit_dict[units]
             if(vectors!=None):
-                A['lattice'] = dot(arr,linalg.inv(vectors.A[units]))
+                A['lattice'] = dot(arr,inv(vectors.A[units]))
             #end if
         #end if
             
@@ -294,12 +240,6 @@ class UnitConverter:
 
         return A
     #end def convert_array_to_all
-    convert_array_to_all = Callable(convert_array_to_all)
-
-    def submit_unit(uo):
-        UnitConverter.unit_dict[uo.symbol] = uo
-    #end def submit_unit
-    submit_unit = Callable(submit_unit)
 #end class UnitConverter
 
 

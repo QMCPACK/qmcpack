@@ -3,6 +3,29 @@
 ##################################################################
 
 
+#====================================================================#
+#  bundle.py                                                         #
+#    Enables bundled simulations.  Groups of bundled simulations     #
+#    share a single batch submission file on supercomputers and      #
+#    will execute concurrently.                                      #
+#                                                                    #
+#  Content summary:                                                  #
+#    SimulationBundle                                                #
+#      Simulation class to represent a bundle of simulations.        #
+#      Contains a list of simulations and inherits dependencies      #
+#        from all component simulations.                             #
+#      Merges individual Job information (e.g. nodes requested) into #
+#        a bundled job.                                              #
+#                                                                    #
+#    bundle                                                          #
+#      Function to bundle together many simulations.                 #
+#      Returns a SimulationBundle object.                            #
+#      Syntax:                                                       #
+#        sim_bundle = bundle(sim1,sim2,sim3,...)                     #
+#                                                                    #                                        
+#====================================================================#
+
+
 from machines import Workstation,Job
 from simulation import Simulation,NullSimulationInput,NullSimulationAnalyzer
 
@@ -22,9 +45,6 @@ class SimulationBundle(Simulation):
     analyzer_type = SimulationBundleAnalyzer
     generic_identifier = 'bundle'
     image_directory    = 'bundle'
-
-    preserve = Simulation.preserve & set(['sims'])
-
 
     def __init__(self,*sims,**kwargs):
         if len(sims)==1 and isinstance(sims[0],list):

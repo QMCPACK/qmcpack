@@ -3,6 +3,14 @@
 ##################################################################
 
 
+#====================================================================#
+#  superstring                                                       #
+#    Small collection of additional string utility functions.        #
+#    Used infrequently.                                              #
+#                                                                    #
+#====================================================================#
+
+
 '''
   superstring
     a collection of functions to manipulate strings

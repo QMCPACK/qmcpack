@@ -112,7 +112,7 @@ namespace qmcplusplus
 
     size_t mem_now=qmc_common.memory_allocated;
     SPOSetBase* newspo=create_spline_set(spin,vals);       
-    qmc_common.print_memory_change("BsplineSetReder", mem_now);
+    qmc_common.print_memory_change("BsplineSetReader", mem_now);
     return newspo;
 
     //Test SPOSetComboNoCopy that can have multiple SPOSets
@@ -165,7 +165,7 @@ namespace qmcplusplus
     //vals.NumSPOs=input_info.max_index()-input_info.min_index();
     size_t mem_now=qmc_common.memory_allocated;
     SPOSetBase* newspo=create_spline_set(spin,vals);       
-    qmc_common.print_memory_change("BsplineSetReder", mem_now);
+    qmc_common.print_memory_change("BsplineSetReader", mem_now);
     return newspo;
   }
 

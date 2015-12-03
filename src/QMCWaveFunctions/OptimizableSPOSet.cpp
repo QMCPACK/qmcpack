@@ -266,8 +266,10 @@ OptimizableSPOSet::put (xmlNodePtr node, SPOPool_t &spo_pool)
 //        myVars.insert(sstr.str(),C(state,i),false,optimize::LINEAR_P);
         }
 #else
-        ParamPointers.push_back(&(C(state,i).real()));
-        ParamPointers.push_back(&(C(state,i).imag()));
+        //ParamPointers.push_back(&(C(state,i).real()));
+        //ParamPointers.push_back(&(C(state,i).imag()));
+        ParamPointers.push_back(reinterpret_cast<RealType*>(C[state]+i));
+        ParamPointers.push_back(reinterpret_cast<RealType*>(C[state]+i)+1);
         ParamIndex.push_back(TinyVector<int,2>(state,i));
         ParamIndex.push_back(TinyVector<int,2>(state,i));
         sstr << id << "_" << 2*i+0;
@@ -605,8 +607,12 @@ OptimizableSPOSet::makeClone() const
 #ifndef QMC_COMPLEX
     clone->ParamPointers.push_back(&(clone->C(ParamIndex[i][0],ParamIndex[i][1])));
 #else
-    clone->ParamPointers.push_back(&(clone->C(ParamIndex[i][0],ParamIndex[i][1]).real()));
-    clone->ParamPointers.push_back(&(clone->C(ParamIndex[i][0],ParamIndex[i][1]).imag()));
+    int ci=ParamIndex[i][0];
+    int cj=ParamIndex[i][1];
+    //clone->ParamPointers.push_back(&(clone->C(ParamIndex[i][0],ParamIndex[i][1]).real()));
+    //clone->ParamPointers.push_back(&(clone->C(ParamIndex[i][0],ParamIndex[i][1]).imag()));
+    clone->ParamPointers.push_back(reinterpret_cast<RealType*>(clone->C[ci]+cj));
+    clone->ParamPointers.push_back(reinterpret_cast<RealType*>(clone->C[ci]+cj)+1);
 #endif
   }
 //   for (int i=0; i< N; i++) {

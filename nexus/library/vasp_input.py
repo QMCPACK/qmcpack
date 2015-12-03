@@ -3,13 +3,49 @@
 ##################################################################
 
 
+#====================================================================#
+#  vasp_input.py                                                     #
+#    Supports I/O, generation, and manipulation of VASP input files. #
+#                                                                    #
+#  Content summary:                                                  #
+#    VaspInput                                                       #
+#      SimulationInput class for VASP.                               #
+#                                                                    #
+#    generate_vasp_input                                             #
+#      User-facing function to generate arbitrary VASP input files.  #
+#                                                                    #
+#    generate_poscar                                                 #
+#      Function to create a Poscar object from a Structure object.   #
+#                                                                    #
+#    Vobj                                                            #
+#      Base class for VASP input classes.                            #
+#                                                                    #
+#    VFile                                                           #
+#      Base class for a VASP file.                                   #
+#                                                                    #
+#    VKeywordFile                                                    #
+#      Base class for VASP input files in keyword format.            #
+#      I/O handled at base class level.                              #
+#      Derived classes contain the keyword spec. for each file.      #
+#      See Incar and Stopcar classes.                                #
+#                                                                    #
+#    VFormattedFile                                                  #
+#      Base class for VASP input files with strict formatting.       #
+#      Derived classes handle specialized I/O for each file.         #
+#      See Iconst, Kpoints, Penaltypot, Poscar, Potcar, and Exhcar.  #
+#                                                                    #
+#====================================================================#
+
+
 import os
 from numpy import array,abs,empty,ndarray
 from generic import obj
+from periodic_table import is_element
+from nexus_base import nexus_noncore
 from simulation import SimulationInput
 from structure import interpolate_structures,Structure
 from physical_system import PhysicalSystem
-from developer import DevBase
+from developer import DevBase,error
 from debug import *
 lcs = ls
 
@@ -304,18 +340,18 @@ class VKeywordFile(VFile):
     @classmethod
     def class_init(cls):
         for kw_field in cls.kw_fields:
-            if not kw_field in cls.__dict__:
-                cls.__dict__[kw_field] = set()
+            if not cls.class_has(kw_field):
+                cls.class_set_single(kw_field,set())
             #end if
         #end for
         #cls.check_consistency()
         cls.scalar_keywords = set()
         for scalar_field in cls.kw_scalars:
-            cls.scalar_keywords |= cls.__dict__[scalar_field]
+            cls.scalar_keywords |= cls.class_get(scalar_field)
         #end for
         cls.array_keywords = set()
         for array_field in cls.kw_arrays:
-            cls.array_keywords |= cls.__dict__[array_field]
+            cls.array_keywords |= cls.class_get(array_field)
         #end for
         cls.keywords = cls.scalar_keywords | cls.array_keywords
         cls.type = obj()
@@ -323,7 +359,7 @@ class VKeywordFile(VFile):
         cls.write_value  = obj()
         cls.assign_value = obj()
         for type in cls.kw_scalars + cls.kw_arrays:
-            for name in cls.__dict__[type]:
+            for name in cls.class_get(type):
                 cls.type[name] = type
                 cls.read_value[name]   = read_value_functions[type]
                 cls.write_value[name]  = write_value_functions[type]
@@ -339,14 +375,14 @@ class VKeywordFile(VFile):
         types = cls.kw_scalars+cls.kw_arrays
         untyped = cls.keywords 
         for type in types:
-            untyped -= cls.__dict__[type]
+            untyped -= cls.class_get(type)
         #end for
         if len(untyped)>0:
             fail = True
             msg += 'variables without a type: {0}\n'.format(sorted(untyped))
         #end if
         for type in types:
-            unknown = cls.__dict__[type]-cls.keywords
+            unknown = cls.class_get(type)-cls.keywords
             if len(unknown)>0:
                 fail = True
                 msg += 'unknown {0}: {1}\n'.format(type,sorted(unknown))
@@ -974,7 +1010,11 @@ class Poscar(VFormattedFile):
         #end for
         if self.elem!=None:
             for e in self.elem:
-                text += e+' '
+                iselem,symbol = is_element(e,symbol=True)
+                if not iselem:
+                    self.error('{0} is not an element'.format(e))
+                #end if
+                text += symbol+' '
             #end for
             text += '\n'
         #end if
@@ -1227,7 +1267,7 @@ class VaspInput(SimulationInput,Vobj):
             name = file.lower()
             if name in self.input_files:
                 filepath = os.path.join(path,prefix+file+postfix)
-                self[name] = self.input_files(filepath)
+                self[name] = self.input_files[name](filepath)
             #end if
         #end for
     #end def read
@@ -1242,7 +1282,7 @@ class VaspInput(SimulationInput,Vobj):
     #end def write
 
 
-    def incorporate_system(self,system,incorp_kpoints=True):
+    def incorporate_system(self,system,incorp_kpoints=True,coord='cartesian'):
         structure = system.structure
 
         # assign kpoints
@@ -1266,8 +1306,15 @@ class VaspInput(SimulationInput,Vobj):
             poscar.axes       = s.axes
             poscar.elem       = species
             poscar.elem_count = species_count
-            poscar.coord      = 'cartesian'
-            poscar.pos        = s.pos
+            if coord=='cartesian':
+                poscar.coord  = 'cartesian'
+                poscar.pos    = s.pos
+            elif coord=='direct':
+                poscar.coord  = 'direct'
+                poscar.pos    = s.pos_unit()
+            else:
+                self.error('coord must be either direct or cartesian\nyou provided: {0}'.format(coord))
+            #end if
             if s.frozen!=None:
                 poscar.dynamic = s.frozen==False
             #end if
@@ -1293,13 +1340,16 @@ class VaspInput(SimulationInput,Vobj):
             #end for
             ordered_pseudos = []
             for element in species:
-                if not element in pseudo_map:
-                    self.error('pseudopotential for element {0} not found\nelements present: {1}\n'.format(element,sorted(pseudo_map.keys())))
+                iselem,symbol = is_element(element,symbol=True)
+                if not iselem:
+                    self.error('{0} is not an element'.format(element))
+                elif not symbol in pseudo_map:
+                    self.error('pseudopotential for element {0} not found\nelements present: {1}'.format(symbol,sorted(pseudo_map.keys())))
                 #end if
-                ordered_pseudos.append(pseudo_map[element])
+                ordered_pseudos.append(pseudo_map[symbol])
             #end for
         #end if
-        self.potcar = Potcar(VaspInput.pseudo_dir,ordered_pseudos)
+        self.potcar = Potcar(nexus_noncore.pseudo_dir,ordered_pseudos)
     #end def set_potcar
 
 
@@ -1378,7 +1428,7 @@ class VaspInput(SimulationInput,Vobj):
 
     def performing_relax(self):
         return self.run_type()=='relax'
-    #end def producing_structure
+    #end def preforming_relax
 
 
     def performing_neb(self):
@@ -1419,7 +1469,8 @@ generate_any_defaults = obj(
     system     = None,
     pseudos    = None,
     neb        = None,
-    neb_args   = obj()
+    neb_args   = obj(),
+    coord      = 'cartesian'
     )
 
 def generate_any_vasp_input(**kwargs):
@@ -1466,7 +1517,7 @@ def generate_any_vasp_input(**kwargs):
     # incorporate system information
     species = None
     if vf.system!=None:
-        species = vi.incorporate_system(vf.system,gen_kpoints)
+        species = vi.incorporate_system(vf.system,gen_kpoints,vf.coord)
     #end if
 
     # set potcar
@@ -1523,7 +1574,7 @@ def generate_any_vasp_input(**kwargs):
 
 
 
-def generate_poscar(structure):
+def generate_poscar(structure,coord='cartesian'):
     s = structure.copy()
     s.change_units('A')
     species,species_count = s.order_by_species()
@@ -1532,8 +1583,15 @@ def generate_poscar(structure):
     poscar.axes       = s.axes
     poscar.elem       = species
     poscar.elem_count = species_count
-    poscar.coord      = 'cartesian'
-    poscar.pos        = s.pos
+    if coord=='cartesian':
+        poscar.coord  = 'cartesian'
+        poscar.pos    = s.pos
+    elif coord=='direct':
+        poscar.coord  = 'direct'
+        poscar.pos    = s.pos_unit()
+    else:
+        error('coord must be either direct or cartesian\nyou provided: {0}'.format(coord),'generate_poscar')
+    #end if
     if s.frozen!=None:
         poscar.dynamic = s.frozen==False
     #end if

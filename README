@@ -10,13 +10,77 @@ h2. Prerequisite
 * einspline, 3D bspline library, http://einspline.sourceforge.net/
 * fftw, FFT library, http://www.fftw.org/
 
-h2. Building with environment variables
 
-This method works with GNU, Intel, and IBM XLC compilers. When the libraries
-are installed in standard locations, e.g., /usr, /usr/local, there is no need
-to set the XYZ_HOME for XYZ package.
+h3. Building with cmake
+
+The build system for qmcpack is based on CMake.  It has been updated to eliminate
+the use of toolchain files for most use cases.  The build system works with GNU, 
+Intel, and IBM XLC compilers.  Compile options can be specified either through specific
+environmental or CMake variables.  When the libraries are installed in standard locations,
+e.g., /usr, /usr/local, there is no need to set environmental or cmake variables for the packages.
 
 See http://docs.qmcpack.org for build examples on Linux, Mac OS X etc.
+
+
+h3.1. Set the environment
+
+A number of enviornmental variables affect the build.  In particular the can control
+the default paths for libraries, the default compilers, etc.  The list of enviornmental variables
+is given below:
+
+   CXX              C++ compiler
+   CC               C Compiler
+   MKL_HOME         Path for MKL
+   LIBXML2_HOME     Path for libxml2
+   HDF5_ROOT        Path for HDF5
+   BOOST_ROOT       Path for Boost
+   EINSPLINE_HOME   Path for EINSPLINE
+   FFTW_HOME        Path for FFTW
+
+
+h3.2. CMake options
+
+In addition to reading the enviornmental variables, CMake provides a number of optional variables
+that can be set to control the build and configure steps.  When passed to CMake, these variables
+will take precident over the enviornmental and default variables.  To set them add -D FLAG=VALUE
+to the configure line between the cmake command and the path to the source directory.
+
+  * General build options
+    CMAKE_BUILD_TYPE    A variable which controls the type of build (defaults to Release).  Possible values are:
+                        None (Do not set debug/optmize flags, use CMAKE_C_FLAGS or CMAKE_CXX_FLAGS)
+                        Debug (create a debug build)
+                        Release (create a release/optimized build)
+                        RelWithDebInfo (create a release/optimized build with debug info)
+                        MinSizeRel (create an executable optimized for size)
+    CMAKE_C_COMPILER    Set the C compiler
+    CMAKE_CXX_COMPILER  Set the C++ compiler
+    CMAKE_C_FLAGS       Set the C flags.  Also supported: CMAKE_C_FLAGS_DEBUG, CMAKE_C_FLAGS_RELEASE, CMAKE_C_FLAGS_RELWITHDEBINFO
+    CMAKE_CXX_FLAGS     Set the C++ flags.  Also supported: CMAKE_CXX_FLAGS_DEBUG, CMAKE_CXX_FLAGS_RELEASE, CMAKE_CXX_FLAGS_RELWITHDEBINFO
+
+  * QMC build options
+    QMC_DATA            Specify data directory for QMCPACK (used for unit tests)
+    QMC_EXTRA_LIBS      Add extra link libraries
+    QMC_BUILD_STATIC    Add -static flags to build
+
+  * libxml
+    Libxml2_INCLUDE_DIRS  Specify include directories for libxml2
+    Libxml2_LIBRARY_DIRS  Specify library directories for libxml2
+
+  * FFTW
+    FFTW_INCLUDE_DIRS   Specify include directories for FFTW
+    FFTW_LIBRARY_DIRS   Specify library directories for FFTW
+
+
+h3.3. Configure and build
+
+* Move to build directory, run cmake and make
+
+   cd build
+   cmake  -D VAR1=VALUE1  -D VAR2=VALUE2 ..
+   make -j 8
+
+
+h3.4. Example configure and build
 
 * Set the environments (the examples below assume bash, Intel compilers and MKL library)
 
@@ -24,31 +88,45 @@ See http://docs.qmcpack.org for build examples on Linux, Mac OS X etc.
   export CC=icc
   export MKL_HOME=/usr/local/intel/mkl/10.0.3.020
   export LIBXML2_HOME=/usr/local
-  export HDF5_HOME=/usr/local
-  export BOOST_HOME=/usr/local/boost
+  export HDF5_ROOT=/usr/local
+  export BOOST_ROOT=/usr/local/boost
   export EINSPLINE_HOME=/usr/local/einspline
   export FFTW_HOME=/usr/local/fftw
 
 * Move to build directory, run cmake and make
 
   cd build
-  cmake ..
-  make
+  cmake -D CMAKE_BUILD_TYPE=Release ..
+  make -j 8
 
-h2. Building with a toolchain file
 
-Several toolchain files used by the developers are available in config
-directory.  They are used on large-scale parallel machines where setting up all
-the neccesary packages can be tricky. 
+h3.5.  Special notes
 
-* AbeMvapich2.cmake for Abe cluster at NCSA
-* JaguarGNU.cmake for CrayXT systems at ORNL
-* KrakenGNU.cmake for CrayXT5 system at NICS
+It is common to create a helper script that contains the configure line for CMake.  
+This is particularly useful when avoiding enviornmental variables, packages are installed
+in custom locations, or the configure line may be long or complex.  In this case it is
+recommended to add "rm -rf CMake*" before the configure line to remove existing CMake
+configure files to ensure a fresh configure each time that the script is called.  
+and example script is given below:
 
-Once a sutiable toolchain file is found, follow these step (example on abe.ncsa.uiuc.edu):
-* cd build
-* cmake -DCMAKE_TOOLCHAIN_FILE=../config/AbeMvapich2.cmake -DCMAKE_VERBOSE_MAKEFILE=TRUE ..
-* cmake -DCMAKE_TOOLCHAIN_FILE=../config/AbeMvapich2.cmake -DCMAKE_VERBOSE_MAKEFILE=TRUE ..
-* make
+   export CXX=mpic++
+   export CC=mpicc
+   export ACML_HOME=/opt/acml-5.3.1/gfortran64
+   export HDF5_ROOT=/opt/hdf5
+   export BOOST_ROOT=/opt/boost
+
+   rm -rf CMake*
+
+   cmake                                                \
+      -D CMAKE_BUILD_TYPE="Debug"                       \
+      -D Libxml2_INCLUDE_DIRS=/usr/include/libxml2      \
+      -D Libxml2_LIBRARY_DIRS=/usr/lib/x86_64-linux-gnu \
+      -D FFTW_INCLUDE_DIRS=/usr/include                 \
+      -D FFTW_LIBRARY_DIRS=/usr/lib/x86_64-linux-gnu    \
+      -D QMC_EXTRA_LIBS="-ldl ${ACML_HOME}/lib/libacml.a -lgfortran" \
+      -D QMC_DATA=/projects/QMCPACK/qmc-data            \
+      ..
+
+
 
 For more informaton, consult QMCPACK pages at http://www.qmcpack.org and http://docs.qmcpack.org

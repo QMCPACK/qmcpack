@@ -2,6 +2,28 @@
 ##  (c) Copyright 2015-  by Jaron T. Krogel                     ##
 ##################################################################
 
+
+#====================================================================#
+#  structure.py                                                      #
+#    Support for atomic structure I/O, generation, and manipulation. #
+#                                                                    #
+#  Content summary:                                                  #
+#    Structure                                                       #
+#      Represents a simulation cell containing a set of atoms.       #
+#      Many functions for manipulating structures or obtaining       #
+#        data regarding local atomic structure.                      #
+#                                                                    #
+#    generate_cell                                                   #
+#      User-facing function to generate an empty simulation cell.    #
+#                                                                    #
+#    generate_structure                                              #
+#      User-facing function to specify arbitrary atomic structures   #
+#      or generate structures corresponding to atoms, dimers, or     #
+#      crystals.                                                     #
+#                                                                    #
+#====================================================================#
+
+
 #! /usr/bin/env python
 
 import os
@@ -10,8 +32,8 @@ from numpy import array,floor,empty,dot,diag,sqrt,pi,mgrid,exp,append,arange,cei
 from numpy.linalg import inv,det,norm
 from types import NoneType
 from unit_converter import convert
-from extended_numpy import nearest_neighbors,convex_hull,voronoi_neighbors
-from periodic_table import pt
+from numerics import nearest_neighbors,convex_hull,voronoi_neighbors
+from periodic_table import pt,is_element
 from generic import obj
 from developer import DevBase,unavailable,error,warn
 from debug import ci,ls,gs
@@ -217,7 +239,7 @@ class Structure(Sobj):
                  posu=None):
         if center is None:
             if axes !=None:
-                center = array(axes).sum(0)/2
+                center = array(axes,dtype=float).sum(0)/2
             else:
                 center = dim*[0]
             #end if
@@ -247,11 +269,11 @@ class Structure(Sobj):
         self.scale  = 1.
         self.units  = units
         self.dim    = dim
-        self.center = array(center)
-        self.axes   = array(axes)
+        self.center = array(center,dtype=float)
+        self.axes   = array(axes,dtype=float)
         self.bconds = array(bconds,dtype=str)
         self.set_elem(elem)
-        self.pos    = array(pos)
+        self.pos    = array(pos,dtype=float)
         self.frozen = None
         self.mag    = array(mag,dtype=object)
         self.kpoints  = empty((0,dim))            
@@ -581,9 +603,12 @@ class Structure(Sobj):
     #    while remaining periodically correct
     #   note that the unshearing procedure is not unique
     #   it depends on the order of unshearing operations
-    def unsheared_axes(self,distances=False):
+    def unsheared_axes(self,axes=None,distances=False):
         if self.dim!=3:
-            self.error('rinscribe is currently only implemented for 3 dimensions')
+            self.error('unsheared_axes is currently only implemented for 3 dimensions')
+        #end if
+        if axes is None:
+            axes = self.axes
         #end if
         dim=3
         axbar = identity(dim)
@@ -631,11 +656,6 @@ class Structure(Sobj):
     def face_distances(self):
         return self.face_vectors(distances=True)[1]
     #end def face_distances
-
-
-    def set_orig(self):
-        self.orig_pos = pos.copy()
-    #end def set_orig
 
     
     def rescale(self,scale):
@@ -1149,6 +1169,51 @@ class Structure(Sobj):
         self.pos  = array(plist)
         self.remove_folded_structure()
     #end def point_defect
+
+
+    def species(self,symbol=False):
+        if not symbol:
+            return set(self.elem)
+        else:
+            species_labels = set(self.elem)
+            species = set()
+            for e in species_labels:
+                is_elem,symbol = is_element(e,symbol=True)
+                species.add(symbol)
+            #end for
+            return species_labels,species
+        #end if
+    #end def species
+
+        
+    def ordered_species(self,symbol=False):
+        speclab_set    = set()
+        species_labels = []
+        if not symbol:
+            for e in self.elem:
+                if e not in speclab_set:
+                    speclab_set.add(e)
+                    species_labels.append(e)
+                #end if
+            #end for
+            return species_labels
+        else:
+            species  = []
+            spec_set = set()
+            for e in self.elem:
+                is_elem,symbol = is_element(e,symbol=True)
+                if e not in speclab_set:
+                    speclab_set.add(e)
+                    species_labels.append(e)
+                #end if
+                if symbol not in spec_set:
+                    spec_set.add(symbol)
+                    species.append(symbol)
+                #end if
+            #end for
+            return species_labels,species
+        #end if
+    #end def ordered_species
 
 
     def order_by_species(self,folded=False):
@@ -2884,23 +2949,25 @@ class Structure(Sobj):
             if '.' in file:
                 name,format = file.rsplit('.',1)
             else:
-                self.error('file does not have a format extension: {0}'.format(filepath))
+                format = file
+            #else:
+            #    self.error('file does not have a format extension: {0}'.format(filepath))
             #end if
         #end if
         c = open(filepath,'r').read()
-        self.read_contents(c,format,elem=elem)
+        self.read_text(c,format,elem=elem)
         return c
     #end def read
 
 
-    def read_contents(self,contents,format,elem=None):
+    def read_text(self,contents,format,elem=None):
         format = format.lower()
         if format=='poscar':
             self.read_poscar(contents,elem=elem,contents=True)
         else:
             self.error('unrecognized file format: {0}'.format(format))
         #end if
-    #end def read_contents
+    #end def read_text
 
 
     def read_poscar(self,filepath,elem=None,contents=False):
@@ -2939,6 +3006,20 @@ class Structure(Sobj):
             lcur = 7
         #end if
         species = elem
+        # relabel species that have multiple occurances
+        sset = set(species)
+        for spec in sset:
+            if species.count(spec)>1:
+                cnt=0
+                for n in range(len(species)):
+                    specn = species[n]
+                    if specn==spec:
+                        cnt+=1
+                        species[n] = specn+str(cnt)
+                    #end if
+                #end for
+            #end if
+        #end for
         elem = []
         for i in range(len(counts)):
             elem.extend(counts[i]*[species[i]])
@@ -3961,6 +4042,8 @@ def generate_structure(type='crystal',*args,**kwargs):
         s = generate_atom_structure(*args,**kwargs)
     elif type=='dimer':
         s = generate_dimer_structure(*args,**kwargs)
+    elif type=='trimer':
+        s = generate_trimer_structure(*args,**kwargs)
     elif type=='jellium':
         s = generate_jellium_structure(*args,**kwargs)
     elif type=='empty':
@@ -3968,7 +4051,7 @@ def generate_structure(type='crystal',*args,**kwargs):
     elif type=='basic':
         s = Structure(*args,**kwargs)
     else:
-        Structure.class_error(str(type)+' is not a valid structure type\n  options are crystal, defect, or atom')
+        Structure.class_error(str(type)+' is not a valid structure type\n  options are crystal, defect, atom, dimer, trimer, jellium, empty, or basic')
     #end if
     return s
 #end def generate_structure
@@ -3977,6 +4060,9 @@ def generate_structure(type='crystal',*args,**kwargs):
 
 
 def generate_atom_structure(atom=None,units='A',Lbox=None,skew=0,axes=None,kgrid=(1,1,1),kshift=(0,0,0),struct_type=Structure):
+    if atom is None:
+        Structure.class_error('atom must be provided','generate_atom_structure')
+    #end if
     if Lbox!=None:
         axes = [[Lbox*(1-skew),0,0],[0,Lbox,0],[0,0,Lbox*(1+skew)]]
     #end if
@@ -3991,6 +4077,9 @@ def generate_atom_structure(atom=None,units='A',Lbox=None,skew=0,axes=None,kgrid
 
 
 def generate_dimer_structure(dimer=None,units='A',separation=None,Lbox=None,skew=0,axes=None,kgrid=(1,1,1),kshift=(0,0,0),struct_type=Structure,axis='x'):
+    if dimer is None:
+        Structure.class_error('dimer atoms must be provided to construct dimer','generate_dimer_structure')
+    #end if
     if separation is None:
         Structure.class_error('separation must be provided to construct dimer','generate_dimer_structure')
     #end if
@@ -4016,6 +4105,69 @@ def generate_dimer_structure(dimer=None,units='A',separation=None,Lbox=None,skew
 #end def generate_dimer_structure
 
 
+def generate_trimer_structure(trimer=None,units='A',separation=None,angle=None,Lbox=None,skew=0,axes=None,kgrid=(1,1,1),kshift=(0,0,0),struct_type=Structure,axis='x',axis2='y',angular_units='degrees'):
+    if trimer is None:
+        Structure.class_error('trimer atoms must be provided to construct trimer','generate_trimer_structure')
+    #end if
+    if separation is None:
+        Structure.class_error('separation must be provided to construct trimer','generate_trimer_structure')
+    #end if
+    if len(separation)!=2:
+        Structure.class_error('two separation distances (atom1-atom2,atom1-atom3) must be provided to construct trimer\nyou provided {0} separation distances'.format(len(separation)),'generate_trimer_structure')
+    #end if
+    if angle is None:
+        Structure.class_error('angle must be provided to construct trimer','generate_trimer_structure')
+    #end if
+    if angular_units=='degrees':
+        angle *= pi/180
+    elif not angle.startswith('rad'):
+        Structure.class_error('angular units must be degrees or radians\nyou provided: {0}'.format(angle),'generate_trimer_structure')
+    #end if
+    if axis==axis2:
+        Structure.class_error('axis and axis2 must be different to define the trimer plane\nyou provided {0} for both'.format(axis),'generate_trimer_structure')
+    #end if
+    if Lbox!=None:
+        axes = [[Lbox*(1-skew),0,0],[0,Lbox,0],[0,0,Lbox*(1+skew)]]
+    #end if
+    p1 = [0,0,0]
+    if axis=='x':
+        p2 = [separation[0],0,0]
+    elif axis=='y':
+        p2 = [0,separation[0],0]
+    elif axis=='z':
+        p2 = [0,0,separation[0]]
+    else:
+        Structure.class_error('trimer bond1 (atom2-atom1) orientation axis must be x,y,z\n  you provided: {0}'.format(axis),'generate_trimer_structure')
+    #end if
+    r = separation[1]
+    c = cos(angle)
+    s = sin(angle)
+    axpair = axis+axis2
+    if axpair=='xy':
+        p3 = [r*c,r*s,0]
+    elif axpair=='yx':
+        p3 = [r*s,r*c,0]
+    elif axpair=='yz':
+        p3 = [0,r*c,r*s]
+    elif axpair=='zy':
+        p3 = [0,r*s,r*c]
+    elif axpair=='zx':
+        p3 = [r*s,0,r*c]
+    elif axpair=='xz':
+        p3 = [r*c,0,r*s]
+    else:
+        Structure.class_error('trimer bond2 (atom3-atom1) orientation axis must be x,y,z\n  you provided: {0}'.format(axis2),'generate_trimer_structure')
+    #end if
+    if axes is None:
+        s = Structure(elem=trimer,pos=[p1,p2,p3],units=units)
+    else:
+        s = Structure(elem=trimer,pos=[p1,p2,p3],axes=axes,kgrid=kgrid,kshift=kshift,units=units)
+        s.center_molecule()
+    #end if
+    return s
+#end def generate_trimer_structure
+
+
 def generate_jellium_structure(*args,**kwargs):
     return Jellium(*args,**kwargs)
 #end def generate_jellium_structure
@@ -4028,7 +4180,7 @@ def generate_crystal_structure(lattice=None,cell=None,centering=None,
                                basis_vectors=None,tiling=None,cscale=None,
                                axes=None,units=None,angular_units='degrees',
                                magnetization=None,magnetic_order=None,magnetic_prim=True,
-                               kpoints=None,kgrid=None,kshift=(0,0,0),permute=None,
+                               kpoints=None,kweights=None,kgrid=None,kshift=(0,0,0),permute=None,
                                structure=None,shape=None,element=None,scale=None, #legacy inputs
                                operations=None,
                                struct_type=Crystal,elem=None,pos=None,frozen=None,
@@ -4171,9 +4323,9 @@ def generate_defect_structure(defect,structure,shape=None,element=None,
 #end def generate_defect_structure
 
 
-def read_structure(filepath):
+def read_structure(filepath,elem=None):
     s = generate_structure('empty')
-    s.read(filepath)
+    s.read(filepath,elem=elem)
     return s
 #end def read_structure
 

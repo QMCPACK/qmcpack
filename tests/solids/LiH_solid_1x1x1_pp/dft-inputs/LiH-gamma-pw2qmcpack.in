@@ -1,0 +1,5 @@
+&inputpp
+   outdir='.'
+   prefix='LiH-gamma'
+   write_psir=.false.
+/

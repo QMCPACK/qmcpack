@@ -768,6 +768,7 @@ QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matri
       Return_t eloc_new=saved[ENERGY_NEW];
       const Return_t* Dsaved= (*DerivRecords[ip])[iw];
       const Return_t* HDsaved= (*HDerivRecords[ip])[iw];
+      #pragma omp parallel for
       for (int pm=0; pm<NumParams(); pm++)
       {
         Return_t wfe = (HDsaved[pm] +(Dsaved[pm]-D_avg[pm])*eloc_new)*weight;

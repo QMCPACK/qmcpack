@@ -8,20 +8,35 @@
 \usepackage{listings}
 \usepackage{tabularx}
 \usepackage{placeins}
+\usepackage{xcolor}
+\usepackage{graphicx}
+
 \lstloadlanguages{C++,XML}
 \newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+\newcommand{\courier}[1]{{\fontfamily{pcr}\selectfont #1}}
+
+% for markup, as needed
+\newcommand{\red}[1]{{\color{red} #1}}
+\newcommand{\blue}[1]{{\color{blue} #1}}
+
+% hide or show developer notes
+\newcommand{\dev}[1]{#1}
+%\newcommand{\dev}[1]{}
 
 \oddsidemargin 0cm
 \evensidemargin 0cm
 \textwidth 6.5in
 
 \begin{document}
-\lstset{basicstyle=\footnotesize,
+\lstset{
+basicstyle=\footnotesize\ttfamily,  % copy/paste from pdf w/o mangled quotes
 keywordstyle=\color{black}\bfseries,
 frame=single,
 breaklines=true,
 language=xml,
-escapeinside={<:}{:>}
+escapeinside={<:}{:>},
+columns=fullflexible,   % copy/paste from pdf w/o added spaces
+showstringspaces=false  % avoid showing underbrackets in quoted text
 }
 
 \input{title.tex}

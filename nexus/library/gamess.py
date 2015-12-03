@@ -3,6 +3,34 @@
 ##################################################################
 
 
+#====================================================================#
+#  gamess.py                                                         #
+#    Nexus interface to the GAMESS simulation code.                  #
+#                                                                    #
+#  Content summary:                                                  #
+#    GamessInput                                                     #
+#      Input class for the GAMESS code.                              #
+#      Capable of reading/writing arbitrary GAMESS input files.      #
+#                                                                    #
+#    generate_gamess_input                                           #
+#      User function to create arbitrary GAMESS input.               #
+#                                                                    #
+#    KeywordGroup                                                    #
+#      Represents an arbitary keyword group in the input file.       #
+#                                                                    #
+#    KeywordSpecGroup                                                #
+#      Base class for specialized keyword groups.                    #
+#      Derived classes enforce the keyword specification.            #
+#      See ContrlGroup, SystemGroup, GuessGroup, ScfGroup,           #
+#        McscfGroup, DftGroup, GugdiaGroup, DrtGroup, CidrtGroup,    #
+#        and DetGroup                                                #
+#                                                                    #
+#    FormattedGroup                                                  #
+#      Represents strict machine-formatted input groups.             #
+#                                                                    #
+#====================================================================#
+
+
 import os
 from numpy import array,ndarray,abs
 from generic import obj
@@ -68,6 +96,7 @@ class Gamess(Simulation):
         analyzer = self.load_analyzer_image()
         if result_name=='orbitals':
             result.location  = os.path.join(self.locdir,self.outfile)
+            result.outfile   = result.location
             result.vec       = None # vec from punch
             result.norbitals = 0    # orbital count in punch
             result.mos       = 0    # orbital count (MO's) from log file
@@ -126,6 +155,25 @@ class Gamess(Simulation):
         output_files = []
         return output_files
     #end def get_output_files
+
+
+    def output_filename(self,name):
+        name = name.upper()
+        if name not in GamessInput.file_units:
+            self.error('gamess does not produce a file matching the requested description: {0}'.format(name))
+        #end if
+        unit = GamessInput.file_units[name]
+        filename = '{0}.F{1}'.format(self.identifier,str(unit).zfill(2))
+        return filename
+    #end def output_filename
+
+
+    def output_filepath(self,name):
+        filename = self.output_filename(name)
+        filepath = os.path.join(self.locdir,filename)
+        filepath = os.path.abspath(filepath)
+        return filepath
+    #end def
 #end class Gamess
 
 

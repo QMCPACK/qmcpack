@@ -886,7 +886,9 @@ kSpaceJastrow::resetParameters(const opt_variables_type& active)
     if(loc_r>=0)
     {
       myVars[ii]=active[loc_r];    //update the optimization parameter
-      OneBodySymmCoefs[i].cG.real()=myVars[ii];  //update the coefficient from local opt parametr
+      //lvalue error with LLVM
+      OneBodySymmCoefs[i].cG=ComplexType(myVars[ii],OneBodySymmCoefs[i].cG.imag());  
+      //OneBodySymmCoefs[i].cG.real()=myVars[ii];  //update the coefficient from local opt parametr
       ii++;  
     }
     //The imaginary part...
@@ -894,7 +896,9 @@ kSpaceJastrow::resetParameters(const opt_variables_type& active)
     if(loc_i>=0)
     {
       myVars[ii]=active[loc_i];
-      OneBodySymmCoefs[i].cG.imag()=myVars[ii];
+      //lvalue error with LLVM 
+      OneBodySymmCoefs[i].cG=ComplexType(OneBodySymmCoefs[i].cG.real(),myVars[ii]);  
+      //OneBodySymmCoefs[i].cG.imag()=myVars[ii];
       ii++;
     }
   }

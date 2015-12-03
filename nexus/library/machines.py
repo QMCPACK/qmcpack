@@ -3,6 +3,46 @@
 ##################################################################
 
 
+#====================================================================#
+#  machines.py                                                       #
+#    Representations of local machine environments including         #
+#    workstations and supercomputers and the jobs that will be       #
+#    executed on them.                                               #
+#                                                                    #
+#  Content summary:                                                  #
+#    Job                                                             #
+#      Class to represent a generic simulation job.                  #
+#                                                                    #
+#    Machine                                                         #
+#      Represents a generic machine.                                 #
+#      Base class for specific machine types.                        #
+#                                                                    #
+#    Workstation                                                     #
+#      Represents a workstation with a fixed number of cores.        #
+#                                                                    #
+#    InteractiveCluster                                              #
+#      Represents a supercomputer in interactive mode.               #
+#      Similar to a workstation with many cores.                     #
+#                                                                    #
+#    Supercomputer                                                   #
+#      Represents a generic supercomputer with a batch queue.        #
+#      Base class for specific supercomputers.                       #
+#      See Jaguar, Kraken, Taub, OIC5, Hopper, Edison, BlueWatersXE, #
+#        BlueWatersXK, Titan, EOS, Vesta, Cetus, Mira, Lonestar,     #
+#        Matisse, Komodo, and Amos                                   #
+#                                                                    #
+#    cpu_count                                                       #
+#      Function to return the number of cores on the local machine.  #
+#                                                                    #
+#    Options                                                         #
+#      Class representing command line options for a simulation job, #
+#      including arguments to the simulation executable,             #
+#      the run launcher (aprun/mpirun, etc), and the job submitter   #
+#      (e.g. qsub).                                                  #
+#                                                                    #
+#====================================================================#
+
+
 import os
 import time
 #from multiprocessing import cpu_count
@@ -10,7 +50,8 @@ from socket import gethostname
 from subprocess import Popen,PIPE
 from numpy import array,mod,floor,ceil,round,log
 from generic import obj
-from project_base import Pobj
+from developer import DevBase
+from nexus_base import NexusCore,nexus_core
 from debug import *
 
 
@@ -39,7 +80,7 @@ def  cpu_count():
 
 
 
-class Options(Pobj):
+class Options(DevBase):
     def __init__(self,**kwargs):
         self.add(**kwargs)
     #end def __init__
@@ -90,7 +131,7 @@ class Options(Pobj):
 
 
 
-class Job(Pobj):
+class Job(NexusCore):
 
     machine = None #default machine if none is specified in settings
 
@@ -130,15 +171,15 @@ class Job(Pobj):
                  name         = 'jobname',
                  directory    = None,
                  sub_dir      = None,
-                 app_name     = None,
+                 app_name     = None, # name of/path to application
                  app_flags    = None,
                  app_command  = None,
                  app_props    = None,
-                 app          = None,
+                 app          = None, # name of/path to application
                  env          = None,
-                 user_env     = True,
-                 presub       = '',
-                 postsub      = '',
+                 user_env     = True, # import user environment
+                 presub       = '',   # shell text executed just prior to submission
+                 postsub      = '',   # shell text executed just after submission
                  outfile      = None,
                  errfile      = None,
                  mode         = None,
@@ -147,9 +188,9 @@ class Job(Pobj):
                  queue        = None,
                  bundled_jobs = None,
                  relative     = False,
-                 cores        = None,
-                 nodes        = None,
-                 threads      = 1,
+                 cores        = None, # number of cores for the job
+                 nodes        = None, # number of nodes for the job
+                 threads      = 1,    # number of openmp threads for the job
                  ppn          = None,
                  compiler     = None,
                  override     = None,
@@ -157,7 +198,8 @@ class Job(Pobj):
                  app_options  = None,
                  run_options  = None,
                  sub_options  = None,
-                 serial       = False,
+                 serial       = False, # run job serially, no mpi
+                 local        = False, # run job locally, no queue submission
                  days         = 0,
                  hours        = 0,
                  minutes      = 0,
@@ -194,6 +236,7 @@ class Job(Pobj):
         self.run_options = Options()
         self.sub_options = Options()
         self.serial      = serial
+        self.local       = local
         self.days        = days
         self.hours       = hours
         self.minutes     = minutes
@@ -255,6 +298,11 @@ class Job(Pobj):
             #end if
         #end if
 
+        if self.serial:
+            self.cores = 1
+            self.nodes = None
+        #end if
+
         if machine!=None:
             self.machine = machine
         #end if
@@ -268,6 +316,9 @@ class Job(Pobj):
             if not machine.batch_capable:
                 self.error('running batched/bundled jobs on {0} is either not possible or not yet implemented, sorry.'.format(machine.name))
             #end if
+            for job in bundled_jobs:     # Paul Young's fix for jobs
+                machine.process_job(job) # with differing node counts
+            #end for
         #end if
 
         self.normalize_time()
@@ -295,7 +346,7 @@ class Job(Pobj):
         #end if
         if self.subdir is None:
             if machine.local_directory!=None:
-                self.subdir = os.path.join(machine.local_directory,sim.runs,sim.path)
+                self.subdir = os.path.join(machine.local_directory,nexus_core.runs,sim.path)
                 self.abs_subdir = self.subdir
             else:
                 self.subdir = self.directory
@@ -399,7 +450,7 @@ class Job(Pobj):
 
 
     def determine_end_status(self,status):
-        if not self.generate_only:
+        if not nexus_core.generate_only:
             self.successful = False # not really implemented yet
             #errfile = os.path.join(self.directory,self.errfile)
             #if os.path.exists(errfile):
@@ -529,7 +580,7 @@ class Job(Pobj):
 
 
 
-class Machine(Pobj):
+class Machine(NexusCore):
 
     machines = obj()
 
@@ -790,13 +841,11 @@ class Workstation(Machine):
     #end def write_job_states
 
     def query_queue(self):
-        self.dlog('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~query queue',n=1)
         #self.write_job_states('query queue')
         self.validate()
         done = []
-        self.dlog('qq',self.processes.keys(),n=2)
         for pid,process in self.processes.iteritems():
-            if self.generate_only or not self.monitor:
+            if nexus_core.generate_only or not nexus_core.monitor:
                 qpid,status = pid,0
             else:
                 qpid,status = os.waitpid(pid,os.WNOHANG) 
@@ -810,7 +859,7 @@ class Workstation(Machine):
                 self.running.remove(iid)
                 self.finished.add(iid)
                 done.append(pid)
-                if not self.generate_only:
+                if not nexus_core.generate_only:
                     job.out.close()
                     job.err.close()
                 #end if
@@ -819,14 +868,11 @@ class Workstation(Machine):
         for pid in done:
             del self.processes[pid]
         #end for
-        self.dlog('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~end query queue',n=1)
     #end def query_queue
 
 
 
     def submit_jobs(self):
-        self.dlog('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~submit jobs',n=1)
-        self.dlog('sj',self.waiting,n=2)
         cores_used = 0
         for process in self.processes:
             cores_used += process.job.cores
@@ -840,14 +886,13 @@ class Workstation(Machine):
             job_req.append(job)
             core_req.append(job.cores)
         #end for
-        core_req = array(core_req)
-        job_req  = array(job_req)
-        order = core_req.argsort()
-        job_req = job_req[order]
+        core_req = array(core_req,dtype=int)
+        job_req  = array(job_req ,dtype=object)
+        order    = core_req.argsort()
+        job_req  = job_req[order]
 
-        self.dlog('cores available:',cores_available,n=2)
         for job in job_req:
-            if job.cores>self.cores and not self.generate_only:                
+            if job.cores>self.cores and not nexus_core.generate_only:                
                 self.error('job '+str(job.internal_id)+' is too large to run on this machine\n  cores requested: '+str(job.cores)+'\n  machine cores: '+str(self.cores))
             #end if
             if job.cores<=cores_available:
@@ -862,7 +907,6 @@ class Workstation(Machine):
                 break
             #end if
         #end for                
-        self.dlog('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~end submit jobs',n=1)
     #end def submit_jobs
 
 
@@ -885,11 +929,11 @@ class Workstation(Machine):
         job.status = job.states.running
         process = obj()
         process.job = job
-        if self.generate_only:
+        if nexus_core.generate_only:
             self.log(pad+'Would have executed:  '+command)
             job.system_id = job.internal_id
         else:
-            if self.monitor:
+            if nexus_core.monitor:
                 self.log(pad+'Executing:  '+command)
                 job.out = open(job.outfile,'w')
                 job.err = open(job.errfile,'w')
@@ -1206,18 +1250,11 @@ class Supercomputer(Machine):
 
 
     def query_queue(self):
-
-#        print
-#        print 'in query queue'
-
         self.system_queue.clear()
         if self.queue_querier=='qstat':
             out,err = Popen('qstat -a',shell=True,stdout=PIPE,stderr=PIPE,close_fds=True).communicate()            
             lines = out.splitlines()
             for line in lines:
-
-#                print line
-
                 tokens=line.split()
                 if len(tokens)>0:
                     if '.' in tokens[0]:
@@ -1287,8 +1324,6 @@ class Supercomputer(Machine):
                     else:
                         spid = tokens[0]
                     #endif
-                    #print tokens
-                    #print '----------'
                     if spid.isdigit() and len(tokens)==6:  #if account is empty, only 6 tokens.
 
                         pid = int(spid)
@@ -1314,14 +1349,9 @@ class Supercomputer(Machine):
         else:
             self.error('ability to query queue with '+self.queue_querier+' has not yet been implemented')
         #end if
-
-#        print
-#        print 'system_queue'
-#        print self.system_queue
-
         done = []
         for pid,process in self.processes.iteritems():
-            if not pid in self.system_queue or self.system_queue[pid]=='complete' or self.generate_only:
+            if not pid in self.system_queue or self.system_queue[pid]=='complete' or nexus_core.generate_only:
                 job = process.job
                 job.status = job.states.finished
                 job.finished = True
@@ -1334,10 +1364,6 @@ class Supercomputer(Machine):
         for pid in done:
             del self.processes[pid]
         #end for
-
-#        print
-#        print 'processes'
-#        print self.processes
     #end def query_queue
 
 
@@ -1370,7 +1396,7 @@ class Supercomputer(Machine):
             self.error('job submission file was not written prior to submission\n  submission file: '+os.path.join(job.directory,job.subfile))
         #end if
         command = self.sub_launcher+job.sub_options.write()+' '+job.subfile
-        if self.generate_only:
+        if nexus_core.generate_only:
             self.log(pad+'Would have executed:  '+command)
             job.status = job.states.running
             process = obj()
@@ -2034,14 +2060,14 @@ class Amos(Supercomputer):
             job.seconds =0
         #end if
         if job.nodes<base_partition:
-            self.warn('!!! ATTENTION !!!\n  number of nodes in {0} should not be less than {1}\n  you requested: {2}'.format(job.queue,self.base_partition,job.nodes))
+            self.warn('!!! ATTENTION !!!\n  number of nodes in {0} should not be less than {1}\n  you requested: {2}'.format(job.queue,base_partition,job.nodes))
         elif job.nodes>max_partition:
             self.warn('!!! ATTENTION !!!\n  number of nodes in {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_partition,job.nodes))
         else:
             if job.queue != 'verylarge':
                 partition = log(float(job.nodes)/base_partition)/log(2.)
                 if abs(partition-int(partition))>1e-6:
-                    self.warn('!!! ATTENTION !!!\n  number of nodes on {0} must be {1} times a power of two\n  you requested: {2}\n  nearby valid node count: {3}'.format(self.name,self.base_partition,job.nodes,self.base_partition*2**int(round(partition))))
+                    self.warn('!!! ATTENTION !!!\n  number of nodes on {0} must be {1} times a power of two\n  you requested: {2}\n  nearby valid node count: {3}'.format(self.name,base_partition,job.nodes,base_partition*2**int(round(partition))))
             elif job.nodes != 3072 and job.nodes != 4096:
                 self.warn('!!! ATTENTION !!!\n  number of nodes on {0} must be 3072 or 4096 you requested {1}'.format(self.name,job.nodes))
             #end if
@@ -2080,7 +2106,7 @@ Kraken(       9408,   2,     6,   16,  100,  'aprun',   'qsub',   'qstat',    'q
 Taub(          400,   2,     6,   24,   50, 'mpirun',   'qsub',   'qstat',    'qdel')
 OIC5(           28,   2,    16,  128, 1000, 'mpirun',   'qsub',   'qstat',    'qdel')
 Hopper(       6384,   2,    12,   64, 1000,  'aprun',   'qsub',   'qstat',    'qdel')
-Edison(        664,   2,     8,   64,  100,  'aprun',   'qsub',   'qstat',    'qdel')
+Edison(        664,   2,    12,   64,  100,  'aprun',   'qsub',   'qstat',    'qdel')
 BlueWatersXK( 3072,   1,    16,   32,  100,  'aprun',   'qsub',   'qstat',    'qdel')
 BlueWatersXE(22640,   2,    16,   64,  100,  'aprun',   'qsub',   'qstat',    'qdel')
 Titan(       18688,   1,    16,   32,  100,  'aprun',   'qsub',   'qstat',    'qdel')
@@ -2096,5 +2122,8 @@ Amos(         5120,   1,    16,   16,  128,   'srun', 'sbatch',   'sacct', 'scan
 #machine accessor functions
 get_machine_name = Machine.get_hostname
 get_machine      = Machine.get
+
+#rename Job with lowercase
+job=Job
 
 

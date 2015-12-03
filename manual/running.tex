@@ -26,3 +26,136 @@ considerations for mpi, threads, gpu.
 
 \subsection{Running on GPU machines}
 \label{sec:gpurunning}
+
+The GPU version on the NVIDIA CUDA platform is fully incorporated into
+the main trunk. Currently some commonly used functionalities for
+solid-state and molecular systems using B-spline single-particle
+orbitals is supported. A detailed description of the GPU
+implementation can be found in Ref. \cite{EslerKimCeperleyShulenburger2012}.
+
+Current GPU implementation assumes one MPI process per
+GPU. Vectorization is achieved over walkers, that is, all walkers are
+propagated in parallel. In each GPU kernel, loops over electrons,
+atomic cores or orbitals are further vectorized to exploit an
+additional level of parallelism and to allow coalesced memory access.
+
+%---------------------------------------------------------------------------%
+
+\subsubsection{Supported GPU features}
+
+\begin{enumerate}
+
+  \item Quantum Monte Carlo methods:
+
+    \begin{enumerate}
+	\item Variational Monte Carlo (VMC).
+	\item Diffusion Monte Carlo (DMC).
+	\item Limited support for wavefunction optimization.
+    \end{enumerate}
+
+  \item Boundary conditions:
+
+    \begin{enumerate}
+	\item Periodic and open boundary conditions are fully supported.
+	\item Twist-averaged boundary condition is supported for only real-valued wavefunctions.
+	\item Mixed boundary conditions and complex wavefunctions (e.g. fixed phase) are not yet supported. 
+    \end{enumerate}
+
+  \item Wavefunctions:
+
+    \begin{enumerate}
+	\item Single Slater determinants with 3D B-spline orbitals. Only real-valued wavefunctions is supported, but tiling complex orbitals to supercells is supported as long as each k-point is a multiple of half a G-vector of the supercell.
+	\item Mixed basis representation in which orbitals are represented as 1D splines times spherical harmonics in spherical regions (muffin tins) around atoms, and 3D B-splines in the interstitial region.
+	\item One-body and two-body Jastrows represented as 1D B-splines are supported. Note that only single-precision arithmetic is fully functional at the time of writing. 
+    \end{enumerate}
+
+  \item Interaction types:
+
+    \begin{enumerate}
+	\item Semilocal (nonlocal and local) pseudopotentials.
+	\item Coulomb interaction (electron-electron, electron-ion).
+	\item Model periodic Coulomb (MPC) interaction.
+    \end{enumerate}
+
+\end{enumerate}
+
+%---------------------------------------------------------------------------%
+
+\subsubsection{Compiling the GPU code}
+
+To build the executable \courier{qmcapp} with GPU support, follow
+these steps:
+
+\begin{enumerate}
+  
+  \item  Make sure NVIDIA's CUDA compiler, nvcc, is in the search
+    path. In most cases, CMake should be able to locate the nvcc
+    compiler on the system automatically.
+  \item 
+    \begin{enumerate}
+      \item Run CMake with the argument \courier{QMC\_CUDA} switched on: \\
+               \courier{
+           	cd build \\
+           	cmake -D QMC\_CUDA=1 .. \\
+           	make}
+
+       \item[] \hspace{-0.27in} or
+
+       \item If a CMake toolchain file is used, switch on \courier{QMC\_CUDA} by
+         including this line in the toolchain file: \\
+               \courier{SET (QMC\_CUDA 1)} \\
+                Then compile the code as before: \\
+                \courier{
+         	cd build \\
+        	cmake -D CMAKE\_TOOLCHAIN\_FILE=[toolchain name] .. \\
+         	make \\}
+    \end{enumerate}
+
+\end{enumerate}
+
+%---------------------------------------------------------------------------%
+
+\subsubsection{CMake variables for adjusting CUDA code build features}
+
+These values can be changed by passing them as CMake's command line
+options with the \courier{-D} flag, or using a toolchain file to
+overwrite the default values. \\
+
+\begin{enumerate}
+
+\item \courier{QMC\_CUDA}
+
+\begin{tabular}{l@{: }p{4.5in}}
+\courier{=0} (default) & no GPU support, build QMCPACK as a CPU code \\
+\courier{=1}               & build QMCPACK with GPU support \\
+\end{tabular} \\
+
+\item \courier{CUDA\_PRECISION}
+
+\begin{tabular}{l@{: }p{4in}}
+\courier{=float} (default) & single precision arithmetics and data
+                             types will be used for GPU kernels \\
+\courier{=double}           & double precision arithmetics and data
+                                 types will be used for GPU
+                                 kernels (Warning: not fully
+                                 functional!) \\
+\end{tabular}
+
+\end{enumerate}
+
+%----------------------------------------------------------------------------%
+
+\subsubsection{Performance consideration}
+
+The relative speedup of the GPU implementation increases with both the number of electrons and the number of walkers running on a GPU. Typically, 128-256 walkers per GPU utilize sufficient number of threads to operate the GPU efficiently and to hide memory-access latency. 
+
+To achieve better performance, current implementation utilizes single precision operations on most GPU calculations, except for matrix inversions where double precision is required to retain high accuracy. The single precision GPU code is as accurate as the double precision CPU code up to a certain system size. Cross checking and verification of accuracy are encouraged for systems with more than approximately 1500 electrons.
+
+%------------------------------------------------------------------------------%
+
+\subsubsection{Memory consideration}
+
+In the GPU implementation, each walker has an anonymous buffer on the GPU's global memory to store temporary data associated with the wavefunctions. Therefore, the amount of memory available on a GPU limits the number of walkers and eventually the system size that it can process.
+
+If the GPU memory is exhausted, reduce the number of walkers per GPU. Coarsening the grids of the B-splines representation (by decreasing the value of meshfactor in the input file) can also lower the memory usage, at the expense (risk) of obtaining inaccurate results. Proceed with caution if this option has to be considered.
+

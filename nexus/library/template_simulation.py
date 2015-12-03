@@ -3,6 +3,31 @@
 ##################################################################
 
 
+#====================================================================#
+#  template_simulation.py                                            #
+#    Instructions and code templates for developers seeking to       #
+#    interface a new simulation code with Nexus.                     #
+#                                                                    #
+#  Content summary:                                                  #
+#    TemplateSimulationInput                                         #
+#      Code template for a SimulationInput class.                    #
+#                                                                    #
+#    generate_template_simulation_input                              #
+#      Code template for user-facing simulation input generator      #
+#      function.                                                     #
+#                                                                    #
+#    TemplateSimulationAnalyzer                                      #
+#      Code template for a SimulationAnalyzer class.                 #
+#                                                                    #
+#    TemplateSimulation                                              #
+#      Code template for a Simulation class.                         #
+#                                                                    #
+#    generate_template_simulation                                    #
+#      Code template for user-facing simulation generator function.  #
+#                                                                    #
+#====================================================================#
+
+
 import os
 from generic import obj
 from simulation import Simulation,SimulationInput,SimulationAnalyzer
@@ -29,7 +54,7 @@ from simulation import Simulation,SimulationInput,SimulationAnalyzer
 #           in a form TemplateSimulationInput understands (this depends on your implementation)
 #
 #         required functions to be implemented:
-#           TemplateSimulationInput: read_contents, write_contents
+#           TemplateSimulationInput: read_text, write_text
 #           TemplateSimulation:      app_command, check_sim_status
 #
 #     2) generated standalone simulation
@@ -39,7 +64,7 @@ from simulation import Simulation,SimulationInput,SimulationAnalyzer
 #              a standard PhysicalSystem object
 #
 #          required functions to be implemented:
-#           TemplateSimulationInput: read_contents, write_contents, incorporate_system
+#           TemplateSimulationInput: read_text, write_text, incorporate_system
 #           TemplateSimulation:      app_command, check_sim_status
 #           generate_template_simulation_input
 #           
@@ -51,7 +76,7 @@ from simulation import Simulation,SimulationInput,SimulationAnalyzer
 #            this information is used by the others to populate input files
 #
 #         required functions to be implemented:
-#           TemplateSimulationInput: read_contents, write_contents
+#           TemplateSimulationInput: read_text, write_text
 #           TemplateSimulation:      app_command,check_sim_status, 
 #                        check_result, get_result
 #
@@ -64,7 +89,7 @@ from simulation import Simulation,SimulationInput,SimulationAnalyzer
 #            info is used to populate own input file
 #
 #         required functions to be implemented:
-#           TemplateSimulationInput: read_contents, write_contents
+#           TemplateSimulationInput: read_text, write_text
 #           TemplateSimulation:      app_command,check_sim_status, 
 #                        check_result, get_result,
 #                        incorporate_result
@@ -86,10 +111,10 @@ class TemplateSimulationInput(SimulationInput):
     #end def __init__
 
 
-    def read_contents(self,contents):
+    def read_text(self,text,filepath=None):
         # required
-        #  the string 'contents' contains the text of an input file
-        #  translate contents into an internal representation of the input
+        #  the string 'text' contains the text of an input file
+        #  translate text into an internal representation of the input
         # for example, an input file looking like:
         #   section_a
         #     var_a  1
@@ -107,7 +132,7 @@ class TemplateSimulationInput(SimulationInput):
         #   sec['var_d'] = True
         #   self['section_b'] = sec
         # with some line parsing:
-        #   for line in contents.splitlines():
+        #   for line in text.splitlines():
         #      # parse lines here
         #   #end for
         # the resulting input object can then be worked with in a simple way:
@@ -128,23 +153,23 @@ class TemplateSimulationInput(SimulationInput):
         #    
         #    >>> input.section_b.var_c = 25.0
         None
-    #end def read_contents
+    #end def read_text
 
 
-    def write_contents(self):
+    def write_text(self,filepath=None):
         # required
         #  translate the internal representation of input into a string
         # for the above example, this might look like:
-        #   contents = ''
+        #   text = ''
         #   for secname,sec in self.iteritems():
-        #       contents += secname+'\n'
+        #       text += secname+'\n'
         #       for val,val in sec.iteritems():
-        #          contents += '  '+var+' = '+val2str(val)
+        #          text += '  '+var+' = '+val2str(val)
         #       #end for
         #   #end for
-        contents = ''
-        return contents
-    #end def write_contents
+        text = ''
+        return text
+    #end def write_text
 
 
     def incorporate_system(self,system):

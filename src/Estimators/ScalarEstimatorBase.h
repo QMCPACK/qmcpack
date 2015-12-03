@@ -54,18 +54,10 @@ struct ScalarEstimatorBase: public QMCTraits
   ///scalars saved
   vector<accumulator_type> scalars_saved;
 //     RealType NSTEPS;
-  ///whether traces are being collected
-  bool tracing;
 
   inline ScalarEstimatorBase(): FirstIndex(0), LastIndex(0) {}
 
   virtual ~ScalarEstimatorBase() {}
-
-  ///checkout trace arrays
-  virtual void initialize_traces(TraceManager& tm) {};
-
-  ///delete trace arrays
-  virtual void finalize_traces() {};
 
   ///return average of the
   inline RealType average(int i=0) const

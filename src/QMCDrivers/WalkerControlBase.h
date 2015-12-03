@@ -190,6 +190,8 @@ public:
    */
   int copyWalkers(MCWalkerConfiguration& W);
 
+  void Write2XYZ(MCWalkerConfiguration& W);
+
   /** reset to accumulate data */
   virtual void reset();
 

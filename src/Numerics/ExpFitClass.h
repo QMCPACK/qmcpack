@@ -275,12 +275,15 @@ ComplexExpFitClass<M>::eval (double r, complex<double> &u,
     d2P += d2Coefs[j] * r2j;
     r2j *= r;
   }
-  u.real()   = realSign * std::exp (P.real());
-  du.real()  = dP.real() * u.real();
-  d2u.real() = (d2P.real() + dP.real()*dP.real())*u.real();
-  u.imag()   = imagSign * std::exp (P.imag());
-  du.imag()  = dP.imag() * u.imag();
-  d2u.imag() = (d2P.imag() + dP.imag()*dP.imag())*u.imag();
+  u=complex<double>(realSign * std::exp (P.real()),imagSign * std::exp (P.imag()));
+  du=complex<double>(dP.real() * u.real(),dP.imag() * u.imag());
+  d2u=complex<double>((d2P.real() + dP.real()*dP.real())*u.real(),(d2P.imag() + dP.imag()*dP.imag())*u.imag());
+  //u.real()   = realSign * std::exp (P.real());
+  //du.real()  = dP.real() * u.real();
+  //d2u.real() = (d2P.real() + dP.real()*dP.real())*u.real();
+  //u.imag()   = imagSign * std::exp (P.imag());
+  //du.imag()  = dP.imag() * u.imag();
+  //d2u.imag() = (d2P.imag() + dP.imag()*dP.imag())*u.imag();
 }
 
 }

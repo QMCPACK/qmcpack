@@ -1,0 +1,53 @@
+&CONTROL
+   calculation     = 'scf'
+   disk_io         = 'low'
+   outdir          = 'pwscf_output'
+   prefix          = 'pwscf'
+   pseudo_dir      = './'
+   restart_mode    = 'from_scratch'
+   tprnfor         = .false.
+   tstress         = .false.
+   verbosity       = 'high'
+   wf_collect      = .true.
+/
+
+&SYSTEM
+   celldm(1)       = 1.0
+   degauss         = 0.0001
+   ecutrho         = 2000
+   ecutwfc         = 500
+   ibrav           = 0
+   input_dft       = 'lda'
+   nat             = 2
+   nosym           = .true.
+   ntyp            = 1
+   occupations     = 'smearing'
+   smearing        = 'fermi-dirac'
+   tot_charge      = 0
+/
+
+&ELECTRONS
+   conv_thr        = 1e-08
+   diagonalization = 'david'
+   electron_maxstep = 1000
+   mixing_beta     = 0.7
+   mixing_mode     = 'plain'
+/
+
+
+ATOMIC_SPECIES 
+   H  1.00794 H.coulomb-ae.UPF
+
+ATOMIC_POSITIONS alat
+   H        0.00000000       0.00000000       0.00000000 
+   H        1.88972613       1.88972613       1.88972614 
+
+K_POINTS automatic
+   1 1 1  0 0 0 
+
+CELL_PARAMETERS cubic
+         3.77945227       0.00000000       0.00000000 
+         0.00000000       3.77945227       0.00000000 
+         0.00000000       0.00000000       3.77945227 
+
+

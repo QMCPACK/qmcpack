@@ -3,12 +3,42 @@
 ##################################################################
 
 
+#====================================================================#
+#  qmcpack_property_analyzers.py                                     #
+#    Supports analysis of wavefunctions used/made by QMCPACK.        #
+#                                                                    #
+#  Content summary:                                                  #
+#    PropertyAnalyzer                                                #
+#      Base class for specific property analyzers.                   #
+#      Currently, only the wavefunction falls in this category.      #
+#                                                                    #
+#    WavefunctionAnalyzer                                            #
+#      Class to read and plot wavefunction data.                     #
+#      Currently only interfaces with b-spline Jastrows.             #
+#                                                                    #
+#    RadialJastrow                                                   #
+#      Represents a spherically symmetric (radial) jastrow           #
+#        correlation (u) function.                                   #
+#      Base class for specific radial jastrow types.                 #
+#      See Jastrow1B and Jastrow2B                                   #
+#                                                                    #
+#    Jastrow1B                                                       #
+#      Represents a 1-body Jastrow.                                  #
+#                                                                    #
+#    Jastrow2B                                                       #
+#      Represents a 2-body Jastrow.                                  #
+#                                                                    #
+#    Bspline                                                         #
+#      Represents a cubic bspline curve, supports evaluation.        #
+#                                                                    #
+#====================================================================#
+
+
 
 import os
 from numpy import loadtxt,array,ones,dot,floor,zeros
 from qmcpack_input import QmcpackInput
-from qaobject import QAobject
-from qmcpack_analyzer_base import QAanalyzer
+from qmcpack_analyzer_base import QAobject,QAanalyzer
 from developer import unavailable
 from debug import *
 try:

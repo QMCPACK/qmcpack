@@ -2,6 +2,25 @@
 ##  (c) Copyright 2015-  by Jaron T. Krogel                     ##
 ##################################################################
 
+
+#====================================================================#
+#  periodic_table.py                                                 #
+#    Collected periodic table data.                                  #
+#                                                                    #
+#  Content summary:                                                  #
+#    PeriodicTable                                                   #
+#      Class representing the periodic table.                        #
+#                                                                    #
+#    periodic_table or pt                                            #
+#      References to a single, complete PeriodicTable instance.      #
+#      Used extensively by importing modules for data access.        #
+#                                                                    #
+#    Element                                                         #
+#      Class representing a single element.                          #
+#                                                                    #                                        
+#====================================================================#
+
+
 from generic import obj
 from developer import DevBase
 from unit_converter import UnitConverter
@@ -1845,6 +1864,39 @@ class PeriodicTable(DevBase):
 
 pt = PeriodicTable()
 periodic_table = pt
+ptable = pt
+
+
+
+
+def is_element(name,symbol=False):
+    s      = name
+    iselem = False
+    if isinstance(name,str):
+        iselem = name in periodic_table.elements
+        if not iselem:
+            nlen = len(name)
+            if name.find('_')!=-1:
+                s,n = name.split('_',1)
+            elif nlen>1 and name[1:].isdigit():
+                s = name[0:1]
+            elif nlen>2 and name[2:].isdigit():
+                s = name[0:2]
+            #end if
+            if len(s)==1:
+                s = s.upper()
+            elif len(s)==2:
+                s = s[0].upper()+s[1].lower()
+            #end if
+            iselem = s in periodic_table.elements
+        #end if
+    #end if
+    if symbol:
+        return iselem,s
+    else:
+        return iselem
+    #end if
+#end def is_element
 
 
 

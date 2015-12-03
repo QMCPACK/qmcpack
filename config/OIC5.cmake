@@ -34,14 +34,14 @@ set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 #ENDFOREACH(type)
 
 set(CMAKE_FIND_ROOT_PATH
-/home/ihk/share/oic5
+/home/j1k/share/oic5
 )
 
-set(Boost_INCLUDE_DIR /home/ihk/share/boost)
+set(Boost_INCLUDE_DIR /home/j1k/share/boost)
 
 #AMD math lib
-include_directories(/home/ihk/share/oic5/amdlibm-3-0-2/include)
-link_libraries(-llapack -lblas /home/ihk/share/oic5/amdlibm-3-0-2/lib/static/libamdlibm.a -lz)
+include_directories(/home/j1k/share/oic5/amdlibm-3-0-2/include)
+link_libraries(-llapack -lblas /home/j1k/share/oic5/amdlibm-3-0-2/lib/static/libamdlibm.a -lz)
 
 INCLUDE(Platform/UnixPaths)
 

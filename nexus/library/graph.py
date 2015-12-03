@@ -3,6 +3,17 @@
 ##################################################################
 
 
+#====================================================================#
+#  graph.py                                                          #
+#    Interface with pydot to make images of directed graphs.         #
+#                                                                    #
+#  Content summary:                                                  #
+#    Graph                                                           #
+#      Wrapper class for pydot functionality                         #
+#                                                                    #
+#====================================================================#
+
+
 from generic import obj
 from developer import DevBase,unavailable
 try:
@@ -157,7 +168,7 @@ class Graph(DevBase):
             graphs = graphs[0]
         #end if
         for graph in graphs:
-            self.add_graph(graph)
+            self.add_subgraph(graph)
         #end for
     #end def add_subgraphs
 

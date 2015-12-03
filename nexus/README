@@ -76,6 +76,9 @@ Contents
 3. Summary of important library files
 ======================================================================
 
+ The information below can assist in navigating the Nexus program.
+ See headers of individual Python files for more detail.
+
  a. Core facilities
  -------------------------------------------------
 
@@ -228,3 +231,5 @@ Contents
      Example and explanation for developers interested in 
      implementing new derived Simulation classes for codes 
      not yet supported by Nexus.
+
+

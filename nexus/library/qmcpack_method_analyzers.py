@@ -3,12 +3,25 @@
 ##################################################################
 
 
+#====================================================================#
+#  qmcpack_method_analyzers.py                                       #
+#    Analyzer classes at the level of QMC methods.  Instances        #
+#    contain all data outputted by VMC, Opt, DMC, etc. sub-runs      #
+#    carried out by QMCPACK.                                         #
+#                                                                    #
+#  Content summary:                                                  #
+#    MethodAnalyzer                                                  #
+#      Base class for specific method analyzers.                     #
+#      Derived classes are OptAnalyzer, VmcAnalyzer, DmcAnalyzer     #
+#                                                                    #
+#====================================================================#
+
+
 import os
 import re
 from generic import obj
 from hdfreader import HDFreader
-from qaobject import Checks
-from qmcpack_analyzer_base import QAanalyzer,QAdata,QAHDFdata
+from qmcpack_analyzer_base import Checks,QAanalyzer,QAdata,QAHDFdata
 from qmcpack_property_analyzers import WavefunctionAnalyzer
 from qmcpack_quantity_analyzers import HDFAnalyzer
 from debug import *

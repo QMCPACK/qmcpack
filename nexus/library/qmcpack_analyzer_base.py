@@ -3,11 +3,241 @@
 ##################################################################
 
 
+#====================================================================#
+#  qmcpack_analyzer_base.py                                          #
+#    Data object and analyzer base classes for QmcpackAnalyzer.      #
+#    Maintains data global to these classes.                         #
+#                                                                    #
+#  Content summary:                                                  #
+#    QAobject                                                        #
+#      Base class for all QMCPACK analyzer components.               #
+#      Exposes settings options to the user.                         #
+#                                                                    #
+#    Checks                                                          #
+#      Class to assess overall validity based on stored results of   #
+#      many checks (boolean values). Only use so far is to validate  #
+#      the structure of Trace files. See qmcpack_method_analyzers.py.#
+#                                                                    #
+#    Plotter                                                         #
+#      Wrapper class for mayavi visualization of isosurfaces and     #
+#      surface slices. Previously used to visualize energy densities.#
+#      See qmcpack_quantity_analyzers.py and spacegrid.py.           #
+#                                                                    #
+#    QAdata                                                          #
+#      Represents stored data from QMCPACK's output files.           #
+#      Classification marks it as a target for potential merging,    #
+#      e.g. twist averaging.                                         #
+#                                                                    #
+#    QAHDFdata                                                       #
+#      Specialization of QAdata for data from HDF files.             #
+#                                                                    #
+#    QAanalyzer                                                      #
+#      Base class for analyzer classes. Analyzers load and analyze   #
+#      data. Base class functionality includes recursive traversal   #
+#      of nested analyzer object structures for loading and          #
+#      analyzing data.                                               #
+#                                                                    #
+#====================================================================#
+
+
 from numpy import minimum,resize
 from generic import obj
+from developer import DevBase
 from hdfreader import HDFgroup
-from qaobject import QAobject
 from debug import *
+
+
+
+
+import numpy as np
+
+class Plotter(DevBase):
+    def __init__(self):
+        self.initialized = False
+        return
+    #end def __init__
+
+    def ensure_init(self):
+        if not self.initialized:
+            from enthought.mayavi import mlab
+            from enthought.tvtk.api import tvtk
+            self.mlab = mlab
+            self.tvtk = tvtk
+
+            self.show   = mlab.show
+            self.plot3d = mlab.plot3d
+            self.mesh   = mlab.mesh
+
+            self.initialized = True
+        #end if
+    #end def ensure_init
+
+    def isosurface(self,points,scalars,contours,dimensions,name='val'):
+        self.ensure_init()
+        mlab = self.mlab
+        tvtk = self.tvtk
+        sg=tvtk.StructuredGrid(dimensions=dimensions,points=points)
+        sg.point_data.scalars = scalars
+        sg.point_data.scalars.name = name
+        d = mlab.pipeline.add_dataset(sg)
+        iso = mlab.pipeline.iso_surface(d)
+        if isinstance(contours,int):
+            iso.contour.number_of_contours = contours
+        elif isinstance(contours,list):
+            iso.contour.auto_contours = False
+            iso.contour.contours = contours
+        else:
+            self.error('isosurface contours must be an int or list\n  a '+str(type(contours))+' was provided instead')
+        #end if
+        return
+    #end def isosurface
+
+    def surface_slice(self,x,y,z,scalars,options=None):
+        scale = 1.0
+        opacity= 1.0
+        if options!=None:
+            if 'norm_height' in options:
+                scale = options.norm_height/abs(scalars.max())
+            if 'scale' in options:
+                scale = options.scale
+            if 'opacity' in options:
+                opacity = options.opacity
+        #end if
+        self.ensure_init()
+        from numerics import surface_normals
+        self.mesh(x,y,z,opacity=.2)
+        surfnorm = scale*surface_normals(x,y,z)
+        xs=x.copy()
+        ys=y.copy()
+        zs=z.copy()
+        xs[...] = x[...] + surfnorm[...,0]*scalars[...]
+        ys[...] = y[...] + surfnorm[...,1]*scalars[...]
+        zs[...] = z[...] + surfnorm[...,2]*scalars[...]
+        self.mesh(xs,ys,zs,scalars=scalars,opacity=opacity)
+        return
+    #end def surface_slice
+#end class Plotter
+
+
+
+class QAobj_base(DevBase):
+    None
+#end class QAobj_base
+
+
+class QAobject(QAobj_base):
+
+    _global = obj()
+    _global.dynamic_methods_objects=[]
+
+    plotter = Plotter()
+
+    opt_methods = set(['opt','linear','cslinear'])
+
+    def __init__(self):
+        return
+    #end def __init__
+
+    @staticmethod
+    def condense_name(name):
+        return name.strip().lower().replace(' ','_').replace('-','_').replace('__','_')
+    #end def condense_name
+
+
+    def _register_dynamic_methods(self):
+        QAobject._global.dynamic_methods_objects.append(self)
+        return
+    #end def _register_dynamic_methods
+
+    def _unlink_dynamic_methods(self):
+        for o in QAobject._global.dynamic_methods_objects:
+            o._unset_dynamic_methods()
+        #end for
+        return
+    #end def _unlink_dynamic_methods
+
+    def _relink_dynamic_methods(self):
+        for o in QAobject._global.dynamic_methods_objects:
+            o._reset_dynamic_methods()
+        #end for
+        return
+    #end def _relink_dynamic_methods
+
+
+    _allowed_settings = set(['optimize'])
+    _default_settings = obj(
+        #optimize = 'variance'
+        optimize = 'lastcost'
+        #optimize = 'energy_within_variance_tol'  # also ewvt
+        )
+    QAobj_base.class_set(**_default_settings)
+
+    @classmethod
+    def settings(cls,**kwargs):
+        vars = set(kwargs.keys())
+        invalid = vars-cls._allowed_settings
+        if len(invalid)>0:
+            allowed = list(cls._allowed_settings)
+            allowed.sort()
+            invalid = list(invalid)
+            invalid.sort()
+            cls.class_error('attempted to set unknown variables\n  unknown variables: {0}\n  valid options are: {1}'.format(invalid,allowed))
+        #end if
+        QAobj_base.class_set(**kwargs)
+    #end settings
+#end class QAobject
+
+
+
+class Checks(DevBase):
+    def __init__(self,label=''):
+        self._label = label
+        self._exclusions = set()
+    #end def __init__
+
+    def exclude(self,value):
+        self._exclusions.add(value)
+    #end def exclude
+
+    def valid(self):
+        valid = True
+        for name,value in self.iteritems():
+            if not (isinstance(name,str) and name.startswith('_')):
+                if not value in self._exclusions:
+                    valid = valid and value
+                #end if
+            #end if
+        #end if
+        self._valid = valid
+        return valid
+    #end def valid
+
+    def write(self,pad=''):
+        pad2 = pad+'  '
+        if not '_valid' in self:
+            self.valid()
+        #end if
+        valid = self._valid
+        if valid:
+            self.log(pad+self._label+' is valid')
+        else:
+            self.log(pad+self._label+' is invalid')
+            for name,value in self.iteritems():
+                if not (isinstance(name,str) and name.startswith('_')):
+                    if value in self._exclusions:
+                        self.log(pad2+name+' could not be checked')
+                    elif value:
+                        self.log(pad2+name+' is valid')
+                    else:
+                        self.log(pad2+name+' is invalid')
+                    #end if
+                #end if
+            #end for
+        #end if
+    #end def write
+#end class Checks
+
+
 
 
 class QAinformation(obj):
@@ -124,19 +354,6 @@ class QAanalyzer(QAobject):
     dmc_methods = set(['dmc'])
 
 
-    allowed_settings = []
-    @classmethod
-    def settings(cls,**kwargs):
-        invalid = list(set(kwargs.keys())-set(allowed_settings))
-        if len(invalid)>0:
-            cls.class_error('invalid variable names encountered in settings\n  invalid names: {0}\n  valid options are: {1}'.format(invalid,allowed_settings))
-        #end if
-        for name,value in kwargs.iteritems():
-            cls.__dict__[name] = value
-        #end for
-    #end def settings
-
-
     def __init__(self,nindent=0):
         self.info = QAinformation(
             initialized = False,
@@ -195,30 +412,30 @@ class QAanalyzer(QAobject):
         None
     #end def unset_global_info
 
-    def traverse(self,function,block_name=None,callpost=True,**kwargs):
-        if not callpost:
-            cls.__dict__[func_name](self,**kwargs)
-        #end if
-        if block_name is None or not self.info[block_name]: 
-            for name,value in self.iteritems():
-                if isinstance(value,QAanalyzer):
-                    value.traverse(value,func_name,block_name,callpost,**kwargs)
-                elif isinstance(value,QAanalyzerCollection):
-                    for n,v in value.iteritems():
-                        if isinstance(v,QAanalyzer):
-                            v.traverse(v,func_name,block_name,callpost,**kwargs)
-                        #end if
-                    #end for
-                #end if
-            #end for
-        #end if
-        if block_name!=None:
-            self.info[block_name] = True
-        #end if
-        if callpost:
-            cls.__dict__[func_name](self,**kwargs)
-        #end if
-    #end def traverse
+    #def traverse(self,function,block_name=None,callpost=True,**kwargs):
+    #    if not callpost:
+    #        cls.__dict__[func_name](self,**kwargs)
+    #    #end if
+    #    if block_name is None or not self.info[block_name]: 
+    #        for name,value in self.iteritems():
+    #            if isinstance(value,QAanalyzer):
+    #                value.traverse(value,func_name,block_name,callpost,**kwargs)
+    #            elif isinstance(value,QAanalyzerCollection):
+    #                for n,v in value.iteritems():
+    #                    if isinstance(v,QAanalyzer):
+    #                        v.traverse(v,func_name,block_name,callpost,**kwargs)
+    #                    #end if
+    #                #end for
+    #            #end if
+    #        #end for
+    #    #end if
+    #    if block_name!=None:
+    #        self.info[block_name] = True
+    #    #end if
+    #    if callpost:
+    #        cls.__dict__[func_name](self,**kwargs)
+    #    #end if
+    ##end def traverse
 
     def propagate_indicators(self,**kwargs):
         self.reset_indicators(**kwargs)

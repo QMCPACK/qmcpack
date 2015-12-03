@@ -3,6 +3,23 @@
 ##################################################################
 
 
+#====================================================================#
+#  pwscf_data_reader.py                                              #
+#    Supports data processing of PWSCF's xml output.                 #
+#                                                                    #
+#  Content summary:                                                  #
+#    read_qexml                                                      #
+#      Read a data-file.xml and convert to nested object structure.  #
+#                                                                    #
+#    QEXML                                                           #
+#      Class to represent an xml element.                            #
+#                                                                    #
+#    readval                                                         #
+#      Function converts an attribute value string to numeric form.  #
+#                                                                    #
+#====================================================================#
+
+
 import os
 from numpy import array
 from generic import obj

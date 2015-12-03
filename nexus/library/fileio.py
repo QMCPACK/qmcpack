@@ -3,6 +3,23 @@
 ##################################################################
 
 
+#====================================================================#
+#  fileio.py                                                         #
+#    Support for I/O with various file formats.  Currently this only #
+#    contains a generic file I/O class for XSF files.  In the future #
+#    generic XML and HDF5 support should go here.  Input only        #
+#    interfaces to these formats can be found in hdfreader.py and    #
+#    xmlreader.py.                                                   #
+#                                                                    #
+#  Content summary:                                                  #
+#    XsfFile                                                         #
+#      Represents generic XSF, AXSF, and BXSF files.                 #
+#      Can read/write arbitrary files of these formats.              #
+#      Useful for atomic structure and electronic density I/O.       #       
+#                                                                    #
+#====================================================================#
+
+
 import os
 import mmap
 from numpy import array,zeros,ndarray,around,arange,dot
@@ -41,6 +58,10 @@ class TextFile(DevBase):
         #end for
     #end def __iter__
 
+    def __getitem__(self,slc):
+        return self.mm[slc]
+    #end def __getitem__
+
     def lines(self):
         return self.read().splitlines()
     #end def lines
@@ -52,7 +73,37 @@ class TextFile(DevBase):
     def readtokens(self,s=None):
         return self.readline(s).split()
     #end def readtokens
-    
+
+    def readtokensf(self,s=None,*formats):
+        if s!=None:
+            self.seek(s)
+        #end if
+        self.mm.readline()
+        line = self.mm.readline()
+        stokens = line.split()
+        all_same = False
+        if len(formats)==1 and len(stokens)>1:
+            format = formats[0]
+            all_same = True
+        elif len(formats)>len(stokens):
+            self.error('formatted line read failed\nnumber of tokens and provided number of formats do not match\nline: {0}\nnumber of tokens: {1}\nnumber of formats provided: {2}'.format(line,len(stokens),len(formats)))
+        #end if
+        tokens = []
+        if all_same:
+            for stoken in stokens:
+                tokens.append(format(stoken))
+            #end for
+        else:
+            for i in xrange(len(formats)):
+                tokens.append(formats[i](stokens[i]))
+            #end for
+        #end if
+        if len(tokens)==1:
+            return tokens[0]
+        else:
+            return tokens
+        #end if
+    #end def readtokensf
 
     # extended mmap interface below
     def close(self):
@@ -88,7 +139,7 @@ class TextFile(DevBase):
             if pos!=-1:
                 return self.mm.seek(pos,0)
             else:
-                return None
+                return -1
             #end if
         else:
             return self.mm.seek(pos,whence)
@@ -443,7 +494,7 @@ class XsfFile(DevBase):
             i+=1
         #end while
         if check and not self.is_valid():
-            self.error('read failed, not a valid xsf file'.format(filepath))
+            self.error('read failed, not a valid xsf file')
         #end if
     #end def read_text
 

@@ -1,0 +1,3101 @@
+diff -ruN espresso-5.2.1_original/PP/src/Makefile espresso-5.2.1_updated/PP/src/Makefile
+--- espresso-5.2.1_original/PP/src/Makefile	2015-09-24 03:26:12.000000000 -0400
++++ espresso-5.2.1_updated/PP/src/Makefile	2015-10-12 16:01:55.000000000 -0400
+@@ -64,7 +64,7 @@
+       plan_avg.x plotband.x plotproj.x plotrho.x pmw.x pp.x projwfc.x \
+       pawplot.x sumpdos.x pw2wannier90.x pw_export.x pw2gw.x \
+       wannier_ham.x wannier_plot.x molecularpdos.x \
+-      pw2bgw.x bgw2pw.x wfck2r.x importexport_binary.x
++      pw2bgw.x bgw2pw.x wfck2r.x importexport_binary.x pw2qmcpack.x
+ 
+ 
+ libpp.a : $(PPOBJS) 
+@@ -202,6 +202,11 @@
+ 		bgw2pw.o libpp.a $(MODULES) $(LIBOBJS) $(LIBS)
+ 	- ( cd ../../bin ; ln -fs ../PP/src/$@ . )
+ 
++pw2qmcpack.x : pw2qmcpack.o libpp.a $(MODULES) $(LIBOBJS)
++	$(LD) $(LDFLAGS) -o $@ \
++		pw2qmcpack.o libpp.a $(MODULES) $(LIBOBJS) $(LIBS)
++	- ( cd ../../bin ; ln -fs ../PP/src/$@ . )
++
+ tldeps :
+ 	if test -n "$(TLDEPS)" ; then \
+ 	( cd ../.. ; $(MAKE) $(TLDEPS) || exit 1 ) ; fi
+diff -ruN espresso-5.2.1_original/PP/src/pw2qmcpack.f90 espresso-5.2.1_updated/PP/src/pw2qmcpack.f90
+--- espresso-5.2.1_original/PP/src/pw2qmcpack.f90	1969-12-31 19:00:00.000000000 -0500
++++ espresso-5.2.1_updated/PP/src/pw2qmcpack.f90	2015-10-12 16:01:55.000000000 -0400
+@@ -0,0 +1,1229 @@
++!
++! Copyright (C) 2004 PWSCF group 
++! This file is distributed under the terms of the
++! GNU General Public License. See the file `License'
++! in the root directory of the present distribution,
++! or http://www.gnu.org/copyleft/gpl.txt .
++! 
++!----------------------------------------------------------------------- 
++PROGRAM pw2qmcpack
++  !----------------------------------------------------------------------- 
++
++  ! This subroutine writes the file "prefix".pwscf.xml and "prefix".pwscf.h5
++  ! containing the  plane wave coefficients and other stuff needed by QMCPACK. 
++
++  USE io_files,  ONLY : nd_nmbr, prefix, outdir, tmp_dir
++  USE io_global, ONLY : stdout, ionode, ionode_id
++  USE mp,        ONLY : mp_bcast
++  USE mp_global,  ONLY : mp_startup, npool, nimage
++  USE mp_world,   ONLY : world_comm
++  USE environment,ONLY : environment_start, environment_end
++  USE KINDS, ONLY : DP
++  !
++  IMPLICIT NONE
++  INTEGER :: ios
++  LOGICAL :: write_psir, expand_kp
++  REAL(DP) :: t1, t2, dt
++  !
++  CHARACTER(LEN=256), EXTERNAL :: trimcheck
++
++  NAMELIST / inputpp / prefix, outdir, write_psir, expand_kp
++#ifdef __PARA
++  CALL mp_startup ( )
++#endif
++
++  CALL environment_start ( 'pw2qmcpack' )
++#if defined(__HDF5)
++  IF ( nimage > 1) THEN
++     CALL errore('pw2qmcpack', ' image parallelization not (yet) implemented',1)
++  ENDIF
++  !   CALL start_postproc(nd_nmbr)
++  ! 
++  !   set default values for variables in namelist 
++  ! 
++  prefix = 'pwscf'
++  write_psir = .false.
++  expand_kp = .false.
++  CALL get_env( 'ESPRESSO_TMPDIR', outdir )
++  IF ( TRIM( outdir ) == ' ' ) outdir = './'
++  ios = 0
++  IF ( ionode )  THEN 
++     !
++     !READ (5, inputpp, err=200, iostat=ios)
++     READ (5, inputpp, iostat=ios)
++     tmp_dir = trimcheck (outdir)
++     !
++  END IF
++  CALL mp_bcast( ios, ionode_id, world_comm ) 
++  IF ( ios/=0 ) CALL errore('pw2qmcpack', 'reading inputpp namelist', ABS(ios))
++  ! 
++  ! ... Broadcast variables 
++  ! 
++  CALL mp_bcast(prefix, ionode_id, world_comm ) 
++  CALL mp_bcast(tmp_dir, ionode_id, world_comm ) 
++  CALL mp_bcast(write_psir, ionode_id, world_comm ) 
++  CALL mp_bcast(expand_kp, ionode_id, world_comm ) 
++  !
++  ! NAR Previously a call to read_file below, read_file_lite is much faster!
++  CALL start_clock ( 'read_file_lite' )
++  CALL read_file_lite
++  CALL stop_clock ( 'read_file_lite' )
++  !
++  CALL openfil_pp
++  !
++  CALL start_clock ( 'compute_qmcpack' )
++  CALL compute_qmcpack(write_psir, expand_kp)
++  CALL stop_clock ( 'compute_qmcpack' )
++  !
++  IF ( ionode ) THEN 
++    WRITE( 6, * )
++    !
++    CALL print_clock( 'read_file_lite' )
++    CALL print_clock( 'compute_qmcpack' )
++    !
++    WRITE( 6, '(/5x,"Called by read_file_lite:")' )
++    CALL print_clock ( 'read_pseudo' )
++    CALL print_clock ( 'read_rho' )
++    CALL print_clock ( 'fft_rho' )
++    CALL print_clock ( 'read_wave' )
++    !
++    WRITE( 6, '(/5x,"Called by compute_qmcpack:")' )
++    CALL print_clock ( 'big_loop' )
++    CALL print_clock ( 'write_h5' )
++  ENDIF
++#else
++  CALL errore('pw2qmcpack', ' HDF5 flag not enabled during configure',1)
++#endif
++  CALL environment_end ( 'pw2qmcpack' )
++  CALL stop_pp
++  STOP
++
++  
++
++END PROGRAM pw2qmcpack
++
++
++SUBROUTINE compute_qmcpack(write_psir, expand_kp)
++
++  USE kinds, ONLY: DP
++  USE ions_base, ONLY : nat, ntyp => nsp, ityp, tau, zv, atm
++  USE cell_base, ONLY: omega, alat, tpiba2, at, bg
++  USE constants, ONLY: tpi
++  USE run_info,  ONLY: title
++  USE gvect, ONLY: ngm, g
++  USE gvecs, ONLY : nls, nlsm
++  USE klist , ONLY: nks, nelec, nelup, neldw, wk, xk, nkstot
++  USE lsda_mod, ONLY: lsda, nspin, isk
++  USE scf, ONLY: rho, rho_core, rhog_core, vnew
++  USE wvfct, ONLY: npw, npwx, nbnd, igk, g2kin, wg, et, ecutwfc
++  USE control_flags, ONLY: gamma_only
++  USE becmod, ONLY: becp, calbec, allocate_bec_type, deallocate_bec_type
++  USE io_global, ONLY: stdout, ionode,  ionode_id
++  USE mp_world, ONLY: world_comm
++  USE io_files, ONLY: nd_nmbr, nwordwfc, iunwfc, iun => iunsat, tmp_dir, prefix
++  USE wavefunctions_module, ONLY : evc, psic
++  use iotk_module
++  use iotk_xtox_interf
++  USE mp_global,            ONLY: inter_pool_comm, intra_pool_comm, nproc_pool, kunit
++  USE mp_global,            ONLY: npool, my_pool_id, intra_image_comm
++  USE mp,                   ONLY: mp_sum, mp_bcast, mp_barrier
++  use fft_base,             ONLY : gather_grid, scatter_grid, dffts
++  use fft_interfaces,       ONLY : invfft, fwfft
++  USE dfunct, ONLY : newd
++  USE symm_base,            ONLY : nsym, s, ftau
++
++  IMPLICIT NONE
++  LOGICAL :: write_psir, expand_kp
++  INTEGER :: ig, ibnd, ik, io, na, j, ispin, nbndup, nbnddown, &
++       nk, ngtot, ig7, ikk, iks, kpcnt, jks, nt, ijkb0, ikb, ih, jh, jkb, at_num, &
++       nelec_tot, nelec_up, nelec_down, ii, igx, igy, igz, n_rgrid(3), &
++       nkqs, nr1s,nr2s,nr3s
++  INTEGER, ALLOCATABLE :: indx(:), igtog(:), igtomin(:)
++  LOGICAL :: exst, found
++  REAL(DP) :: ek, eloc, enl, charge, etotefield
++  REAL(DP) :: bg_qmc(3,3), g_red(3), lattice_real(3,3)
++  COMPLEX(DP), ALLOCATABLE :: phase(:),eigpacked(:)
++  COMPLEX(DP), ALLOCATABLE :: psitr(:)
++  REAL(DP), ALLOCATABLE ::  tau_r(:,:), g_cart(:,:),psireal(:),eigval(:)
++  INTEGER :: ios, ierr, h5len,oldh5,ig_c,save_complex, nup,ndown
++  INTEGER, EXTERNAL :: atomic_number, is_complex
++  REAL(DP), ALLOCATABLE :: g_qmc(:,:)
++  INTEGER, ALLOCATABLE :: gint_den(:,:), gint_qmc(:,:)
++  REAL (DP), EXTERNAL :: ewald
++  COMPLEX(DP), ALLOCATABLE, TARGET :: tmp_psic(:)
++  COMPLEX(DP), DIMENSION(:), POINTER :: psiCptr
++  REAL(DP), DIMENSION(:), POINTER :: psiRptr
++! **********************************************************************
++  INTEGER :: npw_sym  
++  INTEGER, ALLOCATABLE, TARGET :: igk_sym(:)
++  REAL(DP), ALLOCATABLE :: g2kin_sym(:)
++! **********************************************************************
++  INTEGER :: nkfull,max_nk,max_sym,isym,nxxs
++  INTEGER , ALLOCATABLE :: num_irrep(:) 
++  INTEGER, ALLOCATABLE :: xkfull_index(:,:) ! maps to sym_list and xk_full_list  
++  INTEGER, ALLOCATABLE :: sym_list(:)
++  REAL(DP),    ALLOCATABLE :: xk_full_list(:,:)
++  REAL(DP) :: t1, t2, dt
++  integer, allocatable :: rir(:)  
++  COMPLEX(DP), ALLOCATABLE :: tmp_evc(:)
++
++  CHARACTER(256)          :: tmp,h5name,eigname,tmp_combo
++  CHARACTER(iotk_attlenx) :: attr
++  
++  INTEGER :: rest, nbase, basekindex, nktot
++  real (dp) :: xk_cryst(3)
++
++  
++  NULLIFY(psiRptr)
++  NULLIFY(psiCptr)
++
++  ! MAMorales:
++  ! removed USPP functions
++
++  ! this limits independent definition of ecutrho to < 4*ecutwf
++  ! four times npwx should be enough
++  ALLOCATE (indx (4*npwx) )
++  ALLOCATE (igtog (4*npwx) )
++  ALLOCATE (igtomin(4*npwx) )
++  ALLOCATE (tmp_evc(npwx) )
++
++  indx(:) = 0
++  igtog(:) = 0
++  igtomin(:) = 0
++
++  rest = ( nkstot - kunit * ( nkstot / kunit / npool ) * npool ) / kunit
++  nbase = nks * my_pool_id
++  IF ( ( my_pool_id + 1 ) > rest ) nbase = nbase + rest * kunit
++  
++  IF( lsda ) THEN
++!      IF( expand_kp ) &
++!        CALL errore ('pw2qmcpack','expand_kp not implemented with nspin>1`', 1)     
++     nbndup = nbnd
++     nbnddown = nbnd
++     nk = nks/2
++     nktot = nkstot/2
++     !     nspin = 2
++  ELSE
++     nbndup = nbnd
++     nbnddown = 0
++     nk = nks
++     nktot = nkstot
++     !     nspin = 1
++  ENDIF
++  
++! !    sanity check for lsda logic to follow 
++!   if (ionode) then
++!     DO ik = 1, nktot
++!       iks=ik+nktot
++!       xk_cryst(:) = at(1,:)*xk(1,ik) + at(2,:)*xk(2,ik) + at(3,:)*xk(3,ik) - ( at(1,:)*xk(1,iks) + at(2,:)*xk(2,iks) + at(3,:)*xk(3,iks))
++!       if (abs(xk_cryst(1))+abs(xk_cryst(2))+abs(xk_cryst(3)) .gt. 1e-12) then
++!         print *,"not paired %i %i",ik,iks
++!       endif
++!     ENDDO
++!   endif
++   
++   
++  !
++  
++  ! for now, I'm assuming that symmetry rotations do not affect npw, 
++  ! meaning that rotations don't displace elements outside the cutoff 
++  nr1s = dffts%nr1
++  nr2s = dffts%nr2
++  nr3s = dffts%nr3
++  nxxs = dffts%nr1x * dffts%nr2x * dffts%nr3x
++  allocate (igk_sym( npwx ), g2kin_sym ( npwx ) )
++
++  if (ionode) then
++    if(expand_kp) then
++      max_sym = min(48, 2 * nsym)
++      max_nk = nktot * max_sym 
++      ALLOCATE(num_irrep(nktot),xkfull_index(nktot,max_sym),sym_list(max_nk))
++      ALLOCATE(xk_full_list(3,max_nk))
++      ALLOCATE(rir(nxxs))
++      call generate_symmetry_equivalent_list() 
++      if(ionode) print *,'Total number of k-points after expansion:',nkfull
++    else
++      ALLOCATE(num_irrep(nktot),xkfull_index(nktot,1),sym_list(nktot))
++      ALLOCATE(xk_full_list(3,nktot))
++      nkfull = nktot
++      do ik = 1, nktot
++	xk_full_list(:,ik) = xk(:,ik) 
++	num_irrep(ik) = 1
++	sym_list(ik) = 1 
++	xkfull_index(ik,1) = ik  
++      enddo 
++    endif
++  else
++    if(expand_kp) then
++      max_sym = min(48, 2 * nsym)
++      max_nk = nktot * max_sym 
++      ALLOCATE(num_irrep(nktot),xkfull_index(nktot,max_sym),sym_list(max_nk))
++      ALLOCATE(xk_full_list(3,max_nk))
++      ALLOCATE(rir(nxxs))
++    else
++      ALLOCATE(num_irrep(nktot),xkfull_index(nktot,1),sym_list(nktot))
++      ALLOCATE(xk_full_list(3,nktot))
++      nkfull = nktot
++    endif
++  endif
++
++  CALL mp_bcast(xkfull_index, ionode_id, world_comm ) 
++  CALL mp_bcast(xk_full_list, ionode_id, world_comm ) 
++  CALL mp_bcast(sym_list, ionode_id, world_comm ) 
++  CALL mp_bcast(num_irrep, ionode_id, world_comm ) 
++  CALL mp_bcast(nkfull, ionode_id, world_comm ) 
++  
++!   IF ( nbase > 0 ) THEN
++!      num_irrep(1:nks) = num_irrep(nbase+1:nbase+nks)
++!      xk_full_list(:,1:nks) = xk_full_list(:,nbase+1:nbase+nks)
++!   END IF  
++  
++   if (ionode) then
++
++     DO ik = 1, nkstot
++        CALL gk_sort (xk (1, ik), ngm, g, ecutwfc / tpiba2, npw, igk, g2kin)
++        ! MAM: is this needed here, don't think so...
++         CALL davcio (evc, 2*nwordwfc, iunwfc, ik, - 1)
++
++        DO ig =1, npw
++           IF( igk(ig) > 4*npwx ) & 
++                CALL errore ('pw2qmcpack','increase allocation of index', ig)
++           indx( igk(ig) ) = 1
++        ENDDO
++     ENDDO
++!   endif
++!   call mp_bcast(indx,intra_pool_comm)
++
++    ngtot = 0
++  ! igtomin maps indices from the full set of G-vectors to the
++  ! minimal set which includes the G-spheres of all k-points
++    DO ig = 1, 4*npwx
++      IF( indx(ig) == 1 ) THEN
++	  ngtot = ngtot + 1
++	  igtog(ngtot) = ig
++	  igtomin(ig) = ngtot
++      ENDIF
++    ENDDO
++  !   print *,my_pool_id,ngtot
++  else
++     DO ik = 1, nks
++        CALL gk_sort (xk (1, ik), ngm, g, ecutwfc / tpiba2, npw, igk, g2kin)
++        ! MAM: is this needed here, don't think so...
++         CALL davcio (evc, 2*nwordwfc, iunwfc, ik, - 1)
++     enddo
++  endif !! ionode
++
++   
++  CALL mp_bcast(ngtot, ionode_id, world_comm )
++  CALL mp_bcast(igtog, ionode_id, world_comm )
++  CALL mp_bcast(igtomin, ionode_id, world_comm )
++  
++  ALLOCATE (g_qmc(3,ngtot))
++  ALLOCATE (gint_qmc(3,ngtot))
++  ALLOCATE (gint_den(3,ngm))
++  ALLOCATE (g_cart(3,ngtot))
++  ALLOCATE (tau_r(3,nat))
++
++  ! get the number of electrons
++  nelec_tot= NINT(nelec)
++  nup=NINT(nelup)
++  ndown=NINT(neldw)
++
++  if(nup .eq. 0) then
++    ndown=nelec_tot/2
++    nup=nelec_tot-ndown
++  endif
++
++  bg_qmc(:,:)=bg(:,:)/alat
++
++  if((npool>1) .and. (my_pool_id>0)) then
++    h5name = TRIM( prefix ) // '.pwscf.h5' // "_part"//trim(iotk_itoa(my_pool_id))
++  else
++    h5name = TRIM( prefix ) // '.pwscf.h5'
++  endif
++  eigname = "eigenstates_"//trim(iotk_itoa(nr1s))//'_'//trim(iotk_itoa(nr2s))//'_'//trim(iotk_itoa(nr3s))
++
++  tmp = TRIM( tmp_dir )//TRIM( h5name ) 
++  h5len = LEN_TRIM(tmp)
++  
++#if defined(__HDF5)
++  ! writing to xml and hdf5
++  ! open hdf5 file 
++  oldh5=0
++  CALL esh5_open_file(tmp,h5len,oldh5)
++
++
++  if(ionode) then
++  !! create a file for particle set
++  tmp = TRIM( tmp_dir ) // TRIM( prefix )// '.ptcl.xml'
++  CALL iotk_open_write(iun, FILE=TRIM(tmp), ROOT="qmcsystem", IERR=ierr )
++
++  CALL iotk_write_attr (attr,"name","global",first=.true.)
++  CALL iotk_write_begin(iun, "simulationcell",ATTR=attr)
++  CALL iotk_write_attr (attr,"name","lattice",first=.true.)
++  CALL iotk_write_attr (attr,"units","bohr")
++  CALL iotk_write_begin(iun, "parameter",ATTR=attr)
++   
++  lattice_real=alat*at
++  WRITE(iun,100) lattice_real(1,1), lattice_real(2,1), lattice_real(3,1)
++  WRITE(iun,100) lattice_real(1,2), lattice_real(2,2), lattice_real(3,2)
++  WRITE(iun,100) lattice_real(1,3), lattice_real(2,3), lattice_real(3,3)
++
++  CALL esh5_write_supercell(lattice_real)
++
++  CALL iotk_write_end(iun, "parameter")
++  CALL iotk_write_attr (attr,"name","reciprocal",first=.true.)
++  CALL iotk_write_attr (attr,"units","2pi/bohr")
++  CALL iotk_write_begin(iun, "parameter",ATTR=attr)
++  WRITE(iun,100) bg_qmc(1,1), bg_qmc(2,1), bg_qmc(3,1)
++  WRITE(iun,100) bg_qmc(1,2), bg_qmc(2,2), bg_qmc(3,2)
++  WRITE(iun,100) bg_qmc(1,3), bg_qmc(2,3), bg_qmc(3,3)
++  CALL iotk_write_end(iun, "parameter")
++
++  CALL iotk_write_attr (attr,"name","bconds",first=.true.)
++  CALL iotk_write_begin(iun, "parameter",ATTR=attr)
++  WRITE(iun,'(a)') 'p p p'
++  CALL iotk_write_end(iun, "parameter")
++
++  CALL iotk_write_attr (attr,"name","LR_dim_cutoff",first=.true.)
++  CALL iotk_write_begin(iun, "parameter",ATTR=attr)
++  WRITE(iun,'(a)') '15'
++  CALL iotk_write_end(iun, "parameter")
++  CALL iotk_write_end(iun, "simulationcell")
++
++  ! <particleset name="ions">
++  CALL iotk_write_attr (attr,"name","ion0",first=.true.)
++  CALL iotk_write_attr (attr,"size",nat)
++  CALL iotk_write_begin(iun, "particleset",ATTR=attr)
++
++  CALL esh5_open_atoms(nat,ntyp)
++
++  ! ionic species --> group
++  DO na=1,ntyp
++
++  tmp=TRIM(atm(na))
++  h5len=LEN_TRIM(tmp)
++  CALL esh5_write_species(na,tmp,h5len,atomic_number(tmp),zv(na))
++
++  CALL iotk_write_attr (attr,"name",TRIM(atm(na)),first=.true.)
++  CALL iotk_write_begin(iun, "group",ATTR=attr)
++  CALL iotk_write_attr (attr,"name","charge",first=.true.)
++  CALL iotk_write_begin(iun, "parameter",ATTR=attr)
++  write(iun,*) zv(na)
++  CALL iotk_write_end(iun, "parameter")
++
++  CALL iotk_write_end(iun, "group")
++  ENDDO
++
++
++  ! <attrib name="ionid"/>
++  CALL iotk_write_attr (attr,"name","ionid",first=.true.)
++  CALL iotk_write_attr (attr,"datatype","stringArray")
++  CALL iotk_write_begin(iun, "attrib",ATTR=attr)
++  write(iun,'(a)') (TRIM(atm(ityp(na))),na=1,nat)
++  CALL iotk_write_end(iun, "attrib")
++
++  ! <attrib name="position"/>
++  CALL iotk_write_attr (attr,"name","position",first=.true.)
++  CALL iotk_write_attr (attr,"datatype","posArray")
++  CALL iotk_write_attr (attr,"condition","0")
++  CALL iotk_write_begin(iun, "attrib",ATTR=attr)
++  ! write in cartesian coordinates in bohr
++  ! problem with xyz ordering inrelation to real-space grid
++  DO na = 1, nat
++  tau_r(1,na)=alat*tau(1,na)
++  tau_r(2,na)=alat*tau(2,na)
++  tau_r(3,na)=alat*tau(3,na)
++  WRITE(iun,100) (tau_r(j,na),j=1,3)
++  ENDDO
++  !write(iun,100) tau
++  CALL iotk_write_end(iun, "attrib")
++  CALL iotk_write_end(iun, "particleset")
++
++  !cartesian positions
++  CALL esh5_write_positions(tau_r)
++  CALL esh5_write_species_ids(ityp)
++
++  CALL esh5_close_atoms()
++  ! </particleset>
++
++  ! <particleset name="e">
++  CALL iotk_write_attr (attr,"name","e",first=.true.)
++  CALL iotk_write_attr (attr,"random","yes")
++  CALL iotk_write_attr (attr,"random_source","ion0")
++  CALL iotk_write_begin(iun, "particleset",ATTR=attr)
++
++  ! <group name="u" size="" >
++  CALL iotk_write_attr (attr,"name","u",first=.true.)
++  CALL iotk_write_attr (attr,"size",nup)
++  CALL iotk_write_begin(iun, "group",ATTR=attr)
++  CALL iotk_write_attr (attr,"name","charge",first=.true.)
++  CALL iotk_write_begin(iun, "parameter",ATTR=attr)
++  write(iun,*) -1
++  CALL iotk_write_end(iun, "parameter")
++  CALL iotk_write_end(iun, "group")
++
++  ! <group name="d" size="" >
++  CALL iotk_write_attr (attr,"name","d",first=.true.)
++  CALL iotk_write_attr (attr,"size",ndown)
++  CALL iotk_write_begin(iun, "group",ATTR=attr)
++  CALL iotk_write_attr (attr,"name","charge",first=.true.)
++  CALL iotk_write_begin(iun, "parameter",ATTR=attr)
++  write(iun,*) -1
++  CALL iotk_write_end(iun, "parameter")
++  CALL iotk_write_end(iun, "group")
++  CALL iotk_write_end(iun, "particleset")
++  CALL iotk_close_write(iun)
++
++  !! close the file
++  !!DO ik = 0, nk-1
++  ik=0
++   ! NOT create a xml input file for each k-point
++   !  IF(nk .gt. 1) THEN
++   !    tmp = TRIM( tmp_dir ) // TRIM( prefix ) //TRIM(iotk_index(ik))// '.wfs.xml'
++   !  ELSE
++   !    tmp = TRIM( tmp_dir ) // TRIM( prefix )// '.wfs.xml'
++   !  ENDIF
++   tmp = TRIM( tmp_dir ) // TRIM( prefix )// '.wfs.xml'
++     CALL iotk_open_write(iun, FILE=TRIM(tmp), ROOT="qmcsystem", IERR=ierr )
++     ! <wavefunction name="psi0">
++     CALL iotk_write_attr (attr,"name","psi0",first=.true.)
++     CALL iotk_write_attr (attr,"target","e")
++     CALL iotk_write_begin(iun, "wavefunction",ATTR=attr)
++       write(iun,'(a)') '<!-- Uncomment this out to use plane-wave basis functions'
++       CALL iotk_write_attr (attr,"type","PW",first=.true.)
++       CALL iotk_write_attr (attr,"href",TRIM(h5name))
++       CALL iotk_write_attr (attr,"version","1.10")
++       CALL iotk_write_begin(iun, "determinantset",ATTR=attr)
++       write(iun,'(a)') '--> '
++       CALL iotk_write_attr (attr,"type","bspline",first=.true.)
++       CALL iotk_write_attr (attr,"href",TRIM(h5name))
++       CALL iotk_write_attr (attr,"sort","1")
++       CALL iotk_write_attr (attr,"tilematrix","1 0 0 0 1 0 0 0 1")
++       CALL iotk_write_attr (attr,"twistnum","0")
++       CALL iotk_write_attr (attr,"source","ion0")
++       CALL iotk_write_attr (attr,"version","0.10")
++       CALL iotk_write_begin(iun, "determinantset",ATTR=attr)
++          CALL iotk_write_attr (attr,"ecut",ecutwfc/2,first=.true.)
++          ! basisset to overwrite cutoff to a smaller value
++          !CALL iotk_write_begin(iun, "basisset",ATTR=attr)
++          !   ! add grid to use spline on FFT grid
++          !   CALL iotk_write_attr (attr,"dir","0",first=.true.)
++          !   CALL iotk_write_attr (attr,"npts",nr1s)
++          !   CALL iotk_write_attr (attr,"closed","no")
++          !   CALL iotk_write_empty(iun, "grid",ATTR=attr)
++          !   CALL iotk_write_attr (attr,"dir","1",first=.true.)
++          !   CALL iotk_write_attr (attr,"npts",nr2s)
++          !   CALL iotk_write_attr (attr,"closed","no")
++          !   CALL iotk_write_empty(iun, "grid",ATTR=attr)
++          !   CALL iotk_write_attr (attr,"dir","2",first=.true.)
++          !   CALL iotk_write_attr (attr,"npts",nr3s)
++          !   CALL iotk_write_attr (attr,"closed","no")
++          !   CALL iotk_write_empty(iun, "grid",ATTR=attr)
++          !CALL iotk_write_end(iun, "basisset")
++          
++          !CALL iotk_write_attr (attr,"href",TRIM(h5name),first=.true.)
++          !CALL iotk_write_empty(iun, "coefficients",ATTR=attr)
++  
++          ! write the index of the twist angle
++          !!!! remove twistIndex and twistAngle
++          !using determinantset@twistnum
++          !CALL iotk_write_attr (attr,"name","twistIndex",first=.true.)
++          !CALL iotk_write_begin(iun, "h5tag",ATTR=attr)
++          !write(iun,*) ik
++          !CALL iotk_write_end(iun, "h5tag")
++
++          !CALL iotk_write_attr (attr,"name","twistAngle",first=.true.)
++          !CALL iotk_write_begin(iun, "h5tag",ATTR=attr)
++          !g_red(1)=at(1,1)*xk(1,ik+1)+at(2,1)*xk(2,ik+1)+at(3,1)*xk(3,ik+1)
++          !g_red(2)=at(1,2)*xk(1,ik+1)+at(2,2)*xk(2,ik+1)+at(3,2)*xk(3,ik+1)
++          !g_red(3)=at(1,3)*xk(1,ik+1)+at(2,3)*xk(2,ik+1)+at(3,3)*xk(3,ik+1)
++          !!write(iun,100) xk(1,ik+1),xk(2,ik+1),xk(3,ik+1)
++          !write(iun,100) g_red(1),g_red(2),g_red(3)
++          !CALL iotk_write_end(iun, "h5tag")
++          !write(iun,'(a)') '<!-- Uncomment this out for bspline wavefunctions '
++          !!CALL iotk_write_attr (attr,"name","eigenstates",first=.true.)
++          !!CALL iotk_write_begin(iun, "h5tag",ATTR=attr)
++          !!write(iun,'(a)') TRIM(eigname)
++          !!CALL iotk_write_end(iun, "h5tag")
++          !write(iun,'(a)') '--> '
++
++  
++          CALL iotk_write_begin(iun, "slaterdeterminant")
++             ! build determinant for up electrons
++             CALL iotk_write_attr (attr,"id","updet",first=.true.)
++             CALL iotk_write_attr (attr,"size",nup)
++             CALL iotk_write_begin(iun, "determinant",ATTR=attr)
++                CALL iotk_write_attr (attr,"mode","ground",first=.true.)
++                CALL iotk_write_attr (attr,"spindataset",0)
++                CALL iotk_write_begin(iun, "occupation",ATTR=attr)
++                CALL iotk_write_end(iun, "occupation")
++             CALL iotk_write_end(iun, "determinant")
++  
++             ! build determinant for down electrons
++             CALL iotk_write_attr (attr,"id","downdet",first=.true.)
++             CALL iotk_write_attr (attr,"size",ndown)
++             IF( lsda ) CALL iotk_write_attr (attr,"ref","updet")
++             CALL iotk_write_begin(iun, "determinant",ATTR=attr)
++               CALL iotk_write_attr (attr,"mode","ground",first=.true.)
++               IF( lsda ) THEN
++                 CALL iotk_write_attr (attr,"spindataset",1)
++               ELSE
++                 CALL iotk_write_attr (attr,"spindataset",0)
++               ENDIF
++               CALL iotk_write_begin(iun, "occupation",ATTR=attr)
++               CALL iotk_write_end(iun, "occupation")
++             CALL iotk_write_end(iun, "determinant")
++          CALL iotk_write_end(iun, "slaterdeterminant")
++  
++       CALL iotk_write_end(iun, "determinantset")
++
++       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
++       ! two-body jastro
++       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
++       CALL iotk_write_attr (attr,"name","J2",first=.true.)
++       CALL iotk_write_attr (attr,"type","Two-Body");
++       CALL iotk_write_attr (attr,"function","Bspline");
++       CALL iotk_write_attr (attr,"print","yes");
++       CALL iotk_write_begin(iun, "jastrow",ATTR=attr)
++
++         ! for uu
++         CALL iotk_write_attr (attr,"speciesA","u",first=.true.)
++         CALL iotk_write_attr (attr,"speciesB","u")
++         !CALL iotk_write_attr (attr,"rcut","10")
++         CALL iotk_write_attr (attr,"size","8")
++         CALL iotk_write_begin(iun, "correlation",ATTR=attr)
++           CALL iotk_write_attr (attr,"id","uu",first=.true.)
++           CALL iotk_write_attr (attr,"type","Array")
++           CALL iotk_write_begin(iun, "coefficients",ATTR=attr)
++           write(iun,*) "0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0"
++           CALL iotk_write_end(iun, "coefficients")
++         CALL iotk_write_end(iun, "correlation")
++
++         ! for ud
++         CALL iotk_write_attr (attr,"speciesA","u",first=.true.)
++         CALL iotk_write_attr (attr,"speciesB","d")
++         !CALL iotk_write_attr (attr,"rcut","10")
++         CALL iotk_write_attr (attr,"size","8")
++         CALL iotk_write_begin(iun, "correlation",ATTR=attr)
++           CALL iotk_write_attr (attr,"id","ud",first=.true.)
++           CALL iotk_write_attr (attr,"type","Array")
++           CALL iotk_write_begin(iun, "coefficients",ATTR=attr)
++           write(iun,*) "0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0"
++           CALL iotk_write_end(iun, "coefficients")
++         CALL iotk_write_end(iun, "correlation")
++
++       CALL iotk_write_end(iun, "jastrow")
++
++       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
++       ! one-body jastro
++       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
++       CALL iotk_write_attr (attr,"name","J1",first=.true.)
++       CALL iotk_write_attr (attr,"type","One-Body");
++       CALL iotk_write_attr (attr,"function","Bspline");
++       CALL iotk_write_attr (attr,"source","ion0");
++       CALL iotk_write_attr (attr,"print","yes");
++       CALL iotk_write_begin(iun, "jastrow",ATTR=attr)
++
++       DO na=1,ntyp
++         tmp=TRIM(atm(na))
++         tmp_combo='e'//TRIM(atm(na))
++
++         !h5len=LEN_TRIM(tmp)
++         CALL iotk_write_attr (attr,"elementType",TRIM(tmp),first=.true.)
++         !CALL iotk_write_attr (attr,"rcut","10")
++         CALL iotk_write_attr (attr,"size","8")
++         CALL iotk_write_begin(iun, "correlation",ATTR=attr)
++
++         CALL iotk_write_attr (attr,"id",TRIM(tmp_combo),first=.true.)
++         CALL iotk_write_attr (attr,"type","Array")
++         CALL iotk_write_begin(iun, "coefficients",ATTR=attr)
++         write(iun,*) "0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0"
++         CALL iotk_write_end(iun, "coefficients")
++         CALL iotk_write_end(iun, "correlation")
++       ENDDO
++       CALL iotk_write_end(iun, "jastrow")
++     
++     CALL iotk_write_end(iun, "wavefunction")
++  
++     CALL iotk_close_write(iun)
++  !ENDDO
++
++  endif ! ionode
++
++  DO ig=1, ngtot
++    ig_c =igtog(ig)
++    g_cart(1,ig)=tpi/alat*g(1,ig_c)
++    g_cart(2,ig)=tpi/alat*g(2,ig_c)
++    g_cart(3,ig)=tpi/alat*g(3,ig_c)
++    g_qmc(1,ig)=at(1,1)*g(1,ig_c)+at(2,1)*g(2,ig_c)+at(3,1)*g(3,ig_c)
++    g_qmc(2,ig)=at(1,2)*g(1,ig_c)+at(2,2)*g(2,ig_c)+at(3,2)*g(3,ig_c)
++    g_qmc(3,ig)=at(1,3)*g(1,ig_c)+at(2,3)*g(2,ig_c)+at(3,3)*g(3,ig_c)
++    gint_qmc(1,ig)=NINT(at(1,1)*g(1,ig_c)+at(2,1)*g(2,ig_c)+at(3,1)*g(3,ig_c))
++    gint_qmc(2,ig)=NINT(at(1,2)*g(1,ig_c)+at(2,2)*g(2,ig_c)+at(3,2)*g(3,ig_c))
++    gint_qmc(3,ig)=NINT(at(1,3)*g(1,ig_c)+at(2,3)*g(2,ig_c)+at(3,3)*g(3,ig_c))
++    !WRITE(io,'(3(1x,f20.15))') g_cart(1,ig),g_cart(2,ig),g_cart(3,ig)
++  ENDDO
++
++  DO ig=1,ngm
++     gint_den(1,ig)=NINT(at(1,1)*g(1,ig)+at(2,1)*g(2,ig)+at(3,1)*g(3,ig))
++     gint_den(2,ig)=NINT(at(1,2)*g(1,ig)+at(2,2)*g(2,ig)+at(3,2)*g(3,ig))
++     gint_den(3,ig)=NINT(at(1,3)*g(1,ig)+at(2,3)*g(2,ig)+at(3,3)*g(3,ig))
++  ENDDO
++
++
++  n_rgrid(1)=nr1s
++  n_rgrid(2)=nr2s
++  n_rgrid(3)=nr3s
++
++  save_complex=0
++  if(ionode) then
++    DO ik = 1, nktot
++      !! evaluate the phase
++      !phase(:) = (0.d0,0.d0)
++      !if ( ig_(ik,ib)>0) phase( nls(ig_(ik,ib)) ) = (1.d0,0.d0)
++      g_red(1)=at(1,1)*xk_full_list(1,ik)+at(2,1)*xk_full_list(2,ik)+at(3,1)*xk_full_list(3,ik)
++      g_red(2)=at(1,2)*xk_full_list(1,ik)+at(2,2)*xk_full_list(2,ik)+at(3,2)*xk_full_list(3,ik)
++      g_red(3)=at(1,3)*xk_full_list(1,ik)+at(2,3)*xk_full_list(2,ik)+at(3,3)*xk_full_list(3,ik)
++
++      IF(g_red(1)*g_red(1)+g_red(2)*g_red(2)+g_red(3)*g_red(3)>1e-12) THEN
++	  save_complex=1
++      END IF
++    END DO
++  endif
++  
++  CALL mp_bcast(save_complex, ionode_id, world_comm )
++  
++
++  
++!     WRITE(io,'(A10,3(1x,i6))') 'ngrid: ',n_rgrid(1:3) 
++
++  !CALL esh5_open_electrons(nup, ndown,nspin,nk,nbnd,n_rgrid)!, save_complex)
++  !CALL esh5_open_electrons(nup, ndown, nspin, nkfull, nbnd, n_rgrid)!, save_complex)
++  
++  if(ionode) then
++    CALL esh5_open_electrons_base(nup, ndown, nspin, nkfull, nbnd, n_rgrid)!, save_complex)
++  else
++    CALL esh5_open_electrons(nup, ndown, nspin, nkfull, nbnd, n_rgrid)!, save_complex)
++  endif
++  
++!   IF (write_psir) THEN
++!     CALL esh5_write_psi_r_mesh(n_rgrid)
++!   ENDIF
++
++  !!NOT YET DECIDED
++  !!CALL esh5_write_basis(g_qmc,g_cart,ngtot)
++  !!CALL esh5_write_parameters(nelec_tot,nspin,nbnd,nkfull,ecutwfc/2,alat,at)
++  !
++
++  ALLOCATE (eigpacked(ngtot))
++  ALLOCATE (eigval(nbnd))
++
++!ionode writes all k-point and ev data
++  if(ionode)then
++    DO ik = 1, nkstot
++      basekindex = ik + nbase
++      ispin = 1
++      if (basekindex > nktot) then
++        ispin = 2
++	basekindex = basekindex - nktot
++      endif
++      DO iks = 1,num_irrep(basekindex)  
++	jks = xkfull_index(basekindex,iks)
++	g_red(1)=at(1,1)*xk_full_list(1,jks)+at(2,1)*xk_full_list(2,jks)+at(3,1)*xk_full_list(3,jks)
++	g_red(2)=at(1,2)*xk_full_list(1,jks)+at(2,2)*xk_full_list(2,jks)+at(3,2)*xk_full_list(3,jks)
++	g_red(3)=at(1,3)*xk_full_list(1,jks)+at(2,3)*xk_full_list(2,jks)+at(3,3)*xk_full_list(3,jks)        
++	
++        CALL esh5_open_kpoint(jks)
++        CALL esh5_write_kpoint_data(g_red,wk(basekindex)/num_irrep(basekindex),ngtot,iks,num_irrep(basekindex))
++
++  !     only the 1 index kpoint will write this g vectors
++	if(ik == 1) then
++	    CALL esh5_write_gvectors_k(gint_qmc,ngtot)
++	endif
++
++! 	if (lsda) then
++! 	  ispin = isk(ik)
++! 	else
++! 	  ispin=1
++! 	endif
++	
++        CALL esh5_open_spin(ispin)
++	DO ibnd = 1, nbnd
++	  eigval(ibnd)=0.5*et(ibnd,ik)
++	ENDDO
++	CALL esh5_write_eigvalues(eigval)
++	CALL esh5_close_spin()
++	
++
++        CALL esh5_close_kpoint()
++      ENDDO
++    ENDDO
++  else
++    DO ik = 1, nks
++      basekindex = ik + nbase
++      if (basekindex > nktot) then
++	basekindex = basekindex - nktot
++	ispin=2
++      else
++	ispin=1
++      endif
++      DO iks = 1,num_irrep(basekindex)  
++	jks = xkfull_index(basekindex,iks)
++	g_red(1)=at(1,1)*xk_full_list(1,jks)+at(2,1)*xk_full_list(2,jks)+at(3,1)*xk_full_list(3,jks)
++	g_red(2)=at(1,2)*xk_full_list(1,jks)+at(2,2)*xk_full_list(2,jks)+at(3,2)*xk_full_list(3,jks)
++	g_red(3)=at(1,3)*xk_full_list(1,jks)+at(2,3)*xk_full_list(2,jks)+at(3,3)*xk_full_list(3,jks)
++
++	!! open kpoint 
++	CALL esh5_open_kpoint(jks)
++! 	CALL esh5_write_kpoint_data(g_red,wk(ik)/num_irrep(basekindex),ngtot)
++! 	if (lsda) then
++! 	  ispin = isk(ik)
++! 	else
++! 	  ispin=1
++! 	endif
++	CALL esh5_open_spin(ispin)
++	CALL esh5_close_spin()
++      
++	CALL esh5_close_kpoint()
++
++      ENDDO
++    ENDDO  
++  endif
++
++100 FORMAT (3(1x,f20.15))
++
++  ALLOCATE(psireal(nxxs))
++  ALLOCATE(psitr(nxxs))
++  IF(nproc_pool > 1) THEN
++    ALLOCATE(tmp_psic(nxxs))
++  ENDIF
++
++!   if(ionode) print *,'PW2QMCPACK npw=',npw,'ngtot=',ngtot
++  ! open real-space wavefunction on FFT grid
++  !!CALL esh5_open_eigr(nr1s,nr2s,nr3s)
++  !DO ik = 1, nk
++  
++  CALL start_clock ( 'big_loop' )
++  if(nks .eq. 1) then ! treat 1 kpoint specially
++    write(6,*) 'Only 1 Kpoint. By pass everything '
++    ik=1
++    CALL esh5_open_kpoint(ik)
++    DO ispin = 1, nspin
++        CALL esh5_open_spin(ispin)
++
++        DO ibnd = 1, nbnd !!transform G to R
++           !psic(:)=(0.d0,0.d0)
++           !psic(nls(igk(1:npw)))=evc(1:npw,ibnd)
++           !CALL esh5_write_psi_g(ibnd,psic,ngtot)
++           eigpacked(:)=(0.d0,0.d0)
++           eigpacked(igtomin(igk(1:npw)))=evc(1:npw,ibnd)
++           CALL esh5_write_psi_g(ibnd,eigpacked,ngtot)
++       enddo
++       CALL esh5_close_spin()
++    enddo
++    CALL esh5_close_kpoint() 
++  else ! nk .neq. 1
++    DO ik = 1, nks
++    basekindex = ik + nbase
++    if (basekindex > nktot) then
++      basekindex = basekindex - nktot
++      ispin=2
++    else
++      ispin=1
++    endif
++    DO iks = 1,num_irrep(basekindex)  
++     jks = xkfull_index(basekindex,iks)
++     isym = sym_list(jks)
++
++     if(expand_kp) then
++        call generate_symmetry_rotation(isym)
++     endif
++
++     CALL esh5_open_kpoint(jks)
++
++!      if(ionode) print *,'PW2QMCPACK ik,iks=',ik,iks
++
++!      DO ispin = 1, nspin 
++!         ikk = ik + nk*(ispin-1)
++!       if (lsda) then
++!         ispin = isk(ik)
++!       else
++!         ispin=1
++!       endif
++
++        !!! MAM: This could be outside the num_irrep group is ispin = 1,
++        !!!      can I switch the order of esh5_open_spin and
++        !!!      esh5_open_kpoint??? 
++        CALL gk_sort (xk (1:3, ik), ngm, g, ecutwfc / tpiba2, npw, igk, g2kin)
++        CALL davcio (evc, 2*nwordwfc, iunwfc, ik, - 1)
++        CALL gk_sort (xk_full_list (1:3, jks), ngm, g, ecutwfc / tpiba2, npw_sym, igk_sym, g2kin_sym)
++        if(npw .ne. npw_sym )  then
++          write(*,*) 'Warning!!!: npw != npw_sym: ',npw,npw_sym
++        endif 
++
++        CALL esh5_open_spin(ispin)
++
++        DO ibnd = 1, nbnd !!transform G to R
++
++! I should be able to do the rotation directly in G space, 
++! but for now I'm doing it like this
++           IF(expand_kp) then
++             psic(:)=(0.d0,0.d0)
++             psitr(:)=(0.d0,0.d0)
++             tmp_evc(:) = (0.d0,0.d0) 
++             IF(nproc_pool > 1) THEN
++               ! 
++               psic(nls(igk(1:npw)))=evc(1:npw,ibnd)
++               
++!                call errore ('pw2qmcpack','parallel version not fully implemented.',2)
++               if(gamma_only) then
++                      call errore ('pw2qmcpack','problems with gamma_only, not fully implemented.',2)
++               endif
++               !
++               CALL invfft ('Wave', psic, dffts)
++               !
++!               call cgather_smooth(psic,psitr)
++               call gather_grid(dffts,psic,psitr)
++               tmp_psic(1:nxxs) = psitr(rir(1:nxxs))
++!               call cscatter_smooth(tmp_psic,psic)
++               call scatter_grid(dffts,tmp_psic,psic)
++               !
++               ! at this point, I have the rotated orbital in real space, might
++               ! want to keep it stored somewhere for later use if write_psir 
++               ! 
++               CALL fwfft ('Wave', psic, dffts)
++               !
++               tmp_evc(1:npw_sym)=psic(nls(igk_sym(1:npw_sym)))
++               ! 
++             ELSE ! nproc_pool <= 1
++               ! 
++               psic(nls(igk(1:npw)))=evc(1:npw,ibnd)
++               if(gamma_only) then
++                      call errore ('pw2qmcpack','problems with gamma_only, not fully implemented.',2)
++               endif
++               !
++               CALL invfft ('Wave', psic, dffts)
++               !
++               psitr(1:nxxs) = psic(rir(1:nxxs))
++               ! temporary hack to see if I have problems with inversion
++               ! symmetry
++               if(isym.lt.0 .AND. iks.gt.1 .AND. abs(isym).eq.abs(sym_list(xkfull_index(basekindex,iks-1)))   ) then  
++                 psitr(1:nxxs) = CONJG(psitr(1:nxxs)) 
++               endif
++               !psitr(:) = psic(:)
++               !
++               CALL fwfft ('Wave', psitr, dffts)
++               !
++               tmp_evc(1:npw_sym)=psitr(nls(igk_sym(1:npw_sym)))
++               ! 
++             ENDIF ! nprocpool 
++
++             !mapping is different with expand_kp, revert to the slow method
++             DO ig=1, ngtot
++             ! now for all G vectors find the PW coefficient for this k-point
++             found = .FALSE.
++             !!! MMORALES: This is very inefficient, create a mapping in the beggining from g
++             !!!           to the g grid used in qmcpack, and just set to -1 the elements
++             !!!           outside the cutoff
++               DO ig7 = 1, npw_sym
++                 IF( igk_sym(ig7) == igtog(ig) )THEN
++                   !!! FIX FIX FIX, In parallel, this is completely incorrect since each proc only
++                   !has limited data, you have to do a sum reduce at the very end to the head node 
++                   eigpacked(ig)=tmp_evc(ig7)
++                   found = .TRUE.
++                   GOTO 18
++                 ENDIF
++               ENDDO ! ig7
++             ! if can't find the coefficient this is zero
++             18            IF( .NOT. found ) eigpacked(ig)=(0.d0,0.d0)
++             ENDDO ! ig
++           ELSE ! expandkp = false
++             !
++             !tmp_evc(:) = evc(:,ibnd)
++             eigpacked(:)=(0.d0,0.d0)
++             eigpacked(igtomin(igk(1:npw)))=evc(1:npw,ibnd)
++             !
++           ENDIF ! expandkp
++
++           CALL esh5_write_psi_g(ibnd,eigpacked,ngtot)
++
++           IF (write_psir) THEN
++              psic(:)=(0.d0,0.d0)
++              psic(nls(igk_sym(1:npw_sym)))=tmp_evc(1:npw_sym)
++              if(gamma_only) psic(nlsm(igk_sym(1:npw_sym))) = CONJG(tmp_evc(1:npw_sym))
++              !
++              CALL invfft ('Wave', psic, dffts)
++              !
++              IF(nproc_pool > 1) THEN
++                ! 
++                tmp_psic=psic
++!                call cgather_smooth(psic,tmp_psic)
++                call gather_grid(dffts,psic,tmp_psic)
++                psiCptr => tmp_psic
++                ! 
++              ELSE
++                ! 
++                psiCptr => psic
++                ! 
++              ENDIF
++              !
++              IF(save_complex .eq. 1) THEN
++                 !
++                   !psic(:)=psic(:)/omega
++                   ii=1
++                   DO igx=1,nr1s
++                      DO igy=0,nr2s-1
++                         DO igz=0,nr3s-1
++                            psitr(ii)=psiCptr(igx+nr1s*(igy+igz*nr2s))/omega
++                            ii=ii+1
++                         ENDDO
++                      ENDDO
++                   ENDDO
++                   CALL esh5_write_psi_r(ibnd,psitr,save_complex)
++                 !
++              ELSE
++                 !
++                   ii=1
++                   DO igx=1,nr1s
++                      DO igy=0,nr2s-1
++                         DO igz=0,nr3s-1
++                            psireal(ii)=real(psiCptr(igx+nr1s*(igy+igz*nr2s)))/omega
++                            ii=ii+1
++                         ENDDO
++                      ENDDO
++                   ENDDO
++                   CALL esh5_write_psi_r(ibnd,psireal,save_complex)
++                 !
++              ENDIF
++           ENDIF ! write_psir
++           !! conversion and output complete for each band
++        ENDDO ! ibnd
++        CALL esh5_close_spin()
++!      ENDDO
++     CALL esh5_close_kpoint()
++   ENDDO ! iks
++  ENDDO ! ik
++
++endif ! nk
++CALL stop_clock( 'big_loop' )
++#endif
++  ! write charge density
++  ! ignore spin for the time being
++  !CALL esh5_write_rho(rho,rhog(1,1),ngm)
++
++#if defined(__HDF5)
++CALL start_clock( 'write_h5' )
++  if(ionode) then
++    CALL esh5_open_density(gint_den,ngm,nr1s,nr2s,nr3s)
++    DO ispin = 1, nspin
++       CALL esh5_write_density_g(ispin,rho%of_g(1,ispin))
++    ENDDO
++
++    CALL esh5_close_density()
++   endif 
++   
++   CALL esh5_close_electrons()
++   CALL esh5_close_file()
++      
++  CALL mp_barrier( intra_image_comm )
++!     glue h5 together
++  if(ionode) then
++    if(npool>1) then
++      h5name = TRIM( prefix ) // '.pwscf.h5'
++      tmp = TRIM( tmp_dir )//TRIM( h5name )
++      h5len = LEN_TRIM(tmp)
++      call esh5_join_all(tmp,h5len,npool)
++    endif
++  endif
++CALL stop_clock( 'write_h5' )
++#endif
++
++  IF( ALLOCATED(igtog) ) DEALLOCATE (igtog)
++  IF( ALLOCATED(igtomin) ) DEALLOCATE (igtomin)
++  IF( ALLOCATED(indx) ) DEALLOCATE (indx)
++  IF( ALLOCATED(eigpacked) ) DEALLOCATE (eigpacked)
++  IF( ALLOCATED(g_qmc) ) DEALLOCATE (g_qmc)
++  IF( ALLOCATED(g_cart) ) DEALLOCATE (g_cart)
++  IF( ALLOCATED(psireal) ) DEALLOCATE (psireal)
++  IF( ALLOCATED(psitr) ) DEALLOCATE (psitr)
++  IF( ALLOCATED(tmp_psic) ) DEALLOCATE (tmp_psic)
++  IF( ALLOCATED(num_irrep) ) DEALLOCATE (num_irrep)
++  IF( ALLOCATED(xkfull_index) ) DEALLOCATE (xkfull_index)
++  IF( ALLOCATED(sym_list) ) DEALLOCATE (sym_list)
++  IF( ALLOCATED(xk_full_list) ) DEALLOCATE (xk_full_list)
++  IF( ALLOCATED(rir) ) DEALLOCATE (rir)
++  IF( ALLOCATED(igk_sym) ) DEALLOCATE (igk_sym)
++  IF( ALLOCATED(g2kin_sym) ) DEALLOCATE (g2kin_sym)
++  !DEALLOCATE (phase)
++
++  CONTAINS
++
++  SUBROUTINE generate_symmetry_equivalent_list()
++  ! 
++  ! Code taken mostly from PW/exx.f90
++  !
++  !------------------------------------------------------------------------
++  !
++  USE kinds, ONLY: DP
++  USE cell_base,  ONLY : at
++  USE lsda_mod,   ONLY : nspin
++  USE klist,      ONLY : xk
++  USE io_global,  ONLY : stdout, ionode
++  !
++  USE klist,      ONLY : nkstot
++  USE io_global,            ONLY : stdout
++  USE wvfct,                ONLY : nbnd, npwx, npw, igk, wg, et
++  USE klist,                ONLY : wk, ngk, nks
++  USE symm_base,            ONLY : nsym, s, ftau
++  USE lsda_mod,             ONLY: lsda
++  use fft_base,             ONLY : dffts
++!  use fft_interfaces,       ONLY : invfft
++
++  !
++  IMPLICIT NONE
++  !
++  integer       :: is, ik, ikq, iq, ns ,  nktot
++  logical       :: xk_not_found
++  real (DP)     :: sxk(3), dxk(3), xk_cryst(3), xkk_cryst(3)
++  logical :: exst
++  REAL (DP)         :: eps =1.d-8
++
++  !
++  ! find all k-points equivalent by symmetry to the points in the k-list
++  !
++   
++  if(lsda)then
++    nktot=nkstot/2
++  else
++    nktot=nkstot
++  endif
++  
++  nkfull = 0
++  do ik =1, nktot
++    !
++    num_irrep(ik) = 0 
++    !
++    ! isym=1 is the identity
++    do is=1,nsym
++        xk_cryst(:) = at(1,:)*xk(1,ik) + at(2,:)*xk(2,ik) + at(3,:)*xk(3,ik)
++        sxk(:) = s(:,1,is)*xk_cryst(1) + &
++                 s(:,2,is)*xk_cryst(2) + &
++                 s(:,3,is)*xk_cryst(3)
++        ! add sxk to the auxiliary list if it is not already present
++        xk_not_found = .true.
++        do ikq=1, nkfull 
++           if (xk_not_found ) then
++              dxk(:) = sxk(:)-xk_full_list(:,ikq) - nint(sxk(:)-xk_full_list(:,ikq))
++              if ( abs(dxk(1)).le.eps .and. &
++                   abs(dxk(2)).le.eps .and. &
++                   abs(dxk(3)).le.eps ) xk_not_found = .false.
++           end if
++        end do
++        if (xk_not_found) then
++           nkfull = nkfull + 1
++           num_irrep(ik) = num_irrep(ik) + 1
++           xkfull_index(ik,num_irrep(ik)) = nkfull
++           xk_full_list(:,nkfull) = sxk(:)
++           sym_list(nkfull) = is  
++        end if
++
++        sxk(:) = - sxk(:)
++        xk_not_found = .true.
++        do ikq=1, nkfull 
++           if (xk_not_found ) then
++              dxk(:) = sxk(:)-xk_full_list(:,ikq) - nint(sxk(:)-xk_full_list(:,ikq))
++              if ( abs(dxk(1)).le.eps .and. &
++                   abs(dxk(2)).le.eps .and. &
++                   abs(dxk(3)).le.eps ) xk_not_found = .false.
++           end if
++        end do
++        if (xk_not_found) then
++           nkfull = nkfull + 1
++           num_irrep(ik) = num_irrep(ik) + 1
++           xkfull_index(ik,num_irrep(ik)) = nkfull
++           xk_full_list(:,nkfull) = sxk(:)
++           sym_list(nkfull) = -is
++        end if
++
++     end do
++  end do
++  !
++  ! transform kp list to cartesian again
++  do ik=1,nkfull
++    dxk(:) = bg(:,1)*xk_full_list(1,ik) + &
++             bg(:,2)*xk_full_list(2,ik) + &
++             bg(:,3)*xk_full_list(3,ik)
++    xk_full_list(:,ik) = dxk(:)
++  enddo
++  !
++!   if(ionode) then
++!     print *,'Symmetry Inequivalent list of k-points:'
++!     print *,'Total number: ',nkstot
++!     do ik =1, nkstot
++!       WRITE(*,'(i6,3(1x,f20.15))') ik, xk(1:3,ik) 
++!     enddo
++!     print *,'Full list of k-points (crystal):'
++!     print *,'Total number of k-points: ',nkfull
++!     print *,'IRREP, N, SYM-ID, KP: '
++!     do ik =1, nkstot
++!       do ns=1,num_irrep(ik)
++!         WRITE(*,'(i6,i6,i6,3(1x,f20.15))') ik,ns,sym_list(xkfull_index(ik,ns)) & 
++!          ,xk_full_list(1:3,xkfull_index(ik,ns))
++!       enddo
++!     enddo
++!   endif
++  !
++  ! check symm operations
++  !
++!   do ikq =1,nkfull
++!     is = abs(sym_list(ikq))
++!     if ( mod (s (2, 1, is) * dffts%nr1, dffts%nr2) .ne.0 .or. &
++!        mod (s (3, 1, is) * dffts%nr1, dffts%nr3) .ne.0 .or. &
++!        mod (s (1, 2, is) * dffts%nr2, dffts%nr1) .ne.0 .or. &
++!        mod (s (3, 2, is) * dffts%nr2, dffts%nr3) .ne.0 .or. &
++!        mod (s (1, 3, is) * dffts%nr3, dffts%nr1) .ne.0 .or. &
++!        mod (s (2, 3, is) * dffts%nr3, dffts%nr2) .ne.0 ) then
++!      call errore ('generate_symmetry_equivalent_list',' problems with grid',is)
++!     end if
++!   end do
++
++  END SUBROUTINE generate_symmetry_equivalent_list 
++  !
++  SUBROUTINE generate_symmetry_rotation(is0) 
++  USE kinds, ONLY: DP
++  USE klist,      ONLY : xk
++  USE io_global,  ONLY : stdout, ionode
++  !
++  USE io_global,            ONLY : stdout
++  USE symm_base,            ONLY : nsym, s, ftau
++  use fft_base,             ONLY : dffts
++
++  !
++  IMPLICIT NONE
++  !
++  integer, intent(in)  :: is0
++  !
++  integer       :: i,j,k, ir, ri, rj, rk, is
++  logical :: exst
++  REAL (DP)         :: eps =1.d-6
++
++  !
++  do ir=1, nxxs
++    rir(ir) = ir
++  end do
++  is = abs(is0)
++  do k = 1, dffts%nr3
++   do j = 1, dffts%nr2
++    do i = 1, dffts%nr1
++      call ruotaijk (s(1,1,is), ftau(1,is), i, j, k, &
++              dffts%nr1,dffts%nr2,dffts%nr3, ri, rj , rk )
++      ir =   i + ( j-1)*dffts%nr1x + ( k-1)*dffts%nr1x*dffts%nr2x
++      rir(ir) = ri + (rj-1)*dffts%nr1x + (rk-1)*dffts%nr1x*dffts%nr2x
++    end do
++   end do
++  end do
++  !
++  END SUBROUTINE generate_symmetry_rotation 
++  !
++END SUBROUTINE compute_qmcpack
+diff -ruN espresso-5.2.1_original/PW/src/Makefile espresso-5.2.1_updated/PW/src/Makefile
+--- espresso-5.2.1_original/PW/src/Makefile	2015-09-24 03:26:32.000000000 -0400
++++ espresso-5.2.1_updated/PW/src/Makefile	2015-10-12 16:01:55.000000000 -0400
+@@ -172,6 +172,7 @@
+ rdiaghg.o \
+ read_conf_from_file.o \
+ read_file.o \
++read_file_lite.o \
+ regterg.o \
+ remove_atomic_rho.o \
+ report_mag.o \
+diff -ruN espresso-5.2.1_original/PW/src/read_file_lite.f90 espresso-5.2.1_updated/PW/src/read_file_lite.f90
+--- espresso-5.2.1_original/PW/src/read_file_lite.f90	1969-12-31 19:00:00.000000000 -0500
++++ espresso-5.2.1_updated/PW/src/read_file_lite.f90	2015-10-12 16:46:25.000000000 -0400
+@@ -0,0 +1,370 @@
++!
++! Copyright (C) 2001-2012 Quantum ESPRESSO group
++! This file is distributed under the terms of the
++! GNU General Public License. See the file `License'
++! in the root directory of the present distribution,
++! or http://www.gnu.org/copyleft/gpl.txt .
++!
++!----------------------------------------------------------------------------
++SUBROUTINE read_file_lite()
++  !----------------------------------------------------------------------------
++  !
++  ! Wrapper routine, for compatibility
++  !
++  USE io_files,             ONLY : nwordwfc, iunwfc, prefix, tmp_dir, wfc_dir
++  USE io_global,            ONLY : stdout, ionode
++  USE buffers,              ONLY : open_buffer, close_buffer
++  USE wvfct,                ONLY : nbnd, npwx
++  USE noncollin_module,     ONLY : npol
++  USE klist,                ONLY : nks
++  USE paw_variables,        ONLY : okpaw, ddd_PAW
++  USE paw_onecenter,        ONLY : paw_potential
++  USE uspp,                 ONLY : becsum
++  USE scf,                  ONLY : rho
++  USE realus,               ONLY : betapointlist, &
++                                   init_realspace_vars,real_space
++  USE dfunct,               ONLY : newd
++  USE ldaU,                 ONLY : lda_plus_u, U_projection
++  USE pw_restart,           ONLY : pw_readfile
++  USE control_flags,        ONLY : io_level
++  !
++  IMPLICIT NONE 
++  INTEGER :: ierr
++  LOGICAL :: exst
++  !
++  ! ... Read the contents of the xml data file
++  !
++  IF ( ionode ) WRITE( stdout, '(/,5x,A,/,5x,A)') &
++     'Reading data from directory:', TRIM( tmp_dir ) // TRIM( prefix ) // '.save'
++  !
++  CALL read_xml_file ( )
++  !
++  ! ... Open unit iunwfc, for Kohn-Sham orbitals - we assume that wfcs
++  ! ... have been written to tmp_dir, not to a different directory!
++  ! ... io_level = 1 so that a real file is opened
++  !
++  wfc_dir = tmp_dir
++  nwordwfc = nbnd*npwx*npol
++  io_level = 1
++  CALL open_buffer ( iunwfc, 'wfc', nwordwfc, io_level, exst )
++  !
++  ! ... Read orbitals, write them in 'distributed' form to iunwfc
++  !
++  CALL pw_readfile( 'wave', ierr )
++  !
++  ! ... Assorted initialization: pseudopotentials, PAW
++  ! ... Not sure which ones (if any) should be done here
++  !
++  CALL init_us_1()
++  !
++  IF (lda_plus_u .AND. (U_projection == 'pseudo')) CALL init_q_aeps()
++  !
++  IF (okpaw) THEN
++     becsum = rho%bec
++     CALL PAW_potential(rho%bec, ddd_PAW)
++  ENDIF 
++  !
++  IF ( real_space ) THEN
++    CALL betapointlist()
++    CALL init_realspace_vars()
++    IF( ionode ) WRITE(stdout,'(5x,"Real space initialisation completed")')
++  ENDIF
++  CALL newd()
++  !
++  CALL close_buffer  ( iunwfc, 'KEEP' )
++  !
++END SUBROUTINE read_file_lite
++!
++SUBROUTINE read_xml_file()
++  ! wrapper routine to call the default behavior
++  call read_xml_file_internal(.true.)
++END SUBROUTINE read_xml_file
++
++SUBROUTINE read_xml_file_nobs()
++  ! wrapper routine to load everything except for the band structure
++  call read_xml_file_internal(.false.)
++END SUBROUTINE read_xml_file_nobs
++
++!----------------------------------------------------------------------------
++SUBROUTINE read_xml_file_internal(withbs)
++  !----------------------------------------------------------------------------
++  !
++  ! ... This routine allocates space for all quantities already computed
++  ! ... in the pwscf program and reads them from the data file.
++  ! ... All quantities that are initialized in subroutine "setup" when
++  ! ... starting from scratch should be initialized here when restarting
++  !
++  USE kinds,                ONLY : DP
++  USE ions_base,            ONLY : nat, nsp, ityp, tau, if_pos, extfor
++  USE cell_base,            ONLY : tpiba2, alat,omega, at, bg, ibrav
++  USE force_mod,            ONLY : force
++  USE klist,                ONLY : nkstot, nks, xk, wk
++  USE lsda_mod,             ONLY : lsda, nspin, current_spin, isk
++  USE wvfct,                ONLY : nbnd, nbndx, et, wg, ecutwfc
++  USE symm_base,            ONLY : irt, d1, d2, d3, checkallsym
++  USE ktetra,               ONLY : tetra, ntetra 
++  USE extfield,             ONLY : forcefield, tefield
++  USE cellmd,               ONLY : cell_factor, lmovecell
++  USE fft_base,             ONLY : dfftp
++  USE fft_interfaces,       ONLY : fwfft
++  USE grid_subroutines,     ONLY : realspace_grid_init
++  USE recvec_subs,          ONLY : ggen
++  USE gvect,                ONLY : gg, ngm, g, gcutm, &
++                                   eigts1, eigts2, eigts3, nl, gstart
++  USE fft_base,             ONLY : dfftp, dffts
++  USE gvecs,                ONLY : ngms, nls, gcutms 
++  USE spin_orb,             ONLY : lspinorb, domag
++  USE scf,                  ONLY : rho, rho_core, rhog_core, v
++  USE wavefunctions_module, ONLY : psic
++  USE vlocal,               ONLY : strf
++  USE io_files,             ONLY : tmp_dir, prefix, iunpun, nwordwfc, iunwfc
++  USE noncollin_module,     ONLY : noncolin, npol, nspin_lsda, nspin_mag, nspin_gga
++  USE pw_restart,           ONLY : pw_readfile
++  USE read_pseudo_mod,      ONLY : readpp
++  USE xml_io_base,          ONLY : pp_check_file
++  USE uspp,                 ONLY : becsum
++  USE uspp_param,           ONLY : upf
++  USE paw_variables,        ONLY : okpaw, ddd_PAW
++  USE paw_init,             ONLY : paw_init_onecenter, allocate_paw_internals
++  USE ldaU,                 ONLY : lda_plus_u, eth, init_lda_plus_u
++  USE control_flags,        ONLY : gamma_only
++  USE funct,                ONLY : get_inlc, get_dft_name
++  USE kernel_table,         ONLY : initialize_kernel_table
++  USE esm,                  ONLY : do_comp_esm, esm_init
++  !
++  IMPLICIT NONE
++
++  ! Used to specify whether to read the band structure (files 
++  ! K??????/eigenval.xml), so one can skip it if not needed by
++  ! the post-processing tool. 
++  ! Set to True for the 'default' behavior of reading these files.
++  LOGICAL :: withbs
++
++  INTEGER  :: i, is, ik, ibnd, nb, nt, ios, isym, ierr, inlc
++  REAL(DP) :: rdum(1,1), ehart, etxc, vtxc, etotefield, charge
++  REAL(DP) :: sr(3,3,48)
++  CHARACTER(LEN=20) dft_name
++  !
++  ! ... first we get the version of the qexml file
++  !     if not already read
++  !
++  CALL pw_readfile( 'header', ierr )
++  CALL errore( 'read_xml_file ', 'unable to determine qexml version', ABS(ierr) )
++  !
++  ! ... then we check if the file can be used for post-processing
++  !
++  IF ( .NOT. pp_check_file() ) CALL infomsg( 'read_xml_file', &
++               & 'file ' // TRIM( tmp_dir ) // TRIM( prefix ) &
++               & // '.save not guaranteed to be safe for post-processing' )
++  !
++  ! ... a reset of the internal flags is necessary because some codes call
++  ! ... read_xml_file() more than once
++  !
++  CALL pw_readfile( 'reset', ierr )
++  !
++  ! ... here we read the variables that dimension the system
++  ! ... in parallel execution, only root proc reads the file
++  ! ... and then broadcasts the values to all other procs
++  !
++  CALL pw_readfile( 'dim',   ierr )
++  CALL errore( 'read_xml_file ', 'problem reading file ' // &
++             & TRIM( tmp_dir ) // TRIM( prefix ) // '.save', ierr )
++  !
++  ! ... allocate space for atomic positions, symmetries, forces, tetrahedra
++  !
++  IF ( nat < 0 ) CALL errore( 'read_xml_file', 'wrong number of atoms', 1 )
++  !
++  ! ... allocation
++  !
++  ALLOCATE( ityp( nat ) )
++  ALLOCATE( tau(    3, nat ) )
++  ALLOCATE( if_pos( 3, nat ) )
++  ALLOCATE( force(  3, nat ) )
++  ALLOCATE( extfor(  3, nat ) )
++  !
++  IF ( tefield ) ALLOCATE( forcefield( 3, nat ) )
++  !
++  ALLOCATE( irt( 48, nat ) )
++  ALLOCATE( tetra( 4, MAX( ntetra, 1 ) ) )
++  !
++  CALL set_dimensions()
++  CALL realspace_grid_init ( dfftp, at, bg, gcutm )
++  CALL realspace_grid_init ( dffts, at, bg, gcutms)
++  !
++  ! ... check whether LSDA
++  !
++  IF ( lsda ) THEN
++     !
++     nspin = 2
++     npol  = 1
++     !
++  ELSE IF ( noncolin ) THEN
++     !
++     nspin        = 4
++     npol         = 2
++     current_spin = 1
++     !
++  ELSE
++     !
++     nspin        = 1
++     npol         = 1
++     current_spin = 1
++     !
++  END IF
++  !
++  if (cell_factor == 0.d0) cell_factor = 1.D0
++  !
++  ! ... allocate memory for eigenvalues and weights (read from file)
++  !
++  nbndx = nbnd
++  ALLOCATE( et( nbnd, nkstot ) , wg( nbnd, nkstot ) )
++  !
++  ! ... here we read all the variables defining the system
++  !
++  if (withbs .eqv. .true.) then
++     CALL pw_readfile( 'nowave', ierr )
++  else 
++     CALL pw_readfile( 'nowavenobs', ierr )
++  end if
++  !
++  ! ... distribute across pools k-points and related variables.
++  ! ... nks is defined by the following routine as the number 
++  ! ... of k-points in the current pool
++  !
++  CALL divide_et_impera( xk, wk, isk, lsda, nkstot, nks )
++  !
++  CALL poolscatter( nbnd, nkstot, et, nks, et )
++  CALL poolscatter( nbnd, nkstot, wg, nks, wg )
++  !
++  ! ... check on symmetry
++  !
++  IF (nat > 0) CALL checkallsym( nat, tau, ityp, dfftp%nr1, dfftp%nr2, dfftp%nr3 )
++  !
++  !  Set the different spin indices
++  !
++  nspin_mag  = nspin
++  nspin_lsda = nspin
++  nspin_gga  = nspin
++  IF (nspin==4) THEN
++     nspin_lsda=1
++     IF (domag) THEN
++        nspin_gga=2
++     ELSE
++        nspin_gga=1
++        nspin_mag=1
++     ENDIF
++  ENDIF
++  !
++  ! ... read pseudopotentials
++  !
++  CALL pw_readfile( 'pseudo', ierr )
++  dft_name = get_dft_name () ! already set, should not be set again
++  CALL readpp ( dft_name )
++  !
++  ! ... read the vdw kernel table if needed
++  !
++  inlc = get_inlc()
++  if (inlc > 0 ) then
++      call initialize_kernel_table(inlc)
++  endif
++  !
++  okpaw = ANY ( upf(1:nsp)%tpawp )
++  !
++  IF ( .NOT. lspinorb ) CALL average_pp ( nsp )
++  !
++  ! ... allocate memory for G- and R-space fft arrays
++  !
++  CALL pre_init()
++  CALL allocate_fft()
++  CALL ggen ( gamma_only, at, bg ) 
++  IF (do_comp_esm) THEN
++    CALL pw_readfile( 'esm', ierr )
++    CALL esm_init()
++  END IF
++
++  CALL gshells ( lmovecell ) 
++  !
++  ! ... allocate the potential and wavefunctions
++  !
++  CALL allocate_locpot()
++  CALL allocate_nlpot()
++  IF (okpaw) THEN
++     CALL allocate_paw_internals()
++     CALL paw_init_onecenter()
++     CALL d_matrix(d1,d2,d3)
++  ENDIF
++  !
++  IF ( lda_plus_u ) THEN
++     CALL init_lda_plus_u ( upf(1:nsp)%psd, noncolin )
++  ENDIF
++  !
++  CALL allocate_wfc()
++  !
++  ! ... read the charge density
++  !
++  CALL pw_readfile( 'rho', ierr )
++  !
++  ! ... re-calculate the local part of the pseudopotential vltot
++  ! ... and the core correction charge (if any) - This is done here
++  ! ... for compatibility with the previous version of read_file
++  !
++!LITE  CALL init_vloc()
++!LITE  CALL struc_fact( nat, tau, nsp, ityp, ngm, g, bg, dfftp%nr1, dfftp%nr2, &
++!LITE                   dfftp%nr3, strf, eigts1, eigts2, eigts3 )
++!LITE  CALL setlocal()
++!LITE  CALL set_rhoc()
++  !
++  ! ... bring rho to G-space
++  !
++  DO is = 1, nspin
++     !
++     psic(:) = rho%of_r(:,is)
++     CALL fwfft ('Dense', psic, dfftp)
++     rho%of_g(:,is) = psic(nl(:))
++     !
++  END DO
++  !
++  ! ... read info needed for hybrid functionals
++  !
++  CALL pw_readfile('exx', ierr)
++  !
++  ! ... recalculate the potential
++  !
++!LITE  CALL v_of_rho( rho, rho_core, rhog_core, &
++!LITE                 ehart, etxc, vtxc, eth, etotefield, charge, v )
++  !
++  RETURN
++  !
++  CONTAINS
++    !
++    !------------------------------------------------------------------------
++    SUBROUTINE set_dimensions()
++      !------------------------------------------------------------------------
++      !
++      USE constants, ONLY : pi
++      USE cell_base, ONLY : alat, tpiba, tpiba2
++      USE gvect,     ONLY : ecutrho, gcutm
++      USE wvfct,     ONLY : ecutwfc
++      USE gvecs,     ONLY : gcutms, dual, doublegrid
++      !
++      !
++      ! ... Set the units in real and reciprocal space
++      !
++      tpiba  = 2.D0 * pi / alat
++      tpiba2 = tpiba**2
++      !
++      ! ... Compute the cut-off of the G vectors
++      !
++      gcutm = dual * ecutwfc / tpiba2
++      ecutrho=dual * ecutwfc
++      !
++      doublegrid = ( dual > 4.D0 )
++      IF ( doublegrid ) THEN
++         gcutms = 4.D0 * ecutwfc / tpiba2
++      ELSE
++         gcutms = gcutm
++      END IF
++      !
++    END SUBROUTINE set_dimensions
++    !
++  END SUBROUTINE read_xml_file_internal
+diff -ruN espresso-5.2.1_original/clib/Makefile espresso-5.2.1_updated/clib/Makefile
+--- espresso-5.2.1_original/clib/Makefile	2015-09-24 03:26:41.000000000 -0400
++++ espresso-5.2.1_updated/clib/Makefile	2015-10-12 16:01:55.000000000 -0400
+@@ -15,14 +15,20 @@
+ md5_from_file.o \
+ memstat.o \
+ ptrace.o \
+-qsort.o
++qsort.o 
++
++C99_OBJS = \
++esh5_interfaces.o
+ 
+ all : clib.a
+ 
+-clib.a : $(OBJS) 
++clib.a : $(OBJS) $(C99_OBJS)
+ 	$(AR) $(ARFLAGS) $@ $?
+ 	$(RANLIB) $@
+ 
++esh5_interfaces.o : esh5_interfaces.c
++	$(CC) $(CFLAGS) $(CFLAGS_C99) -c $<
++
+ source :
+ 	co -l $(OBJS:.o=.c)
+ 
+diff -ruN espresso-5.2.1_original/clib/esh5_interfaces.c espresso-5.2.1_updated/clib/esh5_interfaces.c
+--- espresso-5.2.1_original/clib/esh5_interfaces.c	1969-12-31 19:00:00.000000000 -0500
++++ espresso-5.2.1_updated/clib/esh5_interfaces.c	2015-10-12 16:01:55.000000000 -0400
+@@ -0,0 +1,955 @@
++/*
++ * Copyright (C) 2004 PWSCF group 
++ * Copyright (C) 2007 QMCPACK developers
++ *
++ * @author Jeongnim Kim http://www.mcc.uiuc.edu/qmcpack/
++ * @brief Implements generic hdf5 interfaces for plane wave codes and qmcpack
++ *
++ * - esh5_open_file: open hdf5 file
++ * - esh5_close_file : close hdf5 file
++ * - esh5_open_eigg : open eigenstates
++ * - esh5_close_eigg : close eigenstates
++ * - esh5_open_eigr : open eigenstates_nx_ny_nz
++ * - esh5_close_eigr : close eigenstates_nx_ny_nz
++ * 
++ */
++
++#if defined(__HDF5)
++
++#include <stdio.h> 
++#include <string.h>
++#include <stdlib.h>
++#include <sys/stat.h>
++#include <sys/types.h>
++#include <math.h>
++#include <assert.h>
++#include "c_defs.h"
++#include "hdf5.h"
++#include "hdf5_hl.h"
++
++/* file handler */
++static hid_t h_file=-1;
++/* handler for electrons or atoms*/
++static hid_t h_ptcls=-1;
++/* kpoint handler */
++static hid_t h_kpoint=-1;
++/* spin handler */
++static hid_t h_spin=-1;
++/* density handler */
++static hid_t h_density=-1;
++/* number of fft grid */
++static int num_grid[3];
++/* number of real-space grids */
++static int h_ngridtot=0;
++/* check for gamma */
++static int is_gamma=0;
++/* number of atoms */
++static int num_atoms=0;
++/* number of atom species */
++static int num_species=0;
++/* number of electrons */
++static int num_els[2];
++/* number of spin channels */
++static int num_spins=1;
++/* number of kpoints */
++static int num_kpoints=1;
++/* number of bands */
++static int num_bands=0;
++/* number of gvectors */
++static int num_gvectors=0;
++/* number of gvectors */
++static int num_gvectors_max=0;
++/* igmapped */
++static int *igmapped=0;
++/* current k-point */
++static int kpoint_now=-1;
++/* is complex orbital */
++static int psi_r_is_complex=1;
++/* append data */
++static int append_h5=0;
++static int iteration=0;
++static H5E_auto_t err_func;
++static void *client_data=0;
++
++
++/** create a file and write version & application
++ * @param fname name of the output file
++ * @param length size of the file name
++ *
++ * h_file is initialized.
++ */
++void F77_FUNC_(esh5_open_file,ESH5_OPEN_FILE)(const char* fname, const int* length, int* old)
++{
++  H5Eget_auto (&err_func, &client_data);
++  H5Eset_auto (NULL, NULL);
++
++  append_h5=*old;
++
++  char * hfname = ( char * ) malloc( (*length) + 1 ) ;
++  memcpy( hfname , fname , *length ) ;
++  hfname[*length] = '\0' ; 
++
++  if(h_file>=0) H5Fclose(h_file); 
++  h_file = H5Fopen(hfname,H5F_ACC_RDWR,H5P_DEFAULT);
++  //if((append_h5)||(iteration))
++  //{
++  //  printf("esh5 open existing %s\n",hfname);
++  //  h_file = H5Fopen(hfname,H5F_ACC_RDWR,H5P_DEFAULT);
++  //}
++  if(h_file<0)
++  {
++    printf("esh5 create %s\n",hfname);
++    h_file = H5Fcreate(hfname,H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
++    /* impelements version 1.00 hdf5 format */
++    int version[]={2,1,0};
++    hsize_t dim=3;
++    herr_t ret=H5LTmake_dataset(h_file,"version",1,&dim,H5T_NATIVE_INT,version);
++    hsize_t ns=1;
++    {
++      hid_t strtype = H5Tcopy (H5T_C_S1);
++      ret = H5Tset_size (strtype, 7); /* create string of length 5 */
++      ret=H5LTmake_dataset(h_file,"format",1,&ns,strtype,"ES-HDF");
++    }
++
++    hid_t h_app = H5Gcreate(h_file,"application",0);
++    {
++      hid_t strtype = H5Tcopy (H5T_C_S1);
++      ret = H5Tset_size (strtype, 8); /* create string of length 5 */
++      ret=H5LTmake_dataset(h_app,"code",1,&ns,strtype,"espresso");
++    }
++    version[0]=4;
++    version[2]=4;
++    ret=H5LTmake_dataset(h_app,"version",1,&dim,H5T_NATIVE_INT,version);
++    H5Gclose(h_app);
++  }
++  free(hfname);
++//   iteration = iteration+1;
++}
++
++void F77_FUNC_(esh5_close_file,ESH5_CLOSE_FILE)()
++{
++  if(h_file>=0) H5Fclose(h_file);
++  h_file=-1;
++  H5Eset_auto (err_func, client_data);
++
++  //clear the gmap
++  if(num_gvectors_max) free(igmapped);
++}
++
++/** create electrons and create sub groups
++ * @param nels_up 
++ * @param nels_down
++ * @param nspins number_of_spins
++ * @param nkpts number_of_kpoints
++ * @param nband number of electron states
++ * @param ngr 3D mesh
++ */
++void F77_FUNC_(esh5_open_electrons,ESH5_OPEN_ELECTRONS)
++  ( const int* nels_up, const int* nels_down , const int* nspins
++    , const int* nkpts ,const int *nband , const int* ngr
++  )
++{
++  //save the values
++  num_els[0]=*nels_up;
++  num_els[1]=*nels_down;
++  num_spins=*nspins;
++  num_grid[0]=ngr[0];
++  num_grid[1]=ngr[1];
++  num_grid[2]=ngr[2];
++  num_bands=*nband;
++  num_kpoints = *nkpts;
++
++  h_ptcls = H5Gopen(h_file,"electrons");
++  if(h_ptcls<0)
++  {
++//     printf("Creating electrons\n");
++    h_ptcls = H5Gcreate(h_file,"electrons",0);
++
++    //save the number of up and down electrons
++    const hsize_t dim1=1;
++    const hsize_t dim2=2;
++    const hsize_t dim3=3;
++    herr_t ret=H5LTmake_dataset(h_ptcls,"number_of_electrons",1,&dim2,H5T_NATIVE_INT,num_els);
++    ret=H5LTmake_dataset(h_ptcls,"number_of_spins",1,&dim1,H5T_NATIVE_INT,nspins);
++    ret=H5LTmake_dataset(h_ptcls,"number_of_kpoints",1,&dim1,H5T_NATIVE_INT,nkpts);
++    //20110515 psi_r_mesh is used specially
++    //ret=H5LTmake_dataset(h_ptcls,"psi_r_mesh",1,&dim3,H5T_NATIVE_INT,ngr);
++    //ret=H5LTmake_dataset(h_ptcls,"psi_r_is_complex",1,&dim1,H5T_NATIVE_INT,is_complex);
++
++    //create kpoint/spin/state groups
++//     for(int ik=0; ik<*nkpts; ++ik)
++//     {
++//       char twistname[16];
++//       sprintf(twistname,"kpoint_%i",ik + *kstart);
++//       hid_t h1 = H5Gcreate(h_ptcls,twistname,0);
++//       for(int ispin=0; ispin<num_spins; ispin++)
++//       {
++//         char spinname[16];
++//         sprintf(spinname,"spin_%i",ispin);
++//         hid_t h2 = H5Gcreate(h1,spinname,0);
++//         ret=H5LTmake_dataset(h2,"number_of_states",1,&dim1,H5T_NATIVE_INT,nband);
++//         for(int ib=0; ib<*nband; ib++) 
++//         {
++//           char bandname[16];
++//           sprintf(bandname,"state_%i",ib);
++//           hid_t h3 = H5Gcreate(h2,bandname,0);
++//           H5Gclose(h3);
++//         }
++//         H5Gclose(h2);
++//       }
++//       H5Gclose(h1);
++//     }
++  }
++}
++
++/** create electrons and create sub groups
++ * @param nels_up 
++ * @param nels_down
++ * @param nspins number_of_spins
++ * @param nkpts number_of_kpoints
++ * @param nband number of electron states
++ * @param ngr 3D mesh
++ */
++void F77_FUNC_(esh5_open_electrons_base,ESH5_OPEN_ELECTRONS_BASE)
++  ( const int* nels_up, const int* nels_down , const int* nspins
++    , const int* nkpts ,const int *nband , const int* ngr
++  )
++{
++  //save the values
++  num_els[0]=*nels_up;
++  num_els[1]=*nels_down;
++  num_spins=*nspins;
++  num_grid[0]=ngr[0];
++  num_grid[1]=ngr[1];
++  num_grid[2]=ngr[2];
++  num_bands=*nband;
++  num_kpoints = *nkpts;
++
++  h_ptcls = H5Gopen(h_file,"electrons");
++  if(h_ptcls<0)
++  {
++//     printf("Creating electrons\n");
++    h_ptcls = H5Gcreate(h_file,"electrons",0);
++
++    //save the number of up and down electrons
++    const hsize_t dim1=1;
++    const hsize_t dim2=2;
++    const hsize_t dim3=3;
++    herr_t ret=H5LTmake_dataset(h_ptcls,"number_of_electrons",1,&dim2,H5T_NATIVE_INT,num_els);
++    ret=H5LTmake_dataset(h_ptcls,"number_of_spins",1,&dim1,H5T_NATIVE_INT,nspins);
++    ret=H5LTmake_dataset(h_ptcls,"number_of_kpoints",1,&dim1,H5T_NATIVE_INT,nkpts);
++    //20110515 psi_r_mesh is used specially
++    //ret=H5LTmake_dataset(h_ptcls,"psi_r_mesh",1,&dim3,H5T_NATIVE_INT,ngr);
++    //ret=H5LTmake_dataset(h_ptcls,"psi_r_is_complex",1,&dim1,H5T_NATIVE_INT,is_complex);
++
++//     create kpoint/spin/state groups
++    for(int ik=0; ik<*nkpts; ++ik)
++    {
++      char twistname[16];
++      sprintf(twistname,"kpoint_%i",ik );
++      hid_t h1 = H5Gcreate(h_ptcls,twistname,0);
++      for(int ispin=0; ispin<num_spins; ispin++)
++      {
++        char spinname[16];
++        sprintf(spinname,"spin_%i",ispin);
++        hid_t h2 = H5Gcreate(h1,spinname,0);
++        ret=H5LTmake_dataset(h2,"number_of_states",1,&dim1,H5T_NATIVE_INT,nband);
++        for(int ib=0; ib<*nband; ib++) 
++        {
++          char bandname[16];
++          sprintf(bandname,"state_%i",ib);
++          hid_t h3 = H5Gcreate(h2,bandname,0);
++          H5Gclose(h3);
++        }
++        H5Gclose(h2);
++      }
++      H5Gclose(h1);
++    }
++  }
++}
++
++
++/** create psi_r_mesh
++ * @param ngr 3D mesh for psi_r
++ */
++void F77_FUNC_(esh5_write_psi_r_mesh,ESH5_WRITE_PSI_R_MESH)(const int* ngr)
++{
++  const hsize_t dim3=3;
++  herr_t ret=H5LTmake_dataset(h_ptcls,"psi_r_mesh",1,&dim3,H5T_NATIVE_INT,ngr);
++}
++
++/** close electrons group
++ */
++void F77_FUNC_(esh5_close_electrons,ESH5_CLOSE_ELECTRONS) ()
++{
++  H5Gclose(h_ptcls);
++  h_ptcls=-1;
++}
++
++/** open kpoint 
++ * @param ik the kpoint index
++ */
++void F77_FUNC_(esh5_open_kpoint,ESH5_OPEN_KPOINT)(const int* ik)
++{
++  kpoint_now=(*ik)-1;
++  char kname[32];
++  sprintf(kname,"kpoint_%i",kpoint_now);
++  h_kpoint = H5Gopen(h_ptcls,kname);
++  if (h_kpoint < 0) {
++//     fprintf (stderr, "Creating %s\n", kname);
++    h_kpoint = H5Gcreate(h_ptcls,kname,0);
++  }
++ assert (h_kpoint >= 0);
++}
++///* close kpoint */
++void F77_FUNC_(esh5_close_kpoint,ESH5_CLOSE_KPOINT)()
++{
++  H5Gclose(h_kpoint);
++}
++
++
++/* write kpoint data */
++void F77_FUNC_(esh5_write_kpoint_data,ESH5_WRITE_KPOINT_DATA)
++(const double* xk, const double* wgt, const int* ngk_g, const int* irrep, const int* nrelated)
++// (const double* xk, const double* wgt, const int* ngk_g, const hsize_t* gints)
++{
++  hsize_t dim3=3;
++  hsize_t dim1=1;
++  hsize_t dim_g[2];
++  dim_g[0] = *ngk_g;
++  dim_g[1] = 3;
++   
++  herr_t ret=H5LTmake_dataset(h_kpoint,"reduced_k",1,&dim3,H5T_NATIVE_DOUBLE,xk);
++  ret=H5LTmake_dataset(h_kpoint,"weight",1,&dim1,H5T_NATIVE_DOUBLE,wgt);
++  ret=H5LTmake_dataset(h_kpoint,"symgroup",1,&dim1,H5T_NATIVE_INT,irrep);
++  ret=H5LTmake_dataset(h_kpoint,"numsym",1,&dim1,H5T_NATIVE_INT,nrelated);
++//DO NOT WRITE THESE YET: 20110515
++//20110515    ret=H5LTmake_dataset(h_kpoint,"number_of_gvectors",1,&dim1,H5T_NATIVE_INT,ngk_g);
++//20110515    ret=H5LTmake_dataset(h_kpoint,"gvectors",2,dim_g,H5T_NATIVE_INT, gints);
++}
++
++/** open spin
++ * @param ispin the sin index
++ */
++void F77_FUNC_(esh5_open_spin,ESH5_OPEN_SPIN)(const int* ispin)
++{
++  char sname[32];
++  sprintf(sname,"spin_%i",(*ispin)-1);
++  h_spin=H5Gopen(h_kpoint,sname);
++  if (h_spin < 0) {
++//     fprintf (stderr, "Creating %s\n", sname);
++    h_spin=H5Gcreate(h_kpoint,sname,0);
++    for(int ib=0; ib<num_bands; ib++) 
++    {
++      char bandname[16];
++      sprintf(bandname,"state_%i",ib);
++      hid_t h3 = H5Gcreate(h_spin,bandname,0);
++      H5Gclose(h3);
++    }
++  }
++  assert (h_spin >= 0);
++}
++
++/* close kpoint */
++void F77_FUNC_(esh5_close_spin,ESH5_CLOSE_SPIN)()
++{
++  H5Gclose(h_spin);
++}
++
++
++/* write eigen values 
++ * @param ispin spin index
++ * @param eigval eigen values 
++ * @param nband number of bans
++ */
++void F77_FUNC_(esh5_write_eigvalues,ESH5_WRITE_EIGVALUES)(const double* eigval)
++{
++  hsize_t dim3=(hsize_t)num_bands;
++  herr_t ret=H5LTmake_dataset(h_spin,"eigenvalues",1,&dim3,H5T_NATIVE_DOUBLE,eigval);
++  H5Fflush(h_spin,H5F_SCOPE_GLOBAL);
++  //assert (ret >= 0);
++}
++
++
++
++/* write eigen value and eigen vector for (ibnd, ispin) */
++void F77_FUNC_(esh5_write_psi_g,ESH5_WRITE_PSI_G)(const int* ibnd
++    , const double* eigv, const int* ngtot
++    )
++{
++  char aname[64];
++  sprintf(aname,"state_%i/psi_g",(*ibnd)-1);
++  hsize_t dims[2];
++  dims[0] = (hsize_t)*ngtot;
++  dims[1] = 2;
++  //  fprintf(stderr, "aname = %s  ", aname);
++  //  fprintf (stderr, "  ngtot = %d\n", *ngtot);
++  herr_t ret=H5LTmake_dataset(h_spin,aname,2,dims,H5T_NATIVE_DOUBLE,eigv);
++  //assert (ret >= 0);
++}
++
++/* write eigen value and eigen vector for (ibnd, ispin) */
++void F77_FUNC_(esh5_write_psi_r,ESH5_WRITE_PSI_R)(const int* ibnd
++    , const double* eigr, const int* use_complex
++    )
++{
++  static int first_time=1;
++  //need to flag this if they are not the same
++  psi_r_is_complex=*use_complex;
++  char aname[64];
++  sprintf(aname,"state_%i/psi_r",(*ibnd)-1);
++  hsize_t dims_out=(hsize_t)(psi_r_is_complex)?4:3;
++  hsize_t dims[4],dim1=1;
++  dims[0] = num_grid[0];
++  dims[1] = num_grid[1];
++  dims[2] = num_grid[2];
++  dims[3] = 2;
++  herr_t ret=H5LTmake_dataset(h_spin,aname,dims_out,dims,H5T_NATIVE_DOUBLE,eigr);
++  if(first_time)
++  {
++    first_time=0;
++    hid_t pid=H5Dopen(h_ptcls,"psi_r_is_complex");
++    if(pid<0)
++      ret=H5LTmake_dataset(h_ptcls,"psi_r_is_complex",1,&dim1,H5T_NATIVE_INT,&psi_r_is_complex);
++    else
++      ret = H5Dwrite(pid, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,&psi_r_is_complex);
++  }
++}
++
++
++/** open density group and write its grid properties
++ * @param gint G in reduced coordinates
++ * @param ngm number of g vectors
++ * @param nr1s grid of the first direction
++ * @param nr2s grid of the second direction
++ * @param nr3s grid of the third direction
++ *
++ * The ordering of gvectors is handled by pwscf.
++ */
++void F77_FUNC_(esh5_open_density,ESH5_OPEN_DENSITY)(const int* gint
++    , const int* ngm, int *nr1s, int *nr2s, int *nr3s)
++{
++  num_grid[0]=*nr1s;
++  num_grid[1]=*nr2s;
++  num_grid[2]=*nr3s;
++  num_gvectors=*ngm;
++
++  h_density = H5Gcreate(h_ptcls,"density",0);
++  hsize_t dim3=3;
++  herr_t ret=H5LTmake_dataset(h_density,"mesh",1,&dim3,H5T_NATIVE_INT,num_grid);
++
++  // {
++  //   int *ig=(int*)malloc(3*num_gvectors*sizeof(int));
++  //   for(int i=0,i3=0; i<num_gvectors; ++i)
++  //   {
++  //     int cur=3*(igtog[i]-1);
++  //     ig[i3++]=(int)g[cur++];
++  //     ig[i3++]=(int)g[cur++];
++  //     ig[i3++]=(int)g[cur++];
++  //   }
++
++  //   hsize_t gdims[2];
++  //   gdims[0] = (hsize_t)num_gvectors; 
++  //   gdims[1] = (hsize_t)3;
++  //   ret=H5LTmake_dataset(h_density,"gvectors",2,gdims,H5T_NATIVE_INT,ig);
++  //   assert (ret >= 0);
++  //   free(ig);
++  // }
++  hsize_t gdims[2];
++  gdims[0] = (hsize_t)num_gvectors; 
++  gdims[1] = (hsize_t)3;
++  ret=H5LTmake_dataset(h_density,"gvectors",2,gdims,H5T_NATIVE_INT,gint);
++
++  hsize_t dim1=1;
++  ret=H5LTmake_dataset(h_density,"number_of_gvectors",1,
++		       &dim1,H5T_NATIVE_INT,ngm);
++}
++
++/** open density group and write its grid properties
++ * @param nr1s grid of the first direction
++ * @param nr2s grid of the second direction
++ * @param nr3s grid of the third direction
++ */
++void F77_FUNC_(esh5_open_density_r,ESH5_OPEN_DENSITY_R)(int *nr1s, int *nr2s, int *nr3s
++    )
++{
++  printf("ARE YOU GONE MAD \n");
++  num_grid[0]=*nr1s;
++  num_grid[1]=*nr2s;
++  num_grid[2]=*nr3s;
++
++  h_density = H5Gcreate(h_ptcls,"density",0);
++  hsize_t dim3=3;
++  herr_t ret=H5LTmake_dataset(h_density,"mesh",1,&dim3,H5T_NATIVE_INT,num_grid);
++}
++
++void F77_FUNC_(esh5_close_density,ESH5_CLOSE_DENSITY)()
++{
++  H5Gclose(h_density);
++}
++
++/* write eigen value and eigen vector for (ibnd, ispin) */
++void F77_FUNC_(esh5_write_density_r,ESH5_WRITE_DENSITY_R)(const int* ispin,const double* rho)
++{
++  char aname[8];
++  sprintf(aname,"spin_%i",(*ispin)-1);
++  /*hid_t h2 = H5Gcreate(h_density,aname,0);*/
++  hid_t h2 = H5Gopen(h_density,aname);
++  /* write eigenvector */
++  hsize_t dims[3];
++  for(int i=0; i<3; ++i) dims[i] = num_grid[i];
++  herr_t ret=H5LTmake_dataset(h2,"density_r",3,dims,H5T_NATIVE_DOUBLE,rho);
++  H5Gclose(h2);
++}
++
++void F77_FUNC_(esh5_write_density_g,ESH5_WRITE_DENSITY_G)
++     (const int* ispin , const double* rhog)
++{
++  char aname[8];
++  sprintf(aname,"spin_%i",(*ispin)-1);
++  /*hid_t h2 = H5Gopen(h_density,aname);*/
++  hid_t h2 = H5Gcreate(h_density,aname,0);
++  hsize_t dims_g[2];
++  dims_g[0]=num_gvectors;
++  dims_g[1]=2;
++  herr_t ret=H5LTmake_dataset(h2,"density_g",2,dims_g,H5T_NATIVE_DOUBLE,rhog);
++  H5Gclose(h2);
++}
++
++/** write basisset: number of plane waves, plane wave coefficients
++ */
++  void F77_FUNC_(esh5_write_gvectors,ESH5_WRITE_GVECTORS)
++(const int* restrict itmp, const int* restrict igwk, int* ngk_g)
++{
++
++  int ngtot=*ngk_g;
++
++  //printf("esh5_write_gvectors number_of_gvectors %d\n",ngtot);
++
++  if(ngtot>num_gvectors_max)
++  {
++    //free the space
++    if(num_gvectors_max) free(igmapped);
++    num_gvectors_max=ngtot;
++    igmapped=(int*)malloc(3*ngtot*sizeof(int));
++  }
++
++  for(int ig=0,i3=0; ig<ngtot; ++ig)
++  {
++    int j3=(igwk[ig]-1)*3;
++    igmapped[i3++]=itmp[j3++];
++    igmapped[i3++]=itmp[j3++];
++    igmapped[i3++]=itmp[j3++];
++  }
++
++  hsize_t dims[2],dim1=1;
++  dims[0] = ngtot;
++  dims[1] = 3;
++
++  //20110515: add number_of_gvectors here
++  herr_t ret=H5LTmake_dataset(h_kpoint,"number_of_gvectors",1,&dim1,H5T_NATIVE_INT,ngk_g);
++
++  //herr_t ret=H5LTmake_dataset(h_kpoint,"gvectors",2,dims,H5T_NATIVE_INT,itmp);
++  ret=H5LTmake_dataset(h_kpoint,"gvectors",2,dims,H5T_NATIVE_INT,igmapped);
++
++  /*
++  if (iteration<2)
++  {
++    int ngtot=*ngk_g;
++    //int ng=*ngtot;
++    int *igmapped=(int*)malloc(3*ngtot*sizeof(int));
++
++    for(int ig=0,i3=0; ig<ngtot; ++ig)
++    {
++      int j3=(igwk[ig]-1)*3;
++      igmapped[i3++]=itmp[j3++];
++      igmapped[i3++]=itmp[j3++];
++      igmapped[i3++]=itmp[j3++];
++    }
++    //hid_t h1 = H5Gcreate(h_file,"basis",0);
++    //hsize_t dim=1;
++    //herr_t ret=H5LTmake_dataset(h1,"num_planewaves",1,&dim,H5T_NATIVE_INT,ngtot);
++    //
++    //
++
++    hsize_t dims[2],dim1=1;
++    dims[0] = ngtot;
++    dims[1] = 3;
++
++    //20110515: add number_of_gvectors here
++    ret=H5LTmake_dataset(h_kpoint,"number_of_gvectors",1,&dim1,H5T_NATIVE_INT,ngk_g);
++
++    //herr_t ret=H5LTmake_dataset(h_kpoint,"gvectors",2,dims,H5T_NATIVE_INT,itmp);
++    herr_t ret=H5LTmake_dataset(h_kpoint,"gvectors",2,dims,H5T_NATIVE_INT,igmapped);
++    //ret=H5LTmake_dataset(h1,"planewaves",2,dims,H5T_NATIVE_DOUBLE,gcart);
++
++    free(igmapped);
++    //H5Gclose(h1);
++  }
++  */
++}
++
++void F77_FUNC_(esh5_write_gvectors_k,ESH5_WRITE_GVECTORS_K)
++(const int* restrict g_red, int* ngk_g)
++{
++  int ngtot=*ngk_g;
++
++//   printf("esh5_write_gvectors number_of_gvectors %d\n",ngtot);
++  hsize_t dims[2],dim1=1;
++  dims[0] = ngtot;
++  dims[1] = 3;
++
++  //20110515: add number_of_gvectors here
++  herr_t ret=H5LTmake_dataset(h_kpoint,"number_of_gvectors",1,&dim1,H5T_NATIVE_INT,ngk_g);
++
++  //herr_t ret=H5LTmake_dataset(h_kpoint,"gvectors",2,dims,H5T_NATIVE_INT,itmp);
++  ret=H5LTmake_dataset(h_kpoint,"gvectors",2,dims,H5T_NATIVE_INT,g_red);
++}
++
++void F77_FUNC_(esh5_write_supercell,ESH5_WRITE_SUPERCELL)(const double* lattice)
++{
++  hid_t h1 = H5Gcreate(h_file,"supercell",0);
++  hsize_t dims[]={3,3};
++  herr_t ret=H5LTmake_dataset(h1,"primitive_vectors",2,dims,H5T_NATIVE_DOUBLE,lattice);
++  H5Gclose(h1);
++}
++
++void F77_FUNC_(esh5_open_atoms,ESH5_OPEN_ATOMS)(const int* nat, const int *nspecies)
++{
++  h_ptcls = H5Gcreate(h_file,"atoms",0);
++  hsize_t dim1=1;
++  herr_t ret=H5LTmake_dataset(h_ptcls,"number_of_atoms",1,&dim1,H5T_NATIVE_INT,nat);
++  ret=H5LTmake_dataset(h_ptcls,"number_of_species",1,&dim1,H5T_NATIVE_INT,nspecies);
++  num_atoms=*nat;
++  num_species=*nspecies;
++}
++void F77_FUNC_(esh5_close_atoms,ESH5_CLOSE_ATOMS)()
++{
++  H5Gclose(h_ptcls);
++}
++
++void F77_FUNC_(esh5_write_species,ESH5_WRITE_SPECIES)(const int* itype
++    , const char* sname, const int* length
++    , const double* atomic_number, const double* valcharge)
++{
++  char aname[16];
++  sprintf(aname,"species_%i",(*itype)-1);
++  hid_t h1 = H5Gcreate(h_ptcls,aname,0);
++  hsize_t dim1=1;
++  int int_charge = (int) round(*valcharge);
++  herr_t ret=H5LTmake_dataset(h1,"valence_charge",1,&dim1,H5T_NATIVE_INT,&int_charge);
++  ret=H5LTmake_dataset(h1,"atomic_number",1,&dim1,H5T_NATIVE_INT,atomic_number);
++
++  char species_name[8];
++  memcpy(species_name,sname,*length);
++  species_name[*length] = '\0' ; 
++
++  hid_t strtype = H5Tcopy (H5T_C_S1);
++  ret = H5Tset_size (strtype, (*length)+1); /* create string of length 5 */
++  ret=H5LTmake_dataset(h1,"name",1,&dim1,strtype,species_name);
++
++  H5Gclose(h1);
++}
++
++void F77_FUNC_(esh5_write_species_ids,ESH5_WRITE_SPEICES_IDS)(const int* ids_in)
++{
++  int *ids=(int*)malloc(num_atoms*sizeof(int));
++  for(int i=0; i<num_atoms; ++i) ids[i]=ids_in[i]-1;
++  hsize_t dim1=num_atoms;
++  herr_t ret=H5LTmake_dataset(h_ptcls,"species_ids",1,&dim1,H5T_NATIVE_INT,ids);
++  free(ids);
++}
++
++void F77_FUNC_(esh5_write_positions,ESH5_WRITE_POSITIONS)(const double* r)
++{
++  hsize_t dims[2];
++  dims[0]=num_atoms;
++  dims[1]=3;
++  herr_t ret=H5LTmake_dataset(h_ptcls,"positions",2,dims,H5T_NATIVE_DOUBLE,r);
++}
++
++
++/** write basisset: number of plane waves, plane wave coefficients
++void F77_FUNC_(esh5_write_basis,ESH5_WRITE_BASIS)(const double* g, const int* igtog, const int* ngtot)
++{
++  int ng=*ngtot;
++  int *ig=(int*)malloc(3*ng*sizeof(int));
++  for(int i=0,i3=0; i<ng; i++)
++  {
++    int cur=3*(igtog[i]-1);
++    ig[i3++]=(int)g[cur++];
++    ig[i3++]=(int)g[cur++];
++    ig[i3++]=(int)g[cur++];
++  }
++
++  hid_t h_basis = H5Gcreate(h_file,"basis",0);
++  hsize_t dim=1;
++  hid_t dataspace= H5Screate_simple(1, &dim, NULL);
++  hid_t dataset= H5Dcreate(h_basis, "num_planewaves", H5T_NATIVE_INT, dataspace, H5P_DEFAULT);
++  hid_t ret = H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,ngtot);
++  H5Sclose(dataspace);
++  H5Dclose(dataset);
++
++  hsize_t dims[2];
++  dims[0] = ng;
++  dims[1] = 3;
++  dataspace  = H5Screate_simple(2, dims, NULL);
++  dataset =  H5Dcreate(h_basis, "planewaves", H5T_NATIVE_INT, dataspace, H5P_DEFAULT);
++  ret = H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,ig);
++  H5Sclose(dataspace);
++  H5Dclose(dataset);
++
++  H5Gclose(h_basis);
++
++  free(ig);
++}
++ */
++void F77_FUNC_(esh5_write_parameters,ESH5_WRITE_PARAMETERS)(
++    const int* nelec, const int* nspin, const int* nband, const int* nk,
++    const double* ecut, const double* alat, const double* at)
++{
++  hid_t h_param = H5Gcreate(h_file,"parameters",0);
++  hsize_t dim=1;
++  hid_t dataspace= H5Screate_simple(1, &dim, NULL);
++  hid_t dataset= H5Dcreate(h_param, "num_spins", H5T_NATIVE_INT, dataspace, H5P_DEFAULT);
++  hid_t ret = H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,nspin);
++  H5Sclose(dataspace);
++  H5Dclose(dataset);
++
++  dataspace= H5Screate_simple(1, &dim, NULL);
++  dataset= H5Dcreate(h_param, "num_electrons", H5T_NATIVE_INT, dataspace, H5P_DEFAULT);
++  ret = H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,nelec);
++  H5Sclose(dataspace);
++  H5Dclose(dataset);
++
++  dataspace= H5Screate_simple(1, &dim, NULL);
++  dataset= H5Dcreate(h_param, "num_bands", H5T_NATIVE_INT, dataspace, H5P_DEFAULT);
++  ret = H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,nband);
++  H5Sclose(dataspace);
++  H5Dclose(dataset);
++
++  dataspace= H5Screate_simple(1, &dim, NULL);
++  dataset= H5Dcreate(h_param, "num_twists", H5T_NATIVE_INT, dataspace, H5P_DEFAULT);
++  ret = H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,nk);
++  H5Sclose(dataspace);
++  H5Dclose(dataset);
++
++  int iscomplex=1;
++  dataspace= H5Screate_simple(1, &dim, NULL);
++  dataset= H5Dcreate(h_param, "complex_coefficients", H5T_NATIVE_INT, dataspace, H5P_DEFAULT);
++  ret = H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,&iscomplex);
++  H5Sclose(dataspace);
++  H5Dclose(dataset);
++
++  dataspace= H5Screate_simple(1, &dim, NULL);
++  dataset= H5Dcreate(h_param, "maximum_ecut", H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
++  ret = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,ecut);
++  H5Sclose(dataspace);
++  H5Dclose(dataset);
++
++  double lattice[9];
++  for(int i=0; i<9; i++) lattice[i]=(*alat)*at[i];
++  hsize_t dims[]={3,3};
++  dataspace  = H5Screate_simple(2, dims, NULL);
++  dataset =  H5Dcreate(h_param, "lattice", H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
++  ret = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,lattice);
++  H5Sclose(dataspace);
++  H5Dclose(dataset);
++
++  H5Gclose(h_param);
++}
++
++///* open mainbody:eigenstates */
++//void F77_FUNC_(esh5_open_eigg,ESH5_OPEN_EIGG)()
++//{
++//  if(h_main>=0) H5Gclose(h_main);
++//  h_main = H5Gcreate(h_file,"electrons",0);
++//  //h_main = H5Gcreate(h_file,"eigenstates",0);
++//}
++//
++///* close eigenstates */
++//void F77_FUNC_(esh5_close_eigg,ESH5_CLOSE_EIGG)()
++//{
++//  if(h_main>=0) H5Gclose(h_main);
++//  h_main=-1;
++//}
++
++void F77_FUNC_(esh5_write_rho,ESH5_WRITE_RHO)(const double* rho, const double* rhog, const int* ngm)
++{
++  hid_t h1 = H5Gcreate(h_ptcls,"density",0);
++
++  hsize_t dim3=3;
++  herr_t ret=H5LTmake_dataset(h1,"mesh",1,&dim3,H5T_NATIVE_INT,num_grid);
++
++  hid_t h2 = H5Gcreate(h1,"spin_0",0);
++  /* write eigenvector */
++  hsize_t dims[3];
++  dims[0] = num_grid[0];
++  dims[1] = num_grid[1];
++  dims[2] = num_grid[2];
++
++  ret=H5LTmake_dataset(h2,"density_r",3,dims,H5T_NATIVE_DOUBLE,rho);
++  hsize_t dims_g[2];
++  dims_g[0]=*ngm;
++  dims_g[1]=2;
++  ret=H5LTmake_dataset(h2,"density_g",1,dims_g,H5T_NATIVE_DOUBLE,rhog);
++  H5Gclose(h2);
++  H5Gclose(h1);
++  /*
++  hsize_t gdims[2];
++  gdims[0]=ngm;
++  gdims[1]=2;
++  dataspace  = H5Screate_simple(2, gdims, NULL);
++  dataset =  H5Dcreate(h_file, "chargedensity_g", H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
++  ret = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,rhog);
++  H5Sclose(dataspace);
++  H5Dclose(dataset);
++  */
++
++  /* testing with paraview/vtk
++  if(is_gamma)
++  {
++    char vtkname[32];
++    sprintf(vtkname,"band%i.vtk",(*ibnd)-1);
++    FILE *vtk=fopen(vtkname,"w");
++
++    fprintf(vtk,"# vtk DataFile Version 3.0\n");
++    fprintf(vtk,"vtk output\n");
++    fprintf(vtk,"ASCII\n");
++    fprintf(vtk,"DATASET STRUCTURED_POINTS\n");
++    fprintf(vtk,"DIMENSIONS %i %i %i\n",h_ngrid[0],h_ngrid[1],h_ngrid[2]);
++    fprintf(vtk,"ORIGIN 0 0 0\n");
++    fprintf(vtk,"SPACING 1 1 1\n");
++    fprintf(vtk,"\nPOINT_DATA %i\n",h_ngridtot);
++    fprintf(vtk,"SCALARS scalars float\n");
++    fprintf(vtk,"LOOKUP_TABLE default\n");
++
++    for(int i=0,i2=0; i<h_ngridtot;i+=10)
++    { 
++      for(int j=0; j<10; j++,i2+=2) fprintf(vtk,"%12.6e ",eigr[i2]*eigr[i2]);
++      fprintf(vtk,"\n");
++    }
++    fprintf(vtk,"\n");
++    fclose(vtk);
++  }
++  */
++}
++
++void F77_FUNC_(esh5_write_rhog,ESH5_WRITE_RHOG)(const double* rhog, const int* ngm)
++{
++}
++
++
++void F77_FUNC_(esh5_join_all,ESH5_JOIN_ALL)(const char* fname, const int* length, const int* npools)
++{
++  char * hfname = ( char * ) malloc( (*length) + 1 ) ;
++  memcpy( hfname , fname , *length ) ;
++  hfname[*length] = '\0' ; 
++
++  if(h_file>=0) H5Fclose(h_file); 
++  
++  h_file = H5Fopen(hfname,H5F_ACC_RDWR,H5P_DEFAULT);
++  h_ptcls = H5Gopen(h_file,"electrons");
++  if (h_ptcls<0)
++  {
++    printf("Something is wrong");
++    printf( hfname );
++    return;
++  }
++  
++  //   go through each pool and copy the datasets over in the right places
++  for( int i=1;i< *npools;i++)
++  {
++    char name2[*length+10];
++    int len2=0;
++    len2 = sprintf(name2,"%s_part%u",hfname,i);
++    
++    char * othername = ( char * ) malloc( (len2) + 1 ) ;
++    memcpy( othername , name2 , len2 ) ;
++    othername[len2] = '\0' ;  
++    
++//     printf("%s %s",name2,othername);
++    
++    hid_t h_file2 = H5Fopen(othername,H5F_ACC_RDONLY,H5P_DEFAULT);
++    hid_t h_ptcls2 = H5Gopen(h_file2,"electrons");
++    
++    if(h_ptcls2 < 0)
++    {
++      printf("WHOAAA!!! No electrons?!");
++      return;
++    }
++    else
++    {
++      //     create kpoint/spin/state groups
++      for(int ik=0; ik<num_kpoints; ++ik)
++      {
++	char twistname[16];
++	sprintf(twistname,"kpoint_%i",ik);
++	
++	if (H5Lexists( h_ptcls2, twistname, H5P_DEFAULT )<=0)
++	{
++	  continue;
++	}
++	hid_t h1 = H5Gopen(h_ptcls2,twistname);
++	h_kpoint = H5Gopen(h_ptcls,twistname);
++	for(int ispin=0; ispin<num_spins; ispin++)
++	{
++	  char spinname[16];
++	  sprintf(spinname,"spin_%i",ispin);
++	  if (H5Lexists( h1, spinname, H5P_DEFAULT )<=0)
++	  {
++	    continue;
++	  }
++	  hid_t h2 = H5Gopen(h1,spinname);
++	  h_spin =  H5Gopen(h_kpoint,spinname);
++	  
++
++// 	  ocpl_id = H5Pcreate(H5P_OBJECT_COPY);
++// 	  lcpl_id = H5Pcreate(H5P_LINK_CREATE);
++// 	  
++// // 	  now we have the kpoint/spin open and can write the eigenvalues
++// 	  H5Ocopy(h2,"eigenvalues",h_spin,"eigenvalues",ocpl_id,lcpl_id);
++// 	  ret=H5LTmake_dataset(h2,"number_of_states",1,&dim1,H5T_NATIVE_INT,num_bands);
++	  for(int ib=0; ib<num_bands; ib++) 
++	  {
++	    char bandname[16];
++	    sprintf(bandname,"state_%i",ib);
++	    if (H5Lexists( h2, bandname, H5P_DEFAULT )<=0)
++	    {
++	      continue;
++	    }
++	    hid_t h3 = H5Gopen(h2,bandname);
++	    
++	    hid_t h_band = H5Gopen(h_spin,bandname);
++// 	    now we have the band open and can copy over from the _part to the .h5
++	    hid_t ocpl_id=-1;
++	    hid_t lcpl_id=-1;
++	    ocpl_id = H5Pcreate(H5P_OBJECT_COPY);
++	    lcpl_id = H5Pcreate(H5P_LINK_CREATE);
++	    
++  // 	  now we have the kpoint/spin open and can write the eigenvalues
++	    H5Ocopy(h3,"psi_g",h_band,"psi_g",ocpl_id,lcpl_id);	    
++	    
++	    H5Gclose(h3);
++	    H5Gclose(h_band);
++	  }
++	  H5Gclose(h2);
++	  H5Gclose(h_spin);
++	}
++	H5Gclose(h1);
++	H5Gclose(h_kpoint);
++      }
++      H5Gclose(h_ptcls2);
++    }
++    
++
++    if(h_file2>=0)  H5Fclose(h_file2);
++    remove(othername);
++  }
++  H5Gclose(h_ptcls);
++  if(h_file>=0) H5Fclose(h_file);
++  h_file=-1;
++  H5Eset_auto (err_func, client_data);
++}
++
++#endif
+diff -ruN espresso-5.2.1_original/clib/make.depend espresso-5.2.1_updated/clib/make.depend
+--- espresso-5.2.1_original/clib/make.depend	2015-09-24 03:26:41.000000000 -0400
++++ espresso-5.2.1_updated/clib/make.depend	2015-10-12 16:01:55.000000000 -0400
+@@ -1,5 +1,6 @@
+ c_mkdir.o : ../include/c_defs.h
+ cptimer.o : ../include/c_defs.h
++esh5_interfaces.o : ../include/c_defs.h
+ eval_infix.o : ../include/c_defs.h
+ fft_stick.o : ../include/c_defs.h
+ fft_stick.o : fftw.c
+diff -ruN espresso-5.2.1_original/install/configure espresso-5.2.1_updated/install/configure
+--- espresso-5.2.1_original/install/configure	2015-09-24 03:26:40.000000000 -0400
++++ espresso-5.2.1_updated/install/configure	2015-10-12 16:01:55.000000000 -0400
+@@ -646,12 +646,14 @@
+ scalapack_line
+ lapack_line
+ blas_line
++hdf5_line
+ f90rule
+ arflags
+ ar
+ scalapack_libs
+ elpa_libs_switch
+ mass_libs
++hdf5_libs
+ mpi_libs
+ fft_libs
+ lapack_libs_switch
+@@ -675,6 +677,7 @@
+ cpp
+ fdflags
+ dflags
++cflags_c99
+ cflags
+ cc
+ wget
+@@ -754,6 +757,7 @@
+ with_elpa
+ with_internal_blas
+ with_internal_lapack
++with_hdf5
+ enable_environment
+ '
+       ac_precious_vars='build_alias
+@@ -2027,6 +2031,17 @@
+   use_internal_lapack=0
+ fi
+ 
++# Check whether --with-hdf5 was given.
++if test "${with_hdf5+set}" = set; then
++  withval=$with_hdf5; if  test "$withval" = "yes" ; then
++      with_hdf5=1
++   else
++      with_hdf5=0
++   fi
++else
++  with_hdf5=0
++fi
++
+ # -----------------------------
+ # more options
+ # ----------------------------
+@@ -2054,6 +2069,7 @@
+ env_cc=$CC         # C compiler (must be in the execution path)
+ cpp=$CPP           # C preprocessor (as above)
+ cflags=$CFLAGS     # Flags for C compiler
++cflags_c99=$CFLAGS_C99 # Flags for C source using 1999 standard
+ cppflags=$CPPFLAGS # Flags for C preprocessor
+ dflags=$DFLAGS     # Fortran file preprocessing options, e.g. -D__DEFINE_THIS
+ iflags=$IFLAGS     # Location of include files - shouldn't be needed
+@@ -2071,12 +2087,14 @@
+                          # or -L/my/blas/lib -lmyblas
+ lapack_libs=$LAPACK_LIBS # lapack library, similar to above
+ fft_libs=$FFT_LIBS       # FFT libraries - may depend upon DFLAGS
++hdf5_libs=$HDF5_LIBS     # HDF5 libraries - shouldn't be needed
+ mpi_libs=$MPI_LIBS       # MPI libraries - shouldn't be needed
+ mass_libs=$MASS_LIBS     # MASS libraries (IBM only)
+ libdirs=$LIBDIRS         # Where to look for libraries (e.g. /my/blas/lib)
+ scalapack_libs=$SCALAPACK_LIBS # scalapack libs
+ scalapack_dir=$SCALAPACK_LIB  # Where to look for scalapack libs
+ blacs_dir=$BLACS_LIB          # Where to look for libblacs.a
++hdf5_dir=$HDF5_DIR       # Where to look for HDF5
+ ar=$AR                   # ar (shouldn't be needed)
+ arflags=$ARFLAGS         # Flags for ar (as above)
+ extlib_flags=$EXTLIB_FLAGS # Flags for internal copies of lapack and blas
+@@ -5919,6 +5937,9 @@
+ if test "$cflags" = "" ; then cflags=$try_cflags ; fi
+ echo setting CFLAGS... $cflags
+ 
++if test "$with_hdf5" = 1 ; then cflags_c99="-std=c99" ; fi
++echo setting CFLAGS_C99... $cflags_c99
++
+ # preprocessor - try cpp in all cases; the preprocessor returned by
+ # AC_PROG_CPP
+ # may sometimes refuse to preprocess fortran files
+@@ -11583,6 +11604,236 @@
+ 
+ echo setting SCALAPACK_LIBS... $scalapack_libs
+ 
++# hdf5
++if test "$with_hdf5" -eq 1; then
++   CPPFLAGS="-I${hdf5_dir}/include"
++   LIBS="-L${hdf5_dir}/lib -lhdf5_hl -lhdf5"
++   echo $CPPFLAGS
++   echo $LIBS
++   ac_ext=c
++   ac_cpp='$CPP $CPPFLAGS'
++   ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
++   ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
++   ac_compiler_gnu=$ac_cv_c_compiler_gnu
++
++   if test "${ac_cv_header_hdf5_h+set}" = set; then
++      { $as_echo "$as_me:$LINENO: checking for hdf5.h" >&5
++        $as_echo_n "checking for hdf5.h... " >&6; }
++      if test "${ac_cv_header_hdf5_h+set}" = set; then
++         $as_echo_n "(cached) " >&6
++      fi
++      { $as_echo "$as_me:$LINENO: result: $ac_cv_header_hdf5_h" >&5
++        $as_echo "$ac_cv_header_hdf5_h" >&6; }
++   else
++   # Is the header compilable?
++      { $as_echo "$as_me:$LINENO: checking hdf5.h usability" >&5
++        $as_echo_n "checking hdf5.h usability... " >&6; }
++      cat >conftest.$ac_ext <<_ACEOF
++/* confdefs.h.  */
++_ACEOF
++      cat confdefs.h >>conftest.$ac_ext
++      cat >>conftest.$ac_ext <<_ACEOF
++/* end confdefs.h.  */
++$ac_includes_default
++#include <hdf5.h>
++_ACEOF
++      rm -f conftest.$ac_objext
++      if { (ac_try="$ac_compile"
++         case "(($ac_try" in
++           *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
++           *) ac_try_echo=$ac_try;;
++         esac
++         eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
++         $as_echo "$ac_try_echo") >&5
++        (eval "$ac_compile") 2>conftest.er1
++        ac_status=$?
++        grep -v '^ *+' conftest.er1 >conftest.err
++        rm -f conftest.er1
++        cat conftest.err >&5
++        $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
++        (exit $ac_status); } && {
++	 test -z "$ac_c_werror_flag" ||
++	 test ! -s conftest.err
++         } && test -s conftest.$ac_objext; then
++        ac_header_compiler=yes
++     else
++        $as_echo "$as_me: failed program was:" >&5
++        sed 's/^/| /' conftest.$ac_ext >&5
++	ac_header_compiler=no
++     fi
++
++     rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
++     { $as_echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
++       $as_echo "$ac_header_compiler" >&6; }
++
++     # Is the header present?
++     { $as_echo "$as_me:$LINENO: checking hdf5.h presence" >&5
++       $as_echo_n "checking hdf5.h presence... " >&6; }
++     cat >conftest.$ac_ext <<_ACEOF
++/* confdefs.h.  */
++_ACEOF
++     cat confdefs.h >>conftest.$ac_ext
++     cat >>conftest.$ac_ext <<_ACEOF
++/* end confdefs.h.  */
++#include <hdf5.h>
++_ACEOF
++     if { (ac_try="$ac_cpp conftest.$ac_ext"
++        case "(($ac_try" in
++        *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
++        *) ac_try_echo=$ac_try;;
++        esac
++        eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
++        $as_echo "$ac_try_echo") >&5
++        (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
++        ac_status=$?
++        grep -v '^ *+' conftest.er1 >conftest.err
++        rm -f conftest.er1
++        cat conftest.err >&5
++        $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
++        (exit $ac_status); } >/dev/null && {
++	 test -z "$ac_c_preproc_warn_flag$ac_c_werror_flag" ||
++	 test ! -s conftest.err
++        }; then
++        ac_header_preproc=yes
++     else
++        $as_echo "$as_me: failed program was:" >&5
++        sed 's/^/| /' conftest.$ac_ext >&5
++        ac_header_preproc=no
++     fi
++     rm -f conftest.err conftest.$ac_ext
++     { $as_echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
++       $as_echo "$ac_header_preproc" >&6; }
++     # So?  What about this header?
++     case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
++     yes:no: )
++          { $as_echo "$as_me:$LINENO: WARNING: hdf5.h: accepted by the compiler, rejected by the preprocessor!" >&5
++            $as_echo "$as_me: WARNING: hdf5.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
++          { $as_echo "$as_me:$LINENO: WARNING: hdf5.h: proceeding with the compiler's result" >&5
++            $as_echo "$as_me: WARNING: hdf5.h: proceeding with the compiler's result" >&2;}
++          ac_header_preproc=yes
++     ;;
++     no:yes:* )
++          { $as_echo "$as_me:$LINENO: WARNING: hdf5.h: present but cannot be compiled" >&5
++            $as_echo "$as_me: WARNING: hdf5.h: present but cannot be compiled" >&2;}
++          { $as_echo "$as_me:$LINENO: WARNING: hdf5.h:     check for missing prerequisite headers?" >&5
++            $as_echo "$as_me: WARNING: hdf5.h:     check for missing prerequisite headers?" >&2;}
++          { $as_echo "$as_me:$LINENO: WARNING: hdf5.h: see the Autoconf documentation" >&5
++            $as_echo "$as_me: WARNING: hdf5.h: see the Autoconf documentation" >&2;}
++          { $as_echo "$as_me:$LINENO: WARNING: hdf5.h:     section \"Present But Cannot Be Compiled\"" >&5
++            $as_echo "$as_me: WARNING: hdf5.h:     section \"Present But Cannot Be Compiled\"" >&2;}
++          { $as_echo "$as_me:$LINENO: WARNING: hdf5.h: proceeding with the preprocessor's result" >&5
++            $as_echo "$as_me: WARNING: hdf5.h: proceeding with the preprocessor's result" >&2;}
++          { $as_echo "$as_me:$LINENO: WARNING: hdf5.h: in the future, the compiler will take precedence" >&5
++            $as_echo "$as_me: WARNING: hdf5.h: in the future, the compiler will take precedence" >&2;}
++     ;;
++     esac
++     { $as_echo "$as_me:$LINENO: checking for hdf5.h" >&5
++       $as_echo_n "checking for hdf5.h... " >&6; }
++     if test "${ac_cv_header_hdf5_h+set}" = set; then
++        $as_echo_n "(cached) " >&6
++     else
++        ac_cv_header_hdf5_h=$ac_header_preproc
++     fi
++     { $as_echo "$as_me:$LINENO: result: $ac_cv_header_hdf5_h" >&5
++       $as_echo "$ac_cv_header_hdf5_h" >&6; }
++   fi
++   if test "x$ac_cv_header_hdf5_h" = x""yes; then
++       have_hdf5=1
++   else
++       { { $as_echo "$as_me:$LINENO: error: Cannot find HDF5 header file." >&5
++           $as_echo "$as_me: error: Cannot find HDF5 header file." >&2;}
++       { (exit 1); exit 1; }; }
++   fi
++
++   if test "$have_hdf5" -eq 1 ; then
++      try_iflags="$try_iflags -I${hdf5_dir}/include" 
++   fi
++   ac_ext=f
++   ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
++   ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
++   ac_compiler_gnu=$ac_cv_f77_compiler_gnu
++   unset ac_cv_search_h5pset_fapl_mpio_c # clear cached value
++   { $as_echo "$as_me:$LINENO: checking for library containing h5pset_fapl_mpio_c" >&5
++     $as_echo_n "checking for library containing h5pset_fapl_mpio_c... " >&6; }
++   if test "${ac_cv_search_h5pset_fapl_mpio_c+set}" = set; then
++      $as_echo_n "(cached) " >&6
++   else
++      ac_func_search_save_LIBS=$LIBS
++      cat >conftest.$ac_ext <<_ACEOF
++      program main
++      call h5pset_fapl_mpio_c
++      end
++_ACEOF
++      for ac_lib in '' ""; do
++          if test -z "$ac_lib"; then
++             ac_res="none required"
++          else
++             ac_res=-l$ac_lib
++             LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
++          fi
++          rm -f conftest.$ac_objext conftest$ac_exeext
++          if { (ac_try="$ac_link"
++             case "(($ac_try" in
++               *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
++               *) ac_try_echo=$ac_try;;
++             esac
++             eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
++             $as_echo "$ac_try_echo") >&5
++               (eval "$ac_link") 2>conftest.er1
++               ac_status=$?
++             grep -v '^ *+' conftest.er1 >conftest.err
++             rm -f conftest.er1
++             cat conftest.err >&5
++             $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
++             (exit $ac_status); } && {
++	     test -z "$ac_f77_werror_flag" ||
++     	     test ! -s conftest.err
++             } && test -s conftest$ac_exeext && {
++  	     test "$cross_compiling" = yes ||
++ 	     $as_test_x conftest$ac_exeext
++             }; then
++                ac_cv_search_h5pset_fapl_mpio_c=$ac_res
++          else
++                $as_echo "$as_me: failed program was:" >&5
++                sed 's/^/| /' conftest.$ac_ext >&5
++          fi
++          rm -rf conftest.dSYM
++          rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
++          conftest$ac_exeext
++          if test "${ac_cv_search_h5pset_fapl_mpio_c+set}" = set; then
++             break
++          fi
++      done
++      if test "${ac_cv_search_h5pset_fapl_mpio_c+set}" = set; then
++         :
++      else
++         ac_cv_search_h5pset_fapl_mpio_c=no
++      fi
++      rm conftest.$ac_ext
++      LIBS=$ac_func_search_save_LIBS
++   fi
++   { $as_echo "$as_me:$LINENO: result: $ac_cv_search_h5pset_fapl_mpio_c" >&5
++     $as_echo "$ac_cv_search_h5pset_fapl_mpio_c" >&6; }
++   ac_res=$ac_cv_search_h5pset_fapl_mpio_c
++   if test "$ac_res" != no; then
++      test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
++      have_hdf5=1
++   else
++      if test "$enable_parallel" = "yes" ; then 
++      { { $as_echo "$as_me:$LINENO: error: Cannot find parallel HDF5 Fortran library." >&5
++          $as_echo "$as_me: error: Cannot find parallel HDF5 Fortran library." >&2;}
++      { (exit 1); exit 1; }; }
++      fi
++   fi
++   if test "$have_hdf5" -eq 1 ; then
++      try_dflags="$try_dflags -D__HDF5 -DH5_USE_16_API"
++      hdf5_libs="$LIBS"
++   else
++      hdf5_libs=""
++   fi
++fi
++
++echo setting HDF5_LIBS... $hdf5_libs
+ # preprocessing flag for openmp (experimental)
+ if test "$use_openmp" -eq 1 ; then try_dflags="$try_dflags -D__OPENMP" ; fi
+ 
+@@ -11755,6 +12006,12 @@
+ fi
+ lapack_line="LAPACK_LIBS=$lapack_libs"
+ fft_line="FFT_LIBS=$fft_libs"
++if test "$hdf5_libs" != ""; then
++   hdf5_line="HDF5_LIBS=$hdf5_libs"
++else
++   hdf5_libs=""
++   hdf5_line="@delete@"
++fi
+ if test "$mpi_libs" != "" ; then
+    mpi_line="MPI_LIBS=$mpi_libs"
+ else
+diff -ruN espresso-5.2.1_original/install/configure.ac espresso-5.2.1_updated/install/configure.ac
+--- espresso-5.2.1_original/install/configure.ac	2015-09-24 03:26:40.000000000 -0400
++++ espresso-5.2.1_updated/install/configure.ac	2015-10-12 16:01:55.000000000 -0400
+@@ -122,6 +122,16 @@
+       use_internal_lapack=0
+    fi],
+    [use_internal_lapack=0])
++
++AC_ARG_WITH(hdf5,
++   [AS_HELP_STRING([--with-hdf5],
++       [use hdf5 if available (default: yes)])],
++   [if  test "$withval" = "yes" ; then
++      with_hdf5=1
++   else
++      with_hdf5=0
++   fi],
++   [with_hdf5=0])
+ # -----------------------------
+ # more options 
+ # ----------------------------
+@@ -164,12 +174,14 @@
+                          # or -L/my/blas/lib -lmyblas
+ lapack_libs=$LAPACK_LIBS # lapack library, similar to above
+ fft_libs=$FFT_LIBS       # FFT libraries - may depend upon DFLAGS
++hdf5_libs=$HDF5_LIBS     # HDF5 libraries
+ mpi_libs=$MPI_LIBS       # MPI libraries - shouldn't be needed
+ mass_libs=$MASS_LIBS     # MASS libraries (IBM only)
+ libdirs=$LIBDIRS         # Where to look for libraries (e.g. /my/blas/lib)
+ scalapack_libs=$SCALAPACK_LIBS # scalapack libs
+ scalapack_dir=$SCALAPACK_LIB  # Where to look for scalapack libs
+ blacs_dir=$BLACS_LIB          # Where to look for libblacs.a
++hdf5_dir=$HDF5_DIR       # Where to look for HDF5
+ ar=$AR                   # ar (shouldn't be needed)
+ arflags=$ARFLAGS         # Flags for ar (as above)
+ extlib_flags=$EXTLIB_FLAGS # Flags for internal copies of lapack and blas
+@@ -1986,6 +1998,29 @@
+                    try_dflags="$try_dflags -D__SCALAPACK")
+        test "$have_scalapack" -eq 1 && break
+ 
++# hdf5
++if test "$with_hdf5" -eq 1; then
++   CPPFLAGS="-I${hdf5_dir}/include"
++   LIBS="-L${hdf5_dir}/lib -lhdf5_fortran -lhdf5_hl -lhdf5"
++   echo $CPPFLAGS
++   echo $LIBS
++   AC_LANG_PUSH(C)
++   AC_CHECK_HEADER(hdf5.h, have_hdf5=1, AC_MSG_ERROR(Cannot find HDF5 header file.),)
++   if test "$have_hdf5" -eq 1 ; then
++   try_iflags="$try_iflags -I${hdf5_dir}/include" ; fi
++   AC_LANG_POP(C)
++   unset ac_cv_search_h5pset_fapl_mpio_c # clear cached value
++   AC_SEARCH_LIBS(h5pset_fapl_mpio_c, "", have_hdf5=1, AC_MSG_ERROR(Cannot find parallel HDF5 Fortran library.))
++   if test "$have_hdf5" -eq 1 ; then
++      try_dflags="$try_dflags -D__HDF5 -DH5_USE_16_API"
++      hdf5_libs="$LIBS"
++   else
++      hdf5_libs=""
++   fi
++fi   
++echo setting HDF5_LIBS... $hdf5_libs
++
++
+ # Intel MKL blacs&scalapack - Norbert Nemec 2010/08/20
+ # 
+ # Carlo Cavazzoni writes
+@@ -2143,6 +2178,12 @@
+ fi
+ lapack_line="LAPACK_LIBS=$lapack_libs"
+ fft_line="FFT_LIBS=$fft_libs"
++if test "$have_hdf5" -eq 1; then
++   hdf5_line="HDF5_LIBS=$hdf5_libs"
++else
++   hdf5_libs=""
++   hdf5_line="@delete@"
++fi
+ if test "$mpi_libs" != "" ; then
+    mpi_line="MPI_LIBS=$mpi_libs"
+ else
+@@ -2206,6 +2247,7 @@
+ AC_SUBST(lapack_line)
+ AC_SUBST(scalapack_line)
+ AC_SUBST(fft_line)
++AC_SUBST(hdf5_line)
+ AC_SUBST(mpi_line)
+ AC_SUBST(mass_line)
+ AC_SUBST(parallel_report)
+diff -ruN espresso-5.2.1_original/install/make.sys.in espresso-5.2.1_updated/install/make.sys.in
+--- espresso-5.2.1_original/install/make.sys.in	2015-09-24 03:26:40.000000000 -0400
++++ espresso-5.2.1_updated/install/make.sys.in	2015-10-12 16:01:55.000000000 -0400
+@@ -81,6 +81,10 @@
+ F90FLAGS       = @f90flags@ @pre_fdflags@$(FDFLAGS) $(IFLAGS) $(MODFLAGS)
+ FFLAGS         = @fflags@
+ 
++# compiler flags with C99 standard 
++# needed only with HDF5
++CFLAGS_C99     = @cflags_c99@
++
+ # compiler flags without optimization for fortran-77
+ # the latter is NEEDED to properly compile dlamch.f, used by lapack
+ 
+@@ -98,7 +102,7 @@
+ LDFLAGS        = @ldflags@
+ LD_LIBS        = @ld_libs@
+ 
+-# External Libraries (if any) : blas, lapack, fft, MPI
++# External Libraries (if any) : blas, lapack, fft, hdf5, MPI
+ 
+ # If you have nothing better, use the local copy :
+ # BLAS_LIBS = /your/path/to/espresso/BLAS/blas.a
+@@ -124,6 +128,10 @@
+ 
+ FFT_LIBS       = @fft_libs@
+ 
++# needed for pw2qmcpack
++
++HDF5_LIBS      = @hdf5_libs@
++
+ # For parallel execution, the correct path to MPI libraries must
+ # be specified in MPI_LIBS (except for IBM if you use mpxlf)
+ 
+@@ -148,7 +156,7 @@
+ FLIB_TARGETS   = all
+ 
+ LIBOBJS        = ../flib/ptools.a ../flib/flib.a ../clib/clib.a ../iotk/src/libiotk.a 
+-LIBS           = $(SCALAPACK_LIBS) $(LAPACK_LIBS) $(FFT_LIBS) $(BLAS_LIBS) $(MPI_LIBS) $(MASS_LIBS) $(LD_LIBS)
++LIBS           = $(SCALAPACK_LIBS) $(LAPACK_LIBS) $(FFT_LIBS) $(BLAS_LIBS) $(HDF5_LIBS) $(MPI_LIBS) $(MASS_LIBS) $(LD_LIBS)
+ 
+ # wget or curl - useful to download from network
+ WGET = @wget@

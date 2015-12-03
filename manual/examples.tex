@@ -1,2 +1,399 @@
 \chapter{Examples}
 \label{chap:examples}
+
+\textbf{WARNING: THESE EXAMPLES ARE NOT CONVERGED! YOU MUST CONVERGE PARAMETERS (SIMULATION CELL SIZE, JASTROW PARAMETER NUMBER/CUTOFF, TWIST NUMBER, DMC TIME STEP, DFT PLANE WAVE CUTOFF, DFT K-POINT MESH, ETC.) FOR REAL CALCUATIONS!}
+
+The following examples should run in serial on a modern workstation in a few hours.
+
+\section{Using Nexus}
+
+\subsection{H$_2$O Molecule with Quantum ESPRESSO Orbitals}
+With BFD pseudopotentials (see Section \ref{subsec:BFD}) for O and H in a subdirectory named \texttt{pseudopotentials} (both UPF and FSAtom xml formats, named \texttt{O.BFD.upf}, \texttt{O.BFD.xml}, \texttt{H.BFD.upf}, and \texttt{H.BFD.xml}, respectively) and the following XYZ file (named \texttt{H2O.xyz})
+\begin{lstlisting}
+3
+
+O 0.0000000000e+00  0.0000000000e+00  0.0000000000e+00
+H 0.0000000000e+00 -1.4308249289e+00  1.1078707576e+00
+H 0.0000000000e+00  1.4308249289e+00  1.1078707576e+00
+\end{lstlisting}
+in the working directory, a Python script using Nexus to generate the orbitals using Quantum ESPRESSO, then run QMCPACK to optimize the Jastrow and then do DMC for H$_2$O in a box is:
+%\begin{minipage}{\linewidth}
+\begin{lstlisting}[caption=Nexus example for H$_2$O using Quantum ESPRESSO orbitals and BFD pseudopotentials]
+#! /usr/bin/env python
+
+from project import settings,Job,run_project
+from project import Structure,PhysicalSystem
+from project import generate_pwscf
+from project import generate_pw2qmcpack
+from project import generate_qmcpack,vmc,loop,linear,dmc
+
+# General Settings (Directories For I/O, Machine Type, etc.)
+settings(
+    pseudo_dir      = 'pseudopotentials',
+    runs            = 'runs',
+    results         = 'results',
+    sleep           = 3,
+    generate_only   = 0,
+    status_only     = 0,
+    machine         = 'ws1',
+    )
+
+# Executables (Indicate Path If Needed)
+pwscf               = 'pw.x'
+pw2qmcpack          = 'pw2qmcpack.x'
+qmcpack             = 'qmcapp'
+
+# Pseudopotentials
+dft_pps             = ['O.BFD.upf','H.BFD.upf']
+qmc_pps             = ['O.BFD.xml','H.BFD.xml']
+
+# Job Definitions (MPI Tasks, MP Threading, PBS Queue, Time, etc.)
+scf_job             = Job(app=pwscf,serial=True)
+p2q_job             = Job(app=pw2qmcpack,serial=True)
+opt_job             = Job(threads=4,app=qmcpack,serial=True)
+dmc_job             = Job(threads=4,app=qmcpack,serial=True)
+
+# System To Be Simulated
+structure = Structure()
+structure.read_xyz('H2O.xyz')
+structure.bounding_box(
+    box             = 'cubic',
+    scale           = 1.5
+    )
+structure.add_kmesh(
+    kgrid           = (1,1,1),
+    kshift          = (0,0,0)
+)
+H2O_molecule = PhysicalSystem(
+    structure       = structure,
+    net_charge      = 0,
+    net_spin        = 0,
+    O               = 6,
+    H               = 1,
+    )
+
+sims = []
+
+# DFT SCF To Generate Converged Density
+scf = generate_pwscf(
+    identifier      = 'scf',
+    path            = '.',
+    job             = scf_job,
+    input_type      = 'scf',
+    system          = H2O_molecule,
+    pseudos         = dft_pps,
+    ecut            = 50,
+    ecutrho         = 400,
+    conv_thr        = 1.0e-5,
+    mixing_beta     = 0.7,
+    mixing_mode     = 'local-TF',
+    degauss         = 0.001
+    )
+sims.append(scf)
+
+# Convert DFT Wavefunction Into HDF5 File For QMCPACK
+p2q = generate_pw2qmcpack(
+    identifier      = 'p2q',
+    path            = '.',
+    job             = p2q_job,
+    write_psir      = False,
+    dependencies    = (scf,'orbitals')
+    )
+sims.append(p2q)
+
+# QMC Optimization Parameters - Coarse Sampling Set
+linopt1 = linear(
+    energy               = 0.0,
+    unreweightedvariance = 1.0,
+    reweightedvariance   = 0.0,
+    timestep             = 0.4,
+    samples              = 8192,
+    warmupsteps          = 50,
+    blocks               = 64,
+    substeps             = 4,
+    nonlocalpp           = True,
+    usebuffer            = True,
+    walkers              = 1,
+    minwalkers           = 0.5,
+    maxweight            = 1e9,
+    usedrift             = True,
+    minmethod            = 'quartic',
+    beta                 = 0.0,
+    exp0                 = -16,
+    bigchange            = 15.0,
+    alloweddifference    = 1e-4,
+    stepsize             = 0.2,
+    stabilizerscale      = 1.0,
+    nstabilizers         = 3
+    )
+
+# QMC Optimization Parameters - Finer Sampling Set
+linopt2 = linopt1.copy()
+linopt2.samples = 16384
+
+# QMC Optimization
+opt = generate_qmcpack(
+    identifier      = 'opt',
+    path            = '.',
+    job             = opt_job,
+    input_type      = 'basic',
+    system          = H2O_molecule,
+    twistnum        = 0,
+    bconds          = 'nnn',
+    pseudos         = qmc_pps,
+    jastrows        = [('J1','bspline',8,4),
+                       ('J2','bspline',8,4)],
+    calculations    = [loop(max=4,qmc=linopt1),
+                       loop(max=4,qmc=linopt2)],
+    dependencies    = (p2q,'orbitals')
+    )
+sims.append(opt)
+
+# QMC VMC/DMC With Optimized Jastrow Parameters
+qmc = generate_qmcpack(
+    identifier      = 'dmc',
+    path            = '.',
+    job             = dmc_job,
+    input_type      = 'basic',
+    system          = H2O_molecule,
+    pseudos         = qmc_pps,
+    bconds          = 'nnn',
+    jastrows        = [],
+    calculations    = [
+        vmc(
+            walkers              = 1,
+            samplesperthread     = 64,
+            stepsbetweensamples  = 1,
+            substeps             = 5,
+            warmupsteps          = 100,
+            blocks               = 1,
+            timestep             = 1.0,
+            usedrift             = False
+           ),
+        dmc(
+            minimumtargetwalkers = 128,
+            reconfiguration      = 'no',
+            warmupsteps          = 100,
+            timestep             = 0.005,
+            steps                = 10,
+            blocks               = 200,
+            nonlocalmoves        = True
+           )
+        ],
+    dependencies   = [(p2q,'orbitals'),(opt,'jastrow')]
+    )
+sims.append(qmc)
+
+run_project(sims)
+
+\end{lstlisting}
+%\end{minipage}
+
+\subsection{LiH Crystal with Quantum ESPRESSO Orbitals}
+With CASINO-formatted Trail-Needs pseudopotentials (see Section \ref{subsec:CASINO}) for O and H in a subdirectory named \texttt{pseudopotentials} (both UPF and CASINO  formats, named \texttt{O.TN-DF.upf}, \texttt{O.pp.data}, \texttt{H.TN-DF.upf}, and \texttt{H.pp.data}, respectively), a Python script using Nexus to generate the orbitals using Quantum ESPRESSO, then run QMCPACK to optimize the Jastrow and then do DMC for LiH with periodic boundary conditions is:
+\begin{lstlisting}[caption=Nexus example for bulk LiH using Quantum ESPRESSO orbitals and CASINO pseudopotentials]
+#! /usr/bin/env python
+
+from project import settings,Job,run_project
+from project import generate_physical_system
+from project import generate_pwscf
+from project import generate_pw2qmcpack
+from project import generate_qmcpack,vmc,loop,linear,dmc
+
+# General Settings (Directories For I/O, Machine Type, etc.)
+settings(
+    pseudo_dir      = 'pseudopotentials',
+    runs            = 'runs',
+    results         = 'results',
+    sleep           = 3,
+    generate_only   = 1,
+    status_only     = 0,
+    machine         = 'ws1',
+    )
+
+# Executables (Indicate Path If Needed)
+pwscf               = 'pw.x'
+pw2qmcpack          = 'pw2qmcpack.x'
+qmcpack             = 'qmcapp'
+
+# Pseudopotentials
+dft_pps             = ['Li.TN-DF.upf','H.TN-DF.upf']
+qmc_pps             = ['Li.pp.data','H.pp.data']
+
+# Job Definitions (MPI Tasks, MP Threading, PBS Queue, Time, etc.)
+scf_job             = Job(app=pwscf,serial=True)
+nscf_job            = Job(app=pwscf,serial=True)
+p2q_job             = Job(app=pw2qmcpack,serial=True)
+opt_job             = Job(threads=4,app=qmcpack,serial=True)
+dmc_job             = Job(threads=4,app=qmcpack,serial=True)
+
+# System To Be Simulated
+rocksalt_LiH = generate_physical_system(
+    lattice         = 'cubic',
+    cell            = 'primitive',
+    centering       = 'F',
+    atoms           = ('Li','H'),
+    basis           = [[0.0,0.0,0.0],
+                       [0.5,0.5,0.5]],
+    basis_vectors   = 'conventional',
+    constants       = 7.1,
+    units           = 'B',
+    kgrid           = (17,17,17),
+    kshift          = (1,1,1),
+    net_charge      = 0,
+    net_spin        = 0,
+    Li              = 1,
+    H               = 1,
+    )
+
+sims = []
+
+# DFT SCF To Generate Converged Density
+scf = generate_pwscf(
+    identifier      = 'scf',
+    path            = '.',
+    job             = scf_job,
+    input_type      = 'scf',
+    system          = rocksalt_LiH,
+    pseudos         = dft_pps,
+    ecut            = 450,
+    ecutrho         = 1800,
+    conv_thr        = 1.0e-10,
+    mixing_beta     = 0.7,
+    )
+sims.append(scf)
+
+# DFT NSCF To Generate Wave Function At Specified K-points
+nscf = generate_pwscf(
+    identifier      = 'nscf',
+    path            = '.',
+    job             = nscf_job,
+    input_type      = 'nscf',
+    system          = rocksalt_LiH,
+    pseudos         = dft_pps,
+    ecut            = 450,
+    ecutrho         = 1800,
+    conv_thr        = 1.0e-10,
+    mixing_beta     = 0.7,
+    kgrid           = (1,1,1),
+    kshift          = (0,0,0),
+    dependencies    = (scf,'charge-density')
+    )
+sims.append(nscf)
+
+# Convert DFT Wavefunction Into HDF5 File For QMCPACK
+p2q = generate_pw2qmcpack(
+    identifier      = 'p2q',
+    path            = '.',
+    job             = p2q_job,
+    write_psir      = False,
+    dependencies    = (nscf,'orbitals')
+    )
+sims.append(p2q)
+
+# QMC Optimization Parameters - Coarse Sampling Set
+linopt1 = linear(
+    energy               = 0.0,
+    unreweightedvariance = 1.0,
+    reweightedvariance   = 0.0,
+    timestep             = 0.4,
+    samples              = 8192,
+    warmupsteps          = 50,
+    blocks               = 64,
+    substeps             = 4,
+    nonlocalpp           = True,
+    usebuffer            = True,
+    walkers              = 1,
+    minwalkers           = 0.5,
+    maxweight            = 1e9,
+    usedrift             = True,
+    minmethod            = 'quartic',
+    beta                 = 0.0,
+    exp0                 = -16,
+    bigchange            = 15.0,
+    alloweddifference    = 1e-4,
+    stepsize             = 0.2,
+    stabilizerscale      = 1.0,
+    nstabilizers         = 3
+
+# QMC Optimization Parameters - Finer Sampling Set
+linopt2 = linopt1.copy()
+linopt2.samples = 16384
+
+# QMC Optimization
+opt = generate_qmcpack(
+    identifier      = 'opt',
+    path            = '.',
+    job             = opt_job,
+    input_type      = 'basic',
+    system          = rocksalt_LiH,
+    twistnum        = 0,
+    bconds          = 'ppp',
+    pseudos         = qmc_pps,
+    jastrows        = [('J1','bspline',8),
+                       ('J2','bspline',8)],
+    calculations    = [loop(max=4,qmc=linopt1),
+                       loop(max=4,qmc=linopt2)],
+    dependencies    = (p2q,'orbitals')
+    )
+pp = opt.input.get('pseudos')
+pp.Li.format='casino'
+pp.Li['l-local']='s'
+pp.Li.nrule=2
+pp.Li.lmax=2
+pp.Li.cutoff=2.19
+pp.H.format='casino'
+pp.H['l-local']='s'
+pp.H.nrule=2
+pp.H.lmax=2
+pp.H.cutoff=0.50
+sims.append(opt)
+
+# QMC VMC/DMC With Optimized Jastrow Parameters
+qmc = generate_qmcpack(
+    identifier      = 'dmc',
+    path            = '.',
+    job             = dmc_job,
+    input_type      = 'basic',
+    system          = rocksalt_LiH,
+    pseudos         = qmc_pps,
+    bconds          = 'ppp',
+    jastrows        = [],
+    calculations    = [
+        vmc(
+            walkers              = 1,
+            samplesperthread     = 64,
+            stepsbetweensamples  = 1,
+            substeps             = 5,
+            warmupsteps          = 100,
+            blocks               = 1,
+            timestep             = 1.0,
+            usedrift             = False
+           ),
+        dmc(
+            minimumtargetwalkers = 128,
+            reconfiguration      = 'no',
+            warmupsteps          = 100,
+            timestep             = 0.005,
+            steps                = 10,
+            blocks               = 200,
+            nonlocalmoves        = True
+           )
+        ],
+    dependencies   = [(p2q,'orbitals'),(opt,'jastrow')]
+    )
+pp = qmc.input.get('pseudos')
+pp.Li.format='casino'
+pp.Li['l-local']='s'
+pp.Li.nrule=2
+pp.Li.lmax=2
+pp.Li.cutoff=2.37
+pp.H.format='casino'
+pp.H['l-local']='s'
+pp
+pp.H.lmax=2
+pp.H.cutoff=0.50
+sims.append(qmc)
+
+run_project(sims)
+\end{lstlisting}

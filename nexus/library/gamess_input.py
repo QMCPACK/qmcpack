@@ -3,12 +3,41 @@
 ##################################################################
 
 
+#====================================================================#
+#  gamess_input.py                                                   #
+#    Support for GAMESS input file I/O                               #
+#                                                                    #
+#  Content summary:                                                  #
+#    GamessInput                                                     #
+#      Input class for the GAMESS code.                              #
+#      Capable of reading/writing arbitrary GAMESS input files.      #
+#                                                                    #
+#    generate_gamess_input                                           #
+#      User function to create arbitrary GAMESS input.               #
+#                                                                    #
+#    KeywordGroup                                                    #
+#      Represents an arbitary keyword group in the input file.       #
+#                                                                    #
+#    KeywordSpecGroup                                                #
+#      Base class for specialized keyword groups.                    #
+#      Derived classes enforce the keyword specification.            #
+#      See ContrlGroup, SystemGroup, GuessGroup, ScfGroup,           #
+#        McscfGroup, DftGroup, GugdiaGroup, DrtGroup, CidrtGroup,    #
+#        and DetGroup                                                #
+#                                                                    #
+#    FormattedGroup                                                  #
+#      Represents strict machine-formatted input groups.             #
+#                                                                    #
+#====================================================================#
+
+
 
 import os
 from numpy import array,ndarray,abs
 from generic import obj
 from periodic_table import pt
 from developer import DevBase
+from nexus_base import nexus_noncore
 from simulation import SimulationInput
 from debug import *
 
@@ -358,7 +387,7 @@ class ContrlGroup(KeywordSpecGroup):
             'coord' ,'units' ,'nzvar' ,'pp'    ,'local' ,'ispher','qmttol',
             'maxit' ,'molplt','pltorb','aimpac','friend','nfflvl','nprint',
             'nosym' ,'etollz','inttyp','grdtyp','normf' ,'normp' ,'itol'  ,
-            'icut'  ,'iskprp','irest' ,'geom'  ,'ecp'
+            'icut'  ,'iskprp','irest' ,'geom'  ,'ecp'   ,'casino'
             ])
     integers = set([
             'mplevl','icharg','mult' ,'nzvar'  ,'ispher','maxit' ,'nfflvl',
@@ -366,7 +395,7 @@ class ContrlGroup(KeywordSpecGroup):
             'irest'
             ])
     reals    = set(['qmttol' ,'etollz'])
-    bools    = set(['numgrd' ,'molplt','pltorb','aimpac'])
+    bools    = set(['numgrd' ,'molplt','pltorb','aimpac','casino'])
     strings  = set([
             'scftyp','dfttyp','tddft' ,'vbtyp' ,'cityp' ,'cctyp' ,'cimtyp',
             'relwfn','runtyp','exetyp','coord' ,'units' ,'pp'    ,'local' ,
@@ -637,6 +666,28 @@ class DetGroup(KeywordSpecGroup):
 
 
 
+class BasisGroup(KeywordSpecGroup):
+    keywords = set([
+            'gbasis','ngauss','ndfunc','npfunc','diffsp','diffs',
+            'polar' ,'split2','split3','basnam','extfil'
+            ])
+
+    integers = set(['ngauss','ndfunc','nffunc'])
+    bools    = set(['diffsp','diffs','extfil'])
+    strings  = set(['gbasis','polar'])
+    arrays   = set(['split2','split3','basname'])
+
+    allowed_values = obj(
+        #gbasis = set(['sto','n21','n31','n311','g3l','g3lx','mini','midi','dzv',
+        #              'dh','tzv','mc']) # many others
+        ndfunc = set([0,1,2,3]),
+        nffunc = set([0,1]),
+        polar  = set(['common','popn31','popn311','dunning','huzinaga','hondo7']),
+        )
+#end class BasisGroup
+
+
+
 #class XGroup(KeywordSpecGroup):
 #    keywords = set([''])
 #    integers = set([''])
@@ -684,7 +735,7 @@ class GamessInput(SimulationInput,GIbase):
     all_groups = set(group_order)
 
     key_groups  = set(['contrl','system','guess','scf','mcscf','dft',
-                       'gugdia','drt','cidrt','det'])
+                       'gugdia','drt','cidrt','det','basis'])
 
     card_groups = set()
     #card_groups = set(['ecp','data','mcp','gcilst','points','stone','efrag',
@@ -704,7 +755,8 @@ class GamessInput(SimulationInput,GIbase):
         gugdia = GugdiaGroup,
         drt    = DrtGroup,
         cidrt  = CidrtGroup,
-        det    = DetGroup
+        det    = DetGroup,
+        basis  = BasisGroup
         )
     keyspec_group_order = []
     for gname in group_order:
@@ -761,7 +813,7 @@ class GamessInput(SimulationInput,GIbase):
     #end def __init__
 
 
-    def read_contents(self,contents):
+    def read_text(self,contents,filepath=None):
         #print 8*'\n'
         #print contents
 
@@ -878,7 +930,7 @@ class GamessInput(SimulationInput,GIbase):
         #print self
 
         #exit()
-    #end def read_contents
+    #end def read_text
 
         
     def process_line(self,ls):
@@ -900,7 +952,7 @@ class GamessInput(SimulationInput,GIbase):
     #end def process_line
 
 
-    def write_contents(self):
+    def write_text(self,filepath=None):
         contents = ''
         extra_groups = set(self.keys())-set(self.group_order)
         if len(extra_groups)>0:
@@ -917,7 +969,7 @@ class GamessInput(SimulationInput,GIbase):
             #end if
         #end for
         return contents
-    #end def write_contents
+    #end def write_text
 
 
     def incorporate_system(self,system):
@@ -946,7 +998,7 @@ def generate_gamess_input(**kwargs):
 
 
 
-ps_inputs = set('descriptor symmetry system pseudos pseudo_bases'.split())
+ps_inputs = set('descriptor symmetry system pseudos pseudo_bases bases'.split())
 ps_defaults = obj()
 for var in ps_inputs:
     ps_defaults[var]=None
@@ -981,7 +1033,7 @@ def generate_any_gamess_input(**kwargs):
 
     invalid_names = kwset-GamessInput.all_name_aliases
     if len(invalid_names)>0:
-        GamessInput.class_error('invalid group names or keywords encountered\n  invalid names/keywords provided: {0}\n  please check if these group names or keywords are actually valid GAMESS inputs\n  if so, unsupported groups can be generated by providing the keywords as a single argument:\n    generate_gamess_input(\n      ...,\n      group_name = obj(assign keywords),\n      ...,\n      )'.format(sorted(invalid_names)),'generate_gamess_input')
+        GamessInput.class_error('invalid group names or keywords encountered\ninvalid names/keywords provided: {0}\nplease check if these group names or keywords are actually valid GAMESS inputs\nif so, unsupported groups can be generated by providing the keywords as a single argument:\n  generate_gamess_input(\n    ...,\n    group_name = obj(assign keywords),\n    ...,\n    )'.format(sorted(invalid_names)),'generate_gamess_input')
     #end if
 
     gi = GamessInput()
@@ -1062,11 +1114,19 @@ def generate_any_gamess_input(**kwargs):
             data+='\n'
         #end if
         if pskw.pseudos is None:
-            gi.contrl.coord = 'cart'
+            if pskw.bases!=None:
+                bss = nexus_noncore.basissets.bases_by_atom(*pskw.bases)
+            else:
+                bss = obj()
+                gi.contrl.coord = 'cart'
+            #end if
             for i in range(len(elem)):
                 a = elem[i]
                 Z = pt[a].atomic_number
                 data+='{0} {1:3.2f} {2:16.8f} {3:16.8f} {4:16.8f}\n'.format(a,Z,*pos[i])
+                if a in bss:
+                    data+=bss[a].text+'\n\n'
+                #end if
             #end for
         else:
             gi.contrl.set(
@@ -1074,7 +1134,7 @@ def generate_any_gamess_input(**kwargs):
                 ecp   = 'read'
                 )
             ecp = ''
-            pps = GamessInput.pseudopotentials.pseudos_by_atom(*pskw.pseudos)
+            pps = nexus_noncore.pseudopotentials.pseudos_by_atom(*pskw.pseudos)
             atoms = set()
             for i in range(len(elem)):
                 a = elem[i]

@@ -3,147 +3,75 @@
 ##################################################################
 
 
-import sys
-import traceback
-from generic import obj
+#====================================================================#
+#  developer.py                                                      #
+#    Defines developer environment.  Supplies base class for generic #
+#    development (Nexus or beyond)                                   #
+#                                                                    #
+#  Content summary:                                                  #
+#    log, warn, error                                                #
+#      Function interface to logging and error handling.             #
+#                                                                    #
+#    DevBase                                                         #
+#      Base class inheriting generic abilities for obj, etc.         #
+#      Allows for unimplemented functions.                           #
+#                                                                    #
+#    Void                                                            #
+#      Class instances used to represent missing elements.           #
+#      Execution stops when any action is performed on a Void object.#
+#                                                                    #
+#    unavailable                                                     #
+#      Function to create named void objects.                        #
+#      Used when imported entities do not exist on the local machine.#
+#      Allows execution tp proceed normally so long as none of these #
+#        non-existent entities are used during runtime execution.    #
+#      This enables the maximum amount of Nexus functionality to be  #
+#        accessed given the available modules.                       #
+#                                                                    #
+#====================================================================#
 
-exit_call = exit
-devlog    = sys.stdout
 
-def log(self,*items):
-    s=''
-    for item in items:
-        s+=str(item)+' '
-    #end for
-    s+='\n'
-    devlog.write(s)
-#end def log
-
-
-def warn(self,message,location,header=None,post_header=' Warning:'):
-    pad = 4*' '
-    if location is None:
-        header = 'warning:'
-    else:
-        header = location+' warning:'
-    #end if
-    log(header)
-    log(pad+message.replace('\n','\n'+pad))
-#end def warn
-
-
-def error(message,location=None,exit=True,trace=True):
-    pad = 4*' '
-    if location is None:
-        header = 'error:'
-    else:
-        header = location+' error:'
-    #end if
-    log(header)
-    log(pad+message.replace('\n','\n'+pad))
-    if exit:
-        log('  exiting.\n')
-        if trace:
-            traceback.print_stack()
-        #end if
-        exit_call()
-    #end if
-#end def error
+from generic import obj,object_interface,log,error,warn
+from debug import ci,interact
 
 
 class DevBase(obj):
-    user_interface_data = obj()
-    dev_instructions_data = obj()
-
     def not_implemented(self):
-        #self.error('a base class function has not been implemented','Developer')
         self.error('a base class function has not been implemented',trace=True)
     #end def not_implemented
-
-    @classmethod
-    def set_user_interface(cls,class_variables=None,class_functions=None,member_variables=None,member_functions=None):
-        if class_variables is None:
-            class_variables = []
-        if class_functions is None:
-            class_functions = []
-        if member_variables is None:
-            member_variables = []
-        if member_functions is None:
-            member_functions = []
-        ui = cls.user_interface_data
-        ui.class_variables = class_variables
-        ui.class_functions = class_functions
-        ui.member_variables= member_variables
-        ui.member_functions= member_functions
-    #end def set_user_interface
-
-    @classmethod
-    def set_dev_instruction(cls,situation='writing a derived class',class_variables=None,class_functions=None,member_variables=None,member_functions=None):
-        if class_variables is None:
-            class_variables = []
-        if class_functions is None:
-            class_functions = []
-        if member_variables is None:
-            member_variables = []
-        if member_functions is None:
-            member_functions = []
-        ins = obj()
-        cls.dev_instructions_data[situation] = ins
-        ins.class_variables = class_variables
-        ins.class_functions = class_functions
-        ins.member_variables= member_variables
-        ins.member_functions= member_functions
-    #end def set_dev_instruction
-        
-    @classmethod
-    def write_dev_data(cls,s,dev_data,indent=''):
-        p1 = '  '
-        p2 = 2*p1
-        p3 = 3*p1
-        dpad = indent+p3
-        for name,value in dev_data.iteritems():
-            s+=indent+p1+name+'\n'
-            if isinstance(value,list):
-                for v in value:
-                    s+=indent+p2+v+'\n'
-                #end for
-            else:
-                for v,description in value.iteritems():
-                    s+=indent+p2+v+'\n'
-                    s+=dpad+description.replace('\n','\n'+dpad)
-                #end for
-            #end for
-        #end for
-        return s
-    #end def write_dev_data
-
-    @classmethod
-    def user_interface(cls):
-        s='User Interface for '+cls.__name__+' Class\n'
-        s+= (len(s)-1)*'='+'\n'
-        s+=cls.write_dev_data(cls.user_interface_data)
-        return s
-    #end def user_interface
-
-    @classmethod
-    def developer_instructions(cls):
-        s='Developer Instructions for '+cls.__name__+' Class\n'
-        s+= (len(s)-1)*'='+'\n'
-        i1='  '
-        i2=2*i1
-        i3=3*i1
-        for situation,instruction in cls.developer_instructions.iteritems():
-            s+=i1+'situation: '+situation+'\n'
-            s+=i2+'define the following variables and functions:'
-            s+=cls.write_dev_data(instructions,i3)
-        #end for
-        return s
-    #end def developer_instructions
 #end class DevBase
 
 
+class enum(object_interface):
+    def __init__(self,*keys):
+        if len(keys)==1 and isinstance(keys[0],(list,tuple)):
+            keys = keys[0]
+        #end if
+        n=0
+        for key in keys:
+            self[key] = n
+            n+=1
+        #end for
+    #end def __init__
+        
+    # override some object interface methods
+    # specifically forbid modification
+    def __setitem__(self,name,value):
+        self._error('attempted to modify immutable enum object')
+    #end def __setitem__
 
+    def __delitem__(self,name):
+        self._error('attempted to modify immutable enum object')
+    #end def __delitem__
 
+    def clear(self):
+        self._error('attempted to modify immutable enum object')
+    #end def clear
+
+    def _clear(self):
+        enum.clear(self)
+    #end def _clear
+#end class enum
 
 
 class Void:
@@ -192,8 +120,10 @@ class Void:
     @classmethod
     def __instancecheck__(cls,*args,**kwargs):
         Void._class_unavailable()
+    @classmethod
     def __subclasscheck__(cls,*args,**kwargs):
         Void._class_unavailable()
+    @classmethod
     def __subclasshook__(cls,*args,**kwargs):
         Void._class_unavailable()
     
@@ -412,8 +342,6 @@ class Void:
     def __getnewargs__(self,*args,**kwargs):
         Void._unavailable(self)
     def __setstate__(self,*args,**kwargs):
-        Void._unavailable(self)
-    def __hash__(self,*args,**kwargs):
         Void._unavailable(self)
     def __bytes__(self,*args,**kwargs):
         Void._unavailable(self)

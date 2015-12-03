@@ -3,6 +3,14 @@
 ##################################################################
 
 
+#====================================================================#
+#  opium.py                                                          #
+#    Nexus interface to the OPIUM pseudpotential generator.          #
+#    The interface is not yet complete.                              #
+#                                                                    #                                        
+#====================================================================#
+
+
 import os
 from generic import obj
 from developer import DevBase
@@ -29,7 +37,7 @@ from simulation import Simulation,SimulationInput,SimulationAnalyzer
 #           in a form OpiumInput understands (this depends on your implementation)
 #
 #         required functions to be implemented:
-#           OpiumInput: read_contents, write_contents
+#           OpiumInput: read_text, write_text
 #           Opium:      app_command, check_sim_status
 #
 #     2) generated standalone simulation
@@ -37,7 +45,7 @@ from simulation import Simulation,SimulationInput,SimulationAnalyzer
 #            generate functions provide a short-hand of minimal vars for input
 #
 #          required functions to be implemented:
-#           OpiumInput: read_contents, write_contents
+#           OpiumInput: read_text, write_text
 #           Opium:      app_command, check_sim_status
 #           generate_opium_input
 #           
@@ -49,7 +57,7 @@ from simulation import Simulation,SimulationInput,SimulationAnalyzer
 #            this information is used by the others to populate input files
 #
 #         required functions to be implemented:
-#           OpiumInput: read_contents, write_contents
+#           OpiumInput: read_text, write_text
 #           Opium:      app_command,check_sim_status, 
 #                        check_result, get_result
 #
@@ -405,7 +413,7 @@ class OpiumInput(SimulationInput):
     #end def __init__
 
 
-    def read_contents(self,contents):
+    def read_text(self,contents,filepath=None):
         lines = contents.splitlines()
         sections = obj()
         sec=None
@@ -438,10 +446,10 @@ class OpiumInput(SimulationInput):
             section.read(sectext)
             self[secname] = section
         #end for
-    #end def read_contents
+    #end def read_text
 
 
-    def write_contents(self):
+    def write_text(self,filepath=None):
         contents = ''
         for secname in self.section_order:
             secname = secname.lower()
@@ -450,7 +458,7 @@ class OpiumInput(SimulationInput):
             #end if
         #end for
         return contents
-    #end def write_contents
+    #end def write_text
 #end class OpiumInput
 
 

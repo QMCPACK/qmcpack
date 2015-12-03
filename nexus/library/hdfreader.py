@@ -3,6 +3,22 @@
 ##################################################################
 
 
+#====================================================================#
+#  hdfreader.py                                                      #
+#    Support for reading HDF5 files into local structured format     #
+#    containing numpy arrays.                                        #
+#                                                                    #
+#  Content summary:                                                  #
+#    HDFreader                                                       #
+#      Main class to read HDF files and convert to object format.    #
+#                                                                    #
+#    HDFgroup                                                        #
+#      Class representing an HDF group.                              #
+#      Contains other HDFgroup's or named data as numpy arrays       #
+#                                                                    #                                        
+#====================================================================#
+
+
 from numpy import array,ndarray,minimum,abs,ix_,resize
 import sys
 import keyword
@@ -18,6 +34,11 @@ except ImportError:
 #end try
 from debug import *
 
+
+
+class HDFglobals(DevBase):
+    view = False
+#end class HDFglobals
 
 
 class HDFgroup(DevBase):
@@ -228,8 +249,10 @@ class HDFreader(DevBase):
     datasets = set(["<class 'h5py.highlevel.Dataset'>","<class 'h5py._hl.dataset.Dataset'>"])
     groups   = set(["<class 'h5py.highlevel.Group'>","<class 'h5py._hl.group.Group'>"])
     
-    def __init__(self,fpath,verbose=False):
+    def __init__(self,fpath,verbose=False,view=False):
         
+        HDFglobals.view = view
+
         if verbose:
             print '  Initializing HDFreader'
 
@@ -302,14 +325,18 @@ class HDFreader(DevBase):
     #end def decrement_level
 
     def add_dataset(self,cur,k,v):
-        exec 'cur.'+k+'=array(v)'
-        exec 'cur._add_dataset("'+k+'",cur.'+k+')'
+        if not HDFglobals.view:
+            cur[k]=array(v)
+        else:
+            cur[k] = v
+        #end if
+        cur._add_dataset(k,cur[k])
         return
     #end def add_dataset
 
     def add_group(self,hcur,cur,k,v):
-        exec 'cur.'+k+'=HDFgroup()'
-        exec 'cur._add_group("'+k+'",cur.'+k+')'
+        cur[k] = HDFgroup()
+        cur._add_group(k,cur[k])
         cur._groups[k]._parent = cur
         self.increment_level()
         self.cur[self.ilevel]  = cur._groups[k]
@@ -337,4 +364,6 @@ class HDFreader(DevBase):
 
 
 
-
+def read_hdf(fpath,verbose=False,view=False):
+    return HDFreader(fpath=fpath,verbose=verbose,view=view).obj
+#end def read_hdf

@@ -3,6 +3,17 @@
 ##################################################################
 
 
+#====================================================================#
+#  sqd_analyzer.py                                                   #
+#    Supports analysis of SQD output data.                           #
+#                                                                    #
+#  Content summary:                                                  #
+#    SqdAnalyzer                                                     #
+#      SimulationAnalyzer class for the SQD code.                    #
+#                                                                    #
+#====================================================================#
+
+
 import os
 from numpy import loadtxt,empty,array,abs
 from generic import obj

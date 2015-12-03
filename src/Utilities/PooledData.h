@@ -379,7 +379,9 @@ struct PooledData
       myData.push_back((*first).imag());
     }
 #else
-    myData.insert(myData.end(),&(first->real()),&(first->real())+dn);
+    T* t=reinterpret_cast<T*>(first);
+    myData.insert(myData.end(),t,t+dn);
+    //myData.insert(myData.end(),&(first->real()),&(first->real())+dn);
 #endif
     Current += dn;
   }

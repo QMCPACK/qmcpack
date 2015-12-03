@@ -3,6 +3,32 @@
 ##################################################################
 
 
+#====================================================================#
+#  vasp_analyzer.py                                                  #
+#    Supports analysis of vasp output data including OUTCAR and      #
+#    xml data (vasprun.xml).  All data (bands, forces, stress, etc.) #
+#    are available in a structured format.                           #
+#                                                                    #
+#  Content summary:                                                  #
+#    VaspAnalyzer                                                    #
+#      SimulationAnalyzer class for VASP.                            #
+#                                                                    #
+#    OutcarData                                                      #
+#      Reads/processes data from OUTCAR file.                        #
+#                                                                    #
+#    VaspLines                                                       #
+#      Convenience class for line advancing read of OUTCAR file.     #
+#                                                                    #
+#    read_vxml                                                       #
+#      Function to read vasprun.xml.  Returns nested object          #
+#      representation of the file.                                   #
+#                                                                    #
+#    VXML                                                            #
+#      Represents an xml node of vasprun.xml.                        #
+#                                                                    #
+#====================================================================#
+
+
 import os
 from numpy import array,zeros
 from generic import obj

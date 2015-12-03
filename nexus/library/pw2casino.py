@@ -3,8 +3,34 @@
 ##################################################################
 
 
+#====================================================================#
+#  pw2casino.py                                                      #
+#    Nexus interface for the pw2casino tool distributed with PWSCF.  #
+#    pseudopotentials between file formats.                          #
+#                                                                    #
+#  Content summary:                                                  #
+#    generate_pw2casino                                              #
+#      User-facing function to create pw2casino simulation objects.  #
+#                                                                    #
+#    generate_pw2casino_input                                        #
+#      User-facing funcion to create input for pw2casino.            #
+#                                                                    #
+#    Pw2casino                                                       #
+#      Simulation class for pw2casino.                               #
+#                                                                    #
+#    Pw2casinoInput                                                  #
+#      SimulationInput class for pw2casino.                          #
+#                                                                    #
+#    Pw2casinoAnalyzer                                               #
+#      SimulationAnalyzer class for pw2casino.                       #
+#      Reads data from pw2casino log output into numeric form.       #
+#                                                                    #
+#====================================================================#
+
+
 import os
 from generic import obj
+from unit_converter import convert
 from simulation import Simulation,SimulationInput,SimulationAnalyzer
 
 
@@ -63,7 +89,7 @@ class Pw2casinoInput(SimulationInput):
 
     allowed = set(ints+floats+strs+bools)
 
-    def read_contents(self,contents):
+    def read_text(self,contents,filepath=None):
         lines = contents.split('\n')
         inside = False
         for l in lines:
@@ -95,9 +121,9 @@ class Pw2casinoInput(SimulationInput):
                 inside=False
             #end if
         #end for
-    #end def read_contents
+    #end def read_text
 
-    def write_contents(self):
+    def write_text(self,filepath=None):
         contents = ''
         for sname,section in self.iteritems():
             contents+='&'+sname+'\n'
@@ -108,7 +134,7 @@ class Pw2casinoInput(SimulationInput):
             contents+='/\n'
         #end for
         return contents
-    #end def write_contents
+    #end def write_text
 
 
     def __init__(self,filepath=None,**vars):
