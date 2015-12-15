@@ -1,4 +1,7 @@
 h1. Getting and building QMCPACK
+
+Obtain the latest release or development copy from http://www.qmcpack.org
+
 h2. Prerequisite 
 
 * C/C++ compilers
@@ -7,26 +10,30 @@ h2. Prerequisite
 * libxml2, XML parser, http://xmlsoft.org/ 
 * hdf5, portable I/O library, http://www.hdfgroup.org/HDF5/
 * boost, peer-reviewed portable C++ source libraries, http://www.boost.org
-* einspline, 3D bspline library, http://einspline.sourceforge.net/
 * fftw, FFT library, http://www.fftw.org/
 
+Note that the einspline library is no longer required.
 
 h3. Building with cmake
 
-The build system for qmcpack is based on CMake.  It has been updated to eliminate
-the use of toolchain files for most use cases.  The build system works with GNU, 
-Intel, and IBM XLC compilers.  Compile options can be specified either through specific
-environmental or CMake variables.  When the libraries are installed in standard locations,
-e.g., /usr, /usr/local, there is no need to set environmental or cmake variables for the packages.
+The build system for qmcpack is based on CMake.  It will autoconfigure
+based on the detected compilers and libraries. Previously QMCPACK made
+extensive use of toolchains, but the system has since been updated to
+eliminate the use of toolchain files for most cases.  The build
+system works with GNU, Intel, and IBM XLC compilers.  Specific compile options
+can be specified either through specific environmental or CMake
+variables.  When the libraries are installed in standard locations,
+e.g., /usr, /usr/local, there is no need to set environmental or cmake
+variables for the packages.
 
 See http://docs.qmcpack.org for build examples on Linux, Mac OS X etc.
 
 
 h3.1. Set the environment
 
-A number of enviornmental variables affect the build.  In particular the can control
-the default paths for libraries, the default compilers, etc.  The list of enviornmental variables
-is given below:
+A number of enviornmental variables affect the build.  In particular
+they can control the default paths for libraries, the default
+compilers, etc.  The list of enviornmental variables is given below:
 
    CXX              C++ compiler
    CC               C Compiler
@@ -76,7 +83,7 @@ h3.3. Configure and build
 * Move to build directory, run cmake and make
 
    cd build
-   cmake  -D VAR1=VALUE1  -D VAR2=VALUE2 ..
+   cmake ..
    make -j 8
 
 
