@@ -493,11 +493,17 @@ IF(QMC_CUDA)
     MESSAGE(STATUS "Setting CUDA FLAGS=${CUDA_NVCC_FLAGS}")
   else(CUDA_NVCC_FLAGS MATCHES "arch")
     if(CUDA_VERSION VERSION_GREATER 6.5 OR CUDA_VERSION VERSION_EQUAL 6.5)
+# Temporarily disable fast_math because it causes multiple test failures
+#      SET(CUDA_NVCC_FLAGS
+#          "-arch=sm_35;-Drestrict=__restrict__;-DNO_CUDA_MAIN;-O3;-use_fast_math")
       SET(CUDA_NVCC_FLAGS
-          "-arch=sm_35;-Drestrict=__restrict__;-DNO_CUDA_MAIN;-O3;-use_fast_math")
+          "-arch=sm_35;-Drestrict=__restrict__;-DNO_CUDA_MAIN;-O3")
     else(CUDA_VERSION VERSION_GREATER 6.5 OR CUDA_VERSION VERSION_EQUAL 6.5)
+# Temporarily disable fast_math because it causes multiple test failures
+#      SET(CUDA_NVCC_FLAGS
+#          "-arch=sm_20;-Drestrict=__restrict__;-DNO_CUDA_MAIN;-O3;-use_fast_math")#
       SET(CUDA_NVCC_FLAGS
-          "-arch=sm_20;-Drestrict=__restrict__;-DNO_CUDA_MAIN;-O3;-use_fast_math")#
+          "-arch=sm_20;-Drestrict=__restrict__;-DNO_CUDA_MAIN;-O3")#
       MESSAGE(WARNING "Using outdated CUDA FLAGS=${CUDA_NVCC_FLAGS}")
     endif(CUDA_VERSION VERSION_GREATER 6.5 OR CUDA_VERSION VERSION_EQUAL 6.5)
   endif(CUDA_NVCC_FLAGS MATCHES "arch")
