@@ -46,7 +46,6 @@ public:
   vector<RealType> cumNorm;
   vector<RealType> instRij;
   Matrix<RealType> ratioIJ;
-
   string useDriftOption;
 
   ///multiple estimator
@@ -58,6 +57,10 @@ public:
 
   vector<ParticleSet::ParticleGradient_t*> G1;
   vector<ParticleSet::ParticleLaplacian_t*> L1;
+
+  //a list of single particle gradients for multiple wavefunctions;
+  vector<GradType> g1_old;
+  vector<GradType> g1_new;
 
   void resizeWorkSpace(int nw, int nptcls);
   void updateNorms();

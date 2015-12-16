@@ -22,7 +22,8 @@ ENDIF(QMC_BITS MATCHES 64)
 #SET(AIX_CXX_OPT_FLAGS "-O3 -qipa -qinline -qspill=2000")
 SET(AIX_CXX_COMMON_FLAGS "-qarch=pwr4 -qtune=pwr4 -qkeyword=restrict -qstrict -qansialias -qrtti=dyna ")
 #SET(AIX_CXX_OPT_FLAGS "-O3 -DINLINE_ALL=  -Q -qipa=inline -qinline ")
-SET(AIX_CXX_OPT_FLAGS "-O3 -DINLINE_ALL=  -Q ")
+#SET(AIX_CXX_OPT_FLAGS "-O3 -DINLINE_ALL=  -Q ")
+SET(AIX_CXX_OPT_FLAGS "-DINLINE_ALL=  -Q ") # Optimization settings will be picked by build type
 SET(AIX_CXX_FLAGS "-O")
 
 ######################################################################

@@ -303,7 +303,7 @@ void CSVMCUpdateAllWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_en
     if (measure==true)
        for(int ipsi=0; ipsi<nPsi; ipsi++) cumNorm[ipsi]+=invsumratio[ipsi];
        
-    assignDrift(Tau,MassInvP,W.G,drift);
+    assignDrift(Tau,MassInvP,cumGrad,drift);
 
     deltaR = thisWalker.R - W.R - drift;
 

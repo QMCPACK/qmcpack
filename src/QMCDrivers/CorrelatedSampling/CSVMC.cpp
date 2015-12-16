@@ -275,10 +275,14 @@ void CSVMC::resetRun()
 
   makeClones(W,Psi1,H1);
   FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
+ 
+  if(NumThreads>1) APP_ABORT("OpenMP Parallelization for CSVMC not working at the moment");
+
   app_log() << "  Initial partition of walkers ";
   std::copy(wPerNode.begin(),wPerNode.end(),ostream_iterator<int>(app_log()," "));
   app_log() << endl;
   
+ 
   if(Movers.empty())
   {
 	CSMovers.resize(NumThreads,0);
@@ -286,7 +290,8 @@ void CSVMC::resetRun()
     estimatorClones.resize(NumThreads,0);
     traceClones.resize(NumThreads,0);
     Rng.resize(NumThreads,0);
-
+ 
+    
 #if !defined(BGP_BUG)
     #pragma omp parallel for
 #endif    
@@ -307,9 +312,11 @@ void CSVMC::resetRun()
 	 //  hClones[ip]->setRandomGenerator(Rng[ip]);
       if(QMCDriverMode[QMC_UPDATE_MODE])
       {
-        os << "  Using particle-by-particle update " << endl;
-       // CSMovers[ip]=new CSVMCUpdatePbyP(*wClones[ip],PsiPoolClones[ip],HPoolClones[ip],Rng[ip]);
+        os << "  Using particle-by-particle update with fast drift" << endl;
+        APP_ABORT("CSVMC update particle-by-particle with fast drift is still being debugged\n");
+        CSMovers[ip]=new CSVMCUpdatePbyPWithDriftFast(*wClones[ip],PsiPoolClones[ip],HPoolClones[ip],*Rng[ip]);
       }
+      
       if (UseDrift == "yes")
       {
         os << "  Using walker-by-walker update with Drift " << endl;
@@ -365,9 +372,11 @@ void CSVMC::resetRun()
     CSMovers[ip]->put(qmcNode);
     CSMovers[ip]->resetRun(branchClones[ip],estimatorClones[ip],traceClones[ip]);
     if (QMCDriverMode[QMC_UPDATE_MODE])
-     APP_ABORT("Uggh.  PbyP not working");  ////  CSMovers[ip]->initCSWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1], nWarmupSteps>0);
+       app_log()<<"QMCDriverMode[QMC_UPDATE_MODE]==True\n";
+   //  APP_ABORT("Uggh.  PbyP not working");  
+   CSMovers[ip]->initCSWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1], nWarmupSteps>0);
    // else
-      CSMovers[ip]->initCSWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1], nWarmupSteps>0);
+  //    CSMovers[ip]->initCSWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1], nWarmupSteps>0);
 //       if (UseDrift != "rn")
 //       {
     for (int prestep=0; prestep<nWarmupSteps; ++prestep)

@@ -37,6 +37,20 @@ struct QMCGaussianParserBase
   int SizeOfBasisSet;
 // mmorales: number of Molecular orbitals, not always equal to SizeOfBasisSet
   int numMO, readNO, readGuess, numMO2print;
+// benali: Point Charge from FMO ESP 
+  int *  ESPIonChargeIndex;
+  int * ESPValenceChargeIndex;
+  int * ESPAtomicNumberIndex;
+  int TotNumMonomer;
+  ParticleSet *ESPSystem;
+  std::vector <vector<double> > ESP;
+  std::vector <vector <string> > ESPGroupName;
+  xmlNodePtr createESPSet(int iesp);
+  static std::map<int,std::string> ESPName;
+  int FMOIndexI,FMOIndexJ,FMOIndexK;
+  bool FMO, FMO1,FMO2,FMO3;
+  
+
   std::string Title;
   std::string basisType;
   std::string basisName;
@@ -47,7 +61,9 @@ struct QMCGaussianParserBase
 
   ParticleSet IonSystem;
 
+
   std::vector<string> GroupName;
+
   std::vector<int> gShell, gNumber, gBound;
   std::vector<int> Occ_alpha, Occ_beta;
   std::vector<value_type> Qv;
@@ -66,6 +82,8 @@ struct QMCGaussianParserBase
   int ci_size,ci_nca,ci_ncb,ci_nea,ci_neb,ci_nstates;
   double ci_threshold;
   bool usingCSF;
+  bool VSVB;
+
   std::vector<pair<int,double> > coeff2csf;
 
   QMCGaussianParserBase();
@@ -83,6 +101,7 @@ struct QMCGaussianParserBase
   void createShell(int n, int ig, int off_, xmlNodePtr abasis);
   xmlNodePtr createDeterminantSet();
   xmlNodePtr createMultiDeterminantSet();
+  xmlNodePtr createMultiDeterminantSetVSVB();
   xmlNodePtr createDeterminantSetWithHDF5();
   xmlNodePtr createJ3();
   xmlNodePtr createJ2();
@@ -97,8 +116,13 @@ struct QMCGaussianParserBase
   virtual void dump(const string& psi_tag,
                     const string& ion_tag);
 
+  virtual void Fmodump(const string& psi_tag,
+                                 const string& ion_tag,
+                                 std::string Mytag);
+
   //static std::vector<std::string> IonName;
   static std::map<int,std::string> IonName;
+
   static std::vector<std::string> gShellType;
   static std::vector<int>         gShellID;
 

@@ -11,8 +11,6 @@ SET(AIX_OPT_FLAGS "-qmaxmem=-1")
 SET(CMAKE_CXX_FLAGS "${AIX_ARCH_FLAGS} ${AIX_CXX_COMMON_FLAGS} ${AIX_OPT_FLAGS}")
 SET(CMAKE_C_FLAGS "${AIX_ARCH_FLAGS} ${AIX_OPT_FLAGS}")
 
-
-SET(BGQ 1)
 SET(QMC_CUDA 0)
 SET(QMC_COMPLEX 0)
 SET(ENABLE_OPENMP 1)
@@ -26,18 +24,14 @@ SET(HAVE_ADIOS 0)
 SET(BUILD_QMCTOOLS 1)
 SET(BUILD_SANDBOX 1)
 
+SET(BOOST_ROOT /home/projects/qmcpack/boost_1_45_0)
 
-
-
-SET(Boost_INCLUDE_DIR /home/projects/qmcpack/boost_1_45_0)
 SET(CMAKE_FIND_ROOT_PATH
-     /home/projects/qmcpack/boost_1_45_0
      /home/projects/qmcpack/LIBXML2-2.9
      /soft/libraries/hdf5/current/cnk-xl/current
      /soft/libraries/alcf/current/xl/FFTW3
      /soft/libraries/alcf/current/xl/ZLIB
 )
-
 
 SET(LAPACK_LIBRARY /soft/libraries/alcf/current/xl/LAPACK/lib/liblapack.a)
 SET(BLAS_LIBRARY /soft/libraries/essl/current/essl/5.1/lib64/libesslsmpbg.a)
@@ -45,6 +39,7 @@ SET(FORTRAN_LIBRARIES
 $ENV{IBM_FCMP_DIR}/bglib64/libxlf90_r.a
 $ENV{IBM_FCMP_DIR}/bglib64/libxlopt.a
 )
+
 LINK_LIBRARIES(
 $ENV{IBM_MAIN_DIR}/xlmass/bg/7.3/bglib64/libmass.a 
 $ENV{IBM_MAIN_DIR}/xlmass/bg/7.3/bglib64/libmassv.a 
@@ -53,4 +48,11 @@ $ENV{IBM_MAIN_DIR}/xlmass/bg/7.3/bglib64/libmassv.a
 #/bgsys/drivers/ppcfloor/spi/lib/libSPI_upci_cnk.a
 #-pg
 )
+
+FOREACH(type SHARED_LIBRARY SHARED_MODULE EXE)
+  SET(CMAKE_${type}_LINK_STATIC_C_FLAGS "-Wl,-Bstatic")
+  SET(CMAKE_${type}_LINK_DYNAMIC_C_FLAGS "-Wl,-Bstatic")
+  SET(CMAKE_${type}_LINK_STATIC_CXX_FLAGS "-Wl,-Bstatic")
+  SET(CMAKE_${type}_LINK_DYNAMIC_CXX_FLAGS "-Wl,-Bstatic")
+ENDFOREACH(type)
 
