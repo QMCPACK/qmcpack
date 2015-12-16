@@ -19,6 +19,8 @@ SET(MOSRCS
   CasinoParser.cpp
   BParser.cpp
   BMakeFunc.cpp
+  GamesFMOParser.cpp
+  VSVBParser.cpp
 )
 
 # create libmocommon 

@@ -39,6 +39,7 @@ QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv):
   AtomicNumberIndex=IonSystem.getSpeciesSet().addAttribute("atomicnumber");
   cout << "Index of ion charge " << IonChargeIndex << endl;
   cout << "Index of valence charge " << ValenceChargeIndex << endl;
+
   createGridNode(argc,argv);
 }
 
@@ -231,6 +232,20 @@ xmlNodePtr QMCGaussianParserBase::createElectronSet()
   return o.createNode(false);
 }
 
+xmlNodePtr QMCGaussianParserBase::createESPSet(int iesp)
+{
+  const double ang_to_bohr=1.0/0.529177e0;
+  if(!BohrUnit)
+    ESPSystem[iesp].R *= ang_to_bohr;
+  SpeciesSet& ionSpecies(ESPSystem[iesp].getSpeciesSet());
+  for(int i=0; i<ESPSystem[iesp].getTotalNum(); i++)
+  {
+    ionSpecies(ESPValenceChargeIndex[iesp],i)=1;
+  }
+  XMLSaveParticle o(ESPSystem[iesp]);
+  return o.createNode(Periodicity);
+}
+
 xmlNodePtr QMCGaussianParserBase::createIonSet()
 {
   const double ang_to_bohr=1.0/0.529177e0;
@@ -252,7 +267,7 @@ xmlNodePtr QMCGaussianParserBase::createIonSet()
   {
     int z = static_cast<int>(ionSpecies(AtomicNumberIndex,i));
     double valence = ionSpecies(IonChargeIndex,i);
-    if(valence>CoreTable[z])
+    if(valence>CoreTable[z]&& FMO != true)
       valence-=CoreTable[z];
     ionSpecies(ValenceChargeIndex,i)=valence;
   }
@@ -379,6 +394,9 @@ QMCGaussianParserBase::createDeterminantSet()
   xmlNodePtr adet = xmlNewNode(NULL,(const xmlChar*)"determinant");
   xmlNewProp(adet,(const xmlChar*)"id",(const xmlChar*)"updet");
   xmlNewProp(adet,(const xmlChar*)"size",(const xmlChar*)up_size.str().c_str());
+  if (FMO==true || VSVB==true)
+     xmlNewProp(adet,(const xmlChar*)"cuspInfo",(const xmlChar*)"../CuspCorrection/updet.cuspInfo.xml");
+
   //occ<<"\n";
   //vector<int>::iterator it(Occ_alpha.begin());
   //int i=0;
@@ -421,6 +439,9 @@ QMCGaussianParserBase::createDeterminantSet()
   adet = xmlNewNode(NULL,(const xmlChar*)"determinant");
   xmlNewProp(adet,(const xmlChar*)"id",(const xmlChar*)"downdet");
   xmlNewProp(adet,(const xmlChar*)"size",(const xmlChar*)down_size.str().c_str());
+  if (FMO==true || VSVB==true)
+     xmlNewProp(adet,(const xmlChar*)"cuspInfo",(const xmlChar*)"../CuspCorrection/dndet.cuspInfo.xml");
+
   {
     //std::ostringstream occ_beta;
     //occ_beta<<"\n";
@@ -542,6 +563,84 @@ QMCGaussianParserBase::createSPOSets(xmlNodePtr spoUP, xmlNodePtr spoDN)
   }
 }
 
+
+xmlNodePtr
+QMCGaussianParserBase::createMultiDeterminantSetVSVB()
+{
+  xmlNodePtr multislaterdet = xmlNewNode(NULL,(const xmlChar*)"multideterminant");
+  xmlNewProp(multislaterdet,(const xmlChar*)"optimize",(const xmlChar*)"yes");
+  xmlNewProp(multislaterdet,(const xmlChar*)"spo_up",(const xmlChar*)"spo-up");
+  xmlNewProp(multislaterdet,(const xmlChar*)"spo_dn",(const xmlChar*)"spo-dn");
+  xmlNodePtr detlist = xmlNewNode(NULL,(const xmlChar*)"detlist");
+  std::ostringstream nstates,cisize,cinca,cincb,cinea,cineb,ci_thr;
+  cisize <<ci_size;
+  nstates <<ci_nstates;
+  cinca <<ci_nca;
+  cincb <<ci_ncb;
+  cinea <<ci_nea;
+  cineb <<ci_neb;
+  ci_thr <<ci_threshold;
+  xmlNewProp(detlist,(const xmlChar*)"size",(const xmlChar*)cisize.str().c_str());
+  xmlNewProp(detlist,(const xmlChar*)"type",(const xmlChar*)"CSF");
+  xmlNewProp(detlist,(const xmlChar*)"nca",(const xmlChar*)cinca.str().c_str());
+  xmlNewProp(detlist,(const xmlChar*)"ncb",(const xmlChar*)cincb.str().c_str());
+  xmlNewProp(detlist,(const xmlChar*)"nea",(const xmlChar*)cinea.str().c_str());
+  xmlNewProp(detlist,(const xmlChar*)"neb",(const xmlChar*)cineb.str().c_str());
+  xmlNewProp(detlist,(const xmlChar*)"nstates",(const xmlChar*)nstates.str().c_str());
+  xmlNewProp(detlist,(const xmlChar*)"cutoff",(const xmlChar*)ci_thr.str().c_str());
+  CIexcitLVL.clear();
+  for(int i=0; i<CSFocc.size(); i++)
+  {
+    CIexcitLVL.push_back(0);
+    //cout<<CSFocc[i] <<" " <<CIexcitLVL.back() <<endl;
+  }
+  // order dets according to ci coeff
+  std::vector<pair<double,int> > order;
+  for(int i=0; i<coeff2csf.size(); i++)
+  {
+    pair<double,int> cic(std::abs(coeff2csf[i].second),i);
+    order.push_back(cic);
+  }
+  std::vector<pair<double,int> >::reverse_iterator it(order.rbegin());
+  std::vector<pair<double,int> >::reverse_iterator last(order.rend());
+  int iv=0;
+  while(it != last)
+  {
+    int nq = (*it).second;
+    xmlNodePtr csf = xmlNewNode(NULL,(const xmlChar*)"csf");
+    std::ostringstream qc_coeff;
+    qc_coeff<<coeff2csf[nq].second;
+    std::ostringstream coeff;
+    std::ostringstream exct;
+    exct<<CIexcitLVL[nq];
+    coeff<<coeff2csf[nq].second;
+    std::ostringstream tag;
+    tag<<"CSFcoeff_" <<iv;
+    xmlNewProp(csf,(const xmlChar*)"id",(const xmlChar*) tag.str().c_str());
+    xmlNewProp(csf,(const xmlChar*)"exctLvl",(const xmlChar*) exct.str().c_str());
+    xmlNewProp(csf,(const xmlChar*)"coeff",(const xmlChar*) coeff.str().c_str());
+    xmlNewProp(csf,(const xmlChar*)"qchem_coeff",(const xmlChar*) qc_coeff.str().c_str());
+    xmlNewProp(csf,(const xmlChar*)"occ",(const xmlChar*) CSFocc[nq].substr(0,ci_nstates).c_str());
+    for(int i=0; i<CSFexpansion[nq].size(); i++)
+    {
+      xmlNodePtr ci = xmlNewNode(NULL,(const xmlChar*)"det");
+      std::ostringstream coeff0;
+      coeff0<<CSFexpansion[nq][i];
+      std::ostringstream tag0;
+      tag0<<"csf_" <<iv <<"-" <<i;
+      xmlNewProp(ci,(const xmlChar*)"id",(const xmlChar*) tag0.str().c_str());
+      xmlNewProp(ci,(const xmlChar*)"coeff",(const xmlChar*) coeff0.str().c_str());
+      xmlNewProp(ci,(const xmlChar*)"alpha",(const xmlChar*) CSFalpha[nq][i].substr(0,ci_nstates).c_str());
+      xmlNewProp(ci,(const xmlChar*)"beta",(const xmlChar*) CSFbeta[nq][i].substr(0,ci_nstates).c_str());
+      xmlAddChild(csf,ci);
+    }
+    xmlAddChild(detlist,csf);
+    it++;
+    iv++;
+  }
+  xmlAddChild(multislaterdet,detlist);
+  return multislaterdet;
+}
 xmlNodePtr
 QMCGaussianParserBase::createMultiDeterminantSet()
 {
@@ -1070,9 +1169,128 @@ void QMCGaussianParserBase::dump(const string& psi_tag,
       xmlNewProp(detPtr,(const xmlChar*)"type",(const xmlChar*)"MolecularOrbital");
       xmlNewProp(detPtr,(const xmlChar*)"transform",(const xmlChar*)"yes");
       xmlNewProp(detPtr,(const xmlChar*)"source",(const xmlChar*)ion_tag.c_str());
+      if (VSVB==true)
+         xmlNewProp(detPtr,(const xmlChar*)"cuspCorrection",(const xmlChar*)"yes");
+
       {
         xmlNodePtr bsetPtr = createBasisSet();
         xmlAddChild(detPtr,bsetPtr);
+        if(multideterminant)
+        {
+          xmlNodePtr spoupPtr = xmlNewNode(NULL,(const xmlChar*)"sposet");
+          xmlNodePtr spodnPtr = xmlNewNode(NULL,(const xmlChar*)"sposet");
+          xmlNewProp(spoupPtr,(const xmlChar*)"basisset",(const xmlChar*)"LCAOBSet");
+          xmlNewProp(spodnPtr,(const xmlChar*)"basisset",(const xmlChar*)"LCAOBSet");
+          createSPOSets(spoupPtr,spodnPtr);
+          xmlAddChild(detPtr,spoupPtr);
+          xmlAddChild(detPtr,spodnPtr);
+          xmlNodePtr multislaterdetPtr=NULL;
+
+          if (VSVB)        
+             multislaterdetPtr = createMultiDeterminantSetVSVB();
+          else
+             multislaterdetPtr = createMultiDeterminantSet();
+      
+  
+          xmlAddChild(detPtr,multislaterdetPtr);
+        }
+        else
+        {
+          xmlNodePtr slaterdetPtr=NULL;
+          if(UseHDF5)
+          {
+            slaterdetPtr = createDeterminantSetWithHDF5();
+          }
+          else
+          {
+            slaterdetPtr = createDeterminantSet();
+          }
+          xmlAddChild(detPtr,slaterdetPtr);
+        }
+      }
+      xmlAddChild(wfPtr,detPtr);
+      if(addJastrow)
+      {
+        cout << "Adding Two-Body and One-Body jastrows with rcut=\"10\" and size=\"10\"" << endl;
+        xmlAddChild(wfPtr,createJ2());
+        xmlAddChild(wfPtr,createJ1());
+      }
+      if(addJastrow3Body)
+      {
+        cout << "Adding Three-Body rcut=\"10\". " << endl;
+        xmlAddChild(wfPtr,createJ3());
+      }
+    }
+    xmlAddChild(qm_root,wfPtr);
+  }
+  xmlDocSetRootElement(doc, qm_root);
+  xmlXPathContextPtr m_context = xmlXPathNewContext(doc);
+  xmlXPathObjectPtr result
+  = xmlXPathEvalExpression((const xmlChar*)"//atomicBasisSet",m_context);
+  if(!xmlXPathNodeSetIsEmpty(result->nodesetval))
+  {
+    for(int ic=0; ic<result->nodesetval->nodeNr; ic++)
+    {
+      xmlNodePtr cur = result->nodesetval->nodeTab[ic];
+      map2GridFunctors(cur);
+    }
+  }
+  xmlXPathFreeObject(result);
+  std::string fname = Title+"."+basisName+".xml";
+  xmlSaveFormatFile(fname.c_str(),doc,1);
+  xmlFreeDoc(doc);
+}
+void QMCGaussianParserBase::Fmodump(const string& psi_tag,
+                                 const string& ion_tag,
+                                 std::string Mytag)
+{
+  cout << " QMCGaussianParserBase::Fmodump " << endl;
+   {
+   
+    xmlDocPtr doc_p = xmlNewDoc((const xmlChar*)"1.0");
+    xmlNodePtr qm_root_p = xmlNewNode(NULL, BAD_CAST "qmcsystem");
+    xmlAddChild(qm_root_p,createElectronSet());
+    xmlAddChild(qm_root_p,createIonSet());
+    for (int iesp=0;iesp<TotNumMonomer;iesp++)
+    {
+       if(FMO1)
+          if (iesp!=FMOIndexI)
+             xmlAddChild(qm_root_p,createESPSet(iesp));
+
+       if(FMO2)
+          if (iesp!=FMOIndexI && iesp!=FMOIndexJ)
+             xmlAddChild(qm_root_p,createESPSet(iesp));
+
+       if(FMO3)
+          if (iesp!=FMOIndexI && iesp!=FMOIndexJ && iesp!=FMOIndexK)
+             xmlAddChild(qm_root_p,createESPSet(iesp));
+
+
+    }
+    xmlDocSetRootElement(doc_p, qm_root_p);
+    std::string fname = Mytag+".ptcl.xml";
+    xmlSaveFormatFile(fname.c_str(),doc_p,1);
+    xmlFreeDoc(doc_p);
+  }
+  xmlDocPtr doc = xmlNewDoc((const xmlChar*)"1.0");
+  xmlNodePtr qm_root = xmlNewNode(NULL, BAD_CAST "qmcsystem");
+  {
+    //wavefunction
+    xmlNodePtr wfPtr = xmlNewNode(NULL,(const xmlChar*)"wavefunction");
+    xmlNewProp(wfPtr,(const xmlChar*)"id",(const xmlChar*)psi_tag.c_str());
+    xmlNewProp(wfPtr,(const xmlChar*)"target",(const xmlChar*)"e");
+    {
+
+      xmlNodePtr detPtr = xmlNewNode(NULL, (const xmlChar*) "determinantset");
+      xmlNewProp(detPtr,(const xmlChar*)"name",(const xmlChar*)"LCAOBSet");
+      xmlNewProp(detPtr,(const xmlChar*)"type",(const xmlChar*)"MolecularOrbital");
+      xmlNewProp(detPtr,(const xmlChar*)"transform",(const xmlChar*)"yes");
+      xmlNewProp(detPtr,(const xmlChar*)"source",(const xmlChar*)ion_tag.c_str());
+      xmlNewProp(detPtr,(const xmlChar*)"cuspCorrection",(const xmlChar*)"yes");
+      {
+        xmlNodePtr bsetPtr = createBasisSet();
+        xmlAddChild(detPtr,bsetPtr);
+
         if(multideterminant)
         {
           xmlNodePtr spoupPtr = xmlNewNode(NULL,(const xmlChar*)"sposet");
@@ -1128,11 +1346,90 @@ void QMCGaussianParserBase::dump(const string& psi_tag,
     }
   }
   xmlXPathFreeObject(result);
-  std::string fname = Title+"."+basisName+".xml";
+  std::string fname = Mytag+".wfs.xml";
   xmlSaveFormatFile(fname.c_str(),doc,1);
   xmlFreeDoc(doc);
-}
 
+  //Hamiltonian
+
+  xmlDocPtr doc_h = xmlNewDoc((const xmlChar*)"1.0");
+  xmlNodePtr qm_root_h = xmlNewNode(NULL, BAD_CAST "qmcsystem");
+  std::string fname_h = Mytag+".ham.xml";
+
+  xmlNodePtr hamPtr = xmlNewNode(NULL,(const xmlChar*)"hamiltonian");
+  xmlNewProp(hamPtr,(const xmlChar*)"name",(const xmlChar*)"h0");
+  xmlNewProp(hamPtr,(const xmlChar*)"type",(const xmlChar*)"generic");
+  xmlNewProp(hamPtr,(const xmlChar*)"target",(const xmlChar*)"e");
+  {
+    xmlNodePtr pairpot1 = xmlNewNode(NULL,(const xmlChar*)"pairpot");
+    xmlNewProp(pairpot1,(const xmlChar*)"name", (const xmlChar*)"ElecElec");
+    xmlNewProp(pairpot1,(const xmlChar*)"type", (const xmlChar*)"coulomb");
+    xmlNewProp(pairpot1,(const xmlChar*)"source", (const xmlChar*)"e");
+    xmlNewProp(pairpot1,(const xmlChar*)"target", (const xmlChar*)"e");
+    xmlAddChild(hamPtr,pairpot1);
+
+    xmlNodePtr pairpot2 = xmlNewNode(NULL,(const xmlChar*)"pairpot");
+    xmlNewProp(pairpot2,(const xmlChar*)"name", (const xmlChar*)"IonElec");
+    xmlNewProp(pairpot2,(const xmlChar*)"type", (const xmlChar*)"coulomb");
+    xmlNewProp(pairpot2,(const xmlChar*)"source", (const xmlChar*)ion_tag.c_str());
+    xmlNewProp(pairpot2,(const xmlChar*)"target", (const xmlChar*)"e");
+    xmlAddChild(hamPtr,pairpot2);
+
+    xmlNodePtr pairpot3 = xmlNewNode(NULL,(const xmlChar*)"pairpot");
+    xmlNewProp(pairpot3,(const xmlChar*)"name", (const xmlChar*)"IonIon");
+    xmlNewProp(pairpot3,(const xmlChar*)"type", (const xmlChar*)"coulomb");
+    xmlNewProp(pairpot3,(const xmlChar*)"source", (const xmlChar*)ion_tag.c_str());
+    xmlNewProp(pairpot3,(const xmlChar*)"target", (const xmlChar*)ion_tag.c_str());
+    xmlAddChild(hamPtr,pairpot3);
+
+    for (int iesp=0;iesp<TotNumMonomer;iesp++)
+    {
+       std::string name;
+       if(FMO1)
+          if (iesp!=FMOIndexI)
+          {
+             name="nm"+ESPSystem[iesp].getName();
+             xmlNodePtr pairpot4 = xmlNewNode(NULL,(const xmlChar*)"pairpot");
+             xmlNewProp(pairpot4,(const xmlChar*)"name", (const xmlChar*)name.c_str());
+             xmlNewProp(pairpot4,(const xmlChar*)"type", (const xmlChar*)"coulomb");
+             xmlNewProp(pairpot4,(const xmlChar*)"source", (const xmlChar*)ESPSystem[iesp].getName().c_str());
+             xmlNewProp(pairpot4,(const xmlChar*)"target", (const xmlChar*)"e");
+             xmlAddChild(hamPtr,pairpot4);
+          }
+          
+       if(FMO2)
+          if (iesp!=FMOIndexI && iesp!=FMOIndexJ)
+          {
+             name="nm"+ESPSystem[iesp].getName();
+             xmlNodePtr pairpot4 = xmlNewNode(NULL,(const xmlChar*)"pairpot");
+             xmlNewProp(pairpot4,(const xmlChar*)"name", (const xmlChar*)name.c_str());
+             xmlNewProp(pairpot4,(const xmlChar*)"type", (const xmlChar*)"coulomb");
+             xmlNewProp(pairpot4,(const xmlChar*)"source", (const xmlChar*)ESPSystem[iesp].getName().c_str());
+             xmlNewProp(pairpot4,(const xmlChar*)"target", (const xmlChar*)"e");
+             xmlAddChild(hamPtr,pairpot4);
+          }
+
+       if(FMO3)
+          if (iesp!=FMOIndexI && iesp!=FMOIndexJ && iesp!=FMOIndexK)
+          {
+             name="nm"+ESPSystem[iesp].getName();
+             xmlNodePtr pairpot4 = xmlNewNode(NULL,(const xmlChar*)"pairpot");
+             xmlNewProp(pairpot4,(const xmlChar*)"name", (const xmlChar*)name.c_str());
+             xmlNewProp(pairpot4,(const xmlChar*)"type", (const xmlChar*)"coulomb");
+             xmlNewProp(pairpot4,(const xmlChar*)"source", (const xmlChar*)ESPSystem[iesp].getName().c_str());
+             xmlNewProp(pairpot4,(const xmlChar*)"target", (const xmlChar*)"e");
+             xmlAddChild(hamPtr,pairpot4);
+          }
+    }
+
+  }
+  xmlAddChild(qm_root_h,hamPtr);
+
+  xmlDocSetRootElement(doc_h, qm_root_h);
+  xmlSaveFormatFile(fname_h.c_str(),doc_h,1);
+  xmlFreeDoc(doc_h);
+
+}
 int QMCGaussianParserBase::numberOfExcitationsCSF(string& occ)
 {
   int res=0;
