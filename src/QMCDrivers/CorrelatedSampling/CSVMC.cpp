@@ -275,10 +275,14 @@ void CSVMC::resetRun()
 
   makeClones(W,Psi1,H1);
   FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
+ 
+  if(NumThreads>1) APP_ABORT("OpenMP Parallelization for CSVMC not working at the moment");
+
   app_log() << "  Initial partition of walkers ";
   std::copy(wPerNode.begin(),wPerNode.end(),ostream_iterator<int>(app_log()," "));
   app_log() << endl;
   
+ 
   if(Movers.empty())
   {
 	CSMovers.resize(NumThreads,0);
@@ -286,7 +290,8 @@ void CSVMC::resetRun()
     estimatorClones.resize(NumThreads,0);
     traceClones.resize(NumThreads,0);
     Rng.resize(NumThreads,0);
-
+ 
+    
 #if !defined(BGP_BUG)
     #pragma omp parallel for
 #endif    
