@@ -39,6 +39,26 @@ public:
 
 private:
 };
+/** @ingroup QMCDrivers MultiplePsi ParticleByParticle
+ *
+ * @brief Implements the VMC algorithm with drift.  
+ */
+class CSVMCUpdatePbyPWithDriftFast: public CSUpdateBase
+{
+
+public:
+  /// Constructor.
+  CSVMCUpdatePbyPWithDriftFast(MCWalkerConfiguration& w,
+                   vector<TrialWaveFunction*>& psi,
+                   vector<QMCHamiltonian*>& h,
+                  RandomGenerator_t& rg);
+
+  ~CSVMCUpdatePbyPWithDriftFast();
+
+  void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+
+private:
+};
 }
 
 #endif

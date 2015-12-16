@@ -50,6 +50,10 @@ void CSUpdateBase::resizeWorkSpace(int nw,int nptcls)
   instRij.resize(nPsi*(nPsi-1)/2);
   ratioIJ.resize(nw,nPsi*(nPsi-1)/2);
   dG.resize(nptcls);
+
+  g1_new.resize(nPsi);
+  g1_old.resize(nPsi);
+
   for(int ipsi=0; ipsi<nPsi; ipsi++)
   {
     Psi1[ipsi]->G.resize(nptcls);
@@ -212,6 +216,7 @@ void CSUpdateBase::initCSWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end,
     {
       thisWalker.Properties(ipsi,UMBRELLAWEIGHT)
       = invsumratio[ipsi] =1.0/sumratio[ipsi];
+      cumNorm[ipsi]+=1.0/sumratio[ipsi];
     }
     //DON't forget DRIFT!!!
 ///    thisWalker.Drift=0.0;
