@@ -372,11 +372,11 @@ void CSVMC::resetRun()
     CSMovers[ip]->put(qmcNode);
     CSMovers[ip]->resetRun(branchClones[ip],estimatorClones[ip],traceClones[ip]);
     if (QMCDriverMode[QMC_UPDATE_MODE])
-       app_log()<<"QMCDriverMode[QMC_UPDATE_MODE]==True\n";
-   //  APP_ABORT("Uggh.  PbyP not working");  
-   CSMovers[ip]->initCSWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1], nWarmupSteps>0);
+   //    app_log()<<"QMCDriverMode[QMC_UPDATE_MODE]==True\n";
+     APP_ABORT("Uggh.  PbyP not working");  
+//   CSMovers[ip]->initCSWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1], nWarmupSteps>0);
    // else
-  //    CSMovers[ip]->initCSWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1], nWarmupSteps>0);
+      CSMovers[ip]->initCSWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1], nWarmupSteps>0);
 //       if (UseDrift != "rn")
 //       {
     for (int prestep=0; prestep<nWarmupSteps; ++prestep)

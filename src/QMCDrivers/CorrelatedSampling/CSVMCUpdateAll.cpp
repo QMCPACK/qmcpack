@@ -185,7 +185,8 @@ void CSVMCUpdateAll::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool m
         thisWalker.Properties(ipsi,LOCALENERGY)=et;
         //multiEstimator->updateSample(iwlk,ipsi,et,invsumratio[ipsi]);
         //app_log()<<thisWalker.Properties(ipsi,UMBRELLAWEIGHT)<<" "<<endl;
-        H1[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
+         H1[ipsi]->auxHevaluate(W,thisWalker);
+         H1[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
       }
     //  updateNorms();
        // app_log()<<endl;
@@ -366,6 +367,7 @@ void CSVMCUpdateAllWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_en
         thisWalker.Properties(ipsi,LOCALENERGY)=et;
         //multiEstimator->updateSample(iwlk,ipsi,et,invsumratio[ipsi]);
         //app_log()<<thisWalker.Properties(ipsi,UMBRELLAWEIGHT)<<" "<<endl;
+         H1[ipsi]->auxHevaluate(W,thisWalker);
         H1[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
       }
     //  updateNorms();
