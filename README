@@ -41,7 +41,6 @@ compilers, etc.  The list of enviornmental variables is given below:
    LIBXML2_HOME     Path for libxml2
    HDF5_ROOT        Path for HDF5
    BOOST_ROOT       Path for Boost
-   EINSPLINE_HOME   Path for EINSPLINE
    FFTW_HOME        Path for FFTW
 
 
@@ -97,7 +96,6 @@ h3.4. Example configure and build
   export LIBXML2_HOME=/usr/local
   export HDF5_ROOT=/usr/local
   export BOOST_ROOT=/usr/local/boost
-  export EINSPLINE_HOME=/usr/local/einspline
   export FFTW_HOME=/usr/local/fftw
 
 * Move to build directory, run cmake and make
