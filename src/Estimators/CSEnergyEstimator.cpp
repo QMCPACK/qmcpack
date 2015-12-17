@@ -32,7 +32,7 @@ namespace qmcplusplus {
    */
   CSEnergyEstimator::CSEnergyEstimator(QMCHamiltonian& h, int hcopy) 
   {
-    int NumObservables = h.size();
+    int NumObservables = h.sizeOfObservables();
 
     NumCopies=hcopy;
     FirstHamiltonian = h.startIndex();
