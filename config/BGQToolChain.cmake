@@ -24,6 +24,9 @@ SET(HAVE_ADIOS 0)
 SET(BUILD_QMCTOOLS 1)
 SET(BUILD_SANDBOX 1)
 
+SET(MPIEXEC "sh")
+SET(MPIEXEC_NUMPROC_FLAG "${qmcpack_SOURCE_DIR}/utils/bgrunjobhelper.sh")
+
 SET(BOOST_ROOT /home/projects/qmcpack/boost_1_45_0)
 
 SET(CMAKE_FIND_ROOT_PATH
