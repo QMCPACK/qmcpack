@@ -67,6 +67,7 @@ to the configure line between the cmake command and the path to the source direc
     QMC_DATA            Specify data directory for QMCPACK (used for unit tests)
     QMC_EXTRA_LIBS      Add extra link libraries
     QMC_BUILD_STATIC    Add -static flags to build
+    QMC_CUDA            Enable CUDA (1:yes, 0:no)
 
   * libxml
     Libxml2_INCLUDE_DIRS  Specify include directories for libxml2
