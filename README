@@ -5,12 +5,12 @@ Obtain the latest release or development copy from http://www.qmcpack.org
 h2. Prerequisites
 
 * C/C++ compilers
-* cmake, build utility, http://www.cmake.org
-* blas/lapack, numerical library, use platform-optimized libraries
-* libxml2, XML parser, http://xmlsoft.org/ 
-* hdf5, portable I/O library, http://www.hdfgroup.org/HDF5/
-* boost, peer-reviewed portable C++ source libraries, http://www.boost.org
-* fftw, FFT library, http://www.fftw.org/
+* CMake, build utility, http://www.cmake.org
+* BLAS/LAPACK, numerical library, use platform-optimized libraries
+* Libxml2, XML parser, http://xmlsoft.org/ 
+* HDF5, portable I/O library, http://www.hdfgroup.org/HDF5/
+* BOOST, peer-reviewed portable C++ source libraries, http://www.boost.org
+* FFTW, FFT library, http://www.fftw.org/
 
 Note that the einspline library is no longer required.
 
