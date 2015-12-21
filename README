@@ -2,7 +2,7 @@ h1. Getting and building QMCPACK
 
 Obtain the latest release or development copy from http://www.qmcpack.org
 
-h2. Prerequisite 
+h2. Prerequisites
 
 * C/C++ compilers
 * cmake, build utility, http://www.cmake.org
@@ -16,7 +16,7 @@ Note that the einspline library is no longer required.
 
 h3. Building with cmake
 
-The build system for qmcpack is based on CMake.  It will autoconfigure
+The build system for QMCPACK is based on CMake.  It will autoconfigure
 based on the detected compilers and libraries. Previously QMCPACK made
 extensive use of toolchains, but the system has since been updated to
 eliminate the use of toolchain files for most cases.  The build
