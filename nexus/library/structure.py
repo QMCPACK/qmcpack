@@ -53,6 +53,168 @@ except (ImportError,RuntimeError):
 
 
 
+
+
+# installation instructions to enable cif file read
+#   
+#   cif file support in Nexus currently requires two external libraries
+#     PyCifRW  - base interface to read cif files into object format: CifFile
+#     cif2cell - translation layer from CifFile object to cell reconstruction: CellData
+#   
+#   Nexus is currently compatible with PyCifRW-4.1.1 and cif2cell-1.2.7
+#     compatibility last tested: 7 Aug 2015
+# 
+#   installation of PyCifRW
+#     go to https://pypi.python.org/pypi/PyCifRW/4.1
+#     scroll down to bottom of page, download PyCifRW-4.1.1.tar.gz (md5) 
+#     unpack PyCifRW-4.1.1.tar.gz (tar -xzf PyCifRW-4.1.1.tar.gz)
+#     enter directory (cd PyCifRW-4.1.1)
+#     install with python (python setup.py install)  (sudo python setup.py install)
+#     check python installation (python;  from CifFile import CifFile)
+#
+#  "installation" of cif2cell
+#    go to http://sourceforge.net/projects/cif2cell/
+#    click on Download (example: cif2cell-1.2.7.tar.gz)
+#    unpack directory (tar -xzf cif2cell-1.2.7.tar.gz)
+#    add directory to PYTHONPATH in .bashrc after Nexus (export PYTHONPATH=/your/path/to/nexus/library:/your/other/path/to/cif2cell-1.2.7)
+#    apparently an actual install of cif2cell (python setup.py install) will also install PyCifRW, so above install might be redundant
+#
+#
+try:
+    from CifFile import CifFile
+except:
+    CifFile = unavailable('CifFile','CifFile')
+#end try
+try:
+    from uctools import CellData
+except:
+    CellData = unavailable('uctools','CellData')
+#end try
+
+
+cif2cell_unit_dict = dict(angstrom='A',bohr='B',nm='nm')
+
+
+
+def read_cif_celldata(filepath,block=None,grammar='1.1'):
+    # read cif file with PyCifRW
+    path,cif_file = os.path.split(filepath)
+    cwd = os.getcwd()
+    os.chdir(path)
+    cf = CifFile(cif_file,grammar=grammar)
+    #cf = ReadCif(cif_file,grammar=grammar)
+    os.chdir(cwd)
+    if block is None:
+        block = cf.keys()[0]
+    #end if
+    cb = cf.get(block)
+    if cb is None:
+        error('block {0} was not found in cif file {1}'.format(block,filepath),'read_cif_celldata')
+    #end if
+
+    # repack H-M symbols as normal strings so CellData.getFromCIF won't choke on unicode
+    for k in ['_symmetry_space_group_name_H-M','_space_group_name_H-M_alt','_symmetry_space_group_name_h-m','_space_group_name_h-m_alt']:
+        if k in cb.block:
+            v = cb.block[k]
+            if isinstance(v,(list,tuple)):
+                for i in range(len(v)):
+                    if isinstance(v[i],unicode):
+                        v[i] = str(v[i])
+                    #end if
+                #end for
+            #end if
+        #end if
+    #end for
+
+    # extract structure from CifFile with uctools CellData class
+    cd = CellData()
+    cd.getFromCIF(cb)
+
+    return cd
+#end def read_cif_celldata
+
+
+
+def read_cif_cell(filepath,block=None,grammar='1.1',cell='prim'):
+    cd = read_cif_celldata(filepath,block,grammar)
+
+    if cell.startswith('prim'):
+        cell = cd.primitive()
+    elif cell.startswith('conv'):
+        cell = cd.conventional()
+    else:
+        error('cell argument must be primitive or conventional\nyou provided: {0}'.format(cell),'read_cif_cell')
+    #end if
+
+    return cell
+#end def read_cif_cell
+
+
+
+def read_cif(filepath,block=None,grammar='1.1',cell='prim',args_only=False):
+    if isinstance(filepath,str):
+        cell = read_cif_cell(filepath,block,grammar,cell)
+    else:
+        cell = filepath
+    #end if
+
+    # create Structure object from cell
+    if cell.alloy:
+        error('cannot handle alloys','read_cif')
+    #end if
+    units = cif2cell_unit_dict[cell.unit]
+    scale = float(cell.lengthscale)
+    scale = convert(scale,units,'A')
+    units = 'A'
+    axes  = scale*array(cell.latticevectors,dtype=float)
+    elem  = []
+    pos   = []
+    for wyckoff_atoms in cell.atomdata:
+        for atom in wyckoff_atoms:
+            elem.append(str(atom.species.keys()[0]))
+            pos.append(atom.position)
+        #end for
+    #end for
+    pos = dot(array(pos,dtype=float),axes)
+
+    if not args_only:
+        s = Structure(
+            axes  = axes,
+            elem  = elem,
+            pos   = pos,
+            units = units
+            )
+        return s
+    else:
+        return axes,elem,pos,units
+    #end if
+#end def read_cif
+
+
+
+
+
+# installation instructions for spglib interface
+#
+#  this is bootstrapped of of spglib's ASE Python interface
+#
+#  installation of spglib
+#    go to http://sourceforge.net/projects/spglib/files/
+#    click on Download spglib-1.8.2.tar.gz (952.6 kB)
+#    unpack directory (tar -xzf spglib-1.8.2.tar.gz)
+#    enter ase directory (cd spglib-1.8.2/python/ase/)
+#    build and install (sudo python setup.py install)
+from periodic_table import pt as ptable
+try:
+    from pyspglib import spglib
+except:
+    spglib = unavailable('pyspglib','spglib')
+#end try
+
+
+
+
+
 def equate(expr):
     return expr
 #end def equate
@@ -210,6 +372,46 @@ def tile_magnetization(mag,tilevec,mag_order,mag_prim):
 #end def tile_magnetization
 
 
+def rotate_plane(plane,angle,points,units='degrees'):
+    if units=='degrees':
+        angle *= pi/180
+    elif not units.startswith('rad'):
+        error('angular units must be degrees or radians\nyou provided: {0}'.format(angle),'rotate_plane')
+    #end if
+    c = cos(angle)
+    s = sin(angle)
+    if plane=='xy':
+        R = [[ c,-s, 0],
+             [ s, c, 0],
+             [ 0, 0, 1]]
+    elif plane=='yx':
+        R = [[ c, s, 0],
+             [-s, c, 0],
+             [ 0, 0, 1]]
+    elif plane=='yz':
+        R = [[ 1, 0, 0],
+             [ 0, c,-s],
+             [ 0, s, c]]
+    elif plane=='zy':
+        R = [[ 1, 0, 0],
+             [ 0, c, s],
+             [ 0,-s, c]]
+    elif plane=='zx':
+        R = [[ c, 0, s],
+             [ 0, 1, 0],
+             [-s, 0, c]]
+    elif plane=='xz':
+        R = [[ c, 0,-s],
+             [ 0, 1, 0],
+             [ s, 0, c]]
+    else:
+        error('plane must be xy/yx/yz/zy/zx/xz\nyou provided: {0}'.format(plane),'rotate_plane')
+    #end if
+    R = array(R,dtype=float)
+    return dot(R,points.T).T
+#end def rotate_plane
+
+
 
 
 class Sobj(DevBase):
@@ -331,6 +533,11 @@ class Structure(Sobj):
         return len(self.elem)
     #end def size
 
+    
+    def has_axes(self):
+        return len(self.axes)==self.dim
+    #end def has_axes
+
 
     def operate(self,operations):
         for op in operations:
@@ -405,6 +612,11 @@ class Structure(Sobj):
         self.kaxes = 2*pi*inv(axes).T
         self.center = axes.sum(0)/2
     #end def reset_axes
+
+
+    def set_axes(self,axes):
+        self.reset_axes(axes)
+    #end def set_axes
 
 
     def adjust_axes(self,axes):
@@ -504,7 +716,16 @@ class Structure(Sobj):
             self.folded_structure.permute(permutation)
         #end if
     #end def permute
-                
+
+
+    def rotate_plane(self,plane,angle,units='degrees'):
+        self.pos = rotate_plane(plane,angle,self.pos,units)
+        if self.has_axes():
+            axes = rotate_plane(plane,angle,self.axes,units)
+            self.reset_axes(axes)
+        #end if
+    #end def rotate_plane
+
 
     def upcast(self,DerivedStructure):
         if not issubclass(DerivedStructure,Structure):
@@ -2858,6 +3079,15 @@ class Structure(Sobj):
     #end def read_xyz
 
 
+    def read_cif(self,filepath,block=None,grammar='1.1',cell='prim'):
+        axes,elem,pos,units = read_cif(filepath,block,grammar,cell,args_only=True)
+        self.set_axes(axes)
+        self.set_elem(elem)
+        self.pos = pos
+        self.units = units
+    #end def read_cif
+
+
     def write(self,filepath=None,format=None):
         if filepath is None and format is None:
             self.error('please specify either the filepath or format arguments to write()')
@@ -3124,6 +3354,33 @@ class Structure(Sobj):
         self.write_xyz(filepath)
         os.system(viewer+' '+filepath)
     #end def show
+
+
+    # minimal ASE Atoms-like interface to Structure objects for spglib
+    def get_cell(self):
+        return self.axes
+    #end def get_cell
+
+    def get_scaled_positions(self):
+        return self.pos_unit()
+    #end def get_scaled_positions
+
+    def get_number_of_atoms(self):
+        return len(self.elem)
+    #end def get_number_of_atoms
+
+    def get_atomic_numbers(self):
+        an = []
+        for e in self.elem:
+            an.append(ptable[e].atomic_number)
+        #end for
+        return array(an,dtype='intc')
+    #end def get_atomic_numbers
+
+    def get_magnetic_moments(self):
+        self.error('structure objects do not currently support magnetic moments')
+    #end def get_magnetic_moments
+
 #end class Structure
 Structure.set_operations()
 
@@ -4012,6 +4269,10 @@ class Jellium(Structure):
 #end class Jellium
 
 
+    
+    
+
+
 
 
 def generate_cell(shape,tiling=None,scale=1.,units=None,struct_type=Structure):
@@ -4105,7 +4366,7 @@ def generate_dimer_structure(dimer=None,units='A',separation=None,Lbox=None,skew
 #end def generate_dimer_structure
 
 
-def generate_trimer_structure(trimer=None,units='A',separation=None,angle=None,Lbox=None,skew=0,axes=None,kgrid=(1,1,1),kshift=(0,0,0),struct_type=Structure,axis='x',axis2='y',angular_units='degrees'):
+def generate_trimer_structure(trimer=None,units='A',separation=None,angle=None,Lbox=None,skew=0,axes=None,kgrid=(1,1,1),kshift=(0,0,0),struct_type=Structure,axis='x',axis2='y',angular_units='degrees',plane_rot=None):
     if trimer is None:
         Structure.class_error('trimer atoms must be provided to construct trimer','generate_trimer_structure')
     #end if
@@ -4120,8 +4381,8 @@ def generate_trimer_structure(trimer=None,units='A',separation=None,angle=None,L
     #end if
     if angular_units=='degrees':
         angle *= pi/180
-    elif not angle.startswith('rad'):
-        Structure.class_error('angular units must be degrees or radians\nyou provided: {0}'.format(angle),'generate_trimer_structure')
+    elif not angular_units.startswith('rad'):
+        Structure.class_error('angular units must be degrees or radians\nyou provided: {0}'.format(angular_units),'generate_trimer_structure')
     #end if
     if axis==axis2:
         Structure.class_error('axis and axis2 must be different to define the trimer plane\nyou provided {0} for both'.format(axis),'generate_trimer_structure')
@@ -4163,6 +4424,9 @@ def generate_trimer_structure(trimer=None,units='A',separation=None,angle=None,L
     else:
         s = Structure(elem=trimer,pos=[p1,p2,p3],axes=axes,kgrid=kgrid,kshift=kshift,units=units)
         s.center_molecule()
+    #end if
+    if plane_rot!=None:
+        s.rotate_plane(axpair,plane_rot,angular_units)
     #end if
     return s
 #end def generate_trimer_structure

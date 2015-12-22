@@ -3933,7 +3933,7 @@ def generate_simulationcell(bconds='ppp',lr_dim_cutoff=15,system=None):
     if periodic:
         sc.lr_dim_cutoff = lr_dim_cutoff
         if not axes_valid:
-            QmcpackInput.class_error('invalid axes in generate_simulationcell\n  argument system must be provided\n  axes of the structure must have non-zero dimension')
+            QmcpackInput.class_error('invalid axes in generate_simulationcell\nargument system must be provided\naxes of the structure must have non-zero dimension')
         #end if
     #end if
     if axes_valid:
@@ -3953,7 +3953,7 @@ def generate_simulationcell(bconds='ppp',lr_dim_cutoff=15,system=None):
                 axes.shape = fs.axes.shape
                 axes = dot(structure.tmatrix,axes)
                 if abs(axes-structure.axes).sum()>1e-5:
-                    QmcpackInput.class_error('in generate_simulationcell\n  supercell axes do not match tiled version of folded cell axes\n  you may have changed one set of axes (super/folded) and not the other\n  folded cell axes:\n'+str(fs.axes)+'\n  supercell axes:\n'+str(structure.axes)+'\n  folded axes tiled:\n'+str(axes))
+                    QmcpackInput.class_error('in generate_simulationcell\nsupercell axes do not match tiled version of folded cell axes\nyou may have changed one set of axes (super/folded) and not the other\nfolded cell axes:\n'+str(fs.axes)+'\nsupercell axes:\n'+str(structure.axes)+'\nfolded axes tiled:\n'+str(axes))
                 #end if
             else:
                 axes = array(pwscf_array_string(structure.axes).split(),dtype=float)
