@@ -50,6 +50,7 @@ class SimulationBundle(Simulation):
         if len(sims)==1 and isinstance(sims[0],list):
             sims = sims[0]
         #end if
+        sims = list(sims) # make a copy
         if len(sims)==0:
             self.error('attempted to bundle 0 simulations\n  at least one simulation must be provided to bundle')
         #end if

@@ -316,9 +316,10 @@ class Job(NexusCore):
             if not machine.batch_capable:
                 self.error('running batched/bundled jobs on {0} is either not possible or not yet implemented, sorry.'.format(machine.name))
             #end if
-            for job in bundled_jobs:     # Paul Young's fix for jobs
-                machine.process_job(job) # with differing node counts
-            #end for
+            # not needed anymore?
+            #for job in bundled_jobs:     # Paul Young's fix for jobs
+            #    machine.process_job(job) # with differing node counts
+            ##end for
         #end if
 
         self.normalize_time()
