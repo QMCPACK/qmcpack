@@ -48,6 +48,7 @@ import time
 #from multiprocessing import cpu_count
 from socket import gethostname
 from subprocess import Popen,PIPE
+from random import randint
 from numpy import array,mod,floor,ceil,round,log
 from generic import obj
 from developer import DevBase
@@ -307,19 +308,13 @@ class Job(NexusCore):
             self.machine = machine
         #end if
         #check that the machine exists and have it complete the job info
-        machine = self.get_machine()
-        machine.process_job(self)
+        self.process()
 
+        machine = self.get_machine() 
         self.batch_mode = machine.in_batch_mode()
 
-        if bundled_jobs!=None: 
-            if not machine.batch_capable:
-                self.error('running batched/bundled jobs on {0} is either not possible or not yet implemented, sorry.'.format(machine.name))
-            #end if
-            # not needed anymore?
-            #for job in bundled_jobs:     # Paul Young's fix for jobs
-            #    machine.process_job(job) # with differing node counts
-            ##end for
+        if bundled_jobs!=None and not machine.batch_capable:
+            self.error('running batched/bundled jobs on {0} is either not possible or not yet implemented, sorry.'.format(machine.name))
         #end if
 
         self.normalize_time()
@@ -329,6 +324,14 @@ class Job(NexusCore):
     def get_machine(self):
         return Machine.get(self.machine)
     #end def get_machine
+
+    
+    def process(self,machine=None):
+        if machine is None:
+            machine = self.get_machine()
+        #end if
+        machine.process_job(self)
+    #end def process
 
 
     def initialize(self,sim):
@@ -385,6 +388,8 @@ class Job(NexusCore):
         if self.app_props==None:
             self.app_props   = list(sim.app_props)
         #end if
+        # ensure job is processed properly by this initialization stage
+        self.process()
     #end def initialize
 
 
@@ -466,9 +471,9 @@ class Job(NexusCore):
     #end def determine_end_status
 
 
-    def write(self):
+    def write(self,file=False):
         machine = self.get_machine()
-        return machine.write_job(self)
+        return machine.write_job(self,file=file)
     #end def write
 
 
@@ -600,6 +605,8 @@ class Machine(NexusCore):
     outfile_extension  = None
     errfile_extension  = None
 
+    allow_warnings = True
+
     @staticmethod
     def get_hostname():
         hostname = gethostname()
@@ -659,6 +666,177 @@ class Machine(NexusCore):
     #end def get
 
 
+    @staticmethod
+    def check_process_job_idempotency(nw=10,nwj=10,nsj=10,nij=10):
+        allow_warn = Machine.allow_warnings
+        Machine.allow_warnings = False
+        # sort known machines
+        workstations   = obj()
+        supercomputers = []
+        for machine in Machine.machines:
+            if isinstance(machine,Workstation):
+                workstations.append(machine)
+            elif isinstance(machine,Supercomputer):
+                supercomputers.append(machine)
+            else:
+                Machine.class_error('unknown machine type encountered: {0}'.format(machine.__class__.__name__),'check_process_job_idempotency')
+            #end if
+        #end for
+
+        not_idempotent = obj()
+
+        # check workstations
+        nworkstations = nw
+        if nworkstations is None:
+            nworkstations=len(workstations)
+        #end if
+        nworkstations = min(nworkstations,len(workstations))
+        njobs = nwj
+        for nm in range(nworkstations):
+            if nworkstations<len(workstations):
+                machine = workstations.select_random() # select machine at random
+            else:
+                machine = workstations[nm]
+            #end if
+            cores_min     = 1
+            cores_max     = machine.cores
+            processes_min = 1
+            processes_max = machine.cores
+            threads_min   = 1
+            threads_max   = machine.cores
+            job_inputs = []
+            job_inputs_base = []
+            for nj in range(njobs): # vary cores
+                cores   = randint(cores_min,cores_max)
+                threads = randint(threads_min,threads_max)
+                job_inputs_base.append(obj(cores=cores,threads=threads))
+            #end for
+            for nj in range(njobs): # vary processes
+                processes   = randint(processes_min,processes_max)
+                threads = randint(threads_min,threads_max)
+                job_inputs_base.append(obj(processes=processes,threads=threads))
+            #end for
+            job_inputs.extend(job_inputs_base)
+            for job_input in job_inputs_base: # run in serial
+                ji = job_input.copy()
+                ji.serial = True
+                job_inputs.append(ji)
+            #end for
+            # perform idempotency test
+            machine_idempotent = True
+            for job_input in job_inputs:
+                job = Job(machine=machine.name,**job_input)
+                job2 = obj.copy(job)
+                machine.process_job(job2)
+                machine_idempotent &= job==job2
+            #end for
+            if not machine_idempotent:
+                not_idempotent[machine.name] = machine
+            #end if
+        #end for
+
+        # check supercomputers
+        njobs = nsj
+        small_node_ceiling = 20
+        nodes_min   = 1
+        cores_min   = 1
+        threads_min = 1
+        shared_job_inputs = obj(name='some_job',account='some_account')
+        for machine in supercomputers:
+            job_inputs = []
+            job_inputs_base = []
+            threads_max = 2*machine.cores_per_node
+            # sample small number of nodes more heavily
+            nodes_max   = min(small_node_ceiling,machine.nodes)
+            cores_max   = min(small_node_ceiling*machine.cores_per_node,machine.cores)
+            for nj in range(njobs): # nodes alone
+                nodes   = randint(nodes_min,nodes_max)
+                threads = randint(threads_min,threads_max)
+                job_input = obj(nodes=nodes,threads=threads,**shared_job_inputs)
+                job_inputs_base.append(job_input)
+            #end for
+            for nj in range(njobs): # cores alone
+                cores   = randint(cores_min,cores_max)
+                threads = randint(threads_min,threads_max)
+                job_input = obj(cores=cores,threads=threads,**shared_job_inputs)
+                job_inputs_base.append(job_input)
+            #end for
+            for nj in range(njobs): # nodes and cores
+                nodes   = randint(nodes_min,nodes_max)
+                cores   = randint(cores_min,cores_max)
+                threads = randint(threads_min,threads_max)
+                job_input = obj(nodes=nodes,cores=cores,threads=threads,**shared_job_inputs)
+                job_inputs_base.append(job_input)
+            #end for
+            # sample full node set
+            nodes_max = machine.nodes
+            cores_max = machine.cores
+            for nj in range(njobs): # nodes alone
+                nodes   = randint(nodes_min,nodes_max)
+                threads = randint(threads_min,threads_max)
+                job_input = obj(nodes=nodes,threads=threads,**shared_job_inputs)
+                job_inputs_base.append(job_input)
+            #end for
+            for nj in range(njobs): # cores alone
+                cores   = randint(cores_min,cores_max)
+                threads = randint(threads_min,threads_max)
+                job_input = obj(cores=cores,threads=threads,**shared_job_inputs)
+                job_inputs_base.append(job_input)
+            #end for
+            for nj in range(njobs): # nodes and cores
+                nodes   = randint(nodes_min,nodes_max)
+                cores   = randint(cores_min,cores_max)
+                threads = randint(threads_min,threads_max)
+                job_input = obj(nodes=nodes,cores=cores,threads=threads,**shared_job_inputs)
+                job_inputs_base.append(job_input)
+            #end for
+            job_inputs.extend(job_inputs_base)
+            # now add serial jobs
+            for job_input in job_inputs_base:
+                ji = job_input.copy()
+                ji.serial = True
+                job_inputs.append(ji)
+            #end for
+            # now add local, serial jobs
+            for job_input in job_inputs_base:
+                ji = job_input.copy()
+                ji.serial = True
+                ji.local  = True
+                job_inputs.append(ji)
+            #end for
+            # perform idempotency test
+            machine_idempotent = True
+            for job_input in job_inputs:
+                job = Job(machine=machine.name,**job_input)
+                job2 = obj.copy(job)
+                machine.process_job(job2)
+                machine_idempotent &= job==job2
+            #end for
+            if not machine_idempotent:
+                not_idempotent[machine.name] = machine
+            #end if
+        #end for
+
+        if len(not_idempotent)>0:
+            mlist = ''
+            for name in sorted(not_idempotent.keys()):
+                mlist+= '\n  '+name
+            #end for
+            Machine.class_error('\n\nsome machines failed process_job idempotency test:{0}'.format(mlist))
+        #end if
+        Machine.class_log('done checking idempotency')
+        exit()
+        Machine.allow_warnings = allow_warn
+    #end def check_process_job_idempotency
+
+
+    def warn(self,*args,**kwargs):
+        if Machine.allow_warnings:
+            NexusCore.warn(self,*args,**kwargs)
+        #end if
+    #end def warn
+
+
     def validate(self):
         if Machine.exists(self.name):
             if not Machine.is_unique(self):
@@ -683,11 +861,12 @@ class Machine(NexusCore):
         self.not_implemented()
     #end def submit_jobs
 
+    # update all job information, must be idempotent
     def process_job(self,job):
         self.not_implemented()
     #end def process_job
 
-    def write_job(self,job):
+    def write_job(self,job,file=False):
         self.not_implemented()
     #end def write_job
 
@@ -911,13 +1090,7 @@ class Workstation(Machine):
     #end def submit_jobs
 
 
-    def write_job(self,job):
-        return None
-    #end def write_job
-
-
-    def submit_job(self,job):
-        pad = self.enter(job.directory,msg=job.simid)
+    def job_command(self,job,pad=None):
         command = 'export OMP_NUM_THREADS='+str(job.threads)+'\n'
         if len(job.presub)>0:
             command += job.presub+'\n'
@@ -926,7 +1099,21 @@ class Workstation(Machine):
         if len(job.postsub)>0:
             command += job.postsub+'\n'
         #end if
-        command = ('\n'+command).replace('\n','\n  '+pad)
+        if pad!=None:
+            command = ('\n'+command).replace('\n','\n  '+pad)
+        #end if
+    #end def job_command
+
+
+    def write_job(self,job,file=False):
+        c = self.job_command(job)
+        return c
+    #end def write_job
+
+
+    def submit_job(self,job):
+        pad = self.enter(job.directory,msg=job.simid)
+        command = self.job_command(job,pad=pad)
         job.status = job.states.running
         process = obj()
         process.job = job
@@ -1447,7 +1634,7 @@ class Supercomputer(Machine):
     #end def setup_environment
 
 
-    def write_job(self,job):
+    def write_job(self,job,file=False):
         job.subfile = job.name+'.'+self.sub_launcher+'.in'
         env = self.setup_environment(job)
         command = job.run_command(self.app_launcher)
@@ -1461,14 +1648,16 @@ class Supercomputer(Machine):
         if len(job.postsub)>0:
             c+=job.postsub+'\n'
         #end if
-
-        filepath = os.path.join(job.directory,job.subfile)
-        fobj = open(filepath,'w')
-        fobj.write(c)
-        fobj.close()
-        if self.executable_subfile:
-            os.system('chmod +x '+filepath)
+        if file:
+            filepath = os.path.join(job.directory,job.subfile)
+            fobj = open(filepath,'w')
+            fobj.write(c)
+            fobj.close()
+            if self.executable_subfile:
+                os.system('chmod +x '+filepath)
+            #end if
         #end if
+        return c
     #end def write_job
 
 
@@ -1700,17 +1889,11 @@ class NerscMachine(Supercomputer):
 
     def process_job_extra(self,job):
         if job.threads>1:
-            if job.options is None:
-                if mod(8,job.threads)==0:
-                    job.options = '-ss'
-                #end if
+            if 'ss' not in job.run_options and mod(8,job.threads)==0:
+                job.run_options.add(ss='-ss')
             #end if
-            if job.compiler!=None and job.compiler=='intel':
-                if job.options is None:
-                    job.options = '-cc numa_node'
-                else:
-                    job.options = '-cc numa_node '+job.options
-                #end if
+            if job.compiler!=None and job.compiler=='intel' and 'cc' not in job.run_options:
+                job.run_options.add(cc='-cc numa_node')
             #end if
         #end if
     #end def process_job_extra
@@ -2126,5 +2309,10 @@ get_machine      = Machine.get
 
 #rename Job with lowercase
 job=Job
+
+
+
+# tests
+#Machine.check_process_job_idempotency()
 
 

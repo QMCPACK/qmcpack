@@ -745,10 +745,7 @@ class Simulation(NexusCore):
             infile = os.path.join(self.locdir,self.infile)
             self.input.write(infile)
         #end if
-        job_file = self.job.write()
-        if job_file!=None:
-            self.files.add(job_file)
-        #end if
+        self.job.write(file=True)
         self.setup = True
         if save_image:
             self.save_image()
