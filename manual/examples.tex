@@ -21,11 +21,11 @@ in the working directory, a Python script using Nexus to generate the orbitals u
 \begin{lstlisting}[caption=Nexus example for H$_2$O using Quantum ESPRESSO orbitals and BFD pseudopotentials]
 #! /usr/bin/env python
 
-from project import settings,Job,run_project
-from project import Structure,PhysicalSystem
-from project import generate_pwscf
-from project import generate_pw2qmcpack
-from project import generate_qmcpack,vmc,loop,linear,dmc
+from nexus import settings,Job,run_project
+from nexus import Structure,PhysicalSystem
+from nexus import generate_pwscf
+from nexus import generate_pw2qmcpack
+from nexus import generate_qmcpack,vmc,loop,linear,dmc
 
 # General Settings (Directories For I/O, Machine Type, etc.)
 settings(
@@ -194,11 +194,11 @@ With CASINO-formatted Trail-Needs pseudopotentials (see Section \ref{subsec:CASI
 \begin{lstlisting}[caption=Nexus example for bulk LiH using Quantum ESPRESSO orbitals and CASINO pseudopotentials]
 #! /usr/bin/env python
 
-from project import settings,Job,run_project
-from project import generate_physical_system
-from project import generate_pwscf
-from project import generate_pw2qmcpack
-from project import generate_qmcpack,vmc,loop,linear,dmc
+from nexus import settings,Job,run_project
+from nexus import generate_physical_system
+from nexus import generate_pwscf
+from nexus import generate_pw2qmcpack
+from nexus import generate_qmcpack,vmc,loop,linear,dmc
 
 # General Settings (Directories For I/O, Machine Type, etc.)
 settings(
