@@ -323,12 +323,17 @@ class object_interface(object):
     #end def error
 
     @classmethod
+    def class_log(cls,message):
+        log(message,logfile=cls._logfile)
+    #end def class_log
+
+    @classmethod
     def class_warn(cls,message,header=None,post_header=' Warning:'):
         if header==None:
             header=cls.__name__
         #end if
         warn(message,header,logfile=cls._logfile)
-    #end def error
+    #end def class_warn
 
     @classmethod
     def class_error(cls,message,header=None,exit=True,trace=True,post_header=' Error:'):

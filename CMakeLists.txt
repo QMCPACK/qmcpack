@@ -36,6 +36,7 @@ IF ( NOT CMAKE_BUILD_TYPE AND NOT CMAKE_TOOLCHAIN_FILE)
   SET( CMAKE_BUILD_TYPE Release )
 ENDIF()
 STRING( TOUPPER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE )
+MESSAGE( STATUS "CMAKE_BUILD_TYPE is ${CMAKE_BUILD_TYPE}")
 
 ######################################################################
 #define the paths for library and executable for out-of-soruce compilation
@@ -491,25 +492,29 @@ IF(QMC_CUDA)
   #set(CUDA_NVCC_FLAGS
   #  "-arch=sm_20;-Drestrict=__restrict__;-DNO_CUDA_MAIN;-O3;-use_fast_math")
   if(CUDA_NVCC_FLAGS MATCHES "arch")
+    # User defined NVCC flags
     MESSAGE(STATUS "Setting CUDA FLAGS=${CUDA_NVCC_FLAGS}")
   else(CUDA_NVCC_FLAGS MATCHES "arch")
+    # Automatically set the default NVCC flags
+    SET(CUDA_NVCC_FLAGS "-Drestrict=__restrict__;-DNO_CUDA_MAIN")
+    if ( CMAKE_BUILD_TYPE STREQUAL "DEBUG" )
+      SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-g;-G")
+    else()
+      # Temporarily disable fast_math because it causes multiple test failures
+      # SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-O3;-use_fast_math")
+      SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-O3")
+    ENDIF()
     if(CUDA_VERSION VERSION_GREATER 6.5 OR CUDA_VERSION VERSION_EQUAL 6.5)
-# Temporarily disable fast_math because it causes multiple test failures
-#      SET(CUDA_NVCC_FLAGS
-#          "-arch=sm_35;-Drestrict=__restrict__;-DNO_CUDA_MAIN;-O3;-use_fast_math")
-      SET(CUDA_NVCC_FLAGS
-          "-arch=sm_35;-Drestrict=__restrict__;-DNO_CUDA_MAIN;-O3")
-    else(CUDA_VERSION VERSION_GREATER 6.5 OR CUDA_VERSION VERSION_EQUAL 6.5)
-# Temporarily disable fast_math because it causes multiple test failures
-#      SET(CUDA_NVCC_FLAGS
-#          "-arch=sm_20;-Drestrict=__restrict__;-DNO_CUDA_MAIN;-O3;-use_fast_math")#
-      SET(CUDA_NVCC_FLAGS
-          "-arch=sm_20;-Drestrict=__restrict__;-DNO_CUDA_MAIN;-O3")#
-      MESSAGE(WARNING "Using outdated CUDA FLAGS=${CUDA_NVCC_FLAGS}")
-    endif(CUDA_VERSION VERSION_GREATER 6.5 OR CUDA_VERSION VERSION_EQUAL 6.5)
+      SET(CUDA_NVCC_FLAGS "-arch=sm_35;${CUDA_NVCC_FLAGS}")
+    else()
+      SET(CUDA_NVCC_FLAGS "-arch=sm_20;${CUDA_NVCC_FLAGS}")
+    endif()
   endif(CUDA_NVCC_FLAGS MATCHES "arch")
   set(HAVE_CUDA 1)
-  MESSAGE("CUDA_PRECISION=${CUDA_PRECISION}")
+  MESSAGE("   CUDA_PRECISION=${CUDA_PRECISION}")
+  MESSAGE("   CUDA_NVCC_FLAGS}=${CUDA_NVCC_FLAGS}")
+ELSE(QMC_CUDA)
+  MESSAGE(STATUS "Disabling CUDA")
 ENDIF(QMC_CUDA)
 
 #INCLUDE(${PROJECT_CMAKE}/FindPkgConfig.cmake)
@@ -572,6 +577,9 @@ IF(FFTW_FOUND)
   SET(HAVE_LIBFFTW 1)
   INCLUDE_DIRECTORIES(${FFTW_INCLUDE_DIR})
   SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${FFTW_LIBRARIES})
+  MESSAGE(STATUS "Found FFTW")
+ELSE(FFTW_FOUND)
+  MESSAGE(STATUS "Disabling FFTW")
 ENDIF(FFTW_FOUND)
 
 #include qmcpack/src build/src

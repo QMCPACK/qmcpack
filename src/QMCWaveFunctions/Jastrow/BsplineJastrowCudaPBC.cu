@@ -40,7 +40,7 @@ void CMC_profileSample(const char *function, float msec)
     cudaEventDestroy(stop); \
     CMC_profileSample(__FUNCTION__, time); \
   } \
-  if (cudaGetLastError()) { printf("ERRROR!!!\n"); exit(1); }
+  if (cudaGetLastError()) { printf("CUDA ERROR!!! Detected at end of CMC_PROFILING_END.\n"); exit(1); }
 
 static __constant__ float CMC_L[3][3];
 static __constant__ float CMC_Linv[3][3];

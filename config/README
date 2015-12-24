@@ -1,0 +1,8 @@
+Toolchains for systems not fully supported by the CMake build system
+automatically. It is preferred to expand the capabilities of the
+automatic system instead of adding custom machine specific
+workarounds, but this may not be possible.
+
+Old toolchains are stored in attic directory. These need to be updated
+and simplified for the current build system. They may also give ideas
+for what may be needed on specific systems.

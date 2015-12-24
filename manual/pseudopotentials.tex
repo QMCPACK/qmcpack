@@ -1,6 +1,7 @@
 \section{Obtaining pseudopotentials}
 
 \subsection{Opium}
+\label{subsec:opium}
 
 Opium is a pseudopotential generation code available from the website \url{http://opium.sourceforge.net/}.  Opium can generate pseudopotentials with either Hartree-Fock or DFT methods.  Once you have a useable pseudopotential param file (for example, \texttt{Li.param}), generate pseudopotentials for use in Quantum ESPRESSO with the \texttt{upf} format as follows:
 \begin{lstlisting}[caption=Generate UPF-formatted pseudopotential with Opium]
@@ -34,6 +35,7 @@ Save these lines to a file (here, named \texttt{Li.BFD.gamess}; the exact name m
 \end{lstlisting}
 
 \subsection{CASINO}
+\label{subsec:CASINO}
 The QMC code CASINO also makes available its pseudopotentials available at the website \url{https://vallico.net/casinoqmc/pplib/}. To use one in QMCPACK, select a pseudopotential and download its summary file (\texttt{summary.txt}), its tabulated form (\texttt{pp.data}), and (for ppconvert to construct the projectors to convert to Quantum ESPRESSO's UPF format) a CASINO atomic wavefunction for each angular momentum channel (\texttt{awfn.data\_*}).  Then, to convert using ppconvert, issue the following command:
 \begin{lstlisting}[caption=Convert CASINO-formatted pseudopotential to Quantum ESPRESSO UPF format]
 ppconvert --casino_pot pp.data --casino_us awfn.data_s1_2S --casino_up awfn.data_p1_2P --casino_ud awfn.data_d1_2D --upf Li.TN-DF.upf

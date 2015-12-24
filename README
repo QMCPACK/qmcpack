@@ -2,21 +2,21 @@ h1. Getting and building QMCPACK
 
 Obtain the latest release or development copy from http://www.qmcpack.org
 
-h2. Prerequisite 
+h2. Prerequisites
 
 * C/C++ compilers
-* cmake, build utility, http://www.cmake.org
-* blas/lapack, numerical library, use platform-optimized libraries
-* libxml2, XML parser, http://xmlsoft.org/ 
-* hdf5, portable I/O library, http://www.hdfgroup.org/HDF5/
-* boost, peer-reviewed portable C++ source libraries, http://www.boost.org
-* fftw, FFT library, http://www.fftw.org/
+* CMake, build utility, http://www.cmake.org
+* BLAS/LAPACK, numerical library, use platform-optimized libraries
+* Libxml2, XML parser, http://xmlsoft.org/ 
+* HDF5, portable I/O library, http://www.hdfgroup.org/HDF5/
+* BOOST, peer-reviewed portable C++ source libraries, http://www.boost.org
+* FFTW, FFT library, http://www.fftw.org/
 
 Note that the einspline library is no longer required.
 
 h3. Building with cmake
 
-The build system for qmcpack is based on CMake.  It will autoconfigure
+The build system for QMCPACK is based on CMake.  It will autoconfigure
 based on the detected compilers and libraries. Previously QMCPACK made
 extensive use of toolchains, but the system has since been updated to
 eliminate the use of toolchain files for most cases.  The build
@@ -28,8 +28,30 @@ variables for the packages.
 
 See http://docs.qmcpack.org for build examples on Linux, Mac OS X etc.
 
+h3.1. Quick build
 
-h3.1. Set the environment
+If you are feeling lucky and are on a standard UNIX-like system such
+as a Linux laptop or workstation:
+
+* Move to the build directory, run cmake and make
+
+  cd build
+  cmake ..
+  make -j 8
+
+* Safest quick build option is to specify the C and C++ compilers
+  through their MPI wrappers. Here we use Intel MPI and Intel
+  compilers. Move to the build directory, run cmake and make
+
+  cd build
+  cmake -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc ..
+  make -j 8
+
+* Substitute mpicc and mpicxx or other wrapped compiler names to suit
+  your system.
+
+
+h3.2. Set the environment
 
 A number of enviornmental variables affect the build.  In particular
 they can control the default paths for libraries, the default
@@ -41,16 +63,17 @@ compilers, etc.  The list of enviornmental variables is given below:
    LIBXML2_HOME     Path for libxml2
    HDF5_ROOT        Path for HDF5
    BOOST_ROOT       Path for Boost
-   EINSPLINE_HOME   Path for EINSPLINE
    FFTW_HOME        Path for FFTW
 
 
-h3.2. CMake options
+h3.3. CMake options
 
-In addition to reading the enviornmental variables, CMake provides a number of optional variables
-that can be set to control the build and configure steps.  When passed to CMake, these variables
-will take precident over the enviornmental and default variables.  To set them add -D FLAG=VALUE
-to the configure line between the cmake command and the path to the source directory.
+In addition to reading the enviornmental variables, CMake provides a
+number of optional variables that can be set to control the build and
+configure steps.  When passed to CMake, these variables will take
+precident over the enviornmental and default variables.  To set them
+add -D FLAG=VALUE to the configure line between the cmake command and
+the path to the source directory.
 
   * General build options
     CMAKE_BUILD_TYPE    A variable which controls the type of build (defaults to Release).  Possible values are:
@@ -68,6 +91,7 @@ to the configure line between the cmake command and the path to the source direc
     QMC_DATA            Specify data directory for QMCPACK (used for unit tests)
     QMC_EXTRA_LIBS      Add extra link libraries
     QMC_BUILD_STATIC    Add -static flags to build
+    QMC_CUDA            Enable CUDA (1:yes, 0:no)
 
   * libxml
     Libxml2_INCLUDE_DIRS  Specify include directories for libxml2
@@ -78,7 +102,7 @@ to the configure line between the cmake command and the path to the source direc
     FFTW_LIBRARY_DIRS   Specify library directories for FFTW
 
 
-h3.3. Configure and build
+h3.4. Configure and build
 
 * Move to build directory, run cmake and make
 
@@ -87,7 +111,7 @@ h3.3. Configure and build
    make -j 8
 
 
-h3.4. Example configure and build
+h3.5. Example configure and build
 
 * Set the environments (the examples below assume bash, Intel compilers and MKL library)
 
@@ -97,7 +121,6 @@ h3.4. Example configure and build
   export LIBXML2_HOME=/usr/local
   export HDF5_ROOT=/usr/local
   export BOOST_ROOT=/usr/local/boost
-  export EINSPLINE_HOME=/usr/local/einspline
   export FFTW_HOME=/usr/local/fftw
 
 * Move to build directory, run cmake and make
@@ -107,14 +130,14 @@ h3.4. Example configure and build
   make -j 8
 
 
-h3.5.  Special notes
+h3.6.  Special notes
 
-It is common to create a helper script that contains the configure line for CMake.  
+It is recommended to create a helper script that contains the configure line for CMake.  
 This is particularly useful when avoiding enviornmental variables, packages are installed
 in custom locations, or the configure line may be long or complex.  In this case it is
 recommended to add "rm -rf CMake*" before the configure line to remove existing CMake
 configure files to ensure a fresh configure each time that the script is called.  
-and example script is given below:
+and example script build.sh is given below:
 
    export CXX=mpic++
    export CC=mpicc
@@ -134,6 +157,10 @@ and example script is given below:
       -D QMC_DATA=/projects/QMCPACK/qmc-data            \
       ..
 
+h4. Documentation and support
 
+For more informaton, consult QMCPACK pages at http://www.qmcpack.org
+and http://docs.qmcpack.org
 
-For more informaton, consult QMCPACK pages at http://www.qmcpack.org and http://docs.qmcpack.org
+If you have trouble building or using QMCPACK, please post to the
+Google QMCPACK group or contact a developer.
