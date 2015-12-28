@@ -413,7 +413,8 @@ void EnergyDensityEstimator::write_nonzero_domains(const ParticleSet& P)
     }
     if(nonzero)
     {
-      fprintf(stdout,"  %d %e %e %e\n",i,P.Collectables[n],
+//      fprintf(stdout,"  %d %e %e %e %e %e %e\n",i,P.Collectables[n],
+      fprintf(stdout,"  %d %e %e %e \n",i,P.Collectables[n],
               P.Collectables[n+1],
               P.Collectables[n+2]);
     }

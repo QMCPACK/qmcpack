@@ -26,6 +26,11 @@
 #include <qmc_common.h>
 //#define ENABLE_VMC_OMP_MASTER
 #include "ADIOS/ADIOS_profile.h"
+#if !defined(REMOVE_TRACEMANAGER)
+#include "Estimators/TraceManager.h"
+#else
+typedef int TraceManager;
+#endif
 
 namespace qmcplusplus
 {
@@ -196,7 +201,10 @@ bool CSVMC::run()
   Estimators->start(nBlocks);
   for (int ip=0; ip<NumThreads; ++ip)
     CSMovers[ip]->startRun(nBlocks,false);
+
+#if !defined(REMOVE_TRACEMANAGER)
   Traces->startRun(nBlocks,traceClones);
+#endif
   const bool has_collectables=W.Collectables.size();
   ADIOS_PROFILE::profile_adios_init(nBlocks);
   for (int block=0; block<nBlocks; ++block)
@@ -238,7 +246,9 @@ bool CSVMC::run()
     Estimators->stopBlock(estimatorClones);
     ADIOS_PROFILE::profile_adios_end_comp(block);
     ADIOS_PROFILE::profile_adios_start_trace(block);
+#if !defined(REMOVE_TRACEMANAGER)
     Traces->write_buffers(traceClones, block);
+#endif
     ADIOS_PROFILE::profile_adios_end_trace(block);
     ADIOS_PROFILE::profile_adios_start_checkpoint(block);
     if(storeConfigs)
@@ -249,7 +259,9 @@ bool CSVMC::run()
   Estimators->stop(estimatorClones);
   for (int ip=0; ip<NumThreads; ++ip)
     CSMovers[ip]->stopRun2();
+#if !defined(REMOVE_TRACEMANAGER)
   Traces->stopRun();
+#endif
   //copy back the random states
   for (int ip=0; ip<NumThreads; ++ip)
     *(RandomNumberControl::Children[ip])=*(Rng[ip]);
@@ -301,7 +313,9 @@ void CSVMC::resetRun()
 	  estimatorClones[ip]= new EstimatorManager(*Estimators);//,*hClones[ip]);
       estimatorClones[ip]->resetTargetParticleSet(*wClones[ip]);
       estimatorClones[ip]->setCollectionMode(false);
+#if !defined(REMOVE_TRACEMANAGER)
 	  traceClones[ip] = Traces->makeClone();
+#endif
 	  Rng[ip]=new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
 	  
 	  //HPoolClones[0]->setPrimary(true);
@@ -343,6 +357,7 @@ void CSVMC::resetRun()
     }
 
   }
+#if !defined(REMOVE_TRACEMANAGER)
   else
   {
 #if !defined(BGP_BUG)
@@ -353,6 +368,7 @@ void CSVMC::resetRun()
       traceClones[ip]->transfer_state_from(*Traces);
     }
   }
+#endif
   
   app_log() << "  Total Sample Size   =" << nTargetSamples << endl;
   app_log() << "  Walker distribution on root = ";

@@ -27,6 +27,11 @@
 #include <qmc_common.h>
 #include <tau/profiler.h>
 #include "ADIOS/ADIOS_profile.h"
+#if !defined(REMOVE_TRACEMANAGER)
+#include "Estimators/TraceManager.h"
+#else
+typedef int TraceManager;
+#endif
 
 namespace qmcplusplus
 {
@@ -76,11 +81,13 @@ void DMCOMP::resetComponents(xmlNodePtr cur)
     delete Movers[ip];
     delete estimatorClones[ip];
     delete branchClones[ip];
-    delete traceClones[ip];
     estimatorClones[ip]= new EstimatorManager(*Estimators);
     estimatorClones[ip]->setCollectionMode(false);
     branchClones[ip] = new BranchEngineType(*branchEngine);
+#if !defined(REMOVE_TRACEMANAGER)
+    delete traceClones[ip];
     traceClones[ip] = Traces->makeClone();
+#endif
   }
 #if !defined(BGP_BUG)
   #pragma omp parallel for
@@ -161,7 +168,9 @@ void DMCOMP::resetUpdateEngines()
     {
       estimatorClones[ip]= new EstimatorManager(*Estimators);
       estimatorClones[ip]->setCollectionMode(false);
+#if !defined(REMOVE_TRACEMANAGER)
       traceClones[ip] = Traces->makeClone();
+#endif
       Rng[ip]=new RandomGenerator_t(*RandomNumberControl::Children[ip]);
       hClones[ip]->setRandomGenerator(Rng[ip]);
       branchClones[ip] = new BranchEngineType(*branchEngine);
@@ -187,6 +196,7 @@ void DMCOMP::resetUpdateEngines()
       }
     }
   }
+#if !defined(REMOVE_TRACEMANAGER)
   else
   {
 #if !defined(BGP_BUG)
@@ -197,6 +207,7 @@ void DMCOMP::resetUpdateEngines()
       traceClones[ip]->transfer_state_from(*Traces);
     }
   }
+#endif
   branchEngine->checkParameters(W);
   int mxage=mover_MaxAge;
   if(fixW)
@@ -243,7 +254,9 @@ bool DMCOMP::run()
   Estimators->start(nBlocks);
   for(int ip=0; ip<NumThreads; ip++)
     Movers[ip]->startRun(nBlocks,false);
+#if !defined(REMOVE_TRACEMANAGER)
   Traces->startRun(nBlocks,traceClones);
+#endif
   Timer myclock;
   IndexType block = 0;
   IndexType updatePeriod=(QMCDriverMode[QMC_UPDATE_MODE])?Period4CheckProperties:(nBlocks+1)*nSteps;
@@ -304,7 +317,9 @@ bool DMCOMP::run()
     }
 //       branchEngine->debugFWconfig();
     Estimators->stopBlock(acceptRatio());
+#if !defined(REMOVE_TRACEMANAGER)
     Traces->write_buffers(traceClones, block);
+#endif
     block++;
     if(DumpConfig &&block%Period4CheckPoint == 0)
     {
@@ -322,7 +337,9 @@ bool DMCOMP::run()
   Estimators->stop();
   for (int ip=0; ip<NumThreads; ++ip)
     Movers[ip]->stopRun2();
+#if !defined(REMOVE_TRACEMANAGER)
   Traces->stopRun();
+#endif
   return finalize(nBlocks);
 }
 

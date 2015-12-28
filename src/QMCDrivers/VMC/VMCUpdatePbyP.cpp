@@ -17,6 +17,11 @@
 #include "QMCDrivers/VMC/VMCUpdatePbyP.h"
 #include "QMCDrivers/DriftOperators.h"
 #include "Message/OpenMP.h"
+#if !defined(REMOVE_TRACEMANAGER)
+#include "Estimators/TraceManager.h"
+#else
+typedef int TraceManager;
+#endif
 
 namespace qmcplusplus
 {
@@ -713,7 +718,9 @@ void VMCUpdatePbyPWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t it
     thisWalker.resetProperty(logpsi,Psi.getPhase(), eloc);
     H.auxHevaluate(W,thisWalker);
     H.saveProperty(thisWalker.getPropertyBase());
+#if !defined(REMOVE_TRACEMANAGER)
     Traces->buffer_sample(W.current_step);
+#endif
     if(!moved)
       ++nAllRejected;
   }

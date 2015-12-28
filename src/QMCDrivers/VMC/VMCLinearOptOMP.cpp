@@ -22,6 +22,11 @@
 #include "Optimize/VarList.h"
 #include "Numerics/LinearFit.h"
 //#define ENABLE_VMC_OMP_MASTER
+#if !defined(REMOVE_TRACEMANAGER)
+#include "Estimators/TraceManager.h"
+#else
+typedef int TraceManager;
+#endif
 
 namespace qmcplusplus
 {
@@ -491,7 +496,9 @@ void VMCLinearOptOMP::resetRun()
       estimatorClones[ip]= new EstimatorManager(*Estimators);//,*hClones[ip]);
       estimatorClones[ip]->resetTargetParticleSet(*wClones[ip]);
       estimatorClones[ip]->setCollectionMode(false);
+#if !defined(REMOVE_TRACEMANAGER)
       traceClones[ip] = Traces->makeClone();
+#endif
       Rng[ip]=new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
       hClones[ip]->setRandomGenerator(Rng[ip]);
       branchClones[ip] = new BranchEngineType(*branchEngine);
@@ -547,6 +554,7 @@ void VMCLinearOptOMP::resetRun()
         app_log() << os.str() << endl;
     }
   }
+#if !defined(REMOVE_TRACEMANAGER)
   else
   {
 #if !defined(BGP_BUG)
@@ -557,6 +565,7 @@ void VMCLinearOptOMP::resetRun()
       traceClones[ip]->transfer_state_from(*Traces);
     }
   }
+#endif
   #pragma omp parallel
   {
     int ip=omp_get_thread_num();

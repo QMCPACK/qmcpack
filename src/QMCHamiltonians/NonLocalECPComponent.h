@@ -84,10 +84,12 @@ struct NonLocalECPComponent: public QMCTraits
 
   //DistanceTableData* myTable;
 
+#if !defined(REMOVE_TRACEMANAGER)
   ///pointers to trace data of containing NonLocalECPotential object
   Array<TraceReal,1>* Ve_sample;
   Array<TraceReal,1>* Vi_sample;
   bool streaming_particles;
+#endif
 
 
   NonLocalECPComponent();

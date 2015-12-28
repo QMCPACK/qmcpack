@@ -31,14 +31,10 @@
 #include "Utilities/OhmmsInfo.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 #include "QMCDrivers/BranchIO.h"
-#include "Estimators/TraceManager.h"
-
 class Communicate;
 
 namespace qmcplusplus
 {
-
-
 /** @defgroup QMCDrivers QMC Driver group
  * QMC drivers that implement QMC algorithms
  */
@@ -58,9 +54,10 @@ namespace qmcplusplus
  * the energy differences of multiple H-Psi pairs.
  */
 
+//forward declarations: Do not include headers if not needed
 class MCWalkerConfiguration;
 class HDFWalkerOutput;
-
+class TraceManager;
 
 /** @ingroup QMCDrivers
  * @{

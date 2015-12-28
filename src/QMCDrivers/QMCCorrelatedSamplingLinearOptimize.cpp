@@ -243,7 +243,8 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
         stability--;
         stabilityBase+=stabilizerScale;
 //                   mappedStabilizers.push_back(*(new std::pair<RealType,RealType>(std::numeric_limits<RealType>::quiet_NaN(),XS)));
-        mappedStabilizers.push_back(make_pair<RealType,RealType>(XS,std::numeric_limits<RealType>::quiet_NaN()));
+        //mappedStabilizers.push_back(make_pair<RealType,RealType>(XS,std::numeric_limits<RealType>::quiet_NaN()));
+        mappedStabilizers.push_back(pair<RealType,RealType>(XS,std::numeric_limits<RealType>::quiet_NaN()));
         continue;
 //                     for (int i=0; i<numParams; i++) optTarget->Params(i) = optparm[i];
       }

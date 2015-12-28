@@ -113,14 +113,14 @@ void OrbitalBase::get_ratios(ParticleSet& P, vector<ValueType>& ratios)
 {
   ostringstream o;
   o << "OrbitalBase::get_ratios is not implemented by " << OrbitalName;
-  APP_ABORT(o);
+  APP_ABORT(o.str());
 }
 
 void OrbitalBase::evaluateRatios(VirtualParticleSet& P, vector<ValueType>& ratios)
 {
   ostringstream o;
   o << "OrbitalBase::evaluateRatios is not implemented by " << OrbitalName;
-  APP_ABORT(o);
+  APP_ABORT(o.str());
 }
 
 void OrbitalBase::evaluateDerivRatios(VirtualParticleSet& VP, const opt_variables_type& optvars,

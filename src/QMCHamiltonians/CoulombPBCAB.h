@@ -97,11 +97,13 @@ struct CoulombPBCAB: public QMCHamiltonianBase, public ForceBase
   bool kcdifferent;
   RealType minkc;
 
+#if !defined(REMOVE_TRACEMANAGER)
   //particle trace samples
   Array<TraceReal,1>* Ve_sample;
   Array<TraceReal,1>* Vi_sample;
   Array<TraceReal,1>  Ve_const;
   Array<TraceReal,1>  Vi_const;
+#endif
   ParticleSet& Peln;
   ParticleSet& Pion;
 
@@ -115,10 +117,12 @@ struct CoulombPBCAB: public QMCHamiltonianBase, public ForceBase
   void resetTargetParticleSet(ParticleSet& P);
 
 
+#if !defined(REMOVE_TRACEMANAGER)
   virtual void contribute_particle_quantities();
   virtual void checkout_particle_quantities(TraceManager& tm);
   Return_t evaluate_sp(ParticleSet& P); //collect
   virtual void delete_particle_quantities();
+#endif
 
 
   Return_t evaluate(ParticleSet& P);

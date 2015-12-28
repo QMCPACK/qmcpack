@@ -32,7 +32,7 @@
 #include "QMCDrivers/QMCDriver.h"
 #include "Message/Communicate.h"
 #include "Message/OpenMP.h"
-#ifdef QMC_COMPLEX
+#if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/PostProcessor.h"
 #endif
 #include <queue>
@@ -53,7 +53,10 @@ namespace qmcplusplus
 {
 
 QMCMain::QMCMain(Communicate* c)
-  : QMCDriverFactory(c), QMCAppBase(), FirstQMC(true), traces_xml(NULL)
+  : QMCDriverFactory(c), QMCAppBase(), FirstQMC(true)
+#if !defined(REMOVE_TRACEMANAGER)
+  , traces_xml(NULL)
+#endif
 {
   app_log()
       << "\n=====================================================\n"
@@ -118,7 +121,9 @@ bool QMCMain::execute()
     string cname((const char*)cur->name);
     if(cname == "postprocess")
     {
+#if !defined(REMOVE_TRACEMANAGER)
       postprocess(cur,qa);
+#endif
       break;
     }
     else if(cname == "qmc" || cname == "optimize")
@@ -406,10 +411,12 @@ bool QMCMain::validateXML()
       InitMolecularSystem moinit(ptclPool);
       moinit.put(cur);
     }
+#if !defined(REMOVE_TRACEMANAGER)
     else if(cname == "traces")
     {
       traces_xml = cur;
     }
+#endif
     else
     {
       //everything else goes to m_qmcaction
@@ -508,7 +515,9 @@ bool QMCMain::runQMC(xmlNodePtr cur)
       myProject.advance();
     qmcDriver->setStatus(myProject.CurrentMainRoot(),PrevConfigFile, append_run);
     qmcDriver->putWalkers(m_walkerset_in);
+#if !defined(REMOVE_TRACEMANAGER)
     qmcDriver->putTraces(traces_xml);
+#endif
     qmcDriver->process(cur);
     OhmmsInfo::flush();
     Timer qmcTimer;
@@ -551,6 +560,7 @@ bool QMCMain::setMCWalkers(xmlXPathContextPtr context_)
 
 void QMCMain::postprocess(xmlNodePtr cur,int qacur)
 {
+#if !defined(REMOVE_TRACEMANAGER)
   app_log()<<"\nQMCMain::postprocess"<<endl;
 
   int qanext = qacur+1;
@@ -601,12 +611,10 @@ void QMCMain::postprocess(xmlNodePtr cur,int qacur)
   if(ptclPool==0)
     APP_ABORT("QMCMain::postprocess  ptclPool is null");
 
-#ifdef QMC_COMPLEX
   PostProcessor PP(id,series_start,series_end);
   PP.put(cur,*ptclPool,*psiPool,*hamPool);
   PP.postprocess();
 #endif
-
 }
 
 

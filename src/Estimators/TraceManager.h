@@ -5,6 +5,8 @@
 #define QMCPLUSPLUS_TRACEMANAGER_H
 
 
+#if !defined(DISABLE_TRACEMANAGER)
+
 
 #include <Configuration.h>
 #include <OhmmsData/OhmmsElementBase.h>
@@ -2732,6 +2734,161 @@ public:
 
 
 }
+
+
+
+#else
+
+
+// make a vacuous class for TraceManager for lighter compilation
+//   disabling TraceManager should not affect other runtime behavior
+
+#include <Particle/ParticleSet.h>
+
+namespace qmcplusplus
+{
+
+typedef long   TraceInt;
+typedef double TraceReal;
+typedef complex<TraceReal> TraceComp;
+
+struct TraceRequest
+{
+  bool streaming_default_scalars;
+
+  inline TraceRequest()
+  {
+    streaming_default_scalars = false;
+  }
+
+  //inline bool screen_sample(const string& domain,const string& name,bool& write) { return false; }
+  inline bool streaming_scalar(const string& name)                               { return false; }
+  inline bool streaming_array(const string& name)                                { return false; }
+  inline bool streaming(const string& name)                                      { return false; }
+  //inline bool quantity_present(const string& name)                               { return false; }
+  inline bool streaming()                                                        { return false; }
+  //inline bool writing()                                                          { return false; }
+  //inline bool streaming_scalars()                                                { return false; }
+  //inline bool streaming_arrays()                                                 { return false; }      
+
+
+  //inline void set_scalar_domain(const string& domain)                           { }
+  inline void request_scalar(const string& name,bool write=false)               { }
+  inline void request_array(const string& name,bool write=false)                { }
+  //inline void request_scalar(const set<string>& names,bool write=false)         { }
+  //inline void request_array(const set<string>& names,bool write=false)          { }
+  inline void incorporate(TraceRequest& other)                                  { }
+  inline void determine_stream_write()                                          { }
+  inline void relay_stream_info(TraceRequest& other)                            { }
+  //inline void report()                                                          { }
+  //inline void write_selected(const string& header,const string& selector)       { }
+  //inline void guarantee_presence(const string& name,bool combined=false)        { }
+  //inline void check_presence(const string& name)                                { }
+  inline void contribute_scalar(const string& name,bool default_quantity=false) { }
+  inline void contribute_array(const string& name,bool default_quantity=false)  { }
+  inline void contribute_combined(const string& name,vector<string>&deps,
+                                  bool scalar=false,bool array=false,
+                                  bool default_quantity=false)                  { }
+
+
+
+};
+
+
+
+template<typename T>
+struct TraceSample
+{
+  vector<T>&  sample;
+};
+
+
+template<typename T>
+struct CombinedTraceSample : public TraceSample<T>
+{
+  inline void combine() { }
+};
+
+
+struct TraceManager
+{
+  TraceRequest request;
+  bool streaming_traces;
+
+
+  TraceManager(Communicate* comm=0)
+  {
+    streaming_traces = false;
+  }
+
+  inline TraceManager* makeClone() { return new TraceManager(); }
+
+  inline void transfer_state_from(const TraceManager& tm)              { }    
+  //inline void distribute()                                             { }
+  //inline void reset_permissions()                                      { }
+  inline void put(xmlNodePtr cur,bool allow_traces,string series_root) { }
+  inline void update_status()                                          { }
+  inline void screen_writes()                                          { }
+  inline void initialize_traces()                                      { }
+  inline void finalize_traces()                                        { }  
+
+  template<int D> inline Array<TraceInt,D>*  checkout_int(    const string& name,                       int n1=1,int n2=0,int n3=0,int n4=0) { return 0; }
+  //template<int D> inline Array<TraceInt,D>*  checkout_int(    const string& domain,const string& name,  int n1=1,int n2=0,int n3=0,int n4=0) { return 0; }
+  template<int D> inline Array<TraceInt,D>*  checkout_int(    const string& name,  const ParticleSet& P,         int n2=0,int n3=0,int n4=0) { return 0; }
+  template<int D> inline Array<TraceReal,D>* checkout_real(   const string& name,                       int n1=1,int n2=0,int n3=0,int n4=0) { return 0; }
+  //template<int D> inline Array<TraceReal,D>* checkout_real(   const string& domain,const string& name,  int n1=1,int n2=0,int n3=0,int n4=0) { return 0; } 
+  template<int D> inline Array<TraceReal,D>* checkout_real(   const string& name,  const ParticleSet& P,         int n2=0,int n3=0,int n4=0) { return 0; }
+  //template<int D> inline Array<TraceComp,D>* checkout_complex(const string& name,                       int n1=1,int n2=0,int n3=0,int n4=0) { return 0; }
+  //template<int D> inline Array<TraceComp,D>* checkout_complex(const string& domain,const string& name,  int n1=1,int n2=0,int n3=0,int n4=0) { return 0; } 
+  template<int D> inline Array<TraceComp,D>* checkout_complex(const string& name,  const ParticleSet& P,         int n2=0,int n3=0,int n4=0) { return 0; }
+
+  //inline TraceSample<TraceInt>* get_int_trace(const string& name)                            { return 0; }    
+  //inline TraceSample<TraceInt>* get_int_trace(const string& domain, const string& name)      { return 0; }
+  //inline TraceSample<TraceInt>* get_int_trace(const ParticleSet& P, const string& name)      { return 0; }
+  inline TraceSample<TraceReal>* get_real_trace(const string& name)                          { return 0; }
+  //inline TraceSample<TraceReal>* get_real_trace(const string& domain, const string& name)    { return 0; }
+  inline TraceSample<TraceReal>* get_real_trace(const ParticleSet& P, const string& name)    { return 0; }
+  //inline TraceSample<TraceComp>* get_complex_trace(const string& name)                       { return 0; }
+  //inline TraceSample<TraceComp>* get_complex_trace(const string& domain, const string& name) { return 0; }
+  inline TraceSample<TraceComp>* get_complex_trace(const ParticleSet& P, const string& name) { return 0; } 
+
+  //inline CombinedTraceSample<TraceInt>* get_int_combined_trace(const string& name)                            { return 0; }  
+  //inline CombinedTraceSample<TraceInt>* get_int_combined_trace(const string& domain, const string& name)      { return 0; }
+  //inline CombinedTraceSample<TraceInt>* get_int_combined_trace(const ParticleSet& P, const string& name)      { return 0; }
+  //inline CombinedTraceSample<TraceReal>* get_real_combined_trace(const string& name)                          { return 0; }
+  //inline CombinedTraceSample<TraceReal>* get_real_combined_trace(const string& domain, const string& name)    { return 0; }
+  inline CombinedTraceSample<TraceReal>* get_real_combined_trace(const ParticleSet& P, const string& name)    { return 0; }
+  //inline CombinedTraceSample<TraceComp>* get_complex_combined_trace(const string& name)                       { return 0; }
+  //inline CombinedTraceSample<TraceComp>* get_complex_combined_trace(const string& domain, const string& name) { return 0; }
+  //inline CombinedTraceSample<TraceComp>* get_complex_combined_trace(const ParticleSet& P, const string& name) { return 0; }
+
+  inline void make_combined_trace(const string& name,vector<string>& names)                            { }     
+  //inline void make_combined_trace(const string& name,vector<string>& names,vector<TraceReal>& weights) { }
+  //inline void check_clones(vector<TraceManager*>& clones)                                              { }
+  //inline void reset_buffers()                                                                          { }
+  inline void buffer_sample(int current_step)                                                          { }
+  inline void write_buffers(vector<TraceManager*>& clones, int block)                                  { }
+  //inline void open_file(vector<TraceManager*>& clones)                                                 { }
+  //inline void close_file()                                                                             { }
+  inline void startRun(int blocks,vector<TraceManager*>& clones)                                       { }
+  inline void stopRun()                                                                                { }
+  inline void startBlock(int nsteps)                                                                   { }
+  inline void stopBlock()                                                                              { }
+  //inline void write_summary(string pad="  ")                                                           { }
+  inline void user_report(string pad="  ")                                                             { }     
+
+};
+
+
+}
+
+#endif
+
+
+
+
+
+
 #endif
 
 

@@ -30,9 +30,11 @@ struct CoulombPotential: public QMCHamiltonianBase
   int nCenters;
   ///source particle set
   ParticleSet* Pa;
+#if !defined(REMOVE_TRACEMANAGER)
   ///single particle trace samples
   Array<TraceReal,1>* Va_sample;
   Array<TraceReal,1>* Vb_sample;
+#endif
   ParticleSet* Pb;
 
   /** constructor
@@ -62,6 +64,7 @@ struct CoulombPotential: public QMCHamiltonianBase
     }
   }
 
+#if !defined(REMOVE_TRACEMANAGER)
   virtual void contribute_particle_quantities()
   {
     request.contribute_array(myName);
@@ -90,15 +93,17 @@ struct CoulombPotential: public QMCHamiltonianBase
         delete Vb_sample;
     }
   }
-
+#endif
 
   /** evaluate AA-type interactions */
   inline T evaluateAA(const DistanceTableData* d, const T* restrict Z)
   {
     T res=0.0;
+#if !defined(REMOVE_TRACEMANAGER)
     if(streaming_particles)
       res = evaluate_spAA(d,Z);
     else
+#endif
     {
       const int* restrict M=d->M.data();
       const int* restrict J=d->J.data();
@@ -116,9 +121,11 @@ struct CoulombPotential: public QMCHamiltonianBase
   inline T evaluateAB(const DistanceTableData* d, const T* restrict Za, const T* restrict Zb)
   {
     T res=0.0;
+#if !defined(REMOVE_TRACEMANAGER)
     if(streaming_particles)
       res = evaluate_spAB(d,Za,Zb);
     else
+#endif
     {
       const int* restrict M=d->M.data();
       const int* restrict J=d->J.data();
@@ -133,6 +140,7 @@ struct CoulombPotential: public QMCHamiltonianBase
   }
 
 
+#if !defined(REMOVE_TRACEMANAGER)
   /** evaluate AA-type interactions */
   inline T evaluate_spAA(const DistanceTableData* d, const T* restrict Z)
   {
@@ -227,7 +235,7 @@ struct CoulombPotential: public QMCHamiltonianBase
 #endif
     return res;
   }
-
+#endif
 
 
 

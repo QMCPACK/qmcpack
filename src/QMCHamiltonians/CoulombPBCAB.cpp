@@ -86,6 +86,7 @@ void CoulombPBCAB::addObservables(PropertySetType& plist, BufferType& collectabl
 }
 
 
+#if !defined(REMOVE_TRACEMANAGER)
 void CoulombPBCAB::contribute_particle_quantities()
 {
   request.contribute_array(myName);
@@ -109,7 +110,7 @@ void CoulombPBCAB::delete_particle_quantities()
     delete Vi_sample;
   }
 }
-
+#endif
 
 
 CoulombPBCAB::Return_t
@@ -121,15 +122,18 @@ CoulombPBCAB::evaluate(ParticleSet& P)
     Value = evalLRwithForces(P) + evalSRwithForces(P) +myConst;
   }
   else
+#if !defined(REMOVE_TRACEMANAGER)
     if(streaming_particles)
       Value = evaluate_sp(P);
     else
+#endif
       Value = evalLR(P) + evalSR(P) +myConst;
   return Value;
 }
 
 
 
+#if !defined(REMOVE_TRACEMANAGER)
 CoulombPBCAB::Return_t
 CoulombPBCAB::evaluate_sp(ParticleSet& P)
 {
@@ -274,7 +278,7 @@ CoulombPBCAB::evaluate_sp(ParticleSet& P)
 #endif
   return Value;
 }
-
+#endif
 
 
 
@@ -290,10 +294,12 @@ CoulombPBCAB::evalConsts(bool report)
 {
   int nelns = Peln.getTotalNum();
   int nions = Pion.getTotalNum();
+#if !defined(REMOVE_TRACEMANAGER)
   Ve_const.resize(nelns);
   Vi_const.resize(nions);
   Ve_const = 0.0;
   Vi_const = 0.0;
+#endif
   RealType Consts=0.0;
   RealType vs_k0 = AB->evaluateSR_k0();
   RealType v1; //single particle energy
@@ -303,7 +309,9 @@ CoulombPBCAB::evalConsts(bool report)
     for(int s=0; s<NumSpeciesA; s++)
       v1 += NofSpeciesA[s]*Zspec[s];
     v1 *= -.5*Qat[i]*vs_k0;
+#if !defined(REMOVE_TRACEMANAGER)
     Ve_const(i) = v1;
+#endif
     Consts += v1;
   }
   for(int i=0; i<nions; ++i)
@@ -312,7 +320,9 @@ CoulombPBCAB::evalConsts(bool report)
     for(int s=0; s<NumSpeciesB; s++)
       v1 += NofSpeciesB[s]*Qspec[s];
     v1 *= -.5*Zat[i]*vs_k0;
+#if !defined(REMOVE_TRACEMANAGER)
     Vi_const(i) = v1;
+#endif
     Consts += v1;
   }
   if(report)

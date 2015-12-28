@@ -18,8 +18,11 @@ namespace qmcplusplus
     RealType length;
     PosType  center;   
     const ParticleSet& Ps;
+
+#if !defined(REMOVE_TRACEMANAGER)
     ///single particle trace sample array
     Array<TraceReal,1>* V_sample;
+#endif
     
     //construction/destruction
     HarmonicExternalPotential(ParticleSet& P) : Ps(P)  
@@ -45,6 +48,7 @@ namespace qmcplusplus
       return evaluate(P);
     }
 
+#if !defined(REMOVE_TRACEMANAGER)
     //traces interface
     virtual void contribute_particle_quantities()
     {
@@ -66,6 +70,8 @@ namespace qmcplusplus
 
     //  not really for interface, just collects traces
     inline Return_t evaluate_sp(ParticleSet& P);
+#endif
+
   };
 }
 #endif

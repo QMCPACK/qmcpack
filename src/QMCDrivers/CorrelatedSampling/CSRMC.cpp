@@ -19,6 +19,11 @@
 #include "QMCDrivers/CorrelatedSampling/CSVMCUpdatePbyP.h"
 #include "Estimators/CSEnergyEstimator.h"
 #include "QMCDrivers/DriftOperators.h"
+#if !defined(REMOVE_TRACEMANAGER)
+#include "Estimators/TraceManager.h"
+#else
+typedef int TraceManager;
+#endif
 
 namespace qmcplusplus
 {

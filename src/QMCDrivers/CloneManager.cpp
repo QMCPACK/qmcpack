@@ -20,6 +20,11 @@
 #include "Message/OpenMP.h"
 #include "Utilities/IteratorUtility.h"
 #include <qmc_common.h>
+#if !defined(REMOVE_TRACEMANAGER)
+#include "Estimators/TraceManager.h"
+#else
+typedef int TraceManager;
+#endif
 
 //comment this out to use only method to clone
 #define ENABLE_CLONE_PSI_AND_H
@@ -56,7 +61,10 @@ CloneManager::~CloneManager()
   delete_iter(Movers.begin(),Movers.end());
   delete_iter(branchClones.begin(),branchClones.end());
   delete_iter(estimatorClones.begin(),estimatorClones.end());
+
+#if !defined(REMOVE_TRACEMANAGER)
   delete_iter(traceClones.begin(),traceClones.end());
+#endif
 }
 
 void CloneManager::makeClones(MCWalkerConfiguration& w,

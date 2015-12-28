@@ -61,6 +61,7 @@ NonLocalECPotential::~NonLocalECPotential()
 }
 
 
+#if !defined(REMOVE_TRACEMANAGER)
 void NonLocalECPotential::contribute_particle_quantities()
 {
   request.contribute_array(myName);
@@ -102,18 +103,19 @@ void NonLocalECPotential::delete_particle_quantities()
     delete Vi_sample;
   }
 }
-
+#endif
 
 NonLocalECPotential::Return_t
 NonLocalECPotential::evaluate(ParticleSet& P)
 {
   Value=0.0;
+#if !defined(REMOVE_TRACEMANAGER)
   if(streaming_particles)
   {
     (*Ve_sample) = 0.0;
     (*Vi_sample) = 0.0;
   }
-
+#endif
   //loop over all the ions
   if (ComputeForces)
   {
@@ -171,11 +173,13 @@ NonLocalECPotential::Return_t
 NonLocalECPotential::evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
 {
   Value=0.0;
+#if !defined(REMOVE_TRACEMANAGER)
   if(streaming_particles)
   {
     (*Ve_sample) = 0.0;
     (*Vi_sample) = 0.0;
   }
+#endif
   //loop over all the ions
   if (ComputeForces)
   {

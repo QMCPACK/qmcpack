@@ -44,9 +44,11 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
   ///true if we should compute forces
   bool ComputeForces;
   ParticleSet::ParticlePos_t PulayTerm;
+#if !defined(REMOVE_TRACEMANAGER)
   ///single particle trace samples
   Array<TraceReal,1>* Ve_sample;
   Array<TraceReal,1>* Vi_sample;
+#endif
   ParticleSet& Peln;
   ParticleSet& Pion;
 
@@ -57,9 +59,11 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
 
   void resetTargetParticleSet(ParticleSet& P);
 
+#if !defined(REMOVE_TRACEMANAGER)
   virtual void contribute_particle_quantities();
   virtual void checkout_particle_quantities(TraceManager& tm);
   virtual void delete_particle_quantities();
+#endif
 
   Return_t evaluate(ParticleSet& P);
 

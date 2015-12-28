@@ -35,6 +35,11 @@
 #include "Particle/AdiosWalkerInput.h"
 #include <ADIOS/ADIOS_profile.h>
 #endif
+#if !defined(REMOVE_TRACEMANAGER)
+#include "Estimators/TraceManager.h"
+#else
+typedef int TraceManager;
+#endif
 
 
 namespace qmcplusplus
@@ -169,12 +174,14 @@ void QMCDriver::process(xmlNodePtr cur)
     branchEngine->setEstimatorManager(Estimators);
     branchEngine->read(h5FileRoot);
   }
+#if !defined(REMOVE_TRACEMANAGER)
   //create and initialize traces
   if(Traces==0)
   {
     Traces = new TraceManager(myComm);
   }
   Traces->put(traces_xml,allow_traces,RootName);
+#endif
   branchEngine->put(cur);
   Estimators->put(W,H,cur);
   if(wOut==0)

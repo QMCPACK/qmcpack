@@ -8,6 +8,11 @@
 #include "Message/CommOperators.h"
 #include "tau/profiler.h"
 #include "Particle/Reptile.h"
+#if !defined(REMOVE_TRACEMANAGER)
+#include "Estimators/TraceManager.h"
+#else
+typedef int TraceManager;
+#endif
 
 
 namespace qmcplusplus
@@ -57,7 +62,9 @@ namespace qmcplusplus
 //  app_log()<<"Starting Movers\n";
     for (int ip = 0; ip < NumThreads; ++ip)
       Movers[ip]->startRun (nBlocks, false);
+#if !defined(REMOVE_TRACEMANAGER)
     Traces->startRun (nBlocks, traceClones);
+#endif
     const bool has_collectables = W.Collectables.size ();
 
     for (int block = 0; block < nBlocks; ++block)
@@ -247,7 +254,9 @@ namespace qmcplusplus
 	    estimatorClones[ip]->setCollectionMode (false);
 	    Rng[ip] =
 	      new RandomGenerator_t (*(RandomNumberControl::Children[ip]));
+#if !defined(REMOVE_TRACEMANAGER)
 	    traceClones[ip] = Traces->makeClone ();
+#endif
 	    hClones[ip]->setRandomGenerator (Rng[ip]);
 	    branchClones[ip] = new BranchEngineType (*branchEngine);
 	    // branchClones[ip]->initReptile(W);
@@ -277,6 +286,7 @@ namespace qmcplusplus
 	      app_log () << os.str () << endl;
 	  }
       }
+#if !defined(REMOVE_TRACEMANAGER)
     else
       {
 #if !defined(BGP_BUG)
@@ -287,6 +297,7 @@ namespace qmcplusplus
 	    traceClones[ip]->transfer_state_from (*Traces);
 	  }
       }
+#endif
     app_log ().flush ();
 #if !defined(BGP_BUG)
 #pragma omp parallel for
