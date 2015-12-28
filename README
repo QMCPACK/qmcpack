@@ -1,8 +1,8 @@
-h1. Getting and building QMCPACK
+1. Getting and building QMCPACK
 
 Obtain the latest release or development copy from http://www.qmcpack.org
 
-h2. Prerequisites
+2. Prerequisites
 
 * C/C++ compilers
 * CMake, build utility, http://www.cmake.org
@@ -14,7 +14,7 @@ h2. Prerequisites
 
 Note that the einspline library is no longer required.
 
-h3. Building with cmake
+3. Building with cmake
 
 The build system for QMCPACK is based on CMake.  It will autoconfigure
 based on the detected compilers and libraries. Previously QMCPACK made
@@ -28,16 +28,10 @@ variables for the packages.
 
 See http://docs.qmcpack.org for build examples on Linux, Mac OS X etc.
 
-h3.1. Quick build
+3.1. Quick build
 
 If you are feeling lucky and are on a standard UNIX-like system such
 as a Linux laptop or workstation:
-
-* Move to the build directory, run cmake and make
-
-  cd build
-  cmake ..
-  make -j 8
 
 * Safest quick build option is to specify the C and C++ compilers
   through their MPI wrappers. Here we use Intel MPI and Intel
@@ -50,8 +44,19 @@ as a Linux laptop or workstation:
 * Substitute mpicc and mpicxx or other wrapped compiler names to suit
   your system.
 
+* If you are feeling particularly lucky, you can skip the compiler
+  specification, move to the build directory, run cmake and make:
 
-h3.2. Set the environment
+  cd build
+  cmake ..
+  make -j 8
+
+The complexities of modern computer hardware and software systems are
+such that you should check that the autoconfiguration system has made
+good choices and picked optimized libraries and compiler settings
+before doing significant production. i.e. Check the details below.
+
+3.2. Set the environment
 
 A number of enviornmental variables affect the build.  In particular
 they can control the default paths for libraries, the default
@@ -66,7 +71,7 @@ compilers, etc.  The list of enviornmental variables is given below:
    FFTW_HOME        Path for FFTW
 
 
-h3.3. CMake options
+3.3. CMake options
 
 In addition to reading the enviornmental variables, CMake provides a
 number of optional variables that can be set to control the build and
@@ -102,7 +107,7 @@ the path to the source directory.
     FFTW_LIBRARY_DIRS   Specify library directories for FFTW
 
 
-h3.4. Configure and build
+3.4. Configure and build
 
 * Move to build directory, run cmake and make
 
@@ -111,7 +116,7 @@ h3.4. Configure and build
    make -j 8
 
 
-h3.5. Example configure and build
+3.5. Example configure and build
 
 * Set the environments (the examples below assume bash, Intel compilers and MKL library)
 
@@ -130,14 +135,16 @@ h3.5. Example configure and build
   make -j 8
 
 
-h3.6.  Special notes
+3.6.  Special notes
 
-It is recommended to create a helper script that contains the configure line for CMake.  
-This is particularly useful when avoiding enviornmental variables, packages are installed
-in custom locations, or the configure line may be long or complex.  In this case it is
-recommended to add "rm -rf CMake*" before the configure line to remove existing CMake
-configure files to ensure a fresh configure each time that the script is called.  
-and example script build.sh is given below:
+It is recommended to create a helper script that contains the
+configure line for CMake.  This is particularly useful when avoiding
+enviornmental variables, packages are installed in custom locations,
+or the configure line may be long or complex.  In this case it is
+recommended to add "rm -rf CMake*" before the configure line to remove
+existing CMake configure files to ensure a fresh configure each time
+that the script is called.  and example script build.sh is given
+below:
 
    export CXX=mpic++
    export CC=mpicc
@@ -157,7 +164,48 @@ and example script build.sh is given below:
       -D QMC_DATA=/projects/QMCPACK/qmc-data            \
       ..
 
-h4. Documentation and support
+4. Testing and validation of QMCPACK
+
+QMCPACK includes validation tests to ensure the correctness of the
+code, compilers, tools, and runtime. The tests should ideally be run
+each compilation, and certainly before any research use. The tests
+check the output against known mean-field, quantum chemistry, and
+other QMC results.
+
+The tests currently use up to 16 cores in various combinations of MPI
+tasks and OpenMP threads. 
+
+4.1 Run the short (quick) tests
+
+* From the build directory, invoke ctest specifying only tests
+  including "short" should be run
+
+  ctest -R short
+
+These tests currently take several minutes to run. All tests should pass.
+
+4.2 Run the long verification tests
+
+For greater surety, the long verification tests use a far greater
+number of statistical samples than the "short" tests. These take
+several hours each to run.
+
+* From the build directory, invoke ctest with an increased test timeout
+
+  ctest --test-timeout 36000
+
+This will run all the defined tests, "short" and "long". If you are
+running on a system such as a large shared supercomputer you will
+likely have to run these tests from inside a submitted job to avoid
+run length limits.
+
+4.3 Run individual tests
+
+Individual tests can be run by specifying their name
+
+  ctest -R name-of-test-to-run
+
+5. Documentation and support
 
 For more informaton, consult QMCPACK pages at http://www.qmcpack.org
 and http://docs.qmcpack.org
