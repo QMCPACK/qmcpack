@@ -1698,48 +1698,73 @@ class Structure(Sobj):
     #             (1,1,2) = [ (3,5,4) ]
     #           6    #   sum of vertex degrees is 6 (each atom is connected to 2 others)
     #             (2,2,2) = [ (0,1,2) ]           # graphs with vertex degree (2,2,2)  
-    def connected_graphs(self,order,indices=None,rmax=None,nmax=None,degree=False,site_maps=False,**spec_max):
+    def connected_graphs(self,order,indices=None,rmax=None,nmax=None,voronoi=False,degree=False,site_maps=False,**spec_max):
         if indices is None:
             indices = arange(len(self.pos),dtype=int)
             pos = self.pos
         else:
             pos = self.pos[indices]
         #end if
-        elem = set(self.elem[indices])
-        spec = set(spec_max.keys())
-        if spec==elem or rmax!=None:
-            None
-        elif spec<elem and nmax!=None:
-            for e in elem:
-                if e not in spec:
-                    spec_max[e] = nmax
-                #end if
-            #end for
-        #end if
         np = len(indices)
-        # get neighbor table for subset of atoms specified by indices
-        nt,dt = self.neighbor_table(pos,pos,distances=True)
-        # determine how many neighbors to consider based on rmax (all are neighbors if rmax is None)
-        nneigh = zeros((np,),dtype=int)
-        if len(spec_max)>0:
-            for n in xrange(np):
-                nneigh[n] = min(spec_max[self.elem[n]],len(nt[n]))
+        neigh_table = []
+        actual_indices = None
+        if voronoi:
+            actual_indices = True
+            neighbors = self.voronoi_neighbors(indices,restrict=True,distance_ordered=False)
+            for nilist in neighbors:
+                neigh_table.append(nilist)
             #end for
-        elif rmax is None:
-            nneigh[:] = np
         else:
-            nneigh = (dt<rmax).sum(1)                    
+            actual_indices = False
+            elem = set(self.elem[indices])
+            spec = set(spec_max.keys())
+            if spec==elem or rmax!=None:
+                None
+            elif spec<elem and nmax!=None:
+                for e in elem:
+                    if e not in spec:
+                        spec_max[e] = nmax
+                    #end if
+                #end for
+            #end if
+            # get neighbor table for subset of atoms specified by indices
+            nt,dt = self.neighbor_table(pos,pos,distances=True)
+            # determine how many neighbors to consider based on rmax (all are neighbors if rmax is None)
+            nneigh = zeros((np,),dtype=int)
+            if len(spec_max)>0:
+                for n in xrange(np):
+                    nneigh[n] = min(spec_max[self.elem[n]],len(nt[n]))
+                #end for
+            elif rmax is None:
+                nneigh[:] = np
+            else:
+                nneigh = (dt<rmax).sum(1)                    
+            #end if
+            for i in xrange(np):
+                neigh_table.append(nt[i,1:nneigh[i]])
+            #end for
+            del nt,dt,nneigh,elem,spec,rmax
         #end if
+        neigh_table = array(neigh_table,dtype=int)
         # record which atoms are neighbors to each other
         neigh_pairs = set()
-        for i in xrange(np):
-            for ni in nt[i,1:nneigh[i]]:
-                ii = indices[i]
-                jj = indices[ni]
-                neigh_pairs.add((ii,jj))
-                neigh_pairs.add((jj,ii))
+        if actual_indices:
+            for i in xrange(np):
+                for ni in neigh_table[i]:
+                    neigh_pairs.add((i,ni))
+                    neigh_pairs.add((ni,i))
+                #end for
             #end for
-        #end for
+        else:
+            for i in xrange(np):
+                for ni in neigh_table[i]:
+                    ii = indices[i]
+                    jj = indices[ni]
+                    neigh_pairs.add((ii,jj))
+                    neigh_pairs.add((jj,ii))
+                #end for
+            #end for
+        #end if
         # find the connected graphs
         graphs_found = set()  # map to contain tuples of connected atom's indices
         cgraphs = obj()
@@ -1749,36 +1774,42 @@ class Structure(Sobj):
         if order>0:
             cg = cgraphs[1]
             for i in xrange(np):  # list of single atoms
-                gi = (i,)
-                cg.append(gi)
-                graphs_found.add(gi)
+                gi = (i,)              # graph indices
+                cg.append(gi)          # add graph to graph list of order 1
+                graphs_found.add(gi)   # add graph to set of all graphs
             #end for
             for o in range(2,order+1): # graphs of order o are found by adding all
                 cglast = cgraphs[o-1]  # possible single neighbors to each graph of order o-1 
                 cg     = cgraphs[o]
-                for gilast in cglast:
-                    for i in gilast:
-                        for ni in nt[i,1:nneigh[i]]:
-                            gi = tuple(sorted(gilast+(ni,)))
-                            if gi not in graphs_found and len(set(gi))==o:
-                                graphs_found.add(gi)
-                                cg.append(gi)
+                for gilast in cglast:    # all graphs of order o-1
+                    for i in gilast:       # all indices in each graph of order o-1
+                        for ni in neigh_table[i]: # neighbors of selected atom in o-1 graph
+                            gi = tuple(sorted(gilast+(ni,))) # new graph with neighbor added
+                            if gi not in graphs_found and len(set(gi))==o: # add it if it is new and really is order o
+                                graphs_found.add(gi)  # add graph to set of all graphs
+                                cg.append(gi)         # add graph to graph list of order o
                             #end if
                         #end for
                     #end for
                 #end for
             #end for
         #end if
-        # map indices back to actual atomic indices
-        for o,cg in cgraphs.iteritems():
-            cgmap = []
-            for gi in cg:
-                gi = array(gi)
-                gimap = tuple(sorted(indices[array(gi)]))
-                cgmap.append(gimap)
+        if actual_indices:
+            for o,cg in cgraphs.iteritems():
+                cgraphs[o] = array(cg,dtype=int)
             #end for
-            cgraphs[o] = array(sorted(cgmap),dtype=int)
-        #end for
+        else:
+            # map indices back to actual atomic indices
+            for o,cg in cgraphs.iteritems():
+                cgmap = []
+                for gi in cg:
+                    #gi = array(gi)
+                    gimap = tuple(sorted(indices[array(gi)]))
+                    cgmap.append(gimap)
+                #end for
+                cgraphs[o] = array(sorted(cgmap),dtype=int)
+            #end for
+        #end if
         # reorganize the graph listing by cluster and vertex degree, if desired
         if degree:
             #degree_map = obj()
@@ -1814,7 +1845,7 @@ class Structure(Sobj):
                 #end for
                 for dgd in dgo:
                     for di,dgi in dgd.iteritems():
-                        dgd[di]=array(dgi,dtype=int)
+                        dgd[di]=array(sorted(dgi),dtype=int)
                     #end for
                 #end for
             #end for
@@ -1865,6 +1896,71 @@ class Structure(Sobj):
             return cgraphs,cmaps
         #end if
     #end def connected_graphs
+
+
+    # returns connected graphs that are rings up to the requested order
+    #   rings are constructed by pairing lines that share endpoints
+    #   all vertices of a ring have degree two
+    def ring_graphs(self,order,**kwargs):
+        # get all half order connected graphs
+        line_order = order/2+order%2+1
+        cgraphs = self.connected_graphs(line_order,degree=True,site_maps=False,**kwargs)
+        # collect half order graphs that are lines
+        lgraphs = obj()
+        for o in range(2,line_order+1):
+            total_degree  = 2*o-2
+            vertex_degree = tuple([1,1]+(o-2)*[2])
+            lg = None
+            if o in cgraphs:
+                cg = cgraphs[o]
+                if total_degree in cg:
+                    dg = cg[total_degree]
+                    if vertex_degree in dg:
+                        lg = dg[vertex_degree]
+                    #end if
+                #end if
+            #end if
+            if lg!=None:
+                lg_end = obj()
+                for gi in lg:
+                    end_key = tuple(sorted(gi[0:2])) # end points
+                    if end_key not in lg_end:
+                        lg_end[end_key] = []
+                    #end if
+                    lg_end[end_key].append(tuple(gi))
+                #end for
+                lgraphs[o] = lg_end
+            #end if
+        #end for
+        # contruct rings from lines that share endpoints
+        rgraphs = obj()
+        for o in range(3,order+1):
+            o1 = o/2+1    # split half order for odd, same for even, 
+            o2 = o1+o%2
+            lg1 = lgraphs.get_optional(o1,None) # sets of half order lines
+            lg2 = lgraphs.get_optional(o2,None)
+            if lg1!=None and lg2!=None:
+                rg = []
+                rset = set()
+                for end_key,llist1 in lg1.iteritems(): # list of lines sharing endpoints
+                    if end_key in lg2:
+                        llist2 = lg2[end_key]          # second list of lines sharing endpoints
+                        for gi1 in llist1:             # combine line pairs into rings
+                            for gi2 in llist2:
+                                ri = tuple(sorted(set(gi1+gi2[2:]))) # ring indices
+                                if ri not in rset and len(ri)==o:    # exclude repeated lines or rings
+                                    rg.append(ri)
+                                    rset.add(ri)
+                                #end if
+                            #end for
+                        #end for
+                    #end if
+                #end for
+                rgraphs[o] = array(sorted(rg),dtype=int)
+            #end if
+        #end for
+        return rgraphs
+    #end def ring_graphs
 
     
     def min_image_vectors(self,points=None,points2=None,axes=None,pairs=True):
@@ -1984,10 +2080,11 @@ class Structure(Sobj):
     #end def min_image_norms
 
     # get all neighbors according to contacting voronoi polyhedra in PBC
-    def voronoi_neighbors(self,indices=None,restrict=False):
+    def voronoi_neighbors(self,indices=None,restrict=False,distance_ordered=True):
         if indices is None:
             indices = arange(len(self.pos))
         #end if
+        indices = set(indices)
         # make a new version of this (small cell)
         sn = self.copy()
         sn.recenter()
@@ -2023,13 +2120,19 @@ class Structure(Sobj):
             #end if
         #end for
         # remove any duplicates and order by distance
-        dt = self.distance_table()
-        for i,ni in neighbors.iteritems():
-            ni = array(list(set(ni)),dtype=int)
-            di = dt[i,ni]
-            order = di.argsort()
-            neighbors[i] = ni[order]
-        #end for
+        if distance_ordered:
+            dt = self.distance_table()
+            for i,ni in neighbors.iteritems():
+                ni = array(list(set(ni)),dtype=int)
+                di = dt[i,ni]
+                order = di.argsort()
+                neighbors[i] = ni[order]
+            #end for
+        else:  # just remove duplicates
+            for i,ni in neighbors.iteritems():
+                neighbors[i] = array(list(set(ni)),dtype=int)
+            #end for
+        #end if
         return neighbors
     #end def voronoi_neighbors
 
