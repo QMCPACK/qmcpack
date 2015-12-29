@@ -92,12 +92,15 @@ the path to the source directory.
     CMAKE_C_FLAGS       Set the C flags.  Also supported: CMAKE_C_FLAGS_DEBUG, CMAKE_C_FLAGS_RELEASE, CMAKE_C_FLAGS_RELWITHDEBINFO
     CMAKE_CXX_FLAGS     Set the C++ flags.  Also supported: CMAKE_CXX_FLAGS_DEBUG, CMAKE_CXX_FLAGS_RELEASE, CMAKE_CXX_FLAGS_RELWITHDEBINFO
 
-  * QMC build options
-    QMC_DATA            Specify data directory for QMCPACK (used for unit tests)
+  * Key QMC build options
+    QMC_CUDA            Enable CUDA and GPU acceleration (1:yes, 0:no)
+    QMC_COMPLEX         Build the complex (general twist/k-point) version (1:yes, 0:no)
+    
+  * Additional QMC options
+    QMC_DATA            Specify data directory for QMCPACK (currently unused, but likely to be used for performance tests)
     QMC_EXTRA_LIBS      Add extra link libraries
     QMC_BUILD_STATIC    Add -static flags to build
-    QMC_CUDA            Enable CUDA (1:yes, 0:no)
-
+    
   * libxml
     Libxml2_INCLUDE_DIRS  Specify include directories for libxml2
     Libxml2_LIBRARY_DIRS  Specify library directories for libxml2
