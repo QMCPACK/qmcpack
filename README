@@ -178,6 +178,11 @@ other QMC results.
 The tests currently use up to 16 cores in various combinations of MPI
 tasks and OpenMP threads. 
 
+Note that due to the small electron and walker counts used in the
+tests, they should not be used for any performance measurements. These
+should be made on problem sizes that are representative of actual
+research calculations.
+
 4.1 Run the short (quick) tests
 
 * From the build directory, invoke ctest specifying only tests
