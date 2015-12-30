@@ -31,7 +31,7 @@ See http://docs.qmcpack.org for build examples on Linux, Mac OS X etc.
 3.1. Quick build
 
 If you are feeling lucky and are on a standard UNIX-like system such
-as a Linux laptop or workstation:
+as a Linux workstation:
 
 * Safest quick build option is to specify the C and C++ compilers
   through their MPI wrappers. Here we use Intel MPI and Intel
@@ -42,10 +42,14 @@ as a Linux laptop or workstation:
   make -j 8
 
 * Substitute mpicc and mpicxx or other wrapped compiler names to suit
-  your system.
+  your system. e.g. With OpenMPI use
+
+  cd build
+  cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx ..
+  make -j 8
 
 * If you are feeling particularly lucky, you can skip the compiler
-  specification, move to the build directory, run cmake and make:
+  specification:
 
   cd build
   cmake ..
@@ -69,7 +73,6 @@ compilers, etc.  The list of enviornmental variables is given below:
    HDF5_ROOT        Path for HDF5
    BOOST_ROOT       Path for Boost
    FFTW_HOME        Path for FFTW
-
 
 3.3. CMake options
 
@@ -109,7 +112,6 @@ the path to the source directory.
     FFTW_INCLUDE_DIRS   Specify include directories for FFTW
     FFTW_LIBRARY_DIRS   Specify library directories for FFTW
 
-
 3.4. Configure and build
 
 * Move to build directory, run cmake and make
@@ -117,7 +119,6 @@ the path to the source directory.
    cd build
    cmake ..
    make -j 8
-
 
 3.5. Example configure and build
 
@@ -136,7 +137,6 @@ the path to the source directory.
   cd build
   cmake -D CMAKE_BUILD_TYPE=Release ..
   make -j 8
-
 
 3.6.  Special notes
 
