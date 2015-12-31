@@ -741,8 +741,14 @@ class Structure(Sobj):
     
     def incorporate(self,other):
         self.set_elem(list(self.elem)+list(other.elem))
-        self.pos  = array(list(self.pos )+list(other.pos ))
+        self.pos=array(list(self.pos)+list(other.pos))
     #end def incorporate
+
+
+    def add_atoms(self,elem,pos):
+        self.set_elem(list(self.elem)+list(elem))
+        self.pos=array(list(self.pos)+list(pos))
+    #end def add_atoms
 
 
     def distances(self,pos1=None,pos2=None):
@@ -1042,7 +1048,7 @@ class Structure(Sobj):
         #end if
         nn = nearest_neighbors(1,self.pos,pos)
         return nn.ravel()
-    #end def
+    #end def locate_simple
 
     
     def locate(self,identifiers,radii=None,exterior=False):
@@ -1105,7 +1111,7 @@ class Structure(Sobj):
     #end def locate
 
     
-    def freeze(self,identifiers,radii=None,exterior=False,negate=False,directions='xyz'):
+    def freeze(self,identifiers=None,radii=None,exterior=False,negate=False,directions='xyz'):
         if isinstance(identifiers,ndarray) and identifiers.shape==self.pos.shape and identifiers.dtype==bool:
             if negate:
                 self.frozen = ~identifiers
@@ -1114,8 +1120,11 @@ class Structure(Sobj):
             #end if
             return
         #end if
-                
-        indices = self.locate(identifiers,radii,exterior)
+        if identifiers is None:
+            indicies = arange(len(self.pos),dtype=int)
+        else:
+            indices = self.locate(identifiers,radii,exterior)
+        #end if
         if len(indices)==0:
             self.error('failed to select any atoms to freeze')
         #end if
@@ -1962,6 +1971,43 @@ class Structure(Sobj):
         return rgraphs
     #end def ring_graphs
 
+
+    # find the centroid of a set of points/atoms in min image convention
+    def min_image_centroid(self,points=None,indices=None):
+        if indices!=None:
+            points = self.pos[indices]
+        elif points is None:
+            self.error('points or images must be provided to min_image_centroid')
+        #end if
+        p     = array(points,dtype=float)
+        cprev = p[0]+1e99
+        c     = p[0]
+        while(norm(c-cprev)>1e-8):
+            p = self.cell_image(p,center=c)
+            cprev = c
+            c = p.mean(axis=0)
+        #end def min_image_centroid
+        return c
+    #end def min_image_centroid
+
+
+    # find min image centroids of multiple sets of points/atoms
+    def min_image_centroids(self,points=None,indices=None):
+        cents = []
+        if points!=None:
+            for p in points:
+                cents.append(self.min_image_centroid(p))
+            #end for
+        elif indices!=None:
+            for ind in indices:
+                cents.append(self.min_image_centroid(indices=ind))
+            #end for
+        else:
+            self.error('points or images must be provided to min_image_centroid')
+        #end if
+        return array(cents,dtype=float)
+    #end def min_image_centroids
+    
     
     def min_image_vectors(self,points=None,points2=None,axes=None,pairs=True):
         if points is None:
@@ -2078,6 +2124,7 @@ class Structure(Sobj):
         #end if
         return nout
     #end def min_image_norms
+
 
     # get all neighbors according to contacting voronoi polyhedra in PBC
     def voronoi_neighbors(self,indices=None,restrict=False,distance_ordered=True):
@@ -2256,33 +2303,35 @@ class Structure(Sobj):
     #end def rcore_max
 
 
-    def cell_image(self,p):
-        if self.dim!=3:
-            self.error('cell_image is currently only implemented for 3 dimensions')
+    def cell_image(self,p,center=None):
+        pos = array(p,dtype=float)
+        if center is None:
+            c = self.center.copy()
+        else:
+            c = array(center,dtype=float)
         #end if
-        pos = atleast_2d(p)
-        c = empty((1,3))
-        c[:] = self.center[:]
         axes = self.axes
         axinv = inv(axes)
-        for i in range(len(pos)):
+        for i in xrange(len(pos)):
             u = dot(pos[i]-c,axinv)
             pos[i] = dot(u-floor(u+.5),axes)+c
         #end for
-        if isinstance(p,ndarray):
-            p[:] = pos[:]
-        elif len(pos)==1 and len(p)==3:
-            p[0] = pos[0,0]
-            p[1] = pos[0,1]
-            p[2] = pos[0,2]
-        else:
-            for i in range(len(p)):
-                p[i][0] = pos[i,0]
-                p[i][1] = pos[i,1]
-                p[i][2] = pos[i,2]
-            #end for
-        #end if
+        return pos
     #end def cell_image
+
+
+    def center_distances(self,points,center=None):
+        if center is None:
+            c = self.center.copy()
+        else:
+            c = array(center,dtype=float)
+        #end if        
+        points = self.cell_image(points,center=c)
+        for i in xrange(len(points)):
+            points[i] -= c
+        #end for
+        return sqrt((points**2).sum(1))
+    #end def center_distances
 
 
     def recenter(self,center=None):
@@ -2290,11 +2339,11 @@ class Structure(Sobj):
             self.center=array(center)
         #end if
         pos = self.pos
-        c = empty((1,self.dim))
+        c = empty((1,self.dim),dtype=float)
         c[:] = self.center[:]
         axes = self.axes
         axinv = inv(axes)
-        for i in range(len(pos)):
+        for i in xrange(len(pos)):
             u = dot(pos[i]-c,axinv)
             pos[i] = dot(u-floor(u+.5),axes)+c
         #end for
