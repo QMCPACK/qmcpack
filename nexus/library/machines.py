@@ -1102,6 +1102,7 @@ class Workstation(Machine):
         if pad!=None:
             command = ('\n'+command).replace('\n','\n  '+pad)
         #end if
+        return command
     #end def job_command
 
 
