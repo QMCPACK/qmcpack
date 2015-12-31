@@ -200,7 +200,7 @@ several hours each to run.
 
 * From the build directory, invoke ctest with an increased test timeout
 
-  ctest --test-timeout 36000
+  ctest --timeout 36000
 
 This will run all the defined tests, "short" and "long". If you are
 running on a system such as a large shared supercomputer you will
