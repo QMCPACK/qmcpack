@@ -388,8 +388,10 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   #-------------------------------------------------------------------
   # check lapack/blas
   #-------------------------------------------------------------------
-  # Quick search for MKL (this will need to be improved)
-  INCLUDE(CMake/FindMKL.cmake)
+  # Quick search for MKL (this will need to be improved). Currently only for Intel compilers
+  IF (INTEL_COMPILER)
+   INCLUDE(CMake/FindMKL.cmake)
+  ENDIF(INTEL_COMPILER)
   IF ( HAVE_MKL )
     # We found mkl, add the link library
     SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${MKL_FLAGS}")
