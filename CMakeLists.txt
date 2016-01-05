@@ -390,8 +390,7 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   #-------------------------------------------------------------------
   # Quick search for MKL (this will need to be improved)
   INCLUDE(CMake/FindMKL.cmake)
-  CHECK_C_COMPILER_FLAG( "-lmkl" MKL_FOUND )
-  IF ( MKL_FOUND )
+  IF ( HAVE_MKL )
     # We found mkl, add the link library
     SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${MKL_FLAGS}")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MKL_FLAGS}")
