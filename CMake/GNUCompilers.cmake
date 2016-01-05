@@ -16,7 +16,9 @@ IF ( CMAKE_COMPILER_IS_GNUCXX )
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 
   # Set gnu specfic flags (which we always want)
-  ADD_DEFINITIONS(-Drestrict=__restrict__ -DADD_ -DINLINE_ALL=inline)
+  ADD_DEFINITIONS( -Drestrict=__restrict__ )
+  ADD_DEFINITIONS( -DADD_ )
+  ADD_DEFINITIONS( -DINLINE_ALL=inline )
   SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -malign-double -fomit-frame-pointer -finline-limit=1000 -fstrict-aliasing -funroll-all-loops")
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -malign-double -fomit-frame-pointer -finline-limit=1000 -fstrict-aliasing -funroll-all-loops")
 

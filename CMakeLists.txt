@@ -388,13 +388,25 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   #-------------------------------------------------------------------
   # check lapack/blas
   #-------------------------------------------------------------------
-  #INCLUDE(${PROJECT_CMAKE}/FindLapack.cmake)
-  find_package(LAPACK)
-  if(LAPACK_FOUND)
+  # Quick search for MKL (this will need to be improved)
+  INCLUDE(CMake/FindMKL.cmake)
+  CHECK_C_COMPILER_FLAG( "-lmkl" MKL_FOUND )
+  IF ( MKL_FOUND )
+    # We found mkl, add the link library
+    SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${MKL_FLAGS}")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MKL_FLAGS}")
+    SET(LAPACK_FOUND 1)
+    SET(LAPACK_LIBRARIES "${MKL_LIBRARIES}")
+    SET(LAPACK_LINKER_FLAGS "${MKL_LINKER_FLAGS}")
+  ELSE()
+    # Search for Blas/Lapack
+    find_package(LAPACK)
+  ENDIF()
+  IF(LAPACK_FOUND)
     MESSAGE(STATUS "LAPACK libraries: ${LAPACK_LIBRARIES}")
     MESSAGE(STATUS "LAPACK linker flags: ${LAPACK_LINKER_FLAGS}")
     link_libraries(${LAPACK_LIBRARIES} ${LAPACK_LINKER_FLAGS})
-  endif()
+  ENDIF()
 
 
 ENDIF(CMAKE_TOOLCHAIN_FILE)
@@ -571,7 +583,15 @@ endif()
 # Add optional macros
 ######################################################
 
-find_package(FFTW)
+SET( FFTW_FOUND 0 )
+IF ( HAVE_MKL )
+  IF ( HAVE_MKL_FFTW3 )
+    SET( FFTW_FOUND 1 )
+  ENDIF()
+ENDIF()
+IF ( NOT FFTW_FOUND )
+  find_package(FFTW)
+ENDIF()
 IF(FFTW_FOUND)
   SET(HAVE_LIBFFTW 1)
   INCLUDE_DIRECTORIES(${FFTW_INCLUDE_DIR})
@@ -648,6 +668,12 @@ endif()
 ###################################################
 # Add user extra flags
 ###################################################
+IF(QMC_INCLUDE)
+  FOREACH ( tmp ${QMC_INCLUDE} )
+    MESSAGE(STATUS "Adding '${tmp}' to include directories")
+    INCLUDE_DIRECTORIES( "${tmp}" )
+  ENDFOREACH()
+ENDIF()
 IF(QMC_EXTRA_LIBS)
   string(REPLACE " " ";" QMC_EXTRA_LIBS ${QMC_EXTRA_LIBS})
   SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${QMC_EXTRA_LIBS})
