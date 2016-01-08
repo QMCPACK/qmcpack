@@ -366,7 +366,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       else if(potType == "spindensity")
       {
         app_log()<<"  Adding SpinDensity"<<endl;
-        SpinDensity* apot=new SpinDensity(*targetPtcl,ptclPool);
+        SpinDensity* apot=new SpinDensity(*targetPtcl);
         apot->put(cur);
         targetH->addOperator(apot,potName,false);
       }

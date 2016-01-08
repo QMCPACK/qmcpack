@@ -6,7 +6,6 @@
 #define QMCPLUSPLUS_SPIN_DENSITY_H
 
 #include <QMCHamiltonians/QMCHamiltonianBase.h>
-#include <Particle/DistanceTableData.h>
 
 namespace qmcplusplus
 {
@@ -14,17 +13,12 @@ namespace qmcplusplus
 class SpinDensity : public QMCHamiltonianBase
 {
  public:
-
-  typedef map<string,ParticleSet*> PSPool;
+ 
   typedef ParticleSet::ParticleLayout_t Lattice_t;
-  typedef DistanceTableData::ripair ripair;
   typedef vector<RealType> dens_t;
   typedef vector<PosType>  pts_t;
-  typedef ParticleSet::ParticlePos_t ParticlePos_t;
 
   ParticleSet* Ptmp;
-  PSPool& psetpool;
-  ParticlePos_t Robs;
 
   //data members
   int nspecies;
@@ -35,12 +29,9 @@ class SpinDensity : public QMCHamiltonianBase
   TinyVector<int,DIM> grid;
   TinyVector<int,DIM> gdims;
   int npoints;
-  bool voronoi_grid;
-  int dtable_index;
-  vector<ripair> nearest;
 
   //constructor/destructor
-  SpinDensity(ParticleSet& P,PSPool& psp);
+  SpinDensity(ParticleSet& P);
   ~SpinDensity() { }
 
   //standard interface
@@ -72,8 +63,6 @@ class SpinDensity : public QMCHamiltonianBase
   //local functions
   void reset();
   void report(const string& pad);
-  void evaluate_voronoi(ParticleSet& P);
-  void evaluate_cartesian(ParticleSet& P);
   void test(int moves,ParticleSet& P);
   Return_t test_evaluate(ParticleSet& P,int& pmin,int& pmax);
   void postprocess_density(const string& infile,const string& species,
