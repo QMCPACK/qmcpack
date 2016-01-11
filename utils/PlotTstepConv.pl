@@ -3,13 +3,18 @@ use strict;
 use FileHandle;
 use Getopt::Long;
 
-my %config = do "/gprojects/qmcpack/qmcpack/utils/setup-qmc-conf.pl";
+my %config = do "/home/abenali/Work/src/qmcpack/utils/setup-qmc-conf.pl";
 my $gnuplot = $config{gnuplot};
 my $energytool = $config{energytool};
 
 my $epsfile;
-GetOptions('eps=s' => \$epsfile);
-
+my $supercellsize = 1;
+my $maxstepsize = 10;
+my $quadratic;
+GetOptions('eps=s' => \$epsfile,
+           'supercellsize=i' => \$supercellsize,
+           'maxstepsize=f' => \$maxstepsize,
+           'quadratic' => \$quadratic);
 
 my $fname = shift;
 my $start = shift;
@@ -77,6 +82,10 @@ foreach my $line (@temdata) {
 
 }
 
+if ($largesttstep > $maxstepsize) {
+    $largesttstep = $maxstepsize;
+}
+
 #print "Project id = $projid\n";
 #print "Starting series = $seriesStart\n";
 
@@ -86,15 +95,32 @@ if ($epsfile) {
     $gplstring .= "set term post color enhanced 20\n set output \"$epsfile\"\n";
 }
 $gplstring .= "set xlabel \"timestep\"; set ylabel \"energy (Ha)\"\n";
-$gplstring .= "f(x) = a+b*x\n";
-$gplstring .= "fit f(x) \"-\" u 1:2:3 via a,b\n";
+##$gplstring .= "set fit quiet\n";
+$gplstring .= "set print \"tsteps\"\n";
+if ($quadratic) {
+    $gplstring .= "f(x) = a+b*x+c*x**2\n";
+    $gplstring .= "fit [:$maxstepsize] f(x) \"-\" u 1:2:3 via a,b,c\n";
+} else {
+    $gplstring .= "f(x) = a+b*x\n";
+    $gplstring .= "fit [:$maxstepsize] f(x) \"-\" u 1:2:3 via a,b\n";
+}
 foreach my $key ( sort by_key keys %fnames ) {
    my $str = `$energytool $fnames{$key} $start | head -1`;
    my @data = split(/\s+/,$str);
-   my $energy = "$tsteps{$key}   $data[2]  $data[4]\n";
-   $gplstring .= "$energy";  
+   if ($tsteps{$key} <= $maxstepsize) {
+       my $energy = "$tsteps{$key}   " .  $data[2]/$supercellsize . "   " .  $data[4]/$supercellsize . "\n";
+       $gplstring .= "$energy";  
+   }
 }
 $gplstring .= "end\n";
+
+foreach my $key ( sort by_key keys %fnames ) {
+   my $str = `$energytool $fnames{$key} $start | head -1`;
+   my @data = split(/\s+/,$str);
+   my $energy = "$tsteps{$key}   " .  $data[2]/$supercellsize . "   " .  $data[4]/$supercellsize;
+   $gplstring .= "print \"$energy\"\n ";  
+}
+
 
 my $plotmax = $largesttstep*1.05;
 $gplstring .= "plot [0:$plotmax] \"-\" u 1:2:3 lw 3 ps 2 pt 7 notitle w e, f(x) w l lw 3 notitle \n";
@@ -103,7 +129,7 @@ $gplstring .= "plot [0:$plotmax] \"-\" u 1:2:3 lw 3 ps 2 pt 7 notitle w e, f(x) 
 foreach my $key ( sort by_key keys %fnames ) {
    my $str = `$energytool $fnames{$key} $start | head -1`;
    my @data = split(/\s+/,$str);
-   my $energy = "$tsteps{$key}   $data[2]  $data[4]\n";
+   my $energy = "$tsteps{$key}   " .  $data[2]/$supercellsize . "   " .  $data[4]/$supercellsize . "\n";
    $gplstring .= "$energy";  
 }
 
