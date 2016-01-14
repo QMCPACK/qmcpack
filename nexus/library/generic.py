@@ -954,6 +954,21 @@ class hidden(hobj):
         self._alt._log(*items,**kwargs)
     #end def log
 
+    def __repr__(self):
+        s=''
+        for k in sorted(self._keys()):
+            if not isinstance(k,str) or k[0]!='_':
+                v=self._dict[k]
+                if hasattr(v,'__class__'):
+                    s+='  {0:<20}  {1:<20}\n'.format(k,v.__class__.__name__)
+                else:
+                    s+='  {0:<20}  {1:<20}\n'.format(k,type(v))
+                #end if
+            #end if
+        #end for
+        return s
+    #end def __repr__
+
     #  log, warning, and error messages
     def _open_log(self,*args,**kwargs):
         hidden.open_log(self,*args,**kwargs)
