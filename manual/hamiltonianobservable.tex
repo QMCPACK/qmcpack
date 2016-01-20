@@ -32,6 +32,8 @@
    &   \texttt{param6}     &  integer array     &                  &                     &                       \\
    &   \texttt{param7}     &  real array        &                  &                     &                       \\
    &   \texttt{param8}     &  boolean array     &                  &                     &                       \\
+\multicolumn{2}{l}{body text}  & \multicolumn{4}{l}{}\\
+   &                           & \multicolumn{4}{l}{Long form description of body text format}                   \\
   \hline
 \end{tabularx}
 \end{center}
@@ -100,7 +102,7 @@
    &   \texttt{type}$^o$    &  text              &                  & generic             & \textit{No current function}             \\
    &   \texttt{role}$^o$    &  text              & primary/extra    & extra               & Designate as primary Hamiltonian or not  \\
    &   \texttt{source}$^o$  &  text              & \texttt{particleset.name} & i          & Identify classical particleset           \\
-   &   \texttt{target}$^r$  &  text              & \texttt{particleset.name} & e          & Identify quantum particlset              \\
+   &   \texttt{target}$^o$  &  text              & \texttt{particleset.name} & e          & Identify quantum particleset             \\
    &   \texttt{default}$^o$ &  boolean           & yes/no           & yes                 & Include kinetic energy term implicitly   \\
   \hline
 \end{tabularx}
@@ -110,7 +112,7 @@
 
 Additional information:
 \begin{itemize}
-  \item{\textbf{target:} Must be set to the name of the quantum particeset.  In normal usage, no other attributes should be provided.}
+  \item{\textbf{target:} Must be set to the name of the quantum particeset.  The default value is typically sufficient.  In normal usage, no other attributes are provided.}
 \end{itemize}
 
 % All-electron hamiltonian element
@@ -475,7 +477,7 @@ Remarks
 %  <estimator type="nofk" name="nofk" wavefunction="psi0"/>
 
 
-
+\dev{
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
@@ -496,6 +498,7 @@ Remarks
 \end{center}
 \end{table}
 \FloatBarrier
+}
 
 
 \subsection{Chiesa-Ceperley-Martin-Holzmann kinetic energy correction}
@@ -745,43 +748,219 @@ Additional information:
 
 \subsection{Energy density estimator}
 
-%  <estimator type="EnergyDensity" name="EDcell" dynamic="e" static="ion0">
-%    <reference_points coord="cartesian">
-%      r1 1 0 0 
-%      r2 0 1 0
-%      r3 0 0 1
-%    </reference_points>
-%    <spacegrid coord="cartesian">
-%      <origin p1="zero"/>
-%      <axis p1="a1" scale=".5" label="x" grid="-1 (.05) 1"/>
-%      <axis p1="a2" scale=".5" label="y" grid="-1 (.1) 1"/>
-%      <axis p1="a3" scale=".5" label="z" grid="-1 (.1) 1"/>
-%    </spacegrid>
-%  </estimator>
-%
-%  <estimator type="EnergyDensity" name="EDatom" dynamic="e" static="ion0">
-%    <reference_points coord="cartesian">
-%      r1 1 0 0 
-%      r2 0 1 0
-%      r3 0 0 1
-%    </reference_points>
-%    <spacegrid coord="spherical">
-%      <origin p1="ion01"/>
-%      <axis p1="r1" scale="6.9" label="r"     grid="0 1"/>
-%      <axis p1="r2" scale="6.9" label="phi"   grid="0 1"/>
-%      <axis p1="r3" scale="6.9" label="theta" grid="0 1"/>
-%    </spacegrid>
-%    <spacegrid coord="spherical">
-%      <origin p1="ion02"/>
-%      <axis p1="r1" scale="6.9" label="r"     grid="0 1"/>
-%      <axis p1="r2" scale="6.9" label="phi"   grid="0 1"/>
-%      <axis p1="r3" scale="6.9" label="theta" grid="0 1"/>
-%    </spacegrid>
-%  </estimator>
-%
-%  <estimator type="EnergyDensity" name="EDvoronoi" dynamic="e" static="ion0">
-%    <spacegrid coord="voronoi"/>
-%  </estimator>
+\FloatBarrier
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l l }
+\hline
+\multicolumn{6}{l}{\texttt{estimator type=EnergyDensity} element} \\
+\hline
+\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{hamiltonian, qmc}}\\
+\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\texttt{reference\_points, spacegrid}}\\
+\multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
+   &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
+   & \texttt{type}$^r$    &  text              & \textbf{EnergyDensity}    &                  & Must be EnergyDensity     \\
+   & \texttt{name}$^r$    &  text              & \textit{anything}         &                  & Unique name for estimator \\
+   & \texttt{dynamic}$^r$ &  text              & \texttt{particleset.name} &                  & Identify electrons \\
+   & \texttt{static}$^o$  &  text              & \texttt{particleset.name} &                  & Identify ions  \\
+   
+  \hline
+\end{tabularx}
+\end{center}
+\end{table}
+\FloatBarrier
+
+Additional information
+\begin{itemize}
+  \item{\texttt{name:}  Must be unique.  A dataset with blocked statistical data for the energy density will appear in the \texttt{stat.h5} files labeled as \texttt{name}.}
+\end{itemize}
+
+
+\begin{lstlisting}[caption=Energy density estimator accumulated on a 20x10x10 grid over the simulation cell.]
+  <estimator type="EnergyDensity" name="EDcell" dynamic="e" static="ion0">
+    <spacegrid coord="cartesian">
+      <origin p1="zero"/>
+      <axis p1="a1" scale=".5" label="x" grid="-1 (.05) 1"/>
+      <axis p1="a2" scale=".5" label="y" grid="-1 (.1) 1"/>
+      <axis p1="a3" scale=".5" label="z" grid="-1 (.1) 1"/>
+    </spacegrid>
+  </estimator>
+\end{lstlisting}
+
+
+\begin{lstlisting}[caption=Energy density estimator accumulated within spheres of radius 6.9 Bohr centered on the first and second atoms in the ion0 particleset.]
+  <estimator type="EnergyDensity" name="EDatom" dynamic="e" static="ion0">
+    <reference_points coord="cartesian">
+      r1 1 0 0 
+      r2 0 1 0
+      r3 0 0 1
+    </reference_points>
+    <spacegrid coord="spherical">
+      <origin p1="ion01"/>
+      <axis p1="r1" scale="6.9" label="r"     grid="0 1"/>
+      <axis p1="r2" scale="6.9" label="phi"   grid="0 1"/>
+      <axis p1="r3" scale="6.9" label="theta" grid="0 1"/>
+    </spacegrid>
+    <spacegrid coord="spherical">
+      <origin p1="ion02"/>
+      <axis p1="r1" scale="6.9" label="r"     grid="0 1"/>
+      <axis p1="r2" scale="6.9" label="phi"   grid="0 1"/>
+      <axis p1="r3" scale="6.9" label="theta" grid="0 1"/>
+    </spacegrid>
+  </estimator>
+\end{lstlisting}
+
+
+\begin{lstlisting}[caption=Energy density estimator accumulated within Voronoi polyhedra centered on the ions.]
+  <estimator type="EnergyDensity" name="EDvoronoi" dynamic="e" static="ion0">
+    <spacegrid coord="voronoi"/>
+  </estimator>
+\end{lstlisting}
+
+
+
+\FloatBarrier
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l l }
+\hline
+\multicolumn{6}{l}{\texttt{reference\_points} element} \\
+\hline
+\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{estimator type=EnergyDensity}}\\
+\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\textit{None}}\\
+\multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
+   &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
+   &   \texttt{coord}$^r$ &  text              & cartesian/cell   &                     & Specify coordinate system \\
+\multicolumn{2}{l}{body text}  & \multicolumn{4}{l}{}\\
+   &                           & \multicolumn{4}{l}{The body text is a line formatted list of points with labels}     \\
+  \hline
+\end{tabularx}
+\end{center}
+\end{table}
+\FloatBarrier
+
+Additional information
+\begin{itemize}
+  \item{\textbf{coord:} If \texttt{coord=cartesian}, labeled points are in cartesian (x,y,z) format in units of Bohr.  If \texttt{coord=cell}, then labeled points are in units of the simulation cell axes.}
+  \item{\textbf{body text:}  The list of points provided in the body text are line formatted, with four entries per line (\textit{label} \textit{coor1} \textit{coor2} \textit{coor3}}).  A set of points referenced to the simulation cell are available by default (see table \ref{tab:ref_points}).  If \texttt{energydensity.static} is provided, the location of each individual ion is also available (\textit{e.g.} if \texttt{energydensity.static=ion0}, then the location of the first atom is available with label ion01, the second with ion02, etc.). All points can be used by label when constructing spatial histogramming grids (see the \texttt{spacegrid} element below) used to collect energy densities.    
+\end{itemize}
+
+
+\FloatBarrier
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{l l l}
+\hline
+\texttt{label} & \texttt{point} & \texttt{description} \\
+\hline
+\texttt{zero} & 0 0 0    & Cell center  \\
+\texttt{a1}   &  $a_1$   & Cell axis 1  \\
+\texttt{a2}   &  $a_2$   & Cell axis 2  \\
+\texttt{a3}   &  $a_3$   & Cell axis 3  \\
+\texttt{f1p}  &  $a_1$/2 & Cell face 1+ \\
+\texttt{f1m}  & -$a_1$/2 & Cell face 1- \\
+\texttt{f2p}  &  $a_2$/2 & Cell face 2+ \\
+\texttt{f2m}  & -$a_2$/2 & Cell face 2- \\
+\texttt{f3p}  &  $a_3$/2 & Cell face 3+ \\
+\texttt{f3m}  & -$a_3$/2 & Cell face 3- \\
+\texttt{cppp} & $(a_1+a_2+a_3)/2$  & Cell corner +,+,+ \\
+\texttt{cppm} & $(a_1+a_2-a_3)/2$  & Cell corner +,+,- \\
+\texttt{cpmp} & $(a_1-a_2+a_3)/2$  & Cell corner +,-,+ \\
+\texttt{cmpp} & $(-a_1+a_2+a_3)/2$ & Cell corner -,+,+ \\
+\texttt{cpmm} & $(a_1-a_2-a_3)/2$  & Cell corner +,-,- \\
+\texttt{cmpm} & $(-a_1+a_2-a_3)/2$ & Cell corner -,+,- \\
+\texttt{cmmp} & $(-a_1-a_2+a_3)/2$ & Cell corner -,-,+ \\
+\texttt{cmmm} & $(-a_1-a_2-a_3)/2$ & Cell corner -,-,- \\
+\hline
+\end{tabular}
+\end{center}
+\caption{Reference points available by default.  The vectors $a_1$, $a_2$, and $a_3$ refer to the simulation cell axes.  The representation of the cell is centered around \texttt{zero}.  \label{tab:ref_points}}
+\end{table}
+\FloatBarrier
+
+
+
+
+
+\FloatBarrier
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l l }
+\hline
+\multicolumn{6}{l}{\texttt{spacegrid} element} \\
+\hline
+\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{estimator type=EnergyDensity}}\\
+\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\texttt{origin, axis}}\\
+\multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
+   &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
+   &   \texttt{coord}$^r$ &  text              & cartesian        &                     & Specify coordinate system \\
+   &                      &                    & cylindrical      &                     &                           \\
+   &                      &                    & spherical        &                     &                           \\
+   &                      &                    & voronoi          &                     &                           \\
+  \hline
+\end{tabularx}
+\end{center}
+\end{table}
+\FloatBarrier
+
+
+
+\FloatBarrier
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l l }
+\hline
+\multicolumn{6}{l}{\texttt{origin} element} \\
+\hline
+\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{spacegrid}}\\
+\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\textit{None}}\\
+\multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
+   &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
+   &   \texttt{p1}$^r$      &  text              & \texttt{reference\_point.label}   &    &  Select end point       \\
+   &   \texttt{p2}$^o$      &  text              & \texttt{reference\_point.label}   &    &  Select end point       \\
+   &   \texttt{fraction}$^o$&  real              &                  &  0                  &  Interpolation fraction \\
+  \hline
+\end{tabularx}
+\end{center}
+\end{table}
+Additional information:
+\begin{itemize}
+  \item{\textbf{p1/p2/fraction:} The location of the origin is set to \texttt{p1+fraction*(p2-p1)}.  If only \texttt{p1} is provided, the origin is at \texttt{p1}.}
+\end{itemize}
+\FloatBarrier
+
+
+\FloatBarrier
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l l }
+\hline
+\multicolumn{6}{l}{\texttt{axis} element} \\
+\hline
+\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{spacegrid}}\\
+\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\textit{None}}\\
+\multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
+   &   \bfseries name        & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
+   &   \texttt{label}$^r$    &  text              & \textit{See below}&                    &  Axis/dimension label \\
+   &   \texttt{grid}$^r$     &  text              &                  & "0 1"             &  Grid ranges/intervals \\
+   &   \texttt{p1}$^r$       &  text              & \texttt{reference\_point.label}   &    &  Select end point     \\
+   &   \texttt{p2}$^o$       &  text              & \texttt{reference\_point.label}   &    &  Select end point     \\
+   &   \texttt{scale}$^o$    &  real              &                  &                     &  Interpolation fraction\\
+  \hline
+\end{tabularx}
+\end{center}
+\end{table}
+\FloatBarrier
+Additional information:
+\begin{itemize}
+  \item{\textbf{label:} The allowed set of axis labels depends on the coordinate system (\textit{i.e.} \texttt{spacegrid.coord}).  Labels are \texttt{x/y/z} for \texttt{coord=cartesian}, \texttt{r/phi/z} for \texttt{coord=cylindrical}, \texttt{r/phi/theta} for \texttt{coord=spherical}.}
+  \item{\textbf{p1/p2/scale:} The axis vector is set to \texttt{p1+scale*(p2-p1)}.  If only \texttt{p1} is provided, the axis vector is \texttt{p1}.}
+  \item{\textbf{grid:} Specifies the histrogram grid along the direction specified by \texttt{label}.  The allowed grid points fall in the range [-1,1] for \texttt{label=x/y/z} or [0,1] for \texttt{r/phi/theta}.  A grid of 10 evenly spaced points between 0 and 1 can be requested equivalently by \texttt{grid="0 (0.1) 1"} or  \texttt{grid="0 (10) 1"}.  Piecewise uniform grids covering portions of the range are supported, \textit{e.g.} \texttt{grid="-0.7 (10) 0.0 (20) 0.5"}.  }
+  \item{Note that \texttt{grid} specifies the histogram grid along the (curved) coordinate given by \texttt{label}.  The axis specified by \texttt{p1/p2/scale} does not correspond one-to-one with \texttt{label} unless \texttt{label=x/y/z}, but the full set of axes provided define the (sheared) space on top of which the curved (\textit{e.g.} spherical) coordinate system is built. }
+\end{itemize}
+
+
+
 
 
 
