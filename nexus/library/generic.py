@@ -36,7 +36,7 @@ from copy import deepcopy
 import cPickle
 from random import randint
 
-exit_call = exit
+exit_call = sys.exit
 devlog    = sys.stdout
 
 def nocopy(value):
