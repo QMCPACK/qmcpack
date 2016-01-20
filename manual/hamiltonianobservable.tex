@@ -24,14 +24,14 @@
    &   \texttt{attr8}     &  boolean array     &                  &                     &                       \\
 \multicolumn{2}{l}{parameters}  & \multicolumn{4}{l}{}\\
    &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
-   &   \texttt{param1}     &  text              &                  &                     &                       \\
-   &   \texttt{param2}     &  integer           &                  &                     &                       \\
-   &   \texttt{param3}     &  real              &                  &                     &                       \\
-   &   \texttt{param4}     &  boolean           &                  &                     &                       \\
-   &   \texttt{param5}     &  text array        &                  &                     &                       \\
-   &   \texttt{param6}     &  integer array     &                  &                     &                       \\
-   &   \texttt{param7}     &  real array        &                  &                     &                       \\
-   &   \texttt{param8}     &  boolean array     &                  &                     &                       \\
+   &   \texttt{param1}    &  text              &                  &                     &                       \\
+   &   \texttt{param2}    &  integer           &                  &                     &                       \\
+   &   \texttt{param3}    &  real              &                  &                     &                       \\
+   &   \texttt{param4}    &  boolean           &                  &                     &                       \\
+   &   \texttt{param5}    &  text array        &                  &                     &                       \\
+   &   \texttt{param6}    &  integer array     &                  &                     &                       \\
+   &   \texttt{param7}    &  real array        &                  &                     &                       \\
+   &   \texttt{param8}    &  boolean array     &                  &                     &                       \\
 \multicolumn{2}{l}{body text}  & \multicolumn{4}{l}{}\\
    &                           & \multicolumn{4}{l}{Long form description of body text format}                   \\
   \hline
@@ -747,6 +747,24 @@ Additional information:
 
 
 \subsection{Energy density estimator}
+An energy density operator, $\hat{\mathcal{E}}_r$,  satisfies
+\begin{align}
+  \int dr \hat{\mathcal{E}}_r = \hat{H},
+\end{align}
+where the integral is over all space and $\hat{H}$ is the Hamiltonian.  In \qmcpack, the energy density is split into kinetic and potential components
+\begin{align}
+  \hat{\mathcal{E}}_r = \hat{\mathcal{T}}_r + \hat{\mathcal{V}}_r 
+\end{align}
+with each component given by
+\begin{align}
+   \hat{\mathcal{T}}_r &=  \frac{1}{2}\sum_i\delta(r-r_i)\hat{p}_i^2 \\  
+   \hat{\mathcal{V}}_r &=  \sum_{i<j}\frac{\delta(r-r_i)+\delta(r-r_j)}{2}\hat{v}^{ee}(r_i,r_j)
+              + \sum_{i\ell}\frac{\delta(r-r_i)+\delta(r-\tilde{r}_\ell)}{2}\hat{v}^{eI}(r_i,\tilde{r}_\ell) \nonumber\\ 
+    &\qquad   + \sum_{\ell< m}\frac{\delta(r-\tilde{r}_\ell)+\delta(r-\tilde{r}_m)}{2}\hat{v}^{II}(\tilde{r}_\ell,\tilde{r}_m).\nonumber
+\end{align}
+Here $r_i$ and $\tilde{r}_\ell$ represent electon and ion positions, respectively, $\hat{p}_i$ is a single electron momentum operator, and $\hat{v}^{ee}(r_i,r_j)$, $\hat{v}^{eI}(r_i,\tilde{r}_\ell)$, $\hat{v}^{II}(\tilde{r}_\ell,\tilde{r}_m)$ are the electron-electron, electron-ion, and ion-ion pair potential operators (including non-local pseudopotentials, if present).  This form of the energy density is size consistent, \textit{i.e.} the partially integrated energy density operators of well separated atoms gives the isolated Hamiltonians of the respective atoms.  For periodic systems with twist averaged boundary conditions, the energy density is formally correct only for either a set of supercell k-points that correspond to real valued wavefunctions, or a k-point set that has inversion symmetry around a k-point having a real valued wavefunction.  For more information about the energy density, see Ref. \cite{Krogel2013}.
+
+In \qmcpack, the energy density can be accumulated on piecewise uniform three dimensional grids in generalized cartesian, cylindrical, or spherical coordinates.  The energy density integrated within Voronoi volumes centered on ion positions is also available.
 
 \FloatBarrier
 \begin{table}[h]
@@ -955,7 +973,7 @@ Additional information:
 \begin{itemize}
   \item{\textbf{label:} The allowed set of axis labels depends on the coordinate system (\textit{i.e.} \texttt{spacegrid.coord}).  Labels are \texttt{x/y/z} for \texttt{coord=cartesian}, \texttt{r/phi/z} for \texttt{coord=cylindrical}, \texttt{r/phi/theta} for \texttt{coord=spherical}.}
   \item{\textbf{p1/p2/scale:} The axis vector is set to \texttt{p1+scale*(p2-p1)}.  If only \texttt{p1} is provided, the axis vector is \texttt{p1}.}
-  \item{\textbf{grid:} Specifies the histrogram grid along the direction specified by \texttt{label}.  The allowed grid points fall in the range [-1,1] for \texttt{label=x/y/z} or [0,1] for \texttt{r/phi/theta}.  A grid of 10 evenly spaced points between 0 and 1 can be requested equivalently by \texttt{grid="0 (0.1) 1"} or  \texttt{grid="0 (10) 1"}.  Piecewise uniform grids covering portions of the range are supported, \textit{e.g.} \texttt{grid="-0.7 (10) 0.0 (20) 0.5"}.  }
+  \item{\textbf{grid:} Specifies the histogram grid along the direction specified by \texttt{label}.  The allowed grid points fall in the range [-1,1] for \texttt{label=x/y/z} or [0,1] for \texttt{r/phi/theta}.  A grid of 10 evenly spaced points between 0 and 1 can be requested equivalently by \texttt{grid="0 (0.1) 1"} or  \texttt{grid="0 (10) 1"}.  Piecewise uniform grids covering portions of the range are supported, \textit{e.g.} \texttt{grid="-0.7 (10) 0.0 (20) 0.5"}.  }
   \item{Note that \texttt{grid} specifies the histogram grid along the (curved) coordinate given by \texttt{label}.  The axis specified by \texttt{p1/p2/scale} does not correspond one-to-one with \texttt{label} unless \texttt{label=x/y/z}, but the full set of axes provided define the (sheared) space on top of which the curved (\textit{e.g.} spherical) coordinate system is built. }
 \end{itemize}
 
@@ -965,6 +983,146 @@ Additional information:
 
 
 \subsection{One body density matrix}
+The N-body density matrix in DMC is $\hat{\rho}_N=\operator{\Psi_{T}}{}{\Psi_{FN}}$ (for VMC, substitute $\Psi_T$ for $\Psi_{FN}$).  The one body reduced density matrix (1RDM) is obtained by tracing out all particle coordinates but one:
+\begin{align}
+  \hat{n}_1 &= \sum_nTr_{R_n}\operator{\Psi_{T}}{}{\Psi_{FN}}
+\end{align}
+In the formula above, the sum is over all electron indices and $Tr_{R_n}(*)\equiv\int dR_n\expval{R_n}{*}{R_n}$ with $R_n=[r_1,...,r_{n-1},r_{n+1},...,r_N]$.  When the sum is restricted over spin up or down electrons, one obtains a density matrix for each spin species.  The 1RDM computed by \qmcpack is partitioned in this way.
+
+In real space, the matrix elements of the 1RDM are
+\begin{align}
+  n_1(r,r') &= \expval{r}{\hat{n}_1}{r'} = \sum_n\int dR_n \Psi_T(r,R_n)\Psi_{FN}^*(r',R_n) 
+\end{align}
+
+A more efficient and compact representation of the 1RDM is obtained by expanding in the single particle orbitals obtained from a Hartree-Fock or DFT calculation, $\{\phi_i\}$:
+\begin{align}\label{eq:dm1b_direct}
+  n_1(i,j) &= \expval{\phi_i}{\hat{n}_1}{\phi_j} \nonumber \\
+           &= \int dR \Psi_{FN}^*(R)\Psi_{T}(R) \sum_n\int dr'_n \frac{\Psi_T(r_n',R_n)}{\Psi_T(r_n,R_n)}\phi_i(r_n')^* \phi_j(r_n) 
+\end{align} 
+
+The integration over $r'$ in Eq. \ref{eq:dm1b_direct} is inefficient when one is also interested in obtaining matrices involving energetic quantities, such as the energy density matrix of Ref. \cite{Krogel2014} or the related (and more well known) Generalized Fock matrix.  For this reason, an approximation is introduced as follows:
+\begin{align}
+    n_1(i,j) \approx \int dR \Psi_{FN}(R)^*\Psi_T(R)  \sum_n \int dr_n' \frac{\Psi_T(r_n',R_n)^*}{\Psi_T(r_n,R_n)^*}\phi_i(r_n)^* \phi_j(r_n') 
+\end{align}
+For VMC, FN-DMC, FP-DMC, and RN-DMC the formula above represents an exact sampling of the 1RDM corresponding to $\hat{\rho}_N^\dagger$ (see appendix A of Ref. \cite{Krogel2014} for more detail).
+
+
+
+
+\FloatBarrier
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l l }
+\hline
+\multicolumn{6}{l}{\texttt{estimator type=dm1b} element} \\
+\hline
+\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{hamiltonian, qmc}}\\
+\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\textit{none}}\\
+\multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
+   &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
+   & \texttt{type}$^r$    &  text              & \textbf{dm1b}    &                     & Must be dm1b     \\
+   & \texttt{name}$^r$    &  text              & \textit{anything}&                     & Unique name for estimator \\
+\multicolumn{2}{l}{parameters}  & \multicolumn{4}{l}{}\\
+   &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
+   &\texttt{basis}$^r$         &  text array   & sposet.name(s)   &                     & Orbital basis         \\
+   &\texttt{integrator}$^o$    &  text         & uniform\_grid    & uniform\_grid       & Integration method    \\
+   &                           &               & uniform          &                     &                       \\
+   &                           &               & density          &                     &                       \\
+   &\texttt{evaluator}$^o$     &  text         & loop/matrix      & loop                & Evaluation method     \\
+   &\texttt{scale}$^o$         &  real         & $0<scale<1$      & 1.0                 & Scale integration cell\\
+   &\texttt{center}$^o$        &  real array(3)&\textit{any point}&                     & Center of cell        \\
+   &\texttt{points}$^o$        &  integer      & $>0$             & 10                  & Grid points in each dim\\
+   &\texttt{samples}$^o$       &  integer      & $>0$             & 10                  & MC samples            \\
+   &\texttt{warmup}$^o$        &  integer      & $>0$             & 30                  & MC warmup             \\
+   &\texttt{timestep}$^o$      &  real         & $>0$             & 0.5                 & MC time step          \\
+   &\texttt{use\_drift}$^o$    &  boolean      &  yes/no          & no                  & Use drift in VMC      \\
+   &\texttt{check\_overlap}$^o$&  boolean      &  yes/no          & no                  & Print overlap matrix  \\
+   &\texttt{check\_derivatives}$^o$& boolean   &  yes/no          & no                  & Check density derivatives \\
+   &\texttt{acceptance\_ratio}$^o$&  boolean   &  yes/no          & no                  & Print accept ratio    \\
+   &\texttt{rstats}$^o$        &  boolean      &  yes/no          & no                  & Print spatial stats   \\
+   &\texttt{normalized}$^o$    &  boolean      &  yes/no          & no                  & \texttt{basis} comes norm'ed \\
+   &\texttt{energy\_matrix}$^o$&  boolean      & yes/no           & no                  & Energy density matrix \\
+  \hline
+\end{tabularx}
+\end{center}
+\end{table}
+\FloatBarrier
+
+Additional information
+\begin{itemize}
+  \item{\texttt{name:} Density matrix results appear in \texttt{stat.h5} files labeled according to \texttt{name}.}
+  \item{\texttt{basis:} List of \texttt{sposet.name}'s.  The total set of orbitals contained in all \texttt{sposet}'s comprises the basis (subspace) the one body density matrix is projected onto.  This set of orbitals generally includes many virtual orbitals that are not occupied in a single reference Slater determinant.}
+  \item{\texttt{integrator:} This selects the method used to perform the additional single particle integration.  Options are \texttt{uniform\_grid} (uniform grid of points over the cell), \texttt{uniform} (uniform random sampling over the cell), and \texttt{density} (Metropolis sampling of approximate density: $\sum_{b\in \texttt{basis}}\abs{\phi_b}^2$, not well tested, please check results carefully!)}.  Depending on the integrator selected, different subsets of the other input parameters are active.
+  \item{\texttt{evaluator:} Select for-loop or matrix multiply implementations.  Matrix is preferred for speed.  Both implementations should give the same results, but please check as this has not been exhaustively tested.}
+  \item{\texttt{scale:} Resize the simulation cell by scale for use as an integration volume (active for \texttt{integrator=uniform/uniform\_grid}).}
+  \item{\texttt{center:} Translate the integration volume to center at this point (active for \texttt{integrator=uniform/uniform\_grid}). If \texttt{center} is not provided, the scaled simulation cell is used as is. }
+  \item{\texttt{points:} The number of grid points in each dimension for \texttt{integrator=uniform\_grid}.  For example, \texttt{points=10} results in a uniform 10x10x10 grid over the cell.}
+  \item{\texttt{samples:} Sets the number of Monte Carlo samples collected each step (active for \texttt{integrator=uniform/density}).  }
+  \item{\texttt{warmup:} Number of warmup Metropolis steps at the start of the run, prior to data collection (active for \texttt{integrator=density}). }
+  \item{\texttt{timestep:} Drift-diffusion timestep used in Metropolis sampling (active for \texttt{integrator=density}).}
+  \item{\texttt{use\_drift:} Enable drift in Metropolis sampling  (active for \texttt{integrator=density}).}
+  \item{\texttt{check\_overlap:} Print the overlap matrix (computed via simple Riemann sums) to the log and then abort.  Note that subsequent analysis based on the 1RDM is simplest if the input orbitals are orthogonal.}
+  \item{\texttt{check\_derivatives:} Print analytic and numerical derivatives of the approximate (sampled) density for several sample points, then abort. }
+  \item{\texttt{acceptance\_ratio:} Print the acceptance ratio of the density sampling to the log each step.}
+  \item{\texttt{rstats:} Print statistical information about the spatial motion of the sampled points to the log each step.}
+  \item{\texttt{normalized:} Declare whether the inputted orbitals are normalized or not.  If \texttt{normalized=no}, direct Riemann integration over a 200x200x200 grid will be used to compute the normalizations prior to use.}
+  \item{\texttt{energy\_matrix:} Also accumulate the one body reduced energy density matrix and write it to \texttt{stat.h5}.  This matrix is not covered in any detail here; the interested reader is referred to Ref. \cite{Krogel2014}.}
+\end{itemize}
+
+
+\begin{lstlisting}[caption=One body density matrix with uniform grid integration.]
+  <estimator type="dm1b" name="DensityMatrices">
+    <parameter name="basis"        >  spo_u spo_uv  </parameter>
+    <parameter name="evaluator"    >  matrix        </parameter>
+    <parameter name="integrator"   >  uniform_grid  </parameter>
+    <parameter name="points"       >  4             </parameter>
+    <parameter name="scale"        >  1.0           </parameter>
+    <parameter name="center"       >  0 0 0         </parameter>
+  </estimator>
+\end{lstlisting}
+
+
+\begin{lstlisting}[caption=One body density matrix with uniform sampling.]
+  <estimator type="dm1b" name="DensityMatrices">
+    <parameter name="basis"        >  spo_u spo_uv  </parameter>
+    <parameter name="evaluator"    >  matrix        </parameter>
+    <parameter name="integrator"   >  uniform       </parameter>
+    <parameter name="samples"      >  64            </parameter>
+    <parameter name="scale"        >  1.0           </parameter>
+    <parameter name="center"       >  0 0 0         </parameter>
+  </estimator>
+\end{lstlisting}
+
+
+\begin{lstlisting}[caption=One body density matrix with density sampling.]
+  <estimator type="dm1b" name="DensityMatrices">
+    <parameter name="basis"        >  spo_u spo_uv  </parameter>
+    <parameter name="evaluator"    >  matrix        </parameter>
+    <parameter name="integrator"   >  density       </parameter>
+    <parameter name="samples"      >  64            </parameter>
+    <parameter name="timestep"     >  0.5           </parameter>
+    <parameter name="use_drift"    >  no            </parameter>
+  </estimator>
+\end{lstlisting}
+
+
+\begin{lstlisting}[caption={Example sposet initialization for density matrix use.  Occupied and virtual orbital sets are created separately, then joined (\texttt{basis="spo\_u spo\_uv"}).}]
+  <sposet_builder type="bspline" href="../dft/pwscf_output/pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" meshfactor="1.0" gpu="no" precision="single">
+    <sposet type="bspline" name="spo_u"  group="0" size="4"/>
+    <sposet type="bspline" name="spo_d"  group="0" size="2"/>
+    <sposet type="bspline" name="spo_uv" group="0" index_min="4" index_max="10"/>
+  </sposet_builder>
+\end{lstlisting}
+
+
+\begin{lstlisting}[caption={Example sposet initialization for density matrix use.  Density matrix orbital basis created separately (\texttt{basis="dm\_basis"}).}]
+  <sposet_builder type="bspline" href="../dft/pwscf_output/pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" meshfactor="1.0" gpu="no" precision="single">
+    <sposet type="bspline" name="spo_u"  group="0" size="4"/>
+    <sposet type="bspline" name="spo_d"  group="0" size="2"/>
+    <sposet type="bspline" name="dm_basis" size="50" spindataset="0"/>
+  </sposet_builder>
+\end{lstlisting}
+
 
 %  <estimator type="dm1b" name="DensityMatrices">
 %     <parameter name="energy_matrix"       >    yes                   </parameter>
