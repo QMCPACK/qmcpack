@@ -10,6 +10,16 @@ This section covers how the Hamiltonian can be specified, component by component
 
 \section{The Hamiltonian}
 
+The many-body Hamiltonian in Hartree units is given by
+\begin{align}
+  \hat{H} = -\sum_i\frac{1}{2m_i}\nabla_i^2 + \sum_iv^{ext}(r_i) + \sum_{i<j}v^{qq}(r_i,r_j)   + \sum_{i\ell}v^{qc}(r_i,r_\ell)   + \sum_{\ell<m}v^{cc}(r_\ell,r_m).  
+\end{align}
+Here, the sums indexed by $i/j$ are over quantum particles, while $\ell/m$ are reserved for classical particles.  Often the quantum particles are electrons and the classical particles are ions, though \qmcpack is not limited in this way.  The mass of each quantum particle is denoted $m_i$, $v^{qq}/v^{qc}/v^{cc}$ are pair potentials between quantum-quantum/quantum-classical/classical-classical particles, and $v^{ext}$ denotes a purely external potential.
+
+\qmcpack is designed modularly so that any potential can be supported with minimal additions to the code base.  Potentials currently supported include Coulomb interactions in open and periodic boundary conditions, the modified periodic coulomb (MPC) potential, non-local pseudopotentials, helium pair potentials, and various model potentials such as hard sphere, gaussian, and modified Poschl-Teller.
+
+Reference information and examples for the \texttt{<hamiltonian/>} XML element is provided below.  Detailed descriptions of the input for individual potentials is given in the sections that follow.  
+
 % hamiltonian element
 %  dev notes
 %    Hamiltonian element read
@@ -34,7 +44,7 @@ This section covers how the Hamiltonian can be specified, component by component
 \hline
 \multicolumn{6}{l}{\texttt{hamiltonian} element} \\
 \hline
-\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{qmcsystem}}\\
+\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{simulation, qmcsystem}}\\
 \multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\texttt{pairpot extpot estimator constant}(deprecated)}\\
 \multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
    &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default & \bfseries description \\
@@ -79,6 +89,8 @@ Additional information:
 
 
 \section{Pair potentials}
+
+Many pair potentials are supported.  Though only the most commonly used pair potentials are covered in detail in this section, all currently available potentials are listed briefly below.  If a potential you desire is not covered below, or is not present at all, feel free to contact the developers.
 
 % pairpot element
 \FloatBarrier
@@ -147,6 +159,20 @@ Additional information:
 
 \subsection{Coulomb potentials}
 
+The bare Coulomb potential is used in open boundary conditions:
+\begin{align}
+  V_c^{open} = \sum_{i<j}\frac{q_iq_j}{\abs{r_i-r_j}}
+\end{align}
+
+When periodic boundary conditions are selected, Ewald summation is used automatically:
+\begin{align}\label{eq:ewald}
+  V_c^{pbc} = \sum_{i<j}\frac{q_iq_j}{\abs{r_i-r_j}} + \frac{1}{2}\sum_{L\ne0}\sum_{i,j}\frac{q_iq_j}{\abs{r_i-r_j+L}}
+\end{align}
+The sum indexed by $L$ is over all non-zero simulation cell lattice vectors.  In practice, the Ewald sum is broken into short and long ranged parts in a manner optimized for efficiency (see Ref. \cite{Natoli1995}) for details. 
+
+For information on how to set the boundary conditions, consult Sec. \ref{sec:simulationcell}.
+
+
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
@@ -194,6 +220,27 @@ Additional information
 
 
 \subsection{Pseudopotentials}
+
+\qmcpack supports pseudopotentials in semilocal form, which is local in the radial coordinate and non-local in angular coordinates.  When all angular momentum channels above a certain threshold ($\ell_{max}$) are well approximated by the same potential ($V_{\bar{\ell}}\equiv V_{loc}$), the pseudpotential separates into a fully local channel and an angularly-nonlocal component:
+\begin{align}
+  V^{PP} = \sum_{ij}\Big(V_{\bar{\ell}}(\abs{r_i-\tilde{r}_j}) + \sum_{\ell\ne\bar{\ell}}^{\ell_{max}}\sum_{m=-\ell}^\ell \operator{Y_{\ell m}}{\big[V_\ell(\abs{r_i-\tilde{r}_j}) - V_{\bar{\ell}}(\abs{r_i-\tilde{r}_j}) \big]}{Y_{\ell m}} \Big)
+\end{align}  
+Here the electron/ion index is $i/j$ and only one type of ion is shown for simplicity.
+
+Evaluation of the localized pseudopotential energy $\Psi_T^{-1}V^{PP}\Psi_T$ requires additional angular integrals.  These integrals are evaluated on a randomly shifted angular grid.  The size of this grid is determined by $\ell_{max}$.  See Ref. \cite{Mitas1991} for further detail. 
+
+\qmcpack uses the FSAtom pseudopotential file format associated with the ``Free Software Project for Atomic-scale Simulations'' initiated in 2002  (see \url{http://www.tddft.org/fsatom/manifest.php} for general information).  The FSAtom format uses XML for structured data.  Files in this format do not use a specific identifying file extension; they are simply suffixed with ``\texttt{.xml}''.  The tabular data format of CASINO is also supported.
+
+
+% FSAtom format links
+%   unfortunately none of the surviving links detail the format itself
+% http://www.tddft.org/fsatom/index.php
+% http://www.tddft.org/fsatom/programs.php
+% http://www.tddft.org/fsatom/manifest.php
+% http://163.13.111.58/cchu/reference/web/PseudoPotentials%20-%20FSAtom%20Wiki.htm
+% http://departments.icmab.es/leem/alberto/xml/pseudo/index.html
+
+
 
 % pseudopotential element
 %   dev notes
@@ -260,6 +307,7 @@ Additional information:
 %\end{lstlisting}
 
 
+Details of \texttt{<pseudo/>} input elements are given below.  It is possible to include (or construct) a full pseudopotential directly in the input file without providing an external file via \texttt{href}.  The full XML format for pseudopotentials is not yet covered.
 
 % pseudo element
 %   dev notes
@@ -312,7 +360,10 @@ Additional information:
 
 
 
-\subsection{Modified periodic coulomb interaction/correction}
+\subsection{Modified periodic Coulomb interaction/correction}
+
+The modified periodic Coulomb (MPC) interaction is an alternative to direct Ewald summation.  The MPC corrects the exchange correlation hole to more closely match its thermodynamic limit.  Because of this, the MPC exhibits smaller finite size errors than the bare Ewald interaction, though a few alternative and competitive finite size correction schemes now exist.  The MPC is itself often used just as a finite size correction in postprocessing (set \texttt{physical=false} in the input).  
+
 
 % mpc element
 %  dev notes
@@ -363,6 +414,11 @@ Remarks
 % estimator element
 \section{General estimators}
 
+A broad range of estimators for physical observables are available in \qmcpack.  The sections below contain input details for the total number density (\texttt{density}), number density resolved by particle spin (\texttt{spindensity}), spherically averaged pair correlation function (\texttt{gofr}), static structure factor (\texttt{sk}), energy density (\texttt{energydensity}), one body reduced density matrix (\texttt{dm1b}), $S(k)$ based kinetic energy correction (\texttt{chiesa}), forward walking (\texttt{ForwardWalking}), and force (\texttt{Force}) estimators.  Other estimators are not yet covered.
+
+When an \texttt{<estimator/>} element appears in \texttt{<hamiltonian/>}, it is evaluated for all applicable chained QMC runs (\emph{e.g.} VMC$\rightarrow$DMC$\rightarrow$DMC).  Estimators are generally not accumulated during wavefunction optimization sections.    If an \texttt{<estimator/>} element is instead provided in a particular \texttt{<qmc/>} element, that estimator is only evaluated for that specific section (\textit{e.g.} during VMC only).
+
+
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
@@ -389,11 +445,13 @@ Remarks
 \multicolumn{2}{l}{                } & \multicolumn{2}{l}{numberfluctuations} & \multicolumn{2}{l}{Spatial number fluctuations}\\
 \multicolumn{2}{l}{                } & \multicolumn{2}{l}{HFDHE2            } & \multicolumn{2}{l}{Helium pressure}\\
 \multicolumn{2}{l}{                } & \multicolumn{2}{l}{NearestNeighbors  } & \multicolumn{2}{l}{Trace nearest neighbor indices}\\
+\dev{
 \multicolumn{2}{l}{                } & \multicolumn{2}{l}{Kinetic           } & \multicolumn{2}{l}{\textit{No current function}}\\
 \multicolumn{2}{l}{                } & \multicolumn{2}{l}{Pressure          } & \multicolumn{2}{l}{\textit{No current function}}\\
 \multicolumn{2}{l}{                } & \multicolumn{2}{l}{ZeroVarObs        } & \multicolumn{2}{l}{\textit{No current function}}\\
 \multicolumn{2}{l}{                } & \multicolumn{2}{l}{DMCCorrection     } & \multicolumn{2}{l}{\textit{No current function}}\\
 \multicolumn{2}{l}{shared attributes:} & \multicolumn{4}{l}{}\\
+}
    &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
    &   \texttt{type}$^r$      &  text              & \textit{See above}        & 0                   & Select estimator type         \\
    &   \texttt{name}$^r$      &  text              & \textit{anything}         & any                 & Unique name for this estimator\\
@@ -406,43 +464,38 @@ Remarks
 \end{table}
 \FloatBarrier
 
-Remarks
-\begin{itemize}
-  \item{When an \texttt{<estimator/>} element appears in \texttt{<hamiltonian/>}, it is evaluated for all applicable chained QMC runs (\emph{e.g.} VMC$\rightarrow$DMC$\rightarrow$DMC).  When provided in a particular \texttt{<qmc/>} element, an estimator is only evaluated for that specific sub-run.}
-  \item{Only \texttt{density, spindensity, gofr, sk, energydensity, dm1b, chiesa, Force} are described in detail below.  Other types (\texttt{structurefactor, momentum, ForwardWalking, orbitalimages, flux, localmoment, numberfluctuations, HFDHE2, NearestNeighbors}) are not yet covered.}
-\end{itemize}
-
 
 %  <estimator type="structurefactor" name="StructureFactor" report="yes"/>
 %  <estimator type="nofk" name="nofk" wavefunction="psi0"/>
 
 
-\dev{
-\FloatBarrier
-\begin{table}[h]
-\begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
-\hline
-\multicolumn{6}{l}{\texttt{estimator type=X} element} \\
-\hline
-\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{hamiltonian, qmc}}\\
-\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\textit{None}}\\
-\multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
-   &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
-   & \texttt{type}$^r$    &  text              & \textbf{X}     &                     & Must be X         \\
-   & \texttt{name}$^r$    &  text              & \textit{anything}&                  & Unique name for estimator \\
-   & \texttt{source}$^o$  &  text              & \texttt{particleset.name} &\texttt{hamiltonian.target}& Identify particles\\
-   & \texttt{target}$^o$  &  text              & \texttt{particleset.name} &\texttt{hamiltonian.target}& Identify particles  \\
-  \hline
-\end{tabularx}
-\end{center}
-\end{table}
-\FloatBarrier
-}
+%\dev{
+%\FloatBarrier
+%\begin{table}[h]
+%\begin{center}
+%\begin{tabularx}{\textwidth}{l l l l l l }
+%\hline
+%\multicolumn{6}{l}{\texttt{estimator type=X} element} \\
+%\hline
+%\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{hamiltonian, qmc}}\\
+%\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\textit{None}}\\
+%\multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
+%   &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
+%   & \texttt{type}$^r$    &  text              & \textbf{X}     &                     & Must be X         \\
+%   & \texttt{name}$^r$    &  text              & \textit{anything}&                  & Unique name for estimator \\
+%   & \texttt{source}$^o$  &  text              & \texttt{particleset.name} &\texttt{hamiltonian.target}& Identify particles\\
+%   & \texttt{target}$^o$  &  text              & \texttt{particleset.name} &\texttt{hamiltonian.target}& Identify particles  \\
+%  \hline
+%\end{tabularx}
+%\end{center}
+%\end{table}
+%\FloatBarrier
+%}
 
 
 \subsection{Chiesa-Ceperley-Martin-Holzmann kinetic energy correction}
 
+This estimator calculates a finite size correction to the kinetic energy following the formalism laid out in Ref. \cite{Chiesa2006}.  The total energy can be corrected for finite size effects by using this estimator in conjuction with the MPC correction.
 
 \FloatBarrier
 \begin{table}[h]
@@ -474,6 +527,15 @@ Remarks
 
 
 \subsection{Density estimator}
+The particle number density operator is given by
+\begin{align}
+  \hat{n}_r = \sum_i\delta(r-r_i)
+\end{align}
+The \texttt{density} estimator accumulates the number density on a uniform histogram grid over the simulation cell.  The value obtained for a grid cell $c$ with volume $\Omega_c$ is then the average number of particles in that cell:
+\begin{align}
+  n_c = \int dR \abs{\Psi}^2 \int_{\Omega_c}dr \sum_i\delta(r-r_i)
+\end{align}  
+
 
 \FloatBarrier
 \begin{table}[h]
@@ -521,6 +583,8 @@ Additional information:
 
 \subsection{Spin density estimator}
 
+The spin density is similar to the total density described above.  In this case, the sum over particles is performed independently for each spin component.
+
 \FloatBarrier
 \begin{table}[h]
 \begin{center}
@@ -552,7 +616,7 @@ Additional information:
 
 Additional information:
 \begin{itemize}
-  \item{\texttt{name}:The name provided will be used as a label in the \texttt{stat.h5} file for the blocked output data.  Post-processing tools expect \texttt{name="SpinDensity"}.}
+  \item{\texttt{name}: The name provided will be used as a label in the \texttt{stat.h5} file for the blocked output data.  Post-processing tools expect \texttt{name="SpinDensity"}.}
   \item{\texttt{grid}: Sets the dimension of the histogram grid.  Input like \texttt{<parameter name="grid"> 40 40 40 </parameter>} requests a $40 \times 40\times 40$ grid.  The shape of individual grid cells is commensurate with the supercell shape.}
   \item{\texttt{dr}: Real space dimensions of grid cell edges (Bohr units).  Input like \texttt{<parameter name="dr"> 0.5 0.5 0.5 </parameter>} in a supercell with axes of length 10 Bohr each (but of arbitrary shape) will produce a $20\times 20\times 20$ grid. The inputted \texttt{dr} values are rounded to produce an integer number of grid cells along each supercell axis.  Either \texttt{grid} or \texttt{dr} must be provided, but not both.}
   \item{\texttt{cell}: When \texttt{cell} is provided, a user defined grid volume is used instead of the global supercell.  This must be provided if open boundary conditions are used.  Additionally, if \texttt{cell} is provided, the user must specify where the volume is located in space in addition to its size/shape (\texttt{cell}) using either the \texttt{corner} or \texttt{center} parameters.}
@@ -704,7 +768,8 @@ with each component given by
 \end{align}
 Here $r_i$ and $\tilde{r}_\ell$ represent electon and ion positions, respectively, $\hat{p}_i$ is a single electron momentum operator, and $\hat{v}^{ee}(r_i,r_j)$, $\hat{v}^{eI}(r_i,\tilde{r}_\ell)$, $\hat{v}^{II}(\tilde{r}_\ell,\tilde{r}_m)$ are the electron-electron, electron-ion, and ion-ion pair potential operators (including non-local pseudopotentials, if present).  This form of the energy density is size consistent, \textit{i.e.} the partially integrated energy density operators of well separated atoms gives the isolated Hamiltonians of the respective atoms.  For periodic systems with twist averaged boundary conditions, the energy density is formally correct only for either a set of supercell k-points that correspond to real valued wavefunctions, or a k-point set that has inversion symmetry around a k-point having a real valued wavefunction.  For more information about the energy density, see Ref. \cite{Krogel2013}.
 
-In \qmcpack, the energy density can be accumulated on piecewise uniform three dimensional grids in generalized cartesian, cylindrical, or spherical coordinates.  The energy density integrated within Voronoi volumes centered on ion positions is also available.
+In \qmcpack, the energy density can be accumulated on piecewise uniform three dimensional grids in generalized cartesian, cylindrical, or spherical coordinates.  The energy density integrated within Voronoi volumes centered on ion positions is also available.  The total particle number density is also accumulated on the same grids by the energy density estimator for convenience so that related quantities, such as the regional energy per particle, can be computed easily.
+
 
 \FloatBarrier
 \begin{table}[h]
@@ -728,7 +793,7 @@ In \qmcpack, the energy density can be accumulated on piecewise uniform three di
 \end{table}
 \FloatBarrier
 
-Additional information
+Additional information:
 \begin{itemize}
   \item{\texttt{name:}  Must be unique.  A dataset with blocked statistical data for the energy density will appear in the \texttt{stat.h5} files labeled as \texttt{name}.}
 \end{itemize}
@@ -776,6 +841,8 @@ Additional information
 \end{lstlisting}
 
 
+
+The \texttt{<reference\_points/>} element provides a set of points for later use in specifying the origin and coordinate axes needed to construct a spatial histogramming grid.  Several reference points on the surface of the simulation cell (see Table \ref{tab:ref_points}) as well as the positions of the ions (see the \texttt{energydensity.static} attribute) are made available by default.  The reference points can be used, for example, to construct a cylindrical grid along a bond with the origin on the bond center. 
 
 \FloatBarrier
 \begin{table}[h]
@@ -838,6 +905,7 @@ Additional information
 
 
 
+The \texttt{<spacegrid/>} element is used to specify a spatial histogramming grid for the energy density.  Grids are constructed based on a set of, potentially non-orthogonal, user provided coordinate axes.  The axes are based on information available from \texttt{reference\_points}.  Voronoi grids are based only on nearest neighbor distances between electrons and ions.  Any number of space grids can be provided to a single energy density estimator.
 
 
 \FloatBarrier
@@ -862,6 +930,7 @@ Additional information
 \FloatBarrier
 
 
+The \texttt{<origin/>} element gives the location of the origin for a non-Voronoi grid.
 
 \FloatBarrier
 \begin{table}[h]
@@ -887,6 +956,8 @@ Additional information:
 \end{itemize}
 \FloatBarrier
 
+
+The \texttt{<axis/>} element represents a coordinate axis used to construct the, possibly curved, coordinate system for the histogramming grid.  Three \texttt{<axis/>} elements must be provided to a non-Voronoi \texttt{<spacegrid/>} element.
 
 \FloatBarrier
 \begin{table}[h]
@@ -1154,10 +1225,10 @@ To forward walk on an observable, one declares a generic forward walking estimat
 \multicolumn{6}{l}{\texttt{estimator type=ForwardWalking} element} \\
 \hline
 \multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{hamiltonian, qmc}}\\
-\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\textit{Observable}}\\
+\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\texttt{Observable}}\\
 \multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
    & \bfseries name       & \bfseries datatype & \bfseries values  & \bfseries default   & \bfseries description \\
-   & \texttt{type}$^r$    &  text              & \textbf{ForwardWalking}       &                     & Must be ``ForwardWalking"      \\
+   & \texttt{type}$^r$    &  text              & \textbf{ForwardWalking}&                & Must be ``ForwardWalking" \\
    & \texttt{name}$^r$    &  text              & \textit{anything} & any                 & Unique name for estimator \\
   \hline
 \end{tabularx}
