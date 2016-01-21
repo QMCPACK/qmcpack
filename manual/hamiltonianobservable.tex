@@ -2,8 +2,9 @@
 \label{chap:hamiltobs}
 
 
+\qmcpack is capable of the simultaneous measurement of the Hamiltonian and many other quantum operators.  The Hamiltonian attains a special status among the available operators (also referred to as observables) because it ultimately generates all available information regarding the quantum system.  This is evident from an algorithmic standpoint as well since the Hamiltonian (embodied in the the projector) generates the imaginary time dynamics of the walkers in DMC and RMC. 
 
-
+This section covers how the Hamiltonian can be specified, component by component, by the user in the XML format native to \qmcpack.  It also covers the input structure of statistical estimators corresponding to quantum observables such as the density, the static structure factor, and forces.
 
 
 
@@ -36,13 +37,13 @@
 \multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{qmcsystem}}\\
 \multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\texttt{pairpot extpot estimator constant}(deprecated)}\\
 \multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
-   &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
-   &   \texttt{name/id}$^o$ &  text              & \textit{anything}& h0                  & Unique id for this Hamiltonian instance  \\
-   &   \texttt{type}$^o$    &  text              &                  & generic             & \textit{No current function}             \\
-   &   \texttt{role}$^o$    &  text              & primary/extra    & extra               & Designate as primary Hamiltonian or not  \\
-   &   \texttt{source}$^o$  &  text              & \texttt{particleset.name} & i          & Identify classical particleset           \\
-   &   \texttt{target}$^o$  &  text              & \texttt{particleset.name} & e          & Identify quantum particleset             \\
-   &   \texttt{default}$^o$ &  boolean           & yes/no           & yes                 & Include kinetic energy term implicitly   \\
+   &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default & \bfseries description \\
+   & \texttt{name/id}$^o$ &  text              & \textit{anything}& h0                & Unique id for this Hamiltonian instance  \\
+   & \texttt{type}$^o$    &  text              &                  & generic           & \textit{No current function}             \\
+   & \texttt{role}$^o$    &  text              & primary/extra    & extra             & Designate as primary Hamiltonian or not  \\
+   & \texttt{source}$^o$  &  text              & \texttt{particleset.name} & i        & Identify classical particleset           \\
+   & \texttt{target}$^o$  &  text              & \texttt{particleset.name} & e        & Identify quantum particleset             \\
+   & \texttt{default}$^o$ &  boolean           & yes/no           & yes               & Include kinetic energy term implicitly   \\
   \hline
 \end{tabularx}
 \end{center}
