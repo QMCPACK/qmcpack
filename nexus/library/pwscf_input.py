@@ -157,7 +157,7 @@ class PwscfInputBase(DevBase):
     ints=['nstep','iprint','gdir','nppstr','nberrycyc','ibrav','nat','ntyp','nbnd','tot_charge','nr1','nr2','nr3','nr1s','nr2s','nr3s','nspin','multiplicity','tot_magnetization','edir','report','electron_maxstep','mixing_ndim','mixing_fixed_ns','ortho_para','diago_cg_maxiter','diago_david_ndim','nraise','bfgs_ndim','num_of_images','fe_nstep','sw_nstep','modenum','n_charge_compensation','nlev','lda_plus_u_kind']
     floats=['dt','max_seconds','etot_conv_thr','forc_conv_thr','celldm','A','B','C','cosAB','cosAC','cosBC','nelec','ecutwfc','ecutrho','degauss','starting_magnetization','nelup','neldw','ecfixed','qcutz','q2sigma','Hubbard_alpha','Hubbard_U','Hubbard_J','starting_ns_eigenvalue','emaxpos','eopreg','eamp','angle1','angle2','fixed_magnetization','lambda','london_s6','london_rcut','conv_thr','mixing_beta','diago_thr_init','efield','tempw','tolp','delta_t','upscale','trust_radius_max','trust_radius_min','trust_radius_ini','w_1','w_2','temp_req','ds','k_max','k_min','path_thr','fe_step','g_amplitude','press','wmass','cell_factor','press_conv_thr','xqq','ecutcoarse','mixing_charge_compensation','comp_thr','exx_fraction','ecutfock']
     strs=['calculation','title','verbosity','restart_mode','outdir','wfcdir','prefix','disk_io','pseudo_dir','occupations','smearing','input_dft','U_projection_type','constrained_magnetization','mixing_mode','diagonalization','startingpot','startingwfc','ion_dynamics','ion_positions','phase_space','pot_extrapolation','wfc_extrapolation','ion_temperature','opt_scheme','CI_scheme','cell_dynamics','cell_dofree','which_compensation','assume_isolated','exxdiv_treatment']
-    bools=['wf_collect','tstress','tprnfor','lkpoint_dir','tefield','dipfield','lelfield','lberry','nosym','nosym_evc','noinv','force_symmorphic','noncolin','lda_plus_u','lspinorb','do_ee','london','diago_full_acc','tqr','remove_rigid_rot','refold_pos','first_last_opt','use_masses','use_freezing']
+    bools=['wf_collect','tstress','tprnfor','lkpoint_dir','tefield','dipfield','lelfield','lberry','nosym','nosym_evc','noinv','force_symmorphic','noncolin','lda_plus_u','lspinorb','do_ee','london','diago_full_acc','tqr','remove_rigid_rot','refold_pos','first_last_opt','use_masses','use_freezing','la2F']
 
     all_variables = set(ints+floats+strs+bools)
 
@@ -336,7 +336,7 @@ class system(Section):
          'angle2','constrained_magnetization','fixed_magnetization','lambda',
          'report','lspinorb','assume_isolated','do_ee','london','london_s6',
          'london_rcut','exx_fraction','ecutfock',
-         'lda_plus_u_kind','Hubbard_J','exxdiv_treatment'])
+         'lda_plus_u_kind','Hubbard_J','exxdiv_treatment','la2F'])
 
     atomic_variables = obj(
         hubbard_u = 'Hubbard_U',
@@ -902,6 +902,7 @@ class PwscfInput(SimulationInput):
             if len(l)>0 and l[0]!='!':
                 tokens = l.split()
                 if l.startswith('&'):
+                    l=l.strip('/').strip(" ") # allow all default section such as &ions /
                     if l[1:].lower() in self.sections:
                         prev_type = elem_type
                         in_element = True
@@ -1569,7 +1570,9 @@ def generate_scf_input(prefix       = 'pwscf',
                        pseudos      = None,
                        system       = None,
                        use_folded   = True,
-                       group_atoms  = False):
+                       group_atoms  = False,
+                       la2F         = False
+                       ):
     if pseudos is None:
         pseudos = []
     #end if
@@ -1603,7 +1606,8 @@ def generate_scf_input(prefix       = 'pwscf',
         ibrav       = ibrav,
         ecutwfc     = ecut,
         ecutrho     = ecutrho,
-        nosym       = nosym
+        nosym       = nosym,
+        la2F        = la2F
         )
     if assume_isolated!=None:
         pw.system.assume_isolated = assume_isolated
