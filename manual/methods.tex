@@ -24,7 +24,7 @@
    &   \texttt{move}          &  text              &   pbyp, alle     & pbyp              & method used to move electrons \\
    &   \texttt{gpu}           &  text              &   yes, no        & dep.              & use the GPU\\
    &   \texttt{trace}         &  text              &                  & no                & ???                      \\
-   &   \texttt{checkpoints}   &  integer           &                  & -1                & checkpoint frequency \\
+   &   \texttt{checkpoints}   &  integer           &   -1, 0, n       & -1                & checkpoint frequency \\
    &   \texttt{target}        &  text              &                  &                   & ???  \\
    &   \texttt{completed}     &  text              &                  &                   & ???  \\
    &   \texttt{append}        &  text              &   yes, no        & yes               & ???  \\
@@ -41,5 +41,7 @@ Additional information:
 \item \texttt{move}. There are two ways implemented to move electrons. The more used method is the particle-by-particle move. In this method, only one electron is moved for acception or rejection. The other method is the all-electron move, namely all the electrons are moved once for testing acception or rejection.
 
 \item \texttt{gpu}. When the executable is compiled with CUDA, the target computing device can be chosen by this switch. With a regular CPU only compilation, this option is not effective.
+
+\item \texttt{checkpoints}. If Checkpoint=``-1'' no checkpoint will be done (default setting). If Checkpoint=``0'' dump after the completion of a qmc section. If Checkpoint=``n'' where n is an integer>0, walkers will be dumped into a *.config.h5 file every n block. The config.h5 file will contain the state of a population to continue a run including the random number sequences; the list of what is included in the .congig.h5 is: number of walkers, status of the run, branch mode, energy dataset, ratio to accepted moves, ratio to proposed moves, variance dataset, vParam{tau, taueff. E_trial, E_ref, Branch_Max, BranchCutOff, BranchFilter, Sigma, Accepted_Energy, Accepted_Samples}, IParam{warmumSteps, Energy_Update_Interval, Counter, targetwalkers, Maxwalkers, MinWalkers, Branching Interval}, Walker coordinates, Random number size, Random number sequence, version of the code.
 
 \end{itemize}
