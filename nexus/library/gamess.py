@@ -138,7 +138,11 @@ class Gamess(Simulation):
 
 
     def app_command(self):
-        return self.app_name+' '+self.infile.replace('.inp','')      
+        if self.app_name == 'rungms':
+            return 'rungms '+self.infile
+        else:
+          return self.app_name+' '+self.infile.replace('.inp','')      
+        #end if
     #end def app_command
 
 
