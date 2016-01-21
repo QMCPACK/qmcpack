@@ -103,9 +103,9 @@ int main(int argc, char **argv)
     if(OHMMS::Controller->rank()==0)
     {
       cerr << "No input file is given." << endl;
-      cerr << "usage: qmcapp input-files " << endl;
+      cerr << "Usage: qmcapp <input-files> " << endl;
     }
-    APP_ABORT("qmcapp");
+    OHMMS::Controller->finalize();
     return 1;
   }
   if (useGPU)
