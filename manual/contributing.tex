@@ -1,0 +1,99 @@
+
+\chapter{Contributing to the Manual}
+\label{chap:contrib}
+
+This section briefly describes how to contribute to the manual.  It is primarily ``by developers, for developers''.   This section should iterate until a consistent view on style/contents is reached.
+
+\textbf{\underline{Desirable:}}
+\begin{itemize}
+  \item{Use the table templates below when describing XML input.}
+  \item{Place unformatted text targeted at developers in comments.  Include generously.}  
+  \item{Encapsulate formatted text aimed at developers (like this entire chapter), in $\backslash$\texttt{dev\{\}}.  Text encapsulated in this way will be removed from the user version of the manual by editing the definition of $\backslash$\texttt{dev} in \texttt{qmcpack\_manual.tex}.  Existing but deprecated or partially functioning features fall in this category.}
+\end{itemize}
+
+
+\textbf{\underline{Missing sections (these are opinions, not decided priorities):}}
+\begin{itemize}
+  \item{Description of XML input in general.  Discuss XML format, use of attributes and \texttt{<parameter/>}'s in general, case sensitivity (input is generally case sensitive), and behavior of \qmcpack when unrecognized XML elements are encountered (they are generally ignored without notification).}
+  \item{Overview of the input file in general, broad structure, and at least one full example that works in isolation.}
+\end{itemize}
+
+
+\textbf{\underline{Information currently missing for a complete reference specification:}}
+\begin{itemize}
+  \item{Noting how many instances of each child element are allowed.  Examples: \texttt{simulation}--1 only, \texttt{method}--1 or more, \texttt{jastrow}--0 or more}.
+\end{itemize}
+
+
+Below are template tables for describing XML elements in reference fashion.  A number of examples can be found in \textit{e.g.} Chapter \ref{chap:hamiltobs}.  Preliminary style is (please weigh in with opinions): typewriter text ($\backslash$\texttt{texttt\{\}}) for XML element, attribute, and parameter names, normal text for literal information in datatype/values/default columns, bold ($\backslash$\texttt{textbf\{\}}) text if an attribute/parameter must take on a particular value (values column), italics ($\backslash$\texttt{textit\{\}}) for descriptive (non-literal) information in the values column (e.g. \textit{anything}, \textit{non-zero}, etc.), required/optional attributes/parameters noted by \texttt{some\_attr$^r$}/\texttt{some\_attr$^o$} superscripts.  Valid datatypes are text, integer, real, boolean, and arrays of each.  Fixed lengh arrays can be noted, \textit{e.g.} by ``real array(3)''.
+
+
+Template for a generic XML element:
+\FloatBarrier
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l l }
+\hline
+\multicolumn{6}{l}{\texttt{generic} element} \\
+\hline
+\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{parent1 parent2}}\\
+\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\texttt{child1 child2 child3 ...}}\\
+\multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
+   &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
+   &   \texttt{attr1}$^r$ &  text              &                  &                     &                       \\
+   &   \texttt{attr2}$^r$ &  integer           &                  &                     &                       \\
+   &   \texttt{attr3}$^o$ &  real              &                  &                     &                       \\
+   &   \texttt{attr4}$^o$ &  boolean           &                  &                     &                       \\
+   &   \texttt{attr5}$^o$ &  text array        &                  &                     &                       \\
+   &   \texttt{attr6}$^o$ &  integer array     &                  &                     &                       \\
+   &   \texttt{attr7}$^o$ &  real array        &                  &                     &                       \\
+   &   \texttt{attr8}$^o$ &  boolean array     &                  &                     &                       \\
+\multicolumn{2}{l}{parameters}  & \multicolumn{4}{l}{}\\
+   &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
+   &   \texttt{param1}$^r$&  text              &                  &                     &                       \\
+   &   \texttt{param2}$^r$&  integer           &                  &                     &                       \\
+   &   \texttt{param3}$^o$&  real              &                  &                     &                       \\
+   &   \texttt{param4}$^o$&  boolean           &                  &                     &                       \\
+   &   \texttt{param5}$^o$&  text array        &                  &                     &                       \\
+   &   \texttt{param6}$^o$&  integer array     &                  &                     &                       \\
+   &   \texttt{param7}$^o$&  real array        &                  &                     &                       \\
+   &   \texttt{param8}$^o$&  boolean array     &                  &                     &                       \\
+\multicolumn{2}{l}{body text}  & \multicolumn{4}{l}{}\\
+   &                           & \multicolumn{4}{l}{Long form description of body text format}                   \\
+  \hline
+\end{tabularx}
+\end{center}
+\end{table}
+\FloatBarrier
+
+
+
+``Factory'' elements are XML elements that share a tag, but whose contents change based on the value an attribute (or sometimes multiple attributes take).  The attribute(s) that determine the allowed contents is referred to below as the ``type selector''  (\textit{e.g.} for \texttt{<estimator/>} elements, the type selector is usually the \texttt{type} attribute).  These types of elements are frequently encountered as they correspond (sometimes loosely, sometimes literally) to polymorphic classes in \qmcpack that are built in ``factories''.  This name is true to the underlying code, but may be obscure to the general user (is there a better name to retain the general meaning?).   
+
+The template below should be provided each time a new ``factory'' type is encountered (like \texttt{<estimator/>}).  The table lists all types of possible elements (see ``type options'' below) and any attributes that are common to all possible related elements.  Specific ``derived'' elements are then described one at a time with the template above, noting the type selector in addition to the XML tag (\textit{e.g.} ``\texttt{estimator type=density} element'').
+
+Template for shared information about ``factory'' elements.
+\FloatBarrier
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l l }
+\hline
+\multicolumn{6}{l}{\texttt{generic} factory element} \\
+\hline
+\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{parent1 parent2}}\\
+\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\texttt{child1 child2 child3 ...}}\\
+\multicolumn{2}{l}{type   selector:} & \multicolumn{4}{l}{\texttt{some} attribute}\\
+\multicolumn{2}{l}{type   options :} & \multicolumn{4}{l}{Selection1}\\
+\multicolumn{2}{l}{                } & \multicolumn{4}{l}{Selection2}\\
+\multicolumn{2}{l}{                } & \multicolumn{4}{l}{Selection3}\\
+\multicolumn{2}{l}{                } & \multicolumn{4}{l}{...}\\
+\multicolumn{2}{l}{shared attributes:} & \multicolumn{4}{l}{}\\
+   &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
+   &   \texttt{attr1}     &  text              &                  &                     &                       \\
+   &   \texttt{attr2}     &  integer           &                  &                     &                       \\
+   &   ...                &                    &                  &                     &                       \\
+  \hline
+\end{tabularx}
+\end{center}
+\end{table}
+\FloatBarrier
