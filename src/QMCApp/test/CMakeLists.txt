@@ -91,7 +91,7 @@ IF (NOT QMC_COMPLEX)
         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p vmc_hf_noj -e 2 --ee "3.4888166386 0.0024"
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/short-LiH_dimer_ae-vmc_hf_noj-16-1"
     )
-    SET_PROPERTY( TEST short-LiH_dimer_ae-vmc_hf_noj-16-1-totenergy APPEND PROPERTY DEPENDS short-LiH_dimer_ae-vmc_hf_noj-16-1 )
+    SET_PROPERTY( TEST short-LiH_dimer_ae-vmc_hf_noj-16-1-eeenergy APPEND PROPERTY DEPENDS short-LiH_dimer_ae-vmc_hf_noj-16-1 )
   ADD_TEST( NAME short-LiH_dimer_ae-vmc_hf_noj-16-1-samples
          COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 0 -p vmc_hf_noj --ts "1600000 0.0"
          WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/short-LiH_dimer_ae-vmc_hf_noj-16-1"
