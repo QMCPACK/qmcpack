@@ -1,6 +1,6 @@
 Scripts used to run tests of QMCPACK on various machines
 automatically. Users should run ctest directly, as described in the
-manuel.
+manual.
 
 These scripts are designed to be called from cron to execute the
 various nightly, weekly tests of QMCPACK. They are custom to
