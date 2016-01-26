@@ -1421,7 +1421,7 @@ scale_grad_lapl_kernel (T **grad_list, T **hess_list,
   for (int i=0; i<6; i++)
   {
     unsigned int hIndex = (6 * blockIdx.x+i) * SCALE_BS + threadIdx.x;
-    if (hIndex < 6*N)  hessBlock[i][threadIdx.x] = grad[hIndex];
+    if (hIndex < 6*N)  hessBlock[i][threadIdx.x] = hess[hIndex];
   }
   // Now, loop through the rows that I own and compute the
   // dimensioned gradients and laplacians from the
