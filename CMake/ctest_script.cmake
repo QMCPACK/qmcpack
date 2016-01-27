@@ -25,6 +25,13 @@ ELSEIF( ${HOSTNAME} MATCHES "oxygen" )
     SET( CC ${CMAKE_C_COMPILER} )
     SET( CXX ${CMAKE_CXX_COMPILER} )
     SET( CTEST_CMAKE_GENERATOR "Unix Makefiles")
+ELSEIF( ${HOSTNAME} MATCHES "cori" )
+# Setup for cori.nersc.gov phase 1
+    SET( CC ${CMAKE_C_COMPILER} )
+    SET( CXX ${CMAKE_CXX_COMPILER} )
+    SET( CTEST_CMAKE_GENERATOR "Unix Makefiles")
+    SET( CTEST_SITE "cori.nersc.gov" )
+    SET( N_PROCS 32)
 ELSE()
     MESSAGE( FATAL_ERROR "Unknown host: ${HOSTNAME}" )
 ENDIF()
@@ -159,7 +166,9 @@ MESSAGE("   ${CTEST_OPTIONS}")
 
 
 # Configure and run the tests
-SET( CTEST_SITE ${HOSTNAME} )
+IF ( NOT DEFINED CTEST_SITE )
+     SET( CTEST_SITE ${HOSTNAME} )
+ENDIF()
 CTEST_START("${CTEST_DASHBOARD}")
 CTEST_UPDATE()
 CTEST_CONFIGURE(
