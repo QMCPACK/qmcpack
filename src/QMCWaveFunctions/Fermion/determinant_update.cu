@@ -1314,7 +1314,8 @@ calc_many_ratios_kernel (T **Ainv_list, T **new_row_list,
   }
   __syncthreads();
   int NB = N/BS + ((N%BS) ? 1 : 0);
-  __shared__ T Ainv_shared[BS], row[BS];
+  __shared__ T Ainv_shared[BS];
+//  __shared__ T row[BS];
   // We use BS+1 to avoid bank conflicts in the writing.
   __shared__ T ratio_sum[MAX_RATIO_ROWS][BS+1];
   for (int iratio=0; iratio<num_ratios; iratio++)
@@ -1714,7 +1715,7 @@ test_all_ratios_kernel()
   A     = (float *)malloc (N*N*sizeof(float));
   Ainv  = (float *)malloc (N*N*sizeof(float));
   ratio = (float *)malloc (1*N*sizeof(float));
-  float ratio2[N];
+//  float ratio2[N];
   for (int i=0; i<N; i++)
     for (int j=0; j<N; j++)
     {

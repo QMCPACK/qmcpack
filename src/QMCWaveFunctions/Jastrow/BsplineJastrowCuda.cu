@@ -510,7 +510,7 @@ two_body_NLratio_kernel(NLjobGPU<float> *jobs, int first, int last,
   float dr = rMax/(float)(myNumCoefs-3);
   float drInv = 1.0/dr;
   __shared__ float coefs[MAX_COEFS];
-  __shared__ float r1[BS][3];
+//  __shared__ float r1[BS][3];
   if (tid < myNumCoefs)
     coefs[tid] = myCoefs[tid];
   __shared__ float A[4][4];
