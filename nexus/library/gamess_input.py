@@ -183,7 +183,7 @@ class KeywordGroup(Group):
             sval = str(val)
         elif isinstance(val,float):
             sval = str(val).replace('e','d')
-        elif isinstance(val,ndarray):
+        elif isinstance(val,(ndarray,list)):
             sval = ''
             for v in val:
                 vs = str(v)+','
