@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 #PBS -A mat044
-#PBS -N Test
+#PBS -N QMCPACKTest
 #PBS -j oe
 #PBS -l walltime=1:00:00,nodes=1
 #PBS -q batch
@@ -93,8 +93,10 @@ done
 if [ -e $place/eos_build_intel/trunk/build_intel/bin/qmcapp ]; then
 echo "--- Found a built qmcpack executable. Will requeue."
 if [ -e $HOME/.qmcpack_test_jobs/nightly_ornl_olcf_eos.job ]; then
+# Run after 11.01pm next day
+qsub -a `date -d "+1 day" +m%d2301` $HOME/.qmcpack_test_jobs/nightly_ornl_olcf_eos.job
 # Run after 11.01pm each week
-qsub -a `date -d "+1 week" +m%d2301` $HOME/.qmcpack_test_jobs/nightly_ornl_olcf_eos.job
+#qsub -a `date -d "+1 week" +m%d2301` $HOME/.qmcpack_test_jobs/nightly_ornl_olcf_eos.job
 # Example for debugging:
 #qsub -a `date -d "+1 hour" +m%d%H%M` $HOME/.qmcpack_test_jobs/nightly_ornl_olcf_eos.job
 fi
