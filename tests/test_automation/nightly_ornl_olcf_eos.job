@@ -1,0 +1,110 @@
+#!/bin/bash
+#
+#PBS -A mat044
+#PBS -N Test
+#PBS -j oe
+#PBS -l walltime=1:00:00,nodes=1
+#PBS -q batch
+#PBS -m e
+#PBS -M kentpr@ornl.gov
+
+#
+# Setup for eos.ccs.ornl.gov
+#
+# Run the "short" nightlies, requeue if an executable is built
+# 
+# Location of job script must be set at end ($HOME/.qmcpack_test_jobs/... ) for resubmit
+#
+# Checkout, build, and run on scratch. Use custom names for checkout
+# directory because scratch is shared.
+#
+
+cd $PBS_O_WORKDIR
+module load subversion
+
+#Must be an absolute path
+place=$MEMBERWORK/mat044/QMCPACK_CI_BUILDS_DO_NOT_REMOVE
+if [ -e $MEMBERWORK/mat044 ]; then
+
+if [ ! -e $place ]; then
+mkdir $place
+fi
+
+if [ -e $place ]; then
+
+
+for sys in build_intel build_intel_complex
+do
+
+cd $place
+
+if [ -e eos_$sys ]; then
+rm -r -f eos_$sys
+fi
+mkdir eos_$sys
+cd eos_$sys
+
+echo --- Checkout for $sys `date`
+svn checkout https://svn.qmcpack.org/svn/trunk
+#svn checkout https://subversion.assembla.com/svn/qmcdev/trunk
+
+if [ -e trunk/CMakeLists.txt ]; then
+cd trunk
+mkdir $sys
+cd $sys
+echo --- Building for $sys `date`
+
+case $sys in
+"build_intel")
+# Build with default Intel PrgEnv on eos. This is not checked!
+    module load cray-hdf5
+    module load cmake
+    module load fftw
+    export FFTW_HOME=$FFTW_DIR/..
+    module load boost
+    export QMCPACK_TEST_SUBMIT_NAME=Intel-Release
+    ctest -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=CC -S $PWD/../CMake/ctest_script.cmake,release -R short -VV
+    ;;
+"build_intel_complex")
+# Build with default Intel PrgEnv on eos. This is not checked!
+    module load cray-hdf5
+    module load cmake
+    module load fftw
+    export FFTW_HOME=$FFTW_DIR/..
+    module load boost
+    export QMCPACK_TEST_SUBMIT_NAME=Intel-Complex-Release
+    ctest -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=CC -DQMC_COMPLEX=1 -S $PWD/../CMake/ctest_script.cmake,release -R short -VV
+    ;;
+*)
+    echo "ERROR: Unknown build type $sys"
+    ;;
+esac
+
+else
+echo  "ERROR: No CMakeLists. Bad svn checkout."
+exit 1
+fi
+echo --- Finished $sys `date`
+done
+
+# Hard-coded logic for resubmission
+# Default intel build executable must be present
+
+if [ -e $place/eos_build_intel/trunk/build_intel/bin/qmcapp ]; then
+echo "--- Found a built qmcpack executable. Will requeue."
+if [ -e $HOME/.qmcpack_test_jobs/nightly_ornl_olcf_eos.job ]; then
+# Run after 11.01pm each week
+qsub -a `date -d "+1 week" +m%d2301` $HOME/.qmcpack_test_jobs/nightly_ornl_olcf_eos.job
+# Example for debugging:
+#qsub -a `date -d "+1 hour" +m%d%H%M` $HOME/.qmcpack_test_jobs/nightly_ornl_olcf_eos.job
+fi
+else
+echo "ERROR: No built qmcpack executable. Will NOT requeue."
+fi
+
+else
+echo "ERROR: No directory $place"
+exit 1
+fi
+
+fi
