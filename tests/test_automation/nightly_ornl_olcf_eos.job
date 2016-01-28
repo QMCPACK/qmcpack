@@ -73,7 +73,7 @@ case $sys in
     export FFTW_HOME=$FFTW_DIR/..
     module load boost
     export QMCPACK_TEST_SUBMIT_NAME=Intel-Complex-Release
-    ctest -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=CC -DQMC_COMPLEX=1 -S $PWD/../CMake/ctest_script.cmake,release -R short -VV
+    ctest -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=CC -S $PWD/../CMake/ctest_script.cmake,release -R short -VV
     ;;
 *)
     echo "ERROR: Unknown build type $sys"
