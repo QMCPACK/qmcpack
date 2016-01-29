@@ -34,6 +34,7 @@ from types import NoneType
 from unit_converter import convert
 from numerics import nearest_neighbors,convex_hull,voronoi_neighbors
 from periodic_table import pt,is_element
+from fileio import XsfFile
 from generic import obj
 from developer import DevBase,unavailable,error,warn
 from debug import ci,ls,gs
@@ -446,7 +447,7 @@ class Structure(Sobj):
                 center = dim*[0]
             #end if
         #end if
-        if bconds is None:
+        if bconds is None or bconds=='periodic':
             bconds = dim*['p']
         #end if
         if axes is None:
@@ -749,6 +750,17 @@ class Structure(Sobj):
         self.set_elem(list(self.elem)+list(elem))
         self.pos=array(list(self.pos)+list(pos))
     #end def add_atoms
+
+
+    def is_periodic(self):
+        periodic = False
+        openbc = len(self.axes)==0 or len(self.bconds)==0
+        for bc in self.bconds:
+            periodic |= bc=='p'
+        #end if
+        periodic &= not openbc
+        return periodic
+    #end def is_periodic
 
 
     def distances(self,pos1=None,pos2=None):
@@ -3330,33 +3342,55 @@ class Structure(Sobj):
         if format is None:
             if '.' in file:
                 name,format = file.rsplit('.',1)
+            elif file.lower().endswith('poscar'):
+                format = 'poscar'
             else:
-                format = file
-            #else:
-            #    self.error('file does not have a format extension: {0}'.format(filepath))
+                self.error('file format could not be determined\nunrecognized file: {0}'.format(filepath))
             #end if
         #end if
         c = open(filepath,'r').read()
-        self.read_text(c,format,elem=elem)
+        self.read_text(c,format,elem=elem,filepath=filepath)
         return c
     #end def read
 
 
-    def read_text(self,contents,format,elem=None):
+    def read_text(self,text,format,elem=None,filepath=None):
         format = format.lower()
-        if format=='poscar':
-            self.read_poscar(contents,elem=elem,contents=True)
+        if format=='xsf':
+            self.read_xsf(text)
+        elif format=='poscar':
+            self.read_poscar(text,elem=elem,contents=True)
         else:
-            self.error('unrecognized file format: {0}'.format(format))
+            msg = 'cannot read structure from file\nunsupported file format: {0}'.format(format)
+            if filepath!=None:
+                msg+='\nfile path: {0}'.format(filepath)
+            #end if
+            self.error(msg)
         #end if
     #end def read_text
+
+
+    def read_xsf(self,text):
+        f = XsfFile()
+        f.read_text(text)
+        elem = []
+        for n in f.elem:
+            elem.append(pt.simple_elements[n].symbol)
+        #end for
+        self.dim   = 3
+        self.units = 'A'
+        self.reset_axes(f.primvec)
+        self.set_elem(elem)
+        self.pos = f.pos
+    #end def read_xsf
 
 
     def read_poscar(self,filepath,elem=None,contents=False):
         if not contents:
             lines = open(filepath,'r').read().splitlines()
         else:
-            lines = filepath.splitlines()
+            text = filepath
+            lines = text.splitlines()
         #end if
         nlines = len(lines)
         min_lines = 8

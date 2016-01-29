@@ -481,7 +481,8 @@ class SemilocalPP(Pseudopotential):
     #end def find_rcut
 
 
-    def plot(self,r=None,show=True,fig=True,linestyle='-',channels=None,with_local=False,rmin=0.01,rmax=5.0,title=None,metric=None):
+    def plot(self,r=None,show=True,fig=True,linestyle='-',channels=None,with_local=False,rmin=0.01,rmax=5.0,title=None,metric=None,color=None):
+        color_in = color
         if channels is None:
             channels = self.all_channels
         #end if
@@ -501,6 +502,9 @@ class SemilocalPP(Pseudopotential):
                 else:
                     lab = c
                     color = self.channel_colors[c]
+                #end if
+                if color_in!=None:
+                    color = color_in
                 #end if
                 if self.name!=None:
                     lab = self.name+' '+lab
