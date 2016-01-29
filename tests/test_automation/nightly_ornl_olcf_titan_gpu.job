@@ -76,11 +76,11 @@ case $sys in
     fi
 
     module load cray-hdf5
-    module load cmake3
+    module load cmake
     module load fftw
     export FFTW_HOME=$FFTW_DIR/..
     module load boost
-    export QMCPACK_TEST_SUBMIT_NAME=GNU-Release
+    export QMCPACK_TEST_SUBMIT_NAME=GCC-Release
     ctest -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=CC -S $PWD/../CMake/ctest_script.cmake,release -R short -VV
     ;;
 "build_gnu_complex")
@@ -97,11 +97,11 @@ case $sys in
     fi
 
     module load cray-hdf5
-    module load cmake3
+    module load cmake
     module load fftw
     export FFTW_HOME=$FFTW_DIR/..
     module load boost
-    export QMCPACK_TEST_SUBMIT_NAME=GNU-Complex-Release
+    export QMCPACK_TEST_SUBMIT_NAME=GCC-Complex-Release
     ctest -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=CC -S $PWD/../CMake/ctest_script.cmake,release -R short -VV
     ;;
 "build_gnu_cuda")
@@ -112,11 +112,11 @@ case $sys in
 
     module load cudatoolkit
     module load cray-hdf5
-    module load cmake3
+    module load cmake
     module load fftw
     export FFTW_HOME=$FFTW_DIR/..
     module load boost
-    export QMCPACK_TEST_SUBMIT_NAME=GNU-CUDA-Release
+    export QMCPACK_TEST_SUBMIT_NAME=GCC-CUDA-Release
     ctest -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=CC -DQMC_CUDA=1 -S $PWD/../CMake/ctest_script.cmake,release -R short -VV
     ;;
 *)
@@ -134,16 +134,17 @@ done
 # Hard-coded logic for resubmission
 # Default gnu build executable must be present
 
-if [ -e $place/titan_build_gnu/trunk/build_gnu/bin/qmcapp ]; then
+if [ -e $place/titan_build_gnu_cuda/trunk/build_gnu/bin/qmcapp ]; then
 echo "--- Found a built qmcpack executable. Will requeue."
-if [ -e $HOME/.qmcpack_test_jobs/nightly_ornl_olcf_titan.job ]; then
-echo Would qsub here
+if [ -e $HOME/.qmcpack_test_jobs/nightly_ornl_olcf_titan_gpu.job ]; then
+# Run after 11.01pm following Tuesday. This is usually the evening after maintenance
+qsub -a `date -d "next Tuesday" +%m%d2301` $HOME/.qmcpack_test_jobs/nightly_ornl_olcf_titan_gpu.job
 # Run after 11.01pm next day
 #qsub -a 2301 $HOME/.qmcpack_test_jobs/nightly_ornl_olcf_titan_gpu.job
 # Run after one week
-#qsub -a `date -d "+1 week" +m%d%H%M` $HOME/.qmcpack_test_jobs/nightly_ornl_olcf_titan_gpu.job
+#qsub -a `date -d "+1 week" +%m%d%H%M` $HOME/.qmcpack_test_jobs/nightly_ornl_olcf_titan_gpu.job
 # Example for debugging:
-#qsub -a `date -d "+1 hour" +m%d%H%M` $HOME/.qmcpack_test_jobs/nightly_ornl_olcf_titan_gpu.job
+#qsub -a `date -d "+1 hour" +%m%d%H%M` $HOME/.qmcpack_test_jobs/nightly_ornl_olcf_titan_gpu.job
 fi
 else
 echo "ERROR: No built qmcpack executable. Will NOT requeue."

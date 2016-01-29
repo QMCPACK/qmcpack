@@ -93,12 +93,14 @@ done
 if [ -e $place/eos_build_intel/trunk/build_intel/bin/qmcapp ]; then
 echo "--- Found a built qmcpack executable. Will requeue."
 if [ -e $HOME/.qmcpack_test_jobs/nightly_ornl_olcf_eos.job ]; then
+# Run after 11.01pm following Tuesday. This is usually the evening after maintenance
+qsub -a `date -d "next Tuesday" +%m%d2301` $HOME/.qmcpack_test_jobs/nightly_ornl_olcf_eos.job
 # Run after 11.01pm next day
-qsub -a 2301 $HOME/.qmcpack_test_jobs/nightly_ornl_olcf_eos.job
-# Run after 11.01pm each week
-#qsub -a `date -d "+1 week" +m%d%H%M` $HOME/.qmcpack_test_jobs/nightly_ornl_olcf_eos.job
+#qsub -a 2301 $HOME/.qmcpack_test_jobs/nightly_ornl_olcf_eos.job
+# Run in one week
+#qsub -a `date -d "+1 week" +%m%d%H%M` $HOME/.qmcpack_test_jobs/nightly_ornl_olcf_eos.job
 # Example for debugging:
-#qsub -a `date -d "+1 hour" +m%d%H%M` $HOME/.qmcpack_test_jobs/nightly_ornl_olcf_eos.job
+#qsub -a `date -d "+1 hour" +%m%d%H%M` $HOME/.qmcpack_test_jobs/nightly_ornl_olcf_eos.job
 fi
 else
 echo "ERROR: No built qmcpack executable. Will NOT requeue."
