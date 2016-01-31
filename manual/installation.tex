@@ -1,4 +1,454 @@
-\chapter{Obtaining and installing QMCPACK}
+\chapter{Obtaining, installing and validating QMCPACK}
 \label{chap:obtaininginstalling}
 
-Don't forget to patch QE!
+This chapter describes how to obtain, build and validate QMCPACK. This process is designed to be as simple as
+possible and should be no harder than building a modern plane-wave density
+functional theory code such as Quantum Espresso, QBox, or
+VASP. Parallel builds enable a complete
+compilation in under 2 minutes on a fast multicore sysyem, If you
+are unfamiliar with building codes we suggest working with your system
+administrator to install QMCPACK.
+
+\section{Installation steps}
+To install QMCPACK, follow the steps listed below. Full details of
+each step are given in the referenced sections.
+\begin{enumerate}
+\item Download the source code, Sections \ref{sec:obrelease} or \ref{sec:obdevelopment}.
+\item Verify that you have the required compilers, libraries and tools
+  installed, Section \ref{sec:prerequisites}.
+\item Run the cmake configure step and build with make, Section
+  \ref{sec:cmake} and \ref{sec:cmakequick}.
+\item Run the tests to verify QMCPACK, Section \ref{sec:testing}.
+\item Build the ppconvert utility in QMCPACK, Section \ref{sec:buildppconvert}.
+\item Download and patch Quantum Espresso. This patch adds the
+  pw2qmcpack utility, Section \ref{sec:buildqe}.
+\end{enumerate}
+
+Installation instructions for many common systems are given in Section
+\ref{sec:installexamples}. Troubleshooting suggestions are in Section \ref{sec:troubleshoot}.
+
+Note that there are two different QMCPACK executables that can be
+produced: the general one, which is the default, and the ``complex''
+version which support periodic calculations at arbitrary twist angles and
+k-points. This second version is enabled via a cmake configuration
+parameter, see Section \ref{sec:cmakeoptions}. The general version
+only supports wavefunctions that can be made real. If you run a
+calculation that needs the complex version, QMCPACK will stop and inform you.
+
+\section{Obtaining the latest release version}
+\label{sec:obrelease} 
+Major releases of QMCPACK are distributed from
+\url{http://www.qmcpack.org}. These releases undergo the most testing. Unless there are
+specific reasons we encourage all production calculations to use the
+latest release versions.
+
+Releases are usually compressed tar files indicating the version
+number, date, and often the source code revision control number
+corresponding to the release.
+
+\begin{itemize}
+\item Download the latest QMCPACK distribution from \url{http://www.qmcpack.org}.
+\item Untar the archive, e.g., \texttt{tar xvf qmcpack\_v1.3.tar.gz}
+\end{itemize}
+
+\section{Obtaining the latest development version}
+\label{sec:obdevelopment}
+The most recent development version of QMCPACK can be obtained anonymously via 
+\begin{verbatim}
+svn checkout https://svn.qmcpack.org/svn/trunk 
+\end{verbatim}
+Once checked-out,
+updates can be made via the standard \texttt{svn update}.
+
+The subversion repository contains the day-to-day development source
+with the latest updates, bugfixes etc. This may be useful
+for updates to the build system to support new machines, for support
+of the latest versions of Quantum Espresso, or for updates to the
+documentation.  Note that the development version may not be fully
+consistent with the online documentation.  We attempt to keep
+the development version fully working. However, please be sure to run the tests and
+compare with previous release versions before using for any serious
+calculations. We try to keep bugs out, but occasionally they crawl
+in! Reports of any breakages are appreciated.
+
+\section{Prerequisites}
+\label{sec:prerequisites}
+The following are required to build QMCPACK. For workstations, these are available via the standard
+package manager. On shared supercomputers this software is usually
+installed by default and is often
+access via a modules environment - check your system
+documentation.
+
+\textbf{Use of the latest versions of all compilers and libraries is
+strongly encouraged}, but not absolutely essential. Generally newer versions are faster - see
+Section \ref{sec:buildperformance} for performance suggestions.
+
+\begin{itemize}
+\item C/C++ compilers such as GCC, Intel, IBM XLC. CLANG-based compilers
+  are not yet supported by the build system, but the source code is ready.
+\item MPI libary such at OpenMPI \url{http://open-mpi.org}
+\item BLAS/LAPACK, numerical and linear algebra libraries. Use
+  platform-optimized libraries where available, such as Intel MKL.
+  ATLAS or other optimized open-source libraries may also be used
+  \url{http://math-atlas.sourceforge.net}
+\item CMake, build utility, \url{http://www.cmake.org}
+\item Libxml2, XML parser, \url{http://xmlsoft.org}
+\item HDF5, portable I/O library, \url{http://www.hdfgroup.org/HDF5/}
+\item BOOST, peer-reviewed portable C++ source libraries, \url{http://www.boost.org}
+\item FFTW, FFT library, \url{http://www.fftw.org/}
+\end{itemize}
+
+To build the GPU accelerated version of QMCPACK an installation of
+NVIDIA CUDA development tools is required. Ensure that this is
+compatible with the C and C++ compiler versions you plan to
+use. Supported versions are included in the NVIDIA release notes.
+
+Many of the utilities provided with QMCPACK use python (v2). The numpy
+and matplotlib libraries are required for full functionality.
+
+Note that the standalone einspline library used by previous versions of QMCPACK
+is no longer required. A more optimized version is included
+inside. The standalone version should \emph{not} be on any standard
+search paths because conflicts between the old and new include files
+can result.
+
+\section{Building with CMake}
+\label{sec:cmake}
+The build system for QMCPACK is based on CMake.  It will autoconfigure
+based on the detected compilers and libraries. The most recent
+version of CMake has the best detection for the greatest variety of
+systems - at the time of writing this means CMake 3.4.3. The much
+older CMake 2.8 is known to work, but might not work optimally on your system.
+
+Previously QMCPACK made extensive use of toolchains, but the build system
+has since been updated to eliminate the use of toolchain files for
+most cases.  The build system is verified to work with GNU, Intel, and IBM XLC
+compilers.  Specific compile options can be specified either through
+specific environmental or CMake variables.  When the libraries are
+installed in standard locations, e.g., /usr, /usr/local, there is no
+need to set environmental or cmake variables for the packages.
+
+\subsection{Quick build}
+\label{sec:cmakequick}
+
+If you are feeling lucky and are on a standard UNIX-like system such
+as a Linux workstation, the following might work to quickly givin a
+working QMCPACK:
+
+The safest quick build option is to specify the C and C++ compilers
+through their MPI wrappers. Here we use Intel MPI and Intel
+compilers. Move to the build directory, run cmake and make
+\begin{verbatim}
+cd build
+cmake -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc ..
+make -j 8
+\end{verbatim}
+You can increase the \"8\" to the number of cores on your system for
+faster builds. Substitute mpicc and mpicxx or other wrapped compiler names to suit
+  your system. e.g. With OpenMPI use
+\begin{verbatim}
+cd build
+cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx ..
+make -j 8
+\end{verbatim}
+
+If you are feeling particularly lucky, you can skip the compiler specification:
+\begin{verbatim}
+cd build
+cmake ..
+make -j 8
+\end{verbatim}
+
+The complexities of modern computer hardware and software systems are
+such that you should check that the autoconfiguration system has made
+good choices and picked optimized libraries and compiler settings
+before doing significant production. i.e. Check the details below.
+
+\subsection{Environment variables}
+A number of enviornmental variables affect the build.  In particular
+they can control the default paths for libraries, the default
+compilers, etc.  The list of enviornmental variables is given below:
+\begin{verbatim}
+CXX              C++ compiler
+CC               C Compiler
+MKL_HOME         Path for MKL
+LIBXML2_HOME     Path for libxml2
+HDF5_ROOT        Path for HDF5
+BOOST_ROOT       Path for Boost
+FFTW_HOME        Path for FFTW
+\end{verbatim}
+
+\subsection{CMake Options}
+\label{sec:cmakeoptions}
+In addition to reading the enviornmental variables, CMake provides a
+number of optional variables that can be set to control the build and
+configure steps.  When passed to CMake, these variables will take
+precident over the enviornmental and default variables.  To set them
+add -D FLAG=VALUE to the configure line between the cmake command and
+the path to the source directory.
+
+\begin{itemize}
+\item  Key QMCPACK build options
+\begin{verbatim}
+QMC_CUDA            Enable CUDA and GPU acceleration (1:yes, 0:no)
+QMC_COMPLEX         Build the complex (general twist/k-point) version (1:yes, 0:no)
+\end{verbatim}
+  \item General build options
+\begin{verbatim}
+CMAKE_BUILD_TYPE    A variable which controls the type of build (defaults to Release).  Possible values are:
+                   None (Do not set debug/optmize flags, use CMAKE_C_FLAGS or CMAKE_CXX_FLAGS)
+                   Debug (create a debug build)
+                   Release (create a release/optimized build)
+                   RelWithDebInfo (create a release/optimized build with debug info)
+                   MinSizeRel (create an executable optimized for size)
+CMAKE_C_COMPILER    Set the C compiler
+CMAKE_CXX_COMPILER  Set the C++ compiler
+CMAKE_C_FLAGS       Set the C flags.  Note: to prevent default debug/release flags from being used, set the CMAKE_BUILD_TYPE=None
+                   Also supported: CMAKE_C_FLAGS_DEBUG, CMAKE_C_FLAGS_RELEASE, CMAKE_C_FLAGS_RELWITHDEBINFO
+CMAKE_CXX_FLAGS     Set the C++ flags.  Note: to prevent default debug/release flags from being used, set the CMAKE_BUILD_TYPE=None
+                   Also supported: CMAKE_CXX_FLAGS_DEBUG, CMAKE_CXX_FLAGS_RELEASE, CMAKE_CXX_FLAGS_RELWITHDEBINFO
+\end{verbatim}
+\item Additional QMCPACK build options
+\begin{verbatim}
+QMC_DATA            Specify data directory for QMCPACK (currently unused, but likely to be used for performance tests)
+QMC_INCLUDE         Add extra include paths
+QMC_EXTRA_LIBS      Add extra link libraries
+QMC_BUILD_STATIC    Add -static flags to build
+\end{verbatim}
+\item libxml related
+\begin{verbatim}
+Libxml2_INCLUDE_DIRS  Specify include directories for libxml2
+Libxml2_LIBRARY_DIRS  Specify library directories for libxml2
+\end{verbatim}
+ \item FFTW related
+\begin{verbatim}
+FFTW_INCLUDE_DIRS   Specify include directories for FFTW
+FFTW_LIBRARY_DIRS   Specify library directories for FFTW
+\end{verbatim}
+\end{itemize}
+
+\subsection{Configure and build}
+ Move to build directory, run cmake and make
+\begin{verbatim}
+cd build
+cmake ..
+make -j 8
+\end{verbatim}
+As you will have gathered, cmake encourages ``out of source'' builds,
+where all the files for a specific build configuration reside in their
+own directory separate from the source files. This allows multiple
+builds to be created from the same source files which is very useful
+where the filesystem is shared between different systems. You can also
+build versions with different settings (e.g. QMC\_COMPLEX) and
+different compiler settings. The build directory does not have to be
+called build - use something descriptive such as build\_machinename or build\_complex.
+
+\subsection{Example configure and build}
+\begin{itemize}
+\item Set the environments (the examples below assume bash, Intel compilers and MKL library)
+\begin{verbatim}
+export CXX=icpc
+export CC=icc
+export MKL_HOME=/usr/local/intel/mkl/10.0.3.020
+export LIBXML2_HOME=/usr/local
+export HDF5_ROOT=/usr/local
+export BOOST_ROOT=/usr/local/boost
+export FFTW_HOME=/usr/local/fftw
+\end{verbatim}
+
+\item Move to build directory, run cmake and make
+\begin{verbatim}
+cd build
+cmake -D CMAKE_BUILD_TYPE=Release ..
+make -j 8
+\end{verbatim}
+\end{itemize}
+
+\subsection{Build scripts}
+It is recommended to create a helper script that contains the
+configure line for CMake.  This is particularly useful when avoiding
+enviornmental variables, packages are installed in custom locations,
+or if the configure line is long or complex.  In this case it is also
+recommended to add "rm -rf CMake*" before the configure line to remove
+existing CMake configure files to ensure a fresh configure each time
+that the script is called. Deleting all the files in the build
+directory is also acceptable. If you do so we recommend to add some sanity
+checks in case the script is run from the wrong directory, e.g.,
+checking for the existence of some QMCPACK files.
+
+Some build script examples for different systems are given in the
+config directory. For example, on Cray systems these scripts might
+load the appropriate modules to set the appropriate programming
+environment, specific library versions etc.
+
+An example script build.sh is given below:
+\begin{verbatim}
+export CXX=mpic++
+export CC=mpicc
+export ACML_HOME=/opt/acml-5.3.1/gfortran64
+export HDF5_ROOT=/opt/hdf5
+export BOOST_ROOT=/opt/boost
+
+rm -rf CMake*
+
+cmake                                                \
+  -D CMAKE_BUILD_TYPE=Debug                         \
+  -D Libxml2_INCLUDE_DIRS=/usr/include/libxml2      \
+  -D Libxml2_LIBRARY_DIRS=/usr/lib/x86_64-linux-gnu \
+  -D FFTW_INCLUDE_DIRS=/usr/include                 \
+  -D FFTW_LIBRARY_DIRS=/usr/lib/x86_64-linux-gnu    \
+  -D QMC_EXTRA_LIBS="-ldl ${ACML_HOME}/lib/libacml.a -lgfortran" \
+  -D QMC_DATA=/projects/QMCPACK/qmc-data            \
+  ..
+\end{verbatim}
+
+\section{Installation instructions for common workstations and
+  supercomputers}
+\label{sec:installexamples}
+This section describes how to build QMCPACK on various common systems
+including multiple Linux distributions, Apple OS X, and various
+supercomputers. Note that updates to operating systems may require
+small modifications to these recipes.
+\subsection{Installing on Ubuntu Linux}
+
+All the required packages are available in the
+default repositories making for a quick installation. Note that for
+convenience we use a generic BLAS. For production a platform optimized BLAS should be used.
+
+\begin{verbatim}
+apt-get subversion cmake g++ openmpi-bin libopenmpi-dev libboost-dev
+apt-get libatlas-base-dev liblapack-dev libhdf5-dev libxml2-dev fftw3-dev
+export CXX=mpiCC
+cd build
+cmake ..
+make -j 8
+ls -l bin/qmcapp
+\end{verbatim}
+
+For qmca and other tools to function, we install some python libraries:
+\begin{verbatim}
+sudo apt-get install python-numpy python-matplotlib
+\end{verbatim}
+
+\subsection{Installing on CentOS Linux}
+
+Currently this version of CentOS (Red Hat compatible) is using gcc
+4.8.2. The installation is only complicated by the need to install
+another repository to obtain HDF5 packages. Note that for convenience
+we use a generic BLAS. For production a platform optimized BLAS should
+be used.
+
+\begin{verbatim}
+sudo yum install make cmake gcc gcc-c++ subversion openmpi  openmpi-devel fftw fftw-devel boost boost-devel libxml2 libxml2-devel
+sudo yum install blas-devel lapack-devel atlas-devel
+module load mpi 
+
+\end{verbatim}
+
+To setup repoforge as a source for the HDF5 package, go to http://repoforge.org/use . Install the appropriate up to date release package for your OS. By default the CentOS Firefox will offer to run the installer. The CentOS 6.5 settings were usable for HDF5 on CentOS 7 in July 2014, but use CentOS 7 versions when they become available.
+\begin{verbatim}
+sudo yum install hdf5 hdf5-devel 
+\end{verbatim}
+
+To build QMCPACK
+\begin{verbatim}
+module load mpi/openmpi-x86_64
+which mpirun
+# Sanity check; should print something like   /usr/lib64/openmpi/bin/mpirun
+export CXX=mpiCC
+cd build
+cmake ..
+make -j 8
+ls -l bin/qmcapp
+\end{verbatim}
+
+\subsection{Installing on Mac OS X using Macports}
+These instructions assume a fresh installation of macports
+and for consistency with current Linux distributions, use the gcc 4.8.2
+compiler. It is vital to ensure matching compilers/options for all
+packages and to force use of what is installed in /opt/local
+
+Note that we utilize the Apple provided Accelerate framework for optimized BLAS.
+
+Follow the Macports install instructions \url{https://www.macports.org/}
+
+\begin{itemize}
+\item Install Xcode and the Xcode Command Line Tools
+\item Agree to Xcode license in Terminal: sudo xcodebuild -license
+\item Install MacPorts for your version of OS X
+\end{itemize}
+
+
+Install the required tools:
+
+\begin{verbatim} 
+sudo port install gcc48
+sudo port select gcc mp-gcc48  # Set default
+
+sudo port install openmpi-devel-gcc48
+sudo port select —set mpi openmpi-devel-gcc48-fortran  # Set default
+
+# Sanity check
+mpiCXX -v 
+#should return … “gcc version 4.8.2 (MacPorts gcc48 4.8.2_2)” or similar.
+
+sudo port install fftw-3 +gcc48
+sudo port install cmake    # already cmake 3 as of 2014/7/29
+
+sudo port install boost +gcc48
+sudo port install libxml2
+sudo port install hdf5-18 +gcc48
+
+sudo port select —set python python27
+sudo port install py27-matplotlib  # For qmca
+\end{verbatim}
+
+QMCPACK build:
+\begin{verbatim}
+export CXX=mpiCXX
+export CC=/opt/local/bin/gcc
+export LIBXML2_HOME=/opt/local/
+export HDF5_HOME=/opt/local
+export BOOST_HOME=/opt/local
+export FFTW_HOME=/opt/local
+cd build
+cmake ..
+make -j 6 # Adjust for available core count
+\end{verbatim}
+
+\subsection{Installing on ANL ALCF Mira IBM BGQ}
+\subsection{Installing on ORNL OLCF Titan Cray XK7 (NVIDIA GPU  accelerated)}
+\subsection{Installing on ORNL OLCF Titan Cray XK7 (CPU version)}
+\subsection{Installing on ORNL OLCF Eos Cray XC30}
+\subsection{Installing on NERSC Cori Cray XC40}
+\subsection{Installing on NERSC Edison Cray XC30}
+
+\section{Testing and validation of QMCPACK}
+\label{sec:testing}
+\subsection{Systems and software versions that QMCPACK is tested on}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=10cm]{figures/QMCPACK_CDash_Ctest_Results_20160129.png}
+  \caption{Example test results for QMCPACK, showing data for a
+    workstation (Intel, GCC, both CPU and GPU builds) and for two ORNL
+    supercomputers. 4 errors were found.}
+  \label{fig:cdash}
+\end{figure}
+
+\section{Building ppconvert, the pseudpotential format converter
+  utility}
+\label{sec:buildppconvert}
+\section{Installing and patching Quantum Espresso}
+\label{sec:buildqe}
+\section{How to build the fastest executable version of QMCPACK}
+\label{sec:buildperformance}
+
+Most recent C++ compiler
+Optimized BLAS. Vector math library.
+
+\section{Troubleshooting the installation}
+\label{sec:troubleshoot}
+Build on a workstation you control
+Out of date software
+Update CMake

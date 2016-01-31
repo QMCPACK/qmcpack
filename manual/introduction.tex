@@ -35,13 +35,12 @@ QMCPACK.
 \section{Quickstart and a first QMCPACK calculation}
 If you are keen to get started this section describes how to quickly
 build and run QMCPACK on standard UNIX or Linux-like system. The
-autoconfiguring build system often works directly on these
-systems. For a standard
-Linux system where C++, MPI, BLAS/LAPACK, FFTW, HDF5, and CMake are already installed,
-QMCPACK can be built and run within five minutes. For supercomputers, cross-compilation systems, and other computer
-clusters the build system may require hints on the locations of
-libraries and which versions to use,  see Chapter
-\ref{chap:obtaininginstalling}.
+autoconfiguring build system usually works without much fuss on these
+systems.  If C++, MPI, BLAS/LAPACK, FFTW, HDF5, and CMake are already
+installed, QMCPACK can be built and run within five minutes. For
+supercomputers, cross-compilation systems, and other computer clusters
+the build system may require hints on the locations of libraries and
+which versions to use, typical of any code, see Chapter \ref{chap:obtaininginstalling}.
 
 To build QMCPACK:
 
@@ -181,7 +180,7 @@ node performance. In particular the code is highly vectorizable,
 giving high performance on modern CPUs and GPUs. We believe QMCPACK
 delivers performance either comparable to or better than other QMC
 codes when similar calculations are run, particularly for the most
-common QMC methods. If you find a calculation where this is not the
+common QMC methods and for large systems. If you find a calculation where this is not the
 case, or you simply find performance slower than expected, please post on the Google
 group or contact one of the developers. These reports are valuable. If your calculation is
 sufficiently mainstream we will optimize QMCPACK to improve
@@ -243,9 +242,12 @@ well as the code history.
 
 QMCPACK is fully open source and we welcome contributions.  Please
 post on the QMCPACK Google group or contact the developers. If you are
-planning a development, early discussions are encouraged.
-Credit for your contribution can be obtained, e.g., through citation of a paper, or becoming one of
-the authors on the next version of the standard QMCPACK reference citation.
+planning a development, early discussions are encouraged. We will be
+able to tell you if anyone else if working on a similar feature or if
+any related work has been done in the past.  Credit for your
+contribution can be obtained, e.g., through citation of a paper, or
+becoming one of the authors on the next version of the standard
+QMCPACK reference citation.
 
 Please note the following guidelines for a contributions:
 \begin{itemize}
@@ -254,8 +256,12 @@ Please note the following guidelines for a contributions:
   developed on older versions is error prone.
 \item Code should be cleanly formatted, commented, portable, and accessible to
   other programmers. i.e. If you need to use any clever tricks, add a comment
-  to note this, why the trick is needed, how it works etc.  Although we like
-  high performance, ease of maintenance and accessibility are also considerations.
+  to note this, why the trick is needed, how it works etc. Although we like
+  high performance, ease of maintenance and accessibility are also
+  considerations.
+\item Comment your code. You are not only writing it for the compiler
+  for also for other humans! (We know this is a repeat of the previous
+  point, but it is important enough to repeat.)
 \item Write a brief description of the method, algorithms and inputs and outputs
   suitable for inclusion in this manual.
 \item Develop some short tests that exercise the
