@@ -179,7 +179,9 @@ public:
     if(ac)
     {
       std::istringstream stream(ac);
-      return stream >> ref_;
+      //return stream >> ref_;
+      stream >> ref_;
+      return stream.good();
     }
     else
     {

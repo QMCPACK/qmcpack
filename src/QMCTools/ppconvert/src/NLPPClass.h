@@ -116,7 +116,12 @@ public:
   void Write(IOSectionClass &out);
   void Read (IOSectionClass &in);
 
-  PseudoClass() : XC(XC_NONE), Relativistic(false),
+  void SetLocalChannel (int local)
+  {
+    LocalChannel = local;
+  }
+
+  PseudoClass() : XC(XC_NONE), Relativistic(false), LocalChannel(-1),
 		  grid_delta(0.001), WriteLogGrid(false)
   {
     SetupMaps();

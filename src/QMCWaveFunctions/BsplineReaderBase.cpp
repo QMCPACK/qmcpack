@@ -196,7 +196,7 @@ namespace qmcplusplus
     }
 
     //write to a file
-    const Communicate* comm=OHMMS::Controller;
+    const Communicate* comm=myComm;
     if(comm->rank()) return;
 
     string aname= make_bandinfo_filename(mybuilder->getName(),spin

@@ -21,6 +21,11 @@
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "QMCDrivers/DriftOperators.h"
+#if !defined(REMOVE_TRACEMANAGER)
+#include "Estimators/TraceManager.h"
+#else
+typedef int TraceManager;
+#endif
 //#define TEST_INNERBRANCH
 
 
@@ -188,7 +193,9 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalkers(WalkerIter_t it, WalkerIter_
       gf_acc=1.0;
       thisWalker.Weight *= branchEngine->branchWeight(enew,eold);
     }
+#if !defined(REMOVE_TRACEMANAGER)
     Traces->buffer_sample(W.current_step);
+#endif
     if(UseTMove)
     {
       int ibar = nonLocalOps.selectMove(RandomGen());

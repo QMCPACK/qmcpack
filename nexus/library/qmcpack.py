@@ -127,6 +127,8 @@ class Qmcpack(Simulation):
         elif result_name=='cuspcorr':
             result.spo_up_cusps = os.path.join(self.locdir,self.identifier+'.spo-up.cuspInfo.xml')
             result.spo_dn_cusps = os.path.join(self.locdir,self.identifier+'.spo-dn.cuspInfo.xml')
+            result.updet_cusps = os.path.join(self.locdir,'updet.cuspInfo.xml')
+            result.dndet_cusps = os.path.join(self.locdir,'downdet.cuspInfo.xml')
         else:
             self.error('ability to get result '+result_name+' has not been implemented')
         #end if        
@@ -342,8 +344,14 @@ class Qmcpack(Simulation):
 
             ds = self.input.get('determinantset')
             ds.cuspcorrection = True
-            ds.sposets['spo-up'].cuspinfo = os.path.relpath(result.spo_up_cusps,self.locdir)
-            ds.sposets['spo-dn'].cuspinfo = os.path.relpath(result.spo_dn_cusps,self.locdir)
+            try: # multideterminant
+              ds.sposets['spo-up'].cuspinfo = os.path.relpath(result.spo_up_cusps,self.locdir)
+              ds.sposets['spo-dn'].cuspinfo = os.path.relpath(result.spo_dn_cusps,self.locdir)
+            except: # single determinant
+              sd = ds.slaterdeterminant
+              sd.determinants['updet'].cuspinfo = os.path.relpath(result.updet_cusps,self.locdir)
+              sd.determinants['downdet'].cuspinfo = os.path.relpath(result.dndet_cusps,self.locdir)
+            # end try
 
         elif result_name=='wavefunction':
             if not isinstance(sim,Qmcpack):

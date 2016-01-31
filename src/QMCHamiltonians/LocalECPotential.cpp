@@ -69,6 +69,7 @@ void LocalECPotential::add(int groupID, RadialPotentialType* ppot, RealType z)
   }
 }
 
+#if !defined(REMOVE_TRACEMANAGER)
 void LocalECPotential::contribute_particle_quantities()
 {
   request.contribute_array(myName);
@@ -92,15 +93,17 @@ void LocalECPotential::delete_particle_quantities()
     delete Vi_sample;
   }
 }
-
+#endif
 
 
 LocalECPotential::Return_t
 LocalECPotential::evaluate(ParticleSet& P)
 {
+#if !defined(REMOVE_TRACEMANAGER)
   if(streaming_particles)
     Value = evaluate_sp(P);
   else
+#endif
   {
     const DistanceTableData& d_table(*P.DistTables[myTableIndex]);
     Value=0.0;
@@ -122,6 +125,7 @@ LocalECPotential::evaluate(ParticleSet& P)
 
 
 
+#if !defined(REMOVE_TRACEMANAGER)
 LocalECPotential::Return_t
 LocalECPotential::evaluate_sp(ParticleSet& P)
 {
@@ -179,6 +183,7 @@ LocalECPotential::evaluate_sp(ParticleSet& P)
 #endif
   return Value;
 }
+#endif
 
 
 

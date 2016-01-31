@@ -1,0 +1,11 @@
+Scripts used to run tests of QMCPACK on various machines
+automatically. Users should run ctest directly, as described in the
+manual.
+
+These scripts are designed to be called from cron to execute the
+various nightly, weekly tests of QMCPACK. They are custom to
+particular machines, file systems, and users. 
+
+A *copy* of these scripts should be used for automation. At every
+update check for unsafe operations ("rm *") or script actions that can
+go awry e.g. if a filesystem is full or unavailable.

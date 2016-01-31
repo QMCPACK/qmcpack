@@ -20,6 +20,11 @@
 #include "QMCDrivers/DriftOperators.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/OpenMP.h"
+#if !defined(REMOVE_TRACEMANAGER)
+#include "Estimators/TraceManager.h"
+#else
+typedef int TraceManager;
+#endif
 
 namespace qmcplusplus
 {
@@ -131,13 +136,15 @@ void QMCUpdateBase::resetEtrial(RealType et)
 
 void QMCUpdateBase::startRun(int blocks, bool record)
 { 
+  Estimators->start(blocks,record);
+#if !defined(REMOVE_TRACEMANAGER)
   if(!Traces)
   {
     APP_ABORT("QMCUpdateBase::startRun\n  derived QMCDriver class has not setup trace clones properly\n  null TraceManager pointer encountered in derived QMCUpdateBase class\n  see VMCLinearOptOMP.cpp for a correct minimal interface (search on 'trace')\n  refer to changes made in SVN revision 6597 for further guidance");
   }
-  Estimators->start(blocks,record);
   H.initialize_traces(*Traces,W);
   Traces->initialize_traces();
+#endif
 }
 
 void QMCUpdateBase::stopRun()
@@ -149,14 +156,18 @@ void QMCUpdateBase::stopRun()
 //  DMCOMP and VMCSingleOMP do not use stopRun anymore
 void QMCUpdateBase::stopRun2()
 {
+#if !defined(REMOVE_TRACEMANAGER)
   H.finalize_traces();
   Traces->finalize_traces();
+#endif
 }
 
 void QMCUpdateBase::startBlock(int steps)
 {
   Estimators->startBlock(steps);
+#if !defined(REMOVE_TRACEMANAGER)
   Traces->startBlock(steps);
+#endif
   nAccept = 0;
   nReject=0;
   nAllRejected=0;
@@ -167,7 +178,9 @@ void QMCUpdateBase::startBlock(int steps)
 void QMCUpdateBase::stopBlock(bool collectall)
 {
   Estimators->stopBlock(acceptRatio(),collectall);
+#if !defined(REMOVE_TRACEMANAGER)
   Traces->stopBlock();
+#endif
 }
 
 void QMCUpdateBase::initWalkers(WalkerIter_t it, WalkerIter_t it_end)
@@ -271,7 +284,11 @@ void QMCUpdateBase::randomize(Walker_t& awalker)
   RealType logpsi = Psi.updateBuffer(W,awalker.DataSet,false);
   W.saveWalker(awalker);
   RealType eloc=H.evaluate(W);
+#if (__cplusplus >= 201103L)
+  BadState |= std::isnan(eloc);
+#else
   BadState |= isnan(eloc);
+#endif
   //thisWalker.resetProperty(std::log(abs(psi)), psi,eloc);
   awalker.resetProperty(logpsi,Psi.getPhase(), eloc);
   H.auxHevaluate(W,awalker);

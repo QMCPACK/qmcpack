@@ -56,10 +56,12 @@ namespace qmcplusplus
   HarmonicExternalPotential::Return_t 
   HarmonicExternalPotential::evaluate(ParticleSet& P)
   {
+#if !defined(REMOVE_TRACEMANAGER)
     if(streaming_particles)
       Value = evaluate_sp(P);
     else
     {
+#endif
       Value = 0.0;
       RealType prefactor = .5*energy/(length*length);
       for(int i=0;i<P.getTotalNum();++i)
@@ -67,11 +69,14 @@ namespace qmcplusplus
         PosType r = P.R[i]-center;
         Value += prefactor*dot(r,r);
       }
+#if !defined(REMOVE_TRACEMANAGER)
     }
+#endif
     return Value;
   }
 
 
+#if !defined(REMOVE_TRACEMANAGER)
   HarmonicExternalPotential::Return_t 
   HarmonicExternalPotential::evaluate_sp(ParticleSet& P)
   {
@@ -87,5 +92,6 @@ namespace qmcplusplus
     }
     return Value;
   }
+#endif
 
 }

@@ -2339,7 +2339,7 @@ QMCA examples:
 
         unsupported = set('histogram image reblock report examples'.split())
 
-        units = obj(hartree='Ha',ha='Ha',ev='eV',rydberg='Ry')
+        units = obj(hartree='Ha',ha='Ha',ev='eV',rydberg='Ry',kelvin='K',kj_mol='kJ_mol',joules='J')
 
         options,files_in = parser.parse_args()
         QBase.options.transfer_from(options.__dict__)
@@ -2363,7 +2363,7 @@ QMCA examples:
         #end if
         u = opt.units.lower()
         if not u in units:
-            self.error('unrecognized unit system requested: {0}\nvalid units are: {1}'.format(sorted(units.keys())))
+            self.error('unrecognized unit system requested: {0}\nvalid units are: {1}'.format(u, sorted(units.keys())))
         else:
             opt.units = units[u]
         #end if

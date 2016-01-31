@@ -22,7 +22,9 @@
 #include <OhmmsData/RecordProperty.h>
 #include <OhmmsData/HDFAttribIO.h>
 #include <Estimators/accumulators.h>
+#if !defined(REMOVE_TRACEMANAGER)
 #include <Estimators/TraceManager.h>
+#endif
 
 namespace qmcplusplus
 {

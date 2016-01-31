@@ -15,11 +15,11 @@ SET(HAMSRCS
   ForceBase.cpp
   HamiltonianFactory.cpp
   CoulombPotentialFactory.cpp
-  ../Estimators/TraceManager.cpp
   HarmonicExternalPotential.cpp
   StaticStructureFactor.cpp
   OrbitalImages.cpp
-)
+  SpinDensity.cpp
+  )
 #  FSAtomPseudoPot.cpp
 
 IF(OHMMS_DIM MATCHES 3)
@@ -43,13 +43,16 @@ IF(OHMMS_DIM MATCHES 3)
     ECPComponentBuilder.cpp
     ECPComponentBuilder.1.cpp
     ECPComponentBuilder.2.cpp
-    ReferencePoints.cpp
-    SpaceGrid.cpp
-    EnergyDensityEstimator.cpp
     )
 
-  IF(QMC_COMPLEX)
-    SET(HAMSRCS ${HAMSRCS} DensityMatrices1B.cpp SpinDensity.cpp
+
+  IF(NOT REMOVE_TRACEMANAGER)
+    SET(HAMSRCS ${HAMSRCS}
+      ../Estimators/TraceManager.cpp
+      ReferencePoints.cpp
+      SpaceGrid.cpp
+      EnergyDensityEstimator.cpp
+      DensityMatrices1B.cpp
       ../Estimators/PostProcessor.cpp
       ../Estimators/SpinDensityPostProcessor.cpp
       )

@@ -34,6 +34,7 @@ from types import NoneType
 from unit_converter import convert
 from numerics import nearest_neighbors,convex_hull,voronoi_neighbors
 from periodic_table import pt,is_element
+from fileio import XsfFile
 from generic import obj
 from developer import DevBase,unavailable,error,warn
 from debug import ci,ls,gs
@@ -446,7 +447,7 @@ class Structure(Sobj):
                 center = dim*[0]
             #end if
         #end if
-        if bconds is None:
+        if bconds is None or bconds=='periodic':
             bconds = dim*['p']
         #end if
         if axes is None:
@@ -741,8 +742,25 @@ class Structure(Sobj):
     
     def incorporate(self,other):
         self.set_elem(list(self.elem)+list(other.elem))
-        self.pos  = array(list(self.pos )+list(other.pos ))
+        self.pos=array(list(self.pos)+list(other.pos))
     #end def incorporate
+
+
+    def add_atoms(self,elem,pos):
+        self.set_elem(list(self.elem)+list(elem))
+        self.pos=array(list(self.pos)+list(pos))
+    #end def add_atoms
+
+
+    def is_periodic(self):
+        periodic = False
+        openbc = len(self.axes)==0 or len(self.bconds)==0
+        for bc in self.bconds:
+            periodic |= bc=='p'
+        #end if
+        periodic &= not openbc
+        return periodic
+    #end def is_periodic
 
 
     def distances(self,pos1=None,pos2=None):
@@ -1042,7 +1060,7 @@ class Structure(Sobj):
         #end if
         nn = nearest_neighbors(1,self.pos,pos)
         return nn.ravel()
-    #end def
+    #end def locate_simple
 
     
     def locate(self,identifiers,radii=None,exterior=False):
@@ -1105,7 +1123,7 @@ class Structure(Sobj):
     #end def locate
 
     
-    def freeze(self,identifiers,radii=None,exterior=False,negate=False,directions='xyz'):
+    def freeze(self,identifiers=None,radii=None,exterior=False,negate=False,directions='xyz'):
         if isinstance(identifiers,ndarray) and identifiers.shape==self.pos.shape and identifiers.dtype==bool:
             if negate:
                 self.frozen = ~identifiers
@@ -1114,8 +1132,11 @@ class Structure(Sobj):
             #end if
             return
         #end if
-                
-        indices = self.locate(identifiers,radii,exterior)
+        if identifiers is None:
+            indicies = arange(len(self.pos),dtype=int)
+        else:
+            indices = self.locate(identifiers,radii,exterior)
+        #end if
         if len(indices)==0:
             self.error('failed to select any atoms to freeze')
         #end if
@@ -1698,48 +1719,73 @@ class Structure(Sobj):
     #             (1,1,2) = [ (3,5,4) ]
     #           6    #   sum of vertex degrees is 6 (each atom is connected to 2 others)
     #             (2,2,2) = [ (0,1,2) ]           # graphs with vertex degree (2,2,2)  
-    def connected_graphs(self,order,indices=None,rmax=None,nmax=None,degree=False,site_maps=False,**spec_max):
+    def connected_graphs(self,order,indices=None,rmax=None,nmax=None,voronoi=False,degree=False,site_maps=False,**spec_max):
         if indices is None:
             indices = arange(len(self.pos),dtype=int)
             pos = self.pos
         else:
             pos = self.pos[indices]
         #end if
-        elem = set(self.elem[indices])
-        spec = set(spec_max.keys())
-        if spec==elem or rmax!=None:
-            None
-        elif spec<elem and nmax!=None:
-            for e in elem:
-                if e not in spec:
-                    spec_max[e] = nmax
-                #end if
-            #end for
-        #end if
         np = len(indices)
-        # get neighbor table for subset of atoms specified by indices
-        nt,dt = self.neighbor_table(pos,pos,distances=True)
-        # determine how many neighbors to consider based on rmax (all are neighbors if rmax is None)
-        nneigh = zeros((np,),dtype=int)
-        if len(spec_max)>0:
-            for n in xrange(np):
-                nneigh[n] = min(spec_max[self.elem[n]],len(nt[n]))
+        neigh_table = []
+        actual_indices = None
+        if voronoi:
+            actual_indices = True
+            neighbors = self.voronoi_neighbors(indices,restrict=True,distance_ordered=False)
+            for nilist in neighbors:
+                neigh_table.append(nilist)
             #end for
-        elif rmax is None:
-            nneigh[:] = np
         else:
-            nneigh = (dt<rmax).sum(1)                    
+            actual_indices = False
+            elem = set(self.elem[indices])
+            spec = set(spec_max.keys())
+            if spec==elem or rmax!=None:
+                None
+            elif spec<elem and nmax!=None:
+                for e in elem:
+                    if e not in spec:
+                        spec_max[e] = nmax
+                    #end if
+                #end for
+            #end if
+            # get neighbor table for subset of atoms specified by indices
+            nt,dt = self.neighbor_table(pos,pos,distances=True)
+            # determine how many neighbors to consider based on rmax (all are neighbors if rmax is None)
+            nneigh = zeros((np,),dtype=int)
+            if len(spec_max)>0:
+                for n in xrange(np):
+                    nneigh[n] = min(spec_max[self.elem[n]],len(nt[n]))
+                #end for
+            elif rmax is None:
+                nneigh[:] = np
+            else:
+                nneigh = (dt<rmax).sum(1)                    
+            #end if
+            for i in xrange(np):
+                neigh_table.append(nt[i,1:nneigh[i]])
+            #end for
+            del nt,dt,nneigh,elem,spec,rmax
         #end if
+        neigh_table = array(neigh_table,dtype=int)
         # record which atoms are neighbors to each other
         neigh_pairs = set()
-        for i in xrange(np):
-            for ni in nt[i,1:nneigh[i]]:
-                ii = indices[i]
-                jj = indices[ni]
-                neigh_pairs.add((ii,jj))
-                neigh_pairs.add((jj,ii))
+        if actual_indices:
+            for i in xrange(np):
+                for ni in neigh_table[i]:
+                    neigh_pairs.add((i,ni))
+                    neigh_pairs.add((ni,i))
+                #end for
             #end for
-        #end for
+        else:
+            for i in xrange(np):
+                for ni in neigh_table[i]:
+                    ii = indices[i]
+                    jj = indices[ni]
+                    neigh_pairs.add((ii,jj))
+                    neigh_pairs.add((jj,ii))
+                #end for
+            #end for
+        #end if
         # find the connected graphs
         graphs_found = set()  # map to contain tuples of connected atom's indices
         cgraphs = obj()
@@ -1749,36 +1795,42 @@ class Structure(Sobj):
         if order>0:
             cg = cgraphs[1]
             for i in xrange(np):  # list of single atoms
-                gi = (i,)
-                cg.append(gi)
-                graphs_found.add(gi)
+                gi = (i,)              # graph indices
+                cg.append(gi)          # add graph to graph list of order 1
+                graphs_found.add(gi)   # add graph to set of all graphs
             #end for
             for o in range(2,order+1): # graphs of order o are found by adding all
                 cglast = cgraphs[o-1]  # possible single neighbors to each graph of order o-1 
                 cg     = cgraphs[o]
-                for gilast in cglast:
-                    for i in gilast:
-                        for ni in nt[i,1:nneigh[i]]:
-                            gi = tuple(sorted(gilast+(ni,)))
-                            if gi not in graphs_found and len(set(gi))==o:
-                                graphs_found.add(gi)
-                                cg.append(gi)
+                for gilast in cglast:    # all graphs of order o-1
+                    for i in gilast:       # all indices in each graph of order o-1
+                        for ni in neigh_table[i]: # neighbors of selected atom in o-1 graph
+                            gi = tuple(sorted(gilast+(ni,))) # new graph with neighbor added
+                            if gi not in graphs_found and len(set(gi))==o: # add it if it is new and really is order o
+                                graphs_found.add(gi)  # add graph to set of all graphs
+                                cg.append(gi)         # add graph to graph list of order o
                             #end if
                         #end for
                     #end for
                 #end for
             #end for
         #end if
-        # map indices back to actual atomic indices
-        for o,cg in cgraphs.iteritems():
-            cgmap = []
-            for gi in cg:
-                gi = array(gi)
-                gimap = tuple(sorted(indices[array(gi)]))
-                cgmap.append(gimap)
+        if actual_indices:
+            for o,cg in cgraphs.iteritems():
+                cgraphs[o] = array(cg,dtype=int)
             #end for
-            cgraphs[o] = array(sorted(cgmap),dtype=int)
-        #end for
+        else:
+            # map indices back to actual atomic indices
+            for o,cg in cgraphs.iteritems():
+                cgmap = []
+                for gi in cg:
+                    #gi = array(gi)
+                    gimap = tuple(sorted(indices[array(gi)]))
+                    cgmap.append(gimap)
+                #end for
+                cgraphs[o] = array(sorted(cgmap),dtype=int)
+            #end for
+        #end if
         # reorganize the graph listing by cluster and vertex degree, if desired
         if degree:
             #degree_map = obj()
@@ -1814,7 +1866,7 @@ class Structure(Sobj):
                 #end for
                 for dgd in dgo:
                     for di,dgi in dgd.iteritems():
-                        dgd[di]=array(dgi,dtype=int)
+                        dgd[di]=array(sorted(dgi),dtype=int)
                     #end for
                 #end for
             #end for
@@ -1866,6 +1918,108 @@ class Structure(Sobj):
         #end if
     #end def connected_graphs
 
+
+    # returns connected graphs that are rings up to the requested order
+    #   rings are constructed by pairing lines that share endpoints
+    #   all vertices of a ring have degree two
+    def ring_graphs(self,order,**kwargs):
+        # get all half order connected graphs
+        line_order = order/2+order%2+1
+        cgraphs = self.connected_graphs(line_order,degree=True,site_maps=False,**kwargs)
+        # collect half order graphs that are lines
+        lgraphs = obj()
+        for o in range(2,line_order+1):
+            total_degree  = 2*o-2
+            vertex_degree = tuple([1,1]+(o-2)*[2])
+            lg = None
+            if o in cgraphs:
+                cg = cgraphs[o]
+                if total_degree in cg:
+                    dg = cg[total_degree]
+                    if vertex_degree in dg:
+                        lg = dg[vertex_degree]
+                    #end if
+                #end if
+            #end if
+            if lg!=None:
+                lg_end = obj()
+                for gi in lg:
+                    end_key = tuple(sorted(gi[0:2])) # end points
+                    if end_key not in lg_end:
+                        lg_end[end_key] = []
+                    #end if
+                    lg_end[end_key].append(tuple(gi))
+                #end for
+                lgraphs[o] = lg_end
+            #end if
+        #end for
+        # contruct rings from lines that share endpoints
+        rgraphs = obj()
+        for o in range(3,order+1):
+            o1 = o/2+1    # split half order for odd, same for even, 
+            o2 = o1+o%2
+            lg1 = lgraphs.get_optional(o1,None) # sets of half order lines
+            lg2 = lgraphs.get_optional(o2,None)
+            if lg1!=None and lg2!=None:
+                rg = []
+                rset = set()
+                for end_key,llist1 in lg1.iteritems(): # list of lines sharing endpoints
+                    if end_key in lg2:
+                        llist2 = lg2[end_key]          # second list of lines sharing endpoints
+                        for gi1 in llist1:             # combine line pairs into rings
+                            for gi2 in llist2:
+                                ri = tuple(sorted(set(gi1+gi2[2:]))) # ring indices
+                                if ri not in rset and len(ri)==o:    # exclude repeated lines or rings
+                                    rg.append(ri)
+                                    rset.add(ri)
+                                #end if
+                            #end for
+                        #end for
+                    #end if
+                #end for
+                rgraphs[o] = array(sorted(rg),dtype=int)
+            #end if
+        #end for
+        return rgraphs
+    #end def ring_graphs
+
+
+    # find the centroid of a set of points/atoms in min image convention
+    def min_image_centroid(self,points=None,indices=None):
+        if indices!=None:
+            points = self.pos[indices]
+        elif points is None:
+            self.error('points or images must be provided to min_image_centroid')
+        #end if
+        p     = array(points,dtype=float)
+        cprev = p[0]+1e99
+        c     = p[0]
+        while(norm(c-cprev)>1e-8):
+            p = self.cell_image(p,center=c)
+            cprev = c
+            c = p.mean(axis=0)
+        #end def min_image_centroid
+        return c
+    #end def min_image_centroid
+
+
+    # find min image centroids of multiple sets of points/atoms
+    def min_image_centroids(self,points=None,indices=None):
+        cents = []
+        if points!=None:
+            for p in points:
+                cents.append(self.min_image_centroid(p))
+            #end for
+        elif indices!=None:
+            for ind in indices:
+                cents.append(self.min_image_centroid(indices=ind))
+            #end for
+        else:
+            self.error('points or images must be provided to min_image_centroid')
+        #end if
+        return array(cents,dtype=float)
+    #end def min_image_centroids
+    
     
     def min_image_vectors(self,points=None,points2=None,axes=None,pairs=True):
         if points is None:
@@ -1983,11 +2137,13 @@ class Structure(Sobj):
         return nout
     #end def min_image_norms
 
+
     # get all neighbors according to contacting voronoi polyhedra in PBC
-    def voronoi_neighbors(self,indices=None,restrict=False):
+    def voronoi_neighbors(self,indices=None,restrict=False,distance_ordered=True):
         if indices is None:
             indices = arange(len(self.pos))
         #end if
+        indices = set(indices)
         # make a new version of this (small cell)
         sn = self.copy()
         sn.recenter()
@@ -2023,13 +2179,19 @@ class Structure(Sobj):
             #end if
         #end for
         # remove any duplicates and order by distance
-        dt = self.distance_table()
-        for i,ni in neighbors.iteritems():
-            ni = array(list(set(ni)),dtype=int)
-            di = dt[i,ni]
-            order = di.argsort()
-            neighbors[i] = ni[order]
-        #end for
+        if distance_ordered:
+            dt = self.distance_table()
+            for i,ni in neighbors.iteritems():
+                ni = array(list(set(ni)),dtype=int)
+                di = dt[i,ni]
+                order = di.argsort()
+                neighbors[i] = ni[order]
+            #end for
+        else:  # just remove duplicates
+            for i,ni in neighbors.iteritems():
+                neighbors[i] = array(list(set(ni)),dtype=int)
+            #end for
+        #end if
         return neighbors
     #end def voronoi_neighbors
 
@@ -2153,33 +2315,35 @@ class Structure(Sobj):
     #end def rcore_max
 
 
-    def cell_image(self,p):
-        if self.dim!=3:
-            self.error('cell_image is currently only implemented for 3 dimensions')
+    def cell_image(self,p,center=None):
+        pos = array(p,dtype=float)
+        if center is None:
+            c = self.center.copy()
+        else:
+            c = array(center,dtype=float)
         #end if
-        pos = atleast_2d(p)
-        c = empty((1,3))
-        c[:] = self.center[:]
         axes = self.axes
         axinv = inv(axes)
-        for i in range(len(pos)):
+        for i in xrange(len(pos)):
             u = dot(pos[i]-c,axinv)
             pos[i] = dot(u-floor(u+.5),axes)+c
         #end for
-        if isinstance(p,ndarray):
-            p[:] = pos[:]
-        elif len(pos)==1 and len(p)==3:
-            p[0] = pos[0,0]
-            p[1] = pos[0,1]
-            p[2] = pos[0,2]
-        else:
-            for i in range(len(p)):
-                p[i][0] = pos[i,0]
-                p[i][1] = pos[i,1]
-                p[i][2] = pos[i,2]
-            #end for
-        #end if
+        return pos
     #end def cell_image
+
+
+    def center_distances(self,points,center=None):
+        if center is None:
+            c = self.center.copy()
+        else:
+            c = array(center,dtype=float)
+        #end if        
+        points = self.cell_image(points,center=c)
+        for i in xrange(len(points)):
+            points[i] -= c
+        #end for
+        return sqrt((points**2).sum(1))
+    #end def center_distances
 
 
     def recenter(self,center=None):
@@ -2187,11 +2351,11 @@ class Structure(Sobj):
             self.center=array(center)
         #end if
         pos = self.pos
-        c = empty((1,self.dim))
+        c = empty((1,self.dim),dtype=float)
         c[:] = self.center[:]
         axes = self.axes
         axinv = inv(axes)
-        for i in range(len(pos)):
+        for i in xrange(len(pos)):
             u = dot(pos[i]-c,axinv)
             pos[i] = dot(u-floor(u+.5),axes)+c
         #end for
@@ -3178,33 +3342,55 @@ class Structure(Sobj):
         if format is None:
             if '.' in file:
                 name,format = file.rsplit('.',1)
+            elif file.lower().endswith('poscar'):
+                format = 'poscar'
             else:
-                format = file
-            #else:
-            #    self.error('file does not have a format extension: {0}'.format(filepath))
+                self.error('file format could not be determined\nunrecognized file: {0}'.format(filepath))
             #end if
         #end if
         c = open(filepath,'r').read()
-        self.read_text(c,format,elem=elem)
+        self.read_text(c,format,elem=elem,filepath=filepath)
         return c
     #end def read
 
 
-    def read_text(self,contents,format,elem=None):
+    def read_text(self,text,format,elem=None,filepath=None):
         format = format.lower()
-        if format=='poscar':
-            self.read_poscar(contents,elem=elem,contents=True)
+        if format=='xsf':
+            self.read_xsf(text)
+        elif format=='poscar':
+            self.read_poscar(text,elem=elem,contents=True)
         else:
-            self.error('unrecognized file format: {0}'.format(format))
+            msg = 'cannot read structure from file\nunsupported file format: {0}'.format(format)
+            if filepath!=None:
+                msg+='\nfile path: {0}'.format(filepath)
+            #end if
+            self.error(msg)
         #end if
     #end def read_text
+
+
+    def read_xsf(self,text):
+        f = XsfFile()
+        f.read_text(text)
+        elem = []
+        for n in f.elem:
+            elem.append(pt.simple_elements[n].symbol)
+        #end for
+        self.dim   = 3
+        self.units = 'A'
+        self.reset_axes(f.primvec)
+        self.set_elem(elem)
+        self.pos = f.pos
+    #end def read_xsf
 
 
     def read_poscar(self,filepath,elem=None,contents=False):
         if not contents:
             lines = open(filepath,'r').read().splitlines()
         else:
-            lines = filepath.splitlines()
+            text = filepath
+            lines = text.splitlines()
         #end if
         nlines = len(lines)
         min_lines = 8

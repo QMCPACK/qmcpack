@@ -91,9 +91,12 @@ struct BareKineticEnergy: public QMCHamiltonianBase
   bool streaming_kinetic;
   bool streaming_kinetic_comp;
   bool streaming_momentum;
+
+#if !defined(REMOVE_TRACEMANAGER)
   Array<TraceReal,1>* T_sample;
   Array<TraceComp,1>* T_sample_comp;
   Array<TraceComp,2>* p_sample;
+#endif
   ParticleSet& Ps;
 
   /** constructor
@@ -142,6 +145,7 @@ struct BareKineticEnergy: public QMCHamiltonianBase
   void resetTargetParticleSet(ParticleSet& P) { }
 
 
+#if !defined(REMOVE_TRACEMANAGER)
   virtual void contribute_particle_quantities() 
   {
     request.contribute_array(myName);
@@ -171,16 +175,18 @@ struct BareKineticEnergy: public QMCHamiltonianBase
       delete p_sample;
     }
   }
-
+#endif
 
 
   inline Return_t evaluate(ParticleSet& P)
   {
+#if !defined(REMOVE_TRACEMANAGER)
     if(streaming_particles)
     {
       Value = evaluate_sp(P);
     }
     else
+#endif
       if(SameMass)
       {
         Value = Dot(P.G,P.G) + Sum(P.L);
@@ -208,6 +214,7 @@ struct BareKineticEnergy: public QMCHamiltonianBase
   }
 
 
+#if !defined(REMOVE_TRACEMANAGER)
   inline Return_t evaluate_sp(ParticleSet& P)
   {
     Array<RealType,1>& T_samp = *T_sample;
@@ -265,7 +272,7 @@ struct BareKineticEnergy: public QMCHamiltonianBase
     return Value;
   }
 
-
+#endif
 
   inline Return_t evaluate_orig(ParticleSet& P)
   {

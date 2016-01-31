@@ -19,7 +19,9 @@
 #ifndef QMCPLUSPLUS_HAMILTONIAN_H
 #define QMCPLUSPLUS_HAMILTONIAN_H
 #include <QMCHamiltonians/QMCHamiltonianBase.h>
+#if !defined(REMOVE_TRACEMANAGER)
 #include <Estimators/TraceManager.h>
+#endif
 #include <QMCWaveFunctions/OrbitalSetTraits.h>
 namespace qmcplusplus
 {
@@ -89,6 +91,7 @@ public:
     return H[i];
   }
 
+#if !defined(REMOVE_TRACEMANAGER)
   ///initialize trace data
   void initialize_traces(TraceManager& tm,ParticleSet& P);
 
@@ -100,6 +103,7 @@ public:
 
   ///finalize trace data
   void finalize_traces();
+#endif
 
   /**
    * \defgroup Functions to get/put observables
@@ -356,6 +360,8 @@ private:
    */
   void resetObservables(int start, int ncollects);
 
+
+#if !defined(REMOVE_TRACEMANAGER)
   ///traces variables
   TraceRequest request;
   bool streaming_position;
@@ -363,6 +369,7 @@ private:
   Array<TraceInt,1>*  step_sample;
   Array<TraceReal,1>* weight_sample;
   Array<TraceReal,2>* position_sample;
+#endif
 };
 }
 #endif

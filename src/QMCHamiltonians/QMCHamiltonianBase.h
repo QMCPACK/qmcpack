@@ -23,7 +23,9 @@
 #include <OhmmsData/RecordProperty.h>
 #include <Utilities/RandomGenerator.h>
 #include <QMCHamiltonians/observable_helper.h>
+#if !defined(REMOVE_TRACEMANAGER)
 #include <Estimators/TraceManager.h>
+#endif
 #include <QMCWaveFunctions/OrbitalSetTraits.h>
 #include <bitset>
 
@@ -109,16 +111,18 @@ struct QMCHamiltonianBase: public QMCTraits
   string myName;
   ///name of dependent object: to be removed
   string depName;
+
+#if !defined(REMOVE_TRACEMANAGER)
   ///whether traces are being collected
   TraceRequest request;
   bool streaming_scalars;
   bool streaming_particles;
   bool have_required_traces;
-
   vector<RealType> ValueVector;
 
   ///array to store sample value
   Array<RealType,1>* value_sample;
+#endif
 
   ///constructor
   QMCHamiltonianBase();
@@ -365,6 +369,7 @@ struct QMCHamiltonianBase: public QMCTraits
     // empty
   }
 
+#if !defined(REMOVE_TRACEMANAGER)
   ///make trace quantities available
   inline void contribute_trace_quantities()
   {
@@ -423,7 +428,7 @@ struct QMCHamiltonianBase: public QMCTraits
   virtual void checkout_particle_quantities(TraceManager& tm) {};
   virtual void delete_particle_quantities() {};
   virtual void get_required_traces(TraceManager& tm) {};
-
+#endif
 
   virtual void addEnergy(MCWalkerConfiguration &W, vector<RealType> &LocalEnergy);
 

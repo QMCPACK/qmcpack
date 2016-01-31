@@ -195,9 +195,11 @@ class OrbitalImages : public QMCHamiltonianBase
   void resetTargetParticleSet(ParticleSet& P)                      { }
   void setObservables(PropertySetType& plist)                      { }
   void setParticlePropertyList(PropertySetType& plist, int offset) { }
+#if !defined(REMOVE_TRACEMANAGER)
   void checkout_scalar_arrays(TraceManager& tm)                    { }
   void collect_scalar_samples()                                    { }
   void delete_scalar_arrays()                                      { }
+#endif
 
   //obsolete?
   bool get(std::ostream& os) const { return false; }

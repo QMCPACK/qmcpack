@@ -27,9 +27,12 @@ QMCHamiltonianBase::QMCHamiltonianBase()
 {
   quantum_domain       = no_quantum_domain;
   energy_domain        = no_energy_domain;
+
+#if !defined(REMOVE_TRACEMANAGER)
   streaming_scalars    = false;
   streaming_particles  = false;
   have_required_traces = false;
+#endif
   UpdateMode.set(PRIMARY,1);
 }
 

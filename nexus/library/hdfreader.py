@@ -130,6 +130,20 @@ class HDFgroup(DevBase):
     #end def _remove_hidden
 
 
+    # read in all data views (h5py datasets) into arrays
+    #   useful for converting a single group read in view form to full arrays
+    def read_arrays(self):
+        self._remove_hidden()
+        for k,v in self.iteritems():
+            if isinstance(v,HDFgroup):
+                v.read_arrays()
+            else:
+                self[k] = array(v)
+            #end if
+        #end for
+    #end def read_arrays
+
+
     #project interface methods
 
     def zero(self,*names):

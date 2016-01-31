@@ -24,6 +24,11 @@
 #include <qmc_common.h>
 //#define ENABLE_VMC_OMP_MASTER
 #include "ADIOS/ADIOS_profile.h"
+#if !defined(REMOVE_TRACEMANAGER)
+#include "Estimators/TraceManager.h"
+#else
+typedef int TraceManager;
+#endif
 
 namespace qmcplusplus
 {
@@ -53,7 +58,9 @@ bool VMCSingleOMP::run()
   Estimators->start(nBlocks);
   for (int ip=0; ip<NumThreads; ++ip)
     Movers[ip]->startRun(nBlocks,false);
+#if !defined(REMOVE_TRACEMANAGER)
   Traces->startRun(nBlocks,traceClones);
+#endif
   const bool has_collectables=W.Collectables.size();
   for (int block=0; block<nBlocks; ++block)
   {
@@ -88,14 +95,18 @@ bool VMCSingleOMP::run()
     //Estimators->accumulateCollectables(wClones,nSteps);
     CurrentStep+=nSteps;
     Estimators->stopBlock(estimatorClones);
+#if !defined(REMOVE_TRACEMANAGER)
     Traces->write_buffers(traceClones, block);
+#endif
     if(storeConfigs)
       recordBlock(block);
   }//block
   Estimators->stop(estimatorClones);
   for (int ip=0; ip<NumThreads; ++ip)
     Movers[ip]->stopRun2();
+#if !defined(REMOVE_TRACEMANAGER)
   Traces->stopRun();
+#endif
   //copy back the random states
   for (int ip=0; ip<NumThreads; ++ip)
     *(RandomNumberControl::Children[ip])=*(Rng[ip]);
@@ -140,7 +151,9 @@ void VMCSingleOMP::resetRun()
       estimatorClones[ip]= new EstimatorManager(*Estimators);//,*hClones[ip]);
       estimatorClones[ip]->resetTargetParticleSet(*wClones[ip]);
       estimatorClones[ip]->setCollectionMode(false);
+#if !defined(REMOVE_TRACEMANAGER)
       traceClones[ip] = Traces->makeClone();
+#endif
       Rng[ip]=new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
       hClones[ip]->setRandomGenerator(Rng[ip]);
       branchClones[ip] = new BranchEngineType(*branchEngine);
@@ -206,6 +219,7 @@ void VMCSingleOMP::resetRun()
         app_log() << os.str() << endl;
     }
   }
+#if !defined(REMOVE_TRACEMANAGER)
   else
   {
 #if !defined(BGP_BUG)
@@ -216,6 +230,7 @@ void VMCSingleOMP::resetRun()
       traceClones[ip]->transfer_state_from(*Traces);
     }
   }
+#endif
   app_log() << "  Total Sample Size   =" << nTargetSamples << endl;
   app_log() << "  Walker distribution on root = ";
   std::copy(wPerNode.begin(),wPerNode.end(),ostream_iterator<int>(app_log()," "));

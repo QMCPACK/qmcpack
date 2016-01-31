@@ -98,8 +98,11 @@ DistanceTableData* createDistanceTable(ParticleSet& s)
     o << " Using bounding box/reduced coordinates with ";
   else
     o << " using Cartesian coordinates with ";
-  app_log() << o.str() << endl;
-  app_log().flush();
+  if(omp_get_thread_num()==0) 
+  {
+    app_log() << o.str() << endl;
+    app_log().flush();
+  }
   return dt;
 }
 
@@ -180,7 +183,11 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t)
     o << " Using bonding box/reduced coordinates ";
   else
     o << " using Cartesian coordinates ";
-  app_log() << o.str() << endl;
+  if(omp_get_thread_num()==0) 
+  {
+    app_log() << o.str() << endl;
+    app_log().flush();
+  }
   return dt;
 }
 

@@ -80,11 +80,13 @@ NonLocalECPComponent::evaluateVP(const ParticleSet& W, int iat, TrialWaveFunctio
       BLAS::gemv(nknot, nchannel, &Amat[0], &psiratio[0], &wvec[0]);
       pairpot = BLAS::dot(nchannel, &vrad[0], &wvec[0]);
     }
+#if !defined(REMOVE_TRACEMANAGER)
     if(streaming_particles)
     {
       (*Vi_sample)(iat) += .5*pairpot;
       (*Ve_sample)(iel) += .5*pairpot;
     }
+#endif
     esum += pairpot;
   }   /* end loop over electron */
   return esum;
@@ -139,11 +141,13 @@ NonLocalECPComponent::evaluateVP(const ParticleSet& W, int iat, TrialWaveFunctio
       pairpot+=lsum;
     }
 
+#if !defined(REMOVE_TRACEMANAGER)
     if(streaming_particles)
     {
       (*Vi_sample)(iat) += .5*pairpot;
       (*Ve_sample)(iel) += .5*pairpot;
     }
+#endif
     esum += pairpot;
   }   /* end loop over electron */
   return esum;

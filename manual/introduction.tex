@@ -1,20 +1,46 @@
 \chapter{Introduction}
 \label{chap:introduction}
 
-QMCPACK is an open-source, high-performance electronic structure code that implements numerous Quantum Monte Carlo algorithms.
+QMCPACK is an open-source, high-performance electronic structure code
+that implements numerous Quantum Monte Carlo algorithms. Its main
+applications are electronic structure calculations of molecular,
+periodic 2D and periodic 3D solid-state systems. Variational Monte
+Carlo (VMC), diffusion Monte Carlo (DMC) and a number of other
+advanced QMC algorithms are implemented. By directly solving the
+Schrodinger equation, QMC methods offer greater accuracy than methods
+such as density functional theory, but at a trade-off of much greater
+computational expense. Distinct from many other correlated many-body
+methods, QMC methods are readily applicable to both bulk
+(periodic) and isolated molecular systems.
 
-Test of the bibliography\cite{CeperleyAlderPRL1980}.
+QMCPACK is written in C++ and designed with the modularity afforded by
+object-oriented programming. It makes extensive use of template
+metaprogramming to achieve high computational efficiency. Due to the
+modular architecture, the addition of new wavefunctions, algorithms,
+and observables is relatively straightforward. For parallelization
+QMCPACK utilizes a fully hybrid (OpenMP,CUDA)/MPI approach to optimize
+memory usage and to take advantage of the growing number of cores per
+SMP node or graphical processing units (GPUs) and accelerators. High
+parallel and computational efficiencies are achievable on the largest
+supercomputers. Finally, QMCPACK utilizes standard file formats for
+input and output in XML and HDF5 to facilitate data exchange.
+
+This manual currently serves as an introduction to the essential features
+of QMCPACK and a guide to installing and running it. Over time this
+manual will be expanded to including a fuller introduction to QMC
+methods in general and to include more of the specialized features in
+QMCPACK.
+%Test of the bibliography\cite{CeperleyAlderPRL1980}.
 
 \section{Quickstart and a first QMCPACK calculation}
 If you are keen to get started this section describes how to quickly
 build and run QMCPACK on standard UNIX or Linux-like system. The
-autoconfiguring build system often works directly on these
-systems. For a standard
-Linux system where C++, MPI, BLAS/LAPACK, FFTW, HDF5, and CMake are already installed,
-QMCPACK can be built and run within five minutes. For supercomputers, cross-compilation systems, and other computer
-clusters the build system may require hints on the locations of
-libraries and which versions to use,  see Chapter
-\ref{chap:obtaininginstalling}.
+autoconfiguring build system usually works without much fuss on these
+systems.  If C++, MPI, BLAS/LAPACK, FFTW, HDF5, and CMake are already
+installed, QMCPACK can be built and run within five minutes. For
+supercomputers, cross-compilation systems, and other computer clusters
+the build system may require hints on the locations of libraries and
+which versions to use, typical of any code, see Chapter \ref{chap:obtaininginstalling}.
 
 To build QMCPACK:
 
@@ -22,15 +48,16 @@ To build QMCPACK:
 \item Download the latest QMCPACK distribution from
   \url{http://www.qmcpack.org}
 \item Untar the archive, e.g., \texttt{tar xvf
-    qmcpack\_revNNNN\_YYYYMMDD.tar.gz}
+    qmcpack\_v1.3.tar.gz}
+\item Check the instructions in the README
 \item Run CMake in a suitable build directory to configure QMCPACK for
   your system: \texttt{cd
     qmcpack/build; cmake ..}
 \item If CMake is unable to find all needed libraries, see Chapter
   \ref{chap:obtaininginstalling} for instructions and specific build
   instructions for common systems.
-\item Build QMCPACK: \texttt{make} or \texttt{make -j 24}, the latter
-  for a faster parallel build on a system using, e.g., up to 24 processes.
+\item Build QMCPACK: \texttt{make} or \texttt{make -j 16}, the latter
+  for a faster parallel build on a system using, e.g., 16 processes.
 \item The QMCPACK executable is \texttt{bin/qmcapp}
 \end{enumerate}
 
@@ -48,13 +75,15 @@ of a water molecule:
 \item The run will output to the screen and generate a number of files:
 \begin{verbatim}
 $ls H2O*
-H2O.HF.wfs.xml      H2O.s001.scalar.dat H2O.s002.cont.xml   H2O.s002.qmc.xml    H2O.s002.stat.h5
-H2O.s001.qmc.xml    H2O.s001.stat.h5    H2O.s002.dmc.dat    H2O.s002.scalar.dat
+H2O.HF.wfs.xml      H2O.s001.scalar.dat H2O.s002.cont.xml
+H2O.s002.qmc.xml    H2O.s002.stat.h5    H2O.s001.qmc.xml
+H2O.s001.stat.h5    H2O.s002.dmc.dat    H2O.s002.scalar.dat
 \end{verbatim}
-\item The results are in files with suffixes scalar.dat and dmc.dat . They are viewable with any standard editor.
+\item Partially summarized results are in the standard text files with the
+  suffixes scalar.dat and dmc.dat. They are viewable with any standard editor.
 \end{enumerate}
 
-If you have python with matplotlib installed, you can use the
+If you have python and matplotlib installed, you can use the
 \texttt{qmca} analysis utility to produce statistics and plots of the
 data. See Chapter \ref{chap:analysing} for information on analysing
 QMCPACK data.
@@ -65,7 +94,7 @@ qmca H2O.s002.scalar.dat         # For statistical analysis of the DMC data
 qmca -t -q e H2O.s002.scalar.dat # Graphical plot of DMC energy
 \end{verbatim}
 
-The last command should produce a graph as per
+The last command will produce a graph as per
 Fig. \ref{fig:quick_qmca_dmc_trace}. This shows the average energy of
 the DMC walkers at each timestep. In a real simulation we would have
 to check equilibration, convergence with walker population, timestep etc.
@@ -91,38 +120,41 @@ National Laboratory, Sandia National Laboratories, Argonne National
 Laboratory, and Oak Ridge National Laboratory.
 
 The primary and original author of the code is Jeongnim
-Kim. Developers, contributors, and advisors include:
-
-Anouar Benali,  
+Kim. Additional developers, contributors, and advisors include:
+Anouar Benali,
+Mark A. Berrill,  
 David M. Ceperley, 
 Simone Chiesa,
 Raymond C. III Clay,
-Chris Delaney,
+Bryan Clark,
+Kris T. Delaney,
 Kenneth P. Esler,
+Paul R. C. Kent,
 Jaron T. Krogel,
 Ying Wai Li,
 Ye Luo,
 Jeremy McMinis,
-Miguel Morales,
+Miguel A. Morales,
 William D. Parker,
 Nichols A. Romero,
 Luke Shulenburger,
 Norman M. Tubman,
-Jordan E. Vincent,
-\ldots
+and Jordan E. Vincent.
 
-Please let us know if you wish to be listed!
+If you should be added to this list please let us know.
 
-Development of QMCPACK has been supported by:
+Over the years, development of QMCPACK has been supported financially
+several grants, including:
+
 \begin{itemize}
-\item “Network for ab initio many-body methods: development, education
-  and training“ supported through the Predictive
+\item ``Network for ab initio many-body methods: development, education
+  and training'' supported through the Predictive
   Theory and Modeling for Materials and Chemical Science program by
   the U.S. Department of Energy Office of Science, Basic Energy
   Sciences.
-\item QMC Endstation, supported by Accelerating Delivery of Petascale
-  Computing Environment At the DOE Leadership Computing Facility at
-  ORNL, DOE. 
+\item ``QMC Endstation'', supported by Accelerating Delivery of Petascale
+  Computing Environment at the DOE Leadership Computing Facility at
+  ORNL.
 \item PetaApps, supported by the U. S. National Science
   Foundation.
 \item Materials Computational Center, supported by the
@@ -130,12 +162,29 @@ Development of QMCPACK has been supported by:
 \end{itemize}
 
 
-
-\section{Support}
+\section{Support and Contacting the Developers}
 \label{sec:support}
+
+Questions about installing, applying or extending QMCPACK can be
+posted on the QMCPACK Google group
+\url{https://groups.google.com/forum/#!forum/qmcpack}. You may also
+email any of the developers, but we recommend checking the group
+first. Particular attention is given to any problem reports.
 
 \section{Performance}
 \label{sec:performance}
+
+QMCPACK implements modern Monte Carlo algorithms, is highly parallel,
+and is also written using very efficient code for high per-CPU or on
+node performance. In particular the code is highly vectorizable,
+giving high performance on modern CPUs and GPUs. We believe QMCPACK
+delivers performance either comparable to or better than other QMC
+codes when similar calculations are run, particularly for the most
+common QMC methods and for large systems. If you find a calculation where this is not the
+case, or you simply find performance slower than expected, please post on the Google
+group or contact one of the developers. These reports are valuable. If your calculation is
+sufficiently mainstream we will optimize QMCPACK to improve
+the performance.
 
 \section{Open source license}
 \label{sec:license}
@@ -182,15 +231,86 @@ THE CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
 OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, 
 ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR 
 OTHER DEALINGS WITH THE SOFTWARE.
-
 \end{verbatim}
+
+Copyright is generally believed to remain with the authors of the
+individual sections of code. See the various notations in the source code as
+well as the code history.
 
 \section{Contributing to QMCPACK}
 \label{sec:contributing}
 
-\section{Roadmap}
+QMCPACK is fully open source and we welcome contributions.  Please
+post on the QMCPACK Google group or contact the developers. If you are
+planning a development, early discussions are encouraged. We will be
+able to tell you if anyone else if working on a similar feature or if
+any related work has been done in the past.  Credit for your
+contribution can be obtained, e.g., through citation of a paper, or
+becoming one of the authors on the next version of the standard
+QMCPACK reference citation.
+
+Please note the following guidelines for a contributions:
+\begin{itemize}
+\item Additions should be fully synchronized with the latest release
+  version and ideally the latest  development SVN. Merging of code
+  developed on older versions is error prone.
+\item Code should be cleanly formatted, commented, portable, and accessible to
+  other programmers. i.e. If you need to use any clever tricks, add a comment
+  to note this, why the trick is needed, how it works etc. Although we like
+  high performance, ease of maintenance and accessibility are also
+  considerations.
+\item Comment your code. You are not only writing it for the compiler
+  for also for other humans! (We know this is a repeat of the previous
+  point, but it is important enough to repeat.)
+\item Write a brief description of the method, algorithms and inputs and outputs
+  suitable for inclusion in this manual.
+\item Develop some short tests that exercise the
+  functionality that can be used for validation and for examples. We
+  can help with this and their integration into the test system.
+\end{itemize}
+
+\section{QMCPACK Roadmap}
 \label{sec:roadmap}
+
+A general outline of the QMCPACK roadmap is given below. Suggestions
+for improvements are welcome, particularly those that would facilitate new
+scientific applications. For example, if an interface to a particular
+quantum chemical or density functional code would help, this would be
+given strong consideration.
+
+\subsection{Code}
+
+We will to continue improving the accessibility and usability of
+QMCPACK, by combinations of more convenient input parameters, improved
+workflow, integration with more quantum chemical and density
+functional codes, and a wider range of examples.
+
+In terms of methodological development, we expect to significantly
+increase the range of QMC algorithms in QMCPACK in the near future.
+
+Computationally, we are porting QMCPACK to the next generation of
+supercomputer systems. The internal changes required to run on these
+systems efficiently are expected to benefit \emph{all} platforms due
+to improved vectorization, cache utilization and memory performance.
 
 \subsection{Documentation}
 
-\subsection{QMCPACK}
+This manual currently describes the core features of QMCPACK that are
+required for routine research calculations. i.e. the VMC and DMC
+methods, how to obtain and optimize trial wavefunctions, and simple
+observables. Over time this manual will be expanded to include a
+broader introduction to QMC methods and to describe more features of
+the code.
+
+Due to its history as a research code, QMCPACK contains a variety of
+additional QMC methods, trial wavefunction forms, potentials (etc.)
+that, although not critical, may be very useful for specialized
+calculations or particular material or chemical systems. These
+``secret features'' (every code has these) are not actually secret but
+simply lack descriptions, example inputs, and tests. You are
+encouraged to browse and read the source code to find them. New
+descriptions will be added over time, but can also be prioritized and
+added on request, e.g. if a specialized Jastrow factor would help or
+an historical Jastrow form is needed for benchmarking.
+
+

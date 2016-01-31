@@ -29,21 +29,21 @@
 #include "QMCHamiltonians/LocalMomentEstimator.h"
 #include "QMCHamiltonians/DensityEstimator.h"
 #include "QMCHamiltonians/SkEstimator.h"
-#include "QMCHamiltonians/EnergyDensityEstimator.h"
-#include "QMCHamiltonians/NearestNeighborsEstimator.h"
 #include "QMCHamiltonians/HarmonicExternalPotential.h"
 #include "QMCHamiltonians/StaticStructureFactor.h"
+#include "QMCHamiltonians/SpinDensity.h"
 #include "QMCHamiltonians/OrbitalImages.h"
+#if !defined(REMOVE_TRACEMANAGER)
+#include "QMCHamiltonians/EnergyDensityEstimator.h"
+#include "QMCHamiltonians/NearestNeighborsEstimator.h"
+#include "QMCHamiltonians/DensityMatrices1B.h"
+#endif
 #if OHMMS_DIM == 3
 #include "QMCHamiltonians/ChiesaCorrection.h"
 #if defined(HAVE_LIBFFTW_LS)
 #include "QMCHamiltonians/ModInsKineticEnergy.h"
 #include "QMCHamiltonians/MomentumDistribution.h"
 #include "QMCHamiltonians/DispersionRelation.h"
-#endif
-#ifdef QMC_COMPLEX
-#include "QMCHamiltonians/DensityMatrices1B.h"
-#include "QMCHamiltonians/SpinDensity.h"
 #endif
 #endif
 // #include "QMCHamiltonians/ZeroVarObs.h"
@@ -363,29 +363,13 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
           targetH->addOperator(apot,potName,false);
         }
       }
-      else if(potType == "energydensity" || potType == "EnergyDensity")
-      {
-        app_log()<<"  Adding EnergyDensityEstimator"<<endl;
-        EnergyDensityEstimator* apot=new EnergyDensityEstimator(ptclPool,defaultKE);
-        apot->put(cur);
-        targetH->addOperator(apot,potName,false);
-      }
-      else if(potType == "nearestneighbors" || potType == "NearestNeighbors")
-      {
-        app_log()<<"  Adding NearestNeighborsEstimator"<<endl;
-        NearestNeighborsEstimator* apot=new NearestNeighborsEstimator(ptclPool);
-        apot->put(cur);
-        targetH->addOperator(apot,"nearest_neighbors",false);
-      }
-#ifdef QMC_COMPLEX
       else if(potType == "spindensity")
       {
         app_log()<<"  Adding SpinDensity"<<endl;
-        SpinDensity* apot=new SpinDensity(*targetPtcl,ptclPool);
+        SpinDensity* apot=new SpinDensity(*targetPtcl);
         apot->put(cur);
         targetH->addOperator(apot,potName,false);
       }
-#endif
       else if(potType == "structurefactor")
       {
         app_log()<<"  Adding StaticStructureFactor"<<endl;
@@ -400,7 +384,21 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         apot->put(cur);
         targetH->addOperator(apot,potName,false);
       }
-#ifdef QMC_COMPLEX
+#if !defined(REMOVE_TRACEMANAGER)
+      else if(potType == "energydensity" || potType == "EnergyDensity")
+      {
+        app_log()<<"  Adding EnergyDensityEstimator"<<endl;
+        EnergyDensityEstimator* apot=new EnergyDensityEstimator(ptclPool,defaultKE);
+        apot->put(cur);
+        targetH->addOperator(apot,potName,false);
+      }
+      else if(potType == "nearestneighbors" || potType == "NearestNeighbors")
+      {
+        app_log()<<"  Adding NearestNeighborsEstimator"<<endl;
+        NearestNeighborsEstimator* apot=new NearestNeighborsEstimator(ptclPool);
+        apot->put(cur);
+        targetH->addOperator(apot,"nearest_neighbors",false);
+      }
       else if(potType == "dm1b")
       {
         app_log()<<"  Adding DensityMatrices1B"<<endl;

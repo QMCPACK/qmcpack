@@ -27,7 +27,6 @@
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/LinearFit.h"
 #include "Configuration.h"
-
 #include <math.h>
 #if (__GNUC__ == 2)
 #include <algo.h>
@@ -193,11 +192,19 @@ struct NRCOptimization
       qmcplusplus::invert_matrix(S, false);
       qmcplusplus::MatrixOperators::product(S, &(y[0]), &(coefs[0]));
       Lambda = QuarticMinimum (coefs);
+#if (__cplusplus >= 201103L)
+      if (std::abs(Lambda) > largeQuarticStep || std::isnan(Lambda))
+        return lineoptimization2();
+      cost = Func(Lambda);
+      if (std::isnan(cost) || cost > start_cost)
+        return lineoptimization2();
+#else
       if (abs(Lambda) > largeQuarticStep || isnan(Lambda))
         return lineoptimization2();
       cost = Func(Lambda);
       if (isnan(cost) || cost > start_cost)
         return lineoptimization2();
+#endif
     }
     else
     {
@@ -308,12 +315,21 @@ struct NRCOptimization
     {
       qmcplusplus::LinearFit(y,S,coefs);
       Lambda = QuarticMinimum (coefs);
+#if (__cplusplus >= 201103L)
+      if (std::abs(Lambda) > largeQuarticStep || std::isnan(Lambda) || (Lambda==0.0))
+        return lineoptimization2(largeQuarticStep);
+      zeroCost = Func(Lambda);
+//       cout<<"Start Cost:"<< start_cost<<" Lambda:"<<Lambda<<" FinalCost:"<<cost<<endl;
+      if (std::isnan(zeroCost) || zeroCost > start_cost)
+        return lineoptimization2(largeQuarticStep);
+#else
       if (abs(Lambda) > largeQuarticStep || isnan(Lambda) || (Lambda==0.0))
         return lineoptimization2(largeQuarticStep);
       zeroCost = Func(Lambda);
 //       cout<<"Start Cost:"<< start_cost<<" Lambda:"<<Lambda<<" FinalCost:"<<cost<<endl;
       if (isnan(zeroCost) || zeroCost > start_cost)
         return lineoptimization2(largeQuarticStep);
+#endif
     }
     else
     {

@@ -19,13 +19,31 @@
 \newcommand{\red}[1]{{\color{red} #1}}
 \newcommand{\blue}[1]{{\color{blue} #1}}
 
-% hide or show developer notes
+% hide or show text relevant to developers
 \newcommand{\dev}[1]{#1}
 %\newcommand{\dev}[1]{}
 
 \oddsidemargin 0cm
 \evensidemargin 0cm
 \textwidth 6.5in
+
+
+% proper rendering of qmcpack
+\newcommand{\qmcpack}{{QMCPACK} } % apparently the trailing whitespace is significant
+
+% mathematics convenience commands
+\newcommand{\abs}[1]{\lvert #1 \rvert}
+\newcommand{\norm}[1]{\lVert #1 \rVert}
+\newcommand{\pnorm}[2]{\lVert #1 \rVert_{#2}}
+\newcommand{\mean}[1]{\langle #1 \rangle}
+\newcommand{\ket}[1]{\lvert #1 \rangle}
+\newcommand{\bra}[1]{\langle #1 \rvert}
+\newcommand{\expval}[3]{\bra{#1}#2\ket{#3}}
+\newcommand{\expvalh}[3]{\bra{#1}\hat{#2}\ket{#3}}
+\newcommand{\overlap}[2]{\langle #1 \lvert #2 \rangle}
+\newcommand{\operator}[3]{\ket{#1} #2 \bra{#3}}
+\newcommand{\idop}{\hat{\mathbb{1}}}
+
 
 \begin{document}
 \lstset{
@@ -71,6 +89,9 @@ showstringspaces=false  % avoid showing underbrackets in quoted text
 \input{analysis}
 
 \input{examples}
+
+\input{contributing}
+
 
 \newpage
 \chapter{References}

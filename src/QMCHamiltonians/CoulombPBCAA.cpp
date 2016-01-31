@@ -106,6 +106,7 @@ void CoulombPBCAA::resetTargetParticleSet(ParticleSet& P)
 }
 
 
+#if !defined(REMOVE_TRACEMANAGER)
 void CoulombPBCAA::contribute_particle_quantities()
 {
   request.contribute_array(myName);
@@ -127,6 +128,7 @@ void CoulombPBCAA::delete_particle_quantities()
   if(streaming_particles)
     delete V_sample;
 }
+#endif
 
 
 CoulombPBCAA::Return_t
@@ -134,15 +136,18 @@ CoulombPBCAA::evaluate(ParticleSet& P)
 {
   if(is_active)
   {
+#if !defined(REMOVE_TRACEMANAGER)
     if(streaming_particles)
       Value = evaluate_sp(P);
     else
+#endif
       Value = evalLR(P)+evalSR(P)+myConst;
   }
   return Value;
 }
 
 
+#if !defined(REMOVE_TRACEMANAGER)
 CoulombPBCAA::Return_t
 CoulombPBCAA::evaluate_sp(ParticleSet& P)
 {
@@ -251,6 +256,7 @@ CoulombPBCAA::evaluate_sp(ParticleSet& P)
 #endif
   return Value;
 }
+#endif
 
 
 CoulombPBCAA::Return_t
@@ -395,7 +401,11 @@ void CoulombPBCAA::initBreakup(ParticleSet& P)
   MemberAttribIndx = tspecies.addAttribute("membersize");
   NumCenters = P.getTotalNum();
   NumSpecies = tspecies.TotalNum;
+
+#if !defined(REMOVE_TRACEMANAGER)
   V_const.resize(NumCenters);
+#endif
+
   Zat.resize(NumCenters);
   Zspec.resize(NumSpecies);
   NofSpecies.resize(NumSpecies);
@@ -482,13 +492,17 @@ CoulombPBCAA::evalConsts(bool report)
 {
   RealType Consts=0.0; // constant term
   RealType v1; //single particle energy
+#if !defined(REMOVE_TRACEMANAGER)
   V_const = 0.0;
+#endif
   //v_l(r=0) including correction due to the non-periodic direction
   RealType vl_r0 = AA->evaluateLR_r0();
   for(int ipart=0; ipart<NumCenters; ipart++)
   {
     v1 =  -.5*Zat[ipart]*Zat[ipart]*vl_r0;
+#if !defined(REMOVE_TRACEMANAGER)
     V_const(ipart) += v1;
+#endif
     Consts += v1;
   }
   if(report)
@@ -506,7 +520,9 @@ CoulombPBCAA::evalConsts(bool report)
     for(int spec=0; spec<NumSpecies; spec++)
       v1 += NofSpecies[spec]*Zspec[spec];
     v1 *= -.5*Zat[ipart]*vs_k0;
+#if !defined(REMOVE_TRACEMANAGER)
     V_const(ipart) += v1;
+#endif
     Consts += v1;
   }
   if(report)

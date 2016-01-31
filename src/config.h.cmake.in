@@ -212,5 +212,11 @@
 
 #cmakedefine DEBUG_PSIBUFFER_ON @DEBUG_PSIBUFFER_ON@
 
+/* Disable trace manager and associated features */
+#cmakedefine DISABLE_TRACEMANAGER @DISABLE_TRACEMANAGER@
+
+/* Fully remove trace manager and associated features */
+#cmakedefine REMOVE_TRACEMANAGER @REMOVE_TRACEMANAGER@
+
 #endif // QMCPLUSPLUS_CONFIGURATION_H
 

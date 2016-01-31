@@ -130,9 +130,8 @@ inline void convert(const Tensor<T1,3>& in, Tensor<T2,3>& out)
 }
 
 
-
-
-
+// attempted fix to allow for C++11 real/imag/conj while preserving support for pre C++11
+#if __cplusplus<201103L
 ///real part of a scalar
 template<typename T>
 inline T real(const T& c)
@@ -153,6 +152,7 @@ inline T conj(const T& c)
 {
   return c;
 }
+#endif
 
 
 using std::real;

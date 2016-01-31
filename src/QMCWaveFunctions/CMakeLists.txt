@@ -17,6 +17,7 @@ SET(WFBASE_SRCS
   HarmonicOscillator/SHOSetBuilder.cpp
   )
 
+
 ########################
 # build jastrows
 ########################

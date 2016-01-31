@@ -27,12 +27,10 @@
 //#define ENABLE_COMPOSITE_ESTIMATOR
 //#include "Estimators/CompositeEstimators.h"
 #include "Estimators/EstimatorManager.h"
-#include "Estimators/TraceManager.h"
-
 namespace qmcplusplus
 {
 
-
+class TraceManager;
 /** @ingroup QMC
  * @brief Base class for update methods for each step
  *

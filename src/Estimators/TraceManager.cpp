@@ -2,11 +2,17 @@
 // (c) Copyright 2013-  by Jaron T. Krogel                      //
 //////////////////////////////////////////////////////////////////
 
+#if !defined(DISABLE_TRACEMANAGER)
+
+
 #include <Estimators/TraceManager.h>
 
 
 namespace qmcplusplus
 {
+
+
+
 
 double TraceManager::trace_tol = 1e-8;
 
@@ -114,3 +120,7 @@ void check_trace_build()
 #endif
 
 }
+
+
+#endif
+

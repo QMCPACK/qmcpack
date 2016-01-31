@@ -1020,7 +1020,8 @@ PseudoClass::ReadBFD_PP (string fileName)
     fprintf (fout, "%1.16e %1.16e %1.16e\n", r, Vloc, Vlocr);
   }
   fclose (fout);
-  int local = LocalChannel = numProjectors;
+  int local = numProjectors;
+  if (LocalChannel<0) LocalChannel = local;
   PotentialGrid.Init (gridPoints);
   ChannelPotentials[local].Vl.Init(PotentialGrid, Vlocal);
   ChannelPotentials[local].Vlr.Init(PotentialGrid, Vlocalr);
@@ -1180,7 +1181,7 @@ PseudoClass::ReadGAMESS_PP (string fileName)
   PseudoCharge = (double)(Z-izcore);
   assert (parser.ReadInt(lmax));
   assert (parser.FindToken("\n"));
-  LocalChannel = lmax;
+  if (LocalChannel<0) LocalChannel = lmax;
 
   ChannelPotentials.resize(lmax+1);
 
@@ -1566,6 +1567,7 @@ main(int argc, char **argv)
   argList.push_back(ParamClass("p_ref",  true));
   argList.push_back(ParamClass("d_ref",  true));
   argList.push_back(ParamClass("f_ref",  true));
+  argList.push_back(ParamClass("g_ref",  true));
   argList.push_back(ParamClass("xml",    true));
   argList.push_back(ParamClass("tm",     true));
   argList.push_back(ParamClass("upf",    true));
@@ -1573,6 +1575,7 @@ main(int argc, char **argv)
   argList.push_back(ParamClass("fpmd",   true));
   argList.push_back(ParamClass("casino", true));
   argList.push_back(ParamClass("log_grid", false));
+  argList.push_back(ParamClass("local_channel", true));
 
   CommandLineParserClass parser(argList);
   bool success = parser.Parse(argc, argv);
@@ -1592,7 +1595,8 @@ main(int argc, char **argv)
 	 << "   --fhi  fname.fhi   \n"
 	 << "   --fpmd  fname.xml  \n"
 	 << "   --casino fname.xml \n"
-	 << "   --log_grid         \n";
+	 << "   --log_grid         \n"
+	 << "   --local_channel l  \n";
     exit(1);
   }
 
@@ -1604,6 +1608,8 @@ main(int argc, char **argv)
   if (parser.Found("log_grid"))
     nlpp.WriteLogGrid = true;
 
+  if (parser.Found("local_channel"))
+    nlpp.SetLocalChannel(atoi(parser.GetArg("local_channel").c_str()));
 
   if (parser.Found("casino_pot"))
     nlpp.ReadCASINO_PP(parser.GetArg("casino_pot"));
@@ -1663,6 +1669,17 @@ main(int argc, char **argv)
       else {
 	cerr << "Please specify the f-channel projector with either "
 	     << " --f_ref or --casino_uf.\n";
+	// exit(-1);
+      }
+    }
+    if (numChannels > 4) {
+      if (parser.Found ("g_ref"))
+	nlpp.CalcProjector (parser.GetArg("g_ref"), 4);
+      else if(parser.Found("casino_ug"))
+	nlpp.ReadCASINO_WF(parser.GetArg("casino_ug"), 4);
+      else {
+	cerr << "Please specify the g-channel projector with either "
+	     << " --g_ref or --casino_ug.\n";
 	// exit(-1);
       }
     }

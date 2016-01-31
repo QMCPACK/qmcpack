@@ -97,8 +97,8 @@ bool hdf_archive::open(const std::string& fname,unsigned flags)
     return true;
   close();
   file_id = H5Fopen(fname.c_str(),flags,access_id);
-  if(file_id==is_closed)
-    file_id = H5Fcreate(fname.c_str(),flags,H5P_DEFAULT,access_id);
+  // if(file_id==is_closed)
+  //   file_id = H5Fcreate(fname.c_str(),flags,H5P_DEFAULT,access_id);
   return file_id != is_closed;
 }
 

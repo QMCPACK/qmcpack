@@ -36,7 +36,7 @@ from copy import deepcopy
 import cPickle
 from random import randint
 
-exit_call = exit
+exit_call = sys.exit
 devlog    = sys.stdout
 
 def nocopy(value):
@@ -953,6 +953,21 @@ class hidden(hobj):
     def log(self,*items,**kwargs):
         self._alt._log(*items,**kwargs)
     #end def log
+
+    def __repr__(self):
+        s=''
+        for k in sorted(self._keys()):
+            if not isinstance(k,str) or k[0]!='_':
+                v=self._dict[k]
+                if hasattr(v,'__class__'):
+                    s+='  {0:<20}  {1:<20}\n'.format(k,v.__class__.__name__)
+                else:
+                    s+='  {0:<20}  {1:<20}\n'.format(k,type(v))
+                #end if
+            #end if
+        #end for
+        return s
+    #end def __repr__
 
     #  log, warning, and error messages
     def _open_log(self,*args,**kwargs):

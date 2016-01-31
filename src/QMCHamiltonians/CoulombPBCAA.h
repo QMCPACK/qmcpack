@@ -60,9 +60,11 @@ struct CoulombPBCAA: public QMCHamiltonianBase, public ForceBase
 //     madelung constant
   RealType MC0;
 
+#if !defined(REMOVE_TRACEMANAGER)
   //single particle trace sample
   Array<TraceReal,1>* V_sample;
   Array<TraceReal,1>  V_const;
+#endif
   ParticleSet& Ps;
 
 
@@ -107,10 +109,12 @@ struct CoulombPBCAA: public QMCHamiltonianBase, public ForceBase
 
   void initBreakup(ParticleSet& P);
 
+#if !defined(REMOVE_TRACEMANAGER)
   virtual void contribute_particle_quantities();
   virtual void checkout_particle_quantities(TraceManager& tm);
   Return_t evaluate_sp(ParticleSet& P); //collect
   virtual void delete_particle_quantities();
+#endif
 
   Return_t evalConsts_orig(bool report=true);
   Return_t evalSR_old(ParticleSet& P);
