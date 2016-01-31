@@ -67,6 +67,9 @@ class SpinDensity : public QMCHamiltonianBase
   Return_t test_evaluate(ParticleSet& P,int& pmin,int& pmax);
   void postprocess_density(const string& infile,const string& species,
                            pts_t& points,dens_t& density,dens_t& density_err);
+#ifdef QMC_CUDA
+  void addEnergy(MCWalkerConfiguration &W, vector<RealType> &LocalEnergy) { } 
+#endif
 
 };
 
