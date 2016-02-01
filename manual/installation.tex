@@ -285,7 +285,9 @@ config directory. For example, on Cray systems these scripts might
 load the appropriate modules to set the appropriate programming
 environment, specific library versions etc.
 
-An example script build.sh is given below:
+An example script build.sh is given below. It is overly complex for
+the sake of example:
+
 \begin{verbatim}
 export CXX=mpic++
 export CC=mpicc
@@ -309,15 +311,25 @@ cmake                                                \
 \section{Installation instructions for common workstations and
   supercomputers}
 \label{sec:installexamples}
+
 This section describes how to build QMCPACK on various common systems
 including multiple Linux distributions, Apple OS X, and various
-supercomputers. Note that updates to operating systems may require
-small modifications to these recipes.
-\subsection{Installing on Ubuntu Linux}
+supercomputers. The examples should serve as good starting point for
+building QMCPACK on similar machines. For example, the software
+environment on modern Crays is very consistent. Note that updates to
+operating systems and system software may require small modifications
+to these recipes. See Section \label{sec:buildperformance} for key
+points to check to obtain highest performance and
+Section \label{sec:troubleshoot} for troubleshooting hints.
 
-All the required packages are available in the
-default repositories making for a quick installation. Note that for
-convenience we use a generic BLAS. For production a platform optimized BLAS should be used.
+\subsection{Installing on Ubuntu Linux or other apt-get based distribution}
+
+The following is designed to obtain a working QMCPACK build on e.g. a
+student laptop, starting from a basic Linux installation with none of
+the developer tools installed. Fortunately, all the required packages
+are available in the default repositories making for a quick
+installation. Note that for convenience we use a generic BLAS. For
+production a platform optimized BLAS should be used.
 
 \begin{verbatim}
 apt-get subversion cmake g++ openmpi-bin libopenmpi-dev libboost-dev
@@ -334,13 +346,15 @@ For qmca and other tools to function, we install some python libraries:
 sudo apt-get install python-numpy python-matplotlib
 \end{verbatim}
 
-\subsection{Installing on CentOS Linux}
+\subsection{Installing on CentOS Linux or other yum based distribution}
 
-Currently this version of CentOS (Red Hat compatible) is using gcc
-4.8.2. The installation is only complicated by the need to install
-another repository to obtain HDF5 packages. Note that for convenience
-we use a generic BLAS. For production a platform optimized BLAS should
-be used.
+The following is designed to obtain a working QMCPACK build on e.g. a
+student laptop, starting from a basic Linux installation with none of
+the developer tools installed. CentOS 7 (Red Hat compatible) is using
+gcc 4.8.2. The installation is only complicated by the need to install
+another repository to obtain HDF5 packages which are not available by
+default. Note that for convenience we use a generic BLAS. For
+production a platform optimized BLAS should be used.
 
 \begin{verbatim}
 sudo yum install make cmake gcc gcc-c++ subversion openmpi  openmpi-devel fftw fftw-devel boost boost-devel libxml2 libxml2-devel
@@ -349,7 +363,13 @@ module load mpi
 
 \end{verbatim}
 
-To setup repoforge as a source for the HDF5 package, go to http://repoforge.org/use . Install the appropriate up to date release package for your OS. By default the CentOS Firefox will offer to run the installer. The CentOS 6.5 settings were usable for HDF5 on CentOS 7 in July 2014, but use CentOS 7 versions when they become available.
+To setup repoforge as a source for the HDF5 package, go to
+\url{http://repoforge.org/use} . Install the appropriate up to date
+release package for your OS. By default the CentOS Firefox will offer
+to run the installer. The CentOS 6.5 settings were usable for HDF5 on
+CentOS 7 in July 2014, but use CentOS 7 versions when they become
+available.
+
 \begin{verbatim}
 sudo yum install hdf5 hdf5-devel 
 \end{verbatim}
@@ -369,8 +389,10 @@ ls -l bin/qmcapp
 \subsection{Installing on Mac OS X using Macports}
 These instructions assume a fresh installation of macports
 and for consistency with current Linux distributions, use the gcc 4.8.2
-compiler. It is vital to ensure matching compilers/options for all
-packages and to force use of what is installed in /opt/local
+compiler. More recent versions are fine, but it is vital to ensure matching compilers/options for all
+packages and to force use of what is installed in /opt/local. As with
+the Linux examples above, this build is very good if not optimal, and
+is easily good enough to learn QMCPACK or experiment on a travel laptop.
 
 Note that we utilize the Apple provided Accelerate framework for optimized BLAS.
 
@@ -418,12 +440,26 @@ export FFTW_HOME=/opt/local
 cd build
 cmake ..
 make -j 6 # Adjust for available core count
+ls -l bin/qmcapp 
 \end{verbatim}
 
 \subsection{Installing on ANL ALCF Mira IBM BGQ}
 
 \subsection{Installing on ORNL OLCF Titan Cray XK7 (NVIDIA GPU
   accelerated)}
+\label{sec:titanbuildgpu}
+Titan is a GPU accelerated supercomputer at Oak Ridge National
+Laboratory's  Oak Ridge Leadship Computing Facility  (ORNL OLCF). Each
+compute node has a 16 core AMD 2.2GHz Opteron 6274 (Interlagos) and an
+NVIDIA Kepler accelerator. The standard Cray software environment is
+available, with libraries accessed via modules. The only extra
+settings required to build the GPU version are the cudatoolkit module
+and specifiying -DQMC_CUDA=1 on the cmake configure line.
+
+Note that on Crays the compiler wrappers ``CC'' and ``cc'' are 
+used. The build system checks for these and does not (should not) use
+the compilers directly.
+
 \begin{verbatim}
 module swap PrgEnv-pgi PrgEnv-gnu # Use gnu compilers
 module load cudatoolkit           # CUDA for GPU build
@@ -435,9 +471,13 @@ module load boost
 mkdir build_titan_gpu
 cd build_titan_gpu
 cmake -DQMC_CUDA=1 ..             # Must enable CUDA capabilities
+ls -l bin/qmcapp 
 \end{verbatim}
 
 \subsection{Installing on ORNL OLCF Titan Cray XK7 (CPU version)}
+As noted in Section\ref{sec:titanbuildgpu} for the GPU, building on
+Crays requires only loading the appropriate library modules.
+
 \begin{verbatim}
 module swap PrgEnv-pgi PrgEnv-gnu # Use gnu compilers
 module unload cudatoolkit         # No CUDA for CPU build
@@ -449,9 +489,14 @@ module load boost
 mkdir build_titan_cpu
 cd build_titan_cpu
 cmake ..
+ls -l bin/qmcapp 
 \end{verbatim}
 
 \subsection{Installing on ORNL OLCF Eos Cray XC30}
+Eos is Cray XC30 with 16 core Intel Xeon E5-2670 processors connected
+by the Aries interconnect. The build process is identical to titan,
+except that we use the default Intel programming environment. This is
+usually preferred to gnu.
 \begin{verbatim}
 module load cray-hdf5
 module load cmake
@@ -461,9 +506,13 @@ module load boost
 mkdir build_eos
 cd build_eos
 cmake ..
+ls -l bin/qmcapp 
 \end{verbatim}
 
 \subsection{Installing on NERSC Edison Cray XC30}
+
+Edison is a Cray XC30 with dual 12-core Intel "Ivy Bridge" nodes 
+installed at NERSC. The build settings are identical to eos. 
 
 \begin{verbatim}
 module load cray-hdf5
@@ -474,6 +523,7 @@ module load boost
 mkdir build_edison
 cd build_edison
 cmake ..
+ls -l bin/qmcapp 
 \end{verbatim}
 When the above was tested on 1 February 2016, the following module and
 software versions were present:
@@ -490,19 +540,25 @@ Currently Loaded Modulefiles:
   8) cray-libsci/13.3.0                    16) alps/5.2.3-2.0502.9295.14.14.ari      24) altd/2.0
 \end{verbatim}
 
-\subsection{Installing on NERSC Cori Cray XC40}
+\subsection{Installing on NERSC Cori (Phase 1) Cray XC40}
+Cori is a Cray XC40 with 16-core Intel "Haswell" nodes 
+installed at NERSC. The build settings are identical to eos. 
+
 \begin{verbatim}
 module load cray-hdf5
 module load cmake
 module load fftw
 export FFTW_HOME=$FFTW_DIR/..
 module load boost
-mkdir build_edison
-cd build_edison
+mkdir build_cori
+cd build_cori
 cmake ..
+ls -l bin/qmcapp 
 \end{verbatim}
+
 When the above was tested on 1 February 2016, the following module and
 software versions were present:
+
 \begin{verbatim}
 qmcpack@cori05:trunk> module list
 Currently Loaded Modulefiles:
@@ -543,6 +599,7 @@ Most recent C++ compiler
 Optimized BLAS. Vector math library.
 
 \section{Troubleshooting the installation}
+\label{sec:buildperformance}
 \label{sec:troubleshoot}
 Build on a workstation you control
 Verbose builds

@@ -290,6 +290,10 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
     # Flags for ctest
     SET(USE_EXT_MPI_FOR_SERIAL_TESTS 1)
     FIND_PROGRAM(MPIEXEC aprun)
+    IF ( NOT MPIEXEC )
+    # For slurm use srun
+    FIND_PROGRAM(MPIEXEC srun)
+    END IF
     SET(MPIEXEC_NUMPROC_FLAG "-n")
 
     IF($ENV{HOST} MATCHES "eos")
