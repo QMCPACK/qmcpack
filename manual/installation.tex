@@ -17,15 +17,15 @@ each step are given in the referenced sections.
 \item Verify that you have the required compilers, libraries and tools
   installed, Section \ref{sec:prerequisites}.
 \item Run the cmake configure step and build with make, Section
-  \ref{sec:cmake} and \ref{sec:cmakequick}.
+  \ref{sec:cmake} and \ref{sec:cmakequick}. Some examples for common
+  systems are given in Secton \ref{sec:installexamples}.
 \item Run the tests to verify QMCPACK, Section \ref{sec:testing}.
 \item Build the ppconvert utility in QMCPACK, Section \ref{sec:buildppconvert}.
 \item Download and patch Quantum Espresso. This patch adds the
   pw2qmcpack utility, Section \ref{sec:buildqe}.
 \end{enumerate}
 
-Installation instructions for many common systems are given in Section
-\ref{sec:installexamples}. Troubleshooting suggestions are in Section \ref{sec:troubleshoot}.
+Troubleshooting suggestions are in Section \ref{sec:troubleshoot}.
 
 Note that there are two different QMCPACK executables that can be
 produced: the general one, which is the default, and the ``complex''
@@ -128,11 +128,11 @@ specific environmental or CMake variables.  When the libraries are
 installed in standard locations, e.g., /usr, /usr/local, there is no
 need to set environmental or cmake variables for the packages.
 
-\subsection{Quick build instructions}
+\subsection{Quick build instructions (try first)}
 \label{sec:cmakequick}
 
 If you are feeling lucky and are on a standard UNIX-like system such
-as a Linux workstation, the following might work to quickly givin a
+as a Linux workstation, the following might quickly give a
 working QMCPACK:
 
 The safest quick build option is to specify the C and C++ compilers
@@ -162,7 +162,8 @@ make -j 8
 The complexities of modern computer hardware and software systems are
 such that you should check that the autoconfiguration system has made
 good choices and picked optimized libraries and compiler settings
-before doing significant production. i.e. Check the details below.
+before doing significant production. i.e. Check the details below. We
+give examples for a number of common systems in Section \ref{sec:installexamples}.
 
 \subsection{Environment variables}
 A number of enviornmental variables affect the build.  In particular
@@ -322,7 +323,7 @@ to these recipes. See Section \label{sec:buildperformance} for key
 points to check to obtain highest performance and
 Section \label{sec:troubleshoot} for troubleshooting hints.
 
-\subsection{Installing on Ubuntu Linux or other apt-get based distribution}
+\subsection{Installing on Ubuntu Linux or other apt-get based distributions}
 
 The following is designed to obtain a working QMCPACK build on e.g. a
 student laptop, starting from a basic Linux installation with none of
@@ -346,7 +347,7 @@ For qmca and other tools to function, we install some python libraries:
 sudo apt-get install python-numpy python-matplotlib
 \end{verbatim}
 
-\subsection{Installing on CentOS Linux or other yum based distribution}
+\subsection{Installing on CentOS Linux or other yum based distributions}
 
 The following is designed to obtain a working QMCPACK build on e.g. a
 student laptop, starting from a basic Linux installation with none of
@@ -454,7 +455,7 @@ compute node has a 16 core AMD 2.2GHz Opteron 6274 (Interlagos) and an
 NVIDIA Kepler accelerator. The standard Cray software environment is
 available, with libraries accessed via modules. The only extra
 settings required to build the GPU version are the cudatoolkit module
-and specifiying -DQMC_CUDA=1 on the cmake configure line.
+and specifiying -DQMC\_CUDA=1 on the cmake configure line.
 
 Note that on Crays the compiler wrappers ``CC'' and ``cc'' are 
 used. The build system checks for these and does not (should not) use
@@ -494,9 +495,9 @@ ls -l bin/qmcapp
 
 \subsection{Installing on ORNL OLCF Eos Cray XC30}
 Eos is Cray XC30 with 16 core Intel Xeon E5-2670 processors connected
-by the Aries interconnect. The build process is identical to titan,
+by the Aries interconnect. The build process is identical to Titan,
 except that we use the default Intel programming environment. This is
-usually preferred to gnu.
+usually preferred to GNU.
 \begin{verbatim}
 module load cray-hdf5
 module load cmake
@@ -576,32 +577,188 @@ Currently Loaded Modulefiles:
 
 \section{Testing and validation of QMCPACK}
 \label{sec:testing}
-\subsection{Systems and software versions that QMCPACK is tested on}
+We \textbf{strongly encourage} running the included tests each time
+QMCPACK is built. These compare the results from the executable with
+known-good mean-field, quantum chemical, and other QMC results. 
+
+The tests included with QMCPACK currently test only the VMC code with
+single determinant wavefunction and simple spline Jastrow
+wavefunctions, and for gaussian and periodic spline basis
+sets. Although not yet comprehensive, it is extremely unlikely that,
+e.g., DMC will be correct if the VMC tests do not pass.  We check that the known mean
+field results are obtained with no Jastrow. When Jastrow functions are
+included we test against previous QMC data. The tests are statistical
+with a generous 3 $\sigma$ tolerance, however the system sizes are
+small, typically $<10$ electrons, so the error bars are typically
+small.
+
+ The ``short'' tests only take a few minutes on a 16
+core machine. You can run these tests using the command below in the
+build directory:
+
+\begin{verbatim}
+ctest -R short   # Run the tests with "short" in their name
+\end{verbatim}
+
+The  full set of tests consist of longer versions of the short
+test. They require several hours each to run yielding much more
+stringent tests. To run all the tests simply run ctest in the build
+directory:
+
+\begin{verbatim}
+ctest            # Run all the tests. This will take several hours.
+\end{verbatim}
+
+You can also run verbose tests which direct the QMCPACK
+output to the standard output:
+\begin{verbatim}
+ctest -V -R short   # Verbose short tests
+\end{verbatim}
+
+The test system includes specific tests for the complex version of the code.
+
+The data files for the tests are located in the tests directory. The
+runs occur in build/src/QMCApp/test/test\_name. The numerical
+comparisons and test definitions are in
+src/QMCApp/test/CMakeLists.txt. If \textit{all} the QMC tests fail it is likely
+that the appropriate mpiexec (or aprun, srun) is not being
+called or found. If the QMC runs appear to work but all the other
+tests fail it is possible that python is not working on your system -
+we suggest checking some of the test outputs in build/src/QMCApp/test/test\_name.
+
+Note that because the tests are very small, consisting of only a few
+electrons, the performance is not representative of larger
+calculations. For example, while the calculations might fit in cache,
+there will be essentially no vectorization due to the small electron
+counts. \textbf{The tests should not be used for any benchmarking or
+performance analysis}. Dedicated larger runs are required.
+
+\subsection{Automatic tests of QMCPACK}
+
+The QMCPACK developers run automatic tests of QMCPACK on several
+different computer systems and on a continous basis. We currently test
+the following combinations:
+
+\begin{itemize}
+\item On a Red Hat Linux workstation:
+  \begin{itemize}
+  \item GCC 4.8.2 with OpenMPI and CUDA 7.0 (GPU build, run on NVIDIA K40s) 
+  \item GCC 4.8.2 with OpenMPI 
+  \item Intel 2016 with Intel MPI and MKL
+  \item Intel 2015 with Intel MPI and MKL and CUDA 7.0 (GPU build, run on NVIDIA K40s) 
+  \item Intel 2015 with Intel MPI  and MKL
+  \end{itemize}
+\item On Eos, a Cray XC30 Intel machine:
+  \begin{itemize}
+\item The default Intel programming environment and compiler with Cray MPI and Intel MKL
+  \end{itemize}
+
+\item On Titan, a Cray XK7 CPU+GPU machine:
+  \begin{itemize}
+  \item The GCC programming environment and compiler with Cray MPI and CUDA 
+  \item The GCC programming environment and compiler with Cray MPI 
+  \end{itemize}
+\end{itemize}
 
 \begin{figure}
   \centering
   \includegraphics[width=10cm]{figures/QMCPACK_CDash_Ctest_Results_20160129.png}
   \caption{Example test results for QMCPACK, showing data for a
     workstation (Intel, GCC, both CPU and GPU builds) and for two ORNL
-    supercomputers. 4 errors were found.}
+    supercomputers. In this example, 4 errors were found.}
   \label{fig:cdash}
 \end{figure}
 
-\section{Building ppconvert, the pseudpotential format converter
-  utility}
+\section{Building ppconvert, a pseudopotential format converter}
 \label{sec:buildppconvert}
+QMCPACK includes a utility, ppconvert, to convert between different
+pseudopotential formats. Examples include effective core potential
+formats (in gaussians), the UPF format used by Quantum Espresso, and
+the XML format used by QMCPACK itself. The utility also enables the
+atomic orbitals to recomputed via a numerical density functional
+calculation if they need to be reconstructured for use in an
+electronic structure calculation.
+
+To build ppconvert follow the instructions in
+src/QMCTools/ppconvert/README. Currently ppcovert is not built
+automatically although we expect to automate it soon. The makefile
+must be updated to refer to suitable C++ compiler and link in
+BLAS. Due to the small size of the calculations, optimal settings are
+not essential.
+
 \section{Installing and patching Quantum Espresso}
 \label{sec:buildqe}
+For trial wavefunctions obtained in a plane-wave basis we mainly
+support Quantum Espresso. Note that ABINIT and QBox were supported historically
+and could be reactivated.
+
+Quantum-Espresso current stores wavefunctions in a non-standard internal
+``save'' format. To convert these to a conventional HDF5 format file
+we have developed a converter, pw2qmcpack. This is an add on to the
+Quantum Espresso distribution.
+
+To simplify the process of patching Quantum Espresso we have developed
+a script that will automatically download and patch the source
+code. The patches are specific to each version. e.g. To download and
+patch QE v5.3.0:
+\begin{verbatim}
+cd external_codes/quantum_espresso
+./download_and_patch_qe5.3.0.sh
+\end{verbatim}
+After running the patch, be sure to configure quantum espresso with
+the HDF5 capability enabled, e.g.
+\begin{verbatim}
+cd espresso-5.3.0
+./configure --with-hdf5 HDF5_DIR=/opt/local   # Specify HDF5 base directory
+\end{verbatim}
+
+The complete process is described in external\_codes/quantum\_espresso/README.
+
+
 \section{How to build the fastest executable version of QMCPACK}
 \label{sec:buildperformance}
+To build the fastest version of QMCPACK we recommend the following:
+\begin{itemize}
+\item Use the latest C++ compilers available for your
+  system. Substantial gains have been made optimizing C++ in recent
+  years.
+\item Use a vendor optimized BLAS library such as Intel MKL. Although
+  QMC does not make extensive use of linear algebra, it is used in the
+  VMC wavefunction optimizer and also to appy the orbital coefficients in local basis
+  calculations.
+\item Use a vector math library such as Intel VML.  For periodic
+  calculations, the calculation of the structure factor and Ewald
+  potential benefit from vectorized evaluation of sin and
+  cos. Currently we only autodetect Intel VML, as provided with MKL,
+  but support for MASSV and AMD ACML is included via \#defines. See,
+  e.g. src/Numerics/e2iphi.h. For
+  large supercells, this optimization can gain 10\% in performance.
+\end{itemize}
 
-Most recent C++ compiler
-Optimized BLAS. Vector math library.
+Note that greater speedups of QMC calculations can usually be obtained by
+carefully choosing the required statistics for each
+investigation. e.g. By not computing smaller error bars than necessary.
 
 \section{Troubleshooting the installation}
-\label{sec:buildperformance}
 \label{sec:troubleshoot}
-Build on a workstation you control
-Verbose builds
-Out of date software
-Update CMake
+Some tips to help troubleshoot installations of QMCPACK:
+\begin{itemize}
+\item First, build QMCPACK on a workstation that you control, or any
+  system that is likely to have a simple up-to-date set of development
+  tools. You can compare the results of cmake and QMCPACK on this
+  system with any more difficult systems you encounter.
+\item To monitor the compiler settings, use a verbose build, ``make
+  VERBOSE=1''. If an individual source file is failing to compile you
+  can experiment by hand using the output of the verbose build to
+  reconstruct the full compilation line.
+\item Use up to date development software, particularly a recent
+  CMake. 
+\item Verify that the compilers and libraries that you expect are
+  being configured. It is common to have multiple versions
+  installed. The configure system will stop at the first version it
+  finds which might not be the most recent. If this occurs, specify the appropriate
+  directories directly (Section \ref{sec:cmakeoptions}).
+\end{itemize}
+
+If you still have problems please post to the QMCPACK Google group with full
+details, or contact a developer.
