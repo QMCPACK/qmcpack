@@ -5,7 +5,7 @@ This chapter describes how to obtain, build and validate QMCPACK. This process i
 possible and should be no harder than building a modern plane-wave density
 functional theory code such as Quantum Espresso, QBox, or
 VASP. Parallel builds enable a complete
-compilation in under 2 minutes on a fast multicore sysyem, If you
+compilation in under 2 minutes on a fast multicore system, If you
 are unfamiliar with building codes we suggest working with your system
 administrator to install QMCPACK.
 
@@ -18,7 +18,7 @@ each step are given in the referenced sections.
   installed, Section \ref{sec:prerequisites}.
 \item Run the cmake configure step and build with make, Section
   \ref{sec:cmake} and \ref{sec:cmakequick}. Some examples for common
-  systems are given in Secton \ref{sec:installexamples}.
+  systems are given in Section \ref{sec:installexamples}.
 \item Run the tests to verify QMCPACK, Section \ref{sec:testing}.
 \item Build the ppconvert utility in QMCPACK, Section \ref{sec:buildppconvert}.
 \item Download and patch Quantum Espresso. This patch adds the
@@ -86,7 +86,7 @@ Section \ref{sec:buildperformance} for performance suggestions.
 \begin{itemize}
 \item C/C++ compilers such as GCC, Intel, IBM XLC. CLANG-based compilers
   are not yet supported by the build system, but the source code is ready.
-\item MPI libary such at OpenMPI \url{http://open-mpi.org}
+\item MPI library such at OpenMPI \url{http://open-mpi.org}
 \item BLAS/LAPACK, numerical and linear algebra libraries. Use
   platform-optimized libraries where available, such as Intel MKL.
   ATLAS or other optimized open-source libraries may also be used
@@ -166,9 +166,9 @@ before doing significant production. i.e. Check the details below. We
 give examples for a number of common systems in Section \ref{sec:installexamples}.
 
 \subsection{Environment variables}
-A number of enviornmental variables affect the build.  In particular
+A number of environmental variables affect the build.  In particular
 they can control the default paths for libraries, the default
-compilers, etc.  The list of enviornmental variables is given below:
+compilers, etc.  The list of environmental variables is given below:
 \begin{verbatim}
 CXX              C++ compiler
 CC               C Compiler
@@ -181,10 +181,10 @@ FFTW_HOME        Path for FFTW
 
 \subsection{Configuration options}
 \label{sec:cmakeoptions}
-In addition to reading the enviornmental variables, CMake provides a
+In addition to reading the environmental variables, CMake provides a
 number of optional variables that can be set to control the build and
 configure steps.  When passed to CMake, these variables will take
-precident over the enviornmental and default variables.  To set them
+precedent over the environmental and default variables.  To set them
 add -D FLAG=VALUE to the configure line between the cmake command and
 the path to the source directory.
 
@@ -272,7 +272,7 @@ make -j 8
 \subsection{Build scripts}
 It is recommended to create a helper script that contains the
 configure line for CMake.  This is particularly useful when avoiding
-enviornmental variables, packages are installed in custom locations,
+environmental variables, packages are installed in custom locations,
 or if the configure line is long or complex.  In this case it is also
 recommended to add "rm -rf CMake*" before the configure line to remove
 existing CMake configure files to ensure a fresh configure each time
@@ -444,24 +444,30 @@ make -j 6 # Adjust for available core count
 ls -l bin/qmcapp 
 \end{verbatim}
 
-\subsection{Installing on ANL ALCF Mira IBM BGQ}
-
-To build QMCPACK on BG/Q:
+\subsection{Installing on ANL ALCF Mira/Cetus IBM Blue Gene/Q}
+\label{sec:buildbgq}
+Mira/Cetus is a Blue Gene/Q supercomputer at Argonne National Laboratory's Argonne Leadership Computing Facility (ANL ALCF). Mira has 49152 compute nodes and each node has a 16-core PowerPC A2 processor with 16 GB DDR3 memory. Due to the fact that the login nodes and the compute nodes have different processors with distinct instruction sets, cross-compiling is required on this platform. See details about using Blue Gene/Q at \url{http://www.alcf.anl.gov/user-guides/compiling-linking}. On Mira, compilers are loaded via softenv and users need to add +mpiwrapper-xl and +cmake in \$HOME/.soft. In order to build QMCPACK, a toolchain file is provided for setting up CMake and the cmake command should be executed twice.
 
 \begin{verbatim}
-Placeholder for magic incantation 
+cd build
+cmake -DCMAKE_TOOLCHAIN_FILE=../config/BGQToolChain.cmake ..
+cmake -DCMAKE_TOOLCHAIN_FILE=../config/BGQToolChain.cmake ..
+make -j 16
+ls -l bin/qmcapp
 \end{verbatim}
+
+In addition, adding a very useful cmake option -DCMAKE\_VERBOSE\_MAKEFILE=TRUE allows printing all the build commands during the make step.
 
 \subsection{Installing on ORNL OLCF Titan Cray XK7 (NVIDIA GPU
   accelerated)}
 \label{sec:titanbuildgpu}
 Titan is a GPU accelerated supercomputer at Oak Ridge National
-Laboratory's  Oak Ridge Leadship Computing Facility  (ORNL OLCF). Each
+Laboratory's  Oak Ridge Leadership Computing Facility  (ORNL OLCF). Each
 compute node has a 16 core AMD 2.2GHz Opteron 6274 (Interlagos) and an
 NVIDIA Kepler accelerator. The standard Cray software environment is
 available, with libraries accessed via modules. The only extra
 settings required to build the GPU version are the cudatoolkit module
-and specifiying -DQMC\_CUDA=1 on the cmake configure line.
+and specifying -DQMC\_CUDA=1 on the cmake configure line.
 
 Note that on Crays the compiler wrappers ``CC'' and ``cc'' are 
 used. The build system checks for these and does not (should not) use
@@ -642,7 +648,7 @@ performance analysis}. Dedicated larger runs are required.
 \subsection{Automatic tests of QMCPACK}
 
 The QMCPACK developers run automatic tests of QMCPACK on several
-different computer systems and on a continous basis. We currently test
+different computer systems and on a continuous basis. We currently test
 the following combinations:
 
 \begin{itemize}
@@ -668,7 +674,7 @@ the following combinations:
 
 \begin{figure}
   \centering
-  \includegraphics[width=10cm]{figures/QMCPACK_CDash_Ctest_Results_20160129.png}
+  \includegraphics[width=10cm]{figures/QMCPACK_CDash_CTest_Results_20160129.png}
   \caption{Example test results for QMCPACK, showing data for a
     workstation (Intel, GCC, both CPU and GPU builds) and for two ORNL
     supercomputers. In this example, 4 errors were found.}
@@ -682,11 +688,11 @@ pseudopotential formats. Examples include effective core potential
 formats (in gaussians), the UPF format used by Quantum Espresso, and
 the XML format used by QMCPACK itself. The utility also enables the
 atomic orbitals to recomputed via a numerical density functional
-calculation if they need to be reconstructured for use in an
+calculation if they need to be reconstructed for use in an
 electronic structure calculation.
 
 To build ppconvert follow the instructions in
-src/QMCTools/ppconvert/README. Currently ppcovert is not built
+src/QMCTools/ppconvert/README. Currently ppconvert is not built
 automatically although we expect to automate it soon. The makefile
 must be updated to refer to suitable C++ compiler and link in
 BLAS. Due to the small size of the calculations, optimal settings are
@@ -728,15 +734,15 @@ To build the fastest version of QMCPACK we recommend the following:
 \item Use the latest C++ compilers available for your
   system. Substantial gains have been made optimizing C++ in recent
   years.
-\item Use a vendor optimized BLAS library such as Intel MKL. Although
+\item Use a vendor optimized BLAS library such as Intel MKL and AMD ACML. Although
   QMC does not make extensive use of linear algebra, it is used in the
-  VMC wavefunction optimizer and also to appy the orbital coefficients in local basis
+  VMC wavefunction optimizer and also to apply the orbital coefficients in local basis
   calculations.
 \item Use a vector math library such as Intel VML.  For periodic
   calculations, the calculation of the structure factor and Ewald
   potential benefit from vectorized evaluation of sin and
   cos. Currently we only autodetect Intel VML, as provided with MKL,
-  but support for MASSV and AMD ACML is included via \#defines. See,
+  but support for MASSV and AMD LibM is included via \#defines. See,
   e.g. src/Numerics/e2iphi.h. For
   large supercells, this optimization can gain 10\% in performance.
 \end{itemize}
