@@ -128,7 +128,7 @@ specific environmental or CMake variables.  When the libraries are
 installed in standard locations, e.g., /usr, /usr/local, there is no
 need to set environmental or cmake variables for the packages.
 
-\subsection{Quick build}
+\subsection{Quick build instructions}
 \label{sec:cmakequick}
 
 If you are feeling lucky and are on a standard UNIX-like system such
@@ -178,7 +178,7 @@ BOOST_ROOT       Path for Boost
 FFTW_HOME        Path for FFTW
 \end{verbatim}
 
-\subsection{CMake Options}
+\subsection{Configuration options}
 \label{sec:cmakeoptions}
 In addition to reading the enviornmental variables, CMake provides a
 number of optional variables that can be set to control the build and
@@ -227,13 +227,14 @@ FFTW_LIBRARY_DIRS   Specify library directories for FFTW
 \end{verbatim}
 \end{itemize}
 
-\subsection{Configure and build}
- Move to build directory, run cmake and make
+\subsection{Configure and build using cmake and make}
+To configure and build QMPACK, move to build directory, run cmake and make
 \begin{verbatim}
 cd build
 cmake ..
 make -j 8
 \end{verbatim}
+
 As you will have gathered, cmake encourages ``out of source'' builds,
 where all the files for a specific build configuration reside in their
 own directory separate from the source files. This allows multiple
@@ -241,7 +242,10 @@ builds to be created from the same source files which is very useful
 where the filesystem is shared between different systems. You can also
 build versions with different settings (e.g. QMC\_COMPLEX) and
 different compiler settings. The build directory does not have to be
-called build - use something descriptive such as build\_machinename or build\_complex.
+called build - use something descriptive such as build\_machinename or
+build\_complex. The ``..'' in the cmake line refers to the directory
+containing CMakeLists.txt. Update the ``..'' for other build 
+directory locations.
 
 \subsection{Example configure and build}
 \begin{itemize}
@@ -417,11 +421,102 @@ make -j 6 # Adjust for available core count
 \end{verbatim}
 
 \subsection{Installing on ANL ALCF Mira IBM BGQ}
-\subsection{Installing on ORNL OLCF Titan Cray XK7 (NVIDIA GPU  accelerated)}
+
+\subsection{Installing on ORNL OLCF Titan Cray XK7 (NVIDIA GPU
+  accelerated)}
+\begin{verbatim}
+module swap PrgEnv-pgi PrgEnv-gnu # Use gnu compilers
+module load cudatoolkit           # CUDA for GPU build
+module load cray-hdf5
+module load cmake
+module load fftw
+export FFTW_HOME=$FFTW_DIR/..
+module load boost
+mkdir build_titan_gpu
+cd build_titan_gpu
+cmake -DQMC_CUDA=1 ..             # Must enable CUDA capabilities
+\end{verbatim}
+
 \subsection{Installing on ORNL OLCF Titan Cray XK7 (CPU version)}
+\begin{verbatim}
+module swap PrgEnv-pgi PrgEnv-gnu # Use gnu compilers
+module unload cudatoolkit         # No CUDA for CPU build
+module load cray-hdf5
+module load cmake
+module load fftw
+export FFTW_HOME=$FFTW_DIR/..
+module load boost
+mkdir build_titan_cpu
+cd build_titan_cpu
+cmake ..
+\end{verbatim}
+
 \subsection{Installing on ORNL OLCF Eos Cray XC30}
-\subsection{Installing on NERSC Cori Cray XC40}
+\begin{verbatim}
+module load cray-hdf5
+module load cmake
+module load fftw
+export FFTW_HOME=$FFTW_DIR/..
+module load boost
+mkdir build_eos
+cd build_eos
+cmake ..
+\end{verbatim}
+
 \subsection{Installing on NERSC Edison Cray XC30}
+
+\begin{verbatim}
+module load cray-hdf5
+module load cmake
+module load fftw
+export FFTW_HOME=$FFTW_DIR/..
+module load boost
+mkdir build_edison
+cd build_edison
+cmake ..
+\end{verbatim}
+When the above was tested on 1 February 2016, the following module and
+software versions were present:
+\begin{verbatim}
+qmcpack@edison04:trunk> module list
+Currently Loaded Modulefiles:
+  1) modules/3.2.10.3                       9) udreg/2.3.2-1.0502.9889.2.20.ari      17) rca/1.0.0-2.0502.57212.2.56.ari       25) darshan/2.3.0
+  2) nsg/1.2.0                             10) ugni/6.0-1.0502.10245.9.9.ari         18) atp/1.8.3                             26) subversion/1.7.9
+  3) eswrap/1.1.0-1.020200.1130.0          11) pmi/5.0.10-1.0000.11050.0.0.ari       19) PrgEnv-intel/5.2.56                   27) cray-hdf5/1.8.14
+  4) switch/1.0-1.0502.57058.1.58.ari      12) dmapp/7.0.1-1.0502.10246.8.47.ari     20) craype-ivybridge                      28) cmake/2.8.11.2
+  5) craype-network-aries                  13) gni-headers/4.0-1.0502.10317.9.2.ari  21) cray-shmem/7.3.0                      29) fftw/3.3.4.6
+  6) craype/2.5.0                          14) xpmem/0.1-2.0502.57015.1.15.ari       22) cray-mpich/7.3.0                      30) boost/1.54
+  7) intel/15.0.1.133                      15) dvs/2.5_0.9.0-1.0502.1958.2.55.ari    23) slurm/edison
+  8) cray-libsci/13.3.0                    16) alps/5.2.3-2.0502.9295.14.14.ari      24) altd/2.0
+\end{verbatim}
+
+\subsection{Installing on NERSC Cori Cray XC40}
+\begin{verbatim}
+module load cray-hdf5
+module load cmake
+module load fftw
+export FFTW_HOME=$FFTW_DIR/..
+module load boost
+mkdir build_edison
+cd build_edison
+cmake ..
+\end{verbatim}
+When the above was tested on 1 February 2016, the following module and
+software versions were present:
+\begin{verbatim}
+qmcpack@cori05:trunk> module list
+Currently Loaded Modulefiles:
+  1) nsg/1.2.0                             11) pmi/5.0.9-1.0000.10911.0.0.ari        21) cray-shmem/7.2.5
+  2) modules/3.2.10.3                      12) dmapp/7.0.1-1.0502.11080.8.76.ari     22) cray-mpich/7.2.5
+  3) eswrap/1.1.0-1.020200.1231.0          13) gni-headers/4.0-1.0502.10859.7.8.ari  23) slurm/cori
+  4) switch/1.0-1.0502.60522.1.61.ari      14) xpmem/0.1-2.0502.64982.5.3.ari        24) cray-hdf5/1.8.14
+  5) intel/16.0.0.109                      15) dvs/2.5_0.9.0-1.0502.2188.1.116.ari   25) gcc/5.1.0
+  6) craype-network-aries                  16) alps/5.2.4-2.0502.9774.31.11.ari      26) cmake/3.3.2
+  7) craype/2.4.2                          17) rca/1.0.0-2.0502.60530.1.62.ari       27) fftw/3.3.4.5
+  8) cray-libsci/13.2.0                    18) atp/1.8.3                             28) boost/1.59
+  9) udreg/2.3.2-1.0502.10518.2.17.ari     19) PrgEnv-intel/5.2.82
+ 10) ugni/6.0-1.0502.10863.8.29.ari        20) craype-haswell
+\end{verbatim}
 
 \section{Testing and validation of QMCPACK}
 \label{sec:testing}
@@ -450,5 +545,6 @@ Optimized BLAS. Vector math library.
 \section{Troubleshooting the installation}
 \label{sec:troubleshoot}
 Build on a workstation you control
+Verbose builds
 Out of date software
 Update CMake
