@@ -331,7 +331,14 @@ class Qmcpack(Simulation):
             else:
                 self.error('incorporating jastrow from '+sim.__class__.__name__+' has not been implemented')
             #end if
-
+        elif result_name=='particles':
+            if isinstance(sim,Convert4qmc):
+                ptcl_file = result.location
+                qi = QmcpackInput(ptcl_file)
+                self.input.simulation.qmcsystem.particlesets = qi.qmcsystem.particlesets
+            else:
+                self.error('incorporating particles from '+sim.__class__.__name__+' has not been implemented')
+            # end if
         elif result_name=='structure':
 
             structure = self.system.structure
