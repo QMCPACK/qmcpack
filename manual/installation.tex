@@ -361,7 +361,6 @@ production a platform optimized BLAS should be used.
 sudo yum install make cmake gcc gcc-c++ subversion openmpi  openmpi-devel fftw fftw-devel boost boost-devel libxml2 libxml2-devel
 sudo yum install blas-devel lapack-devel atlas-devel
 module load mpi 
-
 \end{verbatim}
 
 To setup repoforge as a source for the HDF5 package, go to
@@ -383,7 +382,7 @@ which mpirun
 export CXX=mpiCC
 cd build
 cmake ..
-make -j 8
+make -j 8  
 ls -l bin/qmcapp
 \end{verbatim}
 
@@ -484,6 +483,7 @@ module load boost
 mkdir build_titan_gpu
 cd build_titan_gpu
 cmake -DQMC_CUDA=1 ..             # Must enable CUDA capabilities
+make -j 8
 ls -l bin/qmcapp 
 \end{verbatim}
 
@@ -502,6 +502,7 @@ module load boost
 mkdir build_titan_cpu
 cd build_titan_cpu
 cmake ..
+make -j 8  
 ls -l bin/qmcapp 
 \end{verbatim}
 
@@ -519,6 +520,7 @@ module load boost
 mkdir build_eos
 cd build_eos
 cmake ..
+make -j 8 
 ls -l bin/qmcapp 
 \end{verbatim}
 
@@ -536,6 +538,7 @@ module load boost
 mkdir build_edison
 cd build_edison
 cmake ..
+make -j 8  
 ls -l bin/qmcapp 
 \end{verbatim}
 When the above was tested on 1 February 2016, the following module and
@@ -566,6 +569,7 @@ module load boost
 mkdir build_cori
 cd build_cori
 cmake ..
+make -j 8  
 ls -l bin/qmcapp 
 \end{verbatim}
 
