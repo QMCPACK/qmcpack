@@ -5,7 +5,7 @@ This chapter describes how to obtain, build and validate QMCPACK. This process i
 possible and should be no harder than building a modern plane-wave density
 functional theory code such as Quantum Espresso, QBox, or
 VASP. Parallel builds enable a complete
-compilation in under 2 minutes on a fast multicore system, If you
+compilation in under 2 minutes on a fast multicore system. If you
 are unfamiliar with building codes we suggest working with your system
 administrator to install QMCPACK.
 
@@ -315,13 +315,13 @@ cmake                                                \
 
 This section describes how to build QMCPACK on various common systems
 including multiple Linux distributions, Apple OS X, and various
-supercomputers. The examples should serve as good starting point for
+supercomputers. The examples should serve as good starting points for
 building QMCPACK on similar machines. For example, the software
 environment on modern Crays is very consistent. Note that updates to
 operating systems and system software may require small modifications
-to these recipes. See Section \label{sec:buildperformance} for key
+to these recipes. See Section \ref{sec:buildperformance} for key
 points to check to obtain highest performance and
-Section \label{sec:troubleshoot} for troubleshooting hints.
+Section \ref{sec:troubleshoot} for troubleshooting hints.
 
 \subsection{Installing on Ubuntu Linux or other apt-get based distributions}
 
@@ -775,7 +775,8 @@ Some tips to help troubleshoot installations of QMCPACK:
   being configured. It is common to have multiple versions
   installed. The configure system will stop at the first version it
   finds which might not be the most recent. If this occurs, specify the appropriate
-  directories directly (Section \ref{sec:cmakeoptions}).
+  directories and files directly (Section
+  \ref{sec:cmakeoptions}). e.g. cmake -DCMAKE\_C\_COMPILER=/full/path/to/mpicc -DCMAKE\_CXX\_COMPILER=/full/path/to/mpicxx ..
 \end{itemize}
 
 If you still have problems please post to the QMCPACK Google group with full
