@@ -617,10 +617,30 @@ build directory:
 \begin{verbatim}
 ctest -R short   # Run the tests with "short" in their name
 \end{verbatim}
+The output should be similar to the following:
+\begin{verbatim}
+Test project build_gcc
+      Start  1: short-LiH_dimer_ae-vmc_hf_noj-16-1
+ 1/44 Test  #1: short-LiH_dimer_ae-vmc_hf_noj-16-1 ..................  Passed   11.20 sec
+      Start  2: short-LiH_dimer_ae-vmc_hf_noj-16-1-kinetic
+ 2/44 Test  #2: short-LiH_dimer_ae-vmc_hf_noj-16-1-kinetic ..........  Passed    0.13 sec
+..
+42/44 Test #42: short-monoO_1x1x1_pp-vmc_sdj-1-16 ...................  Passed   10.02 sec
+      Start 43: short-monoO_1x1x1_pp-vmc_sdj-1-16-totenergy
+43/44 Test #43: short-monoO_1x1x1_pp-vmc_sdj-1-16-totenergy .........  Passed    0.08 sec
+      Start 44: short-monoO_1x1x1_pp-vmc_sdj-1-16-samples
+44/44 Test #44: short-monoO_1x1x1_pp-vmc_sdj-1-16-samples ...........  Passed    0.08 sec
+
+100% tests passed, 0 tests failed out of 44
+
+Total Test time (real) = 167.14 sec
+\end{verbatim}
+Note that the number of tests that are run varies between the
+standard, complex, and GPU compilations.
 
 The  full set of tests consist of significantly longer versions of the short
-tests. They require several hours each to run yielding much more
-stringent tests. To run all the tests simply run ctest in the build
+tests. They require several hours each to run yielding a much more
+stringent test of the code. To run all the tests simply run ctest in the build
 directory:
 
 \begin{verbatim}
