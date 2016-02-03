@@ -191,27 +191,34 @@ the path to the source directory.
 \begin{itemize}
 \item  Key QMCPACK build options
 \begin{verbatim}
-QMC_CUDA            Enable CUDA and GPU acceleration (1:yes, 0:no)
-QMC_COMPLEX         Build the complex (general twist/k-point) version (1:yes, 0:no)
+QMC_CUDA           Enable CUDA and GPU acceleration (1:yes, 0:no)
+QMC_COMPLEX        Build the complex (general twist/k-point) version (1:yes, 0:no)
 \end{verbatim}
   \item General build options
 \begin{verbatim}
-CMAKE_BUILD_TYPE    A variable which controls the type of build (defaults to Release).  Possible values are:
-                   None (Do not set debug/optmize flags, use CMAKE_C_FLAGS or CMAKE_CXX_FLAGS)
+CMAKE_BUILD_TYPE   A variable which controls the type of build
+                   (defaults to Release). Possible values are:
+                   None (Do not set debug/optmize flags, use 
+                   CMAKE_C_FLAGS or CMAKE_CXX_FLAGS)
                    Debug (create a debug build)
                    Release (create a release/optimized build)
                    RelWithDebInfo (create a release/optimized build with debug info)
                    MinSizeRel (create an executable optimized for size)
-CMAKE_C_COMPILER    Set the C compiler
-CMAKE_CXX_COMPILER  Set the C++ compiler
-CMAKE_C_FLAGS       Set the C flags.  Note: to prevent default debug/release flags from being used, set the CMAKE_BUILD_TYPE=None
-                   Also supported: CMAKE_C_FLAGS_DEBUG, CMAKE_C_FLAGS_RELEASE, CMAKE_C_FLAGS_RELWITHDEBINFO
-CMAKE_CXX_FLAGS     Set the C++ flags.  Note: to prevent default debug/release flags from being used, set the CMAKE_BUILD_TYPE=None
-                   Also supported: CMAKE_CXX_FLAGS_DEBUG, CMAKE_CXX_FLAGS_RELEASE, CMAKE_CXX_FLAGS_RELWITHDEBINFO
+CMAKE_C_COMPILER   Set the C compiler
+CMAKE_CXX_COMPILER Set the C++ compiler
+CMAKE_C_FLAGS      Set the C flags.  Note: to prevent default
+                   debug/release flags frombeing used, set the CMAKE_BUILD_TYPE=None
+                   Also supported: CMAKE_C_FLAGS_DEBUG,
+                   CMAKE_C_FLAGS_RELEASE, and CMAKE_C_FLAGS_RELWITHDEBINFO
+CMAKE_CXX_FLAGS    Set the C++ flags.  Note: to prevent default
+                   debug/release flags from being used, set the CMAKE_BUILD_TYPE=None
+                   Also supported: CMAKE_CXX_FLAGS_DEBUG,
+                   CMAKE_CXX_FLAGS_RELEASE, and CMAKE_CXX_FLAGS_RELWITHDEBINFO
 \end{verbatim}
 \item Additional QMCPACK build options
 \begin{verbatim}
-QMC_DATA            Specify data directory for QMCPACK (currently unused, but likely to be used for performance tests)
+QMC_DATA            Specify data directory for QMCPACK (currently
+                    unused, but likely to be used for performance tests)
 QMC_INCLUDE         Add extra include paths
 QMC_EXTRA_LIBS      Add extra link libraries
 QMC_BUILD_STATIC    Add -static flags to build
@@ -358,7 +365,8 @@ default. Note that for convenience we use a generic BLAS. For
 production a platform optimized BLAS should be used.
 
 \begin{verbatim}
-sudo yum install make cmake gcc gcc-c++ subversion openmpi  openmpi-devel fftw fftw-devel boost boost-devel libxml2 libxml2-devel
+sudo yum install make cmake gcc gcc-c++ subversion openmpi openmpi-devel fftw fftw-devel \
+                  boost boost-devel libxml2 libxml2-devel
 sudo yum install blas-devel lapack-devel atlas-devel
 module load mpi 
 \end{verbatim}
@@ -548,14 +556,21 @@ software versions were present:
 \begin{verbatim}
 qmcpack@edison04:trunk> module list
 Currently Loaded Modulefiles:
-  1) modules/3.2.10.3                       9) udreg/2.3.2-1.0502.9889.2.20.ari      17) rca/1.0.0-2.0502.57212.2.56.ari       25) darshan/2.3.0
-  2) nsg/1.2.0                             10) ugni/6.0-1.0502.10245.9.9.ari         18) atp/1.8.3                             26) subversion/1.7.9
-  3) eswrap/1.1.0-1.020200.1130.0          11) pmi/5.0.10-1.0000.11050.0.0.ari       19) PrgEnv-intel/5.2.56                   27) cray-hdf5/1.8.14
-  4) switch/1.0-1.0502.57058.1.58.ari      12) dmapp/7.0.1-1.0502.10246.8.47.ari     20) craype-ivybridge                      28) cmake/2.8.11.2
-  5) craype-network-aries                  13) gni-headers/4.0-1.0502.10317.9.2.ari  21) cray-shmem/7.3.0                      29) fftw/3.3.4.6
-  6) craype/2.5.0                          14) xpmem/0.1-2.0502.57015.1.15.ari       22) cray-mpich/7.3.0                      30) boost/1.54
-  7) intel/15.0.1.133                      15) dvs/2.5_0.9.0-1.0502.1958.2.55.ari    23) slurm/edison
-  8) cray-libsci/13.3.0                    16) alps/5.2.3-2.0502.9295.14.14.ari      24) altd/2.0
+  1) modules/3.2.10.3                        16) alps/5.2.3-2.0502.9295.14.14.ari      
+  2) nsg/1.2.0                               17) rca/1.0.0-2.0502.57212.2.56.ari       
+  3) eswrap/1.1.0-1.020200.1130.0            18) atp/1.8.3                             
+  4) switch/1.0-1.0502.57058.1.58.ari        19) PrgEnv-intel/5.2.56                   
+  5) craype-network-aries                    20) craype-ivybridge                      
+  6) craype/2.5.0                            21) cray-shmem/7.3.0                      
+  7) intel/15.0.1.133                        22) cray-mpich/7.3.0                     
+  8) cray-libsci/13.3.0                      23) slurm/edison                         
+  9) udreg/2.3.2-1.0502.9889.2.20.ari        24) altd/2.0                             
+ 10) ugni/6.0-1.0502.10245.9.9.ari           25) darshan/2.3.0                        
+ 11) pmi/5.0.10-1.0000.11050.0.0.ari         26) subversion/1.7.9                     
+ 12) dmapp/7.0.1-1.0502.10246.8.47.ari       27) cray-hdf5/1.8.14                     
+ 13) gni-headers/4.0-1.0502.10317.9.2.ari    28) cmake/2.8.11.2                       
+ 14) xpmem/0.1-2.0502.57015.1.15.ari         29) fftw/3.3.4.6                         
+ 15) dvs/2.5_0.9.0-1.0502.1958.2.55.ari      30) boost/1.54                           
 \end{verbatim}
 
 \subsection{Installing on NERSC Cori (Phase 1) Cray XC40}
@@ -581,16 +596,20 @@ software versions were present:
 \begin{verbatim}
 qmcpack@cori05:trunk> module list
 Currently Loaded Modulefiles:
-  1) nsg/1.2.0                             11) pmi/5.0.9-1.0000.10911.0.0.ari        21) cray-shmem/7.2.5
-  2) modules/3.2.10.3                      12) dmapp/7.0.1-1.0502.11080.8.76.ari     22) cray-mpich/7.2.5
-  3) eswrap/1.1.0-1.020200.1231.0          13) gni-headers/4.0-1.0502.10859.7.8.ari  23) slurm/cori
-  4) switch/1.0-1.0502.60522.1.61.ari      14) xpmem/0.1-2.0502.64982.5.3.ari        24) cray-hdf5/1.8.14
-  5) intel/16.0.0.109                      15) dvs/2.5_0.9.0-1.0502.2188.1.116.ari   25) gcc/5.1.0
-  6) craype-network-aries                  16) alps/5.2.4-2.0502.9774.31.11.ari      26) cmake/3.3.2
-  7) craype/2.4.2                          17) rca/1.0.0-2.0502.60530.1.62.ari       27) fftw/3.3.4.5
-  8) cray-libsci/13.2.0                    18) atp/1.8.3                             28) boost/1.59
-  9) udreg/2.3.2-1.0502.10518.2.17.ari     19) PrgEnv-intel/5.2.82
- 10) ugni/6.0-1.0502.10863.8.29.ari        20) craype-haswell
+  1) nsg/1.2.0                             15) dvs/2.5_0.9.0-1.0502.2188.1.116.ari            
+  2) modules/3.2.10.3                      16) alps/5.2.4-2.0502.9774.31.11.ari               
+  3) eswrap/1.1.0-1.020200.1231.0          17) rca/1.0.0-2.0502.60530.1.62.ari                
+  4) switch/1.0-1.0502.60522.1.61.ari      18) atp/1.8.3                                      
+  5) intel/16.0.0.109                      19) PrgEnv-intel/5.2.82                            
+  6) craype-network-aries                  20) craype-haswell                                 
+  7) craype/2.4.2                          21) cray-shmem/7.2.5                               
+  8) cray-libsci/13.2.0                    22) cray-mpich/7.2.5                               
+  9) udreg/2.3.2-1.0502.10518.2.17.ari     23) slurm/cori                                     
+ 10) ugni/6.0-1.0502.10863.8.29.ari        24) cray-hdf5/1.8.14                               
+ 11) pmi/5.0.9-1.0000.10911.0.0.ari        25) gcc/5.1.0                                      
+ 12) dmapp/7.0.1-1.0502.11080.8.76.ari     26) cmake/3.3.2                                    
+ 13) gni-headers/4.0-1.0502.10859.7.8.ari  27) fftw/3.3.4.5                                   
+ 14) xpmem/0.1-2.0502.64982.5.3.ari        28) boost/1.59                                     
 \end{verbatim}
 
 \section{Testing and validation of QMCPACK}
@@ -621,15 +640,15 @@ The output should be similar to the following:
 \begin{verbatim}
 Test project build_gcc
       Start  1: short-LiH_dimer_ae-vmc_hf_noj-16-1
- 1/44 Test  #1: short-LiH_dimer_ae-vmc_hf_noj-16-1 ..................  Passed   11.20 sec
+ 1/44 Test  #1: short-LiH_dimer_ae-vmc_hf_noj-16-1 ..............  Passed   11.20 sec
       Start  2: short-LiH_dimer_ae-vmc_hf_noj-16-1-kinetic
- 2/44 Test  #2: short-LiH_dimer_ae-vmc_hf_noj-16-1-kinetic ..........  Passed    0.13 sec
+ 2/44 Test  #2: short-LiH_dimer_ae-vmc_hf_noj-16-1-kinetic ......  Passed    0.13 sec
 ..
-42/44 Test #42: short-monoO_1x1x1_pp-vmc_sdj-1-16 ...................  Passed   10.02 sec
+42/44 Test #42: short-monoO_1x1x1_pp-vmc_sdj-1-16 ...............  Passed   10.02 sec
       Start 43: short-monoO_1x1x1_pp-vmc_sdj-1-16-totenergy
-43/44 Test #43: short-monoO_1x1x1_pp-vmc_sdj-1-16-totenergy .........  Passed    0.08 sec
+43/44 Test #43: short-monoO_1x1x1_pp-vmc_sdj-1-16-totenergy .....  Passed    0.08 sec
       Start 44: short-monoO_1x1x1_pp-vmc_sdj-1-16-samples
-44/44 Test #44: short-monoO_1x1x1_pp-vmc_sdj-1-16-samples ...........  Passed    0.08 sec
+44/44 Test #44: short-monoO_1x1x1_pp-vmc_sdj-1-16-samples .......  Passed    0.08 sec
 
 100% tests passed, 0 tests failed out of 44
 
