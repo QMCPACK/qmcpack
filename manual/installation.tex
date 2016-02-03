@@ -143,7 +143,7 @@ cd build
 cmake -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc ..
 make -j 8
 \end{verbatim}
-You can increase the \"8\" to the number of cores on your system for
+You can increase the ``8'' to the number of cores on your system for
 faster builds. Substitute mpicc and mpicxx or other wrapped compiler names to suit
   your system. e.g. With OpenMPI use
 \begin{verbatim}
@@ -207,7 +207,7 @@ CMAKE_BUILD_TYPE   A variable which controls the type of build
 CMAKE_C_COMPILER   Set the C compiler
 CMAKE_CXX_COMPILER Set the C++ compiler
 CMAKE_C_FLAGS      Set the C flags.  Note: to prevent default
-                   debug/release flags frombeing used, set the CMAKE_BUILD_TYPE=None
+                   debug/release flags from being used, set the CMAKE_BUILD_TYPE=None
                    Also supported: CMAKE_C_FLAGS_DEBUG,
                    CMAKE_C_FLAGS_RELEASE, and CMAKE_C_FLAGS_RELWITHDEBINFO
 CMAKE_CXX_FLAGS    Set the C++ flags.  Note: to prevent default
