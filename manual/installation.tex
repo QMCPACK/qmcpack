@@ -710,7 +710,7 @@ For trial wavefunctions obtained in a plane-wave basis we mainly
 support Quantum Espresso. Note that ABINIT and QBox were supported historically
 and could be reactivated.
 
-Quantum-Espresso current stores wavefunctions in a non-standard internal
+Quantum Espresso currently stores wavefunctions in a non-standard internal
 ``save'' format. To convert these to a conventional HDF5 format file
 we have developed a converter, pw2qmcpack. This is an add on to the
 Quantum Espresso distribution.
@@ -723,8 +723,8 @@ patch QE v5.3.0:
 cd external_codes/quantum_espresso
 ./download_and_patch_qe5.3.0.sh
 \end{verbatim}
-After running the patch, be sure to configure quantum espresso with
-the HDF5 capability enabled, e.g.
+After running the patch, you must configure Quantum Espresso with
+the HDF5 capability enabled, i.e.
 \begin{verbatim}
 cd espresso-5.3.0
 ./configure --with-hdf5 HDF5_DIR=/opt/local   # Specify HDF5 base directory
@@ -755,20 +755,16 @@ To build the fastest version of QMCPACK we recommend the following:
 
 Note that greater speedups of QMC calculations can usually be obtained by
 carefully choosing the required statistics for each
-investigation. e.g. By not computing smaller error bars than necessary.
+investigation. i.e. Do not compute smaller error bars than necessary.
 
 \section{Troubleshooting the installation}
 \label{sec:troubleshoot}
 Some tips to help troubleshoot installations of QMCPACK:
 \begin{itemize}
-\item First, build QMCPACK on a workstation that you control, or any
-  system that is likely to have a simple up-to-date set of development
+\item First, build QMCPACK on a workstation that you control, or on any
+  system that has a simple and up-to-date set of development
   tools. You can compare the results of cmake and QMCPACK on this
   system with any more difficult systems you encounter.
-\item To monitor the compiler settings, use a verbose build, ``make
-  VERBOSE=1''. If an individual source file is failing to compile you
-  can experiment by hand using the output of the verbose build to
-  reconstruct the full compilation line.
 \item Use up to date development software, particularly a recent
   CMake. 
 \item Verify that the compilers and libraries that you expect are
@@ -777,6 +773,10 @@ Some tips to help troubleshoot installations of QMCPACK:
   finds which might not be the most recent. If this occurs, specify the appropriate
   directories and files directly (Section
   \ref{sec:cmakeoptions}). e.g. cmake -DCMAKE\_C\_COMPILER=/full/path/to/mpicc -DCMAKE\_CXX\_COMPILER=/full/path/to/mpicxx ..
+\item To monitor the compiler and linker settings, use a verbose build, ``make
+  VERBOSE=1''. If an individual source file fails to compile you
+  can experiment by hand using the output of the verbose build to
+  reconstruct the full compilation line.
 \end{itemize}
 
 If you still have problems please post to the QMCPACK Google group with full
