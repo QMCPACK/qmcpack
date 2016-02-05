@@ -1336,6 +1336,7 @@ struct TraceAnalyzer
 
   void collect_data_and_write(int s)
   {
+#if USE_MPI
     //collect quantity data across mpi
     if(comm->size()>1)
     {
@@ -1365,6 +1366,7 @@ struct TraceAnalyzer
         nblocks_min = nbm_out[0];
       app_log()<<"    comm    time: "<<time.elapsed()<<endl;
     }
+#endif
 
     //analyze stats and write quantity data
     if(master)  
