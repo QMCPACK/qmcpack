@@ -1,7 +1,7 @@
 These directories contain input files for the automated test
 system. They are not intended to be run separately although any
 QMCPACK inputs should run to completion when run from the same
-directory as the input, e.g. mpirun -n 16 qmcapp vmc.in.xml
+directory as the input, e.g. mpirun -n 16 qmcpack vmc.in.xml
 
 To run the automated tests, from the build directory, run
 

@@ -346,7 +346,7 @@ export CXX=mpiCC
 cd build
 cmake ..
 make -j 8
-ls -l bin/qmcapp
+ls -l bin/qmcpack
 \end{verbatim}
 
 For qmca and other tools to function, we install some python libraries:
@@ -391,7 +391,7 @@ export CXX=mpiCC
 cd build
 cmake ..
 make -j 8  
-ls -l bin/qmcapp
+ls -l bin/qmcpack
 \end{verbatim}
 
 \subsection{Installing on Mac OS X using Macports}
@@ -448,7 +448,7 @@ export FFTW_HOME=/opt/local
 cd build
 cmake ..
 make -j 6 # Adjust for available core count
-ls -l bin/qmcapp 
+ls -l bin/qmcpack 
 \end{verbatim}
 
 \subsection{Installing on ANL ALCF Mira/Cetus IBM Blue Gene/Q}
@@ -460,7 +460,7 @@ cd build
 cmake -DCMAKE_TOOLCHAIN_FILE=../config/BGQToolChain.cmake ..
 cmake -DCMAKE_TOOLCHAIN_FILE=../config/BGQToolChain.cmake ..
 make -j 16
-ls -l bin/qmcapp
+ls -l bin/qmcpack
 \end{verbatim}
 
 In addition, adding a very useful cmake option
@@ -494,7 +494,7 @@ mkdir build_titan_gpu
 cd build_titan_gpu
 cmake -DQMC_CUDA=1 ..             # Must enable CUDA capabilities
 make -j 8
-ls -l bin/qmcapp 
+ls -l bin/qmcpack 
 \end{verbatim}
 
 \subsection{Installing on ORNL OLCF Titan Cray XK7 (CPU version)}
@@ -513,7 +513,7 @@ mkdir build_titan_cpu
 cd build_titan_cpu
 cmake ..
 make -j 8  
-ls -l bin/qmcapp 
+ls -l bin/qmcpack 
 \end{verbatim}
 
 \subsection{Installing on ORNL OLCF Eos Cray XC30}
@@ -531,7 +531,7 @@ mkdir build_eos
 cd build_eos
 cmake ..
 make -j 8 
-ls -l bin/qmcapp 
+ls -l bin/qmcpack 
 \end{verbatim}
 
 \subsection{Installing on NERSC Edison Cray XC30}
@@ -549,7 +549,7 @@ mkdir build_edison
 cd build_edison
 cmake ..
 make -j 8  
-ls -l bin/qmcapp 
+ls -l bin/qmcpack 
 \end{verbatim}
 When the above was tested on 1 February 2016, the following module and
 software versions were present:
@@ -587,7 +587,7 @@ mkdir build_cori
 cd build_cori
 cmake ..
 make -j 8  
-ls -l bin/qmcapp 
+ls -l bin/qmcpack 
 \end{verbatim}
 
 When the above was tested on 1 February 2016, the following module and

@@ -17,13 +17,20 @@ ADD_LIBRARY(qmc ${QMCAPPDIR})
 
 ####################################
 # list of QMC applications
-# qmcapp is the only one
 ####################################
-SET(QMCSRCS qmcapp)
+SET(QMCSRCS qmcpack)
 
 FOREACH(p ${QMCSRCS})
 
-  ADD_EXECUTABLE(${p} ${p}.cpp)
+# QMCPACK historically called qmcapp, and still built from qmcapp.cpp
+# Override source name for executable in this case, otherwise
+# executablename.cpp used for main()
+ IF ( ${p} STREQUAL "qmcpack" )
+  ADD_EXECUTABLE(${p} qmcapp.cpp) 
+ELSE()
+  ADD_EXECUTABLE(${p} ${p}.cpp) 
+ENDIF()
+
   TARGET_LINK_LIBRARIES(${p} qmc qmcdriver qmcham qmcwfs qmcbase qmcutil adios_config)
 
   FOREACH(l ${QMC_UTIL_LIBS})
