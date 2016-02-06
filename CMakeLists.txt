@@ -687,6 +687,14 @@ IF(QMC_EXTRA_LIBS)
   MESSAGE("QMC_UTIL_LIBS=${QMC_UTIL_LIBS}")
 ENDIF()
 
+# Avoid unused variables warnings (for now) by using for information purposes
+IF(QMC_DATA)
+MESSAGE(STATUS "QMC_DATA is ${QMC_DATA}")
+ENDIF()
+IF(ENABLE_GCOV)
+MESSAGE(STATUS "GCOV is enabled")
+ENDIF()
+
 ###################################################
 # Done searching libraries. Start building qmcpack
 ###################################################
