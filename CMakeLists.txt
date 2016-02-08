@@ -24,6 +24,8 @@ SET( DROP_SITE "cdash.qmcpack.org" )
 SET( DROP_LOCATION "/CDash/submit.php?project=QMCPACK" )
 SET( TRIGGER_SITE "" )
 SET( DROP_SITE_CDASH TRUE )
+# Increase timeout per test over the default of 1500 seconds (25 minutes)
+SET( DART_TESTING_TIMEOUT 3600 CACHE STRING "Maximum time for one test")
 ENABLE_TESTING()
 INCLUDE( CTest )
 

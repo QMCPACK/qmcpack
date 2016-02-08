@@ -69,6 +69,61 @@ else()
 #   COPY_DIRECTORY("${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_ae" "${CMAKE_CURRENT_BINARY_DIR}/short-LiH_dimer_ae") 
 #    SET (USE_EXT_MPI_FOR_SERIAL_TESTS)
 
+
+# Add a test run and associated scalar checks
+# BASE_NAME - name of test (number of MPI processes, number of threads, and value to check (if applicable)
+#             will be appended to get the full test name)
+# BASE_DIR - source location of test input files
+# PREFIX - prefix for output files
+# INPUT_FILE - XML input file to QMCPACK
+# PROCS - number of MPI processes
+# THREADS - number of OpenMP threads
+# SCALAR_VALUES - list of output values to check with check_scalars.py
+#                 The list entries alternate between the value name and the value (usually a string with the
+#                 both the average and error).
+# SHOULD_SUCCEED - whether the test is expected to pass or fail.  Expected failing tests will not have
+#                  the scalar tests added.
+
+FUNCTION(QMC_RUN_AND_CHECK BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SCALAR_VALUES SHOULD_SUCCEED)
+    # Map from name of check to appropriate flag for check_scalars.py
+    LIST(APPEND SCALAR_CHECK_TYPE "kinetic" "totenergy" "eeenergy" "samples" "potential" "localpotential")
+    LIST(APPEND CHECK_SCALAR_FLAG "--ke"    "--le"      "--ee"     "--ts"    "--lp"      "--lpp")
+
+    SET( TEST_ADDED FALSE )
+    SET( FULL_NAME "${BASE_NAME}-${PROCS}-${THREADS}" )
+    MESSAGE("Adding test ${FULL_NAME}")
+    RUN_QMC_APP(${FULL_NAME} ${BASE_DIR} ${PROCS} ${THREADS} ${TEST_ADDED} ${INPUT_FILE})
+
+
+    IF ( TEST_ADDED AND NOT SHOULD_SUCCEED)
+        SET_PROPERTY(TEST ${FULL_NAME} APPEND PROPERTY WILL_FAIL TRUE)
+        #MESSAGE("Test ${FULL_NAME} should fail")
+    ENDIF()
+
+    IF ( TEST_ADDED AND SHOULD_SUCCEED)
+        FOREACH(SCALAR_CHECK IN LISTS SCALAR_CHECK_TYPE)
+            LIST(FIND ${SCALAR_VALUES} ${SCALAR_CHECK} IDX1)
+            IF (IDX1 GREATER -1)
+                LIST(FIND SCALAR_CHECK_TYPE ${SCALAR_CHECK} IDX)
+                LIST(GET CHECK_SCALAR_FLAG ${IDX} FLAG)
+
+                MATH( EXPR IDX2 "${IDX1} + 1")
+                LIST(GET ${SCALAR_VALUES} ${IDX2} VALUE)
+
+                SET( TEST_NAME "${FULL_NAME}-${SCALAR_CHECK}" )
+                #MESSAGE("Adding scalar check ${TEST_NAME}")
+                SET(CHECK_CMD ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p ${PREFIX} -e 2 ${FLAG} ${VALUE})
+                #MESSAGE("check command = ${CHECK_CMD}")
+                ADD_TEST( NAME ${TEST_NAME}
+                    COMMAND ${CHECK_CMD}
+                    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${FULL_NAME}"
+                )
+                SET_PROPERTY( TEST ${TEST_NAME} APPEND PROPERTY DEPENDS ${FULL_NAME} )
+            ENDIF()
+        ENDFOREACH(SCALAR_CHECK)
+    ENDIF()
+ENDFUNCTION()
+
 IF(NOT QMC_CUDA)
 
 IF (NOT QMC_COMPLEX)
@@ -76,94 +131,52 @@ IF (NOT QMC_COMPLEX)
 # LiH molecular dimer gaussian tests, all electron
 # Also check results for different number of mpi tasks and threads keeping total constant
 #
-    RUN_QMC_APP(short-LiH_dimer_ae-vmc_hf_noj-16-1 "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_ae" 16 1 vmc_hf_noj.in.xml) 
-    ADD_TEST( NAME short-LiH_dimer_ae-vmc_hf_noj-16-1-kinetic
-        COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p vmc_hf_noj -e 2 --ke "7.9914014383 0.03"
-        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/short-LiH_dimer_ae-vmc_hf_noj-16-1"
-    )
-    SET_PROPERTY( TEST short-LiH_dimer_ae-vmc_hf_noj-16-1-kinetic APPEND PROPERTY DEPENDS short-LiH_dimer_ae-vmc_hf_noj-16-1 )
-   ADD_TEST( NAME short-LiH_dimer_ae-vmc_hf_noj-16-1-totenergy
-        COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p vmc_hf_noj -e 2 --le "-7.9873236457 0.003"
-        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/short-LiH_dimer_ae-vmc_hf_noj-16-1"
-    )
-    SET_PROPERTY( TEST short-LiH_dimer_ae-vmc_hf_noj-16-1-totenergy APPEND PROPERTY DEPENDS short-LiH_dimer_ae-vmc_hf_noj-16-1 )
-   ADD_TEST( NAME short-LiH_dimer_ae-vmc_hf_noj-16-1-eeenergy
-        COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p vmc_hf_noj -e 2 --ee "3.4888166386 0.0024"
-        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/short-LiH_dimer_ae-vmc_hf_noj-16-1"
-    )
-    SET_PROPERTY( TEST short-LiH_dimer_ae-vmc_hf_noj-16-1-eeenergy APPEND PROPERTY DEPENDS short-LiH_dimer_ae-vmc_hf_noj-16-1 )
-  ADD_TEST( NAME short-LiH_dimer_ae-vmc_hf_noj-16-1-samples
-         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 0 -p vmc_hf_noj --ts "1600000 0.0"
-         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/short-LiH_dimer_ae-vmc_hf_noj-16-1"
-     )
-  SET_PROPERTY( TEST short-LiH_dimer_ae-vmc_hf_noj-16-1-samples APPEND PROPERTY DEPENDS short-LiH_dimer_ae-vmc_hf_noj-16-1 )
+  LIST(APPEND LIH_SCALARS "kinetic" "7.9914014383 0.03") # kinetic energy
+  LIST(APPEND LIH_SCALARS "totenergy" "-7.9873236457 0.003") # total energy
+  LIST(APPEND LIH_SCALARS "eeenergy" "3.4888166386 0.0024") # e-e energy
+  LIST(APPEND LIH_SCALARS "samples" "1600000 0.0") # samples
 
+  QMC_RUN_AND_CHECK(short-LiH_dimer_ae-vmc_hf_noj
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_ae"
+                    vmc_hf_noj
+                    vmc_hf_noj.in.xml
+                    16 1
+                    LIH_SCALARS
+                    TRUE)
 
-    RUN_QMC_APP(short-LiH_dimer_ae-vmc_hf_noj-4-4 "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_ae" 4 4 vmc_hf_noj.in.xml) 
-    ADD_TEST( NAME short-LiH_dimer_ae-vmc_hf_noj-4-4-totenergy
-        COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p vmc_hf_noj -e 2 --le "-7.9873236457 0.003"
-        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/short-LiH_dimer_ae-vmc_hf_noj-4-4"
-    )
-    SET_PROPERTY( TEST short-LiH_dimer_ae-vmc_hf_noj-4-4-totenergy APPEND PROPERTY DEPENDS short-LiH_dimer_ae-vmc_hf_noj-4-4 )
-  ADD_TEST( NAME short-LiH_dimer_ae-vmc_hf_noj-4-4-samples
-         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 0 -p vmc_hf_noj --ts "1600000 0.0"
-         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/short-LiH_dimer_ae-vmc_hf_noj-4-4"
-     )
-  SET_PROPERTY( TEST short-LiH_dimer_ae-vmc_hf_noj-4-4-samples APPEND PROPERTY DEPENDS short-LiH_dimer_ae-vmc_hf_noj-4-4 )
-    
-    RUN_QMC_APP(short-LiH_dimer_ae-vmc_hf_noj-1-16 "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_ae" 1 16 vmc_hf_noj.in.xml) 
-    ADD_TEST( NAME short-LiH_dimer_ae-vmc_hf_noj-1-16-totenergy
-        COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p vmc_hf_noj -e 2 --le "-7.9873236457 0.003"
-        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/short-LiH_dimer_ae-vmc_hf_noj-1-16"
-    )
-    SET_PROPERTY( TEST short-LiH_dimer_ae-vmc_hf_noj-1-16-totenergy APPEND PROPERTY DEPENDS short-LiH_dimer_ae-vmc_hf_noj-1-16 )
-  ADD_TEST( NAME short-LiH_dimer_ae-vmc_hf_noj-1-16-samples
-         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 0 -p vmc_hf_noj --ts "1600000 0.0"
-         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/short-LiH_dimer_ae-vmc_hf_noj-1-16"
-     )
-  SET_PROPERTY( TEST short-LiH_dimer_ae-vmc_hf_noj-1-16-samples APPEND PROPERTY DEPENDS short-LiH_dimer_ae-vmc_hf_noj-1-16 )
+  QMC_RUN_AND_CHECK(short-LiH_dimer_ae-vmc_hf_noj
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_ae"
+                    vmc_hf_noj
+                    vmc_hf_noj.in.xml
+                    4 4
+                    LIH_SCALARS
+                    TRUE)
 
-   RUN_QMC_APP(short-LiH_dimer_ae-vmc_hf_noj_nodrift-16-1 "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_ae" 16 1 vmc_hf_noj_nodrift.in.xml) 
-    ADD_TEST( NAME short-LiH_dimer_ae-vmc_hf_noj_nodrift-16-1-totenergy
-        COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p vmc_hf_noj_nodrift -e 2 --le "-7.9873236457 0.003"
-        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/short-LiH_dimer_ae-vmc_hf_noj_nodrift-16-1"
-    )
-    SET_PROPERTY( TEST short-LiH_dimer_ae-vmc_hf_noj_nodrift-16-1-totenergy APPEND PROPERTY DEPENDS short-LiH_dimer_ae-vmc_hf_noj_nodrift-16-1 )
-  ADD_TEST( NAME short-LiH_dimer_ae-vmc_hf_noj_nodrift-16-1-samples
-         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 0 -p vmc_hf_noj_nodrift --ts "1600000 0.0"
-         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/short-LiH_dimer_ae-vmc_hf_noj_nodrift-16-1"
-     )
-  SET_PROPERTY( TEST short-LiH_dimer_ae-vmc_hf_noj_nodrift-16-1-samples APPEND PROPERTY DEPENDS short-LiH_dimer_ae-vmc_hf_noj_nodrift-16-1 )
+  QMC_RUN_AND_CHECK(short-LiH_dimer_ae-vmc_hf_noj
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_ae"
+                    vmc_hf_noj
+                    vmc_hf_noj.in.xml
+                    1 16
+                    LIH_SCALARS
+                    TRUE)
 
 #
 # LiH molecular dimer pseudopotential tests
 #
-   RUN_QMC_APP(short-LiH_dimer_pp-vmc_hf_noj-1-16 "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_pp" 1 16 vmc_hf_noj.in.xml) 
-    ADD_TEST( NAME short-LiH_dimer_pp-vmc_hf_noj-1-16-totenergy
-        COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p vmc_hf_noj -e 2 --le "-0.7507264125 0.00043"
-        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/short-LiH_dimer_pp-vmc_hf_noj-1-16"
-    )
-    SET_PROPERTY( TEST short-LiH_dimer_pp-vmc_hf_noj-1-16-totenergy APPEND PROPERTY DEPENDS short-LiH_dimer_pp-vmc_hf_noj-1-16 )
-    ADD_TEST( NAME short-LiH_dimer_pp-vmc_hf_noj-1-16-kinetic
-        COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p vmc_hf_noj -e 2 --ke "0.6354491487 0.0013"
-        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/short-LiH_dimer_pp-vmc_hf_noj-1-16"
-    )
-    SET_PROPERTY( TEST short-LiH_dimer_pp-vmc_hf_noj-1-16-kinetic APPEND PROPERTY DEPENDS short-LiH_dimer_pp-vmc_hf_noj-1-16 )
-    ADD_TEST( NAME short-LiH_dimer_pp-vmc_hf_noj-1-16-eeenergy
-        COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p vmc_hf_noj -e 2 --ee "0.4814819907 0.00061"
-        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/short-LiH_dimer_pp-vmc_hf_noj-1-16"
-    )
-    SET_PROPERTY( TEST short-LiH_dimer_pp-vmc_hf_noj-1-16-eeenergy APPEND PROPERTY DEPENDS short-LiH_dimer_pp-vmc_hf_noj-1-16 )
-    ADD_TEST( NAME short-LiH_dimer_pp-vmc_hf_noj-1-16-potential
-        COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p vmc_hf_noj -e 2 --lp "-1.3861755612 0.0013"
-        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/short-LiH_dimer_pp-vmc_hf_noj-1-16"
-    )
-    SET_PROPERTY( TEST short-LiH_dimer_pp-vmc_hf_noj-1-16-potential APPEND PROPERTY DEPENDS short-LiH_dimer_pp-vmc_hf_noj-1-16 )
-  ADD_TEST( NAME short-LiH_dimer_pp-vmc_hf_noj-1-16-samples
-         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 0 -p vmc_hf_noj --ts "1600000 0.0"
-         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/short-LiH_dimer_pp-vmc_hf_noj-1-16"
-     )
-  SET_PROPERTY( TEST short-LiH_dimer_pp-vmc_hf_noj-1-16-samples APPEND PROPERTY DEPENDS short-LiH_dimer_pp-vmc_hf_noj-1-16 )
+  LIST(APPEND LIH_PP_SCALARS "kinetic" "0.6354491487 0.0013")
+  LIST(APPEND LIH_PP_SCALARS "totenergy" "-0.7507264125 0.00043")
+  LIST(APPEND LIH_PP_SCALARS "eeenergy" "0.4814819907 0.00061")
+  LIST(APPEND LIH_PP_SCALARS "potential" "-1.3861755612 0.0013")
+  LIST(APPEND LIH_PP_SCALARS "samples" "1600000 0.0")
+
+  QMC_RUN_AND_CHECK(short-LiH_dimer_pp-vmc_hf_noj
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_pp"
+                    vmc_hf_noj
+                    vmc_hf_noj.in.xml
+                    1 16
+                    LIH_PP_SCALARS
+                    TRUE)
+
  ELSE()
     MESSAGE("Skipping all gaussian basis tests because they are not supported by complex build (QMC_COMPLEX=1)")  
 ENDIF()
@@ -175,193 +188,176 @@ ENDIF()
 # LiH solid einspline wavefunction tests for different k-points
 # Wavefunctions from quantum espresso. Reference energies obtained via pw2casino option
 #
-    RUN_QMC_APP(short-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16 "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp" 1 16 hf_vmc_LiH-gamma.xml) 
-    ADD_TEST( NAME short-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16-kinetic
-        COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p hf_vmc_LiH-gamma -e 2 --ke "7.4145221704067854 0.024"
-        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/short-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16"
-    )
-    SET_PROPERTY( TEST short-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16-kinetic APPEND PROPERTY DEPENDS short-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16 )
-    ADD_TEST( NAME short-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16-localpotential
-        COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p hf_vmc_LiH-gamma -e 2 --lpp "-11.718808431876706 0.025"
-        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/short-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16"
-    )
-    SET_PROPERTY( TEST short-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16-localpotential APPEND PROPERTY DEPENDS short-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16 )
-  ADD_TEST( NAME short-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16-samples
-         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 0 -p hf_vmc_LiH-gamma --ts "1600000 0.0"
-         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/short-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16"
-     )
-  SET_PROPERTY( TEST short-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16-samples APPEND PROPERTY DEPENDS short-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16 )
+  LIST(APPEND LIH_GAMMA_SCALARS "kinetic" "7.4145221704067854 0.024")
+  LIST(APPEND LIH_GAMMA_SCALARS "localpotential" "-11.718808431876706 0.025")
+  LIST(APPEND LIH_GAMMA_SCALARS "samples" "1600000 0.0")
 
-   RUN_QMC_APP(short-LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16 "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp" 1 16 hf_vmc_LiH-x.xml) 
-    ADD_TEST( NAME short-LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16-kinetic
-        COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p hf_vmc_LiH-x -e 2 --ke "7.3772282047321536 0.024"
-        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/short-LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16"
-    )
-    SET_PROPERTY( TEST short-LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16-kinetic APPEND PROPERTY DEPENDS short-LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16 )
-    ADD_TEST( NAME short-LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16-localpotential
-        COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p hf_vmc_LiH-x -e 2 --lpp "-11.414410381100344 0.025"
-        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/short-LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16"
-    )
-    SET_PROPERTY( TEST short-LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16-localpotential APPEND PROPERTY DEPENDS short-LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16 )
-  ADD_TEST( NAME short-LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16-samples
-         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 0 -p hf_vmc_LiH-x --ts "1600000 0.0"
-         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/short-LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16"
-     )
-  SET_PROPERTY( TEST short-LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16-samples APPEND PROPERTY DEPENDS short-LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16 )
+  QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+                    hf_vmc_LiH-gamma
+                    hf_vmc_LiH-gamma.xml
+                    1 16
+                    LIH_GAMMA_SCALARS
+                    TRUE)
+
+
+  LIST(APPEND LIH_X_SCALARS "kinetic" "7.3772282047321536 0.024")
+  LIST(APPEND LIH_X_SCALARS "localpotential" "-11.414410381100344 0.025")
+  LIST(APPEND LIH_X_SCALARS "samples" "1600000 0.0")
+
+  QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-x-vmc_hf_noj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+                    hf_vmc_LiH-x
+                    hf_vmc_LiH-x.xml
+                    1 16
+                    LIH_X_SCALARS
+                    TRUE)
+
 
 # Arbitrary k-point requires complex build to run. Ensure fails with real/non-complex build
-    RUN_QMC_APP(short-LiH_solid_1x1x1_pp-arb-vmc_hf_noj-1-16 "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp" 1 16 hf_vmc_LiH-arb.xml) 
-    IF (NOT QMC_COMPLEX)
-       #message ("Not a complex build")
-       SET_PROPERTY(TEST short-LiH_solid_1x1x1_pp-arb-vmc_hf_noj-1-16 APPEND PROPERTY WILL_FAIL TRUE)
-    ELSE()
-       #message ("Is a complex build")
-       ADD_TEST( NAME short-LiH_solid_1x1x1_pp-arb-vmc_hf_noj-1-16-kinetic
-           COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p hf_vmc_LiH-arb -e 2 --ke "7.4201207734399359 0.024"
-           WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/short-LiH_solid_1x1x1_pp-arb-vmc_hf_noj-1-16"
-       )
-       SET_PROPERTY( TEST short-LiH_solid_1x1x1_pp-arb-vmc_hf_noj-1-16-kinetic APPEND PROPERTY DEPENDS short-LiH_solid_1x1x1_pp-arb-vmc_hf_noj-1-16 )
-       ADD_TEST( NAME short-LiH_solid_1x1x1_pp-arb-vmc_hf_noj-1-16-localpotential
-           COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p hf_vmc_LiH-arb -e 2 --lpp "-11.615276430529056 0.025"
-           WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/short-LiH_solid_1x1x1_pp-arb-vmc_hf_noj-1-16"
-       )
-       SET_PROPERTY( TEST short-LiH_solid_1x1x1_pp-arb-vmc_hf_noj-1-16-localpotential APPEND PROPERTY DEPENDS short-LiH_solid_1x1x1_pp-arb-vmc_hf_noj-1-16 )
-     ADD_TEST( NAME short-LiH_solid_1x1x1_pp-arb-vmc_hf_noj-1-16-samples
-            COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 0 -p hf_vmc_LiH-arb --ts "1600000 0.0"
-            WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/short-LiH_solid_1x1x1_pp-arb-vmc_hf_noj-1-16"
-        )
-     SET_PROPERTY( TEST short-LiH_solid_1x1x1_pp-arb-vmc_hf_noj-1-16-samples APPEND PROPERTY DEPENDS short-LiH_solid_1x1x1_pp-arb-vmc_hf_noj-1-16 )
-    ENDIF() 
+  LIST(APPEND LIH_ARB_SCALARS "kinetic" "7.4201207734399359 0.024")
+  LIST(APPEND LIH_ARB_SCALARS "localpotential" "-11.615276430529056 0.025")
+  LIST(APPEND LIH_ARB_SCALARS "samples" "1600000 0.0") # samples
+
+  IF (QMC_COMPLEX)
+    SET(LIH_ARB_SUCCEED TRUE)
+  ELSE()
+    SET(LIH_ARB_SUCCEED FALSE)
+  ENDIF()
+
+
+  QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-arb-vmc_hf_noj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+                    hf_vmc_LiH-arb
+                    hf_vmc_LiH-arb.xml
+                    1 16
+                    LIH_ARB_SCALARS
+                    ${LIH_ARB_SUCCEED})
 
 #
 # Short tests, about 2-3 seconds on 16 cores
 #
-  RUN_QMC_APP(short-bccH_1x1x1_ae-vmc_sdj-1-16 "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae" 1 16 qmc_short.in.xml) 
-  ADD_TEST( NAME short-bccH_1x1x1_ae-vmc_sdj-1-16-totenergy 
-         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p qmc_short -e 2 --le "-1.834032 0.0003"
-         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/short-bccH_1x1x1_ae-vmc_sdj-1-16"
-     )
-  SET_PROPERTY( TEST short-bccH_1x1x1_ae-vmc_sdj-1-16-totenergy APPEND PROPERTY DEPENDS short-bccH_1x1x1_ae-vmc_sdj-1-16 )
-  ADD_TEST( NAME short-bccH_1x1x1_ae-vmc_sdj-1-16-samples
-         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 0 -p qmc_short --ts "960000 0.0"
-         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/short-bccH_1x1x1_ae-vmc_sdj-1-16"
-     )
-  SET_PROPERTY( TEST short-bccH_1x1x1_ae-vmc_sdj-1-16-samples APPEND PROPERTY DEPENDS short-bccH_1x1x1_ae-vmc_sdj-1-16 )
+  LIST(APPEND BCC_H_SCALARS "totenergy" "-1.834032 0.0003")
+  LIST(APPEND BCC_H_SCALARS "samples" "960000 0.0")
+
+  QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-vmc_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+                    qmc_short
+                    qmc_short.in.xml
+                    1 16
+                    BCC_H_SCALARS
+                    TRUE)
 
 
-  RUN_QMC_APP(short-diamondC_1x1x1_pp-vmc_sdj-1-16 "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp" 1 16 qmc_short.in.xml) 
-  ADD_TEST( NAME short-diamondC_1x1x1_pp-vmc_sdj-1-16-totenergy 
-         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p qmc_short -e 2 --le "-10.491445 0.002"
-         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/short-diamondC_1x1x1_pp-vmc_sdj-1-16"
-     )
-  SET_PROPERTY( TEST short-diamondC_1x1x1_pp-vmc_sdj-1-16-totenergy APPEND PROPERTY DEPENDS short-diamondC_1x1x1_pp-vmc_sdj-1-16 )
-  ADD_TEST( NAME short-diamondC_1x1x1_pp-vmc_sdj-1-16-samples
-         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 0 -p qmc_short --ts "128000 0.0"
-         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/short-diamondC_1x1x1_pp-vmc_sdj-1-16"
-     )
-  SET_PROPERTY( TEST short-diamondC_1x1x1_pp-vmc_sdj-1-16-samples APPEND PROPERTY DEPENDS short-diamondC_1x1x1_pp-vmc_sdj-1-16 )
-  
-  RUN_QMC_APP(short-diamondC_2x1x1_pp-vmc_sdj-1-16 "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp" 1 16 qmc_short.in.xml) 
-  ADD_TEST( NAME short-diamondC_2x1x1_pp-vmc_sdj-1-16-totenergy 
-         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p qmc_short -e 2 --le "-21.668293 0.007"
-         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/short-diamondC_2x1x1_pp-vmc_sdj-1-16"
-     )
-  SET_PROPERTY( TEST short-diamondC_2x1x1_pp-vmc_sdj-1-16-totenergy APPEND PROPERTY DEPENDS short-diamondC_2x1x1_pp-vmc_sdj-1-16 )
-  ADD_TEST( NAME short-diamondC_2x1x1_pp-vmc_sdj-1-16-samples
-         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 0 -p qmc_short --ts "32000 0.0"
-         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/short-diamondC_2x1x1_pp-vmc_sdj-1-16"
-     )
-  SET_PROPERTY( TEST short-diamondC_2x1x1_pp-vmc_sdj-1-16-samples APPEND PROPERTY DEPENDS short-diamondC_2x1x1_pp-vmc_sdj-1-16 )
-  
-  RUN_QMC_APP(short-hcpBe_1x1x1_pp-vmc_sdj-1-16 "${CMAKE_SOURCE_DIR}/tests/solids/hcpBe_1x1x1_pp" 1 16 qmc_short.in.xml) 
-  ADD_TEST( NAME short-hcpBe_1x1x1_pp-vmc_sdj-1-16-totenergy 
-         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p qmc_short -e 2 --le "-1.481656 0.0005"
-         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/short-hcpBe_1x1x1_pp-vmc_sdj-1-16"
-     )
-  SET_PROPERTY( TEST short-hcpBe_1x1x1_pp-vmc_sdj-1-16-totenergy APPEND PROPERTY DEPENDS short-hcpBe_1x1x1_pp-vmc_sdj-1-16 )
-  ADD_TEST( NAME short-hcpBe_1x1x1_pp-vmc_sdj-1-16-samples
-         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 0 -p qmc_short --ts "416000 0.0"
-         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/short-hcpBe_1x1x1_pp-vmc_sdj-1-16"
-     )
-  SET_PROPERTY( TEST short-hcpBe_1x1x1_pp-vmc_sdj-1-16-samples APPEND PROPERTY DEPENDS short-hcpBe_1x1x1_pp-vmc_sdj-1-16 )
-  
-  
-  RUN_QMC_APP(short-monoO_1x1x1_pp-vmc_sdj-1-16 "${CMAKE_SOURCE_DIR}/tests/solids/monoO_1x1x1_pp" 1 16 qmc_short.in.xml)
-  ADD_TEST( NAME short-monoO_1x1x1_pp-vmc_sdj-1-16-totenergy 
-         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p qmc_short -e 2 --le "-31.776596 0.006"
-         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/short-monoO_1x1x1_pp-vmc_sdj-1-16"
-     )
-  SET_PROPERTY( TEST short-monoO_1x1x1_pp-vmc_sdj-1-16-totenergy APPEND PROPERTY DEPENDS short-monoO_1x1x1_pp-vmc_sdj-1-16 )
-  ADD_TEST( NAME short-monoO_1x1x1_pp-vmc_sdj-1-16-samples
-         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 0 -p qmc_short --ts "64000 0.0"
-         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/short-monoO_1x1x1_pp-vmc_sdj-1-16"
-     )
-  SET_PROPERTY( TEST short-monoO_1x1x1_pp-vmc_sdj-1-16-samples APPEND PROPERTY DEPENDS short-monoO_1x1x1_pp-vmc_sdj-1-16 )
-  
+  LIST(APPEND DIAMOND_SCALARS "totenergy" "-10.491445 0.002")
+  LIST(APPEND DIAMOND_SCALARS "samples" "128000 0.0")
+
+  QMC_RUN_AND_CHECK(short-diamondC_1x1x1_pp-vmc_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+                    qmc_short
+                    qmc_short.in.xml
+                    1 16
+                    DIAMOND_SCALARS
+                    TRUE)
+
+
+  LIST(APPEND DIAMOND2_SCALARS "totenergy" "-21.668293 0.007")
+  LIST(APPEND DIAMOND2_SCALARS "samples" "32000 0.0")
+
+  QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-vmc_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    qmc_short
+                    qmc_short.in.xml
+                    1 16
+                    DIAMOND2_SCALARS
+                    TRUE)
+
+
+  LIST(APPEND HCP_BE_SCALARS "totenergy" "-1.481656 0.0005")
+  LIST(APPEND HCP_BE_SCALARS "samples" "416000 0.0")
+
+  QMC_RUN_AND_CHECK(short-hcpBe_1x1x1_pp-vmc_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/hcpBe_1x1x1_pp"
+                    qmc_short
+                    qmc_short.in.xml
+                    1 16
+                    HCP_BE_SCALARS
+                    TRUE)
+
+
+  LIST(APPEND MONO_O_SCALARS "totenergy" "-31.776596 0.006")
+  LIST(APPEND MONO_O_SCALARS "samples" "64000 0.0")
+
+  QMC_RUN_AND_CHECK(short-monoO_1x1x1_pp-vmc_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/monoO_1x1x1_pp"
+                    qmc_short
+                    qmc_short.in.xml
+                    1 16
+                    MONO_O_SCALARS
+                    TRUE)
+
 
 
 #
 # Long variants of above, about 1/2 hour with 16 cores
 #
-  SET( CTEST_TEST_TIMEOUT 36000 )  # 10h Should make a macro to avoid changing global settings
-  RUN_QMC_APP(long-bccH_1x1x1_ae-vmc_sdj-1-16 "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae" 1 16 qmc_long.in.xml) 
-  ADD_TEST( NAME long-bccH_1x1x1_ae-vmc_sdj-1-16-totenergy 
-         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p qmc_long -e 2 --le "-1.834032 0.00001"
-         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/long-bccH_1x1x1_ae-vmc_sdj-1-16"
-     )
-  SET_PROPERTY( TEST long-bccH_1x1x1_ae-vmc_sdj-1-16-totenergy APPEND PROPERTY DEPENDS long-bccH_1x1x1_ae-vmc_sdj-1-16 )
-  ADD_TEST( NAME long-bccH_1x1x1_ae-vmc_sdj-1-16-samples
-         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 0 -p qmc_long --ts "921600000 0.0"
-         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/long-bccH_1x1x1_ae-vmc_sdj-1-16"
-     )
-  SET_PROPERTY( TEST long-bccH_1x1x1_ae-vmc_sdj-1-16-samples APPEND PROPERTY DEPENDS long-bccH_1x1x1_ae-vmc_sdj-1-16 )
+  LIST(APPEND LONG_BCC_H_SCALARS "totenergy" "-1.834032 0.00001")
+  LIST(APPEND LONG_BCC_H_SCALARS "samples" "921600000 0.0")
+
+  QMC_RUN_AND_CHECK(long-bccH_1x1x1_ae-vmc_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+                    qmc_long
+                    qmc_long.in.xml
+                    1 16
+                    LONG_BCC_H_SCALARS
+                    TRUE)
+
+
+  LIST(APPEND LONG_DIAMOND_SCALARS "totenergy" "-10.491445 0.000065")
+  LIST(APPEND LONG_DIAMOND_SCALARS "samples" "122880000 0.0")
+
+  QMC_RUN_AND_CHECK(long-diamondC_1x1x1_pp-vmc_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+                    qmc_long
+                    qmc_long.in.xml
+                    1 16
+                    LONG_DIAMOND_SCALARS
+                    TRUE)
   
-  RUN_QMC_APP(long-diamondC_1x1x1_pp-vmc_sdj-1-16 "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp" 1 16 qmc_long.in.xml) 
-  ADD_TEST( NAME long-diamondC_1x1x1_pp-vmc_sdj-1-16-totenergy 
-         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p qmc_long -e 2 --le "-10.491445 0.000065"
-         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/long-diamondC_1x1x1_pp-vmc_sdj-1-16"
-     )
-  SET_PROPERTY( TEST long-diamondC_1x1x1_pp-vmc_sdj-1-16-totenergy APPEND PROPERTY DEPENDS long-diamondC_1x1x1_pp-vmc_sdj-1-16 )
-  ADD_TEST( NAME long-diamondC_1x1x1_pp-vmc_sdj-1-16-samples
-         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 0 -p qmc_long --ts "122880000 0.0"
-         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/long-diamondC_1x1x1_pp-vmc_sdj-1-16"
-     )
-  SET_PROPERTY( TEST long-diamondC_1x1x1_pp-vmc_sdj-1-16-samples APPEND PROPERTY DEPENDS long-diamondC_1x1x1_pp-vmc_sdj-1-16 )
-  
-  RUN_QMC_APP(long-diamondC_2x1x1_pp-vmc_sdj-1-16 "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp" 1 16 qmc_long.in.xml) 
-  ADD_TEST( NAME long-diamondC_2x1x1_pp-vmc_sdj-1-16-totenergy 
-         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p qmc_long -e 2 --le "-21.668293 0.00023"
-         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/long-diamondC_2x1x1_pp-vmc_sdj-1-16"
-     )
-  SET_PROPERTY( TEST long-diamondC_2x1x1_pp-vmc_sdj-1-16-totenergy APPEND PROPERTY DEPENDS long-diamondC_2x1x1_pp-vmc_sdj-1-16 )
-  ADD_TEST( NAME long-diamondC_2x1x1_pp-vmc_sdj-1-16-samples
-         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 0 -p qmc_long --ts "30720000 0.0"
-         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/long-diamondC_2x1x1_pp-vmc_sdj-1-16"
-     )
-  SET_PROPERTY( TEST long-diamondC_2x1x1_pp-vmc_sdj-1-16-samples APPEND PROPERTY DEPENDS long-diamondC_2x1x1_pp-vmc_sdj-1-16 )
-  
-  RUN_QMC_APP(long-hcpBe_1x1x1_pp-vmc_sdj-1-16 "${CMAKE_SOURCE_DIR}/tests/solids/hcpBe_1x1x1_pp" 1 16 qmc_long.in.xml) 
-  ADD_TEST( NAME long-hcpBe_1x1x1_pp-vmc_sdj-1-16-totenergy 
-         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p qmc_long -e 2 --le "-1.481656 0.000017"
-         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/long-hcpBe_1x1x1_pp-vmc_sdj-1-16"
-     )
-  SET_PROPERTY( TEST long-hcpBe_1x1x1_pp-vmc_sdj-1-16-totenergy APPEND PROPERTY DEPENDS long-hcpBe_1x1x1_pp-vmc_sdj-1-16 )
-  ADD_TEST( NAME long-hcpBe_1x1x1_pp-vmc_sdj-1-16-samples
-         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 0 -p qmc_long --ts "399360000 0.0"
-         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/long-hcpBe_1x1x1_pp-vmc_sdj-1-16"
-     )
-  SET_PROPERTY( TEST long-hcpBe_1x1x1_pp-vmc_sdj-1-16-samples APPEND PROPERTY DEPENDS long-hcpBe_1x1x1_pp-vmc_sdj-1-16 )
-  
-  RUN_QMC_APP(long-monoO_1x1x1_pp-vmc_sdj-1-16 "${CMAKE_SOURCE_DIR}/tests/solids/monoO_1x1x1_pp" 1 16 qmc_long.in.xml)
-  ADD_TEST( NAME long-monoO_1x1x1_pp-vmc_sdj-1-16-totenergy 
-         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p qmc_long -e 2 --le "-31.776596 0.0002"
-         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/long-monoO_1x1x1_pp-vmc_sdj-1-16"
-     )
-  SET_PROPERTY( TEST long-monoO_1x1x1_pp-vmc_sdj-1-16-totenergy APPEND PROPERTY DEPENDS long-monoO_1x1x1_pp-vmc_sdj-1-16 )
-  ADD_TEST( NAME long-monoO_1x1x1_pp-vmc_sdj-1-16-samples
-         COMMAND ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 0 -p qmc_long --ts "61440000 0.0"
-         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/long-monoO_1x1x1_pp-vmc_sdj-1-16"
-     )
-  SET_PROPERTY( TEST long-monoO_1x1x1_pp-vmc_sdj-1-16-samples APPEND PROPERTY DEPENDS long-monoO_1x1x1_pp-vmc_sdj-1-16 )
+
+  LIST(APPEND LONG_DIAMOND2_SCALARS "totenergy" "-21.668293 0.00023")
+  LIST(APPEND LONG_DIAMOND2_SCALARS "samples" "30720000 0.0")
+
+  QMC_RUN_AND_CHECK(long-diamondC_2x1x1_pp-vmc_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    qmc_long
+                    qmc_long.in.xml
+                    1 16
+                    LONG_DIAMOND2_SCALARS
+                    TRUE)
+
+
+  LIST(APPEND LONG_HCP_BE_SCALARS "totenergy" "-1.481656 0.000017")
+  LIST(APPEND LONG_HCP_BE_SCALARS "samples" "399360000 0.0")
+
+  QMC_RUN_AND_CHECK(long-hcpBe_1x1x1_pp-vmc_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/hcpBe_1x1x1_pp"
+                    qmc_long
+                    qmc_long.in.xml
+                    1 16
+                    LONG_HCP_BE_SCALARS
+                    TRUE)
+
+
+  LIST(APPEND LONG_MONO_O_SCALARS "totenergy" "-31.776596 0.0002")
+  LIST(APPEND LONG_MONO_O_SCALARS "samples" "61440000 0.0")
+
+  QMC_RUN_AND_CHECK(long-monoO_1x1x1_pp-vmc_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/monoO_1x1x1_pp"
+                    qmc_long
+                    qmc_long.in.xml
+                    1 16
+                    LONG_MONO_O_SCALARS
+                    TRUE)
 
 endif()
