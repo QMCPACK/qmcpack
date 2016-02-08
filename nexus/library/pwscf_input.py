@@ -1221,7 +1221,7 @@ class PwscfInput(SimulationInput):
         atoms   = list(self.atomic_positions.atoms)
         for atom in self.atomic_species.atoms:
             if not atom in valency:
-                self.error('valence charge for atom {0} has not been defined\nplease provide the valence charge as an argument to return_system()')
+                self.error('valence charge for atom {0} has not been defined\nplease provide the valence charge as an argument to return_system()'.format(atom))
             #end if
             ion_charge += atoms.count(atom)*valency[atom]
         #end for
@@ -1525,6 +1525,11 @@ def generate_any_pwscf_input(**kwargs):
             grid      = (1,1,1),
             shift     = kshift
             )
+    #end if
+
+    # check for misformatted kpoints
+    if len(pw.k_points)==0:
+        PwscfInput.class_error('k_points section has not been filled in\nplease provide k-point information in either of\n  1) the kgrid input argument\n  2) in the PhysicalSystem object (system input argument)','generate_pwscf_input')
     #end if
 
     # check for leftover keywords

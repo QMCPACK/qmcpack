@@ -54,8 +54,7 @@ class Qmcpack(Simulation):
     analyzer_type = QmcpackAnalyzer
     generic_identifier = 'qmcpack'
     infile_extension   = '.in.xml'
-    #application   = 'qmcpack'
-    application   = 'qmcpack_complex' # always use complex version until kpoint handling is fixed
+    application   = 'qmcpack'
     application_properties = set(['serial','omp','mpi'])
     application_results    = set(['jastrow','cuspcorr','wavefunction'])
 
