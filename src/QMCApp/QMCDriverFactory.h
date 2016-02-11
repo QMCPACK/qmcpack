@@ -47,6 +47,7 @@ struct QMCDriverFactory: public MPIObjectBase
     VMC_OPT_RUN, /*!< Optimization with vmc blocks */
     LINEAR_OPTIMIZE_RUN,
     CS_LINEAR_OPTIMIZE_RUN,
+    WF_TEST_RUN
   };
 
   /*! enum to set the bit to determine the QMC mode */

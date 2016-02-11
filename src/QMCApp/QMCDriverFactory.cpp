@@ -109,6 +109,8 @@ bool QMCDriverFactory::setQMCDriver(int curSeries, xmlNodePtr cur)
   WhatToDo[GPU_MODE      ] = (gpu_tag     == "yes");
 #endif
   OhmmsInfo::flush();
+
+  string wf_test_name("wftest");
   QMCRunType newRunType = DUMMY_RUN;
   if(curName != "qmc")
     qmc_mode=curName;
@@ -141,16 +143,22 @@ bool QMCDriverFactory::setQMCDriver(int curSeries, xmlNodePtr cur)
     {
       newRunType=RMC_RUN;
     }
+    else if(qmc_mode.find("vmc")<nchars)
+    {
+      newRunType=VMC_RUN;
+    }
+    else if(qmc_mode.find("dmc")<nchars)
+    {
+      newRunType=DMC_RUN;
+    }
+    else if(qmc_mode == wf_test_name)
+    {
+      newRunType=WF_TEST_RUN;
+    }
     else
-      if(qmc_mode.find("vmc")<nchars)
-      {
-        newRunType=VMC_RUN;
-      }
-      else
-        if(qmc_mode.find("dmc")<nchars)
-        {
-          newRunType=DMC_RUN;
-        }
+    {
+       app_log() << "Unknown qmc method: " << qmc_mode << endl;
+    }
   }
   unsigned long newQmcMode=WhatToDo.to_ulong();
   //initialize to 0
@@ -342,11 +350,15 @@ void QMCDriverFactory::createQMCDriver(xmlNodePtr cur)
         opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("psi0"));
         qmcDriver=opt;
       }
-      else
+      else if(curRunType == WF_TEST_RUN)
       {
-        WARNMSG("Testing wavefunctions. Creating WaveFunctionTester for testing");
+        app_log() << "Testing wavefunctions." << endl;
         qmcDriver = new WaveFunctionTester(*qmcSystem,*primaryPsi,*primaryH,
             *ptclPool,*psiPool);
+      }
+      else
+      {
+        APP_ABORT("Unhandled run type: " << curRunType);
       }
   if(curQmcModeBits[MULTIPLE_MODE])
   {
