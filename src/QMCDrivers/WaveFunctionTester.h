@@ -47,6 +47,7 @@ private:
   ParticleSetPool &PtclPool;
   ParticleSet::ParticlePos_t deltaR;
   string checkRatio, checkClone, checkHamPbyP, sourceName, wftricks, checkEloc;
+  string checkBasic, checkRatioV;
   xmlNodePtr myNode;
   /// Copy Constructor (disabled)
   WaveFunctionTester(const WaveFunctionTester& a):
@@ -61,7 +62,7 @@ private:
   /** the basic ratios check */
   void runRatioTest();
   void runRatioTest2();
-  /** test ratios with virutal moves */
+  /** test ratios with virtual moves */
   void runRatioV();
   /** test clone implementations of new wavefunctions and operators */
   void runCloneTest();
@@ -76,7 +77,7 @@ private:
 
   //vector<RealType> Mv3(vector<vector<RealType> >& M, vector<RealType>& v);
 
-  ofstream *fout;
+  ofstream fout;
 };
 }
 #endif

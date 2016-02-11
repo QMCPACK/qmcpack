@@ -45,7 +45,7 @@ WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w,
                                        QMCHamiltonian& h,
                                        ParticleSetPool &ptclPool, WaveFunctionPool& ppool):
   QMCDriver(w,psi,h,ppool),checkRatio("no"),checkClone("no"), checkHamPbyP("no"),
-  PtclPool(ptclPool), wftricks("no"),checkEloc("no")
+  PtclPool(ptclPool), wftricks("no"),checkEloc("no"), checkBasic("yes"), checkRatioV("no")
 {
   m_param.add(checkRatio,"ratio","string");
   m_param.add(checkClone,"clone","string");
@@ -53,10 +53,8 @@ WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w,
   m_param.add(sourceName,"source","string");
   m_param.add(wftricks,"orbitalutility","string");
   m_param.add(checkEloc,"printEloc","string");
-  char fname[16];
-  sprintf(fname,"wftest.%03d",OHMMS::Controller->rank());
-  fout=new ofstream(fname);
-  fout->precision(15);
+  m_param.add(checkBasic,"basic","string");
+  m_param.add(checkRatioV,"virtual_move","string");
 
   deltaR.resize(w.getTotalNum());
   makeGaussRandom(deltaR);
@@ -86,8 +84,14 @@ WaveFunctionTester::~WaveFunctionTester()
 bool
 WaveFunctionTester::run()
 {
-  app_log() << "Starting a Wavefunction tester" << endl;
   //DistanceTable::create(1);
+  char fname[16];
+  sprintf(fname,"wftest.%03d",OHMMS::Controller->rank());
+  fout.open(fname);
+  fout.precision(15);
+
+  app_log() << "Starting a Wavefunction tester.  Additional information in "  << fname << endl;
+
   put(qmcNode);
   if (checkRatio == "yes")
   {
@@ -116,10 +120,12 @@ WaveFunctionTester::run()
     runwftricks();
   else if (wftricks =="plot")
     runNodePlot();
-  else
+  else if (checkBasic == "yes")
     runBasicTest();
-
+  else if (checkRatioV == "yes")
     runRatioV();
+  else
+    app_log() << "No wavefunction test specified" << endl;
 
   //RealType ene = H.evaluate(W);
   //app_log() << " Energy " << ene << endl;
@@ -187,6 +193,8 @@ void WaveFunctionTester::printEloc()
     app_log() << "ParticelSet = " << p->first << endl;
   // Find source ParticleSet
   ParticleSetPool::PoolType::iterator pit(PtclPool.getPool().find(sourceName));
+  if(pit == PtclPool.getPool().end())
+     APP_ABORT("Unknown source \"" + sourceName + "\" in printEloc in WaveFunctionTester.");
   ParticleSet& source = *((*pit).second);
   app_log() << "Source = " <<sourceName <<"  " <<(*pit).first << endl;
   int nel = W.getTotalNum();
@@ -369,18 +377,18 @@ void WaveFunctionTester::runBasicTest()
     }
     G1[iat] = c1*g0;
     L1[iat] = c2*(lap-2.0*OHMMS_DIM*logpsi);
-    *fout << "G1 = " << G1[iat] << endl;
-    *fout << "L1 = " << L1[iat] << endl;
+    fout << "G1 = " << G1[iat] << endl;
+    fout << "L1 = " << L1[iat] << endl;
   }
   for (int iat=0; iat<nat; iat++)
   {
-    *fout << "For particle #" << iat << " at " << W.R[iat] << endl;
-    *fout << "Gradient      = " << setw(12) << G[iat] << endl
-          << "  Finite diff = " << setw(12) << G1[iat] << endl
-          << "  Error       = " << setw(12) << G[iat]-G1[iat] << endl << endl;
-    *fout << "Laplacian     = " << setw(12) << L[iat] << endl
-          << "  Finite diff = " << setw(12) << L1[iat] << endl
-          << "  Error       = " << setw(12) << L[iat]-L1[iat] << endl << endl;
+    fout << "For particle #" << iat << " at " << W.R[iat] << endl;
+    fout << "Gradient      = " << setw(12) << G[iat] << endl
+         << "  Finite diff = " << setw(12) << G1[iat] << endl
+         << "  Error       = " << setw(12) << G[iat]-G1[iat] << endl << endl;
+    fout << "Laplacian     = " << setw(12) << L[iat] << endl
+         << "  Finite diff = " << setw(12) << L1[iat] << endl
+         << "  Error       = " << setw(12) << L[iat]-L1[iat] << endl << endl;
   }
   makeGaussRandom(deltaR);
   //testing ratio alone
@@ -413,12 +421,12 @@ void WaveFunctionTester::runBasicTest()
     if(dphase > 2.0*M_PI)
       dphase -= 2.0*M_PI;
     ValueType ratDiff=std::complex<OHMMS_PRECISION>(ratioMag*std::cos(dphase),ratioMag*std::sin(dphase)) ;
-    *fout << iat << " ratio " << aratio*std::complex<OHMMS_PRECISION>(std::cos(phaseDiff),std::sin(phaseDiff))/ratDiff << " " << ratDiff << endl;
-    *fout << "     ratioMag " << aratio/ratioMag << " " << ratioMag << endl;
-    *fout << "     PhaseDiff " << phaseDiff/dphase << " " << phaseDiff  <<" " << dphase << endl;
+    fout << iat << " ratio " << aratio*std::complex<OHMMS_PRECISION>(std::cos(phaseDiff),std::sin(phaseDiff))/ratDiff << " " << ratDiff << endl;
+    fout << "     ratioMag " << aratio/ratioMag << " " << ratioMag << endl;
+    fout << "     PhaseDiff " << phaseDiff/dphase << " " << phaseDiff  <<" " << dphase << endl;
 #else
     RealType ratDiff=std::exp(psi_m-psi_p)*std::cos(phase_m-phase_p) ;
-    *fout << iat << " ratio " << aratio/ratDiff << " " << ratDiff << endl;
+    fout << iat << " ratio " << aratio/ratDiff << " " << ratDiff << endl;
 #endif
   }
 }
@@ -453,7 +461,7 @@ void WaveFunctionTester::runRatioTest()
     for (int i=0; i<H.sizeOfObservables(); i++)
       app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << endl;
   }
-  *fout << "  Update using drift " << endl;
+  fout << "  Update using drift " << endl;
   bool pbyp_mode=true;
   for (int iter=0; iter<4; ++iter)
   {
@@ -461,7 +469,7 @@ void WaveFunctionTester::runRatioTest()
     it=W.begin();
     while (it != it_end)
     {
-      *fout << "\nStart Walker " << iw++ << endl;
+      fout << "\nStart Walker " << iw++ << endl;
       Walker_t& thisWalker(**it);
       W.loadWalker(thisWalker,pbyp_mode);
       Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
@@ -488,8 +496,8 @@ void WaveFunctionTester::runRatioTest()
           enew = H.evaluatePbyP(W,iat);
         if (ratio > Random())
         {
-          *fout << " Accepting a move for " << iat << endl;
-          *fout << " Energy after a move " << enew << endl;
+          fout << " Accepting a move for " << iat << endl;
+          fout << " Energy after a move " << enew << endl;
           W.G += W.dG;
           W.L += W.dL;
           W.acceptMove(iat);
@@ -500,13 +508,13 @@ void WaveFunctionTester::runRatioTest()
         }
         else
         {
-          *fout << " Rejecting a move for " << iat << endl;
+          fout << " Rejecting a move for " << iat << endl;
           W.rejectMove(iat);
           Psi.rejectMove(iat);
           //H.rejectMove(iat);
         }
       }
-      *fout << " Energy after pbyp = " << H.getLocalEnergy() << endl;
+      fout << " Energy after pbyp = " << H.getLocalEnergy() << endl;
       RealType newlogpsi_up = Psi.evaluateLog(W,w_buffer);
       W.saveWalker(thisWalker);
       RealType ene_up;
@@ -522,30 +530,30 @@ void WaveFunctionTester::runRatioTest()
       RealType ene = H.evaluate(W);
       thisWalker.resetProperty(newlogpsi,Psi.getPhase(),ene);
       //thisWalker.resetProperty(std::log(psi),Psi.getPhase(),ene);
-      *fout << iter << "  Energy by update = "<< ene_up << " " << ene << " "  << ene_up-ene << endl;
-      *fout << iter << " Ratio " << ratio_accum*ratio_accum
+      fout << iter << "  Energy by update = "<< ene_up << " " << ene << " "  << ene_up-ene << endl;
+      fout << iter << " Ratio " << ratio_accum*ratio_accum
             << " | " << std::exp(2.0*(newlogpsi-logpsi)) << " "
             << ratio_accum*ratio_accum/std::exp(2.0*(newlogpsi-logpsi)) << endl
             << " new log(psi) updated " << newlogpsi_up
             << " new log(psi) calculated " << newlogpsi
             << " old log(psi) " << logpsi << endl;
-      *fout << " Gradients " << endl;
+      fout << " Gradients " << endl;
       for (int iat=0; iat<nat; iat++)
-        *fout << W.G[iat]-Gp[iat] << W.G[iat] << endl; //W.G[iat] << G[iat] << endl;
-      *fout << " Laplacians " << endl;
+        fout << W.G[iat]-Gp[iat] << W.G[iat] << endl; //W.G[iat] << G[iat] << endl;
+      fout << " Laplacians " << endl;
       for (int iat=0; iat<nat; iat++)
-        *fout << W.L[iat]-Lp[iat] << " " << W.L[iat] << endl;
+        fout << W.L[iat]-Lp[iat] << " " << W.L[iat] << endl;
       ++it;
     }
   }
-  *fout << "  Update without drift : for VMC useDrift=\"no\"" << endl;
+  fout << "  Update without drift : for VMC useDrift=\"no\"" << endl;
   for (int iter=0; iter<4; ++iter)
   {
     it=W.begin();
     int iw=0;
     while (it != it_end)
     {
-      *fout << "\nStart Walker " << iw++ << endl;
+      fout << "\nStart Walker " << iw++ << endl;
       Walker_t& thisWalker(**it);
       W.loadWalker(thisWalker,pbyp_mode);
       Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
@@ -567,14 +575,14 @@ void WaveFunctionTester::runRatioTest()
           RealType prob = ratio*ratio;
           if (prob > Random())
           {
-            *fout << " Accepting a move for " << iat << endl;
+            fout << " Accepting a move for " << iat << endl;
             W.acceptMove(iat);
             Psi.acceptMove(W,iat);
             ratio_accum *= ratio;
           }
           else
           {
-            *fout << " Rejecting a move for " << iat << endl;
+            fout << " Rejecting a move for " << iat << endl;
             W.rejectMove(iat);
             Psi.rejectMove(iat);
           }
@@ -588,20 +596,20 @@ void WaveFunctionTester::runRatioTest()
       Lp=W.L;
       W.update();
       RealType newlogpsi=Psi.evaluateLog(W);
-      *fout << iter << " Ratio " << ratio_accum*ratio_accum
+      fout << iter << " Ratio " << ratio_accum*ratio_accum
             << " | " << std::exp(2.0*(newlogpsi-logpsi)) << " "
             << ratio_accum*ratio_accum/std::exp(2.0*(newlogpsi-logpsi)) << endl
             << " new log(psi) " << newlogpsi
             << " old log(psi) " << logpsi << endl;
-      *fout << " Gradients " << endl;
+      fout << " Gradients " << endl;
       for (int iat=0; iat<nat; iat++)
       {
-        *fout << W.G[iat]-Gp[iat] << W.G[iat] << endl; //W.G[iat] << G[iat] << endl;
+        fout << W.G[iat]-Gp[iat] << W.G[iat] << endl; //W.G[iat] << G[iat] << endl;
       }
-      *fout << " Laplacians " << endl;
+      fout << " Laplacians " << endl;
       for (int iat=0; iat<nat; iat++)
       {
-        *fout << W.L[iat]-Lp[iat] << " " << W.L[iat] << endl;
+        fout << W.L[iat]-Lp[iat] << " " << W.L[iat] << endl;
       }
       ++it;
     }
@@ -646,7 +654,7 @@ void WaveFunctionTester::runRatioTest2()
     //while(it != it_end)
     for (; it != it_end; ++it)
     {
-      *fout << "\nStart Walker " << iw++ << endl;
+      fout << "\nStart Walker " << iw++ << endl;
       Walker_t& thisWalker(**it);
       W.loadWalker(thisWalker,true);
       Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
@@ -663,7 +671,7 @@ void WaveFunctionTester::runRatioTest2()
       {
         GradType grad_now=Psi.evalGrad(W,iat), grad_new;
         for(int sds=0; sds<3; sds++)
-          *fout<< realGrad[iat][sds]-grad_now[sds]<<" ";
+          fout<< realGrad[iat][sds]-grad_now[sds]<<" ";
         PosType dr(Tau*deltaR[iat]);
         PosType newpos(W.makeMove(iat,dr));
         RealType ratio2 = Psi.ratioGrad(W,iat,grad_new);
@@ -673,7 +681,7 @@ void WaveFunctionTester::runRatioTest2()
         RealType ratio1 = Psi.ratio(W,iat);
         //Psi.rejectMove(iat);
         W.rejectMove(iat);
-        *fout << "  ratio1 = " << ratio1 << " ration2 = " << ratio2 << endl;
+        fout << "  ratio1 = " << ratio1 << " ration2 = " << ratio2 << endl;
       }
     }
   }
@@ -845,15 +853,15 @@ void WaveFunctionTester::runGradSourceTest()
     {
       for (int iat=0; iat<nat; iat++)
       {
-        *fout << "For particle #" << iat << " at " << W.R[iat] << endl;
-        *fout << "Gradient      = " << setw(12) << grad_grad[dimsrc][iat] << endl
-              << "  Finite diff = " << setw(12) << grad_grad_FD[dimsrc][iat] << endl
-              << "  Error       = " << setw(12)
-              <<  grad_grad_FD[dimsrc][iat] - grad_grad[dimsrc][iat] << endl << endl;
-        *fout << "Laplacian     = " << setw(12) << lapl_grad[dimsrc][iat] << endl
-              << "  Finite diff = " << setw(12) << lapl_grad_FD[dimsrc][iat] << endl
-              << "  Error       = " << setw(12)
-              << lapl_grad_FD[dimsrc][iat] - lapl_grad[dimsrc][iat] << endl << endl;
+        fout << "For particle #" << iat << " at " << W.R[iat] << endl;
+        fout << "Gradient      = " << setw(12) << grad_grad[dimsrc][iat] << endl
+             << "  Finite diff = " << setw(12) << grad_grad_FD[dimsrc][iat] << endl
+             << "  Error       = " << setw(12)
+             <<  grad_grad_FD[dimsrc][iat] - grad_grad[dimsrc][iat] << endl << endl;
+        fout << "Laplacian     = " << setw(12) << lapl_grad[dimsrc][iat] << endl
+             << "  Finite diff = " << setw(12) << lapl_grad_FD[dimsrc][iat] << endl
+             << "  Error       = " << setw(12)
+             << lapl_grad_FD[dimsrc][iat] - lapl_grad[dimsrc][iat] << endl << endl;
       }
     }
   }
@@ -980,7 +988,7 @@ void WaveFunctionTester::runDerivTest()
   //sample a new walker configuration and copy to ParticleSet::R
   W.R = awalker->R+deltaR;
 
-  *fout << "Position " << endl << W.R << endl;
+  fout << "Position " << endl << W.R << endl;
 
   //W.R += deltaR;
   W.update();
@@ -995,18 +1003,18 @@ void WaveFunctionTester::runDerivTest()
   ParticleSet::ParticleLaplacian_t L(nat), L1(nat);
   G = W.G;
   L = W.L;
-  *fout<<"Gradients"<<endl;
+  fout<<"Gradients"<<endl;
   for (int iat=0; iat<W.R.size(); iat++)
   {
     for (int i=0; i<3 ; i++)
-      *fout<<W.G[iat][i]<<"  ";
-    *fout<<endl;
+      fout<<W.G[iat][i]<<"  ";
+    fout<<endl;
   }
-  *fout<<"Laplaians"<<endl;
+  fout<<"Laplaians"<<endl;
   for (int iat=0; iat<W.R.size(); iat++)
   {
-    *fout<<W.L[iat]<<"  ";
-    *fout<<endl;
+    fout<<W.L[iat]<<"  ";
+    fout<<endl;
   }
   opt_variables_type wfVars,wfvar_prime;
 //build optimizables from the wavefunction
@@ -1015,7 +1023,7 @@ void WaveFunctionTester::runDerivTest()
   wfVars.resetIndex();
   Psi.checkOutVariables(wfVars);
   wfvar_prime= wfVars;
-  wfVars.print(*fout);
+  wfVars.print(fout);
   int Nvars= wfVars.size();
   vector<RealType> Dsaved(Nvars);
   vector<RealType> HDsaved(Nvars);
@@ -1059,12 +1067,12 @@ void WaveFunctionTester::runDerivTest()
     HGradient[i]= (elocPlus-elocMinus)*dh;
   }
   Psi.resetParameters(wfVars);
-  *fout<<endl<<"Deriv  Numeric Analytic"<<endl;
+  fout<<endl<<"Deriv  Numeric Analytic"<<endl;
   for (int i=0; i<Nvars ; i++)
-    *fout<<i<<"  "<<PGradient[i]<<"  "<<Dsaved[i] <<"  " <<(PGradient[i]-Dsaved[i]) <<endl;
-  *fout<<endl<<"Hderiv  Numeric Analytic"<<endl;
+    fout<<i<<"  "<<PGradient[i]<<"  "<<Dsaved[i] <<"  " <<(PGradient[i]-Dsaved[i]) <<endl;
+  fout<<endl<<"Hderiv  Numeric Analytic"<<endl;
   for (int i=0; i<Nvars ; i++)
-    *fout<<i <<"  "<<HGradient[i]<<"  "<<HDsaved[i] <<"  " <<(HGradient[i]-HDsaved[i]) <<endl;
+    fout<<i <<"  "<<HGradient[i]<<"  "<<HDsaved[i] <<"  " <<(HGradient[i]-HDsaved[i]) <<endl;
 }
 
 
@@ -1215,7 +1223,7 @@ void WaveFunctionTester::runDerivCloneTest()
   Psi.checkInVariables(wfVars);
   wfVars.resetIndex();
   Psi.checkOutVariables(wfVars);
-  wfVars.print(*fout);
+  wfVars.print(fout);
   int Nvars= wfVars.size();
   opt_variables_type wfvar_prime;
 //   wfvar_prime.insertFrom(wfVars);
@@ -1225,7 +1233,7 @@ void WaveFunctionTester::runDerivCloneTest()
   for (int j=0; j<Nvars; j++)
     wfvar_prime[j]=wfVars[j];
   psi_clone->checkOutVariables(wfvar_prime);
-  wfvar_prime.print(*fout);
+  wfvar_prime.print(fout);
   psi_clone->resetParameters(wfvar_prime);
   Psi.resetParameters(wfVars);
   vector<RealType> Dsaved(Nvars,0), og_Dsaved(Nvars,0);
@@ -1273,13 +1281,13 @@ void WaveFunctionTester::runDerivCloneTest()
     PGradient[i]= (logpsiPlus-logpsiMinus)*dh;
     HGradient[i]= (elocPlus-elocMinus)*dh;
   }
-  *fout<<"CLONE"<<endl;
-  *fout<<endl<<"   Deriv  Numeric Analytic"<<endl;
+  fout<<"CLONE"<<endl;
+  fout<<endl<<"   Deriv  Numeric Analytic"<<endl;
   for (int i=0; i<Nvars ; i++)
-    *fout<<i<<"  "<<PGradient[i]<<"  "<<Dsaved[i] <<"  " <<(PGradient[i]-Dsaved[i])/PGradient[i] <<endl;
-  *fout<<endl<<"   Hderiv  Numeric Analytic"<<endl;
+    fout<<i<<"  "<<PGradient[i]<<"  "<<Dsaved[i] <<"  " <<(PGradient[i]-Dsaved[i])/PGradient[i] <<endl;
+  fout<<endl<<"   Hderiv  Numeric Analytic"<<endl;
   for (int i=0; i<Nvars ; i++)
-    *fout<<i <<"  "<<HGradient[i]<<"  "<<HDsaved[i] <<"  " <<(HGradient[i]-HDsaved[i])/HGradient[i] <<endl;
+    fout<<i <<"  "<<HGradient[i]<<"  "<<HDsaved[i] <<"  " <<(HGradient[i]-HDsaved[i])/HGradient[i] <<endl;
   for (int i=0; i<Nvars ; i++)
   {
     for (int j=0; j<Nvars; j++)
@@ -1305,13 +1313,13 @@ void WaveFunctionTester::runDerivCloneTest()
     PGradient[i]= (logpsiPlus-logpsiMinus)*dh;
     HGradient[i]= (elocPlus-elocMinus)*dh;
   }
-  *fout<<"ORIGINAL"<<endl;
-  *fout<<endl<<"   Deriv  Numeric Analytic"<<endl;
+  fout<<"ORIGINAL"<<endl;
+  fout<<endl<<"   Deriv  Numeric Analytic"<<endl;
   for (int i=0; i<Nvars ; i++)
-    *fout<<i<<"  "<<PGradient[i]<<"  "<<Dsaved[i] <<"  " <<(PGradient[i]-Dsaved[i])/PGradient[i] <<endl;
-  *fout<<endl<<"   Hderiv  Numeric Analytic"<<endl;
+    fout<<i<<"  "<<PGradient[i]<<"  "<<Dsaved[i] <<"  " <<(PGradient[i]-Dsaved[i])/PGradient[i] <<endl;
+  fout<<endl<<"   Hderiv  Numeric Analytic"<<endl;
   for (int i=0; i<Nvars ; i++)
-    *fout<<i <<"  "<<HGradient[i]<<"  "<<HDsaved[i] <<"  " <<(HGradient[i]-HDsaved[i])/HGradient[i] <<endl;
+    fout<<i <<"  "<<HGradient[i]<<"  "<<HDsaved[i] <<"  " <<(HGradient[i]-HDsaved[i])/HGradient[i] <<endl;
 }
 void WaveFunctionTester::runwftricks()
 {
