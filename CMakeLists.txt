@@ -260,7 +260,6 @@ IF(CMAKE_TOOLCHAIN_FILE)
 ELSE(CMAKE_TOOLCHAIN_FILE)
   MESSAGE(STATUS "Trying to figure out .....")
   SET(QMC_BUILD_STATIC 0)
-  SET(FOUND_CXXENV 0)
   SET(ENABLE_OPENMP 0)
   SET(HAVE_MPI 0)
   SET(INTEL_COMPILER 0)
@@ -319,39 +318,52 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   ENDIF($ENV{CRAYOS_VERSION} MATCHES ".")
 
   #------------------------------------
-  # Check if using IBM compilers
+  # Identify the compiler
   #------------------------------------
-  IF($ENV{CXX} MATCHES "xlC")
+  IF( $ENV{CXX} MATCHES "icpc" )
+    SET( COMPILER Intel )
+  ELSEIF($ENV{CXX} MATCHES "xlC")
+    SET( COMPILER IBM )
+  ELSEIF ( CMAKE_C_COMPILER_WORKS OR CMAKE_C_COMPILER_WORKS )
+    IF( CMAKE_COMPILE_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX )
+      SET( COMPILER GNU )
+    ELSEIF( MSVC OR MSVC_IDE OR MSVC60 OR MSVC70 OR MSVC71 OR MSVC80 OR CMAKE_COMPILER_2005 OR MSVC90 OR MSVC10 )
+      SET( COMPILER Microsoft )
+    ELSEIF( (${CMAKE_C_COMPILER_ID} MATCHES "Intel") OR (${CMAKE_CXX_COMPILER_ID} MATCHES "Intel") ) 
+      SET( COMPILER Intel )
+    ELSEIF( (${CMAKE_C_COMPILER_ID} MATCHES "PGI") OR (${CMAKE_CXX_COMPILER_ID} MATCHES "PGI") )
+      SET( COMPILER PGI )
+    ELSEIF( (${CMAKE_C_COMPILER_ID} MATCHES "CRAY") OR (${CMAKE_CXX_COMPILER_ID} MATCHES "CRAY") OR
+            (${CMAKE_C_COMPILER_ID} MATCHES "Cray") OR (${CMAKE_CXX_COMPILER_ID} MATCHES "Cray") )
+      SET( COMPILER Cray )
+    ELSEIF( (${CMAKE_C_COMPILER_ID} MATCHES "CLANG") OR (${CMAKE_CXX_COMPILER_ID} MATCHES "CLANG") OR
+            (${CMAKE_C_COMPILER_ID} MATCHES "Clang") OR (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang") )
+      SET( COMPILER Clang )
+    ELSE()
+        SET(USING_DEFAULT TRUE)
+        MESSAGE("${CMAKE_C_COMPILER_ID}")
+        MESSAGE(WARNING "Unknown C/C++ compiler, default flags will be used")
+    ENDIF()
+  ELSE()
+    MESSAGE(WARNING "No compiler identified")
+  ENDIF()
+  MESSAGE(STATUS "Compiler: ${COMPILER}")
+  MESSAGE(STATUS "Compiler Version: ${CMAKE_CXX_COMPILER_VERSION}")
+
+  #------------------------------------
+  # Include compiler-specific cmake file
+  #------------------------------------
+  IF( ${COMPILER} MATCHES "IBM" )
     INCLUDE(${PROJECT_CMAKE}/IBMCompilers.cmake)
-    SET(FOUND_CXXENV 1)
-  ENDIF($ENV{CXX} MATCHES "xlC")
-
-  #------------------------------------
-  # Check if using Intel compilers
-  #------------------------------------
-  IF($ENV{CXX} MATCHES "icpc")
+  ELSEIF( ${COMPILER} MATCHES "Intel" )
     INCLUDE(${PROJECT_CMAKE}/IntelCompilers.cmake)
-    SET(FOUND_CXXENV 1)
-  ENDIF($ENV{CXX} MATCHES "icpc")
-
-  #------------------------------------
-  # other compilers, e.g., mpicxx 
-  # most likely *unix with gnu or intel compilers
-  # using "-restrict" option to find out if intel compilers are backend.
-  #------------------------------------
-  IF(NOT FOUND_CXXENV)
-    IF(CMAKE_COMPILER_IS_GNUCXX)
-      INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
-      SET(FOUND_CXXENV 1)
-    ELSE(CMAKE_COMPILER_IS_GNUCXX)
-      SET(CMAKE_TRY_INTEL_CXX_FLAGS "-restrict")
-      CHECK_CXX_ACCEPTS_FLAG(${CMAKE_TRY_INTEL_CXX_FLAGS} INTEL_CXX_FLAGS)
-      IF(INTEL_CXX_FLAGS)
-        INCLUDE(${PROJECT_CMAKE}/IntelCompilers.cmake)
-        SET(FOUND_CXXENV 1)
-      ENDIF(INTEL_CXX_FLAGS)
-    ENDIF(CMAKE_COMPILER_IS_GNUCXX)
-  ENDIF(NOT FOUND_CXXENV)
+  ELSEIF( ${COMPILER} MATCHES "GNU" )
+    INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
+  ELSEIF( ${COMPILER} MATCHES "Clang" )
+    INCLUDE(${PROJECT_CMAKE}/ClangCompilers.cmake)
+  ELSE()
+    MESSAGE(WARNING "No default file for compiler (${COMPILER})")
+  ENDIF()
 
   #-------------------------------------------------------------------
   #  check MPI installation
