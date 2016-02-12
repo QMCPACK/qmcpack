@@ -379,8 +379,8 @@ void WaveFunctionTester::runBasicTest()
   bool any_fail = false;
   for (int iat=0; iat<nat; iat++)
   {
-    RealType L_err = L[iat]-L1[iat];
-    if (std::abs(L_err) > tol)
+    RealType L_err = std::abs(L[iat]-L1[iat]);
+    if (L_err > tol)
     {
       app_log() << "Finite difference Laplacian exceeds tolerance (" << tol << ") for particle " << iat << endl;
       app_log() << "  Analytic    = " << L[iat] << endl;
@@ -391,8 +391,8 @@ void WaveFunctionTester::runBasicTest()
 
     for (int idim=0; idim<OHMMS_DIM; idim++)
     {
-        RealType G_err = G[iat][idim]-G1[iat][idim];
-        if (std::abs(G_err) > tol)
+        RealType G_err = std::abs(G[iat][idim]-G1[iat][idim]);
+        if (G_err > tol)
         {
           app_log() << "Finite difference gradient exceeds tolerance (" << tol << ") for particle " << iat;
           app_log() << " component " << idim << endl;
@@ -470,8 +470,8 @@ void WaveFunctionTester::runBasicTest()
     int iat = 1;
     for (int i = 0; i < 20; i++) {
       computeNumericalGrad(delta, G, L, G1, L1);
-      RealType L_err = L[iat]-L1[iat];
-      RealType G_err = G[iat][0]-G1[iat][0];
+      RealType L_err = std::abs(L[iat]-L1[iat]);
+      RealType G_err = std::abs(G[iat][0]-G1[iat][0]);
       dout << delta << "  " << std::abs(L_err) << "  " << std::abs(G_err) << endl;;
       delta *= 0.5;
     }
