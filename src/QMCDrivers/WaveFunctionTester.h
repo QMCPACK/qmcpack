@@ -75,6 +75,13 @@ private:
   void runNodePlot();
   void printEloc();
 
+  // compute numerical gradient and laplacian
+  void computeNumericalGrad(RealType delta,
+                            ParticleSet::ParticleGradient_t &G,
+                            ParticleSet::ParticleLaplacian_t &L,
+                            ParticleSet::ParticleGradient_t &G_fd,
+                            ParticleSet::ParticleLaplacian_t &L_fd);
+
   //vector<RealType> Mv3(vector<vector<RealType> >& M, vector<RealType>& v);
 
   ofstream fout;

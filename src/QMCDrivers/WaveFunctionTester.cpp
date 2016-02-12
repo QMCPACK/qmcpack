@@ -275,25 +275,20 @@ void WaveFunctionTester::printEloc()
   out.close();
 }
 
-void WaveFunctionTester::runBasicTest()
+// Compute numerical gradient and Laplacian
+void WaveFunctionTester::computeNumericalGrad(RealType delta,
+                                              ParticleSet::ParticleGradient_t &G, // analytic
+                                              ParticleSet::ParticleLaplacian_t &L,
+                                              ParticleSet::ParticleGradient_t &G_fd, // finite difference
+                                              ParticleSet::ParticleLaplacian_t &L_fd)
 {
-  IndexType nskipped = 0;
-  RealType sig2Enloc=0, sig2Drift=0;
-  RealType delta = 1e-2;
   RealType delta2 = 2*delta;
   ValueType c1 = 1.0/delta/2.0;
   ValueType c2 = 1.0/delta/delta;
-  int nat = W.getTotalNum();
-  MCWalkerConfiguration::PropertyContainer_t Properties;
-  //pick the first walker
-  MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
-  //copy the properties of the working walker
-  Properties = awalker->Properties;
-  //sample a new walker configuration and copy to ParticleSet::R
-  W.R = awalker->R;
-  //W.R += deltaR;
-  W.update();
-  //ValueType psi = Psi.evaluate(W);
+
+  G = W.G;
+  L = W.L;
+
   RealType logpsi0 = Psi.evaluateLog(W);
   RealType phase0=Psi.getPhase();
 #if defined(QMC_COMPLEX)
@@ -301,44 +296,8 @@ void WaveFunctionTester::runBasicTest()
 #else
   ValueType logpsi = logpsi0;
 #endif
-  RealType eloc(0);
-//     =H.evaluate(W);
-  app_log() << "  Logpsi: " <<logpsi  << endl;
-//     app_log() << "  HamTest " << "  Total " <<  eloc << endl;
-//     for (int i=0; i<H.sizeOfObservables(); i++)
-//       app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << endl;
-  //RealType psi = Psi.evaluateLog(W);
-  ParticleSet::ParticleGradient_t G(nat), G1(nat);
-  ParticleSet::ParticleLaplacian_t L(nat), L1(nat);
-  G = W.G;
-  L = W.L;
-//#if defined(QMC_COMPLEX)
-//  ValueType logpsi(std::log(psi));
-//#else
-//  ValueType logpsi(std::log(std::abs(psi)));
-//#endif
-  /*
-  {
-     int iat=0;
-     ofstream out("eloc.dat");
-     double dx=7.0/999.0;
-     W.R[iat] = 0.0;
-     W.R[iat][0] = -3.5;
-     for (int k=0; k<1000; k++)
-     {
-         W.R[iat][0] += dx;
-         W.update();
-         ValueType logpsi_p = Psi.evaluateLog(W);
-         ValueType ene = H.evaluate(W);
 
-         out<<W.R[iat][0] <<"  "
-             <<std::exp(logpsi_p) <<"  "
-             <<logpsi_p <<"  "
-             <<ene <<endl;
-     }
-     out.close();
-  }
-  */
+  int nat = W.getTotalNum();
   for (int iat=0; iat<nat; iat++)
   {
     PosType r0 = W.R[iat];
@@ -374,14 +333,80 @@ void WaveFunctionTester::runBasicTest()
 //      g0[idim] = std::log(std::abs(psi_p/psi_m));
 //#endif
       W.R[iat] = r0;
+      W.update();
+      Psi.evaluateLog(W);
     }
-    G1[iat] = c1*g0;
-    L1[iat] = c2*(lap-2.0*OHMMS_DIM*logpsi);
-    fout << "G1 = " << G1[iat] << endl;
-    fout << "L1 = " << L1[iat] << endl;
+    G_fd[iat] = c1*g0;
+    L_fd[iat] = c2*(lap-2.0*OHMMS_DIM*logpsi);
   }
+}
+
+void WaveFunctionTester::runBasicTest()
+{
+  RealType sig2Enloc=0, sig2Drift=0;
+  RealType delta = 1e-2;
+
+  int nat = W.getTotalNum();
+  MCWalkerConfiguration::PropertyContainer_t Properties;
+  //pick the first walker
+  MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
+  //copy the properties of the working walker
+  Properties = awalker->Properties;
+  //sample a new walker configuration and copy to ParticleSet::R
+  W.R = awalker->R;
+  //W.R += deltaR;
+  W.update();
+  //ValueType psi = Psi.evaluate(W);
+  RealType logpsi0 = Psi.evaluateLog(W);
+  RealType phase0=Psi.getPhase();
+#if defined(QMC_COMPLEX)
+  ValueType logpsi = std::complex<OHMMS_PRECISION>(logpsi0,phase0);
+#else
+  ValueType logpsi = logpsi0;
+#endif
+  RealType eloc(0);
+  fout << "Numerical gradient and Laplacian test" << endl;
+
+  ParticleSet::ParticleGradient_t G(nat), G1(nat);
+  ParticleSet::ParticleLaplacian_t L(nat), L1(nat);
+
+  // Use a single delta with a fairly large tolerance
+  computeNumericalGrad(delta, G, L, G1, L1);
+
+  // TODO - better choice of tolerance
+  // TODO - adjust delta and tolerance based on precision of wavefunction
+  RealType tol = 1e-3;
+  bool any_fail = false;
   for (int iat=0; iat<nat; iat++)
   {
+    RealType L_err = L[iat]-L1[iat];
+    if (std::abs(L_err) > tol)
+    {
+      app_log() << "Finite difference Laplacian exceeds tolerance (" << tol << ") for particle " << iat << endl;
+      app_log() << "  Analytic    = " << L[iat] << endl;
+      app_log() << "  Finite diff = " << L1[iat] << endl;
+      app_log() << "  Error       = " << L_err << endl;
+      any_fail = true;
+    }
+
+    for (int idim=0; idim<OHMMS_DIM; idim++)
+    {
+        RealType G_err = G[iat][idim]-G1[iat][idim];
+        if (std::abs(G_err) > tol)
+        {
+          app_log() << "Finite difference gradient exceeds tolerance (" << tol << ") for particle " << iat;
+          app_log() << " component " << idim << endl;
+          app_log() << "  Analytic    = " << G[iat][idim] << endl;
+          app_log() << "  Finite diff = " << G1[iat][idim] << endl;
+          app_log() << "  Error       = " << G_err << endl;
+          any_fail = true;
+        }
+    }
+  }
+
+  for (int iat=0; iat<nat; iat++)
+  {
+    fout << "delta = " << delta << endl;
     fout << "For particle #" << iat << " at " << W.R[iat] << endl;
     fout << "Gradient      = " << setw(12) << G[iat] << endl
          << "  Finite diff = " << setw(12) << G1[iat] << endl
@@ -390,7 +415,77 @@ void WaveFunctionTester::runBasicTest()
          << "  Finite diff = " << setw(12) << L1[iat] << endl
          << "  Error       = " << setw(12) << L[iat]-L1[iat] << endl << endl;
   }
+
+  // Use sequence of deltas and ensure the finite difference values are getting closer
+  //  to the analytic values.
+
+  RealType delta_seq[] = {1e-1, 1e-2, 1e-3};
+  unsigned int ndelta = sizeof(delta_seq)/sizeof(RealType);
+
+  vector<ParticleSet::ParticleGradient_t> G_fd_seq(ndelta, ParticleSet::ParticleGradient_t(nat));
+  vector<ParticleSet::ParticleLaplacian_t> L_fd_seq(ndelta, ParticleSet::ParticleLaplacian_t(nat));
+  typedef vector<RealType> RealVector;
+  typedef vector<PosType> PosVector;
+  vector<RealVector> L_err(ndelta, RealVector(nat));
+  vector<PosVector> G_err(ndelta, PosVector(nat));
+
+  for (unsigned int i = 0; i < ndelta; i++)
+  {
+    computeNumericalGrad(delta_seq[i], G, L, G_fd_seq[i], L_fd_seq[i]);
+
+    for (int iat = 0; iat < nat; iat++)
+    {
+      L_err[i][iat] = std::abs(L[iat] - L_fd_seq[i][iat]);
+      for (int idim=0; idim<OHMMS_DIM; idim++)
+      {
+        G_err[i][iat][idim] = std::abs(G[iat][idim] - G_fd_seq[i][iat][idim]);
+      }
+
+      if (i > 0)
+      {
+        if (L_err[i][iat] > L_err[i-1][iat])
+        {
+          app_log() << "Laplacian finite difference is not decreasing with delta for particle "  << iat << endl;
+          app_log() << "  Previous diff, delta = " << delta_seq[i-1] << " Diff = " << L_err[i-1][iat];
+          app_log() << " Analytic = " << L[iat] << " FD = " << L_fd_seq[i-1][iat] << endl;
+          app_log() << "  Current diff,  delta = " << delta_seq[i] << " Diff = " << L_err[i][iat];
+          app_log() << " Analytic = " << L[iat] << " FD = " << L_fd_seq[i][iat] << endl;
+          any_fail = true;
+        }
+      }
+    }
+  }
+
+  app_log() << "Finite difference test: " << (any_fail?"FAIL":"PASS") << endl;
+
+  // TODO - test wavefunction components (getOrbitals) separately.
+
+  // Compute approximation error vs. delta.
+  // TODO - Use option in the input file to turn this on.
+  if (false)
+  {
+    ofstream dout("delta.dat");
+    dout << "# delta L_err G_err" << endl;
+    delta = .5;
+    int iat = 1;
+    for (int i = 0; i < 20; i++) {
+      computeNumericalGrad(delta, G, L, G1, L1);
+      RealType L_err = L[iat]-L1[iat];
+      RealType G_err = G[iat][0]-G1[iat][0];
+      dout << delta << "  " << std::abs(L_err) << "  " << std::abs(G_err) << endl;;
+      delta *= 0.5;
+    }
+    dout.close();
+  }
+
+  fout << "Ratio test" << endl;
+
+  RealType ratio_tol = 1e-9;
+  bool any_ratio_fail = false;
   makeGaussRandom(deltaR);
+  fout << "deltaR:" << endl;
+  fout << deltaR << endl;
+  fout << "Particle       Ratio of Ratios     Computed Ratio   Internal Ratio" << endl;
   //testing ratio alone
   for (int iat=0; iat<nat; iat++)
   {
@@ -409,6 +504,7 @@ void WaveFunctionTester::runBasicTest()
     //ValueType psi_m = log(fabs(Psi.evaluate(W)));
     RealType psi_m = Psi.evaluateLog(W);
     RealType phase_m=Psi.getPhase();
+    
 #if defined(QMC_COMPLEX)
     RealType ratioMag = std::exp(psi_m-psi_p);
     RealType dphase = phase_m-phase_p;
@@ -421,14 +517,23 @@ void WaveFunctionTester::runBasicTest()
     if(dphase > 2.0*M_PI)
       dphase -= 2.0*M_PI;
     ValueType ratDiff=std::complex<OHMMS_PRECISION>(ratioMag*std::cos(dphase),ratioMag*std::sin(dphase)) ;
+    // TODO - test complex ratio against a tolerance
     fout << iat << " ratio " << aratio*std::complex<OHMMS_PRECISION>(std::cos(phaseDiff),std::sin(phaseDiff))/ratDiff << " " << ratDiff << endl;
     fout << "     ratioMag " << aratio/ratioMag << " " << ratioMag << endl;
     fout << "     PhaseDiff " << phaseDiff/dphase << " " << phaseDiff  <<" " << dphase << endl;
 #else
-    RealType ratDiff=std::exp(psi_m-psi_p)*std::cos(phase_m-phase_p) ;
-    fout << iat << " ratio " << aratio/ratDiff << " " << ratDiff << endl;
+    RealType ratDiff=std::exp(psi_m-psi_p)*std::cos(phase_m-phase_p);
+    fout << iat << " " << aratio/ratDiff << " " << ratDiff << " " << aratio << endl;
+    if (std::abs(aratio/ratDiff - 1.0) > ratio_tol)
+    {
+      app_log() << "Wavefunction ratio exceeds tolerance " << tol << ") for particle " << iat << endl;
+      app_log() << "  Internally computed ratio = " << aratio << endl;
+      app_log() << "  Separately computed ratio = " << ratDiff << endl;
+      any_ratio_fail = true;
+    }
 #endif
   }
+  app_log() << "Ratio test: " << (any_ratio_fail?"FAIL":"PASS") << endl;
 }
 
 void WaveFunctionTester::runRatioTest()
