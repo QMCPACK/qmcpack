@@ -149,6 +149,11 @@ int main(int argc, char **argv)
       WARNMSG("Creating GamesAsciiParser")
       parser = new GamesAsciiParser(argc,argv);
     }
+    else
+    {
+      cerr << "Unknown extension: " << ext << endl;
+      exit(1);
+    }
   }
   parser->Title=prefix;
   parser->UseHDF5=usehdf5;
