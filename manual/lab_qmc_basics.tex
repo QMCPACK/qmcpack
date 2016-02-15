@@ -27,8 +27,6 @@ The outline below shows the overall structure of the lab.  Those who are new to 
     This section.
   \item[1.2 Lab directories and files] \hfill \\
     Description of directories and files used in the lab.
-  \item[1.3 The QMCPACK input file and XML] \hfill \\
-    XML as used by QMCPACK.  Reduced example of input file structure. 
   \end{description}
 \item[2. Testing PP atomic properties: optimization, diffusion Monte Carlo] \hfill \\
   Calculate ionization potential of oxygen using pre-generated QMCPACK input files.
@@ -43,17 +41,17 @@ The outline below shows the overall structure of the lab.  Those who are new to 
     Optimization and timestep extrapolation of charged oxygen atom.  Timestep extrapolation of DMC ionization potential \& comparison w/ experimental data.
   \end{description}
 \item[3. Testing PP dimer properties: DMC workflow automation] \hfill \\
-  Calculate oxygen dimer binding curve w/ the Project Suite workflow automation system.
+  Calculate oxygen dimer binding curve w/ Nexus workflow automation system.
   \begin{description}
-  \item[3.1 Example Project Suite input] \hfill \\
-    Explanation of Project Suite inputs for simple VMC workflow (Python).
+  \item[3.1 Example Nexus input] \hfill \\
+    Explanation of Nexus inputs for simple VMC workflow (Python).
   \item[3.2 Automated binding curve of the oxygen dimer] \hfill \\
     Explanation of optimization \& DMC inputs.  Workflow w/ single optimization at eqm. bond length and several DMC runs for stretched/compressed dimer.  Comparison of fitted eqm. bond length and dissociation energy w/ experimental data.
   \end{description}
 \item[4. (Optional) Running your system with QMCPACK] \hfill \\
-  Generate input files for (and optionally run) PWSCF and QMCPACK for your own physical system with the Project Suite.  The 8-atom cubic unit cell of diamond is provided as a runnable example.
+  Generate input files for (and optionally run) PWSCF and QMCPACK for your own physical system with Nexus.  The 8-atom cubic unit cell of diamond is provided as a runnable example.
 \item[A. Basic Python constructs] \hfill \\
-  Appendix with brief overview of Python syntax: intrinsics, container types, conditional statements, iteration, functions w/ keyword arguments.  Possibly useful for those new to Python in working with the Project Suite (consult as needed).
+  Appendix with brief overview of Python syntax: intrinsics, container types, conditional statements, iteration, functions w/ keyword arguments.  Possibly useful for those new to Python in working with Nexus (consult as needed).
 \end{description}
 
 \subsection{Lab directories and files}
@@ -65,7 +63,7 @@ Lab_2_QMC_Basics/
 ├── docs                     - documentation 
 │   ├── Lab_2_QMC_Basics.pdf    - this document
 │   ├── Lab_2_Slides.pdf        - slides presented during the lab
-│   └── Project_Suite.pdf       - slides on QMCPACK automation (supplementary)
+│   └── Nexus.pdf               - slides on QMCPACK automation (supplementary)
 │
 ├── oxygen_atom              - oxygen atom calculations 
 │   ├── ip_conv.py              - tool to fit oxygen IP vs timestep
@@ -170,6 +168,10 @@ factors used in QMCPACK.  A brief discussion of wavefunction optimization is
 also given.  The second subsection contains the actual walkthrough to follow 
 for the lab. 
 
+
+% background on the wavefunction should be covered elsewhere in the manual
+%   perhaps replace this with just the figure and a couple of brief comments 
+\hide{
 \subsubsection{Background on trial wavefunction and optimization}\label{sec:opt_background}
 The trial wavefunction used to describe the neutral oxygen atom is of the 
 standard Slater-Jastrow form:
@@ -231,6 +233,7 @@ Here $E_0$ is the ground state energy, $E_T(P)$ is the trial energy, $V_T(P)$ is
   C(P) = \alpha E_T(P) + (1-\alpha) V_T(P).
 \end{align}  
 Iterative varational Monte Carlo methods have been developed to handle the non-linear optimization problem $\min\limits_P C(P)$.  We will be using the linearized optimization method of Umrigar, \emph{et al.} (PRL \textbf{98} 110201 (2007)).  Let us try this now with QMCPACK.
+}
 
 
 \subsubsection{Optimization walkthrough with QMCPACK}\label{sec:opt_walkthrough}
@@ -393,6 +396,9 @@ Identify which optimization series is the ``best'' according to your cost functi
 \subsection{DMC timestep extrapolation I: neutral O atom}
 The diffusion Monte Carlo (DMC) algorithm contains two biases in addition to the fixed node and pseudopotential approximations that are important to control: timestep and population control bias.  The following subsection briefly discusses the origin of timestep and population control biases in DMC and how they can be minimized or extrapolated away.  As before, the second subsection contains the lab walkthrough with QMCPACK.  By the end of the section, we will have a solid DMC estimate of the ground state energy of oxygen.
 
+% background on timestep error should be covered elsewhere in the manual
+%   perhaps replace this with a brief formula of error (order tau^2) on total energy
+\hide{
 \subsubsection{Background on timestep and population control bias}\label{sec:opt_background}
 DMC improves over the VMC algorithm by projecting toward the true many-body electronic ground state of the system.  The projection operator is the (importance sampled) imaginary time propagator, which is also known as the thermodynamic density matrix:
 \begin{align}
@@ -414,7 +420,7 @@ The advantage here is that reasonable approximations of the short time propagato
 where $D(R,R';\tau)$ and $B(R,R';\tau)$ represent drift and branching terms, respectively.  DMC results are biased for any finite timestep ($\tau$).  The bias can be eliminated by extrapolating to zero timestep.  In practice this is done by performing a series of runs with decreasing timesteps and then fitting the results.
 
 The drift term can be sampled with standard Monte Carlo methods, while the branching term is incorporated as a weight assigned to each random walker.  Instead of accumulating the weight, it is more efficient to ``branch'' each walker according to the weight, resulting in some walkers being deleted and others copied multiple times.  If left uncontrolled, the walker population $(P)$ may vanish or diverge.  A stable algorithm is obtained by adjusting the branching weight to preserve the overall number of walkers on average.  Population control also biases the results, but usually to a lesser extent than timestep error (the bias is proportional to $1/P$).  A common rule of thumb is to use at least a couple thousand walkers.  This bias should be checked occasionally by performing runs with varying numbers of walkers.
-
+}
 
 \subsubsection{Timestep extrapolation with QMCPACK}
 In the same directory you used to perform wavefunction optimization (\texttt{oxygen\_atom}) you will find a sample DMC input file for the neutral oxygen atom named \texttt{O.q0.dmc.in.xml}.  Open this file in a text editor and note the differences from the optimization case.  The XML describing the wavefunction is no longer present.  In its place is the line
@@ -439,7 +445,7 @@ The QMC calculation section at the bottom is also different.  The linear optimiz
 
 The purpose of the VMC run is to provide initial electron positions for each DMC walker.  Setting $\texttt{walkers}=1$ in the VMC block ensures there will be only one VMC walker per execution thread.  There will be a total of 512 VMC walkers in this case (see \texttt{O.q0.dmc.qsub.in}).  We want the electron positions used to initialize the DMC walkers to be decorrelated from one another.  A VMC walker will often decorrelate from its current position after propagating for a few Ha$^{-1}$ in imaginary time (in general this is system dependent).  This leads to a rough rule of thumb for choosing \texttt{blocks} and \texttt{steps} for the VMC run ($\texttt{VWALKERS}=512$ here):
 \begin{align}
-  \texttt{VBLOCKS}\times\texttt{VSTEPS} \ge \frac{\texttt{DWALKERS}}{\texttt{VWALKERS}} \frac{5~\textrm{Ha}^{-1}}{\texttt{VTIMESTEP}}
+  \texttt{VBLOCKS}\times\texttt{VSTENexus} \ge \frac{\texttt{DWALKERS}}{\texttt{VWALKERS}} \frac{5~\textrm{Ha}^{-1}}{\texttt{VTIMESTEP}}
 \end{align}
 Fill in the VMC XML block with appropriate values for these parameters.  There should be more than one DMC walker per thread and enough walkers in total to avoid population control bias (see previous subsection).
 
@@ -458,14 +464,14 @@ Choose an initial DMC timestep and create a sequence of $N$ timesteps according 
    <qmc method="dmc" move="pbyp">
       <parameter name="warmupSteps"         >    DWARMUP         </parameter>
       <parameter name="blocks"              >    DBLOCKS         </parameter>
-      <parameter name="steps"               >    DSTEPS          </parameter>
+      <parameter name="steps"               >    DSTENexus          </parameter>
       <parameter name="timestep"            >    DTIMESTEP       </parameter>
       <parameter name="nonlocalmoves"       >    yes             </parameter>
    </qmc>
 \end{verbatim}
 \end{shaded}
 \noindent
-Fill in \texttt{DWARMUP}, \texttt{DBLOCKS}, \texttt{DSTEPS}, and \texttt{DTIMESTEP} for each DMC run according to \ref{eq:timestep_iter}.  Submit the DMC timestep extrapolation run to the queue with \texttt{submit\_O\_q0\_dmc}.  The run should take only a few minutes to complete.
+Fill in \texttt{DWARMUP}, \texttt{DBLOCKS}, \texttt{DSTENexus}, and \texttt{DTIMESTEP} for each DMC run according to \ref{eq:timestep_iter}.  Submit the DMC timestep extrapolation run to the queue with \texttt{submit\_O\_q0\_dmc}.  The run should take only a few minutes to complete.
 
 QMCPACK will create files prefixed with \texttt{O\_q0\_dmc}.  The log file is \texttt{O\_q0\_dmc.output}.  As before, block averaged data is written to \texttt{scalar.dat} files.  In addition, DMC runs produce \texttt{dmc.dat} files which contain energy data averaged only over the walker population (one line per DMC step).  The \texttt{dmc.dat} files also provide a record of the walker population at each step.
 
@@ -550,22 +556,22 @@ Production QMC projects are often composed of many similar workflows.  The simpl
 \end{enumerate}
 Simulation workflows quickly become more complex with increasing costs in terms of human time for the researcher.  Automation tools can decrease both human time and error if used well.
 
-The set of automation tools we will be using is known as the Project Suite (PS), which is distributed with QMCPACK.  The PS is capable of generating input files, submitting and monitoring compute jobs, passing data between simulations (such as relaxed structures, orbital files, optimized Jastrow parameters, etc.), and data analysis.  The user interface to the PS is through a set of functions defined in the Python programming language.  User scripts which execute simple workflows resemble input files and do not require programming experience.  More complex workflows require only basic programming constructs (\emph{e.g.} for loops and if statements).  PS input files/scripts should be easier to navigate than QMCPACK input files and more efficient than submitting all the jobs by hand.
+The set of automation tools we will be using is known as Nexus (Nexus), which is distributed with QMCPACK.  Nexus is capable of generating input files, submitting and monitoring compute jobs, passing data between simulations (such as relaxed structures, orbital files, optimized Jastrow parameters, etc.), and data analysis.  The user interface to Nexus is through a set of functions defined in the Python programming language.  User scripts which execute simple workflows resemble input files and do not require programming experience.  More complex workflows require only basic programming constructs (\emph{e.g.} for loops and if statements).  Nexus input files/scripts should be easier to navigate than QMCPACK input files and more efficient than submitting all the jobs by hand.
 
 
-\subsection{Example Project Suite input}
-The Project Suite (PS) is driven by simple user-defined scripts that resemble keyword-driven input files.  An example PS input file that performs a single VMC calculation is shown below.  Take a moment to read it over and especially note the comments (prefixed with ``\texttt{\#}'') explaining most of the contents.  If the input syntax is unclear you may want to consult portions of appendix \ref{app:python_basics}, which gives a condensed summary of Python constructs.  For more information about the functionality and effective use of the Project Suite, consult \texttt{docs/Project\_Suite.pdf} first.  More information can be found in the user guide distributed with QMCPACK, although examples in this lab series and \texttt{Project\_Suite.pdf} are more up to date (if \texttt{qmcpack} is the location of your QMCPACK distribution, the user guide can be found at \texttt{qmcpack/project\_suite/documentation/project\_suite\_user\_guide.pdf}).
+\subsection{Example Nexus input}
+Nexus is driven by simple user-defined scripts that resemble keyword-driven input files.  An example Nexus input file that performs a single VMC calculation is shown below.  Take a moment to read it over and especially note the comments (prefixed with ``\texttt{\#}'') explaining most of the contents.  If the input syntax is unclear you may want to consult portions of appendix \ref{app:python_basics}, which gives a condensed summary of Python constructs.  For more information about the functionality and effective use of Nexus, consult \texttt{docs/Nexus.pdf} first.  More information can be found in the user guide distributed with QMCPACK, although examples in this lab series and \texttt{Nexus.pdf} are more up to date (if \texttt{qmcpack} is the location of your QMCPACK distribution, the user guide can be found at \texttt{qmcpack/nexus/documentation/nexus\_user\_guide.pdf}).
 
 \begin{shaded}
 \begin{verbatim}
 #! /usr/bin/env python
 
-# import project suite functions
-from project import settings,Job,get_machine,run_project 
-from project import generate_physical_system
-from project import generate_qmcpack,vmc
+# import Nexus functions
+from nexus import settings,Job,get_machine,run_project 
+from nexus import generate_physical_system
+from nexus import generate_qmcpack,vmc
 
-settings(                             # project suite settings
+settings(                             # Nexus settings
     pseudo_dir    = './pseudopotentials', # location of PP files
     runs          = '',                   # root directory for simulations
     results       = '',                   # root directory for simulation results
@@ -626,7 +632,7 @@ run_project(qmc)                       # write input file and submit job
 
 
 \subsection{Automated binding curve of the oxygen dimer}
-Enter the \texttt{oxygen\_dimer} directory.  Copy your BFD pseudopotential from the atom runs into \texttt{oxygen\_dimer/pseudopotentials}.  Open \texttt{O\_dimer.py} with a text editor.  The overall format is similar to the example file shown in the last section.  The header material, including PS imports, settings, and the job parameters for QMC are identical.  The main difference is that optimization and DMC runs are being performed rather than a single VMC run.  
+Enter the \texttt{oxygen\_dimer} directory.  Copy your BFD pseudopotential from the atom runs into \texttt{oxygen\_dimer/pseudopotentials}.  Open \texttt{O\_dimer.py} with a text editor.  The overall format is similar to the example file shown in the last section.  The header material, including Nexus imports, settings, and the job parameters for QMC are identical.  The main difference is that optimization and DMC runs are being performed rather than a single VMC run.  
 
 Following the job parameters, inputs for the optimization method are given.  The keywords should all be familiar from the QMCPACK XML input files you used previously:
 \begin{shaded}
@@ -739,7 +745,7 @@ sims.append(qmc)
 \end{verbatim}
 \end{shaded}
 \noindent
-Shared details such as the run directory, job, pseudopotentials, and orbital file have been omitted (\texttt{...}).  The ``\texttt{opt}'' run will optimize a 1-body B-spline Jastrow with 8 knots having a cutoff of 4.5 Bohr and a 2-body Pad\'{e} Jastrow with up-up and up-down ``\texttt{B}'' parameters set to 0.5 1/Bohr.  The Jastrow list for the DMC run is empty and a new keyword is present: \texttt{dependencies}.  The usage of \texttt{dependencies} above indicates that the DMC run depends on the optimization run for the Jastrow factor.  The PS will submit the ``\texttt{opt}'' run first and upon completion it will scan the output, select the optimal set of parameters, pass the Jastrow information to the ``\texttt{qmc}'' run and then submit the DMC job.  Independent job workflows are submitted in parallel when permitted (we have explicitly prevented this for this lab by setting \texttt{queue\_size=1} for Vesta).  No input files are written or job submissions made until the ``\texttt{run\_project}'' function is reached.
+Shared details such as the run directory, job, pseudopotentials, and orbital file have been omitted (\texttt{...}).  The ``\texttt{opt}'' run will optimize a 1-body B-spline Jastrow with 8 knots having a cutoff of 4.5 Bohr and a 2-body Pad\'{e} Jastrow with up-up and up-down ``\texttt{B}'' parameters set to 0.5 1/Bohr.  The Jastrow list for the DMC run is empty and a new keyword is present: \texttt{dependencies}.  The usage of \texttt{dependencies} above indicates that the DMC run depends on the optimization run for the Jastrow factor.  Nexus will submit the ``\texttt{opt}'' run first and upon completion it will scan the output, select the optimal set of parameters, pass the Jastrow information to the ``\texttt{qmc}'' run and then submit the DMC job.  Independent job workflows are submitted in parallel when permitted (we have explicitly prevented this for this lab by setting \texttt{queue\_size=1} for Vesta).  No input files are written or job submissions made until the ``\texttt{run\_project}'' function is reached.
 
 As written, \texttt{O\_dimer.py} will only perform calculations at the equilibrium separation distance of 1.2074 Angstrom.  Modify the file now to perform DMC calculations across a range of separation distances with each DMC run using the Jastrow factor optimized at the equilibrium separation distance.  The necessary Python \texttt{for} loop syntax should look something like this:
 \begin{shaded}
@@ -761,7 +767,7 @@ run_project(sims)
 \noindent
 Note that the text inside the \texttt{for} loop and the \texttt{if} block must be indented by precisely four spaces.  If you use Emacs, changes in indentation can be performed easily with \texttt{Cntrl-C >} and \texttt{Cntrl-C <} after highlighting a block of text (other editors should have similar functionality).  If you see something like  ``\texttt{SyntaxError: invalid syntax}'' print to the screen when you run \texttt{O\_dimer.py} later on, consult the completed file in \texttt{oxygen\_dimer/reference}.
 
-The values of ``\texttt{scale}'' in the loop must be a subset of \newline \texttt{[0.90,0.925,0.95,0.975,1.00,1.025,1.05,1.075,1.10]} since orbital files have been pre-generated with \texttt{PWSCF} for only these values.  If other values are selected, the job will be submitted but \texttt{QMCPACK} will fail when it attempts to read the non-existent \texttt{O2.pwscf.h5} file (in later labs we will run \texttt{PWSCF} to generate the orbital files directly with the PS).  Begin with the reduced set of \texttt{scale} values shown above.
+The values of ``\texttt{scale}'' in the loop must be a subset of \newline \texttt{[0.90,0.925,0.95,0.975,1.00,1.025,1.05,1.075,1.10]} since orbital files have been pre-generated with \texttt{PWSCF} for only these values.  If other values are selected, the job will be submitted but \texttt{QMCPACK} will fail when it attempts to read the non-existent \texttt{O2.pwscf.h5} file (in later labs we will run \texttt{PWSCF} to generate the orbital files directly with Nexus).  Begin with the reduced set of \texttt{scale} values shown above.
 
 Change the ``\texttt{status\_only}'' parameter in the ``\texttt{settings}'' function to \texttt{1} and type ``./O\_dimer.py'' at the command line.  This will print the status of all simulations:
 \begin{shaded}
@@ -828,7 +834,7 @@ Project finished
 \end{verbatim}
 \end{shaded}
 \noindent
-The PS polls the simulation status every 3 seconds and sleeps in between.  The ``scale\_*'' directories should now contain several files:
+Nexus polls the simulation status every 3 seconds and sleeps in between.  The ``scale\_*'' directories should now contain several files:
 \begin{shaded}
 \begin{verbatim}
 scale_1.0
@@ -896,13 +902,13 @@ Let's actually submit the optimization and DMC jobs now.  Reset the state of the
 
 
 \section{(Optional) Running your system with QMCPACK}\label{sec:your_system}
-This section covers a fairly simple route to get started on QMC calculations of an arbitrary system of interest using the Project Suite (PS) automation system to setup input files and optionally perform the runs.  The example provided in this section uses QM Espresso (PWSCF) to generate the orbitals forming the Slater determinant part of the trial wavefunction.  PWSCF is a natural choice for solid state systems and it can be used for surface/slab and molecular systems as well, albeit at the price of describing additional vacuum space with plane waves.
+This section covers a fairly simple route to get started on QMC calculations of an arbitrary system of interest using Nexus (Nexus) automation system to setup input files and optionally perform the runs.  The example provided in this section uses QM Espresso (PWSCF) to generate the orbitals forming the Slater determinant part of the trial wavefunction.  PWSCF is a natural choice for solid state systems and it can be used for surface/slab and molecular systems as well, albeit at the price of describing additional vacuum space with plane waves.
 
 To start out with, you will need pseudopotentials (PP's) for each element in your system in both the UPF (PWSCF) and FSATOM/XML (QMCPACK) formats.  A good place to start is the Burkatzki-Filippi-Dolg (BFD) pseudopotential database \newline (\href{http://www.burkatzki.com/pseudos/index.2.html}{http://www.burkatzki.com/pseudos/index.2.html}), which we have already used in our study of the oxygen atom.  The database does not contain PP's for the 4th and 5th row transition metals or any of the lanthanides or actinides.  If you need a PP that is not in the BFD database, you may need to generate and test one manually (\emph{e.g.} with OPIUM, \href{http://opium.sourceforge.net/}{http://opium.sourceforge.net/}).  Otherwise, use \texttt{ppconvert} as outlined in section \ref{sec:pseudo} to obtain PP's in the formats used by PWSCF and QMCPACK.  Enter the \texttt{your\_system} lab directory and place the converted PP's in \texttt{your\_system/pseudopotentials}.
 
 Before performing production calculations (more than just the initial setup in this section) be sure to converge the plane wave energy cutoff in PWSCF as these PP's can be rather hard, sometimes requiring cutoffs in excess of 300 Ry.  Depending on the system under study, the amount of memory required to represent the orbitals (QMCPACK uses 3D B-splines) becomes prohibitive and one may be forced to search for softer PP's.
 
-Beyond pseudopotentials, all that is required to get started are the atomic positions and the dimensions/shape of the simulation cell.  The PS file \texttt{example.py} illustrates how to setup PWSCF and QMCPACK input files by providing minimal information regarding the physical system (an 8-atom cubic cell of diamond in the example).  Most of the contents should be familiar from your experience with the automated calculations of the oxygen dimer binding curve in section \ref{sec:dimer_automation} (if you've skipped ahead you may want to skim that section for relevant information).  The most important change is the expanded description of the physical system:
+Beyond pseudopotentials, all that is required to get started are the atomic positions and the dimensions/shape of the simulation cell.  The Nexus file \texttt{example.py} illustrates how to setup PWSCF and QMCPACK input files by providing minimal information regarding the physical system (an 8-atom cubic cell of diamond in the example).  Most of the contents should be familiar from your experience with the automated calculations of the oxygen dimer binding curve in section \ref{sec:dimer_automation} (if you've skipped ahead you may want to skim that section for relevant information).  The most important change is the expanded description of the physical system:
 
 \begin{shaded}
 \begin{verbatim}
@@ -982,7 +988,7 @@ p2q = generate_pw2qmcpack(
 
 Set ``\texttt{generate\_only}'' to \texttt{1} and type ``\texttt{./example.py}'' or similar to generate the input files.  All files will be written to ``\texttt{./diamond\_vmc}'' (``\texttt{./[my\_project\_name]}'' if you have changed ``\texttt{my\_project\_name}'' in the file).  The input files for PWSCF, pw2qmcpack, and QMCPACK are \texttt{scf.in}, \texttt{pw2qmcpack.in}, and \texttt{vmc.in.xml}, repectively.  Take some time to inspect the generated input files.  If you have questions about the file contents, or run into issues with the generation process, feel free to consult with a lab instructor.  
 
-If desired, you can submit the runs directly with \texttt{example.py}.  To do this, first reset the PS simulation record by typing ``\texttt{rm ./diamond\_vmc/sim*/sim.p}'' or similar and set ``\texttt{generate\_only}'' back to \texttt{0}.  Next rerun \texttt{example.py}  (you may want to redirect the text output).  
+If desired, you can submit the runs directly with \texttt{example.py}.  To do this, first reset the Nexus simulation record by typing ``\texttt{rm ./diamond\_vmc/sim*/sim.p}'' or similar and set ``\texttt{generate\_only}'' back to \texttt{0}.  Next rerun \texttt{example.py}  (you may want to redirect the text output).  
 
 Alternatively the runs can be submitted by hand:
 \begin{shaded}
@@ -1016,7 +1022,8 @@ Once the runs have finished, you may want to begin exploring Jastrow optimizatio
 
 
 
-
+% cover basic python elsewhere in the manual?  refer to Nexus user guide or websites instead?
+\hide{
 \appendix
 
 \section{Basic Python constructs\label{app:python_basics}}
@@ -1147,7 +1154,7 @@ else:
 
 \end{verbatim}
 \end{shaded}
-The ``\texttt{\#end if}'' is not part of Python syntax, but you will see text like this throughout the Project Suite for clear encapsulation.
+The ``\texttt{\#end if}'' is not part of Python syntax, but you will see text like this throughout Nexus for clear encapsulation.
 
 \subsubsection{Iteration: \texttt{for}}
 \begin{shaded}
@@ -1234,3 +1241,4 @@ f(**o)                   # kw. args from obj, prints:
                          #   {'timestep': 0.02, 'blocks': 100, 'steps': 5}
 \end{verbatim}
 \end{shaded}
+}
