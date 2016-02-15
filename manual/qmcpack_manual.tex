@@ -10,8 +10,9 @@
 \usepackage{placeins}
 \usepackage{xcolor}
 \usepackage{graphicx}
+\usepackage{framed}
 
-\lstloadlanguages{C++,XML}
+\lstloadlanguages{C++,XML,Python}
 \newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
 \newcommand{\courier}[1]{{\fontfamily{pcr}\selectfont #1}}
 
@@ -26,6 +27,9 @@
 \oddsidemargin 0cm
 \evensidemargin 0cm
 \textwidth 6.5in
+
+% for shaded environment from framed package
+\definecolor{shadecolor}{gray}{0.95}
 
 
 % proper rendering of qmcpack
@@ -89,6 +93,9 @@ showstringspaces=false  % avoid showing underbrackets in quoted text
 \input{analysis}
 
 \input{examples}
+
+% labs: import each as a separate chapter for now
+\input{lab_qmc_basics}
 
 \input{contributing}
 
