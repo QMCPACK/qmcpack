@@ -2350,14 +2350,14 @@ class rmc(QIxml):
     write_types = obj(collect=yesno)
 #end class rmc
 
-class test(QIxml):
+class wftest(QIxml):
     collection_id = 'qmc'
     tag = 'qmc'
     attributes = ['method','checkpoint', 'gpu', 'move', 'multiple', 'warp']
-    parameters = ['ratio','walkers','clone','source']
+    parameters = ['ratio','walkers','clone','source','hamiltonianpbyp','orbitalutility','printeloc','basic','virtual_move']
     #elements   = ['printeloc','source']
-    write_types = obj(ratio=yesno,clone=yesno)
-#end class test    
+    write_types = obj(ratio=yesno,clone=yesno,hamiltonianpbyp=yesno,orbitalutility=yesno,printeloc=yesno,basic=yesno,virtual_move=yesno)
+#end class wftest    
 
 class setparams(QIxml):
     collection_id = 'qmc'
@@ -2369,7 +2369,7 @@ class setparams(QIxml):
 
 qmc = QIxmlFactory(
     name = 'qmc',
-    types   = dict(linear=linear,cslinear=cslinear,vmc=vmc,dmc=dmc,loop=loop,optimize=optimize_qmc,test=test,rmc=rmc,setparams=setparams),
+    types   = dict(linear=linear,cslinear=cslinear,vmc=vmc,dmc=dmc,loop=loop,optimize=optimize_qmc,wftest=wftest,rmc=rmc,setparams=setparams),
     typekey = 'method',
     default = 'loop'
     )
@@ -2400,7 +2400,7 @@ classes = [   #standard classes
     coefficient,radfunc,spindensity,structurefactor,
     sposet,bspline_builder,composite_builder,heg_builder,include,
     multideterminant,detlist,ci,mcwalkerset,csf,det,
-    optimize,cg_optimizer,flex_optimizer,optimize_qmc,test,kspace_jastrow,
+    optimize,cg_optimizer,flex_optimizer,optimize_qmc,wftest,kspace_jastrow,
     header,local,force,forwardwalking,observable,record,rmc,pressure,dmccorrection,
     nofk,mpc_est,distancetable,cpp,element,spline,setparams,
     backflow,transformation,cubicgrid,molecular_orbital_builder,cmc,sk,gofr,
@@ -2488,6 +2488,7 @@ Names.set_expanded_names(
     cuspinfo         = 'cuspInfo',
     exctlvl          = 'exctLvl',
     pairtype         = 'pairType',
+    printeloc        = 'printEloc',
    )
 for c in classes:
     c.init_class()
