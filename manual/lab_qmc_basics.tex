@@ -3,58 +3,23 @@
 
 
 
-\section{Overview}
-This lab is generally focused on the basics of performing quality quantum Monte 
-Carlo (QMC) calculations.  Practical topics covered in this lab include 
-wavefunction optimization with variational Monte Carlo (VMC), diffusion Monte 
-Carlo (DMC) timestep extrapolation, DMC population control bias, and automation 
-of DMC workflows in the context of pseudopotential testing.  Similar tests are 
-an essential part of most QMC studies and the other QMC topics covered here are 
-completely transferrable to larger, production calculations of more complicated 
-material systems.  In this lab, participants will test the quality of the 
-Burkatzki-Filippi-Dolg oxygen pseudopotential by calculating the ionization 
-potential of atomic oxygen and the binding properties of the oxygen dimer with 
-DMC.
+\section{Topics covered in this Lab}
+This lab focuses on the basics of performing quality QMC calculations.  As an example participants test an oxygen pseudopotential within DMC by calculating atomic and dimer properties, a common step prior to production runs.  Topics covered include:
+\begin{itemize}
+  \item{converting pseudopotentials into QMCPACK's FSATOM format}
+  \item{generating orbitals with Quantum Espresso}
+  \item{converting orbitals into QMCPACK's ESHDF format with pw2qmcpack}
+  \item{optimizing Jastrow factors with QMCPACK}
+  \item{removing DMC timestep error via extrapolation}
+  \item{automating QMC workflows with Nexus}
+  \item{testing pseudopotentials for accuracy}
+  \item{(optional) running QMCPACK for a general system of interest}
+\end{itemize}
 
-\subsection{Getting the most out of this lab}
-The outline below shows the overall structure of the lab.  Those who are new to QMC or QMCPACK should probably work through the contents in order.  If you have a specific application/target system you would like to explore with QMCPACK, be sure to leave enough time for the optional material in section \ref{sec:your_system}.  Feel free to discuss your answers/results to the questions/exercises at the end of each section with a lab instructor.
 
-\begin{description}
-\item[1. Overview] \hfill \\
-  Overview of lab content.
-  \begin{description}
-  \item[1.1 Getting the most out of this lab] \hfill \\
-    This section.
-  \item[1.2 Lab directories and files] \hfill \\
-    Description of directories and files used in the lab.
-  \end{description}
-\item[2. Testing PP atomic properties: optimization, diffusion Monte Carlo] \hfill \\
-  Calculate ionization potential of oxygen using pre-generated QMCPACK input files.
-  \begin{description}
-  \item[2.1 Getting and converting a pseudopotential] \hfill \\
-    Download PP from BFD database.  Convert to QMCPACK format with \texttt{ppconvert}. 
-  \item[2.2 Optimization walkthrough: neutral O atom] \hfill \\
-    Theoretical background on trial wavefunction \& optimization.  QMCPACK optimization walkthrough.  Fully annotated input file (\texttt{O.q0.opt.in.xml}) and explanation of Jastrow \& optimization inputs.
-  \item[2.3 DMC timestep extrapolation I: neutral O atom] \hfill \\
-    Theoretical background on timestep \& population control biases.  DMC timestep extrapolation walkthrough w/ QMCPACK and  explanation of DMC inputs.  
-  \item[2.4 DMC timestep extrapolation II: IP of oxygen] \hfill \\
-    Optimization and timestep extrapolation of charged oxygen atom.  Timestep extrapolation of DMC ionization potential \& comparison w/ experimental data.
-  \end{description}
-\item[3. Testing PP dimer properties: DMC workflow automation] \hfill \\
-  Calculate oxygen dimer binding curve w/ Nexus workflow automation system.
-  \begin{description}
-  \item[3.1 Example Nexus input] \hfill \\
-    Explanation of Nexus inputs for simple VMC workflow (Python).
-  \item[3.2 Automated binding curve of the oxygen dimer] \hfill \\
-    Explanation of optimization \& DMC inputs.  Workflow w/ single optimization at eqm. bond length and several DMC runs for stretched/compressed dimer.  Comparison of fitted eqm. bond length and dissociation energy w/ experimental data.
-  \end{description}
-\item[4. (Optional) Running your system with QMCPACK] \hfill \\
-  Generate input files for (and optionally run) PWSCF and QMCPACK for your own physical system with Nexus.  The 8-atom cubic unit cell of diamond is provided as a runnable example.
-\item[A. Basic Python constructs] \hfill \\
-  Appendix with brief overview of Python syntax: intrinsics, container types, conditional statements, iteration, functions w/ keyword arguments.  Possibly useful for those new to Python in working with Nexus (consult as needed).
-\end{description}
 
-\subsection{Lab directories and files}
+
+\section{Lab directories and files}
 
 \begin{shaded}
 \begin{verbatim}
@@ -99,24 +64,10 @@ Lab_2_QMC_Basics/
 
 
 
-\section{Testing PP atomic properties:\newline optimization, diffusion Monte Carlo}
 
-
-\subsection{Getting and converting a pseudopotential}\label{sec:pseudo}
-The Burkatzki-Filippi-Dolg (BFD) pseudopotential (PP) database is a respected 
-source of pre-tested PP's for use in QMC calculations.  The pseudopotentials 
-are represented in gaussian basis sets and are naturally suited for the study 
-of molecular systems (\emph{e.g.} using GAMESS to obtain orbitals).  The PP's 
-can also be used in solid state calculations (\emph{e.g.} using Quantum Espresso 
-to obtain orbitals), but the planewave cutoff required for converged results may 
-become prohibitive for heavier elements.  In this case, DFT-based 
-pseudopotentials may be generated with the OPIUM package (beyond the scope of 
-this lab).  In either case, testing pseudopotentials in relevant environments 
-should be performed.  To illustrate a subset of possible tests while gaining 
-familiarity with QMCPACK we will work with an oxygen pseudopotential from the 
-BFD database.  
-
-To obtain the pseudopotential, go to \href{http://www.burkatzki.com/pseudos/index.2.html}{http://www.burkatzki.com/pseudos/index.2.html}
+\section{Obtaining and converting a pseudopotential for oxygen}\label{sec:lqb_pseudo}
+We will use a potential from the Burkatzki-Filippi-Dolg pseudopotential database.  To obtain the pseudopotential, go to 
+\href{http://www.burkatzki.com/pseudos/index.2.html}{http://www.burkatzki.com/pseudos/index.2.html}
 and click on the ``Select Pseudopotential'' button.  Next click on oxygen in the 
 periodic table.  Click on the empty circle next to ``V5Z'' (a large gaussian 
 basis set) and click on ``Next''.  Select the Gamess format and click on 
@@ -160,7 +111,7 @@ O-QMC GEN 2 1
 The full QMCPACK pseudopotential is also included in \texttt{oxygen\_atom/reference/O.BFD.xml}.
 
 
-\subsection{Optimization walkthrough: neutral O atom}\label{sec:optimization_walkthrough}
+\section{Optimization walkthrough with QMCPACK: neutral O atom}\label{sec:optimization_walkthrough}
 The aim of this section is to obtain a trial wavefunction of reasonable quality 
 for the neutral oxygen atom.  The first subsection provides background regarding 
 the wavefunction for this system, including the specific form of the Jastrow 
@@ -236,7 +187,6 @@ Iterative varational Monte Carlo methods have been developed to handle the non-l
 }
 
 
-\subsubsection{Optimization walkthrough with QMCPACK}\label{sec:opt_walkthrough}
 Enter the \texttt{oxygen\_atom} directory and copy over the oxygen pseudopotential (\texttt{O.BFD.xml}) you downloaded and converted (section \ref{sec:pseudo}).  Alternatively, the already converted pseudopotential is located in the \texttt{oxygen\_atom/reference} directory.  All files prefixed with ``\texttt{O.q0}'' relate to the neutral oxygen atom.  
 
 Open \texttt{O.q0.opt.in.xml} with your favorite text editor.  This is a QMCPACK input file configured for wavefunction optimization with the linear method. Take a minute to familiarize yourself with the general format and contents of the input file.  The major sections are the simulation cell, description of particle species (electrons \& ions/atoms), the trial wavefunction (orbitals, Slater determinants, and Jastrow factors), the Hamiltonian, and finally inputs describing the quantum Monte Carlo process (linear optimization in this case).  Portions marked with ``\texttt{<!-- ... -->}'' are comments describing these sections.  XML is not the easiest to read, but this can be helped by using an editor with color highlighting such as \texttt{emacs} or \texttt{vi}.
@@ -393,7 +343,7 @@ Identify which optimization series is the ``best'' according to your cost functi
 
 
 
-\subsection{DMC timestep extrapolation I: neutral O atom}
+\section{DMC timestep extrapolation I: neutral O atom}
 The diffusion Monte Carlo (DMC) algorithm contains two biases in addition to the fixed node and pseudopotential approximations that are important to control: timestep and population control bias.  The following subsection briefly discusses the origin of timestep and population control biases in DMC and how they can be minimized or extrapolated away.  As before, the second subsection contains the lab walkthrough with QMCPACK.  By the end of the section, we will have a solid DMC estimate of the ground state energy of oxygen.
 
 % background on timestep error should be covered elsewhere in the manual
@@ -422,7 +372,7 @@ where $D(R,R';\tau)$ and $B(R,R';\tau)$ represent drift and branching terms, res
 The drift term can be sampled with standard Monte Carlo methods, while the branching term is incorporated as a weight assigned to each random walker.  Instead of accumulating the weight, it is more efficient to ``branch'' each walker according to the weight, resulting in some walkers being deleted and others copied multiple times.  If left uncontrolled, the walker population $(P)$ may vanish or diverge.  A stable algorithm is obtained by adjusting the branching weight to preserve the overall number of walkers on average.  Population control also biases the results, but usually to a lesser extent than timestep error (the bias is proportional to $1/P$).  A common rule of thumb is to use at least a couple thousand walkers.  This bias should be checked occasionally by performing runs with varying numbers of walkers.
 }
 
-\subsubsection{Timestep extrapolation with QMCPACK}
+
 In the same directory you used to perform wavefunction optimization (\texttt{oxygen\_atom}) you will find a sample DMC input file for the neutral oxygen atom named \texttt{O.q0.dmc.in.xml}.  Open this file in a text editor and note the differences from the optimization case.  The XML describing the wavefunction is no longer present.  In its place is the line
 \begin{shaded}
 \begin{verbatim}
@@ -512,7 +462,7 @@ b               = -0.221687        +/- 0.03757      (16.95%)
 \end{enumerate}
 
 
-\subsection{DMC timestep extrapolation II: IP of oxygen}
+\section{DMC timestep extrapolation II: O atom ionization potential}
 In this section, we will repeat the calculations of the prior two sections (optimization, timestep extrapolation) for the $+1$ charge state of the oxygen atom.  Comparing the resulting 1st ionization potential (IP) with experimental data will complete our first test of the BFD oxygen pseudopotential.  In actual practice, higher IP's could also be tested prior to performing production runs.
 
 Obtaining the timestep extrapolated DMC total energy for ionized oxygen should take much less (human) time than for the neutral case.  For convenience, the necessary steps are briefly summarized below.
