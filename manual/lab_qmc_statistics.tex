@@ -3,26 +3,38 @@
 \label{chap:lab_qmc_statistics}
 
 
-\section{Overview} 
+\section{Topics covered in this Lab} 
 
 This lab focuses on the basics of analyzing data from Monte Carlo (MC)
-calculations.  It covers averaging MC variables, considering the
-autocorrelation and MC time step, blocking the averages, reducing the error in
-the average, and scaling the variational Monte Carlo (VMC) algorithm up
-with increasing particle number.  In this lab, participants will use data from
+calculations.  In this lab, participants will use data from
 VMC calculations of a simple one-electron system with an analytically soluble
 system (the ground state of the hydrogen atom) to understand how to interpret a
 MC situation.  Most of these analyses will also carry over to diffusion Monte
-Carlo (DMC) simulations.
+Carlo (DMC) simulations.  Topics covered include:
+\begin{itemize}
+  \item{averaging Monte Carlo variables}
+  \item{the statisical error bar of mean values}
+  \item{effects of autocorrelation and variance on the error bar}
+  \item{the relationship between Monte Carlo timestep and autocorrelation}
+  \item{the use of blocking to reduce autocorrelation}
+  \item{the significance of the acceptance ratio}
+  \item{the significance of the sample size}
+  \item{how to determine whether a Monte Carlo run was successful}
+  \item{the relationship between wavefunction quality and variance}
+  \item{gauging the efficiency of Monte Carlo runs}
+  \item{the cost of scaling up to larger system sizes}
+\end{itemize}
 
+
+\hide{
 \subsection{How to get the most out of this lab}
-
 Be sure to practice using the various flags in the qmca tool to analyze the
 data.  Although some features are not yet implemented, this will get you used
 to seeing how the values in the data files produce the averages, which are the
 ultimate result of the MC simulations.
+}
 
-\subsection{Lab directories and files}
+\section{Lab directories and files}
 
 \begin{shaded} 
 \begin{verbatim}
@@ -128,7 +140,7 @@ Lab_1_MC_Analysis/
 \end{shaded}
 
 
-\subsection{Atomic units} 
+\section{Atomic units} 
 
 QMCPACK operates in Hartree atomic units to reduce the
 number of factors in the Schr\"odinger equation.  Thus, the unit of length is
@@ -137,9 +149,9 @@ the hartree (4.359744 $\times 10^{-18}$ J = 27.211385 eV).  The energy of the
 ground state of the hydrogen atom in these units is -0.5 hartrees.
 
 
-\section{Monte Carlo data analysis:\newline average, error bars, variance}
+%\section{Monte Carlo data analysis:\newline average, error bars, variance}
 
-\subsection{Reviewing statistics}
+\section{Reviewing statistics}
 \label{sec:review}
 
 We will practice taking the average (mean) and standard deviation of some Monte
@@ -252,7 +264,7 @@ reports the value of the local energy as -0.5 +/- 0.8 hartrees.
 
 Type \textbf{quit()} and press \textbf{[Enter]} to exit the Python command line.
 
-\subsection{Inspecting Monte Carlo data}
+\section{Inspecting Monte Carlo data}
 \label{sec:inspect_data} 
 
 QMCPACK outputs data from MC calculations into files ending in scalar.dat.
@@ -345,7 +357,7 @@ block weight, all quantities vary from line to line.
 Exit the text editor (\textbf{[Esc] :q! [Enter]} in vi, \textbf{[Ctrl]-x [Ctrl]-c} in
 emacs).
 
-\subsection{Averaging quantities in the MC data}
+\section{Averaging quantities in the MC data}
 \label{sec:averaging} 
 
 QMCPACK includes the qmca Python tool to average quantities in the scalar.dat file (and
@@ -399,7 +411,7 @@ H  series 0  LocalEnergy = -0.454460 +/- 0.000568
 Type \textbf{qmca --help} to see the list of all quantities and their
 abbreviations.
 
-\subsection{Evaluating MC simulation quality}
+\section{Evaluating MC simulation quality}
 
 There are several aspects of a MC simulation to consider in deciding how well
 it went.  Besides the deviation of the average from an expected value (if there
@@ -408,7 +420,7 @@ between MC steps, the value of the acceptance ratio (accepted steps over total
 proposed steps), and the variance in the local energy all indicate the quality
 of a MC simulation.  We will look at these one by one.
 
-\subsubsection{Tracing MC quantities}
+\subsection{Tracing MC quantities}
 
 Visualizing the evolution of MC quantities over the course of the simulation by
 a \textit{trace} offers a quick picture of whether the random walk had expected
@@ -442,7 +454,7 @@ erratically toward 0, indicating a poor quality MC run.
 Again, trace the kinetic and potential energies in this run and see how their
 behavior compares to the total local energy.
 
-\subsubsection{Blocking away autocorrelation}
+\subsection{Blocking away autocorrelation}
 
 \textit{Autocorrelation} occurs when a given MC step biases subsequent MC
 steps, leading to samples that are not statistically independent.  We must take
@@ -547,7 +559,7 @@ increasing autocorrelation.
 
 Press \textbf{q [Enter]} to quit gnuplot.
 
-\subsubsection{Balancing autocorrelation and acceptance ratio}
+\subsection{Balancing autocorrelation and acceptance ratio}
 
 Adjusting the time step value also affects the ratio of accepted steps to
 proposed steps.  Stepping nearby in configuration space implies that the
@@ -589,7 +601,7 @@ example, a time step of 0.02 occupies a spot where acceptance ratio is high
 (99.6\%), and autocorrelation is not appreciably larger than the minimum value
 (1.4 vs. 1.0).
 
-\subsubsection{Considering variance}
+\subsection{Considering variance}
 
 Besides autocorrelation, the dominant contributor to the error bar is the
 \textit{variance} in the local energy.  The variance measures the fluctuations
@@ -623,9 +635,9 @@ H  series 0  -0.454460 +/- 0.000568   0.529496 +/- 0.018445   1.1651
 average larger than the value itself.  In the next section, we will approach
 ways to improve the variance that subsequent labs will build upon.  
 
-\subsection{Reducing statistical error bars}
+\section{Reducing statistical error bars}
 
-\subsubsection{Increasing MC sampling}
+\subsection{Increasing MC sampling}
 
 Increasing the number of MC samples in a data set reduces the error bar as the
 inverse of the square root of the number of samples.  There are two ways to
@@ -656,7 +668,7 @@ increasing the total number of samples.   Visualize the tradeoff by inputting
 
 Press \textbf{q [Enter]} to quit gnuplot.
 
-\subsubsection{Improving the basis set}
+\subsection{Improving the basis set}
 
 In all of the above examples, we are using the sum of two gaussian functions
 (STO-2G) to approximate what should be a simple decaying exponential (STO =
@@ -691,7 +703,7 @@ energy of H\_\_exact--the total energy is constantly -0.5 hartree even though
 the kinetic and potential energies fluctuate from configuration to
 configuration.
 
-\subsubsection{Adding a Jastrow factor}
+\subsection{Adding a Jastrow factor}
 
 Another route to reducing the variance is the introduction of a Jastrow factor to 
 account for electron-electron correlation (not the statistical autocorrelation
@@ -717,9 +729,9 @@ This is still 20\% above the ground state energy, and subsequent labs will cover
 to improve on this with improved forms of the wave function that capture more
 of the physics.
 
-\subsection{Scaling to larger numbers of electrons}
+\section{Scaling to larger numbers of electrons}
 
-\subsubsection{Calculating the efficiency}
+\subsection{Calculating the efficiency}
 
 The inverse of the product of CPU time and the variance measures the
 \textit{efficiency} of an MC calculation.  Use qmca to calculate efficiency by
@@ -737,7 +749,7 @@ The Jastrow factor increased the efficiency in these calculations by a factor
 of three, largely through the reduction in variance (check the average block
 CPU time to verify this claim).
 
-\subsubsection{Scaling up}
+\subsection{Scaling up}
 
 To see how MC scales with increasing particle number, change directories to
 \texttt{size}.  Here are the data from runs of increasing number of electrons
