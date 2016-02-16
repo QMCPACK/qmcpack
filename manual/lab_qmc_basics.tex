@@ -38,9 +38,9 @@ Lab_2_QMC_Basics/
 │   ├── O.q0.opt.qsub.in        -    "    "  "  submission file         
 │   ├── O.q0.pwscf.h5           -    "    "  orbitals file         
 │   ├── O.q1.dmc.in.xml         - charged O DMC input file         
-│   ├── O.q1.dmc.qsub.i         -    "    "  "  submission file    n
+│   ├── O.q1.dmc.qsub.in        -    "    "  "  submission file   
 │   ├── O.q1.opt.in.xml         -    "    " optimization input file
-│   ├── O.q1.opt.qsub.i         -    "    "  "  submission file    n
+│   ├── O.q1.opt.qsub.in        -    "    "  "  submission file   
 │   ├── O.q1.pwscf.h5           -    "    "  orbitals file         
 │   ├── reference               - directory w/ completed runs
 │   ├── submit_O_q0_dmc         - executable to submit neutral DMC
@@ -493,10 +493,7 @@ The process listed above, which excludes additional steps for orbital generation
 
 
 
-\section{Testing PP dimer properties:\newline DMC workflow automation}
-\label{sec:dimer_automation}
-In this section we will use automation tools to calculate the DMC total energy of the oxygen dimer over a series of bond lengths.  The equilibrium bond length and binding energy of the dimer will be determined by performing a polynomial fit to the data (Morse potential fits should be preferred in production tests).  Comparing these values with correponding experimental data provides a second test of the BFD pseudopotential for oxygen.
-
+\section{DMC workflow automation with Nexus}
 Production QMC projects are often composed of many similar workflows.  The simplest of these is a single DMC calculation involving four different compute jobs:
 \begin{enumerate}
   \item{Orbital generation via Quantum Espresso or GAMESS.}
@@ -506,10 +503,8 @@ Production QMC projects are often composed of many similar workflows.  The simpl
 \end{enumerate}
 Simulation workflows quickly become more complex with increasing costs in terms of human time for the researcher.  Automation tools can decrease both human time and error if used well.
 
-The set of automation tools we will be using is known as Nexus (Nexus), which is distributed with QMCPACK.  Nexus is capable of generating input files, submitting and monitoring compute jobs, passing data between simulations (such as relaxed structures, orbital files, optimized Jastrow parameters, etc.), and data analysis.  The user interface to Nexus is through a set of functions defined in the Python programming language.  User scripts which execute simple workflows resemble input files and do not require programming experience.  More complex workflows require only basic programming constructs (\emph{e.g.} for loops and if statements).  Nexus input files/scripts should be easier to navigate than QMCPACK input files and more efficient than submitting all the jobs by hand.
+The set of automation tools we will be using is known as Nexus, which is distributed with QMCPACK.  Nexus is capable of generating input files, submitting and monitoring compute jobs, passing data between simulations (such as relaxed structures, orbital files, optimized Jastrow parameters, etc.), and data analysis.  The user interface to Nexus is through a set of functions defined in the Python programming language.  User scripts which execute simple workflows resemble input files and do not require programming experience.  More complex workflows require only basic programming constructs (\emph{e.g.} for loops and if statements).  Nexus input files/scripts should be easier to navigate than QMCPACK input files and more efficient than submitting all the jobs by hand.
 
-
-\subsection{Example Nexus input}
 Nexus is driven by simple user-defined scripts that resemble keyword-driven input files.  An example Nexus input file that performs a single VMC calculation is shown below.  Take a moment to read it over and especially note the comments (prefixed with ``\texttt{\#}'') explaining most of the contents.  If the input syntax is unclear you may want to consult portions of appendix \ref{app:python_basics}, which gives a condensed summary of Python constructs.  For more information about the functionality and effective use of Nexus, consult \texttt{docs/Nexus.pdf} first.  More information can be found in the user guide distributed with QMCPACK, although examples in this lab series and \texttt{Nexus.pdf} are more up to date (if \texttt{qmcpack} is the location of your QMCPACK distribution, the user guide can be found at \texttt{qmcpack/nexus/documentation/nexus\_user\_guide.pdf}).
 
 \begin{shaded}
@@ -581,7 +576,10 @@ run_project(qmc)                       # write input file and submit job
 
 
 
-\subsection{Automated binding curve of the oxygen dimer}
+\section{Automated binding curve of the oxygen dimer}
+\label{sec:dimer_automation}
+In this we will use Nexus to calculate the DMC total energy of the oxygen dimer over a series of bond lengths.  The equilibrium bond length and binding energy of the dimer will be determined by performing a polynomial fit to the data (Morse potential fits should be preferred in production tests).  Comparing these values with correponding experimental data provides a second test of the BFD pseudopotential for oxygen.
+
 Enter the \texttt{oxygen\_dimer} directory.  Copy your BFD pseudopotential from the atom runs into \texttt{oxygen\_dimer/pseudopotentials}.  Open \texttt{O\_dimer.py} with a text editor.  The overall format is similar to the example file shown in the last section.  The header material, including Nexus imports, settings, and the job parameters for QMC are identical.  The main difference is that optimization and DMC runs are being performed rather than a single VMC run.  
 
 Following the job parameters, inputs for the optimization method are given.  The keywords should all be familiar from the QMCPACK XML input files you used previously:
