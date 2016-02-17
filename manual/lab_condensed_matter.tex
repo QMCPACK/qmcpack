@@ -1,6 +1,8 @@
 \chapter{Lab 4: Using PWSCF and QMCPACK to perform total energy calculations of
 condensed systems}
 
+
+\hide{
 \begin{flushleft}
 \textbf{Lab author: Luke Shulenburger}\footnote{Sandia National Laboratories is a multiprogram
 laboratory managed and operated by Sandia Corporation, a wholly owned
@@ -10,6 +12,7 @@ DE-AC04-94AL85000.}
 
 \textbf{Creation date: July 17, 2014}
 \end{flushleft}
+}
 
 
 The goal of this lab will be to introduce you to the somewhat specialized problems involved in performing diffusion Monte Carlo calculations on condensed matter as opposed to the atoms and molecules that were the focus of earlier labs.   Calculations will be performed on two different systems.  Firstly, we will perform a series of calculations on BCC beryllium focusing on the necessary methodology to limit finite size effects.  Secondly, we will perform calculations on graphene as an example of a system where qmcpack’s ability to handle cases with mixed periodic and open boundary conditions is useful.  This example will also focus on strategies to limit memory usage for such systems.
@@ -164,6 +167,7 @@ using the values you have determined to perform the calculation with as small as
 \section{Conclusion}
 Upon completion of this lab, you should be able to use Nexus to perform DMC calculations on periodic solids when provided with a pseudopotential.  You should also be able to reduce the size of the wavefunction in a solid state calculation in cases where memory is a limiting factor.
 
+\hide{
 \section{Acknowledgment}
  This tutorial was created with support from Sandia National Laboratories.
 
@@ -171,3 +175,4 @@ Upon completion of this lab, you should be able to use Nexus to perform DMC calc
  Sandia Corporation, a wholly owned subsidiary of Lockheed Martin Corporation, for
  the U.S. Department of Energy's National Nuclear Security Administration under
  Contract No. DE-AC04-94AL85000.
+}
