@@ -95,8 +95,7 @@ ppconvert --gamess_pot O.BFD.gamess --s_ref "1s(2)2p(4)" \
 \end{shaded}
 
 For reference, the text of \texttt{O.BFD.gamess} should be:
-\begin{shaded}
-\begin{verbatim}
+\begin{lstlisting}
 O-QMC GEN 2 1
 3
 6.00000000 1 9.29793903
@@ -105,8 +104,7 @@ O-QMC GEN 2 1
 1
 38.41914135 2 8.71924452
 
-\end{verbatim}
-\end{shaded}
+\end{lstlisting}
 \noindent
 The full QMCPACK pseudopotential is also included in \texttt{oxygen\_atom/reference/O.BFD.xml}.
 
@@ -192,8 +190,7 @@ Enter the \texttt{oxygen\_atom} directory and copy over the oxygen pseudopotenti
 Open \texttt{O.q0.opt.in.xml} with your favorite text editor.  This is a QMCPACK input file configured for wavefunction optimization with the linear method. Take a minute to familiarize yourself with the general format and contents of the input file.  The major sections are the simulation cell, description of particle species (electrons \& ions/atoms), the trial wavefunction (orbitals, Slater determinants, and Jastrow factors), the Hamiltonian, and finally inputs describing the quantum Monte Carlo process (linear optimization in this case).  Portions marked with ``\texttt{<!-- ... -->}'' are comments describing these sections.  XML is not the easiest to read, but this can be helped by using an editor with color highlighting such as \texttt{emacs} or \texttt{vi}.
 
 The most important parts to focus on for the purposes of this exercise are the Jastrow factors and the inputs to the linear optimization method.  Input specifying the one-body electron-ion Jastrow factor corresponding to eq. \ref{eq:J1} is 
-\begin{shaded}
-\begin{verbatim}
+\begin{lstlisting}
 <jastrow type="One-Body" name="J1" function="bspline" source="ion0" print="yes">  
   <correlation elementType="O" size="8" rcut="4.5" cusp="0.0">
     <coefficients id="eO" type="Array">                  
@@ -201,12 +198,10 @@ The most important parts to focus on for the purposes of this exercise are the J
     </coefficients>
   </correlation>
 </jastrow>
-\end{verbatim}
-\end{shaded}
+\end{lstlisting}
 \noindent
 The XML describes $U_1^{\uparrow/\downarrow}(r)$ as a B-spline with 8 knots, no cusp at the origin (the oxygen pseudopotential is finite at $r=0$), and vanishing beyond 4.5 Bohr.  The initial guess of zero for each of the 8 knot parameters corresponds to $U_1^{\uparrow/\downarrow}(r)=0$.  The input for the two-body electron-electron Jastrow is similar:
-\begin{shaded}
-\begin{verbatim}
+\begin{lstlisting}
 <jastrow type="Two-Body" name="J2" function="pade" print="yes">
   <correlation speciesA="u" speciesB="u">
     <var id="uu_b" name="B">   0.6   </var>
@@ -215,14 +210,11 @@ The XML describes $U_1^{\uparrow/\downarrow}(r)$ as a B-spline with 8 knots, no 
     <var id="ud_b" name="B">   1.0   </var>  
   </correlation>
 </jastrow>
-\end{verbatim}
-\end{shaded}
+\end{lstlisting}
 \noindent
 The XML describes $U_2^{\uparrow\uparrow/\downarrow\downarrow}(r)$ and  $U_2^{\uparrow\downarrow}(r)$ from eq. \ref{eq:J2} as Pad\'{e} functions with initial guesses of $B^{\uparrow\uparrow}=0.6~\textrm{Bohr}^{-1}$ and  $B^{\uparrow\downarrow}=1.0~\textrm{Bohr}^{-1}$ for the adjustable parameters.  
 
 The relevant portion of the input describing the linear optimization process is
-%\begin{shaded}
-%\begin{verbatim}
 \begin{lstlisting}
 <loop max="MAX">
   <qmc method="linear" move="pbyp" checkpoint="-1">
@@ -240,8 +232,6 @@ The relevant portion of the input describing the linear optimization process is
   </qmc>
 </loop>
 \end{lstlisting}
-%\end{verbatim}
-%\end{shaded}
 \noindent
 An explanation of each input variable can be found below.  The remaining variables control specialized internal details of the linear optimization algorithm.  The meaning of these inputs is beyond the scope of this lab and reasonable results are often obtained keeping these values fixed. 
 \begin{description}
@@ -376,11 +366,9 @@ The drift term can be sampled with standard Monte Carlo methods, while the branc
 
 
 In the same directory you used to perform wavefunction optimization (\texttt{oxygen\_atom}) you will find a sample DMC input file for the neutral oxygen atom named \texttt{O.q0.dmc.in.xml}.  Open this file in a text editor and note the differences from the optimization case.  The XML describing the wavefunction is no longer present.  In its place is the line
-\begin{shaded}
-\begin{verbatim}
+\begin{lstlisting}
    <include href="OPT_XML"/>
-\end{verbatim}
-\end{shaded}
+\end{lstlisting}
 \noindent
 Replace ``\texttt{OPT\_XML}'' with the \texttt{opt.xml} file corresponding to the best Jastrow parameters you found in the last section.  The \texttt{include} element essentially amounts to an in-place copy and paste of the contents of the \texttt{opt.xml} file.
 
@@ -397,7 +385,7 @@ The QMC calculation section at the bottom is also different.  The linear optimiz
 
 The purpose of the VMC run is to provide initial electron positions for each DMC walker.  Setting $\texttt{walkers}=1$ in the VMC block ensures there will be only one VMC walker per execution thread.  There will be a total of 512 VMC walkers in this case (see \texttt{O.q0.dmc.qsub.in}).  We want the electron positions used to initialize the DMC walkers to be decorrelated from one another.  A VMC walker will often decorrelate from its current position after propagating for a few Ha$^{-1}$ in imaginary time (in general this is system dependent).  This leads to a rough rule of thumb for choosing \texttt{blocks} and \texttt{steps} for the VMC run ($\texttt{VWALKERS}=512$ here):
 \begin{align}
-  \texttt{VBLOCKS}\times\texttt{VSTENexus} \ge \frac{\texttt{DWALKERS}}{\texttt{VWALKERS}} \frac{5~\textrm{Ha}^{-1}}{\texttt{VTIMESTEP}}
+  \texttt{VBLOCKS}\times\texttt{VSTEPS} \ge \frac{\texttt{DWALKERS}}{\texttt{VWALKERS}} \frac{5~\textrm{Ha}^{-1}}{\texttt{VTIMESTEP}}
 \end{align}
 Fill in the VMC XML block with appropriate values for these parameters.  There should be more than one DMC walker per thread and enough walkers in total to avoid population control bias (see previous subsection).
 
@@ -411,19 +399,17 @@ To study timestep bias, we will perform a sequence of DMC runs over a range of t
 Each DMC run will require about twice as much computer time as the one preceeding it.  Note that the number of blocks is kept fixed for uniform statistical analysis.  $\texttt{blocks}\times\texttt{steps}\times\texttt{timestep}\sim 60~\mathrm{Ha}^{-1}$ is sufficient for this system.
 
 Choose an initial DMC timestep and create a sequence of $N$ timesteps according to \ref{eq:timestep_iter}.  Make $N$ copies of the DMC XML block in the input file
-\begin{shaded}
-\begin{verbatim}
+\begin{lstlisting}
    <qmc method="dmc" move="pbyp">
       <parameter name="warmupSteps"         >    DWARMUP         </parameter>
       <parameter name="blocks"              >    DBLOCKS         </parameter>
-      <parameter name="steps"               >    DSTENexus          </parameter>
+      <parameter name="steps"               >    DSTEPS          </parameter>
       <parameter name="timestep"            >    DTIMESTEP       </parameter>
       <parameter name="nonlocalmoves"       >    yes             </parameter>
    </qmc>
-\end{verbatim}
-\end{shaded}
+\end{lstlisting}
 \noindent
-Fill in \texttt{DWARMUP}, \texttt{DBLOCKS}, \texttt{DSTENexus}, and \texttt{DTIMESTEP} for each DMC run according to \ref{eq:timestep_iter}.  Submit the DMC timestep extrapolation run to the queue with \texttt{submit\_O\_q0\_dmc}.  The run should take only a few minutes to complete.
+Fill in \texttt{DWARMUP}, \texttt{DBLOCKS}, \texttt{DSTEPS}, and \texttt{DTIMESTEP} for each DMC run according to \ref{eq:timestep_iter}.  Submit the DMC timestep extrapolation run to the queue with \texttt{submit\_O\_q0\_dmc}.  The run should take only a few minutes to complete.
 
 QMCPACK will create files prefixed with \texttt{O\_q0\_dmc}.  The log file is \texttt{O\_q0\_dmc.output}.  As before, block averaged data is written to \texttt{scalar.dat} files.  In addition, DMC runs produce \texttt{dmc.dat} files which contain energy data averaged only over the walker population (one line per DMC step).  The \texttt{dmc.dat} files also provide a record of the walker population at each step.
 
@@ -587,8 +573,7 @@ In this we will use Nexus to calculate the DMC total energy of the oxygen dimer 
 Enter the \texttt{oxygen\_dimer} directory.  Copy your BFD pseudopotential from the atom runs into \texttt{oxygen\_dimer/pseudopotentials}.  Open \texttt{O\_dimer.py} with a text editor.  The overall format is similar to the example file shown in the last section.  The header material, including Nexus imports, settings, and the job parameters for QMC are identical.  The main difference is that optimization and DMC runs are being performed rather than a single VMC run.  
 
 Following the job parameters, inputs for the optimization method are given.  The keywords should all be familiar from the QMCPACK XML input files you used previously:
-\begin{shaded}
-\begin{verbatim}
+\begin{lstlisting}
 linopt1 = linear(
     energy               = 0.0,
     unreweightedvariance = 1.0,
@@ -613,12 +598,10 @@ linopt1 = linear(
     stabilizerscale      = 1.0,
     nstabilizers         = 3
     )
-\end{verbatim}
-\end{shaded}
+\end{lstlisting}
 \noindent
 Requesting multiple loop's with different numbers of samples is more compact than in XML:
-\begin{shaded}
-\begin{verbatim}
+\begin{lstlisting}
 linopt1 = ...
 
 linopt2 = linopt1.copy()  
@@ -630,12 +613,10 @@ linopt3.samples = 40000 # opt w/ 40000 samples
 opt_calcs = [loop(max=8,qmc=linopt1), # loops over opt's
              loop(max=6,qmc=linopt2),
              loop(max=4,qmc=linopt3)]
-\end{verbatim}
-\end{shaded}
+\end{lstlisting}
 \noindent
 The VMC/DMC method inputs should also look familiar:
-\begin{shaded}
-\begin{verbatim}
+\begin{lstlisting}
 qmc_calcs = [
     vmc(
         walkers     =   1,
@@ -654,12 +635,10 @@ qmc_calcs = [
         nonlocalmoves = True
         )
     ]
-\end{verbatim}
-\end{shaded}
+\end{lstlisting}
 \noindent
 As in the example in the last section, the oxygen dimer is generated with the \texttt{generate\_physical\_system} function:
-\begin{shaded}
-\begin{verbatim}
+\begin{lstlisting}
 dimer = generate_physical_system(
     type       = 'dimer',
     dimer      = ('O','O'),
@@ -669,14 +648,12 @@ dimer = generate_physical_system(
     net_spin   = 2,
     O          = 6
     )
-\end{verbatim}
-\end{shaded}
+\end{lstlisting}
 \noindent
 Similar syntax can be used to generate crystal structures or to specify systems with arbitrary atomic configurations and simulation cells.  Notice that a ``\texttt{scale}'' variable has been introduced to stretch or compress the dimer.  
 
 Next, objects representing QMCPACK simulations are constructed with the \texttt{generate\_qmcpack} function:
-\begin{shaded}
-\begin{verbatim}
+\begin{lstlisting}
 opt = generate_qmcpack(
     identifier   = 'opt',
     ...
@@ -694,14 +671,12 @@ qmc = generate_qmcpack(
     dependencies = (opt,'jastrow') 
     )
 sims.append(qmc)
-\end{verbatim}
-\end{shaded}
+\end{lstlisting}
 \noindent
 Shared details such as the run directory, job, pseudopotentials, and orbital file have been omitted (\texttt{...}).  The ``\texttt{opt}'' run will optimize a 1-body B-spline Jastrow with 8 knots having a cutoff of 4.5 Bohr and a 2-body Pad\'{e} Jastrow with up-up and up-down ``\texttt{B}'' parameters set to 0.5 1/Bohr.  The Jastrow list for the DMC run is empty and a new keyword is present: \texttt{dependencies}.  The usage of \texttt{dependencies} above indicates that the DMC run depends on the optimization run for the Jastrow factor.  Nexus will submit the ``\texttt{opt}'' run first and upon completion it will scan the output, select the optimal set of parameters, pass the Jastrow information to the ``\texttt{qmc}'' run and then submit the DMC job.  Independent job workflows are submitted in parallel when permitted (we have explicitly prevented this for this lab by setting \texttt{queue\_size=1} for Vesta).  No input files are written or job submissions made until the ``\texttt{run\_project}'' function is reached.
 
 As written, \texttt{O\_dimer.py} will only perform calculations at the equilibrium separation distance of 1.2074 Angstrom.  Modify the file now to perform DMC calculations across a range of separation distances with each DMC run using the Jastrow factor optimized at the equilibrium separation distance.  The necessary Python \texttt{for} loop syntax should look something like this:
-\begin{shaded}
-\begin{verbatim}
+\begin{lstlisting}
 sims = []
 for scale in [1.00,0.90,0.95,1.05,1.10]:
     ...
@@ -714,8 +689,7 @@ for scale in [1.00,0.90,0.95,1.05,1.10]:
     ...
 #end for
 run_project(sims)
-\end{verbatim}
-\end{shaded}
+\end{lstlisting}
 \noindent
 Note that the text inside the \texttt{for} loop and the \texttt{if} block must be indented by precisely four spaces.  If you use Emacs, changes in indentation can be performed easily with \texttt{Cntrl-C >} and \texttt{Cntrl-C <} after highlighting a block of text (other editors should have similar functionality).  If you see something like  ``\texttt{SyntaxError: invalid syntax}'' print to the screen when you run \texttt{O\_dimer.py} later on, consult the completed file in \texttt{oxygen\_dimer/reference}.
 
@@ -854,7 +828,7 @@ Let's actually submit the optimization and DMC jobs now.  Reset the state of the
 
 
 \section{(Optional) Running your system with QMCPACK}\label{sec:your_system}
-This section covers a fairly simple route to get started on QMC calculations of an arbitrary system of interest using Nexus (Nexus) automation system to setup input files and optionally perform the runs.  The example provided in this section uses QM Espresso (PWSCF) to generate the orbitals forming the Slater determinant part of the trial wavefunction.  PWSCF is a natural choice for solid state systems and it can be used for surface/slab and molecular systems as well, albeit at the price of describing additional vacuum space with plane waves.
+This section covers a fairly simple route to get started on QMC calculations of an arbitrary system of interest using the Nexus workflow management system to setup input files and optionally perform the runs.  The example provided in this section uses QM Espresso (PWSCF) to generate the orbitals forming the Slater determinant part of the trial wavefunction.  PWSCF is a natural choice for solid state systems and it can be used for surface/slab and molecular systems as well, albeit at the price of describing additional vacuum space with plane waves.
 
 To start out with, you will need pseudopotentials (PP's) for each element in your system in both the UPF (PWSCF) and FSATOM/XML (QMCPACK) formats.  A good place to start is the Burkatzki-Filippi-Dolg (BFD) pseudopotential database \newline (\href{http://www.burkatzki.com/pseudos/index.2.html}{http://www.burkatzki.com/pseudos/index.2.html}), which we have already used in our study of the oxygen atom.  The database does not contain PP's for the 4th and 5th row transition metals or any of the lanthanides or actinides.  If you need a PP that is not in the BFD database, you may need to generate and test one manually (\emph{e.g.} with OPIUM, \href{http://opium.sourceforge.net/}{http://opium.sourceforge.net/}).  Otherwise, use \texttt{ppconvert} as outlined in section \ref{sec:pseudo} to obtain PP's in the formats used by PWSCF and QMCPACK.  Enter the \texttt{your\_system} lab directory and place the converted PP's in \texttt{your\_system/pseudopotentials}.
 
@@ -862,8 +836,7 @@ Before performing production calculations (more than just the initial setup in t
 
 Beyond pseudopotentials, all that is required to get started are the atomic positions and the dimensions/shape of the simulation cell.  The Nexus file \texttt{example.py} illustrates how to setup PWSCF and QMCPACK input files by providing minimal information regarding the physical system (an 8-atom cubic cell of diamond in the example).  Most of the contents should be familiar from your experience with the automated calculations of the oxygen dimer binding curve in section \ref{sec:dimer_automation} (if you've skipped ahead you may want to skim that section for relevant information).  The most important change is the expanded description of the physical system:
 
-\begin{shaded}
-\begin{verbatim}
+\begin{lstlisting}[language=Python]
 # details of your physical system (diamond conventional cell below)
 my_project_name = 'diamond_vmc'   # directory to perform runs
 my_dft_pps      = ['C.BFD.upf']   # pwscf pseudopotentials
@@ -902,15 +875,13 @@ my_system = generate_physical_system(
 
 my_bconds       = 'ppp'  #  ppp/nnn for periodic/open BC's in QMC
                          #  if nnn, center atoms about (a1+a2+a3)/2
-\end{verbatim}
-\end{shaded}
+\end{lstlisting}
 
 If you have a system you would like to try with QMC, make a copy of \texttt{example.py} and fill in the relevant information about the pseudopotentials, simulation cell axes, and atomic species/positions.  Otherwise, you can proceed with \texttt{example.py} as it is.
 
 The other new aspects are two additional compute jobs to generate the orbitals with PWSCF and convert them into the ESHDF format with \texttt{pw2qmcpack.x}:
 
-\begin{shaded}
-\begin{verbatim}
+\begin{lstlisting}
 # scf run to generate orbitals
 scf = generate_pwscf(
     identifier   = 'scf',
@@ -935,8 +906,7 @@ p2q = generate_pw2qmcpack(
     write_psir   = False,
     dependencies = (scf,'orbitals')
     )
-\end{verbatim}
-\end{shaded}
+\end{lstlisting}
 
 Set ``\texttt{generate\_only}'' to \texttt{1} and type ``\texttt{./example.py}'' or similar to generate the input files.  All files will be written to ``\texttt{./diamond\_vmc}'' (``\texttt{./[my\_project\_name]}'' if you have changed ``\texttt{my\_project\_name}'' in the file).  The input files for PWSCF, pw2qmcpack, and QMCPACK are \texttt{scf.in}, \texttt{pw2qmcpack.in}, and \texttt{vmc.in.xml}, repectively.  Take some time to inspect the generated input files.  If you have questions about the file contents, or run into issues with the generation process, feel free to consult with a lab instructor.  
 
