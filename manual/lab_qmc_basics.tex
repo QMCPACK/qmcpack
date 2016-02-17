@@ -221,8 +221,9 @@ The XML describes $U_1^{\uparrow/\downarrow}(r)$ as a B-spline with 8 knots, no 
 The XML describes $U_2^{\uparrow\uparrow/\downarrow\downarrow}(r)$ and  $U_2^{\uparrow\downarrow}(r)$ from eq. \ref{eq:J2} as Pad\'{e} functions with initial guesses of $B^{\uparrow\uparrow}=0.6~\textrm{Bohr}^{-1}$ and  $B^{\uparrow\downarrow}=1.0~\textrm{Bohr}^{-1}$ for the adjustable parameters.  
 
 The relevant portion of the input describing the linear optimization process is
-\begin{shaded}
-\begin{verbatim}
+%\begin{shaded}
+%\begin{verbatim}
+\begin{lstlisting}
 <loop max="MAX">
   <qmc method="linear" move="pbyp" checkpoint="-1">
     <cost name="energy"              >  ECOST   </cost>
@@ -238,8 +239,9 @@ The relevant portion of the input describing the linear optimization process is
     ...
   </qmc>
 </loop>
-\end{verbatim}
-\end{shaded}
+\end{lstlisting}
+%\end{verbatim}
+%\end{shaded}
 \noindent
 An explanation of each input variable can be found below.  The remaining variables control specialized internal details of the linear optimization algorithm.  The meaning of these inputs is beyond the scope of this lab and reasonable results are often obtained keeping these values fixed. 
 \begin{description}
@@ -507,8 +509,9 @@ The set of automation tools we will be using is known as Nexus, which is distrib
 
 Nexus is driven by simple user-defined scripts that resemble keyword-driven input files.  An example Nexus input file that performs a single VMC calculation is shown below.  Take a moment to read it over and especially note the comments (prefixed with ``\texttt{\#}'') explaining most of the contents.  If the input syntax is unclear you may want to consult portions of appendix \ref{app:python_basics}, which gives a condensed summary of Python constructs.  For more information about the functionality and effective use of Nexus, consult \texttt{docs/Nexus.pdf} first.  More information can be found in the user guide distributed with QMCPACK, although examples in this lab series and \texttt{Nexus.pdf} are more up to date (if \texttt{qmcpack} is the location of your QMCPACK distribution, the user guide can be found at \texttt{qmcpack/nexus/documentation/nexus\_user\_guide.pdf}).
 
-\begin{shaded}
-\begin{verbatim}
+%\begin{shaded}
+%\begin{verbatim}
+\begin{lstlisting}[language=Python]
 #! /usr/bin/env python
 
 # import Nexus functions
@@ -571,8 +574,9 @@ qmc = generate_qmcpack(                # make a qmcpack simulation
     )
                        
 run_project(qmc)                       # write input file and submit job
-\end{verbatim}
-\end{shaded}
+\end{lstlisting}
+%\end{verbatim}
+%\end{shaded}
 
 
 

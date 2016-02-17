@@ -5,14 +5,39 @@
 \usepackage{fancyhdr}
 \usepackage{hyperref} %for urls
 %\usepackage{url}
-\usepackage{listings}
 \usepackage{tabularx}
 \usepackage{placeins}
 \usepackage{xcolor}
 \usepackage{graphicx}
 \usepackage{framed}
 
+% making listing behave properly
+%   with setting below, listings now render correctly
+%   copy/paste from pdf is still messed up (is this even possible to fix?)
+%     -indentation whitespace is not preserved (needed for Python)
+%     -copy/paste can result in mangled text
+%     -mangling depends on pdf viewer (it is different for acroread and evince)
+%     -verbatim suffers from this also
+\usepackage{upquote}  % render ' properly
+\usepackage{listings}
+
 \lstloadlanguages{C++,XML,Python}
+
+\lstset{
+  basicstyle=\footnotesize\ttfamily,  % copy/paste from pdf w/o mangled quotes
+  keywordstyle=\color{black}\bfseries,
+  frame=single,
+  breaklines=true,
+  language=xml,
+  escapeinside={<:}{:>},
+  columns=fullflexible,   % copy/paste from pdf w/o added spaces
+  keepspaces=true,        % but do keep the spaces that are already there
+  showstringspaces=false, % avoid showing underbrackets in quoted text
+}
+
+
+
+
 \newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
 \newcommand{\courier}[1]{{\fontfamily{pcr}\selectfont #1}}
 
@@ -54,16 +79,6 @@
 
 
 \begin{document}
-\lstset{
-basicstyle=\footnotesize\ttfamily,  % copy/paste from pdf w/o mangled quotes
-keywordstyle=\color{black}\bfseries,
-frame=single,
-breaklines=true,
-language=xml,
-escapeinside={<:}{:>},
-columns=fullflexible,   % copy/paste from pdf w/o added spaces
-showstringspaces=false  % avoid showing underbrackets in quoted text
-}
 
 \input{title.tex}
 \newpage
