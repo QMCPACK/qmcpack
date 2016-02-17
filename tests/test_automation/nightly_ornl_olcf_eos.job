@@ -62,7 +62,7 @@ case $sys in
     module load fftw
     export FFTW_HOME=$FFTW_DIR/..
     module load boost
-    module unload cray-libsci
+#    module unload cray-libsci
     export QMCPACK_TEST_SUBMIT_NAME=Intel-Release
     ctest -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=CC -S $PWD/../CMake/ctest_script.cmake,release -R short -VV
     ;;
@@ -73,7 +73,7 @@ case $sys in
     module load fftw
     export FFTW_HOME=$FFTW_DIR/..
     module load boost
-    module unload cray-libsci
+#    module unload cray-libsci
     export QMCPACK_TEST_SUBMIT_NAME=Intel-Complex-Release
     ctest -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=CC -S $PWD/../CMake/ctest_script.cmake,release -R short -VV
     ;;
