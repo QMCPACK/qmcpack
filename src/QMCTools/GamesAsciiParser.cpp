@@ -467,6 +467,7 @@ void GamesAsciiParser::getGaussianCenters(std::istream& is)
   std::map<std::string,int> gsMap;
   gsMap[std::string("S")]=1;
   gsMap[std::string("SP")]=2;
+  gsMap[std::string("L")]=2;
   gsMap[std::string("P")]=3;
   gsMap[std::string("D")]=4;
   gsMap[std::string("F")]=5;
@@ -556,6 +557,11 @@ void GamesAsciiParser::getGaussianCenters(std::istream& is)
             ncoeffpershell[currPos][nshll[currPos]]++;
             shID[currPos][nshll[currPos]] = currentWords[1];
 
+            if(gsMap.find(currentWords[1]) == gsMap.end())
+            {
+              cerr<<"Unhandled primitive type " << currentWords[1] << endl;
+              abort();
+            }
             if(gsMap[currentWords[1]] == 2)
             {
               cerr<<"Can't handle SP basis states yet. Fix later.\n";
