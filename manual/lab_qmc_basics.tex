@@ -13,51 +13,52 @@ This lab focuses on the basics of performing quality QMC calculations.  As an ex
   \item{removing DMC timestep error via extrapolation}
   \item{automating QMC workflows with Nexus}
   \item{testing pseudopotentials for accuracy}
+  \hide{
   \item{(optional) running QMCPACK for a general system of interest}
+  }
 \end{itemize}
 
+\section{Lab outline}
+\begin{enumerate}
+  \item{download and conversion of oxygen atom pseudopotential}
+  \item{DMC timestep study of the neutral oxygen atom}
+  \begin{enumerate}
+    \item{DFT orbital generation with Quantum Espresso}
+    \item{orbital conversion with \texttt{pw2qmcpack.x}}
+    \item{optimization of Jastrow correlation factor with QMCPACK}
+    \item{DMC run with multiple timesteps}
+  \end{enumerate}
+  \item{DMC timestep study of the first ionization potential of oxygen}
+  \begin{enumerate}
+    \item{repetition of a-d above for ionized oxygen atom}
+  \end{enumerate}
+  \item{automated DMC calculations of the oxygen dimer binding curve}
+\end{enumerate}
 
 
-\newpage
 \section{Lab directories and files}
 
 \begin{shaded}
 \begin{verbatim}
-Lab_2_QMC_Basics/
+labs/lab2_qmc_basics/
 │
-├── docs                     - documentation 
-│   ├── Lab_2_QMC_Basics.pdf    - this document
-│   ├── Lab_2_Slides.pdf        - slides presented during the lab
-│   └── Nexus.pdf               - slides on QMCPACK automation (supplementary)
+├── docs                  - documentation 
+│   └── Lab_2_Slides.pdf     - slides presented during the lab
 │
-├── oxygen_atom              - oxygen atom calculations 
-│   ├── ip_conv.py              - tool to fit oxygen IP vs timestep
-│   ├── O.q0.dmc.in.xml         - neutral O DMC input file
-│   ├── O.q0.dmc.qsub.in        -    "    "  "  submission file
-│   ├── O.q0.opt.in.xml         -    "    " optimization input file
-│   ├── O.q0.opt.qsub.in        -    "    "  "  submission file         
-│   ├── O.q0.pwscf.h5           -    "    "  orbitals file         
-│   ├── O.q1.dmc.in.xml         - charged O DMC input file         
-│   ├── O.q1.dmc.qsub.in        -    "    "  "  submission file   
-│   ├── O.q1.opt.in.xml         -    "    " optimization input file
-│   ├── O.q1.opt.qsub.in        -    "    "  "  submission file   
-│   ├── O.q1.pwscf.h5           -    "    "  orbitals file         
-│   ├── reference               - directory w/ completed runs
-│   ├── submit_O_q0_dmc         - executable to submit neutral DMC
-│   ├── submit_O_q0_opt         -    "       "    "       "    optimization
-│   ├── submit_O_q1_dmc         -    "       "    "    charged DMC
-│   └── submit_O_q1_opt         -    "       "    "       "    optimization
+├── oxygen_atom           - oxygen atom calculations 
+│   ├── O.q0.dft.in          - Quantum Espresso input for DFT run
+│   ├── O.q0.p2q.in          - pw2qmcpack.x input for orbital conversion run
+│   ├── O.q0.opt.in.xml      - QMCPACK input for Jastrow optimization run
+│   ├── O.q0.dmc.in.xml      - QMCPACK input file for neutral O DMC
+│   ├── ip_conv.py           - tool to fit oxygen IP vs timestep
+│   ├── jobrun_vesta         - executable to submit jobs on Vesta
+│   └── reference            - directory w/ completed runs
 │
-├── oxygen_dimer             - oxygen dimer calculations
-│   ├── dimer_fit.py            - tool to fit dimer binding curve
-│   ├── O_dimer.py              - automation script for dimer calculations
-│   ├── pseudopotentials        - directory for pseudopotentials
-│   └── reference               - directory w/ completed runs
-│
-└── your_system              - calculations with your own physical system
-    ├── example.py              - generates input files for your system
-    ├── pseudopotentials        - directory for pseudopotentials
-    └── reference               - directory w/ completed runs
+└── oxygen_dimer          - oxygen dimer calculations
+    ├── dimer_fit.py         - tool to fit dimer binding curve
+    ├── O_dimer.py           - automation script for dimer calculations
+    ├── pseudopotentials     - directory for pseudopotentials
+    └── reference            - directory w/ completed runs
 \end{verbatim}
 \end{shaded}
 
@@ -65,7 +66,8 @@ Lab_2_QMC_Basics/
 
 
 
-\section{Obtaining and converting a pseudopotential for oxygen}\label{sec:lqb_pseudo}
+\section{Obtaining and converting a pseudopotential for oxygen}
+\label{sec:lqb_pseudo}
 We will use a potential from the Burkatzki-Filippi-Dolg pseudopotential database.  To obtain the pseudopotential, go to 
 \href{http://www.burkatzki.com/pseudos/index.2.html}{http://www.burkatzki.com/pseudos/index.2.html}
 and click on the ``Select Pseudopotential'' button.  Next click on oxygen in the 
@@ -109,14 +111,120 @@ O-QMC GEN 2 1
 The full QMCPACK pseudopotential is also included in \texttt{oxygen\_atom/reference/O.BFD.xml}.
 
 
-\section{Optimization walkthrough with QMCPACK: neutral O atom}\label{sec:optimization_walkthrough}
-The aim of this section is to obtain a trial wavefunction of reasonable quality 
-for the neutral oxygen atom.  The first subsection provides background regarding 
-the wavefunction for this system, including the specific form of the Jastrow 
-factors used in QMCPACK.  A brief discussion of wavefunction optimization is 
-also given.  The second subsection contains the actual walkthrough to follow 
-for the lab. 
+\section{DFT with Quantum Espresso to obtain the orbital part of the wavefunction}
+\label{sec:lqb_dft}
+With the pseudopotential in hand, the next step toward a QMC calculation is to obtain the Fermionic part of the wavefunction, in this case a single Slater determinant constructed from DFT-LDA orbitals for a neutral oxygen atom.
 
+Enter the \texttt{oxygen\_atom} directory and copy over the oxygen pseudopotential files (\texttt{O.BFD.upf} and \texttt{O.BFD.xml}) you made from section \ref{sec:lqb_pseudo}.  Alternatively, the already converted pseudopotential files are located in the \texttt{oxygen\_atom/reference} directory.  
+
+Quantum Espresso input for the DFT-LDA ground state of the neutral oxygen atom can be found in \texttt{O.q0.dft.in} and also listing \ref{lst:O_q0_dft} below.  Setting \texttt{wf\_collect=.true.} instructs Quantum Espresso to write the orbitals to disk at the end of the run.  Note that the plane-wave energy cutoff has been set to a reasonable value of 200 Ry here (\texttt{ecutwfc=200}).  This value depends on the pseudopotentials used, and in general should be selected by running DFT$\rightarrow$(orbital conversion)$\rightarrow$VMC with increasing energy cutoffs until the lowest VMC total energy and variance is reached.
+
+\begin{lstlisting}[caption={Quantum Espresso input file for the neutral oxygen atom (O.q0.dft.in)\label{lst:O_q0_dft}}]
+&CONTROL
+   calculation       = 'scf'
+   restart_mode      = 'from_scratch'
+   prefix            = 'O_q0'
+   outdir            = 'O_q0_dft_output'
+   pseudo_dir        = './'
+   disk_io           = 'low'
+   wf_collect        = .true.
+/
+
+&SYSTEM
+   celldm(1)         = 1.0
+   ibrav             = 0
+   nat               = 1
+   ntyp              = 1
+   nspin             = 2
+   tot_charge        = 0
+   tot_magnetization = 2
+   input_dft         = 'lda'
+   ecutwfc           = 200
+   ecutrho           = 800
+   nosym             = .true.
+   occupations       = 'smearing'
+   smearing          = 'fermi-dirac'
+   degauss           = 0.0001
+/
+
+&ELECTRONS
+   diagonalization   = 'david'
+   mixing_mode       = 'plain'
+   mixing_beta       = 0.7
+   conv_thr          = 1e-08
+   electron_maxstep  = 1000
+/
+
+
+ATOMIC_SPECIES 
+   O  15.999 O.BFD.upf
+
+ATOMIC_POSITIONS alat
+   O       14.17294600      14.17294600      14.17294600 
+
+K_POINTS automatic
+   1 1 1  0 0 0 
+
+CELL_PARAMETERS cubic
+        28.34589199       0.00000000       0.00000000 
+         0.00000000      28.34589199       0.00000000 
+         0.00000000       0.00000000      28.34589199 
+\end{lstlisting}
+
+Run Quantum Espresso by typing the following if you are on a workstation or simple cluster (it is assumed below that the PWSCF executable, \texttt{pw.x}, is in your \texttt{PATH})
+\begin{shaded}
+\begin{verbatim}
+mpirun -np 4 pw.x -input O.q0.dft.in >&O.q0.dft.out&
+\end{verbatim}
+\end{shaded}
+or if you are completing the lab on the VESTA supercomputer at ALCF, instead type
+\begin{shaded}
+\begin{verbatim}
+jobrun_vesta pw.x O.q0.dft.in
+\end{verbatim}
+\end{shaded}
+
+The DFT run should take a few minutes to complete.  Once finished, you should check the LDA total energy in \texttt{O.q0.dft.out} by typing ``\texttt{grep '!  ' O.q0.dft.out}''.  The result should be close to
+\begin{shaded}
+\begin{verbatim}
+!    total energy              =     -31.56730213 Ry
+\end{verbatim}
+\end{shaded} 
+
+The orbitals have been written in a format native to Quantum Espresso in the \texttt{O\_q0\_dft\_output} directory.  We will convert them into the ESHDF format expected by QMCPACK by using the \texttt{pw2qmcpack.x} tool.  The input for \texttt{pw2qmcpack.x} can be found in the file \texttt{O.q0.p2q.in} and also in listing \ref{lst:O_q0_p2q} below. 
+
+\begin{lstlisting}[caption={\texttt{pw2qmcpack.x} input file for orbital conversion (O.q0.p2q.in)\label{lst:O_q0_p2q}}]
+&inputpp
+  prefix     = 'O_q0'
+  outdir     = 'O_q0_dft_output'
+  write_psir = .false.
+/
+\end{lstlisting}
+
+Perform the orbital conversion now by typing the following if you are on a workstation or simple cluster (again it is assumed below that \texttt{pw2qmcpack.x} is in your PATH)
+\begin{shaded}
+\begin{verbatim}
+mpirun -np 1 pw2qmcpack.x<O.q0.p2q.in>&O.q0.p2q.out&
+\end{verbatim}
+\end{shaded}
+or if you are completing the lab on the VESTA supercomputer at ALCF, instead type
+\begin{shaded}
+\begin{verbatim}
+jobrun_vesta pw2qmcpack.x O.q0.p2q.in
+\end{verbatim}
+\end{shaded}
+Upon completion of the run, a new file should be present containing the orbitals for QMCPACK: \texttt{O\_q0\_dft\_output/O\_q0.pwscf.h5}.
+
+
+\section{Optimization with QMCPACK to obtain the correlated part of the wavefunction}\label{sec:optimization_walkthrough}
+The wavefunction we have obtained to this point corresponds to a non-interacting Hamiltonian.  Once the Coulomb pair potential is switched on between particles, it is known analytically that the exact wavefunction has cusps whenever two particles meet spatially and in general the electrons become correlated.  This is represented in the wavefunction by introducing a Jastrow factor containing at least pair correlations
+\begin{align}
+  &\Psi_{Slater-Jastrow}=e^{-J}\Psi_{Slater} \\
+  &J = \sum_{\sigma\sigma'}\sum_{i<j}u^{\sigma\sigma'}_2(|r_i-r_j|) + \sum_\sigma\sum_{iI}u^\sigma_1(|r_i-r_I|)
+\end{align}
+Here $\sigma$ is a spin variable while $r_i$ and $r_I$ represent electron and ion coordinates, respectively.  The introduction of $J$ into the wavefunction is similar to F12 methods in quantum chemistry, though it has been present in essentially all QMC studies since the origins of the method in 1965.
+
+How are the functions $u_2^{\sigma\sigma'}$ and $u_1^{\sigma}$ obtained?  Generally, they are approximated by analytical functions with several unknown parameters that are determined by minimizing the energy or variance directly within VMC since the energy and variance reach a global minimum only for the true ground state wavefunction ($\textrm{Energy}=E\equiv\expval{\Psi}{\hat{H}}{\Psi}$, $\textrm{Variance}=V\equiv\expval{\Psi}{(\hat{H}-E)^2}{\Psi}$).
 
 % background on the wavefunction should be covered elsewhere in the manual
 %   perhaps replace this with just the figure and a couple of brief comments 
@@ -185,7 +293,6 @@ Iterative varational Monte Carlo methods have been developed to handle the non-l
 }
 
 
-Enter the \texttt{oxygen\_atom} directory and copy over the oxygen pseudopotential (\texttt{O.BFD.xml}) you downloaded and converted (section \ref{sec:pseudo}).  Alternatively, the already converted pseudopotential is located in the \texttt{oxygen\_atom/reference} directory.  All files prefixed with ``\texttt{O.q0}'' relate to the neutral oxygen atom.  
 
 Open \texttt{O.q0.opt.in.xml} with your favorite text editor.  This is a QMCPACK input file configured for wavefunction optimization with the linear method. Take a minute to familiarize yourself with the general format and contents of the input file.  The major sections are the simulation cell, description of particle species (electrons \& ions/atoms), the trial wavefunction (orbitals, Slater determinants, and Jastrow factors), the Hamiltonian, and finally inputs describing the quantum Monte Carlo process (linear optimization in this case).  Portions marked with ``\texttt{<!-- ... -->}'' are comments describing these sections.  XML is not the easiest to read, but this can be helped by using an editor with color highlighting such as \texttt{emacs} or \texttt{vi}.
 
