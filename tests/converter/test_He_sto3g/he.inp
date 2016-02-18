@@ -1,0 +1,13 @@
+ ! Simple input file for a single helium atom
+
+ ! Default method is RHF
+ $CONTRL UNITS=bohr RUNTYP=Energy $END
+
+ $BASIS  GBASIS=STO NGAUSS=3 $END
+
+ $DATA
+Helium atom
+Dnh 2
+
+He 2.0
+ $END
