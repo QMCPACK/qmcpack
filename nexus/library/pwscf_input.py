@@ -1576,7 +1576,7 @@ def generate_scf_input(prefix       = 'pwscf',
                        system       = None,
                        use_folded   = True,
                        group_atoms  = False,
-                       la2F         = False
+                       la2F         = None,
                        ):
     if pseudos is None:
         pseudos = []
@@ -1612,8 +1612,10 @@ def generate_scf_input(prefix       = 'pwscf',
         ecutwfc     = ecut,
         ecutrho     = ecutrho,
         nosym       = nosym,
-        la2F        = la2F
         )
+    if la2F!=None:
+        pw.system.la2F = la2F
+    #end if
     if assume_isolated!=None:
         pw.system.assume_isolated = assume_isolated
     #end if
