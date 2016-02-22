@@ -26,7 +26,8 @@ def run_test(test_name, c4q_exe, conv_inp, gold_file, expect_fail):
     # Example invocation of converter
     #convert4qmc -nojastrow -prefix gold -gamessAscii be.out
 
-    cmd = [c4q_exe, '-nojastrow', '-prefix', 'test', '-gamessAscii', conv_inp]
+    cmd = c4q_exe.split()
+    cmd.extend(['-nojastrow', '-prefix', 'test', '-gamessAscii', conv_inp])
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = p.communicate()
 
