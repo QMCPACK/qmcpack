@@ -101,6 +101,7 @@ public:
   bool ReadCASINO_WF (string fileName, int l);
   bool ReadFHI_PP (string fileName);
   bool ReadGAMESS_PP (string fileName);
+  bool ReadUPF_PP (string fileName);
   void WriteXML (string fileName);
   void WriteABINIT (string fileName="");
   void WriteUPF (string fileName);
