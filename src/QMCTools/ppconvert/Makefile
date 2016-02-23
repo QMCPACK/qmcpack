@@ -10,7 +10,10 @@ COMMONDIR = src/common
 # g++ build using installed MKL
 CXX = g++
 CXXFLAGS = -O3 -g -Drestrict=__restrict__ 
-BLASLIBS = -fopenmp -Wl,--no-as-needed -L$(MKL_HOME)/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -ldl -lpthread -lm
+BLASLIBS = -L/usr/local/apps/intel/Compiler/14.0/106/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -pthread
+
+
+
 
 # dummy rule to build everything
 all: $(BUILDDIR)/ppconvert
