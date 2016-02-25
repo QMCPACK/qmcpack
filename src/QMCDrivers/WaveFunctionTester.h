@@ -77,10 +77,25 @@ private:
 
   // compute numerical gradient and laplacian
   void computeNumericalGrad(RealType delta,
-                            ParticleSet::ParticleGradient_t &G,
-                            ParticleSet::ParticleLaplacian_t &L,
                             ParticleSet::ParticleGradient_t &G_fd,
                             ParticleSet::ParticleLaplacian_t &L_fd);
+
+  struct PositionChange {
+    int index; // particle index
+    PosType r;
+  };
+  typedef vector<PositionChange> PosChangeVector;
+  typedef vector<ValueType> ValueVector;
+
+  /** Generate points to evaluate */
+  void finiteDifferencePoints(RealType delta, PosChangeVector &positions);
+
+  /** Compute finite difference after log psi is computed for each point */
+  void computeFiniteDiff(RealType delta,
+                         PosChangeVector &positions,
+                         ValueVector &values,
+                         ParticleSet::ParticleGradient_t &G_fd,
+                         ParticleSet::ParticleLaplacian_t &L_fd);
 
   //vector<RealType> Mv3(vector<vector<RealType> >& M, vector<RealType>& v);
 

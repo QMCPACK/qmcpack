@@ -275,70 +275,107 @@ void WaveFunctionTester::printEloc()
   out.close();
 }
 
-// Compute numerical gradient and Laplacian
-void WaveFunctionTester::computeNumericalGrad(RealType delta,
-                                              ParticleSet::ParticleGradient_t &G, // analytic
-                                              ParticleSet::ParticleLaplacian_t &L,
-                                              ParticleSet::ParticleGradient_t &G_fd, // finite difference
-                                              ParticleSet::ParticleLaplacian_t &L_fd)
+void WaveFunctionTester::finiteDifferencePoints(RealType delta, PosChangeVector &positions)
 {
-  RealType delta2 = 2*delta;
-  ValueType c1 = 1.0/delta/2.0;
-  ValueType c2 = 1.0/delta/delta;
 
-  G = W.G;
-  L = W.L;
-
-  RealType logpsi0 = Psi.evaluateLog(W);
-  RealType phase0=Psi.getPhase();
-#if defined(QMC_COMPLEX)
-  ValueType logpsi = std::complex<OHMMS_PRECISION>(logpsi0,phase0);
-#else
-  ValueType logpsi = logpsi0;
-#endif
+  // First position is the central point
+  PositionChange p;
+  p.index = 0;
+  p.r = W.R[0];
+  positions.push_back(p);
 
   int nat = W.getTotalNum();
   for (int iat=0; iat<nat; iat++)
   {
+    PositionChange p;
+    p.index = iat;
     PosType r0 = W.R[iat];
-    GradType g0;
-    ValueType lap = 0.0;
+
     for (int idim=0; idim<OHMMS_DIM; idim++)
     {
-      W.R[iat][idim] = r0[idim]+delta;
-      W.update();
-      RealType logpsi0_p = Psi.evaluateLog(W);
-      RealType phase_p=Psi.getPhase();
-#if defined(QMC_COMPLEX)
-      ValueType logpsi_p = std::complex<OHMMS_PRECISION>(logpsi0_p,phase_p);
-#else
-      ValueType logpsi_p = logpsi0_p;
-#endif
-      W.R[iat][idim] = r0[idim]-delta;
-      W.update();
-      RealType logpsi0_m = Psi.evaluateLog(W);
-      RealType phase_m=Psi.getPhase();
-#if defined(QMC_COMPLEX)
-      ValueType logpsi_m = std::complex<OHMMS_PRECISION>(logpsi0_m,phase_m);
-#else
-      ValueType logpsi_m = logpsi0_m;
-#endif
-      lap += logpsi_m+logpsi_p;
-      g0[idim] = logpsi_p-logpsi_m;
-//#if defined(QMC_COMPLEX)
-//      lap += std::log(psi_m) + std::log(psi_p);
-//      g0[idim] = std::log(psi_p)-std::log(psi_m);
-//#else
-//      lap += std::log(std::abs(psi_m)) + std::log(abs(psi_p));
-//      g0[idim] = std::log(std::abs(psi_p/psi_m));
-//#endif
-      W.R[iat] = r0;
-      W.update();
-      Psi.evaluateLog(W);
+      p.r = r0;
+      p.r[idim] = r0[idim] - delta;
+      positions.push_back(p);
+
+      p.r = r0;
+      p.r[idim] = r0[idim] + delta;
+      positions.push_back(p);
     }
-    G_fd[iat] = c1*g0;
-    L_fd[iat] = c2*(lap-2.0*OHMMS_DIM*logpsi);
   }
+}
+
+
+void WaveFunctionTester::computeFiniteDiff(RealType delta,
+                                           PosChangeVector &positions,
+                                           ValueVector &values,
+                                           ParticleSet::ParticleGradient_t &G_fd,
+                                           ParticleSet::ParticleLaplacian_t &L_fd)
+{
+    assert(positions.size() == values.size());
+    if (positions.size() == 0)
+        return;
+
+    ValueType logpsi = values[0];
+
+    // lowest order derivative formula
+    ValueType c1 = 1.0/delta/2.0;
+    ValueType c2 = 1.0/delta/delta;
+
+    const int pt_per_deriv = 2; // number of points per derivative
+    for (int pt_i = 1; pt_i < values.size(); pt_i += pt_per_deriv*OHMMS_DIM)
+    {
+      GradType g0;
+      ValueType lap0 = 0.0;
+      for (int idim=0; idim<OHMMS_DIM; idim++)
+      {
+        int idx = pt_i + idim*pt_per_deriv;
+        ValueType logpsi_m = values[idx];
+        ValueType logpsi_p = values[idx+1];
+
+        g0[idim] = logpsi_p - logpsi_m;
+        lap0 += logpsi_p + logpsi_m;
+      }
+
+      int iat = positions[pt_i].index;
+      GradType g = c1*g0;
+      G_fd[iat] = g;
+
+      ValueType lap = c2*(lap0 - 2.0*OHMMS_DIM*logpsi);
+      L_fd[iat] = lap;
+    }
+}
+
+// Compute numerical gradient and Laplacian
+void WaveFunctionTester::computeNumericalGrad(RealType delta,
+                                              ParticleSet::ParticleGradient_t &G_fd, // finite difference
+                                              ParticleSet::ParticleLaplacian_t &L_fd)
+{
+  PosChangeVector positions;
+  finiteDifferencePoints(delta, positions);
+
+  ValueVector logpsi_vals;
+  PosChangeVector::iterator it;
+ 
+  for (it = positions.begin(); it != positions.end(); it++)
+  {
+    PosType r0 = W.R[it->index];
+    W.R[it->index] = it->r;
+    W.update();
+    RealType logpsi0 = Psi.evaluateLog(W);
+    RealType phase0 = Psi.getPhase();
+#if defined(QMC_COMPLEX)
+    ValueType logpsi = std::complex<OHMMS_PRECISION>(logpsi0,phase0);
+#else
+    ValueType logpsi = logpsi0;
+#endif
+    logpsi_vals.push_back(logpsi);
+
+    W.R[it->index] = r0;
+    W.update();
+    Psi.evaluateLog(W);
+  }
+
+  computeFiniteDiff(delta, positions, logpsi_vals, G_fd, L_fd);
 }
 
 void WaveFunctionTester::runBasicTest()
@@ -370,8 +407,13 @@ void WaveFunctionTester::runBasicTest()
   ParticleSet::ParticleGradient_t G(nat), G1(nat);
   ParticleSet::ParticleLaplacian_t L(nat), L1(nat);
 
+  // compute analytic values
+  G = W.G;
+  L = W.L;
+  Psi.evaluateLog(W);
+
   // Use a single delta with a fairly large tolerance
-  computeNumericalGrad(delta, G, L, G1, L1);
+  computeNumericalGrad(delta, G1, L1);
 
   // TODO - better choice of tolerance
   // TODO - adjust delta and tolerance based on precision of wavefunction
@@ -431,7 +473,12 @@ void WaveFunctionTester::runBasicTest()
 
   for (unsigned int i = 0; i < ndelta; i++)
   {
-    computeNumericalGrad(delta_seq[i], G, L, G_fd_seq[i], L_fd_seq[i]);
+    // compute analytic values
+    G = W.G;
+    L = W.L;
+    Psi.evaluateLog(W);
+
+    computeNumericalGrad(delta_seq[i], G_fd_seq[i], L_fd_seq[i]);
 
     for (int iat = 0; iat < nat; iat++)
     {
@@ -464,16 +511,27 @@ void WaveFunctionTester::runBasicTest()
   // TODO - Use option in the input file to turn this on.
   if (false)
   {
+    delta = 1.0;
+    int iat = 0;
+    int ig = 0;
     ofstream dout("delta.dat");
-    dout << "# delta L_err G_err" << endl;
-    delta = .5;
-    int iat = 1;
+    dout << "# Particle = " << iat << " Gradient component = " << ig << endl;
+    dout << "#" << setw(11) <<  "delta" << setw(14) << "L_err_rel" << setw(14) << "G_err_rel" << endl;
     for (int i = 0; i < 20; i++) {
-      computeNumericalGrad(delta, G, L, G1, L1);
+      // compute analytic values
+      G = W.G;
+      L = W.L;
+      Psi.evaluateLog(W);
+
+      computeNumericalGrad(delta, G1, L1);
       RealType L_err = std::abs(L[iat]-L1[iat]);
-      RealType G_err = std::abs(G[iat][0]-G1[iat][0]);
-      dout << delta << "  " << std::abs(L_err) << "  " << std::abs(G_err) << endl;;
-      delta *= 0.5;
+      RealType L_err_rel = std::abs( L_err/L[iat] );
+      RealType G_err = std::abs(G[iat][ig]-G1[iat][ig]);
+      RealType G_err_rel = std::abs(G_err/G[iat][ig]);
+      dout << setw(12) << delta;
+      dout << setw(14) << std::abs(L_err_rel) << setw(14) << std::abs(G_err_rel);
+      dout << endl;
+      delta *= std::sqrt(0.1);
     }
     dout.close();
   }
