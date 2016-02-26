@@ -275,9 +275,57 @@ void WaveFunctionTester::printEloc()
   out.close();
 }
 
-void WaveFunctionTester::finiteDifferencePoints(RealType delta, PosChangeVector &positions)
-{
 
+class FiniteDifference : public QMCTraits
+{
+public:
+  FiniteDifference() : m_RichardsonSize(10), m_fd_type(FiniteDiff_Richardson) {}
+
+  int m_RichardsonSize;
+
+  enum FiniteDiffType {
+    FiniteDiff_LowOrder,  // use simplest low-order formulas
+    FiniteDiff_Richardson  // use Richardson extrapolation
+  };
+
+  FiniteDiffType m_fd_type;
+
+  struct PositionChange {
+    int index; // particle index
+    PosType r;
+  };
+  typedef vector<PositionChange> PosChangeVector;
+  typedef vector<ValueType> ValueVector;
+
+
+  /** Generate points to evaluate */
+  void finiteDifferencePoints(RealType delta, MCWalkerConfiguration& W,
+                              PosChangeVector &positions);
+
+  /** Compute finite difference after log psi is computed for each point */
+  void computeFiniteDiff(RealType delta,
+                         PosChangeVector &positions,
+                         ValueVector &values,
+                         ParticleSet::ParticleGradient_t &G_fd,
+                         ParticleSet::ParticleLaplacian_t &L_fd);
+
+  void computeFiniteDiffLowOrder(RealType delta,
+                         PosChangeVector &positions,
+                         ValueVector &values,
+                         ParticleSet::ParticleGradient_t &G_fd,
+                         ParticleSet::ParticleLaplacian_t &L_fd);
+
+  void computeFiniteDiffRichardson(RealType delta,
+                         PosChangeVector &positions,
+                         ValueVector &values,
+                         ParticleSet::ParticleGradient_t &G_fd,
+                         ParticleSet::ParticleLaplacian_t &L_fd);
+};
+
+
+void FiniteDifference::finiteDifferencePoints(RealType delta, MCWalkerConfiguration& W,
+                                              PosChangeVector &positions)
+{
   // First position is the central point
   PositionChange p;
   p.index = 0;
@@ -300,21 +348,56 @@ void WaveFunctionTester::finiteDifferencePoints(RealType delta, PosChangeVector 
       p.r = r0;
       p.r[idim] = r0[idim] + delta;
       positions.push_back(p);
+
+      if (m_fd_type == FiniteDiff_Richardson)
+      {
+        RealType dd = delta/2;
+        for (int nr = 0; nr < m_RichardsonSize; nr++)
+        {
+          p.r = r0;
+          p.r[idim] = r0[idim] - dd;
+          positions.push_back(p);
+
+          p.r = r0;
+          p.r[idim] = r0[idim] + dd;
+          positions.push_back(p);
+
+          dd = dd/2;
+        }
+      }
     }
   }
 }
 
 
-void WaveFunctionTester::computeFiniteDiff(RealType delta,
-                                           PosChangeVector &positions,
-                                           ValueVector &values,
-                                           ParticleSet::ParticleGradient_t &G_fd,
-                                           ParticleSet::ParticleLaplacian_t &L_fd)
+void FiniteDifference::computeFiniteDiff(RealType delta,
+                                   PosChangeVector &positions,
+                                   ValueVector &values,
+                                   ParticleSet::ParticleGradient_t &G_fd,
+                                   ParticleSet::ParticleLaplacian_t &L_fd)
 {
     assert(positions.size() == values.size());
     if (positions.size() == 0)
         return;
 
+    ValueType logpsi = values[0];
+
+    if (m_fd_type == FiniteDiff_LowOrder)
+    {
+      computeFiniteDiffLowOrder(delta, positions, values, G_fd, L_fd);
+    }
+    else if (m_fd_type == FiniteDiff_Richardson)
+    {
+      computeFiniteDiffRichardson(delta, positions, values, G_fd, L_fd);
+    }
+}
+
+void FiniteDifference::computeFiniteDiffLowOrder(RealType delta,
+                                   PosChangeVector &positions,
+                                   ValueVector &values,
+                                   ParticleSet::ParticleGradient_t &G_fd,
+                                   ParticleSet::ParticleLaplacian_t &L_fd)
+{
     ValueType logpsi = values[0];
 
     // lowest order derivative formula
@@ -345,17 +428,142 @@ void WaveFunctionTester::computeFiniteDiff(RealType delta,
     }
 }
 
+// Use Richardson extrapolation to compute the derivatives.
+// The 'delta' parameter should not be small, as with fixed
+// order finite difference methods.  The algorithm  will zoom
+// in on the right size of parameter.
+void FiniteDifference::computeFiniteDiffRichardson(RealType delta,
+                                           PosChangeVector &positions,
+                                           ValueVector &values,
+                                           ParticleSet::ParticleGradient_t &G_fd,
+                                           ParticleSet::ParticleLaplacian_t &L_fd)
+{
+  RealType tol = 1e-7;
+  ValueType logpsi = values[0];
+
+  const int pt_per_deriv = 2*(m_RichardsonSize+1); // number of points per derivative
+  for (int pt_i = 1; pt_i < values.size(); pt_i += pt_per_deriv*OHMMS_DIM)
+  {
+    GradType g0;
+    GradType gmin;
+    ValueType lmin;
+    vector<GradType> g_base(m_RichardsonSize+1);
+    vector<GradType> g_rich(m_RichardsonSize+1);
+    vector<GradType> g_prev(m_RichardsonSize+1);
+
+    vector<ValueType> l_base(m_RichardsonSize+1);
+    vector<ValueType> l_rich(m_RichardsonSize+1);
+    vector<ValueType> l_prev(m_RichardsonSize+1);
+
+    // Initial gradients and Laplacians at different deltas.
+    RealType dd = delta;
+    for (int inr = 0; inr < m_RichardsonSize+1; inr++)
+    {
+        l_base[inr] = 0.0;
+        for (int idim=0; idim<OHMMS_DIM; idim++)
+        {
+           int idx = pt_i + idim*pt_per_deriv + 2*inr;
+           ValueType logpsi_m = values[idx];
+           ValueType logpsi_p = values[idx + 1];
+           g_base[inr][idim] = (logpsi_p - logpsi_m)/dd/2.0;
+           l_base[inr] += (logpsi_p + logpsi_m - 2.0*logpsi)/(dd*dd);
+        }
+        dd = dd/2;
+    }
+
+    // Gradient
+
+    g_prev[0] = g_base[0];
+    RealType fac = 1;
+    bool found = false;
+    for (int inr = 1; inr < m_RichardsonSize+1; inr++)
+    {
+        g_rich[0] = g_base[inr];
+
+        fac *= 4;
+        for (int j = 1; j < inr+1; j++) {
+          g_rich[j] = g_rich[j-1] + ( g_rich[j-1] - g_prev[j-1])/(fac-1);
+        }
+
+        RealType err1 = 0.0;
+        RealType norm = 0.0;
+        for (int idim=0; idim<OHMMS_DIM; idim++)
+        {
+            err1 += std::abs(g_rich[inr][idim] - g_prev[inr-1][idim]);
+            norm += std::abs(g_prev[inr-1][idim]);
+        }
+
+        RealType err_rel = err1/norm;
+
+        // Not sure about the best stopping criteria
+        if (err_rel < tol)
+        {
+          gmin = g_rich[inr];
+          found = true;
+          break;
+        }
+        g_prev = g_rich;
+    }
+
+    if (!found)
+    {
+      gmin = g_rich[m_RichardsonSize];
+    }
+
+
+    // Laplacian
+    // TODO: eliminate the copied code between the gradient and Laplacian
+    //       computations.
+
+    l_prev[0] = l_base[0];
+
+    fac = 1;
+    found = false;
+    for (int inr = 1; inr < m_RichardsonSize+1; inr++)
+    {
+        l_rich[0] = l_base[inr];
+
+        fac *= 4;
+        for (int j = 1; j < inr+1; j++) {
+          l_rich[j] = l_rich[j-1] + ( l_rich[j-1] - l_prev[j-1])/(fac-1);
+        }
+
+        RealType err1 = std::abs(l_rich[inr] - l_prev[inr-1]);
+        RealType err_rel = std::abs(err1/l_prev[inr-1]);
+
+        if (err_rel < tol)
+        {
+          lmin = l_rich[inr];
+          found = true;
+          break;
+        }
+        l_prev = l_rich;
+    }
+
+    if (!found)
+    {
+      lmin = l_rich[m_RichardsonSize];
+    }
+
+    int iat = positions[pt_i].index;
+    G_fd[iat] = gmin;
+    L_fd[iat] = lmin;
+  }
+}
+
 // Compute numerical gradient and Laplacian
 void WaveFunctionTester::computeNumericalGrad(RealType delta,
                                               ParticleSet::ParticleGradient_t &G_fd, // finite difference
                                               ParticleSet::ParticleLaplacian_t &L_fd)
 {
-  PosChangeVector positions;
-  finiteDifferencePoints(delta, positions);
+  FiniteDifference fd;
+  FiniteDifference::PosChangeVector positions;
 
-  ValueVector logpsi_vals;
-  PosChangeVector::iterator it;
- 
+  fd.finiteDifferencePoints(delta, W, positions);
+
+  FiniteDifference::ValueVector logpsi_vals;
+  FiniteDifference::PosChangeVector::iterator it;
+
   for (it = positions.begin(); it != positions.end(); it++)
   {
     PosType r0 = W.R[it->index];
@@ -375,13 +583,13 @@ void WaveFunctionTester::computeNumericalGrad(RealType delta,
     Psi.evaluateLog(W);
   }
 
-  computeFiniteDiff(delta, positions, logpsi_vals, G_fd, L_fd);
+  fd.computeFiniteDiff(delta, positions, logpsi_vals, G_fd, L_fd);
 }
 
 void WaveFunctionTester::runBasicTest()
 {
   RealType sig2Enloc=0, sig2Drift=0;
-  RealType delta = 1e-2;
+  RealType delta = 1.0;
 
   int nat = W.getTotalNum();
   MCWalkerConfiguration::PropertyContainer_t Properties;
@@ -456,51 +664,6 @@ void WaveFunctionTester::runBasicTest()
     fout << "Laplacian     = " << setw(12) << L[iat] << endl
          << "  Finite diff = " << setw(12) << L1[iat] << endl
          << "  Error       = " << setw(12) << L[iat]-L1[iat] << endl << endl;
-  }
-
-  // Use sequence of deltas and ensure the finite difference values are getting closer
-  //  to the analytic values.
-
-  RealType delta_seq[] = {1e-1, 1e-2, 1e-3};
-  unsigned int ndelta = sizeof(delta_seq)/sizeof(RealType);
-
-  vector<ParticleSet::ParticleGradient_t> G_fd_seq(ndelta, ParticleSet::ParticleGradient_t(nat));
-  vector<ParticleSet::ParticleLaplacian_t> L_fd_seq(ndelta, ParticleSet::ParticleLaplacian_t(nat));
-  typedef vector<RealType> RealVector;
-  typedef vector<PosType> PosVector;
-  vector<RealVector> L_err(ndelta, RealVector(nat));
-  vector<PosVector> G_err(ndelta, PosVector(nat));
-
-  for (unsigned int i = 0; i < ndelta; i++)
-  {
-    // compute analytic values
-    G = W.G;
-    L = W.L;
-    Psi.evaluateLog(W);
-
-    computeNumericalGrad(delta_seq[i], G_fd_seq[i], L_fd_seq[i]);
-
-    for (int iat = 0; iat < nat; iat++)
-    {
-      L_err[i][iat] = std::abs(L[iat] - L_fd_seq[i][iat]);
-      for (int idim=0; idim<OHMMS_DIM; idim++)
-      {
-        G_err[i][iat][idim] = std::abs(G[iat][idim] - G_fd_seq[i][iat][idim]);
-      }
-
-      if (i > 0)
-      {
-        if (L_err[i][iat] > L_err[i-1][iat])
-        {
-          app_log() << "Laplacian finite difference is not decreasing with delta for particle "  << iat << endl;
-          app_log() << "  Previous diff, delta = " << delta_seq[i-1] << " Diff = " << L_err[i-1][iat];
-          app_log() << " Analytic = " << L[iat] << " FD = " << L_fd_seq[i-1][iat] << endl;
-          app_log() << "  Current diff,  delta = " << delta_seq[i] << " Diff = " << L_err[i][iat];
-          app_log() << " Analytic = " << L[iat] << " FD = " << L_fd_seq[i][iat] << endl;
-          any_fail = true;
-        }
-      }
-    }
   }
 
   app_log() << "Finite difference test: " << (any_fail?"FAIL":"PASS") << endl;
