@@ -1797,36 +1797,10 @@ class Taub(Supercomputer):
         c+='''
 cd ${PBS_O_WORKDIR}
 
-export MPICH_PTL_SEND_CREDITS=-1
-export MPICH_MAX_SHORT_MSG_SIZE=1024
-export MPICH_PTL_UNEX_EVENTS=800000
-export MPICH_UNEX_BUFFER_SIZE=16M
-export MPI_MSGS_PER_PROC=32768
-
-module load mvapich2/1.6-intel
 '''
         return c
     #end def write_job_header
 
-
-    def read_process_id(self,output):
-        lines = output.splitlines()
-        found_pid = False
-        for line in lines:
-            tokens = line.split()
-            for token in tokens:
-                t = token.strip().split('.',2)
-                if len(t)==3 and t[0].isdigit() and t[1].startswith('taub') and t[2]=='campuscluster.illinois.edu':
-                    pid = int(t[0])
-                    found_pid = True
-                    return pid
-                #end if
-            #end for
-        #end for
-        if not found_pid:
-            return None
-        #end if
-    #end def read_process_id
 #end class Taub
 
 
