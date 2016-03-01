@@ -80,6 +80,18 @@ private:
                             ParticleSet::ParticleGradient_t &G_fd,
                             ParticleSet::ParticleLaplacian_t &L_fd);
 
+  bool checkGradients(int lower_iat, int upper_iat,
+                      ParticleSet::ParticleGradient_t &G,
+                      ParticleSet::ParticleLaplacian_t &L,
+                      ParticleSet::ParticleGradient_t &G_fd,
+                      ParticleSet::ParticleLaplacian_t &L_fd,
+                      stringstream &log,
+                      int indent=0);
+
+  bool checkGradientAtConfiguration(MCWalkerConfiguration::Walker_t* W1,
+                                    stringstream &fail_log,
+                                    bool &ignore);
+
   //vector<RealType> Mv3(vector<vector<RealType> >& M, vector<RealType>& v);
 
   ofstream fout;

@@ -35,6 +35,7 @@ using namespace std;
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/SymmetryOperations.h"
 #include "Numerics/Blasf.h"
+#include <sstream>
 
 namespace qmcplusplus
 {
@@ -279,14 +280,14 @@ void WaveFunctionTester::printEloc()
 class FiniteDifference : public QMCTraits
 {
 public:
-  FiniteDifference() : m_RichardsonSize(10), m_fd_type(FiniteDiff_Richardson) {}
-
-  int m_RichardsonSize;
-
   enum FiniteDiffType {
     FiniteDiff_LowOrder,  // use simplest low-order formulas
     FiniteDiff_Richardson  // use Richardson extrapolation
   };
+  FiniteDifference(FiniteDiffType fd_type=FiniteDiff_Richardson) : m_RichardsonSize(10), m_fd_type(fd_type) {}
+
+  int m_RichardsonSize;
+
 
   FiniteDiffType m_fd_type;
 
@@ -556,7 +557,8 @@ void WaveFunctionTester::computeNumericalGrad(RealType delta,
                                               ParticleSet::ParticleGradient_t &G_fd, // finite difference
                                               ParticleSet::ParticleLaplacian_t &L_fd)
 {
-  FiniteDifference fd;
+  FiniteDifference fd(FiniteDifference::FiniteDiff_LowOrder);
+  //FiniteDifference fd(FiniteDifference::FiniteDiff_Richardson);
   FiniteDifference::PosChangeVector positions;
 
   fd.finiteDifferencePoints(delta, W, positions);
@@ -586,100 +588,339 @@ void WaveFunctionTester::computeNumericalGrad(RealType delta,
   fd.computeFiniteDiff(delta, positions, logpsi_vals, G_fd, L_fd);
 }
 
-void WaveFunctionTester::runBasicTest()
+// Usually
+// lower_iat = 0
+// upper_iat = nat
+bool WaveFunctionTester::checkGradients(int lower_iat, int upper_iat,
+                                           ParticleSet::ParticleGradient_t &G,
+                                           ParticleSet::ParticleLaplacian_t &L,
+                                           ParticleSet::ParticleGradient_t &G_fd,
+                                           ParticleSet::ParticleLaplacian_t &L_fd,
+                                           stringstream &log,
+                                           int indent /* = 0 */)
 {
-  RealType sig2Enloc=0, sig2Drift=0;
-  RealType delta = 1.0;
+
+  RealType rel_tol = 1e-3;
+  RealType abs_tol = 1e-7;
+
+  bool all_okay = true;
+  string pad(4*indent, ' ');
+
+  
+  for (int iat=lower_iat; iat<upper_iat; iat++)
+  {
+    RealType L_err = std::abs(L[iat]-L_fd[iat]);
+    RealType L_rel_denom = max( std::abs(L[iat]), std::abs(L_fd[iat]) );
+    RealType L_err_rel = std::abs( L_err / L_rel_denom );
+    
+    if (L_err_rel > rel_tol && L_err > abs_tol)
+    {
+      if (L_err_rel > rel_tol)
+      {
+        log << pad << "Finite difference Laplacian exceeds relative tolerance (" << rel_tol << ") for particle " << iat << endl;
+      } 
+      else
+      {
+        log << pad << "Finite difference Laplacian exceeds absolute tolerance (" << abs_tol << ") for particle " << iat << endl;
+      }
+      log << pad << "  Analytic    = " << L[iat] << endl;
+      log << pad << "  Finite diff = " << L_fd[iat] << endl;
+      log << pad << "  Error       = " << L_err  << "  Relative Error = " << L_err_rel << endl;
+      all_okay = false;
+    }
+
+    GradType G_err_rel;
+    for (int idim=0; idim<OHMMS_DIM; idim++)
+    {
+      RealType G_err = std::abs(G[iat][idim]-G_fd[iat][idim]);
+      RealType G_rel_denom = max( std::abs(G[iat][idim]), std::abs(G_fd[iat][idim]) );
+      G_err_rel[idim] = std::abs( G_err / G[iat][idim] );
+
+      if (G_err_rel[idim] > rel_tol && G_err > abs_tol)
+      {
+        if (G_err_rel[idim] > rel_tol)
+        {
+          log << pad << "Finite difference gradient exceeds relative tolerance (" << rel_tol << ") for particle " << iat;
+        }
+        else
+        {
+          log << pad << "Finite difference gradient exceeds absolute tolerance (" << abs_tol << ") for particle " << iat;
+        }
+        log << " component " << idim << endl;
+        log << pad << "  Analytic    = " << G[iat][idim] << endl;
+        log << pad << "  Finite diff = " << G_fd[iat][idim] << endl;
+        log << pad << "  Error       = " << G_err <<  "  Relative Error = " << G_err_rel[idim] << endl;
+        all_okay = false;
+      }
+    }
+
+    fout << pad << "For particle #" << iat << " at " << W.R[iat] << endl;
+    fout << pad << "Gradient      = " << setw(12) << G[iat] << endl;
+    fout << pad << "  Finite diff = " << setw(12) << G_fd[iat] << endl;
+    fout << pad << "  Error       = " << setw(12) << G[iat]-G_fd[iat] << endl;
+    fout << pad << "  Relative Error = " << setw(12) << G_err_rel << endl << endl;
+    fout << pad << "Laplacian     = " << setw(12) << L[iat] << endl;
+    fout << pad << "  Finite diff = " << setw(12) << L_fd[iat] << endl;
+    fout << pad << "  Error       = " << setw(12) << L[iat]-L_fd[iat] << "  Relative Error = " << L_err_rel << endl << endl;
+  }
+  return all_okay;
+}
+
+bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Walker_t *W1, stringstream &fail_log, bool &ignore)
+{
 
   int nat = W.getTotalNum();
-  MCWalkerConfiguration::PropertyContainer_t Properties;
-  //pick the first walker
-  MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
-  //copy the properties of the working walker
-  Properties = awalker->Properties;
-  //sample a new walker configuration and copy to ParticleSet::R
-  W.R = awalker->R;
-  //W.R += deltaR;
-  W.update();
-  //ValueType psi = Psi.evaluate(W);
-  RealType logpsi0 = Psi.evaluateLog(W);
-  RealType phase0=Psi.getPhase();
-#if defined(QMC_COMPLEX)
-  ValueType logpsi = std::complex<OHMMS_PRECISION>(logpsi0,phase0);
-#else
-  ValueType logpsi = logpsi0;
-#endif
-  RealType eloc(0);
-  fout << "Numerical gradient and Laplacian test" << endl;
-
   ParticleSet::ParticleGradient_t G(nat), G1(nat);
   ParticleSet::ParticleLaplacian_t L(nat), L1(nat);
 
+  W.loadWalker(*W1, true);
+
   // compute analytic values
+  Psi.evaluateLog(W);
   G = W.G;
   L = W.L;
-  Psi.evaluateLog(W);
 
   // Use a single delta with a fairly large tolerance
-  computeNumericalGrad(delta, G1, L1);
+  //computeNumericalGrad(delta, G1, L1);
+
+  RealType delta = 1.0e-4;
+  FiniteDifference fd(FiniteDifference::FiniteDiff_LowOrder);
+  //RealType delta = 1.0;
+  //FiniteDifference fd(FiniteDifference::FiniteDiff_Richardson);
+
+  FiniteDifference::PosChangeVector positions;
+
+  fd.finiteDifferencePoints(delta, W, positions);
+
+  FiniteDifference::ValueVector logpsi_vals;
+  FiniteDifference::PosChangeVector::iterator it;
+
+  for (it = positions.begin(); it != positions.end(); it++)
+  {
+    PosType r0 = W.R[it->index];
+    W.R[it->index] = it->r;
+    W.update();
+    RealType logpsi0 = Psi.evaluateLog(W);
+    RealType phase0 = Psi.getPhase();
+#if defined(QMC_COMPLEX)
+    ValueType logpsi = std::complex<OHMMS_PRECISION>(logpsi0,phase0);
+#else
+    ValueType logpsi = logpsi0;
+#endif
+    logpsi_vals.push_back(logpsi);
+
+    W.R[it->index] = r0;
+    W.update();
+    Psi.evaluateLog(W);
+  }
+
+  fd.computeFiniteDiff(delta, positions, logpsi_vals, G1, L1);
+
+  fout << "delta = " << delta << endl;
 
   // TODO - better choice of tolerance
   // TODO - adjust delta and tolerance based on precision of wavefunction
+
+  bool all_okay = checkGradients(0, nat, G, L, G1, L1, fail_log);
   RealType tol = 1e-3;
-  bool any_fail = false;
-  for (int iat=0; iat<nat; iat++)
+
+  for (int iorb = 0; iorb < Psi.getOrbitals().size(); iorb++)
   {
-    RealType L_err = std::abs(L[iat]-L1[iat]);
-    if (L_err > tol)
+    OrbitalBase *orb = Psi.getOrbitals()[iorb];
+
+    ParticleSet::ParticleGradient_t G(nat), tmpG(nat), G1(nat);
+    ParticleSet::ParticleLaplacian_t L(nat), tmpL(nat), L1(nat);
+
+
+    RealType logpsi1 = orb->evaluateLog(W, G, L);
+
+    fail_log << "Orbital " << iorb << " " << orb->OrbitalName << " log psi = " << logpsi1 << endl;
+
+    FiniteDifference::ValueVector logpsi_vals;
+    FiniteDifference::PosChangeVector::iterator it;
+    for (it = positions.begin(); it != positions.end(); it++)
     {
-      app_log() << "Finite difference Laplacian exceeds tolerance (" << tol << ") for particle " << iat << endl;
-      app_log() << "  Analytic    = " << L[iat] << endl;
-      app_log() << "  Finite diff = " << L1[iat] << endl;
-      app_log() << "  Error       = " << L_err << endl;
-      any_fail = true;
+      PosType r0 = W.R[it->index];
+      W.R[it->index] = it->r;
+      W.update();
+      ParticleSet::SingleParticlePos_t zeroR;
+      W.makeMove(it->index,zeroR);
+
+      RealType logpsi0 = orb->evaluateLog(W, tmpG, tmpL);
+      RealType phase0 = Psi.getPhase();
+#if defined(QMC_COMPLEX)
+      ValueType logpsi = std::complex<OHMMS_PRECISION>(logpsi0,phase0);
+#else
+      ValueType logpsi = logpsi0;
+#endif
+      logpsi_vals.push_back(logpsi);
+      W.rejectMove(it->index);
+
+      W.R[it->index] = r0;
+      W.update();
+    }
+    fd.computeFiniteDiff(delta, positions, logpsi_vals, G1, L1);
+
+    fout << "  Orbital " << iorb << " " << orb->OrbitalName << endl;
+
+    if (!checkGradients(0, nat, G, L, G1, L1, fail_log, 1))
+    {
+      all_okay = false;
     }
 
-    for (int idim=0; idim<OHMMS_DIM; idim++)
+    SlaterDet *sd = dynamic_cast<SlaterDet *>(orb);
+    if (sd)
     {
-        RealType G_err = std::abs(G[iat][idim]-G1[iat][idim]);
-        if (G_err > tol)
+      for (int isd = 0; isd < sd->Dets.size(); isd++)
+      {
+        ParticleSet::ParticleGradient_t G(nat), tmpG(nat), G1(nat);
+        ParticleSet::ParticleLaplacian_t L(nat), tmpL(nat), L1(nat);
+        DiracDeterminantBase *det = sd->Dets[isd];
+        RealType logpsi2 = det->evaluateLog(W, G, L);
+        fail_log << "  Slater Determiant " << isd << " (for particles " << det->FirstIndex << " to " << det->LastIndex << ") log psi = " << logpsi2 << endl;
+        // Should really check the condition number on the matrix determinant.
+        // For now, just ignore values that too small.
+        if (logpsi2 < -40.0)
         {
-          app_log() << "Finite difference gradient exceeds tolerance (" << tol << ") for particle " << iat;
-          app_log() << " component " << idim << endl;
-          app_log() << "  Analytic    = " << G[iat][idim] << endl;
-          app_log() << "  Finite diff = " << G1[iat][idim] << endl;
-          app_log() << "  Error       = " << G_err << endl;
-          any_fail = true;
+            ignore = true;
         }
+        FiniteDifference::ValueVector logpsi_vals;
+        FiniteDifference::PosChangeVector::iterator it;
+        for (it = positions.begin(); it != positions.end(); it++)
+        {
+          PosType r0 = W.R[it->index];
+          W.R[it->index] = it->r;
+          W.update();
+
+          RealType logpsi0 = det->evaluateLog(W, tmpG, tmpL);
+          RealType phase0 = Psi.getPhase();
+    #if defined(QMC_COMPLEX)
+          ValueType logpsi = std::complex<OHMMS_PRECISION>(logpsi0,phase0);
+    #else
+          ValueType logpsi = logpsi0;
+    #endif
+          logpsi_vals.push_back(logpsi);
+
+          W.R[it->index] = r0;
+          W.update();
+        }
+        fd.computeFiniteDiff(delta, positions, logpsi_vals, G1, L1);
+
+        if (!checkGradients(det->FirstIndex, det->LastIndex, G, L, G1, L1, fail_log, 2))
+        {
+          all_okay = false;
+        }
+
+#if 0
+        // Testing single particle orbitals doesn't work yet - probably something
+        // with setup after setting the position.
+        map<string, SPOSetBasePtr>::iterator spo_it = sd->mySPOSet.begin();
+        for (; spo_it != sd->mySPOSet.end(); spo_it++)
+        {
+          SPOSetBasePtr spo = spo_it->second;
+          fail_log << "      SPO set = " << spo_it->first <<  " name = " << spo->className;
+          fail_log << " orbital set size = " << spo->size();
+          fail_log << " basis set size = " << spo->getBasisSetSize() << endl;
+
+          ParticleSet::ParticleGradient_t G(nat), tmpG(nat), G1(nat);
+          ParticleSet::ParticleLaplacian_t L(nat), tmpL(nat), L1(nat);
+          RealType logpsi3 = det->evaluateLog(W, G, L);
+          FiniteDifference::ValueVector logpsi_vals;
+          FiniteDifference::PosChangeVector::iterator it;
+          for (it = positions.begin(); it != positions.end(); it++)
+          {
+            PosType r0 = W.R[it->index];
+            W.R[it->index] = it->r;
+            W.update();
+            ParticleSet::SingleParticlePos_t zeroR;
+            W.makeMove(it->index,zeroR);
+
+            SPOSetBase::ValueVector_t psi(spo->size());
+
+            spo->evaluate(W, it->index, psi);
+            ValueType logpsi = psi[0];
+            logpsi_vals.push_back(logpsi);
+
+            W.rejectMove(it->index);
+            W.R[it->index] = r0;
+            W.update();
+          }
+          fd.computeFiniteDiff(delta, positions, logpsi_vals, G1, L1);
+
+          if (!checkGradients(det->FirstIndex, det->LastIndex, G, L, G1, L1, fail_log, 3))
+          {
+            all_okay = false;
+          }
+        }
+#endif
+      }
     }
   }
+  return all_okay;
+}
 
-  for (int iat=0; iat<nat; iat++)
+void WaveFunctionTester::runBasicTest()
+{
+  RealType sig2Enloc=0, sig2Drift=0;
+
+  int nat = W.getTotalNum();
+  fout << "Numerical gradient and Laplacian test" << endl;
+
+  stringstream fail_log;
+  bool all_okay = true;
+  int fails = 0;
+  int nconfig = 0;
+  int nignore = 0;
+
+  MCWalkerConfiguration::iterator Wit(W.begin());
+  for (; Wit != W.end(); Wit++)
   {
-    fout << "delta = " << delta << endl;
-    fout << "For particle #" << iat << " at " << W.R[iat] << endl;
-    fout << "Gradient      = " << setw(12) << G[iat] << endl
-         << "  Finite diff = " << setw(12) << G1[iat] << endl
-         << "  Error       = " << setw(12) << G[iat]-G1[iat] << endl << endl;
-    fout << "Laplacian     = " << setw(12) << L[iat] << endl
-         << "  Finite diff = " << setw(12) << L1[iat] << endl
-         << "  Error       = " << setw(12) << L[iat]-L1[iat] << endl << endl;
+    fout << "Walker # " << nconfig << endl;
+    stringstream fail_log1;
+    bool ignore = false;
+    bool this_okay =  checkGradientAtConfiguration(*Wit, fail_log1, ignore);
+    if (ignore)
+    {
+      nignore++;
+    }
+    if (!this_okay && !ignore)
+    {
+      fail_log << "Walker # " << nconfig << endl;
+      fail_log << fail_log1.str();
+      fail_log << endl;
+      fails++;
+      all_okay = false;
+    }
+    nconfig++;
   }
 
-  app_log() << "Finite difference test: " << (any_fail?"FAIL":"PASS") << endl;
+  app_log() << "Number of samples = " << nconfig << endl;
+  app_log() << "Number ignored (bad positions) = " << nignore << endl << endl;
+  app_log() << "Number of fails = " << fails << endl << endl;
 
-  // TODO - test wavefunction components (getOrbitals) separately.
+  if (!all_okay)
+  {
+    string fail_name("wf_fails.dat");
+    app_log() << "More detail on finite difference failures in " << fail_name << endl;
+    ofstream eout(fail_name.c_str());
+    eout << fail_log.str();
+    eout.close();
+  }
+
+  app_log() << "Finite difference test: " << (all_okay?"PASS":"FAIL") << endl;
 
   // Compute approximation error vs. delta.
   // TODO - Use option in the input file to turn this on.
   if (false)
   {
-    delta = 1.0;
+    double delta = 1.0;
     int iat = 0;
     int ig = 0;
     ofstream dout("delta.dat");
     dout << "# Particle = " << iat << " Gradient component = " << ig << endl;
     dout << "#" << setw(11) <<  "delta" << setw(14) << "L_err_rel" << setw(14) << "G_err_rel" << endl;
+    ParticleSet::ParticleGradient_t G(nat), G1(nat);
+    ParticleSet::ParticleLaplacian_t L(nat), L1(nat);
     for (int i = 0; i < 20; i++) {
       // compute analytic values
       G = W.G;
@@ -701,6 +942,7 @@ void WaveFunctionTester::runBasicTest()
 
   fout << "Ratio test" << endl;
 
+  RealType tol = 1e-3;
   RealType ratio_tol = 1e-9;
   bool any_ratio_fail = false;
   makeGaussRandom(deltaR);
