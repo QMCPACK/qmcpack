@@ -629,7 +629,7 @@ bool WaveFunctionTester::checkGradients(int lower_iat, int upper_iat,
       all_okay = false;
     }
 
-    GradType G_err_rel;
+    RealType G_err_rel[OHMMS_DIM];
     for (int idim=0; idim<OHMMS_DIM; idim++)
     {
       RealType G_err = std::abs(G[iat][idim]-G_fd[iat][idim]);
