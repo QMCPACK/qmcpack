@@ -217,11 +217,11 @@ CMAKE_CXX_FLAGS    Set the C++ flags.  Note: to prevent default
 \end{verbatim}
 \item Additional QMCPACK build options
 \begin{verbatim}
-QMC_DATA            Specify data directory for QMCPACK (currently
-                    unused, but likely to be used for performance tests)
 QMC_INCLUDE         Add extra include paths
 QMC_EXTRA_LIBS      Add extra link libraries
 QMC_BUILD_STATIC    Add -static flags to build
+QMC_DATA            Specify data directory for QMCPACK (currently
+                    unused, but likely to be used for future performance tests)
 \end{verbatim}
 \item libxml related
 \begin{verbatim}
@@ -293,8 +293,8 @@ config directory. For example, on Cray systems these scripts might
 load the appropriate modules to set the appropriate programming
 environment, specific library versions etc.
 
-An example script build.sh is given below. It is overly complex for
-the sake of example:
+An example script build.sh is given below. It is much more complex
+than usually needed for comprehensiveness:
 
 \begin{verbatim}
 export CXX=mpic++
@@ -374,8 +374,8 @@ module load mpi
 To setup repoforge as a source for the HDF5 package, go to
 \url{http://repoforge.org/use} . Install the appropriate up to date
 release package for your OS. By default the CentOS Firefox will offer
-to run the installer. The CentOS 6.5 settings were usable for HDF5 on
-CentOS 7 in July 2014, but use CentOS 7 versions when they become
+to run the installer. The CentOS 6.5 settings were still usable for HDF5 on
+CentOS 7 in 2016, but use CentOS 7 versions when they become
 available.
 
 \begin{verbatim}
@@ -397,7 +397,8 @@ ls -l bin/qmcpack
 \subsection{Installing on Mac OS X using Macports}
 These instructions assume a fresh installation of macports
 and for consistency with current Linux distributions, use the gcc 4.8.2
-compiler. More recent versions are fine, but it is vital to ensure matching compilers/options for all
+compiler. More recent versions are fine, but it is vital to ensure
+matching compilers and libraries are used for all
 packages and to force use of what is installed in /opt/local. As with
 the Linux examples above, this build is very good if not optimal, and
 is easily good enough to learn QMCPACK or experiment on a travel laptop.
@@ -427,7 +428,7 @@ mpiCXX -v
 #should return … “gcc version 4.8.2 (MacPorts gcc48 4.8.2_2)” or similar.
 
 sudo port install fftw-3 +gcc48
-sudo port install cmake    # already cmake 3 as of 2014/7/29
+sudo port install cmake
 
 sudo port install boost +gcc48
 sudo port install libxml2
@@ -559,7 +560,7 @@ ls -l bin/qmcpack
 \end{verbatim}
 
 \subsection{Installing on ORNL OLCF Eos Cray XC30}
-Eos is Cray XC30 with 16 core Intel Xeon E5-2670 processors connected
+Eos is a Cray XC30 with 16 core Intel Xeon E5-2670 processors connected
 by the Aries interconnect. The build process is identical to Titan,
 except that we use the default Intel programming environment. This is
 usually preferred to GNU.
