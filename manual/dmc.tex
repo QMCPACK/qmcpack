@@ -168,7 +168,7 @@ works in variational Monte Carlo.  This will output an h5 file with the name "pr
 Check that this file exists before attempting a restart.
 To read in this file for a continuation run, specify the following:
 \begin{lstlisting}[caption=Restart (read wakers from previous run) ]
- <mcwalkerset fileroot="BH.s002" node="-1" nprocs="1" version="0 6" collected="yes"/>
+ <mcwalkerset fileroot="BH.s002" version="0 6" collected="yes"/>
 \end{lstlisting}
 where, BH is the project id and s002 is the calculation number to read in the walkers from the previous run.\\
 
