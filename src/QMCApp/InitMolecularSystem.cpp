@@ -157,7 +157,7 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
   //  els->R[ndown_tot++]=ions->R[(*it).ID]+(*it).BondLength*chi[item++];
   //  ++it;
   //}
-  while(it != it_end)
+  while(it != it_end && nup_tot != numUp && ndown_tot != numDown)
   {
     if(nup_tot<numUp) {
       els->R[nup_tot++]=ions->R[(*it).ID]+(*it).BondLength*chi[item++];
