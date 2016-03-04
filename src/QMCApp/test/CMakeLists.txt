@@ -179,7 +179,7 @@ IF (NOT QMC_COMPLEX)
 
  ELSE()
     MESSAGE("Skipping all gaussian basis tests because they are not supported by complex build (QMC_COMPLEX=1)")  
-ENDIF()
+ ENDIF()
 ELSE()
     MESSAGE("Skipping all gaussian basis tests because they are not supported by CUDA build (QMC_CUDA=1)")  
 ENDIF()

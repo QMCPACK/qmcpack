@@ -75,8 +75,7 @@ SET(OHMMS_DIM 3 CACHE INTEGER "Select physical dimension")
 SET(OHMMS_INDEXTYPE int)
 SET(OHMMS_PRECISION double)
 SET(APP_PRECISION double)
-SET(CUDA_PRECISION float)
-#SET(CUDA_PRECISION double)
+SET(CUDA_PRECISION float CACHE STRING "Select the precision of CUDA kernels")
 
 ######################################################################
 # enable MPI and OPNEMP  if possible
