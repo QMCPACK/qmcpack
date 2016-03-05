@@ -7,13 +7,40 @@ import os
 from optparse import OptionParser
 from numpy import loadtxt,array,sqrt
 
+
+# standalone definition of error function from Abramowitz & Stegun
+# credit: http://www.johndcook.com/blog/2009/01/19/stand-alone-error-function-erf/
+import math
+def erf(x):
+    # constants
+    a1 =  0.254829592
+    a2 = -0.284496736
+    a3 =  1.421413741
+    a4 = -1.453152027
+    a5 =  1.061405429
+    p  =  0.3275911
+
+    # Save the sign of x
+    sign = 1
+    if x < 0:
+        sign = -1
+    x = abs(x)
+
+    # A & S 7.1.26
+    t = 1.0/(1.0 + p*x)
+    y = 1.0 - (((((a5*t + a4)*t) + a3)*t + a2)*t + a1)*t*math.exp(-x*x)
+
+    return sign*y
+#end def erf
+
+
 # Returns failure error code to OS.
 # Explicitly prints 'fail' after an optional message.
 def exit_fail(msg=None):
     if msg!=None:
         print msg
     #end if
-    print 'fail'
+    print 'Test status: fail'
     exit(1)
 #end def exit_fail
 
@@ -24,7 +51,7 @@ def exit_pass(msg=None):
     if msg!=None:
         print msg
     #end if
-    print 'pass'
+    print 'Test status: pass'
     exit(0)
 #end def exit_pass
 
@@ -235,19 +262,39 @@ def process_scalar_files(options,quants_check):
 
 # Checks computed values from scalar.dat files 
 # against specified reference values.
+passfail = {True:'pass',False:'fail'}
 def check_values(options,quants_check,values):
     success = True
+    msg = ''
 
     try:
         ns = 0
         for s in options.series:
+            msg+='Tests for series {0}\n'.format(s)
             for q in quants_check:
+                msg+='  Testing quantity: {0}\n'.format(q)
+
                 ref = options.__dict__[q]
                 mean_ref  = ref[2*ns]
                 error_ref = ref[2*ns+1]
                 mean_comp,error_comp = values[s][q]
 
-                success &= abs(mean_comp-mean_ref) <= options.nsigma*error_ref
+                quant_success = abs(mean_comp-mean_ref) <= options.nsigma*error_ref
+
+                success &= quant_success
+
+                delta = mean_comp-mean_ref
+                delta_err = sqrt(error_comp**2+error_ref**2)
+
+                msg+='    reference mean value     : {0: 12.8f}\n'.format(mean_ref)
+                msg+='    reference error bar      : {0: 12.8f}\n'.format(error_ref)
+                msg+='    computed  mean value     : {0: 12.8f}\n'.format(mean_comp)
+                msg+='    computed  error bar      : {0: 12.8f}\n'.format(error_comp)
+                msg+='    pass tolerance           : {0: 12.8f}  ({1: 12.8f} sigma)\n'.format(options.nsigma*error_ref,options.nsigma)
+                msg+='    deviation from reference : {0: 12.8f}  ({1: 12.8f} sigma)\n'.format(delta,delta/error_ref)
+                msg+='    error bar of deviation   : {0: 12.8f}\n'.format(delta_err)
+                msg+='    significance probability : {0: 12.8f}  (gaussian statistics)\n'.format(erf(abs(delta/error_ref)/sqrt(2.0)))
+                msg+='    status of this test      :   {0}\n'.format(passfail[quant_success])
             #end for
             ns+=1
         #end for
@@ -255,7 +302,7 @@ def check_values(options,quants_check,values):
         exit_fail('error during value check:\n'+str(e))
     #end try
 
-    return success
+    return success,msg
 #end def check_values
 
 
@@ -269,12 +316,12 @@ if __name__=='__main__':
     values = process_scalar_files(options,quants_check)
 
     # Check computed means agains reference solutions.
-    success = check_values(options,quants_check,values)
+    success,msg = check_values(options,quants_check,values)
 
     # Pass success/failure exit codes and strings to the OS.
     if success:
-        exit_pass()
+        exit_pass(msg)
     else:
-        exit_fail()
+        exit_fail(msg)
     #end if
 #end if

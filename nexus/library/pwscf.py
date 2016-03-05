@@ -172,7 +172,9 @@ class Pwscf(Simulation):
         fobj = open(outfile,'r')
         output = fobj.read()
         fobj.close()
+        not_converged = 'convergence NOT achieved' in output
         self.finished = 'JOB DONE' in output
+        self.failed = not_converged
     #end def check_sim_status
 
     def get_output_files(self):

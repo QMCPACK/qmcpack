@@ -20,6 +20,9 @@
 #include "Particle/DistanceTable.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
+#include "QMCDrivers/QMCCostFunctionBase.h"
+#include "QMCDrivers/QMCCostFunctionOMP.h"
+#include "QMCDrivers/VMC/VMCSingleOMP.h"
 #if defined(ENABLE_OPENMP)
 #include "QMCDrivers/VMC/VMCSingleOMP.h"
 #include "QMCDrivers/QMCCostFunctionOMP.h"

@@ -1156,6 +1156,294 @@ PseudoClass::ReadFHI_PP (string fileName)
   return true;
 }
 
+class KBprojector
+{
+public:
+  int l;
+  std::vector<double> beta, u, V;
+  KBprojector() {}
+  KBprojector(int l_, std::vector<double> beta_) :
+    l(l_), beta(beta_) {}
+};
+
+bool
+PseudoClass::ReadUPF_PP (string fileName)
+{
+  MemParserClass parser;
+  if (!parser.OpenFile (fileName)) {
+    cerr << "Could not open file \"" << fileName << "\".  Exitting.\n";
+    exit(-1);
+  }
+  string temp;
+
+  assert(parser.FindToken("<PP_HEADER>")); assert(parser.NextLine());
+  // Skip version number
+  assert(parser.NextLine());
+  string element, ppType, coreCorrection;  
+  assert(parser.ReadWord(element));  assert(parser.NextLine());
+  assert(SymbolToZMap.find(element) != SymbolToZMap.end());
+  AtomicNumber = SymbolToZMap[element];
+  //  cerr << "Element = \"" << element << "\"\n";
+  
+  assert(parser.ReadWord(ppType));
+  if (ppType != "NC") {
+    cerr << "Psuedopotential type \"" << ppType 
+	 << "\" is not norm-conserving.\n";
+    abort();
+  }
+  assert (parser.NextLine());
+  assert (parser.ReadWord(coreCorrection)); assert(parser.NextLine());
+  if (coreCorrection != "F" && coreCorrection != "f" &&
+      coreCorrection != "false" && coreCorrection != "False" &&
+      coreCorrection != ".F." && coreCorrection != ".f" &&
+      coreCorrection != "FALSE") {
+    cerr << "It appears that a nonlinear core correction was used.  Cannot convert PP.\n";
+    abort();
+  }
+
+  // Skip XC function info
+  assert(parser.NextLine());
+  assert(parser.ReadDouble(PseudoCharge));
+  // Skip to end of line
+  assert(parser.NextLine());
+  // Skip total energy
+  assert(parser.NextLine());
+  // Skip energy cutoff
+  assert(parser.NextLine());
+  // Skip maximum angular momentum component
+  assert(parser.NextLine());
+
+  int numPoints;
+  assert(parser.ReadInt(numPoints)); assert(parser.NextLine());
+  int numWF, numProj;
+  assert (parser.ReadInt(numWF)); assert(parser.ReadInt(numProj));
+  int numChannels = numProj+1;
+  
+  ChannelPotentials.resize(numChannels);
+  
+
+  assert(parser.FindToken("Wavefunctions"));
+//   for (int i=0; i<numWF; i++) {
+//     assert(parser.FindToken("NL"));
+//     int l;
+//     double occ;
+//     assert(parser.ReadInt(l));
+//     assert(parser.ReadDouble(occ));
+//   }
+  assert(parser.FindToken("</PP_HEADER>"));
+  
+  assert(parser.FindToken("<PP_MESH>"));
+  assert(parser.FindToken("<PP_R>"));
+  vector<double> r(numPoints), dr(numPoints);
+  for (int i=0; i<numPoints; i++) 
+    assert(parser.ReadDouble(r[i]));
+  assert(parser.FindToken("</PP_R>"));
+  PotentialGrid.Init(r);
+
+
+  assert(parser.FindToken("<PP_RAB>"));
+  for (int i=0; i<numPoints; i++) 
+    assert(parser.ReadDouble(dr[i]));
+  assert(parser.FindToken("</PP_RAB>"));
+  assert(parser.FindToken("</PP_MESH>"));
+	 
+  assert(parser.FindToken("<PP_LOCAL>"));
+  vector<double> Vlocal(numPoints);
+  for (int i=0; i<numPoints; i++) {
+    assert(parser.ReadDouble(Vlocal[i]));
+    Vlocal[i] *= 0.5;
+  }
+  assert(parser.FindToken("</PP_LOCAL>"));
+  
+  assert(parser.FindToken("<PP_NONLOCAL>"));
+
+  // Store which channels have nonlocal projectors:
+  // Input:  l    Output:  index of projector
+  std::map<int,int> lmap;
+  std::vector<KBprojector> projectors;
+  for (int proj=0; proj<numProj; proj++) {
+    assert (parser.FindToken("<PP_BETA>"));
+    int Beta;
+    assert (parser.ReadInt(Beta));
+    assert(Beta == (proj+1));
+    int l;
+    assert (parser.ReadInt(l));    parser.NextLine();
+    lmap[l] = proj;
+    //    fprintf (stderr, "Found a projector for l=%d\n", l);
+
+    int npt;
+    assert (parser.ReadInt(npt));
+
+    vector<double> beta(numPoints);
+    for (int ir=0; ir<numPoints; ir++) 
+      assert(parser.ReadDouble(beta[ir]));
+    assert (parser.FindToken("</PP_BETA>"));
+
+    projectors.push_back(KBprojector(l, beta));
+  }
+  assert(parser.FindToken("</PP_NONLOCAL>"));
+
+  int llocal=0;
+  while (lmap.find(llocal) != lmap.end()) llocal++;
+  LocalChannel = llocal;
+  //  fprintf (stderr, "First channel without a projector=%d\n", llocal);
+  ChannelPotentials[llocal].Vl.Init(PotentialGrid, Vlocal);
+  vector<double> Vlocal_r(numPoints);
+  for (int ir=0; ir<numPoints; ir++)
+    Vlocal_r[ir] = r[ir]*Vlocal[ir];
+  ChannelPotentials[llocal].Vlr.Init(PotentialGrid, Vlocal_r);
+  ChannelPotentials[llocal].l = llocal;
+
+  if (numWF) {
+    assert (parser.FindToken("PP_PSWFC"));
+    assert (parser.NextLine());
+    for (int iwf=0; iwf<numWF; iwf++) {
+      string NL;
+      assert (parser.ReadWord(NL));
+      int l;
+      assert (parser.ReadInt(l));
+      double occ;
+      assert (parser.ReadDouble(occ));
+      parser.NextLine();
+      std::vector<double> wf(numPoints);
+      for (int ir=0; ir<numPoints; ir++) 
+	assert (parser.ReadDouble(wf[ir]));
+      // Now, setup the channel potentials
+      if (l != llocal) {
+	assert (lmap.find(l) != lmap.end());
+	KBprojector &proj = projectors[lmap[l]];
+	vector<double> Vl(numPoints), Vlr(numPoints);
+	for (int ir=0; ir<numPoints; ir++) {
+	  Vl[ir]  = Vlocal[ir];
+	  if (wf[ir] != 0.0) 
+	    Vl[ir] += proj.beta[ir]/(2.0*wf[ir]);
+	  Vlr[ir] = r[ir]*Vl[ir];
+	}
+	Vl[0] = 2.0*Vl[1] - Vl[2];
+	Vlr[0] = r[0] * Vl[0];
+	
+// 	for (int ir=0; ir<numPoints; ir++) 
+// 	  fprintf (stderr, "Vl(%8.3f) = %22.16f\n", r[ir], Vl[ir]);
+
+	ChannelPotentials[l].Vl.Init(PotentialGrid, Vl);
+	ChannelPotentials[l].Vlr.Init(PotentialGrid, Vlr);
+	ChannelPotentials[l].l = l;
+      }
+      ChannelPotentials[l].ul.Init(PotentialGrid, wf);
+      ChannelPotentials[l].Occupation = occ;
+      ChannelPotentials[l].HasProjector = true;
+    }
+    
+    assert (parser.FindToken("/PP_PSWFC"));
+  }
+
+  // Now, figure out what rcut should be
+  double rmax = PotentialGrid.End();
+  int n = PotentialGrid.NumPoints()-1;
+  bool diff = false;
+  while ((n>0) && !diff) {
+    double r = PotentialGrid[n];
+    rmax = r;
+    for (int l1=0; l1<numChannels; l1++) {
+      double Vl1 = ChannelPotentials[l1].Vl(r);
+      for (int l2=l1+1; l2<numChannels; l2++) {
+	double Vl2 = ChannelPotentials[l2].Vl(r);
+	if (fabs(Vl1-Vl2) > 1.0e-5)
+	  diff = true;
+      }
+    }
+    n--;
+  }
+  fprintf (stderr, "rmax = %1.5f  numChannels = %d\n", rmax, numChannels);
+  for (int l=0; l<ChannelPotentials.size(); l++)
+    ChannelPotentials[l].Cutoff = rmax;
+
+  parser.CloseFile();
+	 
+  // Read top comment line
+//   assert (parser.ReadLine(temp));
+//   double atomCharge;
+//   assert (parser.ReadDouble(atomCharge));
+//   AtomicNumber = (int)round(atomCharge);
+//   assert (parser.ReadDouble(PseudoCharge));
+//   int date, pspcode, pspxc, lmax, lloc, mmax;
+//   assert (parser.ReadInt(date));
+//   assert (parser.ReadLine(temp));
+//   assert (parser.ReadInt(pspcode));
+//   assert (parser.ReadInt(pspxc));
+//   assert (parser.ReadInt(lmax));
+//   assert (parser.ReadInt(LocalChannel));
+//   assert (parser.ReadInt(mmax));
+//   // Read the rest of the line and skip the next 4
+//   for (int i=0; i<5; i++)
+//     assert (parser.FindToken("\n"));
+//   // Now we are in the FHI file proper
+//   double chrg;
+//   assert (parser.ReadDouble(chrg));
+//   if(fabs(chrg-PseudoCharge) > 1.0e-10) {
+//     cerr << "PseudoCharge = " << PseudoCharge << endl;
+//     cerr << "chrg = " << chrg << endl;
+//   }
+
+//   // Read number of channels and resize
+//   int numChannels;
+//   assert (parser.ReadInt(numChannels));
+//   ChannelPotentials.resize(numChannels);
+
+//   // Skip the next 10 lines
+//   for (int i=0; i<11; i++)
+//     assert (parser.FindToken("\n"));
+
+//   // Read the number of grid points
+//   for (int l=0; l<numChannels; l++) {
+//     int numPoints;
+//     double a_ratio;
+//     assert (parser.ReadInt(numPoints));
+//     assert (parser.ReadDouble(a_ratio));
+//     vector<double> points(numPoints), ul(numPoints), Vl(numPoints), 
+//       Vlr(numPoints);
+//     for (int m=0; m<numPoints; m++) {
+//       int mtest;
+//       assert (parser.ReadInt(mtest));
+//       assert (mtest == (m+1));
+//       assert (parser.ReadDouble(points[m]));
+//       assert (parser.ReadDouble(ul[m]));
+//       assert (parser.ReadDouble(Vl[m]));
+//       Vlr[m] = Vl[m]*points[m];
+//     }
+//     PotentialGrid.Init (points);
+//     ChannelPotentials[l].Vl.Init  (PotentialGrid, Vl);
+//     ChannelPotentials[l].Vlr.Init (PotentialGrid, Vlr);
+//     ChannelPotentials[l].ul.Init  (PotentialGrid, ul);
+//     ChannelPotentials[l].l = l;
+//     ChannelPotentials[l].n_principal = -1;
+//     ChannelPotentials[l].Cutoff = 0.0;
+//     ChannelPotentials[l].HasProjector = true;
+//   }
+//   // Now, figure out what rcut should be
+//   double rmax = PotentialGrid.End();
+//   int n = PotentialGrid.NumPoints()-1;
+//   bool diff = false;
+//   while ((n>0) && !diff) {
+//     double r = PotentialGrid[n];
+//     rmax = r;
+//     for (int l1=0; l1<numChannels; l1++) {
+//       double Vl1 = ChannelPotentials[l1].Vl(r);
+//       for (int l2=l1+1; l2<numChannels; l2++) {
+// 	double Vl2 = ChannelPotentials[l2].Vl(r);
+// 	if (fabs(Vl1-Vl2) > 1.0e-5)
+// 	  diff = true;
+//       }
+//     }
+//     n--;
+//   }
+//   for (int l=0; l<ChannelPotentials.size(); l++)
+//     ChannelPotentials[l].Cutoff = rmax;
+
+//   parser.CloseFile();
+   return true;
+}
+
 bool
 PseudoClass::ReadGAMESS_PP (string fileName)
 {
@@ -1557,6 +1845,7 @@ main(int argc, char **argv)
   argList.push_back(ParamClass("casino_pot", true));
   argList.push_back(ParamClass("bfd_pot",    true));
   argList.push_back(ParamClass("gamess_pot", true));
+  argList.push_back(ParamClass("upf_pot", true));
 
   // Projector parameters
   argList.push_back(ParamClass("casino_us",  true));
@@ -1584,6 +1873,7 @@ main(int argc, char **argv)
 	 << "  Options include:    \n"
 	 << "   --casino_pot fname \n"
 	 << "   --fhi_pot    fname \n"
+         << "   --upf_pot    fname \n"
 	 << "   --bfd_pot    fname \n"
          << "   --gamess_pot fname \n"
 	 << "   --casino_us fname  \n"
@@ -1617,11 +1907,13 @@ main(int argc, char **argv)
     nlpp.ReadBFD_PP (parser.GetArg ("bfd_pot"));
   else if (parser.Found ("fhi_pot")) 
     nlpp.ReadFHI_PP (parser.GetArg ("fhi_pot"));
+  else if (parser.Found ("upf_pot"))
+    nlpp.ReadUPF_PP (parser.GetArg ("upf_pot"));
   else if (parser.Found ("gamess_pot"))
     nlpp.ReadGAMESS_PP (parser.GetArg("gamess_pot"));
   else {
     cerr << "Need to specify a potential file with --casino_pot "
-	 << "or --bfd_pot or --fhi_pot.\n";
+	 << "or --bfd_pot or --fhi_pot or --upf_pot.\n";
     abort();
   }
 

@@ -149,6 +149,11 @@ int main(int argc, char **argv)
       WARNMSG("Creating GamesAsciiParser")
       parser = new GamesAsciiParser(argc,argv);
     }
+    else
+    {
+      cerr << "Unknown extension: " << ext << endl;
+      exit(1);
+    }
   }
   parser->Title=prefix;
   parser->UseHDF5=usehdf5;
@@ -162,6 +167,7 @@ int main(int argc, char **argv)
   parser->outputFile=punch_file;
   parser->parse(in_file);
   parser->dump(psi_tag, ion_tag);
+  OHMMS::Controller->finalize();
   return 0;
 }
 

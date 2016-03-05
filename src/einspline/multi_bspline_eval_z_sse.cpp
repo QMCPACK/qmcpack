@@ -399,7 +399,6 @@ eval_multi_UBspline_2d_z_vg (const multi_UBspline_2d_z *spline,
     }
   double dxInv = spline->x_grid.delta_inv;
   double dyInv = spline->y_grid.delta_inv;
-  complex_double lapl2[2*N];
   for (int n=0; n<N; n++)
   {
     _mm_storeu_pd((double*)(vals+n),mvals[n]);
@@ -545,7 +544,7 @@ eval_multi_UBspline_2d_z_vgl (const multi_UBspline_2d_z *spline,
     }
   double dxInv = spline->x_grid.delta_inv;
   double dyInv = spline->y_grid.delta_inv;
-  complex_double lapl2[2*N];
+  complex_double *lapl2 = new complex_double[2*N];
   for (int n=0; n<N; n++)
   {
     _mm_storeu_pd((double*)(vals+n),mvals[n]);
@@ -562,6 +561,7 @@ eval_multi_UBspline_2d_z_vgl (const multi_UBspline_2d_z *spline,
     lapl2[2*n+1]  *= dyInv*dyInv;
     lapl[n] = lapl2[2*n+0] + lapl2[2*n+1];
   }
+  delete [] lapl2;
 }
 
 

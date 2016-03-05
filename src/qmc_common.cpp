@@ -79,7 +79,7 @@ void QMCState::initialize(int argc, char **argv)
     cerr<<endl << "QMCPACK version "<< QMCPLUSPLUS_VERSION_MAJOR <<"." << QMCPLUSPLUS_VERSION_MINOR << "." << QMCPLUSPLUS_VERSION_PATCH
         << " subversion " << QMCPLUSPLUS_BRANCH
         << " build on " << getDateAndTime("%Y%m%d_%H%M") << endl;
-    cerr << "Usage: qmcapp input [--dryrun --save_wfs[=no] --async_swap[=no] --gpu]" << endl << endl;
+    cerr << "Usage: qmcpack input [--dryrun --save_wfs[=no] --async_swap[=no] --gpu]" << endl << endl;
   }
 }
 

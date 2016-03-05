@@ -241,6 +241,7 @@ class Settings(NexusCore):
                         self.error('interactive mode requested, but interactive_cores not set')
                     #end if
                     ProjectManager.machine = ProjectManager.machine.interactive_representation(mset.interactive_cores)
+                    Job.machine = ProjectManager.machine.name
                 #end if
             #end if
         #end if

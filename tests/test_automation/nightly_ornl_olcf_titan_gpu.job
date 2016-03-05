@@ -134,7 +134,7 @@ done
 # Hard-coded logic for resubmission
 # Default gnu build executable must be present
 
-if [ -e $place/titan_build_gnu_cuda/trunk/build_gnu/bin/qmcapp ]; then
+if [ -e $place/titan_build_gnu_cuda/trunk/build_gnu/bin/qmcpack ]; then
 echo "--- Found a built qmcpack executable. Will requeue."
 if [ -e $HOME/.qmcpack_test_jobs/nightly_ornl_olcf_titan_gpu.job ]; then
 # Run after 11.01pm following Tuesday. This is usually the evening after maintenance

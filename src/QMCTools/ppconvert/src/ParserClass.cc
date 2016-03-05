@@ -178,6 +178,19 @@ MemParserClass::ReadLine (string &word)
   return true;
 }
 
+bool
+MemParserClass::NextLine ()
+{
+  while ((Buffer[Pos]!='\n') && (Pos<Buffer.size()-1))
+    Pos++;
+  if (Pos < Buffer.size()) {
+    Pos++;
+    return true;
+  }
+  else
+    return false;
+}
+
 void
 MemParserClass::Reset()
 {
@@ -299,6 +312,16 @@ FileParserClass::ReadLine (string &line)
     str[0] = ch;
     line.append (str);
   }
+  return true;
+}
+
+bool
+FileParserClass::NextLine ()
+{
+  if (Infile.eof())
+    return false;
+  while (Infile.get()!='\n' && !Infile.eof());
+
   return true;
 }
 
@@ -482,6 +505,20 @@ FileParserClass2::ReadLine (string &line)
   while ((Buffer[offset] != '\n') && (offset<Buffer.size()-1)) {
     str[0] = Buffer[offset];
     line.append(str);
+    offset++;
+    Pos++;
+  }
+  return true;
+}
+
+bool
+FileParserClass2::NextLine ()
+{
+  if (BufferEnd() - Pos < 100)
+    ReadChunk (Pos);
+  long offset = Pos - BufferStart;
+
+  while ((Buffer[offset] != '\n') && (offset<Buffer.size()-1)) {
     offset++;
     Pos++;
   }

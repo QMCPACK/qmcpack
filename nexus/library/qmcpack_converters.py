@@ -684,7 +684,7 @@ class Convert4qmc(Simulation):
     generic_identifier     = 'convert4qmc'
     application            = 'convert4qmc'
     application_properties = set(['serial'])
-    application_results    = set(['orbitals'])
+    application_results    = set(['orbitals','particles'])
 
     def set_app_name(self,app_name):
         self.app_name = app_name
@@ -700,6 +700,8 @@ class Convert4qmc(Simulation):
         calculating_result = False
         if result_name=='orbitals':
             calculating_result = True
+        elif result_name=='particles':
+            calculating_result = True
         else:
             calculating_result = False
             self.error('ability to check for result '+result_name+' has not been implemented')
@@ -713,6 +715,9 @@ class Convert4qmc(Simulation):
         if result_name=='orbitals':
             wfn_file,ptcl_file = input.output_files()
             result.location = os.path.join(self.locdir,wfn_file)
+        elif result_name=='particles':
+            wfn_file,ptcl_file = input.output_files()
+            result.location = os.path.join(self.locdir,ptcl_file)
         else:
             self.error('ability to get result '+result_name+' has not been implemented')
         #end if        

@@ -21,6 +21,7 @@ public:
   virtual bool ReadDouble(double &val)  = 0;
   virtual bool ReadWord (string &word)  = 0;
   virtual bool ReadLine (string &line)  = 0;
+  virtual bool NextLine ()              = 0;
   virtual void Reset()                  = 0;
   virtual void SavePos()                = 0;
   virtual void RestorePos()             = 0;
@@ -42,6 +43,7 @@ public:
   bool ReadComplex(complex<double> &val);
   bool ReadWord (string &word);
   bool ReadLine (string &line);
+  bool NextLine ();
   void SavePos();
   void RestorePos();
   inline void Reset();
@@ -70,6 +72,7 @@ public:
   bool ReadComplex(complex<double> &val);
   bool ReadWord (string &word);
   bool ReadLine (string &line);
+  bool NextLine ();
   void SavePos();
   void RestorePos();
   void Reset();
@@ -100,6 +103,7 @@ public:
   bool ReadComplex(complex<double> &val);
   bool ReadWord (string &word);
   bool ReadLine (string &line);
+  bool NextLine ();
   void SavePos();
   void RestorePos();
   void Reset();

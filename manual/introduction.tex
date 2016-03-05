@@ -40,7 +40,9 @@ systems.  If C++, MPI, BLAS/LAPACK, FFTW, HDF5, and CMake are already
 installed, QMCPACK can be built and run within five minutes. For
 supercomputers, cross-compilation systems, and other computer clusters
 the build system may require hints on the locations of libraries and
-which versions to use, typical of any code, see Chapter \ref{chap:obtaininginstalling}.
+which versions to use, typical of any code, see Chapter
+\ref{chap:obtaininginstalling}. Section \ref{sec:installexamples}
+includes complete examples for common workstations and supercomputers that you can reuse.
 
 To build QMCPACK:
 
@@ -58,7 +60,7 @@ To build QMCPACK:
   instructions for common systems.
 \item Build QMCPACK: \texttt{make} or \texttt{make -j 16}, the latter
   for a faster parallel build on a system using, e.g., 16 processes.
-\item The QMCPACK executable is \texttt{bin/qmcapp}
+\item The QMCPACK executable is \texttt{bin/qmcpack}
 \end{enumerate}
 
 QMCPACK is distributed with examples illustrating different
@@ -70,8 +72,8 @@ of a water molecule:
 \item Go to the appropriate example directory: \texttt{cd
     ../examples/molecules}
 \item (Optional) Put the QMCPACK binary on your path:\\ \texttt{export PATH=\$PATH:location-of-qmcpack/build/bin}
-\item Run QMCPACK: \texttt{../../build/bin/qmcapp simple-H2O.xml} or
-  \texttt{qmcapp simple-H2O.xml} if you followed the step above.
+\item Run QMCPACK: \texttt{../../build/bin/qmcpack simple-H2O.xml} or
+  \texttt{qmcpack simple-H2O.xml} if you followed the step above.
 \item The run will output to the screen and generate a number of files:
 \begin{verbatim}
 $ls H2O*
@@ -143,7 +145,7 @@ and Jordan E. Vincent.
 
 If you should be added to this list please let us know.
 
-Over the years, development of QMCPACK has been supported financially
+Development of QMCPACK has been supported financially by
 several grants, including:
 
 \begin{itemize}

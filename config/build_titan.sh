@@ -48,7 +48,7 @@ cd build_cpu_real
 cmake $CMAKE_FLAGS .. 
 make -j 32
 cd ..
-ln -s ./build_cpu_real/bin/qmcapp ./qmcapp_cpu_real
+ln -s ./build_cpu_real/bin/qmcpack ./qmcpack_cpu_real
 
 
 # Configure and build cpu complex
@@ -60,7 +60,7 @@ cd build_cpu_comp
 cmake -DQMC_COMPLEX=1 $CMAKE_FLAGS .. 
 make -j 32
 cd ..
-ln -s ./build_cpu_comp/bin/qmcapp ./qmcapp_cpu_comp
+ln -s ./build_cpu_comp/bin/qmcpack ./qmcpack_cpu_comp
 
 
 # load cuda toolkit for gpu build
@@ -76,7 +76,6 @@ cd build_gpu_real
 cmake -DQMC_CUDA=1 .. 
 make -j 32
 cd ..
-ln -s ./build_gpu_real/bin/qmcapp ./qmcapp_gpu_real
-
+ln -s ./build_gpu_real/bin/qmcpack ./qmcpack_gpu_real
 
 

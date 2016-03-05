@@ -61,6 +61,7 @@ protected:
   ParticleSet *PtclRef;
   bool FirstTime;
   RealType KEcorr;
+  bool first_addFunc;
 
 public:
 
@@ -75,6 +76,7 @@ public:
     PtclRef = &p;
     init(p);
     FirstTime = true;
+    first_addFunc = true;
     OrbitalName = "TwoBodyJastrow";
   }
 
@@ -111,23 +113,24 @@ public:
 
   void addFunc(int ia, int ib, FT* j)
   {
-    if(ia==ib)
+    // make all pair terms equal to the first one initially
+    //   in case some terms are not provided explicitly
+    if(first_addFunc)
     {
-      if(ia==0)//first time, assign everything
-      {
-        int ij=0;
-        for(int ig=0; ig<NumGroups; ++ig)
-          for(int jg=0; jg<NumGroups; ++jg, ++ij)
-            if(F[ij]==0)
-              F[ij]=j;
-      }
+      int ij=0;
+      for(int ig=0; ig<NumGroups; ++ig)
+	for(int jg=0; jg<NumGroups; ++jg, ++ij)
+	  if(F[ij]==0)
+	    F[ij]=j;
+      first_addFunc = false;
     }
-    else
-    {
-      F[ia*NumGroups+ib]=j;
-      if(ia<ib)
-        F[ib*NumGroups+ia]=j;
-    }
+
+    // add the pair function
+    F[ia*NumGroups+ib]=j;
+    // enforce exchange symmetry
+    if(ia!=ib)
+      F[ib*NumGroups+ia]=j;
+
     stringstream aname;
     aname<<ia<<ib;
     J2Unique[aname.str()]=j;
@@ -168,7 +171,8 @@ public:
     typename std::map<std::string,FT*>::iterator it(J2Unique.begin()),it_end(J2Unique.end());
     while(it != it_end)
     {
-      (*it++).second->checkOutVariables(active);
+      (*it).second->checkOutVariables(active);
+      ++it;
     }
     if(dPsi)
       dPsi->checkOutVariables(active);
@@ -182,7 +186,8 @@ public:
     typename std::map<std::string,FT*>::iterator it(J2Unique.begin()),it_end(J2Unique.end());
     while(it != it_end)
     {
-      (*it++).second->resetParameters(active);
+      (*it).second->resetParameters(active);
+      ++it;
     }
     //if (FirstTime) {
     // if(!IsOptimizing)

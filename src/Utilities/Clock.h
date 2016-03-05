@@ -3,6 +3,9 @@
 
 #include "Message/OpenMP.h"
 
+#include <sys/time.h>
+#include <stddef.h>
+
 #if defined(__bgp__)
 #include <dcmf.h>
 #endif

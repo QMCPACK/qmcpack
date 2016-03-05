@@ -47,6 +47,7 @@ private:
   ParticleSetPool &PtclPool;
   ParticleSet::ParticlePos_t deltaR;
   string checkRatio, checkClone, checkHamPbyP, sourceName, wftricks, checkEloc;
+  string checkBasic, checkRatioV;
   xmlNodePtr myNode;
   /// Copy Constructor (disabled)
   WaveFunctionTester(const WaveFunctionTester& a):
@@ -61,7 +62,7 @@ private:
   /** the basic ratios check */
   void runRatioTest();
   void runRatioTest2();
-  /** test ratios with virutal moves */
+  /** test ratios with virtual moves */
   void runRatioV();
   /** test clone implementations of new wavefunctions and operators */
   void runCloneTest();
@@ -74,9 +75,26 @@ private:
   void runNodePlot();
   void printEloc();
 
+  // compute numerical gradient and laplacian
+  void computeNumericalGrad(RealType delta,
+                            ParticleSet::ParticleGradient_t &G_fd,
+                            ParticleSet::ParticleLaplacian_t &L_fd);
+
+  bool checkGradients(int lower_iat, int upper_iat,
+                      ParticleSet::ParticleGradient_t &G,
+                      ParticleSet::ParticleLaplacian_t &L,
+                      ParticleSet::ParticleGradient_t &G_fd,
+                      ParticleSet::ParticleLaplacian_t &L_fd,
+                      stringstream &log,
+                      int indent=0);
+
+  bool checkGradientAtConfiguration(MCWalkerConfiguration::Walker_t* W1,
+                                    stringstream &fail_log,
+                                    bool &ignore);
+
   //vector<RealType> Mv3(vector<vector<RealType> >& M, vector<RealType>& v);
 
-  ofstream *fout;
+  ofstream fout;
 };
 }
 #endif

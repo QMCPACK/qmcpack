@@ -48,11 +48,11 @@ struct CommunicatorTraits
 };
 
 #define APP_ABORT(msg) \
-{std::cerr << "Fatal Error. Aborting at " << msg << std::endl; std::cerr.flush(); abort();}
+{std::cerr << "Fatal Error. Aborting at " << msg << std::endl; std::cerr.flush(); exit(1);}
 
 #define APP_ABORT_TRACE(f,l,msg) \
 {std::cerr << "Fatal Error. Aborting at " << l \
-  << "::" << f << "\n " <<  msg << endl; abort();}
+  << "::" << f << "\n " <<  msg << endl; exit(1);}
 
 #endif
 

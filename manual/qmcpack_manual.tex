@@ -5,13 +5,39 @@
 \usepackage{fancyhdr}
 \usepackage{hyperref} %for urls
 %\usepackage{url}
-\usepackage{listings}
 \usepackage{tabularx}
 \usepackage{placeins}
 \usepackage{xcolor}
 \usepackage{graphicx}
+\usepackage{framed}
 
-\lstloadlanguages{C++,XML}
+% making listing behave properly
+%   with setting below, listings now render correctly
+%   copy/paste from pdf is still messed up (is this even possible to fix?)
+%     -indentation whitespace is not preserved (needed for Python)
+%     -copy/paste can result in mangled text
+%     -mangling depends on pdf viewer (it is different for acroread and evince)
+%     -verbatim suffers from this also
+\usepackage{upquote}  % render ' properly
+\usepackage{listings}
+
+\lstloadlanguages{C++,XML,Python}
+
+\lstset{
+  basicstyle=\footnotesize\ttfamily,  % copy/paste from pdf w/o mangled quotes
+  keywordstyle=\color{black}\bfseries,
+  frame=single,
+  breaklines=true,
+  language=xml,
+  escapeinside={<:}{:>},
+  columns=fullflexible,   % copy/paste from pdf w/o added spaces
+  keepspaces=true,        % but do keep the spaces that are already there
+  showstringspaces=false, % avoid showing underbrackets in quoted text
+}
+
+
+
+
 \newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
 \newcommand{\courier}[1]{{\fontfamily{pcr}\selectfont #1}}
 
@@ -23,9 +49,16 @@
 \newcommand{\dev}[1]{#1}
 %\newcommand{\dev}[1]{}
 
+% efficiently comment out/hide blocks of text for any purpose
+\newcommand{\hide}[1]{}
+
+
 \oddsidemargin 0cm
 \evensidemargin 0cm
 \textwidth 6.5in
+
+% for shaded environment from framed package
+\definecolor{shadecolor}{gray}{0.95}
 
 
 % proper rendering of qmcpack
@@ -46,16 +79,6 @@
 
 
 \begin{document}
-\lstset{
-basicstyle=\footnotesize\ttfamily,  % copy/paste from pdf w/o mangled quotes
-keywordstyle=\color{black}\bfseries,
-frame=single,
-breaklines=true,
-language=xml,
-escapeinside={<:}{:>},
-columns=fullflexible,   % copy/paste from pdf w/o added spaces
-showstringspaces=false  % avoid showing underbrackets in quoted text
-}
 
 \input{title.tex}
 \newpage
@@ -68,11 +91,14 @@ showstringspaces=false  % avoid showing underbrackets in quoted text
 
 \input{units}
 
+\input{input_overview}
+
 \chapter{Specifying the system to be simulated}
 \input{simulationcell}
 \input{particleset}
 
 \chapter{Trial wavefunction specification}
+\input{intro_wavefunction}
 \input{spo}
 \input{jastrow}
 \input{multideterminants}
@@ -89,6 +115,13 @@ showstringspaces=false  % avoid showing underbrackets in quoted text
 \input{analysis}
 
 \input{examples}
+
+% labs: import each as a separate chapter for now
+\input{lab_qmc_statistics}
+\input{lab_qmc_basics}
+%\input{lab_advanced_molecules}
+\input{lab_condensed_matter}
+
 
 \input{contributing}
 

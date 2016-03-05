@@ -1221,7 +1221,7 @@ class PwscfInput(SimulationInput):
         atoms   = list(self.atomic_positions.atoms)
         for atom in self.atomic_species.atoms:
             if not atom in valency:
-                self.error('valence charge for atom {0} has not been defined\nplease provide the valence charge as an argument to return_system()')
+                self.error('valence charge for atom {0} has not been defined\nplease provide the valence charge as an argument to return_system()'.format(atom))
             #end if
             ion_charge += atoms.count(atom)*valency[atom]
         #end for
@@ -1527,6 +1527,11 @@ def generate_any_pwscf_input(**kwargs):
             )
     #end if
 
+    # check for misformatted kpoints
+    if len(pw.k_points)==0:
+        PwscfInput.class_error('k_points section has not been filled in\nplease provide k-point information in either of\n  1) the kgrid input argument\n  2) in the PhysicalSystem object (system input argument)','generate_pwscf_input')
+    #end if
+
     # check for leftover keywords
     if len(kwargs)>0:
         PwscfInput.class_error('unrecognized keywords: {0}\nthese keywords are not known to belong to any namelist for PWSCF'.format(sorted(kwargs.keys())),'generate_pwscf_input')
@@ -1571,7 +1576,7 @@ def generate_scf_input(prefix       = 'pwscf',
                        system       = None,
                        use_folded   = True,
                        group_atoms  = False,
-                       la2F         = False
+                       la2F         = None,
                        ):
     if pseudos is None:
         pseudos = []
@@ -1607,8 +1612,10 @@ def generate_scf_input(prefix       = 'pwscf',
         ecutwfc     = ecut,
         ecutrho     = ecutrho,
         nosym       = nosym,
-        la2F        = la2F
         )
+    if la2F!=None:
+        pw.system.la2F = la2F
+    #end if
     if assume_isolated!=None:
         pw.system.assume_isolated = assume_isolated
     #end if
