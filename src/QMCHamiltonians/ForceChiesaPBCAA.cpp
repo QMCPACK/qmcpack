@@ -266,7 +266,7 @@ ForceChiesaPBCAA::evaluate(ParticleSet& P)
   evaluateSR(P);
 //  app_log()<<"LR+SR eI FORCE\n";
 //  app_log()<<forces<<endl;
-  
+  if(addionion==true) forces=forces+forces_IonIon;  
   return 0.0;
 }
 

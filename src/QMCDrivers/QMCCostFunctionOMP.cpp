@@ -309,10 +309,6 @@ void QMCCostFunctionOMP::checkConfigurations()
   }
   else
   {
-    if(includeNonlocalH!="no")
-    {
-      APP_ABORT("Need to enable the use of includeNonlocalH=='name' without a buffer.");
-    }
   }
   int numW = 0;
   for(int i=0; i<wClones.size(); i++)
@@ -508,6 +504,8 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::correlatedSampling(bool needGra
   {
     int ip = omp_get_thread_num();
     bool compute_nlpp=useNLPPDeriv && (includeNonlocalH != "no");
+    bool compute_all_from_scratch=(includeNonlocalH != "no") && !StoreDerivInfo; //true if we have nlpp, but no buffer
+
     MCWalkerConfiguration& wRef(*wClones[ip]);
     Return_t wgt_node=0.0, wgt_node2=0.0;
     //int totalElements=W.getTotalNum()*OHMMS_DIM;
@@ -533,7 +531,7 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::correlatedSampling(bool needGra
       }
       else
       {
-        logpsi=psiClones[ip]->evaluateDeltaLog(wRef);
+        logpsi=psiClones[ip]->evaluateDeltaLog(wRef,compute_all_from_scratch);
         wRef.G += *dLogPsi[iwg];
         wRef.L += *d2LogPsi[iwg];
         //             logpsi=psiClones[ip]->evaluateLog(wRef);

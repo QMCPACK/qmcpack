@@ -170,24 +170,23 @@ TrialWaveFunction::evaluateLogOnly(ParticleSet& P)
 }
 
 
-
-
 /** evaluate the log value of a many-body wave function
  * @param P input configuration containing N particles
- * @param needratio users request ratio evaluation
- * @param buf anonymous storage for the reusable data
+ * @param recomputeall recompute all orbitals from scratch
  * @return the value of \f$ \log( \Pi_i \Psi_i) \f$  many-body wave function
  *
- * @if needratio == true
- *  need to update the data from buf, since external objects need to evaluate ratios, e.g., non-local pseudopotentials
+ * @if recomputeall == true
+ *   all orbitals have "evaluateLog" called on them, including the non-optimized ones.
  * @else
- *  evaluate the value only
+ *   default value.  call evaluateLog only on optimizable orbitals.  OK if nonlocal pp's aren't used.
  *
- * Upon return, the gradient and laplacian operators are added by the components.
- * Each OrbitalBase evaluates PhaseValue and LogValue = log(abs(psi_i))
- * Jastrow functions always have PhaseValue=1.
+ * To save time, logpsi, G, and L are only computed for orbitals that change over the course of the optimization.
+ * It is assumed that the fixed components are stored elsewhere.  See evaluateDeltaLog(P,logpsi_fixed_r,logpsi_opt,fixedG,fixedL)
+ * defined below.  Nonlocal pseudopotential evaluation requires temporary information like matrix inverses, so while
+ * the logpsi, G, and L don't change, evaluateLog is called anyways to compute these auxiliary quantities from scratch.
+ * logpsi, G, and L associated with these non-optimizable orbitals are discarded explicitly and with dummy variables. 
  */
-TrialWaveFunction::RealType TrialWaveFunction::evaluateDeltaLog(ParticleSet& P)
+TrialWaveFunction::RealType TrialWaveFunction::evaluateDeltaLog(ParticleSet& P, bool recomputeall)
 {
   P.G = 0.0;
   P.L = 0.0;
@@ -197,17 +196,33 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateDeltaLog(ParticleSet& P)
   vector<OrbitalBase*>::iterator it_end(Z.end());
   for (; it!=it_end; ++it)
   {
-    if ((*it)->Optimizable)
+    if ((*it)->Optimizable )
     {
       logpsi += (*it)->evaluateLog(P, P.G, P.L);
       PhaseValue += (*it)->PhaseValue;
     }
   }
+
+  //In case we need to recompute orbitals, initialize dummy vectors for G and L.
+  //evaluateLog dumps into these variables, and logPsi contribution is discarded.  
+  //Only called for non-optimizable orbitals.   
+  if (recomputeall)
+  {
+    ParticleSet::ParticleGradient_t dummyG(P.G);
+    ParticleSet::ParticleLaplacian_t dummyL(P.L);
+    
+    it=Z.begin();
+    it_end=Z.end();
+
+    for( ; it!=it_end; ++it)
+    {
+      if (!(*it)->Optimizable) (*it)->evaluateLog(P,dummyG, dummyL); //update orbitals if its not flagged optimizable, AND recomputeall is true
+    }
+    
+  }
   convert(logpsi,LogValue);
   return LogValue;
-  //return LogValue=real(logpsi);
 }
-
 TrialWaveFunction::RealType TrialWaveFunction::evaluateDeltaLog(ParticleSet& P, PooledData<RealType>& buf)
 {
   P.G = 0.0;

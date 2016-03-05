@@ -230,6 +230,7 @@ bool CSVMC::run()
           wClones[ip]->Collectables *= cnorm;
         CSMovers[ip]->accumulate(wit,wit_end);
         ++now_loc;
+        //app_log()<<"==step==\n";
         //if (updatePeriod&& now_loc%updatePeriod==0) Movers[ip]->updateWalkers(wit,wit_end);
         if (Period4WalkerDump&& now_loc%Period4WalkerDump==0)
           wClones[ip]->saveEnsemble(wit,wit_end);
