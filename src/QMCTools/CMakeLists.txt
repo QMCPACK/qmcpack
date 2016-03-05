@@ -21,6 +21,7 @@ SET(MOSRCS
   BMakeFunc.cpp
   GamesFMOParser.cpp
   VSVBParser.cpp
+  QPParser.cpp
 )
 
 # create libmocommon 
