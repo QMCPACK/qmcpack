@@ -454,12 +454,14 @@ int WalkerControlBase::copyWalkers(MCWalkerConfiguration& W)
 
 bool WalkerControlBase::put(xmlNodePtr cur)
 {
-  int nw_target=0;
+  int nw_target=0, nw_max=0;
   ParameterSet params;
   params.add(targetEnergyBound,"energyBound","double");
   params.add(targetSigma,"sigmaBound","double");
   params.add(MaxCopy,"maxCopy","int");
   params.add(nw_target,"targetwalkers","int");
+  params.add(nw_max,"max_walkers","int");
+
   bool success=params.put(cur);
 
   app_log() << "  WalkerControlBase parameters " << endl;
@@ -480,6 +482,7 @@ bool WalkerControlBase::put(xmlNodePtr cur)
       Nmin=npernode/5+1;
     }
   }
+  if(nw_max>0) Nmax=nw_max;
   app_log() << "   Max Walkers per node " << Nmax << endl;
   app_log() << "   Min Walkers per node " << Nmin << endl;
   return true;
