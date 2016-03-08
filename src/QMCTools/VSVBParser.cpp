@@ -23,6 +23,7 @@ VSVBParser::VSVBParser()
   NumSpinCoupledOrbitals=0;
   NumOpenShellOrbitals=0;
   NumDoubleOccupiedOrbitals=0;
+  FixValence=true;
 }
 
 VSVBParser::VSVBParser(int argc, char** argv):
@@ -39,6 +40,7 @@ VSVBParser::VSVBParser(int argc, char** argv):
   NumSpinCoupledOrbitals=0;
   NumOpenShellOrbitals=0;
   NumDoubleOccupiedOrbitals=0;
+  FixValence=true;
 }
 
 void VSVBParser::parse(const std::string& fname)
@@ -49,6 +51,7 @@ void VSVBParser::parse(const std::string& fname)
   std::string aline;
   bool MDVSVB=true;
   int NbVbStructures;
+  DoCusp=true;
   
   search(fin,"The number of atoms or centers is",aline);
   parsewords(aline.c_str(),currentWords);

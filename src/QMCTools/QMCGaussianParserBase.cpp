@@ -18,20 +18,20 @@ std::vector<std::string> QMCGaussianParserBase::gShellType;
 std::vector<int> QMCGaussianParserBase::gShellID;
 
 QMCGaussianParserBase::QMCGaussianParserBase():
-  Title("sample"),basisType("Gaussian"),basisName("generic"),
+  Title("sample"),basisType("Gaussian"),basisName("generic"),DoCusp(false),
   Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01)
   ,usingCSF(false),readNO(0),readGuess(0),zeroCI(false)
-  ,orderByExcitation(false), addJastrow(true), addJastrow3Body(false)
+  ,orderByExcitation(false), addJastrow(true), addJastrow3Body(false),QP(false)
 {
 }
 
 QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv):
-  BohrUnit(true),SpinRestricted(false),NumberOfAtoms(0),NumberOfEls(0),
+  BohrUnit(true),SpinRestricted(false),NumberOfAtoms(0),NumberOfEls(0),DoCusp(false),
   SpinMultiplicity(0),NumberOfAlpha(0),NumberOfBeta(0),SizeOfBasisSet(0),
   Title("sample"),basisType("Gaussian"),basisName("generic"),numMO(0),numMO2print(-1),
   Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01),
   angular_type("spherical"),usingCSF(false),readNO(0),readGuess(0),zeroCI(false)
-  ,orderByExcitation(false), addJastrow(true), addJastrow3Body(false)
+  ,orderByExcitation(false), addJastrow(true), addJastrow3Body(false), QP(false)
 {
   //IonSystem.setName("i");
   IonChargeIndex=IonSystem.getSpeciesSet().addAttribute("charge");
@@ -222,7 +222,9 @@ xmlNodePtr QMCGaussianParserBase::createElectronSet()
   InitMolecularSystem m(0,"test");
   if(IonSystem.getTotalNum()>1)
   {
-    m.initMolecule(&IonSystem,&els);
+    cout<<"Total number atoms "<<IonSystem.getTotalNum()<<endl;
+    m.initAtom(&IonSystem,&els);
+    //m.initMolecule(&IonSystem,&els);
   }
   else
   {
@@ -267,7 +269,7 @@ xmlNodePtr QMCGaussianParserBase::createIonSet()
   {
     int z = static_cast<int>(ionSpecies(AtomicNumberIndex,i));
     double valence = ionSpecies(IonChargeIndex,i);
-    if(valence>CoreTable[z]&& FMO != true)
+    if(valence>CoreTable[z]&& FixValence!=true)
       valence-=CoreTable[z];
     ionSpecies(ValenceChargeIndex,i)=valence;
   }
@@ -394,7 +396,7 @@ QMCGaussianParserBase::createDeterminantSet()
   xmlNodePtr adet = xmlNewNode(NULL,(const xmlChar*)"determinant");
   xmlNewProp(adet,(const xmlChar*)"id",(const xmlChar*)"updet");
   xmlNewProp(adet,(const xmlChar*)"size",(const xmlChar*)up_size.str().c_str());
-  if (FMO==true || VSVB==true)
+  if (DoCusp==true)
      xmlNewProp(adet,(const xmlChar*)"cuspInfo",(const xmlChar*)"../CuspCorrection/updet.cuspInfo.xml");
 
   //occ<<"\n";
@@ -439,8 +441,8 @@ QMCGaussianParserBase::createDeterminantSet()
   adet = xmlNewNode(NULL,(const xmlChar*)"determinant");
   xmlNewProp(adet,(const xmlChar*)"id",(const xmlChar*)"downdet");
   xmlNewProp(adet,(const xmlChar*)"size",(const xmlChar*)down_size.str().c_str());
-  if (FMO==true || VSVB==true)
-     xmlNewProp(adet,(const xmlChar*)"cuspInfo",(const xmlChar*)"../CuspCorrection/dndet.cuspInfo.xml");
+  if (DoCusp==true)
+     xmlNewProp(adet,(const xmlChar*)"cuspInfo",(const xmlChar*)"../CuspCorrection/downdet.cuspInfo.xml");
 
   {
     //std::ostringstream occ_beta;
@@ -499,10 +501,15 @@ QMCGaussianParserBase::createSPOSets(xmlNodePtr spoUP, xmlNodePtr spoDN)
   b_size<<numMO;
   nstates_alpha <<ci_nstates+ci_nca;;
   nstates_beta <<ci_nstates+ci_ncb;
+
   xmlNewProp(spoUP,(const xmlChar*)"name",(const xmlChar*)"spo-up");
   xmlNewProp(spoDN,(const xmlChar*)"name",(const xmlChar*)"spo-dn");
   xmlNewProp(spoUP,(const xmlChar*)"size",(const xmlChar*)nstates_alpha.str().c_str());
   xmlNewProp(spoDN,(const xmlChar*)"size",(const xmlChar*)nstates_beta.str().c_str());
+  if (DoCusp==true){
+     xmlNewProp(spoUP,(const xmlChar*)"cuspInfo",(const xmlChar*)"../CuspCorrection/spo-up.cuspInfo.xml");
+     xmlNewProp(spoDN,(const xmlChar*)"cuspInfo",(const xmlChar*)"../CuspCorrection/spo-dn.cuspInfo.xml");
+  }
   xmlNodePtr occ_data = xmlNewNode(NULL,(const xmlChar*)"occupation");
   xmlNewProp(occ_data,(const xmlChar*)"mode",(const xmlChar*)"ground");
   xmlAddChild(spoUP,occ_data);
@@ -563,6 +570,75 @@ QMCGaussianParserBase::createSPOSets(xmlNodePtr spoUP, xmlNodePtr spoDN)
   }
 }
 
+xmlNodePtr
+QMCGaussianParserBase::createMultiDeterminantSetQP()
+{
+    xmlNodePtr multislaterdet = xmlNewNode(NULL,(const xmlChar*)"multideterminant");
+    xmlNewProp(multislaterdet,(const xmlChar*)"optimize",(const xmlChar*)"yes");
+    xmlNewProp(multislaterdet,(const xmlChar*)"spo_up",(const xmlChar*)"spo-up");
+    xmlNewProp(multislaterdet,(const xmlChar*)"spo_dn",(const xmlChar*)"spo-dn");
+    xmlNodePtr detlist = xmlNewNode(NULL,(const xmlChar*)"detlist");
+    std::ostringstream nstates,cisize,cinca,cincb,cinea,cineb,ci_thr;
+    cisize <<ci_size;
+    nstates <<ci_nstates;
+    cinca <<ci_nca;
+    cincb <<ci_ncb;
+    cinea <<ci_nea;
+    cineb <<ci_neb;
+    ci_thr <<ci_threshold;
+    xmlNewProp(detlist,(const xmlChar*)"size",(const xmlChar*)cisize.str().c_str());
+    xmlNewProp(detlist,(const xmlChar*)"type",(const xmlChar*)"DETS");
+    xmlNewProp(detlist,(const xmlChar*)"nca",(const xmlChar*)cinca.str().c_str());
+    xmlNewProp(detlist,(const xmlChar*)"ncb",(const xmlChar*)cincb.str().c_str());
+    xmlNewProp(detlist,(const xmlChar*)"nea",(const xmlChar*)cinea.str().c_str());
+    xmlNewProp(detlist,(const xmlChar*)"neb",(const xmlChar*)cineb.str().c_str());
+    xmlNewProp(detlist,(const xmlChar*)"nstates",(const xmlChar*)nstates.str().c_str());
+    xmlNewProp(detlist,(const xmlChar*)"cutoff",(const xmlChar*)ci_thr.str().c_str());
+    if(CIcoeff.size() == 0)
+    {
+      cerr<<" CI configuration list is empty. \n";
+      exit(101);
+    }
+    if(CIcoeff.size() != CIalpha.size() || CIcoeff.size() != CIbeta.size())
+    {
+      cerr<<" Problem with CI configuration lists. \n";
+      exit(102);
+    }
+    int iv=0;
+    for(int i=0; i<CIcoeff.size(); i++)
+    {
+        xmlNodePtr ci = xmlNewNode(NULL,(const xmlChar*)"ci");
+        std::ostringstream coeff;
+        std::ostringstream qc_coeff;
+        qc_coeff<<CIcoeff[i];
+        coeff<<CIcoeff[i];
+       /*
+        if(zeroCI && i==0)
+        {
+          coeff<<1.0;
+        }
+        else
+          if(zeroCI && i>0)
+          {
+            coeff<<0.0;
+          }
+          else
+          {
+            coeff<<CIcoeff[i];
+          }
+       */
+        std::ostringstream tag;
+        tag<<"CIcoeff_" <<iv++;
+        xmlNewProp(ci,(const xmlChar*)"id",(const xmlChar*) tag.str().c_str());
+        xmlNewProp(ci,(const xmlChar*)"coeff",(const xmlChar*) coeff.str().c_str());
+        xmlNewProp(ci,(const xmlChar*)"qc_coeff",(const xmlChar*) qc_coeff.str().c_str());
+        xmlNewProp(ci,(const xmlChar*)"alpha",(const xmlChar*) CIalpha[i].substr(0,ci_nstates).c_str());
+        xmlNewProp(ci,(const xmlChar*)"beta",(const xmlChar*) CIbeta[i].substr(0,ci_nstates).c_str());
+        xmlAddChild(detlist,ci);
+      }
+    xmlAddChild(multislaterdet,detlist);
+  return multislaterdet;
+  }
 
 xmlNodePtr
 QMCGaussianParserBase::createMultiDeterminantSetVSVB()
@@ -1169,7 +1245,7 @@ void QMCGaussianParserBase::dump(const string& psi_tag,
       xmlNewProp(detPtr,(const xmlChar*)"type",(const xmlChar*)"MolecularOrbital");
       xmlNewProp(detPtr,(const xmlChar*)"transform",(const xmlChar*)"yes");
       xmlNewProp(detPtr,(const xmlChar*)"source",(const xmlChar*)ion_tag.c_str());
-      if (VSVB==true)
+      if (DoCusp==true)
          xmlNewProp(detPtr,(const xmlChar*)"cuspCorrection",(const xmlChar*)"yes");
 
       {
@@ -1186,11 +1262,17 @@ void QMCGaussianParserBase::dump(const string& psi_tag,
           xmlAddChild(detPtr,spodnPtr);
           xmlNodePtr multislaterdetPtr=NULL;
 
-          if (VSVB)        
-             multislaterdetPtr = createMultiDeterminantSetVSVB();
-          else
+
+          if (VSVB!=true && QP!=true) 
              multislaterdetPtr = createMultiDeterminantSet();
-      
+          else
+          {
+             if (VSVB)        
+                multislaterdetPtr = createMultiDeterminantSetVSVB();
+             else
+                multislaterdetPtr = createMultiDeterminantSetQP();
+
+          }
   
           xmlAddChild(detPtr,multislaterdetPtr);
         }
@@ -1245,8 +1327,24 @@ void QMCGaussianParserBase::Fmodump(const string& psi_tag,
                                  std::string Mytag)
 {
   cout << " QMCGaussianParserBase::Fmodump " << endl;
-   {
+   if (DoCusp==true){
+      // Creating a ptcl file with no esp for Cusp computation // 
+      {
    
+       xmlDocPtr doc_p = xmlNewDoc((const xmlChar*)"1.0");
+       xmlNodePtr qm_root_p = xmlNewNode(NULL, BAD_CAST "qmcsystem");
+       xmlAddChild(qm_root_p,createElectronSet());
+
+     for(int i=0 ; i<NumberOfAtoms; i++)
+       xmlAddChild(qm_root_p,createIonSet());
+     for(int i=0 ; i<NumberOfAtoms; i++)
+       xmlDocSetRootElement(doc_p, qm_root_p);
+       std::string fname = Mytag+"-cusp.ptcl.xml";
+       xmlSaveFormatFile(fname.c_str(),doc_p,1);
+       xmlFreeDoc(doc_p);
+      }
+   }
+   {
     xmlDocPtr doc_p = xmlNewDoc((const xmlChar*)"1.0");
     xmlNodePtr qm_root_p = xmlNewNode(NULL, BAD_CAST "qmcsystem");
     xmlAddChild(qm_root_p,createElectronSet());
@@ -1280,13 +1378,13 @@ void QMCGaussianParserBase::Fmodump(const string& psi_tag,
     xmlNewProp(wfPtr,(const xmlChar*)"id",(const xmlChar*)psi_tag.c_str());
     xmlNewProp(wfPtr,(const xmlChar*)"target",(const xmlChar*)"e");
     {
-
       xmlNodePtr detPtr = xmlNewNode(NULL, (const xmlChar*) "determinantset");
       xmlNewProp(detPtr,(const xmlChar*)"name",(const xmlChar*)"LCAOBSet");
       xmlNewProp(detPtr,(const xmlChar*)"type",(const xmlChar*)"MolecularOrbital");
       xmlNewProp(detPtr,(const xmlChar*)"transform",(const xmlChar*)"yes");
       xmlNewProp(detPtr,(const xmlChar*)"source",(const xmlChar*)ion_tag.c_str());
-      xmlNewProp(detPtr,(const xmlChar*)"cuspCorrection",(const xmlChar*)"yes");
+      if(DoCusp==true)
+          xmlNewProp(detPtr,(const xmlChar*)"cuspCorrection",(const xmlChar*)"yes");
       {
         xmlNodePtr bsetPtr = createBasisSet();
         xmlAddChild(detPtr,bsetPtr);
@@ -1333,6 +1431,7 @@ void QMCGaussianParserBase::Fmodump(const string& psi_tag,
     }
     xmlAddChild(qm_root,wfPtr);
   }
+
   xmlDocSetRootElement(doc, qm_root);
   xmlXPathContextPtr m_context = xmlXPathNewContext(doc);
   xmlXPathObjectPtr result
@@ -1343,6 +1442,7 @@ void QMCGaussianParserBase::Fmodump(const string& psi_tag,
     {
       xmlNodePtr cur = result->nodesetval->nodeTab[ic];
       map2GridFunctors(cur);
+
     }
   }
   xmlXPathFreeObject(result);
