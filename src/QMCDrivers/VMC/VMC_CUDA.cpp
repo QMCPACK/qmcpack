@@ -138,6 +138,7 @@ bool VMCcuda::run()
     {
       ++step;
       ++CurrentStep;
+      W.resetCollectables();
       advanceWalkers();
       Psi.gradLapl(W, grad, lapl);
       H.evaluate (W, LocalEnergy);
@@ -312,6 +313,7 @@ bool VMCcuda::runWithDrift()
     {
       step++;
       CurrentStep++;
+      W.resetCollectables();
       advanceWalkersWithDrift();
       Psi.gradLapl(W, grad, lapl);
       H.evaluate (W, LocalEnergy);

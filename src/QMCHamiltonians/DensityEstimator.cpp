@@ -96,17 +96,19 @@ DensityEstimator::addEnergy(MCWalkerConfiguration &W,
     for (int iw=0; iw<nw; iw++)
     {
       Walker_t &w = *W.WalkerList[iw];
+      RealType weight=w.Weight/nw;
       for (int iat=0; iat<N; iat++)
       {
         PosType ru;
-        for (int dim=0; dim<OHMMS_DIM; dim++)
-        {
-          ru[dim]=(w.R[iat][dim]-density_min[dim])*ScaleFactor[dim];
-        }
+        ru=W.Lattice.toUnit(w.R[iat]);
+        // for (int dim=0; dim<OHMMS_DIM; dim++)
+        // {
+        //   ru[dim]=(w.R[iat][dim]-density_min[dim])*ScaleFactor[dim];
+        // }
         int i=static_cast<int>(DeltaInv[0]*(ru[0]-std::floor(ru[0])));
         int j=static_cast<int>(DeltaInv[1]*(ru[1]-std::floor(ru[1])));
         int k=static_cast<int>(DeltaInv[2]*(ru[2]-std::floor(ru[2])));
-        W.Collectables[getGridIndex(i,j,k)]+=1.0;
+        W.Collectables[getGridIndex(i,j,k)]+=weight;
       }
     }
   }
