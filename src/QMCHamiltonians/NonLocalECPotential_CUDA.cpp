@@ -103,7 +103,7 @@ NonLocalECPotential_CUDA::setupCUDA(ParticleSet &elecs)
 
 void NonLocalECPotential_CUDA::resizeCUDA(int nw)
 {
-  MaxPairs = 2 * NumElecs;
+  MaxPairs = 3 * NumElecs;
   // Note: this will not cover pathological systems in which all
   // the cores overlap
   Elecs_GPU.resize(MaxPairs*nw);
@@ -191,8 +191,20 @@ void NonLocalECPotential_CUDA::addEnergy(MCWalkerConfiguration &W,
          NumPairs_GPU.data(), walkers.size());
       }
       // Concatenate work into job list
-      RatioPos_host = RatioPos_GPU;
       NumPairs_host = NumPairs_GPU;
+      int ActualMaxPairs = MaxPairs;
+      for (int iw=0; iw<nw; iw++)
+        if (ActualMaxPairs < NumPairs_host[iw]) ActualMaxPairs = NumPairs_host[iw];
+      if (ActualMaxPairs > MaxPairs)
+      {
+        ostringstream o;
+        o << "ERROR: the actual maximum electrons-ion pairs is larger than the value 'MaxPairs' set in NonLocalECPotential_CUDA.cpp" << endl;
+        o << "       the actual number of maximum electrons-ion pairs is " << ActualMaxPairs << ", MaxPairs = " << MaxPairs << endl;
+        cerr << o.str();
+        cerr.flush();
+        abort();
+      }
+      RatioPos_host = RatioPos_GPU;
       Elecs_host    = Elecs_GPU;
       CosTheta_host = CosTheta_GPU;
       Dist_host      = Dist_GPU;
