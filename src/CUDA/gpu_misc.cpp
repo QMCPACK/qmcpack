@@ -16,6 +16,8 @@ cudaEvent_t ratioSyncOneBodyEvent;
 cudaEvent_t ratioSyncTwoBodyEvent;
 cublasHandle_t cublasHandle;
 
+size_t MaxGPUSpineSizeMB;
+int rank;
 
 void
 initCUDAStreams()

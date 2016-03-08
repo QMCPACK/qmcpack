@@ -27,6 +27,8 @@ extern cudaEvent_t ratioSyncTwoBodyEvent;
 
 extern cublasHandle_t cublasHandle;
 
+extern size_t MaxGPUSpineSizeMB;
+extern int rank;
 
 void initCUDAStreams();
 void initCUDAEvents();

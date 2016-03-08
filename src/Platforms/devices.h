@@ -13,6 +13,8 @@
 #include <unistd.h>
 #include <CUDA/gpu_misc.h>
 
+#define MAX_GPU_SPLINE_SIZE_MB 81920
+
 inline int get_device_num()
 {
   const int MAX_LEN = 200;
@@ -81,8 +83,10 @@ inline void Finalize_CUDA()
 inline void Init_CUDA(int rank, int size)
 {
   int devNum = get_device_num();
-  cerr << "Rank = " << rank
+  ostringstream o;
+  o << "Rank = " << rank
        << "  My device number = " << devNum << endl;
+  cerr << o.str();
   int num_appropriate = get_num_appropriate_devices();
   if (devNum >= num_appropriate)
   {
@@ -95,6 +99,9 @@ inline void Init_CUDA(int rank, int size)
   gpu::initCUDAStreams();
   gpu::initCUDAEvents();
   gpu::initCublas();
+  gpu::MaxGPUSpineSizeMB = MAX_GPU_SPLINE_SIZE_MB;
+  gpu::rank=rank;
+  if(!rank) cerr << "Default MAX_GPU_SPLINE_SIZE_MB is " << gpu::MaxGPUSpineSizeMB << " MB." << endl;
   return;
   int numGPUs;
   cudaGetDeviceCount(&numGPUs);
