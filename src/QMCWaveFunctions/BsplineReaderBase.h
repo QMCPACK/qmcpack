@@ -185,6 +185,9 @@ struct BsplineReaderBase
   void initialize_spo2band(int spin, const vector<BandInfo>& bigspace, SPOSetInfo& sposet,
       vector<int>& band2spo);
 
+  /** export the MultiSpline to the old class EinsplineSetExtended for the GPU calculation*/
+  virtual void export_MultiSpline(multi_UBspline_3d_z **target)=0;
+  virtual void export_MultiSpline(multi_UBspline_3d_d **target)=0;
 };
 
 }

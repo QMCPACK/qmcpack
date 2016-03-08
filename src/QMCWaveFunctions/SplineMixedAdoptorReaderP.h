@@ -64,6 +64,16 @@ struct SplineMixedAdoptorReader: public BsplineReaderBase
     FFTplan=NULL;
   }
 
+  void export_MultiSpline(multi_UBspline_3d_z** target)
+  {
+    APP_ABORT("SplineMixedAdoptorReader::export_MultiSpline(multi_UBspline_3d_z* target) should not be called");
+  }
+
+  void export_MultiSpline(multi_UBspline_3d_d** target)
+  {
+    *target = (multi_UBspline_3d_d*) bspline->MultiSpline;
+  }
+
   /** fft and spline a band
    * @param ti twist index
    * @param iorb orbital index

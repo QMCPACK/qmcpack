@@ -71,6 +71,17 @@ struct MultiGridBsplineSetReader: public BsplineReaderBase
     FFTplan=NULL;
   }
 
+  void export_MultiSpline(multi_UBspline_3d_z** target)
+  {
+    *target = new multi_UBspline_3d_z;
+    APP_ABORT("MultiGridBsplineSetReader::export_MultiSpline(multi_UBspline_3d_z* target) not ready");
+  }
+
+  void export_MultiSpline(multi_UBspline_3d_d** target)
+  {
+    *target = (multi_UBspline_3d_d*) bspline->MultiSpline;
+  }
+
   /** fft and spline a band
    * @param ti twist index
    * @param iorb orbital index
