@@ -408,6 +408,7 @@ EinsplineSetBuilder::AnalyzeTwists2()
     if (dot(ks-kp, ks-kp) > 1.0e-6)
     {
       app_error() << "Primitive and super k-points do not agree.  Error in coding.\n";
+      app_error().flush();
       APP_ABORT("EinsplineSetBuilder::AnalyzeTwists2");
     }
     PosType frac = FracPart (superTwist);
@@ -500,6 +501,7 @@ EinsplineSetBuilder::AnalyzeTwists2()
     {
       app_error() << "Cannot use this super twist with real wavefunctions.\n"
                   << "Please recompile with QMC_COMPLEX=1.\n";
+      app_error().flush();
       APP_ABORT("EinsplineSetBuilder::AnalyzeTwists2");
     }
   }
@@ -511,13 +513,15 @@ EinsplineSetBuilder::AnalyzeTwists2()
   {
     // First make sure we have enough points
     if (superSets[si].size() != numTwistsNeeded)
-      {
-	char buf[1000];
-	
-	snprintf (buf, 1000, "Super twist %d should own %d k-points, but owns %d.\n",
-		 si, numTwistsNeeded, static_cast<int>(superSets[si].size()));
-	app_log() << buf;
-      APP_ABORT("EinsplineSetBuilder::AnalyzeTwists2");
+    {
+      char buf[1000];
+      snprintf (buf, 1000, "Super twist %d should own %d k-points, but owns %d.\n",
+               si, numTwistsNeeded, static_cast<int>(superSets[si].size()));
+      app_error() << buf;
+      if(si==TwistNum)
+        {APP_ABORT("EinsplineSetBuilder::AnalyzeTwists2");}
+      else
+        continue;
     }
     // Now, make sure they are all distinct
     int N = superSets[si].size();
