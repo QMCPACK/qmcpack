@@ -100,6 +100,7 @@ public:
   gpu::host_vector<CUDA_PRECISION*> hostlist;
   gpu::host_vector<CUDA_COULOMB_PRECISION*> hostlist_AA;
   gpu::host_vector<TinyVector<CUDA_PRECISION, OHMMS_DIM> > R_host;
+  gpu::host_vector<TinyVector<CudaValueType, OHMMS_DIM> > Grad_host;
   void allocateGPU(size_t buffersize);
   void copyWalkersToGPU(bool copyGrad=false);
   void copyWalkerGradToGPU();

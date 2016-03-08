@@ -65,6 +65,12 @@ struct Walker
   typedef typename t_traits::RealType RealType;
   /** typedef for value data type. */
   typedef typename t_traits::ValueType ValueType;
+#ifdef QMC_CUDA
+  /** typedef for real data type */
+  typedef typename t_traits::CudaRealType CudaRealType;
+  /** typedef for value data type. */
+  typedef typename t_traits::CudaValueType CudaValueType;
+#endif
   /** array of particles */
   typedef typename p_traits::ParticlePos_t ParticlePos_t;
   /** array of gradients */
@@ -127,7 +133,8 @@ struct Walker
   cuda_Buffer_t cuda_DataSet;
   // Note that R_GPU has size N+1.  The last element contains the
   // proposed position for single-particle moves.
-  gpu::device_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > R_GPU, Grad_GPU;
+  gpu::device_vector<TinyVector<CudaRealType,OHMMS_DIM> > R_GPU;
+  gpu::device_vector<TinyVector<CudaValueType,OHMMS_DIM> > Grad_GPU;
   gpu::device_vector<CUDA_PRECISION> Lap_GPU;
   gpu::device_vector<CUDA_COULOMB_PRECISION> Rhok_GPU;
   int k_species_stride;
@@ -405,7 +412,7 @@ struct Walker
     bsize += 3 *sizeof (int); // size and N and M
     bsize += cuda_DataSize               * sizeof(CUDA_PRECISION); // cuda_DataSet
     bsize += R.size()        * OHMMS_DIM * sizeof(CUDA_PRECISION); // R_GPU
-    bsize += R.size()        * OHMMS_DIM * sizeof(CUDA_PRECISION); // Grad_GPU
+    bsize += R.size()        * OHMMS_DIM * sizeof(CudaValueType); // Grad_GPU
     bsize += R.size()        * 1         * sizeof(CUDA_PRECISION); // Lap_GPU
     bsize += Rhok_GPU.size()             * sizeof(CUDA_COULOMB_PRECISION); // Rhok
 #endif
@@ -437,6 +444,7 @@ struct Walker
     std::vector<CUDA_PRECISION> host_data;
     std::vector<CUDA_COULOMB_PRECISION> host_rhok;
     std::vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > R_host;
+    std::vector<TinyVector<CudaValueType,OHMMS_DIM> > Grad_host;
     std::vector<CUDA_PRECISION> host_lapl;
     cuda_DataSet.copyFromGPU(host_data);
     R_GPU.copyFromGPU(R_host);
@@ -446,8 +454,8 @@ struct Walker
     m.Pack(N);
     m.Pack(&(host_data[0]), host_data.size());
     m.Pack(&(R_host[0][0]), OHMMS_DIM*R_host.size());
-    Grad_GPU.copyFromGPU(R_host);
-    m.Pack(&(R_host[0][0]), OHMMS_DIM*R_host.size());
+    Grad_GPU.copyFromGPU(Grad_host);
+    m.Pack(&(Grad_host[0][0]), OHMMS_DIM*Grad_host.size());
     Lap_GPU.copyFromGPU(host_lapl);
     m.Pack(&(host_lapl[0]), host_lapl.size());
     Rhok_GPU.copyFromGPU(host_rhok);

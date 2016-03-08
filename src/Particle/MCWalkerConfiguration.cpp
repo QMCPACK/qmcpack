@@ -625,13 +625,13 @@ void MCWalkerConfiguration::copyWalkersToGPU(bool copyGrad)
 
 void MCWalkerConfiguration::copyWalkerGradToGPU()
 {
-  R_host.resize(WalkerList[0]->R.size());
+  Grad_host.resize(WalkerList[0]->R.size());
   for (int iw=0; iw<WalkerList.size(); iw++)
   {
     for (int i=0; i<WalkerList[iw]->size(); i++)
       for (int dim=0; dim<OHMMS_DIM; dim++)
-        R_host[i][dim] = WalkerList[iw]->G[i][dim];
-    WalkerList[iw]->Grad_GPU = R_host;
+        Grad_host[i][dim] = WalkerList[iw]->G[i][dim];
+    WalkerList[iw]->Grad_GPU = Grad_host;
   }
 }
 
