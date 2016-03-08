@@ -31,11 +31,21 @@ void apply_phase_factors(float kPoints[], int makeTwoCopies[],
                          float *GL_in[], float *GL_out[],
                          int num_splines, int num_walkers, int row_stride);
 
+void apply_phase_factors(float kPoints[], int makeTwoCopies[], int TwoCopiesIndex[],
+                         float pos[], float *phi_in[], float *phi_out[],
+                         float *GL_in[], float *GL_out[],
+                         int num_splines, int num_walkers, int row_stride);
+
 void apply_phase_factors(double kPoints[], int makeTwoCopies[],
                          double pos[], double *phi_in[], double *phi_out[],
                          int num_splines, int num_walkers);
 
 void apply_phase_factors(double kPoints[], int makeTwoCopies[],
+                         double pos[], double *phi_in[], double *phi_out[],
+                         double *GL_in[], double *GL_out[],
+                         int num_splines, int num_walkers, int row_stride);
+
+void apply_phase_factors(double kPoints[], int makeTwoCopies[], int TwoCopiesIndex[],
                          double pos[], double *phi_in[], double *phi_out[],
                          double *GL_in[], double *GL_out[],
                          int num_splines, int num_walkers, int row_stride);
@@ -151,9 +161,7 @@ inline void
 eval_multi_multi_UBspline_3d_cuda (multi_UBspline_3d_d_cuda *spline,
                                    double *pos, double *sign, double *phi[], int N)
 {
-  app_error() << "eval_multi_multi_UBspline_3d_cuda (multi_UBspline_3d_d_cuda *spline,"
-              << "double *pos, double *sign, double *phi[], int N) not implemented" << endl;
-  abort();
+  eval_multi_multi_UBspline_3d_d_sign_cuda  (spline, pos, sign, phi, N);
 }
 
 
@@ -177,10 +185,8 @@ inline void eval_multi_multi_UBspline_3d_vgl_cuda
 (multi_UBspline_3d_d_cuda *spline, double *pos, double *sign, double Linv[],
  double *phi[], double *grad_lapl[], int N, int row_stride)
 {
-  app_error() << "eval_multi_multi_UBspline_3d_vgl_cuda"
-              << "(multi_UBspline_3d_d_cuda *spline, double *pos, double *sign, double Linv[],"
-              << " double *phi[], double *grad_lapl[], int N, int row_stride) not implemented" << endl;
-  abort();
+  eval_multi_multi_UBspline_3d_d_vgl_sign_cuda
+  (spline, pos, sign, Linv, phi, grad_lapl, N, row_stride);
 }
 
 
@@ -366,10 +372,18 @@ EinsplineSetExtended<T>::resize_cuda(int numWalkers)
   CudaGradLaplPointers = hostGradLaplPointers;
   int M = MakeTwoCopies.size();
   CudaMakeTwoCopies.resize(M);
+  CudaTwoCopiesIndex.resize(M);
   gpu::host_vector<int> hostMakeTwoCopies(M);
+  gpu::host_vector<int> hostTwoCopiesIndex(M);
+  int TwoCopiesIndexCounter = 0;
   for (int i=0; i<M; i++)
+  {
     hostMakeTwoCopies[i] = MakeTwoCopies[i];
+    hostTwoCopiesIndex[i] = TwoCopiesIndexCounter;
+    TwoCopiesIndexCounter = MakeTwoCopies[i] ? TwoCopiesIndexCounter+2 : TwoCopiesIndexCounter+1;
+  }
   CudaMakeTwoCopies = hostMakeTwoCopies;
+  CudaTwoCopiesIndex = hostTwoCopiesIndex;
   CudakPoints.resize(M);
   CudakPoints_reduced.resize(M);
   gpu::host_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > hostkPoints(M),
@@ -467,12 +481,12 @@ EinsplineSetExtended<double>::evaluate
   eval_multi_multi_UBspline_3d_vgl_cuda
   (CudaMultiSpline, (CudaRealType*)cudapos.data(), cudaSign.data(),
    Linv_cuda.data(), phi.data(), grad_lapl.data(), N, row_stride);
-  // gpu::host_vector<CudaRealType*> pointers;
-  // pointers = phi;
-  // CudaRealType data[N];
-  // cudaMemcpy (data, pointers[0], N*sizeof(CudaRealType), cudaMemcpyDeviceToHost);
-  // for (int i=0; i<N; i++)
-  //   fprintf (stderr, "%1.12e\n", data[i]);
+  //gpu::host_vector<CudaRealType*> pointers;
+  //pointers = phi;
+  //CudaRealType data[N];
+  //cudaMemcpy (data, pointers[0], N*sizeof(CudaRealType), cudaMemcpyDeviceToHost);
+  //for (int i=0; i<N; i++)
+  //  fprintf (stderr, "%1.12e\n", data[i]);
 }
 
 
@@ -529,8 +543,17 @@ EinsplineSetExtended<complex<double> >::evaluate
   for (int iw=0; iw < N; iw++)
     hostPos[iw] = newpos[iw];
   cudapos = hostPos;
+  /*
   apply_phase_factors ((CudaRealType*) CudakPoints.data(),
                        CudaMakeTwoCopies.data(),
+                       (CudaRealType*)cudapos.data(),
+                       (CudaRealType**)CudaValuePointers.data(), phi.data(),
+                       (CudaRealType**)CudaGradLaplPointers.data(), grad_lapl.data(),
+                       CudaMultiSpline->num_splines,  walkers.size(), row_stride);
+  */
+  apply_phase_factors ((CudaRealType*) CudakPoints.data(),
+                       CudaMakeTwoCopies.data(),
+                       CudaTwoCopiesIndex.data(),
                        (CudaRealType*)cudapos.data(),
                        (CudaRealType**)CudaValuePointers.data(), phi.data(),
                        (CudaRealType**)CudaGradLaplPointers.data(), grad_lapl.data(),
@@ -1666,8 +1689,8 @@ EinsplineSetExtended<double>::initGPU()
   for (int i=0; i<3; i++)
     for (int j=0; j<3; j++)
     {
-      L_host[i*3+j]    = (float)PrimLattice.R(i,j);
-      Linv_host[i*3+j] = (float)PrimLattice.G(i,j);
+      L_host[i*3+j]    = PrimLattice.R(i,j);
+      Linv_host[i*3+j] = PrimLattice.G(i,j);
     }
   L_cuda    = L_host;
   Linv_cuda = Linv_host;
@@ -1690,8 +1713,8 @@ EinsplineSetExtended<complex<double> >::initGPU()
   for (int i=0; i<3; i++)
     for (int j=0; j<3; j++)
     {
-      L_host[i*3+j]    = (float)PrimLattice.R(i,j);
-      Linv_host[i*3+j] = (float)PrimLattice.G(i,j);
+      L_host[i*3+j]    = PrimLattice.R(i,j);
+      Linv_host[i*3+j] = PrimLattice.G(i,j);
     }
   L_cuda    = L_host;
   Linv_cuda = Linv_host;

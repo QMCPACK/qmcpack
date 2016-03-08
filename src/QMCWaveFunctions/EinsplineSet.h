@@ -291,6 +291,7 @@ protected:
   void resize_cuda(int numWalkers);
   // Cuda equivalent
   gpu::device_vector<int> CudaMakeTwoCopies;
+  gpu::device_vector<int> CudaTwoCopiesIndex;
   // Cuda equivalent
   gpu::device_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM > > CudakPoints,
       CudakPoints_reduced;
@@ -445,6 +446,7 @@ public:
     CudaValuePointers("EinsplineSetExtended::CudaValuePointers"),
     CudaGradLaplPointers("EinsplineSetExtended::CudaGradLaplPointers"),
     CudaMakeTwoCopies("EinsplineSetExtended::CudaMakeTwoCopies"),
+    CudaTwoCopiesIndex("EinsplineSetExtended::CudaTwoCopiesIndex"),
     CudakPoints("EinsplineSetExtended::CudakPoints"),
     CudakPoints_reduced("EinsplineSetExtended::CudakPoints_reduced")
 #endif

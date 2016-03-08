@@ -316,62 +316,112 @@ void phase_factor_kernel (T *kPoints, int *makeTwoCopies,
   }
 }
 
-// T s, c;
-// int end = min (BS, num_splines-block*BS);
-// for (int i=0; i<end; i++) {
-//   // Compute e^{-ikr}
-//   T phase = -(pos_s[tid][0]*kPoints_s[i][0] +
-// 		  pos_s[tid][1]*kPoints_s[i][1] +
-// 		  pos_s[tid][2]*kPoints_s[i][2]);
-//   sincosf(phase, &s, &c);
-//   T phi_real = in_shared[tid][0][2*i]*c - in_shared[tid][0][2*i+1]*s;
-//   T phi_imag = in_shared[tid][0][2*i]*s + in_shared[tid][0][2*i+1]*c;
-//   T grad_real[3], grad_imag[3], lapl_real, lapl_imag;
-//   // for (int dim=0; dim<3; dim++) {
-//   // 	T re, im;
-//   // 	re = grad_lapl_in_shared[tid][dim][2*i+0] + kPoints_s[i][dim]*in_shared[tid][2*i+1];
-//   // 	im = grad_lapl_in_shared[tid][dim][2*i+1] - kPoints_s[i][dim]*in_shared[tid][2*i+0];
-//   // 	grad_real[dim] = re*c - im*s;
-//   // 	grad_imag[dim] = re*s + im*c;
-//   // }
 
-//   // grad_lapl_out_shared[tid][0][outIndex] = grad_real[0];
-//   // grad_lapl_out_shared[tid][1][outIndex] = grad_real[1];
-//   // grad_lapl_out_shared[tid][2][outIndex] = grad_real[2];
-//   // out_shared[tid][outIndex++] = phi_real;
-//   __syncthreads();
-//   if (outIndex == BS) {
-// 	for (int j=0; j<numWrite; j++)
-// 	  phi_out_ptr[j][outBlock*BS+tid]= out_shared[j][tid];
-// 	outIndex = 0;
-// 	outBlock++;
-//   }
-//   __syncthreads();
-//   if (m2c[i]) {
-// 	grad_lapl_out_shared[tid][0][outIndex] = grad_imag[0];
-// 	grad_lapl_out_shared[tid][1][outIndex] = grad_imag[1];
-// 	grad_lapl_out_shared[tid][2][outIndex] = grad_imag[2];
-// 	out_shared[tid][outIndex++] = phi_imag;
-// 	__syncthreads();
-// 	if (outIndex == BS) {
-// 	  for (int j=0; j<numWrite; j++)
-// 	    phi_out_ptr[j][outBlock*BS+tid] = out_shared[j][tid];
-// 	  outIndex = 0;
-// 	  outBlock++;
-// 	}
-//   }
-//   __syncthreads();
-// }
-
-//   }
-
-//   // Write remainining outputs
-//   for (int i=0; i<numWrite; i++)
-//     if (tid < outIndex)
-//       phi_out_ptr[i][outBlock*BS+tid] = out_shared[i][tid];
-// }
-
-
+template<typename T, int BS> __global__
+void phase_factor_kernel (T *kPoints, int *makeTwoCopies,
+                          int *TwoCopiesIndex,
+                          T *pos, T **phi_in, T **phi_out,
+                          T **grad_lapl_in, T **grad_lapl_out,
+                          int num_splines, int num_walkers,
+                          int row_stride)
+{
+  T in_shared[5][2], kPoints_s[3];
+  __shared__ T  pos_s[3];
+  __shared__ T *my_phi_in, *my_phi_out, *my_GL_in, *my_GL_out;
+  int tid = threadIdx.x;
+  if (tid == 0)
+  {
+    my_phi_in  = phi_in[blockIdx.x];
+    my_phi_out = phi_out[blockIdx.x];
+    my_GL_in   = grad_lapl_in[blockIdx.x];
+    my_GL_out  = grad_lapl_out[blockIdx.x];
+  }
+  if (tid < 3)
+    pos_s[tid] = pos[3*blockIdx.x+tid];
+  __syncthreads();
+  int nb = (num_splines + BS-1)/BS;
+  __shared__ int m2c[BS], m2cIndex[BS];
+  for (int block=0; block<nb; block++)
+  {
+    int off = block*BS + tid;
+    if (off < num_splines)
+    {
+      // Load kpoints
+      kPoints_s[0] = kPoints[off*3  ];
+      kPoints_s[1] = kPoints[off*3+1];
+      kPoints_s[2] = kPoints[off*3+2];
+      // Load phi_in
+      in_shared[0][0] = my_phi_in[off*2];
+      in_shared[0][1] = my_phi_in[off*2+1];
+      for (int j=0; j<4; j++)
+      {
+        in_shared[j+1][0] = my_GL_in[2*j*num_splines+2*off  ];
+        in_shared[j+1][1] = my_GL_in[2*j*num_splines+2*off+1];
+      }
+      // Load makeTwoCopies
+      m2c[tid] = makeTwoCopies[off];
+      m2cIndex[tid] = TwoCopiesIndex[off];
+    }
+    // Now add on phase factors
+    T phase = -(pos_s[0]*kPoints_s[0] +
+                pos_s[1]*kPoints_s[1] +
+                pos_s[2]*kPoints_s[2]);
+    T s, c;
+    sincos (phase, &s, &c);
+    T u_re, u_im, gradu_re[3], gradu_im[3], laplu_re, laplu_im;
+    u_re        = in_shared[0][0];
+    u_im        = in_shared[0][1];
+    gradu_re[0] = in_shared[1][0];
+    gradu_im[0] = in_shared[1][1];
+    gradu_re[1] = in_shared[2][0];
+    gradu_im[1] = in_shared[2][1];
+    gradu_re[2] = in_shared[3][0];
+    gradu_im[2] = in_shared[3][1];
+    laplu_re    = in_shared[4][0];
+    laplu_im    = in_shared[4][1];
+    in_shared[0][0] = u_re*c - u_im*s;
+    in_shared[0][1] = u_re*s + u_im*c;
+    // Gradient = e^(-ikr)*(-i*u*k + gradu)
+    for (int dim=0; dim<3; dim++)
+    {
+      T gre, gim;
+      gre = gradu_re[dim] + kPoints_s[dim]*u_im;
+      gim = gradu_im[dim] - kPoints_s[dim]*u_re;
+      in_shared[dim+1][0] = gre*c - gim*s;
+      in_shared[dim+1][1] = gre*s + gim*c;
+    }
+    // Add phase contribution to laplacian
+    T k2 = (kPoints_s[0]*kPoints_s[0] +
+            kPoints_s[1]*kPoints_s[1] +
+            kPoints_s[2]*kPoints_s[2]);
+    T lre = laplu_re - k2*u_re + 2.0*(kPoints_s[0]*gradu_im[0]+
+                                      kPoints_s[1]*gradu_im[1]+
+                                      kPoints_s[2]*gradu_im[2]);
+    T lim = laplu_im - k2*u_im - 2.0*(kPoints_s[0]*gradu_re[0]+
+                                      kPoints_s[1]*gradu_re[1]+
+                                      kPoints_s[2]*gradu_re[2]);
+    in_shared[4][0] = lre*c - lim*s;
+    in_shared[4][1] = lre*s + lim*c;
+    // Now prepare the output buffer
+    int end = min (BS, num_splines - block*BS);
+    if ( tid < end )
+    {
+      my_phi_out[              m2cIndex[tid]] = in_shared[0][0];
+      my_GL_out[0*row_stride + m2cIndex[tid]] = in_shared[1][0];
+      my_GL_out[1*row_stride + m2cIndex[tid]] = in_shared[2][0];
+      my_GL_out[2*row_stride + m2cIndex[tid]] = in_shared[3][0];
+      my_GL_out[3*row_stride + m2cIndex[tid]] = in_shared[4][0];
+      if (m2c[tid])
+      {
+        my_phi_out[              m2cIndex[tid]+1] = in_shared[0][1];
+        my_GL_out[0*row_stride + m2cIndex[tid]+1] = in_shared[1][1];
+        my_GL_out[1*row_stride + m2cIndex[tid]+1] = in_shared[2][1];
+        my_GL_out[2*row_stride + m2cIndex[tid]+1] = in_shared[3][1];
+        my_GL_out[3*row_stride + m2cIndex[tid]+1] = in_shared[4][1];
+      }
+    }
+  }
+}
 
 #include <cstdio>
 #include <complex>
@@ -437,6 +487,27 @@ void apply_phase_factors(float kPoints[], int makeTwoCopies[],
    GL_in, GL_out, num_splines, num_walkers, row_stride);
 }
 
+void apply_phase_factors(float kPoints[], int makeTwoCopies[], int TwoCopiesIndex[],
+                         float pos[], float *phi_in[], float *phi_out[],
+                         float *GL_in[], float *GL_out[],
+                         int num_splines, int num_walkers, int row_stride)
+{
+  const int BS = 128;
+  dim3 dimBlock(BS);
+  dim3 dimGrid (num_walkers);
+  phase_factor_kernel<float,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
+  (kPoints, makeTwoCopies, TwoCopiesIndex, pos, phi_in, phi_out,
+   GL_in, GL_out, num_splines, num_walkers, row_stride);
+  /*
+  const int BS = 32;
+  dim3 dimBlock(BS);
+  dim3 dimGrid (num_walkers);
+  phase_factor_kernel<float,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
+  (kPoints, makeTwoCopies, pos, phi_in, phi_out,
+   GL_in, GL_out, num_splines, num_walkers, row_stride);
+  */
+}
+
 void apply_phase_factors(double kPoints[], int makeTwoCopies[],
                          double pos[], double *phi_in[], double *phi_out[],
                          int num_splines, int num_walkers)
@@ -459,5 +530,18 @@ void apply_phase_factors(double kPoints[], int makeTwoCopies[],
   dim3 dimGrid (num_walkers);
   phase_factor_kernel<double,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
   (kPoints, makeTwoCopies, pos, phi_in, phi_out,
+   GL_in, GL_out, num_splines, num_walkers, row_stride);
+}
+
+void apply_phase_factors(double kPoints[], int makeTwoCopies[], int TwoCopiesIndex[],
+                         double pos[], double *phi_in[], double *phi_out[],
+                         double *GL_in[], double *GL_out[],
+                         int num_splines, int num_walkers, int row_stride)
+{
+  const int BS = 128;
+  dim3 dimBlock(BS);
+  dim3 dimGrid (num_walkers);
+  phase_factor_kernel<double,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
+  (kPoints, makeTwoCopies, TwoCopiesIndex, pos, phi_in, phi_out,
    GL_in, GL_out, num_splines, num_walkers, row_stride);
 }
