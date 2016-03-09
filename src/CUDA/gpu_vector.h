@@ -269,16 +269,16 @@ public:
       resize(vec.size());
     }
 #ifdef QMC_CUDA
-    // fprintf (stderr, "In operator=, name=%s, size=%ld  vec.size()=%ld\n",
-    // 	       name.c_str(), size(), vec.size());
-    // fprintf (stderr, "this pointer = %p  vec pointer=%p\n",
-    // 	       data_pointer, &(vec[0]));
     cudaMemcpy (&((*this)[0]), &(vec[0]), vec.size()*sizeof(T),
                 cudaMemcpyHostToDevice);
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess)
     {
-      fprintf (stderr, "CUDA error in device_vector::operator=(host_vector) for %s:\n  %s\n",
+      fprintf (stderr, "In operator=, name=%s, size=%ld  vec.size()=%ld\n",
+     	       name.c_str(), size(), vec.size());
+      fprintf (stderr, "this pointer = %p  vec pointer=%p\n",
+     	       data_pointer, &(vec[0]));
+      fprintf (stderr, "CUDA error in device_vector::operator=(const host_vector<T> &vec) for %s:\n  %s\n",
                name.c_str(), cudaGetErrorString(err));
       abort();
     }
@@ -302,16 +302,16 @@ public:
       resize(vec.size());
     }
 #ifdef QMC_CUDA
-    // fprintf (stderr, "In operator=, name=%s, size=%ld  vec.size()=%ld\n",
-    // 	       name.c_str(), size(), vec.size());
-    // fprintf (stderr, "this pointer = %p  vec pointer=%p\n",
-    // 	       data_pointer, &(vec[0]));
     cudaMemcpyAsync (&((*this)[0]), &(vec[0]), vec.size()*sizeof(T),
                      cudaMemcpyHostToDevice, kernelStream);
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess)
     {
-      fprintf (stderr, "CUDA error in device_vector::operator=(host_vector) for %s:\n  %s\n",
+      fprintf (stderr, "In operator=, name=%s, size=%ld  vec.size()=%ld\n",
+     	       name.c_str(), size(), vec.size());
+      fprintf (stderr, "this pointer = %p  vec pointer=%p\n",
+     	       data_pointer, &(vec[0]));
+      fprintf (stderr, "CUDA error in device_vector::asyncCopy(const host_vector<T> &vec) for %s:\n  %s\n",
                name.c_str(), cudaGetErrorString(err));
       abort();
     }
@@ -334,16 +334,16 @@ public:
       resize(vec.size());
     }
 #ifdef QMC_CUDA
-    // fprintf (stderr, "In operator=, name=%s, size=%ld  vec.size()=%ld\n",
-    // 	       name.c_str(), size(), vec.size());
-    // fprintf (stderr, "this pointer = %p  vec pointer=%p\n",
-    // 	       data_pointer, &(vec[0]));
     cudaMemcpyAsync (&((*this)[0]), &(vec[0]), vec.size()*sizeof(T),
                      cudaMemcpyHostToDevice, kernelStream);
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess)
     {
-      fprintf (stderr, "CUDA error in device_vector::operator=(host_vector) for %s:\n  %s\n",
+      fprintf (stderr, "In operator=, name=%s, size=%ld  vec.size()=%ld\n",
+     	       name.c_str(), size(), vec.size());
+      fprintf (stderr, "this pointer = %p  vec pointer=%p\n",
+     	       data_pointer, &(vec[0]));
+      fprintf (stderr, "CUDA error in device_vector::asyncCopy(const std::vector<T, std::allocator<T> > &vec) for %s:\n  %s\n",
                name.c_str(), cudaGetErrorString(err));
       abort();
     }
@@ -357,16 +357,16 @@ public:
       vec.resize(size());
     }
 #ifdef QMC_CUDA
-    // fprintf (stderr, "In operator=, name=%s, size=%ld  vec.size()=%ld\n",
-    // 	       name.c_str(), size(), vec.size());
-    // fprintf (stderr, "this pointer = %p  vec pointer=%p\n",
-    // 	       data_pointer, &(vec[0]));
     cudaMemcpy ( &(vec[0]), &((*this)[0]), vec.size()*sizeof(T),
                  cudaMemcpyDeviceToHost);
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess)
     {
-      fprintf (stderr, "CUDA error in device_vector::operator=(host_vector) for %s:\n  %s\n",
+      fprintf (stderr, "In operator=, name=%s, size=%ld  vec.size()=%ld\n",
+     	       name.c_str(), size(), vec.size());
+      fprintf (stderr, "this pointer = %p  vec pointer=%p\n",
+     	       data_pointer, &(vec[0]));
+      fprintf (stderr, "CUDA error in device_vector::copyFromGPU(std::vector<T, std::allocator<T> > &vec) for %s:\n  %s\n",
                name.c_str(), cudaGetErrorString(err));
       abort();
     }
