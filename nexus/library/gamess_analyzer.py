@@ -218,6 +218,11 @@ class GamessAnalyzer(SimulationAnalyzer):
                 #end if
             #end for
         #end if
+        if log!=None and log.seek('COUPLED-CLUSTER ENERGY',0)!=-1:
+            line = log.readline()
+            energy['ccsd(t)'] = float( line.split()[-1] )
+        # end if
+
     #end def read_energy_components
 
 
