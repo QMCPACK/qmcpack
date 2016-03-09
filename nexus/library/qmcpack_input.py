@@ -2151,7 +2151,7 @@ class sk(QIxml):
 
 class gofr(QIxml):
     tag = 'estimator'
-    attributes = ['type','name','num_bin','rmax']
+    attributes = ['type','name','num_bin','rmax','source']
     identifier = 'name'
 #end class gofr
 
@@ -4385,6 +4385,8 @@ def generate_hamiltonian(name         = 'h0',
                         type='EnergyDensity',name='EDvoronoi',dynamic=ename,static=iname,
                         spacegrid = spacegrid(coord='voronoi')
                         )
+                elif estname=='pressure':
+                    est = pressure(type='Pressure')
                 else:
                     QmcpackInput.class_error('estimator '+estimator+' has not yet been enabled in generate_basic_input')
                 #end if
