@@ -154,6 +154,7 @@ def read_command_line():
             kec  = 'KEcorr',
             bw   = 'BlockWeight',
             ts   = 'TotalSamples',
+            fl   = 'Flux',
             )
 
         for qshort in sorted(quantities.keys()):

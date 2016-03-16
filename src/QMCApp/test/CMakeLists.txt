@@ -135,6 +135,7 @@ IF (NOT QMC_COMPLEX)
   LIST(APPEND LIH_SCALARS "totenergy" "-7.9873236457 0.003") # total energy
   LIST(APPEND LIH_SCALARS "eeenergy" "3.4888166386 0.0024") # e-e energy
   LIST(APPEND LIH_SCALARS "samples" "1600000 0.0") # samples
+  LIST(APPEND LIH_SCALARS "flux" "0.0 0.1") # sampling check, should be zero
 
   QMC_RUN_AND_CHECK(short-LiH_dimer_ae-vmc_hf_noj
                     "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_ae"
@@ -168,6 +169,7 @@ IF (NOT QMC_COMPLEX)
   LIST(APPEND LIH_PP_SCALARS "eeenergy" "0.4814819907 0.00061")
   LIST(APPEND LIH_PP_SCALARS "potential" "-1.3861755612 0.0013")
   LIST(APPEND LIH_PP_SCALARS "samples" "1600000 0.0")
+  LIST(APPEND LIH_PP_SCALARS "flux" "0.0 0.0025")
 
   QMC_RUN_AND_CHECK(short-LiH_dimer_pp-vmc_hf_noj
                     "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_pp"
@@ -191,6 +193,7 @@ ENDIF()
   LIST(APPEND LIH_GAMMA_SCALARS "kinetic" "7.4145221704067854 0.024")
   LIST(APPEND LIH_GAMMA_SCALARS "localpotential" "-11.718808431876706 0.025")
   LIST(APPEND LIH_GAMMA_SCALARS "samples" "1600000 0.0")
+  LIST(APPEND LIH_GAMMA_SCALARS "flux" "0.0 0.05")
 
   QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
                     "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
@@ -204,6 +207,7 @@ ENDIF()
   LIST(APPEND LIH_X_SCALARS "kinetic" "7.3772282047321536 0.024")
   LIST(APPEND LIH_X_SCALARS "localpotential" "-11.414410381100344 0.025")
   LIST(APPEND LIH_X_SCALARS "samples" "1600000 0.0")
+  LIST(APPEND LIH_X_SCALARS "flux" "0.0 0.05")
 
   QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-x-vmc_hf_noj
                     "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
@@ -218,6 +222,7 @@ ENDIF()
   LIST(APPEND LIH_ARB_SCALARS "kinetic" "7.4201207734399359 0.024")
   LIST(APPEND LIH_ARB_SCALARS "localpotential" "-11.615276430529056 0.025")
   LIST(APPEND LIH_ARB_SCALARS "samples" "1600000 0.0") # samples
+  LIST(APPEND LIH_ARB_SCALARS "flux" "0.0 0.05")
 
   IF (QMC_COMPLEX)
     SET(LIH_ARB_SUCCEED TRUE)
@@ -239,6 +244,7 @@ ENDIF()
 #
   LIST(APPEND BCC_H_SCALARS "totenergy" "-1.834032 0.0003")
   LIST(APPEND BCC_H_SCALARS "samples" "960000 0.0")
+  LIST(APPEND BCC_H_SCALARS "flux" "0.0 0.03")
 
   QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-vmc_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
@@ -251,6 +257,7 @@ ENDIF()
 
   LIST(APPEND DIAMOND_SCALARS "totenergy" "-10.491445 0.002")
   LIST(APPEND DIAMOND_SCALARS "samples" "128000 0.0")
+  LIST(APPEND DIAMOND_SCALARS "flux" "0.0 0.2")
 
   QMC_RUN_AND_CHECK(short-diamondC_1x1x1_pp-vmc_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
@@ -263,6 +270,7 @@ ENDIF()
 
   LIST(APPEND DIAMOND2_SCALARS "totenergy" "-21.668293 0.007")
   LIST(APPEND DIAMOND2_SCALARS "samples" "32000 0.0")
+  LIST(APPEND DIAMOND2_SCALARS "flux" "0.0 0.5")
 
   QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-vmc_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
@@ -275,6 +283,7 @@ ENDIF()
 
   LIST(APPEND HCP_BE_SCALARS "totenergy" "-1.481656 0.0005")
   LIST(APPEND HCP_BE_SCALARS "samples" "416000 0.0")
+  LIST(APPEND HCP_BE_SCALARS "flux" "0.0 0.003")
 
   QMC_RUN_AND_CHECK(short-hcpBe_1x1x1_pp-vmc_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/hcpBe_1x1x1_pp"
@@ -287,6 +296,7 @@ ENDIF()
 
   LIST(APPEND MONO_O_SCALARS "totenergy" "-31.776596 0.006")
   LIST(APPEND MONO_O_SCALARS "samples" "64000 0.0")
+  LIST(APPEND HCP_BE_SCALARS "flux" "0.0 0.5")
 
   QMC_RUN_AND_CHECK(short-monoO_1x1x1_pp-vmc_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/monoO_1x1x1_pp"
