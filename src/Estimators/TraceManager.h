@@ -1670,7 +1670,7 @@ public:
     streaming_traces = traces_requested && method_allows_traces;
     if(streaming_traces)
     {
-      if (omp_get_thread_num==0)
+      if (omp_get_thread_num()==0)
       {
         app_log()<<"\n  TraceManager::put() "<<master_copy<<endl;
         app_log()<<"    traces requested          : "<<traces_requested<<endl;
