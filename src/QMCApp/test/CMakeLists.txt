@@ -325,6 +325,7 @@ ENDIF()
 
   LIST(APPEND LONG_DIAMOND_SCALARS "totenergy" "-10.491445 0.000065")
   LIST(APPEND LONG_DIAMOND_SCALARS "samples" "122880000 0.0")
+  LIST(APPEND LONG_DIAMOND_SCALARS "flux" "0.0 0.03")
 
   QMC_RUN_AND_CHECK(long-diamondC_1x1x1_pp-vmc_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
@@ -337,6 +338,7 @@ ENDIF()
 
   LIST(APPEND LONG_DIAMOND2_SCALARS "totenergy" "-21.668293 0.00023")
   LIST(APPEND LONG_DIAMOND2_SCALARS "samples" "30720000 0.0")
+  LIST(APPEND LONG_DIAMOND2_SCALARS "flux" "0.0 0.05")
 
   QMC_RUN_AND_CHECK(long-diamondC_2x1x1_pp-vmc_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
@@ -349,6 +351,7 @@ ENDIF()
 
   LIST(APPEND LONG_HCP_BE_SCALARS "totenergy" "-1.481656 0.000017")
   LIST(APPEND LONG_HCP_BE_SCALARS "samples" "399360000 0.0")
+  LIST(APPEND LONG_HCP_BE_SCALARS "flux" "0.0 0.0001")
 
   QMC_RUN_AND_CHECK(long-hcpBe_1x1x1_pp-vmc_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/hcpBe_1x1x1_pp"
@@ -361,6 +364,7 @@ ENDIF()
 
   LIST(APPEND LONG_MONO_O_SCALARS "totenergy" "-31.776596 0.0002")
   LIST(APPEND LONG_MONO_O_SCALARS "samples" "61440000 0.0")
+  LIST(APPEND LONG_MONO_O_SCALARS "flux" "0.0 0.05")
 
   QMC_RUN_AND_CHECK(long-monoO_1x1x1_pp-vmc_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/monoO_1x1x1_pp"
