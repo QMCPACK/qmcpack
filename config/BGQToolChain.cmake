@@ -30,7 +30,7 @@ SET(MPIEXEC_NUMPROC_FLAG "${qmcpack_SOURCE_DIR}/utils/bgrunjobhelper.sh")
 SET(BOOST_ROOT /home/projects/qmcpack/boost_1_45_0)
 
 SET(CMAKE_FIND_ROOT_PATH
-     /home/projects/qmcpack/LIBXML2-2.9
+     /home/projects/qmcpack/libXML2-2.9.1
      /soft/libraries/hdf5/current/cnk-xl/current
      /soft/libraries/alcf/current/xl/FFTW3
      /soft/libraries/alcf/current/xl/ZLIB
