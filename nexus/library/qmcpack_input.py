@@ -4573,7 +4573,7 @@ def generate_jastrows(jastrows,system=None,return_list=False,check_ions=False):
 
 def generate_jastrow(descriptor,*args,**kwargs):
     keywords = set(['function','size','rcut','elements','coeff','cusp','ename',
-                    'iname','spins','density','Buu','Bud','system','isize','esize'])
+                    'iname','spins','density','Buu','Bud','system','isize','esize','init'])
     if not 'system' in kwargs:
         kwargs['system'] = None
     #end if
