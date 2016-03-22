@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 
 # Statical error checking code for use by testing framework
 # Jaron Krogel/ORNL
@@ -38,9 +39,9 @@ def erf(x):
 # Explicitly prints 'fail' after an optional message.
 def exit_fail(msg=None):
     if msg!=None:
-        print msg
+        print(msg)
     #end if
-    print 'Test status: fail'
+    print('Test status: fail')
     exit(1)
 #end def exit_fail
 
@@ -49,9 +50,9 @@ def exit_fail(msg=None):
 # Explicitly prints 'pass' after an optional message.
 def exit_pass(msg=None):
     if msg!=None:
-        print msg
+        print(msg)
     #end if
-    print 'Test status: pass'
+    print('Test status: pass')
     exit(0)
 #end def exit_pass
 
@@ -168,7 +169,7 @@ def read_command_line():
         options,files_in = parser.parse_args()
 
         if options.help:
-            print '\n'+parser.format_help().strip()
+            print('\n'+parser.format_help().strip())
             exit()
         #end if
 
@@ -191,7 +192,7 @@ def read_command_line():
                 quants_check.append(q)
             #end if
         #end for
-    except Exception,e:
+    except Exception as e:
         exit_fail('error during command line read:\n'+str(e))
     #end try
 
@@ -253,7 +254,7 @@ def process_scalar_files(options,quants_check):
             values[s] = svals
             ns += 1
         #end for        
-    except Exception,e:
+    except Exception as e:
         exit_fail('error during scalar file processing:\n'+str(e))
     #end try
 
@@ -299,7 +300,7 @@ def check_values(options,quants_check,values):
             #end for
             ns+=1
         #end for
-    except Exception,e:
+    except Exception as e:
         exit_fail('error during value check:\n'+str(e))
     #end try
 
