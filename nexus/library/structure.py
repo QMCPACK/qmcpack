@@ -320,9 +320,11 @@ def reduce_tilematrix(tiling):
         Tnew = array(T,dtype=float) #sheared/orthogonal tiling matrix
         tbar = identity(dim) #basis for shearing
         dr = range(dim)
-        other = [] # other[d] = dimensions other than d
+        dr = [1,0,2]
+        other = dim*[0] # other[d] = dimensions other than d
         for d in dr: 
-            other.append(set(dr)-set([d]))
+            #other.append(set(dr)-set([d]))
+            other[d] = set(dr)-set([d])
         #end for
         #move each axis to be parallel to barred directions
         # these are volume preserving shears of the supercell

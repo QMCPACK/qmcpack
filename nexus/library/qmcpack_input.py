@@ -748,7 +748,7 @@ class QIxml(Names):
             text = set()
         #end if
         junk = ks -attr -elem -plur -h5tags -costs -parameters -attribs -text
-        self.check_junk(junk)
+        self.check_junk(junk,exit=True)
 
         for v in h5tags:
             self[v] = param(kwargs[v])
