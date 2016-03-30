@@ -171,9 +171,11 @@ void phase_factor_kernel_new (T *kPoints, int *makeTwoCopies,
 }
 
 
+#define WARP_SIZE 32
 
-
-template<typename T, int BS> __global__
+// NO_TWO_COPIES can be set to true if the makeTwoCopies is guaranteed to
+//   only hold 0s.
+template<typename T, int BS, bool NO_TWO_COPIES> __global__
 void phase_factor_kernel (T *kPoints, int *makeTwoCopies,
                           T *pos, T **phi_in, T **phi_out,
                           T **grad_lapl_in, T **grad_lapl_out,
@@ -193,11 +195,16 @@ void phase_factor_kernel (T *kPoints, int *makeTwoCopies,
   }
   if (tid < 3)
     pos_s[tid] = pos[3*blockIdx.x+tid];
-  //__syncthreads();
+
+  if (BS > WARP_SIZE) __syncthreads();
+
   int nb = (num_splines + BS-1)/BS;
   int outIndex=0;
   int outBlock=0;
-  __shared__ int m2c[BS];
+
+  // 0 if NO_TWO_COPIES, but won't compile
+  __shared__ int m2c[NO_TWO_COPIES ? 1 : BS];
+
   for (int block=0; block<nb; block++)
   {
     // Load kpoints into shared memory
@@ -220,7 +227,9 @@ void phase_factor_kernel (T *kPoints, int *makeTwoCopies,
       for (int j=0; j<4; j++)
         in_shared[j+1][tid+BS] = my_GL_in[2*j*num_splines+(2*block+1)*BS+tid];
     }
-    //__syncthreads();
+
+    if (BS > WARP_SIZE) __syncthreads();
+
     // Now add on phase factors
     T phase = -(pos_s[0]*kPoints_s[tid][0] +
                 pos_s[1]*kPoints_s[tid][1] +
@@ -262,17 +271,46 @@ void phase_factor_kernel (T *kPoints, int *makeTwoCopies,
     in_shared[4][2*tid+0] = lre*c - lim*s;
     in_shared[4][2*tid+1] = lre*s + lim*c;
     // Load makeTwoCopies with coallesced reads
-    if (block*BS+tid < num_splines)
-      m2c[tid] = makeTwoCopies[block*BS + tid];
-    //__syncthreads();
+
+    if (!NO_TWO_COPIES)
+      if (block*BS+tid < num_splines)
+        m2c[tid] = makeTwoCopies[block*BS + tid];
+
+    if (BS > WARP_SIZE) __syncthreads();
+
     // Now, serialize to output buffer
     int end = min (BS, num_splines - block*BS);
+
+    // christos: When NO_TWO_COPIES is on, the output buffer logic can be 
+    // optimized further, cutting down on instruction level clutter,
+    // synchronization & overall divergence. This is because outIndex's
+    // updates follow the induction variable (i).
+
+    if (NO_TWO_COPIES && end==BS) {
+       // christos: note: it is possible to eliminate out_shared under
+       // certain conditions
+       for (int i=tid; i<end; i+=BS) {
+          for (int j=0 ; j<5 ; j++)
+          out_shared[j][outIndex+i] = in_shared[j][2*i+0];
+       }
+
+       if (BS > WARP_SIZE) __syncthreads();
+       my_phi_out[             outBlock*BS+tid] = out_shared[0][tid];
+       my_GL_out[0*row_stride +outBlock*BS+tid] = out_shared[1][tid];
+       my_GL_out[1*row_stride +outBlock*BS+tid] = out_shared[2][tid];
+       my_GL_out[2*row_stride +outBlock*BS+tid] = out_shared[3][tid];
+       my_GL_out[3*row_stride +outBlock*BS+tid] = out_shared[4][tid];
+
+       outIndex = 0;
+       outBlock++;
+    } else {
+
     for (int i=0; i<end; i++)
     {
       if (tid < 5)
         out_shared[tid][outIndex] = in_shared[tid][2*i+0];
       outIndex++;
-      //__syncthreads();
+      if (BS > WARP_SIZE) __syncthreads();
       if (outIndex == BS)
       {
         // Write back to global memory
@@ -284,12 +322,12 @@ void phase_factor_kernel (T *kPoints, int *makeTwoCopies,
         outIndex = 0;
         outBlock++;
       }
-      if (m2c[i])
+      if (!NO_TWO_COPIES && m2c[i])
       {
         if (tid < 5)
           out_shared[tid][outIndex] = in_shared[tid][2*i+1];
         outIndex++;
-        //__syncthreads();
+	if (BS > WARP_SIZE) __syncthreads();
         if (outIndex == BS)
         {
           // Write back to global memory
@@ -300,11 +338,12 @@ void phase_factor_kernel (T *kPoints, int *makeTwoCopies,
           my_GL_out[3*row_stride +outBlock*BS+tid] = out_shared[4][tid];
           outIndex = 0;
           outBlock++;
-          //__syncthreads();
+          if (BS > WARP_SIZE) __syncthreads();
         }
       }
     }
-    //__syncthreads();
+    if (BS > WARP_SIZE) __syncthreads();
+  }
   }
   if (tid < outIndex)
   {
@@ -315,6 +354,7 @@ void phase_factor_kernel (T *kPoints, int *makeTwoCopies,
     my_GL_out[3*row_stride +outBlock*BS+tid] = out_shared[4][tid];
   }
 }
+
 
 // T s, c;
 // int end = min (BS, num_splines-block*BS);
@@ -427,12 +467,22 @@ void apply_phase_factors(float kPoints[], int makeTwoCopies[],
 void apply_phase_factors(float kPoints[], int makeTwoCopies[],
                          float pos[], float *phi_in[], float *phi_out[],
                          float *GL_in[], float *GL_out[],
-                         int num_splines, int num_walkers, int row_stride)
+                         int num_splines, int num_walkers, int row_stride,
+                         bool dontMakeTwoCopies)
 {
-  const int BS = 32;
+  const int BS = 64;
   dim3 dimBlock(BS);
   dim3 dimGrid (num_walkers);
-  phase_factor_kernel<float,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
-  (kPoints, makeTwoCopies, pos, phi_in, phi_out,
-   GL_in, GL_out, num_splines, num_walkers, row_stride);
+
+//  std::cout << "num_splines=" << num_splines << ", nb=" << ((num_splines + BS-1)/BS) << std::endl;
+
+  if (dontMakeTwoCopies) {
+     phase_factor_kernel<float,BS,true><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
+       (kPoints, makeTwoCopies, pos, phi_in, phi_out,
+       GL_in, GL_out, num_splines, num_walkers, row_stride);
+  } else {
+     phase_factor_kernel<float,BS,false><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
+       (kPoints, makeTwoCopies, pos, phi_in, phi_out,
+       GL_in, GL_out, num_splines, num_walkers, row_stride);
+  }
 }
