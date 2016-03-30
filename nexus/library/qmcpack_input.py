@@ -4593,13 +4593,13 @@ def generate_jastrow(descriptor,*args,**kwargs):
     if len(dargs)>0:
         args = dargs
     #end if
-    for i in range(ikw,len(descriptor)):
+    for i in range(ikw,len(descriptor),2):
         d = descriptor[i]
         if isinstance(d,str):
             if d in keywords:
                 kwargs[d] = descriptor[i+1]
             else:
-                QmcpackInput.class_warn('keyword {0} is unrecognized and ignored\n  valid options are: {1}'.format(d,str(keywords)),'generate_jastrow')
+                QmcpackInput.class_error('keyword {0} is unrecognized\n  valid options are: {1}'.format(d,str(keywords)),'generate_jastrow')
             #end if
         #end if
     #end for
