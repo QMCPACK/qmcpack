@@ -1,0 +1,85 @@
+\subsubsection{Spline form}
+\label{sec:twobodyjastrowspline}
+
+The two-body spline Jastrow function is the most commonly used two-body Jastrow for solids. This form 
+was first described and used in \cite{EslerKimCeperleyShulenburger2012}.  
+Here $u_{ab}$ is an interpolating 1D Bspline (tricublc spline on a linear grid) between 
+zero distance and $r_{cut}$. In 3D periodic systems 
+the default cutoff distance is the Wigner Seitz cell radius. For other periodicities including isolated 
+molecules the $r_{cut}$ must be specified.  $r_i$ and $r_j$ are typically electron positions.  The cusp 
+condition as $r_i$ approaches $r_j$ is set by the relative spin of the electrons.
+
+\FloatBarrier
+\paragraph{Input Specification}
+
+\FloatBarrier
+\begin{table}[h!]
+\begin{center}
+\begin{tabular}{l c c c l }
+\hline
+\multicolumn{5}{l}{Correlation element} \\
+\hline
+\bfseries name & \bfseries datatype & \bfseries values & \bfseries defaults & \bfseries description \\
+\hline
+speciesA & text & u or d & (required) & Quantum species target \\
+speciesB & text & u or d & (required) & Quantum species target \\
+size & integer & $> 0$ & (required) & number of coefficients \\
+rcut & real & $> 0$ & see below & distance at which the correlation goes to 0 \\
+spin & text & yes or no & no & spin dependent jastrow factor \\
+\hline
+\multicolumn{5}{l}{elements}\\ \hline
+& Coefficients & & & \\ \hline
+\multicolumn{5}{l}{Contents}\\ \hline
+& (None)  & & &  \\ \hline
+\end{tabular}
+%\end{tabular*}
+\end{center}
+\end{table}
+
+\FloatBarrier
+
+Additional information:
+\begin{itemize}
+\item \texttt{speciesA, speciesB} The scale function u(r) is defined for species pairs uu and ud.  
+There is no need to define ud or dd since uu=dd and ud=du.  The cusp condition is computed internally 
+based on the charge of the quantum particles.
+\end{itemize}
+
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{l c c c l }
+\hline
+\multicolumn{5}{l}{Coefficients element} \\
+\hline
+\bfseries name & \bfseries datatype & \bfseries values & \bfseries defaults & \bfseries description \\
+\hline
+id & text & & (required) & Unique identifier \\
+type & text & Array & (required) & \\
+optimize & text & yes or no & yes & if no, values are fixed in optimizations \\
+\hline
+\multicolumn{5}{l}{elements}\\ \hline
+(None) & & & \\ \hline
+\multicolumn{5}{l}{Contents}\\ \hline
+ (no name) & real array & & zeros & Jastrow coefficients \\ \hline
+\end{tabular}
+%\end{tabular*}
+\end{center}
+\end{table}
+
+\paragraph{Example use cases}
+\label{sec:2bjsplineexamples}
+
+Specify a spin-dependent function with 4 parameters for each channel.  In this case, the cusp is set at 
+a radius of 4.0 bohr (rather than to the default of the Wigner Seitz cell radius).  Also, in this example,
+the coefficients are set to not be optimized during an optimization step.
+
+\begin{lstlisting}
+<jastrow name="J2" type="Two-Body" function="Bspline" print="yes">
+  <correlation speciesA="u" speciesB="u" size="8" rcut="4.0">
+    <coefficients id="uu" type="Array" optimize="no"> 0.2309049836 0.1312646071 0.05464141356 0.01306231516</coefficients>
+  </correlation>
+  <correlation speciesA="u" speciesB="d" size="8" rcut="4.0">
+    <coefficients id="ud" type="Array" optimize="no"> 0.4351561096 0.2377951747 0.1129144262 0.0356789236</coefficients>
+  </correlation>
+</jastrow>
+\end{lstlisting}
