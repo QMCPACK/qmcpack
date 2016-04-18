@@ -658,7 +658,12 @@ bool WaveFunctionTester::checkGradients(int lower_iat, int upper_iat,
     fout << pad << "Gradient      = " << setw(12) << G[iat] << endl;
     fout << pad << "  Finite diff = " << setw(12) << G_fd[iat] << endl;
     fout << pad << "  Error       = " << setw(12) << G[iat]-G_fd[iat] << endl;
-    fout << pad << "  Relative Error = " << setw(12) << G_err_rel << endl << endl;
+    fout << pad << "  Relative Error = ";
+    for (int idim = 0; idim<OHMMS_DIM; idim++)
+    {
+        fout << G_err_rel[idim] << " ";
+    }
+    fout << endl << endl;
     fout << pad << "Laplacian     = " << setw(12) << L[iat] << endl;
     fout << pad << "  Finite diff = " << setw(12) << L_fd[iat] << endl;
     fout << pad << "  Error       = " << setw(12) << L[iat]-L_fd[iat] << "  Relative Error = " << L_err_rel << endl << endl;
@@ -747,7 +752,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
       W.makeMove(it->index,zeroR);
 
       RealType logpsi0 = orb->evaluateLog(W, tmpG, tmpL);
-      RealType phase0 = Psi.getPhase();
+      RealType phase0 = orb->PhaseValue;
 #if defined(QMC_COMPLEX)
       ValueType logpsi = std::complex<OHMMS_PRECISION>(logpsi0,phase0);
 #else
@@ -793,7 +798,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
           W.update();
 
           RealType logpsi0 = det->evaluateLog(W, tmpG, tmpL);
-          RealType phase0 = Psi.getPhase();
+          RealType phase0 = det->PhaseValue;
     #if defined(QMC_COMPLEX)
           ValueType logpsi = std::complex<OHMMS_PRECISION>(logpsi0,phase0);
     #else
