@@ -771,8 +771,6 @@ class Structure(Sobj):
 
     def any_periodic(self):
         periodic = False
-        print [self.axes]
-        print [self.bconds]
         nocell = len(self.axes)==0 or len(self.bconds)==0
         for bc in self.bconds:
             periodic |= bc=='p'

@@ -121,7 +121,8 @@ class Qmcpack(Simulation):
             if not 'results' in analyzer or not 'optimization' in analyzer.results:
                 self.error('analyzer did not compute results required to determine jastrow')
             #end if
-            opt_file = str(analyzer.results.optimization.optimal_file)
+            opt_file = analyzer.results.optimization.optimal_file
+            opt_file = str(opt_file)
             result.opt_file = os.path.join(self.locdir,opt_file)
         elif result_name=='cuspcorr':
             result.spo_up_cusps = os.path.join(self.locdir,self.identifier+'.spo-up.cuspInfo.xml')
@@ -423,7 +424,6 @@ class Qmcpack(Simulation):
                 os.system('cp {0} {1}'.format(cf_orig,cf_new))
             #end for
         #end if
-
     #end def check_sim_status
 
 
@@ -442,6 +442,17 @@ class Qmcpack(Simulation):
         #end if
         return output_files
     #end def get_output_files
+
+    
+    def post_analyze(self,analyzer):
+        opt_run = 'opt' in self.input.get_output_info('calctypes')
+        if opt_run:
+            opt_file = analyzer.results.optimization.optimal_file
+            if opt_file is None:
+                self.failed = True
+            #end if
+        #end if
+    #end def post_analyze
 
 
     def app_command(self):

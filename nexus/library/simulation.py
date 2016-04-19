@@ -530,6 +530,10 @@ class Simulation(NexusCore):
         None
     #end def pre_check_status
 
+    def post_analyze(self,analyzer):
+        None
+    #end def post_analyze
+
 
     def condense_name(self,name):
         return name.strip().lower().replace('-','_').replace(' ','_')
@@ -699,6 +703,7 @@ class Simulation(NexusCore):
             sim_image = SimulationImage()
             sim_image.save_image(self,imagefile)
         else:
+            self.error('attempting to save full object!')
             self.save(imagefile)
         #end if
     #end def save_image
@@ -922,9 +927,12 @@ class Simulation(NexusCore):
                 analyzer.analyze()
             #end if
             analyzer.save(os.path.join(self.imresdir,self.analyzer_image))
+            self.post_analyze(analyzer)
+
             del analyzer
             self.analyzed = True
             self.save_image()
+
         #end if
     #end def analyze
 
