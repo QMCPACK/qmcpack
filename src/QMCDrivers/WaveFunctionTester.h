@@ -25,6 +25,21 @@
 namespace qmcplusplus
 {
 
+
+/** Information for output of relative error in wavefunction derivatives
+  vs. finite difference delta.
+*/
+class FiniteDiffErrData : public QMCTraits
+{
+public:
+  FiniteDiffErrData();
+  bool put(xmlNodePtr q);
+
+  int particleIndex;
+  int gradientComponentIndex;
+  string outputFile;
+};
+
 /** Test the correctness of TrialWaveFunction for the values,
     gradients and laplacians
 */
@@ -49,6 +64,11 @@ private:
   string checkRatio, checkClone, checkHamPbyP, sourceName, wftricks, checkEloc;
   string checkBasic, checkRatioV;
   xmlNodePtr myNode;
+  double deltaParam;
+  double toleranceParam;
+  bool outputDeltaVsError;
+  FiniteDiffErrData DeltaVsError;
+ 
   /// Copy Constructor (disabled)
   WaveFunctionTester(const WaveFunctionTester& a):
     QMCDriver(a), PtclPool(a.PtclPool) { }
