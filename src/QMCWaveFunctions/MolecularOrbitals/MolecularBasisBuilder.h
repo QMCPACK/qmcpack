@@ -153,7 +153,11 @@ public:
 #endif
         {
           app_log() << "Creating LCOrbitalSet with the input coefficients" << endl;
-          lcos= new LCOrbitalSet<ThisBasisSetType,false>(thisBasisSet,ReportLevel);
+          string algorithm("");
+          OhmmsAttributeSet coeffAttrib;
+          coeffAttrib.add (algorithm, "algorithm");
+          coeffAttrib.put(cur);
+          lcos= new LCOrbitalSet<ThisBasisSetType,false>(thisBasisSet,ReportLevel,algorithm);
         }
       }
       cur=cur->next;
