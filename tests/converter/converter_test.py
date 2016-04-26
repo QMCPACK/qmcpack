@@ -40,7 +40,8 @@ def run_test(test_name, c4q_exe, conv_inp, gold_file, expect_fail):
         print(convert_libs)
     
     cmd.extend(['-nojastrow', '-prefix', 'test', '-gamessAscii', conv_inp])
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    #p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p = subprocess.Popen(' '.join(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     stdout, stderr = p.communicate()
 
     ret = p.returncode
