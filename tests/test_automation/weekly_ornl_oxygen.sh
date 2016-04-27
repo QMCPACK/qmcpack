@@ -35,6 +35,7 @@ cd $sys
 echo --- Building for $sys `date`
 
 export PATH=/opt/local/bin:/opt/local/sbin:/usr/local/cuda/bin/:/usr/lib64/openmpi/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+export LD_LIBRARY_PATH=/usr/lib64/openmpi/lib:/usr/local/cuda-7.0/lib64
 
 case $sys in
 "build_gcc")
@@ -115,3 +116,4 @@ exit 1
 fi
 
 fi
+
