@@ -26,22 +26,9 @@ def run_test(test_name, c4q_exe, conv_inp, gold_file, expect_fail):
     # Example invocation of converter
     #convert4qmc -nojastrow -prefix gold -gamessAscii be.out
 
-
-    print("LD_LIBRARY_PATH = ",os.environ.get("LD_LIBRARY_PATH", "not set"))
-    print("PATH = ",os.environ.get("PATH", "not set"))
     cmd = c4q_exe.split()
-    print("first command (likely mpirun) = ",cmd[0])
-    which_mpirun = subprocess.check_output(["which",cmd[0]])
-    print("which mpirun = ",which_mpirun)
-    if len(cmd) > 3:
-        convert_exe = cmd[3]
-        convert_libs = subprocess.check_output(["ldd",convert_exe])
-        print("converter libs:")
-        print(convert_libs)
-    
     cmd.extend(['-nojastrow', '-prefix', 'test', '-gamessAscii', conv_inp])
-    #p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    p = subprocess.Popen(' '.join(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = p.communicate()
 
     ret = p.returncode
