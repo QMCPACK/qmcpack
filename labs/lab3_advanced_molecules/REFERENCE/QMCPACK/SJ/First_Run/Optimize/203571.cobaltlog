@@ -1,0 +1,26 @@
+Jobid: 203571
+qsub --mode script -A QMC_2014_training -t 60 -n 32 submit_qmcpack.csh
+Wed Jul 16 00:45:51 2014 +0000 (UTC) submitted with cwd set to: /gpfs/vesta-fs0/projects/QMC_2014_Preparation/mmorales/Tutorial_test/QMCPACK/SJ/First_Run/Optimize
+Wed Jul 16 00:46:25 2014 +0000 (UTC) mmorales/203571: Initiating boot at location VST-02400-13511-32.
+Wed Jul 16 00:46:44 2014 +0000 (UTC) 
+Wed Jul 16 00:46:44 2014 +0000 (UTC) Command: '/gpfs/vesta-fs0/projects/QMC_2014_Preparation/mmorales/Tutorial_test/QMCPACK/SJ/First_Run/Optimize/submit_qmcpack.csh'
+Wed Jul 16 00:46:44 2014 +0000 (UTC) 
+Wed Jul 16 00:46:44 2014 +0000 (UTC) Environment:
+Wed Jul 16 00:46:44 2014 +0000 (UTC) SHELL=/bin/bash
+Wed Jul 16 00:46:44 2014 +0000 (UTC) COBALT_NODEFILE=/tmp/tmp3Oq_hj
+Wed Jul 16 00:46:44 2014 +0000 (UTC) COBALT_PARTNAME=VST-02400-13511-32
+Wed Jul 16 00:46:44 2014 +0000 (UTC) COBALT_JOBID=203571
+Wed Jul 16 00:46:44 2014 +0000 (UTC) COBALT_STARTTIME=1405471553
+Wed Jul 16 00:46:44 2014 +0000 (UTC) LOGNAME=mmorales
+Wed Jul 16 00:46:44 2014 +0000 (UTC) USER=mmorales
+Wed Jul 16 00:46:44 2014 +0000 (UTC) COBALT_ENDTIME=1405475153
+Wed Jul 16 00:46:44 2014 +0000 (UTC) COBALT_PARTSIZE=32
+Wed Jul 16 00:46:44 2014 +0000 (UTC) HOME=/home/mmorales
+Wed Jul 16 00:46:44 2014 +0000 (UTC) COBALT_JOBSIZE=32
+Wed Jul 16 00:46:44 2014 +0000 (UTC) 
+Wed Jul 16 00:46:44 2014 +0000 (UTC) Info: stdin received from /dev/null
+Wed Jul 16 00:46:44 2014 +0000 (UTC) Info: stdout sent to /gpfs/vesta-fs0/projects/QMC_2014_Preparation/mmorales/Tutorial_test/QMCPACK/SJ/First_Run/Optimize/203571.output
+Wed Jul 16 00:46:44 2014 +0000 (UTC) Info: stderr sent to /gpfs/vesta-fs0/projects/QMC_2014_Preparation/mmorales/Tutorial_test/QMCPACK/SJ/First_Run/Optimize/203571.error
+Wed Jul 16 00:46:44 2014 +0000 (UTC) 
+Wed Jul 16 00:46:46 2014 +0000 (UTC) mmorales/203571: Block VST-02400-13511-32 for location VST-02400-13511-32 successfully booted (Initiating). 
+Wed Jul 16 00:51:44 2014 +0000 (UTC) Info: task completed normally with an exit code of 0; initiating job cleanup and removal

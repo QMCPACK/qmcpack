@@ -1,0 +1,27 @@
+Jobid: 201652
+qsub --mode script -q default -A QMC_2014_Preparation -n 1 -t 120 -O p2q --mode script --env BG_SHAREDMEMSIZE=32 p2q.qsub.in
+Tue Jul 08 13:56:11 2014 +0000 (UTC) submitted with cwd set to: /gpfs/vesta-home/krogel/test/05_full_lab/your_system/diamond_vmc
+Tue Jul 08 13:56:56 2014 +0000 (UTC) krogel/201652: Initiating boot at location VST-02040-13151-32.
+Tue Jul 08 13:57:13 2014 +0000 (UTC) 
+Tue Jul 08 13:57:13 2014 +0000 (UTC) Command: '/gpfs/vesta-home/krogel/test/05_full_lab/your_system/diamond_vmc/p2q.qsub.in'
+Tue Jul 08 13:57:13 2014 +0000 (UTC) 
+Tue Jul 08 13:57:13 2014 +0000 (UTC) Environment:
+Tue Jul 08 13:57:13 2014 +0000 (UTC) SHELL=/bin/bash
+Tue Jul 08 13:57:13 2014 +0000 (UTC) COBALT_NODEFILE=/tmp/tmp_vVO9i
+Tue Jul 08 13:57:13 2014 +0000 (UTC) COBALT_PARTNAME=VST-02040-13151-32
+Tue Jul 08 13:57:13 2014 +0000 (UTC) COBALT_JOBID=201652
+Tue Jul 08 13:57:13 2014 +0000 (UTC) BG_SHAREDMEMSIZE=32
+Tue Jul 08 13:57:13 2014 +0000 (UTC) COBALT_STARTTIME=1404827782
+Tue Jul 08 13:57:13 2014 +0000 (UTC) LOGNAME=krogel
+Tue Jul 08 13:57:13 2014 +0000 (UTC) USER=krogel
+Tue Jul 08 13:57:13 2014 +0000 (UTC) COBALT_ENDTIME=1404834982
+Tue Jul 08 13:57:13 2014 +0000 (UTC) COBALT_PARTSIZE=32
+Tue Jul 08 13:57:13 2014 +0000 (UTC) HOME=/home/krogel
+Tue Jul 08 13:57:13 2014 +0000 (UTC) COBALT_JOBSIZE=1
+Tue Jul 08 13:57:13 2014 +0000 (UTC) 
+Tue Jul 08 13:57:13 2014 +0000 (UTC) Info: stdin received from /dev/null
+Tue Jul 08 13:57:13 2014 +0000 (UTC) Info: stdout sent to /gpfs/vesta-home/krogel/test/05_full_lab/your_system/diamond_vmc/p2q.output
+Tue Jul 08 13:57:13 2014 +0000 (UTC) Info: stderr sent to /gpfs/vesta-home/krogel/test/05_full_lab/your_system/diamond_vmc/p2q.error
+Tue Jul 08 13:57:13 2014 +0000 (UTC) 
+Tue Jul 08 13:57:17 2014 +0000 (UTC) krogel/201652: Block VST-02040-13151-32 for location VST-02040-13151-32 successfully booted (Initiating). 
+Tue Jul 08 13:58:08 2014 +0000 (UTC) Info: task completed normally with an exit code of 0; initiating job cleanup and removal

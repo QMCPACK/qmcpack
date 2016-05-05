@@ -1,0 +1,48 @@
+
+
+*******************************************************************************
+Fri Jul 11 14:04:02 2014
+
+
+FIT:    data read from "nelectron_tcpu.dat" using 1:2
+        #datapoints = 8
+        residuals are weighted equally (unit weight)
+
+function used for fitting: f(x)
+fitted parameters initialized with current variable values
+
+
+
+ Iteration 0
+ WSSR        : 1.34735e+06       delta(WSSR)/WSSR   : 0
+ delta(WSSR) : 0                 limit for stopping : 1e-05
+ lambda	  : 228.495
+
+initial set of free parameter values
+
+a               = 1
+b               = 1
+c               = 1
+
+After 6 iterations the fit converged.
+final sum of squares of residuals : 0.000714244
+rel. change during last iteration : -1.06423e-07
+
+degrees of freedom    (FIT_NDF)                        : 5
+rms of residuals      (FIT_STDFIT) = sqrt(WSSR/ndf)    : 0.0119519
+variance of residuals (reduced chisquare) = WSSR/ndf   : 0.000142849
+
+Final set of parameters            Asymptotic Standard Error
+=======================            ==========================
+
+a               = 0.00022426       +/- 4.242e-05    (18.91%)
+b               = 0.00395746       +/- 0.001425     (36.02%)
+c               = -0.000955289     +/- 0.009391     (983.1%)
+
+
+correlation matrix of the fit parameters:
+
+               a      b      c      
+a               1.000 
+b              -0.949  1.000 
+c               0.681 -0.828  1.000 

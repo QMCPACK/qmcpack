@@ -1,0 +1,64 @@
+<?xml version="1.0"?>
+<simulation>
+  <project id="H2O" series="0"/>
+
+  <!-- input from gaussian converter -->
+  <include href="H2O.ptcl.xml"/>
+  <include href="H2O.HF.wfs.xml"/>
+
+  <!--  Hamiltonian -->
+  <hamiltonian name="h0" type="generic" target="e">
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e"/>
+    <pairpot name="ELEMENT-ECP" type="pseudo" source="ion0" target="e" 
+         format="xml" wavefunction="psi0" >
+       <pseudo elementType="O" format="xml" href="/projects/QMC_2014_training/O.BFD.xml" />
+       <pseudo elementType="H" format="xml" href="/projects/QMC_2014_training/H.BFD.xml" />
+    </pairpot>
+    <constant name="IonIon" type="coulomb" source="ion0" target="ion0"/>
+  </hamiltonian>
+
+ <init source="ion0" target="e"/>
+
+  <!-- VMC -->
+  <qmc method="vmc" move="pbyp" checkpoint="-1">
+    <parameter name="useDrift">yes</parameter>
+    <parameter name="warmupSteps">100</parameter>
+    <parameter name="blocks">100</parameter>
+    <parameter name="steps">1</parameter>
+    <parameter name="subSteps"> 20 </parameter>
+    <parameter name="walkers">30</parameter>
+    <parameter name="timestep">0.3</parameter>
+    <estimator name="LocalEnergy" hdf5="no"/>
+  </qmc>
+
+  <!-- DMC -->
+  <qmc method="dmc" move="pbyp" checkpoint="-1">
+    <parameter name="nonlocalmoves">yes</parameter>
+    <parameter name="targetWalkers">960</parameter>
+    <parameter name="blocks">100</parameter>
+    <parameter name="steps">50</parameter>
+    <parameter name="timestep">0.1</parameter>
+    <estimator name="LocalEnergy" hdf5="no"/>
+  </qmc>
+
+  <!-- DMC -->
+  <qmc method="dmc" move="pbyp" checkpoint="-1">
+    <parameter name="nonlocalmoves">yes</parameter>
+    <parameter name="targetWalkers">960</parameter>
+    <parameter name="blocks">150</parameter>
+    <parameter name="steps">75</parameter>
+    <parameter name="timestep">0.05</parameter>
+    <estimator name="LocalEnergy" hdf5="no"/>
+  </qmc>
+
+  <!-- DMC -->
+  <qmc method="dmc" move="pbyp" checkpoint="-1">
+    <parameter name="nonlocalmoves">yes</parameter>
+    <parameter name="targetWalkers">960</parameter>
+    <parameter name="blocks">250</parameter>
+    <parameter name="steps">100</parameter>
+    <parameter name="timestep">0.01</parameter>
+    <estimator name="LocalEnergy" hdf5="no"/>
+  </qmc>
+
+</simulation>
