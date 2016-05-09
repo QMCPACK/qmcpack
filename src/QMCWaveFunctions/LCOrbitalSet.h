@@ -194,7 +194,7 @@ public:
    */
   LCOrbitalSet(BS* bs=0,int rl=0, string algorithm=""): myBasisSet(0),ReportLevel(rl)
   {
-    if(algorithm=="legacy")
+    if(algorithm=="legacy_gemv")
     {
       Algo=0;
       /// input sample: <coefficient size="57" id="updetC" algorithm="legacy">

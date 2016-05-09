@@ -333,7 +333,7 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
 // FIX FIX FIX: control from input file
   mygrid->set(0.000001,100.0,1001);
   dummyLO1 = new LCOrbitalSet<BS,false>(myBasisSet,ReportLevel);
-  dummyLO1->OrbitalSetSize = OrbitalSetSize;
+  dummyLO1->setOrbitalSetSize(OrbitalSetSize);
   dummyLO1->TotalOrbitalSize=TotalOrbitalSize;
   dummyLO1->BasisSetSize = BasisSetSize;
   dummyLO1->setIdentity(Identity);
