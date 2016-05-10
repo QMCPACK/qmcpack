@@ -30,6 +30,10 @@ jobrun_vesta rungms H2O.PBE
 
 jobrun_vesta convert4qmc -gamessAscii H2O.CISD.orbs.output -ci H2O.CISD.orbs.output -threshold 0.01 -readInitialGuess 60  -add3BodyJ
 
+jobrun_vesta pw.x scf.in
+
+jobrun_vesta pw2qmcpack.x p2q.in
+
 jobrun_vesta qmcpack opt.in.xml
 '''
 
