@@ -130,34 +130,59 @@ inline void convert(const Tensor<T1,3>& in, Tensor<T2,3>& out)
 }
 
 
-// attempted fix to allow for C++11 real/imag/conj while preserving support for pre C++11
-#if __cplusplus<201103L
+// Fix to allow real, imag, conj on scalar and complex types
 ///real part of a scalar
-template<typename T>
-inline T real(const T& c)
+inline float real(const float& c)
 {
   return c;
 }
-
+inline double real(const double& c)
+{
+  return c;
+}
+inline float real(const std::complex<float>& c)
+{
+  return c.real();
+}
+inline double real(const std::complex<double>& c)
+{
+  return c.real();
+}
 ///imaginary part of a scalar
-template<typename T>
-inline T imag(const T& c)
+inline float imag(const float& c)
 {
-  return static_cast<T>(0);
+  return 0;
 }
-
+inline double imag(const double& c)
+{
+  return 0;
+}
+inline float imag(const std::complex<float>& c)
+{
+  return c.imag();
+}
+inline double imag(const std::complex<double>& c)
+{
+  return c.imag();
+}
 ///complex conjugate of a scalar
-template<typename T>
-inline T conj(const T& c)
+inline float conj(const float& c)
 {
   return c;
 }
-#endif
+inline double conj(const double& c)
+{
+    return c;
+}
+inline std::complex<float> conj(const std::complex<float>& c)
+{
+    return std::conj(c);
+}
+inline std::complex<double> conj(const std::complex<double>& c)
+{
+    return std::conj(c);
+}
 
-
-using std::real;
-using std::imag;
-using std::conj;
 
 ///real part of product of scalars
 template<typename T>
