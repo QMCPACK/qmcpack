@@ -250,7 +250,7 @@ void QPParser::getGeometry(std::istream& is)
                  if(it0 == currentWords.end())
                  {
                     cerr<<"Problem with ECP data. Didn't found ATOM tag\n";
-                    cerr<<is <<endl;
+                    cerr<< is.rdbuf() <<endl;
                     abort();
                  }
                  it0++;
@@ -287,7 +287,7 @@ void QPParser::getGeometry(std::istream& is)
                     if(it == currentWords.end())
                     {
                        cerr<<"Problem with ECP data (2).\n";
-                       cerr<<"Atom: " <<nq0 <<endl;
+                       cerr<<"Atom: " << nq0 <<endl;
                        abort();
                     }
                     nq = atoi((it+1)->c_str());
