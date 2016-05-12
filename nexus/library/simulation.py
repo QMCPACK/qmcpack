@@ -925,9 +925,9 @@ class Simulation(NexusCore):
             analyzer = self.analyzer_type(self)
             if not nexus_core.generate_only:
                 analyzer.analyze()
+                self.post_analyze(analyzer)
             #end if
             analyzer.save(os.path.join(self.imresdir,self.analyzer_image))
-            self.post_analyze(analyzer)
 
             del analyzer
             self.analyzed = True

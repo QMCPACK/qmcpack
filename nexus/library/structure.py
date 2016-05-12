@@ -567,6 +567,11 @@ class Structure(Sobj):
         self.remove_folded_structure()
     #end def remove_folded
 
+    
+    def has_folded(self):
+        return self.has_folded_structure()
+    #end def has_folded
+
 
     def set_folded_structure(self,folded):
         self.folded_structure = folded
@@ -578,6 +583,11 @@ class Structure(Sobj):
         self.folded_structure = None
         self.tmatrix = None
     #end def remove_folded_structure
+
+        
+    def has_folded_structure(self):
+        return self.folded_structure!=None
+    #end def has_folded_structure
 
             
     def group_atoms(self,folded=True):

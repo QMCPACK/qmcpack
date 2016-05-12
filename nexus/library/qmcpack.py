@@ -384,7 +384,9 @@ class Qmcpack(Simulation):
         cusp_run    = False
 
         if not self.has_generic_input():
-            cusp_run = self.input.cusp_correction()
+            if not isinstance(self.input,TracedQmcpackInput):
+                cusp_run = self.input.cusp_correction()
+            #end if
             if cusp_run:
                 sd = self.input.get('slaterdeterminant')
                 if sd!=None:
