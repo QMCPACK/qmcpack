@@ -11,6 +11,8 @@
 #include <QMCWaveFunctions/BasisSetFactory.h>
 
 
+#define conj_ qmcplusplus::conj
+
 namespace qmcplusplus
 {
 
@@ -612,8 +614,8 @@ namespace qmcplusplus
     generate_samples(weight);
     // compute basis and wavefunction ratio values in matrix form 
     generate_sample_basis(Phi_MB);     // basis           : samples   x basis_size
-    generate_sample_ratios(Psi_NM);    // conj(Psi ratio) : particles x samples
-    generate_particle_basis(P,Phi_NB); // conj(basis)     : particles x basis_size
+    generate_sample_ratios(Psi_NM);    // conj_(Psi ratio) : particles x samples
+    generate_particle_basis(P,Phi_NB); // conj_(basis)     : particles x basis_size
     // perform integration via matrix products
     for(int s=0;s<nspecies;++s)
     {
@@ -622,12 +624,12 @@ namespace qmcplusplus
       Matrix_t& Phi_nb     = *Phi_NB[s];
       diag_product(Psi_nm,sample_weights,Psi_nm);
       product(Psi_nm,Phi_MB,Phi_Psi_nb);       // ratio*basis : particles x basis_size
-      product_AtB(Phi_nb,Phi_Psi_nb,*N_BB[s]);  // conj(basis)^T*ratio*basis : basis_size^2
+      product_AtB(Phi_nb,Phi_Psi_nb,*N_BB[s]);  // conj_(basis)^T*ratio*basis : basis_size^2
       if(energy_mat)
       {
         Vector_t& E = *E_N[s];
-        diag_product(E,Phi_nb,Phi_nb);         // diag(energies)*conj(basis)
-        product_AtB(Phi_nb,Phi_Psi_nb,*E_BB[s]);// (energies*conj(basis))^T*ratio*basis
+        diag_product(E,Phi_nb,Phi_nb);         // diag(energies)*conj_(basis)
+        product_AtB(Phi_nb,Phi_Psi_nb,*E_BB[s]);// (energies*conj_(basis))^T*ratio*basis
       }
     }
     // accumulate data into collectables
@@ -769,7 +771,7 @@ namespace qmcplusplus
           update_basis(rsamp);
           PosType dr = rsamp-P.R[n];
           P.makeMove(n,dr);
-          Value_t ratio = sample_weights[m]*conj(Psi.full_ratio(P,n));
+          Value_t ratio = sample_weights[m]*conj_(Psi.full_ratio(P,n));
           P.rejectMove(n);
           for(int i=0;i<basis_size;++i)
           {
@@ -782,10 +784,10 @@ namespace qmcplusplus
         for(int i=0;i<basis_size;++i)
           Phi_Psi_nb(ns,i) = integrated_values[i];
         for(int i=0;i<basis_size;++i)
-          Phi_nb(ns,i) = conj(basis_values[i]);
+          Phi_nb(ns,i) = conj_(basis_values[i]);
         for(int i=0;i<basis_size;++i)
         {
-          Value_t phi_i = conj(basis_values[i]);
+          Value_t phi_i = conj_(basis_values[i]);
           for(int j=0;j<basis_size;++j)
           {
             Value_t val = phi_i*integrated_values[j];
@@ -798,7 +800,7 @@ namespace qmcplusplus
           E_n[ns] = e_n;
           for(int i=0;i<basis_size;++i)
           {
-            Value_t ephi_i = e_n*conj(basis_values[i]);
+            Value_t ephi_i = e_n*conj_(basis_values[i]);
             Phi_nb(ns,i) = ephi_i;
             for(int j=0;j<basis_size;++j)
             {
@@ -832,7 +834,7 @@ namespace qmcplusplus
         int ij = nindex + s*basis_size2;
         for(int i=0;i<basis_size;++i)
         {
-          Value_t phi_i = conj(basis_values[i]);
+          Value_t phi_i = conj_(basis_values[i]);
           for(int j=0;j<basis_size;++j)
           {
             Value_t val = phi_i*integrated_values[j];
@@ -850,7 +852,7 @@ namespace qmcplusplus
           int ij = eindex + s*basis_size2;
           for(int i=0;i<basis_size;++i)
           {
-            Value_t ephi_i = e_n*conj(basis_values[i]);
+            Value_t ephi_i = e_n*conj_(basis_values[i]);
             for(int j=0;j<basis_size;++j)
             {
               Value_t val = ephi_i*integrated_values[j];
@@ -1021,7 +1023,7 @@ namespace qmcplusplus
     for(int i=0;i<basis_size;++i)
     {
       Value_t b = basis_values[i];
-      dens += abs(conj(b)*b);
+      dens += abs(conj_(b)*b);
     }
     dens /= basis_size;
   }
@@ -1036,7 +1038,7 @@ namespace qmcplusplus
     {
       const Grad_t& bg = basis_gradients[i];
       Value_t b  = basis_values[i];
-      Value_t bc = conj(b);
+      Value_t bc = conj_(b);
       dens  += abs(bc*b);
       for(int d=0;d<DIM;++d)
         drift[d] += prod_real(bc,bg[d]);
@@ -1142,7 +1144,7 @@ namespace qmcplusplus
         for(int m=0;m<samples;++m,++nm)
         {
           Pq.makeMove(p,rsamples[m]-Rp);
-          P_nm(nm) = conj(Psi.full_ratio(Pq,p));
+          P_nm(nm) = conj_(Psi.full_ratio(Pq,p));
           Pq.rejectMove(p);
         }
       }
@@ -1161,7 +1163,7 @@ namespace qmcplusplus
       {
         update_basis(P.R[p]);
         for(int b=0;b<basis_size;++b,++nb)
-          P_nb(nb) = conj(basis_values[b]);
+          P_nb(nb) = conj_(basis_values[b]);
       }
     }
   }
@@ -1175,7 +1177,7 @@ namespace qmcplusplus
       PosType& rsamp = rsamples[s];
       update_basis(rsamp);
       P.makeMove(n,rsamp-P.R[n]);
-      Value_t ratio = sample_weights[s]*conj(Psi.full_ratio(P,n));
+      Value_t ratio = sample_weights[s]*conj_(Psi.full_ratio(P,n));
       P.rejectMove(n);
       for(int i=0;i<basis_size;++i)
         integrated_values[i]+=ratio*basis_values[i];
@@ -1236,7 +1238,7 @@ namespace qmcplusplus
       rp = Lattice.toCart(rp) + rcorner;
       update_basis(rp);
       for(int i=0;i<basis_size;++i)
-        bnorms[i] += conj(basis_values[i])*basis_values[i]*dV;
+        bnorms[i] += conj_(basis_values[i])*basis_values[i]*dV;
     }
     for(int i=0;i<basis_size;++i)
       basis_norms[i] = 1.0/sqrt(real(bnorms[i]));
@@ -1280,7 +1282,7 @@ namespace qmcplusplus
       update_basis(rp);
       for(int i=0;i<basis_size;++i)
         for(int j=0;j<basis_size;++j)
-          omat(i,j) += conj(basis_values[i])*basis_values[j]*dV;
+          omat(i,j) += conj_(basis_values[i])*basis_values[j]*dV;
       for(int d=0;d<DIM;++d)
       {
         rmin[d] = min(rmin[d],rp[d]);
@@ -1390,7 +1392,7 @@ namespace qmcplusplus
     for(int ij=0;ij<nelem;++ij)
     {
       Value_t s = Value_t(nmr_err[ij],nmi_err[ij]);
-      nmv[ij] = conj(s)*s; 
+      nmv[ij] = conj_(s)*s; 
     }
 #else
     const int nmat = 2;
@@ -1416,9 +1418,9 @@ namespace qmcplusplus
       for(int i=0;i<basis_size;++i)
         for(int j=0;j<basis_size;++j,++ij)
         {
-          Value_t aij = basis_values[i]*conj(basis_values[j]);
+          Value_t aij = basis_values[i]*conj_(basis_values[j]);
           d  += real(aij*nm[ij]);
-          de += real(conj(aij)*aij*nmv[ij]);
+          de += real(conj_(aij)*aij*nmv[ij]);
         }
       de = sqrt(de);
       density[p]     = d;

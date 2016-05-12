@@ -25,6 +25,9 @@
 #include <cmath>
 #include <qmc_common.h>
 
+
+#define conj_ qmcplusplus::conj
+
 namespace qmcplusplus
 {
 
@@ -504,7 +507,7 @@ void ECPComponentBuilder::CheckQuadratureRule(int lexact)
           {
             complex<double> v1 = Ylm(l1, m1, grid[k]);
             complex<double> v2 = Ylm(l2, m2, grid[k]);
-            sum += 4.0*M_PI*w[k] * conj(v1)*v2;
+            sum += 4.0*M_PI*w[k] * conj_(v1)*v2;
           }
           double re = real (sum);
           double im = imag (sum);

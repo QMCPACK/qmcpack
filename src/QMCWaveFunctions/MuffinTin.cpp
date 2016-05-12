@@ -21,6 +21,9 @@
 #include <QMCWaveFunctions/MuffinTin.h>
 #include <config/stdlib/math.h>
 
+
+#define conj_ qmcplusplus::conj
+
 namespace qmcplusplus
 {
 
@@ -157,9 +160,9 @@ MuffinTinClass::evalYlm (TinyVector<double,3> rhat)
     for (int m=0; m<=l; m++)
     {
       YlmVec[l*(l+1)+m]  =  XlmVec[l+m]*e2imphi;
-      YlmVec[l*(l+1)-m]  =  XlmVec[l-m]*conj(e2imphi);
+      YlmVec[l*(l+1)-m]  =  XlmVec[l-m]*conj_(e2imphi);
       dYlmVec[l*(l+1)+m] = dXlmVec[l+m]*e2imphi;
-      dYlmVec[l*(l+1)-m] = dXlmVec[l-m]*conj(e2imphi);
+      dYlmVec[l*(l+1)-m] = dXlmVec[l-m]*conj_(e2imphi);
       e2imphi *= e2iphi;
     }
     dl += 1.0;
