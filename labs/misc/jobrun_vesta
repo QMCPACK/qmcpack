@@ -17,7 +17,7 @@ import sys
 account = 'QMCPACK'  # instructor account!
 
 # executables jobrun_vesta knows how to handle
-exe_name_list = 'rungms convert4qmc pw.x pw2qmcpack.x qmcpack qmcpack_comp'.split()
+exe_name_list = 'ppconvert rungms convert4qmc pw.x pw2qmcpack.x qmcpack qmcpack_comp'.split()
 exe_names = set(exe_name_list)
 
 # protect user against errors and print pedagogical error messages
@@ -26,6 +26,8 @@ guard = True
 
 # examples displayed to user if no arguments are provided
 examples = '''
+jobrun_vesta ppconvert --gamess_pot O.BFD.gamess --s_ref "1s(2)2p(4)" --p_ref "1s(2)2p(4)" --d_ref "1s(2)2p(4)" --log_grid --upf O.BFD.upf
+
 jobrun_vesta rungms H2O.PBE
 
 jobrun_vesta convert4qmc -gamessAscii H2O.CISD.orbs.output -ci H2O.CISD.orbs.output -threshold 0.01 -readInitialGuess 60  -add3BodyJ
@@ -36,6 +38,20 @@ jobrun_vesta pw2qmcpack.x p2q.in
 
 jobrun_vesta qmcpack opt.in.xml
 '''
+
+# portions of template qsub script
+cobalt_header = '''#!/bin/bash
+#COBALT -q default
+#COBALT -A {0}
+#COBALT -n {1}
+#COBALT -t {2}
+#COBALT -O {3}
+'''
+cobalt_shape = '''LOCARGS="--block $COBALT_PARTNAME ${COBALT_CORNER:+--corner} $COBALT_CORNER ${COBALT_SHAPE:+--shape} $COBALT_SHAPE"
+echo "Cobalt location args: $LOCARGS" >&2
+'''
+runjob='runjob --np {0} -p {1} $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS={2} : {3}{4}'
+
 
 #==================#
 # global functions #
@@ -76,8 +92,32 @@ if exe_name not in exe_names:
 #end if
 
 # generate submission command based on target executable
+script = False
 command = ''
-if exe_name=='rungms':
+if exe_name=='ppconvert':
+    #===========#
+    # ppconvert #
+    #===========#
+    convert  = '/soft/applications/qmcpack/Binaries/ppconvert'
+    nodes = 9
+    time  = 60
+    queue = 'prod'
+#    script_text = '''#!/bin/sh
+#
+#RANKS_PER_NODE=1
+#NODES=`cat $COBALT_NODEFILE | wc -l`
+#PROCS=$(($NODES * $RANKS_PER_NODE))
+#
+#mpirun -f $COBALT_NODEFILE -n $PROCS {0} {1}
+#    '''.format(convert,join_args(exe_arg_list))
+    script_text = '#!/bin/sh\n{0} {1}\n'.format(convert,join_args(exe_arg_list))
+    script_file = 'ppconvert.submit.sh'
+    open(script_file,'w').write(script_text)
+    os.system('chmod +x '+script_file)
+    # qsub account nodes time submission_script
+    command = 'qsub -A {0} -n {1} -t {2} {3}'.format(account,nodes,time,script_file)
+    
+elif exe_name=='rungms':
     #========#
     # GAMESS #
     #========#
@@ -131,26 +171,18 @@ elif exe_name=='pw.x':
         #end if
     #end if
     if '.' in infile:
-        prefix = infile.split('.')[0]
+        prefix = infile.rsplit('.',1)[0]
     else:
         prefix = infile
     #end if
-    pw    = '/soft/applications/qmcpack/Binaries/pw.x'
-    nodes = 9
-    time  = 60
-    queue = 'prod'
-    script_text = '''#!/bin/sh
+    script  = True
+    exe     = '/soft/applications/qmcpack/Binaries/pw.x'
+    nodes   = 32
+    procs   = 16
+    threads = 1
+    time    = 120
+    argstr  =  ' -input '''+infile+'\n'
 
-RANKS_PER_NODE=4
-NODES=`cat $COBALT_NODEFILE | wc -l`
-PROCS=$(($NODES * $RANKS_PER_NODE))
-
-mpirun -f $COBALT_NODEFILE -n $PROCS {0} -npool 4 -inp {1}
-    '''.format(pw,infile)
-    script_file = prefix+'.submit.sh'
-    open(script_file,'w').write(script_text)
-    # qsub account nodes time submission_script
-    command = 'qsub -A {0} -n {1} -t {2} {3}'.format(account,nodes,time,script_file)
 elif exe_name=='pw2qmcpack.x':
     #==============#
     # pw2qmcpack.x #
@@ -165,26 +197,18 @@ elif exe_name=='pw2qmcpack.x':
         #end if
     #end if
     if '.' in infile:
-        prefix = infile.split('.')[0]
+        prefix = infile.rsplit('.',1)[0]
     else:
         prefix = infile
     #end if
-    pw    = '/soft/applications/qmcpack/Binaries/pw2qmcpack.x'
-    nodes = 9
-    time  = 60
-    queue = 'prod'
-    script_text = '''#!/bin/sh
+    script  = True
+    exe     = '/soft/applications/qmcpack/Binaries/pw.x'
+    nodes   = 1
+    procs   = 1
+    threads = 1
+    time    = 120
+    argstr  = '<'+infile+'\n'
 
-RANKS_PER_NODE=1
-NODES=`cat $COBALT_NODEFILE | wc -l`
-PROCS=$(($NODES * $RANKS_PER_NODE))
-
-mpirun -f $COBALT_NODEFILE -n $PROCS {0} -npool 1 -inp {1}
-    '''.format(pw,infile)
-    script_file = prefix+'.submit.sh'
-    open(script_file,'w').write(script_text)
-    # qsub account nodes time submission_script
-    command = 'qsub -A {0} -n {1} -t {2} {3}'.format(account,nodes,time,script_file)
 elif exe_name=='qmcpack' or exe_name=='qmcpack_comp':
     #=========#
     # QMCPACK #
@@ -199,19 +223,33 @@ elif exe_name=='qmcpack' or exe_name=='qmcpack_comp':
         #end if
     #end if
     if '.' in infile:
-        output = infile.split('.')[0]
+        if infile.endswith('.in.xml'):
+            prefix = infile.rsplit('.',2)[0]
+        else:
+            prefix = infile.rsplit('.',1)[0]
+        #end if
     else:
-        output = infile
+        prefix = infile
     #end if
-    qmcpack = '/soft/applications/qmcpack/Binaries/'+exe_name
-    nodes   = 512
-    threads = 64
-    time    = 60
-    queue   = 'default'
-    mode    = 'c1'
-    command = 'qsub -A {0} -q {1} -n {2} -t {3} -O {4} --mode {5} --env BG_SHAREDMEMSIZE=32:OMP_NUM_THREADS={6} {7} {8}'.format(account,queue,nodes,time,output,mode,threads,qmcpack,infile)
+    script  = True
+    exe     = '/soft/applications/qmcpack/Binaries/'+exe_name
+    nodes   = 32
+    procs   = 1
+    threads = 16
+    time    = 120
+    argstr  = ' '+infile+'\n'
+#end if
+
+if script:
+    script_text = cobalt_header.format(account,nodes,time,prefix)
+    script_text += cobalt_shape
+    script_text += runjob.format(nodes*procs,procs,threads,exe,argstr)
+    script_file = prefix+'.qsub.in'
+    open(script_file,'w').write(script_text)
+    os.system('chmod +x '+script_file)
+    command = 'qsub --mode script --env BG_SHAREDMEMSIZE=32 '+script_file
 #end if
 
 # execute the submission command
-#print command
+print command
 os.system(command)
