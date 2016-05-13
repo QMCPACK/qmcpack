@@ -57,6 +57,20 @@
 \newcommand{\hide}[1]{}
 
 
+% control display of instructions in the labs
+%   normally one only wants to show the 'workstation' way of running the labs
+\newif\ifws
+%\wstrue
+%   for the pdf used during the labs, one wants to show the host supercomputer way
+\wsfalse
+%  command for switching inline text (do not wrap verbatim environments with this!)
+\ifws
+\newcommand{\labsw}[2]{#1}
+\else
+\newcommand{\labsw}[2]{#2}
+\fi
+
+
 \oddsidemargin 0cm
 \evensidemargin 0cm
 \textwidth 6.5in
