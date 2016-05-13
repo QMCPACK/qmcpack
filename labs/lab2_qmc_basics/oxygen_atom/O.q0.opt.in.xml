@@ -90,7 +90,7 @@
                <var id="uu_b" name="B">   0.6   </var>  <!-- up-up B parameter  Ar/(1+Br)  -->
             </correlation>
             <correlation speciesA="u" speciesB="d">
-               <var id="ud_b" name="B">   1.0   </var>  <!-- down-down B parameter  Ar/(1+Br)  -->
+               <var id="ud_b" name="B">   1.0   </var>  <!-- up-down B parameter  Ar/(1+Br)  -->
             </correlation>
          </jastrow>
       </wavefunction>
@@ -119,16 +119,17 @@
 
    <!--  linear optimization method (use fewer samples) -->
    <!--    fill in MAX1, ECOST1, UVCOST1, RVCOST1, TS, SAMPLES1    -->
-   <loop max="8">  <!-- regenerate Monte Carlo samples and optimize MAX1 times -->
+   <!--    samples MUST be a multiple of # threads (512 on Vesta) -->
+   <loop max="MAX1">  <!-- regenerate Monte Carlo samples and optimize MAX1 times -->
       <qmc method="linear" move="pbyp" checkpoint="-1">
-         <cost name="energy"              >    0                </cost>
-         <cost name="unreweightedvariance">    1.0                </cost>
-         <cost name="reweightedvariance"  >    0                </cost>
-         <parameter name="timestep"            >    .3                </parameter>
-         <parameter name="samples"             >    5000           </parameter>
-         <parameter name="warmupSteps"         >    300                </parameter>
-         <parameter name="blocks"              >    800                </parameter>
-         <parameter name="subSteps"            >    10                 </parameter>
+         <cost name="energy"              >    ECOST1                </cost>
+         <cost name="unreweightedvariance">    UVCOST1                </cost>
+         <cost name="reweightedvariance"  >    RVCOST1                </cost>
+         <parameter name="timestep"            >    TS                </parameter>
+         <parameter name="samples"             >    SAMPLES1           </parameter>
+         <parameter name="warmupSteps"         >    50                 </parameter>
+         <parameter name="blocks"              >    200                </parameter>
+         <parameter name="subSteps"            >    1                  </parameter>
          <parameter name="nonlocalpp"          >    yes                </parameter>
          <parameter name="useBuffer"           >    yes                </parameter>
          <parameter name="walkers"             >    1                  </parameter>
@@ -148,16 +149,16 @@
 
    <!--  linear optimization method (use more samples) -->
    <!--    fill in MAX2, ECOST2, UVCOST2, RVCOST2, TS, SAMPLES2    -->
-   <loop max="8">
+   <loop max="MAX2">
       <qmc method="linear" move="pbyp" checkpoint="-1">
-         <cost name="energy"              >    0                </cost>
-         <cost name="unreweightedvariance">    1.0                </cost>
-         <cost name="reweightedvariance"  >    0                </cost>
-         <parameter name="timestep"            >    0.3                </parameter>
-         <parameter name="samples"             >    20000           </parameter>
-         <parameter name="warmupSteps"         >    300                </parameter>
-         <parameter name="blocks"              >    800                </parameter>
-         <parameter name="subSteps"            >    10                 </parameter>
+         <cost name="energy"              >    ECOST2                </cost>
+         <cost name="unreweightedvariance">    UVCOST2                </cost>
+         <cost name="reweightedvariance"  >    RVCOST2                </cost>
+         <parameter name="timestep"            >    TS                </parameter>
+         <parameter name="samples"             >    SAMPLES2           </parameter>
+         <parameter name="warmupSteps"         >    50                 </parameter>
+         <parameter name="blocks"              >    200                </parameter>
+         <parameter name="subSteps"            >    1                  </parameter>
          <parameter name="nonlocalpp"          >    yes                </parameter>
          <parameter name="useBuffer"           >    yes                </parameter>
          <parameter name="walkers"             >    1                  </parameter>
