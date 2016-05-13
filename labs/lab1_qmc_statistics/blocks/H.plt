@@ -32,4 +32,4 @@ set ylabel "t_CPU,total (s)" offset -3
 plot "H.dat" using 1:12
 
 unset multiplot
-#pause -1
+pause -1

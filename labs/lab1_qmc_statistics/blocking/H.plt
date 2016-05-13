@@ -1,5 +1,5 @@
-set terminal png size 400,300 
-set output 'steps_per_block_vs_autocorrelation_energy_H_STO-2G.png'
+#set terminal png size 400,300 
+#set output 'steps_per_block_vs_autocorrelation_energy_H_STO-2G.png'
 
 TOP = 0.98
 DY  = 0.42
