@@ -1,11 +1,11 @@
 #! /usr/bin/env python
 
 # import project suite functions
-from project import settings,Job,run_project,get_machine,obj
-from project import generate_physical_system
-from project import generate_pwscf
-from project import generate_pw2qmcpack
-from project import generate_qmcpack,vmc,loop,linear,dmc
+from nexus import settings,Job,run_project,get_machine,obj
+from nexus import generate_physical_system
+from nexus import generate_pwscf
+from nexus import generate_pw2qmcpack
+from nexus import generate_qmcpack,vmc,loop,linear,dmc
 
 # project suite settings
 settings(
@@ -24,9 +24,9 @@ vesta = get_machine('vesta')
 vesta.queue_size = 1
 
 # locations of pwscf, pw2qmcpack and qmcpack executables
-pwscf      = '/soft/applications/qmcpack/DFT_Binaries/pw.x'
-pw2qmcpack = '/soft/applications/qmcpack/DFT_Binaries/pw2qmcpack.x'
-qmcpack    = '/soft/applications/qmcpack/build_XL_real/bin/qmcapp'
+pwscf      = '/soft/applications/qmcpack/Binaries/pw.x'
+pw2qmcpack = '/soft/applications/qmcpack/Binaries/pw2qmcpack.x'
+qmcpack    = '/soft/applications/qmcpack/Binaries/qmcpack'
 
 # run directory and pseudopotentials
 directory = 'bcc-beryllium' # directory to perform runs
@@ -34,9 +34,9 @@ dft_pps   = ['Be.ncpp']   # pwscf pseudopotentials
 qmc_pps   = ['Be.xml']   # qmcpack pseudopotentials
 
 # job details
-dft_job = Job(cores=16,hours=2,app=pwscf,queue="R.qmc")
-p2q_job = Job(cores=1,hours=2,app=pw2qmcpack,queue="R.qmc")
-qmc_job = Job(nodes=32,hours=2,threads=16,app=qmcpack,queue="R.qmc")
+dft_job = Job(cores=16,hours=2,app=pwscf)
+p2q_job = Job(cores=1,hours=2,app=pw2qmcpack)
+qmc_job = Job(nodes=32,hours=2,threads=16,app=qmcpack)
 
 # specify k-point grids
 kgrids = [(2,2,2),(3,3,3)]
