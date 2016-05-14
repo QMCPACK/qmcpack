@@ -16,7 +16,7 @@ settings(
     generate_only = 0,
     sleep         = 10,
     machine       = 'vesta',
-    account       = 'QMC_2014_training'
+    account       = 'QMCPACK'
     )
  
 # allow max of one job at a time (lab only)
