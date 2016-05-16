@@ -1,12 +1,25 @@
 \chapter{Running QMCPACK}
 \label{chap:running}
 
+To run QMCPACK, put one or more input file names on the command line:
+\begin{verbatim}
+qmcpack [command line options] <XML input file(s)>
+\end{verbatim}
+
 \section{Command line options}
 \label{sec:commandline}
+Command line options include
+
+\begin{description}
+\item[-debug]{ Print more information about code internals.  Helpful for understanding what functions are being called for a particular input file.}
+\end{description}
+
+
 
 
 \section{Input files}
 \label{sec:inputs}
+The input is an XML file, documented in section~\ref{chap:input_overview}.
 
 \section{Output files}
 \label{sec:outputs}
