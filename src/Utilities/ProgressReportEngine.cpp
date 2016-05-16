@@ -34,6 +34,9 @@ void ReportEngine::echo(xmlNodePtr cur, bool recursive)
   }
   app_log() << "/>\n";
 }
+
+bool ReportEngine::DoOutput = false;
+
 }
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
