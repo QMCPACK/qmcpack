@@ -1,8 +1,8 @@
 &CONTROL
    calculation     = 'scf'
    disk_io         = 'low'
-   outdir          = 'q0_output'
    prefix          = 'O.q0'
+   outdir          = './'
    pseudo_dir      = './'
    restart_mode    = 'from_scratch'
    tprnfor         = .false.
