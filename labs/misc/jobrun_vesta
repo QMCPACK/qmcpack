@@ -93,15 +93,36 @@ if exe_name not in exe_names:
 
 # generate submission command based on target executable
 script = False
+runstr = None
 command = ''
 if exe_name=='ppconvert':
     #===========#
     # ppconvert #
     #===========#
-    convert  = '/soft/applications/qmcpack/Binaries/ppconvert'
-    nodes = 9
-    time  = 60
-    queue = 'prod'
+    for n in range(len(exe_arg_list)-1): # put " back on arguments
+        arg1 = exe_arg_list[n]
+        arg2 = exe_arg_list[n+1]
+        if arg1.startswith('--') and arg1.endswith('ref'):
+            if not arg2.startswith('"'):
+                arg2 = '"'+arg2
+            #end if
+            if not arg2.endswith('"'):
+                arg2 = arg2+'"'
+            #end if
+            exe_arg_list[n+1] = arg2
+        #end if
+    #end for
+    script  = True
+    #exe     = '/soft/applications/qmcpack/Binaries/ppconvert'
+    exe     = '/home/yeluo/qmcdev/trunk/src/QMCTools/ppconvert/build/ppconvert'
+    prefix  = 'ppconv'
+    nodes   = 1
+    procs   = 1
+    threads = 1
+    time    = 120
+    argstr  = ' '+join_args(exe_arg_list)+'\n'
+    runstr  = exe+argstr
+
 #    script_text = '''#!/bin/sh
 #
 #RANKS_PER_NODE=1
@@ -110,12 +131,12 @@ if exe_name=='ppconvert':
 #
 #mpirun -f $COBALT_NODEFILE -n $PROCS {0} {1}
 #    '''.format(convert,join_args(exe_arg_list))
-    script_text = '#!/bin/sh\n{0} {1}\n'.format(convert,join_args(exe_arg_list))
-    script_file = 'ppconvert.submit.sh'
-    open(script_file,'w').write(script_text)
-    os.system('chmod +x '+script_file)
-    # qsub account nodes time submission_script
-    command = 'qsub -A {0} -n {1} -t {2} {3}'.format(account,nodes,time,script_file)
+#    script_text = '#!/bin/sh\n{0} {1}\n'.format(convert,join_args(exe_arg_list))
+#    script_file = 'ppconvert.submit.sh'
+#    open(script_file,'w').write(script_text)
+#    os.system('chmod +x '+script_file)
+#    # qsub account nodes time submission_script
+#    command = 'qsub -A {0} -n {1} -t {2} {3}'.format(account,nodes,time,script_file)
     
 elif exe_name=='rungms':
     #========#
@@ -243,7 +264,11 @@ elif exe_name=='qmcpack' or exe_name=='qmcpack_comp':
 if script:
     script_text = cobalt_header.format(account,nodes,time,prefix)
     script_text += cobalt_shape
-    script_text += runjob.format(nodes*procs,procs,threads,exe,argstr)
+    if runstr is None:
+        script_text += runjob.format(nodes*procs,procs,threads,exe,argstr)
+    else:
+        script_text += runstr+'\n'
+    #end if
     script_file = prefix+'.qsub.in'
     open(script_file,'w').write(script_text)
     os.system('chmod +x '+script_file)
