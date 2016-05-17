@@ -223,7 +223,7 @@ elif exe_name=='pw2qmcpack.x':
         prefix = infile
     #end if
     script  = True
-    exe     = '/soft/applications/qmcpack/Binaries/pw.x'
+    exe     = '/soft/applications/qmcpack/Binaries/pw2qmcpack.x'
     nodes   = 1
     procs   = 1
     threads = 1
