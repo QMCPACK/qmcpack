@@ -51,7 +51,6 @@ labs/lab2_qmc_basics/
 │   ├── O.q0.opt.in.xml      - QMCPACK input for Jastrow optimization run
 │   ├── O.q0.dmc.in.xml      - QMCPACK input file for neutral O DMC
 │   ├── ip_conv.py           - tool to fit oxygen IP vs timestep
-│   ├── jobrun_vesta         - executable to submit jobs on Vesta
 │   └── reference            - directory w/ completed runs
 │
 └── oxygen_dimer          - oxygen dimer calculations
@@ -155,8 +154,8 @@ Quantum Espresso input for the DFT-LDA ground state of the neutral oxygen atom c
 &CONTROL
    calculation       = 'scf'
    restart_mode      = 'from_scratch'
-   prefix            = 'O_q0'
-   outdir            = 'O_q0_dft_output'
+   prefix            = 'O.q0'
+   outdir            = './'
    pseudo_dir        = './'
    disk_io           = 'low'
    wf_collect        = .true.
@@ -218,19 +217,19 @@ jobrun_vesta pw.x O.q0.dft.in
 \end{shaded}
 \fi
 
-The DFT run should take a few minutes to complete.  Once finished, you should check the LDA total energy in \texttt{O.q0.dft.out} by typing ``\ifws\verb|grep '!  ' O.q0.dft.out|\else\verb|grep '!  ' O.q0.dft.output|\fi''.  The result should be close to
+The DFT run should take a few minutes to complete.  If desired, you can track the progress of the DFT run by typing ``\ifws\verb|tail -f O.q0.dft.out|\else\verb|tail -f O.q0.dft.output|\fi''. Once finished, you should check the LDA total energy in \texttt{\labsw{O.q0.dft.out}{O.q0.dft.output}} by typing ``\ifws\verb|grep '!  ' O.q0.dft.out|\else\verb|grep '!  ' O.q0.dft.output|\fi''.  The result should be close to
 \begin{shaded}
 \begin{verbatim}
 !    total energy              =     -31.56730213 Ry
 \end{verbatim}
 \end{shaded} 
 
-The orbitals have been written in a format native to Quantum Espresso in the \texttt{O\_q0\_dft\_output} directory.  We will convert them into the ESHDF format expected by QMCPACK by using the \texttt{pw2qmcpack.x} tool.  The input for \texttt{pw2qmcpack.x} can be found in the file \texttt{O.q0.p2q.in} and also in listing \ref{lst:O_q0_p2q} below. 
+The orbitals have been written in a format native to Quantum Espresso in the \texttt{O.q0.save} directory.  We will convert them into the ESHDF format expected by QMCPACK by using the \texttt{pw2qmcpack.x} tool.  The input for \texttt{pw2qmcpack.x} can be found in the file \texttt{O.q0.p2q.in} and also in listing \ref{lst:O_q0_p2q} below. 
 
 \begin{lstlisting}[caption={\texttt{pw2qmcpack.x} input file for orbital conversion (\texttt{O.q0.p2q.in})\label{lst:O_q0_p2q}}]
 &inputpp
-  prefix     = 'O_q0'
-  outdir     = 'O_q0_dft_output'
+  prefix     = 'O.q0'
+  outdir     = './'
   write_psir = .false.
 /
 \end{lstlisting}
@@ -249,14 +248,15 @@ jobrun_vesta pw2qmcpack.x O.q0.p2q.in
 \end{verbatim}
 \end{shaded}
 \fi
-Upon completion of the run, a new file should be present containing the orbitals for QMCPACK: \texttt{O\_q0\_dft\_output/O\_q0.pwscf.h5}.
+\noindent
+Upon completion of the run, a new file should be present containing the orbitals for QMCPACK: \texttt{O.q0.pwscf.h5}.  Template XML files for particle (\texttt{O.q0.ptcl.xml}) and wavefunction (\texttt{O.q0.wfs.xml}) inputs to QMCPACK should also be present.  
 
 
 \section{Optimization with QMCPACK to obtain the correlated part of the wavefunction}\label{sec:optimization_walkthrough}
 The wavefunction we have obtained to this point corresponds to a non-interacting Hamiltonian.  Once the Coulomb pair potential is switched on between particles, it is known analytically that the exact wavefunction has cusps whenever two particles meet spatially and in general the electrons become correlated.  This is represented in the wavefunction by introducing a Jastrow factor containing at least pair correlations
 \begin{align}
   &\Psi_{Slater-Jastrow}=e^{-J}\Psi_{Slater} \\
-  &J = \sum_{\sigma\sigma'}\sum_{i<j}u^{\sigma\sigma'}_2(|r_i-r_j|) + \sum_\sigma\sum_{iI}u^\sigma_1(|r_i-r_I|)
+  &J = \sum_{\sigma\sigma'}\sum_{i<j}u^{\sigma\sigma'}_2(|r_i-r_j|) + \sum_\sigma\sum_{iI}u^{\sigma I}_1(|r_i-r_I|)
 \end{align}
 Here $\sigma$ is a spin variable while $r_i$ and $r_I$ represent electron and ion coordinates, respectively.  The introduction of $J$ into the wavefunction is similar to F12 methods in quantum chemistry, though it has been present in essentially all QMC studies since the first applications the method (circa 1965).
 
@@ -330,49 +330,70 @@ Here $E_0$ is the ground state energy, $E_T(P)$ is the trial energy, $V_T(P)$ is
 Iterative varational Monte Carlo methods have been developed to handle the non-linear optimization problem $\min\limits_P C(P)$.  We will be using the linearized optimization method of Umrigar, \emph{et al.} (PRL \textbf{98} 110201 (2007)).  Let us try this now with QMCPACK.
 }
 
-
-
-Open \texttt{O.q0.opt.in.xml} with your favorite text editor.  This is a QMCPACK input file configured for wavefunction optimization with the linear method. Take a minute to familiarize yourself with the general format and contents of the input file.  The major sections are the simulation cell, description of particle species (electrons \& ions/atoms), the trial wavefunction (orbitals, Slater determinants, and Jastrow factors), the Hamiltonian, and finally inputs describing the quantum Monte Carlo process (linear optimization in this case).  Portions marked with ``\texttt{<!-- ... -->}'' are comments describing these sections.  XML is not the easiest to read, but this can be helped by using an editor with color highlighting such as \texttt{emacs} or \texttt{vi}.
-
-The most important parts to focus on for the purposes of this exercise are the Jastrow factors and the inputs to the linear optimization method.  Input specifying the one-body electron-ion Jastrow is:
+First, we need to update the template particle and wavefunction information in \texttt{O.q0.ptcl.xml} and \texttt{O.q0.wfs.xml}.  We want to simulate the O atom in open boundary conditions (the default is periodic).  To do this open \texttt{O.q0.ptcl.xml} with your favorite text editor (e.g. \texttt{emacs} or \texttt{vi}) and replace
 \begin{lstlisting}
-<jastrow type="One-Body" name="J1" function="bspline" source="ion0" print="yes">  
-  <correlation elementType="O" size="8" rcut="4.5" cusp="0.0">
-    <coefficients id="eO" type="Array">                  
-      0 0 0 0 0 0 0 0    
-    </coefficients>
-  </correlation>
-</jastrow>
+<parameter name="bconds">
+   p p p
+</parameter>
+<parameter name="LR_dim_cutoff">
+   15
+</parameter>
+\end{lstlisting}
+with
+\begin{lstlisting}
+<parameter name="bconds">
+   n n n 
+</parameter>
+\end{lstlisting}
+
+Next we will select Jastrow factors appropriate for an atom.  In open boundary conditions, the B-spline Jastrow correlation functions should cut off to zero at some distance away from the atom.  Open \texttt{O.q0.wfs.xml} and add the following cutoffs (\texttt{rcut} in Bohr radii) to the correlation factors:
+\begin{lstlisting}
+...
+<correlation speciesA="u" speciesB="u" size="8" rcut="10.0">
+...
+<correlation speciesA="u" speciesB="d" size="8" rcut="10.0">
+...
+<correlation elementType="O" size="8" rcut="5.0">
+...
 \end{lstlisting}
 \noindent
-The XML describes $u_1^{\sigma}(r)$ (assuming $u_1^{\uparrow}\approx u_1^{\downarrow}$) as a B-spline with 8 knots, no cusp at the origin (the oxygen pseudopotential is finite at $r=0$), and vanishing beyond 4.5 Bohr.  The initial guess of zero for each of the 8 knot parameters corresponds to $u_1^{\sigma}(r)=0$.  The input for the two-body electron-electron Jastrow is similar:
+These terms correspond to $u_2^{\uparrow\uparrow}/u_2^{\downarrow\downarrow}$, $u_2^{\uparrow\downarrow}$, and $u_1^{\uparrow O}/u_1^{\downarrow O}$, respectively.  In each case, the correlation function ($u_*$) is represented by piecewise continuous cubic B-splines.  Each correlation function has eight parameters which are just the values of $u$ on a uniformly spaced grid up to \texttt{rcut}.  Initially the parameters (\texttt{coefficients}) are set to zero:
 \begin{lstlisting}
-<jastrow type="Two-Body" name="J2" function="pade" print="yes">
-  <correlation speciesA="u" speciesB="u">
-    <var id="uu_b" name="B">   0.6   </var>
-  </correlation>
-  <correlation speciesA="u" speciesB="d">
-    <var id="ud_b" name="B">   1.0   </var>  
-  </correlation>
-</jastrow>
+<correlation speciesA="u" speciesB="u" size="8" rcut="10.0">
+  <coefficients id="uu" type="Array">
+     0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+  </coefficients>
+</correlation>
+\end{lstlisting}
+
+Finally, we need to assemble particle, wavefunction, and pseudopotential information into the main QMCPACK input file (\texttt{O.q0.opt.in.xml}) and specify inputs for the Jastrow optimization process.  Open \texttt{O.q0.opt.in.xml} and write in the location of the particle, wavefunction, and pseudopotential files (``\texttt{<!-- ... -->}'' are comments):
+\begin{lstlisting}
+...
+<!-- include simulationcell and particle information from pw2qmcpqack -->
+<include href="O.q0.ptcl.xml"/>
+...
+<!-- include wavefunction information from pw2qmcpqack -->
+<include href="O.q0.wfs.xml"/>
+...
+<!-- O pseudopotential read from "O.BFD.xml" -->
+<pseudo elementType="O" href="O.BFD.xml"/>
+...
 \end{lstlisting}
 \noindent
-The XML describes $u_2^{\uparrow\uparrow/\downarrow\downarrow}(r)$ and  $u_2^{\uparrow\downarrow}(r)$ as Pad\'{e} functions with initial guesses of $B^{\uparrow\uparrow}=0.6~\textrm{Bohr}^{-1}$ and  $B^{\uparrow\downarrow}=1.0~\textrm{Bohr}^{-1}$ for the adjustable parameters.  
-
 The relevant portion of the input describing the linear optimization process is
 \begin{lstlisting}
-<loop max="MAX">
+<loop max="MAX">  
   <qmc method="linear" move="pbyp" checkpoint="-1">
-    <cost name="energy"              >  ECOST   </cost>
-    <cost name="unreweightedvariance">  UVCOST  </cost>
-    <cost name="reweightedvariance"  >  RVCOST  </cost>
-    <parameter name="timestep"       >  TS      </parameter>
-    <parameter name="samples"        >  SAMPLES </parameter>
-    <parameter name="warmupSteps"    >  300     </parameter>
-    <parameter name="blocks"         >  800     </parameter>
-    <parameter name="subSteps"       >  10      </parameter>
-    <parameter name="nonlocalpp"     >  yes     </parameter>
-    <parameter name="useBuffer"      >  yes     </parameter>
+    <cost name="energy"              >  ECOST    </cost>
+    <cost name="unreweightedvariance">  UVCOST   </cost>
+    <cost name="reweightedvariance"  >  RVCOST   </cost>
+    <parameter name="timestep"       >  TS       </parameter>
+    <parameter name="samples"        >  SAMPLES  </parameter>
+    <parameter name="warmupSteps"    >  50       </parameter>
+    <parameter name="blocks"         >  200      </parameter>
+    <parameter name="subSteps"       >  1        </parameter>
+    <parameter name="nonlocalpp"     >  yes      </parameter>
+    <parameter name="useBuffer"      >  yes      </parameter>
     ...
   </qmc>
 </loop>
@@ -384,16 +405,16 @@ An explanation of each input variable can be found below.  The remaining variabl
   \item[unreweightedvariance] Fraction of unreweighted trial variance in the cost function.  Neglecting the weights can be more robust.
   \item[reweightedvariance] Fraction of trial variance (including the full weights) in the cost function.  
   \item[timestep] Timestep of the VMC random walk, determines spatial distance moved by each electron during MC steps.  Should be chosen such that the acceptance ratio of MC moves is around 50\% (30-70\% is often acceptable).  Reasonable values are often between 0.2 and 0.6 $\textrm{Ha}^{-1}$.
-  \item[samples] Total number of MC samples collected for optimization, determines statistical error bar of cost function.  Often efficient to start with a small number of samples (5-20k) and then increase (20-100k).  More samples may be required if the wavefunction contains a large number of variational parameters.  MUST be be a multiple of the number of threads/cores \labsw{}{(use multiples of 512 on Vesta)}.
+  \item[samples] Total number of MC samples collected for optimization, determines statistical error bar of cost function.  Often efficient to start with a modest number of samples (50k) and then increase as needed.  More samples may be required if the wavefunction contains a large number of variational parameters.  MUST be be a multiple of the number of threads/cores \labsw{}{(use multiples of 512 on Vesta)}.
   \item[warmupSteps]  Number of MC steps discarded as a warmup or equilibration period of the random walk.  If this is too small, it will bias the optimization procedure.
   \item[blocks]  Number of average energy values written to output files.  Should be greater than 200 for meaningful statistical analysis of output data (\emph{e.g.} via \texttt{qmca}).
   \item[subSteps] Number of MC steps in between energy evaluations.  Each energy evaluation is expensive so taking a few steps to decorrelate between measurements can be more efficient.  Will be less efficient with many substeps.
   \item[nonlocalpp,useBuffer] If no, evaluate non-local pseudopotential derivatives approximately during optimization.  This saves time and often does not affect optimization results unless the non-local contribution to the energy is large.
-  \item[loop max] Number of times to repeat the optimization.  Using the resulting wavefunction from the previous optimization in the next one improves the results.  Typical choices range between 4 and 20.   
+  \item[loop max] Number of times to repeat the optimization.  Using the resulting wavefunction from the previous optimization in the next one improves the results.  Typical choices range between 8 and 16.   
 \end{description}
-The cost function defines the quantity to be minimized during optimization. The three components of the cost function, energy, unreweighted variance, and reweighted variance should sum to one.  Dedicating 100\% of the cost function to unreweighted variance is often a good choice.  Another common choice is to try 90/10 or 80/20 mixtures of reweighted variance and energy.  Using 100\% energy minimization is desirable for reducing DMC pseudopotential localization errors, but the optimization process is less stable and should only be attempted after performing several cycles of e.g. variance minimization first.
+The cost function defines the quantity to be minimized during optimization. The three components of the cost function, energy, unreweighted variance, and reweighted variance should sum to one.  Dedicating 100\% of the cost function to unreweighted variance is often a good choice.  Another common choice is to try 90/10 or 80/20 mixtures of reweighted variance and energy.  Using 100\% energy minimization is desirable for reducing DMC pseudopotential localization errors, but the optimization process is less stable and should only be attempted after performing several cycles of e.g. variance minimization first (the entire \texttt{loop} section can be duplicated with a different cost function each time).
 
-Replace \texttt{MAX}, \texttt{EVCOST}, \texttt{UVCOST}, \texttt{RVCOST}, \texttt{TS}, and \texttt{SAMPLES} in the two \texttt{loop}'s with appropriate starting values in the \texttt{O.q0.opt.in.xml} input file.  Perform the optimization run by typing
+Replace \texttt{MAX}, \texttt{EVCOST}, \texttt{UVCOST}, \texttt{RVCOST}, \texttt{TS}, and \texttt{SAMPLES} in the \texttt{loop} with appropriate starting values in the \texttt{O.q0.opt.in.xml} input file.  Perform the optimization run by typing
 \ifws
 \begin{shaded}
 \begin{verbatim}
@@ -410,12 +431,12 @@ jobrun_vesta qmcpack O.q0.opt.in.xml
 \noindent
 The run should only take a few minutes for reasonable values of loop \texttt{max} and \texttt{samples}.  
 
-Log file output will appear in \labsw{\texttt{O\_q0\_opt.out}}{\texttt{O\_q0\_opt.output}}.  The beginning of each linear optimization will be marked with text similar to
+Log file output will appear in \labsw{\texttt{O.q0.opt.out}}{\texttt{O.q0.opt.output}}.  The beginning of each linear optimization will be marked with text similar to
 \begin{shaded}
 \begin{verbatim}
 =========================================================
   Start QMCFixedSampleLinearOptimize
-  File Root O_q0_opt.s011 append = no 
+  File Root O.q0.opt.s011 append = no 
 =========================================================
 \end{verbatim}
 \end{shaded}
@@ -423,62 +444,76 @@ Log file output will appear in \labsw{\texttt{O\_q0\_opt.out}}{\texttt{O\_q0\_op
 At the end of each optimization section the change in cost function, new values for the Jastrow parameters, and elapsed wallclock time are reported:
 \begin{shaded}
 \begin{verbatim}
-OldCost: 7.4701713964e-01 NewCost: 7.4681622535e-01 Delta Cost:-2.0091428584e-04
+ OldCost: 7.1637471800e-01 NewCost: 7.1635425970e-01 Delta Cost:-2.0458302174e-05
 ...
-  <optVariables href="O_q0_opt.s011.opt.xml">
-eO_0 -9.5623201640e-01 1 1  ON 0
-eO_1 -8.4728730387e-01 1 1  ON 1
-eO_2 -6.8954452383e-01 1 1  ON 2
-eO_3 -4.9327199567e-01 1 1  ON 3
-eO_4 -3.2560096773e-01 1 1  ON 4
-eO_5 -1.9567566480e-01 1 1  ON 5
-eO_6 -1.2940405487e-01 1 1  ON 6
-eO_7 -9.5221474839e-02 1 1  ON 7
-uu_b 4.2002038228e-01 0 1  ON 8
-ud_b 6.3472757070e-01 0 1  ON 9
+  <optVariables href="O.q0.opt.s010.opt.xml">
+uu_0 -7.1521288964e-01 1 1  ON 0
+uu_1 -9.2877240336e-01 1 1  ON 1
+uu_2 -1.0467103153e+00 1 1  ON 2
+uu_3 -1.0953972230e+00 1 1  ON 3
+uu_4 -1.1070130734e+00 1 1  ON 4
+uu_5 -1.0874728130e+00 1 1  ON 5
+uu_6 -1.0258488995e+00 1 1  ON 6
+uu_7 -1.4467669332e+00 1 1  ON 7
+ud_0 2.6875014571e-01 1 1  ON 8
+ud_1 -1.5766165503e-02 1 1  ON 9
+ud_2 -1.4123427373e-01 1 1  ON 10
+ud_3 -1.8739730188e-01 1 1  ON 11
+ud_4 -1.8070740017e-01 1 1  ON 12
+ud_5 -1.2069963316e-01 1 1  ON 13
+ud_6 -1.7982920869e-01 1 1  ON 14
+ud_7 -4.2474426156e-01 1 1  ON 15
+eO_0 -1.0520981758e+00 1 1  ON 16
+eO_1 -9.1814574396e-01 1 1  ON 17
+eO_2 -6.9775892269e-01 1 1  ON 18
+eO_3 -4.5411507428e-01 1 1  ON 19
+eO_4 -2.5743489506e-01 1 1  ON 20
+eO_5 -1.0879610780e-01 1 1  ON 21
+eO_6 -2.4139449229e-02 1 1  ON 22
+eO_7 2.1037749269e-02 1 1  ON 23
   </optVariables>
 ...
-  QMC Execution time = 7.0060820112e+00 secs 
+  QMC Execution time = 2.6048565362e+01 secs
 \end{verbatim}
 \end{shaded}
 \noindent
 The cost function should decrease during each linear optimization (\texttt{Delta cost < 0}).  Try ``\labsw{\texttt{grep OldCost *opt.out}}{\texttt{grep OldCost *opt.output}}''.  You should see something like this:
 \begin{shaded}
 \begin{verbatim}
- OldCost: 1.3644746067e+00 NewCost: 1.1049104640e+00 Delta Cost:-2.5956414268e-01
- OldCost: 1.0690085060e+00 NewCost: 8.3206148222e-01 Delta Cost:-2.3694702381e-01
- OldCost: 7.8558402137e-01 NewCost: 7.2478477600e-01 Delta Cost:-6.0799245374e-02
- OldCost: 7.3070322298e-01 NewCost: 7.1655770805e-01 Delta Cost:-1.4145514926e-02
- OldCost: 1.2184771084e+00 NewCost: 1.1923197177e+00 Delta Cost:-2.6157390699e-02
- OldCost: 6.8740347812e-01 NewCost: 6.8733036689e-01 Delta Cost:-7.3111228164e-05
- OldCost: 6.9683928634e-01 NewCost: 6.9681780340e-01 Delta Cost:-2.1482934426e-05
- OldCost: 6.7982953532e-01 NewCost: 6.7982948866e-01 Delta Cost:-4.6667065545e-08
- OldCost: 6.8674328187e-01 NewCost: 6.8674327833e-01 Delta Cost:-3.5391565234e-09
- OldCost: 7.5998537866e-01 NewCost: 7.5965629336e-01 Delta Cost:-3.2908530361e-04
- OldCost: 7.0771416413e-01 NewCost: 7.0765392787e-01 Delta Cost:-6.0236255172e-05
- OldCost: 7.4701713964e-01 NewCost: 7.4681622535e-01 Delta Cost:-2.0091428584e-04
+ OldCost: 1.3134592963e+00 NewCost: 7.7188924330e-01 Delta Cost:-5.4157005302e-01
+ OldCost: 7.4845000981e-01 NewCost: 7.2064323018e-01 Delta Cost:-2.7806779628e-02
+ OldCost: 6.7191694349e-01 NewCost: 6.7190823880e-01 Delta Cost:-8.7046816816e-06
+ OldCost: 7.1515211999e-01 NewCost: 7.1420521174e-01 Delta Cost:-9.4690825078e-04
+ OldCost: 3.0887809677e+00 NewCost: 3.0318584021e+00 Delta Cost:-5.6922565616e-02
+ OldCost: 9.9369152107e-01 NewCost: 9.5254988608e-01 Delta Cost:-4.1141634997e-02
+ OldCost: 7.1198030212e-01 NewCost: 7.1163560440e-01 Delta Cost:-3.4469771549e-04
+ OldCost: 7.4114649965e-01 NewCost: 7.4022000532e-01 Delta Cost:-9.2649432275e-04
+ OldCost: 7.2092937088e-01 NewCost: 7.2054430351e-01 Delta Cost:-3.8506736720e-04
+ OldCost: 7.5929893734e-01 NewCost: 7.5713646616e-01 Delta Cost:-2.1624711826e-03
+ OldCost: 7.1637471800e-01 NewCost: 7.1635425970e-01 Delta Cost:-2.0458302174e-05
+ OldCost: 7.4630768329e-01 NewCost: 7.3689350610e-01 Delta Cost:-9.4141771893e-03
 \end{verbatim}
 \end{shaded}
 
-Blocked averages of energy data, including the kinetic energy and components of the potential energy, are written to \texttt{scalar.dat} files.  The first is named ``\texttt{O\_q0\_opt.s000.scalar.dat}'', with a series number of zero (\texttt{s000}).  In the end there will be \texttt{MAX1}+\texttt{MAX2} of them, one for each series. 
+Blocked averages of energy data, including the kinetic energy and components of the potential energy, are written to \texttt{scalar.dat} files.  The first is named ``\texttt{O.q0.opt.s000.scalar.dat}'', with a series number of zero (\texttt{s000}).  In the end there will be \texttt{MAX} of them, one for each series. 
 
-When the job has finished, use the \texttt{qmca} tool to assess the effectiveness of the optimization process.  To look at just the total energy and the variance, type ``\verb|qmca -q ev O_q0_opt*scalar*|''.  This will print the energy, variance, and the variance/energy ratio in Hartree units:
+When the job has finished, use the \texttt{qmca} tool to assess the effectiveness of the optimization process.  To look at just the total energy and the variance, type ``\verb|qmca -q ev O.q0.opt*scalar*|''.  This will print the energy, variance, and the variance/energy ratio in Hartree units:
 \begin{shaded}
 \begin{verbatim}
                             LocalEnergy               Variance           ratio 
-O_q0_opt  series 0  -15.568764 +/- 0.003421   1.382681 +/- 0.056604   0.0888 
-O_q0_opt  series 1  -15.638500 +/- 0.005014   1.067662 +/- 0.019865   0.0683 
-O_q0_opt  series 2  -15.802163 +/- 0.002680   0.834521 +/- 0.007037   0.0528 
-O_q0_opt  series 3  -15.840982 +/- 0.001791   0.752242 +/- 0.009477   0.0475 
-O_q0_opt  series 4  -15.841584 +/- 0.003301   1.097355 +/- 0.252991   0.0693 
-O_q0_opt  series 5  -15.848602 +/- 0.003280   0.728377 +/- 0.019288   0.0460 
-O_q0_opt  series 6  -15.850839 +/- 0.001870   0.723159 +/- 0.008173   0.0456 
-O_q0_opt  series 7  -15.848411 +/- 0.002449   0.708589 +/- 0.007225   0.0447 
+O.q0.opt  series 0  -15.752691 +/- 0.006638   1.308990 +/- 0.020904   0.0831 
+O.q0.opt  series 1  -15.854499 +/- 0.007304   0.754957 +/- 0.017430   0.0476 
+O.q0.opt  series 2  -15.866341 +/- 0.007299   0.685069 +/- 0.011021   0.0432 
+O.q0.opt  series 3  -15.860209 +/- 0.006086   0.706933 +/- 0.013362   0.0446 
+O.q0.opt  series 4  -15.823484 +/- 0.008361   3.435846 +/- 1.077998   0.2171 
+O.q0.opt  series 5  -15.855915 +/- 0.006224   0.988390 +/- 0.036496   0.0623 
+O.q0.opt  series 6  -15.871419 +/- 0.004609   0.723626 +/- 0.019255   0.0456 
+O.q0.opt  series 7  -15.874430 +/- 0.009471   0.707508 +/- 0.022512   0.0446 
 ...
 \end{verbatim}
 \end{shaded}
 \noindent
-Plots of the data can also be obtained with the ``\texttt{-p}'' option (``\verb|qmca -p -q ev O_q0_opt*scalar*|'').
+Plots of the data can also be obtained with the ``\texttt{-p}'' option (``\verb|qmca -p -q ev O.q0.opt*scalar*|'').
 
 Identify which optimization series is the ``best'' according to your cost function.  It is likely that multiple series are similar in quality.  Note the \texttt{opt.xml} file corresponding to this series.  This file contains the final value of the optimized Jastrow parameters to be used in the DMC calculations of the next section of the lab.  
 
@@ -487,10 +522,10 @@ Identify which optimization series is the ``best'' according to your cost functi
 \textbf{\underline{Questions and Exercises}}
 \end{flushleft}
 \begin{enumerate}
-  \item{What is the acceptance ratio of your optimization runs? (use ``\verb|qmca -q ar O_q0_opt*scalar*|'')  Do you expect the Monte Carlo sampling to be efficient?}
+  \item{What is the acceptance ratio of your optimization runs? (use ``\verb|qmca -q ar O.q0.opt*scalar*|'')  Do you expect the Monte Carlo sampling to be efficient?}
   \item{How do you know when the optimization process has converged?}
-  \item{Why is the mean and the error of the variance sometimes large?  Consider using \newline``\verb|qmca -t -q ev O_q0_opt*scalar*|'' to investigate.}
-  \item{Optimization is sometimes sensitive to initial guesses of the parameters.  If you have time, try varying the initial parameters, including the cutoff radius (\texttt{rcut}) of the one-body Jastrow factor (remember to change \texttt{id} in the \texttt{<project/>} element).  Do you arrive at a similar set of final Jastrow parameters?  What is the lowest variance you are able to achieve?}
+  \item{Why is the mean and the error of the variance sometimes large?  Consider using \newline``\verb|qmca -t -q ev O.q0.opt*scalar*|'' to investigate.}
+  \item{Optimization is sometimes sensitive to initial guesses of the parameters.  If you have time, try varying the initial parameters, including the cutoff radius (\texttt{rcut}) of the Jastrow factors (remember to change \texttt{id} in the \texttt{<project/>} element).  Do you arrive at a similar set of final Jastrow parameters?  What is the lowest variance you are able to achieve?}
 \end{enumerate}
 
 
@@ -529,12 +564,13 @@ The drift term can be sampled with standard Monte Carlo methods, while the branc
 }
 
 
-In the same directory you used to perform wavefunction optimization (\texttt{oxygen\_atom}) you will find a sample DMC input file for the neutral oxygen atom named \texttt{O.q0.dmc.in.xml}.  Open this file in a text editor and note the differences from the optimization case.  The XML describing the wavefunction is no longer present.  In its place is the line
+In the same directory you used to perform wavefunction optimization (\texttt{oxygen\_atom}) you will find a sample DMC input file for the neutral oxygen atom named \texttt{O.q0.dmc.in.xml}.  Open this file in a text editor and note the differences from the optimization case.  Wavefunction information is no longer included from \texttt{pw2qmcpack}, but instead should come from the optimization run:
 \begin{lstlisting}
-   <include href="OPT_XML"/>
+<!-- OPT_XML is from optimization, e.g. O.q0.opt.s008.opt.xml -->
+<include href="OPT_XML"/>
 \end{lstlisting}
 \noindent
-Replace ``\texttt{OPT\_XML}'' with the \texttt{opt.xml} file corresponding to the best Jastrow parameters you found in the last section (this is a file name similar to \verb|O_q0_opt.s008.opt.xml|).  The \texttt{include} element essentially amounts to an in-place copy and paste of the contents of the \texttt{opt.xml} file.
+Replace ``\texttt{OPT\_XML}'' with the \texttt{opt.xml} file corresponding to the best Jastrow parameters you found in the last section (this is a file name similar to \verb|O.q0.opt.s008.opt.xml|).  The \texttt{include} element essentially amounts to an in-place copy and paste of the contents of the \texttt{opt.xml} file.
 
 The QMC calculation section at the bottom is also different.  The linear optimization blocks have been replaced with XML describing a VMC run followed by DMC.  The input keywords are described below.
 
@@ -573,9 +609,24 @@ Choose an initial DMC timestep and create a sequence of $N$ timesteps according 
    </qmc>
 \end{lstlisting}
 \noindent
-Fill in \texttt{DWARMUP}, \texttt{DBLOCKS}, \texttt{DSTEPS}, and \texttt{DTIMESTEP} for each DMC run according to \ref{eq:timestep_iter}.  Submit the DMC timestep extrapolation run to the queue with \texttt{submit\_O\_q0\_dmc}.  The run should take only a few minutes to complete.
+Fill in \texttt{DWARMUP}, \texttt{DBLOCKS}, \texttt{DSTEPS}, and \texttt{DTIMESTEP} for each DMC run according to \ref{eq:timestep_iter}.  Start the DMC timestep extrapolation run by typing:  
+\ifws
+\begin{shaded}
+\begin{verbatim}
+mpirun -np 4 qmcpack O.q0.dmc.in.xml >&O.q0.dmc.out&
+\end{verbatim}
+\end{shaded}
+\else
+\begin{shaded}
+\begin{verbatim}
+jobrun_vesta qmcpack O.q0.dmc.in.xml
+\end{verbatim}
+\end{shaded}
+\fi
+\noindent
+The run should take only a few minutes to complete.
 
-QMCPACK will create files prefixed with \texttt{O\_q0\_dmc}.  The log file is \texttt{O\_q0\_dmc.output}.  As before, block averaged data is written to \texttt{scalar.dat} files.  In addition, DMC runs produce \texttt{dmc.dat} files which contain energy data averaged only over the walker population (one line per DMC step).  The \texttt{dmc.dat} files also provide a record of the walker population at each step.
+QMCPACK will create files prefixed with \texttt{O.q0.dmc}.  The log file is \labsw{\texttt{O.q0.dmc.out}}{\texttt{O.q0.dmc.output}}.  As before, block averaged data is written to \texttt{scalar.dat} files.  In addition, DMC runs produce \texttt{dmc.dat} files which contain energy data averaged only over the walker population (one line per DMC step).  The \texttt{dmc.dat} files also provide a record of the walker population at each step.
 
 Use the \texttt{PlotTstepConv.pl} to obtain a linear fit to the timestep data (type ``\texttt{PlotTstepConv.pl O.q0.dmc.in.xml 40}'').  You should see a plot similar to fig. \ref{fig:timestep_conv}.  The tail end of the text output displays the parameters for the linear fit.  The ``\texttt{a}'' parameter is the total energy extrapolated to zero timestep in Hartree units. 
 
@@ -609,8 +660,8 @@ b               = -0.221687        +/- 0.03757      (16.95%)
   \item{What is the $\tau\rightarrow 0$ extrapolated value for the total energy?}
   \item{What is the maximum timestep you should use if you want to calculate the total energy to an accuracy of $0.05$ eV?  For convenience, $1~\textrm{Ha}=27.2113846~\textrm{eV}$.}
   \item{What is the acceptance ratio for this (bias$<0.05$ eV) run?  Does it follow the rule of thumb for sensible DMC (acceptance ratio $>99$\%) ?}
-  \item{Check the fluctuations in the walker population (\texttt{qmca -t -q nw O\_q0\_dmc*dmc.dat --noac}).  Does the population seem to be stable?}
-  \item{(Optional) Study population control bias for the oxygen atom.  Select a few population sizes \labsw{}{(use multiples of 512 to fit cleanly on a single Vesta partition)}.  Copy \texttt{O.q0.dmc.in.xml} to a new file and remove all but one DMC run (select a single timestep).  Make one copy of the new file for each population, set ``\texttt{samples}'', and choose a unique \texttt{id} in \texttt{<project/>}.  Make submission files similar to \texttt{submit\_O\_q0\_dmc} and \texttt{O.q0.dmc.qsub.in} and run one job at a time to avoid crowding the lab allocation.  Use \texttt{qmca} to study the dependence of the DMC total energy on the walker population.  How large is the bias compared to timestep error?  What bias is incurred by following the ``rule of thumb'' of a couple thousand walkers?  Will population control bias generally be an issue for production runs on modern parallel machines?}
+  \item{Check the fluctuations in the walker population (\verb|qmca -t -q nw O.q0.dmc*dmc.dat --noac|).  Does the population seem to be stable?}
+  \item{(Optional) Study population control bias for the oxygen atom.  Select a few population sizes \labsw{}{(use multiples of 512 to fit cleanly on a single Vesta partition)}.  Copy \texttt{O.q0.dmc.in.xml} to a new file and remove all but one DMC run (select a single timestep).  Make one copy of the new file for each population, set ``\texttt{samples}'', and choose a unique \texttt{id} in \texttt{<project/>}.  \labsw{}{Run one job at a time to avoid crowding the lab allocation.}  Use \texttt{qmca} to study the dependence of the DMC total energy on the walker population.  How large is the bias compared to timestep error?  What bias is incurred by following the ``rule of thumb'' of a couple thousand walkers?  Will population control bias generally be an issue for production runs on modern parallel machines?}
 \end{enumerate}
 
 
@@ -619,13 +670,66 @@ In this section, we will repeat the calculations of the prior two sections (opti
 
 Obtaining the timestep extrapolated DMC total energy for ionized oxygen should take much less (human) time than for the neutral case.  For convenience, the necessary steps are briefly summarized below.
 \begin{enumerate}
-  \item{Copy the linear optimization blocks you used in \texttt{O.q0.opt.in.xml} to  \texttt{O.q0.opt.in.xml}.}
-  \item{Submit the optimization job to Vesta's queue with \texttt{submit\_O\_q1\_opt}}.
-  \item{Identify the optimal set of parameters with \texttt{qmca}.}
-  \item{Replace \texttt{OPT\_XML} in \texttt{submit\_O\_q1\_dmc} with the \texttt{opt.xml} file containing the optimal parameters.}
-  \item{Copy the VMC and DMC blocks you used in \texttt{O.q0.dmc.in.xml} to \texttt{O.q1.dmc.in.xml}.}
-  \item{Submit the DMC timestep job to Vesta's queue with \texttt{submit\_O\_q1\_dmc}}.
-  \item{Obtain the DMC total energy extrapolated to zero timestep with \texttt{PlotTstepConv.pl}.}
+  \item{Obtain DFT orbitals with Quantum Espresso}
+  \begin{enumerate}
+    \item{Copy the DFT input (\texttt{O.q0.dft.in}) to \texttt{O.q1.dft.in}}
+    \item{Edit \texttt{O.q1.dft.in} to match the +1 charge state of the oxygen atom}
+    \begin{verbatim}
+     ...
+     prefix            = 'O.q1'
+     ...
+     tot_charge        = 1
+     tot_magnetization = 3
+     ...
+    \end{verbatim}
+    \item{Perform the DFT run: \ifws\verb|mpirun -np 4 pw.x -input O.q1.dft.in >&O.q1.dft.out&|\else\verb|jobrun_vesta pw.x O.q1.dft.in|\fi}
+  \end{enumerate}
+
+  \item{Convert the orbitals to ESHDF format}
+  \begin{enumerate}
+    \item{Copy the pw2qmcpack input (\texttt{O.q0.p2q.in}) to \texttt{O.q1.p2q.in}}
+    \item{Edit \texttt{O.q1.p2q.in} to match the file prefix used in DFT}
+    \begin{verbatim}
+     ...
+     prefix = 'O.q1'
+     ...
+    \end{verbatim}
+    \item{Perform the orbital conversion run: \ifws\verb|mpirun -np 1 pw2qmcpack.x<O.q1.p2q.in>&O.q1.p2q.out&|\else\verb|jobrun_vesta pw2qmcpack.x O.q1.p2q.in|\fi}
+  \end{enumerate}
+
+  \item{Optimize the Jastrow factor with QMCPACK}
+  \begin{enumerate}
+    \item{Copy the optimization input (\texttt{O.q0.opt.in.xml}) to \texttt{O.q1.opt.in.xml}}
+    \item{Edit \texttt{O.q1.opt.in.xml} to match the file prefix used in DFT}
+    \begin{verbatim}
+     ...
+     <project id="O.q1.opt" series="0">
+     ...
+     <include href="O.q1.ptcl.xml"/>
+     ...
+     <include href="O.q1.wfs.xml"/>
+     ...
+    \end{verbatim}
+    \item{Perform the Jastrow optimization run: \ifws\verb|mpirun -np 4 qmcpack O.q1.opt.in.xml >&O.q1.opt.out&|\else\verb|jobrun_vesta qmcpack O.q1.opt.in.xml|\fi}
+    \item{Identify the optimal set of parameters with \texttt{qmca} (\verb|[your opt.xml]|).}
+  \end{enumerate}
+
+  \item{DMC timestep study with QMCPACK}
+  \begin{enumerate}
+    \item{Copy the DMC input (\texttt{O.q0.dmc.in.xml}) to \texttt{O.q1.dmc.in.xml}}
+    \item{Edit \texttt{O.q1.opt.in.xml} to use the DFT prefix and the optimal Jastrow}
+    \begin{verbatim}
+     ...
+     <project id="O.q1.opt" series="0">
+     ...
+     <include href="O.q1.ptcl.xml"/>
+     ...
+     <include href="[your opt.xml]"/>
+     ...
+    \end{verbatim}
+    \item{Perform the DMC run: \ifws\verb|mpirun -np 4 qmcpack O.q1.dmc.in.xml >&O.q1.dmc.out&|\else\verb|jobrun_vesta qmcpack O.q1.dmc.in.xml|\fi}
+    \item{Obtain the DMC total energy extrapolated to zero timestep with \texttt{PlotTstepConv.pl}.}
+  \end{enumerate}
 \end{enumerate}
 The process listed above, which excludes additional steps for orbital generation and conversion, can become tedious to perform by hand in production settings where many calculations are often required.  For this reason automation tools are introduced for calculations involving the oxygen dimer in section \ref{sec:dimer_automation} of the lab.  
 
