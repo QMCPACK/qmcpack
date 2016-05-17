@@ -3,51 +3,19 @@
    <project id="O_q0_dmc" series="0">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
    </project>
-   <qmcsystem>
-      <simulationcell>
-         <parameter name="lattice" units="bohr">
-                 28.34589199        0.00000000        0.00000000
-                  0.00000000       28.34589483        0.00000000
-                  0.00000000        0.00000000       28.34589766
-         </parameter>
-         <parameter name="bconds">
-            n n n
-         </parameter>
-      </simulationcell>
-      <particleset name="e" random="yes" randomsrc="ion0">
-         <group name="u" size="4">
-            <parameter name="charge"              >    -1                    </parameter>
-            <parameter name="mass"                >    1.0                   </parameter>
-         </group>
-         <group name="d" size="2">
-            <parameter name="charge"              >    -1                    </parameter>
-            <parameter name="mass"                >    1.0                   </parameter>
-         </group>
-      </particleset>
-      <particleset name="ion0">
-         <group name="O" size="1">
-            <parameter name="charge"              >    6                     </parameter>
-            <parameter name="valence"             >    6                     </parameter>
-            <parameter name="atomicnumber"        >    8                     </parameter>
-            <parameter name="mass"                >    29164.3928678            </parameter>
-            <attrib name="position" datatype="posArray" condition="0">
-                    14.17294600       14.17294741       14.17294883
-            </attrib>
-         </group>
-      </particleset>
-   </qmcsystem>
 
+   <include href="O.q0.ptcl.xml"/>
+
+   <!-- OPT_XML is from optimization, e.g. O.q0.opt.s008.opt.xml -->
    <include href="OPT_XML"/>
 
-   <qmcsystem>
-      <hamiltonian name="h0" type="generic" target="e">
-         <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
-         <pairpot type="coulomb" name="IonIon" source="ion0" target="ion0"/>
-         <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
-            <pseudo elementType="O" href="O.BFD.xml"/>
-         </pairpot>
-      </hamiltonian>
-   </qmcsystem>
+   <hamiltonian name="h0" type="generic" target="e">
+      <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
+      <pairpot type="coulomb" name="IonIon" source="ion0" target="ion0"/>
+      <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
+         <pseudo elementType="O" href="O.BFD.xml"/>
+      </pairpot>
+   </hamiltonian>
 
    <!-- fill in VWARMUP, VBLOCKS, VSTEPS, VTIMESTEP, DWALKERS -->
    <qmc method="vmc" move="pbyp">
