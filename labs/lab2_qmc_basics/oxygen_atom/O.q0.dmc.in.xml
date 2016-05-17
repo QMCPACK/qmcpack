@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <simulation>
-   <project id="O_q0_dmc" series="0">
+   <project id="O.q0.dmc" series="0">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
    </project>
 
