@@ -320,9 +320,11 @@ def reduce_tilematrix(tiling):
         Tnew = array(T,dtype=float) #sheared/orthogonal tiling matrix
         tbar = identity(dim) #basis for shearing
         dr = range(dim)
-        other = [] # other[d] = dimensions other than d
+        dr = [1,0,2]
+        other = dim*[0] # other[d] = dimensions other than d
         for d in dr: 
-            other.append(set(dr)-set([d]))
+            #other.append(set(dr)-set([d]))
+            other[d] = set(dr)-set([d])
         #end for
         #move each axis to be parallel to barred directions
         # these are volume preserving shears of the supercell
@@ -474,7 +476,7 @@ class Structure(Sobj):
         self.dim    = dim
         self.center = array(center,dtype=float)
         self.axes   = array(axes,dtype=float)
-        self.bconds = array(bconds,dtype=str)
+        self.set_bconds(bconds)
         self.set_elem(elem)
         self.pos    = array(pos,dtype=float)
         self.frozen = None
@@ -525,6 +527,11 @@ class Structure(Sobj):
     #end def __init__
 
 
+    def set_bconds(self,bconds):
+        self.bconds = array(tuple(bconds),dtype=str)
+    #end def bconds
+
+
     def set_elem(self,elem):
         self.elem = array(elem,dtype=object)
     #end def set_elem
@@ -560,6 +567,11 @@ class Structure(Sobj):
         self.remove_folded_structure()
     #end def remove_folded
 
+    
+    def has_folded(self):
+        return self.has_folded_structure()
+    #end def has_folded
+
 
     def set_folded_structure(self,folded):
         self.folded_structure = folded
@@ -571,6 +583,11 @@ class Structure(Sobj):
         self.folded_structure = None
         self.tmatrix = None
     #end def remove_folded_structure
+
+        
+    def has_folded_structure(self):
+        return self.folded_structure!=None
+    #end def has_folded_structure
 
             
     def group_atoms(self,folded=True):
@@ -752,15 +769,36 @@ class Structure(Sobj):
     #end def add_atoms
 
 
+    def is_open(self):
+        return not self.any_periodic()
+    #end def is_open
+
+
     def is_periodic(self):
+        return self.any_periodic()
+    #end def is_periodic
+
+
+    def any_periodic(self):
         periodic = False
-        openbc = len(self.axes)==0 or len(self.bconds)==0
+        nocell = len(self.axes)==0 or len(self.bconds)==0
         for bc in self.bconds:
             periodic |= bc=='p'
         #end if
-        periodic &= not openbc
+        periodic &= not nocell
         return periodic
-    #end def is_periodic
+    #end def any_periodic
+
+    
+    def all_periodic(self):
+        periodic = True
+        nocell = len(self.axes)==0 or len(self.bconds)==0
+        for bc in self.bconds:
+            periodic &= bc=='p'
+        #end if
+        periodic &= not nocell
+        return periodic
+    #end def all_periodic
 
 
     def distances(self,pos1=None,pos2=None):

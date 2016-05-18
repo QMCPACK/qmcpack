@@ -429,6 +429,14 @@ behavior.  qmca plots traces with the -t flag.
 Type \textbf{qmca -q e -t H.s000.scalar.dat}, which produces a graph of the
 trace of the local energy:
 
+\FloatBarrier
+\begin{figure}[ht!]
+\begin{center}
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{./figures/lab_qmc_statistics_tracing1}
+\end{center}
+\end{figure}
+\FloatBarrier
+
 %\includegraphics[scale=0.5]{E_L_H_STO-2G.png}
 
 The solid black line connects the values of the local energy at each MC block
@@ -444,6 +452,14 @@ comparable to the total local energy.
 
 Change to directory \texttt{problematic} and type \textbf{qmca -q e -t
 H.s000.scalar.dat} to produce this graph:
+
+\FloatBarrier
+\begin{figure}[ht!]
+\begin{center}
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{./figures/lab_qmc_statistics_tracing2}
+\end{center}
+\end{figure}
+\FloatBarrier
 
 %\includegraphics[scale=0.5]{E_L_H_B-splines.png}
 
@@ -505,6 +521,14 @@ see this, type \textbf{qmca -q e {-}{-}sac *.scalar.dat} to see the energies
 and autocorrelation times, then plot with gnuplot by inputting \textbf{gnuplot
 H.plt}:
 
+\FloatBarrier
+\begin{figure}[ht!]
+\begin{center}
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{./figures/lab_qmc_statistics_blocking1}
+\end{center}
+\end{figure}
+\FloatBarrier
+
 %\includegraphics[scale=1.0]{timestep_vs_autocorrelation_energy_H_STO-2G.png}
 
 The error bar also increases with the autocorrelation.  
@@ -550,6 +574,15 @@ visualize the data:
 %H  series 15  LocalEnergy = -0.465723 +/- 0.004425    2.6 
 %\end{verbatim}
 %\end{shaded}
+
+\FloatBarrier
+\begin{figure}[ht!]
+\begin{center}
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{./figures/lab_qmc_statistics_blocking2}
+\end{center}
+\end{figure}
+\FloatBarrier
+
 %\includegraphics[scale=1.0]{steps_per_block_vs_autocorrelation_energy_H_STO-2G.png}
 
 The greatest number of steps per block produces the smallest autocorrelation
@@ -651,6 +684,14 @@ factors of four from 32 to 128 to 512.  Type \textbf{qmca -q ev *scalar.dat}
 and note the change in the error bar on the local energy as the number of
 nodes.  Visualize this with \textbf{gnuplot H.plt}:
 
+\FloatBarrier
+\begin{figure}[ht!]
+\begin{center}
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{./figures/lab_qmc_statistics_nodes}
+\end{center}
+\end{figure}
+\FloatBarrier
+
 %\includegraphics[scale=1.0]{nnode_vs_energy_H_STO-2G.png}
 
 Increasing the number of blocks, unlike running in parallel, increases the
@@ -663,6 +704,14 @@ To see the effect of increasing the block number, change to the directory
 \textbf{grep -A1 blocks H.xml}.  The number of steps remains fixed, thus
 increasing the total number of samples.   Visualize the tradeoff by inputting
 \textbf{gnuplot H.plt}: 
+
+\FloatBarrier
+\begin{figure}[ht!]
+\begin{center}
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{./figures/lab_qmc_statistics_blocks}
+\end{center}
+\end{figure}
+\FloatBarrier
 
 %\includegraphics[scale=1.0]{nblock_vs_tcpu_energy_H_STO-2G.png}
 
@@ -759,6 +808,14 @@ using the STO-6G basis set for the orbitals of the Slater determinant.  The file
 Use \textbf{qmca -q bc *scalar.dat} to see that the CPU time per block
 increases with number of electrons in the simulation, then plot the total CPU
 time of the simulation by \textbf{gnuplot Nelectron\_tCPU.plt}:
+
+\FloatBarrier
+\begin{figure}[ht!]
+\begin{center}
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{./figures/lab_qmc_statistics_scaling}
+\end{center}
+\end{figure}
+\FloatBarrier
 
 %\includegraphics[scale=1.0]{nelectron_vs_tcpu_H_C_CH_STO-6G.png}
 

@@ -1,0 +1,78 @@
+\subsubsection{Pade form}
+\label{sec:onebodyjastrowpade}
+
+While the spline Jastrow factor is the most flexible and most commonly used form implemented in \qmcpack, 
+there are times where its flexibility can make it difficult to optimize.  As an example, a spline jastrow
+with a very large cutoff may be difficult to optimize for isolated systems like molecules due to the small
+number of samples that will be present in the tail of the function.  In such cases, a simpler functional
+form may be advantageous.  The second order Pade jastrow factor, given in Eq.\ref{padeeqn} is a good choice 
+in such cases.  
+\begin{equation}
+\label{padeeqn}
+u_{ab}(r) = \frac{a*r+c*r^2}{1+b*r}
+\end{equation}
+Unlike the spline jastrow factor which includes a cutoff, this form has an infinite range and for every particle
+pair (subject to the minimum image convention) it will be applied.  It also is a cuspless jastrow factor,
+so it should either be used in combination with a single particle basis set that contains the proper cusp or
+with a smooth pseudopotential.
+
+\paragraph{Input Specification}
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{l c c c l }
+\hline
+\multicolumn{5}{l}{Correlation element} \\
+\hline
+\bfseries name & \bfseries datatype & \bfseries values & \bfseries defaults & \bfseries description \\
+\hline
+elementType & text & name & see below & Classical particle target  \\
+\hline
+\multicolumn{5}{l}{elements}\\ \hline
+& Coefficients & & & \\ \hline
+\multicolumn{5}{l}{Contents}\\ \hline
+& (None)  & & &  \\ \hline
+\end{tabular}
+%\end{tabular*}
+\end{center}
+\end{table}
+
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{l c c c l }
+\hline
+\multicolumn{5}{l}{parameter element} \\
+\hline
+\bfseries name & \bfseries datatype & \bfseries values & \bfseries defaults & \bfseries description \\
+\hline
+id & string & name & (required) & name for variable \\
+name & string & A or B or C & (required) & see Eq.\ref{padeeqn}\\
+optimize & text & yes or no & yes & if no, values are fixed in optimizations \\
+\hline
+\multicolumn{5}{l}{elements}\\ \hline
+(None) & & & \\ \hline
+\multicolumn{5}{l}{Contents}\\ \hline
+ (no name) & real & parameter value & (required) & Jastrow coefficients \\ \hline
+\end{tabular}
+%\end{tabular*}
+\end{center}
+\end{table}
+
+\paragraph{Example use case}
+\label{sec:1bjpadeexamples}
+
+Specify a spin independent function with independent jastrow factors for two different species (Li and H).
+The name of the particleset holding the ionic positions is "i".
+\begin{lstlisting}[language=xml]
+<jastrow name="J1" function="pade2" type="One-Body" print="yes" source="i">
+  <correlation elementType="Li">
+    <parameter id="LiA" name="A">  0.34 </parameter>
+    <parameter id="LiB" name="B"> 12.78 </parameter>
+    <parameter id="LiC" name="C">  1.62 </parameter>
+  </correlation>
+  <correlation elementType="H"">
+    <parameter id="HA" name="A">  0.14 </parameter>
+    <parameter id="HB" name="B"> 6.88 </parameter>
+    <parameter id="HC" name="C"> 0.237 </parameter>
+  </correlation>
+</jastrow>
+\end{lstlisting}

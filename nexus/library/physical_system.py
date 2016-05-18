@@ -244,7 +244,6 @@ del plist
 class PhysicalSystem(Matter):
 
     def __init__(self,structure=None,net_charge=0,net_spin=0,particles=None,**valency):
-
         self.pseudized = False
 
         if structure is None:
@@ -672,7 +671,7 @@ def generate_physical_system(**kwargs):
         structure = pre.tile(tiling)
     #end if
 
-    if tiling!=None and tiling!=(1,1,1):
+    if tiling!=None and tiling!=(1,1,1) and structure.has_folded():
         fps = PhysicalSystem(
             structure  = structure.folded_structure,
             net_charge = net_charge,

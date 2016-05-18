@@ -36,6 +36,10 @@
 }
 
 
+% set margins for whole document, lots of wasted space at top and bottom originally
+\usepackage[left=1.0in,right=1.0in,top=1.0in,bottom=1.0in]{geometry}
+
+
 
 
 \newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
@@ -51,6 +55,20 @@
 
 % efficiently comment out/hide blocks of text for any purpose
 \newcommand{\hide}[1]{}
+
+
+% control display of instructions in the labs
+%   normally one only wants to show the 'workstation' way of running the labs
+\newif\ifws
+%\wstrue
+%   for the pdf used during the labs, one wants to show the host supercomputer way
+\wsfalse
+%  command for switching inline text (do not wrap verbatim environments with this!)
+\ifws
+\newcommand{\labsw}[2]{#1}
+\else
+\newcommand{\labsw}[2]{#2}
+\fi
 
 
 \oddsidemargin 0cm
@@ -119,7 +137,7 @@
 % labs: import each as a separate chapter for now
 \input{lab_qmc_statistics}
 \input{lab_qmc_basics}
-%\input{lab_advanced_molecules}
+\input{lab_advanced_molecules}
 \input{lab_condensed_matter}
 
 

@@ -46,7 +46,8 @@ WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w,
                                        QMCHamiltonian& h,
                                        ParticleSetPool &ptclPool, WaveFunctionPool& ppool):
   QMCDriver(w,psi,h,ppool),checkRatio("no"),checkClone("no"), checkHamPbyP("no"),
-  PtclPool(ptclPool), wftricks("no"),checkEloc("no"), checkBasic("yes"), checkRatioV("no")
+  PtclPool(ptclPool), wftricks("no"),checkEloc("no"), checkBasic("yes"), checkRatioV("no"),
+  deltaParam(0.0), toleranceParam(0.0)
 {
   m_param.add(checkRatio,"ratio","string");
   m_param.add(checkClone,"clone","string");
@@ -56,6 +57,8 @@ WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w,
   m_param.add(checkEloc,"printEloc","string");
   m_param.add(checkBasic,"basic","string");
   m_param.add(checkRatioV,"virtual_move","string");
+  m_param.add(deltaParam,"delta","none");
+  m_param.add(toleranceParam,"tolerance","none");
 
   deltaR.resize(w.getTotalNum());
   makeGaussRandom(deltaR);
@@ -602,6 +605,10 @@ bool WaveFunctionTester::checkGradients(int lower_iat, int upper_iat,
 
   RealType rel_tol = 1e-3;
   RealType abs_tol = 1e-7;
+  if (toleranceParam > 0.0)
+  {
+    rel_tol = toleranceParam;
+  } 
 
   bool all_okay = true;
   string pad(4*indent, ' ');
@@ -658,7 +665,12 @@ bool WaveFunctionTester::checkGradients(int lower_iat, int upper_iat,
     fout << pad << "Gradient      = " << setw(12) << G[iat] << endl;
     fout << pad << "  Finite diff = " << setw(12) << G_fd[iat] << endl;
     fout << pad << "  Error       = " << setw(12) << G[iat]-G_fd[iat] << endl;
-    fout << pad << "  Relative Error = " << setw(12) << G_err_rel << endl << endl;
+    fout << pad << "  Relative Error = ";
+    for (int idim = 0; idim<OHMMS_DIM; idim++)
+    {
+        fout << G_err_rel[idim] << " ";
+    }
+    fout << endl << endl;
     fout << pad << "Laplacian     = " << setw(12) << L[iat] << endl;
     fout << pad << "  Finite diff = " << setw(12) << L_fd[iat] << endl;
     fout << pad << "  Error       = " << setw(12) << L[iat]-L_fd[iat] << "  Relative Error = " << L_err_rel << endl << endl;
@@ -684,6 +696,10 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
   //computeNumericalGrad(delta, G1, L1);
 
   RealType delta = 1.0e-4;
+  if (deltaParam > 0.0)
+  {
+    delta = deltaParam;
+  } 
   FiniteDifference fd(FiniteDifference::FiniteDiff_LowOrder);
   //RealType delta = 1.0;
   //FiniteDifference fd(FiniteDifference::FiniteDiff_Richardson);
@@ -723,6 +739,10 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
 
   bool all_okay = checkGradients(0, nat, G, L, G1, L1, fail_log);
   RealType tol = 1e-3;
+  if (toleranceParam> 0.0)
+  {
+    tol = toleranceParam;
+  } 
 
   for (int iorb = 0; iorb < Psi.getOrbitals().size(); iorb++)
   {
@@ -747,7 +767,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
       W.makeMove(it->index,zeroR);
 
       RealType logpsi0 = orb->evaluateLog(W, tmpG, tmpL);
-      RealType phase0 = Psi.getPhase();
+      RealType phase0 = orb->PhaseValue;
 #if defined(QMC_COMPLEX)
       ValueType logpsi = std::complex<OHMMS_PRECISION>(logpsi0,phase0);
 #else
@@ -793,7 +813,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
           W.update();
 
           RealType logpsi0 = det->evaluateLog(W, tmpG, tmpL);
-          RealType phase0 = Psi.getPhase();
+          RealType phase0 = det->PhaseValue;
     #if defined(QMC_COMPLEX)
           ValueType logpsi = std::complex<OHMMS_PRECISION>(logpsi0,phase0);
     #else
@@ -910,32 +930,50 @@ void WaveFunctionTester::runBasicTest()
   app_log() << "Finite difference test: " << (all_okay?"PASS":"FAIL") << endl;
 
   // Compute approximation error vs. delta.
-  // TODO - Use option in the input file to turn this on.
-  if (false)
+  if (outputDeltaVsError)
   {
     double delta = 1.0;
-    int iat = 0;
-    int ig = 0;
-    ofstream dout("delta.dat");
-    dout << "# Particle = " << iat << " Gradient component = " << ig << endl;
-    dout << "#" << setw(11) <<  "delta" << setw(14) << "L_err_rel" << setw(14) << "G_err_rel" << endl;
-    ParticleSet::ParticleGradient_t G(nat), G1(nat);
-    ParticleSet::ParticleLaplacian_t L(nat), L1(nat);
-    for (int i = 0; i < 20; i++) {
-      // compute analytic values
-      G = W.G;
-      L = W.L;
-      Psi.evaluateLog(W);
+    bool inputOkay = true;
 
-      computeNumericalGrad(delta, G1, L1);
-      RealType L_err = std::abs(L[iat]-L1[iat]);
-      RealType L_err_rel = std::abs( L_err/L[iat] );
-      RealType G_err = std::abs(G[iat][ig]-G1[iat][ig]);
-      RealType G_err_rel = std::abs(G_err/G[iat][ig]);
-      dout << setw(12) << delta;
-      dout << setw(14) << std::abs(L_err_rel) << setw(14) << std::abs(G_err_rel);
-      dout << endl;
-      delta *= std::sqrt(0.1);
+    ofstream dout(DeltaVsError.outputFile.c_str());
+
+    int iat = DeltaVsError.particleIndex;
+    int ig = DeltaVsError.gradientComponentIndex;
+
+    if (iat < 0 || iat >= nat)
+    {
+      dout << "# Particle index (" << iat << ") is out of range (0 - " << nat-1 << ")" << endl;
+      inputOkay = false;
+    }
+
+    if (ig < 0 || ig >= OHMMS_DIM)
+    {
+      dout << "# Gradient component index (" << ig << ") is out of range (0 - " << OHMMS_DIM-1 << ")" << endl;
+      inputOkay = false;
+    }
+
+    if (inputOkay)
+    {
+      dout << "# Particle = " << iat << " Gradient component = " << ig << endl;
+      dout << "#" << setw(11) <<  "delta" << setw(14) << "G_err_rel" << setw(14) << "L_err_rel" << endl;
+      ParticleSet::ParticleGradient_t G(nat), G1(nat);
+      ParticleSet::ParticleLaplacian_t L(nat), L1(nat);
+      for (int i = 0; i < 20; i++) {
+        // compute analytic values
+        G = W.G;
+        L = W.L;
+        Psi.evaluateLog(W);
+
+        computeNumericalGrad(delta, G1, L1);
+        RealType L_err = std::abs(L[iat]-L1[iat]);
+        RealType L_err_rel = std::abs( L_err/L[iat] );
+        RealType G_err = std::abs(G[iat][ig]-G1[iat][ig]);
+        RealType G_err_rel = std::abs(G_err/G[iat][ig]);
+        dout << setw(12) << delta;
+        dout << setw(14) << std::abs(G_err_rel) << setw(14) << std::abs(L_err_rel);
+        dout << endl;
+        delta *= std::sqrt(0.1);
+      }
     }
     dout.close();
   }
@@ -1535,6 +1573,18 @@ bool
 WaveFunctionTester::put(xmlNodePtr q)
 {
   myNode = q;
+  xmlNodePtr tcur=q->children;
+  while(tcur != NULL)
+  {
+    string cname((const char*)(tcur->name));
+    if(cname == "delta_output")
+    {
+      outputDeltaVsError = true;
+      DeltaVsError.put(tcur);
+    }
+    tcur = tcur->next;
+  }
+
   return putQMCInfo(q);
 }
 
@@ -2289,6 +2339,19 @@ void  WaveFunctionTester::runNodePlot()
 //           }
 #endif
 }
+
+FiniteDiffErrData::FiniteDiffErrData() : particleIndex(0), gradientComponentIndex(0), outputFile("delta.dat") {}
+
+bool
+FiniteDiffErrData::put(xmlNodePtr q)
+{
+  ParameterSet param;
+  param.add(outputFile,"file","string");
+  param.add(particleIndex,"particle_index","none");
+  param.add(gradientComponentIndex,"gradient_index","none");
+  param.put(q);
+}
+
 
 
 }

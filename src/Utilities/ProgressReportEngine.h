@@ -38,12 +38,15 @@ public:
   inline ReportEngine(const std::string& cname, const std::string& fname, int atype=1):
     ReportType(atype),ClassName(cname), FuncName(fname), LogBuffer(*OhmmsInfo::Log)
   {
-    LogBuffer << "  " << ClassName << "::" << FuncName << "\n";
-    //if(ReportType)
-    //  LogBuffer << ("<echo className=\""+ClassName+"\" funcName=\""+FuncName+"\">\n");
-    //else
-    //  LogBuffer << ("<"+ClassName+">\n");
-    LogBuffer.flush();//always flush
+    if (DoOutput) {
+      LogBuffer << "  " << ClassName << "::" << FuncName << "\n";
+      // If there is structured output it should go to another file, not the stdout stream
+      //if(ReportType)
+      //  LogBuffer << ("<echo className=\""+ClassName+"\" funcName=\""+FuncName+"\">\n");
+      //else
+      //  LogBuffer << ("<"+ClassName+">\n");
+      LogBuffer.flush(); //always flush
+    }
   }
 
   inline ~ReportEngine()
@@ -57,44 +60,31 @@ public:
 
   inline void flush()
   {
-    LogBuffer << '\n';
-    LogBuffer.flush();
-  }
-
-  inline void startWarning()
-  {
-    LogBuffer << "<warning>\n";
-  }
-  inline void endWarning()
-  {
-    LogBuffer << "</warning>\n";
+    if (DoOutput)
+    {
+      LogBuffer << '\n';
+      LogBuffer.flush();
+    }
   }
 
   inline void warning(const std::string& msg)
   {
-    LogBuffer << ("<warning>"+msg+"</warning>\n");
-  }
-
-  inline void startError()
-  {
-    LogBuffer << "<error node=\"" << OHMMS::Controller->rank() << "\">\n";
-  }
-
-  inline void endError(bool fatal=false)
-  {
-    LogBuffer << "</error>\n";
-    if(fatal)
-      APP_ABORT(ClassName+"::"+FuncName);
+    LogBuffer << ("WARNING: "+msg+"\n");
   }
 
   inline void error(const std::string& msg, bool fatal=false)
   {
-    LogBuffer << ("<error>"+msg+"</error>\n");
+    LogBuffer << ("ERROR: "+msg+"\n");
     if(fatal)
       APP_ABORT(ClassName+"::"+FuncName);
   }
 
   void echo(xmlNodePtr cur, bool recursive=false);
+
+  static void enableOutput()
+  {
+    DoOutput = true;
+  }
 
 private:
   ///type of report
@@ -113,6 +103,9 @@ private:
   OhmmsInform& LogBuffer;
   //disable copy constructor
   ReportEngine(const ReportEngine& a):LogBuffer(*OhmmsInfo::Log) {}
+
+  static bool DoOutput;
+
 };
 
 // templated version of operator<< for Inform objects

@@ -1,0 +1,50 @@
+Tue Jul 08 13:56:10 2014 +0000 (UTC) 
+Tue Jul 08 13:56:10 2014 +0000 (UTC) Command: '/gpfs/vesta-home/krogel/test/05_full_lab/your_system/diamond_vmc/vmc.qsub.in'
+Tue Jul 08 13:56:10 2014 +0000 (UTC) 
+Tue Jul 08 13:56:10 2014 +0000 (UTC) Environment:
+Tue Jul 08 13:56:10 2014 +0000 (UTC) SHELL=/bin/bash
+Tue Jul 08 13:56:10 2014 +0000 (UTC) COBALT_NODEFILE=/tmp/tmpZVjjoq
+Tue Jul 08 13:56:10 2014 +0000 (UTC) COBALT_PARTNAME=VST-22060-33171-32
+Tue Jul 08 13:56:10 2014 +0000 (UTC) COBALT_JOBID=201651
+Tue Jul 08 13:56:10 2014 +0000 (UTC) BG_SHAREDMEMSIZE=32
+Tue Jul 08 13:56:10 2014 +0000 (UTC) COBALT_STARTTIME=1404827725
+Tue Jul 08 13:56:10 2014 +0000 (UTC) LOGNAME=krogel
+Tue Jul 08 13:56:10 2014 +0000 (UTC) USER=krogel
+Tue Jul 08 13:56:10 2014 +0000 (UTC) COBALT_ENDTIME=1404834925
+Tue Jul 08 13:56:10 2014 +0000 (UTC) COBALT_PARTSIZE=32
+Tue Jul 08 13:56:10 2014 +0000 (UTC) HOME=/home/krogel
+Tue Jul 08 13:56:10 2014 +0000 (UTC) COBALT_JOBSIZE=32
+Tue Jul 08 13:56:10 2014 +0000 (UTC) 
+Tue Jul 08 13:56:10 2014 +0000 (UTC) Info: stdin received from /dev/null
+Tue Jul 08 13:56:10 2014 +0000 (UTC) Info: stdout sent to /gpfs/vesta-home/krogel/test/05_full_lab/your_system/diamond_vmc/vmc.output
+Tue Jul 08 13:56:10 2014 +0000 (UTC) Info: stderr sent to /gpfs/vesta-home/krogel/test/05_full_lab/your_system/diamond_vmc/vmc.error
+Tue Jul 08 13:56:10 2014 +0000 (UTC) 
+Tue Jul 08 13:56:15 2014 +0000 (UTC) krogel/201651: Block VST-22060-33171-32 for location VST-22060-33171-32 successfully booted (Initiating). 
+Tue Jul 08 13:56:25 2014 +0000 (UTC) Info: task completed normally with an exit code of 126; initiating job cleanup and removal
+Jobid: 201653
+qsub --mode script -q default -A QMC_2014_Preparation -n 32 -t 120 -O vmc --mode script --env BG_SHAREDMEMSIZE=32 vmc.qsub.in
+Tue Jul 08 13:58:24 2014 +0000 (UTC) submitted with cwd set to: /gpfs/vesta-home/krogel/test/05_full_lab/your_system/diamond_vmc
+Tue Jul 08 13:58:53 2014 +0000 (UTC) krogel/201653: Initiating boot at location VST-02060-13171-32.
+Tue Jul 08 13:59:13 2014 +0000 (UTC) 
+Tue Jul 08 13:59:13 2014 +0000 (UTC) Command: '/gpfs/vesta-home/krogel/test/05_full_lab/your_system/diamond_vmc/vmc.qsub.in'
+Tue Jul 08 13:59:13 2014 +0000 (UTC) 
+Tue Jul 08 13:59:13 2014 +0000 (UTC) Environment:
+Tue Jul 08 13:59:13 2014 +0000 (UTC) SHELL=/bin/bash
+Tue Jul 08 13:59:13 2014 +0000 (UTC) COBALT_NODEFILE=/tmp/tmpQ7IyHm
+Tue Jul 08 13:59:13 2014 +0000 (UTC) COBALT_PARTNAME=VST-02060-13171-32
+Tue Jul 08 13:59:13 2014 +0000 (UTC) COBALT_JOBID=201653
+Tue Jul 08 13:59:13 2014 +0000 (UTC) BG_SHAREDMEMSIZE=32
+Tue Jul 08 13:59:13 2014 +0000 (UTC) COBALT_STARTTIME=1404827909
+Tue Jul 08 13:59:13 2014 +0000 (UTC) LOGNAME=krogel
+Tue Jul 08 13:59:13 2014 +0000 (UTC) USER=krogel
+Tue Jul 08 13:59:13 2014 +0000 (UTC) COBALT_ENDTIME=1404835109
+Tue Jul 08 13:59:13 2014 +0000 (UTC) COBALT_PARTSIZE=32
+Tue Jul 08 13:59:13 2014 +0000 (UTC) HOME=/home/krogel
+Tue Jul 08 13:59:13 2014 +0000 (UTC) COBALT_JOBSIZE=32
+Tue Jul 08 13:59:13 2014 +0000 (UTC) 
+Tue Jul 08 13:59:13 2014 +0000 (UTC) Info: stdin received from /dev/null
+Tue Jul 08 13:59:13 2014 +0000 (UTC) Info: stdout sent to /gpfs/vesta-home/krogel/test/05_full_lab/your_system/diamond_vmc/vmc.output
+Tue Jul 08 13:59:13 2014 +0000 (UTC) Info: stderr sent to /gpfs/vesta-home/krogel/test/05_full_lab/your_system/diamond_vmc/vmc.error
+Tue Jul 08 13:59:13 2014 +0000 (UTC) 
+Tue Jul 08 13:59:14 2014 +0000 (UTC) krogel/201653: Block VST-02060-13171-32 for location VST-02060-13171-32 successfully booted (Initiating). 
+Tue Jul 08 14:01:06 2014 +0000 (UTC) Info: task completed normally with an exit code of 0; initiating job cleanup and removal

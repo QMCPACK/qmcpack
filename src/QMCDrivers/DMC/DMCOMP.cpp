@@ -213,7 +213,7 @@ void DMCOMP::resetUpdateEngines()
   if(fixW)
   {
     if(BranchInterval<0)
-      BranchInterval=nSteps;
+      BranchInterval=1;
     mxage=(mover_MaxAge<0)?0:mover_MaxAge;
     for(int ip=0; ip<Movers.size(); ++ip)
       Movers[ip]->MaxAge=mxage;

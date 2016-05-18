@@ -220,7 +220,7 @@ public:
   
 
 
-  RealType evaluateDeltaLog(ParticleSet& P);
+  RealType evaluateDeltaLog(ParticleSet& P, bool recompute=false);
 
   void evaluateDeltaLog(ParticleSet& P,
                         RealType& logpsi_fixed,

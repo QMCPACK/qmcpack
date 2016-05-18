@@ -1,0 +1,7 @@
+Use make to generate the doxygen HTML
+
+The doxygen configuration file is qmcpack.cfg
+
+Update the STRIP_FROM_PATH settings to refer to the current source
+location otherwise long filenames such as /User/you/some/place will be
+utilized.

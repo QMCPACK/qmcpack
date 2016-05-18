@@ -1,0 +1,28 @@
+Jobid: 197952
+qsub --mode script -q default -A QMC_2014_Preparation -n 32 -t 60 -O O_q0_opt --mode script --env BG_SHAREDMEMSIZE=32:OMP_NUM_THREADS=16 O.q0.opt.qsub.in
+Fri Jun 20 19:07:05 2014 +0000 (UTC) submitted with cwd set to: /gpfs/vesta-home/krogel/test/02_oxygen_atom1
+Fri Jun 20 19:07:40 2014 +0000 (UTC) krogel/197952: Initiating boot at location VST-20420-31531-32.
+Fri Jun 20 19:07:59 2014 +0000 (UTC) 
+Fri Jun 20 19:07:59 2014 +0000 (UTC) Command: '/gpfs/vesta-home/krogel/test/02_oxygen_atom1/O.q0.opt.qsub.in'
+Fri Jun 20 19:07:59 2014 +0000 (UTC) 
+Fri Jun 20 19:07:59 2014 +0000 (UTC) Environment:
+Fri Jun 20 19:07:59 2014 +0000 (UTC) SHELL=/bin/bash
+Fri Jun 20 19:07:59 2014 +0000 (UTC) COBALT_NODEFILE=/tmp/tmpq3mOu7
+Fri Jun 20 19:07:59 2014 +0000 (UTC) OMP_NUM_THREADS=16
+Fri Jun 20 19:07:59 2014 +0000 (UTC) COBALT_PARTNAME=VST-20420-31531-32
+Fri Jun 20 19:07:59 2014 +0000 (UTC) COBALT_JOBID=197952
+Fri Jun 20 19:07:59 2014 +0000 (UTC) BG_SHAREDMEMSIZE=32
+Fri Jun 20 19:07:59 2014 +0000 (UTC) COBALT_STARTTIME=1403291227
+Fri Jun 20 19:07:59 2014 +0000 (UTC) LOGNAME=krogel
+Fri Jun 20 19:07:59 2014 +0000 (UTC) USER=krogel
+Fri Jun 20 19:07:59 2014 +0000 (UTC) COBALT_ENDTIME=1403294827
+Fri Jun 20 19:07:59 2014 +0000 (UTC) COBALT_PARTSIZE=32
+Fri Jun 20 19:07:59 2014 +0000 (UTC) HOME=/home/krogel
+Fri Jun 20 19:07:59 2014 +0000 (UTC) COBALT_JOBSIZE=32
+Fri Jun 20 19:07:59 2014 +0000 (UTC) 
+Fri Jun 20 19:07:59 2014 +0000 (UTC) Info: stdin received from /dev/null
+Fri Jun 20 19:07:59 2014 +0000 (UTC) Info: stdout sent to /gpfs/vesta-home/krogel/test/02_oxygen_atom1/O_q0_opt.output
+Fri Jun 20 19:07:59 2014 +0000 (UTC) Info: stderr sent to /gpfs/vesta-home/krogel/test/02_oxygen_atom1/O_q0_opt.error
+Fri Jun 20 19:07:59 2014 +0000 (UTC) 
+Fri Jun 20 19:08:01 2014 +0000 (UTC) krogel/197952: Block VST-20420-31531-32 for location VST-20420-31531-32 successfully booted (Initiating). 
+Fri Jun 20 19:09:49 2014 +0000 (UTC) Info: task completed normally with an exit code of 0; initiating job cleanup and removal

@@ -30,7 +30,7 @@ SET(MPIEXEC_NUMPROC_FLAG "${qmcpack_SOURCE_DIR}/utils/bgrunjobhelper.sh")
 SET(BOOST_ROOT /home/projects/qmcpack/boost_1_45_0)
 
 SET(CMAKE_FIND_ROOT_PATH
-     /home/projects/qmcpack/LIBXML2-2.9
+     /home/projects/qmcpack/libXML2-2.9.1
      /soft/libraries/hdf5/current/cnk-xl/current
      /soft/libraries/alcf/current/xl/FFTW3
      /soft/libraries/alcf/current/xl/ZLIB
@@ -39,18 +39,18 @@ SET(CMAKE_FIND_ROOT_PATH
 SET(LAPACK_LIBRARY /soft/libraries/alcf/current/xl/LAPACK/lib/liblapack.a)
 SET(BLAS_LIBRARY /soft/libraries/essl/current/essl/5.1/lib64/libesslsmpbg.a)
 SET(FORTRAN_LIBRARIES
+$ENV{IBM_MAIN_DIR}/xlmass/bg/7.3/bglib64/libmass.a 
+$ENV{IBM_MAIN_DIR}/xlmass/bg/7.3/bglib64/libmassv.a 
 $ENV{IBM_FCMP_DIR}/bglib64/libxlf90_r.a
 $ENV{IBM_FCMP_DIR}/bglib64/libxlopt.a
 )
 
-LINK_LIBRARIES(
-$ENV{IBM_MAIN_DIR}/xlmass/bg/7.3/bglib64/libmass.a 
-$ENV{IBM_MAIN_DIR}/xlmass/bg/7.3/bglib64/libmassv.a 
+#LINK_LIBRARIES(
 #/soft/perftools/hpctw/libmpihpm_smp.a
 #/bgsys/drivers/ppcfloor/bgpm/lib/libbgpm.a
 #/bgsys/drivers/ppcfloor/spi/lib/libSPI_upci_cnk.a
 #-pg
-)
+#)
 
 FOREACH(type SHARED_LIBRARY SHARED_MODULE EXE)
   SET(CMAKE_${type}_LINK_STATIC_C_FLAGS "-Wl,-Bstatic")

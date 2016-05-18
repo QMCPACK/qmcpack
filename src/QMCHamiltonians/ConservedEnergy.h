@@ -21,6 +21,9 @@
 #include "Particle/WalkerSetRef.h"
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 #include "ParticleBase/ParticleAttribOps.h"
+#ifdef QMC_CUDA
+#include "Particle/MCWalkerConfiguration.h"
+#endif
 
 namespace qmcplusplus
 {
@@ -98,6 +101,28 @@ struct ConservedEnergy: public QMCHamiltonianBase
   {
     return new ConservedEnergy;
   }
+
+#ifdef QMC_CUDA
+  ////////////////////////////////
+  // Vectorized version for GPU //
+  ////////////////////////////////
+  // Nothing is done on GPU here, just copy into vector
+  void addEnergy(MCWalkerConfiguration &W,
+                 vector<RealType> &LocalEnergy)
+  {
+    // Value of LocalEnergy is not used in caller because this is auxiliary H.
+    vector<Walker_t*> &walkers = W.WalkerList;
+    for (int iw=0; iw<walkers.size(); iw++)
+    {
+      Walker_t &w = *(walkers[iw]);
+      double flux = 0.0;
+      for (int ptcl=0; ptcl<w.G.size(); ptcl++)
+        flux +=2.0 * dot(w.G[ptcl],w.G[ptcl]) + w.L[ptcl];
+      w.getPropertyBase()[NUMPROPERTIES+myIndex] = flux;
+    }
+  }
+#endif
+
 };
 }
 #endif

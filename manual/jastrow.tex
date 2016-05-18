@@ -11,9 +11,12 @@ like so:
 \end{equation}
 
 In this section we will detail the types and forms of Jastrow factor used 
-in QMCPACK. 
+in QMCPACK.  Note that each type of Jastrow factor needs to be specified using
+its own individual jastrow XML element.  For this reason, we have repeated the
+specification of the jastrow tag in each section, with specialization for the
+options available for that given type of jastrow.
 
-\section{One-body Jastrow functions}
+\subsection{One-body Jastrow functions}
 \label{sec:onebodyjastrow}
 The one-body Jastrow factor is a form that allows for the direct inclusion
 of correlations between particles that are included in the wavefunction with
@@ -21,12 +24,12 @@ particles that are not explicitly part of it.  The most common example of
 this are correlations between electrons and ions.  
 
 The jastrow function is specified within a \texttt{wavefunction} element
-and must contain one of more \texttt{correlation} elements specifying
+and must contain one or more \texttt{correlation} elements specifying
 additional parameters as well as the actual coefficients. Section
 \ref{sec:1bjsplineexamples} gives examples of the typical nesting of
 \texttt{jastrow}, \texttt{correlation}, and \texttt{coefficient} elements.
 
-\subsection{Input Specification}
+\subsubsection{Input Specification}
 
 \begin{table}[h]
 \begin{center}
@@ -39,10 +42,10 @@ additional parameters as well as the actual coefficients. Section
 name & text &    & (required) & Unique name for this Jastrow function \\
 type & text & One-body & (required) & Define a one-body function \\ 
 function & text & Bspline & (required) & BSpline Jastrow \\
-             & text & Pade & & Pade form \\
+             & text & pade2 & & Pade form \\
              & text & \ldots & & \ldots \\
 source & text & name & (required) & name of attribute of classical particle set \\ 
-print & text & yes / no & yes & should jastrow factor be printed to an external file\\
+print & text & yes / no & yes & jastrow factor printed in external file?\\
   \hline
 \multicolumn{5}{l}{elements}\\ \hline
 & Correlation & & & \\ \hline
@@ -62,5 +65,55 @@ where I runs over all of the ions in the calculation, i runs over the electrons
 and $u_{ab}$ describes the functional form of the correlation between them.
 Many different forms of $u_{ab}$ are implemented in QMCPACK.  We will detail 
 two of the most common ones below.
-
 \include{jastrow_one_body_spline}
+\include{jastrow_one_body_pade}
+
+\subsection{Two-body Jastrow functions}
+The two-body Jastrow factor is a form that allows for the explicit inclusion
+of dynamic correlation between two particles included in the wavefunction.  It
+is almost always given in a spin dependent form so as to satisfy the Kato cusp
+condition between electrons of different spins\cite{kato}.
+
+ The two body jastrow function is specified within a \texttt{wavefunction} element
+and must contain one or more correlation elements specifying additional parameters
+as well as the actual coefficients.  Section \ref{sec:2bjsplineexamples} gives 
+examples of the typical nesting of \texttt{jastrow}, \texttt{correlation} and
+\texttt{coefficient} elements.
+
+\subsubsection{Input Specification}
+
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{l c c c l }
+\hline
+\multicolumn{5}{l}{Jastrow element} \\
+\hline
+\bfseries name & \bfseries datatype & \bfseries values & \bfseries defaults  & \bfseries description \\
+\hline
+name & text &    & (required) & Unique name for this Jastrow function \\
+type & text & Two-body & (required) & Define a one-body function \\ 
+function & text & Bspline & (required) & BSpline Jastrow \\
+print & text & yes / no & yes & jastrow factor printed in external file?\\
+  \hline
+\multicolumn{5}{l}{elements}\\ \hline
+& Correlation & & & \\ \hline
+\multicolumn{5}{l}{Contents}\\ \hline
+& (None)  & & &  \\ \hline
+\end{tabular}
+%\end{tabular*}
+\end{center}
+\end{table}
+
+The two-body jastrow factors used to describe correlations between electrons take the form
+\begin{equation}
+J2=\sum_i^{e}\sum_{j>i}^{e} u_{ab}(|r_i-r_j|)
+\end{equation}
+
+The most commonly used form of two body jastrow factor supported by the code is a splined
+jastrow factor, with many similarities to the one body spline jastrow.
+
+\include{jastrow_two_body_spline}
+
+\subsection{Three-body Jastrow functions}
+Explicit three body correlations can be included in the wavefunction via the three-body
+jastrow factor.

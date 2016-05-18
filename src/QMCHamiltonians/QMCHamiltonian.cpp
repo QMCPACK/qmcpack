@@ -325,7 +325,7 @@ void QMCHamiltonian::initialize_traces(TraceManager& tm,ParticleSet& P)
   }
   else
   {
-    if(first_init && omp_get_thread_num==0)
+    if(first_init && omp_get_thread_num()==0)
       app_log()<<"    traces streaming"<<endl;
     //checkout trace quantities 
     //(requested sources checkout arrays to place samples in for streaming)
@@ -342,13 +342,13 @@ void QMCHamiltonian::initialize_traces(TraceManager& tm,ParticleSet& P)
     //  checkout observable trace quantities
     for(int i=0; i<H.size(); ++i)
     {
-      if(first_init && omp_get_thread_num==0)
+      if(first_init && omp_get_thread_num()==0)
         app_log()<<"    QMCHamiltonianBase::checkout_trace_quantities  "<<H[i]->myName<<endl;
       H[i]->checkout_trace_quantities(tm);
     }
     for(int i=0; i<auxH.size(); ++i)
     {
-      if(first_init && omp_get_thread_num==0)
+      if(first_init && omp_get_thread_num()==0)
         app_log()<<"    QMCHamiltonianBase::checkout_trace_quantities  "<<auxH[i]->myName<<endl;
       auxH[i]->checkout_trace_quantities(tm);
     }
@@ -374,11 +374,11 @@ void QMCHamiltonian::initialize_traces(TraceManager& tm,ParticleSet& P)
     tm.screen_writes();
 
     //observables that depend on traces check them out
-    if(first_init && omp_get_thread_num==0)
+    if(first_init && omp_get_thread_num()==0)
       app_log()<<"\n  Hamiltonian is fulfilling trace requests from observables"<<endl;
     for(int i=0; i<auxH.size(); ++i)
     {
-      if(first_init && omp_get_thread_num==0)
+      if(first_init && omp_get_thread_num()==0)
         app_log()<<"    QMCHamiltonianBase::get_required_traces  "<<auxH[i]->myName<<endl;
       auxH[i]->get_required_traces(tm);
     }

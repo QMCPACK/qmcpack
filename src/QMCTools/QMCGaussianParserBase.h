@@ -48,7 +48,7 @@ struct QMCGaussianParserBase
   xmlNodePtr createESPSet(int iesp);
   static std::map<int,std::string> ESPName;
   int FMOIndexI,FMOIndexJ,FMOIndexK;
-  bool FMO, FMO1,FMO2,FMO3;
+  bool FMO, FMO1,FMO2,FMO3,DoCusp,FixValence,QP;
   
 
   std::string Title;
@@ -102,6 +102,7 @@ struct QMCGaussianParserBase
   xmlNodePtr createDeterminantSet();
   xmlNodePtr createMultiDeterminantSet();
   xmlNodePtr createMultiDeterminantSetVSVB();
+  xmlNodePtr createMultiDeterminantSetQP();
   xmlNodePtr createDeterminantSetWithHDF5();
   xmlNodePtr createJ3();
   xmlNodePtr createJ2();

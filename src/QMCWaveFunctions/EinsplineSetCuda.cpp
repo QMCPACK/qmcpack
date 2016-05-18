@@ -25,11 +25,18 @@
 void apply_phase_factors(float kPoints[], int makeTwoCopies[],
                          float pos[], float *phi_in[], float *phi_out[],
                          int num_splines, int num_walkers);
-
+#ifdef ALGO_CHRISTOS
+void apply_phase_factors(float kPoints[], int makeTwoCopies[],
+                         float pos[], float *phi_in[], float *phi_out[],
+                         float *GL_in[], float *GL_out[],
+                         int num_splines, int num_walkers, int row_stride,
+                         bool dontMakeTwoCopies);
+#else
 void apply_phase_factors(float kPoints[], int makeTwoCopies[],
                          float pos[], float *phi_in[], float *phi_out[],
                          float *GL_in[], float *GL_out[],
                          int num_splines, int num_walkers, int row_stride);
+#endif
 
 void apply_phase_factors(float kPoints[], int makeTwoCopies[], int TwoCopiesIndex[],
                          float pos[], float *phi_in[], float *phi_out[],
@@ -543,7 +550,27 @@ EinsplineSetExtended<complex<double> >::evaluate
   for (int iw=0; iw < N; iw++)
     hostPos[iw] = newpos[iw];
   cudapos = hostPos;
-  /*
+
+#ifdef ALGO_CHRISTOS
+  // Slower for some runs
+  // christos: is MakeTwoCopies consistent with CudaMakeTwoCopies?
+  bool noTwoCopies = true;
+  for (int i=0 ; i<MakeTwoCopies.size() ; i++)
+    if (MakeTwoCopies[i]) {
+      noTwoCopies = false;
+      break;
+    }
+  //  std::cout << "noTwoCopies=" << noTwoCopies << std::endl;
+  
+  apply_phase_factors ((CUDA_PRECISION*) CudakPoints.data(),
+                       CudaMakeTwoCopies.data(),
+                       (CudaRealType*)cudapos.data(),
+                       (CudaRealType**)CudaValuePointers.data(), phi.data(),
+                       (CudaRealType**)CudaGradLaplPointers.data(), grad_lapl.data(),
+                       CudaMultiSpline->num_splines,  walkers.size(), row_stride, 
+                       noTwoCopies);
+#else
+  /* Original implementation
   apply_phase_factors ((CudaRealType*) CudakPoints.data(),
                        CudaMakeTwoCopies.data(),
                        (CudaRealType*)cudapos.data(),
@@ -551,6 +578,7 @@ EinsplineSetExtended<complex<double> >::evaluate
                        (CudaRealType**)CudaGradLaplPointers.data(), grad_lapl.data(),
                        CudaMultiSpline->num_splines,  walkers.size(), row_stride);
   */
+  // Ye: optimized memory access.
   apply_phase_factors ((CudaRealType*) CudakPoints.data(),
                        CudaMakeTwoCopies.data(),
                        CudaTwoCopiesIndex.data(),
@@ -558,6 +586,7 @@ EinsplineSetExtended<complex<double> >::evaluate
                        (CudaRealType**)CudaValuePointers.data(), phi.data(),
                        (CudaRealType**)CudaGradLaplPointers.data(), grad_lapl.data(),
                        CudaMultiSpline->num_splines,  walkers.size(), row_stride);
+#endif
 }
 
 

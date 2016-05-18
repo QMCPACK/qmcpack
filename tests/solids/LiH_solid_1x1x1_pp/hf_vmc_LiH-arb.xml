@@ -28,6 +28,7 @@
     </pairpot>
     <constant name="IonIon" type="coulomb" source="i" target="i"/>
     <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>
+    <estimator type="flux" name="Flux"/>
   </hamiltonian>
 
   <qmc method="vmc" move="pbyp" gpu="yes">

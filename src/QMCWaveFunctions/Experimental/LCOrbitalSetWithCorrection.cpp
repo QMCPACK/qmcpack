@@ -333,7 +333,7 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
 // FIX FIX FIX: control from input file
   mygrid->set(0.000001,100.0,1001);
   dummyLO1 = new LCOrbitalSet<BS,false>(myBasisSet,ReportLevel);
-  dummyLO1->OrbitalSetSize = OrbitalSetSize;
+  dummyLO1->setOrbitalSetSize(OrbitalSetSize);
   dummyLO1->TotalOrbitalSize=TotalOrbitalSize;
   dummyLO1->BasisSetSize = BasisSetSize;
   dummyLO1->setIdentity(Identity);
@@ -364,7 +364,7 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
   xmlNewProp(spo,(const xmlChar*)"name",(const xmlChar*)objectName.c_str());
   for(int i=0; i<numCentr; i++ )
   {
-    app_log()<<"Transforming orbitals of center " <<i <<endl;
+    app_log()<<"Transforming orbitals of center " << i <<endl;
     dummyLO1->C = C;
     dummyLO2->C = C;
     createLCOSets(i,dummyLO1,dummyLO2);

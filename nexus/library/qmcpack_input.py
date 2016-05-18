@@ -748,7 +748,7 @@ class QIxml(Names):
             text = set()
         #end if
         junk = ks -attr -elem -plur -h5tags -costs -parameters -attribs -text
-        self.check_junk(junk)
+        self.check_junk(junk,exit=True)
 
         for v in h5tags:
             self[v] = param(kwargs[v])
@@ -2151,7 +2151,7 @@ class sk(QIxml):
 
 class gofr(QIxml):
     tag = 'estimator'
-    attributes = ['type','name','num_bin','rmax']
+    attributes = ['type','name','num_bin','rmax','source']
     identifier = 'name'
 #end class gofr
 
@@ -4385,6 +4385,8 @@ def generate_hamiltonian(name         = 'h0',
                         type='EnergyDensity',name='EDvoronoi',dynamic=ename,static=iname,
                         spacegrid = spacegrid(coord='voronoi')
                         )
+                elif estname=='pressure':
+                    est = pressure(type='Pressure')
                 else:
                     QmcpackInput.class_error('estimator '+estimator+' has not yet been enabled in generate_basic_input')
                 #end if
@@ -4521,7 +4523,7 @@ def generate_jastrows(jastrows,system=None,return_list=False,check_ions=False):
         #end if
         if '3' in jorders and have_ions:
             jin.append(
-                generate_jastrow('J3','polynomial',4,4,5.0,system=system)
+                generate_jastrow('J3','polynomial',3,3,4.0,system=system)
                 )
         #end if
         if len(jin)==0:
@@ -4571,7 +4573,7 @@ def generate_jastrows(jastrows,system=None,return_list=False,check_ions=False):
 
 def generate_jastrow(descriptor,*args,**kwargs):
     keywords = set(['function','size','rcut','elements','coeff','cusp','ename',
-                    'iname','spins','density','Buu','Bud','system','isize','esize'])
+                    'iname','spins','density','Buu','Bud','system','isize','esize','init'])
     if not 'system' in kwargs:
         kwargs['system'] = None
     #end if
@@ -4591,13 +4593,13 @@ def generate_jastrow(descriptor,*args,**kwargs):
     if len(dargs)>0:
         args = dargs
     #end if
-    for i in range(ikw,len(descriptor)):
+    for i in range(ikw,len(descriptor),2):
         d = descriptor[i]
         if isinstance(d,str):
             if d in keywords:
                 kwargs[d] = descriptor[i+1]
             else:
-                QmcpackInput.class_warn('keyword {0} is unrecognized and ignored\n  valid options are: {1}'.format(d,str(keywords)),'generate_jastrow')
+                QmcpackInput.class_error('keyword {0} is unrecognized\n  valid options are: {1}'.format(d,str(keywords)),'generate_jastrow')
             #end if
         #end if
     #end for
@@ -4621,7 +4623,9 @@ def generate_jastrow1(function='bspline',size=8,rcut=None,coeff=None,cusp=0.,ena
     noelements = elements is None
     nosystem   = system is None
     noelemargs = len(elemargs)==0
-    isopen = False
+    isopen     = False
+    isperiodic = False
+    rinscribe = 1e99
     if noelements and nosystem and noelemargs:
         QmcpackInput.class_error('must specify elements or system','generate_jastrow1')
     #end if
@@ -4630,7 +4634,11 @@ def generate_jastrow1(function='bspline',size=8,rcut=None,coeff=None,cusp=0.,ena
     #end if
     if not nosystem:
         elements.extend(list(set(system.structure.elem)))
-        isopen = system.structure.volume() is None
+        isopen     = system.structure.is_open()
+        isperiodic = system.structure.is_periodic()
+        if not isopen and isperiodic:
+            rinscribe = system.structure.rinscribe()
+        #end if
     #end if
     if not noelemargs:
         elements.extend(elemargs.keys())
@@ -4681,9 +4689,14 @@ def generate_jastrow1(function='bspline',size=8,rcut=None,coeff=None,cusp=0.,ena
                 )
             )            
         if lrcut!=None:
+            if isperiodic and lrcut>rinscribe:
+                QmcpackInput.class_error('rcut must not be greater than the simulation cell incribing radius\nyou provided: {0}\nincribing radius: {1}'.format(lrcut,rinscribe),'generate_jastrow1')
+                
             corr.rcut = lrcut
         elif isopen:
             QmcpackInput.class_error('rcut must be provided for an open system','generate_jastrow1')
+        elif isperiodic:
+            corr.rcut = rinscribe
         #end if
         corrs.append(corr)
     #end for
@@ -4704,11 +4717,19 @@ def generate_bspline_jastrow2(size=8,rcut=None,coeff=None,spins=('u','d'),densit
     if coeff is None and system is None and (init=='rpa' and density is None or rcut is None):
         QmcpackInput.class_error('rcut and density or system must be specified','generate_bspline_jastrow2')
     #end if
-    set_rcut = rcut!=None
+    isopen      = False
+    isperiodic  = False
+    allperiodic = False
+    rincribe    = 1e99
     if system!=None:
-        cell = system.structure
-        volume = cell.volume()
-        if volume is None: #assume it is an open system
+        isopen      = system.structure.is_open()
+        isperiodic  = system.structure.is_periodic()
+        allperiodic = system.structure.all_periodic()
+        if not isopen and isperiodic:
+            rinscribe = system.structure.rinscribe()
+        #end if
+        volume = system.structure.volume()
+        if isopen: 
             if rcut is None:
                 QmcpackInput.class_error('rcut must be provided for an open system','generate_bspline_jastrow2')
             #end if
@@ -4716,8 +4737,8 @@ def generate_bspline_jastrow2(size=8,rcut=None,coeff=None,spins=('u','d'),densit
                 init = 'zero'
             #end if
         else:
-            if rcut is None:
-                rcut = cell.rmin()
+            if rcut is None and isperiodic:
+                rcut = rinscribe
             #end if
             nelectrons = system.particles.count_electrons()
             density = nelectrons/volume
@@ -4727,6 +4748,9 @@ def generate_bspline_jastrow2(size=8,rcut=None,coeff=None,spins=('u','d'),densit
     #end if
     if coeff is None:
         if init=='rpa':
+            if not allperiodic:
+                QmcpackInput.class_error('rpa initialization can only be used for fully periodic systems','generate_bspline_jastrow2')
+            #end if
             wp = sqrt(4*pi*density)
             dr = rcut/size
             r = .02 + dr*arange(size)
@@ -4751,7 +4775,10 @@ def generate_bspline_jastrow2(size=8,rcut=None,coeff=None,spins=('u','d'),densit
         correlation(speciesA=uname,speciesB=dname,size=size,
                     coefficients=section(id=udname,type='Array',coeff=coeff[1]))
         ]
-    if set_rcut:
+    if rcut!=None:
+        if isperiodic and rcut>rinscribe:
+            QmcpackInput.class_error('rcut must not be greater than the simulation cell  incribing radius\nyou provided: {0}\nincribing radius: {1}'.format(rcut,rinscribe),'generate_jastrow2')
+        #end if
         for corr in corrs:
             corr.rcut=rcut
         #end for
@@ -4817,9 +4844,9 @@ def generate_jastrow2(function='bspline',*args,**kwargs):
 
 
 
-def generate_jastrow3(function='polynomial',esize=4,isize=4,rcut=5.,coeff=None,iname='ion0',spins=('u','d'),elements=None,system=None):
+def generate_jastrow3(function='polynomial',esize=3,isize=3,rcut=4.,coeff=None,iname='ion0',spins=('u','d'),elements=None,system=None):
     if elements is None and system is None:
-        QmcpackInput.class_error('must specify elements or sytem to generate jastrow3')
+        QmcpackInput.class_error('must specify elements or system','generate_jastrow3')
     elif elements is None:
         elements = list(set(system.structure.elem))
     #end if
@@ -4827,7 +4854,16 @@ def generate_jastrow3(function='polynomial',esize=4,isize=4,rcut=5.,coeff=None,i
         QmcpackInput.class_error('handling coeff is not yet implemented for generate jastrow3')
     #end if
     if len(spins)!=2:
-        QmcpackInput.class_error('must specify name for up and down spins\n  provided: '+str(spins))
+        QmcpackInput.class_error('must specify name for up and down spins\n  provided: '+str(spins),'generate_jastrow3')
+    #end if
+    if rcut is None:
+        QmcpackInput.class_error('must specify rcut','generate_jastrow3')
+    #end if
+    if system!=None and system.structure.is_periodic():
+        rinscribe = system.structure.rinscribe()
+        if rcut>rinscribe:
+            QmcpackInput.class_error('rcut must not be greater than the simulation cell incribing radius\nyou provided: {0}\nincribing radius: {1}'.format(rcut,rinscribe),'generate_jastrow3')
+        #end if
     #end if
     uname,dname = spins
     uuname = uname+uname
@@ -5075,6 +5111,7 @@ def generate_basic_input(id             = 'qmc',
         )
 
     if system!=None:
+        system.structure.set_bconds(bconds)
         particlesets = generate_particlesets(
             system    = system,
             randomsrc = randomsrc or tuple(bconds)!=('p','p','p')

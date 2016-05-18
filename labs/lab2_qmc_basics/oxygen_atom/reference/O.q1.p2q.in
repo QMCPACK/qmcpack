@@ -1,0 +1,5 @@
+&inputpp
+  write_psir = .false.
+  prefix = 'O.q1'
+  outdir = 'q1_output'
+/

@@ -2,6 +2,9 @@
 #include "QMCTools/GaussianFCHKParser.h"
 #include "QMCTools/GamesXmlParser.h"
 #include "QMCTools/GamesAsciiParser.h"
+#include "QMCTools/VSVBParser.h"
+#include "QMCTools/QPParser.h"
+#include "QMCTools/GamesFMOParser.h"
 #include "QMCTools/BParser.h"
 #include "Message/Communicate.h"
 #include "Utilities/OhmmsInfo.h"
@@ -13,8 +16,8 @@ int main(int argc, char **argv)
 {
   if(argc<2)
   {
-    std::cout << "Usage: convert [-gaussian|-casino|-gamesxml|-gamessAscii] filename ";
-    std::cout << "[-nojastrow -hdf5 -psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf -size npts -ci file.out -threshold cimin -NaturalOrbitals NumToRead -add3BodyJ -prefix title]"
+    std::cout << "Usage: convert [-gaussian|-casino|-gamesxml|-gamessAscii|-gamessFMO |-VSVB| -QP] filename ";
+     std::cout << "[-nojastrow -hdf5 -psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf -size npts -ci file.out -threshold cimin -NaturalOrbitals NumToRead -add3BodyJ -prefix title -addCusp]"
               << std::endl;
     std::cout << "Defaults : -gridtype log -first 1e-6 -last 100 -size 1001 -ci required -threshold 0.01 -prefix sample" << std::endl;
     std::cout << "When the input format is missing, the  extension of filename is used to determine the parser " << std::endl;
@@ -36,7 +39,7 @@ int main(int argc, char **argv)
   string ion_tag("ion0");
   string prefix("sample");
   bool usehdf5=false;
-  bool ci=false,zeroCI=false,orderByExcitation=false;
+  bool ci=false,zeroCI=false,orderByExcitation=false,VSVB=false, fmo=false,addCusp=false;
   double thres=0.01;
   int readNO=0; // if > 0, read Natural Orbitals from gamess output
   int readGuess=0; // if > 0, read Initial Guess from gamess output
@@ -57,6 +60,23 @@ int main(int argc, char **argv)
     {
       parser = new GamesAsciiParser(argc,argv);
       in_file =argv[++iargc];
+    }
+    else if(a == "-QP")
+    {
+      parser = new QPParser(argc,argv);
+      in_file =argv[++iargc];
+    }
+    else if(a == "-VSVB")
+    {
+      parser = new VSVBParser(argc,argv);
+      in_file =argv[++iargc];
+      VSVB=true;
+    }
+    else if(a == "-gamessFMO")
+    {
+      parser = new GamesFMOParser(argc,argv);
+      in_file =argv[++iargc];
+      fmo=true;
     }
     else if(a == "-casino")
     {
@@ -88,6 +108,10 @@ int main(int argc, char **argv)
     {
       ci=true;
       punch_file = argv[++iargc];
+    }
+    else if(a == "-addCusp" )
+    {
+      addCusp = true;
     }
     else if(a == "-threshold" )
     {
@@ -155,46 +179,33 @@ int main(int argc, char **argv)
       exit(1);
     }
   }
-  parser->Title=prefix;
-  parser->UseHDF5=usehdf5;
-  parser->IonSystem.setName(ion_tag);
-  parser->multideterminant=ci;
-  parser->ci_threshold=thres;
-  parser->readNO=readNO;
-  parser->orderByExcitation=orderByExcitation;
-  parser->zeroCI = zeroCI;
-  parser->readGuess=readGuess;
-  parser->outputFile=punch_file;
-  parser->parse(in_file);
-  parser->dump(psi_tag, ion_tag);
-  OHMMS::Controller->finalize();
+  if(fmo)
+  {
+    parser->Title=prefix;
+    parser->UseHDF5=usehdf5;
+    parser->DoCusp=addCusp;
+    parser->parse(in_file);
+
+  }
+  else
+  {
+    parser->Title=prefix;
+    parser->DoCusp=addCusp;
+    parser->UseHDF5=usehdf5;
+    parser->IonSystem.setName(ion_tag);
+    parser->multideterminant=ci;
+    parser->ci_threshold=thres;
+    parser->readNO=readNO;
+    parser->orderByExcitation=orderByExcitation;
+    parser->zeroCI = zeroCI;
+    parser->readGuess=readGuess;
+    parser->outputFile=punch_file;
+    parser->VSVB=VSVB;
+    parser->parse(in_file);
+    parser->dump(psi_tag, ion_tag);
+    OHMMS::Controller->finalize();
+
+  }
   return 0;
 }
 
-/*
-int main(int argc, char **argv) {
-
-  char buffer[200];
-  std::string _txt;
-  std::string _data;
-  double _t;
-  std::cout.setf(std::ios::scientific, std::ios::floatfield);
-  std::cout.setf(std::ios::right,std::ios::adjustfield);
-  std::cout.precision(12);
-  while(std::cin.getline( buffer, sizeof ( buffer ) ) ){
-    std::istringstream stream(buffer);
-    if(isdigit(buffer[1])) {
-      while(stream>>_t) {
-        std::cout << std::setw(21) << _t ;
-      }
-      std::cout << std::endl;
-    } else {
-      if(stream>>_t) {
-        std::cout << "probably numbers " << buffer << std::endl;
-      } else {
-        std::cout << "probably statement " << buffer << std::endl;
-      }
-    }
-  }
-}
-*/

@@ -8,7 +8,7 @@
 ##   ./config/build_titan.sh                                  ##
 ##                                                            ##
 ## (c) Scientific Computing Group, NCCS, ORNL.                ##
-## Last modified: Jan 28, 2016                                ##
+## Last modified: Mar 21, 2016                                ##
 ################################################################
 
 
@@ -27,7 +27,7 @@ module load cray-hdf5
 module load fftw
 module load boost
 module load subversion
-module load cmake3
+module load cmake
 
 
 # Set environment variables
@@ -35,7 +35,9 @@ export FFTW_HOME=$FFTW_DIR/..
 
 
 # Set cmake variables, shared for cpu builds
-CMAKE_FLAGS="-D QMC_INCLUDE=/sw/xk7/amdlibm/include \
+CMAKE_FLAGS="-DCMAKE_C_COMPILER=cc \ 
+             -DCMAKE_CXX_COMPILER=CC \
+             -D QMC_INCLUDE=/sw/xk7/amdlibm/include \
              -D QMC_EXTRA_LIBS=/sw/xk7/amdlibm/lib/static/libamdlibm.a"
 
 
@@ -67,13 +69,17 @@ ln -s ./build_cpu_comp/bin/qmcpack ./qmcpack_cpu_comp
 module load cudatoolkit
 
 
+# Set cmake variables, shared for gpu builds
+CMAKE_FLAGS="-DCMAKE_C_COMPILER=cc \ 
+             -DCMAKE_CXX_COMPILER=CC"
+
 # Configure and build gpu real
 echo ""
 echo ""
 echo "building qmcpack for gpu real"
 mkdir build_gpu_real
 cd build_gpu_real
-cmake -DQMC_CUDA=1 .. 
+cmake -DQMC_CUDA=1 $CMAKE_FLAGS .. 
 make -j 32
 cd ..
 ln -s ./build_gpu_real/bin/qmcpack ./qmcpack_gpu_real

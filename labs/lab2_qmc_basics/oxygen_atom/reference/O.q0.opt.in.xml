@@ -1,0 +1,177 @@
+<?xml version="1.0"?>
+<simulation>
+
+
+   <!-- all output files will be prefixed by "O_q0_opt" -->
+   <project id="O_q0_opt" series="0">
+      <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
+   </project>
+
+ 
+   <!-- qmcsystem: simulation cell, particles, trial wavefunction, and hamiltonian -->
+   <qmcsystem>
+
+     <!-- description of simulation cell and boundary conditions -->
+      <simulationcell>
+         <!-- simulation cell axes in Bohr -->
+         <parameter name="lattice" units="bohr">
+                 28.34589199        0.00000000        0.00000000
+                  0.00000000       28.34589483        0.00000000
+                  0.00000000        0.00000000       28.34589766
+         </parameter>
+
+         <!-- n n n means open boundary conditions in each dimension -->
+         <parameter name="bconds">
+            n n n
+         </parameter>
+      </simulationcell>
+
+
+      <!-- description of electrons and ions -->
+      <!--   electrons  (labeled "e") -->
+      <particleset name="e" random="yes" randomsrc="ion0">
+         <!-- 4 up electrons -->
+         <group name="u" size="4">
+            <parameter name="charge"              >    -1                    </parameter>
+            <parameter name="mass"                >    1.0                   </parameter>
+         </group>
+         <!-- 2 down electrons -->
+         <group name="d" size="2">
+            <parameter name="charge"              >    -1                    </parameter>
+            <parameter name="mass"                >    1.0                   </parameter>
+         </group>
+      </particleset>
+
+      <!--   ions/atoms  (labeled "ion0")  -->
+      <particleset name="ion0">
+         <!-- 1 oxygen atom -->
+         <group name="O" size="1">
+            <parameter name="charge"              >    6                     </parameter>
+            <parameter name="valence"             >    6                     </parameter>
+            <parameter name="atomicnumber"        >    8                     </parameter>
+            <parameter name="mass"                >    29164.3928678         </parameter>
+            <!-- position of oxygen atom in Bohr  -->
+            <attrib name="position" datatype="posArray" condition="0">
+                    14.17294600       14.17294741       14.17294883
+            </attrib>
+         </group>
+      </particleset>
+
+
+      <!-- trial wavefunction (labeled "psi0") -->
+      <wavefunction name="psi0" target="e">
+
+         <!-- single particle orbitals from QM Espresso, read from file "O.q0.pwscf.h5" -->
+         <sposet_builder type="bspline" href="./O.q0.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" version="0.10" meshfactor="1.0" precision="float" truncate="no">
+            <sposet type="bspline" name="spo_u" size="4" spindataset="0"/>  <!--  up orbitals   -->
+            <sposet type="bspline" name="spo_d" size="2" spindataset="1"/>  <!--  down orbitals -->
+         </sposet_builder>
+
+         <!-- spin up and down Slater determinants constructed from orbitals above -->
+         <determinantset>
+            <slaterdeterminant>
+               <determinant id="updet"   group="u" sposet="spo_u" size="4"/>  <!-- up determinant   -->   
+               <determinant id="downdet" group="d" sposet="spo_d" size="2"/>  <!-- down determinant -->   
+            </slaterdeterminant>
+         </determinantset>
+
+         <!-- 1-body B-spline Jastrow factor (electron-ion) -->
+         <jastrow type="One-Body" name="J1" function="bspline" source="ion0" print="yes">  
+            <correlation elementType="O" size="8" rcut="4.5" cusp="0.0">  <!-- 8 knots, vanishes beyond 4.5 Bohr -->
+               <coefficients id="eO" type="Array">                  
+                 0 0 0 0 0 0 0 0    <!-- initial guess for 8 knots is zero  -->
+               </coefficients>
+            </correlation>
+         </jastrow>
+
+         <!-- 2-body Pade Jastrow factor (electron-ion) -->
+         <jastrow type="Two-Body" name="J2" function="pade" print="yes">
+            <correlation speciesA="u" speciesB="u">
+               <var id="uu_b" name="B">   0.6   </var>  <!-- up-up B parameter  Ar/(1+Br)  -->
+            </correlation>
+            <correlation speciesA="u" speciesB="d">
+               <var id="ud_b" name="B">   1.0   </var>  <!-- down-down B parameter  Ar/(1+Br)  -->
+            </correlation>
+         </jastrow>
+      </wavefunction>
+
+
+      <!-- many body Hamiltonian (kinetic energy is implicit) -->
+      <hamiltonian name="h0" type="generic" target="e">
+
+         <!-- electron-electron Coulomb interaction-->
+         <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
+
+         <!-- ion-ion Coulomb interaction (irrelevant for a single atom, of course) -->
+         <pairpot type="coulomb" name="IonIon" source="ion0" target="ion0"/>
+
+         <!-- electron-ion interactions (pseudopotentials) -->
+         <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
+            <pseudo elementType="O" href="O.BFD.xml"/>  <!-- O pseudopotential read from "O.BFD.xml" -->
+         </pairpot>
+      </hamiltonian>
+
+
+   </qmcsystem>
+
+
+   <!-- QMC run parameters below -->
+
+   <!--  linear optimization method (use fewer samples) -->
+   <!--    fill in MAX1, ECOST1, UVCOST1, RVCOST1, TS, SAMPLES1    -->
+   <loop max="8">  <!-- regenerate Monte Carlo samples and optimize MAX1 times -->
+      <qmc method="linear" move="pbyp" checkpoint="-1">
+         <cost name="energy"              >    0                </cost>
+         <cost name="unreweightedvariance">    1.0                </cost>
+         <cost name="reweightedvariance"  >    0                </cost>
+         <parameter name="timestep"            >    .3                </parameter>
+         <parameter name="samples"             >    5000           </parameter>
+         <parameter name="warmupSteps"         >    300                </parameter>
+         <parameter name="blocks"              >    800                </parameter>
+         <parameter name="subSteps"            >    10                 </parameter>
+         <parameter name="nonlocalpp"          >    yes                </parameter>
+         <parameter name="useBuffer"           >    yes                </parameter>
+         <parameter name="walkers"             >    1                  </parameter>
+         <parameter name="minwalkers"          >    0.5                </parameter>
+         <parameter name="maxWeight"           >    1000000000.0       </parameter>
+         <parameter name="useDrift"            >    yes                </parameter>
+         <parameter name="MinMethod"           >    quartic            </parameter>
+         <parameter name="beta"                >    0.025              </parameter>
+         <parameter name="exp0"                >    -16                </parameter>
+         <parameter name="bigchange"           >    15.0               </parameter>
+         <parameter name="alloweddifference"   >    0.0001             </parameter>
+         <parameter name="stepsize"            >    0.2                </parameter>
+         <parameter name="stabilizerscale"     >    1.0                </parameter>
+         <parameter name="nstabilizers"        >    3                  </parameter>
+      </qmc>
+   </loop>
+
+   <!--  linear optimization method (use more samples) -->
+   <!--    fill in MAX2, ECOST2, UVCOST2, RVCOST2, TS, SAMPLES2    -->
+   <loop max="8">
+      <qmc method="linear" move="pbyp" checkpoint="-1">
+         <cost name="energy"              >    0                </cost>
+         <cost name="unreweightedvariance">    1.0                </cost>
+         <cost name="reweightedvariance"  >    0                </cost>
+         <parameter name="timestep"            >    0.3                </parameter>
+         <parameter name="samples"             >    20000           </parameter>
+         <parameter name="warmupSteps"         >    300                </parameter>
+         <parameter name="blocks"              >    800                </parameter>
+         <parameter name="subSteps"            >    10                 </parameter>
+         <parameter name="nonlocalpp"          >    yes                </parameter>
+         <parameter name="useBuffer"           >    yes                </parameter>
+         <parameter name="walkers"             >    1                  </parameter>
+         <parameter name="minwalkers"          >    0.5                </parameter>
+         <parameter name="maxWeight"           >    1000000000.0       </parameter>
+         <parameter name="useDrift"            >    yes                </parameter>
+         <parameter name="MinMethod"           >    quartic            </parameter>
+         <parameter name="beta"                >    0.025              </parameter>
+         <parameter name="exp0"                >    -16                </parameter>
+         <parameter name="bigchange"           >    15.0               </parameter>
+         <parameter name="alloweddifference"   >    0.0001             </parameter>
+         <parameter name="stepsize"            >    0.2                </parameter>
+         <parameter name="stabilizerscale"     >    1.0                </parameter>
+         <parameter name="nstabilizers"        >    3                  </parameter>
+      </qmc>
+   </loop>
+</simulation>

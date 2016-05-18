@@ -18,6 +18,7 @@
 #include "Message/Communicate.h"
 #include "Utilities/OhmmsInfo.h"
 #include "Utilities/SimpleParser.h"
+#include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/FileUtility.h"
 #include "Platforms/sysutil.h"
 #include "Platforms/devices.h"
@@ -54,9 +55,10 @@ int main(int argc, char **argv)
     {
       if (c.find("gpu") < c.size())
         useGPU = true;
-      else
-        if(c.find("clones")<c.size())
-          clones=atoi(argv[++i]);
+      if(c.find("clones")<c.size())
+        clones=atoi(argv[++i]);
+      if (c == "-debug")
+        ReportEngine::enableOutput();
     }
     else
     {

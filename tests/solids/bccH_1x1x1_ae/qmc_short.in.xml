@@ -75,6 +75,7 @@
          <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
          <pairpot type="coulomb" name="IonIon" source="ion0" target="ion0"/>
          <pairpot type="coulomb" name="ElecIon" source="ion0" target="e"/>
+         <estimator type="flux" name="Flux"/>
       </hamiltonian>
    </qmcsystem>
    <qmc method="vmc" move="pbyp">

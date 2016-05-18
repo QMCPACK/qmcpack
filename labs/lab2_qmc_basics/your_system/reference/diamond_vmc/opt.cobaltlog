@@ -1,0 +1,28 @@
+Jobid: 201676
+qsub --mode script -q default -A QMC_2014_Preparation -n 32 -t 120 -O opt --mode script --env BG_SHAREDMEMSIZE=32 opt.qsub.in
+Tue Jul 08 17:52:44 2014 +0000 (UTC) submitted with cwd set to: /gpfs/vesta-home/krogel/test/05_full_lab/your_system/diamond_vmc
+Tue Jul 08 17:53:13 2014 +0000 (UTC) krogel/201676: Initiating boot at location VST-22460-33571-32.
+Tue Jul 08 17:53:16 2014 +0000 (UTC) Info: user delete requested with signal SIGTERM by user krogel
+Tue Jul 08 17:53:29 2014 +0000 (UTC) 
+Tue Jul 08 17:53:29 2014 +0000 (UTC) Command: '/gpfs/vesta-home/krogel/test/05_full_lab/your_system/diamond_vmc/opt.qsub.in'
+Tue Jul 08 17:53:29 2014 +0000 (UTC) 
+Tue Jul 08 17:53:29 2014 +0000 (UTC) Environment:
+Tue Jul 08 17:53:29 2014 +0000 (UTC) SHELL=/bin/bash
+Tue Jul 08 17:53:29 2014 +0000 (UTC) COBALT_NODEFILE=/tmp/tmp06vdXV
+Tue Jul 08 17:53:29 2014 +0000 (UTC) COBALT_PARTNAME=VST-22460-33571-32
+Tue Jul 08 17:53:29 2014 +0000 (UTC) COBALT_JOBID=201676
+Tue Jul 08 17:53:29 2014 +0000 (UTC) BG_SHAREDMEMSIZE=32
+Tue Jul 08 17:53:29 2014 +0000 (UTC) COBALT_STARTTIME=1404841975
+Tue Jul 08 17:53:29 2014 +0000 (UTC) LOGNAME=krogel
+Tue Jul 08 17:53:29 2014 +0000 (UTC) USER=krogel
+Tue Jul 08 17:53:29 2014 +0000 (UTC) COBALT_ENDTIME=1404849175
+Tue Jul 08 17:53:29 2014 +0000 (UTC) COBALT_PARTSIZE=32
+Tue Jul 08 17:53:29 2014 +0000 (UTC) HOME=/home/krogel
+Tue Jul 08 17:53:29 2014 +0000 (UTC) COBALT_JOBSIZE=32
+Tue Jul 08 17:53:29 2014 +0000 (UTC) 
+Tue Jul 08 17:53:29 2014 +0000 (UTC) Info: stdin received from /dev/null
+Tue Jul 08 17:53:29 2014 +0000 (UTC) Info: stdout sent to /gpfs/vesta-home/krogel/test/05_full_lab/your_system/diamond_vmc/opt.output
+Tue Jul 08 17:53:29 2014 +0000 (UTC) Info: stderr sent to /gpfs/vesta-home/krogel/test/05_full_lab/your_system/diamond_vmc/opt.error
+Tue Jul 08 17:53:29 2014 +0000 (UTC) 
+Tue Jul 08 17:53:29 2014 +0000 (UTC) krogel/201676: Block VST-22460-33571-32 for location VST-22460-33571-32 successfully booted (Initiating). 
+Tue Jul 08 18:00:03 2014 +0000 (UTC) Info: task completed normally with an exit code of 0; initiating job cleanup and removal

@@ -181,14 +181,30 @@ public:
   ///pointer to the basis set
   BS* myBasisSet;
 
+  ///temporary matricies
   ValueMatrix_t Temp;
   ValueMatrix_t Tempv;
+
+  ///algorithm switch
+  int Algo;
+
   /** constructor
    * @param bs pointer to the BasisSet
    * @param id identifier of this LCOrbitalSet
    */
-  LCOrbitalSet(BS* bs=0,int rl=0): myBasisSet(0),ReportLevel(rl)
+  LCOrbitalSet(BS* bs=0,int rl=0, string algorithm=""): myBasisSet(0),ReportLevel(rl)
   {
+    if(algorithm=="legacy_gemv")
+    {
+      Algo=0;
+      /// input sample: <coefficient size="57" id="updetC" algorithm="legacy_gemv">
+      app_log() << "SPO coefficients are applied using the legacy algorithm" << endl;
+    }
+    else
+    {
+      Algo=1;
+      app_log() << "SPO coefficients are applied by a single dgemm (BLAS3)" << endl;
+    }
     if(bs)
       setBasisSet(bs);
   }
@@ -223,7 +239,7 @@ public:
   void setOrbitalSetSize(int norbs)
   {
     OrbitalSetSize=norbs;
-    Tempv.resize(OrbitalSetSize,5);
+    Tempv.resize(5,OrbitalSetSize);
   }
 
   /** set the basis set
@@ -232,7 +248,7 @@ public:
   {
     myBasisSet=bs;
     BasisSetSize=myBasisSet->getBasisSetSize();
-    Temp.resize(BasisSetSize,5);
+    Temp.resize(5,BasisSetSize);
   }
 
   /** return the size of the basis set
@@ -253,9 +269,39 @@ public:
   evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
   {
     myBasisSet->evaluateAllForPtclMove(P,iat);
-    simd::gemv(C,myBasisSet->Phi.data(),psi.data());
-    simd::gemv(C,myBasisSet->dPhi.data(),dpsi.data());
-    simd::gemv(C,myBasisSet->d2Phi.data(),d2psi.data());
+
+    if(Algo==1)
+    {
+      // Fast algorithm, using a single dgemm
+      // Temp stores SOA BasisSet
+      simd::copy(Temp.data(), myBasisSet->Phi.data(), BasisSetSize);
+      simd::copy(Temp.data() + BasisSetSize, myBasisSet->d2Phi.data(), BasisSetSize);
+      for(int i=0; i<BasisSetSize; i++)
+      {
+        Temp[2][i]=myBasisSet->dPhi[i][0];
+        Temp[3][i]=myBasisSet->dPhi[i][1];
+        Temp[4][i]=myBasisSet->dPhi[i][2];
+      }
+    
+      MatrixOperators::product_ABt(Temp,C,Tempv);
+    
+      // Tempv stores SOA SPOset
+      simd::copy(psi.data(), Tempv.data(), OrbitalSetSize);
+      simd::copy(d2psi.data(), Tempv.data() + OrbitalSetSize, OrbitalSetSize);
+      for(int i=0; i<OrbitalSetSize; i++)
+      {
+        dpsi[i][0]=Tempv[2][i];
+        dpsi[i][1]=Tempv[3][i];
+        dpsi[i][2]=Tempv[4][i];
+      }
+    }
+    else
+    {
+      // legacy algorithm
+      simd::gemv(C,myBasisSet->Phi.data(),psi.data());
+      simd::gemv(C,myBasisSet->dPhi.data(),dpsi.data());
+      simd::gemv(C,myBasisSet->d2Phi.data(),d2psi.data());
+    }
   }
 
   inline void
@@ -296,20 +342,49 @@ public:
                             ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
   {
     const ValueType* restrict cptr=C.data();
-#pragma ivdep
     for(int i=0,ij=0, iat=first; iat<last; i++,iat++)
     {
       myBasisSet->evaluateForWalkerMove(P,iat);
-      MatrixOperators::product(C,myBasisSet->Phi,logdet[i]);
-      MatrixOperators::product(C,myBasisSet->d2Phi,d2logdet[i]);
-      const typename BS::GradType* restrict dptr=myBasisSet->dPhi.data();
-      for(int j=0,jk=0; j<OrbitalSetSize; j++)
+
+      if(Algo==1)
       {
-        register GradType dres;
-        for(int b=0; b<BasisSetSize; ++b)
-          dres +=  cptr[jk++]*dptr[b];
-        dlogdet(ij)=dres;
-        ++ij;
+        // Fast algorithm, using a single dgemm
+        // Temp stores SOA BasisSet
+        simd::copy(Temp.data(), myBasisSet->Phi.data(), BasisSetSize);
+        simd::copy(Temp.data() + BasisSetSize, myBasisSet->d2Phi.data(), BasisSetSize);
+        for(int k=0; k<BasisSetSize; k++)
+        {
+          Temp[2][k]=myBasisSet->dPhi[k][0];
+          Temp[3][k]=myBasisSet->dPhi[k][1];
+          Temp[4][k]=myBasisSet->dPhi[k][2];
+        }
+
+        MatrixOperators::product_ABt(Temp,C,Tempv);
+
+        // Tempv stores SOA SPOset
+        simd::copy(logdet[i], Tempv.data(), OrbitalSetSize);
+        simd::copy(d2logdet[i], Tempv.data() + OrbitalSetSize, OrbitalSetSize);
+        for(int j=0; j<OrbitalSetSize; j++)
+        {
+          dlogdet[i][j][0]=Tempv[2][j];
+          dlogdet[i][j][1]=Tempv[3][j];
+          dlogdet[i][j][2]=Tempv[4][j];
+        }
+      }
+      else
+      {
+        // legacy algorithm
+        MatrixOperators::product(C,myBasisSet->Phi,logdet[i]);
+        MatrixOperators::product(C,myBasisSet->d2Phi,d2logdet[i]);
+        const typename BS::GradType* restrict dptr=myBasisSet->dPhi.data();
+        for(int j=0,jk=0; j<OrbitalSetSize; j++)
+        {
+          register GradType dres;
+          for(int b=0; b<BasisSetSize; ++b)
+            dres +=  cptr[jk++]*dptr[b];
+          dlogdet(ij)=dres;
+          ++ij;
+        }
       }
     }
   }

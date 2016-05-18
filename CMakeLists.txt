@@ -424,7 +424,7 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   IF(LAPACK_FOUND)
     MESSAGE(STATUS "LAPACK libraries: ${LAPACK_LIBRARIES}")
     MESSAGE(STATUS "LAPACK linker flags: ${LAPACK_LINKER_FLAGS}")
-    link_libraries(${LAPACK_LIBRARIES} ${LAPACK_LINKER_FLAGS})
+    SET(LAPACK_LIBRARY ${LAPACK_LIBRARIES} ${LAPACK_LINKER_FLAGS})
   ENDIF()
 
 
@@ -463,8 +463,29 @@ INCLUDE(${CMAKE_ROOT}/Modules/FindThreads.cmake)
 # use customized cmake file for boost so that we can deal with multiple
 # installataions
 # list of libraries to be linked with the main applications using I/O
-SET(QMC_UTIL_LIBS )
+
+SET(QMC_UTIL_LIBS ${LAPACK_LIBRARY} ${BLAS_LIBRARY})
+
+SET( FFTW_FOUND 0 )
+IF ( HAVE_MKL )
+  IF ( HAVE_MKL_FFTW3 )
+    SET( FFTW_FOUND 1 )
+  ENDIF()
+ENDIF()
+IF ( NOT FFTW_FOUND )
+  find_package(FFTW)
+ENDIF()
+IF(FFTW_FOUND)
+  SET(HAVE_LIBFFTW 1)
+  INCLUDE_DIRECTORIES(${FFTW_INCLUDE_DIR})
+  SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${FFTW_LIBRARIES})
+  MESSAGE(STATUS "Found FFTW")
+ELSE(FFTW_FOUND)
+  MESSAGE(STATUS "Disabling FFTW")
+ENDIF(FFTW_FOUND)
  
+SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${FORTRAN_LIBRARIES})
+
 find_package(ZLIB)
 find_package(LibXml2)
 
@@ -591,36 +612,9 @@ ENDIF(QMC_CUDA)
 #  endif(ENABLE_OPENMP)
 #ENDIF(FOUND_TAU)
 
-###############################################################
-# for specific linker in the case of profiling like hpctoolkit.
-###############################################################
-if(CMAKE_CXX_LINKER)
-  set(CMAKE_CXX_LINK_EXECUTABLE
-  "${CMAKE_CXX_LINKER} <FLAGS> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS>  <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
-  MESSAGE(STATUS "Linker is specified as '${CMAKE_CXX_LINKER}' instead of '${CMAKE_CXX_COMPILER}'")
-endif()
-
 ######################################################
 # Add optional macros
 ######################################################
-
-SET( FFTW_FOUND 0 )
-IF ( HAVE_MKL )
-  IF ( HAVE_MKL_FFTW3 )
-    SET( FFTW_FOUND 1 )
-  ENDIF()
-ENDIF()
-IF ( NOT FFTW_FOUND )
-  find_package(FFTW)
-ENDIF()
-IF(FFTW_FOUND)
-  SET(HAVE_LIBFFTW 1)
-  INCLUDE_DIRECTORIES(${FFTW_INCLUDE_DIR})
-  SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${FFTW_LIBRARIES})
-  MESSAGE(STATUS "Found FFTW")
-ELSE(FFTW_FOUND)
-  MESSAGE(STATUS "Disabling FFTW")
-ENDIF(FFTW_FOUND)
 
 #include qmcpack/src build/src
 INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/src)
@@ -647,7 +641,7 @@ set(build_einspline 1)
 if(build_einspline)
   SUBDIRS(src/einspline)
   INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/include)
-  SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} einspline)
+  SET(QMC_UTIL_LIBS einspline ${QMC_UTIL_LIBS})
 endif()
 
 #include(ExternalProject)
@@ -685,6 +679,14 @@ endif()
 #  ENDIF(GTKMM_FOUND)
 #ENDIF(ENABLE_GTK_GUI)
 
+###############################################################
+# for specific linker in the case of profiling like hpctoolkit.
+###############################################################
+if(CMAKE_CXX_LINKER)
+  set(CMAKE_CXX_LINK_EXECUTABLE
+  "${CMAKE_CXX_LINKER} <FLAGS> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS>  <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
+  MESSAGE(STATUS "Linker is specified as '${CMAKE_CXX_LINKER}' instead of '${CMAKE_CXX_COMPILER}'")
+endif()
 
 ###################################################
 # Add user extra flags

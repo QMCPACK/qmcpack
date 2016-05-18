@@ -372,7 +372,7 @@ void GamesAsciiParser::getGeometry(std::istream& is)
           if(it0 == currentWords.end())
           {
             cerr<<"Problem with ECP data. Didn't found ATOM tag\n";
-            cerr<<is <<endl;
+            cerr<< is.rdbuf() <<endl;
             abort();
           }
           it0++;

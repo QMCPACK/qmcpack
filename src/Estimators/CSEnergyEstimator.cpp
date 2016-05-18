@@ -149,9 +149,9 @@ namespace qmcplusplus {
 	//   - ui*awalker.getPropertyBase(i)[LOCALENERGY] << endl;
 
         for(int k=0; k<tmp_data.cols(); ++k){
-			 
+	 		 
           scalars[ii++]((ui*tmp_data(i,k)/weightaverage[i]-uj*tmp_data(j,k)/weightaverage[j]),1.0);
-         // app_log()<<"i="<<i<<" ii="<<ii<<" wai="<<weightaverage[i]<<" waj="<<weightaverage[j]<<endl;
+//          app_log()<<"i="<<i<<" ii="<<ii<<" wai="<<weightaverage[i]<<" waj="<<weightaverage[j]<<endl;
 	  }
 	  // scalars[ii++](awalker.getPropertyBase(j)[LOCALENERGY] -
 	  // 		awalker.getPropertyBase(i)[LOCALENERGY],1.0);

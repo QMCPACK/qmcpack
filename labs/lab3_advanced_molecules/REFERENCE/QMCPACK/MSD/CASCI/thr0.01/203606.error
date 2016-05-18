@@ -1,0 +1,45 @@
+2014-07-16 01:36:07.877 (INFO ) [0xfff86d3bdd0] ibm.runjob.AbstractOptions: using properties file /bgsys/local/etc/bg.properties
+2014-07-16 01:36:07.878 (INFO ) [0xfff86d3bdd0] ibm.runjob.AbstractOptions: max open file descriptors: 65536
+2014-07-16 01:36:07.878 (INFO ) [0xfff86d3bdd0] ibm.runjob.AbstractOptions: core file limit: 18446744073709551615
+2014-07-16 01:36:07.879 (INFO ) [0xfff86d3bdd0] 10928:tatu.runjob.client: scheduler job id is 203606
+2014-07-16 01:36:07.883 (INFO ) [0xfffb2ea34e0] 10928:tatu.runjob.monitor: monitor started
+2014-07-16 01:36:11.031 (INFO ) [0xfffb2ea34e0] 10928:tatu.runjob.monitor: task record 691340 created
+2014-07-16 01:36:11.031 (INFO ) [0xfff86d3bdd0] VST-22420-33531-32:10928:ibm.runjob.client.options.Parser: set local socket to runjob_mux from properties file
+2014-07-16 01:36:13.162 (INFO ) [0xfff86d3bdd0] VST-22420-33531-32:894075:ibm.runjob.client.Job: job 894075 started
+Rank =    0  Free Memory = 105641 MB
+Rank =    1  Free Memory = 105641 MB
+Rank =    2  Free Memory = 105641 MB
+Rank =    3  Free Memory = 105641 MB
+Rank =    4  Free Memory = 105641 MB
+Rank =    5  Free Memory = 105641 MB
+Rank =    6  Free Memory = 105641 MB
+Rank =    7  Free Memory = 105641 MB
+Rank =    8  Free Memory = 105641 MB
+Rank =    9  Free Memory = 105641 MB
+Rank =   10  Free Memory = 105641 MB
+Rank =   11  Free Memory = 105641 MB
+Rank =   12  Free Memory = 105641 MB
+Rank =   13  Free Memory = 105641 MB
+Rank =   14  Free Memory = 105641 MB
+Rank =   15  Free Memory = 105641 MB
+Rank =   16  Free Memory = 105641 MB
+Rank =   17  Free Memory = 105641 MB
+Rank =   18  Free Memory = 105641 MB
+Rank =   19  Free Memory = 105641 MB
+Rank =   20  Free Memory = 105641 MB
+Rank =   21  Free Memory = 105641 MB
+Rank =   22  Free Memory = 105641 MB
+Rank =   23  Free Memory = 105641 MB
+Rank =   24  Free Memory = 105641 MB
+Rank =   25  Free Memory = 105641 MB
+Rank =   26  Free Memory = 105641 MB
+Rank =   27  Free Memory = 105641 MB
+Rank =   28  Free Memory = 105641 MB
+Rank =   29  Free Memory = 105641 MB
+Rank =   30  Free Memory = 105641 MB
+Rank =   31  Free Memory = 105641 MB
+2014-07-16 01:36:35.741 (INFO ) [0xfffb2ea34e0] 10928:tatu.runjob.monitor: tracklib completed
+2014-07-16 01:49:57.659 (INFO ) [0xfff86d3bdd0] VST-22420-33531-32:894075:ibm.runjob.client.Job: exited with status 0
+2014-07-16 01:49:57.659 (INFO ) [0xfff86d3bdd0] tatu.runjob.client: task exited with status 0
+2014-07-16 01:49:57.659 (INFO ) [0xfffb2ea34e0] 10928:tatu.runjob.monitor: monitor terminating
+2014-07-16 01:49:57.663 (INFO ) [0xfff86d3bdd0] tatu.runjob.client: monitor completed
