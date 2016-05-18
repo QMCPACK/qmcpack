@@ -54,18 +54,18 @@ ENDFOREACH(type)
 set(LAPACK_LIBRARY /usr/local/tools/lapack/lib/liblapack.a) 
 set(BLAS_LIBRARY /usr/local/tools/essl/5.1/lib/libesslsmpbg.a)
 set(FORTRAN_LIBRARIES 
+/opt/ibmcmp/xlmass/bg/7.3/bglib64/libmass.a 
+/opt/ibmcmp/xlmass/bg/7.3/bglib64/libmassv.a 
 /opt/ibmcmp/xlf/bg/14.1/bglib64/libxlf90_r.a
 #/opt/ibmcmp/xlf/bg/14.1/bglib64/libxlfmath.a
 /opt/ibmcmp/xlf/bg/14.1/bglib64/libxlopt.a
 )
 
-link_libraries(
-/opt/ibmcmp/xlmass/bg/7.3/bglib64/libmass.a 
-/opt/ibmcmp/xlmass/bg/7.3/bglib64/libmassv.a 
+#link_libraries(
 #/soft/perftools/hpctw/libmpihpm_smp.a
 #/bgsys/drivers/ppcfloor/bgpm/lib/libbgpm.a
 #/bgsys/drivers/ppcfloor/spi/lib/libSPI_upci_cnk.a
 #-pg
-)
+#)
 SET(BUILD_QMCTOOLS 1)
 SET(BUILD_SANDBOX 1)
