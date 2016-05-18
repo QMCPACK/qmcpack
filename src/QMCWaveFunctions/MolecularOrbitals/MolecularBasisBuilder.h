@@ -133,6 +133,10 @@ public:
       string cname((const char*)(cur->name));
       if(cname.find("coeff") < cname.size())
       {
+        string algorithm("");
+        OhmmsAttributeSet coeffAttrib;
+        coeffAttrib.add (algorithm, "algorithm");
+        coeffAttrib.put(cur);
 #if QMC_BUILD_LEVEL>2
         if(cuspCorr)
         {
@@ -140,7 +144,7 @@ public:
           string tmp = cuspInfo;
           if(cusp_file != "")
             tmp=cusp_file;
-          lcos= new LCOrbitalSetWithCorrection<ThisBasisSetType,false>(thisBasisSet,&targetPtcl,&sourcePtcl,ReportLevel,0.1,tmp);
+          lcos= new LCOrbitalSetWithCorrection<ThisBasisSetType,false>(thisBasisSet,&targetPtcl,&sourcePtcl,ReportLevel,0.1,tmp,algorithm);
 // mmorales:
 // this is a small hack to allow the cusp correction to work
 // but it should be fixed, all basisset/sposet objects should always be named
@@ -153,10 +157,6 @@ public:
 #endif
         {
           app_log() << "Creating LCOrbitalSet with the input coefficients" << endl;
-          string algorithm("");
-          OhmmsAttributeSet coeffAttrib;
-          coeffAttrib.add (algorithm, "algorithm");
-          coeffAttrib.put(cur);
           lcos= new LCOrbitalSet<ThisBasisSetType,false>(thisBasisSet,ReportLevel,algorithm);
         }
       }

@@ -364,7 +364,7 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
   xmlNewProp(spo,(const xmlChar*)"name",(const xmlChar*)objectName.c_str());
   for(int i=0; i<numCentr; i++ )
   {
-    app_log()<<"Transforming orbitals of center " <<i <<endl;
+    app_log()<<"Transforming orbitals of center " << i <<endl;
     dummyLO1->C = C;
     dummyLO2->C = C;
     createLCOSets(i,dummyLO1,dummyLO2);

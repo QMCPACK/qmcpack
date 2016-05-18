@@ -197,7 +197,7 @@ public:
     if(algorithm=="legacy_gemv")
     {
       Algo=0;
-      /// input sample: <coefficient size="57" id="updetC" algorithm="legacy">
+      /// input sample: <coefficient size="57" id="updetC" algorithm="legacy_gemv">
       app_log() << "SPO coefficients are applied using the legacy algorithm" << endl;
     }
     else

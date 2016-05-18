@@ -237,14 +237,30 @@ public:
   ///source ParticleSet
   ParticleSet* sourcePtcl;
 
+  ///temporary matricies
   ValueMatrix_t Temp;
   ValueMatrix_t Tempv;
+
+  ///algorithm switch
+  int Algo;
+
   /** constructor
    * @param bs pointer to the BasisSet
    * @param id identifier of thisLCOrbitalSetWithCorrection
    */
-  LCOrbitalSetWithCorrection(BS* bs=0, ParticleSet* els=0, ParticleSet* ions=0, int rl=0, double rc=-1.0, string cusp_info=""): myBasisSet(0),corrBasisSet(0),targetPtcl(els),sourcePtcl(ions),ReportLevel(rl),Rcut(rc),cuspInfoFile(cusp_info)
+  LCOrbitalSetWithCorrection(BS* bs=0, ParticleSet* els=0, ParticleSet* ions=0, int rl=0, double rc=-1.0, string cusp_info="", string algorithm=""): myBasisSet(0),corrBasisSet(0),targetPtcl(els),sourcePtcl(ions),ReportLevel(rl),Rcut(rc),cuspInfoFile(cusp_info)
   {
+    if(algorithm=="legacy_gemv")
+    {
+      Algo=0;
+      /// input sample: <coefficient size="57" id="updetC" algorithm="legacy_gemv">
+      app_log() << "SPO coefficients are applied using the legacy algorithm" << endl;
+    }
+    else
+    {
+      Algo=1;
+      app_log() << "SPO coefficients are applied by a single dgemm (BLAS3)" << endl;
+    }
 // call APP_ABORT if els==0, ions==0
     if(bs)
       setBasisSet(bs);
@@ -285,7 +301,7 @@ public:
   void setOrbitalSetSize(int norbs)
   {
     OrbitalSetSize=norbs;
-    Tempv.resize(OrbitalSetSize,5);
+    Tempv.resize(5,OrbitalSetSize);
   }
 
   /** set the basis set
@@ -294,7 +310,7 @@ public:
   {
     myBasisSet=bs;
     BasisSetSize=myBasisSet->getBasisSetSize();
-    Temp.resize(BasisSetSize,5);
+    Temp.resize(5,BasisSetSize);
   }
 
   /** return the size of the basis set
@@ -329,50 +345,90 @@ public:
   {
     myBasisSet->evaluateAllForPtclMove(P,iat);
     corrBasisSet->evaluateAllForPtclMove(P,iat);
-    //optimal on tungsten
-    const ValueType* restrict cptr=C.data();
     int numCenters=corrBasisSet->NumCenters;
-    const typename BS::ValueType* restrict pptr=myBasisSet->Phi.data();
-    const typename BS::ValueType* restrict d2ptr=myBasisSet->d2Phi.data();
-    const typename BS::GradType* restrict dptr=myBasisSet->dPhi.data();
-#pragma ivdep
-    for(int j=0; j<OrbitalSetSize; j++)
+    if(Algo==1)
     {
-      register ValueType res=0.0, d2res=0.0;
-      register GradType dres;
-      for(int b=0; b<BasisSetSize; b++,cptr++)
+      // Fast algorithm, using a single dgemm
+      // Temp stores SOA BasisSet
+      simd::copy(Temp.data(), myBasisSet->Phi.data(), BasisSetSize);
+      simd::copy(Temp.data() + BasisSetSize, myBasisSet->d2Phi.data(), BasisSetSize);
+      for(int i=0; i<BasisSetSize; i++)
       {
-        res += *cptr*pptr[b];
-        d2res += *cptr*d2ptr[b];
-        dres += *cptr*dptr[b];
-        //res += *cptr * (*pptr++);
-        //d2res += *cptr* (*d2ptr++);
-        //dres += *cptr* (*dptr++);
+        Temp[2][i]=myBasisSet->dPhi[i][0];
+        Temp[3][i]=myBasisSet->dPhi[i][1];
+        Temp[4][i]=myBasisSet->dPhi[i][2];
       }
+
+      MatrixOperators::product_ABt(Temp,C,Tempv);
+
+      // Tempv stores SOA SPOset
+      simd::copy(psi.data(), Tempv.data(), OrbitalSetSize);
+      simd::copy(d2psi.data(), Tempv.data() + OrbitalSetSize, OrbitalSetSize);
+      for(int i=0; i<OrbitalSetSize; i++)
+      {
+        dpsi[i][0]=Tempv[2][i];
+        dpsi[i][1]=Tempv[3][i];
+        dpsi[i][2]=Tempv[4][i];
+      }
+
+      // add correction
       for(int k=0 ; k<numCenters; k++)
       {
-        res += corrBasisSet->Phi[k*OrbitalSetSize+j];
-        d2res += corrBasisSet->d2Phi[k*OrbitalSetSize+j];
-        dres += corrBasisSet->dPhi[k*OrbitalSetSize+j];
+        for(int j=0; j<OrbitalSetSize; j++)
+        {
+          psi[j] += corrBasisSet->Phi[k*OrbitalSetSize+j];
+          dpsi[j] += corrBasisSet->dPhi[k*OrbitalSetSize+j];
+          d2psi[j] += corrBasisSet->d2Phi[k*OrbitalSetSize+j];
+        }
       }
-      psi[j]=res;
-      dpsi[j]=dres;
-      d2psi[j]=d2res;
     }
-    //blasI is not too good
-    //for(int j=0 ; j<OrbitalSetSize; j++) {
-    //  psi[j]   = dot(C[j],myBasisSet->Phi.data(),  BasisSetSize);
-    //  dpsi[j]  = dot(C[j],myBasisSet->dPhi.data(), BasisSetSize);
-    //  d2psi[j] = dot(C[j],myBasisSet->d2Phi.data(),BasisSetSize);
-    //  //psi[j]   = dot(C[j],myBasisSet->Y[0],  BasisSetSize);
-    //  //dpsi[j]  = dot(C[j],myBasisSet->dY[0], BasisSetSize);
-    //  //d2psi[j] = dot(C[j],myBasisSet->d2Y[0],BasisSetSize);
-    //}
+    else
+    {
+      // legacy algorithm
+      //optimal on tungsten
+      const ValueType* restrict cptr=C.data();
+      const typename BS::ValueType* restrict pptr=myBasisSet->Phi.data();
+      const typename BS::ValueType* restrict d2ptr=myBasisSet->d2Phi.data();
+      const typename BS::GradType* restrict dptr=myBasisSet->dPhi.data();
+      #pragma ivdep
+      for(int j=0; j<OrbitalSetSize; j++)
+      {
+        register ValueType res=0.0, d2res=0.0;
+        register GradType dres;
+        for(int b=0; b<BasisSetSize; b++,cptr++)
+        {
+          res += *cptr*pptr[b];
+          d2res += *cptr*d2ptr[b];
+          dres += *cptr*dptr[b];
+          //res += *cptr * (*pptr++);
+          //d2res += *cptr* (*d2ptr++);
+          //dres += *cptr* (*dptr++);
+        }
+        for(int k=0 ; k<numCenters; k++)
+        {
+          res += corrBasisSet->Phi[k*OrbitalSetSize+j];
+          d2res += corrBasisSet->d2Phi[k*OrbitalSetSize+j];
+          dres += corrBasisSet->dPhi[k*OrbitalSetSize+j];
+        }
+        psi[j]=res;
+        dpsi[j]=dres;
+        d2psi[j]=d2res;
+      }
+      //blasI is not too good
+      //for(int j=0 ; j<OrbitalSetSize; j++) {
+      //  psi[j]   = dot(C[j],myBasisSet->Phi.data(),  BasisSetSize);
+      //  dpsi[j]  = dot(C[j],myBasisSet->dPhi.data(), BasisSetSize);
+      //  d2psi[j] = dot(C[j],myBasisSet->d2Phi.data(),BasisSetSize);
+      //  //psi[j]   = dot(C[j],myBasisSet->Y[0],  BasisSetSize);
+      //  //dpsi[j]  = dot(C[j],myBasisSet->dY[0], BasisSetSize);
+      //  //d2psi[j] = dot(C[j],myBasisSet->d2Y[0],BasisSetSize);
+      //}
+    }
   }
 
   inline void
   evaluate(const ParticleSet& P, int iat,
-           ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& d2psi)
+           ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi)
   {
     myBasisSet->evaluateForPtclMoveWithHessian(P,iat);
     corrBasisSet->evaluateForPtclMoveWithHessian(P,iat);
@@ -402,7 +458,7 @@ public:
       }
       psi[j]=res;
       dpsi[j]=dres;
-      d2psi[j]=d2res;
+      grad_grad_psi[j]=d2res;
     }
   }
 
@@ -440,29 +496,69 @@ public:
   {
     const ValueType* restrict cptr=C.data();
     int numCenters=corrBasisSet->NumCenters;
-#pragma ivdep
     for(int i=0,ij=0, iat=first; iat<last; i++,iat++)
     {
       myBasisSet->evaluateForWalkerMove(P,iat);
       corrBasisSet->evaluateForWalkerMove(P,iat);
-      MatrixOperators::product(C,myBasisSet->Phi,logdet[i]);
-      MatrixOperators::product(C,myBasisSet->d2Phi,d2logdet[i]);
-      const typename BS::GradType* restrict dptr=myBasisSet->dPhi.data();
-      for(int j=0,jk=0; j<OrbitalSetSize; j++)
+
+      if(Algo==1)
       {
-        register GradType dres;
+        // Fast algorithm, using a single dgemm
+        // Temp stores SOA BasisSet
+        simd::copy(Temp.data(), myBasisSet->Phi.data(), BasisSetSize);
+        simd::copy(Temp.data() + BasisSetSize, myBasisSet->d2Phi.data(), BasisSetSize);
+        for(int k=0; k<BasisSetSize; k++)
+        {
+          Temp[2][k]=myBasisSet->dPhi[k][0];
+          Temp[3][k]=myBasisSet->dPhi[k][1];
+          Temp[4][k]=myBasisSet->dPhi[k][2];
+        }
+
+        MatrixOperators::product_ABt(Temp,C,Tempv);
+
+        // Tempv stores SOA SPOset
+        simd::copy(logdet[i], Tempv.data(), OrbitalSetSize);
+        simd::copy(d2logdet[i], Tempv.data() + OrbitalSetSize, OrbitalSetSize);
+        for(int j=0; j<OrbitalSetSize; j++)
+        {
+          dlogdet[i][j][0]=Tempv[2][j];
+          dlogdet[i][j][1]=Tempv[3][j];
+          dlogdet[i][j][2]=Tempv[4][j];
+        }
+
+        // add correction
         for(int k=0 ; k<numCenters; k++)
         {
-          logdet(i,j) += corrBasisSet->Phi[k*OrbitalSetSize+j];
-          d2logdet(i,j) += corrBasisSet->d2Phi[k*OrbitalSetSize+j];
-          dres += corrBasisSet->dPhi[k*OrbitalSetSize+j];
+          for(int j=0; j<OrbitalSetSize; j++)
+          {
+            logdet[i][j]   += corrBasisSet->Phi[k*OrbitalSetSize+j];
+            dlogdet[i][j]  += corrBasisSet->dPhi[k*OrbitalSetSize+j];
+            d2logdet[i][j] += corrBasisSet->d2Phi[k*OrbitalSetSize+j];
+          }
         }
-        for(int b=0; b<BasisSetSize; ++b)
+      }
+      else
+      {
+        // legacy algorithm
+        MatrixOperators::product(C,myBasisSet->Phi,logdet[i]);
+        MatrixOperators::product(C,myBasisSet->d2Phi,d2logdet[i]);
+        const typename BS::GradType* restrict dptr=myBasisSet->dPhi.data();
+        for(int j=0,jk=0; j<OrbitalSetSize; j++)
         {
-          dres +=  cptr[jk++]*dptr[b];
+          register GradType dres;
+          for(int k=0 ; k<numCenters; k++)
+          {
+            logdet(i,j) += corrBasisSet->Phi[k*OrbitalSetSize+j];
+            d2logdet(i,j) += corrBasisSet->d2Phi[k*OrbitalSetSize+j];
+            dres += corrBasisSet->dPhi[k*OrbitalSetSize+j];
+          }
+          for(int b=0; b<BasisSetSize; ++b)
+          {
+            dres +=  cptr[jk++]*dptr[b];
+          }
+          dlogdet(ij)=dres;
+          ++ij;
         }
-        dlogdet(ij)=dres;
-        ++ij;
       }
     }
   }
