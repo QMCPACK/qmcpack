@@ -31,7 +31,7 @@ CoulombPBCAA_CUDA::CoulombPBCAA_CUDA
   Linv("CoulombPBCAATemp::Linv")
 {
 #ifdef QMC_CUDA
-  gpu::host_vector<CUDA_PRECISION> LHost(9), LinvHost(9);
+  gpu::host_vector<CUDA_COULOMB_PRECISION> LHost(9), LinvHost(9);
   for (int i=0; i<3; i++)
     for (int j=0; j<3; j++)
     {
@@ -75,12 +75,12 @@ CoulombPBCAA_CUDA::setupLongRangeGPU(ParticleSet &P)
   {
     StructFact &SK = *(P.SK);
     Numk = SK.KLists.numk;
-    gpu::host_vector<CUDA_PRECISION> kpointsHost(OHMMS_DIM*Numk);
+    gpu::host_vector<CUDA_COULOMB_PRECISION> kpointsHost(OHMMS_DIM*Numk);
     for (int ik=0; ik<Numk; ik++)
       for (int dim=0; dim<OHMMS_DIM; dim++)
         kpointsHost[ik*OHMMS_DIM+dim] = SK.KLists.kpts_cart[ik][dim];
     kpointsGPU = kpointsHost;
-    gpu::host_vector<CUDA_PRECISION> FkHost(Numk);
+    gpu::host_vector<CUDA_COULOMB_PRECISION> FkHost(Numk);
     for (int ik=0; ik<Numk; ik++)
       FkHost[ik] = AA->Fk[ik];
     FkGPU = FkHost;
@@ -139,7 +139,7 @@ CoulombPBCAA_CUDA::addEnergy(MCWalkerConfiguration &W,
                    W.RhokLists_GPU[sp].data(), walkers.size());
   }
 #ifdef DEBUG_CUDA_RHOK
-  gpu::host_vector<CUDA_PRECISION> RhokHost;
+  gpu::host_vector<CUDA_COULOMB_PRECISION> RhokHost;
   RhokHost = RhokGPU;
   for (int ik=0; ik<Numk; ik++)
   {

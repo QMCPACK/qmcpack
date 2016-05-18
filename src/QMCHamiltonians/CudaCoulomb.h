@@ -22,6 +22,9 @@ void
 CoulombAA_Sum(float *R[], int N, float sum[], int numWalkers);
 
 void
+CoulombAA_Sum(double *R[], int N, double sum[], int numWalkers);
+
+void
 CoulombAA_SR_Sum(float *R[], int N, float rMax, int Ntex, int texNum,
                  float lattice[], float latticeInv[], float sum[],
                  int numWalkers);
@@ -29,10 +32,6 @@ CoulombAA_SR_Sum(float *R[], int N, float rMax, int Ntex, int texNum,
 void
 CoulombAB_Sum(float *R[], int Nelec, float I[], float Zion[], int Nion,
               float sum[], int numWalkers);
-
-void
-CoulombAB_Sum(double *R[], int Nelec, double I[], double Zion[], int Nion,
-              double sum[], int numWalkers);
 
 void
 CoulombAB_SR_Sum(float *R[], int Nelec, float I[], int Ifirst, int Ilast,
@@ -64,12 +63,32 @@ eval_vk_sum_cuda (float *rhok1[], float rhok2[],
                   int numWalkers);
 
 
+// mixed-precision
+void
+CoulombAA_SR_Sum(float *R[], int N, double rMax, int Ntex, int texNum,
+                 double lattice[], double latticeInv[], double sum[],
+                 int numWalkers);
+
+void
+CoulombAB_SR_Sum(float *R[], int Nelec, float I[], int Ifirst, int Ilast,
+                 double rMax, int Ntex, int textureNum,
+                 double lattice[], double latticeInv[],
+                 double sum[], int numWalkers);
+
+void
+eval_rhok_cuda(float *R[], int first, int last, double kpoints[],
+               int numk, double* rhok[], int numWalkers);
+
 
 // Double-precision
 void
 CoulombAA_SR_Sum(double *R[], int N, double rMax, int Ntex, int texNum,
                  double lattice[], double latticeInv[], double sum[],
                  int numWalkers);
+
+void
+CoulombAB_Sum(double *R[], int Nelec, double I[], double Zion[], int Nion,
+              double sum[], int numWalkers);
 
 void
 CoulombAB_SR_Sum(double *R[], int Nelec, double I[], int Ifirst, int Ilast,

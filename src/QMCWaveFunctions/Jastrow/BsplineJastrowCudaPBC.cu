@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include "BsplineJastrowCudaPBC.h"
 #include "../../CUDA/gpu_misc.h"
+#include <config.h>
 
 
 bool AisInitializedPBC = false;
@@ -40,10 +41,17 @@ void CMC_profileSample(const char *function, float msec)
     cudaEventDestroy(stop); \
     CMC_profileSample(__FUNCTION__, time); \
   } \
-  if (cudaGetLastError()) { printf("CUDA ERROR!!! Detected at end of CMC_PROFILING_END.\n"); exit(1); }
+  cudaError_t error = cudaGetLastError(); \
+  if (error) { printf("%s\nCUDA ERROR!!! Detected at end of CMC_PROFILING_END in BsplineJastrowCudaPBC!!!\n", cudaGetErrorString(error)); exit(1); }
 
-static __constant__ float CMC_L[3][3];
-static __constant__ float CMC_Linv[3][3];
+#define COPY_LATTICE_DP_TO_SP() \
+  cudaMemcpyToSymbolAsync(CMC_L,    lattice,    sizeof(CMC_L),    0, cudaMemcpyDeviceToDevice, gpu::kernelStream); \
+  cudaMemcpyToSymbolAsync(CMC_Linv, latticeInv, sizeof(CMC_Linv), 0, cudaMemcpyDeviceToDevice, gpu::kernelStream); \
+  cudaError_t error = cudaGetLastError(); \
+  if (error) { printf("%s\nCUDA ERROR!!! Detected at end of COPY_LATTICE_DP_TO_SP in BsplineJastrowCudaPBC!!!\n", cudaGetErrorString(error)); exit(1); }
+
+static __constant__ CUDA_PRECISION CMC_L[3][3];
+static __constant__ CUDA_PRECISION CMC_Linv[3][3];
 
 template<typename T>
 __device__ __forceinline__
@@ -443,20 +451,20 @@ void CMC_eval_1d_spline_vgl (T dist, T rmax, T drInv,
     T c2 = coefs[index+2];
     T c3 = coefs[index+3];
 #if (SCHEME2 == HORNER_SCHEME)
-    u = (c0 * (((AcudaSpline[ 0*4 + 0] * t + AcudaSpline[ 0*4 + 1]) * t + AcudaSpline[ 0*4 + 2]) * t + AcudaSpline[ 0*4 + 3]) +
-         c1 * (((AcudaSpline[ 1*4 + 0] * t + AcudaSpline[ 1*4 + 1]) * t + AcudaSpline[ 1*4 + 2]) * t + AcudaSpline[ 1*4 + 3]) +
-         c2 * (((AcudaSpline[ 2*4 + 0] * t + AcudaSpline[ 2*4 + 1]) * t + AcudaSpline[ 2*4 + 2]) * t + AcudaSpline[ 2*4 + 3]) +
-         c3 * (((AcudaSpline[ 3*4 + 0] * t + AcudaSpline[ 3*4 + 1]) * t + AcudaSpline[ 3*4 + 2]) * t + AcudaSpline[ 3*4 + 3]));
+    u = (c0 * (((AcudaSpline[ 0] * t + AcudaSpline[ 1]) * t + AcudaSpline[ 2]) * t + AcudaSpline[ 3]) +
+         c1 * (((AcudaSpline[ 4] * t + AcudaSpline[ 5]) * t + AcudaSpline[ 6]) * t + AcudaSpline[ 7]) +
+         c2 * (((AcudaSpline[ 8] * t + AcudaSpline[ 9]) * t + AcudaSpline[10]) * t + AcudaSpline[11]) +
+         c3 * (((AcudaSpline[12] * t + AcudaSpline[13]) * t + AcudaSpline[14]) * t + AcudaSpline[15]));
     du = drInv *
-         (c0 * (((AcudaSpline[ 4*4 + 0] * t + AcudaSpline[ 4*4 + 1]) * t + AcudaSpline[ 4*4 + 2]) * t + AcudaSpline[ 4*4 + 3]) +
-          c1 * (((AcudaSpline[ 5*4 + 0] * t + AcudaSpline[ 5*4 + 1]) * t + AcudaSpline[ 5*4 + 2]) * t + AcudaSpline[ 5*4 + 3]) +
-          c2 * (((AcudaSpline[ 6*4 + 0] * t + AcudaSpline[ 6*4 + 1]) * t + AcudaSpline[ 6*4 + 2]) * t + AcudaSpline[ 6*4 + 3]) +
-          c3 * (((AcudaSpline[ 7*4 + 0] * t + AcudaSpline[ 7*4 + 1]) * t + AcudaSpline[ 7*4 + 2]) * t + AcudaSpline[ 7*4 + 3]));
+         (c0 * (((AcudaSpline[16] * t + AcudaSpline[17]) * t + AcudaSpline[18]) * t + AcudaSpline[19]) +
+          c1 * (((AcudaSpline[20] * t + AcudaSpline[21]) * t + AcudaSpline[22]) * t + AcudaSpline[23]) +
+          c2 * (((AcudaSpline[24] * t + AcudaSpline[25]) * t + AcudaSpline[26]) * t + AcudaSpline[27]) +
+          c3 * (((AcudaSpline[28] * t + AcudaSpline[29]) * t + AcudaSpline[30]) * t + AcudaSpline[31]));
     d2u = drInv * drInv *
-          (c0 * (((AcudaSpline[ 8*4 + 0] * t + AcudaSpline[ 8*4 + 1]) * t + AcudaSpline[ 8*4 + 2]) * t + AcudaSpline[ 8*4 + 3]) +
-           c1 * (((AcudaSpline[ 9*4 + 0] * t + AcudaSpline[ 9*4 + 1]) * t + AcudaSpline[ 9*4 + 2]) * t + AcudaSpline[ 9*4 + 3]) +
-           c2 * (((AcudaSpline[10*4 + 0] * t + AcudaSpline[10*4 + 1]) * t + AcudaSpline[10*4 + 2]) * t + AcudaSpline[10*4 + 3]) +
-           c3 * (((AcudaSpline[11*4 + 0] * t + AcudaSpline[11*4 + 1]) * t + AcudaSpline[11*4 + 2]) * t + AcudaSpline[11*4 + 3]));
+          (c0 * (((AcudaSpline[32] * t + AcudaSpline[33]) * t + AcudaSpline[34]) * t + AcudaSpline[35]) +
+           c1 * (((AcudaSpline[36] * t + AcudaSpline[37]) * t + AcudaSpline[38]) * t + AcudaSpline[39]) +
+           c2 * (((AcudaSpline[40] * t + AcudaSpline[41]) * t + AcudaSpline[42]) * t + AcudaSpline[43]) +
+           c3 * (((AcudaSpline[44] * t + AcudaSpline[45]) * t + AcudaSpline[46]) * t + AcudaSpline[47]));
 #elif (SCHEME2 == ESTRIN_SCHEME)
     T t2 = t*t;
     u = (c0 * ((AcudaSpline[ 0*4 + 0] * t + AcudaSpline[ 0*4 + 1]) * t2 + (AcudaSpline[ 0*4 + 2] * t + AcudaSpline[ 0*4 + 3])) +
@@ -506,7 +514,7 @@ two_body_sum_PBC_kernel(T **R, int e1_first, int e1_last,
   T drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999f;
+  rMax *= (T)0.999999;
   int tid = threadIdx.x;
   __shared__ T *myR;
   if (tid == 0)
@@ -620,7 +628,7 @@ two_body_ratio_PBC_kernel(T **R, int first, int last,
   T drInv = ((T)1)/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999f;
+  rMax *= (T)0.999999;
   int tid = threadIdx.x;
   __shared__ T *myR;
   __shared__ T myRnew[3], myRold[3];
@@ -735,23 +743,21 @@ two_body_ratio_grad_PBC_kernel(T const * const * __restrict__ R,
                                T const * __restrict__ latticeInv,
                                bool zero, T *__restrict__ ratio_grad)
 {
-  __shared__ T shared_grad[BS][3];
-  __shared__ T r1[BS][3];
-  __shared__ T shared_sum[BS];
+  __shared__ T shared_grad[BS][4];
   __shared__ T coefs[MAX_COEFS];
   int tid = threadIdx.x;
   T dr = rMax /(T)(numCoefs-3);
   T drInv = ((T)1)/dr;
   // Safety for rounding error
-  rMax *= 0.999999f;
+  rMax *= (T)0.999999;
   if (tid < numCoefs)
   {
     coefs[tid] = spline_coefs[tid];
   }
-  shared_sum[tid] = (T)0;
   shared_grad[tid][0] = (T)0;
   shared_grad[tid][1] = (T)0;
   shared_grad[tid][2] = (T)0;
+  shared_grad[tid][3] = (T)0;
   __syncthreads();
   T const * __restrict__ myR = R[blockIdx.x];
   T rnew_x = Rnew[3*blockIdx.x+0];
@@ -765,65 +771,55 @@ two_body_ratio_grad_PBC_kernel(T const * const * __restrict__ R,
   for (int b=0; b < NB; b++)
   {
     // Load block of positions from global memory
-    for (int i=0; i<3; i++)
+    T r1[3];
+    int n = b*BS + tid;
+    if ( n < N )
     {
-      int n = i*BS + tid;
-      if (((3*b+i)*BS + tid) < (3*N))
-      {
-        r1[0][n] = myR[3*first + (3*b+i)*BS + tid];
-      }
+      r1[0] = myR[3*(first+n)  ];
+      r1[1] = myR[3*(first+n)+1];
+      r1[2] = myR[3*(first+n)+2];
     }
-    __syncthreads();
     int ptcl1 = first+b*BS + tid;
     T dx, dy, dz, u, du, d2u, delta, dist;
-    dx = rold_x - r1[tid][0];
-    dy = rold_y - r1[tid][1];
-    dz = rold_z - r1[tid][2];
+    dx = rold_x - r1[0];
+    dy = rold_y - r1[1];
+    dz = rold_z - r1[2];
     dist = CMC_min_dist_only(dx, dy, dz/*, L, Linv, images*/);
     delta = -CMC_eval_1d_spline (dist, rMax, drInv/*, A*/, coefs);
-    dx = rnew_x - r1[tid][0];
-    dy = rnew_y - r1[tid][1];
-    dz = rnew_z - r1[tid][2];
+    dx = rnew_x - r1[0];
+    dy = rnew_y - r1[1];
+    dz = rnew_z - r1[2];
     dist = CMC_min_dist(dx, dy, dz/*, L, Linv, images*/);
     CMC_eval_1d_spline_vgl (dist, rMax, drInv/*, A*/, coefs, u, du, d2u);
     delta += u;
     if ((ptcl1 != inew) && (ptcl1 < (N + first) ))
     {
       du /= dist;
-      shared_sum[tid] += delta;
-      shared_grad[tid][0] += du * dx;
-      shared_grad[tid][1] += du * dy;
-      shared_grad[tid][2] += du * dz;
+      shared_grad[tid][0] += delta;
+      shared_grad[tid][1] += du * dx;
+      shared_grad[tid][2] += du * dy;
+      shared_grad[tid][3] += du * dz;
     }
-    __syncthreads();
   }
+  __syncthreads();
   for (int s=(BS>>1); s>0; s>>=1)
   {
     if (tid < s)
     {
-      shared_sum[tid] += shared_sum[tid+s];
       shared_grad[tid][0] += shared_grad[tid+s][0];
       shared_grad[tid][1] += shared_grad[tid+s][1];
       shared_grad[tid][2] += shared_grad[tid+s][2];
+      shared_grad[tid][3] += shared_grad[tid+s][3];
     }
     __syncthreads();
   }
-  if (tid==0)
+  if (zero)
   {
-    if (zero)
-    {
-      ratio_grad[4*blockIdx.x+0] = shared_sum[0];
-      ratio_grad[4*blockIdx.x+1] = shared_grad[0][0];
-      ratio_grad[4*blockIdx.x+2] = shared_grad[0][1];
-      ratio_grad[4*blockIdx.x+3] = shared_grad[0][2];
-    }
-    else
-    {
-      ratio_grad[4*blockIdx.x+0] += shared_sum[0];
-      ratio_grad[4*blockIdx.x+1] += shared_grad[0][0];
-      ratio_grad[4*blockIdx.x+2] += shared_grad[0][1];
-      ratio_grad[4*blockIdx.x+3] += shared_grad[0][2];
-    }
+    if ( tid < 4 ) ratio_grad[4*blockIdx.x+tid] = shared_grad[0][tid];
+  }
+  else
+  {
+    if ( tid < 4 ) ratio_grad[4*blockIdx.x+tid] += shared_grad[0][tid];
   }
 }
 
@@ -842,7 +838,7 @@ two_body_ratio_grad_PBC_kernel_fast (T **R, int first, int last,
   T drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999f;
+  rMax *= (T)0.999999;
   __shared__ T *myR;
   __shared__ T myRnew[3], myRold[3];
   if (tid == 0)
@@ -961,7 +957,7 @@ two_body_ratio_grad_PBC(float *R[], int first, int last,
 {
   if (!AisInitializedPBC)
     cuda_spline_init_PBC();
-  const int BS=32;
+  const int BS=128;
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
   CMC_PROFILING_BEGIN();
@@ -990,39 +986,52 @@ two_body_ratio_grad_PBC(double *R[], int first, int last,
                         double  Rnew[], int inew,
                         double spline_coefs[], int numCoefs, double rMax,
                         double lattice[], double latticeInv[], bool zero,
-                        double ratio_grad[], int numWalkers)
+                        double ratio_grad[], int numWalkers,
+                        bool use_fast_image)
 {
   if (!AisInitializedPBC)
     cuda_spline_init_PBC();
-  const int BS=32;
+  const int BS=128;
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
-  two_body_ratio_grad_PBC_kernel<double,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
-  (R, first, last, Rnew, inew, spline_coefs, numCoefs, rMax,
-   lattice, latticeInv, zero, ratio_grad);
+  //CMC_PROFILING_BEGIN();
+  COPY_LATTICE_DP_TO_SP();
+  if (use_fast_image)
+  {
+    two_body_ratio_grad_PBC_kernel_fast<double,BS><<<dimGrid,dimBlock>>>
+    (R, first, last, Rnew, inew, spline_coefs, numCoefs, rMax,
+     lattice, latticeInv, zero, ratio_grad);
+  }
+  else
+  {
+    two_body_ratio_grad_PBC_kernel<double,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
+    (R, first, last, Rnew, inew, spline_coefs, numCoefs, rMax,
+     lattice, latticeInv, zero, ratio_grad);
+  }
+  //CMC_PROFILING_END();
 }
 
 
 
 
-template<int BS>
+template<typename T, int BS>
 __global__ void
-two_body_NLratio_PBC_kernel(NLjobGPU<float> const * __restrict__ jobs,
+two_body_NLratio_PBC_kernel(NLjobGPU<T> const * __restrict__ jobs,
                             int first, int last,
-                            float const * const * __restrict__ spline_coefs,
+                            T const * const * __restrict__ spline_coefs,
                             int const * __restrict__ numCoefs,
-                            float const * __restrict__ rMaxList,
-                            float const * __restrict__ lattice,
-                            float const * __restrict__ latticeInv,
-                            float sim_cell_radius)
+                            T const * __restrict__ rMaxList,
+                            T const * __restrict__ lattice,
+                            T const * __restrict__ latticeInv,
+                            T sim_cell_radius)
 {
   const int MAX_RATIOS = 18;
-  __shared__ float shared_sum[MAX_RATIOS][BS+1];
-  __shared__ float myRnew[MAX_RATIOS][3];
-  __shared__ float coefs[MAX_COEFS];
-  __shared__ float r1[BS][3];
-  float const * __restrict__ myCoefs = spline_coefs[blockIdx.x];
-  NLjobGPU<float> myJob = jobs[blockIdx.x];
+  __shared__ T shared_sum[MAX_RATIOS][BS+1];
+  __shared__ T myRnew[MAX_RATIOS][3];
+  __shared__ T coefs[MAX_COEFS];
+  __shared__ T r1[BS][3];
+  T const * __restrict__ myCoefs = spline_coefs[blockIdx.x];
+  NLjobGPU<T> myJob = jobs[blockIdx.x];
   const int myNumCoefs = numCoefs[blockIdx.x];
   const int tid = threadIdx.x;
   if (tid < myNumCoefs)
@@ -1038,16 +1047,16 @@ two_body_NLratio_PBC_kernel(NLjobGPU<float> const * __restrict__ jobs,
   }
   for (int i = 0; i < myJob.NumQuadPoints; i++)
   {
-    shared_sum[i][tid] = (float)0;
+    shared_sum[i][tid] = (T)0;
   }
   __syncthreads();
-  const float rMax = rMaxList[blockIdx.x];
-  const float dr = rMax / (myNumCoefs - 3);
-  const float drInv = 1.0f / dr;
+  const T rMax = rMaxList[blockIdx.x];
+  const T dr = rMax / (myNumCoefs - 3);
+  const T drInv = (T)1.0 / dr;
   const int use_fast = sim_cell_radius >= rMax;
-  const float rold_x = myJob.R[3*myJob.Elec+0];
-  const float rold_y = myJob.R[3*myJob.Elec+1];
-  const float rold_z = myJob.R[3*myJob.Elec+2];
+  const T rold_x = myJob.R[3*myJob.Elec+0];
+  const T rold_y = myJob.R[3*myJob.Elec+1];
+  const T rold_z = myJob.R[3*myJob.Elec+2];
   const int N = last - first + 1;
   const int NB = N / BS + ((N % BS) ? 1 : 0);
   for (int b=0; b < NB; b++)
@@ -1063,10 +1072,10 @@ two_body_NLratio_PBC_kernel(NLjobGPU<float> const * __restrict__ jobs,
     }
     __syncthreads();
     int ptcl1 = first+b*BS + tid;
-    float dx = rold_x - r1[tid][0];
-    float dy = rold_y - r1[tid][1];
-    float dz = rold_z - r1[tid][2];
-    float dist;
+    T dx = rold_x - r1[tid][0];
+    T dy = rold_y - r1[tid][1];
+    T dz = rold_z - r1[tid][2];
+    T dist;
     if (use_fast)
     {
       dist = CMC_min_dist_fast(dx, dy, dz/*, L, Linv*/);
@@ -1075,7 +1084,7 @@ two_body_NLratio_PBC_kernel(NLjobGPU<float> const * __restrict__ jobs,
     {
       dist = CMC_min_dist_only(dx, dy, dz/*, L, Linv, images*/);
     }
-    float uOld = CMC_eval_1d_spline (dist, rMax, drInv/*, A*/, coefs);
+    T uOld = CMC_eval_1d_spline (dist, rMax, drInv/*, A*/, coefs);
     if (use_fast)
     {
       for (int iq=0; iq<myJob.NumQuadPoints; iq++)
@@ -1124,10 +1133,7 @@ two_body_NLratio_PBC_kernel(NLjobGPU<float> const * __restrict__ jobs,
 }
 
 
-
-
-
-
+/* no longer needed, use the template version instead
 template<int BS>
 __global__ void
 two_body_NLratio_PBC_kernel(NLjobGPU<double> *jobs, int first, int last,
@@ -1217,7 +1223,7 @@ two_body_NLratio_PBC_kernel(NLjobGPU<double> *jobs, int first, int last,
     myJob.Ratios[tid] *= exp(-shared_sum[tid][0]);
 }
 
-
+*/
 
 
 void
@@ -1234,14 +1240,14 @@ two_body_NLratios_PBC(NLjobGPU<float> jobs[], int first, int last,
   while (numjobs > 65535)
   {
     dim3 dimGrid(65535);
-    two_body_NLratio_PBC_kernel<BS><<<dimGrid,dimBlock>>>
+    two_body_NLratio_PBC_kernel<float, BS><<<dimGrid,dimBlock>>>
     (jobs, first, last, spline_coefs, numCoefs, rMax,
      lattice, latticeInv, sim_cell_radius);
     jobs += 65535;
     numjobs -= 65535;
   }
   dim3 dimGrid(numjobs);
-  two_body_NLratio_PBC_kernel<BS><<<dimGrid,dimBlock>>>
+  two_body_NLratio_PBC_kernel<float, BS><<<dimGrid,dimBlock>>>
   (jobs, first, last, spline_coefs, numCoefs, rMax,
    lattice, latticeInv, sim_cell_radius);
   CMC_PROFILING_END();
@@ -1257,19 +1263,22 @@ two_body_NLratios_PBC(NLjobGPU<double> jobs[], int first, int last,
     cuda_spline_init_PBC();
   const int BS=32;
   dim3 dimBlock(BS);
+  //CMC_PROFILING_BEGIN();
+  COPY_LATTICE_DP_TO_SP();
   while (numjobs > 65535)
   {
     dim3 dimGrid(65535);
-    two_body_NLratio_PBC_kernel<BS><<<dimGrid,dimBlock>>>
+    two_body_NLratio_PBC_kernel<double, BS><<<dimGrid,dimBlock>>>
     (jobs, first, last, spline_coefs, numCoefs, rMax,
      lattice, latticeInv, sim_cell_radius);
     jobs += 65535;
     numjobs -= 65535;
   }
   dim3 dimGrid(numjobs);
-  two_body_NLratio_PBC_kernel<BS><<<dimGrid,dimBlock>>>
+  two_body_NLratio_PBC_kernel<double, BS><<<dimGrid,dimBlock>>>
   (jobs, first, last, spline_coefs, numCoefs, rMax,
    lattice, latticeInv, sim_cell_radius);
+  //CMC_PROFILING_END();
 }
 
 
@@ -1305,7 +1314,7 @@ two_body_update_PBC(double *R[], int N, int iat, int numWalkers)
 
 #define MAX_COEFS 32
 
-template<typename T, int BS>
+template<typename T>
 __global__ void
 two_body_grad_lapl_PBC_kernel(T **R, int e1_first, int e1_last,
                               int e2_first, int e2_last,
@@ -1315,9 +1324,8 @@ two_body_grad_lapl_PBC_kernel(T **R, int e1_first, int e1_last,
 {
   T dr = rMax/(T)(numCoefs-3);
   T drInv = 1.0/dr;
-  __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999f;
+  rMax *= (T)0.999999;
   int tid = threadIdx.x;
   __shared__ T *myR;
   if (tid == 0)
@@ -1325,7 +1333,6 @@ two_body_grad_lapl_PBC_kernel(T **R, int e1_first, int e1_last,
   __shared__ T coefs[MAX_COEFS];
   if (tid < numCoefs)
     coefs[tid] = spline_coefs[tid];
-  __shared__ T r1[BS][3], r2[BS][3];
   /*
   __shared__ T L[3][3], Linv[3][3];
   if (tid < 9) {
@@ -1344,53 +1351,49 @@ two_body_grad_lapl_PBC_kernel(T **R, int e1_first, int e1_last,
   __syncthreads();
   int N1 = e1_last - e1_first + 1;
   int N2 = e2_last - e2_first + 1;
-  int NB1 = N1/BS + ((N1 % BS) ? 1 : 0);
-  int NB2 = N2/BS + ((N2 % BS) ? 1 : 0);
-  __shared__ T sGradLapl[BS][4];
-  for (int b1=0; b1 < NB1; b1++)
+  T sGradLapl[4];
+  T r1[3], r2[3];
+  int b1 = blockIdx.y;
+  int BS1 = blockDim.x;
+  // Load positions from global memory
+  int ptcl1 = e1_first + b1*BS1 + tid;
+  if (b1*BS1 + tid < N1)
   {
-    // Load block of positions from global memory
-    for (int i=0; i<3; i++)
-      if ((3*b1+i)*BS + tid < 3*N1)
-        r1[0][i*BS + tid] = myR[3*e1_first + (3*b1+i)*BS + tid];
-    __syncthreads();
-    int ptcl1 = e1_first+b1*BS + tid;
-    int offset = blockIdx.x * row_stride + 4*b1*BS + 4*e1_first;
-    sGradLapl[tid][0] = sGradLapl[tid][1] =
-                          sGradLapl[tid][2] = sGradLapl[tid][3] = (T)0.0;
-    for (int b2=0; b2 < NB2; b2++)
+    r1[0] = myR[3*ptcl1    ];
+    r1[1] = myR[3*ptcl1 + 1];
+    r1[2] = myR[3*ptcl1 + 2];
+  }
+  int offset = blockIdx.x * row_stride + 4 * ( b1*BS1 + e1_first );
+  sGradLapl[0] = sGradLapl[1] = sGradLapl[2] = sGradLapl[3] = (T)0.0;
+  // Now, loop over particles
+  for (int j=0; j<N2; j++)
+  {
+    int ptcl2 = e2_first + j;
+    r2[0] = myR[3*ptcl2    ];
+    r2[1] = myR[3*ptcl2 + 1];
+    r2[2] = myR[3*ptcl2 + 2];
+    T dx, dy, dz, u, du, d2u;
+    dx = r2[0] - r1[0];
+    dy = r2[1] - r1[1];
+    dz = r2[2] - r1[2];
+    T dist = CMC_min_dist(dx, dy, dz/*, L, Linv*/);
+    CMC_eval_1d_spline_vgl (dist, rMax, drInv/*, A*/, coefs, u, du, d2u);
+    //if (ptcl1 != ptcl2 && ptcl1 < (N1+e1_first))
+    if (ptcl1 != ptcl2 && ptcl1 < (N1+e1_first))
     {
-      // Load block of positions from global memory
-      for (int i=0; i<3; i++)
-        if ((3*b2+i)*BS + tid < 3*N2)
-          r2[0][i*BS + tid] = myR[3*e2_first + (3*b2+i)*BS + tid];
-      __syncthreads();
-      // Now, loop over particles
-      int end = (b2+1)*BS < N2 ? BS : N2-b2*BS;
-      for (int j=0; j<end; j++)
-      {
-        int ptcl2 = e2_first + b2*BS+j;
-        T dx, dy, dz, u, du, d2u;
-        dx = r2[j][0] - r1[tid][0];
-        dy = r2[j][1] - r1[tid][1];
-        dz = r2[j][2] - r1[tid][2];
-        T dist = CMC_min_dist(dx, dy, dz/*, L, Linv*/);
-        CMC_eval_1d_spline_vgl (dist, rMax, drInv/*, A*/, coefs, u, du, d2u);
-        if (ptcl1 != ptcl2 && (ptcl1 < (N1+e1_first) ) && (ptcl2 < (N2+e2_first)))
-        {
-          du /= dist;
-          sGradLapl[tid][0] += du * dx;
-          sGradLapl[tid][1] += du * dy;
-          sGradLapl[tid][2] += du * dz;
-          sGradLapl[tid][3] -= d2u + 2.0*du;
-        }
-      }
-      __syncthreads();
+      du /= dist;
+      sGradLapl[0] += du * dx;
+      sGradLapl[1] += du * dy;
+      sGradLapl[2] += du * dz;
+      sGradLapl[3] -= d2u + 2.0*du;
     }
-    for (int i=0; i<4; i++)
-      if ((4*b1+i)*BS + tid < 4*N1)
-        gradLapl[offset + i*BS +tid] += sGradLapl[0][i*BS+tid];
-    __syncthreads();
+  }
+  if (b1*BS1 + tid < N1)
+  {
+    gradLapl[offset + tid*4    ] += sGradLapl[0];
+    gradLapl[offset + tid*4 + 1] += sGradLapl[1];
+    gradLapl[offset + tid*4 + 2] += sGradLapl[2];
+    gradLapl[offset + tid*4 + 3] += sGradLapl[3];
   }
 }
 
@@ -1407,7 +1410,7 @@ two_body_grad_lapl_PBC_kernel_fast(T **R, int e1_first, int e1_last,
   T drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999f;
+  rMax *= (T)0.999999;
   int tid = threadIdx.x;
   __shared__ T *myR;
   if (tid == 0)
@@ -1491,18 +1494,25 @@ two_body_grad_lapl_PBC(float *R[], int e1_first, int e1_last,
                        float lattice[], float latticeInv[], float sim_cell_radius,
                        float gradLapl[], int row_stride, int numWalkers)
 {
-  const int BS=32;
-  dim3 dimBlock(BS);
-  dim3 dimGrid(numWalkers);
   CMC_PROFILING_BEGIN();
   if (sim_cell_radius >= rMax)
+  {
+    const int BS=32;
+    dim3 dimBlock(BS);
+    dim3 dimGrid(numWalkers);
     two_body_grad_lapl_PBC_kernel_fast<float,BS><<<dimGrid,dimBlock>>>
     (R, e1_first, e1_last, e2_first, e2_last, spline_coefs, numCoefs,
      rMax, lattice, latticeInv,  gradLapl, row_stride);
+  }
   else
-    two_body_grad_lapl_PBC_kernel<float,BS><<<dimGrid,dimBlock>>>
+  {
+    const int BS1=128;
+    dim3 dimBlock(BS1);
+    dim3 dimGrid(numWalkers, (e1_last - e1_first + BS1)/BS1);
+    two_body_grad_lapl_PBC_kernel<float><<<dimGrid,dimBlock>>>
     (R, e1_first, e1_last, e2_first, e2_last, spline_coefs, numCoefs,
      rMax, lattice, latticeInv,  gradLapl, row_stride);
+  }
   CMC_PROFILING_END();
 }
 
@@ -1511,17 +1521,32 @@ void
 two_body_grad_lapl_PBC(double *R[], int e1_first, int e1_last,
                        int e2_first, int e2_last,
                        double spline_coefs[], int numCoefs, double rMax,
-                       double lattice[], double latticeInv[],
+                       double lattice[], double latticeInv[], double sim_cell_radius,
                        double gradLapl[], int row_stride, int numWalkers)
 {
   if (!AisInitializedPBC)
     cuda_spline_init_PBC();
-  const int BS=32;
-  dim3 dimBlock(BS);
-  dim3 dimGrid(numWalkers);
-  two_body_grad_lapl_PBC_kernel<double,BS><<<dimGrid,dimBlock>>>
-  (R, e1_first, e1_last, e2_first, e2_last, spline_coefs, numCoefs,
-   rMax, lattice, latticeInv,  gradLapl, row_stride);
+  //CMC_PROFILING_BEGIN();
+  COPY_LATTICE_DP_TO_SP();
+  if (sim_cell_radius >= rMax)
+  {
+    const int BS=32;
+    dim3 dimBlock(BS);
+    dim3 dimGrid(numWalkers);
+    two_body_grad_lapl_PBC_kernel_fast<double,BS><<<dimGrid,dimBlock>>>
+    (R, e1_first, e1_last, e2_first, e2_last, spline_coefs, numCoefs,
+     rMax, lattice, latticeInv,  gradLapl, row_stride);
+  }
+  else
+  {
+    const int BS1=128;
+    dim3 dimBlock(BS1);
+    dim3 dimGrid(numWalkers, (e1_last - e1_first + BS1)/BS1);
+    two_body_grad_lapl_PBC_kernel<double><<<dimGrid,dimBlock>>>
+    (R, e1_first, e1_last, e2_first, e2_last, spline_coefs, numCoefs,
+     rMax, lattice, latticeInv,  gradLapl, row_stride);
+  }
+  //CMC_PROFILING_END();
 }
 
 
@@ -1537,13 +1562,12 @@ two_body_grad_PBC_kernel (T const * const * __restrict__ R,
                           bool zeroOut, T * __restrict__ grad)
 {
   __shared__ T sGrad[BS][3];
-  __shared__ T r1[BS][3];
   __shared__ T coefs[MAX_COEFS];
   T dr = rMax/(T)(numCoefs-3);
   T drInv = ((T)1)/dr;
   int tid = threadIdx.x;
   // Safety for rounding error
-  rMax *= 0.999999f;
+  rMax *= (T)0.999999;
   if (tid < numCoefs)
   {
     coefs[tid] = spline_coefs[tid];
@@ -1561,19 +1585,19 @@ two_body_grad_PBC_kernel (T const * const * __restrict__ R,
   for (int b = 0; b < NB; b++)
   {
     // Load block of positions from global memory
-    for (int i = 0; i < 3; i++)
+    int n = b*BS + tid;
+    T r1[3];
+    if ( n < N )
     {
-      if ((3*b+i)*BS + tid < 3*N)
-      {
-        r1[0][i*BS + tid] = myR[3*first + (3*b+i)*BS + tid];
-      }
+      r1[0] = myR[3*(first+n)  ];
+      r1[1] = myR[3*(first+n)+1];
+      r1[2] = myR[3*(first+n)+2];
     }
-    __syncthreads();
     int ptcl1 = first+b*BS + tid;
     T dx, dy, dz, u, du, d2u;
-    dx = r2_x - r1[tid][0];
-    dy = r2_y - r1[tid][1];
-    dz = r2_z - r1[tid][2];
+    dx = r2_x - r1[0];
+    dy = r2_y - r1[1];
+    dz = r2_z - r1[2];
     T dist = CMC_min_dist(dx, dy, dz/*, L, Linv, images*/);
     CMC_eval_1d_spline_vgl (dist, rMax, drInv/*, A*/, coefs, u, du, d2u);
     if (ptcl1 != iat && ptcl1 < (N+first))
@@ -1583,8 +1607,8 @@ two_body_grad_PBC_kernel (T const * const * __restrict__ R,
       sGrad[tid][1] += du * dy;
       sGrad[tid][2] += du * dz;
     }
-    __syncthreads();
   }
+  __syncthreads();
   // Do reduction across threads in block
   for (int s=BS>>1; s>0; s>>=1)
   {
@@ -1620,7 +1644,7 @@ two_body_grad_PBC_kernel_fast(T **R, int first, int last, int iat,
   T drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999f;
+  rMax *= (T)0.999999;
   int tid = threadIdx.x;
   __shared__ T *myR, r2[3];
   if (tid == 0)
@@ -1704,7 +1728,7 @@ two_body_gradient_PBC (float *R[], int first, int last, int iat,
                        bool zeroOut,
                        float grad[], int numWalkers)
 {
-  const int BS = 32;
+  const int BS = 128;
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
   CMC_PROFILING_BEGIN();
@@ -1723,17 +1747,26 @@ two_body_gradient_PBC (float *R[], int first, int last, int iat,
 void
 two_body_gradient_PBC (double *R[], int first, int last, int iat,
                        double spline_coefs[], int numCoefs, double rMax,
-                       double lattice[], double latticeInv[], bool zeroOut,
+                       double lattice[], double latticeInv[],
+                       double sim_cell_radius, bool zeroOut,
                        double grad[], int numWalkers)
 {
   if (!AisInitializedPBC)
     cuda_spline_init_PBC();
-  const int BS = 32;
+  const int BS = 128;
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
-  two_body_grad_PBC_kernel<double,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
-  (R, first, last, iat, spline_coefs, numCoefs,
-   rMax, lattice, latticeInv,  zeroOut, grad);
+  //CMC_PROFILING_BEGIN();
+  COPY_LATTICE_DP_TO_SP();
+  if (sim_cell_radius >= rMax)
+    two_body_grad_PBC_kernel_fast<double,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
+    (R, first, last, iat, spline_coefs, numCoefs,
+     rMax, lattice, latticeInv,  zeroOut, grad);
+  else
+    two_body_grad_PBC_kernel<double,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
+    (R, first, last, iat, spline_coefs, numCoefs,
+     rMax, lattice, latticeInv,  zeroOut, grad);
+  //CMC_PROFILING_END();
 }
 
 
@@ -1752,7 +1785,7 @@ two_body_derivs_PBC_kernel(T **R, T **gradLogPsi,
   T drInv = 1.0f/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999f;
+  rMax *= (T)0.999999;
   int tid = threadIdx.x;
   __shared__ T *myR, *myGrad, *myDerivs;
   if (tid == 0)
@@ -1935,7 +1968,7 @@ one_body_sum_PBC_kernel(T *C, T **R, int cfirst, int clast,
   T drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999f;
+  rMax *= (T)0.999999;
   int tid = threadIdx.x;
   __shared__ T *myR;
   if (tid == 0)
@@ -2047,7 +2080,7 @@ one_body_ratio_PBC_kernel(T *C, T **R, int cfirst, int clast,
   T drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999f;
+  rMax *= (T)0.999999;
   int tid = threadIdx.x;
   __shared__ T *myR;
   __shared__ T myRnew[3], myRold[3];
@@ -2153,31 +2186,30 @@ one_body_ratio_PBC (double C[], double *R[], int first, int last,
 
 template<typename T, int BS>
 __global__ void
-one_body_ratio_grad_PBC_kernel(T *C, T **R, int cfirst, int clast,
-                               T *Rnew, int inew,
-                               T *spline_coefs, int numCoefs, T rMax,
-                               T *lattice, T* latticeInv, bool zero,
-                               T *ratio_grad)
+one_body_ratio_grad_PBC_kernel(T const * __restrict__ C,
+                               T const * const * __restrict__ R,
+                               int cfirst, int clast,
+                               T const * __restrict__ Rnew, int inew,
+                               T const * __restrict__ spline_coefs,
+                               int numCoefs, T rMax,
+                               T const * __restrict__ lattice,
+                               T const * __restrict__ latticeInv,
+                               bool zero, T * __restrict__ ratio_grad)
 {
   T dr = rMax/(T)(numCoefs-3);
   T drInv = 1.0/dr;
-  __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999f;
+  rMax *= (T)0.999999;
   int tid = threadIdx.x;
-  __shared__ T *myR;
-  __shared__ T myRnew[3], myRold[3];
-  if (tid == 0)
-    myR = R[blockIdx.x];
-  __syncthreads();
-  if (tid < 3 )
-  {
-    myRnew[tid] = Rnew[3*blockIdx.x+tid];
-    myRold[tid] = myR[3*inew+tid];
-  }
-  __syncthreads();
+  T const * __restrict__ myR = R[blockIdx.x];
+  T myRnew[3], myRold[3];
+  myRnew[0] = Rnew[3*blockIdx.x  ];
+  myRnew[1] = Rnew[3*blockIdx.x+1];
+  myRnew[2] = Rnew[3*blockIdx.x+2];
+  myRold[0] = myR[3*inew  ];
+  myRold[1] = myR[3*inew+1];
+  myRold[2] = myR[3*inew+2];
   __shared__ T coefs[MAX_COEFS];
-  __shared__ T c[BS][3];
   /*
   __shared__ T L[3][3], Linv[3][3];
   */
@@ -2210,70 +2242,61 @@ one_body_ratio_grad_PBC_kernel(T *C, T **R, int cfirst, int clast,
   __syncthreads();
   int Nc = clast - cfirst + 1;
   int NB = Nc/BS + ((Nc % BS) ? 1 : 0);
-  __shared__ T shared_sum[BS];
-  __shared__ T shared_grad[BS][3];
-  shared_sum[tid] = (T)0.0;
-  shared_grad[tid][0] = shared_grad[tid][1] = shared_grad[tid][2] = 0.0f;
+  __shared__ T shared_grad[BS][4];
+  shared_grad[tid][0] = shared_grad[tid][1]
+    = shared_grad[tid][2] = shared_grad[tid][3] = (T)0.0;
   for (int b=0; b < NB; b++)
   {
+    T c[3];
     // Load block of positions from global memory
-    for (int i=0; i<3; i++)
-    {
-      int n = i*BS + tid;
-      if ((3*b+i)*BS + tid < 3*Nc)
-        c[0][n] = C[3*cfirst + (3*b+i)*BS + tid];
-    }
-    __syncthreads();
+    int n = b*BS + tid;
     int ptcl1 = cfirst+b*BS + tid;
+    if (n<Nc)
+    {
+        c[0] = C[3*ptcl1  ];
+        c[1] = C[3*ptcl1+1];
+        c[2] = C[3*ptcl1+2];
+    }
     T dx, dy, dz, dist, delta, u, du, d2u;
-    dx = myRold[0] - c[tid][0];
-    dy = myRold[1] - c[tid][1];
-    dz = myRold[2] - c[tid][2];
+    dx = myRold[0] - c[0];
+    dy = myRold[1] - c[1];
+    dz = myRold[2] - c[2];
     dist = CMC_min_dist(dx, dy, dz/*, L, Linv, images*/);
     delta =- CMC_eval_1d_spline (dist, rMax, drInv/*, A*/, coefs);
-    dx = myRnew[0] - c[tid][0];
-    dy = myRnew[1] - c[tid][1];
-    dz = myRnew[2] - c[tid][2];
+    dx = myRnew[0] - c[0];
+    dy = myRnew[1] - c[1];
+    dz = myRnew[2] - c[2];
     dist = CMC_min_dist(dx, dy, dz/*, L, Linv, images*/);
     CMC_eval_1d_spline_vgl (dist, rMax, drInv/*, A*/, coefs, u, du, d2u);
     delta += u;
-    if (ptcl1 < (Nc+cfirst) )
+    if (n < Nc)
     {
       du /= dist;
-      shared_sum[tid] += delta;
-      shared_grad[tid][0] += du * dx;
-      shared_grad[tid][1] += du * dy;
-      shared_grad[tid][2] += du * dz;
+      shared_grad[tid][0] += delta;
+      shared_grad[tid][1] += du * dx;
+      shared_grad[tid][2] += du * dy;
+      shared_grad[tid][3] += du * dz;
     }
-    __syncthreads();
   }
+  __syncthreads();
   for (int s=(BS>>1); s>0; s>>=1)
   {
     if (tid < s)
     {
-      shared_sum[tid] += shared_sum[tid+s];
       shared_grad[tid][0] += shared_grad[tid+s][0];
       shared_grad[tid][1] += shared_grad[tid+s][1];
       shared_grad[tid][2] += shared_grad[tid+s][2];
+      shared_grad[tid][3] += shared_grad[tid+s][3];
     }
     __syncthreads();
   }
-  if (tid==0)
+  if (zero)
   {
-    if (zero)
-    {
-      ratio_grad[4*blockIdx.x+0] = shared_sum[0];
-      ratio_grad[4*blockIdx.x+1] = shared_grad[0][0];
-      ratio_grad[4*blockIdx.x+2] = shared_grad[0][1];
-      ratio_grad[4*blockIdx.x+3] = shared_grad[0][2];
-    }
-    else
-    {
-      ratio_grad[4*blockIdx.x+0] += shared_sum[0];
-      ratio_grad[4*blockIdx.x+1] += shared_grad[0][0];
-      ratio_grad[4*blockIdx.x+2] += shared_grad[0][1];
-      ratio_grad[4*blockIdx.x+3] += shared_grad[0][2];
-    }
+    if ( tid < 4 ) ratio_grad[4*blockIdx.x+tid] = shared_grad[0][tid];
+  }
+  else
+  {
+    if ( tid < 4 ) ratio_grad[4*blockIdx.x+tid] += shared_grad[0][tid];
   }
 }
 
@@ -2292,7 +2315,7 @@ one_body_ratio_grad_PBC_kernel_fast(T *C, T **R, int cfirst, int clast,
   T drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999f;
+  rMax *= (T)0.999999;
   int tid = threadIdx.x;
   __shared__ T *myR;
   __shared__ T myRnew[3], myRold[3];
@@ -2405,7 +2428,7 @@ one_body_ratio_grad_PBC (float C[], float *R[], int first, int last,
 {
   if (!AisInitializedPBC)
     cuda_spline_init_PBC();
-  const int BS = 32;
+  const int BS = 128;
   CMC_PROFILING_BEGIN();
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
@@ -2430,7 +2453,9 @@ one_body_ratio_grad_PBC (double C[], double *R[], int first, int last,
 {
   if (!AisInitializedPBC)
     cuda_spline_init_PBC();
-  const int BS = 32;
+  const int BS = 128;
+  //CMC_PROFILING_BEGIN();
+  COPY_LATTICE_DP_TO_SP();
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
   // if (use_fast_image)
@@ -2441,6 +2466,7 @@ one_body_ratio_grad_PBC (double C[], double *R[], int first, int last,
   one_body_ratio_grad_PBC_kernel<double,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
   (C, R, first, last, Rnew, inew, spline_coefs, numCoefs, rMax,
    lattice, latticeInv, zero, ratio_grad);
+  //CMC_PROFILING_END();
 }
 
 
@@ -2494,7 +2520,7 @@ one_body_grad_lapl_PBC_kernel(T *C, T **R, int cfirst, int clast,
   T drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999f;
+  rMax *= (T)0.999999;
   int tid = threadIdx.x;
   __shared__ T *myR;
   if (tid == 0)
@@ -2639,16 +2665,16 @@ one_body_grad_lapl_PBC(double C[], double *R[], int e1_first, int e1_last,
 }
 
 
-template<int BS>
+template<typename T, int BS>
 __global__ void
-one_body_NLratio_PBC_kernel(NLjobGPU<float> *jobs, float *C, int first, int last,
-                            float *spline_coefs, int numCoefs, float rMax,
-                            float *lattice, float *latticeInv)
+one_body_NLratio_PBC_kernel(NLjobGPU<T> *jobs, T *C, int first, int last,
+                            T *spline_coefs, int numCoefs, T rMax,
+                            T *lattice, T *latticeInv)
 {
   const int MAX_RATIOS = 18;
   int tid = threadIdx.x;
-  __shared__ NLjobGPU<float> myJob;
-  __shared__ float myRnew[MAX_RATIOS][3], myRold[3];
+  __shared__ NLjobGPU<T> myJob;
+  __shared__ T myRnew[MAX_RATIOS][3], myRold[3];
   if (tid == 0)
     myJob = jobs[blockIdx.x];
   __syncthreads();
@@ -2658,15 +2684,15 @@ one_body_NLratio_PBC_kernel(NLjobGPU<float> *jobs, float *C, int first, int last
     if (i*BS + tid < 3*myJob.NumQuadPoints)
       myRnew[0][i*BS+tid] = myJob.QuadPoints[i*BS+tid];
   __syncthreads();
-  float dr = rMax/(float)(numCoefs-3);
-  float drInv = 1.0/dr;
+  T dr = rMax/(T)(numCoefs-3);
+  T drInv = (T)1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999f;
-  __shared__ float coefs[MAX_COEFS];
-  __shared__ float c[BS][3];
+  rMax *= (T)0.999999;
+  __shared__ T coefs[MAX_COEFS];
+  __shared__ T c[BS][3];
   /*
-  __shared__ float L[3][3], Linv[3][3];
+  __shared__ T L[3][3], Linv[3][3];
   */
   if (tid < numCoefs)
     coefs[tid] = spline_coefs[tid];
@@ -2679,11 +2705,11 @@ one_body_NLratio_PBC_kernel(NLjobGPU<float> *jobs, float *C, int first, int last
   __syncthreads();
 
   int index=0;
-  __shared__ float images[27][3];
+  __shared__ T images[27][3];
   if (tid < 3)
-    for (float i=-1.0; i<=1.001; i+=1.0)
-      for (float j=-1.0; j<=1.001; j+=1.0)
-  for (float k=-1.0; k<=1.001; k+=1.0) {
+    for (T i=-1.0; i<=1.001; i+=1.0)
+      for (T j=-1.0; j<=1.001; j+=1.0)
+  for (T k=-1.0; k<=1.001; k+=1.0) {
     images[index][tid] =
       i*L[0][tid] + j*L[1][tid] + k*L[2][tid];
       index++;
@@ -2691,16 +2717,16 @@ one_body_NLratio_PBC_kernel(NLjobGPU<float> *jobs, float *C, int first, int last
   __syncthreads();
 
 
-  __shared__ float A[4][4];
+  __shared__ T A[4][4];
   if (tid < 16)
     A[(tid>>2)][tid&3] = AcudaSpline[tid];
   */
   __syncthreads();
   int N = last - first + 1;
   int NB = N/BS + ((N % BS) ? 1 : 0);
-  __shared__ float shared_sum[MAX_RATIOS][BS+1];
+  __shared__ T shared_sum[MAX_RATIOS][BS+1];
   for (int iq=0; iq<myJob.NumQuadPoints; iq++)
-    shared_sum[iq][tid] = (float)0.0;
+    shared_sum[iq][tid] = (T)0.0;
   for (int b=0; b < NB; b++)
   {
     // Load block of positions from global memory
@@ -2712,12 +2738,12 @@ one_body_NLratio_PBC_kernel(NLjobGPU<float> *jobs, float *C, int first, int last
     }
     __syncthreads();
     int ptcl1 = first+b*BS + tid;
-    float dx, dy, dz;
+    T dx, dy, dz;
     dx = myRold[0] - c[tid][0];
     dy = myRold[1] - c[tid][1];
     dz = myRold[2] - c[tid][2];
-    float dist = CMC_min_dist_only(dx, dy, dz/*, L, Linv, images*/);
-    float uOld = CMC_eval_1d_spline (dist, rMax, drInv/*, A*/, coefs);
+    T dist = CMC_min_dist_only(dx, dy, dz/*, L, Linv, images*/);
+    T uOld = CMC_eval_1d_spline (dist, rMax, drInv/*, A*/, coefs);
     for (int iq=0; iq<myJob.NumQuadPoints; iq++)
     {
       dx = myRnew[iq][0] - c[tid][0];
@@ -2742,16 +2768,16 @@ one_body_NLratio_PBC_kernel(NLjobGPU<float> *jobs, float *C, int first, int last
 
 
 
-template<int BS>
+template<typename T, int BS>
 __global__ void
-one_body_NLratio_PBC_kernel_fast(NLjobGPU<float> *jobs, float *C, int first, int last,
-                                 float *spline_coefs, int numCoefs, float rMax,
-                                 float *lattice, float *latticeInv)
+one_body_NLratio_PBC_kernel_fast(NLjobGPU<T> *jobs, T *C, int first, int last,
+                                 T *spline_coefs, int numCoefs, T rMax,
+                                 T *lattice, T *latticeInv)
 {
   const int MAX_RATIOS = 18;
   int tid = threadIdx.x;
-  __shared__ NLjobGPU<float> myJob;
-  __shared__ float myRnew[MAX_RATIOS][3], myRold[3];
+  __shared__ NLjobGPU<T> myJob;
+  __shared__ T myRnew[MAX_RATIOS][3], myRold[3];
   if (tid == 0)
     myJob = jobs[blockIdx.x];
   __syncthreads();
@@ -2761,14 +2787,14 @@ one_body_NLratio_PBC_kernel_fast(NLjobGPU<float> *jobs, float *C, int first, int
     if (i*BS + tid < 3*myJob.NumQuadPoints)
       myRnew[0][i*BS+tid] = myJob.QuadPoints[i*BS+tid];
   __syncthreads();
-  float dr = rMax/(float)(numCoefs-3);
-  float drInv = 1.0/dr;
+  T dr = rMax/(T)(numCoefs-3);
+  T drInv = (T)1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999f;
-  __shared__ float coefs[MAX_COEFS];
-  __shared__ float c[BS][3];
-  __shared__ float L[3][3], Linv[3][3];
+  rMax *= (T)0.999999;
+  __shared__ T coefs[MAX_COEFS];
+  __shared__ T c[BS][3];
+  __shared__ T L[3][3], Linv[3][3];
   if (tid < numCoefs)
     coefs[tid] = spline_coefs[tid];
   if (tid < 9)
@@ -2776,15 +2802,15 @@ one_body_NLratio_PBC_kernel_fast(NLjobGPU<float> *jobs, float *C, int first, int
     L[0][tid] = lattice[tid];
     Linv[0][tid] = latticeInv[tid];
   }
-  __shared__ float A[4][4];
+  __shared__ T A[4][4];
   if (tid < 16)
     A[(tid>>2)][tid&3] = AcudaSpline[tid];
   __syncthreads();
   int N = last - first + 1;
   int NB = N/BS + ((N % BS) ? 1 : 0);
-  __shared__ float shared_sum[MAX_RATIOS][BS+1];
+  __shared__ T shared_sum[MAX_RATIOS][BS+1];
   for (int iq=0; iq<myJob.NumQuadPoints; iq++)
-    shared_sum[iq][tid] = (float)0.0;
+    shared_sum[iq][tid] = (T)0.0;
   for (int b=0; b < NB; b++)
   {
     // Load block of positions from global memory
@@ -2796,12 +2822,12 @@ one_body_NLratio_PBC_kernel_fast(NLjobGPU<float> *jobs, float *C, int first, int
     }
     __syncthreads();
     int ptcl1 = first+b*BS + tid;
-    float dx, dy, dz;
+    T dx, dy, dz;
     dx = myRold[0] - c[tid][0];
     dy = myRold[1] - c[tid][1];
     dz = myRold[2] - c[tid][2];
-    float dist = min_dist_fast(dx, dy, dz, L, Linv);
-    float uOld = eval_1d_spline (dist, rMax, drInv, A, coefs);
+    T dist = min_dist_fast(dx, dy, dz, L, Linv);
+    T uOld = eval_1d_spline (dist, rMax, drInv, A, coefs);
     for (int iq=0; iq<myJob.NumQuadPoints; iq++)
     {
       dx = myRnew[iq][0] - c[tid][0];
@@ -2824,11 +2850,7 @@ one_body_NLratio_PBC_kernel_fast(NLjobGPU<float> *jobs, float *C, int first, int
     myJob.Ratios[tid] *= exp(-shared_sum[tid][0]);
 }
 
-
-
-
-
-
+/* no longer needed, use the template version instead
 template<int BS>
 __global__ void
 one_body_NLratio_PBC_kernel(NLjobGPU<double> *jobs, double *C, int first, int last,
@@ -2920,7 +2942,7 @@ one_body_NLratio_PBC_kernel(NLjobGPU<double> *jobs, double *C, int first, int la
     myJob.Ratios[tid] *= exp(-shared_sum[tid][0]);
 }
 
-
+*/
 
 
 
@@ -2941,14 +2963,14 @@ one_body_NLratios_PBC(NLjobGPU<float> jobs[], float C[], int first, int last,
     if (rMax <= sim_cell_radius)
     {
       // fprintf (stderr, "Using fast J1 NL kernel.\n");
-      one_body_NLratio_PBC_kernel_fast<BS><<<dimGrid,dimBlock>>>
+      one_body_NLratio_PBC_kernel_fast<float, BS><<<dimGrid,dimBlock>>>
       (jobs, C, first, last, spline_coefs, numCoefs, rMax,
        lattice, latticeInv);
     }
     else
     {
       // fprintf (stderr, "Using slow J1 NL kernel.\n");
-      one_body_NLratio_PBC_kernel<BS><<<dimGrid,dimBlock>>>
+      one_body_NLratio_PBC_kernel<float, BS><<<dimGrid,dimBlock>>>
       (jobs, C, first, last, spline_coefs, numCoefs, rMax,
        lattice, latticeInv);
     }
@@ -2959,14 +2981,14 @@ one_body_NLratios_PBC(NLjobGPU<float> jobs[], float C[], int first, int last,
   if (rMax <= sim_cell_radius)
   {
     // fprintf (stderr, "Using fast J1 NL kernel.\n");
-    one_body_NLratio_PBC_kernel_fast<BS><<<dimGrid,dimBlock>>>
+    one_body_NLratio_PBC_kernel_fast<float, BS><<<dimGrid,dimBlock>>>
     (jobs, C, first, last, spline_coefs, numCoefs, rMax,
      lattice, latticeInv);
   }
   else
   {
     // fprintf (stderr, "Using slow J1 NL kernel.\n");
-    one_body_NLratio_PBC_kernel<BS><<<dimGrid,dimBlock>>>
+    one_body_NLratio_PBC_kernel<float, BS><<<dimGrid,dimBlock>>>
     (jobs, C, first, last, spline_coefs, numCoefs, rMax,
      lattice, latticeInv);
   }
@@ -2977,44 +2999,85 @@ one_body_NLratios_PBC(NLjobGPU<float> jobs[], float C[], int first, int last,
 void
 one_body_NLratios_PBC(NLjobGPU<double> jobs[], double C[], int first, int last,
                       double spline_coefs[], int numCoefs, double rMax,
-                      double lattice[], double latticeInv[], int numjobs)
+                      double lattice[], double latticeInv[], double sim_cell_radius,
+                      int numjobs)
 {
   if (!AisInitializedPBC)
     cuda_spline_init_PBC();
+  //CMC_PROFILING_BEGIN();
+  COPY_LATTICE_DP_TO_SP();
   const int BS=32;
   dim3 dimBlock(BS);
+  /*
   int blockx = numjobs % 65535;
   int blocky = numjobs / 65535 + 1;
   dim3 dimGrid(blockx, blocky);
-  one_body_NLratio_PBC_kernel<BS><<<dimGrid,dimBlock>>>
+  one_body_NLratio_PBC_kernel<double, BS><<<dimGrid,dimBlock>>>
   (jobs, C, first, last, spline_coefs, numCoefs, rMax,
    lattice, latticeInv);
+  */
+  while (numjobs > 65535)
+  {
+    dim3 dimGrid(65535);
+    if (rMax <= sim_cell_radius)
+    {
+      // fprintf (stderr, "Using fast J1 NL kernel.\n");
+      one_body_NLratio_PBC_kernel_fast<double, BS><<<dimGrid,dimBlock>>>
+      (jobs, C, first, last, spline_coefs, numCoefs, rMax,
+       lattice, latticeInv);
+    }
+    else
+    {
+      // fprintf (stderr, "Using slow J1 NL kernel.\n");
+      one_body_NLratio_PBC_kernel<double, BS><<<dimGrid,dimBlock>>>
+      (jobs, C, first, last, spline_coefs, numCoefs, rMax,
+       lattice, latticeInv);
+    }
+    numjobs -= 65535;
+    jobs += 65535;
+  }
+  dim3 dimGrid(numjobs);
+  if (rMax <= sim_cell_radius)
+  {
+    // fprintf (stderr, "Using fast J1 NL kernel.\n");
+    one_body_NLratio_PBC_kernel_fast<double, BS><<<dimGrid,dimBlock>>>
+    (jobs, C, first, last, spline_coefs, numCoefs, rMax,
+     lattice, latticeInv);
+  }
+  else
+  {
+    // fprintf (stderr, "Using slow J1 NL kernel.\n");
+    one_body_NLratio_PBC_kernel<double, BS><<<dimGrid,dimBlock>>>
+    (jobs, C, first, last, spline_coefs, numCoefs, rMax,
+     lattice, latticeInv);
+  }
+  //CMC_PROFILING_END();
 }
 
 
 
 template<typename T, int BS>
 __global__ void
-one_body_grad_PBC_kernel(T **R, int iat, T *C, int first, int last,
-                         T *spline_coefs, int numCoefs, T rMax,
-                         T *lattice, T *latticeInv, bool zeroOut, T* grad)
+one_body_grad_PBC_kernel(T const * const * __restrict__ R, int iat,
+                         T const * __restrict__ C, int first, int last,
+                         T const * __restrict__ spline_coefs, int numCoefs, T rMax,
+                         T const * __restrict__ lattice,
+                         T const * __restrict__ latticeInv,
+                         bool zeroOut, T * __restrict__ grad)
 {
   T dr = rMax/(T)(numCoefs-3);
   T drInv = 1.0/dr;
-  __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999f;
+  rMax *= (T)0.999999;
   int tid = threadIdx.x;
-  __shared__ T *myR, r[3];
-  if (tid == 0)
-    myR = R[blockIdx.x];
-  __syncthreads();
-  if (tid < 3)
-    r[tid] = myR[3*iat+tid];
+  T const * __restrict__ myR = R[blockIdx.x];
+  T r[3];
+  r[0] = myR[3*iat  ];
+  r[1] = myR[3*iat+1];
+  r[2] = myR[3*iat+2];
   __shared__ T coefs[MAX_COEFS];
   if (tid < numCoefs)
     coefs[tid] = spline_coefs[tid];
-  __shared__ T c[BS][3];
   /*
   __shared__ T L[3][3], Linv[3][3];
   if (tid < 9) {
@@ -3049,27 +3112,31 @@ one_body_grad_PBC_kernel(T **R, int iat, T *C, int first, int last,
   sGrad[tid][0]   = sGrad[tid][1] = sGrad[tid][2] = (T)0.0;
   for (int b=0; b < NB; b++)
   {
+    T c[3];
+    int n = b*BS + tid;
+    int ptcl1 = first + n;
     // Load block of positions from global memory
-    for (int i=0; i<3; i++)
-      if ((3*b+i)*BS + tid < 3*N)
-        c[0][i*BS + tid] = C[3*first + (3*b+i)*BS + tid];
-    __syncthreads();
-    int ptcl1 = first+b*BS + tid;
+    if (n < N)
+    {
+      c[0] = C[3*ptcl1  ];
+      c[1] = C[3*ptcl1+1];
+      c[2] = C[3*ptcl1+2];
+    }
     T dx, dy, dz, u, du, d2u;
-    dx = r[0] - c[tid][0];
-    dy = r[1] - c[tid][1];
-    dz = r[2] - c[tid][2];
+    dx = r[0] - c[0];
+    dy = r[1] - c[1];
+    dz = r[2] - c[2];
     T dist = CMC_min_dist(dx, dy, dz/*, L, Linv, images*/);
     CMC_eval_1d_spline_vgl (dist, rMax, drInv/*, A*/, coefs, u, du, d2u);
-    if (ptcl1 < (N+first))
+    if (n < N)
     {
       du /= dist;
       sGrad[tid][0] += du * dx;
       sGrad[tid][1] += du * dy;
       sGrad[tid][2] += du * dz;
     }
-    __syncthreads();
   }
+  __syncthreads();
   // Do reduction across threads in block
   for (int s=BS>>1; s>0; s>>=1)
   {
@@ -3101,7 +3168,7 @@ one_body_grad_PBC_kernel_fast(T **R, int iat, T *C, int first, int last,
   T drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999f;
+  rMax *= (T)0.999999;
   int tid = threadIdx.x;
   __shared__ T *myR, r[3];
   if (tid == 0)
@@ -3180,12 +3247,12 @@ one_body_grad_PBC_kernel_fast(T **R, int iat, T *C, int first, int last,
 void
 one_body_gradient_PBC (float *Rlist[], int iat, float C[], int first, int last,
                        float spline_coefs[], int num_coefs, float rMax,
-                       float lattice[], float latticeInv[], float sim_cell_radius,
-                       bool zeroSum, float grad[], int numWalkers)
+                       float lattice[], float latticeInv[], bool zeroSum,
+                       float grad[], int numWalkers)
 {
   if (!AisInitializedPBC)
     cuda_spline_init_PBC();
-  const int BS=32;
+  const int BS=128;
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
   CMC_PROFILING_BEGIN();
@@ -3204,17 +3271,20 @@ one_body_gradient_PBC (float *Rlist[], int iat, float C[], int first, int last,
 void
 one_body_gradient_PBC (double *Rlist[], int iat, double C[], int first, int last,
                        double spline_coefs[], int num_coefs, double rMax,
-                       double L[], double Linv[], bool zeroSum,
+                       double lattice[], double latticeInv[], bool zeroSum,
                        double grad[], int numWalkers)
 {
   if (!AisInitializedPBC)
     cuda_spline_init_PBC();
-  const int BS=32;
+  const int BS=128;
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
+  //CMC_PROFILING_BEGIN();
+  COPY_LATTICE_DP_TO_SP();
   one_body_grad_PBC_kernel<double,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
   (Rlist, iat, C, first, last, spline_coefs, num_coefs, rMax,
-   L, Linv, zeroSum, grad);
+   lattice, latticeInv, zeroSum, grad);
+  //CMC_PROFILING_END();
 }
 
 
@@ -3232,7 +3302,7 @@ one_body_derivs_PBC_kernel(T* C, T **R, T **gradLogPsi,
   T drInv = 1.0/dr;
   __syncthreads();
   // Safety for rounding error
-  rMax *= 0.999999f;
+  rMax *= (T)0.999999;
   int tid = threadIdx.x;
   __shared__ T *myR, *myGrad, *myDerivs;
   if (tid == 0)

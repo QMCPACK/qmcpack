@@ -54,19 +54,9 @@ WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodeP
   }
   else
   {
-    if (nmax==0)
-    {
-      int npernode=nwtot/ncontexts;
-      nmax=2*npernode+1;
-      nmin=npernode/5+1;
-    }
-    else
-    {
-      int nmaxpernode = nmax/ncontexts;
-      int npernode=nwtot/ncontexts;
-      nmax=nmaxpernode;
-      nmin=npernode/5+1;
-    }
+    int npernode=nwtot/ncontexts;
+    nmin=npernode/5+1;
+    if (nmax==0) nmax=2*npernode+1;
   }
 #if defined(HAVE_MPI)
   if(ncontexts>1)

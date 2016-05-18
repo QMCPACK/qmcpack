@@ -18,6 +18,7 @@
  */
 #ifndef QMCPLUSPLUS_DIRAC_DETERMINANT_CUDA_H
 #define QMCPLUSPLUS_DIRAC_DETERMINANT_CUDA_H
+#include <typeinfo>
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 #include "QMCWaveFunctions/SPOSetBase.h"
 #include "QMCWaveFunctions/Fermion/determinant_update.h"
@@ -168,8 +169,16 @@ public:
     AinvDeltaOffset   = pool.reserve((size_t)1            * RowStride);
     AinvColkOffset    = pool.reserve((size_t)1            * RowStride);
     newGradLaplOffset = pool.reserve((size_t)4            * RowStride);
-    AWorkOffset       = pool.reserve((size_t)2 * NumPtcls * RowStride);
-    AinvWorkOffset    = pool.reserve((size_t)2 * NumPtcls * RowStride);
+    if (typeid(CudaRealType) == typeid(float))
+    {
+      AWorkOffset       = pool.reserve((size_t)2 * NumPtcls * RowStride);
+      AinvWorkOffset    = pool.reserve((size_t)2 * NumPtcls * RowStride);
+    }
+    else if (typeid(CudaRealType) == typeid(double))
+    {
+      AWorkOffset       = pool.reserve((size_t)    NumPtcls * RowStride);
+      AinvWorkOffset    = 0;                  // not needed for inversion
+    }
     Phi->reserve(pool);
   }
 
@@ -185,7 +194,6 @@ public:
 
   void ratio (MCWalkerConfiguration &W, int iat,
               vector<ValueType> &psi_ratios);
-
 
   void ratio (MCWalkerConfiguration &W, int iat,
               vector<ValueType> &psi_ratios,	vector<GradType>  &grad);

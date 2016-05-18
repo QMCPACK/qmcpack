@@ -76,6 +76,7 @@ SET(OHMMS_INDEXTYPE int)
 SET(OHMMS_PRECISION double)
 SET(APP_PRECISION double)
 SET(CUDA_PRECISION float CACHE STRING "Select the precision of CUDA kernels")
+SET(CUDA_COULOMB_PRECISION double)
 
 ######################################################################
 # enable MPI and OPNEMP  if possible

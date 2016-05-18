@@ -4,6 +4,7 @@
 
 #include <QMCHamiltonians/SpinDensity.h>
 #include <OhmmsData/AttributeSet.h>
+#include "Particle/MCWalkerConfiguration.h"
 
 namespace qmcplusplus
 {
@@ -355,5 +356,30 @@ namespace qmcplusplus
 
   }
   
-
+  void SpinDensity::addEnergy(MCWalkerConfiguration &W, vector<RealType> &LocalEnergy)
+  {
+    int nw = W.WalkerList.size();
+    for (int iw=0; iw<nw; iw++)
+    {
+      Walker_t &w = *W.WalkerList[iw];
+      RealType weight=w.Weight/nw;
+      int p=0;
+      int offset = myIndex;
+      for(int s=0; s<nspecies; ++s,offset+=npoints)
+        for(int ps=0; ps<species_size[s]; ++ps,++p)
+        {
+          PosType u = cell.toUnit(w.R[p]-corner);
+          //bool inside = true;
+          //for(int d=0;d<DIM;++d)
+          //  inside &= u[d]>0.0 && u[d]<1.0;
+          //if(inside)
+          //{
+          int point=offset;
+          for(int d=0;d<DIM;++d)
+            point += gdims[d]*((int)(grid[d]*(u[d]-std::floor(u[d])))); //periodic only
+          W.Collectables[point] += weight;
+          //}
+        }
+    }
+  }
 }

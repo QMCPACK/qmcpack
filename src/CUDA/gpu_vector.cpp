@@ -81,19 +81,19 @@ void
 cuda_memory_manager_type::report()
 {
   fprintf (stderr, "\n\nGPU memory map contents:\n");
-  fprintf (stderr, "Object name                                                    Num objects       Total bytes\n");
+  fprintf (stderr, "Object name                                                    Num objects            Total bytes\n");
   std::map<std::string,gpu_mem_object>::iterator iter;
   size_t total_bytes = 0, total_num=0;
   for (iter=gpu_mem_map.begin(); iter != gpu_mem_map.end(); iter++)
   {
-    fprintf (stderr, "%60s %8ld            %10ld\n",
+    fprintf (stderr, "%60s %8ld            %13ld\n",
              iter->first.c_str(),
              iter->second.num_objects,
              iter->second.total_bytes);
     total_bytes += iter->second.total_bytes;
     total_num += iter->second.num_objects;
   }
-  fprintf (stderr, "%60s %8ld            %10ld\n", "Total",
+  fprintf (stderr, "%60s %8ld            %13ld\n", "Total",
            total_num, total_bytes);
 }
 }

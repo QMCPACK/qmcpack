@@ -91,6 +91,11 @@ eval_multi_multi_UBspline_3d_d_cuda
 (const multi_UBspline_3d_d_cuda *spline, double *pos_d, double *vals_d[], int num);
 
 extern "C" void
+eval_multi_multi_UBspline_3d_d_sign_cuda
+(const multi_UBspline_3d_d_cuda *spline, double *pos_d, double *sign_d,
+ double *vals_d[], int num);
+
+extern "C" void
 eval_multi_multi_UBspline_3d_d_vgh_cuda
 (const multi_UBspline_3d_d_cuda *spline,
  double *pos_d, double *vals_d[], double *grads_d[], double *hess_d[], int num);
@@ -98,6 +103,11 @@ eval_multi_multi_UBspline_3d_d_vgh_cuda
 extern "C" void
 eval_multi_multi_UBspline_3d_d_vgl_cuda
 (const multi_UBspline_3d_d_cuda *spline, double *pos_d, double *Linv_d,
+ double *vals_d[], double *grad_lapl_d[], int num, int row_stride);
+
+extern "C" void
+eval_multi_multi_UBspline_3d_d_vgl_sign_cuda
+(const multi_UBspline_3d_d_cuda *spline, double *pos_d, double *sign_d, double *Linv_d,
  double *vals_d[], double *grad_lapl_d[], int num, int row_stride);
 
 

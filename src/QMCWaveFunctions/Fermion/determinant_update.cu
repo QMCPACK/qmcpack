@@ -298,7 +298,7 @@ void update_inverse_core2 (T * __restrict__ A,
                            const T * __restrict__ Ainv_colk,
                            int k, int N, int rowstride)
 {
-  __shared__ T delta_Ainv_shared[BS];
+  T delta_Ainv_shared;
   __shared__ T Ainv_colk_shared[BS];
   T prefact;
   int tidx = threadIdx.x;
@@ -309,7 +309,7 @@ void update_inverse_core2 (T * __restrict__ A,
   // the k-th row of A with the corresponding segment from row vector u
   if (col_Ainv < N)
   {
-    delta_Ainv_shared[tidx] = delta_Ainv[col_Ainv];
+    delta_Ainv_shared = delta_Ainv[col_Ainv];
     A[k*rowstride + col_A] = u[col_A];
   }
   prefact = -1.0f / (1.0f + delta_Ainv[k]);
@@ -332,8 +332,54 @@ void update_inverse_core2 (T * __restrict__ A,
         row_Ainv = blockStart + i;
         // update one segment of current row of Ainv
         Ainv[row_Ainv*rowstride + col_Ainv] +=
-          delta_Ainv_shared[tidx] * Ainv_colk_shared[i];
+          delta_Ainv_shared * Ainv_colk_shared[i];
       }
+    }
+  }
+}
+
+template<typename T, int BS>
+__device__ __forceinline__
+void update_inverse_core2_subblock (T * __restrict__ A,
+                           T * __restrict__ Ainv,
+                           const T * __restrict__ u,
+                           const T * __restrict__ delta_Ainv,
+                           const T * __restrict__ Ainv_colk,
+                           int k, int N, int rowstride)
+{
+  T delta_Ainv_shared;
+  __shared__ T Ainv_colk_shared[BS];
+  T prefact;
+  int tidx = threadIdx.x;
+  int col_Ainv = blockIdx.y*BS + tidx;
+  int col_A = col_Ainv;
+  // int numBlocks = (N + BS - 1) / BS;
+  // Cache one segment of row vector delta*Ainv, and replace one segment of
+  // the k-th row of A with the corresponding segment from row vector u
+  if (col_Ainv < N)
+  {
+    delta_Ainv_shared = delta_Ainv[col_Ainv];
+    A[k*rowstride + col_A] = u[col_A];
+  }
+  prefact = -1.0f / (1.0f + delta_Ainv[k]);
+  const int blockStart = blockIdx.z * BS;
+  int row_Ainv;
+  row_Ainv = blockStart + tidx;
+  // cache and scale next segment of k-th column of Ainv
+  __syncthreads();
+  if (row_Ainv < N)
+  {
+    Ainv_colk_shared[tidx] = prefact * Ainv_colk[row_Ainv];
+  }
+  __syncthreads();
+  if (col_Ainv < N)
+  {
+    for (int i = 0; i < min(BS, N-blockStart); i++)
+    {
+      row_Ainv = blockStart + i;
+      // update one segment of current row of Ainv
+      Ainv[row_Ainv*rowstride + col_Ainv] +=
+        delta_Ainv_shared * Ainv_colk_shared[i];
     }
   }
 }
@@ -468,6 +514,23 @@ update_inverse_kernel2 (T **data, int k, int A_off, int Ainv_off,
                               rowstride);
 }
 
+template<typename T, int BS>
+__global__ void
+update_inverse_kernel2_subblock (T **data, int k, int A_off, int Ainv_off,
+                        int newRow_off,	int AinvDelta_off, int AinvColk_off,
+                        int N, int rowstride)
+
+{
+  T * const sdata     = data[blockIdx.x];
+  T *A                = sdata + A_off;         // A
+  T *Ainv             = sdata + Ainv_off;      // Ainv
+  const T *u          = sdata + newRow_off;    // new k-th row of A
+  const T *delta_Ainv = sdata + AinvDelta_off; // delta * Ainv
+  const T *Ainv_colk  = sdata + AinvColk_off;  // k-th column of orig. Ainv
+  update_inverse_core2_subblock<T,BS> (A, Ainv, u, delta_Ainv, Ainv_colk, k, N,
+                              rowstride);
+}
+
 void
 update_inverse_cuda(float **data, int iat,
                     int A_off, int Ainv_off, int newRow_off,
@@ -485,7 +548,14 @@ update_inverse_cuda(float **data, int iat,
   update_inverse_kernel1<float,BS1><<<dimGrid1,dimBlock1>>>
   (data, iat, A_off, Ainv_off, newRow_off, AinvDelta_off, AinvColk_off,
    N, rowstride);
+  // YY
+  /* ref
   update_inverse_kernel2<float,BS2><<<dimGrid2,dimBlock2>>>
+  (data, iat, A_off, Ainv_off, newRow_off, AinvDelta_off, AinvColk_off,
+   N, rowstride);
+  */
+  dim3 dimGrid3(numWalkers, NB2, NB2);
+  update_inverse_kernel2_subblock<float,BS2><<<dimGrid3,dimBlock2>>>
   (data, iat, A_off, Ainv_off, newRow_off, AinvDelta_off, AinvColk_off,
    N, rowstride);
   cudaError_t err = cudaGetLastError();

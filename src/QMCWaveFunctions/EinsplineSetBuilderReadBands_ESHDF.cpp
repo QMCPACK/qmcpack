@@ -55,13 +55,22 @@ void EinsplineSetBuilder::ReadBands_ESHDF(int spin, EinsplineSetExtended<complex
   int num = 0;
   if (root)
   {
+    char s[1024];
+    std::cerr << "#  Band    State   TwistIndex BandIndex Energy      Kx      Ky      Kz      K1      K2      K3    KmK " << endl;
     for (int iorb=0; iorb<N; iorb++)
     {
       int ti = SortBands[iorb].TwistIndex;
+      int bi   = SortBands[iorb].BandIndex;
+      double e = SortBands[iorb].Energy;
+      int nd = (SortBands[iorb].MakeTwoCopies)?2:1;
       PosType twist  = TwistAngles[ti];
       orbitalSet->kPoints[iorb] = orbitalSet->PrimLattice.k_cart(twist);
       orbitalSet->MakeTwoCopies[iorb] =
         (num < (numOrbs-1)) && SortBands[iorb].MakeTwoCopies;
+      sprintf (s, "%8d %8d %8d %8d %12.6f %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f %6d\n",
+          iorb, num, ti, bi, e, orbitalSet->kPoints[iorb][0], orbitalSet->kPoints[iorb][1], orbitalSet->kPoints[iorb][2],
+          TwistAngles[ti][0], TwistAngles[ti][1], TwistAngles[ti][2],nd);
+      std::cerr << s;
       num += orbitalSet->MakeTwoCopies[iorb] ? 2 : 1;
     }
   }

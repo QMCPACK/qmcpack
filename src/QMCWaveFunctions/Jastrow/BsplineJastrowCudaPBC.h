@@ -41,7 +41,7 @@ two_body_ratio_grad_PBC(double *R[], int first, int last,
                         double  Rnew[], int inew,
                         double spline_coefs[], int numCoefs, double rMax,
                         double lattice[], double latticeInv[], bool zero,
-                        double ratio_grad[], int numWalkers);
+                        double ratio_grad[], int numWalkers, bool use_fast_image);
 
 void
 two_body_NLratios_PBC(NLjobGPU<float> jobs[], int first, int last,
@@ -72,7 +72,7 @@ two_body_grad_lapl_PBC(float *R[], int e1_first, int e1_last, int e2_first, int 
 void
 two_body_grad_lapl_PBC(double *R[], int e1_first, int e1_last, int e2_first, int e2_last,
                        double spline_coefs[], int numCoefs, double rMax,
-                       double lattice[], double latticeInv[],
+                       double lattice[], double latticeInv[], double sim_cell_radius,
                        double gradLapl[], int row_stride, int numWalkers);
 
 
@@ -85,7 +85,8 @@ two_body_gradient_PBC (float *R[], int first, int last, int iat,
 void
 two_body_gradient_PBC (double *R[], int first, int last, int iat,
                        double spline_coefs[], int numCoefs, double rMax,
-                       double lattice[], double latticeInv[], bool zeroOut,
+                       double lattice[], double latticeInv[], double sim_cell_radius,
+                       bool zeroOut,
                        double grad[], int numWalkers);
 
 void
@@ -139,7 +140,7 @@ one_body_ratio_grad_PBC (double C[], double *R[], int first, int last,
                          double Rnew[], int inew,
                          double spline_coefs[], int numCoefs, double rMax,
                          double lattice[], double latticeInv[], bool zero,
-                         double ratio_grad[], int numWalkers);
+                         double ratio_grad[], int numWalkers, bool use_fast_image);
 
 void
 one_body_NLratios_PBC(NLjobGPU<float> jobs[], float C[], int first, int last,
@@ -156,7 +157,8 @@ one_body_NLratios_PBC(NLjobGPU<float> jobs[], float C[], int first, int last,
 void
 one_body_NLratios_PBC(NLjobGPU<double> jobs[], double C[], int first, int last,
                       double spline_coefs[], int numCoefs, double rMax,
-                      double lattice[], double latticeInv[], int numjobs);
+                      double lattice[], double latticeInv[], double sim_cell_radius,
+                      int numjobs);
 
 void
 one_body_update(float *R[], int N, int iat, int numWalkers);
@@ -180,8 +182,8 @@ one_body_grad_lapl_PBC(double C[], double *R[], int e1_first, int e1_last, int e
 void
 one_body_gradient_PBC (float *Rlist[], int iat, float C[], int first, int last,
                        float spline_coefs[], int num_coefs, float rMax,
-                       float L[], float Linv[], float sim_cell_radius,
-                       bool zeroSum, float grad[], int numWalkers);
+                       float L[], float Linv[], bool zeroSum,
+                       float grad[], int numWalkers);
 
 void
 one_body_gradient_PBC (double *Rlist[], int iat, double C[], int first, int last,

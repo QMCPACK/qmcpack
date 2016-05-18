@@ -49,6 +49,9 @@ extern "C" {
 }
 #endif
 
+#define STR_VAL(arg) #arg
+#define GET_MACRO_VAL(arg) STR_VAL(arg)
+
 namespace qmcplusplus
 {
 
@@ -74,6 +77,12 @@ QMCMain::QMCMain(Communicate* c)
       << "\n  MPI Nodes per group  = " << myComm->size()
       << "\n  MPI Group ID         = " << myComm->getGroupID()
       << "\n  OMP_NUM_THREADS      = " << omp_get_max_threads() << endl;
+#ifdef QMC_CUDA
+  app_log()
+      << "\n  CUDA_PRECISION          = " << GET_MACRO_VAL(CUDA_PRECISION) 
+      << "\n  CUDA_COULOMB_PRECISION  = " << GET_MACRO_VAL(CUDA_COULOMB_PRECISION) << endl;
+#endif
+  app_log() << endl;
   app_log().flush();
 }
 

@@ -90,7 +90,6 @@ void SimpleFixedNodeBranch::registerParameters()
   m_param.add(iParam[B_TARGETWALKERS],"targetWalkers","int");
   m_param.add(iParam[B_TARGETWALKERS],"targetwalkers","int");
   m_param.add(iParam[B_TARGETWALKERS],"target_walkers","int");
-  m_param.add(iParam[B_MAXWALKERS],"max_walkers","int");
   //trial energy
   m_param.add(vParam[B_EREF],"refEnergy","AU");
   m_param.add(vParam[B_EREF],"ref_energy","AU");
@@ -339,6 +338,7 @@ void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& walkers)
       //RealType sigma_eq=std::sqrt(EnergyHist.variance());
       //RealType sigma_eq=VarianceHist.mean();//use the variance
       vParam[B_SIGMA]=VarianceHist.mean();
+      //RealType sigma=std::max(std::sqrt(vParam[B_SIGMA])*WalkerController->targetSigma,10.0);
       RealType sigma=std::max(vParam[B_SIGMA]*WalkerController->targetSigma,10.0);
       vParam[B_BRANCHCUTOFF]=std::min(sigma,2.5/vParam[B_TAU]);
       vParam[B_BRANCHMAX]=vParam[B_BRANCHCUTOFF]*1.5;
@@ -585,7 +585,6 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
     iParam[B_TARGETWALKERS] = target_min;
   }
 
-
   bool same_wc=true;
   if(BranchMode[B_DMC] && WalkerController)
   {
@@ -606,7 +605,7 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
   {
     app_log() << "  Continue with the same input as the previous block." << endl;
     app_log().flush();
-    return 1;
+    //return 1;
   }
   app_log() << " SimpleFixedNodeBranch::resetRun detected changes in <parameter>'s " << endl;
   app_log() << " BranchMode : " << bmode << " " << BranchMode << endl;
@@ -647,20 +646,13 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
   //R2Accepted(1.0e-12);
   //R2Proposed(1.0e-12);
   BranchMode[B_DMCSTAGE]=0;
-  ToDoSteps=iParam[B_WARMUPSTEPS]=(iParam[B_WARMUPSTEPS])?iParam[B_WARMUPSTEPS]:10;
-  BranchMode.set(B_USETAUEFF,sParam[USETAUOPT]=="no");
-  if(BranchMode[B_POPCONTROL])
-    logN = std::log(static_cast<RealType>(iParam[B_TARGETWALKERS]));
-  else
-  {
-    //vParam[B_ETRIAL]=0.0;
-    vParam[B_ETRIAL]=vParam[B_EREF];
-    vParam[B_FEEDBACK]=0.0;
-    logN=0.0;
-  }
   WalkerController->put(myNode);
+  ToDoSteps=iParam[B_WARMUPSTEPS]=(iParam[B_WARMUPSTEPS])?iParam[B_WARMUPSTEPS]:10;
   WalkerController->setEnergyAndVariance(vParam[B_EREF],vParam[B_SIGMA]);
   WalkerController->reset();
+#ifdef QMC_CUDA
+  reset(); // needed. Ye
+#endif
   if(BackupWalkerController)
     BackupWalkerController->reset();
 

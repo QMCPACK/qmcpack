@@ -52,7 +52,6 @@ void QMCCostFunctionCUDA::resetWalkers()
 QMCCostFunctionCUDA::Return_t QMCCostFunctionCUDA::correlatedSampling(bool needDerivs)
 {
   Return_t wgt_tot=0.0;
-  Return_t wgt_tot2=0.0;
   int nw = W.getActiveWalkers();
   //#pragma omp parallel reduction(+:wgt_tot)
   Return_t eloc_new;
@@ -114,12 +113,11 @@ QMCCostFunctionCUDA::Return_t QMCCostFunctionCUDA::correlatedSampling(bool needD
   {
     ParticleSet::Walker_t& walker = *(W[iw]);
     Return_t* restrict saved= &(Records(iw,0));
-    RealType weight = std::exp(factor*(logpsi_new[iw] - saved[LOGPSI_FREE]));
+    RealType weight = factor*(logpsi_new[iw] - saved[LOGPSI_FREE]);
     RealType eloc_new = KE[iw] + saved[ENERGY_FIXED];
     saved[ENERGY_NEW] = eloc_new;
     saved[REWEIGHT]   = weight;
     wgt_tot += weight;
-    wgt_tot2 += weight*weight;
     if (needDerivs)
       for (int ip=0; ip<NumOptimizables; ip++)
       {
@@ -131,8 +129,18 @@ QMCCostFunctionCUDA::Return_t QMCCostFunctionCUDA::correlatedSampling(bool needD
   //OHMMS::Controller->barrier();
   //collect the total weight for normalization and apply maximum weight
   myComm->allreduce(wgt_tot);
-//    myComm->allreduce(wgt_tot2);
-  Return_t wgtnorm = (1.0*NumSamples)/wgt_tot;
+  
+  Return_t wgtnorm = wgt_tot/NumSamples;
+  wgt_tot=0.0;
+  for (int iw=0; iw<nw; iw++)
+  {
+    Return_t* restrict saved = &(Records(iw,0));
+    saved[REWEIGHT] = std::min(std::exp(saved[REWEIGHT]-wgtnorm), numeric_limits<Return_t>::max()*0.1 );
+    wgt_tot+= saved[REWEIGHT];
+  }
+  myComm->allreduce(wgt_tot);
+
+  wgtnorm =(wgt_tot==0)?1:(1.0*NumSamples)/wgt_tot;
   wgt_tot=0.0;
   for (int iw=0; iw<nw; iw++)
   {
@@ -695,6 +703,7 @@ QMCCostFunctionCUDA::Return_t QMCCostFunctionCUDA::fillOverlapHamiltonianMatrice
     Return_t eloc_new=saved[ENERGY_NEW];
     const vector<Return_t> &Dsaved = TempDerivRecords[iw];
     const vector<Return_t> &HDsaved= TempHDerivRecords[iw];
+    /*
     for (int pm=0; pm<NumParams(); pm++)
     {
       Return_t wfe = (HDsaved[pm] + Dsaved[pm]*(eloc_new - curAvg_w) )*weight;
@@ -724,15 +733,45 @@ QMCCostFunctionCUDA::Return_t QMCCostFunctionCUDA::fillOverlapHamiltonianMatrice
         //                   H2
         Right(pm+1,pm2+1) += b1*H2_avg*varij; //(b1*H2_avg)*wfe*(HDsaved[pm2]+ Dsaved[pm2]*(eloc_new - curAvg_w));
       }
+    } */
+    for (int pm=0; pm<NumParams(); pm++)
+    {
+      Return_t wfe = (HDsaved[pm] +(Dsaved[pm]-D_avg[pm])*eloc_new)*weight;
+      Return_t wfd = (Dsaved[pm]-D_avg[pm])*weight;
+      Return_t vterm =  HDsaved[pm]*(eloc_new-curAvg_w)+(Dsaved[pm]-D_avg[pm])*eloc_new*(eloc_new-2.0*curAvg_w);
+      //                Return_t vterm = (HDsaved[pm]+(Dsaved[pm]-D_avg[pm])*eloc_new -curAvg_w)*(eloc_new-curAvg_w);
+      //                 H2
+      Right(0,pm+1) += b1*H2_avg*vterm*weight;
+      Right(pm+1,0) += b1*H2_avg*vterm*weight;
+      //                 Variance
+      Left(0,pm+1) += b2*vterm*weight;
+      Left(pm+1,0) += b2*vterm*weight;
+      //                 Hamiltonian
+      Left(0,pm+1) += (1-b2)*wfe;
+      Left(pm+1,0) += (1-b2)*wfd*eloc_new;
+      for (int pm2=0; pm2<NumParams(); pm2++)
+      {
+        //                Hamiltonian
+        Left(pm+1,pm2+1) += (1-b2)*wfd*(HDsaved[pm2] + (Dsaved[pm2]-D_avg[pm2])*eloc_new);
+        //                Overlap
+        RealType ovlij=wfd*(Dsaved[pm2]-D_avg[pm2]);
+        Right(pm+1,pm2+1) += ovlij;
+        Overlap(pm+1,pm2+1) += ovlij;
+        //                Variance
+        RealType varij=weight*(HDsaved[pm] - 2.0*(Dsaved[pm]-D_avg[pm])*eloc_new)*(HDsaved[pm2] - 2.0*(Dsaved[pm2]-D_avg[pm2])*eloc_new);
+        //                  RealType varij=weight*(HDsaved[pm] +(Dsaved[pm]-D_avg[pm])*eloc_new-curAvg_w)*
+        //                                      (HDsaved[pm2] + (Dsaved[pm2]-D_avg[pm2])*eloc_new-curAvg_w);
+        Left(pm+1,pm2+1) +=  b2*(varij+V_avg*ovlij);
+//                H2
+        Right(pm+1,pm2+1) += b1*H2_avg*varij;
+      }
     }
   }
   myComm->allreduce(Right);
   myComm->allreduce(Left);
   myComm->allreduce(Overlap);
-  Left(0,0) = (1-b2)*curAvg_w;
-  Right(0,0) += 1.0+b1*H2_avg*V_avg;
-  Left(0,0) += b2*V_avg;
-  Overlap(0,0) = 1.0;
+  Left(0,0) = (1-b2)*curAvg_w + b2*V_avg;
+  Overlap(0,0) = Right(0,0) = 1.0+b1*H2_avg*V_avg;
   if (GEVType=="H2")
     return H2_avg;
   return 1.0;

@@ -558,6 +558,7 @@ void MCWalkerConfiguration::updateLists_GPU()
     DataList_GPU.resize(nw);
   }
   hostlist.resize(nw);
+  hostlist_AA.resize(nw);
   for (int iw=0; iw<nw; iw++)
   {
     if (WalkerList[iw]->R_GPU.size() != R.size())
@@ -585,8 +586,8 @@ void MCWalkerConfiguration::updateLists_GPU()
   for (int isp=0; isp<NumSpecies; isp++)
   {
     for (int iw=0; iw<nw; iw++)
-      hostlist[iw] = WalkerList[iw]->get_rhok_ptr(isp);
-    RhokLists_GPU[isp] = hostlist;
+      hostlist_AA[iw] = WalkerList[iw]->get_rhok_ptr(isp);
+    RhokLists_GPU[isp] = hostlist_AA;
   }
 }
 
@@ -624,13 +625,13 @@ void MCWalkerConfiguration::copyWalkersToGPU(bool copyGrad)
 
 void MCWalkerConfiguration::copyWalkerGradToGPU()
 {
-  R_host.resize(WalkerList[0]->R.size());
+  Grad_host.resize(WalkerList[0]->R.size());
   for (int iw=0; iw<WalkerList.size(); iw++)
   {
     for (int i=0; i<WalkerList[iw]->size(); i++)
       for (int dim=0; dim<OHMMS_DIM; dim++)
-        R_host[i][dim] = WalkerList[iw]->G[i][dim];
-    WalkerList[iw]->Grad_GPU = R_host;
+        Grad_host[i][dim] = WalkerList[iw]->G[i][dim];
+    WalkerList[iw]->Grad_GPU = Grad_host;
   }
 }
 

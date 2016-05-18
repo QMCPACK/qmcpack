@@ -191,15 +191,15 @@ cublas_inverse (cublasHandle_t handle,
   
   // (ii)  call cublas functions to do inversion
   //       LU decomposition
-  callAndCheckError( cublasDgetrfBatched( handle, N, Alist_d, rowStride, NULL, 
+  callAndCheckError( cublasDgetrfBatched( handle, N, AWorklist_d, rowStride, NULL, 
                                           infoArray, numMats), __LINE__ );
 
   //       Inversion
 #if (CUDA_VERSION >= 6050)
-  callAndCheckError( cublasDgetriBatched( handle, N, (const double**) Alist_d, rowStride, NULL, 
+  callAndCheckError( cublasDgetriBatched( handle, N, (const double**) AWorklist_d, rowStride, NULL, 
                                           Ainvlist_d, rowStride, infoArray, numMats), __LINE__ );
 #else
-  callAndCheckError( cublasDgetriBatched( handle, N, Alist_d, rowStride, NULL, 
+  callAndCheckError( cublasDgetriBatched( handle, N, AWorklist_d, rowStride, NULL, 
                                           Ainvlist_d, rowStride, infoArray, numMats), __LINE__ );
 #endif
 

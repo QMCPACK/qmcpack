@@ -302,7 +302,7 @@ OneBodyJastrowOrbitalBspline::NLratios
   // Copy quad points to GPU
   for (int iq=0; iq<quadPoints.size(); iq++)
   {
-    NL_RatiosHost[iq] = psi_ratios[iq];
+    NL_RatiosHost[iq] = 1.0;
     for (int dim=0; dim<OHMMS_DIM; dim++)
       NL_QuadPointsHost[OHMMS_DIM*iq + dim] = quadPoints[iq][dim];
   }
@@ -329,7 +329,7 @@ OneBodyJastrowOrbitalBspline::NLratios
   }
   NL_RatiosHost = NL_RatiosGPU;
   for (int i=0; i < psi_ratios.size(); i++)
-    psi_ratios[i] = NL_RatiosHost[i];
+    psi_ratios[i] *= NL_RatiosHost[i];
 }
 
 
@@ -354,7 +354,7 @@ void OneBodyJastrowOrbitalBspline::calcGradient
       if (UsePBC)
         one_body_gradient_PBC (W.RList_GPU.data(), iat, C.data(), first, last,
                                spline.coefs.data(), spline.coefs.size(),
-                               spline.rMax, L.data(), Linv.data(), sim_cell_radius,
+                               spline.rMax, L.data(), Linv.data(),
                                zero, OneGradGPU.data(), walkers.size());
       else
         one_body_gradient (W.RList_GPU.data(), iat, C.data(), first, last,

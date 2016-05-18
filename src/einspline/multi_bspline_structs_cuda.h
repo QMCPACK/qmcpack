@@ -99,10 +99,12 @@ typedef struct
 typedef struct
 {
   complex_float *coefs;
+  complex_float *coefs_host;
   uint3 stride;
   float3 gridInv;
   uint3 dim;
   int num_splines;
+  int host_Nx_offset;
 } multi_UBspline_3d_c_cuda;
 
 typedef struct

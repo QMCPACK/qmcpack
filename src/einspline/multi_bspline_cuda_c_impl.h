@@ -181,10 +181,13 @@ void update_dot (const T a, const T b, const T sum, const T corr, T *new_sum, T 
 __global__
 static void
 eval_multi_multi_UBspline_3d_c_kernel (float const * __restrict__ pos,
-                                       float const * __restrict__ coefs,
+                                       float const * __restrict__ coefs_GPU,
                                        float * const * __restrict__ vals,
                                        const float3 drInv, const uint3 dim,
-                                       const uint3 strides, int N)
+                                       const uint3 strides, int N,
+                                       float const * __restrict__ coefs_host,
+                                       int host_Nx_offset)
+
 {
   __shared__ float abc[64];
   __shared__ float a_b_c[12];
@@ -214,6 +217,10 @@ eval_multi_multi_UBspline_3d_c_kernel (float const * __restrict__ pos,
   int indx = ind[0];
   int indy = ind[1];
   int indz = ind[2];
+
+  float const * __restrict__ coefs = indx < host_Nx_offset ? coefs_GPU:coefs_host;
+  if ( indx >= host_Nx_offset ) indx -= host_Nx_offset;
+
   if (tid < 64)
   {
     int i = (tid>>4);
@@ -416,17 +423,19 @@ eval_multi_multi_UBspline_3d_c_vgh_kernel
 
 
 #define VGL_OPTION1 0
-#define VGL_OPTION2 1
+#define VGL_OPTION2 0
 __global__ static void
 eval_multi_multi_UBspline_3d_c_vgl_kernel(float const * __restrict__ pos,
-    float const * __restrict__ coefs,
+    float const * __restrict__ coefs_GPU,
     float const * __restrict__ Linv,
     float* const * __restrict__ vals,
     float* const * __restrict__ grd_lapl,
     float3 drInv, uint3 dim,
-    uint3 strides, int N, int row_stride)
+    uint3 strides, int N, int row_stride,
+    float const * __restrict__ coefs_host,
+    int host_Nx_offset)
 {
-  __shared__ float abc[640];
+  __shared__ float ab[96];
   __shared__ float a[12], b[12], c[12];
   __shared__ float G[3][3], GGt[3][3];
   int ir = blockIdx.y;
@@ -446,6 +455,10 @@ eval_multi_multi_UBspline_3d_c_vgl_kernel(float const * __restrict__ pos,
   sf = floor(s);
   int indz = min(max(0,(int)sf), dim.z-1);
   float tz = s - sf;
+
+  float const * __restrict__ coefs = indx < host_Nx_offset ? coefs_GPU:coefs_host;
+  if ( indx >= host_Nx_offset ) indx -= host_Nx_offset;
+
   int tid = threadIdx.x;
   // First 4 of a are value, second 4 are derivative, last four are
   // second derivative.
@@ -468,34 +481,28 @@ eval_multi_multi_UBspline_3d_c_vgl_kernel(float const * __restrict__ pos,
 #endif
   }
   __syncthreads();
-  if (tid < 64)
+  if (tid < 16)
   {
-    int i = tid >> 4;
-    int j = (tid >> 2) & 3;
-    int k = tid & 3;
-    abc[tid+  0] = a[i+0]*b[j+0]*c[k+0]; // val
-    abc[tid+ 64] = a[i+4]*b[j+0]*c[k+0]; // d/dx
-    abc[tid+128] = a[i+0]*b[j+4]*c[k+0]; // d/dy
-    abc[tid+192] = a[i+0]*b[j+0]*c[k+4]; // d/dz
-    abc[tid+256] = a[i+8]*b[j+0]*c[k+0]; // d2/dx2
-    abc[tid+320] = a[i+4]*b[j+4]*c[k+0]; // d2/dxdy
-    abc[tid+384] = a[i+4]*b[j+0]*c[k+4]; // d2/dxdz
-    abc[tid+448] = a[i+0]*b[j+8]*c[k+0]; // d2/dy2
-    abc[tid+512] = a[i+0]*b[j+4]*c[k+4]; // d2/dydz
-    abc[tid+576] = a[i+0]*b[j+0]*c[k+8]; // d2/dz2
+    int i = tid >> 2;
+    int j = tid & 3;
+    ab[tid+ 0] = a[i+0]*b[j+0]; // val
+    ab[tid+16] = a[i+4]*b[j+0]; // d/dx
+    ab[tid+32] = a[i+0]*b[j+4]; // d/dy
+    ab[tid+48] = a[i+8]*b[j+0]; // d2/dx2
+    ab[tid+64] = a[i+4]*b[j+4]; // d2/dxdy
+    ab[tid+80] = a[i+0]*b[j+8]; // d2/dy2
   }
   __syncthreads();
   float g0 = 0.0f, g1 = 0.0f, g2 = 0.0f;
   float h00 = 0.0f, h01 = 0.0f, h02 = 0.0f;
   float h11 = 0.0f, h12 = 0.0f, h22 = 0.0f;
+  float v = 0.0f;
   int off = blockIdx.x * blockDim.x + threadIdx.x;
   if (off < 2*N)
   {
-    float * __restrict__ myval = vals[ir];
     int stride_x = strides.x;
     int stride_y = strides.y;
     int stride_z = strides.z;
-    float v = 0.0f;
 #pragma unroll
     for (int i = 0; i < 4; i++)
     {
@@ -506,36 +513,38 @@ eval_multi_multi_UBspline_3d_c_vgl_kernel(float const * __restrict__ pos,
 #pragma unroll
         for (int k = 0; k < 4; k++)
         {
-          int idx = 16*i + 4*j + k;
-          float c = coefs[(indx+i)*stride_x + (indy+j)*stride_y + (indz+k)*stride_z + off];
-          v   += abc[idx+  0] * c;
-          g0  += abc[idx+ 64] * c;
-          g1  += abc[idx+128] * c;
-          g2  += abc[idx+192] * c;
-          h00 += abc[idx+256] * c;
-          h01 += abc[idx+320] * c;
-          h02 += abc[idx+384] * c;
-          h11 += abc[idx+448] * c;
-          h12 += abc[idx+512] * c;
-          h22 += abc[idx+576] * c;
+          int idx = 4*i + j;
+          float cf = coefs[(indx+i)*stride_x + (indy+j)*stride_y + (indz+k)*stride_z + off];
+          v   += ab[idx   ] * c[k  ] * cf;
+          g0  += ab[idx+16] * c[k  ] * cf;
+          g1  += ab[idx+32] * c[k  ] * cf;
+          g2  += ab[idx   ] * c[k+4] * cf;
+          h00 += ab[idx+48] * c[k  ] * cf;
+          h01 += ab[idx+64] * c[k  ] * cf;
+          h02 += ab[idx+16] * c[k+4] * cf;
+          h11 += ab[idx+80] * c[k  ] * cf;
+          h12 += ab[idx+32] * c[k+4] * cf;
+          h22 += ab[idx   ] * c[k+8] * cf;
         }
 #else
-        int idx = 16*i + 4*j;
+        int idx = 4*i + j;
         int coefs_idx = ((indx+i)*stride_x + (indy+j)*stride_y + indz*stride_z + off);
-        float c0 = coefs[coefs_idx + 0*stride_z];
-        float c1 = coefs[coefs_idx + 1*stride_z];
-        float c2 = coefs[coefs_idx + 2*stride_z];
-        float c3 = coefs[coefs_idx + 3*stride_z];
-        v   += (abc[idx+  0]*c0 + abc[idx+  1]*c1 + abc[idx+  2]*c2 + abc[idx+  3]*c3);
-        g0  += (abc[idx+ 64]*c0 + abc[idx+ 65]*c1 + abc[idx+ 66]*c2 + abc[idx+ 67]*c3);
-        g1  += (abc[idx+128]*c0 + abc[idx+129]*c1 + abc[idx+130]*c2 + abc[idx+131]*c3);
-        g2  += (abc[idx+192]*c0 + abc[idx+193]*c1 + abc[idx+194]*c2 + abc[idx+195]*c3);
-        h00 += (abc[idx+256]*c0 + abc[idx+257]*c1 + abc[idx+258]*c2 + abc[idx+259]*c3);
-        h01 += (abc[idx+320]*c0 + abc[idx+321]*c1 + abc[idx+322]*c2 + abc[idx+323]*c3);
-        h02 += (abc[idx+384]*c0 + abc[idx+385]*c1 + abc[idx+386]*c2 + abc[idx+387]*c3);
-        h11 += (abc[idx+448]*c0 + abc[idx+449]*c1 + abc[idx+450]*c2 + abc[idx+451]*c3);
-        h12 += (abc[idx+512]*c0 + abc[idx+513]*c1 + abc[idx+514]*c2 + abc[idx+515]*c3);
-        h22 += (abc[idx+576]*c0 + abc[idx+577]*c1 + abc[idx+578]*c2 + abc[idx+579]*c3);
+        float sum0 = c[0]*coefs[coefs_idx + 0*stride_z] + c[1]*coefs[coefs_idx + 1*stride_z]
+                   + c[2]*coefs[coefs_idx + 2*stride_z] + c[3]*coefs[coefs_idx + 3*stride_z];
+        float sum1 = c[4]*coefs[coefs_idx + 0*stride_z] + c[5]*coefs[coefs_idx + 1*stride_z]
+                   + c[6]*coefs[coefs_idx + 2*stride_z] + c[7]*coefs[coefs_idx + 3*stride_z];
+        float sum2 = c[8]*coefs[coefs_idx + 0*stride_z] + c[9]*coefs[coefs_idx + 1*stride_z]
+                   + c[10]*coefs[coefs_idx + 2*stride_z] + c[11]*coefs[coefs_idx + 3*stride_z];
+        v   += ab[idx   ] * sum0;
+        g0  += ab[idx+16] * sum0;
+        g1  += ab[idx+32] * sum0;
+        g2  += ab[idx   ] * sum1;
+        h00 += ab[idx+48] * sum0;
+        h01 += ab[idx+64] * sum0;
+        h02 += ab[idx+16] * sum1;
+        h11 += ab[idx+80] * sum0;
+        h12 += ab[idx+32] * sum1;
+        h22 += ab[idx   ] * sum2;
 #endif
       }
     }
@@ -548,7 +557,6 @@ eval_multi_multi_UBspline_3d_c_vgl_kernel(float const * __restrict__ pos,
     h11 *= drInv.y * drInv.y;
     h12 *= drInv.y * drInv.z;
     h22 *= drInv.z * drInv.z;
-    myval[off] = v;
   }
   int i0 = tid / 3;
   int i1 = tid - 3*i0;
@@ -566,8 +574,10 @@ eval_multi_multi_UBspline_3d_c_vgl_kernel(float const * __restrict__ pos,
   __syncthreads();
   if (off < 2*N)
   {
+    float * __restrict__ myval = vals[ir];
     float * __restrict__ mygrad_lapl = grd_lapl[ir];
     // Store gradients back to global memory
+    myval[off] = v;
     mygrad_lapl[off+0*row_stride] = G[0][0]*g0 + G[0][1]*g1 + G[0][2]*g2;
     mygrad_lapl[off+2*row_stride] = G[1][0]*g0 + G[1][1]*g1 + G[1][2]*g2;
     mygrad_lapl[off+4*row_stride] = G[2][0]*g0 + G[2][1]*g1 + G[2][2]*g2;
@@ -602,7 +612,7 @@ eval_multi_multi_UBspline_3d_c_cuda (multi_UBspline_3d_c_cuda *spline,
   dim3 dimGrid((2 * spline->num_splines + dimBlock.x - 1) / dimBlock.x, num);
   eval_multi_multi_UBspline_3d_c_kernel<<<dimGrid,dimBlock>>>
   (pos_d, (float*)spline->coefs, (float**)vals_d, spline->gridInv,
-   spline->dim, spline->stride, spline->num_splines);
+   spline->dim, spline->stride, spline->num_splines, (float*)spline->coefs_host, spline->host_Nx_offset);
 }
 
 extern "C" void
@@ -639,7 +649,7 @@ eval_multi_multi_UBspline_3d_c_vgl_cuda (multi_UBspline_3d_c_cuda *spline,
   eval_multi_multi_UBspline_3d_c_vgl_kernel<<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
   (pos_d, (float*)spline->coefs, Linv_d, (float**)vals_d,
    (float**)grad_lapl_d, spline->gridInv, spline->dim,
-   spline->stride, spline->num_splines, row_stride);
+   spline->stride, spline->num_splines, row_stride, (float*)spline->coefs_host, spline->host_Nx_offset);
 }
 
 /*
