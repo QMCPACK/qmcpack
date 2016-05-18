@@ -479,7 +479,9 @@ eval_multi_UBspline_2d_d_vgh (const multi_UBspline_2d_d *spline,
 
 
 #ifdef BGQPX
+#ifdef __xlC__
 #include  <builtins.h>
+#endif
 
 void
 eval_multi_UBspline_3d_d (const multi_UBspline_3d_d *spline,

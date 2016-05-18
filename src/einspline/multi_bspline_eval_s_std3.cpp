@@ -476,8 +476,10 @@ eval_multi_UBspline_2d_s_vgh (const multi_UBspline_2d_s *spline,
 /* 3D double-precision, real evaulation functions        */
 /************************************************************/
 
-#ifdef BGQPX 
+#ifdef BGQPX
+#ifdef __xlC__
 #include <builtins.h>
+#endif
 
 void
 eval_multi_UBspline_3d_s (const multi_UBspline_3d_s *spline,
