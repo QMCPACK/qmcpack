@@ -122,21 +122,6 @@ if exe_name=='ppconvert':
     time    = 120
     argstr  = ' '+join_args(exe_arg_list)+'\n'
     runstr  = exe+argstr
-
-#    script_text = '''#!/bin/sh
-#
-#RANKS_PER_NODE=1
-#NODES=`cat $COBALT_NODEFILE | wc -l`
-#PROCS=$(($NODES * $RANKS_PER_NODE))
-#
-#mpirun -f $COBALT_NODEFILE -n $PROCS {0} {1}
-#    '''.format(convert,join_args(exe_arg_list))
-#    script_text = '#!/bin/sh\n{0} {1}\n'.format(convert,join_args(exe_arg_list))
-#    script_file = 'ppconvert.submit.sh'
-#    open(script_file,'w').write(script_text)
-#    os.system('chmod +x '+script_file)
-#    # qsub account nodes time submission_script
-#    command = 'qsub -A {0} -n {1} -t {2} {3}'.format(account,nodes,time,script_file)
     
 elif exe_name=='rungms':
     #========#
@@ -158,7 +143,8 @@ elif exe_name=='rungms':
             error('gamess input file does not exist: {0}'.format(infile))
         #end if
     #end if
-    gms   = '/soft/applications/qmcpack/Binaries/gmsbgq'
+    #gms   = '/soft/applications/qmcpack/Binaries/gmsbgq'
+    gms   = '/home/yeluo/qmcdev/DFT_Binaries/gmsbgq.old' # 1 May 2012 (R2) 
     nodes = 32
     time  = 20
     mode  = 'c1'
@@ -168,15 +154,19 @@ elif exe_name=='convert4qmc':
     #=============#
     # convert4qmc #
     #=============#
-    convert  = '/soft/applications/qmcpack/Binaries/convert4qmc'
-    nodes    = 1
-    threads  = 1
-    time     = 10
-    queue    = 'default'
-    output   = 'convert'
-    mode     = 'c1'
-    # qsub account queue nodes time output mode threads convert4qmc user_args
-    command = 'qsub -A {0} -q {1} -n {2} -t {3} -O {4} --mode {5} --env BG_SHAREDMEMSIZE=32:OMP_NUM_THREADS={6} {7} {8}'.format(account,queue,nodes,time,output,mode,threads,convert,join_args(exe_arg_list))
+    prefix   = 'c4q'
+    for n in range(len(exe_arg_list)):
+        if exe_arg_list[n]=='-prefix' and n+1<len(exe_arg_list):
+            prefix = exe_arg_list[n+1]
+        #end if
+    #end for
+    script  = True
+    exe     = '/soft/applications/qmcpack/Binaries/convert4qmc'
+    nodes   = 1
+    procs   = 1
+    threads = 1
+    time    = 10
+    argstr  = ' '+join_args(exe_arg_list)+'\n'
 
 elif exe_name=='pw.x':
     #======#
@@ -257,6 +247,7 @@ elif exe_name=='qmcpack' or exe_name=='qmcpack_comp':
     nodes   = 32
     procs   = 1
     threads = 16
+    #threads = 64
     time    = 120
     argstr  = ' '+infile+'\n'
 #end if
@@ -272,7 +263,7 @@ if script:
     script_file = prefix+'.qsub.in'
     open(script_file,'w').write(script_text)
     os.system('chmod +x '+script_file)
-    command = 'qsub --mode script --env BG_SHAREDMEMSIZE=32 '+script_file
+    command = 'qsub --mode script --env BG_SHAREDMEMSIZE=32 {0}'.format(script_file)
 #end if
 
 # execute the submission command
