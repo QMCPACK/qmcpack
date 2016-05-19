@@ -1,13 +1,13 @@
 #! /usr/bin/env python
 
-# import project suite functions
-from nexus import settings,Job,run_project,get_machine,obj
+# import Nexus functions
+from nexus import settings,job,run_project,get_machine,obj
 from nexus import generate_physical_system
 from nexus import generate_pwscf
 from nexus import generate_pw2qmcpack
 from nexus import generate_qmcpack,vmc,loop,linear,dmc
 
-# project suite settings
+# Nexus settings
 settings(
     pseudo_dir    = './pseudopotentials',
     runs          = '',
@@ -16,7 +16,7 @@ settings(
     generate_only = 0,
     sleep         = 10,
     machine       = 'vesta',
-    account       = 'QMCPACK'
+    account       = 'QMCPACK-Training'
     )
  
 # allow max of one job at a time (lab only)
@@ -34,9 +34,9 @@ dft_pps   = ['Be.ncpp']   # pwscf pseudopotentials
 qmc_pps   = ['Be.xml']   # qmcpack pseudopotentials
 
 # job details
-dft_job = Job(cores=16,minutes=10,app=pwscf)
-p2q_job = Job(cores=1,minutes=10,app=pw2qmcpack)
-qmc_job = Job(nodes=32,minutes=10,threads=16,app=qmcpack)
+dft_job = job(cores=16,minutes=10,app=pwscf)
+p2q_job = job(cores=1,minutes=10,app=pw2qmcpack)
+qmc_job = job(nodes=32,minutes=10,threads=16,app=qmcpack)
 
 # specify k-point grids
 kgrids = [(2,2,2),(3,3,3)]
@@ -125,7 +125,7 @@ for kgrid in kgrids:
     qmc = generate_qmcpack(
         identifier   = 'dmc',
         path         = directory+'/dmc_'+ks,
-        job          = Job(nodes=ntwists,hours=2,threads=16,app=qmcpack,queue="R.qmc"),
+        job          = job(nodes=ntwists,hours=2,threads=16,app=qmcpack,queue="R.qmc"),
         input_type   = 'basic',
         system       = bcc_Be,
         bconds       = 'ppp',
