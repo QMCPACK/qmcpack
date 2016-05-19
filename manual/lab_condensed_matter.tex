@@ -1,5 +1,6 @@
-\chapter{Lab 4: Using PWSCF and QMCPACK to perform total energy calculations of
-condensed systems}
+\chapter{Lab 4: Condensed Matter Calculations} % changed title to match schedule, can revert if desired
+%\chapter{Lab 4: Using PWSCF and QMCPACK to perform total energy calculations of
+%condensed systems}
 
 
 \hide{
@@ -31,7 +32,7 @@ DE-AC04-94AL85000.}
 
 \begin{shaded}
 \begin{verbatim}
-lab4_condensed_matter/
+labs/lab4_condensed_matter/
 ├── Be-2at-setup.py           - DFT only for prim to conv cell
 ├── Be-2at-qmc.py             - QMC only for prim to conv cell
 ├── Be-16at-qmc.py            - DFT and QMC for prim to 16 atom cell
@@ -137,11 +138,11 @@ In this case, the wavefunction is generated in the directory bcc-beryllium/nscf-
 
 In the course of running Be-2at-setup.py, you will get an error when attempting to perform the vmc and wavefunction optimization calculations.  This is due to the fact that the wavefunction has been generated supercell twists of the form (+/- 1/4, +/- 1/4, +/- 1/4).  In the case that the supercell twist contains only 0 or 1/2, it is possible to operate entirely with real arithmetic.  The executabe that has been indicated in Be-2at-setup.py has been compiled for this case.  Note that where this is possible, the memory usage is a factor of two less than the general case and the calculations are somewhat faster.  However, it is often necessary to perform calculations away from these special twist angles in order to reduce finite size effects.  To fix this, delete the directory bcc-beryllium/opt-2at, change the line in near the top of Be-2at-setup.py from 
 \begin{lstlisting}
-qmcpack    = '/soft/applications/qmcpack/build_XL_real/bin/qmcapp'
+qmcpack    = '/soft/applications/qmcpack/Binaries/qmcpack'
 \end{lstlisting}
 to
 \begin{lstlisting}
-qmcpack    = '/soft/applications/qmcpack/build_XL_complex/bin/qmcapp'
+qmcpack    = '/soft/applications/qmcpack/Binaries/qmcpack_comp'
 \end{lstlisting}
 and rerun the script.
 

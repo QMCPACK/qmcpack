@@ -4,21 +4,18 @@
 
 
 \section{Topics covered in this Lab}
-%This lab focuses on the basics of performing quality QMC calculations.  As an example participants test an oxygen pseudopotential within DMC by calculating atomic and dimer properties, a common step prior to production runs.  Topics covered include:
-%\begin{itemize}
-%  \item{converting pseudopotentials into QMCPACK's FSATOM format}
-%  \item{generating orbitals with Quantum Espresso}
-%  \item{converting orbitals into QMCPACK's ESHDF format with pw2qmcpack}
-%  \item{optimizing Jastrow factors with QMCPACK}
-%  \item{removing DMC timestep error via extrapolation}
-%  \item{automating QMC workflows with Nexus}
-%  \item{testing pseudopotentials for accuracy}
-%  \hide{
-%  \item{(optional) running QMCPACK for a general system of interest}
-%  }
-%\end{itemize}
+This lab covers molecular QMC calculations with wavefunctions of increasing sophistication.  All of the trial wavefunctions are initially generated with the GAMESS code.  Topics covered include:
+\begin{itemize}
+  \item{Generating single determinant trial wavefunctions with GAMESS (HF and DFT)}
+  \item{Generating multi-determinant trial wavefunctions with GAMESS (CISD, CASSCF, CASCI, SOCI)}
+  \item{Optimizing wavefunctions (Jastrow factors and CSF coefficients) with QMC}
+  \item{DMC timestep and walker population convergence studies}
+  \item{Systematic progressions of Jastrow factors in VMC}
+  \item{Systematic convergence of DMC energies with multi-determinant wavefunctions}
+  \item{Influence of orbitals basis choice on rate of multi-determinant DMC convergence}
+\end{itemize}
 
-\section{Lab outline}
+%\section{Lab outline}
 %\begin{enumerate}
 %  \item{download and conversion of oxygen atom pseudopotential}
 %  \item{DMC timestep study of the neutral oxygen atom}
@@ -37,30 +34,12 @@
 
 
 \section{Lab directories and files}
-
-%\begin{shaded}
-%\begin{verbatim}
-%labs/lab2_qmc_basics/
-%│
-%├── docs                  - documentation 
-%│   └── Lab_2_Slides.pdf     - slides presented during the lab
-%│
-%├── oxygen_atom           - oxygen atom calculations 
-%│   ├── O.q0.dft.in          - Quantum Espresso input for DFT run
-%│   ├── O.q0.p2q.in          - pw2qmcpack.x input for orbital conversion run
-%│   ├── O.q0.opt.in.xml      - QMCPACK input for Jastrow optimization run
-%│   ├── O.q0.dmc.in.xml      - QMCPACK input file for neutral O DMC
-%│   ├── ip_conv.py           - tool to fit oxygen IP vs timestep
-%│   ├── jobrun_vesta         - executable to submit jobs on Vesta
-%│   └── reference            - directory w/ completed runs
-%│
-%└── oxygen_dimer          - oxygen dimer calculations
-%    ├── dimer_fit.py         - tool to fit dimer binding curve
-%    ├── O_dimer.py           - automation script for dimer calculations
-%    ├── pseudopotentials     - directory for pseudopotentials
-%    └── reference            - directory w/ completed runs
-%\end{verbatim}
-%\end{shaded}
+\begin{shaded}
+\begin{verbatim}
+labs/lab3_advanced_molecules/
+  ...
+\end{verbatim}
+\end{shaded}
 
 
 \section{Exercise \#1: Basics}
