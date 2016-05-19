@@ -105,7 +105,7 @@ int main(int argc, char **argv)
     if(OHMMS::Controller->rank()==0)
     {
       cerr << "No input file is given." << endl;
-      cerr << "Usage: qmcapp <input-files> " << endl;
+      cerr << "Usage: qmcpack <input-files> " << endl;
     }
     OHMMS::Controller->finalize();
     return 1;
