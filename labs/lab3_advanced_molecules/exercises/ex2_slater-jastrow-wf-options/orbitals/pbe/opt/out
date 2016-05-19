@@ -1,0 +1,3253 @@
+  Input file(s): optm.xml 
+
+=====================================================
+                    QMCPACK 1.0.0 
+
+  (c) Copyright 2003-  QMCPACK developers            
+
+  Subversion branch 6925
+  Last modified     2016-05-18 12:43:30 -0400 (Wed, 18 May 2016)
+=====================================================
+  Global options 
+  async_swap=0 : using blocking send/recv for walker swaps 
+
+  MPI Nodes            = 320
+  MPI Nodes per group  = 320
+  MPI Group ID         = 0
+  OMP_NUM_THREADS      = 1
+
+  Input XML = optm.xml
+
+  Project = jopt-h2o
+  date    = 2016-05-18 17:50:50 EDT
+  host    = nid17997
+  user    = auser
+
+  DO NOT READ DENSITY
+  Offset for the random number seeds based on time 954
+  Random number offset = 954  seeds = 7541-10429
+  Creating e particleset
+  All the species have the same mass 1
+Particles are grouped. Safe to use groups 
+e
+  Creating ion0 particleset
+  All the species have the same mass 1
+Particles are grouped. Safe to use groups 
+ion0
+ Adding WavefunctionFactory for psi0
+Using MolecularBasisBuilder<NGOBuilder>
+<input node="basisset"  name="LCAOBSet"/>
+  Distance table for AA: source/target = e
+    PBC=open Orthorhombic=NA
+ using Cartesian coordinates with 
+  ... ParticleSet::addTable Create Table #0 e_e
+  Distance table for AB: source = ion0 target = e
+    PBC=open Orthorhombic=NA
+ using Cartesian coordinates 
+  ... ParticleSet::addTable Create Table #1 ion0_e
+<input node="atomicBasisSet"  name="Gaussian-G2"  angular="cartesian"  type="Gaussian"  elementType="O"  normalized="no"/>
+  AO BasisSet for O
+   Angular momentum expanded in cartesian functions x^lx y^ly z^lz according to Gamess
+Using log grid with default values: ri = 1e-06 rf = 100 npts = 1001
+   R(n,l,m,s) 0 0 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.125346
+              contraction=0.055741 nomralized contraction = 0.0296669
+    Gaussian exponent = 0.268022
+              contraction=0.304848 nomralized contraction = 0.286897
+    Gaussian exponent = 0.573098
+              contraction=0.453752 nomralized contraction = 0.755101
+    Gaussian exponent = 1.22543
+              contraction=0.295926 nomralized contraction = 0.870791
+    Gaussian exponent = 2.62028
+              contraction=0.019567 nomralized contraction = 0.101812
+    Gaussian exponent = 5.60282
+              contraction=-0.128627 nomralized contraction = -1.18345
+    Gaussian exponent = 11.9802
+              contraction=0.012024 nomralized contraction = 0.19562
+    Gaussian exponent = 25.6168
+              contraction=0.000407 nomralized contraction = 0.0117085
+    Gaussian exponent = 54.7752
+              contraction=-7.59999e-05 nomralized contraction = -0.00386604
+Adding 1 cartesian gaussian orbitals for l= 0
+   R(n,l,m,s) 1 0 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 1.68663
+              contraction=1 nomralized contraction = 3.73922
+	Setting GridManager of 1 radial orbital to false
+Adding 1 cartesian gaussian orbitals for l= 0
+   R(n,l,m,s) 2 0 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.237997
+              contraction=1 nomralized contraction = 0.860882
+	Setting GridManager of 2 radial orbital to false
+Adding 1 cartesian gaussian orbitals for l= 0
+   R(n,l,m,s) 3 1 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.083598
+              contraction=0.044958 nomralized contraction = 0.00589571
+    Gaussian exponent = 0.167017
+              contraction=0.150175 nomralized contraction = 0.046777
+    Gaussian exponent = 0.333673
+              contraction=0.255999 nomralized contraction = 0.189397
+    Gaussian exponent = 0.666627
+              contraction=0.281879 nomralized contraction = 0.495337
+    Gaussian exponent = 1.33182
+              contraction=0.242835 nomralized contraction = 1.01356
+    Gaussian exponent = 2.66076
+              contraction=0.161134 nomralized contraction = 1.59746
+    Gaussian exponent = 5.31578
+              contraction=0.082308 nomralized contraction = 1.93814
+    Gaussian exponent = 10.6201
+              contraction=0.039899 nomralized contraction = 2.23155
+    Gaussian exponent = 21.2173
+              contraction=0.004679 nomralized contraction = 0.621585
+	Setting GridManager of 3 radial orbital to false
+Adding 3 cartesian gaussian orbitals for l= 1
+   R(n,l,m,s) 4 1 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.184696
+              contraction=1 nomralized contraction = 0.353229
+	Setting GridManager of 4 radial orbital to false
+Adding 3 cartesian gaussian orbitals for l= 1
+   R(n,l,m,s) 5 1 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.600621
+              contraction=1 nomralized contraction = 1.54254
+	Setting GridManager of 5 radial orbital to false
+Adding 3 cartesian gaussian orbitals for l= 1
+   R(n,l,m,s) 6 2 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.66934
+              contraction=1 nomralized contraction = 1.29244
+	Setting GridManager of 6 radial orbital to false
+Adding 6 cartesian gaussian orbitals for l= 2
+   R(n,l,m,s) 7 2 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 2.40428
+              contraction=1 nomralized contraction = 12.113
+	Setting GridManager of 7 radial orbital to false
+Adding 6 cartesian gaussian orbitals for l= 2
+   R(n,l,m,s) 8 3 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 1.4231
+              contraction=1 nomralized contraction = 4.36308
+	Setting GridManager of 8 radial orbital to false
+Adding 10 cartesian gaussian orbitals for l= 3
+   Maximu Angular Momentum   = 3
+   Number of Radial functors = 9
+   Basis size                = 34
+
+<input node="atomicBasisSet"  name="Gaussian-G2"  angular="cartesian"  type="Gaussian"  elementType="H"  normalized="no"/>
+  AO BasisSet for H
+   Angular momentum expanded in cartesian functions x^lx y^ly z^lz according to Gamess
+Using log grid with default values: ri = 1e-06 rf = 100 npts = 1001
+   R(n,l,m,s) 0 0 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 8.70089
+              contraction=0.0627182 nomralized contraction = 0.802752
+    Gaussian exponent = 1.95552
+              contraction=0.261959 nomralized contraction = 1.09445
+    Gaussian exponent = 0.559044
+              contraction=0.75701 nomralized contraction = 1.23652
+Adding 1 cartesian gaussian orbitals for l= 0
+   R(n,l,m,s) 1 0 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.164925
+              contraction=1 nomralized contraction = 0.653854
+	Setting GridManager of 1 radial orbital to false
+Adding 1 cartesian gaussian orbitals for l= 0
+   R(n,l,m,s) 2 0 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.0320625
+              contraction=1 nomralized contraction = 0.191431
+	Setting GridManager of 2 radial orbital to false
+Adding 1 cartesian gaussian orbitals for l= 0
+   R(n,l,m,s) 3 1 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.790074
+              contraction=1 nomralized contraction = 2.17305
+	Setting GridManager of 3 radial orbital to false
+Adding 3 cartesian gaussian orbitals for l= 1
+   R(n,l,m,s) 4 1 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.152351
+              contraction=1 nomralized contraction = 0.277679
+	Setting GridManager of 4 radial orbital to false
+Adding 3 cartesian gaussian orbitals for l= 1
+   R(n,l,m,s) 5 2 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.883818
+              contraction=1 nomralized contraction = 2.10215
+	Setting GridManager of 5 radial orbital to false
+Adding 6 cartesian gaussian orbitals for l= 2
+   Maximu Angular Momentum   = 2
+   Number of Radial functors = 6
+   Basis size                = 15
+
+Built BasisSetBuilder "LCAOBSet" of type molecularorbital
+Reuse BasisSetBuilder "LCAOBSet" type MolecularOrbital
+ Building SPOset  with  basis set.
+Creating LCOrbitalSet with the input coefficients
+SPO coefficients are applied by a single dgemm (BLAS3)
+Reuse BasisSetBuilder "LCAOBSet" type MolecularOrbital
+ Building SPOset  with  basis set.
+Creating LCOrbitalSet with the input coefficients
+SPO coefficients are applied by a single dgemm (BLAS3)
+  Creating a determinant updet group=0 sposet=updet
+  Reusing a SPO set updet
+
+  Creating a determinant downdet group=1 sposet=downdet
+  Reusing a SPO set downdet
+
+  FermionWF=SlaterDet
+  BsplineJastrowBuilder adds a functor with cusp = -0.25
+ size = 10 parameters 
+ cusp = -0.25
+ rcut = 10
+Parameter     Name      Value
+uu_0 0 1 1  ON 0
+uu_1 0 1 1  ON 1
+uu_2 0 1 1  ON 2
+uu_3 0 1 1  ON 3
+uu_4 0 1 1  ON 4
+uu_5 0 1 1  ON 5
+uu_6 0 1 1  ON 6
+uu_7 0 1 1  ON 7
+uu_8 0 1 1  ON 8
+uu_9 0 1 1  ON 9
+  BsplineJastrowBuilder adds a functor with cusp = -0.5
+ size = 10 parameters 
+ cusp = -0.5
+ rcut = 10
+Parameter     Name      Value
+ud_0 0 1 1  ON 0
+ud_1 0 1 1  ON 1
+ud_2 0 1 1  ON 2
+ud_3 0 1 1  ON 3
+ud_4 0 1 1  ON 4
+ud_5 0 1 1  ON 5
+ud_6 0 1 1  ON 6
+ud_7 0 1 1  ON 7
+ud_8 0 1 1  ON 8
+ud_9 0 1 1  ON 9
+
+  Using BsplineBuilder for one-body jastrow with B-spline functions
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+ size = 10 parameters 
+ cusp = 0
+ rcut = 10
+Parameter     Name      Value
+eO_0 0 1 1  ON 0
+eO_1 0 1 1  ON 1
+eO_2 0 1 1  ON 2
+eO_3 0 1 1  ON 3
+eO_4 0 1 1  ON 4
+eO_5 0 1 1  ON 5
+eO_6 0 1 1  ON 6
+eO_7 0 1 1  ON 7
+eO_8 0 1 1  ON 8
+eO_9 0 1 1  ON 9
+ size = 10 parameters 
+ cusp = 0
+ rcut = 10
+Parameter     Name      Value
+eH_0 0 1 1  ON 0
+eH_1 0 1 1  ON 1
+eH_2 0 1 1  ON 2
+eH_3 0 1 1  ON 3
+eH_4 0 1 1  ON 4
+eH_5 0 1 1  ON 5
+eH_6 0 1 1  ON 6
+eH_7 0 1 1  ON 7
+eH_8 0 1 1  ON 8
+eH_9 0 1 1  ON 9
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+Expected 26 parameters, but found 0 in PolynomialFunctor3D.
+Parameter     Name      Value
+uuO_0 0 1 1  ON 0
+uuO_1 0 1 1  ON 1
+uuO_2 0 1 1  ON 2
+uuO_3 0 1 1  ON 3
+uuO_4 0 1 1  ON 4
+uuO_5 0 1 1  ON 5
+uuO_6 0 1 1  ON 6
+uuO_7 0 1 1  ON 7
+uuO_8 0 1 1  ON 8
+uuO_9 0 1 1  ON 9
+uuO_10 0 1 1  ON 10
+uuO_11 0 1 1  ON 11
+uuO_12 0 1 1  ON 12
+uuO_13 0 1 1  ON 13
+uuO_14 0 1 1  ON 14
+uuO_15 0 1 1  ON 15
+uuO_16 0 1 1  ON 16
+uuO_17 0 1 1  ON 17
+uuO_18 0 1 1  ON 18
+uuO_19 0 1 1  ON 19
+uuO_20 0 1 1  ON 20
+uuO_21 0 1 1  ON 21
+uuO_22 0 1 1  ON 22
+uuO_23 0 1 1  ON 23
+uuO_24 0 1 1  ON 24
+uuO_25 0 1 1  ON 25
+Expected 26 parameters, but found 0 in PolynomialFunctor3D.
+Parameter     Name      Value
+udO_0 0 1 1  ON 0
+udO_1 0 1 1  ON 1
+udO_2 0 1 1  ON 2
+udO_3 0 1 1  ON 3
+udO_4 0 1 1  ON 4
+udO_5 0 1 1  ON 5
+udO_6 0 1 1  ON 6
+udO_7 0 1 1  ON 7
+udO_8 0 1 1  ON 8
+udO_9 0 1 1  ON 9
+udO_10 0 1 1  ON 10
+udO_11 0 1 1  ON 11
+udO_12 0 1 1  ON 12
+udO_13 0 1 1  ON 13
+udO_14 0 1 1  ON 14
+udO_15 0 1 1  ON 15
+udO_16 0 1 1  ON 16
+udO_17 0 1 1  ON 17
+udO_18 0 1 1  ON 18
+udO_19 0 1 1  ON 19
+udO_20 0 1 1  ON 20
+udO_21 0 1 1  ON 21
+udO_22 0 1 1  ON 22
+udO_23 0 1 1  ON 23
+udO_24 0 1 1  ON 24
+udO_25 0 1 1  ON 25
+Expected 26 parameters, but found 0 in PolynomialFunctor3D.
+Parameter     Name      Value
+uuH_0 0 1 1  ON 0
+uuH_1 0 1 1  ON 1
+uuH_2 0 1 1  ON 2
+uuH_3 0 1 1  ON 3
+uuH_4 0 1 1  ON 4
+uuH_5 0 1 1  ON 5
+uuH_6 0 1 1  ON 6
+uuH_7 0 1 1  ON 7
+uuH_8 0 1 1  ON 8
+uuH_9 0 1 1  ON 9
+uuH_10 0 1 1  ON 10
+uuH_11 0 1 1  ON 11
+uuH_12 0 1 1  ON 12
+uuH_13 0 1 1  ON 13
+uuH_14 0 1 1  ON 14
+uuH_15 0 1 1  ON 15
+uuH_16 0 1 1  ON 16
+uuH_17 0 1 1  ON 17
+uuH_18 0 1 1  ON 18
+uuH_19 0 1 1  ON 19
+uuH_20 0 1 1  ON 20
+uuH_21 0 1 1  ON 21
+uuH_22 0 1 1  ON 22
+uuH_23 0 1 1  ON 23
+uuH_24 0 1 1  ON 24
+uuH_25 0 1 1  ON 25
+Expected 26 parameters, but found 0 in PolynomialFunctor3D.
+Parameter     Name      Value
+udH_0 0 1 1  ON 0
+udH_1 0 1 1  ON 1
+udH_2 0 1 1  ON 2
+udH_3 0 1 1  ON 3
+udH_4 0 1 1  ON 4
+udH_5 0 1 1  ON 5
+udH_6 0 1 1  ON 6
+udH_7 0 1 1  ON 7
+udH_8 0 1 1  ON 8
+udH_9 0 1 1  ON 9
+udH_10 0 1 1  ON 10
+udH_11 0 1 1  ON 11
+udH_12 0 1 1  ON 12
+udH_13 0 1 1  ON 13
+udH_14 0 1 1  ON 14
+udH_15 0 1 1  ON 15
+udH_16 0 1 1  ON 16
+udH_17 0 1 1  ON 17
+udH_18 0 1 1  ON 18
+udH_19 0 1 1  ON 19
+udH_20 0 1 1  ON 20
+udH_21 0 1 1  ON 21
+udH_22 0 1 1  ON 22
+udH_23 0 1 1  ON 23
+udH_24 0 1 1  ON 24
+udH_25 0 1 1  ON 25
+  QMCHamiltonian::addOperator Kinetic to H, physical Hamiltonian 
+  ... ParticleSet::addTable Reuse Table #0 e_e
+  QMCHamiltonian::addOperator ElecElec to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type coulomb named ElecElec
+
+  ECPotential builder for pseudopotential 
+
+  Adding pseudopotential for O
+   Linear grid  ri=0 rf=10 npts = 10001
+    ECPComponentBuilder::buildSemiLocalAndLocal 
+    Assuming Hartree unit
+   Number of angular momentum channels 2
+   Maximum angular momentum channel 1
+   Creating a Linear Grid Rmax=1.30534
+  Using global grid with delta = 0.001
+   Making L=1 a local potential with a radial cutoff of 9.998
+  NonLocalECPComponent::resize_warrays 
+    Non-local pseudopotential parameters
+    Maximum angular mementum = 0
+    Number of non-local channels = 1
+       l(0)=0
+    Cutoff radius = 1.306
+    Spherical grids and weights: 
+                        1                 0                 0       0.08333333333
+                       -1   1.224646799e-16                 0       0.08333333333
+             0.4472135955       0.894427191                 0       0.08333333333
+            -0.4472135955      0.7236067977      0.5257311121       0.08333333333
+             0.4472135955      0.2763932023      0.8506508084       0.08333333333
+            -0.4472135955     -0.2763932023      0.8506508084       0.08333333333
+             0.4472135955     -0.7236067977      0.5257311121       0.08333333333
+            -0.4472135955      -0.894427191   1.095357397e-16       0.08333333333
+             0.4472135955     -0.7236067977     -0.5257311121       0.08333333333
+            -0.4472135955     -0.2763932023     -0.8506508084       0.08333333333
+             0.4472135955      0.2763932023     -0.8506508084       0.08333333333
+            -0.4472135955      0.7236067977     -0.5257311121       0.08333333333
+    Maximum cutoff radius 1.306
+
+  Adding pseudopotential for H
+   Linear grid  ri=0 rf=10 npts = 10001
+    ECPComponentBuilder::buildSemiLocalAndLocal 
+    Assuming Hartree unit
+    Only one vps is found. Set the local component=0
+   Number of angular momentum channels 1
+   Maximum angular momentum channel 0
+   Creating a Linear Grid Rmax=1.16639
+  Using global grid with delta = 0.001
+   Making L=0 a local potential with a radial cutoff of 9.998
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+  QMCHamiltonian::addOperator LocalECP to H, physical Hamiltonian 
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+
+  Using NonLocalECP potential 
+    Maximum grid on a sphere for NonLocalECPotential: 12
+  QMCHamiltonian::addOperator NonLocalECP to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type pseudo named ELEMENT-ECP
+  Distance table for AA: source/target = ion0
+    PBC=open Orthorhombic=NA
+ using Cartesian coordinates with 
+  ... ParticleSet::addTable Create Table #0 ion0_ion0
+  QMCHamiltonian::addOperator IonIon to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type coulomb named IonIon
+
+  QMCHamiltonian::add2WalkerProperty added
+    5 to P::PropertyList 
+    0 to P::Collectables 
+    starting Index of the observables in P::PropertyList = 9
+  Hamiltonian disables VirtualMoves
+<init source="ion0" target="e">
+  ... ParticleSet::addTable Reuse Table #0 ion0_ion0
+</init>
+ParticleSetPool::randomize 
+=========================================================
+ Summary of QMC systems 
+=========================================================
+ParticleSetPool has: 
+
+  ParticleSet e : 0 4 8 
+
+    8
+
+    u -4.0867519743e-01 -3.1544499948e-01  5.0736678068e-01
+    u -3.2660406969e-02  6.5492065899e-01 -3.0651956394e-01
+    u  8.9117139492e-02  3.4727868110e-01  6.2880654254e-01
+    u -2.3848330999e-01 -1.5342166486e+00  1.7834282148e+00
+    d -6.6581131660e-01  1.1474781144e-01  2.5975035186e-01
+    d  5.0035632847e-01  4.8577452553e-01  1.9392954837e-01
+    d -7.0672043892e-01 -5.0557234136e-02 -1.4809524679e-01
+    d  3.3883399996e-02  1.9294521923e+00  1.6314782273e+00
+
+  ParticleSet ion0 : 0 1 3 
+
+    3
+
+    O  0.0000000000e+00  0.0000000000e+00  0.0000000000e+00
+    H -0.0000000000e+00 -1.4308249289e+00  1.1078707576e+00
+    H  0.0000000000e+00  1.4308249289e+00  1.1078707576e+00
+
+  Hamiltonian h0
+  Kinetic         Kinetic energy
+  ElecElec        CoulombAA source/target e
+
+  LocalECP        LocalECPotential: ion0
+  NonLocalECP     NonLocalECPotential: ion0
+  IonIon          CoulombAA source/target ion0
+
+Loop execution max-interations = 10
+
+=========================================================
+  Start QMCFixedSampleLinearOptimize
+  File Root jopt-h2o.s000 append = no 
+=========================================================
+  Skip QMCDriver::putQMCInfo 
+  Resetting Properties of the walkers 1 x 14
+  Adding 1 walkers to 0 existing sets
+  Total number of walkers: 3.2000000000e+02
+  Total weight: 3.2000000000e+02
+
+=========================================================
+  Start VMCSingleOMP
+  File Root jopt-h2o.s000 append = no 
+=========================================================
+  Using the current 1 walkers.
+  Total number of walkers: 3.2000000000e+02
+  Total weight: 3.2000000000e+02
+  Resetting Properties of the walkers 1 x 14
+
+<vmc function="put">
+  qmc_counter=0  my_counter=0
+  time step      = 5.0000000000e-01
+  blocks         = 100
+  steps          = 2
+  substeps       = 20
+  current        = 0
+  target samples = 5.1200000000e+04
+  walkers/mpi    = 1
+
+  stepsbetweensamples = 1
+<parameter name="blocks" condition="int">100</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">5.1200000000e+04</parameter>
+<parameter name="samplesperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="steps" condition="int">2</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">20</parameter>
+<parameter name="substeps" condition="int">20</parameter>
+<parameter name="tau" condition="au">5.0000000000e-01</parameter>
+<parameter name="time_step" condition="au">5.0000000000e-01</parameter>
+<parameter name="timestep" condition="au">5.0000000000e-01</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">1</parameter>
+<parameter name="warmup_steps" condition="int">25</parameter>
+<parameter name="warmupsteps" condition="int">25</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1 steps.
+</vmc>
+ Using QMCCostFunctionOMP::QMCCostFunctionOMP
+<optimization-report>
+<vmc stage="main" blocks="100">
+  Initial partition of walkers 0 1 
+  PbyP moves with drift, using VMCUpdatePbyPWithDriftFast
+
+  Total Sample Size   =51200
+  Walker distribution on root = 0 1 
+  Anonymous Buffer size per walker 944
+MEMORY increase 0 MB VMCSingleOMP::resetRun
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 0
+    time step          = 0.5
+    reference energy   = -16.9343
+    reference variance = 1.3004
+====================================================
+  Execution time = 1.4471371430e+00
+</vmc>
+<opt stage="setup">
+  <log>
+   Reading configurations from h5FileRoot jopt-h2o.s000
+  QMCCostFunctionOMP is created with 1
+   Loading configuration from MCWalkerConfiguration::SampleStack 
+    number of walkers before load 1
+  Using Nonlocal PP in Opt: NonLocalECP
+    number of walkers after load: 160 
+Using buffers for temporary storage in QMCCostFunction.
+
+Memory usage: 
+Linear method (approx matrix usage: 4*N^2): 6.6355200000e-01 MB
+Deriv,HDerivRecord:      5.5296000000e-01 MB
+Buffer memory cost:     MB/walker       MB/total 
+Orbitals only:           2.5600000000e-04      4.0960000000e-02
+Orbitals + dervs:        8.0000000000e-04      1.2800000000e-01
+Inverse:                 0.0000000000e+00      0.0000000000e+00
+Determinants:            0.0000000000e+00      0.0000000000e+00
+  VMC Eavg = -1.6994039489e+01
+  VMC Evar = 1.6137546893e+00
+  Total weights = 5.1200000000e+04
+  Execution time = 3.8441197100e-01
+  </log>
+</opt>
+<opt stage="main" walkers="51200">
+  <log>
+Iteration: 1/1
+od_largest 9.9431615876e+08
+  stabilityBase -6.0000000000e+00
+  stabilizerScale 2.0000000000e+00
+  Using XS:-6.0000000000e+00 0 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+  Failed Step. Largest LM parameter change:1.4249355303e+03
+ERROR   Using XS:-4.0000000000e+00 1 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+  Failed Step. Largest LM parameter change:1.4285661522e+03
+ERROR   Using XS:-2.0000000000e+00 2 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+  Failed Step. Largest LM parameter change:1.4785046355e+03
+ERROR   Using XS:0.0000000000e+00 3 0
+  Good Step. Largest LM parameter change:9.8050186559e+00
+ OldCost: -1.6063649780e+01 NewCost: -1.6370799893e+01 Delta Cost:-3.0715011221e-01
+      Current ene:     -1.7246165016e+01
+      Current var:     2.6113745815e-01
+      Current ene_urw:     -1.7215436711e+01
+      Current var_urw: 3.3882667654e-01
+Setting new Parameters
+ERROR   Execution time = 4.9637823730e+00
+  </log>
+  <optVariables href="jopt-h2o.s000.opt.xml">
+uu_0 3.6035300247e-01 1 1  ON 0
+uu_1 2.2895842742e-01 1 1  ON 1
+uu_2 1.6899707198e-01 1 1  ON 2
+uu_3 1.3713574188e-01 1 1  ON 3
+uu_4 1.0629432877e-01 1 1  ON 4
+uu_5 6.9834744075e-02 1 1  ON 5
+uu_6 4.9763813002e-02 1 1  ON 6
+uu_7 3.1911615992e-02 1 1  ON 7
+uu_8 2.8013960048e-02 1 1  ON 8
+uu_9 5.9292573681e-02 1 1  ON 9
+ud_0 4.7073972585e-01 1 1  ON 10
+ud_1 1.4799709994e-01 1 1  ON 11
+ud_2 2.9226557734e-03 1 1  ON 12
+ud_3 -5.8847499381e-02 1 1  ON 13
+ud_4 -8.8172718198e-02 1 1  ON 14
+ud_5 -1.1100400019e-01 1 1  ON 15
+ud_6 -1.3504643491e-01 1 1  ON 16
+ud_7 -1.7619268920e-01 1 1  ON 17
+ud_8 -1.5931078705e-01 1 1  ON 18
+ud_9 -1.7196942506e-01 1 1  ON 19
+eO_0 -9.8050186559e+00 1 1  ON 20
+eO_1 -9.4869797435e+00 1 1  ON 21
+eO_2 -8.8184913350e+00 1 1  ON 22
+eO_3 -8.1762967036e+00 1 1  ON 23
+eO_4 -7.7096043994e+00 1 1  ON 24
+eO_5 -7.3599802790e+00 1 1  ON 25
+eO_6 -7.2399598542e+00 1 1  ON 26
+eO_7 -7.1571991349e+00 1 1  ON 27
+eO_8 -7.2911743193e+00 1 1  ON 28
+eO_9 -7.1343235373e+00 1 1  ON 29
+eH_0 -3.2954272202e-01 1 1  ON 30
+eH_1 -3.1816952186e-01 1 1  ON 31
+eH_2 -3.1014771977e-01 1 1  ON 32
+eH_3 -2.9017689440e-01 1 1  ON 33
+eH_4 -2.8662126245e-01 1 1  ON 34
+eH_5 -3.1333416453e-01 1 1  ON 35
+eH_6 -3.1714905666e-01 1 1  ON 36
+eH_7 -3.2535531866e-01 1 1  ON 37
+eH_8 -2.5233262876e-01 1 1  ON 38
+eH_9 -3.4594104184e-01 1 1  ON 39
+uuO_0 8.8243709996e-06 1 1  ON 40
+uuO_1 6.4611329733e-06 1 1  ON 41
+uuO_2 -7.1009863193e-06 1 1  ON 42
+uuO_3 -1.0729977659e-05 1 1  ON 43
+uuO_4 -1.8909365594e-06 1 1  ON 44
+uuO_5 6.5662371162e-06 1 1  ON 45
+uuO_6 -8.1258000349e-07 1 1  ON 46
+uuO_7 -5.7805402431e-06 1 1  ON 47
+uuO_8 1.0740256458e-06 1 1  ON 48
+uuO_9 -8.9195664585e-06 1 1  ON 49
+uuO_10 -1.0340409808e-05 1 1  ON 50
+uuO_11 5.1168343679e-06 1 1  ON 51
+uuO_12 -5.8284473521e-07 1 1  ON 52
+uuO_13 1.2651240260e-05 1 1  ON 53
+uuO_14 -5.2892273536e-07 1 1  ON 54
+uuO_15 1.5347423251e-07 1 1  ON 55
+uuO_16 1.8931403383e-05 1 1  ON 56
+uuO_17 6.6002398197e-06 1 1  ON 57
+uuO_18 -3.5397294748e-06 1 1  ON 58
+uuO_19 9.6732130054e-08 1 1  ON 59
+uuO_20 -6.5819743209e-06 1 1  ON 60
+uuO_21 8.2373878423e-07 1 1  ON 61
+uuO_22 -7.2865223075e-08 1 1  ON 62
+uuO_23 1.9273990144e-06 1 1  ON 63
+uuO_24 -1.6648504533e-07 1 1  ON 64
+uuO_25 1.3041330761e-08 1 1  ON 65
+udO_0 -4.4983526871e-06 1 1  ON 66
+udO_1 2.4872373810e-05 1 1  ON 67
+udO_2 3.2014371930e-05 1 1  ON 68
+udO_3 -1.0384144819e-05 1 1  ON 69
+udO_4 -5.2258784160e-06 1 1  ON 70
+udO_5 1.6929505166e-06 1 1  ON 71
+udO_6 4.7843156157e-05 1 1  ON 72
+udO_7 -3.5186454284e-06 1 1  ON 73
+udO_8 2.9854383887e-05 1 1  ON 74
+udO_9 -2.6834913856e-05 1 1  ON 75
+udO_10 -1.2374856708e-06 1 1  ON 76
+udO_11 -2.5852339856e-05 1 1  ON 77
+udO_12 -6.5315540975e-06 1 1  ON 78
+udO_13 2.9012596654e-06 1 1  ON 79
+udO_14 4.0173024898e-06 1 1  ON 80
+udO_15 2.3362095347e-07 1 1  ON 81
+udO_16 3.5896001333e-05 1 1  ON 82
+udO_17 -1.1925915164e-05 1 1  ON 83
+udO_18 1.6369815873e-05 1 1  ON 84
+udO_19 1.3929180627e-06 1 1  ON 85
+udO_20 -3.3693587959e-06 1 1  ON 86
+udO_21 -1.9673098442e-06 1 1  ON 87
+udO_22 -1.8085228361e-08 1 1  ON 88
+udO_23 6.0136093796e-07 1 1  ON 89
+udO_24 1.3187800130e-07 1 1  ON 90
+udO_25 -4.5160615650e-09 1 1  ON 91
+uuH_0 8.3009660518e-06 1 1  ON 92
+uuH_1 3.4832992949e-05 1 1  ON 93
+uuH_2 7.3351400682e-06 1 1  ON 94
+uuH_3 -1.4275976435e-05 1 1  ON 95
+uuH_4 -2.1676421237e-06 1 1  ON 96
+uuH_5 -2.0447220817e-06 1 1  ON 97
+uuH_6 4.2888916772e-05 1 1  ON 98
+uuH_7 -1.1270466425e-05 1 1  ON 99
+uuH_8 5.4647182375e-06 1 1  ON 100
+uuH_9 -3.9591209000e-05 1 1  ON 101
+uuH_10 -7.6253146494e-06 1 1  ON 102
+uuH_11 -1.9036008137e-06 1 1  ON 103
+uuH_12 1.2771059656e-07 1 1  ON 104
+uuH_13 1.4212538639e-05 1 1  ON 105
+uuH_14 -1.0997425568e-06 1 1  ON 106
+uuH_15 7.5398724179e-08 1 1  ON 107
+uuH_16 4.1680833963e-05 1 1  ON 108
+uuH_17 -2.6294608391e-06 1 1  ON 109
+uuH_18 2.9845223554e-06 1 1  ON 110
+uuH_19 -1.1265456205e-06 1 1  ON 111
+uuH_20 -1.0078538690e-05 1 1  ON 112
+uuH_21 4.4362979068e-07 1 1  ON 113
+uuH_22 8.9929506418e-08 1 1  ON 114
+uuH_23 1.9999259315e-06 1 1  ON 115
+uuH_24 -1.9534460194e-07 1 1  ON 116
+uuH_25 -1.1556432815e-09 1 1  ON 117
+udH_0 -3.1295875826e-06 1 1  ON 118
+udH_1 -1.7652061475e-05 1 1  ON 119
+udH_2 8.2121599462e-06 1 1  ON 120
+udH_3 1.6077095501e-06 1 1  ON 121
+udH_4 -1.6654493104e-06 1 1  ON 122
+udH_5 1.1525573241e-06 1 1  ON 123
+udH_6 -1.0442933231e-05 1 1  ON 124
+udH_7 2.8713589346e-07 1 1  ON 125
+udH_8 8.4993683718e-06 1 1  ON 126
+udH_9 6.6503757357e-06 1 1  ON 127
+udH_10 2.1915391428e-06 1 1  ON 128
+udH_11 -9.1233374367e-06 1 1  ON 129
+udH_12 -1.6430672001e-06 1 1  ON 130
+udH_13 3.2266317053e-06 1 1  ON 131
+udH_14 8.9729939641e-07 1 1  ON 132
+udH_15 8.5734054841e-08 1 1  ON 133
+udH_16 6.3544470875e-06 1 1  ON 134
+udH_17 -4.0225759587e-06 1 1  ON 135
+udH_18 7.8736457963e-06 1 1  ON 136
+udH_19 -1.4609842906e-07 1 1  ON 137
+udH_20 -5.5551247522e-06 1 1  ON 138
+udH_21 -6.8342820412e-07 1 1  ON 139
+udH_22 2.7211032333e-08 1 1  ON 140
+udH_23 2.2009470330e-06 1 1  ON 141
+udH_24 -7.6690055466e-08 1 1  ON 142
+udH_25 1.8705350601e-08 1 1  ON 143
+  </optVariables>
+   Restore the number of walkers to 1, removing 159 walkers.
+</opt>
+</optimization-report>
+  QMC Execution time = 4.9765591910e+00 secs 
+  Reusing QMCFixedSampleLinearOptimize
+ Using QMCCostFunctionOMP::QMCCostFunctionOMP
+
+=========================================================
+  Start QMCFixedSampleLinearOptimize
+  File Root jopt-h2o.s001 append = no 
+=========================================================
+  Skip QMCDriver::putQMCInfo 
+  Resetting Properties of the walkers 1 x 14
+
+=========================================================
+  Start VMCSingleOMP
+  File Root jopt-h2o.s001 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 14
+
+<vmc function="put">
+  qmc_counter=1  my_counter=1
+  time step      = 5.0000000000e-01
+  blocks         = 100
+  steps          = 2
+  substeps       = 20
+  current        = 0
+  target samples = 5.1200000000e+04
+  walkers/mpi    = 1
+
+  stepsbetweensamples = 1
+<parameter name="blocks" condition="int">100</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">5.1200000000e+04</parameter>
+<parameter name="samplesperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="steps" condition="int">2</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">20</parameter>
+<parameter name="substeps" condition="int">20</parameter>
+<parameter name="tau" condition="au">5.0000000000e-01</parameter>
+<parameter name="time_step" condition="au">5.0000000000e-01</parameter>
+<parameter name="timestep" condition="au">5.0000000000e-01</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">1</parameter>
+<parameter name="warmup_steps" condition="int">25</parameter>
+<parameter name="warmupsteps" condition="int">25</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1 steps.
+</vmc>
+  EstimatorManager::add replace LocalEnergy estimator.
+  EstimatorManager::add replace LocalEnergy estimator.
+<optimization-report>
+<vmc stage="main" blocks="100">
+  Cannot make clones again. Use existing 1 clones
+  Initial partition of walkers 0 1 
+  Total Sample Size   =51200
+  Walker distribution on root = 0 1 
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 1
+    time step          = 0.5
+    reference energy   = -17.24
+    reference variance = 0.69045
+====================================================
+  Execution time = 1.4575667100e+00
+</vmc>
+<opt stage="setup">
+  <log>
+   Reading configurations from h5FileRoot jopt-h2o.s001
+  QMCCostFunctionOMP is created with 1
+   Loading configuration from MCWalkerConfiguration::SampleStack 
+    number of walkers before load 1
+  Using Nonlocal PP in Opt: NonLocalECP
+    number of walkers after load: 160 
+Using buffers for temporary storage in QMCCostFunction.
+
+Memory usage: 
+Linear method (approx matrix usage: 4*N^2): 6.6355200000e-01 MB
+Deriv,HDerivRecord:      5.5296000000e-01 MB
+Buffer memory cost:     MB/walker       MB/total 
+Orbitals only:           2.5600000000e-04      4.0960000000e-02
+Orbitals + dervs:        8.0000000000e-04      1.2800000000e-01
+Inverse:                 0.0000000000e+00      0.0000000000e+00
+Determinants:            0.0000000000e+00      0.0000000000e+00
+  VMC Eavg = -1.4588421031e+01
+  VMC Evar = 4.7266074588e+01
+  Total weights = 5.1200000000e+04
+  Execution time = 4.0512696200e-01
+  </log>
+</opt>
+<opt stage="main" walkers="51200">
+  <log>
+Iteration: 1/1
+od_largest 1.0746510442e+09
+  stabilityBase -6.0000000000e+00
+  stabilizerScale 2.0000000000e+00
+  Using XS:-6.0000000000e+00 0 0
+ERROR CostFunction-> Number of Effective Walkers is too small 4.1628195245e+03 NumWalkersEff/NumSamples 8.1305068839e-02
+Before:  ax = 0.0000000000e+00  bx=5.0078853242e-01  cx=0.0000000000e+00
+ERROR CostFunction-> Number of Effective Walkers is too small 2.3375319162e+03 NumWalkersEff/NumSamples 4.5654920238e-02
+Problems bracketing minimum. Lower Value returned.
+  Failed Step. Largest LM parameter change:1.0349635928e+01
+ERROR   Using XS:-4.0000000000e+00 1 0
+ERROR CostFunction-> Number of Effective Walkers is too small 5.1746907014e+03 NumWalkersEff/NumSamples 1.0106817776e-01
+Before:  ax = 0.0000000000e+00  bx=5.0077536384e-01  cx=0.0000000000e+00
+ERROR CostFunction-> Number of Effective Walkers is too small 2.9614960733e+03 NumWalkersEff/NumSamples 5.7841720182e-02
+Problems bracketing minimum. Lower Value returned.
+  Failed Step. Largest LM parameter change:1.0214909860e+01
+ERROR   Using XS:-2.0000000000e+00 2 0
+Before:  ax = 0.0000000000e+00  bx=5.0068992270e-01  cx=0.0000000000e+00
+ERROR CostFunction-> Number of Effective Walkers is too small 1.1592940524e+04 NumWalkersEff/NumSamples 2.2642461960e-01
+Problems bracketing minimum. Lower Value returned.
+  Good Step. Largest LM parameter change:9.3760275849e+00
+ OldCost: -1.6361296448e+01 NewCost: -1.6368509899e+01 Delta Cost:-7.2134510168e-03
+      Current ene:     -1.7248114679e+01
+      Current var:     3.4398091364e-01
+      Current ene_urw:     -1.7244138511e+01
+      Current var_urw: 3.4490434568e-01
+Setting new Parameters
+ERROR   Execution time = 5.3727643830e+00
+  </log>
+  <optVariables href="jopt-h2o.s001.opt.xml">
+uu_0 4.5993439583e-01 1 1  ON 0
+uu_1 3.2004329296e-01 1 1  ON 1
+uu_2 2.4237473898e-01 1 1  ON 2
+uu_3 1.9319835595e-01 1 1  ON 3
+uu_4 1.5003132255e-01 1 1  ON 4
+uu_5 1.0632910851e-01 1 1  ON 5
+uu_6 7.7178110009e-02 1 1  ON 6
+uu_7 4.4805710937e-02 1 1  ON 7
+uu_8 1.7452761248e-02 1 1  ON 8
+uu_9 -8.7246879752e-03 1 1  ON 9
+ud_0 7.6235833969e-01 1 1  ON 10
+ud_1 4.4308812777e-01 1 1  ON 11
+ud_2 2.7898806349e-01 1 1  ON 12
+ud_3 2.0176801671e-01 1 1  ON 13
+ud_4 1.6342472173e-01 1 1  ON 14
+ud_5 1.3372205875e-01 1 1  ON 15
+ud_6 9.7329898733e-02 1 1  ON 16
+ud_7 4.4944447503e-02 1 1  ON 17
+ud_8 2.3533781482e-02 1 1  ON 18
+ud_9 -1.2394706114e-02 1 1  ON 19
+eO_0 -1.7342517353e+00 1 1  ON 20
+eO_1 -1.3649109063e+00 1 1  ON 21
+eO_2 -4.8780086848e-01 1 1  ON 22
+eO_3 4.7887904938e-01 1 1  ON 23
+eO_4 1.2639459494e+00 1 1  ON 24
+eO_5 1.8076118239e+00 1 1  ON 25
+eO_6 2.0162658625e+00 1 1  ON 26
+eO_7 2.2188284499e+00 1 1  ON 27
+eO_8 1.8643773264e+00 1 1  ON 28
+eO_9 7.2726599865e-01 1 1  ON 29
+eH_0 -9.4101393094e-01 1 1  ON 30
+eH_1 -9.4779078977e-01 1 1  ON 31
+eH_2 -9.4877138515e-01 1 1  ON 32
+eH_3 -9.3711509207e-01 1 1  ON 33
+eH_4 -9.2774705058e-01 1 1  ON 34
+eH_5 -9.3273265200e-01 1 1  ON 35
+eH_6 -9.4444468550e-01 1 1  ON 36
+eH_7 -9.6151030367e-01 1 1  ON 37
+eH_8 -9.2105196544e-01 1 1  ON 38
+eH_9 -8.2506697467e-01 1 1  ON 39
+uuO_0 1.0132172244e-05 1 1  ON 40
+uuO_1 7.3312198046e-06 1 1  ON 41
+uuO_2 -8.8919534106e-06 1 1  ON 42
+uuO_3 -1.1801315556e-05 1 1  ON 43
+uuO_4 -1.8157039172e-06 1 1  ON 44
+uuO_5 8.6224597620e-06 1 1  ON 45
+uuO_6 -4.2061900821e-06 1 1  ON 46
+uuO_7 -3.8415552895e-06 1 1  ON 47
+uuO_8 -3.6028657920e-07 1 1  ON 48
+uuO_9 -5.8105781174e-06 1 1  ON 49
+uuO_10 -1.0702703718e-05 1 1  ON 50
+uuO_11 5.1743829507e-06 1 1  ON 51
+uuO_12 -4.4675019822e-07 1 1  ON 52
+uuO_13 1.1095592044e-05 1 1  ON 53
+uuO_14 -4.5107144169e-07 1 1  ON 54
+uuO_15 1.2815596966e-07 1 1  ON 55
+uuO_16 1.8324047406e-05 1 1  ON 56
+uuO_17 4.9792046896e-06 1 1  ON 57
+uuO_18 -1.7542744059e-06 1 1  ON 58
+uuO_19 -1.0703161923e-07 1 1  ON 59
+uuO_20 -6.6973652691e-06 1 1  ON 60
+uuO_21 4.2273211517e-07 1 1  ON 61
+uuO_22 -1.1212549841e-09 1 1  ON 62
+uuO_23 2.6992144478e-06 1 1  ON 63
+uuO_24 -1.8505406400e-07 1 1  ON 64
+uuO_25 5.5721887680e-09 1 1  ON 65
+udO_0 -3.4915760121e-06 1 1  ON 66
+udO_1 2.3591459807e-05 1 1  ON 67
+udO_2 2.8128289658e-05 1 1  ON 68
+udO_3 -9.3384990517e-06 1 1  ON 69
+udO_4 -4.8249603971e-06 1 1  ON 70
+udO_5 5.5845031521e-06 1 1  ON 71
+udO_6 4.2951022584e-05 1 1  ON 72
+udO_7 -1.4102221925e-06 1 1  ON 73
+udO_8 2.4277306797e-05 1 1  ON 74
+udO_9 -2.3251750266e-05 1 1  ON 75
+udO_10 -1.7629892491e-06 1 1  ON 76
+udO_11 -2.1335405245e-05 1 1  ON 77
+udO_12 -5.4285807598e-06 1 1  ON 78
+udO_13 1.0173838819e-06 1 1  ON 79
+udO_14 3.0122822344e-06 1 1  ON 80
+udO_15 2.3789173337e-07 1 1  ON 81
+udO_16 3.6239400214e-05 1 1  ON 82
+udO_17 -1.2677754052e-05 1 1  ON 83
+udO_18 1.3665865811e-05 1 1  ON 84
+udO_19 1.3644217588e-06 1 1  ON 85
+udO_20 -3.8893650847e-06 1 1  ON 86
+udO_21 -1.4457176772e-06 1 1  ON 87
+udO_22 -8.2194255466e-08 1 1  ON 88
+udO_23 1.6155805324e-06 1 1  ON 89
+udO_24 -5.5326751285e-08 1 1  ON 90
+udO_25 2.4964053096e-08 1 1  ON 91
+uuH_0 7.1400419998e-06 1 1  ON 92
+uuH_1 3.2553655870e-05 1 1  ON 93
+uuH_2 5.5875847184e-06 1 1  ON 94
+uuH_3 -1.3604899111e-05 1 1  ON 95
+uuH_4 -2.2857680159e-06 1 1  ON 96
+uuH_5 -2.3043630832e-06 1 1  ON 97
+uuH_6 4.3690848725e-05 1 1  ON 98
+uuH_7 -1.6400344449e-05 1 1  ON 99
+uuH_8 3.4113180520e-06 1 1  ON 100
+uuH_9 -3.7029511518e-05 1 1  ON 101
+uuH_10 -8.7008121878e-06 1 1  ON 102
+uuH_11 3.0384908666e-06 1 1  ON 103
+uuH_12 -9.5927798243e-08 1 1  ON 104
+uuH_13 1.4103451897e-05 1 1  ON 105
+uuH_14 -1.2129558025e-06 1 1  ON 106
+uuH_15 1.0221161888e-07 1 1  ON 107
+uuH_16 4.0462557695e-05 1 1  ON 108
+uuH_17 2.3693210463e-08 1 1  ON 109
+uuH_18 -1.1870989465e-06 1 1  ON 110
+uuH_19 -4.4778040929e-07 1 1  ON 111
+uuH_20 -1.0605429654e-05 1 1  ON 112
+uuH_21 1.0250164158e-06 1 1  ON 113
+uuH_22 -4.3076471117e-08 1 1  ON 114
+uuH_23 2.3931169010e-06 1 1  ON 115
+uuH_24 -3.4365000871e-07 1 1  ON 116
+uuH_25 3.5782494416e-08 1 1  ON 117
+udH_0 -1.6781059375e-06 1 1  ON 118
+udH_1 -1.8463715029e-05 1 1  ON 119
+udH_2 4.6813726184e-06 1 1  ON 120
+udH_3 1.9564548004e-06 1 1  ON 121
+udH_4 -9.3972353657e-07 1 1  ON 122
+udH_5 1.0983655739e-06 1 1  ON 123
+udH_6 -1.4820273821e-05 1 1  ON 124
+udH_7 3.7354956716e-06 1 1  ON 125
+udH_8 5.5133039708e-06 1 1  ON 126
+udH_9 8.1299948681e-06 1 1  ON 127
+udH_10 2.3465854890e-06 1 1  ON 128
+udH_11 -8.2505889429e-06 1 1  ON 129
+udH_12 -7.3882252278e-07 1 1  ON 130
+udH_13 1.2507360780e-06 1 1  ON 131
+udH_14 4.7802110710e-07 1 1  ON 132
+udH_15 4.0951534776e-08 1 1  ON 133
+udH_16 5.7820707889e-06 1 1  ON 134
+udH_17 -4.8225370540e-06 1 1  ON 135
+udH_18 7.2520568933e-06 1 1  ON 136
+udH_19 -5.0370980132e-07 1 1  ON 137
+udH_20 -4.4131085165e-06 1 1  ON 138
+udH_21 -5.1672941968e-07 1 1  ON 139
+udH_22 4.8114167156e-08 1 1  ON 140
+udH_23 1.7851040540e-06 1 1  ON 141
+udH_24 -9.8124510813e-08 1 1  ON 142
+udH_25 1.9450358886e-08 1 1  ON 143
+  </optVariables>
+   Restore the number of walkers to 1, removing 159 walkers.
+</opt>
+</optimization-report>
+  QMC Execution time = 5.3858991540e+00 secs 
+  Reusing QMCFixedSampleLinearOptimize
+ Using QMCCostFunctionOMP::QMCCostFunctionOMP
+
+=========================================================
+  Start QMCFixedSampleLinearOptimize
+  File Root jopt-h2o.s002 append = no 
+=========================================================
+  Skip QMCDriver::putQMCInfo 
+  Resetting Properties of the walkers 1 x 14
+
+=========================================================
+  Start VMCSingleOMP
+  File Root jopt-h2o.s002 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 14
+
+<vmc function="put">
+  qmc_counter=2  my_counter=2
+  time step      = 5.0000000000e-01
+  blocks         = 100
+  steps          = 2
+  substeps       = 20
+  current        = 0
+  target samples = 5.1200000000e+04
+  walkers/mpi    = 1
+
+  stepsbetweensamples = 1
+<parameter name="blocks" condition="int">100</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">5.1200000000e+04</parameter>
+<parameter name="samplesperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="steps" condition="int">2</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">20</parameter>
+<parameter name="substeps" condition="int">20</parameter>
+<parameter name="tau" condition="au">5.0000000000e-01</parameter>
+<parameter name="time_step" condition="au">5.0000000000e-01</parameter>
+<parameter name="timestep" condition="au">5.0000000000e-01</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">1</parameter>
+<parameter name="warmup_steps" condition="int">25</parameter>
+<parameter name="warmupsteps" condition="int">25</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1 steps.
+</vmc>
+  EstimatorManager::add replace LocalEnergy estimator.
+  EstimatorManager::add replace LocalEnergy estimator.
+<optimization-report>
+<vmc stage="main" blocks="100">
+  Cannot make clones again. Use existing 1 clones
+  Initial partition of walkers 0 1 
+  Total Sample Size   =51200
+  Walker distribution on root = 0 1 
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 2
+    time step          = 0.5
+    reference energy   = -17.2617
+    reference variance = 0.405825
+====================================================
+  Execution time = 1.4371862340e+00
+</vmc>
+<opt stage="setup">
+  <log>
+   Reading configurations from h5FileRoot jopt-h2o.s002
+  QMCCostFunctionOMP is created with 1
+   Loading configuration from MCWalkerConfiguration::SampleStack 
+    number of walkers before load 1
+  Using Nonlocal PP in Opt: NonLocalECP
+    number of walkers after load: 160 
+Using buffers for temporary storage in QMCCostFunction.
+
+Memory usage: 
+Linear method (approx matrix usage: 4*N^2): 6.6355200000e-01 MB
+Deriv,HDerivRecord:      5.5296000000e-01 MB
+Buffer memory cost:     MB/walker       MB/total 
+Orbitals only:           2.5600000000e-04      4.0960000000e-02
+Orbitals + dervs:        8.0000000000e-04      1.2800000000e-01
+Inverse:                 0.0000000000e+00      0.0000000000e+00
+Determinants:            0.0000000000e+00      0.0000000000e+00
+  VMC Eavg = -9.5543896383e+00
+  VMC Evar = 3.3311053900e+02
+  Total weights = 5.1200000000e+04
+  Execution time = 3.8535476700e-01
+  </log>
+</opt>
+<opt stage="main" walkers="51200">
+  <log>
+Iteration: 1/1
+od_largest 5.3823897550e+07
+  stabilityBase -6.0000000000e+00
+  stabilizerScale 2.0000000000e+00
+  Using XS:-6.0000000000e+00 0 0
+  Good Step. Largest LM parameter change:3.1268759980e+00
+ OldCost: -1.6374609289e+01 NewCost: -1.6378219731e+01 Delta Cost:-3.6104424534e-03
+      Current ene:     -1.7251357507e+01
+      Current var:     2.1139800221e-01
+      Current ene_urw:     -1.7252000356e+01
+      Current var_urw: 2.1321398716e-01
+Setting new Parameters
+ERROR   Execution time = 2.8688493310e+00
+  </log>
+  <optVariables href="jopt-h2o.s002.opt.xml">
+uu_0 9.0848408371e-01 1 1  ON 0
+uu_1 7.5522179975e-01 1 1  ON 1
+uu_2 6.4571782509e-01 1 1  ON 2
+uu_3 5.6643001516e-01 1 1  ON 3
+uu_4 5.0476604834e-01 1 1  ON 4
+uu_5 4.5740842936e-01 1 1  ON 5
+uu_6 4.2508776399e-01 1 1  ON 6
+uu_7 3.9096325891e-01 1 1  ON 7
+uu_8 3.2887766552e-01 1 1  ON 8
+uu_9 1.6090034040e-01 1 1  ON 9
+ud_0 8.8581453366e-01 1 1  ON 10
+ud_1 5.5823967826e-01 1 1  ON 11
+ud_2 3.5797050096e-01 1 1  ON 12
+ud_3 2.5663153800e-01 1 1  ON 13
+ud_4 2.0831565611e-01 1 1  ON 14
+ud_5 1.6794613245e-01 1 1  ON 15
+ud_6 1.3004116872e-01 1 1  ON 16
+ud_7 7.5219179015e-02 1 1  ON 17
+ud_8 4.0509282618e-02 1 1  ON 18
+ud_9 6.4642888983e-02 1 1  ON 19
+eO_0 -4.8611277333e+00 1 1  ON 20
+eO_1 -4.3872305057e+00 1 1  ON 21
+eO_2 -3.1974789124e+00 1 1  ON 22
+eO_3 -1.8031541866e+00 1 1  ON 23
+eO_4 -6.1393374969e-01 1 1  ON 24
+eO_5 1.6092622399e-01 1 1  ON 25
+eO_6 4.1402898342e-01 1 1  ON 26
+eO_7 6.3558956714e-01 1 1  ON 27
+eO_8 5.0564192626e-01 1 1  ON 28
+eO_9 1.6020130086e-01 1 1  ON 29
+eH_0 -1.2415558299e+00 1 1  ON 30
+eH_1 -1.2475969460e+00 1 1  ON 31
+eH_2 -1.2530154086e+00 1 1  ON 32
+eH_3 -1.2541555073e+00 1 1  ON 33
+eH_4 -1.2480887609e+00 1 1  ON 34
+eH_5 -1.2293948364e+00 1 1  ON 35
+eH_6 -1.2294666438e+00 1 1  ON 36
+eH_7 -1.2283972508e+00 1 1  ON 37
+eH_8 -1.1496947148e+00 1 1  ON 38
+eH_9 -9.4812719358e-01 1 1  ON 39
+uuO_0 9.3004764091e-06 1 1  ON 40
+uuO_1 5.7328073382e-06 1 1  ON 41
+uuO_2 -5.2014287244e-06 1 1  ON 42
+uuO_3 -1.0006698155e-05 1 1  ON 43
+uuO_4 -1.0852120255e-06 1 1  ON 44
+uuO_5 1.0779287531e-05 1 1  ON 45
+uuO_6 -3.0625297508e-06 1 1  ON 46
+uuO_7 -2.8650470867e-06 1 1  ON 47
+uuO_8 6.0530723854e-07 1 1  ON 48
+uuO_9 -5.6982635695e-06 1 1  ON 49
+uuO_10 -7.3339266631e-06 1 1  ON 50
+uuO_11 8.4563637465e-07 1 1  ON 51
+uuO_12 -1.4162680510e-08 1 1  ON 52
+uuO_13 7.0368746883e-06 1 1  ON 53
+uuO_14 -9.2571676878e-07 1 1  ON 54
+uuO_15 1.5697631680e-07 1 1  ON 55
+uuO_16 1.8123486183e-05 1 1  ON 56
+uuO_17 -1.7197664241e-06 1 1  ON 57
+uuO_18 3.8568981061e-06 1 1  ON 58
+uuO_19 -8.6350618889e-07 1 1  ON 59
+uuO_20 -5.0497552042e-06 1 1  ON 60
+uuO_21 -3.4429255089e-07 1 1  ON 61
+uuO_22 1.1299514651e-07 1 1  ON 62
+uuO_23 2.1878295762e-06 1 1  ON 63
+uuO_24 3.8559720609e-08 1 1  ON 64
+uuO_25 -2.9585608892e-08 1 1  ON 65
+udO_0 -1.5552301100e-06 1 1  ON 66
+udO_1 2.4042010860e-05 1 1  ON 67
+udO_2 2.0843922771e-05 1 1  ON 68
+udO_3 -1.1797780720e-05 1 1  ON 69
+udO_4 -5.1796595666e-06 1 1  ON 70
+udO_5 1.0435955176e-05 1 1  ON 71
+udO_6 3.6645493662e-05 1 1  ON 72
+udO_7 -1.7542026561e-06 1 1  ON 73
+udO_8 1.6862691427e-05 1 1  ON 74
+udO_9 -1.6685674905e-05 1 1  ON 75
+udO_10 -6.4848751560e-06 1 1  ON 76
+udO_11 -8.5672425752e-06 1 1  ON 77
+udO_12 -5.3996372421e-06 1 1  ON 78
+udO_13 2.1914354041e-06 1 1  ON 79
+udO_14 2.7131624777e-06 1 1  ON 80
+udO_15 2.8353819734e-07 1 1  ON 81
+udO_16 2.8398881630e-05 1 1  ON 82
+udO_17 -3.3425218348e-06 1 1  ON 83
+udO_18 2.1141067720e-06 1 1  ON 84
+udO_19 3.0260234925e-06 1 1  ON 85
+udO_20 -3.3828932187e-06 1 1  ON 86
+udO_21 -2.6769441817e-07 1 1  ON 87
+udO_22 -3.6698678085e-07 1 1  ON 88
+udO_23 2.2514216305e-06 1 1  ON 89
+udO_24 -2.6515382604e-07 1 1  ON 90
+udO_25 7.9872584367e-08 1 1  ON 91
+uuH_0 1.0296200509e-05 1 1  ON 92
+uuH_1 2.3977497478e-05 1 1  ON 93
+uuH_2 -2.0813536597e-06 1 1  ON 94
+uuH_3 -1.3900212071e-05 1 1  ON 95
+uuH_4 -1.3468479958e-06 1 1  ON 96
+uuH_5 -1.4903511343e-06 1 1  ON 97
+uuH_6 2.7529298971e-05 1 1  ON 98
+uuH_7 -1.6708095185e-05 1 1  ON 99
+uuH_8 -8.0016412146e-07 1 1  ON 100
+uuH_9 -2.8292843945e-05 1 1  ON 101
+uuH_10 -9.4293295221e-06 1 1  ON 102
+uuH_11 7.7766924756e-06 1 1  ON 103
+uuH_12 4.3931818922e-07 1 1  ON 104
+uuH_13 1.5662165621e-05 1 1  ON 105
+uuH_14 -1.3199073408e-06 1 1  ON 106
+uuH_15 7.4706261504e-08 1 1  ON 107
+uuH_16 2.9805094868e-05 1 1  ON 108
+uuH_17 4.9590587548e-06 1 1  ON 109
+uuH_18 -4.2543181211e-06 1 1  ON 110
+uuH_19 -3.5219856480e-07 1 1  ON 111
+uuH_20 -1.0127435242e-05 1 1  ON 112
+uuH_21 1.2695002813e-06 1 1  ON 113
+uuH_22 -7.9142111301e-08 1 1  ON 114
+uuH_23 2.5590348561e-06 1 1  ON 115
+uuH_24 -3.7670289023e-07 1 1  ON 116
+uuH_25 4.8021946033e-08 1 1  ON 117
+udH_0 9.8188877294e-07 1 1  ON 118
+udH_1 -1.9310236104e-05 1 1  ON 119
+udH_2 -3.4282715969e-06 1 1  ON 120
+udH_3 1.9495954208e-06 1 1  ON 121
+udH_4 7.4305477968e-08 1 1  ON 122
+udH_5 9.2970980266e-07 1 1  ON 123
+udH_6 -1.9524558746e-05 1 1  ON 124
+udH_7 1.7490564706e-06 1 1  ON 125
+udH_8 -1.7037700231e-06 1 1  ON 126
+udH_9 9.9532388788e-06 1 1  ON 127
+udH_10 9.0858706593e-07 1 1  ON 128
+udH_11 3.3894111939e-07 1 1  ON 129
+udH_12 2.8746906159e-07 1 1  ON 130
+udH_13 7.1372402697e-07 1 1  ON 131
+udH_14 -1.4787467014e-07 1 1  ON 132
+udH_15 -7.0005303812e-09 1 1  ON 133
+udH_16 1.8506342593e-06 1 1  ON 134
+udH_17 1.3473956186e-07 1 1  ON 135
+udH_18 -2.7766275895e-07 1 1  ON 136
+udH_19 -7.8800711520e-08 1 1  ON 137
+udH_20 -2.9626086814e-06 1 1  ON 138
+udH_21 3.1232446974e-07 1 1  ON 139
+udH_22 -3.0778962150e-08 1 1  ON 140
+udH_23 1.1803637799e-06 1 1  ON 141
+udH_24 -1.8080144984e-07 1 1  ON 142
+udH_25 2.6848318318e-08 1 1  ON 143
+  </optVariables>
+   Restore the number of walkers to 1, removing 159 walkers.
+</opt>
+</optimization-report>
+  QMC Execution time = 2.8813265480e+00 secs 
+  Reusing QMCFixedSampleLinearOptimize
+ Using QMCCostFunctionOMP::QMCCostFunctionOMP
+
+=========================================================
+  Start QMCFixedSampleLinearOptimize
+  File Root jopt-h2o.s003 append = no 
+=========================================================
+  Skip QMCDriver::putQMCInfo 
+  Resetting Properties of the walkers 1 x 14
+
+=========================================================
+  Start VMCSingleOMP
+  File Root jopt-h2o.s003 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 14
+
+<vmc function="put">
+  qmc_counter=3  my_counter=3
+  time step      = 5.0000000000e-01
+  blocks         = 100
+  steps          = 2
+  substeps       = 20
+  current        = 0
+  target samples = 5.1200000000e+04
+  walkers/mpi    = 1
+
+  stepsbetweensamples = 1
+<parameter name="blocks" condition="int">100</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">5.1200000000e+04</parameter>
+<parameter name="samplesperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="steps" condition="int">2</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">20</parameter>
+<parameter name="substeps" condition="int">20</parameter>
+<parameter name="tau" condition="au">5.0000000000e-01</parameter>
+<parameter name="time_step" condition="au">5.0000000000e-01</parameter>
+<parameter name="timestep" condition="au">5.0000000000e-01</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">1</parameter>
+<parameter name="warmup_steps" condition="int">25</parameter>
+<parameter name="warmupsteps" condition="int">25</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1 steps.
+</vmc>
+  EstimatorManager::add replace LocalEnergy estimator.
+  EstimatorManager::add replace LocalEnergy estimator.
+<optimization-report>
+<vmc stage="main" blocks="100">
+  Cannot make clones again. Use existing 1 clones
+  Initial partition of walkers 0 1 
+  Total Sample Size   =51200
+  Walker distribution on root = 0 1 
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 3
+    time step          = 0.5
+    reference energy   = -17.2707
+    reference variance = 0.393392
+====================================================
+  Execution time = 1.4345381870e+00
+</vmc>
+<opt stage="setup">
+  <log>
+   Reading configurations from h5FileRoot jopt-h2o.s003
+  QMCCostFunctionOMP is created with 1
+   Loading configuration from MCWalkerConfiguration::SampleStack 
+    number of walkers before load 1
+  Using Nonlocal PP in Opt: NonLocalECP
+    number of walkers after load: 160 
+Using buffers for temporary storage in QMCCostFunction.
+
+Memory usage: 
+Linear method (approx matrix usage: 4*N^2): 6.6355200000e-01 MB
+Deriv,HDerivRecord:      5.5296000000e-01 MB
+Buffer memory cost:     MB/walker       MB/total 
+Orbitals only:           2.5600000000e-04      4.0960000000e-02
+Orbitals + dervs:        8.0000000000e-04      1.2800000000e-01
+Inverse:                 0.0000000000e+00      0.0000000000e+00
+Determinants:            0.0000000000e+00      0.0000000000e+00
+  VMC Eavg = 5.0076631411e+00
+  VMC Evar = 3.0368782577e+03
+  Total weights = 5.1200000000e+04
+  Execution time = 3.8347156899e-01
+  </log>
+</opt>
+<opt stage="main" walkers="51200">
+  <log>
+Iteration: 1/1
+od_largest 7.6420685392e+08
+  stabilityBase -6.0000000000e+00
+  stabilizerScale 2.0000000000e+00
+  Using XS:-6.0000000000e+00 0 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+  Failed Step. Largest LM parameter change:1.9969869104e+03
+ERROR   Using XS:-4.0000000000e+00 1 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+  Failed Step. Largest LM parameter change:1.9972555952e+03
+ERROR   Using XS:-2.0000000000e+00 2 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+  Failed Step. Largest LM parameter change:1.9994854972e+03
+ERROR   Using XS:0.0000000000e+00 3 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+  Failed Step. Largest LM parameter change:2.0918448753e+03
+ERROR   Using XS:2.0000000000e+00 4 0
+ERROR CostFunction-> Number of Effective Walkers is too small 6.6164428536e+00 NumWalkersEff/NumSamples 1.2922739948e-04
+ERROR CostFunction-> Number of Effective Walkers is too small 2.8764029361e+00 NumWalkersEff/NumSamples 5.6179744847e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.3883388694e+01 NumWalkersEff/NumSamples 2.7115993543e-04
+ERROR CostFunction-> Number of Effective Walkers is too small 6.6164428536e+00 NumWalkersEff/NumSamples 1.2922739948e-04
+  Failed Step. Largest LM parameter change:4.7098364938e+02
+ERROR   Using XS:4.0000000000e+00 5 0
+  Good Step. Largest LM parameter change:4.5242026281e+00
+ OldCost: -1.6375738827e+01 NewCost: -1.6375781801e+01 Delta Cost:-4.2974222094e-05
+      Current ene:     -1.7248687793e+01
+      Current var:     2.0943204564e-01
+      Current ene_urw:     -1.7248943483e+01
+      Current var_urw: 2.0939761095e-01
+Setting new Parameters
+ERROR   Execution time = 6.2340720130e+00
+  </log>
+  <optVariables href="jopt-h2o.s003.opt.xml">
+uu_0 9.6077629285e-01 1 1  ON 0
+uu_1 8.1106735238e-01 1 1  ON 1
+uu_2 6.9872499282e-01 1 1  ON 2
+uu_3 6.1666903226e-01 1 1  ON 3
+uu_4 5.5348973027e-01 1 1  ON 4
+uu_5 5.0842199501e-01 1 1  ON 5
+uu_6 4.7460827949e-01 1 1  ON 6
+uu_7 4.4678453329e-01 1 1  ON 7
+uu_8 3.7325712251e-01 1 1  ON 8
+uu_9 1.9052523296e-01 1 1  ON 9
+ud_0 9.0527172449e-01 1 1  ON 10
+ud_1 5.7614182323e-01 1 1  ON 11
+ud_2 3.7146328509e-01 1 1  ON 12
+ud_3 2.6842623257e-01 1 1  ON 13
+ud_4 2.2065094387e-01 1 1  ON 14
+ud_5 1.7951343046e-01 1 1  ON 15
+ud_6 1.4469203644e-01 1 1  ON 16
+ud_7 9.1506933327e-02 1 1  ON 17
+ud_8 4.9929919045e-02 1 1  ON 18
+ud_9 8.6874875337e-02 1 1  ON 19
+eO_0 -5.6179131719e-01 1 1  ON 20
+eO_1 -8.3723751402e-02 1 1  ON 21
+eO_2 1.1177419442e+00 1 1  ON 22
+eO_3 2.5112490358e+00 1 1  ON 23
+eO_4 3.6793600361e+00 1 1  ON 24
+eO_5 4.4454306353e+00 1 1  ON 25
+eO_6 4.7002150546e+00 1 1  ON 26
+eO_7 4.9287303380e+00 1 1  ON 27
+eO_8 4.7923430393e+00 1 1  ON 28
+eO_9 4.6844039290e+00 1 1  ON 29
+eH_0 -1.4510740834e+00 1 1  ON 30
+eH_1 -1.4572448977e+00 1 1  ON 31
+eH_2 -1.4612302662e+00 1 1  ON 32
+eH_3 -1.4616997901e+00 1 1  ON 33
+eH_4 -1.4578274124e+00 1 1  ON 34
+eH_5 -1.4382873253e+00 1 1  ON 35
+eH_6 -1.4364321878e+00 1 1  ON 36
+eH_7 -1.4385637186e+00 1 1  ON 37
+eH_8 -1.3534213298e+00 1 1  ON 38
+eH_9 -1.1786814780e+00 1 1  ON 39
+uuO_0 8.7241781860e-06 1 1  ON 40
+uuO_1 6.1470060188e-06 1 1  ON 41
+uuO_2 -2.7694638359e-06 1 1  ON 42
+uuO_3 -9.4125033591e-06 1 1  ON 43
+uuO_4 -7.7210056694e-07 1 1  ON 44
+uuO_5 1.0849844213e-05 1 1  ON 45
+uuO_6 1.6250325220e-06 1 1  ON 46
+uuO_7 -8.2015476251e-06 1 1  ON 47
+uuO_8 1.5058783845e-06 1 1  ON 48
+uuO_9 -9.3358838630e-06 1 1  ON 49
+uuO_10 -6.2266727180e-06 1 1  ON 50
+uuO_11 1.9522205949e-06 1 1  ON 51
+uuO_12 -8.8724895342e-09 1 1  ON 52
+uuO_13 9.6057727873e-06 1 1  ON 53
+uuO_14 -1.2163511212e-06 1 1  ON 54
+uuO_15 1.9255871231e-07 1 1  ON 55
+uuO_16 1.8899289612e-05 1 1  ON 56
+uuO_17 3.7623291642e-07 1 1  ON 57
+uuO_18 1.7342443162e-06 1 1  ON 58
+uuO_19 -6.9829402868e-07 1 1  ON 59
+uuO_20 -6.3883062382e-06 1 1  ON 60
+uuO_21 1.9650396101e-07 1 1  ON 61
+uuO_22 3.3137557633e-08 1 1  ON 62
+uuO_23 2.5859148395e-06 1 1  ON 63
+uuO_24 -1.0442663899e-07 1 1  ON 64
+uuO_25 -3.1706810092e-09 1 1  ON 65
+udO_0 5.1805945102e-07 1 1  ON 66
+udO_1 2.5361566721e-05 1 1  ON 67
+udO_2 1.7539168143e-05 1 1  ON 68
+udO_3 -1.4034250827e-05 1 1  ON 69
+udO_4 -5.2784953435e-06 1 1  ON 70
+udO_5 1.0176912166e-05 1 1  ON 71
+udO_6 3.6456446583e-05 1 1  ON 72
+udO_7 -4.9678944650e-06 1 1  ON 73
+udO_8 1.4018600013e-05 1 1  ON 74
+udO_9 -1.7545461973e-05 1 1  ON 75
+udO_10 -8.7977387627e-06 1 1  ON 76
+udO_11 -3.4157265945e-06 1 1  ON 77
+udO_12 -5.2095495842e-06 1 1  ON 78
+udO_13 3.9698295045e-06 1 1  ON 79
+udO_14 2.3052241307e-06 1 1  ON 80
+udO_15 3.0565140827e-07 1 1  ON 81
+udO_16 3.0428505239e-05 1 1  ON 82
+udO_17 -3.3287170391e-07 1 1  ON 83
+udO_18 -2.2387827721e-06 1 1  ON 84
+udO_19 3.4669542116e-06 1 1  ON 85
+udO_20 -4.5794911516e-06 1 1  ON 86
+udO_21 4.2229942864e-07 1 1  ON 87
+udO_22 -4.8106542021e-07 1 1  ON 88
+udO_23 2.5419118457e-06 1 1  ON 89
+udO_24 -4.1424671718e-07 1 1  ON 90
+udO_25 1.0937208169e-07 1 1  ON 91
+uuH_0 1.3782196225e-05 1 1  ON 92
+uuH_1 1.0294543859e-05 1 1  ON 93
+uuH_2 -8.6850574409e-06 1 1  ON 94
+uuH_3 -7.2069276932e-06 1 1  ON 95
+uuH_4 1.4239703187e-06 1 1  ON 96
+uuH_5 -3.4792056744e-07 1 1  ON 97
+uuH_6 4.2134738196e-06 1 1  ON 98
+uuH_7 -7.3951295233e-06 1 1  ON 99
+uuH_8 -7.8556629036e-06 1 1  ON 100
+uuH_9 -1.8076133321e-05 1 1  ON 101
+uuH_10 -3.0511280702e-06 1 1  ON 102
+uuH_11 3.9709561645e-06 1 1  ON 103
+uuH_12 3.2561996214e-06 1 1  ON 104
+uuH_13 7.4803176218e-06 1 1  ON 105
+uuH_14 -2.9035411521e-06 1 1  ON 106
+uuH_15 -2.5422879908e-08 1 1  ON 107
+uuH_16 2.7097400611e-05 1 1  ON 108
+uuH_17 -5.7045497121e-06 1 1  ON 109
+uuH_18 1.5720637664e-06 1 1  ON 110
+uuH_19 -2.0314643751e-06 1 1  ON 111
+uuH_20 -7.6360990463e-06 1 1  ON 112
+uuH_21 8.4790590061e-07 1 1  ON 113
+uuH_22 9.2417141418e-08 1 1  ON 114
+uuH_23 2.0642531087e-06 1 1  ON 115
+uuH_24 -2.8581836487e-07 1 1  ON 116
+uuH_25 2.2936760356e-08 1 1  ON 117
+udH_0 1.6176426329e-06 1 1  ON 118
+udH_1 -1.6735922833e-05 1 1  ON 119
+udH_2 -3.5234216788e-06 1 1  ON 120
+udH_3 1.4458511045e-06 1 1  ON 121
+udH_4 1.7797914031e-07 1 1  ON 122
+udH_5 7.8000658090e-07 1 1  ON 123
+udH_6 -1.4213847325e-05 1 1  ON 124
+udH_7 -2.5621917821e-06 1 1  ON 125
+udH_8 -4.2511359013e-06 1 1  ON 126
+udH_9 5.6299062507e-06 1 1  ON 127
+udH_10 3.6651307995e-07 1 1  ON 128
+udH_11 3.6022442975e-06 1 1  ON 129
+udH_12 1.0680872299e-06 1 1  ON 130
+udH_13 1.0736623601e-06 1 1  ON 131
+udH_14 -1.3297734377e-06 1 1  ON 132
+udH_15 3.2664847852e-08 1 1  ON 133
+udH_16 7.9886254223e-06 1 1  ON 134
+udH_17 -1.3919989105e-06 1 1  ON 135
+udH_18 -2.5603035451e-06 1 1  ON 136
+udH_19 -2.2163030176e-07 1 1  ON 137
+udH_20 -3.9605362159e-06 1 1  ON 138
+udH_21 1.0451669086e-06 1 1  ON 139
+udH_22 -9.7421649530e-08 1 1  ON 140
+udH_23 1.3522454196e-06 1 1  ON 141
+udH_24 -3.5045266224e-07 1 1  ON 142
+udH_25 5.1496662689e-08 1 1  ON 143
+  </optVariables>
+   Restore the number of walkers to 1, removing 159 walkers.
+</opt>
+</optimization-report>
+  QMC Execution time = 6.2464065310e+00 secs 
+  Reusing QMCFixedSampleLinearOptimize
+ Using QMCCostFunctionOMP::QMCCostFunctionOMP
+
+=========================================================
+  Start QMCFixedSampleLinearOptimize
+  File Root jopt-h2o.s004 append = no 
+=========================================================
+  Skip QMCDriver::putQMCInfo 
+  Resetting Properties of the walkers 1 x 14
+
+=========================================================
+  Start VMCSingleOMP
+  File Root jopt-h2o.s004 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 14
+
+<vmc function="put">
+  qmc_counter=4  my_counter=4
+  time step      = 5.0000000000e-01
+  blocks         = 100
+  steps          = 2
+  substeps       = 20
+  current        = 0
+  target samples = 5.1200000000e+04
+  walkers/mpi    = 1
+
+  stepsbetweensamples = 1
+<parameter name="blocks" condition="int">100</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">5.1200000000e+04</parameter>
+<parameter name="samplesperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="steps" condition="int">2</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">20</parameter>
+<parameter name="substeps" condition="int">20</parameter>
+<parameter name="tau" condition="au">5.0000000000e-01</parameter>
+<parameter name="time_step" condition="au">5.0000000000e-01</parameter>
+<parameter name="timestep" condition="au">5.0000000000e-01</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">1</parameter>
+<parameter name="warmup_steps" condition="int">25</parameter>
+<parameter name="warmupsteps" condition="int">25</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1 steps.
+</vmc>
+  EstimatorManager::add replace LocalEnergy estimator.
+  EstimatorManager::add replace LocalEnergy estimator.
+<optimization-report>
+<vmc stage="main" blocks="100">
+  Cannot make clones again. Use existing 1 clones
+  Initial partition of walkers 0 1 
+  Total Sample Size   =51200
+  Walker distribution on root = 0 1 
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 4
+    time step          = 0.5
+    reference energy   = -17.2351
+    reference variance = 0.489393
+====================================================
+  Execution time = 1.4360136280e+00
+</vmc>
+<opt stage="setup">
+  <log>
+   Reading configurations from h5FileRoot jopt-h2o.s004
+  QMCCostFunctionOMP is created with 1
+   Loading configuration from MCWalkerConfiguration::SampleStack 
+    number of walkers before load 1
+  Using Nonlocal PP in Opt: NonLocalECP
+    number of walkers after load: 160 
+Using buffers for temporary storage in QMCCostFunction.
+
+Memory usage: 
+Linear method (approx matrix usage: 4*N^2): 6.6355200000e-01 MB
+Deriv,HDerivRecord:      5.5296000000e-01 MB
+Buffer memory cost:     MB/walker       MB/total 
+Orbitals only:           2.5600000000e-04      4.0960000000e-02
+Orbitals + dervs:        8.0000000000e-04      1.2800000000e-01
+Inverse:                 0.0000000000e+00      0.0000000000e+00
+Determinants:            0.0000000000e+00      0.0000000000e+00
+  VMC Eavg = 4.1391136616e+00
+  VMC Evar = 3.7147728227e+03
+  Total weights = 5.1200000000e+04
+  Execution time = 4.1823860501e-01
+  </log>
+</opt>
+<opt stage="main" walkers="51200">
+  <log>
+Iteration: 1/1
+od_largest 7.5854791228e+07
+  stabilityBase -6.0000000000e+00
+  stabilizerScale 2.0000000000e+00
+  Using XS:-6.0000000000e+00 0 0
+  Good Step. Largest LM parameter change:1.1269037663e+00
+ OldCost: -1.6372337608e+01 NewCost: -1.6375120453e+01 Delta Cost:-2.7828449046e-03
+      Current ene:     -1.7248197725e+01
+      Current var:     2.1334772389e-01
+      Current ene_urw:     -1.7245701507e+01
+      Current var_urw: 2.2327264710e-01
+Setting new Parameters
+ERROR   Execution time = 2.9393730270e+00
+  </log>
+  <optVariables href="jopt-h2o.s004.opt.xml">
+uu_0 7.6355486557e-01 1 1  ON 0
+uu_1 6.1789962542e-01 1 1  ON 1
+uu_2 5.2118066065e-01 1 1  ON 2
+uu_3 4.5124513947e-01 1 1  ON 3
+uu_4 3.8798839050e-01 1 1  ON 4
+uu_5 3.3430057352e-01 1 1  ON 5
+uu_6 3.0223801800e-01 1 1  ON 6
+uu_7 2.6378011786e-01 1 1  ON 7
+uu_8 2.3606911513e-01 1 1  ON 8
+uu_9 1.6780633900e-01 1 1  ON 9
+ud_0 9.3116369764e-01 1 1  ON 10
+ud_1 6.1055665939e-01 1 1  ON 11
+ud_2 4.1531245394e-01 1 1  ON 12
+ud_3 3.1147194379e-01 1 1  ON 13
+ud_4 2.6019386446e-01 1 1  ON 14
+ud_5 2.2158287010e-01 1 1  ON 15
+ud_6 1.7757290455e-01 1 1  ON 16
+ud_7 1.1275099885e-01 1 1  ON 17
+ud_8 7.7145861023e-02 1 1  ON 18
+ud_9 5.7679525377e-02 1 1  ON 19
+eO_0 -1.5478647934e+00 1 1  ON 20
+eO_1 -1.1372772051e+00 1 1  ON 21
+eO_2 -9.1618221516e-03 1 1  ON 22
+eO_3 1.4403317727e+00 1 1  ON 23
+eO_4 2.7775559950e+00 1 1  ON 24
+eO_5 3.6947586826e+00 1 1  ON 25
+eO_6 3.8470606133e+00 1 1  ON 26
+eO_7 4.1485860237e+00 1 1  ON 27
+eO_8 3.6784354420e+00 1 1  ON 28
+eO_9 4.4735409472e+00 1 1  ON 29
+eH_0 -1.4262868643e+00 1 1  ON 30
+eH_1 -1.4323879424e+00 1 1  ON 31
+eH_2 -1.4527677367e+00 1 1  ON 32
+eH_3 -1.4516313945e+00 1 1  ON 33
+eH_4 -1.4320170367e+00 1 1  ON 34
+eH_5 -1.4004997307e+00 1 1  ON 35
+eH_6 -1.4064925676e+00 1 1  ON 36
+eH_7 -1.3751942781e+00 1 1  ON 37
+eH_8 -1.2120008244e+00 1 1  ON 38
+eH_9 -1.1498333069e+00 1 1  ON 39
+uuO_0 9.4358531840e-06 1 1  ON 40
+uuO_1 9.9931734363e-06 1 1  ON 41
+uuO_2 -3.9597552445e-06 1 1  ON 42
+uuO_3 -1.1596818989e-05 1 1  ON 43
+uuO_4 -2.5573304391e-06 1 1  ON 44
+uuO_5 1.2099899033e-05 1 1  ON 45
+uuO_6 7.7603038010e-07 1 1  ON 46
+uuO_7 -3.3574011848e-06 1 1  ON 47
+uuO_8 5.1131137923e-06 1 1  ON 48
+uuO_9 -8.5525290650e-06 1 1  ON 49
+uuO_10 -9.9162248720e-06 1 1  ON 50
+uuO_11 6.6251267934e-07 1 1  ON 51
+uuO_12 -2.1522009355e-06 1 1  ON 52
+uuO_13 1.2480069885e-05 1 1  ON 53
+uuO_14 1.0555112053e-06 1 1  ON 54
+uuO_15 1.6321332372e-07 1 1  ON 55
+uuO_16 2.3725389658e-05 1 1  ON 56
+uuO_17 5.7878590227e-06 1 1  ON 57
+uuO_18 2.9318586429e-07 1 1  ON 58
+uuO_19 6.6564593301e-07 1 1  ON 59
+uuO_20 -8.4152423769e-06 1 1  ON 60
+uuO_21 -3.2239229341e-08 1 1  ON 61
+uuO_22 -3.9445522965e-08 1 1  ON 62
+uuO_23 3.3649180812e-06 1 1  ON 63
+uuO_24 -1.6892646717e-07 1 1  ON 64
+uuO_25 2.8731798703e-09 1 1  ON 65
+udO_0 -5.7445638632e-06 1 1  ON 66
+udO_1 2.3742466564e-05 1 1  ON 67
+udO_2 2.9879769514e-05 1 1  ON 68
+udO_3 -7.2092407574e-06 1 1  ON 69
+udO_4 -5.4637930638e-06 1 1  ON 70
+udO_5 1.1113897247e-05 1 1  ON 71
+udO_6 4.2796206907e-05 1 1  ON 72
+udO_7 2.5309970950e-06 1 1  ON 73
+udO_8 2.4373345703e-05 1 1  ON 74
+udO_9 -1.9272919163e-05 1 1  ON 75
+udO_10 -1.8840337732e-06 1 1  ON 76
+udO_11 -2.2130117495e-05 1 1  ON 77
+udO_12 -6.2619145467e-06 1 1  ON 78
+udO_13 -2.4006899651e-06 1 1  ON 79
+udO_14 3.4338446499e-06 1 1  ON 80
+udO_15 3.0329079832e-07 1 1  ON 81
+udO_16 3.7252284951e-05 1 1  ON 82
+udO_17 -1.6054970702e-05 1 1  ON 83
+udO_18 1.6447306663e-05 1 1  ON 84
+udO_19 1.8264110945e-06 1 1  ON 85
+udO_20 -3.1912082360e-06 1 1  ON 86
+udO_21 -2.3170767955e-06 1 1  ON 87
+udO_22 -5.3708342373e-08 1 1  ON 88
+udO_23 2.3101025757e-06 1 1  ON 89
+udO_24 1.2691532093e-07 1 1  ON 90
+udO_25 -3.7069942307e-09 1 1  ON 91
+uuH_0 6.0762736037e-07 1 1  ON 92
+uuH_1 7.5882834947e-06 1 1  ON 93
+uuH_2 1.0808830649e-05 1 1  ON 94
+uuH_3 1.6420824484e-07 1 1  ON 95
+uuH_4 -6.1800363871e-07 1 1  ON 96
+uuH_5 -8.3708854644e-07 1 1  ON 97
+uuH_6 1.6339716870e-05 1 1  ON 98
+uuH_7 3.8444238385e-06 1 1  ON 99
+uuH_8 8.9221792936e-06 1 1  ON 100
+uuH_9 -1.6490854067e-05 1 1  ON 101
+uuH_10 3.0659443760e-06 1 1  ON 102
+uuH_11 -1.5684173568e-05 1 1  ON 103
+uuH_12 -3.3920725185e-07 1 1  ON 104
+uuH_13 -2.2806193911e-07 1 1  ON 105
+uuH_14 2.2055676651e-07 1 1  ON 106
+uuH_15 2.7850130320e-08 1 1  ON 107
+uuH_16 2.3940064589e-05 1 1  ON 108
+uuH_17 -1.4107857376e-05 1 1  ON 109
+uuH_18 1.5485777064e-05 1 1  ON 110
+uuH_19 -1.6315534714e-06 1 1  ON 111
+uuH_20 -3.4810645466e-06 1 1  ON 112
+uuH_21 -1.7970364805e-06 1 1  ON 113
+uuH_22 2.8627665976e-07 1 1  ON 114
+uuH_23 7.7374206912e-07 1 1  ON 115
+uuH_24 3.3133810418e-07 1 1  ON 116
+uuH_25 -6.2936279107e-08 1 1  ON 117
+udH_0 -2.3207374720e-06 1 1  ON 118
+udH_1 -1.7151118765e-05 1 1  ON 119
+udH_2 3.6763301548e-06 1 1  ON 120
+udH_3 9.0638553917e-07 1 1  ON 121
+udH_4 -1.5244915788e-06 1 1  ON 122
+udH_5 1.0460791106e-06 1 1  ON 123
+udH_6 -1.5366126169e-05 1 1  ON 124
+udH_7 9.6934163950e-06 1 1  ON 125
+udH_8 6.4230445279e-06 1 1  ON 126
+udH_9 9.2114466030e-06 1 1  ON 127
+udH_10 5.4187221019e-07 1 1  ON 128
+udH_11 -9.0010380003e-06 1 1  ON 129
+udH_12 -1.1804295889e-06 1 1  ON 130
+udH_13 7.7169922666e-07 1 1  ON 131
+udH_14 1.2462354448e-06 1 1  ON 132
+udH_15 8.8306963845e-09 1 1  ON 133
+udH_16 2.4380362004e-06 1 1  ON 134
+udH_17 -2.3878020729e-06 1 1  ON 135
+udH_18 6.6964187270e-06 1 1  ON 136
+udH_19 -2.8495973371e-07 1 1  ON 137
+udH_20 -2.7840800077e-06 1 1  ON 138
+udH_21 -6.8448579350e-07 1 1  ON 139
+udH_22 4.9172458606e-08 1 1  ON 140
+udH_23 1.0800479057e-06 1 1  ON 141
+udH_24 -2.5993858736e-08 1 1  ON 142
+udH_25 1.3873504201e-08 1 1  ON 143
+  </optVariables>
+   Restore the number of walkers to 1, removing 159 walkers.
+</opt>
+</optimization-report>
+  QMC Execution time = 2.9517560700e+00 secs 
+  Reusing QMCFixedSampleLinearOptimize
+ Using QMCCostFunctionOMP::QMCCostFunctionOMP
+
+=========================================================
+  Start QMCFixedSampleLinearOptimize
+  File Root jopt-h2o.s005 append = no 
+=========================================================
+  Skip QMCDriver::putQMCInfo 
+  Resetting Properties of the walkers 1 x 14
+
+=========================================================
+  Start VMCSingleOMP
+  File Root jopt-h2o.s005 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 14
+
+<vmc function="put">
+  qmc_counter=5  my_counter=5
+  time step      = 5.0000000000e-01
+  blocks         = 100
+  steps          = 2
+  substeps       = 20
+  current        = 0
+  target samples = 5.1200000000e+04
+  walkers/mpi    = 1
+
+  stepsbetweensamples = 1
+<parameter name="blocks" condition="int">100</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">5.1200000000e+04</parameter>
+<parameter name="samplesperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="steps" condition="int">2</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">20</parameter>
+<parameter name="substeps" condition="int">20</parameter>
+<parameter name="tau" condition="au">5.0000000000e-01</parameter>
+<parameter name="time_step" condition="au">5.0000000000e-01</parameter>
+<parameter name="timestep" condition="au">5.0000000000e-01</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">1</parameter>
+<parameter name="warmup_steps" condition="int">25</parameter>
+<parameter name="warmupsteps" condition="int">25</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1 steps.
+</vmc>
+  EstimatorManager::add replace LocalEnergy estimator.
+  EstimatorManager::add replace LocalEnergy estimator.
+<optimization-report>
+<vmc stage="main" blocks="100">
+  Cannot make clones again. Use existing 1 clones
+  Initial partition of walkers 0 1 
+  Total Sample Size   =51200
+  Walker distribution on root = 0 1 
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 5
+    time step          = 0.5
+    reference energy   = -17.2664
+    reference variance = 0.544784
+====================================================
+  Execution time = 1.4369157860e+00
+</vmc>
+<opt stage="setup">
+  <log>
+   Reading configurations from h5FileRoot jopt-h2o.s005
+  QMCCostFunctionOMP is created with 1
+   Loading configuration from MCWalkerConfiguration::SampleStack 
+    number of walkers before load 1
+  Using Nonlocal PP in Opt: NonLocalECP
+    number of walkers after load: 160 
+Using buffers for temporary storage in QMCCostFunction.
+
+Memory usage: 
+Linear method (approx matrix usage: 4*N^2): 6.6355200000e-01 MB
+Deriv,HDerivRecord:      5.5296000000e-01 MB
+Buffer memory cost:     MB/walker       MB/total 
+Orbitals only:           2.5600000000e-04      4.0960000000e-02
+Orbitals + dervs:        8.0000000000e-04      1.2800000000e-01
+Inverse:                 0.0000000000e+00      0.0000000000e+00
+Determinants:            0.0000000000e+00      0.0000000000e+00
+  VMC Eavg = 1.3044115718e+01
+  VMC Evar = 5.5482155033e+03
+  Total weights = 5.1200000000e+04
+  Execution time = 3.8526598099e-01
+  </log>
+</opt>
+<opt stage="main" walkers="51200">
+  <log>
+Iteration: 1/1
+od_largest 9.2163631524e+07
+  stabilityBase -6.0000000000e+00
+  stabilizerScale 2.0000000000e+00
+  Using XS:-6.0000000000e+00 0 0
+  Good Step. Largest LM parameter change:1.9441768130e+00
+ OldCost: -1.6375408481e+01 NewCost: -1.6377406344e+01 Delta Cost:-1.9978637841e-03
+      Current ene:     -1.7250056622e+01
+      Current var:     2.0294893292e-01
+      Current ene_urw:     -1.7249400115e+01
+      Current var_urw: 2.0508401352e-01
+Setting new Parameters
+ERROR   Execution time = 2.9278485050e+00
+  </log>
+  <optVariables href="jopt-h2o.s005.opt.xml">
+uu_0 5.7117712070e-01 1 1  ON 0
+uu_1 4.2179435948e-01 1 1  ON 1
+uu_2 3.2765176393e-01 1 1  ON 2
+uu_3 2.6133903305e-01 1 1  ON 3
+uu_4 2.0998927180e-01 1 1  ON 4
+uu_5 1.6531256695e-01 1 1  ON 5
+uu_6 1.3731515557e-01 1 1  ON 6
+uu_7 1.0215730208e-01 1 1  ON 7
+uu_8 7.4100694032e-02 1 1  ON 8
+uu_9 1.6180925342e-01 1 1  ON 9
+ud_0 9.0778962466e-01 1 1  ON 10
+ud_1 5.9845691534e-01 1 1  ON 11
+ud_2 4.3129720897e-01 1 1  ON 12
+ud_3 3.5552193890e-01 1 1  ON 13
+ud_4 3.1978140667e-01 1 1  ON 14
+ud_5 2.9217715179e-01 1 1  ON 15
+ud_6 2.4483094725e-01 1 1  ON 16
+ud_7 1.9819511390e-01 1 1  ON 17
+ud_8 1.1135154698e-01 1 1  ON 18
+ud_9 3.0719749202e-02 1 1  ON 19
+eO_0 -2.8773663036e+00 1 1  ON 20
+eO_1 -2.4450668932e+00 1 1  ON 21
+eO_2 -1.3410289170e+00 1 1  ON 22
+eO_3 1.9128654683e-02 1 1  ON 23
+eO_4 1.1758825021e+00 1 1  ON 24
+eO_5 1.7505818697e+00 1 1  ON 25
+eO_6 2.0033056234e+00 1 1  ON 26
+eO_7 2.3078442296e+00 1 1  ON 27
+eO_8 2.7822252804e+00 1 1  ON 28
+eO_9 4.0869710850e+00 1 1  ON 29
+eH_0 -9.4001365900e-01 1 1  ON 30
+eH_1 -9.6436329695e-01 1 1  ON 31
+eH_2 -9.6603206829e-01 1 1  ON 32
+eH_3 -9.6379102116e-01 1 1  ON 33
+eH_4 -9.6787231800e-01 1 1  ON 34
+eH_5 -9.8532908408e-01 1 1  ON 35
+eH_6 -9.9434383041e-01 1 1  ON 36
+eH_7 -1.0189931713e+00 1 1  ON 37
+eH_8 -1.1339893311e+00 1 1  ON 38
+eH_9 -1.0179109831e+00 1 1  ON 39
+uuO_0 8.9847738787e-06 1 1  ON 40
+uuO_1 8.7067726112e-06 1 1  ON 41
+uuO_2 -8.9671703517e-06 1 1  ON 42
+uuO_3 -1.3611155466e-05 1 1  ON 43
+uuO_4 -2.6853085816e-06 1 1  ON 44
+uuO_5 9.9621621511e-06 1 1  ON 45
+uuO_6 -3.5307331032e-06 1 1  ON 46
+uuO_7 -2.0551189055e-06 1 1  ON 47
+uuO_8 -3.3398915318e-06 1 1  ON 48
+uuO_9 -2.9671312935e-06 1 1  ON 49
+uuO_10 -1.2700150642e-05 1 1  ON 50
+uuO_11 9.5537162540e-06 1 1  ON 51
+uuO_12 -9.6574160193e-08 1 1  ON 52
+uuO_13 9.4721166912e-06 1 1  ON 53
+uuO_14 -1.0995972167e-06 1 1  ON 54
+uuO_15 1.5080116177e-07 1 1  ON 55
+uuO_16 1.5574074483e-05 1 1  ON 56
+uuO_17 5.5735181440e-06 1 1  ON 57
+uuO_18 -6.4385438358e-06 1 1  ON 58
+uuO_19 4.1816798110e-07 1 1  ON 59
+uuO_20 -5.5926986764e-06 1 1  ON 60
+uuO_21 1.3699390212e-06 1 1  ON 61
+uuO_22 -1.8910727346e-07 1 1  ON 62
+uuO_23 2.8089732675e-06 1 1  ON 63
+uuO_24 -4.5509295502e-07 1 1  ON 64
+uuO_25 6.9538218876e-08 1 1  ON 65
+udO_0 -1.7858756990e-06 1 1  ON 66
+udO_1 2.6035222758e-05 1 1  ON 67
+udO_2 2.3343783663e-05 1 1  ON 68
+udO_3 -1.0737735473e-05 1 1  ON 69
+udO_4 -5.7536547092e-06 1 1  ON 70
+udO_5 1.0701949431e-05 1 1  ON 71
+udO_6 4.2793264722e-05 1 1  ON 72
+udO_7 -2.7370182322e-06 1 1  ON 73
+udO_8 2.2253115939e-05 1 1  ON 74
+udO_9 -2.2650377127e-05 1 1  ON 75
+udO_10 -6.1806245787e-06 1 1  ON 76
+udO_11 -1.2596615354e-05 1 1  ON 77
+udO_12 -7.0838717521e-06 1 1  ON 78
+udO_13 5.2789308880e-06 1 1  ON 79
+udO_14 4.5759986360e-06 1 1  ON 80
+udO_15 2.3878785481e-07 1 1  ON 81
+udO_16 3.4160913788e-05 1 1  ON 82
+udO_17 -1.1841502054e-07 1 1  ON 83
+udO_18 2.4054680496e-06 1 1  ON 84
+udO_19 4.0426768835e-06 1 1  ON 85
+udO_20 -6.1006278743e-06 1 1  ON 86
+udO_21 -5.2774999056e-07 1 1  ON 87
+udO_22 -4.3004451420e-07 1 1  ON 88
+udO_23 3.5887189182e-06 1 1  ON 89
+udO_24 -3.6686975395e-07 1 1  ON 90
+udO_25 9.3295707553e-08 1 1  ON 91
+uuH_0 1.5133493073e-05 1 1  ON 92
+uuH_1 2.6014689308e-05 1 1  ON 93
+uuH_2 -2.1987671847e-06 1 1  ON 94
+uuH_3 -1.6267152009e-05 1 1  ON 95
+uuH_4 -1.5708431689e-06 1 1  ON 96
+uuH_5 -1.7415112518e-06 1 1  ON 97
+uuH_6 2.5158998312e-05 1 1  ON 98
+uuH_7 -1.4997577479e-05 1 1  ON 99
+uuH_8 4.4117729407e-06 1 1  ON 100
+uuH_9 -3.2763815381e-05 1 1  ON 101
+uuH_10 -9.5387077924e-06 1 1  ON 102
+uuH_11 3.7378702454e-06 1 1  ON 103
+uuH_12 -7.1281275121e-07 1 1  ON 104
+uuH_13 2.2223478083e-05 1 1  ON 105
+uuH_14 6.0512672784e-07 1 1  ON 106
+uuH_15 -1.3856160806e-08 1 1  ON 107
+uuH_16 3.5071535884e-05 1 1  ON 108
+uuH_17 1.2594585486e-05 1 1  ON 109
+uuH_18 -5.5009090386e-06 1 1  ON 110
+uuH_19 1.8627537939e-07 1 1  ON 111
+uuH_20 -1.4613305265e-05 1 1  ON 112
+uuH_21 1.5833418481e-06 1 1  ON 113
+uuH_22 -1.5172503176e-07 1 1  ON 114
+uuH_23 3.9167419164e-06 1 1  ON 115
+uuH_24 -6.5698412034e-07 1 1  ON 116
+uuH_25 9.4017975657e-08 1 1  ON 117
+udH_0 -1.2994459660e-06 1 1  ON 118
+udH_1 -2.1167602067e-05 1 1  ON 119
+udH_2 -1.3400867287e-07 1 1  ON 120
+udH_3 4.5144570936e-06 1 1  ON 121
+udH_4 -3.4599757006e-07 1 1  ON 122
+udH_5 1.1990511901e-06 1 1  ON 123
+udH_6 -1.4792782106e-05 1 1  ON 124
+udH_7 -2.2267307488e-07 1 1  ON 125
+udH_8 -1.5494510352e-06 1 1  ON 126
+udH_9 8.4804296218e-06 1 1  ON 127
+udH_10 2.1942675511e-06 1 1  ON 128
+udH_11 -1.3427218187e-06 1 1  ON 129
+udH_12 5.6584198032e-07 1 1  ON 130
+udH_13 -1.7898910719e-06 1 1  ON 131
+udH_14 -8.7529801573e-07 1 1  ON 132
+udH_15 2.7751010953e-08 1 1  ON 133
+udH_16 9.3855143787e-06 1 1  ON 134
+udH_17 -6.2736852356e-06 1 1  ON 135
+udH_18 2.1284653459e-06 1 1  ON 136
+udH_19 -3.6506852760e-07 1 1  ON 137
+udH_20 -4.1911502338e-06 1 1  ON 138
+udH_21 4.2294385871e-07 1 1  ON 139
+udH_22 -4.8346911233e-08 1 1  ON 140
+udH_23 1.7900093065e-06 1 1  ON 141
+udH_24 -2.8197586895e-07 1 1  ON 142
+udH_25 4.5401683631e-08 1 1  ON 143
+  </optVariables>
+   Restore the number of walkers to 1, removing 159 walkers.
+</opt>
+</optimization-report>
+  QMC Execution time = 2.9399581630e+00 secs 
+  Reusing QMCFixedSampleLinearOptimize
+ Using QMCCostFunctionOMP::QMCCostFunctionOMP
+
+=========================================================
+  Start QMCFixedSampleLinearOptimize
+  File Root jopt-h2o.s006 append = no 
+=========================================================
+  Skip QMCDriver::putQMCInfo 
+  Resetting Properties of the walkers 1 x 14
+
+=========================================================
+  Start VMCSingleOMP
+  File Root jopt-h2o.s006 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 14
+
+<vmc function="put">
+  qmc_counter=6  my_counter=6
+  time step      = 5.0000000000e-01
+  blocks         = 100
+  steps          = 2
+  substeps       = 20
+  current        = 0
+  target samples = 5.1200000000e+04
+  walkers/mpi    = 1
+
+  stepsbetweensamples = 1
+<parameter name="blocks" condition="int">100</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">5.1200000000e+04</parameter>
+<parameter name="samplesperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="steps" condition="int">2</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">20</parameter>
+<parameter name="substeps" condition="int">20</parameter>
+<parameter name="tau" condition="au">5.0000000000e-01</parameter>
+<parameter name="time_step" condition="au">5.0000000000e-01</parameter>
+<parameter name="timestep" condition="au">5.0000000000e-01</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">1</parameter>
+<parameter name="warmup_steps" condition="int">25</parameter>
+<parameter name="warmupsteps" condition="int">25</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1 steps.
+</vmc>
+  EstimatorManager::add replace LocalEnergy estimator.
+  EstimatorManager::add replace LocalEnergy estimator.
+<optimization-report>
+<vmc stage="main" blocks="100">
+  Cannot make clones again. Use existing 1 clones
+  Initial partition of walkers 0 1 
+  Total Sample Size   =51200
+  Walker distribution on root = 0 1 
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 6
+    time step          = 0.5
+    reference energy   = -17.1964
+    reference variance = 0.67505
+====================================================
+  Execution time = 1.4402426950e+00
+</vmc>
+<opt stage="setup">
+  <log>
+   Reading configurations from h5FileRoot jopt-h2o.s006
+  QMCCostFunctionOMP is created with 1
+   Loading configuration from MCWalkerConfiguration::SampleStack 
+    number of walkers before load 1
+  Using Nonlocal PP in Opt: NonLocalECP
+    number of walkers after load: 160 
+Using buffers for temporary storage in QMCCostFunction.
+
+Memory usage: 
+Linear method (approx matrix usage: 4*N^2): 6.6355200000e-01 MB
+Deriv,HDerivRecord:      5.5296000000e-01 MB
+Buffer memory cost:     MB/walker       MB/total 
+Orbitals only:           2.5600000000e-04      4.0960000000e-02
+Orbitals + dervs:        8.0000000000e-04      1.2800000000e-01
+Inverse:                 0.0000000000e+00      0.0000000000e+00
+Determinants:            0.0000000000e+00      0.0000000000e+00
+  VMC Eavg = 3.2231760965e+00
+  VMC Evar = 2.9525247432e+03
+  Total weights = 5.1200000000e+04
+  Execution time = 4.0438862200e-01
+  </log>
+</opt>
+<opt stage="main" walkers="51200">
+  <log>
+Iteration: 1/1
+od_largest 1.4967368123e+12
+  stabilityBase -6.0000000000e+00
+  stabilizerScale 2.0000000000e+00
+  Using XS:-6.0000000000e+00 0 0
+  Good Step. Largest LM parameter change:5.8994708929e-01
+ OldCost: -1.6377173230e+01 NewCost: -1.6377199241e+01 Delta Cost:-2.6010622392e-05
+      Current ene:     -1.7251123574e+01
+      Current var:     2.2736308242e-01
+      Current ene_urw:     -1.7251115152e+01
+      Current var_urw: 2.2757446728e-01
+Setting new Parameters
+ERROR   Execution time = 2.9311698700e+00
+  </log>
+  <optVariables href="jopt-h2o.s006.opt.xml">
+uu_0 5.0206670129e-01 1 1  ON 0
+uu_1 3.5232867910e-01 1 1  ON 1
+uu_2 2.5553770803e-01 1 1  ON 2
+uu_3 1.8659817679e-01 1 1  ON 3
+uu_4 1.3307469669e-01 1 1  ON 4
+uu_5 8.7375000530e-02 1 1  ON 5
+uu_6 5.7698489502e-02 1 1  ON 6
+uu_7 2.2938428337e-02 1 1  ON 7
+uu_8 -6.4272184922e-03 1 1  ON 8
+uu_9 7.0834894996e-02 1 1  ON 9
+ud_0 8.9998642351e-01 1 1  ON 10
+ud_1 5.8941979299e-01 1 1  ON 11
+ud_2 4.2049638607e-01 1 1  ON 12
+ud_3 3.4337441001e-01 1 1  ON 13
+ud_4 3.0668203316e-01 1 1  ON 14
+ud_5 2.7729376353e-01 1 1  ON 15
+ud_6 2.2920525943e-01 1 1  ON 16
+ud_7 1.7910362321e-01 1 1  ON 17
+ud_8 9.2986270363e-02 1 1  ON 18
+ud_9 2.0706969209e-02 1 1  ON 19
+eO_0 -3.0873438648e+00 1 1  ON 20
+eO_1 -2.6501323129e+00 1 1  ON 21
+eO_2 -1.5368044648e+00 1 1  ON 22
+eO_3 -1.6674256135e-01 1 1  ON 23
+eO_4 1.0147032247e+00 1 1  ON 24
+eO_5 1.6199342989e+00 1 1  ON 25
+eO_6 1.8924436941e+00 1 1  ON 26
+eO_7 2.0612502390e+00 1 1  ON 27
+eO_8 2.9218366402e+00 1 1  ON 28
+eO_9 4.6769181743e+00 1 1  ON 29
+eH_0 -8.6664234192e-01 1 1  ON 30
+eH_1 -8.8463965117e-01 1 1  ON 31
+eH_2 -8.8737344403e-01 1 1  ON 32
+eH_3 -8.8635091618e-01 1 1  ON 33
+eH_4 -8.8558206042e-01 1 1  ON 34
+eH_5 -8.9476508774e-01 1 1  ON 35
+eH_6 -9.0389941974e-01 1 1  ON 36
+eH_7 -9.2107237699e-01 1 1  ON 37
+eH_8 -1.0062583468e+00 1 1  ON 38
+eH_9 -8.7611247210e-01 1 1  ON 39
+uuO_0 8.6184006040e-06 1 1  ON 40
+uuO_1 7.3243511058e-06 1 1  ON 41
+uuO_2 -8.6034678946e-06 1 1  ON 42
+uuO_3 -1.1737296776e-05 1 1  ON 43
+uuO_4 -1.9551431829e-06 1 1  ON 44
+uuO_5 1.0213910184e-05 1 1  ON 45
+uuO_6 -5.4970312724e-06 1 1  ON 46
+uuO_7 -7.0712884776e-08 1 1  ON 47
+uuO_8 -3.7384063036e-06 1 1  ON 48
+uuO_9 -1.3598713044e-06 1 1  ON 49
+uuO_10 -1.0524231873e-05 1 1  ON 50
+uuO_11 6.5287312795e-06 1 1  ON 51
+uuO_12 5.1406076537e-07 1 1  ON 52
+uuO_13 6.2960254306e-06 1 1  ON 53
+uuO_14 -1.4521036327e-06 1 1  ON 54
+uuO_15 1.2607059917e-07 1 1  ON 55
+uuO_16 1.5406784978e-05 1 1  ON 56
+uuO_17 4.7830232145e-07 1 1  ON 57
+uuO_18 -2.0080953523e-06 1 1  ON 58
+uuO_19 -3.7832342944e-07 1 1  ON 59
+uuO_20 -4.1364404406e-06 1 1  ON 60
+uuO_21 6.8932292666e-07 1 1  ON 61
+uuO_22 -3.5136158031e-08 1 1  ON 62
+uuO_23 2.2868548343e-06 1 1  ON 63
+uuO_24 -2.6091177841e-07 1 1  ON 64
+uuO_25 2.6562899211e-08 1 1  ON 65
+udO_0 -1.5798479847e-06 1 1  ON 66
+udO_1 2.5127773054e-05 1 1  ON 67
+udO_2 2.1736645081e-05 1 1  ON 68
+udO_3 -1.0464124922e-05 1 1  ON 69
+udO_4 -5.3741230843e-06 1 1  ON 70
+udO_5 1.0855619796e-05 1 1  ON 71
+udO_6 4.0019504491e-05 1 1  ON 72
+udO_7 -2.2690123587e-06 1 1  ON 73
+udO_8 2.0147212735e-05 1 1  ON 74
+udO_9 -2.0498027368e-05 1 1  ON 75
+udO_10 -5.9798618082e-06 1 1  ON 76
+udO_11 -1.1192548477e-05 1 1  ON 77
+udO_12 -6.4790707995e-06 1 1  ON 78
+udO_13 4.3088538534e-06 1 1  ON 79
+udO_14 4.1034740761e-06 1 1  ON 80
+udO_15 2.2671147156e-07 1 1  ON 81
+udO_16 3.1275974586e-05 1 1  ON 82
+udO_17 -6.0107465083e-07 1 1  ON 83
+udO_18 1.9089936108e-06 1 1  ON 84
+udO_19 3.7840786912e-06 1 1  ON 85
+udO_20 -5.0781484103e-06 1 1  ON 86
+udO_21 -4.7804037420e-07 1 1  ON 87
+udO_22 -4.0327331222e-07 1 1  ON 88
+udO_23 3.2839022704e-06 1 1  ON 89
+udO_24 -3.3259143758e-07 1 1  ON 90
+udO_25 8.5215439467e-08 1 1  ON 91
+uuH_0 1.6192024509e-05 1 1  ON 92
+uuH_1 2.1462766100e-05 1 1  ON 93
+uuH_2 -7.2712469387e-06 1 1  ON 94
+uuH_3 -1.6036355126e-05 1 1  ON 95
+uuH_4 -9.4123841757e-07 1 1  ON 96
+uuH_5 -1.4334440592e-06 1 1  ON 97
+uuH_6 1.3575386905e-05 1 1  ON 98
+uuH_7 -1.2272602986e-05 1 1  ON 99
+uuH_8 1.0608912740e-06 1 1  ON 100
+uuH_9 -2.4891010038e-05 1 1  ON 101
+uuH_10 -9.6677644941e-06 1 1  ON 102
+uuH_11 6.8503416587e-06 1 1  ON 103
+uuH_12 -3.0760584780e-07 1 1  ON 104
+uuH_13 2.0993093463e-05 1 1  ON 105
+uuH_14 6.2921251547e-07 1 1  ON 106
+uuH_15 -5.2558793659e-08 1 1  ON 107
+uuH_16 2.4242391653e-05 1 1  ON 108
+uuH_17 1.5663846996e-05 1 1  ON 109
+uuH_18 -8.3568737782e-06 1 1  ON 110
+uuH_19 4.1771420362e-07 1 1  ON 111
+uuH_20 -1.2161554772e-05 1 1  ON 112
+uuH_21 1.7184242830e-06 1 1  ON 113
+uuH_22 -1.7821577681e-07 1 1  ON 114
+uuH_23 3.2614552511e-06 1 1  ON 115
+uuH_24 -6.2444092933e-07 1 1  ON 116
+uuH_25 9.3314659090e-08 1 1  ON 117
+udH_0 -1.5666263082e-06 1 1  ON 118
+udH_1 -2.1200732905e-05 1 1  ON 119
+udH_2 9.5622310817e-07 1 1  ON 120
+udH_3 5.1600658896e-06 1 1  ON 121
+udH_4 -1.3349128586e-07 1 1  ON 122
+udH_5 1.2599247250e-06 1 1  ON 123
+udH_6 -1.3653891567e-05 1 1  ON 124
+udH_7 -3.2571634645e-07 1 1  ON 125
+udH_8 -1.5703205724e-06 1 1  ON 126
+udH_9 7.3498896870e-06 1 1  ON 127
+udH_10 3.0356237341e-06 1 1  ON 128
+udH_11 -2.2592983650e-06 1 1  ON 129
+udH_12 9.3179617046e-07 1 1  ON 130
+udH_13 -2.1338306230e-06 1 1  ON 131
+udH_14 -1.2899930109e-06 1 1  ON 132
+udH_15 3.8300456161e-08 1 1  ON 133
+udH_16 1.1370754596e-05 1 1  ON 134
+udH_17 -8.2090700464e-06 1 1  ON 135
+udH_18 3.1036219391e-06 1 1  ON 136
+udH_19 -6.5595929218e-07 1 1  ON 137
+udH_20 -4.4782102312e-06 1 1  ON 138
+udH_21 5.0581046416e-07 1 1  ON 139
+udH_22 -4.2640147801e-08 1 1  ON 140
+udH_23 1.8905735245e-06 1 1  ON 141
+udH_24 -3.2298324726e-07 1 1  ON 142
+udH_25 5.1465375560e-08 1 1  ON 143
+  </optVariables>
+   Restore the number of walkers to 1, removing 159 walkers.
+</opt>
+</optimization-report>
+  QMC Execution time = 2.9436482690e+00 secs 
+  Reusing QMCFixedSampleLinearOptimize
+ Using QMCCostFunctionOMP::QMCCostFunctionOMP
+
+=========================================================
+  Start QMCFixedSampleLinearOptimize
+  File Root jopt-h2o.s007 append = no 
+=========================================================
+  Skip QMCDriver::putQMCInfo 
+  Resetting Properties of the walkers 1 x 14
+
+=========================================================
+  Start VMCSingleOMP
+  File Root jopt-h2o.s007 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 14
+
+<vmc function="put">
+  qmc_counter=7  my_counter=7
+  time step      = 5.0000000000e-01
+  blocks         = 100
+  steps          = 2
+  substeps       = 20
+  current        = 0
+  target samples = 5.1200000000e+04
+  walkers/mpi    = 1
+
+  stepsbetweensamples = 1
+<parameter name="blocks" condition="int">100</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">5.1200000000e+04</parameter>
+<parameter name="samplesperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="steps" condition="int">2</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">20</parameter>
+<parameter name="substeps" condition="int">20</parameter>
+<parameter name="tau" condition="au">5.0000000000e-01</parameter>
+<parameter name="time_step" condition="au">5.0000000000e-01</parameter>
+<parameter name="timestep" condition="au">5.0000000000e-01</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">1</parameter>
+<parameter name="warmup_steps" condition="int">25</parameter>
+<parameter name="warmupsteps" condition="int">25</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1 steps.
+</vmc>
+  EstimatorManager::add replace LocalEnergy estimator.
+  EstimatorManager::add replace LocalEnergy estimator.
+<optimization-report>
+<vmc stage="main" blocks="100">
+  Cannot make clones again. Use existing 1 clones
+  Initial partition of walkers 0 1 
+  Total Sample Size   =51200
+  Walker distribution on root = 0 1 
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 7
+    time step          = 0.5
+    reference energy   = -17.2365
+    reference variance = 0.473036
+====================================================
+  Execution time = 1.4322338380e+00
+</vmc>
+<opt stage="setup">
+  <log>
+   Reading configurations from h5FileRoot jopt-h2o.s007
+  QMCCostFunctionOMP is created with 1
+   Loading configuration from MCWalkerConfiguration::SampleStack 
+    number of walkers before load 1
+  Using Nonlocal PP in Opt: NonLocalECP
+    number of walkers after load: 160 
+Using buffers for temporary storage in QMCCostFunction.
+
+Memory usage: 
+Linear method (approx matrix usage: 4*N^2): 6.6355200000e-01 MB
+Deriv,HDerivRecord:      5.5296000000e-01 MB
+Buffer memory cost:     MB/walker       MB/total 
+Orbitals only:           2.5600000000e-04      4.0960000000e-02
+Orbitals + dervs:        8.0000000000e-04      1.2800000000e-01
+Inverse:                 0.0000000000e+00      0.0000000000e+00
+Determinants:            0.0000000000e+00      0.0000000000e+00
+  VMC Eavg = 4.4264412713e+00
+  VMC Evar = 3.0592388215e+03
+  Total weights = 5.1200000000e+04
+  Execution time = 4.1767824300e-01
+  </log>
+</opt>
+<opt stage="main" walkers="51200">
+  <log>
+Iteration: 1/1
+od_largest 1.0633460358e+08
+  stabilityBase -6.0000000000e+00
+  stabilizerScale 2.0000000000e+00
+  Using XS:-6.0000000000e+00 0 0
+  Good Step. Largest LM parameter change:1.7104597550e+00
+ OldCost: -1.6371698315e+01 NewCost: -1.6373736537e+01 Delta Cost:-2.0382228551e-03
+      Current ene:     -1.7247722326e+01
+      Current var:     2.3199344854e-01
+      Current ene_urw:     -1.7246888268e+01
+      Current var_urw: 2.3855823602e-01
+Setting new Parameters
+ERROR   Execution time = 2.9166276360e+00
+  </log>
+  <optVariables href="jopt-h2o.s007.opt.xml">
+uu_0 4.4369101646e-01 1 1  ON 0
+uu_1 2.9191974307e-01 1 1  ON 1
+uu_2 1.9663968905e-01 1 1  ON 2
+uu_3 1.3786319345e-01 1 1  ON 3
+uu_4 9.0163784377e-02 1 1  ON 4
+uu_5 4.9342850144e-02 1 1  ON 5
+uu_6 2.2995784600e-02 1 1  ON 6
+uu_7 5.4809374308e-03 1 1  ON 7
+uu_8 2.0940408300e-02 1 1  ON 8
+uu_9 1.8890285511e-02 1 1  ON 9
+ud_0 1.0843692569e+00 1 1  ON 10
+ud_1 7.6857468884e-01 1 1  ON 11
+ud_2 5.8049930188e-01 1 1  ON 12
+ud_3 4.8138404959e-01 1 1  ON 13
+ud_4 4.2848671961e-01 1 1  ON 14
+ud_5 3.8371649711e-01 1 1  ON 15
+ud_6 3.2644627543e-01 1 1  ON 16
+ud_7 2.5245140996e-01 1 1  ON 17
+ud_8 1.9940299173e-01 1 1  ON 18
+ud_9 7.5977607853e-02 1 1  ON 19
+eO_0 -4.1879035227e+00 1 1  ON 20
+eO_1 -3.7314658413e+00 1 1  ON 21
+eO_2 -2.5595639906e+00 1 1  ON 22
+eO_3 -1.1515682960e+00 1 1  ON 23
+eO_4 4.8863914831e-02 1 1  ON 24
+eO_5 8.6197061292e-01 1 1  ON 25
+eO_6 9.8239577308e-01 1 1  ON 26
+eO_7 1.1666078270e+00 1 1  ON 27
+eO_8 1.2113768851e+00 1 1  ON 28
+eO_9 5.0420034247e+00 1 1  ON 29
+eH_0 -1.4336940049e+00 1 1  ON 30
+eH_1 -1.4462231716e+00 1 1  ON 31
+eH_2 -1.4549033380e+00 1 1  ON 32
+eH_3 -1.4253319039e+00 1 1  ON 33
+eH_4 -1.3759973422e+00 1 1  ON 34
+eH_5 -1.3377670541e+00 1 1  ON 35
+eH_6 -1.3433639235e+00 1 1  ON 36
+eH_7 -1.2706653262e+00 1 1  ON 37
+eH_8 -1.0195533779e+00 1 1  ON 38
+eH_9 -9.6475951416e-01 1 1  ON 39
+uuO_0 9.4295642371e-06 1 1  ON 40
+uuO_1 -3.7471501063e-07 1 1  ON 41
+uuO_2 -9.4499322274e-06 1 1  ON 42
+uuO_3 -5.7020175370e-06 1 1  ON 43
+uuO_4 -5.7917496957e-07 1 1  ON 44
+uuO_5 1.2160186747e-05 1 1  ON 45
+uuO_6 -1.8814250592e-05 1 1  ON 46
+uuO_7 1.1090719977e-05 1 1  ON 47
+uuO_8 9.8052118385e-08 1 1  ON 48
+uuO_9 5.7978090451e-06 1 1  ON 49
+uuO_10 -5.0094931561e-06 1 1  ON 50
+uuO_11 -6.3213951813e-06 1 1  ON 51
+uuO_12 -6.0976231918e-08 1 1  ON 52
+uuO_13 4.7444050168e-07 1 1  ON 53
+uuO_14 5.8544603847e-07 1 1  ON 54
+uuO_15 -1.8570583847e-08 1 1  ON 55
+uuO_16 1.2265451116e-05 1 1  ON 56
+uuO_17 -7.1511004031e-06 1 1  ON 57
+uuO_18 1.2604159050e-05 1 1  ON 58
+uuO_19 -1.6126765438e-06 1 1  ON 59
+uuO_20 -2.4283837721e-06 1 1  ON 60
+uuO_21 -2.5223293569e-06 1 1  ON 61
+uuO_22 4.7215615293e-07 1 1  ON 62
+uuO_23 2.2782428103e-06 1 1  ON 63
+uuO_24 4.9028950920e-07 1 1  ON 64
+uuO_25 -1.3242864584e-07 1 1  ON 65
+udO_0 -4.9816877999e-06 1 1  ON 66
+udO_1 2.4592950944e-05 1 1  ON 67
+udO_2 2.7960729517e-05 1 1  ON 68
+udO_3 -1.0770630442e-05 1 1  ON 69
+udO_4 -6.0098289835e-06 1 1  ON 70
+udO_5 1.0727331949e-05 1 1  ON 71
+udO_6 4.0923173224e-05 1 1  ON 72
+udO_7 2.5713696006e-06 1 1  ON 73
+udO_8 2.5772313357e-05 1 1  ON 74
+udO_9 -1.8648822975e-05 1 1  ON 75
+udO_10 -4.8790456968e-06 1 1  ON 76
+udO_11 -1.8409725012e-05 1 1  ON 77
+udO_12 -7.0056930729e-06 1 1  ON 78
+udO_13 2.9919003311e-06 1 1  ON 79
+udO_14 4.3819720166e-06 1 1  ON 80
+udO_15 2.8534327693e-07 1 1  ON 81
+udO_16 2.8363083350e-05 1 1  ON 82
+udO_17 -4.5709666417e-06 1 1  ON 83
+udO_18 9.7084236772e-06 1 1  ON 84
+udO_19 2.6245421376e-06 1 1  ON 85
+udO_20 -3.3172538513e-06 1 1  ON 86
+udO_21 -1.5805265987e-06 1 1  ON 87
+udO_22 -1.8106842830e-07 1 1  ON 88
+udO_23 1.8449314504e-06 1 1  ON 89
+udO_24 2.6737198963e-10 1 1  ON 90
+udO_25 2.7933965556e-08 1 1  ON 91
+uuH_0 2.7177097740e-06 1 1  ON 92
+uuH_1 2.6589608751e-05 1 1  ON 93
+uuH_2 7.8998271248e-06 1 1  ON 94
+uuH_3 -1.2040854287e-05 1 1  ON 95
+uuH_4 -3.0860119484e-06 1 1  ON 96
+uuH_5 -1.8345079339e-06 1 1  ON 97
+uuH_6 3.7872153815e-05 1 1  ON 98
+uuH_7 -1.0635527751e-05 1 1  ON 99
+uuH_8 5.4291174078e-06 1 1  ON 100
+uuH_9 -2.9710032802e-05 1 1  ON 101
+uuH_10 -8.6760474285e-06 1 1  ON 102
+uuH_11 1.9961235893e-06 1 1  ON 103
+uuH_12 -1.0754275919e-06 1 1  ON 104
+uuH_13 1.1966008265e-05 1 1  ON 105
+uuH_14 -5.1972234216e-07 1 1  ON 106
+uuH_15 1.5090424872e-07 1 1  ON 107
+uuH_16 3.1432824533e-05 1 1  ON 108
+uuH_17 1.6389453598e-06 1 1  ON 109
+uuH_18 -2.4348470757e-06 1 1  ON 110
+uuH_19 5.2584328184e-07 1 1  ON 111
+uuH_20 -7.6876014820e-06 1 1  ON 112
+uuH_21 8.9157316719e-07 1 1  ON 113
+uuH_22 -1.5980254084e-07 1 1  ON 114
+uuH_23 1.5364590841e-06 1 1  ON 115
+uuH_24 -2.1417912827e-07 1 1  ON 116
+uuH_25 3.6357488723e-08 1 1  ON 117
+udH_0 -8.1187094873e-07 1 1  ON 118
+udH_1 -1.5565403151e-05 1 1  ON 119
+udH_2 1.4647335050e-06 1 1  ON 120
+udH_3 -2.5984856850e-07 1 1  ON 121
+udH_4 -1.3681478733e-06 1 1  ON 122
+udH_5 1.5492127191e-06 1 1  ON 123
+udH_6 -1.2321805713e-05 1 1  ON 124
+udH_7 -1.6759522162e-06 1 1  ON 125
+udH_8 4.0591734884e-06 1 1  ON 126
+udH_9 7.6329443467e-06 1 1  ON 127
+udH_10 -8.5495541918e-07 1 1  ON 128
+udH_11 -2.3052470836e-06 1 1  ON 129
+udH_12 -1.3965926716e-06 1 1  ON 130
+udH_13 3.9659267973e-06 1 1  ON 131
+udH_14 7.0078895407e-07 1 1  ON 132
+udH_15 9.3690450802e-08 1 1  ON 133
+udH_16 3.7578496046e-06 1 1  ON 134
+udH_17 8.8748905358e-07 1 1  ON 135
+udH_18 2.5967712243e-06 1 1  ON 136
+udH_19 3.0118287295e-07 1 1  ON 137
+udH_20 -4.9526038527e-06 1 1  ON 138
+udH_21 -6.6302004972e-08 1 1  ON 139
+udH_22 -7.2120756376e-08 1 1  ON 140
+udH_23 2.0187480712e-06 1 1  ON 141
+udH_24 -2.1992757159e-07 1 1  ON 142
+udH_25 5.1591510339e-08 1 1  ON 143
+  </optVariables>
+   Restore the number of walkers to 1, removing 159 walkers.
+</opt>
+</optimization-report>
+  QMC Execution time = 2.9440884860e+00 secs 
+  Reusing QMCFixedSampleLinearOptimize
+ Using QMCCostFunctionOMP::QMCCostFunctionOMP
+
+=========================================================
+  Start QMCFixedSampleLinearOptimize
+  File Root jopt-h2o.s008 append = no 
+=========================================================
+  Skip QMCDriver::putQMCInfo 
+  Resetting Properties of the walkers 1 x 14
+
+=========================================================
+  Start VMCSingleOMP
+  File Root jopt-h2o.s008 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 14
+
+<vmc function="put">
+  qmc_counter=8  my_counter=8
+  time step      = 5.0000000000e-01
+  blocks         = 100
+  steps          = 2
+  substeps       = 20
+  current        = 0
+  target samples = 5.1200000000e+04
+  walkers/mpi    = 1
+
+  stepsbetweensamples = 1
+<parameter name="blocks" condition="int">100</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">5.1200000000e+04</parameter>
+<parameter name="samplesperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="steps" condition="int">2</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">20</parameter>
+<parameter name="substeps" condition="int">20</parameter>
+<parameter name="tau" condition="au">5.0000000000e-01</parameter>
+<parameter name="time_step" condition="au">5.0000000000e-01</parameter>
+<parameter name="timestep" condition="au">5.0000000000e-01</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">1</parameter>
+<parameter name="warmup_steps" condition="int">25</parameter>
+<parameter name="warmupsteps" condition="int">25</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1 steps.
+</vmc>
+  EstimatorManager::add replace LocalEnergy estimator.
+  EstimatorManager::add replace LocalEnergy estimator.
+<optimization-report>
+<vmc stage="main" blocks="100">
+  Cannot make clones again. Use existing 1 clones
+  Initial partition of walkers 0 1 
+  Total Sample Size   =51200
+  Walker distribution on root = 0 1 
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 8
+    time step          = 0.5
+    reference energy   = -17.2396
+    reference variance = 0.371349
+====================================================
+  Execution time = 1.4363447260e+00
+</vmc>
+<opt stage="setup">
+  <log>
+   Reading configurations from h5FileRoot jopt-h2o.s008
+  QMCCostFunctionOMP is created with 1
+   Loading configuration from MCWalkerConfiguration::SampleStack 
+    number of walkers before load 1
+  Using Nonlocal PP in Opt: NonLocalECP
+    number of walkers after load: 160 
+Using buffers for temporary storage in QMCCostFunction.
+
+Memory usage: 
+Linear method (approx matrix usage: 4*N^2): 6.6355200000e-01 MB
+Deriv,HDerivRecord:      5.5296000000e-01 MB
+Buffer memory cost:     MB/walker       MB/total 
+Orbitals only:           2.5600000000e-04      4.0960000000e-02
+Orbitals + dervs:        8.0000000000e-04      1.2800000000e-01
+Inverse:                 0.0000000000e+00      0.0000000000e+00
+Determinants:            0.0000000000e+00      0.0000000000e+00
+  VMC Eavg = 1.4471921652e+01
+  VMC Evar = 6.0669290854e+03
+  Total weights = 5.1200000000e+04
+  Execution time = 3.8537776000e-01
+  </log>
+</opt>
+<opt stage="main" walkers="51200">
+  <log>
+Iteration: 1/1
+od_largest 1.6970669714e+13
+  stabilityBase -6.0000000000e+00
+  stabilizerScale 2.0000000000e+00
+  Using XS:-6.0000000000e+00 0 0
+Before:  ax = 0.0000000000e+00  bx=5.0013929841e-01  cx=0.0000000000e+00
+After:  ax = 0.0000000000e+00  bx=5.0013929841e-01  cx=1.3093816880e+00
+Minimum found at lambda = 9.9433106362e-01
+  Failed Step. Largest LM parameter change:2.8324347742e+01
+ERROR   Using XS:-4.0000000000e+00 1 0
+Before:  ax = 0.0000000000e+00  bx=5.0013728258e-01  cx=0.0000000000e+00
+After:  ax = 0.0000000000e+00  bx=5.0013728258e-01  cx=1.3093764105e+00
+Minimum found at lambda = 9.9445855751e-01
+  Failed Step. Largest LM parameter change:2.8344816501e+01
+ERROR   Using XS:-2.0000000000e+00 2 0
+Before:  ax = 0.0000000000e+00  bx=5.0012471182e-01  cx=0.0000000000e+00
+After:  ax = 0.0000000000e+00  bx=5.0012471182e-01  cx=1.3093434998e+00
+Minimum found at lambda = 9.9564880998e-01
+  Failed Step. Largest LM parameter change:2.8486119227e+01
+ERROR   Using XS:0.0000000000e+00 3 0
+Before:  ax = 0.0000000000e+00  bx=5.0007980066e-01  cx=0.0000000000e+00
+After:  ax = 0.0000000000e+00  bx=5.0007980066e-01  cx=1.3092259208e+00
+Minimum found at lambda = 1.0241163809e+00
+  Failed Step. Largest LM parameter change:2.9412043399e+01
+ERROR   Using XS:2.0000000000e+00 4 0
+Before:  ax = 0.0000000000e+00  bx=5.0001693999e-01  cx=0.0000000000e+00
+Problems bracketing minimum. Lower Value returned.
+  Failed Step. Largest LM parameter change:3.6413459174e+01
+ERROR   Using XS:4.0000000000e+00 5 0
+ERROR CostFunction-> Number of Effective Walkers is too small 2.6711126839e+03 NumWalkersEff/NumSamples 5.2170169608e-02
+ERROR CostFunction-> Number of Effective Walkers is too small 5.2493346778e+00 NumWalkersEff/NumSamples 1.0252606793e-04
+ERROR CostFunction-> Number of Effective Walkers is too small 1.1447849678e+00 NumWalkersEff/NumSamples 2.2359081403e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0508746273e+00 NumWalkersEff/NumSamples 2.0524895064e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.2437561376e+00 NumWalkersEff/NumSamples 2.4292112063e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.1447849678e+00 NumWalkersEff/NumSamples 2.2359081403e-05
+  Failed Step. Largest LM parameter change:4.4593752943e+02
+ERROR   Using XS:6.0000000000e+00 6 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.9164772467e+01 NumWalkersEff/NumSamples 3.7431196224e-04
+ERROR CostFunction-> Number of Effective Walkers is too small 3.2867446136e+00 NumWalkersEff/NumSamples 6.4194230735e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0981912228e+02 NumWalkersEff/NumSamples 2.1449047321e-03
+ERROR CostFunction-> Number of Effective Walkers is too small 1.9164772467e+01 NumWalkersEff/NumSamples 3.7431196224e-04
+  Failed Step. Largest LM parameter change:1.1982880645e+03
+ERROR   Using XS:8.0000000000e+00 7 0
+  Good Step. Largest LM parameter change:8.0845372578e+00
+ OldCost: -1.6376306640e+01 NewCost: -1.6376359922e+01 Delta Cost:-5.3281805936e-05
+      Current ene:     -1.7249861063e+01
+      Current var:     2.2016175775e-01
+      Current ene_urw:     -1.7249932204e+01
+      Current var_urw: 2.1983803043e-01
+Setting new Parameters
+ERROR   Execution time = 1.4095428502e+01
+  </log>
+  <optVariables href="jopt-h2o.s008.opt.xml">
+uu_0 4.4126087500e-01 1 1  ON 0
+uu_1 2.8842055773e-01 1 1  ON 1
+uu_2 1.9368702766e-01 1 1  ON 2
+uu_3 1.3473892700e-01 1 1  ON 3
+uu_4 8.7195823077e-02 1 1  ON 4
+uu_5 4.5787898043e-02 1 1  ON 5
+uu_6 2.0750715159e-02 1 1  ON 6
+uu_7 1.4348847719e-03 1 1  ON 7
+uu_8 1.8334129502e-02 1 1  ON 8
+uu_9 1.3233345855e-02 1 1  ON 9
+ud_0 1.0843111185e+00 1 1  ON 10
+ud_1 7.6942150389e-01 1 1  ON 11
+ud_2 5.8186229689e-01 1 1  ON 12
+ud_3 4.8282715332e-01 1 1  ON 13
+ud_4 4.2983736765e-01 1 1  ON 14
+ud_5 3.8467120172e-01 1 1  ON 15
+ud_6 3.2758454744e-01 1 1  ON 16
+ud_7 2.5365976358e-01 1 1  ON 17
+ud_8 2.0048286542e-01 1 1  ON 18
+ud_9 7.6799008110e-02 1 1  ON 19
+eO_0 -1.2256447850e+01 1 1  ON 20
+eO_1 -1.1803519410e+01 1 1  ON 21
+eO_2 -1.0632373968e+01 1 1  ON 22
+eO_3 -9.2200811516e+00 1 1  ON 23
+eO_4 -8.0121451143e+00 1 1  ON 24
+eO_5 -7.2082770678e+00 1 1  ON 25
+eO_6 -7.0926519595e+00 1 1  ON 26
+eO_7 -6.9179294308e+00 1 1  ON 27
+eO_8 -6.8506511132e+00 1 1  ON 28
+eO_9 -3.0198806012e+00 1 1  ON 29
+eH_0 -1.7390114128e+00 1 1  ON 30
+eH_1 -1.7556002266e+00 1 1  ON 31
+eH_2 -1.7640167295e+00 1 1  ON 32
+eH_3 -1.7340190810e+00 1 1  ON 33
+eH_4 -1.6839380061e+00 1 1  ON 34
+eH_5 -1.6460950654e+00 1 1  ON 35
+eH_6 -1.6507772714e+00 1 1  ON 36
+eH_7 -1.5798941408e+00 1 1  ON 37
+eH_8 -1.3207749893e+00 1 1  ON 38
+eH_9 -1.3168175550e+00 1 1  ON 39
+uuO_0 1.0219726492e-05 1 1  ON 40
+uuO_1 1.2401675572e-07 1 1  ON 41
+uuO_2 -1.0437684372e-05 1 1  ON 42
+uuO_3 -6.7028422757e-06 1 1  ON 43
+uuO_4 -6.6115396026e-07 1 1  ON 44
+uuO_5 1.2134804059e-05 1 1  ON 45
+uuO_6 -1.8716407217e-05 1 1  ON 46
+uuO_7 9.1246001271e-06 1 1  ON 47
+uuO_8 -4.3516536197e-07 1 1  ON 48
+uuO_9 5.1996696855e-06 1 1  ON 49
+uuO_10 -5.9871853453e-06 1 1  ON 50
+uuO_11 -4.0351340318e-06 1 1  ON 51
+uuO_12 -1.0749377948e-07 1 1  ON 52
+uuO_13 2.4674552951e-06 1 1  ON 53
+uuO_14 5.5062937346e-07 1 1  ON 54
+uuO_15 -1.0056489070e-08 1 1  ON 55
+uuO_16 1.1968701483e-05 1 1  ON 56
+uuO_17 -4.2282561445e-06 1 1  ON 57
+uuO_18 9.9788339185e-06 1 1  ON 58
+uuO_19 -1.3456311659e-06 1 1  ON 59
+uuO_20 -3.3398276940e-06 1 1  ON 60
+uuO_21 -2.0789459284e-06 1 1  ON 61
+uuO_22 4.0329544750e-07 1 1  ON 62
+uuO_23 2.5983259235e-06 1 1  ON 63
+uuO_24 3.7388682187e-07 1 1  ON 64
+uuO_25 -1.1125833631e-07 1 1  ON 65
+udO_0 -5.2179791162e-06 1 1  ON 66
+udO_1 2.4899700648e-05 1 1  ON 67
+udO_2 2.8833544362e-05 1 1  ON 68
+udO_3 -1.1084723548e-05 1 1  ON 69
+udO_4 -6.2851018942e-06 1 1  ON 70
+udO_5 1.0669946644e-05 1 1  ON 71
+udO_6 4.1274485824e-05 1 1  ON 72
+udO_7 3.7960283128e-06 1 1  ON 73
+udO_8 2.7138931425e-05 1 1  ON 74
+udO_9 -1.8895514938e-05 1 1  ON 75
+udO_10 -5.0619682355e-06 1 1  ON 76
+udO_11 -1.9718605148e-05 1 1  ON 77
+udO_12 -7.3226539262e-06 1 1  ON 78
+udO_13 3.3669581109e-06 1 1  ON 79
+udO_14 4.7209340694e-06 1 1  ON 80
+udO_15 2.8198570355e-07 1 1  ON 81
+udO_16 2.8592207301e-05 1 1  ON 82
+udO_17 -4.2643241523e-06 1 1  ON 83
+udO_18 1.0508707481e-05 1 1  ON 84
+udO_19 2.6306368018e-06 1 1  ON 85
+udO_20 -3.5168494129e-06 1 1  ON 86
+udO_21 -1.7290995119e-06 1 1  ON 87
+udO_22 -1.6121422981e-07 1 1  ON 88
+udO_23 1.9004810250e-06 1 1  ON 89
+udO_24 1.7273990771e-08 1 1  ON 90
+udO_25 2.2925225642e-08 1 1  ON 91
+uuH_0 9.8270155312e-07 1 1  ON 92
+uuH_1 3.7805139305e-05 1 1  ON 93
+uuH_2 1.2191914513e-05 1 1  ON 94
+uuH_3 -1.5633136729e-05 1 1  ON 95
+uuH_4 -4.5166466433e-06 1 1  ON 96
+uuH_5 -2.5598397651e-06 1 1  ON 97
+uuH_6 6.1491929138e-05 1 1  ON 98
+uuH_7 -2.5075870392e-05 1 1  ON 99
+uuH_8 5.6138558751e-06 1 1  ON 100
+uuH_9 -4.2884043888e-05 1 1  ON 101
+uuH_10 -1.2855914585e-05 1 1  ON 102
+uuH_11 9.9123819705e-06 1 1  ON 103
+uuH_12 -1.8036977028e-06 1 1  ON 104
+uuH_13 1.6971223807e-05 1 1  ON 105
+uuH_14 -1.3671367296e-06 1 1  ON 106
+uuH_15 2.9846473145e-07 1 1  ON 107
+uuH_16 4.3683621116e-05 1 1  ON 108
+uuH_17 5.1896627380e-06 1 1  ON 109
+uuH_18 -9.8952314092e-06 1 1  ON 110
+uuH_19 1.6959018637e-06 1 1  ON 111
+uuH_20 -1.1115872302e-05 1 1  ON 112
+uuH_21 2.3062301849e-06 1 1  ON 113
+uuH_22 -4.3055491154e-07 1 1  ON 114
+uuH_23 2.3501878277e-06 1 1  ON 115
+uuH_24 -5.4154305456e-07 1 1  ON 116
+uuH_25 1.0339271515e-07 1 1  ON 117
+udH_0 -1.6369436111e-06 1 1  ON 118
+udH_1 -1.0737753118e-05 1 1  ON 119
+udH_2 4.5425475095e-06 1 1  ON 120
+udH_3 -5.4628621348e-06 1 1  ON 121
+udH_4 -3.7250253184e-06 1 1  ON 122
+udH_5 1.3644093000e-06 1 1  ON 123
+udH_6 -6.0694821795e-06 1 1  ON 124
+udH_7 -2.1219056977e-06 1 1  ON 125
+udH_8 1.1934787024e-05 1 1  ON 126
+udH_9 4.4314116382e-06 1 1  ON 127
+udH_10 -5.7742552517e-06 1 1  ON 128
+udH_11 -2.5671091892e-06 1 1  ON 129
+udH_12 -4.5616202985e-06 1 1  ON 130
+udH_13 1.1570006289e-05 1 1  ON 131
+udH_14 3.4648504291e-06 1 1  ON 132
+udH_15 1.2791836765e-07 1 1  ON 133
+udH_16 1.2230394913e-06 1 1  ON 134
+udH_17 1.2812466753e-05 1 1  ON 135
+udH_18 -8.8745648783e-07 1 1  ON 136
+udH_19 2.0423085756e-06 1 1  ON 137
+udH_20 -7.1218824711e-06 1 1  ON 138
+udH_21 -2.1593866716e-07 1 1  ON 139
+udH_22 -2.0098529174e-07 1 1  ON 140
+udH_23 2.5786390526e-06 1 1  ON 141
+udH_24 -2.1976040746e-07 1 1  ON 142
+udH_25 6.6033092710e-08 1 1  ON 143
+  </optVariables>
+   Restore the number of walkers to 1, removing 159 walkers.
+</opt>
+</optimization-report>
+  QMC Execution time = 1.4109841896e+01 secs 
+  Reusing QMCFixedSampleLinearOptimize
+ Using QMCCostFunctionOMP::QMCCostFunctionOMP
+
+=========================================================
+  Start QMCFixedSampleLinearOptimize
+  File Root jopt-h2o.s009 append = no 
+=========================================================
+  Skip QMCDriver::putQMCInfo 
+  Resetting Properties of the walkers 1 x 14
+
+=========================================================
+  Start VMCSingleOMP
+  File Root jopt-h2o.s009 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 14
+
+<vmc function="put">
+  qmc_counter=9  my_counter=9
+  time step      = 5.0000000000e-01
+  blocks         = 100
+  steps          = 2
+  substeps       = 20
+  current        = 0
+  target samples = 5.1200000000e+04
+  walkers/mpi    = 1
+
+  stepsbetweensamples = 1
+<parameter name="blocks" condition="int">100</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">5.1200000000e+04</parameter>
+<parameter name="samplesperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="steps" condition="int">2</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">20</parameter>
+<parameter name="substeps" condition="int">20</parameter>
+<parameter name="tau" condition="au">5.0000000000e-01</parameter>
+<parameter name="time_step" condition="au">5.0000000000e-01</parameter>
+<parameter name="timestep" condition="au">5.0000000000e-01</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">1</parameter>
+<parameter name="warmup_steps" condition="int">25</parameter>
+<parameter name="warmupsteps" condition="int">25</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1 steps.
+</vmc>
+  EstimatorManager::add replace LocalEnergy estimator.
+  EstimatorManager::add replace LocalEnergy estimator.
+<optimization-report>
+<vmc stage="main" blocks="100">
+  Cannot make clones again. Use existing 1 clones
+  Initial partition of walkers 0 1 
+  Total Sample Size   =51200
+  Walker distribution on root = 0 1 
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 9
+    time step          = 0.5
+    reference energy   = -17.2336
+    reference variance = 0.634801
+====================================================
+  Execution time = 1.4437886930e+00
+</vmc>
+<opt stage="setup">
+  <log>
+   Reading configurations from h5FileRoot jopt-h2o.s009
+  QMCCostFunctionOMP is created with 1
+   Loading configuration from MCWalkerConfiguration::SampleStack 
+    number of walkers before load 1
+  Using Nonlocal PP in Opt: NonLocalECP
+    number of walkers after load: 160 
+Using buffers for temporary storage in QMCCostFunction.
+
+Memory usage: 
+Linear method (approx matrix usage: 4*N^2): 6.6355200000e-01 MB
+Deriv,HDerivRecord:      5.5296000000e-01 MB
+Buffer memory cost:     MB/walker       MB/total 
+Orbitals only:           2.5600000000e-04      4.0960000000e-02
+Orbitals + dervs:        8.0000000000e-04      1.2800000000e-01
+Inverse:                 0.0000000000e+00      0.0000000000e+00
+Determinants:            0.0000000000e+00      0.0000000000e+00
+  VMC Eavg = 1.5097392810e+01
+  VMC Evar = 6.7776144841e+03
+  Total weights = 5.1200000000e+04
+  Execution time = 3.8340452901e-01
+  </log>
+</opt>
+<opt stage="main" walkers="51200">
+  <log>
+Iteration: 1/1
+od_largest 7.7140214247e+13
+  stabilityBase -6.0000000000e+00
+  stabilizerScale 2.0000000000e+00
+  Using XS:-6.0000000000e+00 0 0
+  Good Step. Largest LM parameter change:2.9550526910e+00
+ OldCost: -1.6377707040e+01 NewCost: -1.6377840113e+01 Delta Cost:-1.3307270927e-04
+      Current ene:     -1.7251312004e+01
+      Current var:     2.1812580471e-01
+      Current ene_urw:     -1.7251433938e+01
+      Current var_urw: 2.1857602993e-01
+Setting new Parameters
+ERROR   Execution time = 2.9033247060e+00
+  </log>
+  <optVariables href="jopt-h2o.s009.opt.xml">
+uu_0 4.2568729180e-01 1 1  ON 0
+uu_1 2.7022334138e-01 1 1  ON 1
+uu_2 1.7070867527e-01 1 1  ON 2
+uu_3 1.0764452233e-01 1 1  ON 3
+uu_4 5.7915260991e-02 1 1  ON 4
+uu_5 1.4879492220e-02 1 1  ON 5
+uu_6 -1.1455774265e-02 1 1  ON 6
+uu_7 -2.8619633764e-02 1 1  ON 7
+uu_8 -1.2394959693e-02 1 1  ON 8
+uu_9 -1.3799033803e-02 1 1  ON 9
+ud_0 1.1180888450e+00 1 1  ON 10
+ud_1 8.0439540558e-01 1 1  ON 11
+ud_2 6.1814773910e-01 1 1  ON 12
+ud_3 5.2013998043e-01 1 1  ON 13
+ud_4 4.6740659195e-01 1 1  ON 14
+ud_5 4.2190181896e-01 1 1  ON 15
+ud_6 3.6586327571e-01 1 1  ON 16
+ud_7 2.9112886315e-01 1 1  ON 17
+ud_8 2.3569927448e-01 1 1  ON 18
+ud_9 1.1271727005e-01 1 1  ON 19
+eO_0 -1.0893852094e+01 1 1  ON 20
+eO_1 -1.0448581782e+01 1 1  ON 21
+eO_2 -9.2840805403e+00 1 1  ON 22
+eO_3 -7.8712455962e+00 1 1  ON 23
+eO_4 -6.6448169397e+00 1 1  ON 24
+eO_5 -5.8355216194e+00 1 1  ON 25
+eO_6 -5.6623257741e+00 1 1  ON 26
+eO_7 -5.6278702049e+00 1 1  ON 27
+eO_8 -5.0265972336e+00 1 1  ON 28
+eO_9 -6.4827910178e-02 1 1  ON 29
+eH_0 -2.7429856510e+00 1 1  ON 30
+eH_1 -2.7669766472e+00 1 1  ON 31
+eH_2 -2.7805576716e+00 1 1  ON 32
+eH_3 -2.7518451224e+00 1 1  ON 33
+eH_4 -2.7022335444e+00 1 1  ON 34
+eH_5 -2.6671052580e+00 1 1  ON 35
+eH_6 -2.6796399448e+00 1 1  ON 36
+eH_7 -2.6232664785e+00 1 1  ON 37
+eH_8 -2.3761025854e+00 1 1  ON 38
+eH_9 -2.3755084073e+00 1 1  ON 39
+uuO_0 1.0181848470e-05 1 1  ON 40
+uuO_1 2.2871376719e-07 1 1  ON 41
+uuO_2 -9.5344513026e-06 1 1  ON 42
+uuO_3 -6.8216106876e-06 1 1  ON 43
+uuO_4 -7.4068258421e-07 1 1  ON 44
+uuO_5 1.1747077062e-05 1 1  ON 45
+uuO_6 -1.8057278380e-05 1 1  ON 46
+uuO_7 9.4129402626e-06 1 1  ON 47
+uuO_8 9.8555054273e-07 1 1  ON 48
+uuO_9 4.6760668698e-06 1 1  ON 49
+uuO_10 -5.8827392296e-06 1 1  ON 50
+uuO_11 -5.3073381826e-06 1 1  ON 51
+uuO_12 -4.7759993902e-07 1 1  ON 52
+uuO_13 2.7143115427e-06 1 1  ON 53
+uuO_14 9.3097854150e-07 1 1  ON 54
+uuO_15 -1.0374102260e-08 1 1  ON 55
+uuO_16 1.2036682110e-05 1 1  ON 56
+uuO_17 -4.0330822661e-06 1 1  ON 57
+uuO_18 1.0814489238e-05 1 1  ON 58
+uuO_19 -1.3000145858e-06 1 1  ON 59
+uuO_20 -3.3094950718e-06 1 1  ON 60
+uuO_21 -2.2425451115e-06 1 1  ON 61
+uuO_22 4.1865318250e-07 1 1  ON 62
+uuO_23 2.5305677481e-06 1 1  ON 63
+uuO_24 3.9886265009e-07 1 1  ON 64
+uuO_25 -1.1505865322e-07 1 1  ON 65
+udO_0 -5.0826108697e-06 1 1  ON 66
+udO_1 2.5662099551e-05 1 1  ON 67
+udO_2 2.8936524182e-05 1 1  ON 68
+udO_3 -1.1458326420e-05 1 1  ON 69
+udO_4 -6.5239827361e-06 1 1  ON 70
+udO_5 1.0837164368e-05 1 1  ON 71
+udO_6 4.2282138358e-05 1 1  ON 72
+udO_7 3.4739341788e-06 1 1  ON 73
+udO_8 2.7309130176e-05 1 1  ON 74
+udO_9 -1.9775975144e-05 1 1  ON 75
+udO_10 -5.5245534220e-06 1 1  ON 76
+udO_11 -1.9498802022e-05 1 1  ON 77
+udO_12 -7.4025054272e-06 1 1  ON 78
+udO_13 4.1114523226e-06 1 1  ON 79
+udO_14 4.7681709717e-06 1 1  ON 80
+udO_15 2.7897085475e-07 1 1  ON 81
+udO_16 3.0182964618e-05 1 1  ON 82
+udO_17 -3.8193499926e-06 1 1  ON 83
+udO_18 1.0253358612e-05 1 1  ON 84
+udO_19 2.6508861523e-06 1 1  ON 85
+udO_20 -4.2385348355e-06 1 1  ON 86
+udO_21 -1.6969351342e-06 1 1  ON 87
+udO_22 -1.5469107016e-07 1 1  ON 88
+udO_23 2.2105912362e-06 1 1  ON 89
+udO_24 -5.5416174299e-09 1 1  ON 90
+udO_25 2.0892166524e-08 1 1  ON 91
+uuH_0 1.5605648444e-06 1 1  ON 92
+uuH_1 3.8713800231e-05 1 1  ON 93
+uuH_2 1.0986843165e-05 1 1  ON 94
+uuH_3 -1.6334271809e-05 1 1  ON 95
+uuH_4 -4.5844651523e-06 1 1  ON 96
+uuH_5 -2.7085699464e-06 1 1  ON 97
+uuH_6 6.1106485886e-05 1 1  ON 98
+uuH_7 -2.4321971552e-05 1 1  ON 99
+uuH_8 5.3556516538e-06 1 1  ON 100
+uuH_9 -4.2447244994e-05 1 1  ON 101
+uuH_10 -1.3569917881e-05 1 1  ON 102
+uuH_11 9.7023604655e-06 1 1  ON 103
+uuH_12 -1.8220448299e-06 1 1  ON 104
+uuH_13 1.6949268255e-05 1 1  ON 105
+uuH_14 -1.1623781452e-06 1 1  ON 106
+uuH_15 2.7352695517e-07 1 1  ON 107
+uuH_16 4.3491218408e-05 1 1  ON 108
+uuH_17 4.9602818583e-06 1 1  ON 109
+uuH_18 -8.5186886664e-06 1 1  ON 110
+uuH_19 1.4725050487e-06 1 1  ON 111
+uuH_20 -1.1171231976e-05 1 1  ON 112
+uuH_21 1.8925358578e-06 1 1  ON 113
+uuH_22 -3.4969824670e-07 1 1  ON 114
+uuH_23 2.4591910005e-06 1 1  ON 115
+uuH_24 -4.3030228599e-07 1 1  ON 116
+uuH_25 7.9462935736e-08 1 1  ON 117
+udH_0 -3.4304614010e-06 1 1  ON 118
+udH_1 -1.1227704388e-05 1 1  ON 119
+udH_2 6.3165759663e-06 1 1  ON 120
+udH_3 -5.5202102966e-06 1 1  ON 121
+udH_4 -4.1903997078e-06 1 1  ON 122
+udH_5 1.2205271986e-06 1 1  ON 123
+udH_6 -5.6857639953e-06 1 1  ON 124
+udH_7 -9.4721250497e-07 1 1  ON 125
+udH_8 1.3887668158e-05 1 1  ON 126
+udH_9 5.9215988794e-06 1 1  ON 127
+udH_10 -6.0453288546e-06 1 1  ON 128
+udH_11 -3.5102070076e-06 1 1  ON 129
+udH_12 -5.1257244928e-06 1 1  ON 130
+udH_13 1.1516483814e-05 1 1  ON 131
+udH_14 3.8463173180e-06 1 1  ON 132
+udH_15 1.5242028045e-07 1 1  ON 133
+udH_16 -1.9243405030e-06 1 1  ON 134
+udH_17 1.3911007539e-05 1 1  ON 135
+udH_18 -7.9756225558e-07 1 1  ON 136
+udH_19 2.2788085136e-06 1 1  ON 137
+udH_20 -6.1733635724e-06 1 1  ON 138
+udH_21 -3.1011058048e-07 1 1  ON 139
+udH_22 -2.2088305921e-07 1 1  ON 140
+udH_23 2.1584307092e-06 1 1  ON 141
+udH_24 -1.8260116614e-07 1 1  ON 142
+udH_25 6.5993434598e-08 1 1  ON 143
+  </optVariables>
+   Restore the number of walkers to 1, removing 159 walkers.
+</opt>
+</optimization-report>
+  QMC Execution time = 2.9163789960e+00 secs 
+  Total Execution time = 4.8470771718e+01 secs
+
+=========================================================
+  A new xml input file : jopt-h2o.s009.cont.xml
+Application 11222607 resources: utime ~15677s, stime ~140s, Rss ~26476, inblocks ~1277419, outblocks ~3298149

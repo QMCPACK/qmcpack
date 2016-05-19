@@ -1,0 +1,3720 @@
+  Input file(s): optm.xml 
+
+=====================================================
+                    QMCPACK 1.0.0 
+
+  (c) Copyright 2003-  QMCPACK developers            
+
+  Subversion branch 6925
+  Last modified     2016-05-18 12:43:30 -0400 (Wed, 18 May 2016)
+=====================================================
+  Global options 
+  async_swap=0 : using blocking send/recv for walker swaps 
+
+  MPI Nodes            = 320
+  MPI Nodes per group  = 320
+  MPI Group ID         = 0
+  OMP_NUM_THREADS      = 1
+
+  Input XML = optm.xml
+
+  Project = jopt-h2o
+  date    = 2016-05-18 22:36:12 EDT
+  host    = nid17235
+  user    = auser
+
+  DO NOT READ DENSITY
+  Offset for the random number seeds based on time 668
+  Random number offset = 668  seeds = 5003-7829
+  Creating e particleset
+  All the species have the same mass 1
+Particles are grouped. Safe to use groups 
+e
+  Creating ion0 particleset
+  All the species have the same mass 1
+Particles are grouped. Safe to use groups 
+ion0
+ Adding WavefunctionFactory for psi0
+Using MolecularBasisBuilder<NGOBuilder>
+<input node="basisset"  name="LCAOBSet"/>
+  Distance table for AA: source/target = e
+    PBC=open Orthorhombic=NA
+ using Cartesian coordinates with 
+  ... ParticleSet::addTable Create Table #0 e_e
+  Distance table for AB: source = ion0 target = e
+    PBC=open Orthorhombic=NA
+ using Cartesian coordinates 
+  ... ParticleSet::addTable Create Table #1 ion0_e
+<input node="atomicBasisSet"  name="Gaussian-G2"  angular="cartesian"  type="Gaussian"  elementType="O"  normalized="no"/>
+  AO BasisSet for O
+   Angular momentum expanded in cartesian functions x^lx y^ly z^lz according to Gamess
+Using log grid with default values: ri = 1e-06 rf = 100 npts = 1001
+   R(n,l,m,s) 0 0 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.125346
+              contraction=0.055741 nomralized contraction = 0.0296669
+    Gaussian exponent = 0.268022
+              contraction=0.304848 nomralized contraction = 0.286897
+    Gaussian exponent = 0.573098
+              contraction=0.453752 nomralized contraction = 0.755101
+    Gaussian exponent = 1.22543
+              contraction=0.295926 nomralized contraction = 0.870791
+    Gaussian exponent = 2.62028
+              contraction=0.019567 nomralized contraction = 0.101812
+    Gaussian exponent = 5.60282
+              contraction=-0.128627 nomralized contraction = -1.18345
+    Gaussian exponent = 11.9802
+              contraction=0.012024 nomralized contraction = 0.19562
+    Gaussian exponent = 25.6168
+              contraction=0.000407 nomralized contraction = 0.0117085
+    Gaussian exponent = 54.7752
+              contraction=-7.59999e-05 nomralized contraction = -0.00386604
+Adding 1 cartesian gaussian orbitals for l= 0
+   R(n,l,m,s) 1 0 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 1.68663
+              contraction=1 nomralized contraction = 3.73922
+	Setting GridManager of 1 radial orbital to false
+Adding 1 cartesian gaussian orbitals for l= 0
+   R(n,l,m,s) 2 0 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.237997
+              contraction=1 nomralized contraction = 0.860882
+	Setting GridManager of 2 radial orbital to false
+Adding 1 cartesian gaussian orbitals for l= 0
+   R(n,l,m,s) 3 1 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.083598
+              contraction=0.044958 nomralized contraction = 0.00589571
+    Gaussian exponent = 0.167017
+              contraction=0.150175 nomralized contraction = 0.046777
+    Gaussian exponent = 0.333673
+              contraction=0.255999 nomralized contraction = 0.189397
+    Gaussian exponent = 0.666627
+              contraction=0.281879 nomralized contraction = 0.495337
+    Gaussian exponent = 1.33182
+              contraction=0.242835 nomralized contraction = 1.01356
+    Gaussian exponent = 2.66076
+              contraction=0.161134 nomralized contraction = 1.59746
+    Gaussian exponent = 5.31578
+              contraction=0.082308 nomralized contraction = 1.93814
+    Gaussian exponent = 10.6201
+              contraction=0.039899 nomralized contraction = 2.23155
+    Gaussian exponent = 21.2173
+              contraction=0.004679 nomralized contraction = 0.621585
+	Setting GridManager of 3 radial orbital to false
+Adding 3 cartesian gaussian orbitals for l= 1
+   R(n,l,m,s) 4 1 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.184696
+              contraction=1 nomralized contraction = 0.353229
+	Setting GridManager of 4 radial orbital to false
+Adding 3 cartesian gaussian orbitals for l= 1
+   R(n,l,m,s) 5 1 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.600621
+              contraction=1 nomralized contraction = 1.54254
+	Setting GridManager of 5 radial orbital to false
+Adding 3 cartesian gaussian orbitals for l= 1
+   R(n,l,m,s) 6 2 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.66934
+              contraction=1 nomralized contraction = 1.29244
+	Setting GridManager of 6 radial orbital to false
+Adding 6 cartesian gaussian orbitals for l= 2
+   R(n,l,m,s) 7 2 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 2.40428
+              contraction=1 nomralized contraction = 12.113
+	Setting GridManager of 7 radial orbital to false
+Adding 6 cartesian gaussian orbitals for l= 2
+   R(n,l,m,s) 8 3 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 1.4231
+              contraction=1 nomralized contraction = 4.36308
+	Setting GridManager of 8 radial orbital to false
+Adding 10 cartesian gaussian orbitals for l= 3
+   Maximu Angular Momentum   = 3
+   Number of Radial functors = 9
+   Basis size                = 34
+
+<input node="atomicBasisSet"  name="Gaussian-G2"  angular="cartesian"  type="Gaussian"  elementType="H"  normalized="no"/>
+  AO BasisSet for H
+   Angular momentum expanded in cartesian functions x^lx y^ly z^lz according to Gamess
+Using log grid with default values: ri = 1e-06 rf = 100 npts = 1001
+   R(n,l,m,s) 0 0 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 8.70089
+              contraction=0.0627182 nomralized contraction = 0.802752
+    Gaussian exponent = 1.95552
+              contraction=0.261959 nomralized contraction = 1.09445
+    Gaussian exponent = 0.559044
+              contraction=0.75701 nomralized contraction = 1.23652
+Adding 1 cartesian gaussian orbitals for l= 0
+   R(n,l,m,s) 1 0 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.164925
+              contraction=1 nomralized contraction = 0.653854
+	Setting GridManager of 1 radial orbital to false
+Adding 1 cartesian gaussian orbitals for l= 0
+   R(n,l,m,s) 2 0 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.0320625
+              contraction=1 nomralized contraction = 0.191431
+	Setting GridManager of 2 radial orbital to false
+Adding 1 cartesian gaussian orbitals for l= 0
+   R(n,l,m,s) 3 1 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.790074
+              contraction=1 nomralized contraction = 2.17305
+	Setting GridManager of 3 radial orbital to false
+Adding 3 cartesian gaussian orbitals for l= 1
+   R(n,l,m,s) 4 1 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.152351
+              contraction=1 nomralized contraction = 0.277679
+	Setting GridManager of 4 radial orbital to false
+Adding 3 cartesian gaussian orbitals for l= 1
+   R(n,l,m,s) 5 2 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+    Gaussian exponent = 0.883818
+              contraction=1 nomralized contraction = 2.10215
+	Setting GridManager of 5 radial orbital to false
+Adding 6 cartesian gaussian orbitals for l= 2
+   Maximu Angular Momentum   = 2
+   Number of Radial functors = 6
+   Basis size                = 15
+
+Built BasisSetBuilder "LCAOBSet" of type molecularorbital
+Creating SPOSet in SlaterDetBuilder::put(xmlNodePtr cur).
+spo_name = spo-up
+ Building SPOset spo-up with LCAOBSet basis set.
+Creating LCOrbitalSet with the input coefficients
+SPO coefficients are applied by a single dgemm (BLAS3)
+Creating SPOSet in SlaterDetBuilder::put(xmlNodePtr cur).
+spo_name = spo-dn
+ Building SPOset spo-dn with LCAOBSet basis set.
+Creating LCOrbitalSet with the input coefficients
+SPO coefficients are applied by a single dgemm (BLAS3)
+Using Bryan's algorithm for MultiSlaterDeterminant expansion. 
+Creating base determinant (up) for MSD expansion. 
+Creating base determinant (down) for MSD expansion. 
+Found determinant list. 
+Reading CSFs.
+Found 498 terms in the MSD expansion.
+Norm of ci vector (sum of ci^2): 0.977398
+Norm of qchem ci vector (sum of qchem_ci^2): 0.977398
+Found 103 unique up determinants.
+Found 103 unique down determinants.
+Number of terms in pairs array: 67
+Number of terms in pairs array: 67
+CI coefficients are optimizable. 
+  FermionWF=MultiSlaterDeterminantFast
+  BsplineJastrowBuilder adds a functor with cusp = -0.25
+ size = 10 parameters 
+ cusp = -0.25
+ rcut = 10
+Parameter     Name      Value
+uu_0 0 1 1  ON 0
+uu_1 0 1 1  ON 1
+uu_2 0 1 1  ON 2
+uu_3 0 1 1  ON 3
+uu_4 0 1 1  ON 4
+uu_5 0 1 1  ON 5
+uu_6 0 1 1  ON 6
+uu_7 0 1 1  ON 7
+uu_8 0 1 1  ON 8
+uu_9 0 1 1  ON 9
+  BsplineJastrowBuilder adds a functor with cusp = -0.5
+ size = 10 parameters 
+ cusp = -0.5
+ rcut = 10
+Parameter     Name      Value
+ud_0 0 1 1  ON 0
+ud_1 0 1 1  ON 1
+ud_2 0 1 1  ON 2
+ud_3 0 1 1  ON 3
+ud_4 0 1 1  ON 4
+ud_5 0 1 1  ON 5
+ud_6 0 1 1  ON 6
+ud_7 0 1 1  ON 7
+ud_8 0 1 1  ON 8
+ud_9 0 1 1  ON 9
+
+  Using BsplineBuilder for one-body jastrow with B-spline functions
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+ size = 10 parameters 
+ cusp = 0
+ rcut = 10
+Parameter     Name      Value
+eO_0 0 1 1  ON 0
+eO_1 0 1 1  ON 1
+eO_2 0 1 1  ON 2
+eO_3 0 1 1  ON 3
+eO_4 0 1 1  ON 4
+eO_5 0 1 1  ON 5
+eO_6 0 1 1  ON 6
+eO_7 0 1 1  ON 7
+eO_8 0 1 1  ON 8
+eO_9 0 1 1  ON 9
+ size = 10 parameters 
+ cusp = 0
+ rcut = 10
+Parameter     Name      Value
+eH_0 0 1 1  ON 0
+eH_1 0 1 1  ON 1
+eH_2 0 1 1  ON 2
+eH_3 0 1 1  ON 3
+eH_4 0 1 1  ON 4
+eH_5 0 1 1  ON 5
+eH_6 0 1 1  ON 6
+eH_7 0 1 1  ON 7
+eH_8 0 1 1  ON 8
+eH_9 0 1 1  ON 9
+  QMCHamiltonian::addOperator Kinetic to H, physical Hamiltonian 
+  ... ParticleSet::addTable Reuse Table #0 e_e
+  QMCHamiltonian::addOperator ElecElec to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type coulomb named ElecElec
+
+  ECPotential builder for pseudopotential 
+
+  Adding pseudopotential for O
+   Linear grid  ri=0 rf=10 npts = 10001
+    ECPComponentBuilder::buildSemiLocalAndLocal 
+    Assuming Hartree unit
+   Number of angular momentum channels 2
+   Maximum angular momentum channel 1
+   Creating a Linear Grid Rmax=1.30534
+  Using global grid with delta = 0.001
+   Making L=1 a local potential with a radial cutoff of 9.998
+  NonLocalECPComponent::resize_warrays 
+    Non-local pseudopotential parameters
+    Maximum angular mementum = 0
+    Number of non-local channels = 1
+       l(0)=0
+    Cutoff radius = 1.306
+    Spherical grids and weights: 
+                        1                 0                 0       0.08333333333
+                       -1   1.224646799e-16                 0       0.08333333333
+             0.4472135955       0.894427191                 0       0.08333333333
+            -0.4472135955      0.7236067977      0.5257311121       0.08333333333
+             0.4472135955      0.2763932023      0.8506508084       0.08333333333
+            -0.4472135955     -0.2763932023      0.8506508084       0.08333333333
+             0.4472135955     -0.7236067977      0.5257311121       0.08333333333
+            -0.4472135955      -0.894427191   1.095357397e-16       0.08333333333
+             0.4472135955     -0.7236067977     -0.5257311121       0.08333333333
+            -0.4472135955     -0.2763932023     -0.8506508084       0.08333333333
+             0.4472135955      0.2763932023     -0.8506508084       0.08333333333
+            -0.4472135955      0.7236067977     -0.5257311121       0.08333333333
+    Maximum cutoff radius 1.306
+
+  Adding pseudopotential for H
+   Linear grid  ri=0 rf=10 npts = 10001
+    ECPComponentBuilder::buildSemiLocalAndLocal 
+    Assuming Hartree unit
+    Only one vps is found. Set the local component=0
+   Number of angular momentum channels 1
+   Maximum angular momentum channel 0
+   Creating a Linear Grid Rmax=1.16639
+  Using global grid with delta = 0.001
+   Making L=0 a local potential with a radial cutoff of 9.998
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+  QMCHamiltonian::addOperator LocalECP to H, physical Hamiltonian 
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+  ... ParticleSet::addTable Reuse Table #1 ion0_e
+
+  Using NonLocalECP potential 
+    Maximum grid on a sphere for NonLocalECPotential: 12
+  QMCHamiltonian::addOperator NonLocalECP to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type pseudo named ELEMENT-ECP
+  Distance table for AA: source/target = ion0
+    PBC=open Orthorhombic=NA
+ using Cartesian coordinates with 
+  ... ParticleSet::addTable Create Table #0 ion0_ion0
+  QMCHamiltonian::addOperator IonIon to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type coulomb named IonIon
+
+  QMCHamiltonian::add2WalkerProperty added
+    5 to P::PropertyList 
+    0 to P::Collectables 
+    starting Index of the observables in P::PropertyList = 9
+  Hamiltonian disables VirtualMoves
+<init source="ion0" target="e">
+  ... ParticleSet::addTable Reuse Table #0 ion0_ion0
+</init>
+ParticleSetPool::randomize 
+=========================================================
+ Summary of QMC systems 
+=========================================================
+ParticleSetPool has: 
+
+  ParticleSet e : 0 4 8 
+
+    8
+
+    u -4.5494982672e-01 -4.8540064299e-01 -2.8521726067e-01
+    u -6.1752255012e-01 -3.3914612352e-01  1.6609582123e-01
+    u -1.7920000083e-01 -3.3100006842e-01 -6.1827852077e-01
+    u -6.5249022275e-01 -1.7413768381e+00  1.1497758375e+00
+    d  3.4590411302e-01 -5.8745152993e-01 -2.4329623797e-01
+    d  5.2387836629e-01 -3.4540790779e-01 -3.6081414801e-01
+    d  2.1379612446e-01 -1.9408670583e-01  6.6374963851e-01
+    d -2.1056833925e-01  1.8301025561e+00  1.6737155824e+00
+
+  ParticleSet ion0 : 0 1 3 
+
+    3
+
+    O  0.0000000000e+00  0.0000000000e+00  0.0000000000e+00
+    H -0.0000000000e+00 -1.4308249289e+00  1.1078707576e+00
+    H  0.0000000000e+00  1.4308249289e+00  1.1078707576e+00
+
+  Hamiltonian h0
+  Kinetic         Kinetic energy
+  ElecElec        CoulombAA source/target e
+
+  LocalECP        LocalECPotential: ion0
+  NonLocalECP     NonLocalECPotential: ion0
+  IonIon          CoulombAA source/target ion0
+
+Loop execution max-interations = 10
+
+=========================================================
+  Start QMCFixedSampleLinearOptimize
+  File Root jopt-h2o.s000 append = no 
+=========================================================
+  Skip QMCDriver::putQMCInfo 
+  Resetting Properties of the walkers 1 x 14
+  Adding 1 walkers to 0 existing sets
+  Total number of walkers: 3.2000000000e+02
+  Total weight: 3.2000000000e+02
+
+=========================================================
+  Start VMCSingleOMP
+  File Root jopt-h2o.s000 append = no 
+=========================================================
+  Using the current 1 walkers.
+  Total number of walkers: 3.2000000000e+02
+  Total weight: 3.2000000000e+02
+  Resetting Properties of the walkers 1 x 14
+
+<vmc function="put">
+  qmc_counter=0  my_counter=0
+  time step      = 5.0000000000e-01
+  blocks         = 100
+  steps          = 2
+  substeps       = 20
+  current        = 0
+  target samples = 5.1200000000e+04
+  walkers/mpi    = 1
+
+  stepsbetweensamples = 1
+<parameter name="blocks" condition="int">100</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">5.1200000000e+04</parameter>
+<parameter name="samplesperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="steps" condition="int">2</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">20</parameter>
+<parameter name="substeps" condition="int">20</parameter>
+<parameter name="tau" condition="au">5.0000000000e-01</parameter>
+<parameter name="time_step" condition="au">5.0000000000e-01</parameter>
+<parameter name="timestep" condition="au">5.0000000000e-01</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">1</parameter>
+<parameter name="warmup_steps" condition="int">25</parameter>
+<parameter name="warmupsteps" condition="int">25</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1 steps.
+</vmc>
+ Using QMCCostFunctionOMP::QMCCostFunctionOMP
+<optimization-report>
+<vmc stage="main" blocks="100">
+  Initial partition of walkers 0 1 
+  PbyP moves with drift, using VMCUpdatePbyPWithDriftFast
+
+  Total Sample Size   =51200
+  Walker distribution on root = 0 1 
+  Anonymous Buffer size per walker 5042
+MEMORY increase 0 MB VMCSingleOMP::resetRun
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 0
+    time step          = 0.5
+    reference energy   = -16.9564
+    reference variance = 1.18636
+====================================================
+  Execution time = 2.3494750180e+00
+</vmc>
+<opt stage="setup">
+  <log>
+   Reading configurations from h5FileRoot jopt-h2o.s000
+  QMCCostFunctionOMP is created with 1
+   Loading configuration from MCWalkerConfiguration::SampleStack 
+    number of walkers before load 1
+  Using Nonlocal PP in Opt: NonLocalECP
+    number of walkers after load: 160 
+Using buffers for temporary storage in QMCCostFunction.
+
+Memory usage: 
+Linear method (approx matrix usage: 4*N^2): 9.9123200000e-01 MB
+Deriv,HDerivRecord:      6.7584000000e-01 MB
+Buffer memory cost:     MB/walker       MB/total 
+Orbitals only:           1.7280000000e-03      2.7648000000e-01
+Orbitals + dervs:        8.6400000000e-03      1.3824000000e+00
+Inverse:                 2.5600000000e-04      4.0960000000e-02
+Determinants:            2.8016000000e-02      4.4825600000e+00
+  VMC Eavg = -1.7096686952e+01
+  VMC Evar = 1.2900240212e+00
+  Total weights = 5.1200000000e+04
+  Execution time = 1.6986466300e-01
+  </log>
+</opt>
+<opt stage="main" walkers="51200">
+  <log>
+Iteration: 1/1
+od_largest 1.8588119062e+02
+  stabilityBase -6.0000000000e+00
+  stabilizerScale 2.0000000000e+00
+  Using XS:-6.0000000000e+00 0 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.7048322578e+00 NumWalkersEff/NumSamples 3.3297505035e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 2.0897066181e+00 NumWalkersEff/NumSamples 4.0814582385e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0001179930e+00 NumWalkersEff/NumSamples 1.9533554550e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000077354e+00 NumWalkersEff/NumSamples 1.9531401082e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0004959949e+00 NumWalkersEff/NumSamples 1.9540937400e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0001179930e+00 NumWalkersEff/NumSamples 1.9533554550e-05
+  Failed Step. Largest LM parameter change:1.4856949678e+02
+ERROR   Using XS:-4.0000000000e+00 1 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.6917068901e+00 NumWalkersEff/NumSamples 3.3041150197e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 2.0948686016e+00 NumWalkersEff/NumSamples 4.0915402374e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0001143497e+00 NumWalkersEff/NumSamples 1.9533483392e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000074161e+00 NumWalkersEff/NumSamples 1.9531394847e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0004828976e+00 NumWalkersEff/NumSamples 1.9540681594e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0001143497e+00 NumWalkersEff/NumSamples 1.9533483392e-05
+  Failed Step. Largest LM parameter change:1.4922738751e+02
+ERROR   Using XS:-2.0000000000e+00 2 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.5924779405e+00 NumWalkersEff/NumSamples 3.1103084775e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 2.1262462757e+00 NumWalkersEff/NumSamples 4.1528247572e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0116826908e+00 NumWalkersEff/NumSamples 1.9759427554e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0002929402e+00 NumWalkersEff/NumSamples 1.9536971487e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000075539e+00 NumWalkersEff/NumSamples 1.9531397537e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000001969e+00 NumWalkersEff/NumSamples 1.9531253845e-05
+  Failed Step. Largest LM parameter change:1.5471157105e+02
+ERROR   Using XS:0.0000000000e+00 3 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0010205042e+00 NumWalkersEff/NumSamples 1.9551181722e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0035889981e+00 NumWalkersEff/NumSamples 1.9601347618e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000625e+00 NumWalkersEff/NumSamples 1.9531251220e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+  Failed Step. Largest LM parameter change:4.2509603440e+02
+ERROR   Using XS:2.0000000000e+00 4 0
+  Good Step. Largest LM parameter change:1.2133253452e+00
+ OldCost: -1.6177351403e+01 NewCost: -1.6354054603e+01 Delta Cost:-1.7670319999e-01
+      Current ene:     -1.7234029660e+01
+      Current var:     3.6547147172e-01
+      Current ene_urw:     -1.7210655778e+01
+      Current var_urw: 2.7483954159e+00
+Setting new Parameters
+ERROR   Execution time = 6.5251785950e+00
+  </log>
+  <optVariables href="jopt-h2o.s000.opt.xml">
+CSFcoeff_1 -2.3155502004e-02 3 1  ON 0
+CSFcoeff_2 3.4758782211e-02 3 1  ON 1
+CSFcoeff_3 -2.2303033974e-02 3 1  ON 2
+CSFcoeff_4 -2.3218021550e-02 3 1  ON 3
+CSFcoeff_5 -1.9024033951e-02 3 1  ON 4
+CSFcoeff_6 2.0554937241e-02 3 1  ON 5
+CSFcoeff_7 -1.7826514593e-02 3 1  ON 6
+CSFcoeff_8 1.6816688906e-02 3 1  ON 7
+CSFcoeff_9 1.5257646224e-02 3 1  ON 8
+CSFcoeff_10 -1.6823240824e-02 3 1  ON 9
+CSFcoeff_11 -1.6753249492e-02 3 1  ON 10
+CSFcoeff_12 -1.6963099600e-02 3 1  ON 11
+CSFcoeff_13 -1.4648018208e-02 3 1  ON 12
+CSFcoeff_14 -1.8285086248e-02 3 1  ON 13
+CSFcoeff_15 1.1878608826e-02 3 1  ON 14
+CSFcoeff_16 -1.5998276909e-02 3 1  ON 15
+CSFcoeff_17 -1.8015706639e-02 3 1  ON 16
+CSFcoeff_18 -1.3687766078e-02 3 1  ON 17
+CSFcoeff_19 9.8951719327e-03 3 1  ON 18
+CSFcoeff_20 9.6271521149e-03 3 1  ON 19
+CSFcoeff_21 1.5941684464e-02 3 1  ON 20
+CSFcoeff_22 -1.6602227038e-02 3 1  ON 21
+CSFcoeff_23 -1.3090527405e-02 3 1  ON 22
+CSFcoeff_24 1.1449180463e-02 3 1  ON 23
+CSFcoeff_25 1.4815486300e-02 3 1  ON 24
+CSFcoeff_26 -1.2945557421e-02 3 1  ON 25
+CSFcoeff_27 1.6352093560e-02 3 1  ON 26
+CSFcoeff_28 1.6703160616e-02 3 1  ON 27
+CSFcoeff_29 -1.0692395998e-02 3 1  ON 28
+CSFcoeff_30 1.5152738353e-02 3 1  ON 29
+CSFcoeff_31 1.0537058374e-02 3 1  ON 30
+CSFcoeff_32 -1.0354404118e-02 3 1  ON 31
+CSFcoeff_33 -1.0437985028e-02 3 1  ON 32
+CSFcoeff_34 6.3523024573e-03 3 1  ON 33
+CSFcoeff_35 1.1295372920e-02 3 1  ON 34
+CSFcoeff_36 -1.3056854776e-02 3 1  ON 35
+CSFcoeff_37 -1.0175285273e-02 3 1  ON 36
+CSFcoeff_38 -7.2880231054e-03 3 1  ON 37
+CSFcoeff_39 1.7034826414e-02 3 1  ON 38
+CSFcoeff_40 1.8895367781e-02 3 1  ON 39
+CSFcoeff_41 -8.1378151742e-03 3 1  ON 40
+CSFcoeff_42 -8.5596704596e-03 3 1  ON 41
+CSFcoeff_43 1.0737244107e-02 3 1  ON 42
+CSFcoeff_44 9.4842131588e-03 3 1  ON 43
+CSFcoeff_45 1.3483983844e-02 3 1  ON 44
+CSFcoeff_46 -3.2426100515e-03 3 1  ON 45
+CSFcoeff_47 1.0534542280e-02 3 1  ON 46
+CSFcoeff_48 -6.5942234702e-03 3 1  ON 47
+CSFcoeff_49 1.2014599357e-02 3 1  ON 48
+CSFcoeff_50 -6.5403772352e-03 3 1  ON 49
+CSFcoeff_51 1.1370129413e-02 3 1  ON 50
+CSFcoeff_52 -9.1757560493e-03 3 1  ON 51
+CSFcoeff_53 8.4535683346e-03 3 1  ON 52
+CSFcoeff_54 -5.0290651604e-03 3 1  ON 53
+CSFcoeff_55 1.1722916511e-02 3 1  ON 54
+CSFcoeff_56 1.0813186061e-02 3 1  ON 55
+CSFcoeff_57 -9.4133307545e-03 3 1  ON 56
+CSFcoeff_58 -1.0919346053e-02 3 1  ON 57
+CSFcoeff_59 1.0775958218e-02 3 1  ON 58
+CSFcoeff_60 1.5705317819e-02 3 1  ON 59
+CSFcoeff_61 -1.1462147862e-02 3 1  ON 60
+CSFcoeff_62 -5.9197258903e-03 3 1  ON 61
+CSFcoeff_63 1.0951187353e-02 3 1  ON 62
+CSFcoeff_64 -1.0516527927e-02 3 1  ON 63
+CSFcoeff_65 8.1468472340e-03 3 1  ON 64
+CSFcoeff_66 1.1251673468e-02 3 1  ON 65
+CSFcoeff_67 -1.2127630440e-02 3 1  ON 66
+CSFcoeff_68 1.2453803780e-02 3 1  ON 67
+CSFcoeff_69 -8.6051889358e-03 3 1  ON 68
+CSFcoeff_70 -7.9613129826e-03 3 1  ON 69
+CSFcoeff_71 -8.7118162856e-03 3 1  ON 70
+CSFcoeff_72 7.0482760310e-03 3 1  ON 71
+CSFcoeff_73 -9.4566456033e-03 3 1  ON 72
+CSFcoeff_74 -1.2661702186e-02 3 1  ON 73
+CSFcoeff_75 -2.1617646332e-03 3 1  ON 74
+CSFcoeff_76 -8.3134310139e-03 3 1  ON 75
+CSFcoeff_77 -1.0065793980e-02 3 1  ON 76
+CSFcoeff_78 -9.6840962053e-03 3 1  ON 77
+CSFcoeff_79 9.5638263899e-03 3 1  ON 78
+CSFcoeff_80 8.6467438830e-03 3 1  ON 79
+CSFcoeff_81 1.3628585171e-02 3 1  ON 80
+CSFcoeff_82 5.4170310558e-03 3 1  ON 81
+CSFcoeff_83 -4.2977954013e-03 3 1  ON 82
+CSFcoeff_84 -9.2042139645e-03 3 1  ON 83
+CSFcoeff_85 6.3972652559e-03 3 1  ON 84
+CSFcoeff_86 -9.0522309661e-03 3 1  ON 85
+CSFcoeff_87 7.2072324954e-03 3 1  ON 86
+CSFcoeff_88 -1.0527124322e-02 3 1  ON 87
+CSFcoeff_89 -1.0544136778e-02 3 1  ON 88
+CSFcoeff_90 7.9687118519e-03 3 1  ON 89
+CSFcoeff_91 -1.0612241064e-02 3 1  ON 90
+CSFcoeff_92 9.5813294852e-03 3 1  ON 91
+CSFcoeff_93 3.4765347429e-03 3 1  ON 92
+CSFcoeff_94 8.4762909705e-03 3 1  ON 93
+CSFcoeff_95 7.3260485199e-03 3 1  ON 94
+CSFcoeff_96 6.9633796231e-03 3 1  ON 95
+CSFcoeff_97 9.0418674013e-03 3 1  ON 96
+CSFcoeff_98 1.0713592508e-02 3 1  ON 97
+CSFcoeff_99 -8.5155759298e-03 3 1  ON 98
+CSFcoeff_100 1.4767310354e-02 3 1  ON 99
+CSFcoeff_101 -8.9826960957e-03 3 1  ON 100
+CSFcoeff_102 -8.8919883296e-03 3 1  ON 101
+CSFcoeff_103 5.6016346787e-03 3 1  ON 102
+CSFcoeff_104 7.7015777919e-03 3 1  ON 103
+CSFcoeff_105 1.1038705130e-02 3 1  ON 104
+CSFcoeff_106 8.8097380255e-03 3 1  ON 105
+CSFcoeff_107 -7.7532972118e-03 3 1  ON 106
+CSFcoeff_108 1.0229236999e-02 3 1  ON 107
+CSFcoeff_109 -3.4244010840e-03 3 1  ON 108
+CSFcoeff_110 6.1315207668e-03 3 1  ON 109
+CSFcoeff_111 -5.4131910277e-03 3 1  ON 110
+CSFcoeff_112 -9.7660068930e-03 3 1  ON 111
+CSFcoeff_113 -7.5311821919e-03 3 1  ON 112
+CSFcoeff_114 -5.6309134502e-03 3 1  ON 113
+CSFcoeff_115 1.0634842853e-02 3 1  ON 114
+CSFcoeff_116 -5.0935479701e-03 3 1  ON 115
+CSFcoeff_117 -8.7069481456e-03 3 1  ON 116
+CSFcoeff_118 -4.2950096382e-03 3 1  ON 117
+CSFcoeff_119 4.9687270392e-03 3 1  ON 118
+CSFcoeff_120 -9.6214900650e-03 3 1  ON 119
+CSFcoeff_121 -1.4494561338e-02 3 1  ON 120
+CSFcoeff_122 7.1682157895e-03 3 1  ON 121
+CSFcoeff_123 8.9438419482e-03 3 1  ON 122
+CSFcoeff_124 9.5285619846e-03 3 1  ON 123
+CSFcoeff_125 -7.9207115103e-03 3 1  ON 124
+CSFcoeff_126 7.2160871763e-03 3 1  ON 125
+CSFcoeff_127 5.8824012756e-03 3 1  ON 126
+CSFcoeff_128 -8.7990781606e-03 3 1  ON 127
+CSFcoeff_129 -5.0092119023e-03 3 1  ON 128
+CSFcoeff_130 -7.3067468796e-03 3 1  ON 129
+CSFcoeff_131 -5.7672415109e-03 3 1  ON 130
+CSFcoeff_132 -1.2065614365e-02 3 1  ON 131
+CSFcoeff_133 -8.5565872409e-03 3 1  ON 132
+CSFcoeff_134 -7.5272671035e-03 3 1  ON 133
+CSFcoeff_135 -5.8787693560e-03 3 1  ON 134
+CSFcoeff_136 -8.4704645934e-03 3 1  ON 135
+uu_0 3.2518274362e-01 1 1  ON 136
+uu_1 1.2991307125e-01 1 1  ON 137
+uu_2 6.3149346577e-02 1 1  ON 138
+uu_3 3.3365179152e-02 1 1  ON 139
+uu_4 1.8472515948e-02 1 1  ON 140
+uu_5 9.1198358021e-03 1 1  ON 141
+uu_6 1.2934717389e-02 1 1  ON 142
+uu_7 4.3455968632e-03 1 1  ON 143
+uu_8 3.5622446960e-02 1 1  ON 144
+uu_9 -8.5842695757e-03 1 1  ON 145
+ud_0 4.4485542902e-01 1 1  ON 146
+ud_1 1.5236132351e-01 1 1  ON 147
+ud_2 8.6316049664e-02 1 1  ON 148
+ud_3 5.6537068004e-02 1 1  ON 149
+ud_4 4.0735537347e-02 1 1  ON 150
+ud_5 2.7708838488e-02 1 1  ON 151
+ud_6 2.3033808543e-02 1 1  ON 152
+ud_7 2.9516541637e-02 1 1  ON 153
+ud_8 4.1371825802e-02 1 1  ON 154
+ud_9 5.1428514203e-02 1 1  ON 155
+eO_0 -1.2133253452e+00 1 1  ON 156
+eO_1 -9.0767851776e-01 1 1  ON 157
+eO_2 -6.2457175771e-01 1 1  ON 158
+eO_3 -4.8099708738e-01 1 1  ON 159
+eO_4 -3.7406294356e-01 1 1  ON 160
+eO_5 -2.9697671077e-01 1 1  ON 161
+eO_6 -2.7933513810e-01 1 1  ON 162
+eO_7 -3.3760287276e-01 1 1  ON 163
+eO_8 -3.0014083158e-01 1 1  ON 164
+eO_9 -2.6582139634e-01 1 1  ON 165
+eH_0 -6.2449884792e-02 1 1  ON 166
+eH_1 -1.9236548859e-02 1 1  ON 167
+eH_2 -2.0530470879e-03 1 1  ON 168
+eH_3 2.1382746380e-02 1 1  ON 169
+eH_4 2.9781622802e-02 1 1  ON 170
+eH_5 2.2730842961e-02 1 1  ON 171
+eH_6 1.5827292538e-02 1 1  ON 172
+eH_7 -5.8534239431e-04 1 1  ON 173
+eH_8 2.1125605034e-02 1 1  ON 174
+eH_9 -2.4438786101e-04 1 1  ON 175
+  </optVariables>
+   Restore the number of walkers to 1, removing 159 walkers.
+</opt>
+</optimization-report>
+  QMC Execution time = 6.5429156520e+00 secs 
+  Reusing QMCFixedSampleLinearOptimize
+ Using QMCCostFunctionOMP::QMCCostFunctionOMP
+
+=========================================================
+  Start QMCFixedSampleLinearOptimize
+  File Root jopt-h2o.s001 append = no 
+=========================================================
+  Skip QMCDriver::putQMCInfo 
+  Resetting Properties of the walkers 1 x 14
+
+=========================================================
+  Start VMCSingleOMP
+  File Root jopt-h2o.s001 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 14
+
+<vmc function="put">
+  qmc_counter=1  my_counter=1
+  time step      = 5.0000000000e-01
+  blocks         = 100
+  steps          = 2
+  substeps       = 20
+  current        = 0
+  target samples = 5.1200000000e+04
+  walkers/mpi    = 1
+
+  stepsbetweensamples = 1
+<parameter name="blocks" condition="int">100</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">5.1200000000e+04</parameter>
+<parameter name="samplesperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="steps" condition="int">2</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">20</parameter>
+<parameter name="substeps" condition="int">20</parameter>
+<parameter name="tau" condition="au">5.0000000000e-01</parameter>
+<parameter name="time_step" condition="au">5.0000000000e-01</parameter>
+<parameter name="timestep" condition="au">5.0000000000e-01</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">1</parameter>
+<parameter name="warmup_steps" condition="int">25</parameter>
+<parameter name="warmupsteps" condition="int">25</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1 steps.
+</vmc>
+  EstimatorManager::add replace LocalEnergy estimator.
+  EstimatorManager::add replace LocalEnergy estimator.
+<optimization-report>
+<vmc stage="main" blocks="100">
+  Cannot make clones again. Use existing 1 clones
+  Initial partition of walkers 0 1 
+  Total Sample Size   =51200
+  Walker distribution on root = 0 1 
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 1
+    time step          = 0.5
+    reference energy   = -17.2774
+    reference variance = 0.56476
+====================================================
+  Execution time = 2.3677037790e+00
+</vmc>
+<opt stage="setup">
+  <log>
+   Reading configurations from h5FileRoot jopt-h2o.s001
+  QMCCostFunctionOMP is created with 1
+   Loading configuration from MCWalkerConfiguration::SampleStack 
+    number of walkers before load 1
+  Using Nonlocal PP in Opt: NonLocalECP
+    number of walkers after load: 160 
+Using buffers for temporary storage in QMCCostFunction.
+
+Memory usage: 
+Linear method (approx matrix usage: 4*N^2): 9.9123200000e-01 MB
+Deriv,HDerivRecord:      6.7584000000e-01 MB
+Buffer memory cost:     MB/walker       MB/total 
+Orbitals only:           1.7280000000e-03      2.7648000000e-01
+Orbitals + dervs:        8.6400000000e-03      1.3824000000e+00
+Inverse:                 2.5600000000e-04      4.0960000000e-02
+Determinants:            2.8016000000e-02      4.4825600000e+00
+  VMC Eavg = -1.7239567752e+01
+  VMC Evar = 3.2749286785e-01
+  Total weights = 5.1200000000e+04
+  Execution time = 1.7120031599e-01
+  </log>
+</opt>
+<opt stage="main" walkers="51200">
+  <log>
+Iteration: 1/1
+od_largest 2.5798031519e+02
+  stabilityBase -6.0000000000e+00
+  stabilizerScale 2.0000000000e+00
+  Using XS:-6.0000000000e+00 0 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.9427333292e+00 NumWalkersEff/NumSamples 3.7944010336e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 4.4288170065e+00 NumWalkersEff/NumSamples 8.6500332158e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.4526988728e+00 NumWalkersEff/NumSamples 2.8373024859e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.1942226944e+00 NumWalkersEff/NumSamples 2.3324662001e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0918616973e+00 NumWalkersEff/NumSamples 2.1325423775e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0512245395e+00 NumWalkersEff/NumSamples 2.0531729287e-05
+  Failed Step. Largest LM parameter change:9.1421493323e+01
+ERROR   Using XS:-4.0000000000e+00 1 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.9420217338e+00 NumWalkersEff/NumSamples 3.7930111988e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 4.4109024930e+00 NumWalkersEff/NumSamples 8.6150439317e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.4516030453e+00 NumWalkersEff/NumSamples 2.8351621978e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.1935473834e+00 NumWalkersEff/NumSamples 2.3311472332e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0915120654e+00 NumWalkersEff/NumSamples 2.1318595028e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0510455961e+00 NumWalkersEff/NumSamples 2.0528234299e-05
+  Failed Step. Largest LM parameter change:9.1551325022e+01
+ERROR   Using XS:-2.0000000000e+00 2 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.9364019863e+00 NumWalkersEff/NumSamples 3.7820351294e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 4.2747464859e+00 NumWalkersEff/NumSamples 8.3491142304e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.4430622711e+00 NumWalkersEff/NumSamples 2.8184809982e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.1883274671e+00 NumWalkersEff/NumSamples 2.3209520843e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0888242225e+00 NumWalkersEff/NumSamples 2.1266098097e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0496742728e+00 NumWalkersEff/NumSamples 2.0501450640e-05
+  Failed Step. Largest LM parameter change:9.2573090819e+01
+ERROR   Using XS:0.0000000000e+00 3 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.8574252870e+00 NumWalkersEff/NumSamples 3.6277837636e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 3.0346358583e+00 NumWalkersEff/NumSamples 5.9270231607e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.3414197668e+00 NumWalkersEff/NumSamples 2.6199604820e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.1318703778e+00 NumWalkersEff/NumSamples 2.2106843316e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0614635538e+00 NumWalkersEff/NumSamples 2.0731710036e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0361165831e+00 NumWalkersEff/NumSamples 2.0236652013e-05
+  Failed Step. Largest LM parameter change:1.0641904743e+02
+ERROR   Using XS:2.0000000000e+00 4 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 6.0000000000e+00 NumWalkersEff/NumSamples 1.1718750000e-04
+ERROR CostFunction-> Number of Effective Walkers is too small 1.1000000000e+01 NumWalkersEff/NumSamples 2.1484375000e-04
+ERROR CostFunction-> Number of Effective Walkers is too small 3.0000000000e+00 NumWalkersEff/NumSamples 5.8593750000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 6.0000000000e+00 NumWalkersEff/NumSamples 1.1718750000e-04
+  Failed Step. Largest LM parameter change:1.3091488917e+03
+ERROR   Using XS:4.0000000000e+00 5 0
+  Good Step. Largest LM parameter change:3.2592907074e-01
+ OldCost: -1.6361214721e+01 NewCost: -1.6369950940e+01 Delta Cost:-8.7362193265e-03
+      Current ene:     -1.7246167186e+01
+      Current var:     2.7815772637e-01
+      Current ene_urw:     -1.7244025793e+01
+      Current var_urw: 2.8477003254e-01
+Setting new Parameters
+ERROR   Execution time = 7.2054168880e+00
+  </log>
+  <optVariables href="jopt-h2o.s001.opt.xml">
+CSFcoeff_1 -2.2548845875e-02 3 1  ON 0
+CSFcoeff_2 3.7136583362e-02 3 1  ON 1
+CSFcoeff_3 -2.2930872770e-02 3 1  ON 2
+CSFcoeff_4 -2.2593760961e-02 3 1  ON 3
+CSFcoeff_5 -1.6740835892e-02 3 1  ON 4
+CSFcoeff_6 1.9083042811e-02 3 1  ON 5
+CSFcoeff_7 -1.6880884235e-02 3 1  ON 6
+CSFcoeff_8 1.5982637951e-02 3 1  ON 7
+CSFcoeff_9 1.3367596664e-02 3 1  ON 8
+CSFcoeff_10 -1.5796624509e-02 3 1  ON 9
+CSFcoeff_11 -1.6716474396e-02 3 1  ON 10
+CSFcoeff_12 -1.5535507768e-02 3 1  ON 11
+CSFcoeff_13 -1.3836542663e-02 3 1  ON 12
+CSFcoeff_14 -1.8157288703e-02 3 1  ON 13
+CSFcoeff_15 8.4755688494e-03 3 1  ON 14
+CSFcoeff_16 -1.6570635071e-02 3 1  ON 15
+CSFcoeff_17 -1.8194781521e-02 3 1  ON 16
+CSFcoeff_18 -1.1652105990e-02 3 1  ON 17
+CSFcoeff_19 7.9413520897e-03 3 1  ON 18
+CSFcoeff_20 7.6576981474e-03 3 1  ON 19
+CSFcoeff_21 1.4345183218e-02 3 1  ON 20
+CSFcoeff_22 -1.5308403972e-02 3 1  ON 21
+CSFcoeff_23 -1.2596406403e-02 3 1  ON 22
+CSFcoeff_24 1.1114409817e-02 3 1  ON 23
+CSFcoeff_25 1.4272205879e-02 3 1  ON 24
+CSFcoeff_26 -1.4230432324e-02 3 1  ON 25
+CSFcoeff_27 1.5238173215e-02 3 1  ON 26
+CSFcoeff_28 1.5981172476e-02 3 1  ON 27
+CSFcoeff_29 -1.0207717945e-02 3 1  ON 28
+CSFcoeff_30 1.3641214728e-02 3 1  ON 29
+CSFcoeff_31 1.0074872787e-02 3 1  ON 30
+CSFcoeff_32 -1.0008549059e-02 3 1  ON 31
+CSFcoeff_33 -8.9012237294e-03 3 1  ON 32
+CSFcoeff_34 3.0731789121e-03 3 1  ON 33
+CSFcoeff_35 1.0493647074e-02 3 1  ON 34
+CSFcoeff_36 -1.2276898082e-02 3 1  ON 35
+CSFcoeff_37 -9.5520600240e-03 3 1  ON 36
+CSFcoeff_38 -4.4034160831e-03 3 1  ON 37
+CSFcoeff_39 1.4929260280e-02 3 1  ON 38
+CSFcoeff_40 2.0478159985e-02 3 1  ON 39
+CSFcoeff_41 -5.6450831461e-03 3 1  ON 40
+CSFcoeff_42 -7.1504191852e-03 3 1  ON 41
+CSFcoeff_43 8.9566011601e-03 3 1  ON 42
+CSFcoeff_44 7.9776836642e-03 3 1  ON 43
+CSFcoeff_45 1.2561272383e-02 3 1  ON 44
+CSFcoeff_46 -2.0925196784e-03 3 1  ON 45
+CSFcoeff_47 8.8335831885e-03 3 1  ON 46
+CSFcoeff_48 -5.8997309582e-03 3 1  ON 47
+CSFcoeff_49 1.0628657510e-02 3 1  ON 48
+CSFcoeff_50 -6.9658613840e-03 3 1  ON 49
+CSFcoeff_51 1.0291205652e-02 3 1  ON 50
+CSFcoeff_52 -9.0970899437e-03 3 1  ON 51
+CSFcoeff_53 7.7726759380e-03 3 1  ON 52
+CSFcoeff_54 -4.1047606065e-03 3 1  ON 53
+CSFcoeff_55 1.2905924349e-02 3 1  ON 54
+CSFcoeff_56 8.9795582425e-03 3 1  ON 55
+CSFcoeff_57 -6.2110266360e-03 3 1  ON 56
+CSFcoeff_58 -1.1400578269e-02 3 1  ON 57
+CSFcoeff_59 7.5603945162e-03 3 1  ON 58
+CSFcoeff_60 1.5403549000e-02 3 1  ON 59
+CSFcoeff_61 -1.1627964949e-02 3 1  ON 60
+CSFcoeff_62 -4.5884247365e-03 3 1  ON 61
+CSFcoeff_63 9.2993906474e-03 3 1  ON 62
+CSFcoeff_64 -1.0507582607e-02 3 1  ON 63
+CSFcoeff_65 8.2569046416e-03 3 1  ON 64
+CSFcoeff_66 9.8392121604e-03 3 1  ON 65
+CSFcoeff_67 -1.0194116269e-02 3 1  ON 66
+CSFcoeff_68 1.1974232111e-02 3 1  ON 67
+CSFcoeff_69 -8.9970326736e-03 3 1  ON 68
+CSFcoeff_70 -5.4350120160e-03 3 1  ON 69
+CSFcoeff_71 -8.1077277591e-03 3 1  ON 70
+CSFcoeff_72 4.6618130000e-03 3 1  ON 71
+CSFcoeff_73 -8.0065291143e-03 3 1  ON 72
+CSFcoeff_74 -1.1953484131e-02 3 1  ON 73
+CSFcoeff_75 -2.5850957315e-03 3 1  ON 74
+CSFcoeff_76 -7.5368570117e-03 3 1  ON 75
+CSFcoeff_77 -8.9011252554e-03 3 1  ON 76
+CSFcoeff_78 -1.0187267544e-02 3 1  ON 77
+CSFcoeff_79 8.8734810073e-03 3 1  ON 78
+CSFcoeff_80 8.5334988929e-03 3 1  ON 79
+CSFcoeff_81 9.5833188445e-03 3 1  ON 80
+CSFcoeff_82 1.9249677728e-03 3 1  ON 81
+CSFcoeff_83 -5.5992353623e-03 3 1  ON 82
+CSFcoeff_84 -8.4514336680e-03 3 1  ON 83
+CSFcoeff_85 4.4418540303e-03 3 1  ON 84
+CSFcoeff_86 -8.5813692550e-03 3 1  ON 85
+CSFcoeff_87 7.6289251221e-03 3 1  ON 86
+CSFcoeff_88 -8.6690742537e-03 3 1  ON 87
+CSFcoeff_89 -1.0225063125e-02 3 1  ON 88
+CSFcoeff_90 6.2296684842e-03 3 1  ON 89
+CSFcoeff_91 -1.0397887389e-02 3 1  ON 90
+CSFcoeff_92 9.3132959746e-03 3 1  ON 91
+CSFcoeff_93 3.7919251808e-04 3 1  ON 92
+CSFcoeff_94 7.9907592194e-03 3 1  ON 93
+CSFcoeff_95 8.4997431653e-03 3 1  ON 94
+CSFcoeff_96 7.0917598638e-03 3 1  ON 95
+CSFcoeff_97 8.5743476356e-03 3 1  ON 96
+CSFcoeff_98 8.5242774743e-03 3 1  ON 97
+CSFcoeff_99 -9.5320895482e-03 3 1  ON 98
+CSFcoeff_100 1.7841852039e-02 3 1  ON 99
+CSFcoeff_101 -7.8250895525e-03 3 1  ON 100
+CSFcoeff_102 -7.2844614218e-03 3 1  ON 101
+CSFcoeff_103 5.9605674932e-03 3 1  ON 102
+CSFcoeff_104 7.6025738057e-03 3 1  ON 103
+CSFcoeff_105 9.3932729182e-03 3 1  ON 104
+CSFcoeff_106 7.7595977520e-03 3 1  ON 105
+CSFcoeff_107 -7.7515659540e-03 3 1  ON 106
+CSFcoeff_108 9.0778680123e-03 3 1  ON 107
+CSFcoeff_109 -8.3848754338e-04 3 1  ON 108
+CSFcoeff_110 4.3625224087e-03 3 1  ON 109
+CSFcoeff_111 -4.2213188792e-03 3 1  ON 110
+CSFcoeff_112 -7.5558908588e-03 3 1  ON 111
+CSFcoeff_113 -6.8158579548e-03 3 1  ON 112
+CSFcoeff_114 -4.7871980468e-03 3 1  ON 113
+CSFcoeff_115 9.6463385181e-03 3 1  ON 114
+CSFcoeff_116 -4.8823114993e-03 3 1  ON 115
+CSFcoeff_117 -8.1298708571e-03 3 1  ON 116
+CSFcoeff_118 -3.9016404659e-03 3 1  ON 117
+CSFcoeff_119 3.1724282222e-03 3 1  ON 118
+CSFcoeff_120 -9.1314199122e-03 3 1  ON 119
+CSFcoeff_121 -1.5560598481e-02 3 1  ON 120
+CSFcoeff_122 6.1853906160e-03 3 1  ON 121
+CSFcoeff_123 7.5166131439e-03 3 1  ON 122
+CSFcoeff_124 8.8526624654e-03 3 1  ON 123
+CSFcoeff_125 -4.8633376181e-03 3 1  ON 124
+CSFcoeff_126 8.6636979872e-03 3 1  ON 125
+CSFcoeff_127 4.2640430648e-03 3 1  ON 126
+CSFcoeff_128 -9.0806648735e-03 3 1  ON 127
+CSFcoeff_129 -4.6844659386e-03 3 1  ON 128
+CSFcoeff_130 -5.3801091826e-03 3 1  ON 129
+CSFcoeff_131 -6.8370933269e-03 3 1  ON 130
+CSFcoeff_132 -9.9397343698e-03 3 1  ON 131
+CSFcoeff_133 -8.0036519253e-03 3 1  ON 132
+CSFcoeff_134 -9.0013503745e-03 3 1  ON 133
+CSFcoeff_135 -4.7712669254e-03 3 1  ON 134
+CSFcoeff_136 -8.3065004822e-03 3 1  ON 135
+uu_0 2.4175665320e-01 1 1  ON 136
+uu_1 8.7126502749e-02 1 1  ON 137
+uu_2 -1.3243869987e-02 1 1  ON 138
+uu_3 -4.8613026682e-02 1 1  ON 139
+uu_4 -7.1850189210e-02 1 1  ON 140
+uu_5 -7.6973326648e-02 1 1  ON 141
+uu_6 -8.5781421615e-02 1 1  ON 142
+uu_7 -7.6057891243e-02 1 1  ON 143
+uu_8 -6.8815738632e-02 1 1  ON 144
+uu_9 -9.5218250388e-02 1 1  ON 145
+ud_0 4.1594481891e-01 1 1  ON 146
+ud_1 1.7090429491e-01 1 1  ON 147
+ud_2 5.3549134738e-02 1 1  ON 148
+ud_3 2.5185491799e-02 1 1  ON 149
+ud_4 -1.6209799756e-03 1 1  ON 150
+ud_5 -1.4342319165e-02 1 1  ON 151
+ud_6 -3.2091760449e-02 1 1  ON 152
+ud_7 -2.6226648282e-02 1 1  ON 153
+ud_8 1.1062084431e-02 1 1  ON 154
+ud_9 -9.2595302462e-03 1 1  ON 155
+eO_0 -1.1849456708e+00 1 1  ON 156
+eO_1 -8.5157367665e-01 1 1  ON 157
+eO_2 -4.7919579258e-01 1 1  ON 158
+eO_3 -2.9106883277e-01 1 1  ON 159
+eO_4 -1.4432109677e-01 1 1  ON 160
+eO_5 -3.3809222735e-02 1 1  ON 161
+eO_6 1.1309621733e-02 1 1  ON 162
+eO_7 -5.0298354616e-02 1 1  ON 163
+eO_8 2.5788239163e-02 1 1  ON 164
+eO_9 -4.1837577217e-03 1 1  ON 165
+eH_0 -1.5914643411e-01 1 1  ON 166
+eH_1 -1.1143630282e-01 1 1  ON 167
+eH_2 -8.6019880888e-02 1 1  ON 168
+eH_3 -5.6085973866e-02 1 1  ON 169
+eH_4 -4.4472159881e-02 1 1  ON 170
+eH_5 -5.1990942844e-02 1 1  ON 171
+eH_6 -6.6147224886e-02 1 1  ON 172
+eH_7 -8.0710435301e-02 1 1  ON 173
+eH_8 -3.9456462213e-02 1 1  ON 174
+eH_9 -9.1242879619e-02 1 1  ON 175
+  </optVariables>
+   Restore the number of walkers to 1, removing 159 walkers.
+</opt>
+</optimization-report>
+  QMC Execution time = 7.2231475730e+00 secs 
+  Reusing QMCFixedSampleLinearOptimize
+ Using QMCCostFunctionOMP::QMCCostFunctionOMP
+
+=========================================================
+  Start QMCFixedSampleLinearOptimize
+  File Root jopt-h2o.s002 append = no 
+=========================================================
+  Skip QMCDriver::putQMCInfo 
+  Resetting Properties of the walkers 1 x 14
+
+=========================================================
+  Start VMCSingleOMP
+  File Root jopt-h2o.s002 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 14
+
+<vmc function="put">
+  qmc_counter=2  my_counter=2
+  time step      = 5.0000000000e-01
+  blocks         = 100
+  steps          = 2
+  substeps       = 20
+  current        = 0
+  target samples = 5.1200000000e+04
+  walkers/mpi    = 1
+
+  stepsbetweensamples = 1
+<parameter name="blocks" condition="int">100</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">5.1200000000e+04</parameter>
+<parameter name="samplesperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="steps" condition="int">2</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">20</parameter>
+<parameter name="substeps" condition="int">20</parameter>
+<parameter name="tau" condition="au">5.0000000000e-01</parameter>
+<parameter name="time_step" condition="au">5.0000000000e-01</parameter>
+<parameter name="timestep" condition="au">5.0000000000e-01</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">1</parameter>
+<parameter name="warmup_steps" condition="int">25</parameter>
+<parameter name="warmupsteps" condition="int">25</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1 steps.
+</vmc>
+  EstimatorManager::add replace LocalEnergy estimator.
+  EstimatorManager::add replace LocalEnergy estimator.
+<optimization-report>
+<vmc stage="main" blocks="100">
+  Cannot make clones again. Use existing 1 clones
+  Initial partition of walkers 0 1 
+  Total Sample Size   =51200
+  Walker distribution on root = 0 1 
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 2
+    time step          = 0.5
+    reference energy   = -17.2633
+    reference variance = 0.456384
+====================================================
+  Execution time = 2.3313956060e+00
+</vmc>
+<opt stage="setup">
+  <log>
+   Reading configurations from h5FileRoot jopt-h2o.s002
+  QMCCostFunctionOMP is created with 1
+   Loading configuration from MCWalkerConfiguration::SampleStack 
+    number of walkers before load 1
+  Using Nonlocal PP in Opt: NonLocalECP
+    number of walkers after load: 160 
+Using buffers for temporary storage in QMCCostFunction.
+
+Memory usage: 
+Linear method (approx matrix usage: 4*N^2): 9.9123200000e-01 MB
+Deriv,HDerivRecord:      6.7584000000e-01 MB
+Buffer memory cost:     MB/walker       MB/total 
+Orbitals only:           1.7280000000e-03      2.7648000000e-01
+Orbitals + dervs:        8.6400000000e-03      1.3824000000e+00
+Inverse:                 2.5600000000e-04      4.0960000000e-02
+Determinants:            2.8016000000e-02      4.4825600000e+00
+  VMC Eavg = -1.7245618888e+01
+  VMC Evar = 2.8403913167e-01
+  Total weights = 5.1200000000e+04
+  Execution time = 1.7234446500e-01
+  </log>
+</opt>
+<opt stage="main" walkers="51200">
+  <log>
+Iteration: 1/1
+od_largest 1.2171468467e+02
+  stabilityBase -6.0000000000e+00
+  stabilizerScale 2.0000000000e+00
+  Using XS:-6.0000000000e+00 0 0
+ERROR CostFunction-> Number of Effective Walkers is too small 2.9404056836e+00 NumWalkersEff/NumSamples 5.7429798508e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0136639497e+00 NumWalkersEff/NumSamples 1.9798124018e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000482297e+00 NumWalkersEff/NumSamples 1.9532191987e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000001846e+00 NumWalkersEff/NumSamples 1.9531253606e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000007e+00 NumWalkersEff/NumSamples 1.9531250014e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+  Failed Step. Largest LM parameter change:1.1199161022e+02
+ERROR   Using XS:-4.0000000000e+00 1 0
+ERROR CostFunction-> Number of Effective Walkers is too small 2.9408057808e+00 NumWalkersEff/NumSamples 5.7437612906e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0135712729e+00 NumWalkersEff/NumSamples 1.9796313924e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000476002e+00 NumWalkersEff/NumSamples 1.9532179691e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000001810e+00 NumWalkersEff/NumSamples 1.9531253536e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000007e+00 NumWalkersEff/NumSamples 1.9531250014e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+  Failed Step. Largest LM parameter change:1.1212799526e+02
+ERROR   Using XS:-2.0000000000e+00 2 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0597160583e+00 NumWalkersEff/NumSamples 2.0697579263e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0541720710e+02 NumWalkersEff/NumSamples 2.0589298262e-03
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0019663524e+00 NumWalkersEff/NumSamples 1.9569655321e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000659316e+00 NumWalkersEff/NumSamples 1.9532537727e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000022069e+00 NumWalkersEff/NumSamples 1.9531293103e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000738e+00 NumWalkersEff/NumSamples 1.9531251442e-05
+  Failed Step. Largest LM parameter change:3.6765319459e+01
+ERROR   Using XS:0.0000000000e+00 3 0
+ERROR CostFunction-> Number of Effective Walkers is too small 2.5720700340e+00 NumWalkersEff/NumSamples 5.0235742852e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 5.1318409102e+02 NumWalkersEff/NumSamples 1.0023126778e-02
+ERROR CostFunction-> Number of Effective Walkers is too small 2.3867911769e+00 NumWalkersEff/NumSamples 4.6617015173e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.4121670058e+00 NumWalkersEff/NumSamples 2.7581386832e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0937394568e+00 NumWalkersEff/NumSamples 2.1362098765e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0224134162e+00 NumWalkersEff/NumSamples 1.9969012035e-05
+  Failed Step. Largest LM parameter change:3.6620438435e+01
+ERROR   Using XS:2.0000000000e+00 4 0
+  Good Step. Largest LM parameter change:3.1929366866e-01
+ OldCost: -1.6369135987e+01 NewCost: -1.6371602642e+01 Delta Cost:-2.4666555247e-03
+      Current ene:     -1.7248589403e+01
+      Current var:     2.9114581139e-01
+      Current ene_urw:     -1.7245953626e+01
+      Current var_urw: 3.1061680814e-01
+Setting new Parameters
+ERROR   Execution time = 6.5018692650e+00
+  </log>
+  <optVariables href="jopt-h2o.s002.opt.xml">
+CSFcoeff_1 -2.0985652671e-02 3 1  ON 0
+CSFcoeff_2 3.9443257283e-02 3 1  ON 1
+CSFcoeff_3 -1.6658203951e-02 3 1  ON 2
+CSFcoeff_4 -1.9758995585e-02 3 1  ON 3
+CSFcoeff_5 -1.4945567654e-02 3 1  ON 4
+CSFcoeff_6 2.0664039516e-02 3 1  ON 5
+CSFcoeff_7 -1.5535221210e-02 3 1  ON 6
+CSFcoeff_8 1.4389132912e-02 3 1  ON 7
+CSFcoeff_9 1.3432525813e-02 3 1  ON 8
+CSFcoeff_10 -1.5635953422e-02 3 1  ON 9
+CSFcoeff_11 -1.5043693856e-02 3 1  ON 10
+CSFcoeff_12 -1.7419826059e-02 3 1  ON 11
+CSFcoeff_13 -1.3060130078e-02 3 1  ON 12
+CSFcoeff_14 -2.2512172398e-02 3 1  ON 13
+CSFcoeff_15 6.4631811164e-03 3 1  ON 14
+CSFcoeff_16 -1.6753889459e-02 3 1  ON 15
+CSFcoeff_17 -1.6733636515e-02 3 1  ON 16
+CSFcoeff_18 -1.0259043896e-02 3 1  ON 17
+CSFcoeff_19 5.9940225295e-03 3 1  ON 18
+CSFcoeff_20 9.6991964009e-03 3 1  ON 19
+CSFcoeff_21 1.5413834992e-02 3 1  ON 20
+CSFcoeff_22 -1.2693923554e-02 3 1  ON 21
+CSFcoeff_23 -1.5266537839e-02 3 1  ON 22
+CSFcoeff_24 1.1448471061e-02 3 1  ON 23
+CSFcoeff_25 1.3986525474e-02 3 1  ON 24
+CSFcoeff_26 -1.3976078978e-02 3 1  ON 25
+CSFcoeff_27 1.6383623801e-02 3 1  ON 26
+CSFcoeff_28 1.2592041547e-02 3 1  ON 27
+CSFcoeff_29 -9.0952459385e-03 3 1  ON 28
+CSFcoeff_30 1.4436658201e-02 3 1  ON 29
+CSFcoeff_31 1.2308996612e-02 3 1  ON 30
+CSFcoeff_32 -9.0746494117e-03 3 1  ON 31
+CSFcoeff_33 -8.1494495183e-03 3 1  ON 32
+CSFcoeff_34 2.4057505785e-03 3 1  ON 33
+CSFcoeff_35 1.1386719383e-02 3 1  ON 34
+CSFcoeff_36 -1.2754452542e-02 3 1  ON 35
+CSFcoeff_37 -1.1496685537e-02 3 1  ON 36
+CSFcoeff_38 -3.0961888921e-03 3 1  ON 37
+CSFcoeff_39 1.2825199286e-02 3 1  ON 38
+CSFcoeff_40 2.0601356848e-02 3 1  ON 39
+CSFcoeff_41 -5.3839930477e-03 3 1  ON 40
+CSFcoeff_42 -3.9267943747e-03 3 1  ON 41
+CSFcoeff_43 1.0122346217e-02 3 1  ON 42
+CSFcoeff_44 6.0646370744e-03 3 1  ON 43
+CSFcoeff_45 1.3310230418e-02 3 1  ON 44
+CSFcoeff_46 -2.1696033526e-03 3 1  ON 45
+CSFcoeff_47 8.5663081749e-03 3 1  ON 46
+CSFcoeff_48 -6.3393279548e-03 3 1  ON 47
+CSFcoeff_49 1.0282117225e-02 3 1  ON 48
+CSFcoeff_50 -7.3053302622e-03 3 1  ON 49
+CSFcoeff_51 9.4318053910e-03 3 1  ON 50
+CSFcoeff_52 -8.3701772436e-03 3 1  ON 51
+CSFcoeff_53 6.4993406172e-03 3 1  ON 52
+CSFcoeff_54 -3.0984940881e-03 3 1  ON 53
+CSFcoeff_55 1.1015053672e-02 3 1  ON 54
+CSFcoeff_56 6.3807118792e-03 3 1  ON 55
+CSFcoeff_57 -6.5312798405e-03 3 1  ON 56
+CSFcoeff_58 -9.6485884801e-03 3 1  ON 57
+CSFcoeff_59 6.7621410042e-03 3 1  ON 58
+CSFcoeff_60 1.7027219121e-02 3 1  ON 59
+CSFcoeff_61 -1.4281445908e-02 3 1  ON 60
+CSFcoeff_62 -2.9948960963e-03 3 1  ON 61
+CSFcoeff_63 7.1963725400e-03 3 1  ON 62
+CSFcoeff_64 -1.0528941187e-02 3 1  ON 63
+CSFcoeff_65 8.9727472393e-03 3 1  ON 64
+CSFcoeff_66 9.7572264185e-03 3 1  ON 65
+CSFcoeff_67 -1.1307951680e-02 3 1  ON 66
+CSFcoeff_68 1.3570773108e-02 3 1  ON 67
+CSFcoeff_69 -1.0400123308e-02 3 1  ON 68
+CSFcoeff_70 -4.0237765388e-03 3 1  ON 69
+CSFcoeff_71 -1.0099179294e-02 3 1  ON 70
+CSFcoeff_72 4.0527388982e-03 3 1  ON 71
+CSFcoeff_73 -8.4187560209e-03 3 1  ON 72
+CSFcoeff_74 -1.4313974532e-02 3 1  ON 73
+CSFcoeff_75 -1.6524235352e-03 3 1  ON 74
+CSFcoeff_76 -8.4903836655e-03 3 1  ON 75
+CSFcoeff_77 -9.4782134168e-03 3 1  ON 76
+CSFcoeff_78 -8.9431660063e-03 3 1  ON 77
+CSFcoeff_79 8.1468889705e-03 3 1  ON 78
+CSFcoeff_80 8.1226733593e-03 3 1  ON 79
+CSFcoeff_81 7.0489602915e-03 3 1  ON 80
+CSFcoeff_82 5.7045033267e-03 3 1  ON 81
+CSFcoeff_83 -6.6709027994e-03 3 1  ON 82
+CSFcoeff_84 -8.4047469448e-03 3 1  ON 83
+CSFcoeff_85 6.3291548361e-03 3 1  ON 84
+CSFcoeff_86 -7.9856889620e-03 3 1  ON 85
+CSFcoeff_87 5.8910348248e-03 3 1  ON 86
+CSFcoeff_88 -8.4694166958e-03 3 1  ON 87
+CSFcoeff_89 -8.2817709834e-03 3 1  ON 88
+CSFcoeff_90 3.3202475221e-03 3 1  ON 89
+CSFcoeff_91 -5.7984847117e-03 3 1  ON 90
+CSFcoeff_92 1.0815228673e-02 3 1  ON 91
+CSFcoeff_93 -4.7593585408e-05 3 1  ON 92
+CSFcoeff_94 1.1333279112e-02 3 1  ON 93
+CSFcoeff_95 5.8454538658e-03 3 1  ON 94
+CSFcoeff_96 7.3974753905e-03 3 1  ON 95
+CSFcoeff_97 9.7957713439e-03 3 1  ON 96
+CSFcoeff_98 7.9497943980e-03 3 1  ON 97
+CSFcoeff_99 -1.0664157809e-02 3 1  ON 98
+CSFcoeff_100 1.8709459206e-02 3 1  ON 99
+CSFcoeff_101 -9.6135593932e-03 3 1  ON 100
+CSFcoeff_102 -5.1262874176e-03 3 1  ON 101
+CSFcoeff_103 6.5101542311e-03 3 1  ON 102
+CSFcoeff_104 5.6220453161e-03 3 1  ON 103
+CSFcoeff_105 8.2349337920e-03 3 1  ON 104
+CSFcoeff_106 7.2780937905e-03 3 1  ON 105
+CSFcoeff_107 -7.2810199989e-03 3 1  ON 106
+CSFcoeff_108 6.7243322860e-03 3 1  ON 107
+CSFcoeff_109 -2.9607221192e-03 3 1  ON 108
+CSFcoeff_110 3.4051300163e-03 3 1  ON 109
+CSFcoeff_111 -3.4717326070e-03 3 1  ON 110
+CSFcoeff_112 -6.3231883105e-03 3 1  ON 111
+CSFcoeff_113 -7.8420597977e-03 3 1  ON 112
+CSFcoeff_114 -4.6725797774e-03 3 1  ON 113
+CSFcoeff_115 1.1567306217e-02 3 1  ON 114
+CSFcoeff_116 -3.8550479373e-03 3 1  ON 115
+CSFcoeff_117 -1.0573410340e-02 3 1  ON 116
+CSFcoeff_118 -4.0979117097e-03 3 1  ON 117
+CSFcoeff_119 1.2459925642e-03 3 1  ON 118
+CSFcoeff_120 -8.7572022161e-03 3 1  ON 119
+CSFcoeff_121 -1.5049121980e-02 3 1  ON 120
+CSFcoeff_122 5.5435854716e-03 3 1  ON 121
+CSFcoeff_123 5.7440084895e-03 3 1  ON 122
+CSFcoeff_124 6.5775002350e-03 3 1  ON 123
+CSFcoeff_125 -3.7067558820e-03 3 1  ON 124
+CSFcoeff_126 8.9407328033e-03 3 1  ON 125
+CSFcoeff_127 5.3461233232e-03 3 1  ON 126
+CSFcoeff_128 -9.2377245551e-03 3 1  ON 127
+CSFcoeff_129 -6.9807039023e-03 3 1  ON 128
+CSFcoeff_130 -4.9386827482e-03 3 1  ON 129
+CSFcoeff_131 -5.7414629882e-03 3 1  ON 130
+CSFcoeff_132 -8.9262304473e-03 3 1  ON 131
+CSFcoeff_133 -8.3895365955e-03 3 1  ON 132
+CSFcoeff_134 -1.1771823121e-02 3 1  ON 133
+CSFcoeff_135 -4.0461812808e-03 3 1  ON 134
+CSFcoeff_136 -6.2677100426e-03 3 1  ON 135
+uu_0 3.2491915789e-01 1 1  ON 136
+uu_1 1.4557308423e-01 1 1  ON 137
+uu_2 5.0263565544e-02 1 1  ON 138
+uu_3 1.8767266500e-03 1 1  ON 139
+uu_4 -1.9268076503e-02 1 1  ON 140
+uu_5 -3.1169706268e-02 1 1  ON 141
+uu_6 -3.7282794257e-02 1 1  ON 142
+uu_7 -3.4954640104e-02 1 1  ON 143
+uu_8 1.3835079498e-02 1 1  ON 144
+uu_9 -6.9910016487e-03 1 1  ON 145
+ud_0 4.3917980318e-01 1 1  ON 146
+ud_1 1.6341620290e-01 1 1  ON 147
+ud_2 5.0753448187e-02 1 1  ON 148
+ud_3 4.4142688645e-03 1 1  ON 149
+ud_4 -1.5539503440e-02 1 1  ON 150
+ud_5 -3.4934622404e-02 1 1  ON 151
+ud_6 -5.1400884232e-02 1 1  ON 152
+ud_7 -4.7229227984e-02 1 1  ON 153
+ud_8 -7.0076590078e-03 1 1  ON 154
+ud_9 7.6795818163e-02 1 1  ON 155
+eO_0 -1.5042393395e+00 1 1  ON 156
+eO_1 -1.1520649990e+00 1 1  ON 157
+eO_2 -7.4973407946e-01 1 1  ON 158
+eO_3 -5.2952915414e-01 1 1  ON 159
+eO_4 -3.6388348010e-01 1 1  ON 160
+eO_5 -2.2061990155e-01 1 1  ON 161
+eO_6 -1.6973170028e-01 1 1  ON 162
+eO_7 -2.4715790122e-01 1 1  ON 163
+eO_8 -1.4387245858e-01 1 1  ON 164
+eO_9 -2.8922601147e-01 1 1  ON 165
+eH_0 -1.8465414597e-01 1 1  ON 166
+eH_1 -1.3248509126e-01 1 1  ON 167
+eH_2 -1.0592596672e-01 1 1  ON 168
+eH_3 -7.1763582963e-02 1 1  ON 169
+eH_4 -5.8639479362e-02 1 1  ON 170
+eH_5 -6.8922465449e-02 1 1  ON 171
+eH_6 -8.8468392979e-02 1 1  ON 172
+eH_7 -1.1419488513e-01 1 1  ON 173
+eH_8 -4.8943427639e-02 1 1  ON 174
+eH_9 -2.0928476827e-01 1 1  ON 175
+  </optVariables>
+   Restore the number of walkers to 1, removing 159 walkers.
+</opt>
+</optimization-report>
+  QMC Execution time = 6.5197033370e+00 secs 
+  Reusing QMCFixedSampleLinearOptimize
+ Using QMCCostFunctionOMP::QMCCostFunctionOMP
+
+=========================================================
+  Start QMCFixedSampleLinearOptimize
+  File Root jopt-h2o.s003 append = no 
+=========================================================
+  Skip QMCDriver::putQMCInfo 
+  Resetting Properties of the walkers 1 x 14
+
+=========================================================
+  Start VMCSingleOMP
+  File Root jopt-h2o.s003 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 14
+
+<vmc function="put">
+  qmc_counter=3  my_counter=3
+  time step      = 5.0000000000e-01
+  blocks         = 100
+  steps          = 2
+  substeps       = 20
+  current        = 0
+  target samples = 5.1200000000e+04
+  walkers/mpi    = 1
+
+  stepsbetweensamples = 1
+<parameter name="blocks" condition="int">100</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">5.1200000000e+04</parameter>
+<parameter name="samplesperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="steps" condition="int">2</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">20</parameter>
+<parameter name="substeps" condition="int">20</parameter>
+<parameter name="tau" condition="au">5.0000000000e-01</parameter>
+<parameter name="time_step" condition="au">5.0000000000e-01</parameter>
+<parameter name="timestep" condition="au">5.0000000000e-01</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">1</parameter>
+<parameter name="warmup_steps" condition="int">25</parameter>
+<parameter name="warmupsteps" condition="int">25</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1 steps.
+</vmc>
+  EstimatorManager::add replace LocalEnergy estimator.
+  EstimatorManager::add replace LocalEnergy estimator.
+<optimization-report>
+<vmc stage="main" blocks="100">
+  Cannot make clones again. Use existing 1 clones
+  Initial partition of walkers 0 1 
+  Total Sample Size   =51200
+  Walker distribution on root = 0 1 
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 3
+    time step          = 0.5
+    reference energy   = -17.2649
+    reference variance = 0.495902
+====================================================
+  Execution time = 2.3379482380e+00
+</vmc>
+<opt stage="setup">
+  <log>
+   Reading configurations from h5FileRoot jopt-h2o.s003
+  QMCCostFunctionOMP is created with 1
+   Loading configuration from MCWalkerConfiguration::SampleStack 
+    number of walkers before load 1
+  Using Nonlocal PP in Opt: NonLocalECP
+    number of walkers after load: 160 
+Using buffers for temporary storage in QMCCostFunction.
+
+Memory usage: 
+Linear method (approx matrix usage: 4*N^2): 9.9123200000e-01 MB
+Deriv,HDerivRecord:      6.7584000000e-01 MB
+Buffer memory cost:     MB/walker       MB/total 
+Orbitals only:           1.7280000000e-03      2.7648000000e-01
+Orbitals + dervs:        8.6400000000e-03      1.3824000000e+00
+Inverse:                 2.5600000000e-04      4.0960000000e-02
+Determinants:            2.8016000000e-02      4.4825600000e+00
+  VMC Eavg = -1.7246671833e+01
+  VMC Evar = 3.2269079174e-01
+  Total weights = 5.1200000000e+04
+  Execution time = 1.7106438900e-01
+  </log>
+</opt>
+<opt stage="main" walkers="51200">
+  <log>
+Iteration: 1/1
+od_largest 6.3914361757e+02
+  stabilityBase -6.0000000000e+00
+  stabilizerScale 2.0000000000e+00
+  Using XS:-6.0000000000e+00 0 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0294317704e+00 NumWalkersEff/NumSamples 2.0106089266e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0006328745e+00 NumWalkersEff/NumSamples 1.9543610829e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000048034e+00 NumWalkersEff/NumSamples 1.9531343817e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000352e+00 NumWalkersEff/NumSamples 1.9531250688e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000003e+00 NumWalkersEff/NumSamples 1.9531250005e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+  Failed Step. Largest LM parameter change:2.7587429381e+02
+ERROR   Using XS:-4.0000000000e+00 1 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000263255e+00 NumWalkersEff/NumSamples 1.9531764169e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000017287e+00 NumWalkersEff/NumSamples 1.9531283763e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000028e+00 NumWalkersEff/NumSamples 1.9531250055e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+  Failed Step. Largest LM parameter change:3.5295276730e+02
+ERROR   Using XS:-2.0000000000e+00 2 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000257127e+00 NumWalkersEff/NumSamples 1.9531752202e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000016837e+00 NumWalkersEff/NumSamples 1.9531282885e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000027e+00 NumWalkersEff/NumSamples 1.9531250052e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+  Failed Step. Largest LM parameter change:3.5387702525e+02
+ERROR   Using XS:0.0000000000e+00 3 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000004e+00 NumWalkersEff/NumSamples 1.9531250009e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000001e+00 NumWalkersEff/NumSamples 1.9531250002e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+  Failed Step. Largest LM parameter change:2.4630348771e+02
+ERROR   Using XS:2.0000000000e+00 4 0
+  Good Step. Largest LM parameter change:1.8470379052e+00
+ OldCost: -1.6368203702e+01 NewCost: -1.6370568370e+01 Delta Cost:-2.3646678382e-03
+      Current ene:     -1.7248809068e+01
+      Current var:     3.1600488883e-01
+      Current ene_urw:     -1.7245511662e+01
+      Current var_urw: 3.7954377738e-01
+Setting new Parameters
+ERROR   Execution time = 6.5695196370e+00
+  </log>
+  <optVariables href="jopt-h2o.s003.opt.xml">
+CSFcoeff_1 -2.2987480857e-02 3 1  ON 0
+CSFcoeff_2 3.6069873758e-02 3 1  ON 1
+CSFcoeff_3 -1.6805882902e-02 3 1  ON 2
+CSFcoeff_4 -2.2174192096e-02 3 1  ON 3
+CSFcoeff_5 -1.5851529875e-02 3 1  ON 4
+CSFcoeff_6 1.9820637725e-02 3 1  ON 5
+CSFcoeff_7 -1.6490459582e-02 3 1  ON 6
+CSFcoeff_8 1.3315240100e-02 3 1  ON 7
+CSFcoeff_9 1.5360859363e-02 3 1  ON 8
+CSFcoeff_10 -1.3191228199e-02 3 1  ON 9
+CSFcoeff_11 -1.6492218242e-02 3 1  ON 10
+CSFcoeff_12 -1.3092142771e-02 3 1  ON 11
+CSFcoeff_13 -1.2593777877e-02 3 1  ON 12
+CSFcoeff_14 -2.3582649726e-02 3 1  ON 13
+CSFcoeff_15 4.8232178371e-03 3 1  ON 14
+CSFcoeff_16 -1.6033221301e-02 3 1  ON 15
+CSFcoeff_17 -2.1115836646e-02 3 1  ON 16
+CSFcoeff_18 -9.8292542588e-03 3 1  ON 17
+CSFcoeff_19 5.2836399748e-03 3 1  ON 18
+CSFcoeff_20 1.1362028146e-02 3 1  ON 19
+CSFcoeff_21 1.6251928843e-02 3 1  ON 20
+CSFcoeff_22 -1.7642608449e-02 3 1  ON 21
+CSFcoeff_23 -1.7374084095e-02 3 1  ON 22
+CSFcoeff_24 1.0528677805e-02 3 1  ON 23
+CSFcoeff_25 1.5524760040e-02 3 1  ON 24
+CSFcoeff_26 -1.6036030034e-02 3 1  ON 25
+CSFcoeff_27 1.9179036396e-02 3 1  ON 26
+CSFcoeff_28 1.8255697077e-02 3 1  ON 27
+CSFcoeff_29 -4.8242036608e-03 3 1  ON 28
+CSFcoeff_30 1.1243306854e-02 3 1  ON 29
+CSFcoeff_31 1.0951101581e-02 3 1  ON 30
+CSFcoeff_32 -6.7316909687e-03 3 1  ON 31
+CSFcoeff_33 -1.4840743001e-02 3 1  ON 32
+CSFcoeff_34 4.4610975055e-03 3 1  ON 33
+CSFcoeff_35 7.9451640847e-03 3 1  ON 34
+CSFcoeff_36 -1.4707824254e-02 3 1  ON 35
+CSFcoeff_37 -1.4166291059e-02 3 1  ON 36
+CSFcoeff_38 -5.8058543686e-03 3 1  ON 37
+CSFcoeff_39 1.5312519851e-02 3 1  ON 38
+CSFcoeff_40 1.9574492904e-02 3 1  ON 39
+CSFcoeff_41 -4.3067337130e-03 3 1  ON 40
+CSFcoeff_42 9.7585201551e-04 3 1  ON 41
+CSFcoeff_43 5.4305840972e-03 3 1  ON 42
+CSFcoeff_44 3.0416568891e-03 3 1  ON 43
+CSFcoeff_45 1.2786645374e-02 3 1  ON 44
+CSFcoeff_46 -1.9318469029e-03 3 1  ON 45
+CSFcoeff_47 7.6662264719e-03 3 1  ON 46
+CSFcoeff_48 -4.2411909512e-03 3 1  ON 47
+CSFcoeff_49 1.0830716054e-02 3 1  ON 48
+CSFcoeff_50 -1.2577191762e-02 3 1  ON 49
+CSFcoeff_51 1.0743459619e-02 3 1  ON 50
+CSFcoeff_52 -1.0528754282e-02 3 1  ON 51
+CSFcoeff_53 4.2185337262e-03 3 1  ON 52
+CSFcoeff_54 -2.7771867895e-03 3 1  ON 53
+CSFcoeff_55 1.1811470487e-02 3 1  ON 54
+CSFcoeff_56 6.1135931000e-03 3 1  ON 55
+CSFcoeff_57 -7.8751927051e-03 3 1  ON 56
+CSFcoeff_58 -7.3746414483e-03 3 1  ON 57
+CSFcoeff_59 4.1690744537e-03 3 1  ON 58
+CSFcoeff_60 1.6999596379e-02 3 1  ON 59
+CSFcoeff_61 -1.0981504928e-02 3 1  ON 60
+CSFcoeff_62 -3.5486526561e-03 3 1  ON 61
+CSFcoeff_63 7.3549892770e-03 3 1  ON 62
+CSFcoeff_64 -6.7315927668e-03 3 1  ON 63
+CSFcoeff_65 1.0654342419e-02 3 1  ON 64
+CSFcoeff_66 7.1113052913e-03 3 1  ON 65
+CSFcoeff_67 -1.0464871576e-02 3 1  ON 66
+CSFcoeff_68 1.0301553499e-02 3 1  ON 67
+CSFcoeff_69 -8.7217320266e-03 3 1  ON 68
+CSFcoeff_70 -7.1216534370e-03 3 1  ON 69
+CSFcoeff_71 -6.4737930908e-03 3 1  ON 70
+CSFcoeff_72 1.6514417447e-03 3 1  ON 71
+CSFcoeff_73 -8.4795703738e-03 3 1  ON 72
+CSFcoeff_74 -1.6887268112e-02 3 1  ON 73
+CSFcoeff_75 -3.2135296705e-03 3 1  ON 74
+CSFcoeff_76 -8.2616180953e-03 3 1  ON 75
+CSFcoeff_77 -8.5628224337e-03 3 1  ON 76
+CSFcoeff_78 -7.9020765600e-03 3 1  ON 77
+CSFcoeff_79 6.9181175687e-03 3 1  ON 78
+CSFcoeff_80 8.4966336591e-03 3 1  ON 79
+CSFcoeff_81 7.2590328411e-03 3 1  ON 80
+CSFcoeff_82 2.3214402509e-03 3 1  ON 81
+CSFcoeff_83 -8.1377720898e-03 3 1  ON 82
+CSFcoeff_84 -9.3466398963e-03 3 1  ON 83
+CSFcoeff_85 6.1952098032e-03 3 1  ON 84
+CSFcoeff_86 -7.7061421005e-03 3 1  ON 85
+CSFcoeff_87 3.0489757246e-03 3 1  ON 86
+CSFcoeff_88 -1.0143550402e-02 3 1  ON 87
+CSFcoeff_89 -3.9400163075e-03 3 1  ON 88
+CSFcoeff_90 6.1857918437e-03 3 1  ON 89
+CSFcoeff_91 -9.8532705421e-03 3 1  ON 90
+CSFcoeff_92 1.1128704093e-02 3 1  ON 91
+CSFcoeff_93 -7.3054882212e-04 3 1  ON 92
+CSFcoeff_94 1.0979938960e-02 3 1  ON 93
+CSFcoeff_95 1.0829688564e-02 3 1  ON 94
+CSFcoeff_96 1.3291266077e-02 3 1  ON 95
+CSFcoeff_97 1.0643976959e-02 3 1  ON 96
+CSFcoeff_98 1.0280127923e-02 3 1  ON 97
+CSFcoeff_99 -9.1477155849e-03 3 1  ON 98
+CSFcoeff_100 2.0845074895e-02 3 1  ON 99
+CSFcoeff_101 -1.1131636584e-02 3 1  ON 100
+CSFcoeff_102 -6.8651528107e-03 3 1  ON 101
+CSFcoeff_103 4.2939500397e-03 3 1  ON 102
+CSFcoeff_104 5.8911635737e-03 3 1  ON 103
+CSFcoeff_105 7.1645883648e-03 3 1  ON 104
+CSFcoeff_106 6.7907967502e-03 3 1  ON 105
+CSFcoeff_107 -1.8752952539e-03 3 1  ON 106
+CSFcoeff_108 8.6653674866e-03 3 1  ON 107
+CSFcoeff_109 -1.9159646659e-03 3 1  ON 108
+CSFcoeff_110 4.3774558928e-03 3 1  ON 109
+CSFcoeff_111 -4.1556072731e-03 3 1  ON 110
+CSFcoeff_112 -6.5410961423e-03 3 1  ON 111
+CSFcoeff_113 -7.4373397664e-03 3 1  ON 112
+CSFcoeff_114 -5.2794158624e-03 3 1  ON 113
+CSFcoeff_115 1.5002545246e-02 3 1  ON 114
+CSFcoeff_116 -6.7547474634e-03 3 1  ON 115
+CSFcoeff_117 -8.3458793189e-03 3 1  ON 116
+CSFcoeff_118 -4.1948373942e-03 3 1  ON 117
+CSFcoeff_119 -6.2787122440e-04 3 1  ON 118
+CSFcoeff_120 -3.4613300470e-03 3 1  ON 119
+CSFcoeff_121 -1.9148872796e-02 3 1  ON 120
+CSFcoeff_122 8.9471882631e-03 3 1  ON 121
+CSFcoeff_123 3.1836434564e-03 3 1  ON 122
+CSFcoeff_124 6.9332633901e-03 3 1  ON 123
+CSFcoeff_125 -1.2827031976e-03 3 1  ON 124
+CSFcoeff_126 4.4570083381e-03 3 1  ON 125
+CSFcoeff_127 5.4239614757e-03 3 1  ON 126
+CSFcoeff_128 -1.1413474832e-02 3 1  ON 127
+CSFcoeff_129 -5.1150342788e-03 3 1  ON 128
+CSFcoeff_130 -1.8247250386e-03 3 1  ON 129
+CSFcoeff_131 -5.7053527546e-03 3 1  ON 130
+CSFcoeff_132 -4.8490190603e-03 3 1  ON 131
+CSFcoeff_133 -4.5191609204e-03 3 1  ON 132
+CSFcoeff_134 -6.1273373793e-03 3 1  ON 133
+CSFcoeff_135 -3.0633840225e-03 3 1  ON 134
+CSFcoeff_136 -8.0190614366e-03 3 1  ON 135
+uu_0 2.2296339906e-01 1 1  ON 136
+uu_1 4.8770635091e-02 1 1  ON 137
+uu_2 -5.3655567395e-02 1 1  ON 138
+uu_3 -1.0533872943e-01 1 1  ON 139
+uu_4 -1.3203472073e-01 1 1  ON 140
+uu_5 -1.4091629751e-01 1 1  ON 141
+uu_6 -1.4830999938e-01 1 1  ON 142
+uu_7 -1.2303224515e-01 1 1  ON 143
+uu_8 -1.5424406583e-01 1 1  ON 144
+uu_9 -1.2823952878e-01 1 1  ON 145
+ud_0 3.4542973732e-01 1 1  ON 146
+ud_1 7.1560467892e-02 1 1  ON 147
+ud_2 -4.9528188763e-02 1 1  ON 148
+ud_3 -1.0011926109e-01 1 1  ON 149
+ud_4 -1.2512611483e-01 1 1  ON 150
+ud_5 -1.4611453648e-01 1 1  ON 151
+ud_6 -1.6519305101e-01 1 1  ON 152
+ud_7 -1.6897716936e-01 1 1  ON 153
+ud_8 -1.1183758668e-01 1 1  ON 154
+ud_9 -6.2677256554e-02 1 1  ON 155
+eO_0 6.5557712440e-02 1 1  ON 156
+eO_1 4.3093860068e-01 1 1  ON 157
+eO_2 8.6093159783e-01 1 1  ON 158
+eO_3 1.1062872875e+00 1 1  ON 159
+eO_4 1.2839181193e+00 1 1  ON 160
+eO_5 1.4442889653e+00 1 1  ON 161
+eO_6 1.5052794927e+00 1 1  ON 162
+eO_7 1.4598680732e+00 1 1  ON 163
+eO_8 1.6461469061e+00 1 1  ON 164
+eO_9 1.5578118937e+00 1 1  ON 165
+eH_0 -3.1422812298e-01 1 1  ON 166
+eH_1 -2.6461995928e-01 1 1  ON 167
+eH_2 -2.3157670138e-01 1 1  ON 168
+eH_3 -1.9813333380e-01 1 1  ON 169
+eH_4 -1.8188246705e-01 1 1  ON 170
+eH_5 -1.8972642687e-01 1 1  ON 171
+eH_6 -2.0684954105e-01 1 1  ON 172
+eH_7 -2.4822245257e-01 1 1  ON 173
+eH_8 -1.5936854611e-01 1 1  ON 174
+eH_9 -2.4256347546e-01 1 1  ON 175
+  </optVariables>
+   Restore the number of walkers to 1, removing 159 walkers.
+</opt>
+</optimization-report>
+  QMC Execution time = 6.5873336900e+00 secs 
+  Reusing QMCFixedSampleLinearOptimize
+ Using QMCCostFunctionOMP::QMCCostFunctionOMP
+
+=========================================================
+  Start QMCFixedSampleLinearOptimize
+  File Root jopt-h2o.s004 append = no 
+=========================================================
+  Skip QMCDriver::putQMCInfo 
+  Resetting Properties of the walkers 1 x 14
+
+=========================================================
+  Start VMCSingleOMP
+  File Root jopt-h2o.s004 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 14
+
+<vmc function="put">
+  qmc_counter=4  my_counter=4
+  time step      = 5.0000000000e-01
+  blocks         = 100
+  steps          = 2
+  substeps       = 20
+  current        = 0
+  target samples = 5.1200000000e+04
+  walkers/mpi    = 1
+
+  stepsbetweensamples = 1
+<parameter name="blocks" condition="int">100</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">5.1200000000e+04</parameter>
+<parameter name="samplesperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="steps" condition="int">2</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">20</parameter>
+<parameter name="substeps" condition="int">20</parameter>
+<parameter name="tau" condition="au">5.0000000000e-01</parameter>
+<parameter name="time_step" condition="au">5.0000000000e-01</parameter>
+<parameter name="timestep" condition="au">5.0000000000e-01</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">1</parameter>
+<parameter name="warmup_steps" condition="int">25</parameter>
+<parameter name="warmupsteps" condition="int">25</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1 steps.
+</vmc>
+  EstimatorManager::add replace LocalEnergy estimator.
+  EstimatorManager::add replace LocalEnergy estimator.
+<optimization-report>
+<vmc stage="main" blocks="100">
+  Cannot make clones again. Use existing 1 clones
+  Initial partition of walkers 0 1 
+  Total Sample Size   =51200
+  Walker distribution on root = 0 1 
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 4
+    time step          = 0.5
+    reference energy   = -17.2574
+    reference variance = 0.538623
+====================================================
+  Execution time = 2.3305956340e+00
+</vmc>
+<opt stage="setup">
+  <log>
+   Reading configurations from h5FileRoot jopt-h2o.s004
+  QMCCostFunctionOMP is created with 1
+   Loading configuration from MCWalkerConfiguration::SampleStack 
+    number of walkers before load 1
+  Using Nonlocal PP in Opt: NonLocalECP
+    number of walkers after load: 160 
+Using buffers for temporary storage in QMCCostFunction.
+
+Memory usage: 
+Linear method (approx matrix usage: 4*N^2): 9.9123200000e-01 MB
+Deriv,HDerivRecord:      6.7584000000e-01 MB
+Buffer memory cost:     MB/walker       MB/total 
+Orbitals only:           1.7280000000e-03      2.7648000000e-01
+Orbitals + dervs:        8.6400000000e-03      1.3824000000e+00
+Inverse:                 2.5600000000e-04      4.0960000000e-02
+Determinants:            2.8016000000e-02      4.4825600000e+00
+  VMC Eavg = -1.7241978971e+01
+  VMC Evar = 3.1356754595e-01
+  Total weights = 5.1200000000e+04
+  Execution time = 1.7176252499e-01
+  </log>
+</opt>
+<opt stage="main" walkers="51200">
+  <log>
+Iteration: 1/1
+od_largest 2.9576308366e+02
+  stabilityBase -6.0000000000e+00
+  stabilizerScale 2.0000000000e+00
+  Using XS:-6.0000000000e+00 0 0
+ERROR CostFunction-> Number of Effective Walkers is too small 3.5146091826e+00 NumWalkersEff/NumSamples 6.8644710599e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.8966388728e+00 NumWalkersEff/NumSamples 3.7043727985e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.1689936835e+00 NumWalkersEff/NumSamples 2.2831907882e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0088379962e+00 NumWalkersEff/NumSamples 1.9703867113e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0004683348e+00 NumWalkersEff/NumSamples 1.9540397165e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000250055e+00 NumWalkersEff/NumSamples 1.9531738389e-05
+  Failed Step. Largest LM parameter change:6.3001712979e+01
+ERROR   Using XS:-4.0000000000e+00 1 0
+ERROR CostFunction-> Number of Effective Walkers is too small 3.4981861228e+00 NumWalkersEff/NumSamples 6.8323947712e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.8980294100e+00 NumWalkersEff/NumSamples 3.7070886913e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.1679052716e+00 NumWalkersEff/NumSamples 2.2810649837e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0087525177e+00 NumWalkersEff/NumSamples 1.9702197611e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0004623256e+00 NumWalkersEff/NumSamples 1.9540279796e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000246057e+00 NumWalkersEff/NumSamples 1.9531730580e-05
+  Failed Step. Largest LM parameter change:6.3073190858e+01
+ERROR   Using XS:-2.0000000000e+00 2 0
+ERROR CostFunction-> Number of Effective Walkers is too small 3.3727998634e+00 NumWalkersEff/NumSamples 6.5874997333e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.9089027824e+00 NumWalkersEff/NumSamples 3.7283257469e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.1594975174e+00 NumWalkersEff/NumSamples 2.2646435886e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0081020946e+00 NumWalkersEff/NumSamples 1.9689494034e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0004172388e+00 NumWalkersEff/NumSamples 1.9539399196e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000216477e+00 NumWalkersEff/NumSamples 1.9531672808e-05
+  Failed Step. Largest LM parameter change:6.3641165668e+01
+ERROR   Using XS:0.0000000000e+00 3 0
+ERROR CostFunction-> Number of Effective Walkers is too small 2.7158578502e+00 NumWalkersEff/NumSamples 5.3044098637e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0053837802e+00 NumWalkersEff/NumSamples 1.9636401957e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000017536e+00 NumWalkersEff/NumSamples 1.9531284251e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000006e+00 NumWalkersEff/NumSamples 1.9531250011e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+  Failed Step. Largest LM parameter change:1.2596717372e+02
+ERROR   Using XS:2.0000000000e+00 4 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 2.0000000000e+00 NumWalkersEff/NumSamples 3.9062500000e-05
+  Failed Step. Largest LM parameter change:2.0244138166e+03
+ERROR   Using XS:4.0000000000e+00 5 0
+  Good Step. Largest LM parameter change:5.5990770996e-01
+ OldCost: -1.6364201645e+01 NewCost: -1.6366147404e+01 Delta Cost:-1.9457585588e-03
+      Current ene:     -1.7243665467e+01
+      Current var:     3.0669580824e-01
+      Current ene_urw:     -1.7244960702e+01
+      Current var_urw: 3.0750072536e-01
+Setting new Parameters
+ERROR   Execution time = 7.3343315600e+00
+  </log>
+  <optVariables href="jopt-h2o.s004.opt.xml">
+CSFcoeff_1 -2.2884323722e-02 3 1  ON 0
+CSFcoeff_2 3.7045507126e-02 3 1  ON 1
+CSFcoeff_3 -1.7559768470e-02 3 1  ON 2
+CSFcoeff_4 -2.2048720848e-02 3 1  ON 3
+CSFcoeff_5 -1.4156476627e-02 3 1  ON 4
+CSFcoeff_6 2.1001406990e-02 3 1  ON 5
+CSFcoeff_7 -1.1917693166e-02 3 1  ON 6
+CSFcoeff_8 1.1746362526e-02 3 1  ON 7
+CSFcoeff_9 1.4105262802e-02 3 1  ON 8
+CSFcoeff_10 -1.2600808919e-02 3 1  ON 9
+CSFcoeff_11 -1.6191353083e-02 3 1  ON 10
+CSFcoeff_12 -8.3800589247e-03 3 1  ON 11
+CSFcoeff_13 -8.4007480242e-03 3 1  ON 12
+CSFcoeff_14 -2.2301450137e-02 3 1  ON 13
+CSFcoeff_15 4.7987428648e-03 3 1  ON 14
+CSFcoeff_16 -1.7655842689e-02 3 1  ON 15
+CSFcoeff_17 -2.0391040332e-02 3 1  ON 16
+CSFcoeff_18 -8.8048974299e-03 3 1  ON 17
+CSFcoeff_19 6.3202510359e-03 3 1  ON 18
+CSFcoeff_20 8.5274986843e-03 3 1  ON 19
+CSFcoeff_21 1.4945917605e-02 3 1  ON 20
+CSFcoeff_22 -1.4423475441e-02 3 1  ON 21
+CSFcoeff_23 -1.8604010987e-02 3 1  ON 22
+CSFcoeff_24 8.3386696618e-03 3 1  ON 23
+CSFcoeff_25 1.4298844689e-02 3 1  ON 24
+CSFcoeff_26 -1.4230577523e-02 3 1  ON 25
+CSFcoeff_27 1.8311482314e-02 3 1  ON 26
+CSFcoeff_28 1.5914242618e-02 3 1  ON 27
+CSFcoeff_29 -6.5453467790e-03 3 1  ON 28
+CSFcoeff_30 1.3491187391e-02 3 1  ON 29
+CSFcoeff_31 8.7173941597e-03 3 1  ON 30
+CSFcoeff_32 -3.2284699189e-03 3 1  ON 31
+CSFcoeff_33 -1.3410849240e-02 3 1  ON 32
+CSFcoeff_34 2.9760788687e-03 3 1  ON 33
+CSFcoeff_35 5.5908475942e-03 3 1  ON 34
+CSFcoeff_36 -1.6246071235e-02 3 1  ON 35
+CSFcoeff_37 -2.2392930529e-02 3 1  ON 36
+CSFcoeff_38 -4.9265411341e-03 3 1  ON 37
+CSFcoeff_39 1.5391138769e-02 3 1  ON 38
+CSFcoeff_40 1.9612493567e-02 3 1  ON 39
+CSFcoeff_41 -4.8117270269e-03 3 1  ON 40
+CSFcoeff_42 -2.8592577157e-04 3 1  ON 41
+CSFcoeff_43 1.0417534315e-02 3 1  ON 42
+CSFcoeff_44 4.4764119382e-03 3 1  ON 43
+CSFcoeff_45 1.6143183709e-02 3 1  ON 44
+CSFcoeff_46 -2.5947193545e-03 3 1  ON 45
+CSFcoeff_47 -2.5424950767e-03 3 1  ON 46
+CSFcoeff_48 -3.3317840401e-03 3 1  ON 47
+CSFcoeff_49 1.1129804940e-02 3 1  ON 48
+CSFcoeff_50 -1.2526301116e-02 3 1  ON 49
+CSFcoeff_51 9.4545024153e-03 3 1  ON 50
+CSFcoeff_52 -1.0295830000e-02 3 1  ON 51
+CSFcoeff_53 3.9429076668e-03 3 1  ON 52
+CSFcoeff_54 -2.7214260022e-03 3 1  ON 53
+CSFcoeff_55 1.2581680806e-02 3 1  ON 54
+CSFcoeff_56 7.3873056432e-03 3 1  ON 55
+CSFcoeff_57 -9.7119246984e-03 3 1  ON 56
+CSFcoeff_58 -1.3978438798e-02 3 1  ON 57
+CSFcoeff_59 -2.0893408516e-03 3 1  ON 58
+CSFcoeff_60 1.8234409307e-02 3 1  ON 59
+CSFcoeff_61 -1.1724036096e-02 3 1  ON 60
+CSFcoeff_62 -1.0945327324e-02 3 1  ON 61
+CSFcoeff_63 1.8250649977e-03 3 1  ON 62
+CSFcoeff_64 -7.7390638179e-03 3 1  ON 63
+CSFcoeff_65 1.4827861460e-02 3 1  ON 64
+CSFcoeff_66 7.4514502530e-03 3 1  ON 65
+CSFcoeff_67 -1.0870433717e-02 3 1  ON 66
+CSFcoeff_68 9.5686850027e-03 3 1  ON 67
+CSFcoeff_69 -7.7022508620e-03 3 1  ON 68
+CSFcoeff_70 -6.2299099755e-03 3 1  ON 69
+CSFcoeff_71 -7.4687784831e-03 3 1  ON 70
+CSFcoeff_72 3.3178587332e-03 3 1  ON 71
+CSFcoeff_73 -8.3661899279e-03 3 1  ON 72
+CSFcoeff_74 -1.6420109096e-02 3 1  ON 73
+CSFcoeff_75 -3.1444261880e-03 3 1  ON 74
+CSFcoeff_76 -5.9994713311e-03 3 1  ON 75
+CSFcoeff_77 -7.3347479451e-03 3 1  ON 76
+CSFcoeff_78 -8.1643671978e-03 3 1  ON 77
+CSFcoeff_79 6.4105657151e-03 3 1  ON 78
+CSFcoeff_80 9.6934453285e-03 3 1  ON 79
+CSFcoeff_81 8.7699786435e-03 3 1  ON 80
+CSFcoeff_82 3.1786952291e-03 3 1  ON 81
+CSFcoeff_83 -7.6801795127e-03 3 1  ON 82
+CSFcoeff_84 -1.2318759541e-02 3 1  ON 83
+CSFcoeff_85 8.3558384453e-03 3 1  ON 84
+CSFcoeff_86 -7.0303889991e-03 3 1  ON 85
+CSFcoeff_87 3.5934932871e-03 3 1  ON 86
+CSFcoeff_88 -9.8330470973e-03 3 1  ON 87
+CSFcoeff_89 -5.4658253320e-03 3 1  ON 88
+CSFcoeff_90 5.7576957588e-03 3 1  ON 89
+CSFcoeff_91 -1.0562312821e-02 3 1  ON 90
+CSFcoeff_92 1.0333546137e-02 3 1  ON 91
+CSFcoeff_93 2.6127137624e-03 3 1  ON 92
+CSFcoeff_94 1.4949507428e-02 3 1  ON 93
+CSFcoeff_95 1.2561732381e-02 3 1  ON 94
+CSFcoeff_96 1.9341483150e-02 3 1  ON 95
+CSFcoeff_97 1.4004752188e-02 3 1  ON 96
+CSFcoeff_98 9.3721067362e-03 3 1  ON 97
+CSFcoeff_99 -7.7560195032e-03 3 1  ON 98
+CSFcoeff_100 2.1043349896e-02 3 1  ON 99
+CSFcoeff_101 -8.8307789861e-03 3 1  ON 100
+CSFcoeff_102 -8.0556316126e-03 3 1  ON 101
+CSFcoeff_103 2.7782541903e-03 3 1  ON 102
+CSFcoeff_104 1.6206365160e-03 3 1  ON 103
+CSFcoeff_105 6.0106631010e-04 3 1  ON 104
+CSFcoeff_106 4.6389567869e-03 3 1  ON 105
+CSFcoeff_107 -1.4770931184e-03 3 1  ON 106
+CSFcoeff_108 1.0440590446e-02 3 1  ON 107
+CSFcoeff_109 -3.0305824879e-03 3 1  ON 108
+CSFcoeff_110 9.5543304541e-04 3 1  ON 109
+CSFcoeff_111 -2.9979570032e-03 3 1  ON 110
+CSFcoeff_112 -6.8978126325e-03 3 1  ON 111
+CSFcoeff_113 -7.2416433871e-03 3 1  ON 112
+CSFcoeff_114 -4.1380907083e-03 3 1  ON 113
+CSFcoeff_115 1.6627975254e-02 3 1  ON 114
+CSFcoeff_116 -6.3546562646e-03 3 1  ON 115
+CSFcoeff_117 -8.7555075120e-03 3 1  ON 116
+CSFcoeff_118 -4.6059125841e-03 3 1  ON 117
+CSFcoeff_119 -3.2611965135e-03 3 1  ON 118
+CSFcoeff_120 -3.8898620773e-03 3 1  ON 119
+CSFcoeff_121 -1.6888093812e-02 3 1  ON 120
+CSFcoeff_122 1.5896414787e-02 3 1  ON 121
+CSFcoeff_123 8.6954049541e-04 3 1  ON 122
+CSFcoeff_124 9.3853227644e-04 3 1  ON 123
+CSFcoeff_125 -1.0664436024e-03 3 1  ON 124
+CSFcoeff_126 5.0273411392e-03 3 1  ON 125
+CSFcoeff_127 5.0022577552e-03 3 1  ON 126
+CSFcoeff_128 -8.9912284832e-03 3 1  ON 127
+CSFcoeff_129 -5.2366086074e-03 3 1  ON 128
+CSFcoeff_130 -2.4955240922e-03 3 1  ON 129
+CSFcoeff_131 -6.4300963706e-03 3 1  ON 130
+CSFcoeff_132 -5.7149858931e-03 3 1  ON 131
+CSFcoeff_133 -6.7717437680e-03 3 1  ON 132
+CSFcoeff_134 -6.8361075026e-03 3 1  ON 133
+CSFcoeff_135 -3.9620394076e-03 3 1  ON 134
+CSFcoeff_136 -6.7968463179e-03 3 1  ON 135
+uu_0 2.9409812525e-01 1 1  ON 136
+uu_1 1.1863970251e-01 1 1  ON 137
+uu_2 1.6203731815e-02 1 1  ON 138
+uu_3 -3.7320969109e-02 1 1  ON 139
+uu_4 -6.6282126767e-02 1 1  ON 140
+uu_5 -7.7401369894e-02 1 1  ON 141
+uu_6 -8.4784701485e-02 1 1  ON 142
+uu_7 -7.1590409408e-02 1 1  ON 143
+uu_8 -8.5100094231e-02 1 1  ON 144
+uu_9 -1.0862221774e-01 1 1  ON 145
+ud_0 4.0259416750e-01 1 1  ON 146
+ud_1 1.2712060101e-01 1 1  ON 147
+ud_2 6.7045678308e-03 1 1  ON 148
+ud_3 -4.6929996164e-02 1 1  ON 149
+ud_4 -7.2112630167e-02 1 1  ON 150
+ud_5 -9.4668580034e-02 1 1  ON 151
+ud_6 -1.1032046983e-01 1 1  ON 152
+ud_7 -1.3066198532e-01 1 1  ON 153
+ud_8 -6.5024624645e-02 1 1  ON 154
+ud_9 -3.7752808097e-02 1 1  ON 155
+eO_0 -4.9411844758e-01 1 1  ON 156
+eO_1 -1.2896910928e-01 1 1  ON 157
+eO_2 3.0806645804e-01 1 1  ON 158
+eO_3 5.6023848149e-01 1 1  ON 159
+eO_4 7.5617654192e-01 1 1  ON 160
+eO_5 9.2502474209e-01 1 1  ON 161
+eO_6 1.0059598293e+00 1 1  ON 162
+eO_7 1.0003047070e+00 1 1  ON 163
+eO_8 1.2006379499e+00 1 1  ON 164
+eO_9 1.2107979986e+00 1 1  ON 165
+eH_0 -2.8601858318e-01 1 1  ON 166
+eH_1 -2.3295198577e-01 1 1  ON 167
+eH_2 -2.0124826820e-01 1 1  ON 168
+eH_3 -1.6591709053e-01 1 1  ON 169
+eH_4 -1.5029474872e-01 1 1  ON 170
+eH_5 -1.5637032463e-01 1 1  ON 171
+eH_6 -1.8407887820e-01 1 1  ON 172
+eH_7 -2.1832857504e-01 1 1  ON 173
+eH_8 -1.1577250395e-01 1 1  ON 174
+eH_9 -1.4876500826e-01 1 1  ON 175
+  </optVariables>
+   Restore the number of walkers to 1, removing 159 walkers.
+</opt>
+</optimization-report>
+  QMC Execution time = 7.3520243910e+00 secs 
+  Reusing QMCFixedSampleLinearOptimize
+ Using QMCCostFunctionOMP::QMCCostFunctionOMP
+
+=========================================================
+  Start QMCFixedSampleLinearOptimize
+  File Root jopt-h2o.s005 append = no 
+=========================================================
+  Skip QMCDriver::putQMCInfo 
+  Resetting Properties of the walkers 1 x 14
+
+=========================================================
+  Start VMCSingleOMP
+  File Root jopt-h2o.s005 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 14
+
+<vmc function="put">
+  qmc_counter=5  my_counter=5
+  time step      = 5.0000000000e-01
+  blocks         = 100
+  steps          = 2
+  substeps       = 20
+  current        = 0
+  target samples = 5.1200000000e+04
+  walkers/mpi    = 1
+
+  stepsbetweensamples = 1
+<parameter name="blocks" condition="int">100</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">5.1200000000e+04</parameter>
+<parameter name="samplesperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="steps" condition="int">2</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">20</parameter>
+<parameter name="substeps" condition="int">20</parameter>
+<parameter name="tau" condition="au">5.0000000000e-01</parameter>
+<parameter name="time_step" condition="au">5.0000000000e-01</parameter>
+<parameter name="timestep" condition="au">5.0000000000e-01</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">1</parameter>
+<parameter name="warmup_steps" condition="int">25</parameter>
+<parameter name="warmupsteps" condition="int">25</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1 steps.
+</vmc>
+  EstimatorManager::add replace LocalEnergy estimator.
+  EstimatorManager::add replace LocalEnergy estimator.
+<optimization-report>
+<vmc stage="main" blocks="100">
+  Cannot make clones again. Use existing 1 clones
+  Initial partition of walkers 0 1 
+  Total Sample Size   =51200
+  Walker distribution on root = 0 1 
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 5
+    time step          = 0.5
+    reference energy   = -17.2435
+    reference variance = 0.563006
+====================================================
+  Execution time = 2.3394325870e+00
+</vmc>
+<opt stage="setup">
+  <log>
+   Reading configurations from h5FileRoot jopt-h2o.s005
+  QMCCostFunctionOMP is created with 1
+   Loading configuration from MCWalkerConfiguration::SampleStack 
+    number of walkers before load 1
+  Using Nonlocal PP in Opt: NonLocalECP
+    number of walkers after load: 160 
+Using buffers for temporary storage in QMCCostFunction.
+
+Memory usage: 
+Linear method (approx matrix usage: 4*N^2): 9.9123200000e-01 MB
+Deriv,HDerivRecord:      6.7584000000e-01 MB
+Buffer memory cost:     MB/walker       MB/total 
+Orbitals only:           1.7280000000e-03      2.7648000000e-01
+Orbitals + dervs:        8.6400000000e-03      1.3824000000e+00
+Inverse:                 2.5600000000e-04      4.0960000000e-02
+Determinants:            2.8016000000e-02      4.4825600000e+00
+  VMC Eavg = -1.7242360978e+01
+  VMC Evar = 3.2539875724e-01
+  Total weights = 5.1200000000e+04
+  Execution time = 1.7242721400e-01
+  </log>
+</opt>
+<opt stage="main" walkers="51200">
+  <log>
+Iteration: 1/1
+od_largest 1.5060709052e+03
+  stabilityBase -6.0000000000e+00
+  stabilizerScale 2.0000000000e+00
+  Using XS:-6.0000000000e+00 0 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0005553909e+00 NumWalkersEff/NumSamples 1.9542097478e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.4130576194e+00 NumWalkersEff/NumSamples 2.7598781629e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0472547341e+00 NumWalkersEff/NumSamples 2.0454194026e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0068442509e+00 NumWalkersEff/NumSamples 1.9664926776e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0011085072e+00 NumWalkersEff/NumSamples 1.9552900531e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0002163515e+00 NumWalkersEff/NumSamples 1.9535475614e-05
+  Failed Step. Largest LM parameter change:1.3332508788e+02
+ERROR   Using XS:-4.0000000000e+00 1 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0005469273e+00 NumWalkersEff/NumSamples 1.9541932173e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.4109678226e+00 NumWalkersEff/NumSamples 2.7557965286e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0469245829e+00 NumWalkersEff/NumSamples 2.0447745760e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0067764127e+00 NumWalkersEff/NumSamples 1.9663601811e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0010949270e+00 NumWalkersEff/NumSamples 1.9552635292e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0002134321e+00 NumWalkersEff/NumSamples 1.9535418596e-05
+  Failed Step. Largest LM parameter change:1.3357495949e+02
+ERROR   Using XS:-2.0000000000e+00 2 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0004828492e+00 NumWalkersEff/NumSamples 1.9540680649e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.3946100823e+00 NumWalkersEff/NumSamples 2.7238478170e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0443330513e+00 NumWalkersEff/NumSamples 2.0397129907e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0062509456e+00 NumWalkersEff/NumSamples 1.9653338782e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0009910097e+00 NumWalkersEff/NumSamples 1.9550605659e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0001912669e+00 NumWalkersEff/NumSamples 1.9534985682e-05
+  Failed Step. Largest LM parameter change:1.3560258788e+02
+ERROR   Using XS:0.0000000000e+00 3 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0066890470e+00 NumWalkersEff/NumSamples 1.9661895450e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000232202e+00 NumWalkersEff/NumSamples 1.9531703520e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000001635e+00 NumWalkersEff/NumSamples 1.9531253193e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000013e+00 NumWalkersEff/NumSamples 1.9531250025e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+  Failed Step. Largest LM parameter change:5.0696062883e+02
+ERROR   Using XS:2.0000000000e+00 4 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.8280586999e+00 NumWalkersEff/NumSamples 3.5704271482e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+  Failed Step. Largest LM parameter change:5.1846481517e+02
+ERROR   Using XS:4.0000000000e+00 5 0
+  Good Step. Largest LM parameter change:1.3030858268e+00
+ OldCost: -1.6363972991e+01 NewCost: -1.6366172773e+01 Delta Cost:-2.1997815040e-03
+      Current ene:     -1.7243921520e+01
+      Current var:     3.1105342007e-01
+      Current ene_urw:     -1.7242780632e+01
+      Current var_urw: 2.9867337068e-01
+Setting new Parameters
+ERROR   Execution time = 7.1574548950e+00
+  </log>
+  <optVariables href="jopt-h2o.s005.opt.xml">
+CSFcoeff_1 -2.2056276125e-02 3 1  ON 0
+CSFcoeff_2 3.8095918364e-02 3 1  ON 1
+CSFcoeff_3 -1.5297249161e-02 3 1  ON 2
+CSFcoeff_4 -2.7201030465e-02 3 1  ON 3
+CSFcoeff_5 -1.3761180751e-02 3 1  ON 4
+CSFcoeff_6 2.3817422422e-02 3 1  ON 5
+CSFcoeff_7 -1.4884360136e-02 3 1  ON 6
+CSFcoeff_8 1.2401400638e-02 3 1  ON 7
+CSFcoeff_9 1.3787880458e-02 3 1  ON 8
+CSFcoeff_10 -1.1162975972e-02 3 1  ON 9
+CSFcoeff_11 -1.4665546451e-02 3 1  ON 10
+CSFcoeff_12 -1.1115687599e-02 3 1  ON 11
+CSFcoeff_13 -8.6020843226e-03 3 1  ON 12
+CSFcoeff_14 -2.2847357571e-02 3 1  ON 13
+CSFcoeff_15 3.8498637077e-03 3 1  ON 14
+CSFcoeff_16 -1.9962374163e-02 3 1  ON 15
+CSFcoeff_17 -2.0777806639e-02 3 1  ON 16
+CSFcoeff_18 -8.3990674351e-03 3 1  ON 17
+CSFcoeff_19 5.2967337807e-03 3 1  ON 18
+CSFcoeff_20 9.0608038093e-03 3 1  ON 19
+CSFcoeff_21 1.5237209603e-02 3 1  ON 20
+CSFcoeff_22 -1.4949767766e-02 3 1  ON 21
+CSFcoeff_23 -1.8185220169e-02 3 1  ON 22
+CSFcoeff_24 8.6085985239e-03 3 1  ON 23
+CSFcoeff_25 1.7130292693e-02 3 1  ON 24
+CSFcoeff_26 -1.7472706091e-02 3 1  ON 25
+CSFcoeff_27 1.8516785194e-02 3 1  ON 26
+CSFcoeff_28 1.7635089953e-02 3 1  ON 27
+CSFcoeff_29 -5.9890297522e-03 3 1  ON 28
+CSFcoeff_30 1.3626323692e-02 3 1  ON 29
+CSFcoeff_31 8.4519588484e-03 3 1  ON 30
+CSFcoeff_32 -7.7041580549e-03 3 1  ON 31
+CSFcoeff_33 -1.3652433714e-02 3 1  ON 32
+CSFcoeff_34 3.6556212516e-03 3 1  ON 33
+CSFcoeff_35 7.5715590871e-03 3 1  ON 34
+CSFcoeff_36 -1.3447363586e-02 3 1  ON 35
+CSFcoeff_37 -1.1983733461e-02 3 1  ON 36
+CSFcoeff_38 -6.8034175274e-03 3 1  ON 37
+CSFcoeff_39 1.4274500341e-02 3 1  ON 38
+CSFcoeff_40 1.7599788746e-02 3 1  ON 39
+CSFcoeff_41 -4.6099344439e-03 3 1  ON 40
+CSFcoeff_42 -8.6434962456e-04 3 1  ON 41
+CSFcoeff_43 1.2861533492e-02 3 1  ON 42
+CSFcoeff_44 3.7879943390e-03 3 1  ON 43
+CSFcoeff_45 1.3628007958e-02 3 1  ON 44
+CSFcoeff_46 -6.5550978331e-05 3 1  ON 45
+CSFcoeff_47 8.3857864123e-04 3 1  ON 46
+CSFcoeff_48 -6.0686428051e-03 3 1  ON 47
+CSFcoeff_49 1.0571904704e-02 3 1  ON 48
+CSFcoeff_50 -1.1071397710e-02 3 1  ON 49
+CSFcoeff_51 5.5503170937e-03 3 1  ON 50
+CSFcoeff_52 -8.3036851412e-03 3 1  ON 51
+CSFcoeff_53 3.6489173125e-03 3 1  ON 52
+CSFcoeff_54 -3.2839861859e-03 3 1  ON 53
+CSFcoeff_55 9.7898790697e-03 3 1  ON 54
+CSFcoeff_56 8.4713187268e-03 3 1  ON 55
+CSFcoeff_57 -1.2644034649e-02 3 1  ON 56
+CSFcoeff_58 -1.6706461318e-02 3 1  ON 57
+CSFcoeff_59 3.8651764007e-03 3 1  ON 58
+CSFcoeff_60 2.1450870552e-02 3 1  ON 59
+CSFcoeff_61 -1.1735340199e-02 3 1  ON 60
+CSFcoeff_62 -3.5561457016e-03 3 1  ON 61
+CSFcoeff_63 6.5192789904e-03 3 1  ON 62
+CSFcoeff_64 -7.4386216982e-03 3 1  ON 63
+CSFcoeff_65 1.6472421755e-02 3 1  ON 64
+CSFcoeff_66 9.1961373070e-03 3 1  ON 65
+CSFcoeff_67 -9.3807931922e-03 3 1  ON 66
+CSFcoeff_68 1.1902851772e-02 3 1  ON 67
+CSFcoeff_69 -9.1300480215e-03 3 1  ON 68
+CSFcoeff_70 -4.8112496874e-03 3 1  ON 69
+CSFcoeff_71 -7.4911617782e-03 3 1  ON 70
+CSFcoeff_72 1.9999510536e-03 3 1  ON 71
+CSFcoeff_73 -9.0255349871e-03 3 1  ON 72
+CSFcoeff_74 -1.6213167400e-02 3 1  ON 73
+CSFcoeff_75 -3.2814735231e-03 3 1  ON 74
+CSFcoeff_76 -8.8734735546e-03 3 1  ON 75
+CSFcoeff_77 -9.9056089950e-03 3 1  ON 76
+CSFcoeff_78 -9.4274505136e-03 3 1  ON 77
+CSFcoeff_79 4.7039977563e-03 3 1  ON 78
+CSFcoeff_80 7.1679787869e-03 3 1  ON 79
+CSFcoeff_81 5.5813367941e-03 3 1  ON 80
+CSFcoeff_82 3.4825012878e-04 3 1  ON 81
+CSFcoeff_83 -6.0880708078e-03 3 1  ON 82
+CSFcoeff_84 -8.7204890971e-03 3 1  ON 83
+CSFcoeff_85 6.9562826220e-03 3 1  ON 84
+CSFcoeff_86 -7.7708056030e-03 3 1  ON 85
+CSFcoeff_87 3.9625961139e-03 3 1  ON 86
+CSFcoeff_88 -9.6795827657e-03 3 1  ON 87
+CSFcoeff_89 -4.9696226567e-03 3 1  ON 88
+CSFcoeff_90 7.7001157554e-03 3 1  ON 89
+CSFcoeff_91 -1.3782013809e-02 3 1  ON 90
+CSFcoeff_92 1.1514321490e-02 3 1  ON 91
+CSFcoeff_93 6.4951337650e-04 3 1  ON 92
+CSFcoeff_94 1.3205685390e-02 3 1  ON 93
+CSFcoeff_95 9.3586545484e-03 3 1  ON 94
+CSFcoeff_96 1.6749908752e-02 3 1  ON 95
+CSFcoeff_97 1.2766511106e-02 3 1  ON 96
+CSFcoeff_98 9.5174892050e-03 3 1  ON 97
+CSFcoeff_99 -6.1702240979e-03 3 1  ON 98
+CSFcoeff_100 2.0361414216e-02 3 1  ON 99
+CSFcoeff_101 -9.8222188289e-03 3 1  ON 100
+CSFcoeff_102 -5.4833284457e-03 3 1  ON 101
+CSFcoeff_103 5.1494611338e-03 3 1  ON 102
+CSFcoeff_104 5.6642290487e-03 3 1  ON 103
+CSFcoeff_105 5.4244855103e-03 3 1  ON 104
+CSFcoeff_106 5.3191821793e-03 3 1  ON 105
+CSFcoeff_107 -1.5234224582e-03 3 1  ON 106
+CSFcoeff_108 9.9830777021e-03 3 1  ON 107
+CSFcoeff_109 -1.5129335088e-04 3 1  ON 108
+CSFcoeff_110 5.1232715329e-03 3 1  ON 109
+CSFcoeff_111 -4.6302188477e-03 3 1  ON 110
+CSFcoeff_112 -6.9947519695e-03 3 1  ON 111
+CSFcoeff_113 -9.1900323981e-03 3 1  ON 112
+CSFcoeff_114 -4.6989161166e-03 3 1  ON 113
+CSFcoeff_115 1.6210467126e-02 3 1  ON 114
+CSFcoeff_116 -8.8270630568e-03 3 1  ON 115
+CSFcoeff_117 -1.0515165057e-02 3 1  ON 116
+CSFcoeff_118 -8.1318557648e-03 3 1  ON 117
+CSFcoeff_119 -7.3253253599e-05 3 1  ON 118
+CSFcoeff_120 -6.5106018867e-03 3 1  ON 119
+CSFcoeff_121 -1.7125025086e-02 3 1  ON 120
+CSFcoeff_122 1.0859097004e-02 3 1  ON 121
+CSFcoeff_123 7.1625411071e-03 3 1  ON 122
+CSFcoeff_124 1.3720790373e-03 3 1  ON 123
+CSFcoeff_125 -3.7802524151e-03 3 1  ON 124
+CSFcoeff_126 9.1524393592e-03 3 1  ON 125
+CSFcoeff_127 5.4367347013e-03 3 1  ON 126
+CSFcoeff_128 -1.1711671383e-02 3 1  ON 127
+CSFcoeff_129 -7.3527794979e-03 3 1  ON 128
+CSFcoeff_130 -4.3568342046e-03 3 1  ON 129
+CSFcoeff_131 -7.4879373768e-03 3 1  ON 130
+CSFcoeff_132 -4.5508306397e-03 3 1  ON 131
+CSFcoeff_133 -7.5763003846e-03 3 1  ON 132
+CSFcoeff_134 -8.7637366436e-03 3 1  ON 133
+CSFcoeff_135 -9.2103489970e-03 3 1  ON 134
+CSFcoeff_136 -1.1003515637e-02 3 1  ON 135
+uu_0 3.0283478977e-01 1 1  ON 136
+uu_1 1.2884706540e-01 1 1  ON 137
+uu_2 2.9815991735e-02 1 1  ON 138
+uu_3 -2.2934284604e-02 1 1  ON 139
+uu_4 -4.9211211601e-02 1 1  ON 140
+uu_5 -6.4523463133e-02 1 1  ON 141
+uu_6 -6.4701692386e-02 1 1  ON 142
+uu_7 -7.7107923651e-02 1 1  ON 143
+uu_8 7.6142553709e-03 1 1  ON 144
+uu_9 -3.9893300151e-02 1 1  ON 145
+ud_0 1.7830615126e-01 1 1  ON 146
+ud_1 -9.4365515311e-02 1 1  ON 147
+ud_2 -2.1426479685e-01 1 1  ON 148
+ud_3 -2.6579360194e-01 1 1  ON 149
+ud_4 -2.9360435514e-01 1 1  ON 150
+ud_5 -3.0768550194e-01 1 1  ON 151
+ud_6 -3.3884989770e-01 1 1  ON 152
+ud_7 -3.4081786840e-01 1 1  ON 153
+ud_8 -2.9221300644e-01 1 1  ON 154
+ud_9 -2.3248521467e-01 1 1  ON 155
+eO_0 -2.3766056999e-01 1 1  ON 156
+eO_1 1.2326419387e-01 1 1  ON 157
+eO_2 5.5158454264e-01 1 1  ON 158
+eO_3 8.0180677716e-01 1 1  ON 159
+eO_4 9.9851235869e-01 1 1  ON 160
+eO_5 1.1847923143e+00 1 1  ON 161
+eO_6 1.2785339372e+00 1 1  ON 162
+eO_7 1.3606643705e+00 1 1  ON 163
+eO_8 8.8570956930e-01 1 1  ON 164
+eO_9 2.5138838254e+00 1 1  ON 165
+eH_0 -9.1355328991e-02 1 1  ON 166
+eH_1 -4.1730784750e-02 1 1  ON 167
+eH_2 -1.0170418663e-02 1 1  ON 168
+eH_3 2.5076531576e-02 1 1  ON 169
+eH_4 3.9403870170e-02 1 1  ON 170
+eH_5 3.1978682576e-02 1 1  ON 171
+eH_6 3.8657891565e-03 1 1  ON 172
+eH_7 -4.2712613495e-02 1 1  ON 173
+eH_8 3.1224334792e-02 1 1  ON 174
+eH_9 4.1049057296e-02 1 1  ON 175
+  </optVariables>
+   Restore the number of walkers to 1, removing 159 walkers.
+</opt>
+</optimization-report>
+  QMC Execution time = 7.1748683170e+00 secs 
+  Reusing QMCFixedSampleLinearOptimize
+ Using QMCCostFunctionOMP::QMCCostFunctionOMP
+
+=========================================================
+  Start QMCFixedSampleLinearOptimize
+  File Root jopt-h2o.s006 append = no 
+=========================================================
+  Skip QMCDriver::putQMCInfo 
+  Resetting Properties of the walkers 1 x 14
+
+=========================================================
+  Start VMCSingleOMP
+  File Root jopt-h2o.s006 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 14
+
+<vmc function="put">
+  qmc_counter=6  my_counter=6
+  time step      = 5.0000000000e-01
+  blocks         = 100
+  steps          = 2
+  substeps       = 20
+  current        = 0
+  target samples = 5.1200000000e+04
+  walkers/mpi    = 1
+
+  stepsbetweensamples = 1
+<parameter name="blocks" condition="int">100</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">5.1200000000e+04</parameter>
+<parameter name="samplesperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="steps" condition="int">2</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">20</parameter>
+<parameter name="substeps" condition="int">20</parameter>
+<parameter name="tau" condition="au">5.0000000000e-01</parameter>
+<parameter name="time_step" condition="au">5.0000000000e-01</parameter>
+<parameter name="timestep" condition="au">5.0000000000e-01</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">1</parameter>
+<parameter name="warmup_steps" condition="int">25</parameter>
+<parameter name="warmupsteps" condition="int">25</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1 steps.
+</vmc>
+  EstimatorManager::add replace LocalEnergy estimator.
+  EstimatorManager::add replace LocalEnergy estimator.
+<optimization-report>
+<vmc stage="main" blocks="100">
+  Cannot make clones again. Use existing 1 clones
+  Initial partition of walkers 0 1 
+  Total Sample Size   =51200
+  Walker distribution on root = 0 1 
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 6
+    time step          = 0.5
+    reference energy   = -17.2673
+    reference variance = 0.449753
+====================================================
+  Execution time = 2.3366196040e+00
+</vmc>
+<opt stage="setup">
+  <log>
+   Reading configurations from h5FileRoot jopt-h2o.s006
+  QMCCostFunctionOMP is created with 1
+   Loading configuration from MCWalkerConfiguration::SampleStack 
+    number of walkers before load 1
+  Using Nonlocal PP in Opt: NonLocalECP
+    number of walkers after load: 160 
+Using buffers for temporary storage in QMCCostFunction.
+
+Memory usage: 
+Linear method (approx matrix usage: 4*N^2): 9.9123200000e-01 MB
+Deriv,HDerivRecord:      6.7584000000e-01 MB
+Buffer memory cost:     MB/walker       MB/total 
+Orbitals only:           1.7280000000e-03      2.7648000000e-01
+Orbitals + dervs:        8.6400000000e-03      1.3824000000e+00
+Inverse:                 2.5600000000e-04      4.0960000000e-02
+Determinants:            2.8016000000e-02      4.4825600000e+00
+  VMC Eavg = -1.7240256298e+01
+  VMC Evar = 2.8601095181e-01
+  Total weights = 5.1200000000e+04
+  Execution time = 1.7028001300e-01
+  </log>
+</opt>
+<opt stage="main" walkers="51200">
+  <log>
+Iteration: 1/1
+od_largest 2.9127918930e+02
+  stabilityBase -6.0000000000e+00
+  stabilizerScale 2.0000000000e+00
+  Using XS:-6.0000000000e+00 0 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000735e+00 NumWalkersEff/NumSamples 1.9531251435e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0059258201e+00 NumWalkersEff/NumSamples 1.9646988674e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+  Failed Step. Largest LM parameter change:1.5562654228e+02
+ERROR   Using XS:-4.0000000000e+00 1 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000725e+00 NumWalkersEff/NumSamples 1.9531251415e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0058831440e+00 NumWalkersEff/NumSamples 1.9646155156e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+  Failed Step. Largest LM parameter change:1.5575129588e+02
+ERROR   Using XS:-2.0000000000e+00 2 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000649e+00 NumWalkersEff/NumSamples 1.9531251267e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0055558868e+00 NumWalkersEff/NumSamples 1.9639763413e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+  Failed Step. Largest LM parameter change:1.5674009492e+02
+ERROR   Using XS:0.0000000000e+00 3 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000125e+00 NumWalkersEff/NumSamples 1.9531250244e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0023877485e+00 NumWalkersEff/NumSamples 1.9577885712e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+  Failed Step. Largest LM parameter change:1.7148919348e+02
+ERROR   Using XS:2.0000000000e+00 4 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0003660288e+00 NumWalkersEff/NumSamples 1.9538399001e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000008790e+00 NumWalkersEff/NumSamples 1.9531267168e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000052230e+00 NumWalkersEff/NumSamples 1.9531352011e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000688e+00 NumWalkersEff/NumSamples 1.9531251343e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000009e+00 NumWalkersEff/NumSamples 1.9531250017e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+  Failed Step. Largest LM parameter change:2.9214219315e+02
+ERROR   Using XS:4.0000000000e+00 5 0
+  Good Step. Largest LM parameter change:1.3133907498e+00
+ OldCost: -1.6363942936e+01 NewCost: -1.6365487980e+01 Delta Cost:-1.5450440540e-03
+      Current ene:     -1.7241694410e+01
+      Current var:     2.8243418085e-01
+      Current ene_urw:     -1.7240167986e+01
+      Current var_urw: 2.8458474573e-01
+Setting new Parameters
+ERROR   Execution time = 7.2724929170e+00
+  </log>
+  <optVariables href="jopt-h2o.s006.opt.xml">
+CSFcoeff_1 -2.4465986480e-02 3 1  ON 0
+CSFcoeff_2 3.9070069314e-02 3 1  ON 1
+CSFcoeff_3 -1.2779131766e-02 3 1  ON 2
+CSFcoeff_4 -2.5145685258e-02 3 1  ON 3
+CSFcoeff_5 -1.5522226331e-02 3 1  ON 4
+CSFcoeff_6 1.9784106589e-02 3 1  ON 5
+CSFcoeff_7 -1.4759131527e-02 3 1  ON 6
+CSFcoeff_8 1.2524886875e-02 3 1  ON 7
+CSFcoeff_9 1.3460570655e-02 3 1  ON 8
+CSFcoeff_10 -1.1998795575e-02 3 1  ON 9
+CSFcoeff_11 -1.6307886985e-02 3 1  ON 10
+CSFcoeff_12 -1.1324348829e-02 3 1  ON 11
+CSFcoeff_13 -1.0693773133e-02 3 1  ON 12
+CSFcoeff_14 -2.3822242833e-02 3 1  ON 13
+CSFcoeff_15 9.8823291772e-05 3 1  ON 14
+CSFcoeff_16 -1.8317977241e-02 3 1  ON 15
+CSFcoeff_17 -2.0650716678e-02 3 1  ON 16
+CSFcoeff_18 -7.2270083232e-03 3 1  ON 17
+CSFcoeff_19 5.7521652335e-03 3 1  ON 18
+CSFcoeff_20 9.7000782739e-03 3 1  ON 19
+CSFcoeff_21 1.1949691766e-02 3 1  ON 20
+CSFcoeff_22 -1.4924391650e-02 3 1  ON 21
+CSFcoeff_23 -1.8043877578e-02 3 1  ON 22
+CSFcoeff_24 7.8753542945e-03 3 1  ON 23
+CSFcoeff_25 1.6491494207e-02 3 1  ON 24
+CSFcoeff_26 -1.7284551781e-02 3 1  ON 25
+CSFcoeff_27 1.8029537071e-02 3 1  ON 26
+CSFcoeff_28 1.7005690537e-02 3 1  ON 27
+CSFcoeff_29 -6.4607969572e-03 3 1  ON 28
+CSFcoeff_30 1.6011975557e-02 3 1  ON 29
+CSFcoeff_31 4.6422826016e-03 3 1  ON 30
+CSFcoeff_32 -8.8744264237e-03 3 1  ON 31
+CSFcoeff_33 -1.3904495020e-02 3 1  ON 32
+CSFcoeff_34 2.3136537832e-03 3 1  ON 33
+CSFcoeff_35 1.2293286367e-02 3 1  ON 34
+CSFcoeff_36 -1.2976952088e-02 3 1  ON 35
+CSFcoeff_37 -1.0655024248e-02 3 1  ON 36
+CSFcoeff_38 -1.7377843656e-03 3 1  ON 37
+CSFcoeff_39 7.1329925526e-03 3 1  ON 38
+CSFcoeff_40 1.7011824886e-02 3 1  ON 39
+CSFcoeff_41 -5.3541989613e-03 3 1  ON 40
+CSFcoeff_42 -2.3004795596e-03 3 1  ON 41
+CSFcoeff_43 1.3588592253e-02 3 1  ON 42
+CSFcoeff_44 3.6424790618e-03 3 1  ON 43
+CSFcoeff_45 1.6720609268e-02 3 1  ON 44
+CSFcoeff_46 8.9500025627e-04 3 1  ON 45
+CSFcoeff_47 2.4675806348e-03 3 1  ON 46
+CSFcoeff_48 -5.3246672217e-03 3 1  ON 47
+CSFcoeff_49 1.0364990655e-02 3 1  ON 48
+CSFcoeff_50 -1.5477296253e-02 3 1  ON 49
+CSFcoeff_51 9.3795637889e-03 3 1  ON 50
+CSFcoeff_52 -7.1813959197e-03 3 1  ON 51
+CSFcoeff_53 7.5936536797e-03 3 1  ON 52
+CSFcoeff_54 -3.6062935628e-03 3 1  ON 53
+CSFcoeff_55 1.2349706100e-02 3 1  ON 54
+CSFcoeff_56 7.4830968628e-03 3 1  ON 55
+CSFcoeff_57 -1.3385252679e-02 3 1  ON 56
+CSFcoeff_58 -1.5422822610e-02 3 1  ON 57
+CSFcoeff_59 5.8919447942e-03 3 1  ON 58
+CSFcoeff_60 2.3588207620e-02 3 1  ON 59
+CSFcoeff_61 -1.3837895959e-02 3 1  ON 60
+CSFcoeff_62 -3.1427319516e-03 3 1  ON 61
+CSFcoeff_63 1.1808588626e-02 3 1  ON 62
+CSFcoeff_64 -8.6719464488e-03 3 1  ON 63
+CSFcoeff_65 1.4585241081e-02 3 1  ON 64
+CSFcoeff_66 8.3898279273e-03 3 1  ON 65
+CSFcoeff_67 -1.0370858607e-02 3 1  ON 66
+CSFcoeff_68 9.7733365069e-03 3 1  ON 67
+CSFcoeff_69 -9.9103558473e-03 3 1  ON 68
+CSFcoeff_70 -5.3276591808e-03 3 1  ON 69
+CSFcoeff_71 -1.0011581771e-02 3 1  ON 70
+CSFcoeff_72 1.9688634779e-03 3 1  ON 71
+CSFcoeff_73 -8.6198340100e-03 3 1  ON 72
+CSFcoeff_74 -1.4639652263e-02 3 1  ON 73
+CSFcoeff_75 -3.1756083281e-03 3 1  ON 74
+CSFcoeff_76 -7.3278062036e-03 3 1  ON 75
+CSFcoeff_77 -9.2100129913e-03 3 1  ON 76
+CSFcoeff_78 -1.0359301575e-02 3 1  ON 77
+CSFcoeff_79 5.7135153092e-03 3 1  ON 78
+CSFcoeff_80 5.7671328125e-03 3 1  ON 79
+CSFcoeff_81 7.0693002770e-03 3 1  ON 80
+CSFcoeff_82 1.6385519165e-03 3 1  ON 81
+CSFcoeff_83 -7.9103730424e-03 3 1  ON 82
+CSFcoeff_84 -1.0428278938e-02 3 1  ON 83
+CSFcoeff_85 5.5961182444e-03 3 1  ON 84
+CSFcoeff_86 -8.3673811726e-03 3 1  ON 85
+CSFcoeff_87 5.5463042071e-03 3 1  ON 86
+CSFcoeff_88 -9.8708671168e-03 3 1  ON 87
+CSFcoeff_89 -1.0749688400e-02 3 1  ON 88
+CSFcoeff_90 6.9158407753e-03 3 1  ON 89
+CSFcoeff_91 -1.4227630736e-02 3 1  ON 90
+CSFcoeff_92 1.2847910424e-02 3 1  ON 91
+CSFcoeff_93 -1.4393008348e-04 3 1  ON 92
+CSFcoeff_94 1.9499144948e-02 3 1  ON 93
+CSFcoeff_95 6.8101209306e-03 3 1  ON 94
+CSFcoeff_96 9.5118158615e-03 3 1  ON 95
+CSFcoeff_97 1.0151839457e-02 3 1  ON 96
+CSFcoeff_98 6.4978208747e-03 3 1  ON 97
+CSFcoeff_99 -6.3243892688e-03 3 1  ON 98
+CSFcoeff_100 2.0486203631e-02 3 1  ON 99
+CSFcoeff_101 -9.2869540552e-03 3 1  ON 100
+CSFcoeff_102 -7.1694125975e-03 3 1  ON 101
+CSFcoeff_103 5.3212847799e-03 3 1  ON 102
+CSFcoeff_104 5.1623408625e-03 3 1  ON 103
+CSFcoeff_105 6.2860650561e-03 3 1  ON 104
+CSFcoeff_106 5.5607380297e-03 3 1  ON 105
+CSFcoeff_107 -3.6920642353e-03 3 1  ON 106
+CSFcoeff_108 1.7541420648e-02 3 1  ON 107
+CSFcoeff_109 -3.1652238161e-04 3 1  ON 108
+CSFcoeff_110 3.4305684141e-03 3 1  ON 109
+CSFcoeff_111 -4.0818409841e-03 3 1  ON 110
+CSFcoeff_112 -8.4213277068e-03 3 1  ON 111
+CSFcoeff_113 -8.7234008305e-03 3 1  ON 112
+CSFcoeff_114 -4.3404622183e-03 3 1  ON 113
+CSFcoeff_115 1.2990328049e-02 3 1  ON 114
+CSFcoeff_116 -8.0115717419e-03 3 1  ON 115
+CSFcoeff_117 -1.1491094111e-02 3 1  ON 116
+CSFcoeff_118 -6.4700112661e-03 3 1  ON 117
+CSFcoeff_119 3.6214753922e-04 3 1  ON 118
+CSFcoeff_120 -4.5323966779e-03 3 1  ON 119
+CSFcoeff_121 -1.7098823417e-02 3 1  ON 120
+CSFcoeff_122 9.2745038089e-03 3 1  ON 121
+CSFcoeff_123 5.6428038604e-03 3 1  ON 122
+CSFcoeff_124 3.9265442987e-03 3 1  ON 123
+CSFcoeff_125 -3.4165862962e-03 3 1  ON 124
+CSFcoeff_126 1.0341989445e-02 3 1  ON 125
+CSFcoeff_127 2.4651583466e-03 3 1  ON 126
+CSFcoeff_128 -1.0849202581e-02 3 1  ON 127
+CSFcoeff_129 -5.2250613550e-03 3 1  ON 128
+CSFcoeff_130 -4.5463394330e-03 3 1  ON 129
+CSFcoeff_131 -7.4345484762e-03 3 1  ON 130
+CSFcoeff_132 -4.1403964180e-03 3 1  ON 131
+CSFcoeff_133 -7.2304617403e-03 3 1  ON 132
+CSFcoeff_134 -6.7925263981e-03 3 1  ON 133
+CSFcoeff_135 -5.9792594558e-03 3 1  ON 134
+CSFcoeff_136 -7.6414873756e-03 3 1  ON 135
+uu_0 2.9385291613e-01 1 1  ON 136
+uu_1 1.1531137680e-01 1 1  ON 137
+uu_2 1.2430024523e-02 1 1  ON 138
+uu_3 -4.2231963053e-02 1 1  ON 139
+uu_4 -7.1756922539e-02 1 1  ON 140
+uu_5 -8.4913656170e-02 1 1  ON 141
+uu_6 -9.1884742801e-02 1 1  ON 142
+uu_7 -7.3627765388e-02 1 1  ON 143
+uu_8 -1.0873852773e-01 1 1  ON 144
+uu_9 1.5751733674e-01 1 1  ON 145
+ud_0 3.0442728947e-01 1 1  ON 146
+ud_1 2.9302968419e-02 1 1  ON 147
+ud_2 -9.1438998176e-02 1 1  ON 148
+ud_3 -1.4651764392e-01 1 1  ON 149
+ud_4 -1.7138725808e-01 1 1  ON 150
+ud_5 -1.9487100179e-01 1 1  ON 151
+ud_6 -2.0978797388e-01 1 1  ON 152
+ud_7 -2.3366351055e-01 1 1  ON 153
+ud_8 -2.1093016189e-01 1 1  ON 154
+ud_9 -7.5075259773e-02 1 1  ON 155
+eO_0 -1.0493928452e+00 1 1  ON 156
+eO_1 -6.8674139610e-01 1 1  ON 157
+eO_2 -2.4425266769e-01 1 1  ON 158
+eO_3 1.6695564477e-02 1 1  ON 159
+eO_4 2.2597100220e-01 1 1  ON 160
+eO_5 4.2232593634e-01 1 1  ON 161
+eO_6 5.4208973059e-01 1 1  ON 162
+eO_7 4.9982910571e-01 1 1  ON 163
+eO_8 6.1588042548e-01 1 1  ON 164
+eO_9 1.2004930756e+00 1 1  ON 165
+eH_0 1.1559058382e-02 1 1  ON 166
+eH_1 6.3241025124e-02 1 1  ON 167
+eH_2 9.5378011685e-02 1 1  ON 168
+eH_3 1.3255426640e-01 1 1  ON 169
+eH_4 1.4608410075e-01 1 1  ON 170
+eH_5 1.3857241783e-01 1 1  ON 171
+eH_6 9.9495309956e-02 1 1  ON 172
+eH_7 7.9742368590e-02 1 1  ON 173
+eH_8 1.1561859531e-01 1 1  ON 174
+eH_9 2.2139364765e-01 1 1  ON 175
+  </optVariables>
+   Restore the number of walkers to 1, removing 159 walkers.
+</opt>
+</optimization-report>
+  QMC Execution time = 7.2898905470e+00 secs 
+  Reusing QMCFixedSampleLinearOptimize
+ Using QMCCostFunctionOMP::QMCCostFunctionOMP
+
+=========================================================
+  Start QMCFixedSampleLinearOptimize
+  File Root jopt-h2o.s007 append = no 
+=========================================================
+  Skip QMCDriver::putQMCInfo 
+  Resetting Properties of the walkers 1 x 14
+
+=========================================================
+  Start VMCSingleOMP
+  File Root jopt-h2o.s007 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 14
+
+<vmc function="put">
+  qmc_counter=7  my_counter=7
+  time step      = 5.0000000000e-01
+  blocks         = 100
+  steps          = 2
+  substeps       = 20
+  current        = 0
+  target samples = 5.1200000000e+04
+  walkers/mpi    = 1
+
+  stepsbetweensamples = 1
+<parameter name="blocks" condition="int">100</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">5.1200000000e+04</parameter>
+<parameter name="samplesperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="steps" condition="int">2</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">20</parameter>
+<parameter name="substeps" condition="int">20</parameter>
+<parameter name="tau" condition="au">5.0000000000e-01</parameter>
+<parameter name="time_step" condition="au">5.0000000000e-01</parameter>
+<parameter name="timestep" condition="au">5.0000000000e-01</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">1</parameter>
+<parameter name="warmup_steps" condition="int">25</parameter>
+<parameter name="warmupsteps" condition="int">25</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1 steps.
+</vmc>
+  EstimatorManager::add replace LocalEnergy estimator.
+  EstimatorManager::add replace LocalEnergy estimator.
+<optimization-report>
+<vmc stage="main" blocks="100">
+  Cannot make clones again. Use existing 1 clones
+  Initial partition of walkers 0 1 
+  Total Sample Size   =51200
+  Walker distribution on root = 0 1 
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 7
+    time step          = 0.5
+    reference energy   = -17.2312
+    reference variance = 0.467842
+====================================================
+  Execution time = 2.3377523210e+00
+</vmc>
+<opt stage="setup">
+  <log>
+   Reading configurations from h5FileRoot jopt-h2o.s007
+  QMCCostFunctionOMP is created with 1
+   Loading configuration from MCWalkerConfiguration::SampleStack 
+    number of walkers before load 1
+  Using Nonlocal PP in Opt: NonLocalECP
+    number of walkers after load: 160 
+Using buffers for temporary storage in QMCCostFunction.
+
+Memory usage: 
+Linear method (approx matrix usage: 4*N^2): 9.9123200000e-01 MB
+Deriv,HDerivRecord:      6.7584000000e-01 MB
+Buffer memory cost:     MB/walker       MB/total 
+Orbitals only:           1.7280000000e-03      2.7648000000e-01
+Orbitals + dervs:        8.6400000000e-03      1.3824000000e+00
+Inverse:                 2.5600000000e-04      4.0960000000e-02
+Determinants:            2.8016000000e-02      4.4825600000e+00
+  VMC Eavg = -1.7245404403e+01
+  VMC Evar = 2.8726178551e-01
+  Total weights = 5.1200000000e+04
+  Execution time = 1.7051875101e-01
+  </log>
+</opt>
+<opt stage="main" walkers="51200">
+  <log>
+Iteration: 1/1
+od_largest 1.5371811192e+03
+  stabilityBase -6.0000000000e+00
+  stabilizerScale 2.0000000000e+00
+  Using XS:-6.0000000000e+00 0 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000019715e+00 NumWalkersEff/NumSamples 1.9531288507e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 7.8173419583e+01 NumWalkersEff/NumSamples 1.5268246012e-03
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+  Failed Step. Largest LM parameter change:1.5617564211e+02
+ERROR   Using XS:-4.0000000000e+00 1 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000018787e+00 NumWalkersEff/NumSamples 1.9531286694e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 7.5855715686e+01 NumWalkersEff/NumSamples 1.4815569470e-03
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+  Failed Step. Largest LM parameter change:1.5674045586e+02
+ERROR   Using XS:-2.0000000000e+00 2 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000012612e+00 NumWalkersEff/NumSamples 1.9531274633e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 5.8841083952e+01 NumWalkersEff/NumSamples 1.1492399209e-03
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+  Failed Step. Largest LM parameter change:1.6144745051e+02
+ERROR   Using XS:0.0000000000e+00 3 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.8377276396e+00 NumWalkersEff/NumSamples 3.5893117962e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.6129719540e+00 NumWalkersEff/NumSamples 3.1503358476e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.9143282455e+00 NumWalkersEff/NumSamples 3.7389223544e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.2402215417e+00 NumWalkersEff/NumSamples 2.4223076987e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0437859933e+00 NumWalkersEff/NumSamples 2.0386445182e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0077386348e+00 NumWalkersEff/NumSamples 1.9682395211e-05
+  Failed Step. Largest LM parameter change:1.5916321950e+02
+ERROR   Using XS:2.0000000000e+00 4 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000006840e+00 NumWalkersEff/NumSamples 1.9531263359e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+  Failed Step. Largest LM parameter change:5.3838615618e+02
+ERROR   Using XS:4.0000000000e+00 5 0
+  Good Step. Largest LM parameter change:7.8993864824e-01
+ OldCost: -1.6368771093e+01 NewCost: -1.6370455848e+01 Delta Cost:-1.6847549951e-03
+      Current ene:     -1.7246627518e+01
+      Current var:     2.7680587515e-01
+      Current ene_urw:     -1.7246226276e+01
+      Current var_urw: 2.9408707557e-01
+Setting new Parameters
+ERROR   Execution time = 7.2781047840e+00
+  </log>
+  <optVariables href="jopt-h2o.s007.opt.xml">
+CSFcoeff_1 -2.0125840717e-02 3 1  ON 0
+CSFcoeff_2 4.1267671043e-02 3 1  ON 1
+CSFcoeff_3 -2.2664793103e-02 3 1  ON 2
+CSFcoeff_4 -2.2668887698e-02 3 1  ON 3
+CSFcoeff_5 -1.8927340354e-02 3 1  ON 4
+CSFcoeff_6 2.2283993110e-02 3 1  ON 5
+CSFcoeff_7 -1.6132042738e-02 3 1  ON 6
+CSFcoeff_8 1.4133614258e-02 3 1  ON 7
+CSFcoeff_9 1.1069128387e-02 3 1  ON 8
+CSFcoeff_10 -1.2900116415e-02 3 1  ON 9
+CSFcoeff_11 -1.1928440470e-02 3 1  ON 10
+CSFcoeff_12 -7.4806902854e-03 3 1  ON 11
+CSFcoeff_13 -1.0786908318e-02 3 1  ON 12
+CSFcoeff_14 -1.8037086596e-02 3 1  ON 13
+CSFcoeff_15 2.6568236796e-03 3 1  ON 14
+CSFcoeff_16 -1.6257741682e-02 3 1  ON 15
+CSFcoeff_17 -1.9510367756e-02 3 1  ON 16
+CSFcoeff_18 -1.0192485161e-02 3 1  ON 17
+CSFcoeff_19 6.1916003300e-03 3 1  ON 18
+CSFcoeff_20 1.1411321813e-02 3 1  ON 19
+CSFcoeff_21 1.4417004519e-02 3 1  ON 20
+CSFcoeff_22 -1.7231979571e-02 3 1  ON 21
+CSFcoeff_23 -1.5203939086e-02 3 1  ON 22
+CSFcoeff_24 6.6732972118e-03 3 1  ON 23
+CSFcoeff_25 1.9929504727e-02 3 1  ON 24
+CSFcoeff_26 -1.8000186742e-02 3 1  ON 25
+CSFcoeff_27 1.6359304353e-02 3 1  ON 26
+CSFcoeff_28 1.6468348696e-02 3 1  ON 27
+CSFcoeff_29 -6.2897611773e-03 3 1  ON 28
+CSFcoeff_30 1.3254225952e-02 3 1  ON 29
+CSFcoeff_31 7.9004437124e-03 3 1  ON 30
+CSFcoeff_32 -4.2480758359e-03 3 1  ON 31
+CSFcoeff_33 -1.0539056011e-02 3 1  ON 32
+CSFcoeff_34 1.1851992891e-04 3 1  ON 33
+CSFcoeff_35 1.1367241367e-02 3 1  ON 34
+CSFcoeff_36 -1.1966220139e-02 3 1  ON 35
+CSFcoeff_37 -1.3863103209e-02 3 1  ON 36
+CSFcoeff_38 -1.2998939591e-03 3 1  ON 37
+CSFcoeff_39 5.9494234123e-03 3 1  ON 38
+CSFcoeff_40 1.7298838127e-02 3 1  ON 39
+CSFcoeff_41 -4.8369283823e-03 3 1  ON 40
+CSFcoeff_42 -3.2250783884e-03 3 1  ON 41
+CSFcoeff_43 1.0190887253e-02 3 1  ON 42
+CSFcoeff_44 1.8111300496e-03 3 1  ON 43
+CSFcoeff_45 1.4845966477e-02 3 1  ON 44
+CSFcoeff_46 -2.5363377032e-03 3 1  ON 45
+CSFcoeff_47 6.6753040246e-03 3 1  ON 46
+CSFcoeff_48 -7.1237234866e-03 3 1  ON 47
+CSFcoeff_49 1.1167055709e-02 3 1  ON 48
+CSFcoeff_50 -1.5548853570e-02 3 1  ON 49
+CSFcoeff_51 9.2604083508e-03 3 1  ON 50
+CSFcoeff_52 -7.6280854592e-03 3 1  ON 51
+CSFcoeff_53 9.2976742230e-03 3 1  ON 52
+CSFcoeff_54 -4.3457947772e-03 3 1  ON 53
+CSFcoeff_55 1.6835125136e-02 3 1  ON 54
+CSFcoeff_56 9.7855356058e-03 3 1  ON 55
+CSFcoeff_57 -1.1917056248e-02 3 1  ON 56
+CSFcoeff_58 -1.7115023330e-02 3 1  ON 57
+CSFcoeff_59 6.4729825113e-03 3 1  ON 58
+CSFcoeff_60 2.3567607994e-02 3 1  ON 59
+CSFcoeff_61 -1.1102178988e-02 3 1  ON 60
+CSFcoeff_62 -3.6051726787e-03 3 1  ON 61
+CSFcoeff_63 9.6371749058e-03 3 1  ON 62
+CSFcoeff_64 -8.1965584098e-03 3 1  ON 63
+CSFcoeff_65 1.4448049024e-02 3 1  ON 64
+CSFcoeff_66 8.2388406556e-03 3 1  ON 65
+CSFcoeff_67 -1.1121652222e-02 3 1  ON 66
+CSFcoeff_68 9.3788132888e-03 3 1  ON 67
+CSFcoeff_69 -1.0229911855e-02 3 1  ON 68
+CSFcoeff_70 -2.8712586719e-03 3 1  ON 69
+CSFcoeff_71 -8.9290628175e-03 3 1  ON 70
+CSFcoeff_72 3.6838332855e-03 3 1  ON 71
+CSFcoeff_73 -8.2985091023e-03 3 1  ON 72
+CSFcoeff_74 -1.7598122426e-02 3 1  ON 73
+CSFcoeff_75 -3.2708879017e-03 3 1  ON 74
+CSFcoeff_76 -6.2682286952e-03 3 1  ON 75
+CSFcoeff_77 -1.5644701381e-02 3 1  ON 76
+CSFcoeff_78 -1.2230150840e-02 3 1  ON 77
+CSFcoeff_79 3.3443843893e-03 3 1  ON 78
+CSFcoeff_80 4.1484900148e-03 3 1  ON 79
+CSFcoeff_81 8.1749897869e-03 3 1  ON 80
+CSFcoeff_82 4.8391964971e-03 3 1  ON 81
+CSFcoeff_83 -1.0982175815e-02 3 1  ON 82
+CSFcoeff_84 -1.1994969230e-02 3 1  ON 83
+CSFcoeff_85 7.3188404064e-03 3 1  ON 84
+CSFcoeff_86 -8.1036755362e-03 3 1  ON 85
+CSFcoeff_87 9.6181093548e-03 3 1  ON 86
+CSFcoeff_88 -1.2248998303e-02 3 1  ON 87
+CSFcoeff_89 -6.5222872505e-03 3 1  ON 88
+CSFcoeff_90 6.7171867870e-03 3 1  ON 89
+CSFcoeff_91 -1.4670196732e-02 3 1  ON 90
+CSFcoeff_92 8.7766579898e-03 3 1  ON 91
+CSFcoeff_93 -1.2720507455e-04 3 1  ON 92
+CSFcoeff_94 1.4077978028e-02 3 1  ON 93
+CSFcoeff_95 8.3052747805e-03 3 1  ON 94
+CSFcoeff_96 9.8559922127e-03 3 1  ON 95
+CSFcoeff_97 7.9391515135e-03 3 1  ON 96
+CSFcoeff_98 4.0516609085e-03 3 1  ON 97
+CSFcoeff_99 -4.7345687909e-03 3 1  ON 98
+CSFcoeff_100 2.1565680709e-02 3 1  ON 99
+CSFcoeff_101 -8.7313475522e-03 3 1  ON 100
+CSFcoeff_102 -1.0733265229e-02 3 1  ON 101
+CSFcoeff_103 6.7354559687e-03 3 1  ON 102
+CSFcoeff_104 6.8542970289e-03 3 1  ON 103
+CSFcoeff_105 6.9904953880e-03 3 1  ON 104
+CSFcoeff_106 6.7211244770e-03 3 1  ON 105
+CSFcoeff_107 -4.1134212815e-03 3 1  ON 106
+CSFcoeff_108 1.6040220891e-02 3 1  ON 107
+CSFcoeff_109 -3.3293650594e-03 3 1  ON 108
+CSFcoeff_110 2.5533428105e-03 3 1  ON 109
+CSFcoeff_111 -5.7008244803e-03 3 1  ON 110
+CSFcoeff_112 -7.9432880156e-03 3 1  ON 111
+CSFcoeff_113 -1.0948544770e-02 3 1  ON 112
+CSFcoeff_114 -7.3069299098e-03 3 1  ON 113
+CSFcoeff_115 2.0501264590e-02 3 1  ON 114
+CSFcoeff_116 -1.6324636508e-03 3 1  ON 115
+CSFcoeff_117 -1.2293660760e-02 3 1  ON 116
+CSFcoeff_118 -1.7610186679e-03 3 1  ON 117
+CSFcoeff_119 -5.6355475328e-04 3 1  ON 118
+CSFcoeff_120 -5.4970224042e-03 3 1  ON 119
+CSFcoeff_121 -1.5587607462e-02 3 1  ON 120
+CSFcoeff_122 8.8933600000e-03 3 1  ON 121
+CSFcoeff_123 4.8835782498e-03 3 1  ON 122
+CSFcoeff_124 7.9435297430e-03 3 1  ON 123
+CSFcoeff_125 -2.9106715247e-03 3 1  ON 124
+CSFcoeff_126 7.6427564596e-03 3 1  ON 125
+CSFcoeff_127 2.7718259301e-03 3 1  ON 126
+CSFcoeff_128 -9.3317306452e-03 3 1  ON 127
+CSFcoeff_129 -7.6689389246e-03 3 1  ON 128
+CSFcoeff_130 -5.9680369050e-03 3 1  ON 129
+CSFcoeff_131 -8.6482629016e-03 3 1  ON 130
+CSFcoeff_132 -3.8678490663e-03 3 1  ON 131
+CSFcoeff_133 -9.6569473498e-03 3 1  ON 132
+CSFcoeff_134 -1.6257023197e-03 3 1  ON 133
+CSFcoeff_135 -6.4849387922e-04 3 1  ON 134
+CSFcoeff_136 -8.9316825167e-03 3 1  ON 135
+uu_0 1.2389346672e-01 1 1  ON 136
+uu_1 -5.5275955403e-02 1 1  ON 137
+uu_2 -1.5580807347e-01 1 1  ON 138
+uu_3 -2.1035316863e-01 1 1  ON 139
+uu_4 -2.3999691618e-01 1 1  ON 140
+uu_5 -2.5484637818e-01 1 1  ON 141
+uu_6 -2.5088346798e-01 1 1  ON 142
+uu_7 -2.7375265486e-01 1 1  ON 143
+uu_8 -1.6488919735e-01 1 1  ON 144
+uu_9 -2.2166735146e-01 1 1  ON 145
+ud_0 1.8859690022e-01 1 1  ON 146
+ud_1 -8.0255471324e-02 1 1  ON 147
+ud_2 -1.9980586930e-01 1 1  ON 148
+ud_3 -2.5026042497e-01 1 1  ON 149
+ud_4 -2.7998669740e-01 1 1  ON 150
+ud_5 -2.9676162388e-01 1 1  ON 151
+ud_6 -3.2971097668e-01 1 1  ON 152
+ud_7 -3.2003508486e-01 1 1  ON 153
+ud_8 -3.1523868909e-01 1 1  ON 154
+ud_9 -1.0043134273e-01 1 1  ON 155
+eO_0 -1.8121855568e+00 1 1  ON 156
+eO_1 -1.4442169613e+00 1 1  ON 157
+eO_2 -1.0139516728e+00 1 1  ON 158
+eO_3 -7.5431902151e-01 1 1  ON 159
+eO_4 -5.3410960103e-01 1 1  ON 160
+eO_5 -3.4311280446e-01 1 1  ON 161
+eO_6 -1.8549120867e-01 1 1  ON 162
+eO_7 -2.9010954253e-01 1 1  ON 163
+eO_8 3.8817165480e-01 1 1  ON 164
+eO_9 9.1728574368e-01 1 1  ON 165
+eH_0 5.9125067780e-01 1 1  ON 166
+eH_1 6.4931456696e-01 1 1  ON 167
+eH_2 6.7833734108e-01 1 1  ON 168
+eH_3 7.1477530295e-01 1 1  ON 169
+eH_4 7.2963369166e-01 1 1  ON 170
+eH_5 7.1870062282e-01 1 1  ON 171
+eH_6 6.8876854517e-01 1 1  ON 172
+eH_7 6.3462771926e-01 1 1  ON 173
+eH_8 6.7158401803e-01 1 1  ON 174
+eH_9 9.5019700015e-01 1 1  ON 175
+  </optVariables>
+   Restore the number of walkers to 1, removing 159 walkers.
+</opt>
+</optimization-report>
+  QMC Execution time = 7.2952847040e+00 secs 
+  Reusing QMCFixedSampleLinearOptimize
+ Using QMCCostFunctionOMP::QMCCostFunctionOMP
+
+=========================================================
+  Start QMCFixedSampleLinearOptimize
+  File Root jopt-h2o.s008 append = no 
+=========================================================
+  Skip QMCDriver::putQMCInfo 
+  Resetting Properties of the walkers 1 x 14
+
+=========================================================
+  Start VMCSingleOMP
+  File Root jopt-h2o.s008 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 14
+
+<vmc function="put">
+  qmc_counter=8  my_counter=8
+  time step      = 5.0000000000e-01
+  blocks         = 100
+  steps          = 2
+  substeps       = 20
+  current        = 0
+  target samples = 5.1200000000e+04
+  walkers/mpi    = 1
+
+  stepsbetweensamples = 1
+<parameter name="blocks" condition="int">100</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">5.1200000000e+04</parameter>
+<parameter name="samplesperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="steps" condition="int">2</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">20</parameter>
+<parameter name="substeps" condition="int">20</parameter>
+<parameter name="tau" condition="au">5.0000000000e-01</parameter>
+<parameter name="time_step" condition="au">5.0000000000e-01</parameter>
+<parameter name="timestep" condition="au">5.0000000000e-01</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">1</parameter>
+<parameter name="warmup_steps" condition="int">25</parameter>
+<parameter name="warmupsteps" condition="int">25</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1 steps.
+</vmc>
+  EstimatorManager::add replace LocalEnergy estimator.
+  EstimatorManager::add replace LocalEnergy estimator.
+<optimization-report>
+<vmc stage="main" blocks="100">
+  Cannot make clones again. Use existing 1 clones
+  Initial partition of walkers 0 1 
+  Total Sample Size   =51200
+  Walker distribution on root = 0 1 
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 8
+    time step          = 0.5
+    reference energy   = -17.2884
+    reference variance = 0.558129
+====================================================
+  Execution time = 2.3553144910e+00
+</vmc>
+<opt stage="setup">
+  <log>
+   Reading configurations from h5FileRoot jopt-h2o.s008
+  QMCCostFunctionOMP is created with 1
+   Loading configuration from MCWalkerConfiguration::SampleStack 
+    number of walkers before load 1
+  Using Nonlocal PP in Opt: NonLocalECP
+    number of walkers after load: 160 
+Using buffers for temporary storage in QMCCostFunction.
+
+Memory usage: 
+Linear method (approx matrix usage: 4*N^2): 9.9123200000e-01 MB
+Deriv,HDerivRecord:      6.7584000000e-01 MB
+Buffer memory cost:     MB/walker       MB/total 
+Orbitals only:           1.7280000000e-03      2.7648000000e-01
+Orbitals + dervs:        8.6400000000e-03      1.3824000000e+00
+Inverse:                 2.5600000000e-04      4.0960000000e-02
+Determinants:            2.8016000000e-02      4.4825600000e+00
+  VMC Eavg = -1.7243501809e+01
+  VMC Evar = 2.9760405102e-01
+  Total weights = 5.1200000000e+04
+  Execution time = 1.6935326699e-01
+  </log>
+</opt>
+<opt stage="main" walkers="51200">
+  <log>
+Iteration: 1/1
+od_largest 8.4902990772e+05
+  stabilityBase -6.0000000000e+00
+  stabilizerScale 2.0000000000e+00
+  Using XS:-6.0000000000e+00 0 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0030038009e+00 NumWalkersEff/NumSamples 1.9589917987e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 4.7604347324e+03 NumWalkersEff/NumSamples 9.2977240867e-02
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+  Failed Step. Largest LM parameter change:4.7405155110e+02
+ERROR   Using XS:-4.0000000000e+00 1 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0029268470e+00 NumWalkersEff/NumSamples 1.9588414981e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 4.7366319097e+03 NumWalkersEff/NumSamples 9.2512341986e-02
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+  Failed Step. Largest LM parameter change:4.7457681203e+02
+ERROR   Using XS:-2.0000000000e+00 2 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0023819981e+00 NumWalkersEff/NumSamples 1.9577773400e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 4.5509883160e+03 NumWalkersEff/NumSamples 8.8886490546e-02
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+  Failed Step. Largest LM parameter change:4.7875980711e+02
+ERROR   Using XS:0.0000000000e+00 3 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0001023392e+00 NumWalkersEff/NumSamples 1.9533248812e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 2.3864675244e+03 NumWalkersEff/NumSamples 4.6610693837e-02
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.0000000000e+00 NumWalkersEff/NumSamples 1.9531250000e-05
+  Failed Step. Largest LM parameter change:5.4540237775e+02
+ERROR   Using XS:2.0000000000e+00 4 0
+ERROR CostFunction-> Number of Effective Walkers is too small 1.2033595371e+01 NumWalkersEff/NumSamples 2.3503115960e-04
+ERROR CostFunction-> Number of Effective Walkers is too small 3.2838835767e+02 NumWalkersEff/NumSamples 6.4138351106e-03
+ERROR CostFunction-> Number of Effective Walkers is too small 3.2501452291e+01 NumWalkersEff/NumSamples 6.3479399006e-04
+ERROR CostFunction-> Number of Effective Walkers is too small 1.4261390304e+03 NumWalkersEff/NumSamples 2.7854277937e-02
+ERROR CostFunction-> Number of Effective Walkers is too small 3.2838835767e+02 NumWalkersEff/NumSamples 6.4138351106e-03
+  Failed Step. Largest LM parameter change:1.0114179487e+02
+ERROR   Using XS:4.0000000000e+00 5 0
+  Good Step. Largest LM parameter change:1.3194897233e-01
+ OldCost: -1.6366446516e+01 NewCost: -1.6366499152e+01 Delta Cost:-5.2636160309e-05
+      Current ene:     -1.7243659470e+01
+      Current var:     2.9954689041e-01
+      Current ene_urw:     -1.7243639909e+01
+      Current var_urw: 2.9981056315e-01
+Setting new Parameters
+ERROR   Execution time = 7.2412847330e+00
+  </log>
+  <optVariables href="jopt-h2o.s008.opt.xml">
+CSFcoeff_1 -2.0211856308e-02 3 1  ON 0
+CSFcoeff_2 4.1189948544e-02 3 1  ON 1
+CSFcoeff_3 -2.2612999214e-02 3 1  ON 2
+CSFcoeff_4 -2.2670004286e-02 3 1  ON 3
+CSFcoeff_5 -1.8741680535e-02 3 1  ON 4
+CSFcoeff_6 2.2330732156e-02 3 1  ON 5
+CSFcoeff_7 -1.6052047107e-02 3 1  ON 6
+CSFcoeff_8 1.4120843640e-02 3 1  ON 7
+CSFcoeff_9 1.1213208326e-02 3 1  ON 8
+CSFcoeff_10 -1.3115063337e-02 3 1  ON 9
+CSFcoeff_11 -1.1842345614e-02 3 1  ON 10
+CSFcoeff_12 -7.8255319554e-03 3 1  ON 11
+CSFcoeff_13 -1.0826687024e-02 3 1  ON 12
+CSFcoeff_14 -1.8131540289e-02 3 1  ON 13
+CSFcoeff_15 2.6783210937e-03 3 1  ON 14
+CSFcoeff_16 -1.6247950355e-02 3 1  ON 15
+CSFcoeff_17 -1.9552287746e-02 3 1  ON 16
+CSFcoeff_18 -1.0175326126e-02 3 1  ON 17
+CSFcoeff_19 6.2133403609e-03 3 1  ON 18
+CSFcoeff_20 1.1302005558e-02 3 1  ON 19
+CSFcoeff_21 1.4503927826e-02 3 1  ON 20
+CSFcoeff_22 -1.7035013117e-02 3 1  ON 21
+CSFcoeff_23 -1.5266979794e-02 3 1  ON 22
+CSFcoeff_24 6.6583426988e-03 3 1  ON 23
+CSFcoeff_25 1.9962366745e-02 3 1  ON 24
+CSFcoeff_26 -1.7888766080e-02 3 1  ON 25
+CSFcoeff_27 1.6411632897e-02 3 1  ON 26
+CSFcoeff_28 1.6491566348e-02 3 1  ON 27
+CSFcoeff_29 -6.4003632186e-03 3 1  ON 28
+CSFcoeff_30 1.3237639448e-02 3 1  ON 29
+CSFcoeff_31 8.0818558200e-03 3 1  ON 30
+CSFcoeff_32 -4.3284731848e-03 3 1  ON 31
+CSFcoeff_33 -1.0433333093e-02 3 1  ON 32
+CSFcoeff_34 1.3734237133e-04 3 1  ON 33
+CSFcoeff_35 1.1372972041e-02 3 1  ON 34
+CSFcoeff_36 -1.1979373566e-02 3 1  ON 35
+CSFcoeff_37 -1.3894258614e-02 3 1  ON 36
+CSFcoeff_38 -1.2838556868e-03 3 1  ON 37
+CSFcoeff_39 6.0668600254e-03 3 1  ON 38
+CSFcoeff_40 1.7113833234e-02 3 1  ON 39
+CSFcoeff_41 -4.7323111671e-03 3 1  ON 40
+CSFcoeff_42 -3.2218262985e-03 3 1  ON 41
+CSFcoeff_43 1.0085973946e-02 3 1  ON 42
+CSFcoeff_44 1.7429722657e-03 3 1  ON 43
+CSFcoeff_45 1.4738003151e-02 3 1  ON 44
+CSFcoeff_46 -2.4578275887e-03 3 1  ON 45
+CSFcoeff_47 6.5533744068e-03 3 1  ON 46
+CSFcoeff_48 -7.0772941014e-03 3 1  ON 47
+CSFcoeff_49 1.1158144871e-02 3 1  ON 48
+CSFcoeff_50 -1.5476614147e-02 3 1  ON 49
+CSFcoeff_51 9.1207571165e-03 3 1  ON 50
+CSFcoeff_52 -7.7126851418e-03 3 1  ON 51
+CSFcoeff_53 9.1861200835e-03 3 1  ON 52
+CSFcoeff_54 -4.3135683602e-03 3 1  ON 53
+CSFcoeff_55 1.6742180440e-02 3 1  ON 54
+CSFcoeff_56 9.6206779364e-03 3 1  ON 55
+CSFcoeff_57 -1.1907386329e-02 3 1  ON 56
+CSFcoeff_58 -1.6567870960e-02 3 1  ON 57
+CSFcoeff_59 6.3393737029e-03 3 1  ON 58
+CSFcoeff_60 2.3318072801e-02 3 1  ON 59
+CSFcoeff_61 -1.1061918801e-02 3 1  ON 60
+CSFcoeff_62 -3.6614390676e-03 3 1  ON 61
+CSFcoeff_63 9.5153451004e-03 3 1  ON 62
+CSFcoeff_64 -8.2655523488e-03 3 1  ON 63
+CSFcoeff_65 1.4401499290e-02 3 1  ON 64
+CSFcoeff_66 8.2476686795e-03 3 1  ON 65
+CSFcoeff_67 -1.0995429874e-02 3 1  ON 66
+CSFcoeff_68 9.4964432946e-03 3 1  ON 67
+CSFcoeff_69 -1.0143044555e-02 3 1  ON 68
+CSFcoeff_70 -2.8562926236e-03 3 1  ON 69
+CSFcoeff_71 -8.8872146851e-03 3 1  ON 70
+CSFcoeff_72 3.5842766499e-03 3 1  ON 71
+CSFcoeff_73 -8.2977078798e-03 3 1  ON 72
+CSFcoeff_74 -1.7678673896e-02 3 1  ON 73
+CSFcoeff_75 -3.3358589920e-03 3 1  ON 74
+CSFcoeff_76 -6.3156928397e-03 3 1  ON 75
+CSFcoeff_77 -1.5501729327e-02 3 1  ON 76
+CSFcoeff_78 -1.2108302082e-02 3 1  ON 77
+CSFcoeff_79 3.4729274173e-03 3 1  ON 78
+CSFcoeff_80 4.3189176771e-03 3 1  ON 79
+CSFcoeff_81 8.1775218541e-03 3 1  ON 80
+CSFcoeff_82 4.6676134350e-03 3 1  ON 81
+CSFcoeff_83 -1.0784894397e-02 3 1  ON 82
+CSFcoeff_84 -1.2165167475e-02 3 1  ON 83
+CSFcoeff_85 7.2886374151e-03 3 1  ON 84
+CSFcoeff_86 -8.0539868481e-03 3 1  ON 85
+CSFcoeff_87 9.5786952176e-03 3 1  ON 86
+CSFcoeff_88 -1.2158485463e-02 3 1  ON 87
+CSFcoeff_89 -6.6110940410e-03 3 1  ON 88
+CSFcoeff_90 6.6615058327e-03 3 1  ON 89
+CSFcoeff_91 -1.4526732074e-02 3 1  ON 90
+CSFcoeff_92 8.8904256184e-03 3 1  ON 91
+CSFcoeff_93 -1.8269265138e-04 3 1  ON 92
+CSFcoeff_94 1.4016284706e-02 3 1  ON 93
+CSFcoeff_95 8.4361751965e-03 3 1  ON 94
+CSFcoeff_96 9.8465556578e-03 3 1  ON 95
+CSFcoeff_97 7.8937889626e-03 3 1  ON 96
+CSFcoeff_98 4.0271513378e-03 3 1  ON 97
+CSFcoeff_99 -4.8927555670e-03 3 1  ON 98
+CSFcoeff_100 2.1739874709e-02 3 1  ON 99
+CSFcoeff_101 -8.7680146234e-03 3 1  ON 100
+CSFcoeff_102 -1.0761990750e-02 3 1  ON 101
+CSFcoeff_103 6.7821502667e-03 3 1  ON 102
+CSFcoeff_104 6.6744949546e-03 3 1  ON 103
+CSFcoeff_105 6.8628795088e-03 3 1  ON 104
+CSFcoeff_106 6.6700406117e-03 3 1  ON 105
+CSFcoeff_107 -4.2362723611e-03 3 1  ON 106
+CSFcoeff_108 1.5902638099e-02 3 1  ON 107
+CSFcoeff_109 -3.2674584261e-03 3 1  ON 108
+CSFcoeff_110 2.5297025024e-03 3 1  ON 109
+CSFcoeff_111 -5.6811654226e-03 3 1  ON 110
+CSFcoeff_112 -7.8847261754e-03 3 1  ON 111
+CSFcoeff_113 -1.0938984037e-02 3 1  ON 112
+CSFcoeff_114 -7.2774917185e-03 3 1  ON 113
+CSFcoeff_115 2.0697528383e-02 3 1  ON 114
+CSFcoeff_116 -1.7033580609e-03 3 1  ON 115
+CSFcoeff_117 -1.2256441646e-02 3 1  ON 116
+CSFcoeff_118 -1.8399710210e-03 3 1  ON 117
+CSFcoeff_119 -5.6142163285e-04 3 1  ON 118
+CSFcoeff_120 -5.6051783622e-03 3 1  ON 119
+CSFcoeff_121 -1.5359781814e-02 3 1  ON 120
+CSFcoeff_122 9.0647472039e-03 3 1  ON 121
+CSFcoeff_123 4.8987685315e-03 3 1  ON 122
+CSFcoeff_124 7.9475838655e-03 3 1  ON 123
+CSFcoeff_125 -2.9228424090e-03 3 1  ON 124
+CSFcoeff_126 7.7185460202e-03 3 1  ON 125
+CSFcoeff_127 2.8494840209e-03 3 1  ON 126
+CSFcoeff_128 -9.3008096617e-03 3 1  ON 127
+CSFcoeff_129 -7.6624085994e-03 3 1  ON 128
+CSFcoeff_130 -5.8260423618e-03 3 1  ON 129
+CSFcoeff_131 -8.6452523510e-03 3 1  ON 130
+CSFcoeff_132 -3.9073956783e-03 3 1  ON 131
+CSFcoeff_133 -9.5257765948e-03 3 1  ON 132
+CSFcoeff_134 -1.8570401838e-03 3 1  ON 133
+CSFcoeff_135 -7.5015454593e-04 3 1  ON 134
+CSFcoeff_136 -8.9004182489e-03 3 1  ON 135
+uu_0 1.1853471437e-01 1 1  ON 136
+uu_1 -6.0518824220e-02 1 1  ON 137
+uu_2 -1.6130142358e-01 1 1  ON 138
+uu_3 -2.1567286009e-01 1 1  ON 139
+uu_4 -2.4540033411e-01 1 1  ON 140
+uu_5 -2.5999415400e-01 1 1  ON 141
+uu_6 -2.5665964675e-01 1 1  ON 142
+uu_7 -2.7703330054e-01 1 1  ON 143
+uu_8 -1.7460132541e-01 1 1  ON 144
+uu_9 -2.2111071742e-01 1 1  ON 145
+ud_0 1.7953592045e-01 1 1  ON 146
+ud_1 -9.0198830988e-02 1 1  ON 147
+ud_2 -2.0948058118e-01 1 1  ON 148
+ud_3 -2.6019721758e-01 1 1  ON 149
+ud_4 -2.8968935005e-01 1 1  ON 150
+ud_5 -3.0703884797e-01 1 1  ON 151
+ud_6 -3.3850344369e-01 1 1  ON 152
+ud_7 -3.3171327387e-01 1 1  ON 153
+ud_8 -3.2034271641e-01 1 1  ON 154
+ud_9 -1.1665017566e-01 1 1  ON 155
+eO_0 -1.7725207362e+00 1 1  ON 156
+eO_1 -1.3973261367e+00 1 1  ON 157
+eO_2 -9.6906792751e-01 1 1  ON 158
+eO_3 -7.1321471867e-01 1 1  ON 159
+eO_4 -4.8438940979e-01 1 1  ON 160
+eO_5 -3.1261062705e-01 1 1  ON 161
+eO_6 -1.3922044320e-01 1 1  ON 162
+eO_7 -2.4508792264e-01 1 1  ON 163
+eO_8 4.0977381053e-01 1 1  ON 164
+eO_9 1.0492347160e+00 1 1  ON 165
+eH_0 5.8375919757e-01 1 1  ON 166
+eH_1 6.4156019499e-01 1 1  ON 167
+eH_2 6.7063439656e-01 1 1  ON 168
+eH_3 7.0724257339e-01 1 1  ON 169
+eH_4 7.2224322608e-01 1 1  ON 170
+eH_5 7.1116935501e-01 1 1  ON 171
+eH_6 6.8055585485e-01 1 1  ON 172
+eH_7 6.2609748728e-01 1 1  ON 173
+eH_8 6.6593217447e-01 1 1  ON 174
+eH_9 9.3553141329e-01 1 1  ON 175
+  </optVariables>
+   Restore the number of walkers to 1, removing 159 walkers.
+</opt>
+</optimization-report>
+  QMC Execution time = 7.2591519940e+00 secs 
+  Reusing QMCFixedSampleLinearOptimize
+ Using QMCCostFunctionOMP::QMCCostFunctionOMP
+
+=========================================================
+  Start QMCFixedSampleLinearOptimize
+  File Root jopt-h2o.s009 append = no 
+=========================================================
+  Skip QMCDriver::putQMCInfo 
+  Resetting Properties of the walkers 1 x 14
+
+=========================================================
+  Start VMCSingleOMP
+  File Root jopt-h2o.s009 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 14
+
+<vmc function="put">
+  qmc_counter=9  my_counter=9
+  time step      = 5.0000000000e-01
+  blocks         = 100
+  steps          = 2
+  substeps       = 20
+  current        = 0
+  target samples = 5.1200000000e+04
+  walkers/mpi    = 1
+
+  stepsbetweensamples = 1
+<parameter name="blocks" condition="int">100</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">1</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">1</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">5.1200000000e+04</parameter>
+<parameter name="samplesperthread" condition="real">1.6000000000e+02</parameter>
+<parameter name="steps" condition="int">2</parameter>
+<parameter name="stepsbetweensamples" condition="int">1</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">20</parameter>
+<parameter name="substeps" condition="int">20</parameter>
+<parameter name="tau" condition="au">5.0000000000e-01</parameter>
+<parameter name="time_step" condition="au">5.0000000000e-01</parameter>
+<parameter name="timestep" condition="au">5.0000000000e-01</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">1</parameter>
+<parameter name="warmup_steps" condition="int">25</parameter>
+<parameter name="warmupsteps" condition="int">25</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 1 steps.
+</vmc>
+  EstimatorManager::add replace LocalEnergy estimator.
+  EstimatorManager::add replace LocalEnergy estimator.
+<optimization-report>
+<vmc stage="main" blocks="100">
+  Cannot make clones again. Use existing 1 clones
+  Initial partition of walkers 0 1 
+  Total Sample Size   =51200
+  Walker distribution on root = 0 1 
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 9
+    time step          = 0.5
+    reference energy   = -17.3016
+    reference variance = 0.602174
+====================================================
+  Execution time = 2.3371650200e+00
+</vmc>
+<opt stage="setup">
+  <log>
+   Reading configurations from h5FileRoot jopt-h2o.s009
+  QMCCostFunctionOMP is created with 1
+   Loading configuration from MCWalkerConfiguration::SampleStack 
+    number of walkers before load 1
+  Using Nonlocal PP in Opt: NonLocalECP
+    number of walkers after load: 160 
+Using buffers for temporary storage in QMCCostFunction.
+
+Memory usage: 
+Linear method (approx matrix usage: 4*N^2): 9.9123200000e-01 MB
+Deriv,HDerivRecord:      6.7584000000e-01 MB
+Buffer memory cost:     MB/walker       MB/total 
+Orbitals only:           1.7280000000e-03      2.7648000000e-01
+Orbitals + dervs:        8.6400000000e-03      1.3824000000e+00
+Inverse:                 2.5600000000e-04      4.0960000000e-02
+Determinants:            2.8016000000e-02      4.4825600000e+00
+  VMC Eavg = -1.7239978707e+01
+  VMC Evar = 2.7616366326e-01
+  Total weights = 5.1200000000e+04
+  Execution time = 1.7009906200e-01
+  </log>
+</opt>
+<opt stage="main" walkers="51200">
+  <log>
+Iteration: 1/1
+od_largest 9.8140832556e+05
+  stabilityBase -6.0000000000e+00
+  stabilizerScale 2.0000000000e+00
+  Using XS:-6.0000000000e+00 0 0
+ERROR CostFunction-> Number of Effective Walkers is too small 3.9033657343e+00 NumWalkersEff/NumSamples 7.6237611999e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 2.3097151635e+00 NumWalkersEff/NumSamples 4.5111624287e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.1733129956e+01 NumWalkersEff/NumSamples 2.2916269445e-04
+ERROR CostFunction-> Number of Effective Walkers is too small 3.9033657343e+00 NumWalkersEff/NumSamples 7.6237611999e-05
+  Failed Step. Largest LM parameter change:2.2332220957e+02
+ERROR   Using XS:-4.0000000000e+00 1 0
+ERROR CostFunction-> Number of Effective Walkers is too small 3.9028748168e+00 NumWalkersEff/NumSamples 7.6228023765e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 2.3096320646e+00 NumWalkersEff/NumSamples 4.5110001261e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.1729633183e+01 NumWalkersEff/NumSamples 2.2909439811e-04
+ERROR CostFunction-> Number of Effective Walkers is too small 3.9028748168e+00 NumWalkersEff/NumSamples 7.6228023765e-05
+  Failed Step. Largest LM parameter change:2.2333261121e+02
+ERROR   Using XS:-2.0000000000e+00 2 0
+ERROR CostFunction-> Number of Effective Walkers is too small 3.8989538730e+00 NumWalkersEff/NumSamples 7.6151442833e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 2.3089677628e+00 NumWalkersEff/NumSamples 4.5097026617e-05
+ERROR CostFunction-> Number of Effective Walkers is too small 1.1701717648e+01 NumWalkersEff/NumSamples 2.2854917282e-04
+ERROR CostFunction-> Number of Effective Walkers is too small 3.8989538730e+00 NumWalkersEff/NumSamples 7.6151442833e-05
+  Failed Step. Largest LM parameter change:2.2341582127e+02
+ERROR   Using XS:0.0000000000e+00 3 0
+ERROR CostFunction-> Number of Effective Walkers is too small 4.4782946800e+02 NumWalkersEff/NumSamples 8.7466692969e-03
+ERROR CostFunction-> Number of Effective Walkers is too small 9.1782748383e+01 NumWalkersEff/NumSamples 1.7926318044e-03
+ERROR CostFunction-> Number of Effective Walkers is too small 1.4212862047e+03 NumWalkersEff/NumSamples 2.7759496185e-02
+ERROR CostFunction-> Number of Effective Walkers is too small 4.4782946800e+02 NumWalkersEff/NumSamples 8.7466692969e-03
+  Failed Step. Largest LM parameter change:7.0244321204e+01
+ERROR   Using XS:2.0000000000e+00 4 0
+  Good Step. Largest LM parameter change:1.1332456891e+00
+ OldCost: -1.6364171589e+01 NewCost: -1.6364350155e+01 Delta Cost:-1.7856644895e-04
+      Current ene:     -1.7240047466e+01
+      Current var:     2.7389874227e-01
+      Current ene_urw:     -1.7239979190e+01
+      Current var_urw: 2.7495314389e-01
+Setting new Parameters
+ERROR   Execution time = 6.4478734130e+00
+  </log>
+  <optVariables href="jopt-h2o.s009.opt.xml">
+CSFcoeff_1 -2.0237025578e-02 3 1  ON 0
+CSFcoeff_2 4.1228695464e-02 3 1  ON 1
+CSFcoeff_3 -2.2589611922e-02 3 1  ON 2
+CSFcoeff_4 -2.2635106064e-02 3 1  ON 3
+CSFcoeff_5 -1.8639920857e-02 3 1  ON 4
+CSFcoeff_6 2.2441050976e-02 3 1  ON 5
+CSFcoeff_7 -1.6098851387e-02 3 1  ON 6
+CSFcoeff_8 1.4107864213e-02 3 1  ON 7
+CSFcoeff_9 1.1265427961e-02 3 1  ON 8
+CSFcoeff_10 -1.3144973043e-02 3 1  ON 9
+CSFcoeff_11 -1.1906014932e-02 3 1  ON 10
+CSFcoeff_12 -7.9093605821e-03 3 1  ON 11
+CSFcoeff_13 -1.0923673067e-02 3 1  ON 12
+CSFcoeff_14 -1.8050426027e-02 3 1  ON 13
+CSFcoeff_15 2.7106815455e-03 3 1  ON 14
+CSFcoeff_16 -1.6296784082e-02 3 1  ON 15
+CSFcoeff_17 -1.9491359831e-02 3 1  ON 16
+CSFcoeff_18 -1.0180650548e-02 3 1  ON 17
+CSFcoeff_19 6.2210232945e-03 3 1  ON 18
+CSFcoeff_20 1.1221876913e-02 3 1  ON 19
+CSFcoeff_21 1.4544198467e-02 3 1  ON 20
+CSFcoeff_22 -1.7097621097e-02 3 1  ON 21
+CSFcoeff_23 -1.5270746121e-02 3 1  ON 22
+CSFcoeff_24 6.6749113288e-03 3 1  ON 23
+CSFcoeff_25 1.9926065049e-02 3 1  ON 24
+CSFcoeff_26 -1.7872939525e-02 3 1  ON 25
+CSFcoeff_27 1.6443514459e-02 3 1  ON 26
+CSFcoeff_28 1.6557962616e-02 3 1  ON 27
+CSFcoeff_29 -6.3895571780e-03 3 1  ON 28
+CSFcoeff_30 1.3221464451e-02 3 1  ON 29
+CSFcoeff_31 8.1930822519e-03 3 1  ON 30
+CSFcoeff_32 -4.3005609436e-03 3 1  ON 31
+CSFcoeff_33 -1.0348542548e-02 3 1  ON 32
+CSFcoeff_34 1.3822881145e-04 3 1  ON 33
+CSFcoeff_35 1.1488043470e-02 3 1  ON 34
+CSFcoeff_36 -1.1947030955e-02 3 1  ON 35
+CSFcoeff_37 -1.4053578588e-02 3 1  ON 36
+CSFcoeff_38 -1.2851773799e-03 3 1  ON 37
+CSFcoeff_39 6.1433619890e-03 3 1  ON 38
+CSFcoeff_40 1.7830838484e-02 3 1  ON 39
+CSFcoeff_41 -4.6960225841e-03 3 1  ON 40
+CSFcoeff_42 -3.2374860676e-03 3 1  ON 41
+CSFcoeff_43 1.0175822026e-02 3 1  ON 42
+CSFcoeff_44 1.7358780142e-03 3 1  ON 43
+CSFcoeff_45 1.4605798170e-02 3 1  ON 44
+CSFcoeff_46 -2.4352891079e-03 3 1  ON 45
+CSFcoeff_47 6.6490154410e-03 3 1  ON 46
+CSFcoeff_48 -6.9463363030e-03 3 1  ON 47
+CSFcoeff_49 1.1159203464e-02 3 1  ON 48
+CSFcoeff_50 -1.5408291381e-02 3 1  ON 49
+CSFcoeff_51 9.0946628516e-03 3 1  ON 50
+CSFcoeff_52 -7.7308914389e-03 3 1  ON 51
+CSFcoeff_53 9.2332164145e-03 3 1  ON 52
+CSFcoeff_54 -4.3545787513e-03 3 1  ON 53
+CSFcoeff_55 1.6650447456e-02 3 1  ON 54
+CSFcoeff_56 9.5906199364e-03 3 1  ON 55
+CSFcoeff_57 -1.1889988222e-02 3 1  ON 56
+CSFcoeff_58 -1.6579338710e-02 3 1  ON 57
+CSFcoeff_59 6.3951301407e-03 3 1  ON 58
+CSFcoeff_60 2.3423870382e-02 3 1  ON 59
+CSFcoeff_61 -1.1052232468e-02 3 1  ON 60
+CSFcoeff_62 -3.6666893425e-03 3 1  ON 61
+CSFcoeff_63 9.6182021229e-03 3 1  ON 62
+CSFcoeff_64 -8.2682803946e-03 3 1  ON 63
+CSFcoeff_65 1.4449125831e-02 3 1  ON 64
+CSFcoeff_66 8.2644446111e-03 3 1  ON 65
+CSFcoeff_67 -1.1092934557e-02 3 1  ON 66
+CSFcoeff_68 9.5014473257e-03 3 1  ON 67
+CSFcoeff_69 -1.0126145792e-02 3 1  ON 68
+CSFcoeff_70 -2.7529867912e-03 3 1  ON 69
+CSFcoeff_71 -8.8672694135e-03 3 1  ON 70
+CSFcoeff_72 3.5454223266e-03 3 1  ON 71
+CSFcoeff_73 -8.3128356290e-03 3 1  ON 72
+CSFcoeff_74 -1.7622599204e-02 3 1  ON 73
+CSFcoeff_75 -3.4441048496e-03 3 1  ON 74
+CSFcoeff_76 -6.2974336050e-03 3 1  ON 75
+CSFcoeff_77 -1.5413509119e-02 3 1  ON 76
+CSFcoeff_78 -1.2138428130e-02 3 1  ON 77
+CSFcoeff_79 3.7757139355e-03 3 1  ON 78
+CSFcoeff_80 4.2557979853e-03 3 1  ON 79
+CSFcoeff_81 8.1384461325e-03 3 1  ON 80
+CSFcoeff_82 4.5022723474e-03 3 1  ON 81
+CSFcoeff_83 -1.0732080390e-02 3 1  ON 82
+CSFcoeff_84 -1.2251530007e-02 3 1  ON 83
+CSFcoeff_85 7.2405163824e-03 3 1  ON 84
+CSFcoeff_86 -8.0559319411e-03 3 1  ON 85
+CSFcoeff_87 9.5394560876e-03 3 1  ON 86
+CSFcoeff_88 -1.2215512942e-02 3 1  ON 87
+CSFcoeff_89 -6.4691038696e-03 3 1  ON 88
+CSFcoeff_90 6.6840714949e-03 3 1  ON 89
+CSFcoeff_91 -1.4395230357e-02 3 1  ON 90
+CSFcoeff_92 8.7643115857e-03 3 1  ON 91
+CSFcoeff_93 -2.6144943856e-04 3 1  ON 92
+CSFcoeff_94 1.3986446405e-02 3 1  ON 93
+CSFcoeff_95 8.6220141420e-03 3 1  ON 94
+CSFcoeff_96 9.9289015495e-03 3 1  ON 95
+CSFcoeff_97 7.9718329642e-03 3 1  ON 96
+CSFcoeff_98 4.0104891310e-03 3 1  ON 97
+CSFcoeff_99 -4.9080124321e-03 3 1  ON 98
+CSFcoeff_100 2.1617860583e-02 3 1  ON 99
+CSFcoeff_101 -8.7588953712e-03 3 1  ON 100
+CSFcoeff_102 -1.0907595213e-02 3 1  ON 101
+CSFcoeff_103 6.7519735104e-03 3 1  ON 102
+CSFcoeff_104 6.6841520749e-03 3 1  ON 103
+CSFcoeff_105 6.8244155642e-03 3 1  ON 104
+CSFcoeff_106 6.6399217784e-03 3 1  ON 105
+CSFcoeff_107 -4.3154275188e-03 3 1  ON 106
+CSFcoeff_108 1.5892539903e-02 3 1  ON 107
+CSFcoeff_109 -3.3371264975e-03 3 1  ON 108
+CSFcoeff_110 2.4829353763e-03 3 1  ON 109
+CSFcoeff_111 -5.5908649449e-03 3 1  ON 110
+CSFcoeff_112 -7.8392364057e-03 3 1  ON 111
+CSFcoeff_113 -1.0922903080e-02 3 1  ON 112
+CSFcoeff_114 -7.2898339656e-03 3 1  ON 113
+CSFcoeff_115 2.0830227251e-02 3 1  ON 114
+CSFcoeff_116 -1.7197996944e-03 3 1  ON 115
+CSFcoeff_117 -1.2198509697e-02 3 1  ON 116
+CSFcoeff_118 -1.9292264774e-03 3 1  ON 117
+CSFcoeff_119 -6.0558582048e-04 3 1  ON 118
+CSFcoeff_120 -5.6897725029e-03 3 1  ON 119
+CSFcoeff_121 -1.5234396454e-02 3 1  ON 120
+CSFcoeff_122 9.0751436688e-03 3 1  ON 121
+CSFcoeff_123 4.9377822341e-03 3 1  ON 122
+CSFcoeff_124 7.9004263114e-03 3 1  ON 123
+CSFcoeff_125 -2.9406872554e-03 3 1  ON 124
+CSFcoeff_126 7.7018278437e-03 3 1  ON 125
+CSFcoeff_127 2.9001724895e-03 3 1  ON 126
+CSFcoeff_128 -9.2496596557e-03 3 1  ON 127
+CSFcoeff_129 -7.5357318704e-03 3 1  ON 128
+CSFcoeff_130 -5.7707908027e-03 3 1  ON 129
+CSFcoeff_131 -8.6120915689e-03 3 1  ON 130
+CSFcoeff_132 -3.8665079381e-03 3 1  ON 131
+CSFcoeff_133 -9.5076376526e-03 3 1  ON 132
+CSFcoeff_134 -1.8917822371e-03 3 1  ON 133
+CSFcoeff_135 -8.9128845285e-04 3 1  ON 134
+CSFcoeff_136 -8.8401370495e-03 3 1  ON 135
+uu_0 1.2224361346e-01 1 1  ON 136
+uu_1 -5.6609969040e-02 1 1  ON 137
+uu_2 -1.5869501310e-01 1 1  ON 138
+uu_3 -2.1258390496e-01 1 1  ON 139
+uu_4 -2.4143808515e-01 1 1  ON 140
+uu_5 -2.5626445928e-01 1 1  ON 141
+uu_6 -2.5364458145e-01 1 1  ON 142
+uu_7 -2.7258102780e-01 1 1  ON 143
+uu_8 -1.7082750825e-01 1 1  ON 144
+uu_9 -2.1681896034e-01 1 1  ON 145
+ud_0 1.8747415812e-01 1 1  ON 146
+ud_1 -8.2497044901e-02 1 1  ON 147
+ud_2 -2.0152412571e-01 1 1  ON 148
+ud_3 -2.5271646863e-01 1 1  ON 149
+ud_4 -2.8225055401e-01 1 1  ON 150
+ud_5 -3.0008057066e-01 1 1  ON 151
+ud_6 -3.3205017985e-01 1 1  ON 152
+ud_7 -3.2531795956e-01 1 1  ON 153
+ud_8 -3.1216240618e-01 1 1  ON 154
+ud_9 -1.1086014049e-01 1 1  ON 155
+eO_0 -1.7461967950e+00 1 1  ON 156
+eO_1 -1.3859098920e+00 1 1  ON 157
+eO_2 -9.4910565103e-01 1 1  ON 158
+eO_3 -6.9609347575e-01 1 1  ON 159
+eO_4 -4.7558171791e-01 1 1  ON 160
+eO_5 -2.7429682194e-01 1 1  ON 161
+eO_6 -1.2735585710e-01 1 1  ON 162
+eO_7 -2.2039606875e-01 1 1  ON 163
+eO_8 4.2886113275e-01 1 1  ON 164
+eO_9 -8.4010973049e-02 1 1  ON 165
+eH_0 5.2947581152e-01 1 1  ON 166
+eH_1 5.8672322544e-01 1 1  ON 167
+eH_2 6.1232530051e-01 1 1  ON 168
+eH_3 6.5140516039e-01 1 1  ON 169
+eH_4 6.6736462474e-01 1 1  ON 170
+eH_5 6.5587519788e-01 1 1  ON 171
+eH_6 6.2649361215e-01 1 1  ON 172
+eH_7 5.7121755950e-01 1 1  ON 173
+eH_8 6.1220299199e-01 1 1  ON 174
+eH_9 8.6137131608e-01 1 1  ON 175
+  </optVariables>
+   Restore the number of walkers to 1, removing 159 walkers.
+</opt>
+</optimization-report>
+  QMC Execution time = 6.4642052000e+00 secs 
+  Total Execution time = 6.9814101544e+01 secs
+
+=========================================================
+  A new xml input file : jopt-h2o.s009.cont.xml
+Application 11223789 resources: utime ~22479s, stime ~153s, Rss ~33088, inblocks ~1325748, outblocks ~3299807
