@@ -1,13 +1,13 @@
 #! /usr/bin/env python
 
-# import project suite functions
-from project import settings,Job,run_project,get_machine
-from project import generate_physical_system
-from project import generate_pwscf
-from project import generate_pw2qmcpack
-from project import generate_qmcpack,vmc,loop,linear,dmc
+# import Nexus functions
+from nexus import settings,job,run_project,get_machine
+from nexus import generate_physical_system
+from nexus import generate_pwscf
+from nexus import generate_pw2qmcpack
+from nexus import generate_qmcpack,vmc,loop,linear,dmc
 
-# project suite settings
+# Nexus settings
 settings(
     pseudo_dir    = './pseudopotentials',
     runs          = '',
@@ -15,18 +15,25 @@ settings(
     status_only   = 0,
     generate_only = 0,
     sleep         = 3,
+    #machine       = 'ws4',
     machine       = 'vesta',
-    account       = 'QMC_2014_training'
+    account       = 'QMCPACK-Training',
     )
  
-# allow max of one job at a time (lab only)
-vesta = get_machine('vesta')
-vesta.queue_size = 1
+# specify job details
+if settings.machine.startswith('ws'):    # running on workstation
+    dftjob = job(cores=4,app='pw.x')
+    p2qjob = job(cores=1,app='pw2qmcpack.x')
+    qmcjob = job(cores=4,app='qmcpack')
+else:                                    # running on Vesta
+    appdir = '/soft/applications/qmcpack/Binaries/'
+    dftjob  = job(nodes= 4,threads= 1,hours=1,app=appdir+'pw.x')
+    p2qjob  = job(cores= 1,threads= 1,hours=1,app=appdir+'pw2qmcpack.x')
+    qmcjob  = job(nodes=32,threads=16,hours=1,app=appdir+'qmcpack')
 
-# locations of pwscf, pw2qmcpack and qmcpack executables
-pwscf      = '/soft/applications/qmcpack/DFT_Binaries/pw.x'
-pw2qmcpack = '/soft/applications/qmcpack/DFT_Binaries/pw2qmcpack.x'
-qmcpack    = '/soft/applications/qmcpack/build_XL_real/bin/qmcapp'
+    vesta = get_machine('vesta') # allow one job at a time (lab only)
+    vesta.queue_size = 1
+#end if
 
 
 # details of your physical system (diamond conventional cell below)
@@ -75,7 +82,7 @@ sims = []
 scf = generate_pwscf(
     identifier   = 'scf',
     path         = my_project_name,
-    job          = Job(nodes=32,hours=2,app=pwscf),
+    job          = dftjob,
     input_type   = 'scf',
     system       = my_system,
     pseudos      = my_dft_pps,
@@ -92,7 +99,7 @@ sims.append(scf)
 p2q = generate_pw2qmcpack(
     identifier   = 'p2q',
     path         = my_project_name,
-    job          = Job(cores=1,hours=2,app=pw2qmcpack),
+    job          = p2qjob,
     write_psir   = False,
     dependencies = (scf,'orbitals')
     )
@@ -102,7 +109,7 @@ sims.append(p2q)
 qmc = generate_qmcpack(
     identifier   = 'vmc',
     path         = my_project_name,
-    job          = Job(nodes=32,hours=2,threads=16,app=qmcpack),
+    job          = qmcjob,
     input_type   = 'basic',
     system       = my_system,
     bconds       = my_bconds,
@@ -163,7 +170,7 @@ run_project(sims)
 #opt = generate_qmcpack(
 #    identifier   = 'opt',
 #    path         = my_project_name,
-#    job          = Job(nodes=32,hours=2,threads=16,app=qmcpack),
+#    job          = qmcjob,
 #    input_type   = 'basic',
 #    system       = my_system,
 #    bconds       = my_bconds,
@@ -179,7 +186,7 @@ run_project(sims)
 #qmc = generate_qmcpack(
 #    identifier   = 'qmc',
 #    path         = my_project_name,
-#    job          = Job(nodes=32,hours=2,threads=16,app=qmcpack),
+#    job          = qmcjob,
 #    input_type   = 'basic',
 #    system       = my_system,
 #    bconds       = my_bconds,
