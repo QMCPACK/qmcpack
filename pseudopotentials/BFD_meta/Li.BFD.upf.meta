@@ -1,0 +1,10 @@
+meta_version =  0.1
+file         =  Li.BFD.upf
+md5          =  6f5f596274a3559214ac4e3a535878d7
+created      =  2011-10-24 17:55:23
+added        =  2016-05-20 10:59:15
+status       =  converted
+converter    =  ppconvert
+host_file    =  Li.BFD.gamess
+host_md5     =  07c5a25b32477651d611d1456912df3c
+

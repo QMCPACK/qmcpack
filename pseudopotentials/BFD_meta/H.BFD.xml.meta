@@ -1,0 +1,10 @@
+meta_version =  0.1
+file         =  H.BFD.xml
+md5          =  7715745f95bd8cd3f2908ceb6410fba6
+created      =  2011-10-24 17:55:23
+added        =  2016-05-20 10:59:15
+status       =  converted
+converter    =  ppconvert
+host_file    =  H.BFD.gamess
+host_md5     =  cdd1975d599d8a3cc3144d28ed5af6e1
+

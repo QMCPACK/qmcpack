@@ -1,0 +1,10 @@
+meta_version =  0.1
+file         =  O.BFD.upf
+md5          =  1e0c058f731087ccd4c3c4a2233f9cdd
+created      =  2011-10-24 17:55:23
+added        =  2016-05-20 10:59:14
+status       =  converted
+converter    =  ppconvert
+host_file    =  O.BFD.gamess
+host_md5     =  7da6e781e5af56586c1a1867799fb311
+
