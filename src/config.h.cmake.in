@@ -169,9 +169,6 @@
 /* Define if ssse3 support exists */
 #cmakedefine HAVE_SSSE3 @HAVE_SSSE3@
 
-/* Define if AVX support exists */
-#cmakedefine HAVE_AVX @HAVE_AVX@
-
 /* Define if c variable array support exists */
 #cmakedefine HAVE_C_VARARRAYS @HAVE_C_VARARRAYS@
 
