@@ -3249,13 +3249,46 @@ class Structure(Sobj):
     #end def madelung
 
 
+    def read(self,filepath,format=None,elem=None,block=None,grammar='1.1',cell='prim',contents=False):
+        if os.path.exists(filepath):
+            path,file = os.path.split(filepath)
+            if format is None:
+                if '.' in file:
+                    name,format = file.rsplit('.',1)
+                elif file.lower().endswith('poscar'):
+                    format = 'poscar'
+                else:
+                    self.error('file format could not be determined\nunrecognized file: {0}'.format(filepath))
+                #end if
+            #end if
+        elif not contents:
+            self.error('file does not exist: {0}'.format(filepath))
+        #end if
+        if format is None:
+            self.error('file format must be provided')
+        #end if
+        format = format.lower()
+        if format=='xyz':
+            self.read_xyz(filepath)
+        elif format=='xsf':
+            self.read_xsf(filepath)
+        elif format=='poscar':
+            self.read_poscar(filepath,elem=elem)
+        elif format=='cif':
+            self.read_cif(filepath,block=block,grammar=grammar,cell=cell)
+        else:
+            self.error('cannot read structure from file\nunsupported file format: {0}'.format(format))
+        #end if
+    #end def read
+
+
     def read_xyz(self,filepath):
         elem = []
         pos  = []
         if os.path.exists(filepath):
             lines = open(filepath,'r').read().splitlines()
         else:
-            lines = filepath.splitlines()
+            lines = filepath.splitlines() # "filepath" is file contents
         #end if
         ntot = 1000000
         natoms = 0
@@ -3281,136 +3314,13 @@ class Structure(Sobj):
     #end def read_xyz
 
 
-    def read_cif(self,filepath,block=None,grammar='1.1',cell='prim'):
-        axes,elem,pos,units = read_cif(filepath,block,grammar,cell,args_only=True)
-        self.set_axes(axes)
-        self.set_elem(elem)
-        self.pos = pos
-        self.units = units
-    #end def read_cif
-
-
-    def write(self,filepath=None,format=None):
-        if filepath is None and format is None:
-            self.error('please specify either the filepath or format arguments to write()')
-        elif format is None:
-            if '.' in filepath:
-                format = filepath.split('.')[-1]
-            else:
-                self.error('file format could not be determined\neither request the format directly with the format keyword or add a file format extension to the file name')
-            #end if
-        #end if
-        format = format.lower()
-        if format=='xyz':
-            c = self.write_xyz(filepath)
-        elif format=='xsf':
-            c = self.write_xsf(filepath)
+    def read_xsf(self,filepath):
+        if os.path.exists(filepath):
+            f = XsfFile(filepath)
         else:
-            self.error('file format {0} is unrecognized'.format(format))
+            f = XsfFile()
+            f.read_text(filepath) # "filepath" is file contents
         #end if
-        return c
-    #end def write
-
-
-    def write_xyz(self,filepath=None,header=True,units='A'):
-        if self.dim!=3:
-            self.error('write_xyz is currently only implemented for 3 dimensions')
-        #end if
-        s = self.copy()
-        s.change_units(units)
-        c=''
-        if header:
-            c += str(len(s.elem))+'\n\n'
-        #end if
-        for i in range(len(s.elem)):
-            e = s.elem[i]
-            p = s.pos[i]
-            c+=' {0:2} {1:12.8f} {2:12.8f} {3:12.8f}\n'.format(e,p[0],p[1],p[2])
-        #end for
-        if filepath!=None:
-            open(filepath,'w').write(c)
-        #end if
-        return c
-    #end def write_xyz
-
-
-    def write_xsf(self,filepath=None):
-        if self.dim!=3:
-            self.error('write_xsf is currently only implemented for 3 dimensions')
-        #end if
-        s = self.copy()
-        s.change_units('A')
-        c  = ' CRYSTAL\n'
-        c += ' PRIMVEC\n'
-        for a in s.axes:
-            c += '   {0:12.8f}  {1:12.8f}  {2:12.8f}\n'.format(*a)
-        #end for
-        c += ' PRIMCOORD\n'
-        c += '   {0} 1\n'.format(len(s.elem))
-        for i in range(len(s.elem)):
-            e = s.elem[i]
-            identified = e in pt.elements
-            if not identified:
-                if len(e)>2:
-                    e = e[0:2]
-                elif len(e)==2:
-                    e = e[0:1]
-                #end if
-                identified = e in pt.elements
-            #end if
-            if not identified:
-                self.error('{0} is not an element\nxsf file cannot be written'.format(e))
-            #end if
-            enum = pt.elements[e].atomic_number
-            r = s.pos[i]
-            c += '   {0:>3} {1:12.8f}  {2:12.8f}  {3:12.8f}\n'.format(enum,r[0],r[1],r[2])
-        #end for
-        if filepath!=None:
-            open(filepath,'w').write(c)
-        #end if
-        return c
-    #end def write_xsf
-
-
-    def read(self,filepath,format=None,elem=None):
-        if not os.path.exists(filepath):
-            self.error('file {0} does not exist'.format(filepath))
-        #end if
-        path,file = os.path.split(filepath)
-        if format is None:
-            if '.' in file:
-                name,format = file.rsplit('.',1)
-            elif file.lower().endswith('poscar'):
-                format = 'poscar'
-            else:
-                self.error('file format could not be determined\nunrecognized file: {0}'.format(filepath))
-            #end if
-        #end if
-        c = open(filepath,'r').read()
-        self.read_text(c,format,elem=elem,filepath=filepath)
-        return c
-    #end def read
-
-
-    def read_text(self,text,format,elem=None,filepath=None):
-        format = format.lower()
-        if format=='xsf':
-            self.read_xsf(text)
-        elif format=='poscar':
-            self.read_poscar(text,elem=elem,contents=True)
-        else:
-            msg = 'cannot read structure from file\nunsupported file format: {0}'.format(format)
-            if filepath!=None:
-                msg+='\nfile path: {0}'.format(filepath)
-            #end if
-            self.error(msg)
-        #end if
-    #end def read_text
-
-
-    def read_xsf(self,text):
-        f = XsfFile()
-        f.read_text(text)
         elem = []
         for n in f.elem:
             elem.append(pt.simple_elements[n].symbol)
@@ -3423,12 +3333,11 @@ class Structure(Sobj):
     #end def read_xsf
 
 
-    def read_poscar(self,filepath,elem=None,contents=False):
-        if not contents:
+    def read_poscar(self,filepath,elem=None):
+        if os.path.exists(filepath):
             lines = open(filepath,'r').read().splitlines()
         else:
-            text = filepath
-            lines = text.splitlines()
+            lines = filepath.splitlines()  # "filepath" is file contents
         #end if
         nlines = len(lines)
         min_lines = 8
@@ -3520,6 +3429,97 @@ class Structure(Sobj):
             self.freeze(range(self.size()),directions=move=='F')
         #end if
     #end def read_poscar
+
+
+    def read_cif(self,filepath,block=None,grammar='1.1',cell='prim'):
+        axes,elem,pos,units = read_cif(filepath,block,grammar,cell,args_only=True)
+        self.set_axes(axes)
+        self.set_elem(elem)
+        self.pos = pos
+        self.units = units
+    #end def read_cif
+
+
+    def write(self,filepath=None,format=None):
+        if filepath is None and format is None:
+            self.error('please specify either the filepath or format arguments to write()')
+        elif format is None:
+            if '.' in filepath:
+                format = filepath.split('.')[-1]
+            else:
+                self.error('file format could not be determined\neither request the format directly with the format keyword or add a file format extension to the file name')
+            #end if
+        #end if
+        format = format.lower()
+        if format=='xyz':
+            c = self.write_xyz(filepath)
+        elif format=='xsf':
+            c = self.write_xsf(filepath)
+        else:
+            self.error('file format {0} is unrecognized'.format(format))
+        #end if
+        return c
+    #end def write
+
+
+    def write_xyz(self,filepath=None,header=True,units='A'):
+        if self.dim!=3:
+            self.error('write_xyz is currently only implemented for 3 dimensions')
+        #end if
+        s = self.copy()
+        s.change_units(units)
+        c=''
+        if header:
+            c += str(len(s.elem))+'\n\n'
+        #end if
+        for i in range(len(s.elem)):
+            e = s.elem[i]
+            p = s.pos[i]
+            c+=' {0:2} {1:12.8f} {2:12.8f} {3:12.8f}\n'.format(e,p[0],p[1],p[2])
+        #end for
+        if filepath!=None:
+            open(filepath,'w').write(c)
+        #end if
+        return c
+    #end def write_xyz
+
+
+    def write_xsf(self,filepath=None):
+        if self.dim!=3:
+            self.error('write_xsf is currently only implemented for 3 dimensions')
+        #end if
+        s = self.copy()
+        s.change_units('A')
+        c  = ' CRYSTAL\n'
+        c += ' PRIMVEC\n'
+        for a in s.axes:
+            c += '   {0:12.8f}  {1:12.8f}  {2:12.8f}\n'.format(*a)
+        #end for
+        c += ' PRIMCOORD\n'
+        c += '   {0} 1\n'.format(len(s.elem))
+        for i in range(len(s.elem)):
+            e = s.elem[i]
+            identified = e in pt.elements
+            if not identified:
+                if len(e)>2:
+                    e = e[0:2]
+                elif len(e)==2:
+                    e = e[0:1]
+                #end if
+                identified = e in pt.elements
+            #end if
+            if not identified:
+                self.error('{0} is not an element\nxsf file cannot be written'.format(e))
+            #end if
+            enum = pt.elements[e].atomic_number
+            r = s.pos[i]
+            c += '   {0:>3} {1:12.8f}  {2:12.8f}  {3:12.8f}\n'.format(enum,r[0],r[1],r[2])
+        #end for
+        if filepath!=None:
+            open(filepath,'w').write(c)
+        #end if
+        return c
+    #end def write_xsf
 
 
     def plot2d_ax(self,ix,iy,*args,**kwargs):
