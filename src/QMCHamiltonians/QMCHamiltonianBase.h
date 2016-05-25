@@ -397,7 +397,10 @@ struct QMCHamiltonianBase: public QMCTraits
   {
     delete_scalar_quantities();
     delete_particle_quantities();
+    streaming_scalars    = false;
+    streaming_particles  = false;
     have_required_traces = false;
+    request.reset();
   }
 
   virtual void contribute_scalar_quantities()
