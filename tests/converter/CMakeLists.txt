@@ -8,7 +8,7 @@ FUNCTION(ADD_CONVERTER_TEST test_name)
         SET(EXE_NAME "${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 1 ${qmcpack_BINARY_DIR}/bin/convert4qmc")
     ENDIF()
     ADD_TEST(NAME converter_${test_name} COMMAND python converter_test.py "${CMAKE_CURRENT_BINARY_DIR}/${test_name}" --exe "${EXE_NAME}")
-    SET_TESTS_PROPERTIES(converter_${test_name} PROPERTIES TIMEOUT 30)
+    SET_TESTS_PROPERTIES(converter_${test_name} PROPERTIES TIMEOUT 120)
     
 ENDFUNCTION()
 
