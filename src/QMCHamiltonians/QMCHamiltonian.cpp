@@ -31,7 +31,7 @@ namespace qmcplusplus
 QMCHamiltonian::QMCHamiltonian()
   :myIndex(0),numCollectables(0),EnableVirtualMoves(false)
 #if !defined(REMOVE_TRACEMANAGER)
-   , id_sample(0),weight_sample(0),position_sample(0)
+  , id_sample(0),pid_sample(0),step_sample(0),gen_sample(0),age_sample(0),mult_sample(0),weight_sample(0),position_sample(0)
 {
   streaming_position = false;
 }
@@ -260,9 +260,13 @@ void QMCHamiltonian::initialize_traces(TraceManager& tm,ParticleSet& P)
 
 
   //make trace quantities available
-  request.contribute_scalar("id",true);      //default trace quantity
-  request.contribute_scalar("step",true);    //default trace quantity
-  request.contribute_scalar("weight",true);  //default trace quantity
+  request.contribute_scalar("id",true);           //default trace quantity
+  request.contribute_scalar("parent_id",true);    //default trace quantity
+  request.contribute_scalar("step",true);         //default trace quantity
+  request.contribute_scalar("generation",true);   //default trace quantity
+  request.contribute_scalar("age",true);          //default trace quantity
+  request.contribute_scalar("multiplicity",true); //default trace quantity
+  request.contribute_scalar("weight",true);       //default trace quantity
   request.contribute_array("position");
   for(int i=0; i<H.size(); ++i)
     H[i]->contribute_trace_quantities();
@@ -334,7 +338,11 @@ void QMCHamiltonian::initialize_traces(TraceManager& tm,ParticleSet& P)
     if(request.streaming_default_scalars)
     {
       id_sample     = tm.checkout_int<1>("id");
+      pid_sample    = tm.checkout_int<1>("parent_id");
       step_sample   = tm.checkout_int<1>("step");
+      gen_sample    = tm.checkout_int<1>("generation");
+      age_sample    = tm.checkout_int<1>("age");
+      mult_sample   = tm.checkout_int<1>("multiplicity");
       weight_sample = tm.checkout_real<1>("weight");
     }
     if(streaming_position)
@@ -398,7 +406,11 @@ void QMCHamiltonian::collect_walker_traces(Walker_t& walker,int step)
   if(request.streaming_default_scalars)
   {
     (*id_sample)(0)     = walker.ID;
+    (*pid_sample)(0)    = walker.ParentID;
     (*step_sample)(0)   = step;
+    (*gen_sample)(0)    = walker.Generation;
+    (*age_sample)(0)    = walker.Age;
+    (*mult_sample)(0)   = walker.Multiplicity;
     (*weight_sample)(0) = walker.Weight;
   }
   if(streaming_position)
@@ -413,7 +425,11 @@ void QMCHamiltonian::finalize_traces()
   if(request.streaming_default_scalars)
   {
     delete id_sample;
+    delete pid_sample;
     delete step_sample;
+    delete gen_sample;
+    delete age_sample;
+    delete mult_sample;
     delete weight_sample;
   }
   if(streaming_position)

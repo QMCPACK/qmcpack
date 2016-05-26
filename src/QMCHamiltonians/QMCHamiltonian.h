@@ -366,7 +366,11 @@ private:
   TraceRequest request;
   bool streaming_position;
   Array<TraceInt,1>*  id_sample;
+  Array<TraceInt,1>*  pid_sample;
   Array<TraceInt,1>*  step_sample;
+  Array<TraceInt,1>*  gen_sample;
+  Array<TraceInt,1>*  age_sample;
+  Array<TraceInt,1>*  mult_sample;
   Array<TraceReal,1>* weight_sample;
   Array<TraceReal,2>* position_sample;
 #endif
