@@ -116,20 +116,20 @@ bool VMCLinearOptOMP::run()
     #pragma omp parallel for
     for (int ip=0; ip<NumThreads; ++ip)
     {
-      vector<RealType> Dsaved(NumOptimizables);
-      vector<RealType> HDsaved(NumOptimizables);
+      std::vector<RealType> Dsaved(NumOptimizables);
+      std::vector<RealType> HDsaved(NumOptimizables);
       psiClones[ip]->evaluateDerivatives(*wClones[ip],dummyOptVars[ip],Dsaved,HDsaved);
       #pragma omp critical
       {
-        std::copy(Dsaved.begin(),Dsaved.end(),&DerivRecords(ip,0));
-        std::copy(HDsaved.begin(),HDsaved.end(),&HDerivRecords(ip,0));
+        copy(Dsaved.begin(),Dsaved.end(),&DerivRecords(ip,0));
+        copy(HDsaved.begin(),HDsaved.end(),&HDerivRecords(ip,0));
       }
     }
     fillComponentMatrices();
     CurrentBlock++;
   }//block
-//     app_log()<<" Blocks used   : "<<CurrentBlock<<endl;
-//     app_log()<<" Errorbars are : "<<errorbars<<endl;
+//     app_log()<<" Blocks used   : "<<CurrentBlock<< std::endl;
+//     app_log()<<" Errorbars are : "<<errorbars<< std::endl;
   Estimators->stop(estimatorClones);
   //copy back the random states
   for (int ip=0; ip<NumThreads; ++ip)
@@ -169,7 +169,7 @@ bool VMCLinearOptOMP::run()
 //       for (int prestep=0; prestep<myRNWarmupSteps; ++prestep)
 //       {
 //         CSMovers[0]->estimateNormWalkers(psiClones, wClones, hClones, Rng, w_i);
-//         //         for (int ip=0; ip<NumThreads; ip++) app_log()<<"  w_i:"<<w_i[ip]<<endl;
+//         //         for (int ip=0; ip<NumThreads; ip++) app_log()<<"  w_i:"<<w_i[ip]<< std::endl;
 //       }
 //       myComm->allreduce(w_i);
 //       RealType w_0=w_i[0];
@@ -201,7 +201,7 @@ bool VMCLinearOptOMP::run()
 //       for (int ip=0; ip<NumThreads; ip++)
 //       {
 //         w_i[ip] += overNT*std::log(gNorms[0]/gNorms[ip]);
-// //         app_log()<<"Norm["<<ip<<"]: "<<Norms[ip]<<"  w_i:"<<w_i[ip]<<endl;
+// //         app_log()<<"Norm["<<ip<<"]: "<<Norms[ip]<<"  w_i:"<<w_i[ip]<< std::endl;
 //       }
 //       clearCSEstimators();
 //     }
@@ -209,7 +209,7 @@ bool VMCLinearOptOMP::run()
 //     clearCSEstimators();
 //   }
 
-//   int VMCLinearOptOMP::runCS(vector<vector<RealType> >& bestParams, RealType& errorbars)
+//   int VMCLinearOptOMP::runCS(std::vector<std::vector<RealType> >& bestParams, RealType& errorbars)
 //   {
 //     for (int ip=0; ip<NumThreads; ++ip)
 //     {
@@ -219,7 +219,7 @@ bool VMCLinearOptOMP::run()
 //       psiClones[ip]->checkOutVariables(dummy);
 //       for (int i=0;i<bestParams[0].size();i++)  dummy[i] = bestParams[ip][i];
 //       psiClones[ip]->resetParameters(dummy);
-//       //       app_log()<<ip<<endl;
+//       //       app_log()<<ip<< std::endl;
 //       //       psiClones[ip]->reportStatus(app_log());
 //     }
 //
@@ -240,14 +240,14 @@ bool VMCLinearOptOMP::run()
 //     {
 //       for (int step=0; step<nSteps; ++step)
 //         CSMovers[0]->advanceCSWalkers(psiClones, wClones, hClones, Rng, w_i);
-//       //         app_log()<<CSBlock<<endl;
+//       //         app_log()<<CSBlock<< std::endl;
 //       CurrentStep+=nSteps;
 //       errorbars = estimateCS();
 //       CSBlock++;
 //     }//block
-//     app_log()<<" Blocks used   : "<<CSBlock<<endl;
-//     app_log()<<" Errorbars are : "<<errorbars<<endl;
-// //         app_log()<<" Min E["<<minE<<"] estimate: "<<NE_i[minE]<<endl;
+//     app_log()<<" Blocks used   : "<<CSBlock<< std::endl;
+//     app_log()<<" Errorbars are : "<<errorbars<< std::endl;
+// //         app_log()<<" Min E["<<minE<<"] estimate: "<<NE_i[minE]<< std::endl;
 //
 //     ///restore the state
 //     for(int ip=1; ip<NumThreads; ++ip)
@@ -261,7 +261,7 @@ bool VMCLinearOptOMP::run()
 //     else return -1;
 //   }
 
-//   bool VMCLinearOptOMP::bracketing(vector<RealType>& lambdas, RealType errorbars)
+//   bool VMCLinearOptOMP::bracketing(std::vector<RealType>& lambdas, RealType errorbars)
 //   {
 //     //Do some bracketing and line searching if we need to
 //     RealType dl = std::abs(lambdas[1]-lambdas[0]);
@@ -272,7 +272,7 @@ bool VMCLinearOptOMP::run()
 //     {
 //       if(moved_left)
 //       {
-//         app_log()<<" Bracketed minimum between CS runs"<<endl;
+//         app_log()<<" Bracketed minimum between CS runs"<< std::endl;
 //         if (lambdas[minE]==0)
 //         {
 //           moved_right=false;
@@ -285,7 +285,7 @@ bool VMCLinearOptOMP::run()
 //       }
 //       else
 //       {
-//         app_log()<<" Move Right"<<endl;
+//         app_log()<<" Move Right"<< std::endl;
 //         moved_right=true;
 //         //minE is an extreme value on the line search, move over and repeat.
 //         for (int ip=0; ip<NumThreads; ++ip) lambdas[ip] = ip*dl + mL;
@@ -295,7 +295,7 @@ bool VMCLinearOptOMP::run()
 //     {
 //       if (moved_right)
 //       {
-//         app_log()<<" Bracketed minimum between CS runs"<<endl;
+//         app_log()<<" Bracketed minimum between CS runs"<< std::endl;
 //         if (lambdas[minE]==0)
 //         {
 //           moved_right=false;
@@ -308,7 +308,7 @@ bool VMCLinearOptOMP::run()
 //       }
 //       else
 //       {
-//         app_log()<<" Move Left"<<endl;
+//         app_log()<<" Move Left"<< std::endl;
 //         moved_left=true;
 //         //minE is an extreme value on the line search, move over and repeat.
 //         for (int ip=0; ip<NumThreads; ++ip) lambdas[ip] = (ip-NumThreads+1.0)*dl + mL;
@@ -321,7 +321,7 @@ bool VMCLinearOptOMP::run()
 //       //         if (DE<errorbars)
 //       //         {
 //       int nms=3;
-//       vector<RealType>  Y(nms), Coefs(3);
+//       std::vector<RealType>  Y(nms), Coefs(3);
 //       Matrix<RealType> X(nms,3);
 //       for (int i=0; i<nms; i++) X(i,0)=1.0;
 //       for (int i=0; i<nms; i++) X(i,1)=lambdas[i+minE-1];
@@ -331,12 +331,12 @@ bool VMCLinearOptOMP::run()
 //
 //       RealType quadraticMinimum(-0.5*Coefs[1]/Coefs[2]);
 //       lambdas[minE]=quadraticMinimum;
-//       app_log()<<"Min predicted at: "<<quadraticMinimum<<endl;
+//       app_log()<<"Min predicted at: "<<quadraticMinimum<< std::endl;
 //       return false;
 //       //         }
 //       //         else
 //       //         {
-//       //           app_log()<<" Bracketed minimum, refine"<<endl;
+//       //           app_log()<<" Bracketed minimum, refine"<< std::endl;
 //       //           moved_right=false;
 //       //           moved_left=false;
 //       // // energy difference between the points is still larger than the error bars we require
@@ -349,7 +349,7 @@ bool VMCLinearOptOMP::run()
 //     return true;
 //   }
 
-//   VMCLinearOptOMP::RealType VMCLinearOptOMP::runCS(vector<RealType>& curParams, vector<RealType>& curDir, vector<RealType>& lambdas)
+//   VMCLinearOptOMP::RealType VMCLinearOptOMP::runCS(std::vector<RealType>& curParams, std::vector<RealType>& curDir, std::vector<RealType>& lambdas)
 //   {
 //     bool notConverged(true);
 //
@@ -358,12 +358,12 @@ bool VMCLinearOptOMP::run()
 //     //   setWalkersEqual(firstWalker);
 //     while (notConverged)
 //     {
-//       vector<vector<RealType> > dummy(NumThreads,std::vector<RealType>(curParams.size()));
+//       std::vector<std::vector<RealType> > dummy(NumThreads,std::vector<RealType>(curParams.size()));
 //       for (int ip=0; ip<NumThreads; ++ip) for (int i=0;i<curParams.size();i++)  dummy[ip][i] = curParams[i] + lambdas[ip]*curDir[i+1];
 //
 //       RealType errorbars;
 //       int bombed = runCS(dummy, errorbars);
-//       for (int ip=0; ip<NumThreads; ++ip) app_log()<<"E["<<lambdas[ip]<<"] estimate: "<<NE_i[ip]<<endl;
+//       for (int ip=0; ip<NumThreads; ++ip) app_log()<<"E["<<lambdas[ip]<<"] estimate: "<<NE_i[ip]<< std::endl;
 //       if (bombed<0){
 //         lambdas[0]=0;
 //         return 0;
@@ -373,7 +373,7 @@ bool VMCLinearOptOMP::run()
 //       RealType maxV(0);
 //       for (int i=0;i<curParams.size();i++) if (maxV<abs(curDir[i+1])){ maxI=i; maxV=abs(curDir[i+1]);};
 //       RealType maxPChange(maxV*(lambdas[1]-lambdas[0]));
-//       app_log()<<" Parameter diffs: "<<maxPChange<<endl;
+//       app_log()<<" Parameter diffs: "<<maxPChange<< std::endl;
 //       if (maxPChange<1e-6)
 //       {
 //         notConverged = false;
@@ -389,7 +389,7 @@ bool VMCLinearOptOMP::run()
 
 //   VMCLinearOptOMP::RealType VMCLinearOptOMP::estimateCS()
 //   {
-//     vector<long double> e_i(NumThreads), psi2_i(NumThreads);
+//     std::vector<long double> e_i(NumThreads), psi2_i(NumThreads);
 //     long double psi2(0);
 //
 //     for (int ip=0; ip<NumThreads; ip++)
@@ -428,9 +428,9 @@ bool VMCLinearOptOMP::run()
 //
 //     //   Here are the global energy estimates
 //     for (int ip=0; ip<NumThreads; ip++) NE_i[ip] = gEnergies[ip]/gNorms[ip];
-//     //   for (int ip=0; ip<NumThreads; ip++) app_log()<<ip<<": "<<gEnergies[ip]<<"  "<<gNorms[ip]<<"  "<<gNorm2s(ip,ip)<<endl;
-//     //   app_log()<<NumThreads<<": "<<gNorms[NumThreads]<<"  "<<gNorm2s(NumThreads,NumThreads)<<endl;
-//     //   app_log()<<endl;
+//     //   for (int ip=0; ip<NumThreads; ip++) app_log()<<ip<<": "<<gEnergies[ip]<<"  "<<gNorms[ip]<<"  "<<gNorm2s(ip,ip)<< std::endl;
+//     //   app_log()<<NumThreads<<": "<<gNorms[NumThreads]<<"  "<<gNorm2s(NumThreads,NumThreads)<< std::endl;
+//     //   app_log()<< std::endl;
 //     //   find lowest energy
 //     minE=0;
 //     for (int ip=1; ip<NumThreads; ip++) if (NE_i[ip]<NE_i[minE]) minE=ip;
@@ -468,14 +468,14 @@ void VMCLinearOptOMP::resetRun()
   if(samples_this_node%omp_get_max_threads())
     for (int ip=0; ip < samples_this_node%omp_get_max_threads(); ++ip)
       samples_th[ip] +=1;
-  app_log() << "  Samples are dumped every " << myPeriod4WalkerDump << " steps " << endl;
-  app_log() << "  Total Sample Size =" << nTargetSamples << endl;
-  app_log() << "  Nodes Sample Size =" << samples_this_node << endl;
+  app_log() << "  Samples are dumped every " << myPeriod4WalkerDump << " steps " << std::endl;
+  app_log() << "  Total Sample Size =" << nTargetSamples << std::endl;
+  app_log() << "  Nodes Sample Size =" << samples_this_node << std::endl;
   for (int ip=0; ip<NumThreads; ++ip)
-    app_log()  << "    Sample size for thread " <<ip<<" = " << samples_th[ip] << endl;
-  app_log() << "  Warmup Steps " << nWarmupSteps << endl;
+    app_log()  << "    Sample size for thread " <<ip<<" = " << samples_th[ip] << std::endl;
+  app_log() << "  Warmup Steps " << nWarmupSteps << std::endl;
 //     if (UseDrift == "rn") makeClones( *(psiPool.getWaveFunction("guide")) );
-//    app_log() << "  Warmup Steps " << nWarmupSteps << endl;
+//    app_log() << "  Warmup Steps " << nWarmupSteps << std::endl;
   if (Movers.empty())
   {
     Movers.resize(NumThreads,0);
@@ -487,12 +487,12 @@ void VMCLinearOptOMP::resetRun()
     int nwtot=(W.getActiveWalkers()/NumThreads)*NumThreads;
     FairDivideLow(nwtot,NumThreads,wPerNode);
     app_log() << "  Initial partition of walkers ";
-    std::copy(wPerNode.begin(),wPerNode.end(),ostream_iterator<int>(app_log()," "));
-    app_log() << endl;
+    copy(wPerNode.begin(),wPerNode.end(),std::ostream_iterator<int>(app_log()," "));
+    app_log() << std::endl;
     #pragma omp parallel for
     for (int ip=0; ip<NumThreads; ++ip)
     {
-      ostringstream os;
+      std::ostringstream os;
       estimatorClones[ip]= new EstimatorManager(*Estimators);//,*hClones[ip]);
       estimatorClones[ip]->resetTargetParticleSet(*wClones[ip]);
       estimatorClones[ip]->setCollectionMode(false);
@@ -506,7 +506,7 @@ void VMCLinearOptOMP::resetRun()
       {
 //           if (UseDrift == "rn")
 //           {
-//             os <<"  PbyP moves with RN, using VMCUpdatePbyPSampleRN"<<endl;
+//             os <<"  PbyP moves with RN, using VMCUpdatePbyPSampleRN"<< std::endl;
 //             Movers[ip]=new VMCUpdatePbyPSampleRN(*wClones[ip],*psiClones[ip],*guideClones[ip],*hClones[ip],*Rng[ip]);
 //             Movers[ip]->setLogEpsilon(logepsilon);
 //
@@ -515,13 +515,13 @@ void VMCLinearOptOMP::resetRun()
 //           }
 //           else if (UseDrift == "yes")
 //           {
-//             os <<"  PbyP moves with drift, using VMCUpdatePbyPWithDriftFast"<<endl;
+//             os <<"  PbyP moves with drift, using VMCUpdatePbyPWithDriftFast"<< std::endl;
 //             CSMovers[ip]=Movers[ip]=new VMCUpdatePbyPWithDriftFast(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
 // //             CSMovers[ip]=new VMCUpdatePbyPWithDrift(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
 //           }
 //           else
 //           {
-        os <<"  PbyP moves with |psi^2|, using VMCUpdatePbyP"<<endl;
+        os <<"  PbyP moves with |psi^2|, using VMCUpdatePbyP"<< std::endl;
 //             CSMovers[ip]=
         Movers[ip]=new VMCUpdatePbyP(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
 //           }
@@ -531,7 +531,7 @@ void VMCLinearOptOMP::resetRun()
       {
 //           if (UseDrift == "rn")
 //           {
-//             os <<"  walker moves with RN, using VMCUpdateAllSampleRN"<<endl;
+//             os <<"  walker moves with RN, using VMCUpdateAllSampleRN"<< std::endl;
 //             Movers[ip] =new VMCUpdateAllSampleRN(*wClones[ip],*psiClones[ip],*guideClones[ip],*hClones[ip],*Rng[ip]);
 //             Movers[ip]->setLogEpsilon(logepsilon);
 //
@@ -539,19 +539,19 @@ void VMCLinearOptOMP::resetRun()
 //           }
         //             else if (UseDrift == "yes")
         //             {
-        //               os <<"  walker moves with drift, using VMCUpdateAllWithDriftFast"<<endl;
+        //               os <<"  walker moves with drift, using VMCUpdateAllWithDriftFast"<< std::endl;
         //               Movers[ip]=new VMCUpdateAllWithDrift(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
         //             }
 //           else
 //           {
-        os <<"  walker moves with |psi|^2, using VMCUpdateAll"<<endl;
+        os <<"  walker moves with |psi|^2, using VMCUpdateAll"<< std::endl;
 //             CSMovers[ip]=
         Movers[ip]=new VMCUpdateAll(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
 //           }
         //Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
       }
       if (ip==0)
-        app_log() << os.str() << endl;
+        app_log() << os.str() << std::endl;
     }
   }
 #if !defined(REMOVE_TRACEMANAGER)
@@ -717,7 +717,7 @@ void VMCLinearOptOMP::resetRun()
 //       for (int pm2=1; pm2<NumOptimizables+1; pm2++)
 //         Variance(pm,pm2) += V_avg*Overlap(pm,pm2);
 //
-//     //     app_log()<<V_avg<<"  "<<E_avg<<"  "<<sW<<endl;
+//     //     app_log()<<V_avg<<"  "<<E_avg<<"  "<<sW<< std::endl;
 //   }
 
 //   VMCLinearOptOMP::RealType VMCLinearOptOMP::fillOverlapHamiltonianMatrices(Matrix<RealType>& LeftM, Matrix<RealType>& RightM)
@@ -809,7 +809,7 @@ void VMCLinearOptOMP::resetRun()
 // //       for (int pm2=0; pm2<NumOptimizables; pm2++)
 // //         LeftM(pm+1,pm2+1) += b2*V_avg*RightM(pm+1,pm2+1);
 //
-//     //     app_log()<<V_avg<<"  "<<E_avg<<"  "<<sW<<endl;
+//     //     app_log()<<V_avg<<"  "<<E_avg<<"  "<<sW<< std::endl;
 //     if (GEVtype=="H2")
 //       return 1.0/H2_avg;
 //     return 1.0;
@@ -841,7 +841,7 @@ VMCLinearOptOMP::RealType VMCLinearOptOMP::fillOverlapHamiltonianMatrices(Matrix
   RealType E_avg2=E_avg*E_avg;
   RealType E2_avg = g_nrm*g_stats[1];
   V_avg = E2_avg-E_avg2;
-//     app_log()<<E_avg<<" "<<V_avg<<" "<<E2_avg<<endl;
+//     app_log()<<E_avg<<" "<<V_avg<<" "<<E2_avg<< std::endl;
   myComm->allreduce(Ham2);
   Ham2*=g_nrm;
   myComm->allreduce(Ham);
@@ -852,13 +852,13 @@ VMCLinearOptOMP::RealType VMCLinearOptOMP::fillOverlapHamiltonianMatrices(Matrix
   m_vec*=g_nrm;
   if ((printderivs=="yes")&&(myComm->rank()==0))
   {
-    stringstream fn;
+    std::stringstream fn;
     fn<<RootName.c_str()<<".derivs";
-    ofstream d_out(fn.str().c_str());
+    std::ofstream d_out(fn.str().c_str());
     d_out.precision(6);
-    d_out<<"#csf    D        HD"<<endl;
+    d_out<<"#csf    D        HD"<< std::endl;
     for (int i=0; i<NumOptimizables; i++)
-      d_out<<i+1<<" "<<m_vec(0,i)<<"  "<<m_vec(1,i)<<endl;
+      d_out<<i+1<<" "<<m_vec(0,i)<<"  "<<m_vec(1,i)<< std::endl;
   }
   for (int i=0; i<NumOptimizables; i++)
     for (int j=0; j<NumOptimizables; j++)

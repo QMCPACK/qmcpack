@@ -26,7 +26,7 @@ namespace qmcplusplus
       {
         const int c=small.cols();
         for(int i=0; i<small.rows(); ++i) 
-          copy(small[i],small[i]+c,big[i]+offset_c);
+          std::copy(small[i],small[i]+c,big[i]+offset_c);
       }
   }
 
@@ -75,13 +75,13 @@ namespace qmcplusplus
 
   void CompositeSPOSet::report()
   {
-    app_log()<<"CompositeSPOSet"<<endl;
-    app_log()<<"  ncomponents = "<<components.size()<<endl;
-    app_log()<<"  components"<<endl;
+    app_log()<<"CompositeSPOSet"<< std::endl;
+    app_log()<<"  ncomponents = "<<components.size()<< std::endl;
+    app_log()<<"  components"<< std::endl;
     for(int i=0;i<components.size();++i)
     {
       SPOSetBase& c = *components[i];
-      app_log()<<"    "<<i<<endl;
+      app_log()<<"    "<<i<< std::endl;
       components[i]->basic_report("      ");
     }
   }
@@ -125,7 +125,7 @@ namespace qmcplusplus
       SPOSetBase&    component = *components[c];
       ValueVector_t& values    = *component_values[c];
       component.evaluate(P,iat,values);
-      copy(values.begin(),values.end(),psi.begin()+n);
+      std::copy(values.begin(),values.end(),psi.begin()+n);
       n += component.size();
     }
   }
@@ -142,9 +142,9 @@ namespace qmcplusplus
       GradVector_t&  gradients  = *component_gradients[c];
       ValueVector_t& laplacians = *component_laplacians[c];
       component.evaluate(P,iat,values,gradients,laplacians);
-      copy(values.begin(),    values.end(),    psi.begin()+n  );
-      copy(gradients.begin(), gradients.end(), dpsi.begin()+n );
-      copy(laplacians.begin(),laplacians.end(),d2psi.begin()+n);
+      std::copy(values.begin(),    values.end(),    psi.begin()+n  );
+      std::copy(gradients.begin(), gradients.end(), dpsi.begin()+n );
+      std::copy(laplacians.begin(),laplacians.end(),d2psi.begin()+n);
       n += component.size();
     }
   }
@@ -217,7 +217,7 @@ namespace qmcplusplus
 
   SPOSetBase* CompositeSPOSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   {
-    vector<string> spolist;
+    std::vector<std::string> spolist;
     putContent(spolist,cur);
     if(spolist.empty())
     {

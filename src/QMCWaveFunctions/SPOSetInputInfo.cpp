@@ -11,9 +11,9 @@ namespace qmcplusplus
 {
   typedef QMCTraits::RealType RealType;
 
-  const int      inone = numeric_limits<int>::min();
+  const int      inone = std::numeric_limits<int>::min();
   const RealType rnone = 1e99;
-  const string&  snone = "none";
+  const std::string&  snone = "none";
 
 
   void SPOSetInputInfo::reset()
@@ -58,7 +58,7 @@ namespace qmcplusplus
     indices.clear();
     energies.clear();
 
-    string units_in = snone;
+    std::string units_in = snone;
 
     OhmmsAttributeSet attrib;
     attrib.add(group,     "group"     );
@@ -101,7 +101,7 @@ namespace qmcplusplus
     xmlNodePtr element = cur->xmlChildrenNode;
     while(element!=NULL)
     {
-      string ename((const char*)element->name);
+      std::string ename((const char*)element->name);
       if(ename=="indices")
       {
         has_indices = true;
@@ -125,7 +125,7 @@ namespace qmcplusplus
           matching_tol = convert(matching_tol,eunits,Ha);
 
         //convert_array(energies,eunits,Ha);
-        vector<double> entmp;
+        std::vector<double> entmp;
         convert_array(entmp,eunits,Ha);
 
         sort(energies.begin(),energies.end());
@@ -148,17 +148,17 @@ namespace qmcplusplus
   {
     if(has_index_info)
     {
-      lowest_index  = numeric_limits<int>::max();
-      highest_index = numeric_limits<int>::min();
+      lowest_index  = std::numeric_limits<int>::max();
+      highest_index = std::numeric_limits<int>::min();
       if(has_size)
       {
-        lowest_index  = min(lowest_index,0);
-        highest_index = max(highest_index,size-1);
+        lowest_index  = std::min(lowest_index,0);
+        highest_index = std::max(highest_index,size-1);
       }
       if(has_index_range)
       {
-        lowest_index  = min(lowest_index, index_min);
-        highest_index = max(highest_index,index_max);
+        lowest_index  = std::min(lowest_index, index_min);
+        highest_index = std::max(highest_index,index_max);
       }
       if(has_occ)
       {
@@ -172,16 +172,16 @@ namespace qmcplusplus
             imax = i;
           }
         if(imin!=-1)
-          lowest_index  = min(lowest_index,imin);
+          lowest_index  = std::min(lowest_index,imin);
         if(imax!=-1)
-          highest_index = max(highest_index,imax);
+          highest_index = std::max(highest_index,imax);
       }
       if(has_indices)
         for(int i=0;i<indices.size();++i)
         {
           int ind = indices[i];
-          lowest_index  = min(lowest_index, ind);
-          highest_index = max(highest_index,ind);
+          lowest_index  = std::min(lowest_index, ind);
+          highest_index = std::max(highest_index,ind);
         }
     }
   }
@@ -195,65 +195,65 @@ namespace qmcplusplus
       highest_energy = -1e99;
       if(has_ecut)
       {
-        lowest_energy  = min(lowest_energy,-1e99);
-        highest_energy = max(highest_energy,ecut);
+        lowest_energy  = std::min(lowest_energy,-1e99);
+        highest_energy = std::max(highest_energy,ecut);
       }
       if(has_energy_range)
       {
-        lowest_energy  = min(lowest_energy, energy_min);
-        highest_energy = max(highest_energy,energy_max);
+        lowest_energy  = std::min(lowest_energy, energy_min);
+        highest_energy = std::max(highest_energy,energy_max);
       }
       if(has_energies)
         for(int i=0;i<energies.size();++i)
         {
           RealType en = energies[i];
-          lowest_energy  = min(lowest_energy, en);
-          highest_energy = max(highest_energy,en);
+          lowest_energy  = std::min(lowest_energy, en);
+          highest_energy = std::max(highest_energy,en);
         }
     }
   }
 
 
-  void SPOSetInputInfo::report(const string& pad)
+  void SPOSetInputInfo::report(const std::string& pad)
   {
-    app_log()<<pad<<"SPOSetInput report"<<endl;
-    app_log()<<pad<<"  has_size         = "<< has_size <<endl;
-    app_log()<<pad<<"  has_index_range  = "<< has_index_range <<endl;
-    app_log()<<pad<<"  has_occ          = "<< has_occ <<endl;
-    app_log()<<pad<<"  has_ecut         = "<< has_ecut <<endl;
-    app_log()<<pad<<"  has_energy_range = "<< has_energy_range <<endl;
-    app_log()<<pad<<"  has_indices      = "<< has_indices <<endl;
-    app_log()<<pad<<"  has_energies     = "<< has_energies <<endl;
-    app_log()<<pad<<"  group            = "<< group <<endl;
-    app_log()<<pad<<"  size             = "<< size <<endl;
-    app_log()<<pad<<"  index_min        = "<< index_min <<endl;
-    app_log()<<pad<<"  index_max        = "<< index_max <<endl;
-    app_log()<<pad<<"  occ              = "<< occ <<endl;
-    app_log()<<pad<<"  ecut             = "<< ecut <<endl;
-    app_log()<<pad<<"  energy_min       = "<< energy_min <<endl;
-    app_log()<<pad<<"  energy_max       = "<< energy_max <<endl;
-    app_log()<<pad<<"  # of indices     = "<<indices.size() <<endl;
+    app_log()<<pad<<"SPOSetInput report"<< std::endl;
+    app_log()<<pad<<"  has_size         = "<< has_size << std::endl;
+    app_log()<<pad<<"  has_index_range  = "<< has_index_range << std::endl;
+    app_log()<<pad<<"  has_occ          = "<< has_occ << std::endl;
+    app_log()<<pad<<"  has_ecut         = "<< has_ecut << std::endl;
+    app_log()<<pad<<"  has_energy_range = "<< has_energy_range << std::endl;
+    app_log()<<pad<<"  has_indices      = "<< has_indices << std::endl;
+    app_log()<<pad<<"  has_energies     = "<< has_energies << std::endl;
+    app_log()<<pad<<"  group            = "<< group << std::endl;
+    app_log()<<pad<<"  size             = "<< size << std::endl;
+    app_log()<<pad<<"  index_min        = "<< index_min << std::endl;
+    app_log()<<pad<<"  index_max        = "<< index_max << std::endl;
+    app_log()<<pad<<"  occ              = "<< occ << std::endl;
+    app_log()<<pad<<"  ecut             = "<< ecut << std::endl;
+    app_log()<<pad<<"  energy_min       = "<< energy_min << std::endl;
+    app_log()<<pad<<"  energy_max       = "<< energy_max << std::endl;
+    app_log()<<pad<<"  # of indices     = "<<indices.size() << std::endl;
     app_log()<<pad<<"  indices          = \n    ";
     for(int i=0;i<indices.size();++i)
       app_log()<<indices[i]<<" ";
-    app_log()<<endl;
-    app_log()<<pad<<"  # of energies    = "<<energies.size() <<endl;
+    app_log()<< std::endl;
+    app_log()<<pad<<"  # of energies    = "<<energies.size() << std::endl;
     app_log()<<pad<<"  energies         = \n    ";
     for(int i=0;i<energies.size();++i)
       app_log()<<energies[i]<<" ";
-    app_log()<<endl;
-    app_log()<<pad<<"  matching_tol     = "<< matching_tol <<endl;
-    app_log()<<pad<<"  lowest_index     = "<<lowest_index<<endl;
-    app_log()<<pad<<"  highest_index    = "<<highest_index<<endl;
-    app_log()<<pad<<"  lowest_energy    = "<<lowest_energy<<endl;
-    app_log()<<pad<<"  highest_energy   = "<<highest_energy<<endl;
-    app_log()<<pad<<"end SPOSetInput report"<<endl;
+    app_log()<< std::endl;
+    app_log()<<pad<<"  matching_tol     = "<< matching_tol << std::endl;
+    app_log()<<pad<<"  lowest_index     = "<<lowest_index<< std::endl;
+    app_log()<<pad<<"  highest_index    = "<<highest_index<< std::endl;
+    app_log()<<pad<<"  lowest_energy    = "<<lowest_energy<< std::endl;
+    app_log()<<pad<<"  highest_energy   = "<<highest_energy<< std::endl;
+    app_log()<<pad<<"end SPOSetInput report"<< std::endl;
     app_log().flush();
   }
 
 
 
-  SPOSetInputInfo::indices_t& SPOSetInputInfo::get_indices(const vector<SPOSetInfo*>& states_vec)
+  SPOSetInputInfo::indices_t& SPOSetInputInfo::get_indices(const std::vector<SPOSetInfo*>& states_vec)
   {
     if(!all_indices_computed)
     {
@@ -398,15 +398,15 @@ namespace qmcplusplus
   }
 
 
-  void SPOSetInputInfo::occupy(const string& loc,const indices_t& ind)
+  void SPOSetInputInfo::occupy(const std::string& loc,const indices_t& ind)
   {
-    int imin = numeric_limits<int>::max();
-    int imax = numeric_limits<int>::min();
+    int imin = std::numeric_limits<int>::max();
+    int imax = std::numeric_limits<int>::min();
     for(int i=0;i<ind.size();++i)
     {
       int ival = ind[i];
-      imin = min(imin,ival);
-      imax = max(imax,ival);
+      imin = std::min(imin,ival);
+      imax = std::max(imax,ival);
     }
     if(imin<0)
       APP_ABORT("SPOSetInputInfo::occupy("+loc+")\n  indices are negative");

@@ -108,7 +108,7 @@ void SimpleFixedNodeBranch::registerParameters()
 
 }
 
-void SimpleFixedNodeBranch::start(const string& froot, bool append)
+void SimpleFixedNodeBranch::start(const std::string& froot, bool append)
 {
   RootName=froot;
   MyEstimator->RootName=froot;
@@ -135,7 +135,7 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
     {
       Communicate* acomm=MyEstimator->getCommunicator();
       int ncontexts=acomm->size();
-      vector<int> nw(ncontexts,0),nwoff(ncontexts+1,0);
+      std::vector<int> nw(ncontexts,0),nwoff(ncontexts+1,0);
       nw[acomm->rank()]=walkers.getActiveWalkers();
       acomm->allreduce(nw);
       for(int ip=0; ip<ncontexts; ++ip)
@@ -148,7 +148,7 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
     if(!BranchMode[B_RESTART])
     {
       fromscratch=true;
-      app_log() << "  START ALL OVER " << endl;
+      app_log() << "  START ALL OVER " << std::endl;
       vParam[B_TAUEFF]=tau;
       BranchMode.set(B_POPCONTROL,!fixW);//fixW -> 0
       BranchMode.set(B_KILLNODES,killwalker);
@@ -156,7 +156,7 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
       iParam[B_MINWALKERS]=WalkerController->Nmin;
       if(!fixW && sParam[MIXDMCOPT]=="yes")
       {
-        app_log() << "Warmup DMC is done with a fixed population " << iParam[B_TARGETWALKERS] << endl;
+        app_log() << "Warmup DMC is done with a fixed population " << iParam[B_TARGETWALKERS] << std::endl;
         BackupWalkerController=WalkerController; //save the main controller
         WalkerController=createWalkerController(iParam[B_TARGETWALKERS],MyEstimator->getCommunicator(), myNode,true);
         BranchMode.set(B_POPCONTROL,0);
@@ -191,17 +191,17 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
   WalkerController->reset();
   if(BackupWalkerController)
     BackupWalkerController->reset();
-  app_log() << "  QMC counter      = " << iParam[B_COUNTER] << endl;
-  app_log() << "  time step        = " << vParam[B_TAU] << endl;
-  app_log() << "  effective time step = " << vParam[B_TAUEFF] << endl;
-  app_log() << "  trial energy     = " << vParam[B_ETRIAL] << endl;
-  app_log() << "  reference energy = " << vParam[B_EREF] << endl;
-  app_log() << "  Feedback = " << vParam[B_FEEDBACK] <<  endl;
-  app_log() << "  reference variance = " << vParam[B_SIGMA] << endl;
-  app_log() << "  target walkers = " << iParam[B_TARGETWALKERS] << endl;
-  app_log() << "  branch cutoff = " <<  vParam[B_BRANCHCUTOFF] << " " << vParam[B_BRANCHMAX] << endl;
-  app_log() << "  Max and mimum walkers per node= " << iParam[B_MAXWALKERS] << " " << iParam[B_MINWALKERS] << endl;
-  app_log() << "  QMC Status (BranchMode) = " << BranchMode << endl;
+  app_log() << "  QMC counter      = " << iParam[B_COUNTER] << std::endl;
+  app_log() << "  time step        = " << vParam[B_TAU] << std::endl;
+  app_log() << "  effective time step = " << vParam[B_TAUEFF] << std::endl;
+  app_log() << "  trial energy     = " << vParam[B_ETRIAL] << std::endl;
+  app_log() << "  reference energy = " << vParam[B_EREF] << std::endl;
+  app_log() << "  Feedback = " << vParam[B_FEEDBACK] <<  std::endl;
+  app_log() << "  reference variance = " << vParam[B_SIGMA] << std::endl;
+  app_log() << "  target walkers = " << iParam[B_TARGETWALKERS] << std::endl;
+  app_log() << "  branch cutoff = " <<  vParam[B_BRANCHCUTOFF] << " " << vParam[B_BRANCHMAX] << std::endl;
+  app_log() << "  Max and mimum walkers per node= " << iParam[B_MAXWALKERS] << " " << iParam[B_MINWALKERS] << std::endl;
+  app_log() << "  QMC Status (BranchMode) = " << BranchMode << std::endl;
 
   return int(round(double(iParam[B_TARGETWALKERS])/double(nwtot_now)));
 }
@@ -223,7 +223,7 @@ void SimpleFixedNodeBranch::initReptile(MCWalkerConfiguration& W)
     //  {
     //    Communicate* acomm=MyEstimator->getCommunicator();
     //    int ncontexts=acomm->size();
-    //    vector<int> nw(ncontexts,0),nwoff(ncontexts+1,0);
+    //    std::vector<int> nw(ncontexts,0),nwoff(ncontexts+1,0);
     //    nw[acomm->rank()]=W.getActiveWalkers();
     //   acomm->allreduce(nw);
     //    for(int ip=0; ip<ncontexts; ++ip)
@@ -235,7 +235,7 @@ void SimpleFixedNodeBranch::initReptile(MCWalkerConfiguration& W)
     if(!BranchMode[B_RESTART])
     {
       fromscratch=true;
-      app_log() << "  START ALL OVER " << endl;
+      app_log() << "  START ALL OVER " << std::endl;
       vParam[B_TAUEFF]=tau;
       //PopHist.clear();
       //PopHist.reserve(std::max(iParam[B_ENERGYUPDATEINTERVAL],5));
@@ -259,14 +259,14 @@ void SimpleFixedNodeBranch::initReptile(MCWalkerConfiguration& W)
     vParam[B_TAUEFF]=tau*R2Accepted.result()/R2Proposed.result();
   }
   //reset controller
-  app_log() << "  QMC counter      = " << iParam[B_COUNTER] << endl;
-  app_log() << "  time step        = " << vParam[B_TAU] << endl;
-  app_log() << "  effective time step = " << vParam[B_TAUEFF] << endl;
-  app_log() << "  reference energy = " << vParam[B_EREF] << endl;
-  app_log() << "  Feedback = " << vParam[B_FEEDBACK] <<  endl;
-  app_log() << "  reference variance = " << vParam[B_SIGMA] << endl;
-  app_log() << "  branch cutoff = " <<  vParam[B_BRANCHCUTOFF] << " " << vParam[B_BRANCHMAX] << endl;
-  app_log() << "  QMC Status (BranchMode) = " << BranchMode << endl;
+  app_log() << "  QMC counter      = " << iParam[B_COUNTER] << std::endl;
+  app_log() << "  time step        = " << vParam[B_TAU] << std::endl;
+  app_log() << "  effective time step = " << vParam[B_TAUEFF] << std::endl;
+  app_log() << "  reference energy = " << vParam[B_EREF] << std::endl;
+  app_log() << "  Feedback = " << vParam[B_FEEDBACK] <<  std::endl;
+  app_log() << "  reference variance = " << vParam[B_SIGMA] << std::endl;
+  app_log() << "  branch cutoff = " <<  vParam[B_BRANCHCUTOFF] << " " << vParam[B_BRANCHMAX] << std::endl;
+  app_log() << "  QMC Status (BranchMode) = " << BranchMode << std::endl;
 }
 
 void SimpleFixedNodeBranch::flush(int counter)
@@ -343,15 +343,15 @@ void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& walkers)
       vParam[B_BRANCHCUTOFF]=std::min(sigma,2.5/vParam[B_TAU]);
       vParam[B_BRANCHMAX]=vParam[B_BRANCHCUTOFF]*1.5;
       vParam[B_BRANCHFILTER]=1.0/(vParam[B_BRANCHMAX]-vParam[B_BRANCHCUTOFF]);
-      app_log() << "\n Warmup is completed after " << iParam[B_WARMUPSTEPS] << endl;
+      app_log() << "\n Warmup is completed after " << iParam[B_WARMUPSTEPS] << std::endl;
       if(BranchMode[B_USETAUEFF])
         app_log() << "\n  TauEff     = " << vParam[B_TAUEFF] << "\n TauEff/Tau = " << vParam[B_TAUEFF]/vParam[B_TAU];
       else
         app_log() << "\n  TauEff proposed   = " << vParam[B_TAUEFF]*R2Accepted.result()/R2Proposed.result();
-      app_log()  << "\n  Etrial     = " << vParam[B_ETRIAL] << endl;
-      app_log() << " Running average of energy = " << EnergyHist.mean() << endl;
-      app_log() << "                  Variance = " << vParam[B_SIGMA] << endl;
-      app_log() << "branch cutoff = " <<  vParam[B_BRANCHCUTOFF] << " " << vParam[B_BRANCHMAX] << endl;
+      app_log()  << "\n  Etrial     = " << vParam[B_ETRIAL] << std::endl;
+      app_log() << " Running average of energy = " << EnergyHist.mean() << std::endl;
+      app_log() << "                  Variance = " << vParam[B_SIGMA] << std::endl;
+      app_log() << "branch cutoff = " <<  vParam[B_BRANCHCUTOFF] << " " << vParam[B_BRANCHMAX] << std::endl;
       ToDoSteps = iParam[B_ENERGYUPDATEINTERVAL]-1;
       iParam[B_WARMUPSTEPS]=0;
       BranchMode.set(B_DMCSTAGE,1); //set BranchModex to main stage
@@ -360,13 +360,13 @@ void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& walkers)
       EnergyHist(vParam[B_EREF]);
       if(sParam[MIXDMCOPT]=="yes")
       {
-        app_log() << "Switching to DMC with fluctuating populations" << endl;
+        app_log() << "Switching to DMC with fluctuating populations" << std::endl;
         BranchMode.set(B_POPCONTROL,1); //use standard DMC
         delete WalkerController;
         WalkerController=BackupWalkerController;
         BackupWalkerController=0;
         vParam[B_ETRIAL]=vParam[B_EREF];
-        app_log()  << "  Etrial     = " << vParam[B_ETRIAL] << endl;
+        app_log()  << "  Etrial     = " << vParam[B_ETRIAL] << std::endl;
         WalkerController->start();
       }
       //This is not necessary
@@ -384,7 +384,7 @@ void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& walkers)
  *
  * Set the trial energy of clones
  */
-void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& walkers, vector<ThisType*>& clones)
+void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& walkers, std::vector<ThisType*>& clones)
 {
   branch(iter,walkers);
   //synchronize it
@@ -405,30 +405,30 @@ void SimpleFixedNodeBranch::collect(int iter, MCWalkerConfiguration& W)
   MCWalkerConfiguration::Walker_t& tail = W.reptile->getTail();
   vParam[B_ENOW]=0.5*(head.Properties(LOCALENERGY)+tail.Properties(LOCALENERGY));
 // app_log()<<"IN SimpleFixedNodeBranch::collect\n";
-// app_log()<<"\tvParam[B_ENOW]="<<vParam[B_ENOW]<<endl;
+// app_log()<<"\tvParam[B_ENOW]="<<vParam[B_ENOW]<< std::endl;
   EnergyHist(vParam[B_ENOW]);
   vParam[B_EREF]=EnergyHist.mean();
-// app_log()<<"\tvParam[B_EREF]="<<vParam[B_EREF]<<endl;
+// app_log()<<"\tvParam[B_EREF]="<<vParam[B_EREF]<< std::endl;
   //Update the energy variance and R2 for effective timestep and filtering.
   VarianceHist(std::pow(vParam[B_ENOW]-vParam[B_EREF],2));
   R2Accepted(head.Properties(R2ACCEPTED));
   R2Proposed(head.Properties(R2PROPOSED));
-// app_log()<<"\thead.Properties(R2ACCEPTED)="<<head.Properties(R2ACCEPTED)<<endl;
-// app_log()<<"\thead.Properties(R2PROPOSED)="<<head.Properties(R2PROPOSED)<<endl;
-//  app_log()<<"\tR2Accepted="<<R2Accepted.result()<<endl;
-// app_log()<<"\tR2Proposed="<<R2Proposed.result()<<endl;
-//  app_log()<<"\tR2Accept/R2Prop="<<R2Accepted.result()/R2Proposed.result()<<endl;
-// app_log()<<"\t <E^2> = "<<VarianceHist.mean()<<endl;
-// app_log()<<"\t <E>   = "<<EnergyHist.mean()<<endl;
-//  app_log()<<"\t <E>^2 = "<<std::pow(EnergyHist.mean(),2)<<endl;
-// app_log()<<"\t var = "<<VarianceHist.mean()-pow(EnergyHist.mean(),2)<<endl;
+// app_log()<<"\thead.Properties(R2ACCEPTED)="<<head.Properties(R2ACCEPTED)<< std::endl;
+// app_log()<<"\thead.Properties(R2PROPOSED)="<<head.Properties(R2PROPOSED)<< std::endl;
+//  app_log()<<"\tR2Accepted="<<R2Accepted.result()<< std::endl;
+// app_log()<<"\tR2Proposed="<<R2Proposed.result()<< std::endl;
+//  app_log()<<"\tR2Accept/R2Prop="<<R2Accepted.result()/R2Proposed.result()<< std::endl;
+// app_log()<<"\t <E^2> = "<<VarianceHist.mean()<< std::endl;
+// app_log()<<"\t <E>   = "<<EnergyHist.mean()<< std::endl;
+//  app_log()<<"\t <E>^2 = "<<std::pow(EnergyHist.mean(),2)<< std::endl;
+// app_log()<<"\t var = "<<VarianceHist.mean()-pow(EnergyHist.mean(),2)<< std::endl;
 // app_log()<<"--------------\n";
   //current mean
   if(BranchMode[B_USETAUEFF])
   {
-    //app_log()<<" BRANCHMODE = "<<BranchMode[B_USETAUEFF]<<endl;
+    //app_log()<<" BRANCHMODE = "<<BranchMode[B_USETAUEFF]<< std::endl;
     vParam[B_TAUEFF]=vParam[B_TAU]*R2Accepted.result()/R2Proposed.result();
-    //  app_log()<<"\tvParam[B_TAU]="<<vParam[B_TAU]<<" "<<vParam[B_TAUEFF]<<endl;
+    //  app_log()<<"\tvParam[B_TAU]="<<vParam[B_TAU]<<" "<<vParam[B_TAUEFF]<< std::endl;
   }
   /*
   if(BranchMode[B_RMCSTAGE]) // main stage
@@ -446,18 +446,18 @@ void SimpleFixedNodeBranch::collect(int iter, MCWalkerConfiguration& W)
     else
       vParam[B_ETRIAL]=vParam[B_EREF];
   }*/
-  //app_log()<<"BranchMode[B_RMCSTAGE]="<<BranchMode[B_RMCSTAGE]<<endl;
+  //app_log()<<"BranchMode[B_RMCSTAGE]="<<BranchMode[B_RMCSTAGE]<< std::endl;
   if(!BranchMode[B_RMCSTAGE])//warmup
   {
     if(BranchMode[B_USETAUEFF])
       vParam[B_TAUEFF]=vParam[B_TAU]*R2Accepted.result()/R2Proposed.result();
-    // app_log()<<"\t <E^2> = "<<VarianceHist.mean()<<endl;
-// app_log()<<"\t <E>   = "<<EnergyHist.mean()<<endl;
-// app_log()<<"\t <E>^2 = "<<std::pow(EnergyHist.mean(),2)<<endl;
-    //app_log()<<"\t var = "<<VarianceHist.mean()-std::pow(EnergyHist.mean(),2)<<endl;
-// app_log()<<"\t var = "<<VarianceHist.mean()<<endl;
+    // app_log()<<"\t <E^2> = "<<VarianceHist.mean()<< std::endl;
+// app_log()<<"\t <E>   = "<<EnergyHist.mean()<< std::endl;
+// app_log()<<"\t <E>^2 = "<<std::pow(EnergyHist.mean(),2)<< std::endl;
+    //app_log()<<"\t var = "<<VarianceHist.mean()-std::pow(EnergyHist.mean(),2)<< std::endl;
+// app_log()<<"\t var = "<<VarianceHist.mean()<< std::endl;
 //  app_log()<<"----\n";
-    //app_log()<<"ToDoSteps="<<ToDoSteps<<endl;
+    //app_log()<<"ToDoSteps="<<ToDoSteps<< std::endl;
     vParam[B_ETRIAL]=vParam[B_EREF];
     --ToDoSteps;
     if(ToDoSteps==0)  //warmup is done
@@ -472,14 +472,14 @@ void SimpleFixedNodeBranch::collect(int iter, MCWalkerConfiguration& W)
       vParam[B_BRANCHCUTOFF]=std::min(sigma,2.5/vParam[B_TAU]);
       vParam[B_BRANCHMAX]=vParam[B_BRANCHCUTOFF]*1.5;
       vParam[B_BRANCHFILTER]=1.0/(vParam[B_BRANCHMAX]-vParam[B_BRANCHCUTOFF]);
-      app_log() << "\n Warmup is completed after " << iParam[B_WARMUPSTEPS] << " steps."<<endl;
+      app_log() << "\n Warmup is completed after " << iParam[B_WARMUPSTEPS] << " steps."<< std::endl;
       if(BranchMode[B_USETAUEFF])
         app_log() << "\n  TauEff     = " << vParam[B_TAUEFF] << "\n TauEff/Tau = " << vParam[B_TAUEFF]/vParam[B_TAU];
       else
         app_log() << "\n  TauEff proposed   = " << vParam[B_TAUEFF]*R2Accepted.result()/R2Proposed.result();
-      app_log() << "\n Running average of energy = " << EnergyHist.mean() << endl;
-      app_log() << "\n                  Variance = " << vParam[B_SIGMA] << endl;
-      app_log() << "\nbranch cutoff = " <<  vParam[B_BRANCHCUTOFF] << " " << vParam[B_BRANCHMAX] << endl;
+      app_log() << "\n Running average of energy = " << EnergyHist.mean() << std::endl;
+      app_log() << "\n                  Variance = " << vParam[B_SIGMA] << std::endl;
+      app_log() << "\nbranch cutoff = " <<  vParam[B_BRANCHCUTOFF] << " " << vParam[B_BRANCHMAX] << std::endl;
       ToDoSteps = iParam[B_ENERGYUPDATEINTERVAL]-1;
       iParam[B_WARMUPSTEPS]=0;
       BranchMode.set(B_RMCSTAGE,1); //set BranchModex to main stage
@@ -494,7 +494,7 @@ void SimpleFixedNodeBranch::collect(int iter, MCWalkerConfiguration& W)
 
 //Ray Clay:  Have to come up with a better way to collect and sync up reptile copies.  This is taken from DMC.  See RMCSingleOMP
 
-void SimpleFixedNodeBranch::collect(int iter, MCWalkerConfiguration& W, vector<ThisType*>& clones)
+void SimpleFixedNodeBranch::collect(int iter, MCWalkerConfiguration& W, std::vector<ThisType*>& clones)
 {
   collect(iter,W);
   //synchronize it
@@ -563,11 +563,11 @@ void SimpleFixedNodeBranch::setRN (bool rn)
 
 int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
 {
-  app_log() << "BRANCH resetRun" << endl;
+  app_log() << "BRANCH resetRun" << std::endl;
   //estimator is always reset
   MyEstimator->reset();
   MyEstimator->setCollectionMode(true);
-  bitset<B_MODE_MAX> bmode(BranchMode);
+  std::bitset<B_MODE_MAX> bmode(BranchMode);
   IParamType iparam_old(iParam);
   VParamType vparam_old(vParam);
   myNode=cur;
@@ -588,9 +588,9 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
   bool same_wc=true;
   if(BranchMode[B_DMC] && WalkerController)
   {
-    string reconfig("no");
+    std::string reconfig("no");
     if(WalkerController->MyMethod) reconfig="yes";
-    string reconfig_prev(reconfig);
+    std::string reconfig_prev(reconfig);
     ParameterSet p;
     p.add(reconfig,"reconfiguration","string");
     p.put(cur);
@@ -603,20 +603,20 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
       && std::equal(vParam.begin(),vParam.end(),vparam_old.begin())
     )
   {
-    app_log() << "  Continue with the same input as the previous block." << endl;
+    app_log() << "  Continue with the same input as the previous block." << std::endl;
     app_log().flush();
     //return 1;
   }
-  app_log() << " SimpleFixedNodeBranch::resetRun detected changes in <parameter>'s " << endl;
-  app_log() << " BranchMode : " << bmode << " " << BranchMode << endl;
+  app_log() << " SimpleFixedNodeBranch::resetRun detected changes in <parameter>'s " << std::endl;
+  app_log() << " BranchMode : " << bmode << " " << BranchMode << std::endl;
 
   //vmc does not need to do anything with WalkerController
   if(!BranchMode[B_DMC])
   {
-    app_log() << " iParam (old): "  <<iparam_old << endl;
-    app_log() << " iParam (new): "  <<iParam << endl;
-    app_log() << " vParam (old): "  <<vparam_old << endl;
-    app_log() << " vParam (new): "  <<vParam << endl;
+    app_log() << " iParam (old): "  <<iparam_old << std::endl;
+    app_log() << " iParam (new): "  <<iParam << std::endl;
+    app_log() << " vParam (old): "  <<vparam_old << std::endl;
+    app_log() << " vParam (new): "  <<vParam << std::endl;
     app_log().flush();
     return 1;
   }
@@ -627,7 +627,7 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
 
   if(!same_wc)
   {
-    app_log() << "Destroy WalkerController. Existing method " << WalkerController->MyMethod << endl;;
+    app_log() << "Destroy WalkerController. Existing method " << WalkerController->MyMethod << std::endl;;
     delete WalkerController;
     WalkerController = createWalkerController(iParam[B_TARGETWALKERS], MyEstimator->getCommunicator(), myNode);
     app_log().flush();
@@ -659,10 +659,10 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
   iParam[B_MAXWALKERS]=WalkerController->Nmax;
   iParam[B_MINWALKERS]=WalkerController->Nmin;
 
-  app_log() << " iParam (old): "  <<iparam_old << endl;
-  app_log() << " iParam (new): "  <<iParam << endl;
-  app_log() << " vParam (old): "  <<vparam_old << endl;
-  app_log() << " vParam (new): "  <<vParam << endl;
+  app_log() << " iParam (old): "  <<iparam_old << std::endl;
+  app_log() << " iParam (new): "  <<iParam << std::endl;
+  app_log() << " vParam (old): "  <<vparam_old << std::endl;
+  app_log() << " vParam (new): "  <<vParam << std::endl;
   app_log().flush();
   //  return static_cast<int>(iParam[B_TARGETWALKERS]*1.01/static_cast<double>(nw_target));
   return static_cast<int>(round(static_cast<double>(iParam[B_TARGETWALKERS]/static_cast<double>(nw_target))));
@@ -670,7 +670,7 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
 
 void SimpleFixedNodeBranch::checkParameters(MCWalkerConfiguration& w)
 {
-  ostringstream o;
+  std::ostringstream o;
   if(!BranchMode[B_DMCSTAGE])
   {
     RealType e, sigma2;
@@ -684,17 +684,17 @@ void SimpleFixedNodeBranch::checkParameters(MCWalkerConfiguration& w)
     EnergyHist(vParam[B_EREF]);
     VarianceHist(vParam[B_SIGMA]);
     //DMCEnergyHist(vParam[B_EREF]);
-    o << "SimpleFixedNodeBranch::checkParameters " << endl;
-    o << "  Average Energy of a population  = " << e << endl;
-    o << "  Energy Variance = " << vParam[B_SIGMA] << endl;
+    o << "SimpleFixedNodeBranch::checkParameters " << std::endl;
+    o << "  Average Energy of a population  = " << e << std::endl;
+    o << "  Energy Variance = " << vParam[B_SIGMA] << std::endl;
   }
-  app_log() << o.str() << endl;
+  app_log() << o.str() << std::endl;
   app_log().flush();
 }
 
 void SimpleFixedNodeBranch::finalize(MCWalkerConfiguration& w)
 {
-  ostringstream o;
+  std::ostringstream o;
   if(WalkerController)
   {
     o << "====================================================";
@@ -749,13 +749,13 @@ void SimpleFixedNodeBranch::finalize(MCWalkerConfiguration& w)
     o << "\n    reference variance = " << vParam[B_SIGMA];
     o << "\n====================================================";
   }
-  app_log() << o.str() << endl;
+  app_log() << o.str() << std::endl;
   write(RootName,true);
 }
 
 /**  Parse the xml file for parameters
  *@param cur current xmlNode
- *@param LogOut ostream to which the run-time report is sent
+ *@param LogOut std::ostream to which the run-time report is sent
  *
  * Few important parameters are:
  * <ul>
@@ -775,7 +775,7 @@ bool SimpleFixedNodeBranch::put(xmlNodePtr cur)
   return true;
 }
 
-void SimpleFixedNodeBranch::write(const string& fname, bool overwrite)
+void SimpleFixedNodeBranch::write(const std::string& fname, bool overwrite)
 {
   RootName=fname;
   if(MyEstimator->is_manager())
@@ -801,7 +801,7 @@ void SimpleFixedNodeBranch::save_energy()
 #endif
 
 
-void SimpleFixedNodeBranch::read(const string& fname)
+void SimpleFixedNodeBranch::read(const std::string& fname)
 {
   BranchMode.set(B_RESTART,0);
   if(fname.empty())
@@ -819,14 +819,14 @@ void SimpleFixedNodeBranch::read(const string& fname)
               << "\n      variance   = " << VarianceHist.mean()
               << "\n      r2accepted = " << R2Accepted.mean()
               << "\n      r2proposed = " << R2Proposed.mean()
-              <<endl;
+              << std::endl;
   }
   else
   {
     if(BranchMode[B_POPCONTROL]!=bmode[B_POPCONTROL])
     {
       app_log() << "  Population control method has changed from " << BranchMode[B_POPCONTROL]
-        << " to " << bmode[B_POPCONTROL] << endl;
+        << " to " << bmode[B_POPCONTROL] << std::endl;
       BranchMode[B_POPCONTROL]=bmode[B_POPCONTROL];
     }
   }
@@ -839,7 +839,7 @@ void SimpleFixedNodeBranch::read(const string& fname)
   //          << "\n      variance   = " << VarianceHist.mean()
   //          << "\n      r2accepted = " << R2Accepted.mean()
   //          << "\n      r2proposed = " << R2Proposed.mean()
-  //          <<endl;
+  //          << std::endl;
   app_log().flush();
 }
 
@@ -855,12 +855,12 @@ void SimpleFixedNodeBranch::read(const string& fname)
 //
 //   void SimpleFixedNodeBranch::debugFWconfig()
 //   {
-//     cout<<"FW size "<<WalkerController->sizeOfConfigsForForwardWalking()<<endl;
+//     std::cout <<"FW size "<<WalkerController->sizeOfConfigsForForwardWalking()<< std::endl;
 //     for(int i=0;i<WalkerController->ForwardWalkingHistory.size();i++) {
-//       cout<<" Next Gen "<<i<<endl;
+//       std::cout <<" Next Gen "<<i<< std::endl;
 //       for(int j=0;j<WalkerController->ForwardWalkingHistory[i].size();j++)
 //       {
-//         cout<<j<<" "<<WalkerController->ForwardWalkingHistory[i][j].ID<<" "<<WalkerController->ForwardWalkingHistory[i][j].ParentID<<endl;
+//         std::cout <<j<<" "<<WalkerController->ForwardWalkingHistory[i][j].ID<<" "<<WalkerController->ForwardWalkingHistory[i][j].ParentID<< std::endl;
 //       }
 //     }
 //   }

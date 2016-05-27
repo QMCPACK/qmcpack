@@ -25,8 +25,8 @@ struct ReptileStatistics: public ReptileEstimator
 
   void evaluate(MultiChain::iterator first, MultiChain::iterator last, int ipsi)
   {
-    int maxMade=max((*first)->stepmade,(*(last-1))->stepmade);
-    int minMade=min((*first)->stepmade,(*(last-1))->stepmade);
+    int maxMade= std::max((*first)->stepmade,(*(last-1))->stepmade);
+    int minMade= std::min((*first)->stepmade,(*(last-1))->stepmade);
     int maxtouch(0);
     while(first!=last)
     {
@@ -40,14 +40,14 @@ struct ReptileStatistics: public ReptileEstimator
     Values[1]=maxMade-minMade;
   };
 
-  void addNames(vector<string>& names)
+  void addNames(std::vector<std::string>& names)
   {
     myIndex=names.size();
     names.push_back("maxTouch");
     names.push_back("maxAge");
   };
 
-  void setValues(vector<accumulator_type>& data, RealType weight)
+  void setValues(std::vector<accumulator_type>& data, RealType weight)
   {
     data[myIndex](Values[0],1);
     data[myIndex+1](Values[1],1);

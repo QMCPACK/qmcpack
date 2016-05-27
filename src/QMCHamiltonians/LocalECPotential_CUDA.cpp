@@ -69,7 +69,7 @@ LocalECPotential_CUDA::add(int groupID, RadialPotentialType* ppot, RealType z)
     //       snprintf (fname, 100, "local_ecp_%d.dat", groupID);
     //       FILE *fout = fopen (fname, "w");
     int np = rfunc->size();
-    vector<RealType> scaledData(np);
+    std::vector<RealType> scaledData(np);
     for (int ir=0; ir<np; ir++)
     {
       // double r = ((RealType)ir / (RealType)(np-1)) * rmax ;
@@ -89,9 +89,9 @@ LocalECPotential_CUDA::add(int groupID, RadialPotentialType* ppot, RealType z)
 
 void
 LocalECPotential_CUDA::addEnergy(MCWalkerConfiguration &W,
-                                 vector<RealType> &LocalEnergy)
+                                 std::vector<RealType> &LocalEnergy)
 {
-  vector<Walker_t*> &walkers = W.WalkerList;
+  std::vector<Walker_t*> &walkers = W.WalkerList;
   int nw = walkers.size();
   int N = NumElecs;
   if (SumGPU.size() < nw)
@@ -103,7 +103,7 @@ LocalECPotential_CUDA::addEnergy(MCWalkerConfiguration &W,
     SumHost[iw] = 0.0;
   SumGPU = SumHost;
   // First, do short-range part
-  vector<double> esum(nw, 0.0);
+  std::vector<double> esum(nw, 0.0);
   for (int sp=0; sp<NumIonSpecies; sp++)
   {
     if (SRSplines[sp])

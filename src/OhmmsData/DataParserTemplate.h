@@ -179,17 +179,17 @@ public:
 
   OhmmsElement(T& item): ref_(item) { }
 
-  virtual void put(const string& s) const
+  virtual void put(const std::string& s) const
   {
     istringstream stream(s);
     stream >> ref_;
   }
 
-  bool get(ostream& ) const
+  bool get(std::ostream& ) const
   {
     return true;
   }
-  bool put(istream& )
+  bool put( std::istream& )
   {
     return true;
   }
@@ -204,9 +204,9 @@ public:
 };
 
 template<typename T>
-void AddElement(map<string,
+void AddElement(std::map<std::string,
                 const OhmmsElementBase*>& emap,
-                T& aref, const string& apath)
+                T& aref, const std::string& apath)
 {
   emap.insert(make_pair(apath,new OhmmsElement<T>(aref)));
 }

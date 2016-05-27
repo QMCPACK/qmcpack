@@ -27,7 +27,7 @@ protected:
   //////////////////////////////////
   bool UsePBC;
   int NumIonGroups;
-  vector<int> IonFirst, IonLast;
+  std::vector<int> IonFirst, IonLast;
   gpu::device_vector<CUDA_PRECISION> Ions_GPU, L, Linv;
   gpu::device_vector<int> Elecs_GPU;
   gpu::host_vector<int> Elecs_host;
@@ -53,17 +53,17 @@ protected:
   gpu::device_vector<CUDA_PRECISION*> RatioPoslist_GPU, CosThetalist_GPU;
 
   // Quadrature points
-  vector<gpu::device_vector<CUDA_PRECISION> > QuadPoints_GPU;
-  vector<std::vector<CUDA_PRECISION> > QuadPoints_host;
+  std::vector<gpu::device_vector<CUDA_PRECISION> > QuadPoints_GPU;
+  std::vector<std::vector<CUDA_PRECISION> > QuadPoints_host;
   int CurrentNumWalkers;
 
   // These are used in calling Psi->NLratios
-  vector<NLjob> JobList;
-  vector<PosType> QuadPosList;
-  vector<ValueType> RatioList;
+  std::vector<NLjob> JobList;
+  std::vector<PosType> QuadPosList;
+  std::vector<ValueType> RatioList;
 
 
-  vector<PosType> SortedIons;
+  std::vector<PosType> SortedIons;
 
   void setupCUDA(ParticleSet &elecs);
   void resizeCUDA(int nw);
@@ -75,9 +75,9 @@ public:
 
   QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
-  void addEnergy(MCWalkerConfiguration &W, vector<RealType> &LocalEnergy);
-  void addEnergy(MCWalkerConfiguration &W, vector<RealType> &LocalEnergy,
-                 vector<vector<NonLocalData> > &Txy);
+  void addEnergy(MCWalkerConfiguration &W, std::vector<RealType> &LocalEnergy);
+  void addEnergy(MCWalkerConfiguration &W, std::vector<RealType> &LocalEnergy,
+                 std::vector<std::vector<NonLocalData> > &Txy);
 };
 
 

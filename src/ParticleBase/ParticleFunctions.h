@@ -73,7 +73,7 @@ void PartitionGrid(PL& lattice, GIM& grid)
  -- Recommended template GIV: TinyVector<int,D>
  - grid(i,j) for i the level index and j the direction index
  -- Requirement for template GIM: access operator [i][j]
- -- Recommended template GIM: vector<TinyVector<int,D> >
+ -- Recommended template GIM: std::vector<TinyVector<int,D> >
 
  The levels are:
  - i=0 for grid level
@@ -188,7 +188,7 @@ inline
 bool ExpandSuperCell(PT& inout_, GIV& uc_grid)
 {
   PT temp(inout_);
-  vector<GIV> grid(3);
+  std::vector<GIV> grid(3);
   grid[0] = GIV(1);
   grid[1] = GIV(1);
   grid[2] = uc_grid;

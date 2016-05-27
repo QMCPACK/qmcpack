@@ -29,7 +29,7 @@ LocalEnergyEstimatorHDF::LocalEnergyEstimatorHDF(QMCHamiltonian& h)
   scalars_saved.resize(SizeOfHamiltonians+LE_MAX);
 }
 
-void LocalEnergyEstimatorHDF::registerObservables(vector<observable_helper*>& h5desc
+void LocalEnergyEstimatorHDF::registerObservables(std::vector<observable_helper*>& h5desc
     ,hid_t gid)
 {
   int loc=h5desc.size();

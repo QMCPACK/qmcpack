@@ -49,11 +49,11 @@ class DiffOneBodySpinJastrowOrbital: public DiffOrbitalBase
   Matrix<FT*> F;
   ///container for the unique Jastrow functions
   Matrix<int> Fmask;
-  vector<int> s_offset;
-  vector<int> t_offset;
+  std::vector<int> s_offset;
+  std::vector<int> t_offset;
   Vector<RealType> dLogPsi;
-  vector<GradVectorType*> gradLogPsi;
-  vector<ValueVectorType*> lapLogPsi;
+  std::vector<GradVectorType*> gradLogPsi;
+  std::vector<ValueVectorType*> lapLogPsi;
 
 public:
 
@@ -168,8 +168,8 @@ public:
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
-                           vector<RealType>& dlogpsi,
-                           vector<RealType>& dhpsioverpsi)
+                           std::vector<RealType>& dlogpsi,
+                           std::vector<RealType>& dhpsioverpsi)
   {
     if (myVars.Index.size()==0)
       return;
@@ -178,7 +178,7 @@ public:
       (*gradLogPsi[p])=0.0;
     for (int p=0; p<NumVars; ++p)
       (*lapLogPsi[p])=0.0;
-    vector<TinyVector<RealType,3> > derivs(NumVars);
+    std::vector<TinyVector<RealType,3> > derivs(NumVars);
     const DistanceTableData* d_table=P.DistTables[myTableIndex];
     int varoffset=myVars.Index[0];
     for(int ig=0; ig<F.rows(); ++ig)//species

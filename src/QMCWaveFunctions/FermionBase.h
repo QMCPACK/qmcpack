@@ -28,7 +28,7 @@ struct FermionBase
 {
   typedef BasisSetBuilder* BasisSetBuilderPtr;
 
-  typedef map<string,SPOSetBasePtr> spo_set_type;
+  typedef std::map<std::string,SPOSetBasePtr> spo_set_type;
   
   spo_set_type mySPOSet;
   
@@ -36,7 +36,7 @@ struct FermionBase
    * @param aname name of a SPOset
    * @param sposet to be added to the list
    */
-  void addSPO(const string& aname, SPOSetBase* sposet);
+  void addSPO(const std::string& aname, SPOSetBase* sposet);
 
   void addSPO(SPOSetBase* sposet);
 
@@ -71,11 +71,11 @@ struct FermionBase
 
   /** get SPO with aname
    */
-  SPOSetBasePtr getSPO(const string& aname);
+  SPOSetBasePtr getSPO(const std::string& aname);
 
   /** return true if this has the SPOSet with aname
    */
-  inline bool found(const string& aname)
+  inline bool found(const std::string& aname)
   {
     return (mySPOSet.find(aname) != mySPOSet.end());
   }

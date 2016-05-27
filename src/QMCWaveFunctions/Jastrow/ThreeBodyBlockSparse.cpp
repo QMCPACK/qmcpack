@@ -22,7 +22,6 @@
 #include "Numerics/BlockMatrixFunctions.h"
 #include "Numerics/LibxmlNumericIO.h"
 #include "Utilities/IteratorUtility.h"
-using namespace std;
 #include "Numerics/MatrixOperators.h"
 #include "OhmmsData/AttributeSet.h"
 
@@ -214,7 +213,7 @@ void ThreeBodyBlockSparse::update(ParticleSet& P,
                                   ParticleSet::ParticleLaplacian_t& dL,
                                   int iat)
 {
-  cout << "****  This is to be removed " << endl;
+  std::cout << "****  This is to be removed " << std::endl;
   //dG[iat]+=curGrad-dUk[iat];
   //dL[iat]+=curLap-d2Uk[iat];
   acceptMove(P,iat);
@@ -351,9 +350,9 @@ void ThreeBodyBlockSparse::checkOutVariables(const opt_variables_type& active)
   myVars.getIndex(active);
   GeminalBasis->checkOutVariables(active);
   Optimizable=myVars.is_optimizable();
-  app_log() << "<j3-variables>"<<endl;
+  app_log() << "<j3-variables>"<< std::endl;
   myVars.print(app_log());
-  app_log() << "</j3-variables>"<<endl;
+  app_log() << "</j3-variables>"<< std::endl;
 }
 
 ///reset the value of all the Two-Body Jastrow functions
@@ -384,14 +383,14 @@ void ThreeBodyBlockSparse::resetParameters(const opt_variables_type& active)
   for(int i=0; i<myVars.size(); ++i)
     if(myVars.where(i)>=0)
       myVars[i]=active[myVars.where(i)];
-  //app_log() << "ThreeBodyBlockSparse::resetParameters " << endl << Lambda << endl;
+  //app_log() << "ThreeBodyBlockSparse::resetParameters " << std::endl << Lambda << std::endl;
   //for(int b=0; b<LambdaBlocks.size();++b)
   //{
-  //  app_log() << "3Blody Block " << b << endl << *LambdaBlocks[b] << endl;
+  //  app_log() << "3Blody Block " << b << std::endl << *LambdaBlocks[b] << std::endl;
   //}
 }
 
-void ThreeBodyBlockSparse::reportStatus(ostream& os)
+void ThreeBodyBlockSparse::reportStatus(std::ostream& os)
 {
   myVars.print(os);
 }
@@ -401,8 +400,8 @@ bool ThreeBodyBlockSparse::put(xmlNodePtr cur)
   //BasisSize = GeminalBasis->TotalBasis;
   BasisSize = GeminalBasis->getBasisSetSize();
   app_log() << "  The number of Geminal functions "
-            <<"for Three-body Jastrow " << BasisSize << endl;
-  app_log() << "  The number of particles " << NumPtcls << endl;
+            <<"for Three-body Jastrow " << BasisSize << std::endl;
+  app_log() << "  The number of particles " << NumPtcls << std::endl;
   Lambda.resize(BasisSize,BasisSize);
   FreeLambda.resize(BasisSize,BasisSize);
   FreeLambda=false;
@@ -417,9 +416,9 @@ bool ThreeBodyBlockSparse::put(xmlNodePtr cur)
   {
     //read from an input nodes
     char coeffname[16];
-    string aname("j3");
-    string datatype("lambda");
-    string sameblocks("yes");
+    std::string aname("j3");
+    std::string datatype("lambda");
+    std::string sameblocks("yes");
     IndexOffSet=0;//defaults are c
     OhmmsAttributeSet attrib;
     attrib.add(aname,"id");
@@ -476,7 +475,7 @@ bool ThreeBodyBlockSparse::put(xmlNodePtr cur)
 }
 
 
-void ThreeBodyBlockSparse::setBlocks(const vector<int>& blockspergroup)
+void ThreeBodyBlockSparse::setBlocks(const std::vector<int>& blockspergroup)
 {
   //copyc this
   BlocksPerGroup=blockspergroup;
@@ -490,10 +489,10 @@ void ThreeBodyBlockSparse::setBlocks(const vector<int>& blockspergroup)
   BlockID.resize(Blocks.size(),-1);
   if(LambdaBlocks.empty())
   {
-    vector<int> firstK,lastK;
+    std::vector<int> firstK,lastK;
     if(SameBlocksForGroup)
     {
-      vector<int> need2copy(CenterRef.getSpeciesSet().getTotalNum(),-1);
+      std::vector<int> need2copy(CenterRef.getSpeciesSet().getTotalNum(),-1);
       firstK.resize(need2copy.size(),-1);
       lastK.resize(need2copy.size(),-1);
       LambdaBlocks.resize(need2copy.size(),0);
@@ -545,14 +544,14 @@ void ThreeBodyBlockSparse::setBlocks(const vector<int>& blockspergroup)
       Matrix<RealType>& m(*LambdaBlocks[b]);
       for(int k=first,ib=0; k<last; ++k,++ib)
       {
-        ostringstream sstr;
+        std::ostringstream sstr;
         sstr << ID_Lambda<<"_"<<k<< "_"<<k;
         myVars.insert(sstr.str(),m(ib,ib),true);
       }
       for(int k=first,ib=0; k<last; ++k,++ib)
         for(int kp=k+1,jb=ib+1; kp<last; ++kp,++jb)
         {
-          ostringstream sstr;
+          std::ostringstream sstr;
           sstr << ID_Lambda<<"_"<<k<< "_"<<kp;
           myVars.insert(sstr.str(),m(ib,jb),true);
         }
@@ -560,7 +559,7 @@ void ThreeBodyBlockSparse::setBlocks(const vector<int>& blockspergroup)
   }
   if(SameBlocksForGroup)
     checkLambda();
-  app_log() << "  ThreeBodyBlockSparse handles optimizable variables " << endl;
+  app_log() << "  ThreeBodyBlockSparse handles optimizable variables " << std::endl;
   myVars.print(app_log());
 }
 

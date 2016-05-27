@@ -42,7 +42,7 @@ inline bool get_space(hid_t grp, const std::string& aname, int rank, hsize_t* di
   {
     APP_ABORT(aname + " dataspace does not match ");
   }
-  vector<hsize_t> dims_in(rank);
+  std::vector<hsize_t> dims_in(rank);
   int status_n = H5Sget_simple_extent_dims(dataspace, &dims_in[0], NULL);
   H5Dclose(h1);
   bool thesame=true;
@@ -155,7 +155,7 @@ inline bool h5d_append(hid_t grp, const std::string& aname, hsize_t& current,
                        hsize_t ndims, const hsize_t* dims, const T* first,
                        hsize_t chunk_size=1,hid_t xfer_plist=H5P_DEFAULT)
 {
-  //app_log()<<omp_get_thread_num()<<"  h5d_append  group = "<<grp<<"  name = "<<aname.c_str()<<endl;
+  //app_log()<<omp_get_thread_num()<<"  h5d_append  group = "<<grp<<"  name = "<<aname.c_str()<< std::endl;
   if(grp<0)
     return true;
   hid_t h5d_type_id=get_h5_datatype(*first);
@@ -193,21 +193,21 @@ inline bool h5d_append(hid_t grp, const std::string& aname, hsize_t& current,
     // update the "file pointer"
     current = dims[0];
 
-    //app_log()<<"  creating dataset"<<endl;
-    //if(dataspace<0) app_log()<<"    dataspace could not be created"<<endl;
-    //else            app_log()<<"    dataspace creation successful"<<endl;
-    //if(p<0)         app_log()<<"    property list could not be created"<<endl;
-    //else            app_log()<<"    property list creation successful"<<endl;
-    //if(sl<0)        app_log()<<"    layout could not be set"<<endl;
-    //else            app_log()<<"    layout set successfully"<<endl;
-    //if(cs<0)        app_log()<<"    chunk size could not be set"<<endl;
-    //else            app_log()<<"    chunk size set successfully"<<endl;
-    //if(dataset<0)   app_log()<<"    dataset could not be created"<<endl;
-    //else            app_log()<<"    dataset creation successful"<<endl;
-    //if(memspace<0)  app_log()<<"    memspace could not be created"<<endl;
-    //else            app_log()<<"    memspace creation successful"<<endl;
-    //if(ret<0)       app_log()<<"    data could not be written"<<endl;
-    //else            app_log()<<"    data write successful"<<endl;
+    //app_log()<<"  creating dataset"<< std::endl;
+    //if(dataspace<0) app_log()<<"    dataspace could not be created"<< std::endl;
+    //else            app_log()<<"    dataspace creation successful"<< std::endl;
+    //if(p<0)         app_log()<<"    property list could not be created"<< std::endl;
+    //else            app_log()<<"    property list creation successful"<< std::endl;
+    //if(sl<0)        app_log()<<"    layout could not be set"<< std::endl;
+    //else            app_log()<<"    layout set successfully"<< std::endl;
+    //if(cs<0)        app_log()<<"    chunk size could not be set"<< std::endl;
+    //else            app_log()<<"    chunk size set successfully"<< std::endl;
+    //if(dataset<0)   app_log()<<"    dataset could not be created"<< std::endl;
+    //else            app_log()<<"    dataset creation successful"<< std::endl;
+    //if(memspace<0)  app_log()<<"    memspace could not be created"<< std::endl;
+    //else            app_log()<<"    memspace creation successful"<< std::endl;
+    //if(ret<0)       app_log()<<"    data could not be written"<< std::endl;
+    //else            app_log()<<"    data write successful"<< std::endl;
     //H5Eprint(NULL);
 
     // close the property list
@@ -240,24 +240,24 @@ inline bool h5d_append(hid_t grp, const std::string& aname, hsize_t& current,
     // update the "file pointer"
     current = end[0];
 
-    //app_log()<<"  appending to dataset"<<endl;
-    //app_log()<<"      ndims = "<<ndims<<endl;
-    //app_log()<<"      dims  = "<<dims[0]<<" "<<dims[1]<<endl;
-    //app_log()<<"      start = "<<start[0]<<" "<<start[1]<<endl;
-    //app_log()<<"      end   = "<<end[0]<<" "<<end[1]<<endl;
-    //app_log()<<"      current = "<<current<<" "<<&current<<endl;
-    //if(hse<0)       app_log()<<"    set_extent failed"<<endl;
-    //else            app_log()<<"    set_extent successful"<<endl;
-    //if(hsh<0)       app_log()<<"    select_hyperslab failed"<<endl;
-    //else            app_log()<<"    select_hyperslab successful"<<endl;
-    //if(he<0)        app_log()<<"    extend failed"<<endl;
-    //else            app_log()<<"    extend successful"<<endl;
-    //if(dataspace<0) app_log()<<"    dataspace could not be gotten"<<endl;
-    //else            app_log()<<"    dataspace get successful"<<endl;
-    //if(memspace<0)  app_log()<<"    memspace could not be created"<<endl;
-    //else            app_log()<<"    memspace creation successful"<<endl;
-    //if(ret<0)       app_log()<<"    data could not be written"<<endl;
-    //else            app_log()<<"    data write successful"<<endl;
+    //app_log()<<"  appending to dataset"<< std::endl;
+    //app_log()<<"      ndims = "<<ndims<< std::endl;
+    //app_log()<<"      dims  = "<<dims[0]<<" "<<dims[1]<< std::endl;
+    //app_log()<<"      start = "<<start[0]<<" "<<start[1]<< std::endl;
+    //app_log()<<"      end   = "<<end[0]<<" "<<end[1]<< std::endl;
+    //app_log()<<"      current = "<<current<<" "<<&current<< std::endl;
+    //if(hse<0)       app_log()<<"    set_extent failed"<< std::endl;
+    //else            app_log()<<"    set_extent successful"<< std::endl;
+    //if(hsh<0)       app_log()<<"    select_hyperslab failed"<< std::endl;
+    //else            app_log()<<"    select_hyperslab successful"<< std::endl;
+    //if(he<0)        app_log()<<"    extend failed"<< std::endl;
+    //else            app_log()<<"    extend successful"<< std::endl;
+    //if(dataspace<0) app_log()<<"    dataspace could not be gotten"<< std::endl;
+    //else            app_log()<<"    dataspace get successful"<< std::endl;
+    //if(memspace<0)  app_log()<<"    memspace could not be created"<< std::endl;
+    //else            app_log()<<"    memspace creation successful"<< std::endl;
+    //if(ret<0)       app_log()<<"    data could not be written"<< std::endl;
+    //else            app_log()<<"    data write successful"<< std::endl;
     //H5Eprint(NULL);
   }
   // cleanup

@@ -25,11 +25,11 @@ class QMCHamiltonian;
 
 struct TrialDMCCorrection: public QMCHamiltonianBase
 {
-  vector<int> Hindices;
-  vector<int> Pindices;
-  vector<vector<int> > walkerLengths;
-  vector<double> Values,EValues,FWValues;
-  vector<string> Names;
+  std::vector<int> Hindices;
+  std::vector<int> Pindices;
+  std::vector<std::vector<int> > walkerLengths;
+  std::vector<double> Values,EValues,FWValues;
+  std::vector<std::string> Names;
   int resum,CountIndex,nObservables,nValues,FirstHamiltonian;
 
   double count;
@@ -64,12 +64,12 @@ struct TrialDMCCorrection: public QMCHamiltonianBase
 
   inline void calculate(ParticleSet& P)
   {
-    vector<double>::iterator Vit=Values.begin();
-    vector<double>::iterator Vit2=EValues.begin();
-    vector<double>::iterator Vit3=FWValues.begin();
+    std::vector<double>::iterator Vit=Values.begin();
+    std::vector<double>::iterator Vit2=EValues.begin();
+    std::vector<double>::iterator Vit3=FWValues.begin();
     Return_t LocEn = tWalker->Properties(LOCALENERGY);
-    vector<vector<Return_t> >& restrict walkerProps = (tWalker->PropertyHistory);
-    vector<int>& restrict walkerPHindex = tWalker->PHindex;
+    std::vector<std::vector<Return_t> >& restrict walkerProps = (tWalker->PropertyHistory);
+    std::vector<int>& restrict walkerPHindex = tWalker->PHindex;
     if (walkerProps[CountIndex][0] >= resum)
     {
       walkerProps[CountIndex][0]=0;
@@ -152,12 +152,12 @@ struct TrialDMCCorrection: public QMCHamiltonianBase
         //           }
         //           //             app_log()<<"  "<<tWalker->PropertyHistory[Pindices[i]][walkerLengths[i][j]-1];
         //         }
-        //    app_log()<<endl;
+        //    app_log()<< std::endl;
       }
     }
-    std::copy(Values.begin(),Values.end(),tWalker->getPropertyBase()+FirstHamiltonian+myIndex);
-    std::copy(EValues.begin(),EValues.end(),tWalker->getPropertyBase()+FirstHamiltonian+myIndex+nValues);
-    std::copy(FWValues.begin(),FWValues.end(),tWalker->getPropertyBase()+FirstHamiltonian+myIndex+nValues+nValues);
+    copy(Values.begin(),Values.end(),tWalker->getPropertyBase()+FirstHamiltonian+myIndex);
+    copy(EValues.begin(),EValues.end(),tWalker->getPropertyBase()+FirstHamiltonian+myIndex+nValues);
+    copy(FWValues.begin(),FWValues.end(),tWalker->getPropertyBase()+FirstHamiltonian+myIndex+nValues+nValues);
   }
 
   inline Return_t evaluate(ParticleSet& P)
@@ -170,7 +170,7 @@ struct TrialDMCCorrection: public QMCHamiltonianBase
     return 0.0;
   }
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
@@ -195,18 +195,18 @@ struct TrialDMCCorrection: public QMCHamiltonianBase
 
   void setObservables(PropertySetType& plist)
   {
-    std::copy(Values.begin(),Values.end(),plist.begin()+myIndex);
-    std::copy(EValues.begin(),EValues.end(),plist.begin()+myIndex+nValues);
-    std::copy(FWValues.begin(),FWValues.end(),plist.begin()+myIndex+nValues+nValues);
+    copy(Values.begin(),Values.end(),plist.begin()+myIndex);
+    copy(EValues.begin(),EValues.end(),plist.begin()+myIndex+nValues);
+    copy(FWValues.begin(),FWValues.end(),plist.begin()+myIndex+nValues+nValues);
     //for (int i=0;i<nValues;i++) plist[myIndex+ i]=Values[i];
     //for (int i=0;i<nValues;i++) plist[myIndex+i+nValues]=EValues[i];
   }
 
   void setParticlePropertyList(PropertySetType& plist, int offset)
   {
-    std::copy(Values.begin(),Values.end(),plist.begin()+myIndex+offset);
-    std::copy(EValues.begin(),EValues.end(),plist.begin()+myIndex+nValues+offset);
-    std::copy(FWValues.begin(),FWValues.end(),plist.begin()+myIndex+nValues+nValues+offset);
+    copy(Values.begin(),Values.end(),plist.begin()+myIndex+offset);
+    copy(EValues.begin(),EValues.end(),plist.begin()+myIndex+nValues+offset);
+    copy(FWValues.begin(),FWValues.end(),plist.begin()+myIndex+nValues+nValues+offset);
     //for (int i=0;i<nValues;i++) plist[myIndex+i+offset]=Values[i];
     //for (int i=0;i<nValues;i++) plist[myIndex+i+offset+nValues]=EValues[i];
   }

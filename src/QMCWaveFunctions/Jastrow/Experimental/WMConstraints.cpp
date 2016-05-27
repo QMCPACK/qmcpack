@@ -45,7 +45,7 @@ void WMConstraints::apply()
 
 void WMConstraints::addOptimizables(VarRegistry<RealType>& outVars)
 {
-  map<string,BasisSetType*>::iterator it(myBasisSet.begin()),it_end(myBasisSet.end());
+  std::map<std::string,BasisSetType*>::iterator it(myBasisSet.begin()),it_end(myBasisSet.end());
   while(it != it_end)
   {
     BasisSetType& basis(*((*it).second));
@@ -63,21 +63,21 @@ void WMConstraints::addOptimizables(VarRegistry<RealType>& outVars)
 
 void WMConstraints::addBasisGroup(xmlNodePtr cur)
 {
-  string sourceOpt("e");
-  string elementType("e");
+  std::string sourceOpt("e");
+  std::string elementType("e");
   OhmmsAttributeSet aAttrib;
   aAttrib.add(sourceOpt,"source");
   aAttrib.add(elementType,"elementType");
   aAttrib.put(cur);
   RealType rcut(myGrid->rmax());
-  map<string,BasisSetType*>::iterator it(myBasisSet.find(elementType));
+  std::map<std::string,BasisSetType*>::iterator it(myBasisSet.find(elementType));
   if(it == myBasisSet.end())
   {
     BasisSetType* newBasis=new BasisSetType;
     cur=cur->children;
     while(cur != NULL)
     {
-      string cname((const char*)(cur->name));
+      std::string cname((const char*)(cur->name));
       if(cname == "parameter")
       {
         //BasisType* a=new BasisType(1.0,rcut);
@@ -100,7 +100,7 @@ OrbitalBase* WMConstraints::createTwoBody(ParticleSet& target)
   xmlNodePtr cur=myNode->children;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == "basisGroup")
     {
       addBasisGroup(cur);
@@ -108,21 +108,21 @@ OrbitalBase* WMConstraints::createTwoBody(ParticleSet& target)
     else
       if(cname =="correlation")
       {
-        string speciesA(target.getName());
-        string speciesB(target.getName());
+        std::string speciesA(target.getName());
+        std::string speciesB(target.getName());
         OhmmsAttributeSet aAttrib;
         aAttrib.add(speciesA,"speciesA");
         aAttrib.add(speciesB,"speciesB");
         aAttrib.put(cur);
         if(speciesA==speciesB)
         {
-          map<string,BasisSetType*>::iterator it(myBasisSet.find(speciesA));
+          std::map<std::string,BasisSetType*>::iterator it(myBasisSet.find(speciesA));
           if(it == myBasisSet.end())
           {
-            app_error() <<  "  WMBasisSet for " << speciesA << " does not exist." << endl;
+            app_error() <<  "  WMBasisSet for " << speciesA << " does not exist." << std::endl;
             continue;
           }
-          app_log() << "    Creating a correlation function = " << speciesA << "-" << speciesB << endl;
+          app_log() << "    Creating a correlation function = " << speciesA << "-" << speciesB << std::endl;
           infunc = createCorrelation(cur,(*it).second);
         }
       }
@@ -157,7 +157,7 @@ OrbitalBase* WMConstraints::createTwoBody(ParticleSet& target)
 #if !defined(HAVE_MPI)
   if(PrintTables)
   {
-    ofstream fout("Jee.dat");
+    std::ofstream fout("Jee.dat");
     nfunc->print(fout);
   }
 #endif
@@ -169,13 +169,13 @@ OrbitalBase* WMConstraints::createTwoBody(ParticleSet& target)
 
 OrbitalBase* WMConstraints::createOneBody(ParticleSet& target, ParticleSet& source)
 {
-  vector<InFuncType*> jnSet;
+  std::vector<InFuncType*> jnSet;
   jnSet.resize(source.getSpeciesSet().getTotalNum(),0);
   xmlNodePtr cur=myNode->children;
   bool noOneBody=true;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == "basisGroup")
     {
       addBasisGroup(cur);
@@ -183,21 +183,21 @@ OrbitalBase* WMConstraints::createOneBody(ParticleSet& target, ParticleSet& sour
     else
       if(cname =="correlation")
       {
-        string speciesA("e");
-        string speciesB("e");
+        std::string speciesA("e");
+        std::string speciesB("e");
         OhmmsAttributeSet aAttrib;
         aAttrib.add(speciesA,"speciesA");
         aAttrib.add(speciesB,"speciesB");
         aAttrib.put(cur);
         if(speciesA != speciesB)
         {
-          map<string,BasisSetType*>::iterator it(myBasisSet.find(speciesA));
+          std::map<std::string,BasisSetType*>::iterator it(myBasisSet.find(speciesA));
           if(it == myBasisSet.end())
           {
-            app_error() <<  "  WMBasisSet for " << speciesA << " does not exist." << endl;
+            app_error() <<  "  WMBasisSet for " << speciesA << " does not exist." << std::endl;
             continue;
           }
-          app_log() << "    Creating a correlation function = " << speciesA << "-" << speciesB << endl;
+          app_log() << "    Creating a correlation function = " << speciesA << "-" << speciesB << std::endl;
           int gid=source.getSpeciesSet().addSpecies(speciesA);
           jnSet[gid] = createCorrelation(cur,(*it).second);
           noOneBody=false;
@@ -230,11 +230,11 @@ WMConstraints::createCorrelation(xmlNodePtr cur,BasisSetType* basis)
   cur=cur->children;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == "parameter")
     {
-      string id("0");
-      string ref("0");
+      std::string id("0");
+      std::string ref("0");
       RealType c=1.0;
       OhmmsAttributeSet aAttrib;
       aAttrib.add(id,"id");
@@ -256,7 +256,7 @@ WMConstraints::createCorrelation(xmlNodePtr cur,BasisSetType* basis)
 }
 
 WMConstraints::InFuncType*
-WMConstraints::createDefaultTwoBody(xmlNodePtr cur, const string& tname)
+WMConstraints::createDefaultTwoBody(xmlNodePtr cur, const std::string& tname)
 {
   xmlNodePtr basisNode = xmlNewNode(NULL,(const xmlChar*)"basisGroup");
   xmlNewProp(basisNode,(const xmlChar*)"source",(const xmlChar*)tname.c_str());
@@ -290,7 +290,7 @@ WMConstraints::createDefaultTwoBody(xmlNodePtr cur, const string& tname)
   xmlNewProp(c3,(const xmlChar*)"id",(const xmlChar*)"eeC3");
   xmlNewProp(c3,(const xmlChar*)"name",(const xmlChar*)"C");
   xmlAddChild(cur,corrNode);
-  map<string,BasisSetType*>::iterator it(myBasisSet.find("e"));
+  std::map<std::string,BasisSetType*>::iterator it(myBasisSet.find("e"));
   return createCorrelation(corrNode,(*it).second);
 }
 }

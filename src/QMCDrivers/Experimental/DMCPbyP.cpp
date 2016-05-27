@@ -65,7 +65,7 @@ bool DMCPbyP::run()
   {
     if(NonLocalMove == "yes")
     {
-      app_log() << "  Non-local update is used." << endl;
+      app_log() << "  Non-local update is used." << std::endl;
       DMCNonLocalUpdatePbyP* nlocMover= new DMCNonLocalUpdatePbyP(W,Psi,H,Random);
       nlocMover->put(qmcNode);
       Mover=nlocMover;
@@ -75,12 +75,12 @@ bool DMCPbyP::run()
     {
       if(killNC)
       {
-        app_log() << "  Kill a walker, if a node crossing is detected." << endl;
+        app_log() << "  Kill a walker, if a node crossing is detected." << std::endl;
         Mover = new DMCUpdatePbyPWithKill(W,Psi,H,Random);
       }
       else
       {
-        app_log() << "  Reject a move when the node crossing is detected." << endl;
+        app_log() << "  Reject a move when the node crossing is detected." << std::endl;
         Mover = new DMCUpdatePbyPWithRejection(W,Psi,H,Random);
       }
     }
@@ -99,18 +99,18 @@ bool DMCPbyP::run()
       BranchInterval=nSteps;
       nSteps=1;
     }
-    app_log() << "  DMC PbyP update with reconfigurations" << endl;
+    app_log() << "  DMC PbyP update with reconfigurations" << std::endl;
   }
   else
   {
     Mover->MaxAge=1;
     if(BranchInterval<0)
       BranchInterval=1;
-    app_log() << "  DMC PbyP update with a fluctuating population" << endl;
+    app_log() << "  DMC PbyP update with a fluctuating population" << std::endl;
   }
-  app_log() << "    BranchInterval=" << BranchInterval << endl;
-  app_log() << "    Steps         =" << nSteps << endl;
-  app_log() << "    Blocks        =" << nBlocks << endl;
+  app_log() << "    BranchInterval=" << BranchInterval << std::endl;
+  app_log() << "    Steps         =" << nSteps << std::endl;
+  app_log() << "    Blocks        =" << nBlocks << std::endl;
   nAcceptTot = 0;
   nRejectTot = 0;
   return dmcWithBranching();

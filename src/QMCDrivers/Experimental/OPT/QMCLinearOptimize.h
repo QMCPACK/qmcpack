@@ -57,13 +57,13 @@ public:
   virtual bool put(xmlNodePtr cur);
   void resetComponents(xmlNodePtr cur);
   ///add a configuration file to the list of files
-  void addConfiguration(const string& a);
+  void addConfiguration(const std::string& a);
   void setWaveFunctionNode(xmlNodePtr cur)
   {
     wfNode=cur;
   }
 
-  vector<RealType> optdir, optparm;
+  std::vector<RealType> optdir, optparm;
   ///index to denote the partition id
   int PartID;
   ///total number of partitions that will share a set of configuratons
@@ -87,7 +87,7 @@ public:
   ///xml node for optimizer
   xmlNodePtr optNode;
   ///list of files storing configurations
-  vector<string> ConfigFile;
+  std::vector<std::string> ConfigFile;
 
   RealType param_tol;
 
@@ -100,7 +100,7 @@ public:
       return false;
   }
 
-  bool fitMappedStabilizers(vector<std::pair<RealType,RealType> >& mappedStabilizers, RealType& XS, RealType& val, RealType tooBig );
+  bool fitMappedStabilizers(std::vector<std::pair<RealType,RealType> >& mappedStabilizers, RealType& XS, RealType& val, RealType tooBig );
 
   inline int CubicFormula (double a, double b, double c, double d,
                            double &x1, double &x2, double &x3)
@@ -133,7 +133,7 @@ public:
     }
   }
 
-  inline RealType QuarticMinimum (vector<RealType> &coefs)
+  inline RealType QuarticMinimum (std::vector<RealType> &coefs)
   {
     double a, b, c, d;
     a = 4.0*coefs[4];
@@ -167,17 +167,17 @@ public:
   ///common operation to finish optimization, used by the derived classes
   void finish();
   //asymmetric generalized EV
-  RealType getLowestEigenvector(Matrix<RealType>& A, Matrix<RealType>& B, vector<RealType>& ev);
+  RealType getLowestEigenvector(Matrix<RealType>& A, Matrix<RealType>& B, std::vector<RealType>& ev);
   //asymmetric EV
-  RealType getLowestEigenvector(Matrix<RealType>& A, vector<RealType>& ev);
-  RealType getSplitEigenvectors(int first, int last, Matrix<RealType>& FullLeft, Matrix<RealType>& FullRight, vector<RealType>& FullEV, vector<RealType>& LocalEV, string CSF_Option, bool& CSF_scaled);
+  RealType getLowestEigenvector(Matrix<RealType>& A, std::vector<RealType>& ev);
+  RealType getSplitEigenvectors(int first, int last, Matrix<RealType>& FullLeft, Matrix<RealType>& FullRight, std::vector<RealType>& FullEV, std::vector<RealType>& LocalEV, std::string CSF_Option, bool& CSF_scaled);
   void getNonLinearRange(int& first, int& last);
   void orthoScale(std::vector<RealType>& dP, Matrix<RealType>& S);
-  bool nonLinearRescale( vector<RealType>& dP, Matrix<RealType>& S);
-  RealType getNonLinearRescale( vector<RealType>& dP, Matrix<RealType>& S);
+  bool nonLinearRescale( std::vector<RealType>& dP, Matrix<RealType>& S);
+  RealType getNonLinearRescale( std::vector<RealType>& dP, Matrix<RealType>& S);
   void generateSamples();
-  void add_timers(vector<NewTimer*>& timers);
-  vector<NewTimer*> myTimers;
+  void add_timers(std::vector<NewTimer*>& timers);
+  std::vector<NewTimer*> myTimers;
   Timer t1;
 };
 }

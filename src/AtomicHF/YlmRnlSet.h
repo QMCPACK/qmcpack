@@ -100,7 +100,7 @@ struct YlmRnlSet
   typedef T                                        value_type;
   typedef OneDimGridBase<value_type>               RadialGrid_t;
   typedef OneDimCubicSpline<value_type,value_type> RadialOrbital_t;
-  typedef vector<RadialOrbital_t>                  RadialOrbitalSet_t;
+  typedef std::vector<RadialOrbital_t>                  RadialOrbitalSet_t;
 
   typedef TinyVector<int,2> NLIndex;
   typedef TinyVector<int,3> NLMIndex;
@@ -174,7 +174,7 @@ struct YlmRnlSet
   }
 
   ///restriction type;
-  string Restriction;
+  std::string Restriction;
 
   ///number of orbitals
   int NumOrb;
@@ -190,21 +190,21 @@ struct YlmRnlSet
    * The i-th orbital is represented by (N[i],L[i],M[i],S[i])
    *@{n = Principal quantum number
    */
-  vector<int> N;
+  std::vector<int> N;
 
   /*@ l = angular momentum */
-  vector<int> L;
+  std::vector<int> L;
 
   /*@ M = z-angular momentum */
-  vector<int> M;
+  std::vector<int> M;
 
   /*@ S = spin in unit of 1/2 */
-  vector<int> S;
+  std::vector<int> S;
 
   /**@}*///end of group QuantumNumber
 
   ///coefficient for each orbtial (1 if occupied, 0 if not)
-  vector<value_type> Occ;
+  std::vector<value_type> Occ;
 
   ///parameter for calculating orbital cusp conditions
   value_type CuspParam;
@@ -220,12 +220,12 @@ struct YlmRnlSet
   NLMS_Map_t OccNo;
 
   ///assign an id for each orbital
-  vector<int> ID;
+  std::vector<int> ID;
   ///keeps track of the number of orbitals with the same id
-  vector<int> IDcount;
-  // vector<int> IDmap;
+  std::vector<int> IDcount;
+  // std::vector<int> IDmap;
   ///the radial grid orbitals
-  vector<RadialOrbital_t> psi;
+  std::vector<RadialOrbital_t> psi;
 
   bool put(xmlNodePtr cur);
   bool get(std::ostream& os);

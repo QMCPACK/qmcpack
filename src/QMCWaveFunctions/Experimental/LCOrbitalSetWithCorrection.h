@@ -172,9 +172,9 @@ public:
     for(int i=0, iat=first; iat<last; i++,iat++)
     {
       myBasisSet->evaluateForWalkerMove(P,iat);
-      std::copy(myBasisSet->Phi.data(),myBasisSet->Phi.data()+OrbitalSetSize,logdet[i]);
-      std::copy(myBasisSet->dPhi.data(),myBasisSet->dPhi.data()+OrbitalSetSize,dlogdet[i]);
-      std::copy(myBasisSet->d2Phi.data(),myBasisSet->d2Phi.data()+OrbitalSetSize,d2logdet[i]);
+      copy(myBasisSet->Phi.data(),myBasisSet->Phi.data()+OrbitalSetSize,logdet[i]);
+      copy(myBasisSet->dPhi.data(),myBasisSet->dPhi.data()+OrbitalSetSize,dlogdet[i]);
+      copy(myBasisSet->d2Phi.data(),myBasisSet->d2Phi.data()+OrbitalSetSize,d2logdet[i]);
     }
   }
 
@@ -230,7 +230,7 @@ public:
   ///pointer to the basis set of corrected s functions
   CorrectingOrbitalBasisSet<COT>* corrBasisSet;
   /// vector that defines whether a center is corrected
-  vector<bool> corrCenter;
+  std::vector<bool> corrCenter;
 
   ///target ParticleSet
   ParticleSet* targetPtcl;
@@ -248,18 +248,18 @@ public:
    * @param bs pointer to the BasisSet
    * @param id identifier of thisLCOrbitalSetWithCorrection
    */
-  LCOrbitalSetWithCorrection(BS* bs=0, ParticleSet* els=0, ParticleSet* ions=0, int rl=0, double rc=-1.0, string cusp_info="", string algorithm=""): myBasisSet(0),corrBasisSet(0),targetPtcl(els),sourcePtcl(ions),ReportLevel(rl),Rcut(rc),cuspInfoFile(cusp_info)
+  LCOrbitalSetWithCorrection(BS* bs=0, ParticleSet* els=0, ParticleSet* ions=0, int rl=0, double rc=-1.0, std::string cusp_info="", std::string algorithm=""): myBasisSet(0),corrBasisSet(0),targetPtcl(els),sourcePtcl(ions),ReportLevel(rl),Rcut(rc),cuspInfoFile(cusp_info)
   {
     if(algorithm=="legacy_gemv")
     {
       Algo=0;
       /// input sample: <coefficient size="57" id="updetC" algorithm="legacy_gemv">
-      app_log() << "SPO coefficients are applied using the legacy algorithm" << endl;
+      app_log() << "SPO coefficients are applied using the legacy algorithm" << std::endl;
     }
     else
     {
       Algo=1;
-      app_log() << "SPO coefficients are applied by a single dgemm (BLAS3)" << endl;
+      app_log() << "SPO coefficients are applied by a single dgemm (BLAS3)" << std::endl;
     }
 // call APP_ABORT if els==0, ions==0
     if(bs)
@@ -690,11 +690,11 @@ public:
 
 private:
 
-  BS* extractHighYLM(vector<bool> &rmv);
+  BS* extractHighYLM(std::vector<bool> &rmv);
   LCOrbitalSet<BS,false>* originalSPOSet;
   double Rcut;
-  vector<double> Z;
-  string cuspInfoFile;
+  std::vector<double> Z;
+  std::string cuspInfoFile;
 
   void createLCOSets(int centr, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta);
 

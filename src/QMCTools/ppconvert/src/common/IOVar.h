@@ -33,7 +33,7 @@ namespace IO {
       return newVar->VarRead(val);
     }
     else {
-      cerr << "Error:  unknown type in IOVarBase::Read().\n";
+      std::cerr << "Error:  unknown type in IOVarBase::Read().\n";
       abort();
     }
   }
@@ -59,7 +59,7 @@ namespace IO {
       return true;
     }
     else {
-      cerr << "Error:  unknown type in IOVarBase::Read().\n";
+      std::cerr << "Error:  unknown type in IOVarBase::Read().\n";
       abort();
     }
   }
@@ -76,7 +76,7 @@ namespace IO {
       return newVar->VarRead(val);
     }
     else {
-      cerr << "Error:  unknown type in IOVarBase::Read().\n";
+      std::cerr << "Error:  unknown type in IOVarBase::Read().\n";
       abort();
     }
   }	

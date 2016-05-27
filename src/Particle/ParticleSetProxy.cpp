@@ -20,7 +20,7 @@ namespace qmcplusplus
 //    D2OnSphere(const DistanceTableData& dt):DistTableOnSphere(dt)
 //    {}
 //
-//    inline void makeMoves(int iel, const DistanceTableData& dt, const vector<PosType>& displs)
+//    inline void makeMoves(int iel, const DistanceTableData& dt, const std::vector<PosType>& displs)
 //    {
 //      const int nS=dt.N[SourceIndex];
 //      const int nK=r_m.cols();
@@ -44,7 +44,7 @@ namespace qmcplusplus
 //    D1OnSphere(const DistanceTableData& dt):DistTableOnSphere(dt)
 //    {}
 //
-//    inline void makeMoves(int iel, const DistanceTableData& dt, const vector<PosType>& displs)
+//    inline void makeMoves(int iel, const DistanceTableData& dt, const std::vector<PosType>& displs)
 //    {
 //      const int nC=dt.N[SourceIndex];
 //      const int nV=dt.N[VisitorIndex];
@@ -72,7 +72,7 @@ struct D2OnSphere: public DistTableOnSphere
     :DistTableOnSphere(dt), myBconds(P.Lattice)
   {}
 
-  inline void makeMoves(int iel, const DistanceTableData& dt, const vector<PosType>& displs)
+  inline void makeMoves(int iel, const DistanceTableData& dt, const std::vector<PosType>& displs)
   {
     const int nS=dt.N[SourceIndex];
     const int nK=r_m.cols();
@@ -97,7 +97,7 @@ struct D1OnSphere: public DistTableOnSphere
     :DistTableOnSphere(dt), myBconds(P.Lattice)
   {}
 
-  inline void makeMoves(int iel, const DistanceTableData& dt, const vector<PosType>& displs)
+  inline void makeMoves(int iel, const DistanceTableData& dt, const std::vector<PosType>& displs)
   {
     const int nC=dt.N[SourceIndex];
     const int nV=dt.N[VisitorIndex];

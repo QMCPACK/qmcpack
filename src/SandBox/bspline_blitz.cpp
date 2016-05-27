@@ -10,7 +10,6 @@
 #include "SandBox/TestFunc.h"
 #include "SandBox/TricubicBspline.h"
 
-using namespace std;
 
 int main(int argc, char** argv)
 {
@@ -84,9 +83,9 @@ int main(int argc, char** argv)
     grad0=infunc.df(pos);
     lap0=infunc.d2f(x0,y0,z);
     fout << z << std::setw(20) << val0 << std::setw(20) << val <<std::setw(20) <<  (val-val0) <<  std::endl;
-    dfout << z << std::setw(20) << grad0[0] << setw(20) << grad0[1] << setw(20) << grad0[2]
-          << setw(20) << grad[0] << setw(20) << grad[1] << setw(20) << grad[2]
-          << setw(20) << grad[0]-grad0[0] <<  setw(20) << grad[1]-grad0[1]  << setw(20) << grad[2]-grad0[2]  <<std::endl;
+    dfout << z << std::setw(20) << grad0[0] << std::setw(20) << grad0[1] << std::setw(20) << grad0[2]
+          << std::setw(20) << grad[0] << std::setw(20) << grad[1] << std::setw(20) << grad[2]
+          << std::setw(20) << grad[0]-grad0[0] <<  std::setw(20) << grad[1]-grad0[1]  << std::setw(20) << grad[2]-grad0[2]  <<std::endl;
     d2fout << z << std::setw(20) << lap0 <<std::setw(20) <<  lap << std::setw(20) << (lap-lap0) << std::endl;
     z+=dz;
   }

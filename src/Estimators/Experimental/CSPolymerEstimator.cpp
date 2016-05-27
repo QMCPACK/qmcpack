@@ -120,7 +120,7 @@ CSPolymerEstimator::accumulate(const MCWalkerConfiguration& W
   //    d_data[ii++]+=uw[i]*e[i]-uw[j]*e[j];
 }
 
-void CSPolymerEstimator::registerObservables(vector<observable_helper*>& h5dec, hid_t gid)
+void CSPolymerEstimator::registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid)
 {
   //IMPLEMENT for hdf5
 }

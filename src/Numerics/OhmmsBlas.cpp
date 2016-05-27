@@ -34,10 +34,10 @@ const float  BLAS::sone = 1.0e0;
 const float  BLAS::szero = 0.0e0;
 const double BLAS::done = 1.0e0;
 const double BLAS::dzero = 0.0e0;
-const complex<float> BLAS::cone = 1.0e0;
-const complex<float> BLAS::czero = 0.0e0;
-const complex<double> BLAS::zone = 1.0e0;
-const complex<double> BLAS::zzero = 0.0e0;
+const std::complex<float> BLAS::cone = 1.0e0;
+const std::complex<float> BLAS::czero = 0.0e0;
+const std::complex<double> BLAS::zone = 1.0e0;
+const std::complex<double> BLAS::zzero = 0.0e0;
 
 /***************************************************************************
  * $RCSfile$   $Author$

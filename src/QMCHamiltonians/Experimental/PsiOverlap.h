@@ -28,7 +28,7 @@ namespace qmcplusplus
 
 struct PsiOverlapValue: public QMCHamiltonianBase
 {
-  typedef map<string,ParticleSet*> PtclPoolType;
+  typedef std::map<std::string,ParticleSet*> PtclPoolType;
 
   TrialWaveFunction* trialPsi;
   int Power;
@@ -50,14 +50,14 @@ struct PsiOverlapValue: public QMCHamiltonianBase
   evaluate(ParticleSet& P)
   {
     RealType logValue = trialPsi->evaluateLogOnly(P);
-//       app_log()<<tWalker->Properties(LOGPSI)<<"  "<<logValue<<endl;
-//       app_log()<<tWalker->R[0]<<"  "<<P.R[0]<<endl;
+//       app_log()<<tWalker->Properties(LOGPSI)<<"  "<<logValue<< std::endl;
+//       app_log()<<tWalker->R[0]<<"  "<<P.R[0]<< std::endl;
     Value = std::exp(Power*(logValue-tWalker->Properties(LOGPSI)));
     return Value;
   }
 
   inline Return_t
-  evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
@@ -104,9 +104,9 @@ struct PsiOverlapValue: public QMCHamiltonianBase
 
   bool put(xmlNodePtr cur,ParticleSet* qp, PtclPoolType& pset, Communicate* c )
   {
-    app_log()<<"PsiOverlap is being added with Power="<<Power<<endl;
+    app_log()<<"PsiOverlap is being added with Power="<<Power<< std::endl;
     xmlNodePtr tcur = cur->children;
-//       app_log()<<"PUTTING LOGPSI "<<((const char*)(tcur->name))<<endl;
+//       app_log()<<"PUTTING LOGPSI "<<((const char*)(tcur->name))<< std::endl;
     WaveFunctionFactory* WFF = new WaveFunctionFactory(qp,pset,c);
     WFF->setReportLevel(0);
     WFF->setName("HamPsiVal");

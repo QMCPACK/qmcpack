@@ -22,9 +22,9 @@ private:
   //The PlaneWave data - keep all of these strictly private to prevent inconsistencies.
   RealType ecut;
   TinyVector<RealType,3> twist,twist_cart; //Twist angle in reduced and Cartesian.
-  vector<RealType> modkplusg;
-  vector<TinyVector<int,3> > gvecs; //Reduced coordinates
-  vector<TinyVector<RealType,3> > kplusgvecs_cart; //Cartesian.
+  std::vector<RealType> modkplusg;
+  std::vector<TinyVector<int,3> > gvecs; //Reduced coordinates
+  std::vector<TinyVector<RealType,3> > kplusgvecs_cart; //Cartesian.
   //Need to store the maximum translation in each dimension to use recursive PW generation.
   TinyVector<int,3> maxg;
   int maxmaxg;
@@ -44,7 +44,7 @@ private:
   //of others, giving a zero determinant. For this, we build a vector (negative) which
   //stores whether a vector is "+" or "-" (with some criterion, to be defined). We
   //the switch from cos() to sin() based on the value of this input.
-  vector<int> negative;
+  std::vector<int> negative;
 #endif
 public:
   /* inputmap is used for a memory efficient way of
@@ -61,7 +61,7 @@ public:
   ** basis is spherically ordered. However, when a twist-angle is used, the "sphere"
   ** of allowed planewaves is shifted.
   */
-  vector<int> inputmap;
+  std::vector<int> inputmap;
 
   ///total number of basis functions
   int NumPlaneWaves;
@@ -117,8 +117,8 @@ public:
     for(int ig=0; ig<NumPlaneWaves; ig++)
       for(int i=0; i<3; i++)
         if(abs(gvecs[ig][i]) > maxg[i])
-          maxg[i] = abs(gvecs[ig][i]);
-    maxmaxg = max(maxg[0],max(maxg[1],maxg[2]));
+          maxg[i] = std::abs(gvecs[ig][i]);
+    maxmaxg = std::max(maxg[0],max(maxg[1],maxg[2]));
     LOGMSG("\n\tBasisset energy cutoff = " << ecut);
     LOGMSG("\tNumber of planewaves = " << NumPlaneWaves<<"\n");
     //Check that we actually kept some elements within ecut.
@@ -202,7 +202,7 @@ public:
         inputmap[ig] = NumPlaneWaves; //For dumping coefficients of PWs>ecut
   }
 
-  void BuildRecursionCoefs(Matrix<complex<RealType> > &C, const ParticleSet &P,
+  void BuildRecursionCoefs(Matrix<std::complex<RealType> > &C, const ParticleSet &P,
                            int iat)
   {
     ////Fill the recursion coefficients matrix.
@@ -215,10 +215,10 @@ public:
     //using a fast recursion algorithm
     for(int idim=0; idim<3; idim++)
     {
-      complex<RealType> Ctemp;
+      std::complex<RealType> Ctemp;
       //start the recursion with the 111 vector.
       RealType phi = (P.R[iat])[idim] * G111[idim];
-      Ctemp = complex<RealType>(std::cos(phi), std::sin(phi));
+      Ctemp = std::complex<RealType>(std::cos(phi), std::sin(phi));
       C(idim,maxg[idim]) = 1.0; // G=0. Index is shifted: [0..2*max]. Zero at 'max'.
       //Recursively generate all Cs for each dimension independently.
       for(int n=1; n<=maxg[idim]; n++)
@@ -239,7 +239,7 @@ public:
   {
     if(P.getTotalNum() != NumPtcls)
     {
-      cout << "PlaneWaveBasis Error: Storage not allocated correctly" << endl;
+      std::cout << "PlaneWaveBasis Error: Storage not allocated correctly" << std::endl;
       OHMMS::Controller->abort();
     }
     //Evaluate the plane-waves at current particle coordinates using a fast
@@ -247,9 +247,9 @@ public:
     //These can be "dotted" with coefficients later to complete
     //orbital evaluations.
     //Allocate the 'C' temporary arrays. Fill with information to decouple dimensions.
-    Matrix<complex<RealType> > C;
+    Matrix<std::complex<RealType> > C;
     RealType twistdotr;
-    complex<RealType> pw;
+    std::complex<RealType> pw;
     C.resize(3,2*maxmaxg+1);
     for(int iat=first; iat<last; iat++)
     {
@@ -260,7 +260,7 @@ public:
       {
         //PW is initialized as exp(i*twist.r) so that the final basis evaluations
         //are for (twist+G).r
-        pw = complex<RealType>(std::cos(twistdotr),std::sin(twistdotr));
+        pw = std::complex<RealType>(std::cos(twistdotr),std::sin(twistdotr));
         for(int idim=0; idim<3; idim++)
           pw *= C(idim,gvecs[ig][idim]+maxg[idim]);
 #if defined(QMC_COMPLEX)
@@ -289,9 +289,9 @@ public:
     //These can be "dotted" with coefficients later to complete
     //orbital evaluations.
     //Allocate the 'C' temporary arrays. Fill with information to decouple dimensions.
-    Matrix<complex<RealType> > C;
+    Matrix<std::complex<RealType> > C;
     RealType twistdotr;
-    complex<RealType> pw;
+    std::complex<RealType> pw;
     C.resize(3,2*maxmaxg+1);
     for(int iat=first; iat<last; iat++)
     {
@@ -302,7 +302,7 @@ public:
       {
         //PW is initialized as exp(i*twist.r) so that the final basis evaluations
         //are for (twist+G).r
-        pw = complex<RealType>(std::cos(twistdotr),std::sin(twistdotr));
+        pw = std::complex<RealType>(std::cos(twistdotr),std::sin(twistdotr));
         for(int idim=0; idim<3; idim++)
           pw *= C(idim,gvecs[ig][idim]+maxg[idim]);
 #if defined(QMC_COMPLEX)

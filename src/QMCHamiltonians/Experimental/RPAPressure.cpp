@@ -67,19 +67,19 @@ void RPAPressure::setParticlePropertyList(PropertySetType& plist, int offset)
 
 void RPAPressure::resetTargetParticleSet(ParticleSet& P)
 {
-//     cout<<dPsi.size()<<endl;
+//     std::cout <<dPsi.size()<< std::endl;
   for (int i=0; i<(dPsi.size()); i++)
     dPsi[i]->resetTargetParticleSet(P);
   pNorm = 1.0/(P.Lattice.DIM*P.Lattice.Volume);
   //3-D hard coded
   RealType tlen=std::pow(0.75/M_PI*P.Lattice.Volume/static_cast<RealType>(P.getTotalNum()),1.0/3.0);
   drsdV= tlen*pNorm;
-//     app_log()<<"drsdV  "<<drsdV<<endl;
+//     app_log()<<"drsdV  "<<drsdV<< std::endl;
 };
 
 Return_t RPAPressure::evaluate(ParticleSet& P)
 {
-  vector<OrbitalBase*>::iterator dit(dPsi.begin()), dit_end(dPsi.end());
+  std::vector<OrbitalBase*>::iterator dit(dPsi.begin()), dit_end(dPsi.end());
   tValue=0.0;
   Value=0.0;
   dG = 0.0;
@@ -89,7 +89,7 @@ Return_t RPAPressure::evaluate(ParticleSet& P)
     tValue += (*dit)-> evaluateLog(P,dG,dL);
     ++dit;
   }
-//     app_log()<<"tValue  "<<tValue<<endl;
+//     app_log()<<"tValue  "<<tValue<< std::endl;
   tValue *= drsdV;
   ZVCorrection =  -1.0 * (0.5*Sum(dL)+Dot(dG,P.G));
   Value = -ZVCorrection*drsdV;
@@ -100,7 +100,7 @@ Return_t RPAPressure::evaluate(ParticleSet& P)
   return 0.0;
 }
 
-Return_t RPAPressure::evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+Return_t RPAPressure::evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
 {
   return evaluate(P);
 }
@@ -117,10 +117,10 @@ bool RPAPressure::put(xmlNodePtr cur, ParticleSet& P)
   xmlNodePtr tcur = cur->children;
   while(tcur != NULL)
   {
-    string cname((const char*)tcur->name);
+    std::string cname((const char*)tcur->name);
     if(cname == "TwoBody")
     {
-      app_log() <<"  Found TwoBody parameters for dPsi in RPA-ZVZB Pressure"<<endl;
+      app_log() <<"  Found TwoBody parameters for dPsi in RPA-ZVZB Pressure"<< std::endl;
       rpajastrow->put(tcur);
       FOUND=true;
     }
@@ -129,7 +129,7 @@ bool RPAPressure::put(xmlNodePtr cur, ParticleSet& P)
   if (!FOUND)
   {
     rpajastrow->buildOrbital("P_dRPA","true", "true", "drpa", tlen, 10.0/tlen);
-    app_log() <<"  Using Default TwoBody parameters for dPsi in RPA-ZVZB Pressure"<<endl;
+    app_log() <<"  Using Default TwoBody parameters for dPsi in RPA-ZVZB Pressure"<< std::endl;
   }
   dPsi.push_back(rpajastrow);
   return true;
@@ -147,12 +147,12 @@ bool RPAPressure::put(xmlNodePtr cur, ParticleSet& P, ParticleSet& ISource, Tria
   xmlNodePtr tcur = cur->children;
   while(tcur != NULL)
   {
-    string cname((const char*)tcur->name);
+    std::string cname((const char*)tcur->name);
     if(cname == "TwoBody")
     {
       rpajastrow->put(tcur);
       dPsi.push_back(rpajastrow);
-      app_log() <<"  Found TwoBody parameters for dPsi in RPA-ZVZB Pressure"<<endl;
+      app_log() <<"  Found TwoBody parameters for dPsi in RPA-ZVZB Pressure"<< std::endl;
       FOUND2=true;
     }
     else
@@ -162,7 +162,7 @@ bool RPAPressure::put(xmlNodePtr cur, ParticleSet& P, ParticleSet& ISource, Tria
         jb->put(tcur,0);
         OrbitalBase* Hrpajastrow = jb->getOrbital();
         dPsi.push_back(Hrpajastrow);
-        app_log() <<"  Found OneBody parameters for dPsi in RPA-ZVZB Pressure"<<endl;
+        app_log() <<"  Found OneBody parameters for dPsi in RPA-ZVZB Pressure"<< std::endl;
         FOUND1=true;
       }
     tcur = tcur->next;
@@ -171,11 +171,11 @@ bool RPAPressure::put(xmlNodePtr cur, ParticleSet& P, ParticleSet& ISource, Tria
   {
     rpajastrow->buildOrbital("P_dRPA","true", "true", "dRPA", tlen, 10.0/tlen);
     dPsi.push_back(rpajastrow);
-    app_log() <<"  Using Default TwoBody parameters for dPsi in RPA-ZVZB Pressure"<<endl;
+    app_log() <<"  Using Default TwoBody parameters for dPsi in RPA-ZVZB Pressure"<< std::endl;
   }
 //     if (!FOUND1) {
 //       rpajastrow->buildOrbital("P_dRPA","true", "true", "dRPA", tlen, 10.0/tlen);
-//       app_log() <<"  Using Default TwoBody parameters for dPsi in RPA-ZVZB Pressure"<<endl;
+//       app_log() <<"  Using Default TwoBody parameters for dPsi in RPA-ZVZB Pressure"<< std::endl;
 //     }
 //     Communicate* cpt = new Communicate();
 //     TrialWaveFunction* tempPsi = new TrialWaveFunction(cpt);
@@ -193,7 +193,7 @@ bool RPAPressure::put(xmlNodePtr cur, ParticleSet& P, ParticleSet& ISource, Tria
 QMCHamiltonianBase* RPAPressure::makeClone(ParticleSet& P, TrialWaveFunction& psi)
 {
   RPAPressure* myClone = new RPAPressure(P);
-  vector<OrbitalBase*>::iterator dit(dPsi.begin()), dit_end(dPsi.end());
+  std::vector<OrbitalBase*>::iterator dit(dPsi.begin()), dit_end(dPsi.end());
   while(dit != dit_end)
   {
     myClone->dPsi.push_back((*dit)->makeClone(P));

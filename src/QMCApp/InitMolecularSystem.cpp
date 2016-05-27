@@ -19,7 +19,6 @@
  */
 #include "QMCApp/InitMolecularSystem.h"
 #include "QMCApp/ParticleSetPool.h"
-using namespace std;
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/OhmmsInfo.h"
 #include "Particle/DistanceTable.h"
@@ -35,7 +34,7 @@ InitMolecularSystem::InitMolecularSystem(ParticleSetPool* pset,
 
 bool InitMolecularSystem::put(xmlNodePtr cur)
 {
-  string target("e"), source("i"), volume("no");
+  std::string target("e"), source("i"), volume("no");
   OhmmsAttributeSet hAttrib;
   hAttrib.add(target,"target");
   hAttrib.add(source,"source");
@@ -54,14 +53,14 @@ bool InitMolecularSystem::put(xmlNodePtr cur)
     return false;
   }
 
-  app_log() << "<init source=\"" << source << "\" target=\""<< target << "\">" << endl;
+  app_log() << "<init source=\"" << source << "\" target=\""<< target << "\">" << std::endl;
 
   if(volume=="yes")
     initWithVolume(ions,els);
   else
     initMolecule(ions,els);
 
-  app_log() << "</init>" << endl;
+  app_log() << "</init>" << std::endl;
   app_log().flush();
 
   return true;
@@ -100,7 +99,7 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
   const ParticleSet::ParticleIndex_t& grID(ions->GroupID);
   SpeciesSet& Species(ions->getSpeciesSet());
   int Centers = ions->getTotalNum();
-  vector<int> Qtot(Centers), Qcore(Centers), Qval(Centers,0);
+  std::vector<int> Qtot(Centers), Qcore(Centers), Qval(Centers,0);
   //use charge as the core electrons first
   int icharge = Species.addAttribute("charge");
   //Assign default core charge
@@ -115,7 +114,7 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
   int numDown = els->last(1)-els->first(0);
   int item = 0;
   int nup_tot=0, ndown_tot=numUp;
-  vector<LoneElectron> loneQ;
+  std::vector<LoneElectron> loneQ;
   double rmin=cutoff;
   ParticleSet::SingleParticlePos_t cm;
   for(int iat=0; iat<Centers; iat++)
@@ -145,8 +144,8 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
   // imbalances in molecules at large distances. 
   // Not guaranteed to work, but should help in most cases  
   // as long as atoms in molecules are defined sequencially 
-  vector<LoneElectron>::iterator it(loneQ.begin());
-  vector<LoneElectron>::iterator it_end(loneQ.end());
+  std::vector<LoneElectron>::iterator it(loneQ.begin());
+  std::vector<LoneElectron>::iterator it_end(loneQ.end());
   //while(nup_tot<numUp && it != it_end)
   //{
   //  els->R[nup_tot++]=ions->R[(*it).ID]+(*it).BondLength*chi[item++];
@@ -242,13 +241,13 @@ void InitMolecularSystem::initWithVolume(ParticleSet* ions, ParticleSet* els)
     //else
     {
       double buffer_r=buffer*ions->Lattice.OneOverLength[idim];
-      start[idim]=max(0.0,(start[idim]-buffer_r));
-      end[idim]  =min(1.0,(end[idim]  +buffer_r));
+      start[idim]= std::max(0.0,(start[idim]-buffer_r));
+      end[idim]  = std::min(1.0,(end[idim]  +buffer_r));
       shift[idim]=start[idim]*ions->Lattice.Length[idim];
       if(std::abs(end[idim]=start[idim])<buffer)
       {//handle singular case
-        start[idim]=max(0.0,start[idim]-buffer_r/2.0);
-        end[idim]  =min(1.0,end[idim]  +buffer_r/2.0);
+        start[idim]= std::max(0.0,start[idim]-buffer_r/2.0);
+        end[idim]  = std::min(1.0,end[idim]  +buffer_r/2.0);
       }
 
       newbox(idim,idim)=(end[idim]-start[idim])*ions->Lattice.Length[idim];
@@ -258,9 +257,9 @@ void InitMolecularSystem::initWithVolume(ParticleSet* ions, ParticleSet* els)
   ParticleSet::ParticleLayout_t slattice(ions->Lattice);
   slattice.set(newbox);
 
-  app_log() << "  InitMolecularSystem::initWithVolume " << endl;
-  app_log() << "  Effective Lattice shifted by  " << shift << endl;
-  app_log() <<newbox<< endl;
+  app_log() << "  InitMolecularSystem::initWithVolume " << std::endl;
+  app_log() << "  Effective Lattice shifted by  " << shift << std::endl;
+  app_log() <<newbox<< std::endl;
 
   Ru.resize(els->getTotalNum());
   makeUniformRandom(Ru);

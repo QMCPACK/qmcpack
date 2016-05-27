@@ -47,7 +47,7 @@ class GofREstimator: public CompositeEstimatorBase
   /** distance table */
   const DistanceTableData*  myTable;
   /** local copy of pair index */
-  vector<int> PairID;
+  std::vector<int> PairID;
   /** normalization factor for each bin*/
   Vector<RealType> normFactor;
   /** instantaneous gofr */

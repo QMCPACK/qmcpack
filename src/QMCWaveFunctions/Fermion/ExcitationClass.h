@@ -18,15 +18,15 @@ class ExcitationClass
   typedef TinyVector<ValueType,3> GradType;
 
 public:
-  vector<int> unoccupied_orbitals_to_use;
-  vector<int> orbitals_to_replace;
+  std::vector<int> unoccupied_orbitals_to_use;
+  std::vector<int> orbitals_to_replace;
   ValueMatrix_t dotProducts; // orbitals_to_replace.size() x unoccupied_orbitals_to_use.size()
   GradMatrix_t dotProducts_grad; // orbitals_to_replace.size() x unoccupied_orbitals_to_use.size()
   TinyVector<int,2> ii;
   TinyVector<int,2> jj;
 
   TinyVector<int,2> second_replaces_first;
-  list<TinyVector<int,2> > replaceList;
+  std::list<TinyVector<int,2> > replaceList;
   int orbitals_to_replace_index;
   int unoccupied_orbitals_to_use_index;
   void testMe()
@@ -125,7 +125,7 @@ public:
     }
     for (int i=0; i<gs_inverse_update.extent(0); i++)
       for (int j=0; j<gs_inverse_update.extent(1); j++)
-        cerr<<i<<" "<<j<<" "<<gs_inverse_update(i,j)[0]<<endl;
+        std::cerr <<i<<" "<<j<<" "<<gs_inverse_update(i,j)[0]<< std::endl;
     ////BE CAREFUL IF YOU CHANGE THE TRANPSOSE OF dpsiM!!
     int NumPtcls=dpsiM_actual.extent(0);
     assert(NumPtcls==psiM_actual.extent(1));
@@ -137,18 +137,18 @@ public:
           int i=orbitals_to_replace[ii];
           int j=unoccupied_orbitals_to_use[jj];
           dotProducts_grad(ii,jj)[dim]=0.0;
-          cerr<<"enter-fix "<<ii<<" "<<jj<<" "<<i<<" "<<j<<dotProducts_grad(ii,jj)<<endl;
+          std::cerr <<"enter-fix "<<ii<<" "<<jj<<" "<<i<<" "<<j<<dotProducts_grad(ii,jj)<< std::endl;
           for (int ptcl=0; ptcl<NumPtcls; ptcl++)
           {
             //	    GradType toAdd=one_over_ratio*op2(i)*op1(j);
-            cerr<<"on-fix "<<ii<<" "<<jj<<" "<<i<<" "<<j<<dotProducts_grad(ii,jj)<<endl;
+            std::cerr <<"on-fix "<<ii<<" "<<jj<<" "<<i<<" "<<j<<dotProducts_grad(ii,jj)<< std::endl;
             dotProducts_grad(ii,jj)[dim]+=gs_inverse_update(ptcl,i)[dim]*psiM_actual(j,ptcl);
-            cerr<<"on-fix af "<<ii<<" "<<jj<<" "<<i<<" "<<j<<" "<<ptcl<<" "<<dotProducts_grad(ii,jj)<<" "<<gs_inverse_update(ptcl,i)[dim]<<" "<<psiM_actual(j,ptcl)<<endl;
+            std::cerr <<"on-fix af "<<ii<<" "<<jj<<" "<<i<<" "<<j<<" "<<ptcl<<" "<<dotProducts_grad(ii,jj)<<" "<<gs_inverse_update(ptcl,i)[dim]<<" "<<psiM_actual(j,ptcl)<< std::endl;
           }
-          cerr<<"pre-fix "<<ii<<" "<<jj<<" "<<i<<" "<<j<<dotProducts_grad(ii,jj)<<endl;
+          std::cerr <<"pre-fix "<<ii<<" "<<jj<<" "<<i<<" "<<j<<dotProducts_grad(ii,jj)<< std::endl;
           dotProducts_grad(ii,jj)[dim]-=gs_inverse_update(WorkingIndex,i)[dim]*psiM_actual(j,WorkingIndex);
           dotProducts_grad(ii,jj)[dim]+=gs_inverse_update(WorkingIndex,i)[dim]*dpsiM_actual(WorkingIndex,j)[dim];
-          cerr<<"post-fix "<<dotProducts_grad(ii,jj)<<endl;
+          std::cerr <<"post-fix "<<dotProducts_grad(ii,jj)<< std::endl;
         }
     }
   }
@@ -216,7 +216,7 @@ public:
     }
     for (int i=0; i<gs_inverse_update.extent(0); i++)
       for (int j=0; j<gs_inverse_update.extent(1); j++)
-        cerr<<i<<" "<<j<<" "<<gs_inverse_update(i,j)[0]<<endl;
+        std::cerr <<i<<" "<<j<<" "<<gs_inverse_update(i,j)[0]<< std::endl;
     ////BE CAREFUL IF YOU CHANGE THE TRANPSOSE OF dpsiM!!
     int NumPtcls=dpsiM_actual.extent(0);
     assert(NumPtcls==psiM_actual.extent(1));
@@ -228,18 +228,18 @@ public:
           int i=orbitals_to_replace[ii];
           int j=unoccupied_orbitals_to_use[jj];
           dotProducts_grad(ii,jj)[dim]=0.0;
-          cerr<<"enter-fix "<<ii<<" "<<jj<<" "<<i<<" "<<j<<dotProducts_grad(ii,jj)<<endl;
+          std::cerr <<"enter-fix "<<ii<<" "<<jj<<" "<<i<<" "<<j<<dotProducts_grad(ii,jj)<< std::endl;
           for (int ptcl=0; ptcl<NumPtcls; ptcl++)
           {
             //	    GradType toAdd=one_over_ratio*op2(i)*op1(j);
-            cerr<<"on-fix "<<ii<<" "<<jj<<" "<<i<<" "<<j<<dotProducts_grad(ii,jj)<<endl;
+            std::cerr <<"on-fix "<<ii<<" "<<jj<<" "<<i<<" "<<j<<dotProducts_grad(ii,jj)<< std::endl;
             dotProducts_grad(ii,jj)[dim]+=gs_inverse_update(ptcl,i)[dim]*psiM_actual(j,ptcl);
-            cerr<<"on-fix af "<<ii<<" "<<jj<<" "<<i<<" "<<j<<" "<<ptcl<<" "<<dotProducts_grad(ii,jj)<<" "<<gs_inverse_update(ptcl,i)[dim]<<" "<<psiM_actual(j,ptcl)<<endl;
+            std::cerr <<"on-fix af "<<ii<<" "<<jj<<" "<<i<<" "<<j<<" "<<ptcl<<" "<<dotProducts_grad(ii,jj)<<" "<<gs_inverse_update(ptcl,i)[dim]<<" "<<psiM_actual(j,ptcl)<< std::endl;
           }
-          cerr<<"pre-fix "<<ii<<" "<<jj<<" "<<i<<" "<<j<<dotProducts_grad(ii,jj)<<endl;
+          std::cerr <<"pre-fix "<<ii<<" "<<jj<<" "<<i<<" "<<j<<dotProducts_grad(ii,jj)<< std::endl;
           dotProducts_grad(ii,jj)[dim]-=gs_inverse_update(WorkingIndex,i)[dim]*psiM_actual(j,WorkingIndex);
           dotProducts_grad(ii,jj)[dim]+=gs_inverse_update(WorkingIndex,i)[dim]*dpsiM_actual(WorkingIndex,j);
-          cerr<<"post-fix "<<dotProducts_grad(ii,jj)<<endl;
+          std::cerr <<"post-fix "<<dotProducts_grad(ii,jj)<< std::endl;
         }
     }
   }

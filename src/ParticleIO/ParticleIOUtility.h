@@ -40,7 +40,7 @@ namespace qmcplusplus
 //  public:
 
 //  LatticeXMLWriter(ParticleSet::ParticleLayout_t& lat): ref_(lat){ }
-//  bool get(ostream& ) const;
+//  bool get(std::ostream& ) const;
 //};
 
 //class ParticleParser {

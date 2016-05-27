@@ -63,7 +63,7 @@ public:
   void set(int first, int nel);
   void set_iterative(int first,int nel, double &temp_cutoff);
 
-  void SparseToCSR(vector<int> &Arp, vector<int> &Ari,vector<double> &Arx);
+  void SparseToCSR(std::vector<int> &Arp, std::vector<int> &Ari,std::vector<double> &Arx);
 
 
 
@@ -76,8 +76,8 @@ public:
   evaluateLog(ParticleSet& P, PooledData<RealType>& buf) ;
 
 
-  vector<list<pair<int,double> > > particleLists;
-  list<pair<int,double> >  oldPtcl;
+  std::vector<std::list<std::pair<int,double> > > particleLists;
+  std::list<std::pair<int,double> >  oldPtcl;
   double cutoff;
 
 };

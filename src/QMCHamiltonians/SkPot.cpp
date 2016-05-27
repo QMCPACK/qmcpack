@@ -50,7 +50,7 @@ SkPot::Return_t SkPot::evaluate(ParticleSet& P)
   APP_ABORT("SkPot::evaluate(ParticleSet& P)");
 #else
   //sum over species
-  std::copy(P.SK->rhok[0],P.SK->rhok[0]+NumK,RhokTot.begin());
+  copy(P.SK->rhok[0],P.SK->rhok[0]+NumK,RhokTot.begin());
   for(int i=1; i<NumSpecies; ++i)
     accumulate_elements(P.SK->rhok[i],P.SK->rhok[i]+NumK,RhokTot.begin());
   Vector<ComplexType>::const_iterator iit(RhokTot.begin()),iit_end(RhokTot.end());
@@ -67,9 +67,9 @@ bool SkPot::put(xmlNodePtr cur)
   Tattrib.add(K_0,"k0");
   Tattrib.add(V_0,"v0");
   Tattrib.put(cur);
-  app_log()<<"KSpacePot parameters"<<endl;
-  app_log()<<"  k0: "<<K_0<<endl;
-  app_log()<<"  v0: "<<V_0<<endl;
+  app_log()<<"KSpacePot parameters"<< std::endl;
+  app_log()<<"  k0: "<<K_0<< std::endl;
+  app_log()<<"  v0: "<<V_0<< std::endl;
   FillFk();
   return true;
 }

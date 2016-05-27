@@ -10,12 +10,12 @@ void SpaceWarp::update_one_ptcl_Jacob(int iel)
     one_ptcl_Jacob[ipsi][iel]=WarpVector[iel]->Jacobian[ipsi];
 }
 
-//void SpaceWarp::initialize(vector<DistanceTableData*>& dtList){
-void SpaceWarp::initialize(vector<ParticleSet*>& ionSets, DistanceTableData* dtprime)
+//void SpaceWarp::initialize(std::vector<DistanceTableData*>& dtList){
+void SpaceWarp::initialize(std::vector<ParticleSet*>& ionSets, DistanceTableData* dtprime)
 {
   dtPrimary=dtprime;
   npsi=ionSets.size();
-  cout << dtPrimary->VisitorIndex << endl;
+  std::cout << dtPrimary->VisitorIndex << std::endl;
   nptcl= dtPrimary->size(DistanceTableData::VisitorIndex);
   ncenter=dtPrimary->centers();
   //resize and Initialize nuclear displacement
@@ -123,7 +123,7 @@ QMCTraits::PosType SpaceWarp::get_grad_ln_Jacob_num(int iel, int ipsi)
   return grad_ln_Jacob_num;
 }
 
-void SpaceWarp::registerData(vector<ParticleSet*>& plist, PooledData<RealType>& buf)
+void SpaceWarp::registerData(std::vector<ParticleSet*>& plist, PooledData<RealType>& buf)
 {
   if(PtclRefs.empty())
   {
@@ -149,7 +149,7 @@ void SpaceWarp::updateBuffer(PooledData<RealType>& buf)
 
 void SpaceWarp::copyToBuffer(PooledData<RealType>& buf)
 {
-  vector<ParticleSet*>::iterator pit(PtclRefs.begin()), pit_end(PtclRefs.end());
+  std::vector<ParticleSet*>::iterator pit(PtclRefs.begin()), pit_end(PtclRefs.end());
   while(pit != pit_end)
   {
     RealType* first=&((**pit).R[0][0]);
@@ -161,7 +161,7 @@ void SpaceWarp::copyToBuffer(PooledData<RealType>& buf)
 
 void SpaceWarp::copyFromBuffer(PooledData<RealType>& buf)
 {
-  vector<ParticleSet*>::iterator pit(PtclRefs.begin()), pit_end(PtclRefs.end());
+  std::vector<ParticleSet*>::iterator pit(PtclRefs.begin()), pit_end(PtclRefs.end());
   while(pit != pit_end)
   {
     RealType* first=&((**pit).R[0][0]);

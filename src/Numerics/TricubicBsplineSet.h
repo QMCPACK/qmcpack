@@ -75,7 +75,7 @@ private:
 };
 
 
-/** A group of bspline functions stored in a vector<StorageType*>
+/** A group of bspline functions stored in a std::vector<StorageType*>
  *
  * Assume a linear order of the bspline sets.
  */
@@ -206,7 +206,7 @@ private:
   std::vector<StorageType*> P;
 };
 
-/** A group of bspline functions stored in a map<int,StorageType*>
+/** A group of bspline functions stored in a std::map<int,StorageType*>
  */
 template<typename T>
 class TricubicBsplineSet: public TricubicBsplineTraits<T>

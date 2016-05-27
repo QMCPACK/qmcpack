@@ -14,8 +14,8 @@ namespace qmcplusplus
   NonLocalECPotential::Return_t
     NonLocalECPotential::evaluateValueAndDerivatives(ParticleSet& P,
         const opt_variables_type& optvars,
-        const vector<RealType>& dlogpsi,
-        vector<RealType>& dhpsioverpsi)
+        const std::vector<RealType>& dlogpsi,
+        std::vector<RealType>& dhpsioverpsi)
     {
       Value=0.0;
       for(int iat=0; iat<NumIons; iat++)
@@ -72,9 +72,9 @@ namespace qmcplusplus
       //Psi.resetParameters(optvars);
       //Psi.reset();
 
-      //app_log() << "DERIV " << endl;
+      //app_log() << "DERIV " << std::endl;
       //for(int v=0;v<Nvars; ++v)
-      //  app_log() << v << " " << dh_ana[v] << " " << dh_diff[v] << endl;
+      //  app_log() << v << " " << dh_ana[v] << " " << dh_diff[v] << std::endl;
 
       //APP_ABORT("DONE");
       return Value;
@@ -96,12 +96,12 @@ namespace qmcplusplus
     NonLocalECPComponent::evaluateValueAndDerivatives(ParticleSet& W,
         int iat, TrialWaveFunction& psi,
         const opt_variables_type& optvars,
-        const vector<RealType>& dlogpsi,
-        vector<RealType>& dhpsioverpsi)
+        const std::vector<RealType>& dlogpsi,
+        std::vector<RealType>& dhpsioverpsi)
     {
       Matrix<RealType> dratio(optvars.num_active_vars,nknot);
-      vector<RealType> dlogpsi_t(dlogpsi.size(),0.0);
-      vector<RealType> dhlogpsi_t(dlogpsi.size(),0.0);
+      std::vector<RealType> dlogpsi_t(dlogpsi.size(),0.0);
+      std::vector<RealType> dhlogpsi_t(dlogpsi.size(),0.0);
 
       DistanceTableData* myTable = W.DistTables[myTableIndex];
       RealType esum=0.0;

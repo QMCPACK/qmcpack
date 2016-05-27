@@ -38,7 +38,7 @@ RNDiracDeterminantBaseAlternate::RNDiracDeterminantBaseAlternate(const RNDiracDe
   DiracDeterminantBase(s)
 {
   setLogEpsilon(s.logepsilon);
-//     app_log()<<"setting logepsilon "<<s.logepsilon<<" "<<logepsilon<<endl;
+//     app_log()<<"setting logepsilon "<<s.logepsilon<<" "<<logepsilon<< std::endl;
 }
 
 ///default destructor
@@ -235,9 +235,9 @@ RNDiracDeterminantBaseAlternate::ValueType RNDiracDeterminantBaseAlternate::rati
   Phi->evaluate(P, iat, psiV);
   RatioTimer.start();
   curRatio = DetRatioByRow(psiM, psiV,WorkingIndex);
-  if (abs(curRatio)< numeric_limits<RealType>::epsilon())
+  if (abs(curRatio)< std::numeric_limits<RealType>::epsilon())
   {
-    app_log()<<"stepped on node: ratioGrad"<<endl;
+    app_log()<<"stepped on node: ratioGrad"<< std::endl;
     RatioTimer.stop();
     return 0.0;
   }
@@ -320,9 +320,9 @@ RNDiracDeterminantBaseAlternate::ratioGrad(ParticleSet& P, int iat, GradType& gr
   WorkingIndex = iat-FirstIndex;
   UpdateMode=ORB_PBYP_PARTIAL;
   curRatio=simd::dot(psiM[WorkingIndex],psiV.data(),NumOrbitals);
-  if (abs(curRatio)< numeric_limits<RealType>::epsilon())
+  if (abs(curRatio)< std::numeric_limits<RealType>::epsilon())
   {
-    app_log()<<"stepped on node: ratioGrad"<<endl;
+    app_log()<<"stepped on node: ratioGrad"<< std::endl;
     RatioTimer.stop();
     return 0.0;
   }
@@ -346,9 +346,9 @@ RNDiracDeterminantBaseAlternate::alternateRatioGrad(ParticleSet& P, int iat, Gra
   WorkingIndex = iat-FirstIndex;
   UpdateMode=ORB_PBYP_PARTIAL;
   curRatio=simd::dot(psiM[WorkingIndex],psiV.data(),NumOrbitals);
-  if (abs(curRatio)< numeric_limits<RealType>::epsilon())
+  if (abs(curRatio)< std::numeric_limits<RealType>::epsilon())
   {
-    app_log()<<"stepped on node: ratioGrad"<<endl;
+    app_log()<<"stepped on node: ratioGrad"<< std::endl;
     RatioTimer.stop();
     return 0.0;
   }
@@ -383,9 +383,9 @@ RNDiracDeterminantBaseAlternate::ValueType RNDiracDeterminantBaseAlternate::rati
   //psiM_temp = psiM;
   curRatio= DetRatioByRow(psiM_temp, psiV, WorkingIndex);
   RatioTimer.stop();
-  if (abs(curRatio)<numeric_limits<RealType>::epsilon())
+  if (abs(curRatio)<std::numeric_limits<RealType>::epsilon())
   {
-    app_log()<<"stepped on node"<<endl;
+    app_log()<<"stepped on node"<< std::endl;
     UpdateMode=ORB_PBYP_RATIO; //singularity! do not update inverse
     return 0.0;
   }
@@ -514,7 +514,7 @@ RNDiracDeterminantBaseAlternate::evaluateLog(ParticleSet& P,
     ParticleSet::ParticleGradient_t& G,
     ParticleSet::ParticleLaplacian_t& L)
 {
-  //      cerr<<"I'm calling evaluate log"<<endl;
+  //      std::cerr <<"I'm calling evaluate log"<< std::endl;
   Phi->evaluate(P, FirstIndex, LastIndex, psiM,dpsiM, d2psiM);
   myG_alternate=0.0;
   myL_alternate=0.0;

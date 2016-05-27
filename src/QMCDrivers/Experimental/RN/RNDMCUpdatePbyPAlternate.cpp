@@ -152,7 +152,7 @@ void RNDMCUpdatePbyPAlternate::advanceWalkers(WalkerIter_t it, WalkerIter_t it_e
 //           ratio = Psi.alternateRatioGrad(W,iat,grad_iat);
       bool valid_move=false;
       //node is crossed reject the move
-      //if(Psi.getPhase() > numeric_limits<RealType>::epsilon())
+      //if(Psi.getPhase() > std::numeric_limits<RealType>::epsilon())
       //if(branchEngine->phaseChanged(Psi.getPhase(),thisWalker.Properties(SIGN)))
 //         if (inFNpop)
       if (branchEngine->phaseChanged(Psi.getAlternatePhaseDiff(iat)))

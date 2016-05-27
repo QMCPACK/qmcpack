@@ -38,8 +38,8 @@ bool RPAJastrow::put(xmlNodePtr cur)
   xmlNodePtr myNode=xmlCopyNode(cur,1);
   //capture attribute jastrow/@name
   MyName="RPA_Jee";
-  string useL="yes";
-  string useS="yes";
+  std::string useL="yes";
+  std::string useS="yes";
   rpafunc="rpa";
   OhmmsAttributeSet a;
   a.add(MyName,"name");
@@ -49,25 +49,25 @@ bool RPAJastrow::put(xmlNodePtr cur)
   a.put(cur);
   Rs=-1.0;
   Kc=-1.0;
-  string ID_Rs="RPA_rs";
+  std::string ID_Rs="RPA_rs";
   ParameterSet params;
   params.add(Rs,"rs","double");
   params.add(Kc,"kc","double");
   params.put(cur);
   buildOrbital(MyName, useL, useS, rpafunc, Rs, Kc);
-//     app_log() <<endl<<"   LongRangeForm is "<<rpafunc<<endl;
+//     app_log() << std::endl<<"   LongRangeForm is "<<rpafunc<< std::endl;
 //
 //     DropLongRange = (useL == "no");
 //     DropShortRange = (useS=="no");
 //
-//     app_log() << "    Rs can be optimized using ID=" << ID_Rs << endl;
+//     app_log() << "    Rs can be optimized using ID=" << ID_Rs << std::endl;
 //     RealType tlen = std::pow(3.0/4.0/M_PI*targetPtcl.Lattice.Volume/ static_cast<RealType>(targetPtcl.getTotalNum()) ,1.0/3.0);
 //
 //     if(Rs<0) {
 //       if(targetPtcl.Lattice.SuperCellEnum) {
 //         Rs=tlen;
 //       } else {
-//         cout<<"  Error finding rs. Is this an open system?!"<<endl;
+//         std::cout<<"  Error finding rs. Is this an open system?!"<< std::endl;
 //         Rs=100.0;
 //       }
 //     }
@@ -84,10 +84,10 @@ bool RPAJastrow::put(xmlNodePtr cur)
 //
 //     if(Kc>Kc_max){
 //       Kc=Kc_max;
-//       app_log() << "    Kc set too high. Resetting to the maximum value"<<endl;
+//       app_log() << "    Kc set too high. Resetting to the maximum value"<< std::endl;
 //     }
 //
-//     app_log() << "    RPAJastrowBuilder::addTwoBodyPart Rs = " << Rs <<  "  Kc= " << Kc << endl;
+//     app_log() << "    RPAJastrowBuilder::addTwoBodyPart Rs = " << Rs <<  "  Kc= " << Kc << std::endl;
 //
 //     if (rpafunc=="Yukawa" || rpafunc=="breakup"){
 //       myHandler= new LRHandlerTemp<YukawaBreakup<RealType>,LPQHIBasis>(targetPtcl,Kc);
@@ -102,28 +102,28 @@ bool RPAJastrow::put(xmlNodePtr cur)
 //
 //     myHandler->Breakup(targetPtcl,Rs);
 //
-//     app_log() << "  Maximum K shell " << myHandler->MaxKshell << endl;
-//     app_log() << "  Number of k vectors " << myHandler->Fk.size() << endl;
+//     app_log() << "  Maximum K shell " << myHandler->MaxKshell << std::endl;
+//     app_log() << "  Number of k vectors " << myHandler->Fk.size() << std::endl;
 //
 //     if(!DropLongRange) makeLongRange();
 //     if(!DropShortRange) makeShortRange();
   return true;
 }
 
-void RPAJastrow::buildOrbital(const string& name, const string& UL
-                              , const string& US, const string& RF, RealType R, RealType K)
+void RPAJastrow::buildOrbital(const std::string& name, const std::string& UL
+                              , const std::string& US, const std::string& RF, RealType R, RealType K)
 {
-  string ID_Rs="RPA_rs";
+  std::string ID_Rs="RPA_rs";
   MyName = name;
-  string useL=UL;
-  string useS=US;
+  std::string useL=UL;
+  std::string useS=US;
   rpafunc=RF;
   Rs=R;
   Kc=K;
-  app_log() <<endl<<"   LongRangeForm is "<<rpafunc<<endl;
+  app_log() << std::endl<<"   LongRangeForm is "<<rpafunc<< std::endl;
   DropLongRange = (useL == "no");
   DropShortRange = (useS=="no");
-  app_log() << "    Rs can be optimized using ID=" << ID_Rs << endl;
+  app_log() << "    Rs can be optimized using ID=" << ID_Rs << std::endl;
   RealType tlen = std::pow(3.0/4.0/M_PI*targetPtcl.Lattice.Volume/ static_cast<RealType>(targetPtcl.getTotalNum()) ,1.0/3.0);
   if(Rs<0)
   {
@@ -133,7 +133,7 @@ void RPAJastrow::buildOrbital(const string& name, const string& UL
     }
     else
     {
-      cout<<"  Error finding rs. Is this an open system?!"<<endl;
+      std::cout<<"  Error finding rs. Is this an open system?!"<< std::endl;
       Rs=100.0;
     }
   }
@@ -148,9 +148,9 @@ void RPAJastrow::buildOrbital(const string& name, const string& UL
   if(Kc>Kc_max)
   {
     Kc=Kc_max;
-    app_log() << "    Kc set too high. Resetting to the maximum value"<<endl;
+    app_log() << "    Kc set too high. Resetting to the maximum value"<< std::endl;
   }
-  app_log() << "    RPAJastrowBuilder::addTwoBodyPart Rs = " << Rs <<  "  Kc= " << Kc << endl;
+  app_log() << "    RPAJastrowBuilder::addTwoBodyPart Rs = " << Rs <<  "  Kc= " << Kc << std::endl;
   if (rpafunc=="yukawa" || rpafunc=="breakup")
   {
     myHandler= new LRHandlerTemp<YukawaBreakup<RealType>,LPQHIBasis>(targetPtcl,Kc);
@@ -171,17 +171,17 @@ void RPAJastrow::buildOrbital(const string& name, const string& UL
           myHandler= new LRRPAHandlerTemp<DerivRPABreakup<RealType>,LPQHIBasis >(targetPtcl,Kc);
         }
   myHandler->Breakup(targetPtcl,Rs);
-  app_log() << "  Maximum K shell " << myHandler->MaxKshell << endl;
-  app_log() << "  Number of k vectors " << myHandler->Fk.size() << endl;
+  app_log() << "  Maximum K shell " << myHandler->MaxKshell << std::endl;
+  app_log() << "  Number of k vectors " << myHandler->Fk.size() << std::endl;
   if(!DropLongRange)
   {
     makeLongRange();
-    app_log()<<"  Using LongRange part"<<endl;
+    app_log()<<"  Using LongRange part"<< std::endl;
   }
   if(!DropShortRange)
   {
     makeShortRange();
-    app_log()<<"  Using ShortRange part"<<endl;
+    app_log()<<"  Using ShortRange part"<< std::endl;
   }
 }
 
@@ -194,7 +194,7 @@ void RPAJastrow::makeLongRange()
 
 void RPAJastrow::makeShortRange()
 {
-//     app_log()<< "  Adding Short Range part of RPA function"<<endl;
+//     app_log()<< "  Adding Short Range part of RPA function"<< std::endl;
   //short-range uses realHandler
   Rcut = myHandler->get_rc()-0.1;
   myGrid = new GridType;
@@ -211,12 +211,12 @@ void RPAJastrow::makeShortRange()
   //{
   //  char fname[32];
   //  sprintf(fname,"%s.%d.dat",MyName.c_str(),counter++);
-  //  ofstream fout(fname);
+  //  std::ofstream fout(fname);
   //  for (int i = 0; i < myGrid->size(); i++) {
   //    RealType r=(*myGrid)(i);
   //    fout << r << "   " << nfunc->evaluate(r) << "   "
   //      << myHandler->evaluate(r,1.0/r) << " "
-  //      << myHandler->evaluateLR(r) << endl;
+  //      << myHandler->evaluateLR(r) << std::endl;
   //  }
   //}
   TwoBodyJastrowOrbital<FuncType> *j2 = new TwoBodyJastrowOrbital<FuncType>(targetPtcl,IsManager);
@@ -255,7 +255,7 @@ void RPAJastrow::checkInVariables(opt_variables_type& active)
 //     active.insertFrom(myVars);
 }
 
-void RPAJastrow::reportStatus(ostream& os)
+void RPAJastrow::reportStatus(std::ostream& os)
 {
   for(int i=0; i<Psi.size(); i++)
     Psi[i]->reportStatus(os);

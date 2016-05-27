@@ -30,8 +30,8 @@ namespace qmcplusplus
 class HamiltonianFactory: public MPIObjectBase
 {
   public:
-  typedef map<string,ParticleSet*> PtclPoolType;
-  typedef map<string,WaveFunctionFactory*> OrbitalPoolType;
+  typedef std::map<std::string,ParticleSet*> PtclPoolType;
+  typedef std::map<std::string,WaveFunctionFactory*> OrbitalPoolType;
 
   ///type of the lattice. 0=non-periodic, 1=periodic
   int PBCType;
@@ -47,10 +47,10 @@ class HamiltonianFactory: public MPIObjectBase
   xmlNodePtr myNode;
 
   ///name of the TrialWaveFunction
-  string psiName;
+  std::string psiName;
 
   ///list of the old to new name
-  map<string,string> RenamedProperty;
+  std::map<std::string,std::string> RenamedProperty;
 
   ///constructor
   HamiltonianFactory(ParticleSet* qp, PtclPoolType& pset, OrbitalPoolType& oset,
@@ -69,21 +69,21 @@ class HamiltonianFactory: public MPIObjectBase
    * @param a target property whose name should be replaced by b
    * @param b new property name
    */
-  void renameProperty(const string& a, const string& b);
+  void renameProperty(const std::string& a, const std::string& b);
 
   /** renamd a property
    * @param a current name
    *
    * If a is found among the RenamedProperty, a is replaced,
    */
-  void renameProperty(string& a);
+  void renameProperty( std::string& a);
 
   void setCloneSize(int np);
 
   HamiltonianFactory* clone(ParticleSet* qp, TrialWaveFunction* psi,
-                            int ip, const string& aname);
+                            int ip, const std::string& aname);
 
-  vector<HamiltonianFactory*> myClones;
+  std::vector<HamiltonianFactory*> myClones;
 
   private:
   /** process xmlNode to populate targetPsi

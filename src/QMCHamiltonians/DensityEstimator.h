@@ -37,7 +37,7 @@ public:
   RealType evalSR(ParticleSet& P,int ipart);
   RealType evalLR(ParticleSet& P,int iat);
   void InitPotential(ParticleSet &P);
-  vector<RealType> Zat,Zspec;
+  std::vector<RealType> Zat,Zspec;
   RadFunctorType* rVs;
   int NumSpecies;
   int NumCenters;
@@ -46,16 +46,16 @@ public:
 
   Return_t evaluate(ParticleSet& P);
   void addEnergy(MCWalkerConfiguration &W,
-                 vector<RealType> &LocalEnergy);
+                 std::vector<RealType> &LocalEnergy);
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
 
   void addObservables(PropertySetType& plist) { }
   void addObservables(PropertySetType& plist,BufferType& olist);
-  void registerCollectables(vector<observable_helper*>& h5desc, hid_t gid) const ;
+  void registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const ;
   void setObservables(PropertySetType& plist);
   void setParticlePropertyList(PropertySetType& plist, int offset);
   bool put(xmlNodePtr cur);
@@ -91,7 +91,7 @@ private:
   ///upper bound
   TinyVector<RealType, OHMMS_DIM> density_max;
   ///name of the density data
-  string prefix;
+  std::string prefix;
   ///density
   //Array<RealType,OHMMS_DIM> density, Vavg;
   /** resize the internal data

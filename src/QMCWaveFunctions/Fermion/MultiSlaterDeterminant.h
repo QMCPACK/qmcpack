@@ -81,7 +81,7 @@ public:
   virtual void checkInVariables(opt_variables_type& active);
   virtual void checkOutVariables(const opt_variables_type& active);
   virtual void resetParameters(const opt_variables_type& active);
-  virtual void reportStatus(ostream& os);
+  virtual void reportStatus(std::ostream& os);
 
   void resetTargetParticleSet(ParticleSet& P);
 
@@ -119,8 +119,8 @@ public:
   virtual OrbitalBasePtr makeClone(ParticleSet& tqp) const;
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& optvars,
-                                   vector<RealType>& dlogpsi,
-                                   vector<RealType>& dhpsioverpsi);
+                                   std::vector<RealType>& dlogpsi,
+                                   std::vector<RealType>& dhpsioverpsi);
 
   virtual void resize(int,int);
 
@@ -132,12 +132,12 @@ public:
   int nels_up, nels_dn;
   int NumUniqueDets_up;
   int NumUniqueDets_dn;
-  vector<int> DetID;
+  std::vector<int> DetID;
 
   int FirstIndex_up, LastIndex_up;
   int FirstIndex_dn, LastIndex_dn;
 
-  map<string,int> SPOSetID;
+  std::map<std::string,int> SPOSetID;
 
   SPOSetProxyPtr spo_up;
   SPOSetProxyPtr spo_dn;
@@ -146,10 +146,10 @@ public:
   std::vector<DiracDeterminantPtr> dets_dn;
 
   // map determinant in linear combination to unique det list
-  vector<int> C2node_up;
-  vector<int> C2node_dn;
+  std::vector<int> C2node_up;
+  std::vector<int> C2node_dn;
 
-  vector<RealType> C;
+  std::vector<RealType> C;
 
   // lap(#uniqueDet,part#)
   ValueVector_t detValues_up;
@@ -185,11 +185,11 @@ public:
 // CSFs
   bool usingCSF;
   // coefficients of csfs, these are only used during optm
-  vector<RealType> CSFcoeff;
+  std::vector<RealType> CSFcoeff;
   // number of dets per csf
-  vector<int> DetsPerCSF;
+  std::vector<int> DetsPerCSF;
   // coefficient of csf expansion (smaller dimension)
-  vector<RealType> CSFexpansion;
+  std::vector<RealType> CSFexpansion;
 
 };
 

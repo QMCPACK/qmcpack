@@ -29,7 +29,7 @@ struct HFDBHE_smoothed_phy: public QMCHamiltonianBase
 
   Return_t evaluate(ParticleSet& P);
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
@@ -106,11 +106,11 @@ struct HFDBHE_smoothed_aux: public QMCHamiltonianBase
                                 + 6.394277070147666*std::exp(-std::pow(3.455073733699311 + 0.26965201272692674*rc,2.0))
                                 * (-1.3471677840430893e7 + 1.0514001507549516e6*rc + 1.3142529690505246e13*std::exp((1.8633351728239138 + 0.07271220796768266*rc)*rc)
                                    * (erfc(3.455073733699311 + 0.26965201272692674*rc)) ) );
-    app_log() << "  HFDBHE_smoothed_aux tail correction is " << tailcorr << endl;
+    app_log() << "  HFDBHE_smoothed_aux tail correction is " << tailcorr << std::endl;
 #else
     tailcorr = 0.0;
-    app_log() << "  Tail correction without Intel MKL is not supported.  Do this manually." << endl
-              << "  tailcorr value set to 0." << endl;
+    app_log() << "  Tail correction without Intel MKL is not supported.  Do this manually." << std::endl
+              << "  tailcorr value set to 0." << std::endl;
 #endif
   }
 
@@ -129,11 +129,11 @@ struct HFDBHE_smoothed_aux: public QMCHamiltonianBase
                                 + 6.394277070147666*std::exp(-std::pow(3.455073733699311 + 0.26965201272692674*rc,2.0))
                                 * (-1.3471677840430893e7 + 1.0514001507549516e6*rc + 1.3142529690505246e13*std::exp((1.8633351728239138 + 0.07271220796768266*rc)*rc)
                                    * (erfc(3.455073733699311 + 0.26965201272692674*rc)) ) );
-    app_log() << "  HFDBHE_smoothed_aux tail correction is " << tailcorr << endl;
+    app_log() << "  HFDBHE_smoothed_aux tail correction is " << tailcorr << std::endl;
 #else
     tailcorr = 0.0;
-    app_log() << "  Tail correction without Intel MKL is not supported.  Do this manually." << endl
-              << "  tailcorr value set to 0." << endl;
+    app_log() << "  Tail correction without Intel MKL is not supported.  Do this manually." << std::endl
+              << "  tailcorr value set to 0." << std::endl;
 #endif
   }
 
@@ -143,7 +143,7 @@ struct HFDBHE_smoothed_aux: public QMCHamiltonianBase
     return Value;
   }
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }

@@ -31,8 +31,8 @@ namespace ohmmshf
  */
 struct StepPotential: public RadialPotentialBase
 {
-  vector<value_type> Rseg;
-  vector<value_type> Vseg;
+  std::vector<value_type> Rseg;
+  std::vector<value_type> Vseg;
   StepPotential();
   value_type evaluate(const BasisSetType& psi,
                       RadialOrbitalSet_t& V, int norb);

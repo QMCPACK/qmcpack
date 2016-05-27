@@ -223,7 +223,7 @@ void DMCUpdateAllWithKill::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
         H.auxHevaluate(W,thisWalker);
         H.saveProperty(thisWalker.getPropertyBase());
       }
-//         cout<<logpsi<<"  "<<Psi.getPhase()<<"  "<<enew<<"  "<<rr_accepted<<"  "<<rr_proposed<<"  "<<nodecorr<<endl;
+//         std::cout <<logpsi<<"  "<<Psi.getPhase()<<"  "<<enew<<"  "<<rr_accepted<<"  "<<rr_proposed<<"  "<<nodecorr<< std::endl;
       thisWalker.Weight *= branchEngine->branchWeight(enew,eold);
     }
     if(accepted)

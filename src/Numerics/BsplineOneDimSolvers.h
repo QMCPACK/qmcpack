@@ -21,7 +21,7 @@
 #include <complex>
 /** dummy declaration to be specialized
  *
- * Specializations for double and complex<double>
+ * Specializations for double and std::complex<double>
  */
 template<typename T>
 struct SolvePeriodicInterp1D

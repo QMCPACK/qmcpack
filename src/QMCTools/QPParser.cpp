@@ -5,7 +5,6 @@
 #include <set>
 #include <map>
 
-using namespace std;
 
 
 QPParser::QPParser()
@@ -51,8 +50,8 @@ void QPParser::parse(const std::string& fname)
      usingECP=true; 
   else
      usingECP=false;
-  cout<<"usingECP: " <<(usingECP?("yes"):("no")) <<endl;
-  cout.flush();
+  std::cout <<"usingECP: " <<(usingECP?("yes"):("no")) << std::endl;
+  std::cout.flush();
 
   search(fin,"multi_det",aline);
   parsewords(aline.c_str(),currentWords);
@@ -61,21 +60,21 @@ void QPParser::parse(const std::string& fname)
   else
      multideterminant=false;
 
-  cout<<"Multideterminant: " <<(multideterminant?("yes"):("no")) <<endl;
+  std::cout <<"Multideterminant: " <<(multideterminant?("yes"):("no")) << std::endl;
 
 
 
   search(fin,"ao_num",aline);
   parsewords(aline.c_str(),currentWords);
   numAO = atoi(currentWords[1].c_str());
-  cout<<"NUMBER OF AOs: " <<numAO <<endl;
+  std::cout <<"NUMBER OF AOs: " <<numAO << std::endl;
   SizeOfBasisSet = numAO; 
-  cout<<"Size of Basis Set: " <<SizeOfBasisSet <<endl;
+  std::cout <<"Size of Basis Set: " <<SizeOfBasisSet << std::endl;
 
   search(fin,"mo_num",aline);
   parsewords(aline.c_str(),currentWords);
   numMO = atoi(currentWords[1].c_str());
-  cout<<"NUMBER OF MOs: " <<numMO <<endl;
+  std::cout <<"NUMBER OF MOs: " <<numMO << std::endl;
 
 
 
@@ -84,17 +83,17 @@ void QPParser::parse(const std::string& fname)
   search(fin,"elec_alpha_num",aline);
   parsewords(aline.c_str(),currentWords);
   NumberOfAlpha = atoi(currentWords[1].c_str());
-  cout<<"Number of alpha electrons: " <<NumberOfAlpha <<endl;
+  std::cout <<"Number of alpha electrons: " <<NumberOfAlpha << std::endl;
   search(fin,"elec_beta_num",aline);
   parsewords(aline.c_str(),currentWords);
   NumberOfBeta = atoi(currentWords[1].c_str());
-  cout<<"Number of beta electrons: " <<NumberOfBeta <<endl;
+  std::cout <<"Number of beta electrons: " <<NumberOfBeta << std::endl;
 
 
   search(fin,"elec_tot_num",aline);
   parsewords(aline.c_str(),currentWords);
   NumberOfEls = atoi(currentWords[1].c_str());
-  cout<<"Number of electrons: " <<NumberOfEls <<endl;
+  std::cout <<"Number of electrons: " <<NumberOfEls << std::endl;
 
 
 
@@ -105,7 +104,7 @@ void QPParser::parse(const std::string& fname)
   search(fin,"spin_multiplicity",aline);
   parsewords(aline.c_str(),currentWords);
   SpinMultiplicity = atoi(currentWords[1].c_str());
-  cout<<"SPIN MULTIPLICITY: " <<SpinMultiplicity <<endl;
+  std::cout <<"SPIN MULTIPLICITY: " <<SpinMultiplicity << std::endl;
 
   SpinRestricted=true;
 
@@ -113,7 +112,7 @@ void QPParser::parse(const std::string& fname)
   search(fin,"nucl_num",aline);
   parsewords(aline.c_str(),currentWords);
   NumberOfAtoms = atoi(currentWords[1].c_str());
-  cout<<"NUMBER OF ATOMS: " <<NumberOfAtoms <<endl;
+  std::cout <<"NUMBER OF ATOMS: " <<NumberOfAtoms << std::endl;
 
 
   IonSystem.create(NumberOfAtoms);
@@ -138,13 +137,13 @@ void QPParser::parse(const std::string& fname)
     getwords(currentWords,fin);//Empty Line
     getwords(currentWords,fin);//mo_num
     getwords(currentWords,fin);//Number Of determinants
-    cout<<"Found "<<currentWords[1]<<" Determinants"<<endl;
+    std::cout <<"Found "<<currentWords[1]<<" Determinants"<< std::endl;
     ci_size=atoi(currentWords[1].c_str());
     NFZC = 0; 
     NAC = numMO; 
     NEXT =0; 
     NTOT=NEXT+NAC;
-    cout<<"# core, #active, #external: " <<NFZC <<" " <<NAC <<" " <<NEXT <<endl;
+    std::cout <<"# core, #active, #external: " <<NFZC <<" " <<NAC <<" " <<NEXT << std::endl;
     //fin.seekg(pivot_begin);
     getQPCI(fin);
   }
@@ -154,8 +153,8 @@ void QPParser::parse(const std::string& fname)
 void QPParser::getGeometry(std::istream& is)
 {
   //atomic numbers
-  vector<int> atomic_number,core;
-  vector<double> q,pos;
+  std::vector<int> atomic_number,core;
+  std::vector<double> q,pos;
   int natms=0;
   tags.clear();
   is.seekg(pivot_begin);
@@ -166,7 +165,7 @@ void QPParser::getGeometry(std::istream& is)
   {
     if(is.eof())
     {
-      cerr<<"Could not find atomic coordinates. \n";
+      std::cerr <<"Could not find atomic coordinates. \n";
       abort();
     }
     getwords(currentWords,is);
@@ -200,7 +199,7 @@ void QPParser::getGeometry(std::istream& is)
   while(notfound);
   if(natms != NumberOfAtoms)
   {
-    cerr<<"Could not find atomic coordinates for all atoms. \n";
+    std::cerr <<"Could not find atomic coordinates for all atoms. \n";
     abort();
   }
 //ECP PART!!!
@@ -212,7 +211,7 @@ void QPParser::getGeometry(std::istream& is)
     {
        if(is.eof())
        {
-          cerr<<"Problem looking for ECPs, this should not happen. Contact developers for help. \n";
+          std::cerr <<"Problem looking for ECPs, this should not happen. Contact developers for help. \n";
           abort();
        }
        getwords(currentWords,is);
@@ -229,7 +228,7 @@ void QPParser::getGeometry(std::istream& is)
            {
               if(is.eof())
               {
-                 cerr<<"2 Found ECPs, but problem looking ZCORE data.\n";
+                 std::cerr <<"2 Found ECPs, but problem looking ZCORE data.\n";
                  abort();
               }
               getwords(currentWords,is);
@@ -249,8 +248,8 @@ void QPParser::getGeometry(std::istream& is)
                  it0 = find(currentWords.begin(),currentWords.end(),"ATOM");
                  if(it0 == currentWords.end())
                  {
-                    cerr<<"Problem with ECP data. Didn't found ATOM tag\n";
-                    cerr<< is.rdbuf() <<endl;
+                    std::cerr <<"Problem with ECP data. Didn't found ATOM tag\n";
+                    std::cerr << is.rdbuf() << std::endl;
                     abort();
                  }
                  it0++;
@@ -258,20 +257,20 @@ void QPParser::getGeometry(std::istream& is)
                  if(it != currentWords.end())
                  {
                     it++;
-                    cout<<"Avant nq0="<<nq0<<" core[nq0]="<<core[nq0]<<"   q[nq0]="<<q[nq0]<<endl;
+                    std::cout <<"Avant nq0="<<nq0<<" core[nq0]="<<core[nq0]<<"   q[nq0]="<<q[nq0]<< std::endl;
                     core[nq0] = atoi(it->c_str());
                     q[nq0] -= core[nq0];
                        
-                    cout<<"Apres nq0="<<nq0<<" core[nq0]="<<core[nq0]<<"   q[nq0]="<<q[nq0]<<endl;
-                    cout<<"1 Found ECP for atom " <<nq0 <<" with zcore " <<core[nq0] <<endl;
+                    std::cout <<"Apres nq0="<<nq0<<" core[nq0]="<<core[nq0]<<"   q[nq0]="<<q[nq0]<< std::endl;
+                    std::cout <<"1 Found ECP for atom " <<nq0 <<" with zcore " <<core[nq0] << std::endl;
                  }
                  else
                  {
                     it = find(currentWords.begin(),currentWords.end(),"ATOM");
                     if(it == currentWords.end())
                     {
-                        cerr<<"Problem with ECP data. Didn't found ATOM tag\n";
-                        cerr<<"Atom: " <<nq0 <<endl;
+                        std::cerr <<"Problem with ECP data. Didn't found ATOM tag\n";
+                        std::cerr <<"Atom: " <<nq0 << std::endl;
                         abort();
                     }
                     std::vector<std::string>::iterator it2=it;
@@ -279,21 +278,21 @@ void QPParser::getGeometry(std::istream& is)
                     int nq = atoi(it2->c_str());
                     if(nq != nq0+1)
                     {
-                        cerr<<"Problem with ECP data. ID's don't agree\n";
-                        cerr<<"Atom: " <<nq0 <<endl;
+                        std::cerr <<"Problem with ECP data. ID's don't agree\n";
+                        std::cerr <<"Atom: " <<nq0 << std::endl;
                         abort();
                     }
                     it = find(it2,currentWords.end(),"ATOM");
                     if(it == currentWords.end())
                     {
-                       cerr<<"Problem with ECP data (2).\n";
-                       cerr<<"Atom: " << nq0 <<endl;
+                       std::cerr <<"Problem with ECP data (2).\n";
+                       std::cerr <<"Atom: " << nq0 << std::endl;
                        abort();
                     }
                     nq = atoi((it+1)->c_str());
                     core[nq0] = core[nq-1];
                     q[nq0] -= core[nq0];
-                    cout<<"2 Found ECP for atom " <<nq0 <<" with zcore " <<core[nq0] <<endl;
+                    std::cout <<"2 Found ECP for atom " <<nq0 <<" with zcore " <<core[nq0] << std::endl;
                  }
               }
            }
@@ -326,10 +325,10 @@ void QPParser::getGeometry(std::istream& is)
 
 void QPParser::getGaussianCenters(std::istream& is)
 {
-  string Shell_temp;
+  std::string Shell_temp;
   gBound.resize(NumberOfAtoms+1);
   int ng,nx;
-  string aline;
+  std::string aline;
   std::map<std::string,int> basisDataMap;
   int nUniqAt=0;
   for(int i=0; i<NumberOfAtoms; i++)
@@ -340,10 +339,10 @@ void QPParser::getGaussianCenters(std::istream& is)
       basisDataMap[tags[i]]=nUniqAt++;
     }
   }
-  vector<vector<double> > expo(nUniqAt),coef(nUniqAt),coef2(nUniqAt);
-  vector<int> nshll(nUniqAt,0); //use this to 
-  vector<vector<int> > ncoeffpershell(nUniqAt);
-  vector<vector<std::string> > shID(nUniqAt);
+  std::vector<std::vector<double> > expo(nUniqAt),coef(nUniqAt),coef2(nUniqAt);
+  std::vector<int> nshll(nUniqAt,0); //use this to 
+  std::vector<std::vector<int> > ncoeffpershell(nUniqAt);
+  std::vector<std::vector<std::string> > shID(nUniqAt);
   std::map<std::string,int> gsMap;
   gsMap[std::string("S")]=1;
   gsMap[std::string("SP")]=2;
@@ -359,7 +358,7 @@ void QPParser::getGaussianCenters(std::istream& is)
   {
     if(is.eof())
     {
-      cerr<<"Problem with basis set data.\n";
+      std::cerr <<"Problem with basis set data.\n";
       abort();
     }
     getwords(currentWords,is);
@@ -387,7 +386,7 @@ void QPParser::getGaussianCenters(std::istream& is)
         std::map<std::string,int>::iterator it(basisDataMap.find(currentWords[0]));
         if(it == basisDataMap.end())
         {
-           cerr<<"Error in parser.\n";
+           std::cerr <<"Error in parser.\n";
            abort();
         }
         currPos=it->second;
@@ -412,9 +411,9 @@ void QPParser::getGaussianCenters(std::istream& is)
                  expo[currPos].push_back(atof(currentWords[1].c_str()));
                  coef[currPos].push_back(atof(currentWords[2].c_str()));
                  shID[currPos][nshll[currPos]] = Shell_temp; 
-                 cout << currPos << ":" <<expo[currPos].back() << " " << coef[currPos].back() << " " 
+                 std::cout << currPos << ":" <<expo[currPos].back() << " " << coef[currPos].back() << " " 
                  << ncoeffpershell[currPos][nshll[currPos]] 
-                 << " " << shID[currPos][nshll[currPos]]<<endl; 
+                 << " " << shID[currPos][nshll[currPos]]<< std::endl; 
               }              
             nshll[currPos]++;
             ncoeffpershell[currPos].push_back(0);
@@ -438,7 +437,7 @@ void QPParser::getGaussianCenters(std::istream& is)
       }
       else
       {
-          cerr<<"error in parser"<<endl;
+          std::cerr <<"error in parser"<< std::endl;
           abort();
       }
  }
@@ -455,7 +454,7 @@ void QPParser::getGaussianCenters(std::istream& is)
     std::map<std::string,int>::iterator it(basisDataMap.find(tags[i]));
     if(it == basisDataMap.end())
     {
-      cerr<<"Error in parser.\n";
+      std::cerr <<"Error in parser.\n";
       abort();
     }
     gBound[i] = gtot;
@@ -484,9 +483,9 @@ void QPParser::getMO(std::istream& is)
   search(is,"BEGIN_MO");
   getwords(currentWords,is);  // empty line
   
-  vector<double> dummy(50);
+  std::vector<double> dummy(50);
   Matrix<double> CartMat(numMO,SizeOfBasisSet);
-  streampos pivot;
+  std::streampos pivot;
   pivot= is.tellg();
   std::vector<std::string> CartLabels(SizeOfBasisSet);
   getwords(currentWords,is);
@@ -516,7 +515,7 @@ void QPParser::getMO(std::istream& is)
   for(int i=0; i<numMO; i++)
     for(int k=0; k<SizeOfBasisSet; k++)
       EigVec[cnt++] = CartMat[i][k];
-  cout<<"Finished reading MO." <<endl;
+  std::cout <<"Finished reading MO." << std::endl;
 }
 
 void QPParser::getMO_single_set(std::istream& is, Matrix<double> &CartMat, std::vector<value_type>& EigVal)
@@ -539,7 +538,7 @@ void QPParser::getMO_single_set(std::istream& is, Matrix<double> &CartMat, std::
       }
       else
       {
-          cerr<<"Problem reading orbitals!!" <<endl;
+          std::cerr <<"Problem reading orbitals!!" << std::endl;
           abort();
       }
     }
@@ -583,7 +582,7 @@ void QPParser::getQPCI(std::istream& is)
     getwords(currentWords,is); //Empty Line
     if(currentWords[0] == "END_DET")
     {
-        cout<<"Done reading determinants"<<endl;
+        std::cout <<"Done reading determinants"<< std::endl;
         break;
     }
 
@@ -606,7 +605,7 @@ void QPParser::getQPCI(std::istream& is)
       ci_neb++;
   if(CIalpha[0].size() != CIbeta[0].size())
   {
-    cerr<<"QMCPack can't handle different number of active orbitals in alpha and beta channels right now. Contact developers for help (Miguel).\n";
+    std::cerr <<"QMCPack can't handle different number of active orbitals in alpha and beta channels right now. Contact developers for help (Miguel).\n";
     abort();
   }
   int ds=SpinMultiplicity-1;
@@ -614,6 +613,6 @@ void QPParser::getQPCI(std::istream& is)
   int nea= NumberOfEls-NumberOfBeta;
   ci_nca = nea-ci_nea;
   ci_ncb = neb-ci_neb;
-  cout<<" Done reading CIs!!"<<endl;
+  std::cout <<" Done reading CIs!!"<< std::endl;
   ci_nstates = CIalpha[0].size();
 }

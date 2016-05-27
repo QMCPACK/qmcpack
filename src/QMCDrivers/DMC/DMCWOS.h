@@ -44,7 +44,7 @@ public:
   bool run();
   bool put(xmlNodePtr q);
 
-  void setBranchInfo(const string& fname);
+  void setBranchInfo(const std::string& fname);
 
 private:
   /// Copy Constructor (disabled)

@@ -30,12 +30,12 @@ struct BMakeFuncBase
   int L;
   int M;
   int RadFuncType;
-  vector<double> exponent;
-  vector<double> contraction;
-  vector<int> node;
-  string BasisID;
+  std::vector<double> exponent;
+  std::vector<double> contraction;
+  std::vector<int> node;
+  std::string BasisID;
 
-  static vector<double> YlmNorm;
+  static std::vector<double> YlmNorm;
   static void init();
 
   BMakeFuncBase():
@@ -92,16 +92,16 @@ struct BMakeFuncBase
     node.push_back(n);
   }
 
-  void get(ostream& os)
+  void get(std::ostream& os)
   {
-    os << BasisID << " n,l,m " << N << " " << L << " " << M << endl;
+    os << BasisID << " n,l,m " << N << " " << L << " " << M << std::endl;
     for(int i=0; i<exponent.size(); i++)
     {
-      cout << " " << exponent[i] << " " << contraction[i]
-           << " " << node[i] << endl;
+      std::cout << " " << exponent[i] << " " << contraction[i]
+           << " " << node[i] << std::endl;
     }
   }
-  virtual void put(vector<string>& words) = 0;
+  virtual void put(std::vector<std::string>& words) = 0;
 };
 
 

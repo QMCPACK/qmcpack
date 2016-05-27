@@ -58,7 +58,7 @@ void LennardJones_smoothed_phy::add2Hamiltonian(ParticleSet& qp, TrialWaveFuncti
 void LennardJones_smoothed_phy::addCorrection(QMCHamiltonian& targetH)
 {
   LennardJones_smoothed_aux* auxTerm = new LennardJones_smoothed_aux(this);
-  string auxName = myName+"_aux";
+  std::string auxName = myName+"_aux";
   targetH.addOperator(auxTerm, auxName, false);
 }
 }

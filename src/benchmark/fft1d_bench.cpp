@@ -53,7 +53,7 @@ struct fft1d_test
     for(int i=0; i<sample.size(); ++i)
       sample[i]=0.5*std::sin(phase*i)+0.1*std::sin(phase*2*i)+0.3*std::sin(phase*3*i)+0.5*std::sin(phase*4.1*i);;
     for(int i=0; i<howmany; ++i)
-      std::copy(sample.begin(),sample.end(),in[i]);
+      copy(sample.begin(),sample.end(),in[i]);
     myfft.create(in.data(),out.data());
   }
 
@@ -75,7 +75,7 @@ struct fft1d_test
 }
 
 
-inline void print_help(const string& msg)
+inline void print_help(const std::string& msg)
 {
   printf("%s -d fft_dim -m numer_of_fft -i iterations -p [d|s] -t [r2c|c2c] -e [fftw|mkl|essl] \n",msg.c_str());
 }
@@ -92,8 +92,8 @@ int main(int argc, char** argv)
   int niters=10;
   int fft_dim=16;
   //accepted: r2c  or c2c
-  string fft_type("r2c");
-  string fft_eng("fftw");
+  std::string fft_type("r2c");
+  std::string fft_eng("fftw");
   bool inplace=true;
   bool single_precision=false;
   int opt;
@@ -135,7 +135,7 @@ int main(int argc, char** argv)
   {
     //fft1d_test<double,complex<double>,FFTW_ENG> fft_tester(fft_dim,howmany);
     //fft1d_test<float,complex<float>,FFTESSL_ENG> fft_tester(fft_dim,howmany);
-    fft1d_test<complex<float>,complex<float>,FFTESSL_ENG> fft_tester(fft_dim,howmany);
+    fft1d_test<std::complex<float>,complex<float>,FFTESSL_ENG> fft_tester(fft_dim,howmany);
     double t_f=0.0;
     double t_b=0.0;
     Timer clock;
@@ -155,8 +155,8 @@ int main(int argc, char** argv)
   gflops /= omp_get_max_threads();
   fft_time /= omp_get_max_threads()*niters;
   ifft_time /= omp_get_max_threads()*niters;
-  cout << "gflops " << gflops << endl;
-  cout << fft_time <<" " << ifft_time << " " << gflops/fft_time << " " << gflops/ifft_time << endl;
+  std::cout << "gflops " << gflops << std::endl;
+  std::cout << fft_time <<" " << ifft_time << " " << gflops/fft_time << " " << gflops/ifft_time << std::endl;
   OHMMS::Controller->finalize();
   return 0;
 }

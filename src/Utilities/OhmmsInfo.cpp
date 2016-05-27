@@ -95,7 +95,7 @@ void OhmmsInfo::initialize(const char* froot, int master)
 //    bool useone = true; //always share the std
 //    if(useone)
 //    {
-//      // share a ostream of Warrning
+//      // share a std::ostream of Warrning
 //      Warn->set(froot);
 //      Error->set(*Warn);
 //      Log->set(*Warn);

@@ -29,7 +29,7 @@ namespace qmcplusplus
 /** add timers for VMC PbyP updates
  * @param timers container for the timers
  */
-void add_vmc_timers(vector<NewTimer*>& timers)
+void add_vmc_timers(std::vector<NewTimer*>& timers)
 {
   timers.push_back(new NewTimer("VMCUpdatePbyP::advance")); //timer for the walker loop
   timers.push_back(new NewTimer("VMCUpdatePbyP::movePbyP")); //timer for MC, ratio etc
@@ -123,15 +123,15 @@ void VMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool me
   myTimers[0]->stop();
 }
 
-VMCUpdatePbyP::RealType VMCUpdatePbyP::advanceWalkerForEE(Walker_t& w1, vector<PosType>& dR, vector<int>& iats, vector<int>& rs, vector<RealType>& ratios)
+VMCUpdatePbyP::RealType VMCUpdatePbyP::advanceWalkerForEE(Walker_t& w1, std::vector<PosType>& dR, std::vector<int>& iats, std::vector<int>& rs, std::vector<RealType>& ratios)
 {
   Walker_t::Buffer_t& w_buffer(w1.DataSet);
   W.loadWalker(w1,true);
   Psi.copyFromBuffer(W,w_buffer);
-  vector<RealType> runningratio(3,1.0);
+  std::vector<RealType> runningratio(3,1.0);
   int sh(0);
   int nshells(ratios.size()/3);
-  vector<RealType> orb_ratios;
+  std::vector<RealType> orb_ratios;
 //                 accumulate ratios on the way there
   for(int itz(0); itz<(iats.size()-1); itz++)
   {
@@ -184,7 +184,7 @@ VMCUpdatePbyP::RealType VMCUpdatePbyP::advanceWalkerForEE(Walker_t& w1, vector<P
 }
 
 
-//   VMCUpdatePbyP::RealType VMCUpdatePbyP::advanceWalkerForCSEE(Walker_t& w1, vector<PosType>& dR, vector<int>& iats, vector<int>& rs, vector<RealType>& ratios, vector<RealType>& weights, vector<RealType>& logs)
+//   VMCUpdatePbyP::RealType VMCUpdatePbyP::advanceWalkerForCSEE(Walker_t& w1, std::vector<PosType>& dR, std::vector<int>& iats, std::vector<int>& rs, std::vector<RealType>& ratios, std::vector<RealType>& weights, std::vector<RealType>& logs)
 //   {
 //     Walker_t::Buffer_t& w_buffer(w1.DataSet);
 //     W.loadWalker(w1,true);
@@ -193,7 +193,7 @@ VMCUpdatePbyP::RealType VMCUpdatePbyP::advanceWalkerForEE(Walker_t& w1, vector<P
 //
 //     RealType runningratio(std::exp(2.0*logs[1]));
 //     int sh(0);
-//     vector<RealType> lzratios;
+//     std::vector<RealType> lzratios;
 // //                 accumulate ratios on the way there
 //     for(int itz(0); itz<(iats.size()-1); itz++)
 //     {
@@ -237,10 +237,10 @@ VMCUpdatePbyP::RealType VMCUpdatePbyP::advanceWalkerForEE(Walker_t& w1, vector<P
 //     return runningratio;
 //   }
 
-//   void VMCUpdatePbyP::advanceCSWalkers(vector<TrialWaveFunction*>& pclone
-//       , vector<MCWalkerConfiguration*>& wclone
-//       , vector<QMCHamiltonian*>& hclone
-//       , vector<RandomGenerator_t*>& rng, vector<RealType>& c_i)
+//   void VMCUpdatePbyP::advanceCSWalkers(std::vector<TrialWaveFunction*>& pclone
+//       , std::vector<MCWalkerConfiguration*>& wclone
+//       , std::vector<QMCHamiltonian*>& hclone
+//       , std::vector<RandomGenerator_t*>& rng, std::vector<RealType>& c_i)
 //   {
 //     int NumThreads(pclone.size());
 //
@@ -317,11 +317,11 @@ VMCUpdatePbyP::RealType VMCUpdatePbyP::advanceWalkerForEE(Walker_t& w1, vector<P
 //     myTimers[0]->stop();
 //   }
 
-//   void VMCUpdatePbyP::estimateNormWalkers(vector<TrialWaveFunction*>& pclone
-//       , vector<MCWalkerConfiguration*>& wclone
-//       , vector<QMCHamiltonian*>& hclone
-//       , vector<RandomGenerator_t*>& rng
-//       , vector<RealType>& ratio_i_0)
+//   void VMCUpdatePbyP::estimateNormWalkers(std::vector<TrialWaveFunction*>& pclone
+//       , std::vector<MCWalkerConfiguration*>& wclone
+//       , std::vector<QMCHamiltonian*>& hclone
+//       , std::vector<RandomGenerator_t*>& rng
+//       , std::vector<RealType>& ratio_i_0)
 //   {
 //     int NumThreads(pclone.size());
 //
@@ -428,7 +428,7 @@ void VMCUpdatePbyPWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end
           RealType ratio = Psi.ratio(W,iat,dG,dL);
           RealType prob = ratio*ratio;
           //zero is always rejected
-          if (prob<numeric_limits<RealType>::epsilon())
+          if (prob<std::numeric_limits<RealType>::epsilon())
           {
             ++nReject;
             W.rejectMove(iat);
@@ -502,18 +502,18 @@ VMCUpdatePbyPWithDriftFast::~VMCUpdatePbyPWithDriftFast()
 {
 }
 
-VMCUpdatePbyPWithDriftFast::RealType VMCUpdatePbyPWithDriftFast::advanceWalkerForEE(Walker_t& w1, vector<PosType>& dR, vector<int>& iats, vector<int>& rs, vector<RealType>& ratios)
+VMCUpdatePbyPWithDriftFast::RealType VMCUpdatePbyPWithDriftFast::advanceWalkerForEE(Walker_t& w1, std::vector<PosType>& dR, std::vector<int>& iats, std::vector<int>& rs, std::vector<RealType>& ratios)
 {
   Walker_t::Buffer_t& w_buffer(w1.DataSet);
   W.loadWalker(w1,true);
   Psi.copyFromBuffer(W,w_buffer);
   std::vector<RealType> logs;
   Psi.getLogs(logs);
-  vector<RealType> runningratio(4,1.0);
+  std::vector<RealType> runningratio(4,1.0);
   int sh(0);
 //     runningratio[3]=std::exp(2.0*(logs[0]-csoffset));
   int nshells(rs.size());
-  vector<RealType> orb_ratios;
+  std::vector<RealType> orb_ratios;
 //                 accumulate ratios on the way there
   for(int itz(0); itz<(iats.size()-1); itz++)
   {
@@ -569,7 +569,7 @@ VMCUpdatePbyPWithDriftFast::RealType VMCUpdatePbyPWithDriftFast::advanceWalkerFo
   return std::exp(2.0*(logs[0]-csoffset));
 }
 
-//   VMCUpdatePbyPWithDriftFast::RealType VMCUpdatePbyPWithDriftFast::advanceWalkerForCSEE(Walker_t& w1, vector<PosType>& dR, vector<int>& iats, vector<int>& rs, vector<RealType>& ratios, vector<RealType>& weights, vector<RealType>& logs )
+//   VMCUpdatePbyPWithDriftFast::RealType VMCUpdatePbyPWithDriftFast::advanceWalkerForCSEE(Walker_t& w1, std::vector<PosType>& dR, std::vector<int>& iats, std::vector<int>& rs, std::vector<RealType>& ratios, std::vector<RealType>& weights, std::vector<RealType>& logs )
 //   {
 //     Walker_t::Buffer_t& w_buffer(w1.DataSet);
 //     W.loadWalker(w1,true);
@@ -583,7 +583,7 @@ VMCUpdatePbyPWithDriftFast::RealType VMCUpdatePbyPWithDriftFast::advanceWalkerFo
 // //     RealType runningweight(std::exp(2.0*logpsiCS));
 //     logs[0]=runningweight;
 //     int sh(0);
-//     vector<RealType> lzratios;
+//     std::vector<RealType> lzratios;
 // //                 accumulate ratios on the way there
 //     for(int itz(0); itz<(iats.size()-1); itz++)
 //     {
@@ -674,7 +674,7 @@ void VMCUpdatePbyPWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t it
           RealType ratio = Psi.ratioGrad(W,iat,grad_new);
           RealType prob = ratio*ratio;
           //zero is always rejected
-          if (prob<numeric_limits<RealType>::epsilon())
+          if (prob<std::numeric_limits<RealType>::epsilon())
           {
             ++nReject;
             W.rejectMove(iat);
@@ -778,7 +778,7 @@ void VMCUpdateRenyiWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t i
           RealType ratio = Psi.ratioGrad(W,iat,grad_new);
           RealType prob = ratio*ratio;
           //zero is always rejected
-          if (prob<numeric_limits<RealType>::epsilon())
+          if (prob<std::numeric_limits<RealType>::epsilon())
           {
             ++nReject;
             W.rejectMove(iat);
@@ -852,7 +852,7 @@ void VMCUpdateRenyiWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t i
 // {
 // }
 
-//   void VMCUpdatePbyPWithDriftFast::advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng, vector<RealType>& c_i)
+//   void VMCUpdatePbyPWithDriftFast::advanceCSWalkers(std::vector<TrialWaveFunction*>& pclone, std::vector<MCWalkerConfiguration*>& wclone, std::vector<QMCHamiltonian*>& hclone, std::vector<RandomGenerator_t*>& rng, std::vector<RealType>& c_i)
 //   {
 //     int NumThreads(pclone.size());
 //     myTimers[0]->start();
@@ -915,7 +915,7 @@ void VMCUpdateRenyiWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t i
 //         RealType prob = std::exp(psi2_i_new[0]-psi2_i_now[0])*(psi2_new/psi2_now);
 //
 //         //zero is always rejected
-//         if (prob < numeric_limits<RealType>::epsilon())
+//         if (prob < std::numeric_limits<RealType>::epsilon())
 //         {
 //           ++nReject;
 //           for (int ip=0; ip<NumThreads; ++ip)
@@ -1067,7 +1067,7 @@ void VMCUpdateRenyiWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t i
 //           RealType logguide2_new = 2.0*std::log(Guide.ratio(W,iat))+ logguide2_now;
 //
 //           long double prob = psi_ratio*psi_ratio*(1.0 + expl(logguide2_new-logpsi2_new))/(1.0+ expl(logguide2_now-logpsi2_now));
-//           //               app_log()<<prob<<endl;
+//           //               app_log()<<prob<< std::endl;
 //           //RealType prob = std::min(1.0e0,ratio*ratio);
 //           if (RandomGen() < prob)
 //           {
@@ -1122,10 +1122,10 @@ void VMCUpdateRenyiWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t i
 //     myTimers[0]->stop();
 //   }
 //
-//   void VMCUpdatePbyPSampleRN::advanceCSWalkers(vector<TrialWaveFunction*>& pclone
-//       , vector<MCWalkerConfiguration*>& wclone
-//       , vector<QMCHamiltonian*>& hclone
-//       , vector<RandomGenerator_t*>& rng, vector<RealType>& c_i)
+//   void VMCUpdatePbyPSampleRN::advanceCSWalkers(std::vector<TrialWaveFunction*>& pclone
+//       , std::vector<MCWalkerConfiguration*>& wclone
+//       , std::vector<QMCHamiltonian*>& hclone
+//       , std::vector<RandomGenerator_t*>& rng, std::vector<RealType>& c_i)
 //   {
 //     int NumThreads(pclone.size());
 //
@@ -1202,11 +1202,11 @@ void VMCUpdateRenyiWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t i
 //     myTimers[0]->stop();
 //   }
 //
-//   void VMCUpdatePbyPSampleRN::estimateNormWalkers(vector<TrialWaveFunction*>& pclone
-//       , vector<MCWalkerConfiguration*>& wclone
-//       , vector<QMCHamiltonian*>& hclone
-//       , vector<RandomGenerator_t*>& rng
-//       , vector<RealType>& ratio_i_0)
+//   void VMCUpdatePbyPSampleRN::estimateNormWalkers(std::vector<TrialWaveFunction*>& pclone
+//       , std::vector<MCWalkerConfiguration*>& wclone
+//       , std::vector<QMCHamiltonian*>& hclone
+//       , std::vector<RandomGenerator_t*>& rng
+//       , std::vector<RealType>& ratio_i_0)
 //   {
 //     int NumThreads(pclone.size());
 //

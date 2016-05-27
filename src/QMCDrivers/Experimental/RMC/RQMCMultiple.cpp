@@ -169,7 +169,7 @@ void RQMCMultiple::initReptile()
     Reptile=new MultiChain(NewBead,ReptileLength,InitialGrowthDirection,nPsi);
     if(h5FileRoot.size() && (h5FileRoot != "invalid"))
     {
-      app_log() << "Reading the previous multi-chain configurations" << endl;
+      app_log() << "Reading the previous multi-chain configurations" << std::endl;
       restartmode = Reptile->read(h5FileRoot);
     }
     W.setPolymer(Reptile);
@@ -226,7 +226,7 @@ void RQMCMultiple::setReptileProperties()
   RealType RefAction(-1.0e20);
   for(int ipsi=0; ipsi<nPsi; ipsi++)
   {
-    RefAction=max(RefAction,Reptile->GlobalAction[ipsi]);
+    RefAction= std::max(RefAction,Reptile->GlobalAction[ipsi]);
   }
   //Compute Total Weight
   Reptile->GlobalWgt=0.0e0;
@@ -251,7 +251,7 @@ void RQMCMultiple::setReptileProperties()
 void RQMCMultiple::checkReptileProperties()
 {
   //Temporary vector
-  vector<int> SumSign;
+  std::vector<int> SumSign;
   SumSign.resize(nPsi);
   ///Assign a bunch of useful pointers
   MultiChain::iterator first_bead(Reptile->begin()), bead_end(Reptile->end());
@@ -369,7 +369,7 @@ void RQMCMultiple::checkReptileProperties()
   for(int ipsi=0; ipsi<nPsi; ipsi++)
   {
     Reptile->GlobalAction[ipsi]=(*bead)->Properties(ipsi,LOGPSI);
-    //app_log() << " WF : " << ipsi << " " << Reptile->GlobalAction[ipsi] << endl;
+    //app_log() << " WF : " << ipsi << " " << Reptile->GlobalAction[ipsi] << std::endl;
   }
   while(bead != last_bead)
   {
@@ -384,7 +384,7 @@ void RQMCMultiple::checkReptileProperties()
   for(int ipsi=0; ipsi<nPsi; ipsi++)
   {
     Reptile->GlobalAction[ipsi]+=(*bead)->Properties(ipsi,LOGPSI);
-    //app_log() << " WF : " << ipsi << " " << Reptile->GlobalAction[ipsi] << endl;
+    //app_log() << " WF : " << ipsi << " " << Reptile->GlobalAction[ipsi] << std::endl;
   }
   //Compute Global Sign weight (need to be initialized somewhere)
   bead=first_bead;
@@ -402,7 +402,7 @@ void RQMCMultiple::checkReptileProperties()
   {
     WeightSign[ipsi]=std::max(0,Reptile->GlobalSignWgt[ipsi]-Reptile->Last);
     if(WeightSign[ipsi])
-      RefAction=max(RefAction,Reptile->GlobalAction[ipsi]);
+      RefAction= std::max(RefAction,Reptile->GlobalAction[ipsi]);
   }
   //Compute Total Weight
   Reptile->GlobalWgt=0.0e0;
@@ -421,10 +421,10 @@ void RQMCMultiple::checkReptileProperties()
       Reptile->UmbrellaWeight[ipsi] = std::exp(DeltaAction);
     else
       Reptile->UmbrellaWeight[ipsi] = 0.0e0;
-    app_log() << "GA " << ipsi <<  " : " << Reptile->GlobalAction[ipsi] << endl;
-    app_log() << "UW " << ipsi <<  " : " << Reptile->UmbrellaWeight[ipsi] << endl;
+    app_log() << "GA " << ipsi <<  " : " << Reptile->GlobalAction[ipsi] << std::endl;
+    app_log() << "UW " << ipsi <<  " : " << Reptile->UmbrellaWeight[ipsi] << std::endl;
   }
-  app_log() << "GW " <<  " : " << Reptile->GlobalWgt << endl;
+  app_log() << "GW " <<  " : " << Reptile->GlobalWgt << std::endl;
 }
 
 
@@ -436,7 +436,7 @@ void RQMCMultiple::recordBlock(int block)
   //TEST CACHE
   //Estimators->report(CurrentStep);
   //TEST CACHE
-  //app_error() << " BROKEN RQMCMultiple::recordBlock(int block) HDFWalkerOutput as 2007-04-16 " << endl;
+  //app_error() << " BROKEN RQMCMultiple::recordBlock(int block) HDFWalkerOutput as 2007-04-16 " << std::endl;
   //HDFWalkerOutput WO(RootName,false,0);
   //WO.get(W);
   //WO.write(*branchEngine);
@@ -469,7 +469,7 @@ void RQMCMultiple::recordBlock(int block)
 //   }
 bool RQMCMultiple::put(xmlNodePtr q)
 {
-  string observ("NONE");
+  std::string observ("NONE");
   maxTouch=100;
   OhmmsAttributeSet attrib;
   ParameterSet nattrib;
@@ -481,10 +481,10 @@ bool RQMCMultiple::put(xmlNodePtr q)
   attrib.put(q);
   nattrib.put(q);
   if ((scaleBeadDrift=="yes")||(scaleBeadDrift=="true"))
-    app_log()<<"  Using Scaled drift."<<endl;
+    app_log()<<"  Using Scaled drift."<< std::endl;
   else
-    app_log()<<"  Drift set by gradient."<<endl;
-  app_log()<<"  Evaluating observals every "<<EvalInterval<<" steps."<<endl;
+    app_log()<<"  Drift set by gradient."<< std::endl;
+  app_log()<<"  Evaluating observals every "<<EvalInterval<<" steps."<< std::endl;
   nPsi=H1.size();
   if(branchEngine->LogNorm.size()!=nPsi)
   {
@@ -502,8 +502,8 @@ bool RQMCMultiple::put(xmlNodePtr q)
     q2=q2->children;
     bool FoundEstimatorBlock=false;
 //     while(q2!=NULL){
-//       string cname((const char*)q2->name);
-//       string observ="NONE";
+//       std::string cname((const char*)q2->name);
+//       std::string observ="NONE";
 //       int fq(1);
 //       OhmmsAttributeSet Ettrib;
 //       Ettrib.add(observ,"observables" );
@@ -511,12 +511,12 @@ bool RQMCMultiple::put(xmlNodePtr q)
 //       Ettrib.put(q2);
 //       if (cname=="Estimators"){
 // // 	if (observ=="NONE"){
-// // 	  app_log()<<"Using normal Observables"<<endl;
+// // 	  app_log()<<"Using normal Observables"<< std::endl;
 // // 	  multiEstimator = new CSPolymerEstimator(H,nPsi);
 // // 	  FoundEstimatorBlock=true;
 // // 	} else
 // //       if (observ=="ZVZB"){
-// //           app_log()<<"Using ZVZB observables"<<endl;
+// //           app_log()<<"Using ZVZB observables"<< std::endl;
 // //           //         multiEstimator = new MJPolymerEstimator(H,nPsi);
 // //           MJPolymerEstimator* MJp = new MJPolymerEstimator(H,nPsi);
 // //           MJp->setpNorm(1.0/( W.Lattice.DIM *  W.Lattice.Volume));
@@ -526,7 +526,7 @@ bool RQMCMultiple::put(xmlNodePtr q)
 // //           FoundEstimatorBlock=true;
 // //       }
 // //       if (observ=="HF"){
-// //           app_log()<<"Using HF observables"<<endl;
+// //           app_log()<<"Using HF observables"<< std::endl;
 // //           HFPolymerEstimator* MJp = new HFPolymerEstimator(H,nPsi);
 // //           MJp->add_HF_Observables(ReptileLength,fq);
 // //           MJp->setTau(Tau);
@@ -535,14 +535,14 @@ bool RQMCMultiple::put(xmlNodePtr q)
 // //       }
 // //       else if (observ=="HFDHE2"){
 // //
-// // 	app_log()<<"TRUNC is BROKEN Using HFDHE2 observables"<<endl;
+// // 	app_log()<<"TRUNC is BROKEN Using HFDHE2 observables"<< std::endl;
 // // 	HFDHE2PolymerEstimator* HFp = new HFDHE2PolymerEstimator(H,nPsi);
 // // 	HFp->setrLen(ReptileLength);
 // // 	HFp->setpNorm(1.0/( W.Lattice.DIM *  W.Lattice.Volume));
 // // 	multiEstimator = HFp;
 // // 	FoundEstimatorBlock=true;
 // //       } else if (observ=="Combo"){
-// // 	app_log()<<"Using Combo observables"<<endl;
+// // 	app_log()<<"Using Combo observables"<< std::endl;
 // // 	ComboPolymerEstimator* HFp = new ComboPolymerEstimator(H,nPsi);
 // // 	HFp->put(q2,W,ReptileLength);
 // // 	multiEstimator = HFp;
@@ -553,7 +553,7 @@ bool RQMCMultiple::put(xmlNodePtr q)
 //   }
     if (!FoundEstimatorBlock)
     {
-      app_log()<<"Using normal Observables"<<endl;
+      app_log()<<"Using normal Observables"<< std::endl;
       multiEstimator = new CSPolymerEstimator(H,nPsi);
     }
     Estimators->add(multiEstimator,Estimators->MainEstimatorName);
@@ -614,7 +614,7 @@ void RQMCMultiple::moveReptile()
   if (tail->timesTouched > maxTouch)
   {
     FORCE=1;
-    app_log()<<"Forcing Accept!!"<<endl;
+    app_log()<<"Forcing Accept!!"<< std::endl;
   };
   //     //new position,\f$R_{yp} = R_{xp} + \sqrt(2}*\Delta + tau*D_{xp}\f$
   //     W.R = head->R + m_sqrttau*gRand + Tau*head->Drift;
@@ -757,7 +757,7 @@ void RQMCMultiple::moveReptile()
         WeightSign[ipsi]=std::max(0,NewGlobalSignWgt[ipsi]-Reptile->Last);
         // Assign Reference Action
         if(WeightSign[ipsi]>0)
-          RefAction=max(RefAction,NewGlobalAction[ipsi]);
+          RefAction= std::max(RefAction,NewGlobalAction[ipsi]);
       }
       //Compute Log of global Wgt
       for(int ipsi=0; ipsi<nPsi; ipsi++)

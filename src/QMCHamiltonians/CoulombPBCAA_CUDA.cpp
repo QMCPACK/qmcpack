@@ -89,9 +89,9 @@ CoulombPBCAA_CUDA::setupLongRangeGPU(ParticleSet &P)
 
 void
 CoulombPBCAA_CUDA::addEnergy(MCWalkerConfiguration &W,
-                             vector<RealType> &LocalEnergy)
+                             std::vector<RealType> &LocalEnergy)
 {
-  vector<Walker_t*> &walkers = W.WalkerList;
+  std::vector<Walker_t*> &walkers = W.WalkerList;
   // Short-circuit for constant contribution (e.g. fixed ions)
   if (!is_active)
   {
@@ -143,7 +143,7 @@ CoulombPBCAA_CUDA::addEnergy(MCWalkerConfiguration &W,
   RhokHost = RhokGPU;
   for (int ik=0; ik<Numk; ik++)
   {
-    complex<double> rhok(0.0, 0.0);
+    std::complex<double> rhok(0.0, 0.0);
     PosType k = PtclRef.SK->KLists.kpts_cart[ik];
     for (int ir=0; ir<N; ir++)
     {
@@ -151,7 +151,7 @@ CoulombPBCAA_CUDA::addEnergy(MCWalkerConfiguration &W,
       double s, c;
       double phase = dot(k,r);
       sincos(phase, &s, &c);
-      rhok += complex<double>(c,s);
+      rhok += std::complex<double>(c,s);
     }
     fprintf (stderr, "GPU:   %d   %14.6f  %14.6f\n",
              ik, RhokHost[2*ik+0], RhokHost[2*ik+1]);

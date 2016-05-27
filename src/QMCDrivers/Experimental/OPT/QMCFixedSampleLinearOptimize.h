@@ -53,7 +53,7 @@ private:
   inline bool ValidCostFunction(bool valid)
   {
     if (!valid)
-      app_log()<<" Cost Function is Invalid. If this frequently, try reducing the step size of the line minimization or reduce the number of cycles. " <<endl;
+      app_log()<<" Cost Function is Invalid. If this frequently, try reducing the step size of the line minimization or reduce the number of cycles. " << std::endl;
     return valid;
   }
 
@@ -62,7 +62,7 @@ private:
   int Max_iterations;
   int nstabilizers;
   RealType stabilizerScale, bigChange, exp0, exp1, stepsize, savedQuadstep;
-  string MinMethod, GEVtype, StabilizerMethod, GEVSplit;
+  std::string MinMethod, GEVtype, StabilizerMethod, GEVSplit;
   RealType w_beta;
   /// number of previous steps to orthogonalize to.
   int eigCG;

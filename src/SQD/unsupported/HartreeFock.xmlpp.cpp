@@ -41,7 +41,7 @@ HartreeFock::HartreeFock(RadialPotentialSet& pot,
   put(root);
 }
 
-void HartreeFock::setRoot(const string& aroot)
+void HartreeFock::setRoot(const std::string& aroot)
 {
   LogFileName = aroot;
   LogFileName.append(".log");
@@ -63,13 +63,13 @@ HartreeFock::run(Transform_t* fake, int norb)
   typedef Numerov<Transform_t, RadialOrbital_t> Numerov_t;
   value_type Vtotal,KEnew, KEold,E;
   value_type lowerbound, upperbound;
-  vector<value_type> energy(Pot.size());
+  std::vector<value_type> energy(Pot.size());
   eigVal.resize(norb);
   int iter = 0;
   Vtotal = Pot.evaluate(Psi,energy,norb);
   Pot.mix(0.0);
   KEnew = Pot.calcKE(Psi,0,norb);
-  string label("spdf");
+  std::string label("spdf");
   std::ofstream log_stream(LogFileName.c_str());
   log_stream.precision(8);
   do
@@ -90,9 +90,9 @@ HartreeFock::run(Transform_t* fake, int norb)
       //calculate the eigenvalue and the corresponding orbital
       eigsum += (eigVal[ob] =
                    numerov.solve(lowerbound, upperbound, eig_tol));
-      log_stream << Psi.N[ob]<< label[Psi.L[ob]] << '\t' << eigVal[ob] << endl;
+      log_stream << Psi.N[ob]<< label[Psi.L[ob]] << '\t' << eigVal[ob] << std::endl;
     }
-    log_stream << endl;
+    log_stream << std::endl;
     //normalize the orbitals
     Psi.normalize(norb);
     //restrict the orbitals
@@ -106,12 +106,12 @@ HartreeFock::run(Transform_t* fake, int norb)
     Pot.applyRestriction(Psi);
     Pot.mix(ratio);
     log_stream.precision(10);
-    log_stream << "Iteration #" << iter+1 << endl;
-    log_stream << "KE    = " << setw(15) << KEnew
-               << "  PE     = " << setw(15) << Vtotal << endl;
-    log_stream << "PE/KE = " << setw(15) << Vtotal/KEnew
-               << "  Energy = " << setw(15) << E << endl;
-    log_stream << endl;
+    log_stream << "Iteration #" << iter+1 << std::endl;
+    log_stream << "KE    = " << std::setw(15) << KEnew
+               << "  PE     = " << std::setw(15) << Vtotal << std::endl;
+    log_stream << "PE/KE = " << std::setw(15) << Vtotal/KEnew
+               << "  Energy = " << std::setw(15) << E << std::endl;
+    log_stream << std::endl;
     iter++;
     ///continue the loop until the kinetic energy converges
   }
@@ -125,7 +125,7 @@ HartreeFock::run(Transform_t* fake, int norb)
    @brief Instantiate a transformation function based on the potential and grid type and call run.
    *
    */
-void HartreeFock::solve(string pottype, string gridtype, int norb)
+void HartreeFock::solve( std::string pottype, std::string gridtype, int norb)
 {
   if(pottype == "Harmonic" || pottype == "Step")
   {
@@ -192,7 +192,7 @@ bool HartreeFock::put(const xmlpp::Node* q)
       Attribute* att = cur->get_attribute("name");
       if(att)
       {
-        const string& aname = att->get_value();
+        const std::string& aname = att->get_value();
         xmlNode* ccur = cur->cobj();
         if(aname == "max_iter")
         {
@@ -224,9 +224,9 @@ bool HartreeFock::put(const xmlpp::Node* q)
 
 bool parseXMLFile(RadialPotentialSet& Pot,
                   SphericalOrbitalTraits::BasisSetType& Psi,
-                  string& name,
-                  string& pottype,
-                  string& gridtype,
+                  std::string& name,
+                  std::string& pottype,
+                  std::string& gridtype,
                   const xmlpp::Node* root)
 {
   using namespace xmlpp;
@@ -279,7 +279,7 @@ bool parseXMLFile(RadialPotentialSet& Pot,
       int npts = 2001;
       while(it != atts.end())
       {
-        const string& aname = (*it)->get_name();
+        const std::string& aname = (*it)->get_name();
         if(aname == "type")
         {
           gridtype = (*it)->get_value();
@@ -305,7 +305,7 @@ bool parseXMLFile(RadialPotentialSet& Pot,
           Attribute* att = cur->get_attribute("name");
           if(att)
           {
-            const string& aname = att->get_value();
+            const std::string& aname = att->get_value();
             xmlNode* curc = cur->cobj();
             if(aname == "min")
               putContent(min,curc);
@@ -361,13 +361,13 @@ bool parseXMLFile(RadialPotentialSet& Pot,
       xmlNodePtr cur_sub = cur->cobj()->xmlChildrenNode;
       while(cur_sub != NULL)
       {
-        string pname((const char*)(cur_sub->name));
+        std::string pname((const char*)(cur_sub->name));
         if(pname == "Parameter")
         {
           xmlAttrPtr att=cur_sub->properties;
           while(att != NULL)
           {
-            string vname((const char*)(att->children->content));
+            std::string vname((const char*)(att->children->content));
             if(vname == "mass")
             {
               double m=1.0;
@@ -447,7 +447,7 @@ bool parseXMLFile(RadialPotentialSet& Pot,
             Attribute* att = cur->get_attribute("name");
             if(att)
             {
-              const string& aname = att->get_value();
+              const std::string& aname = att->get_value();
               xmlNode* curc = cur->cobj();
               if(aname == "Z")
                 putContent(Z,curc);
@@ -486,7 +486,7 @@ bool parseXMLFile(RadialPotentialSet& Pot,
               Attribute* att = cur->get_attribute("name");
               if(att)
               {
-                const string& aname = att->get_value();
+                const std::string& aname = att->get_value();
                 xmlNode* curc = cur->cobj();
                 if(aname == "Omega")
                   putContent(Omega,curc);
@@ -540,9 +540,9 @@ bool parseXMLFile(RadialPotentialSet& Pot,
 //  DomParser parser;
 //  parser.parse_file(argv[1]);
 //  Node* root = parser.get_document()->get_root_node(); //deleted by DomParser.
-//  string element;
-//  string pottype;
-//  string gridtype;
+//  std::string element;
+//  std::string pottype;
+//  std::string gridtype;
 //  RadialPotentialSet Pot;
 //  SphericalOrbitalTraits::BasisSetType Psi;
 //  parseXMLFile(Pot,Psi,element,pottype,gridtype,root);

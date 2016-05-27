@@ -81,9 +81,9 @@ protected:
   //index of the log-jacobian in Properties
   int LOGJACOB;
 
-  string refSetName;
+  std::string refSetName;
 
-  vector<RealType> Jacobian;
+  std::vector<RealType> Jacobian;
 
   SpaceWarp PtclWarp;
 
@@ -94,10 +94,10 @@ protected:
   Bead *NewBead;
 
   //Warped position of head bead
-  vector<ParticlePos_t> Warped_R,Warped_deltaR;
+  std::vector<ParticlePos_t> Warped_R,Warped_deltaR;
 
   //Auxiliary array to compute properties of freshly warped ptcls
-  vector<ParticleSet*> WW;
+  std::vector<ParticleSet*> WW;
 
   ///move polymers
   void moveReptile();

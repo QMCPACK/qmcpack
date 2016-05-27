@@ -28,7 +28,7 @@ namespace qmcplusplus
 //  }
 
 
-/** adoptor class to match complex<ST> spline stored in a packed array with complex<TT> SPOs
+/** adoptor class to match std::complex<ST> spline stored in a packed array with std::complex<TT> SPOs
  * @tparam ST precision of spline
  * @tparam TT precision of SPOs
  * @tparam D dimension
@@ -111,7 +111,7 @@ struct SplineC2CPackedAdoptor: public SplineAdoptorBase<ST,D>
 
   bool read_splines(hdf_archive& h5f)
   {
-    ostringstream o;
+    std::ostringstream o;
     o<<"spline_" << SplineAdoptorBase<ST,D>::MyIndex;
     einspline_engine<SplineType> bigtable(MultiSpline);
     return h5f.read(bigtable,o.str().c_str()); //"spline_0");
@@ -119,7 +119,7 @@ struct SplineC2CPackedAdoptor: public SplineAdoptorBase<ST,D>
 
   bool write_splines(hdf_archive& h5f)
   {
-    ostringstream o;
+    std::ostringstream o;
     o<<"spline_" << SplineAdoptorBase<ST,D>::MyIndex;
     einspline_engine<SplineType> bigtable(MultiSpline);
     return h5f.write(bigtable,o.str().c_str()); //"spline_0");
@@ -138,7 +138,7 @@ struct SplineC2CPackedAdoptor: public SplineAdoptorBase<ST,D>
     {
       int jr=j<<1;
       sincos(-dot(r,kPoints[j]),&s,&c);
-      psi[psiIndex]=complex<TT>(c*myV[jr]-s*myV[jr+1],s*myV[jr]+c*myV[jr+1]);
+      psi[psiIndex]= std::complex<TT>(c*myV[jr]-s*myV[jr+1],s*myV[jr]+c*myV[jr+1]);
       //t_ptr[jr  ]=c*myV[jr]-s*myV[jr+1];
       //t_ptr[jr+1]=s*myV[jr]+c*myV[jr+1];
     }
@@ -178,10 +178,10 @@ struct SplineC2CPackedAdoptor: public SplineAdoptorBase<ST,D>
       myL[jr]+=kk*myV[jr]+two*dot(kPoints[j],myG[ji]);
       myL[ji]+=kk*myV[ji]-two*dot(kPoints[j],myG[jr]);
       sincos(-dot(r,kPoints[j]),&s,&c); //e-ikr (beware of -1)
-      psi[psiIndex]=complex<TT>(c*myV[jr]-s*myV[ji],c*myV[ji]+s*myV[jr]);
-      d2psi[psiIndex]=complex<TT>(c*myL[jr]-s*myL[ji],c*myL[ji]+s*myL[jr]);
+      psi[psiIndex]= std::complex<TT>(c*myV[jr]-s*myV[ji],c*myV[ji]+s*myV[jr]);
+      d2psi[psiIndex]= std::complex<TT>(c*myL[jr]-s*myL[ji],c*myL[ji]+s*myL[jr]);
       for(int idim=0; idim<D; ++idim)
-        dpsi[psiIndex][idim]=complex<TT>(c*g_r[idim]-s*g_i[idim], c*g_i[idim]+s*g_r[idim]);
+        dpsi[psiIndex][idim]= std::complex<TT>(c*g_r[idim]-s*g_i[idim], c*g_i[idim]+s*g_r[idim]);
     }
     //complex<ST> e_mikr(c,s);
     //convert(e_mikr * myV[j], psi[j]);
@@ -217,14 +217,14 @@ struct SplineC2CPackedAdoptor: public SplineAdoptorBase<ST,D>
       g_r=myG[jr]+myV[ji]*kPoints[j]; // \f$\nabla \psi_r + {\bf k}\psi_i\f$
       g_i=myG[ji]-myV[jr]*kPoints[j]; // \f$\nabla \psi_i - {\bf k}\psi_r\f$
       sincos(-dot(r,kPoints[j]),&s,&c); //e-ikr (beware of -1)
-      psi[psiIndex]=complex<TT>(c*myV[jr]-s*myV[ji],c*myV[ji]+s*myV[jr]);
+      psi[psiIndex]= std::complex<TT>(c*myV[jr]-s*myV[ji],c*myV[ji]+s*myV[jr]);
       for(int idim=0; idim<D; ++idim)
-        dpsi[psiIndex][idim]=complex<TT>(c*g_r[idim]-s*g_i[idim], c*g_i[idim]+s*g_r[idim]);
+        dpsi[psiIndex][idim]= std::complex<TT>(c*g_r[idim]-s*g_i[idim], c*g_i[idim]+s*g_r[idim]);
       kk=outerProduct(kPoints[j],kPoints[j]); // \f$kk=k^k \f$
       h_r=myH[jr]-myV[jr]*kk+outerProductSymm(kPoints[j],myG[ji]); //kdotg_i;
       h_i=myH[ji]-myV[ji]*kk-outerProductSymm(kPoints[j],myG[jr]); //kdotg_r;
       for(int t=0; t<D*D; ++t)
-        grad_grad_psi[psiIndex](t)=complex<TT>(c*h_r(t)-s*h_i(t), c*h_i(t)+s*h_r(t));
+        grad_grad_psi[psiIndex](t)= std::complex<TT>(c*h_r(t)-s*h_i(t), c*h_i(t)+s*h_r(t));
     }
   }
 
@@ -237,7 +237,7 @@ struct SplineC2CPackedAdoptor: public SplineAdoptorBase<ST,D>
   }
 };
 
-/** adoptor class to match complex<ST> spline with TT real SPOs
+/** adoptor class to match std::complex<ST> spline with TT real SPOs
  * @tparam ST precision of spline
  * @tparam TT precision of SPOs
  * @tparam D dimension
@@ -271,11 +271,11 @@ struct SplineC2RPackedAdoptor: public SplineAdoptorBase<ST,D>
   ///offset of the original grid, always 0
   int BaseOffset[3];
 
-  vector<ST>   KdotR;
-  vector<ST>   CosV;
-  vector<ST>   SinV;
-  vector<ST>   mKK;
-  vector<Tensor<ST,D> >  KK; //k^k
+  std::vector<ST>   KdotR;
+  std::vector<ST>   CosV;
+  std::vector<ST>   SinV;
+  std::vector<ST>   mKK;
+  std::vector<Tensor<ST,D> >  KK; //k^k
 
   SplineC2RPackedAdoptor():MultiSpline(0)
   {
@@ -345,7 +345,7 @@ struct SplineC2RPackedAdoptor: public SplineAdoptorBase<ST,D>
 
   bool read_splines(hdf_archive& h5f)
   {
-    ostringstream o;
+    std::ostringstream o;
     o<<"spline_" << SplineAdoptorBase<ST,D>::MyIndex;
     einspline_engine<SplineType> bigtable(MultiSpline);
     return h5f.read(bigtable,o.str().c_str());//"spline_0");
@@ -353,7 +353,7 @@ struct SplineC2RPackedAdoptor: public SplineAdoptorBase<ST,D>
 
   bool write_splines(hdf_archive& h5f)
   {
-    ostringstream o;
+    std::ostringstream o;
     o<<"spline_" << SplineAdoptorBase<ST,D>::MyIndex;
     einspline_engine<SplineType> bigtable(MultiSpline);
     return h5f.write(bigtable,o.str().c_str());//"spline_0");
@@ -481,7 +481,7 @@ struct SplineC2RPackedAdoptor: public SplineAdoptorBase<ST,D>
   }
 };
 
-//  /** adoptor class to match complex<ST> spline with complex<TT> SPOs, just references
+//  /** adoptor class to match std::complex<ST> spline with std::complex<TT> SPOs, just references
 //   * @tparam ST precision of spline
 //   * @tparam TT precision of SPOs
 //   * @tparam D dimension
@@ -492,7 +492,7 @@ struct SplineC2RPackedAdoptor: public SplineAdoptorBase<ST,D>
 //    struct SplineC2CAdoptor
 //    {
 //      typedef ST                                                       real_type;
-//      typedef complex<ST>                                              value_type;
+//      typedef std::complex<ST>                                              value_type;
 //      typedef typename einspline_traits<value_type,D>::SplineType      SplineType;
 //      typedef typename einspline_traits<value_type,D>::BCType          BCType;
 //      typedef typename OrbitalSetTraits<value_type>::ValueVector_t     StorageValueVector_t;
@@ -506,13 +506,13 @@ struct SplineC2RPackedAdoptor: public SplineAdoptorBase<ST,D>
 //      SplineType          *MultiSpline;
 //      UnitCellType        SuperLattice;
 //      UnitCellType        PrimLattice;
-//      vector<PointType>   kPoints;
+//      std::vector<PointType>   kPoints;
 //      TinyVector<int,D>   HalfG;
-//      vector<bool>        MakeTwoCopies;
+//      std::vector<bool>        MakeTwoCopies;
 //      Tensor<real_type,D> GGt;
 //
-//      vector<real_type> phase;
-//      vector<value_type> eikr;
+//      std::vector<real_type> phase;
+//      std::vector<value_type> eikr;
 //
 //      StorageValueVector_t     myV;
 //      StorageValueVector_t     myL;
@@ -552,7 +552,7 @@ struct SplineC2RPackedAdoptor: public SplineAdoptorBase<ST,D>
 //          for(int j=0; j<psi.size(); ++j)
 //          {
 //            sincos(-dot(r,kPoints[j]),&s,&c);
-//            psi[j]=complex<TT>(static_cast<TT>(c*myV[j].real()-s*myV[j].imag()),
+//            psi[j]= std::complex<TT>(static_cast<TT>(c*myV[j].real()-s*myV[j].imag()),
 //                static_cast<TT>(c*myV[j].imag()+s*myV[j].real()));
 //          }
 //
@@ -570,14 +570,14 @@ struct SplineC2RPackedAdoptor: public SplineAdoptorBase<ST,D>
 //          for (int j=0; j<N; j++) myL[j] = trace(myH[j],GGt);
 //
 //          const ST two=2.0;
-//          TinyVector<complex<ST>,D> ck;
+//          TinyVector<std::complex<ST>,D> ck;
 //          register ST s,c;
 //          for (int j=0; j<psi.size(); j++)
 //          {
 //            ST kk=dot(kPoints[j],kPoints[j]);
-//            for(int i=0; i<D; ++i) ck[i]=complex<ST>(0.0,kPoints[j][i]);
+//            for(int i=0; i<D; ++i) ck[i]= std::complex<ST>(0.0,kPoints[j][i]);
 //            sincos(-dot(r,kPoints[j]),&s,&c);
-//            complex<ST> e_mikr(c,s);
+//            std::complex<ST> e_mikr(c,s);
 //            convert(e_mikr * myV[j], psi[j]);
 //            convert(e_mikr*(-myV[j]*ck + myG[j]), dpsi[j]);
 //            convert(e_mikr*(-myV[j]*kk - two*dot(ck,myG[j]) + myL[j]), d2psi[j]);
@@ -590,7 +590,7 @@ struct SplineC2RPackedAdoptor: public SplineAdoptorBase<ST,D>
 //        }
 //    };
 //
-//  /** adoptor class to match complex<ST> spline with TT real SPOs
+//  /** adoptor class to match std::complex<ST> spline with TT real SPOs
 //   * @tparam ST precision of spline
 //   * @tparam TT precision of SPOs
 //   * @tparam D dimension
@@ -601,7 +601,7 @@ struct SplineC2RPackedAdoptor: public SplineAdoptorBase<ST,D>
 //    struct SplineC2RAdoptor
 //    {
 //      typedef ST                                                    real_type;
-//      typedef complex<ST>                                           value_type;
+//      typedef std::complex<ST>                                           value_type;
 //
 //      typedef typename einspline_traits<value_type,D>::SplineType  SplineType;
 //      typedef typename einspline_traits<value_type,D>::BCType      BCType;
@@ -618,11 +618,11 @@ struct SplineC2RPackedAdoptor: public SplineAdoptorBase<ST,D>
 //      UnitCellType        PrimLattice;
 //      TinyVector<int,D>   HalfG;
 //      Tensor<real_type,D> GGt;
-//      vector<PointType>   kPoints;
-//      vector<bool>        MakeTwoCopies;
-//      vector<real_type>   CosV;
-//      vector<real_type>   SinV;
-//      vector<value_type>  mKK;
+//      std::vector<PointType>   kPoints;
+//      std::vector<bool>        MakeTwoCopies;
+//      std::vector<real_type>   CosV;
+//      std::vector<real_type>   SinV;
+//      std::vector<value_type>  mKK;
 //
 //      // Temporary storage for Eispline calls
 //      StorageValueVector_t     myV;
@@ -696,30 +696,30 @@ struct SplineC2RPackedAdoptor: public SplineAdoptorBase<ST,D>
 //
 //          const ST zero=0.0;
 //          const ST two=2.0;
-//          TinyVector<complex<ST>,D> ck;
+//          TinyVector<std::complex<ST>,D> ck;
 //          ST s,c;
 //          for(int j=0; j<N; ++j)
 //          {
-//            for (int n=0; n<D; n++)ck[n] = complex<ST>(zero,-kPoints[j][n]);
+//            for (int n=0; n<D; n++)ck[n] = std::complex<ST>(zero,-kPoints[j][n]);
 //            sincos (-dot(r,kPoints[j]), &s, &c);
-//            complex<ST> e_mikr(c,s);
+//            std::complex<ST> e_mikr(c,s);
 //            myV[j]  = e_mikr*myV[j];
 //            myL[j]  = -dot(kPoints[j],kPoints[j])*myV[j]+e_mikr*(two*dot(ck,myG[j]) + myL[j]);
 //            myG[j]  = myV[j]*ck+e_mikr*myG[j];
 //          }
 //
-//          //const complex<ST> eye (0.0, 1.0);
+//          //const std::complex<ST> eye (0.0, 1.0);
 //          //ST s,c;
 //          //for(int j=0; j<N; ++j)
 //          //{
-//          //  complex<ST> u = myV[j];
-//          //  TinyVector<complex<ST>,D> gradu = myG[j];
-//          //  complex<ST> laplu = myL[j];
+//          //  std::complex<ST> u = myV[j];
+//          //  TinyVector<std::complex<ST>,D> gradu = myG[j];
+//          //  std::complex<ST> laplu = myL[j];
 //          //  PointType k = kPoints[j];
-//          //  TinyVector<complex<ST>,D> ck;
+//          //  TinyVector<std::complex<ST>,D> ck;
 //          //  for (int n=0; n<D; n++)	  ck[n] = k[n];
 //          //  sincos (-dot(r,k), &s, &c);
-//          //  complex<ST> e_mikr (c,s);
+//          //  std::complex<ST> e_mikr (c,s);
 //          //  myV[j]  = e_mikr*u;
 //          //  myG[j]  = e_mikr*(-eye*u*ck + gradu);
 //          //  myL[j]  = e_mikr*(-dot(k,k)*u - two*eye*dot(ck,gradu) + laplu);

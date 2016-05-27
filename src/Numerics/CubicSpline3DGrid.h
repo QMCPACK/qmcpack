@@ -22,7 +22,7 @@
 #define CUBICSPLINE3DCOLLECTION_REGULARGRID_H
 
 #include <bitset>
-using std::bitset;
+
 
 template<class PosA>
 struct CubicSpline3DGrid
@@ -35,7 +35,7 @@ struct CubicSpline3DGrid
   value_type reps;
   pos_type CurrentPos;
   pos_type Rmin, Rmax, dr, drinv, drinv2, dr2over6, drover6;
-  bitset<4> xyz[8];
+  std::bitset<4> xyz[8];
   pos_type L[8], C[8], dC[8];
   int I[8][3];
 
@@ -115,20 +115,20 @@ struct CubicSpline3DGrid
   {
     //4-bit to calculate the coefficient indices and sign
     //xyz[i](x,y,z,sign): initially, all the bits are set to 0
-    //xyz[0] = bitset<4>(0,0,0,0); // -1(0) 3*0
+    //xyz[0] = std::bitset<4>(0,0,0,0); // -1(0) 3*0
     xyz[1].flip(2);
-    xyz[1].flip(3); //xyz[1] = bitset<4>(0,0,1,1); // +1(1) 2*0
+    xyz[1].flip(3); //xyz[1] = std::bitset<4>(0,0,1,1); // +1(1) 2*0
     xyz[2].flip(1);
-    xyz[2].flip(2); //xyz[2] = bitset<4>(0,1,1,0); // -1(0) 1*0
+    xyz[2].flip(2); //xyz[2] = std::bitset<4>(0,1,1,0); // -1(0) 1*0
     xyz[3].flip(1);
-    xyz[3].flip(3); //xyz[3] = bitset<4>(0,1,0,1); // +1(1) 2*0
+    xyz[3].flip(3); //xyz[3] = std::bitset<4>(0,1,0,1); // +1(1) 2*0
     xyz[4].flip(0);
-    xyz[4].flip(3); //xyz[4] = bitset<4>(1,0,0,1); // +1(1) 2*0
+    xyz[4].flip(3); //xyz[4] = std::bitset<4>(1,0,0,1); // +1(1) 2*0
     xyz[5].flip(0);
-    xyz[5].flip(2); //xyz[5] = bitset<4>(1,0,1,0); // -1(0) 1*0
-    xyz[6].flip();                  //xyz[6] = bitset<4>(1,1,1,1); // +1(1) 0*0
+    xyz[5].flip(2); //xyz[5] = std::bitset<4>(1,0,1,0); // -1(0) 1*0
+    xyz[6].flip();                  //xyz[6] = std::bitset<4>(1,1,1,1); // +1(1) 0*0
     xyz[7].flip(0);
-    xyz[7].flip(1); //xyz[7] = bitset<4>(1,1,0,0); // -1(0) 1*0
+    xyz[7].flip(1); //xyz[7] = std::bitset<4>(1,1,0,0); // -1(0) 1*0
   }
 
   inline bool get(const pos_type& pos)
@@ -287,7 +287,7 @@ struct CubicSpline3D
   {
     if(OwnGrid)
     {
-      cerr << "This CubicSpline3D owns grid. Delete it" << endl;
+      std::cerr << "This CubicSpline3D owns grid. Delete it" << std::endl;
       delete myGrid;
     }
   }

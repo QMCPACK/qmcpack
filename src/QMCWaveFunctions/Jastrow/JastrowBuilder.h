@@ -39,17 +39,17 @@ private:
   ///index for the jastrow type: 1, 2, 3
   int JastrowType;
   ///jastrow/@name
-  string nameOpt;
+  std::string nameOpt;
   ///jastrow/@type
-  string typeOpt;
+  std::string typeOpt;
   ///jastrow/@function
-  string funcOpt;
+  std::string funcOpt;
   ///jastrow/@spin
-  string spinOpt;
+  std::string spinOpt;
   ///jastrow/@transform
-  string transformOpt;
+  std::string transformOpt;
   ///jastrow/@source
-  string sourceOpt;
+  std::string sourceOpt;
   ///reset the options
   void resetOptions();
   ///add one-body term

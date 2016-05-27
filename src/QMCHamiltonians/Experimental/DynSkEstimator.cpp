@@ -77,7 +77,7 @@ DynSkEstimator::Return_t DynSkEstimator::evaluate(ParticleSet& P)
   APP_ABORT(" DynSkEstimator::evaluate");
 #else
   //sum over species for t=0 (now)
-  std::copy(P.SK->rhok[0],P.SK->rhok[0]+NumK,RhokTot.begin());
+  copy(P.SK->rhok[0],P.SK->rhok[0]+NumK,RhokTot.begin());
   for(int i=1; i<NumSpecies; ++i)
     accumulate_elements(P.SK->rhok[i],P.SK->rhok[i]+NumK,RhokTot.begin());
   for(int i=0; i<NumK; ++i)
@@ -95,7 +95,7 @@ void DynSkEstimator::addObservables(PropertySetType& plist, BufferType& collecta
 //     if(hdf5_out)
 //     {
 //       myIndex=collectables.size();
-//       vector<RealType> tmp(NumK);
+//       std::vector<RealType> tmp(NumK);
 //       collectables.add(tmp.begin(),tmp.end());
 //     }
 //     else
@@ -130,23 +130,23 @@ void DynSkEstimator::addObservables(PropertySetType& plist )
 void DynSkEstimator::setObservables(PropertySetType& plist)
 {
   if (!hdf5_out)
-    std::copy(values.begin(),values.end(),plist.begin()+myIndex);
+    copy(values.begin(),values.end(),plist.begin()+myIndex);
 }
 
 void DynSkEstimator::setParticlePropertyList(PropertySetType& plist
     , int offset)
 {
   if (!hdf5_out)
-    std::copy(values.begin(),values.end(),plist.begin()+myIndex+offset);
+    copy(values.begin(),values.end(),plist.begin()+myIndex+offset);
 }
 
 
-void DynSkEstimator::registerCollectables(vector<observable_helper*>& h5desc
+void DynSkEstimator::registerCollectables(std::vector<observable_helper*>& h5desc
     , hid_t gid) const
 {
 //     if (hdf5_out)
 //     {
-//       vector<int> ndim(1,NumK);
+//       std::vector<int> ndim(1,NumK);
 //       observable_helper* h5o=new observable_helper(myName);
 //       h5o->set_dimensions(ndim,myIndex);
 //       h5o->open(gid);
@@ -155,7 +155,7 @@ void DynSkEstimator::registerCollectables(vector<observable_helper*>& h5desc
 //       hsize_t kdims[2];
 //       kdims[0] = NumK;
 //       kdims[1] = OHMMS_DIM;
-//       string kpath = myName + "/kpoints";
+//       std::string kpath = myName + "/kpoints";
 //       hid_t k_space = H5Screate_simple(2,kdims, NULL);
 //       hid_t k_set   = H5Dcreate (gid, kpath.c_str(), H5T_NATIVE_DOUBLE, k_space, H5P_DEFAULT);
 //       hid_t mem_space = H5Screate_simple (2, kdims, NULL);
@@ -170,7 +170,7 @@ void DynSkEstimator::registerCollectables(vector<observable_helper*>& h5desc
 
 bool DynSkEstimator::putSpecial(xmlNodePtr cur, ParticleSet& P)
 {
-  string tagName("dSK");
+  std::string tagName("dSK");
   NumT=10;
   MinT=0;
   OhmmsAttributeSet Tattrib;
@@ -178,7 +178,7 @@ bool DynSkEstimator::putSpecial(xmlNodePtr cur, ParticleSet& P)
   Tattrib.add(NumT,"max");
   Tattrib.add(MinT,"min");
   Tattrib.put(cur);
-  app_log()<<"   "<<NumT<<" dynamic SK values will be calculated"<<endl;
+  app_log()<<"   "<<NumT<<" dynamic SK values will be calculated"<< std::endl;
 //     property history is real, so we must add two (complex)
   pindx = P.addPropertyHistory(NumT);
   for(int j(1); j<NumK*2; j++)

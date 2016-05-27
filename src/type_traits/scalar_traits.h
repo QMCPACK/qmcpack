@@ -41,7 +41,7 @@ struct scalar_traits<std::complex<T> >
   enum {DIM=2};
   typedef T          real_type;
   typedef std::complex<T> value_type;
-  static inline T* get_address(complex<T>* a)
+  static inline T* get_address(std::complex<T>* a)
   {
     return reinterpret_cast<T*>(a);
   }

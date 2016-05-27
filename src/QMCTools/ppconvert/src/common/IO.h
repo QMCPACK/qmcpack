@@ -28,25 +28,25 @@ namespace IO {
   void SetVerbose(bool verb);
 
   template<> inline bool 
-  IOTreeClass::WriteVar (string name, const char* val)
+  IOTreeClass::WriteVar ( std::string name, const char* val)
   {
-    return WriteVar(name, string(val));
+    return WriteVar(name, std::string(val));
   }
   template<typename T> bool 
-  IOTreeClass::WriteVar (string name, T val)
+  IOTreeClass::WriteVar ( std::string name, T val)
   {
     if (GetFileType() == ASCII_TYPE) {
       VarList.push_back(new IOVarASCII<T,0>(name,val));
     }
     else {
-      cerr << "Unknown file type in WriteVar.\n";
+      std::cerr << "Unknown file type in WriteVar.\n";
       abort();
     }
     return true;
   }
 
   template<typename T, int LEN> bool
-  IOTreeClass::WriteVar (string name, const TinyVector<T,LEN> &val)
+  IOTreeClass::WriteVar ( std::string name, const TinyVector<T,LEN> &val)
   {
     Array<T,1> aVal(LEN);
     for (int i=0; i<LEN; i++)
@@ -57,20 +57,20 @@ namespace IO {
     
 
   template<typename T, int RANK> bool 
-  IOTreeClass::WriteVar (string name, const blitz::Array<T,RANK> &val)
+  IOTreeClass::WriteVar ( std::string name, const blitz::Array<T,RANK> &val)
   {
     if (GetFileType() == ASCII_TYPE) {
       VarList.push_back(new IOVarASCII<T,RANK>(name, val));
     }
     else {
-      cerr << "Unknown file type in WriteVar.\n";
+      std::cerr << "Unknown file type in WriteVar.\n";
       abort();
     }
     return true;
   }
 
   template<typename T, int RANK, int LEN> bool
-  IOTreeClass::WriteVar (string name, const blitz::Array<TinyVector<T,LEN>,RANK> &val)
+  IOTreeClass::WriteVar ( std::string name, const blitz::Array<TinyVector<T,LEN>,RANK> &val)
   {
     TinyVector<int,RANK+1> shape;
     for (int dim=0; dim<RANK; dim++)
@@ -85,7 +85,7 @@ namespace IO {
 
   /// In the file name format name.extn, returns the extension.
   /// Actually returns everything after the trailing.
-  inline string Extension (string fileName);
+  inline std::string Extension ( std::string fileName);
 
 
   /// This function takes a filename, determines it extension, creates a
@@ -95,9 +95,9 @@ namespace IO {
   /// .h5:            HDF5
   /// .xml:           XML
   /// .anything_else  ASCII
-  IOTreeClass *ReadTree (string fileName, string myName, IOTreeClass *parent);
+  IOTreeClass *ReadTree ( std::string fileName, std::string myName, IOTreeClass *parent);
 
-  IOTreeClass *NewTree (string fileName, string myName, IOTreeClass *parent);
+  IOTreeClass *NewTree ( std::string fileName, std::string myName, IOTreeClass *parent);
 
 
 
@@ -115,13 +115,13 @@ namespace IO {
     /// IOTreeHDF5Class.  For ".xml" it creaes an IOTreeXMLClass.
     /// After creating the object, it calls the objects virtual OpenFile
     /// function, reading the contents of the file into the tree.
-    bool OpenFile (string fileName);
-    string GetName(){ return CurrentSection->Name;}
-    string GetFileName();
-    string GetVarName(int num){ return GetVarPtr(num)->GetName();}
+    bool OpenFile ( std::string fileName);
+    std::string GetName(){ return CurrentSection->Name;}
+    std::string GetFileName();
+    std::string GetVarName(int num){ return GetVarPtr(num)->GetName();}
     /// Creates a file at the top level, choosing the appropriate type
     /// based on the file extension.
-    bool NewFile (string fileName);
+    bool NewFile ( std::string fileName);
 
     /// Calls CurrentSections close file and then deletes the
     /// CurrentSection.  
@@ -132,7 +132,7 @@ namespace IO {
 
     /// Opens the num'th section with the given name.  The default
     /// value for num is 0.
-    bool OpenSection (string name, int num=0);
+    bool OpenSection ( std::string name, int num=0);
 
     /// Opens the num'th section below CurrentSection.
     bool OpenSection (int num);
@@ -141,19 +141,19 @@ namespace IO {
     /// the end of CurrentsSection's SectionList.  It does not change
     /// what CurrentSection points to, ie. it does not descend to the
     /// newly-opened section.
-    bool IncludeSection (string name, string fileName);
+    bool IncludeSection ( std::string name, std::string fileName);
 
     /// Creates a new section of the same type as currentSection under
     /// currentSection.  Pushes the new section to the end of the
     /// section list.
-    inline void NewSection (string name)
+    inline void NewSection ( std::string name)
     {  CurrentSection = CurrentSection->NewSection(name); }
 
     /// This function creates a new file of the appropriate type as
     /// determined by the extension of fileName and mounts it at the end
     /// of the list under CurrentSection.  Returns false if the file
     /// couldn't be created.
-    bool NewSection (string name, string fileName);
+    bool NewSection ( std::string name, std::string fileName);
 
     /// Closes the current section.  That is, CurrentSection becomes
     /// CurrentSection's parent.
@@ -162,11 +162,11 @@ namespace IO {
     /// Template function which reads a variable in the present section
     /// into the passed-by-reference T variable.
     template<class T>
-    bool ReadVar(string name, T &var)
+    bool ReadVar( std::string name, T &var)
     {  return (CurrentSection->ReadVar(name, var)); }
 
     template<class T>
-    bool ReadVar(string name, T &var, T Default)
+    bool ReadVar( std::string name, T &var, T Default)
     { 
       bool success = ReadVar(name, var);
       if (!success)
@@ -176,22 +176,22 @@ namespace IO {
 
     /// Writes a variable under the current section.
     template<typename T> bool
-    WriteVar (string name, T val)
+    WriteVar ( std::string name, T val)
     { return CurrentSection->WriteVar(name, val); }
 
     template<typename T, int RANK> bool
-    WriteVar (string name, const blitz::Array<T,RANK>& val)
+    WriteVar ( std::string name, const blitz::Array<T,RANK>& val)
     { return CurrentSection->WriteVar(name, val); }
   
     template<class T> bool
-    AppendVar(string name, T val)
+    AppendVar( std::string name, T val)
     { return CurrentSection->AppendVar(name, val); }
 
     template<typename T, int RANK> bool
-    AppendVar (string name, const blitz::Array<T,RANK>& val)
+    AppendVar ( std::string name, const blitz::Array<T,RANK>& val)
     { return CurrentSection->AppendVar(name, val); }
   
-    inline IOVarBase *GetVarPtr(string name)
+    inline IOVarBase *GetVarPtr( std::string name)
     {    return (CurrentSection->GetVarPtr(name)); }
 
     inline IOVarBase *GetVarPtr(int num)
@@ -203,7 +203,7 @@ namespace IO {
     /// Returns the number of subsections within the present section
     /// which have the name name.  If called without a name, it returns
     /// the total number of sections.
-    inline int CountSections(string name="")
+    inline int CountSections( std::string name="")
     { return (CurrentSection->CountSections(name)); }
     inline int CountVars()
     {return (CurrentSection->CountVars());}

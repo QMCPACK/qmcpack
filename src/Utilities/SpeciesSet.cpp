@@ -16,7 +16,6 @@
 // -*- C++ -*-
 
 #include "Utilities/SpeciesSet.h"
-using namespace std;
 
 SpeciesSet::SpeciesSet()
 {
@@ -41,7 +40,7 @@ void SpeciesSet::create(unsigned m)
 {
   if(m > 0)
   {
-    speciesName.insert(speciesName.end(), m, string("none"));
+    speciesName.insert(speciesName.end(), m, std::string("none"));
     AttribList_t::iterator dit = d_attrib.begin();
     for(; dit != d_attrib.end(); ++dit)
       (*dit)->insert((*dit)->end(), m, 0);
@@ -49,7 +48,7 @@ void SpeciesSet::create(unsigned m)
   }
 }
 
-int SpeciesSet::addSpecies(const string& aname)
+int SpeciesSet::addSpecies(const std::string& aname)
 {
   int i = findSpecies(aname); // check if the name is registered
   if(i == TotalNum)
@@ -61,7 +60,7 @@ int SpeciesSet::addSpecies(const string& aname)
   return i; // return an index for a species
 }
 
-int SpeciesSet::addAttribute(const string& aname)
+int SpeciesSet::addAttribute(const std::string& aname)
 {
   int i = 0;
   while(i< attribName.size())
@@ -76,7 +75,7 @@ int SpeciesSet::addAttribute(const string& aname)
   return n;
 }
 
-int SpeciesSet::getAttribute(const string& aname)
+int SpeciesSet::getAttribute(const std::string& aname)
 {
   for (int i=0; i<attribName.size(); i++)
   {

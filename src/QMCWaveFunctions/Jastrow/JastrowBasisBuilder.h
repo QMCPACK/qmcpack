@@ -38,7 +38,7 @@ public:
    * \param els reference to the electrons
    * \param ions reference to the ions
    */
-  JastrowBasisBuilder(ParticleSet& els, ParticleSet& ions, const string& functype, bool usespline=false);
+  JastrowBasisBuilder(ParticleSet& els, ParticleSet& ions, const std::string& functype, bool usespline=false);
   ///destructor
   ~JastrowBasisBuilder();
 
@@ -50,7 +50,7 @@ public:
     return 0;
   }
   ///size of blocks
-  vector<int> SizeOfBasisPerCenter;
+  std::vector<int> SizeOfBasisPerCenter;
 private:
   ///target ParticleSet
   ParticleSet& targetPtcl;
@@ -59,9 +59,9 @@ private:
   ///boolean to choose numerical or analytic form
   bool UseSpline;
   ///function name
-  string FuncType;
+  std::string FuncType;
   ///save AtomiBasisBuilder<RFB>*
-  map<string,BasisSetBuilder*> aoBuilders;
+  std::map<std::string,BasisSetBuilder*> aoBuilders;
   /** create a localized basis set
    *
    * The template parameter RFBUILDER is a builder class for radial
@@ -75,7 +75,7 @@ private:
    * @param aoBasis atomic orbtial basis associated with elementType
    */
   template<typename COT>
-  void printRadialFunctors(const string& elementType, COT* aoBasis);
+  void printRadialFunctors(const std::string& elementType, COT* aoBasis);
 };
 }
 #endif

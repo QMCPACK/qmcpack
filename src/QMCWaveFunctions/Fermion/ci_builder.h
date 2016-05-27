@@ -55,7 +55,7 @@ struct ci_builder
    * @param exciations serialized list of excitations
    * @return the number of single generated max_vmc*max_cbm
    */
-  template<typename NODETYPE> inline int singles(vector<NODETYPE>& excitations)
+  template<typename NODETYPE> inline int singles(std::vector<NODETYPE>& excitations)
   {
     if(occupied.empty())
       occupied.push_back(new iset_type);
@@ -96,7 +96,7 @@ struct ci_builder
    * @param level the reference level from which promotions are made
    */
   template<typename NODETYPE>
-  inline int promote(vector<NODETYPE>& excitations, int level)
+  inline int promote(std::vector<NODETYPE>& excitations, int level)
   {
     int dn=occupied.size()-level;
     while(dn)//allocate a new level
@@ -134,7 +134,7 @@ struct ci_builder
         c_p.insert(v1.to_ulong());
       }
     }
-    vector<int> v_tmp;
+    std::vector<int> v_tmp;
     v_tmp.push_back(excitations.size());
     for(typename iset_type::iterator i=v_p.begin(); i!=v_p.end(); ++i)
     {
@@ -165,7 +165,7 @@ struct ci_builder
   }
 
   template<typename NODETYPE>
-  int find_parent(NODETYPE& anode,vector<NODETYPE>& p)
+  int find_parent(NODETYPE& anode,std::vector<NODETYPE>& p)
   {
     bool findv=true;
     std::bitset<CMAX> vid(anode.ground);

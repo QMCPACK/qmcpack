@@ -47,12 +47,12 @@ public:
   bool run();
   bool put(xmlNodePtr q);
 
-  void setBranchInfo(const string& fname);
+  void setBranchInfo(const std::string& fname);
 
 private:
 
   IndexType KillNodeCrossing;
-  string KillWalker;
+  std::string KillWalker;
   ///hdf5 file name for Branch conditions
   std::string BranchInfo;
   /// Copy Constructor (disabled)

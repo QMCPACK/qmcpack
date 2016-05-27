@@ -42,7 +42,7 @@ EinsplineSetBuilder::ReadOrbitalInfo()
   }
   // Read format
   std::string format;
-  HDFAttribIO<string> h_format(format);
+  HDFAttribIO<std::string> h_format(format);
   h_format.read(H5FileID, "/format");
   HDFAttribIO<TinyVector<int,3> > h_Version(Version);
   h_Version.read (H5FileID, "/version");
@@ -72,7 +72,7 @@ EinsplineSetBuilder::ReadOrbitalInfo()
     }
     else
     {
-      ostringstream o;
+      std::ostringstream o;
       o << "Unknown HDF5 orbital file version " << Version[0] << "." << Version[1] << "." << Version[2] << "\n";
       APP_ABORT(o.str());
       //abort();
@@ -114,7 +114,7 @@ EinsplineSetBuilder::ReadOrbitalInfo()
   h_NumMuffinTins.read (H5FileID, (parameterGroup+"/muffin_tins/num_tins").c_str());
   app_log() << "bands=" << NumBands << ", elecs=" << NumElectrons
             << ", spins=" << NumSpins << ", twists=" << NumTwists
-            << ", muffin tins=" << NumMuffinTins << endl;
+            << ", muffin tins=" << NumMuffinTins << std::endl;
   // fprintf (stderr, "  bands = %d, elecs = %d, spins = %d, twists = %d\n",
   // 	     NumBands, NumElectrons, NumSpins, NumTwists);
   if (TileFactor[0]!=1 || TileFactor[1]!=1 || TileFactor[2]!=1)
@@ -130,12 +130,12 @@ EinsplineSetBuilder::ReadOrbitalInfo()
   MT_centers.resize(NumMuffinTins);
   for (int tin=0; tin<NumMuffinTins; tin++)
   {
-    ostringstream MTstream;
+    std::ostringstream MTstream;
     if (NumMuffinTins > 1)
       MTstream << parameterGroup << "/muffin_tins/muffin_tin_" << tin;
     else
       MTstream << parameterGroup << "/muffin_tins/muffin_tin";
-    string MTgroup = MTstream.str();
+    std::string MTgroup = MTstream.str();
     HDFAttribIO<int> h_lmax(MT_APW_lmax[tin]),
                 h_num_radial_points(MT_APW_num_radial_points[tin]);
     HDFAttribIO<RealType> h_radius (MT_APW_radii[tin]);
@@ -160,7 +160,7 @@ EinsplineSetBuilder::ReadOrbitalInfo()
   TwistAngles.resize(NumTwists);
   for (int ti=0; ti<NumTwists; ti++)
   {
-    ostringstream path;
+    std::ostringstream path;
     if ((Version[0]==0 && Version[1]==11) || NumTwists > 1)
       path << eigenstatesGroup << "/twist_" << ti << "/twist_angle";
     else
@@ -178,7 +178,7 @@ EinsplineSetBuilder::ReadOrbitalInfo()
   //////////////////////////////////////////////////////////
   if (!TargetPtcl.Density_G.size())
   {
-    HDFAttribIO<vector<TinyVector<int,OHMMS_DIM> > >
+    HDFAttribIO<std::vector<TinyVector<int,OHMMS_DIM> > >
     h_reduced_gvecs(TargetPtcl.DensityReducedGvecs);
     HDFAttribIO<Array<RealType,OHMMS_DIM> >
     h_density_r (TargetPtcl.Density_r);
@@ -193,7 +193,7 @@ EinsplineSetBuilder::ReadOrbitalInfo()
     if (TargetPtcl.DensityReducedGvecs.size())
     {
       app_log() << "  EinsplineSetBuilder found density in the HDF5 file.\n";
-      HDFAttribIO<vector<ComplexType > > h_density_G (TargetPtcl.Density_G);
+      HDFAttribIO<std::vector<ComplexType > > h_density_G (TargetPtcl.Density_G);
       h_density_G.read (H5FileID, "/density/rho_G");
       if (!TargetPtcl.Density_G.size())
       {
@@ -207,16 +207,16 @@ EinsplineSetBuilder::ReadOrbitalInfo()
 }
 
 
-string
+std::string
 EinsplineSetBuilder::OrbitalPath(int ti, int bi)
 {
-  string eigenstatesGroup;
+  std::string eigenstatesGroup;
   if (Version[0]==0 && Version[1]== 11)
     eigenstatesGroup = "/eigenstates_3";
   else
     if (Version[0]==0 && Version[1]==20)
       eigenstatesGroup = "/eigenstates";
-  ostringstream groupPath;
+  std::ostringstream groupPath;
   if ((Version[0]==0 && Version[1]==11) || NumTwists > 1)
     groupPath << eigenstatesGroup << "/twist_"
               << ti << "/band_" << bi << "/";
@@ -228,16 +228,16 @@ EinsplineSetBuilder::OrbitalPath(int ti, int bi)
   return groupPath.str();
 }
 
-string
+std::string
 EinsplineSetBuilder::CoreStatePath(int ti, int cs)
 {
-  string eigenstatesGroup;
+  std::string eigenstatesGroup;
   if (Version[0]==0 && Version[1]== 11)
     eigenstatesGroup = "/eigenstates_3";
   else
     if (Version[0]==0 && Version[1]==20)
       eigenstatesGroup = "/eigenstates";
-  ostringstream groupPath;
+  std::ostringstream groupPath;
   if ((Version[0]==0 && Version[1]==11) || NumTwists > 1)
     groupPath << eigenstatesGroup << "/twist_"
               << ti << "/core_state_" << cs << "/";
@@ -249,10 +249,10 @@ EinsplineSetBuilder::CoreStatePath(int ti, int cs)
   return groupPath.str();
 }
 
-string
+std::string
 EinsplineSetBuilder::MuffinTinPath(int ti, int bi, int tin)
 {
-  ostringstream groupPath;
+  std::ostringstream groupPath;
   if (NumMuffinTins > 0)
     groupPath << OrbitalPath(ti,bi) << "muffin_tin_" << tin << "/";
   else
@@ -263,7 +263,7 @@ EinsplineSetBuilder::MuffinTinPath(int ti, int bi, int tin)
 #ifdef QMC_CUDA
 void
 EinsplineSetBuilder::ReadBands
-(int spin, EinsplineSetExtended<complex<double> >* orbitalSet)
+(int spin, EinsplineSetExtended<std::complex<double> >* orbitalSet)
 {
   update_token(__FILE__,__LINE__,"ReadBands:complex");
   bool root = myComm->rank()==0;
@@ -286,7 +286,7 @@ EinsplineSetBuilder::ReadBands
   orbitalSet->NumValenceOrbs = NumValenceOrbs;
   orbitalSet->NumCoreOrbs    = NumCoreOrbs;
 
-  vector<BandInfo>& SortBands(*FullBands[spin]);
+  std::vector<BandInfo>& SortBands(*FullBands[spin]);
   if (root)
   {
     int numOrbs = orbitalSet->getOrbitalSetSize();
@@ -308,13 +308,13 @@ EinsplineSetBuilder::ReadBands
   // std::map<H5OrbSet,multi_UBspline_3d_z*>::iterator iter;
   // iter = ExtendedMap_z.find (set);
   // if (iter != ExtendedMap_z.end()) {
-  //   cerr << "Using existing copy of multi_UBspline_3d_z for "
+  //   std::cerr << "Using existing copy of multi_UBspline_3d_z for "
   // 	   << "thread number " << omp_get_thread_num() << ".\n";
   //   orbitalSet->MultiSpline = iter->second;
   //   return;
   // }
   int nx, ny, nz, bi, ti;
-  Array<complex<double>,3> splineData, rawData;
+  Array<std::complex<double>,3> splineData, rawData;
   if (root)
   {
     // Find the orbital mesh size
@@ -323,8 +323,8 @@ EinsplineSetBuilder::ReadBands
       i++;
     ti = SortBands[i].TwistIndex;
     bi = SortBands[i].BandIndex;
-    string vectorName = OrbitalPath (ti, bi) + "eigenvector";
-    HDFAttribIO<Array<complex<double>,3> > h_rawData(rawData);
+    std::string vectorName = OrbitalPath (ti, bi) + "eigenvector";
+    HDFAttribIO<Array<std::complex<double>,3> > h_rawData(rawData);
     h_rawData.read(H5FileID, vectorName.c_str());
     nx = rawData.size(0);
     ny = rawData.size(1);
@@ -405,12 +405,12 @@ EinsplineSetBuilder::ReadBands
         double e = SortBands[iorb].Energy;
         twist = TwistAngles[ti];
         k = orbitalSet->PrimLattice.k_cart(twist);
-        string atomName = CoreStatePath (ti, bi) + "atom";
-        string gName    = CoreStatePath (ti, bi) + "g";
-        string rMaxName = CoreStatePath (ti, bi) + "rmax";
-        string lName    = CoreStatePath (ti, bi) + "l";
-        string kName    = CoreStatePath (ti, bi) + "k";
-        string rName    = CoreStatePath (ti, bi) + "r";
+        std::string atomName = CoreStatePath (ti, bi) + "atom";
+        std::string gName    = CoreStatePath (ti, bi) + "g";
+        std::string rMaxName = CoreStatePath (ti, bi) + "rmax";
+        std::string lName    = CoreStatePath (ti, bi) + "l";
+        std::string kName    = CoreStatePath (ti, bi) + "k";
+        std::string rName    = CoreStatePath (ti, bi) + "r";
         HDFAttribIO<int> h_atom(atom), h_l(l);
         HDFAttribIO<double> h_rmax(rmax);
         HDFAttribIO<Vector<double> > h_g(g);
@@ -454,10 +454,10 @@ EinsplineSetBuilder::ReadBands
         char vs[256];
         sprintf (vs, "  Valence state:  ti=%3d  bi=%3d energy=%8.5f k=(%7.4f, %7.4f, %7.4f) rank=%d\n",
                  ti, bi, e, k[0], k[1], k[2], myComm->rank());
-        app_log() << vs << endl;
+        app_log() << vs << std::endl;
 
-        string vectorName = OrbitalPath (ti, bi) + "eigenvector";
-        HDFAttribIO<Array<complex<double>,3> > h_rawData(rawData);
+        std::string vectorName = OrbitalPath (ti, bi) + "eigenvector";
+        HDFAttribIO<Array<std::complex<double>,3> > h_rawData(rawData);
         h_rawData.read(H5FileID, vectorName.c_str());
         if ((rawData.size(0) != nx) ||
             (rawData.size(1) != ny) ||
@@ -478,23 +478,23 @@ EinsplineSetBuilder::ReadBands
       // Now read muffin tin data
       for (int tin=0; tin<NumMuffinTins; tin++)
       {
-        // app_log() << "Reading data for muffin tin " << tin << endl;
+        // app_log() << "Reading data for muffin tin " << tin << std::endl;
         PosType twist, k;
         int lmax = MT_APW_lmax[tin];
         int numYlm = (lmax+1)*(lmax+1);
-        Array<complex<double>,2>
+        Array<std::complex<double>,2>
         u_lm_r(numYlm, MT_APW_num_radial_points[tin]);
-        Array<complex<double>,1> du_lm_dr (numYlm);
+        Array<std::complex<double>,1> du_lm_dr (numYlm);
         if (root)
         {
           int ti   = SortBands[iorb].TwistIndex;
           int bi   = SortBands[iorb].BandIndex;
           twist = TwistAngles[ti];
           k = orbitalSet->PrimLattice.k_cart(twist);
-          string uName  = MuffinTinPath (ti, bi,tin) + "u_lm_r";
-          string duName = MuffinTinPath (ti, bi,tin) + "du_lm_dr";
-          HDFAttribIO<Array<complex<double>,2> > h_u_lm_r(u_lm_r);
-          HDFAttribIO<Array<complex<double>,1> > h_du_lm_dr(du_lm_dr);
+          std::string uName  = MuffinTinPath (ti, bi,tin) + "u_lm_r";
+          std::string duName = MuffinTinPath (ti, bi,tin) + "du_lm_dr";
+          HDFAttribIO<Array<std::complex<double>,2> > h_u_lm_r(u_lm_r);
+          HDFAttribIO<Array<std::complex<double>,1> > h_du_lm_dr(du_lm_dr);
           h_u_lm_r.read(H5FileID, uName.c_str());
           h_du_lm_dr.read(H5FileID, duName.c_str());
         }
@@ -516,7 +516,7 @@ EinsplineSetBuilder::ReadBands
 (int spin, EinsplineSetExtended<double>* orbitalSet)
 {
   update_token(__FILE__,__LINE__,"ReadBands:double");
-  vector<BandInfo>& SortBands(*FullBands[spin]);
+  std::vector<BandInfo>& SortBands(*FullBands[spin]);
   bool root = myComm->rank()==0;
   // bcast other stuff
   myComm->bcast (NumDistinctOrbitals);
@@ -563,7 +563,7 @@ EinsplineSetBuilder::ReadBands
   // First, check to see if we have already read this in
   H5OrbSet set(H5FileName, spin, N);
   int nx, ny, nz, bi, ti;
-  Array<complex<double>,3> rawData;
+  Array<std::complex<double>,3> rawData;
   Array<double,3>         splineData;
   if (root)
   {
@@ -573,8 +573,8 @@ EinsplineSetBuilder::ReadBands
       i++;
     ti = SortBands[i].TwistIndex;
     bi = SortBands[i].BandIndex;
-    string vectorName = OrbitalPath (ti, bi) + "eigenvector";
-    HDFAttribIO<Array<complex<double>,3> > h_rawData(rawData);
+    std::string vectorName = OrbitalPath (ti, bi) + "eigenvector";
+    HDFAttribIO<Array<std::complex<double>,3> > h_rawData(rawData);
     h_rawData.read(H5FileID, vectorName.c_str());
     nx = rawData.size(0);
     ny = rawData.size(1);
@@ -593,8 +593,8 @@ EinsplineSetBuilder::ReadBands
           double phi = -2.0*M_PI*dot (ru, TwistAngles[ti]);
           double s, c;
           sincos(phi, &s, &c);
-          complex<double> phase(c,s);
-          complex<double> z = phase*rawData(ix,iy,iz);
+          std::complex<double> phase(c,s);
+          std::complex<double> z = phase*rawData(ix,iy,iz);
           splineData(ix,iy,iz) = z.imag();
         }
       }
@@ -692,12 +692,12 @@ EinsplineSetBuilder::ReadBands
         double e = SortBands[iorb].Energy;
         twist = TwistAngles[ti];
         k = orbitalSet->PrimLattice.k_cart(twist);
-        string atomName = CoreStatePath (ti, bi) + "atom";
-        string gName    = CoreStatePath (ti, bi) + "g";
-        string rMaxName = CoreStatePath (ti, bi) + "rmax";
-        string lName    = CoreStatePath (ti, bi) + "l";
-        string kName    = CoreStatePath (ti, bi) + "k";
-        string rName    = CoreStatePath (ti, bi) + "r";
+        std::string atomName = CoreStatePath (ti, bi) + "atom";
+        std::string gName    = CoreStatePath (ti, bi) + "g";
+        std::string rMaxName = CoreStatePath (ti, bi) + "rmax";
+        std::string lName    = CoreStatePath (ti, bi) + "l";
+        std::string kName    = CoreStatePath (ti, bi) + "k";
+        std::string rName    = CoreStatePath (ti, bi) + "r";
         HDFAttribIO<int> h_atom(atom), h_l(l);
         HDFAttribIO<double> h_rmax(rmax);
         HDFAttribIO<Vector<double> > h_g(g);
@@ -740,8 +740,8 @@ EinsplineSetBuilder::ReadBands
         k = orbitalSet->PrimLattice.k_cart(twist);
         fprintf (stderr, "  Valence state:  ti=%3d  bi=%3d energy=%8.5f k=(%7.4f, %7.4f, %7.4f) rank=%d\n",
                  ti, bi, e, k[0], k[1], k[2], myComm->rank());
-        string vectorName = OrbitalPath (ti, bi) + "eigenvector";
-        HDFAttribIO<Array<complex<double>,3> > h_rawData(rawData);
+        std::string vectorName = OrbitalPath (ti, bi) + "eigenvector";
+        HDFAttribIO<Array<std::complex<double>,3> > h_rawData(rawData);
         h_rawData.read(H5FileID, vectorName.c_str());
         if ((rawData.size(0) != nx) ||
             (rawData.size(1) != ny) ||
@@ -764,8 +764,8 @@ EinsplineSetBuilder::ReadBands
               double phi = -2.0*M_PI*dot (ru, TwistAngles[ti]);
               double s, c;
               sincos(phi, &s, &c);
-              complex<double> phase(c,s);
-              complex<double> z = phase*rawData(ix,iy,iz);
+              std::complex<double> phase(c,s);
+              std::complex<double> z = phase*rawData(ix,iy,iz);
               splineData(ix,iy,iz) = z.real();
             }
           }
@@ -777,23 +777,23 @@ EinsplineSetBuilder::ReadBands
       // Now read muffin tin data
       for (int tin=0; tin<NumMuffinTins; tin++)
       {
-        // app_log() << "Reading data for muffin tin " << tin << endl;
+        // app_log() << "Reading data for muffin tin " << tin << std::endl;
         PosType twist, k;
         int lmax = MT_APW_lmax[tin];
         int numYlm = (lmax+1)*(lmax+1);
-        Array<complex<double>,2>
+        Array<std::complex<double>,2>
         u_lm_r(numYlm, MT_APW_num_radial_points[tin]);
-        Array<complex<double>,1> du_lm_dr (numYlm);
+        Array<std::complex<double>,1> du_lm_dr (numYlm);
         if (root)
         {
           int ti   = SortBands[iorb].TwistIndex;
           int bi   = SortBands[iorb].BandIndex;
           twist = TwistAngles[ti];
           k = orbitalSet->PrimLattice.k_cart(twist);
-          string uName  = MuffinTinPath (ti, bi,tin) + "u_lm_r";
-          string duName = MuffinTinPath (ti, bi,tin) + "du_lm_dr";
-          HDFAttribIO<Array<complex<double>,2> > h_u_lm_r(u_lm_r);
-          HDFAttribIO<Array<complex<double>,1> > h_du_lm_dr(du_lm_dr);
+          std::string uName  = MuffinTinPath (ti, bi,tin) + "u_lm_r";
+          std::string duName = MuffinTinPath (ti, bi,tin) + "du_lm_dr";
+          HDFAttribIO<Array<std::complex<double>,2> > h_u_lm_r(u_lm_r);
+          HDFAttribIO<Array<std::complex<double>,1> > h_du_lm_dr(du_lm_dr);
           h_u_lm_r.read(H5FileID, uName.c_str());
           h_du_lm_dr.read(H5FileID, duName.c_str());
         }

@@ -58,14 +58,14 @@ class OneBodySpinJastrowOrbital: public OrbitalBase
    * for(int sg=0;sg<F.rows();++sg)
    *   for(int s=s_offset[sg]; s<s_offset[sg+1];++s)
    */
-  vector<int> s_offset;
+  std::vector<int> s_offset;
   /** index offset for the target particles
    *
    * The loop over the particles is replaced by a double loop as
    * for(int tg=0;tg<F.cols();++tg)
    *   for(int t=t_offset[tg]; t<t_offset[tg+1];++t)
    */
-  vector<int> t_offset;
+  std::vector<int> t_offset;
 public:
   typedef FT FuncType;
 
@@ -132,14 +132,14 @@ public:
         F(source_g,ig)=afunc;
         Fmask(source_g,ig)=pid;
       }
-      app_log() << " Adding functor of type "  << source_g << " for all the target. " << endl;
+      app_log() << " Adding functor of type "  << source_g << " for all the target. " << std::endl;
     }
     else
     {
       Spin=true;
       F(source_g,target_g)=afunc;
       Fmask(source_g,target_g)=source_g*F.cols()+target_g;
-      app_log() << " Adding functor of type "  << source_g << " for the target type " << target_g << endl;
+      app_log() << " Adding functor of type "  << source_g << " for the target type " << target_g << std::endl;
     }
   }
 
@@ -188,13 +188,13 @@ public:
   }
 
   /** print the state, e.g., optimizables */
-  void reportStatus(ostream& os)
+  void reportStatus(std::ostream& os)
   {
     for(int i=0; i<F.size(); ++i)
     {
       if(Fmask(i) ==i)
       {
-        os << "  One-body Jastrow for the group pair " << i/F.cols() << "-" << i%F.cols() << endl;
+        os << "  One-body Jastrow for the group pair " << i/F.cols() << "-" << i%F.cols() << std::endl;
         F(i)->myVars.print(os);
       }
     }
@@ -259,9 +259,9 @@ public:
     return std::exp(U[iat]-curVal);
   }
 
-  inline void evaluateRatios(VirtualParticleSet& VP, vector<ValueType>& ratios)
+  inline void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
   {
-    vector<RealType> myr(ratios.size(),U[VP.activePtcl]);
+    std::vector<RealType> myr(ratios.size(),U[VP.activePtcl]);
     const DistanceTableData* d_table=VP.DistTables[myTableIndex];
     int tg=VP.GroupID[VP.activePtcl];
     for(int sg=0; sg<F.rows(); ++sg)
@@ -282,7 +282,7 @@ public:
 
   /** evaluate the ratio
    */
-  inline void get_ratios(ParticleSet& P, vector<ValueType>& ratios)
+  inline void get_ratios(ParticleSet& P, std::vector<ValueType>& ratios)
   {
     std::fill(ratios.begin(),ratios.end(),0.0);
     const DistanceTableData* d_table=P.DistTables[myTableIndex];

@@ -20,7 +20,6 @@
 #include "QMCApp/HamiltonianPool.h"
 #include "QMCApp/WaveFunctionPool.h"
 #include "QMCApp/ParticleSetPool.h"
-using namespace std;
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/OhmmsInfo.h"
 #include "Message/OpenMP.h"
@@ -39,7 +38,7 @@ HamiltonianPool::HamiltonianPool(Communicate* c, const char* aname)
 bool HamiltonianPool::put(xmlNodePtr cur)
 {
   ReportEngine PRE("HamiltonianPool","put");
-  string id("h0"), target("e"),role("extra");
+  std::string id("h0"), target("e"),role("extra");
   OhmmsAttributeSet hAttrib;
   hAttrib.add(id,"id");
   hAttrib.add(id,"name");
@@ -78,7 +77,7 @@ bool HamiltonianPool::get(std::ostream& os) const
   PoolType::const_iterator it(myPool.begin()), it_end(myPool.end());
   while(it != it_end)
   {
-    os << "\n  Hamiltonian " << (*it).first << endl;;
+    os << "\n  Hamiltonian " << (*it).first << std::endl;;
     (*it).second->targetH->get(os);
     ++it;
   }

@@ -36,7 +36,7 @@ struct HarmonicPotential: public QMCHamiltonianBase
   ///number of centers
   int Centers;
   ///container for \f$ 0.5\omega^2 \f$ for each center
-  vector<RealType> Omega;
+  std::vector<RealType> Omega;
   ///distance table
   DistanceTableData* d_table;
   ///reference to the center particleset
@@ -79,7 +79,7 @@ struct HarmonicPotential: public QMCHamiltonianBase
     return Value;
   }
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
@@ -94,7 +94,7 @@ struct HarmonicPotential: public QMCHamiltonianBase
     os << "Harmonic potential: ";
     for(int i=0; i<Centers; i++)
       os << Omega[i] << " ";
-    os << endl;
+    os << std::endl;
     return true;
   }
 

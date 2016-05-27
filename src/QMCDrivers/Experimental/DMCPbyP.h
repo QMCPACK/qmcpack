@@ -56,15 +56,15 @@ private:
   ///Interval between branching
   IndexType NonLocalMoveIndex;
   ///hdf5 file name for Branch conditions
-  string BranchInfo;
-  ///input string to determine kill walkers or not
-  string KillWalker;
-  ///input string to determine swap walkers among mpi processors
-  string SwapWalkers;
-  ///input string to determine to use reconfiguration
-  string Reconfiguration;
-  ///input string to determine to use nonlocal move
-  string NonLocalMove;
+  std::string BranchInfo;
+  ///input std::string to determine kill walkers or not
+  std::string KillWalker;
+  ///input std::string to determine swap walkers among mpi processors
+  std::string SwapWalkers;
+  ///input std::string to determine to use reconfiguration
+  std::string Reconfiguration;
+  ///input std::string to determine to use nonlocal move
+  std::string NonLocalMove;
   ///update engine
   DMCUpdateBase *Mover;
   /// Copy Constructor (disabled)

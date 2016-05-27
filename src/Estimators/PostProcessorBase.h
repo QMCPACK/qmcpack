@@ -21,8 +21,8 @@ class PostProcessorBase
 
   enum{DIM=OHMMS_DIM};
 
-  string type;
-  string project_id;
+  std::string type;
+  std::string project_id;
   int series_start;
   int series_end;
   
@@ -33,7 +33,7 @@ class PostProcessorBase
 
   ~PostProcessorBase() { }
 
-  void set(const string& t,const string& id,int ss,int se)
+  void set(const std::string& t,const std::string& id,int ss,int se)
   {
     type = t;
     project_id   = id;

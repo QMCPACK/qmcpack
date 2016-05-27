@@ -22,7 +22,6 @@
 #define CUBICSPLINE3DCOLLECTION_REGULARGRID_H
 
 #include <bitset>
-using std::bitset;
 
 /*! \class template<class T> CubicSpline3D
  * \brief spline functions on 3D regular grid [Rmin, Rmax)^3
@@ -40,11 +39,11 @@ struct CubicSpline3D
   int Npt[3];
   int OrbitalID;
   pos_type Rmin, Rmax, dr, drinv, drinv2, dr2over6, drover6;
-  bitset<4> xyz[8];     // \note possible to make it "static const"
+  std::bitset<4> xyz[8];     // \note possible to make it "static const"
   pos_type Lm, Lp, Cm, Cp, Cvm, Cvp;
   int I[3], J[3];
 
-  vector<grid_type*> Orb; // a set of orbitals
+  std::vector<grid_type*> Orb; // a set of orbitals
   //!< default constructor
   CubicSpline3D(): OrbitalID(-1)
   {
@@ -334,20 +333,20 @@ CubicSpline3D<grid_type,pos_type>::setxyz()
 {
   //4-bit to calculate the coefficient indices and sign
   //xyz[i](x,y,z,sign): initially, all the bits are set to 0
-  //xyz[0] = bitset<4>(0,0,0,0); // -1(0) 3*0
+  //xyz[0] = std::bitset<4>(0,0,0,0); // -1(0) 3*0
   xyz[1].flip(2);
-  xyz[1].flip(3); //xyz[1] = bitset<4>(0,0,1,1); // +1(1) 2*0
+  xyz[1].flip(3); //xyz[1] = std::bitset<4>(0,0,1,1); // +1(1) 2*0
   xyz[2].flip(1);
-  xyz[2].flip(2); //xyz[2] = bitset<4>(0,1,1,0); // -1(0) 1*0
+  xyz[2].flip(2); //xyz[2] = std::bitset<4>(0,1,1,0); // -1(0) 1*0
   xyz[3].flip(1);
-  xyz[3].flip(3); //xyz[3] = bitset<4>(0,1,0,1); // +1(1) 2*0
+  xyz[3].flip(3); //xyz[3] = std::bitset<4>(0,1,0,1); // +1(1) 2*0
   xyz[4].flip(0);
-  xyz[4].flip(3); //xyz[4] = bitset<4>(1,0,0,1); // +1(1) 2*0
+  xyz[4].flip(3); //xyz[4] = std::bitset<4>(1,0,0,1); // +1(1) 2*0
   xyz[5].flip(0);
-  xyz[5].flip(2); //xyz[5] = bitset<4>(1,0,1,0); // -1(0) 1*0
-  xyz[6].flip();                  //xyz[6] = bitset<4>(1,1,1,1); // +1(1) 0*0
+  xyz[5].flip(2); //xyz[5] = std::bitset<4>(1,0,1,0); // -1(0) 1*0
+  xyz[6].flip();                  //xyz[6] = std::bitset<4>(1,1,1,1); // +1(1) 0*0
   xyz[7].flip(0);
-  xyz[7].flip(1); //xyz[7] = bitset<4>(1,1,0,0); // -1(0) 1*0
+  xyz[7].flip(1); //xyz[7] = std::bitset<4>(1,1,0,0); // -1(0) 1*0
 }
 
 #endif

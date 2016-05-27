@@ -52,7 +52,7 @@ void OrbitalBase::setDiffOrbital(DiffOrbitalBasePtr d)
 
 void OrbitalBase::evaluateDerivatives(ParticleSet& P,
                                       const opt_variables_type& active,
-                                      vector<RealType>& dlogpsi, vector<RealType>& dhpsioverpsi)
+                                      std::vector<RealType>& dlogpsi, std::vector<RealType>& dhpsioverpsi)
 {
 #if defined(ENABLE_SMARTPOINTER)
   if (dPsi.get())
@@ -109,22 +109,22 @@ OrbitalBase::RealType OrbitalBase::KECorrection()
   return 0.0;
 }
 
-void OrbitalBase::get_ratios(ParticleSet& P, vector<ValueType>& ratios)
+void OrbitalBase::get_ratios(ParticleSet& P, std::vector<ValueType>& ratios)
 {
-  ostringstream o;
+  std::ostringstream o;
   o << "OrbitalBase::get_ratios is not implemented by " << OrbitalName;
   APP_ABORT(o.str());
 }
 
-void OrbitalBase::evaluateRatios(VirtualParticleSet& P, vector<ValueType>& ratios)
+void OrbitalBase::evaluateRatios(VirtualParticleSet& P, std::vector<ValueType>& ratios)
 {
-  ostringstream o;
+  std::ostringstream o;
   o << "OrbitalBase::evaluateRatios is not implemented by " << OrbitalName;
   APP_ABORT(o.str());
 }
 
 void OrbitalBase::evaluateDerivRatios(VirtualParticleSet& VP, const opt_variables_type& optvars,
-    vector<ValueType>& ratios, Matrix<ValueType>& dratios)
+    std::vector<ValueType>& ratios, Matrix<ValueType>& dratios)
 {
   //default is only ratios and zero derivatives
   evaluateRatios(VP,ratios);

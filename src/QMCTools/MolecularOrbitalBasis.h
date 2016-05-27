@@ -252,14 +252,14 @@ public:
   int TotalBasis;
   ///container for the id's of the centers (ions),
   ///several centers may share the same id
-  vector<int>  I;
+  std::vector<int>  I;
   ///container to store the offsets of the basis functions,
   ///the number of basis states for center J is Basis[J+1]-Basis[J]
-  vector<int>  Basis;
+  std::vector<int>  Basis;
   ///container for the pointers to the Atomic Orbitals,
   ///the size of this container being determined by the number
   ///of unique centers
-  vector<COT*> AOs;
+  std::vector<COT*> AOs;
   ///matrix to store values \f$ Y[i,j] = \phi_j(r_i) \f$
   Matrix<ValueType> Y;
   ///matrix to store gradients \f$ dY[i,j] = {\bf \nabla}_i \phi_j(r_i) \f$

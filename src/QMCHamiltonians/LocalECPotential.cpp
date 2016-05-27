@@ -78,7 +78,7 @@ void LocalECPotential::contribute_particle_quantities()
 void LocalECPotential::checkout_particle_quantities(TraceManager& tm)
 {
   streaming_particles = request.streaming_array(myName);
-  if(streaming_particles)
+  if( streaming_particles)
   {
     Ve_sample = tm.checkout_real<1>(myName,Peln);
     Vi_sample = tm.checkout_real<1>(myName,Pion);
@@ -87,7 +87,7 @@ void LocalECPotential::checkout_particle_quantities(TraceManager& tm)
 
 void LocalECPotential::delete_particle_quantities()
 {
-  if(streaming_particles)
+  if( streaming_particles)
   {
     delete Ve_sample;
     delete Vi_sample;
@@ -100,7 +100,7 @@ LocalECPotential::Return_t
 LocalECPotential::evaluate(ParticleSet& P)
 {
 #if !defined(REMOVE_TRACEMANAGER)
-  if(streaming_particles)
+  if( streaming_particles)
     Value = evaluate_sp(P);
   else
 #endif
@@ -161,23 +161,23 @@ LocalECPotential::evaluate_sp(ParticleSet& P)
   RealType Vorig = evaluate_orig(P);
   if(abs(Vsum-Vnow)>TraceManager::trace_tol)
   {
-    app_log()<<"accumtest: LocalECPotential::evaluate()"<<endl;
-    app_log()<<"accumtest:   tot:"<< Vnow <<endl;
-    app_log()<<"accumtest:   sum:"<< Vsum <<endl;
+    app_log()<<"accumtest: LocalECPotential::evaluate()"<< std::endl;
+    app_log()<<"accumtest:   tot:"<< Vnow << std::endl;
+    app_log()<<"accumtest:   sum:"<< Vsum << std::endl;
     APP_ABORT("Trace check failed");
   }
   if(abs(Vesum-Visum)>TraceManager::trace_tol)
   {
-    app_log()<<"sharetest: LocalECPotential::evaluate()"<<endl;
-    app_log()<<"sharetest:   e share:"<< Vesum <<endl;
-    app_log()<<"sharetest:   i share:"<< Visum <<endl;
+    app_log()<<"sharetest: LocalECPotential::evaluate()"<< std::endl;
+    app_log()<<"sharetest:   e share:"<< Vesum << std::endl;
+    app_log()<<"sharetest:   i share:"<< Visum << std::endl;
     APP_ABORT("Trace check failed");
   }
   if(abs(Vorig-Vnow)>TraceManager::trace_tol)
   {
-    app_log()<<"versiontest: LocalECPotential::evaluate()"<<endl;
-    app_log()<<"versiontest:   orig:"<< Vorig <<endl;
-    app_log()<<"versiontest:    mod:"<< Vnow <<endl;
+    app_log()<<"versiontest: LocalECPotential::evaluate()"<< std::endl;
+    app_log()<<"versiontest:   orig:"<< Vorig << std::endl;
+    app_log()<<"versiontest:    mod:"<< Vnow << std::endl;
     APP_ABORT("Trace check failed");
   }
 #endif

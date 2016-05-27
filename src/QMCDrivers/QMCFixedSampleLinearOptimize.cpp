@@ -108,9 +108,9 @@ bool QMCFixedSampleLinearOptimize::run()
   numParams = optTarget->NumParams();
   N = numParams + 1;
 //   where we are and where we are pointing
-  vector<RealType> currentParameterDirections(N,0);
-  vector<RealType> currentParameters(numParams,0);
-  vector<RealType> bestParameters(numParams,0);
+  std::vector<RealType> currentParameterDirections(N,0);
+  std::vector<RealType> currentParameters(numParams,0);
+  std::vector<RealType> bestParameters(numParams,0);
   for (int i=0; i<numParams; i++)
     bestParameters[i] = currentParameters[i] = optTarget->Params(i);
 //   proposed direction and new parameters
@@ -120,7 +120,7 @@ bool QMCFixedSampleLinearOptimize::run()
   while (Total_iterations < Max_iterations)
   {
     Total_iterations+=1;
-    app_log()<<"Iteration: "<<Total_iterations<<"/"<<Max_iterations<<endl;
+    app_log()<<"Iteration: "<<Total_iterations<<"/"<<Max_iterations<< std::endl;
     if (!ValidCostFunction(Valid))
       continue;
 //this is the small amount added to the diagonal to stabilize the eigenvalue equation. 10^stabilityBase
@@ -157,7 +157,7 @@ bool QMCFixedSampleLinearOptimize::run()
     for (int i=0; i<N; i++)
       for (int j=0; j<N; j++)
         od_largest=std::max( std::max(od_largest,std::abs(Left(i,j))-std::abs(Left(i,i))), std::abs(Left(i,j))-std::abs(Left(j,j)));
-    app_log()<<"od_largest "<<od_largest<<endl;
+    app_log()<<"od_largest "<<od_largest<< std::endl;
     //if(od_largest>0)
     //  od_largest = std::log(od_largest);
     //else
@@ -165,9 +165,9 @@ bool QMCFixedSampleLinearOptimize::run()
     //if (od_largest<stabilityBase)
     //  stabilityBase=od_largest;
     //else
-    //  stabilizerScale = max( 0.2*(od_largest-stabilityBase)/nstabilizers, stabilizerScale);
-    app_log()<<"  stabilityBase "<<stabilityBase<<endl;
-    app_log()<<"  stabilizerScale "<<stabilizerScale<<endl;
+    //  stabilizerScale = std::max( 0.2*(od_largest-stabilityBase)/nstabilizers, stabilizerScale);
+    app_log()<<"  stabilityBase "<<stabilityBase<< std::endl;
+    app_log()<<"  stabilizerScale "<<stabilizerScale<< std::endl;
     int failedTries(0);
     bool acceptedOneMove(false);
     for (int stability=0; stability<nstabilizers; stability++)
@@ -180,7 +180,7 @@ bool QMCFixedSampleLinearOptimize::run()
       RealType XS(stabilityBase+stabilizerScale*(failedTries+stability));
       for (int i=1; i<N; i++)
         Right(i,i) += std::exp(XS);
-      app_log()<<"  Using XS:"<<XS<<" "<<failedTries<<" "<<stability<<endl;
+      app_log()<<"  Using XS:"<<XS<<" "<<failedTries<<" "<<stability<< std::endl;
       RealType lowestEV(0);
       myTimers[2]->start();
       lowestEV = getLowestEigenvector(Right,currentParameterDirections);
@@ -197,7 +197,7 @@ bool QMCFixedSampleLinearOptimize::run()
         if (std::abs(Lambda*bigVec)>bigChange)
         {
           goodStep=false;
-          app_log()<<"  Failed Step. Magnitude of largest parameter change: "<<std::abs(Lambda*bigVec)<<endl;
+          app_log()<<"  Failed Step. Magnitude of largest parameter change: "<<std::abs(Lambda*bigVec)<< std::endl;
           if (stability==0)
           {
             failedTries++;
@@ -236,7 +236,7 @@ bool QMCFixedSampleLinearOptimize::run()
         {
           goodStep=false;
           failedTries++;
-          app_log()<<"  Failed Step. Largest LM parameter change:"<<biggestParameterChange<<endl;
+          app_log()<<"  Failed Step. Largest LM parameter change:"<<biggestParameterChange<< std::endl;
           if (stability==0)
             stability--;
           else
@@ -246,7 +246,7 @@ bool QMCFixedSampleLinearOptimize::run()
         {
           for (int i=0; i<numParams; i++)
             optTarget->Params(i) = optparm[i] + Lambda * optdir[i];
-          app_log()<<"  Good Step. Largest LM parameter change:"<<biggestParameterChange<<endl;
+          app_log()<<"  Good Step. Largest LM parameter change:"<<biggestParameterChange<< std::endl;
         }
       }
       if (goodStep)
@@ -255,7 +255,7 @@ bool QMCFixedSampleLinearOptimize::run()
 // 	newCost=evaluated_cost;
         //get cost at new minimum
         newCost = optTarget->Cost(false);
-        app_log()<<" OldCost: "<<lastCost<<" NewCost: "<<newCost<<" Delta Cost:"<<(newCost-lastCost)<<endl;
+        app_log()<<" OldCost: "<<lastCost<<" NewCost: "<<newCost<<" Delta Cost:"<<(newCost-lastCost)<< std::endl;
         optTarget->printEstimates();
         //                 quit if newcost is greater than lastcost. E(Xs) looks quadratic (between steepest descent and parabolic)
         // mmorales
@@ -264,7 +264,7 @@ bool QMCFixedSampleLinearOptimize::run()
         if (!ValidCostFunction(Valid))
         {
           goodStep=false;
-          app_log()<<"  Good Step, but cost function invalid"<<endl;
+          app_log()<<"  Good Step, but cost function invalid"<< std::endl;
           failedTries++;
           if(stability>0)
             stability=nstabilizers;
@@ -325,8 +325,8 @@ bool QMCFixedSampleLinearOptimize::run()
 bool
 QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
 {
-  string useGPU("yes");
-  string vmcMove("pbyp");
+  std::string useGPU("yes");
+  std::string vmcMove("pbyp");
   OhmmsAttributeSet oAttrib;
   oAttrib.add(useGPU,"gpu");
   oAttrib.add(vmcMove,"move");
@@ -338,7 +338,7 @@ QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   int pid=OHMMS::Controller->rank();
   while (cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if (cname == "mcwalkerset")
     {
       mcwalkerNodePtr.push_back(cur);

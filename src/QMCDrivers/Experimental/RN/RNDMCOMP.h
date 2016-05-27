@@ -50,15 +50,15 @@ private:
   ///Interval between branching
   IndexType BranchInterval;
   ///hdf5 file name for Branch conditions
-  string BranchInfo;
-  ///input string to determine kill walkers or not
-  string KillWalker;
-  ///input string to determine swap walkers among mpi processors
-  string SwapWalkers;
-  ///input string to determine to use nonlocal move
-  string NonLocalMove;
-  ///input string to use Alternate mover
-  string useAlternate;
+  std::string BranchInfo;
+  ///input std::string to determine kill walkers or not
+  std::string KillWalker;
+  ///input std::string to determine swap walkers among mpi processors
+  std::string SwapWalkers;
+  ///input std::string to determine to use nonlocal move
+  std::string NonLocalMove;
+  ///input std::string to use Alternate mover
+  std::string useAlternate;
   ///input to control maximum age allowed for walkers.
   IndexType mover_MaxAge;
   IndexType myRNWarmupSteps;

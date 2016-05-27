@@ -23,7 +23,7 @@ namespace qmcplusplus
 {
 
 void TricubicBsplineSetBuilder::readComplex2RealDataWithTruncation(const char* hroot,
-    const vector<int>& occSet, int spinIndex, int degeneracy)
+    const std::vector<int>& occSet, int spinIndex, int degeneracy)
 {
   ReportEngine PRE(ClassName,"readComplex2RealDataWithTruncation");
   if(BigDataSet.size())
@@ -31,9 +31,9 @@ void TricubicBsplineSetBuilder::readComplex2RealDataWithTruncation(const char* h
     int norb=occSet.size()/degeneracy;
     for(int iorb=0; iorb<norb; iorb++)
     {
-      ostringstream wnshort;
+      std::ostringstream wnshort;
       wnshort<<curH5Fname << "#"<<occSet[iorb] << "#" << spinIndex;
-      map<string,RSOType*>::iterator it(BigDataSet.find(wnshort.str()));
+      std::map<std::string,RSOType*>::iterator it(BigDataSet.find(wnshort.str()));
       RSOType& phi(*((*it).second));
       activeBasis->Centers[iorb]=phi.Center;
       activeBasis->Origins[iorb]=phi.Origin;
@@ -47,11 +47,11 @@ void TricubicBsplineSetBuilder::readComplex2RealDataWithTruncation(const char* h
   PosType center(0.0),origin(0.0);
   int norb=occSet.size()/degeneracy;
   //input centers
-  vector<PosType> centerIn(norb);
+  std::vector<PosType> centerIn(norb);
   //read the centers first
   for(int iorb=0; iorb<norb; iorb++)
   {
-    string centerName=myParam->getCenterName(hroot,occSet[iorb]);
+    std::string centerName=myParam->getCenterName(hroot,occSet[iorb]);
     HDFAttribIO<PosType > cdummy(centerIn[iorb]);
     cdummy.read(hfileID,centerName.c_str());
   }
@@ -77,17 +77,17 @@ void TricubicBsplineSetBuilder::readComplex2RealDataWithTruncation(const char* h
   activeBasis->setGrid(0.0,bc[0]*dataKnot.dx, 0.0,bc[1]*dataKnot.dy, 0.0,bc[2]*dataKnot.dz,
                        bc[0],bc[1],bc[2],false,false,false,true);
   app_log() << "    Truncated grid for localized orbitals " << bc << "\n";
-  //app_log() << "    Grid-spacing of the input grid " << dataKnot.dx << " " << dataKnot.dy << " " << dataKnot.dz << endl;
+  //app_log() << "    Grid-spacing of the input grid " << dataKnot.dx << " " << dataKnot.dy << " " << dataKnot.dz << std::endl;
   //app_log() << "    Grid-spacing of the truncated grid " << activeBasis->bKnots.dx << " "
-  //  << activeBasis->bKnots.dy << " " << activeBasis->bKnots.dz << endl;
-  vector<vector<int>* > gIndex;
+  //  << activeBasis->bKnots.dy << " " << activeBasis->bKnots.dz << std::endl;
+  std::vector<std::vector<int>* > gIndex;
   for(int idim=0; idim<DIM; idim++)
-    gIndex.push_back(new vector<int>(bc[idim]));
+    gIndex.push_back(new std::vector<int>(bc[idim]));
   StorageType inData(BoxGrid[0],BoxGrid[1],BoxGrid[2]);
   Array<ComplexType,3> inTemp(BoxGrid[0],BoxGrid[1],BoxGrid[2]);
   Array<ValueType,3> inCopy(BoxGrid[0],BoxGrid[1],BoxGrid[2]);
   Array<ValueType,3> inTrunc(bc[0],bc[1],bc[2]);
-  string fname(curH5Fname);
+  std::string fname(curH5Fname);
   fname.insert(fname.size()-2,"tr.");
   hid_t h5out = H5Fcreate(fname.c_str(),H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
   myParam->writeParameters(h5out);
@@ -111,10 +111,10 @@ void TricubicBsplineSetBuilder::readComplex2RealDataWithTruncation(const char* h
   inTrunc = ValueType();
   for(int iorb=0; iorb<norb; iorb++)
   {
-    ostringstream wnshort;
-    string eigvName=myParam->getEigVectorName(hroot,occSet[iorb],spinIndex);
+    std::ostringstream wnshort;
+    std::string eigvName=myParam->getEigVectorName(hroot,occSet[iorb],spinIndex);
     wnshort<<curH5Fname << "#"<<occSet[iorb] << "#" << spinIndex;
-    map<string,RSOType*>::iterator it(BigDataSet.find(wnshort.str()));
+    std::map<std::string,RSOType*>::iterator it(BigDataSet.find(wnshort.str()));
     if(it == BigDataSet.end())
     {
       HDFAttribIO<Array<ComplexType,3> > dummy(inTemp);
@@ -125,7 +125,7 @@ void TricubicBsplineSetBuilder::readComplex2RealDataWithTruncation(const char* h
       PosType corner;
       for(int idim=0; idim<DIM; idim++)
       {
-        vector<int>& cIndex(*gIndex[idim]);
+        std::vector<int>& cIndex(*gIndex[idim]);
         for(int ii=nL[idim], ic=0; ic<bc[idim]; ii++)
         {
           int iloc=ii;
@@ -137,16 +137,16 @@ void TricubicBsplineSetBuilder::readComplex2RealDataWithTruncation(const char* h
           if(iloc<pbc[idim])
             cIndex[ic++]=iloc;
         }
-        //for(int kkk=0; kkk<cIndex.size(); kkk++) cout << setw(3) << cIndex[kkk];
-        //cout << endl;
+        //for(int kkk=0; kkk<cIndex.size(); kkk++) std::cout << std::setw(3) << cIndex[kkk];
+        //cout << std::endl;
       }
       //Centers[iorb]=activeBasis->Centers[iorb]=PosType(n0[0]*dataKnot.dx,n0[1]*dataKnot.dy,n0[2]*dataKnot.dz);
       activeBasis->Centers[iorb]=center=centerIn[iorb];
       activeBasis->Origins[iorb]=origin=PosType(nL[0]*dataKnot.dx,nL[1]*dataKnot.dy,nL[2]*dataKnot.dz);
-      //cout << "  center index "<< n0 << endl;
-      //  << n0[0]*dataKnot.dx << " " << n0[1]*dataKnot.dy << " " << n0[2]*dataKnot.dz << endl
-      //  << nL[0]*dataKnot.dx << " " << nL[1]*dataKnot.dy << " " << nL[2]*dataKnot.dz << endl
-      //  << endl;
+      //cout << "  center index "<< n0 << std::endl;
+      //  << n0[0]*dataKnot.dx << " " << n0[1]*dataKnot.dy << " " << n0[2]*dataKnot.dz << std::endl
+      //  << nL[0]*dataKnot.dx << " " << nL[1]*dataKnot.dy << " " << nL[2]*dataKnot.dz << std::endl
+      //  << std::endl;
       for(int ic=1; ic<bc[0]-1; ic++)
         //for(int ic=0; ic<bc[0]; ic++)
       {
@@ -157,7 +157,7 @@ void TricubicBsplineSetBuilder::readComplex2RealDataWithTruncation(const char* h
           int jc_in=(*gIndex[1])[jc];
           const ComplexType* restrict inPtr = inTemp.data()+BoxGrid[2]*(jc_in+ic_in*BoxGrid[1]);
           ValueType* restrict outPtr = inTrunc.data()+bc[2]*(jc+ic*bc[1]);
-          const vector<int>& zIndex(*gIndex[2]);
+          const std::vector<int>& zIndex(*gIndex[2]);
           for(int kc=1; kc<bc[2]-1; kc++)
             //for(int kc=0; kc<bc[2]; kc++)
           {
@@ -185,9 +185,9 @@ void TricubicBsplineSetBuilder::readComplex2RealDataWithTruncation(const char* h
       StorageType* newP =new StorageType;
       BigDataSet[wnshort.str()]=new RSOType(center,origin,newP);
       activeBasis->add(iorb,inTrunc,newP);
-      app_log() << "Reading spline function " << eigvName << " (" << wnshort.str()  << ")"  << endl;
-      app_log() << "  center=" << activeBasis->Centers[iorb] << endl;
-      app_log() << "  origin=" << activeBasis->Origins[iorb] << endl;
+      app_log() << "Reading spline function " << eigvName << " (" << wnshort.str()  << ")"  << std::endl;
+      app_log() << "  center=" << activeBasis->Centers[iorb] << std::endl;
+      app_log() << "  origin=" << activeBasis->Origins[iorb] << std::endl;
     }
     else
     {

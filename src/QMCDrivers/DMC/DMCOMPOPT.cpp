@@ -143,7 +143,7 @@ void DMCOMPOPT::resetUpdateEngines()
       wClones[ip]->addPropertyHistory(wlen);
 //       m_param.put(qmcNode);
 //       put(qmcNode);
-//       //app_log()<<"DMCOMPOPT::resetComponents"<<endl;
+//       //app_log()<<"DMCOMPOPT::resetComponents"<< std::endl;
 //       Estimators->reset();
 //       branchEngine->resetRun(qmcNode);
 //       branchEngine->checkParameters(W);
@@ -156,9 +156,9 @@ void DMCOMPOPT::resetUpdateEngines()
     FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
     {
       //log file
-      ostringstream o;
+      std::ostringstream o;
       o << "  Initial partition of walkers on a node: ";
-      std::copy(wPerNode.begin(),wPerNode.end(),ostream_iterator<int>(o," "));
+      copy(wPerNode.begin(),wPerNode.end(),std::ostream_iterator<int>(o," "));
       o << "\n";
       if(QMCDriverMode[QMC_UPDATE_MODE])
         o << "  Updates by particle-by-particle moves";
@@ -172,7 +172,7 @@ void DMCOMPOPT::resetUpdateEngines()
         o << "\n  Walkers are killed when a node crossing is detected";
       else
         o << "\n  DMC moves are rejected when a node crossing is detected";
-      app_log() << o.str() << endl;
+      app_log() << o.str() << std::endl;
     }
     #pragma omp parallel for
     for(int ip=0; ip<NumThreads; ++ip)
@@ -256,11 +256,11 @@ void DMCOMPOPT::resetUpdateEngines()
       samples_th[ip] +=1;
   int ndumps = std::max(samples_this_node/W.getActiveWalkers() + 1,2);
   myPeriod4WalkerDump = nBlocks*nSteps/ndumps;
-  app_log() << "  Samples are dumped every " << myPeriod4WalkerDump << " steps " << endl;
-  app_log() << "  Total Sample Size =" << nTargetSamples << endl;
-  app_log() << "  Nodes Sample Size =" << samples_this_node << endl;
+  app_log() << "  Samples are dumped every " << myPeriod4WalkerDump << " steps " << std::endl;
+  app_log() << "  Total Sample Size =" << nTargetSamples << std::endl;
+  app_log() << "  Nodes Sample Size =" << samples_this_node << std::endl;
   for (int ip=0; ip<NumThreads; ++ip)
-    app_log()  << "    Sample size for thread " <<ip<<" = " << samples_th[ip] << endl;
+    app_log()  << "    Sample size for thread " <<ip<<" = " << samples_th[ip] << std::endl;
   #pragma omp critical
   for(int ip=0; ip<NumThreads; ++ip)
   {
@@ -289,7 +289,7 @@ void DMCOMPOPT::resetUpdateEngines()
       Movers[ip]->MaxAge=mxage;
   }
   {
-    ostringstream o;
+    std::ostringstream o;
     if(fixW)
       o << "  Fixed population using reconfiguration method\n";
     else
@@ -298,9 +298,9 @@ void DMCOMPOPT::resetUpdateEngines()
     o << "  BranchInterval = " << BranchInterval << "\n";
     o << "  Steps per block = " << nSteps << "\n";
     o << "  Number of blocks = " << nBlocks << "\n";
-    app_log() << o.str() << endl;
+    app_log() << o.str() << std::endl;
   }
-  app_log() << "  DMC Engine Initialization = " << init_timer.elapsed() << " secs " << endl;
+  app_log() << "  DMC Engine Initialization = " << init_timer.elapsed() << " secs " << std::endl;
 }
 
 bool DMCOMPOPT::run()
@@ -383,8 +383,8 @@ bool DMCOMPOPT::run()
         Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
         wClones[ip]->loadWalker(thisWalker,true);
         psiClones[ip]->copyFromBuffer(*wClones[ip],w_buffer);
-        vector<RealType> Dsaved(NumOptimizables,0);
-        vector<RealType> HDsaved(NumOptimizables,0);
+        std::vector<RealType> Dsaved(NumOptimizables,0);
+        std::vector<RealType> HDsaved(NumOptimizables,0);
         psiClones[ip]->evaluateDerivatives(*wClones[ip],dummyOptVars[ip],Dsaved,HDsaved,true);//SH like deriv style
         #pragma omp critical
         fillComponentMatrices(Dsaved,HDsaved,thisWalker);

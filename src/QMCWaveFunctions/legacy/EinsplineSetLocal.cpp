@@ -28,12 +28,12 @@ void EinsplineSetLocal::evaluate (const ParticleSet& P, int iat,
   ru[2] -= std::floor (ru[2]);
   for(int j=0; j<OrbitalSetSize; j++)
   {
-    complex<double> val;
+    std::complex<double> val;
     Orbitals[j]->evaluate(ru, val);
     double phase = -dot(r, Orbitals[j]->kVec);
     double s,c;
     sincos (phase, &s, &c);
-    complex<double> e_mikr (c,s);
+    std::complex<double> e_mikr (c,s);
     val *= e_mikr;
     convert(val,psi[j]);
   }
@@ -48,29 +48,29 @@ void EinsplineSetLocal::evaluate (const ParticleSet& P, int iat,
   ru[0] -= std::floor (ru[0]);
   ru[1] -= std::floor (ru[1]);
   ru[2] -= std::floor (ru[2]);
-  complex<double> val;
-  TinyVector<complex<double>,3> gu;
-  Tensor<complex<double>,3> hess;
-  complex<double> eye (0.0, 1.0);
+  std::complex<double> val;
+  TinyVector<std::complex<double>,3> gu;
+  Tensor<std::complex<double>,3> hess;
+  std::complex<double> eye (0.0, 1.0);
   for(int j=0; j<OrbitalSetSize; j++)
   {
-    complex<double> u;
-    TinyVector<complex<double>,3> gradu;
-    complex<double> laplu;
+    std::complex<double> u;
+    TinyVector<std::complex<double>,3> gradu;
+    std::complex<double> laplu;
     Orbitals[j]->evaluate(ru, val, gu, hess);
     u  = val;
     // Compute gradient in cartesian coordinates
     gradu = dot(PrimLattice.G, gu);
     laplu = trace(hess, GGt);
     PosType k = Orbitals[j]->kVec;
-    TinyVector<complex<double>,3> ck;
+    TinyVector<std::complex<double>,3> ck;
     ck[0]=k[0];
     ck[1]=k[1];
     ck[2]=k[2];
     double s,c;
     double phase = -dot(P.R[iat], k);
     sincos (phase, &s, &c);
-    complex<double> e_mikr (c,s);
+    std::complex<double> e_mikr (c,s);
     convert(e_mikr*u,psi[j]);
     convert(e_mikr*(-eye * ck * u + gradu),dpsi[j]);
     convert(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu),d2psi[j]);
@@ -98,28 +98,28 @@ EinsplineSetLocal::evaluate_notranspose (const ParticleSet& P, int first, int la
     ru[0] -= std::floor (ru[0]);
     ru[1] -= std::floor (ru[1]);
     ru[2] -= std::floor (ru[2]);
-    complex<double> val;
-    TinyVector<complex<double>,3> gu;
-    Tensor<complex<double>,3> hess;
-    complex<double> eye (0.0, 1.0);
+    std::complex<double> val;
+    TinyVector<std::complex<double>,3> gu;
+    Tensor<std::complex<double>,3> hess;
+    std::complex<double> eye (0.0, 1.0);
     for(int j=0; j<OrbitalSetSize; j++)
     {
-      complex<double> u;
-      TinyVector<complex<double>,3> gradu;
-      complex<double> laplu;
+      std::complex<double> u;
+      TinyVector<std::complex<double>,3> gradu;
+      std::complex<double> laplu;
       Orbitals[j]->evaluate(ru, val, gu, hess);
       u  = val;
       gradu = dot(PrimLattice.G, gu);
       laplu = trace(hess, GGt);
       PosType k = Orbitals[j]->kVec;
-      TinyVector<complex<double>,3> ck;
+      TinyVector<std::complex<double>,3> ck;
       ck[0]=k[0];
       ck[1]=k[1];
       ck[2]=k[2];
       double s,c;
       double phase = -dot(r, k);
       sincos (phase, &s, &c);
-      complex<double> e_mikr (c,s);
+      std::complex<double> e_mikr (c,s);
       convert(e_mikr * u, vals(i,j));
       convert(e_mikr*(-eye*u*ck + gradu),grads(i,j));
       convert(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu),lapls(i,j));
@@ -148,15 +148,15 @@ EinsplineSetLocal::evaluate_notranspose (const ParticleSet& P, int first, int la
     ru[0] -= std::floor (ru[0]);
     ru[1] -= std::floor (ru[1]);
     ru[2] -= std::floor (ru[2]);
-    complex<double> val;
-    TinyVector<complex<double>,3> gu;
-    Tensor<complex<double>,3> hess;
-    complex<double> eye (0.0, 1.0);
+    std::complex<double> val;
+    TinyVector<std::complex<double>,3> gu;
+    Tensor<std::complex<double>,3> hess;
+    std::complex<double> eye (0.0, 1.0);
     for(int j=0; j<OrbitalSetSize; j++)
     {
-      complex<double> u;
-      TinyVector<complex<double>,3> gradu;
-      Tensor<complex<double>,3> tmphs,hs;
+      std::complex<double> u;
+      TinyVector<std::complex<double>,3> gradu;
+      Tensor<std::complex<double>,3> tmphs,hs;
       Orbitals[j]->evaluate(ru, val, gu, hess);
       u  = val;
       gradu = dot(PrimLattice.G, gu);
@@ -164,14 +164,14 @@ EinsplineSetLocal::evaluate_notranspose (const ParticleSet& P, int first, int la
       tmphs = dot(transpose(PrimLattice.G),hess);
       hs = dot(tmphs,PrimLattice.G);
       PosType k = Orbitals[j]->kVec;
-      TinyVector<complex<double>,3> ck;
+      TinyVector<std::complex<double>,3> ck;
       ck[0]=k[0];
       ck[1]=k[1];
       ck[2]=k[2];
       double s,c;
       double phase = -dot(r, k);
       sincos (phase, &s, &c);
-      complex<double> e_mikr (c,s);
+      std::complex<double> e_mikr (c,s);
       convert(e_mikr * u, vals(i,j));
       convert(e_mikr*(-eye*u*ck + gradu),grads(i,j));
       convert(e_mikr*(hs -u*outerProduct(ck,ck) - eye*outerProduct(ck,gradu) - eye*outerProduct(gradu,ck)),grad_grad_psi(i,j));

@@ -100,11 +100,11 @@ struct container_proxy<std::vector<bool> >
   inline container_proxy(std::vector<bool>& a):ref(a)
   {
     my_copy.resize(a.size());
-    std::copy(a.begin(),a.end(),my_copy.begin());
+    copy(a.begin(),a.end(),my_copy.begin());
   }
   ~container_proxy()
   {
-    std::copy(my_copy.begin(),my_copy.end(),ref.begin());
+    copy(my_copy.begin(),my_copy.end(),ref.begin());
   }
   inline size_t size() const
   {

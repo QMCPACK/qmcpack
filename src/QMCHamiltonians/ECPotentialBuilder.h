@@ -41,9 +41,9 @@ struct ECPotentialBuilder: public MPIObjectBase, public QMCTraits
   ParticleSet& targetPtcl;
   TrialWaveFunction& targetPsi;
 
-  vector<RealType>  localZeff;
-  vector<RadialPotentialType*>  localPot;
-  vector<NonLocalECPComponent*>  nonLocalPot;
+  std::vector<RealType>  localZeff;
+  std::vector<RadialPotentialType*>  localPot;
+  std::vector<NonLocalECPComponent*>  nonLocalPot;
 
   ECPotentialBuilder(QMCHamiltonian& h,
                      ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi,

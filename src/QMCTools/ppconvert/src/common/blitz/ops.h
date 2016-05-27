@@ -77,7 +77,7 @@ struct name {                                                  \
     { return op a; }                                           \
 							       \
     template<typename T1>                                      \
-    static inline void prettyPrint(BZ_STD_SCOPE(string) &str,  \
+    static inline void prettyPrint(BZ_STD_SCOPE( std::string) &str,  \
         prettyPrintFormat& format, const T1& t1)               \
     {                                                          \
         str += #op;                                            \
@@ -101,7 +101,7 @@ struct name {                                                  \
     { return op a; }                                           \
                                                                \
     template<typename T1>                                      \
-    static inline void prettyPrint(BZ_STD_SCOPE(string) &str,  \
+    static inline void prettyPrint(BZ_STD_SCOPE( std::string) &str,  \
         prettyPrintFormat& format, const T1& t1)               \
     {                                                          \
         str += #op;                                            \
@@ -124,7 +124,7 @@ struct name {                                                     \
     { return a op b; }                                            \
 							          \
     template<typename T1, typename T2>                            \
-    static inline void prettyPrint(BZ_STD_SCOPE(string) &str,     \
+    static inline void prettyPrint(BZ_STD_SCOPE( std::string) &str,     \
         prettyPrintFormat& format, const T1& t1,                  \
         const T2& t2)                                             \
     {                                                             \
@@ -159,7 +159,7 @@ struct name {                                                     \
     { return a op b; }                                            \
                                                                   \
     template<typename T1, typename T2>                            \
-    static inline void prettyPrint(BZ_STD_SCOPE(string) &str,     \
+    static inline void prettyPrint(BZ_STD_SCOPE( std::string) &str,     \
         prettyPrintFormat& format, const T1& t1,                  \
         const T2& t2)                                             \
     {                                                             \

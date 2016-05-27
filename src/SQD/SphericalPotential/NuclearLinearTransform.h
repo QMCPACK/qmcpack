@@ -110,7 +110,7 @@ struct NuclearLinearTransform
     value_type r0 = V.r(i);
     value_type dr = V.dr(i);
     value_type deriv;
-    if(L<numeric_limits<value_type>::epsilon())
+    if(L<std::numeric_limits<value_type>::epsilon())
     {
       z0 = pow(r0,L+1);
       deriv = static_cast<value_type>(L+1)*pow(r0,L);

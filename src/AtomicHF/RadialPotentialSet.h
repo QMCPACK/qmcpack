@@ -33,7 +33,7 @@ struct RadialPotentialSet
   ///the grid potentials for each orbital
   RadialPotentialBase::RadialOrbitalSet_t Vsave;
   ///the Self Consistent Fields
-  vector<RadialPotentialBase*> SCF;
+  std::vector<RadialPotentialBase*> SCF;
 
   ///constructor
   RadialPotentialSet() { }
@@ -77,7 +77,7 @@ struct RadialPotentialSet
   }
 
   /*! \fn inline value_type evaluate(HFAtomicOrbitals& psi,
-    vector<value_type>& Energy,
+    std::vector<value_type>& Energy,
     int norb)
     * \param psi the wavefunction
     * \param Energy vector to store the sum of each SCF of
@@ -88,7 +88,7 @@ struct RadialPotentialSet
   */
 
   inline value_type evaluate(HFAtomicOrbitals& psi,
-                             vector<value_type>& Energy,
+                             std::vector<value_type>& Energy,
                              int norb)
   {
     value_type sum = 0.0;
@@ -163,7 +163,7 @@ struct RadialPotentialSet
 
   void applyRestriction(HFAtomicOrbitals& psi)
   {
-    static vector<value_type> sum;
+    static std::vector<value_type> sum;
     if(sum.empty())
     {
       sum.resize(psi.m_grid->size());

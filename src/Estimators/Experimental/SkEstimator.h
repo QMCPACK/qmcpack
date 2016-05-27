@@ -34,11 +34,11 @@ class SkEstimator: public CompositeEstimatorBase
   /** normalization factor */
   RealType OneOverN;
   /** kshell counters */
-  vector<int> Kshell;
+  std::vector<int> Kshell;
   /** instantaneous structure factor  */
-  vector<RealType> Kmag;
+  std::vector<RealType> Kmag;
   /** 1.0/degenracy for a ksell */
-  vector<RealType> OneOverDnk;
+  std::vector<RealType> OneOverDnk;
   /** \f$rho_k = \sum_{\alpha} \rho_k^{\alpha} \f$ for species index \f$\alpha\f$ */
   Vector<ComplexType> RhokTot;
   /** instantaneous structure factor  */

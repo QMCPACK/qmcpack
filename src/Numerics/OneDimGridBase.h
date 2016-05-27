@@ -487,7 +487,7 @@ struct NumericalGrid: public OneDimGridBase<T,CT>
   {
     num_points=g_last-g_first;
     X.resize(num_points);
-    std::copy(g_first,g_last,X.begin());
+    copy(g_first,g_last,X.begin());
     lower_bound=X[0];
     upper_bound=X[num_points-1];
     int nf=num_points/2;

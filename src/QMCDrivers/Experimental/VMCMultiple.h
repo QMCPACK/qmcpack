@@ -58,10 +58,10 @@ private:
   int nPsi;
   ///number of blocks to compute the normalization factor
   int equilBlocks;
-  vector<RealType> logpsi;
-  vector<RealType> sumratio;
-  vector<RealType> invsumratio;
-  vector<RealType> Norm;
+  std::vector<RealType> logpsi;
+  std::vector<RealType> sumratio;
+  std::vector<RealType> invsumratio;
+  std::vector<RealType> Norm;
 };
 }
 

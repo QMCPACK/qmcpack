@@ -48,13 +48,13 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   int sortBands(1);
   int spinSet = 0;
 
-  string sourceName;
-  string spo_prec("double");
-  string truncate("no");
+  std::string sourceName;
+  std::string spo_prec("double");
+  std::string truncate("no");
 #if defined(QMC_CUDA)
-  string useGPU="yes";
+  std::string useGPU="yes";
 #else
-  string useGPU="no";
+  std::string useGPU="no";
 #endif
 
   {
@@ -100,7 +100,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   ///////////////////////////////////////////////
   // Read occupation information from XML file //
   ///////////////////////////////////////////////
-  vector<int> Occ_Old(0,0);
+  std::vector<int> Occ_Old(0,0);
   Occ.resize(0,0);
   bool NewOcc(false);
 
@@ -114,10 +114,10 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   cur = cur->children;
   while (cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == "occupation")
     {
-      string occ_mode("ground");
+      std::string occ_mode("ground");
       occ_format="energy";
       particle_hole_pairs=0;
       OhmmsAttributeSet oAttrib;
@@ -162,7 +162,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     return iter->second->makeClone();
   }
 
-  if(FullBands[spinSet]==0) FullBands[spinSet]=new vector<BandInfo>;
+  if(FullBands[spinSet]==0) FullBands[spinSet]=new std::vector<BandInfo>;
 
   Timer mytimer;
   if(spinSet==0)
@@ -207,12 +207,12 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
       app_error() << "Error reading orbital info from HDF5 file.  Aborting.\n";
       APP_ABORT("EinsplineSetBuilder::createSPOSet");
     }
-  app_log() <<  "TIMER  EinsplineSetBuilder::ReadOrbitalInfo " << mytimer.elapsed() << endl;
+  app_log() <<  "TIMER  EinsplineSetBuilder::ReadOrbitalInfo " << mytimer.elapsed() << std::endl;
   myComm->barrier();
   mytimer.restart();
   BroadcastOrbitalInfo();
 
-  app_log() <<  "TIMER  EinsplineSetBuilder::BroadcastOrbitalInfo " << mytimer.elapsed() << endl;
+  app_log() <<  "TIMER  EinsplineSetBuilder::BroadcastOrbitalInfo " << mytimer.elapsed() << std::endl;
   app_log().flush();
 
   // Now, analyze the k-point mesh to figure out the what k-points  are needed                                                    //
@@ -282,7 +282,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     {
       if(truncate == "yes")
       {
-        app_log() << "  Truncated orbitals with multiple kpoints are not supported yet!" << endl;
+        app_log() << "  Truncated orbitals with multiple kpoints are not supported yet!" << std::endl;
       }
       if(use_single)
       {
@@ -306,13 +306,13 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   MixedSplineReader->setCommon(XMLRoot);
   size_t delta_mem=qmc_common.memory_allocated;
   // temporary disable the following function call, Ye Luo
-  // RotateBands_ESHDF(spinSet, dynamic_cast<EinsplineSetExtended<complex<double> >*>(OrbitalSet));
+  // RotateBands_ESHDF(spinSet, dynamic_cast<EinsplineSetExtended<std::complex<double> >*>(OrbitalSet));
   HasCoreOrbs=bcastSortBands(spinSet,NumDistinctOrbitals,myComm->rank()==0);
   SPOSetBase* bspline_zd=MixedSplineReader->create_spline_set(spinSet,spo_cur);
   if(!bspline_zd)
     APP_ABORT_TRACE(__FILE__,__LINE__,"Failed to create SPOSetBase*");
   delta_mem=qmc_common.memory_allocated-delta_mem;
-  app_log() <<"  MEMORY allocated SplineAdoptorReader " << (delta_mem>>20) << " MB" << endl;
+  app_log() <<"  MEMORY allocated SplineAdoptorReader " << (delta_mem>>20) << " MB" << std::endl;
   OrbitalSet = bspline_zd;
 #ifdef QMC_CUDA
   EinsplineSet *new_OrbitalSet;
@@ -328,11 +328,11 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   }
   else
   {
-    EinsplineSetExtended<complex<double> > *temp_OrbitalSet;
+    EinsplineSetExtended<std::complex<double> > *temp_OrbitalSet;
     if (AtomicOrbitals.size() > 0)
-      temp_OrbitalSet = new EinsplineSetHybrid<complex<double> >;
+      temp_OrbitalSet = new EinsplineSetHybrid<std::complex<double> >;
     else
-      temp_OrbitalSet = new EinsplineSetExtended<complex<double> >;
+      temp_OrbitalSet = new EinsplineSetExtended<std::complex<double> >;
     MixedSplineReader->export_MultiSpline(&(temp_OrbitalSet->MultiSpline));
     temp_OrbitalSet->kPoints.resize(NumDistinctOrbitals);
     temp_OrbitalSet->MakeTwoCopies.resize(NumDistinctOrbitals);
@@ -386,11 +386,11 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   }
 #endif
 #endif
-  app_log() <<  "TIMER  EinsplineSetBuilder::ReadBands " << mytimer.elapsed() << endl;
+  app_log() <<  "TIMER  EinsplineSetBuilder::ReadBands " << mytimer.elapsed() << std::endl;
   SPOSetMap[aset] = OrbitalSet;
   //if (sourceName.size() && (ParticleSets.find(sourceName) == ParticleSets.end()))
   //{
-  //  app_log() << "  EinsplineSetBuilder creates a ParticleSet " << sourceName << endl;
+  //  app_log() << "  EinsplineSetBuilder creates a ParticleSet " << sourceName << std::endl;
   //  ParticleSet* ions=new ParticleSet;
   //  ions->Lattice=TargetPtcl.Lattice;
   //  ESHDFIonsParser ap(*ions,H5FileID,myComm);
@@ -427,7 +427,7 @@ SPOSetBase* EinsplineSetBuilder::createSPOSet(xmlNodePtr cur,SPOSetInputInfo& in
     APP_ABORT_TRACE(__FILE__,__LINE__,"EinsplineSetExtended<T> cannot create a SPOSet");
   }
 
-  string aname;
+  std::string aname;
   int spinSet(0);
   OhmmsAttributeSet a;
   a.add(aname,"name");

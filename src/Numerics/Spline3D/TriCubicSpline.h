@@ -464,12 +464,12 @@ public:
     {
       m_set->ifout = false;
       /*
-      cout << r[0] << '\t' << m_grid->m_axis[0].m_start << '\t'
-      << m_grid->m_axis[0].m_end << endl;
-      cout << r[1] << '\t' << m_grid->m_axis[1].m_start << '\t'
-      << m_grid->m_axis[1].m_end << endl;
-      cout << r[2] << '\t' << m_grid->m_axis[2].m_start << '\t'
-      << m_grid->m_axis[2].m_end << endl;
+      std::cout << r[0] << '\t' << m_grid->m_axis[0].m_start << '\t'
+      << m_grid->m_axis[0].m_end << std::endl;
+      std::cout << r[1] << '\t' << m_grid->m_axis[1].m_start << '\t'
+      << m_grid->m_axis[1].m_end << std::endl;
+      std::cout << r[2] << '\t' << m_grid->m_axis[2].m_start << '\t'
+      << m_grid->m_axis[2].m_end << std::endl;
       */
       gradf[0] = 1e-40;
       gradf[1] = 1e-40;
@@ -477,7 +477,7 @@ public:
       lapf = 1e-40;
       return 1e-20;
     }
-    //    cout << "pointr: " << r << endl;
+    //    std::cout << "pointr: " << r << std::endl;
     int ix = m_set->ix;
     int iy = m_set->iy;
     int iz = m_set->iz;
@@ -844,7 +844,7 @@ public:
 
   void read_data(const char* data_file, const double ufac)
   {
-    std::ifstream infile(data_file,ios_base::in);
+    std::ifstream infile(data_file,std::ios_base::in);
     for(int iz = 0; iz < n_z; iz++)
     {
       for(int iy = 0; iy < n_y; iy++)

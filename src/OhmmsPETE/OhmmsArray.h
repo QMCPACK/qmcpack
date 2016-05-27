@@ -26,7 +26,6 @@
  */
 #include <vector>
 #include <iostream>
-using namespace std;
 
 template<class T, unsigned D>
 class Array
@@ -34,7 +33,7 @@ class Array
 public:
 
   typedef T          Type_t;
-  typedef vector<T>  Container_t;
+  typedef std::vector<T>  Container_t;
   typedef Array<T,D> This_t;
 
   Array();
@@ -233,7 +232,7 @@ Array<T,D>::Array(const Array<T,D>& rhs)
   // assign the D-dimension indices
   for(int i=0; i<D; i++)
     Length[i] = rhs.Length[i];
-  std::copy(rhs.begin(),rhs.end(),X.begin());
+  copy(rhs.begin(),rhs.end(),X.begin());
 }
 
 template<class T, unsigned D>

@@ -64,7 +64,7 @@ QMCOptimize::~QMCOptimize()
 /** Add configuration files for the optimization
  * @param a root of a hdf5 configuration file
  */
-void QMCOptimize::addConfiguration(const string& a)
+void QMCOptimize::addConfiguration(const std::string& a)
 {
   if(a.size())
     ConfigFile.push_back(a);
@@ -85,41 +85,41 @@ QMCOptimize::run()
 
   //cleanup walkers
   //W.destroyWalkers(W.begin(), W.end());
-  app_log() << "<opt stage=\"setup\">" << endl;
-  app_log() << "  <log>"<<endl;
+  app_log() << "<opt stage=\"setup\">" << std::endl;
+  app_log() << "  <log>"<< std::endl;
   //reset the rootname
   optTarget->setRootName(RootName);
   optTarget->setWaveFunctionNode(wfNode);
   optTarget->setRng(vmcEngine->getRng());
-  app_log() << "   Reading configurations from h5FileRoot " << endl;
+  app_log() << "   Reading configurations from h5FileRoot " << std::endl;
   //get configuration from the previous run
   Timer t1;
   optTarget->getConfigurations(h5FileRoot);
   optTarget->checkConfigurations();
-  app_log() << "  Execution time = " << t1.elapsed() << endl;
-  app_log() << "  </log>"<<endl;
-  app_log() << "</opt>" << endl;
-  app_log() << "<opt stage=\"main\" walkers=\""<< optTarget->getNumSamples() << "\">" << endl;
-  app_log() << "  <log>" << endl;
+  app_log() << "  Execution time = " << t1.elapsed() << std::endl;
+  app_log() << "  </log>"<< std::endl;
+  app_log() << "</opt>" << std::endl;
+  app_log() << "<opt stage=\"main\" walkers=\""<< optTarget->getNumSamples() << "\">" << std::endl;
+  app_log() << "  <log>" << std::endl;
   optTarget->setTargetEnergy(branchEngine->getEref());
   t1.restart();
   bool success=optSolver->optimize(optTarget);
 //     W.reset();
 //     branchEngine->flush(0);
 //     branchEngine->reset();
-  app_log() << "  Execution time = " << t1.elapsed() << endl;;
-  app_log() << "  </log>" << endl;
+  app_log() << "  Execution time = " << t1.elapsed() << std::endl;;
+  app_log() << "  </log>" << std::endl;
   optTarget->reportParameters();
 
   int nw_removed=W.getActiveWalkers()-NumOfVMCWalkers;
-  app_log() << "   Restore the number of walkers to " << NumOfVMCWalkers << ", removing " << nw_removed << " walkers." <<endl;
+  app_log() << "   Restore the number of walkers to " << NumOfVMCWalkers << ", removing " << nw_removed << " walkers." << std::endl;
   if(nw_removed>0)
     W.destroyWalkers(nw_removed);
   else
     W.createWalkers(-nw_removed);
 
-  app_log() << "</opt>" << endl;
-  app_log() << "</optimization-report>" << endl;
+  app_log() << "</opt>" << std::endl;
+  app_log() << "</optimization-report>" << std::endl;
   MyCounter++;
   return (optTarget->getReportCounter() > 0);
 }
@@ -127,7 +127,7 @@ QMCOptimize::run()
 void QMCOptimize::generateSamples()
 {
   Timer t1;
-  app_log() << "<optimization-report>" << endl;
+  app_log() << "<optimization-report>" << std::endl;
 
   vmcEngine->QMCDriverMode.set(QMC_WARMUP,1);
   vmcEngine->QMCDriverMode.set(QMC_OPTIMIZE,1);
@@ -135,14 +135,14 @@ void QMCOptimize::generateSamples()
 
   //vmcEngine->setValue("recordWalkers",1);//set record
   vmcEngine->setValue("current",0);//reset CurrentStep
-  app_log() << "<vmc stage=\"main\" blocks=\"" << nBlocks << "\">" << endl;
+  app_log() << "<vmc stage=\"main\" blocks=\"" << nBlocks << "\">" << std::endl;
   t1.restart();
   //     W.reset();
   branchEngine->flush(0);
   branchEngine->reset();
   vmcEngine->run();
-  app_log() << "  Execution time = " << t1.elapsed() << endl;
-  app_log() << "</vmc>" << endl;
+  app_log() << "  Execution time = " << t1.elapsed() << std::endl;
+  app_log() << "</vmc>" << std::endl;
   //write parameter history and energies to the parameter file in the trial wave function through opttarget
   RealType e,w,var;
   vmcEngine->Estimators->getEnergyAndWeight(e,w,var);
@@ -158,8 +158,8 @@ void QMCOptimize::generateSamples()
 bool
 QMCOptimize::put(xmlNodePtr q)
 {
-  string vmcMove("pbyp");
-  string useGPU("no");
+  std::string vmcMove("pbyp");
+  std::string useGPU("no");
   OhmmsAttributeSet oAttrib;
   oAttrib.add(vmcMove,"move");
   oAttrib.add(useGPU,"gpu");
@@ -169,7 +169,7 @@ QMCOptimize::put(xmlNodePtr q)
   int pid=OHMMS::Controller->rank();
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == "mcwalkerset")
     {
       mcwalkerNodePtr.push_back(cur);
@@ -207,28 +207,28 @@ QMCOptimize::put(xmlNodePtr q)
   {
     if(optmethod == "anneal")
     {
-      app_log() << " Annealing optimization using DampedDynamics"<<endl;
+      app_log() << " Annealing optimization using DampedDynamics"<< std::endl;
       optSolver = new DampedDynamics<RealType>;
     }
     else if((optmethod == "flexOpt")  |(optmethod == "flexopt")  | (optmethod == "macopt") )
     {
-      app_log() << "Conjugate-gradient optimization using FlexOptimization"<<endl;
-      app_log() << " This method has been removed. "<< endl;
+      app_log() << "Conjugate-gradient optimization using FlexOptimization"<< std::endl;
+      app_log() << " This method has been removed. "<< std::endl;
       APP_ABORT("QMCOptimize::put");
     }
     else if (optmethod == "BFGS")
     {
-      app_log() << " This method is not implemented correctly yet. "<< endl;
+      app_log() << " This method is not implemented correctly yet. "<< std::endl;
       APP_ABORT("QMCOptimize::put");
     }
     else if (optmethod == "test")
     {
-      app_log() << "Conjugate-gradient optimization using tester Optimization: "<<endl;
+      app_log() << "Conjugate-gradient optimization using tester Optimization: "<< std::endl;
       optSolver = new testDerivOptimization<RealType>;
     }
     else 
     {
-      app_log() << " Conjugate-gradient optimization using CGOptimization"<<endl;
+      app_log() << " Conjugate-gradient optimization using CGOptimization"<< std::endl;
       optSolver = new CGOptimization<RealType>;
     }      //set the stream
     optSolver->setOstream(&app_log());

@@ -9,7 +9,7 @@
 namespace qmcplusplus
 {
 
-  SHOSet::SHOSet(RealType l, PosType c, const vector<SHOState*>& sho_states)
+  SHOSet::SHOSet(RealType l, PosType c, const std::vector<SHOState*>& sho_states)
     : length(l), center(c)
   {
     state_info.resize(sho_states.size());
@@ -31,12 +31,12 @@ namespace qmcplusplus
     qn_max = -1;
     for(int s=0;s<state_info.size();++s)
       for(int d=0;d<DIM;++d)
-        qn_max[d] = max(qn_max[d],state_info[s].quantum_number[d]);
+        qn_max[d] = std::max(qn_max[d],state_info[s].quantum_number[d]);
     qn_max+=1;
 
     nmax = -1;
     for(int d=0;d<DIM;++d)
-      nmax = max(nmax,qn_max[d]);
+      nmax = std::max(nmax,qn_max[d]);
 
     prefactors.resize(nmax);
     hermite.resize(DIM,nmax);
@@ -67,18 +67,18 @@ namespace qmcplusplus
   }
 
 
-  void SHOSet::report(const string& pad)
+  void SHOSet::report(const std::string& pad)
   {
-    app_log()<<pad<<"SHOSet report"<<endl;
-    app_log()<<pad<<"  length    = "<< length    <<endl;
-    app_log()<<pad<<"  center    = "<< center    <<endl;
-    app_log()<<pad<<"  nmax      = "<< nmax      <<endl;
-    app_log()<<pad<<"  qn_max    = "<< qn_max    <<endl;
-    app_log()<<pad<<"  # states  = "<< state_info.size() <<endl;
-    app_log()<<pad<<"  states"<<endl;
+    app_log()<<pad<<"SHOSet report"<< std::endl;
+    app_log()<<pad<<"  length    = "<< length    << std::endl;
+    app_log()<<pad<<"  center    = "<< center    << std::endl;
+    app_log()<<pad<<"  nmax      = "<< nmax      << std::endl;
+    app_log()<<pad<<"  qn_max    = "<< qn_max    << std::endl;
+    app_log()<<pad<<"  # states  = "<< state_info.size() << std::endl;
+    app_log()<<pad<<"  states"<< std::endl;
     for(int s=0;s<state_info.size();++s)
       state_info[s].sho_report(pad+"    "+int2string(s)+" ");
-    app_log()<<pad<<"end SHOSet report"<<endl;
+    app_log()<<pad<<"end SHOSet report"<< std::endl;
     app_log().flush();
   }
 
@@ -280,30 +280,30 @@ namespace qmcplusplus
         dp[n]  = pre[n]*g*(-x*H[n]+dH[n]);
         d2p[n] = pre[n]*g*((x2-1)*H[n]-2*x*dH[n]+d2H[n]);
       }
-      app_log()<<"eval check dim = "<<d<<"  x = "<<x<<endl;
-      app_log()<<"  hermite check"<<endl;
+      app_log()<<"eval check dim = "<<d<<"  x = "<<x<< std::endl;
+      app_log()<<"  hermite check"<< std::endl;
       for(int n=0;n<qn_max[d];++n)
       {
-        app_log()<<"    "<<n<<" "<<H[n]<<endl;
-        app_log()<<"    "<<n<<" "<<hermite(d,n)<<endl;
+        app_log()<<"    "<<n<<" "<<H[n]<< std::endl;
+        app_log()<<"    "<<n<<" "<<hermite(d,n)<< std::endl;
       }
-      app_log()<<"  phi d0 check"<<endl;
+      app_log()<<"  phi d0 check"<< std::endl;
       for(int n=0;n<qn_max[d];++n)
       {
-        app_log()<<"    "<<n<<" "<<p[n]<<endl;
-        app_log()<<"    "<<n<<" "<<d0_values(d,n)<<endl;
+        app_log()<<"    "<<n<<" "<<p[n]<< std::endl;
+        app_log()<<"    "<<n<<" "<<d0_values(d,n)<< std::endl;
       }
-      app_log()<<"  phi d1 check"<<endl;
+      app_log()<<"  phi d1 check"<< std::endl;
       for(int n=0;n<qn_max[d];++n)
       {
-        app_log()<<"    "<<n<<" "<<dp[n]/p[n]<<endl;
-        app_log()<<"    "<<n<<" "<<d1_values(d,n)<<endl;
+        app_log()<<"    "<<n<<" "<<dp[n]/p[n]<< std::endl;
+        app_log()<<"    "<<n<<" "<<d1_values(d,n)<< std::endl;
       }
-      app_log()<<"  phi d2 check"<<endl;
+      app_log()<<"  phi d2 check"<< std::endl;
       for(int n=0;n<qn_max[d];++n)
       {
-        app_log()<<"    "<<n<<" "<<d2p[n]/p[n]<<endl;
-        app_log()<<"    "<<n<<" "<<d2_values(d,n)<<endl;
+        app_log()<<"    "<<n<<" "<<d2p[n]/p[n]<< std::endl;
+        app_log()<<"    "<<n<<" "<<d2_values(d,n)<< std::endl;
       }
         
     }
@@ -345,7 +345,7 @@ namespace qmcplusplus
     ValueViewer_t d2psin(  &vd2psin[0],  size());
 
 
-    app_log()<<" loading dr"<<endl;
+    app_log()<<" loading dr"<< std::endl;
 
     RealType odr2sum = 0.0;
     for(int d=0;d<DIM;++d)
@@ -356,7 +356,7 @@ namespace qmcplusplus
       odr2sum += odr2[d];
     }
 
-    app_log()<<"SHOSet::test_derivatives"<<endl;
+    app_log()<<"SHOSet::test_derivatives"<< std::endl;
 
     ParticleSet Ps;
 
@@ -405,59 +405,59 @@ namespace qmcplusplus
           RealType d2phi_diff = 0.0;
           for(int m=0;m<nphi;++m)
             for(int d=0;d<DIM;++d)
-              dphi_diff = max(dphi_diff,abs(dpsi[m][d]-dpsin[m][d])/abs(dpsin[m][d]));
+              dphi_diff = std::max<RealType>(dphi_diff,std::abs(dpsi[m][d]-dpsin[m][d])/abs(dpsin[m][d]));
           for(int m=0;m<nphi;++m)
-            d2phi_diff = max(d2phi_diff,abs(d2psi[m]-d2psin[m])/abs(d2psin[m]));
-          app_log()<<"  "<<p<<" "<<dphi_diff<<" "<<d2phi_diff<<endl;
-          app_log()<<"    derivatives"<<endl;
+            d2phi_diff = std::max<RealType>(d2phi_diff,std::abs(d2psi[m]-d2psin[m])/abs(d2psin[m]));
+          app_log()<<"  "<<p<<" "<<dphi_diff<<" "<<d2phi_diff<< std::endl;
+          app_log()<<"    derivatives"<< std::endl;
           for(int m=0;m<nphi;++m)
           {
-            string qn="";
+            std::string qn="";
             for(int d=0;d<DIM;++d)
               qn+=int2string(state_info[m].quantum_number[d])+" ";
             app_log()<<"    "<<qn;
             for(int d=0;d<DIM;++d)
               app_log()<<real(dpsi[m][d])<<" ";
-            app_log()<<endl;
+            app_log()<< std::endl;
             app_log()<<"    "<<qn;
             for(int d=0;d<DIM;++d)
               app_log()<<real(dpsin[m][d])<<" ";
-            app_log()<<endl;
+            app_log()<< std::endl;
           }
-          app_log()<<"    laplacians"<<endl;
+          app_log()<<"    laplacians"<< std::endl;
           PosType x=r/length;
           RealType x2 = dot(x,x);
           for(int m=0;m<nphi;++m)
           {
-            string qn="";
+            std::string qn="";
             for(int d=0;d<DIM;++d)
               qn+=int2string(state_info[m].quantum_number[d])+" ";
-            app_log()<<"    "<<qn<<real(d2psi[m]/psi[m])<<endl;
-            app_log()<<"    "<<qn<<real(d2psin[m]/psi[m])<<endl;
+            app_log()<<"    "<<qn<<real(d2psi[m]/psi[m])<< std::endl;
+            app_log()<<"    "<<qn<<real(d2psin[m]/psi[m])<< std::endl;
           }
           p++;
         }
       }
     }
 
-    app_log()<<"end SHOSet::test_derivatives"<<endl;
+    app_log()<<"end SHOSet::test_derivatives"<< std::endl;
   }
 
 
   void SHOSet::test_overlap()
   {
-    app_log()<<"SHOSet::test_overlap"<<endl;
+    app_log()<<"SHOSet::test_overlap"<< std::endl;
 
 
     //linear
     int d=0;
 
-    app_log()<<"  length = "<<length<<endl;
-    app_log()<<"  prefactors"<<endl;
+    app_log()<<"  length = "<<length<< std::endl;
+    app_log()<<"  prefactors"<< std::endl;
     for(int n=0;n<qn_max[d];++n)
-      app_log()<<"    "<<n<<" "<<prefactors[n]<<endl;
+      app_log()<<"    "<<n<<" "<<prefactors[n]<< std::endl;
 
-    app_log()<<"  1d overlap"<<endl;
+    app_log()<<"  1d overlap"<< std::endl;
 
     ValueVector_t vpsi;
     vpsi.resize(size());
@@ -487,16 +487,16 @@ namespace qmcplusplus
     }
 
     for(int i=0;i<nphi;++i){
-      app_log()<<endl;
+      app_log()<< std::endl;
       for(int j=0;j<nphi;++j)
         app_log()<<omat(i,j)<<" ";
     }
-    app_log()<<endl;
+    app_log()<< std::endl;
 
 
 
     //volumetric
-    app_log()<<"  3d overlap"<<endl;
+    app_log()<<"  3d overlap"<< std::endl;
     double dV = dr*dr*dr;
     nphi = size();
     omat.resize(nphi,nphi);
@@ -513,17 +513,17 @@ namespace qmcplusplus
           
           for(int i=0;i<nphi;++i)
             for(int j=0;j<nphi;++j)
-              omat(i,j) += abs(psi[i]*psi[j])*dV;
+              omat(i,j) += std::abs(psi[i]*psi[j])*dV;
         }
     for(int i=0;i<nphi;++i){
-      app_log()<<endl;
+      app_log()<< std::endl;
       for(int j=0;j<nphi;++j)
         app_log()<<omat(i,j)<<" ";
     }
-    app_log()<<endl;
+    app_log()<< std::endl;
 
 
-    app_log()<<"end SHOSet::test_overlap"<<endl;
+    app_log()<<"end SHOSet::test_overlap"<< std::endl;
   }
 
 
@@ -600,7 +600,7 @@ namespace qmcplusplus
 
   void SHOSet::copyParamsFromMatrix(
     const opt_variables_type& active, const ValueMatrix_t &mat, 
-    vector<RealType> &destVec)
+    std::vector<RealType> &destVec)
   {
     not_implemented("copyParamsFromMatrix");
   }

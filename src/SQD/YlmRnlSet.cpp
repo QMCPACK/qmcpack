@@ -57,7 +57,7 @@ bool YlmRnlSet<GT>::add(int n, int l, int m, int s, value_type occ)
       IDcount[(*it).second]++;
       /*locate the position in the array where the orbital
       will be added */
-      vector<int> IDmap(IDcount.size());
+      std::vector<int> IDmap(IDcount.size());
       IDmap[0] = 0;
       int sum = 0;
       for(int i=1; i < IDmap.size(); i++)
@@ -95,7 +95,7 @@ bool YlmRnlSet<GT>::add(int n, int l, int m, int s, value_type occ)
     else
     {
       IDcount[(*it).second]++;
-      vector<int> IDmap(IDcount.size());
+      std::vector<int> IDmap(IDcount.size());
       IDmap[0] = 0;
       int sum = 0;
       for(int i=1; i < IDmap.size(); i++)
@@ -143,7 +143,7 @@ bool YlmRnlSet<GT>::add(int n, int l, int m, int s, value_type occ)
 template<class GT>
 void YlmRnlSet<GT>::applyRestriction(int norb)
 {
-  static vector<value_type> sum;
+  static std::vector<value_type> sum;
   if(sum.empty())
   {
     sum.resize(m_grid->size());

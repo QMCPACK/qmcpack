@@ -76,8 +76,8 @@ bool QMCCSLinearOptimize::run()
   int first,last;
   getNonLinearRange(first,last);
 //     initialize our parameters
-  vector<RealType> currentParameterDirections(N,0);
-  vector<RealType> currentParameters(numParams,0);
+  std::vector<RealType> currentParameterDirections(N,0);
+  std::vector<RealType> currentParameters(numParams,0);
   for (int i=0; i<numParams; i++)
     currentParameters[i] = optTarget->Params(i);
   optdir.resize(numParams,0);
@@ -87,7 +87,7 @@ bool QMCCSLinearOptimize::run()
 //     Matrix<RealType> Var(N,N);
 //     Matrix<RealType> S(N,N);
 //     vmcCSEngine->fillMatrices(Ham2,Ham,Var,S);
-  vector<RealType> bestParameters(currentParameters);
+  std::vector<RealType> bestParameters(currentParameters);
 //this is the small amount added to the diagonal to stabilize the eigenvalue equation. 10^stabilityBase
   RealType stabilityBase(exp0);
   int tooManyTries(20);
@@ -96,8 +96,8 @@ bool QMCCSLinearOptimize::run()
   Matrix<RealType> LeftT(N,N);//temp and transpose
   Matrix<RealType> Right(N,N);
   RealType H2rescale = vmcCSEngine->fillOverlapHamiltonianMatrices(LeftT,Right);
-  vector<std::pair<RealType,RealType> > mappedStabilizers;
-  vector<vector<RealType> > savedCSparameters;
+  std::vector<std::pair<RealType,RealType> > mappedStabilizers;
+  std::vector<std::vector<RealType> > savedCSparameters;
 //     RealType H2rescale(1.0);
 //     if (GEVtype=="H2")
 //     {
@@ -126,7 +126,7 @@ bool QMCCSLinearOptimize::run()
   for (int i=0; i<N; i++)
     for (int j=0; j<N; j++)
       od_largest=std::max( std::max(od_largest,std::abs(Left(i,j))-std::abs(Left(i,i))), std::abs(Left(i,j))-std::abs(Left(j,j)));
-//             app_log()<<"od_largest "<<od_largest<<endl;
+//             app_log()<<"od_largest "<<od_largest<< std::endl;
   if (od_largest>0)
     od_largest = std::log(od_largest)/(nstabilizers-1);
   if (od_largest<=0)
@@ -137,7 +137,7 @@ bool QMCCSLinearOptimize::run()
   nstabilizers=omp_get_max_threads();
   for (int stability=0; stability<nstabilizers; stability++)
   {
-    app_log()<<"Iteration: "<<stability+1<<"/"<<nstabilizers<<endl;
+    app_log()<<"Iteration: "<<stability+1<<"/"<<nstabilizers<< std::endl;
     for (int i=0; i<N; i++)
       for (int j=0; j<N; j++)
       {
@@ -178,7 +178,7 @@ bool QMCCSLinearOptimize::run()
     }
     for (int i=1; i<N; i++)
       LeftT(i,i) += std::exp(XS);
-    app_log()<<"Trying exp0: "<<XS<<endl;
+    app_log()<<"Trying exp0: "<<XS<< std::endl;
     RealType lowestEV;
     myTimers[2]->start();
     lowestEV =getLowestEigenvector(LeftT,currentParameterDirections);
@@ -189,7 +189,7 @@ bool QMCCSLinearOptimize::run()
       bigVec = std::max(bigVec,std::abs(currentParameterDirections[i+1]));
     if (std::abs(Lambda*bigVec)>bigChange)
     {
-      app_log()<<"  Failed Step. Largest EV parameter change: "<<Lambda*bigVec<<endl;
+      app_log()<<"  Failed Step. Largest EV parameter change: "<<Lambda*bigVec<< std::endl;
       if (stability==0)
       {
         failedTries++;
@@ -203,7 +203,7 @@ bool QMCCSLinearOptimize::run()
     RealType newCost(lowestEV);
     if (MinMethod=="rescale")
     {
-      vector<RealType> cs(numParams);
+      std::vector<RealType> cs(numParams);
       for (int i=0; i<numParams; i++)
         cs[i] = currentParameters[i] + Lambda*currentParameterDirections[i+1];
 //              optTarget->resetPsi(false);
@@ -216,11 +216,11 @@ bool QMCCSLinearOptimize::run()
       int nthreads = omp_get_max_threads();
       std::vector<std::vector<RealType> > params_lambdas(nthreads,std::vector<RealType>(numParams,0));
       std::vector<RealType> csts(nthreads);
-      vector<RealType> cs(numParams);
+      std::vector<RealType> cs(numParams);
       RealType error(0);
       RealType fitCost;
       int retry(0);
-      vector<std::pair<RealType,RealType> > mappedCosts;
+      std::vector<std::pair<RealType,RealType> > mappedCosts;
       bool goodTry(true);
       RealType rescaledLambda(Lambda);
       while((goodTry)&&(retry<=1))
@@ -256,7 +256,7 @@ bool QMCCSLinearOptimize::run()
           //             use fit if it works
           for (int i=0; i<numParams; i++)
             bestParameters[i] = cs[i] = currentParameters[i] + Lambda*currentParameterDirections[i+1];
-          app_log()<<" : Using fit."<<endl;
+          app_log()<<" : Using fit."<< std::endl;
         }
         else
         {
@@ -268,7 +268,7 @@ bool QMCCSLinearOptimize::run()
           Lambda=stepsize*Lambda*(indx-1.0);
           fitCost=csts[indx]-csts[1];
           bestParameters=cs=params_lambdas[indx];
-          app_log()<<" :\n Using best, bestCost: "<<fitCost<<endl;
+          app_log()<<" :\n Using best, bestCost: "<<fitCost<< std::endl;
         }
         if (Lambda*rescaledLambda<0)
         {
@@ -284,20 +284,20 @@ bool QMCCSLinearOptimize::run()
           app_log()<<"COSTS: ";
           for(int i=0; i<nthreads; i++)
             app_log()<<csts[i]-csts[1]<<" ";
-          app_log()<<endl;
+          app_log()<< std::endl;
         }
       }
     }
     if(savedCSparameters.size()==omp_get_max_threads())
     {
-      app_log()<<"   Finalizing iteration: Choosing best"<<endl;
+      app_log()<<"   Finalizing iteration: Choosing best"<< std::endl;
       RealType error(0);
       int bestP = vmcCSEngine->runCS(savedCSparameters,error);
       for (int i=0; i<numParams; i++)
         optTarget->Params(i) = bestParameters[i] = savedCSparameters[bestP][i];
       if (bestP<0)
       {
-        app_log()<<"   Error in CS cost function. Unchanged parameters."<<endl;
+        app_log()<<"   Error in CS cost function. Unchanged parameters."<< std::endl;
         bestP=0;
         vmcCSEngine->clearComponentMatrices();
         for (int i=0; i<numParams; i++)
@@ -328,8 +328,8 @@ bool QMCCSLinearOptimize::run()
 bool
 QMCCSLinearOptimize::put(xmlNodePtr q)
 {
-  string useGPU("no");
-  string vmcMove("pbyp");
+  std::string useGPU("no");
+  std::string vmcMove("pbyp");
   OhmmsAttributeSet oAttrib;
   oAttrib.add(useGPU,"gpu");
   oAttrib.add(vmcMove,"move");

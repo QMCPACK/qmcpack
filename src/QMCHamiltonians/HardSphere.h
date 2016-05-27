@@ -66,12 +66,12 @@ struct HardSphere: public QMCHamiltonianBase
         Value += 1;
     }
     return Value*=Q;
-    //return C*std::accumulate(d_table->rinv.data(),
+    //return C* std::accumulate(d_table->rinv.data(),
     //	  	       d_table->rinv.data()+d_table->getTotNadj(),
     //		       0.0);
   }
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
@@ -121,9 +121,9 @@ struct HardSphere: public QMCHamiltonianBase
     Tattrib.add(d,"length");
     Tattrib.add(Q,"mag");
     Tattrib.put(cur);
-    app_log()<<"HardSphere parameters"<<endl;
-    app_log()<<"  length: "<<d<<endl;
-    app_log()<<"  mag: "<<Q<<endl;
+    app_log()<<"HardSphere parameters"<< std::endl;
+    app_log()<<"  length: "<<d<< std::endl;
+    app_log()<<"  mag: "<<Q<< std::endl;
     return true;
   }
 

@@ -72,8 +72,8 @@ struct SplineTestBase
     }
     app_log().setf(std::ios::scientific, std::ios::floatfield);
     app_log().precision(6);
-    app_log() << "#einspline validation grid = " << nx << " " << ny << " " << nz << " num_splines = " << num_splines << " num_samples = " << nsamples <<endl;
-    app_log() << endl;
+    app_log() << "#einspline validation grid = " << nx << " " << ny << " " << nz << " num_splines = " << num_splines << " num_samples = " << nsamples << std::endl;
+    app_log() << std::endl;
     app_log().flush();
     return 0;
   }
@@ -148,7 +148,7 @@ struct SplineTest:public SplineTestBase
     return x*x;
   }
 
-  inline real_type pow2(complex<real_type> x)
+  inline real_type pow2(std::complex<real_type> x)
   {
     return x.real()*x.real()+x.imag()*x.imag();
   }
@@ -183,7 +183,7 @@ struct SplineTest:public SplineTestBase
    * einspline_validate.cpp
    * einspline_filter.cpp
    */
-  void test(vector<TinyVector<real_type,3> >& coord);
+  void test(std::vector<TinyVector<real_type,3> >& coord);
 };
 }
 

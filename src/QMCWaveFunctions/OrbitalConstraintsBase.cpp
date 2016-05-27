@@ -31,12 +31,12 @@ void OrbitalConstraintsBase::getParam(xmlNodePtr cur)
   if(a == NULL || b == NULL)
     return;
   RealType val;
-  string vname((const char*)b);
+  std::string vname((const char*)b);
   putContent(val,cur);
-  map<string,pair<string,RealType> >::iterator vit(inVars.find(vname));
+  std::map<std::string,std::pair<std::string,RealType> >::iterator vit(inVars.find(vname));
   if(vit == inVars.end())
   {
-    inVars[vname]=pair<string,RealType>((const char*)a,val);
+    inVars[vname]= std::pair<std::string,RealType>((const char*)a,val);
   }
 }
 
@@ -52,13 +52,13 @@ bool OrbitalConstraintsBase::getVariables(xmlNodePtr cur)
   cur = cur->children;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == "correlation")
     {
       xmlNodePtr cur1=cur->children;
       while(cur1 != NULL)
       {
-        string cname1((const char*)(cur1->name));
+        std::string cname1((const char*)(cur1->name));
         if(cname1 == "parameter")
         {
           getParam(cur1);
@@ -108,7 +108,7 @@ void OrbitalConstraintsBase::setRadialGrid()
   myGrid = OneDimGridFactory::createGrid(gridPtr);
   //get the cutoff radius
   Rcut = OneDimGridFactory::setSmoothCutoff(myGrid,gridPtr);
-  app_log() << "  Radial Grid Rcut=" << Rcut << " Rmax=" << myGrid->rmax() <<endl;
+  app_log() << "  Radial Grid Rcut=" << Rcut << " Rmax=" << myGrid->rmax() << std::endl;
 }
 }
 /***************************************************************************

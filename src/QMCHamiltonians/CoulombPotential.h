@@ -73,7 +73,7 @@ struct CoulombPotential: public QMCHamiltonianBase
   virtual void checkout_particle_quantities(TraceManager& tm)
   {
     streaming_particles = request.streaming_array(myName);
-    if(streaming_particles)
+    if( streaming_particles)
     {
       Va_sample = tm.checkout_real<1>(myName,*Pa);
       if(Pb)
@@ -86,7 +86,7 @@ struct CoulombPotential: public QMCHamiltonianBase
 
   virtual void delete_particle_quantities()
   {
-    if(streaming_particles)
+    if( streaming_particles)
     {
       delete Va_sample;
       if(Pb)
@@ -100,7 +100,7 @@ struct CoulombPotential: public QMCHamiltonianBase
   {
     T res=0.0;
 #if !defined(REMOVE_TRACEMANAGER)
-    if(streaming_particles)
+    if( streaming_particles)
       res = evaluate_spAA(d,Z);
     else
 #endif
@@ -122,7 +122,7 @@ struct CoulombPotential: public QMCHamiltonianBase
   {
     T res=0.0;
 #if !defined(REMOVE_TRACEMANAGER)
-    if(streaming_particles)
+    if( streaming_particles)
       res = evaluate_spAB(d,Za,Zb);
     else
 #endif
@@ -167,16 +167,16 @@ struct CoulombPotential: public QMCHamiltonianBase
     T Vorig = evaluateAA_orig(d,Z);
     if(abs(Vsum-Vnow)>TraceManager::trace_tol)
     {
-      app_log()<<"accumtest: CoulombPotential::evaluateAA()"<<endl;
-      app_log()<<"accumtest:   tot:"<< Vnow <<endl;
-      app_log()<<"accumtest:   sum:"<< Vsum <<endl;
+      app_log()<<"accumtest: CoulombPotential::evaluateAA()"<< std::endl;
+      app_log()<<"accumtest:   tot:"<< Vnow << std::endl;
+      app_log()<<"accumtest:   sum:"<< Vsum << std::endl;
       APP_ABORT("Trace check failed");
     }
     if(abs(Vorig-Vnow)>TraceManager::trace_tol)
     {
-      app_log()<<"versiontest: CoulombPotential::evaluateAA()"<<endl;
-      app_log()<<"versiontest:   orig:"<< Vorig <<endl;
-      app_log()<<"versiontest:    mod:"<< Vnow <<endl;
+      app_log()<<"versiontest: CoulombPotential::evaluateAA()"<< std::endl;
+      app_log()<<"versiontest:   orig:"<< Vorig << std::endl;
+      app_log()<<"versiontest:    mod:"<< Vnow << std::endl;
       APP_ABORT("Trace check failed");
     }
 #endif
@@ -213,23 +213,23 @@ struct CoulombPotential: public QMCHamiltonianBase
     RealType Vorig = evaluateAB_orig(d,Za,Zb);
     if(abs(Vsum-Vnow)>TraceManager::trace_tol)
     {
-      app_log()<<"accumtest: CoulombPotential::evaluateAB()"<<endl;
-      app_log()<<"accumtest:   tot:"<< Vnow <<endl;
-      app_log()<<"accumtest:   sum:"<< Vsum <<endl;
+      app_log()<<"accumtest: CoulombPotential::evaluateAB()"<< std::endl;
+      app_log()<<"accumtest:   tot:"<< Vnow << std::endl;
+      app_log()<<"accumtest:   sum:"<< Vsum << std::endl;
       APP_ABORT("Trace check failed");
     }
     if(abs(Vasum-Vbsum)>TraceManager::trace_tol)
     {
-      app_log()<<"sharetest: CoulombPotential::evaluateAB()"<<endl;
-      app_log()<<"sharetest:   a share:"<< Vasum <<endl;
-      app_log()<<"sharetest:   b share:"<< Vbsum <<endl;
+      app_log()<<"sharetest: CoulombPotential::evaluateAB()"<< std::endl;
+      app_log()<<"sharetest:   a share:"<< Vasum << std::endl;
+      app_log()<<"sharetest:   b share:"<< Vbsum << std::endl;
       APP_ABORT("Trace check failed");
     }
     if(abs(Vorig-Vnow)>TraceManager::trace_tol)
     {
-      app_log()<<"versiontest: CoulombPotential::evaluateAB()"<<endl;
-      app_log()<<"versiontest:   orig:"<< Vorig <<endl;
-      app_log()<<"versiontest:    mod:"<< Vnow <<endl;
+      app_log()<<"versiontest: CoulombPotential::evaluateAB()"<< std::endl;
+      app_log()<<"versiontest:   orig:"<< Vorig << std::endl;
+      app_log()<<"versiontest:    mod:"<< Vnow << std::endl;
       APP_ABORT("Trace check failed");
     }
 #endif
@@ -297,7 +297,7 @@ struct CoulombPotential: public QMCHamiltonianBase
     return Value;
   }
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
@@ -310,9 +310,9 @@ struct CoulombPotential: public QMCHamiltonianBase
   bool get(std::ostream& os) const
   {
     if(myTableIndex)
-      os << "CoulombAB source=" << Pa->getName() << endl;
+      os << "CoulombAB source=" << Pa->getName() << std::endl;
     else
-      os << "CoulombAA source/target " << Pa->getName() << endl;
+      os << "CoulombAA source/target " << Pa->getName() << std::endl;
     return true;
   }
 

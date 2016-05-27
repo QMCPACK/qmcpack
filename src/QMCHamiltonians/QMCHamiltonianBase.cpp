@@ -101,7 +101,7 @@ void QMCHamiltonianBase::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi
     targetH.addOperator(myclone,myName,UpdateMode[PHYSICAL]);
 }
 
-void QMCHamiltonianBase::registerObservables(vector<observable_helper*>& h5desc
+void QMCHamiltonianBase::registerObservables(std::vector<observable_helper*>& h5desc
     , hid_t gid)  const
 {
   bool collect=UpdateMode.test(COLLECTABLE);
@@ -117,7 +117,7 @@ void QMCHamiltonianBase::registerObservables(vector<observable_helper*>& h5desc
 }
 
 void QMCHamiltonianBase::addEnergy(MCWalkerConfiguration &W,
-    vector<RealType> &LocalEnergy)
+    std::vector<RealType> &LocalEnergy)
 {
   app_error() << "Need specialization for " << myName
     << "::addEnergy(MCWalkerConfiguration &W).\n";

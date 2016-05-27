@@ -9,7 +9,6 @@
 #include <math.h>
 #include <iostream>
 
-using namespace std;
 
 class QDwf
 {
@@ -101,8 +100,8 @@ public:
     */
     onethird = 1.0/3.0;
     reset();
-    cout << "Airy Solved: " << EL << '\t' << kappa << '\t'
-         << psiB << endl;
+    std::cout << "Airy Solved: " << EL << '\t' << kappa << '\t'
+         << psiB << std::endl;
     /*
     /// create and initialise the uniform one-dimensional uGrid1D
     if( !m_grid ) m_grid = new uGrid1D;

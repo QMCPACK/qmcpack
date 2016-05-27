@@ -424,7 +424,7 @@ public:
     const DistanceTableData::IndexVectorType& M = d_table->M;
     const DistanceTableData::IndexVectorType& J = d_table->J;
     const DistanceTableData::IndexVectorType& PairID = d_table->PairID;
-    vector<ValueType> sumu(nw,0.0);
+    std::vector<ValueType> sumu(nw,0.0);
     for(int i=0; i<d_table->size(SourceIndex); i++)
     {
       for(int nn=M[i]; nn<M[i+1]; nn++)

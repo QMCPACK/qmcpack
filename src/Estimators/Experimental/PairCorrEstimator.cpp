@@ -100,7 +100,7 @@ PairCorrEstimator::PairCorrEstimator(ParticleSet& source):
 {
   myTable = DistanceTable::add(source);
   int ns=sourcePtcl.groups();
-  vector<int> mask(ns*ns,-1);
+  std::vector<int> mask(ns*ns,-1);
   int ij=0;
   for(int i=0; i<ns; i++)
     for(int j=i; j<ns; j++,ij++)
@@ -109,8 +109,8 @@ PairCorrEstimator::PairCorrEstimator(ParticleSet& source):
 #if PRINT_DEBUG
       char fname[32];
       sprintf(fname,"gofr.%s_%d_%d.dat",myTable->Name.c_str(),i,j);
-      fout.push_back(new ofstream(fname));
-      fout[ij]->setf(ios::scientific, ios::floatfield);
+      fout.push_back(new std::ofstream(fname));
+      fout[ij]->setf(std::ios::scientific, std::ios::floatfield);
       fout[ij]->precision(5);
 #endif
     }
@@ -138,8 +138,8 @@ PairCorrEstimator::PairCorrEstimator(const ParticleSet& source, ParticleSet& tar
     char fname[32];
     sprintf(fname,"gofr.%s_%s.dat",myTable->Name.c_str(),
             sourcePtcl.getSpeciesSet().speciesName[i].c_str());
-    fout.push_back(new ofstream(fname));
-    fout[i]->setf(ios::scientific, ios::floatfield);
+    fout.push_back(new std::ofstream(fname));
+    fout[i]->setf(std::ios::scientific, std::ios::floatfield);
     fout[i]->precision(5);
   }
 #endif
@@ -228,11 +228,11 @@ void PairCorrEstimator::stopBlock(RealType wgtnorm, RealType errnorm)
     for(int j=0; j<gofr.size2(); ++j, r+=Delta)
     {
       RealType avg=gofr(i,j)*wgtnorm;
-      *fout[i] << setw(15) << r << setw(15) << avg
-               << setw(15) << (gofr2(i,j)*wgtnorm-avg*avg)*errnorm
-               << endl;
+      *fout[i] << std::setw(15) << r << std::setw(15) << avg
+               << std::setw(15) << (gofr2(i,j)*wgtnorm-avg*avg)*errnorm
+               << std::endl;
     }
-    *fout[i] << endl;
+    *fout[i] << std::endl;
   }
 #endif
 }
@@ -311,14 +311,14 @@ void PairCorrEstimator::setBound(RealType rmax, RealType dr)
 //    {
 //      char fname[32];
 //      sprintf(fname,"gofr.%s.dat",myTable->Name.c_str());
-//      fout = new ofstream(fname);
-//      fout->setf(ios::scientific, ios::floatfield);
+//      fout = new std::ofstream(fname);
+//      fout->setf(std::ios::scientific, std::ios::floatfield);
 //      fout->precision(5);
 //    }
 //    RealType r=0.0;
 //    for(int i=0; i<dCBlock.size(); i++, r+=Delta)
-//      *fout << setw(15) << r << setw(15) << wgtinv*dCBlock[i] << endl;
-//    *fout << endl;
+//      *fout << std::setw(15) << r << std::setw(15) << wgtinv*dCBlock[i] << std::endl;
+//    *fout << std::endl;
 //  }
 //
 //  void PairCorrEstimator::startBlock(int steps)

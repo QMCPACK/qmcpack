@@ -48,7 +48,7 @@ void ProductOrbital::checkInVariables(opt_variables_type& o)
     Psi[i]->checkInVariables(o);
 }
 
-void ProductOrbital::reportStatus(ostream& os)
+void ProductOrbital::reportStatus(std::ostream& os)
 {
   for(int i=0; i<Psi.size(); i++)
     Psi[i]->reportStatus(os);
@@ -148,7 +148,7 @@ ProductOrbital::RealType ProductOrbital::evaluateLog(ParticleSet& P,BufferType& 
 
 OrbitalBase* ProductOrbital::makeClone(ParticleSet& tpq) const
 {
-  app_warning() << "  ProductOrbital::makeClone for long-range breakup stuff won't work." << endl;
+  app_warning() << "  ProductOrbital::makeClone for long-range breakup stuff won't work." << std::endl;
   ProductOrbital* myclone=new ProductOrbital(*this);
   for(int i=0; i<Psi.size(); ++i)
   {

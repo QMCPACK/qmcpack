@@ -91,9 +91,9 @@ public:
 };
 
 inline
-TinyMatrix<complex<float>,3,3> conv(TinyMatrix<complex<double>,3,3> val)
+TinyMatrix<std::complex<float>,3,3> conv(TinyMatrix<std::complex<double>,3,3> val)
 {
-  TinyMatrix<complex<float>,3,3> v;
+  TinyMatrix<std::complex<float>,3,3> v;
   v(0,0)=val(0,0); v(0,1)=val(0,1); v(0,2)=v(0,2);
   v(1,0)=val(1,0); v(1,1)=val(1,1); v(1,2)=v(1,2);
   v(2,0)=val(2,0); v(2,1)=val(2,1); v(2,2)=v(2,2);
@@ -101,9 +101,9 @@ TinyMatrix<complex<float>,3,3> conv(TinyMatrix<complex<double>,3,3> val)
 }
 
 inline
-TinyMatrix<complex<double>,3,3> conv(TinyMatrix<complex<float>,3,3> val)
+TinyMatrix<std::complex<double>,3,3> conv(TinyMatrix<std::complex<float>,3,3> val)
 {
-  TinyMatrix<complex<double>,3,3> v;
+  TinyMatrix<std::complex<double>,3,3> v;
   v(0,0)=val(0,0); v(0,1)=val(0,1); v(0,2)=v(0,2);
   v(1,0)=val(1,0); v(1,1)=val(1,1); v(1,2)=v(1,2);
   v(2,0)=val(2,0); v(2,1)=val(2,1); v(2,2)=v(2,2);

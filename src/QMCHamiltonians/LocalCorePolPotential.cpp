@@ -70,7 +70,7 @@ bool LocalCorePolPotential::CPP_Param::put(xmlNodePtr cur)
   //if(b_ptr) r_b = atof((const char*)b_ptr);
   C = -0.5*alpha;
   one_over_rr = 1.0/r_b/r_b;
-  app_log() << "\talpha = " << alpha << " rb = " << r_b <<endl;
+  app_log() << "\talpha = " << alpha << " rb = " << r_b << std::endl;
   return true;
 }
 
@@ -86,14 +86,14 @@ bool LocalCorePolPotential::put(xmlNodePtr cur)
   bool success(true);
   if(cur!= NULL)//input is provided
   {
-    string ename;
+    std::string ename;
     cur= cur->children;
     while(cur != NULL)
     {
-      string cname((const char*)cur->name);
+      std::string cname((const char*)cur->name);
       if(cname == "element")
       {
-        string species_name;
+        std::string species_name;
         OhmmsAttributeSet att;
         att.add(species_name,"name");
         att.put(cur);
@@ -102,7 +102,7 @@ bool LocalCorePolPotential::put(xmlNodePtr cur)
           int itype = IonConfig.getSpeciesSet().addSpecies(species_name); //(const char*)e_ptr);
           if(InpCPP[itype]==0)
             InpCPP[itype] = new CPP_Param;
-          app_log() << "CPP parameters for " << IonConfig.getSpeciesSet().speciesName[itype] << endl;
+          app_log() << "CPP parameters for " << IonConfig.getSpeciesSet().speciesName[itype] << std::endl;
           success = InpCPP[itype]->put(cur);
         }
       }
@@ -138,7 +138,7 @@ LocalCorePolPotential::evaluate(ParticleSet& P)
     RealType corecore(0.0);
     for(int iat=0; iat<nCenters; iat++)
     {
-      //app_log() << "Checking CPP = " << Centers[iat] << endl;
+      //app_log() << "Checking CPP = " << Centers[iat] << std::endl;
       if(Centers[iat])
         corecore+= Centers[iat]->C*dot(CoreCoreDipole[iat],CoreCoreDipole[iat]);
     }

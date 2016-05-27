@@ -30,9 +30,9 @@ struct ChebyshevFunctor
   ///coefficients
   T B, L;
   int lmax;
-  vector<T> alpha;
+  std::vector<T> alpha;
 
-  vector<T> TT, dTT, d2TT;
+  std::vector<T> TT, dTT, d2TT;
   ///constructor
   ChebyshevFunctor() { }
 
@@ -41,7 +41,7 @@ struct ChebyshevFunctor
    */
   inline void reset() { }
 
-  void reset(vector<T> a)
+  void reset(std::vector<T> a)
   {
     alpha = a;
   }
@@ -96,17 +96,17 @@ struct ChebyshevFunctor
   template<class T1>
   void put(xmlNodePtr cur, VarRegistry<T1>& vlist)
   {
-    string idalpha, idb;
+    std::string idalpha, idb;
     //jastrow[iab]->put(cur->xmlChildrenNode,wfs_ref.RealVars);
     xmlNodePtr tcur = cur->xmlChildrenNode;
     while(tcur != NULL)
     {
       //@todo Var -> <param(eter) role="opt"/>
-      string cname((const char*)(tcur->name));
+      std::string cname((const char*)(tcur->name));
       if(cname == "parameter" || cname == "Var")
       {
-        string aname((const char*)(xmlGetProp(tcur,(const xmlChar *)"name")));
-        string idname((const char*)(xmlGetProp(tcur,(const xmlChar *)"id")));
+        std::string aname((const char*)(xmlGetProp(tcur,(const xmlChar *)"name")));
+        std::string idname((const char*)(xmlGetProp(tcur,(const xmlChar *)"id")));
         if(aname == "alpha")
         {
           idalpha = idname;

@@ -38,7 +38,7 @@ struct ZeroVarianceForce : public QMCHamiltonianBase, public ForceBase
 
   Return_t evaluate(ParticleSet& P);
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
@@ -66,7 +66,7 @@ struct ZeroVarianceForce : public QMCHamiltonianBase, public ForceBase
 
   void setParticlePropertyList(PropertySetType& plist, int offset);
 
-  void registerObservables(vector<observable_helper*>& h5list,
+  void registerObservables(std::vector<observable_helper*>& h5list,
                            hid_t gid) const;
 };
 

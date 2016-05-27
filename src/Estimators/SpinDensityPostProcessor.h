@@ -14,8 +14,8 @@ class QMCHamitonian;
 
 struct SpinDensityPostProcessor : public PostProcessorBase
 {
-  typedef vector<RealType> dens_t;
-  typedef vector<PosType>  pts_t;
+  typedef std::vector<RealType> dens_t;
+  typedef std::vector<PosType>  pts_t;
 
   ParticleSet&    Pq;
   ParticleSet&    Pc;
@@ -23,18 +23,18 @@ struct SpinDensityPostProcessor : public PostProcessorBase
 
   RealType dV;
   int nspecies;
-  vector<string> species_name;
-  vector<int>    species_size;
+  std::vector<std::string> species_name;
+  std::vector<int>    species_size;
 
-  vector<string> sources;
-  string format;
-  string format_ext;
+  std::vector<std::string> sources;
+  std::string format;
+  std::string format_ext;
   Lattice_t cell;
   PosType   corner;
   TinyVector<int,DIM> grid;
   pts_t gridpoints;
   int npoints;
-  string normalization;
+  std::string normalization;
 
   SpinDensityPostProcessor(ParticleSet& pq,ParticleSet& pc,QMCHamiltonian& h);
 
@@ -45,19 +45,19 @@ struct SpinDensityPostProcessor : public PostProcessorBase
   void postprocess();
 
   template<typename SDO>
-  void get_density(const string& infile,const string& species,
+  void get_density(const std::string& infile,const std::string& species,
                    QMCHamiltonianBase* h,dens_t& density,dens_t& density_err);
 
   void normalize(int nparticles,dens_t& density,dens_t& density_err);
 
-  void write_density(const string& outfile,dens_t& density);
+  void write_density(const std::string& outfile,dens_t& density);
 
-  void write_density_xsf(const string& outfile,dens_t& density);
+  void write_density_xsf(const std::string& outfile,dens_t& density);
 
   /** get species of particle i from a ParticleSet
    *    wouldn't it be nice if this were in ParticleSet?
    */
-  inline const string& pname(ParticleSet& P,int i)
+  inline const std::string& pname(ParticleSet& P,int i)
   {
     return P.mySpecies.speciesName[P.GroupID[i]];
   }

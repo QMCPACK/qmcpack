@@ -44,7 +44,7 @@ public:
   void checkInVariables(opt_variables_type& active);
   void checkOutVariables(const opt_variables_type& active);
   void resetParameters(const opt_variables_type& active);
-  void reportStatus(ostream& os);
+  void reportStatus(std::ostream& os);
   void resetTargetParticleSet(ParticleSet& P);
 
   RealType evaluateLog(ParticleSet& P,
@@ -111,7 +111,7 @@ private:
   /** temporary value for update */
   RealType diffVal;
   ///root name for Lambda compoenents
-  string ID_Lambda;
+  std::string ID_Lambda;
   /** Y(iat,ibasis) value of the iat-th ortbial, the basis index ibasis
    */
   Matrix<RealType> Y;

@@ -25,7 +25,6 @@
 #include <math.h>
 #include <time.h>
 
-using namespace std;
 
 inline double diff (double a, double b, double tol)
 {

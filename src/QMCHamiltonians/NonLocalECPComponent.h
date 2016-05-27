@@ -33,7 +33,7 @@ namespace qmcplusplus
 struct NonLocalECPComponent: public QMCTraits
 {
 
-  typedef vector<PosType>  SpherGridType;
+  typedef std::vector<PosType>  SpherGridType;
   typedef OneDimGridBase<RealType> GridType;
   typedef OneDimCubicSpline<RealType> RadialPotentialType;
 
@@ -50,28 +50,28 @@ struct NonLocalECPComponent: public QMCTraits
   ///random number generator
   RandomGenerator_t* myRNG;
   ///Angular momentum map
-  vector<int> angpp_m;
+  std::vector<int> angpp_m;
   ///Weight of the angular momentum
-  vector<RealType> wgt_angpp_m;
+  std::vector<RealType> wgt_angpp_m;
   /// Lfactor1[l]=(2*l+1)/(l+1)
-  vector<RealType> Lfactor1;
+  std::vector<RealType> Lfactor1;
   /// Lfactor1[l]=(l)/(l+1)
-  vector<RealType> Lfactor2;
+  std::vector<RealType> Lfactor2;
   ///Non-Local part of the pseudo-potential
-  vector<RadialPotentialType*> nlpp_m;
+  std::vector<RadialPotentialType*> nlpp_m;
   ///fixed Spherical Grid for species
   SpherGridType sgridxyz_m;
   ///randomized spherical grid
   SpherGridType rrotsgrid_m;
   ///weight of the spherical grid
-  vector<RealType> sgridweight_m;
+  std::vector<RealType> sgridweight_m;
   ///Working arrays
-  vector<RealType> psiratio,vrad,dvrad,wvec,Amat,dAmat;
-  vector<PosType> psigrad, psigrad_source;
-  vector<RealType> lpol, dlpol;
+  std::vector<RealType> psiratio,vrad,dvrad,wvec,Amat,dAmat;
+  std::vector<PosType> psigrad, psigrad_source;
+  std::vector<RealType> lpol, dlpol;
 
   // For Pulay correction to the force
-  vector<RealType> WarpNorm;
+  std::vector<RealType> WarpNorm;
   ParticleSet::ParticleGradient_t dG;
   ParticleSet::ParticleLaplacian_t dL;
   /// First index is knot, second is electron
@@ -112,7 +112,7 @@ struct NonLocalECPComponent: public QMCTraits
   void resize_warrays(int n,int m,int l);
 
   void randomize_grid(ParticleSet::ParticlePos_t& sphere, bool randomize);
-  template<typename T> void randomize_grid(vector<T> &sphere);
+  template<typename T> void randomize_grid(std::vector<T> &sphere);
 
   RealType evaluate(ParticleSet& W, int iat, TrialWaveFunction& Psi);
 
@@ -124,22 +124,22 @@ struct NonLocalECPComponent: public QMCTraits
 
 
   RealType
-  evaluate(ParticleSet& W, TrialWaveFunction& Psi,int iat, vector<NonLocalData>& Txy);
+  evaluate(ParticleSet& W, TrialWaveFunction& Psi,int iat, std::vector<NonLocalData>& Txy);
 
   RealType
-  evaluate(ParticleSet& W, TrialWaveFunction& Psi,int iat, vector<NonLocalData>& Txy,
+  evaluate(ParticleSet& W, TrialWaveFunction& Psi,int iat, std::vector<NonLocalData>& Txy,
            PosType &force_iat);
 
   /** compute with virtual moves */
   RealType evaluateVP(const ParticleSet& W, int iat, TrialWaveFunction& Psi);
-  RealType evaluateVP(const ParticleSet& W, int iat, TrialWaveFunction& Psi,vector<NonLocalData>& Txy);
+  RealType evaluateVP(const ParticleSet& W, int iat, TrialWaveFunction& Psi,std::vector<NonLocalData>& Txy);
 
   RealType
   evaluateValueAndDerivatives(ParticleSet& P,
       int iat, TrialWaveFunction& psi,
       const opt_variables_type& optvars,
-      const vector<RealType>& dlogpsi,
-      vector<RealType>& dhpsioverpsi);
+      const std::vector<RealType>& dlogpsi,
+      std::vector<RealType>& dhpsioverpsi);
 
   void print(std::ostream& os);
 

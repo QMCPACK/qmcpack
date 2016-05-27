@@ -64,7 +64,7 @@ GamesFMOParser::GamesFMOParser(int argc, char** argv):
 void GamesFMOParser::parse(const std::string& fname)
 {
   
-  streampos pivot;
+  std::streampos pivot;
   std::ifstream fin(fname.c_str());
   pivot_begin= fin.tellg();
   std::string aline;
@@ -104,10 +104,10 @@ void GamesFMOParser::parse(const std::string& fname)
 
   
   if(FMOMethod==3 && NumTrimer==0){
-     cerr<<" Problem in the Input file! FMO level is 3 but the number of Trimers is 0"<<endl;
+     std::cerr <<" Problem in the Input file! FMO level is 3 but the number of Trimers is 0"<< std::endl;
      abort();
   } 
-  cout<<" Tot Atoms="<<TotNumAtom<<" NumMonomer="<<NumMonomer<<"  NumDimer="<<NumDimer<<"  NumTrimer="<<NumTrimer<<"  FMOMethod="<<FMOMethod<<endl;
+  std::cout <<" Tot Atoms="<<TotNumAtom<<" NumMonomer="<<NumMonomer<<"  NumDimer="<<NumDimer<<"  NumTrimer="<<NumTrimer<<"  FMOMethod="<<FMOMethod<< std::endl;
 
   MOtype = "Canonical";
   readtype=0;
@@ -137,10 +137,10 @@ void GamesFMOParser::parse(const std::string& fname)
   for(int i=0;i<NumMonomer;i++)
   { 
      fin.seekg(pivot);
-     ostringstream convert;
+     std::ostringstream convert;
      convert <<i+1;
      IDMonomer[i]="CURRENT N-MER COORDINATES, I=      "+convert.str()+" J=      0 K=      0";
-     cout<<IDMonomer[i]<<endl;
+     std::cout <<IDMonomer[i]<< std::endl;
      getAllMonomer(fin,i);
   }
 
@@ -149,14 +149,14 @@ void GamesFMOParser::parse(const std::string& fname)
   count=0;
   for(int i=2; i<=NumMonomer; i++){
      for(int j=1; j<=i-1;j++){
-        ostringstream convertI,convertJ;
+        std::ostringstream convertI,convertJ;
         convertI <<i;
         convertJ <<j;
         IDDimer[count].MyId="CURRENT N-MER COORDINATES, I=      "+convertI.str()+" J=      "+convertJ.str()+" K=      0";
         IDDimer[count].IndexI=i-1;
         IDDimer[count].IndexJ=j-1;
         IDDimer[count].IndexK=0;
-        cout<<IDDimer[count].MyId<<endl;
+        std::cout <<IDDimer[count].MyId<< std::endl;
         count++;
 
      }
@@ -170,12 +170,12 @@ void GamesFMOParser::parse(const std::string& fname)
     for(int i=3; i<=NumMonomer; i++){
        for(int j=2; j<=i-1;j++){
           for(int k=1; k<=j-1;k++){
-             ostringstream convertI,convertJ,convertK;
+             std::ostringstream convertI,convertJ,convertK;
              convertI <<i;
              convertJ <<j;
              convertK <<k;
              IDTrimer[count].MyId="CURRENT N-MER COORDINATES, I=      "+convertI.str()+" J=      "+convertJ.str()+" K=      "+convertK.str();
-             cout<<IDTrimer[count].MyId<<endl;
+             std::cout <<IDTrimer[count].MyId<< std::endl;
 
              IDTrimer[count].IndexI=i-1;
              IDTrimer[count].IndexJ=j-1;
@@ -197,7 +197,7 @@ void GamesFMOParser::parse(const std::string& fname)
      int This=0;
      if (Mer==0){
         This=NumMonomer;
-        cout<<"Running Monomers"<<endl;
+        std::cout <<"Running Monomers"<< std::endl;
         FMO1=true;
         FMO2=false;
         FMO3=false;
@@ -205,7 +205,7 @@ void GamesFMOParser::parse(const std::string& fname)
 
      if (Mer==1){
         This=NumDimer;
-        cout<<"Running Dimers"<<endl;
+        std::cout <<"Running Dimers"<< std::endl;
         FMO1=false;
         FMO2=true;
         FMO3=false;
@@ -213,7 +213,7 @@ void GamesFMOParser::parse(const std::string& fname)
 
      if (Mer==2){
         This=NumTrimer;
-        cout<<"Running Trimers"<<endl;
+        std::cout <<"Running Trimers"<< std::endl;
         FMO1=false;
         FMO2=false;
         FMO3=true;
@@ -221,15 +221,15 @@ void GamesFMOParser::parse(const std::string& fname)
 
      for (int i=0; i<This; i++)
      {
-         streampos pivot;
+         std::streampos pivot;
          std::ifstream fin(fname.c_str());
          pivot_begin= fin.tellg();
-         cout<<"Working On "<<Mer<<"-"<<i<<endl;
-         string temp_tag,Frag_Tag;
+         std::cout <<"Working On "<<Mer<<"-"<<i<< std::endl;
+         std::string temp_tag,Frag_Tag;
 
 
          if (Mer==0){
-           ostringstream convert;
+           std::ostringstream convert;
            convert <<i+1;
            Frag_Tag="Monomer"+convert.str();
            Mono=true;
@@ -241,7 +241,7 @@ void GamesFMOParser::parse(const std::string& fname)
          }
 
          if (Mer==1){
-           ostringstream convert;
+           std::ostringstream convert;
            convert <<i+1;
            Frag_Tag="Dimer"+convert.str();
            temp_tag=IDDimer[i].MyId;
@@ -252,7 +252,7 @@ void GamesFMOParser::parse(const std::string& fname)
  
          if(FMOMethod==3){
             if (Mer==2){
-              ostringstream convert;
+              std::ostringstream convert;
               convert <<i+1;
               Frag_Tag="Trimer"+convert.str();
               temp_tag=IDTrimer[i].MyId;
@@ -265,34 +265,34 @@ void GamesFMOParser::parse(const std::string& fname)
          
          if(lookFor(fin,temp_tag,aline))
          {
-            cout<<"temp_tag="<<temp_tag<<endl;
+            std::cout <<"temp_tag="<<temp_tag<< std::endl;
             search(fin,"NUMBER OF ATOMS IN FRAGMENT",aline); 
             parsewords(aline.c_str(),currentWords);
             NumberOfAtoms= atoi(currentWords[5].c_str());  
-            cout<<"Total Number of Atoms="<<NumberOfAtoms<<endl;
+            std::cout <<"Total Number of Atoms="<<NumberOfAtoms<< std::endl;
 
             search(fin,"NUMBER OF CARTESIAN ATOMIC ORBITALS",aline); 
             parsewords(aline.c_str(),currentWords);
             SizeOfBasisSet= atoi(currentWords[5].c_str());  
-            cout<<"Number of Cartesian atomic orbitals="<<SizeOfBasisSet<<endl;
+            std::cout <<"Number of Cartesian atomic orbitals="<<SizeOfBasisSet<< std::endl;
 
 
             search(fin,"SPIN MULTIPLICITY",aline); 
             parsewords(aline.c_str(),currentWords);
             SpinMultiplicity= atoi(currentWords[2].c_str());  
-            cout<<"SpinMultiplicity="<<SpinMultiplicity<<endl;
+            std::cout <<"SpinMultiplicity="<<SpinMultiplicity<< std::endl;
             search(fin,"NUMBER OF ELECTRONS ",aline);
             parsewords(aline.c_str(),currentWords);
             NumberOfEls= atoi(currentWords[3].c_str());  
-            cout<<"Number of electrons="<<NumberOfEls<<endl;
+            std::cout <<"Number of electrons="<<NumberOfEls<< std::endl;
             search(fin,"NUMBER OF OCCUPIED ORBITALS (ALPHA)",aline);
             parsewords(aline.c_str(),currentWords);
             NumberOfAlpha = atoi(currentWords[5].c_str());
-            cout<<"Number of alpha electrons: " <<NumberOfAlpha <<endl;
+            std::cout <<"Number of alpha electrons: " <<NumberOfAlpha << std::endl;
             search(fin,"NUMBER OF OCCUPIED ORBITALS (BETA)",aline);
             parsewords(aline.c_str(),currentWords);
             NumberOfBeta = atoi(currentWords[5].c_str());
-            cout<<"Number of beta electrons: " <<NumberOfBeta <<endl;
+            std::cout <<"Number of beta electrons: " <<NumberOfBeta << std::endl;
  
 
 
@@ -305,7 +305,7 @@ void GamesFMOParser::parse(const std::string& fname)
             search(fin,"TOTAL NUMBER OF MOS IN VARIATION SPACE",aline); 
             parsewords(aline.c_str(),currentWords);
             numMO= atoi(currentWords[7].c_str());  
-            cout<<"Number of Molecular Orbitals="<<numMO<<endl;
+            std::cout <<"Number of Molecular Orbitals="<<numMO<< std::endl;
             
  
             fin.seekg(pivot_begin);
@@ -325,8 +325,8 @@ void GamesFMOParser::parse(const std::string& fname)
          }
          else
          {
-            cerr<<"Could not find all atoms in FMO-Games output"<<endl;
-            cerr<<"	  Problem in "<<temp_tag<<endl;
+            std::cerr <<"Could not find all atoms in FMO-Games output"<< std::endl;
+            std::cerr <<"	  Problem in "<<temp_tag<< std::endl;
             abort(); 
          }
       }
@@ -354,8 +354,8 @@ void GamesFMOParser::getAllMonomer(std::istream& is, int Index)
   const double ang_to_bohr=1.0/0.529177e0;
   std::string aline;
   //atomic numbers
-  vector<int> atomic_number,core;
-  vector<double> q,pos;
+  std::vector<int> atomic_number,core;
+  std::vector<double> q,pos;
   int natms=0;
   int MyAtoms=0;
   //tags.clear();
@@ -367,7 +367,7 @@ void GamesFMOParser::getAllMonomer(std::istream& is, int Index)
     getwords(currentWords,is);
     MyAtoms= atoi(currentWords[5].c_str());  
     
-    ostringstream temp; 
+    std::ostringstream temp; 
     std::string ESP_ion_tag;
     temp<<Index;
     ESP_ion_tag="ESP_Charge"+temp.str();
@@ -400,21 +400,21 @@ void GamesFMOParser::getAllMonomer(std::istream& is, int Index)
       }
       else
       {
-         cerr<<"Could not find Atomic coordinates"<<endl;
+         std::cerr <<"Could not find Atomic coordinates"<< std::endl;
          abort();
       }
 
     if(natms != MyAtoms)
     {
-      cerr<<"Could not find atomic coordinates for all atoms. \n";
+      std::cerr <<"Could not find atomic coordinates for all atoms. \n";
       abort();
     }
  
     SpeciesSet& ESPspecies(ESPSystem[Index].getSpeciesSet());
     for(int i=0, ii=0; i<MyAtoms; i++)
      {
-       string temp;
-       ostringstream convert1,convert2;
+       std::string temp;
+       std::ostringstream convert1,convert2;
        convert1<<Index;
        convert2<<i;
        ESPSystem[Index].R[i][0]=pos[ii++];
@@ -433,7 +433,7 @@ void GamesFMOParser::getAllMonomer(std::istream& is, int Index)
   }
   else
   {
-     cerr<<" Error Finding Monomer coordinates!!! Impossible to create ESP charges!!"<<endl;
+     std::cerr <<" Error Finding Monomer coordinates!!! Impossible to create ESP charges!!"<< std::endl;
      abort();
 
   }
@@ -443,8 +443,8 @@ void GamesFMOParser::getGeometry(std::istream& is)
 {
   //atomic numbers
   const double ang_to_bohr=1.0/0.529177e0;
-  vector<int> atomic_number,core;
-  vector<double> q,pos;
+  std::vector<int> atomic_number,core;
+  std::vector<double> q,pos;
   int natms=0;
   tags.clear();
   getwords(currentWords,is);
@@ -464,21 +464,21 @@ void GamesFMOParser::getGeometry(std::istream& is)
         pos.push_back(atof(currentWords[2].c_str()));
         pos.push_back(atof(currentWords[3].c_str()));
         pos.push_back(atof(currentWords[4].c_str()));
-        //cout<<"Atom number "<<natms<<"  Words:"<<currentWords[0]<<"   "<< currentWords[2]<<"   "<< currentWords[3]<<"   "<< currentWords[4]<<"   "<<endl; 
+        //cout<<"Atom number "<<natms<<"  Words:"<<currentWords[0]<<"   "<< currentWords[2]<<"   "<< currentWords[3]<<"   "<< currentWords[4]<<"   "<< std::endl; 
         getwords(currentWords,is);
 
       }
     }
     else
     {
-       cerr<<"Could not find Atomic coordinates"<<endl;
+       std::cerr <<"Could not find Atomic coordinates"<< std::endl;
        abort();
     }
 
-    cout<<"natms="<<natms<<"    NumberOfAtoms="<<NumberOfAtoms<<endl;
+    std::cout <<"natms="<<natms<<"    NumberOfAtoms="<<NumberOfAtoms<< std::endl;
   if(natms != NumberOfAtoms)
   {
-    cerr<<"Could not find atomic coordinates for all atoms. \n";
+    std::cerr <<"Could not find atomic coordinates for all atoms. \n";
     abort();
   }
   SpeciesSet& species(IonSystem.getSpeciesSet());
@@ -505,7 +505,7 @@ void GamesFMOParser::getGaussianCenters(std::istream& is)
   gBound.resize(NumberOfAtoms+1);
   int ng,nx;
   int OldShell=1;
-  string aline;
+  std::string aline;
   std::map<std::string,int> basisDataMap;
   int nUniqAt=0;
   for(int i=0; i<NumberOfAtoms; i++)
@@ -517,10 +517,10 @@ void GamesFMOParser::getGaussianCenters(std::istream& is)
     }
   }
 
-  vector<vector<double> > expo(nUniqAt),coef(nUniqAt),coef2(nUniqAt);
-  vector<int> nshll(nUniqAt,0); //use this to 
-  vector<vector<int> > ncoeffpershell(nUniqAt);
-  vector<vector<std::string> > shID(nUniqAt);
+  std::vector<std::vector<double> > expo(nUniqAt),coef(nUniqAt),coef2(nUniqAt);
+  std::vector<int> nshll(nUniqAt,0); //use this to 
+  std::vector<std::vector<int> > ncoeffpershell(nUniqAt);
+  std::vector<std::vector<std::string> > shID(nUniqAt);
   std::map<std::string,int> gsMap;
   gsMap[std::string("S")]=1;
   gsMap[std::string("SP")]=2;
@@ -536,7 +536,7 @@ void GamesFMOParser::getGaussianCenters(std::istream& is)
   {
     if(is.eof())
     {
-      cerr<<"Problem with basis set data.\n";
+      std::cerr <<"Problem with basis set data.\n";
       abort();
     }
     getwords(currentWords,is);
@@ -572,7 +572,7 @@ void GamesFMOParser::getGaussianCenters(std::istream& is)
       std::map<std::string,int>::iterator it(basisDataMap.find(currentWords[0]));
       if(it == basisDataMap.end())
       {
-        cerr<<"Error in parser.\n";
+        std::cerr <<"Error in parser.\n";
         abort();
       }
       currPos=it->second;
@@ -589,7 +589,7 @@ void GamesFMOParser::getGaussianCenters(std::istream& is)
 
       while(true)
       {
-        streampos pivot= is.tellg();
+        std::streampos pivot= is.tellg();
         getwords(currentWords,is);
         if(currentWords.empty()) //empty line after the shell
         {
@@ -617,17 +617,17 @@ void GamesFMOParser::getGaussianCenters(std::istream& is)
 
             if(gsMap[currentWords[1]] == 2)
             {
-              cerr<<"Can't handle SP basis states yet. Fix later.\n";
+              std::cerr <<"Can't handle SP basis states yet. Fix later.\n";
               abort();
             }
             if(gsMap[currentWords[1]] >= 7)
             {
-              cerr<<"Can't handle H basis states or higher yet. Fix later.\n";
+              std::cerr <<"Can't handle H basis states or higher yet. Fix later.\n";
               abort();
             }
-            cout << currPos << ":" <<expo[currPos].back() << " " << coef[currPos].back() << " " 
+            std::cout << currPos << ":" <<expo[currPos].back() << " " << coef[currPos].back() << " " 
               << ncoeffpershell[currPos][nshll[currPos]] 
-              << " " << shID[currPos][nshll[currPos]] << endl;
+              << " " << shID[currPos][nshll[currPos]] << std::endl;
           }
         }
       }
@@ -645,7 +645,7 @@ void GamesFMOParser::getGaussianCenters(std::istream& is)
     std::map<std::string,int>::iterator it(basisDataMap.find(tags[i]));
     if(it == basisDataMap.end())
     {
-      cerr<<"Error in parser.\n";
+      std::cerr <<"Error in parser.\n";
       abort();
     }
     gBound[i] = gtot;
@@ -680,9 +680,9 @@ void GamesFMOParser::getMO(std::istream& is,std::string temp_tag)
 
 
   
-  vector<double> dummy(50);
+  std::vector<double> dummy(50);
   Matrix<double> CartMat(numMO,SizeOfBasisSet);
-  streampos pivot;
+  std::streampos pivot;
   pivot= is.tellg();
   std::vector<std::string> CartLabels(SizeOfBasisSet);
 // this is not the best way, you should use the basis type (e.g. S,P,D,etc) to do this
@@ -703,7 +703,7 @@ void GamesFMOParser::getMO(std::istream& is,std::string temp_tag)
     {
       CartLabels[k] = currentWords[3];
     }
-//cout<<"label: " <<k <<"  " <<CartLabels[k] <<endl; cout.flush();
+//cout<<"label: " <<k <<"  " <<CartLabels[k] << std::endl; std::cout.flush();
   }
 
 
@@ -729,7 +729,7 @@ void GamesFMOParser::getMO(std::istream& is,std::string temp_tag)
   for(int i=0; i<numMO; i++)
     for(int k=0; k<SizeOfBasisSet; k++)
       EigVec[cnt++] = CartMat[i][k];
-  cout<<"Finished reading MO." <<endl;
+  std::cout <<"Finished reading MO." << std::endl;
 }
 
 
@@ -753,7 +753,7 @@ void GamesFMOParser::getMO_single_set(std::istream& is, Matrix<double> &CartMat,
     for(int k=0; k<SizeOfBasisSet; k++)
     {
       getwords(currentWords,is);
-//cout<<"i,k,size: " <<i <<" " <<k <<" " <<currentWords.size() <<" " <<currentWords[4] <<endl;
+//cout<<"i,k,size: " <<i <<" " <<k <<" " <<currentWords.size() <<" " <<currentWords[4] << std::endl;
       if(currentWords.size() == 8)
         // G basis or higher TAG gets mixed with atom id
       {
@@ -774,9 +774,9 @@ void GamesFMOParser::getMO_single_set(std::istream& is, Matrix<double> &CartMat,
     }
     getwords(currentWords,is);
     cnt+=5;
-//cout<<"cnt: " <<cnt <<endl; cout.flush();
+//cout<<"cnt: " <<cnt << std::endl; std::cout.flush();
   }
-//cout<<"done with main block, reading rem: " <<rem <<endl; cout.flush();
+//cout<<"done with main block, reading rem: " <<rem << std::endl; std::cout.flush();
   if(rem > 0)
   {
     getwords(currentWords,is);
@@ -809,7 +809,7 @@ void GamesFMOParser::getMO_single_set(std::istream& is, Matrix<double> &CartMat,
     }
     getwords(currentWords,is);
   }
-//cout<<"done with rem block, writing eigV: " <<endl; cout.flush();
+//cout<<"done with rem block, writing eigV: " << std::endl; std::cout.flush();
 }
 
 /////////////////////CLASS Atom Definition/////////
@@ -823,6 +823,6 @@ IndexI(0),IndexJ(0),IndexK(0)
 {}
 
 void Monomer::print_Geometry(){
-   cout<<" My Tag="<< tags<<"   X="<<X<<"   Y="<< Y<<" Z="<< Z<<"  Charge="<<q<<"  ESP Charge="<<ESPq<<"  Index="<<AtomIndex<<endl;
+   std::cout <<" My Tag="<< tags<<"   X="<<X<<"   Y="<< Y<<" Z="<< Z<<"  Charge="<<q<<"  ESP Charge="<<ESPq<<"  Index="<<AtomIndex<< std::endl;
 }
 

@@ -27,7 +27,7 @@ struct PulayForce : public QMCHamiltonianBase, public ForceBase
   ParticleSet& Electrons;
   TrialWaveFunction& Psi;
 
-  vector<RealType> WarpNorm;
+  std::vector<RealType> WarpNorm;
 
   ParticleSet::ParticlePos_t GradLogPsi, EGradLogPsi;
 
@@ -38,7 +38,7 @@ struct PulayForce : public QMCHamiltonianBase, public ForceBase
 
   Return_t evaluate(ParticleSet& P);
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
@@ -73,7 +73,7 @@ struct PulayForce : public QMCHamiltonianBase, public ForceBase
 
   void setParticlePropertyList(PropertySetType& plist, int offset);
 
-  void registerObservables(vector<observable_helper*>& h5list,
+  void registerObservables(std::vector<observable_helper*>& h5list,
                            hid_t gid) const;
 };
 

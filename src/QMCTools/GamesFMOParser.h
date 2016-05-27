@@ -21,9 +21,9 @@ public:
   GamesFMOParser(int argc, char** argv);
 
 
-  streampos pivot_begin;
+  std::streampos pivot_begin;
   std::string psi_tag, ion_tag; 
-  vector<std::string> tags;
+  std::vector<std::string> tags;
   std::string *IDMonomer; 
 
   bool Mono; 
@@ -66,7 +66,7 @@ public:
 
 
   int q,AtomIndex;
-  string tags;
+  std::string tags;
   double X, Y, Z,ESPq;
 
   void print_Geometry();

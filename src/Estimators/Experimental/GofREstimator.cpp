@@ -31,7 +31,7 @@ GofREstimator::GofREstimator(ParticleSet& source):
   myTable = DistanceTable::add(source);
   int ns=sourcePtcl->groups();
   nList.clear();
-  vector<int> mask(ns*ns,-1);
+  std::vector<int> mask(ns*ns,-1);
   int ij=0;
   for(int i=0; i<ns; i++)
     for(int j=i; j<ns; j++,ij++)
@@ -185,11 +185,11 @@ hid_t GofREstimator::createGroup(hid_t gid)
 //    for(int i=0; i<NumBins;i++,r+=Delta) rv[i]=r;
 //    HDFAttribIO<Vector<RealType> > ro(rv);
 //    ro.write(gid,"distances");
-//    ostringstream o;
+//    std::ostringstream o;
 //    for(int i=0; i<NumPairTypes-1; i++) o << nList[i] <<":";
 //    o<<nList.back();
-//    string banner(o.str());
-//    HDFAttribIO<string> so(banner);
+//    std::string banner(o.str());
+//    HDFAttribIO<std::string> so(banner);
 //    so.write(h1,"pair_ids");
 //
 //    H5Gclose(h1);

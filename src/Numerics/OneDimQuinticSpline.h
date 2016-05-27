@@ -72,7 +72,7 @@ public:
     int n = nv.size();
     m_Y.resize(nv.size());
     m_Y2.resize(nv.size());
-    std::copy(nv.begin(), nv.end(), m_Y.data());
+    copy(nv.begin(), nv.end(), m_Y.data());
     B.resize(n);
     D.resize(n);
     E.resize(n);

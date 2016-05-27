@@ -23,11 +23,10 @@
 #include <vector>
 #include <string>
 #include <iostream>
-using std::vector;
-using std::string;
+
 
 /*!\class template<int N> struct FortranString
- *\brief A wrapper class to pass a string to fortran codes
+ *\brief A wrapper class to pass a std::string to fortran codes
  */
 template<int N>
 struct FortranString
@@ -71,7 +70,7 @@ template<int N>
 struct FortranStringArray
 {
 
-  vector<char> m_data;
+  std::vector<char> m_data;
 
   FortranStringArray() {}
 
@@ -92,7 +91,7 @@ struct FortranStringArray
     m_data.resize(num*N,' ');
   }
 
-  void set(const vector<string>& a)
+  void set(const std::vector<std::string>& a)
   {
     resize(a.size());
     for(int i=0; i<a.size(); ++i)
@@ -103,7 +102,7 @@ struct FortranStringArray
     }
   }
 
-  void add(const string& c)
+  void add(const std::string& c)
   {
     int num=m_data.size();
     m_data.insert(m_data.end(), N, ' ');
@@ -113,7 +112,7 @@ struct FortranStringArray
 
   void add(const char* c)
   {
-    string ctmp(c);
+    std::string ctmp(c);
     add(ctmp);
   }
 

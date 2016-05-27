@@ -47,10 +47,10 @@ struct CoulombPBCAA: public QMCHamiltonianBase, public ForceBase
   int NumCenters;
   RealType myConst;
   RealType myRcut;
-  string PtclRefName;
-  vector<RealType> Zat,Zspec;
-  vector<int> NofSpecies;
-  vector<int> SpeciesID;
+  std::string PtclRefName;
+  std::vector<RealType> Zat,Zspec;
+  std::vector<int> NofSpecies;
+  std::vector<int> SpeciesID;
 
   Matrix<RealType> SR2;
   Vector<RealType> dSR;
@@ -80,7 +80,7 @@ struct CoulombPBCAA: public QMCHamiltonianBase, public ForceBase
 
   void update_source(ParticleSet& s);
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }

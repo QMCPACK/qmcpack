@@ -35,8 +35,8 @@ StressPBCAB::StressPBCAB(ParticleSet& ions, ParticleSet& elns,
   myTableIndex=elns.addTable(ions);
   initBreakup(elns);
   prefix="S_AB";
-  app_log() << "  Maximum K shell " << AB->MaxKshell << endl;
-  app_log() << "  Number of k vectors " << AB->Fk.size() << endl;
+  app_log() << "  Maximum K shell " << AB->MaxKshell << std::endl;
+  app_log() << "  Number of k vectors " << AB->Fk.size() << std::endl;
   is_active=true;
 }
 
@@ -133,7 +133,7 @@ StressPBCAB::evalConsts(bool report)
     tmpconsts += -.5*Zat[i]*vs_k0*v1;
   }
   //if(report)
-    app_log() << "   Constant of PBCAB " << tmpconsts << endl;
+    app_log() << "   Constant of PBCAB " << tmpconsts << std::endl;
   return tmpconsts;
 } 
 
@@ -160,7 +160,7 @@ StressPBCAB::evalSR(ParticleSet& P)
     //Accumulate pair sums...species charge for atom i.
     res += Zat[iat]*esum;
   }
-   app_log()<<"\nEvaluateSR_AA()_working = \n"<<res<<endl<<endl;
+   app_log()<<"\nEvaluateSR_AA()_working = \n"<<res<< std::endl<< std::endl;
   return res;
 }
 
@@ -201,11 +201,11 @@ StressPBCAB::evalLR(ParticleSet& P)
        // AA->evaluateStress(PtclRhoK.KLists.kshell, PtclRhoK.rhok[spec1], PtclRhoK.rhok[spec2], temp);
 #endif
       } //speceln
-      app_log()<<"\n   esum stressPBCAB = \n"<<esum<<endl<<endl;
+      app_log()<<"\n   esum stressPBCAB = \n"<<esum<< std::endl<< std::endl;
       res += Zspec[i]*esum;
     }
 //  }//specion
-  app_log()<<"\nEvaluateLR_AB()_working = \n"<<res<<endl<<endl;
+  app_log()<<"\nEvaluateLR_AB()_working = \n"<<res<< std::endl<< std::endl;
   return res;
 }
 
@@ -247,20 +247,20 @@ void StressPBCAB::initBreakup(ParticleSet& P)
     totQ+=Qat[iat] = Qspec[P.GroupID[iat]];
     
     
-  for (int i=0; i<Zspec.size(); i++) app_log()<<"Zspec["<<i<<"]="<<Zspec[i]<<endl;
-  for (int i=0; i<Qspec.size(); i++) app_log()<<"Qspec["<<i<<"]="<<Qspec[i]<<endl;
+  for (int i=0; i<Zspec.size(); i++) app_log()<<"Zspec["<<i<<"]="<<Zspec[i]<< std::endl;
+  for (int i=0; i<Qspec.size(); i++) app_log()<<"Qspec["<<i<<"]="<<Qspec[i]<< std::endl;
   for(int iat=0; iat<NptclA; iat++)
-		app_log()<<"Zat["<<iat<<"]="<<Zat[iat]<<endl;
+		app_log()<<"Zat["<<iat<<"]="<<Zat[iat]<< std::endl;
 		
   for(int iat=0; iat<NptclB; iat++)
-		app_log()<<"Qat["<<iat<<"]="<<Qat[iat]<<endl;      
-//    if(totQ>numeric_limits<RealType>::epsilon())
+		app_log()<<"Qat["<<iat<<"]="<<Qat[iat]<< std::endl;      
+//    if(totQ>std::numeric_limits<RealType>::epsilon())
 //    {
 //      LOGMSG("PBCs not yet finished for non-neutral cells");
 //      OHMMS::Controller->abort();
 //    }
   ////Test if the box sizes are same (=> kcut same for fixed dimcut)
-  kcdifferent = (std::abs(PtclA.Lattice.LR_kc - P.Lattice.LR_kc) > numeric_limits<RealType>::epsilon());
+  kcdifferent = (std::abs(PtclA.Lattice.LR_kc - P.Lattice.LR_kc) > std::numeric_limits<RealType>::epsilon());
   minkc = std::min(PtclA.Lattice.LR_kc,P.Lattice.LR_kc);
   //AB->initBreakup(*PtclB);
   //initBreakup is called only once
@@ -274,7 +274,7 @@ void StressPBCAB::initBreakup(ParticleSet& P)
     V0 = LRCoulombSingleton::createSpline4RbyVs(AB,myRcut,myGrid);
     if(Vat.size())
     {
-      app_log() << "  Vat is not empty. Something is wrong" << endl;
+      app_log() << "  Vat is not empty. Something is wrong" << std::endl;
       OHMMS::Controller->abort();
     }
     Vat.resize(NptclA,V0);
@@ -398,7 +398,7 @@ StressPBCAB::evalLRwithForces(ParticleSet& P)
 {
   const StructFact& RhoKA(*(PtclA.SK));
   const StructFact& RhoKB(*(P.SK));
-  vector<TinyVector<RealType,DIM> > grad(PtclA.getTotalNum());
+  std::vector<TinyVector<RealType,DIM> > grad(PtclA.getTotalNum());
   for(int j=0; j<NumSpeciesB; j++)
   {
     for (int iat=0; iat<grad.size(); iat++)

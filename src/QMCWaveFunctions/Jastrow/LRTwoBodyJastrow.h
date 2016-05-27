@@ -74,8 +74,8 @@ class LRTwoBodyJastrow: public OrbitalBase
   Vector<ComplexType> eikr_new;
   Vector<ComplexType> delta_eikr;
 
-  vector<int> Kshell;
-  vector<RealType> FkbyKK;
+  std::vector<int> Kshell;
+  std::vector<RealType> FkbyKK;
   //vector<PosType>  Kcart;
 
   void resetInternals();
@@ -102,7 +102,7 @@ public:
   void checkInVariables(opt_variables_type& o);
 
   /** print the state, e.g., optimizables */
-  void reportStatus(ostream& os);
+  void reportStatus(std::ostream& os);
 
   void resetParameters(const opt_variables_type& active);
 

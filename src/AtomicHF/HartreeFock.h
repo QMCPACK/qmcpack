@@ -56,7 +56,7 @@ struct HartreeFock
         Attribute* att = cur->get_attribute("name");
         if(att)
         {
-          const string& aname = att->get_value();
+          const std::string& aname = att->get_value();
           xmlNode* ccur = cur->cobj();
           if(aname == "max_iter")
           {
@@ -92,14 +92,14 @@ struct HartreeFock
   {
     typedef Numerov<Transform_t, RadialOrbital_t> Numerov_t;
     value_type Vtotal,KEnew, KEold,E;
-    vector<value_type> energy(Pot.size()), epsilon(norb);
+    std::vector<value_type> energy(Pot.size()), epsilon(norb);
     value_type lowerbound, upperbound;
     int iter = 0;
     Vtotal = Pot.evaluate(Psi,energy,norb);
     Pot.mix(0.0);
     KEnew = Pot.calcKE(Psi,0,norb);
-    string label("spdf");
-    ofstream log_stream("atomicHF.log");
+    std::string label("spdf");
+    std::ofstream log_stream("atomicHF.log");
     log_stream.precision(8);
     do
     {
@@ -119,9 +119,9 @@ struct HartreeFock
         ///calculate the eigenvalue and the corresponding orbital
         eigsum += (epsilon[ob] =
                      numerov.solve(lowerbound, upperbound, eig_tol));
-        log_stream << Psi.N[ob]<< label[Psi.L[ob]] << '\t' << epsilon[ob] << endl;
+        log_stream << Psi.N[ob]<< label[Psi.L[ob]] << '\t' << epsilon[ob] << std::endl;
       }
-      log_stream << endl;
+      log_stream << std::endl;
       ///normalize the orbitals
       Psi.normalize(norb);
       ///restrict the orbitals
@@ -135,19 +135,19 @@ struct HartreeFock
       Pot.applyRestriction(Psi);
       Pot.mix(ratio);
       log_stream.precision(10);
-      log_stream << "Iteration #" << iter+1 << endl;
-      log_stream << "KE    = " << setw(15) << KEnew
-                 << "  PE     = " << setw(15) << Vtotal << endl;
-      log_stream << "PE/KE = " << setw(15) << Vtotal/KEnew
-                 << "  Energy = " << setw(15) << E << endl;
-      log_stream << endl;
+      log_stream << "Iteration #" << iter+1 << std::endl;
+      log_stream << "KE    = " << std::setw(15) << KEnew
+                 << "  PE     = " << std::setw(15) << Vtotal << std::endl;
+      log_stream << "PE/KE = " << std::setw(15) << Vtotal/KEnew
+                 << "  Energy = " << std::setw(15) << E << std::endl;
+      log_stream << std::endl;
       iter++;
       ///continue the loop until the kinetic energy converges
     }
     while(fabs(KEnew-KEold)>scf_tol && iter<maxiter);
   }
 
-  inline void solve(string pottype, string gridtype, int norb)
+  inline void solve( std::string pottype, std::string gridtype, int norb)
   {
     if(pottype == "Harmonic")
     {

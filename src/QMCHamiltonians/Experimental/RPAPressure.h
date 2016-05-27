@@ -38,7 +38,7 @@ struct RPAPressure: public QMCHamiltonianBase
   ///Laplacian and Gradient for derivative of wave function with respect to r_s
   PtclOnLatticeTraits::ParticleGradient_t dG;
   PtclOnLatticeTraits::ParticleLaplacian_t dL;
-  vector<OrbitalBase*> dPsi;
+  std::vector<OrbitalBase*> dPsi;
   Return_t Rs;
   Return_t tValue;
   Return_t drsdV;
@@ -56,7 +56,7 @@ struct RPAPressure: public QMCHamiltonianBase
     pNorm = 1.0/(P.Lattice.DIM*P.Lattice.Volume);
     RealType tlen=std::pow(0.75/M_PI*P.Lattice.Volume/static_cast<RealType>(P.getTotalNum()),1.0/3.0);
     drsdV= tlen*pNorm;
-//       app_log()<<"drsdV  "<<drsdV<<endl;
+//       app_log()<<"drsdV  "<<drsdV<< std::endl;
   };
 
   ///destructor
@@ -75,7 +75,7 @@ struct RPAPressure: public QMCHamiltonianBase
   evaluate(ParticleSet& P);
 
   inline Return_t
-  evaluate(ParticleSet& P, vector<NonLocalData>& Txy) ;
+  evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy) ;
 
   /** implements the virtual function.
    *
@@ -97,7 +97,7 @@ struct RPAPressure: public QMCHamiltonianBase
 
   QMCHamiltonianBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
 
-  string MyName;
+  std::string MyName;
 };
 }
 #endif

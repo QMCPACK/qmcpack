@@ -25,12 +25,12 @@
 
 namespace IO {
 
-  /// This class holds an ASCII token, which is just a string and the
+  /// This class holds an ASCII token, which is just a std::string and the
   /// line number in which it appeared in the file.
   class TokenClass
   {
   public:
-    string Str;
+    std::string Str;
     int LineNumber;
   };
 
@@ -49,15 +49,15 @@ namespace IO {
   {
     /// Reads a text file into a buffer eliminating c++ and c-style
     /// comments.  
-    bool ReadWithoutComments(string fileName, blitz::Array<char,1> &buffer);
+    bool ReadWithoutComments( std::string fileName, blitz::Array<char,1> &buffer);
     /// Reads a section from a list of TokenClass objects.  iter should
     /// refer to the current place in the list that we should start
     /// reading at.  iter should point to a place just after the '{'.
     /// If wantEndBrace is true, it will look for an ending '}'.
     /// Otherwise it will read until the list of Tokens runs out.  
-    bool ReadSection (IOTreeClass *parent, string name,
-		      list<TokenClass>::iterator &iter,
-		      list<TokenClass> &tokenList,
+    bool ReadSection (IOTreeClass *parent, std::string name,
+		      std::list<TokenClass>::iterator &iter,
+		      std::list<TokenClass> &tokenList,
 		      bool wantEndBrace);
   public:
     void WriteSection(ofstream &outFile,int indent);
@@ -67,14 +67,14 @@ namespace IO {
     /// Same thing, just calls above with level 0;
     void PrintTree();
 
-    IOTreeClass* NewSection(string name);
+    IOTreeClass* NewSection( std::string name);
     void IncludeSection (IOTreeClass *);
     /// Takes the name of a file to read, the name of my section and a
     /// pointer to my parent.  Reads the file into a tree of
     /// IOTreeClass's.
-    bool OpenFile (string filename, string myName, 
+    bool OpenFile ( std::string filename, std::string myName, 
 		   IOTreeClass *parent);
-    bool NewFile (string fileName, string mySectionName,
+    bool NewFile ( std::string fileName, std::string mySectionName,
 		  IOTreeClass *parent);
     /// Do any file handling necessary and delete the whole tree of data.
     void CloseFile();

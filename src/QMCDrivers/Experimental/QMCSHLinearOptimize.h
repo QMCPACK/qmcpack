@@ -54,11 +54,11 @@ private:
   inline bool ValidCostFunction(bool valid)
   {
     if (!valid)
-      app_log()<<" Cost Function is Invalid. If this frequently, try reducing the step size of the line minimization or reduce the number of cycles. " <<endl;
+      app_log()<<" Cost Function is Invalid. If this frequently, try reducing the step size of the line minimization or reduce the number of cycles. " << std::endl;
     return valid;
   }
   DMCOMPOPT* dmcEngine;
-  string MinMethod;
+  std::string MinMethod;
   RealType bigChange, w_beta, stepsize;
 
 };

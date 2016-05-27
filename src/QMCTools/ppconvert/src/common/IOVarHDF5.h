@@ -92,7 +92,7 @@ namespace IO {
     bool VarWriteSlice(TVAL val,
 		       T0 s0, T1 s1, T2 s2, T3 s3, T4 s4, T5 s5, T6 s6, T7 s7, T8 s8, T8 s9, T10 s10)
     {
-      cerr << "val = " << val << endl;
+      std::cerr << "val = " << val << std::endl;
       Slice(val, s0,s1,s2,s3,s4,s5,s6,s7,s8,s9,s10).VarWrite(val);
     }
     IOVarHDF5() : OwnDataset(false)
@@ -100,7 +100,7 @@ namespace IO {
 
     }
     
-    IOVarHDF5(string name, hid_t datasetID, hid_t diskSpaceID, hid_t memSpaceID, 
+    IOVarHDF5( std::string name, hid_t datasetID, hid_t diskSpaceID, hid_t memSpaceID, 
 	      hid_t boolTypeID, hid_t complexTypeID, bool ownDataset=false)
     {
       Name          = name;
@@ -123,24 +123,24 @@ namespace IO {
 
   
   ////////////////////////////////////////////////////////////////
-  /// Template specializations of reads and writes for string  ///
+  /// Template specializations of reads and writes for std::string  ///
   /// and bools.                                               ///
   ////////////////////////////////////////////////////////////////
-  template<> bool IOVarHDF5<string,0>::VarRead(string &val);
-  template<> bool IOVarHDF5<string,1>::VarRead(blitz::Array<string,1> &val);
-  template<> bool IOVarHDF5<string,2>::VarRead(blitz::Array<string,2> &val);
-  template<> bool IOVarHDF5<string,3>::VarRead(blitz::Array<string,3> &val);
-  template<> bool IOVarHDF5<string,4>::VarRead(blitz::Array<string,4> &val);
+  template<> bool IOVarHDF5<std::string,0>::VarRead( std::string &val);
+  template<> bool IOVarHDF5<std::string,1>::VarRead(blitz::Array<std::string,1> &val);
+  template<> bool IOVarHDF5<std::string,2>::VarRead(blitz::Array<std::string,2> &val);
+  template<> bool IOVarHDF5<std::string,3>::VarRead(blitz::Array<std::string,3> &val);
+  template<> bool IOVarHDF5<std::string,4>::VarRead(blitz::Array<std::string,4> &val);
   template<> bool IOVarHDF5<bool,  0>::VarRead(bool &val);
   template<> bool IOVarHDF5<bool,  1>::VarRead(blitz::Array<bool,1> &val);
   template<> bool IOVarHDF5<bool,  2>::VarRead(blitz::Array<bool,2> &val);
   template<> bool IOVarHDF5<bool,  3>::VarRead(blitz::Array<bool,3> &val);
   template<> bool IOVarHDF5<bool,  4>::VarRead(blitz::Array<bool,4> &val);
-  template<> bool IOVarHDF5<string,0>::VarWrite(string val);
-  template<> bool IOVarHDF5<string,1>::VarWrite(const blitz::Array<string,1> &val);
-  template<> bool IOVarHDF5<string,2>::VarWrite(const blitz::Array<string,2> &val);
-  template<> bool IOVarHDF5<string,3>::VarWrite(const blitz::Array<string,3> &val);
-  template<> bool IOVarHDF5<string,4>::VarWrite(const blitz::Array<string,4> &val);
+  template<> bool IOVarHDF5<std::string,0>::VarWrite( std::string val);
+  template<> bool IOVarHDF5<std::string,1>::VarWrite(const blitz::Array<std::string,1> &val);
+  template<> bool IOVarHDF5<std::string,2>::VarWrite(const blitz::Array<std::string,2> &val);
+  template<> bool IOVarHDF5<std::string,3>::VarWrite(const blitz::Array<std::string,3> &val);
+  template<> bool IOVarHDF5<std::string,4>::VarWrite(const blitz::Array<std::string,4> &val);
   template<> bool IOVarHDF5<bool,  0>::VarWrite(bool val);
   template<> bool IOVarHDF5<bool,  1>::VarWrite(const blitz::Array<bool,1> &val);
   template<> bool IOVarHDF5<bool,  2>::VarWrite(const blitz::Array<bool,2> &val);
@@ -157,7 +157,7 @@ namespace IO {
     hsize_t dims[RANK+1];
     H5Sget_simple_extent_dims(DiskSpaceID, dims, NULL);
     if (n < dims[0]) {
-      cerr << "Cannot resize and HDF5 dataset to a smaller size.\n";
+      std::cerr << "Cannot resize and HDF5 dataset to a smaller size.\n";
       abort();
     }
     dims[0] = n;
@@ -182,7 +182,7 @@ namespace IO {
   ////////////////////////////////////////////////////////////////
   /// This function creates a new IOVarHDF5 from a dataset id. /// 
   ////////////////////////////////////////////////////////////////
-  IOVarBase *NewIOVarHDF5(hid_t dataSetID, string name, hid_t boolType, hid_t cmplxType);
+  IOVarBase *NewIOVarHDF5(hid_t dataSetID, std::string name, hid_t boolType, hid_t cmplxType);
   
 
   ////////////////////////////////////////////////////////////////
@@ -191,7 +191,7 @@ namespace IO {
   /// variable for writing.                                    ///
   ////////////////////////////////////////////////////////////////
   template<typename T, int RANK>
-  IOVarBase *NewIOVarHDF5(hid_t groupID, string name, const blitz::Array<T,RANK> &val,
+  IOVarBase *NewIOVarHDF5(hid_t groupID, std::string name, const blitz::Array<T,RANK> &val,
 			  hid_t boolType, hid_t cmplxType)
   {
     /// First, create a new DataSpace.
@@ -223,7 +223,7 @@ namespace IO {
     /// a time.
     hsize_t chunk_dims[RANK];
     if (RANK < 3)
-      chunk_dims[0]=min(val.extent(0), 32);
+      chunk_dims[0]= std::min(val.extent(0), 32);
     else 
       chunk_dims[0]=1;
     for (int i=1;i<RANK;i++)
@@ -253,7 +253,7 @@ namespace IO {
     IOVarHDF5<T,RANK> *newVar = 
       dynamic_cast<IOVarHDF5<T,RANK>*> (NewIOVarHDF5(datasetID, name, boolType, cmplxType));
     if (newVar == NULL) {
-      cerr << "Error in dynamic_cast in NewIOVarHDF5 #1.\n";
+      std::cerr << "Error in dynamic_cast in NewIOVarHDF5 #1.\n";
       abort();
     }
     newVar->VarWrite(val);
@@ -268,7 +268,7 @@ namespace IO {
   /// variable for writing.                                    ///
   ////////////////////////////////////////////////////////////////
   template<typename T> inline
-  IOVarBase *NewIOVar0HDF5(hid_t groupID, string name, T val,
+  IOVarBase *NewIOVar0HDF5(hid_t groupID, std::string name, T val,
 			   hid_t boolType, hid_t cmplxType)
   {
     /// First, create a new DataSpace.
@@ -312,7 +312,7 @@ namespace IO {
 
     IOVarHDF5<T,0> *newVar =  dynamic_cast<IOVarHDF5<T,0>*> (NewIOVarHDF5(datasetID, name, boolType, cmplxType));
     if (newVar == NULL) {
-      cerr << "Error in dynamic_cast in NewIOVarHDF5 #2.\n";
+      std::cerr << "Error in dynamic_cast in NewIOVarHDF5 #2.\n";
       abort();
     }
     newVar->VarWrite(val);
@@ -325,7 +325,7 @@ namespace IO {
   /// String specialization of above                           ///
   ////////////////////////////////////////////////////////////////
   template<> inline
-  IOVarBase *NewIOVar0HDF5(hid_t groupID, string name, string val,
+  IOVarBase *NewIOVar0HDF5(hid_t groupID, std::string name, std::string val,
 			   hid_t boolType, hid_t cmplxType)
   {
     /// First, create a new DataSpace.
@@ -343,10 +343,10 @@ namespace IO {
     H5Tclose (typeID);
     H5Sclose(diskSpaceID);
 
-    IOVarHDF5<string,0> *newVar = dynamic_cast<IOVarHDF5<string,0>*>
+    IOVarHDF5<std::string,0> *newVar = dynamic_cast<IOVarHDF5<std::string,0>*>
       (NewIOVarHDF5(datasetID, name, boolType, cmplxType));
     if (newVar == NULL) {
-      cerr << "Error in dynamic_cast in NewIOVarHDF5 #3.\n";
+      std::cerr << "Error in dynamic_cast in NewIOVarHDF5 #3.\n";
       abort();
     }
     newVar->VarWrite(val);
@@ -554,8 +554,8 @@ namespace IO {
     else if (dataType == COMPLEX_TYPE) memType = ComplexTypeID;
     else {
       T a;
-      cerr << "Unknown data type in IOVarHDF5<" << TypeString(a) << ", " 
-	   << RANK << ">" << endl;
+      std::cerr << "Unknown data type in IOVarHDF5<" << TypeString(a) << ", " 
+	   << RANK << ">" << std::endl;
     }
 
     /// Resize val to appropriate size
@@ -583,8 +583,8 @@ namespace IO {
     else if (dataType == COMPLEX_TYPE) memType = ComplexTypeID;
     else {
       T a;
-      cerr << "Unknown data type in IOVarHDF5<" << TypeString(a) << ", " 
-	   << RANK << ">" << endl;
+      std::cerr << "Unknown data type in IOVarHDF5<" << TypeString(a) << ", " 
+	   << RANK << ">" << std::endl;
     }
 
     /// Resize val to appropriate size
@@ -592,7 +592,7 @@ namespace IO {
     TinyVector<int,RANK> dims;
     H5Sget_simple_extent_dims(MemSpaceID, &(h5dims[0]), NULL);
     dims = h5dims;
-    //    cerr << "resizing val to " << dims << endl;
+    //    std::cerr << "resizing val to " << dims << std::endl;
     val.resize(dims);
    
     /// Now, call HDF5 to do the actual reading.
@@ -621,7 +621,7 @@ namespace IO {
     else if (dataType == COMPLEX_TYPE) memType = ComplexTypeID;
     else {
       T a;
-      cerr << "Unknown data type in IOVarHDF5<" << TypeString(a) << ", 0>" << endl;
+      std::cerr << "Unknown data type in IOVarHDF5<" << TypeString(a) << ", 0>" << std::endl;
     }
     /// Now, call HDF5 to do the actual writing.
     herr_t status = 
@@ -651,8 +651,8 @@ namespace IO {
     else if (dataType == COMPLEX_TYPE) memType = ComplexTypeID;
     else {
       T a;
-      cerr << "Unknown data type in IOVarHDF5<" << TypeString(a) << ", " 
-	   << RANK << ">" << endl;
+      std::cerr << "Unknown data type in IOVarHDF5<" << TypeString(a) << ", " 
+	   << RANK << ">" << std::endl;
     }
     /// Now, call HDF5 to do the actual writing.
     herr_t status = 

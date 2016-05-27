@@ -68,7 +68,7 @@ inline void init_array(Array<T,3>& in)
       for(int k=0; k<in.size(2); ++k)
       {
         step=std::sin(static_cast<real_type>(j+1)*static_cast<real_type>(j+k+1));
-        in(i,j,k)=complex<double>(step*sqrt3*0.5,step/sqrt3);
+        in(i,j,k)= std::complex<double>(step*sqrt3*0.5,step/sqrt3);
       }
   }
 }
@@ -82,7 +82,7 @@ inline void init_array(Matrix<T>& in)
     for(int k=0; k<in.cols(); ++k)
     {
       step=std::sin(static_cast<real_type>(k+1)*static_cast<real_type>(in.cols()+1));
-      in(j,k)=complex<double>(step*sqrt3*0.5,step/sqrt3);
+      in(j,k)= std::complex<double>(step*sqrt3*0.5,step/sqrt3);
     }
 }
 
@@ -152,7 +152,7 @@ inline bool check_array(const T* restrict a, const T* restrict b, size_t n
   {
     if(abs_diff(a[i]*norm,b[i])>eps)
     {
-      cerr << "WRONG " << a[i]*norm << " " << b[i] <<  " " << endl;
+      std::cerr << "WRONG " << a[i]*norm << " " << b[i] <<  " " << std::endl;
       no_problem=false;
     }
   }

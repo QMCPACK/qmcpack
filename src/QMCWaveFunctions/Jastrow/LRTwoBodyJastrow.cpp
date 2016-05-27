@@ -70,7 +70,7 @@ void LRTwoBodyJastrow::resetParameters(const opt_variables_type& active)
 //     if(handler) resetByHandler();
 }
 
-void LRTwoBodyJastrow::reportStatus(ostream& os)
+void LRTwoBodyJastrow::reportStatus(std::ostream& os)
 {
 }
 
@@ -96,7 +96,7 @@ LRTwoBodyJastrow::evaluateLog(ParticleSet& P,
   APP_ABORT("LRTwoBodyJastrow::evaluateLog ");
 #else
   //memcopy if necessary but this is not so critcal
-  std::copy(P.SK->rhok[0],P.SK->rhok[0]+MaxK,Rhok.data());
+  copy(P.SK->rhok[0],P.SK->rhok[0]+MaxK,Rhok.data());
   for(int spec1=1; spec1<NumSpecies; spec1++)
     accumulate_elements(P.SK->rhok[spec1],P.SK->rhok[spec1]+MaxK,Rhok.data());
   //Rhok=0.0;
@@ -346,7 +346,7 @@ void LRTwoBodyJastrow::restore(int iat)
 
 void LRTwoBodyJastrow::acceptMove(ParticleSet& P, int iat)
 {
-  std::copy(eikr_new.data(),eikr_new.data()+MaxK,eikr[iat]);
+  copy(eikr_new.data(),eikr_new.data()+MaxK,eikr[iat]);
   U += offU;
   dU += offdU;
   d2U += offd2U;
@@ -357,7 +357,7 @@ void LRTwoBodyJastrow::update(ParticleSet& P,
                               ParticleSet::ParticleLaplacian_t& dL,
                               int iat)
 {
-  app_error() << "LRTwoBodyJastrow::update is INCOMPLETE " << endl;
+  app_error() << "LRTwoBodyJastrow::update is INCOMPLETE " << std::endl;
 }
 
 
@@ -372,7 +372,7 @@ LRTwoBodyJastrow::registerData(ParticleSet& P, PooledData<RealType>& buf)
   APP_ABORT("LRTwoBodyJastrow::registerData");
 #else
   for(int iat=0; iat<NumPtcls; iat++)
-    std::copy(P.SK->eikr[iat],P.SK->eikr[iat]+MaxK,eikr[iat]);
+    copy(P.SK->eikr[iat],P.SK->eikr[iat]+MaxK,eikr[iat]);
 #endif
   buf.add(Rhok.first_address(), Rhok.last_address());
   buf.add(U.first_address(), U.last_address());
@@ -390,7 +390,7 @@ LRTwoBodyJastrow::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
   APP_ABORT("LRTwoBodyJastrow::updateBuffer");
 #else
   for(int iat=0; iat<NumPtcls; iat++)
-    std::copy(P.SK->eikr[iat],P.SK->eikr[iat]+MaxK,eikr[iat]);
+    copy(P.SK->eikr[iat],P.SK->eikr[iat]+MaxK,eikr[iat]);
 #endif
   buf.put(Rhok.first_address(), Rhok.last_address());
   buf.put(U.first_address(), U.last_address());
@@ -409,7 +409,7 @@ void LRTwoBodyJastrow::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
   APP_ABORT("LRTwoBodyJastrow::copyFromBuffer");
 #else
   for(int iat=0; iat<NumPtcls; iat++)
-    std::copy(P.SK->eikr[iat],P.SK->eikr[iat]+MaxK,eikr[iat]);
+    copy(P.SK->eikr[iat],P.SK->eikr[iat]+MaxK,eikr[iat]);
 #endif
 }
 
@@ -428,7 +428,7 @@ bool LRTwoBodyJastrow::put(xmlNodePtr cur)
 {
   if(skRef == 0)
   {
-    app_error() << "  LRTowBodyJastrow should not be used for non periodic systems." << endl;
+    app_error() << "  LRTowBodyJastrow should not be used for non periodic systems." << std::endl;
     return false;
   }
   return true;
@@ -455,7 +455,7 @@ void LRTwoBodyJastrow::resetByHandler(HandlerType* handler)
   }
   MaxK=skRef->KLists.kshell[MaxKshell];
   Kshell.resize(MaxKshell+1);
-  std::copy(skRef->KLists.kshell.begin(),skRef->KLists.kshell.begin()+MaxKshell+1, Kshell.begin());
+  copy(skRef->KLists.kshell.begin(),skRef->KLists.kshell.begin()+MaxKshell+1, Kshell.begin());
   if (Rhok.size()!=MaxK)
     Rhok.resize(MaxK);
 }

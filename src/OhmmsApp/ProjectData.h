@@ -21,7 +21,6 @@
 //#include <vector>
 //#include <string>
 //#include <iostream>
-using namespace std;
 #include "Message/Communicate.h"
 
 namespace qmcplusplus
@@ -40,8 +39,8 @@ struct ProjectData: public OhmmsElementBase
   /// constructor
   ProjectData(const char* aname=0);
 
-  bool get(ostream& os) const;
-  bool put(istream& is);
+  bool get(std::ostream& os) const;
+  bool put( std::istream& is);
   bool put(xmlNodePtr cur);
   void reset();
 
@@ -52,7 +51,7 @@ struct ProjectData: public OhmmsElementBase
   void rewind();
 
   ///set the title
-  inline void setTitle(const string& atitle)
+  inline void setTitle(const std::string& atitle)
   {
     m_title=atitle;
     reset();
@@ -81,28 +80,28 @@ struct ProjectData: public OhmmsElementBase
   /** return the root of the previous sequence
    * @param oldroot is composed by the m_title and m_series
    */
-  bool PreviousRoot(string& oldroot) const;
+  bool PreviousRoot( std::string& oldroot) const;
 
   ///title of the project
-  string m_title;
+  std::string m_title;
 
   ///user name
-  string m_user;
+  std::string m_user;
 
   ///name of the host where the job is running
-  string m_host;
+  std::string m_host;
 
   ///date when the job is executed
-  string m_date;
+  std::string m_date;
 
   ///main root for all the output engines
-  string m_projectmain;
+  std::string m_projectmain;
 
   ///processor-dependent root for all the output engines
-  string m_projectroot;
+  std::string m_projectroot;
 
   ///root for the next run
-  string m_nextroot;
+  std::string m_nextroot;
 
   ///series index
   int m_series;

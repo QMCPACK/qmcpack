@@ -206,9 +206,9 @@ private:
     MaxKshell = static_cast<int>(breakuphandler.SetupKVecs(kc,kcut,kmax));
     if(FirstTime)
     {
-      app_log() <<" finding kc:  "<<ref.LR_kc<<" , "<<LR_kc<<endl;
-      app_log() << "  LRBreakp parameter Kc =" << kc << endl;
-      app_log() << "    Continuum approximation in k = [" << kcut << "," << kmax << ")" << endl;
+      app_log() <<" finding kc:  "<<ref.LR_kc<<" , "<<LR_kc<< std::endl;
+      app_log() << "  LRBreakp parameter Kc =" << kc << std::endl;
+      app_log() << "    Continuum approximation in k = [" << kcut << "," << kmax << ")" << std::endl;
       FirstTime=false;
     }
     //Set up x_k
@@ -222,7 +222,7 @@ private:
     breakuphandler.DoBreakup(Fk.data(),coefs.data()); //Fill array of coefficients.
   }
 
-  void fillXk(vector<TinyVector<RealType,2> >& KList)
+  void fillXk(std::vector<TinyVector<RealType,2> >& KList)
   {
     Fk.resize(KList.size());
     for(int ki=0; ki<KList.size(); ki++)
@@ -235,7 +235,7 @@ private:
   void fillFk(KContainer& KList)
   {
     Fk.resize(KList.kpts_cart.size());
-    const vector<int>& kshell(KList.kshell);
+    const std::vector<int>& kshell(KList.kshell);
     if(MaxKshell >= kshell.size())
       MaxKshell=kshell.size()-1;
     Fk_symm.resize(MaxKshell);

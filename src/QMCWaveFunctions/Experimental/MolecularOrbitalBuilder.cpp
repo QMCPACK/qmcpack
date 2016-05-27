@@ -29,7 +29,7 @@ bool MolecularOrbitalBuilder::put(xmlNodePtr cur)
 {
   if(xmlHasProp(cur, (const xmlChar*)"href"))
   {
-    string fname_in = (const char*)(xmlGetProp(cur, (const xmlChar *)"href"));
+    std::string fname_in = (const char*)(xmlGetProp(cur, (const xmlChar *)"href"));
     LOGMSG("Opening external file " << fname_in)
     putOpen(fname_in);
   }
@@ -52,7 +52,7 @@ bool MolecularOrbitalBuilder::put(xmlNodePtr cur)
 bool MolecularOrbitalBuilder::putSpecial(xmlNodePtr cur)
 {
   bool usegrid = true;
-  string transform("yes"), source("i"), radtype("sto");
+  std::string transform("yes"), source("i"), radtype("sto");
   OhmmsAttributeSet aAttrib;
   aAttrib.add(transform,"transform");
   aAttrib.add(transform,"usegrid");
@@ -76,7 +76,7 @@ bool MolecularOrbitalBuilder::putSpecial(xmlNodePtr cur)
   xmlNodePtr cur1=cur->children;
   while(cur1 != NULL)
   {
-    string cname1((const char*)cur1->name);
+    std::string cname1((const char*)cur1->name);
     if(cname1 == "distancetable")
     {
       if(ions == 0)
@@ -143,7 +143,7 @@ bool MolecularOrbitalBuilder::putSpecial(xmlNodePtr cur)
   return true;
 }
 
-bool MolecularOrbitalBuilder::putOpen(const string& fname_in)
+bool MolecularOrbitalBuilder::putOpen(const std::string& fname_in)
 {
   xmlDocPtr doc=NULL;
   xmlNsPtr ns;
@@ -160,7 +160,7 @@ bool MolecularOrbitalBuilder::putOpen(const string& fname_in)
   // xmlXPathObjectPtr result;
   context = xmlXPathNewContext(doc);
   const char* name = OrbitalBuilderBase::detset_tag.c_str();
-  string sdname("//");
+  std::string sdname("//");
   sdname.append(OrbitalBuilderBase::detset_tag);
   xmlXPathObjectPtr result
   = xmlXPathEvalExpression((const xmlChar*)(sdname.c_str()),context);

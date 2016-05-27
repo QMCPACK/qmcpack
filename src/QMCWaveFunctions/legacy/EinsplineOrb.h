@@ -39,7 +39,7 @@ public:
   PosType kVec;
   void evaluate (const PosType& u, T &psi) {}
   void evaluate (const PosType& u, T &psi, TinyVector<T,D> &grad, Tensor<T,D> &hess) {}
-  void read (hid_t h5file, const string& groupPath)
+  void read (hid_t h5file, const std::string& groupPath)
   {
     APP_ABORT("Using xlC compiler. Cannot use EinsplineOrb");
   }
@@ -67,7 +67,7 @@ public:
   // Reflection controls whether or not to reflect the orbital
   // across each axis.
   PosType Reflection;
-  vector<PosType> uCenters, Reflections;
+  std::vector<PosType> uCenters, Reflections;
   double Radius, Energy;
   bool Localized;
   BsplineClass_2d_d *Bspline;
@@ -94,7 +94,7 @@ public:
 //       eval_UBspline_2d_d_vgh (Spline, r[0], r[1], &psi,
 // 			      &(grad[0]), &(hess(0,0)));
   }
-  void read (hid_t h5file, string baseName)
+  void read (hid_t h5file, std::string baseName)
   {
   }
   EinsplineOrb() : Center(PosType()), Radius(0.0), Energy(0.0),
@@ -104,7 +104,7 @@ public:
 };
 
 template<>
-class EinsplineOrb<complex<double>,2> //: public QMCTraits
+class EinsplineOrb<std::complex<double>,2> //: public QMCTraits
 {
 public:
   CrystalLattice<double,OHMMS_DIM> Lattice;
@@ -114,35 +114,35 @@ public:
   // Reflection controls whether or not to reflect the orbital
   // across each axis.
   PosType Reflection;
-  vector<PosType> uCenters, Reflections;
+  std::vector<PosType> uCenters, Reflections;
   double Radius, Energy;
   bool Localized;
   BsplineClass_2d_z *Bspline;
   // UBspline_2d_z *Spline;
   PosType kVec;
 
-  inline void evaluate (const PosType& r, complex<double> &psi)
+  inline void evaluate (const PosType& r, std::complex<double> &psi)
   {
     psi = (*Bspline)(r);
 //       eval_UBspline_2d_z (Spline, r[0], r[1], &psi);
   }
-  inline void evaluate (const PosType& r, complex<double> &psi,
-                        TinyVector<complex<double>,2> &grad,
-                        complex<double> &lapl)
+  inline void evaluate (const PosType& r, std::complex<double> &psi,
+                        TinyVector<std::complex<double>,2> &grad,
+                        std::complex<double> &lapl)
   {
     Bspline->evaluate (r, psi, grad, lapl);
 //       eval_UBspline_2d_z_vgl (Spline, r[0], r[1],
 // 			      &psi, &(grad[0]), &lapl);
   }
-  inline void evaluate (const PosType& r, complex<double> &psi,
-                        TinyVector<complex<double>,2> &grad,
-                        Tensor<complex<double>,2> &hess)
+  inline void evaluate (const PosType& r, std::complex<double> &psi,
+                        TinyVector<std::complex<double>,2> &grad,
+                        Tensor<std::complex<double>,2> &hess)
   {
     Bspline->evaluate (r, psi, grad, hess);
 //       eval_UBspline_2d_z_vgh (Spline, r[0], r[1],
 // 			      &psi, &(grad[0]), &(hess(0,0)));
   }
-  void read (hid_t h5file, const string& baseName)
+  void read (hid_t h5file, const std::string& baseName)
   {
   }
 
@@ -168,7 +168,7 @@ public:
   // Reflection controls whether or not to reflect the orbital
   // across each axis.
   PosType Reflection;
-  vector<PosType> uCenters, Reflections;
+  std::vector<PosType> uCenters, Reflections;
   double Radius, Energy;
   bool Localized;
   BsplineClass_3d_d *Bspline;
@@ -248,7 +248,7 @@ public:
 // 				&psi, &(grad[0]), &(hess(0,0)));
   }
 
-  void read (hid_t h5file, const string& groupPath)
+  void read (hid_t h5file, const std::string& groupPath)
   {
     uMin   = PosType(0.0, 0.0, 0.0);
     uMax   = PosType(1.0, 1.0, 1.0);
@@ -256,25 +256,25 @@ public:
     // This controls the relative grid spacing at the edges versus
     // the center for nonuniform grids
     PosType clusterfactor(0.0, 0.0, 0.0);
-    vector<PosType> centers;
-    string centerName = groupPath + "center";
-    string centersName = groupPath + "centers";
-    string reflectName = groupPath + "reflections";
-    string vectorName = groupPath + "eigenvector";
-    string  valueName = groupPath + "eigenvalue";
-    string radiusName = groupPath + "radius";
-    string   uminName = groupPath + "umin";
-    string   umaxName = groupPath + "umax";
-    string xfactorName = groupPath + "xgrid/clusterfactor";
-    string yfactorName = groupPath + "ygrid/clusterfactor";
-    string zfactorName = groupPath + "zgrid/clusterfactor";
+    std::vector<PosType> centers;
+    std::string centerName = groupPath + "center";
+    std::string centersName = groupPath + "centers";
+    std::string reflectName = groupPath + "reflections";
+    std::string vectorName = groupPath + "eigenvector";
+    std::string  valueName = groupPath + "eigenvalue";
+    std::string radiusName = groupPath + "radius";
+    std::string   uminName = groupPath + "umin";
+    std::string   umaxName = groupPath + "umax";
+    std::string xfactorName = groupPath + "xgrid/clusterfactor";
+    std::string yfactorName = groupPath + "ygrid/clusterfactor";
+    std::string zfactorName = groupPath + "zgrid/clusterfactor";
     HDFAttribIO<PosType> h_Center(Center);
     HDFAttribIO<PosType> h_uMin(uMin);
     HDFAttribIO<PosType> h_uMax(uMax);
     HDFAttribIO<double>  h_Radius(Radius);
     HDFAttribIO<double>  h_Energy(Energy);
-    HDFAttribIO<vector<PosType> > h_Centers(centers);
-    HDFAttribIO<vector<PosType> > h_Reflections (Reflections);
+    HDFAttribIO<std::vector<PosType> > h_Centers(centers);
+    HDFAttribIO<std::vector<PosType> > h_Reflections (Reflections);
     HDFAttribIO<double>  h_xfactor (clusterfactor[0]);
     HDFAttribIO<double>  h_yfactor (clusterfactor[1]);
     HDFAttribIO<double>  h_zfactor (clusterfactor[2]);
@@ -305,9 +305,9 @@ public:
     uCenters.resize(centers.size());
     for (int i=0; i<centers.size(); i++)
       uCenters[i] = Lattice.toUnit (centers[i]);
-    Array<complex<double>,3> rawData;
+    Array<std::complex<double>,3> rawData;
     Array<double,3> realData;
-    HDFAttribIO<Array<complex<double>,3> > h_rawData(rawData);
+    HDFAttribIO<Array<std::complex<double>,3> > h_rawData(rawData);
     h_rawData.read(h5file, vectorName.c_str());
     int nx, ny, nz;
     nx = rawData.size(0);
@@ -390,8 +390,8 @@ public:
     //       double val;
     //       eval_UBspline_3d_d (Spline, ux, uy, uz, &val);
     //       if (std::fabs((val - realData(ix,iy,iz))) > 1.0e-12) {
-    //         cerr << "Error in spline interpolation at ix=" << ix
-    //	        << " iy=" << iy << " iz=" << iz << endl;
+    //         std::cerr << "Error in spline interpolation at ix=" << ix
+    //	        << " iy=" << iy << " iz=" << iz << std::endl;
     //       }
     //    }
   }
@@ -424,7 +424,7 @@ public:
 };
 
 template<>
-class EinsplineOrb<complex<double>,3> //: public QMCTraits
+class EinsplineOrb<std::complex<double>,3> //: public QMCTraits
 {
 public:
   CrystalLattice<double,OHMMS_DIM> Lattice;
@@ -433,14 +433,14 @@ public:
   // Reflection controls whether or not to reflect the orbital
   // across each axis.
   PosType Reflection;
-  vector<PosType> uCenters, Reflections;
+  std::vector<PosType> uCenters, Reflections;
   double Radius, Energy;
   bool Localized;
   BsplineClass_3d_z *Bspline;
   // UBspline_3d_z *Spline;
   PosType kVec;
 
-  inline void evaluate (const PosType& u, complex<double> &psi)
+  inline void evaluate (const PosType& u, std::complex<double> &psi)
   {
     if (Localized)
     {
@@ -464,15 +464,15 @@ public:
       }
       else
         //psi = 1.0e-10;
-        psi = complex<double>();
+        psi = std::complex<double>();
     }
     else
       psi = (*Bspline)(u);
 // 	eval_UBspline_3d_z (Spline, u[0], u[1], u[2], &psi);
   }
-  inline void evaluate (const PosType& u, complex<double> &psi,
-                        TinyVector<complex<double>,3> &grad,
-                        Tensor<complex<double>,3> &hess)
+  inline void evaluate (const PosType& u, std::complex<double> &psi,
+                        TinyVector<std::complex<double>,3> &grad,
+                        Tensor<std::complex<double>,3> &hess)
   {
     if (Localized)
     {
@@ -507,11 +507,11 @@ public:
       else
       {
         //psi = 1.0e-10;
-        psi       = complex<double>();
-        grad[0]   = grad[1]   = grad[2]   = complex<double>();
-        hess(0,0) = hess(0,1) = hess(0,2) = complex<double>();
-        hess(1,0) = hess(1,1) = hess(1,2) = complex<double>();
-        hess(2,0) = hess(2,1) = hess(2,2) = complex<double>();
+        psi       = std::complex<double>();
+        grad[0]   = grad[1]   = grad[2]   = std::complex<double>();
+        hess(0,0) = hess(0,1) = hess(0,2) = std::complex<double>();
+        hess(1,0) = hess(1,1) = hess(1,2) = std::complex<double>();
+        hess(2,0) = hess(2,1) = hess(2,2) = std::complex<double>();
       }
     }
     else
@@ -519,31 +519,31 @@ public:
 // 	eval_UBspline_3d_z_vgh (Spline, u[0], u[1], u[2],
 // 				&psi, &(grad[0]), &(hess(0,0)));
   }
-  void read (hid_t h5file, const string& groupPath)
+  void read (hid_t h5file, const std::string& groupPath)
   {
     uMin   = PosType(0.0, 0.0, 0.0);
     uMax   = PosType(1.0, 1.0, 1.0);
     Center = PosType(0.5, 0.5, 0.5);
-    vector<PosType> centers;
+    std::vector<PosType> centers;
     PosType clusterfactor (0.0, 0.0, 0.0);
-    string centerName  = groupPath + "center";
-    string centersName = groupPath + "centers";
-    string reflectName = groupPath + "reflections";
-    string vectorName  = groupPath + "eigenvector";
-    string  valueName  = groupPath + "eigenvalue";
-    string radiusName  = groupPath + "radius";
-    string   uminName  = groupPath + "umin";
-    string   umaxName  = groupPath + "umax";
-    string xfactorName = groupPath + "xgrid/clusterfactor";
-    string yfactorName = groupPath + "ygrid/clusterfactor";
-    string zfactorName = groupPath + "zgrid/clusterfactor";
+    std::string centerName  = groupPath + "center";
+    std::string centersName = groupPath + "centers";
+    std::string reflectName = groupPath + "reflections";
+    std::string vectorName  = groupPath + "eigenvector";
+    std::string  valueName  = groupPath + "eigenvalue";
+    std::string radiusName  = groupPath + "radius";
+    std::string   uminName  = groupPath + "umin";
+    std::string   umaxName  = groupPath + "umax";
+    std::string xfactorName = groupPath + "xgrid/clusterfactor";
+    std::string yfactorName = groupPath + "ygrid/clusterfactor";
+    std::string zfactorName = groupPath + "zgrid/clusterfactor";
     HDFAttribIO<PosType> h_Center(Center);
     HDFAttribIO<PosType> h_uMin(uMin);
     HDFAttribIO<PosType> h_uMax(uMax);
     HDFAttribIO<double>  h_Radius(Radius);
     HDFAttribIO<double>  h_Energy(Energy);
-    HDFAttribIO<vector<PosType> > h_Centers(centers);
-    HDFAttribIO<vector<PosType> > h_Reflections(Reflections);
+    HDFAttribIO<std::vector<PosType> > h_Centers(centers);
+    HDFAttribIO<std::vector<PosType> > h_Reflections(Reflections);
     HDFAttribIO<double>  h_xfactor (clusterfactor[0]);
     HDFAttribIO<double>  h_yfactor (clusterfactor[1]);
     HDFAttribIO<double>  h_zfactor (clusterfactor[2]);
@@ -571,8 +571,8 @@ public:
       Reflection = Reflections[0];
     else
       Reflection = PosType (1.0, 1.0, 1.0);
-    Array<complex<double>,3> rawData;
-    HDFAttribIO<Array<complex<double>,3> > h_rawData(rawData);
+    Array<std::complex<double>,3> rawData;
+    HDFAttribIO<Array<std::complex<double>,3> > h_rawData(rawData);
     h_rawData.read(h5file, vectorName.c_str());
     int nx, ny, nz;
     nx = rawData.size(0);
@@ -600,7 +600,7 @@ public:
     }
     else
     {
-      Array<complex<double>,3> splineData(nx-1,ny-1,nz-1);
+      Array<std::complex<double>,3> splineData(nx-1,ny-1,nz-1);
       for (int ix=0; ix<nx-1; ix++)
         for (int iy=0; iy<ny-1; iy++)
           for (int iz=0; iz<nz-1; iz++)

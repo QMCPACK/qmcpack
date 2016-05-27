@@ -20,7 +20,6 @@
 #include "Numerics/OneDimCubicSpline.h"
 #include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
 #include "QMCWaveFunctions/MolecularOrbitals/STO2GridBuilder.h"
-using namespace std;
 namespace qmcplusplus
 {
 
@@ -57,7 +56,7 @@ STO2GridBuilder::addRadialOrbital(xmlNodePtr cur,
   xmlNodePtr s = cur->xmlChildrenNode;
   while(s != NULL)
   {
-    string cname((const char*)(s->name));
+    std::string cname((const char*)(s->name));
     if(cname == "parameter" || cname =="Var")
     {
       putContent(zeta,s);

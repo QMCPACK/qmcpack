@@ -58,8 +58,8 @@ bool DMCcuda::checkBounds (const PosType &newpos)
   return W.Lattice.isValid(red);
 }
 
-void DMCcuda::checkBounds (vector<PosType> &newpos,
-                           vector<bool> &valid)
+void DMCcuda::checkBounds (std::vector<PosType> &newpos,
+                           std::vector<bool> &valid)
 {
   for (int iw=0; iw<newpos.size(); iw++)
   {
@@ -84,19 +84,19 @@ bool DMCcuda::run()
   IndexType nRejectTot = 0;
   int nat = W.getTotalNum();
   int nw  = W.getActiveWalkers();
-  vector<RealType>  LocalEnergy(nw), LocalEnergyOld(nw),
+  std::vector<RealType>  LocalEnergy(nw), LocalEnergyOld(nw),
          oldScale(nw), newScale(nw);
-  vector<PosType>   delpos(nw);
-  vector<PosType>   dr(nw);
-  vector<PosType>   newpos(nw);
-  vector<ValueType> ratios(nw), rplus(nw), rminus(nw), R2prop(nw), R2acc(nw);
-  vector<PosType>  oldG(nw), newG(nw);
-  vector<ValueType> oldL(nw), newL(nw);
-  vector<Walker_t*> accepted(nw);
+  std::vector<PosType>   delpos(nw);
+  std::vector<PosType>   dr(nw);
+  std::vector<PosType>   newpos(nw);
+  std::vector<ValueType> ratios(nw), rplus(nw), rminus(nw), R2prop(nw), R2acc(nw);
+  std::vector<PosType>  oldG(nw), newG(nw);
+  std::vector<ValueType> oldL(nw), newL(nw);
+  std::vector<Walker_t*> accepted(nw);
   Matrix<ValueType> lapl(nw, nat);
   Matrix<GradType>  grad(nw, nat);
-  vector<ValueType> V2(nw), V2bar(nw);
-  vector<vector<NonLocalData> > Txy(nw);
+  std::vector<ValueType> V2(nw), V2bar(nw);
+  std::vector<std::vector<NonLocalData> > Txy(nw);
   for (int iw=0; iw<nw; iw++)
     W[iw]->Weight = 1.0;
   do
@@ -162,7 +162,7 @@ bool DMCcuda::run()
         W.proposeMove_GPU(newpos, iat);
         Psi.calcRatio(W,iat,ratios,newG, newL);
         accepted.clear();
-        vector<bool> acc(nw, true);
+        std::vector<bool> acc(nw, true);
         if (W.UseBoundBox)
           checkBounds (newpos, acc);
         std::vector<RealType> logGf_v(nw);
@@ -223,14 +223,14 @@ bool DMCcuda::run()
       {
         // Now, attempt nonlocal move
         accepted.clear();
-        vector<int> iatList;
-        vector<PosType> accPos;
+        std::vector<int> iatList;
+        std::vector<PosType> accPos;
         for (int iw=0; iw<nw; iw++)
         {
           /// HACK HACK HACK
 // 	    if (LocalEnergy[iw] < -2300.0) {
-// 	      cerr << "Walker " << iw << " has energy "
-// 		   << LocalEnergy[iw] << endl;;
+// 	      std::cerr << "Walker " << iw << " has energy "
+// 		   << LocalEnergy[iw] << std::endl;;
 // 	      double maxWeight = 0.0;
 // 	      int elMax = -1;
 // 	      PosType posMax;
@@ -240,13 +240,13 @@ bool DMCcuda::run()
 // 		  elMax = Txy[iw][j].PID;
 // 		  posMax = W[iw]->R[elMax] + Txy[iw][j].Delta;
 // 		}
-// 	      cerr << "Maximum weight is " << maxWeight << " for electron "
-// 		   << elMax << " at position " << posMax << endl;
+// 	      std::cerr << "Maximum weight is " << maxWeight << " for electron "
+// 		   << elMax << " at position " << posMax << std::endl;
 // 	      PosType unit = W.Lattice.toUnit(posMax);
 // 	      unit[0] -= round(unit[0]);
 // 	      unit[1] -= round(unit[1]);
 // 	      unit[2] -= round(unit[2]);
-// 	      cerr << "Reduced position = " << unit << endl;
+// 	      std::cerr << "Reduced position = " << unit << std::endl;
 // 	    }
           int ibar = NLop.selectMove(Random(), Txy[iw]);
           if (ibar)
@@ -295,7 +295,7 @@ bool DMCcuda::run()
         RealType tauRatio = R2acc[iw] / R2prop[iw];
         //allow large time steps during warmup
         //if (tauRatio < 0.5)
-        //  cerr << "  tauRatio = " << tauRatio << endl;
+        //  std::cerr << "  tauRatio = " << tauRatio << std::endl;
         RealType taueff = m_tauovermass * tauRatio;
         if (scaleweight)
           W[iw]->Weight *= branchEngine->branchWeightTau
@@ -339,18 +339,18 @@ bool DMCcuda::runWithNonlocal()
   IndexType nRejectTot = 0;
   int nat = W.getTotalNum();
   int nw  = W.getActiveWalkers();
-  vector<RealType>  LocalEnergy(nw), LocalEnergyOld(nw),
+  std::vector<RealType>  LocalEnergy(nw), LocalEnergyOld(nw),
          oldScale(nw), newScale(nw);
-  vector<PosType>   delpos(nw);
-  vector<PosType>   dr(nw);
-  vector<PosType>   newpos(nw);
-  vector<ValueType> ratios(nw), rplus(nw), rminus(nw), R2prop(nw), R2acc(nw);
-  vector<PosType>  oldG(nw), newG(nw);
-  vector<ValueType> oldL(nw), newL(nw);
-  vector<Walker_t*> accepted(nw);
+  std::vector<PosType>   delpos(nw);
+  std::vector<PosType>   dr(nw);
+  std::vector<PosType>   newpos(nw);
+  std::vector<ValueType> ratios(nw), rplus(nw), rminus(nw), R2prop(nw), R2acc(nw);
+  std::vector<PosType>  oldG(nw), newG(nw);
+  std::vector<ValueType> oldL(nw), newL(nw);
+  std::vector<Walker_t*> accepted(nw);
   Matrix<ValueType> lapl(nw, nat);
   Matrix<GradType>  grad(nw, nat);
-  vector<vector<NonLocalData> > Txy(nw);
+  std::vector<std::vector<NonLocalData> > Txy(nw);
   for (int iw=0; iw<nw; iw++)
     W[iw]->Weight = 1.0;
   do
@@ -407,7 +407,7 @@ bool DMCcuda::runWithNonlocal()
         W.proposeMove_GPU(newpos, iat);
         Psi.calcRatio(W,iat,ratios,newG, newL);
         accepted.clear();
-        vector<bool> acc(nw, false);
+        std::vector<bool> acc(nw, false);
         std::vector<RealType> logGf_v(nw);
         std::vector<RealType> rand_v(nw);
         for(int iw=0; iw<nw; ++iw)
@@ -444,7 +444,7 @@ bool DMCcuda::runWithNonlocal()
       }
       for (int iw=0; iw < nw; iw++)
         if (W[iw]->Age)
-          cerr << "Encountered stuck walker with iw=" << iw << endl;
+          std::cerr << "Encountered stuck walker with iw=" << iw << std::endl;
       //	Psi.recompute(W, false);
       Psi.gradLapl(W, grad, lapl);
       H.evaluate (W, LocalEnergy, Txy);
@@ -452,12 +452,12 @@ bool DMCcuda::runWithNonlocal()
         LocalEnergyOld = LocalEnergy;
       // Now, attempt nonlocal move
       accepted.clear();
-      vector<int> iatList;
-      vector<PosType> accPos;
+      std::vector<int> iatList;
+      std::vector<PosType> accPos;
       for (int iw=0; iw<nw; iw++)
       {
         int ibar = NLop.selectMove(Random(), Txy[iw]);
-        // cerr << "Txy[iw].size() = " << Txy[iw].size() << endl;
+        // std::cerr << "Txy[iw].size() = " << Txy[iw].size() << std::endl;
         if (ibar)
         {
           accepted.push_back(W[iw]);
@@ -521,11 +521,11 @@ void DMCcuda::resetUpdateEngine()
     int nw_multi=branchEngine->resetRun(qmcNode);
     if(nw_multi>1)
     {
-      app_log() << " Current population " << W.getActiveWalkers() << " " << W.getGlobalNumWalkers()  << endl;
-      app_log() << " The target population has changed. Multiply walkers by " << nw_multi << endl;
+      app_log() << " Current population " << W.getActiveWalkers() << " " << W.getGlobalNumWalkers()  << std::endl;
+      app_log() << " The target population has changed. Multiply walkers by " << nw_multi << std::endl;
       W.createWalkers((nw_multi-1)*W.getActiveWalkers());
       setWalkerOffsets();
-      app_log() << " New population " << W.getActiveWalkers() << " " << W.getGlobalNumWalkers()  << endl;
+      app_log() << " New population " << W.getActiveWalkers() << " " << W.getGlobalNumWalkers()  << std::endl;
     }
   }
 
@@ -533,8 +533,8 @@ void DMCcuda::resetUpdateEngine()
 
   //    Mover->updateWalkers(W.begin(),W.end());
   Mover->MaxAge=1;
-  app_log() << "  Steps per block = " << nSteps << endl;
-  app_log() << "  Number of blocks = " << nBlocks << endl;
+  app_log() << "  Steps per block = " << nSteps << std::endl;
+  app_log() << "  Number of blocks = " << nBlocks << std::endl;
 }
 
 
@@ -571,7 +571,7 @@ void DMCcuda::resetRun()
   app_log() << "Successfully allocated walkers.\n";
   W.copyWalkersToGPU();
   W.updateLists_GPU();
-  vector<RealType> logPsi(W.WalkerList.size(), 0.0);
+  std::vector<RealType> logPsi(W.WalkerList.size(), 0.0);
   //Psi.evaluateLog(W, logPsi);
   Psi.recompute(W, true);
   Estimators->start(nBlocks, true);

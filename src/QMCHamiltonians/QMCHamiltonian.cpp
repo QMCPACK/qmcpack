@@ -53,8 +53,8 @@ bool QMCHamiltonian::get(std::ostream& os) const
 {
   for(int i=0; i<H.size(); i++)
   {
-    os.setf(ios::left);
-    os << "  " << setw(16) << H[i]->myName;
+    os.setf(std::ios::left);
+    os << "  " << std::setw(16) << H[i]->myName;
     H[i]->get(os);
     os << "\n";
   }
@@ -67,7 +67,7 @@ bool QMCHamiltonian::get(std::ostream& os) const
  * @param physical if true, a physical operator
  */
 void
-QMCHamiltonian::addOperator(QMCHamiltonianBase* h, const string& aname, bool physical)
+QMCHamiltonian::addOperator(QMCHamiltonianBase* h, const std::string& aname, bool physical)
 {
   //change UpdateMode[PHYSICAL] of h so that cloning can be done correctly
   h->UpdateMode[QMCHamiltonianBase::PHYSICAL]=physical;
@@ -77,14 +77,14 @@ QMCHamiltonian::addOperator(QMCHamiltonianBase* h, const string& aname, bool phy
     {
       if(H[i]->myName == aname)
       {
-        app_warning() << "QMCHamiltonian::addOperator cannot " << aname << ". The name is already used" << endl;
+        app_warning() << "QMCHamiltonian::addOperator cannot " << aname << ". The name is already used" << std::endl;
         return;
       }
     }
-    app_log() << "  QMCHamiltonian::addOperator " << aname << " to H, physical Hamiltonian " << endl;
+    app_log() << "  QMCHamiltonian::addOperator " << aname << " to H, physical Hamiltonian " << std::endl;
     h->myName=aname;
     H.push_back(h);
-    string tname="Hamiltonian::"+aname;
+    std::string tname="Hamiltonian::"+aname;
     NewTimer *atimer=new NewTimer(tname);
     myTimers.push_back(atimer);
     TimerManager.addTimer(atimer);
@@ -96,11 +96,11 @@ QMCHamiltonian::addOperator(QMCHamiltonianBase* h, const string& aname, bool phy
     {
       if(auxH[i]->myName == aname)
       {
-        app_warning() << "QMCHamiltonian::addOperator cannot " << aname << ". The name is already used" << endl;
+        app_warning() << "QMCHamiltonian::addOperator cannot " << aname << ". The name is already used" << std::endl;
         return;
       }
     }
-    app_log() << "  QMCHamiltonian::addOperator " << aname << " to auxH " << endl;
+    app_log() << "  QMCHamiltonian::addOperator " << aname << " to auxH " << std::endl;
     h->myName=aname;
     auxH.push_back(h);
   }
@@ -109,16 +109,16 @@ QMCHamiltonian::addOperator(QMCHamiltonianBase* h, const string& aname, bool phy
 }
 
 
-void QMCHamiltonian::addOperatorType(const string& name, const string& type)
+void QMCHamiltonian::addOperatorType(const std::string& name, const std::string& type)
 {
-  app_log()<<"QMCHamiltonian::addOperatorType added type "<<type<<" named "<<name<<endl;
+  app_log()<<"QMCHamiltonian::addOperatorType added type "<<type<<" named "<<name<< std::endl;
   operator_types[name] = type;
 }
 
 
-const string& QMCHamiltonian::getOperatorType(const string& name)
+const std::string& QMCHamiltonian::getOperatorType(const std::string& name)
 {
-  map<string,string>::iterator type = operator_types.find(name);
+  std::map<std::string,std::string>::iterator type = operator_types.find(name);
   if(type==operator_types.end())
     APP_ABORT("QMCHamiltonian::getOperatorType\n  operator type not found for name "+name);
   return type->second;
@@ -129,7 +129,7 @@ const string& QMCHamiltonian::getOperatorType(const string& name)
 // *@return true, if the request hamiltonian exists and is removed.
 // */
 //bool
-//QMCHamiltonian::remove(const string& aname)
+//QMCHamiltonian::remove(const std::string& aname)
 //{
 //  return false;
 //}
@@ -161,8 +161,8 @@ const string& QMCHamiltonian::getOperatorType(const string& name)
 //  myIndex=plist.add(Observables.Names[0]);
 //  for(int i=1; i<Observables.size(); ++i) plist.add(Observables.Names[i]);
 //
-//  app_log() << "  QMCHamiltonian::add2WalkerProperty added " << Observables.size() << " data to PropertyList" << endl;
-//  app_log() << "    starting Index = " << myIndex << endl;
+//  app_log() << "  QMCHamiltonian::add2WalkerProperty added " << Observables.size() << " data to PropertyList" << std::endl;
+//  app_log() << "    starting Index = " << myIndex << std::endl;
 //}
 //
 int QMCHamiltonian::addObservables(ParticleSet& P)
@@ -184,7 +184,7 @@ int QMCHamiltonian::addObservables(ParticleSet& P)
   app_log() << "\n  QMCHamiltonian::add2WalkerProperty added"
             << "\n    " << Observables.size()  << " to P::PropertyList "
             << "\n    " <<  P.Collectables.size() << " to P::Collectables "
-            << "\n    starting Index of the observables in P::PropertyList = " << myIndex << endl;
+            << "\n    starting Index of the observables in P::PropertyList = " << myIndex << std::endl;
   return Observables.size();
 }
 
@@ -206,7 +206,7 @@ void QMCHamiltonian::resetObservables(int start, int ncollects)
 }
 
 void
-QMCHamiltonian::registerObservables(vector<observable_helper*>& h5desc
+QMCHamiltonian::registerObservables(std::vector<observable_helper*>& h5desc
                                     , hid_t gid)  const
 {
   for(int i=0; i<H.size(); ++i)
@@ -216,7 +216,7 @@ QMCHamiltonian::registerObservables(vector<observable_helper*>& h5desc
 }
 
 void
-QMCHamiltonian::registerCollectables(vector<observable_helper*>& h5desc
+QMCHamiltonian::registerCollectables(std::vector<observable_helper*>& h5desc
                                      , hid_t gid)  const
 {
   //The physical operators cannot add to collectables
@@ -231,12 +231,12 @@ void QMCHamiltonian::initialize_traces(TraceManager& tm,ParticleSet& P)
   static bool first_init = true;
   bool trace_log = first_init && tm.verbose && omp_get_thread_num()==0;
   if(trace_log)
-    app_log()<<"\n  Hamiltonian is initializing traces"<<endl;
+    app_log()<<"\n  Hamiltonian is initializing traces"<< std::endl;
 
-  //fill string vectors for combined trace quantities
-  vector<string> Eloc;
-  vector<string> Vloc;
-  vector<string> Vq,Vc,Vqq,Vqc,Vcc;
+  //fill std::string vectors for combined trace quantities
+  std::vector<std::string> Eloc;
+  std::vector<std::string> Vloc;
+  std::vector<std::string> Vq,Vc,Vqq,Vqc,Vcc;
   for(int i=0; i<H.size(); ++i)
     Eloc.push_back(H[i]->myName);
   for(int i=1; i<H.size(); ++i)
@@ -255,7 +255,7 @@ void QMCHamiltonian::initialize_traces(TraceManager& tm,ParticleSet& P)
     else if(h.is_classical_classical())
       Vcc.push_back(h.myName);
     else
-      if (omp_get_thread_num()==0) app_log()<<"  warning: potential named "<<h.myName<<" has not been classified according to its quantum domain (q,c,qq,qc,cc)\n    estimators depending on this classification may not function properly"<<endl;    
+      if (omp_get_thread_num()==0) app_log()<<"  warning: potential named "<<h.myName<<" has not been classified according to its quantum domain (q,c,qq,qc,cc)\n    estimators depending on this classification may not function properly"<< std::endl;    
   }
 
 
@@ -290,7 +290,7 @@ void QMCHamiltonian::initialize_traces(TraceManager& tm,ParticleSet& P)
 
 
   //collect trace requests
-  vector<TraceRequest*> requests;
+  std::vector<TraceRequest*> requests;
   //  Hamiltonian request (id, step, weight, positions)
   requests.push_back(&request);
   //  requests from Hamiltonian components
@@ -325,12 +325,12 @@ void QMCHamiltonian::initialize_traces(TraceManager& tm,ParticleSet& P)
     // Empty. Do not log if nothing will be done
 
     if(trace_log)
-      app_log()<<"    no traces streaming"<<endl;
+      app_log()<<"    no traces streaming"<< std::endl;
   }
   else
   {
     if(trace_log)
-      app_log()<<"    traces streaming"<<endl;
+      app_log()<<"    traces streaming"<< std::endl;
     //checkout trace quantities 
     //(requested sources checkout arrays to place samples in for streaming)
     //  checkout walker trace quantities
@@ -345,19 +345,19 @@ void QMCHamiltonian::initialize_traces(TraceManager& tm,ParticleSet& P)
       mult_sample   = tm.checkout_int<1>("multiplicity");
       weight_sample = tm.checkout_real<1>("weight");
     }
-    if(streaming_position)
+    if( streaming_position)
       position_sample = tm.checkout_real<2>("position",P,DIM);
     //  checkout observable trace quantities
     for(int i=0; i<H.size(); ++i)
     {
       if(trace_log)
-        app_log()<<"    QMCHamiltonianBase::checkout_trace_quantities  "<<H[i]->myName<<endl;
+        app_log()<<"    QMCHamiltonianBase::checkout_trace_quantities  "<<H[i]->myName<< std::endl;
       H[i]->checkout_trace_quantities(tm);
     }
     for(int i=0; i<auxH.size(); ++i)
     {
       if(trace_log)
-        app_log()<<"    QMCHamiltonianBase::checkout_trace_quantities  "<<auxH[i]->myName<<endl;
+        app_log()<<"    QMCHamiltonianBase::checkout_trace_quantities  "<<auxH[i]->myName<< std::endl;
       auxH[i]->checkout_trace_quantities(tm);
     }
     //setup combined traces that depend on H information
@@ -377,17 +377,17 @@ void QMCHamiltonian::initialize_traces(TraceManager& tm,ParticleSet& P)
     if(Vcc.size()>0 && request.streaming("Vcc"))
       tm.make_combined_trace("Vcc",Eloc);
 
-    //all trace samples have been created (streaming instances)
+    //all trace samples have been created ( streaming instances)
     //  mark the ones that will be writing also
     tm.screen_writes();
 
     //observables that depend on traces check them out
     if(trace_log)
-      app_log()<<"\n  Hamiltonian is fulfilling trace requests from observables"<<endl;
+      app_log()<<"\n  Hamiltonian is fulfilling trace requests from observables"<< std::endl;
     for(int i=0; i<auxH.size(); ++i)
     {
       if(trace_log)
-        app_log()<<"    QMCHamiltonianBase::get_required_traces  "<<auxH[i]->myName<<endl;
+        app_log()<<"    QMCHamiltonianBase::get_required_traces  "<<auxH[i]->myName<< std::endl;
       auxH[i]->get_required_traces(tm);
     }
     //report
@@ -413,7 +413,7 @@ void QMCHamiltonian::collect_walker_traces(Walker_t& walker,int step)
     (*mult_sample)(0)   = walker.Multiplicity;
     (*weight_sample)(0) = walker.Weight;
   }
-  if(streaming_position)
+  if( streaming_position)
     for(int i=0; i<walker.R.size(); ++i)
       for(int d=0; d<DIM; ++d)
         (*position_sample)(i,d) = walker.R[i][d];
@@ -432,7 +432,7 @@ void QMCHamiltonian::finalize_traces()
     delete mult_sample;
     delete weight_sample;
   }
-  if(streaming_position)
+  if( streaming_position)
     delete position_sample;
   if(request.streaming())
   {
@@ -476,8 +476,8 @@ QMCHamiltonian::evaluate(ParticleSet& P)
 QMCHamiltonian::RealType 
 QMCHamiltonian::evaluateValueAndDerivatives(ParticleSet& P,
     const opt_variables_type& optvars,
-    vector<RealType>& dlogpsi,
-    vector<RealType>& dhpsioverpsi,
+    std::vector<RealType>& dlogpsi,
+    std::vector<RealType>& dhpsioverpsi,
     bool compute_deriv)
 {
   //if(EnableVirtualMoves) P.initVirtualMoves();
@@ -555,7 +555,7 @@ void QMCHamiltonian::rejectedMove(ParticleSet& P, Walker_t& ThisWalker )
 }
 
 QMCHamiltonian::Return_t
-QMCHamiltonian::evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+QMCHamiltonian::evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
 {
   //if(EnableVirtualMoves) P.initVirtualMoves();
   LocalEnergy = 0.0;
@@ -591,7 +591,7 @@ QMCHamiltonian::Return_t QMCHamiltonian::getEnsembleAverage()
  *
  * If not found, return 0
  */
-QMCHamiltonianBase* QMCHamiltonian::getHamiltonian(const string& aname)
+QMCHamiltonianBase* QMCHamiltonian::getHamiltonian(const std::string& aname)
 {
   for(int i=0; i<H.size(); ++i)
     if(H[i]->myName == aname)
@@ -724,9 +724,9 @@ void QMCHamiltonian::rejectMove(int active)
 #ifdef QMC_CUDA
 void
 QMCHamiltonian::evaluate(MCWalkerConfiguration &W,
-                         vector<RealType> &energyVector)
+                         std::vector<RealType> &energyVector)
 {
-  vector<Walker_t*> &walkers = W.WalkerList;
+  std::vector<Walker_t*> &walkers = W.WalkerList;
   int nw = walkers.size();
   if (LocalEnergyVector.size() != nw)
   {
@@ -766,10 +766,10 @@ QMCHamiltonian::evaluate(MCWalkerConfiguration &W,
 
 void
 QMCHamiltonian::evaluate(MCWalkerConfiguration &W,
-                         vector<RealType> &energyVector,
-                         vector<vector<NonLocalData> > &Txy)
+                         std::vector<RealType> &energyVector,
+                         std::vector<std::vector<NonLocalData> > &Txy)
 {
-  vector<Walker_t*> &walkers = W.WalkerList;
+  std::vector<Walker_t*> &walkers = W.WalkerList;
   int nw = walkers.size();
   if (LocalEnergyVector.size() != nw)
   {
@@ -807,14 +807,14 @@ QMCHamiltonian::evaluate(MCWalkerConfiguration &W,
 #else
 void
 QMCHamiltonian::evaluate(MCWalkerConfiguration &W,
-                         vector<RealType> &energyVector)
+                         std::vector<RealType> &energyVector)
 {
 }
 
 void
 QMCHamiltonian::evaluate(MCWalkerConfiguration &W,
-                         vector<RealType> &energyVector,
-                         vector<vector<NonLocalData> > &Txy)
+                         std::vector<RealType> &energyVector,
+                         std::vector<std::vector<NonLocalData> > &Txy)
 {
 }
 #endif

@@ -44,8 +44,8 @@ public:
   int ChargeAttribIndx;
   int MemberAttribIndx;
   int NParticles;
-  vector<RealType> Zat,Zspec;
-  vector<int> NofSpecies;
+  std::vector<RealType> Zat,Zspec;
+  std::vector<int> NofSpecies;
 
   VHXC(ParticleSet& ref);
 
@@ -58,7 +58,7 @@ public:
 
   Return_t evaluate(ParticleSet& P);
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }

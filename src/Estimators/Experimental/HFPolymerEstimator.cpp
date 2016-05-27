@@ -41,7 +41,7 @@ HFPolymerEstimator::HFPolymerEstimator(QMCHamiltonian& h, int hcopy, MultiChain*
 //     Hpointer = &h;
   SizeOfHamiltonians = h.sizeOfObservables();
   FirstHamiltonian = h.startIndex();
-//     cout<<"size of Hamiltonian "<<SizeOfHamiltonians<<" First one "<<FirstHamiltonian<<endl;
+//     std::cout <<"size of Hamiltonian "<<SizeOfHamiltonians<<" First one "<<FirstHamiltonian<< std::endl;
   elocal_name.push_back("LocalEnergy");
   elocal_name.push_back("HeadEnergy");
   elocal_name.push_back("TailEnergy");
@@ -63,20 +63,20 @@ void HFPolymerEstimator::add_HF_Observables(int nchains, int strd)
     nobs=1+(nchains-1)/stride;
   else
     nobs=nchains/stride;
-  app_log()<<"Writing observables each "<<stride<<" steps"<<endl;
-  app_log()<<"Writing "<<nobs<<" observables"<<endl;
+  app_log()<<"Writing observables each "<<stride<<" steps"<< std::endl;
+  app_log()<<"Writing "<<nobs<<" observables"<< std::endl;
   int nadded(elocal_name.size());
   for(int j=0; j < nobs; j++)
     for(int i=1; i < SizeOfHamiltonians; i++)
     {
-      ostringstream ss;
+      std::ostringstream ss;
       ss << "BR_"<<H.getObservableName(i)<<"_"<<stride*j;
       elocal_name.push_back(ss.str());
     }
   for(int j=0; j < nobs; j++)
     for(int i=1; i < SizeOfHamiltonians; i++)
     {
-      ostringstream ss;
+      std::ostringstream ss;
       ss << "ED_"<<H.getObservableName(i)<<"_"<<stride*j;
       elocal_name.push_back(ss.str());
       ss.str("");
@@ -206,7 +206,7 @@ void HFPolymerEstimator::accumulate(const MCWalkerConfiguration& W
 // //         tmpF+= 0.5*(*Bit)->deltaRSquared[2];
 // //         tmpE+=(*Bit)->getPropertyBase(i)[LOCALENERGY];
 //         tmpV+=(*Bit)->getPropertyBase(i)[LOCALPOTENTIAL];
-//         Bage=min((*Bit)->stepmade,Bage);
+//         Bage= std::min((*Bit)->stepmade,Bage);
 //       };
 //
 // //       tmpF-=0.25*Reptile->back()->deltaRSquared[2];
@@ -316,7 +316,7 @@ void HFPolymerEstimator::accumulate(const MCWalkerConfiguration& W
   }
 }
 
-void HFPolymerEstimator::registerObservables(vector<observable_helper*>& h5dec, hid_t gid)
+void HFPolymerEstimator::registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid)
 {
   //IMPLEMENT for hdf5
 }

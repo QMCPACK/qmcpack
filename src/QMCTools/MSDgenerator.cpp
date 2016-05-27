@@ -50,11 +50,11 @@ int main(int argc, char* argv[])
   std::vector<std::string> &CIalpha=parser->CIalpha;
   std::vector<std::string> &CIbeta=parser->CIbeta;
   std::vector<std::string> &CSFocc=parser->CSFocc;
-  std::vector<vector<std::string> > &CSFalpha=parser->CSFalpha;
-  std::vector<vector<std::string> > &CSFbeta=parser->CSFbeta;
-  std::vector<vector<double> > &CSFexpansion=parser->CSFexpansion;
+  std::vector<std::vector<std::string> > &CSFalpha=parser->CSFalpha;
+  std::vector<std::vector<std::string> > &CSFbeta=parser->CSFbeta;
+  std::vector<std::vector<double> > &CSFexpansion=parser->CSFexpansion;
   std::vector<double> &CIcoeff=parser->CIcoeff;
-  std::vector<pair<int,double> > &coeff2csf=parser->coeff2csf;
+  std::vector<std::pair<int,double> > &coeff2csf=parser->coeff2csf;
   if(useCSF)
   {
 // dummy for now
@@ -69,7 +69,7 @@ int main(int argc, char* argv[])
     for(int i=neb; i<nea; i++)
       occ0[i]='1';
     std::vector<double> vec;
-    pair<int,double> dum(1,0.95);
+    std::pair<int,double> dum(1,0.95);
     // HF
     coeff2csf.push_back(dum);
     CSFocc.push_back(occ0);

@@ -233,7 +233,7 @@ struct excitation_node
    *
    * inverse matrix is updated by inverseUpdate(...,true)
    */
-  inline void getRatioByColSubstitution(vector<T>& u_c
+  inline void getRatioByColSubstitution(std::vector<T>& u_c
                                         , std::vector<excitation_node>& ci
                                         , std::vector<T>& ratios
                                         , int col_id
@@ -241,7 +241,7 @@ struct excitation_node
   {
     const int m=inverse.rows();
     ratios[0]=ratio=BLAS::dot(m,inverse[col_id],u_c.data());
-    vector<T> temp(u_c);
+    std::vector<T> temp(u_c);
     for(int i=0; i<children.size(); ++i)
     {
       ci[ children[i] ].getRatioByColSubstitution(temp,ci,ratios,m,col_id);
@@ -251,14 +251,14 @@ struct excitation_node
     }
   }
 
-  void getRatioByColSubstitution(vector<T>& u_c , std::vector<excitation_node>& ci
+  void getRatioByColSubstitution(std::vector<T>& u_c , std::vector<excitation_node>& ci
                                  , std::vector<T>& ratios , int m, int col_id)
   {
     int v=m-1-from;
     int c=m+to;
     u_c[v]=u_c[c];
     ratios[my_id]=ratio=BLAS::dot(m,inverse[col_id],u_c.data());
-    vector<T> temp(u_c);
+    std::vector<T> temp(u_c);
     for(int i=0; i<children.size(); ++i)
     {
       ci[ children[i] ].getRatioByColSubstitution(temp,ci,ratios,m,col_id);
@@ -274,7 +274,7 @@ struct excitation_node
    *
    * inverse matrix is updated by inverseUpdateByColumn
    */
-  inline void getRatioByRowSubstitution(vector<T>& u_c
+  inline void getRatioByRowSubstitution(std::vector<T>& u_c
                                         , std::vector<excitation_node>& ci
                                         , std::vector<T>& ratios
                                         , int row_id
@@ -282,7 +282,7 @@ struct excitation_node
   {
     const int m=inverse.rows();
     ratios[0]=ratio=BLAS::dot(m,inverse.data()+row_id,m,u_c.data(),1);
-    vector<T> temp(u_c);
+    std::vector<T> temp(u_c);
     for(int i=0; i<children.size(); ++i)
     {
       ci[ children[i] ].getRatioByRowSubstitution(temp,ci,ratios,m,row_id);
@@ -292,14 +292,14 @@ struct excitation_node
     }
   }
 
-  void getRatioByRowSubstitution(vector<T>& u_c , std::vector<excitation_node>& ci
+  void getRatioByRowSubstitution(std::vector<T>& u_c , std::vector<excitation_node>& ci
                                  , std::vector<T>& ratios , int m, int row_id)
   {
     const int v=m-1-from;
     const int c=m+to;
     u_c[v]=u_c[c];
     ratios[my_id]=ratio=BLAS::dot(m,inverse.data()+row_id,m,u_c.data(),1);
-    vector<T> temp(u_c);
+    std::vector<T> temp(u_c);
     for(int i=0; i<children.size(); ++i)
     {
       ci[ children[i] ].getRatioByRowSubstitution(temp,ci,ratios,m,row_id);
@@ -313,7 +313,7 @@ struct excitation_node
 
 
   template<unsigned CMAX>
-  inline void write_node(ostream& os, int level, int& count, std::vector<excitation_node>& ci)
+  inline void write_node(std::ostream& os, int level, int& count, std::vector<excitation_node>& ci)
   {
     my_id=count;
     //if(children.size())

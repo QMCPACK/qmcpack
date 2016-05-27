@@ -38,13 +38,13 @@ private:
   int Lmax;
 
   /// mapping function for Rnl[ RnlID[name] ]
-  map<string,int> RnlID;
+  std::map<std::string,int> RnlID;
 
   ///temporary storage of radial functions
-  vector<RadialOrbital_t*> Rnl;
+  std::vector<RadialOrbital_t*> Rnl;
 
   ///single-particle wave functions
-  map<string, SPO_t*>   OrbSet;
+  std::map<std::string, SPO_t*>   OrbSet;
 
   bool getBasis(xmlNodePtr cur);
   HFAtomicSTOSet* getOrbital(xmlNodePtr cur);

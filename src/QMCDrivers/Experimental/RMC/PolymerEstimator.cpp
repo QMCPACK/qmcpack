@@ -45,18 +45,18 @@ void PolymerEstimator::clean()
   }
 }
 
-void PolymerEstimator::resetReportSettings(const string& aname)
+void PolymerEstimator::resetReportSettings(const std::string& aname)
 {
   clean();
   std::string filename(aname);
   filename.append(".pe.dat");
-  fout = new ofstream(filename.c_str());
+  fout = new std::ofstream(filename.c_str());
   //filename=aname+".Eloc.bin";
   filename="Eloc.bin";
-  OutLocEn=new ofstream(filename.c_str(),ios::binary);
+  OutLocEn=new std::ofstream(filename.c_str(),std::ios::binary);
   //filename=aname+".Epot.bin";
   filename="Epot.bin";
-  OutPotEn=new ofstream(filename.c_str(),ios::binary);
+  OutPotEn=new std::ofstream(filename.c_str(),std::ios::binary);
   int uno=1;
   int isize=sizeof(int);
   int dsize=sizeof(double);
@@ -81,9 +81,9 @@ void PolymerEstimator::report(int iter)
   for(int i=0; i<PEavg.size(); i++)
   {
     double eavg = PEavg[i]*wgtinv;
-    (*fout)  <<  setw(15) << eavg;
+    (*fout)  <<  std::setw(15) << eavg;
   }
-  (*fout) << endl;
+  (*fout) << std::endl;
   //double oneoversteps=1.0/static_cast<double>(Counter);
   for(int i=0; i<nPsi; i++)
   {

@@ -41,7 +41,7 @@ struct RPAJastrowFunctor: public OptimizableFunctorBase<T>
   ///coefficients
   real_type A, B, AB, ABB;
   ///id of A for optimization
-  string ID_A;
+  std::string ID_A;
   /** constructor
    * @param a A coefficient
    * @param samespin boolean to indicate if this function is for parallel spins
@@ -137,11 +137,11 @@ struct RPAJastrowFunctor: public OptimizableFunctorBase<T>
     while(tcur != NULL)
     {
       //@todo Var -> <param(eter) role="opt"/>
-      string cname((const char*)(tcur->name));
+      std::string cname((const char*)(tcur->name));
       if(cname == "parameter" || cname == "Var")
       {
-        string aname((const char*)(xmlGetProp(tcur,(const xmlChar *)"name")));
-        string idname((const char*)(xmlGetProp(tcur,(const xmlChar *)"id")));
+        std::string aname((const char*)(xmlGetProp(tcur,(const xmlChar *)"name")));
+        std::string idname((const char*)(xmlGetProp(tcur,(const xmlChar *)"id")));
         if(aname == "A")
         {
           ID_A = idname;

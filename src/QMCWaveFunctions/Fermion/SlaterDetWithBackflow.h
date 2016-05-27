@@ -217,12 +217,12 @@ public:
     return Dets[i]->getPhi();
   }
 
-  void get_ratios(ParticleSet& P, vector<ValueType>& ratios);
+  void get_ratios(ParticleSet& P, std::vector<ValueType>& ratios);
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           vector<RealType>& dlogpsi,
-                           vector<RealType>& dhpsioverpsi);
+                           std::vector<RealType>& dlogpsi,
+                           std::vector<RealType>& dhpsioverpsi);
 
   void testDerivGL(ParticleSet& P);
 

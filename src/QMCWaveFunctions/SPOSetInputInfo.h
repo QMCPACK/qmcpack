@@ -18,14 +18,14 @@ namespace qmcplusplus
   struct SPOSetInputInfo
   {
     typedef QMCTraits::RealType RealType;
-    typedef vector<int> indices_t;
-    typedef vector<RealType> energies_t;
+    typedef std::vector<int> indices_t;
+    typedef std::vector<RealType> energies_t;
 
     int group;
     int size;
     int index_min;
     int index_max;
-    string occ;
+    std::string occ;
     indices_t indices;
     RealType ecut;
     RealType energy_min;
@@ -52,7 +52,7 @@ namespace qmcplusplus
     RealType highest_energy;
 
     bool all_indices_computed;
-    vector<bool> occupations;
+    std::vector<bool> occupations;
     indices_t    all_indices;
 
     SPOSetInputInfo(xmlNodePtr cur) 
@@ -71,7 +71,7 @@ namespace qmcplusplus
 
     void put(xmlNodePtr cur);
 
-    void report(const string& pad="");
+    void report(const std::string& pad="");
 
     inline int min_index()
     {
@@ -93,9 +93,9 @@ namespace qmcplusplus
       return highest_energy;
     }
 
-    indices_t& get_indices(const vector<SPOSetInfo*>& states_vec);
+    indices_t& get_indices(const std::vector<SPOSetInfo*>& states_vec);
 
-    inline indices_t& get_indices(xmlNodePtr cur,const vector<SPOSetInfo*>& states_vec)
+    inline indices_t& get_indices(xmlNodePtr cur,const std::vector<SPOSetInfo*>& states_vec)
     {
       put(cur);
       return get_indices(states_vec);
@@ -114,7 +114,7 @@ namespace qmcplusplus
     void occupy_energy_range(const SPOSetInfo& states);
     void occupy_energies(const SPOSetInfo& states);
 
-    void occupy(const string& loc,const indices_t& ind);
+    void occupy(const std::string& loc,const indices_t& ind);
 
   };
 

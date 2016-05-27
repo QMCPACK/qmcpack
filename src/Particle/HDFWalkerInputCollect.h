@@ -34,7 +34,7 @@ class HDFWalkerInputCollect
   bool CollectMode;
   bool RewindMode;
 
-  vector<hsize_t> OffSet;
+  std::vector<hsize_t> OffSet;
 
   /** distribute nw among the processors */
   void distribute(hsize_t nw);
@@ -48,7 +48,7 @@ public:
    * @param arrot root name
    * @return true if the file can be open
    */
-  bool open(const string& aroot);
+  bool open(const std::string& aroot);
   /** read walkers
    * @param W walker set to which new walkers will be added
    * @param rollback number of blocks to read

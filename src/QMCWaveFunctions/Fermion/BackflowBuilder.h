@@ -44,7 +44,7 @@ class BackflowBuilder: public OrbitalBuilderBase
 
   typedef LRHandlerBase HandlerType;
   typedef LinearGrid<RealType> GridType;
-  typedef map<string,ParticleSet*>   PtclPoolType;
+  typedef std::map<std::string,ParticleSet*>   PtclPoolType;
 
 public:
 
@@ -84,9 +84,9 @@ private:
 
   void makeLongRange_oneBody();
 
-  void makeShortRange_twoBody(xmlNodePtr cur, Backflow_ee<BsplineFunctor<double> > *tbf, vector<int>& offsets);
+  void makeShortRange_twoBody(xmlNodePtr cur, Backflow_ee<BsplineFunctor<double> > *tbf, std::vector<int>& offsets);
 
-  void makeLongRange_twoBody(xmlNodePtr cur, Backflow_ee_kSpace *tbf, vector<int>& offsets);
+  void makeLongRange_twoBody(xmlNodePtr cur, Backflow_ee_kSpace *tbf, std::vector<int>& offsets);
 
 
 };

@@ -130,43 +130,43 @@ public:
     const double aBeff = epsbym * aB;
     const double u0 = 1.0/aBeff;
     /// read in the units
-    string cname ((const char*)(cur->name));
+    std::string cname ((const char*)(cur->name));
     if( cname == "Grid3D")
     {
-      string cunit = (char*)xmlGetProp(cur,(xmlChar*)"unit");
+      std::string cunit = (char*)xmlGetProp(cur,(xmlChar*)"unit");
       if(cunit == "nm")
       {
         units = u0 * 1.0e-9;
-        cout << "The input data are expressed in nano-meters. " << endl;
-        cout << "Using a.u. :: 1nm = " << units << " a_B*, and 1 a_B* =  "
-             << aBeff << " m" << endl;
+        std::cout << "The input data are expressed in nano-meters. " << std::endl;
+        std::cout << "Using a.u. :: 1nm = " << units << " a_B*, and 1 a_B* =  "
+             << aBeff << " m" << std::endl;
       }
       else
         if(cunit == "A")
         {
           units = u0 * 1.0e-10;
-          cout << "The input data are expressed in Angstroms. " << endl;
-          cout << "Using a.u. :: 1A = " << units << " a_B* " << endl;
+          std::cout << "The input data are expressed in Angstroms. " << std::endl;
+          std::cout << "Using a.u. :: 1A = " << units << " a_B* " << std::endl;
         }
         else
           if(cunit == "au")
           {
             units = u0 * aB;
-            cout << "The input data are expressed in atomic units. " << endl;
-            cout << "Using a.u. :: 1 a_B = " << units << " a_B* "  << endl;
+            std::cout << "The input data are expressed in atomic units. " << std::endl;
+            std::cout << "Using a.u. :: 1 a_B = " << units << " a_B* "  << std::endl;
           }
           else
           {
             units = 1.0;
-            cout << "The input data are expressed in effective au. " << endl;
-            cout << "Using a.u. :: 1nm = 1 a_B = 5.291772083(19)e-11m" << endl;
+            std::cout << "The input data are expressed in effective au. " << std::endl;
+            std::cout << "Using a.u. :: 1nm = 1 a_B = 5.291772083(19)e-11m" << std::endl;
           }
-      vector<int> n_rho;
-      vector<double> d_h;
+      std::vector<int> n_rho;
+      std::vector<double> d_h;
       xmlNodePtr node1 = cur->xmlChildrenNode;     /// node1->name = Grid1D
       while( node1 != NULL )
       {
-        string name1 ((const char*)(node1->name));
+        std::string name1 ((const char*)(node1->name));
         if( name1 == "Grid1D" )
         {
           /// axis number
@@ -185,7 +185,7 @@ public:
           xmlNodePtr node2 = node1->xmlChildrenNode;
           while( node2 != NULL )
           {
-            string name2 ((const char*)(node2->name));
+            std::string name2 ((const char*)(node2->name));
             if( name2 == "section" )
             {
               n_rho[isec]=atoi((char*)xmlGetProp(node2,(xmlChar*)"nx"));
@@ -202,7 +202,7 @@ public:
     }
     else
     {
-      cout << "Grid3D not properly supplied. Exiting ... " << endl;
+      std::cout << "Grid3D not properly supplied. Exiting ... " << std::endl;
       exit(-1);
     }
     set_size();     /// set all dimension sizes

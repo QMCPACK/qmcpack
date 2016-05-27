@@ -21,9 +21,8 @@
 
 #include "Utilities/SimpleParser.h"
 #include <algorithm>
-using namespace std;
 
-char* readLine(char *s, int max, istream &fp)
+char* readLine(char *s, int max, std::istream &fp)
 {
   char ch;
   int i = 0;
@@ -61,7 +60,7 @@ char* readLine(char *s, int max, istream &fp)
 
 
 // NOTE that it only adds strings
-unsigned parsewords(const char *inbuf, vector<string>& slist)
+unsigned parsewords(const char *inbuf, std::vector<std::string>& slist)
 {
   const char* token = "=, \t\n\"";
   char *tmpstr = new char[strlen(inbuf)+1];
@@ -72,14 +71,14 @@ unsigned parsewords(const char *inbuf, vector<string>& slist)
   while(tokenp && tokenp[0] != '#')
   {
     num++;
-    slist.push_back(string(tokenp));
+    slist.push_back( std::string(tokenp));
     tokenp = strtok(0,token);
   }
   delete [] tmpstr;
   return num;
 }
 
-unsigned parsewords(const char *inbuf, list<string>& slist)
+unsigned parsewords(const char *inbuf, std::list<std::string>& slist)
 {
   const char* token = "=, \t\n";
   char *tmpstr = new char[strlen(inbuf)+1];
@@ -90,14 +89,14 @@ unsigned parsewords(const char *inbuf, list<string>& slist)
   while(tokenp && tokenp[0] != '#')
   {
     num++;
-    slist.push_back(string(tokenp));
+    slist.push_back( std::string(tokenp));
     tokenp = strtok(0,token);
   }
   delete [] tmpstr;
   return num;
 }
 
-int getwords(vector<string>& slist, istream &fp, string& aline)
+int getwords(std::vector<std::string>& slist, std::istream &fp, std::string& aline)
 {
   const int max = 1024;
   char s[max];
@@ -112,7 +111,7 @@ int getwords(vector<string>& slist, istream &fp, string& aline)
 }
 
 
-int getwords(vector<string>& slist, istream &fp)
+int getwords(std::vector<std::string>& slist, std::istream &fp)
 {
   const int max = 1024;
   char s[max];
@@ -124,9 +123,9 @@ int getwords(vector<string>& slist, istream &fp)
 
 
 
-void readXmol(istream& fxmol,double* data,int numvar)
+void readXmol( std::istream& fxmol,double* data,int numvar)
 {
-  vector<string> slist;
+  std::vector<std::string> slist;
   int argc = getwords(slist,fxmol);
   unsigned natom = atoi(slist.front().c_str());
   argc =  getwords(slist, fxmol);
@@ -143,18 +142,18 @@ void readXmol(istream& fxmol,double* data,int numvar)
 
 
 /* \fn
-int getwords(vector<string>& slist,istream& fpos, const char* field, const char* terminate)
+int getwords(std::vector<std::string>& slist,std::istream& fpos, const char* field, const char* terminate)
 * \param slist, input strings between <field> </field>
-* \param fpos   istream
+* \param fpos   std::istream
 * \param field  <filed> data </field>
-* \param terminate string to stop searching
+* \param terminate std::string to stop searching
 */
 
 int
-getwords(vector<string>& slist,istream& fpos, const char* field, const char* terminate)
+getwords(std::vector<std::string>& slist,std::istream& fpos, const char* field, const char* terminate)
 {
   slist.erase(slist.begin(), slist.end());
-  vector<string> vlist;
+  std::vector<std::string> vlist;
   //char start_key[128];
   char end_key[128];
   //sprintf(start_key,"<%s>",field);
@@ -192,14 +191,14 @@ getwords(vector<string>& slist,istream& fpos, const char* field, const char* ter
 }
 
 /////////////////////////////////////////////////////////////
-// insert parsed strings of istream until terminate is encountered
+// insert parsed strings of std::istream until terminate is encountered
 /////////////////////////////////////////////////////////////
 int
-getwords(vector<string>& slist,istream& fpos, const char* terminate)
+getwords(std::vector<std::string>& slist,std::istream& fpos, const char* terminate)
 {
-  vector<string> vlist;
+  std::vector<std::string> vlist;
   // first check if the input list already contains "terminate"
-  vector<string>::iterator it = find(slist.begin(), slist.end(), terminate);
+  std::vector<std::string>::iterator it = find(slist.begin(), slist.end(), terminate);
   if(it != slist.end())
     return slist.size();
   //slist.erase(slist.begin(), slist.end()); // remove input number
@@ -221,7 +220,7 @@ getwords(vector<string>& slist,istream& fpos, const char* terminate)
 ////////////////////////////////////////////////////////
 // simple parser to get around XML parser problem
 ////////////////////////////////////////////////////////
-unsigned parseXwords(char *inbuf, vector<string>& slist)
+unsigned parseXwords(char *inbuf, std::vector<std::string>& slist)
 {
   const char* token = "=, <>\"\t\n";
   char *tmpstr = new char[strlen(inbuf)+1];
@@ -232,14 +231,14 @@ unsigned parseXwords(char *inbuf, vector<string>& slist)
   while(tokenp && tokenp[0] != '#')
   {
     num++;
-    slist.push_back(string(tokenp));
+    slist.push_back( std::string(tokenp));
     tokenp = strtok(0,token);
   }
   delete [] tmpstr;
   return num;
 }
 
-int getXwords(vector<string>& slist, istream &fp)
+int getXwords(std::vector<std::string>& slist, std::istream &fp)
 {
   const int max = 1024;
   char s[max];
@@ -251,14 +250,14 @@ int getXwords(vector<string>& slist, istream &fp)
 
 
 /////////////////////////////////////////////////////////////
-// insert parsed strings of istream until terminate is encountered
+// insert parsed strings of std::istream until terminate is encountered
 /////////////////////////////////////////////////////////////
 int
-getXwords(vector<string>& slist,istream& fpos, const char* terminate)
+getXwords(std::vector<std::string>& slist,std::istream& fpos, const char* terminate)
 {
-  vector<string> vlist;
+  std::vector<std::string> vlist;
   // first check if the input list already contains "terminate"
-  vector<string>::iterator it = find(slist.begin(), slist.end(), terminate);
+  std::vector<std::string>::iterator it = find(slist.begin(), slist.end(), terminate);
   if(it != slist.end())
     return slist.size();
   //slist.erase(slist.begin(), slist.end()); // remove input number

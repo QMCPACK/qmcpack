@@ -83,7 +83,7 @@ public:
   void checkInVariables(opt_variables_type& active);
   void checkOutVariables(const opt_variables_type& active);
   void resetParameters(const opt_variables_type& active);
-  void reportStatus(ostream& os);
+  void reportStatus(std::ostream& os);
 
   void resetTargetParticleSet(ParticleSet& P);
 
@@ -140,13 +140,13 @@ public:
   OrbitalBasePtr makeClone(ParticleSet& tqp) const;
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           vector<RealType>& dlogpsi,
-                           vector<RealType>& dhpsioverpsi);
+                           std::vector<RealType>& dlogpsi,
+                           std::vector<RealType>& dhpsioverpsi);
 
 //      void evaluateDerivatives(ParticleSet& P,
 //                                       const opt_variables_type& optvars,
-//                                       vector<RealType>& dlogpsi,
-//                                       vector<RealType>& dhpsioverpsi,
+//                                       std::vector<RealType>& dlogpsi,
+//                                       std::vector<RealType>& dhpsioverpsi,
 //                                       PooledData<RealType>& buf);
 
   void resize(int,int);
@@ -160,17 +160,17 @@ public:
   bool usingCSF;
 
   // assume Dets[0]: up, Dets[1]:down
-  vector<MultiDiracDeterminantBase*> Dets;
+  std::vector<MultiDiracDeterminantBase*> Dets;
 
-  vector<int> DetID;
+  std::vector<int> DetID;
 
-  map<string,int> SPOSetID;
+  std::map<std::string,int> SPOSetID;
 
   // map determinant in linear combination to unique det list
-  vector<int> C2node_up;
-  vector<int> C2node_dn;
+  std::vector<int> C2node_up;
+  std::vector<int> C2node_dn;
 
-  vector<RealType> C;
+  std::vector<RealType> C;
 
   ValueType curRatio;
   ValueType psiCurrent;
@@ -187,11 +187,11 @@ public:
 
 // CSFs
   // coefficients of csfs, these are only used during optm
-  vector<RealType> CSFcoeff;
+  std::vector<RealType> CSFcoeff;
   // number of dets per csf
-  vector<int> DetsPerCSF;
+  std::vector<int> DetsPerCSF;
   // coefficient of csf expansion (smaller dimension)
-  vector<RealType> CSFexpansion;
+  std::vector<RealType> CSFexpansion;
 
   // transformation
   BackflowTransformation *BFTrans;

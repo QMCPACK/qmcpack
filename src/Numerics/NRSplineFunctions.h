@@ -259,9 +259,9 @@ inline void
 QuinticSplineSolve(int N, const Tg* X, T* Y, T* B, T* C, T* D, T* E, T* F)
 {
   int M;
-  // mmorales: had issues setting numeric_limits<T>::epsilon() with gcc, FIX later
+  // mmorales: had issues setting std::numeric_limits<T>::epsilon() with gcc, FIX later
   T eps = 1.0e-9;
-  //eps=numeric_limits<double>::epsilon();
+  //eps= std::numeric_limits<double>::epsilon();
   T Q,R,Q2,Q3,R2,QR,P,P2,PQ,PR,PQQR,B1,V,TT,S,U,P3;
   M=N-2;
   Q=X[1]-X[0];

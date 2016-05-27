@@ -26,7 +26,6 @@
 #include "Numerics/OneDimIntegration.h"
 #include "OhmmsPETE/TinyVector.h"
 
-using namespace std;
 using namespace qmcplusplus;
 /**@defgroup QuantumNumber
    @brief quantum numbers n, l, m and s
@@ -110,7 +109,7 @@ struct YlmRnlSet
   typedef T                                        value_type;
   typedef OneDimGridBase<value_type>               RadialGrid_t;
   typedef OneDimCubicSpline<value_type,value_type> RadialOrbital_t;
-  typedef vector<RadialOrbital_t>                  RadialOrbitalSet_t;
+  typedef std::vector<RadialOrbital_t>                  RadialOrbitalSet_t;
 
   typedef TinyVector<int,2> NLIndex;
   typedef TinyVector<int,3> NLMIndex;
@@ -194,7 +193,7 @@ struct YlmRnlSet
   }
 
   ///restriction type;
-  string Restriction;
+  std::string Restriction;
 
   ///number of unique orbitals
   int NumUniqueOrb;
@@ -203,15 +202,15 @@ struct YlmRnlSet
   RadialGrid_t* m_grid;
 
   ///principal quantum number for each orbital
-  vector<int> N;
+  std::vector<int> N;
   ///angular momentum quantum number for each orbital
-  vector<int> L;
+  std::vector<int> L;
   ///z-angular momentum quantum number for each orbital
-  vector<int> M;
+  std::vector<int> M;
   ///spin for each orbital (up = 1, down = -1)
-  vector<int> S;
+  std::vector<int> S;
   ///coefficient for each orbtial (1 if occupied, 0 if not)
-  vector<value_type> Occ;
+  std::vector<value_type> Occ;
 
   ///number of spin-up orbitals
   int Nup;
@@ -238,13 +237,13 @@ struct YlmRnlSet
   NLMS_Map_t OccNo;
 
   ///assign an id for each orbital
-  vector<int> ID;
+  std::vector<int> ID;
 
   ///keeps track of the number of orbitals with the same id
-  vector<int> IDcount;
+  std::vector<int> IDcount;
 
   ///the radial grid orbitals
-  vector<RadialOrbital_t*> psi;
+  std::vector<RadialOrbital_t*> psi;
 
   bool put(xmlNodePtr cur);
   bool get(std::ostream& os);

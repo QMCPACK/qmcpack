@@ -22,7 +22,7 @@ public:
   HartreeFock(RadialPotentialSet& pot, BasisSetType& psi);
 
   bool put(xmlNodePtr cur);
-  void setRoot(const string& aroot);
+  void setRoot(const std::string& aroot);
   bool solve();
   int report();
   inline value_type getE(int i) const
@@ -42,10 +42,10 @@ private:
   ///mixing ratio of self-consistent field
   value_type ratio;
   ///root of all the output files
-  string RootFileName;
+  std::string RootFileName;
   ///name of the log file
-  string LogFileName;
-  string AtomName, PotType, GridType;
+  std::string LogFileName;
+  std::string AtomName, PotType, GridType;
 
 
   xmlNodePtr grid_ptr;

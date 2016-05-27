@@ -29,8 +29,8 @@ struct RPAJastrow: public OrbitalBase
 
   bool put(xmlNodePtr cur);
 
-  void buildOrbital(const string& name, const string& UL
-                    , const string& US, const string& RF, RealType R, RealType K);
+  void buildOrbital(const std::string& name, const std::string& UL
+                    , const std::string& US, const std::string& RF, RealType R, RealType K);
 
   void makeShortRange();
   void makeLongRange();
@@ -50,7 +50,7 @@ struct RPAJastrow: public OrbitalBase
   void checkInVariables(opt_variables_type& o);
 
   /** print the state, e.g., optimizables */
-  void reportStatus(ostream& os);
+  void reportStatus(std::ostream& os);
 
   /** reset the parameters during optimizations
     */
@@ -102,9 +102,9 @@ private:
   RealType Rs;
   RealType Kc;
   RealType Rcut;
-  string ID_Rs;
-  string rpafunc;
-  string MyName;
+  std::string ID_Rs;
+  std::string rpafunc;
+  std::string MyName;
 
   ///@}
   /** main handler
@@ -122,7 +122,7 @@ private:
   ShortRangePartAdapter<RealType>* SRA;
   ParticleSet& targetPtcl;
   ///A list of OrbitalBase*
-  vector<OrbitalBase*> Psi;
+  std::vector<OrbitalBase*> Psi;
 };
 }
 #endif

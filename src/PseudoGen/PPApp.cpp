@@ -33,7 +33,7 @@ main(int argc, char **argv)
   int i=1;
   while(i<argc)
   {
-    string arg(argv[i]);
+    std::string arg(argv[i]);
     if(arg == "-nox")
     {
       showplot = false;

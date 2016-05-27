@@ -18,7 +18,7 @@ namespace qmcplusplus
   {
   public:
     typedef QMCTraits::RealType RealType;
-    typedef vector<SPOInfo*> states_t;
+    typedef std::vector<SPOInfo*> states_t;
     typedef spoinfo::orderings orderings;
 
     // construction/destruction
@@ -28,7 +28,7 @@ namespace qmcplusplus
     // initialization
     void add(SPOInfo& state);
     void add(SPOInfo* state);
-    void add(vector<SPOInfo*>& state_vector);
+    void add(std::vector<SPOInfo*>& state_vector);
     void add(SPOSetInfo& other);
     /// renders collection immutable, must be called at end of initialization
     void finish(orderings ord=spoinfo::no_order,RealType tol=1e-6);
@@ -56,11 +56,11 @@ namespace qmcplusplus
     bool energy_ordered() const;
 
     // printing
-    void report(const string& pad="");
+    void report(const std::string& pad="");
 
     // templated versions of finish to work with arbitrary vectors
     template<typename SPOI>
-    inline void finish(vector<SPOI*>& state_vector,orderings ord=spoinfo::no_order,RealType  tol=1e-6)
+    inline void finish(std::vector<SPOI*>& state_vector,orderings ord=spoinfo::no_order,RealType  tol=1e-6)
     {
       for(int i=0;i<state_vector.size();++i)
         add(state_vector[i]);
@@ -68,7 +68,7 @@ namespace qmcplusplus
     }
 
     template<typename SPOI>
-    inline void finish(vector<int>& subset,vector<SPOI*>& state_vector,orderings ord=spoinfo::no_order,RealType  tol=1e-6)
+    inline void finish(std::vector<int>& subset,std::vector<SPOI*>& state_vector,orderings ord=spoinfo::no_order,RealType  tol=1e-6)
     {
       for(int i=0;i<subset.size();++i)
         add(state_vector[subset[i]]);
@@ -98,7 +98,7 @@ namespace qmcplusplus
     int index_max;
 
     /// collection of SPOInfo
-    vector<SPOInfo*> states;
+    std::vector<SPOInfo*> states;
 
     /// sort states by index
     void index_sort();
@@ -126,7 +126,7 @@ namespace qmcplusplus
   struct SPOSetInfoSimple
   {
     typedef QMCTraits::RealType RealType;
-    vector<SPOI*> states; //SPOI should derive from SPOInfo
+    std::vector<SPOI*> states; //SPOI should derive from SPOInfo
 
     SPOSetInfoSimple() { }
 

@@ -35,7 +35,7 @@ SlaterDetWithBackflow::~SlaterDetWithBackflow()
   ///clean up SPOSet
 }
 
-void SlaterDetWithBackflow::get_ratios(ParticleSet& P, vector<ValueType>& ratios)
+void SlaterDetWithBackflow::get_ratios(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   for(int i=0; i<Dets.size(); ++i)
     Dets[i]->get_ratios(P,ratios);
@@ -46,7 +46,7 @@ void SlaterDetWithBackflow::resetTargetParticleSet(ParticleSet& P)
   BFTrans->resetTargetParticleSet(P);
   for (int i = 0; i < Dets.size(); i++)
     Dets[i]->resetTargetParticleSet(BFTrans->QP);
-  map<string, SPOSetBasePtr>::iterator sit(mySPOSet.begin());
+  std::map<std::string, SPOSetBasePtr>::iterator sit(mySPOSet.begin());
   while (sit != mySPOSet.end())
   {
     (*sit).second->resetTargetParticleSet(BFTrans->QP);
@@ -253,9 +253,9 @@ void SlaterDetWithBackflow::testDerivGL(ParticleSet& P)
   checkOutVariables(wfVars);
   int Nvars= wfVars.size();
   wfvar_prime= wfVars;
-  wfVars.print(cout);
-  vector<RealType> dlogpsi;
-  vector<RealType> dhpsi;
+  wfVars.print(std::cout);
+  std::vector<RealType> dlogpsi;
+  std::vector<RealType> dhpsi;
   dlogpsi.resize(Nvars);
   dhpsi.resize(Nvars);
   ParticleSet::ParticleGradient_t G0,G1,G2;
@@ -280,7 +280,7 @@ void SlaterDetWithBackflow::testDerivGL(ParticleSet& P)
       Dets_->testDerivLi(P,i);
     }
   }
-  app_log() <<"Nvars: " <<Nvars <<endl;
+  app_log() <<"Nvars: " <<Nvars << std::endl;
   for(int i=0; i<Nvars; i++)
   {
     for (int j=0; j<Nvars; j++)
@@ -317,12 +317,12 @@ void SlaterDetWithBackflow::testDerivGL(ParticleSet& P)
       tmp+=(L1[q]-L2[q])/(2*dh);
     app_log() <<i <<"\n"
               <<"Ldiff : " <<L0[0] <<"  " <<tmp
-              <<"  " <<L0[0]-tmp <<endl;
+              <<"  " <<L0[0]-tmp << std::endl;
     for(int k=0; k<P.getTotalNum(); k++)
     {
-      app_log()<<G0[k] <<endl
-               <<(G1[k]-G2[k])/(2*dh) <<endl
-               <<"Gdiff: " <<G0[k]-(G1[k]-G2[k])/(2*dh) <<endl <<endl;
+      app_log()<<G0[k] << std::endl
+               <<(G1[k]-G2[k])/(2*dh) << std::endl
+               <<"Gdiff: " <<G0[k]-(G1[k]-G2[k])/(2*dh) << std::endl << std::endl;
     }
   }
   resetParameters(wfVars);
@@ -332,8 +332,8 @@ void SlaterDetWithBackflow::testDerivGL(ParticleSet& P)
 
 void SlaterDetWithBackflow::evaluateDerivatives(ParticleSet& P,
     const opt_variables_type& optvars,
-    vector<RealType>& dlogpsi,
-    vector<RealType>& dhpsioverpsi)
+    std::vector<RealType>& dlogpsi,
+    std::vector<RealType>& dhpsioverpsi)
 {
   //testDerivGL(P);
   if(BFTrans->isOptimizable())

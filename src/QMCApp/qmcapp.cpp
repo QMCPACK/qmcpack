@@ -46,11 +46,11 @@ int main(int argc, char **argv)
   OHMMS::Controller->initialize(argc,argv);
   int clones=1;
   bool useGPU=(qmc_common.compute_device == 1);
-  vector<string> fgroup1,fgroup2;
+  std::vector<std::string> fgroup1,fgroup2;
   int i=1;
   while(i<argc)
   {
-    string c(argv[i]);
+    std::string c(argv[i]);
     if(c[0]=='-')
     {
       if (c.find("gpu") < c.size())
@@ -66,11 +66,11 @@ int main(int argc, char **argv)
         fgroup1.push_back(argv[i]);
       else
       {
-        ifstream fin(argv[i],ifstream::in);
+        std::ifstream fin(argv[i],std::ifstream::in);
         bool valid=!fin.fail();
         while(valid)
         {
-          vector<string> words;
+          std::vector<std::string> words;
           getwords(words,fin);
           if(words.size())
           {
@@ -94,8 +94,8 @@ int main(int argc, char **argv)
     ++i;
   }
   int in_files=fgroup1.size();
-  vector<string> inputs(in_files*clones+fgroup2.size());
-  std::copy(fgroup2.begin(),fgroup2.end(),inputs.begin());
+  std::vector<std::string> inputs(in_files*clones+fgroup2.size());
+  copy(fgroup2.begin(),fgroup2.end(),inputs.begin());
   i=fgroup2.size();
   for(int k=0; k<in_files; ++k)
     for(int c=0; c<clones; ++c)
@@ -104,8 +104,8 @@ int main(int argc, char **argv)
   {
     if(OHMMS::Controller->rank()==0)
     {
-      cerr << "No input file is given." << endl;
-      cerr << "Usage: qmcpack <input-files> " << endl;
+      std::cerr << "No input file is given." << std::endl;
+      std::cerr << "Usage: qmcpack <input-files> " << std::endl;
     }
     OHMMS::Controller->finalize();
     return 1;
@@ -116,9 +116,9 @@ int main(int argc, char **argv)
   Communicate* qmcComm=OHMMS::Controller;
   if(inputs.size()>1)
     qmcComm=new Communicate(*OHMMS::Controller,inputs.size());
-  stringstream logname;
+  std::stringstream logname;
   int inpnum = (inputs.size() > 1) ? qmcComm->getGroupID() : 0;
-  string myinput = inputs[qmcComm->getGroupID()];
+  std::string myinput = inputs[qmcComm->getGroupID()];
   myinput = myinput.substr(0,myinput.size()-4);
   logname << myinput;
   OhmmsInfo Welcome(logname.str(),qmcComm->rank(),qmcComm->getGroupID(),inputs.size());
@@ -131,7 +131,7 @@ int main(int argc, char **argv)
   app_log() << "  Input file(s): ";
   for(int k=0; k<inputs.size(); ++k)
     app_log() << inputs[k] << " ";
-  app_log() << endl;
+  app_log() << std::endl;
   qmc = new QMCMain(qmcComm);
   if(inputs.size()>1)
     validInput=qmc->parse(inputs[qmcComm->getGroupID()]);

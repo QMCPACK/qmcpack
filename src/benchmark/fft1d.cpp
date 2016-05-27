@@ -74,7 +74,7 @@ struct fft1d_test
     for(int i=0; i<sample.size(); ++i)
       sample[i]=0.5*std::sin(phase*i)+0.1*std::sin(phase*2*i)+0.3*std::sin(phase*3*i)+0.5*std::sin(phase*4.1*i);;
     for(int i=0; i<howmany; ++i)
-      std::copy(sample.begin(),sample.end(),in[i]);
+      copy(sample.begin(),sample.end(),in[i]);
     if(inplace)
       myfft.create(in.data());
     else
@@ -100,12 +100,12 @@ struct fft1d_test
     in *= norm;
     for(int i=0; i<howmany; ++i)
     {
-      cout << "State index = " << i << endl;
+      std::cout << "State index = " << i << std::endl;
       for(int k=0; k<fft_dim; ++k)
       {
-        //cout << target(i,k) << " " << sample[k] << endl;
+        //cout << target(i,k) << " " << sample[k] << std::endl;
         if(abs_diff(in(i,k),sample[k])>eps)
-          cerr << "WRONG " << in(i,k) << " " << sample[k] <<  " " << endl;
+          std::cerr << "WRONG " << in(i,k) << " " << sample[k] <<  " " << std::endl;
       }
     }
   }
@@ -117,23 +117,23 @@ struct fft1d_debug
   static void doit(int fft_dim, int howmany)
   {
     {
-      cout << "r2c, in-place " << endl;
+      std::cout << "r2c, in-place " << std::endl;
       fft1d_test<T,complex<T>,fft_id> test(fft_dim,howmany,true);
       test.debug();
     }
     {
-      cout << "r2c, out-place " << endl;
+      std::cout << "r2c, out-place " << std::endl;
       fft1d_test<T,complex<T>,fft_id> test(fft_dim,howmany,false);
       test.debug();
     }
     {
-      cout << "c2c, in-place " << endl;
-      fft1d_test<complex<T>,complex<T>,fft_id> test(fft_dim,howmany,true);
+      std::cout << "c2c, in-place " << std::endl;
+      fft1d_test<std::complex<T>,complex<T>,fft_id> test(fft_dim,howmany,true);
       test.debug();
     }
     {
-      cout << "c2c, out-place " << endl;
-      fft1d_test<complex<T>,complex<T>,fft_id> test(fft_dim,howmany,false);
+      std::cout << "c2c, out-place " << std::endl;
+      fft1d_test<std::complex<T>,complex<T>,fft_id> test(fft_dim,howmany,false);
       test.debug();
     }
   }
@@ -142,7 +142,7 @@ struct fft1d_debug
 }
 
 
-inline void print_help(const string& msg)
+inline void print_help(const std::string& msg)
 {
   printf("%s -d fft_dim -m numer_of_fft -i iterations -p [d|s] -t [r2c|c2c] -e [fftw|mkl|essl] \n",msg.c_str());
 }
@@ -158,8 +158,8 @@ int main(int argc, char** argv)
   int niters=10;
   int fft_dim=16;
   //accepted: r2c  or c2c
-  string fft_type("r2c");
-  string fft_eng("fftw");
+  std::string fft_type("r2c");
+  std::string fft_eng("fftw");
   bool inplace=true;
   bool single_precision=false;
   int opt;
@@ -196,12 +196,12 @@ int main(int argc, char** argv)
   }
   if(fft_eng =="fftw")
   {
-    cout << "Testing FFT1D with FFTW " << endl;
+    std::cout << "Testing FFT1D with FFTW " << std::endl;
 #if defined(SINGLE_PREC)
-    cout << "Single precision " << endl;
+    std::cout << "Single precision " << std::endl;
     fft1d_debug<float,FFTW_ENG>::doit(fft_dim,howmany);
 #else
-    cout << "Double precision " << endl;
+    std::cout << "Double precision " << std::endl;
     fft1d_debug<double,FFTW_ENG>::doit(fft_dim,howmany);
 #endif
   }
@@ -209,10 +209,10 @@ int main(int argc, char** argv)
   else
     if(fft_eng=="mkl")
     {
-      cout << "Testing FFT1D with MKL " << endl;
-      cout << "Double precision " << endl;
+      std::cout << "Testing FFT1D with MKL " << std::endl;
+      std::cout << "Double precision " << std::endl;
       fft1d_debug<double,FFTMKL_ENG>::doit(fft_dim,howmany);
-      cout << "Single precision " << endl;
+      std::cout << "Single precision " << std::endl;
       fft1d_debug<float,FFTMKL_ENG>::doit(fft_dim,howmany);
     }
 #endif
@@ -220,16 +220,16 @@ int main(int argc, char** argv)
     else
       if(fft_eng =="essl")
       {
-        cout << "Testing FFT1D with ESSL " << endl;
-        cout << "Double precision " << endl;
+        std::cout << "Testing FFT1D with ESSL " << std::endl;
+        std::cout << "Double precision " << std::endl;
         fft1d_debug<double,FFTESSL_ENG>::doit(fft_dim,howmany);
-        cout << "Single precision " << endl;
+        std::cout << "Single precision " << std::endl;
         fft1d_debug<float,FFTESSL_ENG>::doit(fft_dim,howmany);
       }
 #endif
       else
       {
-        cout << fft_eng << " is not available. Choose fftw, mkl or essl" << endl;
+        std::cout << fft_eng << " is not available. Choose fftw, mkl or essl" << std::endl;
       }
   OHMMS::Controller->finalize();
   return 0;

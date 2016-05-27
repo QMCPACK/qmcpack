@@ -114,7 +114,7 @@ void RQMCMultiWarp::initReptile()
     Reptile=new MultiChain(NewBead,ReptileLength,InitialGrowthDirection,nPsi);
     if(h5FileRoot.size() && (h5FileRoot != "invalid"))
     {
-      app_log() << "Reading the previous multi-chain configurations" << endl;
+      app_log() << "Reading the previous multi-chain configurations" << std::endl;
       restartmode = Reptile->read(h5FileRoot);
     }
     W.setPolymer(Reptile);
@@ -200,7 +200,7 @@ void RQMCMultiWarp::setReptileProperties()
   RealType RefAction(-1.0e20);
   for(int ipsi=0; ipsi<nPsi; ipsi++)
   {
-    RefAction=max(RefAction,Reptile->GlobalAction[ipsi]);
+    RefAction= std::max(RefAction,Reptile->GlobalAction[ipsi]);
   }
   //Compute Total Weight
   Reptile->GlobalWgt=0.0e0;
@@ -226,9 +226,9 @@ void RQMCMultiWarp::checkReptileProperties()
 {
   //Temporary vector
   typedef MCWalkerConfiguration::ParticlePos_t ParticlePos_t;
-  vector<ParticlePos_t> Warped_R_prev,Warped_R_next,Warped_R_curr;
-  vector<int> SumSign(nPsi);
-  vector<RealType>Jacobian_next(nPsi);
+  std::vector<ParticlePos_t> Warped_R_prev,Warped_R_next,Warped_R_curr;
+  std::vector<int> SumSign(nPsi);
+  std::vector<RealType>Jacobian_next(nPsi);
   for(int ipsi=0; ipsi<nPsi; ipsi++)
   {
     Warped_R_prev.push_back(ParticlePos_t(nptcl));
@@ -252,7 +252,7 @@ void RQMCMultiWarp::checkReptileProperties()
       Jacobian[ipsi]*=PtclWarp.get_Jacobian(iptcl,ipsi);
     }
   }
-  //cout << "<<<<<<<<< setRefProperties():Step1 " << endl;
+  //cout << "<<<<<<<<< setRefProperties():Step1 " << std::endl;
   //Save initial warped position for next move
   //If growth is in Plus direction do it at the end
   if(Reptile->GrowthDirection==MinusDirection)
@@ -260,7 +260,7 @@ void RQMCMultiWarp::checkReptileProperties()
     for(int ipsi=0; ipsi<nPsi; ipsi++)
       Warped_R[ipsi]=Warped_R_curr[ipsi];
   }
-  //cout << "<<<<<<<<< setRefProperties():Step2 " << endl;
+  //cout << "<<<<<<<<< setRefProperties():Step2 " << std::endl;
   while(bead != bead_end)
   {
     ///Pointer to the current walker
@@ -334,7 +334,7 @@ void RQMCMultiWarp::checkReptileProperties()
     }
     ++bead;
   }// End Loop over beads
-  //cout << "<<<<<<<<< setRefProperties():Step3 " << endl;
+  //cout << "<<<<<<<<< setRefProperties():Step3 " << std::endl;
   //Store warped position for next move if direction is +
   //otherwise this is done at the beginning of the bead loop
   if(Reptile->GrowthDirection==PlusDirection)
@@ -430,7 +430,7 @@ void RQMCMultiWarp::checkReptileProperties()
       //                               (*(bead+1))->Action(ipsi,Directionless) );
       Reptile->GlobalAction[ipsi]+=((*bead)->Properties(ipsi,LOGJACOB)-LinkAction);
       //cout << "Psi: " << ipsi << " LA " << LinkAction << "   LJ " <<
-      //        (*bead)->Properties(ipsi,LOGJACOB) << endl;
+      //        (*bead)->Properties(ipsi,LOGJACOB) << std::endl;
     }
     ++bead;
   }
@@ -455,7 +455,7 @@ void RQMCMultiWarp::checkReptileProperties()
   {
     WeightSign[ipsi]=std::max(0,Reptile->GlobalSignWgt[ipsi]-Reptile->Last);
     if(WeightSign[ipsi])
-      RefAction=max(RefAction,Reptile->GlobalAction[ipsi]);
+      RefAction= std::max(RefAction,Reptile->GlobalAction[ipsi]);
   }
   //Compute Total Weight
   Reptile->GlobalWgt=0.0e0;
@@ -495,13 +495,13 @@ bool RQMCMultiWarp::run()
   AveWeight.resize(nPsi);
   std::string filename(RootName);
   filename=RootName+".Eloc.dat";
-  ofstream *OutEnergy;
-  OutEnergy=new ofstream(filename.c_str());
+  std::ofstream *OutEnergy;
+  OutEnergy=new std::ofstream(filename.c_str());
   //PolymerEstimator reptileReport(*Reptile,nPsi);
   //reptileReport.resetReportSettings(RootName);
   //accumulate configuration: probably need to reorder
   //HDFWalkerOutput WO(RootName);
-  vector<RealType>Norm(nPsi);
+  std::vector<RealType>Norm(nPsi);
   for(int ipsi=0; ipsi<nPsi; ipsi++)
     Norm[ipsi]=0.0;
   RealType oneoversteps=1.0/static_cast<RealType>(nSteps);
@@ -548,7 +548,7 @@ bool RQMCMultiWarp::run()
       *OutEnergy << AveEloc[ipsi] << " ";
       *OutEnergy << AveWeight[ipsi]/nSteps << " ";
     }
-    *OutEnergy << acceptedR << endl;
+    *OutEnergy << acceptedR << std::endl;
     OutEnergy->flush();
     nAcceptTot += nAccept;
     nRejectTot += nReject;
@@ -563,7 +563,7 @@ bool RQMCMultiWarp::run()
   //Need MPI-IO
   app_log() << "ratio = "
             << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot)
-            << endl;
+            << std::endl;
   Reptile->close();
   return finalize(nBlocks);
 }
@@ -574,7 +574,7 @@ void RQMCMultiWarp::recordBlock(int block)
   //TEST CACHE
   //Estimators->report(CurrentStep);
   //TEST CACHE
-  //app_error() << " BROKEN RQMCMultiWarp::recordBlock(int block) HDFWalkerOutput as 2007-04-16 " << endl;
+  //app_error() << " BROKEN RQMCMultiWarp::recordBlock(int block) HDFWalkerOutput as 2007-04-16 " << std::endl;
   //HDFWalkerOutput WO(RootName,false,0);
   //WO.get(W);
   //WO.write(*branchEngine);
@@ -592,16 +592,16 @@ bool RQMCMultiWarp::put(xmlNodePtr q)
     W.clearDistanceTables();
   }
   //qmcsystem
-  vector<ParticleSet*> ionSets;
+  std::vector<ParticleSet*> ionSets;
   DistanceTableData* dtableReference;
   xmlNodePtr cur=q->children;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == "qmcsystem")
     {
       OhmmsAttributeSet aAttrib;
-      string source_name("i");
+      std::string source_name("i");
       aAttrib.add(source_name,"source");
       aAttrib.put(cur);
       ParticleSet* ions=PtclPool.getParticleSet(source_name);
@@ -618,7 +618,7 @@ bool RQMCMultiWarp::put(xmlNodePtr q)
     p=PtclPool.getParticleSet(refSetName);
     if(p==0)
     {
-      cout << "The specified reference cannot be found. Stop." << endl;
+      std::cout << "The specified reference cannot be found. Stop." << std::endl;
       APP_ABORT("RQMCMultiWarp::put");
     }
   }
@@ -629,12 +629,12 @@ bool RQMCMultiWarp::put(xmlNodePtr q)
   }
   dtableReference=DistanceTable::add(*p,W);
   /*vector<DistanceTableData*> dtableList;
-  string target_name(W.getName());
+  std::string target_name(W.getName());
   xmlNodePtr cur=q->children;
   while(cur != NULL) {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == "qmcsystem") {
-      string source_name((const char*)xmlGetProp(cur,(const xmlChar*)"source"));
+      std::string source_name((const char*)xmlGetProp(cur,(const xmlChar*)"source"));
       dtableList.push_back(DistanceTable::getTable(source_name.c_str(),target_name.c_str()));
     }
     cur=cur->next;
@@ -653,14 +653,14 @@ bool RQMCMultiWarp::put(xmlNodePtr q)
       ParticleSet* pclone=PtclPool.getParticleSet(newname);
       if(pclone == 0)
       {
-        app_log() << "  Cloning particle set in VMCMultipleWarp " << newname << endl;
+        app_log() << "  Cloning particle set in VMCMultipleWarp " << newname << std::endl;
         pclone=new ParticleSet(W);
         pclone->setName(newname);
         PtclPool.addParticleSet(pclone);
       }
       else
       {
-        app_log() << "  Cloned particle exists " << newname << endl;
+        app_log() << "  Cloned particle exists " << newname << std::endl;
       }
       WW.push_back(pclone);
       Psi1[ipsi]->resetTargetParticleSet(*WW[ipsi]);
@@ -674,12 +674,12 @@ bool RQMCMultiWarp::put(xmlNodePtr q)
   sprintf(newname,"%s%d", W.getName().c_str(),ipsi);
       ParticleSet* pclone=PtclPool.getParticleSet(newname);
       if(pclone == 0) {
-        app_log() << "  Cloning particle set in VMCMultipleWarp " << newname << endl;
+        app_log() << "  Cloning particle set in VMCMultipleWarp " << newname << std::endl;
         pclone=new ParticleSet(W);
         pclone->setName(newname);
         PtclPool.addParticleSet(pclone);
       } else {
-        app_log() << "  Cloned particle exists " << newname << endl;
+        app_log() << "  Cloned particle exists " << newname << std::endl;
       }
   //Correct copy constructor????????
   WW.push_back(pclone);
@@ -748,7 +748,7 @@ void RQMCMultiWarp::moveReptile()
     //Save particle position
     for(int ipsi=0; ipsi<nPsi; ipsi++)
     {
-      //cout << PtclWarp.get_displacement(iptcl,ipsi) << endl;
+      //cout << PtclWarp.get_displacement(iptcl,ipsi) << std::endl;
       WW[ipsi]->R[iptcl]=W.R[iptcl]+PtclWarp.get_displacement(iptcl,ipsi);
       Jacobian[ipsi]*=PtclWarp.get_Jacobian(iptcl,ipsi);
     }
@@ -821,7 +821,7 @@ void RQMCMultiWarp::moveReptile()
       WeightSign[ipsi]=std::max(0,NewGlobalSignWgt[ipsi]-Reptile->Last);
       // Assign Reference Action
       if(WeightSign[ipsi]>0)
-        RefAction=max(RefAction,NewGlobalAction[ipsi]);
+        RefAction= std::max(RefAction,NewGlobalAction[ipsi]);
     }
     //Compute Log of global Wgt
     for(int ipsi=0; ipsi<nPsi; ipsi++)

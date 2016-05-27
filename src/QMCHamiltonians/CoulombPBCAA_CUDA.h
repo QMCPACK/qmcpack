@@ -40,12 +40,12 @@ struct CoulombPBCAA_CUDA : public CoulombPBCAA
   gpu::device_vector<CUDA_COULOMB_PRECISION> FkGPU;
   // The first vector index is the species number
   // Complex, stored as float2
-  vector<gpu::device_vector<CUDA_COULOMB_PRECISION*> > RhoklistsGPU;
-  vector<gpu::host_vector<CUDA_COULOMB_PRECISION*> > RhoklistsHost;
+  std::vector<gpu::device_vector<CUDA_COULOMB_PRECISION*> > RhoklistsGPU;
+  std::vector<gpu::host_vector<CUDA_COULOMB_PRECISION*> > RhoklistsHost;
   gpu::device_vector<CUDA_COULOMB_PRECISION> RhokGPU;
   void setupLongRangeGPU(ParticleSet &P);
   void addEnergy(MCWalkerConfiguration &W,
-                 vector<RealType> &LocalEnergy);
+                 std::vector<RealType> &LocalEnergy);
 
   void initBreakup(ParticleSet& P, bool cloning);
   QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);

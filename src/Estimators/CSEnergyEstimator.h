@@ -39,11 +39,11 @@ struct CSEnergyEstimator: public ScalarEstimatorBase
   ///index of the ending Hamiltonian component
   int LastHamiltonian;
   ///save umbrella weights
-  vector<RealType> uweights;
+  std::vector<RealType> uweights;
   ///temporary dat
   Matrix<RealType> tmp_data;
   ///name of hamiltonian components
-  vector<string> h_components;
+  std::vector<std::string> h_components;
   /** constructor
    * @param h QMCHamiltonian to define the components
    * @param hcopy number of copies of QMCHamiltonians
@@ -71,7 +71,7 @@ struct CSEnergyEstimator: public ScalarEstimatorBase
    *@param record storage of scalar records (name,value)
    */
   void add2Record(RecordNamedProperty<RealType>& record);
-  void registerObservables(vector<observable_helper*>& h5dec, hid_t gid);
+  void registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid);
   ScalarEstimatorBase* clone();
 
   void evaluateDiff();

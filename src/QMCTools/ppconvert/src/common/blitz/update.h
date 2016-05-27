@@ -39,7 +39,7 @@ class _bz_updater_base { };
   public:                                                   \
     static inline void update(X& restrict x, Y y)           \
     { x op y; }                                             \
-    static void prettyPrint(BZ_STD_SCOPE(string) &str)      \
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str)      \
     { str += symbol; }                                      \
   }
 
@@ -49,7 +49,7 @@ class _bz_update : public _bz_updater_base {
     static inline void update(X& restrict x, Y y)
     { x = (X)y; }
 
-    static void prettyPrint(BZ_STD_SCOPE(string) &str)
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str)
     { str += "="; }
 };
 

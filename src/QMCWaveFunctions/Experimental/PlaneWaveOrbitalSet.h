@@ -73,30 +73,30 @@ public:
   ///put from XML
   bool put(xmlNodePtr cur)
   {
-    cout << "PUT FROM XML CALLED: NOT VALID HERE" << endl;
+    std::cout << "PUT FROM XML CALLED: NOT VALID HERE" << std::endl;
     OHMMS::Controller->abort();
     return true;
   }
 
-  ///write to a ostream
+  ///write to a std::ostream
   bool get(std::ostream& ) const
   {
-    cout << "GET TO OSTREAM CALLED. Not yet coded." << endl;
+    std::cout << "GET TO OSTREAM CALLED. Not yet coded." << std::endl;
     std::exit(0);
     return true;
   }
 
-  ///read from istream
+  ///read from std::istream
   bool put(std::istream& )
   {
-    cout << "PUT FROM ISTREAM CALLED. Not yet coded." << endl;
+    std::cout << "PUT FROM ISTREAM CALLED. Not yet coded." << std::endl;
     std::exit(0);
     return true;
   }
 
   void resetTargetParticleSet(ParticleSet& P)
   {
-    cout << "resetTargetParticleSet not yet coded." << endl;
+    std::cout << "resetTargetParticleSet not yet coded." << std::endl;
     OHMMS::Controller->abort();
     //      change in basis and here. This involves resizing of storage.
     //      What happens to Coefs in number of particles changes? Must reread from HDF.

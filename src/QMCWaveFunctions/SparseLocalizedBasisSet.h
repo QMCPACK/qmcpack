@@ -65,7 +65,7 @@ struct SparseLocalizedBasisSet: public BasisSetBase<typename COT::value_type>
   ///number of groups
   int NumGroups;
   ///BasisOffset
-  vector<int> BasisOffset;
+  std::vector<int> BasisOffset;
 
   /** class to handle a COT and particle indices which share the COT
    */
@@ -74,7 +74,7 @@ struct SparseLocalizedBasisSet: public BasisSetBase<typename COT::value_type>
     ///Centered Orbital Type for this center
     COT* myO;
     ///IDs for the particle which belong to the same center
-    vector<int> myP;
+    std::vector<int> myP;
     inline LOForCenter(COT* o=0):myO(o) {}
     LOForCenter(const LOForCenter& old):myP(old.myP)
     {
@@ -82,7 +82,7 @@ struct SparseLocalizedBasisSet: public BasisSetBase<typename COT::value_type>
     }
   };
 
-  typedef vector<LOForCenter*> ContainerType;
+  typedef std::vector<LOForCenter*> ContainerType;
   ContainerType LOBasisSet;
 
   /** distance table, e.g., ion-electron
@@ -168,13 +168,13 @@ struct SparseLocalizedBasisSet: public BasisSetBase<typename COT::value_type>
     //{
     //  if(LOBasisSet[ig])
     //  {
-    //    cout << "### SparseLOBasis " << ig << " : ";
-    //    const vector<int>& plist(LOBasisSet[ig]->myP);
+    //    std::cout << "### SparseLOBasis " << ig << " : ";
+    //    const std::vector<int>& plist(LOBasisSet[ig]->myP);
     //    for(int i=0; i<plist.size(); i++)
     //    {
-    //      cout << plist[i] << "[" << BasisOffset[plist[i]] << "] ";
+    //      std::cout << plist[i] << "[" << BasisOffset[plist[i]] << "] ";
     //    }
-    //    cout << endl;
+    //    std::cout << std::endl;
     //  }
     //}
     this->resize(NumTargets);
@@ -214,7 +214,7 @@ struct SparseLocalizedBasisSet: public BasisSetBase<typename COT::value_type>
     {
       if(LOBasisSet[ig])
       {
-        const vector<int>& plist(LOBasisSet[ig]->myP);
+        const std::vector<int>& plist(LOBasisSet[ig]->myP);
         COT& o(*(LOBasisSet[ig]->myO));
         for(int i=0; i<plist.size(); i++)
         {
@@ -231,7 +231,7 @@ struct SparseLocalizedBasisSet: public BasisSetBase<typename COT::value_type>
     {
       if(LOBasisSet[ig])
       {
-        const vector<int>& plist(LOBasisSet[ig]->myP);
+        const std::vector<int>& plist(LOBasisSet[ig]->myP);
         COT& o(*(LOBasisSet[ig]->myO));
         for(int i=0; i<plist.size(); i++)
         {
@@ -248,7 +248,7 @@ struct SparseLocalizedBasisSet: public BasisSetBase<typename COT::value_type>
     {
       if(LOBasisSet[ig])
       {
-        const vector<int>& plist(LOBasisSet[ig]->myP);
+        const std::vector<int>& plist(LOBasisSet[ig]->myP);
         COT& o(*(LOBasisSet[ig]->myO));
         for(int i=0; i<plist.size(); i++)
         {
@@ -265,7 +265,7 @@ struct SparseLocalizedBasisSet: public BasisSetBase<typename COT::value_type>
     {
       if(LOBasisSet[ig])
       {
-        const vector<int>& plist(LOBasisSet[ig]->myP);
+        const std::vector<int>& plist(LOBasisSet[ig]->myP);
         COT& o(*(LOBasisSet[ig]->myO));
         for(int i=0; i<plist.size(); i++)
         {

@@ -45,7 +45,7 @@ bool AnyConstraints::put(xmlNodePtr cur)
 
 void AnyConstraints::resetParameters(const opt_variables_type& active)
 {
-  //map<string,BasisGroupType*>::iterator it(BasisGroups.begin()),it_end(BasisGroups.end());
+  //map<std::string,BasisGroupType*>::iterator it(BasisGroups.begin()),it_end(BasisGroups.end());
   //while(it != it_end)
   //{
   //  (*it).second->Out_->resetParameters(active);
@@ -56,7 +56,7 @@ void AnyConstraints::resetParameters(const opt_variables_type& active)
 //void AnyConstraints::addOptimizables(OptimizableSetType& outVars)
 //{
 //  //createBasis will take care of this. Do not add again
-//  map<string,BasisGroupType*>::iterator it(BasisGroups.begin()),it_end(BasisGroups.end());
+//  std::map<std::string,BasisGroupType*>::iterator it(BasisGroups.begin()),it_end(BasisGroups.end());
 //  while(it != it_end)
 //  {
 //    (*it).second->In_->addOptimizables(outVars);
@@ -78,13 +78,13 @@ void AnyConstraints::addSingleBasisPerSpecies(xmlNodePtr cur)
   gAttrib.add(rcut,"rf");
   gAttrib.add(npts,"npts");
   gAttrib.add(step,"step");
-  string tpname(targetPtcl.getName());
+  std::string tpname(targetPtcl.getName());
   BasisGroupType* curBG=0;
   cur=cur->children;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
-    string elementType("e");
+    std::string cname((const char*)(cur->name));
+    std::string elementType("e");
     OhmmsAttributeSet aAttrib;
     aAttrib.add(elementType,"elementType");
     aAttrib.put(cur);
@@ -96,7 +96,7 @@ void AnyConstraints::addSingleBasisPerSpecies(xmlNodePtr cur)
       xmlNodePtr cur1=cur->children;
       while(cur1 != NULL)
       {
-        string cname1((const char*)(cur1->name));
+        std::string cname1((const char*)(cur1->name));
         if(cname1 == "basisGroup")
         {
           curBG=createBasisGroup(cur1,elementType);
@@ -128,10 +128,10 @@ void AnyConstraints::addSingleBasisPerSpecies(xmlNodePtr cur)
 
 
 AnyConstraints::BasisGroupType*
-AnyConstraints::createBasisGroup(xmlNodePtr cur, const string& elementType)
+AnyConstraints::createBasisGroup(xmlNodePtr cur, const std::string& elementType)
 {
   ReportEngine PRE(ClassName,"createBasisGroup(...)");
-  string type("WM");
+  std::string type("WM");
   RealType cusp=0.0;
   OhmmsAttributeSet aAttrib;
   aAttrib.add(type,"type");
@@ -160,15 +160,15 @@ void AnyConstraints::add2BasisGroup(BasisGroupType* curBG, xmlNodePtr cur)
   ComboFuncType* acombo=new ComboFuncType;
   curBG->In_ = acombo;
   //DerivFuncType* aderiv=new DerivFuncType(curBG->Rcut);
-  string radID("0");
+  std::string radID("0");
   cur=cur->children;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == "radfunc")
     {
       OhmmsAttributeSet rAttrib;
-      string rfuncName("WM");
+      std::string rfuncName("WM");
       RealType exponent=1.0;
       RealType contraction=1.0;
       RealType rcut(curBG->Rcut);
@@ -193,7 +193,7 @@ void AnyConstraints::add2BasisGroup(BasisGroupType* curBG, xmlNodePtr cur)
       {
         a= new WMFunctor<RealType>(exponent,rcut);
         a->put(cur);
-        string id_c=radID+"_C";
+        std::string id_c=radID+"_C";
         acombo->addComponent(a,contraction,id_c);
         //add a component to the derivative
         //aderiv->addComponent(contraction,exponent,radID);
@@ -205,7 +205,7 @@ void AnyConstraints::add2BasisGroup(BasisGroupType* curBG, xmlNodePtr cur)
       //}
       app_log()  << "<radfunc id=\"" << radID << "\" exponent=\""<< exponent
                  << "\" contraction=\"" << contraction
-                 << "\" node=\"" << rpower << "\" rcut=\"" << rcut << "\"/>" << endl;
+                 << "\" node=\"" << rpower << "\" rcut=\"" << rcut << "\"/>" << std::endl;
     }
     cur=cur->next;
   }
@@ -213,14 +213,14 @@ void AnyConstraints::add2BasisGroup(BasisGroupType* curBG, xmlNodePtr cur)
   //aderiv->addOptimizables(targetPsi.VarList);
   //for(int i=0; i<targetPsi.VarList.size(); ++i)
   //{
-  //  cout << targetPsi.VarList.getName(i) << " " << targetPsi.VarList.getValue(i) << endl;
+  //  std::cout << targetPsi.VarList.getName(i) << " " << targetPsi.VarList.getValue(i) << std::endl;
   //}
   //non-zero cusp
-  if(abs(curBG->Cusp)>numeric_limits<RealType>::epsilon())
+  if(abs(curBG->Cusp)>std::numeric_limits<RealType>::epsilon())
   {
     CuspCorrectionFunctor<RealType> *a  = new CuspCorrectionFunctor<RealType>(2.0,curBG->Rcut);
-    app_log() << "  Adding a cusp term: " << curBG->Cusp << "* (-1/b exp(-br)), b=" << a->E << endl;
-    string cusp_tag=radID+"_cusp"; //non optimizable
+    app_log() << "  Adding a cusp term: " << curBG->Cusp << "* (-1/b exp(-br)), b=" << a->E << std::endl;
+    std::string cusp_tag=radID+"_cusp"; //non optimizable
     acombo->addComponent(a,curBG->Cusp,cusp_tag,true);//this cannot be modified
   }
   //curBG->Deriv_ = aderiv;
@@ -233,7 +233,7 @@ OrbitalBase* AnyConstraints::createTwoBody()
   xmlNodePtr cur=myNode->children;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == "basisset")
     {
       addSingleBasisPerSpecies(cur);
@@ -243,7 +243,7 @@ OrbitalBase* AnyConstraints::createTwoBody()
   if(BasisGroups.empty())
   {
     app_error() << "  AnyConstraints::createTwoBody fails to create a TwoBodyJastrow "
-                << " due to missing <basisset/> " << endl;
+                << " due to missing <basisset/> " << std::endl;
     return 0;
   }
   BasisGroupType* curGroup=0;
@@ -262,9 +262,9 @@ OrbitalBase* AnyConstraints::createTwoBody()
 #if !defined(HAVE_MPI)
   if(PrintTables)
   {
-    ofstream fout("J2.dat");
-    fout.setf(ios::scientific, ios::floatfield);
-    fout << "# Two-body Jastrow generated by AnyContraints::createTwoBody" << endl;
+    std::ofstream fout("J2.dat");
+    fout.setf(std::ios::scientific, std::ios::floatfield);
+    fout << "# Two-body Jastrow generated by AnyContraints::createTwoBody" << std::endl;
     nfunc->print(fout);
   }
 #endif
@@ -284,11 +284,11 @@ OrbitalBase* AnyConstraints::createTwoBody()
 
 OrbitalBase* AnyConstraints::createOneBody(ParticleSet& source)
 {
-  map<string,InFuncType*> jnSet;
+  std::map<std::string,InFuncType*> jnSet;
   xmlNodePtr cur=myNode->children;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == "basisset")
     {
       addSingleBasisPerSpecies(cur);
@@ -319,10 +319,10 @@ OrbitalBase* AnyConstraints::createOneBody(ParticleSet& source)
       {
         char fname[16];
         sprintf(fname,"J1.%s.dat",source.getSpeciesSet().speciesName[ig].c_str());
-        ofstream fout(fname);
-        fout.setf(ios::scientific, ios::floatfield);
+        std::ofstream fout(fname);
+        fout.setf(std::ios::scientific, std::ios::floatfield);
         fout << "# One-body Jastrow " << source.getSpeciesSet().speciesName[ig]
-             << " generated by AnyContraints::createOneBody" << endl;
+             << " generated by AnyContraints::createOneBody" << std::endl;
         nfunc->print(fout);
       }
 #endif
@@ -344,7 +344,7 @@ OrbitalBase* AnyConstraints::createOneBody(ParticleSet& source)
 
 
 // void
-//   AnyConstraints::createDefaultTwoBody(xmlNodePtr cur, const string& tname) {
+//   AnyConstraints::createDefaultTwoBody(xmlNodePtr cur, const std::string& tname) {
 //    //xmlNodePtr basisNode = xmlNewNode(NULL,(const xmlChar*)"basisGroup");
 //    //xmlNewProp(basisNode,(const xmlChar*)"source",(const xmlChar*)tname.c_str());
 //    //xmlNodePtr b0 = xmlNewTextChild(basisNode,NULL,(const xmlChar*)"parameter",(const xmlChar*)"4.55682");
@@ -380,7 +380,7 @@ OrbitalBase* AnyConstraints::createOneBody(ParticleSet& source)
 //    //xmlNewProp(c3,(const xmlChar*)"name",(const xmlChar*)"C");
 //    //xmlAddChild(cur,corrNode);
 
-//    //map<string,BasisSetType*>::iterator it(myBasisSet.find("e"));
+//    //map<std::string,BasisSetType*>::iterator it(myBasisSet.find("e"));
 //    //return createCorrelation(corrNode,(*it).second);
 // }
 }

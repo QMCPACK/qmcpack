@@ -78,7 +78,7 @@ public:
     {
         BZPRECHECK(N_destRank == N_index,  
             "Array reduction performed over rank " << N_index 
-            << " to produce a rank " << N_destRank << " expression." << endl
+            << " to produce a rank " << N_destRank << " expression." << std::endl
             << "You must reduce over rank " << N_destRank << " instead.");
 
         TinyVector<int, N_destRank + 1> index;
@@ -94,9 +94,9 @@ public:
         // <limits> widely available
         BZPRECHECK((lbound != INT_MIN) && (ubound != INT_MAX),
            "Array reduction performed over rank " << N_index
-           << " is unbounded." << endl 
+           << " is unbounded." << std::endl 
            << "There must be an array object in the expression being reduced"
-           << endl << "which provides a bound in rank " << N_index << ".");
+           << std::endl << "which provides a bound in rank " << N_index << ".");
 
         reduce_.reset();
 
@@ -195,7 +195,7 @@ public:
         return;
     }
 
-    void prettyPrint(BZ_STD_SCOPE(string) &str, 
+    void prettyPrint(BZ_STD_SCOPE( std::string) &str, 
         prettyPrintFormat& format) const
     {
         // NEEDS_WORK-- do real formatting for reductions

@@ -42,7 +42,7 @@ namespace qmcplusplus
 
   bool HarmonicExternalPotential::get(std::ostream& os) const
   {
-    os << "External harmonic potential"<<endl;
+    os << "External harmonic potential"<< std::endl;
     return true;
   } 
 
@@ -57,7 +57,7 @@ namespace qmcplusplus
   HarmonicExternalPotential::evaluate(ParticleSet& P)
   {
 #if !defined(REMOVE_TRACEMANAGER)
-    if(streaming_particles)
+    if( streaming_particles)
       Value = evaluate_sp(P);
     else
     {

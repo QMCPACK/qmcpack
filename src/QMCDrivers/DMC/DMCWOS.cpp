@@ -39,7 +39,7 @@ DMCWOS::DMCWOS(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian&
   QMCType ="dmc";
 }
 
-void DMCWOS::setBranchInfo(const string& afile)
+void DMCWOS::setBranchInfo(const std::string& afile)
 {
   BranchInfo=afile;
 }
@@ -78,9 +78,9 @@ bool DMCWOS::run()
   wos_ref = dynamic_cast<WOSPotential*>(H.getHamiltonian("wos"));
   if(wos_ref)
   {
-    cout << wos_ref->m_runs << '\t' << wos_ref->m_norm << endl;
+    std::cout << wos_ref->m_runs << '\t' << wos_ref->m_norm << std::endl;
     wos_ref->set_mrun(wos_ref->dmc_runs);
-    cout << "Using " << wos_ref->m_runs << " runners/walker for DMC" << endl;
+    std::cout << "Using " << wos_ref->m_runs << " runners/walker for DMC" << std::endl;
     H.setTau(Tau);
     Tau_var = Tau;
   }
@@ -151,7 +151,7 @@ bool DMCWOS::run()
                          static_cast<double>(nAccept)/static_cast<double>(nAccept+nReject));
     Estimators.report(CurrentStep);
     LogOut->getStream() << "Block " << block << " " << timer.cpu_time()
-                        << " " << Population << endl;
+                        << " " << Population << std::endl;
     Eest = Estimators.average(0);
     nAccept = 0;
     nReject = 0;
@@ -168,7 +168,7 @@ bool DMCWOS::run()
   while(block<nBlocks);
   LogOut->getStream()
       << "ratio = " << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot)
-      << endl;
+      << std::endl;
   if(!pStride)
   {
     //create an output engine: could accumulate the configurations
@@ -339,9 +339,9 @@ DMCWOS::advanceWalkerByWalker(BRANCHER& Branch)
     //calculate the weight and multiplicity
     ValueType M = Branch.branchGF(Tau,emixed*0.5,1.0-prob);
     if((*it)->Properties(AGE) > 3.0)
-      M = min(0.5,M);
+      M = std::min(0.5,M);
     if((*it)->Properties(AGE) > 0.9)
-      M = min(1.0,M);
+      M = std::min(1.0,M);
     (*it)->Properties(WEIGHT) = M;
     (*it)->Properties(MULTIPLICITY) = M + Random();
     //node-crossing: kill it for the time being
@@ -386,8 +386,8 @@ DMCWOS::advanceWalkerByWalker(BRANCHER& Branch)
 
     //calculate the weight and multiplicity
     ValueType M = Branch.branchGF(Tau,emixed*0.5,1.0-prob);
-    if((*it)->Properties(AGE) > 3.0) M = min(0.5,M);
-    if((*it)->Properties(AGE) > 0.9) M = min(1.0,M);
+    if((*it)->Properties(AGE) > 3.0) M = std::min(0.5,M);
+    if((*it)->Properties(AGE) > 0.9) M = std::min(1.0,M);
     (*it)->Properties(WEIGHT) = M;
     (*it)->Properties(MULTIPLICITY) = M + Random();
     }
@@ -468,8 +468,8 @@ void DMCWOS::advanceAllWalkers(BRANCHER& Branch)
   //      RealType logbackwardGF = -oneover2tau*Dot(deltaR,deltaR);
   //
   //      ValueType logpsi(log(abs(psi(iw))));
-  //      prob = min(exp(logbackwardGF-forwardGF+2,0*(logpsi-(*it)->Properties(LOGPSI))),1.0);
-  //      //prob = min(backwardGF/forwardGF*psisq/(*it)->Properties(PSISQ),1.0);
+  //      prob = std::min(exp(logbackwardGF-forwardGF+2,0*(logpsi-(*it)->Properties(LOGPSI))),1.0);
+  //      //prob = std::min(backwardGF/forwardGF*psisq/(*it)->Properties(PSISQ),1.0);
   //      if(Random() > prob) {
   //        ++nReject;
   //        (*it)->Properties(AGE) += 1;

@@ -18,9 +18,9 @@ private:
   /// whether the second derivatives need recomputation.
   bool UpToDate;
   /// The function values on the grid points.
-  vector<double> y;   
+  std::vector<double> y;   
   /// The second derivatives of the function
-  vector<double> d2y;  
+  std::vector<double> d2y;  
 
   /// The values of the derivative of the represented function on the
   /// boundary.  If each value is greater that 1e30, we compute
@@ -42,19 +42,19 @@ public:
   inline double Deriv3(double x);
   /// Recompute the second derivatives from the function values
   void Update();
-  inline vector<double>& Data() { return y; } 
+  inline std::vector<double>& Data() { return y; } 
   
   /// Initialize the cubic spline.  See notes about start and end
   /// deriv above.
-  inline void Init(SimpleGrid &newGrid, vector<double> yvals,
+  inline void Init(SimpleGrid &newGrid, std::vector<double> yvals,
 		   double startderiv, double endderiv)
   {
     StartDeriv = startderiv;
     EndDeriv   = endderiv;
     if (newGrid.NumPoints() != yvals.size()) {
-      cerr << "Size mismatch in CubSpline.\n";
-      cerr << "Grid Points = " << newGrid.NumPoints() << endl;
-      cerr << "Y points    = " << yvals.size() << endl;
+      std::cerr << "Size mismatch in CubSpline.\n";
+      std::cerr << "Grid Points = " << newGrid.NumPoints() << std::endl;
+      std::cerr << "Y points    = " << yvals.size() << std::endl;
       abort();
     }
     grid = newGrid;
@@ -67,14 +67,14 @@ public:
 
   /// Simplified form which assumes that the second derivative at both
   /// boundaries are zero.
-  inline void Init (SimpleGrid &newGrid, vector<double> &yvals)
+  inline void Init (SimpleGrid &newGrid, std::vector<double> &yvals)
   {
     Init (newGrid, yvals, 5.0e30, 5.0e30);
     Update();
   }
   
   /// Simplified constructor.
-  inline CubSpline (SimpleGrid &newGrid, vector<double> &yvals)
+  inline CubSpline (SimpleGrid &newGrid, std::vector<double> &yvals)
   {
     StartDeriv = EndDeriv = 5.0e30;
     Init (newGrid, yvals, 5.0e30, 5.0e30);
@@ -82,7 +82,7 @@ public:
   }
 
   /// Full constructor.
-  inline CubSpline (SimpleGrid &newGrid, vector<double> &yvals,
+  inline CubSpline (SimpleGrid &newGrid, std::vector<double> &yvals,
 		      double startderiv, double endderiv)
   {
     Init (newGrid, yvals, startderiv, endderiv);
@@ -122,8 +122,8 @@ inline double CubSpline::operator()(double x)
 	x = X.End();
       else
 	{
-	  cerr << "x outside grid in CubSpline.\n";
-	  cerr << "x = " << x << " X.End = " << X.End() << "\n";
+	  std::cerr << "x outside grid in CubSpline.\n";
+	  std::cerr << "x = " << x << " X.End = " << X.End() << "\n";
 	  abort();
 	}
     }

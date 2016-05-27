@@ -24,7 +24,7 @@
 #ifndef OHMMS_REPLICACONTROL_H
 #define OHMMS_REPLICACONTROL_H
 #include <vector>
-using std::vector;
+
 #include "Particle/OhmmsParticle.h"
 #include "Message/Communicate.h"
 
@@ -121,23 +121,23 @@ public:
   bool sendDirections(int& winner);
   int recvDirections();
 
-  void reportTimeData(ostream& ,int itrans);
+  void reportTimeData(std::ostream& ,int itrans);
 
   void resize(int n);
 
 protected:
 
   int NumReplica;
-  vector<int> ReplicaID;
+  std::vector<int> ReplicaID;
 
   double CumMD_t, CumHMD_t; // cummulative time over replica
   double TotMD_t, TotHMD_t; // total time
   int            FrameNum;
   int LeftNode, RightNode;
 
-  vector<double> WallClockTime;  // wall-clock time
-  vector<double> MDTime;    // mdtime
-  vector<double> HMDTime; // hyper time will be added
+  std::vector<double> WallClockTime;  // wall-clock time
+  std::vector<double> MDTime;    // mdtime
+  std::vector<double> HMDTime; // hyper time will be added
 };
 
 #endif

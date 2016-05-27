@@ -67,7 +67,7 @@ public:
       accumulate(**first,wgt);
   }
   void add2Record(RecordListType& record);
-  void registerObservables(vector<observable_helper*>& h5dec, hid_t gid);
+  void registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid);
   ScalarEstimatorBase* clone();
   /*@}*/
 };

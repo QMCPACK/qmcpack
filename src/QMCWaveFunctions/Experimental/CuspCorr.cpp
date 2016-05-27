@@ -45,7 +45,7 @@ void CuspCorr<BS>::fillRadFunWithPhi(int curOrb_, int curCenter_, double Zion, L
 }
 
 template<class BS>
-void CuspCorr<BS>::executeWithRCLoop(int curOrb_, int curCenter_, double Zion, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta, Vector<double>& xgrid, Vector<double>& rad_orb, string file, double cutoff, double* data)
+void CuspCorr<BS>::executeWithRCLoop(int curOrb_, int curCenter_, double Zion, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta, Vector<double>& xgrid, Vector<double>& rad_orb, std::string file, double cutoff, double* data)
 {
   double bestRc = cutoff, smallX2;
   double xa, xb, xc, xd;
@@ -91,7 +91,7 @@ void CuspCorr<BS>::executeWithRCLoop(int curOrb_, int curCenter_, double Zion, L
     {
 //          APP_ABORT("Problems bracketing minimum. \n");
       smallX2==execute(curOrb_,curCenter_,Zion,Phi,Eta,xgrid,rad_orb,file,bestRc,data);
-      app_log() <<"Problems bracketing minimum, using best rc so far: " <<bestRc <<"  " <<smallX2 <<endl;
+      app_log() <<"Problems bracketing minimum, using best rc so far: " <<bestRc <<"  " <<smallX2 << std::endl;
       return;
     }
   }
@@ -131,7 +131,7 @@ void CuspCorr<BS>::executeWithRCLoop(int curOrb_, int curCenter_, double Zion, L
 }
 
 template<class BS>
-double CuspCorr<BS>::execute(int curOrb_, int curCenter_, double Zion, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta, Vector<double>& xgrid, Vector<double>& rad_orb, string thisFile, double cutoff, double* data)
+double CuspCorr<BS>::execute(int curOrb_, int curCenter_, double Zion, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta, Vector<double>& xgrid, Vector<double>& rad_orb, std::string thisFile, double cutoff, double* data)
 {
   bool writeout=(thisFile!="NULL");
   Psi1=Phi;
@@ -204,7 +204,7 @@ double CuspCorr<BS>::execute(int curOrb_, int curCenter_, double Zion, LCOrbital
     fa=ff;
     xd += delx; // dumb, fix later
     fd=loop(xd,X);
-//std::cout <<"x,f: " <<xd <<"  " <<fd <<endl;
+//std::cout <<"x,f: " <<xd <<"  " <<fd << std::endl;
 //std::cout.flush();
     if(cnt == 50)
       delx*=5;
@@ -220,10 +220,10 @@ double CuspCorr<BS>::execute(int curOrb_, int curCenter_, double Zion, LCOrbital
   // find minimum
   while( std::fabs(xa-xd) > 1e-5*(std::fabs(xb)+std::fabs(xc)) ) // from Num Rec.
   {
-    //app_log()<<"xa,fa: " <<xa <<"  " <<loop(xa,X) <<endl
-    //   <<"xb,fb: " <<xb <<"  " <<fb <<endl
-    //   <<"xc,fc: " <<xc <<"  " <<fc <<endl
-    //   <<"xd,fd: " <<xd <<"  " <<loop(xd,X) <<endl <<endl;
+    //app_log()<<"xa,fa: " <<xa <<"  " <<loop(xa,X) << std::endl
+    //   <<"xb,fb: " <<xb <<"  " <<fb << std::endl
+    //   <<"xc,fc: " <<xc <<"  " <<fc << std::endl
+    //   <<"xd,fd: " <<xd <<"  " <<loop(xd,X) << std::endl << std::endl;
     if(fb > fc)
     {
       xa=xb;
@@ -243,10 +243,10 @@ double CuspCorr<BS>::execute(int curOrb_, int curCenter_, double Zion, LCOrbital
       fc=loop(xc,X);
     }
   }
-  //app_log()<<"xa,fa: " <<xa <<"  " <<loop(xa,X) <<endl
-  //   <<"xb,fb: " <<xb <<"  " <<fb <<endl
-  //   <<"xc,fc: " <<xc <<"  " <<fc <<endl
-  //   <<"xd,fd: " <<xd <<"  " <<loop(xd,X) <<endl;
+  //app_log()<<"xa,fa: " <<xa <<"  " <<loop(xa,X) << std::endl
+  //   <<"xb,fb: " <<xb <<"  " <<fb << std::endl
+  //   <<"xc,fc: " <<xc <<"  " <<fc << std::endl
+  //   <<"xd,fd: " <<xd <<"  " <<loop(xd,X) << std::endl;
   if(fb < fc)
   {
     chi2=loop(xb,X);
@@ -267,18 +267,18 @@ double CuspCorr<BS>::execute(int curOrb_, int curCenter_, double Zion, LCOrbital
             chi2Min=chi2;
             phiMin=phi0;
           }
-          app_log()<<"i , chi2: " <<i <<"  " <<chi2 <<endl;
+          app_log()<<"i , chi2: " <<i <<"  " <<chi2 << std::endl;
         }
         chi2=loop(phiMin,X);
   */
   if(writeout)
   {
-    app_log()<<setprecision(12) <<"alpha: " <<alpha[0] <<"  "
+    app_log()<< std::setprecision(12) <<"alpha: " <<alpha[0] <<"  "
              <<alpha[1] <<"  "
              <<alpha[2] <<"  "
              <<alpha[3] <<"  "
-             <<alpha[4] <<"  " <<endl;
-    app_log()<<"mo,ion,C, sg, rc, chi2: " <<curOrb_ <<"  " <<curCenter_ <<"  " <<C <<"  " <<sg <<"  " <<Rc <<" " <<chi2 <<endl;
+             <<alpha[4] <<"  " << std::endl;
+    app_log()<<"mo,ion,C, sg, rc, chi2: " <<curOrb_ <<"  " <<curCenter_ <<"  " <<C <<"  " <<sg <<"  " <<Rc <<" " <<chi2 << std::endl;
   }
   for(int i=0; i<xgrid.size(); i++)
   {
@@ -298,7 +298,7 @@ double CuspCorr<BS>::execute(int curOrb_, int curCenter_, double Zion, LCOrbital
          <<phi(pos[i]) <<"  "
          <<phiBar(pos[i]) <<"  "
          <<pr(pos[i]) <<"  "
-         <<endl;
+         << std::endl;
     }
     out.close();
     std::string full;
@@ -309,7 +309,7 @@ double CuspCorr<BS>::execute(int curOrb_, int curCenter_, double Zion, LCOrbital
     {
       double xp = i*5.0/(nx-1.0);
       out<<xp <<"  "
-         <<phi(xp) <<endl;
+         <<phi(xp) << std::endl;
     }
     out.close();
   }

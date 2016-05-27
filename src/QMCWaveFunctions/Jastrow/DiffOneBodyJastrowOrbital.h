@@ -43,13 +43,13 @@ class DiffOneBodyJastrowOrbital: public DiffOrbitalBase
   ///variables handled by this orbital
   opt_variables_type myVars;
   ///container for the Jastrow functions  for all the pairs
-  vector<FT*> Fs;
+  std::vector<FT*> Fs;
   ///container for the unique Jastrow functions
-  vector<FT*> Funique;
-  vector<pair<int,int> > OffSet;
+  std::vector<FT*> Funique;
+  std::vector<std::pair<int,int> > OffSet;
   Vector<RealType> dLogPsi;
-  vector<GradVectorType*> gradLogPsi;
-  vector<ValueVectorType*> lapLogPsi;
+  std::vector<GradVectorType*> gradLogPsi;
+  std::vector<ValueVectorType*> lapLogPsi;
 
 public:
 
@@ -136,11 +136,11 @@ public:
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
-                           vector<RealType>& dlogpsi,
-                           vector<RealType>& dhpsioverpsi)
+                           std::vector<RealType>& dlogpsi,
+                           std::vector<RealType>& dhpsioverpsi)
   {
     bool recalculate(false);
-    vector<bool> rcsingles(myVars.size(),false);
+    std::vector<bool> rcsingles(myVars.size(),false);
     for (int k=0; k<myVars.size(); ++k)
     {
       int kk=myVars.where(k);
@@ -158,7 +158,7 @@ public:
         (*gradLogPsi[p])=0.0;
       for (int p=0; p<NumVars; ++p)
         (*lapLogPsi[p])=0.0;
-      vector<TinyVector<RealType,3> > derivs(NumVars);
+      std::vector<TinyVector<RealType,3> > derivs(NumVars);
       for (int i=0; i<d_table->size(SourceIndex); ++i)
       {
         FT* func=Fs[i];

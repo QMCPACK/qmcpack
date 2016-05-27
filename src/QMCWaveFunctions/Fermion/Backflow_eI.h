@@ -28,9 +28,9 @@ class Backflow_eI: public BackflowFunctionBase
 {
 
 public:
-  vector<FT*> RadFun;
-  vector<FT*> uniqueRadFun;
-  vector<int> offsetPrms;
+  std::vector<FT*> RadFun;
+  std::vector<FT*> uniqueRadFun;
+  std::vector<int> offsetPrms;
 
   Backflow_eI(ParticleSet& ions, ParticleSet& els): BackflowFunctionBase(ions,els)
   {
@@ -85,13 +85,13 @@ public:
     return clone;
   }
 
-  void reportStatus(ostream& os)
+  void reportStatus(std::ostream& os)
   {
-    cerr<<RadFun.size()<<endl;
-    cerr<<isOptimizable()<<endl;
-    cerr<<myTable<<endl;
+    std::cerr <<RadFun.size()<< std::endl;
+    std::cerr <<isOptimizable()<< std::endl;
+    std::cerr <<myTable<< std::endl;
     for(int i=0; i<offsetPrms.size(); i++)
-      cerr<<offsetPrms[i]<<endl;
+      std::cerr <<offsetPrms[i]<< std::endl;
     for(int i=0; i<uniqueRadFun.size(); i++)
       uniqueRadFun[i]->reportStatus(os);
   }
@@ -273,7 +273,7 @@ public:
    */
   inline void
   evaluatePbyP(const ParticleSet& P, ParticleSet::ParticlePos_t& newQP
-               ,const vector<int>& index)
+               ,const std::vector<int>& index)
   {
     RealType du,d2u;
     int maxI = myTable->size(SourceIndex);
@@ -304,7 +304,7 @@ public:
 
   inline void
   evaluatePbyP(const ParticleSet& P, ParticleSet::ParticlePos_t& newQP
-               ,const vector<int>& index, HessMatrix_t& Amat)
+               ,const std::vector<int>& index, HessMatrix_t& Amat)
   {
     RealType du,d2u;
     int maxI = myTable->size(SourceIndex);
@@ -347,7 +347,7 @@ public:
 
   inline void
   evaluatePbyP(const ParticleSet& P, ParticleSet::ParticlePos_t& newQP
-               ,const vector<int>& index, GradMatrix_t& Bmat_full, HessMatrix_t& Amat)
+               ,const std::vector<int>& index, GradMatrix_t& Bmat_full, HessMatrix_t& Amat)
   {
     RealType du,d2u;
     int maxI = myTable->size(SourceIndex);
@@ -425,7 +425,7 @@ public:
         RealType uij = RadFun[i]->evaluate(myTable->r(nn),du,d2u);
 //           std::fill(derivs.begin(),derivs.end(),0.0);
         int NPrms = RadFun[i]->NumParams;
-        vector<TinyVector<RealType,3> > derivsju(NPrms);
+        std::vector<TinyVector<RealType,3> > derivsju(NPrms);
         RadFun[i]->evaluateDerivatives(myTable->r(nn),derivsju);
         du *= myTable->rinv(nn);
         //PosType u = uij*myTable->dr(nn);

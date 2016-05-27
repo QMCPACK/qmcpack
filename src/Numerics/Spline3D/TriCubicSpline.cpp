@@ -1,7 +1,6 @@
 #include "Numerics/Spline3D/TriCubicSpline.h"
 #include <iostream>
 
-using namespace std;
 
 void TriCubicSpline::Update(bool iflap)
 {

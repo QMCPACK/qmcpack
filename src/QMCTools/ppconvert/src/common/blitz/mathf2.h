@@ -46,7 +46,7 @@ public:
     { return _bz_exp<T_numtype1>::apply(x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "cexp(";
@@ -66,7 +66,7 @@ public:
     { return _bz_sqrt<T_numtype1>::apply(x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "csqrt(";
@@ -88,7 +88,7 @@ public:
     }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "pow2(";
@@ -111,7 +111,7 @@ public:
     }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "pow3(";
@@ -134,7 +134,7 @@ public:
     }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "pow4(";
@@ -158,7 +158,7 @@ public:
     }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "pow5(";
@@ -182,7 +182,7 @@ public:
     }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "pow6(";
@@ -208,7 +208,7 @@ public:
     }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "pow7(";
@@ -232,7 +232,7 @@ public:
     }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "pow8(";
@@ -266,9 +266,9 @@ BZ_DECLARE_POW(double)
 BZ_DECLARE_POW(long double)
 
 #ifdef BZ_HAVE_COMPLEX
-BZ_DECLARE_POW(complex<float>)
-BZ_DECLARE_POW(complex<double>)
-BZ_DECLARE_POW(complex<long double>)
+BZ_DECLARE_POW(std::complex<float>)
+BZ_DECLARE_POW(std::complex<double>)
+BZ_DECLARE_POW(std::complex<long double>)
 #endif
 
 BZ_NAMESPACE_END

@@ -52,24 +52,24 @@ void profile_adios_finalize(Communicate* myComm, int nBlocks)
     MPI_Barrier(myComm->getMPI());
     if(i==myComm->rank())
     {
-      cout<<myComm->rank()<<" profile"<<endl;
+      std::cout <<myComm->rank()<<" profile"<< std::endl;
       double total_comp_time = 0.0;
       double total_trace_time = 0.0;
       double total_checkpoint_time = 0.0;
       for(int j=0; j<nBlocks; j++)
       {
         printf("comp time %f trace time %f checkpoint_time %f\n", comp_times[j], trace_times[j], checkpoint_times[j]);
-        //cout<<"comp time "<<comp_times[j]<<" trace time "<<trace_times[j]<<" checkpoint_times "<<checkpoint_times[j]<<endl;
+        //cout<<"comp time "<<comp_times[j]<<" trace time "<<trace_times[j]<<" checkpoint_times "<<checkpoint_times[j]<< std::endl;
         total_comp_time += comp_times[j];
         total_trace_time += trace_times[j];
         total_checkpoint_time += checkpoint_times[j];
 				if(j<trace_index)
-					cout<<myComm->rank()<<" profile adios trace write size is "<<trace_data_grp[j]<<" "<<trace_data_total[j]<<endl;
+					cout<<myComm->rank()<<" profile adios trace write size is "<<trace_data_grp[j]<<" "<<trace_data_total[j]<< std::endl;
 				if(j<ckp_index)
-					cout<<myComm->rank()<<" profile adios checkpoint write size is "<<ckp_data_grp[j]<<" "<<ckp_data_total[j]<<endl;
+					cout<<myComm->rank()<<" profile adios checkpoint write size is "<<ckp_data_grp[j]<<" "<<ckp_data_total[j]<< std::endl;
       }
       printf("total time is %f comp time %f trace time %f checkpoint time %f rank %d\n", end_time, total_comp_time, total_trace_time, total_checkpoint_time, myComm->rank());
-      //cout<<"total time is "<<end_time<<" comp time "<<total_comp_time<<" trace time "<<total_trace_time<<" checkpoint time "<<total_checkpoint_time<<" rank "<<myComm->rank()<<endl;
+      //cout<<"total time is "<<end_time<<" comp time "<<total_comp_time<<" trace time "<<total_trace_time<<" checkpoint time "<<total_checkpoint_time<<" rank "<<myComm->rank()<< std::endl;
     }
     MPI_Barrier(myComm->getMPI());
   }
@@ -157,7 +157,7 @@ void profile_final(){
   //ofstream myfile;
   //myfile.open(buf);
   //for(int i=0; i<times.size(); i++){
-    //myfile <<times[i].time<<"\t"<<times[i].t_attr<<"\t"<<times[i].block<<"\t"<<times[i].step<<endl;
+    //myfile <<times[i].time<<"\t"<<times[i].t_attr<<"\t"<<times[i].block<<"\t"<<times[i].step<< std::endl;
   //}
   //myfile.close();
 }
@@ -168,7 +168,7 @@ void comp_s(){
 
 void comp_e(){
   comp_end = MPI_Wtime();
-  qmcplusplus::app_log()<<block<<" comp "<<comp_end-comp_start<<endl;
+  qmcplusplus::app_log()<<block<<" comp "<<comp_end-comp_start<< std::endl;
   //TIME_INFO t;
   //t.time = comp_end - comp_start;
   //t.t_attr = COMP;
@@ -183,7 +183,7 @@ void comm_s(){
 
 void comm_e(){
   comm_end = MPI_Wtime();
-  qmcplusplus::app_log()<<block<<" comm "<<comm_end-comm_start<<endl;
+  qmcplusplus::app_log()<<block<<" comm "<<comm_end-comm_start<< std::endl;
   //TIME_INFO t;
   //t.time = comm_end - comm_start;
   //t.t_attr = COMM;
@@ -198,7 +198,7 @@ void io_open_s(){
 
 void io_open_e(){
   io_open_end = MPI_Wtime();
-  qmcplusplus::app_log()<<block<<" open "<<io_open_end-io_open_start<<endl;
+  qmcplusplus::app_log()<<block<<" open "<<io_open_end-io_open_start<< std::endl;
   //TIME_INFO t;
   //t.time = io_open_end - io_open_start;
   //t.t_attr = IO_OPEN;
@@ -212,7 +212,7 @@ void io_group_s(){
 
 void io_group_e(){
   io_group_end = MPI_Wtime();
-  qmcplusplus::app_log()<<block<<" group "<<io_group_end-io_group_start<<endl;
+  qmcplusplus::app_log()<<block<<" group "<<io_group_end-io_group_start<< std::endl;
   //TIME_INFO t;
   //t.time = io_group_end - io_group_start;
   //t.t_attr = IO_GROUP;
@@ -226,7 +226,7 @@ void io_write_s(){
 
 void io_write_e(){
   io_write_end = MPI_Wtime();
-  qmcplusplus::app_log()<<block<<" write "<<io_write_end-io_write_start<<endl;
+  qmcplusplus::app_log()<<block<<" write "<<io_write_end-io_write_start<< std::endl;
   //TIME_INFO t;
   //t.time = io_write_end - io_write_start;
   //t.t_attr = IO_WRITE;
@@ -240,7 +240,7 @@ void io_close_s(){
 
 void io_close_e(){
   io_close_end = MPI_Wtime();
-  qmcplusplus::app_log()<<block<<" close "<<io_close_end-io_close_start<<endl;
+  qmcplusplus::app_log()<<block<<" close "<<io_close_end-io_close_start<< std::endl;
   //TIME_INFO t;
   //t.time = io_close_end - io_close_start;
   //t.t_attr = IO_CLOSE;

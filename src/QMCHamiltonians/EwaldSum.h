@@ -112,17 +112,17 @@ struct EwaldSum: public EwaldSumTraits<typename PT::Scalar_t,false,false>
                        ParticlePos_t& f,
                        Tensor_t& stress);
 
-  void print(ostream& os)
+  void print(std::ostream& os)
   {
-    os.setf(ios::scientific, ios::floatfield);
-    os << "Eps                 = " << Eps << endl;
-    os << "Reciprocal     sum  = " << gamrec << endl;
-    os << "Direct         sum  = " << gamdir << endl;
-    os << "Point self-senergy  = " << s3 << endl;
-    os << "Charged system term = " << s4 << endl;
-    os << "Maximum K components= " << maxG <<endl;
-    os << "Maximum R components= " << maxR << endl;
-    os << "Rmax                = " << Rmax << endl;
+    os.setf(std::ios::scientific, std::ios::floatfield);
+    os << "Eps                 = " << Eps << std::endl;
+    os << "Reciprocal     sum  = " << gamrec << std::endl;
+    os << "Direct         sum  = " << gamdir << std::endl;
+    os << "Point self-senergy  = " << s3 << std::endl;
+    os << "Charged system term = " << s4 << std::endl;
+    os << "Maximum K components= " << maxG << std::endl;
+    os << "Maximum R components= " << maxR << std::endl;
+    os << "Rmax                = " << Rmax << std::endl;
   }
 
   ///Eps = alpha^2
@@ -184,17 +184,17 @@ EwaldSum<PT>::init(ParticleLayout_t& lat, const ParticleScalar_t& q)
   maxR[0] = static_cast<int>(sqrt( x2max/dot(lat.a(0),lat.a(0)))) + 0;
   maxR[1] = static_cast<int>(sqrt( x2max/dot(lat.a(1),lat.a(1)))) + 0;
   maxR[2] = static_cast<int>(sqrt( x2max/dot(lat.a(2),lat.a(2)))) + 0;
-//   std::map<int,vector<SingleParticleIndex_t>*> gs;
-//   std::map<int,vector<SingleParticleIndex_t>*> rs;
+//   std::map<int,std::vector<SingleParticleIndex_t>*> gs;
+//   std::map<int,std::vector<SingleParticleIndex_t>*> rs;
 //   int ic=0;
 //   for(int ix1=-maxR[0]; ix1<=maxR[0]; ix1++) {
 //     for(int ix2=-maxR[1]; ix2<=maxR[1]; ix2++) {
 //       for(int ix3=-maxR[2]; ix3<=maxR[2]; ix3++) {
 // 	ic++;
 // 	int ih=ix1*ix1+ix2*ix2+ix3*ix3;
-// 	std::map<int,vector<SingleParticleIndex_t>*>::iterator it = rs.find(ih);
+// 	std::map<int,std::vector<SingleParticleIndex_t>*>::iterator it = rs.find(ih);
 // 	if(it == rs.end()) {
-// 	  vector<SingleParticleIndex_t>* ns = new vector<SingleParticleIndex_t>;
+// 	  std::vector<SingleParticleIndex_t>* ns = new std::vector<SingleParticleIndex_t>;
 // 	  ns->push_back(SingleParticleIndex_t(ix1,ix2,ix3));
 //           rs[ih] = ns;
 // 	} else {
@@ -205,13 +205,13 @@ EwaldSum<PT>::init(ParticleLayout_t& lat, const ParticleScalar_t& q)
 //   }
 //   RShell.resize(ic);
 //   int ir=0;
-//   std::map<int,vector<SingleParticleIndex_t>*>::const_iterator cit = rs.begin();
+//   std::map<int,std::vector<SingleParticleIndex_t>*>::const_iterator cit = rs.begin();
 //   while(cit != rs.end()) {
-//     const vector<SingleParticleIndex_t>& iv = *((*cit).second);
+//     const std::vector<SingleParticleIndex_t>& iv = *((*cit).second);
 //     for(int i=0; i<iv.size(); i++) RShell[ir++] = iv[i];
 //     cit++;
 //   }
-//   std::map<int,vector<SingleParticleIndex_t>*>::iterator it = rs.begin();
+//   std::map<int,std::vector<SingleParticleIndex_t>*>::iterator it = rs.begin();
 //   while(it != rs.end()) {
 //     delete (*it).second;it++;
 //   }

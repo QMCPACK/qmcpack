@@ -34,7 +34,7 @@ QMCCostFunctionSingle::QMCCostFunctionSingle(MCWalkerConfiguration& w, TrialWave
 {
   CSWeight=(1.0);
   APP_ABORT("QMCCostFunctionSingle is deprecated");
-  app_log()<<" Using QMCCostFunctionSingle::QMCCostFunctionSingle"<<endl;
+  app_log()<<" Using QMCCostFunctionSingle::QMCCostFunctionSingle"<< std::endl;
 }
 
 /** Clean up the vector */
@@ -78,8 +78,8 @@ QMCCostFunctionSingle::Return_t QMCCostFunctionSingle::correlatedSampling(bool n
     Return_t weight = std::exp(2.0*(logpsi-saved[LOGPSI_FREE])) ;
     //Return_t eloc_new=+saved[ENERGY_FIXED];
     //Return_t weight = UseWeight?std::exp(2.0*(logpsi-saved[LOGPSI_FREE])):1.0;
-    vector<Return_t>* Dsaved= &(TempDerivRecords[iw]) ;
-    vector<Return_t>* HDsaved= &(TempHDerivRecords[iw]) ;
+    std::vector<Return_t>* Dsaved= &(TempDerivRecords[iw]) ;
+    std::vector<Return_t>* HDsaved= &(TempHDerivRecords[iw]) ;
     if (needGrad)
       Psi.evaluateDerivatives(W, OptVariables,*Dsaved,*HDsaved);
 //    for(int l=0; l<NumOptimizables; l++) (*HDsaved)[l] += saved[ENERGY_FIXED] * (*Dsaved)[l];
@@ -123,16 +123,16 @@ QMCCostFunctionSingle::Return_t QMCCostFunctionSingle::correlatedSampling(bool n
 }
 
 void
-QMCCostFunctionSingle::getConfigurations(const string& aroot)
+QMCCostFunctionSingle::getConfigurations(const std::string& aroot)
 {
-  app_log() << "   Loading configuration from MCWalkerConfiguration::SampleStack " << endl;
-  app_log() << "    number of walkers before load " << W.getActiveWalkers() << endl;
+  app_log() << "   Loading configuration from MCWalkerConfiguration::SampleStack " << std::endl;
+  app_log() << "    number of walkers before load " << W.getActiveWalkers() << std::endl;
   Timer t1;
   W.loadEnsemble();
-  app_log() << "    Loading time = " << t1.elapsed() << endl;
-  app_log() << "    number of walkers after load " << W.getActiveWalkers() << endl;
+  app_log() << "    Loading time = " << t1.elapsed() << std::endl;
+  app_log() << "    number of walkers after load " << W.getActiveWalkers() << std::endl;
   //if(aroot.size() && aroot != "invalid") {
-  //  app_log() << "  Reading configurations from the previous qmc block" << endl;
+  //  app_log() << "  Reading configurations from the previous qmc block" << std::endl;
   //  HDFWalkerInputCollect wReader(aroot);
   //  wReader.putSingle(W);
   //}
@@ -155,23 +155,23 @@ QMCCostFunctionSingle::getConfigurations(const string& aroot)
     delete debug_stream;
   char fname[16];
   sprintf(fname,"optdebug.p%d",OHMMS::Controller->mycontext());
-  debug_stream = new ofstream(fname);
-  debug_stream->setf(ios::scientific, ios::floatfield);
+  debug_stream = new std::ofstream(fname);
+  debug_stream->setf(std::ios::scientific, std::ios::floatfield);
   debug_stream->precision(8);
-  *debug_stream << "Initial : " << endl;
+  *debug_stream << "Initial : " << std::endl;
   for (int i=0; i<OptParams.size(); i++)
     *debug_stream << " " << IDtag[i] << "=" << OptParams[i];
-  *debug_stream << endl;
+  *debug_stream << std::endl;
 #endif
 }
 
 // /** evaluate everything before optimization */
 // void
-// QMCCostFunctionSingle::getConfigurations(vector<string>& ConfigFile,
+// QMCCostFunctionSingle::getConfigurations(std::vector<std::string>& ConfigFile,
 //     int partid, int nparts) {
 //   if(ConfigFile.size()) {
 
-//     app_log() << "  Reading configurations from mcwalkerset " << endl;
+//     app_log() << "  Reading configurations from mcwalkerset " << std::endl;
 
 //     W.destroyWalkers(W.begin(),W.end());
 //     for(int i=0; i<ConfigFile.size(); i++) {
@@ -196,16 +196,16 @@ QMCCostFunctionSingle::checkConfigurations()
   int numLocWalkers=W.getActiveWalkers();
   Records.resize(numLocWalkers,6);
   if(usebuffer == "yes" )
-    app_log() <<"Using buffers for temporary storage in QMCCostFunction.\n" <<endl;
-  TempHDerivRecords.resize(numLocWalkers,vector<Return_t>(NumOptimizables,0));
-  TempDerivRecords.resize(numLocWalkers,vector<Return_t>(NumOptimizables,0));
+    app_log() <<"Using buffers for temporary storage in QMCCostFunction.\n" << std::endl;
+  TempHDerivRecords.resize(numLocWalkers,std::vector<Return_t>(NumOptimizables,0));
+  TempDerivRecords.resize(numLocWalkers,std::vector<Return_t>(NumOptimizables,0));
   if ( !H_KE.getHamiltonian("Kinetic") )
   {
     H_KE.addOperator(H.getHamiltonian("Kinetic"),"Kinetic");
 //       if ( includeNonlocalH=="yes" )
 //       {
 //         H_KE.addOperator(H.getHamiltonian("NonLocalECP"),"NonLocalECP");
-//         app_log()<<" Adding Non local PP component for optimization"<<endl;
+//         app_log()<<" Adding Non local PP component for optimization"<< std::endl;
 //       }
     H_KE.addObservables(W);
   }
@@ -240,21 +240,21 @@ QMCCostFunctionSingle::checkConfigurations()
 //         else
     saved[ENERGY_FIXED] = H.getLocalPotential();
     saved[REWEIGHT]=thisWalker.Weight=1.0;
-    vector<Return_t>* Dsaved=  &(TempDerivRecords[iw]) ;
-    vector<Return_t>* HDsaved=  &(TempHDerivRecords[iw]) ;
+    std::vector<Return_t>* Dsaved=  &(TempDerivRecords[iw]) ;
+    std::vector<Return_t>* HDsaved=  &(TempHDerivRecords[iw]) ;
     Psi.evaluateDerivatives(W, OptVariables,*Dsaved,*HDsaved);
   }
   //Need to sum over the processors
-  vector<Return_t> etemp(3);
+  std::vector<Return_t> etemp(3);
   etemp[0]=Etarget;
   etemp[1]=static_cast<Return_t>(numLocWalkers);
   etemp[2]=e2sum;
   myComm->allreduce(etemp);
   Etarget = static_cast<Return_t>(etemp[0]/etemp[1]);
   NumSamples = static_cast<int>(etemp[1]);
-  app_log() << "  VMC Eavg = " << Etarget << endl;
-  app_log() << "  VMC Evar = " << etemp[2]/etemp[1]-Etarget*Etarget << endl;
-  app_log() << "  Total weights = " << etemp[1] << endl;
+  app_log() << "  VMC Eavg = " << Etarget << std::endl;
+  app_log() << "  VMC Evar = " << etemp[2]/etemp[1]-Etarget*Etarget << std::endl;
+  app_log() << "  Total weights = " << etemp[1] << std::endl;
   setTargetEnergy(Etarget);
   ReportCounter=0;
 }
@@ -281,7 +281,7 @@ void QMCCostFunctionSingle::resetPsi(bool final_reset)
 }
 
 
-void QMCCostFunctionSingle::GradCost(vector<Return_t>& PGradient, const vector<Return_t>& PM, Return_t FiniteDiff)
+void QMCCostFunctionSingle::GradCost(std::vector<Return_t>& PGradient, const std::vector<Return_t>& PM, Return_t FiniteDiff)
 {
   if (FiniteDiff>0)
   {
@@ -308,11 +308,11 @@ void QMCCostFunctionSingle::GradCost(vector<Return_t>& PGradient, const vector<R
     curAvg_w = SumValue[SUM_E_WGT]/SumValue[SUM_WGT];
     Return_t curAvg2_w = curAvg_w*curAvg_w;
     curVar_w = SumValue[SUM_ESQ_WGT]/SumValue[SUM_WGT]-curAvg_w*curAvg_w;
-    vector<Return_t> EDtotals(NumOptimizables,0.0);
-    vector<Return_t> EDtotals_w(NumOptimizables,0.0);
-    vector<Return_t> E2Dtotals_w(NumOptimizables,0.0);
-    vector<Return_t> URV(NumOptimizables,0.0);
-    vector<Return_t> HD_avg(NumOptimizables,0.0);
+    std::vector<Return_t> EDtotals(NumOptimizables,0.0);
+    std::vector<Return_t> EDtotals_w(NumOptimizables,0.0);
+    std::vector<Return_t> E2Dtotals_w(NumOptimizables,0.0);
+    std::vector<Return_t> URV(NumOptimizables,0.0);
+    std::vector<Return_t> HD_avg(NumOptimizables,0.0);
     Return_t wgtinv = 1.0/SumValue[SUM_WGT];
     Return_t delE_bar;
     int nw=W.getActiveWalkers();
@@ -322,8 +322,8 @@ void QMCCostFunctionSingle::GradCost(vector<Return_t>& PGradient, const vector<R
       Return_t weight=saved[REWEIGHT]*wgtinv;
       Return_t eloc_new=saved[ENERGY_NEW];
       delE_bar += weight*std::pow(abs(eloc_new-EtargetEff),PowerE);
-      vector<Return_t>  Dsaved= (TempDerivRecords[iw]);
-      vector<Return_t>  HDsaved= (TempHDerivRecords[iw]);
+      std::vector<Return_t>  Dsaved= (TempDerivRecords[iw]);
+      std::vector<Return_t>  HDsaved= (TempHDerivRecords[iw]);
       for (int pm=0; pm<NumOptimizables; pm++)
       {
         HD_avg[pm]+= HDsaved[pm];
@@ -344,8 +344,8 @@ void QMCCostFunctionSingle::GradCost(vector<Return_t>& PGradient, const vector<R
         ltz=false;
       Return_t delE=std::pow(abs(eloc_new-EtargetEff),PowerE);
       Return_t ddelE = PowerE*std::pow(abs(eloc_new-EtargetEff),PowerE-1);
-      vector<Return_t> Dsaved= TempDerivRecords[iw];
-      vector<Return_t> HDsaved= TempHDerivRecords[iw];
+      std::vector<Return_t> Dsaved= TempDerivRecords[iw];
+      std::vector<Return_t> HDsaved= TempHDerivRecords[iw];
       for (int pm=0; pm<NumOptimizables; pm++)
       {
         EDtotals_w[pm] += weight*(HDsaved[pm] + 2.0*Dsaved[pm]*delta_l);
@@ -367,8 +367,8 @@ void QMCCostFunctionSingle::GradCost(vector<Return_t>& PGradient, const vector<R
       Return_t eloc_new=saved[ENERGY_NEW];
       Return_t delta_l = (eloc_new-curAvg_w);
       Return_t sigma_l = delta_l*delta_l;
-      vector<Return_t> Dsaved= TempDerivRecords[iw];
-      vector<Return_t> HDsaved= TempHDerivRecords[iw];
+      std::vector<Return_t> Dsaved= TempDerivRecords[iw];
+      std::vector<Return_t> HDsaved= TempHDerivRecords[iw];
       for (int pm=0; pm<NumOptimizables; pm++)
       {
         E2Dtotals_w[pm] += weight*2.0*(Dsaved[pm]*(sigma_l-curVar_w) + delta_l*(HDsaved[pm]-EDtotals_w[pm]));
@@ -406,13 +406,13 @@ QMCCostFunctionSingle::Return_t QMCCostFunctionSingle::fillOverlapHamiltonianMat
   curAvg_w = SumValue[SUM_E_WGT]/SumValue[SUM_WGT];
   Return_t curAvg2_w = SumValue[SUM_ESQ_WGT]/SumValue[SUM_WGT];
   Return_t wgtinv = 1.0/SumValue[SUM_WGT];
-  vector<Return_t> D_avg(NumParams(),0);
+  std::vector<Return_t> D_avg(NumParams(),0);
   int nw=W.getActiveWalkers();
   for (int iw=0; iw<nw; iw++)
   {
     Return_t*  saved=Records[iw];
     Return_t weight=saved[REWEIGHT]*wgtinv;
-    vector<Return_t> Dsaved= TempDerivRecords[iw];
+    std::vector<Return_t> Dsaved= TempDerivRecords[iw];
     for (int pm=0; pm<NumParams(); pm++)
     {
       D_avg[pm]+= Dsaved[pm]*weight;
@@ -435,8 +435,8 @@ QMCCostFunctionSingle::Return_t QMCCostFunctionSingle::fillOverlapHamiltonianMat
     Return_t*  saved=Records[iw];
     Return_t weight=saved[REWEIGHT]*wgtinv;
     Return_t eloc_new=saved[ENERGY_NEW];
-    vector<Return_t> Dsaved= TempDerivRecords[iw];
-    vector<Return_t> HDsaved= TempHDerivRecords[iw];
+    std::vector<Return_t> Dsaved= TempDerivRecords[iw];
+    std::vector<Return_t> HDsaved= TempHDerivRecords[iw];
     for (int pm=0; pm<NumParams(); pm++)
     {
       Return_t wfd = (Dsaved[pm]-D_avg[pm])*weight;

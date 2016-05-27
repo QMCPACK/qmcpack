@@ -2,7 +2,7 @@
 
 void QDwf::reset()
 {
-  //cout << "Calling QDwf::reset:: " << Ez << " " << z0 << endl;
+  //cout << "Calling QDwf::reset:: " << Ez << " " << z0 << std::endl;
   fac1 = zB - z0;
   fac2 = pow(2.0*Ez,onethird);
   kappa = sqrt(2.0*VB);
@@ -28,8 +28,8 @@ void QDwf::reset()
     azp0 = 0.5 * ( a + b );
     EL = Ez * ( fac1 - azp0 / fac2 );
     kappa = sqrt( 2.0 * ( VB - EL ) );
-    //      cout << Ez << '\t' << fac1 << '\t' << azp0 << '\t'
-    //	   << fac2 << '\t' << EL << '\t' << VB-EL << '\t' << kappa << endl;
+    //      std::cout << Ez << '\t' << fac1 << '\t' << azp0 << '\t'
+    //	   << fac2 << '\t' << EL << '\t' << VB-EL << '\t' << kappa << std::endl;
   }
   psiB = gsl_sf_airy_Ai( azp0, mode );
   /// create and initialise the uniform one-dimensional uGrid1D
@@ -52,7 +52,7 @@ void QDwf::reset()
     m_spline->F(i)[0] = gsl_sf_airy_Ai(zz,mode);
     m_spline->F(i)[1] = fac2*gsl_sf_airy_Ai_deriv(zz,mode);
   }
-  //    cout << z0 << '\t' << Ez << '\t' << kappa << '\t' << EL << endl;
+  //    std::cout << z0 << '\t' << Ez << '\t' << kappa << '\t' << EL << std::endl;
   //    exit(-1);
   return;
 }

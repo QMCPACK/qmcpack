@@ -46,13 +46,13 @@ bool PlaneWaveOrbitalBuilder::put(xmlNodePtr cur)
   //
   //Get wavefunction data and parameters from XML and HDF5
   //
-  string hdf5file;
+  std::string hdf5file;
   RealType ecut=-1.0;
   //Move through the XML tree and read basis information
   cur = cur->children;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == "basisset")
     {
       const xmlChar* aptr = xmlGetProp(cur,(const xmlChar*)"ecut");
@@ -82,7 +82,7 @@ bool PlaneWaveOrbitalBuilder::put(xmlNodePtr cur)
           xmlNodePtr slaterdetnode=cur->children;
           while(slaterdetnode != NULL)
           {
-            string cname2((const char*)(slaterdetnode->name));
+            std::string cname2((const char*)(slaterdetnode->name));
             //Which determinant?
             if(cname2 == "determinant")
             {
@@ -94,7 +94,7 @@ bool PlaneWaveOrbitalBuilder::put(xmlNodePtr cur)
                 xmlNodePtr detnode = slaterdetnode->children;
                 while(detnode!=NULL)
                 {
-                  string cname3((const char*)(detnode->name));
+                  std::string cname3((const char*)(detnode->name));
                   if(cname3 == "occupation")
                   {
                     const xmlChar* aptr2 = xmlGetProp(detnode,(const xmlChar*)"spindataset");
@@ -112,7 +112,7 @@ bool PlaneWaveOrbitalBuilder::put(xmlNodePtr cur)
                   xmlNodePtr detnode = slaterdetnode->children;
                   while(detnode!=NULL)
                   {
-                    string cname3((const char*)(detnode->name));
+                    std::string cname3((const char*)(detnode->name));
                     if(cname3 == "occupation")
                     {
                       const xmlChar* aptr2 = xmlGetProp(detnode,(const xmlChar*)"spindataset");

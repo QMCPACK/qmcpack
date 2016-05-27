@@ -29,7 +29,7 @@ QMCCSLinearOptimizeWFmanagerOMP::QMCCSLinearOptimizeWFmanagerOMP(MCWalkerConfigu
     TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool):
   QMCCostFunctionBase(w,psi,h), CloneManager(hpool)
 {
-  app_log()<<" Using QMCCSLinearOptimizeWFmanagerOMP::QMCCSLinearOptimizeWFmanagerOMP"<<endl;
+  app_log()<<" Using QMCCSLinearOptimizeWFmanagerOMP::QMCCSLinearOptimizeWFmanagerOMP"<< std::endl;
 }
 
 
@@ -75,9 +75,9 @@ void QMCCSLinearOptimizeWFmanagerOMP::resetPsi(bool final_reset)
 //       for (; it!=it_end; ++it)
 //         (**it).DataSetForDerivatives.clear();
   }
-  //cout << "######### QMCCSLinearOptimizeWFmanagerOMP::resetPsi " << endl;
-//     OptVariablesForPsi.print(cout);
-  //cout << "-------------------------------------- " << endl;
+  //cout << "######### QMCCSLinearOptimizeWFmanagerOMP::resetPsi " << std::endl;
+//     OptVariablesForPsi.print(std::cout);
+  //cout << "-------------------------------------- " << std::endl;
   Psi.resetParameters(OptVariablesForPsi);
   for (int i=0; i<psiClones.size(); ++i)
     psiClones[i]->resetParameters(OptVariablesForPsi);

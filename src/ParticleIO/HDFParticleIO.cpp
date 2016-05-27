@@ -22,7 +22,6 @@
 #include <utility>
 #include <iostream>
 #include <fstream>
-using namespace std;
 #include "Utilities/OhmmsInfo.h"
 #include "ParticleIO/ParticleLayoutIO.h"
 #include "ParticleIO/HDFParticleIO.h"
@@ -65,7 +64,7 @@ HDFParticleParser::put(xmlNodePtr cur)
   typedef Particle_t::ParticleIndex_t ParticleIndex_t;
   typedef Particle_t::ParticleScalar_t ParticleScalar_t;
   typedef Particle_t::ParticlePos_t ParticlePos_t;
-  string hfile;
+  std::string hfile;
   if(xmlHasProp(cur, (const xmlChar *) "href"))
   {
     hfile = (const char*)(xmlGetProp(cur, (const xmlChar *) "href"));
@@ -84,7 +83,7 @@ HDFParticleParser::put(xmlNodePtr cur)
   cur = cur->xmlChildrenNode;
   while(cur!=NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     /**@warning transition from UnitCell -> unitcell */
     if (cname == "UnitCell" || cname == "unitcell")
     {
@@ -94,13 +93,13 @@ HDFParticleParser::put(xmlNodePtr cur)
     else
       if (cname == "attrib")
       {
-        string oname(null_tag), otype(null_tag);
+        std::string oname(null_tag), otype(null_tag);
         int utype = 0;
         ///process attributes: type or format
         xmlAttrPtr att = cur->properties;
         while(att != NULL)
         {
-          string aname((const char*)(att->name));
+          std::string aname((const char*)(att->name));
           if(aname == "name")
           {
             oname = (const char*)(att->children->content);
@@ -166,18 +165,18 @@ void HDFSaveParticle::report(int iter)
 //  typedef Particle_t::ParticleScalar_t ParticleScalar_t;
 //  typedef Particle_t::ParticlePos_t ParticlePos_t;
 //
-//  string metafile = FileRoot;
+//  std::string metafile = FileRoot;
 //  metafile.append(".xml");
 //
-//  string hfile = FileRoot;
+//  std::string hfile = FileRoot;
 //  hfile.append(".h5");
 //
 //  // writing a meta file
-//  ofstream ftbmd(metafile.c_str()); // always overwrite
-//  ftbmd << "<?xml version=\"1.0\"?>" << endl;
+//  std::ofstream ftbmd(metafile.c_str()); // always overwrite
+//  ftbmd << "<?xml version=\"1.0\"?>" << std::endl;
 //  ftbmd << "<particleset src=\"" << hfile << "\" size=\"" << ref_.getTotalNum()
-//	<<"\" format=\"hdf5\">" << endl;
-//  ftbmd.setf(ios_base::scientific);
+//	<<"\" format=\"hdf5\">" << std::endl;
+//  ftbmd.setf(std::ios_base::scientific);
 //  ftbmd.precision(15);
 //  LatticeXMLWriter latticeout(ref_.Lattice);
 //  latticeout.get(ftbmd);
@@ -188,7 +187,7 @@ void HDFSaveParticle::report(int iter)
 //    ooref.end_node(ftbmd);
 //    it++;
 //  }
-//  ftbmd << "</particleset>" << endl;
+//  ftbmd << "</particleset>" << std::endl;
 //  ftbmd.close();
 //
 //  // creat HDF file handler

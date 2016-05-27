@@ -45,30 +45,30 @@ ForceChiesaPBCAA::ForceChiesaPBCAA(ParticleSet& ions, ParticleSet& elns, bool fi
   kcdifferent=false;
   myTableIndex=elns.addTable(ions);
   initBreakup(elns);
- // app_log()<< "IonIon Force" <<endl;
- // app_log()<<forces_IonIon<<endl; 
+ // app_log()<< "IonIon Force" << std::endl;
+ // app_log()<<forces_IonIon<< std::endl; 
   if (first_time==true)
   { 
    evaluateLR_AA();
- // app_log()<< "IonIon Force" <<endl;
- // app_log()<<forces_IonIon<<endl; 
+ // app_log()<< "IonIon Force" << std::endl;
+ // app_log()<<forces_IonIon<< std::endl; 
    evaluateSR_AA();
-   app_log()<< "IonIon Force" <<endl;
-   app_log()<<forces_IonIon<<endl;
+   app_log()<< "IonIon Force" << std::endl;
+   app_log()<<forces_IonIon<< std::endl;
    first_time=false;
   }
  // forces=0.0;
  // evaluateLR(elns);
  // app_log()<<"LR eI FORCE\n";
- // app_log()<<forces<<endl;
+ // app_log()<<forces<< std::endl;
 
  // evaluateSR(elns);
  // app_log()<<"LR+SR eI FORCE\n";
- // app_log()<<forces<<endl;
+ // app_log()<<forces<< std::endl;
   
  
- // app_log() << "  Maximum K shell " << AB->MaxKshell << endl;
- // app_log() << "  Number of k vectors " << AB->Fk.size() << endl;
+ // app_log() << "  Maximum K shell " << AB->MaxKshell << std::endl;
+ // app_log() << "  Number of k vectors " << AB->Fk.size() << std::endl;
   
   ///////////////////////////////////////////////////////////////
 }
@@ -126,13 +126,13 @@ void ForceChiesaPBCAA::initBreakup(ParticleSet& P)
     totQ+=Zat[iat] = Zspec[PtclA.GroupID[iat]];
   for(int iat=0; iat<NptclB; iat++)
     totQ+=Qat[iat] = Qspec[P.GroupID[iat]];
-//    if(totQ>numeric_limits<RealType>::epsilon())
+//    if(totQ>std::numeric_limits<RealType>::epsilon())
 //    {
 //      LOGMSG("PBCs not yet finished for non-neutral cells");
 //      OHMMS::Controller->abort();
 //    }
   ////Test if the box sizes are same (=> kcut same for fixed dimcut)
-  kcdifferent = (std::abs(PtclA.Lattice.LR_kc - P.Lattice.LR_kc) > numeric_limits<RealType>::epsilon());
+  kcdifferent = (std::abs(PtclA.Lattice.LR_kc - P.Lattice.LR_kc) > std::numeric_limits<RealType>::epsilon());
   minkc = std::min(PtclA.Lattice.LR_kc,P.Lattice.LR_kc);
   //AB->initBreakup(*PtclB);
   //initBreakup is called only once
@@ -146,7 +146,7 @@ void ForceChiesaPBCAA::initBreakup(ParticleSet& P)
  //   V0 = LRCoulombSingleton::createSpline4RbyVs(AB,myRcut,myGrid);
  //   if(Vat.size())
  //   {
- //     app_log() << "  Vat is not empty. Something is wrong" << endl;
+ //     app_log() << "  Vat is not empty. Something is wrong" << std::endl;
  //     OHMMS::Controller->abort();
  //   }
  //   Vat.resize(NptclA,V0);
@@ -160,8 +160,8 @@ void ForceChiesaPBCAA::evaluateLR(ParticleSet& P)
 {
   const StructFact& RhoKA(*(PtclA.SK));
   const StructFact& RhoKB(*(P.SK));
-  //app_log()<<"Calculate Long Range e-I forces"<<endl;
-  vector<TinyVector<RealType,DIM> > grad(PtclA.getTotalNum());
+  //app_log()<<"Calculate Long Range e-I forces"<< std::endl;
+  std::vector<TinyVector<RealType,DIM> > grad(PtclA.getTotalNum());
   for(int j=0; j<NumSpeciesB; j++)
   {
     for (int iat=0; iat<grad.size(); iat++)
@@ -169,8 +169,8 @@ void ForceChiesaPBCAA::evaluateLR(ParticleSet& P)
     AB->evaluateGrad(PtclA, P, j, Zat, grad);
     for (int iat=0; iat<grad.size(); iat++){
       forces[iat] += Qspec[j]*grad[iat];
-    //  app_log()<<"Qspec["<<j<<"] = "<<Qspec[j]<<endl;
-  //    app_log()<<"Grad["<<iat<<"] = "<<grad[iat]<<endl;
+    //  app_log()<<"Qspec["<<j<<"] = "<<Qspec[j]<< std::endl;
+  //    app_log()<<"Grad["<<iat<<"] = "<<grad[iat]<< std::endl;
     }
   } // electron species
   
@@ -185,7 +185,7 @@ void ForceChiesaPBCAA::evaluateSR(ParticleSet& P)
   for(int iat=0; iat<NptclA; iat++)
   {
     //RealType esum = 0.0;
-    //app_log()<<"Long Range force calculation for ion..."<<endl;
+    //app_log()<<"Long Range force calculation for ion..."<< std::endl;
     for(int nn=d_ab.M[iat], jat=0; nn<d_ab.M[iat+1]; ++nn,++jat)
     {
       RealType V;
@@ -193,15 +193,15 @@ void ForceChiesaPBCAA::evaluateSR(ParticleSet& P)
       //rV = rVs->splint(d_ab.r(nn), d_rV_dr, d2_rV_dr2);
       V = -AB->srDf(d_ab.r(nn),d_ab.rinv(nn));
      // std::stringstream wee;
-    //  wee<<"srDf() #"<<omp_get_thread_num()<<" V= "<<V<<" "<<iat<<" "<<nn<<endl;
+    //  wee<<"srDf() #"<<omp_get_thread_num()<<" V= "<<V<<" "<<iat<<" "<<nn<< std::endl;
       
-    //  cout<<wee.str();
+    //  std::cout <<wee.str();
       
       PosType drhat = d_ab.rinv(nn) * d_ab.dr(nn);
       //esum += Qat[jat]*d_ab.rinv(nn)*rV;
-    //  app_log()<<"iat="<<iat<<" elec="<<jat<<endl;
-    //  app_log()<<"dr = "<<d_ab.dr(nn)<<endl;
-    //  app_log()<<"force = "<<-g_f*Zat[iat]*Qat[jat] * V * drhat<<endl;
+    //  app_log()<<"iat="<<iat<<" elec="<<jat<< std::endl;
+    //  app_log()<<"dr = "<<d_ab.dr(nn)<< std::endl;
+    //  app_log()<<"force = "<<-g_f*Zat[iat]*Qat[jat] * V * drhat<< std::endl;
       forces[iat] += -g_f*Zat[iat]*Qat[jat] * V * drhat;
     }
   }
@@ -223,9 +223,9 @@ void ForceChiesaPBCAA::evaluateSR_AA()
       PosType grad = -Zat[jpart]*Zat[ipart]*V*d_aa.rinv(nn)*d_aa.dr(nn);
       forces_IonIon[ipart] += grad;
       forces_IonIon[jpart] -= grad;
-   //   app_log()<<"ShortRange Ion Ion component"<<endl;
-   //   app_log() <<"grad[" <<ipart<< "] = "<<grad<<endl;
-   //   app_log() <<"Zat[" <<ipart<< "] = "<<Zat[ipart]<<endl;
+   //   app_log()<<"ShortRange Ion Ion component"<< std::endl;
+   //   app_log() <<"grad[" <<ipart<< "] = "<<grad<< std::endl;
+   //   app_log() <<"Zat[" <<ipart<< "] = "<<Zat[ipart]<< std::endl;
     }
   }
 }
@@ -233,7 +233,7 @@ void ForceChiesaPBCAA::evaluateSR_AA()
 void ForceChiesaPBCAA::evaluateLR_AA()
 {
   const StructFact& PtclRhoK(*(PtclA.SK));
-  vector<TinyVector<RealType,DIM> > grad(PtclA.getTotalNum());
+  std::vector<TinyVector<RealType,DIM> > grad(PtclA.getTotalNum());
   for(int spec2=0; spec2<NumSpeciesA; spec2++)
   {
     RealType Z2 = Zspec[spec2];
@@ -242,9 +242,9 @@ void ForceChiesaPBCAA::evaluateLR_AA()
     AB->evaluateGrad(PtclA, PtclA, spec2, Zat, grad);
 
     for (int iat=0; iat<grad.size(); iat++){
-     // app_log()<<"Long Range Ion Ion Component."<<endl;
-     // app_log() <<"grad[" <<iat<< "] = "<<grad[iat]<<endl;
-     // app_log() <<"Zat[" <<iat<< "] = "<<Zat[iat]<<endl;
+     // app_log()<<"Long Range Ion Ion Component."<< std::endl;
+     // app_log() <<"grad[" <<iat<< "] = "<<grad[iat]<< std::endl;
+     // app_log() <<"Zat[" <<iat<< "] = "<<Zat[iat]<< std::endl;
       forces_IonIon[iat] += Z2*grad[iat];
       
   }
@@ -261,11 +261,11 @@ ForceChiesaPBCAA::evaluate(ParticleSet& P)
   forces=0.0;
   evaluateLR(P);
 //  app_log()<<"LR eI FORCE\n";
-//  app_log()<<forces<<endl;
+//  app_log()<<forces<< std::endl;
 
   evaluateSR(P);
 //  app_log()<<"LR+SR eI FORCE\n";
-//  app_log()<<forces<<endl;
+//  app_log()<<forces<< std::endl;
   if(addionion==true) forces=forces+forces_IonIon;  
   return 0.0;
 }
@@ -290,24 +290,24 @@ ForceChiesaPBCAA::Return_t ForceChiesaPBCAA::g_filter(RealType r)
 
 bool ForceChiesaPBCAA::put(xmlNodePtr cur)
 {
-  string ionionforce("yes");
+  std::string ionionforce("yes");
   OhmmsAttributeSet attr;
   attr.add(prefix, "name");
   attr.add(ionionforce, "addionion");
   attr.put(cur);
   addionion = (ionionforce=="yes") || (ionionforce == "true");
-  app_log() << "ionionforce = "<<ionionforce<<endl;
-  app_log() << "addionion="<<addionion<<endl;
-  app_log() << "FirstTime= "<<FirstTime<<endl;
+  app_log() << "ionionforce = "<<ionionforce<< std::endl;
+  app_log() << "addionion="<<addionion<< std::endl;
+  app_log() << "FirstTime= "<<FirstTime<< std::endl;
   ParameterSet fcep_param_set;
   fcep_param_set.add(Rcut, "rcut","real");
   fcep_param_set.add(N_basis, "nbasis", "int");
   fcep_param_set.add(m_exp, "weight_exp", "int");
   fcep_param_set.put(cur);
-  app_log() <<"    ForceChiesaPBCAA Parameters"<<endl;
-  app_log() <<"        ForceChiesaPBCAA::Rcut="<<Rcut<<endl;
-  app_log() <<"        ForceChiesaPBCAA::N_basis="<<N_basis<<endl;
-  app_log() <<"        ForceChiesaPBCAA::m_exp="<<m_exp<<endl;
+  app_log() <<"    ForceChiesaPBCAA Parameters"<< std::endl;
+  app_log() <<"        ForceChiesaPBCAA::Rcut="<<Rcut<< std::endl;
+  app_log() <<"        ForceChiesaPBCAA::N_basis="<<N_basis<< std::endl;
+  app_log() <<"        ForceChiesaPBCAA::m_exp="<<m_exp<< std::endl;
   InitMatrix();
   return true;
 }
@@ -349,29 +349,29 @@ QMCHamiltonianBase* ForceChiesaPBCAA::makeClone(ParticleSet& qp, TrialWaveFuncti
 }
 
 //  void ForceChiesaPBCAA::addObservables(PropertySetType& plist) {
-//    //cerr << "ForceBase::addObs sound off" << endl;
+//    //cerr << "ForceBase::addObs sound off" << std::endl;
 //    //obsName << myName << "0_x";
 //    //myIndex = plist.add(obsName.str());
 //    //obsName.clear();
 //    mySize = Nnuc*OHMMS_DIM;
-//    //cerr << "ForceBase mySize is " << Nnuc << " * " << OHMMS_DIM << " = " << mySize << endl;
+//    //cerr << "ForceBase mySize is " << Nnuc << " * " << OHMMS_DIM << " = " << mySize << std::endl;
 //    checkInit = true;
 //    if(myIndex<0) myIndex=plist.size();
 //    int tmpIndex;
 //    bool firstTime = true;
 //    for(int iat=0; iat<Nnuc; iat++) {
 //      for(int x=0; x<OHMMS_DIM; x++) {
-//        ostringstream obsName;
+//        std::ostringstream obsName;
 //        obsName << "HFCep_" << iat << "_" << x;
 //        tmpIndex = plist.add(obsName.str());
 //        //if(firstTime) {
 //        //  firstTime = false;
 //        //  myIndex = tmpIndex;// + 3;
 //        //}
-//        cerr << iat << ", " << x << " stored at " << tmpIndex << endl;
+//        std::cerr << iat << ", " << x << " stored at " << tmpIndex << std::endl;
 //      }
 //    }
-//    cerr << "AddObs myIndex is " << myIndex << " last " << tmpIndex << endl;
+//    std::cerr << "AddObs myIndex is " << myIndex << " last " << tmpIndex << std::endl;
 //  }
 //  // debugging version only z component
 //  //void ForceChiesaPBCAA::addObservables(PropertySetType& plist) {
@@ -381,18 +381,18 @@ QMCHamiltonianBase* ForceChiesaPBCAA::makeClone(ParticleSet& qp, TrialWaveFuncti
 //  //  bool firstTime = true;
 //  //  for(int iat=0; iat<Nnuc; iat++) {
 //  //    //for(int x=0; x<OHMMS_DIM; x++) {
-//  //      ostringstream obsName;
+//  //      std::ostringstream obsName;
 //  //      obsName << "HFCep_" << iat << "_Z_sr";
 //  //      tmpIndex = plist.add(obsName.str());
 //  //      if(firstTime) {
 //  //        firstTime = false;
 //  //        myIndex = tmpIndex;
-//  //        cerr << "ForceChiesaPBCAA addObs setting myindex " << myIndex << endl;
+//  //        std::cerr << "ForceChiesaPBCAA addObs setting myindex " << myIndex << std::endl;
 //  //      }
-//  //      ostringstream obsName2;
+//  //      std::ostringstream obsName2;
 //  //      obsName2 << "HFCep_" << iat << "_Z_lr";
 //  //      tmpIndex = plist.add(obsName2.str());
-//  //      //cerr << iat << ", " << x << " stored at " << tmpIndex << endl;
+//  //      //cerr << iat << ", " << x << " stored at " << tmpIndex << std::endl;
 //  //    //}
 //  //  }
 //  //}
@@ -412,7 +412,7 @@ QMCHamiltonianBase* ForceChiesaPBCAA::makeClone(ParticleSet& qp, TrialWaveFuncti
 //  //    index++;
 //  //    //}
 //  //  }
-//  //  //cerr << endl;
+//  //  //cerr << std::endl;
 //  //}
 //  void ForceChiesaPBCAA::setObservables(PropertySetType& plist) {
 //    ///cerr << "ForceBase::setObs storing forces";
@@ -424,7 +424,7 @@ QMCHamiltonianBase* ForceChiesaPBCAA::makeClone(ParticleSet& qp, TrialWaveFuncti
 //        index++;
 //      }
 //    }
-//    //cerr << endl;
+//    //cerr << std::endl;
 //  }
 
 /***************************************************************************

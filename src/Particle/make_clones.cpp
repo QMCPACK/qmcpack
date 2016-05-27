@@ -72,9 +72,9 @@ void ParticleSet::reset_clones()
 
   //for(int tid=0; tid<nt; ++tid)
   //{
-  //  cout << "Thread ID = " << get_clone(tid)->getName() << endl;
+  //  std::cout << "Thread ID = " << get_clone(tid)->getName() << std::endl;
   //  for(int t=0; t<DistTables.size(); ++t)
-  //    cout << get_clone(tid)->DistTables[t]->origin().getName() << endl;
+  //    std::cout << get_clone(tid)->DistTables[t]->origin().getName() << std::endl;
   //}
 }
 

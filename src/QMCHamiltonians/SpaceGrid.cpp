@@ -42,16 +42,16 @@ SpaceGrid::SpaceGrid(int& nvalues)
 }
 
 
-bool SpaceGrid::put(xmlNodePtr cur, map<string,Point>& points,bool abort_on_fail)
+bool SpaceGrid::put(xmlNodePtr cur, std::map<std::string,Point>& points,bool abort_on_fail)
 {
   bool succeeded=true;
   ndomains=-1;
   OhmmsAttributeSet ga;
-  string coord;
+  std::string coord;
   int npundef = -100000;
   npmin = npundef;
   npmax = npundef;
-  string ref("");
+  std::string ref("");
   ga.add(coord,"coord");         //must be cartesian, cylindrical, or spherical
   ga.add(npmin,"min_part");
   ga.add(npmax,"max_part");
@@ -70,8 +70,8 @@ bool SpaceGrid::put(xmlNodePtr cur, map<string,Point>& points,bool abort_on_fail
           coordinate = voronoi;
         else
         {
-          app_log()<<"  Coordinate supplied to spacegrid must be cartesian, cylindrical, spherical, or voronoi" <<endl;
-          app_log()<<"  You provided "<<coord<<endl;
+          app_log()<<"  Coordinate supplied to spacegrid must be cartesian, cylindrical, spherical, or voronoi" << std::endl;
+          app_log()<<"  You provided "<<coord<< std::endl;
           succeeded=false;
         }
   chempot = npmin!=npundef && npmax!=npundef;
@@ -88,7 +88,7 @@ bool SpaceGrid::put(xmlNodePtr cur, map<string,Point>& points,bool abort_on_fail
           reference = neutral;
         else
         {
-          app_log()<<ref<<" is not a valid reference, choose vacuum or neutral."<<endl;
+          app_log()<<ref<<" is not a valid reference, choose vacuum or neutral."<< std::endl;
           APP_ABORT("SpaceGrid::put()");
         }
     if(coordinate==voronoi)
@@ -126,7 +126,7 @@ bool SpaceGrid::put(xmlNodePtr cur, map<string,Point>& points,bool abort_on_fail
 }
 
 
-bool SpaceGrid::initialize_voronoi(map<string,Point>& points)
+bool SpaceGrid::initialize_voronoi(std::map<std::string,Point>& points)
 {
   bool succeeded = true;
   if(Rptcl)
@@ -154,7 +154,7 @@ bool SpaceGrid::initialize_voronoi(map<string,Point>& points)
         fill(reference_count.begin(),reference_count.end(),0.0);
         break;
       case(neutral):
-        const vector<RealType>& Z = *Zptcl;
+        const std::vector<RealType>& Z = *Zptcl;
         for(int i=0; i<ndomains; i++)
           reference_count[i] = (int)Z[i] + 1;//+1 is for ion itself
         Zptcl = 0;
@@ -164,20 +164,20 @@ bool SpaceGrid::initialize_voronoi(map<string,Point>& points)
   }
   else
   {
-    app_log()<<"  Pstatic must be specified for a Voronoi grid"<<endl;
+    app_log()<<"  Pstatic must be specified for a Voronoi grid"<< std::endl;
     succeeded = false;
   }
   return succeeded;
 }
 
 
-bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, string& coord, map<string,Point>& points)
+bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, std::string& coord, std::map<std::string,Point>& points)
 {
   bool succeeded = true;
-  string ax_cartesian[DIM]   = {"x" , "y"   , "z"    };
-  string ax_cylindrical[DIM] = {"r" , "phi" , "z"    };
-  string ax_spherical[DIM]   = {"r" , "phi" , "theta"};
-  map<string,int> cmap;
+  std::string ax_cartesian[DIM]   = {"x" , "y"   , "z"    };
+  std::string ax_cylindrical[DIM] = {"r" , "phi" , "z"    };
+  std::string ax_spherical[DIM]   = {"r" , "phi" , "theta"};
+  std::map<std::string,int> cmap;
   switch(coordinate)
   {
   case(cartesian):
@@ -204,25 +204,25 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, string& coord, map<string
   }
   //loop over spacegrid xml elements
   xmlNodePtr element = cur->children;
-  string undefined   = "";
+  std::string undefined   = "";
   int iaxis          ;
   int naxes =0;
   bool has_origin    = false;
   origin = points["zero"];
   // variables for loop
   RealType utol = 1e-5;
-  string grid;
-  vector<int> ndu_per_interval[DIM];
+  std::string grid;
+  std::vector<int> ndu_per_interval[DIM];
   while(element!=NULL)
   {
-    string name = (const char*)element->name;
+    std::string name = (const char*)element->name;
     OhmmsAttributeSet* ea   = new OhmmsAttributeSet;
-    string p1       = undefined;
-    string p2       = "zero";
-    string fraction = undefined;
+    std::string p1       = undefined;
+    std::string p2       = "zero";
+    std::string fraction = undefined;
     RealType frac     = -1.0;
-    string scale    = undefined;
-    string label    = undefined;
+    std::string scale    = undefined;
+    std::string label    = undefined;
     grid     = "0 1";
     astring agrid;
     ea->add(p1,"p1");
@@ -238,12 +238,12 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, string& coord, map<string
     {
       if(p1==undefined)
       {
-        app_log() << "      p1 must be defined in spacegrid element "<<name<<endl;
+        app_log() << "      p1 must be defined in spacegrid element "<<name<< std::endl;
         succeeded=false;
       }
       if(has_origin)
       {
-        app_log()<<"      spacegrid must contain at most one origin element"<<endl;
+        app_log()<<"      spacegrid must contain at most one origin element"<< std::endl;
         APP_ABORT("SpaceGrid::put");
       }
       else
@@ -259,22 +259,22 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, string& coord, map<string
       {
         if(p1==undefined)
         {
-          app_log() << "      p1 must be defined in spacegrid element "<<name<<endl;
+          app_log() << "      p1 must be defined in spacegrid element "<<name<< std::endl;
           succeeded=false;
         }
         naxes++;
         if(naxes>DIM)
         {
-          app_log()<<"        spacegrid must contain "<<DIM<<" axes, "<<naxes<<"provided"<<endl;
+          app_log()<<"        spacegrid must contain "<<DIM<<" axes, "<<naxes<<"provided"<< std::endl;
           APP_ABORT("SpaceGrid::put");
         }
         if(cmap.find(label)==cmap.end())
         {
-          app_log()<<"      grid label "<<label<<" is invalid for "<<coord<<" coordinates"<<endl;
+          app_log()<<"      grid label "<<label<<" is invalid for "<<coord<<" coordinates"<< std::endl;
           app_log()<<"      valid options are: ";
           for(int d=0; d<DIM; d++)
             app_log()<<axlabel[d]<<", ";
-          app_log()<<endl;
+          app_log()<< std::endl;
           APP_ABORT("SpaceGrid::put");
         }
         iaxis=cmap[label];
@@ -286,7 +286,7 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, string& coord, map<string
           axes(d,iaxis) = frac*(points[p1][d]-points[p2][d]);
         //read in the grid contents
         //  remove spaces inside of parentheses
-        string gtmp;
+        std::string gtmp;
         bool inparen=false;
         char gc;
         for(int i=0; i<grid.size(); i++)
@@ -307,7 +307,7 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, string& coord, map<string
         }
         grid=gtmp;
         //  break into tokens
-        vector<string> tokens = split(grid," ");
+        std::vector<std::string> tokens = split(grid," ");
         //  count the number of intervals
         int nintervals=0;
         for(int i=0; i<tokens.size(); i++)
@@ -315,8 +315,8 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, string& coord, map<string
             nintervals++;
         nintervals--;
         //  allocate temporary interval variables
-        vector<int> ndom_int,ndu_int;
-        vector<RealType> du_int;
+        std::vector<int> ndom_int,ndu_int;
+        std::vector<RealType> du_int;
         ndom_int.resize(nintervals);
         du_int.resize(nintervals);
         ndu_int.resize(nintervals);
@@ -325,8 +325,8 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, string& coord, map<string
         umin[iaxis]=u1;
         if(abs(u1)>1.0000001)
         {
-          app_log()<<"  interval endparticles cannot be greater than "<<1<<endl;
-          app_log()<<"  endpoint provided: "<<u1<<endl;
+          app_log()<<"  interval endparticles cannot be greater than "<<1<< std::endl;
+          app_log()<<"  endpoint provided: "<<u1<< std::endl;
           succeeded=false;
         }
         bool is_int=false;
@@ -346,13 +346,13 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, string& coord, map<string
             interval++;
             if(u2<u1)
             {
-              app_log()<<"  interval ("<<u1<<","<<u2<<") is negative"<<endl;
+              app_log()<<"  interval ("<<u1<<","<<u2<<") is negative"<< std::endl;
               succeeded=false;
             }
             if(abs(u2)>1.0000001)
             {
-              app_log()<<"  interval endparticles cannot be greater than "<<1<<endl;
-              app_log()<<"  endpoint provided: "<<u2<<endl;
+              app_log()<<"  interval endparticles cannot be greater than "<<1<< std::endl;
+              app_log()<<"  endpoint provided: "<<u2<< std::endl;
               succeeded=false;
             }
             if(is_int)
@@ -366,7 +366,7 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, string& coord, map<string
               ndom_int[interval]=floor((u2-u1)/du_i+.5);
               if(abs(u2-u1-du_i*ndom_int[interval])>utol)
               {
-                app_log()<<"  interval ("<<u1<<","<<u2<<") not divisible by du="<<du_i<<endl;
+                app_log()<<"  interval ("<<u1<<","<<u2<<") not divisible by du="<<du_i<< std::endl;
                 succeeded=false;
               }
             }
@@ -375,8 +375,8 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, string& coord, map<string
           else
           {
             has_paren_val=true;
-            string paren_val=tokens[i].substr(1,tokens[i].length()-2);
-            is_int=tokens[i].find(".")==string::npos;
+            std::string paren_val=tokens[i].substr(1,tokens[i].length()-2);
+            is_int=tokens[i].find(".")==std::string::npos;
             if(is_int)
             {
               ndom_i = string2int(paren_val);
@@ -392,7 +392,7 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, string& coord, map<string
         // find the smallest domain width
         RealType du_min=1.0;
         for(int i=0; i<du_int.size(); i++)
-          du_min=min(du_min,du_int[i]);
+          du_min= std::min(du_min,du_int[i]);
         odu[iaxis]=1.0/du_min;
         // make sure it divides into all other domain widths
         for(int i=0; i<du_int.size(); i++)
@@ -400,7 +400,7 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, string& coord, map<string
           ndu_int[i]=floor(du_int[i]/du_min+.5);
           if(abs(du_int[i]-ndu_int[i]*du_min)>utol)
           {
-            app_log()<<"interval "<<i+1<<" of axis "<<iaxis+1<<" is not divisible by smallest subinterval "<<du_min<<endl;
+            app_log()<<"interval "<<i+1<<" of axis "<<iaxis+1<<" is not divisible by smallest subinterval "<<du_min<< std::endl;
             succeeded=false;
           }
         }
@@ -414,7 +414,7 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, string& coord, map<string
             nd++;
             for(int k=0; k<ndu_int[i]; k++)
             {
-              //app_log()<<"        accessing gmap "<<iaxis<<" "<<n<<endl;
+              //app_log()<<"        accessing gmap "<<iaxis<<" "<<n<< std::endl;
               gmap[iaxis][n]=nd;
               n++;
             }
@@ -439,12 +439,12 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, string& coord, map<string
   }
   if(naxes!=DIM)
   {
-    app_log()<<"  spacegrid must contain "<<DIM<<" axes, "<<iaxis+1<<"provided"<<endl;
+    app_log()<<"  spacegrid must contain "<<DIM<<" axes, "<<iaxis+1<<"provided"<< std::endl;
     succeeded=false;
   }
   axinv = inverse(axes);
   //check that all axis grid values fall in the allowed intervals
-  map<string,int> cartmap;
+  std::map<std::string,int> cartmap;
   for(int d=0; d<DIM; d++)
   {
     cartmap[ax_cartesian[d]]=d;
@@ -455,8 +455,8 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, string& coord, map<string
     {
       if(umin[d]<-1.0 || umax[d]>1.0)
       {
-        app_log()<<"  grid values for "<<axlabel[d]<<" must fall in [-1,1]"<<endl;
-        app_log()<<"  interval provided: ["<<umin[d]<<","<<umax[d]<<"]"<<endl;
+        app_log()<<"  grid values for "<<axlabel[d]<<" must fall in [-1,1]"<< std::endl;
+        app_log()<<"  interval provided: ["<<umin[d]<<","<<umax[d]<<"]"<< std::endl;
         succeeded=false;
       }
     }
@@ -465,8 +465,8 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, string& coord, map<string
       {
         if(abs(umin[d])+abs(umax[d])>1.0)
         {
-          app_log()<<"  phi interval cannot be longer than 1"<<endl;
-          app_log()<<"  interval length provided: "<<abs(umin[d])+abs(umax[d])<<endl;
+          app_log()<<"  phi interval cannot be longer than 1"<< std::endl;
+          app_log()<<"  interval length provided: "<<abs(umin[d])+abs(umax[d])<< std::endl;
           succeeded=false;
         }
       }
@@ -474,8 +474,8 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, string& coord, map<string
       {
         if(umin[d]<0.0 || umax[d]>1.0)
         {
-          app_log()<<"  grid values for "<<axlabel[d]<<" must fall in [0,1]"<<endl;
-          app_log()<<"  interval provided: ["<<umin[d]<<","<<umax[d]<<"]"<<endl;
+          app_log()<<"  grid values for "<<axlabel[d]<<" must fall in [0,1]"<< std::endl;
+          app_log()<<"  interval provided: ["<<umin[d]<<","<<umax[d]<<"]"<< std::endl;
           succeeded=false;
         }
       }
@@ -492,17 +492,17 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, string& coord, map<string
   ndomains=dimensions[0]
            *dimensions[1]
            *dimensions[2];
-  volume = abs(det(axes))*8.0;//axes span only one octant
+  volume = std::abs(det(axes))*8.0;//axes span only one octant
   //compute domain volumes, centers, and widths
   domain_volumes.resize(ndomains,1);
   domain_centers.resize(ndomains,DIM);
   domain_uwidths.resize(ndomains,DIM);
-  vector<RealType> interval_centers[DIM];
-  vector<RealType> interval_widths[DIM];
+  std::vector<RealType> interval_centers[DIM];
+  std::vector<RealType> interval_widths[DIM];
   for(int d=0; d<DIM; d++)
   {
     int nintervals = ndu_per_interval[d].size();
-    app_log()<<"nintervals "<<d<<" "<<nintervals<<endl;
+    app_log()<<"nintervals "<<d<<" "<<nintervals<< std::endl;
     interval_centers[d].resize(nintervals);
     interval_widths[d].resize(nintervals);
     interval_widths[d][0]=ndu_per_interval[d][0]/odu[d];
@@ -513,17 +513,17 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, string& coord, map<string
       interval_centers[d][i] = interval_centers[d][i-1]
                                +.5*(interval_widths[d][i]+interval_widths[d][i-1]);
     }
-    //app_log()<<"  interval widths"<<endl;
+    //app_log()<<"  interval widths"<< std::endl;
     //for(int i=0;i<nintervals;i++)
-    //  app_log()<<"    "<<i<<" "<<interval_widths[d][i]<<endl;
-    //app_log()<<"  interval centers"<<endl;
+    //  app_log()<<"    "<<i<<" "<<interval_widths[d][i]<< std::endl;
+    //app_log()<<"  interval centers"<< std::endl;
     //for(int i=0;i<nintervals;i++)
-    //  app_log()<<"    "<<i<<" "<<interval_centers[d][i]<<endl;
+    //  app_log()<<"    "<<i<<" "<<interval_centers[d][i]<< std::endl;
   }
   Point du,uc,ubc,rc;
   RealType vol;
   RealType vol_tot=0.0;
-  RealType vscale = abs(det(axes));
+  RealType vscale = std::abs(det(axes));
   for(int i=0; i<dimensions[0]; i++)
   {
     for(int j=0; j<dimensions[1]; j++)
@@ -567,11 +567,11 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, string& coord, map<string
         vol*=vscale;
         vol_tot+=vol;
         rc = dot(axes,ubc) + origin;
-        //app_log()<<endl;
-        //app_log()<<"umin "<<uc-du/2<<endl;
-        //app_log()<<"uc "<<uc<<endl;
-        //app_log()<<"umax "<<uc+du/2<<endl;
-        //app_log()<<"rc "<<rc<<endl;
+        //app_log()<< std::endl;
+        //app_log()<<"umin "<<uc-du/2<< std::endl;
+        //app_log()<<"uc "<<uc<< std::endl;
+        //app_log()<<"umax "<<uc+du/2<< std::endl;
+        //app_log()<<"rc "<<rc<< std::endl;
         domain_volumes(idomain,0) = vol;
         for(int d=0; d<DIM; d++)
         {
@@ -598,9 +598,9 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, string& coord, map<string
   //  vfrac=vol_tot/volume;
   //}
   //if(abs(vol_tot/volume-vfrac)>1e-6){
-  //  app_log()<<"  "<<coord<<" relative volume"<<endl;
-  //  app_log()<<"  spacegrid volume fraction "<<vol_tot/volume<<endl;
-  //  app_log()<<"                  should be "<<vfrac<<endl;
+  //  app_log()<<"  "<<coord<<" relative volume"<< std::endl;
+  //  app_log()<<"  spacegrid volume fraction "<<vol_tot/volume<< std::endl;
+  //  app_log()<<"                  should be "<<vfrac<< std::endl;
   //  succeeded=false;
   //}
   //find the actual volume of the grid
@@ -642,10 +642,10 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, string& coord, map<string
 
 
 
-void SpaceGrid::write_description(ostream& os, string& indent)
+void SpaceGrid::write_description(std::ostream& os, std::string& indent)
 {
-  os<<indent+"SpaceGrid"<<endl;
-  string s;
+  os<<indent+"SpaceGrid"<< std::endl;
+  std::string s;
   switch(coordinate)
   {
   case cartesian:
@@ -658,26 +658,26 @@ void SpaceGrid::write_description(ostream& os, string& indent)
     s="spherical";
     break;
   }
-  os<<indent+"  coordinates   = "+s<<endl;
-  os<<indent+"  buffer_offset = "<<buffer_offset<<endl;
-  os<<indent+"  ndomains      = "<<ndomains<<endl;
-  os<<indent+"  axes  = "<<axes<<endl;
-  os<<indent+"  axinv = "<<axinv<<endl;
+  os<<indent+"  coordinates   = "+s<< std::endl;
+  os<<indent+"  buffer_offset = "<<buffer_offset<< std::endl;
+  os<<indent+"  ndomains      = "<<ndomains<< std::endl;
+  os<<indent+"  axes  = "<<axes<< std::endl;
+  os<<indent+"  axinv = "<<axinv<< std::endl;
   for(int d=0; d<DIM; d++)
   {
-    os<<indent+"  axis "<<axlabel[d]<<":"<<endl;
-    os<<indent+"    umin = "<<umin[d]<<endl;
-    os<<indent+"    umax = "<<umax[d]<<endl;
-    os<<indent+"    du   = "<<1.0/odu[d]<<endl;
-    os<<indent+"    dm   = "<<dm[d]<<endl;
+    os<<indent+"  axis "<<axlabel[d]<<":"<< std::endl;
+    os<<indent+"    umin = "<<umin[d]<< std::endl;
+    os<<indent+"    umax = "<<umax[d]<< std::endl;
+    os<<indent+"    du   = "<<1.0/odu[d]<< std::endl;
+    os<<indent+"    dm   = "<<dm[d]<< std::endl;
     os<<indent+"    gmap = ";
     for(int g=0; g<gmap[d].size(); g++)
     {
       os<<gmap[d][g]<<" ";
     }
-    os<<endl;
+    os<< std::endl;
   }
-  os<<indent+"end SpaceGrid"<<endl;
+  os<<indent+"end SpaceGrid"<< std::endl;
 }
 
 
@@ -687,14 +687,14 @@ int SpaceGrid::allocate_buffer_space(BufferType& buf)
   buffer_offset = buf.size();
   if(!chempot)
   {
-    vector<RealType> tmp(nvalues_per_domain*ndomains);
+    std::vector<RealType> tmp(nvalues_per_domain*ndomains);
     buf.add(tmp.begin(),tmp.end());
     buffer_start = buffer_offset;
     buffer_end   = buffer_start+nvalues_per_domain*ndomains-1;
   }
   else
   {
-    vector<RealType> tmp(nvalues_per_domain*npvalues*ndomains);
+    std::vector<RealType> tmp(nvalues_per_domain*npvalues*ndomains);
     buf.add(tmp.begin(),tmp.end());
     buffer_start = buffer_offset;
     buffer_end   = buffer_start+nvalues_per_domain*npvalues*ndomains-1;
@@ -704,15 +704,15 @@ int SpaceGrid::allocate_buffer_space(BufferType& buf)
 
 
 
-void SpaceGrid::registerCollectables(vector<observable_helper*>& h5desc, hid_t gid, int grid_index) const
+void SpaceGrid::registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid, int grid_index) const
 {
   typedef Matrix<int> iMatrix;
   iMatrix imat;
-  vector<int> ng(1);
+  std::vector<int> ng(1);
   int cshift=1;
-  stringstream ss;
+  std::stringstream ss;
   ss<<grid_index+cshift;
-  string name = "spacegrid"+ss.str();
+  std::string name = "spacegrid"+ss.str();
   observable_helper* oh = new observable_helper(name);
   if(!chempot)
     ng[0]=nvalues_per_domain*ndomains;
@@ -745,7 +745,7 @@ void SpaceGrid::registerCollectables(vector<observable_helper*>& h5desc, hid_t g
     oh->addProperty(const_cast<Tensor_t&>(axinv   ),"axinv"   );
     oh->addProperty(const_cast<Matrix_t&>(domain_uwidths),"domain_uwidths");
     //add dimensioned quantities
-    map<string,int> axtmap;
+    std::map<std::string,int> axtmap;
     axtmap["x"]=0;
     axtmap["y"]=1;
     axtmap["z"]=2;
@@ -760,7 +760,7 @@ void SpaceGrid::registerCollectables(vector<observable_helper*>& h5desc, hid_t g
     int n;
     const int ni=3;
     int* ivar[ni];
-    string iname[ni];
+    std::string iname[ni];
     n=0;
     ivar[n]=(int*)axtypes;
     iname[n]="axtypes";
@@ -773,7 +773,7 @@ void SpaceGrid::registerCollectables(vector<observable_helper*>& h5desc, hid_t g
     n++;
     const int nr=3;
     RealType* rvar[nr];
-    string rname[nr];
+    std::string rname[nr];
     n=0;
     rvar[n]=(RealType*)odu;
     rname[n]="odu";
@@ -809,7 +809,7 @@ void SpaceGrid::registerCollectables(vector<observable_helper*>& h5desc, hid_t g
         imat(i,0) = gval;
       }
       int ival = d+1;
-      string gmname = "gmap"+int2string(ival);
+      std::string gmname = "gmap"+int2string(ival);
       oh->addProperty(const_cast<iMatrix&>(imat),gmname);
     }
   }
@@ -823,7 +823,7 @@ void SpaceGrid::registerCollectables(vector<observable_helper*>& h5desc, hid_t g
 
 void SpaceGrid::evaluate(const ParticlePos_t& R,
                          const Matrix<RealType>& values,
-                         BufferType& buf, vector<bool>& particles_outside,
+                         BufferType& buf, std::vector<bool>& particles_outside,
                          const DistanceTableData& dtab)
 {
   int p,v;
@@ -931,7 +931,7 @@ void SpaceGrid::evaluate(const ParticlePos_t& R,
         nearcell[p].r = 1e99;
       break;
     default:
-      app_log()<<"  coordinate type must be cartesian, cylindrical, spherical, or voronoi"<<endl;
+      app_log()<<"  coordinate type must be cartesian, cylindrical, spherical, or voronoi"<< std::endl;
       APP_ABORT("SpaceGrid::evaluate");
     }
   }
@@ -1043,7 +1043,7 @@ void SpaceGrid::evaluate(const ParticlePos_t& R,
         nearcell[p].r = 1e99;
       break;
     default:
-      app_log()<<"  coordinate type must be cartesian, cylindrical, spherical, or voronoi"<<endl;
+      app_log()<<"  coordinate type must be cartesian, cylindrical, spherical, or voronoi"<< std::endl;
       APP_ABORT("SpaceGrid::evaluate");
     }
     //now place samples in the buffer according to how
@@ -1083,7 +1083,7 @@ void SpaceGrid::sum(const BufferType& buf,RealType* vals)
 
 bool SpaceGrid::check_grid(void)
 {
-  app_log()<<"SpaceGrid::check_grid"<<endl;
+  app_log()<<"SpaceGrid::check_grid"<< std::endl;
   const RealType o2pi = 1.0/(2.0*M_PI);
   int iu[DIM];
   int idomain;
@@ -1116,15 +1116,15 @@ bool SpaceGrid::check_grid(void)
     idomain = dm[0]*iu[0]+dm[1]*iu[1]+dm[2]*iu[2];
     if(idomain!=i)
     {
-      app_log()<<"  cell mismatch "<<i<<" "<<idomain<<endl;
+      app_log()<<"  cell mismatch "<<i<<" "<<idomain<< std::endl;
       ok=false;
     }
   }
   if(!ok)
   {
-    app_log()<<"  SpaceGrid cells do not map onto themselves"<<endl;
+    app_log()<<"  SpaceGrid cells do not map onto themselves"<< std::endl;
   }
-  app_log()<<"end SpaceGrid::check_grid"<<endl;
+  app_log()<<"end SpaceGrid::check_grid"<< std::endl;
   return ok;
 }
 

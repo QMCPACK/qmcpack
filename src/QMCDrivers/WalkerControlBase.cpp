@@ -61,7 +61,7 @@ void WalkerControlBase::start()
 {
   if(MyContext == 0)
   {
-    string hname(myComm->getName());
+    std::string hname(myComm->getName());
     if (WriteRN)
       hname.append(".rn.dat");
     else
@@ -70,26 +70,26 @@ void WalkerControlBase::start()
     {
       if(dmcStream)
         delete dmcStream;
-      dmcStream= new ofstream(hname.c_str());
+      dmcStream= new std::ofstream(hname.c_str());
       //oa = new boost::archive::binary_oarchive (*dmcStream);
-      dmcStream->setf(ios::scientific, ios::floatfield);
+      dmcStream->setf(std::ios::scientific, std::ios::floatfield);
       dmcStream->precision(10);
       (*dmcStream) << "# Index "
-                   << setw(20) << "LocalEnergy"
-                   << setw(20) << "Variance"
-                   << setw(20) << "Weight"
-                   << setw(20) << "NumOfWalkers"
-                   << setw(20) << "AvgSentWalkers";  //add the number of walkers
+                   << std::setw(20) << "LocalEnergy"
+                   << std::setw(20) << "Variance"
+                   << std::setw(20) << "Weight"
+                   << std::setw(20) << "NumOfWalkers"
+                   << std::setw(20) << "AvgSentWalkers";  //add the number of walkers
       if (WriteRN)
       {
-        (*dmcStream) << setw(20) << "RNWalkers"
-                     << setw(20) << "AlternateEnergy";
+        (*dmcStream) << std::setw(20) << "RNWalkers"
+                     << std::setw(20) << "AlternateEnergy";
       }
-      (*dmcStream)   << setw(20) << "TrialEnergy"
-                     << setw(20) << "DiffEff";
+      (*dmcStream)   << std::setw(20) << "TrialEnergy"
+                     << std::setw(20) << "DiffEff";
 //         if (WriteRN)
-      (*dmcStream)  << setw(20) << "LivingFraction";
-      (*dmcStream) << endl;
+      (*dmcStream)  << std::setw(20) << "LivingFraction";
+      (*dmcStream) << std::endl;
       dmcFname=hname;
     }
   }
@@ -128,23 +128,23 @@ void WalkerControlBase::measureProperties(int iter)
   {
     //boost::archive::text_oarchive oa(*dmcStream);
     //(*oa) & iter  & eavg_cur & wgt_cur & Etrial  & pop_old;
-    (*dmcStream) << setw(10) << iter
-                 << setw(20) << EnsembleProperty.Energy
-                 << setw(20) << EnsembleProperty.Variance
-                 << setw(20) << EnsembleProperty.Weight
-                 << setw(20) << EnsembleProperty.NumSamples
-                 << setw(20) << curData[SENTWALKERS_INDEX]/static_cast<double>(NumContexts);
+    (*dmcStream) << std::setw(10) << iter
+                 << std::setw(20) << EnsembleProperty.Energy
+                 << std::setw(20) << EnsembleProperty.Variance
+                 << std::setw(20) << EnsembleProperty.Weight
+                 << std::setw(20) << EnsembleProperty.NumSamples
+                 << std::setw(20) << curData[SENTWALKERS_INDEX]/static_cast<double>(NumContexts);
     if (WriteRN)
     {
-      (*dmcStream) << setw(20) << EnsembleProperty.RNSamples
-                   << setw(20) << EnsembleProperty.AlternateEnergy;
+      (*dmcStream) << std::setw(20) << EnsembleProperty.RNSamples
+                   << std::setw(20) << EnsembleProperty.AlternateEnergy;
     }
     (*dmcStream)
-        << setw(20) << trialEnergy
-        << setw(20) << EnsembleProperty.R2Accepted/EnsembleProperty.R2Proposed;
+        << std::setw(20) << trialEnergy
+        << std::setw(20) << EnsembleProperty.R2Accepted/EnsembleProperty.R2Proposed;
 //       if (WriteRN) (*dmcStream)
-    (*dmcStream) << setw(20) << EnsembleProperty.LivingFraction;
-    (*dmcStream)  << endl;
+    (*dmcStream) << std::setw(20) << EnsembleProperty.LivingFraction;
+    (*dmcStream)  << std::endl;
   }
 }
 
@@ -255,17 +255,17 @@ int WalkerControlBase::branch(int iter, MCWalkerConfiguration& W, RealType trigg
 
 void WalkerControlBase::Write2XYZ(MCWalkerConfiguration& W)
 {
-  ofstream fout("bad.xyz");
+  std::ofstream fout("bad.xyz");
   MCWalkerConfiguration::iterator it(W.begin());
   MCWalkerConfiguration::iterator it_end(W.end());
   int nptcls(W.getTotalNum());
   while(it != it_end)
   {
-    fout << nptcls << endl
+    fout << nptcls << std::endl
          << "# E = " << (*it)->Properties(LOCALENERGY)
-         << " Wgt= " << (*it)->Weight << endl;
+         << " Wgt= " << (*it)->Weight << std::endl;
     for(int i=0; i<nptcls; i++)
-      fout << "H " << (*it)->R[i] << endl;
+      fout << "H " << (*it)->R[i] << std::endl;
     ++it;
   }
 }
@@ -276,8 +276,8 @@ void WalkerControlBase::Write2XYZ(MCWalkerConfiguration& W)
 int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
 {
   MCWalkerConfiguration::iterator it(W.begin());
-  vector<Walker_t*> bad,good_rn;
-  vector<int> ncopy_rn;
+  std::vector<Walker_t*> bad,good_rn;
+  std::vector<int> ncopy_rn;
   NumWalkers=0;
   MCWalkerConfiguration::iterator it_end(W.end());
   RealType esum=0.0,e2sum=0.0,wsum=0.0,ecum=0.0, w2sum=0.0, besum=0.0, bwgtsum=0.0;
@@ -373,7 +373,7 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
   {
     if(good_w.empty())
     {
-      app_error() << "All the walkers have died. Abort. " << endl;
+      app_error() << "All the walkers have died. Abort. " << std::endl;
       APP_ABORT("WalkerControlBase::sortWalkers");
     }
     int sizeofgood = good_w.size();
@@ -402,7 +402,7 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
         if(nadd_target> sizeofgood)
         {
           app_warning() << "The number of walkers is running low. Requested walkers "
-                        << nadd_target << " good walkers = " << sizeofgood << endl;
+                        << nadd_target << " good walkers = " << sizeofgood << std::endl;
         }
         int i=0;
         while(i< sizeofgood && nadd<nadd_target)
@@ -464,10 +464,10 @@ bool WalkerControlBase::put(xmlNodePtr cur)
 
   bool success=params.put(cur);
 
-  app_log() << "  WalkerControlBase parameters " << endl;
-  //app_log() << "    energyBound = " << targetEnergyBound << endl;
-  //app_log() << "    sigmaBound = " << targetSigma << endl;
-  app_log() << "    maxCopy = " << MaxCopy << endl;
+  app_log() << "  WalkerControlBase parameters " << std::endl;
+  //app_log() << "    energyBound = " << targetEnergyBound << std::endl;
+  //app_log() << "    sigmaBound = " << targetSigma << std::endl;
+  app_log() << "    maxCopy = " << MaxCopy << std::endl;
   if(nw_target>0)
   {
     int npernode=nw_target/NumContexts;
@@ -483,8 +483,8 @@ bool WalkerControlBase::put(xmlNodePtr cur)
     }
   }
   if(nw_max>0) Nmax=nw_max;
-  app_log() << "   Max Walkers per node " << Nmax << endl;
-  app_log() << "   Min Walkers per node " << Nmin << endl;
+  app_log() << "   Max Walkers per node " << Nmax << std::endl;
+  app_log() << "   Min Walkers per node " << Nmin << std::endl;
   return true;
 }
 }

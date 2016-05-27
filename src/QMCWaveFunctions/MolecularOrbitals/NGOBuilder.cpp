@@ -53,8 +53,8 @@ NGOBuilder::~NGOBuilder()
 
 bool NGOBuilder::putCommon(xmlNodePtr cur)
 {
-  string normin("yes");
-  string afilename("0");
+  std::string normin("yes");
+  std::string afilename("0");
   OhmmsAttributeSet aAttrib;
   aAttrib.add(normin,"normalized");
   aAttrib.add(m_infunctype,"type");
@@ -75,7 +75,7 @@ bool NGOBuilder::putCommon(xmlNodePtr cur)
     {
       APP_ABORT("NGOBuilder::putCommon Old format is not supported. Please rerun SQD if the output is produced by it");
     }
-    app_log() << "  " << afilename <<  " version " << in_version << endl;
+    app_log() << "  " << afilename <<  " version " << in_version << std::endl;
   }
   else
     m_fileid=-1;
@@ -102,10 +102,10 @@ bool NGOBuilder::addGrid(xmlNodePtr cur)
   }
   else
   {
-    app_log() << "   Grid is created by the input paremters in h5" << endl;
+    app_log() << "   Grid is created by the input paremters in h5" << std::endl;
     hid_t gid = H5Gopen(m_fileid,"radial_basis_states/grid");
-    string gridtype;
-    HDFAttribIO<string> gtypestr(gridtype);
+    std::string gridtype;
+    HDFAttribIO<std::string> gtypestr(gridtype);
     gtypestr.read(gid,"type");
     int npts=0;
     RealType ri=0.0,rf=10.0,rmax_safe=10,tt=0;
@@ -124,7 +124,7 @@ bool NGOBuilder::addGrid(xmlNodePtr cur)
     }
     if(gridtype == "log")
     {
-      app_log() << "    Using log grid ri = " << ri << " rf = " << rf << " npts = " << npts << endl;
+      app_log() << "    Using log grid ri = " << ri << " rf = " << rf << " npts = " << npts << std::endl;
       input_grid = new LogGrid<RealType>;
       input_grid->set(ri,rf,npts);
       //GridType *agrid = new LinearGrid<RealType>;
@@ -136,7 +136,7 @@ bool NGOBuilder::addGrid(xmlNodePtr cur)
     else
       if(gridtype == "linear")
       {
-        app_log() << "    Using linear grid ri = " << ri << " rf = " << rf << " npts = " << npts << endl;
+        app_log() << "    Using linear grid ri = " << ri << " rf = " << rf << " npts = " << npts << std::endl;
         input_grid = new LinearGrid<RealType>;
         input_grid->set(ri,rf,npts);
         m_orbitals->Grids.push_back(input_grid);
@@ -170,8 +170,8 @@ NGOBuilder::addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms)
     ERRORMSG("m_orbitals, SphericalOrbitals<ROT,GT>*, is not initialized")
     return false;
   }
-  string radtype(m_infunctype);
-  string dsname("0");
+  std::string radtype(m_infunctype);
+  std::string dsname("0");
   OhmmsAttributeSet aAttrib;
   aAttrib.add(radtype,"type");
   aAttrib.add(m_rcut,"rmax");
@@ -195,7 +195,7 @@ NGOBuilder::addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms)
     else
       if(radtype == "Pade")
       {
-        app_error() << "  Any2GridBuilder::addPade is disabled." << endl;
+        app_error() << "  Any2GridBuilder::addPade is disabled." << std::endl;
         APP_ABORT("NGOBuilder::addRadialOrbital");
         //addPade(cur);
       }
@@ -205,7 +205,7 @@ NGOBuilder::addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms)
       }
   if(lastRnl && m_orbitals->Rnl.size()> lastRnl)
   {
-    app_log() << "\tSetting GridManager of " << lastRnl << " radial orbital to false" << endl;
+    app_log() << "\tSetting GridManager of " << lastRnl << " radial orbital to false" << std::endl;
     m_orbitals->Rnl[lastRnl]->setGridManager(false);
   }
   return true;
@@ -242,7 +242,7 @@ void NGOBuilder::addSlater(xmlNodePtr cur)
   m_orbitals->RnlID.push_back(m_nlms);
 }
 
-void NGOBuilder::addNumerical(xmlNodePtr cur, const string& dsname)
+void NGOBuilder::addNumerical(xmlNodePtr cur, const std::string& dsname)
 {
   int imin = 0;
   OhmmsAttributeSet aAttrib;
@@ -268,7 +268,7 @@ void NGOBuilder::addNumerical(xmlNodePtr cur, const string& dsname)
   //  RealType yprime_i = (rad_orb[imin+1]-rad_orb[imin])/((input_grid->r(imin+1)-input_grid->r(imin)));
   //  torb.spline(imin,yprime_i,imax,0.0);
   //  GridType* agrid = m_orbitals->Grids[0];
-  //  vector<double> orb_linear(agrid->size(),0.0);
+  //  std::vector<double> orb_linear(agrid->size(),0.0);
   //  for(int ig=0; ig<agrid->size()-2; ++ig) orb_linear[ig]=torb.f(agrid->r(ig));
   //  RadialOrbitalType *radorb = new RadialOrbitalType(agrid,orb_linear);
   //  radorb->spline(imin,yprime_i,agrid->size()-2,0.0);
@@ -294,13 +294,13 @@ void NGOBuilder::addNumerical(xmlNodePtr cur, const string& dsname)
   //    //Do not need this anymore
   //    //radorb->setgrid(_r);
   //    y = radorb->evaluate(_r,1.0/_r,dy,d2y);
-  //    dfile << setw(15) << _r << setw(20) << setprecision(12) << y
-  //          << setw(20) << dy << setw(20) << d2y
-  //          << endl;
+  //    dfile << std::setw(15) << _r << std::setw(20) << setprecision(12) << y
+  //          << std::setw(20) << dy << std::setw(20) << d2y
+  //          << std::endl;
   //    _r+=dr;
   //  }
   //}
-  //cout << " Power " << rinv_p << " size=" << rad_orb.size() << endl;
+  //cout << " Power " << rinv_p << " size=" << rad_orb.size() << std::endl;
   //APP_ABORT("NGOBuilder::addNumerical");
 }
 
@@ -343,7 +343,7 @@ struct PadeOrbital: public OptimizableFunctorBase
     cur = cur->children;
     while(cur != NULL)
     {
-      string cname((const char*)cur->name);
+      std::string cname((const char*)cur->name);
       if(cname == nodeName)
       {
         OhmmsAttributeSet radAttrib;

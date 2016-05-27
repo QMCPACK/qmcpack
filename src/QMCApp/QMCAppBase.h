@@ -52,7 +52,7 @@ public:
    * @param infile file to be parsed.
    * @return true if the input file is a valid xml file
    */
-  bool parse(const string& infile);
+  bool parse(const std::string& infile);
 
   /** save the xml document
    *
@@ -77,7 +77,7 @@ protected:
   RandomNumberControl myRandomControl;
 
   ///open a new document
-  bool pushDocument(const string& infile);
+  bool pushDocument(const std::string& infile);
   ///close the current document
   void popDocument();
 };

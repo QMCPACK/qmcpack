@@ -35,7 +35,7 @@
 #error "Only tested with ESSL and MKL library "
 #endif
 
-inline void print_help(const string& msg)
+inline void print_help(const std::string& msg)
 {
   printf("%s -d fft_dim -m numer_of_fft -i iterations -p [d|s] -t [r2c|c2c] -e [fftw|mkl|essl] \n",msg.c_str());
 }
@@ -52,8 +52,8 @@ int main(int argc, char** argv)
   int nx=6;
   int ny=6;
   //accepted: r2c  or c2c
-  string fft_type("r2c");
-  string fft_eng("fftw");
+  std::string fft_type("r2c");
+  std::string fft_eng("fftw");
   bool inplace=true;
   bool single_precision=false;
   bool debug=false;
@@ -96,9 +96,9 @@ int main(int argc, char** argv)
     }
   }
   typedef double real_type;
-  typedef complex<real_type> complex_type;
+  typedef std::complex<real_type> complex_type;
   typedef Matrix<complex_type> matrix_type;
-  vector<matrix_type*> in,in_x,in_t;
+  std::vector<matrix_type*> in,in_x,in_t;
   matrix_type incopy(nx,ny);
   for(int i=0; i<howmany; ++i)
   {
@@ -112,7 +112,7 @@ int main(int argc, char** argv)
     niters=1; //reset
   if(debug && nx*ny<144)
   {
-    cout << "Before transformation " << endl;
+    std::cout << "Before transformation " << std::endl;
     print_array(*in[0]);
   }
   /// @typedef 1D FFT engine to be use
@@ -150,7 +150,7 @@ int main(int argc, char** argv)
     }
     if(debug)
       if(check_array(in[0]->data(),incopy.data(),incopy.size(),1.0/static_cast<double>(nx*ny)))
-        cout << "We are good with 1D FFT+getmo+1D FFT" << endl;
+        std::cout << "We are good with 1D FFT+getmo+1D FFT" << std::endl;
     dt_essl_t_f=my_dt_f/static_cast<double>(niters);
     dt_essl_t_b=my_dt_b/static_cast<double>(niters);
   }
@@ -187,7 +187,7 @@ int main(int argc, char** argv)
     }
     if(debug)
       if(check_array(in[0]->data(),incopy.data(),incopy.size(),1.0/static_cast<double>(nx*ny)))
-        cout << "We are good with 1D FFT+t(1D FFT)" << endl;
+        std::cout << "We are good with 1D FFT+t(1D FFT)" << std::endl;
     dt_essl_f=my_dt_f/static_cast<double>(niters);
     dt_essl_b=my_dt_b/static_cast<double>(niters);
   }
@@ -256,7 +256,7 @@ int main(int argc, char** argv)
   dt_b /= static_cast<double>(niters*omp_get_max_threads());
   if(debug)
     if(check_array(in[0]->data(),incopy.data(),incopy.size(),1.0/static_cast<double>(nx*ny)))
-      cout << "We are good with 1D FFT+tfunc+ 1DFFT" << endl;
+      std::cout << "We are good with 1D FFT+tfunc+ 1DFFT" << std::endl;
   printf("tag nX  nY  M  OMP 1D+t(1D) 1D+tfunc+1D 1D+getmo+1D  \n");
   printf("fft2d %d %d %d %d %12.4e %12.4e %12.4e %12.4e %12.4e %12.4e\n"
          , nx, ny, howmany, omp_get_max_threads()

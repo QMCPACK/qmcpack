@@ -48,14 +48,14 @@ struct einspline_traits<double,3>
   typedef double              DataType;
 };
 
-/** specialization for 3D complex<double> */
+/** specialization for 3D std::complex<double> */
 template<>
-struct einspline_traits<complex<double>,3>
+struct einspline_traits<std::complex<double>,3>
 {
   typedef multi_UBspline_3d_z SplineType;
   typedef UBspline_3d_z       SingleSplineType;
   typedef BCtype_z            BCType;
-  typedef complex<double>     DataType;
+  typedef std::complex<double>     DataType;
 };
 
 /** specialization for 3D float */
@@ -68,14 +68,14 @@ struct einspline_traits<float,3>
   typedef float               DataType;
 };
 
-/** specialization for 3D complex<float> */
+/** specialization for 3D std::complex<float> */
 template<>
-struct einspline_traits<complex<float>,3>
+struct einspline_traits<std::complex<float>,3>
 {
   typedef multi_UBspline_3d_c SplineType;
   typedef UBspline_3d_c       SingleSplineType;
   typedef BCtype_c            BCType;
-  typedef complex<float>      DataType;
+  typedef std::complex<float>      DataType;
 };
 
 /** symmetric outer product
@@ -127,14 +127,14 @@ struct SplineAdoptorBase
   CrystalLattice<ST,D>       SuperLattice;
   CrystalLattice<ST,D>       PrimLattice;
   /// flags to unpack sin/cos
-  vector<bool>               MakeTwoCopies;
+  std::vector<bool>               MakeTwoCopies;
   /// kpoints for each unique orbitals
-  vector<TinyVector<ST,D> >  kPoints;
+  std::vector<TinyVector<ST,D> >  kPoints;
 
   ///name of the adoptor
-  string AdoptorName;
+  std::string AdoptorName;
   ///keyword used to match hdf5
-  string KeyWord;
+  std::string KeyWord;
 
   typedef typename einspline_traits<ST,D>::DataType   DataType;
   typename OrbitalSetTraits<ST>::ValueVector_t     myV;
@@ -207,7 +207,7 @@ struct BsplineSet: public SPOSetBase, public SplineAdoptor
     for(int iat=0; iat<P.getTotalNum(); ++iat)
     {
       SplineAdoptor::evaluate_v(P.R[iat],psi);
-      std::copy(psi.begin(),psi.end(),psiM[iat]);
+      copy(psi.begin(),psi.end(),psiM[iat]);
     }
   }
 

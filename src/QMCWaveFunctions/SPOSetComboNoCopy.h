@@ -15,7 +15,7 @@ namespace qmcplusplus
    */
   struct SPOSetComboNoCopy: public SPOSetBase
   {
-    vector<SPOSetBase*> mySPOs;
+    std::vector<SPOSetBase*> mySPOs;
 
     /** default constructor */
     SPOSetComboNoCopy() { }

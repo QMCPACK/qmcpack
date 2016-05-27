@@ -30,20 +30,20 @@ struct LocalECPotential_CUDA : public LocalECPotential
   //// Short-range part
   int NumIons, NumElecs, NumElecGroups, NumIonSpecies;
   ParticleSet &ElecRef, &IonRef;
-  vector<int> IonFirst, IonLast;
+  std::vector<int> IonFirst, IonLast;
   // This is indexed by the ion species
-  vector<TextureSpline*> SRSplines;
+  std::vector<TextureSpline*> SRSplines;
   TextureSpline *V0Spline;
   gpu::device_vector<CUDA_PRECISION>  SumGPU;
   gpu::host_vector<CUDA_PRECISION>    SumHost;
   gpu::device_vector<CUDA_PRECISION>  IGPU;
   gpu::device_vector<CUDA_PRECISION>  ZionGPU;
 
-  vector<PosType> SortedIons;
+  std::vector<PosType> SortedIons;
   void add(int groupID, RadialPotentialType* ppot, RealType zion);
 
   void addEnergy(MCWalkerConfiguration &W,
-                 vector<RealType> &LocalEnergy);
+                 std::vector<RealType> &LocalEnergy);
 
   QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 

@@ -82,7 +82,7 @@ bool putContent(IT first, IT last, xmlNodePtr cur)
   {
     stream >> *first++;
     success=stream.good();
-    //success=(stream >> *first++);
+    //success=( stream >> *first++);
   }
   return success;
 }
@@ -109,8 +109,8 @@ bool getContent(const T& a, xmlNodePtr cur)
   return true;
 }
 
-/** assign vector<T> from a node. Create a temporary vector and make assignment.
- *\param a reference vector<T>
+/** assign std::vector<T> from a node. Create a temporary vector and make assignment.
+ *\param a reference std::vector<T>
  *\param cur current node to which a content is copied
  *\return ture if successful
  *
@@ -129,7 +129,7 @@ putContent(std::vector<T>& a, xmlNodePtr cur)
   T t;
   while(!stream.eof())
   {
-    if(stream >> t)
+    if( stream >> t)
       b.push_back(t);
   }
   a = b;
@@ -137,7 +137,7 @@ putContent(std::vector<T>& a, xmlNodePtr cur)
 }
 
 /** write std::vector<T> to node. Each element is separated by a space.
- *\param a reference vector<T>
+ *\param a reference std::vector<T>
  *\param cur current node to which a content is copied
  *\return ture if successful
  *

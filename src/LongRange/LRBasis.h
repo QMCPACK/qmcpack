@@ -61,7 +61,7 @@ public:
   
   ///$f(r,{tn})$ returns the value of $\sum_n t_n*h_{\alpha n}(r)$ 
   ///   r is radial position (scalar)
-  ///   vector<RealType> coefs are the {tn} optimized breakup coefficients.
+  ///   std::vector<RealType> coefs are the {tn} optimized breakup coefficients.
   
 /*
  * 
@@ -72,7 +72,7 @@ public:
  * 
  */
   
-  inline RealType f(RealType r, vector<RealType>& coefs)
+  inline RealType f(RealType r, std::vector<RealType>& coefs)
   {
     RealType f = 0.0;
     //RealType df = myFunc.df(r, rinv);
@@ -90,7 +90,7 @@ public:
  * 
  */
   
-  inline RealType df_dr(RealType r, vector<RealType>& coefs)
+  inline RealType df_dr(RealType r, std::vector<RealType>& coefs)
   {
     RealType df = 0.0;
     //RealType df = myFunc.df(r, rinv);
@@ -109,7 +109,7 @@ public:
  */
   
   
-  inline RealType fk(RealType k, vector<RealType> coefs)
+  inline RealType fk(RealType k, std::vector<RealType> coefs)
   {
 	RealType fk = 0.0;
 	for (int n=0; n<coefs.size(); n++)
@@ -126,7 +126,7 @@ public:
  * 
  */
   
-  inline RealType dfk_dk(RealType k, vector<RealType> coefs)
+  inline RealType dfk_dk(RealType k, std::vector<RealType> coefs)
   {
 	RealType dfk = 0.0;
 	for (int n=0; n<coefs.size(); n++)

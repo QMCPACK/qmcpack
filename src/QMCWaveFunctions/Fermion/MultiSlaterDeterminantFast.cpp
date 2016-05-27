@@ -116,18 +116,18 @@ void MultiSlaterDeterminantFast::testMSD(ParticleSet& P, int iat)
   log0 = evaluate(P,G0,L0);
   /*
        app_log() <<"Testing evaluate(P,G,L). \n";
-       cout<<endl <<endl;
-       cout<<"Psi: " <<log <<"   " <<log0 <<"   " <<log/log0 <<endl;
+       std::cout << std::endl << std::endl;
+       std::cout <<"Psi: " <<log <<"   " <<log0 <<"   " <<log/log0 << std::endl;
 
        for(int i=0; i<n; i++) {
-         cout<<i  <<"\n"
+         std::cout <<i  <<"\n"
              <<"  x: " <<G(i)[0]-G0(i)[0] <<"\n"
              <<"  y: " <<G(i)[1]-G0(i)[1] <<"\n"
              <<"  z: " <<G(i)[2]-G0(i)[2] <<"\n"
              <<"  d2: " <<L(i)-L0(i) <<"\n"
-             <<endl;
+             << std::endl;
        }
-       cout<<endl <<endl;
+       std::cout << std::endl << std::endl;
        APP_ABORT("end of test 1");
   */
   Walker_t::Buffer_t wbuffer;
@@ -147,17 +147,17 @@ void MultiSlaterDeterminantFast::testMSD(ParticleSet& P, int iat)
   L0=0;
 //     log = msd->ratio(P,iat,G,L);
   log0 = ratio(P,iat,G0,L0);
-  cout<<"Psi: " <<log <<"   " <<log0 <<"   " <<log/log0 <<endl;
+  std::cout <<"Psi: " <<log <<"   " <<log0 <<"   " <<log/log0 << std::endl;
   for(int i=0; i<n; i++)
   {
-    cout<<i  <<"\n"
+    std::cout <<i  <<"\n"
         <<"  x: " <<G(i)[0]-G0(i)[0] <<"  " <<G(i)[0]   <<"\n"
         <<"  y: " <<G(i)[1]-G0(i)[1] <<"  " <<G(i)[1] <<"\n"
         <<"  z: " <<G(i)[2]-G0(i)[2] <<"  " <<G(i)[2] <<"\n"
         <<"  d2: " <<L(i)-L0(i) <<"  " <<L(i) <<"\n"
-        <<endl;
+        << std::endl;
   }
-  cout<<endl <<endl;
+  std::cout << std::endl << std::endl;
   APP_ABORT("After MultiSlaterDeterminantFast::testMSD()");
 }
 
@@ -183,8 +183,8 @@ OrbitalBase::ValueType MultiSlaterDeterminantFast::evaluate(ParticleSet& P
   psiCurrent=0.0;
   myG=0.0;
   myL=0.0;
-  vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
-  vector<RealType>::iterator it(C.begin()),last(C.end());
+  std::vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
+  std::vector<RealType>::iterator it(C.begin()),last(C.end());
   while(it != last)
   {
     psiCurrent += (*it)*detValues_up[*upC]*detValues_dn[*dnC];
@@ -251,8 +251,8 @@ OrbitalBase::RealType MultiSlaterDeterminantFast::evaluateLog(ParticleSet& P,
   psiCurrent=0.0;
   myG=0.0;
   myL=0.0;
-  vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
-  vector<RealType>::iterator it(C.begin()),last(C.end());
+  std::vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
+  std::vector<RealType>::iterator it(C.begin()),last(C.end());
   while(it != last)
   {
     psiCurrent += (*it)*detValues_up[*upC]*detValues_dn[*dnC];
@@ -295,8 +295,8 @@ OrbitalBase::GradType MultiSlaterDeterminantFast::evalGrad(ParticleSet& P, int i
     GradMatrix_t& grads_up = Dets[0]->grads;
     int N1 = Dets[0]->FirstIndex;
     ValueType psi=0.0;
-    vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
-    vector<RealType>::iterator it(C.begin()),last(C.end());
+    std::vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
+    std::vector<RealType>::iterator it(C.begin()),last(C.end());
     while(it != last)
     {
       psi += (*it)*detValues_up[*upC]*detValues_dn[*dnC];
@@ -316,8 +316,8 @@ OrbitalBase::GradType MultiSlaterDeterminantFast::evalGrad(ParticleSet& P, int i
     ValueVector_t& detValues_dn = Dets[1]->detValues;
     GradMatrix_t& grads_dn = Dets[1]->grads;
     int N2 = Dets[1]->FirstIndex;
-    vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
-    vector<RealType>::iterator it(C.begin()),last(C.end());
+    std::vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
+    std::vector<RealType>::iterator it(C.begin()),last(C.end());
     while(it != last)
     {
       psi += (*it)*detValues_up[*upC]*detValues_dn[*dnC];
@@ -349,8 +349,8 @@ OrbitalBase::ValueType MultiSlaterDeterminantFast::ratioGrad(ParticleSet& P
     ValueVector_t& detValues_dn = Dets[1]->detValues;
     GradMatrix_t& grads_up = Dets[0]->new_grads;
     int N1 = Dets[0]->FirstIndex;
-    vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
-    vector<RealType>::iterator it(C.begin()),last(C.end());
+    std::vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
+    std::vector<RealType>::iterator it(C.begin()),last(C.end());
     ValueType psiNew=0.0;
     GradType dummy;
     it=C.begin();
@@ -378,8 +378,8 @@ OrbitalBase::ValueType MultiSlaterDeterminantFast::ratioGrad(ParticleSet& P
     ValueVector_t& detValues_dn = Dets[1]->new_detValues;
     GradMatrix_t& grads_dn = Dets[1]->new_grads;
     int N2 = Dets[1]->FirstIndex;
-    vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
-    vector<RealType>::iterator it(C.begin()),last(C.end());
+    std::vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
+    std::vector<RealType>::iterator it(C.begin()),last(C.end());
     ValueType psiNew=0.0;
     GradType dummy;
     while(it != last)
@@ -437,8 +437,8 @@ OrbitalBase::ValueType  MultiSlaterDeterminantFast::ratio(ParticleSet& P, int ia
     int NP2 = Dets[1]->NumPtcls;
     ValueType psiNew=0.0;
     // myG,myL should contain current grad and lapl
-    vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
-    vector<RealType>::iterator it(C.begin()),last(C.end());
+    std::vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
+    std::vector<RealType>::iterator it(C.begin()),last(C.end());
     myG_temp=0.0;
     myL_temp=0.0;
     while(it != last)
@@ -486,8 +486,8 @@ OrbitalBase::ValueType  MultiSlaterDeterminantFast::ratio(ParticleSet& P, int ia
     int NP2 = Dets[1]->NumPtcls;
     ValueType psiNew=0.0;
     // myG,myL should contain current grad and lapl
-    vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
-    vector<RealType>::iterator it(C.begin()),last(C.end());
+    std::vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
+    std::vector<RealType>::iterator it(C.begin()),last(C.end());
     myG_temp=0.0;
     myL_temp=0.0;
     while(it != last)
@@ -538,8 +538,8 @@ OrbitalBase::ValueType MultiSlaterDeterminantFast::ratio(ParticleSet& P, int iat
     ValueVector_t& detValues_up = Dets[0]->new_detValues;
     ValueVector_t& detValues_dn = Dets[1]->detValues;
     ValueType psiNew=0.0;
-    vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
-    vector<RealType>::iterator it(C.begin()),last(C.end());
+    std::vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
+    std::vector<RealType>::iterator it(C.begin()),last(C.end());
     while(it != last)
       psiNew += (*(it++))*detValues_up[*(upC++)]*detValues_dn[*(dnC++)];
     curRatio = psiNew/psiCurrent;
@@ -555,8 +555,8 @@ OrbitalBase::ValueType MultiSlaterDeterminantFast::ratio(ParticleSet& P, int iat
     ValueVector_t& detValues_up = Dets[0]->detValues;
     ValueVector_t& detValues_dn = Dets[1]->new_detValues;
     ValueType psiNew=0.0;
-    vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
-    vector<RealType>::iterator it(C.begin()),last(C.end());
+    std::vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
+    std::vector<RealType>::iterator it(C.begin()),last(C.end());
     while(it != last)
       psiNew += (*(it++))*detValues_up[*(upC++)]*detValues_dn[*(dnC++)];
     curRatio = psiNew/psiCurrent;
@@ -607,8 +607,8 @@ void MultiSlaterDeterminantFast::acceptMove(ParticleSet& P, int iat)
       ValueType psi=0.0;
       myG_temp=0.0;
       myL_temp=0.0;
-      vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
-      vector<RealType>::iterator it(C.begin()),last(C.end());
+      std::vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
+      std::vector<RealType>::iterator it(C.begin()),last(C.end());
       while(it != last) {
         psi += (*it)*detValues_up[*upC]*detValues_dn[*dnC];
         for(int k=0,n=N1; k<NP1; k++,n++) {
@@ -708,8 +708,8 @@ OrbitalBase::RealType MultiSlaterDeterminantFast::updateBuffer(ParticleSet& P, B
   psiCurrent=0.0;
   myG=0.0;
   myL=0.0;
-  vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
-  vector<RealType>::iterator it(C.begin()),last(C.end());
+  std::vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
+  std::vector<RealType>::iterator it(C.begin()),last(C.end());
   while(it != last)
   {
     psiCurrent += (*it)*detValues_up[*upC]*detValues_dn[*dnC];
@@ -810,7 +810,7 @@ void MultiSlaterDeterminantFast::resetParameters(const opt_variables_type& activ
     }
   }
 }
-void MultiSlaterDeterminantFast::reportStatus(ostream& os)
+void MultiSlaterDeterminantFast::reportStatus(std::ostream& os)
 {
 }
 
@@ -822,8 +822,8 @@ void MultiSlaterDeterminantFast::reportStatus(ostream& os)
 
 void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
     const opt_variables_type& optvars,
-    vector<RealType>& dlogpsi,
-    vector<RealType>& dhpsioverpsi)
+    std::vector<RealType>& dlogpsi,
+    std::vector<RealType>& dhpsioverpsi)
 {
   bool recalculate(false);
   for (int k=0; k<myVars.size(); ++k)

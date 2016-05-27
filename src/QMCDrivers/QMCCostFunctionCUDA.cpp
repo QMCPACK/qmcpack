@@ -61,7 +61,7 @@ QMCCostFunctionCUDA::Return_t QMCCostFunctionCUDA::correlatedSampling(bool needD
   int iw=0;
   int numParams = OptVariablesForPsi.size();
   int numPtcl   = W.getTotalNum();
-  vector<RealType> logpsi_new(nw), logpsi_fixed(nw), KE(nw);
+  std::vector<RealType> logpsi_new(nw), logpsi_fixed(nw), KE(nw);
   TrialWaveFunction::ValueMatrix_t d_logpsi_dalpha, d_hpsioverpsi_dalpha;
   TrialWaveFunction::GradMatrix_t  fixedG(nw, numPtcl);
   TrialWaveFunction::ValueMatrix_t fixedL(nw, numPtcl);
@@ -135,7 +135,7 @@ QMCCostFunctionCUDA::Return_t QMCCostFunctionCUDA::correlatedSampling(bool needD
   for (int iw=0; iw<nw; iw++)
   {
     Return_t* restrict saved = &(Records(iw,0));
-    saved[REWEIGHT] = std::min(std::exp(saved[REWEIGHT]-wgtnorm), numeric_limits<Return_t>::max()*0.1 );
+    saved[REWEIGHT] = std::min(std::exp(saved[REWEIGHT]-wgtnorm), std::numeric_limits<Return_t>::max()*0.1 );
     wgt_tot+= saved[REWEIGHT];
   }
   myComm->allreduce(wgt_tot);
@@ -146,7 +146,7 @@ QMCCostFunctionCUDA::Return_t QMCCostFunctionCUDA::correlatedSampling(bool needD
   {
     Return_t* restrict saved = Records[iw];
     saved[REWEIGHT] = std::min(saved[REWEIGHT]*wgtnorm,MaxWeight) ;
-//app_log()<<saved[REWEIGHT]<<endl;
+//app_log()<<saved[REWEIGHT]<< std::endl;
     wgt_tot+= saved[REWEIGHT];
   }
   myComm->allreduce(wgt_tot);
@@ -175,10 +175,10 @@ QMCCostFunctionCUDA::Return_t QMCCostFunctionCUDA::correlatedSampling(bool needD
 }
 
 void
-QMCCostFunctionCUDA::getConfigurations(const string& aroot)
+QMCCostFunctionCUDA::getConfigurations(const std::string& aroot)
 {
-  app_log() << "   Loading configuration from MCWalkerConfiguration::SampleStack " << endl;
-  app_log() << "    number of walkers before load " << W.getActiveWalkers() << endl;
+  app_log() << "   Loading configuration from MCWalkerConfiguration::SampleStack " << std::endl;
+  app_log() << "    number of walkers before load " << W.getActiveWalkers() << std::endl;
   if (H_KE.size()==0)
   {
     H_KE.addOperator(H.getHamiltonian("Kinetic"),"Kinetic");
@@ -203,7 +203,7 @@ QMCCostFunctionCUDA::getConfigurations(const string& aroot)
   OhmmsInfo::Log->reset();
   OhmmsInfo::Warn->reset();
   app_log() << "    number of walkers after load: "
-            << W.getActiveWalkers() << endl;
+            << W.getActiveWalkers() << std::endl;
   if(dLogPsi.size() != W.getActiveWalkers())
   {
     delete_iter(dLogPsi.begin(),dLogPsi.end());
@@ -253,16 +253,16 @@ QMCCostFunctionCUDA::checkConfigurations()
   d2logPsi_fixed.resize(numWalkers, nptcl);
   //if (needGrads)
   {
-    TempHDerivRecords.resize(numWalkers,vector<Return_t>(NumOptimizables,0));
-    TempDerivRecords.resize(numWalkers,vector<Return_t>(NumOptimizables,0));
+    TempHDerivRecords.resize(numWalkers,std::vector<Return_t>(NumOptimizables,0));
+    TempDerivRecords.resize(numWalkers,std::vector<Return_t>(NumOptimizables,0));
     LogPsi_Derivs.resize(numWalkers, NumOptimizables);
     LocE_Derivs.resize  (numWalkers, NumOptimizables);
   }
   Return_t e0=0.0;
   Return_t e2=0.0;
-  vector<RealType> logPsi_free(numWalkers,0), d2logPsi_free(numWalkers,0);
-  vector<RealType> logPsi_fixed(numWalkers,0);
-  vector<GradType> dlogPsi_free(numWalkers);
+  std::vector<RealType> logPsi_free(numWalkers,0), d2logPsi_free(numWalkers,0);
+  std::vector<RealType> logPsi_fixed(numWalkers,0);
+  std::vector<GradType> dlogPsi_free(numWalkers);
   //Psi.evaluateDeltaLog(W, logPsi_free);
   if (includeNonlocalH != "no")
     Psi.evaluateDeltaLog(W, logPsi_fixed, logPsi_free, dlogPsi_fixed, d2logPsi_fixed);
@@ -342,16 +342,16 @@ QMCCostFunctionCUDA::checkConfigurations()
   et_tot+=e0;
   e2_tot+=e2;
   //Need to sum over the processors
-  vector<Return_t> etemp(3);
+  std::vector<Return_t> etemp(3);
   etemp[0]=et_tot;
   etemp[1]=static_cast<Return_t>(W.getActiveWalkers());
   etemp[2]=e2_tot;
   myComm->allreduce(etemp);
   Etarget = static_cast<Return_t>(etemp[0]/etemp[1]);
   NumSamples = static_cast<int>(etemp[1]);
-  app_log() << "  VMC Eavg = " << Etarget << endl;
-  app_log() << "  VMC Evar = " << etemp[2]/etemp[1]-Etarget*Etarget << endl;
-  app_log() << "  Total weights = " << etemp[1] << endl;
+  app_log() << "  VMC Eavg = " << Etarget << std::endl;
+  app_log() << "  VMC Evar = " << etemp[2]/etemp[1]-Etarget*Etarget << std::endl;
+  app_log() << "  Total weights = " << etemp[1] << std::endl;
   setTargetEnergy(Etarget);
   ReportCounter=0;
 }
@@ -366,9 +366,9 @@ void QMCCostFunctionCUDA::resetPsi(bool final_reset)
   else
     for(int i=0; i<OptVariables.size(); ++i)
       OptVariablesForPsi[i]=OptVariables[i];
-  //cout << "######### QMCCostFunctionCUDA::resetPsi " << endl;
-  //OptVariablesForPsi.print(cout);
-  //cout << "-------------------------------------- " << endl;
+  //cout << "######### QMCCostFunctionCUDA::resetPsi " << std::endl;
+  //OptVariablesForPsi.print(std::cout);
+  //cout << "-------------------------------------- " << std::endl;
   Psi.resetParameters(OptVariablesForPsi);
   if (final_reset)
   {
@@ -380,7 +380,7 @@ void QMCCostFunctionCUDA::resetPsi(bool final_reset)
 
 
 void
-QMCCostFunctionCUDA::GradCost(vector<Return_t>& PGradient, const vector<Return_t>& PM, Return_t FiniteDiff)
+QMCCostFunctionCUDA::GradCost(std::vector<Return_t>& PGradient, const std::vector<Return_t>& PM, Return_t FiniteDiff)
 {
   if (std::fabs(FiniteDiff) > 1.0e-10)
   {
@@ -407,11 +407,11 @@ QMCCostFunctionCUDA::GradCost(vector<Return_t>& PGradient, const vector<Return_t
     curAvg_w = SumValue[SUM_E_WGT]/SumValue[SUM_WGT];
     Return_t curAvg2_w = curAvg_w*curAvg_w;
     curVar_w = SumValue[SUM_ESQ_WGT]/SumValue[SUM_WGT]-curAvg_w*curAvg_w;
-    vector<Return_t> EDtotals(NumOptimizables,0.0);
-    vector<Return_t> EDtotals_w(NumOptimizables,0.0);
-    vector<Return_t> E2Dtotals_w(NumOptimizables,0.0);
-    vector<Return_t> URV(NumOptimizables,0.0);
-    vector<Return_t> HD_avg(NumOptimizables,0.0);
+    std::vector<Return_t> EDtotals(NumOptimizables,0.0);
+    std::vector<Return_t> EDtotals_w(NumOptimizables,0.0);
+    std::vector<Return_t> E2Dtotals_w(NumOptimizables,0.0);
+    std::vector<Return_t> URV(NumOptimizables,0.0);
+    std::vector<Return_t> HD_avg(NumOptimizables,0.0);
     Return_t wgtinv = 1.0/SumValue[SUM_WGT];
     Return_t delE_bar;
     int nw=W.getActiveWalkers();
@@ -421,8 +421,8 @@ QMCCostFunctionCUDA::GradCost(vector<Return_t>& PGradient, const vector<Return_t
       Return_t weight=saved[REWEIGHT]*wgtinv;
       Return_t eloc_new=saved[ENERGY_NEW];
       delE_bar += weight*std::pow(abs(eloc_new-EtargetEff),PowerE);
-      vector<Return_t> &Dsaved = TempDerivRecords[iw];
-      vector<Return_t> &HDsaved= TempHDerivRecords[iw];
+      std::vector<Return_t> &Dsaved = TempDerivRecords[iw];
+      std::vector<Return_t> &HDsaved= TempHDerivRecords[iw];
       for (int pm=0; pm<NumOptimizables; pm++)
         HD_avg[pm]+= HDsaved[pm];
     }
@@ -441,8 +441,8 @@ QMCCostFunctionCUDA::GradCost(vector<Return_t>& PGradient, const vector<Return_t
         ltz=false;
       Return_t delE=std::pow(abs(eloc_new-EtargetEff),PowerE);
       Return_t ddelE = PowerE*std::pow(abs(eloc_new-EtargetEff),PowerE-1);
-      vector<Return_t> &Dsaved=  TempDerivRecords[iw];
-      vector<Return_t> &HDsaved= TempHDerivRecords[iw];
+      std::vector<Return_t> &Dsaved=  TempDerivRecords[iw];
+      std::vector<Return_t> &HDsaved= TempHDerivRecords[iw];
       for (int pm=0; pm<NumOptimizables; pm++)
       {
         EDtotals_w[pm] += weight*(HDsaved[pm] + 2.0*Dsaved[pm]*delta_l );
@@ -464,8 +464,8 @@ QMCCostFunctionCUDA::GradCost(vector<Return_t>& PGradient, const vector<Return_t
       Return_t eloc_new=saved[ENERGY_NEW];
       Return_t delta_l = (eloc_new-curAvg_w);
       Return_t sigma_l = delta_l*delta_l;
-      vector<Return_t> &Dsaved=  TempDerivRecords[iw];
-      vector<Return_t> &HDsaved= TempHDerivRecords[iw];
+      std::vector<Return_t> &Dsaved=  TempDerivRecords[iw];
+      std::vector<Return_t> &HDsaved= TempHDerivRecords[iw];
       for (int pm=0; pm<NumOptimizables; pm++)
         E2Dtotals_w[pm] += weight*2.0*( Dsaved[pm]*(sigma_l-curVar_w) + delta_l*(HDsaved[pm]-EDtotals_w[pm]) );
     }
@@ -503,14 +503,14 @@ QMCCostFunctionCUDA::fillOverlapHamiltonianMatrices
   Return_t NWE = NumWalkersEff=correlatedSampling(true);
   curAvg_w = SumValue[SUM_E_WGT]/SumValue[SUM_WGT];
   Return_t curAvg2_w = SumValue[SUM_ESQ_WGT]/SumValue[SUM_WGT];
-  vector<Return_t> D_avg(NumParams(),0);
+  std::vector<Return_t> D_avg(NumParams(),0);
   Return_t wgtinv = 1.0/SumValue[SUM_WGT];
   int nw = W.getActiveWalkers();
   for (int iw=0; iw<nw; iw++)
   {
     const Return_t* restrict saved = &Records(iw,0);
     Return_t weight=saved[REWEIGHT]*wgtinv;
-    vector<Return_t> &Dsaved= TempDerivRecords[iw];
+    std::vector<Return_t> &Dsaved= TempDerivRecords[iw];
     for (int pm=0; pm<NumParams(); pm++)
       D_avg[pm]+= Dsaved[pm]*weight;
   }
@@ -530,8 +530,8 @@ QMCCostFunctionCUDA::fillOverlapHamiltonianMatrices
     Return_t weight=saved[REWEIGHT]*wgtinv;
     Return_t eloc_new=saved[ENERGY_NEW];
     //             Return_t ke_new=saved[ENERGY_NEW] - saved[ENERGY_FIXED];
-    vector<Return_t> &Dsaved = TempDerivRecords[iw];
-    vector<Return_t> &HDsaved= TempHDerivRecords[iw];
+    std::vector<Return_t> &Dsaved = TempDerivRecords[iw];
+    std::vector<Return_t> &HDsaved= TempHDerivRecords[iw];
     for (int pm=0; pm<NumParams(); pm++)
     {
       Return_t wfe = (HDsaved[pm] + Dsaved[pm]*(eloc_new-curAvg_w) )*weight;
@@ -588,7 +588,7 @@ QMCCostFunctionCUDA::fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matr
   Return_t curAvg2_w = SumValue[SUM_ESQ_WGT]/SumValue[SUM_WGT];
   RealType H2_avg = 1.0/curAvg2_w;
   RealType V_avg = curAvg2_w - curAvg_w*curAvg_w;
-  vector<Return_t> D_avg(NumParams(),0);
+  std::vector<Return_t> D_avg(NumParams(),0);
   Return_t wgtinv = 1.0/SumValue[SUM_WGT];
   for (int ip=0, wn=0; ip<NumThreads; ip++)
   {
@@ -682,14 +682,14 @@ QMCCostFunctionCUDA::Return_t QMCCostFunctionCUDA::fillOverlapHamiltonianMatrice
   Return_t curAvg2_w = SumValue[SUM_ESQ_WGT]/SumValue[SUM_WGT];
   RealType H2_avg = 1.0/(curAvg_w*curAvg_w);
   RealType V_avg = curAvg2_w - curAvg_w*curAvg_w;
-  vector<Return_t> D_avg(NumParams(),0);
+  std::vector<Return_t> D_avg(NumParams(),0);
   Return_t wgtinv = 1.0/SumValue[SUM_WGT];
   int nw=W.getActiveWalkers();
   for (int iw=0; iw<nw; iw++)
   {
     const Return_t* restrict saved= &(Records(iw,0));
     Return_t weight=saved[REWEIGHT]*wgtinv;
-    const vector<Return_t> &Dsaved = TempDerivRecords[iw];
+    const std::vector<Return_t> &Dsaved = TempDerivRecords[iw];
     for (int pm=0; pm<NumParams(); pm++)
     {
       D_avg[pm]+= Dsaved[pm]*weight;
@@ -701,8 +701,8 @@ QMCCostFunctionCUDA::Return_t QMCCostFunctionCUDA::fillOverlapHamiltonianMatrice
     const Return_t* restrict saved = &Records(iw,0);
     Return_t weight=saved[REWEIGHT]*wgtinv;
     Return_t eloc_new=saved[ENERGY_NEW];
-    const vector<Return_t> &Dsaved = TempDerivRecords[iw];
-    const vector<Return_t> &HDsaved= TempHDerivRecords[iw];
+    const std::vector<Return_t> &Dsaved = TempDerivRecords[iw];
+    const std::vector<Return_t> &HDsaved= TempHDerivRecords[iw];
     /*
     for (int pm=0; pm<NumParams(); pm++)
     {

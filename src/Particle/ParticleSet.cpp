@@ -37,7 +37,7 @@ template<> int ParticleSet::Walker_t::cuda_DataSize = 0;
 ///object counter
 int  ParticleSet::PtclObjectCounter = 0;
 
-void add_p_timer(vector<NewTimer*>& timers)
+void add_p_timer(std::vector<NewTimer*>& timers)
 {
   timers.push_back(new NewTimer("ParticleSet::makeMove")); //timer for MC, ratio etc
   timers.push_back(new NewTimer("ParticleSet::makeMoveOnSphere")); //timer for the walker loop
@@ -66,10 +66,10 @@ ParticleSet::ParticleSet(const ParticleSet& p)
   //need explicit copy:
   Mass=p.Mass;
   Z=p.Z;
-  ostringstream o;
+  std::ostringstream o;
   o<<p.getName()<<ObjectTag;
   this->setName(o.str());
-  app_log() << "  Copying a particle set " << p.getName() << " to " << this->getName() << " groups=" << groups() << endl;
+  app_log() << "  Copying a particle set " << p.getName() << " to " << this->getName() << " groups=" << groups() << std::endl;
   PropertyList.Names=p.PropertyList.Names;
   PropertyList.Values=p.PropertyList.Values;
   PropertyHistory=p.PropertyHistory;
@@ -77,7 +77,7 @@ ParticleSet::ParticleSet(const ParticleSet& p)
   //construct the distance tables with the same order
   if(p.DistTables.size())
   {
-    app_log() << "  Cloning distance tables. It has " << p.DistTables.size() << endl;
+    app_log() << "  Cloning distance tables. It has " << p.DistTables.size() << std::endl;
     addTable(*this); //first is always for this-this paier
     for (int i=1; i<p.DistTables.size(); ++i)
       addTable(p.DistTables[i]->origin());
@@ -179,8 +179,8 @@ void ParticleSet::resetGroups()
   int qind=mySpecies.addAttribute("charge");
   if(natt==qind)
   {
-    app_log() << " Missing charge attribute of the SpeciesSet " << myName << " particleset" << endl;
-    app_log() << " Assume neutral particles Z=0.0 " << endl;
+    app_log() << " Missing charge attribute of the SpeciesSet " << myName << " particleset" << std::endl;
+    app_log() << " Assume neutral particles Z=0.0 " << std::endl;
     for(int ig=0; ig<nspecies; ig++)
       mySpecies(qind,ig)=0.0;
   }
@@ -198,12 +198,12 @@ void ParticleSet::resetGroups()
   for(int ig=1; ig<nspecies; ig++)
     SameMass &= (mySpecies(massind,ig)== m0);
   if(SameMass)
-    app_log() << "  All the species have the same mass " << m0 << endl;
+    app_log() << "  All the species have the same mass " << m0 << std::endl;
   else
-    app_log() << "  Distinctive masses for each species " << endl;
+    app_log() << "  Distinctive masses for each species " << std::endl;
   for(int iat=0; iat<Mass.size(); iat++)
     Mass[iat]=mySpecies(massind,GroupID[iat]);
-  vector<int> ng(nspecies,0);
+  std::vector<int> ng(nspecies,0);
   for(int iat=0; iat<GroupID.size(); iat++)
   {
     if(GroupID[iat]<nspecies)
@@ -229,9 +229,9 @@ void ParticleSet::resetGroups()
   for(int iat=0; iat<ID.size(); ++iat)
     IsGrouped &= (IndirectID[iat]==ID[iat]);
   if(IsGrouped)
-    app_log() << "Particles are grouped. Safe to use groups " << endl;
+    app_log() << "Particles are grouped. Safe to use groups " << std::endl;
   else
-    app_log() << "ID is not grouped. Need to use IndirectID for species-dependent operations " << endl;
+    app_log() << "ID is not grouped. Need to use IndirectID for species-dependent operations " << std::endl;
 }
 
 void
@@ -248,7 +248,7 @@ ParticleSet::randomizeFromSource (ParticleSet &src)
   int NumSpecies    = spSet.TotalNum;
   int NumSrcSpecies = srcSpSet.TotalNum;
   //Store information about charges and number of each species
-  vector<int> Zat, Zspec, NofSpecies, NofSrcSpecies, CurElec;
+  std::vector<int> Zat, Zspec, NofSpecies, NofSrcSpecies, CurElec;
   Zat.resize(Nsrc);
   Zspec.resize(NumSrcSpecies);
   NofSpecies.resize(NumSpecies);
@@ -267,15 +267,15 @@ ParticleSet::randomizeFromSource (ParticleSet &src)
   int totQ=0;
   for(int iat=0; iat<Nsrc; iat++)
     totQ+=Zat[iat] = Zspec[src.GroupID[iat]];
-  app_log() << "  Total ion charge    = " << totQ << endl;
+  app_log() << "  Total ion charge    = " << totQ << std::endl;
   totQ -= Nptcl;
-  app_log() << "  Total system charge = " << totQ << endl;
+  app_log() << "  Total system charge = " << totQ << std::endl;
   // Now, loop over ions, attaching electrons to them to neutralize
   // charge
   int spToken = 0;
   // This is decremented when we run out of electrons in each species
   int spLeft = NumSpecies;
-  vector<PosType> gaussRand (Nptcl);
+  std::vector<PosType> gaussRand (Nptcl);
   makeGaussRandom (gaussRand);
   for (int iat=0; iat<Nsrc; iat++)
   {
@@ -292,7 +292,7 @@ ParticleSet::randomizeFromSource (ParticleSet &src)
         int elec = CurElec[sp]++;
         app_log() << "  Assigning " << (sp ? "down" : "up  ")
                   << " electron " << elec << " to ion " << iat
-                  << " with charge " << z << endl;
+                  << " with charge " << z << std::endl;
         double radius = 0.5* std::sqrt((double)Zat[iat]);
         R[elec] = src.R[iat] + radius * gaussRand[elec];
       }
@@ -314,8 +314,8 @@ ParticleSet::randomizeFromSource (ParticleSet &src)
   }
 }
 
-///write to a ostream
-bool ParticleSet::get(ostream& os) const
+///write to a std::ostream
+bool ParticleSet::get(std::ostream& os) const
 {
   os << "  ParticleSet " << getName() << " : ";
   for (int i=0; i<SubPtcl.size(); i++)
@@ -323,13 +323,13 @@ bool ParticleSet::get(ostream& os) const
   os <<"\n\n    " << LocalNum << "\n\n";
   for (int i=0; i<LocalNum; i++)
   {
-    os << "    " << mySpecies.speciesName[GroupID[i]]  << R[i] << endl;
+    os << "    " << mySpecies.speciesName[GroupID[i]]  << R[i] << std::endl;
   }
   return true;
 }
 
-///read from istream
-bool ParticleSet::put(istream& is)
+///read from std::istream
+bool ParticleSet::put( std::istream& is)
 {
   return true;
 }
@@ -337,7 +337,7 @@ bool ParticleSet::put(istream& is)
 ///reset member data
 void ParticleSet::reset()
 {
-  app_log() << "<<<< going to set properties >>>> " << endl;
+  app_log() << "<<<< going to set properties >>>> " << std::endl;
 }
 
 ///read the particleset
@@ -358,7 +358,7 @@ void ParticleSet::checkBoundBox(RealType rb)
     app_warning()
         << "ParticleSet::checkBoundBox "
         << rb << "> SimulationCellRadius=" << Lattice.SimulationCellRadius
-        << "\n Using SLOW method for the sphere update. " <<endl;
+        << "\n Using SLOW method for the sphere update. " << std::endl;
     UseSphereUpdate=false;
   }
 }
@@ -396,30 +396,30 @@ int ParticleSet::addTable(const ParticleSet& psrc)
     //add  this-this pair
     myDistTableMap.clear();
     myDistTableMap[ObjectTag]=0;
-    app_log() << "  ... ParticleSet::addTable Create Table #0 " << DistTables[0]->Name << endl;
+    app_log() << "  ... ParticleSet::addTable Create Table #0 " << DistTables[0]->Name << std::endl;
     DistTables[0]->ID=0;
     if (psrc.tag() == ObjectTag)
       return 0;
   }
   if (psrc.tag() == ObjectTag)
   {
-    app_log() << "  ... ParticleSet::addTable Reuse Table #" << 0 << " " << DistTables[0]->Name <<endl;
+    app_log() << "  ... ParticleSet::addTable Reuse Table #" << 0 << " " << DistTables[0]->Name << std::endl;
     return 0;
   }
   int tsize=DistTables.size(),tid;
-  map<int,int>::iterator tit(myDistTableMap.find(psrc.tag()));
+  std::map<int,int>::iterator tit(myDistTableMap.find(psrc.tag()));
   if (tit == myDistTableMap.end())
   {
     tid=DistTables.size();
     DistTables.push_back(createDistanceTable(psrc,*this));
     myDistTableMap[psrc.tag()]=tid;
     DistTables[tid]->ID=tid;
-    app_log() << "  ... ParticleSet::addTable Create Table #" << tid << " " << DistTables[tid]->Name <<endl;
+    app_log() << "  ... ParticleSet::addTable Create Table #" << tid << " " << DistTables[tid]->Name << std::endl;
   }
   else
   {
     tid = (*tit).second;
-    app_log() << "  ... ParticleSet::addTable Reuse Table #" << tid << " " << DistTables[tid]->Name << endl;
+    app_log() << "  ... ParticleSet::addTable Reuse Table #" << tid << " " << DistTables[tid]->Name << std::endl;
   }
   app_log().flush();
   return tid;
@@ -435,7 +435,7 @@ int ParticleSet::getTable(const ParticleSet& psrc)
       tid = 0;
     else
     {
-      map<int,int>::iterator tit(myDistTableMap.find(psrc.tag()));
+      std::map<int,int>::iterator tit(myDistTableMap.find(psrc.tag()));
       if (tit == myDistTableMap.end())
         tid = -1;
       else
@@ -578,7 +578,7 @@ bool ParticleSet::makeMove(const Walker_t& awalker
 }
 
 bool ParticleSet::makeMove(const Walker_t& awalker
-                           , const ParticlePos_t& deltaR, const vector<RealType>& dt)
+                           , const ParticlePos_t& deltaR, const std::vector<RealType>& dt)
 {
   activePtcl=-1;
   if (UseBoundBox)
@@ -647,7 +647,7 @@ bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker
 
 bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker
                                     , const ParticlePos_t& drift , const ParticlePos_t& deltaR
-                                    , const vector<RealType>& dt)
+                                    , const std::vector<RealType>& dt)
 {
   activePtcl=-1;
   if (UseBoundBox)
@@ -716,7 +716,7 @@ void ParticleSet::acceptMove(Index_t iat)
   }
   else
   {
-    ostringstream o;
+    std::ostringstream o;
     o << "  Illegal acceptMove " << iat << " != " << activePtcl;
     APP_ABORT(o.str());
   }
@@ -907,8 +907,8 @@ void ParticleSet::initPropertyList()
   PropertyList.add("LocalPotential");
   if (PropertyList.size() != NUMPROPERTIES)
   {
-    app_error() << "The number of default properties for walkers  is not consistent." << endl;
-    app_error() << "NUMPROPERTIES " << NUMPROPERTIES << " size of PropertyList " << PropertyList.size() << endl;
+    app_error() << "The number of default properties for walkers  is not consistent." << std::endl;
+    app_error() << "NUMPROPERTIES " << NUMPROPERTIES << " size of PropertyList " << PropertyList.size() << std::endl;
     APP_ABORT("ParticleSet::initPropertyList");
   }
 }
@@ -925,7 +925,7 @@ void ParticleSet::clearDistanceTables()
 int ParticleSet::addPropertyHistory(int leng)
 {
   int newL = PropertyHistory.size();
-  vector<RealType> newVecHistory=vector<RealType>(leng,0.0);
+  std::vector<RealType> newVecHistory = std::vector<RealType>(leng,0.0);
   PropertyHistory.push_back(newVecHistory);
   PHindex.push_back(0);
   return newL;

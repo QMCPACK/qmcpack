@@ -73,7 +73,7 @@ public:
   BS* BasisSet;
   ///matrix containing the coefficients
   Matrix<ValueType> C;
-  vector<RealType> Occupation;
+  std::vector<RealType> Occupation;
 
   /** constructor
    * @param bs pointer to the BasisSet
@@ -254,7 +254,7 @@ public:
   template<class VM, class GM>
   inline void
   evaluate(const WalkerSetRef& W, int first, int last,
-     vector<VM>& logdet, vector<GM>& dlogdet, vector<VM>& d2logdet) {
+     std::vector<VM>& logdet, std::vector<GM>& dlogdet, std::vector<VM>& d2logdet) {
     //calculate everything
     if(!(ID || first)) { BasisSet->evaluate(W); }
 
@@ -302,7 +302,7 @@ public:
     cur = cur->xmlChildrenNode;
     while(cur != NULL)
     {
-      string cname((const char*)(cur->name));
+      std::string cname((const char*)(cur->name));
       if(cname == "occupation")
       {
         occ_ptr=cur;
@@ -335,8 +335,8 @@ public:
     Occupation.resize(numBasis());
     for(int i=0; i<NumSPOs; i++)
       Occupation[i]=1.0;
-    vector<int> occ_in;
-    string occ_mode("table");
+    std::vector<int> occ_in;
+    std::string occ_mode("table");
     if(occ_ptr == NULL)
     {
       occ_mode="ground";
@@ -369,7 +369,7 @@ public:
 
   bool putFromXML(xmlNodePtr coeff_ptr)
   {
-    vector<ValueType> Ctemp;
+    std::vector<ValueType> Ctemp;
     int total(NumSPOs);
     Identity = true;
     if(coeff_ptr != NULL)
@@ -394,13 +394,13 @@ public:
     else
     {
       int n=0,i=0;
-      typename vector<ValueType>::iterator cit(Ctemp.begin());
+      typename std::vector<ValueType>::iterator cit(Ctemp.begin());
       BasisSize=numBasis();
       while(i<NumSPOs)
       {
-        if(Occupation[n]>numeric_limits<RealType>::epsilon())
+        if(Occupation[n]>std::numeric_limits<RealType>::epsilon())
         {
-          std::copy(cit,cit+BasisSize,C[i]);
+          copy(cit,cit+BasisSize,C[i]);
           i++;
         }
         n++;
@@ -421,7 +421,7 @@ public:
   {
 #if defined(HAVE_LIBHDF5)
     int neigs=numBasis();
-    string setname("invalid");
+    std::string setname("invalid");
     if(coeff_ptr)
     {
       const xmlChar* d=xmlGetProp(coeff_ptr,(const xmlChar*)"dataset");
@@ -450,9 +450,9 @@ public:
       BasisSize=numBasis();
       while(i<NumSPOs)
       {
-        if(Occupation[n]>numeric_limits<RealType>::epsilon())
+        if(Occupation[n]>std::numeric_limits<RealType>::epsilon())
         {
-          std::copy(Ctemp[n],Ctemp[n+1],C[i]);
+          copy(Ctemp[n],Ctemp[n+1],C[i]);
           i++;
         }
         n++;
@@ -469,13 +469,13 @@ public:
     return true;
   }
 
-  ///write to a ostream
+  ///write to a std::ostream
   bool get(std::ostream& ) const
   {
     return true;
   }
 
-  ///read from istream
+  ///read from std::istream
   bool put(std::istream& )
   {
     return true;

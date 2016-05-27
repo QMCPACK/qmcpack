@@ -23,13 +23,13 @@ private:
   Matrix<RealType> S1; //First derivatives
   Matrix<RealType> S2; //Second derivatives
   RealType Mfactor[3];
-  vector<RealType> tvec; //Coefficients
+  std::vector<RealType> tvec; //Coefficients
 
   //Helper functions for computing FT of basis functions (used in c(n,k))
-  inline complex<RealType> Eplus(int i, RealType k, int n);
-  inline complex<RealType> Eminus(int i, RealType k, int n);
-  inline complex<RealType> Eplus_dG(int i, RealType k, int n);
-  inline complex<RealType> Eminus_dG(int i, RealType k, int n);
+  inline std::complex<RealType> Eplus(int i, RealType k, int n);
+  inline std::complex<RealType> Eminus(int i, RealType k, int n);
+  inline std::complex<RealType> Eplus_dG(int i, RealType k, int n);
+  inline std::complex<RealType> Eminus_dG(int i, RealType k, int n);
   inline RealType Dplus(int i, RealType k, int n);
   inline RealType Dminus(int i, RealType k, int n);
   inline RealType Dplus_dG(int i, RealType k, int n);

@@ -29,11 +29,11 @@ namespace qmcplusplus
 WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodePtr cur,
     bool reconfig)
 {
-  app_log() << "  Creating WalkerController: target  number of walkers = " << nwtot << endl;
+  app_log() << "  Creating WalkerController: target  number of walkers = " << nwtot << std::endl;
   ///set of parameters
   int nmax=0;
   int nmin=0;
-  string reconfigopt("no");
+  std::string reconfigopt("no");
   ParameterSet m_param;
   m_param.add(nwtot,"targetWalkers","int");
   m_param.add(nwtot,"targetwalkers","int");
@@ -63,12 +63,12 @@ WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodeP
   {
     if(fixw)
     {
-      app_log() << "  Using WalkerReconfigurationMPI for population control." << endl;
+      app_log() << "  Using WalkerReconfigurationMPI for population control." << std::endl;
       wc = new WalkerReconfigurationMPI(comm);
     }
     else
     {
-      app_log() << "  Using WalkerControlMPI for dynamic population control." << endl;
+      app_log() << "  Using WalkerControlMPI for dynamic population control." << std::endl;
       wc = new WalkerControlMPI(comm);
     }
   }
@@ -77,12 +77,12 @@ WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodeP
   {
     if(fixw)
     {
-      app_log() << "  Using WalkerReconfiguration for population control." << endl;
+      app_log() << "  Using WalkerReconfiguration for population control." << std::endl;
       wc = new WalkerReconfiguration(comm);
     }
     else
     {
-      app_log() << "  Using WalkerControlBase for dynamic population control." << endl;
+      app_log() << "  Using WalkerControlBase for dynamic population control." << std::endl;
       wc = new WalkerControlBase(comm);
     }
   }
@@ -154,12 +154,12 @@ WalkerControlBase* CreateWalkerController(
     {
       if(reconfig)
       {
-        app_log() << "  Using WalkerReconfigurationMPI for population control." << endl;
+        app_log() << "  Using WalkerReconfigurationMPI for population control." << std::endl;
         wc = new WalkerReconfigurationMPI(comm);
       }
       else
       {
-        app_log() << "  Using WalkerControlMPI for dynamic population control." << endl;
+        app_log() << "  Using WalkerControlMPI for dynamic population control." << std::endl;
         wc = new WalkerControlMPI(comm);
       }
     }
@@ -168,12 +168,12 @@ WalkerControlBase* CreateWalkerController(
     {
       if(reconfig)
       {
-        app_log() << "  Using WalkerReconfiguration for population control." << endl;
+        app_log() << "  Using WalkerReconfiguration for population control." << std::endl;
         wc = new WalkerReconfiguration(comm);
       }
       else
       {
-        app_log() << "  Using WalkerControlBase for dynamic population control." << endl;
+        app_log() << "  Using WalkerControlBase for dynamic population control." << std::endl;
         wc = new WalkerControlBase(comm);
       }
     }

@@ -26,7 +26,7 @@ namespace optimize
 //   {
 //     Index.resize(input.size(),-1);
 //     NameAndValue.resize(input.size());
-//     std::copy(input.begin(),input.end(),NameAndValue.begin());
+//     copy(input.begin(),input.end(),NameAndValue.begin());
 //     for(int i=0; i<Index.size(); ++i) Index[i]=i;
 //
 //     ParameterType.resize(0); Recompute.resize(0);

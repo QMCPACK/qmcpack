@@ -45,7 +45,7 @@ struct JelliumPotential: public QMCHamiltonianBase
   ParticleSet& sourcePtcl;
   DistanceTableData* d_table;
   ///container for the ion charges
-  vector<RealType> Z,RC,RS;
+  std::vector<RealType> Z,RC,RS;
 
   JelliumPotential(ParticleSet& ions, ParticleSet& els):
     sourcePtcl(ions), d_table(0)
@@ -66,11 +66,11 @@ struct JelliumPotential: public QMCHamiltonianBase
       RS[iat] = tspecies(rs,ions.GroupID[iat]);
       RC[iat] = std::pow(-Z[iat],1.0/3.0)*RS[iat];
       RS[iat] = 1.0/(RS[iat]*RS[iat]*RS[iat]);
-      app_log()<<" rs is "<<rs<<endl;
-      app_log()<<" iz is "<<iz<<endl;
-      app_log()<<" RC is "<<RC[iat]<<endl;
-      app_log()<<" RS^-3 is "<<RS[iat]<<endl;
-      app_log()<<" Z is "<<Z[iat]<<endl;
+      app_log()<<" rs is "<<rs<< std::endl;
+      app_log()<<" iz is "<<iz<< std::endl;
+      app_log()<<" RC is "<<RC[iat]<< std::endl;
+      app_log()<<" RS^-3 is "<<RS[iat]<< std::endl;
+      app_log()<<" Z is "<<Z[iat]<< std::endl;
     }
   }
 
@@ -95,7 +95,7 @@ struct JelliumPotential: public QMCHamiltonianBase
     return Value;
   }
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }

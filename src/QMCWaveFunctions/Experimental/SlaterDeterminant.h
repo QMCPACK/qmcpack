@@ -89,7 +89,7 @@ public:
   inline void resetParameters(const opt_variables_type& active)
   { }
 
-  inline void reportStatus(ostream& os)
+  inline void reportStatus(std::ostream& os)
   { }
 
   void resetTargetParticleSet(ParticleSet& P)
@@ -276,10 +276,10 @@ public:
   }
 
 private:
-  vector<int> M;
-  vector<int> DetID;
+  std::vector<int> M;
+  std::vector<int> DetID;
   ///container for the DiracDeterminants
-  vector<Determinant_t*>  Dets;
+  std::vector<Determinant_t*>  Dets;
   BasisSet_t* BasisSet;
 };
 }

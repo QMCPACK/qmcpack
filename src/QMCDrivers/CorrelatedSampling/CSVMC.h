@@ -44,7 +44,7 @@ public:
   bool put(xmlNodePtr cur);
 
 private:
-  string UseDrift;
+  std::string UseDrift;
   int prevSteps;
   int prevStepsBetweenSamples;
   ///blocks over which normalization factors are accumulated

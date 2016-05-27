@@ -58,19 +58,19 @@ void buildBasisSet(xmlNodePtr cur)
 {
   xmlNodePtr anchor = cur;
   xmlNodePtr grid_ptr = 0;
-  vector<xmlNodePtr> phi_ptr;
-  vector<QuantumNumberType> nlms;
+  std::vector<xmlNodePtr> phi_ptr;
+  std::vector<QuantumNumberType> nlms;
   int Lmax = 0;
   int current = 0;
   std::string acenter("none");
   const xmlChar* aptr = xmlGetProp(cur,(const xmlChar*)"species");
   if(aptr)
     acenter = (const char*)aptr;
-  cout << "Building basis set for " << acenter << endl;
+  std::cout << "Building basis set for " << acenter << std::endl;
   cur = anchor->children;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == "grid")
       grid_ptr = cur;
     else

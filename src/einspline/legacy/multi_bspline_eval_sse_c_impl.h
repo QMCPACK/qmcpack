@@ -723,9 +723,9 @@ eval_multi_UBspline_3d_c (const multi_UBspline_3d_c *spline,
   int iy = ((int *)&ixiyiz)[2];
   int iz = ((int *)&ixiyiz)[1];
 #else
-  int ix = min(max(0,((int *)&intpart)[3]),spline->x_grid.num-1);
-  int iy = min(max(0,((int *)&intpart)[2]),spline->y_grid.num-1);
-  int iz = min(max(0,((int *)&intpart)[1]),spline->z_grid.num-1);
+  int ix = std::min(std::max(0,((int *)&intpart)[3]),spline->x_grid.num-1);
+  int iy = std::min(std::max(0,((int *)&intpart)[2]),spline->y_grid.num-1);
+  int iz = std::min(std::max(0,((int *)&intpart)[1]),spline->z_grid.num-1);
   __m128i ixiyiz=_mm_set_epi32(ix,iy,iz,0);
   _mm_storeu_si128 (&intpart, ixiyiz);
 #endif
@@ -841,9 +841,9 @@ eval_multi_UBspline_3d_c_vg (const multi_UBspline_3d_c *spline,
   int iy = ((int *)&ixiyiz)[2];
   int iz = ((int *)&ixiyiz)[1];
 #else
-  int ix = min(max(0,((int *)&intpart)[3]),spline->x_grid.num-1);
-  int iy = min(max(0,((int *)&intpart)[2]),spline->y_grid.num-1);
-  int iz = min(max(0,((int *)&intpart)[1]),spline->z_grid.num-1);
+  int ix = std::min(std::max(0,((int *)&intpart)[3]),spline->x_grid.num-1);
+  int iy = std::min(std::max(0,((int *)&intpart)[2]),spline->y_grid.num-1);
+  int iz = std::min(std::max(0,((int *)&intpart)[1]),spline->z_grid.num-1);
   __m128i ixiyiz=_mm_set_epi32(ix,iy,iz,0);
   _mm_storeu_si128 (&intpart, ixiyiz);
 #endif
@@ -1006,9 +1006,9 @@ eval_multi_UBspline_3d_c_vgl (const multi_UBspline_3d_c *spline,
   int iy = ((int *)&ixiyiz)[2];
   int iz = ((int *)&ixiyiz)[1];
 #else
-  int ix = min(max(0,((int *)&intpart)[3]),spline->x_grid.num-1);
-  int iy = min(max(0,((int *)&intpart)[2]),spline->y_grid.num-1);
-  int iz = min(max(0,((int *)&intpart)[1]),spline->z_grid.num-1);
+  int ix = std::min(std::max(0,((int *)&intpart)[3]),spline->x_grid.num-1);
+  int iy = std::min(std::max(0,((int *)&intpart)[2]),spline->y_grid.num-1);
+  int iz = std::min(std::max(0,((int *)&intpart)[1]),spline->z_grid.num-1);
   __m128i ixiyiz=_mm_set_epi32(ix,iy,iz,0);
   _mm_storeu_si128 (&intpart, ixiyiz);
 #endif
@@ -1202,9 +1202,9 @@ eval_multi_UBspline_3d_c_vgh (const multi_UBspline_3d_c *spline,
   int iy = ((int *)&ixiyiz)[2];
   int iz = ((int *)&ixiyiz)[1];
 #else
-  int ix = min(max(0,((int *)&intpart)[3]),spline->x_grid.num-1);
-  int iy = min(max(0,((int *)&intpart)[2]),spline->y_grid.num-1);
-  int iz = min(max(0,((int *)&intpart)[1]),spline->z_grid.num-1);
+  int ix = std::min(std::max(0,((int *)&intpart)[3]),spline->x_grid.num-1);
+  int iy = std::min(std::max(0,((int *)&intpart)[2]),spline->y_grid.num-1);
+  int iz = std::min(std::max(0,((int *)&intpart)[1]),spline->z_grid.num-1);
   __m128i ixiyiz=_mm_set_epi32(ix,iy,iz,0);
   _mm_storeu_si128 (&intpart, ixiyiz);
 #endif

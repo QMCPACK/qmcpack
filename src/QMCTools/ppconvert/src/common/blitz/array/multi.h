@@ -34,7 +34,7 @@ BZ_NAMESPACE(blitz)
  * The multicomponent_traits class provides a mapping from multicomponent
  * tuples to the element type they contain.  For example:
  *
- * multicomponent_traits<complex<float> >::T_numtype is float,
+ * multicomponent_traits<std::complex<float> >::T_numtype is float,
  * multicomponent_traits<TinyVector<int,3> >::T_numtype is int.
  *
  * This is used to support Array<T,N>::operator[], which extracts components
@@ -56,9 +56,9 @@ struct multicomponent_traits<TinyVector<T_numtype,N_rank> > {
 };
 
 #ifdef BZ_HAVE_COMPLEX
-// complex<T>
+// std::complex<T>
 template<typename T>
-struct multicomponent_traits<complex<T> > {
+struct multicomponent_traits<std::complex<T> > {
     typedef T T_element;
     static const int numComponents = 2;
 };

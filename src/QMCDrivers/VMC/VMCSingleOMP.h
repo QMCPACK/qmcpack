@@ -33,7 +33,7 @@ public:
                HamiltonianPool& hpool, WaveFunctionPool& ppool);
   bool run();
   bool put(xmlNodePtr cur);
-  //inline vector<RandomGenerator_t*>& getRng() { return Rng;}
+  //inline std::vector<RandomGenerator_t*>& getRng() { return Rng;}
 private:
   int prevSteps;
   int prevStepsBetweenSamples;
@@ -41,7 +41,7 @@ private:
   ///Ways to set rn constant
   RealType logoffset,logepsilon;
   ///option to enable/disable drift equation or RN for VMC
-  string UseDrift;
+  std::string UseDrift;
   ///check the run-time environments
   void resetRun();
   ///copy constructor

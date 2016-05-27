@@ -14,14 +14,14 @@ bool TriCubicSplineBuilder::put(xmlNodePtr cur)
     m_orbitals = new TriCubicSplineSet;
   typedef DiracDeterminant<SPOSet_t> DDet_t;
   typedef SlaterDeterminant<SPOSet_t> SDet_t;
-  map<string,int> SplineID;
+  std::map<std::string,int> SplineID;
   int nbasis=0;
   SDet_t* sdet = new SDet_t;
   /// go through the tree cur = DeterminantSet
   cur = cur->xmlChildrenNode;
   while(cur!=NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == "BasisSet")
     {
       m_orbitals->put(cur,grid_ref);  /// read in qGridi and qGridf,
@@ -34,7 +34,7 @@ bool TriCubicSplineBuilder::put(xmlNodePtr cur)
         xmlNodePtr tcur = cur->xmlChildrenNode;
         while(tcur != NULL)
         {
-          string cname2((const char*)(tcur->name));
+          std::string cname2((const char*)(tcur->name));
           if(cname2 == "Determinant")
           {
             SPOSet_t* swfs = new SPOSet_t;
@@ -46,7 +46,7 @@ bool TriCubicSplineBuilder::put(xmlNodePtr cur)
             xmlNodePtr t = tcur->xmlChildrenNode;
             while(t != NULL)
             {
-              string oname((const char*)(t->name));
+              std::string oname((const char*)(t->name));
               if(oname == "Orbital")
               {
                 /// ??? what is this doing ???

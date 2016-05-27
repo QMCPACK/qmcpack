@@ -149,7 +149,7 @@ int main(int argc, char** argv)
     }
   }
   timer.stop();
-  cout << "Time to evaluate " << timer.cpu_time() << endl;
+  std::cout << "Time to evaluate " << timer.cpu_time() << std::endl;
   //Test TriCubicSplineT function
   //Create XYZCubicGrid
   XYZCubicGrid<double> grid3(&gridX,&gridY,&gridZ);
@@ -161,18 +161,18 @@ int main(int argc, char** argv)
   TinyVector<double,3> grad;
   //aorb.reset();
   //Write for vtk ImageData
-  string fname("spline3d.vti");
+  std::string fname("spline3d.vti");
   std::ofstream dfile(fname.c_str());
-  dfile.setf(ios::scientific, ios::floatfield);
-  dfile.setf(ios::left,ios::adjustfield);
+  dfile.setf(std::ios::scientific, std::ios::floatfield);
+  dfile.setf(std::ios::left,std::ios::adjustfield);
   dfile.precision(10);
-  dfile << "<?xml version=\"1.0\"?>" << endl;
-  dfile << "<VTKFile type=\"ImageData\" version=\"0.1\">" << endl;
+  dfile << "<?xml version=\"1.0\"?>" << std::endl;
+  dfile << "<VTKFile type=\"ImageData\" version=\"0.1\">" << std::endl;
   dfile << "  <ImageData WholeExtent=\"0 " << npts[0]-2 << " 0 " << npts[1]-2 << " 0 " << npts[2]-2
-        << "\" Origin=\"0 0 0\" Spacing=\"1 1 1\">"<< endl;
-  dfile << "    <Piece Extent=\"0 " << npts[0]-2 << " 0 " << npts[1]-2 << " 0 " << npts[2]-2 << "\">" << endl;
-  dfile << "       <PointData Scalars=\"wfs\">" << endl;
-  dfile << "          <DataArray type=\"Float32\" Name=\"wfs\">" << endl;
+        << "\" Origin=\"0 0 0\" Spacing=\"1 1 1\">"<< std::endl;
+  dfile << "    <Piece Extent=\"0 " << npts[0]-2 << " 0 " << npts[1]-2 << " 0 " << npts[2]-2 << "\">" << std::endl;
+  dfile << "       <PointData Scalars=\"wfs\">" << std::endl;
+  dfile << "          <DataArray type=\"Float32\" Name=\"wfs\">" << std::endl;
   timer.start();
   int ng=0;
   for(int ix=0; ix<npts[0]-1; ix++)
@@ -185,22 +185,22 @@ int main(int argc, char** argv)
       {
         TinyVector<double,3> p(x,y,gridZ(iz));
         //aorb.setgrid(p);
-        //Timing with the ofstream is not correct.
+        //Timing with the std::ofstream is not correct.
         //Uncomment the line below and comment out the next two line.
         //double t=aorb.evaluate(p,grad,lap);
-        dfile << setw(20) << aorb.evaluate(p,grad,lap);
+        dfile << std::setw(20) << aorb.evaluate(p,grad,lap);
         if(ng%5 == 4)
-          dfile << endl;
+          dfile << std::endl;
       }
     }
   }
   timer.stop();
-  cout << "Time to evaluate with spline " << timer.cpu_time() << endl;
-  dfile << "          </DataArray>" << endl;
-  dfile << "       </PointData>" << endl;
-  dfile << "    </Piece>" << endl;
-  dfile << "  </ImageData>" << endl;
-  dfile << "</VTKFile>" << endl;
+  std::cout << "Time to evaluate with spline " << timer.cpu_time() << std::endl;
+  dfile << "          </DataArray>" << std::endl;
+  dfile << "       </PointData>" << std::endl;
+  dfile << "    </Piece>" << std::endl;
+  dfile << "  </ImageData>" << std::endl;
+  dfile << "</VTKFile>" << std::endl;
   hid_t h_file = H5Fcreate("spline3d.h5",H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
   HDFAttribIO<std::vector<double> > dump(inData,npts);
   dump.write(h_file,"orb0000");
@@ -214,7 +214,7 @@ int main(int argc, char** argv)
   //  TinyVector<double,3> p(xcut,gridY(k)+0.11*gridY.dr(k),ycut);
   //  aorb.setgrid(p);
   //  double y=aorb.evaluate(p,grad,lap);
-  //  dfile << setw(30) << p[1] << setw(30) << infunc.f(p) << setw(30) << y << setw(30) << infunc.d2f(p) << setw(30) << lap << endl;
+  //  dfile << std::setw(30) << p[1] << std::setw(30) << infunc.f(p) << std::setw(30) << y << std::setw(30) << infunc.d2f(p) << std::setw(30) << lap << std::endl;
   //}
   return 0;
 }

@@ -11,13 +11,12 @@
 #include <boost/tokenizer.hpp>
 #include <Platforms/sysutil.h>
 //#include <boost/date_time/posix_time/posix_time.hpp>
-using namespace std;
 
 // A helper function to simplify the main part.
 template<class T>
-ostream& operator<<(ostream& os, const vector<T>& v)
+ostream& operator<<(std::ostream& os, const std::vector<T>& v)
 {
-  copy(v.begin(), v.end(), ostream_iterator<T>(os, " "));
+  copy(v.begin(), v.end(), std::ostream_iterator<T>(os, " "));
   return os;
 }
 
@@ -33,13 +32,13 @@ int DataSporkAnalysis::getOptions(int ac, char* av[])
     ("version,v", "print version string")
     ("help,h", "produce help message")
     ("xsl",
-     po::value<string>(&xslt_file)->default_value("no"),
+     po::value<std::string>(&xslt_file)->default_value("no"),
      "xslt file to generate html using xsltproc")
     ("merge",
-     po::value<string>(&merged_file)->default_value("no"),
+     po::value<std::string>(&merged_file)->default_value("no"),
      "merge files for one output")
     ("output",
-     po::value<string>(&output_file)->default_value("generic.xml"),
+     po::value<std::string>(&output_file)->default_value("generic.xml"),
      "write to a file file")
     ("first",
      po::value<int>(&FirstIndex)->default_value(0),
@@ -51,10 +50,10 @@ int DataSporkAnalysis::getOptions(int ac, char* av[])
      po::value<int>(&output_precision)->default_value(6),
      "precision of the output")
     ("qmc-input",
-     po::value<string>(&generator_file)->default_value("missing"),
+     po::value<std::string>(&generator_file)->default_value("missing"),
      "The main driver for qmc run")
     ("message,m",
-     po::value<string>(&message_txt)->default_value("dataspork analysis"),
+     po::value<std::string>(&message_txt)->default_value("dataspork analysis"),
      "The main driver for qmc run")
     ;
     // Declare a group of options that will be
@@ -63,17 +62,17 @@ int DataSporkAnalysis::getOptions(int ac, char* av[])
     po::options_description config("Configuration");
     config.add_options()
     ("observable,o",
-     po::value< vector<string> >()->composing(),
+     po::value< std::vector<std::string> >()->composing(),
      "observables")
     ("collectable,c",
-     po::value< vector<string> >()->composing(),
+     po::value< std::vector<std::string> >()->composing(),
      "collectables")
     ;
     // Hidden options, will be allowed both on command line and
     // in config file, but will not be shown to the user.
     po::options_description hidden("Hidden options");
     hidden.add_options()
-    ("input-file", po::value< vector<string> >(), "input file")
+    ("input-file", po::value< std::vector<std::string> >(), "input file")
     ;
     po::options_description cmdline_options;
     cmdline_options.add(generic).add(config).add(hidden);
@@ -85,10 +84,10 @@ int DataSporkAnalysis::getOptions(int ac, char* av[])
     p.add("input-file", -1);
     store(po::command_line_parser(ac, av).
           options(cmdline_options).positional(p).run(), vm);
-    ifstream ifs("dataspork.cfg");
+    std::ifstream ifs("dataspork.cfg");
     if(ifs.fail())
     {
-      stringstream qin;
+      std::stringstream qin;
       qin << "observable = LocalEnergy LocalPotential Kinetic ElecElec Coulomb\n";
       qin << "collectable =  Variance Weight NumOfWalkers TrialEnergy BlockCPU AcceptRatio\n";
       store(parse_config_file(qin, config_file_options), vm);
@@ -101,24 +100,24 @@ int DataSporkAnalysis::getOptions(int ac, char* av[])
     notify(vm);
     if (vm.count("help"))
     {
-      cout << "Usage: datasporkpp input-file+ [options]\n\n";
-      cout << visible << "\n";
+      std::cout << "Usage: datasporkpp input-file+ [options]\n\n";
+      std::cout << visible << "\n";
       return 0;
     }
     if (vm.count("version"))
     {
-      cout << "datasporkpp version 1.0\n";
+      std::cout << "datasporkpp version 1.0\n";
       return 0;
     }
     //if (vm.count("include-dir"))
     //{
-    //    cout << "Include directories are: "
-    //         << vm["include-dir"].as< vector<string> >() << "\n";
+    //    std::cout << "Include directories are: "
+    //         << vm["include-dir"].as< std::vector<std::string> >() << "\n";
     //}
     if (vm.count(observable))
     {
-      const vector<string>& vm_o(vm[observable].as< vector<string> >());
-      vector<string>::const_iterator it(vm_o.begin()), it_end(vm_o.end());
+      const std::vector<std::string>& vm_o(vm[observable].as< std::vector<std::string> >());
+      std::vector<std::string>::const_iterator it(vm_o.begin()), it_end(vm_o.end());
       int curObservable=Observables.size();
       while(it != it_end)
       {
@@ -134,8 +133,8 @@ int DataSporkAnalysis::getOptions(int ac, char* av[])
     }
     if (vm.count(collectable))
     {
-      const vector<string>& vm_o(vm[collectable].as< vector<string> >());
-      vector<string>::const_iterator it(vm_o.begin()), it_end(vm_o.end());
+      const std::vector<std::string>& vm_o(vm[collectable].as< std::vector<std::string> >());
+      std::vector<std::string>::const_iterator it(vm_o.begin()), it_end(vm_o.end());
       int curCollectable=Collectables.size();
       while(it != it_end)
       {
@@ -152,26 +151,26 @@ int DataSporkAnalysis::getOptions(int ac, char* av[])
   }
   catch(exception& e)
   {
-    cout << e.what() << "\n";
+    std::cout << e.what() << "\n";
     return 1;
   }
   return 0;
 }
 
-void DataSporkAnalysis::printOptions(ostream& os)
+void DataSporkAnalysis::printOptions(std::ostream& os)
 {
   os << "    <options>\n";
   if (vm.count("input-file"))
   {
-    const vector<string>& ins(vm["input-file"].as< vector<string> >());
+    const std::vector<std::string>& ins(vm["input-file"].as< std::vector<std::string> >());
     os << "    <input_file>\n" << ins << "\n</input_file>\n";
   }
   if (vm.count(observable))
   {
-    const vector<string>& ins(vm["observable"].as< vector<string> >());
+    const std::vector<std::string>& ins(vm["observable"].as< std::vector<std::string> >());
     os << "    <observable>\n" << ins << "\n</observable>\n";
   }
-  os << "  </options>" << endl;
+  os << "  </options>" << std::endl;
 }
 
 void DataSporkAnalysis::execute()
@@ -179,20 +178,20 @@ void DataSporkAnalysis::execute()
   ScalarDataSetManager fh;
   fh.registerObservables(Observables);
   fh.registerCollectables(Collectables);
-  ofstream out(output_file.c_str());
+  std::ofstream out(output_file.c_str());
   out.setf(std::ios::scientific, std::ios::floatfield);
   out.precision(output_precision);
-  cout.setf(std::ios::scientific, std::ios::floatfield);
-  cout.precision(output_precision);
+  std::cout.setf(std::ios::scientific, std::ios::floatfield);
+  std::cout.precision(output_precision);
   if (vm.count("input-file"))
   {
     if(merged_file != "no")
     {
-      fh.addDataSet(vm["input-file"].as< vector<string> >(), merged_file, FirstIndex, LastIndex);
+      fh.addDataSet(vm["input-file"].as< std::vector<std::string> >(), merged_file, FirstIndex, LastIndex);
     }
     else
     {
-      const vector<string>& ins(vm["input-file"].as< vector<string> >());
+      const std::vector<std::string>& ins(vm["input-file"].as< std::vector<std::string> >());
       for(int i=0; i<ins.size(); i++)
       {
         fh.addDataSet(ins[i], FirstIndex, LastIndex);
@@ -204,10 +203,10 @@ void DataSporkAnalysis::execute()
   //ptime now=second_clock::local_time();
   //time_facet* facet(new time_facet("%Y-%m-%d %T"));
   //out.imbue(std::locale(out.getloc(), facet));
-  string now=getDateAndTime("%Y-%m-%d %T");
+  std::string now=getDateAndTime("%Y-%m-%d %T");
   out << "<?xml version=\"1.0\"?>\n"
       << "<?xml-stylesheet type=\"text/xsl\" href=\"dataspork.xsl\"?>\n"
-      << "<dataspork>" << endl;
+      << "<dataspork>" << std::endl;
   out
       << "  <generated by=\"datasporkpp\" version=\"1.0\">\n"
       << "    <when>" << now << "</when>\n";
@@ -216,11 +215,11 @@ void DataSporkAnalysis::execute()
   out << "  <original_input>"<<generator_file<< "\n</original_input>\n";
   out << "  <comment>"<<message_txt << "\n</comment>\n";
   fh.write(out);
-  out <<"</dataspork>" << endl;
+  out <<"</dataspork>" << std::endl;
   out.close();
   if(xslt_file != "no")
   {
-    cout << "Generating " << output_file << ".html using " << xslt_file << endl;
+    std::cout << "Generating " << output_file << ".html using " << xslt_file << std::endl;
     char cmds[128];
     sprintf(cmds,"xsltproc -o %s.html %s %s",
             output_file.c_str(),xslt_file.c_str(),output_file.c_str());

@@ -52,8 +52,8 @@ namespace qmcplusplus
     QMCUpdateBase::put (cur);
     ParameterSet m_param;
     // bool usedrift=false;
-    string action = "SLA";
-    string usedrift = "no";
+    std::string action = "SLA";
+    std::string usedrift = "no";
     m_param.add (usedrift, "useScaledDrift", "string");
     m_param.add (action, "Action", "string");
     m_param.add (equilSteps, "equilsteps", "int");
@@ -104,8 +104,8 @@ namespace qmcplusplus
 	setScaledDriftPbyPandNodeCorr (m_tauovermass, curhead.G, drift);
     else
     assignDrift (m_tauovermass, curhead.G, drift);
-    //app_log()<<"Sign head = "<<curhead.Properties(SIGN)<<endl;
-    //app_log()<<"Old phase = "<<Psi.getPhase()<<endl;
+    //app_log()<<"Sign head = "<<curhead.Properties(SIGN)<< std::endl;
+    //app_log()<<"Old phase = "<<Psi.getPhase()<< std::endl;
     makeGaussRandomWithEngine (deltaR, RandomGen);
     RealType r2proposed = Dot (deltaR, deltaR);
     RealType r2accept = 0.0;
@@ -176,7 +176,7 @@ namespace qmcplusplus
 //      RealType eest = W.reptile->eest;
 
 //      RealType fbet = std::max(eest - curhead.Properties(LOCALENERGY), eest - eloc);
-    //   app_log()<<"eval = "<<eest<<" estdev="<<stddev<<endl;
+    //   app_log()<<"eval = "<<eest<<" estdev="<<stddev<< std::endl;
 //      RealType rawcutoff=100*std::sqrt(W.reptile->evar);
 //      RealType cutoffmax = 1.5*rawcutoff;
 //      RealType cutoff=1;
@@ -344,7 +344,7 @@ namespace qmcplusplus
 //  {
 //     vmcToDoSteps=vmcSteps;
 //     equilToDoSteps=equilSteps;
-//     app_log()<<"MaxAge for center bead exceeded.  Reequilibrating. "<<vmcSteps<<" "<<equilSteps<<endl;
+//     app_log()<<"MaxAge for center bead exceeded.  Reequilibrating. "<<vmcSteps<<" "<<equilSteps<< std::endl;
 //  }
 
     //We are going to monitor the center bead's age to determine whether we force
@@ -358,8 +358,8 @@ namespace qmcplusplus
       setScaledDrift (m_tauovermass, curhead.G, drift);
     else
       assignDrift (m_tauovermass, curhead.G, drift);
-    //app_log()<<"Sign head = "<<curhead.Properties(SIGN)<<endl;
-    //app_log()<<"Old phase = "<<Psi.getPhase()<<endl;
+    //app_log()<<"Sign head = "<<curhead.Properties(SIGN)<< std::endl;
+    //app_log()<<"Old phase = "<<Psi.getPhase()<< std::endl;
     makeGaussRandomWithEngine (deltaR, RandomGen);
     RealType r2proposed = Dot (deltaR, deltaR);
     RealType r2accept = 0.0;
@@ -374,7 +374,7 @@ namespace qmcplusplus
 	return;
       }
     RealType logpsi (Psi.evaluateLog (W));
-    // app_log()<<"Sign newhead = "<<W.Properties(SIGN)<<endl;
+    // app_log()<<"Sign newhead = "<<W.Properties(SIGN)<< std::endl;
     //RealType* restrict old_headProp ((*it)->getPropertyBase());
     //old_headProp[TransProb[forward]]= 0.5*Dot(deltaR,deltaR);
 
@@ -489,11 +489,11 @@ namespace qmcplusplus
 
 	//  acceptProb=std::exp(-dS_0 + tail_backward - head_forward);
 	// app_log()<<"logGf (calced) = "
-	//  app_log()<<"dS_old="<<dS_old<<endl;
-	//  app_log()<<"dS_head="<<dS_head<<endl;
-	//  app_log()<<"dS_tail="<<dS_tail<<endl;
-	//  app_log()<<"dS' = "<<dS_0<<endl;
-	//        app_log()<<"W.Properties(LOCALENERGY)="<<W.Properties(LOCALENERGY)<<endl;
+	//  app_log()<<"dS_old="<<dS_old<< std::endl;
+	//  app_log()<<"dS_head="<<dS_head<< std::endl;
+	//  app_log()<<"dS_tail="<<dS_tail<< std::endl;
+	//  app_log()<<"dS' = "<<dS_0<< std::endl;
+	//        app_log()<<"W.Properties(LOCALENERGY)="<<W.Properties(LOCALENERGY)<< std::endl;
 
 	//  app_log()<<"---------------\n";
 	acceptProb = std::exp (-dS_0 + (nextlastbead.Properties (W.reptile->TransProb[backward]) - curhead.Properties (W.reptile->TransProb[forward])));	//tail_backward - head_forward);
@@ -516,8 +516,8 @@ namespace qmcplusplus
 
       }
 
-    //app_log()<<acceptProb<<endl;
-//       app_log()<<"r2proposed.... = "<<r2proposed<<endl;
+    //app_log()<<acceptProb<< std::endl;
+//       app_log()<<"r2proposed.... = "<<r2proposed<< std::endl;
     if ((RandomGen () < acceptProb) || curhead.Age >= MaxAge)
       {
 

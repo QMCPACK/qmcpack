@@ -35,7 +35,7 @@ nofrEstimator::nofrEstimator(TrialWaveFunction &psi,MCWalkerConfiguration& w):
 //     myTable = DistanceTable::add(source);
 //     int ns=sourcePtcl->groups();
 //
-//     vector<int> mask(ns*ns,-1);
+//     std::vector<int> mask(ns*ns,-1);
 //     int ij=0;
 //     for(int i=0; i<ns; i++)
 //       for(int j=i; j<ns; j++,ij++)
@@ -126,7 +126,7 @@ nofrEstimator::PutInBox (PosType &v)
 void nofrEstimator::accumulate(ParticleSet& p)
 {
   NumSamples++;
-  cerr<<"Accumulating nofr"<<endl;
+  std::cerr <<"Accumulating nofr"<< std::endl;
   ParticleSet::ParticlePos_t gRand;
   gRand.resize(1);
   ///Here we are going to compute the ODLRO stuff
@@ -149,7 +149,7 @@ void nofrEstimator::accumulate(ParticleSet& p)
     RealType ratio = Psi.ratio(p,ptcl);
     //      ratio=ratio*ratio;
     p.rejectMove(ptcl);
-    //      cerr<<"Ratio is "<<dist<<" "<<ratio<<endl;
+    //      std::cerr <<"Ratio is "<<dist<<" "<<ratio<< std::endl;
     if (!(dist>=Dmax))
     {
       int ig=static_cast<int>(DeltaInv*dist);
@@ -174,22 +174,22 @@ void nofrEstimator::accumulate(ParticleSet& p)
 // 	/////	PutInBox(p.R[ptcl]);
 
 // 	PosType diff=p.R[ptcl]-oldPos;
-// 	//	cerr<<"RAND: "<<gRand[0]<<" "<<diff<<" "<<endl;
+// 	//	std::cerr <<"RAND: "<<gRand[0]<<" "<<diff<<" "<< std::endl;
 // 	PutInBox(diff);
-// 	//	cerr<<"post-diff: "<<diff<<endl;
+// 	//	std::cerr <<"post-diff: "<<diff<< std::endl;
 // 	//      p.Lattice.inBox(diff);//applyBC(diff);
 // 	double dist=std::sqrt(dot(diff,diff));
-// 	//	cerr<<"dist: "<<dist<<endl;
+// 	//	std::cerr <<"dist: "<<dist<< std::endl;
 // 	RealType ratio = Psi.ratio(p,ptcl);
 // 	p.R[ptcl]=oldPos;
-// 	cerr<<dist<<" "<<ratio<<endl;
+// 	std::cerr <<dist<<" "<<ratio<< std::endl;
 // 	if (!(dist>=Dmax)){
 // 	  int ig=static_cast<int>(DeltaInv*dist);
 // 	  gofrInst(0,ig)+=ratio*ratio;
 // 	}
 // 	//      }
 //     }
-//     cerr<<"Done accumulating nofr"<<endl;
+//     std::cerr <<"Done accumulating nofr"<< std::endl;
 
 //     for(int iat=0; iat<Centers; iat++) {
 //       for(int nn=myTable->M[iat]; nn<myTable->M[iat+1]; nn++)
@@ -252,7 +252,7 @@ void nofrEstimator::setBound(RealType dr)
 
 hid_t nofrEstimator::createGroup(hid_t gid)
 {
-  cout<<"nofr group creating"<<endl;
+  std::cout <<"nofr group creating"<< std::endl;
   hid_t h1=H5Gcreate(gid,this->Title.c_str(),0);
   Vector<RealType> rv(NumBins);
   RealType r=0;
@@ -271,11 +271,11 @@ hid_t nofrEstimator::createGroup(hid_t gid)
 //    for(int i=0; i<NumBins;i++,r+=Delta) rv[i]=r;
 //    HDFAttribIO<Vector<RealType> > ro(rv);
 //    ro.write(gid,"distances");
-//    ostringstream o;
+//    std::ostringstream o;
 //    for(int i=0; i<NumPairTypes-1; i++) o << nList[i] <<":";
 //    o<<nList.back();
-//    string banner(o.str());
-//    HDFAttribIO<string> so(banner);
+//    std::string banner(o.str());
+//    HDFAttribIO<std::string> so(banner);
 //    so.write(h1,"pair_ids");
 //
 //    H5Gclose(h1);

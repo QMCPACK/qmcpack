@@ -5,7 +5,6 @@
 #include <iostream>
 #include <iomanip>
 #include "ScalarObservable.h"
-using namespace std;
 
 void
 ScalarObservable::get_stat()
@@ -19,7 +18,7 @@ ScalarObservable::get_average()
 {
   if(Modified)
   {
-    Average =std::accumulate(Self.begin(),Self.end(),0.0)
+    Average = std::accumulate(Self.begin(),Self.end(),0.0)
              /static_cast<value_type>(Self.size());
     //iterator first(Self.begin()),last(Self.end());
     //value_type s(0),s2(0);
@@ -149,10 +148,10 @@ void ScalarObservable::write(std::ostream& os)
   os.precision(p);
   os << "      <sigma>"<<sig<<"</sigma>\n"
      << "      <corrtime>"<<CorrTime<<"</corrtime>\n";
-  cout <<setw(16) <<  Average
-       << setw(16) << err
-       << setw(16) << sig
-       << setw(16) << CorrTime << endl;
+  std::cout <<setw(16) <<  Average
+       << std::setw(16) << err
+       << std::setw(16) << sig
+       << std::setw(16) << CorrTime << std::endl;
 }
 
 /** Original dataspork method to evaluate the autocorrelation */

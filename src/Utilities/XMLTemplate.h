@@ -19,12 +19,11 @@
 #define OHMMS_XMLTEMPLATEFUNCTORS_H
 
 #include <iostream>
-using namespace std;
 
 namespace OHMMS
 {
 template<class T>
-void printXML(const T&, ostream&)
+void printXML(const T&, std::ostream&)
 {
 }
 

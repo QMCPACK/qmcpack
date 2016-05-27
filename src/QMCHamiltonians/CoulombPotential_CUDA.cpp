@@ -26,9 +26,9 @@ CoulombPotentialAA_CUDA::CoulombPotentialAA_CUDA(ParticleSet* s, bool quantum):
 
 void
 CoulombPotentialAA_CUDA::addEnergy(MCWalkerConfiguration &W,
-                                   vector<RealType> &LocalEnergy)
+                                   std::vector<RealType> &LocalEnergy)
 {
-  vector<Walker_t*> &walkers = W.WalkerList;
+  std::vector<Walker_t*> &walkers = W.WalkerList;
   int nw = walkers.size();
   if (SumGPU.size() < nw)
     SumGPU.resize(nw);
@@ -83,9 +83,9 @@ CoulombPotentialAB_CUDA::CoulombPotentialAB_CUDA(ParticleSet* s, ParticleSet* t)
 
 void
 CoulombPotentialAB_CUDA::addEnergy(MCWalkerConfiguration &W,
-                                   vector<RealType> &LocalEnergy)
+                                   std::vector<RealType> &LocalEnergy)
 {
-  vector<Walker_t*> &walkers = W.WalkerList;
+  std::vector<Walker_t*> &walkers = W.WalkerList;
   int nw = walkers.size();
   if (SumGPU.size() < nw)
     SumGPU.resize(nw);

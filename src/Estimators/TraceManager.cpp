@@ -25,22 +25,22 @@ double TraceManager::trace_tol = 1e-8;
 //note: the presence of check_trace_build causes a multiple-definition problem at link-time
 void check_trace_build()
 {
-  string domain = "domain";
-  string name   = "name";
+  std::string domain = "domain";
+  std::string name   = "name";
   int index     = 0;
   int dim       = 3;
-  string label  = "label";
-  vector<int> vi;
-  vector<double> vr;
-  vector<complex<double> > vc;
+  std::string label  = "label";
+  std::vector<int> vi;
+  std::vector<double> vr;
+  std::vector<std::complex<double> > vc;
   TinyVector<int,4> shape;
   ParticleSet P;
   TraceSample<int> tsi(domain,name,index,dim,vi);
   TraceSample<double> tsr(domain,name,index,dim,vr);
-  TraceSample<complex<double> > tsc(domain,name,index,dim,vc);
+  TraceSample<std::complex<double> > tsc(domain,name,index,dim,vc);
   TraceSamples<int> tssi;
   TraceSamples<double> tssr;
-  TraceSamples<complex<double> > tssc;
+  TraceSamples<std::complex<double> > tssc;
   TraceBuffer<int> tbi;
   TraceBuffer<double> tbr;
   Array<int,1>* ai1;
@@ -67,10 +67,10 @@ void check_trace_build()
   ar3 = tssr.checkout_array<3>(P,name,shape);
   ar4 = tssr.checkout_array<4>(domain,name,shape);
   ar4 = tssr.checkout_array<4>(P,name,shape);
-  Array<complex<double>,1>* ac1;
-  Array<complex<double>,2>* ac2;
-  Array<complex<double>,3>* ac3;
-  Array<complex<double>,4>* ac4;
+  Array<std::complex<double>,1>* ac1;
+  Array<std::complex<double>,2>* ac2;
+  Array<std::complex<double>,3>* ac3;
+  Array<std::complex<double>,4>* ac4;
   ac1 = tssc.checkout_array<1>(domain,name,shape);
   ac1 = tssc.checkout_array<1>(P,name,shape);
   ac2 = tssc.checkout_array<2>(domain,name,shape);

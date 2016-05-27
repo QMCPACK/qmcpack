@@ -20,30 +20,30 @@ namespace qmcplusplus
 {
 
 // void
-// ratio (MCWalkerConfiguration &W, int iat, vector<PosType> &new_pos,
-// 	   vector<ValueType> &psi_ratios)
+// ratio (MCWalkerConfiguration &W, int iat, std::vector<PosType> &new_pos,
+// 	   std::vector<ValueType> &psi_ratios)
 // {
 //   Dets[DetID[iat]]->ratio(W, iat, new_pos, psi_ratios);
 // }
 
 // void
-// ratio (MCWalkerConfiguration &W, int iat, vector<PosType> &new_pos,
-// 	   vector<ValueType> &psi_ratios,	vector<GradType>  &grad)
+// ratio (MCWalkerConfiguration &W, int iat, std::vector<PosType> &new_pos,
+// 	   std::vector<ValueType> &psi_ratios,	vector<GradType>  &grad)
 // {
 //   Dets[DetID[iat]]->ratio(W, iat, new_pos, psi_ratios, grad);
 // }
 
 void
-SlaterDet::ratio (vector<Walker_t*> &walkers,    vector<int> &iatList,
-                  vector<PosType> &rNew, vector<ValueType> &psi_ratios,
-                  vector<GradType>  &grad, vector<ValueType> &lapl)
+SlaterDet::ratio (std::vector<Walker_t*> &walkers,    std::vector<int> &iatList,
+                  std::vector<PosType> &rNew, std::vector<ValueType> &psi_ratios,
+                  std::vector<GradType>  &grad, std::vector<ValueType> &lapl)
 {
   // Sort walkers by determinant number
-  vector<vector<Walker_t*> > sorted_walkers(Dets.size());
-  vector<vector<int> >       sorted_iatList(Dets.size());
-  vector<vector<PosType> >   sorted_rNew(Dets.size());
-  vector<vector<ValueType> > ratio_det(Dets.size()), lapl_det(Dets.size());
-  vector<vector<GradType> >  grad_det(Dets.size());
+  std::vector<std::vector<Walker_t*> > sorted_walkers(Dets.size());
+  std::vector<std::vector<int> >       sorted_iatList(Dets.size());
+  std::vector<std::vector<PosType> >   sorted_rNew(Dets.size());
+  std::vector<std::vector<ValueType> > ratio_det(Dets.size()), lapl_det(Dets.size());
+  std::vector<std::vector<GradType> >  grad_det(Dets.size());
   for (int iw=0; iw<walkers.size(); iw++)
   {
     int det = DetID[iatList[iw]];
@@ -62,7 +62,7 @@ SlaterDet::ratio (vector<Walker_t*> &walkers,    vector<int> &iatList,
                         ratio_det[idet], grad_det[idet], lapl_det[idet]);
   }
   // Copy ratios back into output
-  vector<int> index(Dets.size());
+  std::vector<int> index(Dets.size());
   for (int iw=0; iw<walkers.size(); iw++)
   {
     int det = DetID[iatList[iw]];
@@ -73,12 +73,12 @@ SlaterDet::ratio (vector<Walker_t*> &walkers,    vector<int> &iatList,
   }
 }
 
-void SlaterDet::update (const vector<Walker_t*> &walkers,
-                        const vector<int> &iatList)
+void SlaterDet::update (const std::vector<Walker_t*> &walkers,
+                        const std::vector<int> &iatList)
 {
   // Sort walkers by determinant number
-  vector<vector<Walker_t*> > sorted_walkers(Dets.size());
-  vector<vector<int> >       sorted_iatList(Dets.size());
+  std::vector<std::vector<Walker_t*> > sorted_walkers(Dets.size());
+  std::vector<std::vector<int> >       sorted_iatList(Dets.size());
   for (int iw=0; iw<walkers.size(); iw++)
   {
     int det = DetID[iatList[iw]];

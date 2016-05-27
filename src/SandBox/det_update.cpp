@@ -27,7 +27,6 @@
 #include <QMCWaveFunctions/Fermion/ci_builder.h>
 #include "Utilities/IteratorUtility.h"
 using namespace qmcplusplus;
-using namespace std;
 
 extern "C"
 {
@@ -52,7 +51,7 @@ int main(int argc, char** argv)
   int cmax=32;
   int M=512;
   typedef Matrix<double> mat_t;
-  vector<mat_t*> dets(8);
+  std::vector<mat_t*> dets(8);
   mat_t psi_big(M+cmax,M), psi_test(M,M), dpsi(M,M);
   for(int i=0; i<psi_big.size(); ++i)
     psi_big(i)=Random();
@@ -62,7 +61,7 @@ int main(int argc, char** argv)
   double dt0=0.0,dt1=0.0,dt2=0.0;
   for(int iter=0; iter<100; ++iter)
   {
-    std::copy(psi_big[0],psi_big[M],dets[0]->data());
+    copy(psi_big[0],psi_big[M],dets[0]->data());
     *dets[1] = *dets[0];
     int unoccupied=iter%cmax;
     double det_0=invert_matrix(*dets[0],true);
@@ -81,14 +80,14 @@ int main(int argc, char** argv)
     dt2 += myclock.elapsed();
     //difference
     dpsi=psi_test-(*dets[0]);
-    cout << setw(20) << BLAS::norm2(psi_test.size(),psi_test.data())
-         << setw(20) << BLAS::norm2(dpsi.size(),dpsi.data()) << endl;
+    std::cout << std::setw(20) << BLAS::norm2(psi_test.size(),psi_test.data())
+         << std::setw(20) << BLAS::norm2(dpsi.size(),dpsi.data()) << std::endl;
     dpsi=psi_test-(*dets[1]);
-    cout << setw(20) << BLAS::norm2(psi_test.size(),psi_test.data())
-         << setw(20) << BLAS::norm2(dpsi.size(),dpsi.data()) << endl;
+    std::cout << std::setw(20) << BLAS::norm2(psi_test.size(),psi_test.data())
+         << std::setw(20) << BLAS::norm2(dpsi.size(),dpsi.data()) << std::endl;
   }
-  cout << "Timing old = " << dt0 << " dger=" << dt1 << " direct=" << dt2
-       << "\n dt0/dt1=" << dt0/dt1 << " dt2/dt1=" << dt2/dt1 << endl;
+  std::cout << "Timing old = " << dt0 << " dger=" << dt1 << " direct=" << dt2
+       << "\n dt0/dt1=" << dt0/dt1 << " dt2/dt1=" << dt2/dt1 << std::endl;
   delete_iter(dets.begin(),dets.end());
   return 0;
 }

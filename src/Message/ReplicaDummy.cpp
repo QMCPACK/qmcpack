@@ -30,7 +30,7 @@ extern "C" {
 
 ReplicaControl::ReplicaControl()
 {
-  ReplicaID = vector<int>(1);
+  ReplicaID = std::vector<int>(1);
   NumReplica = OhmmsComm->getNumNodes();
   ReplicaID[0] = OhmmsComm->getNodeID();
   TotMD_t = 0.0e0;
@@ -39,7 +39,7 @@ ReplicaControl::ReplicaControl()
 
 ReplicaControl::ReplicaControl(int argc, char **argv)
 {
-  ReplicaID = vector<int>(1);
+  ReplicaID = std::vector<int>(1);
   NumReplica = OhmmsComm->getNumNodes();
   ReplicaID[0] = OhmmsComm->getNodeID();
   TotMD_t = 0.0e0;
@@ -50,7 +50,7 @@ void ReplicaControl::init(int nproc)
 {
   if(nproc != ReplicaID.size())
   {
-    ReplicaID = vector<int>(nproc);
+    ReplicaID = std::vector<int>(nproc);
     for(int i=0; i<nproc; i++)
       ReplicaID[i] = i;
   }
@@ -63,9 +63,9 @@ void ReplicaControl::resize(int n)
     WallClockTime.erase(WallClockTime.begin(), WallClockTime.end());
     MDTime.erase(MDTime.begin(), MDTime.end());
     HMDTime.erase(HMDTime.begin(), HMDTime.end());
-    WallClockTime = vector<double>(2*n,0.0e0);
-    MDTime   = vector<double>(2*n,0.0e0);
-    HMDTime  = vector<double>(2*n,0.0e0);
+    WallClockTime = std::vector<double>(2*n,0.0e0);
+    MDTime   = std::vector<double>(2*n,0.0e0);
+    HMDTime  = std::vector<double>(2*n,0.0e0);
   }
 }
 
@@ -119,9 +119,9 @@ void ReplicaControl::collectExactTimes(int itrans, double t0)
 {
 }
 
-void ReplicaControl::reportTimeData(ostream& os,int i_trans)
+void ReplicaControl::reportTimeData(std::ostream& os,int i_trans)
 {
-  os << setw(18) << MDTime[i_trans] << setw(18) << TotMD_t << " ";
+  os << std::setw(18) << MDTime[i_trans] << std::setw(18) << TotMD_t << " ";
 }
 
 

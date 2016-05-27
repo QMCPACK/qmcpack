@@ -36,14 +36,14 @@ class MPC: public QMCHamiltonianBase
 protected:
   UBspline_3d_d *VlongSpline, *DensitySpline;
   double Vconst;
-  void compute_g_G(double &g_0_N, vector<double> &g_G_N, int N);
+  void compute_g_G(double &g_0_N, std::vector<double> &g_G_N, int N);
   void init_gvecs();
   void init_f_G();
   void init_spline();
   double Ecut;
-  vector<TinyVector<int,OHMMS_DIM> > Gints;
-  vector<PosType> Gvecs;
-  vector<ComplexType> Rho_G;
+  std::vector<TinyVector<int,OHMMS_DIM> > Gints;
+  std::vector<PosType> Gvecs;
+  std::vector<ComplexType> Rho_G;
   TinyVector<int,OHMMS_DIM> SplineDim;
   int MaxDim;
   Return_t evalSR(ParticleSet& P) const;
@@ -52,8 +52,8 @@ protected:
 public:
   ParticleSet* PtclRef;
   // Store the average electron charge density in reciprocal space
-  vector<ComplexType> RhoAvg_G;
-  vector<RealType> f_G;
+  std::vector<ComplexType> RhoAvg_G;
+  std::vector<RealType> f_G;
   // The G=0 component
   double f_0;
 
@@ -64,8 +64,8 @@ public:
   int NParticles;
   RealType myConst;
   RealType myRcut;
-  vector<RealType> Zat,Zspec;
-  vector<int> NofSpecies;
+  std::vector<RealType> Zat,Zspec;
+  std::vector<int> NofSpecies;
 
   MPC(ParticleSet& ref, double cutoff);
 
@@ -78,13 +78,13 @@ public:
 
   Return_t evaluate(ParticleSet& P);
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
 
   /** implement all-walker stuff */
-  virtual void addEnergy(MCWalkerConfiguration &W, vector<RealType> &LocalEnergy);
+  virtual void addEnergy(MCWalkerConfiguration &W, std::vector<RealType> &LocalEnergy);
 
   /** Do nothing */
   bool put(xmlNodePtr cur);

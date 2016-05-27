@@ -29,11 +29,11 @@ struct EGOSet: public SPOSetBase
 {
 
   int KptMax;
-  vector<PosType>  K;
-  vector<RealType> mK2;
+  std::vector<PosType>  K;
+  std::vector<RealType> mK2;
 
-  EGOSet(const vector<PosType>& k, const vector<RealType>& k2);
-  EGOSet(const vector<PosType>& k, const vector<RealType>& k2, const vector<int>& d);
+  EGOSet(const std::vector<PosType>& k, const std::vector<RealType>& k2);
+  EGOSet(const std::vector<PosType>& k, const std::vector<RealType>& k2, const std::vector<int>& d);
 
   SPOSetBase* makeClone() const
   {

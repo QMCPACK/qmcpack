@@ -43,7 +43,7 @@ namespace qmcplusplus
 
     //functions for physical (hamiltonian component) estimator
     Return_t evaluate(ParticleSet& P);
-    inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+    inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
     {
       return evaluate(P);
     }
@@ -58,13 +58,13 @@ namespace qmcplusplus
     virtual void checkout_particle_quantities(TraceManager& tm)
     {
       streaming_particles = request.streaming_array(myName);
-      if(streaming_particles)
+      if( streaming_particles)
         V_sample = tm.checkout_real<1>(myName,Ps);
     }
 
     virtual void delete_particle_quantities()
     {
-      if(streaming_particles)
+      if( streaming_particles)
         delete V_sample;
     }
 

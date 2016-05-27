@@ -11,7 +11,7 @@
 namespace qmcplusplus
 {
 
-/** adoptor class to match complex<ST> spline stored in a packed array with complex<TT> SPOs
+/** adoptor class to match std::complex<ST> spline stored in a packed array with std::complex<TT> SPOs
  * @tparam ST precision of spline
  * @tparam TT precision of SPOs
  * @tparam D dimension
@@ -20,7 +20,7 @@ template<typename ST, typename TT, unsigned D>
 struct SplineC2CAdoptorPacked
 {
   typedef ST                                                      real_type;
-  typedef complex<ST>                                             value_type;
+  typedef std::complex<ST>                                             value_type;
   typedef typename einspline_traits<real_type,D>::SplineType      SplineType;
   typedef typename einspline_traits<real_type,D>::BCType          BCType;
   typedef typename OrbitalSetTraits<real_type>::ValueVector_t     StorageValueVector_t;
@@ -35,12 +35,12 @@ struct SplineC2CAdoptorPacked
   UnitCellType        SuperLattice;
   UnitCellType        PrimLattice;
   TinyVector<int,D>   HalfG;
-  vector<bool>        MakeTwoCopies;
+  std::vector<bool>        MakeTwoCopies;
   Tensor<real_type,D> GGt;
-  vector<PointType>   kPoints;
+  std::vector<PointType>   kPoints;
 
-  vector<real_type> phase;
-  vector<value_type> eikr;
+  std::vector<real_type> phase;
+  std::vector<value_type> eikr;
 
   StorageValueVector_t     myV;
   StorageValueVector_t     myL;
@@ -107,10 +107,10 @@ struct SplineC2CAdoptorPacked
       myL[jr]+=kk*myV[jr]+two*dot(kPoints[j],myG[ji]);
       myL[ji]+=kk*myV[ji]-two*dot(kPoints[j],myG[jr]);
       sincos(-dot(r,kPoints[j]),&s,&c); //e-ikr (beware of -1)
-      psi[j]=complex<TT>(c*myV[jr]-s*myV[ji],c*myV[ji]+s*myV[jr]);
-      d2psi[j]=complex<TT>(c*myL[jr]-s*myL[ji],c*myL[ji]+s*myL[jr]);
+      psi[j]= std::complex<TT>(c*myV[jr]-s*myV[ji],c*myV[ji]+s*myV[jr]);
+      d2psi[j]= std::complex<TT>(c*myL[jr]-s*myL[ji],c*myL[ji]+s*myL[jr]);
       for(int idim=0; idim<D; ++idim)
-        dpsi[j][idim]=complex<TT>(c*g_r[idim]-s*g_i[idim], c*g_i[idim]+s*g_r[idim]);
+        dpsi[j][idim]= std::complex<TT>(c*g_r[idim]-s*g_i[idim], c*g_i[idim]+s*g_r[idim]);
       //complex<ST> e_mikr(c,s);
       //convert(e_mikr * myV[j], psi[j]);
       //convert(e_mikr*(-myV[j]*ck + myG[j]), dpsi[j]);
@@ -124,7 +124,7 @@ struct SplineC2CAdoptorPacked
   }
 };
 
-/** adoptor class to match complex<ST> spline with TT real SPOs
+/** adoptor class to match std::complex<ST> spline with TT real SPOs
  * @tparam ST precision of spline
  * @tparam TT precision of SPOs
  * @tparam D dimension
@@ -135,7 +135,7 @@ template<typename ST, typename TT, unsigned D>
 struct SplineC2RAdoptorPacked
 {
   typedef ST                                                    real_type;
-  typedef complex<ST>                                           value_type;
+  typedef std::complex<ST>                                           value_type;
 
   typedef typename einspline_traits<real_type,D>::SplineType           SplineType;
   typedef typename einspline_traits<real_type,D>::BCType               BCType;
@@ -152,11 +152,11 @@ struct SplineC2RAdoptorPacked
   UnitCellType        PrimLattice;
   TinyVector<int,D>   HalfG;
   Tensor<real_type,D> GGt;
-  vector<PointType>   kPoints;
-  vector<bool>        MakeTwoCopies;
-  vector<real_type>   CosV;
-  vector<real_type>   SinV;
-  vector<real_type>   mKK;
+  std::vector<PointType>   kPoints;
+  std::vector<bool>        MakeTwoCopies;
+  std::vector<real_type>   CosV;
+  std::vector<real_type>   SinV;
+  std::vector<real_type>   mKK;
 
   // Temporary storage for Eispline calls
   StorageValueVector_t     myV;

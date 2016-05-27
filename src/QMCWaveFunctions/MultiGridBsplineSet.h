@@ -33,11 +33,11 @@ namespace qmcplusplus
     ///SPOSet on the global grid of the primitive cell
     bspline_type* Extended;
     ///SPOSet on the localized grid centered at the ions
-    vector<bspline_type*> Localized;
+    std::vector<bspline_type*> Localized;
     ///grid converter for each subdomain
-    vector<GridConvert<DataType> > gTransform;
+    std::vector<GridConvert<DataType> > gTransform;
     ///copy of PCID of the source particleset
-    vector<int> PCID;
+    std::vector<int> PCID;
 
     MultiGridBsplineSet()
       :myTableIndex(1), Rcut(0.5), Extended(0)
@@ -87,7 +87,7 @@ namespace qmcplusplus
         sprintf(s," Offset = %d %d %d Ngrid = %d %d %d",
             gTransform[ic].Offset[0],gTransform[ic].Offset[1],gTransform[ic].Offset[2],
             gTransform[ic].N[0],     gTransform[ic].N[1],     gTransform[ic].N[2]);
-        app_log() << "setSubDomain " << s << endl;
+        app_log() << "setSubDomain " << s << std::endl;
         return sizeof(DataType)*(Localized[ic]->MultiSpline->coefs_size);
       }
 

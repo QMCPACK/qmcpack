@@ -23,12 +23,12 @@ struct SplineAdoptorReader: public BsplineReaderBase
   typedef typename adoptor_type::DataType    DataType;
   typedef typename adoptor_type::SplineType SplineType;
 
-  Array<complex<double>,3> FFTbox;
+  Array<std::complex<double>,3> FFTbox;
   Array<double,3> splineData_r, splineData_i;
-  vector<UBspline_3d_d*> spline_r;
-  vector<UBspline_3d_d*> spline_i;
+  std::vector<UBspline_3d_d*> spline_r;
+  std::vector<UBspline_3d_d*> spline_i;
   BsplineSet<adoptor_type>* bspline;
-  vector<int> OrbGroups;
+  std::vector<int> OrbGroups;
   fftw_plan FFTplan;
 
   SplineAdoptorReader(EinsplineSetBuilder* e)
@@ -124,11 +124,11 @@ struct SplineAdoptorReader: public BsplineReaderBase
     //Timer c_prep, c_unpack,c_fft, c_phase, c_spline, c_newphase, c_h5, c_init;
     //double t_prep=0.0, t_unpack=0.0, t_fft=0.0, t_phase=0.0, t_spline=0.0, t_newphase=0.0, t_h5=0.0, t_init=0.0;
     bspline=new BsplineSet<adoptor_type>;
-    app_log() << "  AdoptorName = " << bspline->AdoptorName << endl;
+    app_log() << "  AdoptorName = " << bspline->AdoptorName << std::endl;
     if(bspline->is_complex)
-      app_log() << "  Using complex einspline table" << endl;
+      app_log() << "  Using complex einspline table" << std::endl;
     else
-      app_log() << "  Using real einspline table" << endl;
+      app_log() << "  Using real einspline table" << std::endl;
 
     //baseclass handles twists
     check_twists(bspline,bandgroup);
@@ -143,9 +143,9 @@ struct SplineAdoptorReader: public BsplineReaderBase
     }
     bspline->create_spline(xyz_grid,xyz_bc);
     int TwistNum = mybuilder->TwistNum;
-    ostringstream oo;
+    std::ostringstream oo;
     oo<<bandgroup.myName << ".g"<<MeshSize[0]<<"x"<<MeshSize[1]<<"x"<<MeshSize[2]<<".h5";
-    string splinefile= oo.str(); //bandgroup.myName+".h5";
+    std::string splinefile= oo.str(); //bandgroup.myName+".h5";
     //=make_spline_filename(mybuilder->H5FileName,mybuilder->TileMatrix,spin,TwistNum,bandgroup.GroupID,MeshSize);
     bool root=(myComm->rank() == 0);
     int foundspline=0;
@@ -157,7 +157,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
       foundspline=h5f.open(splinefile,H5F_ACC_RDONLY);
       if(foundspline)
       {
-        string aname("none");
+        std::string aname("none");
         foundspline = h5f.read(aname,"adoptor_name");
         foundspline = (aname.find(bspline->KeyWord) != std::string::npos);
       }
@@ -169,15 +169,15 @@ struct SplineAdoptorReader: public BsplineReaderBase
       }
       if(foundspline)
         bspline->read_splines(h5f);
-      app_log() << "  Time to read the table in " << splinefile << " = " << now.elapsed() << endl;;
+      app_log() << "  Time to read the table in " << splinefile << " = " << now.elapsed() << std::endl;;
     }
     myComm->bcast(foundspline);
     if(foundspline)
     {
-      app_log() << "Use existing bspline tables in " << splinefile << endl;
+      app_log() << "Use existing bspline tables in " << splinefile << std::endl;
       now.restart();
       chunked_bcast(myComm, bspline->MultiSpline);
-      app_log() << "  SplineAdoptorReader bcast the full table " << now.elapsed() << " sec" << endl;
+      app_log() << "  SplineAdoptorReader bcast the full table " << now.elapsed() << " sec" << std::endl;
       app_log().flush();
     }
     else
@@ -216,19 +216,19 @@ struct SplineAdoptorReader: public BsplineReaderBase
                                    +1, FFTW_ESTIMATE);
         //now.restart();
         //initialize_spline_pio_bcast(spin);
-        //app_log() << "  SplineAdoptorReader initialize_spline_pio_bcast " << now.elapsed() << " sec" << endl;
+        //app_log() << "  SplineAdoptorReader initialize_spline_pio_bcast " << now.elapsed() << " sec" << std::endl;
         size_t ntot=size_t(nx*ny*nz)*size_t(N);
         //if(ntot>>22) //Using 4M as the cutoff, candidate for autotuning
         {
           now.restart();
           initialize_spline_pio(spin,bandgroup);
-          app_log() << "  SplineAdoptorReader initialize_spline_pio " << now.elapsed() << " sec" << endl;
+          app_log() << "  SplineAdoptorReader initialize_spline_pio " << now.elapsed() << " sec" << std::endl;
         }
         //else //avoid this buggy branch.
         //{
         //  now.restart();
         //  initialize_spline_slow(spin,bandgroup);
-        //  app_log() << "  SplineAdoptorReader initialize_spline_slow " << now.elapsed() << " sec" << endl;
+        //  app_log() << "  SplineAdoptorReader initialize_spline_slow " << now.elapsed() << " sec" << std::endl;
         //}
         fftw_destroy_plan(FFTplan);
         FFTplan=NULL;
@@ -244,7 +244,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
         int sizeD=sizeof(typename adoptor_type::DataType);
         h5f.write(sizeD,"sizeof");
         bspline->write_splines(h5f);
-        app_log() << "  SplineAdoptorReader dump " << now.elapsed() << " sec" << endl;
+        app_log() << "  SplineAdoptorReader dump " << now.elapsed() << " sec" << std::endl;
       }
     }
 
@@ -259,7 +259,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
    *
    * Perform FFT and spline to spline_r[iorb] and spline_i[iorb]
    */
-  inline void fft_spline(Vector<complex<double> >& cG, int ti, int iorb)
+  inline void fft_spline(Vector<std::complex<double> >& cG, int ti, int iorb)
   {
     unpack4fftw(cG,mybuilder->Gvecs[0],MeshSize,FFTbox);
     fftw_execute (FFTplan);
@@ -286,8 +286,8 @@ struct SplineAdoptorReader: public BsplineReaderBase
     Array<DataType,3> data_r(nx,ny,nz), data_i;
     if(bspline->is_complex)
       data_i.resize(ny,ny,nz);
-    Vector<complex<double> > cG(mybuilder->MaxNumGvecs);
-    const vector<BandInfo>& cur_bands=bandgroup.myBands;
+    Vector<std::complex<double> > cG(mybuilder->MaxNumGvecs);
+    const std::vector<BandInfo>& cur_bands=bandgroup.myBands;
     //this will be parallelized with OpenMP
     for(int iorb=0; iorb<N; ++iorb)
     {
@@ -318,12 +318,12 @@ struct SplineAdoptorReader: public BsplineReaderBase
       int iorb_last =OrbGroups[myComm->rank()+1];
       hdf_archive h5f(myComm,false);
       h5f.open(mybuilder->H5FileName,H5F_ACC_RDONLY);
-      Vector<complex<double> > cG(mybuilder->Gvecs[0].size());;
-      const vector<BandInfo>& cur_bands=bandgroup.myBands;
+      Vector<std::complex<double> > cG(mybuilder->Gvecs[0].size());;
+      const std::vector<BandInfo>& cur_bands=bandgroup.myBands;
       for(int ib=0, iorb=iorb_first; iorb<iorb_last; ib++, iorb++)
       {
         int ti=cur_bands[iorb].TwistIndex;
-        string s=psi_g_path(ti,spin,cur_bands[iorb].BandIndex);
+        std::string s=psi_g_path(ti,spin,cur_bands[iorb].BandIndex);
         foundit &= h5f.read(cG,s);
         fft_spline(cG,ti,ib);
       }
@@ -362,7 +362,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
           if(bspline->is_complex)
             mpi::recv(*myComm,spline_i[ib]->coefs,ng_big,ip,iorb+N);
         }
-        const vector<BandInfo>& cur_bands=bandgroup.myBands;
+        const std::vector<BandInfo>& cur_bands=bandgroup.myBands;
         for(int iorb=OrbGroups[ip],ib=0; iorb<OrbGroups[ip+1]; ++iorb,++ib)
         {
           bspline->set_spline(spline_r[ib],spline_i[ib],cur_bands[iorb].TwistIndex,iorb,0);
@@ -378,7 +378,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
     bool root=(myComm->rank()==0);
     int np=OrbGroups.size()-1;
     bool foundit=true;
-    const vector<BandInfo>& cur_bands=bandgroup.myBands;
+    const std::vector<BandInfo>& cur_bands=bandgroup.myBands;
 
     if(myComm->rank()<np)
     {
@@ -386,11 +386,11 @@ struct SplineAdoptorReader: public BsplineReaderBase
       int iorb_last =OrbGroups[myComm->rank()+1];
       hdf_archive h5f(myComm,false);
       h5f.open(mybuilder->H5FileName,H5F_ACC_RDONLY);
-      Vector<complex<double> > cG(mybuilder->Gvecs[0].size());;
+      Vector<std::complex<double> > cG(mybuilder->Gvecs[0].size());;
       for(int ib=0, iorb=iorb_first; iorb<iorb_last; ib++, iorb++)
       {
         int ti=cur_bands[iorb].TwistIndex;
-        string s=psi_g_path(ti,spin,cur_bands[iorb].BandIndex);
+        std::string s=psi_g_path(ti,spin,cur_bands[iorb].BandIndex);
         foundit &= h5f.read(cG,s);
         fft_spline(cG,ti,ib);
       }
@@ -435,8 +435,8 @@ struct SplineAdoptorReader: public BsplineReaderBase
     int ny=MeshSize[1];
     int nz=MeshSize[2];
     Array<DataType,3> splineData_r(nx,ny,nz),splineData_i(ny,ny,nz);
-    Array<complex<double>,3> rawData(nx,ny,nz);
-    const vector<BandInfo>& cur_bands=bandgroup.myBands;
+    Array<std::complex<double>,3> rawData(nx,ny,nz);
+    const std::vector<BandInfo>& cur_bands=bandgroup.myBands;
     //this will be parallelized with OpenMP
     int N=bandgroup.getNumDistinctOrbitals();
     for(int iorb=0; iorb<N; ++iorb)
@@ -444,8 +444,8 @@ struct SplineAdoptorReader: public BsplineReaderBase
       //check dimension
       if(myComm->rank() ==0)
       {
-        string path=psi_r_path(cur_bands[iorb].TwistIndex,spin,cur_bands[iorb].BandIndex);
-        HDFAttribIO<Array<complex<double>,3> >  h_splineData(rawData);
+        std::string path=psi_r_path(cur_bands[iorb].TwistIndex,spin,cur_bands[iorb].BandIndex);
+        HDFAttribIO<Array<std::complex<double>,3> >  h_splineData(rawData);
         h_splineData.read(mybuilder->H5FileID, path.c_str());
         simd::copy(splineData_r.data(),splineData_i.data(),rawData.data(),rawData.size());
       }

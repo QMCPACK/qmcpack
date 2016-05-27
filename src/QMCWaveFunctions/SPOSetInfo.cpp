@@ -39,7 +39,7 @@ namespace qmcplusplus
     states.push_back(state->copy());
   }
 
-  void SPOSetInfo::add(vector<SPOInfo*>& state_vector)
+  void SPOSetInfo::add(std::vector<SPOInfo*>& state_vector)
   {
     for(int i=0;i<state_vector.size();++i)
       add(state_vector[i]);
@@ -56,16 +56,16 @@ namespace qmcplusplus
   {
     if(!complete())
     {
-      index_min = numeric_limits<int>::max();
-      index_max = numeric_limits<int>::min();
+      index_min = std::numeric_limits<int>::max();
+      index_max = std::numeric_limits<int>::min();
       indices_present  = true;
       energies_present  = true;
       states_t::iterator i=states.begin(),i_end=states.end();
       for(;i!=i_end;++i)
       {
         SPOInfo& s = **i;
-        index_min = min(s.index,index_min);
-        index_max = max(s.index,index_max);
+        index_min = std::min(s.index,index_min);
+        index_max = std::max(s.index,index_max);
         indices_present  &= s.has_index();
         energies_present &= s.has_energy();
       }
@@ -161,26 +161,26 @@ namespace qmcplusplus
 
 
   // printing
-  void SPOSetInfo::report(const string& pad)
+  void SPOSetInfo::report(const std::string& pad)
   {
-    app_log()<<pad<<"complete           = "<< complete()           <<endl;
+    app_log()<<pad<<"complete           = "<< complete()           << std::endl;
     if(complete())
     {
-      app_log()<<pad<<"min_index  = "<< min_index()  <<endl;
-      app_log()<<pad<<"max_index  = "<< max_index()  <<endl;
-      app_log()<<pad<<"contiguous         = "<< contiguous()         <<endl;
-      app_log()<<pad<<"has_energies       = "<< has_energies()       <<endl;
-      app_log()<<pad<<"energy_ordered     = "<< energy_ordered()     <<endl;
+      app_log()<<pad<<"min_index  = "<< min_index()  << std::endl;
+      app_log()<<pad<<"max_index  = "<< max_index()  << std::endl;
+      app_log()<<pad<<"contiguous         = "<< contiguous()         << std::endl;
+      app_log()<<pad<<"has_energies       = "<< has_energies()       << std::endl;
+      app_log()<<pad<<"energy_ordered     = "<< energy_ordered()     << std::endl;
       if(energy_ordered())
-        app_log()<<pad<<"energy_tolerance   = "<< energy_tolerance()   <<endl;
-      app_log()<<pad<<"# of states        = "<<size()<<endl;
-      app_log()<<pad<<"state information:"<<endl;
+        app_log()<<pad<<"energy_tolerance   = "<< energy_tolerance()   << std::endl;
+      app_log()<<pad<<"# of states        = "<<size()<< std::endl;
+      app_log()<<pad<<"state information:"<< std::endl;
       states_t::iterator s=states.begin(),s_end=states.end();
-      string pad2 = pad+"    ";
+      std::string pad2 = pad+"    ";
       int ns=0;
       for(;s!=s_end;++s,++ns)
       {
-        app_log()<<pad<<"  state "<<ns<<endl;
+        app_log()<<pad<<"  state "<<ns<< std::endl;
         (*s)->report(pad2);
       }
     }
@@ -216,7 +216,7 @@ namespace qmcplusplus
         stmp=s;
         ++stmp;
         // look ahead to count
-        while(stmp!=s_end && abs((*stmp)->energy-(*s)->energy)<energy_tol)
+        while(stmp!=s_end && std::abs((*stmp)->energy-(*s)->energy)<energy_tol)
         {
           g++;
           ++stmp;

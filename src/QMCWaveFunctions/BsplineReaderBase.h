@@ -44,7 +44,7 @@ struct BsplineReaderBase
   double Rcut;
   /** @}*/
   ///map from spo index to band index
-  vector<vector<int> > spo2band;
+  std::vector<std::vector<int> > spo2band;
 
   BsplineReaderBase(EinsplineSetBuilder* e);
 
@@ -62,7 +62,7 @@ struct BsplineReaderBase
     if(MeshSize[0]==0) MeshSize=mybuilder->MeshSize;
 
     app_log() << "  Using meshsize=" << MeshSize 
-            << "\n  vs input meshsize=" << mybuilder->MeshSize << endl;
+            << "\n  vs input meshsize=" << mybuilder->MeshSize << std::endl;
 
     xyz_grid[0].start = 0.0;
     xyz_grid[0].end = 1.0;
@@ -111,7 +111,7 @@ struct BsplineReaderBase
     bspline->last_spo =bandgroup.getLastSPO();
 
     int num = 0;
-    const vector<BandInfo>& cur_bands=bandgroup.myBands;
+    const std::vector<BandInfo>& cur_bands=bandgroup.myBands;
     for (int iorb=0; iorb<N; iorb++)
     {
       int ti = cur_bands[iorb].TwistIndex;
@@ -120,7 +120,7 @@ struct BsplineReaderBase
       num += bspline->MakeTwoCopies[iorb] ? 2 : 1;
     }
 
-    app_log() << "NumDistinctOrbitals " << N << " numOrbs = " << numOrbs << endl;
+    app_log() << "NumDistinctOrbitals " << N << " numOrbs = " << numOrbs << std::endl;
 
     bspline->HalfG=0;
     TinyVector<int,3> bconds=mybuilder->TargetPtcl.Lattice.BoxBConds;
@@ -134,17 +134,17 @@ struct BsplineReaderBase
           bspline->HalfG[i] = 1;
         else
           bspline->HalfG[i] = 0;
-      app_log() << "  TwistIndex = " << cur_bands[0].TwistIndex << " TwistAngle " << twist0 << endl;
-      app_log() <<"   HalfG = " << bspline->HalfG << endl;
+      app_log() << "  TwistIndex = " << cur_bands[0].TwistIndex << " TwistAngle " << twist0 << std::endl;
+      app_log() <<"   HalfG = " << bspline->HalfG << std::endl;
     }
     app_log().flush();
   }
 
   /** return the path name in hdf5
    */
-  inline string psi_g_path(int ti, int spin, int ib)
+  inline std::string psi_g_path(int ti, int spin, int ib)
   {
-    ostringstream path;
+    std::ostringstream path;
     path << "/electrons/kpoint_" << ti
          << "/spin_" << spin << "/state_" << ib << "/psi_g";
     return path.str();
@@ -152,9 +152,9 @@ struct BsplineReaderBase
 
   /** return the path name in hdf5
    */
-  inline string psi_r_path(int ti, int spin, int ib)
+  inline std::string psi_r_path(int ti, int spin, int ib)
   {
-    ostringstream path;
+    std::ostringstream path;
     path << "/electrons/kpoint_" << ti
          << "/spin_" << spin << "/state_" << ib << "/psi_r";
     return path.str();
@@ -166,7 +166,7 @@ struct BsplineReaderBase
    * @param ib band index
    * @param cG psi_g as stored in hdf5
    */
-  void get_psi_g(int ti, int spin, int ib, Vector<complex<double> >& cG);
+  void get_psi_g(int ti, int spin, int ib, Vector<std::complex<double> >& cG);
 
   /** create the actual spline sets
    */
@@ -182,8 +182,8 @@ struct BsplineReaderBase
   /** create the spline set */
   SPOSetBase* create_spline_set(int spin, xmlNodePtr cur);
 
-  void initialize_spo2band(int spin, const vector<BandInfo>& bigspace, SPOSetInfo& sposet,
-      vector<int>& band2spo);
+  void initialize_spo2band(int spin, const std::vector<BandInfo>& bigspace, SPOSetInfo& sposet,
+      std::vector<int>& band2spo);
 
   /** export the MultiSpline to the old class EinsplineSetExtended for the GPU calculation*/
   virtual void export_MultiSpline(multi_UBspline_3d_z **target)=0;

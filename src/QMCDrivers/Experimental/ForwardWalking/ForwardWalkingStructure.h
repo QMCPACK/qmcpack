@@ -60,7 +60,7 @@ struct ForwardWalkingData
   }
 
   //template<typename T>
-  //inline void toFloat(vector<T>& pout)
+  //inline void toFloat(std::vector<T>& pout)
   //{
   //  pout.resize(Pos.size()*OHMMS_DIM);
   //  int i=0;
@@ -70,7 +70,7 @@ struct ForwardWalkingData
   //}
 
   template<typename T>
-  inline void fromFloat(vector<T>& pin)
+  inline void fromFloat(std::vector<T>& pin)
   {
     //Pos.resize(pout.size()/OHMMS_DIM);
     assert(pin.size()/OHMMS_DIM == Pos.size() );
@@ -81,7 +81,7 @@ struct ForwardWalkingData
   }
 
   template<typename T>
-  inline void append(vector<T>& pout) const
+  inline void append(std::vector<T>& pout) const
   {
     for(int k=0; k<Pos.size(); ++k)
       for(int dim=0; dim<OHMMS_DIM; ++dim)
@@ -91,16 +91,16 @@ struct ForwardWalkingData
 
 /** Container for the forward walking history object
  *
- * Using vector<vector<<ForwardWalkingData>*> to limit the allocation and copy
+ * Using std::vector<std::vector<<ForwardWalkingData>*> to limit the allocation and copy
  */
 struct ForwardWalkingHistoryObject
 {
   typedef MCWalkerConfiguration::Walker_t Walker_t;
-  typedef vector<ForwardWalkingData> ForwardWalkingConfiguration;
+  typedef std::vector<ForwardWalkingData> ForwardWalkingConfiguration;
 
   ///accumulated number of walkers
   size_t number_of_walkers;
-  vector<ForwardWalkingConfiguration*> ForwardWalkingHistory;
+  std::vector<ForwardWalkingConfiguration*> ForwardWalkingHistory;
 
   inline ForwardWalkingHistoryObject():number_of_walkers(0) {}
 
@@ -148,7 +148,7 @@ struct ForwardWalkingHistoryObject
     return szeFW;
   }
 
-  inline void layoutOfConfigsForForwardWalking(vector<int>& returnVal)
+  inline void layoutOfConfigsForForwardWalking(std::vector<int>& returnVal)
   {
     returnVal.resize(ForwardWalkingHistory.size(),0);
     for(int i=0; i<ForwardWalkingHistory.size(); i++)

@@ -40,17 +40,17 @@ private:
   ///index for the jastrow type: 1, 2, 3
   int IonOrbitalType;
   ///name
-  string nameOpt;
+  std::string nameOpt;
   ///type
-  string typeOpt;
+  std::string typeOpt;
   ///function
   Vector<RealType> widthOpt;
   ///spin
-  string spinOpt;
+  std::string spinOpt;
   ///transform
-  string transformOpt;
+  std::string transformOpt;
   ///source
-  string sourceOpt;
+  std::string sourceOpt;
   ///reset the options
   void resetOptions();
 };

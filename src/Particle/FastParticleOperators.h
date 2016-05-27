@@ -312,7 +312,7 @@ struct ConvertPosUnit<ParticleAttrib<TinyVector<T,2> >,Tensor<T,2>, 2, false>
 };
 
 #define SUPERCELL_BOUNDARY_LIMITS(T)               \
-  const T epsilon = -numeric_limits<T>::epsilon(); \
+  const T epsilon = -std::numeric_limits<T>::epsilon(); \
   const T plus_one = 1.0
 
 

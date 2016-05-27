@@ -35,7 +35,7 @@ public:
   typedef TriCubicSplineT<ValueType,RealType>           SPOType;
   typedef TriCubicSplineT<ValueType,RealType>::GridType GridType;
   typedef SingleParticleOrbitalSet<SPOType>             SPOSetType;
-  typedef map<string,ParticleSet*> PtclPoolType;
+  typedef std::map<std::string,ParticleSet*> PtclPoolType;
 
   /** constructor
    * @param p target ParticleSet
@@ -58,9 +58,9 @@ private:
   ///global GridType*, should be generalized for any number of grids
   GridType* GridXYZ;
   ///set of SPOType*
-  map<string,SPOType* > NumericalOrbitals;
+  std::map<std::string,SPOType* > NumericalOrbitals;
   ///set of SPOSetType*
-  map<string,SPOSetType*> SPOSet;
+  std::map<std::string,SPOSetType*> SPOSet;
 };
 }
 #endif

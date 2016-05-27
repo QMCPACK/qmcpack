@@ -82,7 +82,7 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
   bool success=true;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname =="sposet_builder")
     {
       BasisSetFactory basisFactory(*targetPtcl,*targetPsi,ptclPool);
@@ -95,10 +95,10 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
       xmlNodePtr kcur = cur->children;
       while(kcur != NULL)
       {
-        string kname((const char*)(kcur->name));
+        std::string kname((const char*)(kcur->name));
         if (kname=="h5tag")
         {
-          string hdfName;
+          std::string hdfName;
           OhmmsAttributeSet attribs;
           attribs.add (hdfName, "name");
           if (hdfName=="twistAngle")
@@ -165,8 +165,8 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
 bool WaveFunctionFactory::addFermionTerm(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName,"addFermionTerm");
-  string orbtype("MolecularOrbital");
-  string nuclei("i");
+  std::string orbtype("MolecularOrbital");
+  std::string nuclei("i");
   OhmmsAttributeSet oAttrib;
   oAttrib.add(orbtype,"type");
   oAttrib.add(nuclei,"source");
@@ -199,7 +199,7 @@ bool WaveFunctionFactory::addNode(OrbitalBuilderBase* b, xmlNodePtr cur)
 {
   psiBuilder.push_back(b);
   ///if(myNode != NULL) {
-  ///  cout << ">>>> Adding " << (const char*)cur->name << endl;
+  ///  std::cout << ">>>> Adding " << (const char*)cur->name << std::endl;
   ///  xmlAddChild(myNode,xmlCopyNode(cur,1));
   ///}
   return true;
@@ -211,7 +211,7 @@ void WaveFunctionFactory::setCloneSize(int np)
 }
 
 WaveFunctionFactory*
-WaveFunctionFactory::clone(ParticleSet* qp, int ip, const string& aname)
+WaveFunctionFactory::clone(ParticleSet* qp, int ip, const std::string& aname)
 {
   WaveFunctionFactory* aCopy= new WaveFunctionFactory(qp,ptclPool,myComm);
   //turn off the report for the clones
@@ -236,9 +236,9 @@ bool WaveFunctionFactory::put(xmlNodePtr cur)
 void WaveFunctionFactory::reset() { }
 
 //  bool WaveFunctionFactory::addJastrowTerm(xmlNodePtr cur) {
-//    string jasttype("0");
-//    string jastname("0");
-//    string funcname("0");
+//    std::string jasttype("0");
+//    std::string jastname("0");
+//    std::string funcname("0");
 //
 //    OhmmsAttributeSet oAttrib;
 //    oAttrib.add(jasttype,"type");
@@ -248,7 +248,7 @@ void WaveFunctionFactory::reset() { }
 //
 //    if(jasttype[0] == '0')
 //    {
-//      app_warning() << "  WaveFunctionFactory::addJastrowTerm missing type. Ignore " << jastname << endl;
+//      app_warning() << "  WaveFunctionFactory::addJastrowTerm missing type. Ignore " << jastname << std::endl;
 //      return false;
 //    }
 //
@@ -270,28 +270,28 @@ void WaveFunctionFactory::reset() { }
 //    }
 //    else if(jasttype == "TEST")
 //    {
-//      app_log() << "\n  Using JastrowBasisBuilder for TESTING ONLY" << endl;
+//      app_log() << "\n  Using JastrowBasisBuilder for TESTING ONLY" << std::endl;
 //      jbuilder=new JastrowBuilder(*targetPtcl,*targetPsi,ptclPool);
 //    }
 //    else if(jasttype == "Long-Range")
 //    {
-//      app_log() << "\n  Using JAAPBCBuilder for two-body jatrow TESTING ONLY" << endl;
+//      app_log() << "\n  Using JAAPBCBuilder for two-body jatrow TESTING ONLY" << std::endl;
 //      jbuilder = new JAAPBCBuilder(*targetPtcl,*targetPsi);
 //    }
 //    else if(jasttype == "One-Body")
 //    {
 //      if(useSpline) {
-//        app_log() << "\n  Using NJABBuilder for one-body jatrow with spline functions" << endl;
+//        app_log() << "\n  Using NJABBuilder for one-body jatrow with spline functions" << std::endl;
 //        jbuilder = new NJABBuilder(*targetPtcl,*targetPsi,ptclPool);
 //      } else {
-//        app_log() << "\n  Using JABBuilder for one-body jatrow with analytic functions" << endl;
+//        app_log() << "\n  Using JABBuilder for one-body jatrow with analytic functions" << std::endl;
 //        jbuilder = new JABBuilder(*targetPtcl,*targetPsi,ptclPool);
 //      }
 //    }
 //#if !defined(QMC_COMPLEX)
 //    else if(jasttype == "Three-Body-Geminal") {
-//      app_log() << "\n  creating Three-Body-Germinal Jastrow function " << endl;
-//      string source_name("i");
+//      app_log() << "\n  creating Three-Body-Germinal Jastrow function " << std::endl;
+//      std::string source_name("i");
 //      const xmlChar* iptr = xmlGetProp(cur, (const xmlChar *)"source");
 //      if(iptr != NULL) source_name=(const char*)iptr;
 //      PtclPoolType::iterator pit(ptclPool.find(source_name));
@@ -299,8 +299,8 @@ void WaveFunctionFactory::reset() { }
 //        jbuilder = new ThreeBodyGeminalBuilder(*targetPtcl,*targetPsi,*((*pit).second));
 //      }
 //    } else if (jasttype == "Three-Body-Pade") {
-//      app_log() << "\n  creating Three-Body-Pade Jastrow function " << endl;
-//      string source_name("i");
+//      app_log() << "\n  creating Three-Body-Pade Jastrow function " << std::endl;
+//      std::string source_name("i");
 //      const xmlChar* iptr = xmlGetProp(cur, (const xmlChar *)"source");
 //      //if(iptr != NULL) source_name=(const char*)iptr;
 //      PtclPoolType::iterator pit(ptclPool.find(source_name));
@@ -315,7 +315,7 @@ void WaveFunctionFactory::reset() { }
 //      addNode(jbuilder,cur);
 //      return true;
 //    } else {
-//      app_warning() << "    " << jasttype << " is not valid." << endl;
+//      app_warning() << "    " << jasttype << " is not valid." << std::endl;
 //      return false;
 //    }
 //  }

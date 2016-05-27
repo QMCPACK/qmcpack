@@ -31,7 +31,7 @@ template<class T, unsigned D>
 struct DuplicateSuperCell<CrystalLattice<T,D> >
 {
   typedef typename CrystalLattice<T,D>::SingleParticlePos_t SingleParticlePos_t;
-  inline static void apply(const CrystalLattice<T,D>& , vector<SingleParticlePos_t>& nc, T rmax)
+  inline static void apply(const CrystalLattice<T,D>& , std::vector<SingleParticlePos_t>& nc, T rmax)
   {
   }
 };
@@ -44,7 +44,7 @@ struct DuplicateSuperCell<CrystalLattice<T,1> >
   typedef typename CrystalLattice<T,1>::SingleParticlePos_t SingleParticlePos_t;
 
   inline static void apply(
-    const CrystalLattice<T,1>& lat, vector<SingleParticlePos_t>& nc, T rmax)
+    const CrystalLattice<T,1>& lat, std::vector<SingleParticlePos_t>& nc, T rmax)
   {
     if(nc.empty())
     {
@@ -76,7 +76,7 @@ struct DuplicateSuperCell<CrystalLattice<T,2> >
 {
 
   typedef typename CrystalLattice<T,2>::SingleParticlePos_t SingleParticlePos_t;
-  inline static void apply(const CrystalLattice<T,2>& lat, vector<SingleParticlePos_t>& nc, T rmax)
+  inline static void apply(const CrystalLattice<T,2>& lat, std::vector<SingleParticlePos_t>& nc, T rmax)
   {
     if(nc.empty())
     {
@@ -131,7 +131,7 @@ struct DuplicateSuperCell<CrystalLattice<T,3> >
 {
 
   typedef typename CrystalLattice<T,3>::SingleParticlePos_t SingleParticlePos_t;
-  inline static void apply(const CrystalLattice<T,3>& lat, vector<SingleParticlePos_t>& nc, T rmax)
+  inline static void apply(const CrystalLattice<T,3>& lat, std::vector<SingleParticlePos_t>& nc, T rmax)
   {
     if(nc.empty())
     {

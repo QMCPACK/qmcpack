@@ -12,7 +12,7 @@ namespace qmcplusplus
 
 template<typename ENGT>
 void SplineTest<ENGT>
-::test(vector<TinyVector<typename SplineTest<ENGT>::real_type,3> >& coord)
+::test(std::vector<TinyVector<typename SplineTest<ENGT>::real_type,3> >& coord)
 {
   typedef TinyVector<real_type,3> pos_type;
   typedef TinyVector<value_type,3> grad_type;
@@ -51,12 +51,12 @@ void SplineTest<ENGT>
     dvgh_g(diff(g,grad[0]));
     dvgh_h(diff(h,hess[0]));
     for(int k=1; k<hess.size(); ++k)
-      if(diff(hess[0],hess[k]) > numeric_limits<real_type>::epsilon())
-        app_log() << "Check multi evaluation = " << hess[0] << "\n"  << hess[k] << endl;
+      if(diff(hess[0],hess[k]) > std::numeric_limits<real_type>::epsilon())
+        app_log() << "Check multi evaluation = " << hess[0] << "\n"  << hess[k] << std::endl;
   }
-  app_log() << "Average difference = " << dv.mean() << endl;
-  app_log() << "Average difference VGL = " << dvgl_v.mean() << " " << dvgl_g.mean() << " " << dvgl_l.mean()  <<  endl;
-  app_log() << "Average difference VGH = " << dvgh_v.mean() << " " << dvgh_g.mean() << " " << dvgh_h.mean()  <<  endl;
+  app_log() << "Average difference = " << dv.mean() << std::endl;
+  app_log() << "Average difference VGL = " << dvgl_v.mean() << " " << dvgl_g.mean() << " " << dvgl_l.mean()  <<  std::endl;
+  app_log() << "Average difference VGH = " << dvgh_v.mean() << " " << dvgh_g.mean() << " " << dvgh_h.mean()  <<  std::endl;
 }
 }
 
@@ -69,22 +69,22 @@ int main(int argc, char** argv)
   Random.init(0,1,-1);
   SplineTestBase param(argc,argv);
   typedef TinyVector<double,3> pos_type;
-  vector<pos_type> coord(param.nsamples);
+  std::vector<pos_type> coord(param.nsamples);
   for(int i=0; i<coord.size(); ++i)
     coord[i]=pos_type(Random(),Random(),Random()/2.0);
-  vector<TinyVector<float,3> > coord_s(coord.size());
+  std::vector<TinyVector<float,3> > coord_s(coord.size());
   for(int i=0; i<coord.size(); ++i)
     convert(coord[i],coord_s[i]);
-  cout << "\n Testing double " << endl;
+  std::cout << "\n Testing double " << std::endl;
   SplineTest<multi_UBspline_3d_d> test_d(param);
   test_d.test(coord);
-  //cout << "\n Testing complex<double> " << endl;
+  //cout << "\n Testing std::complex<double> " << std::endl;
   //SplineTest<multi_UBspline_3d_z> test_z(param);
   //test_z.test(coord);
-  //cout << "\n Testing float " << endl;
+  //cout << "\n Testing float " << std::endl;
   //SplineTest<multi_UBspline_3d_s> test_s(param);
   //test_s.test(coord_s);
-  //cout << "\n Testing complex<float> " << endl;
+  //cout << "\n Testing std::complex<float> " << std::endl;
   //SplineTest<multi_UBspline_3d_c> test_c(param);
   //test_c.test(coord_s);
   return 0;

@@ -18,11 +18,11 @@ class PostProcessor
 {
  public:
   
-  PostProcessor(const string& id,int ss,int se);
+  PostProcessor(const std::string& id,int ss,int se);
 
   ~PostProcessor() { }
 
-  void set(const string& id,int ss,int se)
+  void set(const std::string& id,int ss,int se)
   {
     project_id   = id;
     series_start = ss;
@@ -35,11 +35,11 @@ class PostProcessor
   void postprocess();
 
  private:
-  string project_id;
+  std::string project_id;
   int series_start;
   int series_end;
 
-  vector<PostProcessorBase*> postprocessors;
+  std::vector<PostProcessorBase*> postprocessors;
 
   inline void add(PostProcessorBase* pp)
   {

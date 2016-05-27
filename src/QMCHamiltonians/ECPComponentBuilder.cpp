@@ -26,12 +26,10 @@
 #include <qmc_common.h>
 
 
-#define conj_ qmcplusplus::conj
-
 namespace qmcplusplus
 {
 
-ECPComponentBuilder::ECPComponentBuilder(const string& aname, Communicate* c):
+ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate* c):
   MPIObjectBase(c),
   RcutMax(-1), NumNonLocal(0), Lmax(0), Zeff(0), Species(aname), Nrule(4),
   grid_global(0),pp_loc(0), pp_nonloc(0)
@@ -48,18 +46,18 @@ ECPComponentBuilder::ECPComponentBuilder(const string& aname, Communicate* c):
   angMon["4"]=4;
 }
 
-bool ECPComponentBuilder::parse(const string& fname, xmlNodePtr cur)
+bool ECPComponentBuilder::parse(const std::string& fname, xmlNodePtr cur)
 {
   const xmlChar* rptr=xmlGetProp(cur,(const xmlChar*)"cutoff");
   if(rptr != NULL)
     RcutMax = atof((const char*)rptr);
   int length=0;
   char* cbuffer=0;
-  ifstream *fin=0;
+  std::ifstream *fin=0;
   int missing_xml=0;
   if(myComm->rank()==0)
   {
-    fin = new ifstream(fname.c_str());
+    fin = new std::ifstream(fname.c_str());
     if (!fin->is_open())
       missing_xml=1;
   }
@@ -70,9 +68,9 @@ bool ECPComponentBuilder::parse(const string& fname, xmlNodePtr cur)
   }
   if(myComm->rank()==0)
   {
-    fin->seekg (0, ios::end);
+    fin->seekg (0, std::ios::end);
     length = fin->tellg();
-    fin->seekg (0, ios::beg);
+    fin->seekg (0, std::ios::beg);
   }
   myComm->bcast(length);
   cbuffer = new char[length];
@@ -107,11 +105,11 @@ bool ECPComponentBuilder::put(xmlNodePtr cur)
 {
   int nk=0;
   //vector<RealType> kpts;
-  vector<xmlNodePtr> semiPtr;
+  std::vector<xmlNodePtr> semiPtr;
   cur=cur->children;
   while(cur != NULL)
   {
-    string cname((const char*)cur->name);
+    std::string cname((const char*)cur->name);
     if(cname == "header")
     {
       Zeff = atoi((const char*)xmlGetProp(cur,(const xmlChar*)"zval"));
@@ -152,9 +150,9 @@ bool ECPComponentBuilder::put(xmlNodePtr cur)
   if(pp_nonloc)
   {
     SetQuadratureRule(Nrule);
-    app_log() << "    Non-local pseudopotential parameters" <<endl;
+    app_log() << "    Non-local pseudopotential parameters" << std::endl;
     pp_nonloc->print(app_log());
-    app_log() << "    Maximum cutoff radius " << pp_nonloc->Rmax << endl;
+    app_log() << "    Maximum cutoff radius " << pp_nonloc->Rmax << std::endl;
   }
   return true;
 }
@@ -165,7 +163,7 @@ void ECPComponentBuilder::printECPTable()
 
   char fname[12];
   sprintf(fname,"%s.pp.dat",Species.c_str());
-  ofstream fout(fname);
+  std::ofstream fout(fname);
   fout.setf(std::ios::scientific, std::ios::floatfield);
   fout.precision(12);
   int nl=pp_nonloc?pp_nonloc->nlpp_m.size():0;
@@ -173,25 +171,25 @@ void ECPComponentBuilder::printECPTable()
   RealType rt=0.13*d;
   if(nl)
   {
-    fout << "#  Lmax = " << Lmax+1 << " nonlocal L channels" << nl << endl;
-    fout << "#  Units = bohr hartree " << endl;
-    fout << "#  r  -r*V/zeff   Vnl ... " << endl;
+    fout << "#  Lmax = " << Lmax+1 << " nonlocal L channels" << nl << std::endl;
+    fout << "#  Units = bohr hartree " << std::endl;
+    fout << "#  r  -r*V/zeff   Vnl ... " << std::endl;
     while(rt<5)
     {
-      fout << rt << setw(25) << pp_loc->splint(rt);
+      fout << rt << std::setw(25) << pp_loc->splint(rt);
       for(int l=0; l<nl; l++)
-        fout << setw(25) << pp_nonloc->nlpp_m[l]->splint(rt);
-      fout << endl;
+        fout << std::setw(25) << pp_nonloc->nlpp_m[l]->splint(rt);
+      fout << std::endl;
       rt+=d;
     }
   }
   else
   {
-    fout << "#  Units = bohr hartree " << endl;
-    fout << "#  r  -r*V/zeff " << endl;
+    fout << "#  Units = bohr hartree " << std::endl;
+    fout << "#  r  -r*V/zeff " << std::endl;
     while(rt<5)
     {
-      fout << rt << setw(25) << pp_loc->splint(rt) << endl;;
+      fout << rt << std::setw(25) << pp_loc->splint(rt) << std::endl;;
       rt+=d;
     }
   }
@@ -199,8 +197,7 @@ void ECPComponentBuilder::printECPTable()
 
 void ECPComponentBuilder::SetQuadratureRule(int rule)
 {
-  using namespace std;
-  int nk;
+    int nk;
   RealType w;
   typedef enum {SINGLE, TETRA, OCTA, ICOSA} SymmType;
   SymmType symmetry;
@@ -263,7 +260,7 @@ void ECPComponentBuilder::SetQuadratureRule(int rule)
     abort();
   }
   // First, build a_i, b_i, and c_i points
-  vector<PosType> a, b, c, d;
+  std::vector<PosType> a, b, c, d;
   RealType p = 1.0/std::sqrt(2.0);
   RealType q = 1.0/std::sqrt(3.0);
   RealType r = 1.0/std::sqrt(11.0);
@@ -404,7 +401,7 @@ void ECPComponentBuilder::SetQuadratureRule(int rule)
     double nrm = dot(r,r);
     assert (std::abs(nrm-1.0) < 1.0e-14);
     wSum += pp_nonloc->sgridweight_m[k];
-    //cout << pp_nonloc->sgridxyz_m[k] << " " << pp_nonloc->sgridweight_m[k] << endl;
+    //cout << pp_nonloc->sgridxyz_m[k] << " " << pp_nonloc->sgridweight_m[k] << std::endl;
   }
   assert (std::abs(wSum - 1.0) < 1.0e-14);
   // Check the quadrature rule
@@ -413,7 +410,7 @@ void ECPComponentBuilder::SetQuadratureRule(int rule)
 
 //   double ECPComponentBuilder::AssociatedLegendre(int l, int m, double x)
 //   {
-//     int am = abs(m);
+//     int am = std::abs(m);
 //     // Value for positive m
 //     double posVal;
 //     if (l == 0)
@@ -456,7 +453,7 @@ void ECPComponentBuilder::SetQuadratureRule(int rule)
 
 //   }
 
-//   complex<double> ECPComponentBuilder::Ylm (int l, int m, PosType r)
+//   std::complex<double> ECPComponentBuilder::Ylm (int l, int m, PosType r)
 //   {
 //     double costheta, phi;
 //     costheta = r[0];
@@ -489,25 +486,25 @@ void ECPComponentBuilder::SetQuadratureRule(int rule)
 // 	Plm1 = Pl;
 //       }
 //     }
-//     complex<double> e2imphi (std::cos(m*phi), std::sin(m*phi));
+//     std::complex<double> e2imphi (std::cos(m*phi), std::sin(m*phi));
 //     return prefactor * Pl * e2imphi;
 //   }
 
 void ECPComponentBuilder::CheckQuadratureRule(int lexact)
 {
-  vector<PosType> &grid = pp_nonloc->sgridxyz_m;
-  vector<RealType> &w = pp_nonloc->sgridweight_m;
+  std::vector<PosType> &grid = pp_nonloc->sgridxyz_m;
+  std::vector<RealType> &w = pp_nonloc->sgridweight_m;
   for (int l1=0; l1<=lexact; l1++)
     for (int l2=0; l2 <= (lexact-l1); l2++)
       for (int m1=-l1; m1<=l1; m1++)
         for (int m2=-l2; m2<=l2; m2++)
         {
-          complex<double> sum(0.0, 0.0);
+          std::complex<double> sum(0.0, 0.0);
           for (int k=0; k<grid.size(); k++)
           {
-            complex<double> v1 = Ylm(l1, m1, grid[k]);
-            complex<double> v2 = Ylm(l2, m2, grid[k]);
-            sum += 4.0*M_PI*w[k] * conj_(v1)*v2;
+            std::complex<double> v1 = Ylm(l1, m1, grid[k]);
+            std::complex<double> v2 = Ylm(l2, m2, grid[k]);
+            sum += 4.0*M_PI*w[k] * conj(v1)*v2;
           }
           double re = real (sum);
           double im = imag (sum);
@@ -515,7 +512,7 @@ void ECPComponentBuilder::CheckQuadratureRule(int lexact)
             re -= 1.0;
           if ((std::abs(im) > 1.0e-14) || (std::abs(re) > 1.0e-14))
           {
-            app_error() << "Broken spherical quadrature for " << grid.size() << "-point rule.\n" << endl;
+            app_error() << "Broken spherical quadrature for " << grid.size() << "-point rule.\n" << std::endl;
             APP_ABORT("Give up");
           }
 // 	    fprintf (stderr, "(l1,m1,l2m,m2) = (%2d,%2d,%2d,%2d)  sum = (%20.16f %20.16f)\n",

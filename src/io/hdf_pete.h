@@ -161,7 +161,7 @@ struct h5data_proxy<Array<T,D> >: public h5_space_type<T,D>
 //{
 //  typedef PooledData<T> data_type;
 //  std::vector<T>& ref_;
-//  vector<hsize_t> dims;
+//  std::vector<hsize_t> dims;
 
 //  inline h5data_proxy(data_type& a): ref_(a.myData){dims.resize(1,a.size());}
 

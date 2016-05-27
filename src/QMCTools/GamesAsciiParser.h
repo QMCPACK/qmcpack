@@ -19,8 +19,8 @@ public:
 
   GamesAsciiParser(int argc, char** argv);
 
-  streampos pivot_begin;
-  vector<std::string> tags;
+  std::streampos pivot_begin;
+  std::vector<std::string> tags;
   bool usingECP;
   std::string MOtype;
   //int nCartMO;
@@ -43,7 +43,7 @@ public:
 
   void getCSF(std::istream& is);
 
-  double getCSFSign(vector<int>&);
+  double getCSFSign(std::vector<int>&);
 
 };
 #endif

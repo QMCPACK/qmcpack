@@ -54,9 +54,9 @@ NonlinearFitClass<M,ModelType>::Chi2(const Array<double,1> &x,
   double chi2 = 0;
   for (int i=0; i<N; i++) {
     double val = Model (x(i));
-//     cerr << "val = " << val << endl; 
-//     cerr << "yi  = " << y(i) << endl;
-//     cerr << "sigma = " << sigma(i) << endl;
+//     std::cerr << "val = " << val << std::endl; 
+//     std::cerr << "yi  = " << y(i) << std::endl;
+//     std::cerr << "sigma = " << sigma(i) << std::endl;
     chi2 += (val-y(i))*(val-y(i))/(sigma(i)*sigma(i));
   }
   return chi2;
@@ -92,7 +92,7 @@ NonlinearFitClass<M,ModelType>::CalcAlphaBeta (const Array<double,1> &x,
       for (int l=0; l<M; l++)
 	Alpha(k,l) += grad[k]*grad[l]/(sigma(i)*sigma(i));
   }
-  // cerr << "Alpha = " << Alpha << endl;
+  // std::cerr << "Alpha = " << Alpha << std::endl;
 }
 
 
@@ -149,9 +149,9 @@ NonlinearFitClass<M,ModelType>::Fit (const Array<double,1> &x,
   int iter = 1;
   int numSmallDecrease = 0;
   while (!done) {
-//     cerr << "Iteration " << iter << ":  Chi2 = " << chiNow << endl;
-//    cerr << "params = " << params << endl;
-//     cerr << "lambda = " << lambda << endl;
+//     std::cerr << "Iteration " << iter << ":  Chi2 = " << chiNow << std::endl;
+//    std::cerr << "params = " << params << std::endl;
+//     std::cerr << "lambda = " << lambda << std::endl;
 
     CalcAlphaBeta (x, y, sigma, params);
     for (int i=0; i<M; i++)
@@ -183,14 +183,14 @@ NonlinearFitClass<M,ModelType>::Fit (const Array<double,1> &x,
     for (int j=0; j<M; j++)
       AlphaInv(i,j) = Alpha(i,j);
   GJInverse(AlphaInv);
-//   cerr << "Covariace matrix:\n";
+//   std::cerr << "Covariace matrix:\n";
 //   for (int i=0; i<AlphaInv.rows(); i++) {
 //     for (int j=0; j<AlphaInv.cols(); j++)
 //       fprintf (stderr, "%12.4e ", AlphaInv(i,j));
 //     fprintf (stderr, "\n");
 //   }
   Model.SetParams (params);
-  //  cerr << "Chi2 = " << chiNow << endl;
+  //  std::cerr << "Chi2 = " << chiNow << std::endl;
 }
 
 #endif

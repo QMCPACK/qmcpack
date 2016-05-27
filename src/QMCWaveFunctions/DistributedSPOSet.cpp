@@ -37,7 +37,7 @@ void DistributedSPOSet::setCommunicator(Communicate* c)
 {
   if(myComm && myComm == c)
   {
-    app_log() << "  Identical communicator. Nothing to be done in ScalarEstimatorManager::setCommunicator." << endl;
+    app_log() << "  Identical communicator. Nothing to be done in ScalarEstimatorManager::setCommunicator." << std::endl;
     return;
   }
   if(c)
@@ -112,7 +112,7 @@ DistributedSPOSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   ValueVector_t psiL(OrbitalCount[myNodeID]);
   //do the local calculation
   Phi->evaluate(pos,psiL);
-  std::copy(psiL.begin(),psiL.end(),psi.begin()+OrbitalOffset[myNodeID]);
+  copy(psiL.begin(),psiL.end(),psi.begin()+OrbitalOffset[myNodeID]);
   //can make waitsome
   int err=MPI_Waitall(NumRemoteNodes, sendPos,statusPos);
   //do the calculation with the positions recv and send back the orbitals
@@ -168,9 +168,9 @@ DistributedSPOSet::evaluate(const ParticleSet& P, int iat,
   ValueVector_t p2siL(OrbitalCount[myNodeID]);
   //do the local calculation
   Phi->evaluate(pos,psiL,dpsiL,d2psiL);
-  std::copy(psiL.begin(),psiL.end(),psi.begin()+OrbitalOffset[myNoodeID]);
-  std::copy(dpsiL.begin(),dpsiL.end(),dpsi.begin()+OrbitalOffset[myNoodeID]);
-  std::copy(d2psiL.begin(),d2psiL.end(),d2psi.begin()+OrbitalOffset[myNoodeID]);
+  copy(psiL.begin(),psiL.end(),psi.begin()+OrbitalOffset[myNoodeID]);
+  copy(dpsiL.begin(),dpsiL.end(),dpsi.begin()+OrbitalOffset[myNoodeID]);
+  copy(d2psiL.begin(),d2psiL.end(),d2psi.begin()+OrbitalOffset[myNoodeID]);
   int err=MPI_Waitall(NumRemoteNodes, sendPos,statusPos);
   int ngd=OrbitalCount[myNodeID]*OHMMS_DIM;
   //do the calculation with the positions recv and send back the orbitals
@@ -221,7 +221,7 @@ void DistributedSPOSet::evaluate_notranspose(const ParticleSet& P, int first, in
   CommunicatorTraits::mpi_status_type statusPos[MAX_NUM_SHARED_NODES];
   CommunicatorTraits::mpi_status_type statusPsi[MAX_NUM_SHARED_NODES];
   int nat=last-first;
-  vector<PosType> pos(nat);
+  std::vector<PosType> pos(nat);
   for(int iat=first,i=0; iat<last; iat++,i++)
     pos[i]=P.R[iat];
   //send the current position and start recv
@@ -238,7 +238,7 @@ void DistributedSPOSet::evaluate_notranspose(const ParticleSet& P, int first, in
   {
     //do the local calculation
     Phi->evaluate_notranspose(pos[i],psiL,dpsiL,d2psiL);
-    //use std::copy
+    //use copy
     for(int jc=0,j=OrbitalOffset[myNoodeID]; jc<OrbitalCount[myNodeID]; jc++,j++)
     {
       //logdet(j,i)=psiL[jc];

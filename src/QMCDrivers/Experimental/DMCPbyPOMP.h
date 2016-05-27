@@ -53,11 +53,11 @@ private:
   ///Total number of rejected steps per block
   IndexType nRejectTot;
   ///hdf5 file name for Branch conditions
-  string BranchInfo;
-  ///input string to determine kill walkers or not
-  string KillWalker;
-  ///input string to determine swap walkers among mpi processors
-  string SwapWalkers;
+  std::string BranchInfo;
+  ///input std::string to determine kill walkers or not
+  std::string KillWalker;
+  ///input std::string to determine swap walkers among mpi processors
+  std::string SwapWalkers;
   /// Copy Constructor (disabled)
   DMCPbyPOMP(const DMCPbyPOMP& a): QMCDriver(a) { }
   /// Copy operator (disabled).
@@ -67,16 +67,16 @@ private:
   }
 
   int NumThreads;
-  string Reconfiguration;
-  string BenchMarkRun;
+  std::string Reconfiguration;
+  std::string BenchMarkRun;
 
-  vector<DMCUpdateBase*> Movers;
-  vector<ParticleSet*> wClones;
-  vector<TrialWaveFunction*> psiClones;
-  vector<QMCHamiltonian*> hClones;
-  vector<RandomGenerator_t*> Rng;
-  vector<BranchEngineType*> branchClones;
-  vector<int> wPerNode;
+  std::vector<DMCUpdateBase*> Movers;
+  std::vector<ParticleSet*> wClones;
+  std::vector<TrialWaveFunction*> psiClones;
+  std::vector<QMCHamiltonian*> hClones;
+  std::vector<RandomGenerator_t*> Rng;
+  std::vector<BranchEngineType*> branchClones;
+  std::vector<int> wPerNode;
 
   void resetRun();
   void benchMark();

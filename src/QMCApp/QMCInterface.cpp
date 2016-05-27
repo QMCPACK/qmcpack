@@ -35,7 +35,6 @@
 #include "QMCDrivers/RQMCMultiple.h"
 #include "Message/Communicate.h"
 #include <queue>
-using namespace std;
 #include "OhmmsData/AttributeSet.h"
 #include <sstream>
 
@@ -69,7 +68,7 @@ bool QMCInterface::initialize(int myProc, int numProcs)
   }
   OHMMS::Controller->setNodeID(myProc);
   OHMMS::Controller->setNumNodes(numProcs);
-  ostringstream newTitle;
+  std::ostringstream newTitle;
   newTitle << myProject.m_title << "." << OHMMS::Controller->rank();
   myProject.setTitle(newTitle.str());
   //validate the input file
@@ -96,23 +95,23 @@ bool QMCInterface::SetVMC(double dt, int w, int steps, int nblocks)
   //cerr << "    QMCInterface::SetVMC: Creating new VMC driver...";
   if(qmcDriver != NULL)
   {
-    //cerr << "qmcpack: deleting previous driver" << endl;
+    //cerr << "qmcpack: deleting previous driver" << std::endl;
     delete qmcDriver;
   }
   qmcDriver = new VMCSingle(*ptclPool->getWalkerSet("e"),*psiPool->getPrimary(),*hamPool->getPrimary(),*psiPool);
-  //cerr << " done." << endl;
+  //cerr << " done." << std::endl;
   bool append_run = false;
   qmcDriver->setStatus(myProject.CurrentRoot(),PrevConfigFile, append_run);
-  //cerr << "QMCInterface::SetVMC: Using Default Parameters:" << endl;
-  //cerr << "  timestep = 0.03; walkers = 100; steps = 100;" << endl;
+  //cerr << "QMCInterface::SetVMC: Using Default Parameters:" << std::endl;
+  //cerr << "  timestep = 0.03; walkers = 100; steps = 100;" << std::endl;
   qmcDriver->setValue("timeStep", dt);
   qmcDriver->setValue("walkers", w);
   qmcDriver->setValue("steps", steps);
   qmcDriver->setValue("blocks", nblocks);
-  //cerr << "  blocks = " << nblocks << endl;
+  //cerr << "  blocks = " << nblocks << std::endl;
   //cerr << "  Setting xmlNodepointer...";
   runInfoNode = xmlNewNode(NULL,(const xmlChar*)"vmc");
-  //cerr << " Done.  Ready to run." << endl;
+  //cerr << " Done.  Ready to run." << std::endl;
   return true;
 }
 
@@ -121,12 +120,12 @@ bool QMCInterface::SetVMCMultiple(double dt, int w, int steps, int nblocks)
   //cerr << "    QMCInterface::SetVMCMultiple: Creating new VMCMultiple driver...";
   if(qmcDriver != NULL)
   {
-    //cerr << "qmcpack: deleting previous driver" << endl;
+    //cerr << "qmcpack: deleting previous driver" << std::endl;
     delete qmcDriver;
   }
   qmcDriver = new CSVMC(*ptclPool->getWalkerSet("e"),*psiPool->getPrimary(),*hamPool->getPrimary(),*psiPool);
   //qmcDriver = new VMCMultiple(*ptclPool->getWalkerSet("e"),*psiPool->getPrimary(),*hamPool->getPrimary());
-  //cerr << " done." << endl;
+  //cerr << " done." << std::endl;
   // get second psi, hamiltonian
   QMCHamiltonian* secondHam = hamPool->getHamiltonian("h1");
   TrialWaveFunction* secondPsi = psiPool->getWaveFunction("psi1");
@@ -148,7 +147,7 @@ bool QMCInterface::SetRQMCMultiple(double dt, int chains, int steps, int nblocks
   bool isNewDriver = false;
   if(qmcDriver == NULL)
   {
-    //cerr << "Creating new RQMC driver" << endl;
+    //cerr << "Creating new RQMC driver" << std::endl;
     qmcDriver = new RQMCMultiple(*ptclPool->getWalkerSet("e"),*psiPool->getPrimary(),*hamPool->getPrimary(),*psiPool);
     // get second psi, hamiltonian
     QMCHamiltonian* secondHam = hamPool->getHamiltonian("h1");
@@ -160,7 +159,7 @@ bool QMCInterface::SetRQMCMultiple(double dt, int chains, int steps, int nblocks
   }
   else
   {
-    //cerr << "REUSING RQMC driver" << endl;
+    //cerr << "REUSING RQMC driver" << std::endl;
     append_run = false;
   }
   qmcDriver->setStatus(myProject.CurrentRoot(),PrevConfigFile, append_run);
@@ -169,7 +168,7 @@ bool QMCInterface::SetRQMCMultiple(double dt, int chains, int steps, int nblocks
   qmcDriver->setValue("steps", steps);
   qmcDriver->setValue("blocks", nblocks);
   runInfoNode = xmlNewNode(NULL,(const xmlChar*)"rqmc-multi");
-  //cerr << " done." << endl;
+  //cerr << " done." << std::endl;
   //return true;
   return isNewDriver;
 }
@@ -180,7 +179,7 @@ bool QMCInterface::SetRQMCMultiple(double dt, int chains, int steps, int nblocks
    delete qmcDriver;
    }
    qmcDriver = new RQMCMultiple(*ptclPool->getWalkerSet("e"),*psiPool->getPrimary(),*hamPool->getPrimary());
-//cerr << " done." << endl;
+//cerr << " done." << std::endl;
 
 // get second psi, hamiltonian
 QMCHamiltonian* secondHam = hamPool->getHamiltonian("h1");
@@ -205,11 +204,11 @@ return true;
 
 bool QMCInterface::process()
 {
-  //cerr << "    QMCInterface::process: Processing..." << endl;
+  //cerr << "    QMCInterface::process: Processing..." << std::endl;
   qmcDriver->process(runInfoNode);
   //DO NOT NEED THIS
   //qmcDriver->Estimators->setAccumulateMode(true);
-  //cerr << " done." << endl;
+  //cerr << " done." << std::endl;
   return true;
 }
 
@@ -222,7 +221,7 @@ bool QMCInterface::execute()
   //ParticleSet* pseudoSet1 = ptclPool->getParticleSet("pseudo1");
   //cerr << "	qmcpack: updating pseudo center from " << pseudoSet->R[0];
   //pseudoSet->R[0] = 0.5*(refSet->R[0] + refSet->R[1]);
-  //cerr << " to " << pseudoSet->R[0] << " given H1 at " << refSet->R[0] << " and H2 at " << refSet->R[1] << endl;
+  //cerr << " to " << pseudoSet->R[0] << " given H1 at " << refSet->R[0] << " and H2 at " << refSet->R[1] << std::endl;
   //pseudoSet1->R[0] = 0.5*(refSet1->R[0] + refSet1->R[1]);
   qmcDriver->run();
   return true;
@@ -230,13 +229,13 @@ bool QMCInterface::execute()
 
 // returns a pointer to a vector containing energy estimator output
 /*
-   vector<double>* QMCInterface::GetData(){
+   std::vector<double>* QMCInterface::GetData(){
    return qmcDriver->energyData.Send();
    }
    */
 
 /*
-   double QMCInterface::GetData(string estimator, string tag){
+   double QMCInterface::GetData( std::string estimator, std::string tag){
    int EstIndex = qmcDriver->Estimators.add(estimator);
    int ValueIndex = qmcDriver->Estimators[EstIndex].add(tag);
    double value = qmcDriver->Estimators[EstIndex].average(ValueIndex);
@@ -250,18 +249,18 @@ void QMCInterface::SetPtclPos(int id, double* newR)
   //cerr << "    QMCInterface::SetPtclPos: updated ion " << id << " from " << mySet->R[id];
   qmcplusplus::TinyVector<double,3> newVec(newR[0],newR[1],newR[2]);
   mySet->R[id] = newVec;
-  //cerr << " to " << mySet->R[id] << endl;
+  //cerr << " to " << mySet->R[id] << std::endl;
 }
 
 // sets ptcl coordinates in speciefied set
-void QMCInterface::SetPtclPos(string set, int id, double* newR)
+void QMCInterface::SetPtclPos( std::string set, int id, double* newR)
 {
-  //cerr << "int SetPtclPos, looking to move " << id << " of set " << set << endl;
+  //cerr << "int SetPtclPos, looking to move " << id << " of set " << set << std::endl;
   ParticleSet* mySet = ptclPool->getParticleSet(set);
   //cerr << "    QMCInterface::SetPtclPos: updated particle " << id << " of ParticleSet " << set << " from " << mySet->R[id];
   qmcplusplus::TinyVector<double,3> newVec(newR[0],newR[1],newR[2]);
   mySet->R[id] = newVec;
-  //cerr << " to " << mySet->R[id] << endl;
+  //cerr << " to " << mySet->R[id] << std::endl;
 }
 
 /** validate the Interface document
@@ -283,23 +282,23 @@ bool QMCInterface::validateXML()
   OhmmsXPathObject result("//project",m_context);
   if(result.empty())
   {
-    app_warning() << "Project is not defined" << endl;
+    app_warning() << "Project is not defined" << std::endl;
     myProject.reset();
   }
   else
   {
     myProject.put(result[0]);
   }
-  app_log() << endl;
+  app_log() << std::endl;
   myProject.get(app_log());
-  app_log() << endl;
+  app_log() << std::endl;
   //initialize the random number generator
   xmlNodePtr rptr = myRandomControl.initialize(m_context);
   //preserve the input order
   xmlNodePtr cur=XmlDocStack.top()->getRoot()->children;
   while(cur != NULL)
   {
-    string cname((const char*)cur->name);
+    std::string cname((const char*)cur->name);
     if(cname == "particleset")
     {
       ptclPool->put(cur);
@@ -373,7 +372,7 @@ void QMCInterface::processPWH(xmlNodePtr cur)
   cur=cur->children;
   while(cur != NULL)
   {
-    string cname((const char*)cur->name);
+    std::string cname((const char*)cur->name);
     if(cname == "simulationcell")
     {
       ptclPool->putLattice(cur);
@@ -407,9 +406,9 @@ bool QMCInterface::runQMC(xmlNodePtr cur)
   bool append_run = setQMCDriver(myProject.m_series,cur);
   if(qmcDriver)
   {
-    app_log() << endl;
+    app_log() << std::endl;
     myProject.get(app_log());
-    app_log() << endl;
+    app_log() << std::endl;
     //advance the project id
     //if it is NOT the first qmc node and qmc/@append!='yes'
     if(!FirstQMC && !append_run)

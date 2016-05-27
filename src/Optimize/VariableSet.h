@@ -183,7 +183,7 @@ struct VariableSet
   }
 
 
-  /** equivalent to map<string,T>[string] operator
+  /** equivalent to std::map<std::string,T>[string] operator
    */
   inline real_type& operator[](const std::string& vname)
   {

@@ -39,18 +39,18 @@ namespace qmcplusplus
     // if (w.reptile_new==0){w.reptile_new = new Reptile_new(&w);};
 
     // w.reptile_new->loadFromWalkerList(w.WalkerList);
-//  app_log()<<"  reptile_new.size()="<<w.reptile_new->size()<<endl;
-//  app_log()<<"  WalkerList.size()="<<w.WalkerList.size()<<endl;
+//  app_log()<<"  reptile_new.size()="<<w.reptile_new->size()<< std::endl;
+//  app_log()<<"  WalkerList.size()="<<w.WalkerList.size()<< std::endl;
 
     Action.resize (3);
     Action[0] = w.addProperty ("ActionBackward");
     Action[1] = w.addProperty ("ActionForward");
     Action[2] = w.addProperty ("ActionLocal");
-//     app_log()<<Action[0]<<" "<<Action[1]<<" "<<Action[2]<<endl;
+//     app_log()<<Action[0]<<" "<<Action[1]<<" "<<Action[2]<< std::endl;
     TransProb.resize (2);
     TransProb[0] = w.addProperty ("TransProbBackward");
     TransProb[1] = w.addProperty ("TransProbForward");
-//     app_log()<<TransProb[0]<<" "<<TransProb[1]<<endl;
+//     app_log()<<TransProb[0]<<" "<<TransProb[1]<< std::endl;
   }
 
   bool RMCSingleOMP::run ()
@@ -69,7 +69,7 @@ namespace qmcplusplus
 
     for (int block = 0; block < nBlocks; ++block)
       {
-	//    app_log()<<"Block "<<block<<endl;
+	//    app_log()<<"Block "<<block<< std::endl;
 #pragma omp parallel
 	{
 	  int ip = omp_get_thread_num ();
@@ -150,7 +150,7 @@ namespace qmcplusplus
     else
       beta = beads * Tau;
 
-    app_log () << "Projection time:  " << beta << " Ha^-1" << endl;
+    app_log () << "Projection time:  " << beta << " Ha^-1" << std::endl;
     //Calculate the number of VMC presteps if not given:
     if (prestepsVMC == -1 && fromScratch == true)
       prestepsVMC = beads + 2;
@@ -168,11 +168,11 @@ namespace qmcplusplus
 	    //pull the reptile configurations out
 	    app_log () << "  Previous Tau/Beta:  " << W.ReptileList[0]->
 	      getTau () << "/" << W.ReptileList[0]->getTau () *
-	      W.ReptileList[0]->size () << endl;
+	      W.ReptileList[0]->size () << std::endl;
 	    app_log () << "  New      Tau/Beta: " << Tau << "/" << beta <<
-	      endl;
+	      std::endl;
 	    app_log () << "    Linear interpolation to get new reptile.\n";
-	    vector < ReptileConfig_t > repSamps (0);
+	    std::vector< ReptileConfig_t > repSamps (0);
 	    for (IndexType sampid = 0;
 		 sampid < W.ReptileList.size () && sampid < nReptiles;
 		 sampid++)
@@ -194,7 +194,7 @@ namespace qmcplusplus
       {
 	//Initialize on whatever walkers are in MCWalkerConfiguration.
 	app_log () << "Using walkers from previous non-RMC run.\n";
-	vector < ParticlePos_t > wSamps (0);
+	std::vector<ParticlePos_t> wSamps (0);
 	MCWalkerConfiguration::iterator wit (W.begin ()), wend (W.end ());
 	for (IndexType sampid = 0; wit != wend && sampid < nReptiles; wit++)
 	  wSamps.push_back ((**wit).R);
@@ -222,13 +222,13 @@ namespace qmcplusplus
         addWalkers(nwtot-W.getActiveWalkers());
         
        //   W.reptile_new->loadFromWalkerList(W.WalkerList);
- // app_log()<<"  reptile_new.size()="<<W.reptile_new->size()<<endl;
-  //app_log()<<"  WalkerList.size()="<<W.WalkerList.size()<<endl;
+ // app_log()<<"  reptile_new.size()="<<W.reptile_new->size()<< std::endl;
+  //app_log()<<"  WalkerList.size()="<<W.WalkerList.size()<< std::endl;
     }
   else
     {
       ///Norm
-      app_log()<<"resizing the reptile not yet implemented."<<endl;
+      app_log()<<"resizing the reptile not yet implemented."<< std::endl;
     }*/
     makeClones (W, Psi, H);
     myPeriod4WalkerDump =
@@ -248,7 +248,7 @@ namespace qmcplusplus
 #endif
 	for (int ip = 0; ip < NumThreads; ++ip)
 	  {
-	    ostringstream os;
+	    std::ostringstream os;
 	    estimatorClones[ip] = new EstimatorManager (*Estimators);	//,*hClones[ip]);
 	    estimatorClones[ip]->resetTargetParticleSet (*wClones[ip]);
 	    estimatorClones[ip]->setCollectionMode (false);
@@ -264,7 +264,7 @@ namespace qmcplusplus
 	      {
 		os <<
 		  "  PbyP moves with drift, using RMCUpdatePbyPWithDriftFast"
-		  << endl;
+		  << std::endl;
 		Movers[ip] =
 		  new RMCUpdatePbyPWithDrift (*wClones[ip], *psiClones[ip],
 					      *hClones[ip], *Rng[ip], Action,
@@ -275,7 +275,7 @@ namespace qmcplusplus
 	      {
 		os <<
 		  "  walker moves with drift, using RMCUpdateAllWithDriftFast"
-		  << endl;
+		  << std::endl;
 		Movers[ip] =
 		  new RMCUpdateAllWithDrift (*wClones[ip], *psiClones[ip],
 					     *hClones[ip], *Rng[ip], Action,
@@ -283,7 +283,7 @@ namespace qmcplusplus
 	      }
 	    Movers[ip]->nSubSteps = nSubSteps;
 	    if (ip == 0)
-	      app_log () << os.str () << endl;
+	      app_log () << os.str () << std::endl;
 	  }
       }
 #if !defined(REMOVE_TRACEMANAGER)
@@ -309,7 +309,7 @@ namespace qmcplusplus
 			      traceClones[ip]);
 	// wClones[ip]->reptile = new Reptile(*wClones[ip], W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
 	wClones[ip]->reptile = W.ReptileList[ip];
-	//app_log()<<"Thread # "<<ip<<endl;
+	//app_log()<<"Thread # "<<ip<< std::endl;
 	// printf(" Thread# %d  WalkerList.size()=%d \n",ip,wClones[ip]->WalkerList.size());
 
 	// wClones[ip]->reptile->printState();
@@ -335,7 +335,7 @@ namespace qmcplusplus
 	//this will "unroll" the reptile according to forced VMC steps (no bounce).  See beginning of function for logic of setting prestepVMC.
 	for (IndexType prestep = 0; prestep < prestepsVMC; prestep++)
 	  {
-//	    app_log () << "prestep# " << prestep << endl;
+//	    app_log () << "prestep# " << prestep << std::endl;
 	    Movers[ip]->advanceWalkers (W.begin (), W.begin (), true);
 	  }
      
@@ -395,7 +395,7 @@ namespace qmcplusplus
       delete *it;
     W.ReptileList.clear ();
     // Maybe we should be more vigorous in cleaning the MCWC WalkerList?
-    vector < int >repWalkerSlice;
+    std::vector<int> repWalkerSlice;
     int nwtot = nbeads_in * nReptiles_in;
     FairDivideLow (nwtot, nReptiles_in, repWalkerSlice);
     if (W.getActiveWalkers () - nwtot != 0)
@@ -413,13 +413,13 @@ namespace qmcplusplus
 
   }
   //This will resize the MCWalkerConfiguration and initialize Reptile list.  It will then reinitialize the MCWC with a list of Reptile coordinates
-  void RMCSingleOMP::resetReptiles (vector < ReptileConfig_t > &reptile_samps,
+  void RMCSingleOMP::resetReptiles (std::vector< ReptileConfig_t > &reptile_samps,
 				    RealType tau)
   {
     if (reptile_samps.empty ())
       {
 	APP_ABORT
-	  ("RMCSingleOMP::resetReptiles(vector< ReptileConfig_t > reptile_samps):  No samples!\n");
+	  ("RMCSingleOMP::resetReptiles(std::vector< ReptileConfig_t > reptile_samps):  No samples!\n");
       }
     else
       {
@@ -434,13 +434,13 @@ namespace qmcplusplus
       }
   }
   //For # of walker samples, create that many reptiles with nbeads each.  Initialize each reptile to have the value of the walker "seed".
-  void RMCSingleOMP::resetReptiles (vector < ParticlePos_t > &walker_samps,
+  void RMCSingleOMP::resetReptiles (std::vector< ParticlePos_t > &walker_samps,
 				    int nBeads_in, RealType tau)
   {
     if (walker_samps.empty ())
       {
 	APP_ABORT
-	  ("RMCSingleOMP::resetReptiles(vector< ParticlePos_t > walker_samps):  No samples!\n");
+	  ("RMCSingleOMP::resetReptiles(std::vector< ParticlePos_t > walker_samps):  No samples!\n");
       }
     else
       {

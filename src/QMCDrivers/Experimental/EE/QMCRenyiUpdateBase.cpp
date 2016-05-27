@@ -23,7 +23,7 @@
 
 namespace qmcplusplus
 {
-void add_ee_timers(vector<NewTimer*>& timers)
+void add_ee_timers(std::vector<NewTimer*>& timers)
 {
   timers.push_back(new NewTimer("QMCRenyiUpdateBase::advance")); //timer for the walker loop
   timers.push_back(new NewTimer("QMCRenyiUpdateBase::movePbyP")); //timer for MC, ratio etc
@@ -123,7 +123,7 @@ void QMCRenyiUpdateBase::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end
   }
 }
 
-void QMCRenyiUpdateBase::check_region(WalkerIter_t it, WalkerIter_t it_end, RealType v, string shape, ParticleSet::ParticlePos_t& ed, ParticleSet::ParticlePos_t& Center, int maxN, int minN, bool pbyp)
+void QMCRenyiUpdateBase::check_region(WalkerIter_t it, WalkerIter_t it_end, RealType v, std::string shape, ParticleSet::ParticlePos_t& ed, ParticleSet::ParticlePos_t& Center, int maxN, int minN, bool pbyp)
 {
   computeEE=shape;
   vsize=v;
@@ -283,7 +283,7 @@ int QMCRenyiUpdateBase::sort_regions_by_r( )
 {
   for(int i(0); i<2*RenyiOrder; i++)
   {
-    std::vector<pair<RealType,int> > w_i_r(NumPtcl);
+    std::vector<std::pair<RealType,int> > w_i_r(NumPtcl);
     ParticleSet::ParticlePos_t Pos(W_vec[i]->R);
     for (int g=0; g<W.groups(); ++g)
       for (int iat=W.first(g); iat<W.last(g); ++iat)
@@ -318,8 +318,8 @@ int QMCRenyiUpdateBase::sort_regions_by_r( )
     for (int iat(0); iat<NumPtcl; iat++)
       r_map(i,iat)=w_i_r[iat].second;
 //       for (int iat(0);iat<NumPtcl;iat++)
-//         cerr<<r_map(i,iat)<<" ";
-//       cerr<<endl;
+//         std::cerr <<r_map(i,iat)<<" ";
+//       std::cerr << std::endl;
   }
   return 0;
 }
@@ -329,13 +329,13 @@ void QMCRenyiUpdateBase::print_all()
   for(int x(0); x<NumPtcl; x++)
   {
     for(int i(0); i<RenyiOrder*2; i++)
-      cerr<<W_vec[i]->R[x]<<" ";
+      std::cerr <<W_vec[i]->R[x]<<" ";
     for(int i(0); i<regions.size1(); i++)
-      cerr<<regions[i][x]<<" ";
-    cerr<<endl;
+      std::cerr <<regions[i][x]<<" ";
+    std::cerr << std::endl;
   }
-  cerr<<regions[0][NumPtcl+2]<<endl;
-  cerr<<regions[0][NumPtcl+3]<<endl;
+  std::cerr <<regions[0][NumPtcl+2]<< std::endl;
+  std::cerr <<regions[0][NumPtcl+3]<< std::endl;
 }
 
 }

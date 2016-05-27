@@ -28,7 +28,7 @@ public:
 
   OhmmsIOBase():stride(-1), OwnBuffer(false) {}
 
-  virtual void open(const char*,ios_base::openmode iomode) = 0;
+  virtual void open(const char*,std::ios_base::openmode iomode) = 0;
   virtual void close() = 0;
   virtual void flush() = 0;
 

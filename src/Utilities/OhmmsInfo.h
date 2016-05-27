@@ -45,14 +45,14 @@ public:
   /** constructor using command-line arguments
    * @param argc number of arguments
    * @param argv arguments
-   * @param master selects an ostream that does writing
+   * @param master selects an std::ostream that does writing
    */
   OhmmsInfo(int argc, char** argv, int master=-1);
   /** constructor
    * @param fin_name input file name
    * @param rank node rank
    * @param group groupd rank
-   * @param multi_run true, open one ostream per group
+   * @param multi_run true, open one std::ostream per group
    */
   OhmmsInfo(const std::string& fin_name, int rank=0, int gid=0, int num_groups=1);
   ~OhmmsInfo();

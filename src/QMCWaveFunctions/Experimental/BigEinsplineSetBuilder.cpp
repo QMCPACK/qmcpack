@@ -86,10 +86,10 @@ void EinsplineSetBuilder::ReadBands_ESHDF_Big(int spin, SPE* orbitalSet)
   orbitalSet->create_spline(MeshSize,NumValenceOrbs,fullgrid);
   app_log() << "  Adding a small box"
             << "\n  LowerBound " << lower
-            << "\n  UpperBound " << upper << endl;
+            << "\n  UpperBound " << upper << std::endl;
   orbitalSet->add_box(dense,lower,upper);
   int foundspline=0;
-  string splinefile=make_spline_filename(H5FileName,spin,0,MeshSize);
+  std::string splinefile=make_spline_filename(H5FileName,spin,0,MeshSize);
   Timer now;
   if(root)
   {
@@ -112,7 +112,7 @@ void EinsplineSetBuilder::ReadBands_ESHDF_Big(int spin, SPE* orbitalSet)
       }
       else
       {
-        app_log() << "  The upper/lower bound of the input is different from the current value."<< endl;
+        app_log() << "  The upper/lower bound of the input is different from the current value."<< std::endl;
         foundspline=0;
       }
     }
@@ -120,13 +120,13 @@ void EinsplineSetBuilder::ReadBands_ESHDF_Big(int spin, SPE* orbitalSet)
   myComm->bcast(foundspline);
   if(foundspline)
   {
-    app_log() << "Use existing bspline tables in " << splinefile << endl;
+    app_log() << "Use existing bspline tables in " << splinefile << std::endl;
     chunked_bcast(myComm, orbitalSet->MultiSpline);
     chunked_bcast(myComm, orbitalSet->smallBox);
   }
   else
   {
-    app_log() << "Perform FFT+spline and dump bspline tables to " << splinefile << endl;
+    app_log() << "Perform FFT+spline and dump bspline tables to " << splinefile << std::endl;
     Array<ComplexType,3> FFTbox;
     FFTbox.resize(MeshSize[0], MeshSize[1], MeshSize[2]);
     fftw_plan FFTplan = fftw_plan_dft_3d
@@ -138,16 +138,16 @@ void EinsplineSetBuilder::ReadBands_ESHDF_Big(int spin, SPE* orbitalSet)
     Array<double,3> smallD(coarse_mesh[0],coarse_mesh[1],coarse_mesh[2]);
     for(int iorb=0,ival=0; iorb<N; ++iorb, ++ival)
     {
-      Vector<complex<double> > cG;
+      Vector<std::complex<double> > cG;
       int ncg=0;
       int ti=0;
       //int ti=SortBands[iorb].TwistIndex;
       if(root)
       {
-        ostringstream path;
+        std::ostringstream path;
         path << "/electrons/kpoint_" << ti    //SortBands[iorb].TwistIndex
              << "/spin_" << spin << "/state_" << SortBands[iorb].BandIndex << "/psi_g";
-        HDFAttribIO<Vector<complex<double> > >  h_cG(cG);
+        HDFAttribIO<Vector<std::complex<double> > >  h_cG(cG);
         h_cG.read (H5FileID, path.str().c_str());
         ncg=cG.size();
       }
@@ -179,7 +179,7 @@ void EinsplineSetBuilder::ReadBands_ESHDF_Big(int spin, SPE* orbitalSet)
       h5f.create(splinefile);
       einspline_engine<typename SPE::SplineType> bigtable(orbitalSet->MultiSpline);
       einspline_engine<typename SPE::SplineType> smalltable(orbitalSet->smallBox);
-      string aname("EinsplineOpenAdoptor");
+      std::string aname("EinsplineOpenAdoptor");
       h5f.write(aname,"bspline_type");
       h5f.write(lower,"lower_bound");
       h5f.write(upper,"upper_bound");
@@ -187,7 +187,7 @@ void EinsplineSetBuilder::ReadBands_ESHDF_Big(int spin, SPE* orbitalSet)
       h5f.write(smalltable,"spline_1");
     }
   }
-  app_log() << "TIME READBANDS " << now.elapsed() << endl;
+  app_log() << "TIME READBANDS " << now.elapsed() << std::endl;
 }
 }
 #endif

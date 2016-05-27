@@ -43,8 +43,8 @@ VMCcuda::VMCcuda(MCWalkerConfiguration& w, TrialWaveFunction& psi,
   m_param.add(GEVtype,"GEVMethod","string");
 }
 
-bool VMCcuda::checkBounds (vector<PosType> &newpos,
-                           vector<bool> &valid)
+bool VMCcuda::checkBounds (std::vector<PosType> &newpos,
+                           std::vector<bool> &valid)
 {
   for (int iw=0; iw<newpos.size(); iw++)
   {
@@ -58,12 +58,12 @@ void VMCcuda::advanceWalkers()
 {
   int nat = W.getTotalNum();
   int nw  = W.getActiveWalkers();
-  vector<PosType>   delpos(nw);
-  vector<PosType>   newpos(nw);
-  vector<ValueType> ratios(nw);
-  vector<GradType>  newG(nw);
-  vector<ValueType> newL(nw);
-  vector<Walker_t*> accepted(nw);
+  std::vector<PosType>   delpos(nw);
+  std::vector<PosType>   newpos(nw);
+  std::vector<ValueType> ratios(nw);
+  std::vector<GradType>  newG(nw);
+  std::vector<ValueType> newL(nw);
+  std::vector<Walker_t*> accepted(nw);
 
   for (int isub=0; isub<nSubSteps; isub++)
   {
@@ -80,7 +80,7 @@ void VMCcuda::advanceWalkers()
       W.proposeMove_GPU(newpos, iat);
       Psi.ratio(W,iat,ratios,newG, newL);
       accepted.clear();
-      vector<bool> acc(nw, true);
+      std::vector<bool> acc(nw, true);
       if (W.UseBoundBox)
         checkBounds (newpos, acc);
       for(int iw=0; iw<nw; ++iw)
@@ -118,7 +118,7 @@ bool VMCcuda::run()
                           : (nBlocks+1)*nSteps;
   int nat = W.getTotalNum();
   int nw  = W.getActiveWalkers();
-  vector<RealType>  LocalEnergy(nw);
+  std::vector<RealType>  LocalEnergy(nw);
   Matrix<ValueType> lapl(nw, nat);
   Matrix<GradType>  grad(nw, nat);
   double Esum;
@@ -193,7 +193,7 @@ bool VMCcuda::run()
       E_avg = nrm*g_stats[0];
       V_avg = nrm*g_stats[1]-E_avg*E_avg;
     }
-    // vector<RealType> logPsi(W.WalkerList.size(), 0.0);
+    // std::vector<RealType> logPsi(W.WalkerList.size(), 0.0);
     // Psi.evaluateLog(W, logPsi);
     double accept_ratio = (double)nAccept/(double)(nAccept+nReject);
     Estimators->stopBlock(accept_ratio);
@@ -207,7 +207,7 @@ bool VMCcuda::run()
   //finalize a qmc section
   if (!myComm->rank())
   {
-    cerr << "At the end of VMC" << endl;
+    std::cerr << "At the end of VMC" << std::endl;
     gpu::cuda_memory_manager.report();
   }
   return finalize(block);
@@ -217,14 +217,14 @@ void VMCcuda::advanceWalkersWithDrift()
 {
   int nat = W.getTotalNum();
   int nw  = W.getActiveWalkers();
-  vector<RealType>  oldScale(nw), newScale(nw);
-  vector<PosType>   delpos(nw);
-  vector<PosType>   dr(nw);
-  vector<PosType>   newpos(nw);
-  vector<ValueType> ratios(nw);
-  vector<PosType>   oldG(nw), newG(nw);
-  vector<ValueType> oldL(nw), newL(nw);
-  vector<Walker_t*> accepted(nw);
+  std::vector<RealType>  oldScale(nw), newScale(nw);
+  std::vector<PosType>   delpos(nw);
+  std::vector<PosType>   dr(nw);
+  std::vector<PosType>   newpos(nw);
+  std::vector<ValueType> ratios(nw);
+  std::vector<PosType>   oldG(nw), newG(nw);
+  std::vector<ValueType> oldL(nw), newL(nw);
+  std::vector<Walker_t*> accepted(nw);
 
   for (int isub=0; isub<nSubSteps; isub++)
   {
@@ -244,7 +244,7 @@ void VMCcuda::advanceWalkersWithDrift()
       W.proposeMove_GPU(newpos, iat);
       Psi.calcRatio(W,iat,ratios,newG, newL);
       accepted.clear();
-      vector<bool> acc(nw, true);
+      std::vector<bool> acc(nw, true);
       if (W.UseBoundBox)
         checkBounds (newpos, acc);
       std::vector<RealType> logGf_v(nw);
@@ -263,7 +263,7 @@ void VMCcuda::advanceWalkersWithDrift()
         PosType drNew  =
           (newpos[iw] + newScale[iw]*newG[iw]) - W[iw]->R[iat];
         // if (dot(drNew, drNew) > 25.0)
-        //   cerr << "Large drift encountered!  Drift = " << drNew << endl;
+        //   std::cerr << "Large drift encountered!  Drift = " << drNew << std::endl;
         RealType logGb =  -m_oneover2tau * dot(drNew, drNew);
         RealType x = logGb - logGf_v[iw];
         RealType prob = ratios[iw]*ratios[iw]*std::exp(x);
@@ -295,7 +295,7 @@ bool VMCcuda::runWithDrift()
   IndexType nRejectTot = 0;
   int nat = W.getTotalNum();
   int nw  = W.getActiveWalkers();
-  vector<RealType>  LocalEnergy(nw);
+  std::vector<RealType>  LocalEnergy(nw);
   Matrix<ValueType> lapl(nw, nat);
   Matrix<GradType>  grad(nw, nat);
 
@@ -368,7 +368,7 @@ bool VMCcuda::runWithDrift()
       E_avg = nrm*g_stats[0];
       V_avg = nrm*g_stats[1]-E_avg*E_avg;
       //for (int i=0; i<numParams; i++) app_log()<<HD[i]<<" ";
-      //  app_log()<<endl;
+      //  app_log()<< std::endl;
     }
 //      Psi.recompute(W);
     double accept_ratio = (double)nAccept/(double)(nAccept+nReject);
@@ -382,7 +382,7 @@ bool VMCcuda::runWithDrift()
   //finalize a qmc section
   if (!myComm->rank())
   {
-    cerr << "At the end of VMC with drift" << endl;
+    std::cerr << "At the end of VMC with drift" << std::endl;
     gpu::cuda_memory_manager.report();
   }
   return finalize(block);
@@ -404,12 +404,12 @@ void VMCcuda::resetRun()
   m_tauovermass = Tau/mass;
   if (!myComm->rank())
   {
-    cerr << "Before allocating GPU buffer" << endl;
+    std::cerr << "Before allocating GPU buffer" << std::endl;
     gpu::cuda_memory_manager.report();
   }
   // Compute the size of data needed for each walker on the GPU card
   PointerPool<Walker_t::cuda_Buffer_t > pool;
-  app_log() << "Starting VMCcuda::resetRun() " << endl;
+  app_log() << "Starting VMCcuda::resetRun() " << std::endl;
   Psi.reserve (pool);
   app_log() << "Each walker requires " << pool.getTotalSize() * sizeof(CudaRealType)
             << " bytes in GPU memory.\n";
@@ -422,13 +422,13 @@ void VMCcuda::resetRun()
   W.allocateGPU(pool.getTotalSize());
   if (!myComm->rank())
   {
-    cerr << "After allocating GPU buffer" << endl;
+    std::cerr << "After allocating GPU buffer" << std::endl;
     gpu::cuda_memory_manager.report();
   }
   app_log() << "Successfully allocated walkers.\n";
   W.copyWalkersToGPU();
   W.updateLists_GPU();
-  vector<RealType> logPsi(W.WalkerList.size(), 0.0);
+  std::vector<RealType> logPsi(W.WalkerList.size(), 0.0);
   //Psi.evaluateLog(W, logPsi);
   Psi.recompute(W, true);
   Estimators->start(nBlocks, true);
@@ -473,7 +473,7 @@ bool
 VMCcuda::put(xmlNodePtr q)
 {
   app_log() << "\n<vmc function=\"put\">"
-    << "\n  qmc_counter=" << qmc_common.qmc_counter << "  my_counter=" << MyCounter<< endl;
+    << "\n  qmc_counter=" << qmc_common.qmc_counter << "  my_counter=" << MyCounter<< std::endl;
   if(qmc_common.qmc_counter && MyCounter)
   {
     nSteps=prevSteps;
@@ -508,22 +508,22 @@ VMCcuda::put(xmlNodePtr q)
   prevSteps=nSteps;
   prevStepsBetweenSamples=nStepsBetweenSamples;
 
-  app_log() << "  time step      = " << Tau << endl;
-  app_log() << "  blocks         = " << nBlocks << endl;
-  app_log() << "  steps          = " << nSteps << endl;
-  app_log() << "  substeps       = " << nSubSteps << endl;
-  app_log() << "  current        = " << CurrentStep << endl;
-  app_log() << "  target samples = " << nTargetPopulation << endl;
-  app_log() << "  walkers/mpi    = " << W.getActiveWalkers() << endl << endl;
-  app_log() << "  stepsbetweensamples = " << nStepsBetweenSamples << endl;
+  app_log() << "  time step      = " << Tau << std::endl;
+  app_log() << "  blocks         = " << nBlocks << std::endl;
+  app_log() << "  steps          = " << nSteps << std::endl;
+  app_log() << "  substeps       = " << nSubSteps << std::endl;
+  app_log() << "  current        = " << CurrentStep << std::endl;
+  app_log() << "  target samples = " << nTargetPopulation << std::endl;
+  app_log() << "  walkers/mpi    = " << W.getActiveWalkers() << std::endl << std::endl;
+  app_log() << "  stepsbetweensamples = " << nStepsBetweenSamples << std::endl;
 
   if(DumpConfig)
-    app_log() << "  DumpConfig==true Configurations are dumped to config.h5 with a period of " << Period4CheckPoint << " blocks" << endl;
+    app_log() << "  DumpConfig==true Configurations are dumped to config.h5 with a period of " << Period4CheckPoint << " blocks" << std::endl;
   else
-    app_log() << "  DumpConfig==false Nothing (configurations, state) will be saved." << endl;
+    app_log() << "  DumpConfig==false Nothing (configurations, state) will be saved." << std::endl;
   if (Period4WalkerDump>0)
-    app_log() << "  Walker Samples are dumped every " << Period4WalkerDump << " steps." << endl;
-  app_log() << "</vmc>" << endl;
+    app_log() << "  Walker Samples are dumped every " << Period4WalkerDump << " steps." << std::endl;
+  app_log() << "</vmc>" << std::endl;
   app_log().flush();
   //nothing to add
   return true;
@@ -598,28 +598,28 @@ VMCcuda::RealType VMCcuda::fillOverlapHamiltonianMatrices(Matrix<RealType>& Left
   }
   /*
       for (int i=0; i<numParams; i++) app_log()<<D[i]<<" ";
-      app_log()<<endl;
+      app_log()<< std::endl;
       for (int i=0; i<numParams; i++) app_log()<<D_E[i]<<" ";
-      app_log()<<endl;
+      app_log()<< std::endl;
       for (int i=0; i<numParams; i++) app_log()<<HD[i]<<" ";
-      app_log()<<endl;
+      app_log()<< std::endl;
       for (int i=0; i<numParams; i++) app_log()<<HD2[i]<<" ";
-      app_log()<<endl;
+      app_log()<< std::endl;
 
       for (int i=0; i<numParams+1; i++)
       {
         for (int j=0; j<numParams+1; j++)
           app_log()<<LeftM(i,j)<<" ";
-        app_log()<<endl;
+        app_log()<< std::endl;
       }
-      app_log()<<endl;
+      app_log()<< std::endl;
       for (int i=0; i<numParams+1; i++)
       {
         for (int j=0; j<numParams+1; j++)
           app_log()<<RightM(i,j)<<" ";
-        app_log()<<endl;
+        app_log()<< std::endl;
       }
-      app_log()<<endl;
+      app_log()<< std::endl;
   */
   return 1.0;
 }

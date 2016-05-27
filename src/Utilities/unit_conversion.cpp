@@ -11,7 +11,7 @@ namespace qmcplusplus
   namespace Units
   {
 
-    units count_unit(const string& su)
+    units count_unit(const std::string& su)
     {
       units u;
       if(su=="mol")
@@ -24,7 +24,7 @@ namespace qmcplusplus
     }
 
     
-    units distance_unit(const string& su)
+    units distance_unit(const std::string& su)
     {
       units u;
       if(su=="m")
@@ -57,7 +57,7 @@ namespace qmcplusplus
     }
 
     
-    units time_unit(const string& su)
+    units time_unit(const std::string& su)
     {
       units u;
       if(su=="s")
@@ -86,7 +86,7 @@ namespace qmcplusplus
     }
 
     
-    units mass_unit(const string& su)
+    units mass_unit(const std::string& su)
     {
       units u;
       if(su=="kg")
@@ -115,7 +115,7 @@ namespace qmcplusplus
     }
 
     
-    units energy_unit(const string& su)
+    units energy_unit(const std::string& su)
     {
       units u;
       if(su=="J")
@@ -148,7 +148,7 @@ namespace qmcplusplus
     }
 
     
-    units charge_unit(const string& su)
+    units charge_unit(const std::string& su)
     {
       units u;
       if(su=="C")
@@ -165,7 +165,7 @@ namespace qmcplusplus
     }
 
     
-    units pressure_unit(const string& su)
+    units pressure_unit(const std::string& su)
     {
       units u;
       if(su=="Pa")
@@ -192,7 +192,7 @@ namespace qmcplusplus
     }
 
     
-    units force_unit(const string& su)
+    units force_unit(const std::string& su)
     {
       units u;
       if(su=="N")

@@ -116,10 +116,10 @@ struct DistributedIndex
     else
     {
       std::map<int,List_t*>::const_iterator it=I.begin();
-      list<int>::size_type n=0;
+      std::list<int>::size_type n=0;
       while(it != I.end())
       {
-        n = max(n,(*it).second->size());
+        n = std::max(n,(*it).second->size());
         ++it;
       }
       return int(n);
@@ -363,7 +363,7 @@ struct DistributedIndex
     for(int ig=0; ig<I.size(); ig++)
     {
       os << "Data set " << ig << std::endl;
-      std::copy(I[ig]->begin(), I[ig]->end(),std::ostream_iterator<int>(os, " "));
+      copy(I[ig]->begin(), I[ig]->end(),std::ostream_iterator<int>(os, " "));
       os << std::endl;
     }
   }

@@ -75,8 +75,8 @@ protected:
         allocate(length_);
 
 #ifdef BZ_DEBUG_LOG_ALLOCATIONS
-    cout << "MemoryBlock: allocated " << setw(8) << length_ 
-         << " at " << ((void *)dataBlockAddress_) << endl;
+    std::cout << "MemoryBlock: allocated " << std::setw(8) << length_ 
+         << " at " << ((void *)dataBlockAddress_) << std::endl;
 #endif
 
         BZASSERT(dataBlockAddress_ != 0);
@@ -101,8 +101,8 @@ protected:
         {
 
 #ifdef BZ_DEBUG_LOG_ALLOCATIONS
-    cout << "MemoryBlock:     freed " << setw(8) << length_
-         << " at " << ((void *)dataBlockAddress_) << endl;
+    std::cout << "MemoryBlock:     freed " << std::setw(8) << length_
+         << " at " << ((void *)dataBlockAddress_) << std::endl;
 #endif
 
             deallocate();
@@ -117,9 +117,9 @@ protected:
         ++references_; 
 
 #ifdef BZ_DEBUG_LOG_REFERENCES
-    cout << "MemoryBlock:    reffed " << setw(8) << length_ 
+    std::cout << "MemoryBlock:    reffed " << std::setw(8) << length_ 
          << " at " << ((void *)dataBlockAddress_) << " (r=" 
-         << (int)references_ << ")" << endl;
+         << (int)references_ << ")" << std::endl;
 #endif
         BZ_MUTEX_UNLOCK(mutex)
 
@@ -152,9 +152,9 @@ protected:
         int refcount = --references_;
 
 #ifdef BZ_DEBUG_LOG_REFERENCES
-    cout << "MemoryBlock: dereffed  " << setw(8) << length_
+    std::cout << "MemoryBlock: dereffed  " << std::setw(8) << length_
          << " at " << ((void *)dataBlockAddress_) << " (r=" << (int)references_ 
-         << ")" << endl;
+         << ")" << std::endl;
 #endif
         BZ_MUTEX_UNLOCK(mutex)
         return refcount;
@@ -271,8 +271,8 @@ public:
         block_->addReference();
 
 #ifdef BZ_DEBUG_LOG_ALLOCATIONS
-    cout << "MemoryBlockReference: created MemoryBlock at "
-         << ((void*)block_) << endl;
+    std::cout << "MemoryBlockReference: created MemoryBlock at "
+         << ((void*)block_) << std::endl;
 #endif
 
         data_ = data;
@@ -285,8 +285,8 @@ public:
         data_ = block_->data();
 
 #ifdef BZ_DEBUG_LOG_ALLOCATIONS
-    cout << "MemoryBlockReference: created MemoryBlock at "
-         << ((void*)block_) << endl;
+    std::cout << "MemoryBlockReference: created MemoryBlock at "
+         << ((void*)block_) << std::endl;
 #endif
 
     }
@@ -297,8 +297,8 @@ public:
         if ((refcount == 0) && (block_ != &nullBlock_))
         {
 #ifdef BZ_DEBUG_LOG_ALLOCATIONS
-    cout << "MemoryBlock: no more refs, delete MemoryBlock object at "
-         << ((void*)block_) << endl;
+    std::cout << "MemoryBlock: no more refs, delete MemoryBlock object at "
+         << ((void*)block_) << std::endl;
 #endif
 
             delete block_;
@@ -342,8 +342,8 @@ protected:
         data_ = block_->data();
 
 #ifdef BZ_DEBUG_LOG_ALLOCATIONS
-    cout << "MemoryBlockReference: created MemoryBlock at "
-         << ((void*)block_) << endl;
+    std::cout << "MemoryBlockReference: created MemoryBlock at "
+         << ((void*)block_) << std::endl;
 #endif
     }
 

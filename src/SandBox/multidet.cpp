@@ -37,7 +37,7 @@ int main(int argc, char** argv)
   int niters=10000;
   while(ic<argc)
   {
-    string c(argv[ic]);
+    std::string c(argv[ic]);
     if(c=="-v")//number of valence states
       M=atoi(argv[++ic]);
     else
@@ -61,7 +61,7 @@ int main(int argc, char** argv)
     psi_big(i)=Random();
   for(int i=0; i<M; ++i)
     psi_v(i)=Random();
-  std::copy(psi_big[0],psi_big[M],psi_0.data());
+  copy(psi_big[0],psi_big[M],psi_0.data());
   psi_saved=psi_0;
   {
     psi_1=psi_0;
@@ -77,20 +77,20 @@ int main(int argc, char** argv)
     for(int i=0; i<M; ++i)
       psi_1(0,i)=newcols(i);
     double det_1=invert_matrix(psi_1,true);
-    cout << "Checking column substitution= " << rc
-         << " " << det_1/det_0 << endl;
+    std::cout << "Checking column substitution= " << rc
+         << " " << det_1/det_0 << std::endl;
   }
   //save the original matrices
   psi_1=psi_saved;
   double phase=0;
   double logdet_0=InvertWithLog(psi_0.data(),M,M,phase);
-  cout.setf(std::ios::scientific, std::ios::floatfield);
+  std::cout.setf(std::ios::scientific, std::ios::floatfield);
   MatrixOperators::product(psi_0,psi_saved,Identity);
   for(int i=0; i<M; ++i)
     Identity(i,i)-=1.0;
-  cout << "Checking identity " << BLAS::norm2(Identity.size(),Identity.data())<< endl;
+  std::cout << "Checking identity " << BLAS::norm2(Identity.size(),Identity.data())<< std::endl;
   Vector<double> ratios(nc), ratios_0(nc);
-  vector<int> imap(nc);
+  std::vector<int> imap(nc);
   for(int i=0; i<nc; ++i)
     imap[i]=i;
   Timer myclock;
@@ -101,11 +101,11 @@ int main(int argc, char** argv)
   for(int iter=0; iter<niters; ++iter)
     getRatiosByRowSubstitution(psi_big[M],psi_0[unocc],ratios.data(),M,nc);
   double t_gemv=myclock.elapsed();
-  cout << "Timing of ratios gemv= " << t_gemv << " naive=" << t_naive << " better=" << t_naive/t_gemv<< endl;
+  std::cout << "Timing of ratios gemv= " << t_gemv << " naive=" << t_naive << " better=" << t_naive/t_gemv<< std::endl;
   ratios_0 -= ratios;
-  cout << "Error in the ratios= " <<  BLAS::norm2(ratios_0.size(),ratios_0.data())<< endl;
+  std::cout << "Error in the ratios= " <<  BLAS::norm2(ratios_0.size(),ratios_0.data())<< std::endl;
   //Matrix<double> newinv(nc,M*M);
-  vector<Matrix<double>*> newinv_v(nc);
+  std::vector<Matrix<double>*> newinv_v(nc);
   for(int i=0; i<nc; ++i)
     newinv_v[i]=new Matrix<double>(M,M);
   double t_multi=0.0, t_dir=0.0;
@@ -123,7 +123,7 @@ int main(int argc, char** argv)
     {
       int i=imap[k]+M;
       //std::copy(newinv[k],newinv[k+1],psi_2.data());
-      std::copy(newinv_v[k]->begin(),newinv_v[k]->end(),psi_2.data());
+      copy(newinv_v[k]->begin(),newinv_v[k]->end(),psi_2.data());
       psi_1=psi_saved;
       myclock.restart();
       for(int j=0; j<M; ++j)
@@ -134,15 +134,15 @@ int main(int argc, char** argv)
       if(iter==4)
       {
         psi_2-=psi_1;
-        cout << "Error in Inverse matrix = " << BLAS::norm2(psi_2.size(),psi_2.data()) << endl;
-        cout << "Inverse matrix norm2 = " <<BLAS::norm2(psi_1.size(),psi_1.data()) << endl;
+        std::cout << "Error in Inverse matrix = " << BLAS::norm2(psi_2.size(),psi_2.data()) << std::endl;
+        std::cout << "Inverse matrix norm2 = " <<BLAS::norm2(psi_1.size(),psi_1.data()) << std::endl;
         if(phase==newphase)//too lazy
-          cout << "DetRatioTranspose = " << ratios[k] << " error=" << ratios[k]-std::exp(logdet_1-logdet_0) << endl;
+          std::cout << "DetRatioTranspose = " << ratios[k] << " error=" << ratios[k]-std::exp(logdet_1-logdet_0) << std::endl;
       }
     }
   }
-  cout << M << " " << nc << " " << t_dir/niters << " " << t_multi/niters << " " << t_dir/t_multi
-       << endl;
+  std::cout << M << " " << nc << " " << t_dir/niters << " " << t_multi/niters << " " << t_dir/t_multi
+       << std::endl;
   for(int i=0; i<nc; ++i)
     delete newinv_v[i];
   OHMMS::Controller->finalize();

@@ -18,20 +18,20 @@ class EnergyDensityEstimator: public QMCHamiltonianBase, public PtclOnLatticeTra
 public:
 
   typedef ReferencePoints::Point Point;
-  typedef map<string,ParticleSet*> PSPool;
+  typedef std::map<std::string,ParticleSet*> PSPool;
 
-  EnergyDensityEstimator(PSPool& PSP, const string& defaultKE);
+  EnergyDensityEstimator(PSPool& PSP, const std::string& defaultKE);
   ~EnergyDensityEstimator();
 
   void resetTargetParticleSet(ParticleSet& P);
   Return_t evaluate(ParticleSet& P);
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
   void addObservables(PropertySetType& plist) { }
   void addObservables(PropertySetType& plist,BufferType& olist);
-  void registerCollectables(vector<observable_helper*>& h5desc, hid_t gid) const ;
+  void registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const ;
   void setObservables(PropertySetType& plist);
   void setParticlePropertyList(PropertySetType& plist, int offset);
   bool put(xmlNodePtr cur);
@@ -39,22 +39,22 @@ public:
   bool get(std::ostream& os) const;
   QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
-  void write_description(ostream& os);
+  void write_description(std::ostream& os);
 
   void write_EDValues(void);
   void write_nonzero_domains(const ParticleSet& P);
-  void write_Collectables(string& label,int& cnt,ParticleSet& P);
+  void write_Collectables( std::string& label,int& cnt,ParticleSet& P);
 
 private:
 
   //original xml
   xmlNodePtr input_xml;
   //system information
-  string defKE;
+  std::string defKE;
   PSPool& psetpool;
   ParticleSet* Pdynamic;
   ParticleSet* Pstatic;
-  ParticleSet* get_particleset(string& psname);
+  ParticleSet* get_particleset( std::string& psname);
   int dtable_index;
   int nparticles;
   //collection of points from which to build spacegrid origin and axes
@@ -64,10 +64,10 @@ private:
   Matrix<RealType> EDValues;
   //for EnergyDensity of particles falling outside any spacegrid
   int outside_buffer_offset;
-  vector<bool> particles_outside;
+  std::vector<bool> particles_outside;
   //spacegrids are used to find which cell domain
   //  contains the Energy information of particles
-  vector<SpaceGrid*> spacegrids;
+  std::vector<SpaceGrid*> spacegrids;
   //particle positions
   ParticlePos_t R;
   //number of samples accumulated
@@ -76,7 +76,7 @@ private:
   //needed (temporarily) for chempot
   //ParticleSet should carry Zptcl so it doesn't have
   // to be computed everywhere from species
-  vector<RealType> Zptcl;
+  std::vector<RealType> Zptcl;
   ParticlePos_t Rptcl;
   void set_ptcl(void);
   void unset_ptcl(void);

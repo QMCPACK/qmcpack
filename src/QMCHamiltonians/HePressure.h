@@ -76,8 +76,8 @@ struct HePressure: public QMCHamiltonianBase
     tailcorr =  (10*c3)/7*rm7 + (8*c2)/5*rm5 + (2*c1)*rm3 + ( A*std::exp(alpha*r1) * (6 - alpha*rcutoff*(6 - alpha*rcutoff* (3 - alpha* rcutoff))))/(alpha*alpha*alpha);
     tailcorr *= pNorm;
     tailcorr *= 2.0*M_PI*rho*N0;
-    cout<<setprecision (12)<<"  HePressure:: Tail Correction for "<<sourcePtcl->getName()<<" is: "<<tailcorr<<endl;
-//       cout<<"  Cutoff is: "<<rcutoff<<endl;
+    std::cout << std::setprecision(12) <<"  HePressure:: Tail Correction for "<<sourcePtcl->getName()<<" is: "<<tailcorr<< std::endl;
+//       std::cout <<"  Cutoff is: "<<rcutoff<< std::endl;
   }
   ///destructor
   ~HePressure() { }
@@ -101,7 +101,7 @@ struct HePressure: public QMCHamiltonianBase
     tailcorr =  (10*c3)/7*rm7 + (8*c2)/5*rm5 + (2*c1)*rm3 + ( A*std::exp(alpha*r1) * (6 - alpha*rcutoff*(6 - alpha*rcutoff* (3 - alpha* rcutoff))))/(alpha*alpha*alpha);
     tailcorr *= pNorm;
     tailcorr *= 2.0*M_PI*rho*N0;
-//       cout<<"  Pressure Tail Correction for "<<sourcePtcl->getName()<<" is: "<<tailcorr<<endl;
+//       std::cout <<"  Pressure Tail Correction for "<<sourcePtcl->getName()<<" is: "<<tailcorr<< std::endl;
   }
 
   inline Return_t evaluate(ParticleSet& P)
@@ -150,7 +150,7 @@ struct HePressure: public QMCHamiltonianBase
 //     }
 
   inline Return_t
-  evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }

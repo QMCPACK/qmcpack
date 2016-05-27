@@ -12,16 +12,16 @@ namespace ohmmshf
 void PseudoGen::plot_ascii()
 {
   char* fname = "Ge.pp.ASCII";
-  ofstream gplot(fname);
+  std::ofstream gplot(fname);
   gplot.precision(10);
-  gplot.setf(ios::scientific,ios::floatfield);
-  cout << "Writing Pseudopotential to file " << fname << endl;
+  gplot.setf(std::ios::scientific,std::ios::floatfield);
+  std::cout << "Writing Pseudopotential to file " << fname << std::endl;
   for(int i=0; i<Psi.m_grid->size(); i++)
   {
     value_type r =  Psi.m_grid->r(i);
     value_type SJ_num = 1.0-exp(-Params(0)*r);
     value_type SJ_den = 1.0+exp(-Params(0)*(r-Params(1)));
-    gplot << setw(20) << r << setw(20) <<  (-1.0*4.0/r)*(SJ_num/SJ_den) << endl;
+    gplot << std::setw(20) << r << std::setw(20) <<  (-1.0*4.0/r)*(SJ_num/SJ_den) << std::endl;
   }
   gplot.close();
 }
@@ -49,8 +49,8 @@ void PseudoGen::plot_siesta_grid()
   Transform2GridFunctor<OneDimGridFunctor<value_type>,
                         OneDimGridFunctor<value_type> > transform(VCharge,VCharge_siesta_grid);
   transform.generate();
-  cout << "Total valence charge = " << integrate_RK2(VCharge) << endl;
-  cout << "Total valence charge = " << integrate_RK2(VCharge_siesta_grid) << endl;
+  std::cout << "Total valence charge = " << integrate_RK2(VCharge) << std::endl;
+  std::cout << "Total valence charge = " << integrate_RK2(VCharge_siesta_grid) << std::endl;
   RadialOrbital_t PP(siesta_grid);
   value_type prefactor = -2.0*4.0;
   for(int i=0; i<npts; i++)
@@ -61,134 +61,134 @@ void PseudoGen::plot_siesta_grid()
     PP(i) = prefactor*(SJ_num/SJ_den);
   }
   char* fname = "Ge.siesta_grid.psf";
-  ofstream siesta(fname);
-  cout << "Writing Pseudopential to file " << fname << endl;
-  siesta << " Radial grid follows" << endl;
+  std::ofstream siesta(fname);
+  std::cout << "Writing Pseudopential to file " << fname << std::endl;
+  siesta << " Radial grid follows" << std::endl;
   int nlines = (npts-1)/4;
   int remainder = npts-1-nlines*4;
   siesta.precision(12);
-  siesta.setf(ios::scientific,ios::floatfield);
-  siesta << setiosflags(ios::uppercase);
+  siesta.setf(std::ios::scientific,std::ios::floatfield);
+  siesta << setiosflags(std::ios::uppercase);
   int j=1;
   for(int i=0; i<nlines; i++)
   {
-    siesta << setw(20) << siesta_grid->r(j)
-           << setw(20) << siesta_grid->r(j+1)
-           << setw(20) << siesta_grid->r(j+2)
-           << setw(20) << siesta_grid->r(j+3)
-           << endl;
+    siesta << std::setw(20) << siesta_grid->r(j)
+           << std::setw(20) << siesta_grid->r(j+1)
+           << std::setw(20) << siesta_grid->r(j+2)
+           << std::setw(20) << siesta_grid->r(j+3)
+           << std::endl;
     j+=4;
   }
   if(remainder)
   {
     for(int i=j; i<npts; i++)
-      siesta << setw(20) << siesta_grid->r(i);
-    siesta << endl;
+      siesta << std::setw(20) << siesta_grid->r(i);
+    siesta << std::endl;
   }
-  siesta << " Down Pseudopotential follows (l on next line)" << endl;
-  siesta << "  0" << endl;
+  siesta << " Down Pseudopotential follows (l on next line)" << std::endl;
+  siesta << "  0" << std::endl;
   j=1;
   for(int i=0; i<nlines; i++)
   {
-    siesta << setw(20) << PP(j)
-           << setw(20) << PP(j+1)
-           << setw(20) << PP(j+2)
-           << setw(20) << PP(j+3)
-           << endl;
+    siesta << std::setw(20) << PP(j)
+           << std::setw(20) << PP(j+1)
+           << std::setw(20) << PP(j+2)
+           << std::setw(20) << PP(j+3)
+           << std::endl;
     j+=4;
   }
   if(remainder)
   {
     for(int i=j; i<npts; i++)
-      siesta << setw(20) << PP(i);
-    siesta << endl;
+      siesta << std::setw(20) << PP(i);
+    siesta << std::endl;
   }
-  siesta << " Down Pseudopotential follows (l on next line)" << endl;
-  siesta << "  1" << endl;
+  siesta << " Down Pseudopotential follows (l on next line)" << std::endl;
+  siesta << "  1" << std::endl;
   j=1;
   for(int i=0; i<nlines; i++)
   {
-    siesta << setw(20) << PP(j)
-           << setw(20) << PP(j+1)
-           << setw(20) << PP(j+2)
-           << setw(20) << PP(j+3)
-           << endl;
+    siesta << std::setw(20) << PP(j)
+           << std::setw(20) << PP(j+1)
+           << std::setw(20) << PP(j+2)
+           << std::setw(20) << PP(j+3)
+           << std::endl;
     j+=4;
   }
   if(remainder)
   {
     for(int i=j; i<npts; i++)
-      siesta << setw(20) << PP(i);
-    siesta << endl;
+      siesta << std::setw(20) << PP(i);
+    siesta << std::endl;
   }
-  siesta << " Down Pseudopotential follows (l on next line)" << endl;
-  siesta << "  2" << endl;
+  siesta << " Down Pseudopotential follows (l on next line)" << std::endl;
+  siesta << "  2" << std::endl;
   j=1;
   for(int i=0; i<nlines; i++)
   {
-    siesta << setw(20) << PP(j)
-           << setw(20) << PP(j+1)
-           << setw(20) << PP(j+2)
-           << setw(20) << PP(j+3)
-           << endl;
+    siesta << std::setw(20) << PP(j)
+           << std::setw(20) << PP(j+1)
+           << std::setw(20) << PP(j+2)
+           << std::setw(20) << PP(j+3)
+           << std::endl;
     j+=4;
   }
   if(remainder)
   {
     for(int i=j; i<npts; i++)
-      siesta << setw(20) << PP(i);
-    siesta << endl;
+      siesta << std::setw(20) << PP(i);
+    siesta << std::endl;
   }
-  siesta << " Down Pseudopotential follows (l on next line)" << endl;
-  siesta << "  3" << endl;
+  siesta << " Down Pseudopotential follows (l on next line)" << std::endl;
+  siesta << "  3" << std::endl;
   j=1;
   for(int i=0; i<nlines; i++)
   {
-    siesta << setw(20) << PP(j)
-           << setw(20) << PP(j+1)
-           << setw(20) << PP(j+2)
-           << setw(20) << PP(j+3)
-           << endl;
+    siesta << std::setw(20) << PP(j)
+           << std::setw(20) << PP(j+1)
+           << std::setw(20) << PP(j+2)
+           << std::setw(20) << PP(j+3)
+           << std::endl;
     j+=4;
   }
   if(remainder)
   {
     for(int i=0; i<remainder; i++)
-      siesta << setw(20) << PP(i);
-    siesta << endl;
+      siesta << std::setw(20) << PP(i);
+    siesta << std::endl;
   }
   double CC = 0.0;
-  siesta << " Core charge follows" << endl;
+  siesta << " Core charge follows" << std::endl;
   for(int i=0; i<nlines; i++)
   {
-    siesta << setw(20) << CC
-           << setw(20) << CC
-           << setw(20) << CC
-           << setw(20) << CC
-           << endl;
+    siesta << std::setw(20) << CC
+           << std::setw(20) << CC
+           << std::setw(20) << CC
+           << std::setw(20) << CC
+           << std::endl;
   }
   if(remainder)
   {
     for(int i=j; i<npts; i++)
-      siesta << setw(20) << CC;
-    siesta << endl;
+      siesta << std::setw(20) << CC;
+    siesta << std::endl;
   }
-  siesta << " Valence charge follows" << endl;
+  siesta << " Valence charge follows" << std::endl;
   j=1;
   for(int i=0; i<nlines; i++)
   {
-    siesta << setw(20) << VCharge_siesta_grid(j)
-           << setw(20) << VCharge_siesta_grid(j+1)
-           << setw(20) << VCharge_siesta_grid(j+2)
-           << setw(20) << VCharge_siesta_grid(j+3)
-           << endl;
+    siesta << std::setw(20) << VCharge_siesta_grid(j)
+           << std::setw(20) << VCharge_siesta_grid(j+1)
+           << std::setw(20) << VCharge_siesta_grid(j+2)
+           << std::setw(20) << VCharge_siesta_grid(j+3)
+           << std::endl;
     j+=4;
   }
   if(remainder)
   {
     for(int i=j; i<npts; i++)
-      siesta << setw(20) << VCharge_siesta_grid(i);
-    siesta << endl;
+      siesta << std::setw(20) << VCharge_siesta_grid(i);
+    siesta << std::endl;
   }
   siesta.close();
 }

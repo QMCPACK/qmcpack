@@ -59,7 +59,7 @@ namespace qmcplusplus
     }
 
     /// write orbital info to stdout
-    void report(const string& pad="");
+    void report(const std::string& pad="");
   };
 
 

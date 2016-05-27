@@ -36,22 +36,22 @@ struct ECPComponentBuilder: public MPIObjectBase, public QMCTraits
   int Lmax, Llocal, Nrule;
   RealType Zeff;
   RealType RcutMax;
-  string Species;
+  std::string Species;
   GridType *grid_global;
-  map<string,GridType*> grid_inp;
+  std::map<std::string,GridType*> grid_inp;
   RadialPotentialType* pp_loc;
   NonLocalECPComponent* pp_nonloc;
-  map<string,int> angMon;
+  std::map<std::string,int> angMon;
 
-  ECPComponentBuilder(const string& aname, Communicate* c);
+  ECPComponentBuilder(const std::string& aname, Communicate* c);
 
-  bool parse(const string& fname, xmlNodePtr cur);
+  bool parse(const std::string& fname, xmlNodePtr cur);
   bool put(xmlNodePtr cur);
   void addSemiLocal(xmlNodePtr cur);
   void buildLocal(xmlNodePtr cur);
-  void buildSemiLocalAndLocal(vector<xmlNodePtr>& semiPtr);
+  void buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPtr);
 
-  bool parseCasino(const string& fname, xmlNodePtr cur); //std::string& fname, RealType rc);
+  bool parseCasino(const std::string& fname, xmlNodePtr cur); //std::string& fname, RealType rc);
   //bool parseCasino(std::string& fname, RealType rc);
   // This sets the spherical quadrature rule used to apply the
   // projection operators.  rule can be 1 to 7.  See
@@ -71,7 +71,7 @@ struct ECPComponentBuilder: public MPIObjectBase, public QMCTraits
   RadialPotentialType* createVrWithBasisGroup(xmlNodePtr cur, GridType* agrid);
   RadialPotentialType* createVrWithData(xmlNodePtr cur, GridType* agrid, int rCorrection=0);
 
-  void doBreakUp(const vector<int>& angList, const Matrix<RealType>& vnn,
+  void doBreakUp(const std::vector<int>& angList, const Matrix<RealType>& vnn,
                  RealType rmax, RealType Vprefactor=1.0);
 
   void printECPTable();

@@ -36,7 +36,7 @@ void HDFWalkerIOEngine::read(hid_t grp, const char* name)
   hid_t dataspace = H5Dget_space(dataset);
   int rank = H5Sget_simple_extent_ndims(dataspace);
   int status_n = H5Sget_simple_extent_dims(dataspace, count, NULL);
-  vector<MCWalkerConfiguration::PosType> posIn(count[0]*count[1]);
+  std::vector<MCWalkerConfiguration::PosType> posIn(count[0]*count[1]);
   hid_t memspace = H5Screate_simple(RANK, count, NULL);
   herr_t status = H5Sselect_hyperslab(dataspace,H5S_SELECT_SET, offset,NULL,count,NULL);
   status = H5Dread(dataset, H5T_NATIVE_DOUBLE, memspace, dataspace, H5P_DEFAULT, &(posIn[0][0]));
@@ -69,7 +69,7 @@ void HDFWalkerIOEngine::readAll(hid_t grp, const char* name, Communicate* comm)
 {
   int mynode=comm->rank();
   int nprocs=comm->size();
-  vector<int> woffset(nprocs+1,0);
+  std::vector<int> woffset(nprocs+1,0);
   const int RANK = 3;
   hsize_t offset[]= {1,1,1};
   hsize_t gcount[RANK],count[RANK];
@@ -87,9 +87,9 @@ void HDFWalkerIOEngine::readAll(hid_t grp, const char* name, Communicate* comm)
   count[1]=gcount[1];
   count[2]=gcount[2];
   app_log() << "   Initial walker distribution: ";
-  std::copy(woffset.begin(),woffset.end(),ostream_iterator<int>(app_log()," "));
-  app_log() << endl;
-  vector<MCWalkerConfiguration::PosType> posIn(count[0]*count[1]);
+  copy(woffset.begin(),woffset.end(),std::ostream_iterator<int>(app_log()," "));
+  app_log() << std::endl;
+  std::vector<MCWalkerConfiguration::PosType> posIn(count[0]*count[1]);
   hid_t memspace = H5Screate_simple(RANK, count, NULL);
   herr_t status = H5Sselect_hyperslab(dataspace,H5S_SELECT_SET, offset,NULL,count,NULL);
 #if defined(H5_HAVE_PARALLEL)

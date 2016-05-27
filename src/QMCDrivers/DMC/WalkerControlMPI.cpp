@@ -29,10 +29,10 @@ namespace qmcplusplus
 //#define DMC_BRANCH_STOP(TID,TM) TID=TM
 //#define DMC_BRANCH_DUMP(IT,T1,T2,T3)  \
 //  OhmmsInfo::Debug->getStream()  << "BRANCH " \
-//<< setw(8) << IT \
-//<< " SORT" << setw(16) << T1 \
-//<< " GSUM" << setw(16) << T2 \
-//<< " SWAP" << setw(16) << T3 << std::endl
+//<< std::setw(8) << IT \
+//<< " SORT" << std::setw(16) << T1 \
+//<< " GSUM" << std::setw(16) << T2 \
+//<< " SWAP" << std::setw(16) << T3 << std::endl
 //#else
 #define DMC_BRANCH_START(NOW)
 #define DMC_BRANCH_STOP(TID,TM)
@@ -54,7 +54,7 @@ WalkerControlMPI::WalkerControlMPI(Communicate* c): WalkerControlBase(c)
 #ifdef MCWALKERSET_MPI_DEBUG
   char fname[128];
   sprintf(fname,"test.%d",MyContext);
-  ofstream fout(fname);
+  std::ofstream fout(fname);
 #endif
   myTimers.push_back(new NewTimer("WalkerControlMPI::branch")); //timer for the branch
   myTimers.push_back(new NewTimer("WalkerControlMPI::pre-loadbalance")); //timer for the branch
@@ -146,7 +146,7 @@ WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
 void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
 {
   FairDivideLow(Cur_pop,NumContexts,FairOffSet);
-  vector<int> minus, plus;
+  std::vector<int> minus, plus;
   int deltaN;
   for(int ip=0; ip<NumContexts; ip++)
   {
@@ -164,12 +164,12 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
       }
   }
   Walker_t& wRef(*W[0]);
-  vector<Walker_t*> newW;
-  vector<Walker_t*> oldW;
+  std::vector<Walker_t*> newW;
+  std::vector<Walker_t*> oldW;
 #ifdef MCWALKERSET_MPI_DEBUG
   char fname[128];
   sprintf(fname,"test.%d",MyContext);
-  ofstream fout(fname, ios::app);
+  std::ofstream fout(fname, std::ios::app);
   //fout << NumSwaps << " " << Cur_pop << " ";
   //for(int ic=0; ic<NumContexts; ic++) fout << NumPerNode[ic] << " ";
   //fout << " | ";
@@ -184,7 +184,7 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
   {
     fout << minus[ic] << " ";
   }
-  fout << endl;
+  fout << std::endl;
 #endif
   int nswap=std::min(plus.size(), minus.size());
   int last=W.getActiveWalkers()-1;
@@ -228,7 +228,7 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
 void WalkerControlMPI::swapWalkersAsync(MCWalkerConfiguration& W)
 {
   FairDivideLow(Cur_pop,NumContexts,FairOffSet);
-  vector<int> minus, plus;
+  std::vector<int> minus, plus;
   int deltaN;
   for(int ip=0; ip<NumContexts; ip++)
   {
@@ -246,12 +246,12 @@ void WalkerControlMPI::swapWalkersAsync(MCWalkerConfiguration& W)
       }
   }
   Walker_t& wRef(*W[0]);
-  vector<Walker_t*> newW;
-  vector<Walker_t*> oldW;
+  std::vector<Walker_t*> newW;
+  std::vector<Walker_t*> oldW;
 #ifdef MCWALKERSET_MPI_DEBUG
   char fname[128];
   sprintf(fname,"test.%d",MyContext);
-  ofstream fout(fname, ios::app);
+  std::ofstream fout(fname, std::ios::app);
   //fout << NumSwaps << " " << Cur_pop << " ";
   //for(int ic=0; ic<NumContexts; ic++) fout << NumPerNode[ic] << " ";
   //fout << " | ";
@@ -266,7 +266,7 @@ void WalkerControlMPI::swapWalkersAsync(MCWalkerConfiguration& W)
   {
     fout << minus[ic] << " ";
   }
-  fout << endl;
+  fout << std::endl;
 #endif
   int nswap=std::min(plus.size(), minus.size());
   int last=W.getActiveWalkers()-1;
@@ -274,8 +274,8 @@ void WalkerControlMPI::swapWalkersAsync(MCWalkerConfiguration& W)
   int countSend = 1;
   OOMPI_Packed ** sendBuffers = new OOMPI_Packed*[NumContexts];
   OOMPI_Packed ** recvBuffers = new OOMPI_Packed*[NumContexts];
-  vector<OOMPI_Request> requests(NumContexts);
-  vector<int> sendCounts(NumContexts,0);
+  std::vector<OOMPI_Request> requests(NumContexts);
+  std::vector<int> sendCounts(NumContexts,0);
   for(int ip=0; ip < NumContexts; ++ip)
     sendBuffers[ip] = 0;
   for(int ip=0; ip < NumContexts; ++ip)
@@ -370,7 +370,7 @@ void WalkerControlMPI::swapWalkersBlocked(MCWalkerConfiguration& W)
   int toLeft=FairOffSet[MyContext]-OffSet[MyContext];
   int toRight=FairOffSet[MyContext+1]-OffSet[MyContext+1];
   Walker_t& wRef(*W[0]);
-  vector<Walker_t*> newW;
+  std::vector<Walker_t*> newW;
   int num_deleted=0;
   int last=NumPerNode[MyContext]-1;
   //scehdule irecv
@@ -458,14 +458,14 @@ void WalkerControlMPI::swapWalkersBlocked(MCWalkerConfiguration& W)
  */
 void WalkerControlMPI::swapWalkersMap(MCWalkerConfiguration& W)
 {
-  multimap<int,int> nw_map;
+  std::multimap<int,int> nw_map;
   for(int i=0; i<NumContexts; i++)
   {
-    nw_map.insert(pair<int,int>(NumPerNode[i],i));
+    nw_map.insert(std::pair<int,int>(NumPerNode[i],i));
   }
   // multimap key is sorted with ascending order
-  multimap<int,int>::iterator it(nw_map.begin());
-  multimap<int,int>::reverse_iterator it_b(nw_map.end());
+  std::multimap<int,int>::iterator it(nw_map.begin());
+  std::multimap<int,int>::reverse_iterator it_b(nw_map.end());
   bool notpaired=true;
   int target_context=-1;
   int half=NumContexts/2;
@@ -552,15 +552,15 @@ void WalkerControlMPI::swapWalkersMap(MCWalkerConfiguration& W)
   }
   /* not used yet
   struct lessNode {
-    inline bool operator()(const pair<int,int>& a,
-        const pair<int,int>& b) const {
+    inline bool operator()(const std::pair<int,int>& a,
+        const std::pair<int,int>& b) const {
       return a.second < b.second;
     }
   };
-  //typedef pair<int,int> mytype;
+  //typedef std::pair<int,int> mytype;
   //vector<mytype> id2n(NumContexts);
   //for(int i=0; i<NumContexts; i++) {
-  //  id2n=pair<int,int>(i,NumPerNode[i]);
+  //  id2n= std::pair<int,int>(i,NumPerNode[i]);
   //}
   //
   //std::sort(id2n.begin(),id2n.end(),lessNode);

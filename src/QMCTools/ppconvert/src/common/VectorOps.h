@@ -28,7 +28,7 @@
 #include "../config.h"
 
 typedef TinyVector<int,3> Int3;
-typedef Array<complex<double>,1> zVec;
+typedef Array<std::complex<double>,1> zVec;
 typedef Array<cVec3,1> zVecVec;
 typedef Array<cMat3,1> zMatVec;
 
@@ -51,19 +51,19 @@ extern "C"{
 extern "C" double F77_DZNRM2(const int *N, const void *X, const int *INC);
 extern "C" void   F77_ZDSCAL(const int *N, double *ALPHA, const void *X, 
 			     const int *INC);
-// extern "C" void F77_ZDOTC (complex<double> *z, const int *N, 
+// extern "C" void F77_ZDOTC (std::complex<double> *z, const int *N, 
 // 			   const void *X, const int *INCX, 
 // 			   const void *Y, const int *INCY);
-extern "C" complex<double> F77_ZDOTC (const int *N, 
+extern "C" std::complex<double> F77_ZDOTC (const int *N, 
  				      const void *X, const int *INCX, 
  				      const void *Y, const int *INCY);
 extern "C" void   F77_ZGEMV (char *TRANS, const int *M, const int *N, 
-			     complex<double> *alpha, const void *A, 
+			     std::complex<double> *alpha, const void *A, 
 			     const int *LDA, const void *X, 
-			     const int *INCX, complex<double> *beta, 
+			     const int *INCX, std::complex<double> *beta, 
 			     const void *Y, const int *INCY);
 
-extern "C" void   F77_ZAXPY (const int *N, complex<double> *ALPHA,
+extern "C" void   F77_ZAXPY (const int *N, std::complex<double> *ALPHA,
 			     void *X, int *INCX, void *Y, int *INCY);
 #endif
 
@@ -79,23 +79,23 @@ inline void Normalize (zVec &c)
 inline double norm (const zVec &c)
 { return cblas_dznrm2(c.size(), c.data(), 1); }
 
-inline complex<double> conjdot(zVec &cA, zVec &cB)
+inline std::complex<double> conjdot(zVec &cA, zVec &cB)
 {
-  complex<double> z;
+  std::complex<double> z;
   cblas_zdotc_sub(cA.size(), cA.data(), 1, cB.data(), 1, &z);
   return z;
 }
 
 inline void 
-Orthogonalize (const Array<complex<double>,2> &A, zVec &x)
+Orthogonalize (const Array<std::complex<double>,2> &A, zVec &x)
 {
   int m = A.rows();
   int n = A.cols();
   assert (n == x.size());
-  complex<double> zero(0.0, 0.0);
-  complex<double> one (1.0, 0.0);
-  complex<double> minusone (-1.0, 0.0);
-  Array<complex<double>,1> S(m);
+  std::complex<double> zero(0.0, 0.0);
+  std::complex<double> one (1.0, 0.0);
+  std::complex<double> minusone (-1.0, 0.0);
+  Array<std::complex<double>,1> S(m);
   
 
   cblas_zgemv(CblasColMajor, CblasConjTrans, n, m, &one,
@@ -126,28 +126,28 @@ inline double norm (const zVec &c)
 }
 
 
-inline complex<double> conjdot(zVec &cA, zVec &cB)
+inline std::complex<double> conjdot(zVec &cA, zVec &cB)
 {
   const int n = cA.size();
   const int incA = 1;
   const int incB = 1;
   return F77_ZDOTC (&n, cA.data(), &incA, cB.data(), &incB);
   
-//   complex<double> z;
+//   std::complex<double> z;
 //   F77_ZDOTC (&z, &n, cA.data(), &incA, cB.data(), &incB);
 //   return z;
 }
 
 inline void 
-Orthogonalize (const Array<complex<double>,2> &A, zVec &x)
+Orthogonalize (const Array<std::complex<double>,2> &A, zVec &x)
 {
   int m = A.rows();
   int n = A.cols();
   assert (n == x.size());
-  complex<double> zero(0.0, 0.0);
-  complex<double> one (1.0, 0.0);
-  complex<double> minusone (-1.0, 0.0);
-  Array<complex<double>,1> S(m);
+  std::complex<double> zero(0.0, 0.0);
+  std::complex<double> one (1.0, 0.0);
+  std::complex<double> minusone (-1.0, 0.0);
+  Array<std::complex<double>,1> S(m);
   
   // Calculate overlaps
   // Calling with column major and ConjTrans is equivalent to
@@ -184,19 +184,19 @@ inline double realconjdot(zVec &cA, zVec &cB)
     
 
 
-inline double mag (complex<double> x)
+inline double mag (std::complex<double> x)
 {
   return (x.real()*x.real() + x.imag()*x.imag());
 }
 
 inline void 
-Orthogonalize2 (Array<complex<double>,2> &A, zVec &x, int lastBand)
+Orthogonalize2 (Array<std::complex<double>,2> &A, zVec &x, int lastBand)
 {
   int m = A.rows();
   int n = A.cols();
   assert (n == x.size());
   zVec Ar;
-  Array<complex<double>,1> S(m);
+  Array<std::complex<double>,1> S(m);
 
   for (int row=0; row<=lastBand; row++) {
     Ar.reference (A(row,Range::all()));
@@ -208,16 +208,16 @@ Orthogonalize2 (Array<complex<double>,2> &A, zVec &x, int lastBand)
 //     Ar.reference (A(row,Range::all()));
 //     S(row) = conjdot (Ar, x);
 //     if (mag(S(row)) > 1.0e-14) {
-//       cerr << "row = " << row << " lastband = " << lastBand << endl;
-//       cerr << "Error in Orthogonalize2!, s = " << S(row) << endl;
+//       std::cerr << "row = " << row << " lastband = " << lastBand << std::endl;
+//       std::cerr << "Error in Orthogonalize2!, s = " << S(row) << std::endl;
 //       double norm = realconjdot (Ar, Ar);
-//       cerr << "norm = " << norm << endl;
+//       std::cerr << "norm = " << norm << std::endl;
 //     }
 //   }
 }
 
 inline void
-OrthogExcluding(const Array<complex<double>,2> &A, zVec &x,
+OrthogExcluding(const Array<std::complex<double>,2> &A, zVec &x,
 		int excluding)
 {
   int m = A.rows();
@@ -226,7 +226,7 @@ OrthogExcluding(const Array<complex<double>,2> &A, zVec &x,
   zVec Ar;
 
 #ifndef __INTEL_COMPILER
-  complex<double> S[m];
+  std::complex<double> S[m];
   for (int row=0; row<m; row++) {
     Ar.reference (A(row,Range::all()));
     S[row] = conjdot(Ar, x);
@@ -240,26 +240,26 @@ OrthogExcluding(const Array<complex<double>,2> &A, zVec &x,
 
   for (int row=0; row<m; row++) {
     Ar.reference (A(row,Range::all()));
-    complex<double> S = conjdot(Ar, x);
+    std::complex<double> S = conjdot(Ar, x);
     Sre[row] = real(S);
     Sim[row] = imag(S);
   }
   for (int row=0; row<m; row++) 
     if (row != excluding)
-      x -= complex<double>(Sre[row],Sim[row]) * A(row,Range::all());
+      x -= std::complex<double>(Sre[row],Sim[row]) * A(row,Range::all());
 #endif
 }
 
 
 inline void
-OrthogLower(const Array<complex<double>,2> &A, zVec &x,
+OrthogLower(const Array<std::complex<double>,2> &A, zVec &x,
 	    int currBand)
 {
   int m = currBand;
   int n = A.cols();
   assert (n == x.size());
   zVec Ar;
-  complex<double> S;
+  std::complex<double> S;
 
   for (int row=0; row<m; row++) {
     Ar.reference (A(row,Range::all()));
@@ -270,7 +270,7 @@ OrthogLower(const Array<complex<double>,2> &A, zVec &x,
 
 
 inline void
-GramSchmidt (Array<complex<double>,2> &A)
+GramSchmidt (Array<std::complex<double>,2> &A)
 {
   zVec a, b;
   for (int i=0; i<A.rows(); i++) {
@@ -285,10 +285,10 @@ GramSchmidt (Array<complex<double>,2> &A)
 }
 
 inline void
-Orthogonalize (Array<complex<double>,2> &A)
+Orthogonalize (Array<std::complex<double>,2> &A)
 {
   zVec x, y;
-  Array<complex<double>,1> S(A.rows());
+  Array<std::complex<double>,1> S(A.rows());
   for (int iter=0; iter < 40; iter++) {
     for (int i=0; i<A.rows();i++) {
       x.reference (A(i, Range::all()));
@@ -306,7 +306,7 @@ Orthogonalize (Array<complex<double>,2> &A)
 }
 
 
-inline void CheckOrthog (const Array<complex<double>,2> &A,
+inline void CheckOrthog (const Array<std::complex<double>,2> &A,
 			 zVec &x)
 {
   zVec Ai;
@@ -314,22 +314,22 @@ inline void CheckOrthog (const Array<complex<double>,2> &A,
   for (int i=0; i<A.rows(); i++) {
     Ai.reference (A(i,Range::all()));
     if (normInv*mag(conjdot(Ai, x)) > 1.0e-13) {
-      cerr << "CheckOrthog failed for i=" << i << ".\n";
+      std::cerr << "CheckOrthog failed for i=" << i << ".\n";
       exit(1);
     }
   }
 }
 
 inline void
-zaxpy (complex<double> alpha, const Array<complex<double>,1> &x,
-       const complex<double> y, Array<complex<double>,1> &axpy)
+zaxpy (std::complex<double> alpha, const Array<std::complex<double>,1> &x,
+       const std::complex<double> y, Array<std::complex<double>,1> &axpy)
 {
 
 }
 
 
-// inline Array<complex<double>,3>&
-// operator*= (Array<complex<double>,3> &A, const Array<complex<double>,3> &B)
+// inline Array<std::complex<double>,3>&
+// operator*= (Array<std::complex<double>,3> &A, const Array<std::complex<double>,3> &B)
 // {
   
 

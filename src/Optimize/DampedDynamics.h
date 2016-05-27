@@ -80,10 +80,10 @@ public:
   /** optimize TargetFunc */
   bool optimize();
 
-  ///write to a ostream
+  ///write to a std::ostream
   bool get(std::ostream& ) const;
 
-  ///read from istream
+  ///read from std::istream
   bool put(std::istream& );
 
   ///read from an xmlNode
@@ -162,14 +162,14 @@ bool DampedDynamics<T>::optimize()
     if(fx<GradTol)
     {
       if(msg_stream)
-        *msg_stream << " CGOptimization  has reached gradient max|G| = " << fx << endl;
+        *msg_stream << " CGOptimization  has reached gradient max|G| = " << fx << std::endl;
       return false;
     }
     Return_t dx=fabs((curCost-prevCost)/curCost);
     if(dx <= CostTol)
     {
       if(msg_stream)
-        *msg_stream << " CGOptimization::Converged cost with " << dx << endl;
+        *msg_stream << " CGOptimization::Converged cost with " << dx << std::endl;
       return false;
     }
     CurStep++;
@@ -180,7 +180,7 @@ bool DampedDynamics<T>::optimize()
     else
     {
       if(msg_stream)
-        *msg_stream << " DampedDynamics stopped due to invalid cost values " << endl;
+        *msg_stream << " DampedDynamics stopped due to invalid cost values " << std::endl;
       return false;
     }
   }

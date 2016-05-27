@@ -31,8 +31,8 @@ namespace qmcplusplus
 {
 
 //initialize the static data member
-//map<string,TricubicBsplineSetBuilder::StorageType*> TricubicBsplineSetBuilder::BigDataSet;
-map<string,TricubicBsplineSetBuilder::RSOType*> TricubicBsplineSetBuilder::BigDataSet;
+//map<std::string,TricubicBsplineSetBuilder::StorageType*> TricubicBsplineSetBuilder::BigDataSet;
+map<std::string,TricubicBsplineSetBuilder::RSOType*> TricubicBsplineSetBuilder::BigDataSet;
 
 TricubicBsplineSetBuilder::TricubicBsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, xmlNodePtr cur):
   targetPtcl(p),ptclPool(psets),OpenEndGrid(false),TranslateGrid(false),FloatingGrid(false),
@@ -79,7 +79,7 @@ bool TricubicBsplineSetBuilder::put(xmlNodePtr cur)
       if(cname == "grid")
         //if(cname == "grid")
       {
-        string closedEnd("yes");
+        std::string closedEnd("yes");
         int idir=0,npts=2;
         RealType ri=0,rf=-1.0;
         OhmmsAttributeSet aAttrib;
@@ -106,7 +106,7 @@ bool TricubicBsplineSetBuilder::put(xmlNodePtr cur)
         }
     //else if(cname == "center")//move center of the grid
     //{
-    //  string move("no");
+    //  std::string move("no");
     //  putContent(move,cur);
     //  TranslateGrid = (move =="yes");
     //}
@@ -133,7 +133,7 @@ TricubicBsplineSetBuilder::createSPOSet(xmlNodePtr cur)
   //return createSPOSetWithEG();
   //stage 1: get the general parameters, e.g., source, twist angle
   int norb(0);
-  string detname("0");
+  std::string detname("0");
   OhmmsAttributeSet aAttrib;
   aAttrib.add(norb,"orbitals");
   aAttrib.add(norb,"size");
@@ -166,14 +166,14 @@ TricubicBsplineSetBuilder::createSPOSet(xmlNodePtr cur)
   myParam->put(cur);
   if(is_manager())
   {
-    string tname=myParam->getTwistAngleName();
+    std::string tname=myParam->getTwistAngleName();
     HDFAttribIO<PosType> hdfobj_twist(TwistAngle);
     hdfobj_twist.read(hfileID,tname.c_str());
   }
   myComm->bcast(TwistAngle);
   PRE<<"Twist-angle " << TwistAngle << "\n";
   //stage 2: analyze the supercell to choose a specialized bspline function
-  bool atGamma= (dot(TwistAngle,TwistAngle)<numeric_limits<RealType>::epsilon());
+  bool atGamma= (dot(TwistAngle,TwistAngle)<std::numeric_limits<RealType>::epsilon());
   bool localize = myParam->Rcut>0.0;
   //RealType offdiag=0.0;
   //for(int idim=0; idim<DIM; idim++)
@@ -181,7 +181,7 @@ TricubicBsplineSetBuilder::createSPOSet(xmlNodePtr cur)
   //  {
   //    if(idim != jdim) offdiag+=abs(targetPtcl.Lattice.R(idim,jdim));
   //  }
-  //bool orthorhombic=(offdiag< numeric_limits<RealType>::epsilon());
+  //bool orthorhombic=(offdiag< std::numeric_limits<RealType>::epsilon());
   bool orthorhombic=basisLattice.DiagonalOnly;
   //stage 3: check if the grid needs to be modified
   BoxDup=myParam->BoxDup;
@@ -202,7 +202,7 @@ TricubicBsplineSetBuilder::createSPOSet(xmlNodePtr cur)
   Timer t1;
   //determine activeBasis
   activeBasis=0;
-  map<string,BsplineBasisType*>::iterator git(myBasis.find(detname));
+  std::map<std::string,BsplineBasisType*>::iterator git(myBasis.find(detname));
   if(git == myBasis.end())
   {
     if(atGamma) //gamma point
@@ -350,7 +350,7 @@ void TricubicBsplineSetBuilder::initGrid()
 //  {
 //    return 0; //disable
 //#if defined(QMC_COMPLEX)
-//    app_error() << " TricubicBsplineSetBuilder::createSPOSetWithEG cannot be used for QMC_COMPLEX=1" << endl;
+//    app_error() << " TricubicBsplineSetBuilder::createSPOSetWithEG cannot be used for QMC_COMPLEX=1" << std::endl;
 //    OHMMS::Controller->abort();
 //    return 0; //to make some compilers happy
 //#else
@@ -366,7 +366,7 @@ void TricubicBsplineSetBuilder::initGrid()
 //    RealType dz=(UpperBox[2]-LowerBox[2])/static_cast<RealType>(npts[2]);
 //
 //    SPOSetType* psi= new SPOSetType(norb);
-//    map<string,OrbitalGroupType*>::iterator git(myBasis.find("0"));
+//    std::map<std::string,OrbitalGroupType*>::iterator git(myBasis.find("0"));
 //    OrbitalGroupType *abasis=0;
 //    if(git == myBasis.end())
 //    {
@@ -381,7 +381,7 @@ void TricubicBsplineSetBuilder::initGrid()
 //      HEGGrid<RealType,DIM> egGrid(targetPtcl.Lattice);
 //      int nkpts=(nup-1)/2;
 //
-//      app_log() << "Number of kpoints " << nkpts << endl;
+//      app_log() << "Number of kpoints " << nkpts << std::endl;
 //      //create a E(lectron)G(as)O(rbital)Set
 //      egGrid.createGrid(nc,nkpts);
 //      RealEGOSet* eg=new RealEGOSet(egGrid.kpt,egGrid.mk2);
@@ -399,12 +399,12 @@ void TricubicBsplineSetBuilder::initGrid()
 //          }
 //        }
 //        StorageType* newP=0;
-//        map<string,StorageType*>::iterator it(BigDataSet.find(wfshortname));
+//        std::map<std::string,StorageType*>::iterator it(BigDataSet.find(wfshortname));
 //        if(it == BigDataSet.end()) {
 //          newP=new StorageType;
 //          BigDataSet[wfshortname]=newP;
 //          abasis->add(iorb,inData,newP);
-//          app_log() << "   Using spline function for EG " << wfshortname << endl;
+//          app_log() << "   Using spline function for EG " << wfshortname << std::endl;
 //        }
 //      }
 //      delete eg;

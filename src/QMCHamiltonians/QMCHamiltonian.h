@@ -56,13 +56,13 @@ public:
   ~QMCHamiltonian();
 
   ///add an operator
-  void addOperator(QMCHamiltonianBase* h, const string& aname, bool physical=true);
+  void addOperator(QMCHamiltonianBase* h, const std::string& aname, bool physical=true);
 
   ///record the name-type pair of an operator
-  void addOperatorType(const string& name,const string& type);
+  void addOperatorType(const std::string& name,const std::string& type);
 
   ///return type of named H element or fail
-  const string& getOperatorType(const string& name);
+  const std::string& getOperatorType(const std::string& name);
 
   ///return the number of Hamiltonians
   inline int size() const
@@ -80,7 +80,7 @@ public:
    * @param aname name of a QMCHamiltonianBase
    * @return 0 if aname is not found.
    */
-  QMCHamiltonianBase* getHamiltonian(const string& aname);
+  QMCHamiltonianBase* getHamiltonian(const std::string& aname);
 
   /** return i-th QMCHamiltonianBase
    * @param i index of the QMCHamiltonianBase
@@ -124,14 +124,14 @@ public:
    * @param h5desc has observable_helper* for each h5 group
    * @param gid h5 group id to which the observable groups are added.
    */
-  void registerObservables(vector<observable_helper*>& h5desc, hid_t gid) const ;
+  void registerObservables(std::vector<observable_helper*>& h5desc, hid_t gid) const ;
   /** register collectables so that their averages can be dumped to hdf5
    * @param h5desc has observable_helper* for each h5 group
    * @param gid h5 group id to which the observable groups are added.
    *
    * Add observable_helper information for the data stored in ParticleSet::mcObservables.
    */
-  void registerCollectables(vector<observable_helper*>& h5desc, hid_t gid) const ;
+  void registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const ;
   ///retrun the starting index
   inline int startIndex() const
   {
@@ -153,7 +153,7 @@ public:
     return Observables.Values[i];
   }
   ///return the value of the observable with a set name if it exists
-  inline int getObservable(string Oname) const
+  inline int getObservable( std::string Oname) const
   {
     int rtval(-1);
     for(int io=0; io<Observables.size(); io++)
@@ -164,7 +164,7 @@ public:
     return rtval;
   }
   ///return the name of the i-th observable
-  inline string getObservableName(int i) const
+  inline std::string getObservableName(int i) const
   {
     return Observables.Names[i];
   }
@@ -174,7 +174,7 @@ public:
   void saveProperty(IT first)
   {
     first[LOCALPOTENTIAL]= LocalEnergy-KineticEnergy;
-    std::copy(Observables.begin(),Observables.end(),first+myIndex);
+    copy(Observables.begin(),Observables.end(),first+myIndex);
   }
   /*@}*/
 
@@ -184,7 +184,7 @@ public:
   {
 //       LocalEnergy=first[LOCALENERGY];
 //       KineticEnergy=LocalEnergy-first[LOCALPOTENTIAL];
-    std::copy(first+myIndex,first+myIndex+Observables.size(),Observables.begin());
+    copy(first+myIndex,first+myIndex+Observables.size(),Observables.begin());
   }
 
   void update_source(ParticleSet& s);
@@ -249,7 +249,7 @@ public:
    * @param Txy transition matrix of nonlocal Hamiltonians
    * @return Local energy
    */
-  Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy);
+  Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy);
   
   /** evaluate energy and derivatives wrt to the variables
    * @param P ParticleSet
@@ -260,8 +260,8 @@ public:
    */
   RealType evaluateValueAndDerivatives(ParticleSet& P,
       const opt_variables_type& optvars,
-      vector<RealType>& dlogpsi,
-      vector<RealType>& dhpsioverpsi,
+      std::vector<RealType>& dlogpsi,
+      std::vector<RealType>& dhpsioverpsi,
       bool compute_deriv);
   
   /** evaluate energy 
@@ -295,13 +295,13 @@ public:
    * and this is in conflict with the declaration of OhmmsElementBase.
    * For the moment, QMCHamiltonian is not inherited from OhmmsElementBase.
    */
-  void setName(const string& aname)
+  void setName(const std::string& aname)
   {
     myName=aname;
   }
 
 
-  string getName() const
+  std::string getName() const
   {
     return myName;
   }
@@ -316,16 +316,16 @@ public:
   ////////////////////////////////////////////
   // Vectorized evaluation routines for GPU //
   ////////////////////////////////////////////
-  void evaluate (MCWalkerConfiguration &W,  vector<RealType> &LocalEnergy);
-  void evaluate(MCWalkerConfiguration &W, vector<RealType> &energyVector,
-                vector<vector<NonLocalData> > &Txy);
+  void evaluate (MCWalkerConfiguration &W,  std::vector<RealType> &LocalEnergy);
+  void evaluate(MCWalkerConfiguration &W, std::vector<RealType> &energyVector,
+                std::vector<std::vector<NonLocalData> > &Txy);
 
 #ifdef QMC_CUDA
 private:
   /////////////////////
   // Vectorized data //
   /////////////////////
-  vector<Return_t> LocalEnergyVector, KineticEnergyVector,
+  std::vector<Return_t> LocalEnergyVector, KineticEnergyVector,
          AuxEnergyVector;
 #endif
 
@@ -343,7 +343,7 @@ private:
   ///Current Local Energy for the proposed move
   Return_t NewLocalEnergy;
   ///getName is in the way
-  string myName;
+  std::string myName;
   ///vector of Hamiltonians
   std::vector<QMCHamiltonianBase*> H;
   ///vector of Hamiltonians
@@ -351,7 +351,7 @@ private:
   ///timers
   std::vector<NewTimer*> myTimers;
   ///types of component operators
-  map<string,string> operator_types;
+  std::map<std::string,std::string> operator_types;
   ///data
   PropertySetType Observables;
   /** reset Observables and counters

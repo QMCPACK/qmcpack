@@ -193,10 +193,10 @@ void MultiChain::copyToBuffer(Buffer_t& buf)
  *      R, Drift, Multiple Gradients,
  *      properties, weights etc, see Bead::copyToBuffer
  */
-void MultiChain::open(const string& aroot)
+void MultiChain::open(const std::string& aroot)
 {
   hid_t h_file=-1;
-  string h5file=aroot+".config.h5";
+  std::string h5file=aroot+".config.h5";
   h_file  =  H5Fopen(h5file.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
   h_config = H5Gcreate(h_file,"MultiChain",0);
   int m_version=1;
@@ -213,7 +213,7 @@ void MultiChain::open(const string& aroot)
   Buffer_t bead_buffer;
   (*(this->begin()))->registerData(bead_buffer);
   BeadBufferSize=bead_buffer.size();
-  app_log() << "  MultiChain::Bead Buffer size = " << BeadBufferSize << endl;
+  app_log() << "  MultiChain::Bead Buffer size = " << BeadBufferSize << std::endl;
   HDFAttribIO<int> c2(BeadBufferSize);
   c2.write(h_config,"BeadBufferSize");
   Buffer_t chain_buffer;
@@ -221,7 +221,7 @@ void MultiChain::open(const string& aroot)
   MyBufferSize=chain_buffer.size();
   HDFAttribIO<Buffer_t> mcout(chain_buffer);
   mcout.write(h_config,"state");
-  app_log() << "  MultiChain state Buffer size = " << MyBufferSize << endl;
+  app_log() << "  MultiChain state Buffer size = " << MyBufferSize << std::endl;
   std::deque<Bead*>::iterator bead_it(this->begin());
   std::deque<Bead*>::iterator bead_end(this->end());
   //create the group and increment counter
@@ -274,7 +274,7 @@ bool MultiChain::read(hid_t grp)
   c.read(hgrp,"NumberOfBeads");
   if(nc != Beads.size())
   {
-    app_warning() << "MultiChain::read stopped due to the difference in the number of beads"<<endl;
+    app_warning() << "MultiChain::read stopped due to the difference in the number of beads"<< std::endl;
     return false;
   }
   typedef Bead::RealType PosType;
@@ -306,10 +306,10 @@ bool MultiChain::read(hid_t grp)
   H5Gclose(hgrp);
   return true;
 }
-bool MultiChain::read(const string& aroot)
+bool MultiChain::read(const std::string& aroot)
 {
-  string h5file = aroot;
-  string ext=getExtension(h5file);
+  std::string h5file = aroot;
+  std::string ext=getExtension(h5file);
   if(ext != "h5")
     //if the filename does not h5 extension, add the extension
   {

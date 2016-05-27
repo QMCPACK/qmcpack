@@ -30,8 +30,8 @@ struct OpenGaussianSlaterFunctor: public OptimizableFunctorBase
   ///coefficients
   real_type A;
   real_type B;
-  string ID_A;
-  string ID_B;
+  std::string ID_A;
+  std::string ID_B;
 
   /** constructor
   * @param a A coefficient
@@ -133,7 +133,7 @@ struct OpenGaussianSlaterFunctor: public OptimizableFunctorBase
   }
 
   inline bool
-  evaluateDerivatives(real_type r, vector<TinyVector<real_type,3> >& derivs)
+  evaluateDerivatives(real_type r, std::vector<TinyVector<real_type,3> >& derivs)
   {
     real_type u = 1.0/(1.0+B*r);
     derivs[0][0]= r*r*u;
@@ -155,11 +155,11 @@ struct OpenGaussianSlaterFunctor: public OptimizableFunctorBase
     while (tcur != NULL)
     {
       //@todo Var -> <param(eter) role="opt"/>
-      string cname((const char*)(tcur->name));
+      std::string cname((const char*)(tcur->name));
       if (cname == "parameter" || cname == "Var")
       {
-        string aname((const char*)(xmlGetProp(tcur,(const xmlChar *)"name")));
-//            string idname((const char*)(xmlGetProp(tcur,(const xmlChar *)"id")));
+        std::string aname((const char*)(xmlGetProp(tcur,(const xmlChar *)"name")));
+//            std::string idname((const char*)(xmlGetProp(tcur,(const xmlChar *)"id")));
         if (aname == "A")
         {
           ID_A = (const char*)(xmlGetProp(tcur,(const xmlChar *)"id"));

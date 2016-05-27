@@ -104,7 +104,7 @@ bool DMCMoveAll::dmcWithBranching()
   }
   while(block<nBlocks);
   //Need MPI-IO
-  app_log() << "\t ratio = " << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot) << endl;
+  app_log() << "\t ratio = " << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot) << std::endl;
   return finalize(block);
 }
 
@@ -156,7 +156,7 @@ bool DMCMoveAll::dmcWithReconfiguration()
   }
   while(block<nBlocks);
   //Need MPI-IO
-  app_log() << "\t ratio = " << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot) << endl;
+  app_log() << "\t ratio = " << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot) << std::endl;
   return finalize(block);
 }
 /** Advance the walkers nblocks*nsteps timesteps.
@@ -189,7 +189,7 @@ bool DMCMoveAll::run()
   {
     if(NonLocalMove == "yes")
     {
-      app_log() << "  Non-local update is used." << endl;
+      app_log() << "  Non-local update is used." << std::endl;
       DMCNonLocalUpdate* nlocMover= new DMCNonLocalUpdate(W,Psi,H,Random);
       nlocMover->put(qmcNode);
       Mover=nlocMover;
@@ -199,12 +199,12 @@ bool DMCMoveAll::run()
     {
       if(KillNodeCrossing)
       {
-        app_log() << "  Walkers will be killed if a node crossing is detected." << endl;
+        app_log() << "  Walkers will be killed if a node crossing is detected." << std::endl;
         Mover = new DMCUpdateAllWithKill(W,Psi,H,Random);
       }
       else
       {
-        app_log() << "  Walkers will be kept even if a node crossing is detected." << endl;
+        app_log() << "  Walkers will be kept even if a node crossing is detected." << std::endl;
         Mover = new DMCUpdateAllWithRejection(W,Psi,H,Random);
       }
     }
@@ -219,15 +219,15 @@ bool DMCMoveAll::run()
       BranchInterval=nSteps;
       nSteps=1;
     }
-    app_log() << "  DMC all-ptcl update with reconfigurations " << endl;
-    app_log() << "    BranchInterval=" << BranchInterval << endl;
-    app_log() << "    Steps         =" << nSteps << endl;
-    app_log() << "    Blocks        =" << nBlocks << endl;
+    app_log() << "  DMC all-ptcl update with reconfigurations " << std::endl;
+    app_log() << "    BranchInterval=" << BranchInterval << std::endl;
+    app_log() << "    Steps         =" << nSteps << std::endl;
+    app_log() << "    Blocks        =" << nBlocks << std::endl;
     success = dmcWithReconfiguration();
   }
   else
   {
-    app_log() << "  DMC all-ptcl update with a fluctuating population" << endl;
+    app_log() << "  DMC all-ptcl update with a fluctuating population" << std::endl;
     success = dmcWithBranching();
   }
   return success;

@@ -33,7 +33,7 @@ struct CSPolymerEstimator: public PolymerEstimator
   void accumulate(const MCWalkerConfiguration& W
                   , WalkerIterator first, WalkerIterator last, RealType wgt);
   void add2Record(RecordNamedProperty<RealType>& record);
-  void registerObservables(vector<observable_helper*>& h5dec, hid_t gid);
+  void registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid);
   ScalarEstimatorBase* clone();
   /*@}*/
 };

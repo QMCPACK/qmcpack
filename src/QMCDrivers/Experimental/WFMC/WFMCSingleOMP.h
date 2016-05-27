@@ -41,7 +41,7 @@ private:
   ///Index for Energy Index
   int Eindex;
   ///option to enable/disable drift equation for VMC
-  string UseDrift,reweight;
+  std::string UseDrift,reweight;
   ///check the run-time environments
   void resetRun();
   ///copy constructor

@@ -38,18 +38,18 @@ struct Bead: public MCWalkerConfiguration::Walker_t
   //Drift is moved  from Walker
   ParticlePos_t Drift;
   Vector<int> BeadSignWgt;
-  vector<ParticlePos_t*> Gradients;
-  vector<ParticleLaplacian_t*> Laplacians;
-  vector<ParticlePos_t*> DriftVectors;
+  std::vector<ParticlePos_t*> Gradients;
+  std::vector<ParticleLaplacian_t*> Laplacians;
+  std::vector<ParticlePos_t*> DriftVectors;
   Matrix<RealType> Action;
   RealType TransProb[2];
   bool ScaleDrift;
-  vector<RealType> Tau_eff;
+  std::vector<RealType> Tau_eff;
 
   //Extra Observable Spots for Pressure, etc.
   Vector<RealType> deltaRSquared;
   int stepmade,timesTouched;
-  vector<int> ptclAge;
+  std::vector<int> ptclAge;
 
   inline Bead(const Bead& a)
   {
@@ -69,7 +69,7 @@ struct Bead: public MCWalkerConfiguration::Walker_t
   }
 
   //       deltaRSquared.resize(3);
-  inline Bead(const Walker_t& a, string scaleBeadDrift): Walker_t(a)
+  inline Bead(const Walker_t& a, std::string scaleBeadDrift): Walker_t(a)
   {
     ScaleDrift = ((scaleBeadDrift=="true")||(scaleBeadDrift=="yes"));
     resize_bead(R.size());
@@ -143,7 +143,7 @@ struct Bead: public MCWalkerConfiguration::Walker_t
   void copyFromBuffer(Buffer_t& buf);
   void copyToBuffer(Buffer_t& buf);
 
-  inline void getDrift(vector<RealType>& LogNorm)
+  inline void getDrift(std::vector<RealType>& LogNorm)
   {
     int npsi(Properties.rows());
     //compute Drift
@@ -160,7 +160,7 @@ struct Bead: public MCWalkerConfiguration::Walker_t
     Drift *= denom;
   }
 
-  inline void getScaledDrift(vector<RealType>& LogNorm, RealType Tau)
+  inline void getScaledDrift(std::vector<RealType>& LogNorm, RealType Tau)
   {
     int npsi(Properties.rows());
     //compute Drift
@@ -190,7 +190,7 @@ struct Bead: public MCWalkerConfiguration::Walker_t
     Drift *= denom;
   }
 
-  inline void getScaledDriftSingle(vector<RealType>& LogNorm, RealType Tau, int ipsi)
+  inline void getScaledDriftSingle(std::vector<RealType>& LogNorm, RealType Tau, int ipsi)
   {
     if (ScaleDrift)
     {
@@ -204,7 +204,7 @@ struct Bead: public MCWalkerConfiguration::Walker_t
     }
   }
 
-  inline void getDrift(vector<RealType>& Jacobian, SpaceWarp& PtclWarp,vector<RealType>& LogNorm)
+  inline void getDrift(std::vector<RealType>& Jacobian, SpaceWarp& PtclWarp,std::vector<RealType>& LogNorm)
   {
     QMCTraits::PosType WarpDrift;
     int npsi(Properties.rows());
@@ -344,7 +344,7 @@ struct MultiChain
   }
   inline void flip()
   {
-    GrowthDirection = abs(GrowthDirection-1); //flip the direction
+    GrowthDirection = std::abs(GrowthDirection-1); //flip the direction
   }
 
   inline void setRefSign(int ipsi, RealType phase)
@@ -382,7 +382,7 @@ struct MultiChain
    * @param aroot root name
    * @return true, if the input file contains valid data
    */
-  bool read(const string& aroot);
+  bool read(const std::string& aroot);
 
   /** read MultiChain tree a group *
    * @param grp hdf5 group
@@ -395,7 +395,7 @@ struct MultiChain
   /** open hdf5 and initialize the dataspace
    * @param aroot root name of hdf5 output
    */
-  void open(const string& aroot);
+  void open(const std::string& aroot);
   /** record the data for restart */
   void record();
   /** close the file */

@@ -39,7 +39,7 @@ struct HFDHE2Potential: public QMCHamiltonianBase
 //       Return_t N0 = P.G.size();
     rc = P.Lattice.WignerSeitzRadius;
 //       tailcorr = 2.0*M_PI*rho*N0*(-26.7433377905*std::pow(rc,-7.0) - 2.8440930339*std::pow(rc,-5.0)-0.486669351961 *std::pow(rc,-3.0)+ std::exp(-2.381392669*rc)*(2.75969257875+6.571911675726*rc+7.82515114293*rc*rc) );
-//       cout<<"  HFDHE2Potential tail correction is  "<<tailcorr<<endl;
+//       std::cout <<"  HFDHE2Potential tail correction is  "<<tailcorr<< std::endl;
     depName = "HFDHE2tail";
     Return_t r2 = (rc*rc);
     Return_t rm2 = 1.0/r2;
@@ -89,7 +89,7 @@ struct HFDHE2Potential: public QMCHamiltonianBase
     return Value;
   }
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }

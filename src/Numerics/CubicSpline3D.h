@@ -22,7 +22,7 @@
 #define CUBICSPLINE3D_REGULARGRID_H
 
 #include <bitset>
-using std::bitset;
+
 
 /*! \class template<class T> CubicSplineDiff
  * \brief spline functions on regular grid [Rmin, Rmax)
@@ -35,7 +35,7 @@ public:
 
   typedef typename grid_type::value_type value_type;
   pos_type Rmin, Rmax, dr, drinv, drinv2, dr2over6, drover6;
-  bitset<4> xyz[8];
+  std::bitset<4> xyz[8];
   grid_type Y;
 
   //!< default constructor
@@ -61,20 +61,20 @@ public:
   {
     //4-bit to calculate the coefficient indices and sign
     //xyz[i](x,y,z,sign): initially, all the bits are set to 0
-    //xyz[0] = bitset<4>(0,0,0,0); // -1(0) 3*0
+    //xyz[0] = std::bitset<4>(0,0,0,0); // -1(0) 3*0
     xyz[1].flip(2);
-    xyz[1].flip(3); //xyz[1] = bitset<4>(0,0,1,1); // +1(1) 2*0
+    xyz[1].flip(3); //xyz[1] = std::bitset<4>(0,0,1,1); // +1(1) 2*0
     xyz[2].flip(1);
-    xyz[2].flip(2); //xyz[2] = bitset<4>(0,1,1,0); // -1(0) 1*0
+    xyz[2].flip(2); //xyz[2] = std::bitset<4>(0,1,1,0); // -1(0) 1*0
     xyz[3].flip(1);
-    xyz[3].flip(3); //xyz[3] = bitset<4>(0,1,0,1); // +1(1) 2*0
+    xyz[3].flip(3); //xyz[3] = std::bitset<4>(0,1,0,1); // +1(1) 2*0
     xyz[4].flip(0);
-    xyz[4].flip(3); //xyz[4] = bitset<4>(1,0,0,1); // +1(1) 2*0
+    xyz[4].flip(3); //xyz[4] = std::bitset<4>(1,0,0,1); // +1(1) 2*0
     xyz[5].flip(0);
-    xyz[5].flip(2); //xyz[5] = bitset<4>(1,0,1,0); // -1(0) 1*0
-    xyz[6].flip();                  //xyz[6] = bitset<4>(1,1,1,1); // +1(1) 0*0
+    xyz[5].flip(2); //xyz[5] = std::bitset<4>(1,0,1,0); // -1(0) 1*0
+    xyz[6].flip();                  //xyz[6] = std::bitset<4>(1,1,1,1); // +1(1) 0*0
     xyz[7].flip(0);
-    xyz[7].flip(1); //xyz[7] = bitset<4>(1,1,0,0); // -1(0) 1*0
+    xyz[7].flip(1); //xyz[7] = std::bitset<4>(1,1,0,0); // -1(0) 1*0
   }
 
   value_type& operator()(int i, int j, int k)

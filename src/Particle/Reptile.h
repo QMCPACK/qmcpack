@@ -28,7 +28,7 @@ namespace qmcplusplus
     //typedef Walker_t::Buffer_t              Buffer_t;
     //    typedef MCWalkerConfiguration::Walker_t Walker_t;
     typedef MCWalkerConfiguration::iterator WalkerIter_t;
-    typedef vector < Walker_t::ParticlePos_t > ReptileConfig_t;
+    typedef std::vector< Walker_t::ParticlePos_t > ReptileConfig_t;
 
       std::vector < IndexType > Action;
       std::vector < IndexType > TransProb;
@@ -213,7 +213,7 @@ namespace qmcplusplus
       app_log () << "Direction=" << direction << "  Headindex=" << headindex
 	<< "  tail=" << getBeadIndex (nbeads -
 				      1) << "\n  next=" <<
-	getBeadIndex (nbeads - 2) << "  nbeads=" << nbeads << endl;
+	getBeadIndex (nbeads - 2) << "  nbeads=" << nbeads << std::endl;
       app_log () <<
 	"BeadIndex\tWrapIndex\tEnergy\tAction[0]\tAction[1]\tAction[2]\t\n";
       for (int i = 0; i < nbeads; i++)
@@ -229,16 +229,16 @@ namespace qmcplusplus
 	{
 	  //  app_log()<<i<<"\t1"<<1<<"\t"<<getBead(i).R[0]<<"\n";
 	  //  app_log()<<i<<"\t2"<<2<<"\t"<<getBead(i).R[1]<<"\n";
-	  app_log () << "BEAD #" << i << " tau = " << tau * i << endl;
-	  app_log () << getBead (i).R << endl;
+	  app_log () << "BEAD #" << i << " tau = " << tau * i << std::endl;
+	  app_log () << getBead (i).R << std::endl;
 	}
       app_log () << "GVECS===============:\n";
       for (int i = 0; i < nbeads; i++)
 	{
 //      app_log()<<i<<"\t1"<<1<<"\t"<<getBead(i).G[0]<<"\n";
 //      app_log()<<i<<"\t2"<<2<<"\t"<<getBead(i).G[1]<<"\n";
-	  app_log () << "BEAD #" << i << " tau = " << tau * i << endl;
-	  app_log () << getBead (i).G << endl;
+	  app_log () << "BEAD #" << i << " tau = " << tau * i << std::endl;
+	  app_log () << getBead (i).G << std::endl;
 	}
       app_log () << "************************************\n";
     }

@@ -85,7 +85,7 @@ int main(int argc, char** argv)
     grad0=infunc.df(pos);
     lap0=infunc.d2f(pos);
     fout << z
-         << std::setw(20) << val0 << std::setw(20) << val  << endl;
+         << std::setw(20) << val0 << std::setw(20) << val  << std::endl;
     dfout << z
           << std::setw(20) << grad0[0]<< std::setw(20) << grad[0]
           << std::setw(20) << grad0[1]<< std::setw(20) << grad[1]

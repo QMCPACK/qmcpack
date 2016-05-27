@@ -55,7 +55,7 @@ SHEGPotential::evaluate(const BasisSetType& psi,
         (*Vext)(ig)=normin*(3.0-(r*r)*r2)-Zgauss * exp(-r*r/Sgauss/Sgauss);
       else
         (*Vext)(ig)=-Zext/r-Zgauss * exp(-r*r/Sgauss/Sgauss) ;
-      // cout << r << " " << (*Vext)(ig) << endl;
+      // std::cout << r << " " << (*Vext)(ig) << std::endl;
     }
   }
   for(int ig=0; ig < psi.m_grid->size(); ++ig)

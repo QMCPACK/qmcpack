@@ -30,13 +30,13 @@ namespace qmcplusplus
 struct NumberFluctuations: public QMCHamiltonianBase
 {
 
-  vector<Return_t> regions;
-  string shape;
+  std::vector<Return_t> regions;
+  std::string shape;
   ParticleSet::ParticlePos_t *L, *C;
   bool PBCType;
   int nreg,grps,pwrs,ngrid;
-  vector<int> grp_v;
-  vector<Return_t>  Values, voffsets;
+  std::vector<int> grp_v;
+  std::vector<Return_t>  Values, voffsets;
   DistanceTableData* d_table;
 
 
@@ -100,14 +100,14 @@ struct NumberFluctuations: public QMCHamiltonianBase
 //         l-=(l/dvi)*std::pow(ngrid,k);
 //       }
 // //       for(int k(0);k<DIM;k++) app_log()<<C[k]<<" ";
-// //       app_log()<<endl;
+// //       app_log()<< std::endl;
 //       P.convert2Cart((*C));
 // //       for(int k(0);k<DIM;k++) app_log()<<C[k]<<" ";
-// //       app_log()<<endl;
+// //       app_log()<< std::endl;
 //       (*L)=P.R;
 //       for(int k(0);k<(*L).size();k++) (*L)[k]+= -1.0*(*C)[0];
 // //       for(int k(0);k<DIM;k++) app_log()<<L[0][k]<<" ";
-// //       app_log()<<endl;
+// //       app_log()<< std::endl;
 //       //       P.applyBC(*L);
 //       P.convert2CartInBox(*L, *C);
 //       Matrix<int> np(grps+1,nreg);
@@ -149,7 +149,7 @@ struct NumberFluctuations: public QMCHamiltonianBase
       Values[g]=0;
     Return_t nnrm(1.0/P.R.size());
     Return_t pnrm(1.0/P.Lattice.Volume);
-    vector<Matrix<int> > np(P.R.size(), Matrix<int>(grps+1,nreg));
+    std::vector<Matrix<int> > np(P.R.size(), Matrix<int>(grps+1,nreg));
     for(int i(0); i<P.R.size(); i++)
       np[i]=0;
     //Center
@@ -167,7 +167,7 @@ struct NumberFluctuations: public QMCHamiltonianBase
         {
           int jat=d_table->iadj(iat,nn);
           Return_t z = d_table->r(d_table->loc(iat,nn));
-//             app_log()<<iat<<" "<<jat<<" "<<z<<endl;
+//             app_log()<<iat<<" "<<jat<<" "<<z<< std::endl;
           z*=z;
           int a(nreg-1);
           while((z<regions[a])&&(a>=0))
@@ -275,12 +275,12 @@ struct NumberFluctuations: public QMCHamiltonianBase
 
   void setObservables(PropertySetType& plist)
   {
-    std::copy(Values.begin(),Values.end(),plist.begin()+myIndex);
+    copy(Values.begin(),Values.end(),plist.begin()+myIndex);
   }
 
   void setParticlePropertyList(PropertySetType& plist, int offset)
   {
-    std::copy(Values.begin(),Values.end(),plist.begin()+myIndex+offset);
+    copy(Values.begin(),Values.end(),plist.begin()+myIndex+offset);
   }
 
   inline Return_t evaluate(ParticleSet& P)
@@ -296,7 +296,7 @@ struct NumberFluctuations: public QMCHamiltonianBase
     return 0.0;
   }
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
@@ -338,7 +338,7 @@ struct NumberFluctuations: public QMCHamiltonianBase
     xmlNodePtr xmlCoefs = cur->xmlChildrenNode;
     while (xmlCoefs != NULL)
     {
-      string cname((const char*)xmlCoefs->name);
+      std::string cname((const char*)xmlCoefs->name);
       if (cname == "regions")
       {
         OhmmsAttributeSet cAttrib;
@@ -352,19 +352,19 @@ struct NumberFluctuations: public QMCHamiltonianBase
       xmlCoefs = xmlCoefs->next;
     }
     nreg=regions.size();
-    app_log()<<" Shape: "<<shape<<endl;
-    app_log()<<" Max Power: "<<pwrs<<endl;
-    app_log()<<" Grid: "<<ngrid<<endl;
+    app_log()<<" Shape: "<<shape<< std::endl;
+    app_log()<<" Max Power: "<<pwrs<< std::endl;
+    app_log()<<" Grid: "<<ngrid<< std::endl;
     app_log()<<" regions:";
     for(int i(0); i<nreg; i++)
       app_log()<<" "<<regions[i];
-    app_log()<<endl;
+    app_log()<< std::endl;
     if(voffsets.size()!=nreg*(grps+1))
       voffsets.resize(nreg*(grps+1),0);
     app_log()<<" voffsets:";
     for(int i(0); i<nreg*(grps+1); i++)
       app_log()<<" "<<voffsets[i];
-    app_log()<<endl;
+    app_log()<< std::endl;
     Values.resize( (grps+1)*nreg*pwrs,0 );
     return true;
   }

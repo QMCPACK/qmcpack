@@ -32,10 +32,10 @@
 #endif
 #include <strstream>
 
-/**  Wrapper of ostream to provide uniform environments for run-time report
+/**  Wrapper of std::ostream to provide uniform environments for run-time report
  *
  * Each object can choose a prompt, a mode (only master processor or all the processors),
- * and an ostream.
+ * and an std::ostream.
  */
 class OhmmsInform
 {

@@ -54,7 +54,7 @@ public:
    */
   TinyVector<RealType,4> PreFactors;
   ///store |k|
-  vector<RealType> kMag;
+  std::vector<RealType> kMag;
   /// Constructor
   EwaldHandler(ParticleSet& ref, RealType kc_in=-1.0)
     : LRHandlerBase(kc_in)
@@ -121,7 +121,7 @@ public:
 
   /** evaluate k-dependent
    */
-  RealType evaluate_slab(RealType z, const vector<int>& kshell
+  RealType evaluate_slab(RealType z, const std::vector<int>& kshell
                          , const ComplexType* restrict rk1, const ComplexType* restrict rk2);
 
   /** evaluate k=0 term at z

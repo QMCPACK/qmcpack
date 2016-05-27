@@ -43,7 +43,7 @@ SlaterDet::~SlaterDet()
 }
 
 ///add a new SPOSet to the list of determinants
-void SlaterDet::add(SPOSetBase* sposet, const string& aname)
+void SlaterDet::add(SPOSetBase* sposet, const std::string& aname)
 {
   if (mySPOSet.find(aname) == mySPOSet.end())
   {
@@ -52,7 +52,7 @@ void SlaterDet::add(SPOSetBase* sposet, const string& aname)
   }
   else
   {
-    APP_ABORT(" SlaterDet::add(SPOSetBase*, const string&) Cannot reuse the " + aname )
+    APP_ABORT(" SlaterDet::add(SPOSetBase*, const std::string&) Cannot reuse the " + aname )
     ;
   }
 }
@@ -104,13 +104,13 @@ void SlaterDet::resetParameters(const opt_variables_type& active)
       Dets[i]->resetParameters(active);
 }
 
-void SlaterDet::reportStatus(ostream& os)
+void SlaterDet::reportStatus(std::ostream& os)
 {
 }
 
 void SlaterDet::resetTargetParticleSet(ParticleSet& P)
 {
-  map<string, SPOSetBasePtr>::iterator sit(mySPOSet.begin());
+  std::map<std::string, SPOSetBasePtr>::iterator sit(mySPOSet.begin());
   while (sit != mySPOSet.end())
   {
     (*sit).second->resetTargetParticleSet(P);
@@ -122,7 +122,7 @@ void SlaterDet::resetTargetParticleSet(ParticleSet& P)
     Dets[i]->resetTargetParticleSet(P);
 }
 
-void SlaterDet::get_ratios(ParticleSet& P, vector<ValueType>& ratios)
+void SlaterDet::get_ratios(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   for (int i = 0; i < Dets.size(); ++i)
     Dets[i]->get_ratios(P, ratios);
@@ -197,9 +197,9 @@ void SlaterDet::evaluateHessian(ParticleSet & P, HessVector_t& grad_grad_psi)
     {
 	  tmp=0;
       Dets[i]->evaluateHessian(P, tmp);
-    //  app_log()<<"squee ----- "<<i<<endl;
-    //  app_log()<<"grad_grad_psi = "<<grad_grad_psi<<endl;
-    //  app_log()<<"tmp = "<<tmp<<endl<<endl;
+    //  app_log()<<"squee ----- "<<i<< std::endl;
+    //  app_log()<<"grad_grad_psi = "<<grad_grad_psi<< std::endl;
+    //  app_log()<<"tmp = "<<tmp<< std::endl<< std::endl;
       grad_grad_psi += tmp;
 
     }
@@ -300,7 +300,7 @@ OrbitalBasePtr SlaterDet::makeClone(ParticleSet& tqp) const
   myclone->Optimizable=Optimizable;
   if (mySPOSet.size() > 1)
   {
-    map<string,SPOSetBasePtr>::const_iterator Mit,Lit;
+    std::map<std::string,SPOSetBasePtr>::const_iterator Mit,Lit;
     Mit= mySPOSet.begin();
     Lit= mySPOSet.end();
     while (Mit!=Lit)
@@ -368,7 +368,7 @@ OrbitalBasePtr SlaterDet::makeClone(ParticleSet& tqp) const
   //myclone->releasedNode=releasedNode;
   //for(int i=0; i<Dets.size(); i++)
   //{
-  //  map<SPOSetBase*,SPOSetBase*>::iterator it=spomap.find(Dets[i]->Phi);
+  //  std::map<SPOSetBase*,SPOSetBase*>::iterator it=spomap.find(Dets[i]->Phi);
   //  if (releasedNode==1)
   //  {
   //    RNDiracDeterminantBase* adet=new RNDiracDeterminantBase(static_cast<RNDiracDeterminantBase&>(*Dets[i]));

@@ -38,7 +38,7 @@ class ParticleSetPool : public MPIObjectBase
 
 public:
 
-  typedef map<string,ParticleSet*> PoolType;
+  typedef std::map<std::string,ParticleSet*> PoolType;
 
   /** constructor
    * @param aname xml tag
@@ -46,7 +46,7 @@ public:
   ParticleSetPool(Communicate* c, const char* aname = "particleset");
 
   bool put(xmlNodePtr cur);
-  bool get(ostream& os) const;
+  bool get(std::ostream& os) const;
   void reset();
 
   ///assign TileMatrix
@@ -69,7 +69,7 @@ public:
    *
    * When the named ParticleSet is not in this object, return 0.
    */
-  ParticleSet* getParticleSet(const string& pname);
+  ParticleSet* getParticleSet(const std::string& pname);
 
   /** get a named MCWalkerConfiguration
    * @param pname name of the MCWalkerConfiguration
@@ -77,7 +77,7 @@ public:
    *
    * When the named MCWalkerConfiguration is not in this object, return 0.
    */
-  MCWalkerConfiguration* getWalkerSet(const string& pname);
+  MCWalkerConfiguration* getWalkerSet(const std::string& pname);
 
   /** get the Pool object
    */
@@ -92,7 +92,7 @@ public:
    *
    * Introduced to avoid conflicting definitions of the particlesets
    */
-  ParticleSet* createESParticleSet(xmlNodePtr cur, const string& target, ParticleSet* qp);
+  ParticleSet* createESParticleSet(xmlNodePtr cur, const std::string& target, ParticleSet* qp);
 
   /** randomize a particleset particleset/@random='yes' && particleset@random_source exists
    */
@@ -117,12 +117,12 @@ private:
    *
    * Each ParticleSet has to have a unique name which is used as a key for the map
    */
-  map<string,ParticleSet*> myPool;
+  std::map<std::string,ParticleSet*> myPool;
   /** xml node for random initialization.
    *
    * randomize() process initializations just before starting qmc sections
    */
-  vector<xmlNodePtr> randomize_nodes;
+  std::vector<xmlNodePtr> randomize_nodes;
 };
 }
 #endif

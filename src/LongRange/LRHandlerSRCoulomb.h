@@ -58,7 +58,7 @@ public:
   BreakupBasisType Basis; //This needs a Lattice for the constructor...
   Func myFunc;
 
-  vector<RealType> Fk_copy;
+  std::vector<RealType> Fk_copy;
   
   GridType* aGrid;
   
@@ -106,7 +106,7 @@ public:
 //    fillYk(ref.SK->KLists);
 //    fillYkg(ref.SK->KLists);
 //    filldFk_dk(ref.SK->KLists);
-   // app_log()<<"copy constructor called.  thread #"<<omp_get_num_threads()<<endl;
+   // app_log()<<"copy constructor called.  thread #"<<omp_get_num_threads()<< std::endl;
     aGrid = new GridType(*(aLR.aGrid));
    // new GridType(aLR.aGrid)
     rV_energy = aLR.rV_energy->makeClone();
@@ -159,11 +159,11 @@ public:
        aGrid->set(0.0,Basis.get_rc(),ngrid);
      }
      
-     vector<RealType> vE(ngrid);
-     vector<RealType> vF(ngrid);
-     vector<RealType> dvF(ngrid);
-     vector<RealType> vS(ngrid);
-     vector<RealType> dvS(ngrid);
+     std::vector<RealType> vE(ngrid);
+     std::vector<RealType> vF(ngrid);
+     std::vector<RealType> dvF(ngrid);
+     std::vector<RealType> vS(ngrid);
+     std::vector<RealType> dvS(ngrid);
      
      for( int i=1; i<ngrid; i++)
      {
@@ -204,11 +204,11 @@ public:
        aGrid->set(0.0,Basis.get_rc(),ngrid);
      }
      
-     vector<RealType> vE(ngrid);
-     vector<RealType> vF(ngrid);
-     vector<RealType> dvF(ngrid);
-     vector<RealType> vS(ngrid);
-     vector<RealType> dvS(ngrid);
+     std::vector<RealType> vE(ngrid);
+     std::vector<RealType> vF(ngrid);
+     std::vector<RealType> dvF(ngrid);
+     std::vector<RealType> vS(ngrid);
+     std::vector<RealType> dvS(ngrid);
      
      for( int i=1; i<ngrid; i++)
      {
@@ -255,7 +255,7 @@ public:
   inline RealType evaluate(RealType r, RealType rinv)
   {
     RealType v = Basis.f(r, coefs);
-    //app_log()<<"evaluate() #"<<omp_get_num_threads()<<" rmax="<<aGrid->rmax()<<" size="<<aGrid->size()<<endl;
+    //app_log()<<"evaluate() #"<<omp_get_num_threads()<<" rmax="<<aGrid->rmax()<<" size="<<aGrid->size()<< std::endl;
    
   //  return df;
     return v;
@@ -269,10 +269,10 @@ public:
   inline RealType srDf(RealType r, RealType rinv)
   {
    // RealType df = Basis.df_dr(r, gcoefs);
-     //app_log()<<"evaluate() #"<<omp_get_thread_num()<<" rmax="<<aGrid->rmax()<<" size="<<aGrid->size()<<endl;
+     //app_log()<<"evaluate() #"<<omp_get_thread_num()<<" rmax="<<aGrid->rmax()<<" size="<<aGrid->size()<< std::endl;
  //    return df; 
 //    std::stringstream wee;
-//    wee<<"srDf() #"<<omp_get_thread_num()<<" dspl= "<<rinv*rinv*du-df<<" ref= "<<df<<" r= "<<r<<endl;
+//    wee<<"srDf() #"<<omp_get_thread_num()<<" dspl= "<<rinv*rinv*du-df<<" ref= "<<df<<" r= "<<r<< std::endl;
 //   app_log()<<wee.str();  
     return drV_force->splint(r)/RealType(r*r) ; 
   }
@@ -321,7 +321,7 @@ public:
   {
 	  SymTensor<RealType, OHMMS_DIM> deriv_tensor = 0;
 	 // RealType derivconst = Basis.fk(kmag, dcoefs);
-	//  app_log()<<"squoo "<<derivconst<<endl;
+	//  app_log()<<"squoo "<<derivconst<< std::endl;
 	  
 	  for (int dim1=0; dim1<OHMMS_DIM; dim1++)
 		for(int dim2=dim1; dim2<OHMMS_DIM; dim2++)
@@ -330,7 +330,7 @@ public:
           deriv_tensor(dim1,dim2)=- evaldYkgstrain(kmag)*k[dim1]*k[dim2]/kmag; //- evaldFk_dk(kmag)*k[dim1]*k[dim2]/kmag ;
           
           if (dim1==dim2) deriv_tensor(dim1,dim2)-= evalYkgstrain(kmag); //+ derivconst;
-         // app_log()<<"squoo "<<Basis.fk(kmag, dcoefs(dim1,dim2))<<endl;
+         // app_log()<<"squoo "<<Basis.fk(kmag, dcoefs(dim1,dim2))<< std::endl;
 		}
 	  	
 		
@@ -470,9 +470,9 @@ private:
     if(FirstTime)
     {
 	  app_log() <<"\nPerforming Optimized Breakup with Short Range Coulomb Basis\n";	
-      app_log() <<" finding kc:  "<<ref.LR_kc<<" , "<<LR_kc<<endl;
-      app_log() << "  LRBreakp parameter Kc =" << kc << endl;
-      app_log() << "    Continuum approximation in k = [" << kcut << "," << kmax << ")" << endl;
+      app_log() <<" finding kc:  "<<ref.LR_kc<<" , "<<LR_kc<< std::endl;
+      app_log() << "  LRBreakp parameter Kc =" << kc << std::endl;
+      app_log() << "    Continuum approximation in k = [" << kcut << "," << kmax << ")" << std::endl;
       FirstTime=false;
     }
     //Set up x_k
@@ -534,9 +534,9 @@ private:
   //  chisqr_df=breakuphandler.DoGradBreakup(Fkg.data(), gcoefs.data(), constraints.data());
   //  chisqr_strain=breakuphandler.DoStrainBreakup(Fk.data(), Fkgstrain.data(), gstraincoefs.data(), strainconstraints.data());   
     breakuphandler.DoAllBreakup(chisqr.data(), Fk.data(), Fkgstrain.data(), coefs.data(), gcoefs.data(), gstraincoefs.data(), constraints.data());
-    app_log()<<"         LR function chi^2 = "<<chisqr[0]<<endl;
-    app_log()<<"    LR grad function chi^2 = "<<chisqr[1]<<endl;
-    app_log()<<"  LR strain function chi^2 = "<<chisqr[2]<<endl;
+    app_log()<<"         LR function chi^2 = "<<chisqr[0]<< std::endl;
+    app_log()<<"    LR grad function chi^2 = "<<chisqr[1]<< std::endl;
+    app_log()<<"  LR strain function chi^2 = "<<chisqr[2]<< std::endl;
    // app_log()<<"  n  tn   gtn h(n)\n";
      
   //  myFunc.reset(ref);
@@ -549,7 +549,7 @@ private:
 
 
 
-  void fillVk(vector<TinyVector<RealType,2> >& KList)
+  void fillVk(std::vector<TinyVector<RealType,2> >& KList)
   {
     Fk.resize(KList.size());
     Fkg.resize(KList.size());
@@ -568,7 +568,7 @@ private:
   void fillYk(KContainer& KList)
   {
     Fk.resize(KList.kpts_cart.size());
-    const vector<int>& kshell(KList.kshell);
+    const std::vector<int>& kshell(KList.kshell);
     if(MaxKshell >= kshell.size())
       MaxKshell=kshell.size()-1;
     Fk_symm.resize(MaxKshell);
@@ -588,7 +588,7 @@ private:
   void fillYkg(KContainer& KList)
   {
     Fkg.resize(KList.kpts_cart.size());
-    const vector<int>& kshell(KList.kshell);
+    const std::vector<int>& kshell(KList.kshell);
     if(MaxKshell >= kshell.size())
       MaxKshell=kshell.size()-1;
 
@@ -604,7 +604,7 @@ private:
   void fillYkgstrain(KContainer& KList)
   {
     Fkgstrain.resize(KList.kpts_cart.size());
-    const vector<int>& kshell(KList.kshell);
+    const std::vector<int>& kshell(KList.kshell);
     if(MaxKshell >= kshell.size())
       MaxKshell=kshell.size()-1;
     for(int ks=0,ki=0; ks<MaxKshell; ks++)

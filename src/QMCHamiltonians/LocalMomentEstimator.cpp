@@ -85,7 +85,7 @@ LocalMomentEstimator::Return_t LocalMomentEstimator::evaluate(ParticleSet& P)
   return 0.0;
 }
 
-void LocalMomentEstimator::registerCollectables(vector<observable_helper*>& h5list
+void LocalMomentEstimator::registerCollectables(std::vector<observable_helper*>& h5list
     , hid_t gid) const
 {
 }
@@ -107,7 +107,7 @@ bool LocalMomentEstimator::put(xmlNodePtr cur)
 
 bool LocalMomentEstimator::get(std::ostream& os) const
 {
-  os << myName << " rcut=" << Dmax << endl;
+  os << myName << " rcut=" << Dmax << std::endl;
   return true;
 }
 

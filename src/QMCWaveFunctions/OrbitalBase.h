@@ -140,7 +140,7 @@ struct OrbitalBase: public QMCTraits
   ValueVectorType d2LogPsi;
   /** Name of this orbital
    */
-  string OrbitalName;
+  std::string OrbitalName;
   ///list of variables this orbital handles
   opt_variables_type myVars;
 
@@ -191,7 +191,7 @@ struct OrbitalBase: public QMCTraits
   virtual void resetParameters(const opt_variables_type& active)=0;
 
   /** print the state, e.g., optimizables */
-  virtual void reportStatus(ostream& os)=0;
+  virtual void reportStatus(std::ostream& os)=0;
 
   /** reset properties, e.g., distance tables, for a new target ParticleSet
    * @param P ParticleSet
@@ -434,9 +434,9 @@ struct OrbitalBase: public QMCTraits
 
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& optvars,
-                                   vector<RealType>& dlogpsi,
-                                   vector<RealType>& dhpsioverpsi) ;
-  virtual void multiplyDerivsByOrbR(vector<RealType>& dlogpsi)
+                                   std::vector<RealType>& dlogpsi,
+                                   std::vector<RealType>& dhpsioverpsi) ;
+  virtual void multiplyDerivsByOrbR(std::vector<RealType>& dlogpsi)
   {
     RealType myrat = std::exp(LogValue)*std::cos(PhaseValue);
     for(int j=0; j<myVars.size(); j++)
@@ -448,8 +448,8 @@ struct OrbitalBase: public QMCTraits
 
 //      virtual void evaluateDerivatives(ParticleSet& P,
 //                                       const opt_variables_type& optvars,
-//                                       vector<RealType>& dlogpsi,
-//                                       vector<RealType>& dhpsioverpsi,
+//                                       std::vector<RealType>& dlogpsi,
+//                                       std::vector<RealType>& dhpsioverpsi,
 //                                       PooledData<RealType>& buf)
 //      {
 //         evaluateDerivatives(P,optvars,dlogpsi,dhpsioverpsi);
@@ -461,13 +461,13 @@ struct OrbitalBase: public QMCTraits
    * @param P reference particleset
    * @param ratios \f$ ratios[i]=\{{\bf R}\}\rightarrow {r_0,\cdots,r_i^p=pos,\cdots,r_{N-1}}\f$
    */
-  virtual void get_ratios(ParticleSet& P, vector<ValueType>& ratios);
+  virtual void get_ratios(ParticleSet& P, std::vector<ValueType>& ratios);
 
   /** evaluate ratios to evaluate the non-local PP
    * @param VP VirtualParticleSet
    * @param ratios ratios with new positions VP.R[k] the VP.activePtcl
    */
-  virtual void evaluateRatios(VirtualParticleSet& VP, vector<ValueType>& ratios);
+  virtual void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios);
 
   /** evaluate ratios to evaluate the non-local PP
    * @param VP VirtualParticleSet
@@ -475,7 +475,7 @@ struct OrbitalBase: public QMCTraits
    * @param dratios \f$\partial_{\alpha}(\ln \Psi ({\bf R}^{\prime}) - \ln \Psi ({\bf R})) \f$
    */
   virtual void evaluateDerivRatios(VirtualParticleSet& VP, const opt_variables_type& optvars,
-      vector<ValueType>& ratios, Matrix<ValueType>& dratios);
+      std::vector<ValueType>& ratios, Matrix<ValueType>& dratios);
 
   ///** copy data members from old
   // * @param old existing OrbitalBase from which all the data members are copied.
@@ -503,7 +503,7 @@ struct OrbitalBase: public QMCTraits
    */
   virtual void
   addLog (MCWalkerConfiguration &W,
-          vector<RealType> &logPsi)
+          std::vector<RealType> &logPsi)
   {
     app_error() << "Need specialization of OrbitalBase::addLog for "
                 << OrbitalName << ".\n";
@@ -518,7 +518,7 @@ struct OrbitalBase: public QMCTraits
    */
   virtual void
   ratio (MCWalkerConfiguration &W, int iat,
-         vector<ValueType> &psi_ratios)
+         std::vector<ValueType> &psi_ratios)
   {
     app_error() << "Need specialization of OrbitalBase::ratio.\n";
     abort();
@@ -528,7 +528,7 @@ struct OrbitalBase: public QMCTraits
   // in the respective vectors
   virtual void
   ratio (MCWalkerConfiguration &W, int iat,
-         vector<ValueType> &psi_ratios,	vector<GradType>  &grad)
+         std::vector<ValueType> &psi_ratios,	vector<GradType>  &grad)
   {
     app_error() << "Need specialization of OrbitalBase::ratio.\n";
     abort();
@@ -536,8 +536,8 @@ struct OrbitalBase: public QMCTraits
 
   virtual void
   ratio (MCWalkerConfiguration &W, int iat,
-         vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
-         vector<ValueType> &lapl)
+         std::vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
+         std::vector<ValueType> &lapl)
   {
     app_error() << "Need specialization of OrbitalBase::ratio.\n";
     abort();
@@ -545,8 +545,8 @@ struct OrbitalBase: public QMCTraits
 
   virtual void
   calcRatio (MCWalkerConfiguration &W, int iat,
-             vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
-             vector<ValueType> &lapl)
+             std::vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
+             std::vector<ValueType> &lapl)
   {
     app_error() << "Need specialization of OrbitalBase::calcRatio.\n";
     abort();
@@ -554,17 +554,17 @@ struct OrbitalBase: public QMCTraits
 
   virtual void
   addRatio (MCWalkerConfiguration &W, int iat,
-            vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
-            vector<ValueType> &lapl)
+            std::vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
+            std::vector<ValueType> &lapl)
   {
     app_error() << "Need specialization of OrbitalBase::addRatio.\n";
     abort();
   }
 
   virtual void
-  ratio (vector<Walker_t*> &walkers, vector<int> &iatList,
-         vector<PosType> &rNew,  vector<ValueType> &psi_ratios,
-         vector<GradType>  &grad,  vector<ValueType> &lapl)
+  ratio (std::vector<Walker_t*> &walkers, std::vector<int> &iatList,
+         std::vector<PosType> &rNew,  std::vector<ValueType> &psi_ratios,
+         std::vector<GradType>  &grad,  std::vector<ValueType> &lapl)
   {
     app_error() << "Need specialization of OrbitalBase::ratio.\n";
     abort();
@@ -573,7 +573,7 @@ struct OrbitalBase: public QMCTraits
 
   virtual void
   addGradient(MCWalkerConfiguration &W, int iat,
-              vector<GradType> &grad)
+              std::vector<GradType> &grad)
   {
     app_error() << "Need specialization of OrbitalBase::addGradient for "
                 << OrbitalName << ".\n";
@@ -582,7 +582,7 @@ struct OrbitalBase: public QMCTraits
 
   virtual void
   calcGradient(MCWalkerConfiguration &W, int iat,
-               vector<GradType> &grad)
+               std::vector<GradType> &grad)
   {
     app_error() << "Need specialization of OrbitalBase::calcGradient for "
                 << OrbitalName << ".\n";
@@ -600,15 +600,15 @@ struct OrbitalBase: public QMCTraits
 
 
   virtual void
-  update (vector<Walker_t*> &walkers, int iat)
+  update (std::vector<Walker_t*> &walkers, int iat)
   {
     app_error() << "Need specialization of OrbitalBase::update.\n";
     abort();
   }
 
   virtual void
-  update (const vector<Walker_t*> &walkers,
-          const vector<int> &iatList)
+  update (const std::vector<Walker_t*> &walkers,
+          const std::vector<int> &iatList)
   {
     app_error() << "Need specialization of OrbitalBase::update.\n";
     abort();
@@ -616,8 +616,8 @@ struct OrbitalBase: public QMCTraits
 
 
   virtual void
-  NLratios (MCWalkerConfiguration &W,  vector<NLjob> &jobList,
-            vector<PosType> &quadPoints, vector<ValueType> &psi_ratios)
+  NLratios (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
+            std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios)
   {
     app_error() << "Need specialization of OrbitalBase::NLRatios.\n";
     abort();

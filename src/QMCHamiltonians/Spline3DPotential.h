@@ -23,17 +23,17 @@ struct Spline3DPotential: public QMCHamiltonianBase
   Spline3D* pot_m;
 
   /// Constructor
-  Spline3DPotential(Grid3D* agrid, const string& fname)
+  Spline3DPotential(Grid3D* agrid, const std::string& fname)
   {
     full_Grid = agrid;
     pot_m = new Spline3D(agrid,agrid->npts_m);
     /// Create the spline from the given grid and initialise from the file
-    cout << "Reading Potential File and initialising ... ";
+    std::cout << "Reading Potential File and initialising ... ";
     pot_m->read_data(fname.c_str());
     for(int i = 0; i < pot_m->f.size(); i++)
       pot_m->f[i] *= 0.036749033500418936;
     pot_m->d2fdr2();
-    cout << "done! " << endl;
+    std::cout << "done! " << std::endl;
   }
 
   /// Destructor
@@ -50,7 +50,7 @@ struct Spline3DPotential: public QMCHamiltonianBase
     return e;
   }
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }

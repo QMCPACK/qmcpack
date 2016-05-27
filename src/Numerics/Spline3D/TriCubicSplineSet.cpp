@@ -11,7 +11,6 @@
 namespace ohmmsqmc
 {
 
-using namespace std;
 
 TriCubicSplineSet::TriCubicSplineSet(): DeviceGrid(NULL),
   Schr_Grid(NULL),
@@ -25,19 +24,19 @@ bool TriCubicSplineSet::put(xmlNodePtr cur,
                             Grid3D* agrid)
 {
   ///  make these member functions (WHY???)
-  vector<string> wfile;
-  vector<int> norbs_t;
+  std::vector<std::string> wfile;
+  std::vector<int> norbs_t;
   DeviceGrid = agrid;  /// point to the whole Grid3D
   if(!m_set)
     m_set = new SetSplinePoint;   /// create r-point set
   xmlNodePtr node = cur->xmlChildrenNode;
   while( node != NULL)
   {
-    string name((char*)node->name);
+    std::string name((char*)node->name);
     if(name=="orbitals")
     {
       int n = atoi((char*)xmlGetProp(node,(xmlChar*)"norbs"));
-      string w((char*)xmlGetProp(node,(xmlChar*)"file"));
+      std::string w((char*)xmlGetProp(node,(xmlChar*)"file"));
       norbs_t.push_back(n);
       wfile.push_back(w);
     }
@@ -46,13 +45,13 @@ bool TriCubicSplineSet::put(xmlNodePtr cur,
       xmlNodePtr node1 = node->xmlChildrenNode;
       while(node1 != NULL)
       {
-        string cname((const char*)(node1->name));
+        std::string cname((const char*)(node1->name));
         if(cname=="Grid3D")
         {
           xmlNodePtr node2 = node1->xmlChildrenNode;
           while(node2 != NULL)
           {
-            string qname((const char*)(node2->name));
+            std::string qname((const char*)(node2->name));
             if(qname=="qGridi")
             {
               ri[0] = atoi((char*)xmlGetProp(node2,(xmlChar*)"x"));
@@ -79,7 +78,7 @@ bool TriCubicSplineSet::put(xmlNodePtr cur,
   Schr_Grid->init(ri,rf,DeviceGrid);
   /// read in the input wave-function file
   norbs = 0;
-  cout << "Reading Wafefunction file ..." ;
+  std::cout << "Reading Wafefunction file ..." ;
   for(int iset=0; iset<wfile.size(); iset++)
   {
     for(int iorb = 0; iorb < norbs_t[iset]; iorb++)
@@ -88,7 +87,7 @@ bool TriCubicSplineSet::put(xmlNodePtr cur,
     }
     readwf(wfile[iset].c_str(),iset,norbs_t[iset]);
   }
-  cout << "done!" << endl;
+  std::cout << "done!" << std::endl;
   if(wfile.size() ==1)
   {
     char aname[4];
@@ -122,7 +121,7 @@ void TriCubicSplineSet::readwf(const char* wfile, int ispin, int num)
       orbital_map[aname]=norbs++;
     }
   }
-  ifstream infile(wfile, ios_base::in);
+  std::ifstream infile(wfile, ios_base::in);
   double x;
   for(int i = 0; i < Schr_Grid->m_size; i++)
   {

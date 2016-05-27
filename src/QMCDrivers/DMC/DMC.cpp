@@ -92,7 +92,7 @@ void DMC::resetUpdateEngine()
     {
       if(NonLocalMove == "yes")
       {
-        app_log() << "  Non-local update is used." << endl;
+        app_log() << "  Non-local update is used." << std::endl;
         DMCNonLocalUpdatePbyP* nlocMover= new DMCNonLocalUpdatePbyP(W,Psi,H,Random);
         nlocMover->put(qmcNode);
         Mover=nlocMover;
@@ -108,7 +108,7 @@ void DMC::resetUpdateEngine()
     {
       if(NonLocalMove == "yes")
       {
-        app_log() << "  Non-local update is used." << endl;
+        app_log() << "  Non-local update is used." << std::endl;
         DMCNonLocalUpdate* nlocMover= new DMCNonLocalUpdate(W,Psi,H,Random);
         nlocMover->put(qmcNode);
         Mover=nlocMover;
@@ -137,9 +137,9 @@ void DMC::resetUpdateEngine()
   if(fixW)
   {
     if(QMCDriverMode[QMC_UPDATE_MODE])
-      app_log() << "  DMC PbyP Update with reconfigurations" << endl;
+      app_log() << "  DMC PbyP Update with reconfigurations" << std::endl;
     else
-      app_log() << "  DMC walker Update with reconfigurations" << endl;
+      app_log() << "  DMC walker Update with reconfigurations" << std::endl;
     Mover->MaxAge=0;
     if(BranchInterval<0)
     {
@@ -151,20 +151,20 @@ void DMC::resetUpdateEngine()
   {
     if(QMCDriverMode[QMC_UPDATE_MODE])
     {
-      app_log() << "  DMC PbyP Update with a fluctuating population" << endl;
+      app_log() << "  DMC PbyP Update with a fluctuating population" << std::endl;
       Mover->MaxAge=1;
     }
     else
     {
-      app_log() << "  DMC walker Update with a fluctuating population" << endl;
+      app_log() << "  DMC walker Update with a fluctuating population" << std::endl;
       Mover->MaxAge=3;
     }
     if(BranchInterval<0)
       BranchInterval=1;
   }
-  app_log() << "  BranchInterval = " << BranchInterval << endl;
-  app_log() << "  Steps per block = " << nSteps << endl;
-  app_log() << "  Number of blocks = " << nBlocks << endl;
+  app_log() << "  BranchInterval = " << BranchInterval << std::endl;
+  app_log() << "  Steps per block = " << nSteps << std::endl;
+  app_log() << "  Number of blocks = " << nBlocks << std::endl;
 }
 
 bool DMC::put(xmlNodePtr q)

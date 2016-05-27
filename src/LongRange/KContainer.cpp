@@ -18,9 +18,9 @@ KContainer::UpdateKLists(ParticleLayout_t& lattice, RealType kc, bool useSphere)
   FindApproxMMax(lattice);
   BuildKLists(lattice,useSphere);
 
-  app_log() << "  KContainer initialised with cutoff " << kcutoff << endl;
-  app_log() << "   # of K-shell  = " << kshell.size() << endl;
-  app_log() << "   # of K points = " << kpts.size() << endl;
+  app_log() << "  KContainer initialised with cutoff " << kcutoff << std::endl;
+  app_log() << "   # of K-shell  = " << kshell.size() << std::endl;
+  app_log() << "   # of K points = " << kpts.size() << std::endl;
 }
 
 void
@@ -70,7 +70,7 @@ KContainer::FindApproxMMax(ParticleLayout_t& lattice)
 //overwrite the non-periodic directon to be zero
 if(qmc_common.use_ewald)
 {
-  app_log() << "  Using Ewald sum for the slab " << endl;
+  app_log() << "  Using Ewald sum for the slab " << std::endl;
 #if OHMMS_DIM==3
   if(lattice.SuperCellEnum == SUPERCELL_SLAB) mmax[2]=0;
 //  if(lattice.SuperCellEnum == SUPERCELL_WIRE) mmax[1]=mmax[2]=0;
@@ -91,7 +91,7 @@ KContainer::BuildKLists(ParticleLayout_t& lattice, bool useSphere)
   TinyVector<int,DIM> kvec;
   TinyVector<RealType,DIM> kvec_cart;
   RealType modk2;
-  vector<TinyVector<int,DIM> > kpts_tmp;
+  std::vector<TinyVector<int,DIM> > kpts_tmp;
   VContainer_t kpts_cart_tmp;
   SContainer_t ksq_tmp;
   // reserve the space for memory efficiency
@@ -125,7 +125,7 @@ KContainer::BuildKLists(ParticleLayout_t& lattice, bool useSphere)
           //Update record of the allowed maximum translation.
           for(int idim=0; idim<3; idim++)
             if(abs(kvec[idim]) > TempActualMax[idim])
-              TempActualMax[idim] = abs(kvec[idim]);
+              TempActualMax[idim] = std::abs(kvec[idim]);
         }
       }
     }
@@ -196,7 +196,7 @@ KContainer::BuildKLists(ParticleLayout_t& lattice, bool useSphere)
         //Update record of the allowed maximum translation.
         for(int idim=0; idim<3; idim++)
           if(abs(kvec[idim]) > TempActualMax[idim])
-            TempActualMax[idim] = abs(kvec[idim]);
+            TempActualMax[idim] = std::abs(kvec[idim]);
       }
     }
   }

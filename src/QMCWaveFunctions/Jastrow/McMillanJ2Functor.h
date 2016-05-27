@@ -34,8 +34,8 @@ struct McMillanJ2Functor: public OptimizableFunctorBase
   real_type A;
   real_type B;
 
-  string ID_A;
-  string ID_B;
+  std::string ID_A;
+  std::string ID_B;
 
   /** constructor
   * @param a A coefficient
@@ -135,11 +135,11 @@ struct McMillanJ2Functor: public OptimizableFunctorBase
     while(tcur != NULL)
     {
       //@todo Var -> <param(eter) role="opt"/>
-      string cname((const char*)(tcur->name));
+      std::string cname((const char*)(tcur->name));
       if(cname == "parameter" || cname == "Var")
       {
-        string aname((const char*)(xmlGetProp(tcur,(const xmlChar *)"name")));
-//            string idname((const char*)(xmlGetProp(tcur,(const xmlChar *)"id")));
+        std::string aname((const char*)(xmlGetProp(tcur,(const xmlChar *)"name")));
+//            std::string idname((const char*)(xmlGetProp(tcur,(const xmlChar *)"id")));
         if(aname == "a")
         {
           putContent(A,tcur);
@@ -174,7 +174,7 @@ struct McMillanJ2Functor: public OptimizableFunctorBase
 //     real_type RC;
 //     real_type c0,c1,c2,c3,c4,c5,c6;
 //
-//     string ID_A,ID_B,ID_RC;
+//     std::string ID_A,ID_B,ID_RC;
 //
 //       /** constructor
 //      * @param a A coefficient
@@ -277,10 +277,10 @@ struct McMillanJ2Functor: public OptimizableFunctorBase
 //       xmlNodePtr tcur = cur->xmlChildrenNode;
 //       while(tcur != NULL) {
 //           //@todo Var -> <param(eter) role="opt"/>
-//         string cname((const char*)(tcur->name));
+//         std::string cname((const char*)(tcur->name));
 //         if(cname == "parameter" || cname == "Var") {
-//           string aname((const char*)(xmlGetProp(tcur,(const xmlChar *)"name")));
-//           string idname((const char*)(xmlGetProp(tcur,(const xmlChar *)"id")));
+//           std::string aname((const char*)(xmlGetProp(tcur,(const xmlChar *)"name")));
+//           std::string idname((const char*)(xmlGetProp(tcur,(const xmlChar *)"id")));
 //           if(aname == "A") {
 //             ID_A = idname;
 //             putContent(A,tcur);
@@ -319,7 +319,7 @@ struct ModMcMillanJ2Functor: public OptimizableFunctorBase
   real_type RC;
   real_type cA,c0,c1,c2,c3,c4,c5;
 
-  string ID_A,ID_B,ID_RC;
+  std::string ID_A,ID_B,ID_RC;
 
   /** constructor
   * @param a A coefficient
@@ -458,11 +458,11 @@ struct ModMcMillanJ2Functor: public OptimizableFunctorBase
     while(tcur != NULL)
     {
       //@todo Var -> <param(eter) role="opt"/>
-      string cname((const char*)(tcur->name));
+      std::string cname((const char*)(tcur->name));
       if(cname == "parameter" || cname == "Var")
       {
-        string aname((const char*)(xmlGetProp(tcur,(const xmlChar *)"name")));
-        string idname((const char*)(xmlGetProp(tcur,(const xmlChar *)"id")));
+        std::string aname((const char*)(xmlGetProp(tcur,(const xmlChar *)"name")));
+        std::string idname((const char*)(xmlGetProp(tcur,(const xmlChar *)"id")));
         if(aname == "A")
         {
           ID_A = idname;
@@ -510,7 +510,7 @@ struct comboMcMillanJ2Functor: public OptimizableFunctorBase
   real_type cA,c0,c1,c2,c3,c4,c5;
   real_type b0,b1,b2,b3;
 
-  string ID_A,ID_B,ID_RC,ID_R0;
+  std::string ID_A,ID_B,ID_RC,ID_R0;
 
   /** constructor
   * @param a A coefficient
@@ -706,11 +706,11 @@ struct comboMcMillanJ2Functor: public OptimizableFunctorBase
     while(tcur != NULL)
     {
       //@todo Var -> <param(eter) role="opt"/>
-      string cname((const char*)(tcur->name));
+      std::string cname((const char*)(tcur->name));
       if(cname == "parameter" || cname == "Var")
       {
-        string aname((const char*)(xmlGetProp(tcur,(const xmlChar *)"name")));
-        string idname((const char*)(xmlGetProp(tcur,(const xmlChar *)"id")));
+        std::string aname((const char*)(xmlGetProp(tcur,(const xmlChar *)"name")));
+        std::string idname((const char*)(xmlGetProp(tcur,(const xmlChar *)"id")));
         if(aname == "A")
         {
           ID_A = idname;

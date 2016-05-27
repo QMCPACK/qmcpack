@@ -67,7 +67,7 @@ private:
   ///xml node for optimizer
   xmlNodePtr optNode;
   ///option to use drift
-  string UseDrift;
+  std::string UseDrift;
 
   ///these going to be matrix
   Vector <Vector<RealType> > dLogPsi;

@@ -12,7 +12,7 @@ void check_adios_error()
 {
   if (adios_errno < 0)
   {
-    app_error() << adios_errmsg() << endl;
+    app_error() << adios_errmsg() << std::endl;
   }
 }
 
@@ -32,7 +32,7 @@ string AdiosWalkerInput::getFileRoot()
   return FileRoot;
 }
 
-bool AdiosWalkerInput::put(vector<xmlNodePtr>& wset)
+bool AdiosWalkerInput::put(std::vector<xmlNodePtr>& wset)
 {
   //Get our mpi proc rank
   int rank = myComm->rank();
@@ -41,16 +41,16 @@ bool AdiosWalkerInput::put(vector<xmlNodePtr>& wset)
     return false;
   int walker_win = 0;
   //This will accumalate the walkers we will be reading from the file
-  string bpFileName;
+  std::string bpFileName;
   //Number of walkers per process
-  vector<int> nw(myComm->size(), 0);
+  std::vector<int> nw(myComm->size(), 0);
   //iterate through the mcwalkerset tags
   for (int i = 0; i < wset.size(); i++)
   {
     //We have multiple tags corresponding to mcWalkerset
     xmlNodePtr curr = wset[i];
     //set up a parse of the xml node curr
-    string froot, file, href;
+    std::string froot, file, href;
     int nprocs;
     OhmmsAttributeSet pAttrib;
     //full file name could either be href or file
@@ -69,21 +69,21 @@ bool AdiosWalkerInput::put(vector<xmlNodePtr>& wset)
     {
       bpFileName = froot + ".config.bp";
       app_log() << "Using froot: ignoring href and file tags"
-                << endl;
+                << std::endl;
     }
     else if (!file.empty())
     {
       bpFileName = file;
-      app_log() << "Using file: ignoring href" << endl;
+      app_log() << "Using file: ignoring href" << std::endl;
     }
     else if (!href.empty())
     {
       bpFileName = href;
-      app_log() << "Using href tag" << endl;
+      app_log() << "Using href tag" << std::endl;
     }
     else
-      app_error() << "No file associated tag in mcwalkerset tag" << endl;
-    app_log() << "Reading walker configurations from: " << bpFileName << endl;
+      app_error() << "No file associated tag in mcwalkerset tag" << std::endl;
+    app_log() << "Reading walker configurations from: " << bpFileName << std::endl;
     //Open the bp file
     ADIOS_FILE* adios_file_handle = adios_read_open_file(bpFileName.c_str(),
                                     ADIOS_READ_METHOD_BP,
@@ -93,7 +93,7 @@ bool AdiosWalkerInput::put(vector<xmlNodePtr>& wset)
     //Inquire about the number of proccess
     ADIOS_VARINFO* var_info = adios_inq_var(adios_file_handle, "walkers");
     nprocs = *var_info->nblocks;
-    app_log() << "Number of procs that wrote " << nprocs << endl;
+    app_log() << "Number of procs that wrote " << nprocs << std::endl;
     adios_free_varinfo(var_info);
     //read in the data
     read(nprocs, adios_file_handle, walker_win, nw);
@@ -104,14 +104,14 @@ bool AdiosWalkerInput::put(vector<xmlNodePtr>& wset)
   return true;
 }
 
-void AdiosWalkerInput::setMCWalker(vector<int> nw)
+void AdiosWalkerInput::setMCWalker(std::vector<int> nw)
 {
   //Now we generate the walker offsets
   int np = myComm->size();
-  vector<int> nwoff(myComm->size() + 1, 0);
+  std::vector<int> nwoff(myComm->size() + 1, 0);
   for(int ip=0; ip<np; ++ip)
     nwoff[ip+1]=nwoff[ip]+nw[ip];
-  app_log() << "Number of walkers " << nwoff[np] << endl;
+  app_log() << "Number of walkers " << nwoff[np] << std::endl;
   targetW.setGlobalNumWalkers(nwoff[np]);
   targetW.setWalkerOffsets(nwoff);
 }
@@ -119,10 +119,10 @@ void AdiosWalkerInput::setMCWalker(vector<int> nw)
 void AdiosWalkerInput::read(int nprocs,
                             ADIOS_FILE* file_handle,
                             int& walker_win,
-                            vector<int>& nw)
+                            std::vector<int>& nw)
 {
   //iterate over the number of blocks in the adios file
-  vector<int> walker_num(nprocs, 0);
+  std::vector<int> walker_num(nprocs, 0);
   int total_walker_num = 0;
   ADIOS_SELECTION* sel;
   for (int i = 0; i < nprocs; i++)
@@ -138,7 +138,7 @@ void AdiosWalkerInput::read(int nprocs,
     total_walker_num += walker_num[i];
   for (int j = 0; j < walker_num.size(); j++)
     app_log() << walker_num[j] << ", ";
-  app_log() << endl;
+  app_log() << std::endl;
   //The number of proccess to add 1 extra walker too
   int walker_wrap = total_walker_num % myComm->size();
   //Buffer for each block in the adios
@@ -158,14 +158,14 @@ void AdiosWalkerInput::read(int nprocs,
       walkers_to_read = total_walker_num / myComm->size() + 1;
     else
       walkers_to_read = total_walker_num / myComm->size();
-    app_log() << "walkers_to_read " << walkers_to_read << " proc=" << i <<endl;
+    app_log() << "walkers_to_read " << walkers_to_read << " proc=" << i << std::endl;
     //Keep track of how many walkers each proccess has
     nw[i] += walkers_to_read;
     while (walkers_to_read != 0)
     {
       for (int j = 0; j < walker_num.size(); j++)
         app_log() << walker_num[j] << ", ";
-      app_log() << endl;
+      app_log() << std::endl;
       int read_size;
       if (walker_num[current_adios_block] > walkers_to_read)
       {
@@ -182,11 +182,11 @@ void AdiosWalkerInput::read(int nprocs,
         next_adios_block = current_adios_block + 1;
       }
       walkers_to_read -= read_size;
-      app_log() << "Read Size=" << read_size << endl;
-      app_log() << "Offset=" << current_offset << endl;
-      app_log() << "Adios Block=" << current_adios_block << endl;
-      app_log() << "Next Block=" << next_adios_block << endl;
-      app_log() << " Next Offset=" << next_offset << endl;
+      app_log() << "Read Size=" << read_size << std::endl;
+      app_log() << "Offset=" << current_offset << std::endl;
+      app_log() << "Adios Block=" << current_adios_block << std::endl;
+      app_log() << "Next Block=" << next_adios_block << std::endl;
+      app_log() << " Next Offset=" << next_offset << std::endl;
       if (i == myComm->rank())
       {
         //Select a region of the walker buffer

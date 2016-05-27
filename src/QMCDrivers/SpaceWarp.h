@@ -13,14 +13,14 @@
 //    PosType nusum;
 //
 //    //quantities depending on nuclear position
-//    vector<RealType> r,rinv,omega,g;
-//    vector<PosType>  dr,d_omega,nu;
-//    vector<TensorType> d2omega;
+//    std::vector<RealType> r,rinv,omega,g;
+//    std::vector<PosType>  dr,d_omega,nu;
+//    std::vector<TensorType> d2omega;
 //
 //    //quantities depending on Hamiltonian
-//    vector<RealType> Jacobian;
-//    vector<PosType>  Deltax;
-//    vector<TensorType> Jacob_matrix,Jacob_cofactor;
+//    std::vector<RealType> Jacobian;
+//    std::vector<PosType>  Deltax;
+//    std::vector<TensorType> Jacob_matrix,Jacob_cofactor;
 //
 //    //Unit Matrix
 //    TensorType unitMatrix;
@@ -52,7 +52,7 @@
 //    RealType warpLogGrad(RealType r, RealType rinv){ return -4*rinv;}
 //    RealType warpLogGrad2(RealType r, RealType rinv){ return -rinv;}
 //
-//    void update_warp_disp(const vector<RealType>& R,const vector<RealType>& Rinv,const vector<PosType>& dR){
+//    void update_warp_disp(const std::vector<RealType>& R,const std::vector<RealType>& Rinv,const std::vector<PosType>& dR){
 //      r=R; rinv=Rinv; dr=dR;
 //      RealType d=0.e0;
 //      for(int iat=0; iat<ncenter; iat++){
@@ -65,7 +65,7 @@
 //    }
 //
 //
-//    PosType get_displacement(int ipsi, const vector<PosType>& delta){
+//    PosType get_displacement(int ipsi, const std::vector<PosType>& delta){
 //      //compute the warp for all geometries
 //      Deltax[ipsi]=0.e0;
 //      for(int iat=0; iat<ncenter; iat++)
@@ -86,12 +86,12 @@
 //    }
 //
 //
-//    RealType get_Jacobian(int ipsi, const vector<PosType>& delta){
+//    RealType get_Jacobian(int ipsi, const std::vector<PosType>& delta){
 //      Jacob_matrix[ipsi]=unitMatrix;
 //      for(int iat=0; iat<ncenter; iat++) Jacob_matrix[ipsi]+= outerProduct(delta[iat],d_omega[iat]);
 //      //Compute the cofactor matrix
 //      Jacob_cofactor[ipsi] = getCof(Jacob_matrix[ipsi]);
-//      //cout << Jacob_cofactor[ipsi] << endl;
+//      //cout << Jacob_cofactor[ipsi] << std::endl;
 //      //Compute the jacobian
 //      Jacobian[ipsi] = dot(Jacob_matrix[ipsi].getRow(0),Jacob_cofactor[ipsi].getRow(0));
 //      return Jacobian[ipsi];
@@ -115,7 +115,7 @@
 //    }
 //
 //
-//    PosType get_grad_ln_Jacob(int ipsi,const vector<PosType>& delta){
+//    PosType get_grad_ln_Jacob(int ipsi,const std::vector<PosType>& delta){
 //      PosType GradlnJacob;
 //      for(int igamma=0; igamma<3; igamma++){
 //        TensorType d_Jacob_matrix=outerProduct(delta[0],d2omega[0].getRow(igamma));
@@ -168,15 +168,15 @@ struct SpaceWarp : public QMCTraits
 
   int nptcl,ncenter,npsi,SizeOfR;
 
-  vector<RealType> r,rinv;
+  std::vector<RealType> r,rinv;
 
-  vector<PosType> dr;
+  std::vector<PosType> dr;
 
-  vector<vector<PosType> > Delta;
+  std::vector<std::vector<PosType> > Delta;
 
-  vector<ParticleSet*> PtclRefs;
+  std::vector<ParticleSet*> PtclRefs;
 
-  vector<SinglePtclWarp*> WarpVector;
+  std::vector<SinglePtclWarp*> WarpVector;
 
   Matrix<RealType> one_ptcl_Jacob;
 
@@ -191,7 +191,7 @@ struct SpaceWarp : public QMCTraits
   //    one_ptcl_Jacob[ipsi][iel]=WarpVector[iel]->Jacobian[ipsi];
   //}
 
-  void initialize(vector<ParticleSet*>& IonSets, DistanceTableData* dtprime);
+  void initialize(std::vector<ParticleSet*>& IonSets, DistanceTableData* dtprime);
 
   void warp_one(int iel, bool require_register );
 
@@ -207,7 +207,7 @@ struct SpaceWarp : public QMCTraits
 
   PosType get_grad_ln_Jacob_num(int iptcl, int ipsi);
 
-  void registerData(vector<ParticleSet*>& plist, PooledData<RealType>& buf);
+  void registerData(std::vector<ParticleSet*>& plist, PooledData<RealType>& buf);
 
 
   void updateBuffer(PooledData<RealType>& buf);

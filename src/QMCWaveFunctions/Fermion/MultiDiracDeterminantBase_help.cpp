@@ -153,12 +153,12 @@ MultiDiracDeterminantBase::evalGradSource
   ValueMatrix_t &Grad2_phi(d2psiM);
   HessMatrix_t &Grad_phi_alpha(grad_grad_source_psiM);
   GradMatrix_t &Grad2_phi_alpha(grad_lapl_source_psiM);
-  //    vector<ValueType> grad_psi_over_psi_vector;
-  //    vector<ValueType> grad_psi_alpha_over_psi_vector;
+  //    std::vector<ValueType> grad_psi_over_psi_vector;
+  //    std::vector<ValueType> grad_psi_alpha_over_psi_vector;
   GradType Psi_alpha_over_psi;
   Psi_alpha_over_psi = evalGradSource(P, source, iat);
-  ofstream outfile;
-  outfile.open("grad_psi_alpha_over_psi",ios::app);
+  std::ofstream outfile;
+  outfile.open("grad_psi_alpha_over_psi",std::ios::app);
   ValueMatrix_t toDet;
   ValueMatrix_t toDet_l;
   toDet.resize(2,2);
@@ -212,7 +212,7 @@ MultiDiracDeterminantBase::evalGradSource
           }
         }
         Grad_psi_alpha_over_psi(dim,el_dim)=one_row_change(dim,el_dim)+two_row_change(dim,el_dim);
-        outfile<<Grad_psi_alpha_over_psi(dim,el_dim)<<endl;
+        outfile<<Grad_psi_alpha_over_psi(dim,el_dim)<< std::endl;
         grad_grad(dim)(ptcl)(el_dim)=one_row_change(dim,el_dim)+two_row_change(dim,el_dim)-
                                      Grad_psi_over_psi(el_dim)*Psi_alpha_over_psi(dim);
       }

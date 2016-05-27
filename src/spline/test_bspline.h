@@ -3,9 +3,9 @@
 namespace qmcplusplus
 {
 //template<typename T>
-//  inline T abs(const TinyVector<T,3>& a, const TitnyVector<T,3>& b)
+//  inline T std::abs(const TinyVector<T,3>& a, const TitnyVector<T,3>& b)
 //  {
-//    return abs(a[0]-b[0])+abs(a[1]-b[1])+abs(a[2]-b[2]);
+//    return std::abs(a[0]-b[0])+abs(a[1]-b[1])+abs(a[2]-b[2]);
 //  }
 
 template<typename T1, typename T2>
@@ -20,14 +20,14 @@ bool is_same(int n, const T1* restrict a, const T1* restrict b, T2 eps)
     diff=std::max(diff,x);
     if(x>eps)
       yes=false;
-    //diff=std::max(diff,abs((a[i]-b[i])/a[i]));
+    //diff=std::max(diff,std::abs((a[i]-b[i])/a[i]));
     ////if(abs(a[i]-b[i])>eps) yes=false;
     //if(abs(1-b[i]/a[i])>eps) yes=false;
   }
   for(int i=0; i< std::min(n,9); i++)
-    cout << i << " " << a[i] << " " << b[i] << " " << a[i]-b[i] << endl;
-  //cout << "Relative max diff = " << diff << endl;
-  cout << "Absolute max diff = " << diff << endl;
+    std::cout << i << " " << a[i] << " " << b[i] << " " << a[i]-b[i] << std::endl;
+  //cout << "Relative max diff = " << diff << std::endl;
+  std::cout << "Absolute max diff = " << diff << std::endl;
   return yes;
 }
 
@@ -39,31 +39,31 @@ bool is_same(int n, const T1* restrict a, const T1* restrict b, T2 eps)
 //   {
 //     if(abs(1-b[i][0]/a[i][0])+abs(1-b[i][1]/a[i][1])+abs(1-b[i][2]/a[i][2])>eps) yes=false;
 //     //if(abs(a[i][0]-b[i][0])+abs(a[i][1]-b[i][1])+abs(a[i][2]-b[i][2])>eps) yes=false;
-//     cout << a[i] << " " << a[i]-b[i] << endl;
+//     std::cout << a[i] << " " << a[i]-b[i] << std::endl;
 //   }
 //   return yes;
 // }
 
 //template<typename T>
-//bool is_same(int n, const complex<T>* restrict a, const complex<T>* restrict b, T eps)
+//bool is_same(int n, const std::complex<T>* restrict a, const std::complex<T>* restrict b, T eps)
 //{
 //  bool yes=true;
 //  T diff_r=0.0, diff_i;
 //  for(int i=0; i<n; i++)
 //  {
-//    diff_r=std::max(diff_r,abs(1-b[i].real()/a[i].real()));
-//    diff_i=std::max(diff_i,abs(1-b[i].real()/a[i].real()));
+//    diff_r=std::max(diff_r,std::abs(1-b[i].real()/a[i].real()));
+//    diff_i=std::max(diff_i,std::abs(1-b[i].real()/a[i].real()));
 //    //if(abs(a[i]-b[i])>eps) yes=false;
-//    if(abs(1-b[i].real()/a[i].real())>eps || abs(1-b[i].imag()/a[i].imag())>eps)
+//    if(abs(1-b[i].real()/a[i].real())>eps || std::abs(1-b[i].imag()/a[i].imag())>eps)
 //    {
 //      yes=false;
 //    }
 //  }
 
 //  for(int i=0; i< std::min(n,8); i++)
-//    cout << i << " " << a[i] << " " << a[i]-b[i] << endl;
+//    std::cout << i << " " << a[i] << " " << a[i]-b[i] << std::endl;
 
-//  cout << "Absolute max diff = " << diff_r << " " << diff_i << endl;
+//  std::cout << "Absolute max diff = " << diff_r << " " << diff_i << std::endl;
 //  return yes;
 //}
 
@@ -81,76 +81,76 @@ void test_bspline(ParticleSet& TargetPtcl, SPE1& a, SPE2& b)
   SPOSetBase::ValueVector_t d2psi_1(N);
   a.evaluate(TargetPtcl,0,psi_0);
   b.evaluate(TargetPtcl,0,psi_1);
-  cout << "Check values " << endl;
+  std::cout << "Check values " << std::endl;
   if(is_same(N,psi_0.data(),psi_1.data(),eps))
-    cout << "Value evaluation Success" << endl;
+    std::cout << "Value evaluation Success" << std::endl;
   else
-    cout << "Value evaluation Failed" << endl;
-  cout << endl << "Check VGL " << endl;
+    std::cout << "Value evaluation Failed" << std::endl;
+  std::cout << std::endl << "Check VGL " << std::endl;
   a.evaluate(TargetPtcl,0,psi_0,dpsi_0,d2psi_0);
   b.evaluate(TargetPtcl,0,psi_1,dpsi_1,d2psi_1);
   if(is_same(N,psi_0.data(),psi_1.data(),eps))
-    cout << "VGL Value evaluation Success" << endl;
+    std::cout << "VGL Value evaluation Success" << std::endl;
   else
-    cout << "VGL Value evaluation Failed" << endl;
+    std::cout << "VGL Value evaluation Failed" << std::endl;
   if(is_same(N*3,&(dpsi_0[0][0]),&(dpsi_1[0][0]),eps))
-    cout << "VGL Grad evaluation Success" << endl;
+    std::cout << "VGL Grad evaluation Success" << std::endl;
   else
-    cout << "VGL Grad evaluation Failed" << endl;
+    std::cout << "VGL Grad evaluation Failed" << std::endl;
   if(is_same(N,d2psi_0.data(),d2psi_1.data(),eps))
-    cout << "VGL Lap evaluation Success" << endl;
+    std::cout << "VGL Lap evaluation Success" << std::endl;
   else
-    cout << "VGL Lap evaluation Failed" << endl;
+    std::cout << "VGL Lap evaluation Failed" << std::endl;
   SPOSetBase::ValueMatrix_t psiM_0(N,N);
   SPOSetBase::ValueMatrix_t psiM_1(N,N);
   SPOSetBase::GradMatrix_t  dpsiM_0(N,N);
   SPOSetBase::GradMatrix_t  dpsiM_1(N,N);
   SPOSetBase::ValueMatrix_t d2psiM_0(N,N);
   SPOSetBase::ValueMatrix_t d2psiM_1(N,N);
-  cout << endl << " evaluate_notranspose " << endl;
+  std::cout << std::endl << " evaluate_notranspose " << std::endl;
   a.evaluate_notranspose(TargetPtcl,0,N,psiM_0,dpsiM_0,d2psiM_0);
   b.evaluate_notranspose(TargetPtcl,0,N,psiM_1,dpsiM_1,d2psiM_1);
   if(is_same(N*N,psiM_0.data(),psiM_1.data(),eps))
-    cout << "Psi Success " << endl;
+    std::cout << "Psi Success " << std::endl;
   else
-    cout << "Psi Failed!!! " << endl;
+    std::cout << "Psi Failed!!! " << std::endl;
   //if(is_same(N*N,dpsiM_0.data(),dpsiM_1.data(),eps))
-  //  cout << "dPsi Success " << endl;
+  //  std::cout << "dPsi Success " << std::endl;
   //else
-  //  cout << "dPsi Failed!!! " << endl;
+  //  std::cout << "dPsi Failed!!! " << std::endl;
   if(is_same(N*N,d2psiM_0.data(),d2psiM_1.data(),eps))
-    cout << "d2Psi Success " << endl;
+    std::cout << "d2Psi Success " << std::endl;
   else
-    cout << "d2Psi Failed!!! " << endl;
+    std::cout << "d2Psi Failed!!! " << std::endl;
   Timer t;
   t.restart();
   for(int l=0; l<100; ++l)
     for(int j=0; j<TargetPtcl.getTotalNum(); ++j)
       a.evaluate(TargetPtcl,j,psi_0);
-  cout << "ELAPSED VALUE DOUBLE = " << t.elapsed() << endl;
+  std::cout << "ELAPSED VALUE DOUBLE = " << t.elapsed() << std::endl;
   t.restart();
   for(int l=0; l<100; ++l)
     for(int j=0; j<TargetPtcl.getTotalNum(); ++j)
       b.evaluate(TargetPtcl,j,psi_0);
-  cout << "ELAPSED VALUE NEW = " << t.elapsed() << endl;
+  std::cout << "ELAPSED VALUE NEW = " << t.elapsed() << std::endl;
   t.restart();
   for(int l=0; l<100; ++l)
     for(int j=0; j<TargetPtcl.getTotalNum(); ++j)
       a.evaluate(TargetPtcl,j,psi_0,dpsi_0,d2psi_0);
-  cout << "ELAPSED VGL DOUBLE = " << t.elapsed() << endl;
+  std::cout << "ELAPSED VGL DOUBLE = " << t.elapsed() << std::endl;
   t.restart();
   for(int l=0; l<100; ++l)
     for(int j=0; j<TargetPtcl.getTotalNum(); ++j)
       b.evaluate(TargetPtcl,j,psi_1,dpsi_1,d2psi_1);
-  cout << "ELAPSED VGL NEW = " << t.elapsed() << endl;
+  std::cout << "ELAPSED VGL NEW = " << t.elapsed() << std::endl;
   t.restart();
   for(int l=0; l<100; ++l)
     a.evaluate_notranspose(TargetPtcl,0,N,psiM_0,dpsiM_0,d2psiM_0);
-  cout << "ELAPSED NOTRANSPOSE = " << t.elapsed() << endl;
+  std::cout << "ELAPSED NOTRANSPOSE = " << t.elapsed() << std::endl;
   t.restart();
   for(int l=0; l<100; ++l)
     b.evaluate_notranspose(TargetPtcl,0,N,psiM_0,dpsiM_0,d2psiM_0);
-  cout << "ELAPSED NOTRANSPOSE NEW = " << t.elapsed() << endl;
+  std::cout << "ELAPSED NOTRANSPOSE NEW = " << t.elapsed() << std::endl;
 }
 }
 #endif

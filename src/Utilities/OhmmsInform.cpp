@@ -22,18 +22,17 @@
 
 #include <iomanip>
 #include <fstream>
-using namespace std;
 
 OhmmsInform::OhmmsInform(bool allcanwrite, bool writenode):bgStream(0),myPrompt("qmc>")
 {
   if(allcanwrite || writenode)
   {
-    myStream = &cout;
+    myStream = &std::cout;
     OwnStream =false;
   }
   else
   {
-    myStream = new ostringstream();
+    myStream = new std::ostringstream();
     OwnStream=true;
   }
   Blanks=0;
@@ -43,12 +42,12 @@ OhmmsInform::OhmmsInform(const char* prompt, bool allcanwrite, bool writenode):m
 {
   if(allcanwrite || writenode)
   {
-    myStream = &cout;
+    myStream = &std::cout;
     OwnStream=false;
   }
   else
   {
-    myStream = new ostringstream();
+    myStream = new std::ostringstream();
     OwnStream=true;
   }
   Blanks=0;
@@ -58,14 +57,14 @@ OhmmsInform::OhmmsInform(const char* prompt, const char* fname, int appmode):Own
 {
   // file mode
   if(appmode == OVERWRITE)
-    myStream = new ofstream(fname);
+    myStream = new std::ofstream(fname);
   else
-    myStream = new ofstream(fname,ios::app);
+    myStream = new std::ofstream(fname,std::ios::app);
   Blanks=0;
 }
 
 
-OhmmsInform::OhmmsInform(const char* prompt, ostream& o)
+OhmmsInform::OhmmsInform(const char* prompt, std::ostream& o)
   :OwnStream(false),myStream(&o),myPrompt(prompt)
 {
   Blanks=0;
@@ -78,9 +77,9 @@ void OhmmsInform::set(const char* fname, int appmode)
     delete myStream;
   OwnStream = true;
   if(appmode == OVERWRITE)
-    myStream = new ofstream(fname);
+    myStream = new std::ofstream(fname);
   else
-    myStream = new ofstream(fname,ios::app);
+    myStream = new std::ofstream(fname,std::ios::app);
 }
 
 
@@ -96,7 +95,7 @@ void OhmmsInform::set(OhmmsInform& o)
   OwnStream = false;
 }
 
-void OhmmsInform::set(OhmmsInform& o, const string& s)
+void OhmmsInform::set(OhmmsInform& o, const std::string& s)
 {
   if(OwnStream)
   {
@@ -107,7 +106,7 @@ void OhmmsInform::set(OhmmsInform& o, const string& s)
   myPrompt=s;
   OwnStream = false;
 }
-void OhmmsInform::setPrompt(const string& s)
+void OhmmsInform::setPrompt(const std::string& s)
 {
   myPrompt=s;
 }
@@ -119,14 +118,14 @@ void OhmmsInform::setStdError()
     if(myStream)
       delete myStream;
   }
-  myStream=&cerr;
+  myStream=&std::cerr;
   OwnStream=false;
 }
 
 void OhmmsInform::turnoff()
 {
   bgStream=myStream;
-  myStream = new ostream(0);
+  myStream = new std::ostream(0);
 }
 
 void OhmmsInform::reset()

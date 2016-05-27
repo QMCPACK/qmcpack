@@ -79,8 +79,8 @@ void compare_blas_1_2(int n, int m, int niters)
     MatrixOperators::product(A,q.data(),q_out.data());
   double dt_q_blas2=clock.elapsed();
   double f=1.0/static_cast<double>(niters);
-  cout << n << " " << m << " " << dt_dot*f << " " << dt_gemm*f << " " << dt_blas*f << " "
-       << " " << dt_v_blas1*f << " " << dt_v_blas2*f <<  " " << dt_q_blas2*f << endl;
+  std::cout << n << " " << m << " " << dt_dot*f << " " << dt_gemm*f << " " << dt_blas*f << " "
+       << " " << dt_v_blas1*f << " " << dt_v_blas2*f <<  " " << dt_q_blas2*f << std::endl;
 }
 
 inline int ops(int n, int m)
@@ -92,7 +92,7 @@ int main(int argc, char** argv)
   Random.init(0,1,11);
   int niters=1<<25;
   int n=4;
-  cout << "# n m dot_v gemm_v blas_v dot_g blase2_g blas2_gl " << endl;
+  std::cout << "# n m dot_v gemm_v blas_v dot_g blase2_g blas2_gl " << std::endl;
   for(int m=n; m<600; m*= 2)
   {
     int i=niters/ops(m,m);

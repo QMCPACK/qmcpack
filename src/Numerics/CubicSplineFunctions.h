@@ -29,7 +29,6 @@
 #define CUBICSPLINEFUNCTIONS_H
 
 #include <vector>
-using std::vector;
 
 template<class T>
 class CubicSpline
@@ -37,7 +36,7 @@ class CubicSpline
 public:
   int Npt;
   T Yp1, Ypn;
-  vector<T> X, Y, Y2;
+  std::vector<T> X, Y, Y2;
 
   CubicSpline() { }
   inline CubicSpline(const int n)
@@ -48,9 +47,9 @@ public:
   inline void resize(const int n)
   {
     Npt = n;
-    X = vector<T>(n+1);
-    Y = vector<T>(n+1);
-    Y2= vector<T>(n+1);
+    X = std::vector<T>(n+1);
+    Y = std::vector<T>(n+1);
+    Y2= std::vector<T>(n+1);
   }
   T operator()(T x0);
   T operator()(T x0, T& yval);
@@ -77,7 +76,7 @@ class RegCubicSpline
   int Npt;
   T Xmin, Xmax, Dx, DxInv;
   T Yp1, Ypn, h2over6;
-  vector<T> Y, Y2;
+  std::vector<T> Y, Y2;
 public:
 
   RegCubicSpline() { }
@@ -89,8 +88,8 @@ public:
   inline void resize(const int n)
   {
     Npt = n;
-    Y = vector<T>(n+1);
-    Y2= vector<T>(n+1);
+    Y = std::vector<T>(n+1);
+    Y2= std::vector<T>(n+1);
   }
   T operator()(T x0);
   T operator()(T x0, T& yval);

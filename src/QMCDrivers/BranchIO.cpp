@@ -42,7 +42,7 @@ namespace qmcplusplus
 {
 #if defined(HAVE_LIBBOOST)
 template<typename T>
-inline void put_histogram(string name, accumulator_set<T> a,  boost::property_tree::ptree &pt)
+inline void put_histogram( std::string name, accumulator_set<T> a,  boost::property_tree::ptree &pt)
 {
   pt.put(name+".value",a.properties[0]);
   pt.put(name+".value_squared",a.properties[1]);
@@ -50,7 +50,7 @@ inline void put_histogram(string name, accumulator_set<T> a,  boost::property_tr
 }
 
 template<typename T>
-inline void get_histogram(string name, accumulator_set<T>& a, boost::property_tree::ptree &pt)
+inline void get_histogram( std::string name, accumulator_set<T>& a, boost::property_tree::ptree &pt)
 {
   a.properties[0]=pt.get<T>(name+".value");
   a.properties[1]=pt.get<T>(name+".value_squared");
@@ -93,8 +93,8 @@ struct h5data_proxy<accumulator_set<T> >: public h5_space_type<T,1>
   }
 };
 
-vector<string> BranchIO::vParamName;
-vector<string> BranchIO::iParamName;
+std::vector<std::string> BranchIO::vParamName;
+std::vector<std::string> BranchIO::iParamName;
 
 void BranchIO::initAttributes()
 {
@@ -121,7 +121,7 @@ void BranchIO::initAttributes()
   iParamName[6]="brnachinterval";
 }
 
-bool BranchIO::write(const string& fname)
+bool BranchIO::write(const std::string& fname)
 {
   if(myComm->rank()) return true;
 
@@ -142,18 +142,18 @@ bool BranchIO::write(const string& fname)
   put_histogram("state.variance",ref.VarianceHist,pt);
   put_histogram("state.r2accepted",ref.R2Accepted,pt);
   put_histogram("state.r2proposed",ref.R2Proposed,pt);
-  string xname=fname+".qmc.xml";
+  std::string xname=fname+".qmc.xml";
   write_xml(xname, pt);
 #else
   //append .qmc.h5 if missing
-  string h5name(fname);
+  std::string h5name(fname);
   if(fname.find("qmc.h5")>= fname.size()) h5name.append(".qmc.h5");
   hdf_archive dump(myComm);
   hid_t fid = dump.create(h5name);
   dump.push(hdf::main_state);
   dump.push(hdf::qmc_status);
-  string v_header("tau:taueff:etrial:eref:branchmax:branchcutoff:branchfilter:sigma:acc_energy:acc_samples");
-  string i_header("warmupsteps:energyupdateinterval:counter:targetwalkers:maxwalkers:minwalkers:branchinterval");
+  std::string v_header("tau:taueff:etrial:eref:branchmax:branchcutoff:branchfilter:sigma:acc_energy:acc_samples");
+  std::string i_header("warmupsteps:energyupdateinterval:counter:targetwalkers:maxwalkers:minwalkers:branchinterval");
   dump.write(v_header,"vparam_def");
   dump.write(i_header,"iparam_def");
   dump.write(ref.vParam,"vparam");
@@ -174,7 +174,7 @@ bool BranchIO::write(const string& fname)
   return true;
 }
 
-bool BranchIO::read(const string& fname)
+bool BranchIO::read(const std::string& fname)
 {
   int found_config=0;
 
@@ -184,7 +184,7 @@ bool BranchIO::read(const string& fname)
     initAttributes();
     using boost::property_tree::ptree;
     ptree pt;
-    string xname=fname+".qmc.xml";
+    std::string xname=fname+".qmc.xml";
     read_xml(xname, pt);
     if(!pt.empty())
     {
@@ -216,7 +216,7 @@ bool BranchIO::read(const string& fname)
     HDFVersion in_version(0,1);
 
     //append .config.h5 if missing
-    string h5name(fname);
+    std::string h5name(fname);
     if(fname.find("qmc.h5")>= fname.size()) h5name.append(".qmc.h5");
 
     hdf_archive prevconfig(myComm,true);
@@ -262,7 +262,7 @@ bool BranchIO::read(const string& fname)
 }
 
 
-bool BranchIO::read_adios(const string& fname)
+bool BranchIO::read_adios(const std::string& fname)
 {//do not use this
   #ifdef HAVE_ADIOS
   if(ADIOS::getRdADIOS())
@@ -286,21 +286,21 @@ bool BranchIO::read_adios(const string& fname)
 void BranchIO::bcast_state()
 {
   int n=ref.vParam.size()+ref.iParam.size();
-  vector<RealType> pdata(n+1+16,-1);
+  std::vector<RealType> pdata(n+1+16,-1);
 
   if(myComm->rank()==0)
   {
-    std::copy(ref.vParam.begin(),ref.vParam.end(),pdata.begin());
-    std::copy(ref.iParam.begin(),ref.iParam.end(),pdata.begin()+ref.vParam.size());
+    copy(ref.vParam.begin(),ref.vParam.end(),pdata.begin());
+    copy(ref.iParam.begin(),ref.iParam.end(),pdata.begin()+ref.vParam.size());
     int offset=n;
     pdata[offset++]=ref.BranchMode.to_ulong();
-    std::copy(ref.EnergyHist.properties,ref.EnergyHist.properties+4,pdata.begin()+offset);
+    copy(ref.EnergyHist.properties,ref.EnergyHist.properties+4,pdata.begin()+offset);
     offset+=4;
-    std::copy(ref.VarianceHist.properties,ref.VarianceHist.properties+4,pdata.begin()+offset);
+    copy(ref.VarianceHist.properties,ref.VarianceHist.properties+4,pdata.begin()+offset);
     offset+=4;
-    std::copy(ref.R2Accepted.properties,ref.R2Accepted.properties+4,pdata.begin()+offset);
+    copy(ref.R2Accepted.properties,ref.R2Accepted.properties+4,pdata.begin()+offset);
     offset+=4;
-    std::copy(ref.R2Proposed.properties,ref.R2Proposed.properties+4,pdata.begin()+offset);
+    copy(ref.R2Proposed.properties,ref.R2Proposed.properties+4,pdata.begin()+offset);
   }
 
   //broadcast to the nodes : need to add a namespace mpi::

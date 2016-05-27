@@ -28,7 +28,6 @@
 #include <Utilities/IteratorUtility.h>
 #include <fstream>
 using namespace qmcplusplus;
-using namespace std;
 
 int main(int argc, char** argv)
 {
@@ -36,11 +35,11 @@ int main(int argc, char** argv)
   const int vmax=4;
   const int cmax=8;
   typedef ci_node_proxy node_type;
-  vector<node_type> excitations;
+  std::vector<node_type> excitations;
   int multiplet=3;
   int nparent=0;
   int nchildren=0;
-  vector<int> det_offset(multiplet+2,1);
+  std::vector<int> det_offset(multiplet+2,1);
   //add zero
   excitations.push_back(node_type());
   {
@@ -57,7 +56,7 @@ int main(int argc, char** argv)
       nparent++;
     }
   }
-  ofstream fout("tree.xml");
+  std::ofstream fout("tree.xml");
   int npeers=0;
   int count=0;
   excitations[0].write_node<max_states>(fout,0,count,excitations);
@@ -65,11 +64,11 @@ int main(int argc, char** argv)
   ci_node<double> real_nodes;
   real_nodes.build_tree(64,excitations);
   real_nodes.set_peers(64,vmax);
-  ofstream fout1("tree_1.xml");
+  std::ofstream fout1("tree_1.xml");
   real_nodes.write_node(fout1);
   //copy constructor
   ci_node<double> copied(real_nodes);
-  ofstream fout2("tree_2.xml");
+  std::ofstream fout2("tree_2.xml");
   copied.write_node(fout2);
   return 0;
 }

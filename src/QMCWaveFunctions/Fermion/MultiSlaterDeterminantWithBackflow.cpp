@@ -429,8 +429,8 @@ OrbitalBase::ValueType MultiSlaterDeterminantWithBackflow::ratio(ParticleSet& P,
       detsRatios[i]=dets_up[i]->ratio(P,iat);
     }
     Ratio1Timer.stop();
-    vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
-    vector<RealType>::iterator it(C.begin()),last(C.end());
+    std::vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
+    std::vector<RealType>::iterator it(C.begin()),last(C.end());
     ValueType psiOld=0.0,psiNew=0.0;
     while(it != last)
     {
@@ -456,8 +456,8 @@ OrbitalBase::ValueType MultiSlaterDeterminantWithBackflow::ratio(ParticleSet& P,
       detsRatios[i]=dets_dn[i]->ratio(P,iat);
     }
     Ratio1Timer.stop();
-    vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
-    vector<RealType>::iterator it(C.begin()),last(C.end());
+    std::vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
+    std::vector<RealType>::iterator it(C.begin()),last(C.end());
     ValueType psiOld=0.0,psiNew=0.0;
     while(it != last)
     {
@@ -813,7 +813,7 @@ void MultiSlaterDeterminantWithBackflow::resetParameters(const opt_variables_typ
   }
 }
 
-void MultiSlaterDeterminantWithBackflow::reportStatus(ostream& os)
+void MultiSlaterDeterminantWithBackflow::reportStatus(std::ostream& os)
 {
   if(Optimizable)
   {
@@ -850,8 +850,8 @@ void MultiSlaterDeterminantWithBackflow::checkOutVariables(const opt_variables_t
 
 void MultiSlaterDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
     const opt_variables_type& optvars,
-    vector<RealType>& dlogpsi,
-    vector<RealType>& dhpsioverpsi)
+    std::vector<RealType>& dlogpsi,
+    std::vector<RealType>& dhpsioverpsi)
 {
   bool recalculate(false);
   for (int k=0; k<myVars.size(); ++k)

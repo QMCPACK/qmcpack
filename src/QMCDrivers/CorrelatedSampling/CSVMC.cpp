@@ -86,7 +86,7 @@ bool CSVMC::put(xmlNodePtr q)
   p.put(q);
 
   app_log() << "\n<vmc function=\"put\">"
-    << "\n  qmc_counter=" << qmc_common.qmc_counter << "  my_counter=" << MyCounter<< endl;
+    << "\n  qmc_counter=" << qmc_common.qmc_counter << "  my_counter=" << MyCounter<< std::endl;
   if(qmc_common.qmc_counter && MyCounter)
   {
     nSteps=prevSteps;
@@ -127,30 +127,30 @@ bool CSVMC::put(xmlNodePtr q)
   prevSteps=nSteps;
   prevStepsBetweenSamples=nStepsBetweenSamples;
 
-  app_log() << "  time step      = " << Tau << endl;
-  app_log() << "  blocks         = " << nBlocks << endl;
-  app_log() << "  steps          = " << nSteps << endl;
-  app_log() << "  substeps       = " << nSubSteps << endl;
-  app_log() << "  current        = " << CurrentStep << endl;
-  app_log() << "  target samples = " << nTargetPopulation << endl;
-  app_log() << "  walkers/mpi    = " << W.getActiveWalkers() << endl << endl;
-  app_log() << "  stepsbetweensamples = " << nStepsBetweenSamples << endl;
+  app_log() << "  time step      = " << Tau << std::endl;
+  app_log() << "  blocks         = " << nBlocks << std::endl;
+  app_log() << "  steps          = " << nSteps << std::endl;
+  app_log() << "  substeps       = " << nSubSteps << std::endl;
+  app_log() << "  current        = " << CurrentStep << std::endl;
+  app_log() << "  target samples = " << nTargetPopulation << std::endl;
+  app_log() << "  walkers/mpi    = " << W.getActiveWalkers() << std::endl << std::endl;
+  app_log() << "  stepsbetweensamples = " << nStepsBetweenSamples << std::endl;
 
   m_param.get(app_log());
 
   if(DumpConfig)
   {
-    app_log() << "  DumpConfig==true Configurations are dumped to config.h5 with a period of " << Period4CheckPoint << " blocks" << endl;
+    app_log() << "  DumpConfig==true Configurations are dumped to config.h5 with a period of " << Period4CheckPoint << " blocks" << std::endl;
   }
   else
   {
-    app_log() << "  DumpConfig==false Nothing (configurations, state) will be saved." << endl;
+    app_log() << "  DumpConfig==false Nothing (configurations, state) will be saved." << std::endl;
   }
 
   if (Period4WalkerDump>0)
-    app_log() << "  Walker Samples are dumped every " << Period4WalkerDump << " steps." << endl;
+    app_log() << "  Walker Samples are dumped every " << Period4WalkerDump << " steps." << std::endl;
 
-  app_log() << "</vmc>" << endl;
+  app_log() << "</vmc>" << std::endl;
   app_log().flush();
 
   return true;
@@ -238,7 +238,7 @@ bool CSVMC::run()
 //             ForwardWalkingHistory.storeConfigsForForwardWalking(*wClones[ip]);
       }
       CSMovers[ip]->stopBlock(false);
-     // app_log()<<"THREAD "<<ip<<endl;
+     // app_log()<<"THREAD "<<ip<< std::endl;
      // CSMovers[ip]->updateAvgWeights();
       
     }//end-of-parallel for
@@ -272,7 +272,7 @@ bool CSVMC::run()
   {
     wrotesamples=W.dumpEnsemble(wClones,wOut,myComm->size(),nBlocks);
     if(wrotesamples)
-      app_log() << "  samples are written to the config.h5" << endl;
+      app_log() << "  samples are written to the config.h5" << std::endl;
   }
   //finalize a qmc section
   return finalize(nBlocks,!wrotesamples);
@@ -292,8 +292,8 @@ void CSVMC::resetRun()
   if(NumThreads>1) APP_ABORT("OpenMP Parallelization for CSVMC not working at the moment");
 
   app_log() << "  Initial partition of walkers ";
-  std::copy(wPerNode.begin(),wPerNode.end(),ostream_iterator<int>(app_log()," "));
-  app_log() << endl;
+  copy(wPerNode.begin(),wPerNode.end(),std::ostream_iterator<int>(app_log()," "));
+  app_log() << std::endl;
   
  
   if(Movers.empty())
@@ -310,7 +310,7 @@ void CSVMC::resetRun()
 #endif    
     for(int ip=0; ip<NumThreads; ++ip)
     {
-	  ostringstream os;
+	  std::ostringstream os;
 	  estimatorClones[ip]= new EstimatorManager(*Estimators);//,*hClones[ip]);
       estimatorClones[ip]->resetTargetParticleSet(*wClones[ip]);
       estimatorClones[ip]->setCollectionMode(false);
@@ -327,24 +327,24 @@ void CSVMC::resetRun()
 	 //  hClones[ip]->setRandomGenerator(Rng[ip]);
       if(QMCDriverMode[QMC_UPDATE_MODE])
       {
-        os << "  Using particle-by-particle update with fast drift" << endl;
+        os << "  Using particle-by-particle update with fast drift" << std::endl;
         APP_ABORT("CSVMC update particle-by-particle with fast drift is still being debugged\n");
         CSMovers[ip]=new CSVMCUpdatePbyPWithDriftFast(*wClones[ip],PsiPoolClones[ip],HPoolClones[ip],*Rng[ip]);
       }
       
       if (UseDrift == "yes")
       {
-        os << "  Using walker-by-walker update with Drift " << endl;
+        os << "  Using walker-by-walker update with Drift " << std::endl;
         CSMovers[ip]=new CSVMCUpdateAllWithDrift(*wClones[ip],PsiPoolClones[ip],HPoolClones[ip],*Rng[ip]);
       }
       else
       {
-        os << "  Using walker-by-walker update " << endl;
+        os << "  Using walker-by-walker update " << std::endl;
         CSMovers[ip]=new CSVMCUpdateAll(*wClones[ip],PsiPoolClones[ip],HPoolClones[ip],*Rng[ip]);
 
       }
       if(ip==0)
-        app_log() << os.str() << endl;
+        app_log() << os.str() << std::endl;
 
       //traceClones[ip]->transfer_state_from(*Traces);
 
@@ -371,13 +371,13 @@ void CSVMC::resetRun()
   }
 #endif
   
-  app_log() << "  Total Sample Size   =" << nTargetSamples << endl;
+  app_log() << "  Total Sample Size   =" << nTargetSamples << std::endl;
   app_log() << "  Walker distribution on root = ";
-  std::copy(wPerNode.begin(),wPerNode.end(),ostream_iterator<int>(app_log()," "));
-  app_log() << endl;
-  //app_log() << "  Sample Size per node=" << samples_this_node << endl;
+  copy(wPerNode.begin(),wPerNode.end(),std::ostream_iterator<int>(app_log()," "));
+  app_log() << std::endl;
+  //app_log() << "  Sample Size per node=" << samples_this_node << std::endl;
   //for (int ip=0; ip<NumThreads; ++ip)
-  //  app_log()  << "    Sample size for thread " <<ip<<" = " << samples_th[ip] << endl;
+  //  app_log()  << "    Sample size for thread " <<ip<<" = " << samples_th[ip] << std::endl;
   app_log().flush();
   
 #if !defined(BGP_BUG)
@@ -400,7 +400,7 @@ void CSVMC::resetRun()
     {
       CSMovers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
     //  CSMovers[ip]->updateNorms();
-    //  app_log()<<cumnorm<<endl;
+    //  app_log()<<cumnorm<< std::endl;
       if (prestep==nWarmupSteps-1) CSMovers[ip]->updateNorms();
     }
     

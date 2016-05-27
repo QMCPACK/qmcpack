@@ -55,18 +55,18 @@ struct HEGGrid<T,3>
   ///maxmim ksq
   T MaxKsq;
   PL_t& Lattice;
-  map<int,vector<PosType>*> rs;
+  std::map<int,std::vector<PosType>*> rs;
 
 
-  vector<PosType> kpt;
-  vector<T>       mk2;
-  vector<int>     deg;
-  vector<int> n_within_shell;
+  std::vector<PosType> kpt;
+  std::vector<T>       mk2;
+  std::vector<int>     deg;
+  std::vector<int> n_within_shell;
   PosType twist;
 
 
   typedef kpdata<T,3> kpdata_t;
-  typedef vector<kpdata_t > kpoints_t;
+  typedef std::vector<kpdata_t > kpoints_t;
 
   kpoints_t* kpoints_grid;
   int nctmp;
@@ -110,7 +110,7 @@ struct HEGGrid<T,3>
 
   ~HEGGrid()
   {
-    typename map<int,vector<PosType>*>::iterator it(rs.begin()),
+    typename std::map<int,std::vector<PosType>*>::iterator it(rs.begin()),
              it_end(rs.end());
     while(it != it_end)
     {
@@ -153,7 +153,7 @@ struct HEGGrid<T,3>
   //return the shell index for nkpt k-points
   inline int getShellIndex(int nkpt) const
   {
-    vector<int>::const_iterator loc=std::upper_bound(n_within_shell.begin(),n_within_shell.end(),nkpt);
+    std::vector<int>::const_iterator loc=std::upper_bound(n_within_shell.begin(),n_within_shell.end(),nkpt);
     if(loc<n_within_shell.end())
       return loc-n_within_shell.begin()-1;
     else
@@ -187,10 +187,10 @@ struct HEGGrid<T,3>
         for(int ix3=first_ix3; ix3<=nc; ix3++)
         {
           int ih=ix1*ix1+ix2*ix2+ix3*ix3;
-          typename std::map<int,vector<PosType>*>::iterator it = rs.find(ih);
+          typename std::map<int,std::vector<PosType>*>::iterator it = rs.find(ih);
           if(it == rs.end())
           {
-            vector<PosType>* ns = new vector<PosType>;
+            std::vector<PosType>* ns = new std::vector<PosType>;
             ns->push_back(PosType(ix1,ix2,ix3));
             rs[ih] = ns;
           }
@@ -215,10 +215,10 @@ struct HEGGrid<T,3>
     //int ke=0;
     MaxKsq=0.0;
     int rsbin=0;
-    typename map<int, vector<PosType>*>::iterator rs_it(rs.begin()), rs_end(rs.end());
+    typename std::map<int, std::vector<PosType>*>::iterator rs_it(rs.begin()), rs_end(rs.end());
     while(ikpt<nkpts && rs_it != rs_end)
     {
-      typename vector<PosType>::iterator ns_it((*rs_it).second->begin()), ns_end((*rs_it).second->end());
+      typename std::vector<PosType>::iterator ns_it((*rs_it).second->begin()), ns_end((*rs_it).second->end());
       T minus_ksq=-Lattice.ksq(*ns_it);
       while(ikpt<nkpts && ns_it!=ns_end)
       {
@@ -231,10 +231,10 @@ struct HEGGrid<T,3>
       ++rs_it;
     }
     MaxKsq = Lattice.ksq(*((*rs_it).second->begin()));
-    app_log() << "List of kpoints (half-sphere) " << endl;
+    app_log() << "List of kpoints (half-sphere) " << std::endl;
     for(int ik=0; ik<kpt.size(); ik++)
     {
-      app_log() << ik << " " << kpt[ik] << " " << mk2[ik] << endl;
+      app_log() << ik << " " << kpt[ik] << " " << mk2[ik] << std::endl;
     }
   }
 
@@ -254,12 +254,12 @@ struct HEGGrid<T,3>
       return;
     nctmp = nc;
     kpoints_t& kpoints = *kpoints_grid;
-    app_log()<<"  resizing kpoint grid"<<endl;
-    app_log()<<"  current size = "<<kpoints.size()<<endl;
+    app_log()<<"  resizing kpoint grid"<< std::endl;
+    app_log()<<"  current size = "<<kpoints.size()<< std::endl;
     // make space for the kpoint grid
     int nkpoints = pow( 2*(nc+1)+1 , 3 );
     kpoints.resize(nkpoints);
-    app_log()<<"  cubic size = "<<kpoints.size()<<endl;
+    app_log()<<"  cubic size = "<<kpoints.size()<< std::endl;
     typename kpoints_t::iterator kptmp,kp=kpoints.begin(),kp_end=kpoints.end();
     // make the kpoint grid
     T k2max = 1e99;
@@ -270,8 +270,8 @@ struct HEGGrid<T,3>
           PosType k(i0+tw[0],i1+tw[1],i2+tw[2]);
           kp->k  = Lattice.k_cart(k);
           kp->k2 = Lattice.ksq(k);
-          if(abs(i0)==(nc+1) || abs(i1)==(nc+1) || abs(i2)==(nc+1))
-            k2max = min(k2max,kp->k2);
+          if(abs(i0)==(nc+1) || std::abs(i1)==(nc+1) || std::abs(i2)==(nc+1))
+            k2max = std::min(k2max,kp->k2);
           ++kp;
         }
     // sort kpoints by magnitude
@@ -285,7 +285,7 @@ struct HEGGrid<T,3>
       ++kp;
     }
     kpoints.resize(nkp);
-    app_log()<<"  new spherical size = "<<kpoints.size()<<endl;
+    app_log()<<"  new spherical size = "<<kpoints.size()<< std::endl;
     kp_end = kpoints.end();
     // count degeneracies
     kp = kpoints.begin();
@@ -296,7 +296,7 @@ struct HEGGrid<T,3>
       int g=1;
       ++kptmp;
       // look ahead to count
-      while(kptmp!=kp_end && abs(kptmp->k2-k2)<tol)
+      while(kptmp!=kp_end && std::abs(kptmp->k2-k2)<tol)
       {
         g++;
         ++kptmp;
@@ -307,11 +307,11 @@ struct HEGGrid<T,3>
         (++kp)->g = g;
       ++kp;
     }
-    //app_log()<<"create_kpoints"<<endl;
-    //app_log()<<"  nkpoints = "<<nkpoints<<endl;
-    //app_log()<<"  kpoints"<<endl;
+    //app_log()<<"create_kpoints"<< std::endl;
+    //app_log()<<"  nkpoints = "<<nkpoints<< std::endl;
+    //app_log()<<"  kpoints"<< std::endl;
     //for(kp=kpoints.begin();kp!=kp_end;++kp)
-    //  app_log()<<"    "<<kp->k2<<" "<<kp->g<<" "<<kp->k<<endl;
+    //  app_log()<<"    "<<kp->k2<<" "<<kp->g<<" "<<kp->k<< std::endl;
     //APP_ABORT("end create_kpoints");
   }
 
@@ -333,24 +333,24 @@ struct HEGGrid<T,3>
       mk2[i] = -kp.k2;
       deg[i] =  kp.g;
     }
-    app_log() << "List of kpoints with twist = " << twistAngle << endl;
+    app_log() << "List of kpoints with twist = " << twistAngle << std::endl;
     for(int ik=0; ik<kpt.size(); ik++)
-      app_log() << ik << " " << kpt[ik] << " " <<-mk2[ik] << endl;
+      app_log() << ik << " " << kpt[ik] << " " <<-mk2[ik] << std::endl;
   }
 
 
 
-  void createGrid(const vector<int>& states, T tol=1e-6)
+  void createGrid(const std::vector<int>& states, T tol=1e-6)
   {
     createGrid(states,twist,tol);
   }
 
 
-  void createGrid(const vector<int>& states,const PosType& twistAngle, T tol=1e-6)
+  void createGrid(const std::vector<int>& states,const PosType& twistAngle, T tol=1e-6)
   {
     int smax=0;
     for(int i=0;i<states.size();++i)
-      smax = max(smax,states[i]);
+      smax = std::max(smax,states[i]);
     smax++;
     create_kpoints(get_nc(smax),twistAngle,tol);
     kpoints_t& kpoints = *kpoints_grid;
@@ -384,15 +384,15 @@ struct HEGGrid<T,2>
   ///maxmim ksq
   T MaxKsq;
   PL_t& Lattice;
-  map<int,vector<PosType>*> rs;
-  vector<PosType> kpt;
-  vector<T>       mk2;
-  vector<int>     deg;
-  vector<int> n_within_shell;
+  std::map<int,std::vector<PosType>*> rs;
+  std::vector<PosType> kpt;
+  std::vector<T>       mk2;
+  std::vector<int>     deg;
+  std::vector<int> n_within_shell;
   PosType twist;
 
   typedef kpdata<T,2> kpdata_t;
-  typedef vector<kpdata_t > kpoints_t;
+  typedef std::vector<kpdata_t > kpoints_t;
 
   kpoints_t* kpoints_grid;
 
@@ -624,7 +624,7 @@ struct HEGGrid<T,2>
 
   ~HEGGrid()
   {
-    typename map<int,vector<PosType>*>::iterator it(rs.begin()),
+    typename std::map<int,std::vector<PosType>*>::iterator it(rs.begin()),
              it_end(rs.end());
     while(it != it_end)
     {
@@ -651,7 +651,7 @@ struct HEGGrid<T,2>
   //return the shell index for nkpt k-points
   inline int getShellIndex(int nkpt) const
   {
-    vector<int>::const_iterator loc=std::upper_bound(n_within_shell.begin(),n_within_shell.end(),nkpt);
+    std::vector<int>::const_iterator loc=std::upper_bound(n_within_shell.begin(),n_within_shell.end(),nkpt);
     if(loc<n_within_shell.end())
       return loc-n_within_shell.begin()-1;
     else
@@ -683,10 +683,10 @@ struct HEGGrid<T,2>
       for(int ix2=first_ix2; ix2<=nc; ix2++)
       {
         int ih=ix1*ix1+ix2*ix2;
-        typename std::map<int,vector<PosType>*>::iterator it = rs.find(ih);
+        typename std::map<int,std::vector<PosType>*>::iterator it = rs.find(ih);
         if(it == rs.end())
         {
-          vector<PosType>* ns = new vector<PosType>;
+          std::vector<PosType>* ns = new std::vector<PosType>;
           ns->push_back(PosType(ix1,ix2));
           rs[ih] = ns;
         }
@@ -710,10 +710,10 @@ struct HEGGrid<T,2>
     //int ke=0;
     MaxKsq=0.0;
     int rsbin=0;
-    typename map<int, vector<PosType>*>::iterator rs_it(rs.begin()), rs_end(rs.end());
+    typename std::map<int, std::vector<PosType>*>::iterator rs_it(rs.begin()), rs_end(rs.end());
     while(ikpt<nkpts && rs_it != rs_end)
     {
-      typename vector<PosType>::iterator ns_it((*rs_it).second->begin()), ns_end((*rs_it).second->end());
+      typename std::vector<PosType>::iterator ns_it((*rs_it).second->begin()), ns_end((*rs_it).second->end());
       T minus_ksq=-Lattice.ksq(*ns_it);
       while(ikpt<nkpts && ns_it!=ns_end)
       {
@@ -726,10 +726,10 @@ struct HEGGrid<T,2>
       ++rs_it;
     }
     MaxKsq = Lattice.ksq(*((*rs_it).second->begin()));
-    app_log() << "List of kpoints (half-sphere) " << endl;
+    app_log() << "List of kpoints (half-sphere) " << std::endl;
     for(int ik=0; ik<kpt.size(); ik++)
     {
-      app_log() << ik << " " << kpt[ik] << " " << mk2[ik] << endl;
+      app_log() << ik << " " << kpt[ik] << " " << mk2[ik] << std::endl;
     }
   }
 
@@ -741,17 +741,17 @@ struct HEGGrid<T,2>
     int nkpts = 2*NumKptsHalf+1;
     kpt.resize(nkpts);
     mk2.resize(nkpts);
-    app_log() << "Check this " << NumKptsHalf << " " << nkpts << endl;
+    app_log() << "Check this " << NumKptsHalf << " " << nkpts << std::endl;
     abort();
     //add gamma
     int ikpt=0;
     kpt[ikpt]=Lattice.k_cart(twistAngle);
     mk2[ikpt]=-Lattice.ksq(twistAngle);
     ++ikpt;
-    typename map<int, vector<PosType>*>::iterator rs_it(rs.begin()), rs_end(rs.end());
+    typename std::map<int, std::vector<PosType>*>::iterator rs_it(rs.begin()), rs_end(rs.end());
     while(ikpt<nkpts && rs_it != rs_end)
     {
-      typename vector<PosType>::iterator ns_it((*rs_it).second->begin()), ns_end((*rs_it).second->end());
+      typename std::vector<PosType>::iterator ns_it((*rs_it).second->begin()), ns_end((*rs_it).second->end());
       while(ikpt<nkpts && ns_it!=ns_end)
       {
         //add twist+k
@@ -770,15 +770,15 @@ struct HEGGrid<T,2>
       }
       ++rs_it;
     }
-    app_log() << "List of kpoints with twist = " << twistAngle << endl;
+    app_log() << "List of kpoints with twist = " << twistAngle << std::endl;
     for(int ik=0; ik<kpt.size(); ik++)
     {
-      app_log() << ik << " " << kpt[ik] << " " <<-mk2[ik] << endl;
+      app_log() << ik << " " << kpt[ik] << " " <<-mk2[ik] << std::endl;
     }
   }
 
 
-  void createGrid(const vector<int>& states, T tol=1e-6)
+  void createGrid(const std::vector<int>& states, T tol=1e-6)
   {
     APP_ABORT("HEGGrid::createGrid(states) has not been implemented");
   }

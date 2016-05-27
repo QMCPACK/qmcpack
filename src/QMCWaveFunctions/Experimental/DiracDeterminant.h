@@ -155,7 +155,7 @@ public:
   inline void resetParameters(const opt_variables_type& active)
   { }
 
-  inline void reportStatus(ostream& os)
+  inline void reportStatus(std::ostream& os)
   { }
 
 
@@ -326,13 +326,13 @@ public:
     curRatio= DetRatio(psiM_temp, psiV.begin(),WorkingIndex);
 #endif
 #ifdef QMC_COMPLEX
-    if(norm(curRatio)<numeric_limits<RealType>::epsilon())
+    if(norm(curRatio)<std::numeric_limits<RealType>::epsilon())
     {
       UpdateMode = ORB_PBYP_RATIO;
       return 0.0;
     }
 #else
-    if(abs(curRatio)<numeric_limits<RealType>::epsilon())
+    if(abs(curRatio)<std::numeric_limits<RealType>::epsilon())
     {
       UpdateMode = ORB_PBYP_RATIO;
       return 0.0;

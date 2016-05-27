@@ -188,23 +188,23 @@ LRCoulombSingleton::getHandler(ParticleSet& ref)
 #if OHMMS_DIM==3
     if(ref.SK->SuperCellEnum == SUPERCELL_SLAB)
     {
-      app_log() << "\n   Creating CoulombHandler using quasi-2D Ewald method for the slab. " << endl;
+      app_log() << "\n   Creating CoulombHandler using quasi-2D Ewald method for the slab. " << std::endl;
       CoulombHandler= new EwaldHandler(ref);
     }
     else //if(ref.LRBox.SuperCellEnum == SUPERCELL_BULK)
     {
-      app_log() << "\n  Creating CoulombHandler with the optimal breakup. " << endl;
+      app_log() << "\n  Creating CoulombHandler with the optimal breakup. " << std::endl;
       CoulombHandler= new LRHandlerTemp<CoulombFunctor<RealType>,LPQHIBasis>(ref);
     //  CoulombHandler = new LRHandlerSRCoulomb<CoulombFunctor<RealType>, LPQHISRCoulombBasis>(ref);
       
     }
 //        else if(ref.LRBox.SuperCellEnum == SUPERCELL_SLAB)
 //        {
-//          app_log() << "\n   Creating CoulombHandler using quasi-2D Ewald method for the slab. " << endl;
+//          app_log() << "\n   Creating CoulombHandler using quasi-2D Ewald method for the slab. " << std::endl;
 //          CoulombHandler= new EwaldHandler(ref);
 //        }
 #elif OHMMS_DIM==2
-    app_log() << "\n   Creating CoulombHandler using 2D Ewald method. " << endl;
+    app_log() << "\n   Creating CoulombHandler using 2D Ewald method. " << std::endl;
     CoulombHandler= new TwoDEwaldHandler(ref);
 #endif
     CoulombHandler->initBreakup(ref);
@@ -212,7 +212,7 @@ LRCoulombSingleton::getHandler(ParticleSet& ref)
   }
   else
   {
-    app_log() << "  Clone CoulombHandler. " << endl;
+    app_log() << "  Clone CoulombHandler. " << std::endl;
     return CoulombHandler->makeClone(ref);
   }
 }
@@ -222,7 +222,7 @@ LRCoulombSingleton::getDerivHandler(ParticleSet& ref)
   //APP_ABORT("SR Coulomb Basis Handler has cloning issues.  Stress also has some kinks");
   if(CoulombDerivHandler==0)
   {
-    app_log() << "\n  Creating CoulombHandler with the optimal breakup of SR piece. " << endl;
+    app_log() << "\n  Creating CoulombHandler with the optimal breakup of SR piece. " << std::endl;
     CoulombDerivHandler= new LRHandlerSRCoulomb<CoulombFunctor<RealType>,LPQHISRCoulombBasis>(ref);
    // CoulombDerivHandler = new LRDerivHandler<CoulombFunctor<RealType>, LPQHIBasis> (ref);
     //CoulombDerivHandler= new EwaldHandler(ref);
@@ -233,7 +233,7 @@ LRCoulombSingleton::getDerivHandler(ParticleSet& ref)
   }
   else
   {
-    app_log() << "  Clone CoulombDerivHandler. " << endl;
+    app_log() << "  Clone CoulombDerivHandler. " << std::endl;
     return CoulombDerivHandler->makeClone(ref);
    // return CoulombDerivHandler;
   }
@@ -250,10 +250,10 @@ LRCoulombSingleton::createSpline4RbyVs(LRHandlerType* aLR, RealType rcut,
     agrid->set(0.0,rcut,1001);
   }
   int ng=agrid->size();
-  vector<RealType> v(ng);
+  std::vector<RealType> v(ng);
   RealType r=(*agrid)[0];
   //check if the first point is not zero
-  v[0]=(r>numeric_limits<RealType>::epsilon())? r*aLR->evaluate(r,1.0/r):0.0;
+  v[0]=(r>std::numeric_limits<RealType>::epsilon())? r*aLR->evaluate(r,1.0/r):0.0;
   for(int ig=1; ig<ng-1; ig++)
   {
     r=(*agrid)[ig];

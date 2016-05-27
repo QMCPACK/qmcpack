@@ -56,8 +56,8 @@ void DMCOMP::resetUpdateEngines()
     Rng.resize(NumThreads,0);
     FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
     app_log() << "  Initial partition of walkers ";
-    std::copy(wPerNode.begin(),wPerNode.end(),ostream_iterator<int>(app_log()," "));
-    app_log() << endl;
+    copy(wPerNode.begin(),wPerNode.end(),std::ostream_iterator<int>(app_log()," "));
+    app_log() << std::endl;
     #pragma omp parallel
     {
       int ip = omp_get_thread_num();
@@ -88,7 +88,7 @@ void DMCOMP::resetUpdateEngines()
       {
         if(NonLocalMove == "yes")
         {
-          app_log() << "  Non-local update is used." << endl;
+          app_log() << "  Non-local update is used." << std::endl;
           DMCNonLocalUpdate* nlocMover= new DMCNonLocalUpdate(W,Psi,H,Random);
           nlocMover->put(qmcNode);
           Movers[ip]=nlocMover;
@@ -112,9 +112,9 @@ void DMCOMP::resetUpdateEngines()
   if(fixW)
   {
     if(QMCDriverMode[QMC_UPDATE_MODE])
-      app_log() << "  DMCOMP PbyP Update with reconfigurations" << endl;
+      app_log() << "  DMCOMP PbyP Update with reconfigurations" << std::endl;
     else
-      app_log() << "  DMCOMP walker Update with reconfigurations" << endl;
+      app_log() << "  DMCOMP walker Update with reconfigurations" << std::endl;
     for(int ip=0; ip<Movers.size(); ip++)
       Movers[ip]->MaxAge=0;
     if(BranchInterval<0)
@@ -126,22 +126,22 @@ void DMCOMP::resetUpdateEngines()
   {
     if(QMCDriverMode[QMC_UPDATE_MODE])
     {
-      app_log() << "  DMCOMP PbyP Update with a fluctuating population" << endl;
+      app_log() << "  DMCOMP PbyP Update with a fluctuating population" << std::endl;
       for(int ip=0; ip<Movers.size(); ip++)
         Movers[ip]->MaxAge=1;
     }
     else
     {
-      app_log() << "  DMCOMP walker Update with a fluctuating population" << endl;
+      app_log() << "  DMCOMP walker Update with a fluctuating population" << std::endl;
       for(int ip=0; ip<Movers.size(); ip++)
         Movers[ip]->MaxAge=3;
     }
     if(BranchInterval<0)
       BranchInterval=1;
   }
-  app_log() << "  BranchInterval = " << BranchInterval << endl;
-  app_log() << "  Steps per block = " << nSteps << endl;
-  app_log() << "  Number of blocks = " << nBlocks << endl;
+  app_log() << "  BranchInterval = " << BranchInterval << std::endl;
+  app_log() << "  Steps per block = " << nSteps << std::endl;
+  app_log() << "  Number of blocks = " << nBlocks << std::endl;
 }
 
 bool DMCOMP::run()
@@ -153,7 +153,7 @@ bool DMCOMP::run()
   {
     int ip = omp_get_thread_num();
     int np = omp_get_num_threads();
-    vector<int> wpart(np+1);
+    std::vector<int> wpart(np+1);
     FairDivideLow(W.getActiveWalkers(),np,wpart);
     int firstW=wpart[ip];
     int lastW=wpart[ip+1];
@@ -201,7 +201,7 @@ bool DMCOMP::run()
           lastW=wpart[ip+1];
         }
         ++step;
-//fout <<  step << " " << firstW << " " << lastW << " " << W.getActiveWalkers() << " " << branchClones[ip]->E_T << endl;
+//fout <<  step << " " << firstW << " " << lastW << " " << W.getActiveWalkers() << " " << branchClones[ip]->E_T << std::endl;
         CurrentStep+=BranchInterval;
       }
       while(step<nSteps);
@@ -238,7 +238,7 @@ void DMCOMP::benchMark()
   {
     char fname[16];
     sprintf(fname,"test.%i",ip);
-    ofstream fout(fname);
+    std::ofstream fout(fname);
   }
   for(int istep=0; istep<nSteps; istep++)
   {
@@ -313,9 +313,9 @@ DMCOMP::put(xmlNodePtr q)
 //
 //      //Need MPI-IO
 //      //app_log()
-//      //  << setw(4) << block
-//      //  << setw(20) << static_cast<RealType>(nAllRejected)*totmoves
-//      //  << setw(20) << static_cast<RealType>(nNodeCrossing)*totmoves << endl;
+//      //  << std::setw(4) << block
+//      //  << std::setw(20) << static_cast<RealType>(nAllRejected)*totmoves
+//      //  << std::setw(20) << static_cast<RealType>(nNodeCrossing)*totmoves << std::endl;
 //      block++;
 //
 //      recordBlock(block);

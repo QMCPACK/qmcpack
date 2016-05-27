@@ -63,7 +63,7 @@ QMCLinearOptimize::~QMCLinearOptimize()
   delete optTarget;
 }
 
-void QMCLinearOptimize::add_timers(vector<NewTimer*>& timers)
+void QMCLinearOptimize::add_timers(std::vector<NewTimer*>& timers)
 {
   timers.push_back(new NewTimer("QMCLinearOptimize::GenerateSamples"));
   timers.push_back(new NewTimer("QMCLinearOptimize::Initialize"));
@@ -76,7 +76,7 @@ void QMCLinearOptimize::add_timers(vector<NewTimer*>& timers)
 /** Add configuration files for the optimization
 * @param a root of a hdf5 configuration file
 */
-void QMCLinearOptimize::addConfiguration(const string& a)
+void QMCLinearOptimize::addConfiguration(const std::string& a)
 {
   if (a.size())
     ConfigFile.push_back(a);
@@ -93,12 +93,12 @@ void QMCLinearOptimize::start()
   myTimers[0]->stop();
   //store active number of walkers
   NumOfVMCWalkers=W.getActiveWalkers();
-  app_log() << "<opt stage=\"setup\">" << endl;
-  app_log() << "  <log>"<<endl;
+  app_log() << "<opt stage=\"setup\">" << std::endl;
+  app_log() << "  <log>"<< std::endl;
   //reset the rootname
   optTarget->setRootName(RootName);
   optTarget->setWaveFunctionNode(wfNode);
-  app_log() << "   Reading configurations from h5FileRoot " << h5FileRoot << endl;
+  app_log() << "   Reading configurations from h5FileRoot " << h5FileRoot << std::endl;
   //get configuration from the previous run
   Timer t1;
   myTimers[1]->start();
@@ -106,64 +106,64 @@ void QMCLinearOptimize::start()
   optTarget->setRng(vmcEngine->getRng());
   optTarget->checkConfigurations();
   myTimers[1]->stop();
-  app_log() << "  Execution time = " << t1.elapsed() << endl;
-  app_log() << "  </log>"<<endl;
-  app_log() << "</opt>" << endl;
-  app_log() << "<opt stage=\"main\" walkers=\""<< optTarget->getNumSamples() << "\">" << endl;
-  app_log() << "  <log>" << endl;
+  app_log() << "  Execution time = " << t1.elapsed() << std::endl;
+  app_log() << "  </log>"<< std::endl;
+  app_log() << "</opt>" << std::endl;
+  app_log() << "<opt stage=\"main\" walkers=\""<< optTarget->getNumSamples() << "\">" << std::endl;
+  app_log() << "  <log>" << std::endl;
   t1.restart();
 }
 
 void QMCLinearOptimize::finish()
 {
   MyCounter++;
-  app_log() << "  Execution time = " << t1.elapsed() << endl;
+  app_log() << "  Execution time = " << t1.elapsed() << std::endl;
   TimerManager.print(myComm);
   TimerManager.reset();
-  app_log() << "  </log>" << endl;
+  app_log() << "  </log>" << std::endl;
   optTarget->reportParameters();
   int nw_removed=W.getActiveWalkers()-NumOfVMCWalkers;
-  app_log() << "   Restore the number of walkers to " << NumOfVMCWalkers << ", removing " << nw_removed << " walkers." <<endl;
+  app_log() << "   Restore the number of walkers to " << NumOfVMCWalkers << ", removing " << nw_removed << " walkers." << std::endl;
   if(nw_removed>0)
     W.destroyWalkers(nw_removed);
   else
     W.createWalkers(-nw_removed);
-  app_log() << "</opt>" << endl;
-  app_log() << "</optimization-report>" << endl;
+  app_log() << "</opt>" << std::endl;
+  app_log() << "</optimization-report>" << std::endl;
 }
 
 void QMCLinearOptimize::generateSamples()
 {
-  app_log() << "<optimization-report>" << endl;
+  app_log() << "<optimization-report>" << std::endl;
   //if(WarmupBlocks)
   //{
-  //  app_log() << "<vmc stage=\"warm-up\" blocks=\"" << WarmupBlocks << "\">" << endl;
+  //  app_log() << "<vmc stage=\"warm-up\" blocks=\"" << WarmupBlocks << "\">" << std::endl;
   //  //turn off QMC_OPTIMIZE
   //  vmcEngine->setValue("blocks",WarmupBlocks);
   vmcEngine->QMCDriverMode.set(QMC_WARMUP,1);
   //  vmcEngine->run();
   //  vmcEngine->setValue("blocks",nBlocks);
-  //  app_log() << "  Execution time = " << t1.elapsed() << endl;
-  //  app_log() << "</vmc>" << endl;
+  //  app_log() << "  Execution time = " << t1.elapsed() << std::endl;
+  //  app_log() << "</vmc>" << std::endl;
   //}
 //     if (W.getActiveWalkers()>NumOfVMCWalkers)
 //     {
 //         W.destroyWalkers(W.getActiveWalkers()-NumOfVMCWalkers);
-//         app_log() << "  QMCLinearOptimize::generateSamples removed walkers." << endl;
-//         app_log() << "  Number of Walkers per node " << W.getActiveWalkers() << endl;
+//         app_log() << "  QMCLinearOptimize::generateSamples removed walkers." << std::endl;
+//         app_log() << "  Number of Walkers per node " << W.getActiveWalkers() << std::endl;
 //     }
   vmcEngine->QMCDriverMode.set(QMC_OPTIMIZE,1);
   vmcEngine->QMCDriverMode.set(QMC_WARMUP,0);
   //vmcEngine->setValue("recordWalkers",1);//set record
   vmcEngine->setValue("current",0);//reset CurrentStep
-  app_log() << "<vmc stage=\"main\" blocks=\"" << nBlocks << "\">" << endl;
+  app_log() << "<vmc stage=\"main\" blocks=\"" << nBlocks << "\">" << std::endl;
   t1.restart();
   //     W.reset();
   branchEngine->flush(0);
   branchEngine->reset();
   vmcEngine->run();
-  app_log() << "  Execution time = " << t1.elapsed() << endl;
-  app_log() << "</vmc>" << endl;
+  app_log() << "  Execution time = " << t1.elapsed() << std::endl;
+  app_log() << "</vmc>" << std::endl;
   //write parameter history and energies to the parameter file in the trial wave function through opttarget
   RealType e,w,var;
   vmcEngine->Estimators->getEnergyAndWeight(e,w,var);
@@ -175,7 +175,7 @@ void QMCLinearOptimize::generateSamples()
   h5FileRoot=RootName;
 }
 
-QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealType>& A, Matrix<RealType>& B, vector<RealType>& ev)
+QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealType>& A, Matrix<RealType>& B, std::vector<RealType>& ev)
 {
   int Nl(ev.size());
   //Tested the single eigenvalue speed and It was no faster.
@@ -186,7 +186,7 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealT
     Matrix<double> TAU(Nl,Nl);
     int INFO;
     int LWORK(-1);
-    vector<RealType> WORK(1);
+    std::vector<RealType> WORK(1);
     //optimal work size
     dgeqrf( &Nl, &Nl, B.data(), &Nl, TAU.data(), &WORK[0], &LWORK, &INFO);
     LWORK=int(WORK[0]);
@@ -212,7 +212,7 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealT
       Z(zi,zi)=1;
     dgghrd(&COMPQ, &COMPZ, &Nl, &ILO, &Nl, A.data(), &Nl, B.data(), &Nl, Q.data(), &LDQ, Z.data(), &Nl, &INFO);
     //Take the pair and reduce to shur form and get eigenvalues
-    vector<RealType> alphar(Nl),alphai(Nl),beta(Nl);
+    std::vector<RealType> alphar(Nl),alphai(Nl),beta(Nl);
     char JOB('S');
     COMPQ='N';
     COMPZ='V';
@@ -223,7 +223,7 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealT
     WORK.resize(LWORK);
     dhgeqz(&JOB, &COMPQ, &COMPZ, &Nl, &ILO, &Nl, A.data(), &Nl, B.data(), &Nl, &alphar[0], &alphai[0], &beta[0], Q.data(), &LDQ, Z.data(), &Nl, &WORK[0], &LWORK, &INFO);
     //find the best eigenvalue
-    vector<std::pair<RealType,int> > mappedEigenvalues(Nl);
+    std::vector<std::pair<RealType,int> > mappedEigenvalues(Nl);
     for (int i=0; i<Nl; i++)
     {
       RealType evi(alphar[i]/beta[i]);
@@ -271,7 +271,7 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealT
     for (int i=0; i<Nl; i++)
       ev[i] = evec[i]/evec[0];
 //     for (int i=0; i<Nl; i++) app_log()<<ev[i]<<" ";
-//     app_log()<<endl;
+//     app_log()<< std::endl;
     return mappedEigenvalues[0].first;
   }
   else
@@ -280,11 +280,11 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealT
 //   Getting the optimal worksize
     char jl('N');
     char jr('V');
-    vector<RealType> alphar(Nl),alphai(Nl),beta(Nl);
+    std::vector<RealType> alphar(Nl),alphai(Nl),beta(Nl);
     Matrix<RealType> eigenT(Nl,Nl);
     int info;
     int lwork(-1);
-    vector<RealType> work(1);
+    std::vector<RealType> work(1);
     RealType tt(0);
     int t(1);
     dggev(&jl, &jr, &Nl, A.data(), &Nl, B.data(), &Nl, &alphar[0], &alphai[0], &beta[0],&tt,&t, eigenT.data(), &Nl, &work[0], &lwork, &info);
@@ -307,7 +307,7 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealT
     {
       APP_ABORT("Invalid Matrix Diagonalization Function!");
     }
-    vector<std::pair<RealType,int> > mappedEigenvalues(Nl);
+    std::vector<std::pair<RealType,int> > mappedEigenvalues(Nl);
     for (int i=0; i<Nl; i++)
     {
       RealType evi(alphar[i]/beta[i]);
@@ -330,7 +330,7 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealT
 }
 
 
-QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealType>& A, vector<RealType>& ev)
+QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealType>& A, std::vector<RealType>& ev)
 {
   int Nl(ev.size());
   //Tested the single eigenvalue speed and It was no faster.
@@ -341,7 +341,7 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealT
 //         Matrix<double> TAU(Nl,Nl);
 //         int INFO;
 //         int LWORK(-1);
-//         vector<RealType> WORK(1);
+//         std::vector<RealType> WORK(1);
 //         //optimal work size
 //         dgeqrf( &Nl, &Nl, B.data(), &Nl, TAU.data(), &WORK[0], &LWORK, &INFO);
 //         LWORK=int(WORK[0]);
@@ -369,7 +369,7 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealT
 //         dgghrd(&COMPQ, &COMPZ, &Nl, &ILO, &Nl, A.data(), &Nl, B.data(), &Nl, Q.data(), &LDQ, Z.data(), &Nl, &INFO);
 //
 //         //Take the pair and reduce to shur form and get eigenvalues
-//         vector<RealType> alphar(Nl),alphai(Nl),beta(Nl);
+//         std::vector<RealType> alphar(Nl),alphai(Nl),beta(Nl);
 //         char JOB('S');
 //         COMPQ='N';
 //         COMPZ='V';
@@ -380,7 +380,7 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealT
 //         WORK.resize(LWORK);
 //         dhgeqz(&JOB, &COMPQ, &COMPZ, &Nl, &ILO, &Nl, A.data(), &Nl, B.data(), &Nl, &alphar[0], &alphai[0], &beta[0], Q.data(), &LDQ, Z.data(), &Nl, &WORK[0], &LWORK, &INFO);
 //         //find the best eigenvalue
-//         vector<std::pair<RealType,int> > mappedEigenvalues(Nl);
+//         std::vector<std::pair<RealType,int> > mappedEigenvalues(Nl);
 //         for (int i=0; i<Nl; i++)
 //         {
 //             RealType evi(alphar[i]/beta[i]);
@@ -428,7 +428,7 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealT
 //         for (int i=0; i<Nl; i++) for (int j=0; j<Nl; j++) evec[i] += Z(j,i)*Z_I(0,j);
 //         for (int i=0; i<Nl; i++) ev[i] = evec[i]/evec[0];
 // //     for (int i=0; i<Nl; i++) app_log()<<ev[i]<<" ";
-// //     app_log()<<endl;
+// //     app_log()<< std::endl;
 //         return mappedEigenvalues[0].first;
 //     }
 //     else
@@ -438,12 +438,12 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealT
   RealType zerozero=A(0,0);
   char jl('N');
   char jr('V');
-  vector<RealType> alphar(Nl),alphai(Nl),beta(Nl);
+  std::vector<RealType> alphar(Nl),alphai(Nl),beta(Nl);
   Matrix<RealType> eigenT(Nl,Nl);
   Matrix<RealType> eigenD(Nl,Nl);
   int info;
   int lwork(-1);
-  vector<RealType> work(1);
+  std::vector<RealType> work(1);
   RealType tt(0);
   int t(1);
   dgeev(&jl, &jr, &Nl, A.data(), &Nl,  &alphar[0], &alphai[0], eigenD.data(), &Nl, eigenT.data(), &Nl, &work[0], &lwork, &info);
@@ -466,7 +466,7 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealT
   {
     APP_ABORT("Invalid Matrix Diagonalization Function!");
   }
-  vector<std::pair<RealType,int> > mappedEigenvalues(Nl);
+  std::vector<std::pair<RealType,int> > mappedEigenvalues(Nl);
   for (int i=0; i<Nl; i++)
   {
     RealType evi(alphar[i]);
@@ -482,7 +482,7 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealT
     }
   }
   std::sort(mappedEigenvalues.begin(),mappedEigenvalues.end());
-//         for (int i=0; i<4; i++) app_log()<<i<<": "<<alphar[mappedEigenvalues[i].second]<<endl;
+//         for (int i=0; i<4; i++) app_log()<<i<<": "<<alphar[mappedEigenvalues[i].second]<< std::endl;
   for (int i=0; i<Nl; i++)
     ev[i] = eigenT(mappedEigenvalues[0].second,i)/eigenT(mappedEigenvalues[0].second,0);
   return alphar[mappedEigenvalues[0].second];
@@ -526,7 +526,7 @@ void QMCLinearOptimize::getNonLinearRange(int& first, int& last)
     }
   }
 //     returns the number of non-linear parameters.
-//    app_log()<<"line params: "<<first<<" "<<last<<endl;
+//    app_log()<<"line params: "<<first<<" "<<last<< std::endl;
 }
 
 QMCLinearOptimize::RealType QMCLinearOptimize::getNonLinearRescale(std::vector<RealType>& dP, Matrix<RealType>& S)
@@ -543,7 +543,7 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getNonLinearRescale(std::vector<R
       D += S(i+1,j+1)*dP[i+1]*dP[j+1];
   rescale = (1-xi)*D/((1-xi) + xi*std::sqrt(1+D));
   rescale = 1.0/(1.0-rescale);
-//     app_log()<<"rescale: "<<rescale<<endl;
+//     app_log()<<"rescale: "<<rescale<< std::endl;
   return rescale;
 }
 
@@ -573,22 +573,22 @@ void QMCLinearOptimize::orthoScale(std::vector<RealType>& dP, Matrix<RealType>& 
     dP[i] *=rs;
   for (int i=0; i<dP.size(); i++)
     app_log()<<dP[i]<<" ";
-  app_log()<<endl;
+  app_log()<< std::endl;
 //     RealType D(0.0);
 //     for (int i=first; i<last; i++) D += 2.0*S(i+1,0)*dP[i];
 //     for (int i=first; i<last; i++) for (int j=first; j<last; j++) D += S(i+1,j+1)*dP[i]*dP[j];
-//     app_log()<<D<<endl;
+//     app_log()<<D<< std::endl;
 //
 //
 //     RealType rescale = 0.5*D/(0.5 + 0.5*std::sqrt(1.0+D));
 //     rescale = 1.0/(1.0-rescale);
-//     app_log()<<rescale<<endl;
+//     app_log()<<rescale<< std::endl;
 //     for (int i=0; i<dP.size(); i++) dP[i] *= rescale;
 }
 
-QMCLinearOptimize::RealType QMCLinearOptimize::getSplitEigenvectors(int first, int last, Matrix<RealType>& FullLeft, Matrix<RealType>& FullRight, vector<RealType>& FullEV, vector<RealType>& LocalEV, string CSF_Option, bool& CSF_scaled)
+QMCLinearOptimize::RealType QMCLinearOptimize::getSplitEigenvectors(int first, int last, Matrix<RealType>& FullLeft, Matrix<RealType>& FullRight, std::vector<RealType>& FullEV, std::vector<RealType>& LocalEV, std::string CSF_Option, bool& CSF_scaled)
 {
-  vector<RealType> GEVSplitDirection(N,0);
+  std::vector<RealType> GEVSplitDirection(N,0);
   RealType returnValue;
   int N_nonlin=last-first;
   int N_lin   =N-N_nonlin-1;
@@ -620,7 +620,7 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getSplitEigenvectors(int first, i
       RightTJ(i-J_begin+1,j-J_begin+1)= FullRight(i,j);
     }
   }
-  vector<RealType> J_parms(M_nonlin);
+  std::vector<RealType> J_parms(M_nonlin);
   myTimers[2]->start();
   RealType lowest_J_EV =getLowestEigenvector(LeftTJ,RightTJ,J_parms);
   myTimers[2]->stop();
@@ -640,18 +640,18 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getSplitEigenvectors(int first, i
       RightTCSF(i-CSF_begin+1,j-CSF_begin+1)= FullRight(i,j);
     }
   }
-  vector<RealType> CSF_parms(M_lin);
+  std::vector<RealType> CSF_parms(M_lin);
   myTimers[2]->start();
   RealType lowest_CSF_EV =getLowestEigenvector(LeftTCSF,RightTCSF,CSF_parms);
   myTimers[2]->stop();
 // //                   Now we have both eigenvalues and eigenvectors
-//                   app_log()<<" Jastrow eigenvalue: "<<lowest_J_EV<<endl;
-//                   app_log()<<"     CSF eigenvalue: "<<lowest_CSF_EV<<endl;
+//                   app_log()<<" Jastrow eigenvalue: "<<lowest_J_EV<< std::endl;
+//                   app_log()<<"     CSF eigenvalue: "<<lowest_CSF_EV<< std::endl;
 //                We can rescale the matrix and re-solve the whole thing or take the CSF parameters
 //                  as solved in the matrix and opt the Jastrow instead
   if (CSF_Option=="freeze")
   {
-    returnValue=min(lowest_J_EV,lowest_CSF_EV);
+    returnValue= std::min(lowest_J_EV,lowest_CSF_EV);
 //                   Line minimize for the nonlinear components
     for (int i=J_begin; i<J_end; i++)
       GEVSplitDirection[i]=J_parms[i-J_begin+1];
@@ -692,7 +692,7 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getSplitEigenvectors(int first, i
           CSF_scaled=true;
         else
           CSF_scaled=false;
-        returnValue=min(lowest_J_EV,lowest_CSF_EV);
+        returnValue= std::min(lowest_J_EV,lowest_CSF_EV);
       }
   return returnValue;
 }
@@ -704,8 +704,8 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getSplitEigenvectors(int first, i
 bool
 QMCLinearOptimize::put(xmlNodePtr q)
 {
-  string useGPU("no");
-  string vmcMove("pbyp");
+  std::string useGPU("no");
+  std::string vmcMove("pbyp");
   OhmmsAttributeSet oAttrib;
   oAttrib.add(useGPU,"gpu");
   oAttrib.add(vmcMove,"move");
@@ -715,7 +715,7 @@ QMCLinearOptimize::put(xmlNodePtr q)
   int pid=OHMMS::Controller->rank();
   while (cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if (cname == "mcwalkerset")
     {
       mcwalkerNodePtr.push_back(cur);
@@ -766,7 +766,7 @@ QMCLinearOptimize::put(xmlNodePtr q)
 
 void QMCLinearOptimize::resetComponents(xmlNodePtr cur)
 {
-  string useGPU("yes");
+  std::string useGPU("yes");
   optNode=cur;
   m_param.put(cur);
   if(optTarget)
@@ -783,7 +783,7 @@ void QMCLinearOptimize::resetComponents(xmlNodePtr cur)
   //if(qmc_common.qmc_counter ==0) vmcEngine->put(cur);
   //vmcEngine->resetComponents(cur);
 }
-bool QMCLinearOptimize::fitMappedStabilizers(vector<std::pair<RealType,RealType> >&
+bool QMCLinearOptimize::fitMappedStabilizers(std::vector<std::pair<RealType,RealType> >&
     mappedStabilizers, RealType& XS, RealType& val, RealType tooBig )
 {
   int nms(0);
@@ -794,7 +794,7 @@ bool QMCLinearOptimize::fitMappedStabilizers(vector<std::pair<RealType,RealType>
   if (nms>=5)
   {
     //Quartic fit the stabilizers we have tried and try to choose the best we can
-    vector<RealType>  Y(nms), Coefs(5);
+    std::vector<RealType>  Y(nms), Coefs(5);
     Matrix<RealType> X(nms,5);
     for (int i=0; i<nms; i++)
       if(mappedStabilizers[i].second==mappedStabilizers[i].second)
@@ -811,9 +811,9 @@ bool QMCLinearOptimize::fitMappedStabilizers(vector<std::pair<RealType,RealType>
     val=0;
     for (int i=0; i<5; i++)
       val+=std::pow(Xmin,i)*Coefs[i];
-    app_log()<<"quartic Fit min: "<<Xmin<<" val: "<<val<<endl;;
+    app_log()<<"quartic Fit min: "<<Xmin<<" val: "<<val<< std::endl;;
 //         for (int i=0; i<5; i++) app_log()<<Coefs[i]<<" ";
-//         app_log()<<endl;
+//         app_log()<< std::endl;
     SuccessfulFit=true;
     for (int i=0; i<nms; i++)
       if(mappedStabilizers[i].second==mappedStabilizers[i].second)
@@ -829,7 +829,7 @@ bool QMCLinearOptimize::fitMappedStabilizers(vector<std::pair<RealType,RealType>
     {
       //Quadratic fit the stabilizers we have tried and try to choose the best we can
       std::sort(mappedStabilizers.begin(),mappedStabilizers.end());
-      vector<RealType>  Y(nms), Coefs(3);
+      std::vector<RealType>  Y(nms), Coefs(3);
       Matrix<RealType> X(nms,3);
       for (int i=0; i<nms; i++)
         if(mappedStabilizers[i].second==mappedStabilizers[i].second)
@@ -845,9 +845,9 @@ bool QMCLinearOptimize::fitMappedStabilizers(vector<std::pair<RealType,RealType>
       val=0;
       for (int i=0; i<3; i++)
         val+=std::pow(Xmin,i)*Coefs[i];
-      app_log()<<"quadratic Fit min: "<<Xmin<<" val: "<<val<<endl;
+      app_log()<<"quadratic Fit min: "<<Xmin<<" val: "<<val<< std::endl;
 //         for (int i=0; i<3; i++) app_log()<<Coefs[i]<<" ";
-//         app_log()<<endl;
+//         app_log()<< std::endl;
       SuccessfulFit=true;
       if(Xmin>tooBig)
         SuccessfulFit=false;

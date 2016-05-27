@@ -78,20 +78,20 @@ bool FWSingleOMP::run()
     if (H5Fclose(f_file)>-1)
       f_file=-1;
     if (verbose>0)
-      app_log()<<" weightLength "<<weightLength<<endl;
+      app_log()<<" weightLength "<<weightLength<< std::endl;
   }
   if (verbose>0)
-    app_log()<<" Done Computing Weights"<<endl;
+    app_log()<<" Done Computing Weights"<< std::endl;
   if (doObservables==1)
   {
     int nprops = H.sizeOfObservables();//local energy, local potnetial and all hamiltonian elements
     int FirstHamiltonian = H.startIndex();
-    //     vector<vector<vector<RealType> > > savedValues;
+    //     std::vector<std::vector<vector<RealType> > > savedValues;
     int nelectrons = W[0]->R.size();
     int nfloats=OHMMS_DIM*nelectrons;
     //     W.clearEnsemble();
     makeClones(W,Psi,H);
-    vector<ForwardWalkingData* > FWvector;
+    std::vector<ForwardWalkingData* > FWvector;
     for(int ip=0; ip<NumThreads; ip++)
       FWvector.push_back(new ForwardWalkingData(nelectrons));
     if (myComm->rank()==0)
@@ -100,18 +100,18 @@ bool FWSingleOMP::run()
     for(int step=0; step<numSteps; step++)
     {
       hdf_float_data.setStep(step);
-      vector<RealType> stepObservables(walkersPerBlock[step]*(nprops+2), 0);
+      std::vector<RealType> stepObservables(walkersPerBlock[step]*(nprops+2), 0);
       for(int wstep=0; wstep<walkersPerBlock[step];)
       {
-        vector<float> ThreadsCoordinate(NumThreads*nfloats);
+        std::vector<float> ThreadsCoordinate(NumThreads*nfloats);
         int nwalkthread = hdf_float_data.getFloat(wstep*nfloats, (wstep+NumThreads)*nfloats, ThreadsCoordinate) / nfloats;
         //         for(int j=0;j<ThreadsCoordinate.size();j++)cout<<ThreadsCoordinate[j]<<" ";
-        //         cout<<endl;
+        //         std::cout << std::endl;
         #pragma omp parallel for
         for(int ip=0; ip<nwalkthread; ip++)
         {
-          vector<float> SINGLEcoordinate(0);
-          vector<float>::iterator TCB1(ThreadsCoordinate.begin()+ip*nfloats), TCB2(ThreadsCoordinate.begin()+(1+ip)*nfloats);
+          std::vector<float> SINGLEcoordinate(0);
+          std::vector<float>::iterator TCB1(ThreadsCoordinate.begin()+ip*nfloats), TCB2(ThreadsCoordinate.begin()+(1+ip)*nfloats);
           SINGLEcoordinate.insert(SINGLEcoordinate.begin(),TCB1,TCB2);
           FWvector[ip]->fromFloat(SINGLEcoordinate);
           wClones[ip]->R=FWvector[ip]->Pos;
@@ -135,12 +135,12 @@ bool FWSingleOMP::run()
       //       savedValues.push_back(stepObservables);
       hdf_float_data.endStep();
       if (verbose >1)
-        cout<<"Done with step: "<<step<<endl;
+        std::cout <<"Done with step: "<<step<< std::endl;
     }
   }
   if(doDat>=1)
   {
-    vector<int> Dimensions(4);
+    std::vector<int> Dimensions(4);
     hdf_WGT_data.openFile();
     hdf_OBS_data.openFile();
     Estimators->start(weightLength,1);
@@ -181,12 +181,12 @@ int FWSingleOMP::getNumberOfSamples(int omittedSteps)
 void FWSingleOMP::fillIDMatrix()
 {
   if (verbose>0)
-    app_log()<<" There are "<<numSteps<<" steps"<<endl;
+    app_log()<<" There are "<<numSteps<<" steps"<< std::endl;
   IDs.resize(numSteps);
   PIDs.resize(numSteps);
   Weights.resize(numSteps);
-  vector<vector<long> >::iterator stepIDIterator(IDs.begin());
-  vector<vector<long> >::iterator stepPIDIterator(PIDs.begin());
+  std::vector<std::vector<long> >::iterator stepIDIterator(IDs.begin());
+  std::vector<std::vector<long> >::iterator stepPIDIterator(PIDs.begin());
   int st(0);
   hdf_ID_data.openFile(fname.str());
   hdf_PID_data.openFile(fname.str());
@@ -199,7 +199,7 @@ void FWSingleOMP::fillIDMatrix()
     stepPIDIterator++;
     st++;
     if (verbose>1)
-      app_log()<<"step:"<<st<<endl;
+      app_log()<<"step:"<<st<< std::endl;
   }
   while (st<numSteps);
   hdf_ID_data.closeFile();
@@ -215,7 +215,7 @@ void FWSingleOMP::fillIDMatrix()
 void FWSingleOMP::resetWeights()
 {
   if (verbose>2)
-    app_log()<<" Resetting Weights"<<endl;
+    app_log()<<" Resetting Weights"<< std::endl;
   Weights.clear();
   Weights.resize(numSteps);
   for(int i=0; i<numSteps; i++)
@@ -225,8 +225,8 @@ void FWSingleOMP::resetWeights()
 void FWSingleOMP::FWOneStep()
 {
   //create an ordered version of the ParentIDs to make the weight calculation faster
-  vector<vector<long> > orderedPIDs=(PIDs);
-  vector<vector<long> >::iterator it(orderedPIDs.begin());
+  std::vector<std::vector<long> > orderedPIDs=(PIDs);
+  std::vector<std::vector<long> >::iterator it(orderedPIDs.begin());
   do
   {
     std::sort((*it).begin(),(*it).end());
@@ -234,23 +234,23 @@ void FWSingleOMP::FWOneStep()
   }
   while(it<orderedPIDs.end());
   if (verbose>2)
-    app_log()<<" Done Sorting IDs"<<endl;
+    app_log()<<" Done Sorting IDs"<< std::endl;
   resetWeights();
-  vector<vector<long> >::iterator stepIDIterator(IDs.begin());
-  vector<vector<long> >::iterator stepPIDIterator(orderedPIDs.begin() + gensTransferred);
-  vector<vector<int> >::iterator stepWeightsIterator(Weights.begin());
+  std::vector<std::vector<long> >::iterator stepIDIterator(IDs.begin());
+  std::vector<std::vector<long> >::iterator stepPIDIterator(orderedPIDs.begin() + gensTransferred);
+  std::vector<std::vector<int> >::iterator stepWeightsIterator(Weights.begin());
   //we start comparing the next generations ParentIDs with the current generations IDs
   int i=0;
   do
   {
     if (verbose>2)
-      app_log()<<"  calculating weights for gen:"<<gensTransferred<<" step:"<<i<<"/"<<orderedPIDs.size()<<endl;
-    //       if (verbose>2) app_log()<<"Nsamples ="<<(*stepWeightsIteratoetWeights).size()<<endl;
-    vector<long>::iterator IDit( (*stepIDIterator).begin()     );
-    vector<long>::iterator PIDit( (*stepPIDIterator).begin()   );
-    vector<int>::iterator  Wit( (*stepWeightsIterator).begin() );
+      app_log()<<"  calculating weights for gen:"<<gensTransferred<<" step:"<<i<<"/"<<orderedPIDs.size()<< std::endl;
+    //       if (verbose>2) app_log()<<"Nsamples ="<<(*stepWeightsIteratoetWeights).size()<< std::endl;
+    std::vector<long>::iterator IDit( (*stepIDIterator).begin()     );
+    std::vector<long>::iterator PIDit( (*stepPIDIterator).begin()   );
+    std::vector<int>::iterator  Wit( (*stepWeightsIterator).begin() );
     if (verbose>2)
-      app_log()<<"ID size:"<<(*stepIDIterator).size()<<" PID size:"<<(*stepPIDIterator).size()<<" Weight size:"<<(*stepWeightsIterator).size()<<endl;
+      app_log()<<"ID size:"<<(*stepIDIterator).size()<<" PID size:"<<(*stepPIDIterator).size()<<" Weight size:"<<(*stepWeightsIterator).size()<< std::endl;
     do
     {
       if ((*PIDit)==(*IDit))
@@ -280,33 +280,33 @@ void FWSingleOMP::FWOneStep()
   while(stepPIDIterator<orderedPIDs.end());
 }
 
-void FWSingleOMP::printIDs(vector<long> vi)
+void FWSingleOMP::printIDs(std::vector<long> vi)
 {
   for (int j=0; j<vi.size(); j++)
     app_log()<<vi[j]<<" ";
-  app_log()<<endl;
+  app_log()<< std::endl;
 }
-void FWSingleOMP::printInts(vector<int> vi)
+void FWSingleOMP::printInts(std::vector<int> vi)
 {
   for (int j=0; j<vi.size(); j++)
     app_log()<<vi[j]<<" ";
-  app_log()<<endl;
+  app_log()<< std::endl;
 }
 
 void FWSingleOMP::transferParentsOneGeneration( )
 {
-  vector<vector<long> >::reverse_iterator stepIDIterator(IDs.rbegin());
-  vector<vector<long> >::reverse_iterator stepPIDIterator(PIDs.rbegin()), nextStepPIDIterator(realPIDs.rbegin());
+  std::vector<std::vector<long> >::reverse_iterator stepIDIterator(IDs.rbegin());
+  std::vector<std::vector<long> >::reverse_iterator stepPIDIterator(PIDs.rbegin()), nextStepPIDIterator(realPIDs.rbegin());
   stepIDIterator+=gensTransferred;
   nextStepPIDIterator+=gensTransferred;
   int i(0);
   do
   {
-    vector<long>::iterator hereID( (*stepIDIterator).begin() ) ;
-    vector<long>::iterator nextStepPID( (*nextStepPIDIterator).begin() );
-    vector<long>::iterator herePID( (*stepPIDIterator).begin() );
+    std::vector<long>::iterator hereID( (*stepIDIterator).begin() ) ;
+    std::vector<long>::iterator nextStepPID( (*nextStepPIDIterator).begin() );
+    std::vector<long>::iterator herePID( (*stepPIDIterator).begin() );
     if (verbose>2)
-      app_log()<<"  calculating Parent IDs for gen:"<<gensTransferred<<" step:"<<i<<"/"<<PIDs.size()-gensTransferred<<endl;
+      app_log()<<"  calculating Parent IDs for gen:"<<gensTransferred<<" step:"<<i<<"/"<<PIDs.size()-gensTransferred<< std::endl;
     if (verbose>2)
     {
       printIDs((*nextStepPIDIterator));
@@ -328,7 +328,7 @@ void FWSingleOMP::transferParentsOneGeneration( )
         {
           hereID=(*stepIDIterator).begin();
           nextStepPID=(*nextStepPIDIterator).begin();
-          //             if (verbose>2) app_log()<<"resetting to beginning of parents"<<endl;
+          //             if (verbose>2) app_log()<<"resetting to beginning of parents"<< std::endl;
         }
       }
     }
@@ -341,7 +341,7 @@ void FWSingleOMP::transferParentsOneGeneration( )
   while(stepIDIterator<IDs.rend());
   gensTransferred++; //number of gens backward to compare parents
   if (verbose>2)
-    app_log()<<"  Finished generation block"<<endl;
+    app_log()<<"  Finished generation block"<< std::endl;
 }
 
 
@@ -353,16 +353,16 @@ FWSingleOMP::put(xmlNodePtr q)
   hsize_t numGrps = 0;
   H5Gget_num_objs(c_file, &numGrps);
   numSteps = static_cast<int> (numGrps)-3;
-  app_log()<<"  Total number of steps in input file "<<numSteps<<endl;
+  app_log()<<"  Total number of steps in input file "<<numSteps<< std::endl;
   if (weightFreq<1)
     weightFreq=1;
   int numberDataPoints = weightLength/weightFreq;
   //     pointsToCalculate.resize(numberDataPoints);
   //     for(int i=0;i<numberDataPoints;i++) pointsToCalculate[i]=i*weightFreq;
-  app_log()<<"  "<<numberDataPoints<<" sets of observables will be calculated each "<<weightFreq<<" steps"<<endl;
-  app_log()<<"  Config Generations skipped for thermalization: "<<startStep<<endl;//<<" steps. At: ";
+  app_log()<<"  "<<numberDataPoints<<" sets of observables will be calculated each "<<weightFreq<<" steps"<< std::endl;
+  app_log()<<"  Config Generations skipped for thermalization: "<<startStep<< std::endl;//<<" steps. At: ";
   //     for(int i=0;i<numberDataPoints;i++) app_log()<<pointsToCalculate[i]<<" ";
-  app_log()<<endl;
+  app_log()<< std::endl;
   if (H5Fclose(c_file)>-1)
     c_file=-1;
   return true;

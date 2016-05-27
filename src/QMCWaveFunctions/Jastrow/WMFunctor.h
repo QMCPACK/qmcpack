@@ -152,7 +152,7 @@ struct WMFunctorSet: public OptimizableFunctorBase
   ///12/Rcut/Rcut
   real_type D2xDr2;
   ///input  Param[i][0]=B; Param[i][1]=C for i-th component
-  vector<variable_type> Params;
+  std::vector<variable_type> Params;
 
   WMFunctorSet(real_type rc=7.5):Rcut(rc)
   {
@@ -169,12 +169,12 @@ struct WMFunctorSet: public OptimizableFunctorBase
 
   inline void reset() {}
 
-  inline void addComponent(real_type c, real_type b, const string& aname)
+  inline void addComponent(real_type c, real_type b, const std::string& aname)
   {
     int i=Params.size();
     Params.push_back(variable_type(c,b));
-    string cname=aname+"_C";
-    string ename=aname+"_E";
+    std::string cname=aname+"_C";
+    std::string ename=aname+"_E";
     myVars.insert(cname,Params[i][0]);
     myVars.insert(ename,Params[i][1]);
   }
@@ -219,7 +219,7 @@ struct WMFunctorSet: public OptimizableFunctorBase
   }
 
   inline bool
-  evaluateDerivatives(real_type r, vector<TinyVector<real_type,3> >& derivs)
+  evaluateDerivatives(real_type r, std::vector<TinyVector<real_type,3> >& derivs)
   {
     if(r>=Rcut)
       return false;
@@ -230,7 +230,7 @@ struct WMFunctorSet: public OptimizableFunctorBase
     real_type dzdrsq=dzdr*dzdr;
     real_type d2zdr2=D2xDr2*(1.0-4.0*x+3.0*xx);
     typedef TinyVector<real_type,3> e_type;
-    typename vector<e_type>::iterator dit(derivs.begin());
+    typename std::vector<e_type>::iterator dit(derivs.begin());
     for(int i=0,ii=0; i<Params.size(); ++i)
     {
       real_type c=Params[i][0];

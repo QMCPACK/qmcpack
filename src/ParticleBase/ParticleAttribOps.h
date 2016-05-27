@@ -28,7 +28,7 @@
  *
  *  Equivalent to blitz::Array<T,1>, pooma::Array<1,T>.
  *
- *  class C is a container class. Default is vector<T>
+ *  class C is a container class. Default is std::vector<T>
  *
  *  \todo Implement openMP compatible container class or evaluate function.
  *  \todo Implement get/put member functions for MPI-like parallelism
@@ -144,9 +144,9 @@ struct PAOps<T,3>
 {
 
   typedef T                        real_type;
-  typedef complex<T>               complex_type;
+  typedef std::complex<T>               complex_type;
   typedef TinyVector<T,3>          rpos_type;
-  typedef TinyVector<complex<T>,3> cpos_type;
+  typedef TinyVector<std::complex<T>,3> cpos_type;
 
   static inline
   void scale(T a, const ParticleAttrib<cpos_type>& pa,
@@ -237,9 +237,9 @@ struct PAOps<T,2>
 {
 
   typedef T                        real_type;
-  typedef complex<T>               complex_type;
+  typedef std::complex<T>               complex_type;
   typedef TinyVector<T,2>          rpos_type;
-  typedef TinyVector<complex<T>,2> cpos_type;
+  typedef TinyVector<std::complex<T>,2> cpos_type;
 
   static inline
   void scale(T a, const ParticleAttrib<cpos_type>& pa,

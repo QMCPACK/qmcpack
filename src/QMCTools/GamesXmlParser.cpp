@@ -41,7 +41,7 @@ void GamesXmlParser::parse(const std::string& fname)
 {
   if(multideterminant)
   {
-    cerr<<"Multideterminant parser for Gamesxml is not implemented. \n";
+    std::cerr <<"Multideterminant parser for Gamesxml is not implemented. \n";
     exit(201);
   }
   xmlDocPtr m_doc = xmlParseFile(fname.c_str());
@@ -59,26 +59,26 @@ void GamesXmlParser::parse(const std::string& fname)
     return;
   }
   //xmlNodePtr for atoms
-  vector<xmlNodePtr> aPtrList;
+  std::vector<xmlNodePtr> aPtrList;
   //xmlNodePtr for eigvectors
-  vector<xmlNodePtr> ePtrList;
+  std::vector<xmlNodePtr> ePtrList;
   //xmlNodePtr for gaussian basis
-  vector<xmlNodePtr> bPtrList;
+  std::vector<xmlNodePtr> bPtrList;
   cur=cur->children;
   while(cur != NULL)
   {
-    string cname((const char*)cur->name);
+    std::string cname((const char*)cur->name);
     if(cname == "IN")
     {
       xmlNodePtr cur1=cur->children;
       while(cur1 != NULL)
       {
-        string cname1((const char*)cur1->name);
+        std::string cname1((const char*)cur1->name);
         if(cname1 == "RUN_TITLE")
         {
-          string atitle;
+          std::string atitle;
           putContent(atitle,cur1);
-          string::size_type wh=atitle.find("...");
+          std::string::size_type wh=atitle.find("...");
           if(wh<atitle.size())
             atitle.erase(wh,atitle.size()-wh);
           Title = atitle;
@@ -97,17 +97,17 @@ void GamesXmlParser::parse(const std::string& fname)
         xmlNodePtr cur1=cur->children;
         while(cur1 != NULL)
         {
-          string cname1((const char*)cur1->name);
+          std::string cname1((const char*)cur1->name);
           if(cname1 == "SYSTEM_STATE")
           {
             //Unit needs to be generalized!!
-            string unitL((const char*)xmlGetProp(cur1,(const xmlChar*)"UNITS"));
+            std::string unitL((const char*)xmlGetProp(cur1,(const xmlChar*)"UNITS"));
             if(unitL == "ANGS")
               BohrUnit=false;
             xmlNodePtr cur2 = cur1->children;
             while(cur2 != NULL)
             {
-              string cname2((const char*)cur2->name);
+              std::string cname2((const char*)cur2->name);
               if(cname2 == "ATOM")
               {
                 aPtrList.push_back(cur2);
@@ -126,7 +126,7 @@ void GamesXmlParser::parse(const std::string& fname)
               xmlNodePtr cur2 = cur1->children;
               while(cur2 != NULL)
               {
-                string cname2((const char*)cur2->name);
+                std::string cname2((const char*)cur2->name);
                 if(cname2 == "PATOMIC_BASIS_SET")
                 {
                   bPtrList.push_back(cur2);
@@ -149,11 +149,11 @@ void GamesXmlParser::parse(const std::string& fname)
 
 void GamesXmlParser::getControlParameters(xmlNodePtr cur)
 {
-  string a;
+  std::string a;
   cur=cur->children;
   while(cur != NULL)
   {
-    string cname((const char*)cur->name);
+    std::string cname((const char*)cur->name);
     if(cname == "SCFTYP")
     {
       putContent(a,cur);
@@ -172,7 +172,7 @@ void GamesXmlParser::getControlParameters(xmlNodePtr cur)
   }
 }
 
-void GamesXmlParser::getGeometry(vector<xmlNodePtr>& aPtrList)
+void GamesXmlParser::getGeometry(std::vector<xmlNodePtr>& aPtrList)
 {
   NumberOfAtoms = aPtrList.size();
   IonSystem.create(NumberOfAtoms);
@@ -182,11 +182,11 @@ void GamesXmlParser::getGeometry(vector<xmlNodePtr>& aPtrList)
   for(int i=0; i<NumberOfAtoms; i++)
   {
     xmlNodePtr cur=aPtrList[i]->children;
-    string atName;
+    std::string atName;
     double q;
     while(cur != NULL)
     {
-      string cname((const char*)cur->name);
+      std::string cname((const char*)cur->name);
       if(cname == "ATOM_NAME")
       {
         //string aname;
@@ -205,7 +205,7 @@ void GamesXmlParser::getGeometry(vector<xmlNodePtr>& aPtrList)
             xmlNodePtr tcur=cur->children;
             while(tcur!=NULL)
             {
-              string tname((const char*)tcur->name);
+              std::string tname((const char*)tcur->name);
               double x,y,z;
               if(tname == "XCOORD")
                 putContent(x,tcur);
@@ -231,17 +231,17 @@ void GamesXmlParser::getGeometry(vector<xmlNodePtr>& aPtrList)
   NumberOfEls=static_cast<int>(nel);
   NumberOfBeta=(NumberOfEls-NumberOfAlpha)/2;
   NumberOfAlpha=NumberOfEls-NumberOfBeta;
-  cout << "Number of atoms " << NumberOfAtoms << endl;
-  cout << "Number of electrons " << NumberOfEls << endl;
-  cout << "Number of electrons (ALPHA) " << NumberOfAlpha << endl;
-  cout << "Number of electrons (BETA) " << NumberOfBeta << endl;
-  cout << "Group ID " << endl;
-  std::copy(IonSystem.GroupID.begin(), IonSystem.GroupID.end(),
-            ostream_iterator<int>(cout, " "));
-  cout << endl;
+  std::cout << "Number of atoms " << NumberOfAtoms << std::endl;
+  std::cout << "Number of electrons " << NumberOfEls << std::endl;
+  std::cout << "Number of electrons (ALPHA) " << NumberOfAlpha << std::endl;
+  std::cout << "Number of electrons (BETA) " << NumberOfBeta << std::endl;
+  std::cout << "Group ID " << std::endl;
+  copy(IonSystem.GroupID.begin(), IonSystem.GroupID.end(),
+            std::ostream_iterator<int>(std::cout, " "));
+  std::cout << std::endl;
 }
 
-void GamesXmlParser::getGaussianCenters(vector<xmlNodePtr>& bPtrList)
+void GamesXmlParser::getGaussianCenters(std::vector<xmlNodePtr>& bPtrList)
 {
   //if(bPtrList.size() != aPtrList.size())
   gBound.push_back(0);
@@ -250,12 +250,12 @@ void GamesXmlParser::getGaussianCenters(vector<xmlNodePtr>& bPtrList)
   SizeOfBasisSet=0;
   for(int i=0; i<bPtrList.size(); i++)
   {
-    string p;
+    std::string p;
     int ng_tot=0,ng;
     xmlNodePtr cur=bPtrList[i]->children;
     while(cur != NULL)
     {
-      string cname((const char*)cur->name);
+      std::string cname((const char*)cur->name);
       if(cname == "PSHELL")
       {
         ng_tot++;
@@ -263,7 +263,7 @@ void GamesXmlParser::getGaussianCenters(vector<xmlNodePtr>& bPtrList)
         int gshellType=1;
         while(cur1!= NULL)
         {
-          string tname((const char*)cur1->name);
+          std::string tname((const char*)cur1->name);
           if(tname == "PTYPE")
           {
             putContent(p,cur1);
@@ -299,7 +299,7 @@ void GamesXmlParser::getGaussianCenters(vector<xmlNodePtr>& bPtrList)
                 xmlNodePtr cur2=cur1->children;
                 while(cur2 != NULL)
                 {
-                  string cname2((const char*)cur2->name);
+                  std::string cname2((const char*)cur2->name);
                   if(cname2 == "PZETA")
                   {
                     putContent(zeta,cur2);
@@ -313,7 +313,7 @@ void GamesXmlParser::getGaussianCenters(vector<xmlNodePtr>& bPtrList)
                     }
                   cur2=cur2->next;
                 }
-                cout << "zeta,c " << zeta << " " << c << endl;
+                std::cout << "zeta,c " << zeta << " " << c << std::endl;
               }
           cur1=cur1->next;
         }
@@ -323,21 +323,21 @@ void GamesXmlParser::getGaussianCenters(vector<xmlNodePtr>& bPtrList)
     offset+=ng_tot;
     gBound.push_back(offset);
   }
-  cout << "Bound of gauassians " << endl;
-  std::copy(gBound.begin(), gBound.end(),ostream_iterator<int>(cout, " "));
-  cout << endl;
-  cout << "Number of shell type " << endl;
-  std::copy(gShell.begin(), gShell.end(),ostream_iterator<int>(cout, " "));
-  cout << endl;
-  cout << "Number of gaussians per shell " << endl;
-  std::copy(gNumber.begin(), gNumber.end(),ostream_iterator<int>(cout, " "));
-  cout << endl;
+  std::cout << "Bound of gauassians " << std::endl;
+  copy(gBound.begin(), gBound.end(),std::ostream_iterator<int>(std::cout, " "));
+  std::cout << std::endl;
+  std::cout << "Number of shell type " << std::endl;
+  copy(gShell.begin(), gShell.end(),std::ostream_iterator<int>(std::cout, " "));
+  std::cout << std::endl;
+  std::cout << "Number of gaussians per shell " << std::endl;
+  copy(gNumber.begin(), gNumber.end(),std::ostream_iterator<int>(std::cout, " "));
+  std::cout << std::endl;
   gC1.resize(gC0.size(),0.0);
 }
 
-void GamesXmlParser::getEigVectors(vector<xmlNodePtr>& ePtrList)
+void GamesXmlParser::getEigVectors(std::vector<xmlNodePtr>& ePtrList)
 {
-  vector<xmlNodePtr> a;
+  std::vector<xmlNodePtr> a;
   //vector<int> numorb(ePtrList.size());
   for(int i=0; i<ePtrList.size(); i++)
   {
@@ -345,7 +345,7 @@ void GamesXmlParser::getEigVectors(vector<xmlNodePtr>& ePtrList)
     int n=0;
     while(cur != NULL)
     {
-      string cname((const char*)cur->name);
+      std::string cname((const char*)cur->name);
       if(cname == "ORB")
       {
         a.push_back(cur);
@@ -356,7 +356,7 @@ void GamesXmlParser::getEigVectors(vector<xmlNodePtr>& ePtrList)
   }
   //adhoc
   //if(ePtrList.size()>1) SpinRestricted=false;
-  cout << "Size of eig vectors " << a.size() << " x " << SizeOfBasisSet << endl;
+  std::cout << "Size of eig vectors " << a.size() << " x " << SizeOfBasisSet << std::endl;
   EigVal_alpha.resize(SizeOfBasisSet);
   EigVal_beta.resize(SizeOfBasisSet);
 // mmorales: not sure if this is correct, this leaves it unmodified
@@ -369,7 +369,7 @@ void GamesXmlParser::getEigVectors(vector<xmlNodePtr>& ePtrList)
     xmlNodePtr cur=a[i]->children;
     while(cur != NULL)
     {
-      string cname((const char*)cur->name);
+      std::string cname((const char*)cur->name);
       if(cname== "EIGENVALUE")
       {
         if(i<SizeOfBasisSet)

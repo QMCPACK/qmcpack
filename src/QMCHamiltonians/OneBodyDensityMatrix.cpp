@@ -55,7 +55,7 @@ OneBodyDensityMatrix::Return_t OneBodyDensityMatrix::evaluate(ParticleSet& P)
   //  RealType ratio = Psi.ratio(p,ptcl);
   //  //      ratio=ratio*ratio;
   //  p.rejectMove(ptcl);
-  //  //      cerr<<"Ratio is "<<dist<<" "<<ratio<<endl;
+  //  //      std::cerr <<"Ratio is "<<dist<<" "<<ratio<< std::endl;
   //  if (dist<Dmax)
   //  {
   //    gofr[static_cast<int>(DeltaInv*dist)]+=ratio;
@@ -68,7 +68,7 @@ void OneBodyDensityMatrix::addObservables(PropertySetType& plist)
 {
   for(int i=0; i<gofr.size(); ++i)
   {
-    ostringstream obsName;
+    std::ostringstream obsName;
     osbName<<myName<<"_"<<i;
     myIndex=plist.add(obsName.str());
   }
@@ -77,13 +77,13 @@ void OneBodyDensityMatrix::addObservables(PropertySetType& plist)
 
 void OneBodyDensityMatrix::setObservables(PropertySetType& plist)
 {
-  std::copy(gofr.begin(),gofr.end(),plist.begin()+myIndex);
+  copy(gofr.begin(),gofr.end(),plist.begin()+myIndex);
 }
 
 void OneBodyDensityMatrix::setParticlePropertyList(PropertySetType& plist
     , int offset)
 {
-  std::copy(gofr.begin(),gofr.end(),plist.begin()+offset);
+  copy(gofr.begin(),gofr.end(),plist.begin()+offset);
 }
 
 bool OneBodyDensityMatrix::put(xmlNodePtr cur)
@@ -94,7 +94,7 @@ bool OneBodyDensityMatrix::put(xmlNodePtr cur)
 
 bool OneBodyDensityMatrix::get(std::ostream& os) const
 {
-  os << myName << " dmax=" << Dmax << endl;
+  os << myName << " dmax=" << Dmax << std::endl;
 }
 
 QMCHamiltonianBase* OneBodyDensityMatrix::makeClone(ParticleSet& qp

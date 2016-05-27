@@ -38,7 +38,7 @@ class WFMCOnlyEstimator: public ScalarEstimatorBase
   int PsiIndex;
 
   ///vector to contain the names of all the constituents of the local energy
-  std::vector<string> elocal_name;
+  std::vector<std::string> elocal_name;
 
 public:
 
@@ -72,10 +72,10 @@ public:
                          , WalkerIterator first, WalkerIterator last, RealType wgt)
   {
     for(; first!=last; ++first)
-      accumulate(**first,wgt);
+      std::accumulate(**first,wgt);
   }
   void add2Record(RecordListType& record);
-  void registerObservables(vector<observable_helper*>& h5dec, hid_t gid);
+  void registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid);
   ScalarEstimatorBase* clone();
   /*@}*/
 

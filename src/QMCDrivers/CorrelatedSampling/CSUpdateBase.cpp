@@ -23,7 +23,7 @@
 namespace qmcplusplus
 {
 CSUpdateBase::CSUpdateBase(MCWalkerConfiguration& w,
-                           vector<TrialWaveFunction*>& psipool, vector<QMCHamiltonian*>& hpool, RandomGenerator_t& rg):
+                           std::vector<TrialWaveFunction*>& psipool, std::vector<QMCHamiltonian*>& hpool, RandomGenerator_t& rg):
   QMCUpdateBase(w,*psipool[0],*hpool[0],rg), nPsi(0), useDriftOption("no"), H1(hpool), Psi1(psipool)
 {
   myParams.add(useDriftOption,"useDrift","string");
@@ -69,13 +69,13 @@ void CSUpdateBase::updateNorms()
  //   cumNorm[ipsi]+=multiEstimator->getUmbrellaWeight(ipsi);
   //if(block==(equilBlocks-1) || block==(nBlocks-1)){
 //	  app_log()<<"Inside UpdateNorm\n";
-  RealType winv=1.0/double(std::accumulate(cumNorm.begin(), cumNorm.end(),0.0));
+  RealType winv=1.0/double( std::accumulate(cumNorm.begin(), cumNorm.end(),0.0));
   for(int ipsi=0; ipsi< nPsi; ipsi++)
   {
     avgNorm[ipsi]=cumNorm[ipsi]*winv;
    // avgNorm[ipsi]=0.5;
     logNorm[ipsi]=std::log(avgNorm[ipsi]);
-   // app_log()<<ipsi<<" "<<avgNorm[ipsi]<<" "<<logNorm[ipsi]<<" "<<winv<<endl;
+   // app_log()<<ipsi<<" "<<avgNorm[ipsi]<<" "<<logNorm[ipsi]<<" "<<winv<< std::endl;
     cumNorm[ipsi]=0;
   }
   
@@ -83,11 +83,11 @@ void CSUpdateBase::updateNorms()
 }
 void CSUpdateBase::updateAvgWeights()
 {
-	  RealType winv=1.0/double(std::accumulate(cumNorm.begin(), cumNorm.end(),0.0));
+	  RealType winv=1.0/double( std::accumulate(cumNorm.begin(), cumNorm.end(),0.0));
   for(int ipsi=0; ipsi< nPsi; ipsi++)
   {
     avgWeight[ipsi]=cumNorm[ipsi]*winv;
-   //  app_log()<<ipsi<<" "<<avgWeight[ipsi]<<endl;
+   //  app_log()<<ipsi<<" "<<avgWeight[ipsi]<< std::endl;
    // avgNorm[ipsi]=0.5;
     cumNorm[ipsi]=0;
   }
@@ -100,7 +100,7 @@ void CSUpdateBase::initCSWalkers(WalkerIter_t it, WalkerIter_t it_end,
   useDrift=(useDriftOption=="yes");
   if(nPsi ==0)
   {
-    app_error() << "  CSUpdateBase::initCSWalkers fails. Empyty Psi/H pairs" << endl;
+    app_error() << "  CSUpdateBase::initCSWalkers fails. Empyty Psi/H pairs" << std::endl;
     abort();//FIX_ABORT
   }
   int nw = it_end-it;//W.getActiveWalkers();
@@ -168,7 +168,7 @@ void CSUpdateBase::initCSWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end,
   useDrift=(useDriftOption=="yes");
   if(nPsi ==0)
   {
-    app_error() << "  CSUpdateBase::initCSWalkers fails. Empyty Psi/H pairs" << endl;
+    app_error() << "  CSUpdateBase::initCSWalkers fails. Empyty Psi/H pairs" << std::endl;
     abort();//FIX_ABORT
   }
   int nw = it_end-it;//W.getActiveWalkers();

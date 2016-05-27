@@ -33,7 +33,7 @@ namespace qmcplusplus
  * @param k list of unique k points in Cartesian coordinate excluding gamma
  * @param k2 k2[i]=dot(k[i],k[i])
  */
-RealEGOSet::RealEGOSet(const vector<PosType>& k, const vector<RealType>& k2): K(k),mK2(k2)
+RealEGOSet::RealEGOSet(const std::vector<PosType>& k, const std::vector<RealType>& k2): K(k),mK2(k2)
 {
   KptMax=k.size();
   Identity=true;
@@ -71,7 +71,7 @@ bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
 #if QMC_BUILD_LEVEL>2
   xmlNodePtr curRoot=cur;
   xmlNodePtr BFNode(NULL);
-  string cname;
+  std::string cname;
   cur = curRoot->children;
   while (cur != NULL)//check the basis set
   {
@@ -99,15 +99,15 @@ bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
     ndn = egGrid.getNumberOfKpoints(nc2);
   if (nc<0)
   {
-    app_error() << "  HEG Invalid Shell." << endl;
+    app_error() << "  HEG Invalid Shell." << std::endl;
     APP_ABORT("ElectronGasOrbitalBuilder::put");
   }
   if (nat!=(nup+ndn))
   {
-    app_error() << "  The number of particles "<<nup<<"/"<<ndn<< " does not match to the shell." << endl;
-    app_error() << "  Suggested values for the number of particles " << endl;
-    app_error() << "   " << 2*egGrid.getNumberOfKpoints(nc) << " for shell "<< nc << endl;
-    app_error() << "   " << 2*egGrid.getNumberOfKpoints(nc-1) << " for shell "<< nc-1 << endl;
+    app_error() << "  The number of particles "<<nup<<"/"<<ndn<< " does not match to the shell." << std::endl;
+    app_error() << "  Suggested values for the number of particles " << std::endl;
+    app_error() << "   " << 2*egGrid.getNumberOfKpoints(nc) << " for shell "<< nc << std::endl;
+    app_error() << "   " << 2*egGrid.getNumberOfKpoints(nc-1) << " for shell "<< nc-1 << std::endl;
     APP_ABORT("ElectronGasOrbitalBuilder::put");
     return false;
   }
@@ -156,9 +156,9 @@ bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
       APP_ABORT("RN with Backflow not implemented. \n");
 #endif
     if (rntype==1)
-      app_log()<<" Using determinant with eps="<<bosonic_eps<<endl;
+      app_log()<<" Using determinant with eps="<<bosonic_eps<< std::endl;
     else
-      app_log()<<" Using alternate determinant with eps="<<bosonic_eps<<endl;
+      app_log()<<" Using alternate determinant with eps="<<bosonic_eps<< std::endl;
     //create up determinant
     Det_t *updet;
     if (rntype==1)
@@ -249,11 +249,11 @@ bool ElectronGasBasisBuilder::put(xmlNodePtr cur)
   
 SPOSetBase* ElectronGasBasisBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
-  app_log() << "ElectronGasBasisBuilder::createSPOSet " << endl;
+  app_log() << "ElectronGasBasisBuilder::createSPOSet " << std::endl;
   int nc=0;
   int ns=0;
   PosType twist(0.0);
-  string spo_name("heg");
+  std::string spo_name("heg");
   OhmmsAttributeSet aAttrib;
   aAttrib.add(ns,"size");
   aAttrib.add(twist,"twist");
@@ -264,7 +264,7 @@ SPOSetBase* ElectronGasBasisBuilder::createSPOSetFromXML(xmlNodePtr cur)
     nc=egGrid.getShellFromStates(ns);
   if (nc<0)
   {
-    app_error() << "  HEG Invalid Shell." << endl;
+    app_error() << "  HEG Invalid Shell." << std::endl;
     APP_ABORT("ElectronGasOrbitalBuilder::put");
   }
   egGrid.createGrid(nc,(ns-1)/2);

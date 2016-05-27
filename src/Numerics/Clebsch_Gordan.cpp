@@ -48,10 +48,10 @@ Clebsch_Gordan::Clebsch_Gordan(const int lmax):
         for(m2=-l2; m2<=l2; m2++)
         {
           m3 = m1 + m2;
-          lmin = abs(l1-l2);
-          if(lmin < abs(m3))
+          lmin = std::abs(l1-l2);
+          if(lmin < std::abs(m3))
           {
-            lmin = abs(m3);
+            lmin = std::abs(m3);
           }
           for(l3=lmin; l3<=l1+l2; l3++)
           {

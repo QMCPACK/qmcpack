@@ -29,8 +29,8 @@ struct OneDimGridFactory: public QMCTraits
 
   ///typedef of the one-dimensional grid
   typedef OneDimGridBase<RealType>   GridType;
-  ///typedef of map(string,GridType*>
-  typedef std::map<string,GridType*> GridObjectMapType;
+  ///typedef of map( std::string,GridType*>
+  typedef std::map<std::string,GridType*> GridObjectMapType;
 
   ///container of one-dimensional grids
   static GridObjectMapType GridObjects;

@@ -38,7 +38,7 @@ public:
 
   Return_t calculate(ParticleSet& P);
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
@@ -56,7 +56,7 @@ public:
 
   void addObservables(PropertySetType& plist);
   void addObservables(PropertySetType& plist, BufferType& collectables);
-  void registerCollectables(vector<observable_helper*>& h5desc, hid_t gid) const ;
+  void registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const ;
   void setObservables(PropertySetType& plist);
   void setParticlePropertyList(PropertySetType& plist, int offset);
   bool putSpecial(xmlNodePtr cur, ParticleSet& P);
@@ -78,11 +78,11 @@ protected:
   /** normalization factor */
   RealType OneOverN;
   /** kshell counters */
-  vector<int> Kshell;
+  std::vector<int> Kshell;
   /** instantaneous structure factor  */
-  vector<RealType> Kmag;
+  std::vector<RealType> Kmag;
   /** 1.0/degenracy for a ksell */
-  vector<RealType> OneOverDnk;
+  std::vector<RealType> OneOverDnk;
   /** \f$rho_k = \sum_{\alpha} \rho_k^{\alpha} \f$ for species index \f$\alpha\f$ */
   Vector<ComplexType> RhokTot;
   Vector<RealType> values;

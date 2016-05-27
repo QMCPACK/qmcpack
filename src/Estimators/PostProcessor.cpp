@@ -12,9 +12,9 @@
 namespace qmcplusplus
 {
 
-  PostProcessor::PostProcessor(const string& id,int ss,int se)
+  PostProcessor::PostProcessor(const std::string& id,int ss,int se)
   {
-    app_log()<<"  PostProcessor Engine created"<<endl;
+    app_log()<<"  PostProcessor Engine created"<< std::endl;
     set(id,ss,se);
   }
 
@@ -22,14 +22,14 @@ namespace qmcplusplus
   void PostProcessor::put(xmlNodePtr cur,ParticleSetPool& ppool,
                           WaveFunctionPool& wpool,HamiltonianPool& hpool)
   {
-    app_log()<<"  Initializing PostProcessor"<<endl;
+    app_log()<<"  Initializing PostProcessor"<< std::endl;
     
-    string snone = "";
+    std::string snone = "";
 
-    string Pqname  = snone;
-    string Pcname  = snone;
-    string Psiname = snone;
-    string Hname   = snone;
+    std::string Pqname  = snone;
+    std::string Pcname  = snone;
+    std::string Psiname = snone;
+    std::string Hname   = snone;
 
     OhmmsAttributeSet attrib;
     attrib.add(Pqname ,"Pq" );
@@ -45,13 +45,13 @@ namespace qmcplusplus
     if(notPq||notPc||notPsi||notH)
     {
       if(notPq)
-        app_log()<<"PostProcessor::put  attribute Pq  (quantum ParticleSet) is missing"<<endl;
+        app_log()<<"PostProcessor::put  attribute Pq  (quantum ParticleSet) is missing"<< std::endl;
       if(notPc)
-        app_log()<<"PostProcessor::put  attribute Pc  (classical ParticleSet) is missing"<<endl;
+        app_log()<<"PostProcessor::put  attribute Pc  (classical ParticleSet) is missing"<< std::endl;
       if(notPsi)
-        app_log()<<"PostProcessor::put  attribute Psi (WaveFunction) is missing"<<endl;
+        app_log()<<"PostProcessor::put  attribute Psi (WaveFunction) is missing"<< std::endl;
       if(notH)
-        app_log()<<"PostProcessor::put  attribute H   (Hamiltonian) is missing"<<endl;
+        app_log()<<"PostProcessor::put  attribute H   (Hamiltonian) is missing"<< std::endl;
       APP_ABORT("PostProcessor::put  xml input is incomplete, see messages above.");
     }
 
@@ -67,20 +67,20 @@ namespace qmcplusplus
     if(notPq||notPc||notPsi||notH)
     {
       if(notPq)
-        app_log()<<"PostProcessor::put ParticleSet Pq="<<Pqname<<" cannot be found"<<endl;
+        app_log()<<"PostProcessor::put ParticleSet Pq="<<Pqname<<" cannot be found"<< std::endl;
       if(notPc)
-        app_log()<<"PostProcessor::put ParticleSet Pc="<<Pcname<<" cannot be found"<<endl;
+        app_log()<<"PostProcessor::put ParticleSet Pc="<<Pcname<<" cannot be found"<< std::endl;
       if(notPsi)
-        app_log()<<"PostProcessor::put WaveFunction Psi="<<Psiname<<" cannot be found"<<endl;
+        app_log()<<"PostProcessor::put WaveFunction Psi="<<Psiname<<" cannot be found"<< std::endl;
       if(notH)
-        app_log()<<"PostProcessor::put Hamiltonian H="<<Hname<<" cannot be found"<<endl;
+        app_log()<<"PostProcessor::put Hamiltonian H="<<Hname<<" cannot be found"<< std::endl;
       APP_ABORT("PostProcessor::put  cannot find qmcsystem objects");
     }
 
     cur = cur->children;
     while(cur != NULL)
     { 
-      string cname((const char*)cur->name);
+      std::string cname((const char*)cur->name);
       bool not_text = cname!="text";
       PostProcessorBase* pp = 0;
       if(cname=="spindensity")
@@ -91,7 +91,7 @@ namespace qmcplusplus
       {
         if(pp)
         {
-          app_log()<<"    adding "+cname+" postprocessor"<<endl;
+          app_log()<<"    adding "+cname+" postprocessor"<< std::endl;
           pp->set(cname,project_id,series_start,series_end);
           pp->put(cur);
           add(pp);
@@ -106,14 +106,14 @@ namespace qmcplusplus
 
   void PostProcessor::postprocess()
   {
-    app_log()<<"  Postprocessing requested data"<<endl;
+    app_log()<<"  Postprocessing requested data"<< std::endl;
     for(int i=0;i<postprocessors.size();++i)
     {
       PostProcessorBase& pp = *postprocessors[i];
-      app_log()<<"    postprocessing "+pp.type<<endl;
+      app_log()<<"    postprocessing "+pp.type<< std::endl;
       pp.postprocess();
     }
-    app_log()<<"  Postprocessing completed\n"<<endl;
+    app_log()<<"  Postprocessing completed\n"<< std::endl;
   }
 
 }

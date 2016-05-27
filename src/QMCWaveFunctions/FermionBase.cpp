@@ -19,7 +19,7 @@ namespace qmcplusplus
 {
 
 ///add a new SPOSet to the list of determinants
-void FermionBase::addSPO(const string& aname, SPOSetBase* sposet)
+void FermionBase::addSPO(const std::string& aname, SPOSetBase* sposet)
 {
   if (mySPOSet.find(aname) == mySPOSet.end())
   {
@@ -34,7 +34,7 @@ void FermionBase::addSPO(const string& aname, SPOSetBase* sposet)
 
 void FermionBase::resetSPOs(ParticleSet& P)
 {
-  map<string, SPOSetBasePtr>::iterator sit(mySPOSet.begin());
+  std::map<std::string, SPOSetBasePtr>::iterator sit(mySPOSet.begin());
   while (sit != mySPOSet.end())
   {
     (*sit).second->resetTargetParticleSet(P);
@@ -63,7 +63,7 @@ void FermionBase::copySPOs(spo_set_type& spos)
   }
 }
 
-SPOSetBasePtr FermionBase::getSPO(const string& aname)
+SPOSetBasePtr FermionBase::getSPO(const std::string& aname)
 {
   spo_set_type::iterator sit=mySPOSet.find(aname);
   if(sit == mySPOSet.end())

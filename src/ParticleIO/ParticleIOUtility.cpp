@@ -35,20 +35,20 @@ void expandSuperCell(ParticleSet& ref_, Tensor<int,3>& tmat)
     return;
   ReportEngine PRE("expandSuperCell"," ");
   app_log() << "  TileMatrix != Identity. Expanding a simulation cell for "
-            << ref_.getName() << endl;
+            << ref_.getName() << std::endl;
   {
     char buff[500];
     snprintf (buff, 500
               , "   tilematrix= %4d %4d %4d %4d %4d %4d %4d %4d %4d\n"
               , tmat[0], tmat[1], tmat[2] ,tmat[3], tmat[4], tmat[5], tmat[6], tmat[7], tmat[8]);
-    app_log() << buff<< endl;
+    app_log() << buff<< std::endl;
   }
   //convert2unit
   ref_.convert2Unit(ref_.R);
   ParticleSet::ParticleLayout_t PrimCell(ref_.Lattice);
   ref_.Lattice.set(dot(tmat,PrimCell.R));
   int natoms=ref_.getTotalNum();
-  int numCopies = abs(det(tmat));
+  int numCopies = std::abs(det(tmat));
   ParticleSet::ParticlePos_t primPos(ref_.R);
   ParticleSet::ParticleIndex_t primTypes(ref_.GroupID);
   ref_.resize(natoms*numCopies);
@@ -89,9 +89,9 @@ void expandSuperCell(ParticleSet& ref_, Tensor<int,3>& tmat)
             }
           }
   }
-  app_log() << "  Simulationcell after tiling" << endl;
+  app_log() << "  Simulationcell after tiling" << std::endl;
   ref_.Lattice.print(app_log());
-  app_log() << endl;
+  app_log() << std::endl;
 }
 
 #elif OHMMS_DIM == 2
@@ -114,7 +114,7 @@ void expandSuperCell(ParticleSet& ref_, Tensor<int,2>& tmat)
   ParticleSet::ParticleLayout_t PrimCell(ref_.Lattice);
   ref_.Lattice.set(dot(tmat,PrimCell.R));
   int natoms=ref_.getTotalNum();
-  int numCopies = abs(det(tmat));
+  int numCopies = std::abs(det(tmat));
   ParticleSet::ParticlePos_t primPos(ref_.R);
   ParticleSet::ParticleIndex_t primTypes(ref_.GroupID);
   ref_.resize(natoms*numCopies);

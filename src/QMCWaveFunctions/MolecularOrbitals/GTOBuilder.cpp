@@ -15,7 +15,6 @@
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include "QMCWaveFunctions/MolecularOrbitals/GTOBuilder.h"
-using namespace std;
 namespace qmcplusplus
 {
 

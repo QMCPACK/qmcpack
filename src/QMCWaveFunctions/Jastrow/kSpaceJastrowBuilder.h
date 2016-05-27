@@ -27,7 +27,7 @@ class ParticleSet;
 struct kSpaceJastrowBuilder: public OrbitalBuilderBase
 {
   ParticleSet sourcePtcl;
-  std::map<string,kSpaceJastrow::SymmetryType> SymmMap;
+  std::map<std::string,kSpaceJastrow::SymmetryType> SymmMap;
   // One-body constructor
   kSpaceJastrowBuilder(ParticleSet& target, TrialWaveFunction& psi,
                        ParticleSet& source) :

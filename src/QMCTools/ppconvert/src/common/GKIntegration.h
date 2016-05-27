@@ -94,7 +94,7 @@ class GKIntegration {
       return (delta ? err/delta : err);
     }
 
-    friend ostream& operator<<(ostream &os, const IntervalResult & ir) {
+    friend std::ostream& operator<<(std::ostream &os, const IntervalResult & ir) {
       os << "[a= " << ir.a
 	 << " b= " << ir.b
 	 << " result= " << ir.result
@@ -170,13 +170,13 @@ class GKIntegration {
   }
 
   void PrintList() {
-    cout << "/------------------------------------------\\" << endl;
+    std::cout << "/------------------------------------------\\" << std::endl;
     int i=0;
     for(typename list <IntervalResult>::iterator p=ir.begin(); p!=ir.end(); p++) {
       BMWrite2(i,*p);
       i++;
     }
-    cout << "\\------------------------------------------/" << endl;
+    std::cout << "\\------------------------------------------/" << std::endl;
   }
 
   //Print interval with maxium error per interval length
@@ -240,7 +240,7 @@ class GKIntegration {
   }
 
   void Insert(const IntervalResult & r) {
-    //    cout << "Inserting.." << endl;
+    //    std::cout << "Inserting.." << std::endl;
     //    PrintList();
 
     if (ir.empty()) {
@@ -280,7 +280,7 @@ class GKIntegration {
 
     // #define PRINT_IT
 #ifdef PRINT_IT
-    cout << "Beginning integration" << endl;
+    std::cout << "Beginning integration" << std::endl;
 #endif
 
     double errorUnresolved=0.0;
@@ -339,10 +339,10 @@ class GKIntegration {
       err    += r1.err   +r2.err    - r.err;
 
 #ifdef PRINT_IT
-      cout.setf(ios::scientific);
-      cout << "Refined [ " << r.a << " " << r.b 
+      std::cout.setf(std::ios::scientific);
+      std::cout << "Refined [ " << r.a << " " << r.b 
 	   << " ] err/L=" << (r1.err +r2.err)/(r.b-r.a)
-      	   << " error=" << err << endl;
+      	   << " error=" << err << std::endl;
 #endif
 
       // must remove old element first because new ones could move to top
@@ -388,24 +388,24 @@ class GKIntegration {
 
     //    CheckList();
 #ifdef PRINT_IT
-    cout << "End integration" << endl;
+    std::cout << "End integration" << std::endl;
 #endif
     double sum = 0.0;
     int numIntervals = 0;
-    for(typename list<IntervalResult>::iterator p=ir.begin();p!=ir.end();p++) {
+    for(typename std::list<IntervalResult>::iterator p=ir.begin();p!=ir.end();p++) {
       sum += p->result;
       numIntervals++;
     }
 
 //     if (numIntervals > 2000)
-//       cerr << "Number of intervals = " << numIntervals << endl;
+//       std::cerr << "Number of intervals = " << numIntervals << std::endl;
 
     double badSum = fabs((result-sum) / sum);
     if ((badSum > 1.0e-7) && (fabs(result-sum) > absError)) {
-      cerr << "absError tolerance = " << absError << endl;
-      cerr << "Percent error = " << badSum*100.0 << endl;
-      cerr << "Number of intervals = " << numIntervals << endl;
-      cerr << "result = " << result << " sum = " << sum << endl;
+      std::cerr << "absError tolerance = " << absError << std::endl;
+      std::cerr << "Percent error = " << badSum*100.0 << std::endl;
+      std::cerr << "Number of intervals = " << numIntervals << std::endl;
+      std::cerr << "result = " << result << " sum = " << sum << std::endl;
     }
 
 

@@ -24,7 +24,7 @@
 //#define SINGLE_PREC
 #include <benchmark/fft_help.h>
 
-inline void print_help(const string& msg)
+inline void print_help(const std::string& msg)
 {
   printf("%s -d fft_dim -m numer_of_fft -i iterations -p [d|s] -t [r2c|c2c] -e [fftw|mkl|essl] \n",msg.c_str());
 }
@@ -41,8 +41,8 @@ int main(int argc, char** argv)
   int nx=6;
   int ny=6;
   //accepted: r2c  or c2c
-  string fft_type("r2c");
-  string fft_eng("fftw");
+  std::string fft_type("r2c");
+  std::string fft_eng("fftw");
   bool inplace=true;
   bool single_precision=false;
   int opt;
@@ -88,14 +88,14 @@ int main(int argc, char** argv)
   int inc2y=ny;
   //int inc1y=nx;
   //int inc2y=1;
-  typedef complex<double> complex_type;
+  typedef std::complex<double> complex_type;
   Array<complex_type,3> in(howmany,nx,ny), out, incopy(howmany,nx,ny);
   if(inc1y==1)
     out.resize(howmany,nx,ny);
   else
     out.resize(howmany,ny,nx);
   init_array(in);
-  cout << "Before transformation " << endl;
+  std::cout << "Before transformation " << std::endl;
   if(nx*ny<64)
     print_array(in);
   //randomize(in.data(),in.size(),Random);
@@ -118,7 +118,7 @@ int main(int argc, char** argv)
     dcft2 (0, in.data()+i*nxy, inc1x, inc2x, out.data()+i*nxy, inc1y, inc2y, ny,nx
            , f_dir, scale, aux1_f.data(), naux1, aux2_f.data(), naux2);
   }
-  cout << "After transformation " << endl;
+  std::cout << "After transformation " << std::endl;
   if(nx*ny<64)
     print_array(out);
   for(int i=0; i<howmany; ++i)
@@ -127,7 +127,7 @@ int main(int argc, char** argv)
            , b_dir, iscale, aux1_b.data(), naux1, aux2_b.data(), naux2);
   }
   if(check_array(in.data(),incopy.data(),nx*ny,1.0))
-    cout << "All is good " << endl;
+    std::cout << "All is good " << std::endl;
   else
     return 0;
   Timer clock, clock_big;
@@ -146,7 +146,7 @@ int main(int argc, char** argv)
     dt_b += clock.elapsed();
   }
   double t_norm=1.0/static_cast<double>(niters);
-  cout << "Timer said = " << clock_big.elapsed()*t_norm << endl;
+  std::cout << "Timer said = " << clock_big.elapsed()*t_norm << std::endl;
   printf("tag nX  nY  M  OMP 1D+t(1D) 1D+tfunc+1D 1D+getmo+1D  \n");
   printf("fft2d %d %d %d %d %12.4e %12.4e \n"
          , nx, ny, howmany, omp_get_max_threads()

@@ -181,9 +181,9 @@ void DMCPeta::resetUpdateEngine()
     Mover->resetRun(branchEngine,Estimators);
     Mover->initWalkersForPbyP(W.begin(),W.end());
   }
-  app_log() << "  BranchInterval = " << BranchInterval << endl;
-  app_log() << "  Steps per block = " << nSteps << endl;
-  app_log() << "  Number of blocks = " << nBlocks << endl;
+  app_log() << "  BranchInterval = " << BranchInterval << std::endl;
+  app_log() << "  Steps per block = " << nSteps << std::endl;
+  app_log() << "  Number of blocks = " << nBlocks << std::endl;
 }
 
 bool DMCPeta::put(xmlNodePtr q)

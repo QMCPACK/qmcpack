@@ -20,7 +20,7 @@ bool useADIOS();
 bool useHDF5();
 const std::string& get_adios_xml();
 
-static string adiosname;
+static std::string adiosname;
 static ADIOS_FILE * openfp;
 
 void set_adios_init(bool b);
@@ -33,7 +33,7 @@ void setFirstOpen(bool a);
 string getTraceFileName();
 typedef qmcplusplus::RandomGenerator_t::uint_type uint_type;
 
-inline int open(const string &fname, MPI_Comm comm)
+inline int open(const std::string &fname, MPI_Comm comm)
 {
   int ret = 0;
   adiosname = fname;
@@ -44,11 +44,11 @@ inline int open(const string &fname, MPI_Comm comm)
                                         comm);
   if(openfp == NULL)
   {
-    qmcplusplus::app_error() <<"Fail to open adios file "<<adiosname<<" Abort."<<endl;
+    qmcplusplus::app_error() <<"Fail to open adios file "<<adiosname<<" Abort."<< std::endl;
   }
   else
   {
-    qmcplusplus::app_log()<<adiosname<<" is open "<<endl;
+    qmcplusplus::app_log()<<adiosname<<" is open "<< std::endl;
     ret = 1;
   }
   return ret;
@@ -65,7 +65,7 @@ void read(T data, const std::string& aname)
   std::strcpy (name, aname.c_str());
 	if ( openfp == NULL)
 	{
-		qmcplusplus::app_error()<<"openfp is null "<<endl;
+		qmcplusplus::app_error()<<"openfp is null "<< std::endl;
 	}
   vi = adios_inq_var(openfp, name);
   adios_inq_var_blockinfo (openfp, vi);
@@ -93,7 +93,7 @@ void read_scalar(T& data, const std::string& aname, C& index)
   std::strcpy(name, aname.c_str());
   if (openfp == NULL)
   {
-    qmcplusplus::app_error()<<"openfp is null "<<endl;
+    qmcplusplus::app_error()<<"openfp is null "<< std::endl;
   }
   vi = adios_inq_var(openfp, name);
   adios_inq_var_blockinfo(openfp, vi);
@@ -123,7 +123,7 @@ void read_walkers(T& data, const std::string& aname)
   std::strcpy(name, aname.c_str());
   if (openfp == NULL)
   {
-    qmcplusplus::app_error()<<"openfp is null "<<endl;
+    qmcplusplus::app_error()<<"openfp is null "<< std::endl;
   }
   vi = adios_inq_var(openfp, name);
   adios_inq_var_blockinfo(openfp, vi);
@@ -152,7 +152,7 @@ void read_random(T& data, S& shape, const std::string& aname)
   std::strcpy (name, aname.c_str());
   if ( openfp == NULL)
   {
-    qmcplusplus::app_error()<<"openfp is null "<<endl;
+    qmcplusplus::app_error()<<"openfp is null "<< std::endl;
   }
 
 	uint64_t DIM = 2;
@@ -165,7 +165,7 @@ void read_random(T& data, S& shape, const std::string& aname)
   vi = adios_inq_var(openfp, name);
   if (vi->ndim != DIM)
   {
- 		qmcplusplus::app_error() <<"random number dimension is not 2."<<endl; 
+ 		qmcplusplus::app_error() <<"random number dimension is not 2."<< std::endl; 
 	}  
 	
 	ADIOS_SELECTION *sel;
@@ -188,9 +188,9 @@ inline void close()
 {
 	int ret = adios_read_close(openfp);
 	if(ret)
-		qmcplusplus::app_error() <<"Fail to close adios file "<<adiosname<<" Abort."<<endl;
+		qmcplusplus::app_error() <<"Fail to close adios file "<<adiosname<<" Abort."<< std::endl;
   else
-    qmcplusplus::app_log()<<adiosname<<" is closed "<<endl;
+    qmcplusplus::app_log()<<adiosname<<" is closed "<< std::endl;
 }
 
 };

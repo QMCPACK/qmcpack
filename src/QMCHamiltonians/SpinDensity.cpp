@@ -54,7 +54,7 @@ namespace qmcplusplus
     using std::ceil;
     using std::sqrt;
     reset();
-    string write_report = "no";
+    std::string write_report = "no";
     OhmmsAttributeSet attrib;
     attrib.add(myName,"name");
     attrib.add(write_report,"report");
@@ -75,10 +75,10 @@ namespace qmcplusplus
     xmlNodePtr element = cur->xmlChildrenNode;
     while(element!=NULL)
     {
-      string ename((const char*)element->name);
+      std::string ename((const char*)element->name);
       if(ename=="parameter")
       {
-        string name((const char*)(xmlGetProp(element,(const xmlChar*)"name")));
+        std::string name((const char*)(xmlGetProp(element,(const xmlChar*)"name")));
         if(name=="dr")      
         {
           have_dr = true;
@@ -151,35 +151,35 @@ namespace qmcplusplus
   }
 
 
-  void SpinDensity::report(const string& pad)
+  void SpinDensity::report(const std::string& pad)
   {
-    app_log()<<pad<<"SpinDensity report"<<endl;
-    app_log()<<pad<<"  dim     = "<< DIM <<endl;
-    app_log()<<pad<<"  npoints = "<< npoints <<endl;
-    app_log()<<pad<<"  grid    = "<< grid <<endl;
-    app_log()<<pad<<"  gdims   = "<< gdims <<endl;
-    app_log()<<pad<<"  corner  = "<< corner <<endl;
-    app_log()<<pad<<"  center  = "<< corner+cell.Center <<endl;
-    app_log()<<pad<<"  cell " <<endl;
+    app_log()<<pad<<"SpinDensity report"<< std::endl;
+    app_log()<<pad<<"  dim     = "<< DIM << std::endl;
+    app_log()<<pad<<"  npoints = "<< npoints << std::endl;
+    app_log()<<pad<<"  grid    = "<< grid << std::endl;
+    app_log()<<pad<<"  gdims   = "<< gdims << std::endl;
+    app_log()<<pad<<"  corner  = "<< corner << std::endl;
+    app_log()<<pad<<"  center  = "<< corner+cell.Center << std::endl;
+    app_log()<<pad<<"  cell " << std::endl;
     for(int d=0;d<DIM;++d)
-      app_log()<<pad<<"    "<< d <<" "<< cell.Rv[d] <<endl;
-    app_log()<<pad<<"  end cell " <<endl;
-    app_log()<<pad<<"  nspecies = "<< nspecies <<endl;
+      app_log()<<pad<<"    "<< d <<" "<< cell.Rv[d] << std::endl;
+    app_log()<<pad<<"  end cell " << std::endl;
+    app_log()<<pad<<"  nspecies = "<< nspecies << std::endl;
     for(int s=0;s<nspecies;++s)
-      app_log()<<pad<<"    species["<<s<<"]"<<" = "<<species_name[s]<<" "<<species_size[s]<<endl;
-    app_log()<<pad<<"end SpinDensity report"<<endl;
+      app_log()<<pad<<"    species["<<s<<"]"<<" = "<<species_name[s]<<" "<<species_size[s]<< std::endl;
+    app_log()<<pad<<"end SpinDensity report"<< std::endl;
   }
 
 
   void SpinDensity::addObservables(PropertySetType& plist,BufferType& collectables)
   {
     myIndex=collectables.current();
-    vector<RealType> tmp(nspecies*npoints);
+    std::vector<RealType> tmp(nspecies*npoints);
     collectables.add(tmp.begin(),tmp.end());
   }
 
 
-  void SpinDensity::registerCollectables(vector<observable_helper*>& h5desc, hid_t gid) const 
+  void SpinDensity::registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const 
   {
     hid_t sgid=H5Gcreate(gid,myName.c_str(),0);
 
@@ -187,7 +187,7 @@ namespace qmcplusplus
     //for(int d=0;d<DIM;++d)
     //  ng[d] = grid[d];
 
-    vector<int> ng(1);
+    std::vector<int> ng(1);
     ng[0] = npoints;
 
     for(int s=0;s<nspecies;++s)
@@ -226,11 +226,11 @@ namespace qmcplusplus
 
   void SpinDensity::test(int moves,ParticleSet& P)
   {
-    app_log()<<"  SpinDensity test"<<endl;
+    app_log()<<"  SpinDensity test"<< std::endl;
     RandomGenerator_t rng;
     int particles = P.getTotalNum();
-    int pmin = numeric_limits<int>::max();
-    int pmax = numeric_limits<int>::min();
+    int pmin = std::numeric_limits<int>::max();
+    int pmax = std::numeric_limits<int>::min();
     for(int m=0;m<moves;++m)
     {
       for(int p=0;p<particles;++p)
@@ -242,7 +242,7 @@ namespace qmcplusplus
       }
       test_evaluate(P,pmin,pmax);
     }
-    app_log()<<"  end SpinDensity test"<<endl;
+    app_log()<<"  end SpinDensity test"<< std::endl;
     APP_ABORT("SpinDensity::test  test complete");
   }
 
@@ -265,20 +265,20 @@ namespace qmcplusplus
           int point=offset;
           for(int d=0;d<DIM;++d)
             point += gdims[d]*((int)(u[d]*grid[d]));
-          pmin = min(pmin,point-offset);
-          pmax = max(pmax,point-offset);
+          pmin = std::min(pmin,point-offset);
+          pmax = std::max(pmax,point-offset);
         }
       }
-    app_log()<<"    pmin = "<<pmin<<" pmax = "<<pmax<<" npoints = "<<npoints<<endl;
+    app_log()<<"    pmin = "<<pmin<<" pmax = "<<pmax<<" npoints = "<<npoints<< std::endl;
     return 0.0;
   }
 
 
   void SpinDensity::
-  postprocess_density(const string& infile,const string& species,
+  postprocess_density(const std::string& infile,const std::string& species,
                       pts_t& points,dens_t& density,dens_t& density_err)
   {
-    ifstream datafile;
+    std::ifstream datafile;
     datafile.open(infile.c_str());
     if(!datafile.is_open())
       APP_ABORT("SpinDensity::postprocess_density\n  could not open file: "+infile);
@@ -297,7 +297,7 @@ namespace qmcplusplus
     }
     if(dens_err.size()!=npoints)
     {
-      app_log()<<"SpinDensity::postprocess_density\n  file "<<infile<<"\n  contains "<<dens.size()+dens_err.size()<<" values\n  expected "<<2*npoints<<" values"<<endl;
+      app_log()<<"SpinDensity::postprocess_density\n  file "<<infile<<"\n  contains "<<dens.size()+dens_err.size()<<" values\n  expected "<<2*npoints<<" values"<< std::endl;
       APP_ABORT("SpinDensity::postprocess_density");
     }
 
@@ -336,7 +336,7 @@ namespace qmcplusplus
     //for(int p=0;p<npoints;++p)
     //  count[dc[p]]++;
     //for(int c=0;c<count.size();++c)
-    //  app_log()<<"count "<<c<<" "<<count[c]<<endl;
+    //  app_log()<<"count "<<c<<" "<<count[c]<< std::endl;
     //
     //PosType pmin;
     //PosType pmax;
@@ -345,18 +345,18 @@ namespace qmcplusplus
     //for(int p=0;p<points.size();++p)
     //  for(int d=0;d<DIM;++d)
     //  {
-    //    pmin[d] = min(pmin[d],points[p][d]);
-    //    pmax[d] = max(pmax[d],points[p][d]);
+    //    pmin[d] = std::min(pmin[d],points[p][d]);
+    //    pmax[d] = std::max(pmax[d],points[p][d]);
     //  }
-    //app_log()<<" pmin "<<pmin<<endl;
-    //app_log()<<" pmax "<<pmax<<endl;
-    //app_log()<<" gridpoints = "<<points.size()<<endl;
+    //app_log()<<" pmin "<<pmin<< std::endl;
+    //app_log()<<" pmax "<<pmax<< std::endl;
+    //app_log()<<" gridpoints = "<<points.size()<< std::endl;
     //
     //APP_ABORT("sdens check");
 
   }
   
-  void SpinDensity::addEnergy(MCWalkerConfiguration &W, vector<RealType> &LocalEnergy)
+  void SpinDensity::addEnergy(MCWalkerConfiguration &W, std::vector<RealType> &LocalEnergy)
   {
     int nw = W.WalkerList.size();
     for (int iw=0; iw<nw; iw++)

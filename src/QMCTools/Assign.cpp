@@ -129,7 +129,7 @@ int main(int argc, char **argv)
   DistanceTableData* d_ii = DistanceTable::getTable(DistanceTable::add(ion));
   d_ii->create(1);
   d_ii->evaluate(ion);
-  vector<double> Cut, Core;
+  std::vector<double> Cut, Core;
   int Centers = ion.getTotalNum();
   //attribute id for cut
   int icut = ion.Species.addAttribute("cut");
@@ -209,24 +209,24 @@ int main(int argc, char **argv)
       }
     }
   }
-  cout << "Ionic configuration : " << ion.getName() << endl;
-  ion.get(cout);
-  cout << "Electronic configuration : " << el.getName() << endl;
-  el.get(cout);
-  string newxml(myProject.CurrentRoot());
+  std::cout << "Ionic configuration : " << ion.getName() << std::endl;
+  ion.get(std::cout);
+  std::cout << "Electronic configuration : " << el.getName() << std::endl;
+  el.get(std::cout);
+  std::string newxml(myProject.CurrentRoot());
   newxml.append(".ptcl.xml");
-  ofstream ptcl_out(newxml.c_str());
+  std::ofstream ptcl_out(newxml.c_str());
   /*
-    ofstream molmol("assign.xyz");
+    std::ofstream molmol("assign.xyz");
 
-    molmol << Centers+el.getTotalNum() << endl;
-    molmol << endl;
+    molmol << Centers+el.getTotalNum() << std::endl;
+    molmol << std::endl;
 
     for(int iat=0; iat<Centers; iat++)
-    molmol << ion.Species.speciesName[ion.GroupID[iat]] << 0.5292*ion.R[iat] << endl;
+    molmol << ion.Species.speciesName[ion.GroupID[iat]] << 0.5292*ion.R[iat] << std::endl;
 
     for(int ipart=0; ipart<el.getTotalNum(); ipart++)
-    molmol << "He" << 0.5292*el.R[ipart] << endl;
+    molmol << "He" << 0.5292*el.R[ipart] << std::endl;
 
     molmol.close();
   */
@@ -234,23 +234,23 @@ int main(int argc, char **argv)
   xmlFreeDoc(m_doc);
   int nup = el.last(0);
   int ndown = el.last(1)-el.last(0);
-  ptcl_out << "<?xml version=\"1.0\"?>" << endl;
-  ptcl_out << "<particleset name=\"e\">" << endl;
-  ptcl_out << "<group name=\"u\" size=\"" << nup << "\">" << endl;
-  ptcl_out << "<parameter name=\"charge\">-1</parameter>" << endl;
-  ptcl_out << "<attrib name=\"position\" datatype=\"posArray\">" << endl;
+  ptcl_out << "<?xml version=\"1.0\"?>" << std::endl;
+  ptcl_out << "<particleset name=\"e\">" << std::endl;
+  ptcl_out << "<group name=\"u\" size=\"" << nup << "\">" << std::endl;
+  ptcl_out << "<parameter name=\"charge\">-1</parameter>" << std::endl;
+  ptcl_out << "<attrib name=\"position\" datatype=\"posArray\">" << std::endl;
   for (int ipart=0; ipart<nup; ++ipart)
-    ptcl_out << el.R[ipart] << endl;
-  ptcl_out << "</attrib>" << endl;
-  ptcl_out << "</group>" << endl;
-  ptcl_out << "<group name=\"d\" size=\"" << ndown << "\">" << endl;
-  ptcl_out << "<parameter name=\"charge\">-1</parameter>" << endl;
-  ptcl_out << "<attrib name=\"position\" datatype=\"posArray\">" << endl;
+    ptcl_out << el.R[ipart] << std::endl;
+  ptcl_out << "</attrib>" << std::endl;
+  ptcl_out << "</group>" << std::endl;
+  ptcl_out << "<group name=\"d\" size=\"" << ndown << "\">" << std::endl;
+  ptcl_out << "<parameter name=\"charge\">-1</parameter>" << std::endl;
+  ptcl_out << "<attrib name=\"position\" datatype=\"posArray\">" << std::endl;
   for (int ipart=nup; ipart<el.getTotalNum(); ++ipart)
-    ptcl_out << el.R[ipart] << endl;
-  ptcl_out << "</attrib>" << endl;
-  ptcl_out << "</group>" << endl;
-  ptcl_out << "</particleset>" << endl;
+    ptcl_out << el.R[ipart] << std::endl;
+  ptcl_out << "</attrib>" << std::endl;
+  ptcl_out << "</group>" << std::endl;
+  ptcl_out << "</particleset>" << std::endl;
   OHMMS::Controller->finalize();
   return 0;
 }

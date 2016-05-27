@@ -32,7 +32,7 @@ struct BesselZero: public OptimizableFunctorBase
   std::vector<real_type> Parameters;
   real_type R_B,R_Binv;
   real_type C_0,C_0inv;
-  string pr;
+  std::string pr;
 
   ///constructor
   BesselZero():R_B(1.0)
@@ -129,7 +129,7 @@ struct BesselZero: public OptimizableFunctorBase
 
 
   inline bool
-  evaluateDerivatives (real_type r, vector<TinyVector<real_type,3> >& derivs)
+  evaluateDerivatives (real_type r, std::vector<TinyVector<real_type,3> >& derivs)
   {
     real_type A(C_0);
     real_type Ainv(C_0inv);
@@ -177,7 +177,7 @@ struct BesselZero: public OptimizableFunctorBase
     rAttrib.add(R_B,   "RB");
     rAttrib.add(pr,   "print");
     rAttrib.put(cur);
-    app_log()<<" R_B is set to: "<<R_B<<endl;
+    app_log()<<" R_B is set to: "<<R_B<< std::endl;
     R_Binv = 1.0/R_B;
     C_0 = 3.1415926535897932384626433832795028841968*R_Binv;
     C_0inv = 1.0/C_0;
@@ -185,16 +185,16 @@ struct BesselZero: public OptimizableFunctorBase
     {
       PRE.error("You must specify a positive number of parameters for the BesselZero jastrow function.",true);
     }
-    app_log() << " size = " << NumParams << " parameters " << endl;
+    app_log() << " size = " << NumParams << " parameters " << std::endl;
     resize (NumParams);
     // Now read coefficents
     xmlNodePtr xmlCoefs = cur->xmlChildrenNode;
     while (xmlCoefs != NULL)
     {
-      string cname((const char*)xmlCoefs->name);
+      std::string cname((const char*)xmlCoefs->name);
       if (cname == "coefficients")
       {
-        string type("0"), id("0");
+        std::string type("0"), id("0");
         OhmmsAttributeSet cAttrib;
         cAttrib.add(id, "id");
         cAttrib.add(type, "type");
@@ -204,7 +204,7 @@ struct BesselZero: public OptimizableFunctorBase
           PRE.error( "Unknown correlation type " + type + " in BesselZero." + "Resetting to \"Array\"");
           xmlNewProp (xmlCoefs, (const xmlChar*) "type", (const xmlChar*) "Array");
         }
-        vector<real_type> params;
+        std::vector<real_type> params;
         putContent(params, xmlCoefs);
         if (params.size() == NumParams)
           Parameters = params;
@@ -248,8 +248,8 @@ struct BesselZero: public OptimizableFunctorBase
 
   void print()
   {
-//       string fname = (elementType != "") ? elementType : pairType;
-    string fname = "BesselZero.dat";
+//       std::string fname = (elementType != "") ? elementType : pairType;
+    std::string fname = "BesselZero.dat";
 //       //cerr << "Writing " << fname << " file.\n";
     FILE *fout = fopen (fname.c_str(), "w");
     for (double r=0.0; r<R_B*4; r+=0.01)
@@ -266,8 +266,8 @@ struct BesselZero: public OptimizableFunctorBase
 //       for(int i=0; i<n; ++i)
 //       {
 //         u=evaluate(r,du,d2du);
-//         os << setw(22) << r << setw(22) << u << setw(22) << du
-//           << setw(22) << d2du << std::endl;
+//         os << std::setw(22) << r << std::setw(22) << u << std::setw(22) << du
+//           << std::setw(22) << d2du << std::endl;
 //         r+=d;
 //       }
   }

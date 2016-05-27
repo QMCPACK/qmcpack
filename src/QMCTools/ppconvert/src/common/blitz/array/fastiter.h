@@ -171,7 +171,7 @@ public:
     bool canCollapse(int outerLoopRank, int innerLoopRank) const
     { return array_.canCollapse(outerLoopRank, innerLoopRank); }
 
-    void prettyPrint(BZ_STD_SCOPE(string) &str, 
+    void prettyPrint(BZ_STD_SCOPE( std::string) &str, 
         prettyPrintFormat& format) const
     {
         if (format.tersePrintingSelected())

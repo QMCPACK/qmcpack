@@ -133,7 +133,7 @@ int main(int argc, char **argv)
   m_param.add(ri,"ri","AU");
   m_param.add(rf,"rf","AU");
   m_param.add(npts,"npts","int");
-  string type = "elel";
+  std::string type = "elel";
   result
   = xmlXPathEvalExpression((const xmlChar*)"//paircorrelation",m_context);
   xmlNodePtr cur=result->nodesetval->nodeTab[0];
@@ -141,11 +141,11 @@ int main(int argc, char **argv)
   XMLReport("Type = " << type)
   xmlNodePtr tcur = cur->children;
   m_param.put(cur);
-  vector<xmlNodePtr> wset;
+  std::vector<xmlNodePtr> wset;
   int pid=OHMMS::Controller->mycontext();
   while(tcur != NULL)
   {
-    string cname((const char*)(tcur->name));
+    std::string cname((const char*)(tcur->name));
     if(cname == "mcwalkerset")
     {
       int pid_target=pid;
@@ -159,7 +159,7 @@ int main(int argc, char **argv)
     }
     tcur=tcur->next;
   }
-  vector<string> ConfigFile;
+  std::vector<std::string> ConfigFile;
   if(wset.size())
   {
     for(int i=0; i<wset.size(); i++)
@@ -220,9 +220,9 @@ int main(int argc, char **argv)
       }
     }
   }
-  string froot(myProject.CurrentRoot());
+  std::string froot(myProject.CurrentRoot());
   froot.append(".pc");
-  ofstream pc_out(froot.c_str());
+  std::ofstream pc_out(froot.c_str());
   double vol = 4.0*4.0*atan(1.0)/3.0*pow(rcut,3);
   double norm = static_cast<double>(count*factor)/(vol);
   for(int ng=0; ng<histogram.rows()-1; ng++)
@@ -232,20 +232,20 @@ int main(int argc, char **argv)
     double r2 = grid[ng+1];
     // double r = 0.5*(r1+r2);
     double r = 0.75*(pow(r2,4)-pow(r1,4))/(pow(r2,3)-pow(r1,3));
-    pc_out << setw(20) << r;
+    pc_out << std::setw(20) << r;
     for(int j=0; j<histogram.cols(); j++)
     {
       //volume element dr = 4/3\pi[(r+dr)^3-r^3]
       //double binVol =  4.0*4.0*atan(1.0)/3.0*(pow(r2,3)-pow(r1,3));
       double binVol = 1.0;
-      pc_out << setw(20) << static_cast<double>(histogram(ng,j))/(binVol*norm);
+      pc_out << std::setw(20) << static_cast<double>(histogram(ng,j))/(binVol*norm);
     }
-    pc_out << endl;
+    pc_out << std::endl;
   }
-  cout << "Ionic configuration : " << ion.getName() << endl;
-  ion.get(cout);
-  cout << "Electronic configuration : " << el.getName() << endl;
-  el.get(cout);
+  std::cout << "Ionic configuration : " << ion.getName() << std::endl;
+  ion.get(std::cout);
+  std::cout << "Electronic configuration : " << el.getName() << std::endl;
+  el.get(std::cout);
   xmlXPathFreeContext(m_context);
   xmlFreeDoc(m_doc);
   OHMMS::Controller->finalize();

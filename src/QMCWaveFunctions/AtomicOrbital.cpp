@@ -4,7 +4,7 @@ namespace qmcplusplus
 {
 
 template<> void
-AtomicOrbital<complex<double> >::allocate()
+AtomicOrbital<std::complex<double> >::allocate()
 {
   Numlm = (lMax+1)*(lMax+1);
   YlmVec.resize(Numlm);
@@ -51,11 +51,11 @@ AtomicOrbital<double>::allocate()
 
 
 template<> void
-AtomicOrbital<complex<double> >::set_band(int band, Array<complex<double>,2> &spline_data,
-    Array<complex<double>,2> &poly_coefs,
+AtomicOrbital<std::complex<double> >::set_band(int band, Array<std::complex<double>,2> &spline_data,
+    Array<std::complex<double>,2> &poly_coefs,
     PosType twist)
 {
-  vector<complex<double> > one_spline(SplinePoints);
+  std::vector<std::complex<double> > one_spline(SplinePoints);
   for (int lm=0; lm<Numlm; lm++)
   {
     int index = band*Numlm + lm;
@@ -71,11 +71,11 @@ AtomicOrbital<complex<double> >::set_band(int band, Array<complex<double>,2> &sp
 
 // Here, we convert the complex Ylm representation to the real Ylm representation
 template<> void
-AtomicOrbital<double>::set_band (int band, Array<complex<double>,2> &spline_data,
-                                 Array<complex<double>,2> &poly_coefs,
+AtomicOrbital<double>::set_band (int band, Array<std::complex<double>,2> &spline_data,
+                                 Array<std::complex<double>,2> &poly_coefs,
                                  PosType twist)
 {
-  vector<double> one_spline(SplinePoints);
+  std::vector<double> one_spline(SplinePoints);
   for (int l=0; l<=lMax; l++)
   {
     // Set spline for m=0
@@ -113,7 +113,7 @@ AtomicOrbital<double>::set_band (int band, Array<complex<double>,2> &spline_data
     }
   }
   TwistAngles[band] = twist;
-  // AtomicOrbital<complex<double> > zorb;
+  // AtomicOrbital<std::complex<double> > zorb;
   // zorb.set_pos (Pos);
   // zorb.set_lmax(lMax);
   // zorb.set_cutoff(CutoffRadius);
@@ -124,7 +124,7 @@ AtomicOrbital<double>::set_band (int band, Array<complex<double>,2> &spline_data
   // zorb.set_band(band, spline_data, poly_coefs, twist);
   // PosType dir(0.324, -0.8, 1.3);
   // dir = (1.0/std::sqrt(dot(dir,dir)))*dir;
-  // ostringstream fname;
+  // std::ostringstream fname;
   // fname << "TestAtomic_" << band << ".dat";
   // FILE *fout = fopen (fname.str().c_str(), "w");
   // Vector<double> zval(NumBands), val(NumBands);

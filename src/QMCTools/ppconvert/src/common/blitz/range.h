@@ -168,7 +168,7 @@ public:
         return first_ + i * stride_;
     }
 
-    friend inline ostream& operator<<(ostream& os, const Range& range)
+    friend inline std::ostream& operator<<(std::ostream& os, const Range& range)
     {
         os << "Range(" << range.first() << "," << range.last() << ","
            << range.stride() << ")";

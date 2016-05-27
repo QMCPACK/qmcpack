@@ -19,7 +19,7 @@
  *
  *  Closely related to PETE STL vector example.
  *  Equivalent to blitz::Array<T,1>, pooma::Array<1,T>.
- *  class C is a container class. Default is vector<T>
+ *  class C is a container class. Default is std::vector<T>
  *  \todo Implement openMP compatible container class or evaluate function.
  *  \todo Implement get/put member functions for MPI-like parallelism
  */
@@ -31,8 +31,7 @@
 #include <cstdlib>
 #include <vector>
 #include <iostream>
-//using namespace std;
-
+//
 namespace qmcplusplus
 {
 template<class T, class C = std::vector<T> >

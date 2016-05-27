@@ -33,9 +33,9 @@ struct LCNode
 
   int ID; //!< Unique ID for this node
   int LocalNum; //!< Number of particles belonging to this node
-  vector<int> Next;//!< ID's of adjacent nodes
-  vector<SingleParticlePos_t> Del;//!< Displacements of adjacent nodes
-  vector<int> PtclID; //!< Particle ID's for the particles of this node
+  std::vector<int> Next;//!< ID's of adjacent nodes
+  std::vector<SingleParticlePos_t> Del;//!< Displacements of adjacent nodes
+  std::vector<int> PtclID; //!< Particle ID's for the particles of this node
 
   LCNode() { }
   ~LCNode() { }
@@ -52,7 +52,7 @@ struct LCNode
   {
     LocalNum = 0;
     if(PtclID.size() < nat)
-      PtclID = vector<int>(nat);
+      PtclID = std::vector<int>(nat);
   }//!< Resets the number of particles of this node
 
   inline void add(int ijk, SingleParticlePos_t& disp)
@@ -102,7 +102,7 @@ struct LCNodeSet<CrystalLattice<T,1> >
 
   int nbox, max_nnbox;
   T   dinv;
-  vector<LCNode_t* > Nodes;                  //!< List of nodes
+  std::vector<LCNode_t* > Nodes;                  //!< List of nodes
 
   void reset(int nat)
   {
@@ -183,7 +183,7 @@ struct LCNodeSet<CrystalLattice<T,1> >
       } // 0-dimension
       max_nnbox = size(0);
       for(int ic=1; ic<size(); ic++)
-        max_nnbox = max(size(ic),max_nnbox);
+        max_nnbox = std::max(size(ic),max_nnbox);
     }
   }
 
@@ -203,7 +203,7 @@ struct LCNodeSet<CrystalLattice<T,2> >
   int nbox[2];
   T   dinv[2];
   int max_nnbox;
-  vector<LCNode_t* > Nodes;                  //!< List of nodes
+  std::vector<LCNode_t* > Nodes;                  //!< List of nodes
 
   void reset(int nat)
   {
@@ -310,13 +310,13 @@ struct LCNodeSet<CrystalLattice<T,2> >
               Nodes[iii]->add(jby + jbx*nbox[1],delta);
             } // 0 - dimension
           } // 1 - dimension
-          //cout << "-----------------------------------------" << endl;
+          //cout << "-----------------------------------------" << std::endl;
           iii++;
         } // 1-dimension
       } // 0-dimension
       max_nnbox = size(0);
       for(int ic=1; ic<size(); ic++)
-        max_nnbox = max(size(ic),max_nnbox);
+        max_nnbox = std::max(size(ic),max_nnbox);
     }
   }
 };
@@ -336,7 +336,7 @@ struct LCNodeSet<CrystalLattice<T,3> >
   int nbox[3];
   int max_nnbox;
 
-  vector<LCNode_t* > Nodes;//!< List of nodes
+  std::vector<LCNode_t* > Nodes;//!< List of nodes
 
   void reset(int nat)
   {
@@ -469,21 +469,21 @@ struct LCNodeSet<CrystalLattice<T,3> >
                 } // 0 - dimension
               } // 1 - dimension
             } // 2 -dimension
-            //cout << "-----------------------------------------" << endl;
+            //cout << "-----------------------------------------" << std::endl;
             iii++;
           } // 2-dimension
         } // 1-dimension
       } // 0-dimension
 //       for(int ic=0; ic<nctot;ic++) {
-// 	cout << "Key = " << Nodes[ic]->ID << endl;
+// 	cout << "Key = " << Nodes[ic]->ID << std::endl;
 // 	for(int next=0; next<Nodes[ic]->Next.size(); next++) {
-// 	  cout << Nodes[ic]->Next[next] <<" "
-// 	       << Nodes[ic]->Del[next] <<  endl;
+// 	  std::cout << Nodes[ic]->Next[next] <<" "
+// 	       << Nodes[ic]->Del[next] <<  std::endl;
 // 	}
 //       }
       max_nnbox = size(0);
       for(int ic=1; ic<size(); ic++)
-        max_nnbox = max(size(ic),max_nnbox);
+        max_nnbox = std::max(size(ic),max_nnbox);
     }
   }
 

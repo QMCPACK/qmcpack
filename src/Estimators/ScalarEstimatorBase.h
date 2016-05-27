@@ -52,9 +52,9 @@ struct ScalarEstimatorBase: public QMCTraits
   ///last index within an record of the first element handled by an object
   int LastIndex;
   ///scalars to be measured
-  vector<accumulator_type> scalars;
+  std::vector<accumulator_type> scalars;
   ///scalars saved
-  vector<accumulator_type> scalars_saved;
+  std::vector<accumulator_type> scalars_saved;
 //     RealType NSTEPS;
 
   inline ScalarEstimatorBase(): FirstIndex(0), LastIndex(0) {}
@@ -72,7 +72,7 @@ struct ScalarEstimatorBase: public QMCTraits
     return scalars_saved[i].variance();
   }
   ///retrun mean and variance
-  inline pair<RealType,RealType> operator[](int i) const
+  inline std::pair<RealType,RealType> operator[](int i) const
   {
     return scalars[i].mean_and_variance();
   }
@@ -143,7 +143,7 @@ struct ScalarEstimatorBase: public QMCTraits
    * @param h5desc descriptor of a data stored in a h5 group
    * @param gid h5 group to which each statistical data will be stored
    */
-  virtual void registerObservables(vector<observable_helper*>& h5dec, hid_t gid)=0;
+  virtual void registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid)=0;
 
   ///clone the object
   virtual ScalarEstimatorBase* clone()=0;

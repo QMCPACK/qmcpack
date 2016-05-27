@@ -192,18 +192,18 @@ public:
    * @param bs pointer to the BasisSet
    * @param id identifier of this LCOrbitalSet
    */
-  LCOrbitalSet(BS* bs=0,int rl=0, string algorithm=""): myBasisSet(0),ReportLevel(rl)
+  LCOrbitalSet(BS* bs=0,int rl=0, std::string algorithm=""): myBasisSet(0),ReportLevel(rl)
   {
     if(algorithm=="legacy_gemv")
     {
       Algo=0;
       /// input sample: <coefficient size="57" id="updetC" algorithm="legacy_gemv">
-      app_log() << "SPO coefficients are applied using the legacy algorithm" << endl;
+      app_log() << "SPO coefficients are applied using the legacy algorithm" << std::endl;
     }
     else
     {
       Algo=1;
-      app_log() << "SPO coefficients are applied by a single dgemm (BLAS3)" << endl;
+      app_log() << "SPO coefficients are applied by a single dgemm (BLAS3)" << std::endl;
     }
     if(bs)
       setBasisSet(bs);

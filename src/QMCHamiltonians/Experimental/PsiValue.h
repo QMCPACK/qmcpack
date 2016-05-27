@@ -28,7 +28,7 @@ namespace qmcplusplus
 
 struct PsiValue: public QMCHamiltonianBase
 {
-  typedef map<string,ParticleSet*> PtclPoolType;
+  typedef std::map<std::string,ParticleSet*> PtclPoolType;
 
   TrialWaveFunction* trialPsi;
   int Power;
@@ -53,7 +53,7 @@ struct PsiValue: public QMCHamiltonianBase
     if (Power!=0)
     {
       RealType logValue = trialPsi->evaluateLogOnly(P);
-      //       app_log()<<tWalker->Properties(LOGPSI)<<"  "<<logValue<<endl;
+      //       app_log()<<tWalker->Properties(LOGPSI)<<"  "<<logValue<< std::endl;
       Value = std::exp(Power*logValue);
       return Value;
     }
@@ -62,7 +62,7 @@ struct PsiValue: public QMCHamiltonianBase
   }
 
   inline Return_t
-  evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
@@ -137,11 +137,11 @@ struct PsiValue: public QMCHamiltonianBase
   bool put(xmlNodePtr cur,ParticleSet* qp,
            PtclPoolType& pset, Communicate* c )
   {
-    app_log()<<"Psi evaluator is being added with Power="<<Power<<endl;
+    app_log()<<"Psi evaluator is being added with Power="<<Power<< std::endl;
     if (Power!=0)
     {
       xmlNodePtr tcur = cur->children;
-      //       app_log()<<"PUTTING LOGPSI "<<((const char*)(tcur->name))<<endl;
+      //       app_log()<<"PUTTING LOGPSI "<<((const char*)(tcur->name))<< std::endl;
       WaveFunctionFactory* WFF = new WaveFunctionFactory(qp,pset,c);
       WFF->setReportLevel(0);
       WFF->setName("HamPsiVal");

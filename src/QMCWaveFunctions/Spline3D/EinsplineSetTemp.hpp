@@ -180,7 +180,7 @@ namespace qmcplusplus
     template<typename ValT>
       inline void evaluate(const TinyVector<ValT,DIM>& r, ValT* restrict psi)
       {
-        cout << "bspline_engine<EngT,IsGamma,IsOrtho,false>::evaluate, real" << endl;
+        std::cout << "bspline_engine<EngT,IsGamma,IsOrtho,false>::evaluate, real" << std::endl;
 //        PosType ru(PrimLattice.toUnit(r));
 //        for (int i=0; i<DIM; i++) ru[i] -= std::floor (ru[i]);
 //        bspline_evaluate(MultiSpline, ru, myPsi.data());
@@ -205,7 +205,7 @@ namespace qmcplusplus
     template<typename ValT>
       inline void evaluate(const TinyVector<ValT,DIM>& r, std::complex<ValT>* restrict psi)
       {
-        cout << "bspline_engine<EngT,IsGamma,IsOrtho,false>::evaluate, complex" << endl;
+        std::cout << "bspline_engine<EngT,IsGamma,IsOrtho,false>::evaluate, complex" << std::endl;
 //        PosType ru(PrimLattice.toUnit(r));
 //        for (int i=0; i<DIM; i++) ru[i] -= std::floor (ru[i]);
 //        bspline_evaluate(MultiSpline,ru,myPsi.data());
@@ -221,7 +221,7 @@ namespace qmcplusplus
       inline void evaluate(const TinyVector<ValT,DIM>& r 
           , ValT* restrict psi , TinyVector<ValT,DIM>* restrict dpsi , ValT* restrict d2psi)
       {
-        cout << "bspline_engine_vgl<EngT,IsGamma,IsOrtho,false>::evaluate, real" << endl;
+        std::cout << "bspline_engine_vgl<EngT,IsGamma,IsOrtho,false>::evaluate, real" << std::endl;
 //        PosType ru(PrimLattice.toUnit(r));
 //        for (int i=0; i<DIM; i++) ru[i] -= std::floor (ru[i]);
 //        bspline_evaluate(MultiSpline,ru,myPsi.data(),myGrad.data(),myHess.data());
@@ -238,7 +238,7 @@ namespace qmcplusplus
       inline void evaluate(const TinyVector<ValT,DIM>& r
           , std::complex<ValT>* restrict psi, TinyVector<std::complex<ValT>,DIM>* restrict dpsi , std::complex<ValT>* restrict d2psi)
       {
-        cout << "bspline_engine_vgl<EngT,IsGamma,IsOrtho,false>::evaluate, complex" << endl;
+        std::cout << "bspline_engine_vgl<EngT,IsGamma,IsOrtho,false>::evaluate, complex" << std::endl;
 //        PosType ru(PrimLattice.toUnit(r));
 //        for (int i=0; i<DIM; i++) ru[i] -= std::floor (ru[i]);
 //        bspline_evaluate(MultiSpline,ru,myPsi.data(),myGrad.data(),myHess.data());
@@ -282,7 +282,7 @@ namespace qmcplusplus
       template<typename ValT>
       inline void evaluate(const TinyVector<ValT,3>& r, ValT* restrict psi)
       {
-        cout << "bspline_engine<EngT,IsGamma,IsOrtho,IsReal==true>::evaluate called" << endl;
+        std::cout << "bspline_engine<EngT,IsGamma,IsOrtho,IsReal==true>::evaluate called" << std::endl;
         //PosType ru(PrimLattice.toUnit(r));
         //int asign=0;
         //for (int i=0; i<OHMMS_DIM; i++)
@@ -308,7 +308,7 @@ namespace qmcplusplus
       inline void evaluate_vgl(const TinyVector<ValT,DIM>& r
           , ValT* restrict psi , TinyVector<ValT,DIM>* restrict dpsi , ValT* restrict d2psi)
       {
-        cout << "bspline_engine<EngT,IsGamma,IsOrtho,IsReal==true>::evaluate_vgl called" << endl;
+        std::cout << "bspline_engine<EngT,IsGamma,IsOrtho,IsReal==true>::evaluate_vgl called" << std::endl;
         //PosType ru(PrimLattice.toUnit(r));
         //int asign=0;
         //for (int i=0; i<OHMMS_DIM; i++)
@@ -363,11 +363,11 @@ namespace qmcplusplus
       {
         //TinyVector<Type_t,DIM> ru(PrimLattice.toUnit(r));
         if(type_check<Type_t,ValT>::value)
-          cout << "bspline_engine<EngT,true,true,true>::evaluate no conversion " << endl;
+          std::cout << "bspline_engine<EngT,true,true,true>::evaluate no conversion " << std::endl;
           //bspline_evaluate(MultiSpline,ru,psi);
         else
         {
-          cout << "bspline_engine<EngT,true,true,true>::evaluate conversion different datatype" << endl;
+          std::cout << "bspline_engine<EngT,true,true,true>::evaluate conversion different datatype" << std::endl;
           //bspline_evaluate(MultiSpline,ru,myPsi.data());
           //for(int i=0; i<N; ++i) convert(myPsi[i],psi[i]);
         }
@@ -379,11 +379,11 @@ namespace qmcplusplus
       {
         //TinyVector<Type_t,DIM> ru(PrimLattice.toUnit(r));
         if(type_check<Type_t,ValT>::value)
-          cout << "bspline_engine<EngT,true,true,true>::evaluate_vgl no conversion " << endl;
+          std::cout << "bspline_engine<EngT,true,true,true>::evaluate_vgl no conversion " << std::endl;
           //bspline_evaluate(MultiSpline,ru,psi,dpsi,d2psi);
         else
         {
-          cout << "bspline_engine<EngT,true,true,true>::evaluate_vgl conversion different datatype" << endl;
+          std::cout << "bspline_engine<EngT,true,true,true>::evaluate_vgl conversion different datatype" << std::endl;
           //bspline_evaluate(MultiSpline,ru,myPs.data(),myGrad.data(),myLap.data());
           //for(int i=0; i<N; ++i) convert(myPsi[i],psi[i]);
           //for(int i=0; i<N; ++i) convert(myGrad[i],dpsi[i]);

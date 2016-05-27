@@ -18,7 +18,6 @@
 #include <cmath>
 #include <string>
 #include <boost/random.hpp>
-using namespace std;
 #include "Utilities/OhmmsInfo.h"
 #include "Message/Communicate.h"
 #include "Message/OpenMP.h"
@@ -279,7 +278,7 @@ int main(int argc, char** argv)
   std::vector<uint32_t> myprimes;
   //rng.PrimeNumbers.get(Random.offset()+omp_get_max_threads(),omp_get_max_threads(),myprimes);
   rng.PrimeNumbers.get(1024,512,myprimes);
-  std::cout <<"============================  " << endl;
+  std::cout <<"============================  " << std::endl;
   for(int i=0; i<myprimes.size();)
   {
     for(int j=0; j<8; j++, i++)
@@ -287,7 +286,7 @@ int main(int argc, char** argv)
     std::cout << std::endl;
   }
   histogram_OMP(Random, 10000, -0.5, 1.5, myprimes, "uniform_real(0,1)");
-  std::cout <<"============================  " << endl;
+  std::cout <<"============================  " << std::endl;
   int imax=8*(rng.PrimeNumbers.size()/8);
   for(int i=0; i<imax;)
   {
@@ -297,17 +296,17 @@ int main(int argc, char** argv)
   }
   //std::stringstream a;
   //Random.write(a);
-  //cout << "Size of string " << a.str().size() << endl;
+  //cout << "Size of std::string " << a.str().size() << std::endl;
   //vector<uint32_t> v;
   //uint32_t vt;
   //while(!a.eof())
   //{
   //  if(a>>vt) v.push_back(vt);
   //}
-  //for(int i=0; i<v.size(); i++) cout << v[i] << endl;
-  //Random.write(cout);
-  //cout << endl;
-  //cout << " size of data " << v.size() << endl;
+  //for(int i=0; i<v.size(); i++) std::cout << v[i] << std::endl;
+  //Random.write(std::cout);
+  //cout << std::endl;
+  //cout << " size of data " << v.size() << std::endl;
   OHMMS::Controller->finalize();
   return 0;
 }

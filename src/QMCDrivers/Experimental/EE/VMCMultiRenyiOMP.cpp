@@ -83,7 +83,7 @@ bool VMCMultiRenyiOMP::run()
         for(int i(0); i<EEN; i++)
           file_out<<"  EE"<<i<<"_N"<<k<<"_r"<<j;
       }
-    file_out<<endl;
+    file_out<< std::endl;
     file_out.close();
     file_out.open(s_dat.str().c_str(),fstream::out | fstream::trunc);
     file_out<<"# indx";
@@ -99,7 +99,7 @@ bool VMCMultiRenyiOMP::run()
         for(int i(1); i<EEN; i++)
           file_out<<"  EER"<<i<<"_N"<<k<<"_r"<<j;
       }
-    file_out<<endl;
+    file_out<< std::endl;
     file_out.close();
     file_out.open(N_dat.str().c_str(),fstream::out| fstream::trunc);
     file_out<<"# indx";
@@ -113,24 +113,24 @@ bool VMCMultiRenyiOMP::run()
         for(int i(0); i<10; i++)
           file_out<<"   N"<<"_"<<i<<"_"<<j;
     }
-    file_out<<endl;
+    file_out<< std::endl;
     file_out.close();
   }
 //       if(csEE!="no")
 //       {
 //         get a decent normalization for a crazy ;arge log value for the trial function
-  vector<RealType> Jvalue(NumThreads,0);
+  std::vector<RealType> Jvalue(NumThreads,0);
   #pragma omp parallel
   {
     int ip=omp_get_thread_num();
     int i=wPerNode[ip];
     while(i<wPerNode[ip+1])
     {
-      vector<PosType> dR;
-      vector<int> iat(0);
-      vector<RealType> lratio(0);
-      vector<RealType> logs;
-      vector<RealType> lweights(0);
+      std::vector<PosType> dR;
+      std::vector<int> iat(0);
+      std::vector<RealType> lratio(0);
+      std::vector<RealType> logs;
+      std::vector<RealType> lweights(0);
       {
         Movers[ip]->getLogs(logs);
         Jvalue[ip] += logs[0];
@@ -149,7 +149,7 @@ bool VMCMultiRenyiOMP::run()
 //         }
   for (int ip=0; ip<NumThreads; ++ip)
     Movers[ip]->csoffset=csoffset;
-  app_log()<<"Using csoffset:"<<csoffset<<endl;
+  app_log()<<"Using csoffset:"<<csoffset<< std::endl;
 //       }
   //start the main estimator
   Estimators->start(nBlocks);
@@ -192,7 +192,7 @@ bool VMCMultiRenyiOMP::run()
     }//end-of-parallel for
     int nnode(W.getActiveWalkers());
     //         set up ratio helpers
-    vector<qmcplusplus::EEholder> EE_indices(EENR);
+    std::vector<qmcplusplus::EEholder> EE_indices(EENR);
     for (int i=0; i<EENR; i++)
       EE_indices[i].resize(nnode,W.groups()+1);
     ParticleSet::ParticlePos_t L(1);
@@ -231,7 +231,7 @@ bool VMCMultiRenyiOMP::run()
         W.convert2Cart(L);
 //           app_log()<<" Using EE_R: ";
 //           for(int i(0);i<EENR;i++) app_log()<<std::sqrt(vsize+i*EEdR)<<" ";
-//           app_log()<<endl;
+//           app_log()<< std::endl;
       }
     }
     #pragma omp parallel
@@ -283,11 +283,11 @@ bool VMCMultiRenyiOMP::run()
           EE_indices[j].g_w_num[g][i] += EE_indices[j-1].g_w_num[g][i];
 //         for(int j(0);j<EENR;j++) for (int g=0; g<W.groups()+1;g++)
 //         app_log()<<" "<<EE_indices[j].g_w_num[g][0];
-//         app_log()<<endl;
+//         app_log()<< std::endl;
     int EENR2(2*EENR);
     int EENR3(3*EENR);
-    vector<Matrix<RealType> > ratios(4*EENR,Matrix<RealType>(nnode,nnode));
-    vector<RealType> Jvalue(nnode+1,0);
+    std::vector<Matrix<RealType> > ratios(4*EENR,Matrix<RealType>(nnode,nnode));
+    std::vector<RealType> Jvalue(nnode+1,0);
     #pragma omp parallel
     {
       int ip=omp_get_thread_num();
@@ -306,8 +306,8 @@ bool VMCMultiRenyiOMP::run()
           else
           {
             bool one_same(false);
-            vector<int> same_number;
-            vector<int> number_k;
+            std::vector<int> same_number;
+            std::vector<int> number_k;
             for(int k(0); k<EENR; k++)
             {
               bool goodk(true);
@@ -338,8 +338,8 @@ bool VMCMultiRenyiOMP::run()
               int nshells(same_number.size());
               int maxk(same_number[nshells-1]);
               int max_Sub(number_k[maxk]);
-              vector<PosType> dR;
-              vector<int> iat;
+              std::vector<PosType> dR;
+              std::vector<int> iat;
               for (int k=0; k<=maxk; k++)
                 for (int g=0; g<W.groups(); g++)
                   for (int p=0; p<EE_indices[k].g_w_pindex[g][j].size(); p++)
@@ -357,8 +357,8 @@ bool VMCMultiRenyiOMP::run()
                     iat.push_back(iat_i);
                     iti++;
                   }
-              vector<RealType> lratio(4*nshells);
-//                   vector<RealType> logs;
+              std::vector<RealType> lratio(4*nshells);
+//                   std::vector<RealType> logs;
 //                   if(csEE!="no")
 //                   {
 //                     Movers[ip]->advanceWalkerForCSEE((*W[i]), dR, iat,number_k,lratio,lweights,logs);
@@ -372,7 +372,7 @@ bool VMCMultiRenyiOMP::run()
               Jvalue[i] += Movers[ip]->advanceWalkerForEE((*W[i]), dR, iat,number_k,lratio);
               Jvalue[nnode]+=1;
 //                   Movers[0]->advanceWalkerForEE((*W[i]), dR, iat,number_k,lratio);
-//                   for(int a(0);a<same_number.size();a++) app_log()<<a<<" "<<i<<" "<<j<<" "<<same_number[a]<<" "<<number_k[a]<<" "<<lratio[a]<<endl;
+//                   for(int a(0);a<same_number.size();a++) app_log()<<a<<" "<<i<<" "<<j<<" "<<same_number[a]<<" "<<number_k[a]<<" "<<lratio[a]<< std::endl;
               #pragma omp critical
               for (int k=0; k<nshells; k++)
               {
@@ -412,18 +412,18 @@ bool VMCMultiRenyiOMP::run()
       file_out<<block;
       file_out.close();
     }
-    vector<RealType> prev_estimate(EEN,0), prev_nrm(EEN,0);
+    std::vector<RealType> prev_estimate(EEN,0), prev_nrm(EEN,0);
     int EEN2(EEN*2);
     int EEN3(EEN*3);
     for(int j(0); j<EENR; j++)
     {
-      vector<RealType> estimateA(4*EEN,0);
-      vector<RealType> estimateV(4*EEN,0);
-      vector<RealType> estimateS(4*EEN,0);
-      vector<RealType> estimateN(4*EEN,0);
-      vector<RealType> tv(4*EEN,0);
-      vector<int> itr(EEN+1,0);
-      vector<Matrix<RealType> > ratios3(4);
+      std::vector<RealType> estimateA(4*EEN,0);
+      std::vector<RealType> estimateV(4*EEN,0);
+      std::vector<RealType> estimateS(4*EEN,0);
+      std::vector<RealType> estimateN(4*EEN,0);
+      std::vector<RealType> tv(4*EEN,0);
+      std::vector<int> itr(EEN+1,0);
+      std::vector<Matrix<RealType> > ratios3(4);
       ratios3[0]=ratios[j];
       ratios3[1]=ratios[EENR+j];
       ratios3[2]=ratios[EENR2+j];
@@ -557,20 +557,20 @@ bool VMCMultiRenyiOMP::run()
     if(myComm->rank()==0)
     {
       file_out.open(ee_dat.str().c_str(),fstream::out | fstream::app);
-      file_out<<endl;
+      file_out<< std::endl;
       file_out.close();
       file_out.open(N_dat.str().c_str(),fstream::out | fstream::app);
-      file_out<<endl;
+      file_out<< std::endl;
       file_out.close();
       file_out.open(s_dat.str().c_str(),fstream::out | fstream::app);
-      file_out<<endl;
+      file_out<< std::endl;
       file_out.close();
     }
-//         app_log()<<"new ratios block"<<endl;
+//         app_log()<<"new ratios block"<< std::endl;
 //         for(int i(0);i<nnode;i++)
 //         {
 //           for(int j(0);j<nnode;j++) app_log()<<ratios(i,j)<<" ";
-//           app_log()<<endl;
+//           app_log()<< std::endl;
 //         }
     //Estimators->accumulateCollectables(wClones,nSteps);
     CurrentStep+=nSteps;
@@ -603,12 +603,12 @@ void VMCMultiRenyiOMP::resetRun()
   if(samples_this_node%omp_get_max_threads())
     for (int ip=0; ip < samples_this_node%omp_get_max_threads(); ++ip)
       samples_th[ip] +=1;
-  app_log() << "  Samples are dumped every " << myPeriod4WalkerDump << " steps " << endl;
-  app_log() << "  Total Sample Size =" << nTargetSamples << endl;
-  app_log() << "  Nodes Sample Size =" << samples_this_node << endl;
+  app_log() << "  Samples are dumped every " << myPeriod4WalkerDump << " steps " << std::endl;
+  app_log() << "  Total Sample Size =" << nTargetSamples << std::endl;
+  app_log() << "  Nodes Sample Size =" << samples_this_node << std::endl;
   for (int ip=0; ip<NumThreads; ++ip)
-    app_log()  << "    Sample size for thread " <<ip<<" = " << samples_th[ip] << endl;
-  app_log() << "  Warmup Steps " << myWarmupSteps << endl;
+    app_log()  << "    Sample size for thread " <<ip<<" = " << samples_th[ip] << std::endl;
+  app_log() << "  Warmup Steps " << myWarmupSteps << std::endl;
 //     if (UseDrift == "rn") makeClones( *(psiPool.getWaveFunction("guide")) );
   if (Movers.empty())
   {
@@ -621,7 +621,7 @@ void VMCMultiRenyiOMP::resetRun()
     {
       app_log() << "  walker number not integer multiple of threads. Removing "<< W.getActiveWalkers()-nwtot <<" walkers. ";
       W.destroyWalkers(W.getActiveWalkers()-nwtot);
-      vector<int> nwoff(myComm->size()+1,0);
+      std::vector<int> nwoff(myComm->size()+1,0);
       for(int ip=0; ip<myComm->size(); ip++)
         nwoff[ip+1]=nwoff[ip]+nwtot;
       W.setGlobalNumWalkers(nwoff[myComm->size()]);
@@ -629,14 +629,14 @@ void VMCMultiRenyiOMP::resetRun()
     }
     FairDivideLow(nwtot,NumThreads,wPerNode);
     app_log() << "  Initial partition of walkers ";
-    std::copy(wPerNode.begin(),wPerNode.end(),ostream_iterator<int>(app_log()," "));
-    app_log() << endl;
+    copy(wPerNode.begin(),wPerNode.end(),std::ostream_iterator<int>(app_log()," "));
+    app_log() << std::endl;
 #if !defined(BGP_BUG)
     #pragma omp parallel for
 #endif
     for(int ip=0; ip<NumThreads; ++ip)
     {
-      ostringstream os;
+      std::ostringstream os;
       estimatorClones[ip]= new EstimatorManager(*Estimators);//,*hClones[ip]);
       estimatorClones[ip]->resetTargetParticleSet(*wClones[ip]);
       estimatorClones[ip]->setCollectionMode(false);
@@ -647,13 +647,13 @@ void VMCMultiRenyiOMP::resetRun()
       {
         if (UseDrift == "yes")
         {
-          os <<"  PbyP moves with drift, using VMCUpdatePbyPWithDriftFast"<<endl;
+          os <<"  PbyP moves with drift, using VMCUpdatePbyPWithDriftFast"<< std::endl;
           Movers[ip]=new VMCUpdatePbyPWithDriftFast(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
           // Movers[ip]=new VMCUpdatePbyPWithDrift(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
         }
         else
         {
-          os <<"  PbyP moves with |psi^2|, using VMCUpdatePbyP"<<endl;
+          os <<"  PbyP moves with |psi^2|, using VMCUpdatePbyP"<< std::endl;
           Movers[ip]=new VMCUpdatePbyP(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
         }
         //Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
@@ -662,18 +662,18 @@ void VMCMultiRenyiOMP::resetRun()
       {
         if (UseDrift == "yes")
         {
-          os <<"  walker moves with drift, using VMCUpdateAllWithDrift"<<endl;
+          os <<"  walker moves with drift, using VMCUpdateAllWithDrift"<< std::endl;
           Movers[ip]=new VMCUpdateAllWithDrift(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
         }
         else
         {
-          os <<"  walker moves with |psi|^2, using VMCUpdateAll"<<endl;
+          os <<"  walker moves with |psi|^2, using VMCUpdateAll"<< std::endl;
           Movers[ip]=new VMCUpdateAll(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
         }
         //Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
       }
       if(ip==0)
-        app_log() << os.str() << endl;
+        app_log() << os.str() << std::endl;
     }
   }
 #if !defined(BGP_BUG)
@@ -753,7 +753,7 @@ void VMCMultiRenyiOMP::resetRun()
   //    }
 }
 
-//  void VMCMultiRenyiOMP::godeeper(int lvl,int EEN,Matrix<RealType>& ratios,vector<RealType>& estimate,vector<RealType>& nrm,vector<RealType>& tv,vector<int>& itr)
+//  void VMCMultiRenyiOMP::godeeper(int lvl,int EEN,Matrix<RealType>& ratios,std::vector<RealType>& estimate,std::vector<RealType>& nrm,std::vector<RealType>& tv,std::vector<int>& itr)
 //{
 //  int itrl(lvl+1);
 //  for(itr[ itrl ]=0;itr[ itrl ]<W.getActiveWalkers();itr[ itrl ]++)
@@ -774,7 +774,7 @@ void VMCMultiRenyiOMP::resetRun()
 //  }
 //}
 
-void VMCMultiRenyiOMP::godeeper(int lvl,vector<Matrix<RealType> >& ratios, vector<RealType>& estimateA,vector<RealType>& estimateV,vector<RealType>& estimateS,vector<RealType>& estimateN,vector<RealType>& tv,vector<int>& itr)
+void VMCMultiRenyiOMP::godeeper(int lvl,std::vector<Matrix<RealType> >& ratios, std::vector<RealType>& estimateA,std::vector<RealType>& estimateV,std::vector<RealType>& estimateS,std::vector<RealType>& estimateN,std::vector<RealType>& tv,std::vector<int>& itr)
 {
   int itrl(lvl+1);
   for(itr[ itrl ]=itr[lvl]+1; itr[ itrl ]<W.getActiveWalkers(); itr[ itrl ]++)

@@ -49,14 +49,14 @@ CrystalLattice<T,D,ORTHO>::CrystalLattice()
 template<class T, unsigned D,bool ORTHO>
 void CrystalLattice<T,D,ORTHO>::set(int argc, char **argv)
 {
-  std::vector<string> opt;
+  std::vector<std::string> opt;
   for(int i=0; i<argc; i++)
     opt.push_back(argv[i]);
   set(opt);
 }
 
 template<class T, unsigned D,bool ORTHO>
-void CrystalLattice<T,D,ORTHO>::set(vector<string>& argv)
+void CrystalLattice<T,D,ORTHO>::set(std::vector<std::string>& argv)
 {
   makelattice<CrystalLattice<T,D,ORTHO> >::apply(*this, argv);
 }
@@ -190,16 +190,16 @@ CrystalLattice<T,D,ORTHO>::operator*=(T sc)
 }
 
 template<class T, unsigned D,bool ORTHO>
-void CrystalLattice<T,D,ORTHO>::print(ostream& os, int level) const
+void CrystalLattice<T,D,ORTHO>::print(std::ostream& os, int level) const
 {
   /*\note level == 0: print only the lattice vectors
    *      level == 1: lattice vectors, boundary conditions, grid
    *      level == 2: + all the internal values
    */
-  os << "<parameter name=\"lattice\">" << endl;
+  os << "<parameter name=\"lattice\">" << std::endl;
   for(int i=0; i<D; ++i)
-    os << Rv[i] << endl;
-  os << "</parameter>" << endl;
+    os << Rv[i] << std::endl;
+  os << "</parameter>" << std::endl;
   if(level > 0)
   {
     os << "<parameter name=\"bconds\"> ";
@@ -210,15 +210,15 @@ void CrystalLattice<T,D,ORTHO>::print(ostream& os, int level) const
       else
         os << " n ";
     }
-    os << "</parameter>" << endl;
+    os << "</parameter>" << std::endl;
   }
-  os << "<note>"<<endl;
+  os << "<note>"<< std::endl;
   if(level > 1)
   {
-    os << "Volume (A^3) = " << Volume << endl;
+    os << "Volume (A^3) = " << Volume << std::endl;
     os << "Reciprocal vectors without 2*pi.\n";
     for(int i=0; i<D; ++i)
-      os << "g_"<< i+1<< " = " << Gv[i] << endl;
+      os << "g_"<< i+1<< " = " << Gv[i] << std::endl;
     os << "Metric tensor in real-space.\n";
     for(int i=0; i<D; ++i)
     {
@@ -227,7 +227,7 @@ void CrystalLattice<T,D,ORTHO>::print(ostream& os, int level) const
       {
         os << M(i,j) << " ";
       }
-      os << endl;
+      os << std::endl;
     }
     os << "Metric tensor in g-space.\n";
     for(int i=0; i<D; ++i)
@@ -237,10 +237,10 @@ void CrystalLattice<T,D,ORTHO>::print(ostream& os, int level) const
       {
         os << Mg(i,j) << " ";
       }
-      os << endl;
+      os << std::endl;
     }
   }
-  os << "</note>"<<endl;
+  os << "</note>"<< std::endl;
 }
 
 template<class T, unsigned D,bool ORTHO>
@@ -248,7 +248,7 @@ inline bool operator==(const CrystalLattice<T,D,ORTHO>& lhs,
                        const CrystalLattice<T,D,ORTHO>& rhs)
 {
   for(int i=0; i<D*D; ++i)
-    if(abs(lhs.R[i]-rhs.R[i]) > numeric_limits<T>::epsilon())
+    if(abs(lhs.R[i]-rhs.R[i]) > std::numeric_limits<T>::epsilon())
       return false;
   return true;
 }

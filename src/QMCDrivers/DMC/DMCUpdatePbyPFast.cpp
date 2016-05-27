@@ -109,7 +109,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalkers(WalkerIter_t it, WalkerIter_
         RealType ratio = Psi.ratioGrad(W,iat,grad_iat);
         bool valid_move=false;
         //node is crossed reject the move
-        //if(Psi.getPhase() > numeric_limits<RealType>::epsilon())
+        //if(Psi.getPhase() > std::numeric_limits<RealType>::epsilon())
         //if(branchEngine->phaseChanged(Psi.getPhase(),thisWalker.Properties(SIGN)))
         if (branchEngine->phaseChanged(Psi.getPhaseDiff()))
         {

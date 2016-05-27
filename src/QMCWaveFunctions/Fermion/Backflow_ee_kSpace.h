@@ -40,8 +40,8 @@ public:
   //number of groups of the target particleset
   bool Optimize;
   int numParams;
-  vector<RealType> Fk;
-  vector<int> offsetPrms;
+  std::vector<RealType> Fk;
+  std::vector<int> offsetPrms;
   int NumGroups;
   int NumKShells; // number of k shells included in bf function
   int NumKVecs; // number of k vectors included in bf function
@@ -67,7 +67,7 @@ public:
     offsetPrms.resize(NumGroups*NumGroups,0);
   }
 
-  void initialize(ParticleSet&P, vector<RealType>& yk)
+  void initialize(ParticleSet&P, std::vector<RealType>& yk)
   {
     NumKShells = yk.size();
     Fk = yk;
@@ -146,7 +146,7 @@ public:
     */
   }
 
-  void reportStatus(ostream& os)
+  void reportStatus(std::ostream& os)
   {
     myVars.print(os);
   }
@@ -281,11 +281,11 @@ public:
     APP_ABORT("Backflow_ee_kSpace::evaluate");
 #else
     //memcopy if necessary but this is not so critcal
-    std::copy(P.SK->rhok[0],P.SK->rhok[0]+NumKVecs,Rhok.data());
+    copy(P.SK->rhok[0],P.SK->rhok[0]+NumKVecs,Rhok.data());
     for(int spec1=1; spec1<NumGroups; spec1++)
       accumulate_elements(P.SK->rhok[spec1],P.SK->rhok[spec1]+NumKVecs,Rhok.data());
     const KContainer::VContainer_t& Kcart(P.SK->KLists.kpts_cart);
-    vector<int>& kshell(P.SK->KLists.kshell);
+    std::vector<int>& kshell(P.SK->KLists.kshell);
     for(int iel=0; iel<NumTargets; iel++)
     {
       const ComplexType* restrict eikr_ptr(P.SK->eikr[iel]);
@@ -321,11 +321,11 @@ public:
     APP_ABORT("Backflow_ee_kSpace::evaluate");
 #else
     //memcopy if necessary but this is not so critcal
-    std::copy(P.SK->rhok[0],P.SK->rhok[0]+NumKVecs,Rhok.data());
+    copy(P.SK->rhok[0],P.SK->rhok[0]+NumKVecs,Rhok.data());
     for(int spec1=1; spec1<NumGroups; spec1++)
       accumulate_elements(P.SK->rhok[spec1],P.SK->rhok[spec1]+NumKVecs,Rhok.data());
     const KContainer::VContainer_t& Kcart(P.SK->KLists.kpts_cart);
-    vector<int>& kshell(P.SK->KLists.kshell);
+    std::vector<int>& kshell(P.SK->KLists.kshell);
     GradType fact;
     HessType kakb;
     for(int iel=0; iel<NumTargets; iel++)
@@ -375,7 +375,7 @@ public:
    */
   inline void
   evaluatePbyP(const ParticleSet& P, ParticleSet::ParticlePos_t& newQP
-               ,const vector<int>& index)
+               ,const std::vector<int>& index)
   {
   }
 
@@ -390,7 +390,7 @@ public:
    */
   inline void
   evaluatePbyP(const ParticleSet& P, ParticleSet::ParticlePos_t& newQP
-               ,const vector<int>& index, HessMatrix_t& Amat)
+               ,const std::vector<int>& index, HessMatrix_t& Amat)
   {
   }
 
@@ -406,7 +406,7 @@ public:
    */
   inline void
   evaluatePbyP(const ParticleSet& P, ParticleSet::ParticlePos_t& newQP
-               ,const vector<int>& index, GradMatrix_t& Bmat, HessMatrix_t& Amat)
+               ,const std::vector<int>& index, GradMatrix_t& Bmat, HessMatrix_t& Amat)
   {
   }
 

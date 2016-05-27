@@ -37,10 +37,10 @@ PadeJastrowBuilder::PadeJastrowBuilder(ParticleSet& target, TrialWaveFunction& p
 bool PadeJastrowBuilder::put(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName,"put()");
-  string sourceOpt=targetPtcl.getName();
-  string jname="PadeJastrow";
-  string spin="yes";
-  string id_b="jee_b";
+  std::string sourceOpt=targetPtcl.getName();
+  std::string jname="PadeJastrow";
+  std::string spin="yes";
+  std::string id_b="jee_b";
   RealType pade_b=1.0;
   OhmmsAttributeSet pattrib;
   pattrib.add(jname,"name");
@@ -67,8 +67,8 @@ bool PadeJastrowBuilder::put(xmlNodePtr cur)
       {
         OhmmsAttributeSet rAttrib;
         RealType cusp=-1e10;
-        string spA(species.speciesName[0]);
-        string spB(species.speciesName[0]);
+        std::string spA(species.speciesName[0]);
+        std::string spB(species.speciesName[0]);
         rAttrib.add(spA,"speciesA");
         rAttrib.add(spB,"speciesB");
         rAttrib.add(cusp,"cusp");
@@ -84,24 +84,24 @@ bool PadeJastrowBuilder::put(xmlNodePtr cur)
           RealType qq=species(chargeInd,ia)*species(chargeInd,ib);
           cusp = (ia==ib)? -0.25*qq:-0.5*qq;
         }
-        ostringstream o;
+        std::ostringstream o;
         o<<"j2"<<ia<<ib;
         RadFuncType *functor = new RadFuncType(cusp,o.str());
         functor->put(cur);
         J2->addFunc(ia,ib,functor);
         dJ2->addFunc(ia,ib,functor);
         //{
-        //  ostringstream o;
+        //  std::ostringstream o;
         //  o<< "pade"<<ia<<"-"<<ib;
-        //  ofstream fstream(o.str().c_str());
+        //  std::ofstream fstream(o.str().c_str());
         //  int n=100;
         //  RealType d=10/100.,r=0.001;
         //  RealType u,du,d2du;
         //  for (int i=0; i<n; ++i)
         //  {
         //    u=functor->evaluate(r,du,d2du);
-        //    fstream << setw(22) << r << setw(22) << u << setw(22) << du
-        //      << setw(22) << d2du << std::endl;
+        //    fstream << std::setw(22) << r << std::setw(22) << u << std::setw(22) << du
+        //      << std::setw(22) << d2du << std::endl;
         //    r+=d;
         //  }
         //}
@@ -119,10 +119,10 @@ bool PadeJastrowBuilder::put(xmlNodePtr cur)
 //
 //    ReportEngine PRE(ClassName,"put()");
 //
-//    string sourceOpt=targetPtcl.getName();
-//    string jname="PadeJastrow";
-//    string spin="no";
-//    string id_b="jee_b";
+//    std::string sourceOpt=targetPtcl.getName();
+//    std::string jname="PadeJastrow";
+//    std::string spin="no";
+//    std::string id_b="jee_b";
 //    RealType pade_b=1.0;
 //    OhmmsAttributeSet pattrib;
 //    pattrib.add(jname,"name");
@@ -134,7 +134,7 @@ bool PadeJastrowBuilder::put(xmlNodePtr cur)
 //    while(cur != NULL)
 //    {
 //      {//just to hide this
-//        string pname="0";
+//        std::string pname="0";
 //        OhmmsAttributeSet aa;
 //        aa.add(pname,"name");
 //        aa.add(id_b,"id");
@@ -145,19 +145,19 @@ bool PadeJastrowBuilder::put(xmlNodePtr cur)
 //      xmlNodePtr cur1=cur->children;
 //      while(cur1!= NULL)
 //      {
-//        string pname="0";
+//        std::string pname="0";
 //        OhmmsAttributeSet aa;
 //        aa.add(pname,"name");
 //        aa.add(id_b,"id");
 //        aa.put(cur1);
 //        if(pname[0]=='B') putContent(pade_b,cur1);
 //        cur1=cur1->next;
-//        cout << "TESTING " << pade_b << endl;
+//        std::cout << "TESTING " << pade_b << std::endl;
 //      }
 //      cur=cur->next;
 //    }
 //
-//    app_log() << "PadeJastrowBuilder " << id_b << " = " << pade_b << endl;
+//    app_log() << "PadeJastrowBuilder " << id_b << " = " << pade_b << std::endl;
 //
 //    typedef PadeFunctor<RealType> FuncType;
 //
@@ -206,7 +206,7 @@ bool PadeJastrowBuilder::put(xmlNodePtr cur)
 //
 //    if(sourceOpt != targetPtcl.getName())
 //    {
-//      map<string,ParticleSet*>::iterator pa_it(ptclPool.find(sourceOpt));
+//      std::map<std::string,ParticleSet*>::iterator pa_it(ptclPool.find(sourceOpt));
 //      if(pa_it == ptclPool.end())
 //      {
 //        PRE.warning("PadeJastrowBuilder::put failed. "+sourceOpt+" does not exist.");
@@ -214,7 +214,7 @@ bool PadeJastrowBuilder::put(xmlNodePtr cur)
 //      }
 //      ParticleSet& sourcePtcl= (*(*pa_it).second);
 //
-//      app_log() << "  PadeBuilder::Adding Pade One-Body Jastrow with effective ionic charges." << endl;
+//      app_log() << "  PadeBuilder::Adding Pade One-Body Jastrow with effective ionic charges." << std::endl;
 //      typedef OneBodyJastrowOrbital<FuncType> JneType;
 //      JneType* J1 = new JneType(sourcePtcl,targetPtcl);
 //
@@ -227,7 +227,7 @@ bool PadeJastrowBuilder::put(xmlNodePtr cur)
 //      for(int ig=0; ig<ng; ++ig)
 //      {
 //        RealType zeff=Species(icharge,ig);
-//        ostringstream j1id;
+//        std::ostringstream j1id;
 //        j1id<<"pade_"<<Species.speciesName[ig];
 //
 //        RealType sc=std::pow(2*zeff,0.25);
@@ -240,7 +240,7 @@ bool PadeJastrowBuilder::put(xmlNodePtr cur)
 //        //dJ1->addFunc(ig,dfunc);
 //        //dFuncList.push_back(dfunc);
 //
-//        app_log() << "    " << Species.speciesName[ig] <<  " Zeff = " << zeff << " B= " << pade_b*sc << endl;
+//        app_log() << "    " << Species.speciesName[ig] <<  " Zeff = " << zeff << " B= " << pade_b*sc << std::endl;
 //      }
 //      targetPsi.addOrbital(J1,"J1_pade");
 //    }

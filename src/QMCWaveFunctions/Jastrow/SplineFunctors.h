@@ -92,7 +92,7 @@ struct CubicSplineSingle: public OptimizableFunctorBase
     InFunc=in_;
   }
 
-  void reportStatus(ostream& os)
+  void reportStatus(std::ostream& os)
   {
     //myVars.print(os);
   }
@@ -188,11 +188,11 @@ struct CubicSplineSingle: public OptimizableFunctorBase
     }
   }
 
-  void print(ostream& os)
+  void print(std::ostream& os)
   {
     real_type r=0;
     for(int i=0; i<NumGridPoints; i++, r+=GridDelta)
-      os << r << " " << OutFunc.splint(r) << endl;
+      os << r << " " << OutFunc.splint(r) << std::endl;
   }
 
   ///set the input, analytic function
@@ -317,11 +317,11 @@ struct CubicSplineBasisSet: public OptimizableFunctorBase
     return InFunc->put(cur);
   }
 
-  void print(ostream& os)
+  void print(std::ostream& os)
   {
     real_type r=0;
     for(int i=0; i<NumGridPoints; i++, r+=GridDelta)
-      os << r << " " << OutFunc->splint(r) << endl;
+      os << r << " " << OutFunc->splint(r) << std::endl;
   }
 
   ///set the input, analytic function
@@ -440,17 +440,17 @@ struct CubicSplineBasisSet: public OptimizableFunctorBase
 //      {
 //        if(!InFunc)
 //        {
-//          app_error() << "  CubicSplineJastrow::reset failed due to null input function " << endl;
+//          app_error() << "  CubicSplineJastrow::reset failed due to null input function " << std::endl;
 //          OHMMS::Controller->abort();
 //        }
 //        InFunc->resetParameters(optVariables);
 //        resetInternals();
 //      }
 //
-//      void print(ostream& os) {
+//      void print(std::ostream& os) {
 //        real_type r=0;
 //        for(int i=0; i<NumGridPoints; i++, r+=GridDelta)
-//          os << r << " " << OutFunc->splint(r) << endl;
+//          os << r << " " << OutFunc->splint(r) << std::endl;
 //      }
 //
 //      ///set the input, analytic function
@@ -519,7 +519,7 @@ struct CubicSplineBasisSet: public OptimizableFunctorBase
 //        int last=grid.size()-1;
 //        for(int i=0; i<grid.size(); i++) {
 //          (*OutFunc)(i) = InFunc->f(grid(i));
-////	  cout << grid(i) << "   " << (*OutFunc)(i) << endl;
+////	  std::cout << grid(i) << "   " << (*OutFunc)(i) << std::endl;
 //        }
 //	(*OutFunc)(last)=0.0;
 //        //boundary conditions
@@ -562,10 +562,10 @@ struct CubicSplineBasisSet: public OptimizableFunctorBase
 //      {
 //        InFunc->addOptimizables(vlist);
 //      }
-//      void print(ostream& os) {
+//      void print(std::ostream& os) {
 //        const typename FNOUT::grid_type& grid = OutFunc->grid();
 //        for(int i=0; i<grid.size(); i++) {
-//          cout << grid(i) << " " << (*OutFunc)(i) << endl;
+//          std::cout << grid(i) << " " << (*OutFunc)(i) << std::endl;
 //        }
 //      }
 //

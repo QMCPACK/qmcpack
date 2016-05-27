@@ -79,10 +79,10 @@ public:
   /** optimize TargetFunc */
   bool optimize();
 
-  ///write to a ostream
+  ///write to a std::ostream
   bool get(std::ostream& ) const;
 
-  ///read from istream
+  ///read from std::istream
   bool put(std::istream& );
 
   ///read from an xmlNode
@@ -204,7 +204,7 @@ bool CGOptimization<T>::optimize()
       return false;
     }
     evaluateGradients(gY);
-    Return_t fx= abs(*(std::max_element(gY.begin(), gY.end())));
+    Return_t fx= std::abs(*(std::max_element(gY.begin(), gY.end())));
     gdotg0=gdotg;
     gdotg=dotProduct(gY,gY);
     //Do not check the component yet
@@ -213,11 +213,11 @@ bool CGOptimization<T>::optimize()
     if(fx<GradTol)
     {
       if(msg_stream)
-        *msg_stream << " CGOptimization  has reached gradient max|G| = " << fx << "<" << GradTol << endl;
+        *msg_stream << " CGOptimization  has reached gradient max|G| = " << fx << "<" << GradTol << std::endl;
       return false;
     }
     //if(gdotg < GradTol) {
-    //  *msg_stream << " CGOptimization::Converged gradients" << endl;
+    //  *msg_stream << " CGOptimization::Converged gradients" << std::endl;
     //  return false;
     //}
     gdoth = dotProduct(gY,gY0);
@@ -226,20 +226,20 @@ bool CGOptimization<T>::optimize()
     if(abs(gamma) < GammaTol)
     {
       if(msg_stream)
-        *msg_stream << " CGOptimization::Converged conjugate gradients; gamma = " << gamma << "<" << GammaTol << endl;
+        *msg_stream << " CGOptimization::Converged conjugate gradients; gamma = " << gamma << "<" << GammaTol << std::endl;
       return false;
     }
     if(gamma > 1.0e2)
     {
       if(msg_stream)
-        *msg_stream << " CGOptimization restart: " << gamma << " is too big." << endl;
+        *msg_stream << " CGOptimization restart: " << gamma << " is too big." << std::endl;
       RestartCG = true;
     }
     Return_t dx=abs((curCost-prevCost)/curCost);
     if(dx <= CostTol)
     {
       if(msg_stream)
-        *msg_stream << " CGOptimization::Converged cost with " << dx << endl;
+        *msg_stream << " CGOptimization::Converged cost with " << dx << std::endl;
       return false; //
     }
     prevCost=curCost;
@@ -253,7 +253,7 @@ bool CGOptimization<T>::optimize()
     else
     {
       if(msg_stream)
-        *msg_stream << " CGOptimization stopped due to invalid cost values " << endl;
+        *msg_stream << " CGOptimization stopped due to invalid cost values " << std::endl;
       return false;
     }
   }

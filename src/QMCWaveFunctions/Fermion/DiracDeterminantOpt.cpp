@@ -73,12 +73,12 @@ DiracDeterminantOpt::resetParameters(const opt_variables_type& optvars)
 void
 DiracDeterminantOpt::evaluateDerivatives(ParticleSet& P,
     const opt_variables_type& active,
-    vector<RealType>& dlogpsi,
-    vector<RealType>& dhpsioverpsi)
+    std::vector<RealType>& dlogpsi,
+    std::vector<RealType>& dhpsioverpsi)
 {
   // The dlogpsi part is simple -- just ratios
   // First, evaluate the basis functions
-  // cerr << "GEMM 1:\n";
+  // std::cerr << "GEMM 1:\n";
   // fprintf (stderr, "FirstIndex = %d  LastIndex=%d\n", FirstIndex,
   // LastIndex);
   resetParameters(active);

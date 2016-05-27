@@ -49,7 +49,7 @@ void  ProjectData::setCommunicator(Communicate* c)
   myComm=c;
 }
 
-bool ProjectData::get(ostream& os) const
+bool ProjectData::get(std::ostream& os) const
 {
   os << "  Project = " << m_title << "\n";
   os << "  date    = " << getDateAndTime("%Y-%m-%d %H:%M:%S %Z\n");
@@ -58,7 +58,7 @@ bool ProjectData::get(ostream& os) const
   return true;
 }
 
-bool ProjectData::put(istream& is)
+bool ProjectData::put( std::istream& is)
 {
 #if defined(ENABLE_GUI)
   // get the data from window
@@ -78,7 +78,7 @@ bool ProjectData::put(istream& is)
   m_user = wxGetUserId();
   temp->SetValue(m_user.c_str());
 #else
-  string t1;
+  std::string t1;
   while(!is.eof())
   {
     if(isdigit(t1[0]))
@@ -169,7 +169,7 @@ void ProjectData::reset()
     xmlSetProp(m_cur, (const xmlChar *) "series", (const xmlChar *)(s.str().c_str()));
 }
 
-bool ProjectData::PreviousRoot(string& oldroot) const
+bool ProjectData::PreviousRoot( std::string& oldroot) const
 {
   oldroot.erase(oldroot.begin(), oldroot.end());
   if(m_series)
@@ -217,7 +217,7 @@ bool ProjectData::put(xmlNodePtr cur)
   cur = cur->xmlChildrenNode;
   while (cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == "user")
     {
       m_user = getUserName();

@@ -38,10 +38,10 @@ struct StressKinetic: public QMCHamiltonianBase, public ForceBase
   int MemberAttribIndx;
   int NumCenters;
   RealType myRcut;
-  string PtclRefName;
-  vector<RealType> Zat,Zspec;
-  vector<int> NofSpecies;
-  vector<int> SpeciesID;
+  std::string PtclRefName;
+  std::vector<RealType> Zat,Zspec;
+  std::vector<int> NofSpecies;
+  std::vector<int> SpeciesID;
   
   TrialWaveFunction& Psi;
 
@@ -57,7 +57,7 @@ struct StressKinetic: public QMCHamiltonianBase, public ForceBase
   Return_t evaluate(ParticleSet& P);
   Return_t evaluatePbyP(ParticleSet& P, int iat);
   
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
@@ -80,7 +80,7 @@ struct StressKinetic: public QMCHamiltonianBase, public ForceBase
   QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
   SymTensor<RealType, OHMMS_DIM> evaluateStress(){return stress;}
-  void registerObservables(vector<observable_helper*>& h5list, hid_t gid) const
+  void registerObservables(std::vector<observable_helper*>& h5list, hid_t gid) const
   {
     registerObservablesF(h5list,gid);
   }

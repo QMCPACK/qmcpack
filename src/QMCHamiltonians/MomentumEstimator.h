@@ -28,14 +28,14 @@ public:
 
   Return_t evaluate(ParticleSet& P);
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
 
   void addObservables(PropertySetType& plist) { }
   void addObservables(PropertySetType& plist,BufferType& olist);
-  void registerCollectables(vector<observable_helper*>& h5desc, hid_t gid) const ;
+  void registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const ;
   void setObservables(PropertySetType& plist);
   void setParticlePropertyList(PropertySetType& plist, int offset);
   bool putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootNode);
@@ -47,7 +47,7 @@ public:
   QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
   void setRandomGenerator(RandomGenerator_t* rng);
   //resize the internal data by input k-point list
-  void resize(const vector<PosType>& kin,const vector<RealType>& qin);
+  void resize(const std::vector<PosType>& kin,const std::vector<RealType>& qin);
   ///number of samples
   int M;
   ///normalization factor for n(k)
@@ -61,30 +61,30 @@ public:
   ///random generator
   RandomGenerator_t myRNG;
   ///wavefunction ratios
-  vector<ValueType> psi_ratios;
+  std::vector<ValueType> psi_ratios;
   ///nofK internal
   Vector<RealType> kdotp;
   ///phases
   Vector<ComplexType> phases;
   ///list of k-points in Cartesian Coordinates
-  vector<PosType> kPoints;
+  std::vector<PosType> kPoints;
   ///weight of k-points (make use of symmetry)
-  vector<int> kWeights;
+  std::vector<int> kWeights;
   ///dims of a grid for k points
   int kgrid;
   ///nofK
   Vector<RealType> nofK;
   ///list of Q for the Compton profile
-  vector<RealType> Q;
+  std::vector<RealType> Q;
   ///compton profile at q
   Vector<RealType> compQ;
   /// print to hdf5 or scalar.dat
   bool hdf5_out;
 
-  vector<vector<int> > mappedQtonofK;
-//     vector<vector<int> > mappednofKtoK;
-  vector<RealType> mappedQnorms;
-  vector<RealType> mappedKnorms;
+  std::vector<std::vector<int> > mappedQtonofK;
+//     std::vector<std::vector<int> > mappednofKtoK;
+  std::vector<RealType> mappedQnorms;
+  std::vector<RealType> mappedKnorms;
   PosType twist;
 };
 

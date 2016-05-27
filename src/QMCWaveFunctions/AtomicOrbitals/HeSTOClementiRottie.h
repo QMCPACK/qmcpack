@@ -176,7 +176,7 @@ struct HePresetHF: public QMCTraits
   template<class VM, class GM>
   inline void
   evaluate(const WalkerSetRef& W, int first, int last,
-           vector<VM>& logdet, vector<GM>& dlogdet, vector<VM>& d2logdet)
+           std::vector<VM>& logdet, std::vector<GM>& dlogdet, std::vector<VM>& d2logdet)
   {
     int nptcl = last-first;
     for(int iw=0; iw<W.walkers(); iw++)

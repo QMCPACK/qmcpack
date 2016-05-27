@@ -203,9 +203,9 @@ public:
                    , int dir, unsigned uflag)
   {
     if(in==out)
-      std::cerr << "Creat plans for r2c inplace. Incorrect!!! "<< endl;
+      std::cerr << "Creat plans for r2c inplace. Incorrect!!! "<< std::endl;
     else
-      std::cerr << "Creat plans for r2c out place. Incorrect!!! "<< endl;
+      std::cerr << "Creat plans for r2c out place. Incorrect!!! "<< std::endl;
   }
 
   void create_plan(int* desc, complex_type* in, complex_type* out , int dir, unsigned uflag)
@@ -248,12 +248,12 @@ public:
 
   inline void execute_fft(real_type* inout)
   {
-    std::cerr << "fft r2c inplace is not working!!! "<< endl;
+    std::cerr << "fft r2c inplace is not working!!! "<< std::endl;
   }
 
   inline void execute_ifft(real_type* inout)
   {
-    std::cerr << "ifft r2c inplace is not working!!! "<< endl;
+    std::cerr << "ifft r2c inplace is not working!!! "<< std::endl;
   }
 
   inline void execute_fft(complex_type* inout)

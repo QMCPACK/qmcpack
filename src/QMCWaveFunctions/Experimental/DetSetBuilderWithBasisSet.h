@@ -45,7 +45,7 @@ struct DetSetBuilderWithBasisSet: public OrbitalBuilderBase
 
   BasisBuilderT& builder_ref;
   int NumPtcl;
-  string BasisName;
+  std::string BasisName;
 
   /** constructor
    *@param p particleset whose positions defines the wave function
@@ -69,7 +69,7 @@ struct DetSetBuilderWithBasisSet: public OrbitalBuilderBase
     typedef SlaterDeterminant<SPOSetType>        SlaterDeterminant_t;
     ///vector of Slater determinants
     std::vector<SlaterDeterminant_t*> slaterdets;
-    std::vector<string> sdet_coeff_id;
+    std::vector<std::string> sdet_coeff_id;
     std::vector<RealType> sdet_coeff;
     ///vector of coefficients of the Slater determinants
     //std::vector<RealType> sdet_coeff;
@@ -78,7 +78,7 @@ struct DetSetBuilderWithBasisSet: public OrbitalBuilderBase
     int nvar(targetPsi.VarList.size());
     int is=0, first=0;
     int detCounter = 0;
-    string cname, tname;
+    std::string cname, tname;
     cur = cur->xmlChildrenNode;
     while(cur != NULL)
     {
@@ -96,7 +96,7 @@ struct DetSetBuilderWithBasisSet: public OrbitalBuilderBase
           first = 0;
           //add a new SlaterDeterminant
           slaterdets.push_back(new SlaterDeterminant_t);
-          string multiCoeff_name("detC");
+          std::string multiCoeff_name("detC");
           sdet_coeff.push_back(1.0);
           xmlNodePtr tcur = cur->xmlChildrenNode;
           while(tcur != NULL)
@@ -113,8 +113,8 @@ struct DetSetBuilderWithBasisSet: public OrbitalBuilderBase
             else
               if(tname == det_tag)
               {
-                string basisName(BasisName);
-                string detname("invalid"), refname("invalid");
+                std::string basisName(BasisName);
+                std::string detname("invalid"), refname("invalid");
                 OhmmsAttributeSet aAttrib;
                 aAttrib.add(basisName,basisset_tag);
                 aAttrib.add(detname,"id");
@@ -131,7 +131,7 @@ struct DetSetBuilderWithBasisSet: public OrbitalBuilderBase
                       //no id is given, assign one
                     {
                       detname="det";
-                      ostringstream idassigned(detname);
+                      std::ostringstream idassigned(detname);
                       idassigned << is;
                     }
                     psi = new SPOSetType(basisSet,detCounter);
@@ -181,7 +181,7 @@ struct DetSetBuilderWithBasisSet: public OrbitalBuilderBase
         slaterdets[i]->setOptimizable(optimizeit);
         multidet->add(slaterdets[i],sdet_coeff[i],sdet_coeff_id[i],targetPsi.VarList);
         app_log() << "   MultiSlaterDeterminant coeff name=" << sdet_coeff_id[i]
-                  << " value=" << sdet_coeff[i] << endl;
+                  << " value=" << sdet_coeff[i] << std::endl;
       }
       multidet->setOptimizable(true);
       //add a MultiDeterminant to the trial wavefuntion

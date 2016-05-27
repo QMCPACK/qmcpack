@@ -98,12 +98,12 @@ struct LocalCorePolPotential: public QMCHamiltonianBase
   DistanceTableData* d_ii;
 
   ///input CPP_Param whose size is the number of species
-  vector<CPP_Param*> InpCPP;
+  std::vector<CPP_Param*> InpCPP;
   ///CPP_Param for each ion
-  vector<CPP_Param*> Centers;
+  std::vector<CPP_Param*> Centers;
 
   ///CoreCoreDipole(C,C') \f$ =  Z_{C'} {\bf R}_{CC'}/ R_{CC'}^3 \f$
-  vector<PosType> CoreCoreDipole;
+  std::vector<PosType> CoreCoreDipole;
   ///ElCoreDipole(C,i) \f$ = {\bf r}_{Ci} f(\bar{r}_{bCi}) /r_{Ci}^3\f$
   Matrix<PosType> CoreElDipole;
 
@@ -119,7 +119,7 @@ struct LocalCorePolPotential: public QMCHamiltonianBase
 
   Return_t evaluate(ParticleSet& P);
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }

@@ -22,7 +22,7 @@ namespace qmcplusplus
 {
 
 
-/*  void add_rmc_timers(vector<NewTimer*>& timers)
+/*  void add_rmc_timers(std::vector<NewTimer*>& timers)
   {
     timers.push_back(new NewTimer("RMCUpdatePbyP::advance")); //timer for the walker loop
     timers.push_back(new NewTimer("RMCUpdatePbyP::movePbyP")); //timer for MC, ratio etc
@@ -100,7 +100,7 @@ namespace qmcplusplus
 
     ParameterSet m_param;
     bool usedrift = true;
-    string action = "SLA";
+    std::string action = "SLA";
     m_param.add (usedrift, "useDrift", "bool");
     m_param.add (action, "Action", "string");
     m_param.add (equilSteps, "equilsteps", "int");
@@ -133,7 +133,7 @@ namespace qmcplusplus
     //  double starttime = cpu_clock ();
     myTimers[0]->start ();
     // app_log () << "advanceWalkersVMC()::CALLED.. " << cpu_clock () -
-    //   starttime << endl;
+    //   starttime << std::endl;
     IndexType direction = W.reptile->direction;
     IndexType forward = (1 - direction) / 2;
     IndexType backward = (1 + direction) / 2;
@@ -143,7 +143,7 @@ namespace qmcplusplus
     W.loadWalker (prophead, true);
     W.R = prophead.R;
     //app_log () << "advanceWalkersVMC()::initialized variables... " <<
-    //   cpu_clock () - starttime << endl;
+    //   cpu_clock () - starttime << std::endl;
     //  starttime = cpu_clock ();
 //      W.update();
     //W.loadWalker(awalker,UpdatePbyP);
@@ -196,7 +196,7 @@ namespace qmcplusplus
 	    RealType ratio = Psi.ratioGrad (W, iat, grad_iat);
 	    bool valid_move = false;
 	    //node is crossed reject the move
-	    //if(Psi.getPhase() > numeric_limits<RealType>::epsilon())
+	    //if(Psi.getPhase() > std::numeric_limits<RealType>::epsilon())
 	    //if(branchEngine->phaseChanged(Psi.getPhase(),thisWalker.Properties(SIGN)))
 	    if (branchEngine->phaseChanged (Psi.getPhaseDiff ()))
 	      {
@@ -348,7 +348,7 @@ namespace qmcplusplus
 	    RealType ratio = Psi.ratioGrad (W, iat, grad_iat);
 	    bool valid_move = false;
 	    //node is crossed reject the move
-	    //if(Psi.getPhase() > numeric_limits<RealType>::epsilon())
+	    //if(Psi.getPhase() > std::numeric_limits<RealType>::epsilon())
 	    //if(branchEngine->phaseChanged(Psi.getPhase(),thisWalker.Properties(SIGN)))
 	    if (branchEngine->phaseChanged (Psi.getPhaseDiff ()))
 	      {
@@ -433,7 +433,7 @@ namespace qmcplusplus
       RealType ratio=Psi.ratio(W,iat,dG,dL);
       bool valid_move=false;
       //node is crossed reject the move
-      //if(Psi.getPhase() > numeric_limits<RealType>::epsilon())
+      //if(Psi.getPhase() > std::numeric_limits<RealType>::epsilon())
       if(branchEngine->phaseChanged(Psi.getPhaseDiff()))
         {
           ++nRejectTemp;

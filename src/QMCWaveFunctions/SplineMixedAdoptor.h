@@ -36,7 +36,7 @@ struct hdf_dual_grid
     }
     else
     {
-      app_log() << "  The upper/lower bound of the input is different from the current value."<< endl;
+      app_log() << "  The upper/lower bound of the input is different from the current value."<< std::endl;
       foundspline=false;
     }
     return foundspline;

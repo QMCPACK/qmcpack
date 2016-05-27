@@ -36,7 +36,7 @@ IonOrbitalBuilder:: put(xmlNodePtr cur)
   oAttrib.put(cur);
   if(nameOpt == "")
   {
-    app_warning() << "  IonOrbitalBuilder::put does not have name "<< endl;
+    app_warning() << "  IonOrbitalBuilder::put does not have name "<< std::endl;
     return false;
   }
   if (!widthOpt.size())
@@ -45,7 +45,7 @@ IonOrbitalBuilder:: put(xmlNodePtr cur)
                 << " an ionwf.";
     abort();
   }
-  map<string,ParticleSet*>::iterator pa_it(ptclPool.find(sourceOpt));
+  std::map<std::string,ParticleSet*>::iterator pa_it(ptclPool.find(sourceOpt));
   if(pa_it == ptclPool.end())
   {
     app_error() << "Could not file source ParticleSet "

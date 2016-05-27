@@ -116,8 +116,8 @@ struct Walker
   PropertyContainer_t  Properties;
 
   ///Property history vector
-  vector<vector<RealType> >  PropertyHistory;
-  vector<int> PHindex;
+  std::vector<std::vector<RealType> >  PropertyHistory;
+  std::vector<int> PHindex;
 
   ///buffer for the data for particle-by-particle update
   Buffer_t DataSet;
@@ -187,7 +187,7 @@ struct Walker
   inline int addPropertyHistory(int leng)
   {
     int newL = PropertyHistory.size();
-    vector<RealType> newVecHistory=vector<RealType>(leng,0.0);
+    std::vector<RealType> newVecHistory = std::vector<RealType>(leng,0.0);
     PropertyHistory.push_back(newVecHistory);
     PHindex.push_back(0);
     return newL;
@@ -222,7 +222,7 @@ struct Walker
   inline RealType getPropertyHistorySum(int index, int endN)
   {
     RealType mean=0.0;
-    typename vector<RealType>::const_iterator phStart;
+    typename std::vector<RealType>::const_iterator phStart;
     phStart=PropertyHistory[index].begin()+PHindex[index];
     for (int i=0; i<endN; phStart++,i++)
     {
@@ -518,11 +518,11 @@ struct Walker
 };
 
 template<class RealType, class PA>
-ostream& operator<<(ostream& out, const Walker<RealType,PA>& rhs)
+std::ostream& operator<<(std::ostream& out, const Walker<RealType,PA>& rhs)
 {
   copy(rhs.Properties.begin(), rhs.Properties.end(),
-       ostream_iterator<double>(out," "));
-  out << endl;
+       std::ostream_iterator<double>(out," "));
+  out << std::endl;
   out << rhs.R;
   return out;
 }

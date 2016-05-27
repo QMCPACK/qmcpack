@@ -53,7 +53,7 @@ public:
   ///process xml node
   bool put(xmlNodePtr cur);
   ///add a configuration file to the list of files
-  void addConfiguration(const string& a);
+  void addConfiguration(const std::string& a);
 
   void setWaveFunctionNode(xmlNodePtr cur)
   {
@@ -71,7 +71,7 @@ private:
   ///total number of Warmup Blocks
   int NumOfVMCWalkers;
   ///yes/no applicable only first time
-  string SkipSampleGeneration;
+  std::string SkipSampleGeneration;
   ///need to know HamiltonianPool to use OMP
   HamiltonianPool& hamPool;
   ///target cost function to optimize
@@ -86,9 +86,9 @@ private:
   ///xml node for optimizer
   xmlNodePtr optNode;
   ///method for optimization, default conjugate gradient
-  string optmethod;
+  std::string optmethod;
   ///list of files storing configurations
-  vector<string> ConfigFile;
+  std::vector<std::string> ConfigFile;
   ///Copy Constructor (disabled).
   QMCOptimize(const QMCOptimize& a): QMCDriver(a),hamPool(a.hamPool) { }
   ///Copy operator (disabled).

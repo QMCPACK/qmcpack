@@ -30,37 +30,37 @@ class CSUpdateBase: public QMCUpdateBase
 {
 public:
 
-  CSUpdateBase(MCWalkerConfiguration& w, vector<TrialWaveFunction*>& psi, vector<QMCHamiltonian*>& h,
+  CSUpdateBase(MCWalkerConfiguration& w, std::vector<TrialWaveFunction*>& psi, std::vector<QMCHamiltonian*>& h,
                RandomGenerator_t& rg);
 
   virtual ~CSUpdateBase();
 
   int nPsi;
   bool useDrift;
-  vector<RealType> logpsi;
-  vector<RealType> sumratio;
-  vector<RealType> invsumratio;
-  vector<RealType> avgNorm;
-  vector<RealType> avgWeight;
-  vector<RealType> logNorm;
-  vector<RealType> cumNorm;
-  vector<RealType> instRij;
+  std::vector<RealType> logpsi;
+  std::vector<RealType> sumratio;
+  std::vector<RealType> invsumratio;
+  std::vector<RealType> avgNorm;
+  std::vector<RealType> avgWeight;
+  std::vector<RealType> logNorm;
+  std::vector<RealType> cumNorm;
+  std::vector<RealType> instRij;
   Matrix<RealType> ratioIJ;
-  string useDriftOption;
+  std::string useDriftOption;
 
   ///multiple estimator
   CSEnergyEstimator* multiEstimator;
   ///a list of TrialWaveFunctions for multiple method
-  vector<TrialWaveFunction*> Psi1;
+  std::vector<TrialWaveFunction*> Psi1;
   ///a list of QMCHamiltonians for multiple method
-  vector<QMCHamiltonian*> H1;
+  std::vector<QMCHamiltonian*> H1;
 
-  vector<ParticleSet::ParticleGradient_t*> G1;
-  vector<ParticleSet::ParticleLaplacian_t*> L1;
+  std::vector<ParticleSet::ParticleGradient_t*> G1;
+  std::vector<ParticleSet::ParticleLaplacian_t*> L1;
 
   //a list of single particle gradients for multiple wavefunctions;
-  vector<GradType> g1_old;
-  vector<GradType> g1_new;
+  std::vector<GradType> g1_old;
+  std::vector<GradType> g1_new;
 
   void resizeWorkSpace(int nw, int nptcls);
   void updateNorms();

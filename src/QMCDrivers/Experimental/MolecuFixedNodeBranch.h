@@ -117,7 +117,7 @@ public:
   inline T branchGF(T tau, T emixed, T reject) const
   {
     return exp(-tau*(emixed-E_T));
-    //return min(0.5/(reject+1e-12),exp(-tau*(emix-E_T)));
+    //return std::min(0.5/(reject+1e-12),exp(-tau*(emix-E_T)));
   }
 
   ///set \f$ <E_G> = eg \f$
@@ -168,10 +168,10 @@ public:
     //insert a new value at the beggining of the deque
     Eg.push_front(eavg);
     //int mlimit = std::min(Counter/2+1,EgBufferSize);
-    //T Esum = std::accumulate(Eg.begin(),Eg.begin()+mlimit,T());
+    //T Esum =  std::accumulate(Eg.begin(),Eg.begin()+mlimit,T());
     if(Counter>EgBufferSize)
     {
-      T Esum = std::accumulate(Eg.begin(),Eg.end(),T());
+      T Esum =  std::accumulate(Eg.begin(),Eg.end(),T());
       E_T = Esum/static_cast<T>(EgBufferSize)-Feed*log(static_cast<T>(pop_now))+logN;
     }
     return E_T;
@@ -180,7 +180,7 @@ public:
 
   /**  Parse the xml file for parameters
    *@param cur current xmlNode
-   *@param LogOut ostream to which the run-time report is sent
+   *@param LogOut std::ostream to which the run-time report is sent
    *
    * Few important parameters are:
    * <ul>
@@ -201,9 +201,9 @@ public:
       Eg[i] = E_T;
     checkBranchData(cur);
     reset();
-    LogOut->getStream() << "reference energy = " << Eg[0] << endl;
-    LogOut->getStream() << "number of generations = " << Feed << endl;
-    LogOut->getStream() << "feedback = " << Feed << endl;
+    LogOut->getStream() << "reference energy = " << Eg[0] << std::endl;
+    LogOut->getStream() << "number of generations = " << Feed << std::endl;
+    LogOut->getStream() << "feedback = " << Feed << std::endl;
     return true;
   }
 
@@ -213,7 +213,7 @@ public:
     cur=cur->children;
     while(cur != NULL)
     {
-      string cname((const char*)(cur->name));
+      std::string cname((const char*)(cur->name));
       if(cname == "branch")
       {
         branchPtr=cur;
@@ -232,7 +232,7 @@ public:
       cur=branchPtr->children;
       while(cur != NULL)
       {
-        string cname((const char*)(cur->name));
+        std::string cname((const char*)(cur->name));
         if(cname == "trial_energies")
         {
           egPtr=cur;
@@ -292,7 +292,7 @@ public:
 
   //void write(hid_t grp) {
   //  hsize_t dim = static_cast<hsize_t>(EgBufferSize);
-  //  vector<T> etrial(Eg.begin(),Eg.end());
+  //  std::vector<T> etrial(Eg.begin(),Eg.end());
   //  hid_t dataspace  = H5Screate_simple(1, &dim, NULL);
   //  hid_t dataset =
   //    H5Dcreate(grp, "TrialEnergies", H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
@@ -312,8 +312,8 @@ public:
 
   //}
 
-  //void read(const string& aroot) {
-  //  string h5file(aroot);
+  //void read(const std::string& aroot) {
+  //  std::string h5file(aroot);
   //  h5file.append(".config.h5");
   //  hid_t h_file =  H5Fopen(h5file.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
   //  hid_t h_config = H5Gopen(h_file,"config_collection");
@@ -322,10 +322,10 @@ public:
   //    Counter=0;
   //    reset();
   //  } else {
-  //    vector<T> etrial(EgBufferSize);
+  //    std::vector<T> etrial(EgBufferSize);
   //    hsize_t ret = H5Dread(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &etrial[0]);
   //    H5Dclose(dataset);
-  //    std::copy(etrial.begin(),etrial.end(),Eg.begin());
+  //    copy(etrial.begin(),etrial.end(),Eg.begin());
   //    char temp[256];
   //    dataset = H5Dopen(h_config, "BranchParameters");
   //    ret = H5Dread(dataset, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL, H5P_DEFAULT, temp);

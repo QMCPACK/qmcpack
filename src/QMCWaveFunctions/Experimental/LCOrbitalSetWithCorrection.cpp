@@ -12,8 +12,8 @@ BS* LCOrbitalSetWithCorrection<BS,false>::extractHighYLM( std::vector<bool> &rmv
 {
   int nUniqCenters = myBasisSet->LOBasisSet.size(), cnt=0;
   int cntEta;
-  vector<int> nSorbs;
-  vector<vector<bool> > sOrbs, tags;
+  std::vector<int> nSorbs;
+  std::vector<std::vector<bool> > sOrbs, tags;
   rmv.resize(myBasisSet->BasisSetSize);
   nSorbs.resize(nUniqCenters);
   sOrbs.resize(nUniqCenters);
@@ -60,10 +60,10 @@ BS* LCOrbitalSetWithCorrection<BS,false>::extractHighYLM( std::vector<bool> &rmv
        }
 
   // modify objects
-       vector<int> LM_eta, NL_eta;
-       vector<typename BS::ThisCOT_t::RadialOrbital_t*> Rnl_eta;
-  //     vector<COT::RadialOrbital_t*> Rnl_eta;
-       vector<QuantumNumberType> RnlID_eta;
+       std::vector<int> LM_eta, NL_eta;
+       std::vector<typename BS::ThisCOT_t::RadialOrbital_t*> Rnl_eta;
+  //     std::vector<COT::RadialOrbital_t*> Rnl_eta;
+       std::vector<QuantumNumberType> RnlID_eta;
        for(int i=0; i<nUniqCenters; i++)
        {
           int bss = myBasisSet->LOBasisSet[i]->BasisSetSize;
@@ -73,7 +73,7 @@ BS* LCOrbitalSetWithCorrection<BS,false>::extractHighYLM( std::vector<bool> &rmv
           Rnl_eta.resize(nrf-nSorbs[i]);
           RnlID_eta.resize(nrf-nSorbs[i]);
 
-          map<int,int> old2eta;
+          std::map<int,int> old2eta;
 
           cntEta=0;
           for(int k=0; k<nrf; k++)
@@ -129,7 +129,7 @@ void LCOrbitalSetWithCorrection<BS,false>::createLCOSets(int centr, LCOrbitalSet
 {
   int numCtr = myBasisSet->NumCenters;
   int numUniq = myBasisSet->LOBasisSet.size();
-  vector<bool> rmv;
+  std::vector<bool> rmv;
   int cnt=0;
   rmv.resize(myBasisSet->BasisSetSize);
   for(int i=0; i<myBasisSet->CenterSys.getTotalNum(); i++)
@@ -178,14 +178,14 @@ template<class BS>
 bool LCOrbitalSetWithCorrection<BS,false>::readCuspInfo(Matrix<TinyVector<RealType,9> > &info)
 {
   bool success=true;
-  string cname;
+  std::string cname;
   int ncenter = info.rows();
   int nOrbs = info.cols();
-  app_log() <<"Reading cusp info from : " <<cuspInfoFile <<endl;
+  app_log() <<"Reading cusp info from : " <<cuspInfoFile << std::endl;
   Libxml2Document adoc;
   if(!adoc.parse(cuspInfoFile))
   {
-    app_log()<<"Could not find precomputed cusp data for spo set: " <<objectName <<endl;
+    app_log()<<"Could not find precomputed cusp data for spo set: " <<objectName << std::endl;
     app_log() <<"Recalculating data.\n";
     return false;
   }
@@ -197,7 +197,7 @@ bool LCOrbitalSetWithCorrection<BS,false>::readCuspInfo(Matrix<TinyVector<RealTy
     getNodeName(cname,head);
     if(cname == "sposet")
     {
-      string name;
+      std::string name;
       OhmmsAttributeSet spoAttrib;
       spoAttrib.add (name, "name");
       spoAttrib.put(head);
@@ -211,13 +211,13 @@ bool LCOrbitalSetWithCorrection<BS,false>::readCuspInfo(Matrix<TinyVector<RealTy
   }
   if(cur==NULL)
   {
-    app_log()<<"Could not find precomputed cusp data for spo set: " <<objectName <<endl;
+    app_log()<<"Could not find precomputed cusp data for spo set: " <<objectName << std::endl;
     app_log() <<"Recalculating data.\n";
     return false;
   }
   else
   {
-    app_log() <<"Found precomputed cusp data for spo set: " <<objectName <<endl;
+    app_log() <<"Found precomputed cusp data for spo set: " <<objectName << std::endl;
   }
   cur=cur->children;
   while (cur != NULL)
@@ -266,7 +266,7 @@ bool LCOrbitalSetWithCorrection<BS,false>::readCuspInfo(Matrix<TinyVector<RealTy
             info(num,orb)[8] = a9;
           }
           /*
-          cout<<" Found: num,orb:" <<num <<"  " <<orb <<endl
+          std::cout <<" Found: num,orb:" <<num <<"  " <<orb << std::endl
               <<info(num,orb)[0] <<"\n"
               <<info(num,orb)[1] <<"\n"
               <<info(num,orb)[2] <<"\n"
@@ -276,7 +276,7 @@ bool LCOrbitalSetWithCorrection<BS,false>::readCuspInfo(Matrix<TinyVector<RealTy
               <<info(num,orb)[6] <<"\n"
               <<info(num,orb)[7] <<"\n"
               <<info(num,orb)[8] <<"\n"
-               <<endl;cout.flush();
+               << std::endl;cout.flush();
           */
         }
         ctr=ctr->next;
@@ -291,7 +291,7 @@ template<class BS>
 bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
 {
   app_log()<<" Transforming Single Particle Orbital Set with cusp correcting algorithm. \n";
-  app_log() <<"cuspFile: " <<cuspInfoFile <<endl;
+  app_log() <<"cuspFile: " <<cuspInfoFile << std::endl;
   SpeciesSet& tspecies(sourcePtcl->getSpeciesSet());
   int iz = tspecies.addAttribute("charge");
   Z.resize(sourcePtcl->getTotalNum());
@@ -310,7 +310,7 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
       if( tspecies(cctag,sourcePtcl->GroupID[iat]) != 0)
       {
         corrCenter[iat] = false;
-        app_log() <<"Not using cusp correction algorithm in atoms of type: " <<tspecies.speciesName[sourcePtcl->GroupID[iat]] <<endl;
+        app_log() <<"Not using cusp correction algorithm in atoms of type: " <<tspecies.speciesName[sourcePtcl->GroupID[iat]] << std::endl;
       }
     }
   }
@@ -364,7 +364,7 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
   xmlNewProp(spo,(const xmlChar*)"name",(const xmlChar*)objectName.c_str());
   for(int i=0; i<numCentr; i++ )
   {
-    app_log()<<"Transforming orbitals of center " << i <<endl;
+    app_log()<<"Transforming orbitals of center " << i << std::endl;
     dummyLO1->C = C;
     dummyLO2->C = C;
     createLCOSets(i,dummyLO1,dummyLO2);
@@ -413,7 +413,7 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
               // recompute with rc loop
             {
               std::sprintf(buff2,"%d",k);
-              myCorr.executeWithRCLoop(k,i,Z[i],dummyLO1,dummyLO2,xgrid,rad_orb,"newOrbs."+objectName+".C"+string(buff1)+".MO"+string(buff2),Rcut,info(i,k).data());
+              myCorr.executeWithRCLoop(k,i,Z[i],dummyLO1,dummyLO2,xgrid,rad_orb,"newOrbs."+objectName+".C"+std::string(buff1)+".MO"+std::string(buff2),Rcut,info(i,k).data());
             }
             else
               if(redo > 1)
@@ -421,7 +421,7 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
               {
                 RealType rc = info(i,k)[3];
                 std::sprintf(buff2,"%d",k);
-                myCorr.execute(k,i,Z[i],dummyLO1,dummyLO2,xgrid,rad_orb,"newOrbs."+objectName+".C"+string(buff1)+".MO"+string(buff2),rc,info(i,k).data());
+                myCorr.execute(k,i,Z[i],dummyLO1,dummyLO2,xgrid,rad_orb,"newOrbs."+objectName+".C"+std::string(buff1)+".MO"+std::string(buff2),rc,info(i,k).data());
               }
               else
                 // read from file
@@ -432,7 +432,7 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
         else
         {
           std::sprintf(buff2,"%d",k);
-          myCorr.executeWithRCLoop(k,i,Z[i],dummyLO1,dummyLO2,xgrid,rad_orb,"newOrbs."+objectName+".C"+string(buff1)+".MO"+string(buff2),Rcut,info(i,k).data());
+          myCorr.executeWithRCLoop(k,i,Z[i],dummyLO1,dummyLO2,xgrid,rad_orb,"newOrbs."+objectName+".C"+std::string(buff1)+".MO"+std::string(buff2),Rcut,info(i,k).data());
           info(i,k)[0]=0;
         }
       }
@@ -528,7 +528,7 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
   for(int i=0; i<rmv.size(); i++)
     if(rmv[i])
     {
-      app_log()<<"removing basis element i: " <<i <<endl;
+      app_log()<<"removing basis element i: " <<i << std::endl;
       for(int k=0; k<OrbitalSetSize; k++)
         C(k,i) = 0.0;
     }
@@ -540,24 +540,24 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
     xmlAddChild(cuspRoot,spo);
     xmlDocSetRootElement(doc, cuspRoot);
     std::string fname = objectName+".cuspInfo.xml";
-    app_log() <<"Saving resulting cusp Info xml block to: " <<fname <<endl;
+    app_log() <<"Saving resulting cusp Info xml block to: " <<fname << std::endl;
     xmlSaveFormatFile(fname.c_str(),doc,1);
     xmlFreeDoc(doc);
   }
   /*
-       ofstream out("test.txt");
-       ofstream out9("test9.txt");
+       std::ofstream out("test.txt");
+       std::ofstream out9("test9.txt");
        ValueVector_t psi_2,d2y_2;
        GradVector_t dy_2;
        psi_2.resize(OrbitalSetSize);
        d2y_2.resize(OrbitalSetSize);
        dy_2.resize(OrbitalSetSize);
-       vector<double> v1(OrbitalSetSize,0.0),v2(OrbitalSetSize,0.0);
-       vector<double> v3(OrbitalSetSize,0.0),v4(OrbitalSetSize,0.0);
-       vector<double> v5(OrbitalSetSize,0.0),v6(OrbitalSetSize,0.0);
-       vector<double> v7(OrbitalSetSize,0.0),v8(OrbitalSetSize,0.0);
-       vector<double> v9(OrbitalSetSize,0.0),v10(OrbitalSetSize,0.0);
-       vector<double> v11(OrbitalSetSize,0.0),v12(OrbitalSetSize,0.0);
+       std::vector<double> v1(OrbitalSetSize,0.0),v2(OrbitalSetSize,0.0);
+       std::vector<double> v3(OrbitalSetSize,0.0),v4(OrbitalSetSize,0.0);
+       std::vector<double> v5(OrbitalSetSize,0.0),v6(OrbitalSetSize,0.0);
+       std::vector<double> v7(OrbitalSetSize,0.0),v8(OrbitalSetSize,0.0);
+       std::vector<double> v9(OrbitalSetSize,0.0),v10(OrbitalSetSize,0.0);
+       std::vector<double> v11(OrbitalSetSize,0.0),v12(OrbitalSetSize,0.0);
        (targetPtcl->R[0]) = 0.0;
        for(int ig=0; ig<xgrid.size(); ++ig)
        {
@@ -582,8 +582,8 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
             v5[i] += std::fabs(dy[i][2]-dy_2[i][2]);
             v6[i] += std::fabs(d2y[i]-d2y_2[i]);
          }
-         out<<endl;
-         out9<<endl;
+         out<< std::endl;
+         out9<< std::endl;
        }
        app_log()<<"Integrated differences after transformation: \n";
        for(int i=0; i<OrbitalSetSize; i++) {
@@ -636,17 +636,17 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
        this->evaluate(*targetPtcl,0,psi,dy,d2y);
        originalSPOSet->evaluate(*targetPtcl,0,psi_2,dy_2,d2y_2);
 
-       ofstream out1("test2.txt");
-       out1<<xgrid[400] <<endl <<endl;
-       out1<<corrBasisSet->d2Phi[0] <<endl <<endl;
+       std::ofstream out1("test2.txt");
+       out1<<xgrid[400] << std::endl << std::endl;
+       out1<<corrBasisSet->d2Phi[0] << std::endl << std::endl;
        double tmp1=0.0,tmp2=0.0;
        for(int i=0; i<myBasisSet->Phi.size(); i++) {
-          out1<<i <<"  " <<C(0,i) <<"  " <<myBasisSet->d2Phi[i] <<"  " <<originalSPOSet->myBasisSet->d2Phi[i] <<"  " <<myBasisSet->d2Phi[i]-originalSPOSet->myBasisSet->d2Phi[i] <<endl;
+          out1<<i <<"  " <<C(0,i) <<"  " <<myBasisSet->d2Phi[i] <<"  " <<originalSPOSet->myBasisSet->d2Phi[i] <<"  " <<myBasisSet->d2Phi[i]-originalSPOSet->myBasisSet->d2Phi[i] << std::endl;
           tmp1+=C(0,i)*myBasisSet->d2Phi[i];
           tmp2+=originalSPOSet->C(0,i)*originalSPOSet->myBasisSet->d2Phi[i];
        }
-       out1<<endl <<endl;
-       out1<<tmp1 <<"   "  <<tmp2 <<endl;
+       out1<< std::endl << std::endl;
+       out1<<tmp1 <<"   "  <<tmp2 << std::endl;
        out1.close();
   */
   targetPtcl->R[0]=storeR;

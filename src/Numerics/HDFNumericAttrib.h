@@ -31,14 +31,14 @@ namespace qmcplusplus
 {
 
 
-/** Specialization for string */
+/** Specialization for std::string */
 /*
 template<>
-struct HDFAttribIO<string>: public HDFAttribIOBase {
+struct HDFAttribIO<std::string>: public HDFAttribIOBase {
 
   std::string& ref;
 
-  HDFAttribIO<string>(string& a):ref(a) { }
+  HDFAttribIO<std::string>( std::string& a):ref(a) { }
 
   inline void write(hid_t grp, const char* name) {
     hsize_t dim = 1;
@@ -493,7 +493,7 @@ template<>
 struct HDFAttribIO<Vector<std::complex<double> > >: public HDFAttribIOBase
 {
 
-  typedef Vector<complex<double> > ArrayType_t;
+  typedef Vector<std::complex<double> > ArrayType_t;
   ArrayType_t&  ref;
 
   HDFAttribIO<ArrayType_t>(ArrayType_t& a):ref(a) { }
@@ -608,7 +608,7 @@ struct HDFAttribIO<Vector<TinyVector<double,D> > >: public HDFAttribIOBase
     int status_n = H5Sget_simple_extent_dims(dataspace, dims_out, NULL);
     if(ref.size() != (unsigned long)dims_out[0])
     {
-      //   cout << "dimensions not equal" << endl;
+      //   std::cout << "dimensions not equal" << std::endl;
       ref.resize(dims_out[0]);
     }
     hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ref.data());
@@ -829,7 +829,7 @@ struct HDFAttribIO<blitz::Array<TinyVector<double,D>,2> >: public HDFAttribIOBas
     int status_n = H5Sget_simple_extent_dims(dataspace, dims_out, NULL);
     if((ref.extent(0) != (unsigned long)dims_out[0]) || (ref.extent(1) != (unsigned long)dims_out[1]))
     {
-      //   cout << "dimensions not equal" << endl;
+      //   std::cout << "dimensions not equal" << std::endl;
       ref.resize(dims_out[0],dims_out[1]);
     }
     hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ref.data());
@@ -882,11 +882,11 @@ struct HDFAttribIO<Array<double,D> >: public HDFAttribIOBase
   }
 };
 
-/** Specialization for Array<complex<double>,D> */
+/** Specialization for Array<std::complex<double>,D> */
 template<unsigned D>
-struct HDFAttribIO<Array<complex<double>,D> >: public HDFAttribIOBase
+struct HDFAttribIO<Array<std::complex<double>,D> >: public HDFAttribIOBase
 {
-  typedef Array<complex<double>,D> ArrayType_t;
+  typedef Array<std::complex<double>,D> ArrayType_t;
 
   ArrayType_t&  ref;
   bool replace;

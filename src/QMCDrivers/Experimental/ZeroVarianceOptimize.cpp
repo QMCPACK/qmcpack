@@ -68,7 +68,7 @@ bool ZeroVarianceOptimize::run()
     }
     Mover->stopBlock();
     //accumulate Hessian and Overlap matrices
-    accumulate(W.begin(),W.end());
+    std::accumulate(W.begin(),W.end());
     nAcceptTot += Mover->nAccept;
     nRejectTot += Mover->nReject;
     //periodically re-evaluate everything for pbyp
@@ -76,23 +76,23 @@ bool ZeroVarianceOptimize::run()
       Mover->updateWalkers(W.begin(),W.end());
   }
   Mover->stopRun();
-  //cout << "Hessian matrix " << endl;
+  //cout << "Hessian matrix " << std::endl;
   //for(int i=0; i<NoptPlusOne; ++i)
   //{
   //for(int j=0; j<NoptPlusOne; ++j)
   //{
-  //cout << setw(22) << Hessian(i,j);
+  //cout << std::setw(22) << Hessian(i,j);
   //}
-  //cout << endl;
+  //cout << std::endl;
   //}
-  //cout << "Overlap matrix " << endl;
+  //cout << "Overlap matrix " << std::endl;
   //for(int i=0; i<NoptPlusOne; ++i)
   //{
   //for(int j=0; j<NoptPlusOne; ++j)
   //{
-  //cout << setw(22) << Overlap(i,j);
+  //cout << std::setw(22) << Overlap(i,j);
   //}
-  //cout << endl;
+  //cout << std::endl;
   //}
   //finalize a qmc section
   return finalize(nBlocks);
@@ -135,7 +135,7 @@ void ZeroVarianceOptimize::resetRun()
   {
     if(QMCDriverMode[QMC_UPDATE_MODE])
     {
-      app_log() << "  Update particle by particle " << endl;
+      app_log() << "  Update particle by particle " << std::endl;
       if(UseDrift == "yes")
         Mover=new VMCUpdatePbyPWithDrift(W,Psi,H,Random);
       else
@@ -144,7 +144,7 @@ void ZeroVarianceOptimize::resetRun()
     }
     else
     {
-      app_log() << "  Update walker by walker " << endl;
+      app_log() << "  Update walker by walker " << std::endl;
       if(UseDrift == "yes")
         Mover=new VMCUpdateAllWithDrift(W,Psi,H,Random);
       else
@@ -208,9 +208,9 @@ ZeroVarianceOptimize::put(xmlNodePtr q)
 //  ValueType psi = Psi.evaluate(W);
 //  RealType eloc=H.evaluate(W);
 
-//  app_log() << "  HamTest " << "  Total " <<  eloc << endl;
+//  app_log() << "  HamTest " << "  Total " <<  eloc << std::endl;
 //  for(int i=0; i<H.size(); i++)
-//    app_log() << "  HamTest " << H.getName(i) << " " << H[i] << endl;
+//    app_log() << "  HamTest " << H.getName(i) << " " << H[i] << std::endl;
 
 
 //  RealType p0=Psi.VarList["jee_b"];
@@ -246,23 +246,23 @@ ZeroVarianceOptimize::put(xmlNodePtr q)
 //  Psi.resetParameters(v);
 //  ValueType logpsi_p = Psi.evaluateLog(W);
 //  RealType eloc_p=H.evaluate(W);
-//  cout << "### eloc_p " << eloc_p << " " << H[0] << endl;
+//  std::cout << "### eloc_p " << eloc_p << " " << H[0] << std::endl;
 //  eloc_p=H[0];
 
 //  v["jee_b"]=p0-delta;
 //  Psi.resetParameters(v);
 //  ValueType logpsi_m = Psi.evaluateLog(W);
 //  RealType eloc_m=H.evaluate(W);
-//  cout << "### eloc_m " << eloc_m << " " << H[0] << endl;
+//  std::cout << "### eloc_m " << eloc_m << " " << H[0] << std::endl;
 //  eloc_m=H[0];
 
 
-//  cout << "### Direct evaluation " << endl;
-//  cout << "### logpsi_p " << logpsi_p << endl;
-//  cout << "### logpsi_m " << logpsi_m << endl;
-//  cout << "### d logpsi " << (logpsi_p-logpsi_m)/delta/2.0 << endl;
-//  cout << "### d h logpsi " << (eloc_p-eloc_m)/delta/2.0/psi << endl;
-//  cout << "### d h logpsi " << (eloc_p-eloc_m)/delta/2.0 << endl;
+//  std::cout << "### Direct evaluation " << std::endl;
+//  std::cout << "### logpsi_p " << logpsi_p << std::endl;
+//  std::cout << "### logpsi_m " << logpsi_m << std::endl;
+//  std::cout << "### d logpsi " << (logpsi_p-logpsi_m)/delta/2.0 << std::endl;
+//  std::cout << "### d h logpsi " << (eloc_p-eloc_m)/delta/2.0/psi << std::endl;
+//  std::cout << "### d h logpsi " << (eloc_p-eloc_m)/delta/2.0 << std::endl;
 //}
 }
 

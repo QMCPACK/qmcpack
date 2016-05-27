@@ -54,7 +54,7 @@ private:
   /// tau/mass
   RealType m_tauovermass;
   /// Whether to use drift or not
-  string UseDrift;
+  std::string UseDrift;
   ///period for walker dump
   int myPeriod4WalkerDump;
   /// Copy Constructor (disabled)
@@ -65,7 +65,7 @@ private:
     return *this;
   }
   ///hide initialization from the main function
-  bool checkBounds (vector<PosType> &newpos, vector<bool> &valid);
+  bool checkBounds (std::vector<PosType> &newpos, std::vector<bool> &valid);
 
   void resetRun();
 
@@ -74,7 +74,7 @@ private:
   Matrix<ValueType> d_logpsi_dalpha, d_hpsioverpsi_dalpha;
   RealType w_beta,w_alpha;
   RealType E_avg, V_avg;
-  string GEVtype;
+  std::string GEVtype;
   bool forOpt;
 
   ///These are the values we collect to build the Matrices GLOBAL

@@ -57,18 +57,18 @@ void genDegenLattice(RealType cut, ParticleSet& ptclSet,
   Degeneracies.resize(localContainer.kpts_sorted.size()+1);
   LocLattice[0] = PosType(0,0,0);
   Degeneracies[0] = 1.0;
-  cout << "In genDegenLattice, about to start loop over kpts_sorted." << endl;
+  std::cout << "In genDegenLattice, about to start loop over kpts_sorted." << std::endl;
   std::map<int, std::vector<int>*>::iterator it(localContainer.kpts_sorted.begin());
   for (IndexType i = 1; i < LocLattice.size(); i++)
   {
-    vector<int>& vecref(*(it->second));
+    std::vector<int>& vecref(*(it->second));
     Degeneracies[i] = vecref.size();
     LocLattice[i] = localContainer.kpts_cart[vecref[0]];
     ++it;
   }
   for (IndexType i = 0; i < LocLattice.size(); i++)
   {
-    cout << Degeneracies[i] << "      " << LocLattice[i] << endl;
+    std::cout << Degeneracies[i] << "      " << LocLattice[i] << std::endl;
   }
 }
 

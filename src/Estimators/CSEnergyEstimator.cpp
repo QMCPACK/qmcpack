@@ -47,7 +47,7 @@ namespace qmcplusplus {
     scalars.resize(NumCopies  + 
 		   h_components.size()*(NumCopies+NumCopies*(NumCopies-1)/2));
     scalars_saved.resize(scalars.size());
-    //    cerr << "scalars.size() = " << scalars.size() << endl;
+    //    std::cerr << "scalars.size() = " << scalars.size() << std::endl;
     //d_data.resize(NumCopies*3+NumCopies*(NumCopies-1)/2);
   }
 
@@ -98,7 +98,7 @@ namespace qmcplusplus {
     //msg.add(d_data.begin(),d_data.end());
   }
 
-  void CSEnergyEstimator::registerObservables(vector<observable_helper*>& h5dec, hid_t gid)
+  void CSEnergyEstimator::registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid)
   {
     //NEED TO IMPLEMENT for hdf5
   }
@@ -134,7 +134,7 @@ namespace qmcplusplus {
       RealType ui_avg=scalars_saved[ii-1].mean();
       if (ui_avg > 0) weightaverage[i]=ui_avg;
       else weightaverage[i]=1;
-     // app_log()<<"i="<<i<<" ii="<<ii<<" uweight[i]="<<uweights[i]<<" scalars[ii]="<<scalars_saved[ii-1].result()<<" wa="<<weightaverage[i]<<endl; 
+     // app_log()<<"i="<<i<<" ii="<<ii<<" uweight[i]="<<uweights[i]<<" scalars[ii]="<<scalars_saved[ii-1].result()<<" wa="<<weightaverage[i]<< std::endl; 
     }
 
     for(int i=0; i<NumCopies; i++) 
@@ -143,15 +143,15 @@ namespace qmcplusplus {
       for(int j=i+1; j<NumCopies; j++)
       {
         RealType uj=uweights[j];
-	// cerr << "ui = " << ui << "  uj = " << uj << endl;
-	// cerr << "diff        = " << tmp_data(j,0) - tmp_data(i,0) << endl;
-	// cerr << "LOCALENERGY = " << uj*awalker.getPropertyBase(j)[LOCALENERGY] 
-	//   - ui*awalker.getPropertyBase(i)[LOCALENERGY] << endl;
+	// std::cerr << "ui = " << ui << "  uj = " << uj << std::endl;
+	// std::cerr << "diff        = " << tmp_data(j,0) - tmp_data(i,0) << std::endl;
+	// std::cerr << "LOCALENERGY = " << uj*awalker.getPropertyBase(j)[LOCALENERGY] 
+	//   - ui*awalker.getPropertyBase(i)[LOCALENERGY] << std::endl;
 
         for(int k=0; k<tmp_data.cols(); ++k){
 	 		 
           scalars[ii++]((ui*tmp_data(i,k)/weightaverage[i]-uj*tmp_data(j,k)/weightaverage[j]),1.0);
-//          app_log()<<"i="<<i<<" ii="<<ii<<" wai="<<weightaverage[i]<<" waj="<<weightaverage[j]<<endl;
+//          app_log()<<"i="<<i<<" ii="<<ii<<" wai="<<weightaverage[i]<<" waj="<<weightaverage[j]<< std::endl;
 	  }
 	  // scalars[ii++](awalker.getPropertyBase(j)[LOCALENERGY] -
 	  // 		awalker.getPropertyBase(i)[LOCALENERGY],1.0);

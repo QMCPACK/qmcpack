@@ -96,7 +96,7 @@ struct AsymmetricDTD
           trans_dr(i,j)=dr_m[j*nv+i];
   }
 
-  inline virtual void nearest_neighbor(vector<ripair>& ri,bool transposed=false) const
+  inline virtual void nearest_neighbor(std::vector<ripair>& ri,bool transposed=false) const
   {
     if(transposed)
     {
@@ -138,7 +138,7 @@ struct AsymmetricDTD
     }
   }
 
-  inline virtual void nearest_neighbors(int n,int neighbors,vector<ripair>& ri,bool transposed=false)
+  inline virtual void nearest_neighbors(int n,int neighbors,std::vector<ripair>& ri,bool transposed=false)
   {
     if(transposed)
     {
@@ -164,7 +164,7 @@ struct AsymmetricDTD
     partial_sort(ri.begin(),ri.begin()+neighbors,ri.end());
   }
 
-  virtual void nearest_neighbors_by_spec(int n,int neighbors,int spec_start,vector<ripair>& ri,bool transposed=false)
+  virtual void nearest_neighbors_by_spec(int n,int neighbors,int spec_start,std::vector<ripair>& ri,bool transposed=false)
   {
     if(transposed)
     {

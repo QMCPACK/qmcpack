@@ -22,8 +22,8 @@
 #include "OhmmsData/libxmldefs.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-/** assign vector<T> from a node. Create a temporary vector and make assignment.
- *\param a reference vector<T>
+/** assign std::vector<T> from a node. Create a temporary vector and make assignment.
+ *\param a reference std::vector<T>
  *\param cur current node to which a content is copied
  *\return ture if successful
  */

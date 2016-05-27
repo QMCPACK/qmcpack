@@ -55,7 +55,7 @@ void WFMCOnlyEstimator::add2Record(RecordListType& record)
   clear();
 }
 
-void WFMCOnlyEstimator::registerObservables(vector<observable_helper*>& h5dec, hid_t gid)
+void WFMCOnlyEstimator::registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid)
 {
   //IMPLEMENT for hdf5
 }

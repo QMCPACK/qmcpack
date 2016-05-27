@@ -56,8 +56,8 @@ SkEstimator::Return_t SkEstimator::evaluate(ParticleSet& P)
 {
 #if defined(USE_REAL_STRUCT_FACTOR)
   //sum over species
-  std::copy(P.SK->rhok_r[0],P.SK->rhok_r[0]+NumK,RhokTot_r.begin());
-  std::copy(P.SK->rhok_i[0],P.SK->rhok_i[0]+NumK,RhokTot_i.begin());
+  copy(P.SK->rhok_r[0],P.SK->rhok_r[0]+NumK,RhokTot_r.begin());
+  copy(P.SK->rhok_i[0],P.SK->rhok_i[0]+NumK,RhokTot_i.begin());
   for(int i=1; i<NumSpecies; ++i)
     accumulate_elements(P.SK->rhok_r[i],P.SK->rhok_r[i]+NumK,RhokTot_r.begin());
   for(int i=1; i<NumSpecies; ++i)
@@ -78,7 +78,7 @@ SkEstimator::Return_t SkEstimator::evaluate(ParticleSet& P)
   }
 #else
   //sum over species
-  std::copy(P.SK->rhok[0],P.SK->rhok[0]+NumK,RhokTot.begin());
+  copy(P.SK->rhok[0],P.SK->rhok[0]+NumK,RhokTot.begin());
   for(int i=1; i<NumSpecies; ++i)
     accumulate_elements(P.SK->rhok[i],P.SK->rhok[i]+NumK,RhokTot.begin());
   if(hdf5_out)
@@ -102,7 +102,7 @@ void SkEstimator::addObservables(PropertySetType& plist, BufferType& collectable
   if(hdf5_out)
   {
     myIndex=collectables.size();
-    vector<RealType> tmp(NumK);
+    std::vector<RealType> tmp(NumK);
     collectables.add(tmp.begin(),tmp.end());
   }
   else
@@ -131,23 +131,23 @@ void SkEstimator::addObservables(PropertySetType& plist )
 void SkEstimator::setObservables(PropertySetType& plist)
 {
   if (!hdf5_out)
-    std::copy(values.begin(),values.end(),plist.begin()+myIndex);
+    copy(values.begin(),values.end(),plist.begin()+myIndex);
 }
 
 void SkEstimator::setParticlePropertyList(PropertySetType& plist
     , int offset)
 {
   if (!hdf5_out)
-    std::copy(values.begin(),values.end(),plist.begin()+myIndex+offset);
+    copy(values.begin(),values.end(),plist.begin()+myIndex+offset);
 }
 
 
-void SkEstimator::registerCollectables(vector<observable_helper*>& h5desc
+void SkEstimator::registerCollectables(std::vector<observable_helper*>& h5desc
                                        , hid_t gid) const
 {
   if (hdf5_out)
   {
-    vector<int> ndim(1,NumK);
+    std::vector<int> ndim(1,NumK);
     observable_helper* h5o=new observable_helper(myName);
     h5o->set_dimensions(ndim,myIndex);
     h5o->open(gid);
@@ -155,7 +155,7 @@ void SkEstimator::registerCollectables(vector<observable_helper*>& h5desc
     hsize_t kdims[2];
     kdims[0] = NumK;
     kdims[1] = OHMMS_DIM;
-    string kpath = myName + "/kpoints";
+    std::string kpath = myName + "/kpoints";
     hid_t k_space = H5Screate_simple(2,kdims, NULL);
     hid_t k_set   = H5Dcreate (gid, kpath.c_str(), H5T_NATIVE_DOUBLE, k_space, H5P_DEFAULT);
     hid_t mem_space = H5Screate_simple (2, kdims, NULL);
@@ -171,7 +171,7 @@ void SkEstimator::registerCollectables(vector<observable_helper*>& h5desc
 bool SkEstimator::put(xmlNodePtr cur)
 {
   OhmmsAttributeSet pAttrib;
-  string hdf5_flag="no";
+  std::string hdf5_flag="no";
   pAttrib.add(hdf5_flag,"hdf5");
   pAttrib.put(cur);
   if (hdf5_flag=="yes")

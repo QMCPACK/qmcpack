@@ -40,7 +40,7 @@ NJABBuilder::NJABBuilder(ParticleSet& p, TrialWaveFunction& psi, PtclPoolType& p
 { }
 
 NJABBuilder::InFuncType*
-NJABBuilder::createInFunc(const string& jastfunction)
+NJABBuilder::createInFunc(const std::string& jastfunction)
 {
   if(jastfunction == "nocusp")
   {
@@ -76,8 +76,8 @@ NJABBuilder::createInFunc(const string& jastfunction)
  */
 bool NJABBuilder::putInFunc(xmlNodePtr cur)
 {
-  string corr_tag("correlation");
-  string jastfunction("pade");
+  std::string corr_tag("correlation");
+  std::string jastfunction("pade");
   int	ng=1;
   const xmlChar *ftype = xmlGetProp(cur, (const xmlChar *)"function");
   if(ftype != NULL)
@@ -85,7 +85,7 @@ bool NJABBuilder::putInFunc(xmlNodePtr cur)
   const xmlChar* s=xmlGetProp(cur,(const xmlChar*)"source");
   if(s != NULL)
   {
-    map<string,ParticleSet*>::iterator pa_it(ptclPool.find((const char*)s));
+    std::map<std::string,ParticleSet*>::iterator pa_it(ptclPool.find((const char*)s));
     if(pa_it == ptclPool.end())
       return false;
     sourcePtcl = (*pa_it).second;
@@ -95,7 +95,7 @@ bool NJABBuilder::putInFunc(xmlNodePtr cur)
   cur = cur->children;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == "grid")
     {
       gridPtr=cur; //save the pointer
@@ -103,8 +103,8 @@ bool NJABBuilder::putInFunc(xmlNodePtr cur)
     else
       if(cname == dtable_tag)
       {
-        string source_name((const char*)(xmlGetProp(cur,(const xmlChar *)"source")));
-        map<string,ParticleSet*>::iterator pa_it(ptclPool.find(source_name));
+        std::string source_name((const char*)(xmlGetProp(cur,(const xmlChar *)"source")));
+        std::map<std::string,ParticleSet*>::iterator pa_it(ptclPool.find(source_name));
         if(pa_it == ptclPool.end())
           return false;
         sourcePtcl=(*pa_it).second;
@@ -117,8 +117,8 @@ bool NJABBuilder::putInFunc(xmlNodePtr cur)
         {
           if(sourcePtcl==0)
             return false;
-          string jfunctype(jastfunction);
-          string spA((const char*)(xmlGetProp(cur,(const xmlChar *)"speciesA")));
+          std::string jfunctype(jastfunction);
+          std::string spA((const char*)(xmlGetProp(cur,(const xmlChar *)"speciesA")));
           ftype = xmlGetProp(cur, (const xmlChar *)"type");
           if(ftype)
           {
@@ -130,7 +130,7 @@ bool NJABBuilder::putInFunc(xmlNodePtr cur)
             InFuncType *j1=createInFunc(jfunctype);
             InFunc[ia]= j1;
             app_log() <<"   Added Jastrow Correlation ("<<jfunctype
-                      << ") between " <<spA<<" and "<<targetPtcl.getName() << endl;
+                      << ") between " <<spA<<" and "<<targetPtcl.getName() << std::endl;
           }
           InFunc[ia]->put(cur);
           InFunc[ia]->addOptimizables(targetPsi.VarList);

@@ -129,7 +129,7 @@ public:
         return true;
     }
 
-    void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat&) const {
+    void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat&) const {
         // NEEDS_WORK-- do real formatting for reductions
         str += "index-expr[NEEDS_WORK]";
     }

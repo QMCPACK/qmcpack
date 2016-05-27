@@ -38,7 +38,7 @@ NJAABuilder::NJAABuilder(ParticleSet& p, TrialWaveFunction& psi):
 { }
 
 NJAABuilder::InFuncType*
-NJAABuilder::createInFunc(const string& jastfunction, int speciesA, int speciesB)
+NJAABuilder::createInFunc(const std::string& jastfunction, int speciesA, int speciesB)
 {
   //return new PadeJastrow<RealType>;
   if(jastfunction == "rpa")
@@ -56,8 +56,8 @@ NJAABuilder::createInFunc(const string& jastfunction, int speciesA, int speciesB
 }
 bool NJAABuilder::putInFunc(xmlNodePtr cur)
 {
-  string corr_tag("correlation");
-  string jastfunction("pade");
+  std::string corr_tag("correlation");
+  std::string jastfunction("pade");
   const xmlChar *ftype = xmlGetProp(cur, (const xmlChar *)"function");
   if(ftype)
     jastfunction = (const char*) ftype;
@@ -71,7 +71,7 @@ bool NJAABuilder::putInFunc(xmlNodePtr cur)
   cur = cur->children;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == "grid")
     {
       gridPtr=cur; //save the pointer
@@ -79,8 +79,8 @@ bool NJAABuilder::putInFunc(xmlNodePtr cur)
     else
       if(cname ==corr_tag)
       {
-        string spA((const char*)(xmlGetProp(cur,(const xmlChar *)"speciesA")));
-        string spB((const char*)(xmlGetProp(cur,(const xmlChar *)"speciesB")));
+        std::string spA((const char*)(xmlGetProp(cur,(const xmlChar *)"speciesA")));
+        std::string spB((const char*)(xmlGetProp(cur,(const xmlChar *)"speciesB")));
         const xmlChar* refptr=xmlGetProp(cur,(const xmlChar *)"ref");
         const xmlChar* idptr=xmlGetProp(cur,(const xmlChar *)"id");
         if(!IgnoreSpin)
@@ -113,7 +113,7 @@ bool NJAABuilder::put(xmlNodePtr cur)
   const xmlChar* spin=xmlGetProp(cur,(const xmlChar*)"spin");
   if(spin != NULL)
   {
-    string a((const char*)spin);
+    std::string a((const char*)spin);
     if(a == "yes")
       IgnoreSpin=false;
   }
@@ -140,7 +140,7 @@ bool NJAABuilder::put(xmlNodePtr cur)
   OneDimGridFactory::GridType* agrid = OneDimGridFactory::createGrid(gridPtr);
   //get the cutoff radius
   RealType rcut = OneDimGridFactory::setSmoothCutoff(agrid,gridPtr);
-  app_log() << "  smoothing function starts at " << rcut << endl;
+  app_log() << "  smoothing function starts at " << rcut << std::endl;
   DistanceTableData* d_table = DistanceTable::add(targetPtcl);
   TwoBodyJastrowOrbital<FuncType> *J2 = new TwoBodyJastrowOrbital<FuncType>(targetPtcl,d_table);
   int	ng = targetPtcl.groups();

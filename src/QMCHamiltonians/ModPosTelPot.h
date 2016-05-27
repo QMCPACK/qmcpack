@@ -69,7 +69,7 @@ struct ModPoschlTeller: public QMCHamiltonianBase
     return Value*= d*d*Q;
   }
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
@@ -119,10 +119,10 @@ struct ModPoschlTeller: public QMCHamiltonianBase
     Tattrib.add(Q,"v0");
     Tattrib.add(d,"r0");
     Tattrib.put(cur);
-    app_log()<<"ModPoschlTeller parameters"<<endl;
-    app_log()<<"  range : "<<d<<endl;
+    app_log()<<"ModPoschlTeller parameters"<< std::endl;
+    app_log()<<"  range : "<<d<< std::endl;
     d=1.0/d;
-    app_log()<<"  mag   : "<<Q<<endl;
+    app_log()<<"  mag   : "<<Q<< std::endl;
     return true;
   }
 

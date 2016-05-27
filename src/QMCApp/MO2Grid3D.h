@@ -65,18 +65,18 @@ public:
    * mapping to numerical 3D data for QMC.
    * See QMCWaveFunctions/NumericalOrbitalBuilder.cpp
    */
-  void copyOrbitalSet(map<string,TriCubicSplineT<ValueType>* >& other);
+  void copyOrbitalSet(std::map<std::string,TriCubicSplineT<ValueType>* >& other);
 
 private:
 
-  string InFileRoot;
+  std::string InFileRoot;
   ParticleSetPool* ptclPool;
   MCWalkerConfiguration* Electrons;
   ParticleSet* Ions;
   xmlNodePtr dsetPtr;
   xmlNodePtr normalPtr;
   xmlNodePtr corePtr;
-  map<string,TriCubicSplineT<ValueType>* > SPOSet;
+  std::map<std::string,TriCubicSplineT<ValueType>* > SPOSet;
 
   bool selectCore(xmlNodePtr cur);
   void getEigVectors(xmlNodePtr cur, const Matrix<RealType>& A);

@@ -51,7 +51,7 @@ struct AnyConstraints: public OrbitalConstraintsBase
     }
   };
   ///typedef for BasisGroupContainer
-  typedef map<string,BasisGroupType*> BGContainerType;
+  typedef std::map<std::string,BasisGroupType*> BGContainerType;
   ///flag to tunr on/off spin-dependent term, always off
   bool IgnoreSpin;
   ///has all the basis groups
@@ -67,7 +67,7 @@ struct AnyConstraints: public OrbitalConstraintsBase
   void addExtra2ComboOrbital(ComboOrbital* jcombo) {}
   bool put(xmlNodePtr cur);
   void addSingleBasisPerSpecies(xmlNodePtr cur);
-  BasisGroupType* createBasisGroup(xmlNodePtr cur, const string& elementType);
+  BasisGroupType* createBasisGroup(xmlNodePtr cur, const std::string& elementType);
   void add2BasisGroup(BasisGroupType* curBG, xmlNodePtr cur);
 };
 

@@ -79,8 +79,8 @@ Ykofr(GF& g, const GF& a, const GF& b, int k)
   GF second_integrand;
   first_integrand.shallow_copy(g);
   second_integrand.shallow_copy(g);
-  vector<value_type> r_to_k(n);
-  vector<value_type> r_to_minus_k_plus_one(n);
+  std::vector<value_type> r_to_k(n);
+  std::vector<value_type> r_to_minus_k_plus_one(n);
   //Store values for r_to_k and r_to_minus_kplus1
   for(int i=0; i < n; ++i)
   {

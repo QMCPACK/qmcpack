@@ -81,9 +81,9 @@ _bz_global int  assertSuccessCount BZ_GLOBAL_INIT(0);
     else {
       if (!condition)
       {
-        cerr << "Unexpected assert failure!" << endl;
+        std::cerr << "Unexpected assert failure!" << std::endl;
         if (where)
-            cerr << where << ":" << line << endl;
+            std::cerr << where << ":" << line << std::endl;
         cerr.flush();
         assert(0);
       }
@@ -103,7 +103,7 @@ _bz_global int  assertSuccessCount BZ_GLOBAL_INIT(0);
     assertFailMode = false;
     if (assertFailCount == 0)
     {
-      cerr << "Assert check failed!" << endl;
+      std::cerr << "Assert check failed!" << std::endl;
       assert(0);
     }
   }
@@ -115,7 +115,7 @@ _bz_global int  assertSuccessCount BZ_GLOBAL_INIT(0);
     #define BZPRECHECK(X,Y)                                    \
         {                                                      \
             if ((assertFailMode == false) && (!(X)))       \
-                cerr << Y << endl;                             \
+                std::cerr << Y << std::endl;                             \
             checkAssert(X, __FILE__, __LINE__);                \
         }
 
@@ -123,7 +123,7 @@ _bz_global int  assertSuccessCount BZ_GLOBAL_INIT(0);
         {                                                                \
             if (assertFailMode == false)                             \
             {                                                            \
-                cout << __FILE__ << ":" << __LINE__ << " " << X << endl; \
+                std::cout << __FILE__ << ":" << __LINE__ << " " << X << std::endl; \
             }                                                            \
         }
 
@@ -139,16 +139,16 @@ _bz_global int  assertSuccessCount BZ_GLOBAL_INIT(0);
     #define BZSTATECHECK(X,Y)  assert(X == Y)
     #define BZPRECHECK(X,Y)                                                 \
         { if (!(X))                                                         \
-          { cerr << "[Blitz++] Precondition failure: Module " << __FILE__   \
-               << " line " << __LINE__ << endl                              \
-               << Y << endl;                                                \
+          { std::cerr << "[Blitz++] Precondition failure: Module " << __FILE__   \
+               << " line " << __LINE__ << std::endl                              \
+               << Y << std::endl;                                                \
             cerr.flush();                                                   \
             assert(0);                                                      \
           }                                                                 \
         }
 
     #define BZ_DEBUG_MESSAGE(X) \
-        { cout << __FILE__ << ":" << __LINE__ << " " << X << endl; }
+        { std::cout << __FILE__ << ":" << __LINE__ << " " << X << std::endl; }
 
     #define BZ_DEBUG_PARAM(X) X
     #define BZ_PRE_FAIL      assert(0)
@@ -172,8 +172,8 @@ _bz_global int  assertSuccessCount BZ_GLOBAL_INIT(0);
 
 #endif  // !BZ_TESTSUITE && !BZ_DEBUG
 
-#define BZ_NOT_IMPLEMENTED()   { cerr << "[Blitz++] Not implemented: module " \
-    << __FILE__ << " line " << __LINE__ << endl;                \
+#define BZ_NOT_IMPLEMENTED()   { std::cerr << "[Blitz++] Not implemented: module " \
+    << __FILE__ << " line " << __LINE__ << std::endl;                \
     exit(1); }
 
 #ifdef BZ_HAVE_RTTI
@@ -183,7 +183,7 @@ _bz_global int  assertSuccessCount BZ_GLOBAL_INIT(0);
 template<typename T>
 class _bz_stringLiteralForNumericType {
 public:
-    static const char* string()
+    static const char* std::string()
     { return "unknown"; }
 };
 
@@ -191,7 +191,7 @@ public:
  template<>                 \
  class _bz_stringLiteralForNumericType< X > {  \
  public:                                       \
-     static const char* string()               \
+     static const char* std::string()               \
      { return Y; }                             \
  }
 
@@ -212,9 +212,9 @@ BZ_DECL_SLFNT(double, "double");
 BZ_DECL_SLFNT(long double, "long double");
 
 #ifdef BZ_HAVE_COMPLEX
-BZ_DECL_SLFNT(complex<float>, "complex<float>");
-BZ_DECL_SLFNT(complex<double>, "complex<double>");
-BZ_DECL_SLFNT(complex<long double>, "complex<long double>");
+BZ_DECL_SLFNT(std::complex<float>, "complex<float>");
+BZ_DECL_SLFNT(std::complex<double>, "complex<double>");
+BZ_DECL_SLFNT(std::complex<long double>, "complex<long double>");
 #endif
 
 #define BZ_DEBUG_TEMPLATE_AS_STRING_LITERAL(X) \

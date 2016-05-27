@@ -39,7 +39,7 @@ void QMCState::initialize(int argc, char **argv)
   int i=1;
   while(i<argc)
   {
-    string c(argv[i]);
+    std::string c(argv[i]);
     if(c.find("--dryrun") < c.size())
     {
       dryrun=true;
@@ -76,30 +76,30 @@ void QMCState::initialize(int argc, char **argv)
   }
   if(stopit)
   {
-    cerr<<endl << "QMCPACK version "<< QMCPLUSPLUS_VERSION_MAJOR <<"." << QMCPLUSPLUS_VERSION_MINOR << "." << QMCPLUSPLUS_VERSION_PATCH
+    std::cerr << std::endl << "QMCPACK version "<< QMCPLUSPLUS_VERSION_MAJOR <<"." << QMCPLUSPLUS_VERSION_MINOR << "." << QMCPLUSPLUS_VERSION_PATCH
         << " subversion " << QMCPLUSPLUS_BRANCH
-        << " build on " << getDateAndTime("%Y%m%d_%H%M") << endl;
-    cerr << "Usage: qmcpack input [--dryrun --save_wfs[=no] --async_swap[=no] --gpu]" << endl << endl;
+        << " build on " << getDateAndTime("%Y%m%d_%H%M") << std::endl;
+    std::cerr << "Usage: qmcpack input [--dryrun --save_wfs[=no] --async_swap[=no] --gpu]" << std::endl << std::endl;
   }
 }
 
-void QMCState::print_options(ostream& os)
+void QMCState::print_options(std::ostream& os)
 {
-  os << "  Global options " << endl;
+  os << "  Global options " << std::endl;
   if(dryrun)
-    os << "  dryrun : qmc sections will be ignored." << endl;
+    os << "  dryrun : qmc sections will be ignored." << std::endl;
   if(save_wfs)
-    os << "  save_wfs=1 : save wavefunctions in hdf5. " << endl;
+    os << "  save_wfs=1 : save wavefunctions in hdf5. " << std::endl;
   if(async_swap)
-    os << "  async_swap=1 : using async isend/irecv for walker swaps " << endl;
+    os << "  async_swap=1 : using async isend/irecv for walker swaps " << std::endl;
   else
-    os << "  async_swap=0 : using blocking send/recv for walker swaps " << endl;
+    os << "  async_swap=0 : using blocking send/recv for walker swaps " << std::endl;
 }
 
-void QMCState::print_memory_change(const string& who, size_t before)
+void QMCState::print_memory_change(const std::string& who, size_t before)
 {
   before=memory_allocated-before;
-  app_log() << "MEMORY increase " << (before>>20) << " MB " << who << endl;
+  app_log() << "MEMORY increase " << (before>>20) << " MB " << who << std::endl;
 }
 
 QMCState qmc_common;

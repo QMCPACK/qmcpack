@@ -138,10 +138,10 @@ void EstimatorManager::resetTargetParticleSet(ParticleSet& p)
 {
 }
 
-void EstimatorManager::addHeader(ostream& o)
+void EstimatorManager::addHeader(std::ostream& o)
 {
-  o.setf(ios::scientific, ios::floatfield);
-  o.setf(ios::left,ios::adjustfield);
+  o.setf(std::ios::scientific, std::ios::floatfield);
+  o.setf(std::ios::left,std::ios::adjustfield);
   o.precision(10);
   for (int i=0; i<BlockAverages.size(); i++)
     FieldWidth = std::max(FieldWidth, BlockAverages.Names[i].size()+2);
@@ -150,11 +150,11 @@ void EstimatorManager::addHeader(ostream& o)
   int maxobjs=std::min(BlockAverages.size(),max4ascii);
   o << "#   index    ";
   for(int i=0; i<maxobjs; i++)
-    o << setw(FieldWidth) << BlockAverages.Names[i];
+    o << std::setw(FieldWidth) << BlockAverages.Names[i];
   for(int i=0; i<BlockProperties.size(); i++)
-    o << setw(FieldWidth) << BlockProperties.Names[i];
-  o << endl;
-  o.setf(ios::right,ios::adjustfield);
+    o << std::setw(FieldWidth) << BlockProperties.Names[i];
+  o << std::endl;
+  o.setf(std::ios::right,std::ios::adjustfield);
 }
 
 void EstimatorManager::start(int blocks, bool record)
@@ -189,7 +189,7 @@ void EstimatorManager::start(int blocks, bool record)
   {
     char fname[128];
     sprintf(fname,"%s.p%03d.scalar.dat",myComm->getName().c_str(), myComm->rank());
-    DebugArchive = new ofstream(fname);
+    DebugArchive = new std::ofstream(fname);
     addHeader(*DebugArchive);
   }
 #endif
@@ -199,9 +199,9 @@ void EstimatorManager::start(int blocks, bool record)
   {
     if(Archive)
       delete Archive;
-    string fname(myComm->getName());
+    std::string fname(myComm->getName());
     fname.append(".scalar.dat");
-    Archive = new ofstream(fname.c_str());
+    Archive = new std::ofstream(fname.c_str());
     addHeader(*Archive);
     if(h5desc.size())
     {
@@ -229,7 +229,7 @@ void EstimatorManager::start(int blocks, bool record)
   }
 }
 
-void EstimatorManager::stop(const vector<EstimatorManager*> est)
+void EstimatorManager::stop(const std::vector<EstimatorManager*> est)
 {
   int num_threads=est.size();
   //normalize by the number of threads per node
@@ -302,7 +302,7 @@ void EstimatorManager::stopBlock(RealType accept, bool collectall)
     collectBlockAverages(1);
 }
 
-void EstimatorManager::stopBlock(const vector<EstimatorManager*>& est)
+void EstimatorManager::stopBlock(const std::vector<EstimatorManager*>& est)
 {
   //normalized it by the thread
   int num_threads=est.size();
@@ -336,9 +336,9 @@ void EstimatorManager::collectBlockAverages(int num_threads)
     int n3=n2+PropertyCache.size();
     {
       BufferType::iterator cur(RemoteData[0]->begin());
-      std::copy(AverageCache.begin(),AverageCache.end(),cur);
-      std::copy(SquaredAverageCache.begin(),SquaredAverageCache.end(),cur+n1);
-      std::copy(PropertyCache.begin(),PropertyCache.end(),cur+n2);
+      copy(AverageCache.begin(),AverageCache.end(),cur);
+      copy(SquaredAverageCache.begin(),SquaredAverageCache.end(),cur+n1);
+      copy(PropertyCache.begin(),PropertyCache.end(),cur+n2);
     }
 #if defined(QMC_ASYNC_COLLECT)
     if(Options[MANAGE])
@@ -356,9 +356,9 @@ void EstimatorManager::collectBlockAverages(int num_threads)
     if(Options[MANAGE])
     {
       BufferType::iterator cur(RemoteData[0]->begin());
-      std::copy(cur,cur+n1, AverageCache.begin());
-      std::copy(cur+n1,cur+n2, SquaredAverageCache.begin());
-      std::copy(cur+n2,cur+n3, PropertyCache.begin());
+      copy(cur,cur+n1, AverageCache.begin());
+      copy(cur+n1,cur+n2, SquaredAverageCache.begin());
+      copy(cur+n2,cur+n3, PropertyCache.begin());
       RealType nth=1.0/static_cast<RealType>(myComm->size());
       AverageCache *= nth;
       SquaredAverageCache *= nth;
@@ -372,13 +372,13 @@ void EstimatorManager::collectBlockAverages(int num_threads)
   varAccumulator(SquaredAverageCache[0]-AverageCache[0]*AverageCache[0]);
   if(Archive)
   {
-    *Archive << setw(10) << RecordCount;
+    *Archive << std::setw(10) << RecordCount;
     int maxobjs=std::min(BlockAverages.size(),max4ascii);
     for(int j=0; j<maxobjs; j++)
-      *Archive << setw(FieldWidth) << AverageCache[j];
+      *Archive << std::setw(FieldWidth) << AverageCache[j];
     for(int j=0; j<PropertyCache.size(); j++)
-      *Archive << setw(FieldWidth) << PropertyCache[j];
-    *Archive << endl;
+      *Archive << std::setw(FieldWidth) << PropertyCache[j];
+    *Archive << std::endl;
     for(int o=0; o<h5desc.size(); ++o)
       h5desc[o]->write(AverageCache.data(),SquaredAverageCache.data());
     H5Fflush(h_file,H5F_SCOPE_LOCAL);
@@ -437,7 +437,7 @@ void EstimatorManager::getCurrentStatistics(MCWalkerConfiguration& W
   LocalEnergyOnlyEstimator energynow;
   energynow.clear();
   energynow.accumulate(W,W.begin(),W.end(),1.0);
-  vector<RealType> tmp(3);
+  std::vector<RealType> tmp(3);
   tmp[0]= energynow.scalars[0].result();
   tmp[1]= energynow.scalars[0].result2();
   tmp[2]= energynow.scalars[0].count();
@@ -453,9 +453,9 @@ EstimatorManager::EstimatorType* EstimatorManager::getMainEstimator()
   return MainEstimator;
 }
 
-EstimatorManager::EstimatorType* EstimatorManager::getEstimator(const string& a)
+EstimatorManager::EstimatorType* EstimatorManager::getEstimator(const std::string& a)
 {
-  std::map<string,int>::iterator it = EstimatorMap.find(a);
+  std::map<std::string,int>::iterator it = EstimatorMap.find(a);
   if(it == EstimatorMap.end())
     return 0;
   else
@@ -465,15 +465,15 @@ EstimatorManager::EstimatorType* EstimatorManager::getEstimator(const string& a)
 /** This should be moved to branch engine */
 bool EstimatorManager::put(MCWalkerConfiguration& W, QMCHamiltonian& H, xmlNodePtr cur)
 {
-  vector<string> extra;
+  std::vector<std::string> extra;
   cur = cur->children;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == "estimator")
     {
-      string est_name(MainEstimatorName);
-      string use_hdf5("yes");
+      std::string est_name(MainEstimatorName);
+      std::string use_hdf5("yes");
       OhmmsAttributeSet hAttrib;
       hAttrib.add(est_name, "name");
       hAttrib.add(use_hdf5, "hdf5");
@@ -500,7 +500,7 @@ bool EstimatorManager::put(MCWalkerConfiguration& W, QMCHamiltonian& H, xmlNodeP
           hAttrib.add(nPsi, "nPsi");
           hAttrib.put(cur);	      
 	      add(new CSEnergyEstimator(H,nPsi), MainEstimatorName);
-	       app_log() << "  Adding a default LocalEnergyEstimator for the MainEstimator " << endl;
+	       app_log() << "  Adding a default LocalEnergyEstimator for the MainEstimator " << std::endl;
 	    }
         else  
           extra.push_back(est_name);
@@ -509,22 +509,22 @@ bool EstimatorManager::put(MCWalkerConfiguration& W, QMCHamiltonian& H, xmlNodeP
   }
   if(Estimators.empty())
   {
-    app_log() << "  Adding a default LocalEnergyEstimator for the MainEstimator " << endl;
+    app_log() << "  Adding a default LocalEnergyEstimator for the MainEstimator " << std::endl;
     max4ascii=H.sizeOfObservables()+3;
     add(new LocalEnergyEstimator(H,true),MainEstimatorName);
   }
   //Collectables is special and should not be added to Estimators
   if(Collectables == 0 && H.sizeOfCollectables())
   {
-    app_log() << "  Using CollectablesEstimator for collectables, e.g. sk, gofr, density " << endl;
+    app_log() << "  Using CollectablesEstimator for collectables, e.g. sk, gofr, density " << std::endl;
     Collectables=new CollectablesEstimator(H);
   }
   return true;
 }
 
-int EstimatorManager::add(EstimatorType* newestimator, const string& aname)
+int EstimatorManager::add(EstimatorType* newestimator, const std::string& aname)
 {
-  std::map<string,int>::iterator it = EstimatorMap.find(aname);
+  std::map<std::string,int>::iterator it = EstimatorMap.find(aname);
   int n =  Estimators.size();
   if(it == EstimatorMap.end())
   {
@@ -534,7 +534,7 @@ int EstimatorManager::add(EstimatorType* newestimator, const string& aname)
   else
   {
     n=(*it).second;
-    app_log() << "  EstimatorManager::add replace " << aname << " estimator." << endl;
+    app_log() << "  EstimatorManager::add replace " << aname << " estimator." << std::endl;
     delete Estimators[n];
     Estimators[n]=newestimator;
   }
@@ -555,7 +555,7 @@ int EstimatorManager::addObservable(const char* aname)
   return mine;
 }
 
-void EstimatorManager::getData(int i, vector<RealType>& values)
+void EstimatorManager::getData(int i, std::vector<RealType>& values)
 {
   int entries = TotalAveragesData.rows();
   values.resize(entries);

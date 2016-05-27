@@ -21,7 +21,7 @@ int main(int argc, char** argv)
   for(int i=0; i<1000; i++)
     sumL += Random();
   int ndiv=atoi(argv[1]);
-  cout << "Group = " << ndiv << endl;
+  std::cout << "Group = " << ndiv << std::endl;
   Communicate newComm(*OHMMS::Controller,ndiv);
   std::cout << OHMMS::Controller->rank() << " Rank = "
             << newComm.rank() << " Size = " << newComm.size() << " " << sumL << std::endl;

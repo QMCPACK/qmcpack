@@ -53,10 +53,10 @@ private:
   IndexType BranchInterval;
   ///Interval between branching
   IndexType NonLocalMoveIndex;
-  string Reconfiguration;
-  string KillWalker;
-  ///input string to determine to use nonlocal move
-  string NonLocalMove;
+  std::string Reconfiguration;
+  std::string KillWalker;
+  ///input std::string to determine to use nonlocal move
+  std::string NonLocalMove;
   /// Copy Constructor (disabled)
   DMCMoveAll(const DMCMoveAll& a): QMCDriver(a) { }
   /// Copy operator (disabled).

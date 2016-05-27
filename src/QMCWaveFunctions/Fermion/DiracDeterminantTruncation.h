@@ -70,7 +70,7 @@ public:
   ValueVector_t psi_diff;
   void UpdatePsiM2(ValueVector_t &vec,int ptcl);
 
-  void ChooseNearbyParticles(int ptcl,list<int> &nearbyPtcls);
+  void ChooseNearbyParticles(int ptcl,std::list<int> &nearbyPtcls);
 
 
   /** move was accepted, update the real container
@@ -88,8 +88,8 @@ public:
   evaluateLog(ParticleSet& P, PooledData<RealType>& buf) ;
 
 
-  vector<list<pair<int,double> > > particleLists;
-  list<pair<int,double> >  oldPtcl;
+  std::vector<std::list<std::pair<int,double> > > particleLists;
+  std::list<std::pair<int,double> >  oldPtcl;
   double cutoff;
 
 };

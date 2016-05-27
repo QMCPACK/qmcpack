@@ -50,7 +50,7 @@
 //-----------------------------------------------------------------------------
 
 #include <vector>
-using std::vector;
+
 #include "PETE/PETE.h"
 #include "STLVectorOperators.h"
 
@@ -58,7 +58,7 @@ using std::vector;
 // This file contains several class definitions that are used to evaluate
 // expressions containing STL vectors.  The main function defined at the end
 // is evaluate(lhs,op,rhs), which allows the syntax:
-// vector<int> a,b,c;
+// std::vector<int> a,b,c;
 // evaluate(a,OpAssign(),b+c);
 //
 // evaluate() is called by all the global assignment operator functions
@@ -71,11 +71,11 @@ using std::vector;
 //-----------------------------------------------------------------------------
 
 template<class T, class Allocator>
-struct CreateLeaf<vector<T, Allocator> >
+struct CreateLeaf<std::vector<T, Allocator> >
 {
-  typedef Reference<vector<T> > Leaf_t;
+  typedef Reference<std::vector<T> > Leaf_t;
   inline static
-  Leaf_t make(const vector<T, Allocator> &a)
+  Leaf_t make(const std::vector<T, Allocator> &a)
   {
     return Leaf_t(a);
   }
@@ -142,11 +142,11 @@ struct LeafFunctor<TinyVector<T, D>,EvalLeaf1>
 };
 
 template<class T, class Allocator>
-struct LeafFunctor<vector<T, Allocator>, SizeLeaf>
+struct LeafFunctor<std::vector<T, Allocator>, SizeLeaf>
 {
   typedef bool Type_t;
   inline static
-  bool apply(const vector<T, Allocator> &v, const SizeLeaf &s)
+  bool apply(const std::vector<T, Allocator> &v, const SizeLeaf &s)
   {
     return s(v.size());
   }
@@ -158,11 +158,11 @@ struct LeafFunctor<vector<T, Allocator>, SizeLeaf>
 //-----------------------------------------------------------------------------
 
 template<class T, class Allocator>
-struct LeafFunctor<vector<T, Allocator>,EvalLeaf1>
+struct LeafFunctor<std::vector<T, Allocator>,EvalLeaf1>
 {
   typedef T Type_t;
   inline static
-  Type_t apply(const vector<T, Allocator>& vec,const EvalLeaf1 &f)
+  Type_t apply(const std::vector<T, Allocator>& vec,const EvalLeaf1 &f)
   {
     return vec[f.val1()];
   }
@@ -172,7 +172,7 @@ struct LeafFunctor<vector<T, Allocator>,EvalLeaf1>
 // Loop over vector and evaluate the expression at each location.
 //-----------------------------------------------------------------------------
 template<class T, class Allocator, class Op, class RHS>
-inline void evaluate(vector<T, Allocator> &lhs, const Op &op,
+inline void evaluate(std::vector<T, Allocator> &lhs, const Op &op,
                      const Expression<RHS> &rhs)
 {
   if (forEach(rhs, SizeLeaf(lhs.size()), AndCombine()))
@@ -193,7 +193,7 @@ inline void evaluate(vector<T, Allocator> &lhs, const Op &op,
   }
   else
   {
-    cerr << "Error: LHS and RHS don't conform." << endl;
+    std::cerr << "Error: LHS and RHS don't conform." << std::endl;
     exit(1);
   }
 }
@@ -201,12 +201,12 @@ inline void evaluate(vector<T, Allocator> &lhs, const Op &op,
 //----------------------------------------------------------------------
 // I/O
 template<class T, class Allocator>
-ostream& operator<<(ostream& out, const vector<T,Allocator>& rhs)
+ostream& operator<<(std::ostream& out, const std::vector<T,Allocator>& rhs)
 {
   if (rhs.size() >= 1)
   {
     for (int i=0; i<rhs.size(); i++)
-      out << rhs[i] << endl;
+      out << rhs[i] << std::endl;
   }
   return out;
 }

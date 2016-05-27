@@ -124,7 +124,7 @@ struct PooledData
     myData.push_back(x);
   }
 
-  inline void add(complex<T>& x)
+  inline void add(std::complex<T>& x)
   {
     myData.push_back(x.real());
     myData.push_back(x.imag());
@@ -170,7 +170,7 @@ struct PooledData
   {
     //typename std::vector<T>::iterator here=Anchor;
     size_type dn=last-first;
-    std::copy(Anchor,Anchor+dn,first);
+    copy(Anchor,Anchor+dn,first);
     Anchor += dn;
   }
 
@@ -193,7 +193,7 @@ struct PooledData
   {
     *Anchor++ = x;
   }
-  /** Add a complex<T>
+  /** Add a std::complex<T>
    * @param x a complex value to add
    */
   inline void put(std::complex<T>& x)
@@ -209,7 +209,7 @@ struct PooledData
   template<class _FowardIterator>
   inline void put(_FowardIterator first, _FowardIterator last)
   {
-    std::copy(first,last,Anchor);
+    copy(first,last,Anchor);
     Anchor += last-first;
   }
 
@@ -237,7 +237,7 @@ struct PooledData
 
   inline void print(std::ostream& os)
   {
-    std::copy(myData.begin(), myData.end(), ostream_iterator<T>(os," "));
+    copy(myData.begin(), myData.end(), std::ostream_iterator<T>(os," "));
   }
 
   template<class Msg>
@@ -314,7 +314,7 @@ struct PooledData
     myData.clear();
     Current=0;
   }
-  ///reserve the memory using vector<T>::reserve
+  ///reserve the memory using std::vector<T>::reserve
   inline void reserve(size_type n)
   {
     myData.reserve(n);
@@ -351,7 +351,7 @@ struct PooledData
     myData.push_back(x);
   }
 
-  inline void add(complex<T>& x)
+  inline void add(std::complex<T>& x)
   {
     Current+=2;
     myData.push_back(x.real());
@@ -408,7 +408,7 @@ struct PooledData
   {
     size_type now=Current;
     Current+=last-first;
-    std::copy(myData.begin()+now,myData.begin()+Current,first);
+    copy(myData.begin()+now,myData.begin()+Current,first);
     //while(first != last) {
     //  *first++ = (*this)[Current++];
     //}
@@ -437,7 +437,7 @@ struct PooledData
   template<class _InputIterator>
   inline void put(_InputIterator first, _InputIterator last)
   {
-    std::copy(first,last,myData.begin()+Current);
+    copy(first,last,myData.begin()+Current);
     Current+=last-first;
     //while(first != last) {
     //  (*this)[Current++] = *first++;
@@ -463,7 +463,7 @@ struct PooledData
 
   inline void print(std::ostream& os)
   {
-    std::copy(myData.begin(), myData.end(), ostream_iterator<T>(os," "));
+    copy(myData.begin(), myData.end(), std::ostream_iterator<T>(os," "));
   }
 
   template<class Msg>
@@ -504,7 +504,7 @@ bool operator==(const PooledData<T>& a, const PooledData<T>& b)
   //if(a.Current != b.Current) return false;
   for(typename PooledData<T>::size_type i=0; i<a.size(); ++i)
   {
-    if(abs(a[i]-b[i])>numeric_limits<T>::epsilon())
+    if( std::abs(a[i]-b[i]) > std::numeric_limits<T>::epsilon() )
       return false;
   }
   return true;
@@ -519,7 +519,7 @@ bool operator!=(const PooledData<T>& a, const PooledData<T>& b)
   //if(a.Current != b.Current) return true;
   for(typename PooledData<T>::size_type i=0; i<a.size(); ++i)
   {
-    if(abs(a[i]-b[i])>numeric_limits<T>::epsilon())
+    if( std::abs(a[i]-b[i]) > std::numeric_limits<T>::epsilon() )
       return true;
   }
   return false;

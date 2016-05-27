@@ -81,7 +81,7 @@ public:
    * - QMCDriverMode[QMC_MULTIPLE]? multiple H/Psi : single H/Psi
    * - QMCDriverMode[QMC_OPTIMIZE]? optimization : vmc/dmc/rmc
    */
-  bitset<4> QMCDriverMode;
+  std::bitset<4> QMCDriverMode;
 
   /// whether to allow traces
   bool allow_traces;
@@ -117,7 +117,7 @@ public:
    * of previous QMC runs for the simulation and "suffix"
    * is the suffix for the output file.
    */
-  void setStatus(const string& aname, const string& h5name, bool append);
+  void setStatus(const std::string& aname, const std::string& h5name, bool append);
 
   /** add QMCHamiltonian/TrialWaveFunction pair for multiple
    * @param h QMCHamiltonian
@@ -135,7 +135,7 @@ public:
   /** return a xmlnode with update **/
   xmlNodePtr getQMCNode();
 
-  void putWalkers(vector<xmlNodePtr>& wset);
+  void putWalkers(std::vector<xmlNodePtr>& wset);
 
   inline void putTraces(xmlNodePtr txml)
   {
@@ -146,13 +146,13 @@ public:
 
   virtual bool put(xmlNodePtr cur) = 0;
 
-  inline string getEngineName() const
+  inline std::string getEngineName() const
   {
     return  QMCType;
   }
 
   template<class PDT>
-  void setValue(const string& aname, PDT x)
+  void setValue(const std::string& aname, PDT x)
   {
     m_param.setValue(aname,x);
   }
@@ -169,7 +169,7 @@ public:
     return branchEngine;
   }
 
-  int addObservable(const string& aname)
+  int addObservable(const std::string& aname)
   {
     if(Estimators)
       return Estimators->addObservable(aname.c_str());
@@ -197,7 +197,7 @@ public:
   ///set global offsets of the walkers
   void setWalkerOffsets();
 
-  //virtual vector<RandomGenerator_t*>& getRng() {}
+  //virtual std::vector<RandomGenerator_t*>& getRng() {}
 
   ///Observables manager
   EstimatorManager* Estimators;
@@ -206,7 +206,7 @@ public:
   TraceManager* Traces;
 
   ///return the random generators
-  inline vector<RandomGenerator_t*>& getRng()
+  inline std::vector<RandomGenerator_t*>& getRng()
   {
     return Rng;
   }
@@ -312,11 +312,11 @@ protected:
   xmlNodePtr qmcNode;
 
   ///type of qmc: assigned by subclasses
-  string QMCType;
+  std::string QMCType;
   ///the root of h5File
-  string h5FileRoot;
+  std::string h5FileRoot;
   ///root of all the output files
-  string RootName;
+  std::string RootName;
 
   ///store any parameter that has to be read from a file
   ParameterSet m_param;
@@ -335,19 +335,19 @@ protected:
   QMCHamiltonian& H;
 
   ///a list of TrialWaveFunctions for multiple method
-  vector<TrialWaveFunction*> Psi1;
+  std::vector<TrialWaveFunction*> Psi1;
 
   ///a list of QMCHamiltonians for multiple method
-  vector<QMCHamiltonian*> H1;
+  std::vector<QMCHamiltonian*> H1;
 
   ///Random number generators
-  vector<RandomGenerator_t*> Rng;
+  std::vector<RandomGenerator_t*> Rng;
 
   ///a list of mcwalkerset element
-  vector<xmlNodePtr> mcwalkerNodePtr;
+  std::vector<xmlNodePtr> mcwalkerNodePtr;
 
   ///a list of timers
-  vector<NewTimer*> myTimers;
+  std::vector<NewTimer*> myTimers;
 
   ///temporary storage for drift
   ParticleSet::ParticlePos_t drift;
@@ -391,8 +391,8 @@ protected:
   int rotation;
   void adiosCheckpoint(int block);
   void adiosCheckpointFinal(int block, bool dumpwalkers);
-  string getRotationName(string RootName);
-  string getLastRotationName(string RootName);
+  std::string getRotationName( std::string RootName);
+  std::string getLastRotationName( std::string RootName);
 
 };
 /**@}*/

@@ -29,7 +29,7 @@ void TwoDEwaldHandler::initBreakup(ParticleSet& ref)
   }
   app_log() << "   TwoDEwaldHandler Sigma/LR_rc = " << Sigma ;
   Sigma/=LR_rc;
-  app_log() << "  Sigma=" << Sigma  << endl;
+  app_log() << "  Sigma=" << Sigma  << std::endl;
   Volume=ref.Lattice.Volume;
   fillFk(ref.SK->KLists);
 }
@@ -42,7 +42,7 @@ TwoDEwaldHandler::TwoDEwaldHandler(const TwoDEwaldHandler& aLR, ParticleSet& ref
 void TwoDEwaldHandler::fillFk(KContainer& KList)
 {
   Fk.resize(KList.kpts_cart.size());
-  const vector<int>& kshell(KList.kshell);
+  const std::vector<int>& kshell(KList.kshell);
   MaxKshell=kshell.size()-1;
   Fk_symm.resize(MaxKshell);
   kMag.resize(MaxKshell);
@@ -55,7 +55,7 @@ void TwoDEwaldHandler::fillFk(KContainer& KList)
     Fk_symm[ks]=uk;
     while(ki<KList.kshell[ks+1] && ki<Fk.size())
       Fk[ki++]=uk;
-//       app_log()<<kMag[ks]<<" "<<uk<<endl;
+//       app_log()<<kMag[ks]<<" "<<uk<< std::endl;
   }
   app_log().flush();
 }

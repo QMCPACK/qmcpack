@@ -109,7 +109,7 @@ public:
   {
     if(InFunc)
     {
-      cout << "Getting thru " << endl;
+      std::cout << "Getting thru " << std::endl;
       InFunc->reset();
       container_type datain(Npts);
       point_type r=GridStart;
@@ -141,7 +141,7 @@ private:
   /// The control points
   container_type P;
   ///a list of cubic splines which are managed by this object
-  vector<ThisType*> Siblings;
+  std::vector<ThisType*> Siblings;
 
 //  /** evaluate the value of this object
 //  */

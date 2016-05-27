@@ -63,7 +63,7 @@ struct YukawaBreakup
 
   inline T operator()(T r, T rinv)
   {
-    if(r< numeric_limits<T>::epsilon())
+    if(r< std::numeric_limits<T>::epsilon())
       return SqrtRs-0.5*r;
     else
       return Rs*rinv*(1.0-std::exp(-r*OneOverSqrtRs));
@@ -73,7 +73,7 @@ struct YukawaBreakup
 
   inline T df(T r)
   {
-    if(r< numeric_limits<T>::epsilon())
+    if(r< std::numeric_limits<T>::epsilon())
       return -0.5+r*OneOverSqrtRs/3.0;
     else
     {
@@ -339,7 +339,7 @@ struct DerivYukawaBreakup
   /** need the df(r)/d(rs) */
   inline T operator()(T r, T rinv)
   {
-    if(r< numeric_limits<T>::epsilon())
+    if(r< std::numeric_limits<T>::epsilon())
       return 0.5*OneOverSqrtRs*(1.0-r*OneOverSqrtRs);
     else
     {
@@ -350,7 +350,7 @@ struct DerivYukawaBreakup
   /** need d(df(r)/d(rs))/dr */
   inline T df(T r)
   {
-    if(r< numeric_limits<T>::epsilon())
+    if(r< std::numeric_limits<T>::epsilon())
       return -0.5*OneOverRs*(1.0-r*OneOverSqrtRs);
     else
     {

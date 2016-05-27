@@ -49,7 +49,7 @@ struct RadialPotentialSet
   value_type EffectiveMass;
 
   ///the Self Consistent Fields
-  vector<RadialPotentialBase*> SCF;
+  std::vector<RadialPotentialBase*> SCF;
 
   /**an external potential
    *
@@ -169,7 +169,7 @@ struct RadialPotentialSet
    *for each orbital.
    */
   inline value_type evaluate(BasisSetType& psi,
-                             vector<value_type>& Energy,
+                             std::vector<value_type>& Energy,
                              int norb)
   {
     value_type sum = 0.0;
@@ -247,7 +247,7 @@ struct RadialPotentialSet
 
   void applyRestriction(BasisSetType& psi)
   {
-    static vector<value_type> sum;
+    static std::vector<value_type> sum;
     if(sum.empty())
     {
       sum.resize(psi.m_grid->size());

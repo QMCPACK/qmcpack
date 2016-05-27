@@ -68,7 +68,7 @@ int main(int argc, char** argv)
   //assign lattice
   ions.Lattice.set(lat);
   //print lattice
-  ions.Lattice.print(cout);
+  ions.Lattice.print(std::cout);
   TensorType hess;
   TensorType gT=transpose(ions.Lattice.G);
   for(int i=0; i<hess.size(); ++i)
@@ -77,9 +77,9 @@ int main(int argc, char** argv)
   TensorType hs = dot(tmphs,ions.Lattice.G);
   TensorType newhs=toCart(ions.Lattice.G,hess);
   TensorType newhsT=toCartT(gT,hess);
-  cout << hs << endl<<endl;
-  cout << newhs << endl<<endl;
-  cout << newhsT-hs << endl;
+  std::cout << hs << std::endl<< std::endl;
+  std::cout << newhs << std::endl<< std::endl;
+  std::cout << newhsT-hs << std::endl;
   OHMMS::Controller->finalize();
   return 0;
 }

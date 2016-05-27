@@ -76,14 +76,14 @@ bool VMCPbyPMultiple::run()
 {
   useDrift = (useDriftOpt=="yes");
   if(useDrift)
-    app_log() << "  VMCPbyPMultiple::run useDrift=yes" << endl;
+    app_log() << "  VMCPbyPMultiple::run useDrift=yes" << std::endl;
   else
-    app_log() << "  VMCPbyPMultiple::run useDrift=no" << endl;
+    app_log() << "  VMCPbyPMultiple::run useDrift=no" << std::endl;
   //TEST CACHE
   //Estimators->reportHeader(AppendRun);
   //going to add routines to calculate how much we need
   bool require_register =  W.createAuxDataSet();
-  vector<RealType>Norm(nPsi),tmpNorm(nPsi);
+  std::vector<RealType>Norm(nPsi),tmpNorm(nPsi);
   if(equilBlocks > 0)
   {
     for(int ipsi=0; ipsi< nPsi; ipsi++)
@@ -214,7 +214,7 @@ bool VMCPbyPMultiple::run()
             ++nAccept;
             W.acceptMove(iat);
             // Update Buffer for (Psi[i]/Psi[j])^2
-            std::copy(ratioij.begin(),ratioij.end(),ratioijPtr);
+            copy(ratioij.begin(),ratioij.end(),ratioijPtr);
             // Update Umbrella weight
             UmbrellaWeight=invsumratio;
             // Store sumratio for next Accept/Reject step to Multiplicity
@@ -314,7 +314,7 @@ bool VMCPbyPMultiple::run()
   //app_log()
   //  << "Ratio = "
   //  << static_cast<RealType>(nAcceptTot)/static_cast<RealType>(nAcceptTot+nRejectTot)
-  //  << endl;
+  //  << std::endl;
   return finalize(block);
 }
 

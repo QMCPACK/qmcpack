@@ -19,7 +19,7 @@ MPC_CUDA::MPC_CUDA(ParticleSet& ptcl, double cutoff) :
 
   //create virtual particle
   myPtcl.resize(omp_get_max_threads());
-  app_log() << "MPC_CUDA::evalLR uses " << myPtcl.size() << " threads." << endl;
+  app_log() << "MPC_CUDA::evalLR uses " << myPtcl.size() << " threads." << std::endl;
   for(int i=0; i<myPtcl.size(); ++i)
     myPtcl[i]=new ParticleSet(ptcl);
 }
@@ -52,10 +52,10 @@ MPC_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 
 void
 MPC_CUDA::addEnergy(MCWalkerConfiguration &W,
-                    vector<RealType> &LocalEnergy)
+                    std::vector<RealType> &LocalEnergy)
 {
   init_Acuda();
-  vector<Walker_t*> &walkers = W.WalkerList;
+  std::vector<Walker_t*> &walkers = W.WalkerList;
   const int nw = walkers.size();
   const int N = NParticles;
   if (SumGPU.size() < nw)
@@ -63,7 +63,7 @@ MPC_CUDA::addEnergy(MCWalkerConfiguration &W,
     SumGPU.resize(nw, 1.25);
     SumHost.resize(nw);
   }
-  vector<double> esum(nw, 0.0);
+  std::vector<double> esum(nw, 0.0);
 
   //for (int iw=0; iw<nw; iw++)
   //  SumHost[iw] = 0.0;

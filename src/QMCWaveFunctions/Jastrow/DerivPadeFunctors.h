@@ -259,8 +259,8 @@ struct D2PadeDB2Functor:public OptimizableFunctorBase<T>
       std::string cname((const char*)(cur->name));
       if(cname == "parameter")
       {
-        string pname('0');
-        string iname('0');
+        std::string pname('0');
+        std::string iname('0');
         OhmmsAttributeSet rAttrib;
         rAttrib.add(pname,"name");
         rAttrib.add(iname,"id");

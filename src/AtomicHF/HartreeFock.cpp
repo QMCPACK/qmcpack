@@ -28,7 +28,7 @@ namespace ohmmshf
 {
 
 bool parseXMLFile(RadialPotentialSet& Pot, HFAtomicOrbitals& Psi,
-                  string& name,string& pottype,string& gridtype,
+                  std::string& name,std::string& pottype,std::string& gridtype,
                   const xmlpp::Node* root)
 {
   using namespace xmlpp;
@@ -81,7 +81,7 @@ bool parseXMLFile(RadialPotentialSet& Pot, HFAtomicOrbitals& Psi,
       int npts = 2001;
       while(it != atts.end())
       {
-        const string& aname = (*it)->get_name();
+        const std::string& aname = (*it)->get_name();
         if(aname == "type")
         {
           gridtype = (*it)->get_value();
@@ -107,7 +107,7 @@ bool parseXMLFile(RadialPotentialSet& Pot, HFAtomicOrbitals& Psi,
           Attribute* att = cur->get_attribute("name");
           if(att)
           {
-            const string& aname = att->get_value();
+            const std::string& aname = att->get_value();
             xmlNode* curc = cur->cobj();
             if(aname == "min")
               putContent(min,curc);
@@ -225,7 +225,7 @@ bool parseXMLFile(RadialPotentialSet& Pot, HFAtomicOrbitals& Psi,
             Attribute* att = cur->get_attribute("name");
             if(att)
             {
-              const string& aname = att->get_value();
+              const std::string& aname = att->get_value();
               xmlNode* curc = cur->cobj();
               if(aname == "Z")
                 putContent(Z,curc);
@@ -265,7 +265,7 @@ bool parseXMLFile(RadialPotentialSet& Pot, HFAtomicOrbitals& Psi,
               Attribute* att = cur->get_attribute("name");
               if(att)
               {
-                const string& aname = att->get_value();
+                const std::string& aname = att->get_value();
                 xmlNode* curc = cur->cobj();
                 if(aname == "Omega")
                   putContent(Omega,curc);
@@ -309,7 +309,7 @@ bool parseXMLFile(RadialPotentialSet& Pot, HFAtomicOrbitals& Psi,
                 Attribute* att = cur->get_attribute("name");
                 if(att)
                 {
-                  const string& aname = att->get_value();
+                  const std::string& aname = att->get_value();
                   xmlNode* curc = cur->cobj();
                   if(aname == "Z")
                     putContent(Z,curc);
@@ -349,7 +349,7 @@ bool parseXMLFile(RadialPotentialSet& Pot, HFAtomicOrbitals& Psi,
                   Attribute* att = cur->get_attribute("name");
                   if(att)
                   {
-                    const string& aname = att->get_value();
+                    const std::string& aname = att->get_value();
                     xmlNode* curc = cur->cobj();
                     if(aname == "rc")
                     {
@@ -399,9 +399,9 @@ int main(int argc, char **argv)
   parser.parse_file(argv[1]);
   Node* root
   = parser.get_document()->get_root_node(); //deleted by DomParser.
-  string element;
-  string pottype;
-  string gridtype;
+  std::string element;
+  std::string pottype;
+  std::string gridtype;
   RadialPotentialSet Pot;
   HFAtomicOrbitals Psi;
   parseXMLFile(Pot,Psi,element,pottype,gridtype,root);

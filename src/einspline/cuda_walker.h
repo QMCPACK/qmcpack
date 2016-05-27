@@ -40,7 +40,7 @@ private:
   std::vector<float*> A_vec, Ainv_vec, delta_vec,
       Ainv_delta_vec, Ainv_colk_vec;
   std::vector<float> ratio_vec, pos_vec;
-  vector<cuda_walker> walkers;
+  std::vector<cuda_walker> walkers;
   // Number of up and down electrons
   int num_elecs[2];
   multi_UBspline_3d_s_cuda *multi_spline;

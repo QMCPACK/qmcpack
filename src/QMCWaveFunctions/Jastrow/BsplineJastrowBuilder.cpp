@@ -39,7 +39,7 @@ template<typename OBJT, typename DOBJT>
 bool BsplineJastrowBuilder::createOneBodyJastrow(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName,"createOneBodyJastrow(xmlNodePtr)");
-  string j1name("J1");
+  std::string j1name("J1");
   {
     OhmmsAttributeSet a;
     a.add(j1name,"name");
@@ -61,8 +61,8 @@ bool BsplineJastrowBuilder::createOneBodyJastrow(xmlNodePtr cur)
     if (kidsname == "correlation")
     {
       RealType cusp=0.0;
-      string speciesA;
-      string speciesB;
+      std::string speciesA;
+      std::string speciesB;
       OhmmsAttributeSet rAttrib;
       rAttrib.add(speciesA,"elementType");
       rAttrib.add(speciesA,"speciesA");
@@ -87,7 +87,7 @@ bool BsplineJastrowBuilder::createOneBodyJastrow(xmlNodePtr cur)
           {
             app_log()  << "  BsplineFunction rcut is currently zero.\n"
                        << "  Setting to Wigner-Seitz radius = "
-                       << sourcePtcl->Lattice.WignerSeitzRadius << endl;
+                       << sourcePtcl->Lattice.WignerSeitzRadius << std::endl;
             functor->cutoff_radius = sourcePtcl->Lattice.WignerSeitzRadius;
             functor->reset();
           }
@@ -146,7 +146,7 @@ template<typename T>
 struct BsplineInitializer
 {
 
-  vector<T> rpaValues;
+  std::vector<T> rpaValues;
 
   /** initialize with RPA
    * @param ref particleset
@@ -193,7 +193,7 @@ bool BsplineJastrowBuilder::put(xmlNodePtr cur)
   // Create a one-body Jastrow
   if (sourcePtcl)
   {
-    string j1spin("no");
+    std::string j1spin("no");
     OhmmsAttributeSet jAttrib;
     jAttrib.add(j1spin,"spin");
     jAttrib.put(cur);
@@ -202,12 +202,12 @@ bool BsplineJastrowBuilder::put(xmlNodePtr cur)
 #else
     //if(sourcePtcl->IsGrouped)
     //{
-    //  app_log() << "Creating OneBodySpinJastrowOrbital<T> " << endl;
+    //  app_log() << "Creating OneBodySpinJastrowOrbital<T> " << std::endl;
     //  return createOneBodyJastrow<OneBodySpinJastrowOrbital<RadFuncType>,DiffOneBodySpinJastrowOrbital<RadFuncType> >(cur);
     //}
     //else
     //{
-    //  app_log() << "Creating OneBodyJastrowOrbital<T> " << endl;
+    //  app_log() << "Creating OneBodyJastrowOrbital<T> " << std::endl;
     //  return createOneBodyJastrow<OneBodyJastrowOrbital<RadFuncType>,DiffOneBodyJastrowOrbital<RadFuncType> >(cur);
     //}
     if(j1spin=="yes")
@@ -218,7 +218,7 @@ bool BsplineJastrowBuilder::put(xmlNodePtr cur)
   }
   else // Create a two-body Jastrow
   {
-    string init_mode("0");
+    std::string init_mode("0");
     {
       OhmmsAttributeSet hAttrib;
       hAttrib.add(init_mode,"init");
@@ -246,9 +246,9 @@ bool BsplineJastrowBuilder::put(xmlNodePtr cur)
       {
         OhmmsAttributeSet rAttrib;
         RealType cusp=-1e10;
-        string pairType("0");
-        string spA(species.speciesName[0]);
-        string spB(species.speciesName[0]);
+        std::string pairType("0");
+        std::string spA(species.speciesName[0]);
+        std::string spB(species.speciesName[0]);
         rAttrib.add(spA,"speciesA");
         rAttrib.add(spB,"speciesB");
         rAttrib.add(pairType,"pairType");
@@ -276,7 +276,7 @@ bool BsplineJastrowBuilder::put(xmlNodePtr cur)
           RealType qq=species(chargeInd,ia)*species(chargeInd,ib);
           cusp = (ia==ib)? -0.25*qq:-0.5*qq;
         }
-        app_log() << "  BsplineJastrowBuilder adds a functor with cusp = " << cusp << endl;
+        app_log() << "  BsplineJastrowBuilder adds a functor with cusp = " << cusp << std::endl;
         RadFuncType *functor = new RadFuncType(cusp);
         functor->periodic      = targetPtcl.Lattice.SuperCellEnum == SUPERCELL_BULK;
         functor->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
@@ -288,7 +288,7 @@ bool BsplineJastrowBuilder::put(xmlNodePtr cur)
           {
             app_log()  << "  BsplineFunction rcut is currently zero.\n"
                        << "  Setting to Wigner-Seitz radius = "
-                       << targetPtcl.Lattice.WignerSeitzRadius << endl;
+                       << targetPtcl.Lattice.WignerSeitzRadius << std::endl;
             functor->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
             functor->reset();
           }
@@ -300,7 +300,7 @@ bool BsplineJastrowBuilder::put(xmlNodePtr cur)
         //RPA INIT
         if(!initialized_p && init_mode =="rpa")
         {
-          app_log() << "  Initializing Two-Body with RPA Jastrow " << endl;
+          app_log() << "  Initializing Two-Body with RPA Jastrow " << std::endl;
           j2Initializer.initWithRPA(targetPtcl,*functor,-cusp/0.5);
         }
         J2->addFunc(ia,ib,functor);

@@ -64,12 +64,12 @@ class NLPPClass : public Potential
 {
 protected:
   int lLocal;
-  vector<ChannelPotential> Vl;  
+  std::vector<ChannelPotential> Vl;  
   // The charge of the ion.  The potential should have a tail of
   // V(r) = -Zion/r for large r.
   double Zion;
   int AtomicNumber;
-  string Symbol;
+  std::string Symbol;
   Grid *PotentialGrid;
 public:
   // General accessor functions
@@ -128,7 +128,7 @@ ChannelPotential::jl(int l, double x)
 	return ((3.0/(x*x*x) - 1.0/x)*sin(x) - 3.0/(x*x)*cos(x));
     }
     else {
-      cerr << "j(l,x) not implemented for l > 2.\n";
+      std::cerr << "j(l,x) not implemented for l > 2.\n";
       abort();
     }
   }

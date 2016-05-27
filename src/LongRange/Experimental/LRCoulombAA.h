@@ -36,8 +36,8 @@ private:
   int MemberAttribIndx;
   int NParticles;
 
-  vector<RealType> Zat,Zspec;
-  vector<int> NofSpecies;
+  std::vector<RealType> Zat,Zspec;
+  std::vector<int> NofSpecies;
 
 public:
   RealType evalLR();

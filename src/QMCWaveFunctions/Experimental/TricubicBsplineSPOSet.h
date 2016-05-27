@@ -288,7 +288,7 @@ public:
   typedef typename std::map<int,const StorageType*>::iterator  IteratorType;
 
   using TricubicBsplineTraits<T>::Rcut2;
-  vector<PosType> Centers;
+  std::vector<PosType> Centers;
 
   /** default constructure
    *
@@ -416,7 +416,7 @@ public:
   using TricubicBsplineTraits<T>::GGt;
   //going to use Lattice
   using TricubicBsplineTraits<T>::Lattice;
-  vector<PosType> Centers;
+  std::vector<PosType> Centers;
 
   /** default constructure
    *

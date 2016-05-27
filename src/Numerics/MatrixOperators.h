@@ -223,7 +223,7 @@ namespace MatrixOperators
   inline void product(const Matrix<double>& A,
                       const Matrix<std::complex<double> >& B, Matrix<double>& C)
   {
-    cerr << " Undefined C=AB with real A and complex B " << endl;
+    std::cerr << " Undefined C=AB with real A and complex B " << std::endl;
   }
 
   /** static function to perform y=Ax for generic matrix and vector
@@ -350,7 +350,7 @@ namespace MatrixOperators
   inline void product(const Matrix<double>& A,
                       const Vector<std::complex<double> >& x, double* restrict yptr)
   {
-    cerr << " Undefined C=AB with real A and complex x " << endl;
+    std::cerr << " Undefined C=AB with real A and complex x " << std::endl;
   }
 
   template<typename T>

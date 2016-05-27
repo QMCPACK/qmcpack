@@ -56,12 +56,12 @@ void VSVBParser::parse(const std::string& fname)
   search(fin,"The number of atoms or centers is",aline);
   parsewords(aline.c_str(),currentWords);
   NumberOfAtoms = atoi(currentWords[7].c_str());
-  cout<<"NUMBER OF ATOMS: " <<NumberOfAtoms <<endl;
+  std::cout <<"NUMBER OF ATOMS: " <<NumberOfAtoms << std::endl;
 
   search(fin,"basis functions",aline);
   parsewords(aline.c_str(),currentWords);
   SizeOfBasisSet = atoi(currentWords[2].c_str());
-  cout<<" SizeOfBasisSet = "<<SizeOfBasisSet<<endl; 
+  std::cout <<" SizeOfBasisSet = "<<SizeOfBasisSet<< std::endl; 
 
 
   if(lookFor(fin,"Orbital information"))
@@ -69,27 +69,27 @@ void VSVBParser::parse(const std::string& fname)
       search(fin,"spin-coupled orbitals labeled",aline);
       parsewords(aline.c_str(),currentWords);
       NumSpinCoupledOrbitals= atoi(currentWords[2].c_str());
-      cout<<"Number of Spin Coupled Orbitals = "<<NumSpinCoupledOrbitals<<endl;
+      std::cout <<"Number of Spin Coupled Orbitals = "<<NumSpinCoupledOrbitals<< std::endl;
 
       search(fin,"open-shell orbitals",aline);
       parsewords(aline.c_str(),currentWords);
       NumOpenShellOrbitals= atoi(currentWords[2].c_str());
-      cout<<"Number of Open Shell Orbitals = "<<NumOpenShellOrbitals<<endl;
+      std::cout <<"Number of Open Shell Orbitals = "<<NumOpenShellOrbitals<< std::endl;
 
       search(fin,"double-occupied orbital",aline);
       parsewords(aline.c_str(),currentWords);
       NumDoubleOccupiedOrbitals= atoi(currentWords[2].c_str());
-      cout<<"Number of doubly Occupied Orbitals = "<<NumDoubleOccupiedOrbitals<<endl;
+      std::cout <<"Number of doubly Occupied Orbitals = "<<NumDoubleOccupiedOrbitals<< std::endl;
   }
   else{
-     cout<<"Could not find Orbital information!!!! Check VSVB output!"<<endl;
+     std::cout <<"Could not find Orbital information!!!! Check VSVB output!"<< std::endl;
      abort();
   }
 
   numMO=NumSpinCoupledOrbitals+NumOpenShellOrbitals+NumDoubleOccupiedOrbitals;
-  cout<<"NUMBER OF MOs: " <<numMO <<endl;
+  std::cout <<"NUMBER OF MOs: " <<numMO << std::endl;
   SpinMultiplicity = NumOpenShellOrbitals+1; 
-  cout<<"SPIN MULTIPLICITY: " <<SpinMultiplicity <<endl;
+  std::cout <<"SPIN MULTIPLICITY: " <<SpinMultiplicity << std::endl;
 
   IonSystem.create(NumberOfAtoms);
   GroupName.resize(NumberOfAtoms);
@@ -103,20 +103,20 @@ void VSVBParser::parse(const std::string& fname)
   search(fin,"The total number of electrons is",aline);
   parsewords(aline.c_str(),currentWords);
   NumberOfEls = atoi(currentWords[6].c_str());
-  cout<<"Number of electrons: " <<NumberOfEls <<endl;
+  std::cout <<"Number of electrons: " <<NumberOfEls << std::endl;
   /*search(fin,"NUMBER OF OCCUPIED ORBITALS (ALPHA)",aline);
   parsewords(aline.c_str(),currentWords);
   NumberOfAlpha = atoi(currentWords[5].c_str());
-  cout<<"Number of alpha electrons: " <<NumberOfAlpha <<endl;
+  std::cout <<"Number of alpha electrons: " <<NumberOfAlpha << std::endl;
   search(fin,"NUMBER OF OCCUPIED ORBITALS (BETA )",aline);
   parsewords(aline.c_str(),currentWords);
   NumberOfBeta = atoi(currentWords[6].c_str());
-  cout<<"Number of beta electrons: " <<NumberOfBeta <<endl;*/
+  std::cout <<"Number of beta electrons: " <<NumberOfBeta << std::endl;*/
 
   NumberOfAlpha = NumberOfEls/2; 
   NumberOfBeta =  NumberOfEls/2; 
-  cout<<"Number of alpha electrons: " <<NumberOfAlpha <<endl;
-  cout<<"Number of beta electrons: " <<NumberOfBeta <<endl;
+  std::cout <<"Number of alpha electrons: " <<NumberOfAlpha << std::endl;
+  std::cout <<"Number of beta electrons: " <<NumberOfBeta << std::endl;
 
   getGaussianCenters(fin);
   getMO(fin);
@@ -128,13 +128,13 @@ void VSVBParser::parse(const std::string& fname)
   {
       MDVSVB=false;
       multideterminant=false;
-      cout<<"This is a single-determinant VSVB calculation!"<<endl<<"CONVERSION TO QMCPACK INPUT COMPLETE!!"<<endl;
+      std::cout <<"This is a single-determinant VSVB calculation!"<< std::endl<<"CONVERSION TO QMCPACK INPUT COMPLETE!!"<< std::endl;
   }
   else
   {
       MDVSVB=true;
       multideterminant=true;
-      cout<<"This is a multi-determinant VSVB calculation!"<<endl<<"Adding the VB structures to the determinant"<<endl;
+      std::cout <<"This is a multi-determinant VSVB calculation!"<< std::endl<<"Adding the VB structures to the determinant"<< std::endl;
 
   }
   fin.close();
@@ -148,19 +148,19 @@ void VSVBParser::parse(const std::string& fname)
     {
       getwords(currentWords,fin);
       parsewords(aline.c_str(),currentWords);
-      cout<<"Found "<<currentWords[2]<<" VB structures"<<endl;
+      std::cout <<"Found "<<currentWords[2]<<" VB structures"<< std::endl;
       NbVbStructures=atoi(currentWords[2].c_str());
       NFZC = 0; 
       NAC = numMO; 
       NEXT =0; 
       NTOT=NEXT+NAC;
-      cout<<"# core, #active, #external: " <<NFZC <<" " <<NAC <<" " <<NEXT <<endl;
+      std::cout <<"# core, #active, #external: " <<NFZC <<" " <<NAC <<" " <<NEXT << std::endl;
       //fin.seekg(pivot_begin);
       getMDVSVB(fin,NbVbStructures);
     }
     else
     {
-       cout<<" Could not find VB structures!! Check VSVB output!"<<endl;
+       std::cout <<" Could not find VB structures!! Check VSVB output!"<< std::endl;
        abort();
     }
 
@@ -175,8 +175,8 @@ void VSVBParser::getGeometry(std::istream& is)
   std::string aline;
   bool all_atoms=true;
   //atomic numbers
-  vector<int> atomic_number,core;
-  vector<double> q,pos;
+  std::vector<int> atomic_number,core;
+  std::vector<double> q,pos;
   int natms=0;
   int test=0;
   tags.clear();
@@ -209,13 +209,13 @@ void VSVBParser::getGeometry(std::istream& is)
    }
    else
    {
-    cerr<<"Could not find atomic coordinates. \n";
+    std::cerr <<"Could not find atomic coordinates. \n";
     abort();
    }
 
   if(natms != NumberOfAtoms)
   {
-    cerr<<"Could not find atomic coordinates for all atoms. \n";
+    std::cerr <<"Could not find atomic coordinates for all atoms. \n";
     abort();
   }
 
@@ -236,10 +236,10 @@ void VSVBParser::getGeometry(std::istream& is)
 
 void VSVBParser::getGaussianCenters(std::istream& is)
 {
-  string Shell_temp;
+  std::string Shell_temp;
   gBound.resize(NumberOfAtoms+1);
   int ng,nx;
-  string aline;
+  std::string aline;
   std::map<std::string,int> basisDataMap;
   int nUniqAt=0;
   for(int i=0; i<NumberOfAtoms; i++)
@@ -250,10 +250,10 @@ void VSVBParser::getGaussianCenters(std::istream& is)
       basisDataMap[tags[i]]=nUniqAt++;
     }
   }
-  vector<vector<double> > expo(nUniqAt),coef(nUniqAt),coef2(nUniqAt);
-  vector<int> nshll(nUniqAt,0); //use this to 
-  vector<vector<int> > ncoeffpershell(nUniqAt);
-  vector<vector<std::string> > shID(nUniqAt);
+  std::vector<std::vector<double> > expo(nUniqAt),coef(nUniqAt),coef2(nUniqAt);
+  std::vector<int> nshll(nUniqAt,0); //use this to 
+  std::vector<std::vector<int> > ncoeffpershell(nUniqAt);
+  std::vector<std::vector<std::string> > shID(nUniqAt);
   std::map<std::string,int> gsMap;
   gsMap[std::string("S")]=1;
   gsMap[std::string("SP")]=2;
@@ -269,7 +269,7 @@ void VSVBParser::getGaussianCenters(std::istream& is)
   {
     if(is.eof())
     {
-      cerr<<"Problem with basis set data.\n";
+      std::cerr <<"Problem with basis set data.\n";
       abort();
     }
     getwords(currentWords,is);
@@ -305,7 +305,7 @@ void VSVBParser::getGaussianCenters(std::istream& is)
         std::map<std::string,int>::iterator it(basisDataMap.find(currentWords[5]));
         if(it == basisDataMap.end())
         {
-           cerr<<"Error in parser.\n";
+           std::cerr <<"Error in parser.\n";
            abort();
         }
         currPos=it->second;
@@ -329,9 +329,9 @@ void VSVBParser::getGaussianCenters(std::istream& is)
                  expo[currPos].push_back(atof(currentWords[0].c_str()));
                  coef[currPos].push_back(atof(currentWords[1].c_str()));
                  shID[currPos][nshll[currPos]] = Shell_temp; 
-                 cout << currPos << ":" <<expo[currPos].back() << " " << coef[currPos].back() << " " 
+                 std::cout << currPos << ":" <<expo[currPos].back() << " " << coef[currPos].back() << " " 
                  << ncoeffpershell[currPos][nshll[currPos]] 
-                 << " " << shID[currPos][nshll[currPos]]<<endl; 
+                 << " " << shID[currPos][nshll[currPos]]<< std::endl; 
               }              
             nshll[currPos]++;
             ncoeffpershell[currPos].push_back(0);
@@ -355,7 +355,7 @@ void VSVBParser::getGaussianCenters(std::istream& is)
       }
       else
       {
-          cerr<<"error in parser"<<endl;
+          std::cerr <<"error in parser"<< std::endl;
           abort();
       }
  }
@@ -372,7 +372,7 @@ void VSVBParser::getGaussianCenters(std::istream& is)
     std::map<std::string,int>::iterator it(basisDataMap.find(tags[i]));
     if(it == basisDataMap.end())
     {
-      cerr<<"Error in parser.\n";
+      std::cerr <<"Error in parser.\n";
       abort();
     }
     gBound[i] = gtot;
@@ -400,11 +400,11 @@ void VSVBParser::getMO(std::istream& is)
   EigVal_beta.resize(numMO);
   EigVec.resize(2*SizeOfBasisSet*numMO);
   std::string aline;
-  vector <double> SpinCoupledOrbitals;
-  vector <double> OpenShellOrbitals;
-  vector <double> DoubleOccupiedOrbitals;
+  std::vector<double> SpinCoupledOrbitals;
+  std::vector<double> OpenShellOrbitals;
+  std::vector<double> DoubleOccupiedOrbitals;
 
-  //cout<<"Size of BasisSet="<<SizeOfBasisSet<<" Size of nq="<<nq<<"  Size of rem="<<rem<<" nq+rm="<<4*nq+rem<<endl; 
+  //cout<<"Size of BasisSet="<<SizeOfBasisSet<<" Size of nq="<<nq<<"  Size of rem="<<rem<<" nq+rm="<<4*nq+rem<< std::endl; 
   search(is,"Orbital information ...");
   getwords(currentWords,is); //Number of spin-coupled orbitals
   if(NumSpinCoupledOrbitals !=0){
@@ -425,7 +425,7 @@ void VSVBParser::getMO(std::istream& is)
         getwords(currentWords,is);
      }
   }
-  cout<<"Size of elements for spin-coupled orbitals ="<<SpinCoupledOrbitals.size()<<endl;
+  std::cout <<"Size of elements for spin-coupled orbitals ="<<SpinCoupledOrbitals.size()<< std::endl;
   
   getwords(currentWords,is); //Empty line
   getwords(currentWords,is); //Number of open shell orbitals 
@@ -448,7 +448,7 @@ void VSVBParser::getMO(std::istream& is)
         getwords(currentWords,is);
      }
   }
-  cout<<"Size of elements for Open Shell orbitals="<<OpenShellOrbitals.size()<<endl;
+  std::cout <<"Size of elements for Open Shell orbitals="<<OpenShellOrbitals.size()<< std::endl;
 
   getwords(currentWords,is); //Empty line
   getwords(currentWords,is); //Number of doubly occupied orbitals 
@@ -472,7 +472,7 @@ void VSVBParser::getMO(std::istream& is)
      }
   }
 
-  cout<<"Size of elements for Doubly Occupied orbitals="<<DoubleOccupiedOrbitals.size()<<endl;
+  std::cout <<"Size of elements for Doubly Occupied orbitals="<<DoubleOccupiedOrbitals.size()<< std::endl;
 
     int cnt=0;
     for(int spin=0;spin<2;spin++){
@@ -492,7 +492,7 @@ void VSVBParser::getMO(std::istream& is)
        }
    
     }
-  cout<<"Finished reading MO." <<endl;
+  std::cout <<"Finished reading MO." << std::endl;
 }
 
 void VSVBParser::getMDVSVB(std::istream& is,int NbVbStructures)
@@ -520,12 +520,12 @@ void VSVBParser::getMDVSVB(std::istream& is,int NbVbStructures)
         currentWords[2] == "determinant" &&
         currentWords[3] == "information" )
     {
-        cout<<"Done reading VB determinants"<<endl;
+        std::cout <<"Done reading VB determinants"<< std::endl;
         break;
     }
 
     VB_Coeff=atof(currentWords[currentWords.size()-1].c_str());
-    pair<int,double> cic(numVB,VB_Coeff);
+    std::pair<int,double> cic(numVB,VB_Coeff);
     coeff2csf.push_back(cic);
     CSFocc.push_back(getOccup(1));
     VB_indx=atoi(currentWords[2].c_str());
@@ -537,7 +537,7 @@ void VSVBParser::getMDVSVB(std::istream& is,int NbVbStructures)
            currentWords[2] == "VB" &&
            currentWords[3] == "structure" )
        {
-           cout<<"Done reading CI for VB "<<VB_indx<<endl;
+           std::cout <<"Done reading CI for VB "<<VB_indx<< std::endl;
            Val=false;
            break;
        }
@@ -555,12 +555,12 @@ void VSVBParser::getMDVSVB(std::istream& is,int NbVbStructures)
     } 
     if(is.eof())
     {
-       cerr<<"Could not find VB structures!. \n";
+       std::cerr <<"Could not find VB structures!. \n";
        abort();
     }
     
   }
-  cout<<" Done reading VB structures!!"<<endl;
+  std::cout <<" Done reading VB structures!!"<< std::endl;
   ci_size=NbVbStructures;
   ci_nstates = numMO;
   int ds=SpinMultiplicity-1;
@@ -577,7 +577,7 @@ void VSVBParser::getMDVSVB(std::istream& is,int NbVbStructures)
   //is.seekg(pivot_begin);
   //look for CI coefficients
   bool notfound=true;
-  string aline;
+  std::string aline;
   int VB_indx;
   int Count=0;
   double VB_Coeff; 
@@ -597,7 +597,7 @@ void VSVBParser::getMDVSVB(std::istream& is,int NbVbStructures)
         currentWords[2] == "determinant" &&
         currentWords[3] == "information" )
     {
-        cout<<"Done reading VB determinants"<<endl;
+        std::cout <<"Done reading VB determinants"<< std::endl;
         break;
     }
     VB_Coeff=atof(currentWords[currentWords.size()-1].c_str());
@@ -610,7 +610,7 @@ void VSVBParser::getMDVSVB(std::istream& is,int NbVbStructures)
            currentWords[2] == "VB" &&
            currentWords[3] == "structure" )
        {
-           cout<<"Done reading CI for VB "<<VB_indx<<endl;
+           std::cout <<"Done reading CI for VB "<<VB_indx<< std::endl;
            Val=false;
            break;
        }
@@ -628,12 +628,12 @@ void VSVBParser::getMDVSVB(std::istream& is,int NbVbStructures)
     } 
     if(is.eof())
     {
-       cerr<<"Could not find VB structures!. \n";
+       std::cerr <<"Could not find VB structures!. \n";
        abort();
     }
     
   }
-  cout<<" Done reading VB structures!!"<<endl;
+  std::cout <<" Done reading VB structures!!"<< std::endl;
   ci_nea=ci_neb=0;
   
   for(int i=0; i<CIalpha[0].size(); i++)
@@ -644,7 +644,7 @@ void VSVBParser::getMDVSVB(std::istream& is,int NbVbStructures)
       ci_neb++;
   if(CIalpha[0].size() != CIbeta[0].size())
   {
-    cerr<<"QMCPack can't handle different number of active orbitals in alpha and beta channels right now. Contact developers for help (Miguel).\n";
+    std::cerr <<"QMCPack can't handle different number of active orbitals in alpha and beta channels right now. Contact developers for help (Miguel).\n";
     abort();
   }
   int ds=SpinMultiplicity-1;
@@ -658,7 +658,7 @@ void VSVBParser::getMDVSVB(std::istream& is,int NbVbStructures)
 std::string VSVBParser::getOccup(int val)
 {
 
-    string Occup; 
+    std::string Occup; 
 
     if (val==0){
        char Temp[numMO+1];

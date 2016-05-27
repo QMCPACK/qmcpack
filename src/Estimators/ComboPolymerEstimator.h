@@ -38,14 +38,14 @@ struct ComboPolymerEstimator: public PolymerEstimator
   void accumulate(const MCWalkerConfiguration& W
                   , WalkerIterator first, WalkerIterator last, RealType wgt);
   void add2Record(RecordNamedProperty<RealType>& record);
-  void registerObservables(vector<observable_helper*>& h5dec, hid_t gid);
+  void registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid);
   ScalarEstimatorBase* clone();
   /*@}*/
   void evaluateDiff();
 
 private:
 
-  std::vector<string> scalars_name;
+  std::vector<std::string> scalars_name;
   std::vector<int> scalars_index;
   std::vector<ReptileEstimator*> RepEstimators;
   int FirstHamiltonian;

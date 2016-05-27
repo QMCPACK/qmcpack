@@ -65,7 +65,7 @@ bool JastrowBuilder::put(xmlNodePtr cur)
   oAttrib.put(cur);
   if(nameOpt[0] == '0')
   {
-    app_warning() << "  JastrowBuilder::put does not have name "<< endl;
+    app_warning() << "  JastrowBuilder::put does not have name "<< std::endl;
     return false;
   }
   if(typeOpt.find("One") < typeOpt.size())
@@ -83,16 +83,16 @@ bool JastrowBuilder::put(xmlNodePtr cur)
 
 bool JastrowBuilder::addkSpace(xmlNodePtr cur)
 {
-  app_log() << "  JastrowBuilder::addkSpace(xmlNodePtr)" << endl;
-  map<string,ParticleSet*>::iterator pa_it(ptclPool.find(sourceOpt));
+  app_log() << "  JastrowBuilder::addkSpace(xmlNodePtr)" << std::endl;
+  std::map<std::string,ParticleSet*>::iterator pa_it(ptclPool.find(sourceOpt));
   if(pa_it == ptclPool.end())
   {
     app_warning() << "  JastrowBuilder::addkSpace failed. "
-                  << sourceOpt << " does not exist" << endl;
+                  << sourceOpt << " does not exist" << std::endl;
     return false;
   }
   ParticleSet* sourcePtcl= (*pa_it).second;
-  app_log() << "\n  Using kSpaceJastrowBuilder for reciprocal-space Jastrows" << endl;
+  app_log() << "\n  Using kSpaceJastrowBuilder for reciprocal-space Jastrows" << std::endl;
   OrbitalBuilderBase* sBuilder = new kSpaceJastrowBuilder (targetPtcl, targetPsi, *sourcePtcl);
   Children.push_back(sBuilder);
   return sBuilder->put(cur);
@@ -107,7 +107,7 @@ bool JastrowBuilder::addOneBody(xmlNodePtr cur)
                 +"\nExit JastrowBuilder::addOneBody.\n");
     return false;
   }
-  map<string,ParticleSet*>::iterator pa_it(ptclPool.find(sourceOpt));
+  std::map<std::string,ParticleSet*>::iterator pa_it(ptclPool.find(sourceOpt));
   if(pa_it == ptclPool.end())
   {
     PRE.warning("JastrowBuilder::addOneBody failed. "+sourceOpt+" does not exist.");
@@ -119,7 +119,7 @@ bool JastrowBuilder::addOneBody(xmlNodePtr cur)
   tolower(funcOpt);
   if (funcOpt == "bspline" )
   {
-    app_log() << "\n  Using BsplineBuilder for one-body jastrow with B-spline functions" << endl;
+    app_log() << "\n  Using BsplineBuilder for one-body jastrow with B-spline functions" << std::endl;
     BsplineJastrowBuilder jb(targetPtcl,targetPsi,*sourcePtcl);
     success=jb.put(cur);
   }
@@ -127,7 +127,7 @@ bool JastrowBuilder::addOneBody(xmlNodePtr cur)
     if (funcOpt == "rpa" )
     {
 #if OHMMS_DIM ==3
-      app_log() << "\n  Using RPA for one-body jastrow" << endl;
+      app_log() << "\n  Using RPA for one-body jastrow" << std::endl;
       singleRPAJastrowBuilder jb(targetPtcl, targetPsi, *sourcePtcl);
       success= jb.put(cur);
 #else
@@ -136,7 +136,7 @@ bool JastrowBuilder::addOneBody(xmlNodePtr cur)
     }
     else
     {
-      app_log() << "\n  Using JABBuilder for one-body jastrow with analytic functions" << endl;
+      app_log() << "\n  Using JABBuilder for one-body jastrow with analytic functions" << std::endl;
       JABBuilder jb(targetPtcl,targetPsi,ptclPool);
       success=jb.put(cur);
     }
@@ -151,7 +151,7 @@ bool JastrowBuilder::add_eeI (xmlNodePtr cur)
   if(pit == ptclPool.end())
   {
     app_error() << "     JastrowBuilder::add_eeI requires a source attribute. "
-                << sourceOpt << " is invalid " << endl;
+                << sourceOpt << " is invalid " << std::endl;
     APP_ABORT("  JastrowBuilder::add_eeI");
     return false;
   }
@@ -207,7 +207,7 @@ bool JastrowBuilder::addTwoBody(xmlNodePtr cur)
 #if QMC_BUILD_LEVEL>2
       else //try other special analytic functions
       {
-        app_log() << "\n  Using JAABuilder for two-body jastrow with analytic functions" << endl;
+        app_log() << "\n  Using JAABuilder for two-body jastrow with analytic functions" << std::endl;
         JAABuilder jb(targetPtcl,targetPsi);
         return jb.put(cur);
       }
@@ -238,7 +238,7 @@ bool JastrowBuilder::addTwoBody(xmlNodePtr cur)
 //       if(control->JComponent[ONEBODY] && sourceOpt != targetPtcl.getName())
 //       {
 //         app_log() << ("Adding one-body Jastrow function dependent upon two-body " + funcOpt + " Jastrow function\n");
-//         map<string,ParticleSet*>::iterator pa_it(ptclPool.find(sourceOpt));
+//         std::map<std::string,ParticleSet*>::iterator pa_it(ptclPool.find(sourceOpt));
 //         if(pa_it != ptclPool.end())
 //         {
 //           OrbitalBase* j1=control->createOneBody(*((*pa_it).second));
@@ -254,7 +254,7 @@ bool JastrowBuilder::addTwoBody(xmlNodePtr cur)
 //     }
 //     else
 //     {
-//       string j2name="J2_"+funcOpt;
+//       std::string j2name="J2_"+funcOpt;
 //       targetPsi.addOrbital(j2,j2name);
 //     }
 //     Children.push_back(control);
@@ -266,22 +266,22 @@ bool JastrowBuilder::addThreeBody(xmlNodePtr cur)
 #if OHMMS_DIM==3
   if(sourceOpt == targetPtcl.getName())
   {
-    app_warning() << "  Three-Body Jastrow Function needs a source different from " << targetPtcl.getName() << endl;
+    app_warning() << "  Three-Body Jastrow Function needs a source different from " << targetPtcl.getName() << std::endl;
     APP_ABORT("  JastrowBuilder::addThreeBody");
     return false;
   }
   PtclPoolType::iterator pit(ptclPool.find(sourceOpt));
   if(pit == ptclPool.end())
   {
-    app_error() << "     JastrowBuilder::addThreeBody requires a center. " << sourceOpt << " is invalid " << endl;
+    app_error() << "     JastrowBuilder::addThreeBody requires a center. " << sourceOpt << " is invalid " << std::endl;
     APP_ABORT("  JastrowBuilder::addThreeBody");
     return false;
   }
-  app_log() << "  JastrowBuilder::addThreeBody source="<< sourceOpt <<  endl;
+  app_log() << "  JastrowBuilder::addThreeBody source="<< sourceOpt <<  std::endl;
   xmlNodePtr basisPtr=NULL;
   xmlNodePtr coeffPtr=NULL;
-  string diagOnly("no");//default:use diagonal blocks only
-  string sameblocks("yes");
+  std::string diagOnly("no");//default:use diagonal blocks only
+  std::string sameblocks("yes");
   OhmmsAttributeSet tAttrib;
   tAttrib.add(diagOnly,"diagonal");
   tAttrib.add(sameblocks,"sameBlocksForGroup");
@@ -289,7 +289,7 @@ bool JastrowBuilder::addThreeBody(xmlNodePtr cur)
   cur = cur->xmlChildrenNode;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == basisset_tag)
     {
       basisPtr=cur;
@@ -306,7 +306,7 @@ bool JastrowBuilder::addThreeBody(xmlNodePtr cur)
   }
   if(basisPtr == NULL)
   {
-    app_error() << "     JastrowBuilder::addThreeBody exit. Missing <basisset/>"<< endl;
+    app_error() << "     JastrowBuilder::addThreeBody exit. Missing <basisset/>"<< std::endl;
     return false;
   }
   ParticleSet* sourcePtcl=(*pit).second;
@@ -315,7 +315,7 @@ bool JastrowBuilder::addThreeBody(xmlNodePtr cur)
   basisBuilder->put(basisPtr);
   if(diagOnly == "yes")
   {
-    app_log() << "\n  creating Three-Body Jastrow function using only diagnoal blocks." << endl;
+    app_log() << "\n  creating Three-Body Jastrow function using only diagnoal blocks." << std::endl;
     ThreeBodyBlockSparse* J3 = new ThreeBodyBlockSparse(*sourcePtcl, targetPtcl);
     J3->setBasisSet(basisBuilder->myBasisSet);
     J3->put(coeffPtr);
@@ -325,7 +325,7 @@ bool JastrowBuilder::addThreeBody(xmlNodePtr cur)
   }
   else
   {
-    app_log() << "\n  creating Three-Body Jastrow function using a complete Geminal matrix." << endl;
+    app_log() << "\n  creating Three-Body Jastrow function using a complete Geminal matrix." << std::endl;
     ThreeBodyGeminal* J3 = new ThreeBodyGeminal(*sourcePtcl, targetPtcl);
     J3->setBasisSet(basisBuilder->myBasisSet);
     J3->put(coeffPtr);
@@ -333,7 +333,7 @@ bool JastrowBuilder::addThreeBody(xmlNodePtr cur)
   }
   delete basisBuilder;
 #else
-  app_error() << "  Three-body Jastrow function is not supported for DIM != 3." << endl;
+  app_error() << "  Three-body Jastrow function is not supported for DIM != 3." << std::endl;
 //#error "  Three-body Jastrow is disabled for QMC_DIM != 3\n "
 #endif
   //if(jbuilder)
@@ -343,8 +343,8 @@ bool JastrowBuilder::addThreeBody(xmlNodePtr cur)
   //  return true;
   //}
   //    } else if (jasttype == "Three-Body-Pade") {
-  //      app_log() << "\n  creating Three-Body-Pade Jastrow function " << endl;
-  //      string source_name("i");
+  //      app_log() << "\n  creating Three-Body-Pade Jastrow function " << std::endl;
+  //      std::string source_name("i");
   //      const xmlChar* iptr = xmlGetProp(cur, (const xmlChar *)"source");
   //      //if(iptr != NULL) source_name=(const char*)iptr;
   //      PtclPoolType::iterator pit(ptclPool.find(source_name));

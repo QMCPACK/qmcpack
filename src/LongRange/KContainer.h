@@ -42,9 +42,9 @@ public:
   //Typedef for the lattice-type. We don't need the full particle-set.
   typedef ParticleSet::ParticleLayout_t ParticleLayout_t;
   ///typedef of vector containers
-  typedef vector<PosType>  VContainer_t;
+  typedef std::vector<PosType>  VContainer_t;
   ///typedef of scalar containers
-  typedef vector<RealType> SContainer_t;
+  typedef std::vector<RealType> SContainer_t;
 
   ///number of k-points
   int numk;
@@ -57,7 +57,7 @@ public:
 
   /** K-vector in reduced coordinates
    */
-  vector<TinyVector<int,DIM> > kpts;
+  std::vector<TinyVector<int,DIM> > kpts;
   /** K-vector in Cartesian coordinates
    */
   VContainer_t kpts_cart;
@@ -66,9 +66,9 @@ public:
   SContainer_t ksq;
   /** Given a k index, return index to -k
    */
-  vector<int> minusk;
+  std::vector<int> minusk;
   /** kpts which belong to the ith-shell [kshell[i], kshell[i+1]) */
-  vector<int> kshell;
+  std::vector<int> kshell;
 
   /** k points sorted by the |k|  excluding |k|=0
    *

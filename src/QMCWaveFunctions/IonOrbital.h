@@ -40,8 +40,8 @@ private:
   RealType curVal, curLap;
   PosType curGrad;
 public:
-  vector<RealType> ParticleAlpha;
-  vector<int> ParticleCenter;
+  std::vector<RealType> ParticleAlpha;
+  std::vector<int> ParticleCenter;
 
   IonOrbital(ParticleSet &centers, ParticleSet &ptcls);
 
@@ -57,7 +57,7 @@ public:
   void checkInVariables(opt_variables_type& o);
 
   /** print the state, e.g., optimizables */
-  void reportStatus(ostream& os);
+  void reportStatus(std::ostream& os);
 
   /** reset the parameters during optimizations
    */

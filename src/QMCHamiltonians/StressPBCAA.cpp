@@ -32,8 +32,8 @@ StressPBCAA::StressPBCAA(ParticleSet& ref, bool active) :
   PtclRefName=d_aa->Name;
   initBreakup(ref);
   prefix="S_"+PtclRefName;
-  app_log() << "  Maximum K shell " << AA->MaxKshell << endl;
-  app_log() << "  Number of k vectors " << AA->Fk.size() << endl;
+  app_log() << "  Maximum K shell " << AA->MaxKshell << std::endl;
+  app_log() << "  Number of k vectors " << AA->Fk.size() << std::endl;
   if(!is_active)
   {
     d_aa->evaluate(ref);
@@ -61,7 +61,7 @@ StressPBCAA::StressPBCAA(ParticleSet& ref, bool active) :
     //NewValue=Value = eL+eS+myConst;
     //app_log() << "  Fixed Coulomb potential for " << ref.getName();
     //app_log() << "\n    e-e Madelung Const. =" << MC0
-    //          << "\n    Vtot     =" << Value << endl;
+    //          << "\n    Vtot     =" << Value << std::endl;
     
   }
   app_log() << "  Stress SymTensor components for  " << ref.getName();
@@ -69,7 +69,7 @@ StressPBCAA::StressPBCAA(ParticleSet& ref, bool active) :
             << "\n    Stot     =\n" << stress 
             << "\n    S_SR     =\n" << sSR   
             << "\n    S_LR     =\n" << sLR
-            << "\n    S_Const  =\n" << myConst<<endl;
+            << "\n    S_Const  =\n" << myConst<< std::endl;
 }
 
 StressPBCAA:: ~StressPBCAA() { }
@@ -202,39 +202,39 @@ StressPBCAA::spevaluate(ParticleSet& P)
   RealType Vcorig  = evalConsts_orig(false);
   if(abs(Vsum-Vnow)>TraceManager::trace_tol)
   {
-    app_log()<<"accumtest: StressPBCAA::evaluate()"<<endl;
-    app_log()<<"accumtest:   tot:"<< Vnow <<endl;
-    app_log()<<"accumtest:   sum:"<< Vsum  <<endl;
+    app_log()<<"accumtest: StressPBCAA::evaluate()"<< std::endl;
+    app_log()<<"accumtest:   tot:"<< Vnow << std::endl;
+    app_log()<<"accumtest:   sum:"<< Vsum  << std::endl;
     APP_ABORT("Trace check failed");
   }
   if(abs(Vcsum-Vcnow)>TraceManager::trace_tol)
   {
-    app_log()<<"accumtest: StressPBCAA::evalConsts()"<<endl;
-    app_log()<<"accumtest:   tot:"<< Vcnow <<endl;
-    app_log()<<"accumtest:   sum:"<< Vcsum  <<endl;
+    app_log()<<"accumtest: StressPBCAA::evalConsts()"<< std::endl;
+    app_log()<<"accumtest:   tot:"<< Vcnow << std::endl;
+    app_log()<<"accumtest:   sum:"<< Vcsum  << std::endl;
     APP_ABORT("Trace check failed");
   }
   if(abs(Vsrold-Vsrnow)>TraceManager::trace_tol)
   {
-    app_log()<<"versiontest: StressPBCAA::evalSR()"<<endl;
-    app_log()<<"versiontest:    old:"<< Vsrold <<endl;
-    app_log()<<"versiontest:    mod:"<< Vsrnow <<endl;
+    app_log()<<"versiontest: StressPBCAA::evalSR()"<< std::endl;
+    app_log()<<"versiontest:    old:"<< Vsrold << std::endl;
+    app_log()<<"versiontest:    mod:"<< Vsrnow << std::endl;
     APP_ABORT("Trace check failed");
   }
   if(abs(Vlrold-Vlrnow)>TraceManager::trace_tol)
   {
-    app_log()<<"versiontest: StressPBCAA::evalLR()"<<endl;
-    app_log()<<"versiontest:    old:"<< Vlrold <<endl;
-    app_log()<<"versiontest:    mod:"<< Vlrnow <<endl;
+    app_log()<<"versiontest: StressPBCAA::evalLR()"<< std::endl;
+    app_log()<<"versiontest:    old:"<< Vlrold << std::endl;
+    app_log()<<"versiontest:    mod:"<< Vlrnow << std::endl;
     APP_ABORT("Trace check failed");
   }
   if(abs(Vcold-Vcorig)>TraceManager::trace_tol ||
-      abs(Vcnow-Vcorig)>TraceManager::trace_tol )
+      std::abs(Vcnow-Vcorig)>TraceManager::trace_tol )
   {
-    app_log()<<"versiontest: StressPBCAA::evalConsts()"<<endl;
-    app_log()<<"versiontest:    old:"<< Vcold <<endl;
-    app_log()<<"versiontest:   orig:"<< Vcorig <<endl;
-    app_log()<<"versiontest:    mod:"<< Vcnow <<endl;
+    app_log()<<"versiontest: StressPBCAA::evalConsts()"<< std::endl;
+    app_log()<<"versiontest:    old:"<< Vcold << std::endl;
+    app_log()<<"versiontest:   orig:"<< Vcorig << std::endl;
+    app_log()<<"versiontest:    mod:"<< Vcnow << std::endl;
     APP_ABORT("Trace check failed");
   }
 #endif
@@ -418,7 +418,7 @@ StressPBCAA::evalLRwithForces(ParticleSet& P)
 {
   RealType LR=0.0;
   const StructFact& PtclRhoK(*(P.SK));
-  vector<TinyVector<RealType,DIM> > grad(P.getTotalNum());
+  std::vector<TinyVector<RealType,DIM> > grad(P.getTotalNum());
   for(int spec2=0; spec2<NumSpecies; spec2++)
   {
     RealType Z2 = Zspec[spec2];
@@ -477,28 +477,28 @@ StressPBCAA::evalConsts(bool report)
  // V_const = 0.0;
   //v_l(r=0) including correction due to the non-periodic direction
   SymTensor<RealType, OHMMS_DIM> vl_r0 = AA->evaluateLR_r0_dstrain();
-  app_log()<<"   PBCAA vl_r0 = \n"<<vl_r0<<endl;
+  app_log()<<"   PBCAA vl_r0 = \n"<<vl_r0<< std::endl;
   for(int ipart=0; ipart<NumCenters; ipart++)
   {
     Consts += -.5*Zat[ipart]*Zat[ipart]*vl_r0;
   }
   
   if(report)
-    app_log() << "   PBCAA self-interaction term\n " << Consts << endl;
+    app_log() << "   PBCAA self-interaction term\n " << Consts << std::endl;
   //Compute Madelung constant: this is not correct for general cases
   MC0 = 0.0;
 
   const StructFact& PtclRhoK(*(Ps.SK));
-  const vector<PosType> &kpts = PtclRhoK.KLists.kpts_cart;
+  const std::vector<PosType> &kpts = PtclRhoK.KLists.kpts_cart;
   for(int ks=0; ks<AA->dFk_dstrain.size(); ks++)
     {
         MC0+=AA->dFk_dstrain[ks];
     }
-  app_log()<<"   PBCAA MC0 = "<< MC0<<endl;
+  app_log()<<"   PBCAA MC0 = "<< MC0<< std::endl;
   MC0 = 0.5*(MC0 - vl_r0);
   //Neutraling background term
   SymTensor<RealType, OHMMS_DIM> vs_k0=AA->evaluateSR_k0_dstrain(); //v_s(k=0)
-  app_log()<<"    PBCAA Background Term:\n"<<vs_k0<<endl;
+  app_log()<<"    PBCAA Background Term:\n"<<vs_k0<< std::endl;
   for(int ipart=0; ipart<NumCenters; ipart++)
   {
     v1 = 0.0;
@@ -509,8 +509,8 @@ StressPBCAA::evalConsts(bool report)
     Consts += v1*vs_k0;
   }
   if(report)
-    app_log() << "   PBCAA total constant \n" << Consts << endl;
-  //app_log() << "   MC0 of PBCAA " << MC0 << endl;
+    app_log() << "   PBCAA total constant \n" << Consts << std::endl;
+  //app_log() << "   MC0 of PBCAA " << MC0 << std::endl;
   return Consts;
 }
 
@@ -529,12 +529,12 @@ StressPBCAA::evalSR(ParticleSet& P)
     for(int nn=d_aa.M[ipart],jpart=ipart+1; nn<d_aa.M[ipart+1]; nn++,jpart++)
     {
       esum += Zat[jpart]* AA->evaluateSR_dstrain(d_aa.dr(nn), d_aa.r(nn));
-      //app_log()<<"ipart = "<<ipart<<" nn="<<nn<< " dr = "<< d_aa.dr(nn)<< endl;
-      //app_log()<<"srDf(r) = "<<AA->srDf(d_aa.r(nn),1.0/d_aa.r(nn))<< " part stress = \n"<<Zat[jpart]* AA->evaluateSR_dstrain(d_aa.dr(nn), d_aa.r(nn))<<endl;
+      //app_log()<<"ipart = "<<ipart<<" nn="<<nn<< " dr = "<< d_aa.dr(nn)<< std::endl;
+      //app_log()<<"srDf(r) = "<<AA->srDf(d_aa.r(nn),1.0/d_aa.r(nn))<< " part stress = \n"<<Zat[jpart]* AA->evaluateSR_dstrain(d_aa.dr(nn), d_aa.r(nn))<< std::endl;
     }
     //Accumulate pair sums...species charge for atom i.
     SR += Zat[ipart]*esum;
-    //app_log()<<" SRpartsum=\n"<<Zat[ipart]*esum<<endl<<endl;
+    //app_log()<<" SRpartsum=\n"<<Zat[ipart]*esum<< std::endl<< std::endl;
   }
   return SR;
   
@@ -559,7 +559,7 @@ StressPBCAA::evalLR(ParticleSet& P)
  #else      
         SymTensor<RealType, OHMMS_DIM> temp = AA->evaluateStress(PtclRhoK.KLists.kshell, PtclRhoK.rhok_r[spec1], PtclRhoK.rhok_i[spec1], PtclRhoK.rhok_r[spec2], PtclRhoK.rhok_i[spec2]);
  #endif       
-       // app_log()<<"WEEEE "<<temp<<endl;ls
+       // app_log()<<"WEEEE "<<temp<< std::endl;ls
        
         if(spec2==spec1)
           temp*=0.5;

@@ -85,8 +85,8 @@ public :
 private :
 
   int Lmax;
-  vector<value_type> Ylm;
-  vector<Point_t> gradYlm;
+  std::vector<value_type> Ylm;
+  std::vector<Point_t> gradYlm;
 };
 
 template<class T, class Point_t>
@@ -188,7 +188,7 @@ void SphericalTensor<T,Point_t>::evaluate(const Point_t& p)
       int lm = index(l-1,0);
       value_type fac = ((value_type) (2*l+1))/(2*l-1);
       value_type gx,gy,gz,dpr,dpi,dmr,dmi;
-      int ma = abs(m);
+      int ma = std::abs(m);
       value_type cp = sqrt(fac*(l-ma-1)*(l-ma));
       value_type cm = sqrt(fac*(l+ma-1)*(l+ma));
       value_type c0 = sqrt(fac*(l-ma)*(l+ma));

@@ -8,9 +8,8 @@
 #include "ScalarDataSet.h"
 #include "ScalarObservable.h"
 #include <boost/tokenizer.hpp>
-using namespace std;
 
-ScalarDataSet::ScalarDataSet(const string& fname, int first, int last):Grouped(false)
+ScalarDataSet::ScalarDataSet(const std::string& fname, int first, int last):Grouped(false)
 {
   read(fname,first,last);
 }
@@ -42,21 +41,21 @@ ScalarDataSet::clone(int nc)
   return c;
 }
 
-void ScalarDataSet::read(const string& fname, int first, int last)
+void ScalarDataSet::read(const std::string& fname, int first, int last)
 {
-  ifstream fin(fname.c_str());
+  std::ifstream fin(fname.c_str());
   if(!fin.is_open())
   {
-    cerr << " Cannot open " << fname << endl;
+    std::cerr << " Cannot open " << fname << std::endl;
     return;
   }
-  string aline;
-  vector<std::string> columnList;
+  std::string aline;
+  std::vector<std::string> columnList;
   bool find_data=true;
   int nskip=0;
   while(find_data && !fin.eof())
   {
-    streampos cur=fin.tellg();
+    std::streampos cur=fin.tellg();
     if(std::getline(fin,aline))
     {
       typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
@@ -84,11 +83,11 @@ void ScalarDataSet::read(const string& fname, int first, int last)
     }
   }
   //temporary vector for the columns so that we can use index
-  vector<ScalarObservable*> dtemp;
-  vector<std::string>::iterator cit(columnList.begin()), cit_end(columnList.end());
+  std::vector<ScalarObservable*> dtemp;
+  std::vector<std::string>::iterator cit(columnList.begin()), cit_end(columnList.end());
   while(cit != cit_end)
   {
-    map<string,ScalarObservable*>::iterator dit(Data.find(*cit));
+    std::map<std::string,ScalarObservable*>::iterator dit(Data.find(*cit));
     if(dit == Data.end())
       //add to newSet
     {
@@ -105,10 +104,10 @@ void ScalarDataSet::read(const string& fname, int first, int last)
     ++cit;
   }
   int nc=columnList.size();
-  vector<double> arow(nc);
+  std::vector<double> arow(nc);
   double firstColumn=-1;
   if(last<0)
-    last=numeric_limits<int>::max();
+    last= std::numeric_limits<int>::max();
   int nr=0;
   while(nr<first)
   {
@@ -116,7 +115,7 @@ void ScalarDataSet::read(const string& fname, int first, int last)
     nr++;
   }
   //treat the first column as string
-  string dummy,prev("invalid");
+  std::string dummy,prev("invalid");
   while(nr < last && !fin.eof())
   {
     fin >> dummy;
@@ -156,16 +155,16 @@ void ScalarDataSet::accumulate(const RawDataSetType& raw)
 }
 
 void
-ScalarDataSet::group(const map<string,ScalarDataSet*>& dlist)
+ScalarDataSet::group(const std::map<std::string,ScalarDataSet*>& dlist)
 {
   Grouped=true;
   FirstRow=0;
   LastRow=NumRows=(*Data.begin()).second->size();
-  map<string,ScalarDataSet*>::const_iterator first(dlist.begin()), last(dlist.end());
+  std::map<std::string,ScalarDataSet*>::const_iterator first(dlist.begin()), last(dlist.end());
   double dn=0;
   while(first != last)
   {
-    accumulate((*first).second->Data);
+    std::accumulate((*first).second->Data);
     dn+=1.0;
     ++first;
   }
@@ -186,27 +185,27 @@ ScalarDataSet::group(const map<string,ScalarDataSet*>& dlist)
 }
 
 void
-ScalarDataSet::writeCollect(ostream& os, const string& cname)
+ScalarDataSet::writeCollect(std::ostream& os, const std::string& cname)
 {
-  map<string,ScalarObservable*>::iterator dit(Data.find(cname));
+  std::map<std::string,ScalarObservable*>::iterator dit(Data.find(cname));
   if(dit != Data.end())
   {
     os << "    <collect name=\""<<(*dit).first << "\""
        << " value=\"" <<(*dit).second->get_average()
        << "\"/>\n";
-    cout << (*dit).first << " " << (*dit).second->get_average() << endl;
+    std::cout << (*dit).first << " " << (*dit).second->get_average() << std::endl;
   }
 }
 
 void
-ScalarDataSet::writeObservable(ostream& os, const string& oname)
+ScalarDataSet::writeObservable(std::ostream& os, const std::string& oname)
 {
-  map<string,ScalarObservable*>::iterator dit(Data.find(oname));
+  std::map<std::string,ScalarObservable*>::iterator dit(Data.find(oname));
   if(dit != Data.end())
   {
-    cout.setf(ios::left,ios::adjustfield);
-    cout << setw(16) << (*dit).first;
-    cout.setf(ios::right,ios::adjustfield);
+    std::cout.setf(std::ios::left,std::ios::adjustfield);
+    std::cout << std::setw(16) << (*dit).first;
+    std::cout.setf(std::ios::right,std::ios::adjustfield);
     os << "    <observable name=\""<<(*dit).first << "\">\n";
     (*dit).second->get_stat();
     (*dit).second->write(os);

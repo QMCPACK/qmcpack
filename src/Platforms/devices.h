@@ -20,7 +20,7 @@ inline int get_device_num()
   const int MAX_LEN = 200;
   int size = OHMMS::Controller->size();
   int rank = OHMMS::Controller->rank();
-  vector<char> myname(MAX_LEN);
+  std::vector<char> myname(MAX_LEN);
   gethostname(&myname[0], MAX_LEN);
   std::vector<char> host_list(MAX_LEN*size);
   for (int i=0; i<MAX_LEN; i++)
@@ -29,7 +29,7 @@ inline int get_device_num()
   std::vector<std::string> hostnames;
   for (int i=0; i<size; i++)
     hostnames.push_back(&(host_list[i*MAX_LEN]));
-  string myhostname = &myname[0];
+  std::string myhostname = &myname[0];
   int devnum = 0;
   for (int i=0; i<rank; i++)
     if (hostnames[i] == myhostname)
@@ -83,14 +83,14 @@ inline void Finalize_CUDA()
 inline void Init_CUDA(int rank, int size)
 {
   int devNum = get_device_num();
-  ostringstream o;
+  std::ostringstream o;
   o << "Rank = " << rank
-       << "  My device number = " << devNum << endl;
-  cerr << o.str();
+       << "  My device number = " << devNum << std::endl;
+  std::cerr << o.str();
   int num_appropriate = get_num_appropriate_devices();
   if (devNum >= num_appropriate)
   {
-    cerr << "Not enough double-precision capable GPUs for MPI rank "
+    std::cerr << "Not enough double-precision capable GPUs for MPI rank "
          << rank << ".\n";
     abort();
   }
@@ -101,29 +101,29 @@ inline void Init_CUDA(int rank, int size)
   gpu::initCublas();
   gpu::MaxGPUSpineSizeMB = MAX_GPU_SPLINE_SIZE_MB;
   gpu::rank=rank;
-  if(!rank) cerr << "Default MAX_GPU_SPLINE_SIZE_MB is " << gpu::MaxGPUSpineSizeMB << " MB." << endl;
+  if(!rank) std::cerr << "Default MAX_GPU_SPLINE_SIZE_MB is " << gpu::MaxGPUSpineSizeMB << " MB." << std::endl;
   return;
   int numGPUs;
   cudaGetDeviceCount(&numGPUs);
-  cerr << "There are " << numGPUs << " GPUs.";
-  cerr << "Size = " << size << endl;
+  std::cerr << "There are " << numGPUs << " GPUs.";
+  std::cerr << "Size = " << size << std::endl;
   int chunk = size/numGPUs;
   //  int device_num = rank % numGPUs;
   int device_num = rank * numGPUs / size;
-  cerr << "My device number is " << device_num << endl;
+  std::cerr << "My device number is " << device_num << std::endl;
   cudaSetDevice (device_num);
 }
 #else
 inline void Init_CUDA(int rank, int size)
 {
-  cerr << "Flag \"--gpu\" was used, but QMCPACK was built without "
+  std::cerr << "Flag \"--gpu\" was used, but QMCPACK was built without "
        << "GPU code.\nPlease use cmake -DQMC_CUDA=1.\n";
   APP_ABORT("GPU disabled");
 }
 
 inline void Finalize_CUDA()
 {
-  cerr << "Flag \"--gpu\" was used, but QMCPACK was built without "
+  std::cerr << "Flag \"--gpu\" was used, but QMCPACK was built without "
        << "GPU code.\nPlease use cmake -DQMC_CUDA=1.\n";
   APP_ABORT("GPU disabled");
 }

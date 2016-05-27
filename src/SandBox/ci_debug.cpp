@@ -29,16 +29,15 @@
 #include <fstream>
 #include <limits>
 using namespace qmcplusplus;
-using namespace std;
 
 template<typename CT, typename T>
 inline void check_ratios(const CT& a, const CT& b, T eps)
 {
   T del;
-  cout.setf(std::ios::scientific, std::ios::floatfield);
+  std::cout.setf(std::ios::scientific, std::ios::floatfield);
   for(int i=0; i<a.size(); ++i)
     if(abs(del=(a[i]/b[i]-1.0))>eps)
-      cout << i << " recursive=" << a[i] << " error=" << del << endl;
+      std::cout << i << " recursive=" << a[i] << " error=" << del << std::endl;
 }
 
 
@@ -48,11 +47,11 @@ int main(int argc, char** argv)
   const int vmax=4;
   const int cmax=8;
   typedef ci_node_proxy node_type;
-  vector<node_type> excitations;
+  std::vector<node_type> excitations;
   int multiplet=3;
   int nparent=0;
   int nchildren=0;
-  vector<int> det_offset(multiplet+2,1);
+  std::vector<int> det_offset(multiplet+2,1);
   //add zero
   excitations.push_back(node_type());
   {
@@ -69,7 +68,7 @@ int main(int argc, char** argv)
       nparent++;
     }
   }
-  ofstream fout("tree.xml");
+  std::ofstream fout("tree.xml");
   int npeers=0;
   int count=0;
   excitations[0].write_node<max_states>(fout,0,count,excitations);
@@ -78,7 +77,7 @@ int main(int argc, char** argv)
   ci_node<double> CI;
   CI.build_tree(M,excitations);
   CI.set_peers(M,vmax);
-  ofstream fout1("tree_1.xml");
+  std::ofstream fout1("tree_1.xml");
   CI.write_node(fout1);
   typedef Matrix<double> mat_t;
   mat_t psiv(M,M), psic(cmax,M), Identity(M,M);
@@ -88,11 +87,11 @@ int main(int argc, char** argv)
   for(int i=0; i<psic.size(); ++i)
     psic(i)=Random();
   const double eps=1e-12;
-  vector<double> dets(excitations.size()),ratios(excitations.size());
+  std::vector<double> dets(excitations.size()),ratios(excitations.size());
   {
     double det_0=CI.getRatios(psiv,psic,ratios,true);
     CI.debugRatios(psiv,psic,dets,true);
-    cout << "Checking row replacement " << endl;
+    std::cout << "Checking row replacement " << std::endl;
     for(int i=0; i<ratios.size(); ++i)
       ratios[i]*=det_0;
     check_ratios(ratios,dets,eps);
@@ -100,7 +99,7 @@ int main(int argc, char** argv)
   {
     double det_0=CI.getRatios(psiv,psic,ratios,false);
     CI.debugRatios(psiv,psic,dets,false);
-    cout << "Checking column replacement " << endl;
+    std::cout << "Checking column replacement " << std::endl;
     for(int i=0; i<ratios.size(); ++i)
       ratios[i]*=det_0;
     check_ratios(ratios,dets,eps);

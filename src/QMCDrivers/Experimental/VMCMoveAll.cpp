@@ -108,7 +108,7 @@ bool VMCMoveAll::run()
       Estimators.setColumn(AcceptIndex,
                            static_cast<double>(nAccept)/static_cast<double>(nAccept+nReject));
       Estimators.report(CurrentStep);
-      LogOut->getStream() << "Block " << block << " " << timer.cpu_time() << endl;
+      LogOut->getStream() << "Block " << block << " " << timer.cpu_time() << std::endl;
       if(pStride)
         WO.get(W);
       nAccept = 0;
@@ -119,7 +119,7 @@ bool VMCMoveAll::run()
     LogOut->getStream()
         << "Ratio = "
         << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot)
-        << endl;
+        << std::endl;
     if(!pStride)
       WO.get(W);
     Estimators.finalize();

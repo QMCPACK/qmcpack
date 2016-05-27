@@ -78,10 +78,10 @@ inline void applyOverSubdomain(const T_array& BZ_DEBUG_PARAM(array), T_arrayiter
 {
     BZPRECHECK(array.isInRange(subdomain),
         "In indirection using an STL container of TinyVector<int,"
-        << array.rank() << ">, one of the" << endl << "positions is out of"
-        " range: " << endl << subdomain << endl
-        << "Array lower bounds: " << array.lbound() << endl
-        << "Array upper bounds: " << array.ubound() << endl)
+        << array.rank() << ">, one of the" << std::endl << "positions is out of"
+        " range: " << std::endl << subdomain << std::endl
+        << "Array lower bounds: " << array.lbound() << std::endl
+        << "Array upper bounds: " << array.ubound() << std::endl)
 
     arrayIter.moveTo(subdomain);
     expr.moveTo(subdomain);
@@ -121,28 +121,28 @@ inline void applyOverSubdomain(const T_array& BZ_DEBUG_PARAM(array), T_arrayiter
     for (int i=0; i < N_rank; ++i)
       if ((i != stripDim) && (subdomain.lbound(i) != subdomain.ubound(i)))
         BZPRECHECK(0, "In indirection using an STL container of RectDomain<"
-          << N_rank << ">, one of" << endl << "the RectDomain objects was not"
-          " a one-dimensional strip:" << endl << "RectDomain<" << N_rank
-          << ">::lbound() = " << subdomain.lbound() << endl
+          << N_rank << ">, one of" << std::endl << "the RectDomain objects was not"
+          " a one-dimensional strip:" << std::endl << "RectDomain<" << N_rank
+          << ">::lbound() = " << subdomain.lbound() << std::endl
           << "RectDomain<" << N_rank << ">::ubound() = " << subdomain.ubound())
 #endif
 
     // Check that the start and end position are in range
     BZPRECHECK(array.isInRange(subdomain.lbound()),
         "In indirection using an STL container of RectDomain<"
-        << N_rank << ">, one of" << endl << "the RectDomain objects has a"
-        " lbound which is out of range:" << endl
-        << subdomain.lbound() << endl
-        << "Array lower bounds: " << array.lbound() << endl
-        << "Array upper bounds: " << array.ubound() << endl)
+        << N_rank << ">, one of" << std::endl << "the RectDomain objects has a"
+        " lbound which is out of range:" << std::endl
+        << subdomain.lbound() << std::endl
+        << "Array lower bounds: " << array.lbound() << std::endl
+        << "Array upper bounds: " << array.ubound() << std::endl)
 
     BZPRECHECK(array.isInRange(subdomain.ubound()),
         "In indirection using an STL container of RectDomain<"
-        << N_rank << ">, one of" << endl << "the RectDomain objects has a"
-        " ubound which is out of range:" << endl
-        << subdomain.lbound() << endl
-        << "Array lower bounds: " << array.lbound() << endl
-        << "Array upper bounds: " << array.ubound() << endl)
+        << N_rank << ">, one of" << std::endl << "the RectDomain objects has a"
+        " ubound which is out of range:" << std::endl
+        << subdomain.lbound() << std::endl
+        << "Array lower bounds: " << array.lbound() << std::endl
+        << "Array upper bounds: " << array.ubound() << std::endl)
 
     // Position at the beginning of the strip
     arrayIter.moveTo(subdomain.lbound());
@@ -353,7 +353,7 @@ indexSet(const T_container& container0, const T_container& container1,
 // int and T_container.  This traits class finds the container
 // type, and sets T_container.
 //
-// e.g. cp_findContainerType<int,int,list<int>,int>::T_container is list<int>
+// e.g. cp_findContainerType<int,int,std::list<int>,int>::T_container is std::list<int>
 //      cp_findContainerType<int,deque<int>,deque<int>>::T_container 
 //        is deque<int>
 

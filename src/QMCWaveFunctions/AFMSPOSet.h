@@ -32,7 +32,7 @@ protected:
   //GS is Gamma point, Basis is AFM vector orbitals
   SPOSetBase *GSOrbitals, *BasisOrbitals;
 
-//     void addParameter (string id, int iorb, int basis);
+//     void addParameter ( std::string id, int iorb, int basis);
 
   ValueVector_t GSVal, BasisVal, GSLapl, BasisLapl;
   GradVector_t  GSGrad, BasisGrad;
@@ -58,7 +58,7 @@ public:
   inline void setpm(int x)
   {
 //      pm=x;
-//       app_log()<<"setting pm:"<<x<<endl;
+//       app_log()<<"setting pm:"<<x<< std::endl;
   }
 
   inline void resetTheta(RealType x)
@@ -96,7 +96,7 @@ public:
   // BasisOrbitals->evaluate, then does the matrix product with
   // C.
   void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
-  void evaluate(const ParticleSet& P, const PosType& r, vector<RealType> &psi);
+  void evaluate(const ParticleSet& P, const PosType& r, std::vector<RealType> &psi);
   void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi,
                 GradVector_t& dpsi, ValueVector_t& d2psi);
   void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi,

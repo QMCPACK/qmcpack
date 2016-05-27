@@ -673,7 +673,7 @@ struct PadeTwo2ndOrderFunctor:public OptimizableFunctorBase
     p.put(cur);
     if (fcup=="true")
       fcup="yes";
-    // if (fcup=="yes") app_log()<<" fixing cusp conditions"<<endl;
+    // if (fcup=="yes") app_log()<<" fixing cusp conditions"<< std::endl;
     real_type Atemp=A,Btemp=B, Ctemp=C, Dtemp=D;
     //jastrow[iab]->put(cur->xmlChildrenNode,wfs_ref.RealVars);
     xmlNodePtr tcur = cur->xmlChildrenNode;

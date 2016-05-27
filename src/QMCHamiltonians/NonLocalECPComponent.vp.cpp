@@ -81,7 +81,7 @@ NonLocalECPComponent::evaluateVP(const ParticleSet& W, int iat, TrialWaveFunctio
       pairpot = BLAS::dot(nchannel, &vrad[0], &wvec[0]);
     }
 #if !defined(REMOVE_TRACEMANAGER)
-    if(streaming_particles)
+    if( streaming_particles)
     {
       (*Vi_sample)(iat) += .5*pairpot;
       (*Ve_sample)(iel) += .5*pairpot;
@@ -94,7 +94,7 @@ NonLocalECPComponent::evaluateVP(const ParticleSet& W, int iat, TrialWaveFunctio
 
 
 NonLocalECPComponent::RealType
-NonLocalECPComponent::evaluateVP(const ParticleSet& W, int iat, TrialWaveFunction& psi,vector<NonLocalData>& Txy)
+NonLocalECPComponent::evaluateVP(const ParticleSet& W, int iat, TrialWaveFunction& psi,std::vector<NonLocalData>& Txy)
 {
   const DistanceTableData* myTable = W.DistTables[myTableIndex];
   RealType esum=0.0;
@@ -142,7 +142,7 @@ NonLocalECPComponent::evaluateVP(const ParticleSet& W, int iat, TrialWaveFunctio
     }
 
 #if !defined(REMOVE_TRACEMANAGER)
-    if(streaming_particles)
+    if( streaming_particles)
     {
       (*Vi_sample)(iat) += .5*pairpot;
       (*Ve_sample)(iel) += .5*pairpot;

@@ -56,22 +56,22 @@ GTOMolecularOrbitals::addBasisSet(xmlNodePtr cur)
   if(!BasisSet)
     BasisSet = new BasisSetType(IonSys.getSpeciesSet().getTotalNum());
   QuantumNumberType nlms;
-  string rnl;
+  std::string rnl;
   //current number of centers
   int ncenters = CenterID.size();
   int activeCenter;
   int gridmode = -1;
   bool addsignforM = true;
-  string  sph("spherical"), Morder("gaussian");
+  std::string  sph("spherical"), Morder("gaussian");
   //go thru the tree
   cur = cur->xmlChildrenNode;
   while(cur!=NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == basis_tag || cname == "atomicBasisSet")
     {
       int expandlm = GAUSSIAN_EXPAND;
-      string abasis("invalid"), norm("no");
+      std::string abasis("invalid"), norm("no");
       //Register valid attributes attributes
       OhmmsAttributeSet aAttrib;
       aAttrib.add(abasis,"elementType");
@@ -109,7 +109,7 @@ GTOMolecularOrbitals::addBasisSet(xmlNodePtr cur)
         LOGMSG("Spherical Harmonics contain (-1)^m factor")
             else
               LOGMSG("Spherical Harmonics  DO NOT contain (-1)^m factor")
-              map<string,int>::iterator it = CenterID.find(abasis); //search the species name
+              std::map<std::string,int>::iterator it = CenterID.find(abasis); //search the species name
       if(it == CenterID.end())
         //add the name to the map CenterID
       {
@@ -118,17 +118,17 @@ GTOMolecularOrbitals::addBasisSet(xmlNodePtr cur)
         int Lmax(0); //maxmimum angular momentum of this center
         int num(0);//the number of localized basis functions of this center
         //process the basic property: maximun angular momentum, the number of basis functions to be added
-        vector<xmlNodePtr> radGroup;
+        std::vector<xmlNodePtr> radGroup;
         xmlNodePtr cur1 = cur->xmlChildrenNode;
         xmlNodePtr gptr=0;
         while(cur1 != NULL)
         {
-          string cname1((const char*)(cur1->name));
+          std::string cname1((const char*)(cur1->name));
           if(cname1 == basisfunc_tag || cname1 == "basisGroup")
           {
             radGroup.push_back(cur1);
             int l=atoi((const char*)(xmlGetProp(cur1, (const xmlChar *)"l")));
-            Lmax = max(Lmax,l);
+            Lmax = std::max(Lmax,l);
             if(expandlm)
               num += 2*l+1;
             else
@@ -146,15 +146,15 @@ GTOMolecularOrbitals::addBasisSet(xmlNodePtr cur)
         aos->NL.resize(num);
         //Now, add distinct Radial Orbitals and (l,m) channels
         num=0;
-        vector<xmlNodePtr>::iterator it(radGroup.begin());
-        vector<xmlNodePtr>::iterator it_end(radGroup.end());
+        std::vector<xmlNodePtr>::iterator it(radGroup.begin());
+        std::vector<xmlNodePtr>::iterator it_end(radGroup.end());
         while(it != it_end)
         {
           cur1 = (*it);
           xmlAttrPtr att = cur1->properties;
           while(att != NULL)
           {
-            string aname((const char*)(att->name));
+            std::string aname((const char*)(att->name));
             if(aname == "rid" || aname == "id")
               //accept id/rid
             {
@@ -162,7 +162,7 @@ GTOMolecularOrbitals::addBasisSet(xmlNodePtr cur)
             }
             else
             {
-              map<string,int>::iterator iit = nlms_id.find(aname);
+              std::map<std::string,int>::iterator iit = nlms_id.find(aname);
               if(iit != nlms_id.end())
                 //valid for n,l,m,s
               {
@@ -177,8 +177,8 @@ GTOMolecularOrbitals::addBasisSet(xmlNodePtr cur)
           ++it;
         }
         LOGMSG("Checking the order of angular momentum ")
-        std::copy(aos->LM.begin(), aos->LM.end(), ostream_iterator<int>(app_log()," "));
-        app_log() << endl;
+        copy(aos->LM.begin(), aos->LM.end(), std::ostream_iterator<int>(app_log()," "));
+        app_log() << std::endl;
         //add the new atomic basis to the basis set
         BasisSet->add(aos,activeCenter);
       }
@@ -203,7 +203,7 @@ GTOMolecularOrbitals::addBasisSet(xmlNodePtr cur)
 }
 
 int
-GTOMolecularOrbitals::expandYlm(const string& rnl, const QuantumNumberType& nlms,
+GTOMolecularOrbitals::expandYlm(const std::string& rnl, const QuantumNumberType& nlms,
                                 int num, CenteredOrbitalType* aos, xmlNodePtr cur1,
                                 int expandlm)
 {
@@ -217,7 +217,7 @@ GTOMolecularOrbitals::expandYlm(const string& rnl, const QuantumNumberType& nlms
   }
   if(expandlm == GAUSSIAN_EXPAND)
   {
-    map<string,int>::iterator rnl_it = RnlID.find(rnl);
+    std::map<std::string,int>::iterator rnl_it = RnlID.find(rnl);
     if(rnl_it == RnlID.end())
     {
       int l = nlms[q_l];
@@ -267,7 +267,7 @@ GTOMolecularOrbitals::expandYlm(const string& rnl, const QuantumNumberType& nlms
   else
     if(expandlm == NATURAL_EXPAND)
     {
-      map<string,int>::iterator rnl_it = RnlID.find(rnl);
+      std::map<std::string,int>::iterator rnl_it = RnlID.find(rnl);
       if(rnl_it == RnlID.end())
         //only when rid is different
       {
@@ -291,7 +291,7 @@ GTOMolecularOrbitals::expandYlm(const string& rnl, const QuantumNumberType& nlms
     {
       XMLReport("Ylm is NOT expanded.")
       aos->LM[num] = aos->Ylm.index(nlms[q_l],nlms[q_m]);
-      map<string,int>::iterator rnl_it = RnlID.find(rnl);
+      std::map<std::string,int>::iterator rnl_it = RnlID.find(rnl);
       if(rnl_it == RnlID.end())
       {
         int nl = aos->Rnl.size();

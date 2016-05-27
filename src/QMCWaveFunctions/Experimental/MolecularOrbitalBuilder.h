@@ -39,14 +39,14 @@ class ParticleSet;
 struct MolecularOrbitalBuilder: public OrbitalBuilderBase
 {
 
-  typedef map<string,ParticleSet*> PtclPoolType;
+  typedef std::map<std::string,ParticleSet*> PtclPoolType;
 
   MolecularOrbitalBuilder(ParticleSet& p, TrialWaveFunction& psi,
                           PtclPoolType& psets):OrbitalBuilderBase(p,psi),ptclPool(psets) { }
 
   bool put(xmlNodePtr cur);
   bool putSpecial(xmlNodePtr cur);
-  bool putOpen(const string& fname_in);
+  bool putOpen(const std::string& fname_in);
 
   ///need ParticleSetPool
   PtclPoolType& ptclPool;

@@ -49,9 +49,9 @@ protected:
   ValueMatrix_t Gamma, L_gamma;
 
   // This vector maps variable number into ExcitedCoefs matrix
-  vector<TinyVector<int,2> > VarIndex;
+  std::vector<TinyVector<int,2> > VarIndex;
   //
-  vector<PosType> MyG;
+  std::vector<PosType> MyG;
 
 public:
   DiracDeterminantBase* makeCopy(SPOSetBase* spo) const;
@@ -63,8 +63,8 @@ public:
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
-                           vector<RealType>& dlogpsi,
-                           vector<RealType>& dhpsioverpsi);
+                           std::vector<RealType>& dlogpsi,
+                           std::vector<RealType>& dhpsioverpsi);
 
   void checkInVariables(opt_variables_type& active);
   void checkOutVariables(const opt_variables_type& active);

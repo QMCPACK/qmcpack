@@ -63,9 +63,9 @@ struct HDFWalkerInput_0_4
   //propoery list to handle parallel io
   hid_t h_plist;
   //the last file which was processed
-  string FileName;
+  std::string FileName;
   //list of files to process
-  stack<string> FileStack;
+  std::stack<std::string> FileStack;
 
   /** constructor
    * @param W target MCWalkerConfiguration
@@ -86,11 +86,11 @@ struct HDFWalkerInput_0_4
   void checkOptions(xmlNodePtr cur);
 
   /** read walkers for small number of MPI tasks */
-  bool read_hdf5(string h5name);
+  bool read_hdf5( std::string h5name);
   /** read walkers. Master reads and scatter the walkers */
-  bool read_hdf5_scatter(string h5name);
+  bool read_hdf5_scatter( std::string h5name);
   /** read walkers using PHDF5 */
-  bool read_phdf5(string h5name);
+  bool read_phdf5( std::string h5name);
   /**  for adios validation */
   bool read_adios(xmlNodePtr cur);
 

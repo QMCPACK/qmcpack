@@ -468,7 +468,7 @@ template<typename T, int BC0, int BC1, int BC2>
 void
 TricubicBsplineGrid<T,BC0,BC1,BC2>::SolvePeriodicInterp(const Array<T,3>& data, Array<T,3>& P)
 {
-  vector<T> dTemp(Nx),pTemp(Nx);
+  std::vector<T> dTemp(Nx),pTemp(Nx);
   // Do X direction
   for (int iy=0; iy<Ny; iy++)
     for (int iz=0; iz<Nz; iz++)
@@ -529,7 +529,7 @@ TricubicBsplineGrid<T,BC0,BC1,BC2>::SolveFirstDerivInterp(const Array<T,3>& data
   int My=Ny+2;
   int Mz=Nz+2;
   // Do X direction
-  vector<T> dTemp(Mx),pTemp(Mx);
+  std::vector<T> dTemp(Mx),pTemp(Mx);
   for (int iy=0; iy<Ny; iy++)
     for (int iz=0; iz<Nz; iz++)
     {

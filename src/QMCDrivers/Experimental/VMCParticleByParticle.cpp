@@ -80,7 +80,7 @@ bool VMCParticleByParticle::run()
   //Need MPI-IO
   app_log() << "Ratio = "
             << static_cast<RealType>(nAcceptTot)/static_cast<RealType>(nAcceptTot+nRejectTot)
-            << endl;
+            << std::endl;
   //finalize a qmc section
   return finalize(block);
 }

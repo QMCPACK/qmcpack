@@ -43,7 +43,7 @@ bool PolyConstraints::put(xmlNodePtr cur)
 
 void PolyConstraints::resetParameters(OptimizableSetType& optVariables)
 {
-  map<string,BasisGroupType*>::iterator it(BasisGroups.begin()),it_end(BasisGroups.end());
+  std::map<std::string,BasisGroupType*>::iterator it(BasisGroups.begin()),it_end(BasisGroups.end());
   while(it != it_end)
   {
     (*it).second->resetParameters(optVariables);
@@ -53,7 +53,7 @@ void PolyConstraints::resetParameters(OptimizableSetType& optVariables)
 
 void PolyConstraints::addOptimizables(OptimizableSetType& outVars)
 {
-  map<string,BasisGroupType*>::iterator it(BasisGroups.begin()),it_end(BasisGroups.end());
+  std::map<std::string,BasisGroupType*>::iterator it(BasisGroups.begin()),it_end(BasisGroups.end());
   while(it != it_end)
   {
     (*it).second->addOptimizables(outVars);
@@ -77,8 +77,8 @@ void PolyConstraints::addSingleBasisPerSpecies(xmlNodePtr cur)
   cur=cur->children;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
-    string elementType("e");
+    std::string cname((const char*)(cur->name));
+    std::string elementType("e");
     OhmmsAttributeSet aAttrib;
     aAttrib.add(elementType,"elementType");
     aAttrib.put(cur);
@@ -87,7 +87,7 @@ void PolyConstraints::addSingleBasisPerSpecies(xmlNodePtr cur)
       xmlNodePtr cur1=cur->children;
       while(cur1 != NULL)
       {
-        string cname1((const char*)(cur1->name));
+        std::string cname1((const char*)(cur1->name));
         if(cname1 == "basisGroup")
         {
           createBasisGroup(cur1,elementType,rcut);
@@ -114,7 +114,7 @@ void PolyConstraints::addSingleBasisPerSpecies(xmlNodePtr cur)
 
 
 void
-PolyConstraints::createBasisGroup(xmlNodePtr cur, const string& elementType, RealType rcut)
+PolyConstraints::createBasisGroup(xmlNodePtr cur, const std::string& elementType, RealType rcut)
 {
   BGContainerType::iterator it(BasisGroups.find(elementType));
   BasisGroupType* curBG=0;
@@ -136,7 +136,7 @@ OrbitalBase* PolyConstraints::createTwoBody()
   xmlNodePtr cur=myNode->children;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == "basisset")
     {
       addSingleBasisPerSpecies(cur);
@@ -146,7 +146,7 @@ OrbitalBase* PolyConstraints::createTwoBody()
   if(BasisGroups.empty())
   {
     app_error() << "  PolyConstraints::createTwoBody fails to create a TwoBodyJastrow "
-                << " due to missing <basisset/> " << endl;
+                << " due to missing <basisset/> " << std::endl;
     return 0;
   }
   //create a Jastrow function: spin-independent for now
@@ -170,11 +170,11 @@ OrbitalBase* PolyConstraints::createTwoBody()
 
 OrbitalBase* PolyConstraints::createOneBody(ParticleSet& source)
 {
-  map<string,BasisGroupType*> jnSet;
+  std::map<std::string,BasisGroupType*> jnSet;
   xmlNodePtr cur=myNode->children;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == "basisset")
     {
       addSingleBasisPerSpecies(cur);

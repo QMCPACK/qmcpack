@@ -499,9 +499,9 @@ eval_multi_UBspline_3d_s (const multi_UBspline_3d_s *spline,
   uy = y*spline->y_grid.delta_inv;
   uz = z*spline->z_grid.delta_inv;
   
-  tx = modff (ux, &ipartx);  int ix = min(max(0,(int) ipartx),spline->x_grid.num-1);
-  ty = modff (uy, &iparty);  int iy = min(max(0,(int) iparty),spline->y_grid.num-1);
-  tz = modff (uz, &ipartz);  int iz = min(max(0,(int) ipartz),spline->z_grid.num-1);
+  tx = modff (ux, &ipartx);  int ix = std::min(std::max(0,(int) ipartx),spline->x_grid.num-1);
+  ty = modff (uy, &iparty);  int iy = std::min(std::max(0,(int) iparty),spline->y_grid.num-1);
+  tz = modff (uz, &ipartz);  int iz = std::min(std::max(0,(int) ipartz),spline->z_grid.num-1);
 
   a[0] = ( ( Af[0]  * tx + Af[1] ) * tx + Af[2] ) * tx + Af[3];
   a[1] = ( ( Af[4]  * tx + Af[5] ) * tx + Af[6] ) * tx + Af[7];
@@ -527,7 +527,7 @@ eval_multi_UBspline_3d_s (const multi_UBspline_3d_s *spline,
   ys = spline->y_stride;
   zs = spline->z_stride;
 
-  // cout << "x,y,z "<< ix << ", " << iy << ", " << iz << endl;
+  // std::cout << "x,y,z "<< ix << ", " << iy << ", " << iz << std::endl;
 
   for (int n=0; n<spline->num_splines; n++)
     vals[n] = 0.0;
@@ -595,9 +595,9 @@ eval_multi_UBspline_3d_s_vgh (const multi_UBspline_3d_s *spline,
   //tx = modff (ux, &ipartx);  int ix = (int) ipartx;
   //ty = modff (uy, &iparty);  int iy = (int) iparty;
   //tz = modff (uz, &ipartz);  int iz = (int) ipartz;
-  tx = modff (ux, &ipartx);  int ix = min(max(0,(int) ipartx),spline->x_grid.num-1);
-  ty = modff (uy, &iparty);  int iy = min(max(0,(int) iparty),spline->y_grid.num-1);
-  tz = modff (uz, &ipartz);  int iz = min(max(0,(int) ipartz),spline->z_grid.num-1);
+  tx = modff (ux, &ipartx);  int ix = std::min(std::max(0,(int) ipartx),spline->x_grid.num-1);
+  ty = modff (uy, &iparty);  int iy = std::min(std::max(0,(int) iparty),spline->y_grid.num-1);
+  tz = modff (uz, &ipartz);  int iz = std::min(std::max(0,(int) ipartz),spline->z_grid.num-1);
   
   float a[4], b[4], c[4],da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
 
@@ -868,9 +868,9 @@ eval_multi_UBspline_3d_s (const multi_UBspline_3d_s *spline,
   uy = y*spline->y_grid.delta_inv;
   uz = z*spline->z_grid.delta_inv;
   
-  tx = modff (ux, &ipartx);  int ix = min(max(0,(int) ipartx),spline->x_grid.num-1);
-  ty = modff (uy, &iparty);  int iy = min(max(0,(int) iparty),spline->y_grid.num-1);
-  tz = modff (uz, &ipartz);  int iz = min(max(0,(int) ipartz),spline->z_grid.num-1);
+  tx = modff (ux, &ipartx);  int ix = std::min(std::max(0,(int) ipartx),spline->x_grid.num-1);
+  ty = modff (uy, &iparty);  int iy = std::min(std::max(0,(int) iparty),spline->y_grid.num-1);
+  tz = modff (uz, &ipartz);  int iz = std::min(std::max(0,(int) ipartz),spline->z_grid.num-1);
 
   a[0] = ( ( Af[0]  * tx + Af[1] ) * tx + Af[2] ) * tx + Af[3];
   a[1] = ( ( Af[4]  * tx + Af[5] ) * tx + Af[6] ) * tx + Af[7];
@@ -924,9 +924,9 @@ eval_multi_UBspline_3d_s_vgh (const multi_UBspline_3d_s *spline,
   //tx = modff (ux, &ipartx);  int ix = (int) ipartx;
   //ty = modff (uy, &iparty);  int iy = (int) iparty;
   //tz = modff (uz, &ipartz);  int iz = (int) ipartz;
-  tx = modff (ux, &ipartx);  int ix = min(max(0,(int) ipartx),spline->x_grid.num-1);
-  ty = modff (uy, &iparty);  int iy = min(max(0,(int) iparty),spline->y_grid.num-1);
-  tz = modff (uz, &ipartz);  int iz = min(max(0,(int) ipartz),spline->z_grid.num-1);
+  tx = modff (ux, &ipartx);  int ix = std::min(std::max(0,(int) ipartx),spline->x_grid.num-1);
+  ty = modff (uy, &iparty);  int iy = std::min(std::max(0,(int) iparty),spline->y_grid.num-1);
+  tz = modff (uz, &ipartz);  int iz = std::min(std::max(0,(int) ipartz),spline->z_grid.num-1);
   
   float a[4], b[4], c[4],da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
   float* restrict coefs = spline->coefs;
@@ -1145,9 +1145,9 @@ eval_multi_UBspline_3d_s_vgl (const multi_UBspline_3d_s *spline,
   //tx = modff (ux, &ipartx);  int ix = (int) ipartx;
   //ty = modff (uy, &iparty);  int iy = (int) iparty;
   //tz = modff (uz, &ipartz);  int iz = (int) ipartz;
-  tx = modff (ux, &ipartx);  int ix = min(max(0,(int) ipartx),spline->x_grid.num-1);
-  ty = modff (uy, &iparty);  int iy = min(max(0,(int) iparty),spline->y_grid.num-1);
-  tz = modff (uz, &ipartz);  int iz = min(max(0,(int) ipartz),spline->z_grid.num-1);
+  tx = modff (ux, &ipartx);  int ix = std::min(std::max(0,(int) ipartx),spline->x_grid.num-1);
+  ty = modff (uy, &iparty);  int iy = std::min(std::max(0,(int) iparty),spline->y_grid.num-1);
+  tz = modff (uz, &ipartz);  int iz = std::min(std::max(0,(int) ipartz),spline->z_grid.num-1);
   
   float tpx[4], tpy[4], tpz[4], a[4], b[4], c[4], 
     da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];

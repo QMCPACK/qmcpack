@@ -99,8 +99,8 @@ void HeteroStructure::add_Layer(Layer* aLayer)
   int id = layers.size();
   layers.push_back( aLayer );
   layers[ id ]->setid(id);
-  r_min[0] = min( layers[id]->r_min[0], r_min[0] );
-  r_max[0] = max( layers[id]->r_max[0], r_max[0] );
+  r_min[0] = std::min( layers[id]->r_min[0], r_min[0] );
+  r_max[0] = std::max( layers[id]->r_max[0], r_max[0] );
 }
 
 void HeteroStructure::add_Interface(Interface* anInterface)
@@ -227,7 +227,7 @@ double HeteroStructure::Image_Contribution(int ipt,
       }
     }
   }
-  //  cout << "Gself & Gee: " << Gself << '\t' << Gee << endl;
+  //  std::cout << "Gself & Gee: " << Gself << '\t' << Gee << std::endl;
   Gself += Gee;
   return 0.5*Gself;
 }
@@ -272,9 +272,9 @@ double HeteroStructure::Domain_Contribution(const Domain& domain,
   double rhov = rhoq[index];
   //double rhov = rho_Spline->evaluate(r);
   double radius = domain.radius*0.052917725;
-  //  cout << domain.radius << '\t' << radius << endl;
+  //  std::cout << domain.radius << '\t' << radius << std::endl;
   rhov = units * rhov * radius * radius / domain.eps_d;
-  //cout << "rhoContrib: " << r << '\t' << temp << '\t' << rhov << endl;
+  //cout << "rhoContrib: " << r << '\t' << temp << '\t' << rhov << std::endl;
   double Gee = 0.0;
   /// calculate distance of domain from particle
   for(int iat = 0; iat < P.getTotalNum(); iat++)
@@ -288,7 +288,7 @@ double HeteroStructure::Domain_Contribution(const Domain& domain,
     }
   }
   Gee *= Gfac;
-  //  cout << "rhov & Gee " << rhov << '\t' << Gee << '\t' << ir << endl;
+  //  std::cout << "rhov & Gee " << rhov << '\t' << Gee << '\t' << ir << std::endl;
   /// only half of the e-e interaction to prevent double counting
   double contribution = rhov + 0.5*Gee;
   return contribution;
@@ -298,7 +298,7 @@ void HeteroStructure::read_file(int sign,
                                 const char* file,
                                 std::vector<double>& vec)
 {
-  ifstream infile(file, ios_base::in);
+  std::ifstream infile(file, ios_base::in);
   double val;
   double eVtoHa = 0.036749309;
   double units = 1.0;//eVtoHa;
@@ -324,8 +324,8 @@ double HeteroStructure::passage(Domain& domain)
     vapp = weight_bc * bare_potential[index];
     /// runner now on surface
     domain.in_device = false;
-    //cout << "witihin skin : " << domain.runner << endl;
-    //    cout << "gridpt: " << ir << " index: " << index << '\t' << bare_potential[index] << endl;
+    //cout << "witihin skin : " << domain.runner << std::endl;
+    //    std::cout << "gridpt: " << ir << " index: " << index << '\t' << bare_potential[index] << std::endl;
   }
   return vapp;
 }

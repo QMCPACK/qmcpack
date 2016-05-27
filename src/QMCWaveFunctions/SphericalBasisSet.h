@@ -73,16 +73,16 @@ struct SphericalBasisSet
   CartesianHarmonics_t XYZ;
   ///index of the corresponding real Spherical Harmonic with quantum
   ///numbers \f$ (l,m) \f$
-  vector<int> LM;
+  std::vector<int> LM;
   /**index of the corresponding radial orbital with quantum
     numbers \f$ (n,l) \f$ */
-  vector<int> NL;
+  std::vector<int> NL;
   ///container for the radial grid
-  vector<GT*> Grids;
+  std::vector<GT*> Grids;
   ///container for the radial orbitals
-  vector<ROT*> Rnl;
+  std::vector<ROT*> Rnl;
   ///container for the quantum-numbers
-  vector<QuantumNumberType> RnlID;
+  std::vector<QuantumNumberType> RnlID;
 
   ///the constructor
   explicit SphericalBasisSet(int lmax, bool addsignforM=false, bool useXYZ=false):Ylm(lmax,addsignforM),XYZ(lmax),useCartesian(useXYZ) {}
@@ -172,13 +172,13 @@ struct SphericalBasisSet
     std::vector<RealType>& valueYlm = useCartesian?XYZ.XYZ:Ylm.Ylm;
     std::vector<PosType>& gradYlm = useCartesian?XYZ.gradXYZ:Ylm.gradYlm;
     std::vector<RealType>& laplYlm = useCartesian?XYZ.laplXYZ:Ylm.laplYlm;
-    typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
+    typename std::vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
     while(rit != rit_end)
     {
       (*rit)->evaluateAll(r,rinv);
       ++rit;
     }
-    vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
+    std::vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
     while(nlit != nlit_end)
       //for(int ib=0; ib<NL.size(); ib++, offset++) {
     {
@@ -216,13 +216,13 @@ struct SphericalBasisSet
     std::vector<RealType>& valueYlm = useCartesian?XYZ.XYZ:Ylm.Ylm;
     std::vector<PosType>& gradYlm = useCartesian?XYZ.gradXYZ:Ylm.gradYlm;
     std::vector<Tensor<RealType,3> >& hessYlm = useCartesian?XYZ.hessXYZ:Ylm.hessYlm;
-    typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
+    typename std::vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
     while(rit != rit_end)
     {
       (*rit)->evaluateAll(r,rinv);
       ++rit;
     }
-    vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
+    std::vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
     while(nlit != nlit_end)
       //for(int ib=0; ib<NL.size(); ib++, offset++) {
     {
@@ -298,24 +298,24 @@ struct SphericalBasisSet
            dummyEval(r2,dr2,psi2,dpsi2,hpsi2,gpsi2);
 
            for(int i=0; i<nb; i++) {
-              cout<<"i: " <<i <<endl
-                  <<"dPhi_x: " <<dpsi0[i][la]-(psi1[i]-psi2[i])/(2*dh) <<endl
-                  <<"hPhi_0: " <<hpsi0[i](la,0)-(dpsi1[i][0]-dpsi2[i][0])/(2*dh) <<endl
-                  <<"hPhi_1: " <<hpsi0[i](la,1)-(dpsi1[i][1]-dpsi2[i][1])/(2*dh) <<endl
-                  <<"hPhi_2: " <<hpsi0[i](la,2)-(dpsi1[i][2]-dpsi2[i][2])/(2*dh) <<endl
-                  <<"gPhi_00: " <<gpsi0[i][la](0,0)-(hpsi1[i](0,0)-hpsi2[i](0,0))/(2*dh)  <<"  " <<gpsi0[i][la](0,0)  <<endl
-                  <<"gPhi_11: " <<gpsi0[i][la](1,1)-(hpsi1[i](1,1)-hpsi2[i](1,1))/(2*dh) <<"  " <<gpsi0[i][la](1,1) <<endl
-                  <<"gPhi_22: " <<gpsi0[i][la](2,2)-(hpsi1[i](2,2)-hpsi2[i](2,2))/(2*dh) <<"  " <<gpsi0[i][la](2,2) <<endl
-                  <<"gPhi_01: " <<gpsi0[i][la](0,1)-(hpsi1[i](0,1)-hpsi2[i](0,1))/(2*dh) <<"  " <<gpsi0[i][la](0,1) <<endl
-                  <<"gPhi_02: " <<gpsi0[i][la](0,2)-(hpsi1[i](0,2)-hpsi2[i](0,2))/(2*dh) <<"  " <<gpsi0[i][la](0,2) <<endl
-                  <<"gPhi_12: " <<gpsi0[i][la](1,2)-(hpsi1[i](1,2)-hpsi2[i](1,2))/(2*dh) <<"  " <<gpsi0[i][la](1,2) <<endl;
+              std::cout <<"i: " <<i << std::endl
+                  <<"dPhi_x: " <<dpsi0[i][la]-(psi1[i]-psi2[i])/(2*dh) << std::endl
+                  <<"hPhi_0: " <<hpsi0[i](la,0)-(dpsi1[i][0]-dpsi2[i][0])/(2*dh) << std::endl
+                  <<"hPhi_1: " <<hpsi0[i](la,1)-(dpsi1[i][1]-dpsi2[i][1])/(2*dh) << std::endl
+                  <<"hPhi_2: " <<hpsi0[i](la,2)-(dpsi1[i][2]-dpsi2[i][2])/(2*dh) << std::endl
+                  <<"gPhi_00: " <<gpsi0[i][la](0,0)-(hpsi1[i](0,0)-hpsi2[i](0,0))/(2*dh)  <<"  " <<gpsi0[i][la](0,0)  << std::endl
+                  <<"gPhi_11: " <<gpsi0[i][la](1,1)-(hpsi1[i](1,1)-hpsi2[i](1,1))/(2*dh) <<"  " <<gpsi0[i][la](1,1) << std::endl
+                  <<"gPhi_22: " <<gpsi0[i][la](2,2)-(hpsi1[i](2,2)-hpsi2[i](2,2))/(2*dh) <<"  " <<gpsi0[i][la](2,2) << std::endl
+                  <<"gPhi_01: " <<gpsi0[i][la](0,1)-(hpsi1[i](0,1)-hpsi2[i](0,1))/(2*dh) <<"  " <<gpsi0[i][la](0,1) << std::endl
+                  <<"gPhi_02: " <<gpsi0[i][la](0,2)-(hpsi1[i](0,2)-hpsi2[i](0,2))/(2*dh) <<"  " <<gpsi0[i][la](0,2) << std::endl
+                  <<"gPhi_12: " <<gpsi0[i][la](1,2)-(hpsi1[i](1,2)-hpsi2[i](1,2))/(2*dh) <<"  " <<gpsi0[i][la](1,2) << std::endl;
 
            }
 
-      //cout<<"psi: " <<psi0[0] <<endl
-      //    <<"dpsi: " <<dpsi0[0] <<endl
-      //    <<"hpsi: " <<hpsi0[0] <<endl
-      //    <<"gpsi: " <<gpsi0[0] <<endl;
+      //cout<<"psi: " <<psi0[0] << std::endl
+      //    <<"dpsi: " <<dpsi0[0] << std::endl
+      //    <<"hpsi: " <<hpsi0[0] << std::endl
+      //    <<"gpsi: " <<gpsi0[0] << std::endl;
 
           APP_ABORT("Aborting after testing. \n");
     *********************************************************************/
@@ -356,13 +356,13 @@ struct SphericalBasisSet
     std::vector<PosType>& gradYlm = useCartesian?XYZ.gradXYZ:Ylm.gradYlm;
     std::vector<Tensor<RealType,3> >& hessYlm = useCartesian?XYZ.hessXYZ:Ylm.hessYlm;
     std::vector<GGGType>& gggYlm = useCartesian?XYZ.gggXYZ:Ylm.gggYlm;
-    typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
+    typename std::vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
     while(rit != rit_end)
     {
       (*rit)->evaluateWithThirdDeriv(r,rinv);
       ++rit;
     }
-    vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
+    std::vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
     while(nlit != nlit_end)
       //for(int ib=0; ib<NL.size(); ib++, offset++) {
     {
@@ -454,13 +454,13 @@ struct SphericalBasisSet
     std::vector<PosType>& gradYlm = useCartesian?XYZ.gradXYZ:Ylm.gradYlm;
     std::vector<Tensor<RealType,3> >& hessYlm = useCartesian?XYZ.hessXYZ:Ylm.hessYlm;
     std::vector<GGGType>& gggYlm = useCartesian?XYZ.gggXYZ:Ylm.gggYlm;
-    typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
+    typename std::vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
     while(rit != rit_end)
     {
       (*rit)->evaluateWithThirdDeriv(r,rinv);
       ++rit;
     }
-    vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
+    std::vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
     while(nlit != nlit_end)
       //for(int ib=0; ib<NL.size(); ib++, offset++) {
     {
@@ -551,7 +551,7 @@ struct SphericalBasisSet
         }
       }
     }
-    typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
+    typename std::vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
     while(rit != rit_end)
     {
       (*rit)->evaluateWithThirdDeriv(r,rinv);
@@ -571,7 +571,7 @@ struct SphericalBasisSet
     std::vector<PosType>& gradYlm = useCartesian?XYZ.gradXYZ:Ylm.gradYlm;
     std::vector<Tensor<RealType,3> >& hessYlm = useCartesian?XYZ.hessXYZ:Ylm.hessYlm;
     std::vector<GGGType>& gggYlm = useCartesian?XYZ.gggXYZ:Ylm.gggYlm;
-    vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
+    std::vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
     while(nlit != nlit_end)
       //for(int ib=0; ib<NL.size(); ib++, offset++) {
     {
@@ -642,14 +642,14 @@ struct SphericalBasisSet
       std::vector<RealType>& valueYlm = useCartesian?XYZ.XYZ:Ylm.Ylm;
       std::vector<PosType>& gradYlm = useCartesian?XYZ.gradXYZ:Ylm.gradYlm;
       std::vector<RealType>& laplYlm = useCartesian?XYZ.laplXYZ:Ylm.laplYlm;
-      typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
+      typename std::vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
       while(rit != rit_end)
       {
         (*rit)->evaluateAll(r,rinv);
         ++rit;
       }
       int bindex(offset);
-      vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
+      std::vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
       ValueType* restrict yptr = y[iat]+offset;
       GradType* restrict dyptr = dy[iat]+offset;
       ValueType* restrict d2yptr = d2y[iat]+offset;
@@ -700,12 +700,12 @@ struct SphericalBasisSet
     std::vector<RealType>& valueYlm = useCartesian?XYZ.XYZ:Ylm.Ylm;
     std::vector<PosType>& gradYlm = useCartesian?XYZ.gradXYZ:Ylm.gradYlm;
     std::vector<RealType>& laplYlm = useCartesian?XYZ.laplXYZ:Ylm.laplYlm;
-    typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
+    typename std::vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
     while(rit != rit_end)
     {
       (*rit++)->evaluateAll(r,rinv);
     }
-    vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
+    std::vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
     ValueType* restrict tptr=temp[offset];
     while(nlit != nlit_end)
       //for(int ib=0; ib<NL.size(); ib++, offset++) {
@@ -744,13 +744,13 @@ struct SphericalBasisSet
       Ylm.evaluate(dr);
     }
     std::vector<RealType>& valueYlm = useCartesian?XYZ.XYZ:Ylm.Ylm;
-    typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
+    typename std::vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
     while(rit != rit_end)
     {
       (*rit)->evaluate(r,rinv);
       ++rit;
     }
-    vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
+    std::vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
     while(nlit != nlit_end)
       //for(int ib=0; ib<NL.size(); ib++, offset++) {
     {
@@ -777,13 +777,13 @@ struct SphericalBasisSet
     std::vector<RealType>& valueYlm = useCartesian?XYZ.XYZ:Ylm.Ylm;
     std::vector<PosType>& gradYlm = useCartesian?XYZ.gradXYZ:Ylm.gradYlm;
     std::vector<RealType>& laplYlm = useCartesian?XYZ.laplXYZ:Ylm.laplYlm;
-    typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
+    typename std::vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
     while(rit != rit_end)
     {
       (*rit)->evaluateAll(r,rinv);
       ++rit;
     }
-    vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
+    std::vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
     while(nlit != nlit_end)
       //for(int ib=0; ib<NL.size(); ib++, offset++) {
     {
@@ -816,13 +816,13 @@ struct SphericalBasisSet
       Ylm.evaluate(dr);
     }
     std::vector<RealType>& valueYlm = useCartesian?XYZ.XYZ:Ylm.Ylm;
-    typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
+    typename std::vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
     while(rit != rit_end)
     {
       (*rit)->evaluate(r,rinv);
       ++rit;
     }
-    vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
+    std::vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
     while(nlit != nlit_end)
       //for(int ib=0; ib<NL.size(); ib++, offset++) {
     {
@@ -846,13 +846,13 @@ struct SphericalBasisSet
     std::vector<RealType>& valueYlm = useCartesian?XYZ.XYZ:Ylm.Ylm;
     std::vector<PosType>& gradYlm = useCartesian?XYZ.gradXYZ:Ylm.gradYlm;
     std::vector<RealType>& laplYlm = useCartesian?XYZ.laplXYZ:Ylm.laplYlm;
-    typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
+    typename std::vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
     while(rit != rit_end)
     {
       (*rit)->evaluateAll(r,rinv);
       ++rit;
     }
-    vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
+    std::vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
     while(nlit != nlit_end)
       //for(int ib=0; ib<NL.size(); ib++, offset++) {
     {
@@ -889,13 +889,13 @@ struct SphericalBasisSet
     std::vector<RealType>& valueYlm = useCartesian?XYZ.XYZ:Ylm.Ylm;
     std::vector<PosType>& gradYlm = useCartesian?XYZ.gradXYZ:Ylm.gradYlm;
     std::vector<Tensor<RealType,3> >& hessYlm = useCartesian?XYZ.hessXYZ:Ylm.hessYlm;
-    typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
+    typename std::vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
     while(rit != rit_end)
     {
       (*rit)->evaluateAll(r,rinv);
       ++rit;
     }
-    vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
+    std::vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
     while(nlit != nlit_end)
       //for(int ib=0; ib<NL.size(); ib++, offset++) {
     {

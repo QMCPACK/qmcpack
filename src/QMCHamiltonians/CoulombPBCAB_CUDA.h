@@ -27,9 +27,9 @@ struct CoulombPBCAB_CUDA : public CoulombPBCAB
   //// Short-range part
   int NumIons, NumElecs, NumElecGroups, NumIonSpecies;
   ParticleSet &ElecRef, &IonRef;
-  vector<int> IonFirst, IonLast;
+  std::vector<int> IonFirst, IonLast;
   // This is indexed by the ion species
-  vector<TextureSpline*> SRSplines;
+  std::vector<TextureSpline*> SRSplines;
   TextureSpline *V0Spline;
   gpu::device_vector<CUDA_COULOMB_PRECISION>  SumGPU;
   gpu::host_vector<CUDA_COULOMB_PRECISION>  SumHost;
@@ -49,9 +49,9 @@ struct CoulombPBCAB_CUDA : public CoulombPBCAB
   // This stores rho_k for the electrons in one big array
   gpu::device_vector<CUDA_COULOMB_PRECISION> RhokElecGPU;
 
-  vector<PosType> SortedIons;
+  std::vector<PosType> SortedIons;
   // This stores rho_k for the ions.  Index is species number
-  vector<gpu::device_vector<CUDA_COULOMB_PRECISION> > RhokIonsGPU;
+  std::vector<gpu::device_vector<CUDA_COULOMB_PRECISION> > RhokIonsGPU;
   void setupLongRangeGPU();
 
   void add(int groupID, RadFunctorType* ppot);
@@ -59,7 +59,7 @@ struct CoulombPBCAB_CUDA : public CoulombPBCAB
   void initBreakup(ParticleSet& P);
 
   void addEnergy(MCWalkerConfiguration &W,
-                 vector<RealType> &LocalEnergy);
+                 std::vector<RealType> &LocalEnergy);
 
   QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 

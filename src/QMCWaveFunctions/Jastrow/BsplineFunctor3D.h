@@ -392,7 +392,7 @@ struct BsplineFunctor3D: public OptimizableFunctorBase
 
 
   inline bool
-  evaluateDerivatives(real_type r, vector<TinyVector<real_type,3> >& derivs)
+  evaluateDerivatives(real_type r, std::vector<TinyVector<real_type,3> >& derivs)
   {
     //what is this?
     return false;
@@ -400,9 +400,9 @@ struct BsplineFunctor3D: public OptimizableFunctorBase
 
   inline bool
   evaluateDerivatives (real_type r_12, real_type r_1I, real_type r_2I,
-                       vector<double> &d_vals,
-                       vector<TinyVector<real_type,3> >& d_grads,
-                       vector<Tensor<real_type,3> > &d_hess)
+                       std::vector<double> &d_vals,
+                       std::vector<TinyVector<real_type,3> >& d_grads,
+                       std::vector<Tensor<real_type,3> > &d_hess)
   {
     return false;
   }
@@ -431,18 +431,18 @@ struct BsplineFunctor3D: public OptimizableFunctorBase
       PRE.error("You must specify a positive number for \"isize\"",true);
     if (NumParams_ee == 0)
       PRE.error("You must specify a positive number for \"esize\"",true);
-    app_log() << " esize = " << NumParams_ee << " parameters " << endl;
-    app_log() << " isize = " << NumParams_eI << " parameters " << endl;
-    app_log() << " rcut = " << cutoff_radius << endl;
+    app_log() << " esize = " << NumParams_ee << " parameters " << std::endl;
+    app_log() << " isize = " << NumParams_eI << " parameters " << std::endl;
+    app_log() << " rcut = " << cutoff_radius << std::endl;
     resize(NumParams_eI, NumParams_ee);
     // Now read coefficents
     xmlNodePtr xmlCoefs = cur->xmlChildrenNode;
     while (xmlCoefs != NULL)
     {
-      string cname((const char*)xmlCoefs->name);
+      std::string cname((const char*)xmlCoefs->name);
       if (cname == "coefficients")
       {
-        string type("0"), id("0");
+        std::string type("0"), id("0");
         OhmmsAttributeSet cAttrib;
         cAttrib.add(id, "id");
         cAttrib.add(type, "type");
@@ -453,14 +453,14 @@ struct BsplineFunctor3D: public OptimizableFunctorBase
                     " in BsplineFunctor3D." + "Resetting to \"Array\"");
           xmlNewProp(xmlCoefs, (const xmlChar*) "type", (const xmlChar*) "Array");
         }
-        vector<real_type> params;
+        std::vector<real_type> params;
         putContent(params, xmlCoefs);
         if (params.size() == Parameters.size())
           Parameters = params;
         else
           if (params.size() == 0)
           {
-            app_log()<<" Initializing all parameters to zero"<<endl;
+            app_log()<<" Initializing all parameters to zero"<< std::endl;
           }
           else
           {
@@ -532,7 +532,7 @@ struct BsplineFunctor3D: public OptimizableFunctorBase
   void print()
   {
     const int N = 100;
-    string fname = iSpecies + ".J3.h5";
+    std::string fname = iSpecies + ".J3.h5";
     hid_t hid = H5Fcreate(fname.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
     Array<real_type,3> val(N,N,N);
     for (int i=0; i<N; i++)
@@ -555,7 +555,7 @@ struct BsplineFunctor3D: public OptimizableFunctorBase
     coefs_attrib.write(hid, "coefs");
     param_attrib.write(hid, "params");
     H5Fclose(hid);
-    // string fname = (elementType != "") ? elementType : pairType;
+    // std::string fname = (elementType != "") ? elementType : pairType;
     // fname = fname + ".dat";
     // //cerr << "Writing " << fname << " file.\n";
     // FILE *fout = fopen (fname.c_str(), "w");
@@ -573,8 +573,8 @@ struct BsplineFunctor3D: public OptimizableFunctorBase
     for (int i=0; i<n; ++i)
     {
       u=evaluate(r,du,d2du);
-      os << setw(22) << r << setw(22) << u << setw(22) << du
-         << setw(22) << d2du << std::endl;
+      os << std::setw(22) << r << std::setw(22) << u << std::setw(22) << du
+         << std::setw(22) << d2du << std::endl;
       r+=d;
     }
   }

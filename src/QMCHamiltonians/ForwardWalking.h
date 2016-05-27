@@ -28,11 +28,11 @@ class QMCHamiltonian;
 
 struct ForwardWalking: public QMCHamiltonianBase
 {
-  vector<int> Hindices;
-  vector<int> Pindices;
-  vector<vector<int> > walkerLengths;
-  vector<double> Values;
-  vector<string> Names;
+  std::vector<int> Hindices;
+  std::vector<int> Pindices;
+  std::vector<std::vector<int> > walkerLengths;
+  std::vector<double> Values;
+  std::vector<std::string> Names;
   int blockT,nObservables,nValues,FirstHamiltonian;
   double count;
 
@@ -63,7 +63,7 @@ struct ForwardWalking: public QMCHamiltonianBase
 
   inline Return_t calculate(ParticleSet& P)
   {
-    vector<Return_t>::iterator Vit=Values.begin();
+    std::vector<Return_t>::iterator Vit=Values.begin();
     for(int i=0; i<nObservables; i++)
     {
       int j=0;
@@ -78,7 +78,7 @@ struct ForwardWalking: public QMCHamiltonianBase
         Vit++;
       }
     }
-    std::copy(Values.begin(),Values.end(),tWalker->getPropertyBase()+FirstHamiltonian+myIndex);
+    copy(Values.begin(),Values.end(),tWalker->getPropertyBase()+FirstHamiltonian+myIndex);
     return 0.0;
   }
 
@@ -92,7 +92,7 @@ struct ForwardWalking: public QMCHamiltonianBase
     return 0.0;
   }
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
@@ -119,12 +119,12 @@ struct ForwardWalking: public QMCHamiltonianBase
 
   void setObservables(PropertySetType& plist)
   {
-    std::copy(Values.begin(),Values.end(),plist.begin()+myIndex);
+    copy(Values.begin(),Values.end(),plist.begin()+myIndex);
   }
 
   void setParticlePropertyList(PropertySetType& plist, int offset)
   {
-    std::copy(Values.begin(),Values.end(),plist.begin()+myIndex+offset);
+    copy(Values.begin(),Values.end(),plist.begin()+myIndex+offset);
   }
 };
 }

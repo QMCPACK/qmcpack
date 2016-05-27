@@ -20,7 +20,7 @@ struct CudaSpline
     for (int i=0; i<num_coefs; i++)
     {
       coefs_h[i] = func.SplineCoefs[i];
-      // app_log() << "coefs_h[" << i << "] = " << coefs_h[i] << endl;
+      // app_log() << "coefs_h[" << i << "] = " << coefs_h[i] << std::endl;
     }
     coefs = coefs_h;
     rMax = func.cutoff_radius;

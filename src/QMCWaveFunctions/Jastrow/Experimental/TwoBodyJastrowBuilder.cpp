@@ -33,10 +33,10 @@ TwoBodyJastrowBuilder::TwoBodyJastrowBuilder(ParticleSet& p, TrialWaveFunction& 
 bool TwoBodyJastrowBuilder::put(xmlNodePtr cur)
 {
   myNode=cur;
-  string functionOpt("pade");
-  string transformOpt("no");
-  string sourceOpt(targetPtcl.getName());
-  string spinOpt("yes");
+  std::string functionOpt("pade");
+  std::string transformOpt("no");
+  std::string sourceOpt(targetPtcl.getName());
+  std::string spinOpt("yes");
   OhmmsAttributeSet oAttrib;
   oAttrib.add(functionOpt,"function");
   oAttrib.add(transformOpt,"transform");
@@ -48,16 +48,16 @@ bool TwoBodyJastrowBuilder::put(xmlNodePtr cur)
   OrbitalConstraintsBase* control=0;
   //@todo automatically set it to yes with PBC
   bool useSpline= (transformOpt == "yes");
-  app_log() << "  TwoBodyJastrowBuilder for " << functionOpt << endl;
+  app_log() << "  TwoBodyJastrowBuilder for " << functionOpt << std::endl;
   if(functionOpt == "pade")
   {
-    app_log() << "    Using analytic Pade Jastrow Functor " <<endl;
+    app_log() << "    Using analytic Pade Jastrow Functor " << std::endl;
     control = new PadeConstraints(targetPtcl,targetPsi,IgnoreSpin);
   }
   else
     if(functionOpt == "scaledpade")
     {
-      app_log() << "    Using analytic Scaled Pade Jastrow Functor " <<endl;
+      app_log() << "    Using analytic Scaled Pade Jastrow Functor " << std::endl;
       control = new ScaledPadeConstraints(targetPtcl,targetPsi,IgnoreSpin);
     }
     else
@@ -85,8 +85,8 @@ bool TwoBodyJastrowBuilder::put(xmlNodePtr cur)
   control->addTwoBodyPart(jcombo);
   if(sourceOpt != targetPtcl.getName())
   {
-    app_log() << "    Adding one-body Jastrow function dependent upon two-body " << functionOpt << endl;
-    map<string,ParticleSet*>::iterator pa_it(ptclPool.find(sourceOpt));
+    app_log() << "    Adding one-body Jastrow function dependent upon two-body " << functionOpt << std::endl;
+    std::map<std::string,ParticleSet*>::iterator pa_it(ptclPool.find(sourceOpt));
     if(pa_it == ptclPool.end())
     {
       return false;

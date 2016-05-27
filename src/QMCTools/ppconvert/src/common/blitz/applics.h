@@ -331,7 +331,7 @@ public:
 // Applicative templates for these functions are defined in
 // <blitz/mathfunc.h>, which is included below:
 //
-// abs(i), labs(l)                     Absolute value
+// std::abs(i), labs(l)                     Absolute value
 // acos(d), acols(ld)                  Inverse cosine
 // acosh(d)                            Inverse hyperbolic cosine
 // asin(d), asinl(ld)                  Inverse sine

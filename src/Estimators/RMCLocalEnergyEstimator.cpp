@@ -52,15 +52,15 @@ void RMCLocalEnergyEstimator::add2Record(RecordListType& record)
   //for(int j=0; j <= NObs; j++)
   for(int i=0; i < SizeOfHamiltonians; i++)
   {
-    ostringstream ss;
+    std::ostringstream ss;
     ss << refH.getObservableName(i)<<"_m";
     record.add(ss.str());
   }
   for(int i=0; i < SizeOfHamiltonians; i++)
   {
-    ostringstream ss;
+    std::ostringstream ss;
     ss << refH.getObservableName(i)<<"_p";
-    // app_log()<<"Registering observable "<<ss.str()<<endl;
+    // app_log()<<"Registering observable "<<ss.str()<< std::endl;
     record.add(ss.str());
   }
   LastIndex=record.size();

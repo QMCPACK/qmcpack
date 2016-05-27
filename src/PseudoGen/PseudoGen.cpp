@@ -52,7 +52,7 @@ PseudoGen::PseudoGen(RadialPotentialSet& pot,
  *@brief Sets the root for all output files.
 */
 
-void PseudoGen::setRoot(const string& aroot)
+void PseudoGen::setRoot(const std::string& aroot)
 {
   RootFileName = aroot;
   LogFileName = RootFileName + ".log";
@@ -108,14 +108,14 @@ bool PseudoGen::putOptParams()
     }
   }
   XMLReport("Initial variables")
-  copy(OptParams.begin(),OptParams.end(),ostream_iterator<value_type>(cout,"\n"));
+  copy(OptParams.begin(),OptParams.end(),std::ostream_iterator<value_type>(std::cout,"\n"));
   return true;
 }
 
 bool PseudoGen::getOptParams()
 {
   XMLReport("Updated variables")
-  copy(OptParams.begin(),OptParams.end(),ostream_iterator<value_type>(cout,"\n"));
+  copy(OptParams.begin(),OptParams.end(),std::ostream_iterator<value_type>(std::cout,"\n"));
   int offset = 0;
   //loop over all the unique id's
   for(int i=0; i<IDtag.size(); i++)
@@ -158,23 +158,23 @@ double PseudoGen::Cost()
       TotE = runHF(afake,norb);
     }
   double cost = 0.0;
-  string llabel("spdf");
-  string slabel("d0u");
-  cout.precision(8);
-  cout << "Iteration = " << NumCostCalls++
-       << " and Total Energy = " << TotE << endl;
+  std::string llabel("spdf");
+  std::string slabel("d0u");
+  std::cout.precision(8);
+  std::cout << "Iteration = " << NumCostCalls++
+       << " and Total Energy = " << TotE << std::endl;
   value_type sum_norm = 0.0;
   value_type sum_eig = 0.0;
-  cout.precision(15);
+  std::cout.precision(15);
   for(int ob=0; ob<norb; ob++)
   {
-    cout << "Orbital " <<  Psi.N[ob] << llabel[Psi.L[ob]]
-         << slabel[Psi.S[ob]+1] << endl;
+    std::cout << "Orbital " <<  Psi.N[ob] << llabel[Psi.L[ob]]
+         << slabel[Psi.S[ob]+1] << std::endl;
     double diff_eig = fabs(1.0-PPeigVal[ob]/AEeigVal[ob]);
-    cout << setw(25) << "PPeigVal" << setw(25) << "AEeigVal"
-         << setw(25) << "error" << endl;
-    cout << setw(25) << PPeigVal[ob] << setw(25)
-         << AEeigVal[ob] << setw(25) << diff_eig << endl;
+    std::cout << std::setw(25) << "PPeigVal" << std::setw(25) << "AEeigVal"
+         << std::setw(25) << "error" << std::endl;
+    std::cout << std::setw(25) << PPeigVal[ob] << std::setw(25)
+         << AEeigVal[ob] << std::setw(25) << diff_eig << std::endl;
     RadialOrbital_t psi_norm(Psi(ob));
     RadialOrbital_t psi_sq(Psi(ob));
     for(int j=0; j<Psi(ob).size(); j++)
@@ -183,21 +183,21 @@ double PseudoGen::Cost()
     //grid index of the matching radius
     int x = Psi.m_grid->index(rmatch);
     double diff_norm = fabs(1.0-psi_norm(x)/AEorbitals_norm[ob](x));
-    cout << setw(25) << "PPpnorm" << setw(25) << "AEpnorm"
-         << setw(25) << "error" << endl;
-    cout << setw(25) << psi_norm(x) << setw(25)
-         << AEorbitals_norm[ob](x) << setw(25) << diff_norm << endl;
-    cout << endl;
+    std::cout << std::setw(25) << "PPpnorm" << std::setw(25) << "AEpnorm"
+         << std::setw(25) << "error" << std::endl;
+    std::cout << std::setw(25) << psi_norm(x) << std::setw(25)
+         << AEorbitals_norm[ob](x) << std::setw(25) << diff_norm << std::endl;
+    std::cout << std::endl;
     sum_norm += diff_norm;
     sum_eig += diff_eig;
   }
   sum_norm /= static_cast<value_type>(norb);
   sum_eig /= static_cast<value_type>(norb);
   cost = (sum_norm*weight_norm+sum_eig*weight_eig);
-  cout << "Differential in eigenvalues:   " << sum_eig << endl;
-  cout << "Differential in partial norms: " << sum_norm << endl;
-  cout << "Cost = " << cost << endl;
-  cout << endl;
+  std::cout << "Differential in eigenvalues:   " << sum_eig << std::endl;
+  std::cout << "Differential in partial norms: " << sum_norm << std::endl;
+  std::cout << "Cost = " << cost << std::endl;
+  std::cout << std::endl;
   if(cost > 100.0)
     return 100;
   if (Params(0) < 0.0)
@@ -225,14 +225,14 @@ PseudoGen::runHF(Transform_t* fake, int norb)
   typedef Numerov<Transform_t, RadialOrbital_t> Numerov_t;
   value_type Vtotal,KEnew, KEold,E;
   value_type lowerbound, upperbound;
-  vector<value_type> energy(Pot.size());
+  std::vector<value_type> energy(Pot.size());
   Pot.reset();
   Psi.reset();
   int iter = 0;
   Vtotal = Pot.evaluate(Psi,energy,norb);
   Pot.mix(0.0);
   KEnew = Pot.calcKE(Psi,0,norb);
-  string label("spdf");
+  std::string label("spdf");
   do
   {
     KEold = KEnew;
@@ -267,28 +267,28 @@ PseudoGen::runHF(Transform_t* fake, int norb)
     Pot.applyRestriction(Psi);
     //mix the new SCF potential with the old
     Pot.mix(ratio);
-    //  cout.precision(10);
-    //       cout << "Iteration #" << iter+1 << endl;
-    //       cout << "KE    = " << setw(15) << KEnew
-    // 		 << "  PE     = " << setw(15) << Vtotal << endl;
-    //       cout << "PE/KE = " << setw(15) << Vtotal/KEnew
-    // 		 << "  Energy = " << setw(15) << E << endl;
-    //       cout << endl;
+    //  std::cout.precision(10);
+    //       std::cout << "Iteration #" << iter+1 << std::endl;
+    //       std::cout << "KE    = " << std::setw(15) << KEnew
+    // 		 << "  PE     = " << std::setw(15) << Vtotal << std::endl;
+    //       std::cout << "PE/KE = " << std::setw(15) << Vtotal/KEnew
+    // 		 << "  Energy = " << std::setw(15) << E << std::endl;
+    //       std::cout << std::endl;
     iter++;
     //continue the loop until the kinetic energy converges
   }
   while(fabs(KEnew-KEold)>scf_tol && iter<maxiter);
-  cout.precision(10);
-  cout << "Total Hartree-Fock iterations = " << iter << endl;
-  cout << "KE    = " << setw(15) << KEnew
-       << "  PE     = " << setw(15) << Vtotal << endl;
-  cout << "PE/KE = " << setw(15) << Vtotal/KEnew
-       << "  Energy = " << setw(15) << E << endl;
-  cout << endl;
-  cout << "V_External = " << energy[0] << endl;
-  cout << "V_Hartree = "  << energy[1] << endl;
-  cout << "V_Exchange = " << energy[2] << endl;
-  cout << endl;
+  std::cout.precision(10);
+  std::cout << "Total Hartree-Fock iterations = " << iter << std::endl;
+  std::cout << "KE    = " << std::setw(15) << KEnew
+       << "  PE     = " << std::setw(15) << Vtotal << std::endl;
+  std::cout << "PE/KE = " << std::setw(15) << Vtotal/KEnew
+       << "  Energy = " << std::setw(15) << E << std::endl;
+  std::cout << std::endl;
+  std::cout << "V_External = " << energy[0] << std::endl;
+  std::cout << "V_Hartree = "  << energy[1] << std::endl;
+  std::cout << "V_Exchange = " << energy[2] << std::endl;
+  std::cout << std::endl;
   return E;
 }
 

@@ -57,7 +57,7 @@ struct DistTableOnSphere
     else
       APP_ABORT("DistTableOnSphere initialized with an empty particleset");
   }
-  virtual void makeMoves(int iel, const DistanceTableData& dt, const vector<PosType>& displs)=0;
+  virtual void makeMoves(int iel, const DistanceTableData& dt, const std::vector<PosType>& displs)=0;
 };
 
 /** proxy class to handle multiple moves
@@ -78,7 +78,7 @@ struct MultiMoveHandler
   ///new positions of activePtcl
   ParticlePos_t R;
   ///matching tables
-  vector<DistTableOnSphere*>  myTables;
+  std::vector<DistTableOnSphere*>  myTables;
 
   MultiMoveHandler(const ParticleSet& pt);
   ~MultiMoveHandler();

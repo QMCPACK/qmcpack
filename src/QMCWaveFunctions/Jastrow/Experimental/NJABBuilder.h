@@ -44,7 +44,7 @@ struct NJABBuilder: public OrbitalBuilderBase
   ///pointer to <grid/>
   xmlNodePtr gridPtr;
   ///unique analytic functions
-  vector<InFuncType*> InFunc;
+  std::vector<InFuncType*> InFunc;
 
   NJABBuilder(ParticleSet& p, TrialWaveFunction& psi, PtclPoolType& psets);
 
@@ -59,7 +59,7 @@ struct NJABBuilder: public OrbitalBuilderBase
    */
   bool putInFunc(xmlNodePtr cur);
 
-  InFuncType* createInFunc(const string& jastfunction);
+  InFuncType* createInFunc(const std::string& jastfunction);
 
 };
 }

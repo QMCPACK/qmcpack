@@ -20,7 +20,6 @@
 #include "Message/Communicate.h"
 #include "Message/OpenMP.h"
 #include "qmc_common.h"
-using namespace std;
 #include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus
@@ -28,8 +27,8 @@ namespace qmcplusplus
 
 bool QMCMain::executeDebugSection(xmlNodePtr cur)
 {
-  app_log() << "QMCMain::executeDebugSection " << endl;
-  app_log() << "  Use this to debug new features with <debug/> in the input file " << endl;
+  app_log() << "QMCMain::executeDebugSection " << std::endl;
+  app_log() << "  Use this to debug new features with <debug/> in the input file " << std::endl;
 
   return true;
 }
@@ -37,7 +36,7 @@ bool QMCMain::executeDebugSection(xmlNodePtr cur)
 bool QMCMain::executeCMCSection(xmlNodePtr cur)
 {
   bool success=true;
-  string target("ion0");
+  std::string target("ion0");
   OhmmsAttributeSet a;
   a.add(target,"target");
   a.put(cur);
@@ -46,7 +45,7 @@ bool QMCMain::executeCMCSection(xmlNodePtr cur)
   TrialWaveFunction* primaryPsi=psiPool->getPrimary();
   QMCHamiltonian* primaryH=hamPool->getPrimary();
 
-  app_log() << "QMCMain::executeCMCSection moving " << target << " by dummy move." << endl;
+  app_log() << "QMCMain::executeCMCSection moving " << target << " by dummy move." << std::endl;
   //DummyIonMove dummy(*ions,*primaryPsi,*primaryH,*hamPool,*psiPool,qmcDriver);
   //dummy.run();
 
@@ -59,13 +58,13 @@ bool QMCMain::executeCMCSection(xmlNodePtr cur)
   qmcSystem->update();
 
   double logpsi1 = primaryPsi->evaluateLog(*qmcSystem);
-  cout << "logpsi1 " << logpsi1 << endl;
+  std::cout << "logpsi1 " << logpsi1 << std::endl;
 
   double eloc1  = primaryH->evaluate(*qmcSystem);
-  cout << "Local Energy " << eloc1 << endl;
+  std::cout << "Local Energy " << eloc1 << std::endl;
 
   for (int i=0; i<primaryH->sizeOfObservables(); i++)
-    app_log() << "  HamTest " << primaryH->getObservableName(i) << " " << primaryH->getObservable(i) << endl;
+    app_log() << "  HamTest " << primaryH->getObservableName(i) << " " << primaryH->getObservable(i) << std::endl;
 
   for(int iat=0; iat<nat; ++iat)
   {
@@ -78,11 +77,11 @@ bool QMCMain::executeCMCSection(xmlNodePtr cur)
     double logpsi2 = primaryPsi->evaluateLog(*qmcSystem);
     double eloc2  = primaryH->evaluate(*qmcSystem);
 
-    cout << "\nION " << iat << " " << ions->R[iat] << endl;
-    cout << "logpsi " << logpsi2 << endl;
-    cout << "Local Energy " << eloc2 << endl;
+    std::cout << "\nION " << iat << " " << ions->R[iat] << std::endl;
+    std::cout << "logpsi " << logpsi2 << std::endl;
+    std::cout << "Local Energy " << eloc2 << std::endl;
     for (int i=0; i<primaryH->sizeOfObservables(); i++)
-      app_log() << "  HamTest " << primaryH->getObservableName(i) << " " << primaryH->getObservable(i) << endl;
+      app_log() << "  HamTest " << primaryH->getObservableName(i) << " " << primaryH->getObservable(i) << std::endl;
 
     ions->R[iat]-=deltaR[iat];
     ions->update(); //update position and distance table of itself 
@@ -94,7 +93,7 @@ bool QMCMain::executeCMCSection(xmlNodePtr cur)
 
     if(abs(eloc1-eloc3)>1e-12)
     {
-      cout << "ERROR Energies are different " << endl;
+      std::cout << "ERROR Energies are different " << std::endl;
     }
   }
 

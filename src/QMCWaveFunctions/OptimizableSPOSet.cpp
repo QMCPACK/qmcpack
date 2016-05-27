@@ -20,14 +20,14 @@ namespace qmcplusplus
 {
 
 void
-OptimizableSPOSet::addParameter (string id, int iorb, int basis)
+OptimizableSPOSet::addParameter ( std::string id, int iorb, int basis)
 {
 }
 
 bool
 OptimizableSPOSet::put (xmlNodePtr node, SPOPool_t &spo_pool)
 {
-  string gsName, basisName;
+  std::string gsName, basisName;
   bool same_k = false;
   bool mapped_k = false;
   bool same_orbital = false;
@@ -91,7 +91,7 @@ OptimizableSPOSet::put (xmlNodePtr node, SPOPool_t &spo_pool)
   allowedOrbs.resize(N,M);
 //    if (mapped_k)
 //    {
-//      cerr<<"Not Done"<<endl;
+//      std::cerr <<"Not Done"<< std::endl;
 //    }
 //    else
   if (same_k)
@@ -110,7 +110,7 @@ OptimizableSPOSet::put (xmlNodePtr node, SPOPool_t &spo_pool)
 //             for(int ix=0;ix<3;ix++) app_log()<<k_gs[ix]<<"  ";
 //             app_log()<<" : ";
 //             for(int ix=0;ix<3;ix++) app_log()<<k_b[ix]<<"  ";
-//             app_log()<<endl;
+//             app_log()<< std::endl;
           allowedOrbs(igs,ib)=1;
         }
         else
@@ -119,7 +119,7 @@ OptimizableSPOSet::put (xmlNodePtr node, SPOPool_t &spo_pool)
 //             for(int ix=0;ix<3;ix++) app_log()<<k_gs[ix]<<"  ";
 //             app_log()<<" : ";
 //             for(int ix=0;ix<3;ix++) app_log()<<k_b[ix]<<"  ";
-//             app_log()<<endl;
+//             app_log()<< std::endl;
           allowedOrbs(igs,ib)=0;
         }
       }
@@ -131,10 +131,10 @@ OptimizableSPOSet::put (xmlNodePtr node, SPOPool_t &spo_pool)
       xmlNodePtr xmlCoefs = node->xmlChildrenNode;
       while (xmlCoefs != NULL)
       {
-        string cname((const char*)xmlCoefs->name);
+        std::string cname((const char*)xmlCoefs->name);
         if (cname == "orbitalmap")
         {
-          string type("0");
+          std::string type("0");
           OhmmsAttributeSet cAttrib;
           cAttrib.add(type, "type");
           cAttrib.put(xmlCoefs);
@@ -143,7 +143,7 @@ OptimizableSPOSet::put (xmlNodePtr node, SPOPool_t &spo_pool)
             // app_error() << "Unknown correlation type " + type + " in OptimizableSPOSet." + "Resetting to \"Array\"\n";
             xmlNewProp(xmlCoefs, (const xmlChar*) "type", (const xmlChar*) "Array");
           }
-          vector<RealType> params;
+          std::vector<RealType> params;
           putContent(params, xmlCoefs);
           int indx(0);
           if(params.size()==N*M)
@@ -156,7 +156,7 @@ OptimizableSPOSet::put (xmlNodePtr node, SPOPool_t &spo_pool)
             }
           else
           {
-            app_error()<<"Map size is incorrect. parameters given= "<<params.size()<<" parameters needed= "<<M*N<<endl;
+            app_error()<<"Map size is incorrect. parameters given= "<<params.size()<<" parameters needed= "<<M*N<< std::endl;
           }
         }
         xmlCoefs = xmlCoefs->next;
@@ -167,7 +167,7 @@ OptimizableSPOSet::put (xmlNodePtr node, SPOPool_t &spo_pool)
       {
         if(M<N)
         {
-          app_error()<<"Map size is incorrect. N<M for same orbital mapping"<<endl;
+          app_error()<<"Map size is incorrect. N<M for same orbital mapping"<< std::endl;
         }
         allowedOrbs=0;
         for (int igs=0; igs<N; igs++)
@@ -194,10 +194,10 @@ OptimizableSPOSet::put (xmlNodePtr node, SPOPool_t &spo_pool)
   xmlNodePtr xmlCoefs = node->xmlChildrenNode;
   while (xmlCoefs != NULL)
   {
-    string cname((const char*)xmlCoefs->name);
+    std::string cname((const char*)xmlCoefs->name);
     if (cname == "coefficients")
     {
-      string type("0"), id("0");
+      std::string type("0"), id("0");
       int state=-1;
       int asize(-1);
       OhmmsAttributeSet cAttrib;
@@ -215,14 +215,14 @@ OptimizableSPOSet::put (xmlNodePtr node, SPOPool_t &spo_pool)
         // app_error() << "Unknown correlation type " + type + " in OptimizableSPOSet." + "Resetting to \"Array\"\n";
         xmlNewProp(xmlCoefs, (const xmlChar*) "type", (const xmlChar*) "Array");
       }
-      vector<RealType> params;
+      std::vector<RealType> params;
       putContent(params, xmlCoefs);
       app_log() << "Coefficients for state" << state << ":\n";
-      // cerr << "params.size() = " << params.size() << endl;
+      // std::cerr << "params.size() = " << params.size() << std::endl;
       //If params is missized resize and initialize to zero.
       if ((params.size()!=asize)&&(asize>0))
       {
-        vector<RealType> t_params(params);
+        std::vector<RealType> t_params(params);
         params.resize(asize,0.0);
         int ipm(0);
         if (t_params.size()>0)
@@ -344,8 +344,8 @@ OptimizableSPOSet::evaluateDerivatives
   if (BasisOrbitals)
   {
     BasisOrbitals->evaluate(P,iat,BasisVal);
-    vector<TinyVector<int,2> >::iterator iter;
-    vector<TinyVector<int,2> >& act = ActiveBasis[iat];
+    std::vector<TinyVector<int,2> >::iterator iter;
+    std::vector<TinyVector<int,2> >& act = ActiveBasis[iat];
     for (iter=act.begin(); iter != act.end(); iter++)
     {
       int elem  = (*iter)[0];
@@ -382,9 +382,9 @@ OptimizableSPOSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
 
 void
 OptimizableSPOSet::evaluate(const ParticleSet& P, const PosType& r,
-                            vector<RealType> &psi)
+                            std::vector<RealType> &psi)
 {
-  app_error() << "OptimizableSPOSet::evaluate(const ParticleSet& P, const PosType& r, vector<RealType> &psi)\n  should not be called.  Abort.\n";
+  app_error() << "OptimizableSPOSet::evaluate(const ParticleSet& P, const PosType& r, std::vector<RealType> &psi)\n  should not be called.  Abort.\n";
   abort();
 }
 
@@ -467,7 +467,7 @@ OptimizableSPOSet::evaluateBasis (const ParticleSet &P, int first, int last,
 void
 OptimizableSPOSet::copyParamsFromMatrix (const opt_variables_type& active,
     const Matrix<RealType> &mat,
-    vector<RealType> &destVec)
+    std::vector<RealType> &destVec)
 {
   for (int ip=0; ip<myVars.size(); ip++)
   {
@@ -483,7 +483,7 @@ OptimizableSPOSet::copyParamsFromMatrix (const opt_variables_type& active,
 void
 OptimizableSPOSet::copyParamsFromMatrix (const opt_variables_type& active,
     const Matrix<ComplexType> &mat,
-    vector<RealType> &destVec)
+    std::vector<RealType> &destVec)
 {
   for (int ip=0; ip<myVars.size(); ip+=2)
   {
@@ -508,10 +508,10 @@ OptimizableSPOSet::evaluate_notranspose
 (const ParticleSet& P, int first, int last,
  ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
 {
-//     cerr << "GSValMatrix.size =(" << GSValMatrix.size(0) << ", " << GSValMatrix.size(1) << ")\n";
-//     cerr << "GSGradMatrix.size =(" << GSGradMatrix.size(0) << ", " << GSGradMatrix.size(1) << ")\n";
-//     cerr << "GSLaplMatrix.size =(" << GSLaplMatrix.size(0) << ", " << GSLaplMatrix.size(1) << ")\n";
-//     cerr << "first=" << first << "  last=" << last << endl;
+//     std::cerr << "GSValMatrix.size =(" << GSValMatrix.size(0) << ", " << GSValMatrix.size(1) << ")\n";
+//     std::cerr << "GSGradMatrix.size =(" << GSGradMatrix.size(0) << ", " << GSGradMatrix.size(1) << ")\n";
+//     std::cerr << "GSLaplMatrix.size =(" << GSLaplMatrix.size(0) << ", " << GSLaplMatrix.size(1) << ")\n";
+//     std::cerr << "first=" << first << "  last=" << last << std::endl;
   GSOrbitals->evaluate_notranspose
   (P, first, last, GSValMatrix, GSGradMatrix, GSLaplMatrix);
   if (BasisOrbitals)

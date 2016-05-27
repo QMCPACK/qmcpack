@@ -78,7 +78,7 @@ public:
     return OptParams.size();
   }
   ///add a configuration file to the list of files
-  void addConfiguration(const string& a);
+  void addConfiguration(const std::string& a);
 
   void setWaveFunctionNode(xmlNodePtr cur)
   {
@@ -134,19 +134,19 @@ private:
   ///document node to be dumped
   xmlDocPtr m_doc_out;
   ///parameters to be updated
-  vector<xmlNodePtr> m_param_out;
+  std::vector<xmlNodePtr> m_param_out;
   ///storage for previous values of the cost function
   std::deque<Return_t> costList;
   ///storage for previous sets of parameters
-  std::deque<vector<Return_t> > paramList;
+  std::deque<std::vector<Return_t> > paramList;
   ///parameters to be optimized
-  vector<Return_t> OptParams;
+  std::vector<Return_t> OptParams;
   ///ID tag for each optimizable parameter
-  vector<string> IDtag;
+  std::vector<std::string> IDtag;
   ///method for optimization, default conjugate gradient
-  string optmethod;
+  std::string optmethod;
   ///list of files storing configurations
-  vector<string> ConfigFile;
+  std::vector<std::string> ConfigFile;
   ///Hamiltonians that depend on the optimization: KE
   QMCHamiltonian H_KE;
 

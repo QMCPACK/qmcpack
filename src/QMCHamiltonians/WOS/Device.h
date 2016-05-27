@@ -68,10 +68,10 @@ public:
 
   void flush()
   {
-    cout << m_skin << '\t' << m_eps << '\t' << rho0 << endl;
-    cout << r_min << endl;
-    cout << r_max << endl;
-    cout << Vapp[4] << '\t' << Vapp[5] << endl;
+    std::cout << m_skin << '\t' << m_eps << '\t' << rho0 << std::endl;
+    std::cout << r_min << std::endl;
+    std::cout << r_max << std::endl;
+    std::cout << Vapp[4] << '\t' << Vapp[5] << std::endl;
   }
 
 

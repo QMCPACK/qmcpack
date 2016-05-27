@@ -68,8 +68,8 @@ public:
     if (NewGrid->NumPoints != NewYs.rows())
       {
 	cerr << "Size mismatch in CubicSplineCommon.\n";
-	cerr << "Grid Points = " << NewGrid->NumPoints << endl;
-	cerr << "Y points    = " << NewYs.rows() << endl;
+	cerr << "Grid Points = " << NewGrid->NumPoints << std::endl;
+	cerr << "Y points    = " << NewYs.rows() << std::endl;
 	exit(1);
       }
     grid = NewGrid;
@@ -176,8 +176,8 @@ inline double CubicSplineCommon::operator()(double x)
 	x = X.End;
       else
 	{
-	  cerr << "x outside grid in CubicSplineCommon.\n";
-	  cerr << "x = " << x << " X.End = " << X.End << "\n";
+	  std::cerr << "x outside grid in CubicSplineCommon.\n";
+	  std::cerr << "x = " << x << " X.End = " << X.End << "\n";
 	  abort();
 	}
     }
@@ -328,8 +328,8 @@ public:
     if (NewGrid->NumPoints != NewYs.rows())
       {
 	cerr << "Size mismatch in CubicSplineCommon.\n";
-	cerr << "Grid Points = " << NewGrid->NumPoints << endl;
-	cerr << "Y points    = " << NewYs.rows() << endl;
+	cerr << "Grid Points = " << NewGrid->NumPoints << std::endl;
+	cerr << "Y points    = " << NewYs.rows() << std::endl;
 	exit(1);
       }
 
@@ -480,8 +480,8 @@ inline double MultiCubicSplineCommon::operator()(int i, double x)
 	x = X.End;
       else
 	{
-	  cerr << "x outside grid in CubicSplineCommon.\n";
-	  cerr << "x = " << x << " X.End = " << X.End << "\n";
+	  std::cerr << "x outside grid in CubicSplineCommon.\n";
+	  std::cerr << "x = " << x << " X.End = " << X.End << "\n";
 	  exit(1);
 	}
     }
@@ -525,8 +525,8 @@ inline void MultiCubicSplineCommon::operator()(double x, Array<double,1> &yVec)
 	x = X.End;
       else
 	{
-	  cerr << "x outside grid in CubicSplineCommon.\n";
-	  cerr << "x = " << x << " X.End = " << X.End << "\n";
+	  std::cerr << "x outside grid in CubicSplineCommon.\n";
+	  std::cerr << "x = " << x << " X.End = " << X.End << "\n";
 	  exit(1);
 	}
     }

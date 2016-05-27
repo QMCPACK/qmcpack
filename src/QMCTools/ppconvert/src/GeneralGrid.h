@@ -3,18 +3,17 @@
 
 #include <vector>
 
-using namespace std;
 
 class SimpleGrid
 {
 private:
-  vector<double> grid;
+  std::vector<double> grid;
   
 public:
   inline int NumPoints()
   { return grid.size();  }
 
-  inline vector<double>& Points()
+  inline std::vector<double>& Points()
   { return grid; }
 
   inline double operator[](int i)
@@ -52,7 +51,7 @@ public:
   inline double End()
   { return grid[grid.size()-1]; }
 
-  void Init (vector<double> &points)
+  void Init (std::vector<double> &points)
   {
     grid.resize(points.size());
     grid = points;

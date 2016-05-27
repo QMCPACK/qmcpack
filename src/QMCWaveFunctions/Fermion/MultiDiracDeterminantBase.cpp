@@ -51,13 +51,13 @@ void MultiDiracDeterminantBase::set(int first, int nel,int norb)
 //    testDets();
 }
 
-void MultiDiracDeterminantBase::createDetData(ci_configuration2& ref, vector<int>& data,
-    vector<pair<int,int> >& pairs, vector<double>& sign)
+void MultiDiracDeterminantBase::createDetData(ci_configuration2& ref, std::vector<int>& data,
+    std::vector<std::pair<int,int> >& pairs, std::vector<double>& sign)
 {
   int nci = confgList.size(), nex;
-  vector<int> pos(NumPtcls);
-  vector<int> ocp(NumPtcls);
-  vector<int> uno(NumPtcls);
+  std::vector<int> pos(NumPtcls);
+  std::vector<int> ocp(NumPtcls);
+  std::vector<int> uno(NumPtcls);
   data.clear();
   sign.resize(nci);
   pairs.clear();
@@ -77,28 +77,28 @@ void MultiDiracDeterminantBase::createDetData(ci_configuration2& ref, vector<int
     for(int k1=0; k1<nex; k1++)
       for(int k2=0; k2<nex; k2++)
       {
-//           pair<int,int> temp(ocp[k1],uno[k2]);
-        pair<int,int> temp(pos[k1],uno[k2]);
+//           std::pair<int,int> temp(ocp[k1],uno[k2]);
+        std::pair<int,int> temp(pos[k1],uno[k2]);
         if(find(pairs.begin(),pairs.end(),temp) == pairs.end()) //pair is new
           pairs.push_back(temp);
       }
   }
-  app_log()<<"Number of terms in pairs array: " <<pairs.size() <<endl;
+  app_log()<<"Number of terms in pairs array: " <<pairs.size() << std::endl;
   /*
-       cout<<"ref: " <<ref <<endl;
-       cout<<"list: " <<endl;
+       std::cout <<"ref: " <<ref << std::endl;
+       std::cout <<"list: " << std::endl;
        for(int i=0; i<confgList.size(); i++)
-         cout<<confgList[i] <<endl;
+         std::cout <<confgList[i] << std::endl;
 
-       cout<<"pairs: " <<endl;
+       std::cout <<"pairs: " << std::endl;
        for(int i=0; i<pairs.size(); i++)
-         cout<<pairs[i].first <<"   " <<pairs[i].second <<endl;
+         std::cout <<pairs[i].first <<"   " <<pairs[i].second << std::endl;
   */
 }
 
 //erase
-void out1(int n, string str="NULL") {}
-//{ cout<<"MDD: " <<str <<"  " <<n <<endl; cout.flush(); }
+void out1(int n, std::string str="NULL") {}
+//{ std::cout <<"MDD: " <<str <<"  " <<n << std::endl; std::cout.flush(); }
 
 
 void MultiDiracDeterminantBase::evaluateForWalkerMove(ParticleSet& P, bool fromScratch)
@@ -109,8 +109,8 @@ void MultiDiracDeterminantBase::evaluateForWalkerMove(ParticleSet& P, bool fromS
   if(NumPtcls==1)
   {
     //APP_ABORT("Evaluate Log with 1 particle in MultiDiracDeterminantBase is potentially dangerous. Fix later");
-    vector<ci_configuration2>::iterator it(confgList.begin());
-    vector<ci_configuration2>::iterator last(confgList.end());
+    std::vector<ci_configuration2>::iterator it(confgList.begin());
+    std::vector<ci_configuration2>::iterator last(confgList.end());
     ValueVector_t::iterator det(detValues.begin());
     ValueMatrix_t::iterator lap(lapls.begin());
     GradMatrix_t::iterator grad(grads.begin());
@@ -125,7 +125,7 @@ void MultiDiracDeterminantBase::evaluateForWalkerMove(ParticleSet& P, bool fromS
   else
   {
     InverseTimer.start();
-    vector<int>::iterator it(confgList[ReferenceDeterminant].occup.begin());
+    std::vector<int>::iterator it(confgList[ReferenceDeterminant].occup.begin());
     for(int i=0; i<NumPtcls; i++)
     {
       for(int j=0; j<NumPtcls; j++)
@@ -246,31 +246,31 @@ void MultiDiracDeterminantBase::acceptMove(ParticleSet& P, int iat)
     psiMinv = psiMinv_temp;
     for(int i=0; i<NumOrbitals; i++)
       TpsiM(i,WorkingIndex) = psiV(i);
-    std::copy(psiV.begin(),psiV.end(),psiM[iat-FirstIndex]);
-    std::copy(new_detValues.begin(),new_detValues.end(),detValues.begin());
+    copy(psiV.begin(),psiV.end(),psiM[iat-FirstIndex]);
+    copy(new_detValues.begin(),new_detValues.end(),detValues.begin());
     break;
   case ORB_PBYP_PARTIAL:
     psiMinv = psiMinv_temp;
     for(int i=0; i<NumOrbitals; i++)
       TpsiM(i,WorkingIndex) = psiV(i);
-    std::copy(new_detValues.begin(),new_detValues.end(),detValues.begin());
+    copy(new_detValues.begin(),new_detValues.end(),detValues.begin());
 // no use saving these
 //        for(int i=0; i<NumDets; i++)
 //          grads(i,WorkingIndex) = new_grads(i,WorkingIndex);
-    std::copy(psiV.begin(),psiV.end(),psiM[WorkingIndex]);
-    std::copy(dpsiV.begin(),dpsiV.end(),dpsiM[WorkingIndex]);
-    std::copy(d2psiV.begin(),d2psiV.end(),d2psiM[WorkingIndex]);
+    copy(psiV.begin(),psiV.end(),psiM[WorkingIndex]);
+    copy(dpsiV.begin(),dpsiV.end(),dpsiM[WorkingIndex]);
+    copy(d2psiV.begin(),d2psiV.end(),d2psiM[WorkingIndex]);
     break;
   default:
     psiMinv = psiMinv_temp;
     for(int i=0; i<NumOrbitals; i++)
       TpsiM(i,WorkingIndex) = psiV(i);
-    std::copy(new_detValues.begin(),new_detValues.end(),detValues.begin());
-    std::copy(new_grads.begin(),new_grads.end(),grads.begin());
-    std::copy(new_lapls.begin(),new_lapls.end(),lapls.begin());
-    std::copy(psiV.begin(),psiV.end(),psiM[WorkingIndex]);
-    std::copy(dpsiV.begin(),dpsiV.end(),dpsiM[WorkingIndex]);
-    std::copy(d2psiV.begin(),d2psiV.end(),d2psiM[WorkingIndex]);
+    copy(new_detValues.begin(),new_detValues.end(),detValues.begin());
+    copy(new_grads.begin(),new_grads.end(),grads.begin());
+    copy(new_lapls.begin(),new_lapls.end(),lapls.begin());
+    copy(psiV.begin(),psiV.end(),psiM[WorkingIndex]);
+    copy(dpsiV.begin(),dpsiV.end(),dpsiM[WorkingIndex]);
+    copy(d2psiV.begin(),d2psiV.end(),d2psiM[WorkingIndex]);
     break;
   }
 }
@@ -515,7 +515,7 @@ void MultiDiracDeterminantBase::copyFromDerivativeBuffer(ParticleSet& P, PooledD
       }
 }
 
-void MultiDiracDeterminantBase::setDetInfo(int ref, vector<ci_configuration2> list)
+void MultiDiracDeterminantBase::setDetInfo(int ref, std::vector<ci_configuration2> list)
 {
   ReferenceDeterminant = ref;
   confgList = list;

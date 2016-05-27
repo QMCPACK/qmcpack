@@ -55,13 +55,13 @@ VMCPbyPMultiWarp::~VMCPbyPMultiWarp()
 
 bool VMCPbyPMultiWarp::run()
 {
-  vector<RealType> new_Jacobian(nPsi);
+  std::vector<RealType> new_Jacobian(nPsi);
   //TEST CACHE
   //Estimators->reportHeader(AppendRun);
   //going to add routines to calculate how much we need
   //bool require_register =  W.createAuxDataSet();
   bool require_register =  W[0]->DataSet.size();
-  vector<RealType>  Norm(nPsi),tmpNorm(nPsi);
+  std::vector<RealType>  Norm(nPsi),tmpNorm(nPsi);
   if(equilBlocks > 0)
   {
     for(int ipsi=0; ipsi< nPsi; ipsi++)
@@ -132,10 +132,10 @@ bool VMCPbyPMultiWarp::run()
           //PosType dr = m_sqrttau*deltaR[iat]+thisWalker.Drift[iat];
           PosType newpos = W.makeMove(iat,dr);
           /*
-          cout << "========================" << endl;
-          cout << "PARTICLE " << iat << endl;
-          cout << "DRIFT        " << thisWalker.Drift[iat]<< endl;
-          cout << "NEW POSITION " << W.R[iat] << endl;
+          std::cout << "========================" << std::endl;
+          std::cout << "PARTICLE " << iat << std::endl;
+          std::cout << "DRIFT        " << thisWalker.Drift[iat]<< std::endl;
+          std::cout << "NEW POSITION " << W.R[iat] << std::endl;
           */
           //Compute the displacement due to space-warp
           PtclWarp.warp_one(iat,1);
@@ -159,10 +159,10 @@ bool VMCPbyPMultiWarp::run()
           }
           /*
           for(int ipsi=0; ipsi<nPsi; ipsi++){
-            cout << "NEW WARP POSITION " << ipsi << " " << WW[ipsi]->R[iat]<<endl;
+            std::cout << "NEW WARP POSITION " << ipsi << " " << WW[ipsi]->R[iat]<< std::endl;
           }
           for(int ipsi=0; ipsi<nPsi; ipsi++){
-            cout << "NEW JACOBIAN " << ipsi << " " << new_Jacobian[ipsi]<<endl;
+            std::cout << "NEW JACOBIAN " << ipsi << " " << new_Jacobian[ipsi]<< std::endl;
           }
           */
           // Compute new (Psi[i]/Psi[j])^2 and their sum
@@ -180,13 +180,13 @@ bool VMCPbyPMultiWarp::run()
           }
           /*
           for(int ipsi=0; ipsi<nPsi; ipsi++){
-            cout << "WF RATIO " << ipsi << " " << ratio[ipsi] << endl;
+            std::cout << "WF RATIO " << ipsi << " " << ratio[ipsi] << std::endl;
           }
           for(int ipsi=0; ipsi<nPsi; ipsi++){
-            cout << "NEW GRADIENT " << ipsi << " " << (*G[ipsi])[iat]<<endl;
+            std::cout << "NEW GRADIENT " << ipsi << " " << (*G[ipsi])[iat]<< std::endl;
           }
           for(int ipsi=0; ipsi<nPsi; ipsi++){
-            cout << "NEW LAPLACIAN " << ipsi << " " << (Psi1[ipsi]->L[iat]+ (*dL[ipsi])[iat]) <<endl;
+            std::cout << "NEW LAPLACIAN " << ipsi << " " << (Psi1[ipsi]->L[iat]+ (*dL[ipsi])[iat]) << std::endl;
           }
           */
           // Evaluate new Umbrella Weight and new drift
@@ -214,26 +214,26 @@ bool VMCPbyPMultiWarp::run()
             invsumratio[ipsi]=1.0/sumratio[ipsi];
           /*
           for(int ipsi=0; ipsi<nPsi; ipsi++){
-            cout << "NEW WEIGHT " << ipsi << " " << invsumratio[ipsi]<<endl;
+            std::cout << "NEW WEIGHT " << ipsi << " " << invsumratio[ipsi]<< std::endl;
           }
           */
           setScaledDrift(Tau,*G[0],drift);
           /*
-          cout << "NEXT GRAD " << "0" << " " << (*G[0])[iat+1]<<endl;
-          cout << "NEXT DRIFT " << "0" << " " << drift[iat+1]<<endl;
+          std::cout << "NEXT GRAD " << "0" << " " << (*G[0])[iat+1]<< std::endl;
+          std::cout << "NEXT DRIFT " << "0" << " " << drift[iat+1]<< std::endl;
           */
           drift*=invsumratio[0];
           for(int ipsi=1; ipsi< nPsi ; ipsi++)
           {
             setScaledDrift(Tau,*G[ipsi],dG);
             /*
-            cout << "NEXT GRAD " << ipsi << " " << (*G[ipsi])[iat+1]<<endl;
-            cout << "NEXT DRIFT " << ipsi << " " << dG[iat+1]<<endl;
+            std::cout << "NEXT GRAD " << ipsi << " " << (*G[ipsi])[iat+1]<< std::endl;
+            std::cout << "NEXT DRIFT " << ipsi << " " << dG[iat+1]<< std::endl;
             */
 #ifndef QMC_COMPLEX
             drift+= (invsumratio[ipsi]*dG);
 #else
-            app_error() << " Operation is not implemented." << endl;
+            app_error() << " Operation is not implemented." << std::endl;
 #endif
           }
           //END NEW
@@ -247,7 +247,7 @@ bool VMCPbyPMultiWarp::run()
           RealType prob = td*std::exp(logGb-logGf);
           if(Random() < prob)
           {
-            //cout << "ACCEPTED" << endl << endl;
+            //cout << "ACCEPTED" << std::endl << std::endl;
             /* Electron move is accepted. Update:
             -ratio (Psi[i]/Psi[j])^2 for this walker
             -Gradient and laplacian for each Psi1[i]
@@ -264,7 +264,7 @@ bool VMCPbyPMultiWarp::run()
             // Update single particle jacobian
             PtclWarp.update_one_ptcl_Jacob(iat);
             // Update Buffer for (Psi[i]/Psi[j])^2
-            std::copy(ratioij.begin(),ratioij.end(),ratioijPtr);
+            copy(ratioij.begin(),ratioij.end(),ratioijPtr);
             // Update Umbrella weight
             UmbrellaWeight=invsumratio;
             // Store sumratio for next Accept/Reject step to Multiplicity
@@ -285,7 +285,7 @@ bool VMCPbyPMultiWarp::run()
           }
           else
           {
-            //cout << "REJECTED" << endl << endl;
+            //cout << "REJECTED" << std::endl << std::endl;
             ++nReject;
             W.rejectMove(iat);
             // reject moves
@@ -342,7 +342,7 @@ bool VMCPbyPMultiWarp::run()
     {
       for(int ipsi=0; ipsi< nPsi; ipsi++)
       {
-        //cout << "WGT " << multiEstimator->esum(ipsi,MultipleEnergyEstimator::WEIGHT_INDEX) << endl;
+        //cout << "WGT " << multiEstimator->esum(ipsi,MultipleEnergyEstimator::WEIGHT_INDEX) << std::endl;
         tmpNorm[ipsi]+=multiEstimator->esum(ipsi,MultipleEnergyEstimator::WEIGHT_INDEX);
       }
       if(block==(equilBlocks-1) || block==(nBlocks-1))
@@ -354,7 +354,7 @@ bool VMCPbyPMultiWarp::run()
         {
           Norm[ipsi]=tmpNorm[ipsi]/SumNorm;
           branchEngine->LogNorm[ipsi]=std::log(Norm[ipsi]);
-          //cout << "LOGNORM VMC " << branchEngine->LogNorm[ipsi] << endl;
+          //cout << "LOGNORM VMC " << branchEngine->LogNorm[ipsi] << std::endl;
         }
       }
     }
@@ -374,7 +374,7 @@ bool VMCPbyPMultiWarp::run()
   app_log()
       << "Ratio = "
       << static_cast<RealType>(nAcceptTot)/static_cast<RealType>(nAcceptTot+nRejectTot)
-      << endl;
+      << std::endl;
   return finalize(block);
 }
 
@@ -390,15 +390,15 @@ VMCPbyPMultiWarp::put(xmlNodePtr q)
     W.clearDistanceTables();
   }
   //qmcsystem
-  vector<ParticleSet*> ionSets;
+  std::vector<ParticleSet*> ionSets;
   DistanceTableData* dtableReference;
   xmlNodePtr cur=q->children;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == "qmcsystem")
     {
-      string source_name((const char*)xmlGetProp(cur,(const xmlChar*)"source"));
+      std::string source_name((const char*)xmlGetProp(cur,(const xmlChar*)"source"));
       ionSets.push_back(PtclPool.getParticleSet(source_name));
     }
     cur=cur->next;
@@ -409,7 +409,7 @@ VMCPbyPMultiWarp::put(xmlNodePtr q)
     p=PtclPool.getParticleSet(refSetName);
     if(p==0)
     {
-      cout << "The specified reference cannot be found. Stop." << endl;
+      std::cout << "The specified reference cannot be found. Stop." << std::endl;
       abort();
     }
   }
@@ -420,12 +420,12 @@ VMCPbyPMultiWarp::put(xmlNodePtr q)
   }
   dtableReference=DistanceTable::add(*p,W);
   /*vector<DistanceTableData*> dtableList;
-  string target_name(W.getName());
+  std::string target_name(W.getName());
   xmlNodePtr cur=q->children;
   while(cur != NULL) {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == "qmcsystem") {
-      string source_name((const char*)xmlGetProp(cur,(const xmlChar*)"source"));
+      std::string source_name((const char*)xmlGetProp(cur,(const xmlChar*)"source"));
   dtableList.push_back(DistanceTable::getTable(source_name.c_str(),target_name.c_str()));
     }
     cur=cur->next;
@@ -473,14 +473,14 @@ VMCPbyPMultiWarp::put(xmlNodePtr q)
       ParticleSet* pclone=PtclPool.getParticleSet(newname);
       if(pclone == 0)
       {
-        app_log() << "  Cloning particle set in VMCMultipleWarp " << newname << endl;
+        app_log() << "  Cloning particle set in VMCMultipleWarp " << newname << std::endl;
         pclone=new ParticleSet(W);
         pclone->setName(newname);
         PtclPool.addParticleSet(pclone);
       }
       else
       {
-        app_log() << "  Cloned particle exists " << newname << endl;
+        app_log() << "  Cloned particle exists " << newname << std::endl;
       }
       WW.push_back(pclone);
       Psi1[ipsi]->resetTargetParticleSet(*WW[ipsi]);
@@ -494,12 +494,12 @@ VMCPbyPMultiWarp::put(xmlNodePtr q)
   sprintf(newname,"%s%d", W.getName().c_str(),ipsi);
       ParticleSet* pclone=PtclPool.getParticleSet(newname);
       if(pclone == 0) {
-        app_log() << "  Cloning particle set in VMCMultipleWarp " << newname << endl;
+        app_log() << "  Cloning particle set in VMCMultipleWarp " << newname << std::endl;
         pclone=new ParticleSet(W);
         pclone->setName(newname);
         PtclPool.addParticleSet(pclone);
       } else {
-        app_log() << "  Cloned particle exists " << newname << endl;
+        app_log() << "  Cloned particle exists " << newname << std::endl;
       }
   //Correct copy constructor????????
   WW.push_back(pclone);

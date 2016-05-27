@@ -103,7 +103,7 @@ struct OTCross< TinyVector<T1,D> , TinyVector<T2,D> >
   apply(const TinyVector<T1,D>& a, const TinyVector<T2,D>& b)
   {
     ERRORMSG("Cross-product *only* implemented for 3D; you're trying to"
-             << " do it for " << D << "D." << endl);
+             << " do it for " << D << "D." << std::endl);
     TinyVector<Type_t,D> bogusCross(-99999);
     return bogusCross;
   }

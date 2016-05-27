@@ -25,7 +25,6 @@
 #include <cmath>
 #include <string>
 #include <boost/random.hpp>
-using namespace std;
 #include "Utilities/OhmmsInfo.h"
 #include "Message/Communicate.h"
 #include "Message/OpenMP.h"
@@ -51,23 +50,23 @@ struct RadFunctorTest
     double dv=u.df(r);
     double ub_p=up.evaluate(r);
     double ub_m=um.evaluate(r);
-    cout << "checking derivative functor ";
-    cout <<  (ub_p-ub_m)/(2*delta)-ub.f(r) << endl;
+    std::cout << "checking derivative functor ";
+    std::cout <<  (ub_p-ub_m)/(2*delta)-ub.f(r) << std::endl;
     double du,d2udr2;
-    cout << "checking Functor::evaulate ";
+    std::cout << "checking Functor::evaulate ";
     double e=u.evaluate(r,du,d2udr2);
     double dv_p=u.f(r+delta);
     double dv_m=u.f(r-delta);
-    cout << "  dudr = " << (dv_p-dv_m)/(2*delta)-du;
-    cout << " d2udr2 = " << (dv_p+dv_m-2.0*v)/(delta*delta)-d2udr2 << endl;
-    cout << "checking DFunctor::evaulate ";
+    std::cout << "  dudr = " << (dv_p-dv_m)/(2*delta)-du;
+    std::cout << " d2udr2 = " << (dv_p+dv_m-2.0*v)/(delta*delta)-d2udr2 << std::endl;
+    std::cout << "checking DFunctor::evaulate ";
     e=ub.evaluate(r,du,d2udr2);
     v=ub.f(r);
     dv=ub.df(r);
     dv_p=ub.f(r+delta);
     dv_m=ub.f(r-delta);
-    cout << " dudr = " << (dv_p-dv_m)/(2*delta)-du;
-    cout << " d2udr2 = " << (dv_p+dv_m-2.0*v)/(delta*delta)-d2udr2 << endl;
+    std::cout << " dudr = " << (dv_p-dv_m)/(2*delta)-du;
+    std::cout << " d2udr2 = " << (dv_p+dv_m-2.0*v)/(delta*delta)-d2udr2 << std::endl;
   }
 };
 
@@ -89,11 +88,11 @@ int main(int argc, char** argv)
   }
   else
   {
-    cout << "Using default values" << endl;
-    cout << "Usage : radfunc B distance cutoff-distance " << endl;
+    std::cout << "Using default values" << std::endl;
+    std::cout << "Usage : radfunc B distance cutoff-distance " << std::endl;
   }
-  cout << "rc= " << rc << " distance= " << r << endl;
-  cout << "Printing differences: small numbers are good." << endl;
+  std::cout << "rc= " << rc << " distance= " << r << std::endl;
+  std::cout << "Printing differences: small numbers are good." << std::endl;
   //test WMFunctors
   {
     typedef WMFunctor<double> RadFunctor;
@@ -102,7 +101,7 @@ int main(int argc, char** argv)
     RadFunctor up(b+delta,rc);
     RadFunctor um(b-delta,rc);
     DerivRadFunctor ub(b,rc);
-    cout << endl << "Testing WM functors " << endl;
+    std::cout << std::endl << "Testing WM functors " << std::endl;
     RadFunctorTest<RadFunctor,DerivRadFunctor> test(u,ub,up,um);
     test.run(r,delta);
   }
@@ -114,7 +113,7 @@ int main(int argc, char** argv)
     RadFunctor up(-0.5,b+delta);
     RadFunctor um(-0.5,b-delta);
     DerivRadFunctor ub(-0.5,b);
-    cout << endl << "Testing pade functors " << endl;
+    std::cout << std::endl << "Testing pade functors " << std::endl;
     RadFunctorTest<RadFunctor,DerivRadFunctor> test(u,ub,up,um);
     test.run(r,delta);
   }

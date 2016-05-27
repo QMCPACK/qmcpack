@@ -27,37 +27,37 @@ namespace qmcplusplus
 
 //int OrbitalBuilderBase::print_level=1;
 
-string OrbitalBuilderBase::wfs_tag="wavefunction";
+std::string OrbitalBuilderBase::wfs_tag="wavefunction";
 
-string OrbitalBuilderBase::param_tag="parameter";
+std::string OrbitalBuilderBase::param_tag="parameter";
 
-string OrbitalBuilderBase::dtable_tag="distancetable";
+std::string OrbitalBuilderBase::dtable_tag="distancetable";
 
-string OrbitalBuilderBase::jastrow_tag="jastrow";
+std::string OrbitalBuilderBase::jastrow_tag="jastrow";
 
-string OrbitalBuilderBase::detset_tag="determinantset";
+std::string OrbitalBuilderBase::detset_tag="determinantset";
 
-string OrbitalBuilderBase::sd_tag="slaterdeterminant";
+std::string OrbitalBuilderBase::sd_tag="slaterdeterminant";
 
-string OrbitalBuilderBase::det_tag="determinant";
+std::string OrbitalBuilderBase::det_tag="determinant";
 
-string OrbitalBuilderBase::rn_tag="determinant_rn";
+std::string OrbitalBuilderBase::rn_tag="determinant_rn";
 
-string OrbitalBuilderBase::spo_tag="psi";
+std::string OrbitalBuilderBase::spo_tag="psi";
 
-string OrbitalBuilderBase::sposet_tag="sposet";
+std::string OrbitalBuilderBase::sposet_tag="sposet";
 
-string OrbitalBuilderBase::basisset_tag="basisset";
+std::string OrbitalBuilderBase::basisset_tag="basisset";
 
-string OrbitalBuilderBase::basis_tag="basis";
+std::string OrbitalBuilderBase::basis_tag="basis";
 
-string OrbitalBuilderBase::basisfunc_tag="phi";
+std::string OrbitalBuilderBase::basisfunc_tag="phi";
 
-string OrbitalBuilderBase::ionorb_tag="ionwf";
+std::string OrbitalBuilderBase::ionorb_tag="ionwf";
 
-string OrbitalBuilderBase::backflow_tag="backflow";
+std::string OrbitalBuilderBase::backflow_tag="backflow";
 
-string OrbitalBuilderBase::multisd_tag="multideterminant";
+std::string OrbitalBuilderBase::multisd_tag="multideterminant";
 
 OrbitalBuilderBase::OrbitalBuilderBase(ParticleSet& p, TrialWaveFunction& psi):
   MPIObjectBase(psi.getCommunicator()),

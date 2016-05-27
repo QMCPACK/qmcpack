@@ -159,7 +159,7 @@ public:
 private:
   void addGaussian(xmlNodePtr cur);
   void addSlater(xmlNodePtr cur);
-  void addNumerical(xmlNodePtr cur, const string& dsname);
+  void addNumerical(xmlNodePtr cur, const std::string& dsname);
   void addPade(xmlNodePtr cur);
   hid_t m_fileid;
 };

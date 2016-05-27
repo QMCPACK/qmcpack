@@ -26,19 +26,19 @@
 template<typename T>
 inline T abs_diff(T a, T b)
 {
-  return abs(a-b);
+  return std::abs(a-b);
 }
 
 template<typename T>
 inline T abs_diff(std::complex<T>& a, std::complex<T>& b)
 {
-  return abs(a.real()-b.real())+abs(a.imag()-b.imag());
+  return std::abs(a.real()-b.real())+abs(a.imag()-b.imag());
 }
 
 template<typename T>
 inline T abs_diff(std::complex<T>& a, T b)
 {
-  return abs(a.real()-b);
+  return std::abs(a.real()-b);
 }
 
 int main(int argc, char** argv)
@@ -52,7 +52,7 @@ int main(int argc, char** argv)
   int niters=10;
   int fft_dim=16;
   typedef double real_type;
-  typedef complex<double> complex_type;
+  typedef std::complex<double> complex_type;
   //const unsigned int fft_id=FFTW_ENG;
   const unsigned int fft_id=FFTMKL_ENG;
   typedef fft1d_engine<real_type,complex_type,fft_id> fft1d_engine_t;
@@ -71,7 +71,7 @@ int main(int argc, char** argv)
   //myfft.create(in.data(),out.data());
   myfft.create(in.data());
   for(int i=0; i<howmany; ++i)
-    std::copy(sample.begin(),sample.end(),in[i]);
+    copy(sample.begin(),sample.end(),in[i]);
   myfft.fft_forward(in.data());
   myfft.fft_backward(in.data());
   //myfft.fft_forward(in.data(),out.data());
@@ -80,12 +80,12 @@ int main(int argc, char** argv)
   in *= norm;
   for(int i=0; i<howmany; ++i)
   {
-    cout << "State index = " << i << endl;
+    std::cout << "State index = " << i << std::endl;
     for(int k=0; k<fft_dim; ++k)
     {
-      //cout << target(i,k) << " " << sample[k] << endl;
+      //cout << target(i,k) << " " << sample[k] << std::endl;
       if(abs_diff(in(i,k),sample[k])>eps)
-        cerr << "WRONG " << in(i,k) << sample[k] <<  " " << endl;
+        std::cerr << "WRONG " << in(i,k) << sample[k] <<  " " << std::endl;
     }
   }
   OHMMS::Controller->finalize();

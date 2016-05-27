@@ -30,21 +30,20 @@
 #else
 #include <sstream>
 #endif
-using namespace std;
 
-char* readLine(char *s, int max, istream &fp);
+char* readLine(char *s, int max, std::istream &fp);
 
-int getwords(vector<string>& slist, istream &fp);
-int getwords(vector<string>& slist, istream &fp, string& aline );
-int getwords(vector<string>& slist,istream& fpos, const char* field, const char* terminate);
-int getwords(vector<string>& slist,istream& fpos, const char* terminate);
-int getXwords(vector<string>& slist, istream &fp);
-int getXwords(vector<string>& slist,istream& fpos, const char* terminate);
+int getwords(std::vector<std::string>& slist, std::istream &fp);
+int getwords(std::vector<std::string>& slist, std::istream &fp, std::string& aline );
+int getwords(std::vector<std::string>& slist,std::istream& fpos, const char* field, const char* terminate);
+int getwords(std::vector<std::string>& slist,std::istream& fpos, const char* terminate);
+int getXwords(std::vector<std::string>& slist, std::istream &fp);
+int getXwords(std::vector<std::string>& slist,std::istream& fpos, const char* terminate);
 
-unsigned parsewords(const char *inbuf, vector<string>& slist);
-unsigned parsewords(const char *inbuf, list<string>& slist);
+unsigned parsewords(const char *inbuf, std::vector<std::string>& slist);
+unsigned parsewords(const char *inbuf, std::list<std::string>& slist);
 
-void readXmol(istream& ,double*,int);
+void readXmol( std::istream& ,double*,int);
 
 struct OhmmsAsciiParser
 {
@@ -100,7 +99,7 @@ struct OhmmsAsciiParser
       getline(is,aline,'\n');
       if(! is)
       {
-        cout << "KEYWORD " << keyword << " : NOT FOUND. " << endl;
+        std::cout << "KEYWORD " << keyword << " : NOT FOUND. " << std::endl;
         abort();
       }
       if(aline.find(keyword) < aline.size())
@@ -120,7 +119,7 @@ struct OhmmsAsciiParser
       getline(is,aline,'\n');
       if(! is)
       {
-        cout << "KEYWORD " << keyword << " : NOT FOUND. " << endl;
+        std::cout << "KEYWORD " << keyword << " : NOT FOUND. " << std::endl;
         abort();
       }
       if(aline.find(keyword) < aline.size())
@@ -139,7 +138,7 @@ struct OhmmsAsciiParser
     {
       std::string aline;
       getline(is,aline,'\n');
-      if(aline.find(keyword) != string::npos)
+      if(aline.find(keyword) != std::string::npos)
         // < aline.size()) {
       {
         notfound = false;
@@ -160,7 +159,7 @@ struct OhmmsAsciiParser
     {
       std::string aline;
       getline(is,aline,'\n');
-      if(aline.find(keyword) != string::npos)
+      if(aline.find(keyword) != std::string::npos)
         // < aline.size()) {
       {
         notfound = false;

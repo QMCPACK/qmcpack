@@ -39,14 +39,14 @@ public:
    * for(int sg=0;sg<F.rows();++sg)
    *   for(int s=s_offset[sg]; s<s_offset[sg+1];++s)
    */
-  vector<int> s_offset;
+  std::vector<int> s_offset;
   /** index offset for the target particles
    *
    * The loop over the particles is replaced by a double loop as
    * for(int tg=0;tg<F.cols();++tg)
    *   for(int t=t_offset[tg]; t<t_offset[tg+1];++t)
    */
-  vector<int> t_offset;
+  std::vector<int> t_offset;
 
   Backflow_eI_spin(ParticleSet& ions, ParticleSet& els)
     : BackflowFunctionBase(ions,els), Spin(false)
@@ -89,14 +89,14 @@ public:
         RadFunc(source_g,ig)=afunc;
         Fmask(source_g,ig)=pid;
       }
-      app_log() << " Adding functor of type "  << source_g << " for all the target. " << endl;
+      app_log() << " Adding functor of type "  << source_g << " for all the target. " << std::endl;
     }
     else
     {
       Spin=true;
       RadFunc(source_g,target_g)=afunc;
       Fmask(source_g,target_g)=source_g*RadFunc.cols()+target_g;
-      app_log() << " Adding functor of type "  << source_g << " for the target type " << target_g << endl;
+      app_log() << " Adding functor of type "  << source_g << " for the target type " << target_g << std::endl;
     }
   }
 
@@ -129,12 +129,12 @@ public:
     return clone;
   }
 
-  void reportStatus(ostream& os)
+  void reportStatus(std::ostream& os)
   {
-    cerr<<RadFunc.size()<<endl;
-    cerr<<isOptimizable()<<endl;
-    cerr<<myTable<<endl;
-    cerr << offsetPrms << endl;
+    std::cerr <<RadFunc.size()<< std::endl;
+    std::cerr <<isOptimizable()<< std::endl;
+    std::cerr <<myTable<< std::endl;
+    std::cerr << offsetPrms << std::endl;
   }
 
   void resetParameters(const opt_variables_type& active)
@@ -351,7 +351,7 @@ public:
    */
   inline void
   evaluatePbyP(const ParticleSet& P, ParticleSet::ParticlePos_t& newQP
-               ,const vector<int>& index)
+               ,const std::vector<int>& index)
   {
     evaluatePbyP(P,index[0],newQP);
   }
@@ -381,7 +381,7 @@ public:
 
   inline void
   evaluatePbyP(const ParticleSet& P, ParticleSet::ParticlePos_t& newQP
-               ,const vector<int>& index, HessMatrix_t& Amat)
+               ,const std::vector<int>& index, HessMatrix_t& Amat)
   {
     evaluatePbyP(P,index[0],newQP,Amat);
   }
@@ -416,7 +416,7 @@ public:
 
   inline void
   evaluatePbyP(const ParticleSet& P, ParticleSet::ParticlePos_t& newQP
-               ,const vector<int>& index, GradMatrix_t& Bmat_full, HessMatrix_t& Amat)
+               ,const std::vector<int>& index, GradMatrix_t& Bmat_full, HessMatrix_t& Amat)
   {
     evaluatePbyP(P,index[0],newQP,Bmat_full,Amat);
   }
@@ -500,7 +500,7 @@ public:
               RealType uij = func->evaluate(myTable->r(nn),du,d2u);
               //           std::fill(derivs.begin(),derivs.end(),0.0);
               int NPrms = func->NumParams;
-              vector<TinyVector<RealType,3> > derivsju(NPrms);
+              std::vector<TinyVector<RealType,3> > derivsju(NPrms);
               func->evaluateDerivatives(myTable->r(nn),derivsju);
               du *= myTable->rinv(nn);
               //PosType u = uij*myTable->dr(nn);

@@ -35,8 +35,8 @@ struct McMillanJ2GFunctor: public OptimizableFunctorBase
   real_type A, B, R0, c1, c2;
   // setting R0 = 2.5 by default, in the constructor
 
-  string ID_A;
-  string ID_B;
+  std::string ID_A;
+  std::string ID_B;
 
   /** constructor
   * @param a A coefficient
@@ -178,11 +178,11 @@ struct McMillanJ2GFunctor: public OptimizableFunctorBase
     while(tcur != NULL)
     {
       //@todo Var -> <param(eter) role="opt"/>
-      string cname((const char*)(tcur->name));
+      std::string cname((const char*)(tcur->name));
       if(cname == "parameter" || cname == "Var")
       {
-        string aname((const char*)(xmlGetProp(tcur,(const xmlChar *)"name")));
-//            string idname((const char*)(xmlGetProp(tcur,(const xmlChar *)"id")));
+        std::string aname((const char*)(xmlGetProp(tcur,(const xmlChar *)"name")));
+//            std::string idname((const char*)(xmlGetProp(tcur,(const xmlChar *)"id")));
         if(aname == "a")
         {
           putContent(A,tcur);
@@ -203,7 +203,7 @@ struct McMillanJ2GFunctor: public OptimizableFunctorBase
     c1 = evaluate(R0, Y, c2);
     c2 = -Y/(2.0*R0*c1);
     c1 *= std::exp(c2*R0*R0);
-//      cout << "ChangMo's test: " << R0 << ", " << cutoff_radius << ", " << c1 << ", " << c2 << endl << evaluate(R0-0.0001) << ", " << evaluate(R0+0.0001) << endl;
+//      std::cout << "ChangMo's test: " << R0 << ", " << cutoff_radius << ", " << c1 << ", " << c2 << std::endl << evaluate(R0-0.0001) << ", " << evaluate(R0+0.0001) << std::endl;
     return true;
   }
 

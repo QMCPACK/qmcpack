@@ -59,23 +59,23 @@ StressPBC::StressPBC(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& Ps
       firsttime=false;
   }
 
- // app_log()<<"Ion sr = "<<evaluateSR_AA(PtclA)<<endl;
- // app_log()<<"\nIon lr = "<<evaluateLR_AA(PtclA)<<endl;
-//  app_log()<<"\n Ion const = "<<evalConsts_AA(PtclA)<<endl;
- // app_log()<<"\n e-e const = "<<evalConsts_AA(PtclTarg)<<endl;
-//  app_log()<<"\n e-I const = "<<evalConsts_AB()<<endl<<endl;
+ // app_log()<<"Ion sr = "<<evaluateSR_AA(PtclA)<< std::endl;
+ // app_log()<<"\nIon lr = "<<evaluateLR_AA(PtclA)<< std::endl;
+//  app_log()<<"\n Ion const = "<<evalConsts_AA(PtclA)<< std::endl;
+ // app_log()<<"\n e-e const = "<<evalConsts_AA(PtclTarg)<< std::endl;
+//  app_log()<<"\n e-I const = "<<evalConsts_AB()<< std::endl<< std::endl;
 //  evaluateSR_AA();
   
 //  stress_IonIon=evaluateSR_AA(PtclA)+evaluateLR_AA(PtclA)+evalConsts_AA(PtclA); //+ evaluateLR_AA(PtclA);
 //  stress_eI_const+=evalConsts_AB();
  // stress_ee_const+=evalConsts_AA(PtclTarg);
   
- // app_log()<<"\n====ion-ion stress ====\n"<<stress_IonIon<<endl;
- // app_log()<<"\n eI_const = "<<stress_eI_const<<endl;
-  //app_log()<< "IonIon Force" <<endl;
- // app_log()<<forces_IonIon<<endl; 
- // app_log() << "  Maximum K shell " << AB->MaxKshell << endl;
- // app_log() << "  Number of k vectors " << AB->Fk.size() << endl;
+ // app_log()<<"\n====ion-ion stress ====\n"<<stress_IonIon<< std::endl;
+ // app_log()<<"\n eI_const = "<<stress_eI_const<< std::endl;
+  //app_log()<< "IonIon Force" << std::endl;
+ // app_log()<<forces_IonIon<< std::endl; 
+ // app_log() << "  Maximum K shell " << AB->MaxKshell << std::endl;
+ // app_log() << "  Number of k vectors " << AB->Fk.size() << std::endl;
   
   ///////////////////////////////////////////////////////////////
 }
@@ -139,7 +139,7 @@ void StressPBC::initBreakup(ParticleSet& P)
   for(int iat=0; iat<NptclB; iat++)
     totQ+=Qat[iat] = Qspec[P.GroupID[iat]];
  
-  kcdifferent = (std::abs(PtclA.Lattice.LR_kc - P.Lattice.LR_kc) > numeric_limits<RealType>::epsilon());
+  kcdifferent = (std::abs(PtclA.Lattice.LR_kc - P.Lattice.LR_kc) > std::numeric_limits<RealType>::epsilon());
   minkc = std::min(PtclA.Lattice.LR_kc,P.Lattice.LR_kc);
   //AB->initBreakup(*PtclB);
   //initBreakup is called only once
@@ -214,14 +214,14 @@ SymTensor<StressPBC::RealType,OHMMS_DIM> StressPBC::evaluateSR_AA(ParticleSet& P
    int NumSpecies = P.getSpeciesSet().TotalNum;
   //RealType res=0.0;
   //Loop over distinct eln-ion pairs
- //app_log()<<"NumSpeciesA = "<<NumSpeciesA<<endl;
+ //app_log()<<"NumSpeciesA = "<<NumSpeciesA<< std::endl;
  
 //  int ChargeAttribIndx = P.getSpeciesSet().getAttribute("charge");
  // int MemberAttribIndx =P.getSpeciesSet().getAttribute("membersize");
   
- // vector<int> NofSpecies;
+ // std::vector<int> NofSpecies;
  // NofSpecies.resize(NumSpecies);
- // vector<int> Zmyspec;
+ // std::vector<int> Zmyspec;
 //  Zmyspec.resize(NumSpecies);
 //  for(int spec=0; spec<NumSpecies; spec++)
 //  {
@@ -254,8 +254,8 @@ SymTensor<StressPBC::RealType,OHMMS_DIM> StressPBC::evaluateLR_AA(ParticleSet& P
   int ChargeAttribIndx = P.getSpeciesSet().getAttribute("charge");
   int MemberAttribIndx =P.getSpeciesSet().getAttribute("membersize");
   
-  vector<int> NofSpecies;
-  vector<int> Zmyspec;
+  std::vector<int> NofSpecies;
+  std::vector<int> Zmyspec;
   NofSpecies.resize(NumSpecies);
   Zmyspec.resize(NumSpecies);;
 
@@ -278,7 +278,7 @@ SymTensor<StressPBC::RealType,OHMMS_DIM> StressPBC::evaluateLR_AA(ParticleSet& P
  #else      
         SymTensor<RealType, OHMMS_DIM> temp = AA->evaluateStress(PtclRhoK.KLists.kshell, PtclRhoK.rhok_r[spec1], PtclRhoK.rhok_i[spec1], PtclRhoK.rhok_r[spec2], PtclRhoK.rhok_i[spec2]);
  #endif       
-       // app_log()<<"WEEEE "<<temp<<endl;ls
+       // app_log()<<"WEEEE "<<temp<< std::endl;ls
        
         if(spec2==spec1)
           temp*=0.5;
@@ -333,8 +333,8 @@ StressPBC::evalConsts_AA(ParticleSet& P)
   int ChargeAttribIndx = P.getSpeciesSet().getAttribute("charge");
   int MemberAttribIndx =P.getSpeciesSet().getAttribute("membersize");
   
-  vector<int> NofSpecies;
-  vector<int> Zmyspec;
+  std::vector<int> NofSpecies;
+  std::vector<int> Zmyspec;
   NofSpecies.resize(NumSpecies);
   Zmyspec.resize(NumSpecies);
  
@@ -348,7 +348,7 @@ StressPBC::evalConsts_AA(ParticleSet& P)
 //  V_const = 0.0;
   //v_l(r=0) including correction due to the non-periodic direction
   SymTensor<RealType, OHMMS_DIM> vl_r0 = AA->evaluateLR_r0_dstrain();
-  //app_log()<<"   PBCAA vl_r0 = "<<vl_r0<<endl;
+  //app_log()<<"   PBCAA vl_r0 = "<<vl_r0<< std::endl;
   for(int ipart=0; ipart<NumCenters; ipart++)
   {
   //  v1 =  -.5*Zat[ipart]*Zat[ipart]*vl_r0;
@@ -356,7 +356,7 @@ StressPBC::evalConsts_AA(ParticleSet& P)
     tmpconsts += -.5*P.Z[ipart]*P.Z[ipart]*vl_r0;
   }
  // if(report)
-    app_log() << "   PBCAA self-interaction term \n" << tmpconsts << endl;
+    app_log() << "   PBCAA self-interaction term \n" << tmpconsts << std::endl;
   //Compute Madelung constant: this is not correct for general cases
   SymTensor<RealType, OHMMS_DIM> MC0 = 0;
   for(int ks=0; ks<AA->Fk.size(); ks++)
@@ -374,8 +374,8 @@ StressPBC::evalConsts_AA(ParticleSet& P)
     tmpconsts += v1*vs_k0;
   }
  // if(report)
-    app_log() << "   PBCAA total constant \n" << tmpconsts << endl;
-  //app_log() << "   MC0 of PBCAA " << MC0 << endl;
+    app_log() << "   PBCAA total constant \n" << tmpconsts << std::endl;
+  //app_log() << "   MC0 of PBCAA " << MC0 << std::endl;
   return tmpconsts;
 }
 
@@ -445,24 +445,24 @@ StressPBC::Return_t StressPBC::g_filter(RealType r)
 
 bool StressPBC::put(xmlNodePtr cur)
 {
-  string ionionforce("yes");
+  std::string ionionforce("yes");
   OhmmsAttributeSet attr;
   attr.add(prefix, "name");
   attr.add(ionionforce, "addionion");
   attr.put(cur);
   addionion = (ionionforce=="yes") || (ionionforce == "true");
-  app_log() << "ionionforce = "<<ionionforce<<endl;
-  app_log() << "addionion="<<addionion<<endl;
-  app_log() << "FirstTime= "<<FirstTime<<endl;
+  app_log() << "ionionforce = "<<ionionforce<< std::endl;
+  app_log() << "addionion="<<addionion<< std::endl;
+  app_log() << "FirstTime= "<<FirstTime<< std::endl;
   ParameterSet fcep_param_set;
   fcep_param_set.add(Rcut, "rcut","real");
   fcep_param_set.add(N_basis, "nbasis", "int");
   fcep_param_set.add(m_exp, "weight_exp", "int");
   fcep_param_set.put(cur);
-  app_log() <<"    StressPBC Parameters"<<endl;
-  app_log() <<"        StressPBC::Rcut="<<Rcut<<endl;
-  app_log() <<"        StressPBC::N_basis="<<N_basis<<endl;
-  app_log() <<"        StressPBC::m_exp="<<m_exp<<endl;
+  app_log() <<"    StressPBC Parameters"<< std::endl;
+  app_log() <<"        StressPBC::Rcut="<<Rcut<< std::endl;
+  app_log() <<"        StressPBC::N_basis="<<N_basis<< std::endl;
+  app_log() <<"        StressPBC::m_exp="<<m_exp<< std::endl;
   InitMatrix();
   return true;
 }

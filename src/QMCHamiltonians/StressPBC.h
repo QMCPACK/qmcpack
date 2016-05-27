@@ -80,21 +80,21 @@ struct StressPBC: public QMCHamiltonianBase, public ForceBase
   int MaxGridPoints;
   
   ///number of particles per species of A
-  vector<int> NofSpeciesA;
+  std::vector<int> NofSpeciesA;
   ///number of particles per species of B
-  vector<int> NofSpeciesB;
+  std::vector<int> NofSpeciesB;
   ///Zat[iat] charge for the iat-th particle of A
-  vector<RealType> Zat;
+  std::vector<RealType> Zat;
   ///Qat[iat] charge for the iat-th particle of B
-  vector<RealType> Qat;
+  std::vector<RealType> Qat;
   ///Zspec[spec] charge for the spec-th species of A
-  vector<RealType> Zspec;
+  std::vector<RealType> Zspec;
   ///Qspec[spec] charge for the spec-th species of B
-  vector<RealType> Qspec;
+  std::vector<RealType> Qspec;
   ///Short-range potential for each ion
-  vector<RadFunctorType*> Vat;
+  std::vector<RadFunctorType*> Vat;
   ///Short-range potential for each species
-  vector<RadFunctorType*> Vspec;
+  std::vector<RadFunctorType*> Vspec;
   
   ///On initialization, signals computation of constant stress from ion.  
   ///For cloning, forces copying of existing stress tensors.  
@@ -129,12 +129,12 @@ struct StressPBC: public QMCHamiltonianBase, public ForceBase
   
   Return_t g_filter(RealType r);
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
 
-  void registerObservables(vector<observable_helper*>& h5list, hid_t gid) const
+  void registerObservables(std::vector<observable_helper*>& h5list, hid_t gid) const
   {
     registerObservablesF(h5list,gid);
   }
@@ -173,7 +173,7 @@ struct StressPBC: public QMCHamiltonianBase, public ForceBase
      stress_eI_const+=evalConsts_AB();
      stress_ee_const+=evalConsts_AA(PtclTarg);
   
-     app_log()<<"\n====ion-ion stress ====\n"<<stress_IonIon<<endl;  
+     app_log()<<"\n====ion-ion stress ====\n"<<stress_IonIon<< std::endl;  
   }
 
 };

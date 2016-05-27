@@ -308,7 +308,7 @@ ExchangePotential::evaluate(const HFAtomicOrbitals& psi,
       int lj = psi.L[j];
       int two_lj_plus_one = 2*lj + 1;
       int kmax = li + lj;
-      int kmin = abs(li - lj);
+      int kmin = std::abs(li - lj);
       if( si == sj )
       {
         for(int k=kmax; k >= kmin; k-=2)

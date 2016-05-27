@@ -56,7 +56,7 @@ public:
 
   ///process xml node
   bool put(xmlNodePtr cur);
-  void resetCostFunction(vector<xmlNodePtr>& cset);
+  void resetCostFunction(std::vector<xmlNodePtr>& cset);
   ///assign optimization parameter i
   Return_t& Params(int i)
   {
@@ -78,7 +78,7 @@ public:
   Return_t computedCost();
   void printEstimates();
   ///return the gradient of cost value for CGMinimization
-  virtual void GradCost(vector<Return_t>& PGradient, const vector<Return_t>& PM, Return_t FiniteDiff=0) {};
+  virtual void GradCost(std::vector<Return_t>& PGradient, const std::vector<Return_t>& PM, Return_t FiniteDiff=0) {};
   ///return the number of optimizable parameters
   inline int NumParams()
   {
@@ -123,16 +123,16 @@ public:
   {
     OptVariables=Psi.coefficientHistory.getAvgCoefficients(N);
   }
-  //void getConfigurations(vector<string>& ConfigFile, int partid, int nparts);
+  //void getConfigurations(std::vector<std::string>& ConfigFile, int partid, int nparts);
 
   void setTargetEnergy(Return_t et);
 
-  void setRootName(const string& aroot)
+  void setRootName(const std::string& aroot)
   {
     RootName=aroot;
   }
 
-  void setStream(ostream* os)
+  void setStream(std::ostream* os)
   {
     msg_stream = os;
   }
@@ -148,7 +148,7 @@ public:
    * If successful, any optimization object updates the parameters by x0 + dl*gr
    * and proceeds with a new step.
    */
-  bool lineoptimization(const vector<Return_t>& x0, const vector<Return_t>& gr, Return_t val0,
+  bool lineoptimization(const std::vector<Return_t>& x0, const std::vector<Return_t>& gr, Return_t val0,
                         Return_t& dl, Return_t& val_proj, Return_t& lambda_max);
 
   virtual Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& H2, Matrix<Return_t>& Hamiltonian, Matrix<Return_t>& Variance, Matrix<Return_t>& Overlap)=0;
@@ -158,11 +158,11 @@ public:
     return 1;
   }
 
-  virtual void getConfigurations(const string& aroot)=0;
+  virtual void getConfigurations(const std::string& aroot)=0;
 
   virtual void checkConfigurations()=0;
 
-  void setRng(vector<RandomGenerator_t*>& r);
+  void setRng(std::vector<RandomGenerator_t*>& r);
 
   inline void setneedGrads(bool tf)
   {
@@ -234,7 +234,7 @@ protected:
   ///threshold to remove configurations from sample with |Psi_old| < SmallWeight
   Return_t SmallWeight;
   Return_t w_beta;
-  string GEVType;
+  std::string GEVType;
   Return_t vmc_or_dmc;
   bool needGrads;
   /** Rescaling factor to correct the target energy Etarget=(1+CorrelationFactor)*Etarget
@@ -266,25 +266,25 @@ protected:
   ///index mapping for <negative> constraints
   std::vector<TinyVector<int,2> > negateVarMap;
   ///stream to which progress is sent
-  ostream* msg_stream;
+  std::ostream* msg_stream;
   ///xml node to be dumped
   xmlNodePtr m_wfPtr;
   ///document node to be dumped
   xmlDocPtr m_doc_out;
   ///parameters to be updated
-  std::map<string,xmlNodePtr> paramNodes;
+  std::map<std::string,xmlNodePtr> paramNodes;
   ///coefficients to be updated
-  std::map<string,xmlNodePtr> coeffNodes;
+  std::map<std::string,xmlNodePtr> coeffNodes;
   ///attributes to be updated
-  std::map<string,pair<xmlNodePtr,string> > attribNodes;
+  std::map<std::string,std::pair<xmlNodePtr,std::string> > attribNodes;
   ///string for the file root
-  string RootName;
+  std::string RootName;
   ///Hamiltonians that depend on the optimization: KE
   QMCHamiltonian H_KE;
 
   ///Random number generators
-  vector<RandomGenerator_t*> RngSaved,MoverRng;
-  string includeNonlocalH;
+  std::vector<RandomGenerator_t*> RngSaved,MoverRng;
+  std::string includeNonlocalH;
 
 
   /** Sum of energies and weights for averages
@@ -300,11 +300,11 @@ protected:
   Matrix<Return_t> Records;
   ///** Saved derivative properties and Hderivative properties of all the walkers
   //*/
-  //vector<vector<vector<Return_t> >* > DerivRecords;
-  //vector<vector<vector<Return_t> >* > HDerivRecords;
-  // string that defines whether buffers are used during correlated sampling
+  //vector<std::vector<vector<Return_t> >* > DerivRecords;
+  //vector<std::vector<vector<Return_t> >* > HDerivRecords;
+  // std::string that defines whether buffers are used during correlated sampling
   // to store temporary object
-  string usebuffer;
+  std::string usebuffer;
   // are we using buffers to store derivative informatin
   bool StoreDerivInfo;
   // storage level
@@ -314,11 +314,11 @@ protected:
   typedef ParticleSet::ParticleGradient_t ParticleGradient_t;
   typedef ParticleSet::ParticleLaplacian_t ParticleLaplacian_t;
   ///** Fixed  Gradients , \f$\nabla\ln\Psi\f$, components */
-  vector<ParticleGradient_t*> dLogPsi;
+  std::vector<ParticleGradient_t*> dLogPsi;
   ///** Fixed  Laplacian , \f$\nabla^2\ln\Psi\f$, components */
-  vector<ParticleLaplacian_t*> d2LogPsi;
+  std::vector<ParticleLaplacian_t*> d2LogPsi;
   ///stream for debug
-  ostream* debug_stream;
+  std::ostream* debug_stream;
 
   bool checkParameters();
   void updateXmlNodes();

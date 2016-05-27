@@ -79,10 +79,10 @@ int main(int argc, char** argv)
   app_log() << "#einspline benchmark grid = " << nx << " " << ny << " " << nz
             << " num_splines = " << num_splines << " num_samples = " << nsamples
             << " iterations = " << niters
-            << " number of operations in millions " << endl;
-  app_log() << "#MPI = " << mycomm->size() << "  OMP_NUM_THREADS = " << omp_get_max_threads() << endl;
+            << " number of operations in millions " << std::endl;
+  app_log() << "#MPI = " << mycomm->size() << "  OMP_NUM_THREADS = " << omp_get_max_threads() << std::endl;
   app_log() << "#   mpi   openmp    datatype     "
-            << "  value_op         vgl_op              vgh_op         value_time       vgl_time         vgh_time" << endl;
+            << "  value_op         vgl_op              vgh_op         value_time       vgl_time         vgh_time" << std::endl;
   big_clock.restart();
   app_log().flush();
   #pragma omp parallel
@@ -122,12 +122,12 @@ int main(int argc, char** argv)
   c_timer_t*=tfac;
   app_log().setf(std::ios::scientific, std::ios::floatfield);
   app_log().precision(6);
-  app_log() << "einspline_smp "<< setw(4) << mycomm->size()<< setw(4) << omp_get_max_threads() <<  " double    "<< nops/d_timer_t << d_timer_t << endl;
-  app_log() << "einspline_smp "<< setw(4) << mycomm->size()<< setw(4) << omp_get_max_threads() <<  " d-complex "<< nops/z_timer_t << z_timer_t << endl;
-  app_log() << "einspline_smp "<< setw(4) << mycomm->size()<< setw(4) << omp_get_max_threads() <<  " single    "<< nops/s_timer_t << s_timer_t << endl;
-  app_log() << "einspline_smp "<< setw(4) << mycomm->size()<< setw(4) << omp_get_max_threads() <<  " s-complex "<< nops/c_timer_t << c_timer_t << endl;
-  app_log() << " Initialization = " << t_init << endl;
-  app_log() << " Total time = " << t_comp << endl;
+  app_log() << "einspline_smp "<< std::setw(4) << mycomm->size()<< std::setw(4) << omp_get_max_threads() <<  " double    "<< nops/d_timer_t << d_timer_t << std::endl;
+  app_log() << "einspline_smp "<< std::setw(4) << mycomm->size()<< std::setw(4) << omp_get_max_threads() <<  " d-complex "<< nops/z_timer_t << z_timer_t << std::endl;
+  app_log() << "einspline_smp "<< std::setw(4) << mycomm->size()<< std::setw(4) << omp_get_max_threads() <<  " single    "<< nops/s_timer_t << s_timer_t << std::endl;
+  app_log() << "einspline_smp "<< std::setw(4) << mycomm->size()<< std::setw(4) << omp_get_max_threads() <<  " s-complex "<< nops/c_timer_t << c_timer_t << std::endl;
+  app_log() << " Initialization = " << t_init << std::endl;
+  app_log() << " Total time = " << t_comp << std::endl;
   OHMMS::Controller->finalize();
   return 0;
 }

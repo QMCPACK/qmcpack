@@ -37,9 +37,9 @@ class PolymerEstimator
   int EpotLength;
   int EpotSize;
   int ElocSize;
-  ofstream* fout;
-  ofstream* OutLocEn;
-  ofstream* OutPotEn;
+  std::ofstream* fout;
+  std::ofstream* OutLocEn;
+  std::ofstream* OutPotEn;
 
   Vector<double> AvgLocalEnergy;
   Vector<double> AvgPotentialEnergy;
@@ -59,7 +59,7 @@ public:
 
   void clean();
 
-  void resetReportSettings(const string& aname);
+  void resetReportSettings(const std::string& aname);
 
   inline void reset()
   {

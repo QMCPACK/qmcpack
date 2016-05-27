@@ -64,11 +64,11 @@ void  HFDHE2Potential::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi
 void  HFDHE2Potential::addCorrection(QMCHamiltonian& targetH)
 {
   HFDHE2Potential_tail* tcrr = new HFDHE2Potential_tail(this);
-  string corrected=myName+"_tail";
+  std::string corrected=myName+"_tail";
   targetH.addOperator(tcrr,corrected,false);
 }
 
-void HFDHE2Potential_tail::registerObservables(vector<observable_helper*>& h5list
+void HFDHE2Potential_tail::registerObservables(std::vector<observable_helper*>& h5list
     , hid_t gid) const
 {
   int loc=h5list.size();

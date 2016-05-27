@@ -11,7 +11,7 @@ public:
   HDF5_FW_float():RANK(1) {}
   ~HDF5_FW_float() {}
 
-  void openFile(string filename)
+  void openFile( std::string filename)
   {
     c_file = H5Fopen(filename.c_str(),H5F_ACC_RDONLY,H5P_DEFAULT);
   }
@@ -25,7 +25,7 @@ public:
 
   void setStep(int step)
   {
-    stringstream gname("");
+    std::stringstream gname("");
     gname<<"Block_"<< step;
     d_file = H5Gopen(c_file,gname.str().c_str());
     dataset = H5Dopen(d_file, "Positions");
@@ -38,7 +38,7 @@ public:
 //         }
   }
 
-  int getFloat(int first, int last, vector<float>& data_out)
+  int getFloat(int first, int last, std::vector<float>& data_out)
   {
     if (dims[0]< first)
       return 0;
@@ -97,7 +97,7 @@ public:
   HDF5_FW_long():RANK(1) {}
   ~HDF5_FW_long() {}
 
-  void openFile(string filename)
+  void openFile( std::string filename)
   {
     c_file = H5Fopen(filename.c_str(),H5F_ACC_RDONLY,H5P_DEFAULT);
   }
@@ -108,7 +108,7 @@ public:
       c_file=-1;
   }
 
-  void setID(string ID)
+  void setID( std::string ID)
   {
     IDstring=ID;
   }
@@ -116,7 +116,7 @@ public:
 
   void setStep(int step)
   {
-    stringstream gname("");
+    std::stringstream gname("");
     gname<<"Block_"<< step;
     d_file = H5Gopen(c_file,gname.str().c_str());
     dataset = H5Dopen(d_file, "Positions");
@@ -130,7 +130,7 @@ public:
     }
   }
 
-  int getFloat(int first, int last, vector<float>& data_out)
+  int getFloat(int first, int last, std::vector<float>& data_out)
   {
     if (dims[0]< last)
       data_out.resize(dims[0]-first);
@@ -157,9 +157,9 @@ public:
     H5Gclose(d_file);
   }
 
-  void readAll(int step, vector<long>& data_out)
+  void readAll(int step, std::vector<long>& data_out)
   {
-    stringstream gname("");
+    std::stringstream gname("");
     gname<<"Block_"<< step;
     hid_t d_file = H5Gopen(c_file,gname.str().c_str());
     dataset = H5Dopen(d_file, IDstring.c_str());
@@ -203,7 +203,7 @@ private:
 
   hid_t c_file;
   hid_t d_file;
-  string IDstring;
+  std::string IDstring;
 };
 
 class HDF5_FW_observables
@@ -212,14 +212,14 @@ public:
   HDF5_FW_observables() {}
   ~HDF5_FW_observables() {}
 
-  void setFileName(string fn)
+  void setFileName( std::string fn)
   {
     std::stringstream sstr("");
     sstr<<fn<<".storedOBS.h5";
     filename=sstr.str();
   }
 
-  string getFileName()
+  std::string getFileName()
   {
     return filename;
   }
@@ -244,7 +244,7 @@ public:
       c_file=-1;
   }
 
-  void addStep(int step, vector<double>& Observables)
+  void addStep(int step, std::vector<double>& Observables)
   {
     std::stringstream sstr("");
     sstr<<"Block_"<<step;
@@ -257,7 +257,7 @@ public:
     H5Pset_chunk(p,rank,dims);
 //
 //         sstr.str("OBS");
-//         string groupName = sstr.str();
+//         std::string groupName = sstr.str();
     dataset =  H5Dcreate(c_file, sstr.str().c_str(), H5T_NATIVE_DOUBLE, dataspace, p);
     memspace = H5Screate_simple( rank, dims, NULL);
     status = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, memspace, dataspace, H5P_DEFAULT,&(Observables[0]));
@@ -267,9 +267,9 @@ public:
 //         if (H5Gclose(d_file) > -1) d_file = -1;
   }
 
-  void readStep(int step, vector<double>& data_out)
+  void readStep(int step, std::vector<double>& data_out)
   {
-    stringstream gname("");
+    std::stringstream gname("");
     gname<<"Block_"<< step;
 //         d_file = H5Gopen(c_file,gname.str().c_str());
 //         gname.str("OBS");
@@ -294,7 +294,7 @@ public:
 
   int numObsStep(int step)
   {
-    stringstream gname("");
+    std::stringstream gname("");
     gname<<"Block_"<< step;
     dataset = H5Dopen(c_file, gname.str().c_str());
     dataspace = H5Dget_space(dataset);
@@ -325,7 +325,7 @@ private:
 
   hid_t c_file;
   hid_t d_file;
-  string filename;
+  std::string filename;
 };
 
 class HDF5_FW_weights
@@ -334,14 +334,14 @@ public:
   HDF5_FW_weights() {}
   ~HDF5_FW_weights() {}
 
-  void setFileName(string fn)
+  void setFileName( std::string fn)
   {
     std::stringstream sstr("");
     sstr<<fn<<".storedWeights.h5";
     filename=sstr.str();
   }
 
-  string getFileName()
+  std::string getFileName()
   {
     return filename;
   }
@@ -379,7 +379,7 @@ public:
       d_file = -1;
   }
 
-  void addStep(int step, vector<int>& Observables)
+  void addStep(int step, std::vector<int>& Observables)
   {
     dims[0] = Observables.size();
     maxdims[0] = H5S_UNLIMITED;
@@ -387,7 +387,7 @@ public:
     dataspace  = H5Screate_simple(rank, dims, maxdims);
     hid_t p = H5Pcreate (H5P_DATASET_CREATE);
     H5Pset_chunk(p,rank,dims);
-    stringstream gname("");
+    std::stringstream gname("");
     gname<<"Block_"<<step;
     dataset =  H5Dcreate(d_file, gname.str().c_str(), H5T_NATIVE_INT, dataspace, p);
     memspace = H5Screate_simple( rank, dims, NULL);
@@ -397,9 +397,9 @@ public:
     H5Sclose(dataspace);
   }
 
-  void readStep(int age, int step, vector<int>& data_out)
+  void readStep(int age, int step, std::vector<int>& data_out)
   {
-    stringstream gname("");
+    std::stringstream gname("");
     gname<<"Age_"<<age<<"/Block_"<< step;
 //         hid_t d_file = H5Dopen(c_file,gname.str().c_str());
 //         gname.str("OBS");
@@ -424,7 +424,7 @@ public:
 
   int numWgtStep(int step)
   {
-    stringstream gname("");
+    std::stringstream gname("");
     gname<<"Age_0/Block_"<< step;
     dataset = H5Dopen(c_file, gname.str().c_str());
     dataspace = H5Dget_space(dataset);
@@ -456,7 +456,7 @@ private:
 
   hid_t c_file;
   hid_t d_file;
-  string filename;
+  std::string filename;
 };
 
 class HDF5_FW_density
@@ -465,14 +465,14 @@ public:
   HDF5_FW_density() {}
   ~HDF5_FW_density() {}
 
-  void setFileName(string fn)
+  void setFileName( std::string fn)
   {
     std::stringstream sstr("");
     sstr<<fn<<".storedDensity.h5";
     filename=sstr.str();
   }
 
-  string getFileName()
+  std::string getFileName()
   {
     return filename;
   }
@@ -497,7 +497,7 @@ public:
       c_file=-1;
   }
 
-  void writeDensity(vector<int> info, vector<int>& Observables)
+  void writeDensity(std::vector<int> info, std::vector<int>& Observables)
   {
     rank=1;
     dims[0]=Observables.size();
@@ -511,7 +511,7 @@ public:
 //               hid_t p = H5Pcreate (H5P_DATASET_CREATE);
 //               H5Pset_chunk(p,rank,dims);
 //
-//               stringstream gname("");
+//               std::stringstream gname("");
 //               gname<<"Block_"<<age<<"/X_"<<x<<"/Y_"<<y<<"/Z_"<<z;
 //               dataset =  H5Dcreate(c_file, gname.str().c_str(), H5T_NATIVE_INT, dataspace, p);
 //               memspace = H5Screate_simple( rank, dims, NULL);
@@ -524,7 +524,7 @@ public:
     dataspace  = H5Screate_simple(rank, dims, maxdims);
     hid_t p = H5Pcreate (H5P_DATASET_CREATE);
     H5Pset_chunk(p,rank,dims);
-    stringstream gname("");
+    std::stringstream gname("");
     gname<<"Block_"<<age;
     dataset =  H5Dcreate(c_file, gname.str().c_str(), H5T_NATIVE_INT, dataspace, p);
     memspace = H5Screate_simple( rank, dims, NULL);
@@ -546,7 +546,7 @@ public:
     H5Sclose(dataspace);
   }
 
-  void writeIons(vector<string> NMS, vector<double>& Pos, double& latticeConstant, int& nElectrons, int& ngrids)
+  void writeIons(std::vector<std::string> NMS, std::vector<double>& Pos, double& latticeConstant, int& nElectrons, int& ngrids)
   {
     rank=1;
     int sze(-1);
@@ -565,7 +565,7 @@ public:
     dataspace  = H5Screate_simple(rank, dims, maxdims);
     hid_t p = H5Pcreate (H5P_DATASET_CREATE);
     H5Pset_chunk(p,rank,dims);
-    stringstream gname("");
+    std::stringstream gname("");
     gname<<"Ion_Str";
     dataset =  H5Dcreate(c_file, gname.str().c_str(), H5T_C_S1, dataspace, p);
     memspace = H5Screate_simple( rank, dims, NULL);
@@ -578,7 +578,7 @@ public:
     dataspace  = H5Screate_simple(rank, dims, maxdims);
     p = H5Pcreate (H5P_DATASET_CREATE);
     H5Pset_chunk(p,rank,dims);
-    stringstream pname("");
+    std::stringstream pname("");
     pname<<"Ion_Pos";
     dataset =  H5Dcreate(c_file, pname.str().c_str(), H5T_NATIVE_DOUBLE, dataspace, p);
     memspace = H5Screate_simple( rank, dims, NULL);
@@ -591,7 +591,7 @@ public:
     dataspace  = H5Screate_simple(rank, dims, maxdims);
     p = H5Pcreate (H5P_DATASET_CREATE);
     H5Pset_chunk(p,rank,dims);
-    stringstream lname("");
+    std::stringstream lname("");
     lname<<"LatticeConstant";
     dataset =  H5Dcreate(c_file, lname.str().c_str(), H5T_NATIVE_DOUBLE, dataspace, p);
     memspace = H5Screate_simple( rank, dims, NULL);
@@ -602,7 +602,7 @@ public:
     dataspace  = H5Screate_simple(rank, dims, maxdims);
     p = H5Pcreate (H5P_DATASET_CREATE);
     H5Pset_chunk(p,rank,dims);
-    stringstream ename("");
+    std::stringstream ename("");
     ename<<"nElectrons";
     dataset =  H5Dcreate(c_file, ename.str().c_str(), H5T_NATIVE_INT, dataspace, p);
     memspace = H5Screate_simple( rank, dims, NULL);
@@ -613,7 +613,7 @@ public:
     dataspace  = H5Screate_simple(rank, dims, maxdims);
     p = H5Pcreate (H5P_DATASET_CREATE);
     H5Pset_chunk(p,rank,dims);
-    stringstream dname("");
+    std::stringstream dname("");
     dname<<"nbins";
     dataset =  H5Dcreate(c_file, dname.str().c_str(), H5T_NATIVE_INT, dataspace, p);
     memspace = H5Screate_simple( rank, dims, NULL);
@@ -643,7 +643,7 @@ private:
 
   hid_t c_file;
   hid_t d_file;
-  string filename;
+  std::string filename;
 };
 
 }

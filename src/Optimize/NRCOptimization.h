@@ -39,7 +39,7 @@
 //  a = b; b= c; c = d;
 //}
 //double sign(double a, double b) {
-//  return (b > 0.0)? abs(a): -abs(a);
+//  return (b > 0.0)? std::abs(a): -abs(a);
 //}
 
 template<class T>
@@ -50,7 +50,7 @@ struct sign2<double>
 {
   inline static double apply(double a, double b)
   {
-    return (b > 0.0)? abs(a): -abs(a);
+    return (b > 0.0)? std::abs(a): -abs(a);
   }
 };
 
@@ -85,7 +85,7 @@ struct NRCOptimization
     GOLD = 1.618034e0;
     TOL = 2.0e-4;
     GLIMIT = 100.0;
-    TINY = numeric_limits<T>::epsilon();
+    TINY = std::numeric_limits<T>::epsilon();
     LambdaMax = 0.02;
     current_step = 0;
     quadstep=0.01;
@@ -138,7 +138,7 @@ struct NRCOptimization
     }
   }
 
-  inline Return_t QuarticMinimum (vector<Return_t> &coefs)
+  inline Return_t QuarticMinimum (std::vector<Return_t> &coefs)
   {
     double a, b, c, d;
     a = 4.0*coefs[4];
@@ -171,7 +171,7 @@ struct NRCOptimization
 
   bool lineoptimization()
   {
-    vector<Return_t> x(5), y(5), coefs(5), deriv(4);
+    std::vector<Return_t> x(5), y(5), coefs(5), deriv(4);
     qmcplusplus::Matrix<Return_t> S(5,5);
     x[0]=-2*quadstep;
     x[1]=-quadstep;
@@ -233,12 +233,12 @@ struct NRCOptimization
   {
     // quartic fit with variable number of points for input.
     //  least squares solver
-    vector<Return_t> x(points), y(points), coefs(5);
+    std::vector<Return_t> x(points), y(points), coefs(5);
     qmcplusplus::Matrix<Return_t> S(points,5);
     for(int i=0; i<points; i++)
       x[i]=Return_t(i-1)*quadstep;
     Return_t start_cost, cost;
-    vector<bool> cFailed(points,false);
+    std::vector<bool> cFailed(points,false);
     int nFailed(0);
     validFuncVal=true;
     y[0] = Func(x[0]);
@@ -283,14 +283,14 @@ struct NRCOptimization
         S(i,j) = std::pow(x[i],j);
     }
     start_cost = y[1];
-//     for (int i=0; i<points; i++) cout<<x[i]<<": "<<y[i]<<endl;
+//     for (int i=0; i<points; i++) std::cout <<x[i]<<": "<<y[i]<< std::endl;
     if (nFailed>0)
     {
       int ok_pts(points-nFailed);
       if (ok_pts>=5)
       {
         //some failed but we still have enough to do a fit
-        vector<Return_t> xp(ok_pts), yp(ok_pts);
+        std::vector<Return_t> xp(ok_pts), yp(ok_pts);
         qmcplusplus::Matrix<Return_t> Sp(ok_pts,5);
         for (int i=0,ip=0; i<points; i++)
         {
@@ -319,14 +319,14 @@ struct NRCOptimization
       if (std::abs(Lambda) > largeQuarticStep || std::isnan(Lambda) || (Lambda==0.0))
         return lineoptimization2(largeQuarticStep);
       zeroCost = Func(Lambda);
-//       cout<<"Start Cost:"<< start_cost<<" Lambda:"<<Lambda<<" FinalCost:"<<cost<<endl;
+//       std::cout <<"Start Cost:"<< start_cost<<" Lambda:"<<Lambda<<" FinalCost:"<<cost<< std::endl;
       if (std::isnan(zeroCost) || zeroCost > start_cost)
         return lineoptimization2(largeQuarticStep);
 #else
       if (abs(Lambda) > largeQuarticStep || isnan(Lambda) || (Lambda==0.0))
         return lineoptimization2(largeQuarticStep);
       zeroCost = Func(Lambda);
-//       cout<<"Start Cost:"<< start_cost<<" Lambda:"<<Lambda<<" FinalCost:"<<cost<<endl;
+//       std::cout <<"Start Cost:"<< start_cost<<" Lambda:"<<Lambda<<" FinalCost:"<<cost<< std::endl;
       if (isnan(zeroCost) || zeroCost > start_cost)
         return lineoptimization2(largeQuarticStep);
 #endif
@@ -369,7 +369,7 @@ struct NRCOptimization
     // END HACK HACK HACK
     bool success=true;
     validFuncVal=true;
-    qmcplusplus::app_log()<<"Before:  ax = "<<ax<<"  bx="<<xx<<"  cx="<<bx<<endl;
+    qmcplusplus::app_log()<<"Before:  ax = "<<ax<<"  bx="<<xx<<"  cx="<<bx<< std::endl;
     success=mnbrakNRC(ax,xx,bx,fa,fx,fb,maxStep);
     if((!success && !validFuncVal) || (success && !validFuncVal))
     {
@@ -385,12 +385,12 @@ struct NRCOptimization
         qmcplusplus::app_log()<<"Problems bracketing minimum. Lower Value returned.\n";
         return false;
       }
-    qmcplusplus::app_log()<<"After:  ax = "<<ax<<"  bx="<<xx<<"  cx="<<bx<<endl;
+    qmcplusplus::app_log()<<"After:  ax = "<<ax<<"  bx="<<xx<<"  cx="<<bx<< std::endl;
     Lambda = 0.0e0;
     Return_t ep = brentNRC(ax,xx,bx,Lambda);
     if(validFuncVal)
     {
-      qmcplusplus::app_log()<<"Minimum found at lambda = "<<Lambda<<endl;
+      qmcplusplus::app_log()<<"Minimum found at lambda = "<<Lambda<< std::endl;
       if(std::abs(Lambda)<TINY)
         return false;
       else
@@ -462,7 +462,7 @@ T NRCOptimization<T>::brentNRC(Return_t ax, Return_t bx,  Return_t cx, Return_t&
       q=abs(q);
       etemp=e;
       e=d;
-      if (abs(p) >= abs(0.5*q*etemp) || p <= q*(a-x) || p >= q*(b-x))
+      if (abs(p) >= std::abs(0.5*q*etemp) || p <= q*(a-x) || p >= q*(b-x))
         d=CGOLD*(e=(x >= xm ? a-x : b-x));
       else
       {
@@ -548,8 +548,8 @@ bool NRCOptimization<T>::mnbrakNRC(Return_t& ax, Return_t& bx, Return_t& cx,
   {
     r=(bx-ax)*(fb-fc);
     q=(bx-cx)*(fb-fa);
-    //u=(bx)-((bx-cx)*q-(bx-ax)*r)/(2.0*sign(max(abs(q-r),TINY),q-r));
-    u=(bx)-((bx-cx)*q-(bx-ax)*r)/(2.0*sign2<T>::apply(max(abs(q-r),TINY),q-r));
+    //u=(bx)-((bx-cx)*q-(bx-ax)*r)/(2.0*sign(std::max<T>(abs(q-r),TINY),q-r));
+    u=(bx)-((bx-cx)*q-(bx-ax)*r)/(2.0*sign2<T>::apply(std::max<T>(abs(q-r),TINY),q-r));
     ulim=(bx)+GLIMIT*(cx-bx);
     if ((bx-u)*(u-cx) > 0.0)
     {

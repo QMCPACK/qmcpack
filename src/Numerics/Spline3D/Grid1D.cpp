@@ -1,14 +1,13 @@
 #include "Numerics/Spline3D/Grid1D.h"
 #include <iostream>
 
-using namespace std;
 
 
 void Grid1D::init(int nsections,
                   int npts,
                   double xi,
-                  const vector<int>& nrho,
-                  const vector<double>& dh)
+                  const std::vector<int>& nrho,
+                  const std::vector<double>& dh)
 {
   m_size = npts;
   m_coord.resize(m_size);

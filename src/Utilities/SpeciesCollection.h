@@ -21,7 +21,6 @@
 
 #include <iostream>
 #include <vector>
-using namespace std;
 
 #ifndef OHMMS_SPECIESBASE_H
 #include "Utilities/OhmmsSpecies.h"
@@ -40,7 +39,7 @@ class SpeciesCollection
 public:
 
   typedef SpeciesBase::SpeciesAttrib_t SpeciesAttrib_t;
-  typedef vector<string>               SpeciesAttribMap_t;
+  typedef std::vector<std::string>               SpeciesAttribMap_t;
 
   static SpeciesBase* getSpecies();//!< Returns singleton SpeciesBase*
   static int addAttrib(const char* name);//!< Adds an attribute
@@ -49,7 +48,7 @@ public:
     return mySpecies->getSpeciesID(name);
   }//!< Adds a species
 
-  static void print(ostream& );
+  static void print(std::ostream& );
 
 protected:
 

@@ -58,12 +58,12 @@ private:
   typedef ParticleSet::ParticleGradient_t ParticleGradient_t;
   typedef ParticleSet::ParticleLaplacian_t ParticleLaplacian_t;
   ParticleGradient_t dG;
-  vector<ParticleGradient_t*> G;
-  vector<ParticleLaplacian_t*> dL;
-  vector<RealType> ratio, ratioij, logpsi2, UmbrellaWeight,sumratio,invsumratio;
-  vector<ParticleSet*> WW;
+  std::vector<ParticleGradient_t*> G;
+  std::vector<ParticleLaplacian_t*> dL;
+  std::vector<RealType> ratio, ratioij, logpsi2, UmbrellaWeight,sumratio,invsumratio;
+  std::vector<ParticleSet*> WW;
   MultipleEnergyEstimator *multiEstimator;
-  string refSetName;
+  std::string refSetName;
 
   SpaceWarp PtclWarp;
 

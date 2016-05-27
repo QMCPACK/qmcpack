@@ -42,7 +42,7 @@ class HDFWalkerInput0
 
 public:
 
-  HDFWalkerInput0(const string& fname, int ipart=0, int nparts=1);
+  HDFWalkerInput0(const std::string& fname, int ipart=0, int nparts=1);
   ~HDFWalkerInput0();
   //int put(MCWalkerConfiguration&);
   bool put(MCWalkerConfiguration&, int ic);

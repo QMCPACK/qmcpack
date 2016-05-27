@@ -225,8 +225,8 @@ SphericalTensor<T, Point_t, Tensor_t, GGG_t>::SphericalTensor(const int l_max, b
       NormFactor[index(l,0)]=1.0;
       for (int m=1; m<=l; m++)
       {
-        NormFactor[index(l,m)]=pow(-1.0e0,m)*sqrt2;
-        NormFactor[index(l,-m)]=pow(-1.0e0,-m)*sqrt2;
+        NormFactor[index(l,m)]=std::pow(-1.0e0,m)*sqrt2;
+        NormFactor[index(l,-m)]=std::pow(-1.0e0,-m)*sqrt2;
       }
     }
   }
@@ -272,7 +272,7 @@ void SphericalTensor<T,Point_t, Tensor_t, GGG_t>::evaluate(const Point_t& p)
   value_type cphi,sphi,ctheta;
   value_type r2xy=x*x+y*y;
   value_type r=sqrt(r2xy+z*z);
-  if (r2xy<numeric_limits<T>::epsilon())
+  if (r2xy<std::numeric_limits<T>::epsilon())
   {
     cphi = 0.0;
     sphi = 1.0;
@@ -361,7 +361,7 @@ void SphericalTensor<T,Point_t, Tensor_t, GGG_t>::evaluateAll(const Point_t& p)
   value_type cphi,sphi,ctheta;
   value_type r2xy=x*x+y*y;
   value_type r=sqrt(r2xy+z*z);
-  if (r2xy<numeric_limits<T>::epsilon())
+  if (r2xy<std::numeric_limits<T>::epsilon())
   {
     cphi = 0.0;
     sphi = 1.0;
@@ -444,7 +444,7 @@ void SphericalTensor<T,Point_t, Tensor_t, GGG_t>::evaluateAll(const Point_t& p)
     {
       int lm = index(l-1,0);
       value_type gx,gy,gz,dpr,dpi,dmr,dmi;
-      int ma = abs(m);
+      int ma = std::abs(m);
       value_type cp = sqrt(fac*(l-ma-1)*(l-ma));
       value_type cm = sqrt(fac*(l+ma-1)*(l+ma));
       value_type c0 = sqrt(fac*(l-ma)*(l+ma));
@@ -520,7 +520,7 @@ void SphericalTensor<T,Point_t, Tensor_t, GGG_t>::evaluateWithHessian(const Poin
   value_type cphi,sphi,ctheta;
   value_type r2xy=x*x+y*y;
   value_type r=sqrt(r2xy+z*z);
-  if (r2xy<numeric_limits<T>::epsilon())
+  if (r2xy<std::numeric_limits<T>::epsilon())
   {
     cphi = 0.0;
     sphi = 1.0;
@@ -603,7 +603,7 @@ void SphericalTensor<T,Point_t, Tensor_t, GGG_t>::evaluateWithHessian(const Poin
     {
       int lm = index(l-1,0);
       value_type gx,gy,gz,dpr,dpi,dmr,dmi;
-      int ma = abs(m);
+      int ma = std::abs(m);
       value_type cp = sqrt(fac*(l-ma-1)*(l-ma));
       value_type cm = sqrt(fac*(l+ma-1)*(l+ma));
       value_type c0 = sqrt(fac*(l-ma)*(l+ma));

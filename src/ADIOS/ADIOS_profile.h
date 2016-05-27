@@ -10,7 +10,6 @@
 #include <strings.h>
 #include <vector>
 
-using namespace std;
 
 namespace ADIOS_PROFILE
 {
@@ -66,7 +65,7 @@ static double comp_total;
 static double comm_total;
 static double io_total;
 static int block;
-static vector<TIME_INFO> times;
+static std::vector<TIME_INFO> times;
 static int myrank;
 
 #if (defined HAVE_ADIOS) && (defined IO_PROFILE)

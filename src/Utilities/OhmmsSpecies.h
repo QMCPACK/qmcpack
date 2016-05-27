@@ -22,7 +22,6 @@
 
 #include <string>
 #include <vector>
-using namespace std;
 
 /*! \class SpeciesBase
  *  \brief A class containing species attributes.
@@ -32,14 +31,14 @@ class SpeciesBase
 public:
 
   typedef double                     Scalar_t;
-  typedef vector<Scalar_t>           SpeciesAttrib_t;
-  typedef vector<SpeciesAttrib_t*>   AttribList_t;
+  typedef std::vector<Scalar_t>           SpeciesAttrib_t;
+  typedef std::vector<SpeciesAttrib_t*>   AttribList_t;
 
   //!< The number of species
   unsigned        TotalNum;
 
   //!< Species Name
-  vector<string>  Name;
+  std::vector<std::string>  Name;
 
   //!< List of species attributes
   AttribList_t    d_attrib;
@@ -85,7 +84,7 @@ public:
   {
     if(m > 0)
     {
-      Name.insert(Name.end(), m, string("none"));
+      Name.insert(Name.end(), m, std::string("none"));
       AttribList_t::iterator dit = d_attrib.begin();
       for(; dit != d_attrib.end(); ++dit)
         (*dit)->insert((*dit)->end(), m, 0);
@@ -94,7 +93,7 @@ public:
   }
 
   //!< Returns an ID for the species with name.
-  unsigned find(const string& name) const
+  unsigned find(const std::string& name) const
   {
     unsigned i=0;
     for(; i< TotalNum; i++)
@@ -105,13 +104,13 @@ public:
     return i;//Not found. Returns TotalNum.
   }
 
-  const string& getName(unsigned int i) const
+  const std::string& getName(unsigned int i) const
   {
     return Name[i];
   }
 
   //!< Returns an ID for the species with name.
-  unsigned getSpeciesID(const string& name)
+  unsigned getSpeciesID(const std::string& name)
   {
     unsigned i = find(name); // check if the name is registered
     if(i == TotalNum)

@@ -29,7 +29,7 @@ namespace qmcplusplus
 
 struct DMCPsiValue: public QMCHamiltonianBase
 {
-  typedef map<string,ParticleSet*> PtclPoolType;
+  typedef std::map<std::string,ParticleSet*> PtclPoolType;
 
   TrialWaveFunction* trialPsi;
   int psiindx,Eindx,blockSeries,counter;
@@ -103,7 +103,7 @@ struct DMCPsiValue: public QMCHamiltonianBase
   }
 
   inline Return_t
-  evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }

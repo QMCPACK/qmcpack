@@ -47,10 +47,10 @@ struct StressPBCAA:  public QMCHamiltonianBase, public ForceBase
   int NumCenters;
   SymTensor<RealType, OHMMS_DIM> myConst;
   RealType myRcut;
-  string PtclRefName;
-  vector<RealType> Zat,Zspec;
-  vector<int> NofSpecies;
-  vector<int> SpeciesID;
+  std::string PtclRefName;
+  std::vector<RealType> Zat,Zspec;
+  std::vector<int> NofSpecies;
+  std::vector<int> SpeciesID;
   
   SymTensor<RealType, OHMMS_DIM> sSR;
   SymTensor<RealType, OHMMS_DIM> sLR;
@@ -80,7 +80,7 @@ struct StressPBCAA:  public QMCHamiltonianBase, public ForceBase
 
   void update_source(ParticleSet& s);
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }

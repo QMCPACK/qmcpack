@@ -42,7 +42,7 @@ public:
   /* evaluate the pair correlation functions */
   Return_t evaluate(ParticleSet& P);
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
@@ -59,7 +59,7 @@ public:
     }
   }
   void addObservables(PropertySetType& plist, BufferType& collectables);
-  void registerCollectables(vector<observable_helper*>& h5list, hid_t gid) const;
+  void registerCollectables(std::vector<observable_helper*>& h5list, hid_t gid) const;
   void setObservables(PropertySetType& plist)
   {
     int k(0);
@@ -82,11 +82,11 @@ private:
   /// maximum distance
   RealType Dmax;
   Matrix<RealType> lm;
-  vector<int> ion_id, el_id;
-  vector<RealType> el_nrm;
+  std::vector<int> ion_id, el_id;
+  std::vector<RealType> el_nrm;
   int nag;
   DistanceTableData* d_table;
-  vector<string> names;
+  std::vector<std::string> names;
   ParticleSet& ions;
 };
 

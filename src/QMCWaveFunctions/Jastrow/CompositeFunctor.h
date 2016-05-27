@@ -324,7 +324,7 @@ struct CuspCorrectionFunctor: public OptimizableFunctorBase
   bool put(xmlNodePtr cur)
   {
     ///ID for variable E
-    string ID_E;
+    std::string ID_E;
     OhmmsAttributeSet rAttrib;
     rAttrib.add(ID_E,"id");
     rAttrib.add(E,"exponent");
@@ -467,7 +467,7 @@ struct DCuspCorrectionDEFunctor: public OptimizableFunctorBase
   bool put(xmlNodePtr cur)
   {
     ///ID for variable E
-    string ID_E;
+    std::string ID_E;
     OhmmsAttributeSet rAttrib;
     rAttrib.add(ID_E,"id");
     rAttrib.add(E,"exponent");

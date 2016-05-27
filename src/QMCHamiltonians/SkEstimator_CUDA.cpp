@@ -19,14 +19,14 @@ namespace qmcplusplus
 {
 void
 SkEstimator_CUDA::addEnergy(MCWalkerConfiguration &W,
-                            vector<RealType> &LocalEnergy)
+                            std::vector<RealType> &LocalEnergy)
 {
   int nw = W.WalkerList.size();
   gpu::host_vector<CUDA_COULOMB_PRECISION> rhok_host;
   int stride = (int)(W.WalkerList[0]->get_rhok_ptr(1) -
                      W.WalkerList[0]->get_rhok_ptr(0));
   RealType OneOverNW = 1.0/(RealType)nw;
-  vector<CUDA_PRECISION> rhok_total(2*NumK, 0.0);
+  std::vector<CUDA_PRECISION> rhok_total(2*NumK, 0.0);
   for (int iw=0; iw<nw; iw++)
   {
     Walker_t &walker = *(W.WalkerList[iw]);

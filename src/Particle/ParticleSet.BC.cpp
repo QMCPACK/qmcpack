@@ -41,7 +41,7 @@ void ParticleSet::createSK()
   //  if(groups()<1)
   //  {
   //    int nspecies=mySpecies.getTotalNum();
-  //    vector<int> ppg(nspecies,0);
+  //    std::vector<int> ppg(nspecies,0);
   //    for(int iat=0; iat<GroupID.size(); ++iat) ppg[GroupID[iat]]+=1;
   //    SubPtcl.resize(nspecies+1);
   //    SubPtcl[0]=0;
@@ -53,11 +53,11 @@ void ParticleSet::createSK()
   //    for(int iat=0; iat<ID.size(); ++iat) grouped &= (orgID[iat]==ID[iat]);
   //    if(grouped)
   //    {
-  //      app_log() << "  ParticleSet is grouped. No need to reorder." << endl;
+  //      app_log() << "  ParticleSet is grouped. No need to reorder." << std::endl;
   //    }
   //    else
   //    {
-  //      app_log() << "  Need to reorder. Only R is swapped." << endl;
+  //      app_log() << "  Need to reorder. Only R is swapped." << std::endl;
   //      ParticlePos_t oldR(R);
   //      for(int iat=0; iat<R.size(); ++iat) R[iat]=oldR[orgID[iat]];
   //      for(int i=0; i<groups(); ++i)
@@ -89,18 +89,18 @@ void ParticleSet::createSK()
     LRBox.reset();
     LRBox.SetLRCutoffs();
 
-    app_log() << "--------------------------------------- " << endl;
+    app_log() << "--------------------------------------- " << std::endl;
     LRBox.print(app_log());
-    app_log() << "--------------------------------------- " << endl;
+    app_log() << "--------------------------------------- " << std::endl;
 
     if(SK)
     {
-      app_log() << "\n  Structure Factor is reset by " << Lattice.LR_kc << endl;
+      app_log() << "\n  Structure Factor is reset by " << Lattice.LR_kc << std::endl;
       SK->UpdateNewCell(*this,LRBox.LR_kc);
     }
     else
     {
-      app_log() << "\n  Creating Structure Factor for periodic systems " << LRBox.LR_kc <<endl;
+      app_log() << "\n  Creating Structure Factor for periodic systems " << LRBox.LR_kc << std::endl;
       SK = new StructFact(*this,LRBox.LR_kc);
     }
     //Lattice.print(app_log());
@@ -112,7 +112,7 @@ void ParticleSet::createSK()
   int massind= mySpecies.addAttribute("mass");
   if(beforemass == massind)
   {
-    app_log() << "  ParticleSet::createSK setting mass of  " << getName() << " to 1.0" << endl;
+    app_log() << "  ParticleSet::createSK setting mass of  " << getName() << " to 1.0" << std::endl;
     for(int ig=0; ig<mySpecies.getTotalNum(); ++ig)
       mySpecies(massind,ig)=1.0;
   }

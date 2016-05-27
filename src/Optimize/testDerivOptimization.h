@@ -58,15 +58,15 @@ public:
   int CG_ortho;
   int xycleanup;
   Return_t a_gtyp ;
-  vector<Return_t>  a_pt ,  a_gx ,  a_gy , a_gunused ;
-  vector<Return_t>  a_xi , a_g , a_h, Parms;
+  std::vector<Return_t>  a_pt ,  a_gx ,  a_gy , a_gunused ;
+  std::vector<Return_t>  a_xi , a_g , a_h, Parms;
   int a_restart ;
   bool Failed_Last;
   int xybisect;
   Return_t Gfactor;
-  vector< vector<Return_t> > Past_a_xi, Past_Parms, Past_a_h;
-  vector< vector<Return_t> > PastGradients;
-  vector< vector<Return_t> > PastGradientsParameterPoints;
+  std::vector< std::vector<Return_t> > Past_a_xi, Past_Parms, Past_a_h;
+  std::vector< std::vector<Return_t> > PastGradients;
+  std::vector< std::vector<Return_t> > PastGradientsParameterPoints;
 
   testDerivOptimization(ObjectFuncType* atarget=0):  TargetFunc(atarget),
     Displacement(0),xybisect(0), Failed_Last(false),
@@ -180,7 +180,7 @@ public:
     Failed_Last=false;
   }
 
-  Return_t func(vector<Return_t> _p)
+  Return_t func(std::vector<Return_t> _p)
   {
     for (int i=0; i<NumParams; ++i)
       TargetFunc->Params(i) = _p[i] ;
@@ -188,23 +188,23 @@ public:
   }
 
 
-  void dfunc(vector<Return_t> RT, vector<Return_t> &FG)
+  void dfunc(std::vector<Return_t> RT, std::vector<Return_t> &FG)
   {
     ///To test we simply output the analytic and numeric gradients of the cost function. Make sure they agree.
-    vector<Return_t> Dummy(FG);
+    std::vector<Return_t> Dummy(FG);
     TargetFunc->GradCost( Dummy, RT, 1e-5);
     TargetFunc->GradCost(FG, RT, 0.0);
     PastGradients.push_back(FG);
     PastGradientsParameterPoints.push_back(RT);
-    cout<<"Numeric            Analytic       Percent"<<endl;
+    std::cout <<"Numeric            Analytic       Percent"<< std::endl;
     for(int k=0; k<NumParams; k++)
     {
       if (Dummy[k]!=0)
-        cout<<Dummy[k]<<"  "<<FG[k]<<"  "<< 100*(Dummy[k]-FG[k])/Dummy[k]<<endl;
+        std::cout <<Dummy[k]<<"  "<<FG[k]<<"  "<< 100*(Dummy[k]-FG[k])/Dummy[k]<< std::endl;
       else
-        cout<<Dummy[k]<<"  "<<FG[k]<<"   inf"<<endl;
+        std::cout <<Dummy[k]<<"  "<<FG[k]<<"   inf"<< std::endl;
     }
-    cout<<endl;
+    std::cout << std::endl;
   }
 
   /** Main Optimization routine
@@ -240,18 +240,18 @@ public:
       {
         if (a_verbose>1)
         {
-          cout<<"G grew too much "<<GGnew<<" > "<<Gfactor<<"*"<<gg<<endl;
+          std::cout <<"G grew too much "<<GGnew<<" > "<<Gfactor<<"*"<<gg<< std::endl;
           printf("mac_it %d of %d : gg = %6.3g tol = %6.3g: \n", a_its , a_itmax , gg , CostTol) ;
           if (a_verbose>3)
           {
             int PastLines = Past_a_h.size()-1;
-            cout<<PastLines<<endl;
+            std::cout <<PastLines<< std::endl;
             for (int ih=PastLines; ((ih>-1) & (ih>(PastLines-CG_ortho))) ; ih--)
             {
-              cout<<"Past_a_h ["<<ih<<"] ";
+              std::cout <<"Past_a_h ["<<ih<<"] ";
               for (int j = 0 ; j < NumParams ; j ++)
-                cout<<Past_a_h[ih][j]<<" ";
-              cout<<endl;
+                std::cout <<Past_a_h[ih][j]<<" ";
+              std::cout << std::endl;
             }
           }
         }
@@ -287,7 +287,7 @@ public:
           --CG_ortho;
           if (a_verbose>3)
           {
-            cout<<"Relaxing Orthogonality condition. Rotating to Steepest Descent"<<endl;
+            std::cout <<"Relaxing Orthogonality condition. Rotating to Steepest Descent"<< std::endl;
           }
         }
         Past_Parms.push_back(Parms);
@@ -303,19 +303,19 @@ public:
         int PastLines = Past_a_h.size()-1;
         for (int ih=PastLines; ((ih>-1) & (ih>(PastLines-CG_ortho))) ; ih--)
         {
-          cout<<"Past_a_h ["<<ih<<"] ";
+          std::cout <<"Past_a_h ["<<ih<<"] ";
           for (int j = 0 ; j < NumParams ; j ++)
-            cout<<Past_a_h[ih][j]<<" ";
-          cout<<endl;
-          cout<<"Past_a_xi ["<<ih<<"] ";
+            std::cout <<Past_a_h[ih][j]<<" ";
+          std::cout << std::endl;
+          std::cout <<"Past_a_xi ["<<ih<<"] ";
           for (int j = 0 ; j < NumParams ; j ++)
-            cout<<Past_a_xi[ih][j]<<" ";
-          cout<<endl;
+            std::cout <<Past_a_xi[ih][j]<<" ";
+          std::cout << std::endl;
         }
       }
       if (!Failed_Last)
       {
-        vector<Return_t> tmpA_H(a_xi);
+        std::vector<Return_t> tmpA_H(a_xi);
         for (int j = 0 ; j < NumParams ; j ++)
           tmpA_H[j] *= -1.0;
         int PastLines = Past_a_h.size()-1;
@@ -336,18 +336,18 @@ public:
         if (a_verbose>3)
         {
           PastLines = Past_a_h.size()-1;
-          cout<<"Inner Products for line searches:"<<endl;
+          std::cout <<"Inner Products for line searches:"<< std::endl;
           for (int ih=PastLines; ((ih>-1) & (ih>(PastLines-CG_ortho-1))) ; --ih)
           {
             for (int ih2=ih; ((ih2>-1) & (ih2>(PastLines-CG_ortho-1))) ; --ih2)
             {
-              cout<<"Between "<<ih<<"  "<<ih2<<"  ";
+              std::cout <<"Between "<<ih<<"  "<<ih2<<"  ";
               Return_t tempGG(0.0);
               for (int j = 0 ; j < NumParams ; j ++)
               {
                 tempGG += Past_a_h[ih][j] * Past_a_h[ih2][j];
               }
-              cout<<tempGG<<endl;
+              std::cout <<tempGG<< std::endl;
             }
           }
         }
@@ -359,7 +359,7 @@ public:
   }
 
 
-  Return_t maclinminII(vector<Return_t> &p)
+  Return_t maclinminII(std::vector<Return_t> &p)
   {
     Return_t y(0.0) ;
     Return_t  t(0.0) ;
@@ -534,7 +534,7 @@ public:
   }
 
 
-  Return_t lineProduct(vector<Return_t> p , vector<Return_t> &gy , Return_t y)
+  Return_t lineProduct(std::vector<Return_t> p , std::vector<Return_t> &gy , Return_t y)
   {
     Return_t s = 0.0 ;
     for (int i = 0 ; i < NumParams ; i ++)

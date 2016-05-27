@@ -55,7 +55,7 @@ void HFDBHE_smoothed_phy::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& ps
 void HFDBHE_smoothed_phy::addCorrection(QMCHamiltonian& targetH)
 {
   HFDBHE_smoothed_aux* auxTerm = new HFDBHE_smoothed_aux(this);
-  string auxName = myName+"_aux";
+  std::string auxName = myName+"_aux";
   targetH.addOperator(auxTerm, auxName, false);
 }
 }

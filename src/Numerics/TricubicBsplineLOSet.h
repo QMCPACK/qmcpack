@@ -23,7 +23,7 @@
 namespace qmcplusplus
 {
 
-/** A group of bspline functions stored in a map<int,StorageType*>
+/** A group of bspline functions stored in a std::map<int,StorageType*>
  */
 template<class T>
 class TricubicBsplineLOSet: public TricubicBsplineTraits<T>
@@ -37,7 +37,7 @@ public:
   typedef typename std::map<int,const StorageType*>::iterator  IteratorType;
 
   using TricubicBsplineTraits<T>::Rcut2;
-  vector<PosType> Centers;
+  std::vector<PosType> Centers;
 
   /** default constructure
    *

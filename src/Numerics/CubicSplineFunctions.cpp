@@ -67,7 +67,7 @@ CubicSpline<T>::operator()(T r, T& val)
     h=X[khi]-X[klo];
     if (h == 0.0)
     {
-      //ERRORMSG("splint called with r = " << r << endl);
+      //ERRORMSG("splint called with r = " << r << std::endl);
     };
     a=(X[khi]-r)/h;
     b=(r-X[klo])/h;
@@ -117,7 +117,7 @@ CubicSpline<T>::operator()(T r, T& val, T& yp)
     h=X[khi]-X[klo];
     if (h == 0.0)
     {
-      //ERRORMSG("splint called with r = " << r << endl);
+      //ERRORMSG("splint called with r = " << r << std::endl);
     };
     T hinv = 1/h;
     a=(X[khi]-r)*hinv;
@@ -155,7 +155,7 @@ void CubicSpline<T>::spline()
   //which generates spline coefficients given a set of spline parameters.
   int i,k;
   T p,qn,sig,un;
-  vector<T> u(Npt+1);
+  std::vector<T> u(Npt+1);
   if (Yp1 > 0.99e30)
     Y2[1]=u[1]=0.0;
   else
@@ -279,7 +279,7 @@ RegCubicSpline<T>::spline()
   //which generates spline coefficients given a set of spline parameters.
   int i,k;
   T p,qn,sig,un;
-  vector<T> u(Npt+1);
+  std::vector<T> u(Npt+1);
   if (Yp1 > 0.99e30)
     Y2[1]=u[1]=0.0;
   else

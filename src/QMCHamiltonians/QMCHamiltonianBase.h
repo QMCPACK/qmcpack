@@ -92,7 +92,7 @@ struct QMCHamiltonianBase: public QMCTraits
   };
   
   ///set the current update mode
-  bitset<8> UpdateMode;
+  std::bitset<8> UpdateMode;
   ///starting index of this object
   int myIndex;
   ///number of dependents: to be removed
@@ -108,9 +108,9 @@ struct QMCHamiltonianBase: public QMCTraits
   Walker_t* tWalker;
   //Walker<Return_t, ParticleSet::ParticleGradient_t>* tWalker;
   ///name of this object
-  string myName;
+  std::string myName;
   ///name of dependent object: to be removed
-  string depName;
+  std::string depName;
 
 #if !defined(REMOVE_TRACEMANAGER)
   ///whether traces are being collected
@@ -118,7 +118,7 @@ struct QMCHamiltonianBase: public QMCTraits
   bool streaming_scalars;
   bool streaming_particles;
   bool have_required_traces;
-  vector<RealType> ValueVector;
+  std::vector<RealType> ValueVector;
 
   ///array to store sample value
   Array<RealType,1>* value_sample;
@@ -228,7 +228,7 @@ struct QMCHamiltonianBase: public QMCTraits
    *
    * The default implementation is to register a scalar for this->Value
    */
-  virtual void registerObservables(vector<observable_helper*>& h5desc
+  virtual void registerObservables(std::vector<observable_helper*>& h5desc
                                    , hid_t gid) const ;
 
   /*** add to collectables descriptor for hdf5
@@ -238,7 +238,7 @@ struct QMCHamiltonianBase: public QMCTraits
    * The default implementation does nothing. The derived classes which compute
    * big data, e.g. density, should overwrite this function.
    */
-  virtual void registerCollectables(vector<observable_helper*>& h5desc
+  virtual void registerCollectables(std::vector<observable_helper*>& h5desc
                                     , hid_t gid) const
   {}
 
@@ -279,7 +279,7 @@ struct QMCHamiltonianBase: public QMCTraits
   {
     return 0;
   }
-  virtual Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy) = 0;
+  virtual Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy) = 0;
   
   /** evaluate value and derivatives wrt the optimizables
    *
@@ -287,8 +287,8 @@ struct QMCHamiltonianBase: public QMCTraits
    */
   virtual Return_t evaluateValueAndDerivatives(ParticleSet& P,
       const opt_variables_type& optvars,
-      const vector<RealType>& dlogpsi,
-      vector<RealType>& dhpsioverpsi)
+      const std::vector<RealType>& dlogpsi,
+      std::vector<RealType>& dhpsioverpsi)
   {
     return evaluate(P);
   }
@@ -388,7 +388,7 @@ struct QMCHamiltonianBase: public QMCTraits
   ///collect scalar trace data
   inline void collect_scalar_traces()
   {
-    //app_log()<<"QMCHamiltonianBase::collect_scalar_traces"<<endl;
+    //app_log()<<"QMCHamiltonianBase::collect_scalar_traces"<< std::endl;
     collect_scalar_quantities();
   }
 
@@ -411,19 +411,19 @@ struct QMCHamiltonianBase: public QMCTraits
   virtual void checkout_scalar_quantities(TraceManager& tm)
   {
     streaming_scalars = request.streaming_scalar(myName);
-    if(streaming_scalars)
+    if( streaming_scalars)
       value_sample = tm.checkout_real<1>(myName);
   }
 
   virtual void collect_scalar_quantities()
   {
-    if(streaming_scalars)
+    if( streaming_scalars)
       (*value_sample)(0) = Value;
   }
 
   virtual void delete_scalar_quantities()
   {
-    if(streaming_scalars)
+    if( streaming_scalars)
       delete value_sample;
   }
 
@@ -433,11 +433,11 @@ struct QMCHamiltonianBase: public QMCTraits
   virtual void get_required_traces(TraceManager& tm) {};
 #endif
 
-  virtual void addEnergy(MCWalkerConfiguration &W, vector<RealType> &LocalEnergy);
+  virtual void addEnergy(MCWalkerConfiguration &W, std::vector<RealType> &LocalEnergy);
 
   virtual void addEnergy(MCWalkerConfiguration &W,
-                         vector<RealType> &LocalEnergy,
-                         vector<vector<NonLocalData> > &Txy)
+                         std::vector<RealType> &LocalEnergy,
+                         std::vector<std::vector<NonLocalData> > &Txy)
   {
     addEnergy (W, LocalEnergy);
   }

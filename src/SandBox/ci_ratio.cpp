@@ -29,16 +29,15 @@
 #include <fstream>
 #include <limits>
 using namespace qmcplusplus;
-using namespace std;
 
 template<typename CT, typename T>
 inline void check_ratios(const CT& a, const CT& b, T eps)
 {
   T del;
-  cout.setf(std::ios::scientific, std::ios::floatfield);
+  std::cout.setf(std::ios::scientific, std::ios::floatfield);
   for(int i=0; i<a.size(); ++i)
     if(abs(del=(a[i]/b[i]-1.0))>eps)
-      cout << i << " recursive=" << a[i] << " error=" << del << endl;
+      std::cout << i << " recursive=" << a[i] << " error=" << del << std::endl;
 }
 
 int main(int argc, char** argv)
@@ -47,11 +46,11 @@ int main(int argc, char** argv)
   const int vmax=4;
   const int cmax=8;
   typedef ci_node_proxy node_type;
-  vector<node_type> excitations;
+  std::vector<node_type> excitations;
   int multiplet=3;
   int nparent=0;
   int nchildren=0;
-  vector<int> det_offset(multiplet+2,1);
+  std::vector<int> det_offset(multiplet+2,1);
   //add zero
   excitations.push_back(node_type());
   {
@@ -68,7 +67,7 @@ int main(int argc, char** argv)
       nparent++;
     }
   }
-  ofstream fout("tree.xml");
+  std::ofstream fout("tree.xml");
   int count=0;
   excitations[0].write_node<max_states>(fout,0,count,excitations);
   count=0;
@@ -76,13 +75,13 @@ int main(int argc, char** argv)
   ci_node<double> CI;
   CI.build_tree(M,excitations);
   CI.set_peers(M,vmax);
-  ofstream fout1("tree_1.xml");
+  std::ofstream fout1("tree_1.xml");
   CI.write_node(fout1);
   typedef Matrix<double> mat_t;
   typedef Vector<double> vec_t;
   mat_t psi0(M,M), psiv(M,M), psic(cmax,M), Identity(M,M);
   vec_t psiv_big(M+cmax);
-  vector<mat_t*> inverse(excitations.size());
+  std::vector<mat_t*> inverse(excitations.size());
   for(int i=0; i<inverse.size(); ++i)
     inverse[i]=new mat_t(M,M);
   //build up big  psi
@@ -94,8 +93,8 @@ int main(int argc, char** argv)
     psiv_big(i)=Random();
   psi0=psiv;//save
   int mdtot=excitations.size();
-  vector<double> dets(mdtot),detbyratio(mdtot);//store determinants
-  vector<double> ratios_rec(mdtot), ptcl_ratios(mdtot), ptcl_ratios_rec(mdtot);
+  std::vector<double> dets(mdtot),detbyratio(mdtot);//store determinants
+  std::vector<double> ratios_rec(mdtot), ptcl_ratios(mdtot), ptcl_ratios_rec(mdtot);
   const bool substitute_col=true;
   const double eps=1e-12;
   double det_0,det_inv;
@@ -104,7 +103,7 @@ int main(int argc, char** argv)
   det_0=invert_matrix(CI.inverse,true);
   CI.getRatios(psic,ratios_rec,substitute_col);
   CI.debugRatios(psiv,psic,dets,inverse,substitute_col);
-  cout << "Comparing promotion " << endl;
+  std::cout << "Comparing promotion " << std::endl;
   for(int i=0; i<mdtot; ++i)
     detbyratio[i]=det_0*ratios_rec[i];
   check_ratios(dets,detbyratio,eps);
@@ -114,7 +113,7 @@ int main(int argc, char** argv)
   CI.inverse=*inverse[0];
   //CI.ratioByRowSubstitution(psic,psiv_big,iat,ptcl_ratios_rec);
   CI.ratioByRowSubstitution(psiv_big,iat,ptcl_ratios_rec);
-  cout << "Comparing particle-update ratios " << endl;
+  std::cout << "Comparing particle-update ratios " << std::endl;
   check_ratios(ptcl_ratios,ptcl_ratios_rec,eps);
   {
     //use direct method
@@ -126,17 +125,17 @@ int main(int argc, char** argv)
     CI.debugRatios(psiv,psic,dets,inverse,substitute_col);
     for(int i=0; i<mdtot; ++i)
       detbyratio[i]=det_0*ratios_rec[i]*ptcl_ratios[i];
-    cout << "Comparing particle-update against direct method" << endl;
+    std::cout << "Comparing particle-update against direct method" << std::endl;
     check_ratios(dets,detbyratio,eps);
   }
   Timer clock;
   for(int i=0; i<1000; ++i)
     CI.debugRatioByRowSubstitution(psiv_big,iat,ptcl_ratios,inverse);
-  cout << "Time for direct ratio = " << clock.elapsed() << endl;
+  std::cout << "Time for direct ratio = " << clock.elapsed() << std::endl;
   clock.restart();
   for(int i=0; i<1000; ++i)
     CI.ratioByRowSubstitution(psiv_big,iat,ptcl_ratios);
-  cout << "Time for recusrive ratio = " << clock.elapsed() << endl;
+  std::cout << "Time for recusrive ratio = " << clock.elapsed() << std::endl;
   //for(int i=0; i<ratios.size(); ++i) detbyratio[i]=det_0*ratios[i]*ptcl_ratios[i];
   //check_ratios(dets,detbyratio,eps);
   //psi_big=psi0;

@@ -58,14 +58,14 @@ MPC::init_gvecs()
     if (0.5*dot(G,G) < Ecut)
     {
       for (int j=0; j<OHMMS_DIM; j++)
-        maxIndex[j] = max(maxIndex[j], abs(gint[j]));
+        maxIndex[j] = std::max(maxIndex[j], std::abs(gint[j]));
       Gvecs.push_back(G);
       Gints.push_back(gint);
       Rho_G.push_back(PtclRef->Density_G[iG]);
     }
   }
   SplineDim = 4 * maxIndex;
-  MaxDim = max(maxIndex[0], max(maxIndex[1], maxIndex[2]));
+  MaxDim = std::max(maxIndex[0], std::max(maxIndex[1], maxIndex[2]));
   app_log() << "  Using " << Gvecs.size()
             << " G-vectors for MPC interaction.\n";
   app_log() << "   Using real-space box of size [" << SplineDim[0]
@@ -76,14 +76,14 @@ MPC::init_gvecs()
 
 
 void
-MPC::compute_g_G(double &g_0, vector<double> &g_G, int N)
+MPC::compute_g_G(double &g_0, std::vector<double> &g_G, int N)
 {
   double L = PtclRef->Lattice.WignerSeitzRadius;
   double Linv = 1.0/L;
   double Linv3 = Linv*Linv*Linv;
   // create an FFTW plan
-  Array<complex<double>,3> rBox(N,N,N);
-  Array<complex<double>,3> GBox(N,N,N);
+  Array<std::complex<double>,3> rBox(N,N,N);
+  Array<std::complex<double>,3> GBox(N,N,N);
   // app_log() << "Doing " << N << " x " << N << " x " << N << " FFT.\n";
   //create BC handler
   DTD_BConds<double,3,SUPERCELL_BULK> mybc(PtclRef->Lattice);
@@ -174,8 +174,8 @@ MPC::init_f_G()
 {
   int numG = Gints.size();
   f_G.resize(numG);
-  int N = max(64, 2*MaxDim+1);
-  vector<double> g_G_N(numG), g_G_2N(numG), g_G_4N(numG);
+  int N = std::max(64, 2*MaxDim+1);
+  std::vector<double> g_G_N(numG), g_G_2N(numG), g_G_4N(numG);
   double g_0_N, g_0_2N, g_0_4N;
   compute_g_G(g_0_N , g_G_N,  1*N);
   compute_g_G(g_0_2N, g_G_2N, 2*N);
@@ -190,11 +190,11 @@ MPC::init_f_G()
   f_0 = extrap (N, g0_124);
   app_log().precision(12);
   app_log() << "    Linear extrap    = " << std::scientific
-            << extrap (2*N, g0_12) << endl;
+            << extrap (2*N, g0_12) << std::endl;
   app_log() << "    Quadratic extrap = " << std::scientific
-            << f_0 << endl;
+            << f_0 << std::endl;
   f_0 += 0.4*M_PI*L*L*volInv;
-  // cerr << "f_0 = " << f_0/volInv << endl;
+  // std::cerr << "f_0 = " << f_0/volInv << std::endl;
   double worst = 0.0, worstLin, worstQuad;
   int iworst = 0;
   for (int iG=0; iG<numG; iG++)
@@ -216,8 +216,8 @@ MPC::init_f_G()
     double G  = std::sqrt(G2);
     f_G[iG] += volInv*M_PI*(4.0/G2 + 12.0/(L*L*G2*G2)*
                             (std::cos(G*L) - std::sin(G*L)/(G*L)));
-    // cerr << "f_G = " << f_G[iG]/volInv << endl;
-    // cerr << "f_G - 4*pi/G2= " << f_G[iG]/volInv - 4.0*M_PI/G2 << endl;
+    // std::cerr << "f_G = " << f_G[iG]/volInv << std::endl;
+    // std::cerr << "f_G - 4*pi/G2= " << f_G[iG]/volInv - 4.0*M_PI/G2 << std::endl;
   }
   char buff[1000];
   snprintf (buff, 1000 ,
@@ -232,10 +232,10 @@ MPC::init_f_G()
 void
 MPC::init_spline()
 {
-  Array<complex<double>,3> rBox(SplineDim[0], SplineDim[1], SplineDim[2]),
+  Array<std::complex<double>,3> rBox(SplineDim[0], SplineDim[1], SplineDim[2]),
         GBox(SplineDim[0], SplineDim[1], SplineDim[2]);
   Array<double,3> splineData(SplineDim[0], SplineDim[1], SplineDim[2]);
-  GBox = complex<double>();
+  GBox = std::complex<double>();
   Vconst = 0.0;
   // Now fill in elements of GBox
   double vol = PtclRef->Lattice.Volume;
@@ -259,7 +259,7 @@ MPC::init_spline()
   // G=0 component calculated seperately
   GBox(0,0,0) = -vol * f_0 * Rho_G[0];
   Vconst += 0.5 * vol * vol * f_0 * norm(Rho_G[0]);
-  app_log() << "  Constant potential = " << Vconst << endl;
+  app_log() << "  Constant potential = " << Vconst << std::endl;
   fftw_plan fft = fftw_plan_dft_3d
                   (SplineDim[0], SplineDim[1], SplineDim[2], (fftw_complex*)GBox.data(),
                    (fftw_complex*) rBox.data(), -1, FFTW_ESTIMATE);
@@ -296,7 +296,7 @@ void
 MPC::initBreakup()
 {
   NParticles = PtclRef->getTotalNum();
-  app_log() << "\n  === Initializing MPC interaction === " << endl;
+  app_log() << "\n  === Initializing MPC interaction === " << std::endl;
   if (PtclRef->Density_G.size() == 0)
   {
     app_error() << "************************\n"
@@ -379,7 +379,7 @@ MPC::evaluate (ParticleSet& P)
   return Value;
 }
 
-void MPC::addEnergy(MCWalkerConfiguration &W, vector<RealType> &LocalEnergy)
+void MPC::addEnergy(MCWalkerConfiguration &W, std::vector<RealType> &LocalEnergy)
 {
 //only used for debugging
 //  const int nw=W.getActiveWalkers();
@@ -408,7 +408,7 @@ bool MPC::put(xmlNodePtr cur)
   {
     Ecut = 30.0;
     app_log() << "    MPC cutoff not found.  Set using \"cutoff\" attribute.\n"
-              << "    Setting to default value of " << Ecut << endl;
+              << "    Setting to default value of " << Ecut << std::endl;
   }
   return true;
 }

@@ -116,11 +116,11 @@ struct accumulator_set
     return properties[WEIGHT];
   }
 
-  inline pair<return_type,return_type> mean_and_variance() const
+  inline std::pair<return_type,return_type> mean_and_variance() const
   {
     value_type norm=1.0/properties[WEIGHT];
     value_type avg=properties[VALUE]*norm;
-    return pair<return_type,return_type>(avg,norm*properties[VALUESQ]-avg*avg);
+    return std::pair<return_type,return_type>(avg,norm*properties[VALUESQ]-avg*avg);
   }
 
   ///return the mean
@@ -138,7 +138,7 @@ struct accumulator_set
   inline return_type variance() const
   {
     if(iszero(properties[WEIGHT]))
-      return numeric_limits<T>::max();
+      return std::numeric_limits<T>::max();
     value_type norm=1.0/properties[WEIGHT];
     return norm*(properties[VALUESQ]-properties[VALUE]*properties[VALUE]*norm);
   }

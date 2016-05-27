@@ -37,7 +37,7 @@ struct ModPadeFunctor: public OptimizableFunctorBase
   real_type Coeff;
   real_type mAB;
 
-  string ID_B;
+  std::string ID_B;
 
   /** constructor
    * @param a A coefficient
@@ -125,10 +125,10 @@ struct ModPadeFunctor: public OptimizableFunctorBase
     while(cur != NULL)
     {
       //@todo Var -> <param(eter) role="opt"/>
-      string cname((const char*)(cur->name));
+      std::string cname((const char*)(cur->name));
       if(cname == "parameter" || cname == "Var")
       {
-        string aname("B"),idname("0");
+        std::string aname("B"),idname("0");
         OhmmsAttributeSet p;
         p.add(aname,"name");
         p.add(idname,"id");

@@ -29,7 +29,7 @@
 namespace qmcplusplus {
   struct Profile
   {
-    std::stack<string> domains;
+    std::stack<std::string> domains;
     inline Profile(const char* name, const char* tag,  unsigned id)
     {
       domains.push(name);
@@ -47,7 +47,7 @@ namespace qmcplusplus {
 
     inline void pop()
     {
-      string name=domains.top();
+      std::string name=domains.top();
       VT_USER_END(name.c_str());
       domains.pop();
     }

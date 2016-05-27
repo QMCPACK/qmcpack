@@ -21,7 +21,6 @@
 
 #include <vector>
 #include <string>
-using namespace std;
 
 #ifndef OHMMS_PETE_VECTOR_H
 #include "OhmmsPETE/OhmmsVector.h"
@@ -58,16 +57,16 @@ public:
   typedef TinyVector<T,D> Vector_t;
   typedef Tensor<T,D>     Tensor_t;
 
-  typedef vector<int>      IndexList_t;
-  typedef vector<T>        ScalarList_t;
-  typedef vector<Vector_t> VectorList_t;
-  typedef vector<Tensor_t> TensorList_t;
+  typedef std::vector<int>      IndexList_t;
+  typedef std::vector<T>        ScalarList_t;
+  typedef std::vector<Vector_t> VectorList_t;
+  typedef std::vector<Tensor_t> TensorList_t;
 
-  //typedef Vector<int, vector<int> >           IndexList_t;
-  //typedef Vector<T, vector<T> >               ScalarList_t;
-  //typedef Vector<Vector_t, vector<Vector_t> > VectorList_t;
-  //typedef Vector<Tensor_t, vector<Tensor_t> > TensorList_t;
-  //typedef map<string,int>  PairFieldMap_t;
+  //typedef Vector<int, std::vector<int> >           IndexList_t;
+  //typedef Vector<T, std::vector<T> >               ScalarList_t;
+  //typedef Vector<Vector_t, std::vector<Vector_t> > VectorList_t;
+  //typedef Vector<Tensor_t, std::vector<Tensor_t> > TensorList_t;
+  //typedef std::map<std::string,int>  PairFieldMap_t;
 
   IndexList_t  I;//!< ID
   IndexList_t  M;//!< Locator
@@ -136,10 +135,10 @@ public:
     //if(maxnn > MaxNN) { MaxNN = maxnn; resize(MaxNN*M.size()); }
   }//!< Resizes neighbor lists. Removes everything.
 
-  void print(ostream& os) const
+  void print(std::ostream& os) const
   {
-    os << "Total Number of Pairs" << M[LocalNum] << endl;
-    os << "Total Number of Pair Attributes "  << NumAttrib << endl;
+    os << "Total Number of Pairs" << M[LocalNum] << std::endl;
+    os << "Total Number of Pair Attributes "  << NumAttrib << std::endl;
   }
 
   inline void reset()

@@ -73,16 +73,16 @@ public:
     RealType avgWgt = std::sqrt(g_stats[4]/g_stats[5]);
     if ((printderivs=="yes")&&(myComm->rank()==0))
     {
-      stringstream fn;
+      std::stringstream fn;
       fn<<RootName.c_str()<<".derivs";
-      ofstream d_out(fn.str().c_str());
+      std::ofstream d_out(fn.str().c_str());
       d_out.precision(6);
-      d_out<<"#CSF    D        HD"<<endl;
+      d_out<<"#CSF    D        HD"<< std::endl;
       for (int i=0; i<NumOptimizables; i++)
-        d_out<<i<<"  "<<nrm*D[i]<<"  "<<nrm*HD[i]<<endl;
+        d_out<<i<<"  "<<nrm*D[i]<<"  "<<nrm*HD[i]<< std::endl;
     }
-//       app_log()<<"Ebar: "<<g_stats[2]/g_stats[5]<<endl;
-//       app_log()<<"Weights: "<<avgWgt<<" "<<avgInvWgt<<" "<<(g_stats[4]/g_stats[5])*wgtNrm<<" "<<(g_stats[3]/g_stats[5])/wgtNrm<<" "<<wgtNrm<<endl;
+//       app_log()<<"Ebar: "<<g_stats[2]/g_stats[5]<< std::endl;
+//       app_log()<<"Weights: "<<avgWgt<<" "<<avgInvWgt<<" "<<(g_stats[4]/g_stats[5])*wgtNrm<<" "<<(g_stats[3]/g_stats[5])/wgtNrm<<" "<<wgtNrm<< std::endl;
     std::vector<RealType> DT2(DT.size(),0);
     for(int i=0; i<NumOptimizables; i++)
       DT2[i] = (Overlap(i,i)==0)?0:1.0/std::sqrt(nrm*Overlap(i,i));
@@ -104,20 +104,20 @@ public:
 //       for(int i=0;i<D.size();i++) d2[i] = DT2[i]*(D[i] - DT[i]/avgInvWgt);
     e=E_avg;
 //       RealType Det= invert_matrix(Overlap,true);
-//       app_log()<<Det<<endl;
+//       app_log()<<Det<< std::endl;
 //
 //       for (int i=0; i<NumOptimizables; i++) app_log()<< DT2[i] <<" ";
-//       app_log()<<endl;
+//       app_log()<< std::endl;
     for (int i=0; i<NumOptimizables; i++)
       app_log()<< DT2[i]*(D[i]/avgWgt)*nrm<<" ";
-    app_log()<<endl;
+    app_log()<< std::endl;
     for (int i=0; i<NumOptimizables; i++)
       app_log()<< DT2[i]*(DT[i]/avgInv)*nrm<<" ";
-    app_log()<<endl;
+    app_log()<< std::endl;
 //
     for (int i=0; i<NumOptimizables; i++)
       app_log()<<d[i]<<" ";
-    app_log()<<endl;
+    app_log()<< std::endl;
 //
 //       for (int i=0; i<NumOptimizables; i++)
 //       {
@@ -127,7 +127,7 @@ public:
 //       }
 //
 //       for (int i=0; i<NumOptimizables; i++) app_log()<<d[i]<<" ";
-//       app_log()<<endl;
+//       app_log()<< std::endl;
   }
 
 private:
@@ -136,19 +136,19 @@ private:
   ///Interval between branching
   IndexType BranchInterval;
   ///hdf5 file name for Branch conditions
-  string BranchInfo;
-  ///input string to determine kill walkers or not
-  string KillWalker;
-  ///input string to determine swap walkers among mpi processors
-  string SwapWalkers;
-  ///input string to determine to use reconfiguration
-  string Reconfiguration;
-  ///input string to determine to use nonlocal move
-  string NonLocalMove;
-  ///input string to benchmark OMP performance
-  string BenchMarkRun;
-  ///input string to use fast gradient
-  string UseFastGrad;
+  std::string BranchInfo;
+  ///input std::string to determine kill walkers or not
+  std::string KillWalker;
+  ///input std::string to determine swap walkers among mpi processors
+  std::string SwapWalkers;
+  ///input std::string to determine to use reconfiguration
+  std::string Reconfiguration;
+  ///input std::string to determine to use nonlocal move
+  std::string NonLocalMove;
+  ///input std::string to benchmark OMP performance
+  std::string BenchMarkRun;
+  ///input std::string to use fast gradient
+  std::string UseFastGrad;
   ///input to control maximum age allowed for walkers.
   IndexType mover_MaxAge;
 
@@ -161,7 +161,7 @@ private:
   int myPeriod4WalkerDump, wlen, Eindx;
   int samples_this_node;
   bool firsttime;
-  string printderivs;
+  std::string printderivs;
   std::vector<opt_variables_type> dummyOptVars;
 
 

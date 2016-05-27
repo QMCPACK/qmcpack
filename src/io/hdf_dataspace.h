@@ -19,11 +19,11 @@
  *
  * h5_space_type is a helper class for h5data_proxy and used internally
  * - h5_space_type<T,DS>
- * - h5_space_type<complex<T>,DS>
+ * - h5_space_type<std::complex<T>,DS>
  * - h5_space_type<TinyVector<T,D>,DS>
- * - h5_space_type<TinyVector<complex<T>,D>,DS>
+ * - h5_space_type<TinyVector<std::complex<T>,D>,DS>
  * - h5_space_type<Tensor<T,D>,DS>
- * - h5_space_type<Tensor<complex<T>,D>,DS>
+ * - h5_space_type<Tensor<std::complex<T>,D>,DS>
  */
 #ifndef QMCPLUSPLUS_HDF_DATASPACE_TRAITS_H
 #define QMCPLUSPLUS_HDF_DATASPACE_TRAITS_H
@@ -59,7 +59,7 @@ struct h5_space_type
   }
 };
 
-/** specialization of h5_space_type for complex<T>
+/** specialization of h5_space_type for std::complex<T>
  *
  * Raize the dimension of the space by 1 and set the last dimension=2
  */
@@ -103,10 +103,10 @@ struct h5_space_type<TinyVector<T,D>, DS>
   }
 };
 
-/** specialization of h5_space_type for TinyVector<complex<T>,D> for complex<T>
+/** specialization of h5_space_type for TinyVector<std::complex<T>,D> for std::complex<T>
  */
 template<typename T, unsigned D, hsize_t DS>
-struct h5_space_type<TinyVector<complex<T>,D>, DS>
+struct h5_space_type<TinyVector<std::complex<T>,D>, DS>
 {
   typedef T* pointer;
   hsize_t dims[DS+2];
@@ -119,7 +119,7 @@ struct h5_space_type<TinyVector<complex<T>,D>, DS>
   {
     return DS+2;
   }
-  inline pointer get_address(TinyVector<complex<T>,D>* a)
+  inline pointer get_address(TinyVector<std::complex<T>,D>* a)
   {
     return reinterpret_cast<T*>(a->data());
   }
@@ -147,10 +147,10 @@ struct h5_space_type<Tensor<T,D>, DS>
   }
 };
 
-/** specialization of h5_space_type for TinyVector<complex<T>,D> for complex<T>
+/** specialization of h5_space_type for TinyVector<std::complex<T>,D> for std::complex<T>
  */
 template<typename T, unsigned D, hsize_t DS>
-struct h5_space_type<Tensor<complex<T>,D>, DS>
+struct h5_space_type<Tensor<std::complex<T>,D>, DS>
 {
   typedef T* pointer;
   hsize_t dims[DS+3];
@@ -164,7 +164,7 @@ struct h5_space_type<Tensor<complex<T>,D>, DS>
   {
     return DS+2;
   }
-  inline pointer get_address(Tensor<complex<T>,D>* a)
+  inline pointer get_address(Tensor<std::complex<T>,D>* a)
   {
     return reinterpret_cast<T*>(a->data());
   }

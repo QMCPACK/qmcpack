@@ -55,7 +55,7 @@ struct einspline3d_benchmark
 
   einspline3d_benchmark(einspline3d_benchmark<ENGT>& in)
   {
-    cout << "Calling copy constructor " << endl;
+    std::cout << "Calling copy constructor " << std::endl;
     this->einspliner.spliner=copy_multi_UBspline_3d_d(in.einspliner.spliner);
     //this->einspliner.spliner=(ENGT*)(malloc(sizeof(ENGT)));
     //this->einspliner.spliner=new ENGT;
@@ -94,8 +94,8 @@ struct einspline3d_benchmark
     hess.resize(num_splines);
   }
 
-  inline TinyVector<double,3> test_all(const vector<pos_type>& Vpos,
-                                       const vector<pos_type>& VGLpos, const vector<pos_type>& VGHpos)
+  inline TinyVector<double,3> test_all(const std::vector<pos_type>& Vpos,
+                                       const std::vector<pos_type>& VGLpos, const std::vector<pos_type>& VGHpos)
   {
     TinyVector<double,3> timers;
     Timer clock;
@@ -110,19 +110,19 @@ struct einspline3d_benchmark
     return timers;
   }
 
-  inline void test_v(const vector<pos_type>& coord) //const
+  inline void test_v(const std::vector<pos_type>& coord) //const
   {
     for(int i=0; i<coord.size(); ++i)
       einspliner.evaluate(coord[i],psi);
   }
 
-  inline void test_vgl(const vector<pos_type>& coord)// const
+  inline void test_vgl(const std::vector<pos_type>& coord)// const
   {
     for(int i=0; i<coord.size(); ++i)
       einspliner.evaluate_vgl(coord[i],psi,grad,lap);
   }
 
-  inline void test_vgh(const vector<pos_type>& coord) //const
+  inline void test_vgh(const std::vector<pos_type>& coord) //const
   {
     for(int i=0; i<coord.size(); ++i)
       einspliner.evaluate_vgh(coord[i],psi,grad,hess);
@@ -136,7 +136,7 @@ struct random_position_generator
   typedef TinyVector<T,3> pos_type;
   typedef RandomGenerator_t::uint_type uint_type;
   RandomGenerator_t myrand;
-  vector<pos_type> Vpos, VGLpos, VGHpos;
+  std::vector<pos_type> Vpos, VGLpos, VGHpos;
   random_position_generator(int n,  uint_type seed):myrand(seed)
   {
     Vpos.resize(n);

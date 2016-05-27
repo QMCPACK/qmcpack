@@ -111,8 +111,8 @@ CompositeEstimatorSet::CompositeEstimatorSet():
 CompositeEstimatorSet::CompositeEstimatorSet(const CompositeEstimatorSet& ce):
   GroupID(-1), NumSteps(1),OneOverNumSteps(1.0)
 {
-  map<string,int>::const_iterator it(ce.EstimatorMap.begin());
-  map<string,int>::const_iterator it_end(ce.EstimatorMap.end());
+  std::map<std::string,int>::const_iterator it(ce.EstimatorMap.begin());
+  std::map<std::string,int>::const_iterator it_end(ce.EstimatorMap.end());
   while(it != it_end)
   {
     add(ce.Estimators[(*it).second]->clone(),(*it).first);
@@ -129,7 +129,7 @@ CompositeEstimatorSet::~CompositeEstimatorSet()
 }
 
 ///not checking the map again, assuming that missing function
-void CompositeEstimatorSet::add(EstimatorType* est,const string& aname)
+void CompositeEstimatorSet::add(EstimatorType* est,const std::string& aname)
 {
   //map<strin,int>::iterator it(EstimatorMap.find(aname));
   //if(it == EstimatorMap.end())
@@ -165,7 +165,7 @@ void CompositeEstimatorSet::resetTargetParticleSet(ParticleSet& p)
  */
 void CompositeEstimatorSet::accumulate(MCWalkerConfiguration& W, RealType wgtnorm)
 {
-  accumulate(W,W.begin(),W.end(),wgtnorm);
+  std::accumulate(W,W.begin(),W.end(),wgtnorm);
 }
 
 void CompositeEstimatorSet::accumulate(MCWalkerConfiguration& W,

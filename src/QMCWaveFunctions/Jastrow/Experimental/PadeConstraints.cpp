@@ -49,7 +49,7 @@ bool PadeConstraints::put(xmlNodePtr cur)
 {
   //always copy the node
   bool success=getVariables(cur);
-  map<string,pair<string,RealType> >::iterator vit(inVars.find("B"));
+  std::map<std::string,std::pair<std::string,RealType> >::iterator vit(inVars.find("B"));
   if(vit == inVars.end())
     return false; //disaster, need to abort
   ID_B=(*vit).second.first;
@@ -126,7 +126,7 @@ OrbitalBase* PadeConstraints::createTwoBody()
 
 OrbitalBase* PadeConstraints::createOneBody(ParticleSet& source)
 {
-  app_log() << "  PadeBuilder::Adding Pade One-Body Jastrow with effective ionic charges." << endl;
+  app_log() << "  PadeBuilder::Adding Pade One-Body Jastrow with effective ionic charges." << std::endl;
   typedef OneBodyJastrowOrbital<FuncType> JneType;
   JneType* J1 = new JneType(source,targetPtcl);
   //typedef OneBodyJastrowOrbital<DerivFuncType> DerivJneType;
@@ -137,7 +137,7 @@ OrbitalBase* PadeConstraints::createOneBody(ParticleSet& source)
   for(int ig=0; ig<ng; ig++)
   {
     RealType zeff=Species(icharge,ig);
-    ostringstream j1id;
+    std::ostringstream j1id;
     j1id<<"pade_"<<Species.speciesName[ig];
     RealType sc=std::pow(2*zeff,0.25);
     FuncType *func=new FuncType(-zeff,B,sc);
@@ -147,7 +147,7 @@ OrbitalBase* PadeConstraints::createOneBody(ParticleSet& source)
     //DerivFuncType *dfunc=new DerivFuncType(-zeff,B,sc);
     //dJ1->addFunc(ig,dfunc);
     //dFuncList.push_back(dfunc);
-    app_log() << "    " << Species.speciesName[ig] <<  " Zeff = " << zeff << " B= " << B*sc << endl;
+    app_log() << "    " << Species.speciesName[ig] <<  " Zeff = " << zeff << " B= " << B*sc << std::endl;
   }
   //add dJ1 to dPsi
   //dPsi->addOrbital(dJ1);
@@ -195,8 +195,8 @@ void ScaledPadeConstraints::resetParameters(const opt_variables_type& active)
 bool ScaledPadeConstraints::put(xmlNodePtr cur)
 {
   bool success=getVariables(cur);
-  map<string,pair<string,RealType> >::iterator bit(inVars.find("B"));
-  map<string,pair<string,RealType> >::iterator cit(inVars.find("C"));
+  std::map<std::string,std::pair<std::string,RealType> >::iterator bit(inVars.find("B"));
+  std::map<std::string,std::pair<std::string,RealType> >::iterator cit(inVars.find("C"));
   if(bit == inVars.end() || cit == inVars.end())
     return false;
   ID_B=(*bit).second.first;
@@ -212,7 +212,7 @@ OrbitalBase* ScaledPadeConstraints::createTwoBody()
   JeeType *J2 = new JeeType(targetPtcl);
   if(IgnoreSpin)
   {
-    app_log() << "  ScaledPadeConstraints::Adding Spin-independent Pade Two-Body Jastrow " << endl;
+    app_log() << "  ScaledPadeConstraints::Adding Spin-independent Pade Two-Body Jastrow " << std::endl;
     FuncType *func=new FuncType(-0.5,B,C);
     J2->addFunc("pade_uu",0,0,func);
     //dJ2->addFunc("pade_uu",0,0,dfunc);
@@ -220,7 +220,7 @@ OrbitalBase* ScaledPadeConstraints::createTwoBody()
   }
   else
   {
-    app_log() << "  ScaledPadeConstraints::Adding Spin-dependent Pade Two-Body Jastrow " << endl;
+    app_log() << "  ScaledPadeConstraints::Adding Spin-dependent Pade Two-Body Jastrow " << std::endl;
     FuncType *funcUU=new FuncType(-0.25,B,C);
     FuncType *funcUD=new FuncType(-0.5,B,C);
     J2->addFunc("pade_uu",0,0,funcUU);
@@ -228,7 +228,7 @@ OrbitalBase* ScaledPadeConstraints::createTwoBody()
     FuncList.push_back(funcUU);
     FuncList.push_back(funcUD);
   }
-  app_log() << "  ScaledPadeConstraints:: B = " << B << " C = " << C <<endl;
+  app_log() << "  ScaledPadeConstraints:: B = " << B << " C = " << C << std::endl;
   return J2;
 }
 
@@ -248,7 +248,7 @@ ScaledPadeConstraints::createOneBody(ParticleSet& source)
 
 //bool PadeOnGridConstraints::put(xmlNodePtr cur) {
 //  bool success=getVariables(cur);
-//  map<string,pair<string,RealType> >::iterator vit(inVars.find("B"));
+//  std::map<std::string,std::pair<std::string,RealType> >::iterator vit(inVars.find("B"));
 //  if(vit == inVars.end()) return false; //disaster, need to abort
 //  ID=(*vit).second.first; B=(*vit).second.second;
 //  return true;
@@ -274,7 +274,7 @@ ScaledPadeConstraints::createOneBody(ParticleSet& source)
 //  typedef TwoBodyJastrowOrbital<FuncType> JeeType;
 //  JeeType *J2 = new JeeType(target);
 //  if(IgnoreSpin) {
-//    app_log() << "  PadeOnGridConstraints::Adding Spin-independent Pade Two-Body Jastrow B=" << B << endl;
+//    app_log() << "  PadeOnGridConstraints::Adding Spin-independent Pade Two-Body Jastrow B=" << B << std::endl;
 //    //create an analytic input functor
 //    InFuncType *infunc=new InFuncType(-0.5,B);
 //    //create a numerical functor
@@ -286,7 +286,7 @@ ScaledPadeConstraints::createOneBody(ParticleSet& source)
 //    FuncList.push_back(nfunc);
 //    for(int i=0; i<4; i++) J2->addFunc(nfunc);
 //  } else {
-//    app_log() << "  PadeOnGridConstraints::Adding Spin-dependent Pade Two-Body Jastrow B= " << B << endl;
+//    app_log() << "  PadeOnGridConstraints::Adding Spin-dependent Pade Two-Body Jastrow B= " << B << std::endl;
 //    InFuncType *uu=new InFuncType(-0.25,B);
 //    InFuncType *ud=new InFuncType(-0.5,B);
 

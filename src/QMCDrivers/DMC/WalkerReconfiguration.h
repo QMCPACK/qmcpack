@@ -33,11 +33,11 @@ struct WalkerReconfiguration: public WalkerControlBase
   //random number [0,1)
   RealType UnitZeta;
 
-  vector<int>      IndexCopy;
+  std::vector<int>      IndexCopy;
   //weight per walker
-  vector<RealType> wConf;
+  std::vector<RealType> wConf;
   //comb
-  vector<RealType> Zeta;
+  std::vector<RealType> Zeta;
   /** default constructor
    *
    * Set the SwapMode to zero so that instantiation can be done

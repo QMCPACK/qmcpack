@@ -31,7 +31,7 @@ namespace qmcplusplus
 struct WaveFunctionFactory: public MPIObjectBase
 {
 
-  typedef map<string,ParticleSet*> PtclPoolType;
+  typedef std::map<std::string,ParticleSet*> PtclPoolType;
   ///target ParticleSet
   ParticleSet* targetPtcl;
   ///many-body wavefunction object
@@ -76,9 +76,9 @@ struct WaveFunctionFactory: public MPIObjectBase
 
   void setCloneSize(int np);
 
-  WaveFunctionFactory* clone(ParticleSet* qp, int ip, const string& aname);
+  WaveFunctionFactory* clone(ParticleSet* qp, int ip, const std::string& aname);
 
-  vector<WaveFunctionFactory*> myClones;
+  std::vector<WaveFunctionFactory*> myClones;
 };
 
 }

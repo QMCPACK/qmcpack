@@ -54,7 +54,7 @@ namespace qmcplusplus
       return create_multi_UBspline_3d_d(grid[0],grid[1],grid[2], bc[0], bc[1], bc[2], num_splines);
     }
 
-    /** create spline for complex<double> */
+    /** create spline for std::complex<double> */
     template<typename GT, typename BCT>
     multi_UBspline_3d_z*  create(multi_UBspline_3d_z* s, GT& grid , BCT& bc, int num_splines)
     { 
@@ -68,7 +68,7 @@ namespace qmcplusplus
       return create_multi_UBspline_3d_s(grid[0],grid[1],grid[2], bc[0], bc[1], bc[2], num_splines);
     }
 
-    /** create spline for complex<float> */
+    /** create spline for std::complex<float> */
     template<typename GT, typename BCT>
     multi_UBspline_3d_c*  create(multi_UBspline_3d_c* s, GT& grid , BCT& bc, int num_splines)
     { 
@@ -113,12 +113,12 @@ namespace qmcplusplus
       inline void  evaluate_vghgh(multi_UBspline_3d_d *restrict spline, const PT& r, VT &psi, GT &grad, HT& hess, GG& gradhess)
       { eval_multi_UBspline_3d_d_vghgh (spline, r[0], r[1], r[2], psi.data(), grad[0].data(),hess[0].data(),gradhess[0].data()); }
 
-    /** set bspline for the i-th orbital for complex<double>-to-complex<double>
+    /** set bspline for the i-th orbital for std::complex<double>-to-complex<double>
      * @param spline multi_UBspline_3d_z
      * @param i the orbital index
      * @param indata starting address of the input data
      */
-    inline void  set(multi_UBspline_3d_z* spline, int i, complex<double>* restrict indata)
+    inline void  set(multi_UBspline_3d_z* spline, int i, std::complex<double>* restrict indata)
     { set_multi_UBspline_3d_z(spline, i, indata); }                                                            
 
     /** evaluate values only using multi_UBspline_3d_z 
@@ -195,20 +195,20 @@ namespace qmcplusplus
       inline void  evaluate_vgh(multi_UBspline_3d_s *restrict spline, const PT& r, VT &psi, GT &grad, HT& hess)
       { eval_multi_UBspline_3d_s_vgh (spline, r[0], r[1], r[2], psi.data(), grad[0].data(),hess[0].data()); }
 
-    /** set bspline for the i-th orbital for complex<float>-to-complex<float>
+    /** set bspline for the i-th orbital for std::complex<float>-to-complex<float>
      * @param spline multi_UBspline_3d_c
      * @param i the orbital index
      * @param indata starting address of the input data
      */
-    inline void  set(multi_UBspline_3d_c* spline, int i, complex<float>* restrict indata)
+    inline void  set(multi_UBspline_3d_c* spline, int i, std::complex<float>* restrict indata)
     { set_multi_UBspline_3d_c(spline, i, indata); }                                                            
 
-    /** set bspline for the i-th orbital for complex<double>-to-complex<float>
+    /** set bspline for the i-th orbital for std::complex<double>-to-complex<float>
      * @param spline multi_UBspline_3d_c
      * @param i the orbital index
      * @param indata starting address of the input data
      */
-    inline void  set(multi_UBspline_3d_c* spline, int i, complex<double>* restrict indata)
+    inline void  set(multi_UBspline_3d_c* spline, int i, std::complex<double>* restrict indata)
     { 
       set_multi_UBspline_3d_c_z(spline, i, indata); 
     }                                                            
@@ -255,7 +255,7 @@ namespace qmcplusplus
     }
 
 
-    /** create spline for complex<double> */
+    /** create spline for std::complex<double> */
     template<typename VT, typename IT>
     multi_UBspline_3d_c*  create(multi_UBspline_3d_c* s
         , VT& start , VT& end, IT& ng , bc_code bc, int num_splines)
@@ -287,7 +287,7 @@ namespace qmcplusplus
       simd::copy(out->coefs,in->coefs,in->coefs_size);
     }
 
-    /** convert complex<double> to complex<float> */
+    /** convert std::complex<double> to std::complex<float> */
     inline void convert(multi_UBspline_3d_z* in, multi_UBspline_3d_c* out)
     {
       BCtype_c xbc, ybc, zbc;
@@ -343,7 +343,7 @@ namespace qmcplusplus
       return create_multi_UBspline_3d_d(x_grid,y_grid,z_grid, xBC, yBC, zBC, num_splines);
     }
 
-    /** create spline for complex<double> */
+    /** create spline for std::complex<double> */
     template<typename VT, typename IT>
     multi_UBspline_3d_z*  create(multi_UBspline_3d_z* s
         , VT& start , VT& end, IT& ng , bc_code bc, int num_splines)

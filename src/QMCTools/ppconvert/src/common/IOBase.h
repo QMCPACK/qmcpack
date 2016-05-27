@@ -25,7 +25,6 @@
 
 #include "IOVar.h"
 
-using namespace std;
 namespace IO 
 {
   /// This class stores a tree of input file sections.  Each member of
@@ -38,8 +37,8 @@ namespace IO
     bool IsModified;
     bool UseUnderscores;
   public:
-    list<IOVarBase*> VarList;
-    list<IOTreeClass*> SectionList;
+    std::list<IOVarBase*> VarList;
+    std::list<IOTreeClass*> SectionList;
 
     inline void MarkModified();
     /// This is used to ensure proper ordering of sections in the HDF
@@ -51,20 +50,20 @@ namespace IO
     virtual IOFileType GetFileType() = 0;
 
     IOTreeClass* Parent;
-    /// This is the empty string unless I'm the root node of some file. 
-    string FileName;
-    string Name;
+    /// This is the empty std::string unless I'm the root node of some file. 
+    std::string FileName;
+    std::string Name;
     inline void InsertSection (IOTreeClass *newSec);
-    inline bool FindSection (string name, IOTreeClass * &sectionPtr, 
+    inline bool FindSection ( std::string name, IOTreeClass * &sectionPtr, 
 			     int num=0);
-    inline int CountSections(string name);
+    inline int CountSections( std::string name);
     inline int CountVars();
 
     template<class T>
-    bool ReadVar(string name, T &var)
+    bool ReadVar( std::string name, T &var)
     {
       bool readVarSuccess;
-      list<IOVarBase*>::iterator varIter=VarList.begin();
+      std::list<IOVarBase*>::iterator varIter=VarList.begin();
       while ((varIter!=VarList.end()) && ((*varIter)->GetName()!=name)) 
 	varIter++;
 
@@ -79,9 +78,9 @@ namespace IO
       return readVarSuccess;	 
     }
 
-    inline IOVarBase* GetVarPtr(string name)
+    inline IOVarBase* GetVarPtr( std::string name)
     {
-      list<IOVarBase *>::iterator iter = VarList.begin();
+      std::list<IOVarBase *>::iterator iter = VarList.begin();
       while ((iter != VarList.end()) && ((*iter)->GetName() != name)){
 	iter++;
       }
@@ -95,7 +94,7 @@ namespace IO
     }
     inline IOVarBase* GetVarPtr(int num)
     {
-      list<IOVarBase *>::iterator iter = VarList.begin();
+      std::list<IOVarBase *>::iterator iter = VarList.begin();
       int i=0;
       while ((iter != VarList.end()) && (i != num)){
 	iter++;
@@ -114,13 +113,13 @@ namespace IO
 
 
     /// Write me!
-    virtual IOTreeClass* NewSection(string name)=0;
+    virtual IOTreeClass* NewSection( std::string name)=0;
   
-    virtual bool OpenFile (string fileName, 
-			   string mySectionName, 
+    virtual bool OpenFile ( std::string fileName, 
+			   std::string mySectionName, 
 			   IOTreeClass *parent) = 0;
-    virtual bool NewFile (string fileName,
-			  string mySectionName,
+    virtual bool NewFile ( std::string fileName,
+			  std::string mySectionName,
 			  IOTreeClass *parent) = 0;
     /// Inserts a new Include directive in the present section.
     virtual void IncludeSection (IOTreeClass *) = 0;
@@ -128,18 +127,18 @@ namespace IO
     virtual void FlushFile() = 0;
 
     /// These create a new variable with the given name and value:
-    template<typename T> bool WriteVar (string name, T val);
-    template<typename T, int  LEN> bool  WriteVar (string name, const TinyVector<T,LEN> &val);
-    template<typename T, int RANK> bool WriteVar (string name, const blitz::Array<T,RANK> &val);
+    template<typename T> bool WriteVar ( std::string name, T val);
+    template<typename T, int  LEN> bool  WriteVar ( std::string name, const TinyVector<T,LEN> &val);
+    template<typename T, int RANK> bool WriteVar ( std::string name, const blitz::Array<T,RANK> &val);
     template<typename T, int RANK, int LEN> bool WriteVar 
-    (string name, const blitz::Array<TinyVector<T,LEN>,RANK> &val);
+    ( std::string name, const blitz::Array<TinyVector<T,LEN>,RANK> &val);
 
 
     /// Append a value to a variable of dimension of 1 higher than val.
     /// i.e. Add a double to an blitz::Array<double,1> or add blitz::Array<double,1>
     /// to an blitz::Array<double,2>, etc.
     template<class T>
-    inline bool AppendVar(string name, T val);
+    inline bool AppendVar( std::string name, T val);
     inline void SetUnderscores (bool use)
     { UseUnderscores = use; }
 
@@ -159,7 +158,7 @@ namespace IO
 
 
   template<class T>
-  inline bool IOTreeClass::AppendVar(string name, T val)
+  inline bool IOTreeClass::AppendVar( std::string name, T val)
   { 
     IOVarBase *var = GetVarPtr(name);
     if (var == NULL)
@@ -175,9 +174,9 @@ namespace IO
 
   /// Returns the number of subsections with the given name within the
   /// present section.
-  inline int IOTreeClass::CountSections(string name)
+  inline int IOTreeClass::CountSections( std::string name)
   {
-    list<IOTreeClass*>::iterator sectionIter;
+    std::list<IOTreeClass*>::iterator sectionIter;
     sectionIter=SectionList.begin();
     int numSections=0;
     while (sectionIter!=SectionList.end()){
@@ -191,7 +190,7 @@ namespace IO
 
   inline int IOTreeClass::CountVars()
   {
-    list<IOVarBase*>::iterator varIter;
+    std::list<IOVarBase*>::iterator varIter;
     varIter=VarList.begin();
     int numVars=0;
     while (varIter!=VarList.end()){
@@ -212,12 +211,12 @@ namespace IO
   /// optionally resets the section iterator to the beginning of the
   /// section.  Thus, one may control whether or not order is
   /// significant.  
-  inline bool IOTreeClass::FindSection (string name, 
+  inline bool IOTreeClass::FindSection ( std::string name, 
 					IOTreeClass* &sectionPtr,
 					int num)
   {
   
-    list<IOTreeClass*>::iterator Iter=SectionList.begin();
+    std::list<IOTreeClass*>::iterator Iter=SectionList.begin();
     int counter=0;
     while(counter<=num && Iter!=SectionList.end()){
       if ((*Iter)->Name==name){
@@ -237,7 +236,7 @@ namespace IO
 
   inline void IOTreeClass::InsertSection(IOTreeClass *newSec)
   {
-    list<IOTreeClass *>::iterator iter;
+    std::list<IOTreeClass *>::iterator iter;
   
     if (SectionList.empty())
       SectionList.push_back(newSec);

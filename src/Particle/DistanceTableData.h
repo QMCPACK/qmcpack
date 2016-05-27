@@ -114,7 +114,7 @@ public:
   typedef std::vector<IndexType>         IndexVectorType;
   typedef TempDisplacement<RealType,DIM> TempDistType;
   typedef PooledData<RealType>           BufferType;
-  typedef pair<RealType,IndexType>       ripair;
+  typedef std::pair<RealType,IndexType>  ripair;
 
   ///type of cell
   int CellType;
@@ -182,12 +182,12 @@ public:
   virtual ~DistanceTableData() { }
 
   ///return the name of table
-  inline string getName() const
+  inline std::string getName() const
   {
     return Name;
   }
   ///set the name of table
-  inline void setName(const string& tname)
+  inline void setName(const std::string& tname)
   {
     Name = tname;
   }
@@ -359,24 +359,24 @@ public:
   virtual void create(int walkers) = 0;
 
   /// find index and distance of each nearest neighbor particle
-  virtual void nearest_neighbor(vector<ripair>& ri,bool transposed=false) const
+  virtual void nearest_neighbor(std::vector<ripair>& ri,bool transposed=false) const
   {
     APP_ABORT("DistanceTableData::nearest_neighbor is not implemented in calling base class");
   }
 
   /// find indices and distances of nearest neighbors particles to particle n
-  virtual void nearest_neighbors(int n,int neighbors,vector<ripair>& ri,bool transposed=false)
+  virtual void nearest_neighbors(int n,int neighbors,std::vector<ripair>& ri,bool transposed=false)
   {
     APP_ABORT("DistanceTableData::nearest_neighbors is not implemented in calling base class");
   }
 
   /// find species resolved indices and distances of nearest particles to particle n
-  virtual void nearest_neighbors_by_spec(int n,int neighbors,int spec_start,vector<ripair>& ri,bool transposed=false)
+  virtual void nearest_neighbors_by_spec(int n,int neighbors,int spec_start,std::vector<ripair>& ri,bool transposed=false)
   {
     APP_ABORT("DistanceTableData::nearest_neighbors is not implemented in calling base class");
   }
 
-  inline void check_neighbor_size(vector<ripair>& ri,bool transposed=false) const
+  inline void check_neighbor_size(std::vector<ripair>& ri,bool transposed=false) const
   {
     int m;
     if(transposed)
@@ -439,10 +439,10 @@ public:
 
   inline void print(std::ostream& os)
   {
-    os << "Table " << Origin->getName() << endl;
+    os << "Table " << Origin->getName() << std::endl;
     for(int i=0; i<r_m.size(); i++)
       os << r_m[i] << " ";
-    os << endl;
+    os << std::endl;
   }
 
 protected:

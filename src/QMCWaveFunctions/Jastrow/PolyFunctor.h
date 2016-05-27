@@ -50,7 +50,7 @@ struct PolyFunctor: public OptimizableFunctorBase<T>
   ///second derivative of coefficient
   std::vector<T> d2C;
   ///id
-  std::vector<string> ID_C;
+  std::vector<std::string> ID_C;
   ///default constructor
   inline PolyFunctor(): L(10.0), K(0), N(0), OneOverL(0),KOverL(0), KKOverL2(0)
   {}
@@ -138,24 +138,24 @@ struct PolyFunctor: public OptimizableFunctorBase<T>
     OhmmsAttributeSet aAttrib;
     aAttrib.add(K,"n");
     aAttrib.put(cur);
-    map<int,pair<real_type,string> > ctemp;
+    std::map<int,std::pair<real_type,std::string> > ctemp;
     cur=cur->children;
     N=0;
     while(cur != NULL)
     {
-      string cname((const char*)(cur->name));
+      std::string cname((const char*)(cur->name));
       if(cname == "radfunc")
       {
         int i=0;
         real_type c=0.0;
-        string aname("pn");
+        std::string aname("pn");
         OhmmsAttributeSet rAttrib;
         rAttrib.add(c,"contraction");
         rAttrib.add(i,"node");
         rAttrib.add(aname,"id");
         rAttrib.put(cur);
         aname.append("_C");
-        ctemp[i]=pair<real_type,string>(c,aname);
+        ctemp[i]= std::pair<real_type,std::string>(c,aname);
         N=std::max(i,N);
       }
       cur=cur->next;
@@ -163,15 +163,15 @@ struct PolyFunctor: public OptimizableFunctorBase<T>
     N++;
     C.resize(N,0.0);
     ID_C.resize(N,"0");
-    typename map<int,pair<real_type,string> >::iterator it(ctemp.begin());
-    typename map<int,pair<real_type,string> >::iterator it_end(ctemp.end());
-    app_log() << "    PolyFunctor [(r-L)/L]^K  K=" << K << " L=" << L << endl;
+    typename std::map<int,std::pair<real_type,std::string> >::iterator it(ctemp.begin());
+    typename std::map<int,std::pair<real_type,std::string> >::iterator it_end(ctemp.end());
+    app_log() << "    PolyFunctor [(r-L)/L]^K  K=" << K << " L=" << L << std::endl;
     while(it != it_end)
     {
       int i=(*it).first;
       C[i]=(*it).second.first;
       ID_C[i]=(*it).second.second;
-      app_log() << "      i="<< i << " "  << ID_C[i] << "=" << C[i] << endl;
+      app_log() << "      i="<< i << " "  << ID_C[i] << "=" << C[i] << std::endl;
       ++it;
     }
     resetInternals();

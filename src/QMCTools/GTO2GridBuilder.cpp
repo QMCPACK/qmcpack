@@ -51,7 +51,7 @@ GTO2GridBuilder::addRadialOrbital(xmlNodePtr cur,
 {
   int n=nlms[0];
   int l=nlms[1];
-  string b_name((const char*)xmlGetProp(cur,(const xmlChar*)"rid"));
+  std::string b_name((const char*)xmlGetProp(cur,(const xmlChar*)"rid"));
   //Using default <radfunc exponent="alpha" contraction="c"/>
   GaussianCombo<RealType> gaussian(l,Normalized);
   gaussian.putBasisGroup(cur);

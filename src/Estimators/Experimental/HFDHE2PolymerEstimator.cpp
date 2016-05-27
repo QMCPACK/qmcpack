@@ -39,7 +39,7 @@ HFDHE2PolymerEstimator::HFDHE2PolymerEstimator(QMCHamiltonian& h, int hcopy, Mul
 //     Hpointer = &h;
   SizeOfHamiltonians = h.sizeOfObservables();
   FirstHamiltonian = h.startIndex();
-//     cout<<"size of Hamiltonian "<<SizeOfHamiltonians<<" First one "<<FirstHamiltonian<<endl;
+//     std::cout <<"size of Hamiltonian "<<SizeOfHamiltonians<<" First one "<<FirstHamiltonian<< std::endl;
   elocal_name.push_back("LocalEnergy");
   for(int i=0; i < SizeOfHamiltonians; i++)
   {
@@ -127,7 +127,7 @@ void HFDHE2PolymerEstimator::accumulate(const MCWalkerConfiguration& W
 //         for( MultiChain::iterator Bit = Reptile->begin();Bit != (Reptile->end());Bit++){
 //           tmpF+= (*Bit)->getPropertyBase(i)[Pindex+2+FirstHamiltonian];
 //           tmpV+=(*Bit)->getPropertyBase(i)[LOCALPOTENTIAL];
-//           Bage=min((*Bit)->stepmade,Bage);
+//           Bage= std::min((*Bit)->stepmade,Bage);
 //         };
 //
 //       tmpF-=0.5*Reptile->back()->getPropertyBase(i)[Pindex+2+FirstHamiltonian];
@@ -219,7 +219,7 @@ void HFDHE2PolymerEstimator::accumulate(const MCWalkerConfiguration& W
   }
 }
 
-void HFDHE2PolymerEstimator::registerObservables(vector<observable_helper*>& h5dec, hid_t gid)
+void HFDHE2PolymerEstimator::registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid)
 {
   //IMPLEMENT for hdf5
 }

@@ -50,7 +50,7 @@ public:
 
   virtual Return_t Cost(bool needGrad=true) = 0;
 
-  virtual void GradCost(vector<Return_t>& PGradient, const vector<Return_t>& PM, Return_t FiniteDiff=0) = 0;
+  virtual void GradCost(std::vector<Return_t>& PGradient, const std::vector<Return_t>& PM, Return_t FiniteDiff=0) = 0;
 
   virtual void Report() = 0;
 
@@ -94,7 +94,7 @@ struct MinimizerBase
 
   /** stream to write intermediate message
    */
-  ostream* msg_stream;
+  std::ostream* msg_stream;
 
   /** typedef of the object function to be optimized
    */
@@ -107,9 +107,9 @@ struct MinimizerBase
   virtual ~MinimizerBase() {}
 
   /** set msg_stream
-   * @param os_ptr pointer to ostream
+   * @param os_ptr pointer to std::ostream
    */
-  void setOstream(ostream* os_ptr)
+  void setOstream(std::ostream* os_ptr)
   {
     msg_stream = os_ptr;
   }

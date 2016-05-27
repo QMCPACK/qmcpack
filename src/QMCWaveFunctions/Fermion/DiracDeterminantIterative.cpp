@@ -73,17 +73,17 @@ void DiracDeterminantIterative::resize(int nel, int morb)
 }
 
 
-void DiracDeterminantIterative::SparseToCSR(vector<int> &Arp, vector<int> &Ari,vector<double> &Arx)
+void DiracDeterminantIterative::SparseToCSR(std::vector<int> &Arp, std::vector<int> &Ari,std::vector<double> &Arx)
 {
   int systemSize=LastIndex-FirstIndex;
   int nnz_index=0;
   Arp.push_back(0);
-  //    cerr<<"Particle list size is "<<particleLists.size()<<endl;
+  //    std::cerr <<"Particle list size is "<<particleLists.size()<< std::endl;
   for (int ptcl=0; ptcl<particleLists.size(); ptcl++)
   {
-    for (list<pair<int,double> >::iterator orb=particleLists[ptcl].begin(); orb!=particleLists[ptcl].end(); orb++)
+    for (list<std::pair<int,double> >::iterator orb=particleLists[ptcl].begin(); orb!=particleLists[ptcl].end(); orb++)
     {
-      pair<int,double> myPair=*orb;
+      std::pair<int,double> myPair=*orb;
       int orbitalIndex=myPair.first;
       double value=myPair.second;
       //	if (abs(myValue)>=cutoff){
@@ -94,44 +94,44 @@ void DiracDeterminantIterative::SparseToCSR(vector<int> &Arp, vector<int> &Ari,v
     //      }
     Arp.push_back(nnz_index);
   }
-  //    cerr<<"Ari size is "<<Ari.size()<<endl;
+  //    std::cerr <<"Ari size is "<<Ari.size()<< std::endl;
 }
 
 
 
 DiracDeterminantBase::ValueType DiracDeterminantIterative::ratio(ParticleSet& P, int iat)
 {
-  //    cerr<<"Using local ratio "<<TestMe()<<endl;
+  //    std::cerr <<"Using local ratio "<<TestMe()<< std::endl;
   UpdateMode=ORB_PBYP_RATIO;
   WorkingIndex = iat-FirstIndex;
   assert(FirstIndex==0);
   Phi->evaluate(P, iat, psiV);
-  //    cerr<<"Preparing stuff"<<endl;
-  vector<int> Arp;
-  vector<int> Ari;
-  vector<double> Arx;
+  //    std::cerr <<"Preparing stuff"<< std::endl;
+  std::vector<int> Arp;
+  std::vector<int> Ari;
+  std::vector<double> Arx;
   SparseToCSR(Arp,Ari,Arx);
-  vector<int> Arp2(Arp.size());
-  vector<int> Ari2(Ari.size());
-  vector<double> Arx2(Arx.size());
+  std::vector<int> Arp2(Arp.size());
+  std::vector<int> Ari2(Ari.size());
+  std::vector<double> Arx2(Arx.size());
   Arp2=Arp;
   Ari2=Ari;
   Arx2=Arx;
   int particleMoved=iat;
   int systemSize=LastIndex-FirstIndex;
   int nnzUpdatedPassed=Ari.size();
-  vector<double> uPassed(psiV.size());
+  std::vector<double> uPassed(psiV.size());
   double detRatio_ILU=0;
   for (int i=0; i<uPassed.size(); i++)
     uPassed[i]=psiV[i];
-  //    cerr<<"Calling stuff"<<systemSize<<" "<<Arp.size()<<endl;
+  //    std::cerr <<"Calling stuff"<<systemSize<<" "<<Arp.size()<< std::endl;
   assert(systemSize+1==Arp.size());
   assert(Ari.size()<=nnzUpdatedPassed);
-  //    cerr<<"Entering"<<endl;
+  //    std::cerr <<"Entering"<< std::endl;
   //HACK TO GET TO COMPILE    calcDeterminantILUGMRES(&particleMoved, &systemSize, &nnzUpdatedPassed, uPassed.data(), Arp.data(), Ari.data(), Arx.data(), Arp2.data(), Ari2.data(), Arx2.data(), &detRatio_ILU);
   //    int *Arp_ptr; int *Ari_ptr; double *Arx_ptr;
   //    DenseToCSR(psiM_actual,Arp_ptr,Ari_ptr,Arx_ptr);
-  //    cerr<<"The size of my particle list is "<<particleLists[iat].size()<<" "<<cutoff<<endl;
+  //    std::cerr <<"The size of my particle list is "<<particleLists[iat].size()<<" "<<cutoff<< std::endl;
   oldPtcl.clear();
   assert(iat<particleLists.size());
   particleLists[iat].swap(oldPtcl);
@@ -145,11 +145,11 @@ DiracDeterminantBase::ValueType DiracDeterminantIterative::ratio(ParticleSet& P,
   }
 #ifdef DIRAC_USE_BLAS
   curRatio = BLAS::dot(NumOrbitals,psiM[iat-FirstIndex],&psiV[0]);
-  //    cerr<<"RATIOS: "<<curRatio<<" "<<detRatio_ILU<<endl;
+  //    std::cerr <<"RATIOS: "<<curRatio<<" "<<detRatio_ILU<< std::endl;
   return curRatio;
 #else
   curRatio = DetRatio(psiM, psiV.begin(),iat-FirstIndex);
-  //    cerr<<"RATIOS: "<<curRatio<<" "<<detRatio_ILU<<endl;
+  //    std::cerr <<"RATIOS: "<<curRatio<<" "<<detRatio_ILU<< std::endl;
   return curRatio;
 #endif
 }
@@ -160,7 +160,7 @@ DiracDeterminantBase::ValueType DiracDeterminantIterative::ratio(ParticleSet& P,
     ParticleSet::ParticleGradient_t& dG,
     ParticleSet::ParticleLaplacian_t& dL)
 {
-  //    cerr<<"doing large update"<<endl;
+  //    std::cerr <<"doing large update"<< std::endl;
   UpdateMode=ORB_PBYP_ALL;
   Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
   WorkingIndex = iat-FirstIndex;
@@ -169,7 +169,7 @@ DiracDeterminantBase::ValueType DiracDeterminantIterative::ratio(ParticleSet& P,
 #else
   curRatio= DetRatio(psiM_temp, psiV.begin(),WorkingIndex);
 #endif
-  if(abs(curRatio)<numeric_limits<RealType>::epsilon())
+  if(abs(curRatio)<std::numeric_limits<RealType>::epsilon())
   {
     UpdateMode=ORB_PBYP_RATIO; //singularity! do not update inverse
     return 0.0;
@@ -238,7 +238,7 @@ DiracDeterminantIterative::evaluateLog(ParticleSet& P,
     {
       if (abs(psiM(orbital,ptcl))>=cutoff)
       {
-        pair<int,double> temp(orbital,psiM(orbital,ptcl));
+        std::pair<int,double> temp(orbital,psiM(orbital,ptcl));
         particleLists[ptcl].push_back(temp);
       }
     }

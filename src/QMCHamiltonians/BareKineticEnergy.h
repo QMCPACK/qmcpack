@@ -39,7 +39,7 @@ inline T laplacian(const TinyVector<T,D>& g, T l)
 /** specialization of laplacian with complex g & l
  */
 template<typename T, unsigned D>
-inline T laplacian(const TinyVector<complex<T>,D>& g, const complex<T>& l)
+inline T laplacian(const TinyVector<std::complex<T>,D>& g, const std::complex<T>& l)
 {
   return  l.real()+OTCDot<T,T,D>::apply(g,g);
 }
@@ -63,9 +63,9 @@ inline T laplacian(const TinyVector<complex<T>,D>& g, const complex<T>& l)
  */
 
 
-inline string int2string(const int& i)
+inline std::string int2string(const int& i)
 {
-  stringstream ss;
+  std::stringstream ss;
   ss<<i;
   return ss.str();
 }
@@ -82,7 +82,7 @@ struct BareKineticEnergy: public QMCHamiltonianBase
   ///\f$ 1/(2 m^*) \f$
   T OneOver2M;
   ///MinusOver2M[i] = \f$ -1/2m[i]\f$ for the ith species
-  vector<T> MinusOver2M;
+  std::vector<T> MinusOver2M;
 
   ParticleSet::ParticleGradient_t Gtmp;
   ParticleSet::ParticleLaplacian_t Ltmp;
@@ -158,7 +158,7 @@ struct BareKineticEnergy: public QMCHamiltonianBase
     streaming_particles =  request.streaming_array(myName) 
                         || request.streaming_array(myName+"_complex")
                         || request.streaming_array("momentum");
-    if(streaming_particles)
+    if( streaming_particles)
     {
       T_sample      = tm.checkout_real<1>(myName,Ps);
       T_sample_comp = tm.checkout_complex<1>(myName+"_complex",Ps);
@@ -168,7 +168,7 @@ struct BareKineticEnergy: public QMCHamiltonianBase
 
   virtual void delete_particle_quantities()
   {
-    if(streaming_particles)
+    if( streaming_particles)
     {
       delete T_sample;
       delete T_sample_comp;
@@ -181,7 +181,7 @@ struct BareKineticEnergy: public QMCHamiltonianBase
   inline Return_t evaluate(ParticleSet& P)
   {
 #if !defined(REMOVE_TRACEMANAGER)
-    if(streaming_particles)
+    if( streaming_particles)
     {
       Value = evaluate_sp(P);
     }
@@ -208,7 +208,7 @@ struct BareKineticEnergy: public QMCHamiltonianBase
 
 
   inline Return_t
-  evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
@@ -218,9 +218,9 @@ struct BareKineticEnergy: public QMCHamiltonianBase
   inline Return_t evaluate_sp(ParticleSet& P)
   {
     Array<RealType,1>& T_samp = *T_sample;
-    Array<complex<RealType>,1>& T_samp_comp = *T_sample_comp;
-    Array<complex<RealType>,2>& p_samp = *p_sample;
-    complex<RealType> t1=0.0;
+    Array<std::complex<RealType>,1>& T_samp_comp = *T_sample_comp;
+    Array<std::complex<RealType>,2>& p_samp = *p_sample;
+    std::complex<RealType> t1=0.0;
     Value = 0.0;
     if(SameMass)
     {
@@ -256,16 +256,16 @@ struct BareKineticEnergy: public QMCHamiltonianBase
     RealType Vold = evaluate_orig(P);
     if(abs(Vsum-Vnow)>TraceManager::trace_tol)
     {
-      app_log()<<"accumtest: BareKineticEnergy::evaluate()"<<endl;
-      app_log()<<"accumtest:   tot:"<< Vnow <<endl;
-      app_log()<<"accumtest:   sum:"<< Vsum <<endl;
+      app_log()<<"accumtest: BareKineticEnergy::evaluate()"<< std::endl;
+      app_log()<<"accumtest:   tot:"<< Vnow << std::endl;
+      app_log()<<"accumtest:   sum:"<< Vsum << std::endl;
       APP_ABORT("Trace check failed");
     }
     if(abs(Vold-Vnow)>TraceManager::trace_tol)
     {
-      app_log()<<"versiontest: BareKineticEnergy::evaluate()"<<endl;
-      app_log()<<"versiontest:   orig:"<< Vold <<endl;
-      app_log()<<"versiontest:    mod:"<< Vnow <<endl;
+      app_log()<<"versiontest: BareKineticEnergy::evaluate()"<< std::endl;
+      app_log()<<"versiontest:   orig:"<< Vold << std::endl;
+      app_log()<<"versiontest:    mod:"<< Vnow << std::endl;
       APP_ABORT("Trace check failed");
     }
 #endif
@@ -362,9 +362,9 @@ struct BareKineticEnergy: public QMCHamiltonianBase
   ////////////////////////////////
   // Nothing is done on GPU here, just copy into vector
   void addEnergy(MCWalkerConfiguration &W,
-                 vector<RealType> &LocalEnergy)
+                 std::vector<RealType> &LocalEnergy)
   {
-    vector<Walker_t*> &walkers = W.WalkerList;
+    std::vector<Walker_t*> &walkers = W.WalkerList;
     for (int iw=0; iw<walkers.size(); iw++)
     {
       Walker_t &w = *(walkers[iw]);

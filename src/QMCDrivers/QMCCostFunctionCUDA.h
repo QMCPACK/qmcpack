@@ -42,10 +42,10 @@ public:
   ///Destructor
   ~QMCCostFunctionCUDA();
 
-  void getConfigurations(const string& aroot);
+  void getConfigurations(const std::string& aroot);
   void checkConfigurations();
   void resetWalkers();   
-  void GradCost(vector<Return_t>& PGradient, const vector<Return_t>& PM, Return_t FiniteDiff=0);
+  void GradCost(std::vector<Return_t>& PGradient, const std::vector<Return_t>& PM, Return_t FiniteDiff=0);
   Return_t fillOverlapHamiltonianMatrices
   (Matrix<Return_t>& H2, Matrix<Return_t>& Hamiltonian, Matrix<Return_t>& Variance, Matrix<Return_t>& Overlap);
   Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matrix<Return_t>& Right);
@@ -57,15 +57,15 @@ protected:
   typedef TrialWaveFunction::GradMatrix_t  GradMatrix_t;
   /** Temp derivative properties and Hderivative properties of all the walkers
   */
-  vector<vector<Return_t> >  TempDerivRecords;
-  vector<vector<Return_t> >  TempHDerivRecords;
+  std::vector<std::vector<Return_t> >  TempDerivRecords;
+  std::vector<std::vector<Return_t> >  TempHDerivRecords;
   ValueMatrix_t LogPsi_Derivs, LocE_Derivs;
   ValueMatrix_t d2logPsi_opt, d2logPsi_fixed;
   GradMatrix_t   dlogPsi_opt,  dlogPsi_fixed;
 
-  vector<Matrix<Return_t>*> RecordsOnNode;
-  vector<Matrix<Return_t>* > DerivRecords;
-  vector<Matrix<Return_t>* > HDerivRecords;
+  std::vector<Matrix<Return_t>*> RecordsOnNode;
+  std::vector<Matrix<Return_t>* > DerivRecords;
+  std::vector<Matrix<Return_t>* > HDerivRecords;
 
   ///number of vmc walkers
   int nVMCWalkers;

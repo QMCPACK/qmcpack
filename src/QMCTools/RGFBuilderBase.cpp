@@ -22,7 +22,6 @@
 #include "QMCTools/GridMolecularOrbitals.h"
 #include "QMCTools/RGFBuilderBase.h"
 #include "QMCFactory/OneDimGridFactory.h"
-using namespace std;
 namespace qmcplusplus
 {
 
@@ -42,7 +41,7 @@ RGFBuilderBase::~RGFBuilderBase()
  * @param aroot filename
  * @param omode mode, 0=check cubic spline quality, 1=ascii and 2=hdf5
  */
-void RGFBuilderBase::print(const string& aroot, int omode)
+void RGFBuilderBase::print(const std::string& aroot, int omode)
 {
   enum {DEBUG_OUTPUT=0, ASCII_OUTPUT, HDF_OUTPUT};
   if(omode == DEBUG_OUTPUT)
@@ -53,9 +52,9 @@ void RGFBuilderBase::print(const string& aroot, int omode)
       RadialOrbitalType* radorb = m_orbitals->Rnl[i];
       char fname[128];
       sprintf(fname,"%s.%d.dat",aroot.c_str(), i);
-      ofstream dfile(fname);
-      dfile.setf(ios::scientific, ios::floatfield);
-      dfile.setf(ios::left,ios::adjustfield);
+      std::ofstream dfile(fname);
+      dfile.setf(std::ios::scientific, std::ios::floatfield);
+      dfile.setf(std::ios::left,std::ios::adjustfield);
       dfile.precision(12);
       for(int ig=0; ig<agrid.size()-1; ig++)
       {
@@ -66,9 +65,9 @@ void RGFBuilderBase::print(const string& aroot, int omode)
           //setgrid is removed.  The GridManager functor will re-evaluate the grid parameters.
           //radorb->setgrid(_r);
           y = radorb->evaluate(_r,1.0/_r,dy,d2y);
-          dfile << setw(24) << _r << setw(24) << y
-                << setw(24) << dy << setw(24) << d2y
-                << endl;
+          dfile << std::setw(24) << _r << std::setw(24) << y
+                << std::setw(24) << dy << std::setw(24) << d2y
+                << std::endl;
           _r+=dr;
         }
       }
@@ -80,25 +79,25 @@ void RGFBuilderBase::print(const string& aroot, int omode)
       GridType& agrid(m_orbitals->Rnl[0]->grid());
       char fname[128];
       sprintf(fname,"%s.combo.dat",aroot.c_str());
-      ofstream dfile(fname);
-      dfile.setf(ios::scientific, ios::floatfield);
-      dfile.setf(ios::left,ios::adjustfield);
+      std::ofstream dfile(fname);
+      dfile.setf(std::ios::scientific, std::ios::floatfield);
+      dfile.setf(std::ios::left,std::ios::adjustfield);
       int norb = m_orbitals->Rnl.size();
-      dfile << "# column 0 : Radial grid" << endl;
+      dfile << "# column 0 : Radial grid" << std::endl;
       for(int i=0; i<norb; i++)
       {
-        dfile << "# column " << i+1 << " :  " << m_orbitals->RnlID[i] << endl;
+        dfile << "# column " << i+1 << " :  " << m_orbitals->RnlID[i] << std::endl;
       }
       dfile.precision(15);
       for(int ig=0; ig<agrid.size()-1; ig++)
       {
         RealType _r = agrid(ig);
-        dfile << setw(30) << _r;
+        dfile << std::setw(30) << _r;
         for(int i=0; i<norb; i++)
         {
-          dfile << setw(30) << m_orbitals->Rnl[i]->operator()(ig);
+          dfile << std::setw(30) << m_orbitals->Rnl[i]->operator()(ig);
         }
-        dfile << endl;
+        dfile << std::endl;
       }
     }
 }

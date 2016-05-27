@@ -41,7 +41,7 @@ public:
   typedef TrialWaveFunction::ValueType ValueType;
   typedef TrialWaveFunction::PosType   PosType;
   typedef TrialWaveFunction::GradType  GradType;
-  typedef map<string,ParticleSet*> PtclPoolType;
+  typedef std::map<std::string,ParticleSet*> PtclPoolType;
 
   /////level of printing
   //static int print_level;
@@ -110,7 +110,7 @@ protected:
   xmlNodePtr myNode;
 
   /// child builder
-  vector<OrbitalBuilderBase*> Children;
+  std::vector<OrbitalBuilderBase*> Children;
 };
 
 }

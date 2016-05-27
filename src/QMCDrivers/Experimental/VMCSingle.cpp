@@ -90,7 +90,7 @@ void VMCSingle::resetRun()
   {
     if(QMCDriverMode[QMC_UPDATE_MODE])
     {
-      app_log() << "  Update particle by particle " << endl;
+      app_log() << "  Update particle by particle " << std::endl;
       if(UseDrift == "yes")
         Mover=new VMCUpdatePbyPWithDrift(W,Psi,H,Random);
       else
@@ -98,7 +98,7 @@ void VMCSingle::resetRun()
     }
     else
     {
-      app_log() << "  Update walker by walker " << endl;
+      app_log() << "  Update walker by walker " << std::endl;
       if(UseDrift == "yes")
         Mover=new VMCUpdateAllWithDrift(W,Psi,H,Random);
       else
@@ -111,10 +111,10 @@ void VMCSingle::resetRun()
     Mover->initWalkersForPbyP(W.begin(),W.end());
   else
     Mover->initWalkers(W.begin(),W.end());
-  app_log() << "  Samples are dumped at every " << myPeriod4WalkerDump << " step " << endl;
+  app_log() << "  Samples are dumped at every " << myPeriod4WalkerDump << " step " << std::endl;
   app_log() << "  Total Sample Size =" << nTargetSamples
-            << "\n  Sample size per node per thread = " << samples_tot << endl;
-  app_log() << "  Warmup Steps " << nWarmupSteps << endl;
+            << "\n  Sample size per node per thread = " << samples_tot << std::endl;
+  app_log() << "  Warmup Steps " << nWarmupSteps << std::endl;
   //do a warmup run
   for(int prestep=0; prestep<nWarmupSteps; ++prestep)
     Mover->advanceWalkers(W.begin(),W.end(),true);

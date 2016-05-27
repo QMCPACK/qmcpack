@@ -66,12 +66,12 @@ struct GaussianPot: public QMCHamiltonianBase
       Value +=  std::exp(-1.0*(d_table->r(nn)*d)*(d_table->r(nn)*d));
     }
     return Value*=Q;
-    //return C*std::accumulate(d_table->rinv.data(),
+    //return C* std::accumulate(d_table->rinv.data(),
     //	  	       d_table->rinv.data()+d_table->getTotNadj(),
     //		       0.0);
   }
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
@@ -121,10 +121,10 @@ struct GaussianPot: public QMCHamiltonianBase
     Tattrib.add(d,"length");
     Tattrib.add(Q,"mag");
     Tattrib.put(cur);
-    app_log()<<"GaussianPot parameters"<<endl;
-    app_log()<<"  length: "<<d<<endl;
+    app_log()<<"GaussianPot parameters"<< std::endl;
+    app_log()<<"  length: "<<d<< std::endl;
     d=1.0/d;
-    app_log()<<"  mag: "<<Q<<endl;
+    app_log()<<"  mag: "<<Q<< std::endl;
     return true;
   }
 

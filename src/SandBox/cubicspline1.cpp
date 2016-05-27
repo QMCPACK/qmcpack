@@ -30,7 +30,7 @@ struct TestFunc1
   ///1/Rcut
   real_type OneOverRc;
   ///id
-  string ID;
+  std::string ID;
   ///constructor
   explicit TestFunc1(real_type b, real_type rc=7.5)
   {

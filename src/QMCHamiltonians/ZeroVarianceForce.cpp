@@ -35,14 +35,14 @@ void ZeroVarianceForce::addObservables(PropertySetType& plist
   if(FirstForceIndex<0)
     FirstForceIndex=plist.size();
     
- //   app_log() << "ionionforce = "<<ionionforce<<endl;
-  app_log() << "addionion="<<addionion<<endl;
-  app_log() << "FirstTime= "<<FirstTime<<endl;
+ //   app_log() << "ionionforce = "<<ionionforce<< std::endl;
+  app_log() << "addionion="<<addionion<< std::endl;
+  app_log() << "FirstTime= "<<FirstTime<< std::endl;
   for(int iat=0; iat<Nnuc; iat++)
   {
     for(int x=0; x<OHMMS_DIM; x++)
     {
-      ostringstream obsName1, obsName2;
+      std::ostringstream obsName1, obsName2;
       obsName1 << "F_ZV1" << "_" << iat << "_" << x;
       obsName2 << "F_ZV2" << "_" << iat << "_" << x;
       app_log() << "Adding " << obsName1.str() << " to observable list.\n";
@@ -54,11 +54,11 @@ void ZeroVarianceForce::addObservables(PropertySetType& plist
 }
 
 void
-ZeroVarianceForce::registerObservables(vector<observable_helper*>& h5list,
+ZeroVarianceForce::registerObservables(std::vector<observable_helper*>& h5list,
                                        hid_t gid) const
 {
   QMCHamiltonianBase::registerObservables(h5list, gid);
-  vector<int> ndim(2);
+  std::vector<int> ndim(2);
   ndim[0]=Nnuc;
   ndim[1]=OHMMS_DIM;
   observable_helper* h5o1 = new observable_helper("F_ZV1");

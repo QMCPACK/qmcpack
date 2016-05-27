@@ -47,7 +47,7 @@ bool SplineSetBuilder::put(xmlNodePtr cur)
 SPOSetBase*
 SplineSetBuilder::createSPOSet(xmlNodePtr cur)
 {
-  string hrefname("NONE");
+  std::string hrefname("NONE");
   int norb(0);
   int degeneracy(1);
   OhmmsAttributeSet aAttrib;
@@ -57,33 +57,33 @@ SplineSetBuilder::createSPOSet(xmlNodePtr cur)
   aAttrib.put(cur);
   if(norb ==0)
   {
-    app_error() << "SplineSetBuilder::createSPOSet failed. Check the attribte orbitals." << endl;
+    app_error() << "SplineSetBuilder::createSPOSet failed. Check the attribte orbitals." << std::endl;
     return 0;
   }
-  app_log() << "    Degeneracy = " << degeneracy << endl;
+  app_log() << "    Degeneracy = " << degeneracy << std::endl;
   std::vector<int> npts(3);
   npts[0]=GridXYZ->nX;
   npts[1]=GridXYZ->nY;
   npts[2]=GridXYZ->nZ;
   std::vector<RealType> inData(npts[0]*npts[1]*npts[2]);
   SPOSetType* psi= new SPOSetType(norb);
-  vector<int> occSet(norb);
+  std::vector<int> occSet(norb);
   for(int i=0; i<norb; i++)
     occSet[i]=i;
   cur=cur->children;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == "occupation")
     {
-      string occ_mode("ground");
+      std::string occ_mode("ground");
       const xmlChar* o=xmlGetProp(cur,(const xmlChar*)"mode");
       if(o!= NULL)
         occ_mode = (const char*)o;
       //Do nothing if mode == ground
       if(occ_mode == "excited")
       {
-        vector<int> occ_in, occRemoved;
+        std::vector<int> occ_in, occRemoved;
         putContent(occ_in,cur);
         for(int k=0; k<occ_in.size(); k++)
         {
@@ -99,7 +99,7 @@ SplineSetBuilder::createSPOSet(xmlNodePtr cur)
       }
       hid_t h_file = H5Fopen(hrefname.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
       const xmlChar* h5path = xmlGetProp(cur,(const xmlChar*)"h5path");
-      string hroot("/eigenstates_3/twist_0");
+      std::string hroot("/eigenstates_3/twist_0");
       if(h5path != NULL)
         hroot=(const char*)h5path;
       char wfname[128],wfshortname[16];
@@ -108,7 +108,7 @@ SplineSetBuilder::createSPOSet(xmlNodePtr cur)
         sprintf(wfname,"%s/band_%d/eigenvector",hroot.c_str(),occSet[iorb]/degeneracy);
         sprintf(wfshortname,"b%d",occSet[iorb]/degeneracy);
         SPOType* neworb=0;
-        map<string,SPOType*>::iterator it(NumericalOrbitals.find(wfshortname));
+        std::map<std::string,SPOType*>::iterator it(NumericalOrbitals.find(wfshortname));
         if(it == NumericalOrbitals.end())
         {
           neworb=new SPOType(GridXYZ);
@@ -117,12 +117,12 @@ SplineSetBuilder::createSPOSet(xmlNodePtr cur)
           //neworb->reset(inData.begin(), inData.end(), targetPtcl.Lattice.BoxBConds[0]);
           neworb->reset(inData.begin(), inData.end(), targetPtcl.Lattice.SuperCellEnum);
           NumericalOrbitals[wfshortname]=neworb;
-          app_log() << "   Reading spline function " << wfname << endl;
+          app_log() << "   Reading spline function " << wfname << std::endl;
         }
         else
         {
           neworb = (*it).second;
-          app_log() << "   Reusing spline function " << wfname << endl;
+          app_log() << "   Reusing spline function " << wfname << std::endl;
         }
         psi->add(neworb);
       }
@@ -131,18 +131,18 @@ SplineSetBuilder::createSPOSet(xmlNodePtr cur)
     cur=cur->next;
   }
   SPOType* aorb=(*NumericalOrbitals.begin()).second;
-  string fname("spline3d.vti");
+  std::string fname("spline3d.vti");
   std::ofstream dfile(fname.c_str());
-  dfile.setf(ios::scientific, ios::floatfield);
-  dfile.setf(ios::left,ios::adjustfield);
+  dfile.setf(std::ios::scientific, std::ios::floatfield);
+  dfile.setf(std::ios::left,std::ios::adjustfield);
   dfile.precision(10);
-  dfile << "<?xml version=\"1.0\"?>" << endl;
-  dfile << "<VTKFile type=\"ImageData\" version=\"0.1\">" << endl;
+  dfile << "<?xml version=\"1.0\"?>" << std::endl;
+  dfile << "<VTKFile type=\"ImageData\" version=\"0.1\">" << std::endl;
   dfile << "  <ImageData WholeExtent=\"0 " << npts[0]-2 << " 0 " << npts[1]-2 << " 0 " << npts[2]-2
-        << "\" Origin=\"0 0 0\" Spacing=\"1 1 1\">"<< endl;
-  dfile << "    <Piece Extent=\"0 " << npts[0]-2 << " 0 " << npts[1]-2 << " 0 " << npts[2]-2 << "\">" << endl;
-  dfile << "       <PointData Scalars=\"wfs\">" << endl;
-  dfile << "          <DataArray type=\"Float32\" Name=\"wfs\">" << endl;
+        << "\" Origin=\"0 0 0\" Spacing=\"1 1 1\">"<< std::endl;
+  dfile << "    <Piece Extent=\"0 " << npts[0]-2 << " 0 " << npts[1]-2 << " 0 " << npts[2]-2 << "\">" << std::endl;
+  dfile << "       <PointData Scalars=\"wfs\">" << std::endl;
+  dfile << "          <DataArray type=\"Float32\" Name=\"wfs\">" << std::endl;
   int ng=0;
   GradType grad;
   ValueType lap;
@@ -156,20 +156,20 @@ SplineSetBuilder::createSPOSet(xmlNodePtr cur)
       {
         PosType p(x,y,GridXYZ->gridZ->operator()(iz));
         //aorb.setgrid(p);
-        //Timing with the ofstream is not correct.
+        //Timing with the std::ofstream is not correct.
         //Uncomment the line below and comment out the next two line.
         //double t=aorb.evaluate(p,grad,lap);
-        dfile << setw(20) << aorb->evaluate(p,grad,lap);
+        dfile << std::setw(20) << aorb->evaluate(p,grad,lap);
         if(ng%5 == 4)
-          dfile << endl;
+          dfile << std::endl;
       }
     }
   }
-  dfile << "          </DataArray>" << endl;
-  dfile << "       </PointData>" << endl;
-  dfile << "    </Piece>" << endl;
-  dfile << "  </ImageData>" << endl;
-  dfile << "</VTKFile>" << endl;
+  dfile << "          </DataArray>" << std::endl;
+  dfile << "       </PointData>" << std::endl;
+  dfile << "    </Piece>" << std::endl;
+  dfile << "  </ImageData>" << std::endl;
+  dfile << "</VTKFile>" << std::endl;
   abort();
   return psi;
 }

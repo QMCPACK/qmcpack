@@ -101,12 +101,12 @@ public:
   TinyMatrix<double,3,6> S;
   /// The following are helpers to calculate the Fourier tranform of
   /// the basis functions
-  inline complex<double> Eplus(int i, double k, int n);
-  inline complex<double> Eminus(int i, double k, int n);
+  inline std::complex<double> Eplus(int i, double k, int n);
+  inline std::complex<double> Eminus(int i, double k, int n);
   inline double Dplus(int i, double k, int n);
   inline double Dminus(int i, double k, int n);
-  inline complex<double> dEplus_dk(int i, double k, int n);
-  inline complex<double> dEminus_dk(int i, double k, int n);
+  inline std::complex<double> dEplus_dk(int i, double k, int n);
+  inline std::complex<double> dEminus_dk(int i, double k, int n);
   inline double dDplus_dk(int i, double k, int n);
   inline double dDminus_dk(int i, double k, int n);
   Array<double,1> tvec;
@@ -128,40 +128,40 @@ public:
   }
 };
 
-inline complex<double> LPQHI_BasisClass::Eplus(int i, double k, int n)
+inline std::complex<double> LPQHI_BasisClass::Eplus(int i, double k, int n)
 {
-  complex<double> eye(0.0, 1.0);
+  std::complex<double> eye(0.0, 1.0);
 
   if (n == 0) {
-    complex<double> e1(cos(k*delta)-1.0, sin(k*delta));
-    complex<double> e2(cos(k*delta*i),   sin(k*delta*i));
+    std::complex<double> e1(cos(k*delta)-1.0, sin(k*delta));
+    std::complex<double> e2(cos(k*delta*i),   sin(k*delta*i));
     return (-(eye/k)*e1*e2);
   }
   else {
-    complex<double> t1, t2;
+    std::complex<double> t1, t2;
     double sign = 1.0;
-    t1 = complex<double>(cos(k*delta*(i+1)),sin(k*delta*(i+1)));
+    t1 = std::complex<double>(cos(k*delta*(i+1)),sin(k*delta*(i+1)));
     t2=-(double)n/delta*Eplus(i,k,n-1);;
     return (-(eye/k)*(t1+t2));
   }
 }
 
-inline complex<double> LPQHI_BasisClass::dEplus_dk(int i, double k, int n)
+inline std::complex<double> LPQHI_BasisClass::dEplus_dk(int i, double k, int n)
 {
-  complex<double> eye(0.0, 1.0);
+  std::complex<double> eye(0.0, 1.0);
 
   if (n == 0) {
-    complex<double>  e1(cos(k*delta)-1.0,        sin(k*delta));
-    complex<double> de1(-delta*sin(k*delta),     delta*cos(k*delta));
-    complex<double>  e2(cos(k*delta*i),          sin(k*delta*i));
-    complex<double> de2(-delta*i*sin(k*delta*i), delta*i*cos(k*delta*i));
+    std::complex<double>  e1(cos(k*delta)-1.0,        sin(k*delta));
+    std::complex<double> de1(-delta*sin(k*delta),     delta*cos(k*delta));
+    std::complex<double>  e2(cos(k*delta*i),          sin(k*delta*i));
+    std::complex<double> de2(-delta*i*sin(k*delta*i), delta*i*cos(k*delta*i));
     return ((eye/(k*k))*e1*e2-(eye/k)*(de1*e2+e1*de2));
   }
   else {
-    complex<double> t1, t2, dt1, dt2;
+    std::complex<double> t1, t2, dt1, dt2;
     double sign = 1.0;
-    t1  = complex<double>(cos(k*delta*(i+1)),sin(k*delta*(i+1)));
-    dt1 = complex<double>(-delta*(i+1)*sin(k*delta*(i+1)),
+    t1  = std::complex<double>(cos(k*delta*(i+1)),sin(k*delta*(i+1)));
+    dt1 = std::complex<double>(-delta*(i+1)*sin(k*delta*(i+1)),
 			  delta*(i+1)*cos(k*delta*(i+1)));
     t2  = -(double)n/delta*Eplus(i,k,n-1);
     dt2 = -(double)n/delta*dEplus_dk(i,k,n-1);
@@ -169,41 +169,41 @@ inline complex<double> LPQHI_BasisClass::dEplus_dk(int i, double k, int n)
   }
 }
 
-inline complex<double> LPQHI_BasisClass::Eminus(int i, double k, int n)
+inline std::complex<double> LPQHI_BasisClass::Eminus(int i, double k, int n)
 {
-  complex<double> eye(0.0, 1.0);
+  std::complex<double> eye(0.0, 1.0);
 
   if (n == 0) {
-    complex<double> e1(cos(k*delta)-1.0, -sin(k*delta));
-    complex<double> e2(cos(k*delta*i),    sin(k*delta*i));
+    std::complex<double> e1(cos(k*delta)-1.0, -sin(k*delta));
+    std::complex<double> e2(cos(k*delta*i),    sin(k*delta*i));
     return (-(eye/k)*e1*e2);
   }
   else {
-    complex<double> t1, t2;
+    std::complex<double> t1, t2;
     double sign = (n & 1) ? -1.0 : 1.0;
     t1 = sign*
-      complex<double> (cos(k*delta*(i-1)),sin(k*delta*(i-1)));
+      std::complex<double> (cos(k*delta*(i-1)),sin(k*delta*(i-1)));
     t2=-(double)n/delta*Eminus(i,k,n-1);
     return (-(eye/k)*(t1+t2));
   }
 }
 
-inline complex<double> LPQHI_BasisClass::dEminus_dk(int i, double k, int n)
+inline std::complex<double> LPQHI_BasisClass::dEminus_dk(int i, double k, int n)
 {
-  complex<double> eye(0.0, 1.0);
+  std::complex<double> eye(0.0, 1.0);
 
   if (n == 0) {
-    complex<double>  e1(cos(k*delta)-1.0,        -sin(k*delta));
-    complex<double> de1(-delta*sin(k*delta),     -delta*cos(k*delta));
-    complex<double>  e2(cos(k*delta*i),          sin(k*delta*i));
-    complex<double> de2(-delta*i*sin(k*delta*i), delta*i*cos(k*delta*i));
+    std::complex<double>  e1(cos(k*delta)-1.0,        -sin(k*delta));
+    std::complex<double> de1(-delta*sin(k*delta),     -delta*cos(k*delta));
+    std::complex<double>  e2(cos(k*delta*i),          sin(k*delta*i));
+    std::complex<double> de2(-delta*i*sin(k*delta*i), delta*i*cos(k*delta*i));
     return ((eye/(k*k))*e1*e2-(eye/k)*(de1*e2+e1*de2));
   }
   else {
-    complex<double> t1, t2, dt1, dt2;
+    std::complex<double> t1, t2, dt1, dt2;
     double sign = (n & 1) ? -1.0 : 1.0;
-    t1  = sign * complex<double>(cos(k*delta*(i-1)),sin(k*delta*(i-1)));
-    dt1 = sign * complex<double>(-delta*(i-1)*sin(k*delta*(i-1)),
+    t1  = sign * std::complex<double>(cos(k*delta*(i-1)),sin(k*delta*(i-1)));
+    dt1 = sign * std::complex<double>(-delta*(i-1)*sin(k*delta*(i-1)),
 			  delta*(i-1)*cos(k*delta*(i-1)));
     t2  = -(double)n/delta*Eminus(i,k,n-1);
     dt2 = -(double)n/delta*dEminus_dk(i,k,n-1);
@@ -215,38 +215,38 @@ inline complex<double> LPQHI_BasisClass::dEminus_dk(int i, double k, int n)
 
 inline double LPQHI_BasisClass::Dplus(int i, double k, int n)
 {
-  complex<double> eye(0.0, 1.0); 
-  complex<double> Z1 = Eplus(i,k,n+1);
-  complex<double> Z2 = Eplus(i,k,n);
+  std::complex<double> eye(0.0, 1.0); 
+  std::complex<double> Z1 = Eplus(i,k,n+1);
+  std::complex<double> Z2 = Eplus(i,k,n);
   return 4.0*M_PI/(k*Omega)*(delta* Z1.imag() + i*delta*Z2.imag());
 }
 
 inline double LPQHI_BasisClass::dDplus_dk(int i, double k, int n)
 {
-  complex<double> eye(0.0, 1.0); 
-  complex<double> Z1 = Eplus(i,k,n+1);
-  complex<double> Z2 = Eplus(i,k,n);
-  complex<double> dZ1 = dEplus_dk(i,k,n+1);
-  complex<double> dZ2 = dEplus_dk(i,k,n);
+  std::complex<double> eye(0.0, 1.0); 
+  std::complex<double> Z1 = Eplus(i,k,n+1);
+  std::complex<double> Z2 = Eplus(i,k,n);
+  std::complex<double> dZ1 = dEplus_dk(i,k,n+1);
+  std::complex<double> dZ2 = dEplus_dk(i,k,n);
   return -4.0*M_PI/(k*k*Omega)*(delta* Z1.imag() + i*delta*Z2.imag()) +
     4.0*M_PI/(k*Omega)*(delta*dZ1.imag() + i*delta*dZ2.imag());
 }
 
 inline double LPQHI_BasisClass::Dminus(int i, double k, int n)
 {
-  complex<double> eye(0.0, 1.0); 
-  complex<double> Z1 = Eminus(i,k,n+1);
-  complex<double> Z2 = Eminus(i,k,n);
+  std::complex<double> eye(0.0, 1.0); 
+  std::complex<double> Z1 = Eminus(i,k,n+1);
+  std::complex<double> Z2 = Eminus(i,k,n);
   return -4.0*M_PI/(k*Omega)*(delta* Z1.imag() + i*delta*Z2.imag());
 }
 
 inline double LPQHI_BasisClass::dDminus_dk(int i, double k, int n)
 {
-  complex<double> eye(0.0, 1.0); 
-  complex<double> Z1  = Eminus(i,k,n+1);
-  complex<double> dZ1 = dEminus_dk(i,k,n+1);
-  complex<double> Z2  = Eminus(i,k,n);
-  complex<double> dZ2 = dEminus_dk(i,k,n);
+  std::complex<double> eye(0.0, 1.0); 
+  std::complex<double> Z1  = Eminus(i,k,n+1);
+  std::complex<double> dZ1 = dEminus_dk(i,k,n+1);
+  std::complex<double> Z2  = Eminus(i,k,n);
+  std::complex<double> dZ2 = dEminus_dk(i,k,n);
   return 4.0*M_PI/(k*k*Omega)*(delta* Z1.imag() + i*delta*Z2.imag())
     -4.0*M_PI/(k*Omega)*(delta* dZ1.imag() + i*delta*dZ2.imag());
 }

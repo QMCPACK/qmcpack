@@ -52,9 +52,9 @@ void resize(int n)
     WallClockTime.erase(WallClockTime.begin(), WallClockTime.end());
     MDTime.erase(MDTime.begin(), MDTime.end());
     HMDTime.erase(HMDTime.begin(), HMDTime.end());
-    WallClockTime = vector<double>(2*n,0.0e0);
-    MDTime   = vector<double>(2*n,0.0e0);
-    HMDTime  = vector<double>(2*n,0.0e0);
+    WallClockTime = std::vector<double>(2*n,0.0e0);
+    MDTime   = std::vector<double>(2*n,0.0e0);
+    HMDTime  = std::vector<double>(2*n,0.0e0);
   }
 }
 
@@ -198,7 +198,7 @@ ReplicaControl::recv(ParticlePos_t& p, int& node, int btag)
   bool ReplicaControl::sendExactTime(double wallt, bool havewon)
   {
     int masternode = 0;
-    double newtime[3];// vector<double> newtime(3);
+    double newtime[3];// std::vector<double> newtime(3);
     if(havewon)
     {
       newtime[0] = MDTime[FrameNum];
@@ -241,9 +241,9 @@ ReplicaControl::recv(ParticlePos_t& p, int& node, int btag)
     MDTime[itrans] = CumMD_t;
     TotMD_t += CumMD_t;
   }
-  void ReplicaControl::reportTimeData(ostream& os,int i_trans)
+  void ReplicaControl::reportTimeData(std::ostream& os,int i_trans)
   {
-    os << setw(18) << MDTime[i_trans] << setw(18) << TotMD_t << " ";
+    os << std::setw(18) << MDTime[i_trans] << std::setw(18) << TotMD_t << " ";
   }
 //  bool ReplicaControl::sendNewConfig(ParticlePos_t& newp){
 //    int size = OHMMS_DIM*newp.size();

@@ -33,11 +33,11 @@ int main(int argc, char **argv)
   QMCGaussianParserBase::init();
   QMCGaussianParserBase *parser=0;
   int iargc=0;
-  string in_file(argv[1]);
-  string punch_file;
-  string psi_tag("psi0");
-  string ion_tag("ion0");
-  string prefix("sample");
+  std::string in_file(argv[1]);
+  std::string punch_file;
+  std::string psi_tag("psi0");
+  std::string ion_tag("ion0");
+  std::string prefix("sample");
   bool usehdf5=false;
   bool ci=false,zeroCI=false,orderByExcitation=false,VSVB=false, fmo=false,addCusp=false;
   double thres=0.01;
@@ -141,13 +141,13 @@ int main(int argc, char **argv)
   }
   if(readNO > 0 && readGuess > 0)
   {
-    cerr<<"Can only use one of: -NaturalOrbitals or -readInitialGuess. \n";
+    std::cerr <<"Can only use one of: -NaturalOrbitals or -readInitialGuess. \n";
     abort();
   }
   //Failed to create a parser. Try with the extension
   if(parser == 0)
   {
-    string ext= getExtension(in_file);
+    std::string ext= getExtension(in_file);
     if(ext == "data")
     {
       WARNMSG("Creating CasinoParser")
@@ -175,7 +175,7 @@ int main(int argc, char **argv)
     }
     else
     {
-      cerr << "Unknown extension: " << ext << endl;
+      std::cerr << "Unknown extension: " << ext << std::endl;
       exit(1);
     }
   }

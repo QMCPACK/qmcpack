@@ -61,7 +61,7 @@ struct LatticeAnalyzer<T,3>
   inline bool isDiagonalOnly(const Tensor_t& R) const
   {
     T offdiag=abs(R(0,1))+abs(R(0,2))+abs(R(1,0))+abs(R(1,2))+abs(R(2,0))+abs(R(2,1));
-    return (offdiag< numeric_limits<T>::epsilon());
+    return (offdiag< std::numeric_limits<T>::epsilon());
   }
 
   inline SingleParticlePos_t calcSolidAngles(
@@ -132,7 +132,7 @@ struct LatticeAnalyzer<T,3>
     //  //T theta  = std::min (theta1, theta2);
     //  //T dist   = std::min (a0mag, a1mag);
     //  //scr=0.5*std::sin(theta)*dist;
-    //  cout << " calcSimulationCellRadius for Slab" << endl;
+    //  std::cout << " calcSimulationCellRadius for Slab" << std::endl;
     //}
     //else if(mySC == SUPERCELL_WIRE)
     //{
@@ -141,7 +141,7 @@ struct LatticeAnalyzer<T,3>
     return scr;
   }
 
-  inline void makeNextCells(const Tensor_t& lat, vector<SingleParticlePos_t>& nextcells)
+  inline void makeNextCells(const Tensor_t& lat, std::vector<SingleParticlePos_t>& nextcells)
   {
     int ic=0;
     if(mySC == SUPERCELL_BULK)
@@ -200,7 +200,7 @@ struct LatticeAnalyzer<T,2>
   inline bool isDiagonalOnly(const Tensor<T,2>& R) const
   {
     T offdiag=abs(R(0,1))+abs(R(1,0));
-    return (offdiag< numeric_limits<T>::epsilon());
+    return (offdiag< std::numeric_limits<T>::epsilon());
   }
 
   inline SingleParticlePos_t calcSolidAngles(
@@ -235,7 +235,7 @@ struct LatticeAnalyzer<T,2>
     // return calcWignerSeitzRadius(a);
   }
 
-  inline void makeNextCells(const Tensor_t& lat, vector<SingleParticlePos_t>& nextcells)
+  inline void makeNextCells(const Tensor_t& lat, std::vector<SingleParticlePos_t>& nextcells)
   {
     nextcells.resize(8);
     int ic=0;
@@ -276,7 +276,7 @@ struct LatticeAnalyzer<T,1>
 template<typename T>
 inline bool found_shorter_base(TinyVector<TinyVector<T,3>,3>& rb)
 {
-  const T eps=2.0*numeric_limits<float>::epsilon();
+  const T eps=2.0*std::numeric_limits<float>::epsilon();
   int imax=0;
   T r2max=dot(rb[0],rb[0]);
   for(int i=1; i<3; i++)

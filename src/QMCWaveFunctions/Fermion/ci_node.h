@@ -127,7 +127,7 @@ struct ci_node
     int count=1,rem,add;
     int m=inverse.cols();
     int n=dpsiM.cols();
-    for(vector<configuration>::iterator it=confg.begin()+1; it!=confg.end(); ++it)
+    for(std::vector<configuration>::iterator it=confg.begin()+1; it!=confg.end(); ++it)
       it->taken=false;
     for(int i=0; i<confg.size(); i++)
     {
@@ -142,7 +142,7 @@ struct ci_node
         sort (peers.begin(), peers.end());
       }
     }
-    for(vector<configuration>::iterator it=confg.begin()+1; it!=confg.end(); ++it)
+    for(std::vector<configuration>::iterator it=confg.begin()+1; it!=confg.end(); ++it)
     {
       if(!(it->taken) )
       {
@@ -591,7 +591,7 @@ struct ci_node
         BLAS::copy(psic.size(),psiv_big.data()+m,psic.data());
         for(int i=0; i<children.size();++i)
         {
-          std::copy(psiv_big.data(),psiv_big.data()+m,psiv.data());
+          copy(psiv_big.data(),psiv_big.data()+m,psiv.data());
           children[i]->ratioByRowSubstitution(psiv, psiv_big, irow, m, ratios);
         }
       }
@@ -604,14 +604,14 @@ struct ci_node
         ValueVector psiv_temp(m);
         for(int i=0; i<children.size();++i)
         {
-          std::copy(psiv.begin(),psiv.end(),psiv_temp.data());
+          copy(psiv.begin(),psiv.end(),psiv_temp.data());
           children[i]->ratioByRowSubstitution(psiv_temp, psic, irow, m, ratios);
         }
       }
   */
 
   //this is just debug
-  void write_node(ostream& os)
+  void write_node(std::ostream& os)
   {
     os  << "<node "
         << " from=\"" << from
@@ -649,7 +649,7 @@ private:
     d2psiV.resize(n);
   }
 
-  void look_for_peers(vector<configuration>& confg, int& count, std::vector<int>& map2det)
+  void look_for_peers(std::vector<configuration>& confg, int& count, std::vector<int>& map2det)
   {
     int rem,add;
     int m=inverse.cols();

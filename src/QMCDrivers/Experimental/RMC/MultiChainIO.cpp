@@ -68,7 +68,7 @@ struct HDFAttribIO<PooledData<double> >: public HDFAttribIOBase
  * - opens a hdf5 file
  * - create the main groups /multichain and /random_state
  */
-HDFMultiChainOutput::HDFMultiChainOutput(const string& aroot, int count) :
+HDFMultiChainOutput::HDFMultiChainOutput(const std::string& aroot, int count) :
   Counter(count) , m_version(1)
 {
   h5file = aroot;
@@ -144,10 +144,10 @@ bool HDFMultiChainOutput::get(MultiChain& W)
  *
  *@note The main group is "/config_collection"
  */
-HDFMultiChainInput::HDFMultiChainInput(const string& aroot)
+HDFMultiChainInput::HDFMultiChainInput(const std::string& aroot)
 {
-  string h5file = aroot;
-  string ext=getExtension(h5file);
+  std::string h5file = aroot;
+  std::string ext=getExtension(h5file);
   if(ext != "h5")
     //if the filename does not h5 extension, add the extension
   {

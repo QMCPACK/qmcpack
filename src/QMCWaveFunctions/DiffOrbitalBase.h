@@ -35,7 +35,7 @@ namespace qmcplusplus
  * - \f$\nabla \fraction{\partial \log\Psi}{\partial \alpha}\$
  * - \f$\nabla^2 \fraction{\partial \log\Psi}{\partial \alpha}\$
  * Each object handles one or more parameters during the optimiation.
- * The data type of refOrbital, vector<OrbitalBase*> is intended for the cases
+ * The data type of refOrbital, std::vector<OrbitalBase*> is intended for the cases
  * when a common variable is used by several OrbitalBase class, e.g.,
  * TwoBodyJastrowOrbital<PadeFunctor> and OneBodyJastrowOrbital<PadeFunctor>
  * with one scaling parameter.
@@ -56,7 +56,7 @@ struct DiffOrbitalBase
   //@}
   /** list of reference orbitals which contribute to the derivatives
    */
-  vector<OrbitalBase*> refOrbital;
+  std::vector<OrbitalBase*> refOrbital;
 
   /// default constructor
   DiffOrbitalBase(OrbitalBase* orb=0);
@@ -86,12 +86,12 @@ struct DiffOrbitalBase
    */
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& optvars,
-                                   vector<RealType>& dlogpsi,
-                                   vector<RealType>& dhpsioverpsi)=0;
+                                   std::vector<RealType>& dlogpsi,
+                                   std::vector<RealType>& dhpsioverpsi)=0;
 
   virtual void evaluateDerivRatios(ParticleSet& VP, const opt_variables_type& optvars, Matrix<ValueType>& dratios);
 
-  virtual void multiplyDerivsByOrbR(vector<RealType>& dlogpsi)
+  virtual void multiplyDerivsByOrbR(std::vector<RealType>& dlogpsi)
   {
     for (int i=0; i<refOrbital.size(); ++i)
     {
@@ -132,8 +132,8 @@ struct NumericalDiffOrbital: public DiffOrbitalBase
   void resetTargetParticleSet(ParticleSet& P);
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           vector<RealType>& dlogpsi,
-                           vector<RealType>& dhpsioverpsi);
+                           std::vector<RealType>& dlogpsi,
+                           std::vector<RealType>& dhpsioverpsi);
   void checkOutVariables(const opt_variables_type& optvars);
   void resetParameters(const opt_variables_type& optvars);
 
@@ -153,8 +153,8 @@ struct AnalyticDiffOrbital: public DiffOrbitalBase
   void resetTargetParticleSet(ParticleSet& P);
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           vector<RealType>& dlogpsi,
-                           vector<RealType>& dhpsioverpsi);
+                           std::vector<RealType>& dlogpsi,
+                           std::vector<RealType>& dhpsioverpsi);
   void checkOutVariables(const opt_variables_type& optvars);
   void resetParameters(const opt_variables_type& optvars);
 

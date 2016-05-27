@@ -43,13 +43,13 @@ struct WalkerReconfigurationMPI: public WalkerControlBase
   ///1/(total number of walkers)
   RealType nwInv;
   ///the number of extra/missing walkers
-  vector<IndexType> dN;
+  std::vector<IndexType> dN;
   //weight per walker
-  vector<RealType> wConf;
+  std::vector<RealType> wConf;
   //accumulated weight [0,ip) for each ip
-  vector<RealType> wOffset;
+  std::vector<RealType> wOffset;
   //local sum of the weights for each ip
-  vector<RealType> wSum;
+  std::vector<RealType> wSum;
   //comb
   //vector<RealType> Zeta;
 
@@ -70,12 +70,12 @@ struct WalkerReconfigurationMPI: public WalkerControlBase
   /** send the extra walkers to other node
    * @param plus local indices of the walkers to be sent
    */
-  void sendWalkers(MCWalkerConfiguration& W, const vector<IndexType>& plus);
+  void sendWalkers(MCWalkerConfiguration& W, const std::vector<IndexType>& plus);
 
   /** send the missing walkers from other node
    * @param minus local indices of the walkers to be copied
    */
-  void recvWalkers(MCWalkerConfiguration& W, const vector<IndexType>& minus);
+  void recvWalkers(MCWalkerConfiguration& W, const std::vector<IndexType>& minus);
 
 };
 }

@@ -153,7 +153,7 @@ double Device::OC_contrib0( double d0,
 //     double r = sqrt(dot(rdiff,rdiff));
 //     /// r should be smaller than radius but not too close to centre.
 //     contrib += WP->Q[j] / (r+1.e-20);
-//     cout << "contrib: " << contrib << '\t' << WP->Q[j] / (r+1.e-20) << endl;
+//     std::cout << "contrib: " << contrib << '\t' << WP->Q[j] / (r+1.e-20) << std::endl;
 //   }
 //   WP->Q[i] = Qi;
 //   return contrib;

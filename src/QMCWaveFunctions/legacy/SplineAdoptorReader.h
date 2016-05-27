@@ -100,7 +100,7 @@ struct BsplineReaderBase
     }
     app_log() << "NumDistinctOrbitals " << mybuilder->NumDistinctOrbitals
               << " NumValenceOrbs " << mybuilder->NumValenceOrbs
-              << " numOrbs = " << numOrbs << endl;
+              << " numOrbs = " << numOrbs << std::endl;
     bspline->HalfG=0;
     TinyVector<int,3> bconds=mybuilder->TargetPtcl.Lattice.BoxBConds;
     if(!bspline->is_complex)
@@ -113,17 +113,17 @@ struct BsplineReaderBase
           bspline->HalfG[i] = 1;
         else
           bspline->HalfG[i] = 0;
-      app_log() << "  TwistIndex = " << mybuilder->SortBands[0].TwistIndex << " TwistAngle " << twist0 << endl;
-      app_log() <<"   HalfG = " << bspline->HalfG << endl;
+      app_log() << "  TwistIndex = " << mybuilder->SortBands[0].TwistIndex << " TwistAngle " << twist0 << std::endl;
+      app_log() <<"   HalfG = " << bspline->HalfG << std::endl;
     }
     app_log().flush();
   }
 
   /** return the path name in hdf5
    */
-  inline string psi_g_path(int ti, int spin, int ib)
+  inline std::string psi_g_path(int ti, int spin, int ib)
   {
-    ostringstream path;
+    std::ostringstream path;
     path << "/electrons/kpoint_" << ti
          << "/spin_" << spin << "/state_" << ib << "/psi_g";
     return path.str();
@@ -131,9 +131,9 @@ struct BsplineReaderBase
 
   /** return the path name in hdf5
    */
-  inline string psi_r_path(int ti, int spin, int ib)
+  inline std::string psi_r_path(int ti, int spin, int ib)
   {
-    ostringstream path;
+    std::ostringstream path;
     path << "/electrons/kpoint_" << ti
          << "/spin_" << spin << "/state_" << ib << "/psi_r";
     return path.str();
@@ -145,13 +145,13 @@ struct BsplineReaderBase
    * @param ib band index
    * @param cG psi_g as stored in hdf5
    */
-  void get_psi_g(int ti, int spin, int ib, Vector<complex<double> >& cG)
+  void get_psi_g(int ti, int spin, int ib, Vector<std::complex<double> >& cG)
   {
     int ncg=0;
     if(myComm->rank()==0)
     {
-      string path=psi_g_path(ti,spin,ib);
-      HDFAttribIO<Vector<complex<double> > >  h_cG(cG);
+      std::string path=psi_g_path(ti,spin,ib);
+      HDFAttribIO<Vector<std::complex<double> > >  h_cG(cG);
       h_cG.read (mybuilder->H5FileID, path.c_str());
       ncg=cG.size();
     }
@@ -188,11 +188,11 @@ struct SplineAdoptorReader: public BsplineReaderBase
     Timer c_prep, c_unpack,c_fft, c_phase, c_spline, c_newphase, c_h5, c_init;
     double t_prep=0.0, t_unpack=0.0, t_fft=0.0, t_phase=0.0, t_spline=0.0, t_newphase=0.0, t_h5=0.0, t_init=0.0;
     BsplineSet<adoptor_type>* bspline=new BsplineSet<adoptor_type>;
-    app_log() << "  AdoptorName = " << bspline->AdoptorName << endl;
+    app_log() << "  AdoptorName = " << bspline->AdoptorName << std::endl;
     if(bspline->is_complex)
-      app_log() << "  Using complex einspline table" << endl;
+      app_log() << "  Using complex einspline table" << std::endl;
     else
-      app_log() << "  Using real einspline table" << endl;
+      app_log() << "  Using real einspline table" << std::endl;
     //baseclass handles twists
     check_twists(orbitalSet,bspline);
     Ugrid xyz_grid[3];
@@ -204,7 +204,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
     }
     bspline->create_spline(xyz_grid,xyz_bc);
     int TwistNum = mybuilder->TwistNum;
-    string splinefile
+    std::string splinefile
     =make_spline_filename(mybuilder->H5FileName,mybuilder->TileMatrix
                           ,spin,TwistNum,mybuilder->MeshSize);
     bool root=(myComm->rank() == 0);
@@ -216,7 +216,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
       foundspline=h5f.open(splinefile,H5F_ACC_RDONLY);
       if(foundspline)
       {
-        string aname("none");
+        std::string aname("none");
         foundspline = h5f.read(aname,"adoptor_name");
         foundspline = (aname.find(bspline->KeyWord) != std::string::npos);
       }
@@ -233,7 +233,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
     t_h5 = now.elapsed();
     if(foundspline)
     {
-      app_log() << "Use existing bspline tables in " << splinefile << endl;
+      app_log() << "Use existing bspline tables in " << splinefile << std::endl;
       chunked_bcast(myComm, bspline->MultiSpline);
       t_init+=now.elapsed();
     }
@@ -253,13 +253,13 @@ struct SplineAdoptorReader: public BsplineReaderBase
       if(havePsig)//perform FFT using FFTW
       {
         c_init.restart();
-        Array<complex<double>,3> FFTbox;
+        Array<std::complex<double>,3> FFTbox;
         FFTbox.resize(nx, ny, nz);
         fftw_plan FFTplan = fftw_plan_dft_3d(nx, ny, nz,
                                              reinterpret_cast<fftw_complex*>(FFTbox.data()),
                                              reinterpret_cast<fftw_complex*>(FFTbox.data()),
                                              +1, FFTW_ESTIMATE);
-        Vector<complex<double> > cG(mybuilder->MaxNumGvecs);
+        Vector<std::complex<double> > cG(mybuilder->MaxNumGvecs);
         //this will be parallelized with OpenMP
         for(int iorb=0; iorb<N; ++iorb)
         {
@@ -286,15 +286,15 @@ struct SplineAdoptorReader: public BsplineReaderBase
       }
       //else
       //{
-      //  Array<complex<double>,3> rawData(nx,ny,nz);
+      //  Array<std::complex<double>,3> rawData(nx,ny,nz);
       //  //this will be parallelized with OpenMP
       //  for(int iorb=0; iorb<N; ++iorb)
       //  {
       //    //check dimension
       //    if(root)
       //    {
-      //      string path=psi_r_path(SortBands[iorb].TwistIndex,spin,SortBands[iorb].BandIndex);
-      //      HDFAttribIO<Array<complex<double>,3> >  h_splineData(rawData);
+      //      std::string path=psi_r_path(SortBands[iorb].TwistIndex,spin,SortBands[iorb].BandIndex);
+      //      HDFAttribIO<Array<std::complex<double>,3> >  h_splineData(rawData);
       //      h_splineData.read(mybuilder->H5FileID, path.c_str());
       //      simd::copy(splineData_r.data(),splineData_i.data(),rawData.data(),rawData.size());
       //    }
@@ -313,13 +313,13 @@ struct SplineAdoptorReader: public BsplineReaderBase
         bspline->write_splines(h5f);
       }
     }
-    app_log() << "    READBANDS::PREP   = " << t_prep << endl;
-    app_log() << "    READBANDS::H5     = " << t_h5 << endl;
-    app_log() << "    READBANDS::UNPACK = " << t_unpack << endl;
-    app_log() << "    READBANDS::FFT    = " << t_fft << endl;
-    app_log() << "    READBANDS::PHASE  = " << t_phase << endl;
-    app_log() << "    READBANDS::SPLINE = " << t_spline << endl;
-    app_log() << "    READBANDS::SUM    = " << t_init << endl;
+    app_log() << "    READBANDS::PREP   = " << t_prep << std::endl;
+    app_log() << "    READBANDS::H5     = " << t_h5 << std::endl;
+    app_log() << "    READBANDS::UNPACK = " << t_unpack << std::endl;
+    app_log() << "    READBANDS::FFT    = " << t_fft << std::endl;
+    app_log() << "    READBANDS::PHASE  = " << t_phase << std::endl;
+    app_log() << "    READBANDS::SPLINE = " << t_spline << std::endl;
+    app_log() << "    READBANDS::SUM    = " << t_init << std::endl;
     return bspline;
   }
 };

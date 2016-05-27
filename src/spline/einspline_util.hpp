@@ -78,27 +78,27 @@ namespace qmcplusplus
     }
   };
 
-  inline string make_spline_filename(const string& old, int spin, int twist, const TinyVector<int,3>& mesh)
+  inline std::string make_spline_filename(const std::string& old, int spin, int twist, const TinyVector<int,3>& mesh)
   {
-    string aname(old);
+    std::string aname(old);
     if(getExtension(aname) == "h5")
     {
       aname.erase(aname.end()-3,aname.end());
     }
-    ostringstream oo;
+    std::ostringstream oo;
     oo<<".spin_"<< spin << ".tw" << twist <<".g"<<mesh[0]<<"x"<<mesh[1]<<"x"<<mesh[2]<<".h5";
     aname+=oo.str();
     return aname;
   }
 
-  inline string make_spline_filename(const string& old, const Tensor<int,3>& tilematrix,int spin, int twist, const TinyVector<int,3>& mesh)
+  inline std::string make_spline_filename(const std::string& old, const Tensor<int,3>& tilematrix,int spin, int twist, const TinyVector<int,3>& mesh)
   {
-    string aname(old);
+    std::string aname(old);
     if(getExtension(aname) == "h5")
     {
       aname.erase(aname.end()-3,aname.end());
     }
-    ostringstream oo;
+    std::ostringstream oo;
     oo<<".tile_" 
       << tilematrix(0,0) <<tilematrix(0,1) <<tilematrix(0,2)
       << tilematrix(1,0) <<tilematrix(1,1) <<tilematrix(1,2)
@@ -108,15 +108,15 @@ namespace qmcplusplus
     return aname;
   }
 
-  inline string make_spline_filename(const string& old, const Tensor<int,3>& tilematrix,int spin, int twist,
+  inline std::string make_spline_filename(const std::string& old, const Tensor<int,3>& tilematrix,int spin, int twist,
       int bg, const TinyVector<int,3>& mesh)
   {
-    string aname(old);
+    std::string aname(old);
     if(getExtension(aname) == "h5")
     {
       aname.erase(aname.end()-3,aname.end());
     }
-    ostringstream oo;
+    std::ostringstream oo;
     oo<<".tile_" 
       << tilematrix(0,0) <<tilematrix(0,1) <<tilematrix(0,2)
       << tilematrix(1,0) <<tilematrix(1,1) <<tilematrix(1,2)
@@ -128,9 +128,9 @@ namespace qmcplusplus
   }
 
   template<typename T>
-  string make_spline_filename(const string& old,int spin, const TinyVector<T,3>& twistangle, const TinyVector<int,3>& mesh)
+  std::string make_spline_filename(const std::string& old,int spin, const TinyVector<T,3>& twistangle, const TinyVector<int,3>& mesh)
   {
-    string aname(old);
+    std::string aname(old);
     if(getExtension(aname) == "h5")
     {
       aname.erase(aname.end()-3,aname.end());
@@ -154,9 +154,9 @@ namespace qmcplusplus
   template<typename ENGT>
     void print_spliner(ENGT* spline)
     {
-      cout << "xgrid       "; print_grid(spline->x_grid);
-      cout << "ygrid       "; print_grid(spline->y_grid);
-      cout << "zgrid       "; print_grid(spline->z_grid);
+      std::cout << "xgrid       "; print_grid(spline->x_grid);
+      std::cout << "ygrid       "; print_grid(spline->y_grid);
+      std::cout << "zgrid       "; print_grid(spline->z_grid);
     }
 
 

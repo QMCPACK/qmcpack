@@ -40,7 +40,7 @@ public:
   */
   CollectablesEstimator* clone();
 
-  void registerObservables(vector<observable_helper*>& h5dec, hid_t gid);
+  void registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid);
   void add2Record(RecordListType& record);
   /** do nothing with accumulate */
   void accumulate(const MCWalkerConfiguration& W

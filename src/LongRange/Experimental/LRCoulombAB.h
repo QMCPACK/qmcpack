@@ -42,9 +42,9 @@ private:
   int NIons;
   int NElns;
 
-  vector<RealType> Zat,Zspec;
-  vector<int> NofSpeciesIons;
-  vector<int> NofSpeciesElns;
+  std::vector<RealType> Zat,Zspec;
+  std::vector<int> NofSpeciesIons;
+  std::vector<int> NofSpeciesElns;
   //This is set to true if the K_c of structure-factors are different
   bool kcdifferent;
   RealType minkc;

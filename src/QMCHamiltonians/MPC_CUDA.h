@@ -28,8 +28,8 @@ protected:
   //////////////////////////////////
   //// Short-range part
   UBspline_3d_s_cuda *CudaSpline;
-  vector<int> IonFirst, IonLast;
-  vector<ParticleSet*> myPtcl;
+  std::vector<int> IonFirst, IonLast;
+  std::vector<ParticleSet*> myPtcl;
   // This is indexed by the ion species
   gpu::device_vector<CUDA_PRECISION>  SumGPU;
   gpu::host_vector<CUDA_PRECISION>  SumHost;
@@ -44,7 +44,7 @@ public:
                                 TrialWaveFunction& psi);
 
   void addEnergy(MCWalkerConfiguration &W,
-                 vector<RealType> &LocalEnergy);
+                 std::vector<RealType> &LocalEnergy);
 
 };
 }

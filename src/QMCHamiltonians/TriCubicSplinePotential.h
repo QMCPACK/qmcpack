@@ -27,7 +27,7 @@ struct TriCubicSplinePotential: public QMCHamiltonianBase
   /// Constructor
   TriCubicSplinePotential(double mbyepsq,
                           Grid3D* agrid,
-                          const string& fname)
+                          const std::string& fname)
   {
     const double Ha = 27.2113845;   /// Hartree in eV
     const double effHa = mbyepsq * Ha; /// effective Hartree
@@ -36,11 +36,11 @@ struct TriCubicSplinePotential: public QMCHamiltonianBase
     double ufac = 0.036749033500418936;
     Efac = 1.0/effHa;
     /// Create the spline from the given grid and initialise from the file
-    cout << "Converting Energy units to effective Ha: 1 eV = "
-         << Efac << " Ha*, 1Ha* = " << effHa << "" << endl;
-    cout << "Reading Potential File and initialising ... ";
+    std::cout << "Converting Energy units to effective Ha: 1 eV = "
+         << Efac << " Ha*, 1Ha* = " << effHa << "" << std::endl;
+    std::cout << "Reading Potential File and initialising ... ";
     pot_m->read_data(fname.c_str(),Efac);
-    cout << "done! " << endl;
+    std::cout << "done! " << std::endl;
   }
 
   /// Destructor
@@ -61,7 +61,7 @@ struct TriCubicSplinePotential: public QMCHamiltonianBase
     return e;
   }
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }

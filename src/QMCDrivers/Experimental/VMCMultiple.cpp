@@ -39,7 +39,7 @@ VMCMultiple::VMCMultiple(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHa
   QMCType ="VMCMultiple";
   equilBlocks=-1;
   m_param.add(equilBlocks,"equilBlocks","int");
-  cout << "EquilBlocks " << equilBlocks << endl;
+  std::cout << "EquilBlocks " << equilBlocks << std::endl;
   QMCDriverMode.set(QMC_MULTIPLE,1);
   //Add the primary h and psi, extra H and Psi pairs will be added by QMCMain
   add_H_and_Psi(&h,&psi);
@@ -74,7 +74,7 @@ bool VMCMultiple::put(xmlNodePtr q)
     Estimators->add(multiEstimator,Estimators->MainEstimatorName);
     branchEngine->setEstimatorManager(Estimators);
   }
-  app_log() << "Number of H and Psi " << nPsi << endl;
+  app_log() << "Number of H and Psi " << nPsi << std::endl;
   H1[0]->setPrimary(true);
   for(int ipsi=1; ipsi<nPsi; ipsi++)
   {
@@ -93,7 +93,7 @@ bool VMCMultiple::run()
   //Estimators->reportHeader(AppendRun);
   bool require_register=false;
   //Check if we need to update the norm of the wave functions
-  vector<RealType> tmpNorm(nPsi);
+  std::vector<RealType> tmpNorm(nPsi);
   if(equilBlocks > 0)
   {
     for(int ipsi=0; ipsi< nPsi; ipsi++)
@@ -163,7 +163,7 @@ bool VMCMultiple::run()
   //Need MPI-IO
   app_log() << "Ratio = "
             << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot)
-            << endl;
+            << std::endl;
   //finalize a qmc section
   return finalize(block);
 }

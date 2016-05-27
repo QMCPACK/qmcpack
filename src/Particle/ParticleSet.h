@@ -152,19 +152,19 @@ public:
   StructFact *SK;
 
   ///distance tables that need to be updated by moving this ParticleSet
-  vector<DistanceTableData*> DistTables;
+  std::vector<DistanceTableData*> DistTables;
 
   ///spherical-grids for non-local PP
-  vector<ParticlePos_t*> Sphere;
+  std::vector<ParticlePos_t*> Sphere;
 
   ///Particle density in G-space for MPC interaction
-  vector<TinyVector<int,OHMMS_DIM> > DensityReducedGvecs;
-  vector<ComplexType>   Density_G;
+  std::vector<TinyVector<int,OHMMS_DIM> > DensityReducedGvecs;
+  std::vector<ComplexType>   Density_G;
   Array<RealType,OHMMS_DIM> Density_r;
 
   /// DFT potential
-  vector<TinyVector<int,OHMMS_DIM> > VHXCReducedGvecs;
-  vector<ComplexType>   VHXC_G[2];
+  std::vector<TinyVector<int,OHMMS_DIM> > VHXCReducedGvecs;
+  std::vector<ComplexType>   VHXC_G[2];
   Array<RealType,OHMMS_DIM> VHXC_r[2];
 
   /** name-value map of Walker Properties
@@ -190,11 +190,11 @@ public:
   Buffer_t Collectables;
 
   ///clones of this object: used by the thread pool
-  vector<ParticleSet*> myClones;
+  std::vector<ParticleSet*> myClones;
 
   ///Property history vector
-  vector<vector<RealType> >  PropertyHistory;
-  vector<int> PHindex;
+  std::vector<std::vector<RealType> >  PropertyHistory;
+  std::vector<int> PHindex;
   ///@}
 
   ///current MC step
@@ -209,11 +209,11 @@ public:
   ///default destructor
   virtual ~ParticleSet();
 
-  ///write to a ostream
-  bool get(ostream& ) const;
+  ///write to a std::ostream
+  bool get(std::ostream& ) const;
 
-  ///read from istream
-  bool put(istream& );
+  ///read from std::istream
+  bool put( std::istream& );
 
   ///reset member data
   void reset();
@@ -323,11 +323,11 @@ public:
   }
 
   ///return parent's name
-  inline const string& parentName() const
+  inline const std::string& parentName() const
   {
     return ParentName;
   }
-  inline void setName(const string& aname)
+  inline void setName(const std::string& aname)
   {
     myName     = aname;
     if(ParentName=="0")
@@ -369,7 +369,7 @@ public:
    */
   bool makeMove(const Walker_t& awalker, const ParticlePos_t& deltaR, RealType dt);
 
-  bool makeMove(const Walker_t& awalker, const ParticlePos_t& deltaR, const vector<RealType>& dt);
+  bool makeMove(const Walker_t& awalker, const ParticlePos_t& deltaR, const std::vector<RealType>& dt);
   /** move all the particles including the drift
    *
    * Otherwise, everything is the same as makeMove for a walker
@@ -378,7 +378,7 @@ public:
                          , const ParticlePos_t& drift, const ParticlePos_t& deltaR, RealType dt);
 
   bool makeMoveWithDrift(const Walker_t& awalker
-                         , const ParticlePos_t& drift, const ParticlePos_t& deltaR, const vector<RealType>& dt);
+                         , const ParticlePos_t& drift, const ParticlePos_t& deltaR, const std::vector<RealType>& dt);
 
   void makeMoveOnSphere(Index_t iat, const SingleParticlePos_t& displ);
 
@@ -406,7 +406,7 @@ public:
   }
 
   void initPropertyList();
-  inline int addProperty(const string& pname)
+  inline int addProperty(const std::string& pname)
   {
     return PropertyList.add(pname.c_str());
   }
@@ -536,7 +536,7 @@ public:
       
   /** get species name of particle i
    */
-  inline const string& species_from_index(int i)
+  inline const std::string& species_from_index(int i)
   {
     return mySpecies.speciesName[GroupID[i]];
   }
@@ -556,13 +556,13 @@ protected:
    * myDistTableMap[source-particle-tag]= locator in the distance table
    * myDistTableMap[ObjectTag] === 0
    */
-  map<int,int> myDistTableMap;
+  std::map<int,int> myDistTableMap;
   void initParticleSet();
 
-  vector<NewTimer*> myTimers;
+  std::vector<NewTimer*> myTimers;
   SingleParticlePos_t myTwist;
 
-  string ParentName;
+  std::string ParentName;
 };
 }
 #endif

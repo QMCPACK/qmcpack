@@ -34,7 +34,7 @@ public:
     dx_ivals.resize(nsecs_m+1);
     prop_m.resize(nsecs_m);
     prior_m.resize(nsecs_m);
-    cout << "material Grid:" << nsecs_m << endl;
+    std::cout << "material Grid:" << nsecs_m << std::endl;
   }
 
   /// initialise with the entire data from input

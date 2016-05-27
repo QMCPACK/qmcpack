@@ -76,19 +76,19 @@ int StepPotential::getNumOfNodes(int n, int l)
 bool StepPotential::put(xmlNodePtr cur)
 {
   cur = cur->xmlChildrenNode;
-  vector<double> r0, v0;
+  std::vector<double> r0, v0;
   double vmin=1000;
   double vmax=-1000;
   while(cur!= NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == "Region")
     {
       xmlAttrPtr att = cur->properties;
       double rmin, rmax, v;
       while(att != NULL)
       {
-        string aname((const char*)(att->name));
+        std::string aname((const char*)(att->name));
         const char* vname= (const char*)(att->children->content);
         if(aname == "rmin")
         {

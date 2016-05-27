@@ -14,7 +14,7 @@
 
 BZ_NAMESPACE(blitz)
 
-// abs(P_numtype1)    Absolute value
+// std::abs(P_numtype1)    Absolute value
 template<typename P_numtype1>
 class _bz_abs : public OneOperandApplicativeTemplatesBase {
 public:
@@ -25,7 +25,7 @@ public:
     { return BZ_MATHFN_SCOPE(abs)(x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "abs(";
@@ -34,7 +34,7 @@ public:
     }
 };
 
-// abs(long)
+// std::abs(long)
 /*
 template<>
 class _bz_abs<long> : public OneOperandApplicativeTemplatesBase {
@@ -46,7 +46,7 @@ public:
     { return BZ_MATHFN_SCOPE(abs)((long)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "labs(";
@@ -56,7 +56,7 @@ public:
 };
 */
 
-// abs(float)
+// std::abs(float)
 template<>
 class _bz_abs<float> : public OneOperandApplicativeTemplatesBase {
 public:
@@ -67,7 +67,7 @@ public:
     { return BZ_MATHFN_SCOPE(fabs)((float)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "fabs(";
@@ -76,7 +76,7 @@ public:
     }
 };
 
-// abs(double)
+// std::abs(double)
 template<>
 class _bz_abs<double> : public OneOperandApplicativeTemplatesBase {
 public:
@@ -87,7 +87,7 @@ public:
     { return BZ_MATHFN_SCOPE(fabs)((double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "fabs(";
@@ -96,7 +96,7 @@ public:
     }
 };
 
-// abs(long double)
+// std::abs(long double)
 template<>
 class _bz_abs<long double> : public OneOperandApplicativeTemplatesBase {
 public:
@@ -107,7 +107,7 @@ public:
     { return BZ_MATHFN_SCOPE(fabs)((long double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "fabs(";
@@ -116,19 +116,19 @@ public:
     }
 };
 
-// abs(complex<float> )
+// std::abs(std::complex<float> )
 #ifdef BZ_HAVE_COMPLEX_FCNS
 template<>
-class _bz_abs<complex<float> > : public OneOperandApplicativeTemplatesBase {
+class _bz_abs<std::complex<float> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<float>  T_numtype1;
+    typedef std::complex<float>  T_numtype1;
     typedef float T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(abs)((complex<float> )x); }
+    { return BZ_CMATHFN_SCOPE(abs)((std::complex<float> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "abs(";
@@ -138,19 +138,19 @@ public:
 };
 #endif
 
-// abs(complex<double> )
+// std::abs(std::complex<double> )
 #ifdef BZ_HAVE_COMPLEX_FCNS
 template<>
-class _bz_abs<complex<double> > : public OneOperandApplicativeTemplatesBase {
+class _bz_abs<std::complex<double> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<double>  T_numtype1;
+    typedef std::complex<double>  T_numtype1;
     typedef double T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(abs)((complex<double> )x); }
+    { return BZ_CMATHFN_SCOPE(abs)((std::complex<double> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "abs(";
@@ -160,19 +160,19 @@ public:
 };
 #endif
 
-// abs(complex<long double> )
+// std::abs(std::complex<long double> )
 #ifdef BZ_HAVE_COMPLEX_FCNS
 template<>
-class _bz_abs<complex<long double> > : public OneOperandApplicativeTemplatesBase {
+class _bz_abs<std::complex<long double> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<long double>  T_numtype1;
+    typedef std::complex<long double>  T_numtype1;
     typedef long double T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(abs)((complex<long double> )x); }
+    { return BZ_CMATHFN_SCOPE(abs)((std::complex<long double> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "abs(";
@@ -193,7 +193,7 @@ public:
     { return BZ_MATHFN_SCOPE(acos)((double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "acos(";
@@ -213,7 +213,7 @@ public:
     { return BZ_MATHFN_SCOPE(acos)((float)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "acos(";
@@ -233,7 +233,7 @@ public:
     { return BZ_MATHFN_SCOPE(acos)((long double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "acos(";
@@ -242,41 +242,19 @@ public:
     }
 };
 
-// acos(complex<float> )
+// acos(std::complex<float> )
 #ifdef BZ_HAVE_COMPLEX_MATH2
 template<>
-class _bz_acos<complex<float> > : public OneOperandApplicativeTemplatesBase {
+class _bz_acos<std::complex<float> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<float>  T_numtype1;
-    typedef complex<float> T_numtype;
+    typedef std::complex<float>  T_numtype1;
+    typedef std::complex<float> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(acos)((complex<float> )x); }
+    { return BZ_CMATHFN_SCOPE(acos)((std::complex<float> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
-        const T1& a)
-    {
-        str += "acos(";
-        a.prettyPrint(str,format);
-        str += ")";
-    }
-};
-#endif
-
-// acos(complex<double> )
-#ifdef BZ_HAVE_COMPLEX_MATH2
-template<>
-class _bz_acos<complex<double> > : public OneOperandApplicativeTemplatesBase {
-public:
-    typedef complex<double>  T_numtype1;
-    typedef complex<double> T_numtype;
-
-    static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(acos)((complex<double> )x); }
-
-    template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "acos(";
@@ -286,19 +264,41 @@ public:
 };
 #endif
 
-// acos(complex<long double> )
+// acos(std::complex<double> )
 #ifdef BZ_HAVE_COMPLEX_MATH2
 template<>
-class _bz_acos<complex<long double> > : public OneOperandApplicativeTemplatesBase {
+class _bz_acos<std::complex<double> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<long double>  T_numtype1;
-    typedef complex<long double> T_numtype;
+    typedef std::complex<double>  T_numtype1;
+    typedef std::complex<double> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(acos)((complex<long double> )x); }
+    { return BZ_CMATHFN_SCOPE(acos)((std::complex<double> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
+        const T1& a)
+    {
+        str += "acos(";
+        a.prettyPrint(str,format);
+        str += ")";
+    }
+};
+#endif
+
+// acos(std::complex<long double> )
+#ifdef BZ_HAVE_COMPLEX_MATH2
+template<>
+class _bz_acos<std::complex<long double> > : public OneOperandApplicativeTemplatesBase {
+public:
+    typedef std::complex<long double>  T_numtype1;
+    typedef std::complex<long double> T_numtype;
+
+    static inline T_numtype apply(T_numtype1 x)
+    { return BZ_CMATHFN_SCOPE(acos)((std::complex<long double> )x); }
+
+    template<typename T1>
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "acos(";
@@ -320,7 +320,7 @@ public:
     { return BZ_IEEEMATHFN_SCOPE(acosh)((double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "acosh(";
@@ -341,7 +341,7 @@ public:
     { return BZ_MATHFN_SCOPE(asin)((double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "asin(";
@@ -361,7 +361,7 @@ public:
     { return BZ_MATHFN_SCOPE(asin)((float)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "asin(";
@@ -381,7 +381,7 @@ public:
     { return BZ_MATHFN_SCOPE(asin)((long double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "asin(";
@@ -390,41 +390,19 @@ public:
     }
 };
 
-// asin(complex<float> )
+// asin(std::complex<float> )
 #ifdef BZ_HAVE_COMPLEX_MATH2
 template<>
-class _bz_asin<complex<float> > : public OneOperandApplicativeTemplatesBase {
+class _bz_asin<std::complex<float> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<float>  T_numtype1;
-    typedef complex<float> T_numtype;
+    typedef std::complex<float>  T_numtype1;
+    typedef std::complex<float> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(asin)((complex<float> )x); }
+    { return BZ_CMATHFN_SCOPE(asin)((std::complex<float> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
-        const T1& a)
-    {
-        str += "asin(";
-        a.prettyPrint(str,format);
-        str += ")";
-    }
-};
-#endif
-
-// asin(complex<double> )
-#ifdef BZ_HAVE_COMPLEX_MATH2
-template<>
-class _bz_asin<complex<double> > : public OneOperandApplicativeTemplatesBase {
-public:
-    typedef complex<double>  T_numtype1;
-    typedef complex<double> T_numtype;
-
-    static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(asin)((complex<double> )x); }
-
-    template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "asin(";
@@ -434,19 +412,41 @@ public:
 };
 #endif
 
-// asin(complex<long double> )
+// asin(std::complex<double> )
 #ifdef BZ_HAVE_COMPLEX_MATH2
 template<>
-class _bz_asin<complex<long double> > : public OneOperandApplicativeTemplatesBase {
+class _bz_asin<std::complex<double> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<long double>  T_numtype1;
-    typedef complex<long double> T_numtype;
+    typedef std::complex<double>  T_numtype1;
+    typedef std::complex<double> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(asin)((complex<long double> )x); }
+    { return BZ_CMATHFN_SCOPE(asin)((std::complex<double> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
+        const T1& a)
+    {
+        str += "asin(";
+        a.prettyPrint(str,format);
+        str += ")";
+    }
+};
+#endif
+
+// asin(std::complex<long double> )
+#ifdef BZ_HAVE_COMPLEX_MATH2
+template<>
+class _bz_asin<std::complex<long double> > : public OneOperandApplicativeTemplatesBase {
+public:
+    typedef std::complex<long double>  T_numtype1;
+    typedef std::complex<long double> T_numtype;
+
+    static inline T_numtype apply(T_numtype1 x)
+    { return BZ_CMATHFN_SCOPE(asin)((std::complex<long double> )x); }
+
+    template<typename T1>
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "asin(";
@@ -468,7 +468,7 @@ public:
     { return BZ_IEEEMATHFN_SCOPE(asinh)((double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "asinh(";
@@ -490,7 +490,7 @@ public:
     { return 0; }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "0(";
@@ -500,19 +500,19 @@ public:
 };
 #endif
 
-// arg(complex<float> )
+// arg(std::complex<float> )
 #ifdef BZ_HAVE_COMPLEX_FCNS
 template<>
-class _bz_arg<complex<float> > : public OneOperandApplicativeTemplatesBase {
+class _bz_arg<std::complex<float> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<float>  T_numtype1;
+    typedef std::complex<float>  T_numtype1;
     typedef float T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(arg)((complex<float> )x); }
+    { return BZ_CMATHFN_SCOPE(arg)((std::complex<float> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "arg(";
@@ -522,19 +522,19 @@ public:
 };
 #endif
 
-// arg(complex<double> )
+// arg(std::complex<double> )
 #ifdef BZ_HAVE_COMPLEX_FCNS
 template<>
-class _bz_arg<complex<double> > : public OneOperandApplicativeTemplatesBase {
+class _bz_arg<std::complex<double> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<double>  T_numtype1;
+    typedef std::complex<double>  T_numtype1;
     typedef double T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(arg)((complex<double> )x); }
+    { return BZ_CMATHFN_SCOPE(arg)((std::complex<double> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "arg(";
@@ -544,19 +544,19 @@ public:
 };
 #endif
 
-// arg(complex<long double> )
+// arg(std::complex<long double> )
 #ifdef BZ_HAVE_COMPLEX_FCNS
 template<>
-class _bz_arg<complex<long double> > : public OneOperandApplicativeTemplatesBase {
+class _bz_arg<std::complex<long double> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<long double>  T_numtype1;
+    typedef std::complex<long double>  T_numtype1;
     typedef long double T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(arg)((complex<long double> )x); }
+    { return BZ_CMATHFN_SCOPE(arg)((std::complex<long double> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "arg(";
@@ -577,7 +577,7 @@ public:
     { return BZ_MATHFN_SCOPE(atan)((double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "atan(";
@@ -597,7 +597,7 @@ public:
     { return BZ_MATHFN_SCOPE(atan)((float)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "atan(";
@@ -617,7 +617,7 @@ public:
     { return BZ_MATHFN_SCOPE(atan)((long double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "atan(";
@@ -626,41 +626,19 @@ public:
     }
 };
 
-// atan(complex<float> )
+// atan(std::complex<float> )
 #ifdef BZ_HAVE_COMPLEX_MATH2
 template<>
-class _bz_atan<complex<float> > : public OneOperandApplicativeTemplatesBase {
+class _bz_atan<std::complex<float> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<float>  T_numtype1;
-    typedef complex<float> T_numtype;
+    typedef std::complex<float>  T_numtype1;
+    typedef std::complex<float> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(atan)((complex<float> )x); }
+    { return BZ_CMATHFN_SCOPE(atan)((std::complex<float> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
-        const T1& a)
-    {
-        str += "atan(";
-        a.prettyPrint(str,format);
-        str += ")";
-    }
-};
-#endif
-
-// atan(complex<double> )
-#ifdef BZ_HAVE_COMPLEX_MATH2
-template<>
-class _bz_atan<complex<double> > : public OneOperandApplicativeTemplatesBase {
-public:
-    typedef complex<double>  T_numtype1;
-    typedef complex<double> T_numtype;
-
-    static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(atan)((complex<double> )x); }
-
-    template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "atan(";
@@ -670,19 +648,41 @@ public:
 };
 #endif
 
-// atan(complex<long double> )
+// atan(std::complex<double> )
 #ifdef BZ_HAVE_COMPLEX_MATH2
 template<>
-class _bz_atan<complex<long double> > : public OneOperandApplicativeTemplatesBase {
+class _bz_atan<std::complex<double> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<long double>  T_numtype1;
-    typedef complex<long double> T_numtype;
+    typedef std::complex<double>  T_numtype1;
+    typedef std::complex<double> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(atan)((complex<long double> )x); }
+    { return BZ_CMATHFN_SCOPE(atan)((std::complex<double> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
+        const T1& a)
+    {
+        str += "atan(";
+        a.prettyPrint(str,format);
+        str += ")";
+    }
+};
+#endif
+
+// atan(std::complex<long double> )
+#ifdef BZ_HAVE_COMPLEX_MATH2
+template<>
+class _bz_atan<std::complex<long double> > : public OneOperandApplicativeTemplatesBase {
+public:
+    typedef std::complex<long double>  T_numtype1;
+    typedef std::complex<long double> T_numtype;
+
+    static inline T_numtype apply(T_numtype1 x)
+    { return BZ_CMATHFN_SCOPE(atan)((std::complex<long double> )x); }
+
+    template<typename T1>
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "atan(";
@@ -704,7 +704,7 @@ public:
     { return BZ_IEEEMATHFN_SCOPE(atanh)((double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "atanh(";
@@ -726,7 +726,7 @@ public:
     { return BZ_MATHFN_SCOPE(atan2)((double)x,(double)y); }
 
     template<typename T1, typename T2>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a, const T2& b)
     {
         str += "atan2(";
@@ -749,7 +749,7 @@ public:
     { return BZ_MATHFN_SCOPE(atan2)((float)x,(float)y); }
 
     template<typename T1, typename T2>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a, const T2& b)
     {
         str += "atan2(";
@@ -772,7 +772,7 @@ public:
     { return BZ_MATHFN_SCOPE(atan2)((long double)x,(long double)y); }
 
     template<typename T1, typename T2>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a, const T2& b)
     {
         str += "atan2(";
@@ -795,7 +795,7 @@ public:
     { return BZ_IEEEMATHFN_SCOPE(_class)(x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "_class(";
@@ -817,7 +817,7 @@ public:
     { return BZ_IEEEMATHFN_SCOPE(cbrt)((double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "cbrt(";
@@ -838,7 +838,7 @@ public:
     { return BZ_MATHFN_SCOPE(ceil)((double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "ceil(";
@@ -858,7 +858,7 @@ public:
     { return BZ_MATHFN_SCOPE(ceil)((float)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "ceil(";
@@ -878,7 +878,7 @@ public:
     { return BZ_MATHFN_SCOPE(ceil)((long double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "ceil(";
@@ -899,7 +899,7 @@ public:
     { return BZ_CMATHFN_SCOPE(conj)(x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "conj(";
@@ -920,7 +920,7 @@ public:
     { return BZ_MATHFN_SCOPE(cos)((double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "cos(";
@@ -940,7 +940,7 @@ public:
     { return BZ_MATHFN_SCOPE(cos)((float)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "cos(";
@@ -960,7 +960,7 @@ public:
     { return BZ_MATHFN_SCOPE(cos)((long double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "cos(";
@@ -969,19 +969,19 @@ public:
     }
 };
 
-// cos(complex<float> )
+// cos(std::complex<float> )
 #ifdef BZ_HAVE_COMPLEX_MATH1
 template<>
-class _bz_cos<complex<float> > : public OneOperandApplicativeTemplatesBase {
+class _bz_cos<std::complex<float> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<float>  T_numtype1;
-    typedef complex<float> T_numtype;
+    typedef std::complex<float>  T_numtype1;
+    typedef std::complex<float> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(cos)((complex<float> )x); }
+    { return BZ_CMATHFN_SCOPE(cos)((std::complex<float> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "cos(";
@@ -991,19 +991,19 @@ public:
 };
 #endif
 
-// cos(complex<double> )
+// cos(std::complex<double> )
 #ifdef BZ_HAVE_COMPLEX_MATH1
 template<>
-class _bz_cos<complex<double> > : public OneOperandApplicativeTemplatesBase {
+class _bz_cos<std::complex<double> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<double>  T_numtype1;
-    typedef complex<double> T_numtype;
+    typedef std::complex<double>  T_numtype1;
+    typedef std::complex<double> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(cos)((complex<double> )x); }
+    { return BZ_CMATHFN_SCOPE(cos)((std::complex<double> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "cos(";
@@ -1014,19 +1014,19 @@ public:
 #endif
 
 #ifndef __PGI
-// cos(complex<long double> )
+// cos(std::complex<long double> )
 #ifdef BZ_HAVE_COMPLEX_MATH1
 template<>
-class _bz_cos<complex<long double> > : public OneOperandApplicativeTemplatesBase {
+class _bz_cos<std::complex<long double> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<long double>  T_numtype1;
-    typedef complex<long double> T_numtype;
+    typedef std::complex<long double>  T_numtype1;
+    typedef std::complex<long double> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(cos)((complex<long double> )x); }
+    { return BZ_CMATHFN_SCOPE(cos)((std::complex<long double> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "cos(";
@@ -1050,7 +1050,7 @@ public:
     { return BZ_IEEEMATHFN_SCOPE(copysign)((double)x,(double)y); }
 
     template<typename T1, typename T2>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a, const T2& b)
     {
         str += "copysign(";
@@ -1073,7 +1073,7 @@ public:
     { return BZ_MATHFN_SCOPE(cosh)((double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "cosh(";
@@ -1093,7 +1093,7 @@ public:
     { return BZ_MATHFN_SCOPE(cosh)((float)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "cosh(";
@@ -1113,7 +1113,7 @@ public:
     { return BZ_MATHFN_SCOPE(cosh)((long double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "cosh(";
@@ -1122,19 +1122,19 @@ public:
     }
 };
 
-// cosh(complex<float> )
+// cosh(std::complex<float> )
 #ifdef BZ_HAVE_COMPLEX_MATH1
 template<>
-class _bz_cosh<complex<float> > : public OneOperandApplicativeTemplatesBase {
+class _bz_cosh<std::complex<float> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<float>  T_numtype1;
-    typedef complex<float> T_numtype;
+    typedef std::complex<float>  T_numtype1;
+    typedef std::complex<float> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(cosh)((complex<float> )x); }
+    { return BZ_CMATHFN_SCOPE(cosh)((std::complex<float> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "cosh(";
@@ -1144,19 +1144,19 @@ public:
 };
 #endif
 
-// cosh(complex<double> )
+// cosh(std::complex<double> )
 #ifdef BZ_HAVE_COMPLEX_MATH1
 template<>
-class _bz_cosh<complex<double> > : public OneOperandApplicativeTemplatesBase {
+class _bz_cosh<std::complex<double> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<double>  T_numtype1;
-    typedef complex<double> T_numtype;
+    typedef std::complex<double>  T_numtype1;
+    typedef std::complex<double> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(cosh)((complex<double> )x); }
+    { return BZ_CMATHFN_SCOPE(cosh)((std::complex<double> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "cosh(";
@@ -1167,19 +1167,19 @@ public:
 #endif
 
 #ifndef __PGI
-// cosh(complex<long double> )
+// cosh(std::complex<long double> )
 #ifdef BZ_HAVE_COMPLEX_MATH1
 template<>
-class _bz_cosh<complex<long double> > : public OneOperandApplicativeTemplatesBase {
+class _bz_cosh<std::complex<long double> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<long double>  T_numtype1;
-    typedef complex<long double> T_numtype;
+    typedef std::complex<long double>  T_numtype1;
+    typedef std::complex<long double> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(cosh)((complex<long double> )x); }
+    { return BZ_CMATHFN_SCOPE(cosh)((std::complex<long double> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "cosh(";
@@ -1203,7 +1203,7 @@ public:
     { return BZ_IEEEMATHFN_SCOPE(drem)((double)x,(double)y); }
 
     template<typename T1, typename T2>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a, const T2& b)
     {
         str += "drem(";
@@ -1226,7 +1226,7 @@ public:
     { return BZ_MATHFN_SCOPE(exp)((double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "exp(";
@@ -1246,7 +1246,7 @@ public:
     { return BZ_MATHFN_SCOPE(exp)((float)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "exp(";
@@ -1266,7 +1266,7 @@ public:
     { return BZ_MATHFN_SCOPE(exp)((long double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "exp(";
@@ -1275,19 +1275,19 @@ public:
     }
 };
 
-// exp(complex<float> )
+// exp(std::complex<float> )
 #ifdef BZ_HAVE_COMPLEX_MATH1
 template<>
-class _bz_exp<complex<float> > : public OneOperandApplicativeTemplatesBase {
+class _bz_exp<std::complex<float> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<float>  T_numtype1;
-    typedef complex<float> T_numtype;
+    typedef std::complex<float>  T_numtype1;
+    typedef std::complex<float> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(exp)((complex<float> )x); }
+    { return BZ_CMATHFN_SCOPE(exp)((std::complex<float> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "exp(";
@@ -1297,19 +1297,19 @@ public:
 };
 #endif
 
-// exp(complex<double> )
+// exp(std::complex<double> )
 #ifdef BZ_HAVE_COMPLEX_MATH1
 template<>
-class _bz_exp<complex<double> > : public OneOperandApplicativeTemplatesBase {
+class _bz_exp<std::complex<double> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<double>  T_numtype1;
-    typedef complex<double> T_numtype;
+    typedef std::complex<double>  T_numtype1;
+    typedef std::complex<double> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(exp)((complex<double> )x); }
+    { return BZ_CMATHFN_SCOPE(exp)((std::complex<double> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "exp(";
@@ -1320,19 +1320,19 @@ public:
 #endif
 
 #ifndef __PGI
-// exp(complex<long double> )
+// exp(std::complex<long double> )
 #ifdef BZ_HAVE_COMPLEX_MATH1
 template<>
-class _bz_exp<complex<long double> > : public OneOperandApplicativeTemplatesBase {
+class _bz_exp<std::complex<long double> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<long double>  T_numtype1;
-    typedef complex<long double> T_numtype;
+    typedef std::complex<long double>  T_numtype1;
+    typedef std::complex<long double> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(exp)((complex<long double> )x); }
+    { return BZ_CMATHFN_SCOPE(exp)((std::complex<long double> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "exp(";
@@ -1355,7 +1355,7 @@ public:
     { return BZ_IEEEMATHFN_SCOPE(expm1)((double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "expm1(";
@@ -1377,7 +1377,7 @@ public:
     { return BZ_IEEEMATHFN_SCOPE(erf)((double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "erf(";
@@ -1399,7 +1399,7 @@ public:
     { return BZ_IEEEMATHFN_SCOPE(erfc)((double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "erfc(";
@@ -1420,7 +1420,7 @@ public:
     { return BZ_MATHFN_SCOPE(floor)((double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "floor(";
@@ -1440,7 +1440,7 @@ public:
     { return BZ_MATHFN_SCOPE(floor)((float)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "floor(";
@@ -1460,7 +1460,7 @@ public:
     { return BZ_MATHFN_SCOPE(floor)((long double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "floor(";
@@ -1481,7 +1481,7 @@ public:
     { return BZ_MATHFN_SCOPE(fmod)((double)x,(double)y); }
 
     template<typename T1, typename T2>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a, const T2& b)
     {
         str += "fmod(";
@@ -1505,7 +1505,7 @@ public:
     { return BZ_IEEEMATHFN_SCOPE(hypot)((double)x,(double)y); }
 
     template<typename T1, typename T2>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a, const T2& b)
     {
         str += "hypot(";
@@ -1529,7 +1529,7 @@ public:
     { return BZ_IEEEMATHFN_SCOPE(ilogb)(x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "ilogb(";
@@ -1557,7 +1557,7 @@ public:
     }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "blitz_isnan(";
@@ -1579,7 +1579,7 @@ public:
     { return BZ_IEEEMATHFN_SCOPE(itrunc)(x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "itrunc(";
@@ -1601,7 +1601,7 @@ public:
     { return BZ_IEEEMATHFN_SCOPE(j0)((double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "j0(";
@@ -1623,7 +1623,7 @@ public:
     { return BZ_IEEEMATHFN_SCOPE(j1)((double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "j1(";
@@ -1645,7 +1645,7 @@ public:
     { return BZ_IEEEMATHFN_SCOPE(lgamma)((double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "lgamma(";
@@ -1666,7 +1666,7 @@ public:
     { return BZ_MATHFN_SCOPE(log)((double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "log(";
@@ -1686,7 +1686,7 @@ public:
     { return BZ_MATHFN_SCOPE(log)((float)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "log(";
@@ -1706,7 +1706,7 @@ public:
     { return BZ_MATHFN_SCOPE(log)((long double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "log(";
@@ -1715,19 +1715,19 @@ public:
     }
 };
 
-// log(complex<float> )
+// log(std::complex<float> )
 #ifdef BZ_HAVE_COMPLEX_MATH1
 template<>
-class _bz_log<complex<float> > : public OneOperandApplicativeTemplatesBase {
+class _bz_log<std::complex<float> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<float>  T_numtype1;
-    typedef complex<float> T_numtype;
+    typedef std::complex<float>  T_numtype1;
+    typedef std::complex<float> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(log)((complex<float> )x); }
+    { return BZ_CMATHFN_SCOPE(log)((std::complex<float> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "log(";
@@ -1737,19 +1737,19 @@ public:
 };
 #endif
 
-// log(complex<double> )
+// log(std::complex<double> )
 #ifdef BZ_HAVE_COMPLEX_MATH1
 template<>
-class _bz_log<complex<double> > : public OneOperandApplicativeTemplatesBase {
+class _bz_log<std::complex<double> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<double>  T_numtype1;
-    typedef complex<double> T_numtype;
+    typedef std::complex<double>  T_numtype1;
+    typedef std::complex<double> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(log)((complex<double> )x); }
+    { return BZ_CMATHFN_SCOPE(log)((std::complex<double> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "log(";
@@ -1760,19 +1760,19 @@ public:
 #endif
 
 #ifndef __PGI
-// log(complex<long double> )
+// log(std::complex<long double> )
 #ifdef BZ_HAVE_COMPLEX_MATH1
 template<>
-class _bz_log<complex<long double> > : public OneOperandApplicativeTemplatesBase {
+class _bz_log<std::complex<long double> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<long double>  T_numtype1;
-    typedef complex<long double> T_numtype;
+    typedef std::complex<long double>  T_numtype1;
+    typedef std::complex<long double> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(log)((complex<long double> )x); }
+    { return BZ_CMATHFN_SCOPE(log)((std::complex<long double> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "log(";
@@ -1795,7 +1795,7 @@ public:
     { return BZ_IEEEMATHFN_SCOPE(logb)((double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "logb(";
@@ -1817,7 +1817,7 @@ public:
     { return BZ_IEEEMATHFN_SCOPE(log1p)((double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "log1p(";
@@ -1838,7 +1838,7 @@ public:
     { return BZ_MATHFN_SCOPE(log10)((double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "log10(";
@@ -1858,7 +1858,7 @@ public:
     { return BZ_MATHFN_SCOPE(log10)((float)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "log10(";
@@ -1878,7 +1878,7 @@ public:
     { return BZ_MATHFN_SCOPE(log10)((long double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "log10(";
@@ -1887,41 +1887,19 @@ public:
     }
 };
 
-// log10(complex<float> )
+// log10(std::complex<float> )
 #ifdef BZ_HAVE_COMPLEX_MATH2
 template<>
-class _bz_log10<complex<float> > : public OneOperandApplicativeTemplatesBase {
+class _bz_log10<std::complex<float> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<float>  T_numtype1;
-    typedef complex<float> T_numtype;
+    typedef std::complex<float>  T_numtype1;
+    typedef std::complex<float> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(log10)((complex<float> )x); }
+    { return BZ_CMATHFN_SCOPE(log10)((std::complex<float> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
-        const T1& a)
-    {
-        str += "log10(";
-        a.prettyPrint(str,format);
-        str += ")";
-    }
-};
-#endif
-
-// log10(complex<double> )
-#ifdef BZ_HAVE_COMPLEX_MATH2
-template<>
-class _bz_log10<complex<double> > : public OneOperandApplicativeTemplatesBase {
-public:
-    typedef complex<double>  T_numtype1;
-    typedef complex<double> T_numtype;
-
-    static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(log10)((complex<double> )x); }
-
-    template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "log10(";
@@ -1931,19 +1909,41 @@ public:
 };
 #endif
 
-// log10(complex<long double> )
+// log10(std::complex<double> )
 #ifdef BZ_HAVE_COMPLEX_MATH2
 template<>
-class _bz_log10<complex<long double> > : public OneOperandApplicativeTemplatesBase {
+class _bz_log10<std::complex<double> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<long double>  T_numtype1;
-    typedef complex<long double> T_numtype;
+    typedef std::complex<double>  T_numtype1;
+    typedef std::complex<double> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(log10)((complex<long double> )x); }
+    { return BZ_CMATHFN_SCOPE(log10)((std::complex<double> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
+        const T1& a)
+    {
+        str += "log10(";
+        a.prettyPrint(str,format);
+        str += ")";
+    }
+};
+#endif
+
+// log10(std::complex<long double> )
+#ifdef BZ_HAVE_COMPLEX_MATH2
+template<>
+class _bz_log10<std::complex<long double> > : public OneOperandApplicativeTemplatesBase {
+public:
+    typedef std::complex<long double>  T_numtype1;
+    typedef std::complex<long double> T_numtype;
+
+    static inline T_numtype apply(T_numtype1 x)
+    { return BZ_CMATHFN_SCOPE(log10)((std::complex<long double> )x); }
+
+    template<typename T1>
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "log10(";
@@ -1965,7 +1965,7 @@ public:
     { return BZ_IEEEMATHFN_SCOPE(nearest)((double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "nearest(";
@@ -1988,7 +1988,7 @@ public:
     { return BZ_IEEEMATHFN_SCOPE(nextafter)((double)x,(double)y); }
 
     template<typename T1, typename T2>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a, const T2& b)
     {
         str += "nextafter(";
@@ -2009,7 +2009,7 @@ public:
     { return -x; }
 
         template<typename T1>
-        static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format, const T1& a)
+        static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format, const T1& a)
         {
                 str += "-(";
                        a.prettyPrint(str,format);
@@ -2029,7 +2029,7 @@ public:
     { return BZ_CMATHFN_SCOPE(norm)(x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "norm(";
@@ -2046,13 +2046,13 @@ class _bz_polar : public TwoOperandApplicativeTemplatesBase {
 public:
     typedef P_numtype1 T_numtype1;
     typedef P_numtype2 T_numtype2;
-    typedef complex<T_numtype1> T_numtype;
+    typedef std::complex<T_numtype1> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x, T_numtype2 y)
     { return BZ_CMATHFN_SCOPE(polar)(x,y); }
 
     template<typename T1, typename T2>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a, const T2& b)
     {
         str += "polar(";
@@ -2076,7 +2076,7 @@ public:
     { return BZ_MATHFN_SCOPE(pow)((double)x,(double)y); }
 
     template<typename T1, typename T2>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a, const T2& b)
     {
         str += "pow(";
@@ -2100,7 +2100,7 @@ public:
     { return BZ_MATHFN_SCOPE(pow)((float)x,(float)y); }
 
     template<typename T1, typename T2>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a, const T2& b)
     {
         str += "pow(";
@@ -2124,7 +2124,7 @@ public:
     { return BZ_MATHFN_SCOPE(pow)((long double)x,(long double)y); }
 
     template<typename T1, typename T2>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a, const T2& b)
     {
         str += "pow(";
@@ -2135,20 +2135,20 @@ public:
     }
 };
 
-// pow(complex<float>, complex<float>)
+// pow(std::complex<float>, std::complex<float>)
 #ifdef BZ_HAVE_COMPLEX_MATH1
 template<>
-class _bz_pow<complex<float>, complex<float> > : public TwoOperandApplicativeTemplatesBase {
+class _bz_pow<std::complex<float>, std::complex<float> > : public TwoOperandApplicativeTemplatesBase {
 public:
-    typedef complex<float> T_numtype1;
-    typedef complex<float> T_numtype2;
-    typedef complex<float> T_numtype;
+    typedef std::complex<float> T_numtype1;
+    typedef std::complex<float> T_numtype2;
+    typedef std::complex<float> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x, T_numtype2 y)
-    { return BZ_CMATHFN_SCOPE(pow)((complex<float>)x,(complex<float>)y); }
+    { return BZ_CMATHFN_SCOPE(pow)((std::complex<float>)x,(std::complex<float>)y); }
 
     template<typename T1, typename T2>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a, const T2& b)
     {
         str += "pow(";
@@ -2160,20 +2160,20 @@ public:
 };
 #endif
 
-// pow(complex<double>, complex<double>)
+// pow(std::complex<double>, std::complex<double>)
 #ifdef BZ_HAVE_COMPLEX_MATH1
 template<>
-class _bz_pow<complex<double>, complex<double> > : public TwoOperandApplicativeTemplatesBase {
+class _bz_pow<std::complex<double>, std::complex<double> > : public TwoOperandApplicativeTemplatesBase {
 public:
-    typedef complex<double> T_numtype1;
-    typedef complex<double> T_numtype2;
-    typedef complex<double> T_numtype;
+    typedef std::complex<double> T_numtype1;
+    typedef std::complex<double> T_numtype2;
+    typedef std::complex<double> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x, T_numtype2 y)
-    { return BZ_CMATHFN_SCOPE(pow)((complex<double>)x,(complex<double>)y); }
+    { return BZ_CMATHFN_SCOPE(pow)((std::complex<double>)x,(std::complex<double>)y); }
 
     template<typename T1, typename T2>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a, const T2& b)
     {
         str += "pow(";
@@ -2186,20 +2186,20 @@ public:
 #endif
 
 #ifndef __PGI
-// pow(complex<long double>, complex<long double>)
+// pow(std::complex<long double>, std::complex<long double>)
 #ifdef BZ_HAVE_COMPLEX_MATH1
 template<>
-class _bz_pow<complex<long double>, complex<long double> > : public TwoOperandApplicativeTemplatesBase {
+class _bz_pow<std::complex<long double>, std::complex<long double> > : public TwoOperandApplicativeTemplatesBase {
 public:
-    typedef complex<long double> T_numtype1;
-    typedef complex<long double> T_numtype2;
-    typedef complex<long double> T_numtype;
+    typedef std::complex<long double> T_numtype1;
+    typedef std::complex<long double> T_numtype2;
+    typedef std::complex<long double> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x, T_numtype2 y)
-    { return BZ_CMATHFN_SCOPE(pow)((complex<long double>)x,(complex<long double>)y); }
+    { return BZ_CMATHFN_SCOPE(pow)((std::complex<long double>)x,(std::complex<long double>)y); }
 
     template<typename T1, typename T2>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a, const T2& b)
     {
         str += "pow(";
@@ -2225,7 +2225,7 @@ public:
     { return BZ_IEEEMATHFN_SCOPE(remainder)((double)x,(double)y); }
 
     template<typename T1, typename T2>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a, const T2& b)
     {
         str += "remainder(";
@@ -2249,7 +2249,7 @@ public:
     { return BZ_IEEEMATHFN_SCOPE(rint)((double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "rint(";
@@ -2271,7 +2271,7 @@ public:
     { return BZ_IEEEMATHFN_SCOPE(rsqrt)((double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "rsqrt(";
@@ -2294,7 +2294,7 @@ public:
     { return BZ_IEEEMATHFN_SCOPE(scalb)((double)x,(double)y); }
 
     template<typename T1, typename T2>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a, const T2& b)
     {
         str += "scalb(";
@@ -2317,7 +2317,7 @@ public:
     { return BZ_MATHFN_SCOPE(sin)((double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "sin(";
@@ -2337,7 +2337,7 @@ public:
     { return BZ_MATHFN_SCOPE(sin)((float)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "sin(";
@@ -2357,7 +2357,7 @@ public:
     { return BZ_MATHFN_SCOPE(sin)((long double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "sin(";
@@ -2366,19 +2366,19 @@ public:
     }
 };
 
-// sin(complex<float> )
+// sin(std::complex<float> )
 #ifdef BZ_HAVE_COMPLEX_MATH1
 template<>
-class _bz_sin<complex<float> > : public OneOperandApplicativeTemplatesBase {
+class _bz_sin<std::complex<float> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<float>  T_numtype1;
-    typedef complex<float> T_numtype;
+    typedef std::complex<float>  T_numtype1;
+    typedef std::complex<float> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(sin)((complex<float> )x); }
+    { return BZ_CMATHFN_SCOPE(sin)((std::complex<float> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "sin(";
@@ -2388,19 +2388,19 @@ public:
 };
 #endif
 
-// sin(complex<double> )
+// sin(std::complex<double> )
 #ifdef BZ_HAVE_COMPLEX_MATH1
 template<>
-class _bz_sin<complex<double> > : public OneOperandApplicativeTemplatesBase {
+class _bz_sin<std::complex<double> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<double>  T_numtype1;
-    typedef complex<double> T_numtype;
+    typedef std::complex<double>  T_numtype1;
+    typedef std::complex<double> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(sin)((complex<double> )x); }
+    { return BZ_CMATHFN_SCOPE(sin)((std::complex<double> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "sin(";
@@ -2411,19 +2411,19 @@ public:
 #endif
 
 #ifndef __PGI
-// sin(complex<long double> )
+// sin(std::complex<long double> )
 #ifdef BZ_HAVE_COMPLEX_MATH1
 template<>
-class _bz_sin<complex<long double> > : public OneOperandApplicativeTemplatesBase {
+class _bz_sin<std::complex<long double> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<long double>  T_numtype1;
-    typedef complex<long double> T_numtype;
+    typedef std::complex<long double>  T_numtype1;
+    typedef std::complex<long double> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(sin)((complex<long double> )x); }
+    { return BZ_CMATHFN_SCOPE(sin)((std::complex<long double> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "sin(";
@@ -2445,7 +2445,7 @@ public:
     { return BZ_MATHFN_SCOPE(sinh)((double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "sinh(";
@@ -2465,7 +2465,7 @@ public:
     { return BZ_MATHFN_SCOPE(sinh)((float)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "sinh(";
@@ -2485,7 +2485,7 @@ public:
     { return BZ_MATHFN_SCOPE(sinh)((long double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "sinh(";
@@ -2494,19 +2494,19 @@ public:
     }
 };
 
-// sinh(complex<float> )
+// sinh(std::complex<float> )
 #ifdef BZ_HAVE_COMPLEX_MATH1
 template<>
-class _bz_sinh<complex<float> > : public OneOperandApplicativeTemplatesBase {
+class _bz_sinh<std::complex<float> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<float>  T_numtype1;
-    typedef complex<float> T_numtype;
+    typedef std::complex<float>  T_numtype1;
+    typedef std::complex<float> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(sinh)((complex<float> )x); }
+    { return BZ_CMATHFN_SCOPE(sinh)((std::complex<float> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "sinh(";
@@ -2516,19 +2516,19 @@ public:
 };
 #endif
 
-// sinh(complex<double> )
+// sinh(std::complex<double> )
 #ifdef BZ_HAVE_COMPLEX_MATH1
 template<>
-class _bz_sinh<complex<double> > : public OneOperandApplicativeTemplatesBase {
+class _bz_sinh<std::complex<double> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<double>  T_numtype1;
-    typedef complex<double> T_numtype;
+    typedef std::complex<double>  T_numtype1;
+    typedef std::complex<double> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(sinh)((complex<double> )x); }
+    { return BZ_CMATHFN_SCOPE(sinh)((std::complex<double> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "sinh(";
@@ -2539,19 +2539,19 @@ public:
 #endif
 
 #ifndef __PGI
-// sinh(complex<long double> )
+// sinh(std::complex<long double> )
 #ifdef BZ_HAVE_COMPLEX_MATH1
 template<>
-class _bz_sinh<complex<long double> > : public OneOperandApplicativeTemplatesBase {
+class _bz_sinh<std::complex<long double> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<long double>  T_numtype1;
-    typedef complex<long double> T_numtype;
+    typedef std::complex<long double>  T_numtype1;
+    typedef std::complex<long double> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(sinh)((complex<long double> )x); }
+    { return BZ_CMATHFN_SCOPE(sinh)((std::complex<long double> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "sinh(";
@@ -2570,7 +2570,7 @@ public:
     static inline T_numtype apply(T_numtype x)
     { return x*x; }
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "sqr(";
@@ -2580,11 +2580,11 @@ public:
 };
 
 #ifdef BZ_HAVE_COMPLEX
-// Specialization of _bz_sqr for complex<T>
+// Specialization of _bz_sqr for std::complex<T>
 template<typename T>
-class _bz_sqr<complex<T> > : public OneOperandApplicativeTemplatesBase {
+class _bz_sqr<std::complex<T> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<T> T_numtype;
+    typedef std::complex<T> T_numtype;
 
     static inline T_numtype apply(T_numtype x)
     {
@@ -2592,7 +2592,7 @@ public:
         return T_numtype(r*r-i*i, 2*r*i);
     }
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "sqr(";
@@ -2613,7 +2613,7 @@ public:
     { return BZ_MATHFN_SCOPE(sqrt)((double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "sqrt(";
@@ -2633,7 +2633,7 @@ public:
     { return BZ_MATHFN_SCOPE(sqrt)((float)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "sqrt(";
@@ -2653,7 +2653,7 @@ public:
     { return BZ_MATHFN_SCOPE(sqrt)((long double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "sqrt(";
@@ -2662,19 +2662,19 @@ public:
     }
 };
 
-// sqrt(complex<float> )
+// sqrt(std::complex<float> )
 #ifdef BZ_HAVE_COMPLEX_MATH1
 template<>
-class _bz_sqrt<complex<float> > : public OneOperandApplicativeTemplatesBase {
+class _bz_sqrt<std::complex<float> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<float>  T_numtype1;
-    typedef complex<float> T_numtype;
+    typedef std::complex<float>  T_numtype1;
+    typedef std::complex<float> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(sqrt)((complex<float> )x); }
+    { return BZ_CMATHFN_SCOPE(sqrt)((std::complex<float> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "sqrt(";
@@ -2684,19 +2684,19 @@ public:
 };
 #endif
 
-// sqrt(complex<double> )
+// sqrt(std::complex<double> )
 #ifdef BZ_HAVE_COMPLEX_MATH1
 template<>
-class _bz_sqrt<complex<double> > : public OneOperandApplicativeTemplatesBase {
+class _bz_sqrt<std::complex<double> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<double>  T_numtype1;
-    typedef complex<double> T_numtype;
+    typedef std::complex<double>  T_numtype1;
+    typedef std::complex<double> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(sqrt)((complex<double> )x); }
+    { return BZ_CMATHFN_SCOPE(sqrt)((std::complex<double> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "sqrt(";
@@ -2707,19 +2707,19 @@ public:
 #endif
 
 #ifndef __PGI
-// sqrt(complex<long double> )
+// sqrt(std::complex<long double> )
 #ifdef BZ_HAVE_COMPLEX_MATH1
 template<>
-class _bz_sqrt<complex<long double> > : public OneOperandApplicativeTemplatesBase {
+class _bz_sqrt<std::complex<long double> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<long double>  T_numtype1;
-    typedef complex<long double> T_numtype;
+    typedef std::complex<long double>  T_numtype1;
+    typedef std::complex<long double> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(sqrt)((complex<long double> )x); }
+    { return BZ_CMATHFN_SCOPE(sqrt)((std::complex<long double> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "sqrt(";
@@ -2741,7 +2741,7 @@ public:
     { return BZ_MATHFN_SCOPE(tan)((double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "tan(";
@@ -2761,7 +2761,7 @@ public:
     { return BZ_MATHFN_SCOPE(tan)((float)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "tan(";
@@ -2781,7 +2781,7 @@ public:
     { return BZ_MATHFN_SCOPE(tan)((long double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "tan(";
@@ -2790,19 +2790,19 @@ public:
     }
 };
 
-// tan(complex<float> )
+// tan(std::complex<float> )
 #ifdef BZ_HAVE_COMPLEX_MATH1
 template<>
-class _bz_tan<complex<float> > : public OneOperandApplicativeTemplatesBase {
+class _bz_tan<std::complex<float> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<float>  T_numtype1;
-    typedef complex<float> T_numtype;
+    typedef std::complex<float>  T_numtype1;
+    typedef std::complex<float> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(tan)((complex<float> )x); }
+    { return BZ_CMATHFN_SCOPE(tan)((std::complex<float> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "tan(";
@@ -2812,19 +2812,19 @@ public:
 };
 #endif
 
-// tan(complex<double> )
+// tan(std::complex<double> )
 #ifdef BZ_HAVE_COMPLEX_MATH1
 template<>
-class _bz_tan<complex<double> > : public OneOperandApplicativeTemplatesBase {
+class _bz_tan<std::complex<double> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<double>  T_numtype1;
-    typedef complex<double> T_numtype;
+    typedef std::complex<double>  T_numtype1;
+    typedef std::complex<double> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(tan)((complex<double> )x); }
+    { return BZ_CMATHFN_SCOPE(tan)((std::complex<double> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "tan(";
@@ -2835,19 +2835,19 @@ public:
 #endif
 
 #ifndef __PGI
-// tan(complex<long double> )
+// tan(std::complex<long double> )
 #ifdef BZ_HAVE_COMPLEX_MATH1
 template<>
-class _bz_tan<complex<long double> > : public OneOperandApplicativeTemplatesBase {
+class _bz_tan<std::complex<long double> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<long double>  T_numtype1;
-    typedef complex<long double> T_numtype;
+    typedef std::complex<long double>  T_numtype1;
+    typedef std::complex<long double> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(tan)((complex<long double> )x); }
+    { return BZ_CMATHFN_SCOPE(tan)((std::complex<long double> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "tan(";
@@ -2869,7 +2869,7 @@ public:
     { return BZ_MATHFN_SCOPE(tanh)((double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "tanh(";
@@ -2889,7 +2889,7 @@ public:
     { return BZ_MATHFN_SCOPE(tanh)((float)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "tanh(";
@@ -2909,7 +2909,7 @@ public:
     { return BZ_MATHFN_SCOPE(tanh)((long double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "tanh(";
@@ -2918,19 +2918,19 @@ public:
     }
 };
 
-// tanh(complex<float> )
+// tanh(std::complex<float> )
 #ifdef BZ_HAVE_COMPLEX_MATH1
 template<>
-class _bz_tanh<complex<float> > : public OneOperandApplicativeTemplatesBase {
+class _bz_tanh<std::complex<float> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<float>  T_numtype1;
-    typedef complex<float> T_numtype;
+    typedef std::complex<float>  T_numtype1;
+    typedef std::complex<float> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(tanh)((complex<float> )x); }
+    { return BZ_CMATHFN_SCOPE(tanh)((std::complex<float> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "tanh(";
@@ -2940,19 +2940,19 @@ public:
 };
 #endif
 
-// tanh(complex<double> )
+// tanh(std::complex<double> )
 #ifdef BZ_HAVE_COMPLEX_MATH1
 template<>
-class _bz_tanh<complex<double> > : public OneOperandApplicativeTemplatesBase {
+class _bz_tanh<std::complex<double> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<double>  T_numtype1;
-    typedef complex<double> T_numtype;
+    typedef std::complex<double>  T_numtype1;
+    typedef std::complex<double> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(tanh)((complex<double> )x); }
+    { return BZ_CMATHFN_SCOPE(tanh)((std::complex<double> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "tanh(";
@@ -2963,19 +2963,19 @@ public:
 #endif
 
 #ifndef __PGI
-// tanh(complex<long double> )
+// tanh(std::complex<long double> )
 #ifdef BZ_HAVE_COMPLEX_MATH1
 template<>
-class _bz_tanh<complex<long double> > : public OneOperandApplicativeTemplatesBase {
+class _bz_tanh<std::complex<long double> > : public OneOperandApplicativeTemplatesBase {
 public:
-    typedef complex<long double>  T_numtype1;
-    typedef complex<long double> T_numtype;
+    typedef std::complex<long double>  T_numtype1;
+    typedef std::complex<long double> T_numtype;
 
     static inline T_numtype apply(T_numtype1 x)
-    { return BZ_CMATHFN_SCOPE(tanh)((complex<long double> )x); }
+    { return BZ_CMATHFN_SCOPE(tanh)((std::complex<long double> )x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "tanh(";
@@ -2998,7 +2998,7 @@ public:
     { return BZ_IEEEMATHFN_SCOPE(uitrunc)((unsigned)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "uitrunc(";
@@ -3021,7 +3021,7 @@ public:
     { return BZ_IEEEMATHFN_SCOPE(unordered)(x,y); }
 
     template<typename T1, typename T2>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a, const T2& b)
     {
         str += "unordered(";
@@ -3045,7 +3045,7 @@ public:
     { return BZ_IEEEMATHFN_SCOPE(y0)((double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "y0(";
@@ -3067,7 +3067,7 @@ public:
     { return BZ_IEEEMATHFN_SCOPE(y1)((double)x); }
 
     template<typename T1>
-    static void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat& format,
+    static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
         str += "y1(";

@@ -12,7 +12,7 @@ void adios_checkpoint_verify_variables(ADIOS_FILE* fp, const char* name, unsigne
   vi = adios_inq_var(fp, name);
   if (vi->ndim > 0)
   {
-    cout<<name<<" verification not passed, not a scalar"<<endl;
+    std::cout <<name<<" verification not passed, not a scalar"<< std::endl;
     return;
   }
   size = count*adios_type_size(vi->type, vi->value);
@@ -21,11 +21,11 @@ void adios_checkpoint_verify_variables(ADIOS_FILE* fp, const char* name, unsigne
   adios_perform_reads(fp, 1);
   if(mem[0] == origin)
   {
-    cout<<name<<" verification passed"<<mem[0]<<endl;
+    std::cout <<name<<" verification passed"<<mem[0]<< std::endl;
   }
   else
   {
-    cout<<name<<" verification not passed, readin: "<<mem[0]<<" writeout: "<<origin<<endl;
+    std::cout <<name<<" verification not passed, readin: "<<mem[0]<<" writeout: "<<origin<< std::endl;
   }
   adios_free_varinfo (vi);
   free(mem);
@@ -39,7 +39,7 @@ void adios_checkpoint_verify_variables(ADIOS_FILE* fp, const char* name, int* or
   vi = adios_inq_var(fp, name);
   if (vi->ndim > 0)
   {
-    cout<<name<<" verification not passed, not a scalar"<<endl;
+    std::cout <<name<<" verification not passed, not a scalar"<< std::endl;
     return;
   }
   size = count*adios_type_size(vi->type, vi->value);
@@ -50,11 +50,11 @@ void adios_checkpoint_verify_variables(ADIOS_FILE* fp, const char* name, int* or
   adios_perform_reads(fp, 1);
   if(mem[0] == *origin)
   {
-    cout<<name<<" verification passed "<<mem[0]<<endl;
+    std::cout <<name<<" verification passed "<<mem[0]<< std::endl;
   }
   else
   {
-    cout<<name<<" verification not passed, readin: "<<mem[0]<<" writeout: "<<*origin<<endl;
+    std::cout <<name<<" verification not passed, readin: "<<mem[0]<<" writeout: "<<*origin<< std::endl;
   }
   adios_free_varinfo (vi);
   adios_selection_delete(sel);
@@ -85,11 +85,11 @@ void adios_checkpoint_verify_intarray_variables(ADIOS_FILE* fp, const char* name
   {
     if(mem[i] == origin[i])
     {
-      cout<<name<<"["<<i<<"]verification passed "<<mem[i]<<endl;
+      std::cout <<name<<"["<<i<<"]verification passed "<<mem[i]<< std::endl;
     }
     else
     {
-      cout<<name<<"["<<i<<"]verification not passed, readin: "<<mem[i]<<" writeout: "<<origin[i]<<endl;
+      std::cout <<name<<"["<<i<<"]verification not passed, readin: "<<mem[i]<<" writeout: "<<origin[i]<< std::endl;
     }
   }
   adios_free_varinfo (vi);
@@ -120,11 +120,11 @@ void adios_checkpoint_verify_variables(ADIOS_FILE* fp, const char* name, RealTyp
   {
     if(mem[i] == origin[i])
     {
-      cout<<name<<"["<<i<<"]verification passed "<<mem[i]<<endl;
+      std::cout <<name<<"["<<i<<"]verification passed "<<mem[i]<< std::endl;
     }
     else
     {
-      cout<<name<<"["<<i<<"]verification not passed, readin: "<<mem[i]<<" writeout: "<<origin[i]<<endl;
+      std::cout <<name<<"["<<i<<"]verification not passed, readin: "<<mem[i]<<" writeout: "<<origin[i]<< std::endl;
     }
   }
   adios_free_varinfo (vi);
@@ -154,7 +154,7 @@ void adios_checkpoint_verify_random_variables(ADIOS_FILE* fp, const char* name, 
         start[k] = vi->blockinfo[j].start[k];
         count[k] = vi->blockinfo[j].count[k];
         count_int *= count[k];
-        //cout<<OHMMS::Controller->rank()<<" count "<<start[k]<<" "<<count[k]<<endl;
+        //cout<<OHMMS::Controller->rank()<<" count "<<start[k]<<" "<<count[k]<< std::endl;
       }
     }
   }
@@ -168,16 +168,16 @@ void adios_checkpoint_verify_random_variables(ADIOS_FILE* fp, const char* name, 
   {
     if(mem[i] == origin[i])
     {
-      //cout<<name<<"["<<i<<"]verification passed "<<mem[i]<<endl;
+      //cout<<name<<"["<<i<<"]verification passed "<<mem[i]<< std::endl;
     }
     else
     {
       flag = 1;
-      cout<<name<<"["<<i<<"]verification not passed, readin: "<<mem[i]<<" writeout: "<<origin[i]<<endl;
+      std::cout <<name<<"["<<i<<"]verification not passed, readin: "<<mem[i]<<" writeout: "<<origin[i]<< std::endl;
     }
   }
-  if (flag == 0) cout<<name<<" verification passed "<<endl;
-  else cout<<name<<" verification not passed "<<endl;
+  if (flag == 0) std::cout <<name<<" verification passed "<< std::endl;
+  else std::cout <<name<<" verification not passed "<< std::endl;
   adios_free_varinfo (vi);
   adios_selection_delete(sel);
   free(start);
@@ -217,10 +217,10 @@ void adios_checkpoint_verify_local_variables(ADIOS_FILE* fp, const char* name, O
     else
     {
       flag = 1;
-      cout<<OHMMS::Controller->rank()<<" "<<name<<"["<<i<<"]verification not passed, readin: "<<mem[i]<<" writeout: "<<origin[i]<<endl;
+      std::cout <<OHMMS::Controller->rank()<<" "<<name<<"["<<i<<"]verification not passed, readin: "<<mem[i]<<" writeout: "<<origin[i]<< std::endl;
     }
   }
-  if(flag == 0) cout<<OHMMS::Controller->rank()<<" "<<name<<" verification passed"<<endl;
+  if(flag == 0) std::cout <<OHMMS::Controller->rank()<<" "<<name<<" verification passed"<< std::endl;
   adios_selection_delete(sel);
   adios_free_varinfo (vi);
   free(mem);
@@ -257,10 +257,10 @@ void adios_trace_verify_local_variables(ADIOS_FILE* fp, const char* name, double
     else
     {
       flag = 1;
-      cout<<OHMMS::Controller->rank()<<" "<<name<<"["<<i<<"]verification not passed, readin: "<<mem[i]<<" writeout: "<<origin[i]<<endl;
+      std::cout <<OHMMS::Controller->rank()<<" "<<name<<"["<<i<<"]verification not passed, readin: "<<mem[i]<<" writeout: "<<origin[i]<< std::endl;
     }
   }
-  if(flag == 0) cout<<OHMMS::Controller->rank()<<" "<<name<<" verification passed"<<endl;
+  if(flag == 0) std::cout <<OHMMS::Controller->rank()<<" "<<name<<" verification passed"<< std::endl;
   adios_selection_delete(sel);
   adios_free_varinfo (vi);
   free(mem);

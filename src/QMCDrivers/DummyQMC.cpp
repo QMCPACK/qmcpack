@@ -40,8 +40,8 @@ bool DummyQMC::run()
 {
   m_oneover2tau = 0.5/Tau;
   m_sqrttau = sqrt(Tau);
-  cout << "Lattice of ParticleSet " << endl;
-  W.Lattice.print(cout);
+  std::cout << "Lattice of ParticleSet " << std::endl;
+  W.Lattice.print(std::cout);
   //property container to hold temporary properties, such as a local energy
   //MCWalkerConfiguration::PropertyContainer_t Properties;
   MCWalkerConfiguration::Walker_t& thisWalker(**W.begin());

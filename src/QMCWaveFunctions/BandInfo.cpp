@@ -17,7 +17,7 @@ namespace qmcplusplus
 {
   BandInfoGroup::BandInfoGroup(): FirstSPO(0), NumSPOs(0), FirstBand(0) {}
 
-  void BandInfoGroup::selectBands(const vector<BandInfo>& bigspace, double emin, double emax)
+  void BandInfoGroup::selectBands(const std::vector<BandInfo>& bigspace, double emin, double emax)
   {
     myBands.clear();
     if(emin>emax) return;
@@ -49,23 +49,23 @@ namespace qmcplusplus
       ++iorb;
     }
 
-    app_log() << "BandInfoGroup::selectBands using energy ["<< emin << "," << emax << ")"  << endl;
-    app_log() << "  Number of distinct bands " << myBands.size() << endl;
-    app_log() << "  First Band index " << FirstBand << endl;
-    app_log() << "  First SPO index " << FirstSPO << endl;
-    app_log() << "  Size of SPOs " << NumSPOs << endl;
+    app_log() << "BandInfoGroup::selectBands using energy ["<< emin << "," << emax << ")"  << std::endl;
+    app_log() << "  Number of distinct bands " << myBands.size() << std::endl;
+    app_log() << "  First Band index " << FirstBand << std::endl;
+    app_log() << "  First SPO index " << FirstSPO << std::endl;
+    app_log() << "  Size of SPOs " << NumSPOs << std::endl;
 
     //for(int i=0; i<myBands.size(); ++i)
-    //  app_log() << myBands[i].TwistIndex << " " << myBands[i].Energy << endl;
+    //  app_log() << myBands[i].TwistIndex << " " << myBands[i].Energy << std::endl;
     app_log().flush();
   }
 
-  void BandInfoGroup::selectBands(const vector<BandInfo>& bigspace, 
+  void BandInfoGroup::selectBands(const std::vector<BandInfo>& bigspace, 
       int first_orb, int num_spos, bool relative)
   {
 
     app_log() << "BandInfoGroup::selectBands bigspace has " << bigspace.size() 
-      << " distinct orbitals " << endl;
+      << " distinct orbitals " << std::endl;
     myBands.clear();
 
     int iorb=0;
@@ -96,16 +96,16 @@ namespace qmcplusplus
       ++iorb;
     }
 
-    app_log() << "BandInfoGroup::selectBands using distinct orbitals ["<< first_orb << "," << iorb << ")"  << endl;
-    app_log() << "  Number of distinct bands " << myBands.size() << endl;
-    app_log() << "  First Band index " << FirstBand << endl;
-    app_log() << "  First SPO index " << FirstSPO << endl;
-    app_log() << "  Size of SPOs " << NumSPOs << endl;
+    app_log() << "BandInfoGroup::selectBands using distinct orbitals ["<< first_orb << "," << iorb << ")"  << std::endl;
+    app_log() << "  Number of distinct bands " << myBands.size() << std::endl;
+    app_log() << "  First Band index " << FirstBand << std::endl;
+    app_log() << "  First SPO index " << FirstSPO << std::endl;
+    app_log() << "  Size of SPOs " << NumSPOs << std::endl;
   }
 
-//  void BandInfoGroup::selectBands(const vector<BandInfo>& bigspace, int first_orb, int last_orb)
+//  void BandInfoGroup::selectBands(const std::vector<BandInfo>& bigspace, int first_orb, int last_orb)
 //  {
-//    app_log() << "BandInfoGroup::selectBands bigspace has " << bigspace.size() << " distinct orbitals " << endl;
+//    app_log() << "BandInfoGroup::selectBands bigspace has " << bigspace.size() << " distinct orbitals " << std::endl;
 //    myBands.clear();
 //
 //    int iorb=0;
@@ -147,7 +147,7 @@ namespace qmcplusplus
 //    }
 //
 //    //for(int i=0; i<myBands.size(); ++i)
-//    //  app_log() << myBands[i].TwistIndex << " " << myBands[i].Energy << endl;
+//    //  app_log() << myBands[i].TwistIndex << " " << myBands[i].Energy << std::endl;
 //
 //    app_log().flush();
 //  }

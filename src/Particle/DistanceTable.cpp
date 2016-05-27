@@ -32,13 +32,13 @@ DistanceTableData* createDistanceTable(ParticleSet& s)
   enum {DIM=OHMMS_DIM};
   int sc=s.Lattice.SuperCellEnum;
   DistanceTableData* dt=0;
-  ostringstream o;
+  std::ostringstream o;
   o << "  Distance table for AA: source/target = " << s.getName() << "\n";
   if(sc == SUPERCELL_BULK)
   {
     if(s.Lattice.DiagonalOnly)
     {
-      o << "    PBC=bulk Orthorhombic=yes Using SymmetricDTD<T,DIM,PPPO> " << PPPO <<endl;
+      o << "    PBC=bulk Orthorhombic=yes Using SymmetricDTD<T,DIM,PPPO> " << PPPO << std::endl;
       dt = new SymmetricDTD<RealType,DIM,PPPO>(s,s);
     }
     else
@@ -46,14 +46,14 @@ DistanceTableData* createDistanceTable(ParticleSet& s)
       o << "    PBC=bulk Orthorhombic=no ";
       if(s.Lattice.WignerSeitzRadius>s.Lattice.SimulationCellRadius)
       {
-        o << "  Using SymmetricDTD<T,D,PPPG> " << PPPG <<endl;
+        o << "  Using SymmetricDTD<T,D,PPPG> " << PPPG << std::endl;
         dt = new  SymmetricDTD<RealType,DIM,PPPG>(s,s);
-        //o << "    PBC=bulk Orthorhombic=no SymmetricDTD<T,DIM,PPPX> " << PPPX <<endl;
+        //o << "    PBC=bulk Orthorhombic=no SymmetricDTD<T,DIM,PPPX> " << PPPX << std::endl;
         //dt = new  SymmetricDTD<RealType,DIM,PPPX>(s,s);
       }
       else
       {
-        o << "  Using SymmetricDTD<T,D,PPPS> " << PPPS <<endl;
+        o << "  Using SymmetricDTD<T,D,PPPS> " << PPPS << std::endl;
         dt = new  SymmetricDTD<RealType,DIM,PPPS>(s,s);
       }
       o << "\n    Setting Rmax = " << s.Lattice.SimulationCellRadius;
@@ -63,19 +63,19 @@ DistanceTableData* createDistanceTable(ParticleSet& s)
   {
     if(s.Lattice.DiagonalOnly)
     {
-      o << "    PBC=slab Orthorhombic=yes Using SymmetricDTD<T,D,PPNO> " << PPNO <<endl;
+      o << "    PBC=slab Orthorhombic=yes Using SymmetricDTD<T,D,PPNO> " << PPNO << std::endl;
       dt = new SymmetricDTD<RealType,DIM,PPNO>(s,s);
     }
     else
     {
       if(s.Lattice.WignerSeitzRadius>s.Lattice.SimulationCellRadius)
       {
-        o << "    PBC=slab Orthorhombic=no Using SymmetricDTD<T,D,PPNX> " << PPNX <<endl;
+        o << "    PBC=slab Orthorhombic=no Using SymmetricDTD<T,D,PPNX> " << PPNX << std::endl;
         dt = new SymmetricDTD<RealType,DIM,PPNX>(s,s);
       }
       else
       {
-        o << "    PBC=slab Orthorhombic=no Using SymmetricDTD<T,D,PPNS> " << PPNS <<endl;
+        o << "    PBC=slab Orthorhombic=no Using SymmetricDTD<T,D,PPNS> " << PPNS << std::endl;
         dt = new SymmetricDTD<RealType,DIM,PPNS>(s,s);
       }
     }
@@ -91,7 +91,7 @@ DistanceTableData* createDistanceTable(ParticleSet& s)
     dt = new SymmetricDTD<RealType,DIM,SUPERCELL_OPEN>(s,s);
   }
   dt->CellType=sc;
-  ostringstream p;
+  std::ostringstream p;
   p << s.getName() << "_" << s.getName();
   dt->Name=p.str();//assign the table name
   if(sc != SUPERCELL_OPEN)
@@ -100,7 +100,7 @@ DistanceTableData* createDistanceTable(ParticleSet& s)
     o << " using Cartesian coordinates with ";
   if(omp_get_thread_num()==0) 
   {
-    app_log() << o.str() << endl;
+    app_log() << o.str() << std::endl;
     app_log().flush();
   }
   return dt;
@@ -117,13 +117,13 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t)
   DistanceTableData* dt=0;
   //int sc=s.Lattice.SuperCellEnum;
   int sc=t.Lattice.SuperCellEnum;
-  ostringstream o;
+  std::ostringstream o;
   o << "  Distance table for AB: source = " << s.getName() << " target = " << t.getName() << "\n";
   if(sc == SUPERCELL_BULK)
   {
     if(s.Lattice.DiagonalOnly)
     {
-      o << "    PBC=bulk Orthorhombic=yes Using AsymmetricDTD<T,D,PPPO> " << PPPO <<endl;
+      o << "    PBC=bulk Orthorhombic=yes Using AsymmetricDTD<T,D,PPPO> " << PPPO << std::endl;
       dt = new AsymmetricDTD<RealType,DIM,PPPO>(s,t);
     }
     else
@@ -131,12 +131,12 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t)
       o << "    PBC=bulk Orthorhombic=no ";
       if(s.Lattice.WignerSeitzRadius>s.Lattice.SimulationCellRadius)
       {
-        o << " Using AsymmetricDTD<T,D,PPPG> " << PPPG <<endl;
+        o << " Using AsymmetricDTD<T,D,PPPG> " << PPPG << std::endl;
         dt = new AsymmetricDTD<RealType,DIM,PPPG>(s,t);
       }
       else
       {
-        o << " Using AsymmetricDTD<T,D,PPPS> " << PPPS <<endl;
+        o << " Using AsymmetricDTD<T,D,PPPS> " << PPPS << std::endl;
         dt = new AsymmetricDTD<RealType,DIM,PPPS>(s,t);
       }
       o << "    Setting Rmax = " << s.Lattice.SimulationCellRadius;
@@ -146,7 +146,7 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t)
   {
     if(s.Lattice.DiagonalOnly)
     {
-      o << "    PBC=slab Orthorhombic=yes Using AsymmetricDTD<T,D,PPNO> " << PPNO <<endl;
+      o << "    PBC=slab Orthorhombic=yes Using AsymmetricDTD<T,D,PPNO> " << PPNO << std::endl;
       dt = new AsymmetricDTD<RealType,DIM,PPNO>(s,t);
     }
     else
@@ -154,12 +154,12 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t)
       o << "    PBC=slab Orthorhombic=no ";
       if(s.Lattice.WignerSeitzRadius>s.Lattice.SimulationCellRadius)
       {
-        o << " Using AsymmetricDTD<T,DIM,PPNX> " << PPNX <<endl;
+        o << " Using AsymmetricDTD<T,DIM,PPNX> " << PPNX << std::endl;
         dt = new AsymmetricDTD<RealType,DIM,PPNX>(s,t);
       }
       else
       {
-        o << " Using AsymmetricDTD<T,DIM,PPNS> " << PPNS <<endl;
+        o << " Using AsymmetricDTD<T,DIM,PPNS> " << PPNS << std::endl;
         dt = new AsymmetricDTD<RealType,DIM,PPNS>(s,t);
       }
     }
@@ -176,7 +176,7 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t)
   }
 
   dt->CellType=sc;
-  ostringstream p;
+  std::ostringstream p;
   p << s.getName() << "_" << t.getName();
   dt->Name=p.str();//assign the table name
   if(sc!=SUPERCELL_OPEN)
@@ -185,7 +185,7 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t)
     o << " using Cartesian coordinates ";
   if(omp_get_thread_num()==0) 
   {
-    app_log() << o.str() << endl;
+    app_log() << o.str() << std::endl;
     app_log().flush();
   }
   return dt;

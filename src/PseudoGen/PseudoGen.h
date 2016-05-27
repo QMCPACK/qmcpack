@@ -25,7 +25,7 @@ public:
   PseudoGen(RadialPotentialSet& pot, BasisSetType& psi);
 
   bool put(xmlNodePtr cur);
-  void setRoot(const string& aroot);
+  void setRoot(const std::string& aroot);
   bool solve();
   int report();
   inline value_type getE(int i) const
@@ -49,7 +49,7 @@ public:
   }
   void WriteStuff()
   {
-    cout << "calling WriteStuff" << endl;
+    std::cout << "calling WriteStuff" << std::endl;
   }
 
   double Cost();
@@ -74,10 +74,10 @@ private:
   ///conjugate gradient epsilon
   value_type cg_epsilon;
   ///root of all the output files
-  string RootFileName;
+  std::string RootFileName;
   ///name of the log file
-  string LogFileName;
-  string AtomName, PotType, GridType;
+  std::string LogFileName;
+  std::string AtomName, PotType, GridType;
 
   xmlNodePtr grid_ptr;
   xmlNodePtr pot_ptr;
@@ -96,13 +96,13 @@ private:
   ///Pseudo eigenvalues
   std::vector<value_type> PPeigVal;
   ///parameters to be optimized
-  vector<scalar> OptParams;
+  std::vector<scalar> OptParams;
   ///ID tag for each optimizable parameter
-  vector<string> IDtag;
+  std::vector<std::string> IDtag;
   ///All-Electron orbitals
-  vector<RadialOrbital_t> AEorbitals;
+  std::vector<RadialOrbital_t> AEorbitals;
   ///All-Electron partial norms
-  vector<RadialOrbital_t> AEorbitals_norm;
+  std::vector<RadialOrbital_t> AEorbitals_norm;
   ///registry for which variables are added for optimization
   VarRegistry<value_type> vreg;
 

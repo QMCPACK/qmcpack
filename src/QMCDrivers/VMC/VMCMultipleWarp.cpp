@@ -59,15 +59,15 @@ bool VMCMultipleWarp::put(xmlNodePtr q)
     W.clearDistanceTables();
   }
   //qmcsystem
-  vector<ParticleSet*> ionSets;
+  std::vector<ParticleSet*> ionSets;
   DistanceTableData* dtableReference;
   xmlNodePtr cur=q->children;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == "qmcsystem")
     {
-      string source_name((const char*)xmlGetProp(cur,(const xmlChar*)"source"));
+      std::string source_name((const char*)xmlGetProp(cur,(const xmlChar*)"source"));
       ionSets.push_back(PtclPool.getParticleSet(source_name));
     }
     cur=cur->next;
@@ -78,7 +78,7 @@ bool VMCMultipleWarp::put(xmlNodePtr q)
     p=PtclPool.getParticleSet(refSetName);
     if(p==0)
     {
-      cout << "The specified reference cannot be found. Stop." << endl;
+      std::cout << "The specified reference cannot be found. Stop." << std::endl;
       abort();
     }
   }
@@ -127,7 +127,7 @@ bool VMCMultipleWarp::put(xmlNodePtr q)
       ParticleSet* pclone=PtclPool.getParticleSet(newname);
       if(pclone == 0)
       {
-        app_log() << "  Cloning particle set in VMCMultipleWarp " << newname << endl;
+        app_log() << "  Cloning particle set in VMCMultipleWarp " << newname << std::endl;
         pclone=new ParticleSet(W);
         pclone->setName(newname);
         pclone->clearDistanceTables(); // NECESSARY???????
@@ -135,7 +135,7 @@ bool VMCMultipleWarp::put(xmlNodePtr q)
       }
       else
       {
-        app_log() << "  Cloned particle exists " << newname << endl;
+        app_log() << "  Cloned particle exists " << newname << std::endl;
       }
       WW.push_back(pclone);
       Psi1[ipsi]->resetTargetParticleSet(*WW[ipsi]);
@@ -156,7 +156,7 @@ bool VMCMultipleWarp::run()
   //Estimators->reportHeader(AppendRun);
   bool require_register=false;
   //Check if we need to update the norm of the wave functions
-  vector<RealType> tmpNorm(nPsi);
+  std::vector<RealType> tmpNorm(nPsi);
   if(equilBlocks > 0)
   {
     for(int ipsi=0; ipsi< nPsi; ipsi++)
@@ -216,7 +216,7 @@ bool VMCMultipleWarp::run()
           Norm[ipsi]=tmpNorm[ipsi]/SumNorm;
           branchEngine->LogNorm[ipsi]=std::log(Norm[ipsi]);
         }
-        cout << "BranchEngine is updated " << branchEngine->LogNorm[0] << " " << branchEngine->LogNorm[1] << endl;
+        std::cout << "BranchEngine is updated " << branchEngine->LogNorm[0] << " " << branchEngine->LogNorm[1] << std::endl;
       }
     }
     Estimators->stopBlock(nAccept/static_cast<RealType>(nAccept+nReject));
@@ -249,7 +249,7 @@ bool VMCMultipleWarp::run()
   //   Estimators->setColumn(AcceptIndex,nAccept/TotalConfig);
   //   Estimators->report(CurrentStep);
   //
-  //   LogOut->getStream() << "Block " << block << " " << timer.cpu_time() << endl;
+  //   LogOut->getStream() << "Block " << block << " " << timer.cpu_time() << std::endl;
   //   //HDFWalkerOutput WO(RootName,block&&appendwalker, block);
   //   //WO.get(W);
   //   branchEngine->accumulate(Estimators->average(0),1.0);
@@ -261,7 +261,7 @@ bool VMCMultipleWarp::run()
   app_log()
       << "Ratio = "
       << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot)
-      << endl;
+      << std::endl;
   //finalize a qmc section
   return finalize(block);
 }
@@ -322,7 +322,7 @@ VMCMultipleWarp::advanceWalkerByWalker()
     }
     for(int ipsi=0; ipsi< nPsi; ipsi++)
       invsumratio[ipsi]=1.0/sumratio[ipsi];
-    // cout << invsumratio[0] << " " << invsumratio[1] << endl;
+    // std::cout << invsumratio[0] << " " << invsumratio[1] << std::endl;
     // Only these properties need to be updated
     // Using the sum of the ratio Psi^2[j]/Psi^2[iwref]
     // because these are number of order 1. Potentially
@@ -355,7 +355,7 @@ VMCMultipleWarp::advanceWalkerByWalker()
                  std::exp(logGb-logGf+2.0*(logpsi[0]-thisWalker.Properties(LOGPSI)));
     if(Random() > g)
     {
-      //cout << "REJECTED" << endl << endl;
+      //cout << "REJECTED" << std::endl << std::endl;
       thisWalker.Age++;
       ++nReject;
     }
@@ -377,13 +377,13 @@ VMCMultipleWarp::advanceWalkerByWalker()
         H1[ipsi]->auxHevaluate(W);
         H1[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
       }
-      //cout << "ACCEPTED" << endl << endl;
+      //cout << "ACCEPTED" << std::endl << std::endl;
       ++nAccept;
     }
     ++it;
     ++iwlk;
   }
-  //cout << endl;
+  //cout << std::endl;
 }
 }
 

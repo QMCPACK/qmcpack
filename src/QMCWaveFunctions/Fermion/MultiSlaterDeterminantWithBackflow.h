@@ -44,7 +44,7 @@ public:
   void checkInVariables(opt_variables_type& active);
   void checkOutVariables(const opt_variables_type& active);
   void resetParameters(const opt_variables_type& active);
-  void reportStatus(ostream& os);
+  void reportStatus(std::ostream& os);
 
   ///set BF pointers
   void setBF(BackflowTransformation* bf)
@@ -86,8 +86,8 @@ public:
   OrbitalBasePtr makeClone(ParticleSet& tqp) const;
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           vector<RealType>& dlogpsi,
-                           vector<RealType>& dhpsioverpsi);
+                           std::vector<RealType>& dlogpsi,
+                           std::vector<RealType>& dhpsioverpsi);
 
   void resize(int,int);
 

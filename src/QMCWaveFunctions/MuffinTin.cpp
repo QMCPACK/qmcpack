@@ -22,8 +22,6 @@
 #include <config/stdlib/math.h>
 
 
-#define conj_ qmcplusplus::conj
-
 namespace qmcplusplus
 {
 
@@ -31,8 +29,8 @@ namespace qmcplusplus
 // should contain the values to be fitted.  F should contain
 // all the basis functions evaluated at each x.
 void
-MuffinTinClass::LinFit (vector<double> &y,                  // input
-                        vector<TinyVector<double,2> > &F,   // input
+MuffinTinClass::LinFit (std::vector<double> &y,                  // input
+                        std::vector<TinyVector<double,2> > &F,   // input
                         TinyVector<double,2> &a )           // output
 {
   int M=2;
@@ -74,8 +72,8 @@ MuffinTinClass::LinFit (vector<double> &y,                  // input
 // should contain the values to be fitted.  F should contain
 // all the basis functions evaluated at each x.
 void
-MuffinTinClass::LinFit (vector<double> &y,                  // input
-                        vector<TinyVector<double,3> > &F,   // input
+MuffinTinClass::LinFit (std::vector<double> &y,                  // input
+                        std::vector<TinyVector<double,3> > &F,   // input
                         TinyVector<double,3> &a )           // output
 {
   int M=3;
@@ -122,7 +120,7 @@ MuffinTinClass::evalYlm (TinyVector<double,3> rhat)
   double cosphi, sinphi;
   cosphi=rhat[0]/sintheta;
   sinphi=rhat[1]/sintheta;
-  complex<double> e2iphi(cosphi, sinphi);
+  std::complex<double> e2iphi(cosphi, sinphi);
   double lsign = 1.0;
   double dl = 0.0;
   for (int l=0; l<=lMax; l++)
@@ -156,13 +154,13 @@ MuffinTinClass::evalYlm (TinyVector<double,3> rhat)
       dXlmVec[l+m] *= norm;
     }
     // Multiply by azimuthal phase and store in YlmVec
-    complex<double> e2imphi (1.0, 0.0);
+    std::complex<double> e2imphi (1.0, 0.0);
     for (int m=0; m<=l; m++)
     {
       YlmVec[l*(l+1)+m]  =  XlmVec[l+m]*e2imphi;
-      YlmVec[l*(l+1)-m]  =  XlmVec[l-m]*conj_(e2imphi);
+      YlmVec[l*(l+1)-m]  =  XlmVec[l-m]*conj(e2imphi);
       dYlmVec[l*(l+1)+m] = dXlmVec[l+m]*e2imphi;
-      dYlmVec[l*(l+1)-m] = dXlmVec[l-m]*conj_(e2imphi);
+      dYlmVec[l*(l+1)-m] = dXlmVec[l-m]*conj(e2imphi);
       e2imphi *= e2iphi;
     }
     dl += 1.0;
@@ -288,7 +286,7 @@ MuffinTinClass::init_APW (Vector<double> rgrid,
       app_error() << "Error in creating log grid.\n"
                   << "rgrid[i] = " << rgrid[i] << "   "
                   << "RadialGrid->points[i] = "
-                  << RadialGrid->points[i] << endl;
+                  << RadialGrid->points[i] << std::endl;
   // Boundary conditions
   BCtype_z rBC;
   rBC.lCode = NATURAL;
@@ -310,8 +308,8 @@ MuffinTinClass::init_APW (Vector<double> rgrid,
 
 void
 MuffinTinClass::set_APW (int orbNum, TinyVector<double,3> k,
-                         Array<complex<double>,2> &u_lm,
-                         Array<complex<double>,1> &du_lm_final,
+                         Array<std::complex<double>,2> &u_lm,
+                         Array<std::complex<double>,1> &du_lm_final,
                          double Z)
 {
   kPoints[orbNum] = k;
@@ -324,7 +322,7 @@ MuffinTinClass::set_APW (int orbNum, TinyVector<double,3> k,
   // actually spline u_lm(r)/r^l, and then multiply this   //
   // back on when we evaluate.                             //
   ///////////////////////////////////////////////////////////
-  Array<complex<double>,1> uvec (num_r);
+  Array<std::complex<double>,1> uvec (num_r);
   double rlast2l = 1.0;
   int lastr = u_lm.size(1)-1;
   double rlast = RadialGrid->points[lastr];
@@ -333,8 +331,8 @@ MuffinTinClass::set_APW (int orbNum, TinyVector<double,3> k,
     for (int m=-l; m<=l; m++)
     {
       int lm = l*(l+1) + m;
-      complex<double> u = u_lm(lm,lastr);
-      complex<double> du = du_lm_final(lm);
+      std::complex<double> u = u_lm(lm,lastr);
+      std::complex<double> du = du_lm_final(lm);
       du_lm_final(lm) = (1.0/rlast2l) * (du - (double)l/rlast * u);
     }
     rlast2l *= rlast;
@@ -354,8 +352,8 @@ MuffinTinClass::set_APW (int orbNum, TinyVector<double,3> k,
     }
   }
   // Temp vectors for small r fit
-  vector<complex<double> > uSmall(iSmall+1);
-  vector<double> rSmall(iSmall+1);
+  std::vector<std::complex<double> > uSmall(iSmall+1);
+  std::vector<double> rSmall(iSmall+1);
   for (int l=0; l<=lMax; l++)
   {
     for (int m=-l; m<=l; m++)
@@ -376,7 +374,7 @@ MuffinTinClass::set_APW (int orbNum, TinyVector<double,3> k,
       BCtype_z rBC;
       rBC.rCode = DERIV1;
       rBC.lCode = DERIV1;
-      complex<double> u0 = uvec(0);
+      std::complex<double> u0 = uvec(0);
       rBC.lVal_r = -Z*u0.real()/(double)(l+1);
       rBC.lVal_i = -Z*u0.imag()/(double)(l+1);
       rBC.rVal_r = du_lm_final(lm).real();
@@ -401,7 +399,7 @@ MuffinTinClass::set_center (TinyVector<double,3> r)
 
 void
 MuffinTinClass::evaluate (TinyVector<double,3> r,
-                          Vector<complex<double> > &phi)
+                          Vector<std::complex<double> > &phi)
 {
   TinyVector<double,3> disp, u, dr, L;
   disp = r - Center;
@@ -413,7 +411,7 @@ MuffinTinClass::evaluate (TinyVector<double,3> r,
   if (dot(dr,dr) > APWRadius*APWRadius)
   {
     for (int i=0; i<phi.size(); i++)
-      phi[i] = complex<double>();
+      phi[i] = std::complex<double>();
     return;
   }
   double drmag = std::sqrt (dot(dr,dr));
@@ -448,30 +446,30 @@ MuffinTinClass::evaluate (TinyVector<double,3> r,
   int i=0;
   for (int iorb=0; iorb<NumOrbitals; iorb++)
   {
-    phi[iorb] = complex<double>();
+    phi[iorb] = std::complex<double>();
     for (int lm=0; lm<numYlm; lm++, i++)
       phi[iorb] += RadialVec[i] * YlmVec[lm];
     // Multiply by phase factor for k-point translation
     double phase = -dot(L,kPoints[iorb]);
     double s,c;
     sincos (phase, &s, &c);
-    phi[iorb] *= complex<double>(c,s);
+    phi[iorb] *= std::complex<double>(c,s);
   }
 }
 
 
 void
 MuffinTinClass::evaluateFD (TinyVector<double,3> r,
-                            Vector<complex<double> > &phi,
-                            Vector<TinyVector<complex<double>,3> > &grad,
-                            Vector<complex<double> > &lapl)
+                            Vector<std::complex<double> > &phi,
+                            Vector<TinyVector<std::complex<double>,3> > &grad,
+                            Vector<std::complex<double> > &lapl)
 {
   double eps = 1.0e-6;
   TinyVector<double,3> dx(eps, 0.0, 0.0);
   TinyVector<double,3> dy(0.0, eps, 0.0);
   TinyVector<double,3> dz(0.0, 0.0, eps);
   int n = phi.size();
-  Vector<complex<double> > xplus(n), xminus(n),
+  Vector<std::complex<double> > xplus(n), xminus(n),
          yplus(n), yminus(n), zplus(n), zminus(n);
   evaluate (r, phi);
   evaluate (r+dx, xplus);
@@ -492,9 +490,9 @@ MuffinTinClass::evaluateFD (TinyVector<double,3> r,
 
 void
 MuffinTinClass::evaluate (TinyVector<double,3> r,
-                          Vector<complex<double> > &phi,
-                          Vector<TinyVector<complex<double>,3> > &grad,
-                          Vector<Tensor<complex<double>,3> > &hess)
+                          Vector<std::complex<double> > &phi,
+                          Vector<TinyVector<std::complex<double>,3> > &grad,
+                          Vector<Tensor<std::complex<double>,3> > &hess)
 {
   APP_ABORT("Hessian not inplemented in MuffinTinClass::evaluate. \n");
 }
@@ -502,9 +500,9 @@ MuffinTinClass::evaluate (TinyVector<double,3> r,
 
 void
 MuffinTinClass::evaluate (TinyVector<double,3> r,
-                          Vector<complex<double> > &phi,
-                          Vector<TinyVector<complex<double>,3> > &grad,
-                          Vector<complex<double> > &lapl)
+                          Vector<std::complex<double> > &phi,
+                          Vector<TinyVector<std::complex<double>,3> > &grad,
+                          Vector<std::complex<double> > &lapl)
 {
   TinyVector<double,3> disp, dr, L;
   disp = r - Center;
@@ -517,9 +515,9 @@ MuffinTinClass::evaluate (TinyVector<double,3> r,
   {
     for (int i=0; i<phi.size(); i++)
     {
-      phi[i] = lapl[i] = complex<double>();
+      phi[i] = lapl[i] = std::complex<double>();
       for (int j=0; j<3; j++)
-        grad[i][j] = complex<double>();
+        grad[i][j] = std::complex<double>();
     }
     return;
   }
@@ -560,9 +558,9 @@ MuffinTinClass::evaluate (TinyVector<double,3> r,
       for (int m=-l; m<=l; m++)
       {
         int lm = l*(l+1) + m;
-        complex<double> u = RadialVec[j];
-        complex<double> du = dRadialVec[j];
-        complex<double> d2u = d2RadialVec[j];
+        std::complex<double> u = RadialVec[j];
+        std::complex<double> du = dRadialVec[j];
+        std::complex<double> d2u = d2RadialVec[j];
         RadialVec[j] = r2l * u;
         dRadialVec[j] = (double)l * r2lm1 * u +
                         r2l * du;
@@ -582,14 +580,14 @@ MuffinTinClass::evaluate (TinyVector<double,3> r,
   for (int iorb=0; iorb<NumOrbitals; iorb++)
   {
     int i = numYlm * iorb;
-    phi[iorb] = complex<double>();
-    grad[iorb][0] = grad[iorb][1] = grad[iorb][2] = complex<double>();
-    lapl[iorb] = complex<double>();
+    phi[iorb] = std::complex<double>();
+    grad[iorb][0] = grad[iorb][1] = grad[iorb][2] = std::complex<double>();
+    lapl[iorb] = std::complex<double>();
     int lm=0;
     for (int l=0; l<=lStop; l++)
       for (int m=-l; m<=l; m++, lm++,i++)
       {
-        complex<double> im(0.0,(double)m);
+        std::complex<double> im(0.0,(double)m);
         phi[iorb]  += RadialVec[i] * YlmVec[lm];
         grad[iorb] +=
           (dRadialVec[i]                 *     YlmVec[lm] * rhat     +
@@ -603,9 +601,9 @@ MuffinTinClass::evaluate (TinyVector<double,3> r,
     double phase = -dot(L,kPoints[iorb]);
     double s,c;
     sincos (phase, &s, &c);
-    phi[iorb]  *= complex<double>(c,s);
-    grad[iorb] *= complex<double>(c,s);
-    lapl[iorb] *= complex<double>(c,s);
+    phi[iorb]  *= std::complex<double>(c,s);
+    grad[iorb] *= std::complex<double>(c,s);
+    lapl[iorb] *= std::complex<double>(c,s);
   }
 }
 
@@ -626,7 +624,7 @@ MuffinTinClass::addCore (int l, int m, Vector<double> &r, Vector<double> &g0,
   rSmallCore = r[irSmall+1];
   //fprintf (stderr, "rSmallCore = %1.8f  irSmall = %d\n",
   //         rSmallCore, irSmall);
-  vector<double> vals(irSmall+50), rvals(irSmall+50);
+  std::vector<double> vals(irSmall+50), rvals(irSmall+50);
   for (int ir=0; ir<irSmall+50; ir++)
   {
     vals[ir] = g0[ir];
@@ -654,9 +652,9 @@ MuffinTinClass::addCore (int l, int m, Vector<double> &r, Vector<double> &g0,
   int jstart = 0;
   while (r[jstart] < 1.0)
     jstart++;
-  jstart = min (i-30, jstart);
+  jstart = std::min(i-30, jstart);
   // Compute large-r coefficients
-  vector<TinyVector<double,2> > bfuncs(i+1-jstart);
+  std::vector<TinyVector<double,2> > bfuncs(i+1-jstart);
   TinyVector<double,2> largeCoefs;
   vals.resize(i+1-jstart);
   for (int j=0; j<bfuncs.size(); j++)
@@ -679,7 +677,7 @@ MuffinTinClass::addCore (int l, int m, Vector<double> &r, Vector<double> &g0,
 
 void
 MuffinTinClass::evaluateCore (TinyVector<double,3> r,
-                              Vector<complex<double> > &phi,
+                              Vector<std::complex<double> > &phi,
                               int first)
 {
   TinyVector<double,3> disp, dr, drhat;
@@ -697,7 +695,7 @@ MuffinTinClass::evaluateCore (TinyVector<double,3> r,
     int l = Core_lm[i][0];
     int m = Core_lm[i][1];
     int lm = l*(l+1)+m;
-    complex<double> ylm = YlmVec[lm];
+    std::complex<double> ylm = YlmVec[lm];
     double u;
     if (drmag < rSmallCore)
       Small_r_Core_Fits[i].eval (drmag, u);
@@ -717,23 +715,23 @@ MuffinTinClass::evaluateCore (TinyVector<double,3> r,
     // double phase = dot (r, Core_kVecs[i]);
     // double s, c;
     // sincos(phase, &s, &c);
-    // phi[first+i] *= complex<double>(c,s);
+    // phi[first+i] *= std::complex<double>(c,s);
   }
 }
 
 void
 MuffinTinClass::evaluateCore (TinyVector<double,3> r,
-                              Vector<complex<double> > &phi,
-                              Vector<TinyVector<complex<double>,3> > &grad,
-                              Vector<Tensor<complex<double>,3> > &hess, int first)
+                              Vector<std::complex<double> > &phi,
+                              Vector<TinyVector<std::complex<double>,3> > &grad,
+                              Vector<Tensor<std::complex<double>,3> > &hess, int first)
 {
 }
 
 void
 MuffinTinClass::evaluateCore (TinyVector<double,3> r,
-                              Vector<complex<double> > &phi,
-                              Vector<TinyVector<complex<double>,3> > &grad,
-                              Vector<complex<double> > &lapl, int first)
+                              Vector<std::complex<double> > &phi,
+                              Vector<TinyVector<std::complex<double>,3> > &grad,
+                              Vector<std::complex<double> > &lapl, int first)
 {
   TinyVector<double,3> disp, dr;
   disp = r - Center;
@@ -761,8 +759,8 @@ MuffinTinClass::evaluateCore (TinyVector<double,3> r,
     int l = Core_lm[i][0];
     int m = Core_lm[i][1];
     int lm = l*(l+1)+m;
-    complex<double> ylm = YlmVec[lm];
-    complex<double> im(0.0,(double)m);
+    std::complex<double> ylm = YlmVec[lm];
+    std::complex<double> im(0.0,(double)m);
     double u, du, d2u;
     if (drmag < rSmallCore)
       Small_r_Core_Fits[i].eval (drmag, u, du, d2u);

@@ -54,7 +54,7 @@ bool BackflowBuilder::put(xmlNodePtr cur)
   bool first=true;
   bool success=true;
   xmlNodePtr curRoot=cur;
-  string cname;
+  std::string cname;
   BFTrans = new BackflowTransformation(targetPtcl);
   cur = curRoot->children;
   while (cur != NULL)
@@ -63,9 +63,9 @@ bool BackflowBuilder::put(xmlNodePtr cur)
     if (cname == "transf" || cname == "transformation")
     {
       OhmmsAttributeSet spoAttrib;
-      string source("none");
-      string name("bf0");
-      string type("none");
+      std::string source("none");
+      std::string name("bf0");
+      std::string type("none");
       spoAttrib.add (name, "name");
       spoAttrib.add (type, "type");
       spoAttrib.add (source, "source");
@@ -106,12 +106,12 @@ bool BackflowBuilder::put(xmlNodePtr cur)
 void BackflowBuilder::addOneBody(xmlNodePtr cur)
 {
   OhmmsAttributeSet spoAttrib;
-  string source("none");
-  string name("bf0");
-  string type("none");
-  string funct("Gaussian");
-  string unique("no");
-  string spin("no"); //add spin attribute, with default spin="no"
+  std::string source("none");
+  std::string name("bf0");
+  std::string type("none");
+  std::string funct("Gaussian");
+  std::string unique("no");
+  std::string spin("no"); //add spin attribute, with default spin="no"
   spoAttrib.add (name, "name");
   spoAttrib.add (type, "type");
   spoAttrib.add (source, "source");
@@ -144,15 +144,15 @@ void BackflowBuilder::addOneBody(xmlNodePtr cur)
     =new Backflow_eI_spin<BsplineFunctor<RealType> >(*ions,targetPtcl);
     tbf1->numParams=0;
     xmlNodePtr cur1=cur->children;
-    string cname;
+    std::string cname;
     while (cur1 != NULL)
     {
       getNodeName(cname,cur1);
       if(cname =="correlation")
       {
         RealType my_cusp=0.0;
-        string speciesA("0");
-        string speciesB("e"); //assume electrons
+        std::string speciesA("0");
+        std::string speciesB("e"); //assume electrons
         OhmmsAttributeSet anAttrib;
         anAttrib.add(speciesA, "elementType");
         anAttrib.add (speciesA, "speciesA");
@@ -196,11 +196,11 @@ void BackflowBuilder::addOneBody(xmlNodePtr cur)
   }
   else //keep original implementation
   {
-    vector<xmlNodePtr> funs;
-    vector<int> ion2functor(nIons,-1);
-    vector<RealType> cusps;
+    std::vector<xmlNodePtr> funs;
+    std::vector<int> ion2functor(nIons,-1);
+    std::vector<RealType> cusps;
     xmlNodePtr curRoot=cur;
-    string cname;
+    std::string cname;
     cur = curRoot->children;
     while (cur != NULL)
     {
@@ -208,7 +208,7 @@ void BackflowBuilder::addOneBody(xmlNodePtr cur)
       if (cname == "correlation")
       {
         RealType my_cusp=0.0;
-        string elementType("none");
+        std::string elementType("none");
         OhmmsAttributeSet anAttrib;
         anAttrib.add (elementType, "elementType");
         anAttrib.add (my_cusp, "cusp");
@@ -218,14 +218,14 @@ void BackflowBuilder::addOneBody(xmlNodePtr cur)
         if(unique == "yes") // look for <index> block, and map based on that
         {
           xmlNodePtr kids=cur;
-          string aname;
+          std::string aname;
           kids = cur->children;
           while (kids != NULL)
           {
             getNodeName(aname,kids);
             if (aname == "index")
             {
-              vector<int> pos;
+              std::vector<int> pos;
               putContent(pos, kids);
               for(int i=0; i<pos.size(); i++)
               {
@@ -259,7 +259,7 @@ void BackflowBuilder::addOneBody(xmlNodePtr cur)
       tbf = (BackflowFunctionBase *) new Backflow_eI<BsplineFunctor<double> >(*ions,targetPtcl);
       Backflow_eI<BsplineFunctor<double> > *dum = (Backflow_eI<BsplineFunctor<double> >*) tbf;
       tbf->numParams=0;
-      vector<int> offsets;
+      std::vector<int> offsets;
       for(int i=0; i<funs.size(); i++)
       {
         //           BsplineFunctor<double> *bsp = new BsplineFunctor<double>(cusps[i]);
@@ -300,10 +300,10 @@ void BackflowBuilder::addTwoBody(xmlNodePtr cur)
 {
   app_log() <<"Adding electron-electron backflow. \n";
   OhmmsAttributeSet trAttrib;
-  string source("none");
-  string name("bf0");
-  string type("none");
-  string funct("Bspline");
+  std::string source("none");
+  std::string name("bf0");
+  std::string type("none");
+  std::string funct("Bspline");
   trAttrib.add (name, "name");
   trAttrib.add (funct, "function");
   trAttrib.put(cur);
@@ -311,7 +311,7 @@ void BackflowBuilder::addTwoBody(xmlNodePtr cur)
   //BackflowFunctionBase *tbf = (BackflowFunctionBase *) new Backflow_ee<BsplineFunctor<double> >(targetPtcl,targetPtcl);
   Backflow_ee<BsplineFunctor<double> > *tbf = new Backflow_ee<BsplineFunctor<double> >(targetPtcl,targetPtcl);
   SpeciesSet& species(targetPtcl.getSpeciesSet());
-  vector<int> offsets;
+  std::vector<int> offsets;
   if(funct == "Gaussian")
   {
     APP_ABORT("Disabled GaussianFunctor for now, \n");
@@ -321,7 +321,7 @@ void BackflowBuilder::addTwoBody(xmlNodePtr cur)
     {
       app_log() <<"Using BsplineFunctor type. \n";
 //         BsplineFunctor<double> *bsp = new BsplineFunctor<double>(cusp);
-      string cname;
+      std::string cname;
       cur = curRoot->children;
       while (cur != NULL)
       {
@@ -329,8 +329,8 @@ void BackflowBuilder::addTwoBody(xmlNodePtr cur)
         if (cname == "correlation")
         {
           RealType cusp=0;
-          string spA(species.speciesName[0]);
-          string spB(species.speciesName[0]);
+          std::string spA(species.speciesName[0]);
+          std::string spB(species.speciesName[0]);
           OhmmsAttributeSet anAttrib;
           anAttrib.add (cusp, "cusp");
           anAttrib.add(spA,"speciesA");
@@ -343,7 +343,7 @@ void BackflowBuilder::addTwoBody(xmlNodePtr cur)
           {
             APP_ABORT("Failed. Species are incorrect in e-e backflow.");
           }
-          app_log() <<"Adding radial component for species: " <<spA <<" " <<spB <<" " <<ia <<"  " <<ib <<endl;
+          app_log() <<"Adding radial component for species: " <<spA <<" " <<spB <<" " <<ia <<"  " <<ib << std::endl;
           BsplineFunctor<double> *bsp = new BsplineFunctor<double>();
           bsp->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
           bsp->put(cur);
@@ -357,8 +357,8 @@ void BackflowBuilder::addTwoBody(xmlNodePtr cur)
 //            {
 //              char fname[64];
 //              sprintf(fname,"BFe-e.%s.dat",(spA+spB).c_str());
-//              ofstream fout(fname);
-//              fout.setf(ios::scientific, ios::floatfield);
+//              std::ofstream fout(fname);
+//              fout.setf(std::ios::scientific, std::ios::floatfield);
 //              fout << "# Backflow radial function \n";
 //              bsp->print(fout);
 //              fout.close();
@@ -368,7 +368,7 @@ void BackflowBuilder::addTwoBody(xmlNodePtr cur)
       }
       tbf->derivs.resize(tbf->numParams);
       // setup offsets
-      // could keep a map<pair<>,int>
+      // could keep a std::map<std::pair<>,int>
       for(int i=0; i<tbf->RadFun.size(); i++)
       {
         bool done = false;
@@ -398,8 +398,8 @@ void BackflowBuilder::addRPA(xmlNodePtr cur)
 {
   ReportEngine PRE("BackflowBuilder","addRPA");
   /*
-      string useL="yes";
-      string useS="yes";
+      std::string useL="yes";
+      std::string useS="yes";
 
       OhmmsAttributeSet a;
       a.add(useL,"longrange");
@@ -427,7 +427,7 @@ void BackflowBuilder::addRPA(xmlNodePtr cur)
     }
     else
     {
-      cout<<"  Error finding rs. Is this an open system?!"<<endl;
+      std::cout <<"  Error finding rs. Is this an open system?!"<< std::endl;
       Rs=100.0;
     }
   }
@@ -440,21 +440,21 @@ void BackflowBuilder::addRPA(xmlNodePtr cur)
   if(Kc>Kc_max)
   {
     Kc=Kc_max;
-    app_log() << " BackflowBuilderBuilder   Kc set too high. Resetting to the maximum value"<<endl;
+    app_log() << " BackflowBuilderBuilder   Kc set too high. Resetting to the maximum value"<< std::endl;
   }
-  app_log() << "    BackflowBuilderBuilder   Rs = " << Rs <<  "  Kc= " << Kc << endl;
+  app_log() << "    BackflowBuilderBuilder   Rs = " << Rs <<  "  Kc= " << Kc << std::endl;
   // mmorales: LRRPABFeeHandlerTemp is a copy of LRRPAHandlerTemp for now,
   // in case I need to specialize it later on
   myHandler= new LRRPABFeeHandlerTemp<RPABFeeBreakup<RealType>,LPQHIBasis>(targetPtcl,Kc);
   myHandler->Breakup(targetPtcl,Rs);
-  app_log() << "  Maximum K shell " << myHandler->MaxKshell << endl;
-  app_log() << "  Number of k vectors " << myHandler->Fk.size() << endl;
-  vector<int> offsetsSR;
-  vector<int> offsetsLR;
+  app_log() << "  Maximum K shell " << myHandler->MaxKshell << std::endl;
+  app_log() << "  Number of k vectors " << myHandler->Fk.size() << std::endl;
+  std::vector<int> offsetsSR;
+  std::vector<int> offsetsLR;
   Backflow_ee<BsplineFunctor<double> > *tbf = 0;
   Backflow_ee_kSpace *tbfks = 0;
   // now look for components
-  string cname;
+  std::string cname;
   xmlNodePtr curRoot = cur;
   cur = cur->children;
   while (cur != NULL)
@@ -462,7 +462,7 @@ void BackflowBuilder::addRPA(xmlNodePtr cur)
     getNodeName(cname,cur);
     if (cname == "correlation")
     {
-      string type = "none";
+      std::string type = "none";
       OhmmsAttributeSet anAttrib;
       anAttrib.add(type,"type");
       anAttrib.put(cur);
@@ -498,7 +498,7 @@ void BackflowBuilder::addRPA(xmlNodePtr cur)
   {
     tbf->derivs.resize(tbf->numParams);
     // setup offsets
-    // could keep a map<pair<>,int>
+    // could keep a std::map<std::pair<>,int>
     for(int i=0; i<tbf->RadFun.size(); i++)
     {
       bool done = false;
@@ -522,13 +522,13 @@ void BackflowBuilder::addRPA(xmlNodePtr cur)
 }
 
 void BackflowBuilder::makeLongRange_oneBody() {}
-void BackflowBuilder::makeLongRange_twoBody(xmlNodePtr cur, Backflow_ee_kSpace *tbfks, vector<int>& offsets)
+void BackflowBuilder::makeLongRange_twoBody(xmlNodePtr cur, Backflow_ee_kSpace *tbfks, std::vector<int>& offsets)
 {
   int size=-1;
   SpeciesSet& species(targetPtcl.getSpeciesSet());
-  string spA(species.speciesName[0]);
-  string spB(species.speciesName[0]);
-  string init = "yes";
+  std::string spA(species.speciesName[0]);
+  std::string spB(species.speciesName[0]);
+  std::string init = "yes";
   OhmmsAttributeSet anAttrib;
   anAttrib.add(size,"size");
   anAttrib.add(init,"init");
@@ -542,16 +542,16 @@ void BackflowBuilder::makeLongRange_twoBody(xmlNodePtr cur, Backflow_ee_kSpace *
   {
     APP_ABORT("Failed. Species are incorrect in longrange RPA backflow.");
   }
-  app_log() <<"Adding RPABackflow longrange component for species: " <<spA <<" " <<spB <<" " <<ia <<"  " <<ib <<endl;
+  app_log() <<"Adding RPABackflow longrange component for species: " <<spA <<" " <<spB <<" " <<ia <<"  " <<ib << std::endl;
   // Now read coefficents
   xmlNodePtr xmlCoefs = cur->xmlChildrenNode;
   while (xmlCoefs != NULL)
   {
-    string cname((const char*)xmlCoefs->name);
+    std::string cname((const char*)xmlCoefs->name);
     if (cname == "coefficients")
     {
-      string type("0"), id("0");
-      string optimize("no");
+      std::string type("0"), id("0");
+      std::string optimize("no");
       OhmmsAttributeSet cAttrib;
       cAttrib.add(id, "id");
       cAttrib.add(type, "type");
@@ -563,7 +563,7 @@ void BackflowBuilder::makeLongRange_twoBody(xmlNodePtr cur, Backflow_ee_kSpace *
       }
       if(optimize == "true" || optimize == "yes")
         tbfks->Optimize = true;
-      vector<RealType> yk;
+      std::vector<RealType> yk;
       if(init == "true" || init == "yes")
       {
         app_log() <<"Initializing k-space backflow function with RPA form.";
@@ -584,12 +584,12 @@ void BackflowBuilder::makeLongRange_twoBody(xmlNodePtr cur, Backflow_ee_kSpace *
       {
         char fname[16];
         sprintf(fname,"RPABFee-LR.%s.dat",(spA+spB).c_str());
-        ofstream fout(fname);
-        fout.setf(ios::scientific, ios::floatfield);
+        std::ofstream fout(fname);
+        fout.setf(std::ios::scientific, std::ios::floatfield);
         fout << "# Backflow longrange  \n";
         for(int i=0; i<tbfks->NumKShells; i++)
         {
-          fout<<std::pow(targetPtcl.SK->KLists.ksq[targetPtcl.SK->KLists.kshell[i]],0.5) <<" " <<yk[i] <<endl;
+          fout<<std::pow(targetPtcl.SK->KLists.ksq[targetPtcl.SK->KLists.kshell[i]],0.5) <<" " <<yk[i] << std::endl;
         }
         fout.close();
       }
@@ -599,14 +599,14 @@ void BackflowBuilder::makeLongRange_twoBody(xmlNodePtr cur, Backflow_ee_kSpace *
 }
 
 void BackflowBuilder::makeShortRange_oneBody() {}
-void BackflowBuilder::makeShortRange_twoBody(xmlNodePtr cur, Backflow_ee<BsplineFunctor<double> > *tbf, vector<int>& offsets)
+void BackflowBuilder::makeShortRange_twoBody(xmlNodePtr cur, Backflow_ee<BsplineFunctor<double> > *tbf, std::vector<int>& offsets)
 {
   int size=-1;
   SpeciesSet& species(targetPtcl.getSpeciesSet());
-  string spA(species.speciesName[0]);
-  string spB(species.speciesName[0]);
+  std::string spA(species.speciesName[0]);
+  std::string spB(species.speciesName[0]);
   RealType cusp=0.0;
-  string init = "yes";
+  std::string init = "yes";
   OhmmsAttributeSet anAttrib;
   anAttrib.add(cusp,"cusp");
   anAttrib.add(size,"size");
@@ -621,16 +621,16 @@ void BackflowBuilder::makeShortRange_twoBody(xmlNodePtr cur, Backflow_ee<Bspline
   {
     APP_ABORT("Failed. Species are incorrect in e-e backflow.");
   }
-  app_log() <<"Adding radial component for species: " <<spA <<" " <<spB <<" " <<ia <<"  " <<ib <<endl;
+  app_log() <<"Adding radial component for species: " <<spA <<" " <<spB <<" " <<ia <<"  " <<ib << std::endl;
   // Now read coefficents
   xmlNodePtr xmlCoefs = cur->xmlChildrenNode;
   while (xmlCoefs != NULL)
   {
-    string cname((const char*)xmlCoefs->name);
+    std::string cname((const char*)xmlCoefs->name);
     if (cname == "coefficients")
     {
-      string type("0"), id("0");
-      string optimize("no");
+      std::string type("0"), id("0");
+      std::string optimize("no");
       OhmmsAttributeSet cAttrib;
       cAttrib.add(id, "id");
       cAttrib.add(type, "type");
@@ -649,7 +649,7 @@ void BackflowBuilder::makeShortRange_twoBody(xmlNodePtr cur, Backflow_ee<Bspline
         int npts=static_cast<int>(Rcut/0.01)+3;
         myGrid->set(0,Rcut-0.01,npts);
         //create the numerical functor
-        vector<RealType> x(myGrid->size()),y(myGrid->size());
+        std::vector<RealType> x(myGrid->size()),y(myGrid->size());
 //              x[0]=(*myGrid)(0);
 //              RealType x0=x[0];
 //              if(x0 < 1.0e-6) x0 = 1.0e-6;
@@ -661,7 +661,7 @@ void BackflowBuilder::makeShortRange_twoBody(xmlNodePtr cur, Backflow_ee<Bspline
 //                y[i]=-myHandler->srDf(x[i],1.0/x[i])/x[i];
           y[i]=myHandler->evaluate(x[i],0.0);
         }
-        app_log() <<"Rcut,npts:" <<Rcut <<"  " <<npts <<"  " <<x[myGrid->size()-1] <<endl;
+        app_log() <<"Rcut,npts:" <<Rcut <<"  " <<npts <<"  " <<x[myGrid->size()-1] << std::endl;
 //fit potential to gaussians
         int nfitgaussians(3);
         Matrix<RealType> basis(myGrid->size(),nfitgaussians);
@@ -671,7 +671,7 @@ void BackflowBuilder::makeShortRange_twoBody(xmlNodePtr cur, Backflow_ee<Bspline
           for (int j=0; j<nfitgaussians; j++)
             basis(i,j) = std::exp(-r*r/((j+1)*Rcut*Rcut))-std::exp(-1/(j+1));
         }
-        vector<RealType> gb(nfitgaussians);
+        std::vector<RealType> gb(nfitgaussians);
         LinearFit(y, basis, gb);
 //spline deriv of gaussian fit
         for  (int i = 0; i < myGrid->size(); i++)
@@ -710,8 +710,8 @@ void BackflowBuilder::makeShortRange_twoBody(xmlNodePtr cur, Backflow_ee<Bspline
 //            {
 //              char fname[64];
 //              sprintf(fname,"RPABFee-SR.%s.dat",(spA+spB).c_str());
-//              ofstream fout(fname);
-//              fout.setf(ios::scientific, ios::floatfield);
+//              std::ofstream fout(fname);
+//              fout.setf(std::ios::scientific, std::ios::floatfield);
 //              fout << "# Backflow radial function \n";
 //              bsp->print(fout);
 //              fout.close();

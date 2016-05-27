@@ -33,7 +33,7 @@ void PulayForce::addObservables(PropertySetType& plist
   {
     for(int x=0; x<OHMMS_DIM; x++)
     {
-      ostringstream obsName1, obsName2;
+      std::ostringstream obsName1, obsName2;
       obsName1 << "grad_log_psi" << "_" << iat << "_" << x;
       plist.add(obsName1.str());
       obsName2 << "Egrad_log_psi" << "_" << iat << "_" << x;
@@ -43,11 +43,11 @@ void PulayForce::addObservables(PropertySetType& plist
 }
 
 void
-PulayForce::registerObservables(vector<observable_helper*>& h5list,
+PulayForce::registerObservables(std::vector<observable_helper*>& h5list,
                                 hid_t gid) const
 {
   QMCHamiltonianBase::registerObservables(h5list, gid);
-  vector<int> ndim(2);
+  std::vector<int> ndim(2);
   ndim[0]=Nnuc;
   ndim[1]=OHMMS_DIM;
   observable_helper* h5o1 = new observable_helper("grad_log_psi");
@@ -104,7 +104,7 @@ PulayForce::evaluate(ParticleSet& P)
     EGradLogPsi[ion] = E * GradLogPsi[ion];
   }
   return Value=0.0;
-  //    cerr << "In PulayForce::evaluate(ParticleSet& P).\n";
+  //    std::cerr << "In PulayForce::evaluate(ParticleSet& P).\n";
   // Compute normalization of the warp tranform for each electron
   for (int elec=0; elec<Nel; elec++)
     WarpNorm[elec] = 0.0;
@@ -125,7 +125,7 @@ PulayForce::evaluate(ParticleSet& P)
     // EGradLogPsi[ion] = P.getPropertyBase()[LOCALENERGY] * GradLogPsi[ion];
     EGradLogPsi[ion] = E * GradLogPsi[ion];
   }
-  //    cerr << "Finish PulayForce::evaluate(ParticleSet& P).\n";
+  //    std::cerr << "Finish PulayForce::evaluate(ParticleSet& P).\n";
   return Value = 0.0;
 }
 

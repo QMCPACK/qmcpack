@@ -16,13 +16,12 @@
 // -*- C++ -*-
 #include <vector>
 #include <iostream>
-using namespace std;
 #include "QMCTools/HDFWalkerMerger.h"
 #include "Utilities/RandomGeneratorIO.h"
 using namespace qmcplusplus;
 
 
-HDFWalkerMerger::HDFWalkerMerger(const string& aroot, int ncopy)
+HDFWalkerMerger::HDFWalkerMerger(const std::string& aroot, int ncopy)
   : NumCopy(ncopy), FileRoot(aroot)
 {
 }
@@ -34,14 +33,14 @@ void HDFWalkerMerger::init()
   char fname[128];
   char GrpName[128];
   hsize_t dimin[3], summary_size=3;
-  vector<double> summaryIn;
+  std::vector<double> summaryIn;
   //determine the minimum configuration and walkers for each config
   int min_config=10000;
   MaxNumWalkers=0;
   for(int ip=0; ip<NumCopy; ip++)
   {
     int nconf=1;
-    numWalkersIn.push_back(new vector<hsize_t>);
+    numWalkersIn.push_back(new std::vector<hsize_t>);
     sprintf(fname,"%s.p%03d.config.h5",FileRoot.c_str(),ip);
     hid_t hfile = H5Fopen(fname,H5F_ACC_RDWR,H5P_DEFAULT);
     hid_t h_config = H5Gopen(hfile,"config_collection");
@@ -156,7 +155,7 @@ void HDFWalkerMerger::merge()
     sprintf(fname,"%s.p%03d.config.h5",FileRoot.c_str(),ip);
     hid_t h0 = H5Fopen(fname,H5F_ACC_RDWR,H5P_DEFAULT);
     hid_t cfcollect = H5Gopen(h0,"config_collection");
-    const vector<hsize_t>& nw(*(numWalkersIn[ip]));
+    const std::vector<hsize_t>& nw(*(numWalkersIn[ip]));
     for(int iconf=0; iconf<NumConfig; iconf++)
     {
       //get the number of walkers for (ip,iconf)

@@ -20,7 +20,7 @@ namespace qmcplusplus
 {
 
 //   void
-//   AFMSPOSet::addParameter (string id, int iorb, int basis)
+//   AFMSPOSet::addParameter ( std::string id, int iorb, int basis)
 //   {
 //
 //   }
@@ -28,7 +28,7 @@ namespace qmcplusplus
 bool
 AFMSPOSet::put (xmlNodePtr node, SPOPool_t &spo_pool)
 {
-  string gsName, basisName, opt("true"), varname("theta");
+  std::string gsName, basisName, opt("true"), varname("theta");
   OhmmsAttributeSet attrib;
   attrib.add (gsName,    "gs_sposet");
   attrib.add (basisName, "basis_sposet");
@@ -80,7 +80,7 @@ AFMSPOSet::put (xmlNodePtr node, SPOPool_t &spo_pool)
   int M = GSOrbitals->getOrbitalSetSize();
   if (N!=M)
   {
-    app_error() << "sposet sizes do not match \"" << N << ",  "<<M<<". ABORT."<<endl;
+    app_error() << "sposet sizes do not match \"" << N << ",  "<<M<<". ABORT."<< std::endl;
     abort();
   }
   resize(N);
@@ -136,7 +136,7 @@ AFMSPOSet::evaluateDerivatives
 (ParticleSet& P, int iat, const opt_variables_type& active,
  ValueMatrix_t& d_phi, ValueMatrix_t& d_lapl_phi)
 {
-  app_error() << "AFMSPOSet::evaluateDerivatives" <<endl;
+  app_error() << "AFMSPOSet::evaluateDerivatives" << std::endl;
   abort();
 }
 
@@ -151,9 +151,9 @@ AFMSPOSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
 
 void
 AFMSPOSet::evaluate(const ParticleSet& P, const PosType& r,
-                    vector<RealType> &psi)
+                    std::vector<RealType> &psi)
 {
-  app_error() << "AFMSPOSet::evaluate(const ParticleSet& P, const PosType& r, vector<RealType> &psi)\n  should not be called.  Abort.\n";
+  app_error() << "AFMSPOSet::evaluate(const ParticleSet& P, const PosType& r, std::vector<RealType> &psi)\n  should not be called.  Abort.\n";
   abort();
 }
 

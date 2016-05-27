@@ -73,7 +73,7 @@ public:
     const RealType* restrict cPtr = center.getPropertyBase();
     //   RealType wwght=  head.Weight;
     RealType wwght=0.5;
-    //app_log()<<"~~~~~For head:  Energy:"<<ePtr[LOCALENERGY]<<endl;
+    //app_log()<<"~~~~~For head:  Energy:"<<ePtr[LOCALENERGY]<< std::endl;
     scalars[0](0.5*(ePtr[LOCALENERGY]+lPtr[LOCALENERGY]),wwght);
     scalars[1](0.5*(ePtr[LOCALENERGY]*ePtr[LOCALENERGY]+lPtr[LOCALENERGY]*lPtr[LOCALENERGY]),wwght);
     scalars[2](cPtr[LOCALENERGY],wwght);
@@ -131,15 +131,15 @@ public:
     //   int maxage(0);
 //     while(first!=last)
     //   {
-    //     maxage=max(maxage,(*first)->Age);
+    //     maxage= std::max(maxage,(*first)->Age);
     //      first++;
     //   }
     //  scalars[3](maxage);
-//       for(; first != last; ++first) accumulate(**first,wgt);*/
+//       for(; first != last; ++first) std::accumulate(**first,wgt);*/
   }
 
   void add2Record(RecordListType& record);
-  void registerObservables(vector<observable_helper*>& h5dec, hid_t gid) {}
+  void registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid) {}
   ScalarEstimatorBase* clone();
   /*@}*/
 };

@@ -60,12 +60,12 @@ private:
   PosType twist_cart; //Twist angle in reduced and Cartesian.
 
   ///gvecs in reduced coordiates
-  vector<GIndex_t> gvecs;
+  std::vector<GIndex_t> gvecs;
   ///Reduced coordinates with offset gvecs_shifted[][idim]=gvecs[][idim]+maxg[idim]
-  vector<GIndex_t> gvecs_shifted;
+  std::vector<GIndex_t> gvecs_shifted;
 
-  vector<RealType> minusModKplusG2;
-  vector<PosType>  kplusgvecs_cart; //Cartesian.
+  std::vector<RealType> minusModKplusG2;
+  std::vector<PosType>  kplusgvecs_cart; //Cartesian.
 
   Matrix<ComplexType> C;
   //Real wavefunctions here. Now the basis states are cos(Gr) or sin(Gr), not exp(iGr)
@@ -74,7 +74,7 @@ private:
   //of others, giving a zero determinant. For this, we build a vector (negative) which
   //stores whether a vector is "+" or "-" (with some criterion, to be defined). We
   //the switch from cos() to sin() based on the value of this input.
-  vector<int> negative;
+  std::vector<int> negative;
 public:
   //enumeration for the value, laplacian, gradients and size
   enum {PW_VALUE, PW_LAP, PW_GRADX, PW_GRADY, PW_GRADZ, PW_MAXINDEX};
@@ -97,7 +97,7 @@ public:
    * basis is spherically ordered. However, when a twist-angle is used, the "sphere"
    * of allowed planewaves is shifted.
    */
-  vector<int> inputmap;
+  std::vector<int> inputmap;
 
   ///total number of basis functions
   int NumPlaneWaves;
@@ -142,8 +142,8 @@ public:
   int
   readbasis(hid_t h5basisgroup,RealType ecutoff,
             ParticleLayout_t &lat,
-            const string& pwname="planewaves",
-            const string& pwmultname="multipliers",
+            const std::string& pwname="planewaves",
+            const std::string& pwmultname="multipliers",
             bool resizeContainer=true);
 
   /** Remove basis elements if kinetic energy > ecut.

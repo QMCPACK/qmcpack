@@ -55,7 +55,7 @@ TrialWaveFunction::reserve
 
 void
 TrialWaveFunction::evaluateLog (MCWalkerConfiguration &W,
-                                vector<RealType> &logPsi)
+                                std::vector<RealType> &logPsi)
 {
   for (int iw=0; iw<logPsi.size(); iw++)
     logPsi[iw] = RealType();
@@ -65,7 +65,7 @@ TrialWaveFunction::evaluateLog (MCWalkerConfiguration &W,
 
 void
 TrialWaveFunction::calcGradient (MCWalkerConfiguration &W, int iat,
-                                 vector<GradType> &grad)
+                                 std::vector<GradType> &grad)
 {
   for (int iw=0; iw<grad.size(); iw++)
     grad[iw] = GradType();
@@ -75,7 +75,7 @@ TrialWaveFunction::calcGradient (MCWalkerConfiguration &W, int iat,
 
 void
 TrialWaveFunction::addGradient (MCWalkerConfiguration &W, int iat,
-                                vector<GradType> &grad)
+                                std::vector<GradType> &grad)
 {
   for(int i=0; i<Z.size()-1; i++)
     Z[i]->addGradient(W, iat, grad);
@@ -84,7 +84,7 @@ TrialWaveFunction::addGradient (MCWalkerConfiguration &W, int iat,
 
 void
 TrialWaveFunction::getGradient (MCWalkerConfiguration &W, int iat,
-                                vector<GradType> &grad)
+                                std::vector<GradType> &grad)
 {
   for (int iw=0; iw<grad.size(); iw++)
     grad[iw] = GradType();
@@ -94,8 +94,8 @@ TrialWaveFunction::getGradient (MCWalkerConfiguration &W, int iat,
 
 void
 TrialWaveFunction::ratio (MCWalkerConfiguration &W, int iat,
-                          vector<ValueType> &psi_ratios,
-                          vector<GradType> &newG)
+                          std::vector<ValueType> &psi_ratios,
+                          std::vector<GradType> &newG)
 {
   for (int iw=0; iw<W.WalkerList.size(); iw++)
   {
@@ -113,8 +113,8 @@ TrialWaveFunction::ratio (MCWalkerConfiguration &W, int iat,
 
 void
 TrialWaveFunction::ratio (MCWalkerConfiguration &W, int iat,
-                          vector<ValueType> &psi_ratios,
-                          vector<GradType> &newG, vector<ValueType> &newL)
+                          std::vector<ValueType> &psi_ratios,
+                          std::vector<GradType> &newG, std::vector<ValueType> &newL)
 {
   for (int iw=0; iw<W.WalkerList.size(); iw++)
   {
@@ -131,8 +131,8 @@ TrialWaveFunction::ratio (MCWalkerConfiguration &W, int iat,
 }
 void
 TrialWaveFunction::calcRatio (MCWalkerConfiguration &W, int iat,
-                              vector<ValueType> &psi_ratios,
-                              vector<GradType> &newG, vector<ValueType> &newL)
+                              std::vector<ValueType> &psi_ratios,
+                              std::vector<GradType> &newG, std::vector<ValueType> &newL)
 {
   for (int iw=0; iw<W.WalkerList.size(); iw++)
   {
@@ -149,8 +149,8 @@ TrialWaveFunction::calcRatio (MCWalkerConfiguration &W, int iat,
 }
 void
 TrialWaveFunction::addRatio (MCWalkerConfiguration &W, int iat,
-                             vector<ValueType> &psi_ratios,
-                             vector<GradType> &newG, vector<ValueType> &newL)
+                             std::vector<ValueType> &psi_ratios,
+                             std::vector<GradType> &newG, std::vector<ValueType> &newL)
 {
   for (int i=0,ii=1; i<Z.size()-1; i++,ii+=TIMER_SKIP)
   {
@@ -167,9 +167,9 @@ TrialWaveFunction::addRatio (MCWalkerConfiguration &W, int iat,
 
 
 void
-TrialWaveFunction::ratio (vector<Walker_t*> &walkers, vector<int> &iatList,
-                          vector<PosType> &rNew, vector<ValueType> &psi_ratios,
-                          vector<GradType> &newG, vector<ValueType> &newL)
+TrialWaveFunction::ratio (std::vector<Walker_t*> &walkers, std::vector<int> &iatList,
+                          std::vector<PosType> &rNew, std::vector<ValueType> &psi_ratios,
+                          std::vector<GradType> &newG, std::vector<ValueType> &newL)
 {
   for (int iw=0; iw<walkers.size(); iw++)
   {
@@ -187,7 +187,7 @@ TrialWaveFunction::ratio (vector<Walker_t*> &walkers, vector<int> &iatList,
 
 void
 TrialWaveFunction::ratio (MCWalkerConfiguration &W, int iat,
-                          vector<ValueType> &psi_ratios)
+                          std::vector<ValueType> &psi_ratios)
 {
   for (int iw=0; iw<W.WalkerList.size(); iw++)
     psi_ratios[iw] = 1.0;
@@ -200,7 +200,7 @@ TrialWaveFunction::ratio (MCWalkerConfiguration &W, int iat,
 }
 
 void
-TrialWaveFunction::update (vector<Walker_t*> &walkers, int iat)
+TrialWaveFunction::update (std::vector<Walker_t*> &walkers, int iat)
 {
   for (int i=0,ii=ACCEPT_TIMER; i<Z.size(); i++,ii+=TIMER_SKIP)
   {
@@ -211,8 +211,8 @@ TrialWaveFunction::update (vector<Walker_t*> &walkers, int iat)
 }
 
 void
-TrialWaveFunction::update (const vector<Walker_t*> &walkers,
-                           const vector<int> &iatList)
+TrialWaveFunction::update (const std::vector<Walker_t*> &walkers,
+                           const std::vector<int> &iatList)
 {
   for (int i=0,ii=ACCEPT_TIMER; i<Z.size(); i++,ii+=TIMER_SKIP)
   {
@@ -249,9 +249,9 @@ TrialWaveFunction::gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads,
 
 void
 TrialWaveFunction::NLratios (MCWalkerConfiguration &W,
-                             vector<NLjob> &jobList,
-                             vector<PosType> &quadPoints,
-                             vector<ValueType> &psi_ratios)
+                             std::vector<NLjob> &jobList,
+                             std::vector<PosType> &quadPoints,
+                             std::vector<ValueType> &psi_ratios)
 {
   for (int i=0; i<psi_ratios.size(); i++)
     psi_ratios[i] = 1.0;
@@ -283,7 +283,7 @@ TrialWaveFunction::NLratios (MCWalkerConfiguration &W,
 
 void
 TrialWaveFunction::evaluateDeltaLog(MCWalkerConfiguration &W,
-                                    vector<RealType>& logpsi_opt)
+                                    std::vector<RealType>& logpsi_opt)
 {
   for (int iw=0; iw<logpsi_opt.size(); iw++)
     logpsi_opt[iw] = RealType();
@@ -299,8 +299,8 @@ TrialWaveFunction::evaluateDeltaLog(MCWalkerConfiguration &W,
 
 void
 TrialWaveFunction::evaluateDeltaLog (MCWalkerConfiguration &W,
-                                     vector<RealType>& logpsi_fixed,
-                                     vector<RealType>& logpsi_opt,
+                                     std::vector<RealType>& logpsi_fixed,
+                                     std::vector<RealType>& logpsi_opt,
                                      GradMatrix_t&  fixedG,
                                      ValueMatrix_t& fixedL)
 {
@@ -350,7 +350,7 @@ TrialWaveFunction::evaluateDeltaLog (MCWalkerConfiguration &W,
 
 void
 TrialWaveFunction::evaluateOptimizableLog (MCWalkerConfiguration &W,
-    vector<RealType>& logpsi_opt,
+    std::vector<RealType>& logpsi_opt,
     GradMatrix_t&  optG,
     ValueMatrix_t& optL)
 {

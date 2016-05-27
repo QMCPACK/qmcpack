@@ -99,30 +99,30 @@ public:
   ///current variance
   RealType curVar;
   ///number of particle per node
-  vector<int> NumPerNode;
+  std::vector<int> NumPerNode;
   ///offset of the particle index
-  vector<int> OffSet;
+  std::vector<int> OffSet;
   ///offset of the particle index for a fair distribution
-  vector<int> FairOffSet;
+  std::vector<int> FairOffSet;
 
   ///ensenble properties
   MCDataType<RealType> EnsembleProperty;
 
   ///filename for dmc.dat
-  string dmcFname;
+  std::string dmcFname;
   ///file to save energy histogram
-  ofstream* dmcStream;
+  std::ofstream* dmcStream;
   ///archive
   //boost::archive::binary_oarchive *oa;
 
   ///any accumulated data over a block
-  vector<RealType> accumData;
+  std::vector<RealType> accumData;
   ///any temporary data
-  vector<RealType> curData;
+  std::vector<RealType> curData;
   ///temporary storage for good walkers
-  vector<Walker_t*> good_w;
+  std::vector<Walker_t*> good_w;
   ///temporary storage for copy counters
-  vector<int> ncopy_w;
+  std::vector<int> ncopy_w;
   ///Add released-node fields to .dmc.dat file
   bool WriteRN;
 
@@ -266,11 +266,11 @@ public:
 
 
 
-//     typedef vector<ForwardWalkingData> ForwardWalkingConfiguration;
-//     vector<ForwardWalkingConfiguration> ForwardWalkingHistory;
+//     typedef std::vector<ForwardWalkingData> ForwardWalkingConfiguration;
+//     std::vector<ForwardWalkingConfiguration> ForwardWalkingHistory;
 //     inline void storeConfigsForForwardWalking(MCWalkerConfiguration& W)
 //     {
-//       vector<ForwardWalkingData> ForwardWalkingHere;
+//       std::vector<ForwardWalkingData> ForwardWalkingHere;
 //
 //       for(std::vector<Walker_t*>::iterator Wit(W.begin()); Wit != W.end(); Wit++ )
 //       {
@@ -294,7 +294,7 @@ public:
 //       return szeFW;
 //     }
 //
-//     inline void layoutOfConfigsForForwardWalking(vector<int>& returnVal)
+//     inline void layoutOfConfigsForForwardWalking(std::vector<int>& returnVal)
 //     {
 //       returnVal.resize(ForwardWalkingHistory.size()+1,0);
 //       returnVal[0]=0;

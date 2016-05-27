@@ -30,9 +30,9 @@ class Backflow_ee: public BackflowFunctionBase
 public:
 
   //number of groups of the target particleset
-  vector<FT*> RadFun;
-  vector<FT*> uniqueRadFun;
-  vector<int> offsetPrms;
+  std::vector<FT*> RadFun;
+  std::vector<FT*> uniqueRadFun;
+  std::vector<int> offsetPrms;
   int NumGroups;
   Matrix<int> PairID;
   bool first;
@@ -125,7 +125,7 @@ public:
     buf.add(FirstOfB,LastOfB);
   }
 
-  void reportStatus(ostream& os)
+  void reportStatus(std::ostream& os)
   {
     for(int i=0; i<uniqueRadFun.size(); i++)
       uniqueRadFun[i]->reportStatus(os);
@@ -353,7 +353,7 @@ public:
    */
   inline void
   evaluatePbyP(const ParticleSet& P, ParticleSet::ParticlePos_t& newQP
-               ,const vector<int>& index)
+               ,const std::vector<int>& index)
   {
     RealType du,d2u;
 // myTable->Temp[jat].r1
@@ -398,7 +398,7 @@ public:
    */
   inline void
   evaluatePbyP(const ParticleSet& P, ParticleSet::ParticlePos_t& newQP
-               ,const vector<int>& index, HessMatrix_t& Amat)
+               ,const std::vector<int>& index, HessMatrix_t& Amat)
   {
     RealType du,d2u;
 // myTable->Temp[jat].r1
@@ -487,7 +487,7 @@ public:
    */
   inline void
   evaluatePbyP(const ParticleSet& P, ParticleSet::ParticlePos_t& newQP
-               ,const vector<int>& index, GradMatrix_t& Bmat, HessMatrix_t& Amat)
+               ,const std::vector<int>& index, GradMatrix_t& Bmat, HessMatrix_t& Amat)
   {
     RealType du,d2u;
 // myTable->Temp[jat].r1
@@ -636,7 +636,7 @@ public:
         //for(int q=0; q<derivs.size(); q++) derivs[q]=0.0; // I believe this is necessary
 //           std::fill(derivs.begin(),derivs.end(),0.0);
         int numParamJU = RadFun[PairID(i,j)]->NumParams;
-        vector<TinyVector<RealType,3> > derivsju(numParamJU);
+        std::vector<TinyVector<RealType,3> > derivsju(numParamJU);
         RadFun[PairID(i,j)]->evaluateDerivatives(myTable->r(nn),derivsju);
         du *= myTable->rinv(nn);
         PosType u = uij*myTable->dr(nn);

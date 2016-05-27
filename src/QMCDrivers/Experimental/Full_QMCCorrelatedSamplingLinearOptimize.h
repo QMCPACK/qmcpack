@@ -61,7 +61,7 @@ private:
   ///Number of iterations maximum before generating new configurations.
   int Max_iterations;
   /// switch to control whether NRCOptimization::lineoptimization() is used or somethign else
-  string MinMethod, GEVtype;
+  std::string MinMethod, GEVtype;
 
   RealType stabilizerScale, bigChange, exp0, stepsize;
   RealType Lambda;

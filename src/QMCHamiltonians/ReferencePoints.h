@@ -32,13 +32,13 @@ public:
   typedef TinyVector<RealType,DIM> Point;
   typedef Tensor<RealType,DIM>     Tensor_t;
 
-  map<string,Point> points;
+  std::map<std::string,Point> points;
   Tensor_t axes;
 
-  bool put(xmlNodePtr cur, ParticleSet& P, vector<ParticleSet*>& Pref);
-  bool put(ParticleSet& P, vector<ParticleSet*>& Pref);
-  void write_description(ostream& os, string& indent);
-  void save(vector<observable_helper*>& h5desc, hid_t gid) const;
+  bool put(xmlNodePtr cur, ParticleSet& P, std::vector<ParticleSet*>& Pref);
+  bool put(ParticleSet& P, std::vector<ParticleSet*>& Pref);
+  void write_description(std::ostream& os, std::string& indent);
+  void save(std::vector<observable_helper*>& h5desc, hid_t gid) const;
 
 private:
   enum Coordinate {cellC=0,cartesianC,ndirections,nodir};

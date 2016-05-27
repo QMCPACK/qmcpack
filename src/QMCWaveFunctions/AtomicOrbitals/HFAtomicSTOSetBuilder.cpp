@@ -31,9 +31,9 @@ template<class T, class POS>
 std::ostream&
 operator<<(std::ostream& out, const ComboSTO<T,POS>& asto)
 {
-  out << asto.Name << " LM = " << asto.LM << endl;
+  out << asto.Name << " LM = " << asto.LM << std::endl;
   for(int i=0; i<asto.C.size(); i++)
-    out << asto.Rnl[i]->ID << " " << asto.C[i] << endl;
+    out << asto.Rnl[i]->ID << " " << asto.C[i] << std::endl;
   return out;
 }
 
@@ -51,14 +51,14 @@ HFAtomicSTOSetBuilder::getBasis(xmlNodePtr cur)
   cur = cur->xmlChildrenNode;
   while(cur!=NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == basisfunc_tag)
     {
       XMLReport("Found a radial basis function.")
       int n=atoi((const char*)(xmlGetProp(cur, (const xmlChar *)"n")));
       int l=atoi((const char*)(xmlGetProp(cur, (const xmlChar *)"l")));
-      Lmax = max(Lmax,l);
-      string newRnl;
+      Lmax = std::max(Lmax,l);
+      std::string newRnl;
       const xmlChar* aptr(xmlGetProp(cur, (const xmlChar *)"id"));
       if(aptr)
       {
@@ -74,14 +74,14 @@ HFAtomicSTOSetBuilder::getBasis(xmlNodePtr cur)
       xmlNodePtr s = cur->xmlChildrenNode;
       while(s != NULL)
       {
-        string vname((const char*)(s->name));
+        std::string vname((const char*)(s->name));
         if(vname == param_tag)
         {
           putContent(screen,s);
         }
         s=s->next;
       }
-      map<string,int>::iterator it = RnlID.find(newRnl);
+      std::map<std::string,int>::iterator it = RnlID.find(newRnl);
       if(it == RnlID.end())
       {
         //the ID of the next Radial Function
@@ -105,12 +105,12 @@ HFAtomicSTOSetBuilder::getOrbital(xmlNodePtr cur)
   HFAtomicSTOSet* psi = new HFAtomicSTOSet(Lmax);
   XMLReport("The maximum angular momentum " << Lmax)
   //set of  RadialFunctions(integers)
-  set<int> RnlSet;
+  std::set<int> RnlSet;
   int spin = atoi((const char*)(xmlGetProp(cur, (const xmlChar *)"spin")));
   xmlNodePtr orb=cur->xmlChildrenNode;
   while(orb!=NULL)
   {
-    string cname((const char*)(orb->name));
+    std::string cname((const char*)(orb->name));
     //a single-particle orbtial consiting of a number of Orbitals is added
     if(cname == spo_tag)
     {
@@ -119,9 +119,9 @@ HFAtomicSTOSetBuilder::getOrbital(xmlNodePtr cur)
       xmlChar *att=xmlGetProp(orb,(const xmlChar*)"ref");
       if(att)
       {
-        string aname((const char*)att);
+        std::string aname((const char*)att);
         XMLReport("Using an existing Orbital id =" << aname)
-        map<string,SPO_t*>::iterator it = OrbSet.find(aname);
+        std::map<std::string,SPO_t*>::iterator it = OrbSet.find(aname);
         if(it == OrbSet.end())
         {
           ERRORMSG("Orbital " << aname << " does not exisit. Failed.")
@@ -149,25 +149,25 @@ HFAtomicSTOSetBuilder::getOrbital(xmlNodePtr cur)
         //get the properties first
         int l=atoi((const char*)(xmlGetProp(orb, (const xmlChar *)"l")));
         int m=atoi((const char*)(xmlGetProp(orb, (const xmlChar *)"m")));
-        string aname((const char*)(xmlGetProp(orb, (const xmlChar *)"id")));
+        std::string aname((const char*)(xmlGetProp(orb, (const xmlChar *)"id")));
         XMLReport("Adding a new Orbital id =" << aname << " l= " << l << " m=" << m)
         //temporary storage for coefficients and radial orbtials
-        vector<RealType> c;
-        vector<RadialOrbital_t*> sto;
+        std::vector<RealType> c;
+        std::vector<RadialOrbital_t*> sto;
         RealType ctmp;
         xmlNodePtr s = orb->xmlChildrenNode;
         while(s != NULL)
         {
-          string sname((const char*)(s->name));
+          std::string sname((const char*)(s->name));
           if(sname == basisfunc_tag)
           {
             //getting the index of the radial basis functions
-            string  rfn((const char*)(xmlGetProp(s, (const xmlChar *)"ref")));
+            std::string  rfn((const char*)(xmlGetProp(s, (const xmlChar *)"ref")));
             //c.push_back(atof((const char*)(xmlGetProp(s, (const xmlChar *)"C"))));
             xmlNodePtr z=s->xmlChildrenNode;
             while(z != NULL)
             {
-              string vname((const char*)(z->name));
+              std::string vname((const char*)(z->name));
               if(vname == param_tag)
               {
                 putContent(ctmp,z);
@@ -176,7 +176,7 @@ HFAtomicSTOSetBuilder::getOrbital(xmlNodePtr cur)
               z=z->next;
             }
             XMLReport("Adding STO " << rfn << " C = " << c.back())
-            map<string,int>::iterator it = RnlID.find(rfn);
+            std::map<std::string,int>::iterator it = RnlID.find(rfn);
             sto.push_back(Rnl[(*it).second]);
             RnlSet.insert((*it).second);
           }
@@ -194,7 +194,7 @@ HFAtomicSTOSetBuilder::getOrbital(xmlNodePtr cur)
     orb = orb->next;
   }
   ///time to add a set of Rnl to HFAtomicSTOSet for pre-calculations
-  set<int>::iterator irnl = RnlSet.begin();
+  std::set<int>::iterator irnl = RnlSet.begin();
   while(irnl != RnlSet.end())
   {
     psi->RnlPool.push_back(Rnl[*irnl]);
@@ -210,13 +210,13 @@ HFAtomicSTOSetBuilder::put(xmlNodePtr cur)
   typedef DiracDeterminant<HFAtomicSTOSet> Det_t;
   typedef SlaterDeterminant<HFAtomicSTOSet> SlaterDeterminant_t;
   SlaterDeterminant_t *asymmpsi;
-  vector<SlaterDeterminant_t*> slaterdets;
-  vector<RealType> C;
+  std::vector<SlaterDeterminant_t*> slaterdets;
+  std::vector<RealType> C;
   int is=0;
   cur = cur->xmlChildrenNode;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == basisset_tag)
     {
       getBasis(cur);
@@ -233,7 +233,7 @@ HFAtomicSTOSetBuilder::put(xmlNodePtr cur)
         //}
         while(tcur != NULL)
         {
-          string vname((const char*)(tcur->name));
+          std::string vname((const char*)(tcur->name));
           if(vname == param_tag)
           {
             putContent(C[is],tcur);
@@ -263,7 +263,7 @@ HFAtomicSTOSetBuilder::put(xmlNodePtr cur)
     HFAtomicSTOSet::BasisSet_t *bs=new HFAtomicSTOSet::BasisSet_t;
     for(int i=0; i<slaterdets.size(); i++)
     {
-      cout << "Multi determinant " << C[i] << endl;
+      std::cout << "Multi determinant " << C[i] << std::endl;
       slaterdets[i]->setBasisSet(bs);
       multidet->add(slaterdets[i],C[i]);
     }

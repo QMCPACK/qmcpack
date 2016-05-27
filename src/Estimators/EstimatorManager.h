@@ -43,7 +43,7 @@ class EstimatorManager: public QMCTraits
 public:
 
   typedef ScalarEstimatorBase  EstimatorType;
-  typedef vector<RealType>     BufferType;
+  typedef std::vector<RealType>     BufferType;
   //enum { WEIGHT_INDEX=0, BLOCK_CPU_INDEX, ACCEPT_RATIO_INDEX, TOTAL_INDEX};
 
   ///name of the primary estimator name
@@ -117,15 +117,15 @@ public:
     return  TotalAverages[i];
   }
 
-  void getData(int i, vector<RealType>& values);
+  void getData(int i, std::vector<RealType>& values);
 
   /** add an Estimator
    * @param newestimator New Estimator
    * @param aname name of the estimator
    * @return locator of newestimator
    */
-  int add(EstimatorType* newestimator, const string& aname);
-  //int add(CompositeEstimatorBase* newestimator, const string& aname);
+  int add(EstimatorType* newestimator, const std::string& aname);
+  //int add(CompositeEstimatorBase* newestimator, const std::string& aname);
 
   /** add a main estimator
    * @param newestimator New Estimator
@@ -137,7 +137,7 @@ public:
   }
 
   ///return a pointer to the estimator aname
-  EstimatorType* getEstimator(const string& a);
+  EstimatorType* getEstimator(const std::string& a);
 
   ///return a pointer to the estimator
   EstimatorType* getMainEstimator();
@@ -181,7 +181,7 @@ public:
   void stop();
   /** stop a qmc run
    */
-  void stop(const vector<EstimatorManager*> m);
+  void stop(const std::vector<EstimatorManager*> m);
 
 
   /** start  a block
@@ -202,7 +202,7 @@ public:
   /** stop a block
    * @param m list of estimator which has been collecting data independently
    */
-  void stopBlock(const vector<EstimatorManager*>& m);
+  void stopBlock(const std::vector<EstimatorManager*>& m);
 
   /** accumulate the measurements
    * @param W walkers
@@ -219,7 +219,7 @@ public:
 
 //     /** accumulate the FW observables
 //      */
-//     void accumulate(HDF5_FW_observables& OBS, HDF5_FW_weights& WGTS, vector<int>& Dims);
+//     void accumulate(HDF5_FW_observables& OBS, HDF5_FW_weights& WGTS, std::vector<int>& Dims);
 
   ///** set the cummulative energy and weight
   void getEnergyAndWeight(RealType& e, RealType& w, RealType& var);
@@ -234,7 +234,7 @@ public:
 
 protected:
   ///use bitset to handle options
-  bitset<8> Options;
+  std::bitset<8> Options;
   ///size of the message buffer
   int BufferSize;
   ///number of records in a block
@@ -250,9 +250,9 @@ protected:
   ///total weight accumulated in a block
   RealType BlockWeight;
   ///file handler to write data
-  ofstream* Archive;
+  std::ofstream* Archive;
   ///file handler to write data for debugging
-  ofstream* DebugArchive;
+  std::ofstream* DebugArchive;
   ///communicator to handle communication
   Communicate* myComm;
   /** pointer to the primary ScalarEstimatorBase
@@ -285,13 +285,13 @@ protected:
   ///data accumulated over the blocks
   Matrix<RealType> TotalAveragesData;
   ///index mapping between BlockAverages and TotalAverages
-  vector<int> Block2Total;
+  std::vector<int> Block2Total;
   ///column map
-  std::map<string,int> EstimatorMap;
+  std::map<std::string,int> EstimatorMap;
   ///estimators of simple scalars
-  vector<EstimatorType*> Estimators;
+  std::vector<EstimatorType*> Estimators;
   ///convenient descriptors for hdf5
-  vector<observable_helper*> h5desc;
+  std::vector<observable_helper*> h5desc;
   /////estimators of composite data
   //CompositeEstimatorSet* CompEstimators;
   ///Timer
@@ -302,13 +302,13 @@ private:
   ///number of requests
   int pendingRequests;
   //Data for communication
-  vector<BufferType*> RemoteData;
+  std::vector<BufferType*> RemoteData;
   //storage for MPI_Request
-  vector<Communicate::request> myRequest;
+  std::vector<Communicate::request> myRequest;
   ///collect data and write
   void collectBlockAverages(int num_threads);
-  ///add header to an ostream
-  void addHeader(ostream& o);
+  ///add header to an std::ostream
+  void addHeader(std::ostream& o);
   size_t FieldWidth;
 };
 }

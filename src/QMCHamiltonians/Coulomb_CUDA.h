@@ -31,7 +31,7 @@ struct CoulombAA_CUDA : public CoulombPotentialAA
   gpu::device_vector<CUDA_PRECISION>  SumGPU;
   gpu::host_vector<CUDA_PRECISION>  SumHost;
   void addEnergy(MCWalkerConfiguration &W,
-                 vector<RealType> &LocalEnergy);
+                 std::vector<RealType> &LocalEnergy);
 
   QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 };
@@ -48,7 +48,7 @@ struct CoulombAB_CUDA : public CoulombPotentialAB
   gpu::host_vector<CUDA_PRECISION>  SumHost;
   gpu::device_vector<CUDA_PRECISION> ZionGPU;
   void addEnergy(MCWalkerConfiguration &W,
-                 vector<RealType> &LocalEnergy);
+                 std::vector<RealType> &LocalEnergy);
 
   QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 };

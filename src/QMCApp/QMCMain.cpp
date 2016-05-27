@@ -38,7 +38,6 @@
 #include <queue>
 #include <cstring>
 #include "HDFVersion.h"
-using namespace std;
 #include "OhmmsData/AttributeSet.h"
 #include "qmc_common.h"
 #ifdef HAVE_ADIOS
@@ -76,13 +75,13 @@ QMCMain::QMCMain(Communicate* c)
       << "\n  MPI Nodes            = " << OHMMS::Controller->size()
       << "\n  MPI Nodes per group  = " << myComm->size()
       << "\n  MPI Group ID         = " << myComm->getGroupID()
-      << "\n  OMP_NUM_THREADS      = " << omp_get_max_threads() << endl;
+      << "\n  OMP_NUM_THREADS      = " << omp_get_max_threads() << std::endl;
 #ifdef QMC_CUDA
   app_log()
       << "\n  CUDA_PRECISION          = " << GET_MACRO_VAL(CUDA_PRECISION) 
-      << "\n  CUDA_COULOMB_PRECISION  = " << GET_MACRO_VAL(CUDA_COULOMB_PRECISION) << endl;
+      << "\n  CUDA_COULOMB_PRECISION  = " << GET_MACRO_VAL(CUDA_COULOMB_PRECISION) << std::endl;
 #endif
-  app_log() << endl;
+  app_log() << std::endl;
   app_log().flush();
 }
 
@@ -118,16 +117,16 @@ bool QMCMain::execute()
   OHMMS::Controller->barrier();
   if(qmc_common.dryrun)
   {
-    app_log() << "  dryrun == 1 Ignore qmc/loop elements " << endl;
+    app_log() << "  dryrun == 1 Ignore qmc/loop elements " << std::endl;
     APP_ABORT("QMCMain::execute");
   }
   Timer t1;
-  curMethod = string("invalid");
+  curMethod = std::string("invalid");
   qmc_common.qmc_counter=0;
   for(int qa=0; qa<m_qmcaction.size(); qa++)
   {
     xmlNodePtr cur=m_qmcaction[qa].first;
-    string cname((const char*)cur->name);
+    std::string cname((const char*)cur->name);
     if(cname == "postprocess")
     {
 #if !defined(REMOVE_TRACEMANAGER)
@@ -153,12 +152,12 @@ bool QMCMain::execute()
     else if(cname == "debug")
     {
       executeDebugSection(cur);
-      app_log() << "  Debug is done. Skip the rest of the input " << endl;
+      app_log() << "  Debug is done. Skip the rest of the input " << std::endl;
       break;
     }
   }
   m_qmcaction.clear();
-  app_log() << "  Total Execution time = " << t1.elapsed() << " secs" << endl;
+  app_log() << "  Total Execution time = " << t1.elapsed() << " secs" << std::endl;
   if(is_manager())
   {
     //generate multiple files
@@ -207,20 +206,20 @@ void QMCMain::executeLoop(xmlNodePtr cur)
   a.put(cur);
   //reset qmc_counter
   qmc_common.qmc_counter=0;
-  app_log() << "Loop execution max-interations = " << niter << endl;
+  app_log() << "Loop execution max-interations = " << niter << std::endl;
   for(int iter=0; iter<niter; iter++)
   {
     xmlNodePtr tcur=cur->children;
     while(tcur != NULL)
     {
-      string cname((const char*)tcur->name);
+      std::string cname((const char*)tcur->name);
       if(cname == "qmc")
       {
         //prevent completed is set
         bool success = executeQMCSection(tcur, false);
         if(!success)
         {
-          app_warning() << "  Terminated loop execution. A sub section returns false." << endl;
+          app_warning() << "  Terminated loop execution. A sub section returns false." << std::endl;
           return;
         }
         qmc_common.qmc_counter++; // increase the counter
@@ -232,8 +231,8 @@ void QMCMain::executeLoop(xmlNodePtr cur)
 
 bool QMCMain::executeQMCSection(xmlNodePtr cur, bool noloop)
 {
-  string target("e");
-  string random_test("no");
+  std::string target("e");
+  std::string random_test("no");
   OhmmsAttributeSet a;
   a.add(target,"target");
   a.add(random_test,"testrng");
@@ -267,7 +266,7 @@ bool QMCMain::validateXML()
   OhmmsXPathObject ai("//adiosinit",m_context);
   if(ai.empty())
   {
-    app_warning()<<"adiosinit is not defined"<<endl;
+    app_warning()<<"adiosinit is not defined"<< std::endl;
   }
   else
   {
@@ -283,7 +282,7 @@ bool QMCMain::validateXML()
       else
       {
         if (OHMMS::Controller->rank() == 0)
-          cout << "Adios is initialized" << endl;
+          std::cout << "Adios is initialized" << std::endl;
         ADIOS::set_adios_init(true);
       }
       adios_read_init_method(ADIOS_READ_METHOD_BP, myComm->getMPI(), "verbose=3");
@@ -292,7 +291,7 @@ bool QMCMain::validateXML()
   OhmmsXPathObject io("//checkpoint",m_context);
   if(io.empty())
   {
-    app_warning() << "checkpoint IO is not defined, no checkpoint will be written out." << endl;
+    app_warning() << "checkpoint IO is not defined, no checkpoint will be written out." << std::endl;
   }
   else{
   
@@ -311,14 +310,14 @@ bool QMCMain::validateXML()
       {
         UseHDF5 = true;
       }
-      app_log() << "property: " << curr->name << ", value: " << value << endl;
+      app_log() << "property: " << curr->name << ", value: " << value << std::endl;
     }
     ADIOS::initialize(UseHDF5, UseADIOS);
   }
   OhmmsXPathObject rd("//restart",m_context);
   if(rd.empty())
   {
-    app_warning() << "Checkpoint restart read method is not defined. frest start." << endl;
+    app_warning() << "Checkpoint restart read method is not defined. frest start." << std::endl;
   }
   else
   {
@@ -334,16 +333,16 @@ bool QMCMain::validateXML()
   myProject.setCommunicator(myComm);
   if(result.empty())
   {
-    app_warning() << "Project is not defined" << endl;
+    app_warning() << "Project is not defined" << std::endl;
     myProject.reset();
   }
   else
   {
     myProject.put(result[0]);
   }
-  app_log() << endl;
+  app_log() << std::endl;
   myProject.get(app_log());
-  app_log() << endl;
+  app_log() << std::endl;
   OhmmsXPathObject ham("//hamiltonian",m_context);
   if(ham.empty())
   {
@@ -356,7 +355,7 @@ bool QMCMain::validateXML()
       xmlNodePtr cur=ham[i]->children;
       while(cur != NULL)
       {
-        string aname="0";
+        std::string aname="0";
         OhmmsAttributeSet a;
         a.add(aname,"type");
         a.put(cur);
@@ -370,11 +369,11 @@ bool QMCMain::validateXML()
   }
   if(qmc_common.use_density)
   {
-    app_log() << "  hamiltonian has MPC. Will read density if it is found." << endl;
+    app_log() << "  hamiltonian has MPC. Will read density if it is found." << std::endl;
   }
   else
   {
-    app_log() << "  DO NOT READ DENSITY" << endl;
+    app_log() << "  DO NOT READ DENSITY" << std::endl;
   }
   //initialize the random number generator
   xmlNodePtr rptr = myRandomControl.initialize(m_context);
@@ -382,7 +381,7 @@ bool QMCMain::validateXML()
   xmlNodePtr cur=XmlDocStack.top()->getRoot()->children;
   while(cur != NULL)
   {
-    string cname((const char*)cur->name);
+    std::string cname((const char*)cur->name);
     bool inputnode=true;
     if(cname == "parallel")
     {
@@ -429,7 +428,7 @@ bool QMCMain::validateXML()
     else
     {
       //everything else goes to m_qmcaction
-      m_qmcaction.push_back(pair<xmlNodePtr,bool>(cur,true));
+      m_qmcaction.push_back(std::pair<xmlNodePtr,bool>(cur,true));
       inputnode=false;
     }
     if(inputnode)
@@ -478,7 +477,7 @@ bool QMCMain::processPWH(xmlNodePtr cur)
   cur=cur->children;
   while(cur != NULL)
   {
-    string cname((const char*)cur->name);
+    std::string cname((const char*)cur->name);
     if(cname == "simulationcell")
     {
       ptclPool->putLattice(cur);
@@ -500,7 +499,7 @@ bool QMCMain::processPWH(xmlNodePtr cur)
       //add to m_qmcaction
     {
       inputnode=false;
-      m_qmcaction.push_back(pair<xmlNodePtr,bool>(xmlCopyNode(cur,1),false));
+      m_qmcaction.push_back(std::pair<xmlNodePtr,bool>(xmlCopyNode(cur,1),false));
     }
     cur=cur->next;
   }
@@ -531,7 +530,7 @@ bool QMCMain::runQMC(xmlNodePtr cur)
     OhmmsInfo::flush();
     Timer qmcTimer;
     qmcDriver->run();
-    app_log() << "  QMC Execution time = " << qmcTimer.elapsed() << " secs " << endl;
+    app_log() << "  QMC Execution time = " << qmcTimer.elapsed() << " secs " << std::endl;
     //keeps track of the configuration file
     PrevConfigFile = myProject.CurrentMainRoot();
     return true;
@@ -554,7 +553,7 @@ bool QMCMain::setMCWalkers(xmlXPathContextPtr context_)
   //use the last mcwalkerset to initialize random numbers if possible
   if(result.size())
   {
-    string fname;
+    std::string fname;
     OhmmsAttributeSet a;
     a.add(fname,"fileroot");
     a.add(fname,"href");
@@ -570,7 +569,7 @@ bool QMCMain::setMCWalkers(xmlXPathContextPtr context_)
 void QMCMain::postprocess(xmlNodePtr cur,int qacur)
 {
 #if !defined(REMOVE_TRACEMANAGER)
-  app_log()<<"\nQMCMain::postprocess"<<endl;
+  app_log()<<"\nQMCMain::postprocess"<< std::endl;
 
   int qanext = qacur+1;
   if(qanext>=m_qmcaction.size())
@@ -579,9 +578,9 @@ void QMCMain::postprocess(xmlNodePtr cur,int qacur)
   }
   else
   {
-    app_log()<<"  Assuming same target particleset for all qmc methods"<<endl;
+    app_log()<<"  Assuming same target particleset for all qmc methods"<< std::endl;
     xmlNodePtr next=m_qmcaction[qanext].first;
-    string target("e");
+    std::string target("e");
     OhmmsAttributeSet a;
     a.add(target,"target");
     a.put(next);
@@ -594,7 +593,7 @@ void QMCMain::postprocess(xmlNodePtr cur,int qacur)
   for(int qa=qanext;qa<m_qmcaction.size();++qa)
   {
     xmlNodePtr meth=m_qmcaction[qa].first;
-    string cname((const char*)meth->name);
+    std::string cname((const char*)meth->name);
     if(cname=="qmc"||cname=="optimize"||cname=="cmc")
       series_end++;
     else if(cname=="loop")
@@ -609,9 +608,9 @@ void QMCMain::postprocess(xmlNodePtr cur,int qacur)
   app_log()<<"  Found series";
   for(int s=series_start;s<series_end;++s)
     app_log()<<" "<<s;
-  app_log()<<endl;
+  app_log()<< std::endl;
 
-  string id = myProject.m_title;
+  std::string id = myProject.m_title;
 
   if(hamPool==0)
     APP_ABORT("QMCMain::postprocess  hamPool is null");

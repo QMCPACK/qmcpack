@@ -21,13 +21,13 @@
 namespace qmcplusplus
 {
 
-bool ReferencePoints::put(xmlNodePtr cur, ParticleSet& P, vector<ParticleSet*>& Pref)
+bool ReferencePoints::put(xmlNodePtr cur, ParticleSet& P, std::vector<ParticleSet*>& Pref)
 {
-  app_log()<<"  Entering ReferencePoints::put"<<endl;
+  app_log()<<"  Entering ReferencePoints::put"<< std::endl;
   bool succeeded=true;
   put(P,Pref);
   OhmmsAttributeSet ra;
-  string coord="";
+  std::string coord="";
   ra.add(coord,"coord");
   ra.put(cur);
   for(int i=0; i<DIM; i++)
@@ -52,23 +52,23 @@ bool ReferencePoints::put(xmlNodePtr cur, ParticleSet& P, vector<ParticleSet*>& 
     }
     else
     {
-      app_log() << endl;
-      app_log() << "    Valid coordinates must be provided for element reference_points." << endl;
-      app_log() << "      You provided: "<<coord<<endl;
-      app_log() << "      Options are cell or cartesian." << endl;
-      app_log() << endl;
+      app_log() << std::endl;
+      app_log() << "    Valid coordinates must be provided for element reference_points." << std::endl;
+      app_log() << "      You provided: "<<coord<< std::endl;
+      app_log() << "      Options are cell or cartesian." << std::endl;
+      app_log() << std::endl;
       succeeded=false;
     }
   //read in the point contents
-  app_log()<<"    reading reference_points contents"<<endl;
-  string contents = (const char*)(xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1));
-  vector<string> lines = split(strip(contents),"\n");
+  app_log()<<"    reading reference_points contents"<< std::endl;
+  std::string contents = (const char*)(xmlNodeListGetString(cur->doc, cur->xmlChildrenNode, 1));
+  std::vector<std::string> lines = split(strip(contents),"\n");
   for(int i=0; i<lines.size(); i++)
   {
-    vector<string> tokens = split(strip(lines[i])," ");
+    std::vector<std::string> tokens = split(strip(lines[i])," ");
     if(tokens.size()!=DIM+1)
     {
-      app_log() << "  reference point has 4 entries, given "<< tokens.size() <<": "<<lines[i]<< endl;
+      app_log() << "  reference point has 4 entries, given "<< tokens.size() <<": "<<lines[i]<< std::endl;
       succeeded=false;
     }
     else
@@ -85,7 +85,7 @@ bool ReferencePoints::put(xmlNodePtr cur, ParticleSet& P, vector<ParticleSet*>& 
   return succeeded;
 }
 
-bool ReferencePoints::put(ParticleSet& P, vector<ParticleSet*>& Psets)
+bool ReferencePoints::put(ParticleSet& P, std::vector<ParticleSet*>& Psets)
 {
   //get axes and origin information from the ParticleSet
   points["zero"]  = 0*P.Lattice.a(0);
@@ -116,7 +116,7 @@ bool ReferencePoints::put(ParticleSet& P, vector<ParticleSet*>& Psets)
     ParticleSet& PS = *Psets[i];
     for(int p=0; p<PS.getTotalNum(); p++)
     {
-      stringstream ss;
+      std::stringstream ss;
       ss<<p+cshift;
       points[PS.getName()+ss.str()]=PS.R[p];
     }
@@ -125,23 +125,23 @@ bool ReferencePoints::put(ParticleSet& P, vector<ParticleSet*>& Psets)
 }
 
 
-void ReferencePoints::write_description(ostream& os, string& indent)
+void ReferencePoints::write_description(std::ostream& os, std::string& indent)
 {
-  os<< indent+"reference_points"  <<endl;
-  map<string,Point>::const_iterator it,end=points.end();
+  os<< indent+"reference_points"  << std::endl;
+  std::map<std::string,Point>::const_iterator it,end=points.end();
   for(it=points.begin(); it!=end; ++it)
   {
-    os<< indent+"  " << it->first << ": " << it->second <<endl;
+    os<< indent+"  " << it->first << ": " << it->second << std::endl;
   }
-  os<< indent+"end reference_points"  <<endl;
+  os<< indent+"end reference_points"  << std::endl;
   return;
 }
 
-void ReferencePoints::save(vector<observable_helper*>& h5desc, hid_t gid) const
+void ReferencePoints::save(std::vector<observable_helper*>& h5desc, hid_t gid) const
 {
   observable_helper* oh = new observable_helper("reference_points");
   oh->open(gid);
-  map<string,Point>::const_iterator it;
+  std::map<std::string,Point>::const_iterator it;
   for (it=points.begin(); it != points.end(); ++it)
   {
     oh->addProperty(const_cast<Point&>(it->second),it->first);

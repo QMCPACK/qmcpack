@@ -37,7 +37,7 @@ Spline3DBuilder::put(xmlNodePtr cur)
   //typedef SlaterDeterminant<Spline3DSet> SDet_t;
   typedef DiracDeterminant<SPOSet_t> DDet_t;
   typedef SlaterDeterminant<SPOSet_t> SDet_t;
-  map<string,int> SplineID;
+  std::map<std::string,int> SplineID;
   int nbasis=0;
   SDet_t* sdet = new SDet_t;
   ///go thru the tree
@@ -45,7 +45,7 @@ Spline3DBuilder::put(xmlNodePtr cur)
   cur = cur->xmlChildrenNode;
   while(cur!=NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == "BasisSet")
     {
       d_orbitals->put(cur);
@@ -57,7 +57,7 @@ Spline3DBuilder::put(xmlNodePtr cur)
         xmlNodePtr tcur = cur->xmlChildrenNode;
         while(tcur != NULL)
         {
-          string cname2((const char*)(tcur->name));
+          std::string cname2((const char*)(tcur->name));
           if(cname2 == "Determinant")
           {
             SPOSet_t* swfs = new SPOSet_t;
@@ -68,7 +68,7 @@ Spline3DBuilder::put(xmlNodePtr cur)
             xmlNodePtr t = tcur->xmlChildrenNode;
             while(t != NULL)
             {
-              string oname((const char*)(t->name));
+              std::string oname((const char*)(t->name));
               if(oname == "Orbital")
               {
                 Spline3D* neworb
@@ -81,7 +81,7 @@ Spline3DBuilder::put(xmlNodePtr cur)
               t = t->next;
             }
             // for(xmlNodePtr t=cur1->xmlChildrenNode; t != NULL; t=t->next) {
-            //  string awfs((const char*)xmlGetProp(t,(xmlChar*)"name"));
+            //  std::string awfs((const char*)xmlGetProp(t,(xmlChar*)"name"));
             //  int iorb= SplineID[awfs];
             DDet_t* ddet = new DDet_t(*swfs,first);
             ddet->set(first,swfs->size());

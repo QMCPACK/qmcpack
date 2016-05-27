@@ -34,7 +34,7 @@ NumericalOrbitalSetBuilder::NumericalOrbitalSetBuilder(ParticleSet& p,
  */
 bool NumericalOrbitalSetBuilder::put(xmlNodePtr cur)
 {
-  string source("i");
+  std::string source("i");
   OhmmsAttributeSet aAttrib;
   aAttrib.add(source,"source");
   aAttrib.put(cur);
@@ -53,11 +53,11 @@ bool NumericalOrbitalSetBuilder::put(xmlNodePtr cur)
         targetPsi,*ions);
   }
   xmlNodePtr gridPtr=0;
-  vector<xmlNodePtr> sdetPtr;
+  std::vector<xmlNodePtr> sdetPtr;
   cur=cur->children;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == "cubicgrid")
     {
       gridPtr=cur;
@@ -105,17 +105,17 @@ bool NumericalOrbitalSetBuilder::put(xmlNodePtr cur)
 NumericalOrbitalSetBuilder::SlaterDeterminant_t*
 NumericalOrbitalSetBuilder::addSlaterDeterminant(xmlNodePtr cur)
 {
-  string nogood("invalid");
+  std::string nogood("invalid");
   int is=0;
   SlaterDeterminant_t* sdet=new SlaterDeterminant_t;
   int first = 0;
   cur = cur->xmlChildrenNode;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == det_tag)
     {
-      string id("det"),ref(nogood);
+      std::string id("det"),ref(nogood);
       int norb(0);
       OhmmsAttributeSet aAttrib;
       aAttrib.add(id,"id");
@@ -126,8 +126,8 @@ NumericalOrbitalSetBuilder::addSlaterDeterminant(xmlNodePtr cur)
       if(ref == nogood)
         ref=id;
       SPOSetType* psi= 0;
-      //map<string,SPOSetType*>::iterator sit(SPOSet.find(id));
-      map<string,SPOSetType*>::iterator sit(SPOSet.find(ref));
+      //map<std::string,SPOSetType*>::iterator sit(SPOSet.find(id));
+      std::map<std::string,SPOSetType*>::iterator sit(SPOSet.find(ref));
       if(sit == SPOSet.end())
       {
         LOGMSG("Adding a single-particle orbital " << id)
@@ -138,11 +138,11 @@ NumericalOrbitalSetBuilder::addSlaterDeterminant(xmlNodePtr cur)
         LOGMSG("Reusing an existing single-particle orbital " << id)
         psi = (*sit).second;
       }
-      map<string,Det_t*>::iterator dit(DetSet.find(id));
+      std::map<std::string,Det_t*>::iterator dit(DetSet.find(id));
       //check if determinant's id is valid
       if(dit != DetSet.end() && SlaterDetSet.empty())
       {
-        ostringstream idassigned(id);
+        std::ostringstream idassigned(id);
         idassigned << is;
         ERRORMSG("determinants cannot have same id. id will be assigned to " << id)
       }
@@ -151,7 +151,7 @@ NumericalOrbitalSetBuilder::addSlaterDeterminant(xmlNodePtr cur)
       if(dit == DetSet.end())
         //need to add a new Determinant
       {
-        cout << "Checking determinant , first, norb " << endl;
+        std::cout << "Checking determinant , first, norb " << std::endl;
         adet = new Det_t(*psi,first);
         adet->set(first,norb);
         first+=norb;
@@ -177,7 +177,7 @@ NumericalOrbitalSetBuilder::addSlaterDeterminant(xmlNodePtr cur)
  * @return a new MixedSPOSet
  */
 NumericalOrbitalSetBuilder::SPOSetType*
-NumericalOrbitalSetBuilder::createSPOSet(xmlNodePtr cur, const string& ref, int norb)
+NumericalOrbitalSetBuilder::createSPOSet(xmlNodePtr cur, const std::string& ref, int norb)
 {
   std::vector<int> npts(3);
   npts[0]=GridXYZ->nX;
@@ -189,11 +189,11 @@ NumericalOrbitalSetBuilder::createSPOSet(xmlNodePtr cur, const string& ref, int 
   cur=cur->children;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == "coefficient" || cname == "parameter")
     {
       LOType *phi=0;
-      map<string,LOType*>::iterator it(LocalizedOrbitals.find(ref));
+      std::map<std::string,LOType*>::iterator it(LocalizedOrbitals.find(ref));
       if(it == LocalizedOrbitals.end())
       {
         phi=new LOType(MOBasisSet,first);
@@ -217,7 +217,7 @@ NumericalOrbitalSetBuilder::createSPOSet(xmlNodePtr cur, const string& ref, int 
           sprintf(wfname,"%s.wf%04d",hroot,iorb);
           sprintf(hfile,"%s.wf%04d.h5",hroot,iorb);
           NumericalOrbitalType* neworb=0;
-          map<string,NumericalOrbitalType*>::iterator it(NumericalOrbitals.find(wfname));
+          std::map<std::string,NumericalOrbitalType*>::iterator it(NumericalOrbitals.find(wfname));
           if(it == NumericalOrbitals.end())
           {
             neworb=new NumericalOrbitalType(GridXYZ);

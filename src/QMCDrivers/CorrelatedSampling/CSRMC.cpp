@@ -75,12 +75,12 @@ bool CSVMC::run()
   {
     if(QMCDriverMode[QMC_UPDATE_MODE])
     {
-      app_log() << "  Using particle-by-particle update " << endl;
+      app_log() << "  Using particle-by-particle update " << std::endl;
       Mover=new CSVMCUpdatePbyP(W,Psi,H,Random);
     }
     else
     {
-      app_log() << "  Using walker-by-walker update " << endl;
+      app_log() << "  Using walker-by-walker update " << std::endl;
       Mover=new CSVMCUpdateAll(W,Psi,H,Random);
     }
     Mover->put(qmcNode);

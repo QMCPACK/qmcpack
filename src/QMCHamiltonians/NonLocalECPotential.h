@@ -34,9 +34,9 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
   ///index of distance table for the ion-el pair
   int myTableIndex;
   ///the set of local-potentials (one for each ion)
-  vector<NonLocalECPComponent*> PP;
+  std::vector<NonLocalECPComponent*> PP;
   ///unique NonLocalECPComponent to remove
-  vector<NonLocalECPComponent*> PPset;
+  std::vector<NonLocalECPComponent*> PPset;
   ///reference to the center ion
   ParticleSet& IonConfig;
   ///target TrialWaveFunction
@@ -67,12 +67,12 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
 
   Return_t evaluate(ParticleSet& P);
 
-  Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy);
+  Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy);
 
   Return_t evaluateValueAndDerivatives(ParticleSet& P,
       const opt_variables_type& optvars,
-      const vector<RealType>& dlogpsi,
-      vector<RealType>& dhpsioverpsi);
+      const std::vector<RealType>& dlogpsi,
+      std::vector<RealType>& dhpsioverpsi);
 
   /** Do nothing */
   bool put(xmlNodePtr cur)
@@ -98,7 +98,7 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
 
   void setParticlePropertyList(PropertySetType& plist, int offset);
 
-  void registerObservables(vector<observable_helper*>& h5list,
+  void registerObservables(std::vector<observable_helper*>& h5list,
                            hid_t gid) const;
 };
 }

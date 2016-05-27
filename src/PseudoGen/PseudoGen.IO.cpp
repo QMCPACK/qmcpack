@@ -55,7 +55,7 @@ bool PseudoGen::put(xmlNodePtr d_root)
     xmlAttrPtr att = cur->properties;
     while(att != NULL)
     {
-      string aname((const char*)(att->name));
+      std::string aname((const char*)(att->name));
       const char *avalue = (const char*)(att->children->content);
       if(aname == "name")
       {
@@ -72,7 +72,7 @@ bool PseudoGen::put(xmlNodePtr d_root)
     xmlNodePtr cur1 = cur->xmlChildrenNode;
     while(cur1 != NULL)
     {
-      string cname1((const char*)(cur1->name));
+      std::string cname1((const char*)(cur1->name));
       if(cname1 == "grid")
       {
         grid_ptr = cur1;
@@ -157,14 +157,14 @@ bool PseudoGen::put(xmlNodePtr d_root)
     cur = result->nodesetval->nodeTab[0]->children;
     while(cur != NULL)
     {
-      string cname((const char*)(cur->name));
+      std::string cname((const char*)(cur->name));
       if(cname == "parameter")
       {
         xmlAttrPtr att = cur->properties;
         while(att != NULL)
         {
-          string aname((const char*)(att->name));
-          string vname((const char*)(att->children->content));
+          std::string aname((const char*)(att->name));
+          std::string vname((const char*)(att->children->content));
           if(aname == "name")
           {
             if(vname == "max_iter")
@@ -227,7 +227,7 @@ bool PseudoGen::initGrid()
   xmlAttrPtr att = cur->properties;
   while(att != NULL)
   {
-    string aname((const char*)(att->name));
+    std::string aname((const char*)(att->name));
     const char *avalue = (const char*)(att->children->content);
     if(aname == "type")
     {
@@ -249,10 +249,10 @@ bool PseudoGen::initGrid()
       att = cur1->properties;
       while(att != NULL)
       {
-        string aname((const char*)(att->name));
+        std::string aname((const char*)(att->name));
         if(aname == "name")
         {
-          string vname((const char*)(att->children->content));
+          std::string vname((const char*)(att->children->content));
           if(vname == "min")
           {
             putContent(min,cur1);
@@ -309,13 +309,13 @@ bool PseudoGen::initGrid()
 
 bool PseudoGen::initOrbitalSet()
 {
-  string afilename;
+  std::string afilename;
   //find the restriction type and file name for the All-Electron Orbitals
   xmlNodePtr cur = orb_ptr;
   xmlAttrPtr att = cur->properties;
   while(att != NULL)
   {
-    string aname((const char*)(att->name));
+    std::string aname((const char*)(att->name));
     const char *avalue = (const char*)(att->children->content);
     if(aname == "rest_type")
     {
@@ -336,7 +336,7 @@ bool PseudoGen::initOrbitalSet()
   int l;
   int m;
   int s;
-  string grpname;
+  std::string grpname;
   value_type occ;
   value_type rm;
   int index = 0;
@@ -460,14 +460,14 @@ bool PseudoGen::initAEOrbital(const std::string& grpname,
   H5Gclose(group_id_orb);
   XMLReport("Reading in radial orbital")
   RadialOrbital_t temp(Psi(0));
-  //    cout << "index of ae orbital = " << index << endl;
+  //    std::cout << "index of ae orbital = " << index << std::endl;
   for(int j=0; j<rad_orb.size(); j++)
   {
     AEorbitals[index](j) = rad_orb[j];
     temp(j) = rad_orb[j]*rad_orb[j];
   }
-  cout << "Checking the normalization: norm = " << setprecision(12)
-       <<integrate_RK2_forward(temp,AEorbitals_norm[index]) << endl;
+  std::cout << "Checking the normalization: norm = " << setprecision(12)
+       <<integrate_RK2_forward(temp,AEorbitals_norm[index]) << std::endl;
   return true;
 }
 
@@ -495,13 +495,13 @@ bool PseudoGen::initHamiltonian()
   xmlNodePtr cur = pot_ptr->children;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == "parameter")
     {
       xmlAttrPtr att = cur->properties;
       while(att != NULL)
       {
-        string vname((const char*)(att->children->content));
+        std::string vname((const char*)(att->children->content));
         if(vname == "rc")
         {
           putContent(rc,cur);
@@ -537,13 +537,13 @@ bool PseudoGen::initHamiltonian()
   xmlNodePtr cur_sub = pot_ptr->xmlChildrenNode;
   while(cur_sub != NULL)
   {
-    string pname((const char*)(cur_sub->name));
+    std::string pname((const char*)(cur_sub->name));
     if(pname == "parameter")
     {
       xmlAttrPtr att=cur_sub->properties;
       while(att != NULL)
       {
-        string vname((const char*)(att->children->content));
+        std::string vname((const char*)(att->children->content));
         if(vname == "mass")
         {
           double m=1.0;
@@ -565,14 +565,14 @@ bool PseudoGen::initOptimizer()
   xmlNodePtr cur = opt_ptr->children;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == "parameter")
     {
       xmlAttrPtr att = cur->properties;
       while(att != NULL)
       {
-        string aname((const char*)(att->name));
-        string vname((const char*)(att->children->content));
+        std::string aname((const char*)(att->name));
+        std::string vname((const char*)(att->children->content));
         if(aname == "name")
         {
           if(vname == "cg_tolerance")
@@ -629,20 +629,20 @@ bool PseudoGen::initOptimizer()
 
 int PseudoGen::report()
 {
-  string fileforplot(RootFileName);
+  std::string fileforplot(RootFileName);
   fileforplot.append(".orb.dat");
-  ofstream fout(fileforplot.c_str());
+  std::ofstream fout(fileforplot.c_str());
   fout << "#Results for " << AtomName << " with " << PotType
-       << " potential on " << GridType << " grid." <<endl;
-  fout << "#Eigen values " << endl;
+       << " potential on " << GridType << " grid." << std::endl;
+  fout << "#Eigen values " << std::endl;
   fout.precision(10);
-  fout.setf(ios::scientific,ios::floatfield);
+  fout.setf(std::ios::scientific,std::ios::floatfield);
   for(int orb=0; orb<PPeigVal.size(); orb++)
   {
-    fout << "# n=" << Psi.N[orb] << " " <<  " l=" << Psi.L[orb] << setw(15)
-         << PPeigVal[orb] << " " << endl;
+    fout << "# n=" << Psi.N[orb] << " " <<  " l=" << Psi.L[orb] << std::setw(15)
+         << PPeigVal[orb] << " " << std::endl;
   }
-  fout << "#The number of unique radial orbitals " << Psi.NumUniqueOrb << endl;
+  fout << "#The number of unique radial orbitals " << Psi.NumUniqueOrb << std::endl;
   //find the maximum radius for the orbital set
   int max_rad_all = 0;
   int orbindex = 0;
@@ -658,14 +658,14 @@ int PseudoGen::report()
   fout.precision(12);
   for(int ig=0; ig<max_rad_all; ig++)
   {
-    fout << setw(22) << myGrid->r(ig);
+    fout << std::setw(22) << myGrid->r(ig);
     orbindex=0;
     for(int orb=0; orb<Psi.NumUniqueOrb; orb++)
     {
-      fout << setw(22) << Psi(orbindex,ig);
+      fout << std::setw(22) << Psi(orbindex,ig);
       orbindex += Psi.IDcount[orb];
     }
-    fout << endl;
+    fout << std::endl;
   }
   Psi.print_HDF5(RootFileName,GridType,PPeigVal);
   Psi.print_basis(AtomName,RootFileName,GridType);

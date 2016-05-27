@@ -64,9 +64,9 @@ private:
   QPushButton* quitButton;
   QTextEdit *d_log;
 
-  string elementType;
-  string potType;
-  string gridType;
+  std::string elementType;
+  std::string potType;
+  std::string gridType;
 
   ohmmshf::RadialPotentialSet Pot;
   ohmmshf::SphericalOrbitalTraits::BasisSetType Psi;

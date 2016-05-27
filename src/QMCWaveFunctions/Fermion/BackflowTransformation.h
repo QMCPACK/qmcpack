@@ -55,7 +55,7 @@ public:
   typedef Array<HessType,3>       HessArray_t;
 
   typedef MCWalkerConfiguration::Walker_t Walker_t;
-  typedef map<string,ParticleSet*>   PtclPoolType;
+  typedef std::map<std::string,ParticleSet*>   PtclPoolType;
   //typedef Array<GradType,3>       GradArray_t;
   //typedef Array<PosType,3>        PosArray_t;
 
@@ -88,7 +88,7 @@ public:
   };
 
   // map index of variables from local arrays to outside world
-  map<int,int> optIndexMap;
+  std::map<int,int> optIndexMap;
 
   // cutoff of radial funtions
   RealType cutOff;
@@ -132,10 +132,10 @@ public:
   HessType HESS_ID;
   HessType DummyHess;
 
-  vector<BackflowFunctionBase*> bfFuns;
+  std::vector<BackflowFunctionBase*> bfFuns;
 
-  map<string,int> sources;
-  vector<string> names;
+  std::map<std::string,int> sources;
+  std::vector<std::string> names;
 
   /// new qp coordinates for pbyp moves.
   ParticleSet::ParticlePos_t newQP;
@@ -186,7 +186,7 @@ public:
     numVarBefore=tr.numVarBefore;
     optIndexMap=tr.optIndexMap;
     bfFuns.resize((tr.bfFuns).size());
-    vector<BackflowFunctionBase*>::iterator it((tr.bfFuns).begin());
+    std::vector<BackflowFunctionBase*>::iterator it((tr.bfFuns).begin());
     for(int i=0; i<(tr.bfFuns).size() ; i++,it++)
       bfFuns[i] = (*it)->makeClone(targetPtcl);
   }
@@ -196,7 +196,7 @@ public:
   {
     BackflowTransformation *clone = new BackflowTransformation(tqp);
     clone->copyFrom(*this);
-//       vector<BackflowFunctionBase*>::iterator it((bfFuns).begin());
+//       std::vector<BackflowFunctionBase*>::iterator it((bfFuns).begin());
 //       for(int i=0; i<(bfFuns).size() ; i++,it++)
 //       {
 //         clone->bfFuns[i]->reportStatus(cerr);
@@ -254,7 +254,7 @@ public:
       bfFuns[i]->checkInVariables(active);
   }
 
-  inline void reportStatus(ostream& os)
+  inline void reportStatus(std::ostream& os)
   {
     for(int i=0; i<bfFuns.size(); i++)
       bfFuns[i]->reportStatus(os);
@@ -389,11 +389,11 @@ public:
     resetTargetParticleSet(dummyQP2);
     evaluate(P,dummyQP);
     resetTargetParticleSet(P);
-    cout<<"index: ";
-    for(int i=0; i<indexQP.size(); i++) cout<<indexQP[i] <<" ";
-    cout<<endl;
+    std::cout <<"index: ";
+    for(int i=0; i<indexQP.size(); i++) std::cout <<indexQP[i] <<" ";
+    std::cout << std::endl;
     for(int jat=0; jat<NumTargets; jat++)
-      cout<<jat <<"  "
+      std::cout <<jat <<"  "
       <<(newQP[jat]-dummyQP.R[jat]) <<" " <<newQP[jat] <<" " <<QP.R[jat] <<"\n";
     for(int i=0; i<NumTargets; i++) newQP[i] = dummyQP.R[i];
     * /
@@ -487,11 +487,11 @@ public:
     }
     for(int i=0; i<bfFuns.size(); i++)
       bfFuns[i]->evaluate(P,QP,Bmat_full,Amat);
-//      cerr<<"P.R \n";
-//      cerr<<P.R[0] <<endl;
-//      cerr<<"QP.R " <<endl;
-//      cerr<<QP.R[0] <<endl;
-//      cerr<<omp_get_thread_num()<<" "<<P.R[0]-QP.R[0] <<endl;
+//      std::cerr <<"P.R \n";
+//      std::cerr <<P.R[0] << std::endl;
+//      std::cerr <<"QP.R " << std::endl;
+//      std::cerr <<QP.R[0] << std::endl;
+//      std::cerr <<omp_get_thread_num()<<" "<<P.R[0]-QP.R[0] << std::endl;
 //      APP_ABORT("TESTING BF \n");
     /*Bmat=0.0;
     Amat=0.0;
@@ -502,10 +502,10 @@ public:
     /*
           // testing bf
           for(int i=0; i<NumTargets; i++) {
-            cout<<"i: " <<i <<endl;
-            cout<<P.R[i] <<endl;
-            cout<<QP.R[i] <<endl;
-            cout<<P.R[i]-QP.R[i] <<endl;
+            std::cout <<"i: " <<i << std::endl;
+            std::cout <<P.R[i] << std::endl;
+            std::cout <<QP.R[i] << std::endl;
+            std::cout <<P.R[i]-QP.R[i] << std::endl;
           }
           //
     */
@@ -538,11 +538,11 @@ public:
         numParams+=tmp;
       }
       numVarBefore = bfFuns[0]->indexOffset();
-      //app_log() <<"numVarBefore: " <<numVarBefore <<endl;
+      //app_log() <<"numVarBefore: " <<numVarBefore << std::endl;
       for(int i=0; i<numParams; i++)
       {
         optIndexMap[i] = i+numVarBefore;
-        //app_log() <<"prm, map: " <<i <<"  " <<optIndexMap[i] <<endl;
+        //app_log() <<"prm, map: " <<i <<"  " <<optIndexMap[i] << std::endl;
       }
       Cmat.resize(numParams,NumTargets);
       Xmat.resize(numParams,NumTargets,NumTargets);
@@ -611,13 +611,13 @@ public:
       qp_0[i] = QP.R[i];
     }
     app_log() <<" Testing derivatives of backflow transformation. \n";
-    app_log() <<" Numtargets: " <<NumTargets <<endl;
+    app_log() <<" Numtargets: " <<NumTargets << std::endl;
     opt_variables_type wfVars,wfvar_prime;
     checkInVariables(wfVars);
     checkOutVariables(wfVars);
     int Nvars= wfVars.size();
     wfvar_prime= wfVars;
-    wfVars.print(cout);
+    wfVars.print(std::cout);
     for(int i=0; i<Nvars; i++)
     {
       for (int j=0; j<Nvars; j++)
@@ -667,10 +667,10 @@ public:
             maxD=std::abs(df);
           //app_log() <<k <<"  " <<q <<"   "
           //          <<( (qp_1[k])[q] - (qp_2[k])[0] )/(2.0*dh)   <<"  "
-          //          <<Cmat(i,k)[q] <<"  " <<(( (qp_1[k])[q] - (qp_2[k])[q] )/(2.0*dh)-Cmat(i,k)[q]) <<endl;
+          //          <<Cmat(i,k)[q] <<"  " <<(( (qp_1[k])[q] - (qp_2[k])[q] )/(2.0*dh)-Cmat(i,k)[q]) << std::endl;
         }
       }
-      app_log() <<i <<"  " <<av/cnt <<"  " <<maxD <<endl;
+      app_log() <<i <<"  " <<av/cnt <<"  " <<maxD << std::endl;
       av=cnt=maxD=0.0;
       app_log() <<"Ymat: \n";
       for(int k=0; k<NumTargets; k++)
@@ -687,10 +687,10 @@ public:
             maxD=std::abs(df);
           //app_log() <<k <<"  " <<q <<"   "
           //        <<dB/(2.0*dh)   <<"  "
-          //        <<Ymat(i,k)[q] <<"  " <<(dB/(2.0*dh)-Ymat(i,k)[q]) <<endl;
+          //        <<Ymat(i,k)[q] <<"  " <<(dB/(2.0*dh)-Ymat(i,k)[q]) << std::endl;
         }
       }
-      app_log() <<i <<"  " <<av/cnt <<"  " <<maxD <<endl;
+      app_log() <<i <<"  " <<av/cnt <<"  " <<maxD << std::endl;
       av=cnt=maxD=0.0;
       app_log() <<"Xmat: \n";
       for(int k1=0; k1<NumTargets; k1++)
@@ -707,11 +707,11 @@ public:
               if( std::abs(df) > maxD )
                 maxD=std::abs(df);
               //app_log() <<k1 <<"  " <<k2 <<"  " <<q1 <<"  " <<q2 <<"   "
-              //        <<(Xmat(i,k1,k2))(q1,q2) <<"  " <<(dB/(2.0*dh)-(Xmat(i,k1,k2))(q1,q2)) <<endl;
+              //        <<(Xmat(i,k1,k2))(q1,q2) <<"  " <<(dB/(2.0*dh)-(Xmat(i,k1,k2))(q1,q2)) << std::endl;
             }
           }
         }
-      app_log() <<i <<"  " <<av/cnt <<"  " <<maxD <<endl;
+      app_log() <<i <<"  " <<av/cnt <<"  " <<maxD << std::endl;
       av=cnt=maxD=0.0;
     }
   }
@@ -742,10 +742,10 @@ public:
     qp_3 = P.R;
     evaluate(P);
     qp_2 = QP.R;
-    app_log() <<"after 1st eval: " <<cutOff <<endl;
+    app_log() <<"after 1st eval: " <<cutOff << std::endl;
     for(int jat=0; jat<NumTargets; jat++)
       app_log() <<jat <<"  "
-                <<P.R[jat]-QP.R[jat]  <<endl;
+                <<P.R[jat]-QP.R[jat]  << std::endl;
     //for(int  iat=0; iat<NumTargets; iat++) {
     for(int  iat=0; iat<1; iat++)
     {
@@ -754,16 +754,16 @@ public:
       dr[1]=0.05;
       dr[2]=-0.3;
       P.makeMove(iat,dr);
-      app_log() <<"Move: " <<myTable->Temp[iat].dr1 <<endl;
-      app_log() <<"cutOff: " <<cutOff <<endl;
+      app_log() <<"Move: " <<myTable->Temp[iat].dr1 << std::endl;
+      app_log() <<"cutOff: " <<cutOff << std::endl;
       for(int jat=0; jat<NumTargets; jat++)
-        app_log() <<jat <<"  " <<myTable->Temp[jat].r1 <<endl;
+        app_log() <<jat <<"  " <<myTable->Temp[jat].r1 << std::endl;
       //evaluatePbyP(P,iat);
       evaluatePbyPWithGrad(P,iat);
       app_log() <<"Moving: ";
       for(int i=0; i<indexQP.size(); i++)
         app_log() <<indexQP[i] <<" ";
-      app_log() <<endl;
+      app_log() << std::endl;
       acceptMove(P,iat);
       P.acceptMove(iat);
     }
@@ -781,14 +781,14 @@ public:
       for(int k=0; k<NumTargets; k++)
         for(int j=0; j<OHMMS_DIM*OHMMS_DIM; j++)
           Amdiff += Amat_1(i,k)[j]*Amat_1(i,k)[j];
-    app_log() <<"Error in pbyp QP transformation: " <<qpdiff <<endl;
-    app_log() <<"Error in pbyp QP Amat: " <<Amdiff <<endl;
+    app_log() <<"Error in pbyp QP transformation: " <<qpdiff << std::endl;
+    app_log() <<"Error in pbyp QP Amat: " <<Amdiff << std::endl;
     app_log() <<"i, diff, newPbyP, newEval: \n";
     for(int i=0; i<NumTargets; i++)
       app_log() <<i <<"\n"
                 <<qp_0[i]-QP.R[i] <<"\n"
                 <<qp_0[i] <<"\n"
-                <<QP.R[i] <<endl <<endl;
+                <<QP.R[i] << std::endl << std::endl;
     APP_ABORT("Finished BackflowTransformation::testPbyP() \n.");
   }
 

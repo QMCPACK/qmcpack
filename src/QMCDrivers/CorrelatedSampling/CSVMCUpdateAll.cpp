@@ -33,7 +33,7 @@ namespace qmcplusplus
 
 /// Constructor.
 CSVMCUpdateAll::CSVMCUpdateAll(MCWalkerConfiguration& w,
-                                vector<TrialWaveFunction*>& psi, vector<QMCHamiltonian*>& h, RandomGenerator_t& rg):
+                                std::vector<TrialWaveFunction*>& psi, std::vector<QMCHamiltonian*>& h, RandomGenerator_t& rg):
   CSUpdateBase(w,psi,h,rg)
 { 
   UpdatePbyP=false;	
@@ -51,8 +51,8 @@ void CSVMCUpdateAll::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool m
     makeGaussRandomWithEngine(deltaR,RandomGen);
    
     RealType tau_over_mass = std::sqrt(Tau*MassInvS[0]);
-   // app_log()<<"tau_over_mass= "<<tau_over_mass<<endl;
-    //app_log()<<"deltaR = "<<deltaR<<endl;
+   // app_log()<<"tau_over_mass= "<<tau_over_mass<< std::endl;
+    //app_log()<<"deltaR = "<<deltaR<< std::endl;
     //if (!W.makeMove(thisWalker,deltaR, m_sqrttau))
     
     if (!W.makeMove(thisWalker,deltaR,tau_over_mass))
@@ -92,7 +92,7 @@ void CSVMCUpdateAll::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool m
     {
       //W.L=0;
       //W.G=0;
-     // app_log()<<"psi0 "<<Psi.evaluateLog(W)<<endl;
+     // app_log()<<"psi0 "<<Psi.evaluateLog(W)<< std::endl;
       logpsi[ipsi]=Psi1[ipsi]->evaluateLog(W);
       Psi1[ipsi]->L=W.L;
       Psi1[ipsi]->G=W.G;
@@ -100,22 +100,22 @@ void CSVMCUpdateAll::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool m
     //  W.G=0;
      *G1[ipsi]=W.G;
      *L1[ipsi]=W.L;    
-//      app_log()<<"Psiname="<<Psi1[ipsi]->getName()<<" H name = "<<H1[ipsi]->getName()<<endl;
-    //  app_log()<<ipsi<<" logpsi "<<logpsi[ipsi]<<endl;
-    //  app_log()<<ipsi<<" L "<<W.L<<endl;
-   //   app_log()<<ipsi<<" Lsave"<<*L1[ipsi]<<endl;
-   //   app_log()<<ipsi<<" G "<<W.G<<endl;
-    //  app_log()<<ipsi<<" Gsave "<<*G1[ipsi]<<endl;
+//      app_log()<<"Psiname="<<Psi1[ipsi]->getName()<<" H name = "<<H1[ipsi]->getName()<< std::endl;
+    //  app_log()<<ipsi<<" logpsi "<<logpsi[ipsi]<< std::endl;
+    //  app_log()<<ipsi<<" L "<<W.L<< std::endl;
+   //   app_log()<<ipsi<<" Lsave"<<*L1[ipsi]<< std::endl;
+   //   app_log()<<ipsi<<" G "<<W.G<< std::endl;
+    //  app_log()<<ipsi<<" Gsave "<<*G1[ipsi]<< std::endl;
       sumratio[ipsi]=1.0;
     }
-  //  app_log()<<endl;
+  //  app_log()<< std::endl;
     // Compute the sum over j of Psi^2[j]/Psi^2[i] for each i
     for(int ipsi=0; ipsi< nPsi-1; ipsi++)
     {
       for(int jpsi=ipsi+1; jpsi< nPsi; jpsi++)
       {
         RealType ratioij=avgNorm[ipsi]/avgNorm[jpsi]*std::exp(2.0*(logpsi[jpsi]-logpsi[ipsi]));
-       // app_log()<<ipsi<<" "<<jpsi<<" "<<ratioij<<" "<<logpsi[ipsi]<<" "<<logpsi[jpsi]<<" "<<avgNorm[ipsi]<<" "<<avgNorm[jpsi]<<endl;
+       // app_log()<<ipsi<<" "<<jpsi<<" "<<ratioij<<" "<<logpsi[ipsi]<<" "<<logpsi[jpsi]<<" "<<avgNorm[ipsi]<<" "<<avgNorm[jpsi]<< std::endl;
         sumratio[ipsi] += ratioij;
         sumratio[jpsi] += 1.0/ratioij;
       }
@@ -171,8 +171,8 @@ void CSVMCUpdateAll::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool m
       {
       //  W.L=Psi1[ipsi]->L;
        // W.G=Psi1[ipsi]->G;
-       // app_log()<<ipsi<<" L "<<W.L<<endl;
-       // app_log()<<ipsi<<" G "<<W.G<<endl;
+       // app_log()<<ipsi<<" L "<<W.L<< std::endl;
+       // app_log()<<ipsi<<" G "<<W.G<< std::endl;
         W.L=*L1[ipsi];
         W.G=*G1[ipsi];
      //   W.L=0;
@@ -184,12 +184,12 @@ void CSVMCUpdateAll::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool m
        // cumNorm[ipsi]+=invsumratio[ipsi];
         thisWalker.Properties(ipsi,LOCALENERGY)=et;
         //multiEstimator->updateSample(iwlk,ipsi,et,invsumratio[ipsi]);
-        //app_log()<<thisWalker.Properties(ipsi,UMBRELLAWEIGHT)<<" "<<endl;
+        //app_log()<<thisWalker.Properties(ipsi,UMBRELLAWEIGHT)<<" "<< std::endl;
          H1[ipsi]->auxHevaluate(W,thisWalker);
          H1[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
       }
     //  updateNorms();
-       // app_log()<<endl;
+       // app_log()<< std::endl;
       ++nAccept;
     }
 
@@ -199,7 +199,7 @@ void CSVMCUpdateAll::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool m
 
 
 CSVMCUpdateAllWithDrift::CSVMCUpdateAllWithDrift(MCWalkerConfiguration& w,
-                                vector<TrialWaveFunction*>& psi, vector<QMCHamiltonian*>& h, RandomGenerator_t& rg):
+                                std::vector<TrialWaveFunction*>& psi, std::vector<QMCHamiltonian*>& h, RandomGenerator_t& rg):
   CSUpdateBase(w,psi,h,rg)
 { 
   UpdatePbyP=false;
@@ -219,8 +219,8 @@ void CSVMCUpdateAllWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_en
     cumGrad=0.0;
     
     RealType tau_over_mass = std::sqrt(Tau*MassInvS[0]);
-   // app_log()<<"tau_over_mass= "<<tau_over_mass<<endl;
-    //app_log()<<"deltaR = "<<deltaR<<endl;
+   // app_log()<<"tau_over_mass= "<<tau_over_mass<< std::endl;
+    //app_log()<<"deltaR = "<<deltaR<< std::endl;
     //if (!W.makeMove(thisWalker,deltaR, m_sqrttau))
     
     if (!W.makeMoveWithDrift(thisWalker,drift ,deltaR,SqrtTauOverMass))
@@ -266,7 +266,7 @@ void CSVMCUpdateAllWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_en
     {
       //W.L=0;
       //W.G=0;
-     // app_log()<<"psi0 "<<Psi.evaluateLog(W)<<endl;
+     // app_log()<<"psi0 "<<Psi.evaluateLog(W)<< std::endl;
       logpsi[ipsi]=Psi1[ipsi]->evaluateLog(W);
       Psi1[ipsi]->L=W.L;
       Psi1[ipsi]->G=W.G;
@@ -274,22 +274,22 @@ void CSVMCUpdateAllWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_en
     //  W.G=0;
      *G1[ipsi]=W.G;
      *L1[ipsi]=W.L;    
-//      app_log()<<"Psiname="<<Psi1[ipsi]->getName()<<" H name = "<<H1[ipsi]->getName()<<endl;
-    //  app_log()<<ipsi<<" logpsi "<<logpsi[ipsi]<<endl;
-    //  app_log()<<ipsi<<" L "<<W.L<<endl;
-   //   app_log()<<ipsi<<" Lsave"<<*L1[ipsi]<<endl;
-   //   app_log()<<ipsi<<" G "<<W.G<<endl;
-    //  app_log()<<ipsi<<" Gsave "<<*G1[ipsi]<<endl;
+//      app_log()<<"Psiname="<<Psi1[ipsi]->getName()<<" H name = "<<H1[ipsi]->getName()<< std::endl;
+    //  app_log()<<ipsi<<" logpsi "<<logpsi[ipsi]<< std::endl;
+    //  app_log()<<ipsi<<" L "<<W.L<< std::endl;
+   //   app_log()<<ipsi<<" Lsave"<<*L1[ipsi]<< std::endl;
+   //   app_log()<<ipsi<<" G "<<W.G<< std::endl;
+    //  app_log()<<ipsi<<" Gsave "<<*G1[ipsi]<< std::endl;
       sumratio[ipsi]=1.0;
     }
-  //  app_log()<<endl;
+  //  app_log()<< std::endl;
     // Compute the sum over j of Psi^2[j]/Psi^2[i] for each i
     for(int ipsi=0; ipsi< nPsi-1; ipsi++)
     {
       for(int jpsi=ipsi+1; jpsi< nPsi; jpsi++)
       {
         RealType ratioij=avgNorm[ipsi]/avgNorm[jpsi]*std::exp(2.0*(logpsi[jpsi]-logpsi[ipsi]));
-       // app_log()<<ipsi<<" "<<jpsi<<" "<<ratioij<<" "<<logpsi[ipsi]<<" "<<logpsi[jpsi]<<" "<<avgNorm[ipsi]<<" "<<avgNorm[jpsi]<<endl;
+       // app_log()<<ipsi<<" "<<jpsi<<" "<<ratioij<<" "<<logpsi[ipsi]<<" "<<logpsi[jpsi]<<" "<<avgNorm[ipsi]<<" "<<avgNorm[jpsi]<< std::endl;
         sumratio[ipsi] += ratioij;
         sumratio[jpsi] += 1.0/ratioij;
       }
@@ -353,8 +353,8 @@ void CSVMCUpdateAllWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_en
       {
       //  W.L=Psi1[ipsi]->L;
        // W.G=Psi1[ipsi]->G;
-       // app_log()<<ipsi<<" L "<<W.L<<endl;
-       // app_log()<<ipsi<<" G "<<W.G<<endl;
+       // app_log()<<ipsi<<" L "<<W.L<< std::endl;
+       // app_log()<<ipsi<<" G "<<W.G<< std::endl;
         W.L=*L1[ipsi];
         W.G=*G1[ipsi];
      //   W.L=0;
@@ -366,12 +366,12 @@ void CSVMCUpdateAllWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_en
        // cumNorm[ipsi]+=invsumratio[ipsi];
         thisWalker.Properties(ipsi,LOCALENERGY)=et;
         //multiEstimator->updateSample(iwlk,ipsi,et,invsumratio[ipsi]);
-        //app_log()<<thisWalker.Properties(ipsi,UMBRELLAWEIGHT)<<" "<<endl;
+        //app_log()<<thisWalker.Properties(ipsi,UMBRELLAWEIGHT)<<" "<< std::endl;
          H1[ipsi]->auxHevaluate(W,thisWalker);
         H1[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
       }
     //  updateNorms();
-       // app_log()<<endl;
+       // app_log()<< std::endl;
       ++nAccept;
     }
  }

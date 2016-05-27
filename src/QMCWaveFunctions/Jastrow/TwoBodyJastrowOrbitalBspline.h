@@ -20,7 +20,7 @@ private:
   typedef CUDA_PRECISION CudaReal;
   //typedef double CudaReal;
 
-  vector<CudaSpline<CudaReal>*> GPUSplines, UniqueSplines;
+  std::vector<CudaSpline<CudaReal>*> GPUSplines, UniqueSplines;
   int MaxCoefs;
   ParticleSet &PtclRef;
   gpu::device_vector<CudaReal> L, Linv;
@@ -49,42 +49,42 @@ public:
 
   void freeGPUmem();
   void checkInVariables(opt_variables_type& active);
-  //void addFunc(const string& aname, int ia, int ib, FT* j);
+  //void addFunc(const std::string& aname, int ia, int ib, FT* j);
   void addFunc(int ia, int ib, FT* j);
   void recompute(MCWalkerConfiguration &W, bool firstTime);
   void reserve (PointerPool<gpu::device_vector<CudaRealType> > &pool);
-  void addLog (MCWalkerConfiguration &W, vector<RealType> &logPsi);
-  void update (vector<Walker_t*> &walkers, int iat);
-  void update (const vector<Walker_t*> &walkers, const vector<int> &iatList)
+  void addLog (MCWalkerConfiguration &W, std::vector<RealType> &logPsi);
+  void update (std::vector<Walker_t*> &walkers, int iat);
+  void update (const std::vector<Walker_t*> &walkers, const std::vector<int> &iatList)
   {
     /* This function doesn't really need to return the ratio */
   }
 
   void ratio (MCWalkerConfiguration &W, int iat,
-              vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
-              vector<ValueType> &lapl);
+              std::vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
+              std::vector<ValueType> &lapl);
 
   void calcRatio (MCWalkerConfiguration &W, int iat,
-                  vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
-                  vector<ValueType> &lapl);
+                  std::vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
+                  std::vector<ValueType> &lapl);
   void addRatio (MCWalkerConfiguration &W, int iat,
-                 vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
-                 vector<ValueType> &lapl);
-  void ratio (vector<Walker_t*> &walkers,    vector<int> &iatList,
-              vector<PosType> &rNew, vector<ValueType> &psi_ratios,
-              vector<GradType>  &grad, vector<ValueType> &lapl)
+                 std::vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
+                 std::vector<ValueType> &lapl);
+  void ratio (std::vector<Walker_t*> &walkers,    std::vector<int> &iatList,
+              std::vector<PosType> &rNew, std::vector<ValueType> &psi_ratios,
+              std::vector<GradType>  &grad, std::vector<ValueType> &lapl)
   {
     /* This function doesn't really need to return the ratio */
   }
 
   void calcGradient(MCWalkerConfiguration &W, int iat,
-                    vector<GradType> &grad);
+                    std::vector<GradType> &grad);
   void addGradient(MCWalkerConfiguration &W, int iat,
-                   vector<GradType> &grad);
+                   std::vector<GradType> &grad);
   void gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads,
                  ValueMatrix_t &lapl);
-  void NLratios (MCWalkerConfiguration &W,  vector<NLjob> &jobList,
-                 vector<PosType> &quadPoints, vector<ValueType> &psi_ratios);
+  void NLratios (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
+                 std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios);
 
   void resetParameters(const opt_variables_type& active);
 
@@ -119,7 +119,7 @@ public:
     NL_RatiosGPU         ("TwoBodyJastrowOrbitalBspline::NL_RatiosGPU")
   {
     UsePBC = pset.Lattice.SuperCellEnum;
-    app_log() << "UsePBC = " << UsePBC << endl;
+    app_log() << "UsePBC = " << UsePBC << std::endl;
     int nsp = NumGroups = pset.groups();
     GPUSplines.resize(nsp*nsp,0);
     if (UsePBC)
@@ -139,7 +139,7 @@ public:
       // 	    sum += LHost[OHMMS_DIM*i+k]*LinvHost[OHMMS_DIM*k+j];
       // 	  if (i == j) sum -= 1.0;
       // 	  if (std::fabs(sum) > 1.0e-5) {
-      // 	    app_error() << "sum = " << sum << endl;
+      // 	    app_error() << "sum = " << sum << std::endl;
       // 	    app_error() << "Linv * L != identity.\n";
       // 	    abort();
       // 	  }

@@ -214,11 +214,11 @@ void RNDMCUpdatePbyPFast::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_en
 
 
 /*
-void RNDMCUpdatePbyPFast::estimateNormWalkers(vector<TrialWaveFunction*>& pclone
-    , vector<MCWalkerConfiguration*>& wclone
-    , vector<QMCHamiltonian*>& hclone
-    , vector<RandomGenerator_t*>& rng
-    , vector<RealType>& ratio_i_0)
+void RNDMCUpdatePbyPFast::estimateNormWalkers(std::vector<TrialWaveFunction*>& pclone
+    , std::vector<MCWalkerConfiguration*>& wclone
+    , std::vector<QMCHamiltonian*>& hclone
+    , std::vector<RandomGenerator_t*>& rng
+    , std::vector<RealType>& ratio_i_0)
 {
   int NumThreads(pclone.size());
 

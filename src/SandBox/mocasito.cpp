@@ -16,7 +16,7 @@ int main(int argc, char** argv)
     alps::hdf5::iarchive h5ar("bela.h5");
     std::vector<int> d;
     h5ar >> alps::make_pvp("/foo/bar2", d);
-    std::copy (d.begin(), d.end(), std::ostream_iterator<int, char, std::char_traits<char> >(std::cout, " "));
+    copy (d.begin(), d.end(), std::ostream_iterator<int, char, std::char_traits<char> >(std::cout, " "));
     std::cout << std::endl;
   }
   {

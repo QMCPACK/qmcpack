@@ -39,18 +39,18 @@ namespace qmcplusplus
 {
 
   //initialization of the static data of BasisSetFactory 
-  map<string,BasisSetBuilder*> BasisSetFactory::basis_builders;
+  std::map<std::string,BasisSetBuilder*> BasisSetFactory::basis_builders;
   BasisSetBuilder* BasisSetFactory::last_builder=0;
 
-  SPOSetBase* get_sposet(const string& name)
+  SPOSetBase* get_sposet(const std::string& name)
   {
     int nfound = 0;
     SPOSetBase* spo = 0;
-    map<string,BasisSetBuilder*>::iterator it;
+    std::map<std::string,BasisSetBuilder*>::iterator it;
     for(it=BasisSetFactory::basis_builders.begin();
         it!=BasisSetFactory::basis_builders.end();++it)
     {
-      vector<SPOSetBase*>& sposets = it->second->sposets;
+      std::vector<SPOSetBase*>& sposets = it->second->sposets;
       for(int i=0;i<sposets.size();++i)
       {
         SPOSetBase* sposet = sposets[i];
@@ -75,18 +75,18 @@ namespace qmcplusplus
   }
 
 
-  void write_basis_builders(const string& pad)
+  void write_basis_builders(const std::string& pad)
   {
-    string pad2 = pad+"  ";
-    map<string,BasisSetBuilder*>::iterator it;
+    std::string pad2 = pad+"  ";
+    std::map<std::string,BasisSetBuilder*>::iterator it;
     for(it=BasisSetFactory::basis_builders.begin();it!=BasisSetFactory::basis_builders.end();++it)
     {
-      const string& type = it->first;
-      vector<SPOSetBase*>& sposets = it->second->sposets;
-      app_log()<<pad<<"sposets for BasisSetBuilder of type "<<type<<endl;
+      const std::string& type = it->first;
+      std::vector<SPOSetBase*>& sposets = it->second->sposets;
+      app_log()<<pad<<"sposets for BasisSetBuilder of type "<<type<< std::endl;
       for(int i=0;i<sposets.size();++i)
       {
-        app_log()<<pad2<<"sposet "<<sposets[i]->objectName<<endl;
+        app_log()<<pad2<<"sposet "<<sposets[i]->objectName<< std::endl;
       }
     }
   }
@@ -117,13 +117,13 @@ bool BasisSetFactory::put(xmlNodePtr cur)
 BasisSetBuilder* BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  rootNode)
 {
   ReportEngine PRE(ClassName,"createBasisSet");
-  string sourceOpt("ion0");
-  string type("");
-  string name("");
-  string keyOpt("NMO"); //gaussian Molecular Orbital
-  string transformOpt("yes"); //numerical Molecular Orbital
-  string cuspC("no");  // cusp correction
-  string cuspInfo("");  // file with precalculated cusp correction info
+  std::string sourceOpt("ion0");
+  std::string type("");
+  std::string name("");
+  std::string keyOpt("NMO"); //gaussian Molecular Orbital
+  std::string transformOpt("yes"); //numerical Molecular Orbital
+  std::string cuspC("no");  // cusp correction
+  std::string cuspInfo("");  // file with precalculated cusp correction info
   OhmmsAttributeSet aAttrib;
   aAttrib.add(sourceOpt,"source");
   aAttrib.add(cuspC,"cuspCorrection");
@@ -136,7 +136,7 @@ BasisSetBuilder* BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  root
   if(rootNode != NULL)
     aAttrib.put(rootNode);
 
-  string type_in=type;
+  std::string type_in=type;
   tolower(type);
 
   //when name is missing, type becomes the input
@@ -145,10 +145,10 @@ BasisSetBuilder* BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  root
   BasisSetBuilder* bb=0;
 
   //check if builder can be reused
-  map<string,BasisSetBuilder*>::iterator bbit=basis_builders.find(name);
+  std::map<std::string,BasisSetBuilder*>::iterator bbit=basis_builders.find(name);
   if(bbit!= basis_builders.end())
   {
-    app_log() << "Reuse BasisSetBuilder \""<<name << "\" type " << type_in <<endl;
+    app_log() << "Reuse BasisSetBuilder \""<<name << "\" type " << type_in << std::endl;
     app_log().flush();
     bb=(*bbit).second;
     bb->put(rootNode);
@@ -160,27 +160,27 @@ BasisSetBuilder* BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  root
 
   if (type == "composite")
   {
-    app_log() << "Composite SPO set with existing SPOSets." << endl;
+    app_log() << "Composite SPO set with existing SPOSets." << std::endl;
     bb= new  CompositeSPOSetBuilder();
   }
   else if (type == "jellium" || type == "heg")
   {
-    app_log()<<"Electron gas SPO set"<<endl;
+    app_log()<<"Electron gas SPO set"<< std::endl;
     bb = new ElectronGasBasisBuilder(targetPtcl,rootNode);
   }
   else if (type == "sho")
   {
-    app_log()<<"Harmonic Oscillator SPO set"<<endl;
+    app_log()<<"Harmonic Oscillator SPO set"<< std::endl;
     bb = new SHOSetBuilder(targetPtcl);
   }
   else if (type == "linearopt")
   {
-    //app_log()<<"Optimizable SPO set"<<endl;
+    //app_log()<<"Optimizable SPO set"<< std::endl;
     bb = new OptimizableSPOBuilder(targetPtcl,ptclPool,rootNode);
   }
   else if (type == "afm")
   {
-    //       app_log()<<"AFM SPO set"<<endl;
+    //       app_log()<<"AFM SPO set"<< std::endl;
     bb = new AFMSPOBuilder(targetPtcl,ptclPool,rootNode);
   }
 #if OHMMS_DIM ==3
@@ -209,7 +209,7 @@ BasisSetBuilder* BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  root
       ions=(*pit).second;
     if(transformOpt == "yes")
     {
-      app_log() << "Using MolecularBasisBuilder<NGOBuilder>" << endl;
+      app_log() << "Using MolecularBasisBuilder<NGOBuilder>" << std::endl;
 #if QMC_BUILD_LEVEL>2
       bb = new MolecularBasisBuilder<NGOBuilder>(targetPtcl,*ions,cuspC=="yes",cuspInfo);
 #else
@@ -236,13 +236,13 @@ BasisSetBuilder* BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  root
     APP_ABORT_TRACE(__FILE__, __LINE__, "BasisSetFactory::createBasisSet\n  BasisSetBuilder creation failed.");
 
   if(bb == last_builder)
-    app_log() << " Missing both \"@name\" and \"@type\". Use the last BasisSetBuilder." << endl;
+    app_log() << " Missing both \"@name\" and \"@type\". Use the last BasisSetBuilder." << std::endl;
   else
   {
     bb->setReportLevel(ReportLevel);
     bb->initCommunicator(myComm);
     bb->put(cur);
-    app_log()<<"Built BasisSetBuilder \""<< name<< "\" of type "<< type << endl;
+    app_log()<<"Built BasisSetBuilder \""<< name<< "\" of type "<< type << std::endl;
     basis_builders[name]=bb; //use name, if missing type is used
   }
   last_builder = bb;
@@ -253,10 +253,10 @@ BasisSetBuilder* BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  root
 
 SPOSetBase* BasisSetFactory::createSPOSet(xmlNodePtr cur)
 {
-  string bname("");
-  string bsname("");
-  string sname("");
-  string type("");
+  std::string bname("");
+  std::string bsname("");
+  std::string sname("");
+  std::string type("");
   OhmmsAttributeSet aAttrib;
   aAttrib.add(bname,"basisset");
   aAttrib.add(bsname,"basis_sposet");
@@ -276,7 +276,7 @@ SPOSetBase* BasisSetFactory::createSPOSet(xmlNodePtr cur)
     bb = basis_builders[type];
   else
   {
-    string cname("");
+    std::string cname("");
     xmlNodePtr tcur=cur->children;
     if(tcur!=NULL)
       getNodeName(cname,cur);
@@ -287,7 +287,7 @@ SPOSetBase* BasisSetFactory::createSPOSet(xmlNodePtr cur)
   }
   if(bb)
   {
-    app_log()<<" Building SPOset "<<sname<<" with "<<bname<<" basis set."<<endl;
+    app_log()<<" Building SPOset "<<sname<<" with "<<bname<<" basis set."<< std::endl;
     return bb->createSPOSet(cur);
   }
   else
@@ -301,28 +301,28 @@ SPOSetBase* BasisSetFactory::createSPOSet(xmlNodePtr cur)
 void BasisSetFactory::build_sposet_collection(xmlNodePtr cur)
 {
   xmlNodePtr parent = cur;
-  string type("");
+  std::string type("");
   OhmmsAttributeSet attrib;
   attrib.add(type,"type");
   attrib.put(cur);
   //tolower(type); 
 
-  app_log()<<"building sposet collection of type "<<type<<endl;
+  app_log()<<"building sposet collection of type "<<type<< std::endl;
 
   BasisSetBuilder* bb = createBasisSet(cur,cur);
   xmlNodePtr element = parent->children;
   int nsposets = 0;
   while(element!=NULL)
   {
-    string cname((const char*)(element->name));
+    std::string cname((const char*)(element->name));
     if(cname=="sposet")
     {
-      string name("");
+      std::string name("");
       OhmmsAttributeSet attrib;
       attrib.add(name,"name");
       attrib.put(element);
 
-      app_log()<<"  Building SPOSet \""<<name<<"\" with "<<type<<" BasisSetBuilder"<<endl;
+      app_log()<<"  Building SPOSet \""<<name<<"\" with "<<type<<" BasisSetBuilder"<< std::endl;
       SPOSetBase* spo = bb->createSPOSet(element);
       spo->objectName = name;
       nsposets++;

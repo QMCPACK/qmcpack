@@ -71,7 +71,7 @@ public:
   //@}
 
   //! Mapping between an attribute name and particle attribute
-  typedef map<string,OhmmsObject*>::iterator  PAListIterator;
+  typedef std::map<std::string,OhmmsObject*>::iterator  PAListIterator;
 
 
   /*! \note Lattice and three particle attributes, ID, GroupID, and R are
@@ -105,7 +105,7 @@ public:
   virtual ~ParticleBase();
 
   ///return a type id: one of the enum values
-  inline int getAttribType(const string& tname)
+  inline int getAttribType(const std::string& tname)
   {
     return AttribTypeMap[tname];
   }
@@ -175,7 +175,7 @@ public:
 #endif
 
   void create(unsigned m);
-  void create(const vector<int>& agroup);
+  void create(const std::vector<int>& agroup);
 
   void resize(unsigned m);
   void clear();
@@ -253,18 +253,18 @@ protected:
   ///array to handle a group of distinct particles per species
   ParticleIndex_t             SubPtcl;
 
-  map<string,int>             AttribTypeMap;
-  map<string,int>             Name2Index;
-  map<string,OhmmsObject*>    AttribList;
-  vector<ParticleIndex_t*>    INDEX;
-  vector<ParticleScalar_t*>   VAL;
-  vector<ParticlePos_t*>      POS;
-  vector<ParticleTensor_t*>   TENZOR;
+  std::map<std::string,int>             AttribTypeMap;
+  std::map<std::string,int>             Name2Index;
+  std::map<std::string,OhmmsObject*>    AttribList;
+  std::vector<ParticleIndex_t*>    INDEX;
+  std::vector<ParticleScalar_t*>   VAL;
+  std::vector<ParticlePos_t*>      POS;
+  std::vector<ParticleTensor_t*>   TENZOR;
 #if defined(QMC_COMPLEX)
-  vector<ParticleGradient_t*>   GRADS;
-  vector<ParticleLaplacian_t*>  LAPS;
+  std::vector<ParticleGradient_t*>   GRADS;
+  std::vector<ParticleLaplacian_t*>  LAPS;
 #endif
-  vector<OhmmsObject*>        myAttribList;
+  std::vector<OhmmsObject*>        myAttribList;
 };
 
 template<class T, unsigned D>

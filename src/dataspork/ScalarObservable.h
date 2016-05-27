@@ -117,7 +117,7 @@ struct ScalarObservable
 
   /** covariance of (Self,*other)
    * @param other ScalarObservable*
-   * @return pair<doulbe,double>
+   * @return std::pair<doulbe,double>
    *
    * CoVarType::first correlation time
    * CoVarType::second covariance

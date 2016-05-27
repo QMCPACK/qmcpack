@@ -22,7 +22,6 @@
 #include <vector>
 #include <map>
 #include <iostream>
-using namespace std;
 #include "Lattice/CrystalLattice.h"
 
 /* \class GridConnection
@@ -41,9 +40,9 @@ struct UniformGridConnection<T,3>
   typedef CrystalLattice<T,3> ParticleLayout_t;
   typedef typename ParticleLayout_t::SingleParticlePos_t   SingleParticlePos_t;
 
-  vector<int> M;
-  vector<int> ID;
-  vector<SingleParticlePos_t> BC;
+  std::vector<int> M;
+  std::vector<int> ID;
+  std::vector<SingleParticlePos_t> BC;
 
   UniformGridConnection() { }
 
@@ -146,13 +145,13 @@ struct UniformGridConnection<T,3>
         }
       }
       M[ig+1] = M[ig]+nconnected;
-      maxnc = max(maxnc,nconnected);
+      maxnc = std::max(maxnc,nconnected);
     }
 //     //for each grid, search for connected grid
 //     for(int ig=0; ig<basegrid.getTotalNum(); ig++) {
-//       cout << ig << " has " << M[ig+1]-M[ig] << endl;
+//       std::cout << ig << " has " << M[ig+1]-M[ig] << std::endl;
 //       for(int j=M[ig]; j<M[ig+1]; j++) {
-// 	cout << ID[j] << " " << BC[j] << endl;
+// 	cout << ID[j] << " " << BC[j] << std::endl;
 //       }
 //     }
     return maxnc; // return the maxmimum number of connected cells
@@ -175,10 +174,10 @@ struct UniformGridConnection<T,3>
     if(!Lattice.BoxBConds[2]) maxx3 = 0;
 
     // using multimap to sort image cells
-    multimap<int,SingleParticlePos_t> N;
+    std::multimap<int,SingleParticlePos_t> N;
 
     // add the origin
-    N.insert(pair<int,SingleParticlePos_t>(0,SingleParticlePos_t(0.0)));
+    N.insert(std::pair<int,SingleParticlePos_t>(0,SingleParticlePos_t(0.0)));
 
     //summation over the direct lattice
     for(int ix1=-maxx1; ix1<=maxx1; ix1++) {
@@ -190,7 +189,7 @@ struct UniformGridConnection<T,3>
   			  static_cast<T>(ix3));
 
     // using ix1^2+ix2^2+ix3^3 as key to sort the image cells
-    N.insert(pair<int,SingleParticlePos_t>(ix1*ix1+ix2*ix2+ix3*ix3, xlp));
+    N.insert(std::pair<int,SingleParticlePos_t>(ix1*ix1+ix2*ix2+ix3*ix3, xlp));
   }
       }
     }
@@ -217,7 +216,7 @@ struct UniformGridConnection<T,3>
   		      basegrid.Node[ig].Ri[1],
   		      basegrid.Node[ig].Ri[2]);
 
-      typename multimap<int,SingleParticlePos_t>::iterator it = N.begin();
+      typename std::multimap<int,SingleParticlePos_t>::iterator it = N.begin();
       int ibox = 0;
       int nconnected = 0;
 
@@ -250,20 +249,20 @@ struct UniformGridConnection<T,3>
   }
   it++; ibox++;
       }
-      maxnc = max(nconnected,maxnc);
+      maxnc = std::max(nconnected,maxnc);
       M[ig+1] = M[ig] + nconnected;
     }
     return maxnc; // return the maxmimum number of connected cells
   }
   */
-  void print(ostream& os)
+  void print(std::ostream& os)
   {
     for(int ig=0; ig<M.size()-1; ig++)
     {
-      cout << ig << " has neighboring cell "  << M[ig+1]-M[ig]<< endl;
+      std::cout << ig << " has neighboring cell "  << M[ig+1]-M[ig]<< std::endl;
       for(int ii=M[ig]; ii<M[ig+1]; ii++)
       {
-        cout << ID[ii] << " " << BC[ii] << endl;
+        std::cout << ID[ii] << " " << BC[ii] << std::endl;
       }
     }
   }

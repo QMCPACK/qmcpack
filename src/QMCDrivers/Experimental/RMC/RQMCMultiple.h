@@ -73,7 +73,7 @@ protected:
   ///the number of H/Psi pairs
   int nPsi;
   ///use scaled drift "true" = yes (default) else no
-  string scaleBeadDrift;
+  std::string scaleBeadDrift;
   ///The Reptile: a chain of beads
   MultiChain* Reptile;
 

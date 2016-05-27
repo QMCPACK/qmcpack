@@ -37,15 +37,15 @@ public:
 
   bool IsOptimizing;
 
-  vector<real_type> R0;
-  vector<real_type> alp;
-  vector<real_type> expo;
+  std::vector<real_type> R0;
+  std::vector<real_type> alp;
+  std::vector<real_type> expo;
 
-  vector<string> R0_id;
-  vector<string> alp_id;
-  vector<string> expo_id;
+  std::vector<std::string> R0_id;
+  std::vector<std::string> alp_id;
+  std::vector<std::string> expo_id;
 
-  vector<bool> activeOptm;
+  std::vector<bool> activeOptm;
 
   NGOrbital *NumOrb;
 
@@ -144,7 +144,7 @@ public:
    */
   bool put(xmlNodePtr cur)
   {
-    app_log() <<"GaussianFunctor::put() " <<endl;
+    app_log() <<"GaussianFunctor::put() " << std::endl;
     real_type r(0.0),a(0.1),expon(1.0);
     cur = cur->xmlChildrenNode;
     bool renewed=false;
@@ -162,9 +162,9 @@ public:
         rAttrib.add(a, "a");
         rAttrib.add(optm, "optimize");
         rAttrib.put(cur);
-        R0_id.push_back(id_in+string("_R0"));
-        alp_id.push_back(id_in+string("_alp"));
-        expo_id.push_back(id_in+string("_expo"));
+        R0_id.push_back(id_in+std::string("_R0"));
+        alp_id.push_back(id_in+std::string("_alp"));
+        expo_id.push_back(id_in+std::string("_expo"));
         R0.push_back(r);
         alp.push_back(a);
         expo.push_back(expon);
@@ -189,7 +189,7 @@ public:
                   <<r <<"\n"
                   <<activeOptm[activeOptm.size()-3] <<" "
                   <<activeOptm[activeOptm.size()-2] <<" "
-                  <<activeOptm[activeOptm.size()-1] <<endl;
+                  <<activeOptm[activeOptm.size()-1] << std::endl;
         if(activeOptm[activeOptm.size()-3])
           myVars.insert(R0_id.back(),R0.back(),true);
         if(activeOptm[activeOptm.size()-2])

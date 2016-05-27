@@ -184,7 +184,7 @@ public:
             && iter3_.isStride(rank,stride);
     }
 
-    void prettyPrint(BZ_STD_SCOPE(string) &str, 
+    void prettyPrint(BZ_STD_SCOPE( std::string) &str, 
         prettyPrintFormat& format) const
     {
         str += "where(";

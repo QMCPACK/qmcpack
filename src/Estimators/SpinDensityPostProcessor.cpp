@@ -42,10 +42,10 @@ namespace qmcplusplus
     xmlNodePtr element = cur->xmlChildrenNode;
     while(element!=NULL)
     {
-      string ename((const char*)element->name);
+      std::string ename((const char*)element->name);
       if(ename=="parameter")
       {
-        string name((const char*)(xmlGetProp(element,(const xmlChar*)"name")));
+        std::string name((const char*)(xmlGetProp(element,(const xmlChar*)"name")));
         if(name=="sources")
         {
           putContent(sources,element);
@@ -167,25 +167,25 @@ namespace qmcplusplus
     for(int s=0;s<nspecies;++s)
       species_size.push_back(species(isize,s));
 
-    app_log()<<"      cell origin = "<<corner<<endl;
+    app_log()<<"      cell origin = "<<corner<< std::endl;
     for(int d=0;d<DIM;++d)
-      app_log()<<"      cell axes "<<d<<" = "<<cell.Rv[d]<<endl;
-    app_log()<<"      grid shape  = "<<grid<<endl;
-    app_log()<<"      grid size   = "<<npoints<<endl;
+      app_log()<<"      cell axes "<<d<<" = "<<cell.Rv[d]<< std::endl;
+    app_log()<<"      grid shape  = "<<grid<< std::endl;
+    app_log()<<"      grid size   = "<<npoints<< std::endl;
     app_log()<<"      sources     = ";
     for(int i=0;i<sources.size();++i)
       app_log()<<sources[i]<<" ";
-    app_log()<<endl;
+    app_log()<< std::endl;
     app_log()<<"      species     = ";
     for(int i=0;i<species_name.size();++i)
       app_log()<<species_name[i]<<" ";
-    app_log()<<endl;
+    app_log()<< std::endl;
   }
 
 
   void SpinDensityPostProcessor::postprocess()
   {
-    map<string,string> typemap;
+    std::map<std::string,std::string> typemap;
     typemap["spindensity"]     = "sd";
     typemap["structurefactor"] = "sf";
     typemap["dm1b"]            = "dm";
@@ -199,24 +199,24 @@ namespace qmcplusplus
     {
       char cseries[256];
       sprintf(cseries,"s%03d.",series);
-      string sprefix(cseries);
+      std::string sprefix(cseries);
       sprefix = project_id+"."+sprefix;
 
       for(int isrc=0;isrc<sources.size();++isrc)
       {
-        string name           = sources[isrc];
+        std::string name           = sources[isrc];
         QMCHamiltonianBase* h = H.getHamiltonian(name);
-        string type           = H.getOperatorType(name);
+        std::string type           = H.getOperatorType(name);
         if(h==0)
           APP_ABORT("SpinDensityPostProcessor::postprocess\n  could not find operator with name "+name);
 
         for(int ispec=0;ispec<nspecies;++ispec)
         {
-          const string& species = species_name[ispec];
-          string infile  = sprefix+type+"_"+species+".dat";
-          string outfile = sprefix+"density_"+typemap[type]+"_"+species;
+          const std::string& species = species_name[ispec];
+          std::string infile  = sprefix+type+"_"+species+".dat";
+          std::string outfile = sprefix+"density_"+typemap[type]+"_"+species;
 
-          app_log()<<"      evaluating & writing density for "<<outfile<<endl;
+          app_log()<<"      evaluating & writing density for "<<outfile<< std::endl;
 
           if(type=="spindensity")
             get_density<SpinDensity>(infile,species,h,density,density_err);
@@ -249,7 +249,7 @@ namespace qmcplusplus
   
   template<typename SDO>
   void SpinDensityPostProcessor::get_density(
-    const string& infile,const string& species,
+    const std::string& infile,const std::string& species,
     QMCHamiltonianBase* h,dens_t& density,dens_t& density_err)
   {
     SDO* sdo = dynamic_cast<SDO*>(h);
@@ -274,7 +274,7 @@ namespace qmcplusplus
     {
       RealType dmax = -1e99;
       for(int p=0;p<npoints;++p)
-        dmax = max(dmax,abs(density[p]));
+        dmax = std::max(dmax,std::abs(density[p]));
       norm = 1.0/dmax;
     }
     for(int p=0;p<npoints;++p)
@@ -284,7 +284,7 @@ namespace qmcplusplus
   }
 
 
-  void SpinDensityPostProcessor::write_density(const string& outfile,dens_t& density)
+  void SpinDensityPostProcessor::write_density(const std::string& outfile,dens_t& density)
   {
     if(format=="xsf")
       write_density_xsf(outfile,density);
@@ -293,15 +293,15 @@ namespace qmcplusplus
   }
 
 
-  void SpinDensityPostProcessor::write_density_xsf(const string& outfile,dens_t& density)
+  void SpinDensityPostProcessor::write_density_xsf(const std::string& outfile,dens_t& density)
   {
     using Units::convert;
     using Units::B;
     using Units::A;
 
-    ofstream file;
-    string filename = outfile+".xsf";
-    file.open(filename.c_str(),ios::out | ios::trunc);
+    std::ofstream file;
+    std::string filename = outfile+".xsf";
+    file.open(filename.c_str(),std::ios::out | std::ios::trunc);
     if(!file.is_open())
       APP_ABORT("SpinDensityPostProcessor::write_density_xsf\n  failed to open file for output: "+outfile+".xsf");
 
@@ -311,51 +311,51 @@ namespace qmcplusplus
 
     int natoms = Pc.getTotalNum();
 
-    file<<" CRYSTAL"<<endl;
-    file<<" PRIMVEC"<<endl;
+    file<<" CRYSTAL"<< std::endl;
+    file<<" PRIMVEC"<< std::endl;
     for(int i=0;i<DIM;++i)
     {
       file<<" ";
       for(int d=0;d<DIM;++d)
         file<<"  "<<convert(Pq.Lattice.Rv[i][d],B,A);
-      file<<endl;
+      file<< std::endl;
     }
-    file<<" PRIMCOORD"<<endl;
-    file<<"   "<<natoms<<"   1"<<endl;
+    file<<" PRIMCOORD"<< std::endl;
+    file<<"   "<<natoms<<"   1"<< std::endl;
     for(int i=0;i<natoms;++i)
     {
       file<<"   "<<pname(Pc,i);
       for(int d=0;d<DIM;++d)
         file<<"  "<<convert(Pc.R[i][d],B,A);
-      file<<endl;
+      file<< std::endl;
     }
-    file<<" BEGIN_BLOCK_DATAGRID_3D"<<endl;
-    file<<"   "<<outfile<<endl;
-    file<<"   DATAGRID_3D_SPIN_DENSITY"<<endl;
+    file<<" BEGIN_BLOCK_DATAGRID_3D"<< std::endl;
+    file<<"   "<<outfile<< std::endl;
+    file<<"   DATAGRID_3D_SPIN_DENSITY"<< std::endl;
     file<<"   ";
     for(int d=0;d<DIM;++d)
       file<<"  "<<grid[d];
-    file<<endl;
+    file<< std::endl;
     file<<"   ";
     for(int d=0;d<DIM;++d)
       file<<"  "<<convert(corner[d],B,A);
-    file<<endl;
+    file<< std::endl;
     for(int i=0;i<DIM;++i)
     {
       file<<"   ";
       for(int d=0;d<DIM;++d)
         file<<"  "<<convert(cell.Rv[i][d],B,A);
-      file<<endl;
+      file<< std::endl;
     }
     file<<"   ";
     for(int p=0;p<npoints;++p)
     {
       file<<"  "<<density[p];
       if((p+1)%columns==0)
-        file<<endl<<"   ";
+        file<< std::endl<<"   ";
     }
-    file<<endl;
-    file<<"   END_DATAGRID_3D"<<endl;
-    file<<" END_BLOCK_DATAGRID_3D"<<endl;
+    file<< std::endl;
+    file<<"   END_DATAGRID_3D"<< std::endl;
+    file<<" END_BLOCK_DATAGRID_3D"<< std::endl;
   }
 }

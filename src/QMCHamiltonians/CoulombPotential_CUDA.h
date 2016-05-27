@@ -34,7 +34,7 @@ struct CoulombPotentialAA_CUDA : public CoulombPotential<OHMMS_PRECISION>
   gpu::device_vector<CUDA_PRECISION> SumGPU;
   gpu::host_vector<CUDA_PRECISION>  SumHost;
   void addEnergy(MCWalkerConfiguration &W,
-                 vector<RealType> &LocalEnergy);
+                 std::vector<RealType> &LocalEnergy);
 
   QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 };
@@ -46,8 +46,8 @@ struct CoulombPotentialAA_CUDA : public CoulombPotential<OHMMS_PRECISION>
 struct CoulombPotentialAB_CUDA : public CoulombPotential<OHMMS_PRECISION>
 {
   int NumElecs, NumIons, NumIonSpecies;
-  vector<int> IonFirst, IonLast;
-  vector<PosType> SortedIons;
+  std::vector<int> IonFirst, IonLast;
+  std::vector<PosType> SortedIons;
 
   CoulombPotentialAB_CUDA(ParticleSet* s, ParticleSet* t);
 
@@ -57,7 +57,7 @@ struct CoulombPotentialAB_CUDA : public CoulombPotential<OHMMS_PRECISION>
   gpu::device_vector<CUDA_PRECISION>    IGPU;
 
   void addEnergy(MCWalkerConfiguration &W,
-                 vector<RealType> &LocalEnergy);
+                 std::vector<RealType> &LocalEnergy);
 
   QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 };

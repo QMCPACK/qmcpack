@@ -55,7 +55,7 @@ protected:
   RealType *FirstAddressOfdU, *LastAddressOfdU;
   Matrix<int> PairID;
   ///sum over the columns of U for virtual moves
-  vector<RealType> Uptcl;
+  std::vector<RealType> Uptcl;
 
   std::map<std::string,FT*> J2Unique;
   ParticleSet *PtclRef;
@@ -68,7 +68,7 @@ public:
   typedef FT FuncType;
 
   ///container for the Jastrow functions
-  vector<FT*> F;
+  std::vector<FT*> F;
 
   TwoBodyJastrowOrbital(ParticleSet& p, int tid)
     : TaskID(tid), KEcorr(0.0)
@@ -131,7 +131,7 @@ public:
     if(ia!=ib)
       F[ib*NumGroups+ia]=j;
 
-    stringstream aname;
+    std::stringstream aname;
     aname<<ia<<ib;
     J2Unique[aname.str()]=j;
     ChiesaKEcorrection();
@@ -193,7 +193,7 @@ public:
     // if(!IsOptimizing)
     // {
     //   app_log() << "  Chiesa kinetic energy correction = "
-    //     << ChiesaKEcorrection() << endl;
+    //     << ChiesaKEcorrection() << std::endl;
     //   //FirstTime = false;
     // }
     if(dPsi)
@@ -207,7 +207,7 @@ public:
   }
 
   /** print the state, e.g., optimizables */
-  void reportStatus(ostream& os)
+  void reportStatus(std::ostream& os)
   {
     typename std::map<std::string,FT*>::iterator it(J2Unique.begin()),it_end(J2Unique.end());
     while(it != it_end)
@@ -271,7 +271,7 @@ public:
     }
 
     //for(int i=0,nat=0; i<N; ++i,nat+=N)
-    //  Uptcl[i]=accumulate(&(U[nat]),&(U[nat+N]),0.0);
+    //  Uptcl[i]=std::accumulate(&(U[nat]),&(U[nat+N]),0.0);
 
     return LogValue;
   }
@@ -340,13 +340,13 @@ public:
     return std::exp(DiffVal);
   }
 
-  inline void evaluateRatios(VirtualParticleSet& VP, vector<ValueType>& ratios)
+  inline void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
   {
     const int iat=VP.activePtcl;
 
     int nat=iat*N;
-    RealType x=accumulate(&(U[nat]),&(U[nat+N]),0.0);
-    vector<RealType> myr(ratios.size(),x);
+    RealType x= std::accumulate(&(U[nat]),&(U[nat+N]),0.0);
+    std::vector<RealType> myr(ratios.size(),x);
     //vector<RealType> myr(ratios.size(),Uptcl[iat]);
 
     const DistanceTableData* d_table=VP.DistTables[0];
@@ -367,7 +367,7 @@ public:
 
   /** evaluate the ratio
   */
-  inline void get_ratios(ParticleSet& P, vector<ValueType>& ratios)
+  inline void get_ratios(ParticleSet& P, std::vector<ValueType>& ratios)
   {
     const DistanceTableData* d_table=P.DistTables[0];
     for (int i=0,ij=0; i<N; ++i)
@@ -459,7 +459,7 @@ public:
     }
     grad_iat += gr;
     //curGrad0-=curGrad;
-    //cout << "RATIOGRAD " << curGrad0 << endl;
+    //cout << "RATIOGRAD " << curGrad0 << std::endl;
     return std::exp(DiffVal);
   }
 
@@ -597,12 +597,12 @@ public:
     }
 
     //for(int i=0,nat=0; i<N; ++i,nat+=N)
-    //  Uptcl[i]=accumulate(&(U[nat]),&(U[nat+N]),0.0);
+    //  Uptcl[i]=std::accumulate(&(U[nat]),&(U[nat+N]),0.0);
   }
 
   inline RealType registerData(ParticleSet& P, PooledData<RealType>& buf)
   {
-    // cerr<<"REGISTERING 2 BODY JASTROW"<<endl;
+    // std::cerr <<"REGISTERING 2 BODY JASTROW"<< std::endl;
     evaluateLogAndStore(P,P.G,P.L);
     //LogValue=0.0;
     //RealType dudr, d2udr2,u;
@@ -713,14 +713,14 @@ public:
     TwoBodyJastrowOrbital<FT>* j2copy=new TwoBodyJastrowOrbital<FT>(tqp,-1);
     if (dPsi)
       j2copy->dPsi = dPsi->makeClone(tqp);
-    map<const FT*,FT*> fcmap;
+    std::map<const FT*,FT*> fcmap;
     for(int ig=0; ig<NumGroups; ++ig)
       for(int jg=ig; jg<NumGroups; ++jg)
       {
         int ij=ig*NumGroups+jg;
         if(F[ij]==0)
           continue;
-        typename map<const FT*,FT*>::iterator fit=fcmap.find(F[ij]);
+        typename std::map<const FT*,FT*>::iterator fit=fcmap.find(F[ij]);
         if(fit == fcmap.end())
         {
           FT* fc=new FT(*F[ij]);
@@ -790,7 +790,7 @@ public:
             }
           }
         }
-        //app_log() << "A = " << aparam << endl;
+        //app_log() << "A = " << aparam << std::endl;
         sum += Ni * aparam / vol;
       }
       if (iG == 0)
@@ -823,7 +823,7 @@ public:
 //     {
 //       // Find magnitude of the smallest nonzero G-vector
 //       RealType Gmag = std::sqrt(PtclRef->SK->KLists.ksq[0]);
-//       //app_log() << "Gmag = " << Gmag << endl;
+//       //app_log() << "Gmag = " << Gmag << std::endl;
 
 //       const int numPoints = 1000;
 //       RealType vol = PtclRef->Lattice.Volume;
@@ -854,7 +854,7 @@ public:
 // 	      }
 // 	    }
 // 	  }
-// 	  //app_log() << "A = " << aparam << endl;
+// 	  //app_log() << "A = " << aparam << std::endl;
 // 	  sum += Ni * aparam / vol;
 // 	}
 // 	fprintf (fout, "%1.8f %1.12e\n", k/Gmag, sum);

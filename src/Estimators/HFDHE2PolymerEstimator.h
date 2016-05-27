@@ -34,7 +34,7 @@ struct HFDHE2PolymerEstimator: public PolymerEstimator
   void settruncLength(int pn)
   {
     truncLength = pn;
-    app_log()<<"  Truncation length set to: "<<truncLength<<endl;
+    app_log()<<"  Truncation length set to: "<<truncLength<< std::endl;
   }
   void setrLen(int pn)
   {
@@ -48,14 +48,14 @@ struct HFDHE2PolymerEstimator: public PolymerEstimator
   void accumulate(const MCWalkerConfiguration& W
                   , WalkerIterator first, WalkerIterator last, RealType wgt);
   void add2Record(RecordNamedProperty<RealType>& record);
-  void registerObservables(vector<observable_helper*>& h5dec, hid_t gid);
+  void registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid);
   ScalarEstimatorBase* clone();
   /*@}*/
 
 
 private:
   ///vector to contain the names of all the constituents of the local energy
-  std::vector<string> elocal_name;
+  std::vector<std::string> elocal_name;
   std::vector<RealType> ObsCont,ObsContAvg;
   std::vector<RealType> ObsCont2,ObsContAvg2;
   int FirstHamiltonian;

@@ -30,7 +30,7 @@ void EwaldHandler::initBreakup(ParticleSet& ref)
   }
   app_log() << "   EwaldHandler Sigma/LR_rc = " << Sigma ;
   Sigma/=ref.Lattice.LR_rc;
-  app_log() << "  Sigma=" << Sigma  << endl;
+  app_log() << "  Sigma=" << Sigma  << std::endl;
   Volume=ref.Lattice.Volume;
   PreFactors=0.0;
   //See A.18
@@ -56,7 +56,7 @@ EwaldHandler::EwaldHandler(const EwaldHandler& aLR, ParticleSet& ref):
 void EwaldHandler::fillFk(KContainer& KList)
 {
   Fk.resize(KList.kpts_cart.size());
-  const vector<int>& kshell(KList.kshell);
+  const std::vector<int>& kshell(KList.kshell);
   MaxKshell=kshell.size()-1;
   Fk_symm.resize(MaxKshell);
   kMag.resize(MaxKshell);
@@ -111,12 +111,12 @@ void EwaldHandler::fillFk(KContainer& KList)
 }
 
 EwaldHandler::RealType
-EwaldHandler::evaluate_slab(RealType z, const vector<int>& kshell
+EwaldHandler::evaluate_slab(RealType z, const std::vector<int>& kshell
                             , const ComplexType* restrict eikr_i, const ComplexType* restrict eikr_j)
 {
   RealType zp=z*Sigma;
   RealType vk=-SlabFunc0(z,zp);
-  //cout << "### SLAB " << z << " " << zp << endl;
+  //cout << "### SLAB " << z << " " << zp << std::endl;
   for(int ks=0,ki=0; ks<MaxKshell; ks++)
   {
     RealType u=0;//\sum Real (e^ikr_i e^(-ikr_j))

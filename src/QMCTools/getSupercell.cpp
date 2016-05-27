@@ -2,8 +2,8 @@
 #include <cmath>
 #include <cstdlib>
 #include <stdio.h>
-#include <string.h>
-using namespace std;
+#include <string>
+#include <cstring>
 
 
 template<typename T>
@@ -58,7 +58,7 @@ double SimCellRad(double* mat)
       C[j] = mat[cstart+j];
     }
     cross(B,C,BxC);
-    double val = abs(0.5*dot(A,BxC) / sqrt(dot(BxC,BxC)));
+    double val = std::abs(0.5*dot(A,BxC) / sqrt(dot(BxC,BxC)));
     if (val < radius)
       radius = val;
   }
@@ -70,10 +70,10 @@ double getScore(double *mat)
   double score = 0;
   static const double tol = 0.001;
   // Highest preference for diagonal matrices
-  const double abssumoffidag = abs(mat[1]) + abs(mat[2]) + abs(mat[3]) + abs(mat[5]) + abs(mat[6]) + abs(mat[7]);
+  const double abssumoffidag = std::abs(mat[1]) + std::abs(mat[2]) + std::abs(mat[3]) + std::abs(mat[5]) + std::abs(mat[6]) + std::abs(mat[7]);
   if (abssumoffidag < tol)
   {
-    //    cout << "Found a diagonal supercell!" << endl;
+    //    std::cout << "Found a diagonal supercell!" << std::endl;
     score += 50000;
   }
   // Now prefer positive elements that come as early as possible
@@ -121,7 +121,7 @@ void getBestTile(double* primcell, int target, int* tilemat, double& radius, int
   double bestScore = 0.0;
   static const double tol = 0.0000001;
   double detPrim = getDet(primcell);
-  //  cout << "detPrim = " << detPrim << endl;
+  //  std::cout << "detPrim = " << detPrim << std::endl;
   if (detPrim < 0)
   {
     target *= -1;
@@ -179,7 +179,7 @@ void getBestTile(double* primcell, int target, int* tilemat, double& radius, int
                         {
                           my_largest = rad;
                           localBestScore = score;
-                          memcpy(my_besttile, d, 9*sizeof(int));
+                          std::memcpy(my_besttile, d, 9*sizeof(int));
                         }
                       }
                     }
@@ -188,7 +188,7 @@ void getBestTile(double* primcell, int target, int* tilemat, double& radius, int
                     {
                       if (numpart == target)
                       {
-                        //			cout << "Got here" << endl;
+                        //			cout << "Got here" << std::endl;
                         for (int q = -range; q <= range; q++)
                         {
                           d[8] = q;
@@ -200,7 +200,7 @@ void getBestTile(double* primcell, int target, int* tilemat, double& radius, int
                           {
                             my_largest = rad;
                             localBestScore = score;
-                            memcpy(my_besttile, d, 9*sizeof(int));
+                            std::memcpy(my_besttile, d, 9*sizeof(int));
                           }
                         }
                       }
@@ -221,7 +221,7 @@ void getBestTile(double* primcell, int target, int* tilemat, double& radius, int
         {
           largest = my_largest;
           bestScore = localBestScore;
-          memcpy(tilemat, my_besttile, 9*sizeof(int));
+          std::memcpy(tilemat, my_besttile, 9*sizeof(int));
         }
       }
     }
@@ -242,7 +242,7 @@ int main(int argc, char* argv[])
   {
     if (i <= argc)
     {
-      if (!strcmp(argv[i],"--ptvs"))
+      if (!std::strcmp(argv[i],"--ptvs"))
       {
         for (int j = 0; j < 9; j++)
         {
@@ -250,16 +250,16 @@ int main(int argc, char* argv[])
         }
         i += 9;
       }
-      if (!strcmp(argv[i],"--target"))
+      if (!std::strcmp(argv[i],"--target"))
       {
         target = strtol(argv[i+1], &pend, 10);
         i++;
       }
-      if (!strcmp(argv[i],"--verbose"))
+      if (!std::strcmp(argv[i],"--verbose"))
       {
         verbose=1;
       }
-      if (!strcmp(argv[i],"--maxentry"))
+      if (!std::strcmp(argv[i],"--maxentry"))
       {
         maxentry = strtol(argv[i+1], &pend, 10);
         i++;
@@ -267,11 +267,11 @@ int main(int argc, char* argv[])
     }
   }
   /*
-  cout << "The input primitive translation vectors are: \n";
-  cout << prim[0] << "   " << prim[1] << "   " << prim[2] << endl;
-  cout << prim[3] << "   " << prim[4] << "   " << prim[5] << endl;
-  cout << prim[6] << "   " << prim[7] << "   " << prim[8] << endl;
-  cout << "The target is " << target << endl;
+  std::cout << "The input primitive translation vectors are: \n";
+  std::cout << prim[0] << "   " << prim[1] << "   " << prim[2] << std::endl;
+  std::cout << prim[3] << "   " << prim[4] << "   " << prim[5] << std::endl;
+  std::cout << prim[6] << "   " << prim[7] << "   " << prim[8] << std::endl;
+  std::cout << "The target is " << target << std::endl;
   */
   int besttile[9];
   double super[9];
@@ -280,27 +280,27 @@ int main(int argc, char* argv[])
   getSupercell(prim, besttile, super);
   if (verbose)
   {
-    cout << "Best Tiling Matrix = " << endl;
+    std::cout << "Best Tiling Matrix = " << std::endl;
     for (int i = 0; i < 3; i++)
     {
       for (int j = 0; j < 3; j++)
       {
-        cout << besttile[i*3+j] << "   ";
+        std::cout << besttile[i*3+j] << "   ";
       }
-      cout << endl;
+      std::cout << std::endl;
     }
-    cout << "Best Supercell = " << endl;
+    std::cout << "Best Supercell = " << std::endl;
     for (int i = 0; i < 3; i++)
     {
       for (int j = 0; j < 3; j++)
       {
-        cout << super[i*3+j] << "   ";
+        std::cout << super[i*3+j] << "   ";
       }
-      cout << endl;
+      std::cout << std::endl;
     }
-    cout << "radius = " << radius << endl;
+    std::cout << "radius = " << radius << std::endl;
     double score = getScore(super);
-    cout << "score = " << score << endl;
+    std::cout << "score = " << score << std::endl;
     int trialtile[9];
     trialtile[0] = -1;
     trialtile[1] =  3;
@@ -313,31 +313,31 @@ int main(int argc, char* argv[])
     trialtile[8] =  1;
     double ts[9];
     getSupercell(prim, trialtile, ts);
-    cout << "Trial Supercell = " << endl;
+    std::cout << "Trial Supercell = " << std::endl;
     for (int i = 0; i < 3; i++)
     {
       for (int j = 0; j < 3; j++)
       {
-        cout << ts[i*3+j] << "   ";
+        std::cout << ts[i*3+j] << "   ";
       }
-      cout << endl;
+      std::cout << std::endl;
     }
-    cout << "radius = " << SimCellRad(ts) << endl;
+    std::cout << "radius = " << SimCellRad(ts) << std::endl;
     score = getScore(ts);
-    cout << "score = " << score << endl;
+    std::cout << "score = " << score << std::endl;
   }
   else
   {
-    cout << radius << "   ";
+    std::cout << radius << "   ";
     for (int i = 0; i < 9; i++)
     {
-      cout << besttile[i] << "   ";
+      std::cout << besttile[i] << "   ";
     }
     for (int i = 0; i < 9; i++)
     {
-      cout << super[i] << "   ";
+      std::cout << super[i] << "   ";
     }
-    cout << endl;
+    std::cout << std::endl;
   }
 }
 

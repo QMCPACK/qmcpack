@@ -23,11 +23,11 @@ public :
 
   bool put(std::vector<xmlNodePtr>& wset);
 
-  void read(int nprocs, ADIOS_FILE* file_handle, int& walker_win, vector<int>& nw);
+  void read(int nprocs, ADIOS_FILE* file_handle, int& walker_win, std::vector<int>& nw);
   void append_walkers(R_t& walker_buff,int, int);
-  void setMCWalker(vector<int> nw);
+  void setMCWalker(std::vector<int> nw);
 
-  string getFileRoot();
+  std::string getFileRoot();
 };
 }
 

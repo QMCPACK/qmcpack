@@ -47,8 +47,8 @@ QMCCostFunctionBase::QMCCostFunctionBase(MCWalkerConfiguration& w, TrialWaveFunc
 #if defined(QMCCOSTFUNCTION_DEBUG)
   char fname[16];
   sprintf(fname,"optdebug.p%d",OHMMS::Controller->mycontext());
-  debug_stream = new ofstream(fname);
-  debug_stream->setf(ios::scientific, ios::floatfield);
+  debug_stream = new std::ofstream(fname);
+  debug_stream->setf(std::ios::scientific, std::ios::floatfield);
   debug_stream->precision(8);
 #endif
 }
@@ -63,7 +63,7 @@ QMCCostFunctionBase::~QMCCostFunctionBase()
     delete debug_stream;
 }
 
-void QMCCostFunctionBase::setRng(vector<RandomGenerator_t*>& r)
+void QMCCostFunctionBase::setRng(std::vector<RandomGenerator_t*>& r)
 {
   if(MoverRng.size()<r.size())
   {
@@ -82,23 +82,23 @@ void QMCCostFunctionBase::setTargetEnergy(Return_t et)
 {
   //evaluate effective target energy
   EtargetEff= Etarget = et;
-//     app_log() << "Effective Target Energy = " << EtargetEff << endl;
+//     app_log() << "Effective Target Energy = " << EtargetEff << std::endl;
 //     app_log() << "Cost Function = " << w_en << "*<E> + "
-//     << w_var << "*<Var> + " << w_w << "*<Var(unreweighted)> " << endl;
+//     << w_var << "*<Var> + " << w_w << "*<Var(unreweighted)> " << std::endl;
   //if(UseWeight)
-  //app_log() << "Correlated sampling is used." << endl;
+  //app_log() << "Correlated sampling is used." << std::endl;
   //else
-  //app_log() << "Weight is set to one." << endl;
+  //app_log() << "Weight is set to one." << std::endl;
 //     if (msg_stream)
 //       {
-//         *msg_stream << "  Total number of walkers          = " << NumSamples << endl;
-//         *msg_stream << "  Effective Target Energy = " << EtargetEff << endl;
-//         *msg_stream << "  Cost Function = " << w_en << "*<E> + " << w_var << "*<Var> + " << w_w << "*<Var(unreweighted)> " << endl;
+//         *msg_stream << "  Total number of walkers          = " << NumSamples << std::endl;
+//         *msg_stream << "  Effective Target Energy = " << EtargetEff << std::endl;
+//         *msg_stream << "  Cost Function = " << w_en << "*<E> + " << w_var << "*<Var> + " << w_w << "*<Var(unreweighted)> " << std::endl;
 //         *msg_stream << "  Optimization report = ";
 //         *msg_stream << "cost, walkers, eavg/wgt, eavg/walkers, evar/wgt, evar/walkers, evar_abs\n";
 //         *msg_stream << "  Optimized variables = " << OptVariables.name(0);
 //         for (int i=1; i<OptVariables.size(); ++i) *msg_stream << "," << OptVariables.name(i) ;
-//         *msg_stream << endl;
+//         *msg_stream << std::endl;
 //       }
 }
 
@@ -114,10 +114,10 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::Cost(bool needGrad)
 
 void QMCCostFunctionBase::printEstimates()
 {
-  app_log()<<"      Current ene:     " <<curAvg_w<<endl;
-  app_log()<<"      Current var:     " <<curVar_w<<endl;
-  app_log()<<"      Current ene_urw:     " <<curAvg<<endl;
-  app_log()<<"      Current var_urw: " <<curVar<<endl;
+  app_log()<<"      Current ene:     " <<curAvg_w<< std::endl;
+  app_log()<<"      Current var:     " <<curVar_w<< std::endl;
+  app_log()<<"      Current ene_urw:     " <<curAvg<< std::endl;
+  app_log()<<"      Current var_urw: " <<curVar<< std::endl;
 }
 
 QMCCostFunctionBase::Return_t QMCCostFunctionBase::computedCost()
@@ -127,18 +127,18 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::computedCost()
   curAvg_w = SumValue[SUM_E_WGT]/SumValue[SUM_WGT];
   curVar_w = SumValue[SUM_ESQ_WGT]/SumValue[SUM_WGT]-curAvg_w*curAvg_w;
   Return_t wgtinv=1.0/static_cast<Return_t>(NumSamples);
-  // app_log() << "wgtinv = " << wgtinv << endl;
+  // app_log() << "wgtinv = " << wgtinv << std::endl;
   curAvg = SumValue[SUM_E_BARE]*wgtinv;
   curVar = SumValue[SUM_ESQ_BARE]*wgtinv-curAvg*curAvg;
   curVar_abs = SumValue[SUM_ABSE_WGT]/SumValue[SUM_WGT];
   // app_log() << "curVar     = " << curVar
   //     << "   curAvg     = " << curAvg
-  //     << "   NumWalkersEff     = " << NumWalkersEff << endl;
-  // app_log() << "SumValue[SUM_WGT] = " << SumValue[SUM_WGT] << endl;
-  // app_log() << "SumValue[SUM_WGTSQ] = " << SumValue[SUM_WGTSQ] << endl;
-  // app_log() << "SumValue[SUM_ABSE_WGT] = " << SumValue[SUM_ABSE_WGT] << endl;
-  // app_log() << "SumValue[SUM_E_WGT] = " << SumValue[SUM_E_WGT] << endl;
-  // app_log() << "SumValue[SUM_ESQ_WGT] = " << SumValue[SUM_ESQ_WGT] << endl;
+  //     << "   NumWalkersEff     = " << NumWalkersEff << std::endl;
+  // app_log() << "SumValue[SUM_WGT] = " << SumValue[SUM_WGT] << std::endl;
+  // app_log() << "SumValue[SUM_WGTSQ] = " << SumValue[SUM_WGTSQ] << std::endl;
+  // app_log() << "SumValue[SUM_ABSE_WGT] = " << SumValue[SUM_ABSE_WGT] << std::endl;
+  // app_log() << "SumValue[SUM_E_WGT] = " << SumValue[SUM_E_WGT] << std::endl;
+  // app_log() << "SumValue[SUM_ESQ_WGT] = " << SumValue[SUM_ESQ_WGT] << std::endl;
   Return_t wgt_var = SumValue[SUM_WGTSQ]-SumValue[SUM_WGT]*SumValue[SUM_WGT];
   wgt_var *=wgtinv;
   CostValue = 0.0;
@@ -152,7 +152,7 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::computedCost()
   if (std::abs(w_w) > small)
     CostValue += w_w*curVar;
   //CostValue = w_abs*curVar_abs + w_var*curVar_w + w_en*curAvg_w + w_w*curVar;
-  // app_log() << "CostValue, NumEffW = " << CostValue <<"  " <<NumWalkersEff << endl;
+  // app_log() << "CostValue, NumEffW = " << CostValue <<"  " <<NumWalkersEff << std::endl;
   IsValid=true;
   if(NumWalkersEff < NumSamples*MinNumWalkers)
     //    if (NumWalkersEff < MinNumWalkers)
@@ -234,9 +234,9 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::computedCost()
 //  }
 
 //  void
-//  QMCCostFunctionBase::getConfigurations(const string& aroot) {
+//  QMCCostFunctionBase::getConfigurations(const std::string& aroot) {
 //    if(aroot.size() && aroot != "invalid") {
-//      app_log() << "  Reading configurations from the previous qmc block" << endl;
+//      app_log() << "  Reading configurations from the previous qmc block" << std::endl;
 //      HDFWalkerInputCollect wReader(aroot);
 //      wReader.putSingle(W);
 //    }
@@ -245,24 +245,24 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::computedCost()
 //    if(debug_stream) delete debug_stream;
 //    char fname[16];
 //    sprintf(fname,"optdebug.p%d",OHMMS::Controller->mycontext());
-//    debug_stream = new ofstream(fname);
-//    debug_stream->setf(ios::scientific, ios::floatfield);
+//    debug_stream = new std::ofstream(fname);
+//    debug_stream->setf(std::ios::scientific, std::ios::floatfield);
 //    debug_stream->precision(8);
 //
-//    *debug_stream << "Initial : " << endl;
+//    *debug_stream << "Initial : " << std::endl;
 //    for(int i=0; i<OptParams.size(); i++)
 //      *debug_stream << " " << IDtag[i] << "=" << OptParams[i];
-//    *debug_stream << endl;
+//    *debug_stream << std::endl;
 //#endif
 //  }
 
 //  /** evaluate everything before optimization */
 //  void
-//  QMCCostFunctionBase::getConfigurations(vector<string>& ConfigFile,
+//  QMCCostFunctionBase::getConfigurations(std::vector<std::string>& ConfigFile,
 //      int partid, int nparts) {
 //    if(ConfigFile.size()) {
 //
-//      app_log() << "  Reading configurations from mcwalkerset " << endl;
+//      app_log() << "  Reading configurations from mcwalkerset " << std::endl;
 //
 //      W.destroyWalkers(W.begin(),W.end());
 //      for(int i=0; i<ConfigFile.size(); i++) {
@@ -305,8 +305,8 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::computedCost()
 //
 //      Return_t*  saved=Records[iw];
 //#if defined(QMC_COMPLEX)
-//      app_error() << " Optimization is not working with complex wavefunctions yet" << endl;
-//      app_error() << "  Needs to fix TrialWaveFunction::evaluateDeltaLog " << endl;
+//      app_error() << " Optimization is not working with complex wavefunctions yet" << std::endl;
+//      app_error() << "  Needs to fix TrialWaveFunction::evaluateDeltaLog " << std::endl;
 //#else
 //      Psi.evaluateDeltaLog(W, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], thisWalker.Drift, dL);
 //#endif
@@ -319,7 +319,7 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::computedCost()
 //    }
 //
 //    //Need to sum over the processors
-//    vector<Return_t> etemp(2);
+//    std::vector<Return_t> etemp(2);
 //    etemp[0]=Etarget;
 //    etemp[1]=static_cast<Return_t>(numLocWalkers);
 //    myComm->allreduce(etemp);
@@ -339,10 +339,10 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::computedCost()
 //    {
 //      Return_t v=(*oit).second;
 //      OptVariablesForPsi[(*oit).first]=v;
-//      map<string,set<string>*>::iterator eit(equalConstraints.find((*oit).first));
+//      std::map<std::string,std::set<std::string>*>::iterator eit(equalConstraints.find((*oit).first));
 //      if(eit != equalConstraints.end())
 //      {
-//        set<string>::iterator f((*eit).second->begin()),l((*eit).second->end());
+//        std::set<std::string>::iterator f((*eit).second->begin()),l((*eit).second->end());
 //        while(f != l)
 //        {
 //          OptVariablesForPsi[(*f)]=v;
@@ -352,15 +352,15 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::computedCost()
 //      ++oit;
 //    }
 //
-//    //cout << "QMCCostFunctionBase::resetPsi " <<endl;
+//    //cout << "QMCCostFunctionBase::resetPsi " << std::endl;
 //    //oit=OptVariablesForPsi.begin();
 //    //oit_end=OptVariablesForPsi.end();
 //    //while(oit != oit_end)
 //    //{
-//    //  cout << (*oit).first << "=" << (*oit).second << " ";
+//    //  std::cout << (*oit).first << "=" << (*oit).second << " ";
 //    //  ++oit;
 //    //}
-//    //cout << endl;
+//    //cout << std::endl;
 //    Psi.resetParameters(OptVariablesForPsi);
 //  }
 
@@ -399,15 +399,15 @@ void QMCCostFunctionBase::Report()
     {
       msg_stream->precision(8);
       *msg_stream << " curCost "
-                  << setw(5) << ReportCounter << setw(16) << CostValue
-                  << setw(16) << NumWalkersEff
-                  << setw(16) << curAvg_w << setw(16) << curAvg
-                  << setw(16) << curVar_w << setw(16) << curVar
-                  << setw(16) << curVar_abs << endl;
-      *msg_stream << " curVars " << setw(5) << ReportCounter;
+                  << std::setw(5) << ReportCounter << std::setw(16) << CostValue
+                  << std::setw(16) << NumWalkersEff
+                  << std::setw(16) << curAvg_w << std::setw(16) << curAvg
+                  << std::setw(16) << curVar_w << std::setw(16) << curVar
+                  << std::setw(16) << curVar_abs << std::endl;
+      *msg_stream << " curVars " << std::setw(5) << ReportCounter;
       for (int i=0; i<OptVariables.size(); i++)
-        *msg_stream << setw(16) << OptVariables[i];
-      *msg_stream << endl;
+        *msg_stream << std::setw(16) << OptVariables[i];
+      *msg_stream << std::endl;
     }
     //report the data
     //Psi.reportStatus(*mgs_stream);
@@ -415,7 +415,7 @@ void QMCCostFunctionBase::Report()
 #if defined(QMCCOSTFUNCTION_DEBUG)
   *debug_stream << ReportCounter;
   OptVariables.print(*debug_stream);
-  *debug_stream << endl;
+  *debug_stream << std::endl;
 #endif
   ReportCounter++;
   //myComm->barrier();
@@ -429,9 +429,9 @@ void QMCCostFunctionBase::reportParameters()
   {
     char newxml[128];
     sprintf(newxml,"%s.opt.xml", RootName.c_str());
-    *msg_stream << "  <optVariables href=\"" << newxml << "\">" << endl;
+    *msg_stream << "  <optVariables href=\"" << newxml << "\">" << std::endl;
     OptVariables.print(*msg_stream);
-    *msg_stream << "  </optVariables>" << endl;
+    *msg_stream << "  </optVariables>" << std::endl;
     updateXmlNodes();
     xmlSaveFormatFile(newxml,m_doc_out,1);
   }
@@ -471,8 +471,8 @@ bool QMCCostFunctionBase::checkParameters()
 bool
 QMCCostFunctionBase::put(xmlNodePtr q)
 {
-  string writeXmlPerStep("no");
-  string computeNLPPderiv("no");
+  std::string writeXmlPerStep("no");
+  std::string computeNLPPderiv("no");
   ParameterSet m_param;
   m_param.add(writeXmlPerStep,"dumpXML","string");
   m_param.add(MinNumWalkers,"minwalkers","scalar");
@@ -489,33 +489,33 @@ QMCCostFunctionBase::put(xmlNodePtr q)
 
   if(computeNLPPderiv != "no" && includeNonlocalH != "no")
   {
-    app_log() << "   Going to include the derivatives of " << includeNonlocalH << endl;
+    app_log() << "   Going to include the derivatives of " << includeNonlocalH << std::endl;
     useNLPPDeriv=true;
   }
-  // app_log() << "  QMCCostFunctionBase::put " << endl;
+  // app_log() << "  QMCCostFunctionBase::put " << std::endl;
   // m_param.get(app_log());
   Write2OneXml = (writeXmlPerStep == "no");
   xmlNodePtr qsave=q;
   //Estimators.put(q);
-  vector<xmlNodePtr> cset;
-  vector<string> excluded;
-  std::map<string,vector<string>*> equalConstraints;
-  std::map<string,vector<string>*> negateConstraints;
-  vector<string> idtag;
+  std::vector<xmlNodePtr> cset;
+  std::vector<std::string> excluded;
+  std::map<std::string,std::vector<std::string>*> equalConstraints;
+  std::map<std::string,std::vector<std::string>*> negateConstraints;
+  std::vector<std::string> idtag;
   xmlNodePtr cur=qsave->children;
   int pid=myComm->rank();
   while (cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if (cname == "optimize")
     {
-      vector<string> tmpid;
+      std::vector<std::string> tmpid;
       putContent(tmpid,cur);
       idtag.insert(idtag.end(),tmpid.begin(),tmpid.end());
     }
     else if (cname == "exclude")
     {
-      vector<string> tmpid;
+      std::vector<std::string> tmpid;
       putContent(tmpid,cur);
       excluded.insert(excluded.end(),tmpid.begin(),tmpid.end());
     }
@@ -525,24 +525,24 @@ QMCCostFunctionBase::put(xmlNodePtr q)
     }
     else if (cname == "set")
     {
-      string ctype("equal");
-      string s("0");
+      std::string ctype("equal");
+      std::string s("0");
       OhmmsAttributeSet pAttrib;
       pAttrib.add(ctype,"type");
       pAttrib.add(s,"name");
       pAttrib.put(cur);
       if (ctype == "equal" || ctype == "=")
       {
-        map<string,vector<string>*>::iterator eit(equalConstraints.find(s));
-        vector<string>* eqSet=0;
+        std::map<std::string,std::vector<std::string>*>::iterator eit(equalConstraints.find(s));
+        std::vector<std::string>* eqSet=0;
         if (eit == equalConstraints.end())
         {
-          eqSet = new vector<string>;
+          eqSet = new std::vector<std::string>;
           equalConstraints[s]=eqSet;
         }
         else
           eqSet = (*eit).second;
-        vector<string> econt;
+        std::vector<std::string> econt;
         putContent(econt,cur);
         eqSet->insert(eqSet->end(),econt.begin(),econt.end());
       }
@@ -562,7 +562,7 @@ QMCCostFunctionBase::put(xmlNodePtr q)
   int nc=0;
   if (equalConstraints.size())
   {
-    map<string,vector<string>*>::iterator eit(equalConstraints.begin());
+    std::map<std::string,std::vector<std::string>*>::iterator eit(equalConstraints.begin());
     while (eit != equalConstraints.end())
     {
       nc+=(*eit).second->size();
@@ -591,13 +591,13 @@ QMCCostFunctionBase::put(xmlNodePtr q)
       equalVarMap.push_back(TinyVector<int,2>(bigloc,i));
     }
     //add <equal/>
-    map<string,vector<string>*>::iterator eit(equalConstraints.begin());
+    std::map<std::string,std::vector<std::string>*>::iterator eit(equalConstraints.begin());
     while (eit != equalConstraints.end())
     {
       int loc=OptVariables.getIndex((*eit).first);
       if (loc>=0)
       {
-        const vector<string>& elist(*((*eit).second));
+        const std::vector<std::string>& elist(*((*eit).second));
         for (int i=0; i<elist.size(); ++i)
         {
           int bigloc=OptVariablesForPsi.getIndex(elist[i]);
@@ -606,7 +606,7 @@ QMCCostFunctionBase::put(xmlNodePtr q)
           equalVarMap.push_back(TinyVector<int,2>(bigloc,loc));
         }
       }
-      //remove vector<string>
+      //remove std::vector<std::string>
       delete(*eit).second;
       ++eit;
     }
@@ -618,18 +618,18 @@ QMCCostFunctionBase::put(xmlNodePtr q)
   {
     APP_ABORT("QMCCostFunctionBase::put No valid optimizable variables are found.");
   }
-//     app_log() << "<active-optimizables> " << endl;
+//     app_log() << "<active-optimizables> " << std::endl;
 //     OptVariables.print(app_log());
-//     app_log() << "</active-optimizables>" << endl;
+//     app_log() << "</active-optimizables>" << std::endl;
   if (msg_stream)
-    msg_stream->setf(ios::scientific, ios::floatfield);
+    msg_stream->setf(std::ios::scientific, std::ios::floatfield);
   resetPsi();
 //     Psi.reportStatus(app_log());
   //set the cost function
   if (cset.empty())
   {
     if (msg_stream)
-      *msg_stream << " Using Default Cost Function: Cost = <|E-E_ff|^2>" << endl;
+      *msg_stream << " Using Default Cost Function: Cost = <|E-E_ff|^2>" << std::endl;
   }
   else
     resetCostFunction(cset);
@@ -638,11 +638,11 @@ QMCCostFunctionBase::put(xmlNodePtr q)
   return true;
 }
 
-void QMCCostFunctionBase::resetCostFunction(vector<xmlNodePtr>& cset)
+void QMCCostFunctionBase::resetCostFunction(std::vector<xmlNodePtr>& cset)
 {
   for (int i=0; i<cset.size(); i++)
   {
-    string pname;
+    std::string pname;
     Return_t wgt=1.0;
     OhmmsAttributeSet pAttrib;
     pAttrib.add(pname,"name");
@@ -679,7 +679,7 @@ void QMCCostFunctionBase::updateXmlNodes()
       const xmlChar* iptr=xmlGetProp(cur,(const xmlChar*)"id");
       if (iptr == NULL)
         continue;
-      string aname((const char*)iptr);
+      std::string aname((const char*)iptr);
       opt_variables_type::iterator oit(OptVariablesForPsi.find(aname));
       if (oit != OptVariablesForPsi.end())
       {
@@ -695,20 +695,20 @@ void QMCCostFunctionBase::updateXmlNodes()
       const xmlChar* iptr=xmlGetProp(cur,(const xmlChar*)"id");
       if (iptr == NULL)
         continue;
-      string aname((const char*)iptr);
-      string expID=aname+"_E";
+      std::string aname((const char*)iptr);
+      std::string expID=aname+"_E";
       xmlAttrPtr aptr=xmlHasProp(cur,(const xmlChar*)"exponent");
       opt_variables_type::iterator oit(OptVariablesForPsi.find(expID));
       if (aptr != NULL && oit != OptVariablesForPsi.end())
       {
-        attribNodes[expID]=pair<xmlNodePtr,string>(cur,"exponent");
+        attribNodes[expID]= std::pair<xmlNodePtr,std::string>(cur,"exponent");
       }
-      string cID=aname+"_C";
+      std::string cID=aname+"_C";
       aptr=xmlHasProp(cur,(const xmlChar*)"contraction");
       oit=OptVariablesForPsi.find(cID);
       if (aptr != NULL && oit != OptVariablesForPsi.end())
       {
-        attribNodes[cID]=pair<xmlNodePtr,string>(cur,"contraction");
+        attribNodes[cID]= std::pair<xmlNodePtr,std::string>(cur,"contraction");
       }
     }
     xmlXPathFreeObject(result);
@@ -720,12 +720,12 @@ void QMCCostFunctionBase::updateXmlNodes()
       const xmlChar* iptr=xmlGetProp(cur,(const xmlChar*)"id");
       if (iptr == NULL)
         continue;
-      string aname((const char*)iptr);
+      std::string aname((const char*)iptr);
       xmlAttrPtr aptr=xmlHasProp(cur,(const xmlChar*)"coeff");
       opt_variables_type::iterator oit(OptVariablesForPsi.find(aname));
       if (aptr != NULL && oit != OptVariablesForPsi.end())
       {
-        attribNodes[aname]=pair<xmlNodePtr,string>(cur,"coeff");
+        attribNodes[aname]= std::pair<xmlNodePtr,std::string>(cur,"coeff");
       }
     }
     xmlXPathFreeObject(result);
@@ -737,12 +737,12 @@ void QMCCostFunctionBase::updateXmlNodes()
       const xmlChar* iptr=xmlGetProp(cur,(const xmlChar*)"id");
       if (iptr == NULL)
         continue;
-      string aname((const char*)iptr);
+      std::string aname((const char*)iptr);
       xmlAttrPtr aptr=xmlHasProp(cur,(const xmlChar*)"coeff");
       opt_variables_type::iterator oit(OptVariablesForPsi.find(aname));
       if (aptr != NULL && oit != OptVariablesForPsi.end())
       {
-        attribNodes[aname]=pair<xmlNodePtr,string>(cur,"coeff");
+        attribNodes[aname]= std::pair<xmlNodePtr,std::string>(cur,"coeff");
       }
     }
     xmlXPathFreeObject(result);
@@ -751,31 +751,31 @@ void QMCCostFunctionBase::updateXmlNodes()
     xmlXPathFreeContext(acontext);
   }
   //     Psi.reportStatus(app_log());
-  map<string,xmlNodePtr>::iterator pit(paramNodes.begin()), pit_end(paramNodes.end());
+  std::map<std::string,xmlNodePtr>::iterator pit(paramNodes.begin()), pit_end(paramNodes.end());
   while (pit != pit_end)
   {
     Return_t v=OptVariablesForPsi[(*pit).first];
     getContent(v,(*pit).second);
-    //         vout <<(*pit).second<<endl;
+    //         vout <<(*pit).second<< std::endl;
     ++pit;
   }
-  map<string,pair<xmlNodePtr,string> >::iterator ait(attribNodes.begin()), ait_end(attribNodes.end());
+  std::map<std::string,std::pair<xmlNodePtr,std::string> >::iterator ait(attribNodes.begin()), ait_end(attribNodes.end());
   while (ait != ait_end)
   {
     std::ostringstream vout;
-    vout.setf(ios::scientific, ios::floatfield);
+    vout.setf(std::ios::scientific, std::ios::floatfield);
     vout.precision(16);
     vout << OptVariablesForPsi[(*ait).first];
     xmlSetProp((*ait).second.first, (const xmlChar*)(*ait).second.second.c_str(),(const xmlChar*)vout.str().c_str());
     ++ait;
   }
-  map<string,xmlNodePtr>::iterator cit(coeffNodes.begin()), cit_end(coeffNodes.end());
+  std::map<std::string,xmlNodePtr>::iterator cit(coeffNodes.begin()), cit_end(coeffNodes.end());
   while (cit != cit_end)
   {
-    string rname((*cit).first);
+    std::string rname((*cit).first);
     OhmmsAttributeSet cAttrib;
-    string datatype("none");
-    string aname("0");
+    std::string datatype("none");
+    std::string aname("0");
     cAttrib.add(datatype,"type");
     cAttrib.add(aname,"id");
     cAttrib.put((*cit).second);
@@ -784,7 +784,7 @@ void QMCCostFunctionBase::updateXmlNodes()
       //
       aname.append("_");
       opt_variables_type::iterator vit(OptVariablesForPsi.begin());
-      vector<Return_t> c;
+      std::vector<Return_t> c;
       while (vit != OptVariablesForPsi.end())
       {
         if ((*vit).first.find(aname) == 0)
@@ -803,7 +803,7 @@ void QMCCostFunctionBase::updateXmlNodes()
       xmlNodePtr cur=(*cit).second->children;
       while (cur != NULL)
       {
-        string cname((const char*)(cur->name));
+        std::string cname((const char*)(cur->name));
         if (cname == "lambda")
         {
           int i=0;
@@ -821,7 +821,7 @@ void QMCCostFunctionBase::updateXmlNodes()
           if (vTarget != OptVariablesForPsi.end())
           {
             std::ostringstream vout;
-            vout.setf(ios::scientific, ios::floatfield);
+            vout.setf(std::ios::scientific, std::ios::floatfield);
             vout.precision(16);
             vout << (*vTarget).second;
             xmlSetProp(cur, (const xmlChar*)"c",(const xmlChar*)vout.str().c_str());
@@ -845,9 +845,9 @@ void QMCCostFunctionBase::addCoefficients(xmlXPathContextPtr acontext, const cha
   {
     xmlNodePtr cur= result->nodesetval->nodeTab[iparam];
     OhmmsAttributeSet cAttrib;
-    string aname("0");
-    string optimize("yes");
-    string datatype("none");
+    std::string aname("0");
+    std::string optimize("yes");
+    std::string datatype("none");
     cAttrib.add(aname,"id");
     cAttrib.add(aname,"name");
     cAttrib.add(datatype,"type");
@@ -867,7 +867,7 @@ void QMCCostFunctionBase::addCoefficients(xmlXPathContextPtr acontext, const cha
       opt_variables_type::iterator oit(OptVariablesForPsi.begin()),oit_end(OptVariablesForPsi.end());
       while (notlisted && oit != oit_end)
       {
-        const string& oname((*oit).first);
+        const std::string& oname((*oit).first);
         notlisted=(oname.find(aname)>=oname.size());
         ++oit;
       }
@@ -881,7 +881,7 @@ void QMCCostFunctionBase::addCoefficients(xmlXPathContextPtr acontext, const cha
 }
 
 bool
-QMCCostFunctionBase::lineoptimization(const vector<Return_t>& x0, const vector<Return_t>& gr, Return_t val0,
+QMCCostFunctionBase::lineoptimization(const std::vector<Return_t>& x0, const std::vector<Return_t>& gr, Return_t val0,
                                       Return_t&  dl, Return_t& val_proj, Return_t& lambda_max)
 {
   return false;
@@ -936,7 +936,7 @@ QMCCostFunctionBase::lineoptimization(const vector<Return_t>& x0, const vector<R
       A(i,k)=std::pow(dxmax,k);
     app_log() << " (" << dxmax << "," << y[i] << ")";
   }
-  app_log() << endl;
+  app_log() << std::endl;
   Vector<double> polys(max_poly);
   Vector<double> errors(max_poly);
   LeastSquaredFitLU(y,sigma,A,polys,errors);
@@ -950,7 +950,7 @@ QMCCostFunctionBase::lineoptimization(const vector<Return_t>& x0, const vector<R
   for (int j=0; j<x0.size(); ++j)
     Params(j)=x0[j]+dl*gr[j];
   val_proj=Cost();
-  app_log() << "  cost = " << val_proj << endl;
+  app_log() << "  cost = " << val_proj << std::endl;
   //Psi.reportStatus(app_log());
   //return false;
   return true;

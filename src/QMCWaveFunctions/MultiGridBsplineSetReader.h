@@ -35,11 +35,11 @@ struct MultiGridBsplineSetReader: public BsplineReaderBase
   /** raw data on the original grid */
   Array<double,3> dense_r, dense_i;
   Array<double,3> coarse_r, coarse_i;
-  vector<SingleSplineType*> spline_r;
-  vector<SingleSplineType*> spline_i;
-  Array<complex<double>,3> FFTbox;
+  std::vector<SingleSplineType*> spline_r;
+  std::vector<SingleSplineType*> spline_i;
+  Array<std::complex<double>,3> FFTbox;
   fftw_plan FFTplan;
-  vector<int> OrbGroups;
+  std::vector<int> OrbGroups;
 
   MultiGridBsplineSetReader(EinsplineSetBuilder* e)
     : BsplineReaderBase(e),use_complex(false),thisSPOSet(0),FFTplan(NULL)
@@ -86,7 +86,7 @@ struct MultiGridBsplineSetReader: public BsplineReaderBase
    * @param ti twist index
    * @param iorb orbital index
    */
-  void fft_spline(Vector<complex<double> >& cG, int ti, int iorb)
+  void fft_spline(Vector<std::complex<double> >& cG, int ti, int iorb)
   {
     unpack4fftw(cG,mybuilder->Gvecs[0],mybuilder->MeshSize,FFTbox);
     fftw_execute (FFTplan);
@@ -119,13 +119,13 @@ struct MultiGridBsplineSetReader: public BsplineReaderBase
     ReportEngine PRE("MultiGridBsplineSetReader","create_spline_set(int, EinsplineSet*)");
 
     thisSPOSet=new ThisSPOSetType;
-    app_log() << "  AdoptorName = MixedGridBsplineSet "<< endl;
+    app_log() << "  AdoptorName = MixedGridBsplineSet "<< std::endl;
 
     use_complex=thisSPOSet->is_complex;
     if(use_complex)
-      app_log() << "  Using complex einspline table" << endl;
+      app_log() << "  Using complex einspline table" << std::endl;
     else
-      app_log() << "  Using real einspline table" << endl;
+      app_log() << "  Using real einspline table" << std::endl;
 
     check_twists(thisSPOSet->Extended,bandgroup);
 
@@ -198,15 +198,15 @@ struct MultiGridBsplineSetReader: public BsplineReaderBase
       typedef QMCTraits::PosType pos_type;
       pos_type delta(n2/static_cast<double>(MeshSize[0]),n2/static_cast<double>(MeshSize[1]),n2/static_cast<double>(MeshSize[2]));
 
-      app_log() << "  Estimated SubDomain " << 2.0*delta << endl;
+      app_log() << "  Estimated SubDomain " << 2.0*delta << std::endl;
       TinyVector<double,3> lower(0.0);
       TinyVector<double,3> upper(1.0);
 
       //prepare to add sub domains
       thisSPOSet->resizeSubDomains(ions.getTotalNum(),ncenters);
-      std::copy(ions.PCID.begin(),ions.PCID.end(),thisSPOSet->PCID.begin());
+      copy(ions.PCID.begin(),ions.PCID.end(),thisSPOSet->PCID.begin());
 
-      vector<int> boxes(ncenters,-1); 
+      std::vector<int> boxes(ncenters,-1); 
       char s[1024];
       for(int i=0; i<ions.getTotalNum(); ++i)
       {
@@ -237,7 +237,7 @@ struct MultiGridBsplineSetReader: public BsplineReaderBase
         << " Global " << (thisSPOSet->sizeOfExtended()>>20)
         << " Local  " << (loc_data_size>>20) 
         << "\n  Saving factor= " << static_cast<double>(org_data_size)/static_cast<double>(thisSPOSet->sizeOfExtended()+loc_data_size)
-        << endl;
+        << std::endl;
     }
 
     //APP_ABORT("DONE");
@@ -258,9 +258,9 @@ struct MultiGridBsplineSetReader: public BsplineReaderBase
         coarse_i.resize(coarse_mesh[0],coarse_mesh[1],coarse_mesh[2]);
       }
 
-      Vector<complex<double> > cG(mybuilder->Gvecs[0].size());
+      Vector<std::complex<double> > cG(mybuilder->Gvecs[0].size());
       int N = mybuilder->NumDistinctOrbitals;
-      const vector<BandInfo>& cur_bands=bandgroup.myBands;
+      const std::vector<BandInfo>& cur_bands=bandgroup.myBands;
       for(int iorb=0,ival=0; iorb<N; ++iorb, ++ival)
       {
         int ti=cur_bands[iorb].TwistIndex;

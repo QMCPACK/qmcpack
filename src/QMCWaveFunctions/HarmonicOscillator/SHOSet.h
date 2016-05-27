@@ -32,9 +32,9 @@ namespace qmcplusplus
       energy         = e;
     }
 
-    inline void sho_report(const string& pad="")
+    inline void sho_report(const std::string& pad="")
     {
-      app_log()<<pad<<"qn="<<quantum_number<<"  e="<<energy<<endl;
+      app_log()<<pad<<"qn="<<quantum_number<<"  e="<<energy<< std::endl;
     }
   };
 
@@ -51,8 +51,8 @@ namespace qmcplusplus
 
     int nmax;
     TinyVector<int,DIM> qn_max;
-    vector<SHOState>  state_info;
-    vector<RealType>  prefactors;
+    std::vector<SHOState>  state_info;
+    std::vector<RealType>  prefactors;
     Array<RealType,2> hermite;
     Array<RealType,2> bvalues;
     Array<RealType,2> d0_values;
@@ -60,7 +60,7 @@ namespace qmcplusplus
     Array<RealType,2> d2_values;
 
     //construction/destruction
-    SHOSet(RealType l, PosType c, const vector<SHOState*>& sho_states);
+    SHOSet(RealType l, PosType c, const std::vector<SHOState*>& sho_states);
 
     ~SHOSet();
 
@@ -88,7 +88,7 @@ namespace qmcplusplus
     void evaluate_d0(const PosType& xpos, ValueViewer_t& psi);
     void evaluate_d1(const PosType& xpos, ValueViewer_t& psi, GradViewer_t& dpsi);
     void evaluate_d2(const PosType& xpos, ValueViewer_t& psi, ValueViewer_t& d2psi);
-    void report(const string& pad="");
+    void report(const std::string& pad="");
     void test_derivatives();
     void test_overlap();
     void evaluate_check(PosType r, ValueViewer_t& psi, 
@@ -103,7 +103,7 @@ namespace qmcplusplus
 
     
     ///unimplemented functions call this to abort
-    inline void not_implemented(const string& method)
+    inline void not_implemented(const std::string& method)
     {
       APP_ABORT("SHOSet::"+method+" has not been implemented.");
     }
@@ -137,7 +137,7 @@ namespace qmcplusplus
                           ValueMatrix_t &basis_lapl);
     void copyParamsFromMatrix(const opt_variables_type& active, 
                               const ValueMatrix_t &mat, 
-                              vector<RealType> &destVec);
+                              std::vector<RealType> &destVec);
   };
 
 }

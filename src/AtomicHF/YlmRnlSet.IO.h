@@ -27,15 +27,15 @@ template<class GT>
 bool YlmRnlSet<GT>::get(std::ostream& os)
 {
   os.precision(12);
-  os.setf(ios::scientific, ios::floatfield);
+  os.setf(std::ios::scientific, std::ios::floatfield);
   for(int i=0; i < m_grid->size(); i++)
   {
-    os << setw(20) << m_grid->r(i);
+    os << std::setw(20) << m_grid->r(i);
     for(int ob=0; ob < psi.size(); ob++)
     {
-      os << setw(20) << psi[ob](i);
+      os << std::setw(20) << psi[ob](i);
     }
-    os << endl;
+    os << std::endl;
   }
   return true;
 }
@@ -135,12 +135,12 @@ template<class GT>
 bool YlmRnlSet<GT>::print(const std::string& elementName)
 {
 /// print to file fname
-  string HDFfname = elementName + ".h5";
+  std::string HDFfname = elementName + ".h5";
   hid_t afile = H5Fcreate(HDFfname.c_str(),H5F_ACC_TRUNC,
                           H5P_DEFAULT,H5P_DEFAULT);
   OneDimGridBase<double>* reduced_grid;
   reduced_grid = new LinearGrid<double>;
-  ofstream* out;
+  std::ofstream* out;
   int orbindex = 0;
 /// main group
   hid_t group_id = H5Gcreate(afile,"radial_basis_states",0);
@@ -155,7 +155,7 @@ bool YlmRnlSet<GT>::print(const std::string& elementName)
 //  grid_type[0] = 1;
 // else if(gridtype == "log")
   grid_type[0] = 2;
-//HDFAttribIO<string> GridHDFTypeOut(gridtype);
+//HDFAttribIO<std::string> GridHDFTypeOut(gridtype);
 //GridHDFTypeOut.write(group_id_grid,"grid_type");
   HDFAttribIO<Vector<int> > GridHDFTypeOut(grid_type);
   GridHDFTypeOut.write(group_id_grid,"grid_type");
@@ -190,7 +190,7 @@ bool YlmRnlSet<GT>::print(const std::string& elementName)
     else
       sprintf(sfname,"ORB.%01d.%01d.%01s",N[orbindex],L[orbindex],
               elementName.c_str());
-    out = new ofstream(sfname);
+    out = new std::ofstream(sfname);
     int max_rad = m_grid->size()-1;
     while(fabs(psi[orbindex](max_rad)) < 1e-12)
       max_rad--;
@@ -208,7 +208,7 @@ bool YlmRnlSet<GT>::print(const std::string& elementName)
     transform(psi[orbindex],temp_orb);
     transform.generate();
     for(int j=0; j<reduced_grid->size(); j++)
-      *out << setw(15) << temp_orb.r(j) << setw(15) << temp_orb(j) << endl;
+      *out << std::setw(15) << temp_orb.r(j) << std::setw(15) << temp_orb(j) << std::endl;
     out->close();
     HDFAttribIO<Vector<double> > RadOrbOut(rad_orb);
     RadOrbOut.write(group_id_orb,"radial_orbital");
@@ -221,13 +221,13 @@ bool YlmRnlSet<GT>::print(const std::string& elementName)
   int nUp = 0;
   int nDn = 0;
   int nBasis = 0;
-  ofstream* osXML;
-  string fnameXML = elementName + ".basis.xml";
-  osXML = new ofstream(fnameXML.c_str());
-  *osXML << "<DeterminantSet type=\"MolecularOrbital\">" << endl;
-  *osXML << "<BasisSet>" << endl;
+  std::ofstream* osXML;
+  std::string fnameXML = elementName + ".basis.xml";
+  osXML = new std::ofstream(fnameXML.c_str());
+  *osXML << "<DeterminantSet type=\"MolecularOrbital\">" << std::endl;
+  *osXML << "<BasisSet>" << std::endl;
   *osXML << "<Basis type=\"HFNG\" species=\"" << elementName
-         << "\" file=\"" << HDFfname << "\">" << endl;
+         << "\" file=\"" << HDFfname << "\">" << std::endl;
   if(Restriction == "none")
   {
     for(int orb=0; orb<size(); orb++)
@@ -238,7 +238,7 @@ bool YlmRnlSet<GT>::print(const std::string& elementName)
       sprintf(idname,"R%03d",ID[orb]);
       *osXML << "<psi id=\"" << idname << "\" n=\"" << N[orb]
              << "\" l=\"" << L[orb] << "\" m=\"" << M[orb]
-             << "\" s=\"" << S[orb] << "\" zeta=\"1\"/>" << endl;
+             << "\" s=\"" << S[orb] << "\" zeta=\"1\"/>" << std::endl;
     }
   }
   else
@@ -253,15 +253,15 @@ bool YlmRnlSet<GT>::print(const std::string& elementName)
         sprintf(idname,"R%03d",ID[orb]);
         *osXML << "<psi id=\"" << idname << "\" n=\"" << N[orb]
                << "\" l=\"" << L[orb] << "\" m=\"" << M[orb]
-               << "\" s=\"" << S[orb] << "\" zeta=\"1\"/>" << endl;
+               << "\" s=\"" << S[orb] << "\" zeta=\"1\"/>" << std::endl;
       }
     }
   }
-  *osXML << "</Basis>" << endl;
-  *osXML << "</BasisSet>" << endl;
-  *osXML << "<SlaterDeterminant>" << endl;
-  *osXML << "<Determinant spin=\"1\" orbitals=\"" << nUp << "\">" << endl;
-  *osXML << "<Var type=\"Array\">" << endl;
+  *osXML << "</Basis>" << std::endl;
+  *osXML << "</BasisSet>" << std::endl;
+  *osXML << "<SlaterDeterminant>" << std::endl;
+  *osXML << "<Determinant spin=\"1\" orbitals=\"" << nUp << "\">" << std::endl;
+  *osXML << "<Var type=\"Array\">" << std::endl;
   Matrix<double> M_Up(nUp,nBasis);
   if(Restriction == "none")
   {
@@ -289,10 +289,10 @@ bool YlmRnlSet<GT>::print(const std::string& elementName)
     }
   }
   *osXML << M_Up;
-  *osXML << "</Var>" << endl;
-  *osXML << "</Determinant>" << endl;
-  *osXML << "<Determinant spin=\"-1\" orbitals=\"" << nDn << "\">" << endl;
-  *osXML << "<Var type=\"Array\">" << endl;
+  *osXML << "</Var>" << std::endl;
+  *osXML << "</Determinant>" << std::endl;
+  *osXML << "<Determinant spin=\"-1\" orbitals=\"" << nDn << "\">" << std::endl;
+  *osXML << "<Var type=\"Array\">" << std::endl;
   Matrix<double> M_Dn(nDn,nBasis);
   if(Restriction == "none")
   {
@@ -320,10 +320,10 @@ bool YlmRnlSet<GT>::print(const std::string& elementName)
     }
   }
   *osXML << M_Dn;
-  *osXML << "</Var>" << endl;
-  *osXML << "</Determinant>" << endl;
-  *osXML << "</SlaterDeterminant>" << endl;
-  *osXML << "</DeterminantSet>" << endl;
+  *osXML << "</Var>" << std::endl;
+  *osXML << "</Determinant>" << std::endl;
+  *osXML << "</SlaterDeterminant>" << std::endl;
+  *osXML << "</DeterminantSet>" << std::endl;
   delete osXML;
   return true;
 }

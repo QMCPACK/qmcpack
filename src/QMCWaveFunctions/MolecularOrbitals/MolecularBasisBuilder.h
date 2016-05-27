@@ -46,7 +46,7 @@ public:
    * \param els reference to the electrons
    * \param ions reference to the ions
    */
-  MolecularBasisBuilder(ParticleSet& els, ParticleSet& ions, bool cusp=false, string cusp_info=""):
+  MolecularBasisBuilder(ParticleSet& els, ParticleSet& ions, bool cusp=false, std::string cusp_info=""):
     targetPtcl(els), sourcePtcl(ions), thisBasisSet(0),cuspCorr(cusp),cuspInfo(cusp_info)
   {
     ClassName="MolecularBasisBuilder";
@@ -81,16 +81,16 @@ public:
     cur = cur->xmlChildrenNode;
     while(cur!=NULL)
     {
-      string cname((const char*)(cur->name));
+      std::string cname((const char*)(cur->name));
       if(cname == "atomicBasisSet")
       {
-        string elementType;
+        std::string elementType;
         OhmmsAttributeSet att;
         att.add(elementType,"elementType");
         att.put(cur);
         if(elementType.empty())
           PRE.error("Missing elementType attribute of atomicBasisSet.",true);
-        map<string,BasisSetBuilder*>::iterator it = aoBuilders.find(elementType);
+        std::map<std::string,BasisSetBuilder*>::iterator it = aoBuilders.find(elementType);
         if(it == aoBuilders.end())
         {
           AtomicBasisBuilder<RFB>* any = new AtomicBasisBuilder<RFB>(elementType);
@@ -120,7 +120,7 @@ public:
   SPOSetBase* createSPOSetFromXML(xmlNodePtr cur)
   {
     ReportEngine PRE(ClassName,"createSPO(xmlNodePtr)");
-    string spo_name(""), id, cusp_file("");
+    std::string spo_name(""), id, cusp_file("");
     OhmmsAttributeSet spoAttrib;
     spoAttrib.add (spo_name, "name");
     spoAttrib.add (id, "id");
@@ -130,18 +130,18 @@ public:
     cur = cur->xmlChildrenNode;
     while(cur!=NULL)
     {
-      string cname((const char*)(cur->name));
+      std::string cname((const char*)(cur->name));
       if(cname.find("coeff") < cname.size())
       {
-        string algorithm("");
+        std::string algorithm("");
         OhmmsAttributeSet coeffAttrib;
         coeffAttrib.add (algorithm, "algorithm");
         coeffAttrib.put(cur);
 #if QMC_BUILD_LEVEL>2
         if(cuspCorr)
         {
-          app_log() << "Creating LCOrbitalSetWithCorrection with the input coefficients" << endl;
-          string tmp = cuspInfo;
+          app_log() << "Creating LCOrbitalSetWithCorrection with the input coefficients" << std::endl;
+          std::string tmp = cuspInfo;
           if(cusp_file != "")
             tmp=cusp_file;
           lcos= new LCOrbitalSetWithCorrection<ThisBasisSetType,false>(thisBasisSet,&targetPtcl,&sourcePtcl,ReportLevel,0.1,tmp,algorithm);
@@ -156,7 +156,7 @@ public:
         else
 #endif
         {
-          app_log() << "Creating LCOrbitalSet with the input coefficients" << endl;
+          app_log() << "Creating LCOrbitalSet with the input coefficients" << std::endl;
           lcos= new LCOrbitalSet<ThisBasisSetType,false>(thisBasisSet,ReportLevel,algorithm);
         }
       }
@@ -164,7 +164,7 @@ public:
     }
     if(lcos==0)
     {
-      app_log() << "Creating LCOrbitalSet with the Identity coefficient" << endl;
+      app_log() << "Creating LCOrbitalSet with the Identity coefficient" << std::endl;
       lcos = new LCOrbitalSet<ThisBasisSetType,true>(thisBasisSet,ReportLevel);
     }
     return lcos;
@@ -178,10 +178,10 @@ private:
   ///BasisSet
   ThisBasisSetType* thisBasisSet;
   ///save AtomiBasisBuilder<RFB>*
-  map<string,BasisSetBuilder*> aoBuilders;
+  std::map<std::string,BasisSetBuilder*> aoBuilders;
   ///apply cusp correction to molecular orbitals
   bool cuspCorr;
-  string cuspInfo;
+  std::string cuspInfo;
 };
 }
 #endif

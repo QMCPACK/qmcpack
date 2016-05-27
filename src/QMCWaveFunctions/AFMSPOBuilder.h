@@ -24,8 +24,8 @@ namespace qmcplusplus
 class AFMSPOBuilder : public BasisSetBuilder
 {
 protected:
-  typedef map<string,ParticleSet*> PtclPoolType;
-  typedef map<string,SPOSetBase*>  SPOPoolType;
+  typedef std::map<std::string,ParticleSet*> PtclPoolType;
+  typedef std::map<std::string,SPOSetBase*>  SPOPoolType;
   ParticleSet *targetPtcl;
 public:
   AFMSPOBuilder(ParticleSet& p, PtclPoolType& psets,

@@ -39,7 +39,7 @@ RNDiracDeterminantBase::RNDiracDeterminantBase(const RNDiracDeterminantBase& s):
 {
   this->resize(s.NumPtcls,s.NumOrbitals);
   setLogEpsilon(s.logepsilon);
-//     app_log()<<"setting logepsilon "<<s.logepsilon<<" "<<logepsilon<<endl;
+//     app_log()<<"setting logepsilon "<<s.logepsilon<<" "<<logepsilon<< std::endl;
 }
 
 ///default destructor
@@ -223,9 +223,9 @@ RNDiracDeterminantBase::ValueType RNDiracDeterminantBase::ratio(ParticleSet& P, 
   Phi->evaluate(P, iat, psiV);
   RatioTimer.start();
   alternateCurRatio = DetRatioByRow(psiM, psiV,WorkingIndex);
-  if (abs(alternateCurRatio)< numeric_limits<RealType>::epsilon())
+  if (abs(alternateCurRatio)< std::numeric_limits<RealType>::epsilon())
   {
-    app_log()<<"stepped on node: ratioGrad"<<endl;
+    app_log()<<"stepped on node: ratioGrad"<< std::endl;
     RatioTimer.stop();
     return 0.0;
   }
@@ -318,9 +318,9 @@ RNDiracDeterminantBase::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   WorkingIndex = iat-FirstIndex;
   UpdateMode=ORB_PBYP_PARTIAL;
   alternateCurRatio=simd::dot(psiM[WorkingIndex],psiV.data(),NumOrbitals);
-  if (abs(alternateCurRatio)< numeric_limits<RealType>::epsilon())
+  if (abs(alternateCurRatio)< std::numeric_limits<RealType>::epsilon())
   {
-    app_log()<<"stepped on node: ratioGrad"<<endl;
+    app_log()<<"stepped on node: ratioGrad"<< std::endl;
     RatioTimer.stop();
     return 0.0;
   }
@@ -381,9 +381,9 @@ RNDiracDeterminantBase::ValueType RNDiracDeterminantBase::ratio(ParticleSet& P, 
   //psiM_temp = psiM;
   alternateCurRatio= DetRatioByRow(psiM_temp, psiV, WorkingIndex);
   RatioTimer.stop();
-  if (abs(alternateCurRatio)<numeric_limits<RealType>::epsilon())
+  if (abs(alternateCurRatio)<std::numeric_limits<RealType>::epsilon())
   {
-    app_log()<<"stepped on node"<<endl;
+    app_log()<<"stepped on node"<< std::endl;
     UpdateMode=ORB_PBYP_RATIO; //singularity! do not update inverse
     return 0.0;
   }
@@ -396,8 +396,8 @@ RNDiracDeterminantBase::ValueType RNDiracDeterminantBase::ratio(ParticleSet& P, 
   //update psiM_temp with the row substituted
   InverseUpdateByRow(psiM_temp,psiV,workV1,workV2,WorkingIndex,alternateCurRatio);
   //update dpsiM_temp and d2psiM_temp
-  std::copy(dpsiV.begin(),dpsiV.end(),dpsiM_temp[WorkingIndex]);
-  std::copy(d2psiV.begin(),d2psiV.end(),d2psiM_temp[WorkingIndex]);
+  copy(dpsiV.begin(),dpsiV.end(),dpsiM_temp[WorkingIndex]);
+  copy(d2psiV.begin(),d2psiV.end(),d2psiM_temp[WorkingIndex]);
   UpdateTimer.stop();
   RatioTimer.start();
   for (int i=0,kat=FirstIndex; i<NumPtcls; i++,kat++)
@@ -431,8 +431,8 @@ void RNDiracDeterminantBase::acceptMove(ParticleSet& P, int iat)
   case ORB_PBYP_PARTIAL:
     //psiM = psiM_temp;
     InverseUpdateByRow(psiM,psiV,workV1,workV2,WorkingIndex,alternateCurRatio);
-    std::copy(dpsiV.begin(),dpsiV.end(),dpsiM[WorkingIndex]);
-    std::copy(d2psiV.begin(),d2psiV.end(),d2psiM[WorkingIndex]);
+    copy(dpsiV.begin(),dpsiV.end(),dpsiM[WorkingIndex]);
+    copy(d2psiV.begin(),d2psiV.end(),d2psiM[WorkingIndex]);
     //////////////////////////////////////
     ////THIS WILL BE REMOVED. ONLY FOR DEBUG DUE TO WAVEFUNCTIONTEST
     //myG = myG_temp;
@@ -443,8 +443,8 @@ void RNDiracDeterminantBase::acceptMove(ParticleSet& P, int iat)
     myG = myG_temp;
     myL = myL_temp;
     psiM = psiM_temp;
-    std::copy(dpsiV.begin(),dpsiV.end(),dpsiM[WorkingIndex]);
-    std::copy(d2psiV.begin(),d2psiV.end(),d2psiM[WorkingIndex]);
+    copy(dpsiV.begin(),dpsiV.end(),dpsiM[WorkingIndex]);
+    copy(d2psiV.begin(),d2psiV.end(),d2psiM[WorkingIndex]);
     break;
   }
   UpdateTimer.stop();
@@ -512,7 +512,7 @@ RNDiracDeterminantBase::evaluateLog(ParticleSet& P,
                                     ParticleSet::ParticleGradient_t& G,
                                     ParticleSet::ParticleLaplacian_t& L)
 {
-  //      cerr<<"I'm calling evaluate log"<<endl;
+  //      std::cerr <<"I'm calling evaluate log"<< std::endl;
   Phi->evaluate(P, FirstIndex, LastIndex, psiM,dpsiM, d2psiM);
   myG_alternate=0.0;
   myL_alternate=0.0;

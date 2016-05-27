@@ -81,13 +81,13 @@ class eeI_JastrowOrbital: public OrbitalBase
   // Temporary store for parameter derivatives of functor
   // The first index is the functor index in J3Unique.  The second is the parameter index w.r.t. to that
   // functor
-  vector<vector<RealType> >               du_dalpha;
-  vector<vector<PosType> >             dgrad_dalpha;
-  vector<vector<Tensor<RealType,3> > > dhess_dalpha;
+  std::vector<std::vector<RealType> >               du_dalpha;
+  std::vector<std::vector<PosType> >             dgrad_dalpha;
+  std::vector<std::vector<Tensor<RealType,3> > > dhess_dalpha;
 
   // Used for evaluating derivatives with respect to the parameters
   int NumVars;
-  Array<pair<int,int>,3> VarOffset;
+  Array<std::pair<int,int>,3> VarOffset;
   Vector<RealType> dLogPsi;
   Array<PosType,2> gradLogPsi;
   Array<RealType,2> lapLogPsi;
@@ -191,7 +191,7 @@ public:
     {
       APP_ABORT("eeI_JastrowOrbital::addFunc  Jastrow function pointer is NULL");
     }
-    strstream aname;
+    std::strstream aname;
     aname << iSpecies << "_" << eSpecies1 << "_" << eSpecies2;
     J3Unique[aname.str()]=j;
     initUnique();
@@ -218,7 +218,7 @@ public:
             nfilled++;
       partial = nfilled>0 && nfilled<ne2;
       if(partial)
-        app_log() << "J3 eeI is missing correlation for ion "<<i<<endl;
+        app_log() << "J3 eeI is missing correlation for ion "<<i<< std::endl;
       complete = complete && !partial;
     }
     if(!complete)
@@ -245,7 +245,7 @@ public:
             radii_match = radii_match && F(i,e1,e2)->cutoff_radius==rcut;
         if(!radii_match)
           app_log() << "eeI functors for ion species " << i
-                    << " have different radii"<<endl;
+                    << " have different radii"<< std::endl;
         all_radii_match = all_radii_match && radii_match;
       }
     }
@@ -301,7 +301,7 @@ public:
     }
     myVars.getIndex(active);
     NumVars=myVars.size();
-    //myVars.print(cout);
+    //myVars.print(std::cout);
     if (NumVars)
     {
       dLogPsi.resize(NumVars);
@@ -345,7 +345,7 @@ public:
     // if(!IsOptimizing)
     // {
     //   app_log() << "  Chiesa kinetic energy correction = "
-    //     << ChiesaKEcorrection() << endl;
+    //     << ChiesaKEcorrection() << std::endl;
     //   //FirstTime = false;
     // }
     //      if(dPsi) dPsi->resetParameters( active );
@@ -358,7 +358,7 @@ public:
   }
 
   /** print the state, e.g., optimizables */
-  void reportStatus(ostream& os)
+  void reportStatus(std::ostream& os)
   {
     typename std::map<std::string,FT*>::iterator it(J3Unique.begin()),it_end(J3Unique.end());
     while(it != it_end)
@@ -419,15 +419,15 @@ public:
       for (int j=0; j<ion.elecs_inside.size(); j++)
       {
         int jel = ion.elecs_inside[j];
-        // cerr << "jel = " << jel << " dtable j = " << eI_table->J[nn0+jel] << endl;
+        // std::cerr << "jel = " << jel << " dtable j = " << eI_table->J[nn0+jel] << std::endl;
         RealType r_Ij     = eI_table->r(nn0+jel);
         RealType r_Ij_inv = eI_table->rinv(nn0+jel);
         int ee0 = ee_table->M[jel]-(jel+1);
         for (int k=j+1; k<ion.elecs_inside.size(); k++)
         {
           int kel = ion.elecs_inside[k];
-          // cerr << "kel = " << kel << " dtable k = " << ee_table->J[ee0+kel] << endl;
-          // cerr << "jel,kel = " << jel << ", " << kel << endl;
+          // std::cerr << "kel = " << kel << " dtable k = " << ee_table->J[ee0+kel] << std::endl;
+          // std::cerr << "jel,kel = " << jel << ", " << kel << std::endl;
           RealType r_Ik     = eI_table->r(nn0+kel);
           RealType r_Ik_inv = eI_table->rinv(nn0+kel);
           RealType r_jk     = ee_table->r(ee0+kel);
@@ -705,13 +705,13 @@ public:
     return G;
   }
 
-  inline void evaluateRatios(VirtualParticleSet& VP, vector<ValueType>& ratios)
+  inline void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
   {
     const int iat=VP.activePtcl;
     const int nk=ratios.size();
     int nat=iat*Nelec;
-    RealType x=accumulate(&(U[nat]),&(U[nat+Nelec]),0.0);
-    vector<RealType> newval(nk,x);
+    RealType x=std::accumulate(&(U[nat]),&(U[nat+Nelec]),0.0);
+    std::vector<RealType> newval(nk,x);
     const DistanceTableData* ee_table=VP.getVirtualTable(0);
     const DistanceTableData* eI_table=VP.getVirtualTable(myTableIndex);
     const DistanceTableData* eI_0=VP.getRealTable(myTableIndex);
@@ -800,7 +800,7 @@ public:
   {
     const DistanceTableData* ee_table=P.DistTables[0];
     const DistanceTableData* eI_table=P.DistTables[myTableIndex];
-    //      cerr << "ratio(P,iat,dG,dL) called.\n";
+    //      std::cerr << "ratio(P,iat,dG,dL) called.\n";
     curVal  = 0.0;
     curGrad_i = PosType();
     curLap_i  = 0.0;
@@ -1010,7 +1010,7 @@ public:
   void acceptMove(ParticleSet& P, int iat)
   {
     const DistanceTableData* eI_table=P.DistTables[myTableIndex];
-    //      cerr << "acceptMove called.\n";
+    //      std::cerr << "acceptMove called.\n";
     DiffValSum += DiffVal;
     for(int jat=0,ij=iat*Nelec,ji=iat; jat<Nelec; jat++,ij++,ji+=Nelec)
       if (jat != iat)
@@ -1069,7 +1069,7 @@ public:
                                   ParticleSet::ParticleGradient_t& G,
                                   ParticleSet::ParticleLaplacian_t& L)
   {
-    //      cerr << "evaluateLogAndStore called.\n";
+    //      std::cerr << "evaluateLogAndStore called.\n";
     LogValue=0.0;
     const DistanceTableData* ee_table=P.DistTables[0];
     const DistanceTableData* eI_table=P.DistTables[myTableIndex];
@@ -1153,8 +1153,8 @@ public:
     PosType G2 = 0.0;
     for (int jat=0; jat<Nelec; jat++)
       G2 -= dU[iat*Nelec+jat];
-    // cerr << "G2   = " << G2   << endl;
-    // cerr << "G[2] = " << G[2] << endl;
+    // std::cerr << "G2   = " << G2   << std::endl;
+    // std::cerr << "G[2] = " << G[2] << std::endl;
     // if (FirstTime) {
     // 	FirstTime = false;
     // 	ChiesaKEcorrection();
@@ -1187,7 +1187,7 @@ public:
 
   inline RealType registerData(ParticleSet& P, PooledData<RealType>& buf)
   {
-    // cerr<<"REGISTERING 2 BODY JASTROW"<<endl;
+    // std::cerr <<"REGISTERING 2 BODY JASTROW"<< std::endl;
     evaluateLogAndStore(P,P.G,P.L);
     //LogValue=0.0;
     //RealType dudr, d2udr2,u;
@@ -1277,7 +1277,7 @@ public:
 
   inline void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
   {
-    //      cerr << "Called copyFromBuffer.\n";
+    //      std::cerr << "Called copyFromBuffer.\n";
     buf.get(U.begin(), U.end());
     buf.get(d2U.begin(), d2U.end());
     buf.get(FirstAddressOfdU,LastAddressOfdU);
@@ -1297,7 +1297,7 @@ public:
     // 	RealType nd;
     // 	buf.get(nd);
     // 	int n = (int)round(nd);
-    // 	cerr << "n = " << n << endl;
+    // 	cerr << "n = " << n << std::endl;
     // 	vector<RealType> elecs_inside(n);
     // 	buf.get(elecs_inside.begin(), elecs_inside.end());
     // 	IonDataList[i].elecs_inside.resize(n);
@@ -1309,7 +1309,7 @@ public:
 
   inline RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
   {
-    //      cerr << "Called evaluateLog (P, buf).\n";
+    //      std::cerr << "Called evaluateLog (P, buf).\n";
     RealType x = (U[NN] += DiffValSum);
     buf.put(U.begin(), U.end());
     buf.put(d2U.begin(), d2U.end());
@@ -1329,7 +1329,7 @@ public:
   {
     eeI_JastrowOrbital<FT>* eeIcopy=
       new eeI_JastrowOrbital<FT>(*IRef, tqp, false);
-    map<const FT*,FT*> fcmap;
+    std::map<const FT*,FT*> fcmap;
     for (int iG=0; iG<iGroups; iG++)
       for (int eG1=0; eG1<eGroups; eG1++)
         for (int eG2=0; eG2<eGroups; eG2++)
@@ -1337,7 +1337,7 @@ public:
           int ijk = iG*eGroups*eGroups + eG1*eGroups + eG2;
           if(F(iG,eG1,eG2)==0)
             continue;
-          typename map<const FT*,FT*>::iterator fit=fcmap.find(F(iG,eG1,eG2));
+          typename std::map<const FT*,FT*>::iterator fit=fcmap.find(F(iG,eG1,eG2));
           if(fit == fcmap.end())
           {
             FT* fc=new FT(*F(iG,eG1,eG2));
@@ -1376,11 +1376,11 @@ public:
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           vector<RealType>& dlogpsi,
-                           vector<RealType>& dhpsioverpsi)
+                           std::vector<RealType>& dlogpsi,
+                           std::vector<RealType>& dhpsioverpsi)
   {
     bool recalculate(false);
-    vector<bool> rcsingles(myVars.size(),false);
+    std::vector<bool> rcsingles(myVars.size(),false);
     for (int k=0; k<myVars.size(); ++k)
     {
       int kk=myVars.where(k);
@@ -1440,9 +1440,9 @@ public:
             U[kel*Nelec+jel] += u;
             int first = VarOffset(i,jel,kel).first;
             int last  = VarOffset(i,jel,kel).second;
-            vector<RealType> &dlog = du_dalpha[idx];
-            vector<PosType>  &dgrad = dgrad_dalpha[idx];
-            vector<Tensor<RealType,3> > &dhess = dhess_dalpha[idx];
+            std::vector<RealType> &dlog = du_dalpha[idx];
+            std::vector<PosType>  &dgrad = dgrad_dalpha[idx];
+            std::vector<Tensor<RealType,3> > &dhess = dhess_dalpha[idx];
             for (int p=first,ip=0; p<last; p++,ip++)
             {
               RealType dval =  dlog[ip];

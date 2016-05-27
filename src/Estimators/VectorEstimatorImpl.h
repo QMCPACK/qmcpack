@@ -61,7 +61,7 @@ struct VectorEstimatorImpl
    * @param a name of this data
    * @param n size of this data
    */
-  VectorEstimatorImpl(const string& a, int n):Name(a)
+  VectorEstimatorImpl(const std::string& a, int n):Name(a)
   {
     resize(n);
   }
@@ -109,7 +109,7 @@ struct VectorEstimatorImpl
   template<typename InputIterator, typename WeightIterator>
   inline void accumulate(InputIterator first, InputIterator last, WeightIterator wit, T norm)
   {
-    typename vector<T>::iterator it(d_data.begin());
+    typename std::vector<T>::iterator it(d_data.begin());
     while(first != last)
     {
       *it++ += norm*(*first++)*(*wit++);
@@ -127,7 +127,7 @@ struct VectorEstimatorImpl
   template<typename InputIterator, typename T1>
   inline void accumulate(InputIterator first, InputIterator last,  T1 wm)
   {
-    typename vector<T>::iterator it(d_data.begin());
+    typename std::vector<T>::iterator it(d_data.begin());
     while(first != last)
     {
       *it++  += wm*(*first++);
@@ -144,8 +144,8 @@ struct VectorEstimatorImpl
   template<typename InputIterator, typename T1>
   inline void accumulate(InputIterator first, T1 wgt)
   {
-    typename vector<T>::iterator it(d_data.begin());
-    typename vector<T>::iterator it_end(d_data.end());
+    typename std::vector<T>::iterator it(d_data.begin());
+    typename std::vector<T>::iterator it_end(d_data.end());
     while(it != it_end)
     {
       (*it++) += wgt*(*first++);
@@ -162,8 +162,8 @@ struct VectorEstimatorImpl
   template<typename InputIterator>
   inline void accumulate(InputIterator first)
   {
-    typename vector<T>::iterator it(d_data.begin());
-    typename vector<T>::iterator it_end(d_data.end());
+    typename std::vector<T>::iterator it(d_data.begin());
+    typename std::vector<T>::iterator it_end(d_data.end());
     while(it != it_end)
     {
       *it++ += *first++;
@@ -176,10 +176,10 @@ struct VectorEstimatorImpl
   template<typename T1>
   inline void takeBlockAverage(T1 wgtnorm)
   {
-    typename vector<T>::const_iterator it(d_data.begin());
-    typename vector<T>::const_iterator it_end(d_data.end());
-    typename vector<T>::iterator sit(d_sum.begin());
-    //typename vector<T>::iterator s2it(d_sum2.begin());
+    typename std::vector<T>::const_iterator it(d_data.begin());
+    typename std::vector<T>::const_iterator it_end(d_data.end());
+    typename std::vector<T>::iterator sit(d_sum.begin());
+    //typename std::vector<T>::iterator s2it(d_sum2.begin());
     while(it != it_end)
     {
       (*sit++)=wgtnorm*(*it++);
@@ -190,7 +190,7 @@ struct VectorEstimatorImpl
   template<typename ForwardIterator>
   ForwardIterator putMessage(ForwardIterator cur) const
   {
-    std::copy(d_sum.begin(), d_sum.end(),cur);
+    copy(d_sum.begin(), d_sum.end(),cur);
     return cur+d_sum.size();
   }
 
@@ -198,15 +198,15 @@ struct VectorEstimatorImpl
   ForwardIterator getMessage(ForwardIterator cur)
   {
     ForwardIterator last=cur+d_sum.size();
-    std::copy(cur,last,d_sum.begin());
+    copy(cur,last,d_sum.begin());
     return last;
   }
 
-  void print(ostream& os)
+  void print(std::ostream& os)
   {
     for(int i=0; i<d_sum.size(); i++)
-      os << setw(20) << d_sum[i];
-    os << endl;
+      os << std::setw(20) << d_sum[i];
+    os << std::endl;
   }
 };
 

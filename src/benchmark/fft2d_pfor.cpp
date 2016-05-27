@@ -37,7 +37,7 @@
 #define TEST_TRANSPOSER DUMMY_TRANSPOSER
 #endif
 
-inline void print_help(const string& msg)
+inline void print_help(const std::string& msg)
 {
   printf("%s -d fft_dim -m numer_of_fft -i iterations -p [d|s] -t [r2c|c2c] -e [fftw|mkl|essl] \n",msg.c_str());
 }
@@ -54,8 +54,8 @@ int main(int argc, char** argv)
   int nx=6;
   int ny=6;
   //accepted: r2c  or c2c
-  string fft_type("r2c");
-  string fft_eng("fftw");
+  std::string fft_type("r2c");
+  std::string fft_eng("fftw");
   bool inplace=true;
   bool single_precision=false;
   bool debug=false;
@@ -98,13 +98,13 @@ int main(int argc, char** argv)
     }
   }
   typedef double real_type;
-  typedef complex<real_type> complex_type;
+  typedef std::complex<real_type> complex_type;
   typedef fft1d_engine<complex_type, complex_type, TEST_FFT_ENG> fft1d_engine_t;
   typedef Matrix<complex_type> matrix_type;
   int np=omp_get_max_threads();
-  vector<matrix_type*> in(np*howmany),in_t(np*howmany) ,in_copy(np*howmany);
-  vector<fft1d_engine_t*> fft_xy(np);
-  vector<fft1d_engine_t*> fft_yx(np);
+  std::vector<matrix_type*> in(np*howmany),in_t(np*howmany) ,in_copy(np*howmany);
+  std::vector<fft1d_engine_t*> fft_xy(np);
+  std::vector<fft1d_engine_t*> fft_yx(np);
   int nx_thread=nx/np;
   int ny_thread=ny/np;
   #pragma omp parallel
@@ -178,7 +178,7 @@ int main(int argc, char** argv)
     if(debug && !iter)
       for(int ip=0; ip<np*howmany; ++ip)
         if(check_array(in[ip]->data(),in_copy[ip]->data(),in_copy[ip]->size(),1.0/static_cast<double>(nx*ny)))
-          cout << "We are good with 1D FFT+t(1D FFT) "<< ip << endl;
+          std::cout << "We are good with 1D FFT+t(1D FFT) "<< ip << std::endl;
   }
   double dt_t=clock_big.elapsed();
   double factor=1.0/static_cast<double>(niters);

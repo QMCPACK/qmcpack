@@ -31,7 +31,7 @@ main(int argc, char **argv)
   int i=1;
   while(i<argc)
   {
-    string arg(argv[i]);
+    std::string arg(argv[i]);
     if(arg == "-nox")
     {
       showplot = false;
@@ -56,14 +56,14 @@ SQDFrame::solve(const char* fname)
   HFSolver = new HartreeFock(Pot,Psi,docRoot);
   HFSolver->setRoot(fname);
   HFSolver->solve(potType,gridType,Psi.size());
-  ofstream fout("test.dat");
+  std::ofstream fout("test.dat");
   for(int ig; ig<Psi.m_grid->size(); ig++)
   {
     for(int orb=0; orb<Psi.NumUniqueOrb; orb++)
     {
-      fout << setw(15) << Psi(orb,ig);
+      fout << std::setw(15) << Psi(orb,ig);
     }
-    fout << endl;
+    fout << std::endl;
   }
   Psi.print(elementType);
 }

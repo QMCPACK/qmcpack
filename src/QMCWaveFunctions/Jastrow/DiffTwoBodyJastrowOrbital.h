@@ -40,12 +40,12 @@ class DiffTwoBodyJastrowOrbital: public DiffOrbitalBase
   ///variables handled by this orbital
   opt_variables_type myVars;
   ///container for the Jastrow functions  for all the pairs
-  vector<FT*> F;
+  std::vector<FT*> F;
   ///offset for the optimizable variables
-  vector<pair<int,int> > OffSet;
+  std::vector<std::pair<int,int> > OffSet;
   Vector<RealType> dLogPsi;
-  vector<GradVectorType*> gradLogPsi;
-  vector<ValueVectorType*> lapLogPsi;
+  std::vector<GradVectorType*> gradLogPsi;
+  std::vector<ValueVectorType*> lapLogPsi;
   std::map<std::string,FT*> J2Unique;
 
 public:
@@ -83,7 +83,7 @@ public:
       if (ia<ib)
         F[ib*NumGroups+ia]=j;
     }
-    stringstream aname;
+    std::stringstream aname;
     aname<<ia<<ib;
     J2Unique[aname.str()]=j;
   }
@@ -116,7 +116,7 @@ public:
     myVars.getIndex(active);
     NumVars=myVars.size();
 
-    //myVars.print(cout);
+    //myVars.print(std::cout);
 
     if (NumVars && dLogPsi.size()==0)
     {
@@ -147,12 +147,12 @@ public:
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
-                           vector<RealType>& dlogpsi,
-                           vector<RealType>& dhpsioverpsi)
+                           std::vector<RealType>& dlogpsi,
+                           std::vector<RealType>& dhpsioverpsi)
   {
     if(myVars.size()==0) return;
     bool recalculate(false);
-    vector<bool> rcsingles(myVars.size(),false);
+    std::vector<bool> rcsingles(myVars.size(),false);
     for (int k=0; k<myVars.size(); ++k)
     {
       int kk=myVars.where(k);
@@ -169,7 +169,7 @@ public:
         (*gradLogPsi[p])=0.0;
       for (int p=0; p<NumVars; ++p)
         (*lapLogPsi[p])=0.0;
-      vector<TinyVector<RealType,3> > derivs(NumVars);
+      std::vector<TinyVector<RealType,3> > derivs(NumVars);
       const DistanceTableData* d_table=P.DistTables[0];
       for (int i=0; i<d_table->size(SourceIndex); ++i)
       {
@@ -219,14 +219,14 @@ public:
   DiffOrbitalBasePtr makeClone(ParticleSet& tqp) const
   {
     DiffTwoBodyJastrowOrbital<FT>* j2copy=new DiffTwoBodyJastrowOrbital<FT>(tqp);
-    map<const FT*,FT*> fcmap;
+    std::map<const FT*,FT*> fcmap;
     for (int ig=0; ig<NumGroups; ++ig)
       for (int jg=ig; jg<NumGroups; ++jg)
       {
         int ij=ig*NumGroups+jg;
         if (F[ij]==0)
           continue;
-        typename map<const FT*,FT*>::iterator fit=fcmap.find(F[ij]);
+        typename std::map<const FT*,FT*>::iterator fit=fcmap.find(F[ij]);
         if (fit == fcmap.end())
         {
           FT* fc=new FT(*F[ij]);

@@ -132,8 +132,8 @@ public:
 
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& active,
-                                   vector<RealType>& dlogpsi,
-                                   vector<RealType>& dhpsioverpsi);
+                                   std::vector<RealType>& dlogpsi,
+                                   std::vector<RealType>& dhpsioverpsi);
 
   // used by DiracDeterminantWithBackflow
   virtual void evaluateDerivatives(ParticleSet& P,
@@ -143,7 +143,7 @@ public:
                                    Array<GradType,3>& dG,
                                    Matrix<RealType>& dL) {}
 
-  inline void reportStatus(ostream& os)
+  inline void reportStatus(std::ostream& os)
   {
   }
   virtual void resetTargetParticleSet(ParticleSet& P)
@@ -194,7 +194,7 @@ public:
 
   /** compute multiple ratios for a particle move
    */
-  virtual void evaluateRatios(VirtualParticleSet& VP, vector<ValueType>& ratios);
+  virtual void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios);
 
   virtual ValueType alternateRatio(ParticleSet& P)
   {
@@ -275,7 +275,7 @@ public:
   virtual DiracDeterminantBase* makeCopy(SPOSetBase* spo) const;
 //       virtual DiracDeterminantBase* makeCopy(ParticleSet& tqp, SPOSetBase* spo) const {return makeCopy(spo); };
 
-  virtual void get_ratios(ParticleSet& P, vector<ValueType>& ratios);
+  virtual void get_ratios(ParticleSet& P, std::vector<ValueType>& ratios);
   ///total number of particles
   int NP;
   ///number of single-particle orbitals which belong to this Dirac determinant
@@ -340,87 +340,87 @@ public:
   /////////////////////////////////////////////////////
   virtual void recompute(MCWalkerConfiguration &W, bool firstTime)
   {
-    cerr << "Need specialization of DiracDetermiantBase::recompute.\n";
+    std::cerr << "Need specialization of DiracDetermiantBase::recompute.\n";
     abort();
   }
 
   virtual void
   reserve (PointerPool<gpu::device_vector<CudaRealType> > &pool)
   {
-    cerr << "Need specialization of DiracDetermiantBase::reserve.\n";
+    std::cerr << "Need specialization of DiracDetermiantBase::reserve.\n";
     abort();
   }
 
   virtual void
-  addLog (MCWalkerConfiguration &W, vector<RealType> &logPsi)
+  addLog (MCWalkerConfiguration &W, std::vector<RealType> &logPsi)
   {
-    cerr << "Need specialization of DiracDetermiantBase::addLog.\n";
+    std::cerr << "Need specialization of DiracDetermiantBase::addLog.\n";
     abort();
   }
 
   virtual void
   ratio (MCWalkerConfiguration &W, int iat,
-         vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
-         vector<ValueType> &lapl)
+         std::vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
+         std::vector<ValueType> &lapl)
   {
-    cerr << "Need specialization of DiracDetermiantBase::ratio.\n";
+    std::cerr << "Need specialization of DiracDetermiantBase::ratio.\n";
     abort();
   }
   virtual void
   addRatio (MCWalkerConfiguration &W, int iat,
-            vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
-            vector<ValueType> &lapl)
+            std::vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
+            std::vector<ValueType> &lapl)
   {
-    cerr << "Need specialization of DiracDetermiantBase::addRatio.\n";
+    std::cerr << "Need specialization of DiracDetermiantBase::addRatio.\n";
     abort();
   }
   virtual void
   calcRatio (MCWalkerConfiguration &W, int iat,
-             vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
-             vector<ValueType> &lapl)
+             std::vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
+             std::vector<ValueType> &lapl)
   {
-    cerr << "Need specialization of DiracDetermiantBase::calcRatio.\n";
+    std::cerr << "Need specialization of DiracDetermiantBase::calcRatio.\n";
     abort();
   }
 
 
 
   virtual void
-  ratio (vector<Walker_t*> &walkers,    vector<int> &iatList,
-         vector<PosType> &rNew, vector<ValueType> &psi_ratios,
-         vector<GradType>  &grad, vector<ValueType> &lapl)
+  ratio (std::vector<Walker_t*> &walkers,    std::vector<int> &iatList,
+         std::vector<PosType> &rNew, std::vector<ValueType> &psi_ratios,
+         std::vector<GradType>  &grad, std::vector<ValueType> &lapl)
   {
-    cerr << "Need specialization of DiracDetermiantBase::ratio.\n";
+    std::cerr << "Need specialization of DiracDetermiantBase::ratio.\n";
     abort();
   }
 
   virtual void
   addGradient(MCWalkerConfiguration &W, int iat,
-              vector<GradType> &grad)
+              std::vector<GradType> &grad)
   {
-    cerr << "Need specialization of DiracDetermiantBase::addGradient.\n";
+    std::cerr << "Need specialization of DiracDetermiantBase::addGradient.\n";
     abort();
   }
   virtual void
   calcGradient(MCWalkerConfiguration &W, int iat,
-               vector<GradType> &grad)
+               std::vector<GradType> &grad)
   {
-    cerr << "Need specialization of DiracDetermiantBase::calcGradient.\n";
+    std::cerr << "Need specialization of DiracDetermiantBase::calcGradient.\n";
     abort();
   }
 
 
-  virtual void update (vector<Walker_t*> &walkers, int iat)
+  virtual void update (std::vector<Walker_t*> &walkers, int iat)
   {
-    cerr << "Need specialization of DiracDetermiantBase::update.\n";
+    std::cerr << "Need specialization of DiracDetermiantBase::update.\n";
     abort();
   }
 
   virtual void
-  update (const vector<Walker_t*> &walkers,
-          const vector<int> &iatList)
+  update (const std::vector<Walker_t*> &walkers,
+          const std::vector<int> &iatList)
   {
-    cerr << "Need specialization of DiracDetermiantBase::update.\n";
+    std::cerr << "Need specialization of DiracDetermiantBase::update.\n";
     abort();
   }
 
@@ -428,15 +428,15 @@ public:
   gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads,
             ValueMatrix_t &lapl)
   {
-    cerr << "Need specialization of DiracDetermiantBase::gradLapl.\n";
+    std::cerr << "Need specialization of DiracDetermiantBase::gradLapl.\n";
     abort();
   }
 
   virtual void
-  NLratios (MCWalkerConfiguration &W,  vector<NLjob> &jobList,
-            vector<PosType> &quadPoints, vector<ValueType> &psi_ratios)
+  NLratios (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
+            std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios)
   {
-    cerr << "Need specialization of DiracDetermiantBase::NLratios.\n";
+    std::cerr << "Need specialization of DiracDetermiantBase::NLratios.\n";
     abort();
   }
 #endif

@@ -44,14 +44,14 @@ bool NumericalMolecularOrbitals::put(xmlNodePtr cur)
   typedef GridMolecularOrbitals::BasisSetType BasisSetType;
   typedef LCOrbitals<BasisSetType>            SPOSetType;
   int nels=0;
-  //map<string,SPOSetType*> InOrbs;
-  vector<SPOSetType*> InOrbs;
-  map<string,int> DetCounter;
+  //map<std::string,SPOSetType*> InOrbs;
+  std::vector<SPOSetType*> InOrbs;
+  std::map<std::string,int> DetCounter;
   BasisSetType *basisSet=0;
   cur = cur->xmlChildrenNode;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == basisset_tag)
     {
       basisSet = Original->addBasisSet(cur);
@@ -63,24 +63,24 @@ bool NumericalMolecularOrbitals::put(xmlNodePtr cur)
         xmlNodePtr tcur = cur->xmlChildrenNode;
         while(tcur != NULL)
         {
-          string tname((const char*)(tcur->name));
+          std::string tname((const char*)(tcur->name));
           if(tname == det_tag)
           {
-            string detname("det");
+            std::string detname("det");
             const xmlChar* a=xmlGetProp(tcur,(const xmlChar*)"id");
             if(a)
             {
               detname = (const char*)a;
             }
             //else {
-            //  ostringstream idassigned(detname);
+            //  std::ostringstream idassigned(detname);
             //  idassigned << "dummy";
             //}
             bool newset=true;
             a=xmlGetProp(tcur,(const xmlChar*)"ref");
             if(a)
             {
-              string detref((const char*)a);
+              std::string detref((const char*)a);
               if(DetCounter.find(detref) != DetCounter.end())
               {
                 newset=false;
@@ -110,7 +110,7 @@ bool NumericalMolecularOrbitals::put(xmlNodePtr cur)
   DistanceTable::create(1);
   targetPtcl.update(1);
   //Need only one electron to calculate this
-  //map<string,SPOSetType*>::iterator oit(InOrbs.begin());
+  //map<std::string,SPOSetType*>::iterator oit(InOrbs.begin());
   SPOSetType* inorb=InOrbs[0];
   double ri = -5.0;
   double rf = 5.0;
@@ -126,7 +126,7 @@ bool NumericalMolecularOrbitals::put(xmlNodePtr cur)
   gridZ.set(ri,rf,npts[2]);
   XYZCubicGrid<ValueType> grid3(&gridX,&gridY,&gridZ);
   typedef TriCubicSplineT<ValueType> NOType;
-  vector<NOType*> torb;
+  std::vector<NOType*> torb;
   for(int i=0; i<inorb->numOrbitals(); i++)
   {
     torb.push_back(new NOType(&grid3));
@@ -134,11 +134,11 @@ bool NumericalMolecularOrbitals::put(xmlNodePtr cur)
       torb[i]->setGridManager(false);
   }
   //TriCubicSplineT<ValueType> torb(&grid3);
-  vector<ValueType> phi(inorb->numOrbitals(),0.0);
-  vector<vector<ValueType>* > dat;
+  std::vector<ValueType> phi(inorb->numOrbitals(),0.0);
+  std::vector<std::vector<ValueType>* > dat;
   int ntot = npts[0]*npts[1]*npts[2];
   for(int is=0; is<inorb->numOrbitals(); is++)
-    dat.push_back(new vector<ValueType>(ntot,0));
+    dat.push_back(new std::vector<ValueType>(ntot,0));
   //int lastpsi=inorb->numOrbitals()-2;
   //int lastpsi=0;
   PosType pos(targetPtcl.R[0]);

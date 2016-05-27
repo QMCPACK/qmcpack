@@ -43,8 +43,8 @@ struct singleRPAJastrowBuilder: public OrbitalBuilderBase
   double Kc_max;
   int indx,ng;
   RealType Rcut;
-  string ID_Rs;
-  string MyName;
+  std::string ID_Rs;
+  std::string MyName;
   HandlerType* myHandler;
   FuncType* nfunc;
   ShortRangePartAdapter<RealType>* SRA;

@@ -40,7 +40,7 @@ bool AGPDeterminantBuilder::createAGP(BasisBuilderT *abuilder, xmlNodePtr cur)
   cur = cur->xmlChildrenNode;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == basisset_tag)
     {
       basisSet = abuilder->addBasisSet(cur);
@@ -95,11 +95,11 @@ bool AGPDeterminantBuilder::createAGP(BasisBuilderT *abuilder, xmlNodePtr cur)
     }
     cur=cur->next;
   }
-  //app_log() << agpDet->Lambda << endl;
+  //app_log() << agpDet->Lambda << std::endl;
   if(spinpolarized)
   {
-    app_log() << "  Coefficients for the unpaired electrons " << endl;
-    app_log() << agpDet->LambdaUP << endl;
+    app_log() << "  Coefficients for the unpaired electrons " << std::endl;
+    app_log() << agpDet->LambdaUP << std::endl;
   }
   return true;
 }
@@ -109,13 +109,13 @@ bool AGPDeterminantBuilder::put(xmlNodePtr cur)
   if(agpDet)
   {
     app_error() << "  AGPDeterminantBuilder::put exits. AGPDeterminant has been already created."
-                << endl;
+                << std::endl;
     return false;
   }
-  app_log() << "  AGPDeterminantBuilder Creating AGPDeterminant." << endl;
+  app_log() << "  AGPDeterminantBuilder Creating AGPDeterminant." << std::endl;
   xmlNodePtr curRoot=cur;
   bool success=true;
-  string cname, tname;
+  std::string cname, tname;
   xmlNodePtr bPtr=NULL;
   xmlNodePtr cPtr=NULL;
   xmlNodePtr uPtr=NULL;
@@ -143,8 +143,8 @@ bool AGPDeterminantBuilder::put(xmlNodePtr cur)
   }
   if(bPtr == NULL || cPtr == NULL)
   {
-    app_error() << "  AGPDeterminantBuilder::put Cannot create AGPDeterminant. " << endl;
-    app_error() << "    Missing <basisset/> or <coefficients/>" << endl;
+    app_error() << "  AGPDeterminantBuilder::put Cannot create AGPDeterminant. " << std::endl;
+    app_error() << "    Missing <basisset/> or <coefficients/>" << std::endl;
     return false;
   }
   if(myBasisSetFactory == 0)
@@ -193,8 +193,8 @@ bool AGPDeterminantBuilder::put(xmlNodePtr cur)
       }
       tcur=tcur->next;
     }
-    app_log() << "  AGPDeterminantBuilder::put Coefficients for the unpaired electrons " << endl;
-    app_log() << agpDet->LambdaUP << endl;
+    app_log() << "  AGPDeterminantBuilder::put Coefficients for the unpaired electrons " << std::endl;
+    app_log() << agpDet->LambdaUP << std::endl;
   }
   if(agpDet)
     targetPsi.addOrbital(agpDet,"AGP");

@@ -49,7 +49,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
   HDFAttribIO<TinyVector<int,3> > h_version(Version);
   h_version.read (H5FileID, "/version");
   app_log() << "  ESHDF orbital file version "
-            << Version[0] << "." << Version[1] <<"." << Version[2] << endl;
+            << Version[0] << "." << Version[1] <<"." << Version[2] << std::endl;
   HDFAttribIO<Tensor<double,3> > h_Lattice(Lattice);
   h_Lattice.read      (H5FileID, "/supercell/primitive_vectors");
   RecipLattice = 2.0*M_PI*inverse(Lattice);
@@ -98,8 +98,8 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
   app_log() << "bands=" << NumBands << ", elecs=" << NumElectrons
             << ", spins=" << NumSpins << ", twists=" << NumTwists
             << ", muffin tins=" << NumMuffinTins
-            << ", core states=" << NumCoreStates << endl;
-  app_log() << "atomic orbital=" << NumAtomicOrbitals << endl;
+            << ", core states=" << NumCoreStates << std::endl;
+  app_log() << "atomic orbital=" << NumAtomicOrbitals << std::endl;
   if (TileFactor[0]!=1 || TileFactor[1]!=1 || TileFactor[2]!=1)
     app_log() << "  Using a " << TileFactor[0] << "x" << TileFactor[1]
               << "x" << TileFactor[2] << " tiling factor.\n";
@@ -112,10 +112,10 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
   int num_species;
   HDFAttribIO<int> h_num_species(num_species);
   h_num_species.read (H5FileID, "/atoms/number_of_species");
-  vector<int> atomic_numbers(num_species);
+  std::vector<int> atomic_numbers(num_species);
   for (int isp=0; isp<num_species; isp++)
   {
-    ostringstream name;
+    std::ostringstream name;
     name << "/atoms/species_" << isp << "/atomic_number";
     HDFAttribIO<int> h_atomic_number (atomic_numbers[isp]);
     h_atomic_number.read(H5FileID, name.str().c_str());
@@ -126,14 +126,14 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
   HDFAttribIO<Vector<TinyVector<double,3> > > h_IonPos(IonPos);
   h_IonPos.read   (H5FileID, "/atoms/positions");
   for (int i=0; i<IonTypes.size(); i++)
-    app_log() << "Atom type(" << i << ") = " << IonTypes(i) << endl;
+    app_log() << "Atom type(" << i << ") = " << IonTypes(i) << std::endl;
   /////////////////////////////////////
   // Read atomic orbital information //
   /////////////////////////////////////
   AtomicOrbitals.resize(NumAtomicOrbitals);
   for (int iat=0; iat<NumAtomicOrbitals; iat++)
   {
-    AtomicOrbital<complex<double> > &orb = AtomicOrbitals[iat];
+    AtomicOrbital<std::complex<double> > &orb = AtomicOrbitals[iat];
     int lmax, polynomial_order, spline_points;
     RealType cutoff_radius, polynomial_radius, spline_radius;
     PosType position;
@@ -143,9 +143,9 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
                 h_polynomial_radius(polynomial_radius),
                 h_spline_radius(spline_radius);
     HDFAttribIO<PosType> h_position(position);
-    ostringstream groupstream;
+    std::ostringstream groupstream;
     groupstream << "/electrons/atomic_orbital_" << iat << "/";
-    string groupname = groupstream.str();
+    std::string groupname = groupstream.str();
     h_lmax.read              (H5FileID, (groupname + "lmax"             ).c_str());
     h_polynomial_order.read  (H5FileID, (groupname + "polynomial_order" ).c_str());
     h_spline_points.read     (H5FileID, (groupname + "spline_points"    ).c_str());
@@ -167,17 +167,17 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
   TwistWeight.resize(NumTwists);
   for (int ti=0; ti<NumTwists; ti++)
   {
-    ostringstream path;
+    std::ostringstream path;
     path << "/electrons/kpoint_" << ti << "/reduced_k";
     HDFAttribIO<PosType> h_Twist(TwistAngles[ti]);
     h_Twist.read (H5FileID, path.str().c_str());
     if ((Version[0] >= 2) and (Version[1] >= 1))
     {
-      ostringstream sym_path;
+      std::ostringstream sym_path;
       sym_path << "/electrons/kpoint_" << ti << "/symgroup";
       HDFAttribIO<int> h_Sym(TwistSymmetry[ti]);
       h_Sym.read (H5FileID, sym_path.str().c_str());
-      ostringstream nsym_path;
+      std::ostringstream nsym_path;
       nsym_path << "/electrons/kpoint_" << ti << "/numsym";
       HDFAttribIO<int> h_Nsym(TwistWeight[ti]);
       h_Nsym.read (H5FileID, nsym_path.str().c_str());
@@ -204,7 +204,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
       // FIXME:  add support for more than one spin density
       if (!TargetPtcl.Density_G.size())
       {
-        HDFAttribIO<vector<TinyVector<int,OHMMS_DIM> > >
+        HDFAttribIO<std::vector<TinyVector<int,OHMMS_DIM> > >
         h_reduced_gvecs(TargetPtcl.DensityReducedGvecs);
         HDFAttribIO<Array<RealType,OHMMS_DIM> >
         h_density_r (TargetPtcl.Density_r);
@@ -220,15 +220,15 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
         app_log() << "  Read " << numG << " density G-vectors.\n";
         for (int ispin=0; ispin<NumSpins; ispin++)
         {
-          ostringstream density_r_path, density_g_path;
+          std::ostringstream density_r_path, density_g_path;
           density_r_path << "/electrons/density/spin_" << ispin << "/density_r";
           density_g_path << "/electrons/density/spin_" << ispin << "/density_g";
           h_density_r.read (H5FileID, density_r_path.str().c_str());
           if (TargetPtcl.DensityReducedGvecs.size())
           {
             app_log() << "  EinsplineSetBuilder found density in the HDF5 file.\n";
-            vector<ComplexType> density_G;
-            HDFAttribIO<vector<ComplexType > > h_density_G (density_G);
+            std::vector<ComplexType> density_G;
+            HDFAttribIO<std::vector<ComplexType > > h_density_G (density_G);
             h_density_G.read (H5FileID, density_g_path.str().c_str());
             if (!density_G.size())
             {
@@ -255,7 +255,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
       // FIXME:  add support for more than one spin potential
       if (!TargetPtcl.VHXC_r[0].size())
       {
-        HDFAttribIO<vector<TinyVector<int,OHMMS_DIM> > >
+        HDFAttribIO<std::vector<TinyVector<int,OHMMS_DIM> > >
         h_reduced_gvecs(TargetPtcl.VHXCReducedGvecs);
         TinyVector<int,3> mesh;
         h_reduced_gvecs.read (H5FileID, "/electrons/VHXC/gvectors");
@@ -271,15 +271,15 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
         {
           HDFAttribIO<Array<RealType,OHMMS_DIM> >
           h_VHXC_r (TargetPtcl.VHXC_r[ispin]);
-          ostringstream VHXC_r_path, VHXC_g_path;
+          std::ostringstream VHXC_r_path, VHXC_g_path;
           VHXC_r_path << "/electrons/VHXC/spin_" << ispin << "/VHXC_r";
           VHXC_g_path << "/electrons/VHXC/spin_" << ispin << "/VHXC_g";
           h_VHXC_r.read (H5FileID, VHXC_r_path.str().c_str());
           if (TargetPtcl.VHXCReducedGvecs.size())
           {
             app_log() << "  EinsplineSetBuilder found VHXC in the HDF5 file.\n";
-            vector<ComplexType> VHXC_G;
-            HDFAttribIO<vector<ComplexType > > h_VHXC_G (VHXC_G);
+            std::vector<ComplexType> VHXC_G;
+            HDFAttribIO<std::vector<ComplexType > > h_VHXC_G (VHXC_G);
             h_VHXC_G.read (H5FileID, VHXC_g_path.str().c_str());
             if (!VHXC_G.size())
             {
@@ -296,7 +296,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
   }
   else
   {
-    app_log() << "   Skip initialization of the density" << endl;
+    app_log() << "   Skip initialization of the density" << std::endl;
   }
   return true;
 }
@@ -308,18 +308,18 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
   if (myComm->rank() != 0)
     return;
 
-  vector<BandInfo>& SortBands(*FullBands[spin]);
+  std::vector<BandInfo>& SortBands(*FullBands[spin]);
   SortBands.clear(); //??? can exit if SortBands is already made?
   int maxOrbs(0);
   for (int ti=0; ti<DistinctTwists.size(); ti++)
   {
     int tindex = DistinctTwists[ti];
     // First, read valence states
-    ostringstream ePath;
+    std::ostringstream ePath;
     ePath << "/electrons/kpoint_" << tindex << "/spin_"
           << spin << "/eigenvalues";
-    vector<double> eigvals;
-    HDFAttribIO<vector<double> > h_eigvals(eigvals);
+    std::vector<double> eigvals;
+    HDFAttribIO<std::vector<double> > h_eigvals(eigvals);
     h_eigvals.read(H5FileID, ePath.str().c_str());
     for (int bi=0; bi<NumBands; bi++)
     {
@@ -366,7 +366,7 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
     sort (SortBands.begin(), SortBands.end());
   }
 
-  vector<int> gsOcc(maxOrbs);
+  std::vector<int> gsOcc(maxOrbs);
   int N_gs_orbs=numOrbs;
   int nocced(0), ntoshift(0);
   for (int ti=0; ti<SortBands.size(); ti++)
@@ -389,7 +389,7 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
   }
 //    if(qafm!=0)
 //    {
-//      app_log()<<"Finding AFM pair for first "<<ntoshift<<" orbitals."<<endl;
+//      app_log()<<"Finding AFM pair for first "<<ntoshift<<" orbitals."<< std::endl;
 //
 //      for (int ti=0; ti<ntoshift; ti++)
 //      {
@@ -402,14 +402,14 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
 //          {
 //            ku=TwistAngles[tj];
 //            PosType k2 = OrbitalSet->PrimLattice.k_cart(ku);
-//            double dkx = abs(k1[0] - k2[0]);
-//            double dky = abs(k1[1] - k2[1]);
-//            double dkz = abs(k1[2] - k2[2]);
+//            double dkx = std::abs(k1[0] - k2[0]);
+//            double dky = std::abs(k1[1] - k2[1]);
+//            double dkz = std::abs(k1[2] - k2[2]);
 //            bool rightK = ((dkx<qafm+0.0001)&&(dkx>qafm-0.0001)&&(dky<0.0001)&&(dkz<0.0001));
 //            if(rightK)
 //            {
 //              SortBands[ti].TwistIndex = tj;
-//              //               app_log()<<"swapping: "<<ti<<" "<<tj<<endl;
+//              //               app_log()<<"swapping: "<<ti<<" "<<tj<< std::endl;
 //              found=true;
 //              break;
 //            }
@@ -426,14 +426,14 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
 //            {
 //              ku=TwistAngles[tj];
 //              PosType k2 = OrbitalSet->PrimLattice.k_cart(ku);
-//              double dkx = abs(k1[0] - k2[0]);
-//              double dky = abs(k1[1] - k2[1]);
-//              double dkz = abs(k1[2] - k2[2]);
+//              double dkx = std::abs(k1[0] - k2[0]);
+//              double dky = std::abs(k1[1] - k2[1]);
+//              double dkz = std::abs(k1[2] - k2[2]);
 //              bool rightK = ((dkx<qafm+0.0001)&&(dkx>qafm-0.0001)&&(dky<0.0001)&&(dkz<0.0001));
 //              if(rightK)
 //              {
 //                SortBands[ti].TwistIndex = tj;
-//                //               app_log()<<"swapping: "<<ti<<" "<<tj<<endl;
+//                //               app_log()<<"swapping: "<<ti<<" "<<tj<< std::endl;
 //                found=true;
 //                break;
 //              }
@@ -443,8 +443,8 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
 //
 //        if(!found)
 //        {
-//          app_log()<<"Need twist: ("<<k1[0]+qafm<<","<<k1[1]<<","<<k1[2]<<")"<<endl;
-//          app_log()<<"Did not find afm pair for orbital: "<<ti<<", twist index: "<<SortBands[ti].TwistIndex<<endl;
+//          app_log()<<"Need twist: ("<<k1[0]+qafm<<","<<k1[1]<<","<<k1[2]<<")"<< std::endl;
+//          app_log()<<"Did not find afm pair for orbital: "<<ti<<", twist index: "<<SortBands[ti].TwistIndex<< std::endl;
 //          APP_ABORT("EinsplineSetBuilder::OccupyBands_ESHDF");
 //        }
 //      }
@@ -452,8 +452,8 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
   if (occ_format=="energy")
   {
     // To get the occupations right.
-    vector<int> Removed(0,0);
-    vector<int> Added(0,0);
+    std::vector<int> Removed(0,0);
+    std::vector<int> Added(0,0);
     for(int ien=0; ien<Occ.size(); ien++)
     {
       if (Occ[ien]<0)
@@ -463,16 +463,16 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
     }
     if(Added.size()-Removed.size() != 0)
     {
-      app_log()<<"need to add and remove same number of orbitals. "<< Added.size()<<" "<<Removed.size()<<endl;
+      app_log()<<"need to add and remove same number of orbitals. "<< Added.size()<<" "<<Removed.size()<< std::endl;
       APP_ABORT("ChangedOccupations");
     }
-    vector<int> DiffOcc(maxOrbs,0);
+    std::vector<int> DiffOcc(maxOrbs,0);
     //Probably a cleaner way to do this.
     for(int i=0; i<Removed.size(); i++)
       DiffOcc[Removed[i]-1]-=1;
     for(int i=0; i<Added.size(); i++)
       DiffOcc[Added[i]-1]+=1;
-    vector<int> SumOrb(SortBands.size(),0);
+    std::vector<int> SumOrb(SortBands.size(),0);
     int doi(0);
     for(int i=0; i<SumOrb.size(); i++)
     {
@@ -484,8 +484,8 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
       else
         SumOrb[i]=gsOcc[i]+DiffOcc[doi++];
     }
-    vector<BandInfo> ReOrderedBands;
-    vector<BandInfo> RejectedBands;
+    std::vector<BandInfo> ReOrderedBands;
+    std::vector<BandInfo> RejectedBands;
     for(int i=0; i<SumOrb.size(); i++)
     {
       if(SumOrb[i]==2)
@@ -505,7 +505,7 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
       }
       else
       {
-        app_log()<<" Trying to add the same orbital ("<<i<<") less than zero or more than 2 times."<<endl;
+        app_log()<<" Trying to add the same orbital ("<<i<<") less than zero or more than 2 times."<< std::endl;
         APP_ABORT("Sorting Excitation");
       }
     }
@@ -514,11 +514,11 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
   }
   else if (occ_format=="band")
   {
-    app_log()<<"  Occupying bands based on (bi,ti) data."<<endl;
+    app_log()<<"  Occupying bands based on (bi,ti) data."<< std::endl;
     if(Occ.size() != particle_hole_pairs*4)
     {
-      app_log()<<" Need Occ = pairs*4. Occ is (ti,bi) of removed, then added."<<endl;
-      app_log()<<Occ.size()<<" "<<particle_hole_pairs<<endl;
+      app_log()<<" Need Occ = pairs*4. Occ is (ti,bi) of removed, then added."<< std::endl;
+      app_log()<<Occ.size()<<" "<<particle_hole_pairs<< std::endl;
       APP_ABORT("ChangedOccupations");
     }
     int cnt(0);
@@ -529,17 +529,17 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
         {
           gsOcc[ien]-=1;
           cnt+=2;
-          app_log()<<"removing orbital "<<ien<<endl;
+          app_log()<<"removing orbital "<<ien<< std::endl;
         }
         else
         {
           gsOcc[ien]+=1;
-          app_log()<<"adding orbital "<<ien<<endl;
+          app_log()<<"adding orbital "<<ien<< std::endl;
           cnt+=2;
         }
     }
-    vector<BandInfo> ReOrderedBands;
-    vector<BandInfo> RejectedBands;
+    std::vector<BandInfo> ReOrderedBands;
+    std::vector<BandInfo> RejectedBands;
     for(int i=0; i<SortBands.size(); i++)
     {
       if(gsOcc[i]==2)
@@ -559,7 +559,7 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
       }
       else
       {
-        app_log()<<" Trying to add the same orbital ("<<i<<") less than zero or more than 2 times."<<endl;
+        app_log()<<" Trying to add the same orbital ("<<i<<") less than zero or more than 2 times."<< std::endl;
         APP_ABORT("Sorting Excitation");
       }
     }
@@ -567,7 +567,7 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
     SortBands=ReOrderedBands;
   }
   //for(int sw=0;sw<Removed.size();sw++){
-  //  app_log()<<" Swapping two orbitals "<<Removed[sw]<<" and "<<Added[sw]<<endl;
+  //  app_log()<<" Swapping two orbitals "<<Removed[sw]<<" and "<<Added[sw]<< std::endl;
   //  BandInfo tempband(SortBands[Removed[sw]-1]);
   //  SortBands[Removed[sw]-1] = SortBands[Added[sw]-1];
   //  SortBands[Added[sw]-1] = tempband;
@@ -597,7 +597,7 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
 
 #ifdef QMC_CUDA
 /** TODO: FIXME RotateBands_ESHDF need psi_r */
-void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<complex<double > >* orbitalSet)
+void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<std::complex<double > >* orbitalSet)
 {
   update_token(__FILE__,__LINE__,"RotateBands_ESHDF:complex");
   bool root = (myComm->rank()==0);
@@ -608,7 +608,7 @@ void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<comp
     xmlNodePtr kids=XMLRoot->children;
     while(kids != NULL)
     {
-      string cname((const char*)(kids->name));
+      std::string cname((const char*)(kids->name));
       if(cname == "rotationmatrix")
         putContent(rotationMatrix,kids);
       else
@@ -618,7 +618,7 @@ void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<comp
     }
     if ((rotatedOrbitals.size()*rotatedOrbitals.size() != rotationMatrix.size()) && (rotationMatrix.size()!=0))
     {
-      app_log()<<" Rotation Matrix is wrong dimension. "<<rotationMatrix.size()<<" should be "<<rotatedOrbitals.size()*rotatedOrbitals.size()<<endl;
+      app_log()<<" Rotation Matrix is wrong dimension. "<<rotationMatrix.size()<<" should be "<<rotatedOrbitals.size()*rotatedOrbitals.size()<< std::endl;
     }
     else
       if (rotationMatrix.size()>0)
@@ -626,13 +626,13 @@ void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<comp
         app_log()<<" Rotating between: ";
         for (int i=0; i<rotatedOrbitals.size(); i++)
           app_log()<<rotatedOrbitals[i]<<" ";
-        app_log()<<endl;
-        app_log()<<" Using the following rotation"<<endl;
+        app_log()<< std::endl;
+        app_log()<<" Using the following rotation"<< std::endl;
         for (int i=0; i<rotatedOrbitals.size(); i++)
         {
           for (int j=0; j<rotatedOrbitals.size(); j++)
             app_log()<<rotationMatrix[rotatedOrbitals.size()*i+j]<<" ";
-          app_log()<<endl;
+          app_log()<< std::endl;
         }
       }
     if ((rotationMatrix.size()>0) && (rotatedOrbitals.size()>0) )
@@ -649,26 +649,26 @@ void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<comp
         }
       }
       //simple copy file function. make backup.
-      string backupName = H5FileName+"_bkup";
-      ifstream fin(H5FileName.c_str(), ios::in | ios::binary);
-      ofstream fout(backupName.c_str() , ios::in); // open with this mode to check whether file exists
-      //       ofstream fout(backupName.c_str(), ios::out | ios::binary);
+      std::string backupName = H5FileName+"_bkup";
+      std::ifstream fin(H5FileName.c_str(), std::ios::in | std::ios::binary);
+      std::ofstream fout(backupName.c_str() , std::ios::in); // open with this mode to check whether file exists
+      //       std::ofstream fout(backupName.c_str(), std::ios::out | std::ios::binary);
       if (fin.fail())
       {
         // reset status flags
         fin.clear();
-        cout << " source file does not exist, try it again"<<endl;
+        std::cout << " source file does not exist, try it again"<< std::endl;
         exit( 0 );
       }
       if (!fout.fail())
       {
         fout.close();
-        cout << " destination file already exists, backup completed"<<endl;
+        std::cout << " destination file already exists, backup completed"<< std::endl;
       }
       else
       {
         fout.close();
-        fout.open(backupName.c_str() , ios::out | ios::binary); // change to writting mode
+        fout.open(backupName.c_str() , std::ios::out | std::ios::binary); // change to writting mode
         int BUFFER_SIZE = 128;
         char buffer[BUFFER_SIZE];
         while (!fin.eof() )
@@ -676,7 +676,7 @@ void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<comp
           fin.read( buffer, BUFFER_SIZE);
           if (fin.bad())
           {
-            cout << "Error reading data" << endl;
+            std::cout << "Error reading data" << std::endl;
             exit( 0 );
           }
           else
@@ -686,8 +686,8 @@ void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<comp
       fin.close();
       fout.close();
       int nx, ny, nz, bi, ti;
-      vector<Array<complex<double>,3> > allRotatedSplines;
-      Array<complex<double>,3> splineData;
+      std::vector<Array<std::complex<double>,3> > allRotatedSplines;
+      Array<std::complex<double>,3> splineData;
       TinyVector<int,3> mesh;
       // Find the orbital mesh size
       HDFAttribIO<TinyVector<int,3> > h_mesh(mesh);
@@ -698,7 +698,7 @@ void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<comp
       ny=mesh[1];
       nz=mesh[2];
       splineData.resize(nx,ny,nz);
-      vector<BandInfo>& SortBands(*FullBands[spin]);
+      std::vector<BandInfo>& SortBands(*FullBands[spin]);
       for (int i=0; i<rotatedOrbitals.size(); i++)
       {
         int iorb = rotatedOrbitals[i];
@@ -710,10 +710,10 @@ void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<comp
         k = orbitalSet->PrimLattice.k_cart(twist);
         fprintf (stderr, "  Rotating state:  ti=%3d  bi=%3d energy=%8.5f k=(%7.4f, %7.4f, %7.4f) rank=%d \n",
                  ti, bi, e, k[0], k[1], k[2], myComm->rank() );
-        ostringstream path;
+        std::ostringstream path;
         path << "/electrons/kpoint_" << ti << "/spin_" << spin << "/state_" << bi << "/";
-        string psirName = path.str() + "psi_r";
-        HDFAttribIO<Array<complex<double>,3> >  h_splineData(splineData);
+        std::string psirName = path.str() + "psi_r";
+        HDFAttribIO<Array<std::complex<double>,3> >  h_splineData(splineData);
         h_splineData.read(H5FileID, psirName.c_str());
         if ((splineData.size(0) != nx) ||
             (splineData.size(1) != ny) ||
@@ -725,8 +725,8 @@ void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<comp
         }
         allRotatedSplines.push_back(splineData);
       }
-      app_log()<<endl;
-      vector<Array<complex<double>,3> > allOriginalSplines(allRotatedSplines);
+      app_log()<< std::endl;
+      std::vector<Array<std::complex<double>,3> > allOriginalSplines(allRotatedSplines);
       #pragma omp parallel for
       for (int i=0; i<rotatedOrbitals.size(); i++)
         for (int ix=0; ix<nx; ix++)
@@ -749,10 +749,10 @@ void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<comp
         int iorb = rotatedOrbitals[i];
         int ti   = SortBands[iorb].TwistIndex;
         int bi   = SortBands[iorb].BandIndex;
-        ostringstream path;
+        std::ostringstream path;
         path << "/electrons/kpoint_" << ti << "/spin_" << spin << "/state_" << bi << "/";
-        string psirName = path.str() + "psi_r";
-        HDFAttribIO<Array<complex<double>,3> >  h_splineData(allRotatedSplines[i],true);
+        std::string psirName = path.str() + "psi_r";
+        HDFAttribIO<Array<std::complex<double>,3> >  h_splineData(allRotatedSplines[i],true);
         h_splineData.write(H5FileID, psirName.c_str());
       }
       //      for (int i=0;i<rotatedOrbitals.size();i++){
@@ -760,16 +760,16 @@ void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<comp
       //           int ti   = SortBands[iorb].TwistIndex;
       //           int bi   = SortBands[iorb].BandIndex;
       //
-      //           ostringstream path;
+      //           std::ostringstream path;
       //           path << "/electrons/kpoint_" << ti << "/spin_" << spin << "/state_" << bi << "/";
-      //           string psirName = path.str() + "psi_r";
+      //           std::string psirName = path.str() + "psi_r";
       //
-      //           HDFAttribIO<Array<complex<double>,3> >  h_splineData(allOriginalSplines[i]);
+      //           HDFAttribIO<Array<std::complex<double>,3> >  h_splineData(allOriginalSplines[i]);
       //           h_splineData.read(H5FileID, psirName.c_str());
       //         }
     }
     else
-      app_log()<<" No rotations defined"<<endl;
+      app_log()<<" No rotations defined"<< std::endl;
   }
 }
 
@@ -784,7 +784,7 @@ void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<doub
     xmlNodePtr kids=XMLRoot->children;
     while(kids != NULL)
     {
-      string cname((const char*)(kids->name));
+      std::string cname((const char*)(kids->name));
       if(cname == "rotationmatrix")
         putContent(rotationMatrix,kids);
       else
@@ -794,7 +794,7 @@ void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<doub
     }
     if ((rotatedOrbitals.size()*rotatedOrbitals.size() != rotationMatrix.size()) && (rotationMatrix.size()!=0))
     {
-      app_log()<<" Rotation Matrix is wrong dimension. "<<rotationMatrix.size()<<" should be "<<rotatedOrbitals.size()*rotatedOrbitals.size()<<endl;
+      app_log()<<" Rotation Matrix is wrong dimension. "<<rotationMatrix.size()<<" should be "<<rotatedOrbitals.size()*rotatedOrbitals.size()<< std::endl;
     }
     else
       if (rotationMatrix.size()>0)
@@ -802,13 +802,13 @@ void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<doub
         app_log()<<" Rotating between: ";
         for (int i=0; i<rotatedOrbitals.size(); i++)
           app_log()<<rotatedOrbitals[i]<<" ";
-        app_log()<<endl;
-        app_log()<<" Using the following rotation"<<endl;
+        app_log()<< std::endl;
+        app_log()<<" Using the following rotation"<< std::endl;
         for (int i=0; i<rotatedOrbitals.size(); i++)
         {
           for (int j=0; j<rotatedOrbitals.size(); j++)
             app_log()<<rotationMatrix[rotatedOrbitals.size()*i+j]<<" ";
-          app_log()<<endl;
+          app_log()<< std::endl;
         }
       }
     if ((rotationMatrix.size()>0) && (rotatedOrbitals.size()>0) )
@@ -825,26 +825,26 @@ void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<doub
         }
       }
       //simple copy file function. make backup.
-      string backupName = H5FileName+"_bkup";
-      ifstream fin(H5FileName.c_str(), ios::in | ios::binary);
-      ofstream fout(backupName.c_str() , ios::in); // open with this mode to check whether file exists
-      //       ofstream fout(backupName.c_str(), ios::out | ios::binary);
+      std::string backupName = H5FileName+"_bkup";
+      std::ifstream fin(H5FileName.c_str(), std::ios::in | std::ios::binary);
+      std::ofstream fout(backupName.c_str() , std::ios::in); // open with this mode to check whether file exists
+      //       std::ofstream fout(backupName.c_str(), std::ios::out | std::ios::binary);
       if (fin.fail())
       {
         // reset status flags
         fin.clear();
-        cout << " source file does not exist, try it again"<<endl;
+        std::cout << " source file does not exist, try it again"<< std::endl;
         exit( 0 );
       }
       if (!fout.fail())
       {
         fout.close();
-        cout << " destination file already exists, backup completed"<<endl;
+        std::cout << " destination file already exists, backup completed"<< std::endl;
       }
       else
       {
         fout.close();
-        fout.open(backupName.c_str() , ios::out | ios::binary); // change to writting mode
+        fout.open(backupName.c_str() , std::ios::out | std::ios::binary); // change to writting mode
         int BUFFER_SIZE = 128;
         char buffer[BUFFER_SIZE];
         while (!fin.eof() )
@@ -852,7 +852,7 @@ void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<doub
           fin.read( buffer, BUFFER_SIZE);
           if (fin.bad())
           {
-            cout << "Error reading data" << endl;
+            std::cout << "Error reading data" << std::endl;
             exit( 0 );
           }
           else
@@ -862,8 +862,8 @@ void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<doub
       fin.close();
       fout.close();
       int nx, ny, nz, bi, ti;
-      vector<Array<complex<double>,3> > allRotatedSplines;
-      Array<complex<double>,3> splineData;
+      std::vector<Array<std::complex<double>,3> > allRotatedSplines;
+      Array<std::complex<double>,3> splineData;
       TinyVector<int,3> mesh;
       // Find the orbital mesh size
       HDFAttribIO<TinyVector<int,3> > h_mesh(mesh);
@@ -874,7 +874,7 @@ void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<doub
       ny=mesh[1];
       nz=mesh[2];
       splineData.resize(nx,ny,nz);
-      vector<BandInfo>& SortBands(*FullBands[spin]);
+      std::vector<BandInfo>& SortBands(*FullBands[spin]);
       for (int i=0; i<rotatedOrbitals.size(); i++)
       {
         int iorb = rotatedOrbitals[i];
@@ -886,10 +886,10 @@ void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<doub
         k = orbitalSet->PrimLattice.k_cart(twist);
         fprintf (stderr, "  Rotating state:  ti=%3d  bi=%3d energy=%8.5f k=(%7.4f, %7.4f, %7.4f) rank=%d \n",
                  ti, bi, e, k[0], k[1], k[2], myComm->rank() );
-        ostringstream path;
+        std::ostringstream path;
         path << "/electrons/kpoint_" << ti << "/spin_" << spin << "/state_" << bi << "/";
-        string psirName = path.str() + "psi_r";
-        HDFAttribIO<Array<complex<double>,3> >  h_splineData(splineData);
+        std::string psirName = path.str() + "psi_r";
+        HDFAttribIO<Array<std::complex<double>,3> >  h_splineData(splineData);
         h_splineData.read(H5FileID, psirName.c_str());
         if ((splineData.size(0) != nx) ||
             (splineData.size(1) != ny) ||
@@ -901,8 +901,8 @@ void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<doub
         }
         allRotatedSplines.push_back(splineData);
       }
-      app_log()<<endl;
-      vector<Array<complex<double>,3> > allOriginalSplines(allRotatedSplines);
+      app_log()<< std::endl;
+      std::vector<Array<std::complex<double>,3> > allOriginalSplines(allRotatedSplines);
       #pragma omp parallel for
       for (int i=0; i<rotatedOrbitals.size(); i++)
         for (int ix=0; ix<nx; ix++)
@@ -925,10 +925,10 @@ void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<doub
         int iorb = rotatedOrbitals[i];
         int ti   = SortBands[iorb].TwistIndex;
         int bi   = SortBands[iorb].BandIndex;
-        ostringstream path;
+        std::ostringstream path;
         path << "/electrons/kpoint_" << ti << "/spin_" << spin << "/state_" << bi << "/";
-        string psirName = path.str() + "psi_r";
-        HDFAttribIO<Array<complex<double>,3> >  h_splineData(allRotatedSplines[i],true);
+        std::string psirName = path.str() + "psi_r";
+        HDFAttribIO<Array<std::complex<double>,3> >  h_splineData(allRotatedSplines[i],true);
         h_splineData.write(H5FileID, psirName.c_str());
       }
       //      for (int i=0;i<rotatedOrbitals.size();i++){
@@ -936,16 +936,16 @@ void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<doub
       //           int ti   = SortBands[iorb].TwistIndex;
       //           int bi   = SortBands[iorb].BandIndex;
       //
-      //           ostringstream path;
+      //           std::ostringstream path;
       //           path << "/electrons/kpoint_" << ti << "/spin_" << spin << "/state_" << bi << "/";
-      //           string psirName = path.str() + "psi_r";
+      //           std::string psirName = path.str() + "psi_r";
       //
-      //           HDFAttribIO<Array<complex<double>,3> >  h_splineData(allOriginalSplines[i]);
+      //           HDFAttribIO<Array<std::complex<double>,3> >  h_splineData(allOriginalSplines[i]);
       //           h_splineData.read(H5FileID, psirName.c_str());
       //         }
     }
     else
-      app_log()<<" No rotations defined"<<endl;
+      app_log()<<" No rotations defined"<< std::endl;
   }
 }
 #endif

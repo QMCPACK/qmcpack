@@ -24,11 +24,10 @@
 #include <string>
 #include <iomanip>
 #include <cmath>
-using namespace std;
 #include "OhmmsData/libxmldefs.h"
 #include "QMCTools/BMakeFunc.h"
 
-vector<double> BMakeFuncBase::YlmNorm;
+std::vector<double> BMakeFuncBase::YlmNorm;
 void BMakeFuncBase::init()
 {
   YlmNorm.resize(10);
@@ -42,7 +41,7 @@ void BMakeFuncBase::init()
 template<int FLAG>
 struct BMakeFunc: public BMakeFuncBase
 {
-  void put(vector<string>& words)
+  void put(std::vector<std::string>& words)
   {
     addRadFunc(atof(words[1].c_str()),1.0,1);
   }
@@ -53,7 +52,7 @@ struct BMakeFunc: public BMakeFuncBase
 template<>
 struct BMakeFunc<34>: public BMakeFuncBase
 {
-  void put(vector<string>& words)
+  void put(std::vector<std::string>& words)
   {
     N=1;
     L=0;
@@ -68,7 +67,7 @@ struct BMakeFunc<34>: public BMakeFuncBase
 template<>
 struct BMakeFunc<10>: public BMakeFuncBase
 {
-  void put(vector<string>& words)
+  void put(std::vector<std::string>& words)
   {
     N=2;
     L=0;
@@ -82,7 +81,7 @@ struct BMakeFunc<10>: public BMakeFuncBase
 template<>
 struct BMakeFunc<12>: public BMakeFuncBase
 {
-  void put(vector<string>& words)
+  void put(std::vector<std::string>& words)
   {
     N=3;
     L=0;
@@ -96,7 +95,7 @@ struct BMakeFunc<12>: public BMakeFuncBase
 template<>
 struct BMakeFunc<20>: public BMakeFuncBase
 {
-  void put(vector<string>& words)
+  void put(std::vector<std::string>& words)
   {
     N=1;
     L=1;
@@ -110,7 +109,7 @@ struct BMakeFunc<20>: public BMakeFuncBase
 template<>
 struct BMakeFunc<22>: public BMakeFuncBase
 {
-  void put(vector<string>& words)
+  void put(std::vector<std::string>& words)
   {
     N=2;
     L=1;
@@ -124,7 +123,7 @@ struct BMakeFunc<22>: public BMakeFuncBase
 template<>
 struct BMakeFunc<30>: public BMakeFuncBase
 {
-  void put(vector<string>& words)
+  void put(std::vector<std::string>& words)
   {
     N=2;
     L=2;
@@ -138,7 +137,7 @@ struct BMakeFunc<30>: public BMakeFuncBase
 template<>
 struct BMakeFunc<100>: public BMakeFuncBase
 {
-  void put(vector<string>& words)
+  void put(std::vector<std::string>& words)
   {
     N=1;
     L=0;
@@ -152,7 +151,7 @@ struct BMakeFunc<100>: public BMakeFuncBase
 template<>
 struct BMakeFunc<103>: public BMakeFuncBase
 {
-  void put(vector<string>& words)
+  void put(std::vector<std::string>& words)
   {
     N=1;
     L=1;
@@ -166,7 +165,7 @@ struct BMakeFunc<103>: public BMakeFuncBase
 template<>
 struct BMakeFunc<127>: public BMakeFuncBase
 {
-  void put(vector<string>& words)
+  void put(std::vector<std::string>& words)
   {
     N=1;
     L=2;
@@ -180,7 +179,7 @@ struct BMakeFunc<127>: public BMakeFuncBase
 template<>
 struct BMakeFunc<147>: public BMakeFuncBase
 {
-  void put(vector<string>& words)
+  void put(std::vector<std::string>& words)
   {
     N=1;
     L=2;
@@ -193,7 +192,7 @@ struct BMakeFunc<147>: public BMakeFuncBase
 template<>
 struct BMakeFunc<200>: public BMakeFuncBase
 {
-  void put(vector<string>& words)
+  void put(std::vector<std::string>& words)
   {
     N=0;
     L=0;
@@ -207,18 +206,18 @@ struct BMakeFunc<200>: public BMakeFuncBase
 template<>
 struct BMakeFunc<300>: public BMakeFuncBase
 {
-  void put(vector<string>& words)
+  void put(std::vector<std::string>& words)
   {
     N=1;
     L=0;
     RadFuncType=GAUSSIANTYPE;
     int nc=(words.size()-1)/2;
-    cout << " 300 = " << nc << endl;
+    std::cout << " 300 = " << nc << std::endl;
     for(int ic=1; ic<=nc; ic++)
     {
       double e=atof(words[ic].c_str());
       double c=atof(words[ic+nc].c_str());
-      cout << " 300:" << e << " " << c  << endl;
+      std::cout << " 300:" << e << " " << c  << std::endl;
       addRadFunc(e,c,1);
     }
   }
@@ -229,18 +228,18 @@ struct BMakeFunc<300>: public BMakeFuncBase
 template<>
 struct BMakeFunc<400>: public BMakeFuncBase
 {
-  void put(vector<string>& words)
+  void put(std::vector<std::string>& words)
   {
     N=1;
     L=1;
     RadFuncType=GAUSSIANTYPE;
     int nc=(words.size()-1)/2;
-    cout << " 400 = " << nc << endl;
+    std::cout << " 400 = " << nc << std::endl;
     for(int ic=1; ic<=nc; ic++)
     {
       double e=atof(words[ic].c_str());
       double c=atof(words[ic+nc].c_str());
-      cout << " 400:" << e << " " << c  << endl;
+      std::cout << " 400:" << e << " " << c  << std::endl;
       addRadFunc(e,c,1);
     }
   }
@@ -251,7 +250,7 @@ struct BMakeFunc<400>: public BMakeFuncBase
 template<>
 struct BMakeFunc<3000>: public BMakeFuncBase
 {
-  void put(vector<string>& words)
+  void put(std::vector<std::string>& words)
   {
     N=1;
     L=0;
@@ -273,7 +272,7 @@ struct BMakeFunc<3000>: public BMakeFuncBase
 template<>
 struct BMakeFunc<3100>: public BMakeFuncBase
 {
-  void put(vector<string>& words)
+  void put(std::vector<std::string>& words)
   {
     N=2;
     L=1;

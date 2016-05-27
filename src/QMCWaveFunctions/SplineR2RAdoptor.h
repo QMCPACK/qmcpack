@@ -112,7 +112,7 @@ struct SplineR2RAdoptor: public SplineAdoptorBase<ST,D>
 
   bool read_splines(hdf_archive& h5f)
   {
-    ostringstream o;
+    std::ostringstream o;
     o<<"spline_" << SplineAdoptorBase<ST,D>::MyIndex;
     einspline_engine<SplineType> bigtable(MultiSpline);
     return h5f.read(bigtable,o.str().c_str()); //"spline_0");
@@ -120,7 +120,7 @@ struct SplineR2RAdoptor: public SplineAdoptorBase<ST,D>
 
   bool write_splines(hdf_archive& h5f)
   {
-    ostringstream o;
+    std::ostringstream o;
     o<<"spline_" << SplineAdoptorBase<ST,D>::MyIndex;
     einspline_engine<SplineType> bigtable(MultiSpline);
     return h5f.write(bigtable,o.str().c_str());//"spline_0");

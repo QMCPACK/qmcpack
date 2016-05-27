@@ -39,7 +39,7 @@ MJPolymerEstimator::MJPolymerEstimator(QMCHamiltonian& h, int hcopy, MultiChain*
 //     Hpointer = &h;
   SizeOfHamiltonians = h.sizeOfObservables();
   FirstHamiltonian = h.startIndex();
-//     cout<<"size of Hamiltonian "<<SizeOfHamiltonians<<" First one "<<FirstHamiltonian<<endl;
+//     std::cout <<"size of Hamiltonian "<<SizeOfHamiltonians<<" First one "<<FirstHamiltonian<< std::endl;
   elocal_name.push_back("LocalEnergy");
   for(int i=0; i < SizeOfHamiltonians; i++)
   {
@@ -64,12 +64,12 @@ MJPolymerEstimator::MJPolymerEstimator(QMCHamiltonian& h, int hcopy, MultiChain*
 //     elocal_name.push_back("RMC_HFCep_1_1");
 // for(int i=0; i < elocal_name.size(); i++)
 //   app_log()<<elocal_name[i]<<" ";
-// app_log()<<endl;
+// app_log()<< std::endl;
   scalars.resize(SizeOfHamiltonians+14);
   scalars_saved=scalars;
   pNorm=0.0;
 //     Findex = h.getObservable("HFCep_1_0");
-//     app_log()<<"Force Index "<<Findex<<endl;
+//     app_log()<<"Force Index "<<Findex<< std::endl;
 };
 
 
@@ -146,7 +146,7 @@ void MJPolymerEstimator::accumulate(const MCWalkerConfiguration& W
 // //         tmpF+= 0.5*(*Bit)->deltaRSquared[2];
 // //         tmpE+=(*Bit)->getPropertyBase(i)[LOCALENERGY];
 //         tmpV+=(*Bit)->getPropertyBase(i)[LOCALPOTENTIAL];
-//         Bage=min((*Bit)->stepmade,Bage);
+//         Bage= std::min((*Bit)->stepmade,Bage);
 //       };
 //
 // //       tmpF-=0.25*Reptile->back()->deltaRSquared[2];
@@ -249,7 +249,7 @@ void MJPolymerEstimator::accumulate(const MCWalkerConfiguration& W
   }
 }
 
-void MJPolymerEstimator::registerObservables(vector<observable_helper*>& h5dec, hid_t gid)
+void MJPolymerEstimator::registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid)
 {
   //IMPLEMENT for hdf5
 }

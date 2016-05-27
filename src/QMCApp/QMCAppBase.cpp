@@ -32,7 +32,7 @@ QMCAppBase::~QMCAppBase()
   }
 }
 
-bool QMCAppBase::pushDocument(const string& infile)
+bool QMCAppBase::pushDocument(const std::string& infile)
 {
   Libxml2Document* adoc= new Libxml2Document();
   bool success = adoc->parse(infile);
@@ -42,7 +42,7 @@ bool QMCAppBase::pushDocument(const string& infile)
   }
   else
   {
-    app_error() << "File " << infile << " is invalid" << endl;
+    app_error() << "File " << infile << " is invalid" << std::endl;
     delete adoc;
   }
   return success;
@@ -66,9 +66,9 @@ void QMCAppBase::popDocument()
  * The data members m_doc and m_root point to the "current" document and
  * root element.
  */
-bool QMCAppBase::parse(const string& infile)
+bool QMCAppBase::parse(const std::string& infile)
 {
-  app_log() << "  Input XML = " << infile << endl;
+  app_log() << "  Input XML = " << infile << std::endl;
   return pushDocument(infile);
 }
 
@@ -76,13 +76,13 @@ void QMCAppBase::saveXml()
 {
   if(!XmlDocStack.empty())
   {
-    string newxml(myProject.CurrentMainRoot());
+    std::string newxml(myProject.CurrentMainRoot());
     //string newxml(myProject.CurrentRoot());
     //myProject.PreviousRoot(newxml);
     //myProject.rewind();
     newxml.append(".cont.xml");
     app_log() << "\n========================================================="
-              << "\n  A new xml input file : " << newxml << endl;
+              << "\n  A new xml input file : " << newxml << std::endl;
     XmlDocStack.top()->dump(newxml);
   }
 }

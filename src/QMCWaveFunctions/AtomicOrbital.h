@@ -8,8 +8,6 @@
 #include <Configuration.h>
 #include <Utilities/NewTimer.h>
 
-#define conj_ qmcplusplus::conj
-
 
 namespace qmcplusplus
 {
@@ -23,7 +21,7 @@ template<> struct AtomicOrbitalTraits<double>
 {
   typedef multi_UBspline_1d_d SplineType;
 };
-template<> struct AtomicOrbitalTraits<complex<double> >
+template<> struct AtomicOrbitalTraits<std::complex<double> >
 {
   typedef multi_UBspline_1d_z SplineType;
 };
@@ -34,7 +32,7 @@ inline void EinsplineMultiEval (multi_UBspline_1d_d *spline,
   eval_multi_UBspline_1d_d (spline, x, val);
 }
 inline void EinsplineMultiEval (multi_UBspline_1d_z *spline,
-                                double x, complex<double> *val)
+                                double x, std::complex<double> *val)
 {
   eval_multi_UBspline_1d_z (spline, x, val);
 }
@@ -44,8 +42,8 @@ inline void EinsplineMultiEval (multi_UBspline_1d_d *spline, double x,
   eval_multi_UBspline_1d_d_vgl (spline, x, val, grad, lapl);
 }
 inline void EinsplineMultiEval (multi_UBspline_1d_z *spline, double x,
-                                complex<double> *val, complex<double> *grad,
-                                complex<double> *lapl)
+                                std::complex<double> *val, std::complex<double> *grad,
+                                std::complex<double> *lapl)
 {
   eval_multi_UBspline_1d_z_vgl (spline, x, val, grad, lapl);
 }
@@ -60,23 +58,23 @@ public:
   typedef CrystalLattice<RealType,OHMMS_DIM>    UnitCellType;
   typedef Vector<double>                        RealValueVector_t;
   typedef Vector<TinyVector<double,OHMMS_DIM> > RealGradVector_t;
-  typedef Vector<complex<double> >              ComplexValueVector_t;
-  typedef Vector<TinyVector<complex<double>,OHMMS_DIM> > ComplexGradVector_t;
+  typedef Vector<std::complex<double> >              ComplexValueVector_t;
+  typedef Vector<TinyVector<std::complex<double>,OHMMS_DIM> > ComplexGradVector_t;
   typedef Vector<Tensor<double,OHMMS_DIM> >     RealHessVector_t;
-  typedef Vector<Tensor<complex<double>,OHMMS_DIM> >  ComplexHessVector_t;
+  typedef Vector<Tensor<std::complex<double>,OHMMS_DIM> >  ComplexHessVector_t;
   typedef typename AtomicOrbitalTraits<StorageType>::SplineType SplineType;
 
 private:
   // Store in order
   // Index = l*(l+1) + m.  There are (lMax+1)^2 Ylm's
-  vector<StorageType> YlmVec, dYlm_dthetaVec, dYlm_dphiVec, ulmVec, dulmVec, d2ulmVec;
+  std::vector<StorageType> YlmVec, dYlm_dthetaVec, dYlm_dphiVec, ulmVec, dulmVec, d2ulmVec;
 
   SplineType *RadialSpline;
   // The first index is n in r^n, the second is lm = l*(l+1)+m
   Array<StorageType,3> PolyCoefs;
   NewTimer YlmTimer, SplineTimer, SumTimer;
   RealType rmagLast;
-  vector<PosType> TwistAngles;
+  std::vector<PosType> TwistAngles;
 public:
   PosType Pos;
   RealType CutoffRadius, SplineRadius, PolyRadius;
@@ -131,18 +129,18 @@ public:
 
   void allocate();
 
-  void set_band (int band, Array<complex<double>,2> &spline_data,
-                 Array<complex<double>,2> &poly_coefs,
+  void set_band (int band, Array<std::complex<double>,2> &spline_data,
+                 Array<std::complex<double>,2> &poly_coefs,
                  PosType twist);
   inline void CalcYlm(PosType rhat,
-                      vector<complex<double> > &Ylm,
-                      vector<complex<double> > &dYlm_dtheta,
-                      vector<complex<double> > &dYlm_dphi);
+                      std::vector<std::complex<double> > &Ylm,
+                      std::vector<std::complex<double> > &dYlm_dtheta,
+                      std::vector<std::complex<double> > &dYlm_dphi);
 
   inline void CalcYlm(PosType rhat,
-                      vector<double> &Ylm,
-                      vector<double> &dYlm_dtheta,
-                      vector<double> &dYlm_dphi);
+                      std::vector<double> &Ylm,
+                      std::vector<double> &dYlm_dtheta,
+                      std::vector<double> &dYlm_dphi);
 
   inline bool evaluate (PosType r, ComplexValueVector_t &vals);
   inline bool evaluate (PosType r, ComplexValueVector_t &val,
@@ -215,7 +213,7 @@ AtomicOrbital<StorageType>::evaluate (PosType r, ComplexValueVector_t &vals)
   int index = 0;
   for (int i=0; i<vals.size(); i++)
   {
-    vals[i] = complex<double>();
+    vals[i] = std::complex<double>();
     for (int lm=0; lm < Numlm; lm++)
       vals[i] += ulmVec[index++] * YlmVec[lm];
     double phase = -2.0*M_PI*dot(TwistAngles[i],img);
@@ -223,7 +221,7 @@ AtomicOrbital<StorageType>::evaluate (PosType r, ComplexValueVector_t &vals)
     // fprintf (stderr, "img = [%f,%f,%f]\n", img[0], img[1], img[2]);
     double s,c;
     sincos(phase,&s,&c);
-    vals[i] *= complex<double>(c,s);
+    vals[i] *= std::complex<double>(c,s);
   }
   SumTimer.stop();
   return true;
@@ -288,7 +286,7 @@ AtomicOrbital<StorageType>::evaluate (PosType r, RealValueVector_t &vals)
     double phase = -2.0*M_PI*dot(TwistAngles[i],img);
     double s,c;
     sincos(phase,&s,&c);
-    vals[i] = real(complex<double>(c,s) * tmp);
+    vals[i] = real(std::complex<double>(c,s) * tmp);
   }
   SumTimer.stop();
   return true;
@@ -385,7 +383,7 @@ AtomicOrbital<StorageType>::evaluate (PosType r,
     double phase = -2.0*M_PI*dot(TwistAngles[i],img);
     double s,c;
     sincos(phase,&s,&c);
-    complex<double> e2mikr(c,s);
+    std::complex<double> e2mikr(c,s);
     StorageType tmp_val, tmp_lapl,
                 grad_rhat, grad_thetahat, grad_phihat;
     tmp_val = tmp_lapl = grad_rhat = grad_thetahat = grad_phihat =
@@ -394,7 +392,7 @@ AtomicOrbital<StorageType>::evaluate (PosType r,
     for (int l=0; l<= lMax; l++)
       for (int m=-l; m<=l; m++,lm++,index++)
       {
-        complex<double> im(0.0,(double)m);
+        std::complex<double> im(0.0,(double)m);
         tmp_val       += ulmVec[index]  * YlmVec[lm];
         grad_rhat     += dulmVec[index] * YlmVec[lm];
         grad_thetahat += ulmVec[index]  * rInv * dYlm_dthetaVec[lm];
@@ -506,11 +504,11 @@ AtomicOrbital<StorageType>::evaluate (PosType r, ComplexValueVector_t &vals,
     double phase = -2.0*M_PI*dot(TwistAngles[i],img);
     double s,c;
     sincos(phase,&s,&c);
-    complex<double> e2mikr(c,s);
+    std::complex<double> e2mikr(c,s);
     for (int l=0; l<= lMax; l++)
       for (int m=-l; m<=l; m++,lm++,index++)
       {
-        complex<double> im(0.0,(double)m);
+        std::complex<double> im(0.0,(double)m);
         vals[i]  += ulmVec[index] * YlmVec[lm];
         grad_rhat     += dulmVec[index] * YlmVec[lm];
         grad_thetahat += ulmVec[index] * rInv * dYlm_dthetaVec[lm];
@@ -540,9 +538,9 @@ AtomicOrbital<StorageType>::evaluate (PosType r, ComplexValueVector_t &vals,
 // See Geophys. J. Int. (1998) 135,pp.307-309
 template<typename StorageType> inline void
 AtomicOrbital<StorageType>::CalcYlm (PosType rhat,
-                                     vector<complex<double> > &Ylm,
-                                     vector<complex<double> > &dYlm_dtheta,
-                                     vector<complex<double> > &dYlm_dphi)
+                                     std::vector<std::complex<double> > &Ylm,
+                                     std::vector<std::complex<double> > &dYlm_dtheta,
+                                     std::vector<std::complex<double> > &dYlm_dphi)
 {
   YlmTimer.start();
   const double fourPiInv = 0.0795774715459477;
@@ -552,7 +550,7 @@ AtomicOrbital<StorageType>::CalcYlm (PosType rhat,
   double cosphi, sinphi;
   cosphi=rhat[0]/sintheta;
   sinphi=rhat[1]/sintheta;
-  complex<double> e2iphi(cosphi, sinphi);
+  std::complex<double> e2iphi(cosphi, sinphi);
   double lsign = 1.0;
   double dl = 0.0;
   double XlmVec[2*lMax+1], dXlmVec[2*lMax+1];
@@ -586,16 +584,16 @@ AtomicOrbital<StorageType>::CalcYlm (PosType rhat,
       dXlmVec[l+m] *= norm;
     }
     // Multiply by azimuthal phase and store in Ylm
-    complex<double> e2imphi (1.0, 0.0);
-    complex<double> eye(0.0, 1.0);
+    std::complex<double> e2imphi (1.0, 0.0);
+    std::complex<double> eye(0.0, 1.0);
     for (int m=0; m<=l; m++)
     {
       Ylm[l*(l+1)+m]  =  XlmVec[l+m]*e2imphi;
-      Ylm[l*(l+1)-m]  =  XlmVec[l-m]*conj_(e2imphi);
+      Ylm[l*(l+1)-m]  =  XlmVec[l-m]*conj(e2imphi);
       dYlm_dphi[l*(l+1)+m ]  =  (double)m * eye *XlmVec[l+m]*e2imphi;
-      dYlm_dphi[l*(l+1)-m ]  = -(double)m * eye *XlmVec[l-m]*conj_(e2imphi);
+      dYlm_dphi[l*(l+1)-m ]  = -(double)m * eye *XlmVec[l-m]*conj(e2imphi);
       dYlm_dtheta[l*(l+1)+m] = dXlmVec[l+m]*e2imphi;
-      dYlm_dtheta[l*(l+1)-m] = dXlmVec[l-m]*conj_(e2imphi);
+      dYlm_dtheta[l*(l+1)-m] = dXlmVec[l-m]*conj(e2imphi);
       e2imphi *= e2iphi;
     }
     dl += 1.0;
@@ -608,9 +606,9 @@ AtomicOrbital<StorageType>::CalcYlm (PosType rhat,
 // See Geophys. J. Int. (1998) 135,pp.307-309
 template<typename StorageType> inline void
 AtomicOrbital<StorageType>::CalcYlm (PosType rhat,
-                                     vector<double> &Ylm,
-                                     vector<double> &dYlm_dtheta,
-                                     vector<double> &dYlm_dphi)
+                                     std::vector<double> &Ylm,
+                                     std::vector<double> &dYlm_dtheta,
+                                     std::vector<double> &dYlm_dphi)
 {
   YlmTimer.start();
   const double fourPiInv = 0.0795774715459477;
@@ -620,7 +618,7 @@ AtomicOrbital<StorageType>::CalcYlm (PosType rhat,
   double cosphi, sinphi;
   cosphi=rhat[0]/sintheta;
   sinphi=rhat[1]/sintheta;
-  complex<double> e2iphi(cosphi, sinphi);
+  std::complex<double> e2iphi(cosphi, sinphi);
   double lsign = 1.0;
   double dl = 0.0;
   double XlmVec[2*lMax+1], dXlmVec[2*lMax+1];
@@ -657,7 +655,7 @@ AtomicOrbital<StorageType>::CalcYlm (PosType rhat,
     Ylm[l*(l+1)]         =  XlmVec[l];
     dYlm_dphi[l*(l+1) ]  = 0.0;
     dYlm_dtheta[l*(l+1)] = dXlmVec[l];
-    complex<double> e2imphi = e2iphi;
+    std::complex<double> e2imphi = e2iphi;
     for (int m=1; m<=l; m++)
     {
       Ylm[l*(l+1)+m]         =  XlmVec[l+m]*e2imphi.real();

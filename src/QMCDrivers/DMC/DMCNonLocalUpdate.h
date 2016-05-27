@@ -66,7 +66,7 @@ private:
   {
     return *this;
   }
-  vector<NewTimer*> myTimers;
+  std::vector<NewTimer*> myTimers;
 
 };
 
@@ -91,7 +91,7 @@ private:
   {
     return *this;
   }
-  vector<NewTimer*> myTimers;
+  std::vector<NewTimer*> myTimers;
 
 };
 

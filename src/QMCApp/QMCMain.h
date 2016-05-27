@@ -56,16 +56,16 @@ private:
   bool FirstQMC;
 
   ///previous configuration file for next qmc node
-  string PrevConfigFile;
+  std::string PrevConfigFile;
 
   ///xml mcwalkerset elements for output
-  vector<xmlNodePtr> m_walkerset;
+  std::vector<xmlNodePtr> m_walkerset;
   ///xml mcwalkerset read-in elements
-  vector<xmlNodePtr> m_walkerset_in;
+  std::vector<xmlNodePtr> m_walkerset_in;
   ///traces xml
   xmlNodePtr traces_xml;
   ///qmc sections
-  vector<pair<xmlNodePtr,bool> > m_qmcaction;
+  std::vector<std::pair<xmlNodePtr,bool> > m_qmcaction;
   ///pointer to the last node of the main inputfile
   xmlNodePtr lastInputNode;
   ///execute <qmc/> element

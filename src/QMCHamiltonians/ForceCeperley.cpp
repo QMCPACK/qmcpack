@@ -100,24 +100,24 @@ ForceCeperley::evaluate(ParticleSet& P)
 
 bool ForceCeperley::put(xmlNodePtr cur)
 {
-  string ionionforce("yes");
+  std::string ionionforce("yes");
   OhmmsAttributeSet attr;
   attr.add(prefix, "name");
   attr.add(ionionforce, "addionion");
   attr.put(cur);
   addionion = (ionionforce=="yes") || (ionionforce == "true");
-  app_log() << "ionionforce = "<<ionionforce<<endl;
-  app_log() << "addionion="<<addionion<<endl;
-  app_log() << "FirstTime= "<<FirstTime<<endl;
+  app_log() << "ionionforce = "<<ionionforce<< std::endl;
+  app_log() << "addionion="<<addionion<< std::endl;
+  app_log() << "FirstTime= "<<FirstTime<< std::endl;
   ParameterSet fcep_param_set;
   fcep_param_set.add(Rcut, "rcut","real");
   fcep_param_set.add(N_basis, "nbasis", "int");
   fcep_param_set.add(m_exp, "weight_exp", "int");
   fcep_param_set.put(cur);
-  app_log() <<"    ForceCeperley Parameters"<<endl;
-  app_log() <<"        ForceCeperley::Rcut="<<Rcut<<endl;
-  app_log() <<"        ForceCeperley::N_basis="<<N_basis<<endl;
-  app_log() <<"        ForceCeperley::m_exp="<<m_exp<<endl;
+  app_log() <<"    ForceCeperley Parameters"<< std::endl;
+  app_log() <<"        ForceCeperley::Rcut="<<Rcut<< std::endl;
+  app_log() <<"        ForceCeperley::N_basis="<<N_basis<< std::endl;
+  app_log() <<"        ForceCeperley::m_exp="<<m_exp<< std::endl;
   InitMatrix();
   return true;
 }
@@ -129,29 +129,29 @@ QMCHamiltonianBase* ForceCeperley::makeClone(ParticleSet& qp, TrialWaveFunction&
 }
 
 //  void ForceCeperley::addObservables(PropertySetType& plist) {
-//    //cerr << "ForceBase::addObs sound off" << endl;
+//    //cerr << "ForceBase::addObs sound off" << std::endl;
 //    //obsName << myName << "0_x";
 //    //myIndex = plist.add(obsName.str());
 //    //obsName.clear();
 //    mySize = Nnuc*OHMMS_DIM;
-//    //cerr << "ForceBase mySize is " << Nnuc << " * " << OHMMS_DIM << " = " << mySize << endl;
+//    //cerr << "ForceBase mySize is " << Nnuc << " * " << OHMMS_DIM << " = " << mySize << std::endl;
 //    checkInit = true;
 //    if(myIndex<0) myIndex=plist.size();
 //    int tmpIndex;
 //    bool firstTime = true;
 //    for(int iat=0; iat<Nnuc; iat++) {
 //      for(int x=0; x<OHMMS_DIM; x++) {
-//        ostringstream obsName;
+//        std::ostringstream obsName;
 //        obsName << "HFCep_" << iat << "_" << x;
 //        tmpIndex = plist.add(obsName.str());
 //        //if(firstTime) {
 //        //  firstTime = false;
 //        //  myIndex = tmpIndex;// + 3;
 //        //}
-//        cerr << iat << ", " << x << " stored at " << tmpIndex << endl;
+//        std::cerr << iat << ", " << x << " stored at " << tmpIndex << std::endl;
 //      }
 //    }
-//    cerr << "AddObs myIndex is " << myIndex << " last " << tmpIndex << endl;
+//    std::cerr << "AddObs myIndex is " << myIndex << " last " << tmpIndex << std::endl;
 //  }
 //  // debugging version only z component
 //  //void ForceCeperley::addObservables(PropertySetType& plist) {
@@ -161,18 +161,18 @@ QMCHamiltonianBase* ForceCeperley::makeClone(ParticleSet& qp, TrialWaveFunction&
 //  //  bool firstTime = true;
 //  //  for(int iat=0; iat<Nnuc; iat++) {
 //  //    //for(int x=0; x<OHMMS_DIM; x++) {
-//  //      ostringstream obsName;
+//  //      std::ostringstream obsName;
 //  //      obsName << "HFCep_" << iat << "_Z_sr";
 //  //      tmpIndex = plist.add(obsName.str());
 //  //      if(firstTime) {
 //  //        firstTime = false;
 //  //        myIndex = tmpIndex;
-//  //        cerr << "ForceCeperley addObs setting myindex " << myIndex << endl;
+//  //        std::cerr << "ForceCeperley addObs setting myindex " << myIndex << std::endl;
 //  //      }
-//  //      ostringstream obsName2;
+//  //      std::ostringstream obsName2;
 //  //      obsName2 << "HFCep_" << iat << "_Z_lr";
 //  //      tmpIndex = plist.add(obsName2.str());
-//  //      //cerr << iat << ", " << x << " stored at " << tmpIndex << endl;
+//  //      //cerr << iat << ", " << x << " stored at " << tmpIndex << std::endl;
 //  //    //}
 //  //  }
 //  //}
@@ -192,7 +192,7 @@ QMCHamiltonianBase* ForceCeperley::makeClone(ParticleSet& qp, TrialWaveFunction&
 //  //    index++;
 //  //    //}
 //  //  }
-//  //  //cerr << endl;
+//  //  //cerr << std::endl;
 //  //}
 //  void ForceCeperley::setObservables(PropertySetType& plist) {
 //    ///cerr << "ForceBase::setObs storing forces";
@@ -204,7 +204,7 @@ QMCHamiltonianBase* ForceCeperley::makeClone(ParticleSet& qp, TrialWaveFunction&
 //        index++;
 //      }
 //    }
-//    //cerr << endl;
+//    //cerr << std::endl;
 //  }
 
 /***************************************************************************

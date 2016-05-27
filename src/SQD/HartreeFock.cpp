@@ -40,13 +40,13 @@ HartreeFock::run(int norb)
   typedef Numerov<Transform_t, RadialOrbital_t> Numerov_t;
   value_type Vtotal,KEnew, KEold,E;
   value_type lowerbound, upperbound;
-  vector<value_type> energy(Pot.size());
+  std::vector<value_type> energy(Pot.size());
   eigVal.resize(norb);
   int iter = 0;
   Vtotal = Pot.evaluate(Psi,energy,norb);
   Pot.mix(0.0);
   KEnew = Pot.calcKE(Psi,0,norb);
-  string label("spdf");
+  std::string label("spdf");
   std::ofstream log_stream(LogFileName.c_str());
   log_stream.precision(8);
   do
@@ -69,9 +69,9 @@ HartreeFock::run(int norb)
       eigsum += (eigVal[ob] =
                    numerov.solve(lowerbound, upperbound, eig_tol));
       log_stream << Psi.N[ob]<< label[Psi.L[ob]] << '\t'
-                 << eigVal[ob] << endl;
+                 << eigVal[ob] << std::endl;
     }
-    log_stream << endl;
+    log_stream << std::endl;
     //normalize the orbitals
     Psi.normalize(norb);
     //restrict the orbitals
@@ -89,20 +89,20 @@ HartreeFock::run(int norb)
     //mix the new SCF potential with the old
     Pot.mix(ratio);
     log_stream.precision(10);
-    log_stream << "Iteration #" << iter+1 << endl;
-    log_stream << "KE    = " << setw(15) << KEnew
-               << "  PE     = " << setw(15) << Vtotal << endl;
-    log_stream << "PE/KE = " << setw(15) << Vtotal/KEnew
-               << "  Energy = " << setw(15) << E << endl;
-    log_stream << endl;
+    log_stream << "Iteration #" << iter+1 << std::endl;
+    log_stream << "KE    = " << std::setw(15) << KEnew
+               << "  PE     = " << std::setw(15) << Vtotal << std::endl;
+    log_stream << "PE/KE = " << std::setw(15) << Vtotal/KEnew
+               << "  Energy = " << std::setw(15) << E << std::endl;
+    log_stream << std::endl;
     iter++;
     //continue the loop until the kinetic energy converges
   }
   while(fabs(KEnew-KEold)>scf_tol && iter<maxiter);
-  log_stream << "V_External = " << energy[0] << endl;
-  log_stream << "V_Hartree = "  << energy[1] << endl;
-  log_stream << "V_Exchange = " << energy[2] << endl;
-  log_stream << "E_tot = " << E << endl;
+  log_stream << "V_External = " << energy[0] << std::endl;
+  log_stream << "V_Hartree = "  << energy[1] << std::endl;
+  log_stream << "V_Exchange = " << energy[2] << std::endl;
+  log_stream << "E_tot = " << E << std::endl;
 }
 
 /** Instantiate a Transformation function based on the potential and grid type and call run.

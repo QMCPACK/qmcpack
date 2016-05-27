@@ -14,13 +14,13 @@ class StaticStructureFactor : public QMCHamiltonianBase
 {
  public:
  
-  typedef vector<RealType> k2_t;
-  typedef vector<RealType> dens_t;
-  typedef vector<PosType>  pts_t;
+  typedef std::vector<RealType> k2_t;
+  typedef std::vector<RealType> dens_t;
+  typedef std::vector<PosType>  pts_t;
 
   //data members
   int nspecies;
-  vector<string> species_name;
+  std::vector<std::string> species_name;
   RealType ecut;
   int nkpoints;
   const ParticleSet& Pinit;
@@ -33,14 +33,14 @@ class StaticStructureFactor : public QMCHamiltonianBase
   QMCHamiltonianBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
   bool put(xmlNodePtr cur);
   Return_t evaluate(ParticleSet& P);
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P); 
   }
 
   //required for Collectables interface
   void addObservables(PropertySetType& plist,BufferType& olist);
-  void registerCollectables(vector<observable_helper*>& h5desc, hid_t gid) const ;
+  void registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const ;
 
   //should be empty for Collectables interface
   void resetTargetParticleSet(ParticleSet& P)                      { }
@@ -58,8 +58,8 @@ class StaticStructureFactor : public QMCHamiltonianBase
 
   //local functions
   void reset();
-  void report(const string& pad);
-  void postprocess_density(const string& infile,const string& species,
+  void report(const std::string& pad);
+  void postprocess_density(const std::string& infile,const std::string& species,
                            pts_t& points,dens_t& density,dens_t& density_err);
 
 };

@@ -55,7 +55,7 @@ namespace qmcplusplus {
 
     /** copy complex to two real containers */
     template<typename T1, typename T2>
-      inline void copy(T1* restrict target_r, T1* restrict target_i, const complex<T2>* restrict source, size_t n)
+      inline void copy(T1* restrict target_r, T1* restrict target_i, const std::complex<T2>* restrict source, size_t n)
       {
         for(int i=0; i<n; ++i)
         {
@@ -236,7 +236,7 @@ namespace qmcplusplus {
 //    }
 //
 //    template<typename T>
-//    inline std::complex<T> dot(const TinyVector<complex<T>,2>& a, const TinyVector<complex<T>,2>& b) 
+//    inline std::complex<T> dot(const TinyVector<std::complex<T>,2>& a, const TinyVector<std::complex<T>,2>& b) 
 //    { 
 //      return a[0]*b[0]+a[1]*b[1];
 //    }
@@ -248,7 +248,7 @@ namespace qmcplusplus {
 //    }
 //
 //    template<typename T>
-//    inline std::complex<T> dot(const TinyVector<complex<T>,3>& a, const TinyVector<complex<T>,3>& b) 
+//    inline std::complex<T> dot(const TinyVector<std::complex<T>,3>& a, const TinyVector<std::complex<T>,3>& b) 
 //    { 
 //      return a[0]*b[0]+a[1]*b[1]+a[2]*b[2]; 
 //    }
@@ -260,7 +260,7 @@ namespace qmcplusplus {
 //    }
 //
 //    template<typename T>
-//    inline std::complex<T> dot(const TinyVector<complex<T>,4>& a, const TinyVector<complex<T>,4>& b) 
+//    inline std::complex<T> dot(const TinyVector<std::complex<T>,4>& a, const TinyVector<std::complex<T>,4>& b) 
 //    { 
 //      return a[0]*b[0]+a[1]*b[1]+a[2]*b[2]+a[3]*b[3]; 
 //    }

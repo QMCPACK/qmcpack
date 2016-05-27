@@ -44,7 +44,7 @@ bool ThreeBodyGeminalBuilder::put(xmlNodePtr cur)
   cur = cur->xmlChildrenNode;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == basisset_tag)
     {
       basisPtr=cur;

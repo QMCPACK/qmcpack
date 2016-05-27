@@ -39,7 +39,7 @@ struct NonLocalTOperator
   RealType plusFactor;
   RealType minusFactor;
 
-  vector<NonLocalData> Txy;
+  std::vector<NonLocalData> Txy;
 
   NonLocalTOperator();
   inline int size() const
@@ -74,7 +74,7 @@ struct NonLocalTOperator
    * @return the move index k for \f$\sum_i^K T/\sum_i^N < prob\f$
    */
   int selectMove(RealType prob);
-  int selectMove(RealType prob, vector<NonLocalData> &txy);
+  int selectMove(RealType prob, std::vector<NonLocalData> &txy);
 };
 
 }

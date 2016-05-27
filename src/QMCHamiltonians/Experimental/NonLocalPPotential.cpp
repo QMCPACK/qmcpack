@@ -160,10 +160,10 @@ NonLocalPPotential::NonLocalPPotential(ParticleSet& ions, ParticleSet& els,
   const SpeciesSet& Species(ions.getSpeciesSet());
   for(int i=0; i<Species.getTotalNum(); i++)
   {
-    vector<RealType> grid_temp, pp_temp;
-    string species(Species.speciesName[i]);
-    string fname = species+".psf";
-    ifstream fin(fname.c_str(),ios_base::in);
+    std::vector<RealType> grid_temp, pp_temp;
+    std::string species(Species.speciesName[i]);
+    std::string fname = species+".psf";
+    std::ifstream fin(fname.c_str(),std::ios_base::in);
     if(!fin)
     {
       ERRORMSG("Could not open file " << fname)
@@ -215,7 +215,7 @@ NonLocalPPotential::NonLocalPPotential(ParticleSet& ions, ParticleSet& els,
         rmax=std::max(rmax,agrid->rmax());
       }
     }
-    //cout << npotentials << " potentials read" << endl;
+    //cout << npotentials << " potentials read" << std::endl;
     PP[i]->lmax=lmax;
     PP[i]->Rmax=rmax;
     LOGMSG("   Maximum cutoff of NonPP " << rmax)
@@ -224,8 +224,8 @@ NonLocalPPotential::NonLocalPPotential(ParticleSet& ions, ParticleSet& els,
     // if NonLocal look for file containing the spherical grid
     if(numnonloc>0)
     {
-      string fname = species+".sgr";
-      ifstream fin(fname.c_str(),ios_base::in);
+      std::string fname = species+".sgr";
+      std::ifstream fin(fname.c_str(),std::ios_base::in);
       if(!fin)
       {
         ERRORMSG("Could not open file " << fname)
@@ -238,7 +238,7 @@ NonLocalPPotential::NonLocalPPotential(ParticleSet& ions, ParticleSet& els,
         PP[i]->addknot(xyz,weight);
         numsgridpts++;
       }
-      //cout << "Spherical grid : " << numsgridpts << " points" <<endl;
+      //cout << "Spherical grid : " << numsgridpts << " points" << std::endl;
     }
     PP[i]->resize_warrays(numsgridpts,numnonloc,lmax);
     ////Has non-local pseudo potentials.

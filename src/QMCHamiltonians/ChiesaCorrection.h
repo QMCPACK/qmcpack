@@ -39,11 +39,11 @@ public:
   Return_t evaluate(ParticleSet& P);
 
 #ifdef QMC_CUDA
-  void addEnergy(MCWalkerConfiguration &W, vector<RealType> &LocalEnergy);
+  void addEnergy(MCWalkerConfiguration &W, std::vector<RealType> &LocalEnergy);
 #endif
 
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }

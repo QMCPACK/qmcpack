@@ -39,21 +39,21 @@ struct DistributedSPOSet: public SPOSetBase
   ///wavefunction
   //SPOSetBase* Phi;
   ///index map
-  vector<int> OrbitalIndex;
+  std::vector<int> OrbitalIndex;
   ///communicator for a mpi group sharing the wavefunctions
   Communicate* myComm;
   ///node id for the remote nodes
-  vector<int> RemoteNodes;
+  std::vector<int> RemoteNodes;
   ///current position
-  vector<PosType> Rnow;
+  std::vector<PosType> Rnow;
   ///orbital indices
-  vector<int> OrbitalCount;
+  std::vector<int> OrbitalCount;
   ///orbital indices
-  vector<int> OrbitalOffset;
+  std::vector<int> OrbitalOffset;
   ///send buffer : maybe better using local variables
-  vector<BufferType*> SendBuffer;
+  std::vector<BufferType*> SendBuffer;
   ///recv buffer : maybe better using local variables
-  vector<BufferType*> RecvBuffer;
+  std::vector<BufferType*> RecvBuffer;
 
   ///constructor
   DistributedSPOSet(int norbs=0);

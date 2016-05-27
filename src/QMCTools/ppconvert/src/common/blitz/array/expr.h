@@ -201,13 +201,13 @@ public:
     bool isStride(int rank, int stride) const
     { return iter_.isStride(rank,stride); }
 
-    void prettyPrint(BZ_STD_SCOPE(string) &str) const
+    void prettyPrint(BZ_STD_SCOPE( std::string) &str) const
     {
         prettyPrintFormat format(true);  // Terse formatting by default
         iter_.prettyPrint(str, format);
     }
 
-    void prettyPrint(BZ_STD_SCOPE(string) &str, 
+    void prettyPrint(BZ_STD_SCOPE( std::string) &str, 
         prettyPrintFormat& format) const
     { iter_.prettyPrint(str, format); }
 
@@ -244,9 +244,9 @@ struct bounds {
             return ascending1;
 
         BZ_DEBUG_MESSAGE("Two array operands have different"
-            << endl << "ascending flags: for rank " << rank 
+            << std::endl << "ascending flags: for rank " << rank 
             << ", the flags are " << ascending1 << " and " 
-            << ascending2 << endl);
+            << ascending2 << std::endl);
         BZ_PRE_FAIL;
         return 0;
     }
@@ -267,8 +267,8 @@ struct bounds {
             return order1;
 
         BZ_DEBUG_MESSAGE("Two array operands have different"
-            << endl << "orders: for rank " << rank << ", the orders are "
-            << order1 << " and " << order2 << endl);
+            << std::endl << "orders: for rank " << rank << ", the orders are "
+            << order1 << " and " << order2 << std::endl);
         BZ_PRE_FAIL;
         return 0;
     }
@@ -289,8 +289,8 @@ struct bounds {
             return lbound1;
 
         BZ_DEBUG_MESSAGE("Two array operands have different"
-            << endl << "lower bounds: in rank " << rank << ", the bounds are "
-            << lbound1 << " and " << lbound2 << endl);
+            << std::endl << "lower bounds: in rank " << rank << ", the bounds are "
+            << lbound1 << " and " << lbound2 << std::endl);
         BZ_PRE_FAIL;
         return 0;
     }
@@ -311,8 +311,8 @@ struct bounds {
             return ubound1;
 
         BZ_DEBUG_MESSAGE("Two array operands have different"
-            << endl << "upper bounds: in rank " << rank << ", the bounds are "
-            << ubound1 << " and " << ubound2 << endl);
+            << std::endl << "upper bounds: in rank " << rank << ", the bounds are "
+            << ubound1 << " and " << ubound2 << std::endl);
         BZ_PRE_FAIL;
         return 0;
     }
@@ -434,7 +434,7 @@ public:
     bool isStride(int rank, int stride) const
     { return iter_.isStride(rank,stride); }
 
-    void prettyPrint(BZ_STD_SCOPE(string) &str, 
+    void prettyPrint(BZ_STD_SCOPE( std::string) &str, 
         prettyPrintFormat& format) const
     { T_op::prettyPrint(str, format, iter_); }
 
@@ -587,7 +587,7 @@ public:
         iter2_.moveTo(i);
     }
 
-    void prettyPrint(BZ_STD_SCOPE(string) &str, 
+    void prettyPrint(BZ_STD_SCOPE( std::string) &str, 
         prettyPrintFormat& format) const
     {
         T_op::prettyPrint(str, format, iter1_, iter2_);
@@ -774,7 +774,7 @@ public:
         iter3_.moveTo(i);
     }
 
-    void prettyPrint(BZ_STD_SCOPE(string) &str, 
+    void prettyPrint(BZ_STD_SCOPE( std::string) &str, 
         prettyPrintFormat& format) const
     {
         T_op::prettyPrint(str, format, iter1_, iter2_, iter3_);
@@ -820,7 +820,7 @@ public:
 
     // tiny() and huge() return the smallest and largest representable
     // integer values.  See <blitz/numinquire.h>
-    // NEEDS_WORK: use tiny(int()) once numeric_limits<T> available on
+    // NEEDS_WORK: use tiny(int()) once std::numeric_limits<T> available on
     // all platforms
 
     int ascending(int)
@@ -834,7 +834,7 @@ public:
 
     int ubound(int)
     { return INT_MAX; }
-    // NEEDS_WORK: use huge(int()) once numeric_limits<T> available on
+    // NEEDS_WORK: use huge(int()) once std::numeric_limits<T> available on
     // all platforms
 
     T_numtype operator*()
@@ -882,7 +882,7 @@ public:
     {
     }
 
-    void prettyPrint(BZ_STD_SCOPE(string) &str, 
+    void prettyPrint(BZ_STD_SCOPE( std::string) &str, 
         prettyPrintFormat& format) const
     {
         if (format.tersePrintingSelected())

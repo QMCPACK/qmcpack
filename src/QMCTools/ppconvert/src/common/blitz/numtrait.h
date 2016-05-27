@@ -83,8 +83,8 @@ BZDECLNUMTRAIT(float, double, float, float, float);
 BZDECLNUMTRAIT(double, double, double, double, double);
 
 #ifdef BZ_HAVE_COMPLEX
-// BZDECLNUMTRAIT(complex<float>, complex<double>, complex<float>, complex<float>);
-// BZDECLNUMTRAIT(complex<double>, complex<long double>, complex<double>, complex<double>);
+// BZDECLNUMTRAIT(std::complex<float>, std::complex<double>, std::complex<float>, std::complex<float>);
+// BZDECLNUMTRAIT(std::complex<double>, std::complex<long double>, std::complex<double>, std::complex<double>);
 #endif // BZ_HAVE_COMPLEX
 
 #endif // BZ_USE_NUMTRAIT

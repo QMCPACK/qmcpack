@@ -54,7 +54,7 @@ public:
   void checkInVariables(opt_variables_type& active);
   void checkOutVariables(const opt_variables_type& active);
   void resetParameters(const opt_variables_type& active);
-  void reportStatus(ostream& os);
+  void reportStatus(std::ostream& os);
 
   void resetTargetParticleSet(ParticleSet& P);
 

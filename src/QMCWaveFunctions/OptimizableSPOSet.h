@@ -46,11 +46,11 @@ protected:
   // This maps the parameter indices to elements in the C
   // matrix.  Using pointers allows the use of complex C
   // while maintaining real optimizable parameters.
-  vector<RealType*> ParamPointers;
+  std::vector<RealType*> ParamPointers;
   // Maps the parameter index in myVars to an index in the C array
-  vector<TinyVector<int,2> > ParamIndex;
+  std::vector<TinyVector<int,2> > ParamIndex;
 
-  void addParameter (string id, int iorb, int basis);
+  void addParameter ( std::string id, int iorb, int basis);
 
   ValueVector_t GSVal, BasisVal, GSLapl, BasisLapl;
   GradVector_t  GSGrad, BasisGrad;
@@ -60,7 +60,7 @@ protected:
 
   // Cache the positions to avoid recomputing GSVal, BasisVal, etc.
   // if unnecessary.
-  vector<PosType> CachedPos;
+  std::vector<PosType> CachedPos;
 public:
   ///set of variables to be optimized;  These are mapped to the
   ///C matrix.  Update:  Moved to SPOSetBase
@@ -72,7 +72,7 @@ public:
   // initialized, we assume that C is fully dense.
   // The first element of the TinyVector is the basis element
   // number.  The second is the corresponding parameter number.
-  vector<vector<TinyVector<int,2> > > ActiveBasis;
+  std::vector<std::vector<TinyVector<int,2> > > ActiveBasis;
 
 
   OptimizableSPOSet() : N(0), M(0), derivScale(10.0), thr(0.0), GSOrbitals(0), BasisOrbitals(0)
@@ -100,7 +100,7 @@ public:
   void resetTargetParticleSet(ParticleSet& P);
   void setOrbitalSetSize(int norbs);
 
-  void set_active_basis (vector<vector<int> > &active)
+  void set_active_basis (std::vector<std::vector<int> > &active)
   {
     //ActiveBasis = active;
   }
@@ -126,7 +126,7 @@ public:
   // BasisOrbitals->evaluate, then does the matrix product with
   // C.
   void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
-  void evaluate(const ParticleSet& P, const PosType& r, vector<RealType> &psi);
+  void evaluate(const ParticleSet& P, const PosType& r, std::vector<RealType> &psi);
   void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi,
                 GradVector_t& dpsi, ValueVector_t& d2psi);
   void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi,
@@ -151,10 +151,10 @@ public:
                       ValueMatrix_t &basis_lapl);
   void copyParamsFromMatrix (const opt_variables_type& active,
                              const Matrix<RealType> &mat,
-                             vector<RealType> &destVec);
+                             std::vector<RealType> &destVec);
   void copyParamsFromMatrix (const opt_variables_type& active,
                              const Matrix<ComplexType> &mat,
-                             vector<RealType> &destVec);
+                             std::vector<RealType> &destVec);
 
 
   void resize(int n, int m)

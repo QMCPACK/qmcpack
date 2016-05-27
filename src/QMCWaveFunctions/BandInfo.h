@@ -77,9 +77,9 @@ struct BandInfoGroup
   ///twist index set by the full band not by the subset
   int TwistIndex;
   ///Bands that belong to this group
-  vector<BandInfo> myBands;
+  std::vector<BandInfo> myBands;
   ///name of this band
-  string myName;
+  std::string myName;
   ///constructor
   BandInfoGroup();
   ///return the size of this band
@@ -97,7 +97,7 @@ struct BandInfoGroup
    * @param emin minimum energy
    * @param emax maxmimum energy
    */
-  void selectBands(const vector<BandInfo>& bigspace, double emin, double emax);
+  void selectBands(const std::vector<BandInfo>& bigspace, double emin, double emax);
 
   /** get the bands within [first_spo,first_spo+num_spos)
    * @param bigspace a set of sorted bands
@@ -105,7 +105,7 @@ struct BandInfoGroup
    * @param num_spos number of SPOs to be created
    * @param relative if(relative) FirstSPO is set to any valid state index  \f$[0,\infty)\f$
    */
-  void selectBands(const vector<BandInfo>& bigspace, int first_orb, int num_spos, bool relative);
+  void selectBands(const std::vector<BandInfo>& bigspace, int first_orb, int num_spos, bool relative);
 };
 
 }

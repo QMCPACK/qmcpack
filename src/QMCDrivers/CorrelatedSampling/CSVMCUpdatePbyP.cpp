@@ -28,8 +28,8 @@ namespace qmcplusplus
 
 /// Constructor.
 CSVMCUpdatePbyP::CSVMCUpdatePbyP(MCWalkerConfiguration& w,
-                                 vector<TrialWaveFunction*>& psi,
-                                 vector<QMCHamiltonian*>& h,
+                                 std::vector<TrialWaveFunction*>& psi,
+                                 std::vector<QMCHamiltonian*>& h,
                                  RandomGenerator_t& rg):
   CSUpdateBase(w,psi,h,rg)
 {
@@ -41,7 +41,7 @@ void CSVMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool 
 {
   int iwalker=0;
   //only used locally
-  vector<RealType> ratio(nPsi), uw(nPsi);
+  std::vector<RealType> ratio(nPsi), uw(nPsi);
   for(; it != it_end; ++it)
   {
     //Walkers loop
@@ -120,7 +120,7 @@ void CSVMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool 
         ++nAccept;
         W.acceptMove(iat);
         // Update Buffer for (Psi[i]/Psi[j])^2
-        std::copy(instRij.begin(),instRij.end(),ratioijPtr);
+        copy(instRij.begin(),instRij.end(),ratioijPtr);
         // copy new Umbrella weight for averages
         uw=invsumratio;
         // Store sumratio for next Accept/Reject step to Multiplicity
@@ -171,7 +171,7 @@ void CSVMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool 
         thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=uw[ipsi];
         thisWalker.Properties(ipsi,LOCALENERGY)=et;
         H1[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
-	//app_log()<<"ipsi="<<ipsi<<" logpsi="<<logpsi<<" umweight="<<uw[ipsi]<<" locen="<<et<<" sumratio="<<sumratio[ipsi]<<" mult="<<thisWalker.Multiplicity<<" avgnorm="<<avgNorm[ipsi]<<" cumNorm="<<cumNorm[ipsi]<<" "<<avgWeight[ipsi]<<endl;
+	//app_log()<<"ipsi="<<ipsi<<" logpsi="<<logpsi<<" umweight="<<uw[ipsi]<<" locen="<<et<<" sumratio="<<sumratio[ipsi]<<" mult="<<thisWalker.Multiplicity<<" avgnorm="<<avgNorm[ipsi]<<" cumNorm="<<cumNorm[ipsi]<<" "<<avgWeight[ipsi]<< std::endl;
       }
     }
     else
@@ -185,8 +185,8 @@ void CSVMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool 
 
 /// UpdatePbyP With Drift Fast.
 CSVMCUpdatePbyPWithDriftFast::CSVMCUpdatePbyPWithDriftFast(MCWalkerConfiguration& w,
-                                 vector<TrialWaveFunction*>& psi,
-                                 vector<QMCHamiltonian*>& h,
+                                 std::vector<TrialWaveFunction*>& psi,
+                                 std::vector<QMCHamiltonian*>& h,
                                  RandomGenerator_t& rg):
   CSUpdateBase(w,psi,h,rg)
 {
@@ -197,7 +197,7 @@ void CSVMCUpdatePbyPWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t 
 {
   int iwalker=0;
   //only used locally
-  vector<RealType> ratio(nPsi), uw(nPsi);
+  std::vector<RealType> ratio(nPsi), uw(nPsi);
   for(; it != it_end; ++it)
   {
     //Walkers loop
@@ -361,7 +361,7 @@ void CSVMCUpdatePbyPWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t 
         thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=uw[ipsi];
         thisWalker.Properties(ipsi,LOCALENERGY)=et;
         H1[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
-	//app_log()<<"ipsi="<<ipsi<<" logpsi="<<logpsi<<" umweight="<<uw[ipsi]<<" locen="<<et<<" sumratio="<<sumratio[ipsi]<<" mult="<<thisWalker.Multiplicity<<" avgnorm="<<avgNorm[ipsi]<<" cumNorm="<<cumNorm[ipsi]<<" "<<avgWeight[ipsi]<<endl;
+	//app_log()<<"ipsi="<<ipsi<<" logpsi="<<logpsi<<" umweight="<<uw[ipsi]<<" locen="<<et<<" sumratio="<<sumratio[ipsi]<<" mult="<<thisWalker.Multiplicity<<" avgnorm="<<avgNorm[ipsi]<<" cumNorm="<<cumNorm[ipsi]<<" "<<avgWeight[ipsi]<< std::endl;
       }
     }
     else

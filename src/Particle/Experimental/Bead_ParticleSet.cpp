@@ -97,7 +97,7 @@ void Bead_ParticleSet::SetGradientAndLaplacian(int ipsi)
 }
 
 
-void Bead_ParticleSet::getDrift(vector<RealType>& LogNorm)
+void Bead_ParticleSet::getDrift(std::vector<RealType>& LogNorm)
 {
   int nPsi(Properties.rows());
   //compute Drift
@@ -114,7 +114,7 @@ void Bead_ParticleSet::getDrift(vector<RealType>& LogNorm)
   Drift *= denom;
 }
 
-void Bead_ParticleSet::getScaledDrift(vector<RealType>& LogNorm, RealType Tau)
+void Bead_ParticleSet::getScaledDrift(std::vector<RealType>& LogNorm, RealType Tau)
 {
   int npsi(Properties.rows());
   //compute Drift
@@ -144,7 +144,7 @@ void Bead_ParticleSet::getScaledDrift(vector<RealType>& LogNorm, RealType Tau)
   Drift *= denom;
 }
 
-void Bead_ParticleSet::getScaledDriftSingle(vector<RealType>& LogNorm, RealType Tau, int ipsi)
+void Bead_ParticleSet::getScaledDriftSingle(std::vector<RealType>& LogNorm, RealType Tau, int ipsi)
 {
   if (ScaleDrift)
   {
@@ -159,7 +159,7 @@ void Bead_ParticleSet::getScaledDriftSingle(vector<RealType>& LogNorm, RealType 
 }
 
 void
-Bead_ParticleSet::CopyFromBead(Bead& b,vector<TrialWaveFunction*> &Psi)
+Bead_ParticleSet::CopyFromBead(Bead& b,std::vector<TrialWaveFunction*> &Psi)
 {
   assert(R.size()==b.R.size());
   assert(BeadSignWgt.size()==b.BeadSignWgt.size());
@@ -188,7 +188,7 @@ Bead_ParticleSet::CopyFromBead(Bead& b,vector<TrialWaveFunction*> &Psi)
 }
 
 void
-Bead_ParticleSet::CopyToBead(Bead& b,vector<TrialWaveFunction*> &Psi)
+Bead_ParticleSet::CopyToBead(Bead& b,std::vector<TrialWaveFunction*> &Psi)
 {
   assert(R.size()==b.R.size());
   assert(b.Drift.size()==Drift.size());
@@ -281,7 +281,7 @@ Bead_ParticleSet::~Bead_ParticleSet()
 //  */
 //   void Bead_ParticleSet::resetWalkerProperty(int ncopy) {
 //     int m(PropertyList.size());
-//     app_log() << "  Resetting Properties of the walkers " << ncopy << " x " << m << endl;
+//     app_log() << "  Resetting Properties of the walkers " << ncopy << " x " << m << std::endl;
 //     Properties.resize(ncopy,m);
 //     iterator it(WalkerList.begin()),it_end(WalkerList.end());
 //     while(it != it_end) {

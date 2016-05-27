@@ -26,11 +26,11 @@ namespace qmcplusplus
 struct ci_configuration2
 {
   // occupied orbitals
-  vector<int> occup;
+  std::vector<int> occup;
 
   ci_configuration2() {}
 
-  ci_configuration2(vector<int> &v): occup(v) {}
+  ci_configuration2(std::vector<int> &v): occup(v) {}
   ci_configuration2(const ci_configuration2& c):occup(c.occup) {}
 
   ~ci_configuration2() {}
@@ -80,7 +80,7 @@ struct ci_configuration2
    *    - uno: label of the MO that replaces ocp[i] (should be the same as the position in array, as opposed to ocp)
    *
    */
-  double calculateExcitations(const ci_configuration2& c, int &n, vector<int>& pos, vector<int>& ocp, vector<int>& uno) const
+  double calculateExcitations(const ci_configuration2& c, int &n, std::vector<int>& pos, std::vector<int>& ocp, std::vector<int>& uno) const
   {
     if(occup.size() != c.occup.size())
     {
@@ -112,7 +112,7 @@ struct ci_configuration2
     // but by defining the determinant through excitations from a reference might change
     // the parity
     // inefficient but easy, is there a sort routine in STL that gives me the parity too???
-    vector<int> ref0(occup);
+    std::vector<int> ref0(occup);
     for(int i=0; i<n; i++)
       ref0[pos[i]] = uno[i];
     for(int i=0; i<ref0.size(); i++)
@@ -142,7 +142,7 @@ inline std::ostream& operator<<(std::ostream& out, const ci_configuration2& c)
   out<<"ci ci_configuration2: ";
   for(int i=0; i<c.occup.size(); i++)
     out <<c.occup[i] <<" ";
-  out<<endl;
+  out<< std::endl;
   return out;
 };
 

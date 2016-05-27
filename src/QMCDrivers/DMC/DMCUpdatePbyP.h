@@ -37,7 +37,7 @@ public:
   void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
 
 private:
-  vector<NewTimer*> myTimers;
+  std::vector<NewTimer*> myTimers;
 };
 
 class DMCUpdatePbyPWithRejectionFast: public QMCUpdateBase
@@ -54,7 +54,7 @@ public:
   void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
 
 private:
-  vector<NewTimer*> myTimers;
+  std::vector<NewTimer*> myTimers;
 };
 
 
@@ -80,7 +80,7 @@ private:
   {
     return *this;
   }
-  vector<NewTimer*> myTimers;
+  std::vector<NewTimer*> myTimers;
 
 };
 
@@ -98,15 +98,15 @@ public:
 
   void initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end);
 
-//     void estimateNormWalkers(vector<TrialWaveFunction*>& pclone
-//     , vector<MCWalkerConfiguration*>& wclone
-//     , vector<QMCHamiltonian*>& hclone
-//     , vector<RandomGenerator_t*>& rng
-//     , vector<RealType>& ratio_i_0);
+//     void estimateNormWalkers(std::vector<TrialWaveFunction*>& pclone
+//     , std::vector<MCWalkerConfiguration*>& wclone
+//     , std::vector<QMCHamiltonian*>& hclone
+//     , std::vector<RandomGenerator_t*>& rng
+//     , std::vector<RealType>& ratio_i_0);
 
 private:
   MCWalkerConfiguration W_G;
-  vector<NewTimer*> myTimers;
+  std::vector<NewTimer*> myTimers;
   int maxS;
   RealType efn;
   int estimateCrossings, maxcopy;
@@ -129,7 +129,7 @@ public:
   void initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end);
 
 private:
-  vector<NewTimer*> myTimers;
+  std::vector<NewTimer*> myTimers;
   int maxS;
   RealType efn;
   int estimateCrossings;

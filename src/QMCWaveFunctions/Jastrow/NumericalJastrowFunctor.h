@@ -147,12 +147,12 @@ struct NumericalJastrow: public OptimizableFunctorBase
     return InFunc->put(cur);
   }
 
-  void print(ostream& os)
+  void print(std::ostream& os)
   {
     const typename FNOUT::grid_type& grid = OutFunc->grid();
     for(int i=0; i<grid.size(); i++)
     {
-      os << grid(i) << " " << (*OutFunc)(i) << endl;
+      os << grid(i) << " " << (*OutFunc)(i) << std::endl;
     }
   }
 

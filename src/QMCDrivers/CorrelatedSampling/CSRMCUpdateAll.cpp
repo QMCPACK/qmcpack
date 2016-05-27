@@ -145,8 +145,8 @@ void RMCUpdateAllWithDrift::advanceWalkersVMC()
 	  RealType nodecorr=setScaledDriftPbyPandNodeCorr(m_tauovermass,curhead.G,drift);
 	else
 	assignDrift(m_tauovermass,curhead.G,drift);
-	//app_log()<<"Sign head = "<<curhead.Properties(SIGN)<<endl;
-	//app_log()<<"Old phase = "<<Psi.getPhase()<<endl;
+	//app_log()<<"Sign head = "<<curhead.Properties(SIGN)<< std::endl;
+	//app_log()<<"Old phase = "<<Psi.getPhase()<< std::endl;
 	makeGaussRandomWithEngine(deltaR,RandomGen);
 	RealType r2proposed=Dot(deltaR,deltaR);
 	RealType r2accept=0.0;
@@ -211,7 +211,7 @@ void RMCUpdateAllWithDrift::advanceWalkersVMC()
 	////////////////////////////////////////////////////////////////////////
 	RealType eest = W.reptile->eest;
 	RealType fbet = std::max(eest - curhead.Properties(LOCALENERGY), eest - eloc);
-	//   app_log()<<"eval = "<<eest<<" estdev="<<stddev<<endl;
+	//   app_log()<<"eval = "<<eest<<" estdev="<<stddev<< std::endl;
 	RealType rawcutoff=100*std::sqrt(W.reptile->evar);
 	RealType cutoffmax = 1.5*rawcutoff;
 	RealType cutoff=1;

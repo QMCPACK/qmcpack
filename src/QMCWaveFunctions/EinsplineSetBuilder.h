@@ -81,7 +81,7 @@ struct H5OrbSet
   ///number of orbitals that belong to this set
   int NumOrbs;
   ///name of the HDF5 file
-  string FileName;
+  std::string FileName;
   /** true if a < b
    *
    * The ordering
@@ -105,7 +105,7 @@ struct H5OrbSet
   H5OrbSet (const H5OrbSet &a) :
     FileName(a.FileName), SpinSet(a.SpinSet), NumOrbs(a.NumOrbs)
   { }
-  H5OrbSet (string name, int spinSet, int numOrbs) :
+  H5OrbSet ( std::string name, int spinSet, int numOrbs) :
     FileName(name), SpinSet(spinSet), NumOrbs(numOrbs)
   { }
   H5OrbSet()
@@ -118,7 +118,7 @@ class EinsplineSetBuilder : public BasisSetBuilder
 {
 public:
 
-  typedef map<string,ParticleSet*> PtclPoolType;
+  typedef std::map<std::string,ParticleSet*> PtclPoolType;
   typedef ParticleSet::ParticleLayout_t UnitCellType;
 
   ///reference to the particleset pool
@@ -133,7 +133,7 @@ public:
   /**  Helper vector for sorting bands
    */
   //std::vector<BandInfo> SortBands;
-  vector<std::vector<BandInfo>*> FullBands;
+  std::vector<std::vector<BandInfo>*> FullBands;
 
   /// reader to use BsplineReaderBase
   BsplineReaderBase *MixedSplineReader;
@@ -170,13 +170,13 @@ public:
   // HDF5-related data  and functions //
   //////////////////////////////////////
   hid_t H5FileID;
-  string H5FileName;
+  std::string H5FileName;
   // HDF5 orbital file version
   typedef enum {QMCPACK, ESHDF} FormatType;
   FormatType Format;
   TinyVector<int,3> Version;
-  string parameterGroup, ionsGroup, eigenstatesGroup;
-  vector<int> Occ;
+  std::string parameterGroup, ionsGroup, eigenstatesGroup;
+  std::vector<int> Occ;
   bool HasCoreOrbs;
   bool ReadOrbitalInfo ();
   bool ReadOrbitalInfo_ESHDF ();
@@ -214,10 +214,10 @@ public:
   RealType BufferLayer;
   RealType MatchingTol;
   TinyVector<int,3> MeshSize;
-  vector<vector<TinyVector<int,3> > > Gvecs;
+  std::vector<std::vector<TinyVector<int,3> > > Gvecs;
 
   //fftw_plan FFTplan;
-  //Array<complex<double>,3> FFTbox;
+  //Array<std::complex<double>,3> FFTbox;
 
   Vector<int> IonTypes;
   Vector<TinyVector<double,OHMMS_DIM> > IonPos;
@@ -238,17 +238,17 @@ public:
   TinyVector<int,OHMMS_DIM> TwistMesh;
   // This vector stores which twist indices will be used by this
   // clone
-  vector<TinyVector<int,OHMMS_DIM> > UseTwists;
-  vector<int> IncludeTwists, DistinctTwists;
+  std::vector<TinyVector<int,OHMMS_DIM> > UseTwists;
+  std::vector<int> IncludeTwists, DistinctTwists;
   bool UseRealOrbitals;
   int NumDistinctOrbitals, NumCoreOrbs, NumValenceOrbs;
   // This is true if the corresponding twist in DistinctTwists should
   // should be used to generate two distinct orbitals from the real and
   // imaginary parts.
-  vector<bool> MakeTwoCopies;
+  std::vector<bool> MakeTwoCopies;
   inline bool TwistPair (PosType a, PosType b);
   // This maps a 3-integer twist index into the twist number in the file
-  map <TinyVector<int,OHMMS_DIM>,int,Int3less> TwistMap;
+  std::map<TinyVector<int,OHMMS_DIM>,int,Int3less> TwistMap;
   void AnalyzeTwists();
   void AnalyzeTwists2();
   void TileIons();
@@ -256,8 +256,8 @@ public:
   void OccupyBands_ESHDF(int spin, int sortBands, int numOrbs);
 
 #ifdef QMC_CUDA
-  void ReadBands      (int spin, EinsplineSetExtended<complex<double> >* orbitalSet);
-  void ReadBands_ESHDF(int spin, EinsplineSetExtended<complex<double> >* orbitalSet);
+  void ReadBands      (int spin, EinsplineSetExtended<std::complex<double> >* orbitalSet);
+  void ReadBands_ESHDF(int spin, EinsplineSetExtended<std::complex<double> >* orbitalSet);
   void ReadBands      (int spin, EinsplineSetExtended<        double  >* orbitalSet);
   void ReadBands_ESHDF(int spin, EinsplineSetExtended<        double  >* orbitalSet);
 #endif
@@ -277,14 +277,14 @@ public:
   ////////////////////////////////
   // Atomic orbital information //
   ////////////////////////////////
-  std::vector<AtomicOrbital<complex<double> > > AtomicOrbitals;
+  std::vector<AtomicOrbital<std::complex<double> > > AtomicOrbitals;
 
 
   // This returns the path in the HDF5 file to the group for orbital
   // with twist ti and band bi
-  string OrbitalPath   (int ti, int bi);
-  string CoreStatePath (int ti, int bi);
-  string MuffinTinPath (int ti, int bi, int tin);
+  std::string OrbitalPath   (int ti, int bi);
+  std::string CoreStatePath (int ti, int bi);
+  std::string MuffinTinPath (int ti, int bi, int tin);
 
   /////////////////////////////////////////////////////////////
   // Information to avoid storing the same orbitals twice in //
@@ -292,14 +292,14 @@ public:
   /////////////////////////////////////////////////////////////
   int LastSpinSet, NumOrbitalsRead;
 
-  string occ_format;
+  std::string occ_format;
   RealType qafm;
   int particle_hole_pairs;
   bool makeRotations;
   std::vector<RealType> rotationMatrix;
   std::vector<int> rotatedOrbitals;
 #ifdef QMC_CUDA
-  void RotateBands_ESHDF(int spin, EinsplineSetExtended<complex<double > >* orbitalSet);
+  void RotateBands_ESHDF(int spin, EinsplineSetExtended<std::complex<double > >* orbitalSet);
   void RotateBands_ESHDF(int spin, EinsplineSetExtended<double>* orbitalSet);
 #endif
 
@@ -313,7 +313,7 @@ public:
   int MyToken;
   inline void update_token(const char* f, int l, const char* msg) 
   {
-    app_log() << "TOKEN=" << MyToken << " " << msg << " " << f << " " << l << endl; MyToken++; 
+    app_log() << "TOKEN=" << MyToken << " " << msg << " " << f << " " << l << std::endl; MyToken++; 
   }
   //inline void update_token(const char* f, int l, const char* msg) 
   //{}

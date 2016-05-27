@@ -58,7 +58,7 @@ private:
 
   ParticleSetPool& PtclPool;
   MultipleEnergyEstimator *multiEstimator;
-  string refSetName;
+  std::string refSetName;
 
   SpaceWarp PtclWarp;
 
@@ -66,12 +66,12 @@ private:
   int nPsi,equilBlocks;
   int nptcl;
   int JACOBIAN;
-  vector<RealType> logpsi;
-  vector<RealType> sumratio;
-  vector<RealType> invsumratio;
-  vector<RealType> Jacobian;
-  vector<RealType> Norm;
-  vector<ParticleSet*> WW;
+  std::vector<RealType> logpsi;
+  std::vector<RealType> sumratio;
+  std::vector<RealType> invsumratio;
+  std::vector<RealType> Jacobian;
+  std::vector<RealType> Norm;
+  std::vector<ParticleSet*> WW;
 };
 }
 

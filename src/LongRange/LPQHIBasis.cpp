@@ -164,43 +164,43 @@ LPQHIBasis::c(int m, RealType k)
 }
 
 
-inline complex<LPQHIBasis::RealType>
+inline std::complex<LPQHIBasis::RealType>
 LPQHIBasis::Eplus(int i, RealType k, int n)
 {
-  complex<RealType> eye(0.0, 1.0);
+  std::complex<RealType> eye(0.0, 1.0);
   if (n == 0)
   {
-    complex<RealType> e1(cos(k*delta)-1.0, sin(k*delta));
-    complex<RealType> e2(cos(k*delta*i),   sin(k*delta*i));
+    std::complex<RealType> e1(cos(k*delta)-1.0, sin(k*delta));
+    std::complex<RealType> e2(cos(k*delta*i),   sin(k*delta*i));
     return (-(eye/k)*e1*e2);
   }
   else
   {
-    complex<RealType> t1, t2;
+    std::complex<RealType> t1, t2;
     RealType sign = 1.0;
-    t1 = complex<RealType>(cos(k*delta*(i+1)),sin(k*delta*(i+1)));
+    t1 = std::complex<RealType>(cos(k*delta*(i+1)),sin(k*delta*(i+1)));
     t2 =-(RealType)n/delta*Eplus(i,k,n-1);;
     return (-(eye/k)*(t1+t2));
   }
 }
 
 
-inline complex<LPQHIBasis::RealType>
+inline std::complex<LPQHIBasis::RealType>
 LPQHIBasis::Eminus(int i, RealType k, int n)
 {
-  complex<RealType> eye(0.0, 1.0);
+  std::complex<RealType> eye(0.0, 1.0);
   if (n == 0)
   {
-    complex<RealType> e1(cos(k*delta)-1.0, -sin(k*delta));
-    complex<RealType> e2(cos(k*delta*i),    sin(k*delta*i));
+    std::complex<RealType> e1(cos(k*delta)-1.0, -sin(k*delta));
+    std::complex<RealType> e2(cos(k*delta*i),    sin(k*delta*i));
     return (-(eye/k)*e1*e2);
   }
   else
   {
-    complex<RealType> t1, t2;
+    std::complex<RealType> t1, t2;
     RealType sign = (n & 1) ? -1.0 : 1.0;
     t1 = sign*
-         complex<RealType> (cos(k*delta*(i-1)),sin(k*delta*(i-1)));
+         std::complex<RealType> (cos(k*delta*(i-1)),sin(k*delta*(i-1)));
     t2 =-(RealType)n/delta*Eminus(i,k,n-1);
     return (-(eye/k)*(t1+t2));
   }
@@ -210,9 +210,9 @@ LPQHIBasis::Eminus(int i, RealType k, int n)
 inline LPQHIBasis::RealType
 LPQHIBasis::Dplus(int i, RealType k, int n)
 {
-  complex<RealType> eye(0.0, 1.0);
-  complex<RealType> Z1 = Eplus(i,k,n+1);
-  complex<RealType> Z2 = Eplus(i,k,n);
+  std::complex<RealType> eye(0.0, 1.0);
+  std::complex<RealType> Z1 = Eplus(i,k,n+1);
+  std::complex<RealType> Z2 = Eplus(i,k,n);
   return 4.0*M_PI/(k*Lattice.Volume)*(delta* Z1.imag() + i*delta*Z2.imag());
 }
 
@@ -220,9 +220,9 @@ LPQHIBasis::Dplus(int i, RealType k, int n)
 inline LPQHIBasis::RealType
 LPQHIBasis::Dminus(int i, RealType k, int n)
 {
-  complex<RealType> eye(0.0, 1.0);
-  complex<RealType> Z1 = Eminus(i,k,n+1);
-  complex<RealType> Z2 = Eminus(i,k,n);
+  std::complex<RealType> eye(0.0, 1.0);
+  std::complex<RealType> Z1 = Eminus(i,k,n+1);
+  std::complex<RealType> Z2 = Eminus(i,k,n);
   return -4.0*M_PI/(k*Lattice.Volume)*(delta* Z1.imag() + i*delta*Z2.imag());
 }
 }

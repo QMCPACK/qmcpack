@@ -11,7 +11,7 @@ namespace qmcplusplus
 {
 
 template<typename T>
-inline void LinearFit (vector<T> &y, Matrix<T> &A, vector<T> &coefs)
+inline void LinearFit (std::vector<T> &y, Matrix<T> &A, std::vector<T> &coefs)
 {
   int N = A.size(0);
   int M = A.size(1);
@@ -29,7 +29,7 @@ inline void LinearFit (vector<T> &y, Matrix<T> &A, vector<T> &coefs)
       for (int i=0; i<N; i++)
         alpha(k,j) += A(i,j) * A(i,k);
   // Next, construct beta vector
-  vector<T> beta(M,0.0);
+  std::vector<T> beta(M,0.0);
   for (int k=0; k<M; k++)
     for (int i=0; i<N; i++)
       beta[k] += y[i]*A(i,k);

@@ -74,8 +74,8 @@ private:
     static T_numtype zero_;
 };
 
-// Specialization of ZeroElement for complex<float>, complex<double>,
-// and complex<long double>
+// Specialization of ZeroElement for std::complex<float>, std::complex<double>,
+// and std::complex<long double>
 
 #define BZZERO_DECLARE(T)            \
   template<>                         \
@@ -88,9 +88,9 @@ private:
   }
 
 #ifdef BZ_HAVE_COMPLEX
-  BZZERO_DECLARE(complex<float>);
-  BZZERO_DECLARE(complex<double>);
-  BZZERO_DECLARE(complex<long double>);
+  BZZERO_DECLARE(std::complex<float>);
+  BZZERO_DECLARE(std::complex<double>);
+  BZZERO_DECLARE(std::complex<long double>);
 #endif // BZ_HAVE_COMPLEX
 
 // initialization of static data member for general class template

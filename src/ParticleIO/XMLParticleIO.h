@@ -28,11 +28,11 @@ namespace qmcplusplus
 {
 
 //   struct XMLParticleBase {
-//     static string root_tag;
-//     static string attrib_tag;
-//     static string datatype_tag;
-//     static string condition_tag;
-//     static string size_tag;
+//     static std::string root_tag;
+//     static std::string attrib_tag;
+//     static std::string datatype_tag;
+//     static std::string condition_tag;
+//     static std::string size_tag;
 //   };
 
 class XMLParticleParser: public ParticleTags
@@ -67,7 +67,7 @@ public:
                     , bool donotresize=false);
 
   ///reading from a file
-  bool put(const string& fname_in, const string& fext_in);
+  bool put(const std::string& fname_in, const std::string& fext_in);
 
   bool put(xmlNodePtr cur);
 
@@ -89,8 +89,8 @@ class XMLSaveParticle:
   typedef Particle_t::ParticleTensor_t ParticleTensor_t;
 
   Particle_t& ref_;
-  string FileRoot;
-  vector<string> SpeciesName;
+  std::string FileRoot;
+  std::vector<std::string> SpeciesName;
 
 public:
 
@@ -106,7 +106,7 @@ public:
 
   bool put(xmlNodePtr cur);
 
-  void get(ostream& os, int olevel) const;
+  void get(std::ostream& os, int olevel) const;
 
   xmlNodePtr createNode(bool addlattice);
 

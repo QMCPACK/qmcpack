@@ -193,8 +193,8 @@ DiracDeterminantWithBackflow::ValueType DiracDeterminantWithBackflow::ratio(Part
   psiM_temp=psiM;
   // either code Woodbury or do multiple single particle updates
   UpdateMode=ORB_PBYP_RATIO;
-  vector<int>::iterator it = BFTrans->indexQP.begin();
-  vector<int>::iterator it_end = BFTrans->indexQP.end();
+  std::vector<int>::iterator it = BFTrans->indexQP.begin();
+  std::vector<int>::iterator it_end = BFTrans->indexQP.end();
   while(it != it_end)
   {
     if(*it<FirstIndex || *it>=LastIndex )
@@ -226,7 +226,7 @@ DiracDeterminantWithBackflow::ValueType DiracDeterminantWithBackflow::ratio(Part
 #endif
 }
 
-void DiracDeterminantWithBackflow::get_ratios(ParticleSet& P, vector<ValueType>& ratios)
+void DiracDeterminantWithBackflow::get_ratios(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   APP_ABORT(" Need to implement DiracDeterminantWithBackflow::get_ratios(ParticleSet& P, int iat). \n");
 }
@@ -279,8 +279,8 @@ DiracDeterminantWithBackflow::ratioGrad(ParticleSet& P, int iat, GradType& grad_
   psiM_temp=psiM;
   dpsiM_temp=dpsiM;
   UpdateMode=ORB_PBYP_PARTIAL;
-  vector<int>::iterator it = BFTrans->indexQP.begin();
-  vector<int>::iterator it_end = BFTrans->indexQP.end();
+  std::vector<int>::iterator it = BFTrans->indexQP.begin();
+  std::vector<int>::iterator it_end = BFTrans->indexQP.end();
   ParticleSet::ParticlePos_t dr;
   while(it != it_end)
   {
@@ -295,8 +295,8 @@ DiracDeterminantWithBackflow::ratioGrad(ParticleSet& P, int iat, GradType& grad_
     Phi->evaluate(BFTrans->QP, *it, psiV, dpsiV, d2psiV);
     for(int orb=0; orb<psiV.size(); orb++)
       psiM_temp(orb,jat) = psiV[orb];
-    std::copy(dpsiV.begin(),dpsiV.end(),dpsiM_temp.begin(jat));
-    std::copy(grad_gradV.begin(),grad_gradV.end(),grad_grad_psiM_temp.begin(jat));
+    copy(dpsiV.begin(),dpsiV.end(),dpsiM_temp.begin(jat));
+    copy(grad_gradV.begin(),grad_gradV.end(),grad_grad_psiM_temp.begin(jat));
     BFTrans->QP.rejectMove(*it);
     it++;
   }
@@ -339,8 +339,8 @@ DiracDeterminantWithBackflow::ValueType DiracDeterminantWithBackflow::ratio(Part
   dpsiM_temp=dpsiM;
   grad_grad_psiM_temp = grad_grad_psiM;
   UpdateMode=ORB_PBYP_ALL;
-  vector<int>::iterator it = BFTrans->indexQP.begin();
-  vector<int>::iterator it_end = BFTrans->indexQP.end();
+  std::vector<int>::iterator it = BFTrans->indexQP.begin();
+  std::vector<int>::iterator it_end = BFTrans->indexQP.end();
   while(it != it_end)
   {
     if(*it<FirstIndex || *it>=LastIndex )
@@ -354,14 +354,14 @@ DiracDeterminantWithBackflow::ValueType DiracDeterminantWithBackflow::ratio(Part
     Phi->evaluate(BFTrans->QP, *it, psiV, dpsiV, grad_gradV);
     for(int orb=0; orb<psiV.size(); orb++)
       psiM_temp(orb,jat) = psiV[orb];
-    std::copy(dpsiV.begin(),dpsiV.end(),dpsiM_temp.begin(jat));
-    std::copy(grad_gradV.begin(),grad_gradV.end(),grad_grad_psiM_temp.begin(jat));
+    copy(dpsiV.begin(),dpsiV.end(),dpsiM_temp.begin(jat));
+    copy(grad_gradV.begin(),grad_gradV.end(),grad_grad_psiM_temp.begin(jat));
     BFTrans->QP.rejectMove(*it);
     it++;
   }
   /*
-      vector<int>::iterator it = BFTrans->indexQP.begin();
-      vector<int>::iterator it_end = BFTrans->indexQP.end();
+      std::vector<int>::iterator it = BFTrans->indexQP.begin();
+      std::vector<int>::iterator it_end = BFTrans->indexQP.end();
       while(it != it_end) {
         if(*it<FirstIndex || *it>=LastIndex ) { ++it; continue;}
         int jat = *it-FirstIndex;
@@ -574,28 +574,28 @@ void DiracDeterminantWithBackflow::testL(ParticleSet& P)
         }
     }
   }
-  cout<<"Testing derivative of Fjj in complex case: \n";
+  std::cout <<"Testing derivative of Fjj in complex case: \n";
   for(int i=0; i<num; i++)
     for(int j=0; j<NumPtcls; j++)
     {
-      cout<<"i,j: " <<i <<" " <<j <<endl;
+      std::cout <<"i,j: " <<i <<" " <<j << std::endl;
       for(int a=0; a<3; a++)
         for(int b=0; b<3; b++)
         {
-          cout<<a <<" " <<b <<" " <<((Kij(i,j))(a,b)) - ((Qij(i,j))(a,b)) <<" -- " <<((Kij(i,j))(a,b)) <<" -- "  <<((Qij(i,j))(a,b)) <<endl;
+          std::cout <<a <<" " <<b <<" " <<((Kij(i,j))(a,b)) - ((Qij(i,j))(a,b)) <<" -- " <<((Kij(i,j))(a,b)) <<" -- "  <<((Qij(i,j))(a,b)) << std::endl;
         }
     }
-  cout<<"Testing derivative of Aij in complex case: \n";
+  std::cout <<"Testing derivative of Aij in complex case: \n";
   for(int i=0; i<num; i++)
     for(int j=0; j<NumPtcls; j++)
     {
-      cout<<"i,j: " <<i <<" " <<j <<endl;
+      std::cout <<"i,j: " <<i <<" " <<j << std::endl;
       for(int a=0; a<3; a++)
       {
-        cout<<a <<" " <<((dAij(i,j))(a)) - ((Bij(i,j))(a)) <<" -- " <<((dAij(i,j))(a)) <<" -- "  <<((Bij(i,j))(a)) <<endl;
+        std::cout <<a <<" " <<((dAij(i,j))(a)) - ((Bij(i,j))(a)) <<" -- " <<((dAij(i,j))(a)) <<" -- "  <<((Bij(i,j))(a)) << std::endl;
       }
     }
-  cout.flush();
+  std::cout.flush();
   APP_ABORT("Finished testL: Aborting \n");
 }
 
@@ -859,8 +859,8 @@ DiracDeterminantWithBackflow::evaluate(ParticleSet& P,
 void
 DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
     const opt_variables_type& active,
-    vector<RealType>& dlogpsi,
-    vector<RealType>& dhpsioverpsi)
+    std::vector<RealType>& dlogpsi,
+    std::vector<RealType>& dhpsioverpsi)
 {
   /*  Note:
    *    Since evaluateDerivatives seems to always be called after
@@ -879,7 +879,7 @@ DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
   {
 //       must compute if didn;t call earlier function
     Phi->evaluate(BFTrans->QP, FirstIndex, LastIndex, psiM, dpsiM, grad_grad_psiM, grad_grad_grad_psiM);
-//       std::copy(psiM.begin(),psiM.end(),psiMinv.begin());
+//       copy(psiM.begin(),psiM.end(),psiMinv.begin());
     psiMinv=psiM;
 //       invert backflow matrix
     InverseTimer.start();
@@ -1138,8 +1138,8 @@ DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
 
 void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
     const opt_variables_type& active,
-    vector<RealType>& dlogpsi,
-    vector<RealType>& dhpsioverpsi,
+    std::vector<RealType>& dlogpsi,
+    std::vector<RealType>& dhpsioverpsi,
     ParticleSet::ParticleGradient_t* G0,
     ParticleSet::ParticleLaplacian_t* L0,
     int pa )
@@ -1306,7 +1306,7 @@ void DiracDeterminantWithBackflow::testGG(ParticleSet& P)
   for(int i=0; i<BFTrans->QP.getTotalNum(); i++)
     qp_0[i] = BFTrans->QP.R[i];
   Phi->evaluate_notranspose(BFTrans->QP, FirstIndex, LastIndex, psiM,dpsiM,ggM);
-  app_log() <<"Testing GGType calculation: " <<endl;
+  app_log() <<"Testing GGType calculation: " << std::endl;
   for(int lx=0; lx<3; lx++)
   {
     for(int ly=0; ly<3; ly++)
@@ -1376,11 +1376,11 @@ void DiracDeterminantWithBackflow::testGG(ParticleSet& P)
   for(int i=0; i<NumPtcls; i++)
     for(int j=0; j<NumOrbitals; j++)
     {
-      cout<<"i,j: " <<i <<" " <<j <<endl;
+      std::cout <<"i,j: " <<i <<" " <<j << std::endl;
       for(int lx=0; lx<3; lx++)
         for(int ly=0; ly<3; ly++)
         {
-          cout<<"a,b: " <<lx <<" " <<ly <<(dgM(i,j))(lx,ly)-(ggM(i,j))(lx,ly) <<" -- " <<(dgM(i,j))(lx,ly) <<" -- " <<(ggM(i,j))(lx,ly) <<endl;
+          std::cout <<"a,b: " <<lx <<" " <<ly <<(dgM(i,j))(lx,ly)-(ggM(i,j))(lx,ly) <<" -- " <<(dgM(i,j))(lx,ly) <<" -- " <<(ggM(i,j))(lx,ly) << std::endl;
         }
     }
   for(int i=0; i<BFTrans->QP.getTotalNum(); i++)
@@ -1408,7 +1408,7 @@ void DiracDeterminantWithBackflow::testGGG(ParticleSet& P)
   for(int i=0; i<BFTrans->QP.getTotalNum(); i++)
     qp_0[i] = BFTrans->QP.R[i];
   Phi->evaluate(BFTrans->QP, FirstIndex, LastIndex, psiM,dpsiM,grad_grad_psiM,grad_grad_grad_psiM);
-  app_log() <<"Testing GGGType calculation: " <<endl;
+  app_log() <<"Testing GGGType calculation: " << std::endl;
   for(int lc=0; lc<3; lc++)
   {
     for(int i=0; i<BFTrans->QP.getTotalNum(); i++)
@@ -1440,11 +1440,11 @@ void DiracDeterminantWithBackflow::testGGG(ParticleSet& P)
 #endif
         }
         app_log() <<i <<"  " <<j <<"\n"
-                  <<"dG : \n" <<dG <<endl
-                  <<"GGG: \n" <<(grad_grad_grad_psiM(i,j))[lc] <<endl;
+                  <<"dG : \n" <<dG << std::endl
+                  <<"GGG: \n" <<(grad_grad_grad_psiM(i,j))[lc] << std::endl;
       }
     app_log() <<"lc, av, max: " <<lc <<"  " <<av/cnt <<"  "
-              <<maxD <<endl;
+              <<maxD << std::endl;
   }
   for(int i=0; i<BFTrans->QP.getTotalNum(); i++)
     BFTrans->QP.R[i] = qp_0[i];
@@ -1453,7 +1453,7 @@ void DiracDeterminantWithBackflow::testGGG(ParticleSet& P)
 
 void DiracDeterminantWithBackflow::testDerivFjj(ParticleSet& P, int pa)
 {
-  app_log() <<" Testing derivatives of the F matrix, prm: " <<pa <<endl;
+  app_log() <<" Testing derivatives of the F matrix, prm: " <<pa << std::endl;
   opt_variables_type wfVars,wfvar_prime;
   BFTrans->checkInVariables(wfVars);
   BFTrans->checkOutVariables(wfVars);
@@ -1543,7 +1543,7 @@ void DiracDeterminantWithBackflow::testDerivFjj(ParticleSet& P, int pa)
           maxD=dpsiM_0(i,j)[lb]-( dpsiM_1(i,j)[lb]-dpsiM_2(i,j)[lb] )/(2*dh);
 #endif
       }
-  app_log() <<" av,max : " <<av/cnt <<"  " <<maxD <<endl;
+  app_log() <<" av,max : " <<av/cnt <<"  " <<maxD << std::endl;
   //APP_ABORT("testing Fij \n");
 }
 
@@ -1566,8 +1566,8 @@ void DiracDeterminantWithBackflow::testDerivLi(ParticleSet& P, int pa)
   myL=0.0;
   //ValueType ps = evaluateLog(P,myG,myL);
   //L0 = Sum(myL);
-  //app_log() <<"L old, L new: " <<L0 <<"  " <<L1+L2+L3 <<endl;
-  app_log() <<endl <<" Testing derivatives of L(i) matrix. " <<endl;
+  //app_log() <<"L old, L new: " <<L0 <<"  " <<L1+L2+L3 << std::endl;
+  app_log() << std::endl <<" Testing derivatives of L(i) matrix. " << std::endl;
   for (int j=0; j<Nvars; j++)
     wfvar_prime[j]=wfVars[j];
   wfvar_prime[pa] = wfVars[pa]+ dh;
@@ -1582,12 +1582,12 @@ void DiracDeterminantWithBackflow::testDerivLi(ParticleSet& P, int pa)
   dummyEvalLi(L1b,L2b,L3b);
   BFTrans->resetParameters(wfVars);
   BFTrans->evaluateDerivatives(P);
-  vector<RealType> dlogpsi;
-  vector<RealType> dhpsi;
+  std::vector<RealType> dlogpsi;
+  std::vector<RealType> dhpsi;
   dlogpsi.resize(Nvars);
   dhpsi.resize(Nvars);
   evaluateDerivatives(P,wfVars,dlogpsi,dhpsi,&myG,&myL,pa);
-  app_log() <<"pa: " <<pa <<endl
+  app_log() <<"pa: " <<pa << std::endl
             <<"dL Numrical: "
             <<(L1a-L1b)/(2*dh) <<"  "
             <<(L2a-L2b)/(2*dh) <<"  "
@@ -1595,11 +1595,11 @@ void DiracDeterminantWithBackflow::testDerivLi(ParticleSet& P, int pa)
             <<"dL Analitival: "
             <<La1 <<"  "
             <<La2 <<"  "
-            <<La3 <<endl
+            <<La3 << std::endl
             <<" dLDiff: "
             <<(L1a-L1b)/(2*dh)-La1 <<"  "
             <<(L2a-L2b)/(2*dh)-La2 <<"  "
-            <<(L3a-L3b)/(2*dh)-La3 <<endl;
+            <<(L3a-L3b)/(2*dh)-La3 << std::endl;
 }
 
 

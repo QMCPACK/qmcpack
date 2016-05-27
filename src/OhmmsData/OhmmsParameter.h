@@ -72,7 +72,7 @@ public:
     tolower(unit_);
   }
 
-  ///print to an ostream
+  ///print to an std::ostream
   inline bool get(std::ostream& os) const
   {
     os << "<parameter name=\""<< myName << "\" condition=\""
@@ -92,7 +92,7 @@ public:
   }
 
 
-  ///read from istream
+  ///read from std::istream
   inline bool put(std::istream& is)
   {
     is >> ref_;
@@ -159,7 +159,7 @@ public:
     tolower(unit_);
   }
 
-  ///print to an ostream
+  ///print to an std::ostream
   inline bool get(std::ostream& os) const
   {
     os << "<parameter name=\""<< myName << "\">" << ref_ << "</parameter>" << std::endl;
@@ -195,7 +195,7 @@ public:
     ref_=x;
   }
 
-  ///read from istream
+  ///read from std::istream
   inline bool put(std::istream& is)
   {
     std::string yes;

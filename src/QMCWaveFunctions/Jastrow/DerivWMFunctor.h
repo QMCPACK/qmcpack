@@ -38,9 +38,9 @@ struct DWMDBFunctor: public OptimizableFunctorBase<T>
   ///1/Rcut
   real_type OneOverRc;
   ///id
-  string ID_B;
+  std::string ID_B;
   ///name of B-attribute
-  string attribName;
+  std::string attribName;
   ///constructor
   WMFunctor(real_type b, real_type rc=7.5, const std::string& bname="exponent"):
     attribName(bname)
@@ -125,9 +125,9 @@ struct D2WMDB2Functor: public OptimizableFunctorBase<T>
   ///1/Rcut
   real_type OneOverRc;
   ///id
-  string ID_B;
+  std::string ID_B;
   ///name of B-attribute
-  string attribName;
+  std::string attribName;
   ///constructor
   D2WMDB2Functor(real_type b, real_type rc=7.5, const std::string& bname="exponent"):
     attribName(bname)

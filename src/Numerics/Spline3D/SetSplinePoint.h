@@ -29,13 +29,13 @@ public:
     {
       ifout = true;
       /*
-      cout << "OUTSIDE" << endl;
-      cout << r[0] << '\t' << agrid->m_axis[0].m_start << '\t'
-      << agrid->m_axis[0].m_end << endl;
-      cout << r[1] << '\t' << agrid->m_axis[1].m_start << '\t'
-      << agrid->m_axis[1].m_end << endl;
-      cout << r[2] << '\t' << agrid->m_axis[2].m_start << '\t'
-      << agrid->m_axis[2].m_end << endl;
+      std::cout << "OUTSIDE" << std::endl;
+      std::cout << r[0] << '\t' << agrid->m_axis[0].m_start << '\t'
+      << agrid->m_axis[0].m_end << std::endl;
+      std::cout << r[1] << '\t' << agrid->m_axis[1].m_start << '\t'
+      << agrid->m_axis[1].m_end << std::endl;
+      std::cout << r[2] << '\t' << agrid->m_axis[2].m_start << '\t'
+      << agrid->m_axis[2].m_end << std::endl;
       */
     }
     h = agrid->m_axis[0].h(ix);

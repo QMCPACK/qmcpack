@@ -37,7 +37,7 @@ public:
 
   Return_t evaluate(ParticleSet& P);
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
@@ -52,7 +52,7 @@ public:
       RealType k=dot(sourcePtcl->SK->KLists.kpts_cart[ki],sourcePtcl->SK->KLists.kpts_cart[ki]);
       k= std::sqrt(k) - K_0;
       Fk[ki] = OneOverN*V_0*std::exp(-k*k);
-//         app_log()<<ki<<": "<<Fk[ki] <<endl;
+//         app_log()<<ki<<": "<<Fk[ki] << std::endl;
     }
   }
 
@@ -68,11 +68,11 @@ protected:
   /** normalization factor */
   RealType OneOverN;
   /** kshell counters */
-  vector<int> Kshell;
+  std::vector<int> Kshell;
   /** instantaneous structure factor  */
-  vector<RealType> Kmag;
+  std::vector<RealType> Kmag;
   /** 1.0/degenracy for a ksell */
-  vector<RealType> OneOverDnk;
+  std::vector<RealType> OneOverDnk;
   /** \f$rho_k = \sum_{\alpha} \rho_k^{\alpha} \f$ for species index \f$\alpha\f$ */
   Vector<ComplexType> RhokTot;
   Vector<RealType> Fk;

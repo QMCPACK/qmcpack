@@ -52,7 +52,7 @@ void ForceBase::addObservablesF(QMCTraits::PropertySetType& plist)
   {
     for(int x=0; x<OHMMS_DIM; x++)
     {
-      ostringstream obsName;
+      std::ostringstream obsName;
       obsName << prefix << "_" << iat << "_" << x;
       plist.add(obsName.str());
     }
@@ -67,16 +67,16 @@ void ForceBase::addObservablesStress(QMCTraits::PropertySetType& plist)
 	for(int i=0; i<OHMMS_DIM; i++)
 		for(int j=i; j<OHMMS_DIM; j++)
 		{
-		  ostringstream obsName;
+		  std::ostringstream obsName;
 		  obsName <<prefix <<"_"<<i<<"_"<<j;
 		  plist.add(obsName.str());	
 		}
 }
 
-void ForceBase::registerObservablesF(vector<observable_helper*>& h5list
+void ForceBase::registerObservablesF(std::vector<observable_helper*>& h5list
                                      , hid_t gid) const
 {
-  vector<int> ndim(2);
+  std::vector<int> ndim(2);
   ndim[0]=Nnuc;
   ndim[1]=OHMMS_DIM;
   observable_helper* h5o=new observable_helper(prefix);
@@ -204,7 +204,7 @@ BareForce::evaluate(ParticleSet& P)
 
 bool BareForce::put(xmlNodePtr cur)
 {
-  string ionionforce("yes");
+  std::string ionionforce("yes");
   OhmmsAttributeSet attr;
   attr.add(prefix, "name");
   attr.add(ionionforce, "addionion");
@@ -218,7 +218,7 @@ ForceBase::InitVarReduction (real_type rcut, int _m, int numFuncs)
 {
   m = _m;
   Rcut = rcut;
-  vector<real_type> h(numFuncs);
+  std::vector<real_type> h(numFuncs);
   Matrix<real_type> S(numFuncs, numFuncs);
   ck.resize(numFuncs, 0.0);
   real_type R2jp1 = Rcut*Rcut;

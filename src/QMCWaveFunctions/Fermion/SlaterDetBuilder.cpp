@@ -87,8 +87,8 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
   xmlNodePtr curRoot=cur;
   xmlNodePtr BFnode;
   bool success=true, FastMSD=true;
-  string cname, tname;
-  std::map<string,SPOSetBasePtr> spomap;
+  std::string cname, tname;
+  std::map<std::string,SPOSetBasePtr> spomap;
   bool multiDet=false;
 
   if (myBasisSetFactory == 0)
@@ -109,11 +109,11 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
     else if ( cname == sposet_tag )
     {
       app_log() << "Creating SPOSet in SlaterDetBuilder::put(xmlNodePtr cur).\n";
-      string spo_name;
+      std::string spo_name;
       OhmmsAttributeSet spoAttrib;
       spoAttrib.add (spo_name, "name");
       spoAttrib.put(cur);
-      app_log() << "spo_name = " << spo_name << endl;
+      app_log() << "spo_name = " << spo_name << std::endl;
       SPOSetBasePtr spo = myBasisSetFactory->createSPOSet(cur);
       //spo->put(cur, spomap);
       if (spomap.find(spo_name) != spomap.end())
@@ -172,7 +172,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
           getNodeName(tname,cur1);
           if(tname == det_tag)
           {
-            string aspo,did;
+            std::string aspo,did;
             OhmmsAttributeSet a;
             a.add(did,"id");
             a.add(aspo,"sposet");
@@ -193,8 +193,8 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
       }
       else if(cname == multisd_tag)
       {
-        string spo_alpha;
-        string spo_beta;
+        std::string spo_alpha;
+        std::string spo_beta;
         OhmmsAttributeSet a;
         a.add (spo_alpha, "spo_up");
         a.add (spo_beta, "spo_dn");
@@ -233,7 +233,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
         slaterdet_0 = new SlaterDeterminant_t(targetPtcl);
 
       // Copy any entries in sposetmap into slaterdet_0
-      std::map<string,SPOSetBasePtr>::iterator iter;
+      std::map<std::string,SPOSetBasePtr>::iterator iter;
       for (iter=spomap.begin(); iter!=spomap.end(); iter++)
       {
         slaterdet_0->add(iter->second,iter->first);
@@ -262,9 +262,9 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
       {
         APP_ABORT("multideterminant is already instantiated.");
       }
-      string spo_alpha;
-      string spo_beta;
-      string fastAlg("yes");
+      std::string spo_alpha;
+      std::string spo_beta;
+      std::string fastAlg("yes");
       OhmmsAttributeSet spoAttrib;
       spoAttrib.add (spo_alpha, "spo_up");
       spoAttrib.add (spo_beta, "spo_dn");
@@ -409,12 +409,12 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 
   SpeciesSet& myspecies=targetPtcl.mySpecies;
 
-  string spin_name=myspecies.speciesName[spin_group];
-  string sposet; 
-  string basisName("invalid");
-  string detname("0"), refname("0");
-  string s_detSize("0");
-  string afm("no");
+  std::string spin_name=myspecies.speciesName[spin_group];
+  std::string sposet; 
+  std::string basisName("invalid");
+  std::string detname("0"), refname("0");
+  std::string s_detSize("0");
+  std::string afm("no");
 
   OhmmsAttributeSet aAttrib;
   aAttrib.add(basisName,basisset_tag);
@@ -423,8 +423,8 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   aAttrib.add(refname,"ref");
   aAttrib.add(afm,"type");
   aAttrib.add(s_detSize,"DetSize");
-  string s_cutoff("0.0");
-  string s_radius("0.0");
+  std::string s_cutoff("0.0");
+  std::string s_radius("0.0");
   int s_smallnumber(-999999);
   int rntype(0);
   aAttrib.add(s_cutoff,"Cutoff");
@@ -444,17 +444,17 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
     if(spin_group_in<myspecies.size() && spin_group_in != spin_group)
     {
       spin_group=spin_group_in;
-      app_log() << "  Overwrite group = " << spin_group << endl;
+      app_log() << "  Overwrite group = " << spin_group << std::endl;
     }
   }
 
   //old input does not have sposet
   if(sposet.empty()) sposet=detname;
 
-  app_log() << "  Creating a determinant " << detname << " group=" << spin_group << " sposet=" << sposet << endl;
+  app_log() << "  Creating a determinant " << detname << " group=" << spin_group << " sposet=" << sposet << std::endl;
 
-  map<string,SPOSetBasePtr>& spo_ref(slaterdet_0->mySPOSet);
-  map<string,SPOSetBasePtr>::iterator lit(spo_ref.find(sposet));
+  std::map<std::string,SPOSetBasePtr>& spo_ref(slaterdet_0->mySPOSet);
+  std::map<std::string,SPOSetBasePtr>::iterator lit(spo_ref.find(sposet));
   SPOSetBasePtr psi=0;
   if (lit == spo_ref.end()) 
   {
@@ -462,7 +462,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
     if(psi==0) 
     {
       //SPOSet[detname]=psi;
-      app_log() << "  Create a new SPO set " << sposet << endl;
+      app_log() << "  Create a new SPO set " << sposet << std::endl;
 #if defined(ENABLE_SMARTPOINTER)
       psi.reset(myBasisSetFactory->createSPOSet(cur));
 #else
@@ -475,7 +475,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   }
   else
   {
-    app_log() << "  Reusing a SPO set " << sposet << endl;
+    app_log() << "  Reusing a SPO set " << sposet << std::endl;
     psi = (*lit).second;
   }
 
@@ -483,14 +483,14 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   int lastIndex=targetPtcl.last(spin_group);
   if(firstIndex==lastIndex)
     return true;
-//    app_log() << "  Creating DiracDeterminant " << detname << " group=" << spin_group << " First Index = " << firstIndex << endl;
-//    app_log() <<"   My det method is "<<detMethod<<endl;
+//    app_log() << "  Creating DiracDeterminant " << detname << " group=" << spin_group << " First Index = " << firstIndex << std::endl;
+//    app_log() <<"   My det method is "<<detMethod<< std::endl;
 //#if defined(BRYAN_MULTIDET_TRIAL)
 //    if (detMethod=="Iterative")
 //    {
-//      //   string s_cutoff("0.0");
+//      //   std::string s_cutoff("0.0");
 //      //   aAttrib.add(s_cutoff,"Cutoff");
-//      app_log()<<"My cutoff is "<<s_cutoff<<endl;
+//      app_log()<<"My cutoff is "<<s_cutoff<< std::endl;
 //
 //      double cutoff=std::atof(s_cutoff.c_str());
 //      DiracDeterminantIterative *adet= new DiracDeterminantIterative(psi,firstIndex);
@@ -499,7 +499,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 //    }
 //    else if (detMethod=="Truncation")
 //    {
-//      //   string s_cutoff("0.0");
+//      //   std::string s_cutoff("0.0");
 //      //   aAttrib.add(s_cutoff,"Cutoff");
 //      DiracDeterminantTruncation *adet= new DiracDeterminantTruncation(psi,firstIndex);
 //      double cutoff=std::atof(s_cutoff.c_str());
@@ -510,7 +510,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 //    }
 //    else if (detMethod=="Multi")
 //    {
-//      app_log()<<"BUILDING DIRAC DETERM "<<firstIndex<<endl;
+//      app_log()<<"BUILDING DIRAC DETERM "<<firstIndex<< std::endl;
 //      MultiDiracDeterminantBase *adet = new MultiDiracDeterminantBase(psi,firstIndex);
 //      int detSize=std::atof(s_detSize.c_str());
 //      adet-> set_Multi(firstIndex,detSize,psi->getOrbitalSetSize());
@@ -520,14 +520,14 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 //      slaterdet_0->add(new Det_t(psi,firstIndex),spin_group);
 //    }
 //#else
-  string dname;
+  std::string dname;
   getNodeName(dname,cur);
   DiracDeterminantBase* adet=0;
 #if !defined(QMC_COMPLEX)
   if (rn_tag == dname)
   {
     double bosonicEpsilon=s_smallnumber;
-    app_log()<<"  BUILDING Released Node Determinant logepsilon="<<bosonicEpsilon<<endl;
+    app_log()<<"  BUILDING Released Node Determinant logepsilon="<<bosonicEpsilon<< std::endl;
     if (rntype==0)
       adet = new RNDiracDeterminantBase(psi,firstIndex);
     else
@@ -544,7 +544,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
       adet = new DiracDeterminantWithBackflow(targetPtcl,psi,BFTrans,firstIndex);
     else if (afm=="AFM")
     {
-      app_log()<<"Using the AFM determinant"<<endl;
+      app_log()<<"Using the AFM determinant"<< std::endl;
       adet = new DiracDeterminantAFM(targetPtcl, psi, firstIndex);
     }
     else if (psi->Optimizable)
@@ -558,7 +558,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   if (psi->Optimizable)
     slaterdet_0->Optimizable = true;
 
-  app_log() << endl;
+  app_log() << std::endl;
   app_log().flush();
   return true;
 }
@@ -566,8 +566,8 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNodePtr cur)
 {
   bool success=true;
-  vector<ci_configuration> uniqueConfg_up, uniqueConfg_dn;
-  vector<std::string> CItags;
+  std::vector<ci_configuration> uniqueConfg_up, uniqueConfg_dn;
+  std::vector<std::string> CItags;
   bool optimizeCI;
   int nels_up = multiSD->nels_up;
   int nels_dn = multiSD->nels_dn;
@@ -577,7 +577,7 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
 // you should choose the det with highest weight for reference
   multiSD->Dets[0]->ReferenceDeterminant = 0; // for now
   multiSD->Dets[0]->NumDets=uniqueConfg_up.size();
-  vector<ci_configuration2>& list_up = multiSD->Dets[0]->confgList;
+  std::vector<ci_configuration2>& list_up = multiSD->Dets[0]->confgList;
   list_up.resize(uniqueConfg_up.size());
   for(int i=0; i<list_up.size(); i++)
   {
@@ -594,7 +594,7 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
   multiSD->Dets[0]->set(multiSD->FirstIndex_up,nels_up,multiSD->Dets[0]->Phi->getOrbitalSetSize());
   multiSD->Dets[1]->ReferenceDeterminant = 0; // for now
   multiSD->Dets[1]->NumDets=uniqueConfg_dn.size();
-  vector<ci_configuration2>& list_dn = multiSD->Dets[1]->confgList;
+  std::vector<ci_configuration2>& list_dn = multiSD->Dets[1]->confgList;
   list_dn.resize(uniqueConfg_dn.size());
   for(int i=0; i<list_dn.size(); i++)
   {
@@ -614,7 +614,7 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
   if(optimizeCI)
   {
     app_log() <<"CI coefficients are optimizable. \n";
-    string resetCI("no");
+    std::string resetCI("no");
     OhmmsAttributeSet spoAttrib;
     spoAttrib.add (resetCI, "reset_coeff");
     spoAttrib.put(cur);
@@ -662,8 +662,8 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
   {
      bool success=true;
 
-     vector<ci_configuration> uniqueConfg_up, uniqueConfg_dn;
-     vector<std::string> CItags;
+     std::vector<ci_configuration> uniqueConfg_up, uniqueConfg_dn;
+     std::vector<std::string> CItags;
      bool optimizeCI;
 
      success = readDetList(cur,uniqueConfg_up,uniqueConfg_dn,multiSD->C2node_up, multiSD->C2node_dn,CItags,multiSD->C,optimizeCI,multiSD->nels_up,multiSD->nels_dn);
@@ -717,8 +717,8 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
 bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur)
 {
   bool success=true;
-  vector<ci_configuration> uniqueConfg_up, uniqueConfg_dn;
-  vector<std::string> CItags;
+  std::vector<ci_configuration> uniqueConfg_up, uniqueConfg_dn;
+  std::vector<std::string> CItags;
   bool optimizeCI;
   int nels_up = multiSD->nels_up;
   int nels_dn = multiSD->nels_dn;
@@ -781,7 +781,7 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur
   if(optimizeCI)
   {
     app_log() <<"CI coefficients are optimizable. \n";
-    string resetCI("no");
+    std::string resetCI("no");
     OhmmsAttributeSet spoAttrib;
     spoAttrib.add (resetCI, "reset_coeff");
     spoAttrib.put(cur);
@@ -826,7 +826,7 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur
 }
 
 
-bool SlaterDetBuilder::readDetList(xmlNodePtr cur, vector<ci_configuration>& uniqueConfg_up, vector<ci_configuration>& uniqueConfg_dn, vector<int>& C2node_up, vector<int>& C2node_dn, vector<std::string>& CItags, vector<RealType>& coeff, bool& optimizeCI, int nels_up, int nels_dn,  vector<RealType>& CSFcoeff, vector<int>& DetsPerCSF, vector<RealType>& CSFexpansion, bool& usingCSF)
+bool SlaterDetBuilder::readDetList(xmlNodePtr cur, std::vector<ci_configuration>& uniqueConfg_up, std::vector<ci_configuration>& uniqueConfg_dn, std::vector<int>& C2node_up, std::vector<int>& C2node_dn, std::vector<std::string>& CItags, std::vector<RealType>& coeff, bool& optimizeCI, int nels_up, int nels_dn,  std::vector<RealType>& CSFcoeff, std::vector<int>& DetsPerCSF, std::vector<RealType>& CSFexpansion, bool& usingCSF)
 {
   bool success=true;
   uniqueConfg_up.clear();
@@ -838,9 +838,9 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur, vector<ci_configuration>& uni
   CSFcoeff.clear();
   DetsPerCSF.clear();
   CSFexpansion.clear();
-  vector<ci_configuration> confgList_up;
-  vector<ci_configuration> confgList_dn;
-  string optCI="no";
+  std::vector<ci_configuration> confgList_up;
+  std::vector<ci_configuration> confgList_dn;
+  std::string optCI="no";
   RealType cutoff=0.0;
   RealType zero_cutoff=0.0;
   OhmmsAttributeSet ciAttrib;
@@ -849,7 +849,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur, vector<ci_configuration>& uni
   ciAttrib.put(cur);
   optimizeCI = (optCI=="yes");
   xmlNodePtr curRoot=cur,DetListNode;
-  string cname,cname0;
+  std::string cname,cname0;
   cur = curRoot->children;
   while (cur != NULL)//check the basis set
   {
@@ -862,8 +862,8 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur, vector<ci_configuration>& uni
     cur = cur->next;
   }
   int NCA,NCB,NEA,NEB,nstates,ndets=0,count=0,cnt0=0;
-  string Dettype="DETS";
-  string CSFChoice="qchem_coeff";
+  std::string Dettype="DETS";
+  std::string CSFChoice="qchem_coeff";
   OhmmsAttributeSet spoAttrib;
   spoAttrib.add (NCA, "nca");
   spoAttrib.add (NCB, "ncb");
@@ -891,7 +891,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur, vector<ci_configuration>& uni
       APP_ABORT("Only allowed type in detlist is DETS or CSF.\n");
     }
   if(zero_cutoff>0)
-    app_log()<<"  Initializing CI coeffs less than "<<zero_cutoff<<" to zero."<<endl;
+    app_log()<<"  Initializing CI coeffs less than "<<zero_cutoff<<" to zero."<< std::endl;
 // cheating until I fix the converter
   NCA = nels_up-NEA;
   NCB = nels_dn-NEB;
@@ -911,7 +911,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur, vector<ci_configuration>& uni
   int ntot=0;
   if(usingCSF)
   {
-    app_log() <<"Reading CSFs." <<endl;
+    app_log() <<"Reading CSFs." << std::endl;
     while (cur != NULL)//check the basis set
     {
       getNodeName(cname,cur);
@@ -919,7 +919,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur, vector<ci_configuration>& uni
       {
         RealType exctLvl,ci=0.0,qc_ci=0.0;
         OhmmsAttributeSet confAttrib;
-        string tag,OccString;
+        std::string tag,OccString;
         confAttrib.add(ci,"coeff");
         confAttrib.add(qc_ci,"qchem_coeff");
         confAttrib.add(tag,"id");
@@ -949,7 +949,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur, vector<ci_configuration>& uni
           getNodeName(cname0,csf);
           if(cname0 == "det")
           {
-            string alpha,beta,tag0;
+            std::string alpha,beta,tag0;
             RealType coef=0.0;
             OhmmsAttributeSet detAttrib;
             detAttrib.add(tag0,"id");
@@ -960,14 +960,14 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur, vector<ci_configuration>& uni
             int nq=0,na,nr;
             if(alpha.size() < nstates)
             {
-              cerr<<"alpha: " <<alpha <<endl;
+              std::cerr <<"alpha: " <<alpha << std::endl;
               APP_ABORT("Found incorrect alpha determinant label. size < nca+nstates");
             }
             for(int i=0; i<nstates; i++)
             {
               if(alpha[i] != '0' && alpha[i] != '1')
               {
-                cerr<<alpha <<endl;
+                std::cerr <<alpha << std::endl;
                 APP_ABORT("Found incorrect determinant label.");
               }
               if(alpha[i] == '1')
@@ -975,20 +975,20 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur, vector<ci_configuration>& uni
             }
             if(nq != NEA)
             {
-              cerr<<"alpha: " <<alpha <<endl;
+              std::cerr <<"alpha: " <<alpha << std::endl;
               APP_ABORT("Found incorrect alpha determinant label. noccup != nca+nea");
             }
             nq=0;
             if(beta.size() < nstates)
             {
-              cerr<<"beta: " <<beta <<endl;
+              std::cerr <<"beta: " <<beta << std::endl;
               APP_ABORT("Found incorrect beta determinant label. size < ncb+nstates");
             }
             for(int i=0; i<nstates; i++)
             {
               if(beta[i] != '0' && beta[i] != '1')
               {
-                cerr<<beta <<endl;
+                std::cerr <<beta << std::endl;
                 APP_ABORT("Found incorrect determinant label.");
               }
               if(beta[i] == '1')
@@ -996,10 +996,10 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur, vector<ci_configuration>& uni
             }
             if(nq != NEB)
             {
-              cerr<<"beta: " <<beta <<endl;
+              std::cerr <<"beta: " <<beta << std::endl;
               APP_ABORT("Found incorrect beta determinant label. noccup != ncb+neb");
             }
-//app_log() <<" <ci id=\"coeff_" <<ntot++ <<"\" coeff=\"" <<ci*coef <<"\" alpha=\"" <<alpha <<"\" beta=\"" <<beta <<"\" />" <<endl;
+//app_log() <<" <ci id=\"coeff_" <<ntot++ <<"\" coeff=\"" <<ci*coef <<"\" alpha=\"" <<alpha <<"\" beta=\"" <<beta <<"\" />" << std::endl;
             DetsPerCSF.back()++;
             CSFexpansion.push_back(coef);
             coeff.push_back(coef*ci);
@@ -1026,14 +1026,14 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur, vector<ci_configuration>& uni
   }
   else
   {
-    app_log() <<"Reading CI expansion." <<endl;
+    app_log() <<"Reading CI expansion." << std::endl;
     while (cur != NULL)//check the basis set
     {
       getNodeName(cname,cur);
       if(cname == "configuration" || cname == "ci")
       {
         RealType ci=0.0, qc_ci=0.0;
-        string alpha,beta,tag;
+        std::string alpha,beta,tag;
         OhmmsAttributeSet confAttrib;
         confAttrib.add(ci,"coeff");
         confAttrib.add(qc_ci,"qchem_coeff");
@@ -1055,14 +1055,14 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur, vector<ci_configuration>& uni
         int nq=0,na,nr;
         if(alpha.size() < nstates)
         {
-          cerr<<"alpha: " <<alpha <<endl;
+          std::cerr <<"alpha: " <<alpha << std::endl;
           APP_ABORT("Found incorrect alpha determinant label. size < nca+nstates");
         }
         for(int i=0; i<nstates; i++)
         {
           if(alpha[i] != '0' && alpha[i] != '1')
           {
-            cerr<<alpha <<endl;
+            std::cerr <<alpha << std::endl;
             APP_ABORT("Found incorrect determinant label.");
           }
           if(alpha[i] == '1')
@@ -1070,20 +1070,20 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur, vector<ci_configuration>& uni
         }
         if(nq != NEA)
         {
-          cerr<<"alpha: " <<alpha <<endl;
+          std::cerr <<"alpha: " <<alpha << std::endl;
           APP_ABORT("Found incorrect alpha determinant label. noccup != nca+nea");
         }
         nq=0;
         if(beta.size() < nstates)
         {
-          cerr<<"beta: " <<beta <<endl;
+          std::cerr <<"beta: " <<beta << std::endl;
           APP_ABORT("Found incorrect beta determinant label. size < ncb+nstates");
         }
         for(int i=0; i<nstates; i++)
         {
           if(beta[i] != '0' && beta[i] != '1')
           {
-            cerr<<beta <<endl;
+            std::cerr <<beta << std::endl;
             APP_ABORT("Found incorrect determinant label.");
           }
           if(beta[i] == '1')
@@ -1091,7 +1091,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur, vector<ci_configuration>& uni
         }
         if(nq != NEB)
         {
-          cerr<<"beta: " <<beta <<endl;
+          std::cerr <<"beta: " <<beta << std::endl;
           APP_ABORT("Found incorrect beta determinant label. noccup != ncb+neb");
         }
         count++;
@@ -1115,7 +1115,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur, vector<ci_configuration>& uni
   //if(count != ndets) {
   if(cnt0 != ndets)
   {
-    cerr<<"count, ndets: " <<cnt0 <<"  " <<ndets <<endl;
+    std::cerr <<"count, ndets: " <<cnt0 <<"  " <<ndets << std::endl;
     APP_ABORT("Problems reading determinant ci_configurations. Found a number of determinants inconsistent with xml file size parameter.\n");
   }
   //if(!usingCSF)
@@ -1128,8 +1128,8 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur, vector<ci_configuration>& uni
   RealType sumsq=0.0;
   for(int i=0; i<coeff.size(); i++)
     sumsq += coeff[i]*coeff[i];
-  app_log() <<"Norm of ci vector (sum of ci^2): " <<sumsq <<endl;
-  app_log() <<"Norm of qchem ci vector (sum of qchem_ci^2): " <<sumsq_qc <<endl;
+  app_log() <<"Norm of ci vector (sum of ci^2): " <<sumsq << std::endl;
+  app_log() <<"Norm of qchem ci vector (sum of qchem_ci^2): " <<sumsq_qc << std::endl;
   for(int i=0; i<confgList_up.size(); i++)
   {
     bool found=false;

@@ -34,7 +34,7 @@ struct PWComponent
   inline void v(const PV& pos, VT& val)
   {
     T kdotp=dot(K,pos);
-    complex<T> res(std::cos(kdotp),std::sin(kdotp));
+    std::complex<T> res(std::cos(kdotp),std::sin(kdotp));
     convert(res,val);
   }
 
@@ -44,9 +44,9 @@ struct PWComponent
     T kdotp=dot(K,pos);
     T sinx=std::sin(kdotp);
     T cosx=std::cos(kdotp);
-    complex<T> eikr(cosx,sinx);
-    complex<T> ieikr(-sinx,cosx);
-    TinyVector<complex<T>,3> g1(K[0]*ieikr,K[1]*ieikr,K[2]*ieikr);
+    std::complex<T> eikr(cosx,sinx);
+    std::complex<T> ieikr(-sinx,cosx);
+    TinyVector<std::complex<T>,3> g1(K[0]*ieikr,K[1]*ieikr,K[2]*ieikr);
     convert(eikr,v);
     convert(g1,g);
     convert(kk*eikr,l);
@@ -58,10 +58,10 @@ struct PWComponent
     T kdotp=dot(K,pos);
     T sinx=std::sin(kdotp);
     T cosx=std::cos(kdotp);
-    complex<T> eikr(cosx,sinx);
-    complex<T> ieikr(-sinx,cosx);
-    TinyVector<complex<T>,3> g1(K[0]*ieikr,K[1]*ieikr,K[2]*ieikr);
-    Tensor<complex<T>,3> h1(-K[0]*K[0]*eikr,-K[0]*K[1]*eikr,-K[0]*K[2]*eikr
+    std::complex<T> eikr(cosx,sinx);
+    std::complex<T> ieikr(-sinx,cosx);
+    TinyVector<std::complex<T>,3> g1(K[0]*ieikr,K[1]*ieikr,K[2]*ieikr);
+    Tensor<std::complex<T>,3> h1(-K[0]*K[0]*eikr,-K[0]*K[1]*eikr,-K[0]*K[2]*eikr
                             ,-K[1]*K[0]*eikr,-K[1]*K[1]*eikr,-K[1]*K[2]*eikr
                             ,-K[2]*K[0]*eikr,-K[2]*K[1]*eikr,-K[2]*K[2]*eikr
                            );

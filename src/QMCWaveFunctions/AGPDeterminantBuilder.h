@@ -47,8 +47,8 @@ protected:
   BasisSetFactory* myBasisSetFactory;
   ///AGPDeterminant
   AGPDeterminant* agpDet;
-  string funcOpt;
-  string transformOpt;
+  std::string funcOpt;
+  std::string transformOpt;
 
   template <typename BasisBuilderT>
   bool createAGP(BasisBuilderT* abuilder, xmlNodePtr cur);

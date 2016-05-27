@@ -69,7 +69,7 @@ bool VMCRenyiOMP::run()
     file_out<<"  EE_S";
     for(int i(Nmin); i<Nmax+1; i++)
       file_out<<"  N"<<i;
-    file_out<<endl;
+    file_out<< std::endl;
     file_out.close();
     if(plotSwapAmplitude)
     {
@@ -79,7 +79,7 @@ bool VMCRenyiOMP::run()
       file_out<<"# indx";
       for(int i(0); i<n_grid_pe; i++)
         file_out<<"  S_"<<i;
-      file_out<<endl;
+      file_out<< std::endl;
     }
   }
   std::vector<Matrix<RealType> > averageSwaps(NumThreads,Matrix<RealType>(total_grid,total_grid));
@@ -142,7 +142,7 @@ bool VMCRenyiOMP::run()
         file_out<<block<<" ";
         for(int i(0); i<n_grid_pe; i++)
           file_out<<pe_r[i]<<" ";
-        file_out<<endl;
+        file_out<< std::endl;
         file_out.close();
       }
       for (int ip=0; ip<NumThreads; ++ip)
@@ -155,7 +155,7 @@ bool VMCRenyiOMP::run()
       file_out<<avgsgn*nrm<<" ";
       for(int i(0); i<(Nmax+1-Nmin); i++)
         file_out<<n_stats[i]*nrm<<" ";
-      file_out<<endl;
+      file_out<< std::endl;
       file_out.close();
     }
 //       for (int ip=0; ip<NumThreads; ++ip)
@@ -177,7 +177,7 @@ void VMCRenyiOMP::resetRun()
 {
   makeClones(W,Psi,H);
   std::vector<IndexType> samples_th(omp_get_max_threads(),0);
-  app_log() << "  Warmup Steps " << myWarmupSteps << endl;
+  app_log() << "  Warmup Steps " << myWarmupSteps << std::endl;
   if (RenyiMovers.empty())
   {
     RenyiMovers.resize(NumThreads,0);
@@ -189,7 +189,7 @@ void VMCRenyiOMP::resetRun()
     {
       app_log() << "  walker number not right. Removing "<< W.getActiveWalkers()-nwtot <<" walkers. ";
       W.destroyWalkers(W.getActiveWalkers()-nwtot);
-      vector<int> nwoff(myComm->size()+1,0);
+      std::vector<int> nwoff(myComm->size()+1,0);
       for(int ip=0; ip<myComm->size(); ip++)
         nwoff[ip+1]=nwoff[ip]+nwtot;
       W.setGlobalNumWalkers(nwoff[myComm->size()]);
@@ -200,7 +200,7 @@ void VMCRenyiOMP::resetRun()
       {
         app_log() << "  walker number not right. Adding "<< nwtot-W.getActiveWalkers() <<" walkers. ";
         W.createWalkers(nwtot-W.getActiveWalkers());
-        vector<int> nwoff(myComm->size()+1,0);
+        std::vector<int> nwoff(myComm->size()+1,0);
         for(int ip=0; ip<myComm->size(); ip++)
           nwoff[ip+1]=nwoff[ip]+nwtot;
         W.setGlobalNumWalkers(nwoff[myComm->size()]);
@@ -208,11 +208,11 @@ void VMCRenyiOMP::resetRun()
       }
     FairDivideLow(nwtot,NumThreads,wPerNode);
     app_log() << "  Initial partition of walkers ";
-    std::copy(wPerNode.begin(),wPerNode.end(),ostream_iterator<int>(app_log()," "));
-    app_log() << endl;
+    copy(wPerNode.begin(),wPerNode.end(),std::ostream_iterator<int>(app_log()," "));
+    app_log() << std::endl;
     for(int ip=0; ip<NumThreads; ++ip)
     {
-      ostringstream os;
+      std::ostringstream os;
       estimatorClones[ip]= new EstimatorManager(*Estimators);//,*hClones[ip]);
       estimatorClones[ip]->resetTargetParticleSet(*wClones[ip]);
       estimatorClones[ip]->setCollectionMode(false);
@@ -223,7 +223,7 @@ void VMCRenyiOMP::resetRun()
       {
         if (UseDrift != "yes")
         {
-          os <<"  PbyP moves without drift, using RenyiUpdatePbyP"<<endl;
+          os <<"  PbyP moves without drift, using RenyiUpdatePbyP"<< std::endl;
           RenyiMovers[ip]=new RenyiUpdatePbyP(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip],EEN);
         }
         else
@@ -234,17 +234,17 @@ void VMCRenyiOMP::resetRun()
         APP_ABORT("NOT IMPLEMENTED");
 //             if (UseDrift != "yes")
 //             {
-//               os <<"  Walkers moves, using RenyiUpdatePbyP"<<endl;
+//               os <<"  Walkers moves, using RenyiUpdatePbyP"<< std::endl;
 //               RenyiMovers[ip]=new RenyiUpdateAll(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip],EEN);
 //             }
 //             else
 //             {
-//               os <<"  Walkers moves with drift, using RenyiUpdatePbyP"<<endl;
+//               os <<"  Walkers moves with drift, using RenyiUpdatePbyP"<< std::endl;
 //               RenyiMovers[ip]=new RenyiUpdateAllWithDrift(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip],EEN);
 //             }
       }
       if(ip==0)
-        app_log() << os.str() << endl;
+        app_log() << os.str() << std::endl;
     }
   }
   ParticleSet::ParticlePos_t L(1);

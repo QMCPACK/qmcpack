@@ -52,9 +52,9 @@ struct ESHDFIonsParser
   ParticleSet& ref_;
   hid_t hfile_id;
   Communicate* myComm;
-  string atomic_number_tag;
-  string charge_tag;
-  string mass_tag;
+  std::string atomic_number_tag;
+  std::string charge_tag;
+  std::string mass_tag;
 };
 
 }

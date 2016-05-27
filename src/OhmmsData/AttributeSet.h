@@ -92,7 +92,7 @@ struct OhmmsAttributeSet
       if(it != m_param.end())
       {
         std::istringstream stream((const char*)(att->children->content));
-        (*it).second->put(stream);
+        (*it).second->put( stream);
       }
       att=att->next;
     }

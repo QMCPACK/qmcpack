@@ -52,10 +52,10 @@ int SpeciesCollection::addAttrib(const char* name)
   return attribMap.size() -1;
 }
 
-void SpeciesCollection::print(ostream& os)
+void SpeciesCollection::print(std::ostream& os)
 {
-  os << "Total Number of Species Attributes = " << mySpecies->numAttributes() << endl;
-  os << "Total Number of Species  = " << mySpecies->getTotalNum() << endl;
+  os << "Total Number of Species Attributes = " << mySpecies->numAttributes() << std::endl;
+  os << "Total Number of Species  = " << mySpecies->getTotalNum() << std::endl;
   for(int isp=0; isp<mySpecies->getTotalNum(); isp++)
   {
     os  << mySpecies->Name[isp] << " " ;
@@ -63,7 +63,7 @@ void SpeciesCollection::print(ostream& os)
     {
       os << mySpecies->operator()(id,isp) << " ";
     }
-    os << endl;
+    os << std::endl;
   }
 }
 /*
@@ -78,7 +78,7 @@ int SpeicesCollection::addSpecies(int argc, char **argv) {
   return id;
 }
 
-int SpeciesCollection::addSpecies(vector<string>& argv) {
+int SpeciesCollection::addSpecies(std::vector<std::string>& argv) {
 
   int i=0;
   int id = -1;

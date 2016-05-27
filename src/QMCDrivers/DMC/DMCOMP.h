@@ -50,19 +50,19 @@ private:
   ///Interval between branching
   IndexType BranchInterval;
   ///hdf5 file name for Branch conditions
-  string BranchInfo;
-  ///input string to determine kill walkers or not
-  string KillWalker;
-  ///input string to determine swap walkers among mpi processors
-  string SwapWalkers;
-  ///input string to determine to use reconfiguration
-  string Reconfiguration;
-  ///input string to determine to use nonlocal move
-  string NonLocalMove;
-  ///input string to benchmark OMP performance
-  string BenchMarkRun;
-  ///input string to use fast gradient
-  string UseFastGrad;
+  std::string BranchInfo;
+  ///input std::string to determine kill walkers or not
+  std::string KillWalker;
+  ///input std::string to determine swap walkers among mpi processors
+  std::string SwapWalkers;
+  ///input std::string to determine to use reconfiguration
+  std::string Reconfiguration;
+  ///input std::string to determine to use nonlocal move
+  std::string NonLocalMove;
+  ///input std::string to benchmark OMP performance
+  std::string BenchMarkRun;
+  ///input std::string to use fast gradient
+  std::string UseFastGrad;
   ///input to control maximum age allowed for walkers.
   IndexType mover_MaxAge;
 

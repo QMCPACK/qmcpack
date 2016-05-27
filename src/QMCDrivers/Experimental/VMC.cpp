@@ -74,13 +74,13 @@ bool VMC::run()
     do
     {
       advanceWalkerByWalker();
-      //cerr << "HEY!!  I'M NOT MOVING ANYBODY; JUST FOR TESTING. -FROM VMC.CPP" << endl;
+      //cerr << "HEY!!  I'M NOT MOVING ANYBODY; JUST FOR TESTING. -FROM VMC.CPP" << std::endl;
       //cerr << "going to evaluate Psi.  it is ";
       //RealType logpsi(Psi.evaluateLog(W));
-      //cerr << logpsi << endl;
-      //cerr << "this is for coords" << endl;
+      //cerr << logpsi << std::endl;
+      //cerr << "this is for coords" << std::endl;
       //for (int w=0; w<W.R.size(); w++)
-      //	cerr << w << ": " << W.R[w] << endl;
+      //	cerr << w << ": " << W.R[w] << std::endl;
       step++;
       CurrentStep++;
       Estimators->accumulate(W);

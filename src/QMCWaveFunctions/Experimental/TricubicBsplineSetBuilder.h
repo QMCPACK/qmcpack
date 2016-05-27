@@ -35,7 +35,7 @@ public:
 
   typedef Bspline3DSetBase              BsplineBasisType;
   typedef Bspline3DSetBase::StorageType StorageType;
-  typedef map<string,ParticleSet*>      PtclPoolType;
+  typedef std::map<std::string,ParticleSet*>      PtclPoolType;
 
   /** real-space orbital type
    */
@@ -71,8 +71,8 @@ private:
    *
    * Key is $1#$2 where $1 is the hdf5 file name and $2 is the band indenx
    */
-  //static map<string,StorageType*> BigDataSet;
-  static map<string,RSOType*> BigDataSet;
+  //static std::map<std::string,StorageType*> BigDataSet;
+  static std::map<std::string,RSOType*> BigDataSet;
   ///if true, grid is open-ended [0,nx) x [0,ny) x [0, nz)
   bool OpenEndGrid;
   ///if true, a grid is translated so that the center of localized orbitals conincides with the cell center
@@ -112,9 +112,9 @@ private:
   ///current hdf5 file name
   std::string curH5Fname;
   ///set of WFSetType*
-  map<string,BsplineBasisType*> myBasis;
+  std::map<std::string,BsplineBasisType*> myBasis;
   ///single-particle orbital sets
-  map<string,SPOSetBase*> mySPOSet;
+  std::map<std::string,SPOSetBase*> mySPOSet;
 
   ///set Bspline functions
   void setBsplineBasisSet(xmlNodePtr cur);
@@ -123,17 +123,17 @@ private:
   void initGrid();
 
   ///initialize the center and origin of orbitals
-  void getCenterAndOrigin(const char* hroot, const vector<int>& occSet, int norb);
+  void getCenterAndOrigin(const char* hroot, const std::vector<int>& occSet, int norb);
 
   ///read numerical orbitals and spline them
   template<typename Tin, typename Tout>
-  void readData(const char* hroot, const vector<int>& occSet, int spinIndex, int degeneracy);
+  void readData(const char* hroot, const std::vector<int>& occSet, int spinIndex, int degeneracy);
 
   ///read numerical orbitals and spline them in parallel
   template<typename Tin, typename Tout>
-  void readDataOMP(const char* hroot, const vector<int>& occSet, int spinIndex, int degeneracy);
+  void readDataOMP(const char* hroot, const std::vector<int>& occSet, int spinIndex, int degeneracy);
 
-  void readComplex2RealDataWithTruncation(const char* hroot, const vector<int>& occSet,
+  void readComplex2RealDataWithTruncation(const char* hroot, const std::vector<int>& occSet,
                                           int spinIndex, int degeneracy);
 
   ///a function to test with EG

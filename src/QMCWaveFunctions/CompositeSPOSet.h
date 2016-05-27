@@ -15,15 +15,15 @@ namespace qmcplusplus
   {
   public:
     ///component SPOSets
-    vector<SPOSetBase*>    components;
+    std::vector<SPOSetBase*>    components;
     ///temporary storage for values
-    vector<ValueVector_t*> component_values;
+    std::vector<ValueVector_t*> component_values;
     ///temporary storage for gradients
-    vector<GradVector_t*>  component_gradients;
+    std::vector<GradVector_t*>  component_gradients;
     ///temporary storage for laplacians
-    vector<ValueVector_t*> component_laplacians;
+    std::vector<ValueVector_t*> component_laplacians;
     ///store the precomputed offsets
-    vector<int> component_offsets;
+    std::vector<int> component_offsets;
 
     CompositeSPOSet();
     ~CompositeSPOSet();
@@ -53,7 +53,7 @@ namespace qmcplusplus
                   GradVector_t& dpsi, ValueVector_t& d2psi);
 
     ///unimplemented functions call this to abort
-    inline void not_implemented(const string& method)
+    inline void not_implemented(const std::string& method)
     {
       APP_ABORT("CompositeSPOSet::"+method+" has not been implemented");
     }

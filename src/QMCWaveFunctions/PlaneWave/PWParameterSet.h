@@ -86,22 +86,22 @@ struct PWParameterSet: public MPIObjectBase
 
   bool hasComplexData(hid_t h);
 
-  string getTwistAngleName();
+  std::string getTwistAngleName();
 
-  string getTwistName();
+  std::string getTwistName();
 
-  string getTwistName(int i);
+  std::string getTwistName(int i);
 
-  string getBandName(int ib, int ispin);
+  std::string getBandName(int ib, int ispin);
 
-  string getBandName(int ib);
+  std::string getBandName(int ib);
 
-  string getSpinName(int ispin);
+  std::string getSpinName(int ispin);
 
-  string getEigVectorName(const string& hg, int ib, int ispin);
-  string getEigVectorName(int ib, int ispin);
-  string getCenterName(const string& hg,int ib);
-  string getOriginName(const string& hg,int ib);
+  std::string getEigVectorName(const std::string& hg, int ib, int ispin);
+  std::string getEigVectorName(int ib, int ispin);
+  std::string getCenterName(const std::string& hg,int ib);
+  std::string getOriginName(const std::string& hg,int ib);
 
   void writeParameters(hid_t gid);
 

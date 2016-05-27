@@ -1,5 +1,4 @@
 #include "QMCHamiltonians/MomentumDistribution.h"
-using namespace std;
 
 namespace qmcplusplus
 {

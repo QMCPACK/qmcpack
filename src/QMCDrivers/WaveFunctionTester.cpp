@@ -17,7 +17,6 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-using namespace std;
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/DistanceTable.h"
 #include "ParticleBase/ParticleUtility.h"
@@ -94,7 +93,7 @@ WaveFunctionTester::run()
   fout.open(fname);
   fout.precision(15);
 
-  app_log() << "Starting a Wavefunction tester.  Additional information in "  << fname << endl;
+  app_log() << "Starting a Wavefunction tester.  Additional information in "  << fname << std::endl;
 
   put(qmcNode);
   if (checkRatio == "yes")
@@ -129,10 +128,10 @@ WaveFunctionTester::run()
   else if (checkRatioV == "yes")
     runRatioV();
   else
-    app_log() << "No wavefunction test specified" << endl;
+    app_log() << "No wavefunction test specified" << std::endl;
 
   //RealType ene = H.evaluate(W);
-  //app_log() << " Energy " << ene << endl;
+  //app_log() << " Energy " << ene << std::endl;
   return true;
 }
 
@@ -140,7 +139,7 @@ void WaveFunctionTester::runCloneTest()
 {
   for (int iter=0; iter<4; ++iter)
   {
-    app_log() << "Clone" << iter << endl;
+    app_log() << "Clone" << iter << std::endl;
     ParticleSet* w_clone = new MCWalkerConfiguration(W);
     TrialWaveFunction *psi_clone = Psi.makeClone(*w_clone);
     QMCHamiltonian *h_clone = H.makeClone(*w_clone,*psi_clone);
@@ -165,25 +164,25 @@ void WaveFunctionTester::runCloneTest()
     w_clone->update();
     ValueType logpsi2 = psi_clone->evaluateLog(*w_clone);
     RealType eloc2  = h_clone->evaluate(*w_clone);
-    app_log() << "Testing walker-by-walker functions " << endl;
-    app_log() << "log (original) = " << logpsi1 << " energy = " << eloc1 << endl;
-    app_log() << "log (clone)    = " << logpsi2 << " energy = " << eloc2 << endl;
-    app_log() << "Testing pbyp functions " << endl;
+    app_log() << "Testing walker-by-walker functions " << std::endl;
+    app_log() << "log (original) = " << logpsi1 << " energy = " << eloc1 << std::endl;
+    app_log() << "log (clone)    = " << logpsi2 << " energy = " << eloc2 << std::endl;
+    app_log() << "Testing pbyp functions " << std::endl;
     Walker_t::Buffer_t &wbuffer(awalker->DataSet);
     wbuffer.clear();
-    app_log() << "  Walker Buffer State current=" << wbuffer.current() << " size=" << wbuffer.size() << endl;
+    app_log() << "  Walker Buffer State current=" << wbuffer.current() << " size=" << wbuffer.size() << std::endl;
     //W.registerData(wbuffer);
     logpsi1=Psi.registerData(W,wbuffer);
     eloc1= H.evaluate(W);
-    app_log() << "  Walker Buffer State current=" << wbuffer.current() << " size=" << wbuffer.size() << endl;
+    app_log() << "  Walker Buffer State current=" << wbuffer.current() << " size=" << wbuffer.size() << std::endl;
     wbuffer.clear();
-    app_log() << "  Walker Buffer State current=" << wbuffer.current() << " size=" << wbuffer.size() << endl;
+    app_log() << "  Walker Buffer State current=" << wbuffer.current() << " size=" << wbuffer.size() << std::endl;
     //w_clone->registerData(wbuffer);
     logpsi2=psi_clone->registerData(W,wbuffer);
     eloc2= H.evaluate(*w_clone);
-    app_log() << "  Walker Buffer State current=" << wbuffer.current() << " size=" << wbuffer.size() << endl;
-    app_log() << "log (original) = " << logpsi1 << " energy = " << eloc1 << endl;
-    app_log() << "log (clone)    = " << logpsi2 << " energy = " << eloc2 << endl;
+    app_log() << "  Walker Buffer State current=" << wbuffer.current() << " size=" << wbuffer.size() << std::endl;
+    app_log() << "log (original) = " << logpsi1 << " energy = " << eloc1 << std::endl;
+    app_log() << "log (clone)    = " << logpsi2 << " energy = " << eloc2 << std::endl;
     delete h_clone;
     delete psi_clone;
     delete w_clone;
@@ -194,20 +193,20 @@ void WaveFunctionTester::printEloc()
 {
   ParticleSetPool::PoolType::iterator p;
   for (p=PtclPool.getPool().begin(); p != PtclPool.getPool().end(); p++)
-    app_log() << "ParticelSet = " << p->first << endl;
+    app_log() << "ParticelSet = " << p->first << std::endl;
   // Find source ParticleSet
   ParticleSetPool::PoolType::iterator pit(PtclPool.getPool().find(sourceName));
   if(pit == PtclPool.getPool().end())
      APP_ABORT("Unknown source \"" + sourceName + "\" in printEloc in WaveFunctionTester.");
   ParticleSet& source = *((*pit).second);
-  app_log() << "Source = " <<sourceName <<"  " <<(*pit).first << endl;
+  app_log() << "Source = " <<sourceName <<"  " <<(*pit).first << std::endl;
   int nel = W.getTotalNum();
   int ncenter = source.getTotalNum();
 //    int ncenter = 3;
-//    cout<<"number of centers: " <<source.getTotalNum() <<endl;
-//    cout<<"0: " <<source.R[0] <<endl;
-//    cout<<"1: " <<source.R[1] <<endl;
-//    cout<<"2: " <<source.R[2] <<endl;
+//    std::cout <<"number of centers: " <<source.getTotalNum() << std::endl;
+//    std::cout <<"0: " <<source.R[0] << std::endl;
+//    std::cout <<"1: " <<source.R[1] << std::endl;
+//    std::cout <<"2: " <<source.R[2] << std::endl;
   MCWalkerConfiguration::PropertyContainer_t Properties;
   //pick the first walker
   MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
@@ -218,14 +217,14 @@ void WaveFunctionTester::printEloc()
   //ValueType psi = Psi.evaluate(W);
   ValueType logpsi = Psi.evaluateLog(W);
   RealType eloc=H.evaluate(W);
-  app_log() << "  Logpsi: " <<logpsi  << endl;
-  app_log() << "  HamTest " << "  Total " <<  eloc << endl;
+  app_log() << "  Logpsi: " <<logpsi  << std::endl;
+  app_log() << "  HamTest " << "  Total " <<  eloc << std::endl;
   for (int i=0; i<H.sizeOfObservables(); i++)
-    app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << endl;
+    app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << std::endl;
   //RealType psi = Psi.evaluateLog(W);
   //int iat=0;
   double maxR = 1000000.0;
-  vector<int> closestElectron(ncenter);
+  std::vector<int> closestElectron(ncenter);
   for(int iat=0; iat<ncenter; iat++)
   {
     maxR=10000000;
@@ -242,7 +241,7 @@ void WaveFunctionTester::printEloc()
     }
   }
 //    closestElectron[iat]=1;
-  ofstream out("eloc.dat");
+  std::ofstream out("eloc.dat");
   double x,dx=1.0/499.0;
   for (int k=0; k<500; k++)
   {
@@ -274,7 +273,7 @@ void WaveFunctionTester::printEloc()
       out<<ene <<"  ";
       W.R[closestElectron[iat]] = tempR;
     }
-    out<<endl;
+    out<< std::endl;
   }
   out.close();
 }
@@ -298,8 +297,8 @@ public:
     int index; // particle index
     PosType r;
   };
-  typedef vector<PositionChange> PosChangeVector;
-  typedef vector<ValueType> ValueVector;
+  typedef std::vector<PositionChange> PosChangeVector;
+  typedef std::vector<ValueType> ValueVector;
 
 
   /** Generate points to evaluate */
@@ -451,13 +450,13 @@ void FiniteDifference::computeFiniteDiffRichardson(RealType delta,
     GradType g0;
     GradType gmin;
     ValueType lmin;
-    vector<GradType> g_base(m_RichardsonSize+1);
-    vector<GradType> g_rich(m_RichardsonSize+1);
-    vector<GradType> g_prev(m_RichardsonSize+1);
+    std::vector<GradType> g_base(m_RichardsonSize+1);
+    std::vector<GradType> g_rich(m_RichardsonSize+1);
+    std::vector<GradType> g_prev(m_RichardsonSize+1);
 
-    vector<ValueType> l_base(m_RichardsonSize+1);
-    vector<ValueType> l_rich(m_RichardsonSize+1);
-    vector<ValueType> l_prev(m_RichardsonSize+1);
+    std::vector<ValueType> l_base(m_RichardsonSize+1);
+    std::vector<ValueType> l_rich(m_RichardsonSize+1);
+    std::vector<ValueType> l_prev(m_RichardsonSize+1);
 
     // Initial gradients and Laplacians at different deltas.
     RealType dd = delta;
@@ -599,7 +598,7 @@ bool WaveFunctionTester::checkGradients(int lower_iat, int upper_iat,
                                            ParticleSet::ParticleLaplacian_t &L,
                                            ParticleSet::ParticleGradient_t &G_fd,
                                            ParticleSet::ParticleLaplacian_t &L_fd,
-                                           stringstream &log,
+                                           std::stringstream &log,
                                            int indent /* = 0 */)
 {
 
@@ -611,28 +610,28 @@ bool WaveFunctionTester::checkGradients(int lower_iat, int upper_iat,
   } 
 
   bool all_okay = true;
-  string pad(4*indent, ' ');
+  std::string pad(4*indent, ' ');
 
   
   for (int iat=lower_iat; iat<upper_iat; iat++)
   {
     RealType L_err = std::abs(L[iat]-L_fd[iat]);
-    RealType L_rel_denom = max( std::abs(L[iat]), std::abs(L_fd[iat]) );
+    RealType L_rel_denom = std::max( std::abs(L[iat]), std::abs(L_fd[iat]) );
     RealType L_err_rel = std::abs( L_err / L_rel_denom );
     
     if (L_err_rel > rel_tol && L_err > abs_tol)
     {
       if (L_err_rel > rel_tol)
       {
-        log << pad << "Finite difference Laplacian exceeds relative tolerance (" << rel_tol << ") for particle " << iat << endl;
+        log << pad << "Finite difference Laplacian exceeds relative tolerance (" << rel_tol << ") for particle " << iat << std::endl;
       } 
       else
       {
-        log << pad << "Finite difference Laplacian exceeds absolute tolerance (" << abs_tol << ") for particle " << iat << endl;
+        log << pad << "Finite difference Laplacian exceeds absolute tolerance (" << abs_tol << ") for particle " << iat << std::endl;
       }
-      log << pad << "  Analytic    = " << L[iat] << endl;
-      log << pad << "  Finite diff = " << L_fd[iat] << endl;
-      log << pad << "  Error       = " << L_err  << "  Relative Error = " << L_err_rel << endl;
+      log << pad << "  Analytic    = " << L[iat] << std::endl;
+      log << pad << "  Finite diff = " << L_fd[iat] << std::endl;
+      log << pad << "  Error       = " << L_err  << "  Relative Error = " << L_err_rel << std::endl;
       all_okay = false;
     }
 
@@ -640,7 +639,7 @@ bool WaveFunctionTester::checkGradients(int lower_iat, int upper_iat,
     for (int idim=0; idim<OHMMS_DIM; idim++)
     {
       RealType G_err = std::abs(G[iat][idim]-G_fd[iat][idim]);
-      RealType G_rel_denom = max( std::abs(G[iat][idim]), std::abs(G_fd[iat][idim]) );
+      RealType G_rel_denom = std::max( std::abs(G[iat][idim]), std::abs(G_fd[iat][idim]) );
       G_err_rel[idim] = std::abs( G_err / G[iat][idim] );
 
       if (G_err_rel[idim] > rel_tol && G_err > abs_tol)
@@ -653,32 +652,32 @@ bool WaveFunctionTester::checkGradients(int lower_iat, int upper_iat,
         {
           log << pad << "Finite difference gradient exceeds absolute tolerance (" << abs_tol << ") for particle " << iat;
         }
-        log << " component " << idim << endl;
-        log << pad << "  Analytic    = " << G[iat][idim] << endl;
-        log << pad << "  Finite diff = " << G_fd[iat][idim] << endl;
-        log << pad << "  Error       = " << G_err <<  "  Relative Error = " << G_err_rel[idim] << endl;
+        log << " component " << idim << std::endl;
+        log << pad << "  Analytic    = " << G[iat][idim] << std::endl;
+        log << pad << "  Finite diff = " << G_fd[iat][idim] << std::endl;
+        log << pad << "  Error       = " << G_err <<  "  Relative Error = " << G_err_rel[idim] << std::endl;
         all_okay = false;
       }
     }
 
-    fout << pad << "For particle #" << iat << " at " << W.R[iat] << endl;
-    fout << pad << "Gradient      = " << setw(12) << G[iat] << endl;
-    fout << pad << "  Finite diff = " << setw(12) << G_fd[iat] << endl;
-    fout << pad << "  Error       = " << setw(12) << G[iat]-G_fd[iat] << endl;
+    fout << pad << "For particle #" << iat << " at " << W.R[iat] << std::endl;
+    fout << pad << "Gradient      = " << std::setw(12) << G[iat] << std::endl;
+    fout << pad << "  Finite diff = " << std::setw(12) << G_fd[iat] << std::endl;
+    fout << pad << "  Error       = " << std::setw(12) << G[iat]-G_fd[iat] << std::endl;
     fout << pad << "  Relative Error = ";
     for (int idim = 0; idim<OHMMS_DIM; idim++)
     {
         fout << G_err_rel[idim] << " ";
     }
-    fout << endl << endl;
-    fout << pad << "Laplacian     = " << setw(12) << L[iat] << endl;
-    fout << pad << "  Finite diff = " << setw(12) << L_fd[iat] << endl;
-    fout << pad << "  Error       = " << setw(12) << L[iat]-L_fd[iat] << "  Relative Error = " << L_err_rel << endl << endl;
+    fout << std::endl << std::endl;
+    fout << pad << "Laplacian     = " << std::setw(12) << L[iat] << std::endl;
+    fout << pad << "  Finite diff = " << std::setw(12) << L_fd[iat] << std::endl;
+    fout << pad << "  Error       = " << std::setw(12) << L[iat]-L_fd[iat] << "  Relative Error = " << L_err_rel << std::endl << std::endl;
   }
   return all_okay;
 }
 
-bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Walker_t *W1, stringstream &fail_log, bool &ignore)
+bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Walker_t *W1, std::stringstream &fail_log, bool &ignore)
 {
 
   int nat = W.getTotalNum();
@@ -732,7 +731,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
 
   fd.computeFiniteDiff(delta, positions, logpsi_vals, G1, L1);
 
-  fout << "delta = " << delta << endl;
+  fout << "delta = " << delta << std::endl;
 
   // TODO - better choice of tolerance
   // TODO - adjust delta and tolerance based on precision of wavefunction
@@ -754,7 +753,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
 
     RealType logpsi1 = orb->evaluateLog(W, G, L);
 
-    fail_log << "Orbital " << iorb << " " << orb->OrbitalName << " log psi = " << logpsi1 << endl;
+    fail_log << "Orbital " << iorb << " " << orb->OrbitalName << " log psi = " << logpsi1 << std::endl;
 
     FiniteDifference::ValueVector logpsi_vals;
     FiniteDifference::PosChangeVector::iterator it;
@@ -781,7 +780,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
     }
     fd.computeFiniteDiff(delta, positions, logpsi_vals, G1, L1);
 
-    fout << "  Orbital " << iorb << " " << orb->OrbitalName << endl;
+    fout << "  Orbital " << iorb << " " << orb->OrbitalName << std::endl;
 
     if (!checkGradients(0, nat, G, L, G1, L1, fail_log, 1))
     {
@@ -797,7 +796,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
         ParticleSet::ParticleLaplacian_t L(nat), tmpL(nat), L1(nat);
         DiracDeterminantBase *det = sd->Dets[isd];
         RealType logpsi2 = det->evaluateLog(W, G, L);
-        fail_log << "  Slater Determiant " << isd << " (for particles " << det->FirstIndex << " to " << det->LastIndex << ") log psi = " << logpsi2 << endl;
+        fail_log << "  Slater Determiant " << isd << " (for particles " << det->FirstIndex << " to " << det->LastIndex << ") log psi = " << logpsi2 << std::endl;
         // Should really check the condition number on the matrix determinant.
         // For now, just ignore values that too small.
         if (logpsi2 < -40.0)
@@ -834,13 +833,13 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
 #if 0
         // Testing single particle orbitals doesn't work yet - probably something
         // with setup after setting the position.
-        map<string, SPOSetBasePtr>::iterator spo_it = sd->mySPOSet.begin();
+        std::map<std::string, SPOSetBasePtr>::iterator spo_it = sd->mySPOSet.begin();
         for (; spo_it != sd->mySPOSet.end(); spo_it++)
         {
           SPOSetBasePtr spo = spo_it->second;
           fail_log << "      SPO set = " << spo_it->first <<  " name = " << spo->className;
           fail_log << " orbital set size = " << spo->size();
-          fail_log << " basis set size = " << spo->getBasisSetSize() << endl;
+          fail_log << " basis set size = " << spo->getBasisSetSize() << std::endl;
 
           ParticleSet::ParticleGradient_t G(nat), tmpG(nat), G1(nat);
           ParticleSet::ParticleLaplacian_t L(nat), tmpL(nat), L1(nat);
@@ -884,9 +883,9 @@ void WaveFunctionTester::runBasicTest()
   RealType sig2Enloc=0, sig2Drift=0;
 
   int nat = W.getTotalNum();
-  fout << "Numerical gradient and Laplacian test" << endl;
+  fout << "Numerical gradient and Laplacian test" << std::endl;
 
-  stringstream fail_log;
+  std::stringstream fail_log;
   bool all_okay = true;
   int fails = 0;
   int nconfig = 0;
@@ -895,8 +894,8 @@ void WaveFunctionTester::runBasicTest()
   MCWalkerConfiguration::iterator Wit(W.begin());
   for (; Wit != W.end(); Wit++)
   {
-    fout << "Walker # " << nconfig << endl;
-    stringstream fail_log1;
+    fout << "Walker # " << nconfig << std::endl;
+    std::stringstream fail_log1;
     bool ignore = false;
     bool this_okay =  checkGradientAtConfiguration(*Wit, fail_log1, ignore);
     if (ignore)
@@ -905,29 +904,29 @@ void WaveFunctionTester::runBasicTest()
     }
     if (!this_okay && !ignore)
     {
-      fail_log << "Walker # " << nconfig << endl;
+      fail_log << "Walker # " << nconfig << std::endl;
       fail_log << fail_log1.str();
-      fail_log << endl;
+      fail_log << std::endl;
       fails++;
       all_okay = false;
     }
     nconfig++;
   }
 
-  app_log() << "Number of samples = " << nconfig << endl;
-  app_log() << "Number ignored (bad positions) = " << nignore << endl << endl;
-  app_log() << "Number of fails = " << fails << endl << endl;
+  app_log() << "Number of samples = " << nconfig << std::endl;
+  app_log() << "Number ignored (bad positions) = " << nignore << std::endl << std::endl;
+  app_log() << "Number of fails = " << fails << std::endl << std::endl;
 
   if (!all_okay)
   {
-    string fail_name("wf_fails.dat");
-    app_log() << "More detail on finite difference failures in " << fail_name << endl;
-    ofstream eout(fail_name.c_str());
+    std::string fail_name("wf_fails.dat");
+    app_log() << "More detail on finite difference failures in " << fail_name << std::endl;
+    std::ofstream eout(fail_name.c_str());
     eout << fail_log.str();
     eout.close();
   }
 
-  app_log() << "Finite difference test: " << (all_okay?"PASS":"FAIL") << endl;
+  app_log() << "Finite difference test: " << (all_okay?"PASS":"FAIL") << std::endl;
 
   // Compute approximation error vs. delta.
   if (outputDeltaVsError)
@@ -935,27 +934,27 @@ void WaveFunctionTester::runBasicTest()
     double delta = 1.0;
     bool inputOkay = true;
 
-    ofstream dout(DeltaVsError.outputFile.c_str());
+    std::ofstream dout(DeltaVsError.outputFile.c_str());
 
     int iat = DeltaVsError.particleIndex;
     int ig = DeltaVsError.gradientComponentIndex;
 
     if (iat < 0 || iat >= nat)
     {
-      dout << "# Particle index (" << iat << ") is out of range (0 - " << nat-1 << ")" << endl;
+      dout << "# Particle index (" << iat << ") is out of range (0 - " << nat-1 << ")" << std::endl;
       inputOkay = false;
     }
 
     if (ig < 0 || ig >= OHMMS_DIM)
     {
-      dout << "# Gradient component index (" << ig << ") is out of range (0 - " << OHMMS_DIM-1 << ")" << endl;
+      dout << "# Gradient component index (" << ig << ") is out of range (0 - " << OHMMS_DIM-1 << ")" << std::endl;
       inputOkay = false;
     }
 
     if (inputOkay)
     {
-      dout << "# Particle = " << iat << " Gradient component = " << ig << endl;
-      dout << "#" << setw(11) <<  "delta" << setw(14) << "G_err_rel" << setw(14) << "L_err_rel" << endl;
+      dout << "# Particle = " << iat << " Gradient component = " << ig << std::endl;
+      dout << "#" << std::setw(11) <<  "delta" << std::setw(14) << "G_err_rel" << std::setw(14) << "L_err_rel" << std::endl;
       ParticleSet::ParticleGradient_t G(nat), G1(nat);
       ParticleSet::ParticleLaplacian_t L(nat), L1(nat);
       for (int i = 0; i < 20; i++) {
@@ -969,24 +968,24 @@ void WaveFunctionTester::runBasicTest()
         RealType L_err_rel = std::abs( L_err/L[iat] );
         RealType G_err = std::abs(G[iat][ig]-G1[iat][ig]);
         RealType G_err_rel = std::abs(G_err/G[iat][ig]);
-        dout << setw(12) << delta;
-        dout << setw(14) << std::abs(G_err_rel) << setw(14) << std::abs(L_err_rel);
-        dout << endl;
+        dout << std::setw(12) << delta;
+        dout << std::setw(14) << std::abs(G_err_rel) << std::setw(14) << std::abs(L_err_rel);
+        dout << std::endl;
         delta *= std::sqrt(0.1);
       }
     }
     dout.close();
   }
 
-  fout << "Ratio test" << endl;
+  fout << "Ratio test" << std::endl;
 
   RealType tol = 1e-3;
   RealType ratio_tol = 1e-9;
   bool any_ratio_fail = false;
   makeGaussRandom(deltaR);
-  fout << "deltaR:" << endl;
-  fout << deltaR << endl;
-  fout << "Particle       Ratio of Ratios     Computed Ratio   Internal Ratio" << endl;
+  fout << "deltaR:" << std::endl;
+  fout << deltaR << std::endl;
+  fout << "Particle       Ratio of Ratios     Computed Ratio   Internal Ratio" << std::endl;
   //testing ratio alone
   for (int iat=0; iat<nat; iat++)
   {
@@ -1019,22 +1018,22 @@ void WaveFunctionTester::runBasicTest()
       dphase -= 2.0*M_PI;
     ValueType ratDiff=std::complex<OHMMS_PRECISION>(ratioMag*std::cos(dphase),ratioMag*std::sin(dphase)) ;
     // TODO - test complex ratio against a tolerance
-    fout << iat << " ratio " << aratio*std::complex<OHMMS_PRECISION>(std::cos(phaseDiff),std::sin(phaseDiff))/ratDiff << " " << ratDiff << endl;
-    fout << "     ratioMag " << aratio/ratioMag << " " << ratioMag << endl;
-    fout << "     PhaseDiff " << phaseDiff/dphase << " " << phaseDiff  <<" " << dphase << endl;
+    fout << iat << " ratio " << aratio*std::complex<OHMMS_PRECISION>(std::cos(phaseDiff),std::sin(phaseDiff))/ratDiff << " " << ratDiff << std::endl;
+    fout << "     ratioMag " << aratio/ratioMag << " " << ratioMag << std::endl;
+    fout << "     PhaseDiff " << phaseDiff/dphase << " " << phaseDiff  <<" " << dphase << std::endl;
 #else
     RealType ratDiff=std::exp(psi_m-psi_p)*std::cos(phase_m-phase_p);
-    fout << iat << " " << aratio/ratDiff << " " << ratDiff << " " << aratio << endl;
+    fout << iat << " " << aratio/ratDiff << " " << ratDiff << " " << aratio << std::endl;
     if (std::abs(aratio/ratDiff - 1.0) > ratio_tol)
     {
-      app_log() << "Wavefunction ratio exceeds tolerance " << tol << ") for particle " << iat << endl;
-      app_log() << "  Internally computed ratio = " << aratio << endl;
-      app_log() << "  Separately computed ratio = " << ratDiff << endl;
+      app_log() << "Wavefunction ratio exceeds tolerance " << tol << ") for particle " << iat << std::endl;
+      app_log() << "  Internally computed ratio = " << aratio << std::endl;
+      app_log() << "  Separately computed ratio = " << ratDiff << std::endl;
       any_ratio_fail = true;
     }
 #endif
   }
-  app_log() << "Ratio test: " << (any_ratio_fail?"FAIL":"PASS") << endl;
+  app_log() << "Ratio test: " << (any_ratio_fail?"FAIL":"PASS") << std::endl;
 }
 
 void WaveFunctionTester::runRatioTest()
@@ -1063,11 +1062,11 @@ void WaveFunctionTester::runRatioTest()
     (*it)->resetProperty(logpsi,Psi.getPhase(),ene,0.0,0.0,1.0);
     H.saveProperty((*it)->getPropertyBase());
     ++it;
-    app_log() << "  HamTest " << "  Total " <<  ene << endl;
+    app_log() << "  HamTest " << "  Total " <<  ene << std::endl;
     for (int i=0; i<H.sizeOfObservables(); i++)
-      app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << endl;
+      app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << std::endl;
   }
-  fout << "  Update using drift " << endl;
+  fout << "  Update using drift " << std::endl;
   bool pbyp_mode=true;
   for (int iter=0; iter<4; ++iter)
   {
@@ -1075,7 +1074,7 @@ void WaveFunctionTester::runRatioTest()
     it=W.begin();
     while (it != it_end)
     {
-      fout << "\nStart Walker " << iw++ << endl;
+      fout << "\nStart Walker " << iw++ << std::endl;
       Walker_t& thisWalker(**it);
       W.loadWalker(thisWalker,pbyp_mode);
       Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
@@ -1102,8 +1101,8 @@ void WaveFunctionTester::runRatioTest()
           enew = H.evaluatePbyP(W,iat);
         if (ratio > Random())
         {
-          fout << " Accepting a move for " << iat << endl;
-          fout << " Energy after a move " << enew << endl;
+          fout << " Accepting a move for " << iat << std::endl;
+          fout << " Energy after a move " << enew << std::endl;
           W.G += W.dG;
           W.L += W.dL;
           W.acceptMove(iat);
@@ -1114,13 +1113,13 @@ void WaveFunctionTester::runRatioTest()
         }
         else
         {
-          fout << " Rejecting a move for " << iat << endl;
+          fout << " Rejecting a move for " << iat << std::endl;
           W.rejectMove(iat);
           Psi.rejectMove(iat);
           //H.rejectMove(iat);
         }
       }
-      fout << " Energy after pbyp = " << H.getLocalEnergy() << endl;
+      fout << " Energy after pbyp = " << H.getLocalEnergy() << std::endl;
       RealType newlogpsi_up = Psi.evaluateLog(W,w_buffer);
       W.saveWalker(thisWalker);
       RealType ene_up;
@@ -1136,30 +1135,30 @@ void WaveFunctionTester::runRatioTest()
       RealType ene = H.evaluate(W);
       thisWalker.resetProperty(newlogpsi,Psi.getPhase(),ene);
       //thisWalker.resetProperty(std::log(psi),Psi.getPhase(),ene);
-      fout << iter << "  Energy by update = "<< ene_up << " " << ene << " "  << ene_up-ene << endl;
+      fout << iter << "  Energy by update = "<< ene_up << " " << ene << " "  << ene_up-ene << std::endl;
       fout << iter << " Ratio " << ratio_accum*ratio_accum
             << " | " << std::exp(2.0*(newlogpsi-logpsi)) << " "
-            << ratio_accum*ratio_accum/std::exp(2.0*(newlogpsi-logpsi)) << endl
+            << ratio_accum*ratio_accum/std::exp(2.0*(newlogpsi-logpsi)) << std::endl
             << " new log(psi) updated " << newlogpsi_up
             << " new log(psi) calculated " << newlogpsi
-            << " old log(psi) " << logpsi << endl;
-      fout << " Gradients " << endl;
+            << " old log(psi) " << logpsi << std::endl;
+      fout << " Gradients " << std::endl;
       for (int iat=0; iat<nat; iat++)
-        fout << W.G[iat]-Gp[iat] << W.G[iat] << endl; //W.G[iat] << G[iat] << endl;
-      fout << " Laplacians " << endl;
+        fout << W.G[iat]-Gp[iat] << W.G[iat] << std::endl; //W.G[iat] << G[iat] << std::endl;
+      fout << " Laplacians " << std::endl;
       for (int iat=0; iat<nat; iat++)
-        fout << W.L[iat]-Lp[iat] << " " << W.L[iat] << endl;
+        fout << W.L[iat]-Lp[iat] << " " << W.L[iat] << std::endl;
       ++it;
     }
   }
-  fout << "  Update without drift : for VMC useDrift=\"no\"" << endl;
+  fout << "  Update without drift : for VMC useDrift=\"no\"" << std::endl;
   for (int iter=0; iter<4; ++iter)
   {
     it=W.begin();
     int iw=0;
     while (it != it_end)
     {
-      fout << "\nStart Walker " << iw++ << endl;
+      fout << "\nStart Walker " << iw++ << std::endl;
       Walker_t& thisWalker(**it);
       W.loadWalker(thisWalker,pbyp_mode);
       Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
@@ -1181,14 +1180,14 @@ void WaveFunctionTester::runRatioTest()
           RealType prob = ratio*ratio;
           if (prob > Random())
           {
-            fout << " Accepting a move for " << iat << endl;
+            fout << " Accepting a move for " << iat << std::endl;
             W.acceptMove(iat);
             Psi.acceptMove(W,iat);
             ratio_accum *= ratio;
           }
           else
           {
-            fout << " Rejecting a move for " << iat << endl;
+            fout << " Rejecting a move for " << iat << std::endl;
             W.rejectMove(iat);
             Psi.rejectMove(iat);
           }
@@ -1204,18 +1203,18 @@ void WaveFunctionTester::runRatioTest()
       RealType newlogpsi=Psi.evaluateLog(W);
       fout << iter << " Ratio " << ratio_accum*ratio_accum
             << " | " << std::exp(2.0*(newlogpsi-logpsi)) << " "
-            << ratio_accum*ratio_accum/std::exp(2.0*(newlogpsi-logpsi)) << endl
+            << ratio_accum*ratio_accum/std::exp(2.0*(newlogpsi-logpsi)) << std::endl
             << " new log(psi) " << newlogpsi
-            << " old log(psi) " << logpsi << endl;
-      fout << " Gradients " << endl;
+            << " old log(psi) " << logpsi << std::endl;
+      fout << " Gradients " << std::endl;
       for (int iat=0; iat<nat; iat++)
       {
-        fout << W.G[iat]-Gp[iat] << W.G[iat] << endl; //W.G[iat] << G[iat] << endl;
+        fout << W.G[iat]-Gp[iat] << W.G[iat] << std::endl; //W.G[iat] << G[iat] << std::endl;
       }
-      fout << " Laplacians " << endl;
+      fout << " Laplacians " << std::endl;
       for (int iat=0; iat<nat; iat++)
       {
-        fout << W.L[iat]-Lp[iat] << " " << W.L[iat] << endl;
+        fout << W.L[iat]-Lp[iat] << " " << W.L[iat] << std::endl;
       }
       ++it;
     }
@@ -1249,9 +1248,9 @@ void WaveFunctionTester::runRatioTest2()
     //RealType ene = H.evaluate(W);
     (*it)->resetProperty(logpsi,Psi.getPhase(),ene,0.0,0.0,1.0);
     H.saveProperty((*it)->getPropertyBase());
-    app_log() << "  HamTest " << "  Total " <<  ene << endl;
+    app_log() << "  HamTest " << "  Total " <<  ene << std::endl;
     for (int i=0; i<H.sizeOfObservables(); i++)
-      app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << endl;
+      app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << std::endl;
   }
   for (int iter=0; iter<20; ++iter)
   {
@@ -1260,7 +1259,7 @@ void WaveFunctionTester::runRatioTest2()
     //while(it != it_end)
     for (; it != it_end; ++it)
     {
-      fout << "\nStart Walker " << iw++ << endl;
+      fout << "\nStart Walker " << iw++ << std::endl;
       Walker_t& thisWalker(**it);
       W.loadWalker(thisWalker,true);
       Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
@@ -1287,7 +1286,7 @@ void WaveFunctionTester::runRatioTest2()
         RealType ratio1 = Psi.ratio(W,iat);
         //Psi.rejectMove(iat);
         W.rejectMove(iat);
-        fout << "  ratio1 = " << ratio1 << " ration2 = " << ratio2 << endl;
+        fout << "  ratio1 = " << ratio1 << " ration2 = " << ratio2 << std::endl;
       }
     }
   }
@@ -1311,7 +1310,7 @@ inline void randomize(ParticleAttrib<TinyVector<T,D> >& displ, T fac)
 
 void WaveFunctionTester::runRatioV()
 {
-  app_log() << "WaveFunctionTester::runRatioV " << endl;
+  app_log() << "WaveFunctionTester::runRatioV " << std::endl;
   int nat = W.getTotalNum();
   Tau=0.025;
 
@@ -1325,7 +1324,7 @@ void WaveFunctionTester::runRatioV()
   double Rmax=2.0;
 
   ParticleSet::ParticlePos_t sphere(8);
-  vector<RealType> ratio_1(8), ratio_v(8);
+  std::vector<RealType> ratio_1(8), ratio_v(8);
   MCWalkerConfiguration::iterator it(W.begin()), it_end(W.end());
   while (it != it_end)
   {
@@ -1358,12 +1357,12 @@ void WaveFunctionTester::runRatioV()
 
         Psi.evaluateRatios(vp,ratio_v);
 
-        app_log() << "IAT = " << iat << " " << iel << endl;
+        app_log() << "IAT = " << iat << " " << iel << std::endl;
         for(int k=0; k<sphere.size(); ++k)
         {
-          app_log() << ratio_1[k]/ratio_v[k] << " " << ratio_1[k] << endl;
+          app_log() << ratio_1[k]/ratio_v[k] << " " << ratio_1[k] << std::endl;
         }
-        app_log() << endl;
+        app_log() << std::endl;
       }
     }
     ++it;
@@ -1374,10 +1373,10 @@ void WaveFunctionTester::runGradSourceTest()
 {
   ParticleSetPool::PoolType::iterator p;
   for (p=PtclPool.getPool().begin(); p != PtclPool.getPool().end(); p++)
-    app_log() << "ParticelSet = " << p->first << endl;
+    app_log() << "ParticelSet = " << p->first << std::endl;
   // Find source ParticleSet
   ParticleSetPool::PoolType::iterator pit(PtclPool.getPool().find(sourceName));
-  app_log() << pit->first << endl;
+  app_log() << pit->first << std::endl;
   // if(pit == PtclPool.getPool().end())
   //   APP_ABORT("Unknown source \"" + sourceName + "\" WaveFunctionTester.");
   ParticleSet& source = *((*pit).second);
@@ -1402,9 +1401,9 @@ void WaveFunctionTester::runGradSourceTest()
   //ValueType psi = Psi.evaluate(W);
   ValueType logpsi = Psi.evaluateLog(W);
   RealType eloc=H.evaluate(W);
-  app_log() << "  HamTest " << "  Total " <<  eloc << endl;
+  app_log() << "  HamTest " << "  Total " <<  eloc << std::endl;
   for (int i=0; i<H.sizeOfObservables(); i++)
-    app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << endl;
+    app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << std::endl;
   //RealType psi = Psi.evaluateLog(W);
   ParticleSet::ParticleGradient_t G(nat), G1(nat);
   ParticleSet::ParticleLaplacian_t L(nat), L1(nat);
@@ -1459,15 +1458,15 @@ void WaveFunctionTester::runGradSourceTest()
     {
       for (int iat=0; iat<nat; iat++)
       {
-        fout << "For particle #" << iat << " at " << W.R[iat] << endl;
-        fout << "Gradient      = " << setw(12) << grad_grad[dimsrc][iat] << endl
-             << "  Finite diff = " << setw(12) << grad_grad_FD[dimsrc][iat] << endl
-             << "  Error       = " << setw(12)
-             <<  grad_grad_FD[dimsrc][iat] - grad_grad[dimsrc][iat] << endl << endl;
-        fout << "Laplacian     = " << setw(12) << lapl_grad[dimsrc][iat] << endl
-             << "  Finite diff = " << setw(12) << lapl_grad_FD[dimsrc][iat] << endl
-             << "  Error       = " << setw(12)
-             << lapl_grad_FD[dimsrc][iat] - lapl_grad[dimsrc][iat] << endl << endl;
+        fout << "For particle #" << iat << " at " << W.R[iat] << std::endl;
+        fout << "Gradient      = " << std::setw(12) << grad_grad[dimsrc][iat] << std::endl
+             << "  Finite diff = " << std::setw(12) << grad_grad_FD[dimsrc][iat] << std::endl
+             << "  Error       = " << std::setw(12)
+             <<  grad_grad_FD[dimsrc][iat] - grad_grad[dimsrc][iat] << std::endl << std::endl;
+        fout << "Laplacian     = " << std::setw(12) << lapl_grad[dimsrc][iat] << std::endl
+             << "  Finite diff = " << std::setw(12) << lapl_grad_FD[dimsrc][iat] << std::endl
+             << "  Error       = " << std::setw(12)
+             << lapl_grad_FD[dimsrc][iat] - lapl_grad[dimsrc][iat] << std::endl << std::endl;
       }
     }
   }
@@ -1478,10 +1477,10 @@ void WaveFunctionTester::runZeroVarianceTest()
 {
   ParticleSetPool::PoolType::iterator p;
   for (p=PtclPool.getPool().begin(); p != PtclPool.getPool().end(); p++)
-    app_log() << "ParticelSet = " << p->first << endl;
+    app_log() << "ParticelSet = " << p->first << std::endl;
   // Find source ParticleSet
   ParticleSetPool::PoolType::iterator pit(PtclPool.getPool().find(sourceName));
-  app_log() << pit->first << endl;
+  app_log() << pit->first << std::endl;
   // if(pit == PtclPool.getPool().end())
   //   APP_ABORT("Unknown source \"" + sourceName + "\" WaveFunctionTester.");
   ParticleSet& source = *((*pit).second);
@@ -1576,7 +1575,7 @@ WaveFunctionTester::put(xmlNodePtr q)
   xmlNodePtr tcur=q->children;
   while(tcur != NULL)
   {
-    string cname((const char*)(tcur->name));
+    std::string cname((const char*)(tcur->name));
     if(cname == "delta_output")
     {
       outputDeltaVsError = true;
@@ -1590,7 +1589,7 @@ WaveFunctionTester::put(xmlNodePtr q)
 
 void WaveFunctionTester::runDerivTest()
 {
-  app_log()<<" Testing derivatives"<<endl;
+  app_log()<<" Testing derivatives"<< std::endl;
   IndexType nskipped = 0;
   RealType sig2Enloc=0, sig2Drift=0;
   RealType delta = 1e-6;
@@ -1606,33 +1605,33 @@ void WaveFunctionTester::runDerivTest()
   //sample a new walker configuration and copy to ParticleSet::R
   W.R = awalker->R+deltaR;
 
-  fout << "Position " << endl << W.R << endl;
+  fout << "Position " << std::endl << W.R << std::endl;
 
   //W.R += deltaR;
   W.update();
   //ValueType psi = Psi.evaluate(W);
   ValueType logpsi = Psi.evaluateLog(W);
   RealType eloc=H.evaluate(W);
-  app_log() << "  HamTest " << "  Total " <<  eloc << endl;
+  app_log() << "  HamTest " << "  Total " <<  eloc << std::endl;
   for (int i=0; i<H.sizeOfObservables(); i++)
-    app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << endl;
+    app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << std::endl;
   //RealType psi = Psi.evaluateLog(W);
   ParticleSet::ParticleGradient_t G(nat), G1(nat);
   ParticleSet::ParticleLaplacian_t L(nat), L1(nat);
   G = W.G;
   L = W.L;
-  fout<<"Gradients"<<endl;
+  fout<<"Gradients"<< std::endl;
   for (int iat=0; iat<W.R.size(); iat++)
   {
     for (int i=0; i<3 ; i++)
       fout<<W.G[iat][i]<<"  ";
-    fout<<endl;
+    fout<< std::endl;
   }
-  fout<<"Laplaians"<<endl;
+  fout<<"Laplaians"<< std::endl;
   for (int iat=0; iat<W.R.size(); iat++)
   {
     fout<<W.L[iat]<<"  ";
-    fout<<endl;
+    fout<< std::endl;
   }
   opt_variables_type wfVars,wfvar_prime;
 //build optimizables from the wavefunction
@@ -1643,10 +1642,10 @@ void WaveFunctionTester::runDerivTest()
   wfvar_prime= wfVars;
   wfVars.print(fout);
   int Nvars= wfVars.size();
-  vector<RealType> Dsaved(Nvars);
-  vector<RealType> HDsaved(Nvars);
-  vector<RealType> PGradient(Nvars);
-  vector<RealType> HGradient(Nvars);
+  std::vector<RealType> Dsaved(Nvars);
+  std::vector<RealType> HDsaved(Nvars);
+  std::vector<RealType> PGradient(Nvars);
+  std::vector<RealType> HGradient(Nvars);
   Psi.resetParameters(wfVars);
   logpsi = Psi.evaluateLog(W);
 
@@ -1685,12 +1684,12 @@ void WaveFunctionTester::runDerivTest()
     HGradient[i]= (elocPlus-elocMinus)*dh;
   }
   Psi.resetParameters(wfVars);
-  fout<<endl<<"Deriv  Numeric Analytic"<<endl;
+  fout<< std::endl<<"Deriv  Numeric Analytic"<< std::endl;
   for (int i=0; i<Nvars ; i++)
-    fout<<i<<"  "<<PGradient[i]<<"  "<<Dsaved[i] <<"  " <<(PGradient[i]-Dsaved[i]) <<endl;
-  fout<<endl<<"Hderiv  Numeric Analytic"<<endl;
+    fout<<i<<"  "<<PGradient[i]<<"  "<<Dsaved[i] <<"  " <<(PGradient[i]-Dsaved[i]) << std::endl;
+  fout<< std::endl<<"Hderiv  Numeric Analytic"<< std::endl;
   for (int i=0; i<Nvars ; i++)
-    fout<<i <<"  "<<HGradient[i]<<"  "<<HDsaved[i] <<"  " <<(HGradient[i]-HDsaved[i]) <<endl;
+    fout<<i <<"  "<<HGradient[i]<<"  "<<HDsaved[i] <<"  " <<(HGradient[i]-HDsaved[i]) << std::endl;
 }
 
 
@@ -1698,10 +1697,10 @@ void WaveFunctionTester::runDerivNLPPTest()
 {
   char fname[16];
   sprintf(fname,"nlpp.%03d",OHMMS::Controller->rank());
-  ofstream nlout(fname);
+  std::ofstream nlout(fname);
   nlout.precision(15);
 
-  app_log()<<" Testing derivatives"<<endl;
+  app_log()<<" Testing derivatives"<< std::endl;
   IndexType nskipped = 0;
   RealType sig2Enloc=0, sig2Drift=0;
   RealType delta = 1e-6;
@@ -1723,27 +1722,27 @@ void WaveFunctionTester::runDerivNLPPTest()
   ValueType logpsi = Psi.evaluateLog(W);
   RealType eloc=H.evaluate(W);
 
-  app_log() << "  HamTest " << "  Total " <<  eloc << endl;
+  app_log() << "  HamTest " << "  Total " <<  eloc << std::endl;
   for (int i=0; i<H.sizeOfObservables(); i++)
-    app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << endl;
+    app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << std::endl;
 
   //RealType psi = Psi.evaluateLog(W);
   ParticleSet::ParticleGradient_t G(nat), G1(nat);
   ParticleSet::ParticleLaplacian_t L(nat), L1(nat);
   G = W.G;
   L = W.L;
-  nlout<<"Gradients"<<endl;
+  nlout<<"Gradients"<< std::endl;
   for (int iat=0; iat<W.R.size(); iat++)
   {
     for (int i=0; i<3 ; i++)
       nlout<<W.G[iat][i]<<"  ";
-    nlout<<endl;
+    nlout<< std::endl;
   }
-  nlout<<"Laplaians"<<endl;
+  nlout<<"Laplaians"<< std::endl;
   for (int iat=0; iat<W.R.size(); iat++)
   {
     nlout<<W.L[iat]<<"  ";
-    nlout<<endl;
+    nlout<< std::endl;
   }
   opt_variables_type wfVars,wfvar_prime;
 //build optimizables from the wavefunction
@@ -1754,10 +1753,10 @@ void WaveFunctionTester::runDerivNLPPTest()
   wfvar_prime= wfVars;
   wfVars.print(nlout);
   int Nvars= wfVars.size();
-  vector<RealType> Dsaved(Nvars);
-  vector<RealType> HDsaved(Nvars);
-  vector<RealType> PGradient(Nvars);
-  vector<RealType> HGradient(Nvars);
+  std::vector<RealType> Dsaved(Nvars);
+  std::vector<RealType> HDsaved(Nvars);
+  std::vector<RealType> PGradient(Nvars);
+  std::vector<RealType> HGradient(Nvars);
   Psi.resetParameters(wfVars);
 
   logpsi = Psi.evaluateLog(W);
@@ -1765,10 +1764,10 @@ void WaveFunctionTester::runDerivNLPPTest()
   //reuse the sphere for non-local pp
   H.setPrimary(false);
 
-  vector<RealType> ene(4), ene_p(4), ene_m(4);
+  std::vector<RealType> ene(4), ene_p(4), ene_m(4);
   Psi.evaluateDerivatives(W, wfVars, Dsaved, HDsaved);
   ene[0]=H.evaluateValueAndDerivatives(W,wfVars,Dsaved,HDsaved,true);
-  app_log() << "Check the energy " << eloc << " " << H.getLocalEnergy() << " " << ene[0] << endl;
+  app_log() << "Check the energy " << eloc << " " << H.getLocalEnergy() << " " << ene[0] << std::endl;
 
   RealType FiniteDiff = 1e-6;
   QMCTraits::RealType dh=1.0/(2.0*FiniteDiff);
@@ -1804,18 +1803,18 @@ void WaveFunctionTester::runDerivNLPPTest()
     HGradient[i]= (elocPlus-elocMinus)*dh;
   }
 
-  nlout<<endl<<"Deriv  Numeric Analytic"<<endl;
+  nlout<< std::endl<<"Deriv  Numeric Analytic"<< std::endl;
   for (int i=0; i<Nvars ; i++)
-    nlout<<i<<"  "<<PGradient[i]<<"  "<<Dsaved[i] <<"  " <<(PGradient[i]-Dsaved[i]) <<endl;
-  nlout<<endl<<"Hderiv  Numeric Analytic"<<endl;
+    nlout<<i<<"  "<<PGradient[i]<<"  "<<Dsaved[i] <<"  " <<(PGradient[i]-Dsaved[i]) << std::endl;
+  nlout<< std::endl<<"Hderiv  Numeric Analytic"<< std::endl;
   for (int i=0; i<Nvars ; i++)
-    nlout<<i <<"  "<<HGradient[i]<<"  "<<HDsaved[i] <<"  " <<(HGradient[i]-HDsaved[i]) <<endl;
+    nlout<<i <<"  "<<HGradient[i]<<"  "<<HDsaved[i] <<"  " <<(HGradient[i]-HDsaved[i]) << std::endl;
 }
 
 
 void WaveFunctionTester::runDerivCloneTest()
 {
-  app_log()<<" Testing derivatives clone"<<endl;
+  app_log()<<" Testing derivatives clone"<< std::endl;
   RandomGenerator_t* Rng1= new RandomGenerator_t();
   RandomGenerator_t* Rng2= new RandomGenerator_t();
   (*Rng1) = (*Rng2);
@@ -1854,24 +1853,24 @@ void WaveFunctionTester::runDerivCloneTest()
   wfvar_prime.print(fout);
   psi_clone->resetParameters(wfvar_prime);
   Psi.resetParameters(wfVars);
-  vector<RealType> Dsaved(Nvars,0), og_Dsaved(Nvars,0);
-  vector<RealType> HDsaved(Nvars,0), og_HDsaved(Nvars,0);
-  vector<RealType> PGradient(Nvars,0), og_PGradient(Nvars,0);
-  vector<RealType> HGradient(Nvars,0), og_HGradient(Nvars,0);
+  std::vector<RealType> Dsaved(Nvars,0), og_Dsaved(Nvars,0);
+  std::vector<RealType> HDsaved(Nvars,0), og_HDsaved(Nvars,0);
+  std::vector<RealType> PGradient(Nvars,0), og_PGradient(Nvars,0);
+  std::vector<RealType> HGradient(Nvars,0), og_HGradient(Nvars,0);
   ValueType logpsi2 = psi_clone->evaluateLog(*w_clone);
   RealType eloc2  = h_clone->evaluate(*w_clone);
   psi_clone->evaluateDerivatives(*w_clone, wfvar_prime, Dsaved, HDsaved);
   ValueType logpsi1 = Psi.evaluateLog(W);
   RealType eloc1  = H.evaluate(W);
   Psi.evaluateDerivatives(W, wfVars, og_Dsaved, og_HDsaved);
-  app_log() << "log (original) = " << logpsi1 << " energy = " << eloc1 << endl;
+  app_log() << "log (original) = " << logpsi1 << " energy = " << eloc1 << std::endl;
   for (int i=0; i<H.sizeOfObservables(); i++)
-    app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << endl;
-  app_log() << "log (clone)    = " << logpsi2 << " energy = " << eloc2 << endl;
+    app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << std::endl;
+  app_log() << "log (clone)    = " << logpsi2 << " energy = " << eloc2 << std::endl;
   for (int i=0; i<h_clone->sizeOfObservables(); i++)
-    app_log() << "  HamTest " << h_clone->getObservableName(i) << " " << h_clone->getObservable(i) << endl;
-//   app_log()<<" Saved quantities:"<<endl;
-//   for(int i=0;i<Nvars;i++) app_log()<<Dsaved[i]<<" "<<og_Dsaved[i]<<"         "<<HDsaved[i]<<" "<<og_HDsaved[i]<<endl;
+    app_log() << "  HamTest " << h_clone->getObservableName(i) << " " << h_clone->getObservable(i) << std::endl;
+//   app_log()<<" Saved quantities:"<< std::endl;
+//   for(int i=0;i<Nvars;i++) app_log()<<Dsaved[i]<<" "<<og_Dsaved[i]<<"         "<<HDsaved[i]<<" "<<og_HDsaved[i]<< std::endl;
   RealType FiniteDiff = 1e-6;
   QMCTraits::RealType dh=1.0/(2.0*FiniteDiff);
   for (int i=0; i<Nvars ; i++)
@@ -1899,13 +1898,13 @@ void WaveFunctionTester::runDerivCloneTest()
     PGradient[i]= (logpsiPlus-logpsiMinus)*dh;
     HGradient[i]= (elocPlus-elocMinus)*dh;
   }
-  fout<<"CLONE"<<endl;
-  fout<<endl<<"   Deriv  Numeric Analytic"<<endl;
+  fout<<"CLONE"<< std::endl;
+  fout<< std::endl<<"   Deriv  Numeric Analytic"<< std::endl;
   for (int i=0; i<Nvars ; i++)
-    fout<<i<<"  "<<PGradient[i]<<"  "<<Dsaved[i] <<"  " <<(PGradient[i]-Dsaved[i])/PGradient[i] <<endl;
-  fout<<endl<<"   Hderiv  Numeric Analytic"<<endl;
+    fout<<i<<"  "<<PGradient[i]<<"  "<<Dsaved[i] <<"  " <<(PGradient[i]-Dsaved[i])/PGradient[i] << std::endl;
+  fout<< std::endl<<"   Hderiv  Numeric Analytic"<< std::endl;
   for (int i=0; i<Nvars ; i++)
-    fout<<i <<"  "<<HGradient[i]<<"  "<<HDsaved[i] <<"  " <<(HGradient[i]-HDsaved[i])/HGradient[i] <<endl;
+    fout<<i <<"  "<<HGradient[i]<<"  "<<HDsaved[i] <<"  " <<(HGradient[i]-HDsaved[i])/HGradient[i] << std::endl;
   for (int i=0; i<Nvars ; i++)
   {
     for (int j=0; j<Nvars; j++)
@@ -1931,39 +1930,39 @@ void WaveFunctionTester::runDerivCloneTest()
     PGradient[i]= (logpsiPlus-logpsiMinus)*dh;
     HGradient[i]= (elocPlus-elocMinus)*dh;
   }
-  fout<<"ORIGINAL"<<endl;
-  fout<<endl<<"   Deriv  Numeric Analytic"<<endl;
+  fout<<"ORIGINAL"<< std::endl;
+  fout<< std::endl<<"   Deriv  Numeric Analytic"<< std::endl;
   for (int i=0; i<Nvars ; i++)
-    fout<<i<<"  "<<PGradient[i]<<"  "<<Dsaved[i] <<"  " <<(PGradient[i]-Dsaved[i])/PGradient[i] <<endl;
-  fout<<endl<<"   Hderiv  Numeric Analytic"<<endl;
+    fout<<i<<"  "<<PGradient[i]<<"  "<<Dsaved[i] <<"  " <<(PGradient[i]-Dsaved[i])/PGradient[i] << std::endl;
+  fout<< std::endl<<"   Hderiv  Numeric Analytic"<< std::endl;
   for (int i=0; i<Nvars ; i++)
-    fout<<i <<"  "<<HGradient[i]<<"  "<<HDsaved[i] <<"  " <<(HGradient[i]-HDsaved[i])/HGradient[i] <<endl;
+    fout<<i <<"  "<<HGradient[i]<<"  "<<HDsaved[i] <<"  " <<(HGradient[i]-HDsaved[i])/HGradient[i] << std::endl;
 }
 void WaveFunctionTester::runwftricks()
 {
-  vector<OrbitalBase*>& Orbitals=Psi.getOrbitals();
-  app_log()<<" Total of "<<Orbitals.size()<<" orbitals."<<endl;
+  std::vector<OrbitalBase*>& Orbitals=Psi.getOrbitals();
+  app_log()<<" Total of "<<Orbitals.size()<<" orbitals."<< std::endl;
   int SDindex(0);
   for (int i=0; i<Orbitals.size(); i++)
     if ("SlaterDet"==Orbitals[i]->OrbitalName)
       SDindex=i;
   SPOSetBasePtr Phi= dynamic_cast<SlaterDet *>(Orbitals[SDindex])->getPhi();
   int NumOrbitals=Phi->getBasisSetSize();
-  app_log()<<"Basis set size: "<<NumOrbitals<<endl;
-  vector<int> SPONumbers(0,0);
-  vector<int> irrepRotations(0,0);
-  vector<int> Grid(0,0);
+  app_log()<<"Basis set size: "<<NumOrbitals<< std::endl;
+  std::vector<int> SPONumbers(0,0);
+  std::vector<int> irrepRotations(0,0);
+  std::vector<int> Grid(0,0);
   xmlNodePtr kids=myNode->children;
-  string doProj("yes");
-  string doRotate("yes");
-  string sClass("C2V");
+  std::string doProj("yes");
+  std::string doRotate("yes");
+  std::string sClass("C2V");
   ParameterSet aAttrib;
   aAttrib.add(doProj,"projection","string");
   aAttrib.add(doRotate,"rotate","string");
   aAttrib.put(myNode);
   while(kids != NULL)
   {
-    string cname((const char*)(kids->name));
+    std::string cname((const char*)(kids->name));
     if(cname == "orbitals")
     {
       putContent(SPONumbers,kids);
@@ -1982,8 +1981,8 @@ void WaveFunctionTester::runwftricks()
   R_cart.setUnit(PosUnit::CartesianUnit);
   ParticleSet::ParticlePos_t R_unit(1);
   R_unit.setUnit(PosUnit::LatticeUnit);
-//       app_log()<<" My crystals basis set is:"<<endl;
-//       vector<vector<RealType> > BasisMatrix(3, vector<RealType>(3,0.0));
+//       app_log()<<" My crystals basis set is:"<< std::endl;
+//       std::vector<std::vector<RealType> > BasisMatrix(3, std::vector<RealType>(3,0.0));
 //
 //       for (int i=0;i<3;i++)
 //       {
@@ -1992,14 +1991,14 @@ void WaveFunctionTester::runwftricks()
 //         R_unit[0][2]=0;
 //         R_unit[0][i]=1;
 //         W.convert2Cart(R_unit,R_cart);
-//         app_log()<<"basis_"<<i<<":  ("<<R_cart[0][0]<<", "<<R_cart[0][1]<<", "<<R_cart[0][2]<<")"<<endl;
+//         app_log()<<"basis_"<<i<<":  ("<<R_cart[0][0]<<", "<<R_cart[0][1]<<", "<<R_cart[0][2]<<")"<< std::endl;
 //         for (int j=0;j<3;j++) BasisMatrix[j][i]=R_cart[0][j];
 //       }
   int Nrotated(SPONumbers.size());
   app_log()<<" Projected orbitals: ";
   for(int i=0; i<Nrotated; i++)
     app_log()<< SPONumbers[i] <<" ";
-  app_log()<<endl;
+  app_log()<< std::endl;
   //indexing trick
 //       for(int i=0;i<Nrotated;i++) SPONumbers[i]-=1;
   SymmetryBuilder SO;
@@ -2012,20 +2011,20 @@ void WaveFunctionTester::runwftricks()
   RealType overG1(1.0/Grid[1]);
   RealType overG2(1.0/Grid[2]);
   RealType overNpoints=  overG0*overG1*overG2;
-  vector<RealType> NormPhi(Nrotated, 0.0);
+  std::vector<RealType> NormPhi(Nrotated, 0.0);
   int totsymops = symOp.getSymmetriesSize();
   Matrix<RealType> SymmetryOrbitalValues;
   SymmetryOrbitalValues.resize(Nrotated,totsymops);
   int ctabledim = symOp.getClassesSize();
   Matrix<double> projs(Nrotated,ctabledim);
   Matrix<double> orthoProjs(Nrotated,Nrotated);
-  vector<RealType> brokenSymmetryCharacter(totsymops);
+  std::vector<RealType> brokenSymmetryCharacter(totsymops);
   for(int k=0; k<Nrotated; k++)
     for(int l=0; l<totsymops; l++)
       brokenSymmetryCharacter[l] += irrepRotations[k]*symOp.getsymmetryCharacter(l,irrepRotations[k]-1);
 //       app_log()<<"bsc: ";
 //       for(int l=0;l<totsymops;l++) app_log()<<brokenSymmetryCharacter[l]<<" ";
-//       app_log()<<endl;
+//       app_log()<< std::endl;
 //       for(int l=0;l<totsymops;l++) brokenSymmetryCharacter[l]+=0.5;
   if ((doProj=="yes")||(doRotate=="yes"))
   {
@@ -2093,17 +2092,17 @@ void WaveFunctionTester::runwftricks()
       for(int l=0; l<Nrotated; l++)
         orthoProjs(n,l) /= std::sqrt(NormPhi[n]*NormPhi[l]);
 //       if (true){
-//         app_log()<<endl;
+//         app_log()<< std::endl;
 //         for(int n=0;n<Nrotated;n++) {
 //           for(int l=0;l<totsymops;l++) app_log()<<SymmetryOrbitalValues(n,l)<<" ";
-//           app_log()<<endl;
+//           app_log()<< std::endl;
 //         }
-//       app_log()<<endl;
+//       app_log()<< std::endl;
 //       }
     for(int n=0; n<Nrotated; n++)
     {
       if (false)
-        app_log()<<" orbital #"<<SPONumbers[n]<<endl;
+        app_log()<<" orbital #"<<SPONumbers[n]<< std::endl;
       for(int i=0; i<ctabledim; i++)
       {
         double proj(0);
@@ -2114,36 +2113,36 @@ void WaveFunctionTester::runwftricks()
         projs(n,i)=proj<1e-4?0:proj;
       }
       if (false)
-        app_log()<<endl;
+        app_log()<< std::endl;
     }
     if (true)
     {
-      app_log()<<"Printing Projection Matrix"<<endl;
+      app_log()<<"Printing Projection Matrix"<< std::endl;
       for(int n=0; n<Nrotated; n++)
       {
         for(int l=0; l<ctabledim; l++)
           app_log()<<projs(n,l)<<" ";
-        app_log()<<endl;
+        app_log()<< std::endl;
       }
-      app_log()<<endl;
+      app_log()<< std::endl;
     }
     if (true)
     {
-      app_log()<<"Printing Coefficient Matrix"<<endl;
+      app_log()<<"Printing Coefficient Matrix"<< std::endl;
       for(int n=0; n<Nrotated; n++)
       {
         for(int l=0; l<ctabledim; l++)
           app_log()<<std::sqrt(projs(n,l))<<" ";
-        app_log()<<endl;
+        app_log()<< std::endl;
       }
-      app_log()<<endl;
+      app_log()<< std::endl;
     }
     if (doRotate=="yes")
     {
-//         app_log()<<"Printing Broken Symmetry Projection Matrix"<<endl;
+//         app_log()<<"Printing Broken Symmetry Projection Matrix"<< std::endl;
 //           for(int n=0;n<Nrotated;n++) {
 //             for(int l=0;l<Nrotated;l++) app_log()<<orthoProjs(n,l)<<" ";
-//             app_log()<<endl;
+//             app_log()<< std::endl;
 //           }
       char JOBU('A');
       char JOBVT('A');
@@ -2152,23 +2151,23 @@ void WaveFunctionTester::runwftricks()
       Matrix<double> U(vdim,vdim);
       Matrix<double> VT(vdim,vdim);
       int lwork=8*Nrotated;
-      vector<double> work(lwork,0);
+      std::vector<double> work(lwork,0);
       int info(0);
       dgesvd(&JOBU, &JOBVT, &vdim, &vdim,
              orthoProjs.data(), &vdim, Sigma.data(), U.data(),
              &vdim, VT.data(), &vdim, &(work[0]),
              &lwork, &info);
-      app_log()<<"Printing Rotation Matrix"<<endl;
+      app_log()<<"Printing Rotation Matrix"<< std::endl;
       for(int n=0; n<vdim; n++)
       {
         for(int l=0; l<vdim; l++)
           app_log()<<VT(l,n)<<" ";
-        app_log()<<endl;
+        app_log()<< std::endl;
       }
-      app_log()<<endl<<"Printing Eigenvalues"<<endl;
+      app_log()<< std::endl<<"Printing Eigenvalues"<< std::endl;
       for(int n=0; n<vdim; n++)
         app_log()<<Sigma[n]<<" ";
-      app_log()<<endl;
+      app_log()<< std::endl;
     }
   }
 }
@@ -2176,14 +2175,14 @@ void WaveFunctionTester::runwftricks()
 void  WaveFunctionTester::runNodePlot()
 {
   xmlNodePtr kids=myNode->children;
-  string doEnergy("no");
+  std::string doEnergy("no");
   ParameterSet aAttrib;
   aAttrib.add(doEnergy,"energy","string");
   aAttrib.put(myNode);
-  vector<int> Grid;
+  std::vector<int> Grid;
   while(kids != NULL)
   {
-    string cname((const char*)(kids->name));
+    std::string cname((const char*)(kids->name));
     if(cname=="grid")
       putContent(Grid,kids);
     kids=kids->next;
@@ -2200,23 +2199,23 @@ void  WaveFunctionTester::runNodePlot()
   assert(Grid.size()==2);
   char fname[16];
 //       sprintf(fname,"loc.xy");
-//       ofstream e_out(fname);
+//       std::ofstream e_out(fname);
 //       e_out.precision(6);
-//       e_out<<"#e  x  y"<<endl;
+//       e_out<<"#e  x  y"<< std::endl;
   int nat = W.getTotalNum();
   int nup = W.getTotalNum()/2;//std::max(W.getSpeciesSet().findSpecies("u"),W.getSpeciesSet().findSpecies("d"));
 //       for(int iat(0);iat<nat;iat++)
-//         e_out<<iat<<" "<<W[0]->R[iat][0]<<" "<<W[0]->R[iat][1]<<endl;
+//         e_out<<iat<<" "<<W[0]->R[iat][0]<<" "<<W[0]->R[iat][1]<< std::endl;
   RealType overG0(1.0/Grid[0]);
   RealType overG1(1.0/Grid[1]);
   for(int iat(0); iat<nat; iat++)
   {
     W.update();
-    stringstream fn;
+    std::stringstream fn;
     fn<<RootName.c_str()<<".ratios."<<iat<<".py";
-    ofstream plot_out(fn.str().c_str());
+    std::ofstream plot_out(fn.str().c_str());
     plot_out.precision(6);
-//         plot_out<<"#e  x  y  ratio"<<endl;
+//         plot_out<<"#e  x  y  ratio"<< std::endl;
     R_unit[0][0]=1.0;
     R_unit[0][1]=1.0;
     W.convert2Cart(R_unit,R_cart);
@@ -2227,10 +2226,10 @@ void  WaveFunctionTester::runNodePlot()
     plot_out<<"import matplotlib.cm as cm\n";
     plot_out<<"import matplotlib.mlab as mlab\n";
     plot_out<<"import matplotlib.pyplot as plt\n";
-    plot_out<<endl;
+    plot_out<< std::endl;
     plot_out<<"matplotlib.rcParams['xtick.direction'] = 'out'\n";
     plot_out<<"matplotlib.rcParams['ytick.direction'] = 'out'\n";
-    plot_out<<endl;
+    plot_out<< std::endl;
     plot_out<<"x = np.arange(0, "<<xmax<<", "<< xmax*overG0 <<")\n";
     plot_out<<"y = np.arange(0, "<<ymax<<", "<< ymax*overG1 <<")\n";
     plot_out<<"X, Y = np.meshgrid(x, y)\n";
@@ -2319,7 +2318,7 @@ void  WaveFunctionTester::runNodePlot()
 //         RealType overG2(1.0/Grid[2]);
 //         int iat(0);
 //         W.update();
-//         plot_out<<"#e  x  y  z  ratio"<<endl;
+//         plot_out<<"#e  x  y  z  ratio"<< std::endl;
 //
 //         for(int i=0;i<Grid[0];i++)
 //           for(int j=0;j<Grid[1];j++)
@@ -2335,7 +2334,7 @@ void  WaveFunctionTester::runNodePlot()
 //             RealType aratio = Psi.ratio(W,iat);
 //             W.rejectMove(iat);
 //             Psi.rejectMove(iat);
-//             plot_out<<iat<<" "<<R_cart[iat][0]<<" "<<R_cart[iat][1]<<" "<<R_cart[iat][2]<<" "<<aratio<<" "<<endl;
+//             plot_out<<iat<<" "<<R_cart[iat][0]<<" "<<R_cart[iat][1]<<" "<<R_cart[iat][2]<<" "<<aratio<<" "<< std::endl;
 //           }
 #endif
 }

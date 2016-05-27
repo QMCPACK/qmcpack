@@ -72,7 +72,7 @@ inline void transpose_b(int nx_th, int  ny, const T* restrict in
 }
 
 template<typename MT>
-inline void transpose_block(const vector<MT*>& in, MT& out, int ip)
+inline void transpose_block(const std::vector<MT*>& in, MT& out, int ip)
 {
   int npy=out.rows();
   for(int jp=0; jp<in.size(); ++jp)
@@ -90,7 +90,7 @@ inline void transpose_block(const vector<MT*>& in, MT& out, int ip)
 }
 
 template<typename MT>
-inline void transpose_block(const vector<MT*>& in, MT& out
+inline void transpose_block(const std::vector<MT*>& in, MT& out
                             , int ip, int np, int ivar, int howmany)
 {
   int npy=out.rows();
@@ -270,7 +270,7 @@ struct Transpose2D<std::complex<float>,ESSL_TRANSPOSER>
 #endif
 
 //template<typename MT>
-//inline void transpose(const vector<MT*>& in, MT& out, int ip)
+//inline void transpose(const std::vector<MT*>& in, MT& out, int ip)
 //{
 //  const int np=in.size();
 //  for(int i=0, ii=ip*out.rows(); i<out.rows(); ++i,++ii)

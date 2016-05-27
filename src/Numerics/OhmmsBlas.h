@@ -50,10 +50,10 @@ struct BLAS
   static const float szero;
   static const double done;
   static const double dzero;
-  static const complex<float> cone;
-  static const complex<float> czero;
-  static const complex<double> zone;
-  static const complex<double> zzero;
+  static const std::complex<float> cone;
+  static const std::complex<float> czero;
+  static const std::complex<double> zone;
+  static const std::complex<double> zzero;
 
   inline static
   void axpy(int n, double x, const double* a, double* b)
@@ -80,8 +80,8 @@ struct BLAS
   }
 
   inline static
-  void axpy(int n, const complex<double> x, const complex<double>* a, int incx,
-            complex<double>* b, int incy)
+  void axpy(int n, const std::complex<double> x, const std::complex<double>* a, int incx,
+            std::complex<double>* b, int incy)
   {
     zaxpy(n, x, a, incx, b, incy);
   }
@@ -93,7 +93,7 @@ struct BLAS
   }
 
   inline static
-  double norm2(int n, const complex<double>* a, int incx =1)
+  double norm2(int n, const std::complex<double>* a, int incx =1)
   {
     return dznrm2(n, a, incx);
   }
@@ -153,9 +153,9 @@ struct BLAS
 
   inline static
   void gemv(char trans_in, int n, int m
-            , const complex<double>& alpha, const complex<double>* restrict amat, int lda
-            , const complex<double>* restrict x, int incx, const complex<double>& beta
-            , complex<double>* y, int incy)
+            , const std::complex<double>& alpha, const std::complex<double>* restrict amat, int lda
+            , const std::complex<double>* restrict x, int incx, const std::complex<double>& beta
+            , std::complex<double>* y, int incy)
   {
     zgemv(trans_in, n, m, alpha, amat, lda, x, incx, beta, y, incy);
   }
@@ -169,9 +169,9 @@ struct BLAS
   }
 
   inline static
-  void gemm (char Atrans, char Btrans, int M, int N, int K, complex<double> alpha,
-             const complex<double> *A, int lda, const complex<double>* restrict B, int ldb,
-             complex<double> beta, complex<double>* restrict C, int ldc)
+  void gemm (char Atrans, char Btrans, int M, int N, int K, std::complex<double> alpha,
+             const std::complex<double> *A, int lda, const std::complex<double>* restrict B, int ldb,
+             std::complex<double> beta, std::complex<double>* restrict C, int ldc)
   {
     zgemm (Atrans, Btrans, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc);
   }
@@ -185,9 +185,9 @@ struct BLAS
 //   }
 
 //   inline static
-//   void symv(char uplo, int n, const complex<double> alpha,
-//             complex<double>* a, int lda, complex<double>* x, const int incx,
-//             const complex<double> beta, complex<double>* y, const int incy) {
+//   void symv(char uplo, int n, const std::complex<double> alpha,
+//             std::complex<double>* a, int lda, std::complex<double>* x, const int incx,
+//             const std::complex<double> beta, std::complex<double>* y, const int incy) {
 //     zsymv(&uplo,&n,&alpha,a,&lda,x,&incx,&beta,y,&incy);
 //   }
 
@@ -199,9 +199,9 @@ struct BLAS
 //   }
 
 //   inline static
-//   void symv(const char uplo, int n, const complex<float> alpha,
-//             complex<float>* a, int lda, complex<float>* x, const int incx,
-//             const complex<float> beta, complex<float>* y, const int incy) {
+//   void symv(const char uplo, int n, const std::complex<float> alpha,
+//             std::complex<float>* a, int lda, std::complex<float>* x, const int incx,
+//             const std::complex<float> beta, std::complex<float>* y, const int incy) {
 //     csymv(&uplo,&n,&alpha,a,&lda,x,&incx,&beta,y,&incy);
 //   }
 
@@ -226,24 +226,24 @@ struct BLAS
 //   }
 
 //   inline static void
-//   symv(int n, complex<double> alpha, complex<double>* a, complex<double>* x,
-//        complex<double>* y) {
+//   symv(int n, std::complex<double> alpha, std::complex<double>* a, std::complex<double>* x,
+//        std::complex<double>* y) {
 //     zsymv(&UPLO,&n,&alpha,a,&n,x,&INCX,&zzero,y,&INCY);
 //   }
 
 //   inline static
-//   void symv(int n, complex<double>* a, complex<double>* x, complex<double>* y) {
+//   void symv(int n, std::complex<double>* a, std::complex<double>* x, std::complex<double>* y) {
 //     zsymv(&UPLO,&n,&zone,a,&n,x,&INCX,&zzero,y,&INCY);
 //   }
 
 //   inline static void
-//   symv(int n, complex<float> alpha, complex<float>* a, complex<float>* x,
-//        complex<float>* y) {
+//   symv(int n, std::complex<float> alpha, std::complex<float>* a, std::complex<float>* x,
+//        std::complex<float>* y) {
 //     csymv(&UPLO,&n,&alpha,a,&n,x,&INCX,&czero,y,&INCY);
 //   }
 
 //   inline static
-//   void symv(int n, complex<float>* a, complex<float>* x, complex<float>* y) {
+//   void symv(int n, std::complex<float>* a, std::complex<float>* x, std::complex<float>* y) {
 //     csymv(&UPLO,&n,&cone,a,&n,x,&INCX,&czero,y,&INCY);
 //   }
 
@@ -255,7 +255,7 @@ struct BLAS
   }
 
   inline static
-  complex<double> dot(int n, const complex<double>* restrict a, const int incx, const complex<double>* restrict b, const int incy )
+  std::complex<double> dot(int n, const std::complex<double>* restrict a, const int incx, const std::complex<double>* restrict b, const int incy )
   {
     return zdotu(n,a,incx,b,incy);
   }
@@ -272,9 +272,9 @@ struct BLAS
 
   template<typename T>
   inline static
-  complex<T> dot(int n, const complex<T>* restrict a, const T* restrict b)
+  std::complex<T> dot(int n, const std::complex<T>* restrict a, const T* restrict b)
   {
-    complex<T> res=0.0;
+    std::complex<T> res=0.0;
     for(int i=0; i<n; ++i)
       res += a[i]*b[i];
     return res;
@@ -282,9 +282,9 @@ struct BLAS
 
   template<typename T>
   inline static
-  complex<T> dot(int n, const complex<T>* restrict a, const complex<T>* restrict b)
+  std::complex<T> dot(int n, const std::complex<T>* restrict a, const std::complex<T>* restrict b)
   {
-    complex<T> res=0.0;
+    std::complex<T> res=0.0;
     for(int i=0; i<n; ++i)
       res += a[i]*b[i];
     return res;
@@ -293,9 +293,9 @@ struct BLAS
 
   template<typename T>
   inline static
-  complex<T> dot(int n, const T* restrict a, const complex<T>* restrict b)
+  std::complex<T> dot(int n, const T* restrict a, const std::complex<T>* restrict b)
   {
-    complex<T> res=0.0;
+    std::complex<T> res=0.0;
     for(int i=0; i<n; ++i)
       res += a[i]*b[i];
     return res;
@@ -322,7 +322,7 @@ struct BLAS
 
   template<typename T>
   inline static
-  void copy(int n, const complex<T>* restrict a, T* restrict b)
+  void copy(int n, const std::complex<T>* restrict a, T* restrict b)
   {
     for(int i=0; i<n; ++i)
       b[i]=a[i].real();
@@ -330,7 +330,7 @@ struct BLAS
 
   template<typename T>
   inline static
-  void copy(int n, const T* restrict a, complex<T>* restrict b)
+  void copy(int n, const T* restrict a, std::complex<T>* restrict b)
   {
     for(int i=0; i<n; ++i)
       b[i]=a[i];
@@ -352,13 +352,13 @@ struct BLAS
     }
 
     inline static
-    void copy(int n, const complex<double>* restrict a, complex<double>* restrict b)
+    void copy(int n, const std::complex<double>* restrict a, std::complex<double>* restrict b)
     {
       zcopy(n,a,INCX,b,INCY);
     }
 
     inline static
-    void copy(int n, const complex<double>* restrict a, int ia, complex<double>* restrict b, int ib) {
+    void copy(int n, const std::complex<double>* restrict a, int ia, std::complex<double>* restrict b, int ib) {
       zcopy(n,a,ia,b,ib);
     }
   */
@@ -373,10 +373,10 @@ struct BLAS
   }
 
   inline static
-  void ger(int m, int n, const complex<double>& alpha
-           , const complex<double>* x
-           , int incx, const complex<double>* y, int incy
-           , complex<double>* a, int lda)
+  void ger(int m, int n, const std::complex<double>& alpha
+           , const std::complex<double>* x
+           , int incx, const std::complex<double>* y, int incy
+           , std::complex<double>* a, int lda)
   {
     zgeru(&m,&n,&alpha,x,&incx,y,&incy,a,&lda);
   }

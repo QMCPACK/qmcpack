@@ -81,16 +81,16 @@ struct SphericalOrbitalSet
   SphericalHarmonics_t Ylm;
   ///index of the corresponding real Spherical Harmonic with quantum
   ///numbers \f$ (l,m) \f$
-  vector<int> LM;
+  std::vector<int> LM;
   /**index of the corresponding radial orbital with quantum
     numbers \f$ (n,l) \f$ */
-  vector<int> NL;
+  std::vector<int> NL;
   ///container for the radial grid
-  vector<GT*> Grids;
+  std::vector<GT*> Grids;
   ///container for the radial orbitals
-  vector<ROT*> Rnl;
+  std::vector<ROT*> Rnl;
   ///container for the quantum-numbers
-  vector<QuantumNumberType> RnlID;
+  std::vector<QuantumNumberType> RnlID;
 
   ///the constructor
   explicit SphericalOrbitalSet(int lmax, bool addsignforM=false): Ylm(lmax,addsignforM) { }
@@ -150,13 +150,13 @@ struct SphericalOrbitalSet
     RealType rinv(myTable->rinv(nn));
     PosType  dr(myTable->dr(nn));
     Ylm.evaluateAll(dr);
-    typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
+    typename std::vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
     while(rit != rit_end)
     {
       (*rit)->evaluateAll(r,rinv);
       ++rit;
     }
-    vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
+    std::vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
     while(nlit != nlit_end)
       //for(int ib=0; ib<NL.size(); ib++, offset++) {
     {
@@ -185,13 +185,13 @@ struct SphericalOrbitalSet
     RealType rinv(myTable->Temp[source].rinv1);
     PosType  dr(myTable->Temp[source].dr1);
     Ylm.evaluate(dr);
-    typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
+    typename std::vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
     while(rit != rit_end)
     {
       (*rit)->evaluate(r,rinv);
       ++rit;
     }
-    vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
+    std::vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
     while(nlit != nlit_end)
       //for(int ib=0; ib<NL.size(); ib++, offset++) {
     {
@@ -207,13 +207,13 @@ struct SphericalOrbitalSet
     RealType rinv(myTable->Temp[source].rinv1);
     PosType  dr(myTable->Temp[source].dr1);
     Ylm.evaluateAll(dr);
-    typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
+    typename std::vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
     while(rit != rit_end)
     {
       (*rit)->evaluateAll(r,rinv);
       ++rit;
     }
-    vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
+    std::vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
     while(nlit != nlit_end)
       //for(int ib=0; ib<NL.size(); ib++, offset++) {
     {
@@ -286,14 +286,14 @@ struct SphericalOrbitalSet
       RealType rinv(myTable->rinv(nn));
       PosType dr(myTable->dr(nn));
       Ylm.evaluateAll(dr);
-      typename vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
+      typename std::vector<ROT*>::iterator rit(Rnl.begin()), rit_end(Rnl.end());
       while(rit != rit_end)
       {
         (*rit)->evaluateAll(r,rinv);
         ++rit;
       }
       int bindex(offset);
-      vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
+      std::vector<int>::iterator nlit(NL.begin()),nlit_end(NL.end()),lmit(LM.begin());
       while(nlit != nlit_end)
         //for(int ib=0; ib<NL.size(); ib++, offset++) {
       {

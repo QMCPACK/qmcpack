@@ -28,9 +28,9 @@ struct PadeConstraints: public OrbitalConstraintsBase
   typedef PadeFunctor<RealType> FuncType;
   bool IgnoreSpin;
   RealType B;
-  string ID_B;
+  std::string ID_B;
   xmlNodePtr node_B;
-  vector<FuncType*> FuncList;
+  std::vector<FuncType*> FuncList;
 
   ~PadeConstraints();
 
@@ -50,9 +50,9 @@ struct ScaledPadeConstraints: public OrbitalConstraintsBase
   bool IgnoreSpin;
   RealType B;
   RealType C;
-  string ID_B;
-  string ID_C;
-  vector<FuncType*> FuncList;
+  std::string ID_B;
+  std::string ID_C;
+  std::vector<FuncType*> FuncList;
 
   ScaledPadeConstraints(ParticleSet& p, TrialWaveFunction& psi, bool nospin=true);
 
@@ -73,9 +73,9 @@ struct ScaledPadeConstraints: public OrbitalConstraintsBase
 //  typedef NumericalJastrow<RealType> FuncType;
 //  bool IgnoreSpin;
 //  RealType B;
-//  string ID;
-//  vector<InFuncType*> InFuncList;
-//  vector<FuncType*> FuncList;
+//  std::string ID;
+//  std::vector<InFuncType*> InFuncList;
+//  std::vector<FuncType*> FuncList;
 
 //  ~PadeOnGridConstraints();
 //  PadeOnGridConstraints(bool nospin=true):IgnoreSpin(nospin) {}

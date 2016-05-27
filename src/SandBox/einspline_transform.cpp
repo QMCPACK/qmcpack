@@ -27,7 +27,7 @@ inline bool inbox(const PT& pos)
 
 template<typename ENGT>
 void SplineTest<ENGT>
-::test(vector<TinyVector<typename SplineTest<ENGT>::real_type,3> >& coord)
+::test(std::vector<TinyVector<typename SplineTest<ENGT>::real_type,3> >& coord)
 {
   //read data from a file
   int ngx=160;
@@ -63,9 +63,9 @@ void SplineTest<ENGT>
   gconv.create(newspline.spliner,dense,lower,upper,num_splines);
   for(int i=0; i<num_splines; ++i)
     einspline::set(newspline.spliner,i,dense,gconv.Offset,gconv.N);
-  cout << "Original dense grid " << endl;
+  std::cout << "Original dense grid " << std::endl;
   print_spliner(einspliner.spliner);
-  cout << "Truncated dense grid " << endl;
+  std::cout << "Truncated dense grid " << std::endl;
   print_spliner(newspline.spliner);
   Vector<value_type> psi(num_splines);
   Vector<real_type> psi_c(num_splines);
@@ -94,19 +94,19 @@ void SplineTest<ENGT>
     dv(diff(v_dense,v_mixed));
     if(verbose)
     {
-      cout << "At " << coord[i] << endl;
-      cout << "Dense Grid " << v_dense
+      std::cout << "At " << coord[i] << std::endl;
+      std::cout << "Dense Grid " << v_dense
            <<  "\nMixed Grid " << v_mixed
-           << endl << endl;
+           << std::endl << std::endl;
     }
   }
-  app_log() << "Number of coords in the box       " << n_in << endl;
-  app_log() << "Number of coords outside the box  " << n_out << endl;
+  app_log() << "Number of coords in the box       " << n_in << std::endl;
+  app_log() << "Number of coords outside the box  " << n_out << std::endl;
   app_log() << "Average difference org-mixed grid " << dv.mean()
             << "\n\tInside  " << din.mean()
             << "\n\tOutside " << dout.mean()
             << "\n\tmulti-spline:single-spline ="  << ds.mean()
-            << endl;
+            << std::endl;
 }
 }
 int main(int argc, char** argv)
@@ -118,7 +118,7 @@ int main(int argc, char** argv)
   Random.init(0,1,11);
   SplineTestBase param(argc,argv);
   typedef TinyVector<double,3> pos_type;
-  vector<pos_type> coord(param.nsamples);
+  std::vector<pos_type> coord(param.nsamples);
   for(int i=0; i<coord.size(); ++i)
     coord[i]=pos_type(Random(),Random(),Random());
 //  for(int i=0; i<coord.size(); ++i)
@@ -127,10 +127,10 @@ int main(int argc, char** argv)
 //        , (upper[2]-lower[2])*Random()+lower[2]
 //        );
 //
-  vector<TinyVector<double,3> > coord_s(coord.size());
+  std::vector<TinyVector<double,3> > coord_s(coord.size());
   for(int i=0; i<coord.size(); ++i)
     convert(coord[i],coord_s[i]);
-  cout << "\nTesting einspline transformation" << endl;
+  std::cout << "\nTesting einspline transformation" << std::endl;
   SplineTest<multi_UBspline_3d_d> test_d(param);
   test_d.test(coord);
   return 0;

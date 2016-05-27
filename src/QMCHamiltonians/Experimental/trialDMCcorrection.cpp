@@ -38,7 +38,7 @@ bool TrialDMCCorrection::putSpecial(xmlNodePtr cur, QMCHamiltonian& h, ParticleS
   attrib.add(blockSeries,"max");
   attrib.add(blockFreq,"frequency");
   attrib.put(cur);
-  //       app_log()<<"  Forward walking block size is "<< blockT<<"*Tau"<<endl;
+  //       app_log()<<"  Forward walking block size is "<< blockT<<"*Tau"<< std::endl;
   //       P.phLength=0;
   bool FIRST=true;
   CountIndex = P.addPropertyHistory(1);
@@ -46,11 +46,11 @@ bool TrialDMCCorrection::putSpecial(xmlNodePtr cur, QMCHamiltonian& h, ParticleS
   xmlNodePtr tcur = cur->children;
   while(tcur != NULL)
   {
-    string cname((const char*)tcur->name);
-    //         app_log()<<cname<<endl;
+    std::string cname((const char*)tcur->name);
+    //         app_log()<<cname<< std::endl;
     if(cname == "Observable")
     {
-      string tagName("none");
+      std::string tagName("none");
       int Hindex(-100);
 //         int blockSeries(0);
 //         int blockFreq(0);
@@ -73,22 +73,22 @@ bool TrialDMCCorrection::putSpecial(xmlNodePtr cur, QMCHamiltonian& h, ParticleS
           app_log()<<"Not a valid H element("<<Hindex<<") Valid names are:";
           for (int jk=0; jk<h.sizeOfObservables(); jk++)
             app_log()<<"  "<<h.getObservableName(jk);
-          app_log()<<endl;
+          app_log()<< std::endl;
           exit(-1);
         }
       /*
          if ((Hindex==-100)){
-         app_log()<<" Hamiltonian Element "<<tagName<<" does not exist!! "<<Hindex<<endl;
+         app_log()<<" Hamiltonian Element "<<tagName<<" does not exist!! "<<Hindex<< std::endl;
          assert(Hindex>=0);
          }*/
       Names.push_back(tagName);
       Hindices.push_back( Hindex);
-      app_log()<<" Hamiltonian Element "<<tagName<<" was found at "<< Hindex<<endl;
+      app_log()<<" Hamiltonian Element "<<tagName<<" was found at "<< Hindex<< std::endl;
       int numT=blockSeries/blockFreq ;
       nObservables+=1;
       nValues+=numT;
-      app_log()<<"   "<<numT<<" values will be calculated every "<<blockFreq<<"*tau H^-1"<<endl;
-      vector<int> pms(3);
+      app_log()<<"   "<<numT<<" values will be calculated every "<<blockFreq<<"*tau H^-1"<< std::endl;
+      std::vector<int> pms(3);
       pms[0]=blockFreq;
       pms[1]=numT;
       pms[2]=blockSeries+2;
@@ -99,12 +99,12 @@ bool TrialDMCCorrection::putSpecial(xmlNodePtr cur, QMCHamiltonian& h, ParticleS
       P.addPropertyHistory(numT);
       // number of times accumulated. For resum
       Pindices.push_back(pindx);
-//         app_log()<<"pindex "<<pindx<<endl;
+//         app_log()<<"pindex "<<pindx<< std::endl;
     }
     tcur = tcur->next;
   }
-  app_log()<<"Total number of observables calculated:"<<nObservables<<endl;
-  app_log()<<"Total number of values calculated:"<<nValues<<endl;
+  app_log()<<"Total number of observables calculated:"<<nObservables<< std::endl;
+  app_log()<<"Total number of values calculated:"<<nValues<< std::endl;
   Values.resize(nValues,0.0);
   EValues.resize(nValues,0.0);
   FWValues.resize(nValues,0.0);
@@ -145,7 +145,7 @@ void TrialDMCCorrection::addObservables(PropertySetType& plist, BufferType& coll
       sstr << "T_" << Names[i] << "_" << (j+1)*walkerLengths[i][0];
       int id= plist.add(sstr.str());
 //         myIndex=std::min(myIndex,id);
-      //app_log()<<"Observables named "<<sstr.str()<< " at " << id <<endl;
+      //app_log()<<"Observables named "<<sstr.str()<< " at " << id << std::endl;
     }
   for(int i=0; i<nObservables; ++i)
     for(int j=0; j<walkerLengths[i][1]; ++j,++nc)
@@ -154,7 +154,7 @@ void TrialDMCCorrection::addObservables(PropertySetType& plist, BufferType& coll
       sstr << "ET_" << Names[i] << "_" << (j+1)*walkerLengths[i][0];
       int id=plist.add(sstr.str());
 //         myIndex=std::min(myIndex,id);
-      //app_log()<<"Observables named "<<sstr.str()<< " at " << id <<endl;
+      //app_log()<<"Observables named "<<sstr.str()<< " at " << id << std::endl;
     }
   for(int i=0; i<nObservables; ++i)
     for(int j=0; j<walkerLengths[i][1]; ++j,++nc)
@@ -163,9 +163,9 @@ void TrialDMCCorrection::addObservables(PropertySetType& plist, BufferType& coll
       sstr << "FW_" << Names[i] << "_" << (j+1)*walkerLengths[i][0];
       int id=plist.add(sstr.str());
 //         myIndex=std::min(myIndex,id);
-      //app_log()<<"Observables named "<<sstr.str()<< " at " << id <<endl;
+      //app_log()<<"Observables named "<<sstr.str()<< " at " << id << std::endl;
     }
-  app_log()<<"TrialDMCCorrection::Observables [" << myIndex << ", " << myIndex+nc << ")" << endl;
+  app_log()<<"TrialDMCCorrection::Observables [" << myIndex << ", " << myIndex+nc << ")" << std::endl;
 }
 }
 

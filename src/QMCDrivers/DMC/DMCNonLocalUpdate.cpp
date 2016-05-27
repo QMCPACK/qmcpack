@@ -399,7 +399,7 @@ void DMCNonLocalUpdatePbyPFast::advanceWalkers(WalkerIter_t it, WalkerIter_t it_
       ++nAllRejected;
       enew=eold;//copy back old energy
       gf_acc=1.0;
-      cerr << "  Failed to move any particle " << thisWalker.ID <<endl;
+      std::cerr << "  Failed to move any particle " << thisWalker.ID << std::endl;
     }
     int ibar = nonLocalOps.selectMove(RandomGen());
     //make a non-local move

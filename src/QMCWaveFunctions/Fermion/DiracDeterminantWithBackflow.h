@@ -82,13 +82,13 @@ public:
   // in general, assume that P is the quasiparticle set
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
-                           vector<RealType>& dlogpsi,
-                           vector<RealType>& dhpsioverpsi);
+                           std::vector<RealType>& dlogpsi,
+                           std::vector<RealType>& dhpsioverpsi);
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
-                           vector<RealType>& dlogpsi,
-                           vector<RealType>& dhpsioverpsi,
+                           std::vector<RealType>& dlogpsi,
+                           std::vector<RealType>& dhpsioverpsi,
                            ParticleSet::ParticleGradient_t* G0,
                            ParticleSet::ParticleLaplacian_t* L0,
                            int k);
@@ -115,7 +115,7 @@ public:
    */
   ValueType ratio(ParticleSet& P, int iat);
 
-  void get_ratios(ParticleSet& P, vector<ValueType>& ratios);
+  void get_ratios(ParticleSet& P, std::vector<ValueType>& ratios);
 
   ValueType alternateRatio(ParticleSet& P)
   {

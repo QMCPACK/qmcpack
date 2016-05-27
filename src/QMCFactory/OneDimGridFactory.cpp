@@ -30,8 +30,8 @@ OneDimGridFactory::GridType* OneDimGridFactory::createGrid(xmlNodePtr cur)
   RealType ascale = -1.0e0;
   RealType astep = 1.25e-2;
   IndexType npts = 1001;
-  string gridType("log");
-  string gridID("invalid");
+  std::string gridType("log");
+  std::string gridID("invalid");
   OhmmsAttributeSet radAttrib;
   radAttrib.add(gridType,"type");
   radAttrib.add(npts,"npts");
@@ -50,10 +50,10 @@ OneDimGridFactory::GridType* OneDimGridFactory::createGrid(xmlNodePtr cur)
   bool hasName= (gridID != "invalid");
   if(hasName)
   {
-    std::map<string,GridType*>::iterator it(GridObjects.find(gridID));
+    std::map<std::string,GridType*>::iterator it(GridObjects.find(gridID));
     if(it != GridObjects.end())
     {
-      app_log() << "  Reuse " << gridID << " grid" << endl;
+      app_log() << "  Reuse " << gridID << " grid" << std::endl;
       return (*it).second;
     }
   }
@@ -68,10 +68,10 @@ OneDimGridFactory::GridType* OneDimGridFactory::createGrid(xmlNodePtr cur)
     else
     {
       LOGMSG("Using log grid with default values: ri = " << ri << " rf = " << rf << " npts = " << npts)
-      if(ri<numeric_limits<RealType>::epsilon())
+      if(ri<std::numeric_limits<RealType>::epsilon())
       {
-        ri=numeric_limits<RealType>::epsilon();
-        app_error() << "   LogGrid cannot accept r=0 for the initial point. Using ri=" << ri << endl;
+        ri= std::numeric_limits<RealType>::epsilon();
+        app_error() << "   LogGrid cannot accept r=0 for the initial point. Using ri=" << ri << std::endl;
       }
       agrid = new LogGrid<RealType>;
       agrid->set(ri,rf,npts);

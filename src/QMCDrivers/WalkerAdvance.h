@@ -20,7 +20,7 @@ struct VMCBranch
    */
   inline bool phaseChanged(double r, double phi) const
   {
-    return r*r<numeric_limits<double>::epsilon();
+    return r*r<std::numeric_limits<double>::epsilon();
   }
 
   /** return weight=1
@@ -46,7 +46,7 @@ struct FixedNodeCBranch
 #if defined(QMC_COMPLEX)
     return false;
 #else
-    return std::cos(psi0) < numeric_limits<RealType>::epsilon();
+    return std::cos(psi0) < std::numeric_limits<RealType>::epsilon();
 #endif
   }
 

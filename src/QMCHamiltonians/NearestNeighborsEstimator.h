@@ -16,15 +16,15 @@ struct NeighborsTrace
 {
   typedef DistanceTableData::ripair ripair;
 
-  string ind_name;
-  string dist_name;
+  std::string ind_name;
+  std::string dist_name;
   int count;
   ParticleSet* neighbors;
   ParticleSet* centers;
   ParticleSet* dtable_owner;
   int dtable_id;
   bool transposed;
-  vector<ripair> ri;
+  std::vector<ripair> ri;
 
   bool streaming_particles;
   TraceRequest& request;
@@ -89,7 +89,7 @@ struct NeighborsTrace
   inline void checkout_arrays(TraceManager& tm)
   {
     streaming_particles = request.streaming_array(ind_name) || request.streaming_array(dist_name);
-    if(streaming_particles)
+    if( streaming_particles)
     {
       index_sample    = tm.checkout_int<2>( ind_name, *centers,count);
       distance_sample = tm.checkout_real<2>(dist_name,*centers,count);
@@ -99,7 +99,7 @@ struct NeighborsTrace
 
   inline void delete_arrays()
   {
-    if(streaming_particles)
+    if( streaming_particles)
     {
       delete index_sample;
       delete distance_sample;
@@ -111,7 +111,7 @@ struct NeighborsTrace
 
   inline void sample()
   {
-    if(streaming_particles)
+    if( streaming_particles)
     {
       DistanceTableData& dtable = *dtable_owner->DistTables[dtable_id];
       dtable.check_neighbor_size(ri,transposed);
@@ -133,9 +133,9 @@ struct NeighborsTrace
 class NearestNeighborsEstimator : public QMCHamiltonianBase
 {
 private:
-  typedef map<string,ParticleSet*> PSPool;
+  typedef std::map<std::string,ParticleSet*> PSPool;
 
-  vector<NeighborsTrace*> ntraces;
+  std::vector<NeighborsTrace*> ntraces;
   PSPool& psetpool;
 
 public:
@@ -158,13 +158,13 @@ public:
     xmlNodePtr element = cur->children;
     while(element!=NULL)
     {
-      string name((const char*)element->name);
+      std::string name((const char*)element->name);
       if(name=="neighbor_trace")
       {
         OhmmsAttributeSet eattrib;
         int count = -1;
-        string neighbors_name = "none";
-        string centers_name   = "none";
+        std::string neighbors_name = "none";
+        std::string centers_name   = "none";
         eattrib.add(count,"count");
         eattrib.add(neighbors_name,"neighbors");
         eattrib.add(centers_name,"centers");
@@ -188,18 +188,18 @@ public:
   }
 
 
-  inline void check_attribute_presence(int count,const string& neighbors_name,const string& centers_name)
+  inline void check_attribute_presence(int count,const std::string& neighbors_name,const std::string& centers_name)
   {
     if(count==-1)
       APP_ABORT("NearestNeighborsEstimator::put  element <neighbor_trace/> must have attribute 'count' (int)");
     if(neighbors_name=="none")
-      APP_ABORT("NearestNeighborsEstimator::put  element <neighbor_trace/> must have attribute 'neighbors' (string)");
+      APP_ABORT("NearestNeighborsEstimator::put  element <neighbor_trace/> must have attribute 'neighbors' ( std::string)");
     if(centers_name=="none")
-      APP_ABORT("NearestNeighborsEstimator::put  element <neighbor_trace/> must have attribute 'centers' (string)");
+      APP_ABORT("NearestNeighborsEstimator::put  element <neighbor_trace/> must have attribute 'centers' ( std::string)");
   }
 
 
-  inline void check_attribute_values(int count,const ParticleSet* neighbors,const ParticleSet* centers,const string& neighbors_name,const string& centers_name)
+  inline void check_attribute_values(int count,const ParticleSet* neighbors,const ParticleSet* centers,const std::string& neighbors_name,const std::string& centers_name)
   {
     if(!neighbors)
       APP_ABORT("NearestNeighborsEstimator::put  <neighbor_trace/> attribute neighbors="+neighbors_name+" does not correspond to a known particleset");
@@ -208,20 +208,20 @@ public:
     if(count<0)
       APP_ABORT("NearestNeighborsEstimator::put  element <neighbor_trace/> attribute 'count' (int) must be greater than zero");
     if(count>neighbors->getTotalNum()){
-      app_log()<<"centers   = "<<centers->parentName()<<endl;
-      app_log()<<"neighbors = "<<neighbors->parentName()<<endl;
-      app_log()<<"        max # of neighbors = "<<neighbors->getTotalNum()<<endl;
-      app_log()<<"  requested # of neighbors = "<<count<<endl;
+      app_log()<<"centers   = "<<centers->parentName()<< std::endl;
+      app_log()<<"neighbors = "<<neighbors->parentName()<< std::endl;
+      app_log()<<"        max # of neighbors = "<<neighbors->getTotalNum()<< std::endl;
+      app_log()<<"  requested # of neighbors = "<<count<< std::endl;
       APP_ABORT("NearestNeighborsEstimator::put  element <neighbor_trace/> attribute 'count' (int) must not be greater than total number of particles in neighbor particleset");
     }
   }
 
 
-  ParticleSet* get_particleset(string& psname)
+  ParticleSet* get_particleset( std::string& psname)
   {
     if(psetpool.find(psname)==psetpool.end())
     {
-      app_log()<<"  ParticleSet "<<psname<<" does not exist"<<endl;
+      app_log()<<"  ParticleSet "<<psname<<" does not exist"<< std::endl;
       APP_ABORT("NearestNeighborsEstimator::put");
     }
     return psetpool[psname];
@@ -268,14 +268,14 @@ public:
 
   virtual Return_t evaluate(ParticleSet& P)
   {
-    if(streaming_particles){
+    if( streaming_particles){
       for(int n=0; n<ntraces.size(); ++n)
         ntraces[n]->sample();
     }
     return 0.0;
   }
 
-  virtual Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  virtual Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
@@ -293,7 +293,7 @@ public:
   }
   virtual void resetTargetParticleSet(ParticleSet& P) {}
   virtual void addObservables(PropertySetType& plist, BufferType& collectables) {}
-  virtual void registerObservables(vector<observable_helper*>& h5desc,hid_t gid) const {}
+  virtual void registerObservables(std::vector<observable_helper*>& h5desc,hid_t gid) const {}
   virtual void setObservables(PropertySetType& plist) {}
   virtual void setParticlePropertyList(PropertySetType& plist, int offset) {}
   virtual void setHistories(Walker_t& ThisWalker) {}

@@ -7,7 +7,6 @@
 #include <numeric>
 #include <set>
 #include <map>
-using namespace std;
 #include "QMCTools/GTO2GridBuilder.h"
 #include "QMCApp/InitMolecularSystem.h"
 
@@ -37,8 +36,8 @@ QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv):
   IonChargeIndex=IonSystem.getSpeciesSet().addAttribute("charge");
   ValenceChargeIndex=IonSystem.getSpeciesSet().addAttribute("valence");
   AtomicNumberIndex=IonSystem.getSpeciesSet().addAttribute("atomicnumber");
-  cout << "Index of ion charge " << IonChargeIndex << endl;
-  cout << "Index of valence charge " << ValenceChargeIndex << endl;
+  std::cout << "Index of ion charge " << IonChargeIndex << std::endl;
+  std::cout << "Index of valence charge " << ValenceChargeIndex << std::endl;
 
   createGridNode(argc,argv);
 }
@@ -164,15 +163,15 @@ void QMCGaussianParserBase::setOccupationNumbers()
   if(!SpinRestricted)
     //UHF
   {
-    multimap<value_type,int> e;
-    //for(int i=0; i<SizeOfBasisSet; i++) e.insert(pair<value_type,int>(EigVal_alpha[i],0));
-    //for(int i=0; i<SizeOfBasisSet; i++) e.insert(pair<value_type,int>(EigVal_beta[i],1));
+    std::multimap<value_type,int> e;
+    //for(int i=0; i<SizeOfBasisSet; i++) e.insert(std::pair<value_type,int>(EigVal_alpha[i],0));
+    //for(int i=0; i<SizeOfBasisSet; i++) e.insert(std::pair<value_type,int>(EigVal_beta[i],1));
     for(int i=0; i<numMO; i++)
-      e.insert(pair<value_type,int>(EigVal_alpha[i],0));
+      e.insert(std::pair<value_type,int>(EigVal_alpha[i],0));
     for(int i=0; i<numMO; i++)
-      e.insert(pair<value_type,int>(EigVal_beta[i],1));
+      e.insert(std::pair<value_type,int>(EigVal_beta[i],1));
     int n=0;
-    multimap<value_type,int>::iterator it(e.begin());
+    std::multimap<value_type,int>::iterator it(e.begin());
     LOGMSG("Unrestricted HF. Sorted eigen values")
     while(n<NumberOfEls && it != e.end())
     {
@@ -209,7 +208,7 @@ xmlNodePtr QMCGaussianParserBase::createElectronSet()
 //   }
   ParticleSet els;
   els.setName("e");
-  vector<int> nel(2);
+  std::vector<int> nel(2);
   nel[0]=NumberOfAlpha;
   nel[1]=NumberOfBeta;
   els.create(nel);
@@ -222,7 +221,7 @@ xmlNodePtr QMCGaussianParserBase::createElectronSet()
   InitMolecularSystem m(0,"test");
   if(IonSystem.getTotalNum()>1)
   {
-    cout<<"Total number atoms "<<IonSystem.getTotalNum()<<endl;
+    std::cout <<"Total number atoms "<<IonSystem.getTotalNum()<< std::endl;
     m.initAtom(&IonSystem,&els);
     //m.initMolecule(&IonSystem,&els);
   }
@@ -323,7 +322,7 @@ xmlNodePtr
 QMCGaussianParserBase::createDeterminantSetWithHDF5()
 {
   setOccupationNumbers();
-  string h5file(Title);
+  std::string h5file(Title);
   h5file.append(".eig.h5");
   xmlNodePtr slaterdet = xmlNewNode(NULL,(const xmlChar*)"slaterdeterminant");
   std::ostringstream up_size, down_size, b_size;
@@ -404,7 +403,7 @@ QMCGaussianParserBase::createDeterminantSet()
   //int i=0;
   //while(i<SizeOfBasisSet) {
   //  int n = (i+10<SizeOfBasisSet)? 10 : SizeOfBasisSet-i;
-  //  std::copy(it, it+n, ostream_iterator<int>(occ," "));
+  //  copy(it, it+n, std::ostream_iterator<int>(occ," "));
   //  occ << "\n"; it += 10; i+=10;
   //}
   //xmlNodePtr occ_data
@@ -424,15 +423,15 @@ QMCGaussianParserBase::createDeterminantSet()
   eig << "\n";
   for(int k=0; k<n; k++)
   {
-    eig << setw(22) << EigVec[b] << setw(22) << EigVec[b+1] << setw(22) << EigVec[b+2] << setw(22) <<  EigVec[b+3] << "\n";
+    eig << std::setw(22) << EigVec[b] << std::setw(22) << EigVec[b+1] << std::setw(22) << EigVec[b+2] << std::setw(22) <<  EigVec[b+3] << "\n";
     b += 4;
   }
   for(int k=0; k<dn; k++)
   {
-    eig << setw(22) << EigVec[b++];
+    eig << std::setw(22) << EigVec[b++];
   }
   if(dn)
-    eig << endl;
+    eig << std::endl;
   xmlNodePtr det_data
   = xmlNewTextChild(adet,NULL,(const xmlChar*)"coefficient",(const xmlChar*)eig.str().c_str());
   xmlNewProp(det_data,(const xmlChar*)"size",(const xmlChar*)b_size.str().c_str());
@@ -451,7 +450,7 @@ QMCGaussianParserBase::createDeterminantSet()
     //int i=0;
     //while(i<SizeOfBasisSet) {
     //  int n = (i+10<SizeOfBasisSet)? 10 : SizeOfBasisSet-i;
-    //  std::copy(it, it+n, ostream_iterator<int>(occ_beta," "));
+    //  copy(it, it+n, std::ostream_iterator<int>(occ_beta," "));
     //  occ_beta << "\n"; it += 10; i+=10;
     //}
     //occ_data=xmlNewTextChild(adet,NULL,(const xmlChar*)"occupation",(const xmlChar*)occ_beta.str().c_str());
@@ -468,15 +467,15 @@ QMCGaussianParserBase::createDeterminantSet()
     b=numMO*SizeOfBasisSet;
     for(int k=0; k<n; k++)
     {
-      eigD << setw(22) << EigVec[b] << setw(22) << EigVec[b+1] << setw(22) << EigVec[b+2] << setw(22) <<  EigVec[b+3] << "\n";
+      eigD << std::setw(22) << EigVec[b] << std::setw(22) << EigVec[b+1] << std::setw(22) << EigVec[b+2] << std::setw(22) <<  EigVec[b+3] << "\n";
       b += 4;
     }
     for(int k=0; k<dn; k++)
     {
-      eigD << setw(22) << EigVec[b++];
+      eigD << std::setw(22) << EigVec[b++];
     }
     if(dn)
-      eigD << endl;
+      eigD << std::endl;
     if(SpinRestricted)
       det_data
       = xmlNewTextChild(adet,NULL,(const xmlChar*)"coefficient",(const xmlChar*)eig.str().c_str());
@@ -524,15 +523,15 @@ QMCGaussianParserBase::createSPOSets(xmlNodePtr spoUP, xmlNodePtr spoDN)
   eig << "\n";
   for(int k=0; k<n; k++)
   {
-    eig << setw(22) << EigVec[b] << setw(22) << EigVec[b+1] << setw(22) << EigVec[b+2] << setw(22) <<  EigVec[b+3] << "\n";
+    eig << std::setw(22) << EigVec[b] << std::setw(22) << EigVec[b+1] << std::setw(22) << EigVec[b+2] << std::setw(22) <<  EigVec[b+3] << "\n";
     b += 4;
   }
   for(int k=0; k<dn; k++)
   {
-    eig << setw(22) << EigVec[b++];
+    eig << std::setw(22) << EigVec[b++];
   }
   if(dn)
-    eig << endl;
+    eig << std::endl;
   xmlNodePtr det_data
   = xmlNewTextChild(spoUP,NULL,(const xmlChar*)"coefficient",(const xmlChar*)eig.str().c_str());
   xmlNewProp(det_data,(const xmlChar*)"size",(const xmlChar*)b_size.str().c_str());
@@ -550,15 +549,15 @@ QMCGaussianParserBase::createSPOSets(xmlNodePtr spoUP, xmlNodePtr spoDN)
     b=numMO*SizeOfBasisSet;
     for(int k=0; k<n; k++)
     {
-      eigD << setw(22) << EigVec[b] << setw(22) << EigVec[b+1] << setw(22) << EigVec[b+2] << setw(22) <<  EigVec[b+3] << "\n";
+      eigD << std::setw(22) << EigVec[b] << std::setw(22) << EigVec[b+1] << std::setw(22) << EigVec[b+2] << std::setw(22) <<  EigVec[b+3] << "\n";
       b += 4;
     }
     for(int k=0; k<dn; k++)
     {
-      eigD << setw(22) << EigVec[b++];
+      eigD << std::setw(22) << EigVec[b++];
     }
     if(dn)
-      eigD << endl;
+      eigD << std::endl;
     if(SpinRestricted)
       det_data
       = xmlNewTextChild(spoDN,NULL,(const xmlChar*)"coefficient",(const xmlChar*)eig.str().c_str());
@@ -596,12 +595,12 @@ QMCGaussianParserBase::createMultiDeterminantSetQP()
     xmlNewProp(detlist,(const xmlChar*)"cutoff",(const xmlChar*)ci_thr.str().c_str());
     if(CIcoeff.size() == 0)
     {
-      cerr<<" CI configuration list is empty. \n";
+      std::cerr <<" CI configuration list is empty. \n";
       exit(101);
     }
     if(CIcoeff.size() != CIalpha.size() || CIcoeff.size() != CIbeta.size())
     {
-      cerr<<" Problem with CI configuration lists. \n";
+      std::cerr <<" Problem with CI configuration lists. \n";
       exit(102);
     }
     int iv=0;
@@ -668,17 +667,17 @@ QMCGaussianParserBase::createMultiDeterminantSetVSVB()
   for(int i=0; i<CSFocc.size(); i++)
   {
     CIexcitLVL.push_back(0);
-    //cout<<CSFocc[i] <<" " <<CIexcitLVL.back() <<endl;
+    //cout<<CSFocc[i] <<" " <<CIexcitLVL.back() << std::endl;
   }
   // order dets according to ci coeff
-  std::vector<pair<double,int> > order;
+  std::vector<std::pair<double,int> > order;
   for(int i=0; i<coeff2csf.size(); i++)
   {
-    pair<double,int> cic(std::abs(coeff2csf[i].second),i);
+    std::pair<double,int> cic(std::abs(coeff2csf[i].second),i);
     order.push_back(cic);
   }
-  std::vector<pair<double,int> >::reverse_iterator it(order.rbegin());
-  std::vector<pair<double,int> >::reverse_iterator last(order.rend());
+  std::vector<std::pair<double,int> >::reverse_iterator it(order.rbegin());
+  std::vector<std::pair<double,int> >::reverse_iterator last(order.rend());
   int iv=0;
   while(it != last)
   {
@@ -743,25 +742,25 @@ QMCGaussianParserBase::createMultiDeterminantSet()
     xmlNewProp(detlist,(const xmlChar*)"neb",(const xmlChar*)cineb.str().c_str());
     xmlNewProp(detlist,(const xmlChar*)"nstates",(const xmlChar*)nstates.str().c_str());
     xmlNewProp(detlist,(const xmlChar*)"cutoff",(const xmlChar*)ci_thr.str().c_str());
-    //std::vector<pair<int,double> >::iterator it(coeff2csf.begin());
+    //std::vector<std::pair<int,double> >::iterator it(coeff2csf.begin());
     //std::vector<std::string>::iterator occit(CSFocc.begin());
-    //std::vector<pair<int,double> >::iterator last(coeff2csf.end());
+    //std::vector<std::pair<int,double> >::iterator last(coeff2csf.end());
     CIexcitLVL.clear();
     for(int i=0; i<CSFocc.size(); i++)
     {
       CIexcitLVL.push_back(numberOfExcitationsCSF(CSFocc[i]));
-      //cout<<CSFocc[i] <<" " <<CIexcitLVL.back() <<endl;
+      //cout<<CSFocc[i] <<" " <<CIexcitLVL.back() << std::endl;
     }
     // order dets according to ci coeff
-    std::vector<pair<double,int> > order;
+    std::vector<std::pair<double,int> > order;
     if(orderByExcitation)
     {
-      cout<<"Ordering csfs by excitation level. \n";
+      std::cout <<"Ordering csfs by excitation level. \n";
       int maxE =  *max_element(CIexcitLVL.begin(),CIexcitLVL.end());
-      vector<int> pos(maxE);
+      std::vector<int> pos(maxE);
       int ip1,ip2,cnt=0,cnt2;
       // add by excitations, and do partial sorts of the list
-      // messy but I dont want pair< pair<> > types right now
+      // messy but I dont want std::pair< std::pair<> > types right now
       for(int i=maxE; i>=0; i--)
       {
         ip1 = ip2 = cnt;
@@ -770,7 +769,7 @@ QMCGaussianParserBase::createMultiDeterminantSet()
         {
           if(CIexcitLVL[k] == i)
           {
-            pair<double,int> cic(std::abs(coeff2csf[k].second),k);
+            std::pair<double,int> cic(std::abs(coeff2csf[k].second),k);
             order.push_back(cic);
             cnt2++;
             cnt++;
@@ -784,13 +783,13 @@ QMCGaussianParserBase::createMultiDeterminantSet()
     {
       for(int i=0; i<coeff2csf.size(); i++)
       {
-        pair<double,int> cic(std::abs(coeff2csf[i].second),i);
+        std::pair<double,int> cic(std::abs(coeff2csf[i].second),i);
         order.push_back(cic);
       }
       sort(order.begin(),order.end());
     }
-    std::vector<pair<double,int> >::reverse_iterator it(order.rbegin());
-    std::vector<pair<double,int> >::reverse_iterator last(order.rend());
+    std::vector<std::pair<double,int> >::reverse_iterator it(order.rbegin());
+    std::vector<std::pair<double,int> >::reverse_iterator last(order.rend());
     int iv=0;
     while(it != last)
     {
@@ -866,12 +865,12 @@ QMCGaussianParserBase::createMultiDeterminantSet()
     xmlNewProp(detlist,(const xmlChar*)"cutoff",(const xmlChar*)ci_thr.str().c_str());
     if(CIcoeff.size() == 0)
     {
-      cerr<<" CI configuration list is empty. \n";
+      std::cerr <<" CI configuration list is empty. \n";
       exit(101);
     }
     if(CIcoeff.size() != CIalpha.size() || CIcoeff.size() != CIbeta.size())
     {
-      cerr<<" Problem with CI configuration lists. \n";
+      std::cerr <<" Problem with CI configuration lists. \n";
       exit(102);
     }
     int iv=0;
@@ -1019,7 +1018,7 @@ xmlNodePtr QMCGaussianParserBase::createJ3()
     xmlNewProp(uuc,(const xmlChar*)"rcut", (const xmlChar*)"10");
 
     xmlNodePtr a= xmlNewTextChild(uuc,NULL,(const xmlChar*)"coefficients",(const xmlChar*)"\n        ");
-    ostringstream o1;
+    std::ostringstream o1;
     o1<< "uu"<<ionSpecies.speciesName[i];
     xmlNewProp(a,(const xmlChar*)"id", (const xmlChar*)o1.str().c_str());
     xmlNewProp(a,(const xmlChar*)"type", (const xmlChar*)"Array");
@@ -1035,7 +1034,7 @@ xmlNodePtr QMCGaussianParserBase::createJ3()
     xmlNewProp(udc,(const xmlChar*)"rcut", (const xmlChar*)"10");
 
     xmlNodePtr b= xmlNewTextChild(udc,NULL,(const xmlChar*)"coefficients",(const xmlChar*)"\n        ");
-    ostringstream o2;
+    std::ostringstream o2;
     o2<< "ud"<<ionSpecies.speciesName[i];
     xmlNewProp(b,(const xmlChar*)"id", (const xmlChar*)o2.str().c_str());
     xmlNewProp(b,(const xmlChar*)"type", (const xmlChar*)"Array");
@@ -1097,7 +1096,7 @@ xmlNodePtr QMCGaussianParserBase::createJ1()
     xmlNewProp(c,(const xmlChar*)"cusp", (const xmlChar*)"0");
     xmlNewProp(c,(const xmlChar*)"elementType", (const xmlChar*)ionSpecies.speciesName[i].c_str());
     xmlNodePtr a= xmlNewTextChild(c,NULL,(const xmlChar*)"coefficients",(const xmlChar*)"0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0");
-    ostringstream o;
+    std::ostringstream o;
     o<< 'e'<<ionSpecies.speciesName[i];
     xmlNewProp(a,(const xmlChar*)"id", (const xmlChar*)o.str().c_str());
     xmlNewProp(a,(const xmlChar*)"type", (const xmlChar*)"Array");
@@ -1111,8 +1110,8 @@ void QMCGaussianParserBase::map2GridFunctors(xmlNodePtr cur)
   using namespace qmcplusplus;
   xmlNodePtr anchor = cur;
   //xmlNodePtr grid_ptr = 0;
-  vector<xmlNodePtr> phi_ptr;
-  vector<QuantumNumberType> nlms;
+  std::vector<xmlNodePtr> phi_ptr;
+  std::vector<QuantumNumberType> nlms;
   int Lmax = 0;
   int current = 0;
   std::string acenter("none");
@@ -1123,7 +1122,7 @@ void QMCGaussianParserBase::map2GridFunctors(xmlNodePtr cur)
   cur = anchor->children;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == "grid")
       grid_ptr = cur;
     else
@@ -1168,14 +1167,14 @@ void QMCGaussianParserBase::map2GridFunctors(xmlNodePtr cur)
 void QMCGaussianParserBase::createGridNode(int argc, char** argv)
 {
   gridPtr = xmlNewNode(NULL,(const xmlChar*)"grid");
-  string gridType("log");
-  string gridFirst("1.e-6");
-  string gridLast("1.e2");
-  string gridSize("1001");
+  std::string gridType("log");
+  std::string gridFirst("1.e-6");
+  std::string gridLast("1.e2");
+  std::string gridSize("1001");
   int iargc=0;
   while(iargc<argc)
   {
-    string a(argv[iargc]);
+    std::string a(argv[iargc]);
     if(a == "-gridtype")
     {
       gridType=argv[++iargc];
@@ -1218,10 +1217,10 @@ void QMCGaussianParserBase::createGridNode(int argc, char** argv)
   xmlNewProp(gridPtr,(const xmlChar*)"npts",(const xmlChar*)gridSize.c_str());
 }
 
-void QMCGaussianParserBase::dump(const string& psi_tag,
-                                 const string& ion_tag)
+void QMCGaussianParserBase::dump(const std::string& psi_tag,
+                                 const std::string& ion_tag)
 {
-  cout << " QMCGaussianParserBase::dump " << endl;
+  std::cout << " QMCGaussianParserBase::dump " << std::endl;
   {
     xmlDocPtr doc_p = xmlNewDoc((const xmlChar*)"1.0");
     xmlNodePtr qm_root_p = xmlNewNode(NULL, BAD_CAST "qmcsystem");
@@ -1293,13 +1292,13 @@ void QMCGaussianParserBase::dump(const string& psi_tag,
       xmlAddChild(wfPtr,detPtr);
       if(addJastrow)
       {
-        cout << "Adding Two-Body and One-Body jastrows with rcut=\"10\" and size=\"10\"" << endl;
+        std::cout << "Adding Two-Body and One-Body jastrows with rcut=\"10\" and size=\"10\"" << std::endl;
         xmlAddChild(wfPtr,createJ2());
         xmlAddChild(wfPtr,createJ1());
       }
       if(addJastrow3Body)
       {
-        cout << "Adding Three-Body rcut=\"10\". " << endl;
+        std::cout << "Adding Three-Body rcut=\"10\". " << std::endl;
         xmlAddChild(wfPtr,createJ3());
       }
     }
@@ -1322,11 +1321,11 @@ void QMCGaussianParserBase::dump(const string& psi_tag,
   xmlSaveFormatFile(fname.c_str(),doc,1);
   xmlFreeDoc(doc);
 }
-void QMCGaussianParserBase::Fmodump(const string& psi_tag,
-                                 const string& ion_tag,
+void QMCGaussianParserBase::Fmodump(const std::string& psi_tag,
+                                 const std::string& ion_tag,
                                  std::string Mytag)
 {
-  cout << " QMCGaussianParserBase::Fmodump " << endl;
+  std::cout << " QMCGaussianParserBase::Fmodump " << std::endl;
    if (DoCusp==true){
       // Creating a ptcl file with no esp for Cusp computation // 
       {
@@ -1419,13 +1418,13 @@ void QMCGaussianParserBase::Fmodump(const string& psi_tag,
       xmlAddChild(wfPtr,detPtr);
       if(addJastrow)
       {
-        cout << "Adding Two-Body and One-Body jastrows with rcut=\"10\" and size=\"10\"" << endl;
+        std::cout << "Adding Two-Body and One-Body jastrows with rcut=\"10\" and size=\"10\"" << std::endl;
         xmlAddChild(wfPtr,createJ2());
         xmlAddChild(wfPtr,createJ1());
       }
       if(addJastrow3Body)
       {
-        cout << "Adding Three-Body rcut=\"10\". " << endl;
+        std::cout << "Adding Three-Body rcut=\"10\". " << std::endl;
         xmlAddChild(wfPtr,createJ3());
       }
     }
@@ -1530,7 +1529,7 @@ void QMCGaussianParserBase::Fmodump(const string& psi_tag,
   xmlFreeDoc(doc_h);
 
 }
-int QMCGaussianParserBase::numberOfExcitationsCSF(string& occ)
+int QMCGaussianParserBase::numberOfExcitationsCSF( std::string& occ)
 {
   int res=0;
   for(int i=ci_neb; i<ci_nstates; i++)

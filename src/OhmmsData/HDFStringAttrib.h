@@ -19,12 +19,12 @@
 #include <sstream>
 namespace qmcplusplus
 {
-/** Specialization for string */
+/** Specialization for std::string */
 template<>
-struct HDFAttribIO<string>: public HDFAttribIOBase
+struct HDFAttribIO<std::string>: public HDFAttribIOBase
 {
 
-  typedef string ArrayType_t;
+  typedef std::string ArrayType_t;
   ArrayType_t& ref;
 
   HDFAttribIO<ArrayType_t>(ArrayType_t& a): ref(a) { }

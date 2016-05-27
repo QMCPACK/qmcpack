@@ -49,7 +49,7 @@ namespace qmcplusplus
     reset();
     const k2_t& k2_init = Pinit.SK->KLists.ksq;
 
-    string write_report = "no";
+    std::string write_report = "no";
     OhmmsAttributeSet attrib;
     attrib.add(myName,"name");
     //attrib.add(ecut,"ecut");
@@ -79,31 +79,31 @@ namespace qmcplusplus
   }
 
 
-  void StaticStructureFactor::report(const string& pad)
+  void StaticStructureFactor::report(const std::string& pad)
   {
-    app_log()<<pad<<"StaticStructureFactor report"<<endl;
-    app_log()<<pad<<"  name     = "<< myName   <<endl;
-    app_log()<<pad<<"  ecut     = "<< ecut     <<endl;
-    app_log()<<pad<<"  nkpoints = "<< nkpoints <<endl;
-    app_log()<<pad<<"  nspecies = "<< nspecies <<endl;
+    app_log()<<pad<<"StaticStructureFactor report"<< std::endl;
+    app_log()<<pad<<"  name     = "<< myName   << std::endl;
+    app_log()<<pad<<"  ecut     = "<< ecut     << std::endl;
+    app_log()<<pad<<"  nkpoints = "<< nkpoints << std::endl;
+    app_log()<<pad<<"  nspecies = "<< nspecies << std::endl;
     for(int s=0;s<nspecies;++s)
-      app_log()<<pad<<"    species["<<s<<"] = "<< species_name[s] <<endl;
-    app_log()<<pad<<"end StaticStructureFactor report"<<endl;
+      app_log()<<pad<<"    species["<<s<<"] = "<< species_name[s] << std::endl;
+    app_log()<<pad<<"end StaticStructureFactor report"<< std::endl;
   }
 
 
   void StaticStructureFactor::addObservables(PropertySetType& plist,BufferType& collectables)
   {
     myIndex=collectables.current();
-    vector<RealType> tmp(nspecies*2*nkpoints); // real & imag parts
+    std::vector<RealType> tmp(nspecies*2*nkpoints); // real & imag parts
     collectables.add(tmp.begin(),tmp.end());
   }
 
 
-  void StaticStructureFactor::registerCollectables(vector<observable_helper*>& h5desc, hid_t gid) const 
+  void StaticStructureFactor::registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const 
   {
     hid_t sgid=H5Gcreate(gid,myName.c_str(),0);
-    vector<int> ng(2);
+    std::vector<int> ng(2);
     ng[0] = 2;
     ng[1] = nkpoints;
     for(int s=0;s<nspecies;++s)
@@ -140,20 +140,20 @@ namespace qmcplusplus
 
 
   void StaticStructureFactor::
-  postprocess_density(const string& infile,const string& species,
+  postprocess_density(const std::string& infile,const std::string& species,
                       pts_t& points,dens_t& density,dens_t& density_err)
   {
-    ifstream datafile;
+    std::ifstream datafile;
     datafile.open(infile.c_str());
     if(!datafile.is_open())
       APP_ABORT("StaticStructureFactor::postprocess_density\n  could not open file: "+infile);
 
     const int nk = nkpoints;
     int n=0;
-    vector<RealType> skr;
-    vector<RealType> ski;
-    vector<RealType> skrv;
-    vector<RealType> skiv;
+    std::vector<RealType> skr;
+    std::vector<RealType> ski;
+    std::vector<RealType> skrv;
+    std::vector<RealType> skiv;
     RealType value;    
     while(datafile>>value)
     {
@@ -169,7 +169,7 @@ namespace qmcplusplus
     }
     if(skiv.size()!=nkpoints)
     {
-      app_log()<<"StaticStructureFactor::postprocess_density\n  file "<<infile<<"\n  contains "<< n <<" values\n  expected "<<4*nkpoints<<" values"<<endl;
+      app_log()<<"StaticStructureFactor::postprocess_density\n  file "<<infile<<"\n  contains "<< n <<" values\n  expected "<<4*nkpoints<<" values"<< std::endl;
       APP_ABORT("StaticStructureFactor::postprocess_density");
     }
 
@@ -178,7 +178,7 @@ namespace qmcplusplus
     using std::cos;
     using std::sin;
     using std::sqrt;
-    const vector<PosType>& kpoints = Pinit.SK->KLists.kpts_cart;
+    const std::vector<PosType>& kpoints = Pinit.SK->KLists.kpts_cart;
     for(int p=0;p<points.size();++p)
     {
       RealType d  = 0.0;

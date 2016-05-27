@@ -46,7 +46,7 @@ namespace qmcplusplus
     bool scaleDrift;
     IndexType actionType;
 
-    vector < NewTimer * >myTimers;
+    std::vector< NewTimer * >myTimers;
 
     IndexType vmcSteps;
     IndexType equilSteps;

@@ -51,7 +51,7 @@ void HeSAPT_smoothed_phy::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& ps
 void HeSAPT_smoothed_phy::addCorrection(QMCHamiltonian& targetH)
 {
   HeSAPT_smoothed_aux* auxTerm = new HeSAPT_smoothed_aux(this);
-  string auxName = myName+"_aux";
+  std::string auxName = myName+"_aux";
   targetH.addOperator(auxTerm, auxName, false);
 }
 }

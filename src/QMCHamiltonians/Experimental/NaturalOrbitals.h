@@ -38,7 +38,7 @@ public:
 
   Return_t evaluate(ParticleSet& P);
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
@@ -47,7 +47,7 @@ public:
   void addObservables(PropertySetType& plist,BufferType& olist);
   void moveRprime();
 
-  void registerCollectables(vector<observable_helper*>& h5desc, hid_t gid) const ;
+  void registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const ;
   void setObservables(PropertySetType& plist);
   void setParticlePropertyList(PropertySetType& plist, int offset);
   bool putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootNode);
@@ -72,7 +72,7 @@ public:
   int steps;
 
   ///wavefunction ratios
-  vector<ValueType> psi_ratios;
+  std::vector<ValueType> psi_ratios;
   ValueVector_t phiV,temp_phiV;
   ValueMatrix_t phii_phij;
   GradVector_t dphiV;

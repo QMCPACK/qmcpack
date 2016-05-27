@@ -5,7 +5,6 @@
 #include <set>
 #include <map>
 
-using namespace std;
 
 GaussianFCHKParser::GaussianFCHKParser()
 {
@@ -32,12 +31,12 @@ void GaussianFCHKParser::parse(const std::string& fname)
 // mmorales: this should be determined by the existence of "Beta MO", since
 // there are many ways to get unrestricted runs without UHF (e.g. UMP2,UCCD,etc)
     SpinRestricted=false;
-    //std::cout << " Spin Unrestricted Calculation (UHF). " << endl;
+    //std::cout << " Spin Unrestricted Calculation (UHF). " << std::endl;
   }
   else
   {
     SpinRestricted=true;
-    //std::cout << " Spin Restricted Calculation (RHF). " << endl;
+    //std::cout << " Spin Restricted Calculation (RHF). " << std::endl;
   }
   getwords(currentWords,fin);//3  Number of atoms
   NumberOfAtoms = atoi(currentWords.back().c_str());
@@ -71,10 +70,10 @@ void GaussianFCHKParser::parse(const std::string& fname)
   SizeOfBasisSet=atoi(currentWords.back().c_str());
   getwords(currentWords,fin); //10 Number of independant functions
   int NumOfIndOrb=atoi(currentWords.back().c_str());
-  std::cout <<"Number of independent orbitals: " <<NumOfIndOrb <<endl;
+  std::cout <<"Number of independent orbitals: " <<NumOfIndOrb << std::endl;
   numMO = NumOfIndOrb;
   // TDB: THIS ADDITION SHOULD BE COMPATIBLE WITH MY OLD FCHK FILES
-  streampos pivottdb = fin.tellg();
+  std::streampos pivottdb = fin.tellg();
   int ng;
   notfound = true;
   while(notfound)
@@ -127,7 +126,7 @@ void GaussianFCHKParser::parse(const std::string& fname)
   std::cout << "Number of atoms " << NumberOfAtoms << std::endl;
   search(fin, "Shell types");
   getGaussianCenters(fin);
-  std::cout << " Shell types reading: OK" << endl;
+  std::cout << " Shell types reading: OK" << std::endl;
 // mmorales: SizeOfBasisSet > numMO always, so leave it like this
   EigVal_alpha.resize(SizeOfBasisSet);
   EigVal_beta.resize(SizeOfBasisSet);
@@ -138,40 +137,40 @@ void GaussianFCHKParser::parse(const std::string& fname)
   search(fin, "Alpha Orbital"); //search "Alpha Orbital Energies"
 // only read NumOfIndOrb
   getValues(fin,EigVal_alpha.begin(), EigVal_alpha.begin()+numMO);
-  std::cout << " Orbital energies reading: OK" << endl;
+  std::cout << " Orbital energies reading: OK" << std::endl;
   if(SpinRestricted)
   {
     EigVec.resize(2*numMO*SizeOfBasisSet);
     EigVal_beta=EigVal_alpha;
-    vector<value_type> etemp;
+    std::vector<value_type> etemp;
     search(fin, "Alpha MO");
     getValues(fin,EigVec.begin(), EigVec.begin()+SizeOfBasisSet*numMO);
-    std::copy(EigVec.begin(),EigVec.begin()+SizeOfBasisSet*numMO,EigVec.begin()+SizeOfBasisSet*numMO);
-    std::cout << " Orbital coefficients reading: OK" << endl;
+    copy(EigVec.begin(),EigVec.begin()+SizeOfBasisSet*numMO,EigVec.begin()+SizeOfBasisSet*numMO);
+    std::cout << " Orbital coefficients reading: OK" << std::endl;
   }
   else
   {
     EigVec.resize(2*numMO*SizeOfBasisSet);
-    vector<value_type> etemp;
+    std::vector<value_type> etemp;
     search(fin, "Beta Orbital");
     getValues(fin,EigVal_beta.begin(), EigVal_beta.begin()+numMO);
-    std::cout << " Read Beta Orbital energies: OK" << endl;
+    std::cout << " Read Beta Orbital energies: OK" << std::endl;
     search(fin, "Alpha MO");
     getValues(fin,EigVec.begin(), EigVec.begin()+SizeOfBasisSet*numMO);
     search(fin, "Beta MO");
     getValues(fin,EigVec.begin()+numMO*SizeOfBasisSet, EigVec.begin()+2*numMO*SizeOfBasisSet);
-    std::cout << " Alpha and Beta Orbital coefficients reading: OK" << endl;
+    std::cout << " Alpha and Beta Orbital coefficients reading: OK" << std::endl;
   }
   if(multideterminant)
   {
     std::ifstream ofile(outputFile.c_str());
     if(ofile.fail())
     {
-      cerr<<"Failed to open output file from gaussian. \n";
+      std::cerr <<"Failed to open output file from gaussian. \n";
       exit(401);
     }
     int statesType = 0;
-    streampos beginpos = ofile.tellg();
+    std::streampos beginpos = ofile.tellg();
     bool found = lookFor(ofile, "SLATER DETERMINANT BASIS");
     if(!found)
     {
@@ -192,7 +191,7 @@ void GaussianFCHKParser::parse(const std::string& fname)
       }
       else
       {
-        cerr<<"Gaussian parser currenly works for slater determinant basis only. Use SlaterDet in CAS() or improve parser.\n";
+        std::cerr <<"Gaussian parser currenly works for slater determinant basis only. Use SlaterDet in CAS() or improve parser.\n";
         abort();
       }
     }
@@ -202,12 +201,12 @@ void GaussianFCHKParser::parse(const std::string& fname)
 // a lot of things. So far, I don't know how to change this
 // without modifying the source code, l510.F or utilam.F
     found = lookFor(ofile, "Do an extra-iteration for final printing");
-    map<int,int> coeff2confg;
+    std::map<int,int> coeff2confg;
 //   290 FORMAT(1X,7('(',I5,')',F10.7,1X)/(1X,7('(',I5,')',F10.7,1X)))
     if(found)
     {
 // this is tricky, because output depends on diagonalizer used (Davidson or Lanczos) for now hope this works
-      streampos tmppos = ofile.tellg();
+      std::streampos tmppos = ofile.tellg();
 // long output with iop(5/33=1)
       int coeffType = 0;
       if(lookFor(ofile,"EIGENVECTOR USED TO COMPUTE DENSITY MATRICES SET"))
@@ -227,12 +226,12 @@ void GaussianFCHKParser::parse(const std::string& fname)
           ofile.seekg(tmppos);//rewind it
           if(!lookFor(ofile,"Eigenvalue"))
           {
-            cerr<<"Failed to find CI voefficients.\n";
+            std::cerr <<"Failed to find CI voefficients.\n";
             abort();
           }
         }
       }
-      streampos strpos = ofile.tellg();
+      std::streampos strpos = ofile.tellg();
       ofile.close();
       ofile.open(outputFile.c_str());
       ofile.seekg(beginpos);//rewind it
@@ -254,11 +253,11 @@ void GaussianFCHKParser::parse(const std::string& fname)
         }
         else
         {
-          cerr<<"Problems finding total number of configurations. \n";
+          std::cerr <<"Problems finding total number of configurations. \n";
           abort();
         }
       }
-      cout<<"Total number of CI configurations in file (w/o truncation): " <<numCI <<endl;
+      std::cout <<"Total number of CI configurations in file (w/o truncation): " <<numCI << std::endl;
       ofile.close();
       ofile.open(outputFile.c_str());
       ofile.seekg(strpos);//rewind it
@@ -274,7 +273,7 @@ void GaussianFCHKParser::parse(const std::string& fname)
           int pos=2;
           std::string aline;
           getline(ofile,aline,'\n');
-//cout<<"aline: " <<aline <<endl;
+//cout<<"aline: " <<aline << std::endl;
           for(int i=0; i<7; i++)
           {
             //int q = atoi( (aline.substr(pos,pos+4)).c_str() );
@@ -285,7 +284,7 @@ void GaussianFCHKParser::parse(const std::string& fname)
             coeff2confg[q] = cnt++;
             CIcoeff.push_back( atof( (aline.substr(pos+9,pos+18)).c_str() ) );
             pos+=21;
-//cout<<"confg, coeff: " <<q <<"  " <<CIcoeff.back() <<endl;
+//cout<<"confg, coeff: " <<q <<"  " <<CIcoeff.back() << std::endl;
           }
         }
         {
@@ -298,7 +297,7 @@ void GaussianFCHKParser::parse(const std::string& fname)
           int q = atoi( (aline.substr(pos,pos+7)).c_str() );
           coeff2confg[q] = cnt++;
           CIcoeff.push_back( atof( (aline.substr(pos+9,pos+18)).c_str() ) );
-//cout<<"confg, coeff: " <<q <<"  " <<CIcoeff.back() <<endl;
+//cout<<"confg, coeff: " <<q <<"  " <<CIcoeff.back() << std::endl;
         }
       }
       else
@@ -315,7 +314,7 @@ void GaussianFCHKParser::parse(const std::string& fname)
           getwords(currentWords,ofile);
           if(currentWords.size() != 5)
           {
-            cerr<<"Error reading CI configurations-line: " <<i <<"\n";
+            std::cerr <<"Error reading CI configurations-line: " <<i <<"\n";
             abort();
           }
           for(int k=0; k<5; k++)
@@ -323,7 +322,7 @@ void GaussianFCHKParser::parse(const std::string& fname)
           getwords(currentWords,ofile);
           if(currentWords.size() != 6)
           {
-            cerr<<"Error reading CI configurations-line: " <<i <<"\n";
+            std::cerr <<"Error reading CI configurations-line: " <<i <<"\n";
             abort();
           }
           for(int k=0; k<5; k++)
@@ -337,7 +336,7 @@ void GaussianFCHKParser::parse(const std::string& fname)
             {
               coeff2confg[indx[k]] = cnt++;
               CIcoeff.push_back(ci);
-//cout<<"ind,cnt,c: " <<indx[k] <<"  " <<cnt-1 <<"  " <<CIcoeff.back() <<endl;
+//cout<<"ind,cnt,c: " <<indx[k] <<"  " <<cnt-1 <<"  " <<CIcoeff.back() << std::endl;
             }
           }
         }
@@ -346,7 +345,7 @@ void GaussianFCHKParser::parse(const std::string& fname)
           getwords(currentWords,ofile);
           if(currentWords.size() != nextra)
           {
-            cerr<<"Error reading CI configurations last line \n";
+            std::cerr <<"Error reading CI configurations last line \n";
             abort();
           }
           for(int k=0; k<nextra; k++)
@@ -354,7 +353,7 @@ void GaussianFCHKParser::parse(const std::string& fname)
           getwords(currentWords,ofile);
           if(currentWords.size() != nextra+1)
           {
-            cerr<<"Error reading CI configurations last line \n";
+            std::cerr <<"Error reading CI configurations last line \n";
             abort();
           }
           for(int k=0; k<nextra; k++)
@@ -368,7 +367,7 @@ void GaussianFCHKParser::parse(const std::string& fname)
           }
         }
       }
-      cout<<"Found " <<CIcoeff.size() <<" coeffficients after truncation. \n";
+      std::cout <<"Found " <<CIcoeff.size() <<" coeffficients after truncation. \n";
       if(statesType==0)
       {
         ofile.close();
@@ -376,11 +375,11 @@ void GaussianFCHKParser::parse(const std::string& fname)
         ofile.seekg(beginpos);//rewind it
 // this might not work, look for better entry point later
         search(ofile,"Truncation Level=");
-//cout<<"found Truncation Level=" <<endl;
+//cout<<"found Truncation Level=" << std::endl;
         getwords(currentWords,ofile);
         while(!ofile.eof() && (currentWords[0] != "no." || currentWords[1] != "active" || currentWords[2] != "orbitals") )
         {
-//        cout<<"1. " <<currentWords[0] <<endl;
+//        std::cout <<"1. " <<currentWords[0] << std::endl;
           getwords(currentWords,ofile);
         }
         ci_nstates=atoi(currentWords[4].c_str());
@@ -388,7 +387,7 @@ void GaussianFCHKParser::parse(const std::string& fname)
 // can choose specific irreps if I want...
         while(currentWords[0] != "Configuration" || currentWords[2] != "Symmetry" )
         {
-//        cout<<"2. " <<currentWords[0] <<endl;
+//        std::cout <<"2. " <<currentWords[0] << std::endl;
           getwords(currentWords,ofile);
         }
         CIbeta.resize(CIcoeff.size());
@@ -398,15 +397,15 @@ void GaussianFCHKParser::parse(const std::string& fname)
         while(currentWords[0] == "Configuration" && currentWords[2] == "Symmetry" )
         {
           int pos = atoi(currentWords[1].c_str());
-          map<int,int>::iterator it = coeff2confg.find( pos );
-//cout<<"3. configuration: " <<currentWords[1].c_str() <<endl;
+          std::map<int,int>::iterator it = coeff2confg.find( pos );
+//cout<<"3. configuration: " <<currentWords[1].c_str() << std::endl;
           if(it != coeff2confg.end())
           {
             std::string alp(currentWords[4]);
             std::string beta(currentWords[4]);
             if(alp.size() != ci_nstates)
             {
-              cerr<<"Problem with ci string. \n";
+              std::cerr <<"Problem with ci string. \n";
               abort();
             }
             for(int i=0; i<alp.size(); i++)
@@ -429,8 +428,8 @@ void GaussianFCHKParser::parse(const std::string& fname)
                   n1++;
               if(n1 != ci_nea)
               {
-                cerr<<"Problems with alpha ci string: "
-                    <<endl <<alp <<endl <<currentWords[3] <<endl;
+                std::cerr <<"Problems with alpha ci string: "
+                    << std::endl <<alp << std::endl <<currentWords[3] << std::endl;
                 abort();
               }
               n1=0;
@@ -439,8 +438,8 @@ void GaussianFCHKParser::parse(const std::string& fname)
                   n1++;
               if(n1 != ci_neb)
               {
-                cerr<<"Problems with beta ci string: "
-                    <<endl <<beta <<endl <<currentWords[3] <<endl;
+                std::cerr <<"Problems with beta ci string: "
+                    << std::endl <<beta << std::endl <<currentWords[3] << std::endl;
                 abort();
               }
             }
@@ -460,7 +459,7 @@ void GaussianFCHKParser::parse(const std::string& fname)
             }
             CIalpha[it->second] = alp;
             CIbeta[it->second] = beta;
-//cout<<"alpha: " <<alp <<"  -   "  <<CIalpha[it->second] <<endl;
+//cout<<"alpha: " <<alp <<"  -   "  <<CIalpha[it->second] << std::endl;
           }
           getwords(currentWords,ofile);
         }
@@ -482,7 +481,7 @@ void GaussianFCHKParser::parse(const std::string& fname)
         {
           getwords(currentWords,ofile);  // state number
           int pos = atoi(currentWords[0].c_str());
-          map<int,int>::iterator it = coeff2confg.find( pos );
+          std::map<int,int>::iterator it = coeff2confg.find( pos );
           if(it != coeff2confg.end())
           {
             getwords(currentWords,ofile);  // state number
@@ -491,20 +490,20 @@ void GaussianFCHKParser::parse(const std::string& fname)
               first_alpha=false;
               ci_nea = currentWords.size();
               ci_nca = nup-ci_nea;
-              cout<<"nca, nea, nstates: " <<ci_nca <<"  " <<ci_nea <<"  " <<ci_nstates <<endl;
+              std::cout <<"nca, nea, nstates: " <<ci_nca <<"  " <<ci_nea <<"  " <<ci_nstates << std::endl;
             }
             else
             {
               if(currentWords.size() != ci_nea)
               {
-                cerr<<"Problems with alpha string: " <<pos <<endl;
+                std::cerr <<"Problems with alpha string: " <<pos << std::endl;
                 abort();
               }
             }
             std::string alp(ci_nstates,'0');
             for(int i=0; i<currentWords.size(); i++)
             {
-//              cout<<"i, alpOcc: " <<i <<"  " <<atoi(currentWords[i].c_str())-1 <<endl; cout.flush();
+//              std::cout <<"i, alpOcc: " <<i <<"  " <<atoi(currentWords[i].c_str())-1 << std::endl; std::cout.flush();
               alp[ atoi(currentWords[i].c_str())-1 ] = '1';
             }
             getwords(currentWords,ofile);  // state number
@@ -513,25 +512,25 @@ void GaussianFCHKParser::parse(const std::string& fname)
               first_beta=false;
               ci_neb = currentWords.size();
               ci_ncb = ndown-ci_neb;
-              cout<<"ncb, neb, nstates: " <<ci_ncb <<"  " <<ci_neb <<"  " <<ci_nstates <<endl;
+              std::cout <<"ncb, neb, nstates: " <<ci_ncb <<"  " <<ci_neb <<"  " <<ci_nstates << std::endl;
             }
             else
             {
               if(currentWords.size() != ci_neb)
               {
-                cerr<<"Problems with beta string: " <<pos <<endl;
+                std::cerr <<"Problems with beta string: " <<pos << std::endl;
                 abort();
               }
             }
             std::string beta(ci_nstates,'0');
             for(int i=0; i<currentWords.size(); i++)
             {
-//              cout<<"i, alpOcc: " <<i <<"  " <<atoi(currentWords[i].c_str())-1 <<endl; cout.flush();
+//              std::cout <<"i, alpOcc: " <<i <<"  " <<atoi(currentWords[i].c_str())-1 << std::endl; std::cout.flush();
               beta[ atoi(currentWords[i].c_str())-1 ] = '1';
             }
             CIalpha[it->second] = alp;
             CIbeta[it->second] = beta;
-//cout<<"alpha: " <<alp <<endl <<"beta: " <<beta <<endl;
+//cout<<"alpha: " <<alp << std::endl <<"beta: " <<beta << std::endl;
             std::string aline1;
             getline(ofile,aline1,'\n');
           }
@@ -548,28 +547,28 @@ void GaussianFCHKParser::parse(const std::string& fname)
     }
     else
     {
-      cerr<<"Could not find CI coefficients in gaussian output file. \n";
+      std::cerr <<"Could not find CI coefficients in gaussian output file. \n";
       abort();
     }
-    cout<<" size of CIalpha,CIbeta: " <<CIalpha.size() <<"  " <<CIbeta.size() <<endl;
+    std::cout <<" size of CIalpha,CIbeta: " <<CIalpha.size() <<"  " <<CIbeta.size() << std::endl;
   }
 }
 
 void GaussianFCHKParser::getGeometry(std::istream& is)
 {
   //atomic numbers
-  vector<int> atomic_number(NumberOfAtoms);
-  vector<double> q(NumberOfAtoms);
+  std::vector<int> atomic_number(NumberOfAtoms);
+  std::vector<double> q(NumberOfAtoms);
   //read atomic numbers
   search(is, "Atomic numbers");//search for Atomic numbers
   getValues(is,atomic_number.begin(),atomic_number.end());
-  streampos pivot= is.tellg();
+  std::streampos pivot= is.tellg();
   //read effective nuclear charges
   search(is, "Nuclear");//search for Nuclear
   getValues(is,q.begin(),q.end());
   is.seekg(pivot);//rewind it
   search(is,"coordinates");
-  vector<double> pos(NumberOfAtoms*OHMMS_DIM);
+  std::vector<double> pos(NumberOfAtoms*OHMMS_DIM);
   getValues(is,pos.begin(),pos.end());
   SpeciesSet& species(IonSystem.getSpeciesSet());
   for(int i=0, ii=0; i<NumberOfAtoms; i++)
@@ -599,7 +598,7 @@ void GaussianFCHKParser::getGaussianCenters(std::istream& is)
   gsMap[-6]=8; //l=6 h1??
   gsMap[-7]=9; //l=7 h2??
   gsMap[-8]=10; //l=8 h3??
-  vector<int> n(gShell.size()), dn(NumberOfAtoms,0);
+  std::vector<int> n(gShell.size()), dn(NumberOfAtoms,0);
   bool SPshell(false);
   getValues(is,n.begin(), n.end());
   for(int i=0; i<n.size(); i++)

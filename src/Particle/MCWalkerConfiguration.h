@@ -77,7 +77,7 @@ public:
    * i.e., W.getActiveWalkers().
    * WalkerOffsets is added to handle parallel I/O with hdf5
    */
-  vector<int> WalkerOffsets;
+  std::vector<int> WalkerOffsets;
 
   // Data for GPU-acceleration via CUDA
   // These hold a list of pointers to the positions, gradients, and
@@ -86,7 +86,7 @@ public:
 #ifdef QMC_CUDA
   gpu::device_vector<CUDA_PRECISION*> RList_GPU, GradList_GPU, LapList_GPU;
   // First index is the species.  The second index is the walker
-  vector<gpu::device_vector<CUDA_COULOMB_PRECISION*> > RhokLists_GPU;
+  std::vector<gpu::device_vector<CUDA_COULOMB_PRECISION*> > RhokLists_GPU;
   gpu::device_vector<CUDA_PRECISION*> DataList_GPU;
   gpu::device_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > Rnew_GPU;
   gpu::host_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > Rnew_host;
@@ -94,7 +94,7 @@ public:
   gpu::host_vector<int> iatList_host;
   gpu::device_vector<CUDA_PRECISION*> NLlist_GPU;
   gpu::host_vector<CUDA_PRECISION*> NLlist_host;
-  vector<PosType>                                    Rnew;
+  std::vector<PosType>                                    Rnew;
   gpu::device_vector<int> AcceptList_GPU;
   gpu::host_vector<int> AcceptList_host;
   gpu::host_vector<CUDA_PRECISION*> hostlist;
@@ -107,11 +107,11 @@ public:
   void updateLists_GPU();
   int CurrentParticle;
   void proposeMove_GPU
-  (vector<PosType> &newPos, int iat);
-  void acceptMove_GPU(vector<bool> &toAccept);
-  void NLMove_GPU (vector<Walker_t*> &walkers,
-                   vector<PosType> &Rnew,
-                   vector<int> &iat);
+  (std::vector<PosType> &newPos, int iat);
+  void acceptMove_GPU(std::vector<bool> &toAccept);
+  void NLMove_GPU (std::vector<Walker_t*> &walkers,
+                   std::vector<PosType> &Rnew,
+                   std::vector<int> &iat);
 #endif
 
   ///default constructor
@@ -189,7 +189,7 @@ public:
     EnsembleProperty.Weight=nw;
   }
 
-  inline void setWalkerOffsets(const vector<int>& o)
+  inline void setWalkerOffsets(const std::vector<int>& o)
   {
     WalkerOffsets=o;
   }
@@ -331,14 +331,14 @@ public:
   //void loadEnsemble(const Walker_t& wcopy);
   /** load SampleStack from others
     */
-  void loadEnsemble(vector<MCWalkerConfiguration*>& others, bool doclean=true);
+  void loadEnsemble(std::vector<MCWalkerConfiguration*>& others, bool doclean=true);
   /** dump Samples to a file
    * @param others MCWalkerConfigurations whose samples will be collected
    * @param out engine to write the samples to state_0/walkers
    * @param np number of processors
    * @return true with non-zero samples
    */
-  bool dumpEnsemble(vector<MCWalkerConfiguration*>& others, HDFWalkerOutput* out, int np, int nBlock);
+  bool dumpEnsemble(std::vector<MCWalkerConfiguration*>& others, HDFWalkerOutput* out, int np, int nBlock);
   ///clear the ensemble
   void clearEnsemble();
   //@}
@@ -349,7 +349,7 @@ public:
     int ds=OHMMS_DIM*GlobalNum;
     for(iterator it=WalkerList.begin(); it!= WalkerList.end(); ++it,target+=ds)
     {
-      std::copy(get_first_address((*it)->R),get_last_address((*it)->R),target);
+      copy(get_first_address((*it)->R),get_last_address((*it)->R),target);
     }
   }
 
@@ -393,7 +393,7 @@ private:
   int MaxSamples;
   int CurSampleCount;
   //add samples
-  vector<MCSample*> SampleStack;
+  std::vector<MCSample*> SampleStack;
 
   /** initialize the PropertyList
    *

@@ -57,10 +57,10 @@ public:
   {
     RealType LR = evalLR();
     RealType SR = evalSR();
-    //cout << "Constant   terms = " << m_consts<<endl;
-    //cout << "LongRange  terms = " << LR <<endl;
-    //cout << "ShortRange terms = " << SR<<endl;
-    //cout << "Total            = " << LR+SR+m_consts<<endl<<endl;
+    //cout << "Constant   terms = " << m_consts<< std::endl;
+    //cout << "LongRange  terms = " << LR << std::endl;
+    //cout << "ShortRange terms = " << SR<< std::endl;
+    //cout << "Total            = " << LR+SR+m_consts<< std::endl<< std::endl;
     return (LR+SR+m_consts);
   }
 
@@ -78,7 +78,7 @@ protected:
   //fillXk requires a 2-dimensional array with index1 = |k|,
   //                                           index2 = degeneracy
   void fillFk(KContainer& KList);
-  void fillXk(vector<TinyVector<RealType,2> >& KList);
+  void fillXk(std::vector<TinyVector<RealType,2> >& KList);
 
   //These both have 2 indices. The first is the function index, so
   //multiple functions can be broken up by the same derived class (examples:
@@ -141,7 +141,7 @@ LRHandler<BreakupBasis>::InitBreakup(ParticleLayout_t& ref,int NumFunctions)
 
 template<class BreakupBasis>
 void
-LRHandler<BreakupBasis>::fillXk(vector<TinyVector<RealType,2> >& KList)
+LRHandler<BreakupBasis>::fillXk(std::vector<TinyVector<RealType,2> >& KList)
 {
   Fk.resize(NumFns,KList.size());
   for(int fn=0; fn<NumFns; fn++)

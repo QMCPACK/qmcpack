@@ -47,11 +47,11 @@ void AlternateReleasedNodeEnergyEstimator::add2Record(RecordListType& record)
   dumy=record.add("FermionEnergy");
   for(int i=0; i<N_rn; ++i)
   {
-    ostringstream o;
+    std::ostringstream o;
     o << "EW_RN_" << i;
-    ostringstream p;
+    std::ostringstream p;
     p << "E2W_RN_" << i;
-    ostringstream q;
+    std::ostringstream q;
     q << "W_RN_" << i;
     record.add(o.str());
     record.add(p.str());

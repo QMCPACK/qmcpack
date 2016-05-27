@@ -54,11 +54,11 @@ struct CoefficientHolder
     RealType bestVal(0);
     bestVal=energies[0]*we + variances[0]*wv;
     if (print)
-      app_log()<<0<<" "<<energies[0]<<" "<<variances[0]<<" "<<bestVal<<endl;
+      app_log()<<0<<" "<<energies[0]<<" "<<variances[0]<<" "<<bestVal<< std::endl;
     for(int ix=1; ix<energies.size(); ix++)
     {
       if (print)
-        app_log()<<ix<<" "<<energies[ix]<<" "<<variances[ix]<<" "<<energies[ix]*we+variances[ix]*wv<<endl;
+        app_log()<<ix<<" "<<energies[ix]<<" "<<variances[ix]<<" "<<energies[ix]*we+variances[ix]*wv<< std::endl;
       if (energies[ix]*we+variances[ix]*wv < bestVal)
       {
         bestVal=energies[ix]*we+variances[ix]*wv;
@@ -174,7 +174,7 @@ public:
 
   ///Add an OrbitalBase
   //void addOrbital(OrbitalBase* aterm);
-  void addOrbital(OrbitalBase* aterm, const string& aname, bool fermion=false);
+  void addOrbital(OrbitalBase* aterm, const std::string& aname, bool fermion=false);
 
   ///read from xmlNode
   bool put(xmlNodePtr cur);
@@ -197,17 +197,17 @@ public:
   void resetParameters(const opt_variables_type& active);
   /** print out state of the trial wavefunction
    */
-  void reportStatus(ostream& os);
+  void reportStatus(std::ostream& os);
 
   /** recursively change the ParticleSet whose G and L are evaluated */
   void resetTargetParticleSet(ParticleSet& P);
 
   /////Check if aname-ed Single-Particle-Orbital set exists
-  //bool hasSPOSet(const string& aname);
+  //bool hasSPOSet(const std::string& aname);
   /////add a Single-Particle-Orbital set
   //void addSPOSet(OhmmsElementBase* spo);
   /////return the aname-ed Single-Particle-Orbital set.
-  //OhmmsElementBase* getSPOSet(const string& aname);
+  //OhmmsElementBase* getSPOSet(const std::string& aname);
 
   /** evalaute the values of the wavefunction, gradient and laplacian  for a walkers */
   ValueType evaluate(ParticleSet& P);
@@ -247,10 +247,10 @@ public:
 
   /** compulte multiple ratios to handle non-local moves and other virtual moves
    */
-  void evaluateRatios(VirtualParticleSet& P, vector<RealType>& ratios);
+  void evaluateRatios(VirtualParticleSet& P, std::vector<RealType>& ratios);
   /** compute both ratios and deriatives of ratio with respect to the optimizables*/
   void evaluateDerivRatios(VirtualParticleSet& P, const opt_variables_type& optvars,
-      vector<RealType>& ratios, Matrix<RealType>& dratio);
+      std::vector<RealType>& ratios, Matrix<RealType>& dratio);
 
   void update(ParticleSet& P, int iat);
 
@@ -292,14 +292,14 @@ public:
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           vector<RealType>& dlogpsi,
-                           vector<RealType>& dhpsioverpsi,
+                           std::vector<RealType>& dlogpsi,
+                           std::vector<RealType>& dhpsioverpsi,
                            bool project=false);
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           vector<RealType>& dlogpsi,
-                           vector<RealType>& dhpsioverpsi,
+                           std::vector<RealType>& dlogpsi,
+                           std::vector<RealType>& dhpsioverpsi,
                            BufferType& buf);
 
   /** evalaute the values of the wavefunction, gradient and laplacian  for all the walkers */
@@ -318,17 +318,17 @@ public:
 
   TrialWaveFunction* makeClone(ParticleSet& tqp) const;
 
-  vector<OrbitalBase*>& getOrbitals()
+  std::vector<OrbitalBase*>& getOrbitals()
   {
     return Z;
   }
 
-  void get_ratios(ParticleSet& P, vector<ValueType>& ratios);
-  void setTwist(vector<RealType> t)
+  void get_ratios(ParticleSet& P, std::vector<ValueType>& ratios);
+  void setTwist(std::vector<RealType> t)
   {
     myTwist=t;
   }
-  const vector<RealType> twist()
+  const std::vector<RealType> twist()
   {
     return myTwist;
   }
@@ -378,7 +378,7 @@ private:
   RealType OneOverM;
 
   ///a list of OrbitalBases constituting many-body wave functions
-  vector<OrbitalBase*> Z;
+  std::vector<OrbitalBase*> Z;
 
   ///fermionic wavefunction
   FermionBase* FermionWF;
@@ -394,8 +394,8 @@ private:
 
   TrialWaveFunction();
 
-  vector<NewTimer*> myTimers;
-  vector<RealType> myTwist;
+  std::vector<NewTimer*> myTimers;
+  std::vector<RealType> myTwist;
 
   ///////////////////////////////////////////
   // Vectorized version for GPU evaluation //
@@ -415,36 +415,36 @@ public:
                 bool onlyOptimizable=false);
 
   void getGradient (MCWalkerConfiguration &W, int iat,
-                    vector<GradType> &grad);
+                    std::vector<GradType> &grad);
   void calcGradient (MCWalkerConfiguration &W, int iat,
-                     vector<GradType> &grad);
+                     std::vector<GradType> &grad);
   void addGradient (MCWalkerConfiguration &W, int iat,
-                    vector<GradType> &grad);
+                    std::vector<GradType> &grad);
   void evaluateLog (MCWalkerConfiguration &W,
-                    vector<RealType> &logPsi);
+                    std::vector<RealType> &logPsi);
   void ratio (MCWalkerConfiguration &W, int iat,
-              vector<ValueType> &psi_ratios);
+              std::vector<ValueType> &psi_ratios);
   void ratio (MCWalkerConfiguration &W, int iat,
-              vector<ValueType> &psi_ratios,
-              vector<GradType> &newG);
+              std::vector<ValueType> &psi_ratios,
+              std::vector<GradType> &newG);
   void ratio (MCWalkerConfiguration &W, int iat,
-              vector<ValueType> &psi_ratios,
-              vector<GradType> &newG,
-              vector<ValueType> &newL);
+              std::vector<ValueType> &psi_ratios,
+              std::vector<GradType> &newG,
+              std::vector<ValueType> &newL);
   void calcRatio (MCWalkerConfiguration &W, int iat,
-                  vector<ValueType> &psi_ratios,
-                  vector<GradType> &newG,
-                  vector<ValueType> &newL);
+                  std::vector<ValueType> &psi_ratios,
+                  std::vector<GradType> &newG,
+                  std::vector<ValueType> &newL);
   void addRatio (MCWalkerConfiguration &W, int iat,
-                 vector<ValueType> &psi_ratios,
-                 vector<GradType> &newG,
-                 vector<ValueType> &newL);
+                 std::vector<ValueType> &psi_ratios,
+                 std::vector<GradType> &newG,
+                 std::vector<ValueType> &newL);
 
-  void ratio (vector<Walker_t*> &walkers, vector<int> &iatList,
-              vector<PosType> &rNew,
-              vector<ValueType> &psi_ratios,
-              vector<GradType> &newG,
-              vector<ValueType> &newL);
+  void ratio (std::vector<Walker_t*> &walkers, std::vector<int> &iatList,
+              std::vector<PosType> &rNew,
+              std::vector<ValueType> &psi_ratios,
+              std::vector<GradType> &newG,
+              std::vector<ValueType> &newL);
   void NLratios (MCWalkerConfiguration &W,
                  gpu::device_vector<CUDA_PRECISION*> &Rlist,
                  gpu::device_vector<int*>            &ElecList,
@@ -452,28 +452,28 @@ public:
                  gpu::device_vector<CUDA_PRECISION*> &QuadPosList,
                  gpu::device_vector<CUDA_PRECISION*> &RatioList,
                  int numQuadPoints);
-  void NLratios (MCWalkerConfiguration &W,  vector<NLjob> &jobList,
-                 vector<PosType> &quadPoints, vector<ValueType> &psi_ratios);
+  void NLratios (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
+                 std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios);
 
-  void update (vector<Walker_t*> &walkers, int iat);
-  void update (const vector<Walker_t*> &walkers,
-               const vector<int> &iatList);
+  void update (std::vector<Walker_t*> &walkers, int iat);
+  void update (const std::vector<Walker_t*> &walkers,
+               const std::vector<int> &iatList);
 
   void gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads,
                  ValueMatrix_t &lapl);
 
 
   void evaluateDeltaLog(MCWalkerConfiguration &W,
-                        vector<RealType>& logpsi_opt);
+                        std::vector<RealType>& logpsi_opt);
 
   void evaluateDeltaLog(MCWalkerConfiguration &W,
-                        vector<RealType>& logpsi_fixed,
-                        vector<RealType>& logpsi_opt,
+                        std::vector<RealType>& logpsi_fixed,
+                        std::vector<RealType>& logpsi_opt,
                         GradMatrix_t&  fixedG,
                         ValueMatrix_t& fixedL);
 
   void evaluateOptimizableLog (MCWalkerConfiguration &W,
-                               vector<RealType>& logpsi_opt,
+                               std::vector<RealType>& logpsi_opt,
                                GradMatrix_t&  optG,
                                ValueMatrix_t& optL);
 

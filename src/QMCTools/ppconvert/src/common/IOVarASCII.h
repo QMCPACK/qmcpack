@@ -92,13 +92,13 @@ namespace IO {
       ArrayValue.reference(var.ArrayValue);
     }
 
-    IOVarASCII(string name, const blitz::Array<T,RANK> &val) {
+    IOVarASCII( std::string name, const blitz::Array<T,RANK> &val) {
       Name = name;
       ArrayValue.resize(val.shape());
       ArrayValue = val;
     }
     /// Default constructor
-    IOVarASCII(string name) {
+    IOVarASCII( std::string name) {
       Name = name;
     }
     /// Copy constructor
@@ -123,12 +123,12 @@ namespace IO {
 
     bool VarRead(double &val) { val = Value; return true; }
     bool VarWrite(double &val);
-    IOVarASCII(string name, double val) {
+    IOVarASCII( std::string name, double val) {
       Name = name;
       Value = val;
     }
     /// Default constructor
-    IOVarASCII(string name) {
+    IOVarASCII( std::string name) {
       Name = name;
     }
   };
@@ -148,21 +148,21 @@ namespace IO {
 
     bool VarRead(int &val) { val = Value; return true; }
     bool VarWrite(int &val);
-    IOVarASCII(string name, int val) {
+    IOVarASCII( std::string name, int val) {
       Name = name;
       Value = val;
     }
     /// Default constructor
-    IOVarASCII(string name) {
+    IOVarASCII( std::string name) {
       Name = name;
     }
   };
 
   template<>
-  class IOVarASCII<string,0> : public IOVarBase
+  class IOVarASCII<std::string,0> : public IOVarBase
   {
   public:
-    string Value;
+    std::string Value;
 
     int GetRank();
     IODataType GetType();
@@ -171,14 +171,14 @@ namespace IO {
     int GetExtent(int dim);
     void Resize(int n);
 
-    bool VarRead(string &val);
-    bool VarWrite(string val);
-    IOVarASCII(string name, string val) {
+    bool VarRead( std::string &val);
+    bool VarWrite( std::string val);
+    IOVarASCII( std::string name, std::string val) {
       Name = name;
       Value = val;
     }
     /// Default constructor
-    IOVarASCII(string name) {
+    IOVarASCII( std::string name) {
       Name = name;
     }
   };
@@ -198,22 +198,22 @@ namespace IO {
 
     bool VarRead(bool &val) { val = Value; return true; }
     bool VarWrite(bool &val);
-    IOVarASCII(string name, bool val) {
+    IOVarASCII( std::string name, bool val) {
       Name = name;
       Value = val;
     }
     /// Default constructor
-    IOVarASCII(string name) {
+    IOVarASCII( std::string name) {
       Name = name;
     }
   };
 
 
   template<>
-  class IOVarASCII<complex<double>,0> : public IOVarBase
+  class IOVarASCII<std::complex<double>,0> : public IOVarBase
   {
   public:
-    complex<double> Value;
+    std::complex<double> Value;
 
     int GetRank();
     IODataType GetType();
@@ -222,14 +222,14 @@ namespace IO {
     int GetExtent(int dim);
     void Resize(int n);
 
-    bool VarRead(complex<double> &val) { val = Value; return true; }
-    bool VarWrite(complex<double> &val);
-    IOVarASCII(string name, complex<double> val) {
+    bool VarRead(std::complex<double> &val) { val = Value; return true; }
+    bool VarWrite(std::complex<double> &val);
+    IOVarASCII( std::string name, std::complex<double> val) {
       Name = name;
       Value = val;
     }
     /// Default constructor
-    IOVarASCII(string name) {
+    IOVarASCII( std::string name) {
       Name = name;
     }
   };
@@ -326,7 +326,7 @@ namespace IO {
   {
     T a;
     if (GetRank() == 0) {
-      out << TypeString(a) << " " << Name << " = " << endl;
+      out << TypeString(a) << " " << Name << " = " << std::endl;
     }
     else {
       out << "Array<" << TypeString(a) << "," << GetRank() << ">(";
@@ -341,7 +341,7 @@ namespace IO {
 	if (i < (ArrayValue.size()-1))
 	  out << ", ";
       }
-      out << " ];" << endl;
+      out << " ];" << std::endl;
     }
   }
 

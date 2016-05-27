@@ -52,9 +52,9 @@ namespace qmcplusplus
 //    specialization.
 //
 //    For example, the abs function typically returns a double when the
-//    argument is a complex<double>. The appropriate specialization here
+//    argument is a std::complex<double>. The appropriate specialization here
 //    would be:
-//      template<> struct PETEUnaryReturn<complex<double>, FnAbs> {
+//      template<> struct PETEUnaryReturn<std::complex<double>, FnAbs> {
 //        typedef double Type_t;
 //      };
 //

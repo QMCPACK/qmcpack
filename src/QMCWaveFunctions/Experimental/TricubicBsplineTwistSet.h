@@ -23,7 +23,7 @@
 namespace qmcplusplus
 {
 
-/** A group of bspline functions stored in a map<int,StorageType*> for a twist angle
+/** A group of bspline functions stored in a std::map<int,StorageType*> for a twist angle
  */
 template<typename T>
 class TricubicBsplineTwistSet: public TricubicBsplineTraits<T>
@@ -185,7 +185,7 @@ private:
   std::map<int,const StorageType*> P;
 };
 
-//  /** A group of bspline functions stored in a map<int,StorageType*>
+//  /** A group of bspline functions stored in a std::map<int,StorageType*>
 //   */
 //  template<typename T>
 //    class TricubicBsplineGCSet

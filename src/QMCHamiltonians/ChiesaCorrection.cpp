@@ -28,10 +28,10 @@ ChiesaCorrection::evaluate(ParticleSet& P)
 #ifdef QMC_CUDA
 void
 ChiesaCorrection::addEnergy(MCWalkerConfiguration &W,
-                            vector<RealType> &LocalEnergy)
+                            std::vector<RealType> &LocalEnergy)
 {
   RealType corr = psi_ref.KECorrection();
-  vector<Walker_t*> &walkers = W.WalkerList;
+  std::vector<Walker_t*> &walkers = W.WalkerList;
   for (int iw=0; iw<LocalEnergy.size(); iw++)
   {
     walkers[iw]->getPropertyBase()[NUMPROPERTIES+myIndex] = corr;

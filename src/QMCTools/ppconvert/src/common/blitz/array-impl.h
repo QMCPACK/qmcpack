@@ -926,7 +926,7 @@ public:
         return RectDomain<N_rank>(lbound(), ubound());
     }
 
-    void dumpStructureInformation(ostream& os = cout) const;
+    void dumpStructureInformation(std::ostream& os = cout) const;
 
     iterator                          end()
     {
@@ -1263,23 +1263,23 @@ public:
 
     bool assertInRange(const T_index& BZ_DEBUG_PARAM(index)) const {
         BZPRECHECK(isInRange(index), "Array index out of range: " << index
-            << endl << "Lower bounds: " << storage_.base() << endl
-            <<         "Length:       " << length_ << endl);
+            << std::endl << "Lower bounds: " << storage_.base() << std::endl
+            <<         "Length:       " << length_ << std::endl);
         return true;
     }
 
     bool assertInRange(int BZ_DEBUG_PARAM(i0)) const {
         BZPRECHECK(isInRange(i0), "Array index out of range: " << i0
-            << endl << "Lower bounds: " << storage_.base() << endl
-            <<         "Length:       " << length_ << endl);
+            << std::endl << "Lower bounds: " << storage_.base() << std::endl
+            <<         "Length:       " << length_ << std::endl);
         return true;
     }
 
     bool assertInRange(int BZ_DEBUG_PARAM(i0), int BZ_DEBUG_PARAM(i1)) const {
         BZPRECHECK(isInRange(i0,i1), "Array index out of range: (" 
             << i0 << ", " << i1 << ")"
-            << endl << "Lower bounds: " << storage_.base() << endl
-            <<         "Length:       " << length_ << endl);
+            << std::endl << "Lower bounds: " << storage_.base() << std::endl
+            <<         "Length:       " << length_ << std::endl);
         return true;
     }
 
@@ -1288,8 +1288,8 @@ public:
     {
         BZPRECHECK(isInRange(i0,i1,i2), "Array index out of range: ("
             << i0 << ", " << i1 << ", " << i2 << ")"
-            << endl << "Lower bounds: " << storage_.base() << endl
-            <<         "Length:       " << length_ << endl);
+            << std::endl << "Lower bounds: " << storage_.base() << std::endl
+            <<         "Length:       " << length_ << std::endl);
         return true;
     }
 
@@ -1298,8 +1298,8 @@ public:
     {
         BZPRECHECK(isInRange(i0,i1,i2,i3), "Array index out of range: ("
             << i0 << ", " << i1 << ", " << i2 << ", " << i3 << ")"
-            << endl << "Lower bounds: " << storage_.base() << endl
-            <<         "Length:       " << length_ << endl);
+            << std::endl << "Lower bounds: " << storage_.base() << std::endl
+            <<         "Length:       " << length_ << std::endl);
         return true;
     }
 
@@ -1310,8 +1310,8 @@ public:
         BZPRECHECK(isInRange(i0,i1,i2,i3,i4), "Array index out of range: ("
             << i0 << ", " << i1 << ", " << i2 << ", " << i3 
             << ", " << i4 << ")"
-            << endl << "Lower bounds: " << storage_.base() << endl
-            <<         "Length:       " << length_ << endl);
+            << std::endl << "Lower bounds: " << storage_.base() << std::endl
+            <<         "Length:       " << length_ << std::endl);
         return true;
     }
 
@@ -1322,8 +1322,8 @@ public:
         BZPRECHECK(isInRange(i0,i1,i2,i3,i4,i5), "Array index out of range: ("
             << i0 << ", " << i1 << ", " << i2 << ", " << i3
             << ", " << i4 << ", " << i5 << ")"
-            << endl << "Lower bounds: " << storage_.base() << endl
-            <<         "Length:       " << length_ << endl);
+            << std::endl << "Lower bounds: " << storage_.base() << std::endl
+            <<         "Length:       " << length_ << std::endl);
         return true;
     }
 
@@ -1335,8 +1335,8 @@ public:
             "Array index out of range: ("
             << i0 << ", " << i1 << ", " << i2 << ", " << i3
             << ", " << i4 << ", " << i5 << ", " << i6 << ")"
-            << endl << "Lower bounds: " << storage_.base() << endl
-            <<         "Length:       " << length_ << endl);
+            << std::endl << "Lower bounds: " << storage_.base() << std::endl
+            <<         "Length:       " << length_ << std::endl);
         return true;
     }
 
@@ -1349,8 +1349,8 @@ public:
             "Array index out of range: ("
             << i0 << ", " << i1 << ", " << i2 << ", " << i3
             << ", " << i4 << ", " << i5 << ", " << i6 << ", " << i7 << ")"
-            << endl << "Lower bounds: " << storage_.base() << endl
-            <<         "Length:       " << length_ << endl);
+            << std::endl << "Lower bounds: " << storage_.base() << std::endl
+            <<         "Length:       " << length_ << std::endl);
         return true;
     }
 
@@ -1364,8 +1364,8 @@ public:
             << i0 << ", " << i1 << ", " << i2 << ", " << i3
             << ", " << i4 << ", " << i5 << ", " << i6 << ", " << i7 
             << ", " << i8 << ")"
-            << endl << "Lower bounds: " << storage_.base() << endl
-            <<         "Length:       " << length_ << endl);
+            << std::endl << "Lower bounds: " << storage_.base() << std::endl
+            <<         "Length:       " << length_ << std::endl);
         return true;
     }
 
@@ -1379,8 +1379,8 @@ public:
             << i0 << ", " << i1 << ", " << i2 << ", " << i3
             << ", " << i4 << ", " << i5 << ", " << i6 << ", " << i7
             << ", " << i8 << ", " << i9 << ")"
-            << endl << "Lower bounds: " << storage_.base() << endl
-            <<         "Length:       " << length_ << endl);
+            << std::endl << "Lower bounds: " << storage_.base() << std::endl
+            <<         "Length:       " << length_ << std::endl);
         return true;
     }
 
@@ -1395,8 +1395,8 @@ public:
             << i0 << ", " << i1 << ", " << i2 << ", " << i3
             << ", " << i4 << ", " << i5 << ", " << i6 << ", " << i7
             << ", " << i8 << ", " << i9 << ", " << i10 << ")"
-            << endl << "Lower bounds: " << storage_.base() << endl
-            <<         "Length:       " << length_ << endl);
+            << std::endl << "Lower bounds: " << storage_.base() << std::endl
+            <<         "Length:       " << length_ << std::endl);
         return true;
     }
 
@@ -2456,16 +2456,16 @@ const int eleventhDim = 10;
  */
 
 template<typename T_numtype>
-ostream& operator<<(ostream&, const Array<T_numtype,1>&);
+ostream& operator<<(std::ostream&, const Array<T_numtype,1>&);
 
 template<typename T_numtype>
-ostream& operator<<(ostream&, const Array<T_numtype,2>&);
+ostream& operator<<(std::ostream&, const Array<T_numtype,2>&);
 
 template<typename T_numtype, int N_rank>
-ostream& operator<<(ostream&, const Array<T_numtype,N_rank>&);
+ostream& operator<<(std::ostream&, const Array<T_numtype,N_rank>&);
 
 template<typename T_numtype, int N_rank>
-istream& operator>>(istream& is, Array<T_numtype,N_rank>& x);
+istream& operator>>( std::istream& is, Array<T_numtype,N_rank>& x);
 
 template <typename P_numtype,int N_rank>
 void swap(Array<P_numtype,N_rank>& a,Array<P_numtype,N_rank>& b) {

@@ -56,13 +56,13 @@ class HDFWalkerOutput
   Communicate* myComm;
   int currentConfigNumber;
   ///rootname
-  string RootName;
-  string prevFile;
+  std::string RootName;
+  std::string prevFile;
 //     ///handle for the storeConfig.h5
 //     hdf_archive fw_out;
 public:
   ///constructor
-  HDFWalkerOutput(MCWalkerConfiguration& W, const string& fname, Communicate* c);
+  HDFWalkerOutput(MCWalkerConfiguration& W, const std::string& fname, Communicate* c);
   ///destructor
   ~HDFWalkerOutput();
 
@@ -87,14 +87,14 @@ private:
 
   ///PooledData<T> is used to define the shape of multi-dimensional array
   typedef PooledData<OHMMS_PRECISION> BufferType;
-  vector<Communicate::request> myRequest;
-  vector<BufferType*> RemoteData;
+  std::vector<Communicate::request> myRequest;
+  std::vector<BufferType*> RemoteData;
   int block;
 
 //     //define some types for the FW collection
-//     typedef vector<ForwardWalkingData> FWBufferType;
-//     vector<FWBufferType*> FWData;
-//     vector<vector<int> > FWCountData;
+//     typedef std::vector<ForwardWalkingData> FWBufferType;
+//     std::vector<FWBufferType*> FWData;
+//     std::vector<std::vector<int> > FWCountData;
 
   void write_configuration(MCWalkerConfiguration& W, hdf_archive& hout, int block);
 };

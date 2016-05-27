@@ -101,30 +101,30 @@ typedef unsigned long mem_t;
 typedef TinyVector<real_t,DIM> Pos_t;
 
 
-const string & none_type_string = "none";
-const string & int_type_string  = "int";
-const string & real_type_string = "real";
+const std::string & none_type_string = "none";
+const std::string & int_type_string  = "int";
+const std::string & real_type_string = "real";
 
 template<typename T>
-const string& get_type_string()
+const std::string& get_type_string()
 {
   return none_type_string;
 }
 
 template<>
-const string& get_type_string<int>()
+const std::string& get_type_string<int>()
 {
   return int_type_string;
 }
 
 template<>
-const string& get_type_string<real_t>()
+const std::string& get_type_string<real_t>()
 {
   return real_type_string;
 }
 
 
-void zfill(int number,string& str,int digits)
+void zfill(int number,std::string& str,int digits)
 {
   char token[32];
   if(digits==6)
@@ -142,13 +142,13 @@ void zfill(int number,string& str,int digits)
 
 
 template<typename T>
-T min(vector<T>&v)
+T std::min(std::vector<T>&v)
 {
   if(v.size()>0)
   {
     T m = v[0];
     for(int i=1;i<v.size();++i)
-      m=min(m,v[i]);
+      m= std::min(m,v[i]);
     return m;
   }
   else
@@ -159,13 +159,13 @@ T min(vector<T>&v)
 }
 
 template<typename T>
-T max(vector<T>&v)
+T max(std::vector<T>&v)
 {
   if(v.size()>0)
   {
     T m = v[0];
     for(int i=1;i<v.size();++i)
-      m=max(m,v[i]);
+      m= std::max(m,v[i]);
     return m;
   }
   else
@@ -177,7 +177,7 @@ T max(vector<T>&v)
 
 
 template<typename T>
-T sum(vector<T>&v)
+T sum(std::vector<T>&v)
 {
   T s = 0.0;
   for(int i=0;i<v.size();++i)
@@ -186,7 +186,7 @@ T sum(vector<T>&v)
 }
 
 template<typename T>
-T sum2(vector<T>&v)
+T sum2(std::vector<T>&v)
 {
   T s = 0.0;
   for(int i=0;i<v.size();++i)
@@ -196,20 +196,20 @@ T sum2(vector<T>&v)
 
 
 template<typename T>
-T mean(vector<T>&v) 
+T mean(std::vector<T>&v) 
 {
   return sum(v)/v.size();
 }
 
 template<typename T>
-T mean2(vector<T>&v) 
+T mean2(std::vector<T>&v) 
 {
   return sum2(v)/v.size();
 }
 
 
 template<typename T>
-void autocorr_stats(vector<T>& block_data,T& avg,T& var,T& error,T& blocks_eff)
+void autocorr_stats(std::vector<T>& block_data,T& avg,T& var,T& error,T& blocks_eff)
 {
   avg = mean(block_data);
   var = mean2(block_data)-avg*avg;
@@ -229,13 +229,13 @@ void autocorr_stats(vector<T>& block_data,T& avg,T& var,T& error,T& blocks_eff)
       corr /= (var*(blocks-i));
     }
   }
-  blocks_eff = blocks/max(kappa,1.0);
+  blocks_eff = blocks/std::max(kappa,1.0);
   error = sqrt(var/blocks_eff);
 }
 
 
 template<typename T>
-void autocorr_stats(vector<T>& block_data,T& blocks_eff)
+void autocorr_stats(std::vector<T>& block_data,T& blocks_eff)
 {
   T avg,var,error;
   autocorr_stats(block_data,avg,var,error,blocks_eff);
@@ -260,30 +260,30 @@ struct Input
   ParticleSet* Peln;
   ParticleSet* Pion;
   // run
-  string path;
-  string prefix;
+  std::string path;
+  std::string prefix;
   int tot_procs;
   int tot_groups;
   int tot_series;
-  vector<int> steps;
-  vector<int> blocks;
+  std::vector<int> steps;
+  std::vector<int> blocks;
   int proc_digits;
-  string elns;
-  string ions;
+  std::string elns;
+  std::string ions;
   // controls
   int blocks_exclude;
   bool average_groups;
   bool verbose;
-  vector<int> series;
-  vector<int> groups;
-  vector<int> procs;
+  std::vector<int> series;
+  std::vector<int> groups;
+  std::vector<int> procs;
   // quantities
   xmlNodePtr quantities;
 
   //derived parameters
   int nspecies;
-  vector<int> species_size;
-  vector<string> species_name;
+  std::vector<int> species_size;
+  std::vector<std::string> species_name;
   int nparticles;
 
   Libxml2Document doc;
@@ -311,11 +311,11 @@ struct Input
     blocks_exclude = 0;
     verbose = false;
     average_groups = true;
-    vector<int> series_range;
-    vector<int> group_range;
-    vector<int> proc_range;
-    string vstr  = "no";
-    string agstr = "yes";
+    std::vector<int> series_range;
+    std::vector<int> group_range;
+    std::vector<int> proc_range;
+    std::string vstr  = "no";
+    std::string agstr = "yes";
     // quantities
     quantities = NULL;
 
@@ -323,14 +323,14 @@ struct Input
     xmlNodePtr elem = doc.getRoot()->children;
     while(elem != NULL)
     {
-      string ename((const char*)elem->name);
+      std::string ename((const char*)elem->name);
       xmlNodePtr cur=elem->children;
       if(ename=="qmcsystem")
       {
         processP(elem);
         while(cur!=NULL)
         {
-          string cname((const char*)cur->name);
+          std::string cname((const char*)cur->name);
           if(cname=="simulationcell")
           {
             LatticeParser a(cell);
@@ -354,10 +354,10 @@ struct Input
       {
         while(cur!=NULL)
         {
-          string cname((const char*)cur->name);
+          std::string cname((const char*)cur->name);
           if(cname=="parameter")
           {
-            string pname((const char*)(xmlGetProp(cur,(const xmlChar*)"name")));
+            std::string pname((const char*)(xmlGetProp(cur,(const xmlChar*)"name")));
             if(pname=="path")
               putContent(path,cur);
             else if(pname=="prefix")
@@ -392,10 +392,10 @@ struct Input
       {
         while(cur!=NULL)
         {
-          string cname((const char*)cur->name);
+          std::string cname((const char*)cur->name);
           if(cname=="parameter")
           {
-            string pname((const char*)(xmlGetProp(cur,(const xmlChar*)"name")));
+            std::string pname((const char*)(xmlGetProp(cur,(const xmlChar*)"name")));
             if(pname=="series")
               putContent(series,cur);
             else if(pname=="groups")
@@ -491,7 +491,7 @@ struct Input
     xmlNodePtr cur = qmcsystem->children;
     while(cur != NULL)
     {
-      string cname((const char*)cur->name);
+      std::string cname((const char*)cur->name);
       if(cname == "simulationcell")
         ptclPool.putLattice(cur);
       else if(cname == "particleset")
@@ -500,16 +500,16 @@ struct Input
     }
   }
 
-  ParticleSet* get_particleset(const string& psname)
+  ParticleSet* get_particleset(const std::string& psname)
   {
-    map<string,ParticleSet*>& pool = ptclPool.getPool();
+    std::map<std::string,ParticleSet*>& pool = ptclPool.getPool();
     if(pool.find(psname)==pool.end())
       return NULL;
     else
       return pool[psname];
   }
 
-  void set_range(const string& name,vector<int>& vec,vector<int>& range)
+  void set_range(const std::string& name,std::vector<int>& vec,std::vector<int>& range)
   {
     if(range.size()==0)
     {
@@ -523,7 +523,7 @@ struct Input
       vec.push_back(i);
   }
 
-  void get_range(vector<int>& vec,int& vmin,int& vmax)
+  void get_range(std::vector<int>& vec,int& vmin,int& vmax)
   {
     vmin = min(vec);
     vmax = max(vec);
@@ -531,34 +531,34 @@ struct Input
 
   void report()
   {
-    app_log()<<endl;
-    app_log()<<"Trace analyzer input:"<<endl;
-    app_log()<<"  path           = "<< path <<endl;
-    app_log()<<"  prefix         = "<< prefix <<endl;
-    app_log()<<"  tot_procs      = "<< tot_procs <<endl;
-    app_log()<<"  tot_groups     = "<< tot_groups <<endl;
-    app_log()<<"  tot_series     = "<< tot_series <<endl;
+    app_log()<< std::endl;
+    app_log()<<"Trace analyzer input:"<< std::endl;
+    app_log()<<"  path           = "<< path << std::endl;
+    app_log()<<"  prefix         = "<< prefix << std::endl;
+    app_log()<<"  tot_procs      = "<< tot_procs << std::endl;
+    app_log()<<"  tot_groups     = "<< tot_groups << std::endl;
+    app_log()<<"  tot_series     = "<< tot_series << std::endl;
     app_log()<<"  steps          = ";
     for(int i=0;i<steps.size();++i)
       app_log()<<steps[i]<<" ";
-    app_log()<<endl;
+    app_log()<< std::endl;
     app_log()<<"  blocks         = ";
     for(int i=0;i<blocks.size();++i)
       app_log()<<blocks[i]<<" ";
-    app_log()<<endl;
-    app_log()<<"  proc_digits    = "<< proc_digits <<endl;
+    app_log()<< std::endl;
+    app_log()<<"  proc_digits    = "<< proc_digits << std::endl;
     int smin,smax;
     get_range(series,smin,smax);
-    app_log()<<"  series range   = "<<smin<<" "<<smax<<endl;
+    app_log()<<"  series range   = "<<smin<<" "<<smax<< std::endl;
     if(tot_groups>0)
     {
       get_range(groups,smin,smax);
-      app_log()<<"  group range    = "<<smin<<" "<<smax<<endl;
+      app_log()<<"  group range    = "<<smin<<" "<<smax<< std::endl;
     }
     get_range(procs,smin,smax);
-    app_log()<<"  proc range     = "<<smin<<" "<<smax<<endl;
-    app_log()<<"  average_groups = "<<average_groups<<endl;
-    app_log()<<"  verbose        = "<<verbose<<endl;
+    app_log()<<"  proc range     = "<<smin<<" "<<smax<< std::endl;
+    app_log()<<"  average_groups = "<<average_groups<< std::endl;
+    app_log()<<"  verbose        = "<<verbose<< std::endl;
   }
 };
 
@@ -567,13 +567,13 @@ struct QuantityTraceBase
 {
   static bool verbose;
   static real_t read_time;
-  string path;
+  std::string path;
   int nrows;
   int ncols;
   Timer time;
 
   virtual void clear()=0;
-  virtual bool read(hdf_archive& hin,const string& inpath)=0;
+  virtual bool read(hdf_archive& hin,const std::string& inpath)=0;
   virtual mem_t memory()=0;
 };
 bool QuantityTraceBase::verbose = false;
@@ -583,7 +583,7 @@ real_t QuantityTraceBase::read_time = 0.0;
 template<typename T>
 struct QuantityTrace : public QuantityTraceBase
 {
-  vector<T> trace;
+  std::vector<T> trace;
 
   QuantityTrace()
   {
@@ -599,16 +599,16 @@ struct QuantityTrace : public QuantityTraceBase
   }
 
 
-  bool read(hdf_archive& hin,const string& inpath)
+  bool read(hdf_archive& hin,const std::string& inpath)
   {
     clear();
     path = inpath;
     if(verbose)
-      app_log()<<"    reading "<<path<<endl;
+      app_log()<<"    reading "<<path<< std::endl;
     time.restart();
     hsize_t dims[2];
     int blockoffset=0;
-    const string& pushpath = "/"+get_type_string<T>()+"_data";
+    const std::string& pushpath = "/"+get_type_string<T>()+"_data";
     bool success=hin.push(pushpath,false);
     if(success)
     {
@@ -626,18 +626,18 @@ struct QuantityTrace : public QuantityTraceBase
         TinyVector<int,2> gcounts(dims[0],dims[1]);
         TinyVector<int,2> counts(nrows,ncols);
         TinyVector<int,2> offsets(blockoffset,col_start);
-        hyperslab_proxy<vector<T>,2> trace_slab(trace,gcounts,counts,offsets);
+        hyperslab_proxy<std::vector<T>,2> trace_slab(trace,gcounts,counts,offsets);
         success&=hin.read(trace_slab,"traces");
       }
     }
     hin.pop();
     if(verbose)
     {
-      app_log()<<"      successful = "<<success<<endl;
-      app_log()<<"      wall time  = "<<time.elapsed()<<endl;
-      app_log()<<"      mbytes     = "<<(memory()>>20)<<endl;
-      app_log()<<"      nrows      = "<<nrows<<endl;
-      app_log()<<"      ncols      = "<<ncols<<endl;
+      app_log()<<"      successful = "<<success<< std::endl;
+      app_log()<<"      wall time  = "<<time.elapsed()<< std::endl;
+      app_log()<<"      mbytes     = "<<(memory()>>20)<< std::endl;
+      app_log()<<"      nrows      = "<<nrows<< std::endl;
+      app_log()<<"      ncols      = "<<ncols<< std::endl;
     }
     return success;
   }
@@ -653,21 +653,21 @@ struct QuantityTrace : public QuantityTraceBase
 
 struct QuantityAnalyzer
 {
-  string name;
+  std::string name;
   Input& input;
   int series_index;
   int group_index;
-  string label;
+  std::string label;
   int pack_start;
   size_t blocks;
   size_t block_size;
-  vector<real_t> block_weights;
-  vector<real_t> block_buffer;
-  vector<real_t> data_mean;
-  vector<real_t> data_error;
-  vector<real_t> stat_blocks;
+  std::vector<real_t> block_weights;
+  std::vector<real_t> block_buffer;
+  std::vector<real_t> data_mean;
+  std::vector<real_t> data_error;
+  std::vector<real_t> stat_blocks;
 
-  QuantityAnalyzer(string& n,Input& i)
+  QuantityAnalyzer( std::string& n,Input& i)
     : name(n),input(i)
   {
     blocks     = 0;
@@ -724,14 +724,14 @@ struct QuantityAnalyzer
     bsize += block_size;
   }
 
-  void pack(int b,vector<real_t>& buffer)
+  void pack(int b,std::vector<real_t>& buffer)
   {
     int boffset = b*block_size;
     for(int n=0;n<block_size;++n)
       buffer[pack_start+n] = block_buffer[boffset+n];
   }
 
-  void unpack(int b,vector<real_t>& buffer)
+  void unpack(int b,std::vector<real_t>& buffer)
   {
     block_weights[b] = buffer[0];
     int boffset = b*block_size;
@@ -772,7 +772,7 @@ struct QuantityAnalyzer
     real_t dmax = -1.0;
     for(int n=0;n<block_size;++n)
     {
-      real_t d = abs(data_mean[n]);
+      real_t d = std::abs(data_mean[n]);
       if(d>dmax)
       {
         dmax=d;
@@ -792,12 +792,12 @@ struct QuantityAnalyzer
       data_error[n] = sqrt(data_error[n]/blocks_eff); //error
   }
 
-  void get_output_file_prefix(string& ofprefix,int s,int g)
+  void get_output_file_prefix( std::string& ofprefix,int s,int g)
   {
     int series = input.series[s];
     int group  = input.groups[g];
-    string stoken;
-    string gtoken;
+    std::string stoken;
+    std::string gtoken;
     zfill(series,stoken,3);
     ofprefix = input.path+"/"+input.prefix;
     if(group!=-1 && !input.average_groups)
@@ -813,7 +813,7 @@ struct QuantityAnalyzer
 
   virtual void put(xmlNodePtr qxml)=0;  
   virtual void load_traces(hdf_archive& hin)=0;
-  virtual void accumulate(QuantityTrace<real_t>& weights,vector<block_props>& block_properties)=0;
+  virtual void accumulate(QuantityTrace<real_t>& weights,std::vector<block_props>& block_properties)=0;
   virtual void clear_traces()=0;
   virtual void write()=0;
 };
@@ -821,7 +821,7 @@ struct QuantityAnalyzer
 
 struct SpinDensityAnalyzer : public QuantityAnalyzer
 {
-  string format;
+  std::string format;
   int npoints;
   TinyVector<int,DIM> grid;
   TinyVector<int,DIM> gdims;
@@ -831,7 +831,7 @@ struct SpinDensityAnalyzer : public QuantityAnalyzer
   int nspecies;
   int nparticles;
 
-  SpinDensityAnalyzer(string& n,Input& i)
+  SpinDensityAnalyzer( std::string& n,Input& i)
     : QuantityAnalyzer(n,i)
   {
     nspecies   = input.nspecies;
@@ -845,10 +845,10 @@ struct SpinDensityAnalyzer : public QuantityAnalyzer
     xmlNodePtr cur=qxml->children;
     while(cur!=NULL)
     {
-      string cname((const char*)cur->name);
+      std::string cname((const char*)cur->name);
       if(cname=="parameter")
       {
-        string pname((const char*)(xmlGetProp(cur,(const xmlChar*)"name")));
+        std::string pname((const char*)(xmlGetProp(cur,(const xmlChar*)"name")));
         if(pname=="grid")
         {
           has_grid = true;
@@ -888,7 +888,7 @@ struct SpinDensityAnalyzer : public QuantityAnalyzer
       APP_ABORT("SpinDensityAnalyzer::load_traces number of particles in traces file and input file differ");
   }
 
-  void accumulate(QuantityTrace<real_t>& weights,vector<block_props>& block_properties)
+  void accumulate(QuantityTrace<real_t>& weights,std::vector<block_props>& block_properties)
   {
     ParticleLayout_t& cell = input.cell;
     ParticlePos_t R(nparticles); //cartesian coordiates
@@ -903,7 +903,7 @@ struct SpinDensityAnalyzer : public QuantityAnalyzer
       int poffset = bp.i1*psize;
       for(int i=bp.i1;i<bp.i2;++i,poffset+=psize)
       {
-        copy(positions.trace.data()+poffset,positions.trace.data()+poffset+psize, &(R[0][0]));
+        std::copy(positions.trace.data()+poffset,positions.trace.data()+poffset+psize, &(R[0][0]));
         ApplyBConds<ParticlePos_t,Tensor_t,3,false>::Cart2Unit(R,cell.G,Ru,0,nparticles);
         real_t w = weights.trace[i];
         int p=0;
@@ -933,15 +933,15 @@ struct SpinDensityAnalyzer : public QuantityAnalyzer
 
   void write()
   {
-    string ofprefix;
+    std::string ofprefix;
     get_output_file_prefix(ofprefix,series_index,group_index);
     
-    vector<real_t> dwrite(npoints);
-    vector<real_t> dmean(npoints,0.0);
-    vector<real_t> derror(npoints,0.0);
+    std::vector<real_t> dwrite(npoints);
+    std::vector<real_t> dmean(npoints,0.0);
+    std::vector<real_t> derror(npoints,0.0);
     for(int s=0,offset=0;s<input.nspecies;++s,offset+=npoints)
     {
-      string sfprefix = ofprefix+"_"+input.species_name[s];
+      std::string sfprefix = ofprefix+"_"+input.species_name[s];
 
       VectorViewer<real_t> dm(&data_mean[offset],npoints);
       VectorViewer<real_t> de(&data_error[offset],npoints);
@@ -970,25 +970,25 @@ struct SpinDensityAnalyzer : public QuantityAnalyzer
     //for(int n=0;n<block_size;++n)
     //  dmn[n] /= blocks;
     //
-    //app_log()<<"\nsums of SpinDensity"<<endl;
+    //app_log()<<"\nsums of SpinDensity"<< std::endl;
     ////boffset = 0;
     ////for(int b=0;b<blocks;++b,boffset+=block_size)
     ////{
     ////  real_t bsum = 0.0;
     ////  for(int n=0;n<block_size;++n)
     ////    bsum += block_buffer[boffset+n];
-    ////  app_log()<<"  block sum "<<b<<" "<<bsum<<endl;
+    ////  app_log()<<"  block sum "<<b<<" "<<bsum<< std::endl;
     ////}
     //for(int s=0,n=0;s<input.nspecies;++s)
     //{
-    //  app_log()<<"  spin "<<s<<endl;
+    //  app_log()<<"  spin "<<s<< std::endl;
     //  for(int p=0;p<npoints;++p,++n)
     //    fprintf(stdout,"    %d  %16.12f  %16.12f  %16.12f\n",n,dmn[n],data_mean[n],data_error[n]);
     //}
   }
 
   template<typename VEC>
-  void write_densities(const string& ofprefix,VEC& dmean,VEC& derror,VEC& dwrite)
+  void write_densities(const std::string& ofprefix,VEC& dmean,VEC& derror,VEC& dwrite)
   {
     write_density(ofprefix+"_mean",dmean);
     write_density(ofprefix+"_err" ,derror);
@@ -1003,14 +1003,14 @@ struct SpinDensityAnalyzer : public QuantityAnalyzer
   }
 
   template<typename VEC>
-  void write_density(const string& outfile,VEC& density)
+  void write_density(const std::string& outfile,VEC& density)
   {
     if(format=="xsf")
       write_density_xsf(outfile,density);
   }
 
   template<typename VEC>
-  void write_density_xsf(const string& outfile,VEC& density)
+  void write_density_xsf(const std::string& outfile,VEC& density)
   {
     using Units::convert;
     using Units::B;
@@ -1020,9 +1020,9 @@ struct SpinDensityAnalyzer : public QuantityAnalyzer
     ParticleSet& Pq = *input.Peln;
     ParticleSet& Pc = *input.Pion;
 
-    ofstream file;
-    string filename = outfile+".xsf";
-    file.open(filename.c_str(),ios::out | ios::trunc);
+    std::ofstream file;
+    std::string filename = outfile+".xsf";
+    file.open(filename.c_str(),std::ios::out | std::ios::trunc);
     if(!file.is_open())
       APP_ABORT("SpinDensityAnalzer::write_density_xsf\n  failed to open file for output: "+outfile+".xsf");
 
@@ -1032,52 +1032,52 @@ struct SpinDensityAnalyzer : public QuantityAnalyzer
 
     int natoms = Pc.getTotalNum();
 
-    file<<" CRYSTAL"<<endl;
-    file<<" PRIMVEC"<<endl;
+    file<<" CRYSTAL"<< std::endl;
+    file<<" PRIMVEC"<< std::endl;
     for(int i=0;i<DIM;++i)
     {
       file<<" ";
       for(int d=0;d<DIM;++d)
         file<<"  "<<convert(Pq.Lattice.Rv[i][d],B,A);
-      file<<endl;
+      file<< std::endl;
     }
-    file<<" PRIMCOORD"<<endl;
-    file<<"   "<<natoms<<"   1"<<endl;
+    file<<" PRIMCOORD"<< std::endl;
+    file<<"   "<<natoms<<"   1"<< std::endl;
     for(int i=0;i<natoms;++i)
     {
       file<<"   "<<Pc.mySpecies.speciesName[Pc.GroupID[i]];
       for(int d=0;d<DIM;++d)
         file<<"  "<<convert(Pc.R[i][d],B,A);
-      file<<endl;
+      file<< std::endl;
     }
-    file<<" BEGIN_BLOCK_DATAGRID_3D"<<endl;
-    file<<"   "<<outfile<<endl;
-    file<<"   DATAGRID_3D_SPIN_DENSITY"<<endl;
+    file<<" BEGIN_BLOCK_DATAGRID_3D"<< std::endl;
+    file<<"   "<<outfile<< std::endl;
+    file<<"   DATAGRID_3D_SPIN_DENSITY"<< std::endl;
     file<<"   ";
     for(int d=0;d<DIM;++d)
       file<<"  "<<grid[d];
-    file<<endl;
+    file<< std::endl;
     file<<"   ";
     for(int d=0;d<DIM;++d)
       file<<"  "<<convert(corner[d],B,A);
-    file<<endl;
+    file<< std::endl;
     for(int i=0;i<DIM;++i)
     {
       file<<"   ";
       for(int d=0;d<DIM;++d)
         file<<"  "<<convert(cell.Rv[i][d],B,A);
-      file<<endl;
+      file<< std::endl;
     }
     file<<"   ";
     for(int p=0;p<npoints;++p)
     {
       file<<"  "<<density[p];
       if((p+1)%columns==0)
-        file<<endl<<"   ";
+        file<< std::endl<<"   ";
     }
-    file<<endl;
-    file<<"   END_DATAGRID_3D"<<endl;
-    file<<" END_BLOCK_DATAGRID_3D"<<endl;
+    file<< std::endl;
+    file<<"   END_DATAGRID_3D"<< std::endl;
+    file<<" END_BLOCK_DATAGRID_3D"<< std::endl;
   }
 
 };
@@ -1089,9 +1089,9 @@ struct TraceAnalyzer
   Communicate* comm;
   bool master;
   int master_rank;
-  vector<int> local_procs;
+  std::vector<int> local_procs;
   Input input;
-  vector<QuantityAnalyzer*> quantities;
+  std::vector<QuantityAnalyzer*> quantities;
   size_t nblocks_min;
   Timer time;
 
@@ -1116,7 +1116,7 @@ struct TraceAnalyzer
     partition_trace_procs();
 
     //process trace files
-    app_log()<<"\nProcessing trace files by series and group"<<endl;
+    app_log()<<"\nProcessing trace files by series and group"<< std::endl;
     for(int s=0;s<input.series.size();++s)
     {
       // setup quantity analyzers
@@ -1142,7 +1142,7 @@ struct TraceAnalyzer
 
   void partition_trace_procs()
   {
-    app_log()<<"\nPartitioning of trace procs across mpi ranks"<<endl;
+    app_log()<<"\nPartitioning of trace procs across mpi ranks"<< std::endl;
     int nmpi = comm->size();
     for(int rank=0;rank<nmpi;++rank)
     {
@@ -1168,7 +1168,7 @@ struct TraceAnalyzer
       app_log()<<"  rank "<<rank<<"  procs ";
       for(int p=0;p<nprocs;++p)
         app_log()<<input.procs[pstart+p]<<" ";
-      app_log()<<endl;
+      app_log()<< std::endl;
     }
   }
 
@@ -1176,11 +1176,11 @@ struct TraceAnalyzer
   {
     if(input.average_groups)
       nblocks_min = 2000000000;
-    app_log()<<"  initializing quantities for series "<<input.series[s]<<endl;
+    app_log()<<"  initializing quantities for series "<<input.series[s]<< std::endl;
     xmlNodePtr cur = input.quantities->children;
     while(cur!=NULL)
     {
-      string cname((const char*)cur->name);
+      std::string cname((const char*)cur->name);
       QuantityAnalyzer* qa = 0;
       if(cname=="spindensity")
         qa = new SpinDensityAnalyzer(cname,input);
@@ -1189,7 +1189,7 @@ struct TraceAnalyzer
       if(qa)
       {
         qa->init(cur,s);
-        app_log()<<"    found "<<qa->name<<"  mbytes = "<<(qa->memory()>>20)<<endl;
+        app_log()<<"    found "<<qa->name<<"  mbytes = "<<(qa->memory()>>20)<< std::endl;
         quantities.push_back(qa);
       }
       cur=cur->next;
@@ -1203,9 +1203,9 @@ struct TraceAnalyzer
     //accumulate trace data from each file
     app_log()<<"  processing trace files for ";
     if(input.groups[g]==-1)
-      app_log()<<"series "<<input.series[s]<<endl;
+      app_log()<<"series "<<input.series[s]<< std::endl;
     else
-      app_log()<<"series "<<input.series[s]<<" group "<<input.groups[g]<<endl;
+      app_log()<<"series "<<input.series[s]<<" group "<<input.groups[g]<< std::endl;
     for(int q=0;q<quantities.size();++q)
     {
       QuantityAnalyzer& qa = *quantities[q];
@@ -1218,35 +1218,35 @@ struct TraceAnalyzer
       int p = local_procs[ip];
 
       // get the trace file name
-      string h5fname;
+      std::string h5fname;
       get_trace_file_name(h5fname,s,g,p);
 
       // open the hdf archive
       if(input.verbose)
-        app_log()<<"\n  reading "+h5fname<<endl;
+        app_log()<<"\n  reading "+h5fname<< std::endl;
       hdf_archive hin(comm);
       hin.open(h5fname,H5F_ACC_RDONLY);
       
       // read shared trace quantities
       if(input.verbose)
-        app_log()<<"  reading shared quantities"<<endl;
+        app_log()<<"  reading shared quantities"<< std::endl;
       QuantityTrace<int>    steps;
       QuantityTrace<real_t> weights;
       steps.read(hin,"scalars/step");
       weights.read(hin,"scalars/weight");
 
       // determine block intervals and block weights
-      vector<block_props> block_properties;
+      std::vector<block_props> block_properties;
       determine_block_properties(s,steps,weights,block_properties);
 
       // accumulate trace data for each quantity
       if(input.verbose)
-        app_log()<<"  accumulating quantities"<<endl;
+        app_log()<<"  accumulating quantities"<< std::endl;
       for(int q=0;q<quantities.size();++q)
       {
         QuantityAnalyzer& qa = *quantities[q];
         if(input.verbose)
-          app_log()<<"   analyzing "<<qa.name<<endl;
+          app_log()<<"   analyzing "<<qa.name<< std::endl;
         time.restart();
         qa.load_traces(hin);
         read_time += time.elapsed();
@@ -1258,19 +1258,19 @@ struct TraceAnalyzer
         qa.clear_traces();
       }
     }
-    app_log()<<"    processed "<<input.procs.size()<<" trace files"<<endl;
-    app_log()<<"    read    time: "<<read_time<<endl;
-    app_log()<<"    process time: "<<accum_time<<endl;
+    app_log()<<"    processed "<<input.procs.size()<<" trace files"<< std::endl;
+    app_log()<<"    read    time: "<<read_time<< std::endl;
+    app_log()<<"    process time: "<<accum_time<< std::endl;
   }
 
-  void get_trace_file_name(string& h5fname,int s,int g,int p)
+  void get_trace_file_name( std::string& h5fname,int s,int g,int p)
   {
     int series = input.series[s];
     int group  = input.groups[g];
     int proc   = input.procs[p];
-    string stoken;
-    string gtoken;
-    string ptoken;
+    std::string stoken;
+    std::string gtoken;
+    std::string ptoken;
     zfill(series,stoken,3);
     zfill(proc,ptoken,input.proc_digits);
     h5fname = input.path+"/"+input.prefix;
@@ -1286,7 +1286,7 @@ struct TraceAnalyzer
   }
 
 
-  void determine_block_properties(int sindex,QuantityTrace<int>& steps,QuantityTrace<real_t>& weights,vector<block_props>& block_properties)
+  void determine_block_properties(int sindex,QuantityTrace<int>& steps,QuantityTrace<real_t>& weights,std::vector<block_props>& block_properties)
   {
     int steps_per_block = input.steps[sindex];
     int stepmax = steps_per_block;
@@ -1312,11 +1312,11 @@ struct TraceAnalyzer
         block_properties.push_back(block_props(i1,i2));
       }
     }
-    nblocks_min = min(nblocks_min,block_properties.size());
+    nblocks_min = std::min(nblocks_min,block_properties.size());
     if(input.verbose)
     {
-      app_log()<<"    steps per block = "<<steps_per_block<<endl;
-      app_log()<<"    nblocks         = "<<block_properties.size()<<endl;
+      app_log()<<"    steps per block = "<<steps_per_block<< std::endl;
+      app_log()<<"    nblocks         = "<<block_properties.size()<< std::endl;
     }
     for(int b=0;b<block_properties.size();++b)
     {
@@ -1328,7 +1328,7 @@ struct TraceAnalyzer
     //for(int b=0;b<block_properties.size();++b)
     //{
     //  block_props& bp = block_properties[b];
-    //  app_log()<<"  block "<<b<<" "<<bp.i1<<" "<<bp.i2<<" "<<bp.w<<endl;
+    //  app_log()<<"  block "<<b<<" "<<bp.i1<<" "<<bp.i2<<" "<<bp.w<< std::endl;
     //}
     return;
   }
@@ -1340,13 +1340,13 @@ struct TraceAnalyzer
     //collect quantity data across mpi
     if(comm->size()>1)
     {
-      app_log()<<"  collecting blocks across ranks "<<endl;
+      app_log()<<"  collecting blocks across ranks "<< std::endl;
       time.restart();
       // compute mpi buffer offsets for each quantity
       int bsize = 1;
       for(int q=0;q<quantities.size();++q)
         quantities[q]->get_pack_start(bsize);
-      vector<real_t> buffer(bsize);
+      std::vector<real_t> buffer(bsize);
       // pack, reduce, unpack each data block
       for(int b=0;b<input.blocks[s];++b)
       {
@@ -1359,28 +1359,28 @@ struct TraceAnalyzer
             quantities[q]->unpack(b,buffer);
       }
       // find the minimum number of blocks across ranks
-      vector<int> nbm_in(1,nblocks_min);
-      vector<int> nbm_out(1,nblocks_min);
+      std::vector<int> nbm_in(1,nblocks_min);
+      std::vector<int> nbm_out(1,nblocks_min);
       MPI_Reduce(&nbm_in[0],&nbm_out[0],1,MPI_INT,MPI_MIN,master_rank,comm->getMPI());
       if(master)
         nblocks_min = nbm_out[0];
-      app_log()<<"    comm    time: "<<time.elapsed()<<endl;
+      app_log()<<"    comm    time: "<<time.elapsed()<< std::endl;
     }
 #endif
 
     //analyze stats and write quantity data
     if(master)  
     {
-      app_log()<<"  writing quantities ("<<nblocks_min<<" out of "<<input.blocks[s]<<" blocks)"<<endl;
+      app_log()<<"  writing quantities ("<<nblocks_min<<" out of "<<input.blocks[s]<<" blocks)"<< std::endl;
       time.restart();
       for(int q=0;q<quantities.size();++q)
       {
         QuantityAnalyzer& qa = *quantities[q];
-        app_log()<<"    writing "<<qa.name<<endl;
+        app_log()<<"    writing "<<qa.name<< std::endl;
         qa.analyze();
         qa.write();
       }
-      app_log()<<"    write  time: "<<time.elapsed()<<endl;
+      app_log()<<"    write  time: "<<time.elapsed()<< std::endl;
     }
     comm->barrier();
   }

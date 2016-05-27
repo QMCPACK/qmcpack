@@ -125,7 +125,7 @@ void NonLocalECPotential_CUDA::resizeCUDA(int nw)
   MaxKnots = 0;
   for (int i=0; i<PPset.size(); i++)
     if (PPset[i])
-      MaxKnots = max(MaxKnots,PPset[i]->nknot);
+      MaxKnots = std::max(MaxKnots,PPset[i]->nknot);
   RatiosPerWalker = MaxPairs * MaxKnots;
   RatioPos_GPU.resize(OHMMS_DIM * RatiosPerWalker * nw);
   CosTheta_GPU.resize(RatiosPerWalker * nw);
@@ -153,14 +153,14 @@ void NonLocalECPotential_CUDA::resizeCUDA(int nw)
 }
 
 void NonLocalECPotential_CUDA::addEnergy(MCWalkerConfiguration &W,
-    vector<RealType> &LocalEnergy)
+    std::vector<RealType> &LocalEnergy)
 {
-  vector<Walker_t*> &walkers = W.WalkerList;
+  std::vector<Walker_t*> &walkers = W.WalkerList;
   int nw = walkers.size();
   if (CurrentNumWalkers < nw)
     resizeCUDA(nw);
   // Loop over the ionic species
-  vector<RealType> esum(walkers.size(), 0.0);
+  std::vector<RealType> esum(walkers.size(), 0.0);
   for (int sp=0; sp<NumIonGroups; sp++)
     if (PPset[sp])
     {
@@ -197,10 +197,10 @@ void NonLocalECPotential_CUDA::addEnergy(MCWalkerConfiguration &W,
         if (ActualMaxPairs < NumPairs_host[iw]) ActualMaxPairs = NumPairs_host[iw];
       if (ActualMaxPairs > MaxPairs)
       {
-        ostringstream o;
-        o << "ERROR: the actual maximum electrons-ion pairs is larger than the value 'MaxPairs' set in NonLocalECPotential_CUDA.cpp" << endl;
-        o << "       the actual number of maximum electrons-ion pairs is " << ActualMaxPairs << ", MaxPairs = " << MaxPairs << endl;
-        cerr << o.str();
+        std::ostringstream o;
+        o << "ERROR: the actual maximum electrons-ion pairs is larger than the value 'MaxPairs' set in NonLocalECPotential_CUDA.cpp" << std::endl;
+        o << "       the actual number of maximum electrons-ion pairs is " << ActualMaxPairs << ", MaxPairs = " << MaxPairs << std::endl;
+        std::cerr << o.str();
         cerr.flush();
         abort();
       }
@@ -210,12 +210,12 @@ void NonLocalECPotential_CUDA::addEnergy(MCWalkerConfiguration &W,
       Dist_host      = Dist_GPU;
       int numQuad = PPset[sp]->nknot;
       // HACK HACK HACK
-      // cerr << "Dist_host.size() = " << Dist_host.size() <<endl;
+      // std::cerr << "Dist_host.size() = " << Dist_host.size() << std::endl;
       // for (int iw=0; iw<nw; iw++) {
       //   for (int ie=0; ie<NumPairs_host[iw]; ie++)
       //     if (Dist_host[MaxPairs*iw+ie] > 1.3)
-      //       cerr << "Dist too long:  " << Dist_host[MaxPairs*iw+ie]
-      // 	   << endl;
+      //       std::cerr << "Dist too long:  " << Dist_host[MaxPairs*iw+ie]
+      // 	   << std::endl;
       // }
       JobList.clear();
       QuadPosList.clear();
@@ -278,8 +278,8 @@ void NonLocalECPotential_CUDA::addEnergy(MCWalkerConfiguration &W,
         }
         if (numPairs != NumPairs_host[iw])
         {
-          cerr << "numPairs = " << numPairs << endl;
-          cerr << "NumPairs_host[" << iw << "] =" << NumPairs_host[iw] << endl;
+          std::cerr << "numPairs = " << numPairs << std::endl;
+          std::cerr << "NumPairs_host[" << iw << "] =" << NumPairs_host[iw] << std::endl;
         }
       }
 #endif
@@ -303,7 +303,7 @@ void NonLocalECPotential_CUDA::addEnergy(MCWalkerConfiguration &W,
             RealType ratio  = RatioList[ratioIndex++] * pp.sgridweight_m[iq];
             // if (std::isnan(ratio)) {
             // 	cerr << "NAN from ratio number " << ratioIndex-1 << "\n";
-            // 	cerr << "RatioList.size() = " << RatioList.size() << endl;
+            // 	cerr << "RatioList.size() = " << RatioList.size() << std::endl;
             // }
             RealType lpolprev=0.0;
             lpol[0] = 1.0;
@@ -333,15 +333,15 @@ void NonLocalECPotential_CUDA::addEnergy(MCWalkerConfiguration &W,
 
 
 void NonLocalECPotential_CUDA::addEnergy
-(MCWalkerConfiguration &W, vector<RealType> &LocalEnergy,
- vector<vector<NonLocalData> > &Txy)
+(MCWalkerConfiguration &W, std::vector<RealType> &LocalEnergy,
+ std::vector<std::vector<NonLocalData> > &Txy)
 {
-  vector<Walker_t*> &walkers = W.WalkerList;
+  std::vector<Walker_t*> &walkers = W.WalkerList;
   int nw = walkers.size();
   if (CurrentNumWalkers < nw)
     resizeCUDA(nw);
   // Loop over the ionic species
-  vector<RealType> esum(walkers.size(), 0.0);
+  std::vector<RealType> esum(walkers.size(), 0.0);
   for (int sp=0; sp<NumIonGroups; sp++)
     if (PPset[sp])
     {
@@ -380,7 +380,7 @@ void NonLocalECPotential_CUDA::addEnergy
       int numQuad = PPset[sp]->nknot;
       JobList.clear();
       QuadPosList.clear();
-      vector<int> iTxy(nw);
+      std::vector<int> iTxy(nw);
       for (int iw=0; iw<nw; iw++)
       {
         iTxy[iw] = Txy[iw].size();

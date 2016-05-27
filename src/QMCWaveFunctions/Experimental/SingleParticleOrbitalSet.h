@@ -38,7 +38,7 @@ struct SingleParticleOrbitalSet: public SPOSetBase
 
   ///the type of single-particle orbtials
   typedef OT                      SPOrbital_t;
-  typedef vector<OT*>             SPOContainer_t;
+  typedef std::vector<OT*>             SPOContainer_t;
   typedef typename OT::value_type value_type;
 
   SPOContainer_t Phi;
@@ -113,7 +113,7 @@ struct SingleParticleOrbitalSet: public SPOSetBase
     //int iat = first;
     //vector<SPOrbital_t*>::iterator it_end(Phi.end());
     //for(int i=0; i<n; i++,iat++) {
-    //  vector<SPOrbital_t*>::iterator it(Phi.begin());
+    //  std::vector<SPOrbital_t*>::iterator it(Phi.begin());
     //  int j(0);
     //  while(it != it_end) {
     //    logdet(j,i)= (*it)->evaluate(P.R[iat], dlogdet(i,j),d2logdet(i,j));

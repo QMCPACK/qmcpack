@@ -10,11 +10,10 @@
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 using namespace qmcplusplus;
-using namespace std;
 
 int print_help()
 {
-  cout << "Usage: density [--fileroot string | --diff root1 root2 ] --np int " << endl;
+  std::cout << "Usage: density [--fileroot std::string | --diff root1 root2 ] --np int " << std::endl;
   return 1;
 }
 
@@ -34,10 +33,10 @@ struct DensityObserver
     npts=static_cast<int>((rmax-rmin)/delta)+1;
     value.resize(npts,npts);
     value=0.0;
-    cout << " Density grid " << npts << endl;
+    std::cout << " Density grid " << npts << std::endl;
   }
 
-  inline void accumulate(const vector<PosType>& pos, int nat)
+  inline void accumulate(const std::vector<PosType>& pos, int nat)
   {
     nsamples+=pos.size();
     for(int i=0; i<nat; i++)
@@ -55,9 +54,9 @@ struct DensityObserver
 
   void print(const char* fname)
   {
-    ofstream fout(fname);
-    fout.setf(ios::scientific, ios::floatfield);
-    fout.setf(ios::left,ios::adjustfield);
+    std::ofstream fout(fname);
+    fout.setf(std::ios::scientific, std::ios::floatfield);
+    fout.setf(std::ios::left,std::ios::adjustfield);
     fout.precision(6);
     double norm=1.0/static_cast<double>(nsamples);
     double x=rmin;
@@ -65,8 +64,8 @@ struct DensityObserver
     {
       double y=rmin;
       for(int jx=0; jx<npts; jx++,y+=delta)
-        fout << setw(20) << y << setw(20) << x << setw(20) << norm*value(ix,jx) << endl;
-      fout << endl;
+        fout << std::setw(20) << y << std::setw(20) << x << std::setw(20) << norm*value(ix,jx) << std::endl;
+      fout << std::endl;
     }
   }
 
@@ -78,12 +77,12 @@ int main(int argc, char** argv)
     return print_help();
   int iargc=0;
   int nproc=1;
-  vector<string> fnamein(2);
-  string h5fileroot("0");
+  std::vector<std::string> fnamein(2);
+  std::string h5fileroot("0");
   bool getdiff=false;
   while(iargc<argc)
   {
-    string c(argv[iargc]);
+    std::string c(argv[iargc]);
     if(c == "--fileroot")
     {
       h5fileroot=argv[++iargc];
@@ -109,7 +108,7 @@ int main(int argc, char** argv)
   }
   if(getdiff)
   {
-    cout << "Going to compare two density " <<  fnamein[0] << " " << fnamein[1] << endl;
+    std::cout << "Going to compare two density " <<  fnamein[0] << " " << fnamein[1] << std::endl;
     DensityObserver recorder1;
     recorder1.getData(fnamein[0].c_str(),nproc);
     DensityObserver recorder2;
@@ -142,7 +141,7 @@ void DensityObserver::getData(const char* froot, int nproc)
     hid_t h1=H5Dopen(mastercf,"NumOfConfigurations");
     H5Dread(h1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT,&(nconf));
     H5Dclose(h1);
-    cout << "Adding data in " << fname << " number of configurations = " << nconf << endl;
+    std::cout << "Adding data in " << fname << " number of configurations = " << nconf << std::endl;
     for(int iconf=0; iconf<nconf; iconf++)
     {
       sprintf(coordname,"config%04d/coord",iconf);
@@ -150,14 +149,14 @@ void DensityObserver::getData(const char* froot, int nproc)
       hid_t dataspace = H5Dget_space(dataset);
       int rank = H5Sget_simple_extent_ndims(dataspace);
       int status_n = H5Sget_simple_extent_dims(dataspace, dimTot, NULL);
-      vector<PosType> pos(dimTot[0]*dimTot[1]);
+      std::vector<PosType> pos(dimTot[0]*dimTot[1]);
       hid_t ret = H5Dread(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &(pos[0][0]));
       H5Dclose(dataset);
       H5Sclose(dataspace);
-      accumulate(pos,dimTot[0]*dimTot[1]);
+      std::accumulate(pos,dimTot[0]*dimTot[1]);
     }
   }
-  string outfname(froot);
+  std::string outfname(froot);
   outfname.append(".den.dat");
   print(outfname.c_str());
 }

@@ -74,20 +74,20 @@ struct LocalizedBasisSet: public BasisSetBase<typename COT::value_type>
    *
    * the number of basis states for center J is BasisOffset[J+1]-Basis[J]
    */
-  vector<int>  BasisOffset;
+  std::vector<int>  BasisOffset;
 
   /** container of the pointers to the Atomic Orbitals
    *
    * size of LOBasis =  number  of centers (e.g., ions)
    * AO[i] returns a Centered Orbital for an ion i
    */
-  vector<COT*> LOBasis;
+  std::vector<COT*> LOBasis;
 
   /** container of the unique pointers to the Atomic Orbitals
    *
    * size of LOBasisSet = number  of unique centers
    */
-  vector<COT*> LOBasisSet;
+  std::vector<COT*> LOBasisSet;
 
   /** distance table, e.g., ion-electron
    *
@@ -138,7 +138,7 @@ struct LocalizedBasisSet: public BasisSetBase<typename COT::value_type>
       return;
     if(myTable ==0)
     {
-      app_error() << "LocalizedBasisSet cannot function without a distance table. Abort" << endl;
+      app_error() << "LocalizedBasisSet cannot function without a distance table. Abort" << std::endl;
     }
     //reset the distance table for the atomic orbitals
     for(int i=0; i<LOBasisSet.size(); i++)

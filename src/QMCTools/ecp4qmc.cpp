@@ -14,7 +14,6 @@
 //   Materials Computation Center, UIUC
 //////////////////////////////////////////////////////////////////
 #include <fstream>
-using namespace std;
 #include "Message/Communicate.h"
 #include "Utilities/OhmmsInfo.h"
 #include "Numerics/GaussianTimesRN.h"
@@ -33,10 +32,10 @@ struct ECPTest
   typedef GaussianTimesRN<RealType> InFuncType;
   typedef OneDimCubicSpline<RealType> OutFuncType;
 
-  string Name;
+  std::string Name;
   RealType Zeff;
 
-  ECPTest(const string& fname);
+  ECPTest(const std::string& fname);
   void buildSemiLocal(xmlNodePtr cur);
   void buildLocal(xmlNodePtr cur);
 };
@@ -50,7 +49,7 @@ int main(int argc, char** argv)
   return 0;
 }
 
-ECPTest::ECPTest(const string& fname)
+ECPTest::ECPTest(const std::string& fname)
 {
   // build an XML tree from a the file;
   xmlDocPtr m_doc = xmlParseFile(fname.c_str());
@@ -69,7 +68,7 @@ ECPTest::ECPTest(const string& fname)
   cur=cur->children;
   while(cur != NULL)
   {
-    string cname((const char*)cur->name);
+    std::string cname((const char*)cur->name);
     if(cname == "header")
     {
       Zeff = atoi((const char*)xmlGetProp(cur,(const xmlChar*)"zval"));
@@ -93,11 +92,11 @@ ECPTest::ECPTest(const string& fname)
 void ECPTest::buildSemiLocal(xmlNodePtr cur)
 {
   GridType* grid_semilocal=0;
-  vector<InFuncType*> semilocal;
+  std::vector<InFuncType*> semilocal;
   cur=cur->children;
   while(cur != NULL)
   {
-    string cname((const char*)cur->name);
+    std::string cname((const char*)cur->name);
     if(cname == "grid")
     {
       grid_semilocal=OneDimGridFactory::createGrid(cur);
@@ -119,21 +118,21 @@ void ECPTest::buildSemiLocal(xmlNodePtr cur)
       }
     cur=cur->next;
   }
-  string fname(Name);
+  std::string fname(Name);
   fname.append(".semilocal.dat");
-  ofstream fout(fname.c_str());
+  std::ofstream fout(fname.c_str());
   fout.setf(std::ios::scientific, std::ios::floatfield);
   fout.precision(12);
   int ig=0;
   while(ig<grid_semilocal->size())
   {
     double r=(*grid_semilocal)[ig++];
-    fout << setw(20) << setprecision(12) << r;
+    fout << std::setw(20) << setprecision(12) << r;
     for(int i=0; i<semilocal.size(); i++)
     {
-      fout << setw(20) << semilocal[i]->f(r);
+      fout << std::setw(20) << semilocal[i]->f(r);
     }
-    fout << endl;
+    fout << std::endl;
   }
 }
 
@@ -144,7 +143,7 @@ void ECPTest::buildLocal(xmlNodePtr cur)
   cur=cur->children;
   while(cur != NULL)
   {
-    string cname((const char*)cur->name);
+    std::string cname((const char*)cur->name);
     if(cname == "grid")
     {
       grid_semilocal=OneDimGridFactory::createGrid(cur);
@@ -157,17 +156,17 @@ void ECPTest::buildLocal(xmlNodePtr cur)
       }
     cur=cur->next;
   }
-  cout << " Effective Z = " << Zeff << endl;
-  string fname(Name);
+  std::cout << " Effective Z = " << Zeff << std::endl;
+  std::string fname(Name);
   fname.append(".local.dat");
-  ofstream fout(fname.c_str());
+  std::ofstream fout(fname.c_str());
   fout.setf(std::ios::scientific, std::ios::floatfield);
   fout.precision(12);
   int ig=0;
   while(ig<grid_semilocal->size())
   {
     double r=(*grid_semilocal)[ig++];
-    fout << setw(20) << setprecision(12) << r << setw(20) << localpp->f(r)-Zeff/r<< endl;
+    fout << std::setw(20) << setprecision(12) << r << std::setw(20) << localpp->f(r)-Zeff/r<< std::endl;
   }
   delete localpp;
 }

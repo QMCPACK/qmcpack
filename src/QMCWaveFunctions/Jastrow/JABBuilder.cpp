@@ -33,16 +33,16 @@ namespace qmcplusplus
 {
 
 template<class FN>
-bool JABBuilder::createJAB(xmlNodePtr cur, const string& jname)
+bool JABBuilder::createJAB(xmlNodePtr cur, const std::string& jname)
 {
-  string corr_tag("correlation");
-  vector<FN*> jastrow;
+  std::string corr_tag("correlation");
+  std::vector<FN*> jastrow;
   int ng = 0;
   ParticleSet* sourcePtcl=0;
   const xmlChar* s=xmlGetProp(cur,(const xmlChar*)"source");
   if (s != NULL)
   {
-    map<string,ParticleSet*>::iterator pa_it(ptclPool.find((const char*)s));
+    std::map<std::string,ParticleSet*>::iterator pa_it(ptclPool.find((const char*)s));
     if (pa_it == ptclPool.end())
       return false;
     sourcePtcl = (*pa_it).second;
@@ -53,11 +53,11 @@ bool JABBuilder::createJAB(xmlNodePtr cur, const string& jname)
   cur = cur->xmlChildrenNode;
   while (cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if (cname == dtable_tag)
     {
-      string source_name((const char*)(xmlGetProp(cur,(const xmlChar *)"source")));
-      map<string,ParticleSet*>::iterator pa_it(ptclPool.find(source_name));
+      std::string source_name((const char*)(xmlGetProp(cur,(const xmlChar *)"source")));
+      std::map<std::string,ParticleSet*>::iterator pa_it(ptclPool.find(source_name));
       if (pa_it == ptclPool.end())
         return false;
       sourcePtcl = (*pa_it).second;
@@ -71,7 +71,7 @@ bool JABBuilder::createJAB(xmlNodePtr cur, const string& jname)
       {
         if (sourcePtcl == 0)
           return false;
-        string spA;
+        std::string spA;
         OhmmsAttributeSet rAttrib;
         rAttrib.add(spA, "speciesA");
         rAttrib.add(spA, "elementType");
@@ -104,7 +104,7 @@ bool JABBuilder::createJAB(xmlNodePtr cur, const string& jname)
     dJ1->addFunc(ig,jastrow[ig]);
   }
   J1->dPsi=dJ1;
-  string j1name="J1_"+jname;
+  std::string j1name="J1_"+jname;
   targetPsi.addOrbital(J1,j1name);
   XMLReport("Added a One-Body Jastrow Function")
   return true;
@@ -112,12 +112,12 @@ bool JABBuilder::createJAB(xmlNodePtr cur, const string& jname)
 
 bool JABBuilder::put(xmlNodePtr cur)
 {
-  string jastfunction("pade");
+  std::string jastfunction("pade");
   OhmmsAttributeSet aAttrib;
   aAttrib.add(jastfunction,"function");
   aAttrib.put(cur);
   bool success=false;
-  app_log() << "  One-Body Jastrow Function = " << jastfunction << endl;
+  app_log() << "  One-Body Jastrow Function = " << jastfunction << std::endl;
   if (jastfunction == "pade")
   {
     success = createJAB<PadeFunctor<RealType> >(cur,jastfunction);
@@ -141,7 +141,7 @@ bool JABBuilder::put(xmlNodePtr cur)
         else
           if (jastfunction == "opengaussianslater")
           {
-            app_log()<<jastfunction<<endl;
+            app_log()<<jastfunction<< std::endl;
             success = createJAB<OpenGaussianSlaterFunctor<RealType> >(cur,jastfunction);
           }
           else

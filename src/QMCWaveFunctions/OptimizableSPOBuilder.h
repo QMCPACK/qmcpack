@@ -24,8 +24,8 @@ namespace qmcplusplus
 class OptimizableSPOBuilder : public BasisSetBuilder
 {
 protected:
-  typedef map<string,ParticleSet*> PtclPoolType;
-  typedef map<string,SPOSetBase*>  SPOPoolType;
+  typedef std::map<std::string,ParticleSet*> PtclPoolType;
+  typedef std::map<std::string,SPOSetBase*>  SPOPoolType;
   ParticleSet *targetPtcl;
 public:
   OptimizableSPOBuilder(ParticleSet& p, PtclPoolType& psets,

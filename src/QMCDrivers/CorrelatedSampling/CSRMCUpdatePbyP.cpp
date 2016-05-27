@@ -41,7 +41,7 @@ void CSVMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool 
 {
   int iwalker=0;
   //only used locally
-  vector<RealType> ratio(nPsi), uw(nPsi);
+  std::vector<RealType> ratio(nPsi), uw(nPsi);
   while(it != it_end)
   {
     //Walkers loop
@@ -118,7 +118,7 @@ void CSVMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool 
         ++nAccept;
         W.acceptMove(iat);
         // Update Buffer for (Psi[i]/Psi[j])^2
-        std::copy(instRij.begin(),instRij.end(),ratioijPtr);
+        copy(instRij.begin(),instRij.end(),ratioijPtr);
         // copy new Umbrella weight for averages
         uw=invsumratio;
         // Store sumratio for next Accept/Reject step to Multiplicity

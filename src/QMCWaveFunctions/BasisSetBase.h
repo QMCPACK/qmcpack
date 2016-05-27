@@ -100,7 +100,7 @@ struct BasisSetBase: public OrbitalSetTraits<T>
     }
     else
     {
-      app_error() << "  BasisSetBase::BasisSetSize == 0" << endl;
+      app_error() << "  BasisSetBase::BasisSetSize == 0" << std::endl;
     }
   }
 
@@ -153,19 +153,19 @@ struct BasisSetBase: public OrbitalSetTraits<T>
  */
 struct BasisSetBuilder: public QMCTraits, public MPIObjectBase
 {
-  typedef std::map<string,SPOSetBase*> SPOPool_t;
-  typedef vector<int> indices_t;
-  typedef vector<RealType> energies_t;
+  typedef std::map<std::string,SPOSetBase*> SPOPool_t;
+  typedef std::vector<int> indices_t;
+  typedef std::vector<RealType> energies_t;
 
 
   /// whether implementation conforms only to legacy standard
   bool legacy;
 
   /// state info of all possible states available in the basis
-  vector<SPOSetInfo*> states;
+  std::vector<SPOSetInfo*> states;
 
   /// list of all sposets created by this builder
-  vector<SPOSetBase*> sposets;
+  std::vector<SPOSetBase*> sposets;
 
   BasisSetBuilder();
   virtual ~BasisSetBuilder() {}

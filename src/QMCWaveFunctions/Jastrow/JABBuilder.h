@@ -36,7 +36,7 @@ struct JABBuilder: public OrbitalBuilderBase
 
   bool put(xmlNodePtr cur);
 
-  template<class FN> bool createJAB(xmlNodePtr cur, const string& jname);
+  template<class FN> bool createJAB(xmlNodePtr cur, const std::string& jname);
 
 
   PtclPoolType& ptclPool;

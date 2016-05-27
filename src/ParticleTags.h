@@ -41,11 +41,11 @@ struct ParticleTags
   /** enumeraton for datatypes for particle attributes
    *
    *Each attribute of type T is stored in a container ParticleAttrib<T>.
-   *ParticleBase::AttribTypeMap is used to map the string and the enumeration.
+   *ParticleBase::AttribTypeMap is used to map the std::string and the enumeration.
    */
   enum {PA_IndexType=0, /*!< index (int) type */
         PA_ScalarType,  /*!< scalar (float|double) type */
-        PA_StringType,  /*!< string type */
+        PA_StringType,  /*!< std::string type */
         PA_PositionType,/*!< position (D-dim vector) type */
         PA_TensorType /*!< tensor type */
        };

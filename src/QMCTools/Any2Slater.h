@@ -51,8 +51,8 @@ public:
     Target.reset();
     Source.grid().locate(0.2*Source.r(igMax));
     minIndex=Source.grid().Loc;
-    cout << "Initial exponent " << Target.Z << " at " << Source.r(igMax) << endl;
-    cout << "The index of the cutoff " << minIndex << " at " << Source.r(minIndex) << endl;
+    std::cout << "Initial exponent " << Target.Z << " at " << Source.r(igMax) << std::endl;
+    std::cout << "The index of the cutoff " << minIndex << " at " << Source.r(minIndex) << std::endl;
     OptParams[0]=Target.Z;
   }
 
@@ -98,7 +98,7 @@ public:
 
   void WriteStuff()
   {
-    cout << "Slater Z = " << Target.Z <<  "    Norm = " << Target.Norm << endl;
+    std::cout << "Slater Z = " << Target.Z <<  "    Norm = " << Target.Norm << std::endl;
   }
 
   /** main optimization function using ConjugateGradient method
@@ -122,7 +122,7 @@ private:
   int minIndex;
   xmlNodePtr mPtr;
   GenericSTO<scalar> Target;
-  vector<scalar> OptParams;
+  std::vector<scalar> OptParams;
   Vector<scalar> psi_sq, psi_norm;
 };
 #endif

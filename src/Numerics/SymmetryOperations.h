@@ -29,7 +29,7 @@ namespace qmcplusplus
 struct SymmetryGroup
 {
 public:
-  SymmetryGroup( string nm="invalid"): name(nm), nClasses(0), nSymmetries(0)
+  SymmetryGroup( std::string nm="invalid"): name(nm), nClasses(0), nSymmetries(0)
   {
   }
 
@@ -37,7 +37,7 @@ public:
   {
   }
 
-  void addOperator(Matrix<double> op, vector<double> characterlist, int cls)
+  void addOperator(Matrix<double> op, std::vector<double> characterlist, int cls)
   {
     SymOps.push_back(op);
     nSymmetries++;
@@ -46,12 +46,12 @@ public:
     nClasses=std::max(nClasses,cls);
     if (nClasses>characterlist.size())
     {
-      app_log()<<" Character table size or class number is wrong."<<endl;
+      app_log()<<" Character table size or class number is wrong."<< std::endl;
       APP_ABORT("SymmetryGroup::addOperator");
     }
   }
 
-  void putClassCharacterTable(vector<vector<double> > cct)
+  void putClassCharacterTable(std::vector<std::vector<double> > cct)
   {
     CharacterTableByClass=cct;
   }
@@ -99,13 +99,13 @@ public:
     oldPos=rv;
   }
 private:
-  vector<Matrix<double> > SymOps;
-  vector<vector<double> > Characters;
-  vector<vector<double> > CharacterTableByClass;
-  vector<int> Classes;
+  std::vector<Matrix<double> > SymOps;
+  std::vector<std::vector<double> > Characters;
+  std::vector<std::vector<double> > CharacterTableByClass;
+  std::vector<int> Classes;
   int nClasses;
   int nSymmetries;
-  string name;
+  std::string name;
 
 };
 
@@ -134,7 +134,7 @@ public:
     xmlNodePtr kids = q->children;
     while(kids != NULL)
     {
-      string cname((const char*)(kids->name));
+      std::string cname((const char*)(kids->name));
       if(cname == "symmetryclass")
       {
         ParameterSet aAttrib;
@@ -151,7 +151,7 @@ public:
       else
       {
         buildByHand(q);
-//         app_log()<<"Symmetry Class "<< symname <<" not yet implemented"<<endl;
+//         app_log()<<"Symmetry Class "<< symname <<" not yet implemented"<< std::endl;
 //         APP_ABORT("SymmetryClass::put");
       }
   }
@@ -159,9 +159,9 @@ public:
 
 private:
   SymmetryGroup symgrp;
-  string symname;
+  std::string symname;
 
-  void buildI(SymmetryGroup& I, vector<double> ctable, int cls)
+  void buildI(SymmetryGroup& I, std::vector<double> ctable, int cls)
   {
     Matrix<double> matrix_i(3,3);
     for(int i=0; i<3; i++)
@@ -169,7 +169,7 @@ private:
     I.addOperator(matrix_i, ctable, cls);
   };
 //    C2V
-  void buildC2Vx(SymmetryGroup& C2, vector<double> ctable, int cls)
+  void buildC2Vx(SymmetryGroup& C2, std::vector<double> ctable, int cls)
   {
     Matrix<double> matrix_c2x(3,3);
     matrix_c2x[0][0]=-1;
@@ -177,7 +177,7 @@ private:
     matrix_c2x[2][2]=-1;
     C2.addOperator(matrix_c2x, ctable, cls);
   };
-  void buildC2Vy(SymmetryGroup& C2, vector<double> ctable, int cls)
+  void buildC2Vy(SymmetryGroup& C2, std::vector<double> ctable, int cls)
   {
     Matrix<double> matrix_c2y(3,3);
     matrix_c2y[0][2]=1;
@@ -185,7 +185,7 @@ private:
     matrix_c2y[2][0]=1;
     C2.addOperator(matrix_c2y, ctable, cls);
   };
-  void buildC2Vz(SymmetryGroup& C2, vector<double> ctable, int cls)
+  void buildC2Vz(SymmetryGroup& C2, std::vector<double> ctable, int cls)
   {
     Matrix<double> matrix_c2z(3,3);
     matrix_c2z[0][2]=-1;
@@ -194,7 +194,7 @@ private:
     C2.addOperator(matrix_c2z, ctable, cls);
   };
 //  D2H
-  void buildD2Hx(SymmetryGroup& C2, vector<double> ctable, int cls)
+  void buildD2Hx(SymmetryGroup& C2, std::vector<double> ctable, int cls)
   {
     Matrix<double> matrix_c2x(3,3);
     matrix_c2x[0][0]=1;
@@ -202,7 +202,7 @@ private:
     matrix_c2x[2][2]=-1;
     C2.addOperator(matrix_c2x, ctable, cls);
   };
-  void buildD2Hy(SymmetryGroup& C2, vector<double> ctable, int cls)
+  void buildD2Hy(SymmetryGroup& C2, std::vector<double> ctable, int cls)
   {
     Matrix<double> matrix_c2y(3,3);
     matrix_c2y[0][0]=-1;
@@ -210,7 +210,7 @@ private:
     matrix_c2y[2][2]=-1;
     C2.addOperator(matrix_c2y, ctable, cls);
   };
-  void buildD2Hz(SymmetryGroup& C2, vector<double> ctable, int cls)
+  void buildD2Hz(SymmetryGroup& C2, std::vector<double> ctable, int cls)
   {
     Matrix<double> matrix_c2z(3,3);
     matrix_c2z[0][0]=-1;
@@ -219,7 +219,7 @@ private:
     C2.addOperator(matrix_c2z, ctable, cls);
   };
 
-//     void buildD2(SymmetryGroup& C2, vector<double> ctable, int cls)
+//     void buildD2(SymmetryGroup& C2, std::vector<double> ctable, int cls)
 //     {
 //       Matrix<double> matrix_c2x(3,3), matrix_c2y(3,3), matrix_c2z(3,3);
 //       matrix_c2z[0][0]=-1; matrix_c2z[1][1]=-1; matrix_c2z[2][2]=1;
@@ -231,7 +231,7 @@ private:
 //       return C2;
 //     };
 
-//     void buildSigmaD(SymmetryGroup& SD, vector<double> ctable, int cls)
+//     void buildSigmaD(SymmetryGroup& SD, std::vector<double> ctable, int cls)
 //     {
 //       Matrix<double> matrix_sd1(3,3), matrix_sd2(3,3), matrix_sd3(3,3), matrix_sd4(3,3), matrix_sd5(3,3), matrix_sd6(3,3);
 //
@@ -252,7 +252,7 @@ private:
 //       return SD;
 //     };
 
-//     void buildS_4(SymmetryGroup& SD, vector<double> ctable, int cls)
+//     void buildS_4(SymmetryGroup& SD, std::vector<double> ctable, int cls)
 //     {
 //       Matrix<double> matrix_sd1(3,3), matrix_sd2(3,3), matrix_sd3(3,3), matrix_sd4(3,3), matrix_sd5(3,3), matrix_sd6(3,3);
 //
@@ -276,7 +276,7 @@ private:
   void buildD2H()
   {
     //Character table
-    vector<vector<double> > CT(4,vector<double>(4,0));
+    std::vector<std::vector<double> > CT(4,std::vector<double>(4,0));
     CT[0][0]=1;
     CT[0][1]=1;
     CT[0][2]=1;
@@ -303,7 +303,7 @@ private:
   void buildC2V()
   {
     //Character table
-    vector<vector<double> > CT(4,vector<double>(4,0));
+    std::vector<std::vector<double> > CT(4,std::vector<double>(4,0));
     CT[0][0]=1;
     CT[0][1]=1;
     CT[0][2]=1;
@@ -335,7 +335,7 @@ private:
     xmlNodePtr symclssptr(NULL);
     while(kids != NULL)
     {
-      string cname((const char*)(kids->name));
+      std::string cname((const char*)(kids->name));
       if(cname == "symmetryclass")
       {
         symclssptr=kids;
@@ -347,26 +347,26 @@ private:
       }
       kids=kids->next;
     }
-    vector<vector<double> > CT;
-    vector<vector<double> > OPS;
-    vector<int> clCT;
+    std::vector<std::vector<double> > CT;
+    std::vector<std::vector<double> > OPS;
+    std::vector<int> clCT;
     kids = symclssptr->children;
     while(kids != NULL)
     {
-      string cname((const char*)(kids->name));
+      std::string cname((const char*)(kids->name));
       if(cname == "charactertable")
       {
         xmlNodePtr kids2 = kids->children;
         while(kids2 != NULL)
         {
-          string cname2((const char*)(kids2->name));
+          std::string cname2((const char*)(kids2->name));
           if(cname2 == "class")
           {
-            string clss;
+            std::string clss;
             OhmmsAttributeSet oAttrib;
             oAttrib.add(clss,"name");
             oAttrib.put(kids2);
-            vector<double> c;
+            std::vector<double> c;
             putContent(c,kids2);
             CT.push_back(c);
           }
@@ -378,13 +378,13 @@ private:
     kids = symclssptr->children;
     while(kids != NULL)
     {
-      string cname((const char*)(kids->name));
+      std::string cname((const char*)(kids->name));
       if (cname=="symmetries")
       {
         xmlNodePtr kids2 = kids->children;
         while(kids2 != NULL)
         {
-          string cname2((const char*)(kids2->name));
+          std::string cname2((const char*)(kids2->name));
           if(cname2 == "operator")
           {
             int clss(-1);
@@ -393,11 +393,11 @@ private:
             oAttrib.put(kids2);
             if(clss==-1)
             {
-              app_log()<<"  Must label class of operators"<<endl;
+              app_log()<<"  Must label class of operators"<< std::endl;
               APP_ABORT("SymmetryClass::put");
             }
             clCT.push_back(clss);
-            vector<double> c;
+            std::vector<double> c;
             putContent(c,kids2);
             OPS.push_back(c);
           }

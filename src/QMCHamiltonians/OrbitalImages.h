@@ -101,7 +101,7 @@ class OrbitalImages : public QMCHamiltonianBase
 
   typedef SPOSetBase::ValueVector_t ValueVector_t;
   typedef ParticleSet::ParticleLayout_t Lattice_t;
-  typedef map<string,ParticleSet*> PSPool;
+  typedef std::map<std::string,ParticleSet*> PSPool;
 
   ///options for orbital value to write
   enum value_types_enum {real_val=0,imag_val,abs_val,abs2_val};
@@ -126,16 +126,16 @@ class OrbitalImages : public QMCHamiltonianBase
   formats_enum format;
 
   ///orbital value selections
-  vector<value_types_enum> value_types;
+  std::vector<value_types_enum> value_types;
 
   ///names of sposets to evaluate
-  vector<string> sposet_names;
+  std::vector<std::string> sposet_names;
 
   ///indices of orbitals within each sposet to evaluate
-  vector<vector<int>*> sposet_indices;
+  std::vector<std::vector<int>*> sposet_indices;
 
   ///sposets obtained by name from BasisSetFactory
-  vector<SPOSetBase*> sposets;
+  std::vector<SPOSetBase*> sposets;
 
   ///cell bounding the evaluation grid, default is simulation cell
   Lattice_t cell;
@@ -162,7 +162,7 @@ class OrbitalImages : public QMCHamiltonianBase
   Array<ValueType,2> batch_values;
 
   ///temporary array to hold values of a single orbital at all grid points
-  vector<ValueType> orbital;
+  std::vector<ValueType> orbital;
 
 
   //constructor/destructor
@@ -178,7 +178,7 @@ class OrbitalImages : public QMCHamiltonianBase
   ///hijack estimator evaluate to evaluate and write all orbitals
   Return_t evaluate(ParticleSet& P);
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P); 
   }
@@ -189,7 +189,7 @@ class OrbitalImages : public QMCHamiltonianBase
 
   //required for Collectables interface
   void addObservables(PropertySetType& plist,BufferType& olist)  { }
-  void registerCollectables(vector<observable_helper*>& h5desc, hid_t gid) const { }
+  void registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const { }
 
   //should be empty for Collectables interface
   void resetTargetParticleSet(ParticleSet& P)                      { }
@@ -206,15 +206,15 @@ class OrbitalImages : public QMCHamiltonianBase
 
   //local functions
   ///write brief report of configuration data
-  void report(const string& pad);
+  void report(const std::string& pad);
 
   ///write a single orbital to file
-  void write_orbital(const string& sponame,int index,
-                     vector<ValueType>& orb,value_types_enum value_type);
+  void write_orbital(const std::string& sponame,int index,
+                     std::vector<ValueType>& orb,value_types_enum value_type);
 
   ///write a single orbital to an xsf file
-  void write_orbital_xsf(const string& sponame,int index,
-                         vector<ValueType>& orb,value_types_enum value_type);
+  void write_orbital_xsf(const std::string& sponame,int index,
+                         std::vector<ValueType>& orb,value_types_enum value_type);
 
 };
 

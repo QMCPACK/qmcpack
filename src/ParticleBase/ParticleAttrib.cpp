@@ -1144,7 +1144,7 @@ inline void evaluate(ParticleAttrib<T> &lhs,
   }
   else
   {
-    cerr << "Error: LHS and RHS don't conform." << endl;
+    std::cerr << "Error: LHS and RHS don't conform." << std::endl;
     exit(1);
   }
 }

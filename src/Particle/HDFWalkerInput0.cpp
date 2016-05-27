@@ -34,11 +34,11 @@ using namespace qmcplusplus;
  *
  *@note The main group is "/config_collection"
  */
-HDFWalkerInput0::HDFWalkerInput0(const string& aroot, int ipart, int nparts):
+HDFWalkerInput0::HDFWalkerInput0(const std::string& aroot, int ipart, int nparts):
   Counter(0), NumSets(0)
 {
-  string h5file = aroot;
-  string ext=getExtension(h5file);
+  std::string h5file = aroot;
+  std::string ext=getExtension(h5file);
   if(ext != "h5")
     //if the filename does not h5 extension, add the extension
   {
@@ -153,7 +153,7 @@ HDFWalkerInput0::put(MCWalkerConfiguration& W, int ic)
   MCWalkerConfiguration::iterator it_end = W.end();
   while(it != it_end)
   {
-    std::copy(Pos_temp[iw],Pos_temp[iw+1], (*it)->R.begin());
+    copy(Pos_temp[iw],Pos_temp[iw+1], (*it)->R.begin());
     ++it;
     ++iw;
   }
@@ -272,7 +272,7 @@ void  HDFWalkerInput0::getRandomState(bool restart)
   }
 }
 #else
-HDFWalkerInput0::HDFWalkerInput0(const string& aroot, int ipart, int nparts):
+HDFWalkerInput0::HDFWalkerInput0(const std::string& aroot, int ipart, int nparts):
   Counter(0), NumSets(0)
 {
   ERRORMSG("HDF5 is disabled")

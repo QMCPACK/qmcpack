@@ -274,7 +274,7 @@ public:
   }
 
   /**print the domain partition information
-   *@param os ostream to write to
+   *@param os std::ostream to write to
    *
    *This is for debug/test only.
    */
@@ -283,8 +283,8 @@ public:
     const int nw = 15;
     os << "number of sub regions " << NumGrids << std::endl;
     os << "Attribute distribution  = " << std::endl;
-    os << "grid spacing = " << setw(nw) << Delta[0] << setw(nw) << Delta[1]
-       << setw(nw) << Delta[2] << std::endl;
+    os << "grid spacing = " << std::setw(nw) << Delta[0] << std::setw(nw) << Delta[1]
+       << std::setw(nw) << Delta[2] << std::endl;
     TinyVector<T,3> origin;
     for(int ig=0; ig<NP[0]; ig++)
     {
@@ -295,9 +295,9 @@ public:
         for(int kg=0; kg<NP[2]; kg++)
         {
           origin[2] = static_cast<T>(kg)*Delta[2];
-          os << setw(nw) << origin[0] << " | " << setw(nw) << origin[0]+Delta[0]
-             << setw(nw) << origin[1] << " | " << setw(nw) << origin[1]+Delta[1]
-             << setw(nw) << origin[2] << " | " << setw(nw) << origin[2]+Delta[2]
+          os << std::setw(nw) << origin[0] << " | " << std::setw(nw) << origin[0]+Delta[0]
+             << std::setw(nw) << origin[1] << " | " << std::setw(nw) << origin[1]+Delta[1]
+             << std::setw(nw) << origin[2] << " | " << std::setw(nw) << origin[2]+Delta[2]
              << std::endl;
         }
       }
@@ -591,7 +591,7 @@ public:
   }
 
   /**print the domain partition information
-   *@param os ostream to write to
+   *@param os std::ostream to write to
    *
    *This is for debug/test only.
    */
@@ -600,7 +600,7 @@ public:
     const int nw = 15;
     os << "number of sub regions " << NumGrids << std::endl;
     os << "Attribute distribution  = " << std::endl;
-    os << "grid spacing = " << setw(nw) << Delta[0] << setw(nw) << Delta[1]
+    os << "grid spacing = " << std::setw(nw) << Delta[0] << std::setw(nw) << Delta[1]
        << std::endl;
     TinyVector<T,2> origin;
     for(int ig=0; ig<NP[0]; ig++)
@@ -609,8 +609,8 @@ public:
       for(int jg=0; jg<NP[1]; jg++)
       {
         origin[1] = static_cast<T>(jg)*Delta[1];
-        os << setw(nw) << origin[0] << " | " << setw(nw) << origin[0]+Delta[0]
-           << setw(nw) << origin[1] << " | " << setw(nw) << origin[1]+Delta[1]
+        os << std::setw(nw) << origin[0] << " | " << std::setw(nw) << origin[0]+Delta[0]
+           << std::setw(nw) << origin[1] << " | " << std::setw(nw) << origin[1]+Delta[1]
            << std::endl;
       }
     }

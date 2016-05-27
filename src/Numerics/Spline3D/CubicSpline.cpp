@@ -1,7 +1,6 @@
 #include "Numerics/Spline3D/CubicSpline.h"
 #include <iostream>
 
-using namespace std;
 
 
 void CubicSpline::Update()
@@ -32,7 +31,7 @@ void CubicSpline::Update()
   for( i = n_x - 2; i >= 0; i-- )
     F(i)[1] -= mu(i) * F(i+1)[1];
   for(int j = 0; j < n_x; j++)
-    cout << F(j)[0] << '\t' << F(j)[1] << endl;
+    std::cout << F(j)[0] << '\t' << F(j)[1] << std::endl;
   exit(-1);
   UpToDate = true;
   return;
@@ -100,7 +99,7 @@ void CubicSpline::Update(){
 
 
 //   for(int i = 0; i < n_x-1; i++)
-//     cout << F(i)[0] << '\t' << F(i)[1] << endl;
+//     std::cout << F(i)[0] << '\t' << F(i)[1] << std::endl;
 //   exit(-1);
 
   UpToDate = true;

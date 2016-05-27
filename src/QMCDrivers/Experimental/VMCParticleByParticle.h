@@ -42,7 +42,7 @@ private:
   IndexType nAllRejected;
   IndexType nSubSteps;
 
-  string UseDrift;
+  std::string UseDrift;
 
   ParticleSet::ParticleGradient_t G, dG;
   ParticleSet::ParticleLaplacian_t L, dL;

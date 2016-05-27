@@ -125,7 +125,7 @@ public:
     //Phi->resetParameters(active);
   }
 
-  inline void reportStatus(ostream& os)
+  inline void reportStatus(std::ostream& os)
   {
   }
   void resetTargetParticleSet(ParticleSet& P)
@@ -249,23 +249,23 @@ public:
 
   // create necessary structures used in the evaluation of the determinants
   // this works with confgList, which shouldn't change during a simulation
-  void createDetData(ci_configuration2& ref, vector<int>& data,
-                     vector<pair<int,int> >& pairs, vector<double>& sign);
+  void createDetData(ci_configuration2& ref, std::vector<int>& data,
+                     std::vector<std::pair<int,int> >& pairs, std::vector<double>& sign);
   /*
       void testDets() {
 
-         vector<int> indx(16);
+         std::vector<int> indx(16);
          ValueMatrix_t Mat(8,8);
          NewTimer dummy("dummy");
          dummy.reset();
 
-         ifstream in("matrix.txt");
+         std::ifstream in("matrix.txt");
          for(int i=0; i<8; i++)
          for(int j=0; j<8; j++)
             in>>Mat(i,j);
          in.close();
 
-         vector<double> dets(9);
+         std::vector<double> dets(9);
          dets[2] =  -0.085167; // 2x2
          dets[3] = 0.051971; // 3x3
          dets[4] = 0.029865; // 4x4
@@ -280,7 +280,7 @@ public:
             indx[k++] = i;
            for(int i=0; i<q; i++)
             indx[k++] = i;
-           cout<<"determinant of " <<q <<": " <<dets[q] <<"  -  " <<CalculateRatioFromMatrixElements(q,Mat,indx.begin()) <<endl;
+           std::cout <<"determinant of " <<q <<": " <<dets[q] <<"  -  " <<CalculateRatioFromMatrixElements(q,Mat,indx.begin()) << std::endl;
          }
          int k=0;
          for(int i=0; i<4; i++)
@@ -288,7 +288,7 @@ public:
          for(int i=0; i<4; i++)
           indx[k++] = i;
 
-         cout<<"Timing n=4 \n";
+         std::cout <<"Timing n=4 \n";
          ValueType res;
          dummy.start();
          for(int i=0; i<1000; i++)
@@ -301,7 +301,7 @@ public:
            res=NewCalculateRatioFromMatrixElements(4,Mat,indx.begin());
          dummy.stop();
          double func = dummy.get_total();
-         cout<<"Direct, function: " <<direct <<"  " <<func <<endl <<endl;
+         std::cout <<"Direct, function: " <<direct <<"  " <<func << std::endl << std::endl;
 
          k=0;
          for(int i=0; i<5; i++)
@@ -309,7 +309,7 @@ public:
          for(int i=0; i<5; i++)
           indx[k++] = i;
 
-         cout<<"Timing n=5 \n";
+         std::cout <<"Timing n=5 \n";
          dummy.start();
          for(int i=0; i<1000; i++)
            res=CalculateRatioFromMatrixElements(5,Mat,indx.begin());
@@ -321,7 +321,7 @@ public:
            res=NewCalculateRatioFromMatrixElements(5,Mat,indx.begin());
          dummy.stop();
          func = dummy.get_total();
-         cout<<"Direct, function: " <<direct <<"  " <<func <<endl <<endl;
+         std::cout <<"Direct, function: " <<direct <<"  " <<func << std::endl << std::endl;
 
          k=0;
          for(int i=0; i<6; i++)
@@ -329,7 +329,7 @@ public:
          for(int i=0; i<6; i++)
           indx[k++] = i;
 
-         cout<<"Timing n=6 \n";
+         std::cout <<"Timing n=6 \n";
          dummy.start();
          for(int i=0; i<1000; i++)
            res=CalculateRatioFromMatrixElements(6,Mat,indx.begin());
@@ -341,13 +341,13 @@ public:
            res=NewCalculateRatioFromMatrixElements(6,Mat,indx.begin());
          dummy.stop();
          func = dummy.get_total();
-         cout<<"Direct, function: " <<direct <<"  " <<func <<endl <<endl;
+         std::cout <<"Direct, function: " <<direct <<"  " <<func << std::endl << std::endl;
 
          exit(1);
       }
   */
 
-  inline ValueType CalculateRatioFromMatrixElements(int n, ValueMatrix_t& dotProducts, vector<int>::iterator it)
+  inline ValueType CalculateRatioFromMatrixElements(int n, ValueMatrix_t& dotProducts, std::vector<int>::iterator it)
   {
     switch(n)
     {
@@ -449,7 +449,7 @@ public:
     return 0.0;
   }
   /*
-      inline ValueType NewCalculateRatioFromMatrixElements(int n, ValueMatrix_t& dotProducts, vector<int>::iterator it)
+      inline ValueType NewCalculateRatioFromMatrixElements(int n, ValueMatrix_t& dotProducts, std::vector<int>::iterator it)
       {
          switch(n)
          {
@@ -475,12 +475,12 @@ public:
       }
   */
 
-  inline void BuildDotProductsAndCalculateRatios(int ref, int iat, ValueVector_t& ratios, ValueMatrix_t &psiinv, ValueMatrix_t &psi, ValueMatrix_t& dotProducts, vector<int>& data, vector<pair<int,int> >& pairs, vector<double>& sign)
+  inline void BuildDotProductsAndCalculateRatios(int ref, int iat, ValueVector_t& ratios, ValueMatrix_t &psiinv, ValueMatrix_t &psi, ValueMatrix_t& dotProducts, std::vector<int>& data, std::vector<std::pair<int,int> >& pairs, std::vector<double>& sign)
   {
     ValueType det0 = ratios[ref];
     buildTableTimer.start();
     int num=psi.extent(1);
-    vector<pair<int,int> >::iterator it(pairs.begin()), last(pairs.end());
+    std::vector<std::pair<int,int> >::iterator it(pairs.begin()), last(pairs.end());
     while(it != last)
     {
       dotProducts((*it).first,(*it).second) = simd::dot(psiinv[(*it).first],psi[(*it).second],num);
@@ -488,7 +488,7 @@ public:
     }
     buildTableTimer.stop();
     readMatTimer.start();
-    vector<int>::iterator it2 = data.begin();
+    std::vector<int>::iterator it2 = data.begin();
     //ValueVector_t::iterator itr = ratios.begin();
     //vector<double>::iterator its = sign.begin();
     int count= 0;  // number of determinants processed
@@ -511,12 +511,12 @@ public:
     readMatTimer.stop();
   }
 
-  inline void BuildDotProductsAndCalculateRatios(int ref, int iat, GradMatrix_t& ratios, ValueMatrix_t& psiinv, ValueMatrix_t& psi, ValueMatrix_t& dotProducts, vector<int>& data, vector<pair<int,int> >& pairs, vector<double>& sign, int dx)
+  inline void BuildDotProductsAndCalculateRatios(int ref, int iat, GradMatrix_t& ratios, ValueMatrix_t& psiinv, ValueMatrix_t& psi, ValueMatrix_t& dotProducts, std::vector<int>& data, std::vector<std::pair<int,int> >& pairs, std::vector<double>& sign, int dx)
   {
     ValueType det0 = ratios(ref,iat)[dx];
     buildTableGradTimer.start();
     int num=psi.extent(1);
-    vector<pair<int,int> >::iterator it(pairs.begin()), last(pairs.end());
+    std::vector<std::pair<int,int> >::iterator it(pairs.begin()), last(pairs.end());
     while(it != last)
     {
       dotProducts((*it).first,(*it).second) = simd::dot(psiinv[(*it).first],psi[(*it).second],num);
@@ -524,7 +524,7 @@ public:
     }
     buildTableGradTimer.stop();
     readMatGradTimer.start();
-    vector<int>::iterator it2 = data.begin();
+    std::vector<int>::iterator it2 = data.begin();
     int count= 0;  // number of determinants processed
     while(it2 != data.end())
     {
@@ -542,17 +542,17 @@ public:
     readMatGradTimer.stop();
   }
 
-  inline void BuildDotProductsAndCalculateRatios(int ref, int iat, ValueMatrix_t& ratios, ValueMatrix_t& psiinv, ValueMatrix_t& psi, ValueMatrix_t& dotProducts, vector<int>& data, vector<pair<int,int> >& pairs, vector<double>& sign)
+  inline void BuildDotProductsAndCalculateRatios(int ref, int iat, ValueMatrix_t& ratios, ValueMatrix_t& psiinv, ValueMatrix_t& psi, ValueMatrix_t& dotProducts, std::vector<int>& data, std::vector<std::pair<int,int> >& pairs, std::vector<double>& sign)
   {
     ValueType det0 = ratios(ref,iat);
     int num=psi.extent(1);
-    vector<pair<int,int> >::iterator it(pairs.begin()), last(pairs.end());
+    std::vector<std::pair<int,int> >::iterator it(pairs.begin()), last(pairs.end());
     while(it != last)
     {
       dotProducts((*it).first,(*it).second) = simd::dot(psiinv[(*it).first],psi[(*it).second],num);
       it++;
     }
-    vector<int>::iterator it2 = data.begin();
+    std::vector<int>::iterator it2 = data.begin();
     int count= 0;  // number of determinants processed
     while(it2 != data.end())
     {
@@ -586,7 +586,7 @@ public:
       inline void InverseUpdateByColumn(ValueMatrix_t& Minv
             , GradVector_t& dM, ValueVector_t& rvec
             , ValueVector_t& rvecinv, int colchanged
-            , ValueType c_ratio, vector<int>::iterator& it)
+            , ValueType c_ratio, std::vector<int>::iterator& it)
       {
             ValueType c_ratio=1.0/ratioLapl;
             BLAS::gemv('N', NumPtcls, NumPtcls, c_ratio, dpsiMinv.data(), NumPtcls, tv, 1, T(), workV1, 1);
@@ -596,7 +596,7 @@ public:
       }
   */
 
-  void setDetInfo(int ref, vector<ci_configuration2> list);
+  void setDetInfo(int ref, std::vector<ci_configuration2> list);
 
   void evaluateDetsForPtclMove(ParticleSet& P, int iat);
 
@@ -626,7 +626,7 @@ public:
   /// number of determinants handled by this object
   int NumDets;
   ///
-  vector<ci_configuration2> confgList;
+  std::vector<ci_configuration2> confgList;
 // the reference determinant never changes, so there is no need to store it.
 // if its value is zero, then use a data from backup, but always use this one
 // by default
@@ -684,14 +684,14 @@ public:
    *     -i1,i2,...,in : occupied orbital to be replaced (these must be numbers from 0:Nptcl-1)
    *     -a1,a2,...,an : excited states that replace the orbitals (these can be anything)
    */
-  vector<int> detData;
-  vector<pair<int,int> > uniquePairs;
-  vector<double> DetSigns;
+  std::vector<int> detData;
+  std::vector<std::pair<int,int> > uniquePairs;
+  std::vector<double> DetSigns;
 
   int backup_reference;
-  vector<int> backup_detData;
-  vector<pair<int,int> > backup_uniquePairs;
-  vector<double> backup_DetSigns;
+  std::vector<int> backup_detData;
+  std::vector<std::pair<int,int> > backup_uniquePairs;
+  std::vector<double> backup_DetSigns;
 
   // transformation
   BackflowTransformation *BFTrans;

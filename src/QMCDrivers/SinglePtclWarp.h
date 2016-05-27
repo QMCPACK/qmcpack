@@ -9,14 +9,14 @@ struct SinglePtclWarp : public QMCTraits
   PosType nusum;
 
   //quantities depending on nuclear position
-  vector<RealType> r,rinv,omega,g;
-  vector<PosType>  dr,d_omega,nu;
-  vector<TensorType> d2omega;
+  std::vector<RealType> r,rinv,omega,g;
+  std::vector<PosType>  dr,d_omega,nu;
+  std::vector<TensorType> d2omega;
 
   //quantities depending on Hamiltonian
-  vector<RealType> Jacobian;
-  vector<PosType>  Deltax;
-  vector<TensorType> Jacob_matrix,Jacob_cofactor;
+  std::vector<RealType> Jacobian;
+  std::vector<PosType>  Deltax;
+  std::vector<TensorType> Jacob_matrix,Jacob_cofactor;
 
   //Unit Matrix
   TensorType unitMatrix;
@@ -54,7 +54,7 @@ struct SinglePtclWarp : public QMCTraits
     return -rinv;
   }
 
-  void update_warp_disp(const vector<RealType>& R,const vector<RealType>& Rinv,const vector<PosType>& dR)
+  void update_warp_disp(const std::vector<RealType>& R,const std::vector<RealType>& Rinv,const std::vector<PosType>& dR)
   {
     r=R;
     rinv=Rinv;
@@ -72,7 +72,7 @@ struct SinglePtclWarp : public QMCTraits
   }
 
 
-  PosType get_displacement(int ipsi, const vector<PosType>& delta)
+  PosType get_displacement(int ipsi, const std::vector<PosType>& delta)
   {
     //compute the warp for all geometries
     Deltax[ipsi]=0.e0;
@@ -98,7 +98,7 @@ struct SinglePtclWarp : public QMCTraits
   }
 
 
-  RealType get_Jacobian(int ipsi, const vector<PosType>& delta)
+  RealType get_Jacobian(int ipsi, const std::vector<PosType>& delta)
   {
     Jacob_matrix[ipsi]=unitMatrix;
     //first index (row index) of Jacob matrix is coordinate in reference system.
@@ -107,7 +107,7 @@ struct SinglePtclWarp : public QMCTraits
       Jacob_matrix[ipsi]+= outerProduct(delta[iat],d_omega[iat]);
     //Compute the cofactor matrix
     Jacob_cofactor[ipsi] = getCof(Jacob_matrix[ipsi]);
-    //cout << Jacob_cofactor[ipsi] << endl;
+    //cout << Jacob_cofactor[ipsi] << std::endl;
     //Compute the jacobian
     Jacobian[ipsi] = dot(Jacob_matrix[ipsi].getRow(0),Jacob_cofactor[ipsi].getRow(0));
     return Jacobian[ipsi];
@@ -136,7 +136,7 @@ struct SinglePtclWarp : public QMCTraits
   }
 
 
-  PosType get_grad_ln_Jacob(int ipsi,const vector<PosType>& delta)
+  PosType get_grad_ln_Jacob(int ipsi,const std::vector<PosType>& delta)
   {
     PosType GradlnJacob;
     for(int igamma=0; igamma<3; igamma++)

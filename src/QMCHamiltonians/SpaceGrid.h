@@ -36,22 +36,22 @@ public:
   typedef Matrix<RealType>         Matrix_t;
 
   SpaceGrid(int& nvalues);
-  bool put(xmlNodePtr cur, map<string,Point>& points,ParticlePos_t& R,vector<RealType>& Z,int ndp,bool abort_on_fail=true)
+  bool put(xmlNodePtr cur, std::map<std::string,Point>& points,ParticlePos_t& R,std::vector<RealType>& Z,int ndp,bool abort_on_fail=true)
   {
     Rptcl = &R;
     Zptcl = &Z;
     ndparticles = ndp;
     return put(cur,points,abort_on_fail);
   }
-  bool put(xmlNodePtr cur, map<string,Point>& points,bool abort_on_fail=true);
-  bool initialize_rectilinear(xmlNodePtr cur, string& coord, map<string,Point>& points);
-  bool initialize_voronoi(map<string,Point>& points);
-  void write_description(ostream& os, string& indent);
+  bool put(xmlNodePtr cur, std::map<std::string,Point>& points,bool abort_on_fail=true);
+  bool initialize_rectilinear(xmlNodePtr cur, std::string& coord, std::map<std::string,Point>& points);
+  bool initialize_voronoi(std::map<std::string,Point>& points);
+  void write_description(std::ostream& os, std::string& indent);
   int allocate_buffer_space(BufferType& buf);
-  void registerCollectables(vector<observable_helper*>& h5desc,
+  void registerCollectables(std::vector<observable_helper*>& h5desc,
                             hid_t gid, int grid_index) const;
   void evaluate(const ParticlePos_t& R, const Matrix<RealType>& values,
-                BufferType& buf,vector<bool>& particles_outside,
+                BufferType& buf,std::vector<bool>& particles_outside,
                 const DistanceTableData& dtab);
 
   bool check_grid(void);
@@ -81,7 +81,7 @@ public:
   int npvalues;
   Matrix<RealType> cellsamples;
   enum {vacuum,neutral,noref} reference;
-  vector<int> reference_count;
+  std::vector<int> reference_count;
 
   //really only used for cartesian-like grids
   Point origin;
@@ -89,8 +89,8 @@ public:
   Tensor<RealType,DIM> axinv;
   RealType volume;
   Matrix<RealType> domain_uwidths;
-  string axlabel[DIM];
-  vector<int> gmap[DIM];
+  std::string axlabel[DIM];
+  std::vector<int> gmap[DIM];
   RealType odu[DIM];
   RealType umin[DIM];
   RealType umax[DIM];
@@ -99,13 +99,13 @@ public:
 
   //voronoi grids
   ParticlePos_t* Rptcl;
-  vector<RealType>* Zptcl;
+  std::vector<RealType>* Zptcl;
   struct irpair
   {
     RealType r;
     int i;
   };
-  vector<irpair> nearcell;
+  std::vector<irpair> nearcell;
   int ndparticles;
 
   //used only in evaluate

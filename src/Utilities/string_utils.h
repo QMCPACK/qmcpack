@@ -9,9 +9,8 @@
 namespace qmcplusplus
 {
 
-using namespace std;
 
-inline string strip(const string& s)
+inline std::string strip(const std::string& s)
 {
   int start=s.length();
   int end=0;
@@ -32,9 +31,9 @@ inline string strip(const string& s)
       break;
     }
   }
-  //app_log()<<"strip got '"<<s<<"'"<<endl;
-  //app_log()<<"start,end "<<start<<","<<end<<" "<<s[start]<<" "<<s[end]<<endl;
-  //app_log()<<"returning '"<<s.substr(start,end-start+1)<<"'"<<endl;
+  //app_log()<<"strip got '"<<s<<"'"<< std::endl;
+  //app_log()<<"start,end "<<start<<","<<end<<" "<<s[start]<<" "<<s[end]<< std::endl;
+  //app_log()<<"returning '"<<s.substr(start,end-start+1)<<"'"<< std::endl;
   return s.substr(start,end-start+1);
 }
 
@@ -45,9 +44,9 @@ inline bool whitespace(char c)
 }
 
 
-inline vector<string> split(const string& s)
+inline std::vector<std::string> split(const std::string& s)
 {
-  vector<string> tokens;
+  std::vector<std::string> tokens;
   int i=0;
   while(i<s.length())
   {
@@ -65,24 +64,24 @@ inline vector<string> split(const string& s)
 }
 
 
-inline vector<string> split(const string& s, const string& pattern)
+inline std::vector<std::string> split(const std::string& s, const std::string& pattern)
 {
   int sloc=0;
   int eloc;
   int plen=pattern.length();
-  string ss;
-  vector<string> tokens;
-  //app_log() << "split got string:" <<endl<<"'"<<s<<"'"<<endl;
+  std::string ss;
+  std::vector<std::string> tokens;
+  //app_log() << "split got string:" << std::endl<<"'"<<s<<"'"<< std::endl;
   while(true)
   {
     eloc=s.find(pattern,sloc);
-    if(eloc!=string::npos)
+    if(eloc!=std::string::npos)
     {
       ss=s.substr(sloc,eloc-sloc);
       if(ss!="")
       {
-        //app_log()<<"  adding token: "<<endl;
-        //app_log()<<"    '"<< ss <<"'" <<endl;
+        //app_log()<<"  adding token: "<< std::endl;
+        //app_log()<<"    '"<< ss <<"'" << std::endl;
         tokens.push_back(ss);
       }
       sloc=eloc+plen;
@@ -93,8 +92,8 @@ inline vector<string> split(const string& s, const string& pattern)
       ss=s.substr(sloc,eloc-sloc);
       if(ss!="")
       {
-        //app_log()<<"  adding token: "<<endl;
-        //app_log()<<"    '"<< ss <<"'" <<endl;
+        //app_log()<<"  adding token: "<< std::endl;
+        //app_log()<<"    '"<< ss <<"'" << std::endl;
         tokens.push_back(ss);
       }
       break;
@@ -103,31 +102,31 @@ inline vector<string> split(const string& s, const string& pattern)
   return tokens;
 }
 
-inline int string2int(const string& s)
+inline int string2int(const std::string& s)
 {
   return atoi(s.c_str());
 }
 
-inline double string2real(const string& s)
+inline double string2real(const std::string& s)
 {
   return atof(s.c_str());
 }
 
-inline string int2string(const int& i)
+inline std::string int2string(const int& i)
 {
-  stringstream ss;
+  std::stringstream ss;
   ss<<i;
   return ss.str();
 }
 
-inline string real2string(const double& r)
+inline std::string real2string(const double& r)
 {
-  stringstream ss;
+  std::stringstream ss;
   ss<<r;
   return ss.str();
 }
 
-inline bool string2bool(const string& s)
+inline bool string2bool(const std::string& s)
 {
   if(s=="true" || s=="yes" || s=="1")
   {
@@ -149,18 +148,18 @@ inline bool string2bool(const string& s)
 //strings for input (OhmmsAttributeSet)
 struct astring
 {
-  string s;
+  std::string s;
 };
-inline istream& operator>>(istream& is,astring& rhs)
+inline std::istream& operator>>( std::istream& is,astring& rhs)
 {
   char buf[256];
   is.getline(buf,256);
   rhs.s.assign(buf);
   return is;
 }
-inline ostream& operator<<(ostream& os, const astring& rhs)
+inline std::ostream& operator<<(std::ostream& os, const astring& rhs)
 {
-  os<<rhs.s<<endl;
+  os<<rhs.s<< std::endl;
   return os;
 }
 

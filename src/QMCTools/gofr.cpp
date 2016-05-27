@@ -9,11 +9,10 @@
 #include "Numerics/HDFNumericAttrib.h"
 #include "Utilities/IteratorUtility.h"
 using namespace qmcplusplus;
-using namespace std;
 
 int print_help()
 {
-  cout << "Usage: gofr --fileroot string --np int " << endl;
+  std::cout << "Usage: gofr --fileroot std::string --np int " << std::endl;
   return 1;
 }
 
@@ -21,12 +20,12 @@ struct GofRObserver
 {
   int NumSamples;
   int NumNodes;
-  string DataSetName;
+  std::string DataSetName;
   Vector<double> gofr;
   Vector<double> gofr2;
   Matrix<double> gofr_dat;
 
-  GofRObserver(const string& aname):DataSetName(aname),NumSamples(0)
+  GofRObserver(const std::string& aname):DataSetName(aname),NumSamples(0)
   {
   }
 
@@ -60,9 +59,9 @@ struct GofRObserver
 
   void print(const char* fname)
   {
-    ofstream fout(fname);
-    fout.setf(ios::scientific, ios::floatfield);
-    fout.setf(ios::left,ios::adjustfield);
+    std::ofstream fout(fname);
+    fout.setf(std::ios::scientific, std::ios::floatfield);
+    fout.setf(std::ios::left,std::ios::adjustfield);
     fout.precision(6);
     //double norm=static_cast<double>(NumNodes)/static_cast<double>(NumSamples);
     double norm=1.0/static_cast<double>(NumSamples);
@@ -71,7 +70,7 @@ struct GofRObserver
     {
       double avg=gofr[i]*norm;
       double var= sqrt(gofr2[i]*norm-avg*avg);
-      fout << setw(3) << i <<  setw(20) << avg << setw(20) << var*sqrtnorm << setw(20) << var << endl;
+      fout << std::setw(3) << i <<  std::setw(20) << avg << std::setw(20) << var*sqrtnorm << std::setw(20) << var << std::endl;
     }
   }
 };
@@ -82,11 +81,11 @@ int main(int argc, char** argv)
     return print_help();
   int iargc=0;
   int nproc=1;
-  vector<string> gofr_name;
-  string h5fileroot("0");
+  std::vector<std::string> gofr_name;
+  std::string h5fileroot("0");
   while(iargc<argc)
   {
-    string c(argv[iargc]);
+    std::string c(argv[iargc]);
     if(c == "--fileroot")
     {
       h5fileroot=argv[++iargc];
@@ -127,14 +126,14 @@ void GofRObserver::getData(const char* froot, int nproc)
       sprintf(fname,"%s.p%03d.config.h5",froot,ip);
     else
       sprintf(fname,"%s.config.h5",froot);
-    cout << "Getting data from " << fname << endl;
+    std::cout << "Getting data from " << fname << std::endl;
     hid_t fileid =  H5Fopen(fname,H5F_ACC_RDWR,H5P_DEFAULT);
     hid_t obsid = H5Gopen(fileid,"observables");
     int count=0;
     HDFAttribIO<int> i(count);
     i.read(obsid,"count");
     count_max = std::min(count_max,count);
-    string gname(DataSetName);
+    std::string gname(DataSetName);
     gname.append("/value");
     //check dimension
     hid_t h1 = H5Dopen(obsid, gname.c_str());
@@ -154,9 +153,9 @@ void GofRObserver::getData(const char* froot, int nproc)
     H5Gclose(obsid);
     H5Fclose(fileid);
   }
-  cout << "Number of blocks " << count_max << endl;
-  accumulate(count_max);
-  string outfname(froot);
+  std::cout << "Number of blocks " << count_max << std::endl;
+  std::accumulate(count_max);
+  std::string outfname(froot);
   outfname += "."+ DataSetName+".dat";
   print(outfname.c_str());
 }

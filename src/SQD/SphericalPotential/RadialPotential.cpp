@@ -33,7 +33,7 @@ RadialPotentialBase::~RadialPotentialBase()
 void RadialPotentialBase::getStorage(const BasisSetType& psi,
                                      const std::string& RootFileName)
 {
-  string fname = RootFileName + ".Vext.xml";
+  std::string fname = RootFileName + ".Vext.xml";
   xmlDocPtr doc = xmlNewDoc((const xmlChar*)"1.0");
   xmlNodePtr p0 = xmlNewNode(NULL, BAD_CAST "pseudo");
   {
@@ -61,11 +61,11 @@ void RadialPotentialBase::getStorage(const BasisSetType& psi,
     s << psi.m_grid->size();
     xmlNewProp(p1,(const xmlChar*)"npts",(const xmlChar*)s.str().c_str());
     std::ostringstream gr;
-    gr.setf(ios_base::scientific);
+    gr.setf(std::ios_base::scientific);
     gr.precision(15);
     gr <<"\n";
     for(int ig=0; ig<psi.m_grid->size(); ++ig)
-      gr<<(*psi.m_grid)[ig]<< endl;
+      gr<<(*psi.m_grid)[ig]<< std::endl;
     xmlNodePtr posPtr=xmlNewTextChild(p1,NULL,
                                       (const xmlChar*)"data", (const xmlChar*)gr.str().c_str());
     xmlAddChild(p0,p1);
@@ -87,11 +87,11 @@ void RadialPotentialBase::getStorage(const BasisSetType& psi,
     xmlNodePtr p3 = xmlNewNode(NULL,(const xmlChar*)"radfunc");
     xmlNewProp(p3,(const xmlChar*)"grid_def",(const xmlChar*)"global");
     std::ostringstream gr;
-    gr.setf(ios_base::scientific);
+    gr.setf(std::ios_base::scientific);
     gr.precision(15);
     gr <<"\n";
     for(int ig=0; ig<psi.m_grid->size(); ++ig)
-      gr<<((*Vext)(ig))*((*psi.m_grid)[ig])<< endl;
+      gr<<((*Vext)(ig))*((*psi.m_grid)[ig])<< std::endl;
     xmlNodePtr posPtr=xmlNewTextChild(p3,NULL,
                                       (const xmlChar*)"data", (const xmlChar*)gr.str().c_str());
     xmlAddChild(p2,p3);
@@ -222,16 +222,16 @@ HartreePotential::evaluate(const BasisSetType& psi,
 void HartreePotential::getStorage(const BasisSetType& psi,
                                   const std::string& RootFileName)
 {
-  string fileforoutput = RootFileName + ".hartree";
-  ofstream fout(fileforoutput.c_str());
-  string llabel("spdf");
-  string slabel("d0u");
+  std::string fileforoutput = RootFileName + ".hartree";
+  std::ofstream fout(fileforoutput.c_str());
+  std::string llabel("spdf");
+  std::string slabel("d0u");
   int norb = psi.size();
   int nn=0;
   value_type temp;
-  fout << "orb#1" << '\t' << "orb#2" << '\t' << "Hartree" << endl;
+  fout << "orb#1" << '\t' << "orb#2" << '\t' << "Hartree" << std::endl;
   fout.precision(12);
-  fout.setf(ios::scientific,ios::floatfield);
+  fout.setf(std::ios::scientific,std::ios::floatfield);
   for(int i=0; i<norb; i++)
   {
     for(int j=i; j<norb; j++, nn++)
@@ -241,7 +241,7 @@ void HartreePotential::getStorage(const BasisSetType& psi,
         temp = 0.0;
       fout << psi.N[i] << llabel[psi.L[i]] << slabel[psi.S[i]+1]
            << '\t' << psi.N[j] << llabel[psi.L[j]] << slabel[psi.S[j]+1]
-           << '\t' << temp << endl;
+           << '\t' << temp << std::endl;
     }
   }
 }
@@ -327,7 +327,7 @@ ExchangePotential::evaluate(const BasisSetType& psi,
       int lj = psi.L[j];
       int two_lj_plus_one = 2*lj + 1;
       int kmax = li + lj;
-      int kmin = abs(li - lj);
+      int kmin = std::abs(li - lj);
       if( si == sj )
       {
         for(int k=kmax; k >= kmin; k-=2)
@@ -357,16 +357,16 @@ ExchangePotential::evaluate(const BasisSetType& psi,
 void ExchangePotential::getStorage(const BasisSetType& psi,
                                    const std::string& RootFileName)
 {
-  string fileforoutput = RootFileName + ".exchange";
-  ofstream fout(fileforoutput.c_str());
-  string llabel("spdf");
-  string slabel("d0u");
+  std::string fileforoutput = RootFileName + ".exchange";
+  std::ofstream fout(fileforoutput.c_str());
+  std::string llabel("spdf");
+  std::string slabel("d0u");
   int norb = psi.size();
   int nn=0;
   value_type temp;
-  fout << "orb#1" << '\t' << "orb#2" << '\t' << "Exchange" << endl;
+  fout << "orb#1" << '\t' << "orb#2" << '\t' << "Exchange" << std::endl;
   fout.precision(12);
-  fout.setf(ios::scientific,ios::floatfield);
+  fout.setf(std::ios::scientific,std::ios::floatfield);
   for(int i=0; i<norb; i++)
   {
     for(int j=i; j<norb; j++, nn++)
@@ -376,7 +376,7 @@ void ExchangePotential::getStorage(const BasisSetType& psi,
         temp = 0.0;
       fout << psi.N[i] << llabel[psi.L[i]] << slabel[psi.S[i]+1]
            << '\t' << psi.N[j] << llabel[psi.L[j]] << slabel[psi.S[j]+1]
-           << '\t' << temp << endl;
+           << '\t' << temp << std::endl;
     }
   }
 }

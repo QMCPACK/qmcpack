@@ -37,10 +37,10 @@ struct RealEGOSet: public SPOSetBase
 
   int KptMax;
   RealType kdotr;
-  vector<PosType> K;
-  vector<RealType> mK2;
+  std::vector<PosType> K;
+  std::vector<RealType> mK2;
 
-  RealEGOSet(const vector<PosType>& k, const vector<RealType>& k2);
+  RealEGOSet(const std::vector<PosType>& k, const std::vector<RealType>& k2);
 
   void resetParameters(const opt_variables_type& optVariables) {}
   inline void resetTargetParticleSet(ParticleSet& P) { }

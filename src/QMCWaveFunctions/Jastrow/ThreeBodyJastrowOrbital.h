@@ -45,8 +45,8 @@ class ThreeBodyJastrowOrbital: public OrbitalBase
   ValueVectorType U,d2U;
   GradVectorType dU;
   ValueType *FirstAddressOfdU, *LastAddressOfdU;
-  vector<FT*> Funique;
-  vector<FT*> Fs;
+  std::vector<FT*> Funique;
+  std::vector<FT*> Fs;
   Array<RealType,3> C;
 public:
 

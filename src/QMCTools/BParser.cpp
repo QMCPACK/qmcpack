@@ -28,7 +28,6 @@
 #include <numeric>
 #include <set>
 #include <map>
-using namespace std;
 
 xmlNodePtr AGPLambda::createNode()
 {
@@ -100,14 +99,14 @@ void BParser::parse(const std::string& fname)
   if(J2Index != 0)
   {
     search(fin,"Jastrow two body");
-    cout << "Found Jastrow Two Body" << endl;
+    std::cout << "Found Jastrow Two Body" << std::endl;
   }
   search(fin,"atomic wf");
   getBasisSetForDet(fin);
   if(J3Shells != 0)
   {
     search(fin,"atomic Jastrow wf");
-    cout << "Getting Atomic three-body Jastrow Wfs  " << endl;
+    std::cout << "Getting Atomic three-body Jastrow Wfs  " << std::endl;
     getBasisSetForJ3(fin);
   }
   search(fin,"Occupation atomic orbitals");
@@ -162,7 +161,7 @@ void BParser::getGeometry(std::istream& is)
 void BParser::getBasisSetForDet(std::istream& is)
 {
   int nitem =  DetShells;
-  vector<int> rnl(IonSystem.getTotalNum(),0);
+  std::vector<int> rnl(IonSystem.getTotalNum(),0);
   detBasisPerAtom.resize(IonSystem.getTotalNum(),0);
   while(nitem)
   {
@@ -170,9 +169,9 @@ void BParser::getBasisSetForDet(std::istream& is)
     int angL=(atoi(currentWords[0].c_str())-1)/2;
     int nterms=atoi(currentWords[1].c_str());
     int iflag=atoi(currentWords[2].c_str());
-    vector<string> items(nterms+1);
+    std::vector<std::string> items(nterms+1);
     //white-space at the end is killing me
-    vector<string> temp;
+    std::vector<std::string> temp;
     int inw=0;
     while(inw<nterms+1)
     {
@@ -185,11 +184,11 @@ void BParser::getBasisSetForDet(std::istream& is)
       }
     }
     int centerID=atoi(items[0].c_str())-1;
-    vector<BMakeFuncBase*>* b=0;
-    map<int,vector<BMakeFuncBase*>*>::iterator it=detBasisSet.find(centerID);
+    std::vector<BMakeFuncBase*>* b=0;
+    std::map<int,std::vector<BMakeFuncBase*>*>::iterator it=detBasisSet.find(centerID);
     if(it == detBasisSet.end())
     {
-      b = new vector<BMakeFuncBase*>;
+      b = new std::vector<BMakeFuncBase*>;
       detBasisSet[centerID]=b;
     }
     else
@@ -214,7 +213,7 @@ void BParser::getBasisSetForDet(std::istream& is)
 void BParser::getBasisSetForJ3(std::istream& is)
 {
   int nitem =  J3Shells;
-  vector<int> rnl(IonSystem.getTotalNum(),0);
+  std::vector<int> rnl(IonSystem.getTotalNum(),0);
   j3BasisPerAtom.resize(IonSystem.getTotalNum(),0);
   while(nitem)
   {
@@ -222,14 +221,14 @@ void BParser::getBasisSetForJ3(std::istream& is)
     int angL=(atoi(currentWords[0].c_str())-1)/2;
     int nterms=atoi(currentWords[1].c_str());
     int iflag=atoi(currentWords[2].c_str());
-    vector<string> items(nterms+1);
+    std::vector<std::string> items(nterms+1);
     getwords(items,is);
     int centerID=atoi(items[0].c_str())-1;
-    vector<BMakeFuncBase*>* b=0;
-    map<int,vector<BMakeFuncBase*>*>::iterator it=j3BasisSet.find(centerID);
+    std::vector<BMakeFuncBase*>* b=0;
+    std::map<int,std::vector<BMakeFuncBase*>*>::iterator it=j3BasisSet.find(centerID);
     if(it == j3BasisSet.end())
     {
-      b = new vector<BMakeFuncBase*>;
+      b = new std::vector<BMakeFuncBase*>;
       j3BasisSet[centerID]=b;
     }
     else
@@ -252,7 +251,7 @@ void BParser::getBasisSetForJ3(std::istream& is)
 
 void BParser::getOccupationForDet(std::istream& is)
 {
-  int tot=std::accumulate(detBasisPerAtom.begin(),detBasisPerAtom.end(),0);
+  int tot= std::accumulate(detBasisPerAtom.begin(),detBasisPerAtom.end(),0);
   detOcc.resize(tot);
   DetSize=0;
   int item=0;
@@ -262,14 +261,14 @@ void BParser::getOccupationForDet(std::istream& is)
     DetSize += detOcc[item]=atoi(currentWords[0].c_str());
     item++;
   }
-  cout << "Occupation for determinants: size = " << DetSize << endl;
-  std::copy(detOcc.begin(),detOcc.end(), ostream_iterator<int>(cout, " "));
-  cout << endl;
+  std::cout << "Occupation for determinants: size = " << DetSize << std::endl;
+  copy(detOcc.begin(),detOcc.end(), std::ostream_iterator<int>(std::cout, " "));
+  std::cout << std::endl;
 }
 
 void BParser::getOccupationForJ3(std::istream& is)
 {
-  int tot=std::accumulate(j3BasisPerAtom.begin(),j3BasisPerAtom.end(),0);
+  int tot= std::accumulate(j3BasisPerAtom.begin(),j3BasisPerAtom.end(),0);
   j3Occ.resize(tot);
   J3Size=0;
   int item=0;
@@ -279,14 +278,14 @@ void BParser::getOccupationForJ3(std::istream& is)
     J3Size += j3Occ[item]=atoi(currentWords[0].c_str());
     item++;
   }
-  cout << "Occupation for J3: size= " << J3Size << endl;
-  std::copy(j3Occ.begin(),j3Occ.end(), ostream_iterator<int>(cout, " "));
-  cout << endl;
+  std::cout << "Occupation for J3: size= " << J3Size << std::endl;
+  copy(j3Occ.begin(),j3Occ.end(), std::ostream_iterator<int>(std::cout, " "));
+  std::cout << std::endl;
 }
 
 void BParser::getLambdaForDet(std::istream& is)
 {
-  cout << "Number of non-zero determinant lambdas " << DetNonZero << endl;
+  std::cout << "Number of non-zero determinant lambdas " << DetNonZero << std::endl;
   //detPairedLambda.reserve(DetNonZero);
   //detUnPairedLambda.reserve(DetNonZero);
   int d=0;
@@ -306,15 +305,15 @@ void BParser::getLambdaForDet(std::istream& is)
     }
     d++;
   }
-  cout << "Non-zero elements of paried Lambda for the Determinant" << endl;
+  std::cout << "Non-zero elements of paried Lambda for the Determinant" << std::endl;
   for(int i=0; i<detPairedLambda.size(); i++)
   {
-    cout << detPairedLambda[i].I << " " <<  detPairedLambda[i].J << " " <<  detPairedLambda[i].X << endl;
+    std::cout << detPairedLambda[i].I << " " <<  detPairedLambda[i].J << " " <<  detPairedLambda[i].X << std::endl;
   }
-  cout << "Non-zero elements of un-paried Lambda for the Determinant" << endl;
+  std::cout << "Non-zero elements of un-paried Lambda for the Determinant" << std::endl;
   for(int i=0; i<detUnPairedLambda.size(); i++)
   {
-    cout << detUnPairedLambda[i].I << " " <<  detUnPairedLambda[i].J << " " <<  detUnPairedLambda[i].X << endl;
+    std::cout << detUnPairedLambda[i].I << " " <<  detUnPairedLambda[i].J << " " <<  detUnPairedLambda[i].X << std::endl;
   }
 }
 
@@ -328,22 +327,22 @@ void BParser::getLambdaForJ3(std::istream& is)
     j3Lambda.push_back(AGPLambda(currentWords));
     j3++;
   }
-  cout << "Non-zero elements for J3 Lambda " << J3NonZero << endl;
+  std::cout << "Non-zero elements for J3 Lambda " << J3NonZero << std::endl;
   for(int i=0; i<j3Lambda.size(); i++)
   {
-    cout << j3Lambda[i].I << " " <<  j3Lambda[i].J << " "
-         <<  j3Lambda[i].X << endl;
+    std::cout << j3Lambda[i].I << " " <<  j3Lambda[i].J << " "
+         <<  j3Lambda[i].X << std::endl;
   }
 }
 
 xmlNodePtr
-BParser::createBasisSet(map<int,vector<BMakeFuncBase*>*>& bset,
-                        vector<int>& basisPerAtom, vector<int>& occ, bool jastrow)
+BParser::createBasisSet(std::map<int,std::vector<BMakeFuncBase*>*>& bset,
+                        std::vector<int>& basisPerAtom, std::vector<int>& occ, bool jastrow)
 {
   xmlNodePtr bPtr = xmlNewNode(NULL, (const xmlChar*) "basisset");
   int boffset=0;
-  vector<bool> newCenter(IonSystem.getSpeciesSet().getTotalNum(),true);
-  map<int,vector<BMakeFuncBase*>*>::iterator it(bset.begin()), it_end(bset.end());
+  std::vector<bool> newCenter(IonSystem.getSpeciesSet().getTotalNum(),true);
+  std::map<int,std::vector<BMakeFuncBase*>*>::iterator it(bset.begin()), it_end(bset.end());
   while(it != it_end)
   {
     int id=(*it).first;
@@ -369,7 +368,7 @@ BParser::createBasisSet(map<int,vector<BMakeFuncBase*>*>& bset,
         xmlNewProp(cPtr,(const xmlChar*)"expandYlm",(const xmlChar*)"no");
       }
       newCenter[centerID]=false;
-      vector<BMakeFuncBase*>& rgroup(*((*it).second));
+      std::vector<BMakeFuncBase*>& rgroup(*((*it).second));
       int b=boffset;
       for(int k=0; k<rgroup.size(); k++)
       {
@@ -466,7 +465,7 @@ xmlNodePtr BParser::createDeterminantSet()
   xmlNewProp(detPtr,(const xmlChar*)"type",(const xmlChar*)"AGP");
   xmlNewProp(detPtr,(const xmlChar*)"transform",(const xmlChar*)"yes");
   xmlNewProp(detPtr,(const xmlChar*)"source",(const xmlChar*)IonSystem.getName().c_str());
-  cout << "Checking the basis set for the determinants " << endl;
+  std::cout << "Checking the basis set for the determinants " << std::endl;
   xmlAddChild(detPtr,createBasisSet(detBasisSet,detBasisPerAtom, detOcc,false));
   //add basis here
   if(detPairedLambda.size())
@@ -516,7 +515,7 @@ xmlNodePtr BParser::createJ3()
   xmlNewProp(j3Ptr,(const xmlChar*)"function",(const xmlChar*)"gto");
   xmlNewProp(j3Ptr,(const xmlChar*)"transform",(const xmlChar*)"yes");
   xmlNewProp(j3Ptr,(const xmlChar*)"source",(const xmlChar*)IonSystem.getName().c_str());
-  cout << "Checking the basis set for the Jastrow " << endl;
+  std::cout << "Checking the basis set for the Jastrow " << std::endl;
   xmlAddChild(j3Ptr, createBasisSet(j3BasisSet,j3BasisPerAtom, j3Occ, true));
   std::ostringstream s;
   s << J3Size;
@@ -531,10 +530,10 @@ xmlNodePtr BParser::createJ3()
   return j3Ptr;
 }
 
-void BParser::dump(const string& psi_tag,
-                   const string& ion_tag)
+void BParser::dump(const std::string& psi_tag,
+                   const std::string& ion_tag)
 {
-  cout << " BParser::dump " << endl;
+  std::cout << " BParser::dump " << std::endl;
   xmlDocPtr doc = xmlNewDoc((const xmlChar*)"1.0");
   xmlNodePtr qm_root = xmlNewNode(NULL, BAD_CAST "qmcsystem");
   {

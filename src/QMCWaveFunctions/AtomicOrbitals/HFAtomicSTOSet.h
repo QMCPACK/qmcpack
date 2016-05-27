@@ -28,7 +28,7 @@ template<class T, class POS>
 struct ComboSTO
 {
 
-  string Name;
+  std::string Name;
 
   typedef T value_type;
   typedef SphericalTensor<T,POS> SphericalHarmonics_t;
@@ -36,8 +36,8 @@ struct ComboSTO
 
   int LM;
   SphericalHarmonics_t& Ylm;
-  vector<RadialOrbital_t*> Rnl;
-  vector<T> C;
+  std::vector<RadialOrbital_t*> Rnl;
+  std::vector<T> C;
 
   ComboSTO(const ComboSTO& aSTO):
     Name(aSTO.Name), LM(aSTO.LM), Ylm(aSTO.Ylm), C(aSTO.C)
@@ -48,7 +48,7 @@ struct ComboSTO
   }
 
   ComboSTO(int lm, SphericalHarmonics_t& ylm,
-           const vector<RadialOrbital_t*>& rnl,
+           const std::vector<RadialOrbital_t*>& rnl,
            T* c):
     LM(lm), Ylm(ylm)
   {
@@ -133,8 +133,8 @@ struct HFAtomicSTOSet: public QMCTraits
 
   ///unique set of orbitals
   SphericalHarmonics_t Ylm;
-  vector<RadialOrbital_t*> RnlPool;
-  vector<SPO_t*> Orbital;
+  std::vector<RadialOrbital_t*> RnlPool;
+  std::vector<SPO_t*> Orbital;
 
   ///default constructor for He: test only
   HFAtomicSTOSet();
@@ -220,7 +220,7 @@ struct HFAtomicSTOSet: public QMCTraits
 //    template<class VM, class GM>
 //    inline void
 //    evaluate(const WalkerSetRef& W, int first, int last,
-//	     vector<VM>& logdet, vector<GM>& dlogdet, vector<VM>& d2logdet) {
+//	     std::vector<VM>& logdet, std::vector<GM>& dlogdet, std::vector<VM>& d2logdet) {
 //
 //#ifdef USE_FASTWALKER
 //      int nptcl = last-first;

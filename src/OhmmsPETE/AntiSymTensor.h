@@ -240,7 +240,7 @@ public:
         return X[((i-1)*i/2) + j];
   }
 
-//    Type_t operator()( pair<int,int> a) const {
+//    Type_t operator()( std::pair<int,int> a) const {
 //      int i = a.first;
 //      int j = a.second;
 //      return (*this)(i, j);
@@ -258,7 +258,7 @@ public:
     }
   }
 
-//    AssignProxy operator()(pair<int,int> a) {
+//    AssignProxy operator()(std::pair<int,int> a) {
 //      int i = a.first;
 //      int j = a.second;
 //      return (*this)(i, j);
@@ -450,7 +450,7 @@ public:
     return T(0.0);
   }
 
-//    Type_t operator()( pair<int,int> a) const {
+//    Type_t operator()( std::pair<int,int> a) const {
 //      int i = a.first;
 //      int j = a.second;
 //      return (*this)(i, j);
@@ -462,7 +462,7 @@ public:
     return AssignProxy(AntiSymTensor<T,1>::Zero, 0);
   }
 
-//    AssignProxy operator()(pair<int,int> a) {
+//    AssignProxy operator()(std::pair<int,int> a) {
 //      int i = a.first;
 //      int j = a.second;
 //      return (*this)(i, j);

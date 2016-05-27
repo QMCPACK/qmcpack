@@ -94,16 +94,16 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
   int first,last;
   getNonLinearRange(first,last);
 //     initialize our parameters
-  vector<RealType> currentParameterDirections(N,0);
-  vector<RealType> currentParameters(numParams,0);
-  vector<RealType> bestParameters(currentParameters);
+  std::vector<RealType> currentParameterDirections(N,0);
+  std::vector<RealType> currentParameters(numParams,0);
+  std::vector<RealType> bestParameters(currentParameters);
   optdir.resize(numParams,0);
   optparm.resize(numParams,0);
   for (int i=0; i<numParams; i++)
     currentParameters[i] = optTarget->Params(i);
   //this is the small amount added to the diagonal to stabilize the eigenvalue equation. e^stabilityBase
   RealType stabilityBase(exp0);
-  vector<vector<RealType> > LastDirections;
+  std::vector<std::vector<RealType> > LastDirections;
   RealType deltaPrms(-1.0);
   bool acceptedOneMove(false);
   int tooManyTries(20);
@@ -115,7 +115,7 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
   LeftT=0;
   Left=0;
   vmcCSEngine->fillOverlapHamiltonianMatrices(LeftT,Right);
-  vector<std::pair<RealType,RealType> > mappedStabilizers;
+  std::vector<std::pair<RealType,RealType> > mappedStabilizers;
   RealType lastCost(0);
   RealType startCost(0);
 //    if ((GEVtype!="H2")||(MinMethod!="rescale"))
@@ -145,8 +145,8 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
 //    stabilizerScale = std::max(stabilizerScale*(nstabilizers-1.0),std::log(-d_neg));
 //    if(nstabilizers>1)
 //      stabilizerScale = stabilizerScale/(nstabilizers-1.0);
-  app_log()<<"  stabilityBase "<<stabilityBase<<endl;
-  app_log()<<"  stabilizerScale "<<stabilizerScale<<endl;
+  app_log()<<"  stabilityBase "<<stabilityBase<< std::endl;
+  app_log()<<"  stabilizerScale "<<stabilizerScale<< std::endl;
   RealType safe = Left(0,0);
   for (int stability=0; stability<nstabilizers; stability++)
   {
@@ -160,7 +160,7 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
     {
       for (int i=1; i<N; i++)
         LeftT(i,i) += std::exp(XS);
-      app_log()<<"  Using XS:"<<XS<<endl;
+      app_log()<<"  Using XS:"<<XS<< std::endl;
     }
     RealType lowestEV(0);
     RealType bigVec(0);
@@ -187,7 +187,7 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
       bigVec = std::max(bigVec,std::abs(currentParameterDirections[i+1]));
     if (std::abs(Lambda*bigVec)>bigChange)
     {
-      app_log()<<"  Failed Step. Largest EV parameter change: "<<Lambda*bigVec<<endl;
+      app_log()<<"  Failed Step. Largest EV parameter change: "<<Lambda*bigVec<< std::endl;
 //           if (GEVtype=="H2") continue;
       if (stability==0)
       {
@@ -236,7 +236,7 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
       RealType biggestParameterChange = bigOptVec*std::abs(Lambda);
       if (biggestParameterChange>bigChange)
       {
-        app_log()<<"  Failed Step. Largest LM parameter change:"<<biggestParameterChange<<endl;
+        app_log()<<"  Failed Step. Largest LM parameter change:"<<biggestParameterChange<< std::endl;
         failedTries++;
         stability--;
         stabilityBase+=stabilizerScale;
@@ -249,7 +249,7 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
       {
         for (int i=0; i<numParams; i++)
           optTarget->Params(i) = optparm[i] + Lambda * optdir[i];
-        app_log()<<"  Largest LM parameter change:"<<biggestParameterChange<<endl;
+        app_log()<<"  Largest LM parameter change:"<<biggestParameterChange<< std::endl;
       }
       //Save this value in here for later
       Lambda = biggestParameterChange;
@@ -259,7 +259,7 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
     //get cost at new minimum
     RealType newCost = optTarget->Cost(false);
     mappedStabilizers.push_back(*(new std::pair<RealType,RealType>(XS,newCost)));
-    app_log()<<" OldCost: "<<lastCost<<" NewCost: "<<newCost<<" Delta Cost:"<<(newCost-lastCost)<<endl;
+    app_log()<<" OldCost: "<<lastCost<<" NewCost: "<<newCost<<" Delta Cost:"<<(newCost-lastCost)<< std::endl;
     optTarget->printEstimates();
     if (newCost < lastCost)
     {
@@ -292,8 +292,8 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
 bool
 QMCCorrelatedSamplingLinearOptimize::put(xmlNodePtr q)
 {
-  string useGPU("no");
-  string vmcMove("pbyp");
+  std::string useGPU("no");
+  std::string vmcMove("pbyp");
   OhmmsAttributeSet oAttrib;
   oAttrib.add(useGPU,"gpu");
   oAttrib.add(vmcMove,"move");
@@ -303,7 +303,7 @@ QMCCorrelatedSamplingLinearOptimize::put(xmlNodePtr q)
   int pid=OHMMS::Controller->rank();
   while (cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if (cname == "mcwalkerset")
     {
       mcwalkerNodePtr.push_back(cur);

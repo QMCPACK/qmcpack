@@ -33,7 +33,7 @@ namespace qmcplusplus
    */
   template<typename T> 
     inline void unpack4fftw(const Vector<std::complex<T> >& cG
-        , const vector<TinyVector<int,3> >& gvecs
+        , const std::vector<TinyVector<int,3> >& gvecs
         , const TinyVector<int,3>& maxg
         , Array<std::complex<T>,3>& fftbox
         )
@@ -99,8 +99,8 @@ namespace qmcplusplus
 //                double phi = -2.0*M_PI*dot (ru, TwistAngles[ti]);
 //                double s, c;
 //                sincos(phi, &s, &c);
-//                complex<double> phase(c,s);
-//                complex<double> z = phase*rawData(ix,iy,iz);
+//                std::complex<double> phase(c,s);
+//                std::complex<double> z = phase*rawData(ix,iy,iz);
 //                splineData(ix,iy,iz) = z.real();
 //              }
 //            }
@@ -334,7 +334,7 @@ namespace qmcplusplus
             //{
             //  T phi=(ruy+(static_cast<T>(iz)*nz_i));
             //  sincos(phi,&s,&c);
-            //  *in_ptr++=complex<T>(c,s);
+            //  *in_ptr++= std::complex<T>(c,s);
             //}
             for(int iz=0; iz<nz;iz++) phase[iz]=(ruy+(static_cast<T>(iz)*nz_i));
             eval_e2iphi(nz,phase,in_ptr);
@@ -408,7 +408,7 @@ namespace qmcplusplus
   {
     update_token(__FILE__,__LINE__,"bcastSortBands");
 
-    vector<BandInfo>& SortBands(*FullBands[spin]);
+    std::vector<BandInfo>& SortBands(*FullBands[spin]);
 
     TinyVector<int,4> nbands(int(SortBands.size()),n,NumValenceOrbs,NumCoreOrbs);
     mpi::bcast(*myComm,nbands);
@@ -479,7 +479,7 @@ namespace qmcplusplus
     //fout.setf(std::ios::scientific, std::ios::floatfield);
     //fout.precision(12);
     //for(int i=0; i<misc.size();++i)
-    //  fout << misc[i] << endl;
+    //  fout << misc[i] << std::endl;
     return isCore;
   }
 

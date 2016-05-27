@@ -40,7 +40,7 @@ public:
   RealType Sigma;
   RealType Volume;
   ///store |k|
-  vector<RealType> kMag;
+  std::vector<RealType> kMag;
   /// Constructor
   TwoDEwaldHandler(ParticleSet& ref, RealType kc_in=-1.0)
     : LRHandlerBase(kc_in)

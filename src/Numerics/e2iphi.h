@@ -29,7 +29,6 @@ namespace std
 {
 #include <amdlibm.h>
 }
-using namespace std;
 
 /* additional translations for AMD libm */
 

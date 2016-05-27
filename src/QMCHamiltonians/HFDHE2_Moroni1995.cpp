@@ -59,12 +59,12 @@ void HFDHE2_Moroni1995_phy::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& 
 void HFDHE2_Moroni1995_phy::addCorrection(QMCHamiltonian& targetH)
 {
   HFDHE2_Moroni1995_aux* auxterm = new HFDHE2_Moroni1995_aux(this);
-  string auxname=myName+"_aux";
+  std::string auxname=myName+"_aux";
   targetH.addOperator(auxterm,auxname,false);
 }
 
 /*
-  void HFDHE2_Moroni1995_aux::registerObservables(vector<observable_helper*>& h5list, hid_t gid) const {
+  void HFDHE2_Moroni1995_aux::registerObservables(std::vector<observable_helper*>& h5list, hid_t gid) const {
     int loc=h5list.size();
     std::vector<int> onedim(1,1);
     h5list.push_back(new observable_helper("HFDHE2_aux"));

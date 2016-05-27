@@ -35,7 +35,7 @@ class WalkerSetRef;
 struct NonLocalPPotential: public QMCHamiltonianBase
 {
 
-  typedef vector<PosType>  SpherGridType;
+  typedef std::vector<PosType>  SpherGridType;
   typedef OneDimGridBase<ValueType> GridType;
   typedef OneDimCubicSpline<ValueType> LocalPotentialType;
 
@@ -54,31 +54,31 @@ struct NonLocalPPotential: public QMCHamiltonianBase
     ///Maximum cutoff the non-local pseudopotential
     RealType Rmax;
     ///Angular momentum map
-    vector<int> angpp_m;
+    std::vector<int> angpp_m;
     ///Weight of the angular momentum
-    vector<RealType> wgt_angpp_m;
+    std::vector<RealType> wgt_angpp_m;
     /// Lfactor1[l]=(2*l+1)/(l+1)
-    vector<RealType> Lfactor1;
+    std::vector<RealType> Lfactor1;
     /// Lfactor1[l]=(l)/(l+1)
-    vector<RealType> Lfactor2;
+    std::vector<RealType> Lfactor2;
 
     ///Local part of the pseudo-potential
     LocalPotentialType* lpp_m;
     ///Grid of the local potential
     GridType* lgrid_m;
     ///Non-Local part of the pseudo-potential
-    vector<LocalPotentialType*> nlpp_m;
+    std::vector<LocalPotentialType*> nlpp_m;
     ///Grid of the non-local potential
-    vector<GridType*> nlgrid_m;
+    std::vector<GridType*> nlgrid_m;
     ///fixed Spherical Grid for species
     SpherGridType sgridxyz_m;
     ///randomized spherical grid
     SpherGridType rrotsgrid_m;
     ///weight of the spherical grid
-    vector<ValueType> sgridweight_m;
+    std::vector<ValueType> sgridweight_m;
 
     ///Working arrays
-    vector<ValueType> psiratio,vrad,wvec,Amat,lpol;
+    std::vector<ValueType> psiratio,vrad,wvec,Amat,lpol;
 
     inline RadialPotentialSet():
       HasNonLocalPP(false), lmax(0), nchannel(0), nknot(0),
@@ -136,12 +136,12 @@ struct NonLocalPPotential: public QMCHamiltonianBase
           ++jt;
         }
         //copy the radomized grid to sphere
-        std::copy(rrotsgrid_m.begin(), rrotsgrid_m.end(), sphere.begin());
+        copy(rrotsgrid_m.begin(), rrotsgrid_m.end(), sphere.begin());
       }
       else
       {
         //copy sphere to the radomized grid
-        std::copy(sphere.begin(), sphere.end(), rrotsgrid_m.begin());
+        copy(sphere.begin(), sphere.end(), rrotsgrid_m.begin());
       }
     }
 
@@ -158,7 +158,7 @@ struct NonLocalPPotential: public QMCHamiltonianBase
   ///the distance table containing electron-nuclei distances
   DistanceTableData* d_table;
   ///the set of local-potentials (one for each ion)
-  vector<RadialPotentialSet*> PP;
+  std::vector<RadialPotentialSet*> PP;
   ///reference to the center ion
   ParticleSet& IonConfig;
   ///unique index for each ion
@@ -174,7 +174,7 @@ struct NonLocalPPotential: public QMCHamiltonianBase
 
   Return_t evaluate(ParticleSet& P);
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }

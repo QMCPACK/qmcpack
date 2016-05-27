@@ -44,8 +44,8 @@ public:
   {
     if (size % 32)
     {
-      cerr << "Unaligned reservation in PointerPool.  size = "
-           << size << endl;
+      std::cerr << "Unaligned reservation in PointerPool.  size = "
+           << size << std::endl;
       size += 32 - (size % 32);
     }
     size_t off = totalSize;
@@ -70,7 +70,7 @@ public:
 
 protected:
   size_t totalSize;
-  vector<size_t> offsets;
+  std::vector<size_t> offsets;
 
 };
 

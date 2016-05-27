@@ -34,7 +34,7 @@ public:
   void initWalkers(WalkerIter_t it, WalkerIter_t it_end);
   virtual void plotSwapAmplitude(WalkerIter_t it, WalkerIter_t it_end,Matrix<RealType>& averageSwaps) {};
 
-  virtual void check_region(WalkerIter_t it, WalkerIter_t it_end, RealType v, string shape, ParticleSet::ParticlePos_t& ed, ParticleSet::ParticlePos_t& Center, int maxN, int minN, bool pbyp=true);
+  virtual void check_region(WalkerIter_t it, WalkerIter_t it_end, RealType v, std::string shape, ParticleSet::ParticlePos_t& ed, ParticleSet::ParticlePos_t& Center, int maxN, int minN, bool pbyp=true);
   virtual int get_region(ParticleSet::ParticlePos_t& Pos,int iat);
   virtual int get_region_all(ParticleSet::ParticlePos_t& Pos, int th=0);
 
@@ -73,7 +73,7 @@ public:
     if (initial)
       for(int i(0); i<RenyiOrder; i++)
         get_region_all(W_vec[i]->R,i);
-    vector<int> miat(RenyiOrder,0);
+    std::vector<int> miat(RenyiOrder,0);
     int swaps(0), all_swaps(0);
 //       first include all region 0
     for(int i(0); i<RenyiOrder; i++,swaps=0)
@@ -114,7 +114,7 @@ public:
 
   int sort_regions_and_dr()
   {
-    vector<int> miat(RenyiOrder,0);
+    std::vector<int> miat(RenyiOrder,0);
     int swaps(0), all_swaps(0);
 //       first include all region 0
     for(int i(0); i<RenyiOrder; i++,swaps=0)
@@ -158,19 +158,19 @@ public:
   void print_all();
 
 
-//     RealType advanceWalkerForEE(Walker_t& w1, vector<PosType>& dR, vector<int>& iats, vector<int>& rs, vector<RealType>& ratios);
+//     RealType advanceWalkerForEE(Walker_t& w1, std::vector<PosType>& dR, std::vector<int>& iats, std::vector<int>& rs, std::vector<RealType>& ratios);
 
-  vector<NewTimer*> myTimers;
-  vector<MCWalkerConfiguration*> W_vec;
-  vector<TrialWaveFunction*> Psi_vec;
-  vector<ParticleSet::ParticlePos_t*> deltaR_vec;
+  std::vector<NewTimer*> myTimers;
+  std::vector<MCWalkerConfiguration*> W_vec;
+  std::vector<TrialWaveFunction*> Psi_vec;
+  std::vector<ParticleSet::ParticlePos_t*> deltaR_vec;
 
 
   int RenyiOrder;
   int mxN,mnN;
   int cnt;
   ///patch geometry (sphere,...
-  string computeEE;
+  std::string computeEE;
   ///patch size (sphere:r^2,...
   RealType vsize;
   ParticleSet::ParticlePos_t C,Edge;

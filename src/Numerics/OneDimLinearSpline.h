@@ -93,7 +93,7 @@ public:
   void assign(IT d_first, IT d_last)
   {
     m_Y.resize(d_last-d_first);
-    std::copy(d_first,d_last,m_Y.data());
+    copy(d_first,d_last,m_Y.data());
     delta=(r_max-r_min)/static_cast<point_type>(m_Y.size()-1);
     //r_min=m_grid->rmin();
     //r_max=m_grid->rmax();
@@ -181,7 +181,7 @@ public:
   inline value_type
   splint(point_type r, value_type& du, value_type& d2u)
   {
-    cerr << "  OneDimLinearSpline cannot be used for derivates." << endl;
+    std::cerr << "  OneDimLinearSpline cannot be used for derivates." << std::endl;
     return 0.0;
   }
 

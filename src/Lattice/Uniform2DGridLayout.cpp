@@ -54,7 +54,7 @@ void Uniform2DGridLayout::makeShell(std::vector<SingleParticleIndex_t>& RS,
   Scalar_t dy=Delta[1]*0.5;
   for(int ix1=-nc[0]; ix1<=nc[0]; ix1++)
   {
-    Scalar_t x= abs(ix1)*Delta[0];
+    Scalar_t x= std::abs(ix1)*Delta[0];
     for(int ix2=-nc[1]; ix2<=nc[1]; ix2++)
     {
       if(ix1==0 && ix2 == 0)
@@ -63,10 +63,10 @@ void Uniform2DGridLayout::makeShell(std::vector<SingleParticleIndex_t>& RS,
       ic++;
       SingleParticlePos_t tc(x-dx,y-dy);
       int ih = static_cast<int>(Dot(tc,tc)*scaleL);
-      std::map<int,vector<SingleParticleIndex_t>*>::iterator it = rs.find(ih);
+      std::map<int,std::vector<SingleParticleIndex_t>*>::iterator it = rs.find(ih);
       if(it == rs.end())
       {
-        vector<SingleParticleIndex_t>* ns = new vector<SingleParticleIndex_t>;
+        std::vector<SingleParticleIndex_t>* ns = new std::vector<SingleParticleIndex_t>;
         ns->push_back(SingleParticleIndex_t(ix1,ix2));
         rs[ih] = ns;
       }
@@ -80,11 +80,11 @@ void Uniform2DGridLayout::makeShell(std::vector<SingleParticleIndex_t>& RS,
   FS.resize(ic);
   int irc = static_cast<int>(4.0*rr*scaleL);
   int ir=0;
-  std::map<int,vector<SingleParticleIndex_t>*>::const_iterator cit = rs.begin();
+  std::map<int,std::vector<SingleParticleIndex_t>*>::const_iterator cit = rs.begin();
   while(cit != rs.end())
   {
     bool inside=((*cit).first <= irc);
-    const vector<SingleParticleIndex_t>& iv = *((*cit).second);
+    const std::vector<SingleParticleIndex_t>& iv = *((*cit).second);
     for(int i=0; i<iv.size(); i++, ir++)
     {
       RS[ir] = iv[i];
@@ -92,7 +92,7 @@ void Uniform2DGridLayout::makeShell(std::vector<SingleParticleIndex_t>& RS,
     }
     cit++;
   }
-  std::map<int,vector<SingleParticleIndex_t>*>::iterator it = rs.begin();
+  std::map<int,std::vector<SingleParticleIndex_t>*>::iterator it = rs.begin();
   while(it != rs.end())
   {
     delete (*it).second;
@@ -102,7 +102,7 @@ void Uniform2DGridLayout::makeShell(std::vector<SingleParticleIndex_t>& RS,
 
 void Uniform2DGridLayout::checkGrid(value_type int_rad)
 {
-  if(int_rad<numeric_limits<Scalar_t>::epsilon())
+  if(int_rad<std::numeric_limits<Scalar_t>::epsilon())
   {
     WARNMSG("Invalid interaction radius.")
     return;
@@ -173,7 +173,7 @@ void Uniform2DGridLayout::initGrid(Grid_t& agrid, const Grid_t& subgrid)
 
 int Uniform2DGridLayout::connectGrid(value_type int_rad, value_type con_rad)
 {
-  if(int_rad<numeric_limits<Scalar_t>::epsilon())
+  if(int_rad<std::numeric_limits<Scalar_t>::epsilon())
     return 1;
   //{  ///create the spatial grid
   //  setGrid(Grid[SPATIAL_GRID]);
@@ -251,24 +251,24 @@ int Uniform2DGridLayout::connectGrid(value_type int_rad, value_type con_rad)
       c_offset[gtot+1] = c_offset[gtot]+nconnected;
       c_max[gtot] = c_offset[gtot]+ncinside;
       gtot++;
-      //maxnc = max(maxnc,nconnected);
-      maxnc = max(maxnc,ncinside);
+      //maxnc = std::max(maxnc,nconnected);
+      maxnc = std::max(maxnc,ncinside);
     }
   }
   MaxConnections = maxnc;
-  //print(cout);
+  //print(std::cout);
   return maxnc; // return the maxmimum number of connected cells
 }
 
 void Uniform2DGridLayout::print(std::ostream& os) const
 {
-  os << "<unitcell>" << endl;
+  os << "<unitcell>" << std::endl;
   Base_t::print(os);
-  os << "<note>" << endl;
-  os << "\tLong-range breakup parameters:" << endl;
-  os << "\trc*kc = " << LR_dim_cutoff << "; rc = " << LR_rc << "; kc = " << LR_kc << "\n" << endl;
-  os << "</note>" << endl;
-  os << "</unitcell>" << endl;
+  os << "<note>" << std::endl;
+  os << "\tLong-range breakup parameters:" << std::endl;
+  os << "\trc*kc = " << LR_dim_cutoff << "; rc = " << LR_rc << "; kc = " << LR_kc << "\n" << std::endl;
+  os << "</note>" << std::endl;
+  os << "</unitcell>" << std::endl;
   ////printGrid(os);
   //for(int ig=0; ig<c_offset.size()-1; ig++) {
   //  os << ig << " has neighboring cell "

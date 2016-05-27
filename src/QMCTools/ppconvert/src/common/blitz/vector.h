@@ -438,10 +438,10 @@ private:
 // Global I/O functions
 
 template<typename P_numtype>
-ostream& operator<<(ostream& os, const Vector<P_numtype>& x);
+ostream& operator<<(std::ostream& os, const Vector<P_numtype>& x);
 
 template<typename P_expr>
-ostream& operator<<(ostream& os, _bz_VecExpr<P_expr> expr);
+ostream& operator<<(std::ostream& os, _bz_VecExpr<P_expr> expr);
 
 BZ_NAMESPACE_END
 

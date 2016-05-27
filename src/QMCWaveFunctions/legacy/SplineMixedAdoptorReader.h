@@ -27,11 +27,11 @@ struct SplineMixedAdoptorReader: public BsplineReaderBase
     ReportEngine PRE("SplineOpenAdoptorReader","create_spline_set(int, EinsplineSet*)");
     //typedef typename adoptor_type::real_type spline_data_type;
     BsplineSet<adoptor_type>* bspline=new BsplineSet<adoptor_type>;
-    app_log() << "  AdoptorName = " << bspline->AdoptorName << endl;
+    app_log() << "  AdoptorName = " << bspline->AdoptorName << std::endl;
     if(bspline->is_complex)
-      app_log() << "  Using complex einspline table" << endl;
+      app_log() << "  Using complex einspline table" << std::endl;
     else
-      app_log() << "  Using real einspline table" << endl;
+      app_log() << "  Using real einspline table" << std::endl;
     check_twists(orbitalSet,bspline);
     Ugrid xyz_grid[3];
     typename adoptor_type::BCType xyz_bc[3];
@@ -122,18 +122,18 @@ struct SplineMixedAdoptorReader: public BsplineReaderBase
     //bspline->create_spline(MeshSize,N,fullgrid);
     int N = mybuilder->NumDistinctOrbitals;
     bspline->create_spline(MeshSize,coarse_mesh,N,N);
-    app_log() << "  Original Mesh " << MeshSize << endl;
-    app_log() << "  Coarse Mesh " << coarse_mesh << endl;
+    app_log() << "  Original Mesh " << MeshSize << std::endl;
+    app_log() << "  Coarse Mesh " << coarse_mesh << std::endl;
     if(use_cartesian)
-      app_log() << "  Using Cartesian grids for open systems. " << endl;
+      app_log() << "  Using Cartesian grids for open systems. " << std::endl;
     else
-      app_log() << "  Using Primitive-cell grids for mixed systems. " << endl;
-    app_log() << "  Using buffer layer for the small box= " << buffer << " bohr " << endl;
-    app_log() << "  Adding a small box" << "\n  LowerBound " << lower << "\n  UpperBound " << upper << endl;
+      app_log() << "  Using Primitive-cell grids for mixed systems. " << std::endl;
+    app_log() << "  Using buffer layer for the small box= " << buffer << " bohr " << std::endl;
+    app_log() << "  Adding a small box" << "\n  LowerBound " << lower << "\n  UpperBound " << upper << std::endl;
     app_log().flush();
     bspline->add_box(dense_r,lower,upper);
     int foundspline=0;
-    string splinefile=make_spline_filename(mybuilder->H5FileName,spin,mybuilder->TwistNum,MeshSize);
+    std::string splinefile=make_spline_filename(mybuilder->H5FileName,spin,mybuilder->TwistNum,MeshSize);
     Timer now;
     if(myComm->rank()==0)
     {
@@ -141,7 +141,7 @@ struct SplineMixedAdoptorReader: public BsplineReaderBase
       foundspline=h5f.open(splinefile,H5F_ACC_RDONLY);
       if(foundspline)
       {
-        string aname("none");
+        std::string aname("none");
         foundspline = h5f.read(aname,"adoptor_name");
         foundspline = (aname.find(bspline->KeyWord) != std::string::npos);
       }
@@ -157,14 +157,14 @@ struct SplineMixedAdoptorReader: public BsplineReaderBase
     myComm->bcast(foundspline);
     if(foundspline)
     {
-      app_log() << "Use existing bspline tables in " << splinefile << endl;
+      app_log() << "Use existing bspline tables in " << splinefile << std::endl;
       chunked_bcast(myComm, bspline->MultiSpline);
       chunked_bcast(myComm, bspline->smallBox);
     }
     else
     {
-      app_log() << "Perform FFT+spline and dump bspline tables to " << splinefile << endl;
-      Array<complex<double>,3> FFTbox;
+      app_log() << "Perform FFT+spline and dump bspline tables to " << splinefile << std::endl;
+      Array<std::complex<double>,3> FFTbox;
       FFTbox.resize(MeshSize[0], MeshSize[1], MeshSize[2]);
       fftw_plan FFTplan = fftw_plan_dft_3d
                           (MeshSize[0], MeshSize[1], MeshSize[2],
@@ -179,7 +179,7 @@ struct SplineMixedAdoptorReader: public BsplineReaderBase
         bigD_i.resize(MeshSize[0],MeshSize[1],MeshSize[2]);
         smallD_i.resize(coarse_mesh[0],coarse_mesh[1],coarse_mesh[2]);
       }
-      Vector<complex<double> > cG(mybuilder->MaxNumGvecs);
+      Vector<std::complex<double> > cG(mybuilder->MaxNumGvecs);
       const std::vector<BandInfo>& SortBands(mybuilder->SortBands);
       for(int iorb=0,ival=0; iorb<N; ++iorb, ++ival)
       {
@@ -228,7 +228,7 @@ struct SplineMixedAdoptorReader: public BsplineReaderBase
         bspline->write_splines(h5f);
       }
     }
-    app_log() << "TIME READBANDS " << now.elapsed() << endl;
+    app_log() << "TIME READBANDS " << now.elapsed() << std::endl;
     return bspline;
   }
 };
@@ -253,7 +253,7 @@ struct SplineMixedAdoptorReader: public BsplineReaderBase
 //
 //        bspline->resizeStorage(N,N);
 //
-//        string H5FileName(mybuilder->H5FileName);
+//        std::string H5FileName(mybuilder->H5FileName);
 //        H5OrbSet set(H5FileName, spin, N);
 //
 //        bool havePsir=!(mybuilder->ReadGvectors_ESHDF());
@@ -294,10 +294,10 @@ struct SplineMixedAdoptorReader: public BsplineReaderBase
 //
 //        bspline->create_spline(MeshSize,N,fullgrid);
 //
-//        app_log() << "Original Mesh " << MeshSize << endl;
-//        app_log() << "Coarse Mesh " << coarse_mesh << endl;
+//        app_log() << "Original Mesh " << MeshSize << std::endl;
+//        app_log() << "Coarse Mesh " << coarse_mesh << std::endl;
 //
-//        app_log() << "  Adding a small box" << "\n  LowerBound " << lower << "\n  UpperBound " << upper << endl;
+//        app_log() << "  Adding a small box" << "\n  LowerBound " << lower << "\n  UpperBound " << upper << std::endl;
 //
 //        app_log().flush();
 //
@@ -305,7 +305,7 @@ struct SplineMixedAdoptorReader: public BsplineReaderBase
 //
 //        int foundspline=0;
 //
-//        string splinefile=make_spline_filename(H5FileName,spin,0,MeshSize);
+//        std::string splinefile=make_spline_filename(H5FileName,spin,0,MeshSize);
 //
 //        Timer now;
 //
@@ -315,7 +315,7 @@ struct SplineMixedAdoptorReader: public BsplineReaderBase
 //          foundspline=h5f.open(splinefile,H5F_ACC_RDONLY);
 //          if(foundspline)
 //          {
-//            string aname("none");
+//            std::string aname("none");
 //            foundspline = h5f.read(aname,"adoptor_name");
 //            foundspline = (aname.find(bspline->KeyWord) != std::string::npos);
 //          }
@@ -336,7 +336,7 @@ struct SplineMixedAdoptorReader: public BsplineReaderBase
 //            }
 //            else
 //            {
-//              app_log() << "  The upper/lower bound of the input is different from the current value."<< endl;
+//              app_log() << "  The upper/lower bound of the input is different from the current value."<< std::endl;
 //              foundspline=0;
 //            }
 //          }
@@ -346,14 +346,14 @@ struct SplineMixedAdoptorReader: public BsplineReaderBase
 //
 //        if(foundspline)
 //        {
-//          app_log() << "Use existing bspline tables in " << splinefile << endl;
+//          app_log() << "Use existing bspline tables in " << splinefile << std::endl;
 //          chunked_bcast(myComm, bspline->MultiSpline);
 //          chunked_bcast(myComm, bspline->smallBox);
 //        }
 //        else
 //        {
-//          app_log() << "Perform FFT+spline and dump bspline tables to " << splinefile << endl;
-//          Array<complex<double>,3> FFTbox;
+//          app_log() << "Perform FFT+spline and dump bspline tables to " << splinefile << std::endl;
+//          Array<std::complex<double>,3> FFTbox;
 //          FFTbox.resize(MeshSize[0], MeshSize[1], MeshSize[2]);
 //          fftw_plan FFTplan = fftw_plan_dft_3d
 //            (MeshSize[0], MeshSize[1], MeshSize[2],
@@ -367,7 +367,7 @@ struct SplineMixedAdoptorReader: public BsplineReaderBase
 //          TinyVector<double,3> TwistAngle(0.0,0.0,0.0);
 //          int ti=0;
 //          int ncg=mybuilder->Gvecs[ti].size();
-//          Vector<complex<double> > cG(ncg);
+//          Vector<std::complex<double> > cG(ncg);
 //
 //          for(int iorb=0,ival=0; iorb<N; ++iorb, ++ival)
 //          {
@@ -397,7 +397,7 @@ struct SplineMixedAdoptorReader: public BsplineReaderBase
 //            h5f.create(splinefile);
 //            einspline_engine<typename adoptor_type::SplineType> bigtable(bspline->MultiSpline);
 //            einspline_engine<typename adoptor_type::SplineType> smalltable(bspline->smallBox);
-//            string aname("EinsplineOpenAdoptor");
+//            std::string aname("EinsplineOpenAdoptor");
 //            h5f.write(aname,"adoptor_name");
 //            h5f.write(lower,"lower_bound");
 //            h5f.write(upper,"upper_bound");
@@ -406,7 +406,7 @@ struct SplineMixedAdoptorReader: public BsplineReaderBase
 //          }
 //        }
 //
-//        app_log() << "TIME READBANDS " << now.elapsed() << endl;
+//        app_log() << "TIME READBANDS " << now.elapsed() << std::endl;
 //
 //        return bspline;
 //      }

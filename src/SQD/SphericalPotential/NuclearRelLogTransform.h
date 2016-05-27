@@ -144,17 +144,17 @@ struct NuclearRelLogTransform
     V.spline(imin,yp1,imax,ypn);
     //cubic-spline test
 #ifdef PRINT_DEBUG
-    string fname("check_spline");
+    std::string fname("check_spline");
     fname.append(".dat");
-    ofstream dfile(fname.c_str());
+    std::ofstream dfile(fname.c_str());
     for(int ig=imin+1; ig<V.size(); ig++)
     {
       value_type _r = V.r(ig),y,dy,d2y;
       //   V.setgrid(_r);
       y = V.evaluate(_r,1.0/_r,dy,d2y);
-      dfile << setw(15) <<  setprecision(12) << _r << setw(20) << V(ig)
-            << setw(20) << dV[ig] << setw(20) << dy << setw(20) << d2V[ig]
-            << setw(20) << d2y << endl;
+      dfile << std::setw(15) <<  setprecision(12) << _r << std::setw(20) << V(ig)
+            << std::setw(20) << dV[ig] << std::setw(20) << dy << std::setw(20) << d2V[ig]
+            << std::setw(20) << d2y << std::endl;
     }
 #endif
   }

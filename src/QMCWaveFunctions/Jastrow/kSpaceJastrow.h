@@ -145,9 +145,9 @@ private:
 public:
   kSpaceJastrow(ParticleSet& ions, ParticleSet& elecs,
                 SymmetryType oneBodySymm, RealType oneBodyCutoff,
-                string onebodyid, bool oneBodySpin,
+                std::string onebodyid, bool oneBodySpin,
                 SymmetryType twoBodySymm, RealType twoBodyCutoff,
-                string twobodyid, bool twoBodySpin);
+                std::string twobodyid, bool twoBodySpin);
 
 
   void setCoefficients (std::vector<RealType> &oneBodyCoefs,
@@ -157,7 +157,7 @@ public:
   void checkInVariables(opt_variables_type& active);
   void checkOutVariables(const opt_variables_type& active);
   void resetParameters(const opt_variables_type& active);
-  void reportStatus(ostream& os);
+  void reportStatus(std::ostream& os);
   //evaluate the distance table with els
   void resetTargetParticleSet(ParticleSet& P);
 
@@ -216,18 +216,18 @@ public:
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
-                           vector<RealType>& dlogpsi,
-                           vector<RealType>& dhpsioverpsi);
+                           std::vector<RealType>& dlogpsi,
+                           std::vector<RealType>& dhpsioverpsi);
 
   /** evaluate the ratio
   */
-  inline void get_ratios(ParticleSet& P, vector<ValueType>& ratios);
+  inline void get_ratios(ParticleSet& P, std::vector<ValueType>& ratios);
 
 private:
   void copyFrom(const kSpaceJastrow& old);
   kSpaceJastrow(const ParticleSet& ions, ParticleSet& els);
-  vector<int> TwoBodyVarMap;
-  vector<int> OneBodyVarMap;
+  std::vector<int> TwoBodyVarMap;
+  std::vector<int> OneBodyVarMap;
 };
 }
 #endif

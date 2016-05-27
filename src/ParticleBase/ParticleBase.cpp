@@ -82,7 +82,7 @@ int ParticleBase<PL>::addAttribute(const std::string& tname,
 {
   ///Name2Index connects the name of an object to a location in the vector of a specific type
   ///An object with oname exists. Return the value of oname
-  map<string,int>::iterator it= Name2Index.find(oname);
+  std::map<std::string,int>::iterator it= Name2Index.find(oname);
   if(it != Name2Index.end())
     return  (*it).second;
   ///a new object to be added either INDEX, VAL, POS or TENZOR
@@ -128,13 +128,13 @@ int ParticleBase<PL>::addAttribute(const std::string& tname,
 
 /** Add ParticleIndex_t attribute, if not found
  * \param pa  ParticleIndex_t to be added
- * \return true the locator (iterator) of the pa in the vector<ParticleIndex_t*>
+ * \return true the locator (iterator) of the pa in the std::vector<ParticleIndex_t*>
  */
 template<class PL>
 int
 ParticleBase<PL>::addAttribute(typename ParticleBase<PL>::ParticleIndex_t& pa)
 {
-  map<string,int>::iterator it= Name2Index.find(pa.objName());
+  std::map<std::string,int>::iterator it= Name2Index.find(pa.objName());
   if(it != Name2Index.end())
     return  (*it).second;
   if(pa.size() < getLocalNum())
@@ -148,13 +148,13 @@ ParticleBase<PL>::addAttribute(typename ParticleBase<PL>::ParticleIndex_t& pa)
 
 /** Add ParticleScalar_t attribute, if not found
  * \param pa  ParticleScalar_t to be added
- * \return true the locator (iterator) of the pa in the vector<ParticleScalar_t*>
+ * \return true the locator (iterator) of the pa in the std::vector<ParticleScalar_t*>
  */
 template<class PL>
 int
 ParticleBase<PL>::addAttribute(typename ParticleBase<PL>::ParticleScalar_t& pa)
 {
-  map<string,int>::iterator it= Name2Index.find(pa.objName());
+  std::map<std::string,int>::iterator it= Name2Index.find(pa.objName());
   if(it != Name2Index.end())
     return  (*it).second;
   if(pa.size() < getLocalNum())
@@ -168,13 +168,13 @@ ParticleBase<PL>::addAttribute(typename ParticleBase<PL>::ParticleScalar_t& pa)
 
 /** Add ParticlePos_t attribute, if not found
  * \param pa  ParticlePos_t to be added
- * \return true the locator (iterator) of the pa in the vector<ParticlePos_t*>
+ * \return true the locator (iterator) of the pa in the std::vector<ParticlePos_t*>
  */
 template<class PL>
 int
 ParticleBase<PL>::addAttribute(typename ParticleBase<PL>::ParticlePos_t& pa)
 {
-  map<string,int>::iterator it= Name2Index.find(pa.objName());
+  std::map<std::string,int>::iterator it= Name2Index.find(pa.objName());
   if(it != Name2Index.end())
     return  (*it).second;
   if(pa.size() < getLocalNum())
@@ -188,13 +188,13 @@ ParticleBase<PL>::addAttribute(typename ParticleBase<PL>::ParticlePos_t& pa)
 
 /** Add ParticleTensor_t attribute, if not found
  * \param pa  ParticleTensor_t to be added
- * \return true the locator (iterator) of the pa in the vector<ParticleTensor_t*>
+ * \return true the locator (iterator) of the pa in the std::vector<ParticleTensor_t*>
  */
 template<class PL>
 int
 ParticleBase<PL>::addAttribute(typename ParticleBase<PL>::ParticleTensor_t& pa)
 {
-  map<string,int>::iterator it= Name2Index.find(pa.objName());
+  std::map<std::string,int>::iterator it= Name2Index.find(pa.objName());
   if(it != Name2Index.end())
     return  (*it).second;
   if(pa.size() < getLocalNum())
@@ -209,7 +209,7 @@ ParticleBase<PL>::addAttribute(typename ParticleBase<PL>::ParticleTensor_t& pa)
 #if defined(QMC_COMPLEX)
 /** Add ParticleLaplacian_t  attribute, if not found
  * \param pa  ParticleLaplacian_t to be added
- * \return true the locator (iterator) of the pa in the vector<ParticlePos_t*>
+ * \return true the locator (iterator) of the pa in the std::vector<ParticlePos_t*>
  *
  * This function is only requred when QMC_COMPLEX is defined
  */
@@ -217,7 +217,7 @@ template<class PL>
 int
 ParticleBase<PL>::addAttribute(typename ParticleBase<PL>::ParticleLaplacian_t& pa)
 {
-  map<string,int>::iterator it= Name2Index.find(pa.objName());
+  std::map<std::string,int>::iterator it= Name2Index.find(pa.objName());
   if(it != Name2Index.end())
     return  (*it).second;
   if(pa.size() < getLocalNum())
@@ -230,7 +230,7 @@ ParticleBase<PL>::addAttribute(typename ParticleBase<PL>::ParticleLaplacian_t& p
 }
 /** Add ParticleGradient_t  attribute, if not found
  * \param pa  ParticleGradient_t to be added
- * \return true the locator (iterator) of the pa in the vector<ParticlePos_t*>
+ * \return true the locator (iterator) of the pa in the std::vector<ParticlePos_t*>
  *
  * This function is only requred when QMC_COMPLEX is defined
  */
@@ -238,7 +238,7 @@ template<class PL>
 int
 ParticleBase<PL>::addAttribute(typename ParticleBase<PL>::ParticleGradient_t& pa)
 {
-  map<string,int>::iterator it= Name2Index.find(pa.objName());
+  std::map<std::string,int>::iterator it= Name2Index.find(pa.objName());
   if(it != Name2Index.end())
     return  (*it).second;
   if(pa.size() < getLocalNum())
@@ -261,7 +261,7 @@ template<class PL>
 typename ParticleBase<PL>::ParticleIndex_t*
 ParticleBase<PL>::getIndexAttrib(const std::string& aname)
 {
-  map<string,OhmmsObject*>::iterator it= AttribList.find(aname);
+  std::map<std::string,OhmmsObject*>::iterator it= AttribList.find(aname);
   if(it != AttribList.end())
   {
     return  dynamic_cast<ParticleIndex_t*>((*it).second);
@@ -279,7 +279,7 @@ template<class PL>
 typename ParticleBase<PL>::ParticleScalar_t*
 ParticleBase<PL>::getScalarAttrib(const std::string& aname)
 {
-  map<string,OhmmsObject*>::iterator it= AttribList.find(aname);
+  std::map<std::string,OhmmsObject*>::iterator it= AttribList.find(aname);
   if(it != AttribList.end())
   {
     return  dynamic_cast<ParticleScalar_t*>((*it).second);
@@ -297,7 +297,7 @@ template<class PL>
 typename ParticleBase<PL>::ParticlePos_t*
 ParticleBase<PL>::getVectorAttrib(const std::string&  aname)
 {
-  map<string,OhmmsObject*>::iterator it= AttribList.find(aname);
+  std::map<std::string,OhmmsObject*>::iterator it= AttribList.find(aname);
   if(it != AttribList.end())
   {
     return  dynamic_cast<ParticlePos_t*>((*it).second);
@@ -315,7 +315,7 @@ template<class PL>
 typename ParticleBase<PL>::ParticleTensor_t*
 ParticleBase<PL>::getTensorAttrib(const std::string& aname)
 {
-  map<string,OhmmsObject*>::iterator it= AttribList.find(aname);
+  std::map<std::string,OhmmsObject*>::iterator it= AttribList.find(aname);
   if(it != AttribList.end())
     return  dynamic_cast<ParticleTensor_t*>((*it).second);
   ParticleTensor_t *pa
@@ -402,7 +402,7 @@ void ParticleBase<PL>::clear()
  *is used to efficient evaluate the subgroup properties.
  */
 template<class PL>
-void ParticleBase<PL>::create(const vector<int>& agroup)
+void ParticleBase<PL>::create(const std::vector<int>& agroup)
 {
   SubPtcl.resize(agroup.size()+1);
   SubPtcl[0] = 0;
@@ -452,7 +452,7 @@ void ParticleBase<PL>::update(int imode) {
       Lattice.dGrid[1]->distribute(getLocalNum());
     }
 
-    vector<int> nat(Lattice.dGrid[2]->getTotalNum(),0);
+    std::vector<int> nat(Lattice.dGrid[2]->getTotalNum(),0);
     ParticleIndex_t cellid(getLocalNum());
     ParticleIndex_t idtmp(getLocalNum());
     ParticlePos_t   ptmp(getLocalNum());
@@ -509,7 +509,7 @@ void ParticleBase<PL>::update(const UpdateMode_t& ptclupdate) {
     ////////////////////////////////////////////////////////
     // initial cell assignmenet
     ////////////////////////////////////////////////////////
-    vector<int> nat(Lattice.dGrid[2]->getTotalNum(),0);
+    std::vector<int> nat(Lattice.dGrid[2]->getTotalNum(),0);
 #pragma omp parallel
     {
       int myID = omp_get_thread_num();
@@ -519,7 +519,7 @@ void ParticleBase<PL>::update(const UpdateMode_t& ptclupdate) {
       SingleParticlePos_t pos;
       int ni = ompgrid.PtclDist[myID];
       int nf = ompgrid.PtclDist[myID+1];
-      vector<int> cellid(nf-ni);
+      std::vector<int> cellid(nf-ni);
       int iL = 0;
       for(int iG=ni; iG<nf; iG++,iL++){
 	pos = Lattice.toUnit(R[iG]);
@@ -528,8 +528,8 @@ void ParticleBase<PL>::update(const UpdateMode_t& ptclupdate) {
 	nat[cloc]++;
       }
 
-      vector<int> idtmp(nf-ni);
-      vector<SingleParticlePos_t> ptmp(nf-ni);
+      std::vector<int> idtmp(nf-ni);
+      std::vector<SingleParticlePos_t> ptmp(nf-ni);
       int il=0;
       for(int iG=ni; iG<nf; il++,iG++) idtmp[il] = GroupID[iG];
       il=0;
@@ -566,11 +566,11 @@ void ParticleBase<PL>::update(const UpdateMode_t& ptclupdate) {
 */
 
 // template<class PL>
-// bool ParticleBase<PL>::write_data(ostream&) {
+// bool ParticleBase<PL>::write_data(std::ostream&) {
 //   return true;
 // }
 // template<class PL>
-// bool ParticleBase<PL>::read_data(istream&) {
+// bool ParticleBase<PL>::read_data( std::istream&) {
 //   return true;
 // }
 

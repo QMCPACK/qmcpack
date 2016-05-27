@@ -14,7 +14,7 @@ using namespace qmcplusplus;
 struct TestFunc
 {
 
-  typedef complex<double> value_type;
+  typedef std::complex<double> value_type;
   TinyVector<double,3> K;
   double d2factor;
 
@@ -52,7 +52,7 @@ struct TestFunc
   }
 
   template<class PV>
-  inline complex<double> d2f(const PV& pos)
+  inline std::complex<double> d2f(const PV& pos)
   {
     return d2factor*f(pos);
   }
@@ -62,7 +62,7 @@ struct TestFunc
 struct ComboFunc
 {
 
-  typedef complex<double> value_type;
+  typedef std::complex<double> value_type;
   std::vector<value_type> C;
   std::vector<TestFunc*> F;
 
@@ -121,7 +121,7 @@ int main(int argc, char** argv)
   const int nk0=1;
   const int nk1=1;
   const int nk2=1;
-  typedef complex<double> value_type;
+  typedef std::complex<double> value_type;
   typedef LinearGrid<double> GridType;
   GridType gridX, gridY, gridZ;
   gridX.set(ri,rf,npts[0]);
@@ -184,7 +184,7 @@ int main(int argc, char** argv)
          << std::setw(20) << val0.real() << std::setw(20) << val.real()
          << std::setw(20) << val0.imag() << std::setw(20) << val.imag()
          << std::setw(20) << val.real()-val0.real() << std::setw(20) << val.imag()-val0.imag()
-         << endl;
+         << std::endl;
     dfout << z
           << std::setw(20) << grad0[0].real() << std::setw(20) << grad[0].real()
           << std::setw(20) << grad0[0].imag() << std::setw(20) << grad[0].imag()

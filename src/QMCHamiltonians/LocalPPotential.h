@@ -50,9 +50,9 @@ struct LocalPPotential: public QMCHamiltonianBase
   struct RadialPotentialSet
   {
     ///the radial potentials
-    vector<LocalPotentialType*> lpp_m;
+    std::vector<LocalPotentialType*> lpp_m;
     ///the radial grids
-    vector<GridType*> grid_m;
+    std::vector<GridType*> grid_m;
 
     ///destructor
     ~RadialPotentialSet();
@@ -82,7 +82,7 @@ struct LocalPPotential: public QMCHamiltonianBase
         //while(gid != gid_end) {
         //  (*gid)->locate(d_table->r(nn));++gid;
         //}
-        vector<LocalPotentialType*>::iterator lit(lpp_m.begin()),lit_end(lpp_m.end());
+        std::vector<LocalPotentialType*>::iterator lit(lpp_m.begin()),lit_end(lpp_m.end());
         while(lit != lit_end)
         {
           esum += (*lit)->evaluate(d_table->r(nn),d_table->rinv(nn));
@@ -100,7 +100,7 @@ struct LocalPPotential: public QMCHamiltonianBase
   ///the distance table containing electron-nuclei distances
   DistanceTableData* d_table;
   ///the set of local-potentials (one for each ion)
-  vector<RadialPotentialSet*> PP;
+  std::vector<RadialPotentialSet*> PP;
   ///unique index for each ion
   const ParticleSet::ParticleIndex_t& Centers;
 
@@ -120,7 +120,7 @@ struct LocalPPotential: public QMCHamiltonianBase
     return Value;
   }
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }

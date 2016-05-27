@@ -36,7 +36,7 @@ public:
   CubicSplineCommon u, dudr;
   int n, l, CoreNodes;
   double Energy, Occupancy, Weight;
-  string Label;
+  std::string Label;
 
   inline double NormDeriv(double r, double u);
   inline Vec2 PseudoDerivs (double r, Vec2 &u_and_du);

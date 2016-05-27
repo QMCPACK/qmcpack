@@ -38,16 +38,16 @@ namespace qmcplusplus
 {
 
 //duplicated implementation: use parsewords in SimpleParser.h
-void Tokenize(const string& str,
-              vector<string>& tokens,
-              const string& delimiters = " ")
+void Tokenize(const std::string& str,
+              std::vector<std::string>& tokens,
+              const std::string& delimiters = " ")
 {
 //   used from http://oopweb.com/CPP/Documents/CPPHOWTO/Volume/C++Programming-HOWTO-7.html
   // Skip delimiters at beginning.
-  string::size_type lastPos = str.find_first_not_of(delimiters, 0);
+  std::string::size_type lastPos = str.find_first_not_of(delimiters, 0);
   // Find first "non-delimiter".
-  string::size_type pos     = str.find_first_of(delimiters, lastPos);
-  while (string::npos != pos || string::npos != lastPos)
+  std::string::size_type pos     = str.find_first_of(delimiters, lastPos);
+  while ( std::string::npos != pos || std::string::npos != lastPos)
   {
     // Found a token, add it to the vector.
     tokens.push_back(str.substr(lastPos, pos - lastPos));
@@ -91,27 +91,27 @@ void ComboPolymerEstimator::put(xmlNodePtr cur,  MCWalkerConfiguration& refWalke
   cur2 = cur2->children;
   while(cur2 != NULL)
   {
-    string cname((const char*)cur2->name);
-//       string potType("Null");
+    std::string cname((const char*)cur2->name);
+//       std::string potType("Null");
 //       OhmmsAttributeSet attrib;
 //       attrib.add(potType,"type");
 //       attrib.put(cur2);
     if((cname == "center")||(cname == "Center") )
     {
-      string tags;
+      std::string tags;
       OhmmsAttributeSet Tattrib;
       Tattrib.add(tags,"names");
       Tattrib.put(cur2);
-      string name;
-      vector<string> names;
+      std::string name;
+      std::vector<std::string> names;
       Tokenize(tags,names,",");
       //parsewords(tags.c_str(),names);
-      app_log()<<"  Found center block: "<<tags<<endl;
+      app_log()<<"  Found center block: "<<tags<< std::endl;
 // 	some special cases
-//         app_log()<<names.size()<<names[names.size()-1]<<tags<<endl;
+//         app_log()<<names.size()<<names[names.size()-1]<<tags<< std::endl;
       for(int j=0; j<names.size(); j++)
       {
-// 	  app_log()<<names[j]<<endl;
+// 	  app_log()<<names[j]<< std::endl;
         if(names[j]=="LocalPotential")
         {
           scalars_name.push_back("C_LocPot");
@@ -124,12 +124,12 @@ void ComboPolymerEstimator::put(xmlNodePtr cur,  MCWalkerConfiguration& refWalke
             scalars_index.push_back(LOGPSI);
           }
       }
-      vector<string> tmp(scalars_name);
+      std::vector<std::string> tmp(scalars_name);
       for(int i=0; i<tmp.size(); i++)
       {
         for(int j=0; j<names.size(); j++)
         {
-          if (string::npos!=tmp[i].rfind(names[j]) )
+          if ( std::string::npos!=tmp[i].rfind(names[j]) )
           {
             tmp[i]="";
             name ="C_";
@@ -146,7 +146,7 @@ void ComboPolymerEstimator::put(xmlNodePtr cur,  MCWalkerConfiguration& refWalke
   cur3 = cur3->children;
   while(cur3 != NULL)
   {
-    string cname((const char*)cur3->name);
+    std::string cname((const char*)cur3->name);
     if ((cname == "stats")||(cname == "Stats"))
     {
       ReptileStatistics* RS = new ReptileStatistics(Reptile);
@@ -157,7 +157,7 @@ void ComboPolymerEstimator::put(xmlNodePtr cur,  MCWalkerConfiguration& refWalke
     else
       if ((cname == "correlation")||(cname == "Correlation"))
       {
-        app_log()<<"  found Correlation Block"<<endl;
+        app_log()<<"  found Correlation Block"<< std::endl;
         ReptileCorrelationEstimator* RC = new ReptileCorrelationEstimator(Reptile);
         RC->put(cur3,ReptileLength,FirstHamiltonian );
         RC->addNames(scalars_name);
@@ -229,7 +229,7 @@ void ComboPolymerEstimator::evaluateDiff()
 {
 }
 
-void ComboPolymerEstimator::registerObservables(vector<observable_helper*>& h5dec, hid_t gid)
+void ComboPolymerEstimator::registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid)
 {
   //IMPLEMENT for hdf5
 }

@@ -85,12 +85,12 @@ void RNDMCOMP::resetUpdateEngines()
     bool klw=(KillWalker=="yes");
     {
       //log file
-      ostringstream o;
+      std::ostringstream o;
       o << "  Initial partition of walkers on a node: ";
-      std::copy(wPerNode.begin(),wPerNode.end(),ostream_iterator<int>(o," "));
+      copy(wPerNode.begin(),wPerNode.end(),std::ostream_iterator<int>(o," "));
       o << "\n";
-      o << "Killing Walkers at nodes " << (useAlternate!="yes") <<endl;
-      o << "Running the released node driver."<<endl;
+      o << "Killing Walkers at nodes " << (useAlternate!="yes") << std::endl;
+      o << "Running the released node driver."<< std::endl;
       app_log() << o.str();
     }
     #pragma omp parallel for
@@ -113,13 +113,13 @@ void RNDMCOMP::resetUpdateEngines()
   if(BranchInterval<0)
     BranchInterval=1;
   {
-    ostringstream o;
-//       if (useAlternate=="yes") o << "  Using Alternate Mover"<<endl;
-//       else o << "  Using Ceperley Mover"<<endl;
+    std::ostringstream o;
+//       if (useAlternate=="yes") o << "  Using Alternate Mover"<< std::endl;
+//       else o << "  Using Ceperley Mover"<< std::endl;
     o << "  BranchInterval = " << BranchInterval << "\n";
     o << "  Steps per block = " << nSteps << "\n";
     o << "  Number of blocks = " << nBlocks << "\n";
-    app_log() << endl << o.str() << endl;
+    app_log() << std::endl << o.str() << std::endl;
   }
 //     RealType avg_w(0);
 //     RealType n_w(0);
@@ -160,7 +160,7 @@ void RNDMCOMP::resetUpdateEngines()
 //         }
 //
 //       }
-  app_log() << " RNDMC Engine Initialization = " << init_timer.elapsed() << " secs " << endl;
+  app_log() << " RNDMC Engine Initialization = " << init_timer.elapsed() << " secs " << std::endl;
 }
 
 bool RNDMCOMP::run()

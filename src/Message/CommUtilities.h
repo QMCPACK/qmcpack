@@ -24,21 +24,21 @@ namespace qmcplusplus
 {
 template<typename IT> inline void wait_all(IT first, IT last)
 {
-  vector<Communicate::request> r(first,last);
-  vector<Communicate::status> st(r.size());
+  std::vector<Communicate::request> r(first,last);
+  std::vector<Communicate::status> st(r.size());
   MPI_Waitall(r.size(),&(r[0]),&(st[0]));
 }
 
 template<typename CT> inline void wait_all(CT& requests)
 {
-  vector<Communicate::status> st(requests.size());
+  std::vector<Communicate::status> st(requests.size());
   MPI_Waitall(requests.size(),&(requests[0]),&(st[0]));
 }
 
 
 inline void wait_all(int n, Communicate::request* pending)
 {
-  vector<Communicate::status> st(n);
+  std::vector<Communicate::status> st(n);
   MPI_Waitall(n,pending,&(st[0]));
 }
 

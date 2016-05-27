@@ -98,12 +98,12 @@ public:
     bool isStride(int rank, int stride) const
     { return iter_.isStride(rank,stride); }
 
-    void prettyPrint(BZ_STD_SCOPE(string) &str) const
+    void prettyPrint(BZ_STD_SCOPE( std::string) &str) const
     {
         str += "(stencil)";    // lame, needs work
     }
 
-    void prettyPrint(BZ_STD_SCOPE(string) &str, prettyPrintFormat&) const
+    void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat&) const
     {   str += "(stencil)"; }
 
     template<typename T_shape>

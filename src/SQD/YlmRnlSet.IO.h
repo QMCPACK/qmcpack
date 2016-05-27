@@ -29,13 +29,13 @@ template<class GT>
 bool YlmRnlSet<GT>::get(std::ostream& os)
 {
   os.precision(12);
-  os.setf(ios::scientific, ios::floatfield);
+  os.setf(std::ios::scientific, std::ios::floatfield);
   for(int i=0; i < m_grid->size(); i++)
   {
-    os << setw(20) << m_grid->r(i);
+    os << std::setw(20) << m_grid->r(i);
     for(int ob=0; ob < psi.size(); ob++)
     {
-      os << setw(20) << psi[ob](i);
+      os << std::setw(20) << psi[ob](i);
     }
     os << std::endl;
   }
@@ -140,7 +140,7 @@ bool YlmRnlSet<GT>::print_HDF5(const std::string& RootName,
 {
 #ifdef HAVE_LIBHDF5
   //print to file fname
-  string HDFfname = RootName + ".h5";
+  std::string HDFfname = RootName + ".h5";
   hdf_archive afile;
   afile.create(HDFfname);
   TinyVector<int,2> res_version(0,1);
@@ -188,7 +188,7 @@ bool YlmRnlSet<GT>::print_HDF5(const std::string& RootName,
     //max_rad += 2;
     //rad_orb.resize(max_rad);
     //
-    vector<double> uofr(m_grid->size(),0.0);
+    std::vector<double> uofr(m_grid->size(),0.0);
     for(int i=0; i<m_grid->size(); ++i)
       uofr[i] = (*psi[orbindex])(i);
     afile.write(uofr,"uofr");
@@ -197,7 +197,7 @@ bool YlmRnlSet<GT>::print_HDF5(const std::string& RootName,
     while(abs((uofr[max_rad]-uofr[max_rad-1])/((*m_grid)[max_rad]-(*m_grid)[max_rad-1])) < 1e-4)
       max_rad--;
     rmax_safe=std::max(rmax_safe,max_rad);
-    cout << "Safe cutoff " << (*m_grid)[max_rad] << endl;
+    std::cout << "Safe cutoff " << (*m_grid)[max_rad] << std::endl;
     int l_plus_one= 1+L[orbindex];
     for(int i=1; i<m_grid->size(); ++i)
       uofr[i] = uofr[i]/pow((*m_grid)[i],l_plus_one);
@@ -211,7 +211,7 @@ bool YlmRnlSet<GT>::print_HDF5(const std::string& RootName,
   }
   afile.push("grid");
   {
-    string gtype_copy=GridType+'\0';
+    std::string gtype_copy=GridType+'\0';
     afile.write(gtype_copy,"type");
     double tt=m_grid->rmin();
     afile.write(tt,"ri");
@@ -246,8 +246,7 @@ bool YlmRnlSet<GT>::print_basis(const std::string& elementName,
                                 const std::string& RootName,
                                 const std::string& GridType)
 {
-  using namespace std;
-  //matrices for spin-up and down orbitals
+    //matrices for spin-up and down orbitals
   Matrix<double> Mup;
   Matrix<double> Mdown;
   if(Restriction == "none")
@@ -270,8 +269,8 @@ bool YlmRnlSet<GT>::print_basis(const std::string& elementName,
   }
   Mup = 0.0;
   Mdown = 0.0;
-  string fnameXML = RootName + ".qmc.xml";
-  string fnameHDF5 = RootName + ".h5";
+  std::string fnameXML = RootName + ".qmc.xml";
+  std::string fnameHDF5 = RootName + ".h5";
   //construct xml tree
   xmlDocPtr doc = xmlNewDoc((const xmlChar*)"1.0");
   xmlNodePtr qmc_root = xmlNewNode(NULL, BAD_CAST "qmcsystem");
@@ -376,7 +375,7 @@ bool YlmRnlSet<GT>::print_basis(const std::string& elementName,
           xmlNewProp(p5,(const xmlChar*)"l",(const xmlChar*)s2.str().c_str());
           xmlNewProp(p5,(const xmlChar*)"m",(const xmlChar*)s3.str().c_str());
           xmlNewProp(p5,(const xmlChar*)"zeta",(const xmlChar*)"1");
-          if((*m_grid)(0)<numeric_limits<value_type>::epsilon())
+          if((*m_grid)(0)<std::numeric_limits<value_type>::epsilon())
             xmlNewProp(p5,(const xmlChar*)"imin",(const xmlChar*)"1");
           xmlAddChild(p4,p5);
         }

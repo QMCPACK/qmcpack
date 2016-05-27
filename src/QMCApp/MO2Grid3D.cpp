@@ -44,7 +44,7 @@ MO2Grid3D::MO2Grid3D(int argc, char** argv): QMCAppBase(argc,argv),
 MO2Grid3D::~MO2Grid3D()
 {
   DEBUGMSG("MO2Grid3D::~MO2Grid3D")
-  map<string,TriCubicSplineT<ValueType>* >::iterator it(SPOSet.begin());
+  std::map<std::string,TriCubicSplineT<ValueType>* >::iterator it(SPOSet.begin());
   while(it != SPOSet.end())
   {
     if((*it).second)
@@ -71,7 +71,7 @@ bool MO2Grid3D::execute()
   xmlNodePtr wfsPtr=0;
   while(cur != NULL)
   {
-    string cname((const char*)cur->name);
+    std::string cname((const char*)cur->name);
     if(cname == "particleset")
     {
       ptclPool->put(cur);
@@ -85,7 +85,7 @@ bool MO2Grid3D::execute()
   }
   if(wfsPtr)
   {
-    string ename("e");
+    std::string ename("e");
     const xmlChar* t=xmlGetProp(wfsPtr,(const xmlChar*)"target");
     if(t)
     {
@@ -101,11 +101,11 @@ bool MO2Grid3D::execute()
     bool splitted=false;
     while(cur != NULL)
     {
-      string cname((const char*)cur->name);
+      std::string cname((const char*)cur->name);
       if(cname == OrbitalBuilderBase::detset_tag)
       {
         dsetPtr=cur; //save determinantset
-        string iname("i");
+        std::string iname("i");
         const xmlChar* t=xmlGetProp(cur,(const xmlChar*)"source");
         if(t)
         {
@@ -128,7 +128,7 @@ bool MO2Grid3D::execute()
     //replace the original determinantset by ceorePtr
     xmlSetProp(corePtr,(const xmlChar*)"type",(const xmlChar*)"NumericalOrbital");
     xmlAddChild(wfsPtr,corePtr);
-    string newfile=InFileRoot+".spline.xml";
+    std::string newfile=InFileRoot+".spline.xml";
     LOGMSG("New xml file " << newfile)
     XmlDocStack.top()->dump(newfile);
   }
@@ -155,7 +155,7 @@ struct BasisGroupType
   inline bool put(xmlNodePtr cur)
   {
     curPtr=cur;
-    string excluded("no");
+    std::string excluded("no");
     OhmmsAttributeSet pAttrib;
     pAttrib.add(excluded,"exclude");
     pAttrib.add(L,"l");
@@ -176,10 +176,10 @@ struct BasisGroupType
 bool MO2Grid3D::selectCore(xmlNodePtr  cur)
 {
   normalPtr=cur;
-  typedef vector<BasisGroupType> AtomicBasisType;
-  typedef map<int,AtomicBasisType* > RGroupType;
+  typedef std::vector<BasisGroupType> AtomicBasisType;
+  typedef std::map<int,AtomicBasisType* > RGroupType;
   RGroupType Rgroup;
-  map<int,xmlNodePtr> RgroupPtr;
+  std::map<int,xmlNodePtr> RgroupPtr;
   SpeciesSet& ionSpecies(Ions->getSpeciesSet());
   xmlNodePtr basissetPtr=0;
   xmlNodePtr sdetPtr=0;
@@ -187,14 +187,14 @@ bool MO2Grid3D::selectCore(xmlNodePtr  cur)
   cur=cur->children;
   while(cur != NULL)
   {
-    string cname((const char*)cur->name);
+    std::string cname((const char*)cur->name);
     if(cname == OrbitalBuilderBase::basisset_tag)
     {
       basissetPtr=cur;//save the pointer
       xmlNodePtr cur1=cur->children;
       while(cur1 != NULL)
       {
-        string cname1((const char*)cur1->name);
+        std::string cname1((const char*)cur1->name);
         if(cname1 == "atomicBasisSet")
         {
           int ionid
@@ -206,7 +206,7 @@ bool MO2Grid3D::selectCore(xmlNodePtr  cur)
             xmlNodePtr cur2=cur1->children;
             while(cur2 != NULL)
             {
-              string cname2((const char*)cur2->name);
+              std::string cname2((const char*)cur2->name);
               if(cname2 == "basisGroup")
               {
                 acenter->push_back(BasisGroupType());
@@ -256,7 +256,7 @@ bool MO2Grid3D::selectCore(xmlNodePtr  cur)
     }
     xmlAddPrevSibling(basissetPtr,splinePtr);
   }
-  vector<bool> mask;
+  std::vector<bool> mask;
   int offset=0, coreoffset=0;
   for(int iat=0; iat<Ions->getTotalNum(); iat++)
   {
@@ -318,20 +318,20 @@ bool MO2Grid3D::selectCore(xmlNodePtr  cur)
   cur=sdetPtr->children;
   while(cur != NULL)
   {
-    string cname((const char*)cur->name);
+    std::string cname((const char*)cur->name);
     if(cname == OrbitalBuilderBase::det_tag)
     {
       //copy determinant
       xmlNodePtr core_2=xmlCopyNode(cur,2);
       xmlNodePtr normal_2=xmlCopyNode(cur,2);
       int norb=atoi((const char*)xmlGetProp(cur,(const xmlChar*)"orbitals"));
-      vector<RealType> tmpC(offset*offset), occ(offset), C(norb*offset);
+      std::vector<RealType> tmpC(offset*offset), occ(offset), C(norb*offset);
       Matrix<RealType> A(norb,coreoffset), B(norb,offset-coreoffset);
       bool foundCoeff=false;
       xmlNodePtr cur1=cur->children;
       while(cur1!=NULL)
       {
-        string cname1((const char*)cur1->name);
+        std::string cname1((const char*)cur1->name);
         if(cname1 == "occupation")
         {
           putContent(occ.begin(), occ.end(),cur1);
@@ -347,13 +347,13 @@ bool MO2Grid3D::selectCore(xmlNodePtr  cur)
       if(foundCoeff)
       {
         int iorb(0),n(0);
-        vector<ValueType>::iterator tit(tmpC.begin());
-        vector<ValueType>::iterator cit(C.begin());
+        std::vector<ValueType>::iterator tit(tmpC.begin());
+        std::vector<ValueType>::iterator cit(C.begin());
         while(iorb<norb)
         {
-          if(occ[n]>numeric_limits<RealType>::epsilon())
+          if(occ[n]>std::numeric_limits<RealType>::epsilon())
           {
-            std::copy(tit,tit+offset,cit);
+            copy(tit,tit+offset,cit);
             iorb++;
             cit+=offset;
           }
@@ -428,14 +428,14 @@ xmlNodePtr MO2Grid3D::copyDeterminantSet(xmlNodePtr cur, xmlNodePtr splinePtr)
   cur=cur->children;
   while(cur != NULL)
   {
-    string cname((const char*)cur->name);
+    std::string cname((const char*)cur->name);
     if(cname == OrbitalBuilderBase::sd_tag)
     {
       next1 = xmlAddSibling(next1,xmlCopyNode(cur,2));
       xmlNodePtr cur1=cur->children;
       while(cur1 != NULL)
       {
-        string cname1((const char*)cur1->name);
+        std::string cname1((const char*)cur1->name);
         if(cname1 == OrbitalBuilderBase::det_tag)
         {
           xmlNodePtr newdet=xmlCopyNode(cur1,2);
@@ -464,13 +464,13 @@ MO2Grid3D::getEigVectors(xmlNodePtr adet, const Matrix<RealType>& A)
   int dn=btot-n*4;
   for(int k=0; k<n; k++)
   {
-    eig << setw(22) << A(b) << setw(22) << A(b+1)
-        << setw(22) << A(b+2) << setw(22) <<  A(b+3) << "\n";
+    eig << std::setw(22) << A(b) << std::setw(22) << A(b+1)
+        << std::setw(22) << A(b+2) << std::setw(22) <<  A(b+3) << "\n";
     b += 4;
   }
   for(int k=0; k<dn; k++)
   {
-    eig << setw(22) << A(b);
+    eig << std::setw(22) << A(b);
   }
   xmlNodePtr det_data
   = xmlNewTextChild(adet,NULL,(const xmlChar*)"coefficient",(const xmlChar*)eig.str().c_str());
@@ -479,9 +479,9 @@ MO2Grid3D::getEigVectors(xmlNodePtr adet, const Matrix<RealType>& A)
 }
 
 void
-MO2Grid3D::copyOrbitalSet(map<string,TriCubicSplineT<ValueType>* >& other)
+MO2Grid3D::copyOrbitalSet(std::map<std::string,TriCubicSplineT<ValueType>* >& other)
 {
-  map<string,TriCubicSplineT<ValueType>* >::iterator it(SPOSet.begin());
+  std::map<std::string,TriCubicSplineT<ValueType>* >::iterator it(SPOSet.begin());
   while(it != SPOSet.end())
   {
     other[(*it).first]=(*it).second;
@@ -502,28 +502,28 @@ xmlNodePtr MO2Grid3D::generateNumericalOrbitals(xmlNodePtr cur)
   std::vector<RealType> ri(3,-5.0);
   std::vector<RealType> rf(3,5.0);
   std::vector<int> npts(3,101);
-  vector<SPOSetType*> InOrbs;
-  map<string,int> DetCounter;
-  vector<xmlNodePtr> SlaterDetPtr;
+  std::vector<SPOSetType*> InOrbs;
+  std::map<std::string,int> DetCounter;
+  std::vector<xmlNodePtr> SlaterDetPtr;
   xmlNodePtr splinePtr=0;
   xmlNodePtr firstSlaterDetPtr=0;
   BasisSetType *basisSet=0;
   const xmlChar* a;
-  vector<xmlNodePtr> nodeToBeRemoved;
+  std::vector<xmlNodePtr> nodeToBeRemoved;
   xmlNodePtr curRoot=cur;
   cur = cur->xmlChildrenNode;
   int idir=0;
   //first pass to check if basisset is used
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == "cubicgrid")
     {
       splinePtr=cur; // save spline data
       xmlNodePtr tcur = cur->xmlChildrenNode;
       while(tcur != NULL)
       {
-        string tname((const char*)(tcur->name));
+        std::string tname((const char*)(tcur->name));
         if(tname == "grid")
         {
           a=xmlGetProp(tcur,(const xmlChar*)"dir");
@@ -565,7 +565,7 @@ xmlNodePtr MO2Grid3D::generateNumericalOrbitals(xmlNodePtr cur)
   cur = curRoot->xmlChildrenNode;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == OrbitalBuilderBase::sd_tag)
     {
       if(firstSlaterDetPtr==0)
@@ -575,11 +575,11 @@ xmlNodePtr MO2Grid3D::generateNumericalOrbitals(xmlNodePtr cur)
       xmlNodePtr tcur = cur->xmlChildrenNode;
       while(tcur != NULL)
       {
-        string tname((const char*)(tcur->name));
+        std::string tname((const char*)(tcur->name));
         if(tname == OrbitalBuilderBase::det_tag)
         {
           bool newset=true;
-          string detname("det");
+          std::string detname("det");
           a=xmlGetProp(tcur,(const xmlChar*)"id");
           if(a)
           {
@@ -591,7 +591,7 @@ xmlNodePtr MO2Grid3D::generateNumericalOrbitals(xmlNodePtr cur)
             if(DetCounter.size())
               newset=false;
           }
-          string detref(detname);
+          std::string detref(detname);
           a=xmlGetProp(tcur,(const xmlChar*)"ref");
           if(a)
           {
@@ -620,7 +620,7 @@ xmlNodePtr MO2Grid3D::generateNumericalOrbitals(xmlNodePtr cur)
             //InOrbs[detname]=psi;
           }
           //add src attribute
-          string detsrc=InFileRoot+"."+detref;
+          std::string detsrc=InFileRoot+"."+detref;
           if(xmlHasProp(tcur,(const xmlChar*)"src"))
           {
             xmlSetProp(tcur,(const xmlChar*)"src",(const xmlChar*)detsrc.c_str());
@@ -639,7 +639,7 @@ xmlNodePtr MO2Grid3D::generateNumericalOrbitals(xmlNodePtr cur)
   //resize with respect to the number of electrons
   basisSet->resize(nels);
   //Need only one electron to calculate this
-  //map<string,SPOSetType*>::iterator oit(InOrbs.begin());
+  //map<std::string,SPOSetType*>::iterator oit(InOrbs.begin());
   //Create one-dimensional grids for three orthogonal directions
   typedef LinearGrid<double> GridType;
   GridType *gridX=new GridType;
@@ -652,21 +652,21 @@ xmlNodePtr MO2Grid3D::generateNumericalOrbitals(xmlNodePtr cur)
   XYZCubicGrid<RealType> *grid3 = new XYZCubicGrid<RealType>(gridX,gridY,gridZ);
   int ntot = npts[0]*npts[1]*npts[2];
   //vector<ValueType> phi(inorb->numOrbitals(),0.0);
-  vector<ValueType> dat(ntot,0.0);
+  std::vector<ValueType> dat(ntot,0.0);
   Pooma::Clock timer;
   char oname[128];
-  cout << "XYZCubicGrid " << endl;
-  cout << " x " << ri[0] << " " << rf[0] << " " << npts[0] << endl;
-  cout << " y " << ri[1] << " " << rf[1] << " " << npts[1] << endl;
-  cout << " z " << ri[2] << " " << rf[2] << " " << npts[2] << endl;
+  std::cout << "XYZCubicGrid " << std::endl;
+  std::cout << " x " << ri[0] << " " << rf[0] << " " << npts[0] << std::endl;
+  std::cout << " y " << ri[1] << " " << rf[1] << " " << npts[1] << std::endl;
+  std::cout << " z " << ri[2] << " " << rf[2] << " " << npts[2] << std::endl;
   std::vector<RealType> lapsed_time(5,0.0);
   PosType pos(Electrons->R[0]);
-  map<string,int>::iterator dit(DetCounter.begin());
+  std::map<std::string,int>::iterator dit(DetCounter.begin());
   //loop over unique determinant sets
   while(dit != DetCounter.end())
   {
     SPOSetType* inorb=InOrbs[(*dit).second];
-    string detID((*dit).first);
+    std::string detID((*dit).first);
     for(int iorb=0; iorb<inorb->numOrbitals(); iorb++)
       //evaluate the values on the grid points
     {
@@ -747,11 +747,11 @@ xmlNodePtr MO2Grid3D::generateNumericalOrbitals(xmlNodePtr cur)
 //      }
     ++dit;
   }
-  cout << "Timing results in sec" << endl;
-  cout << "Function evaluation " << nels << " orbitals = " << lapsed_time[0] << endl;
-  cout << "Spline coefficients = " << lapsed_time[1] << endl;
-  cout << "Testing spline      = " << lapsed_time[2] << endl;
-  cout << "Writing hdf5 files  = " << lapsed_time[3] << endl;
+  std::cout << "Timing results in sec" << std::endl;
+  std::cout << "Function evaluation " << nels << " orbitals = " << lapsed_time[0] << std::endl;
+  std::cout << "Spline coefficients = " << lapsed_time[1] << std::endl;
+  std::cout << "Testing spline      = " << lapsed_time[2] << std::endl;
+  std::cout << "Writing hdf5 files  = " << lapsed_time[3] << std::endl;
   //clean up temporary orbitals on the radial grid
   for(int i=0; i<InOrbs.size(); i++)
     delete InOrbs[i];

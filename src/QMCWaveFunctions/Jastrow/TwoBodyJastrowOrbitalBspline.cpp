@@ -73,9 +73,9 @@ TwoBodyJastrowOrbitalBspline::addFunc(int ia, int ib, FT* j)
 
 void
 TwoBodyJastrowOrbitalBspline::addLog (MCWalkerConfiguration &W,
-                                      vector<RealType> &logPsi)
+                                      std::vector<RealType> &logPsi)
 {
-  vector<Walker_t*> &walkers = W.WalkerList;
+  std::vector<Walker_t*> &walkers = W.WalkerList;
   if (SumGPU.size() < 4*walkers.size())
   {
     SumGPU.resize(4*walkers.size());
@@ -137,7 +137,7 @@ TwoBodyJastrowOrbitalBspline::addLog (MCWalkerConfiguration &W,
 }
 
 void
-TwoBodyJastrowOrbitalBspline::update (vector<Walker_t*> &walkers, int iat)
+TwoBodyJastrowOrbitalBspline::update (std::vector<Walker_t*> &walkers, int iat)
 {
   // for (int iw=0; iw<walkers.size(); iw++)
   //   UpdateListHost[iw] = (CudaReal*)walkers[iw]->R_GPU.data();
@@ -151,10 +151,10 @@ TwoBodyJastrowOrbitalBspline::update (vector<Walker_t*> &walkers, int iat)
 void
 TwoBodyJastrowOrbitalBspline::ratio
 (MCWalkerConfiguration &W, int iat,
- vector<ValueType> &psi_ratios, vector<GradType>  &grad,
- vector<ValueType> &lapl)
+ std::vector<ValueType> &psi_ratios, std::vector<GradType>  &grad,
+ std::vector<ValueType> &lapl)
 {
-  vector<Walker_t*> &walkers = W.WalkerList;
+  std::vector<Walker_t*> &walkers = W.WalkerList;
   if (SumGPU.size() < 4*walkers.size())
     SumGPU.resize(4*walkers.size());
 #ifdef CPU_RATIO
@@ -229,10 +229,10 @@ TwoBodyJastrowOrbitalBspline::ratio
 void
 TwoBodyJastrowOrbitalBspline::calcRatio
 (MCWalkerConfiguration &W, int iat,
- vector<ValueType> &psi_ratios, vector<GradType>  &grad,
- vector<ValueType> &lapl)
+ std::vector<ValueType> &psi_ratios, std::vector<GradType>  &grad,
+ std::vector<ValueType> &lapl)
 {
-  vector<Walker_t*> &walkers = W.WalkerList;
+  std::vector<Walker_t*> &walkers = W.WalkerList;
   if (SumGPU.size() < 4*walkers.size())
     SumGPU.resize(4*walkers.size());
 #ifdef CPU_RATIO
@@ -295,11 +295,11 @@ TwoBodyJastrowOrbitalBspline::calcRatio
 void
 TwoBodyJastrowOrbitalBspline::addRatio
 (MCWalkerConfiguration &W, int iat,
- vector<ValueType> &psi_ratios, vector<GradType>  &grad,
- vector<ValueType> &lapl)
+ std::vector<ValueType> &psi_ratios, std::vector<GradType>  &grad,
+ std::vector<ValueType> &lapl)
 {
 #ifndef CPU_RATIO
-  vector<Walker_t*> &walkers = W.WalkerList;
+  std::vector<Walker_t*> &walkers = W.WalkerList;
   cudaEventSynchronize(gpu::ratioSyncTwoBodyEvent);
   for (int iw=0; iw<walkers.size(); iw++)
   {
@@ -316,11 +316,11 @@ TwoBodyJastrowOrbitalBspline::addRatio
 
 void
 TwoBodyJastrowOrbitalBspline::NLratios
-(MCWalkerConfiguration &W,  vector<NLjob> &jobList,
- vector<PosType> &quadPoints, vector<ValueType> &psi_ratios)
+(MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
+ std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios)
 {
   CudaReal sim_cell_radius = W.Lattice.SimulationCellRadius;
-  vector<Walker_t*> &walkers = W.WalkerList;
+  std::vector<Walker_t*> &walkers = W.WalkerList;
   int njobs = jobList.size();
   if (NL_JobListHost.size() < njobs)
   {
@@ -392,10 +392,10 @@ TwoBodyJastrowOrbitalBspline::NLratios
 
 
 void TwoBodyJastrowOrbitalBspline::calcGradient(MCWalkerConfiguration &W, int iat,
-    vector<GradType> &grad)
+    std::vector<GradType> &grad)
 {
   CudaReal sim_cell_radius = W.Lattice.SimulationCellRadius;
-  vector<Walker_t*> &walkers = W.WalkerList;
+  std::vector<Walker_t*> &walkers = W.WalkerList;
   int newGroup = PtclRef.GroupID[iat];
   if (OneGradHost.size() < OHMMS_DIM*walkers.size())
   {
@@ -424,9 +424,9 @@ void TwoBodyJastrowOrbitalBspline::calcGradient(MCWalkerConfiguration &W, int ia
 }
 
 void TwoBodyJastrowOrbitalBspline::addGradient(MCWalkerConfiguration &W, int iat,
-    vector<GradType> &grad)
+    std::vector<GradType> &grad)
 {
-  vector<Walker_t*> &walkers = W.WalkerList;
+  std::vector<Walker_t*> &walkers = W.WalkerList;
   cudaEventSynchronize(gpu::gradientSyncTwoBodyEvent);
   for (int iw=0; iw<walkers.size(); iw++)
     for (int dim=0; dim<OHMMS_DIM; dim++)
@@ -439,7 +439,7 @@ TwoBodyJastrowOrbitalBspline::gradLapl (MCWalkerConfiguration &W,
                                         ValueMatrix_t &lapl)
 {
   CudaReal sim_cell_radius = W.Lattice.SimulationCellRadius;
-  vector<Walker_t*> &walkers = W.WalkerList;
+  std::vector<Walker_t*> &walkers = W.WalkerList;
   int numGL = 4*N*walkers.size();
   if (GradLaplGPU.size()  < numGL)
   {
@@ -456,7 +456,7 @@ TwoBodyJastrowOrbitalBspline::gradLapl (MCWalkerConfiguration &W,
     GradLaplHost[i] = 0.0;
   GradLaplGPU = GradLaplHost;
 #ifdef CUDA_DEBUG
-  vector<CudaReal> CPU_GradLapl(4*N);
+  std::vector<CudaReal> CPU_GradLapl(4*N);
   DTD_BConds<double,3,SUPERCELL_BULK> bconds;
   int iw = 0;
   for (int group1=0; group1<PtclRef.groups(); group1++)
@@ -555,7 +555,7 @@ TwoBodyJastrowOrbitalBspline::evaluateDerivatives
  ValueMatrix_t &d_logpsi, ValueMatrix_t &dlapl_over_psi)
 {
   CudaReal sim_cell_radius = W.Lattice.SimulationCellRadius;
-  vector<Walker_t*> &walkers = W.WalkerList;
+  std::vector<Walker_t*> &walkers = W.WalkerList;
   int nw = walkers.size();
   for (int i=0; i<UniqueSplines.size(); i++)
     if (DerivListGPU.size() < nw)
@@ -573,7 +573,7 @@ TwoBodyJastrowOrbitalBspline::evaluateDerivatives
         DerivListHost[iw] = SplineDerivsGPU.data() + 2*iw*MaxCoefs;
       DerivListGPU = DerivListHost;
     }
-  vector<TinyVector<RealType, 2> > derivs;
+  std::vector<TinyVector<RealType, 2> > derivs;
   for (int group1=0; group1<PtclRef.groups(); group1++)
   {
     int first1 = PtclRef.first(group1);
@@ -598,8 +598,8 @@ TwoBodyJastrowOrbitalBspline::evaluateDerivatives
       opt_variables_type splineVars = F[ptype]->myVars;
       for (int iv=0; iv<splineVars.size(); iv++)
       {
-        // cerr << "groups = (" << group1 << "," << group2
-        //      << ") Index=" << splineVars.Index[iv] << endl;
+        // std::cerr << "groups = (" << group1 << "," << group2
+        //      << ") Index=" << splineVars.Index[iv] << std::endl;
         int varIndex = splineVars.Index[iv];
         int coefIndex = iv+1;
         for (int iw=0; iw<nw; iw++)

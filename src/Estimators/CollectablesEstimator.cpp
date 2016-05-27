@@ -27,7 +27,7 @@ CollectablesEstimator::CollectablesEstimator(QMCHamiltonian& h)
   scalars_saved.resize(h.sizeOfCollectables());
 }
 
-void CollectablesEstimator::registerObservables(vector<observable_helper*>& h5desc
+void CollectablesEstimator::registerObservables(std::vector<observable_helper*>& h5desc
     , hid_t gid)
 {
   int loc=h5desc.size();
@@ -53,7 +53,7 @@ void CollectablesEstimator::add2Record(RecordListType& record)
   //FirstIndex = record.size();
   //for(int i=0; i<refH.sizeOfCollectables(); ++i)
   //{
-  //  ostringstream o;
+  //  std::ostringstream o;
   //  o<<"a"<<i;
   //  int dummy=record.add(o.str());
   //}

@@ -37,8 +37,8 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active,
   PtclRefName=d_aa->Name;
   initBreakup(ref);
   prefix="F_AA";
-  app_log() << "  Maximum K shell " << AA->MaxKshell << endl;
-  app_log() << "  Number of k vectors " << AA->Fk.size() << endl;
+  app_log() << "  Maximum K shell " << AA->MaxKshell << std::endl;
+  app_log() << "  Number of k vectors " << AA->Fk.size() << std::endl;
   if(!is_active)
   {
     d_aa->evaluate(ref);
@@ -60,11 +60,11 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active,
     //NewValue=Value = eL+eS+myConst;
     //app_log() << "  Fixed Coulomb potential for " << ref.getName();
     //app_log() << "\n    e-e Madelung Const. =" << MC0
-    //          << "\n    Vtot     =" << Value << endl;
+    //          << "\n    Vtot     =" << Value << std::endl;
   }
   app_log() << "  Fixed Coulomb potential for " << ref.getName();
   app_log() << "\n    e-e Madelung Const. =" << MC0
-            << "\n    Vtot     =" << Value << endl;
+            << "\n    Vtot     =" << Value << std::endl;
 }
 
 CoulombPBCAA:: ~CoulombPBCAA() { }
@@ -115,7 +115,7 @@ void CoulombPBCAA::contribute_particle_quantities()
 void CoulombPBCAA::checkout_particle_quantities(TraceManager& tm)
 {
   streaming_particles = request.streaming_array(myName);
-  if(streaming_particles)
+  if( streaming_particles)
   {
     V_sample = tm.checkout_real<1>(myName,Ps);
     if(!is_active)
@@ -125,7 +125,7 @@ void CoulombPBCAA::checkout_particle_quantities(TraceManager& tm)
 
 void CoulombPBCAA::delete_particle_quantities()
 {
-  if(streaming_particles)
+  if( streaming_particles)
     delete V_sample;
 }
 #endif
@@ -137,7 +137,7 @@ CoulombPBCAA::evaluate(ParticleSet& P)
   if(is_active)
   {
 #if !defined(REMOVE_TRACEMANAGER)
-    if(streaming_particles)
+    if( streaming_particles)
       Value = evaluate_sp(P);
     else
 #endif
@@ -218,39 +218,39 @@ CoulombPBCAA::evaluate_sp(ParticleSet& P)
   RealType Vcorig  = evalConsts_orig(false);
   if(abs(Vsum-Vnow)>TraceManager::trace_tol)
   {
-    app_log()<<"accumtest: CoulombPBCAA::evaluate()"<<endl;
-    app_log()<<"accumtest:   tot:"<< Vnow <<endl;
-    app_log()<<"accumtest:   sum:"<< Vsum  <<endl;
+    app_log()<<"accumtest: CoulombPBCAA::evaluate()"<< std::endl;
+    app_log()<<"accumtest:   tot:"<< Vnow << std::endl;
+    app_log()<<"accumtest:   sum:"<< Vsum  << std::endl;
     APP_ABORT("Trace check failed");
   }
   if(abs(Vcsum-Vcnow)>TraceManager::trace_tol)
   {
-    app_log()<<"accumtest: CoulombPBCAA::evalConsts()"<<endl;
-    app_log()<<"accumtest:   tot:"<< Vcnow <<endl;
-    app_log()<<"accumtest:   sum:"<< Vcsum  <<endl;
+    app_log()<<"accumtest: CoulombPBCAA::evalConsts()"<< std::endl;
+    app_log()<<"accumtest:   tot:"<< Vcnow << std::endl;
+    app_log()<<"accumtest:   sum:"<< Vcsum  << std::endl;
     APP_ABORT("Trace check failed");
   }
   if(abs(Vsrold-Vsrnow)>TraceManager::trace_tol)
   {
-    app_log()<<"versiontest: CoulombPBCAA::evalSR()"<<endl;
-    app_log()<<"versiontest:    old:"<< Vsrold <<endl;
-    app_log()<<"versiontest:    mod:"<< Vsrnow <<endl;
+    app_log()<<"versiontest: CoulombPBCAA::evalSR()"<< std::endl;
+    app_log()<<"versiontest:    old:"<< Vsrold << std::endl;
+    app_log()<<"versiontest:    mod:"<< Vsrnow << std::endl;
     APP_ABORT("Trace check failed");
   }
   if(abs(Vlrold-Vlrnow)>TraceManager::trace_tol)
   {
-    app_log()<<"versiontest: CoulombPBCAA::evalLR()"<<endl;
-    app_log()<<"versiontest:    old:"<< Vlrold <<endl;
-    app_log()<<"versiontest:    mod:"<< Vlrnow <<endl;
+    app_log()<<"versiontest: CoulombPBCAA::evalLR()"<< std::endl;
+    app_log()<<"versiontest:    old:"<< Vlrold << std::endl;
+    app_log()<<"versiontest:    mod:"<< Vlrnow << std::endl;
     APP_ABORT("Trace check failed");
   }
   if(abs(Vcold-Vcorig)>TraceManager::trace_tol ||
-      abs(Vcnow-Vcorig)>TraceManager::trace_tol )
+      std::abs(Vcnow-Vcorig)>TraceManager::trace_tol )
   {
-    app_log()<<"versiontest: CoulombPBCAA::evalConsts()"<<endl;
-    app_log()<<"versiontest:    old:"<< Vcold <<endl;
-    app_log()<<"versiontest:   orig:"<< Vcorig <<endl;
-    app_log()<<"versiontest:    mod:"<< Vcnow <<endl;
+    app_log()<<"versiontest: CoulombPBCAA::evalConsts()"<< std::endl;
+    app_log()<<"versiontest:    old:"<< Vcold << std::endl;
+    app_log()<<"versiontest:   orig:"<< Vcorig << std::endl;
+    app_log()<<"versiontest:    mod:"<< Vcnow << std::endl;
     APP_ABORT("Trace check failed");
   }
 #endif
@@ -436,7 +436,7 @@ CoulombPBCAA::evalLRwithForces(ParticleSet& P)
 {
   RealType LR=0.0;
   const StructFact& PtclRhoK(*(P.SK));
-  vector<TinyVector<RealType,DIM> > grad(P.getTotalNum());
+  std::vector<TinyVector<RealType,DIM> > grad(P.getTotalNum());
   for(int spec2=0; spec2<NumSpecies; spec2++)
   {
     RealType Z2 = Zspec[spec2];
@@ -506,7 +506,7 @@ CoulombPBCAA::evalConsts(bool report)
     Consts += v1;
   }
   if(report)
-    app_log() << "   PBCAA self-interaction term " << Consts << endl;
+    app_log() << "   PBCAA self-interaction term " << Consts << std::endl;
   //Compute Madelung constant: this is not correct for general cases
   MC0 = 0.0;
   for(int i=0; i<AA->Fk.size(); i++)
@@ -526,8 +526,8 @@ CoulombPBCAA::evalConsts(bool report)
     Consts += v1;
   }
   if(report)
-    app_log() << "   PBCAA total constant " << Consts << endl;
-  //app_log() << "   MC0 of PBCAA " << MC0 << endl;
+    app_log() << "   PBCAA total constant " << Consts << std::endl;
+  //app_log() << "   MC0 of PBCAA " << MC0 << std::endl;
   return Consts;
 }
 
@@ -615,7 +615,7 @@ CoulombPBCAA::evalConsts_orig(bool report)
     Consts -= 0.5*vl_r0*z*z*n;
   }
   if(report)
-    app_log() << "   PBCAA self-interaction term " << Consts << endl;
+    app_log() << "   PBCAA self-interaction term " << Consts << std::endl;
   //Compute Madelung constant: this is not correct for general cases
   MC0 = 0.0;
   for(int i=0; i<AA->Fk.size(); i++)
@@ -636,8 +636,8 @@ CoulombPBCAA::evalConsts_orig(bool report)
     }
   }
   if(report)
-    app_log() << "   PBCAA total constant " << Consts << endl;
-  //app_log() << "   MC0 of PBCAA " << MC0 << endl;
+    app_log() << "   PBCAA total constant " << Consts << std::endl;
+  //app_log() << "   MC0 of PBCAA " << MC0 << std::endl;
   return Consts;
 }
 
@@ -732,7 +732,7 @@ CoulombPBCAA::evalConsts_old(bool report)
     }
   }
   if(report)
-    app_log() << "   Constant of PBCAA " << Consts << endl;
+    app_log() << "   Constant of PBCAA " << Consts << std::endl;
   return Consts;
 }
 

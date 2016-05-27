@@ -20,7 +20,7 @@ struct HartreeFock
 
   int maxiter;
   value_type eig_tol, scf_tol, ratio;
-  string LogFileName;
+  std::string LogFileName;
   std::vector<value_type> eigVal;
 
   RadialPotentialSet& Pot;
@@ -32,17 +32,17 @@ struct HartreeFock
 
   bool put(const xmlpp::Node* q);
 
-  void setRoot(const string& aroot);
+  void setRoot(const std::string& aroot);
 
   template<class Transform_t> void run(Transform_t* fake, int norb);
 
-  void solve(string pottype, string gridtype, int norb);
+  void solve( std::string pottype, std::string gridtype, int norb);
 };
 
 bool parseXMLFile(RadialPotentialSet& Pot,
                   SphericalOrbitalTraits::BasisSetType& Psi,
-                  string& name,string& pottype,
-                  string& gridtype,
+                  std::string& name,std::string& pottype,
+                  std::string& gridtype,
                   const xmlpp::Node* root);
 }
 

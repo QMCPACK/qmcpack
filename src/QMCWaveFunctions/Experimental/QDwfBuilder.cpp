@@ -10,20 +10,20 @@ bool QDwfBuilder::put(xmlNodePtr cur)
 {
   typedef DiracDeterminant<SPOSet_t> DDet_t;
   typedef SlaterDeterminant<SPOSet_t> SDet_t;
-  map<string,QDwf*> qdwfs;
+  std::map<std::string,QDwf*> qdwfs;
   int nbasis=0;
   SDet_t* sdet = new SDet_t;
   cur = cur->xmlChildrenNode;         /// cur->name = DeterminantSet
   while(cur!=NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname =="SlaterDeterminant")
     {
       int first = 0;
       xmlNodePtr tcur = cur->xmlChildrenNode;
       while(tcur != NULL)
       {
-        string cname2((const char*)(tcur->name));
+        std::string cname2((const char*)(tcur->name));
         if(cname2 == "Determinant")
         {
           SPOSet_t* swfs = new SPOSet_t;
@@ -33,12 +33,12 @@ bool QDwfBuilder::put(xmlNodePtr cur)
           xmlNodePtr t = tcur->xmlChildrenNode;
           while(t != NULL)
           {
-            string oname((const char*)(t->name));
+            std::string oname((const char*)(t->name));
             if(oname == "Orbital")
             {
               string
               orbname((const char*)(xmlGetProp(t, (const xmlChar *)"name")));
-              map<string,QDwf*>::iterator it = qdwfs.find(orbname);
+              std::map<std::string,QDwf*>::iterator it = qdwfs.find(orbname);
               if(it  == qdwfs.end())
               {
                 XMLReport("Adding a new orbital " << orbname)

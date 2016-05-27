@@ -40,7 +40,7 @@ MolecuDMC::~MolecuDMC()
 {
 }
 
-void MolecuDMC::setBranchInfo(const string& afile)
+void MolecuDMC::setBranchInfo(const std::string& afile)
 {
   BranchInfo=afile;
 }
@@ -76,11 +76,11 @@ bool MolecuDMC::run()
   KillNodeCrossing = (KillWalker == "yes");
   if(KillNodeCrossing)
   {
-    app_log() << "Walkers will be killed if a node crossing is detected." << endl;
+    app_log() << "Walkers will be killed if a node crossing is detected." << std::endl;
   }
   else
   {
-    app_log() << "Walkers will be kept even if a node crossing is detected." << endl;
+    app_log() << "Walkers will be kept even if a node crossing is detected." << std::endl;
   }
   //add columns
   IndexType PopIndex = Estimators->addColumn("Population");
@@ -141,7 +141,7 @@ bool MolecuDMC::run()
   }
   while(block<nBlocks);
   //Need MPI-IO
-  app_log() << "\t ratio = " << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot) << endl;
+  app_log() << "\t ratio = " << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot) << std::endl;
   Estimators->finalize();
   return true;
 }
@@ -206,10 +206,10 @@ MolecuDMC::advanceKillNodeCrossing(BRANCHER& Branch)
       //calculate the weight and multiplicity
       ValueType M = Branch.branchGF(Tau,emixed,0.0); //1.0-prob);
       if(thisWalker.Age > 3)
-        M = min(0.5,M);
+        M = std::min(0.5,M);
       else
         if(thisWalker.Age > 0)
-          M = min(1.0,M);
+          M = std::min(1.0,M);
       thisWalker.Weight = M;
       thisWalker.Multiplicity = M + Random();
     }
@@ -282,10 +282,10 @@ MolecuDMC::advanceRejectNodeCrossing(BRANCHER& Branch)
     //calculate the weight and multiplicity
     ValueType M = Branch.branchGF(Tau,emixed,0.0);
     if(thisWalker.Age > 3)
-      M = min(0.5,M);
+      M = std::min(0.5,M);
     else
       if(thisWalker.Age > 0)
-        M = min(1.0,M);
+        M = std::min(1.0,M);
     thisWalker.Weight = M;
     thisWalker.Multiplicity = M + Random();
     Branch.accumulate(eold,thisWalker.Weight);

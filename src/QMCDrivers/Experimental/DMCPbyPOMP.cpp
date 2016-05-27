@@ -65,9 +65,9 @@ void DMCPbyPOMP::resetRun()
 {
   //KillNodeCrossing = (KillWalker == "yes");
   //if(KillNodeCrossing) {
-  //  app_log() << "Walkers will be killed if a node crossing is detected." << endl;
+  //  app_log() << "Walkers will be killed if a node crossing is detected." << std::endl;
   //} else {
-  //  app_log() << "Walkers will be kept even if a node crossing is detected." << endl;
+  //  app_log() << "Walkers will be kept even if a node crossing is detected." << std::endl;
   //}
   if(Movers.empty())
   {
@@ -75,8 +75,8 @@ void DMCPbyPOMP::resetRun()
     branchClones.resize(NumThreads,0);
     FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
     app_log() << "  Initial partition of walkers ";
-    std::copy(wPerNode.begin(),wPerNode.end(),ostream_iterator<int>(app_log()," "));
-    app_log() << endl;
+    copy(wPerNode.begin(),wPerNode.end(),std::ostream_iterator<int>(app_log()," "));
+    app_log() << std::endl;
     #pragma omp parallel
     {
       int ip = omp_get_thread_num();
@@ -104,21 +104,21 @@ bool DMCPbyPOMP::run()
   Estimators->reset();
   if(BenchMarkRun == "yes")
   {
-    app_log() << "  Running DMCPbyPOMP::benchMark " << endl;
+    app_log() << "  Running DMCPbyPOMP::benchMark " << std::endl;
     benchMark();
   }
   else
   {
     if(Reconfiguration == "yes")
     {
-      app_log() << "  DMC/OMP PbyP Update with reconfigurations" << endl;
+      app_log() << "  DMC/OMP PbyP Update with reconfigurations" << std::endl;
       for(int ip=0; ip<Movers.size(); ip++)
         Movers[ip]->MaxAge=0;
       dmcWithReconfiguration();
     }
     else
     {
-      app_log() << "  DMC/OMP PbyP update with a fluctuating population" << endl;
+      app_log() << "  DMC/OMP PbyP update with a fluctuating population" << std::endl;
       for(int ip=0; ip<Movers.size(); ip++)
         Movers[ip]->MaxAge=1;
       dmcWithBranching();
@@ -187,7 +187,7 @@ void DMCPbyPOMP::dmcWithBranching()
   resetRun();
   nAcceptTot = 0;
   nRejectTot = 0;
-  app_log() << "Current step " << CurrentStep << endl;
+  app_log() << "Current step " << CurrentStep << std::endl;
   do
   {
     for(int ip=0; ip<NumThreads; ip++)
@@ -243,9 +243,9 @@ void DMCPbyPOMP::dmcWithBranching()
     RealType totmoves=1.0/static_cast<RealType>(step*W.getActiveWalkers());
     //Need MPI-IO
     //app_log()
-    //  << setw(4) << block
-    //  << setw(20) << static_cast<RealType>(nAllRejected)*totmoves
-    //  << setw(20) << static_cast<RealType>(nNodeCrossing)*totmoves << endl;
+    //  << std::setw(4) << block
+    //  << std::setw(20) << static_cast<RealType>(nAllRejected)*totmoves
+    //  << std::setw(20) << static_cast<RealType>(nNodeCrossing)*totmoves << std::endl;
     block++;
     recordBlock(block);
   }
@@ -268,7 +268,7 @@ void DMCPbyPOMP::benchMark()
   {
     char fname[16];
     sprintf(fname,"test.%i",ip);
-    ofstream fout(fname);
+    std::ofstream fout(fname);
   }
   for(int istep=0; istep<nSteps; istep++)
   {

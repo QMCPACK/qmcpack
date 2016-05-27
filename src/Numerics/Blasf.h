@@ -21,7 +21,6 @@
 
 #include <complex>
 #include <cstring>
-using namespace std;
 
 #ifdef ADD_
 #define daxpy daxpy_
@@ -75,13 +74,13 @@ extern "C" {
 
   float sdot(const int& n, const float *dx, const int& incx,  const float *dy, const int &incy);
 
-  complex<double>
-  zdot(const int& n, const complex<double> *dx, const int& incx,
-       const complex<double> *dy, const int &incy);
+  std::complex<double>
+  zdot(const int& n, const std::complex<double> *dx, const int& incx,
+       const std::complex<double> *dy, const int &incy);
 
-  complex<double>
-  zdotu(const int& n, const complex<double> *dx, const int& incx,
-        const complex<double> *dy, const int &incy);
+  std::complex<double>
+  zdotu(const int& n, const std::complex<double> *dx, const int& incx,
+        const std::complex<double> *dy, const int &incy);
 
 
   void daxpy(const int& n, const double& da,
@@ -90,13 +89,13 @@ extern "C" {
   void saxpy(const int& n, const float& da,
              const float *dx, const int& incx, float *dy, const int& incy);
 
-  void zaxpy(const int& n, const complex<double>&  da,  const complex<double> *dx,
-             const int& incx, complex<double> *dy, const int& incy);
+  void zaxpy(const int& n, const std::complex<double>&  da,  const std::complex<double> *dx,
+             const int& incx, std::complex<double> *dy, const int& incy);
 
 
   double dnrm2(const int& n, const double *dx, const int& incx);
   float  snrm2(const int& n, const float *dx, const int& incx);
-  double dznrm2(const int& n, const  complex<double> *dx, const int& incx);
+  double dznrm2(const int& n, const  std::complex<double> *dx, const int& incx);
 
 
   double dscal(const int& n, const double&, double* x, const int&);
@@ -110,18 +109,18 @@ extern "C" {
               const float* x, const int& incx,
               const float& beta, float *y, const int& incy);
 
-  void  zsymv(const char& uplo, const int& n, const complex<double>& alpha,
-              complex<double>* a, const int& lda, complex<double>* x,
-              const int& incx, const complex<double>& beta,
-              complex<double> *y, const int& incy);
+  void  zsymv(const char& uplo, const int& n, const std::complex<double>& alpha,
+              std::complex<double>* a, const int& lda, std::complex<double>* x,
+              const int& incx, const std::complex<double>& beta,
+              std::complex<double> *y, const int& incy);
 
-  void  csymv(const char& uplo, const int& n, const complex<float>& alpha,
-              complex<float>* a, const int& lda, complex<float>* x,
-              const int& incx, const complex<float>& beta,
-              complex<float> *y, const int& incy);
+  void  csymv(const char& uplo, const int& n, const std::complex<float>& alpha,
+              std::complex<float>* a, const int& lda, std::complex<float>* x,
+              const int& incx, const std::complex<float>& beta,
+              std::complex<float> *y, const int& incy);
 
-  void zcopy(const int& n, const complex<double>* x,
-             const int& incx, complex<double>* y, const int& incy);
+  void zcopy(const int& n, const std::complex<double>* x,
+             const int& incx, std::complex<double>* y, const int& incy);
   void dcopy(const int& n, const double*, const int& , double *, const int&);
 
 
@@ -142,8 +141,8 @@ extern "C" {
 
   void zgemm(const char&, const char&,
              const int&, const int&, const int&,
-             const complex<double>&, const complex<double>*, const int&, const complex<double>*, const int&,
-             const complex<double>&, complex<double>*, const int&);
+             const std::complex<double>&, const std::complex<double>*, const int&, const std::complex<double>*, const int&,
+             const std::complex<double>&, std::complex<double>*, const int&);
 
   void dgemv(const char& trans, const int& nr, const int& nc,
              const double& alpha, const double* amat, const int& lda,
@@ -151,9 +150,9 @@ extern "C" {
              const double& beta, double* cv, const int& incy);
 
   void zgemv(const char& trans, const int& nr, const int& nc,
-             const complex<double>& alpha, const complex<double>* amat, const int& lda,
-             const complex<double>* bv, const int& incx,
-             const complex<double>& beta, complex<double>* cv, const int& incy);
+             const std::complex<double>& alpha, const std::complex<double>* amat, const int& lda,
+             const std::complex<double>* bv, const int& incx,
+             const std::complex<double>& beta, std::complex<double>* cv, const int& incy);
 
   void dsyrk(const char&, const char&, const int&, const int&,
              const double&, const double*, const int&,
@@ -165,7 +164,7 @@ extern "C" {
   void sgetrf(const int& n, const int& m, float* a, const int& n0,
               int* piv, int& st);
 
-  void zgetrf(const int& n, const int& m, complex<double>* a, const int& n0,
+  void zgetrf(const int& n, const int& m, std::complex<double>* a, const int& n0,
               int* piv, int& st);
 
   void dgetri(const int& n, double* a, const int& n0,
@@ -174,8 +173,8 @@ extern "C" {
   void sgetri(const int& n, float* a, const int& n0,
               int* piv, float* work, const int&, int& st);
 
-  void zgetri(const int& n, complex<double>* a, const int& n0,
-              int* piv, complex<double>* work, const int&, int& st);
+  void zgetri(const int& n, std::complex<double>* a, const int& n0,
+              int* piv, std::complex<double>* work, const int&, int& st);
 
   void dgesvd(char *JOBU, char* JOBVT, int *M, int *N,
               double *A, int *LDA, double *S, double *U,
@@ -192,9 +191,9 @@ extern "C" {
             , const double* x, const int* incx, const double* y, const int* incy
             , double* a, const int* lda);
 
-  void zgeru(const int* m, const int* n, const complex<double>* alpha
-             , const complex<double>* x, const int* incx, const complex<double>* y, const int* incy
-             , complex<double>* a, const int* lda);
+  void zgeru(const int* m, const int* n, const std::complex<double>* alpha
+             , const std::complex<double>* x, const int* incx, const std::complex<double>* y, const int* incy
+             , std::complex<double>* a, const int* lda);
 
   void dgeqrf( const int *M, const int *N, double *A, const int *LDA, double *TAU, double *WORK, const int *LWORK, int *INFO );
 

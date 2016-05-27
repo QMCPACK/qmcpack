@@ -63,7 +63,7 @@ struct HusePot: public QMCHamiltonianBase
     return Value*=pf;
   }
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
@@ -124,16 +124,16 @@ struct HusePot: public QMCHamiltonianBase
     Tattrib.add(m,"m");
     Tattrib.add(V,"V");
     Tattrib.put(cur);
-    app_log()<<"HusePot parameters"<<endl;
-    app_log()<<"  m: "<<m<<endl;
-    app_log()<<"  V: "<<V<<endl;
+    app_log()<<"HusePot parameters"<< std::endl;
+    app_log()<<"  m: "<<m<< std::endl;
+    app_log()<<"  V: "<<V<< std::endl;
     if(m > 0.1*std::pow(root3-1,3))
       APP_ABORT("m max is 0.1*std::pow(root3-1,3) ~ 0.0392304845 ");
     L=4*m*std::pow((root3-1),-5)-std::pow(root3-1,-2);
     K=5*m*std::pow((root3-1),-4)-2.0/(root3-1);
     Return_t rc= root3-0.6*(root3-1)/(1-m*4*std::pow(root3-1,-3));
     Return_t f_rc =1.0/f(rc);
-    app_log()<<"  Huse H: "<<f(1)*f_rc<<endl;
+    app_log()<<"  Huse H: "<<f(1)*f_rc<< std::endl;
     pf=V*f_rc;
     return true;
   }

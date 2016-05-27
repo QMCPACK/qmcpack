@@ -29,20 +29,20 @@ namespace qmcplusplus
     energy     = en;
   }
 
-  void SPOInfo::report(const string& pad)
+  void SPOInfo::report(const std::string& pad)
   {
     if(has_index())
-      app_log()<<pad<<"index      = "<< index      <<endl;
+      app_log()<<pad<<"index      = "<< index      << std::endl;
     else
-      app_log()<<pad<<"index      = not assigned"  <<endl;
+      app_log()<<pad<<"index      = not assigned"  << std::endl;
     if(has_energy())
-      app_log()<<pad<<"energy     = "<< energy     <<endl;
+      app_log()<<pad<<"energy     = "<< energy     << std::endl;
     else
-      app_log()<<pad<<"energy     = not assigned"  <<endl;
+      app_log()<<pad<<"energy     = not assigned"  << std::endl;
     if(has_degeneracy())
-      app_log()<<pad<<"degeneracy = "<< degeneracy <<endl;
+      app_log()<<pad<<"degeneracy = "<< degeneracy << std::endl;
     else
-      app_log()<<pad<<"degeneracy = not assigned"  <<endl;
+      app_log()<<pad<<"degeneracy = not assigned"  << std::endl;
     app_log().flush();
   }
 }

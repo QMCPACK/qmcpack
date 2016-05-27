@@ -89,7 +89,7 @@ UBsplineClass_2d_d::evaluate (TinyVector<double,2> r, double &val,
 UBsplineClass_2d_z::UBsplineClass_2d_z(TinyVector<double,2> start,
                                        TinyVector<double,2> end,
                                        BCtype_z xBC, BCtype_z yBC,
-                                       Array<complex<double>,2> &data) :
+                                       Array<std::complex<double>,2> &data) :
   Spline(NULL)
 {
   if (Spline != NULL)
@@ -107,7 +107,7 @@ UBsplineClass_2d_z::UBsplineClass_2d_z(TinyVector<double,2> start,
 complex<double>
 UBsplineClass_2d_z::operator()(TinyVector<double,2> r)
 {
-  complex<double> val;
+  std::complex<double> val;
   eval_UBspline_2d_z (Spline, r[0], r[1], &val);
   return val;
 }
@@ -115,26 +115,26 @@ UBsplineClass_2d_z::operator()(TinyVector<double,2> r)
 
 void
 UBsplineClass_2d_z::evaluate (TinyVector<double,2> r,
-                              complex<double> &val,
-                              TinyVector<complex<double>,2> &grad)
+                              std::complex<double> &val,
+                              TinyVector<std::complex<double>,2> &grad)
 {
   eval_UBspline_2d_z_vg (Spline, r[0], r[1], &val, &grad[0]);
 }
 
 
 void
-UBsplineClass_2d_z::evaluate (TinyVector<double,2> r, complex<double> &val,
-                              TinyVector<complex<double>,2> &grad,
-                              complex<double> &lapl)
+UBsplineClass_2d_z::evaluate (TinyVector<double,2> r, std::complex<double> &val,
+                              TinyVector<std::complex<double>,2> &grad,
+                              std::complex<double> &lapl)
 {
   eval_UBspline_2d_z_vgl (Spline, r[0], r[1], &val,
                           &grad[0], &lapl);
 }
 
 void
-UBsplineClass_2d_z::evaluate (TinyVector<double,2> r, complex<double> &val,
-                              TinyVector<complex<double>,2> &grad,
-                              Tensor<complex<double>,2> &hess)
+UBsplineClass_2d_z::evaluate (TinyVector<double,2> r, std::complex<double> &val,
+                              TinyVector<std::complex<double>,2> &grad,
+                              Tensor<std::complex<double>,2> &hess)
 {
   eval_UBspline_2d_z_vgh (Spline, r[0], r[1], &val, &grad[0],
                           &hess(0,0));
@@ -200,7 +200,7 @@ NUBsplineClass_2d_z::NUBsplineClass_2d_z(TinyVector<double,2> start,
     TinyVector<double,2> end,
     TinyVector<double,2> ratio,
     BCtype_z xBC, BCtype_z yBC,
-    Array<complex<double>,2> &data)
+    Array<std::complex<double>,2> &data)
   : Spline(NULL)
 {
   xGrid = create_center_grid (start[0], end[0], ratio[0], data.size(0));
@@ -211,31 +211,31 @@ NUBsplineClass_2d_z::NUBsplineClass_2d_z(TinyVector<double,2> start,
 complex<double>
 NUBsplineClass_2d_z::operator()(TinyVector<double,2> r)
 {
-  complex<double> val;
+  std::complex<double> val;
   eval_NUBspline_2d_z (Spline, r[0], r[1], &val);
   return val;
 }
 
 void
-NUBsplineClass_2d_z::evaluate (TinyVector<double,2> r, complex<double> &val,
-                               TinyVector<complex<double>,2> &grad)
+NUBsplineClass_2d_z::evaluate (TinyVector<double,2> r, std::complex<double> &val,
+                               TinyVector<std::complex<double>,2> &grad)
 {
   eval_NUBspline_2d_z_vg (Spline, r[0], r[1], &val, &grad[0]);
 }
 
 void
-NUBsplineClass_2d_z::evaluate (TinyVector<double,2> r, complex<double> &val,
-                               TinyVector<complex<double>,2> &grad,
-                               complex<double> &lapl)
+NUBsplineClass_2d_z::evaluate (TinyVector<double,2> r, std::complex<double> &val,
+                               TinyVector<std::complex<double>,2> &grad,
+                               std::complex<double> &lapl)
 {
   eval_NUBspline_2d_z_vgl (Spline, r[0], r[1], &val,
                            &grad[0], &lapl);
 }
 
 void
-NUBsplineClass_2d_z::evaluate (TinyVector<double,2> r, complex<double> &val,
-                               TinyVector<complex<double>,2> &grad,
-                               Tensor<complex<double>,2> &hess)
+NUBsplineClass_2d_z::evaluate (TinyVector<double,2> r, std::complex<double> &val,
+                               TinyVector<std::complex<double>,2> &grad,
+                               Tensor<std::complex<double>,2> &hess)
 {
   eval_NUBspline_2d_z_vgh (Spline, r[0], r[1], &val, &grad[0],
                            &hess(0,0));
@@ -316,7 +316,7 @@ UBsplineClass_3d_d::evaluate (TinyVector<double,3> r, double &val,
 UBsplineClass_3d_z::UBsplineClass_3d_z(TinyVector<double,3> start,
                                        TinyVector<double,3> end,
                                        BCtype_z xBC, BCtype_z yBC, BCtype_z zBC,
-                                       Array<complex<double>,3> &data) :
+                                       Array<std::complex<double>,3> &data) :
   Spline(NULL)
 {
   if (Spline != NULL)
@@ -337,7 +337,7 @@ UBsplineClass_3d_z::UBsplineClass_3d_z(TinyVector<double,3> start,
 complex<double>
 UBsplineClass_3d_z::operator()(TinyVector<double,3> r)
 {
-  complex<double> val;
+  std::complex<double> val;
   eval_UBspline_3d_z (Spline, r[0], r[1], r[2], &val);
   return val;
 }
@@ -345,26 +345,26 @@ UBsplineClass_3d_z::operator()(TinyVector<double,3> r)
 
 void
 UBsplineClass_3d_z::evaluate (TinyVector<double,3> r,
-                              complex<double> &val,
-                              TinyVector<complex<double>,3> &grad)
+                              std::complex<double> &val,
+                              TinyVector<std::complex<double>,3> &grad)
 {
   eval_UBspline_3d_z_vg (Spline, r[0], r[1], r[2], &val, &grad[0]);
 }
 
 
 void
-UBsplineClass_3d_z::evaluate (TinyVector<double,3> r, complex<double> &val,
-                              TinyVector<complex<double>,3> &grad,
-                              complex<double> &lapl)
+UBsplineClass_3d_z::evaluate (TinyVector<double,3> r, std::complex<double> &val,
+                              TinyVector<std::complex<double>,3> &grad,
+                              std::complex<double> &lapl)
 {
   eval_UBspline_3d_z_vgl (Spline, r[0], r[1], r[2], &val,
                           &grad[0], &lapl);
 }
 
 void
-UBsplineClass_3d_z::evaluate (TinyVector<double,3> r, complex<double> &val,
-                              TinyVector<complex<double>,3> &grad,
-                              Tensor<complex<double>,3> &hess)
+UBsplineClass_3d_z::evaluate (TinyVector<double,3> r, std::complex<double> &val,
+                              TinyVector<std::complex<double>,3> &grad,
+                              Tensor<std::complex<double>,3> &hess)
 {
   eval_UBspline_3d_z_vgh (Spline, r[0], r[1], r[2], &val, &grad[0],
                           &hess(0,0));
@@ -432,7 +432,7 @@ NUBsplineClass_3d_z::NUBsplineClass_3d_z(TinyVector<double,3> start,
     TinyVector<double,3> end,
     TinyVector<double,3> ratio,
     BCtype_z xBC, BCtype_z yBC, BCtype_z zBC,
-    Array<complex<double>,3> &data)
+    Array<std::complex<double>,3> &data)
 {
   xGrid = create_center_grid (start[0], end[0], ratio[0], data.size(0));
   yGrid = create_center_grid (start[1], end[1], ratio[1], data.size(1));
@@ -445,32 +445,32 @@ NUBsplineClass_3d_z::NUBsplineClass_3d_z(TinyVector<double,3> start,
 complex<double>
 NUBsplineClass_3d_z::operator()(TinyVector<double,3> r)
 {
-  complex<double> val;
+  std::complex<double> val;
   eval_NUBspline_3d_z (Spline, r[0], r[1], r[2], &val);
   return val;
 }
 
 void
-NUBsplineClass_3d_z::evaluate (TinyVector<double,3> r, complex<double> &val,
-                               TinyVector<complex<double>,3> &grad)
+NUBsplineClass_3d_z::evaluate (TinyVector<double,3> r, std::complex<double> &val,
+                               TinyVector<std::complex<double>,3> &grad)
 {
   eval_NUBspline_3d_z_vg (Spline, r[0], r[1], r[2], &val, &grad[0]);
 }
 
 
 void
-NUBsplineClass_3d_z::evaluate (TinyVector<double,3> r, complex<double> &val,
-                               TinyVector<complex<double>,3> &grad,
-                               complex<double> &lapl)
+NUBsplineClass_3d_z::evaluate (TinyVector<double,3> r, std::complex<double> &val,
+                               TinyVector<std::complex<double>,3> &grad,
+                               std::complex<double> &lapl)
 {
   eval_NUBspline_3d_z_vgl (Spline, r[0], r[1], r[2], &val,
                            &grad[0], &lapl);
 }
 
 void
-NUBsplineClass_3d_z::evaluate (TinyVector<double,3> r, complex<double> &val,
-                               TinyVector<complex<double>,3> &grad,
-                               Tensor<complex<double>,3> &hess)
+NUBsplineClass_3d_z::evaluate (TinyVector<double,3> r, std::complex<double> &val,
+                               TinyVector<std::complex<double>,3> &grad,
+                               Tensor<std::complex<double>,3> &hess)
 {
   eval_NUBspline_3d_z_vgh (Spline, r[0], r[1], r[2], &val, &grad[0],
                            &hess(0,0));

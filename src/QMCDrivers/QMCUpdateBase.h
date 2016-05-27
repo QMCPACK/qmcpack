@@ -185,22 +185,22 @@ public:
    * moves.
    */
   virtual void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure)=0;
-  virtual RealType advanceWalkerForEE(Walker_t& w1, vector<PosType>& dR, vector<int>& iats, vector<int>& rs, vector<RealType>& ratios)
+  virtual RealType advanceWalkerForEE(Walker_t& w1, std::vector<PosType>& dR, std::vector<int>& iats, std::vector<int>& rs, std::vector<RealType>& ratios)
   {
     return 0.0;
   };
-//       virtual RealType advanceWalkerForCSEE(Walker_t& w1, vector<PosType>& dR, vector<int>& iats, vector<int>& rs, vector<RealType>& ratios, vector<RealType>& weights, vector<RealType>& logs ) {return 0.0;};
+//       virtual RealType advanceWalkerForCSEE(Walker_t& w1, std::vector<PosType>& dR, std::vector<int>& iats, std::vector<int>& rs, std::vector<RealType>& ratios, std::vector<RealType>& weights, std::vector<RealType>& logs ) {return 0.0;};
   virtual void setLogEpsilon(RealType eps) {};
-//       virtual void advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng, vector<RealType>& c_i){};
+//       virtual void advanceCSWalkers(std::vector<TrialWaveFunction*>& pclone, std::vector<MCWalkerConfiguration*>& wclone, std::vector<QMCHamiltonian*>& hclone, std::vector<RandomGenerator_t*>& rng, std::vector<RealType>& c_i){};
 
   ///normalization offset for cs type runs.
   RealType csoffset;
 
-//       virtual void estimateNormWalkers(vector<TrialWaveFunction*>& pclone
-//     , vector<MCWalkerConfiguration*>& wclone
-//     , vector<QMCHamiltonian*>& hclone
-//     , vector<RandomGenerator_t*>& rng
-//     , vector<RealType>& ratio_i_0){};
+//       virtual void estimateNormWalkers(std::vector<TrialWaveFunction*>& pclone
+//     , std::vector<MCWalkerConfiguration*>& wclone
+//     , std::vector<QMCHamiltonian*>& hclone
+//     , std::vector<RandomGenerator_t*>& rng
+//     , std::vector<RealType>& ratio_i_0){};
   int RMC_checkIndex(int N, int NMax)
   {
     if(N<0)
@@ -265,11 +265,11 @@ protected:
   ///parameters
   ParameterSet myParams;
   ///1/Mass per species
-  vector<RealType> MassInvS;
+  std::vector<RealType> MassInvS;
   ///1/Mass per particle
-  vector<RealType> MassInvP;
+  std::vector<RealType> MassInvP;
   ///sqrt(tau/Mass) per particle
-  vector<RealType> SqrtTauOverMass;
+  std::vector<RealType> SqrtTauOverMass;
   ///non local operator
   NonLocalTOperator nonLocalOps;
   ///temporary storage for drift

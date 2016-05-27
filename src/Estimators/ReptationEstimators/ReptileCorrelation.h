@@ -37,12 +37,12 @@ struct ReptileCorrelationEstimator: public ReptileEstimator
       sumO=false;
     if (Npoints>Rsize)
     {
-      app_log()<<"ERROR! More points("<<Npoints<<") than beads("<<Rsize<<") in reptile"<<endl;
+      app_log()<<"ERROR! More points("<<Npoints<<") than beads("<<Rsize<<") in reptile"<< std::endl;
       exit(-1);
     }
     if ((Rsize-1) % Npoints !=0 )
     {
-      app_log()<<"ERROR!,Number of links(Reptile Length -1="<<Rsize-1<<") must be a multiple of intervals("<<Npoints<<") "<<endl;
+      app_log()<<"ERROR!,Number of links(Reptile Length -1="<<Rsize-1<<") must be a multiple of intervals("<<Npoints<<") "<< std::endl;
       exit(-1);
     }
     app_log()<<" Calculating Correlations at:";
@@ -76,17 +76,17 @@ struct ReptileCorrelationEstimator: public ReptileEstimator
         app_log()<<"  "<<pnt;
       }
     }
-    app_log()<<endl;
+    app_log()<< std::endl;
     for(int i=1; i<outputPoints.size(); i++)
     {
       outputStride.push_back( outputPoints[i]-outputPoints[i-1] );
     }
-//       app_log()<<"outputStride "<<outputStride.size()<<endl;
+//       app_log()<<"outputStride "<<outputStride.size()<< std::endl;
   }
 
   //     void put(xmlNodePtr cur, MCWalkerConfiguration& refWalker) {put(cur);}
 
-  void addNames(vector<string>& names)
+  void addNames(std::vector<std::string>& names)
   {
     for(int j=0; j<names.size(); j++)
     {
@@ -125,15 +125,15 @@ struct ReptileCorrelationEstimator: public ReptileEstimator
         }
     if ((headO==-10)||(bodyO==-10))
     {
-      app_log()<<  "ERROR! the hamiltonian elements do not exist. Choose from the following,"<<endl;
+      app_log()<<  "ERROR! the hamiltonian elements do not exist. Choose from the following,"<< std::endl;
       for(int j=0; j<names.size(); j++)
       {
         app_log()<<names[j]<<"  ";
       }
-      app_log()<<endl;
+      app_log()<< std::endl;
       exit(-1);
     }
-    app_log()<<"  Head Index, Body Index:"<<headO<<", "<<bodyO<<endl;
+    app_log()<<"  Head Index, Body Index:"<<headO<<", "<<bodyO<< std::endl;
     myIndex=names.size();
     std::stringstream sstr;
     sstr<<headObservable<<"_"<<Rsize;
@@ -158,7 +158,7 @@ struct ReptileCorrelationEstimator: public ReptileEstimator
   void evaluate(MultiChain::iterator first, MultiChain::iterator last, int ipsi)
   {
     MultiChain::iterator end(last), begin(first);
-    vector<RealType>::iterator Vit(Values.begin());
+    std::vector<RealType>::iterator Vit(Values.begin());
     RealType Ohead = (*first)->getPropertyBase(ipsi)[headO];
     (*Vit) = Ohead;
     Vit++;
@@ -170,7 +170,7 @@ struct ReptileCorrelationEstimator: public ReptileEstimator
     Vit++;
     *(Vit) = (*first)->getPropertyBase(ipsi)[bodyO];
     Vit++;
-    for(vector<int>::iterator strit(outputStride.begin()); strit!=outputStride.end() ; strit++,Vit+=2)
+    for(std::vector<int>::iterator strit(outputStride.begin()); strit!=outputStride.end() ; strit++,Vit+=2)
     {
       last-=(*strit);
       first+=(*strit);
@@ -191,11 +191,11 @@ struct ReptileCorrelationEstimator: public ReptileEstimator
   //
 
 private:
-  string headObservable,bodyObservable,sumObservable;
+  std::string headObservable,bodyObservable,sumObservable;
   int headO ,bodyO;
   bool sumO;
   int Npoints,Rsize,FirstHamiltonian;
-  vector<int> outputPoints,outputStride;
+  std::vector<int> outputPoints,outputStride;
 };
 }
 #endif

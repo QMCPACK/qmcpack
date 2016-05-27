@@ -30,7 +30,7 @@ WalkerReconfigurationMPI::WalkerReconfigurationMPI(Communicate* c):
   SwapMode=1;
   UnitZeta=Random();
   myComm->bcast(UnitZeta);
-  app_log() << "  First weight [0,1) for reconfiguration =" << UnitZeta << endl;
+  app_log() << "  First weight [0,1) for reconfiguration =" << UnitZeta << std::endl;
 }
 
 int
@@ -60,7 +60,7 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W)
 {
   //ostringstream o;
   //o << "check." << MyContext << ".dat";
-  //ofstream fout(o.str().c_str(),ios::app);
+  //ofstream fout(o.str().c_str(),std::ios::app);
   int nw=W.getActiveWalkers();
   if(TotalWalkers !=nw*NumContexts)
   {
@@ -118,7 +118,7 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W)
   int minIndex=static_cast<int>((wOffset[MyContext]/wtot-DeltaStep)*static_cast<RealType>(TotalWalkers))-1;
   int maxIndex=static_cast<int>((wOffset[MyContext+1]/wtot-DeltaStep)*static_cast<RealType>(TotalWalkers))+1;
   int nb=maxIndex-minIndex+1;
-  vector<RealType> Zeta(nb);
+  std::vector<RealType> Zeta(nb);
   for(int i=minIndex, ii=0; i<maxIndex; i++,ii++)
   {
     Zeta[ii]= wtot*(DeltaStep+static_cast<RealType>(i)*nwInv);
@@ -149,7 +149,7 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W)
   }
   //plus: a list of walkers to be duplicated
   //minus: a list of walkers to be removed
-  vector<int> plus, minus;
+  std::vector<int> plus, minus;
   for(iw=0; iw<nw; iw++)
   {
     int m=ncopy_w[iw];
@@ -202,10 +202,10 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W)
     sendWalkers(W,plus);
   if(minus.size())
     recvWalkers(W,minus);
-  //app_log() << "RECONFIGURATION  plus= " << dN[NumContexts+2] << " minus= " << dN[NumContexts+3] << endl;
+  //app_log() << "RECONFIGURATION  plus= " << dN[NumContexts+2] << " minus= " << dN[NumContexts+3] << std::endl;
   //app_log() << "RECONFIGURATION ";
   //for(int i=0; i<NumContexts; ++i) app_log() << dN[i] << " ";
-  //app_log() << endl;
+  //app_log() << std::endl;
   //record the number of walkers created/destroyed
   curData[RNONESIZE_INDEX]=dN[NumContexts+1];
   curData[FNSIZE_INDEX]=curData[WEIGHT_INDEX]-curData[RNONESIZE_INDEX];
@@ -215,9 +215,9 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W)
 }
 
 void WalkerReconfigurationMPI::sendWalkers(MCWalkerConfiguration& W,
-    const vector<IndexType>& plus)
+    const std::vector<IndexType>& plus)
 {
-  vector<int> minusN, plusN;
+  std::vector<int> minusN, plusN;
   for(int ip=0; ip<NumContexts; ip++)
   {
     if(dN[ip]>0)
@@ -232,7 +232,7 @@ void WalkerReconfigurationMPI::sendWalkers(MCWalkerConfiguration& W,
   }
   int wbuffer_size=W[0]->byteSize();
   int nswap=plusN.size();
-  int last = abs(dN[MyContext])-1;
+  int last = std::abs(dN[MyContext])-1;
   int ic=0;
   while(ic<nswap && last>=0)
   {
@@ -250,9 +250,9 @@ void WalkerReconfigurationMPI::sendWalkers(MCWalkerConfiguration& W,
 }
 
 void WalkerReconfigurationMPI::recvWalkers(MCWalkerConfiguration& W,
-    const vector<IndexType>& minus)
+    const std::vector<IndexType>& minus)
 {
-  vector<IndexType> minusN, plusN;
+  std::vector<IndexType> minusN, plusN;
   for(int ip=0; ip<NumContexts; ip++)
   {
     if(dN[ip]>0)
@@ -267,7 +267,7 @@ void WalkerReconfigurationMPI::recvWalkers(MCWalkerConfiguration& W,
   }
   int wbuffer_size=W[0]->byteSize();
   int nswap=plusN.size();
-  int last = abs(dN[MyContext])-1;
+  int last = std::abs(dN[MyContext])-1;
   int ic=0;
   while(ic<nswap && last>=0)
   {

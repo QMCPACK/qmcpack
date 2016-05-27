@@ -44,13 +44,13 @@ struct LocalECPotential: public QMCHamiltonianBase
   ///temporary energy per particle for pbyp move
   RealType PPtmp;
   ///unique set of local ECP to cleanup
-  vector<RadialPotentialType*> PPset;
+  std::vector<RadialPotentialType*> PPset;
   ///PP[iat] is the local potential for the iat-th particle
-  vector<RadialPotentialType*> PP;
+  std::vector<RadialPotentialType*> PP;
   ///effective charge per ion
-  vector<RealType> Zeff;
+  std::vector<RealType> Zeff;
   ///effective charge per species
-  vector<RealType> gZeff;
+  std::vector<RealType> gZeff;
   ///energy per particle
   Vector<RealType> PPart;
 #if !defined(REMOVE_TRACEMANAGER)
@@ -76,7 +76,7 @@ struct LocalECPotential: public QMCHamiltonianBase
 
   Return_t evaluate(ParticleSet& P);
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }

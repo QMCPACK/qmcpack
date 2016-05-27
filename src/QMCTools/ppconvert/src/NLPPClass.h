@@ -17,13 +17,13 @@ struct State
   double occ;
   State(int n_, int l_, double occ_) : n(n_), l(l_), occ(occ_)
   { }
-  State(string s);
+  State( std::string s);
 };
 
 class Config
 {
-  vector<State> States;
-  map<char,int> ChannelRevMap;
+  std::vector<State> States;
+  std::map<char,int> ChannelRevMap;
 public:
   inline const State& operator[](int i)
   { return States[i]; }
@@ -31,12 +31,11 @@ public:
   size_t size() { return States.size(); }
 
   Config() {}
-  Config (string s);
+  Config ( std::string s);
 };
 
 
 
-using namespace std;
 
 class ChannelPotentialClass
 {
@@ -66,29 +65,29 @@ class PseudoClass
   : Potential
 {
 private:
-  map<string,double> UnitToHartreeMap;
-  map<string,double> UnitToBohrMap;
-  map<XCType,string> XCMap;
-  map<string,XCType> XCRevMap;
-  map<int,string> ChannelMap;
-  map<string,int> ChannelRevMap;
-  map<int, string> ZToSymbolMap;
-  map<int, double> ZToMassMap;
-  map<string, int> SymbolToZMap;
+  std::map<std::string,double> UnitToHartreeMap;
+  std::map<std::string,double> UnitToBohrMap;
+  std::map<XCType,std::string> XCMap;
+  std::map<std::string,XCType> XCRevMap;
+  std::map<int,std::string> ChannelMap;
+  std::map<std::string,int> ChannelRevMap;
+  std::map<int, string> ZToSymbolMap;
+  std::map<int, double> ZToMassMap;
+  std::map<std::string, int> SymbolToZMap;
   void SetupMaps();
 
-  vector<ChannelPotentialClass> ChannelPotentials;
+  std::vector<ChannelPotentialClass> ChannelPotentials;
   CubSpline RhoAtom;
   int AtomicNumber;
   double PseudoCharge, TotalEnergy;
-  string EnergyUnit, LengthUnit;
+  std::string EnergyUnit, LengthUnit;
   int LocalChannel;
   // The grid is stored in bohr
   SimpleGrid PotentialGrid;
   bool Relativistic;
   XCType XC;
-  void Write4Block(FILE *fout, vector<double> &data, int indent=2);
-  bool GetNextState (string &state, int &n, int &l, double &occ);
+  void Write4Block(FILE *fout, std::vector<double> &data, int indent=2);
+  bool GetNextState ( std::string &state, int &n, int &l, double &occ);
   //
   const double grid_delta;
 public:
@@ -96,21 +95,21 @@ public:
 
   int GetNumChannels();
   bool HaveProjectors();
-  bool ReadBFD_PP (string fileName);
-  bool ReadCASINO_PP (string fileName);
-  bool ReadCASINO_WF (string fileName, int l);
-  bool ReadFHI_PP (string fileName);
-  bool ReadGAMESS_PP (string fileName);
-  bool ReadUPF_PP (string fileName);
-  void WriteXML (string fileName);
-  void WriteABINIT (string fileName="");
-  void WriteUPF (string fileName);
+  bool ReadBFD_PP ( std::string fileName);
+  bool ReadCASINO_PP ( std::string fileName);
+  bool ReadCASINO_WF ( std::string fileName, int l);
+  bool ReadFHI_PP ( std::string fileName);
+  bool ReadGAMESS_PP ( std::string fileName);
+  bool ReadUPF_PP ( std::string fileName);
+  void WriteXML ( std::string fileName);
+  void WriteABINIT ( std::string fileName="");
+  void WriteUPF ( std::string fileName);
   void WriteASCII();
-  void WriteFHI(string filename);
-  void WriteFPMD(string filename);
-  void WriteCASINO (string filename);
-  void WriteHDF5 (string filename);
-  void CalcProjector (string refstate, int lchannel);
+  void WriteFHI( std::string filename);
+  void WriteFPMD( std::string filename);
+  void WriteCASINO ( std::string filename);
+  void WriteHDF5 ( std::string filename);
+  void CalcProjector ( std::string refstate, int lchannel);
   double V     (double r);   double V     (int l, double r);
   double dVdr  (double r);   double dVdr  (int l, double r);
   double d2Vdr2(double r);   double d2Vdr2(int l, double r);

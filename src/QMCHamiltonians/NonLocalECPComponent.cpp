@@ -61,7 +61,7 @@ void NonLocalECPComponent::add(int l, RadialPotentialType* pp)
 
 void NonLocalECPComponent::resize_warrays(int n,int m,int l)
 {
-  app_log() << "  NonLocalECPComponent::resize_warrays " << endl;
+  app_log() << "  NonLocalECPComponent::resize_warrays " << std::endl;
   psiratio.resize(n);
   psigrad.resize(n);
   psigrad_source.resize(n);
@@ -91,14 +91,14 @@ void NonLocalECPComponent::resize_warrays(int n,int m,int l)
 
 void NonLocalECPComponent::print(std::ostream& os)
 {
-  os << "    Maximum angular mementum = "<<  lmax << endl;
-  os << "    Number of non-local channels = " << nchannel << endl;
+  os << "    Maximum angular mementum = "<<  lmax << std::endl;
+  os << "    Number of non-local channels = " << nchannel << std::endl;
   for(int l=0; l <nchannel; l++)
-    os << "       l(" << l << ")=" << angpp_m[l] <<endl;
-  os << "    Cutoff radius = " << Rmax << endl;
-  os << "    Spherical grids and weights: " << endl;
+    os << "       l(" << l << ")=" << angpp_m[l] << std::endl;
+  os << "    Cutoff radius = " << Rmax << std::endl;
+  os << "    Spherical grids and weights: " << std::endl;
   for(int ik=0; ik<nknot; ik++)
-    os << "       " << sgridxyz_m[ik] << setw(20) << sgridweight_m[ik] << endl;
+    os << "       " << sgridxyz_m[ik] << std::setw(20) << sgridweight_m[ik] << std::endl;
 }
 /** evaluate the non-local potential of the iat-th ionic center
  * @param W electron configuration
@@ -114,7 +114,7 @@ NonLocalECPComponent::evaluate(ParticleSet& W, int iat, TrialWaveFunction& psi)
 {
   RealType esum=0.0;
   RealType pairpot;
-  vector<PosType> deltarV(nknot);
+  std::vector<PosType> deltarV(nknot);
   DistanceTableData* myTable = W.DistTables[myTableIndex];
 
   for(int nn=myTable->M[iat],iel=0; nn<myTable->M[iat+1]; nn++,iel++)
@@ -176,7 +176,7 @@ NonLocalECPComponent::evaluate(ParticleSet& W, int iat, TrialWaveFunction& psi)
       pairpot = BLAS::dot(nchannel, &vrad[0], &wvec[0]);
     }
 #if !defined(REMOVE_TRACEMANAGER)
-    if(streaming_particles)
+    if( streaming_particles)
     {
       (*Vi_sample)(iat) += .5*pairpot;
       (*Ve_sample)(iel) += .5*pairpot;
@@ -291,7 +291,7 @@ NonLocalECPComponent::evaluate(ParticleSet& W, int iat,
       pairpot = BLAS::dot(nchannel, &vrad[0], &wvec[0]);
     }
 #if !defined(REMOVE_TRACEMANAGER)
-    if(streaming_particles)
+    if( streaming_particles)
     {
       (*Vi_sample)(iat) += .5*pairpot;
       (*Ve_sample)(iel) += .5*pairpot;
@@ -419,7 +419,7 @@ NonLocalECPComponent::evaluate(ParticleSet& W, ParticleSet &ions, int iat,
       pairpot = BLAS::dot(nchannel, &vrad[0], &wvec[0]);
     }
 #if !defined(REMOVE_TRACEMANAGER)
-    if(streaming_particles)
+    if( streaming_particles)
     {
       (*Vi_sample)(iat) += .5*pairpot;
       (*Ve_sample)(iel) += .5*pairpot;
@@ -593,11 +593,11 @@ NonLocalECPComponent::evaluate(ParticleSet& W, ParticleSet &ions, int iat,
 
 
 NonLocalECPComponent::RealType
-NonLocalECPComponent::evaluate(ParticleSet& W, TrialWaveFunction& psi,int iat, vector<NonLocalData>& Txy)
+NonLocalECPComponent::evaluate(ParticleSet& W, TrialWaveFunction& psi,int iat, std::vector<NonLocalData>& Txy)
 {
   DistanceTableData* myTable = W.DistTables[myTableIndex];
   RealType esum=0.0;
-  vector<PosType> deltaV(nknot);
+  std::vector<PosType> deltaV(nknot);
   for(int nn=myTable->M[iat],iel=0; nn<myTable->M[iat+1]; nn++,iel++)
   {
     register RealType r(myTable->r(nn));
@@ -650,7 +650,7 @@ NonLocalECPComponent::evaluate(ParticleSet& W, TrialWaveFunction& psi,int iat, v
     }
 
 #if !defined(REMOVE_TRACEMANAGER)
-    if(streaming_particles)
+    if( streaming_particles)
     {
       (*Vi_sample)(iat) += .5*pairpot;
       (*Ve_sample)(iel) += .5*pairpot;
@@ -665,7 +665,7 @@ NonLocalECPComponent::evaluate(ParticleSet& W, TrialWaveFunction& psi,int iat, v
 
 NonLocalECPComponent::RealType
 NonLocalECPComponent::evaluate(ParticleSet& W, TrialWaveFunction& psi,int iat,
-                               vector<NonLocalData>& Txy, PosType &force_iat)
+                               std::vector<NonLocalData>& Txy, PosType &force_iat)
 {
 #if defined(QMC_COMPLEX)
   return 0.0;
@@ -731,7 +731,7 @@ NonLocalECPComponent::evaluate(ParticleSet& W, TrialWaveFunction& psi,int iat,
         lsum += vrad[l]*lpol[ angpp_m[l] ];
       pairpot = Txy[txyCounter++].Weight *= lsum;
 #if !defined(REMOVE_TRACEMANAGER)
-      if(streaming_particles)
+      if( streaming_particles)
       {
         (*Vi_sample)(iat) += .5*pairpot;
         (*Ve_sample)(iel) += .5*pairpot;
@@ -787,17 +787,17 @@ void NonLocalECPComponent::randomize_grid(ParticleSet::ParticlePos_t& sphere, bo
       ++jt;
     }
     //copy the radomized grid to sphere
-    std::copy(rrotsgrid_m.begin(), rrotsgrid_m.end(), sphere.begin());
+    copy(rrotsgrid_m.begin(), rrotsgrid_m.end(), sphere.begin());
   }
   else
   {
     //copy sphere to the radomized grid
-    std::copy(sphere.begin(), sphere.end(), rrotsgrid_m.begin());
+    copy(sphere.begin(), sphere.end(), rrotsgrid_m.begin());
   }
 }
 
 template<typename T>
-void NonLocalECPComponent::randomize_grid(vector<T> &sphere)
+void NonLocalECPComponent::randomize_grid(std::vector<T> &sphere)
 {
   RealType phi(TWOPI*((*myRNG)())), psi(TWOPI*((*myRNG)())), cth(((*myRNG)())-0.5);
   RealType sph(std::sin(phi)),cph(std::cos(phi)),
@@ -822,8 +822,8 @@ void NonLocalECPComponent::randomize_grid(vector<T> &sphere)
       sphere[OHMMS_DIM*i+j] = rrotsgrid_m[i][j];
 }
 
-template void NonLocalECPComponent::randomize_grid(vector<float> &sphere);
-template void NonLocalECPComponent::randomize_grid(vector<double> &sphere);
+template void NonLocalECPComponent::randomize_grid(std::vector<float> &sphere);
+template void NonLocalECPComponent::randomize_grid(std::vector<double> &sphere);
 
 
 }

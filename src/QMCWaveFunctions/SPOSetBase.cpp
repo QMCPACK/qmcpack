@@ -97,7 +97,7 @@ bool SPOSetBase::put(xmlNodePtr cur)
 {
   //initialize the number of orbital by the basis set size
   int norb= BasisSetSize;
-  string debugc("no");
+  std::string debugc("no");
   OhmmsAttributeSet aAttrib;
   aAttrib.add(norb,"orbitals");
   aAttrib.add(norb,"size");
@@ -113,7 +113,7 @@ bool SPOSetBase::put(xmlNodePtr cur)
   cur = cur->xmlChildrenNode;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == "occupation")
     {
       occ_ptr=cur;
@@ -126,7 +126,7 @@ bool SPOSetBase::put(xmlNodePtr cur)
   }
   if(coeff_ptr == NULL)
   {
-    app_log() << "   Using Identity for the LCOrbitalSet " << endl;
+    app_log() << "   Using Identity for the LCOrbitalSet " << std::endl;
     return setIdentity(true);
   }
   bool success=putOccupation(occ_ptr);
@@ -137,8 +137,8 @@ bool SPOSetBase::put(xmlNodePtr cur)
   bool success2 = transformSPOSet();
   if(debugc=="yes")
   {
-    app_log() << "   Single-particle orbital coefficients dims=" << C.rows() << " x " << C.cols() << endl;
-    app_log() << C << endl;
+    app_log() << "   Single-particle orbital coefficients dims=" << C.rows() << " x " << C.cols() << std::endl;
+    app_log() << C << std::endl;
   }
   return success && success2;
 }
@@ -147,7 +147,7 @@ void SPOSetBase::checkObject()
 {
   if(!(OrbitalSetSize == C.rows() && BasisSetSize == C.cols()))
   {
-    app_error() << "   SPOSetBase::checkObject Linear coeffient for SPOSet is not consistent with the input." << endl;
+    app_error() << "   SPOSetBase::checkObject Linear coeffient for SPOSet is not consistent with the input." << std::endl;
     OHMMS::Controller->abort();
   }
 }
@@ -160,12 +160,12 @@ bool SPOSetBase::putOccupation(xmlNodePtr occ_ptr)
     APP_ABORT("SPOSetBase::putOccupation detected ZERO BasisSetSize");
     return false;
   }
-  Occ.resize(max(BasisSetSize,OrbitalSetSize));
+  Occ.resize(std::max(BasisSetSize,OrbitalSetSize));
   Occ=0.0;
   for(int i=0; i<OrbitalSetSize; i++)
     Occ[i]=1.0;
-  vector<int> occ_in;
-  string occ_mode("table");
+  std::vector<int> occ_in;
+  std::string occ_mode("table");
   if(occ_ptr == NULL)
   {
     occ_mode="ground";
@@ -212,15 +212,15 @@ bool SPOSetBase::putFromXML(xmlNodePtr coeff_ptr)
   if(norbs)
   {
     Identity=false;
-    vector<ValueType> Ctemp;
+    std::vector<ValueType> Ctemp;
     Ctemp.resize(norbs*BasisSetSize);
     setIdentity(Identity);
     putContent(Ctemp,coeff_ptr);
     int n=0,i=0;
-    vector<ValueType>::iterator cit(Ctemp.begin());
+    std::vector<ValueType>::iterator cit(Ctemp.begin());
     while(i<OrbitalSetSize)
     {
-      if(Occ[n]>numeric_limits<RealType>::epsilon())
+      if(Occ[n]>std::numeric_limits<RealType>::epsilon())
       {
         std::copy(cit,cit+BasisSetSize,C[i]);
         i++;
@@ -243,7 +243,7 @@ bool SPOSetBase::putFromH5(const char* fname, xmlNodePtr coeff_ptr)
 #if defined(HAVE_LIBHDF5)
   int norbs=OrbitalSetSize;
   int neigs=BasisSetSize;
-  string setname;
+  std::string setname;
   OhmmsAttributeSet aAttrib;
   aAttrib.add(setname,"dataset");
   aAttrib.add(neigs,"size");
@@ -275,10 +275,10 @@ bool SPOSetBase::putFromH5(const char* fname, xmlNodePtr coeff_ptr)
 }
 
 
-void SPOSetBase::basic_report(const string& pad)
+void SPOSetBase::basic_report(const std::string& pad)
 {
-  app_log()<<pad<<"size = "<<size()<<endl;
-  app_log()<<pad<<"state info:"<<endl;
+  app_log()<<pad<<"size = "<<size()<< std::endl;
+  app_log()<<pad<<"state info:"<< std::endl;
   //states.report(pad+"  ");
   app_log().flush();
 }
@@ -299,7 +299,7 @@ void SPOSetBase::evaluateForDeriv (const ParticleSet &P, int first, int last,
 }
 
 void SPOSetBase::copyParamsFromMatrix (const opt_variables_type& active,
-                                       const ValueMatrix_t &mat, vector<RealType> &destVec)
+                                       const ValueMatrix_t &mat, std::vector<RealType> &destVec)
 {
   APP_ABORT("Need specialization of SPOSetBase::copyParamsFromMatrix.");
 }
@@ -322,28 +322,28 @@ void SPOSetBase::evaluateGradSource (const ParticleSet &P, int first, int last,
 
 #ifdef QMC_CUDA
 
-void SPOSetBase::evaluate(const ParticleSet& P, const PosType& r, vector<RealType> &psi)
+void SPOSetBase::evaluate(const ParticleSet& P, const PosType& r, std::vector<RealType> &psi)
 {
   APP_ABORT("Not implemented.\n");
 }
 
 
-void SPOSetBase::evaluate (vector<Walker_t*> &walkers, int iat,
+void SPOSetBase::evaluate (std::vector<Walker_t*> &walkers, int iat,
                            gpu::device_vector<CudaValueType*> &phi)
 {
   app_error() << "Need specialization of vectorized evaluate in SPOSetBase.\n";
   abort();
 }
 
-void SPOSetBase::evaluate (vector<Walker_t*> &walkers, vector<PosType> &new_pos,
+void SPOSetBase::evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &new_pos,
                            gpu::device_vector<CudaValueType*> &phi)
 {
   app_error() << "Need specialization of vectorized evaluate in SPOSetBase.\n";
   abort();
 }
 
-void SPOSetBase::evaluate (vector<Walker_t*> &walkers,
-                           vector<PosType> &new_pos,
+void SPOSetBase::evaluate (std::vector<Walker_t*> &walkers,
+                           std::vector<PosType> &new_pos,
                            gpu::device_vector<CudaValueType*> &phi,
                            gpu::device_vector<CudaValueType*> &grad_lapl_list,
                            int row_stride)
@@ -352,14 +352,14 @@ void SPOSetBase::evaluate (vector<Walker_t*> &walkers,
   abort();
 }
 
-void SPOSetBase::evaluate (vector<PosType> &pos, gpu::device_vector<CudaRealType*> &phi)
+void SPOSetBase::evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaRealType*> &phi)
 {
   app_error() << "Need specialization of vectorized evaluate "
               << "in SPOSetBase.\n";
   abort();
 }
 
-void SPOSetBase::evaluate (vector<PosType> &pos, gpu::device_vector<CudaComplexType*> &phi)
+void SPOSetBase::evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaComplexType*> &phi)
 {
   app_error() << "Need specialization of vectorized evaluate "
               << "in SPOSetBase.\n";

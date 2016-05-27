@@ -93,11 +93,11 @@ bool NumericalRadialPotential::put(xmlNodePtr cur)
   radAttrib.add(ri,"ri");
   radAttrib.add(rf,"rf");
   //read xml elemet
-  vector<RealType> vr;
+  std::vector<RealType> vr;
   cur=cur->children;
   while(cur != NULL)
   {
-    string cname((const char*)cur->name);
+    std::string cname((const char*)cur->name);
     if(cname == "grid")
     {
       radAttrib.put(cur);
@@ -122,7 +122,7 @@ bool NumericalRadialPotential::put(xmlNodePtr cur)
 
 bool NumericalRadialPotential::get(std::ostream& os) const
 {
-  os << "NumericalRadial potential: " << endl;
+  os << "NumericalRadial potential: " << std::endl;
   return true;
 }
 

@@ -6,7 +6,6 @@
 #include <map>
 #include <cmath>
 
-using namespace std;
 
 CasinoParser::CasinoParser()
 {
@@ -25,7 +24,7 @@ void CasinoParser::parse(const std::string& fname)
 {
   if(multideterminant)
   {
-    cerr<<"Multideterminant parser for Casino is not implemented. \n";
+    std::cerr <<"Multideterminant parser for Casino is not implemented. \n";
     exit(301);
   }
   std::ifstream fin(fname.c_str());
@@ -75,7 +74,7 @@ void CasinoParser::parse(const std::string& fname)
   //search(fin, "MULTIDETERMINANT");
   EigVal_alpha.resize(SizeOfBasisSet);
   EigVal_beta.resize(SizeOfBasisSet);
-  vector<value_type> etemp;
+  std::vector<value_type> etemp;
 // morales: setting numMO to SizeOfBasisSet, for now
   numMO = SizeOfBasisSet;
   //////////////
@@ -101,14 +100,14 @@ void CasinoParser::parse(const std::string& fname)
     LOGMSG("Looking for EIGENVALUES ")
     skiplines(fin,2);
     getValues(fin,etemp.begin(), etemp.end());
-    std::copy(etemp.begin(), etemp.begin()+SizeOfBasisSet, EigVal_alpha.begin());
+    copy(etemp.begin(), etemp.begin()+SizeOfBasisSet, EigVal_alpha.begin());
     if(SpinRestricted)
     {
       EigVal_beta = EigVal_alpha;
     }
     else
     {
-      std::copy(etemp.begin()+SizeOfBasisSet, etemp.end(), EigVal_beta.begin());
+      copy(etemp.begin()+SizeOfBasisSet, etemp.end(), EigVal_beta.begin());
     }
   }
   else
@@ -136,7 +135,7 @@ void CasinoParser::getGeometry(std::istream& is)
   getValues(is,Qv.begin(),Qv.end());
   if(Periodicity)
   {
-    vector<double> lat(9);
+    std::vector<double> lat(9);
     search(is,"Primitive lattice");
     getValues(is,lat.begin(),lat.end());
     int ij=0;
@@ -144,8 +143,8 @@ void CasinoParser::getGeometry(std::istream& is)
       for(int j=0; j<3; j++,ij++)
         IonSystem.Lattice.R(i,j)=lat[ij];
     IonSystem.Lattice.reset();
-    cout << "Lattice vectors " << endl;
-    IonSystem.Lattice.print(cout);
+    std::cout << "Lattice vectors " << std::endl;
+    IonSystem.Lattice.print(std::cout);
   }
 }
 
@@ -171,7 +170,7 @@ void CasinoParser::getValenceCharges(std::istream& is)
 void CasinoParser::getGaussianCenters(std::istream& is)
 {
   int n=0;
-  streampos pivot= is.tellg();
+  std::streampos pivot= is.tellg();
   search(is, "Number of shells");
   getValue(is,n);
   gShell.resize(n);
@@ -192,7 +191,7 @@ void CasinoParser::getGaussianCenters(std::istream& is)
   search(is, "Code for shell types");
   getValues(is,gShell.begin(), gShell.end());
   LOGMSG("Checking shell types")
-  std::copy(gShell.begin(), gShell.end(),ostream_iterator<int>(cout, " "));
+  copy(gShell.begin(), gShell.end(),std::ostream_iterator<int>(std::cout, " "));
   std::cout << std::endl;
   //becomes true, if there is sp shell
   bool SPshell(false);

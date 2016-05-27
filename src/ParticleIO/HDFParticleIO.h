@@ -70,7 +70,7 @@ public:
 private:
 
   Particle_t& ref_;
-  string FileRoot;
+  std::string FileRoot;
 
 };
 }

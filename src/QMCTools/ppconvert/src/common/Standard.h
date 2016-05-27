@@ -29,7 +29,6 @@
 #include <fstream>
 #include <sstream>
 #include <string>
-using namespace std;
 
 // Define RANGE_CHECKING for testing
 // #define RANGE_CHECKING
@@ -38,13 +37,13 @@ using namespace std;
 
 string IntToString(const int i);
 string DoubleToString(const double d);
-int StringToInt(const string & s);
-double StringToDouble(const string & s);
-string UpperCase(const string & s);
-string LowerCase(const string & s);
+int StringToInt(const std::string & s);
+double StringToDouble(const std::string & s);
+string UpperCase(const std::string & s);
+string LowerCase(const std::string & s);
 
 #ifdef __PGI // PG compiler bug
-inline bool getline(istream & is, string & s) {
+inline bool getline( std::istream & is, std::string & s) {
   s="";
   char c;
   while(is.get(c)) {
@@ -53,7 +52,7 @@ inline bool getline(istream & is, string & s) {
   }
   return false;
 }
-inline bool getline(ifstream & is, string & s) {
+inline bool getline(ifstream & is, std::string & s) {
   s="";
   char c;
   while(is.get(c)) {
@@ -64,10 +63,10 @@ inline bool getline(ifstream & is, string & s) {
 }
 #endif
 
-////////// redefine cout to write to a file //////////////
+////////// redefine std::cout to write to a file //////////////
 // #ifndef NO_COUT
-// #define cout COUT
-// extern ofstream COUT;
+// #define std::cout COUT
+// extern std::ofstream COUT;
 // #endif // NO_COUT
 
 ////////////////////////////////////////////////
@@ -83,7 +82,7 @@ const double pi=3.14159265358979323846;
 /* #ifndef __rs6000__  */
 /* #ifndef __osf__  */
 #if !defined __GNUC__ || (__GNUC__ == 2 || (__GNUC__ == 3 && __GNUC_MINOR__ < 1))
-//inline double abs(double x) {  
+//inline double std::abs(double x) {  
 //   return fabs(x);  
 //} 
 #endif
@@ -104,19 +103,19 @@ inline double nint(const double x) {
   return int(x+0.5*sign(x));
 }
 
-inline double min(double x, double y) {
+inline double std::min(double x, double y) {
   return (x<=y) ? x : y;
 }
 
-inline int min(int x, int y) {
+inline int std::min(int x, int y) {
   return (x<=y) ? x : y;
 }
 
-inline double max(double x, double y) {
+inline double std::max(double x, double y) {
   return (x>=y) ? x : y;
 }
 
-inline int max(int x, int y) {
+inline int std::max(int x, int y) {
   return (x>=y) ? x : y;
 }
 
@@ -142,151 +141,151 @@ inline int sqr(int x) {
 #define write9(i,j,k,l,m,n,o,p,q)    {write8(i,j,k,l,m,n,o,p); write1(q); }
 #define write10(i,j,k,l,m,n,o,p,q,r) {write9(i,j,k,l,m,n,o,p,q); write1(r); }
 
-#define BMWrite(i)                     {write1(i); cout << endl;}
-#define BMWrite2(i,j)                  {write2(i,j); cout << endl;}
-#define BMWrite3(i,j,k)                {write3(i,j,k); cout << endl;}
-#define BMWrite4(i,j,k,l)              {write4(i,j,k,l); cout << endl;}
-#define BMWrite5(i,j,k,l,m)            {write5(i,j,k,l,m); cout << endl;}
-#define BMWrite6(i,j,k,l,m,n)          {write6(i,j,k,l,m,n); cout << endl;}
-#define BMWrite7(i,j,k,l,m,n,o)        {write7(i,j,k,l,m,n,o); cout << endl;}
-#define BMWrite8(i,j,k,l,m,n,o,p)      {write8(i,j,k,l,m,n,o,p); cout << endl;}
-#define BMWrite9(i,j,k,l,m,n,o,p,q)    {write9(i,j,k,l,m,n,o,p,q); cout << endl;}
-#define BMWrite10(i,j,k,l,m,n,o,p,q,r) {write10(i,j,k,l,m,n,o,p,q,r); cout << endl;}
+#define BMWrite(i)                     {write1(i); std::cout << std::endl;}
+#define BMWrite2(i,j)                  {write2(i,j); std::cout << std::endl;}
+#define BMWrite3(i,j,k)                {write3(i,j,k); std::cout << std::endl;}
+#define BMWrite4(i,j,k,l)              {write4(i,j,k,l); std::cout << std::endl;}
+#define BMWrite5(i,j,k,l,m)            {write5(i,j,k,l,m); std::cout << std::endl;}
+#define BMWrite6(i,j,k,l,m,n)          {write6(i,j,k,l,m,n); std::cout << std::endl;}
+#define BMWrite7(i,j,k,l,m,n,o)        {write7(i,j,k,l,m,n,o); std::cout << std::endl;}
+#define BMWrite8(i,j,k,l,m,n,o,p)      {write8(i,j,k,l,m,n,o,p); std::cout << std::endl;}
+#define BMWrite9(i,j,k,l,m,n,o,p,q)    {write9(i,j,k,l,m,n,o,p,q); std::cout << std::endl;}
+#define BMWrite10(i,j,k,l,m,n,o,p,q,r) {write10(i,j,k,l,m,n,o,p,q,r); std::cout << std::endl;}
 
 void Terminate();
 
 inline void WriteError(ostringstream & ss) {
-  const string errorString = "Error   ";  
+  const std::string errorString = "Error   ";  
   //  ss << ends;
-  // cout is redirect into a file which might not yet be opened
-  if (cout) { 
-    cout.precision(16);
-    cout << errorString << ss.str() << endl;
+  // std::cout is redirect into a file which might not yet be opened
+  if (std::cout) { 
+    std::cout.precision(16);
+    std::cout << errorString << ss.str() << std::endl;
   }
   cerr.precision(16);
-  cerr << errorString << ss.str() << endl;
+  std::cerr << errorString << ss.str() << std::endl;
   Terminate();
 }
 
 inline void error(char* m){
-  ostringstream ss;
+  std::ostringstream ss;
   ss << m;
   WriteError(ss);
 }
 
 template<class T> inline 
 void error(char* m, const T& n){
-  ostringstream ss;
+  std::ostringstream ss;
   ss << m << " " << n;
   WriteError(ss);
 }
 
 template<class T, class U> inline
 void error(char* m, const T& t, const U& u){
-  ostringstream ss;
+  std::ostringstream ss;
   ss << m << " " << t << " " << u;
   WriteError(ss);
 }
 
 template<class T, class U, class V> inline
 void error(char* m, const T& t, const U& u, const V& v){
-  ostringstream ss;
+  std::ostringstream ss;
   ss << m << " " << t << " " << u << " " << v;
   WriteError(ss);
 }
 
 template<class T, class U, class V, class W> inline
 void error(char* m, const T& t, const U& u, const V& v, const W& w){
-  ostringstream ss;
+  std::ostringstream ss;
   ss << m << " " << t << " " << u << " " << v << " " << w;
   WriteError(ss);
 }
 
 template<class T, class U, class V, class W, class X> inline
 void error(char* m, const T& t, const U& u, const V& v, const W& w, const X& x){
-  ostringstream ss;
+  std::ostringstream ss;
   ss << m << " " << t << " " << u << " " << v << " " << w << " " << x;
   WriteError(ss);
 }
 
 template<class T, class U, class V, class W, class X, class Y> inline
 void error(char* m, const T& t, const U& u, const V& v, const W& w, const X& x, const Y& y){
-  ostringstream ss;
+  std::ostringstream ss;
   ss << m << " " << t << " " << u << " " << v << " " << w << " " << x << " " << y;
   WriteError(ss);
 }
 
 template<class T, class U, class V, class W, class X, class Y, class Z> inline
 void error(char* m, const T& t, const U& u, const V& v, const W& w, const X& x, const Y& y, const Z& z){
-  ostringstream ss;
+  std::ostringstream ss;
   ss << m << " " << t << " " << u << " " << v << " " << w << " " << x << " " << y << " " << z;
   WriteError(ss);
 }
 
 inline void WriteWarning(ostringstream & ss) {
-  const string warningString = "WARNING   ";  
+  const std::string warningString = "WARNING   ";  
   //  ss << ends;
-  cout << warningString << ss.str() << endl;
-  //  cerr << warningString << ss.str() << endl;
+  std::cout << warningString << ss.str() << std::endl;
+  //  std::cerr << warningString << ss.str() << std::endl;
 }
 
 inline void warning() {
-  ostringstream ss;
+  std::ostringstream ss;
   ss << "...";
   WriteWarning(ss);
 }
 
 inline void warning(char* m){
-  ostringstream ss;
+  std::ostringstream ss;
   ss << m;
   WriteWarning(ss);
 }
 
 template<class T> inline 
 void warning(const char* m, const T& t){
-  ostringstream ss;
+  std::ostringstream ss;
   ss << m << " " << t;
   WriteWarning(ss);
 }
 
 template<class T, class U> inline
 void warning(const char* m, const T& t, const U& u){
-  ostringstream ss;
+  std::ostringstream ss;
   ss << m << " " << t << " " << u;
   WriteWarning(ss);
 }
 
 template<class T, class U, class V> inline
 void warning(const char* m, const T& t, const U& u, const V& v){
-  ostringstream ss;
+  std::ostringstream ss;
   ss << m << " " << t << " " << u << " " << v;
   WriteWarning(ss);
 }
 
 template<class T, class U, class V, class W> inline
 void warning(const char* m, const T& t, const U& u, const V& v, const W& w){
-  ostringstream ss;
+  std::ostringstream ss;
   ss << m << " " << t << " " << u << " " << v << " " << w;
   WriteWarning(ss);
 }
 
 template<class T, class U, class V, class W, class X> inline
 void warning(const char* m, const T& t, const U& u, const V& v, const W& w, const X& x){
-  ostringstream ss;
+  std::ostringstream ss;
   ss << m << " " << t << " " << u << " " << v << " " << w << " " << x;
   WriteWarning(ss);
 }
 
 template<class T, class U, class V, class W, class X, class Y> inline
 void warning(const char* m, const T& t, const U& u, const V& v, const W& w, const X& x, const Y& y){
-  ostringstream ss;
+  std::ostringstream ss;
   ss << m << " " << t << " " << u << " " << v << " " << w << " " << x << " " << y;
   WriteWarning(ss);
 }
 
 template<class T, class U, class V, class W, class X, class Y, class Z> inline
 void warning(const char* m, const T& t, const U& u, const V& v, const W& w, const X& x, const Y& y, const Z& z){
-  ostringstream ss;
+  std::ostringstream ss;
   ss << m << " " << t << " " << u << " " << v << " " << w << " " << x << " " << y << " " << z;
   WriteWarning(ss);
 }
@@ -299,7 +298,7 @@ inline void Limits(const int n, const int max) {
 #ifdef RANGE_CHECKING
   if ((n<0) || (n>=max)) {
     error("Array Index out of range ",n,max);
-    cerr << "Array error: Index out of range:  0<= " 
+    std::cerr << "Array error: Index out of range:  0<= " 
 	 << n << " < " << max << "\n" ;
     Terminate();
   }
@@ -312,7 +311,7 @@ inline void LimitsInclusive(const int n, const int max) {
 #ifdef RANGE_CHECKING
   if ((n<0) || (n>max)) {
     //    error("Array Error: Index out of range ",n,max);
-    cerr << "Array error: Upper limit for index out of range:  0<= " 
+    std::cerr << "Array error: Upper limit for index out of range:  0<= " 
 	 << n << " <= " << max << "\n" ;
     Terminate();
   }
@@ -322,8 +321,8 @@ inline void LimitsInclusive(const int n, const int max) {
 inline void EqualLimits(const int max1, const int max2) {
 #ifdef RANGE_CHECKING
   if (max1!=max2) {
-    cerr << "Array copy error: array sizes not equal:" 
-	 << max1 << "," << max2 << endl;
+    std::cerr << "Array copy error: array sizes not equal:" 
+	 << max1 << "," << max2 << std::endl;
     Terminate();
   }
 #endif // RANGE_CHECKING
@@ -332,8 +331,8 @@ inline void EqualLimits(const int max1, const int max2) {
 inline void BiggerLimit(const int lower, const int upper) {
 #ifdef RANGE_CHECKING
   if (lower>=upper) {
-    cerr << "Sub-array limits error: lower limit not lower " 
-	 << lower << "," << upper << endl;
+    std::cerr << "Sub-array limits error: lower limit not lower " 
+	 << lower << "," << upper << std::endl;
     Terminate();
   }
 #endif // RANGE_CHECKING

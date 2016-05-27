@@ -48,13 +48,13 @@ private:
   ///turn on/off drift for moves
   bool useDrift;
   ///option
-  string useDriftOpt;
+  std::string useDriftOpt;
   typedef ParticleSet::ParticleGradient_t ParticleGradient_t;
   typedef ParticleSet::ParticleLaplacian_t ParticleLaplacian_t;
   ParticleGradient_t dG;
-  vector<ParticleGradient_t*> G;
-  vector<ParticleLaplacian_t*> dL;
-  vector<RealType> ratio, ratioij, logpsi2, UmbrellaWeight,sumratio,invsumratio;
+  std::vector<ParticleGradient_t*> G;
+  std::vector<ParticleLaplacian_t*> dL;
+  std::vector<RealType> ratio, ratioij, logpsi2, UmbrellaWeight,sumratio,invsumratio;
   MultipleEnergyEstimator *multiEstimator;
   ///resize the containers
   void resize(int ncopy, int nptcls);

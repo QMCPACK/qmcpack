@@ -66,7 +66,7 @@ DiracDeterminantTruncation::DiracDeterminantTruncation(const DiracDeterminantTru
 }
 
 void
-DiracDeterminantTruncation::ChooseNearbyParticles(int ptcl,list<int> &closePtcls)
+DiracDeterminantTruncation::ChooseNearbyParticles(int ptcl,std::list<int> &closePtcls)
 {
   closePtcls.clear();
   closePtcls.push_back(ptcl);
@@ -111,14 +111,14 @@ void DiracDeterminantTruncation::resize(int nel, int morb)
 }
 
 
-//   void DiracDeterminantTruncation::SparseToCSR(vector<int> &Arp, vector<int> &Ari,vector<double> &Arx)
+//   void DiracDeterminantTruncation::SparseToCSR(std::vector<int> &Arp, std::vector<int> &Ari,std::vector<double> &Arx)
 //   {
 //     int systemSize=LastIndex-FirstIndex;
 //     int nnz_index=0;
 //     Arp.push_back(0);
-//     cerr<<"Particle list size is "<<particleLists.size()<<endl;
+//     std::cerr <<"Particle list size is "<<particleLists.size()<< std::endl;
 //     for (int ptcl=0;ptcl<particleLists.size();ptcl++){
-//       for (list<pair<int,double> >::iterator orb=particleLists[ptcl].begin();orb!=particleLists[ptcl].end();orb++){
+//       for (list<std::pair<int,double> >::iterator orb=particleLists[ptcl].begin();orb!=particleLists[ptcl].end();orb++){
 // 	pair<int,double> myPair=*orb;
 // 	int orbitalIndex=myPair.first;
 // 	double value=myPair.second;
@@ -130,7 +130,7 @@ void DiracDeterminantTruncation::resize(int nel, int morb)
 //       //      }
 //       Arp.push_back(nnz_index);
 //     }
-//     cerr<<"Ari size is "<<Ari.size()<<endl;
+//     std::cerr <<"Ari size is "<<Ari.size()<< std::endl;
 
 //   }
 
@@ -148,11 +148,11 @@ void DiracDeterminantTruncation::UpdatePsiM2(ValueVector_t &vec,int ptcl)
 
 DiracDeterminantBase::ValueType DiracDeterminantTruncation::ratio(ParticleSet& P, int iat)
 {
-  //    cerr<<"Using local ratio "<<TestMe()<<endl;
+  //    std::cerr <<"Using local ratio "<<TestMe()<< std::endl;
   UpdateMode=ORB_PBYP_RATIO;
   WorkingIndex = iat-FirstIndex;
   assert(FirstIndex==0);
-  list<int> nearbyPtcls;
+  std::list<int> nearbyPtcls;
   ChooseNearbyParticles(iat,nearbyPtcls);
   int num_nearbyPtcls=nearbyPtcls.size();
   ValueMatrix_t psiM2_small_old(num_nearbyPtcls,num_nearbyPtcls);
@@ -165,7 +165,7 @@ DiracDeterminantBase::ValueType DiracDeterminantTruncation::ratio(ParticleSet& P
     for (list<int>::iterator  jIter=nearbyPtcls.begin(); jIter!=nearbyPtcls.end(); jIter++)
     {
       j++;
-      //	cerr<<i<<" "<<j<<" "<<*iIter<<" "<<*jIter<<" "<<psiM2_small_old.extent(0)<<endl;
+      //	std::cerr <<i<<" "<<j<<" "<<*iIter<<" "<<*jIter<<" "<<psiM2_small_old.extent(0)<< std::endl;
       assert(i<psiM2_small_old.extent(0));
       assert(j<psiM2_small_old.extent(1));
       psiM2_small_old(i,j)=psiM2(*iIter,*jIter);
@@ -187,31 +187,31 @@ DiracDeterminantBase::ValueType DiracDeterminantTruncation::ratio(ParticleSet& P
     }
   }
   int sign;
-  //    cerr<<"Size "<<nearbyPtcls.size()<<endl;
+  //    std::cerr <<"Size "<<nearbyPtcls.size()<< std::endl;
   ValueType new_det=invert_matrix_log(psiM2_small_new,sign,true);
   ValueType old_det=invert_matrix_log(psiM2_small_old,sign,true);
   //    ValueType test_det=invert_matrix_log(psiM_actual,sign,true);
   //    invert_matrix_log(psiM_actual,sign,true);
-  //    cerr<<"Preparing stuff "<<nearbyPtcls.size()<<" "<<new_det<<" "<<old_det<<" "<<test_det<<endl;
-  //    vector<int> Arp; vector<int> Ari; vector<double> Arx;
+  //    std::cerr <<"Preparing stuff "<<nearbyPtcls.size()<<" "<<new_det<<" "<<old_det<<" "<<test_det<< std::endl;
+  //    std::vector<int> Arp; std::vector<int> Ari; std::vector<double> Arx;
   //    SparseToCSR(Arp,Ari,Arx);
-  //    vector<int> Arp2(Arp.size()); vector<int> Ari2(Ari.size()); vector<double> Arx2(Arx.size());
+  //    std::vector<int> Arp2(Arp.size()); std::vector<int> Ari2(Ari.size()); std::vector<double> Arx2(Arx.size());
   //    Arp2=Arp; Ari2=Ari; Arx2=Arx;
   //    int particleMoved=iat;
   //    int systemSize=LastIndex-FirstIndex;
   //    int nnzUpdatedPassed=Ari.size();
-  //    vector<double> uPassed(psiV.size());
+  //    std::vector<double> uPassed(psiV.size());
   //    double detRatio_ILU=0;
   //    for (int i=0;i<uPassed.size();i++)
   //      uPassed[i]=psiV[i];
-  //    cerr<<"Calling stuff"<<systemSize<<" "<<Arp.size()<<endl;
+  //    std::cerr <<"Calling stuff"<<systemSize<<" "<<Arp.size()<< std::endl;
   //    assert(systemSize+1==Arp.size());
   //    assert(Ari.size()<=nnzUpdatedPassed);
-  //    cerr<<"Entering"<<endl;
+  //    std::cerr <<"Entering"<< std::endl;
   //    calcDeterminantILUGMRES(&particleMoved, &systemSize, &nnzUpdatedPassed, uPassed.data(), Arp.data(), Ari.data(), Arx.data(), Arp2.data(), Ari2.data(), Arx2.data(), &detRatio_ILU);
   //    int *Arp_ptr; int *Ari_ptr; double *Arx_ptr;
   //    DenseToCSR(psiM_actual,Arp_ptr,Ari_ptr,Arx_ptr);
-  //    cerr<<"The size of my particle list is "<<particleLists[iat].size()<<" "<<cutoff<<endl;
+  //    std::cerr <<"The size of my particle list is "<<particleLists[iat].size()<<" "<<cutoff<< std::endl;
   oldPtcl.clear();
   assert(iat<particleLists.size());
   particleLists[iat].swap(oldPtcl);
@@ -227,11 +227,11 @@ DiracDeterminantBase::ValueType DiracDeterminantTruncation::ratio(ParticleSet& P
   return curRatio;
 #ifdef DIRAC_USE_BLAS
   curRatio = BLAS::dot(NumOrbitals,psiM[iat-FirstIndex],&psiV[0]);
-  //    cerr<<"RATIOS: "<<curRatio<<" "<<std::exp((new_det-old_det)/2)<<endl;
+  //    std::cerr <<"RATIOS: "<<curRatio<<" "<<std::exp((new_det-old_det)/2)<< std::endl;
   return curRatio;
 #else
   curRatio = DetRatio(psiM, psiV.begin(),iat-FirstIndex);
-  //    cerr<<"RATIOS: "<<curRatio<<" "<<std::exp((new_det-old_det)/2)<<endl;
+  //    std::cerr <<"RATIOS: "<<curRatio<<" "<<std::exp((new_det-old_det)/2)<< std::endl;
   return curRatio;
 #endif
 }
@@ -242,7 +242,7 @@ DiracDeterminantBase::ValueType DiracDeterminantTruncation::ratio(ParticleSet& P
     ParticleSet::ParticleGradient_t& dG,
     ParticleSet::ParticleLaplacian_t& dL)
 {
-  //    cerr<<"doing large update"<<endl;
+  //    std::cerr <<"doing large update"<< std::endl;
   UpdateMode=ORB_PBYP_ALL;
   Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
   WorkingIndex = iat-FirstIndex;
@@ -251,7 +251,7 @@ DiracDeterminantBase::ValueType DiracDeterminantTruncation::ratio(ParticleSet& P
 #else
   curRatio= DetRatio(psiM_temp, psiV.begin(),WorkingIndex);
 #endif
-  if(abs(curRatio)<numeric_limits<RealType>::epsilon())
+  if(abs(curRatio)<std::numeric_limits<RealType>::epsilon())
   {
     UpdateMode=ORB_PBYP_RATIO; //singularity! do not update inverse
     return 0.0;
@@ -308,16 +308,16 @@ void DiracDeterminantTruncation::acceptMove(ParticleSet& P, int iat)
   switch(UpdateMode)
   {
   case ORB_PBYP_RATIO:
-    std::copy(psiV.begin(),psiV.end(),psiM_actual[WorkingIndex]);
+    copy(psiV.begin(),psiV.end(),psiM_actual[WorkingIndex]);
     //	DetUpdate(psiM,psiV,workV1,workV2,WorkingIndex,curRatio);
     psiM2=temp_psiM2;
     break;
   case ORB_PBYP_PARTIAL:
     assert(2==3);
-    std::copy(psiV.begin(),psiV.end(),psiM_actual[WorkingIndex]);
+    copy(psiV.begin(),psiV.end(),psiM_actual[WorkingIndex]);
     DetUpdate(psiM,psiV,workV1,workV2,WorkingIndex,curRatio);
-    std::copy(dpsiV.begin(),dpsiV.end(),dpsiM[WorkingIndex]);
-    std::copy(d2psiV.begin(),d2psiV.end(),d2psiM[WorkingIndex]);
+    copy(dpsiV.begin(),dpsiV.end(),dpsiM[WorkingIndex]);
+    copy(d2psiV.begin(),d2psiV.end(),d2psiM[WorkingIndex]);
     psiM2=temp_psiM2;
     //////////////////////////////////////
     ////THIS WILL BE REMOVED. ONLY FOR DEBUG DUE TO WAVEFUNCTIONTEST
@@ -330,9 +330,9 @@ void DiracDeterminantTruncation::acceptMove(ParticleSet& P, int iat)
     myG = myG_temp;
     myL = myL_temp;
     psiM = psiM_temp;
-    std::copy(psiV.begin(),psiV.end(),psiM_actual[WorkingIndex]);
-    std::copy(dpsiV.begin(),dpsiV.end(),dpsiM[WorkingIndex]);
-    std::copy(d2psiV.begin(),d2psiV.end(),d2psiM[WorkingIndex]);
+    copy(psiV.begin(),psiV.end(),psiM_actual[WorkingIndex]);
+    copy(dpsiV.begin(),dpsiV.end(),dpsiM[WorkingIndex]);
+    copy(d2psiV.begin(),d2psiV.end(),d2psiM[WorkingIndex]);
     psiM2=temp_psiM2;
     break;
   }
@@ -366,7 +366,7 @@ DiracDeterminantTruncation::evaluateLog(ParticleSet& P,
     {
       if (abs(psiM(orbital,ptcl))>=cutoff)
       {
-        pair<int,double> temp(orbital,psiM(orbital,ptcl));
+        std::pair<int,double> temp(orbital,psiM(orbital,ptcl));
         particleLists[ptcl].push_back(temp);
       }
     }
@@ -394,7 +394,7 @@ DiracDeterminantTruncation::evaluateLog(ParticleSet& P,
     ValueType old_det=invert_matrix_log(temp_psiM2,sign,true);
     ValueType test_det=invert_matrix_log(psiM_actual,sign,true);
     invert_matrix_log(psiM_actual,sign,true);
-    //	cerr<<"init stuff "<<" "<<new_det<<" "<<old_det<<" "<<test_det<<endl;
+    //	std::cerr <<"init stuff "<<" "<<new_det<<" "<<old_det<<" "<<test_det<< std::endl;
     const ValueType* restrict yptr=psiM.data();
     const ValueType* restrict d2yptr=d2psiM.data();
     const GradType* restrict dyptr=dpsiM.data();

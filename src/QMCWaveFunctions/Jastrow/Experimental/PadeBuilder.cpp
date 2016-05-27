@@ -34,18 +34,18 @@ bool PadeBuilder::put(xmlNodePtr cur)
   const xmlChar* spin=xmlGetProp(cur,(const xmlChar*)"spin");
   if(spin != NULL)
   {
-    string a((const char*)spin);
+    std::string a((const char*)spin);
     if(a == "yes")
       IgnoreSpin=false;
   }
-  string functionOpt("pade");
+  std::string functionOpt("pade");
   const xmlChar *ftype = xmlGetProp(cur, (const xmlChar *)"function");
   if(ftype != NULL)
     functionOpt = (const char*) ftype;
   const xmlChar* s = xmlGetProp(cur, (const xmlChar *)"source");
   if(s != NULL)
   {
-    map<string,ParticleSet*>::iterator pa_it(ptclPool.find((const char*)s));
+    std::map<std::string,ParticleSet*>::iterator pa_it(ptclPool.find((const char*)s));
     if(pa_it != ptclPool.end())
     {
       sourcePtcl=(*pa_it).second;
@@ -55,13 +55,13 @@ bool PadeBuilder::put(xmlNodePtr cur)
   OrbitalConstraintsBase* control=0;
   if(functionOpt == "pade")
   {
-    app_log() << "  Pade Jastrow Functions = " << functionOpt << endl;
+    app_log() << "  Pade Jastrow Functions = " << functionOpt << std::endl;
     control = new PadeConstraints(IgnoreSpin);
   }
   else
     if(functionOpt == "scaledpade")
     {
-      app_log() << "  Scaled Pade Jastrow Functions = " << functionOpt << endl;
+      app_log() << "  Scaled Pade Jastrow Functions = " << functionOpt << std::endl;
       control = new ScaledPadeConstraints(IgnoreSpin);
     }
   if(control==0)

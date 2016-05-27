@@ -19,7 +19,7 @@ namespace qmcplusplus
 {
 template<typename ENGT>
 void SplineTest<ENGT>
-::test(vector<TinyVector<typename SplineTest<ENGT>::real_type,3> >& coord)
+::test(std::vector<TinyVector<typename SplineTest<ENGT>::real_type,3> >& coord)
 {
   //read data from a file
   int ngx=160;
@@ -80,9 +80,9 @@ void SplineTest<ENGT>
     for(int k=0; k<num_splines; ++k)
       dv(diff(psi[k],psi_c[k]));
   }
-  cout << "Average diff " << dv.mean() << endl;
+  std::cout << "Average diff " << dv.mean() << std::endl;
   app_log() << "Timing spline=" << t_spline << " write = " << t_write << " read = " << t_read
-            << "  saving = " << t_spline/t_read<< endl;
+            << "  saving = " << t_spline/t_read<< std::endl;
 }
 }
 int main(int argc, char** argv)
@@ -94,7 +94,7 @@ int main(int argc, char** argv)
   Random.init(0,1,11);
   SplineTestBase param(argc,argv);
   typedef TinyVector<double,3> pos_type;
-  vector<pos_type> coord(param.nsamples);
+  std::vector<pos_type> coord(param.nsamples);
   for(int i=0; i<coord.size(); ++i)
     coord[i]=pos_type(Random(),Random(),Random());
 //  for(int i=0; i<coord.size(); ++i)
@@ -103,10 +103,10 @@ int main(int argc, char** argv)
 //        , (upper[2]-lower[2])*Random()+lower[2]
 //        );
 //
-  vector<TinyVector<float,3> > coord_s(coord.size());
+  std::vector<TinyVector<float,3> > coord_s(coord.size());
   for(int i=0; i<coord.size(); ++i)
     convert(coord[i],coord_s[i]);
-  cout << "\nTesting einspline transformation" << endl;
+  std::cout << "\nTesting einspline transformation" << std::endl;
   SplineTest<multi_UBspline_3d_s> test_d(param);
   test_d.test(coord_s);
   return 0;

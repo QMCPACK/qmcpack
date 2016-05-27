@@ -39,7 +39,7 @@ struct LRHandlerBase: public QMCTraits
   ///Fourier component of the LR part, fit to optimize the gradients.
   Vector<RealType> Fkg;
   ///Fourier component of the LR part of strain tensor, by optimized breakup.  
-  vector< SymTensor<RealType, OHMMS_DIM> > dFk_dstrain;
+  std::vector< SymTensor<RealType, OHMMS_DIM> > dFk_dstrain;
   ///Vector of df_k/dk, fit as to optimize strains.  
   Vector<RealType> Fkgstrain;
   ///Fourier component for each k-shell
@@ -47,11 +47,11 @@ struct LRHandlerBase: public QMCTraits
 
   ///Fourier component for each k-shell
   ///Coefficient
-  vector<RealType> coefs;
+  std::vector<RealType> coefs;
   ///Coefficient for gradient fit. 
-  vector<RealType> gcoefs;
+  std::vector<RealType> gcoefs;
   ///Coefficient for strain fit.
-  vector<RealType> gstraincoefs;
+  std::vector<RealType> gstraincoefs;
 
   
   //constructor
@@ -74,7 +74,7 @@ struct LRHandlerBase: public QMCTraits
    *
    * Valid for the strictly ordered k and \f$F_{k}\f$.
    */
-  inline RealType evaluate(const vector<int>& kshell
+  inline RealType evaluate(const std::vector<int>& kshell
                            , const ComplexType* restrict rk1, const ComplexType* restrict rk2)
   {
     RealType vk=0.0;
@@ -88,7 +88,7 @@ struct LRHandlerBase: public QMCTraits
     return vk;
   }
 
-  inline RealType evaluate(const vector<int>& kshell
+  inline RealType evaluate(const std::vector<int>& kshell
                            , const RealType* restrict rk1_r, const RealType* restrict rk1_i
                            , const RealType* restrict rk2_r, const RealType* restrict rk2_i)
   {
@@ -104,13 +104,13 @@ struct LRHandlerBase: public QMCTraits
   }
 
   /** Evaluate the long-range potential with the open BC for the D-1 direction */
-  virtual  RealType evaluate_slab(RealType z, const vector<int>& kshell
+  virtual  RealType evaluate_slab(RealType z, const std::vector<int>& kshell
                                   , const ComplexType* restrict eikr_i, const ComplexType* restrict eikr_j)
   {
     return 0.0;
   }
 
-  inline RealType evaluate(const vector<int>& kshell
+  inline RealType evaluate(const std::vector<int>& kshell
                            , int iat, const ComplexType* restrict rk2, ParticleSet &P)
   {
     RealType vk=0.0;
@@ -129,7 +129,7 @@ struct LRHandlerBase: public QMCTraits
     return vk;
   }
 
-  inline RealType evaluate(const vector<int>& kshell
+  inline RealType evaluate(const std::vector<int>& kshell
                            , int iat, const RealType* restrict rk2_r, const RealType* restrict rk2_i, ParticleSet &P)
   {
     RealType vk=0.0;
@@ -156,13 +156,13 @@ struct LRHandlerBase: public QMCTraits
    * Valid for the strictly ordered k and \f$F_{k}\f$.
    */
   inline void evaluateGrad(const ParticleSet &A, const ParticleSet &B,
-                           int specB, vector<RealType> &Zat,
-                           vector<TinyVector<RealType,DIM> > &grad1)
+                           int specB, std::vector<RealType> &Zat,
+                           std::vector<TinyVector<RealType,DIM> > &grad1)
   {
 #if !defined(USE_REAL_STRUCT_FACTOR)
     const Matrix<ComplexType> &e2ikrA = A.SK->eikr;
     const ComplexType *rhokB = B.SK->rhok[specB];
-    const vector<PosType> &kpts = A.SK->KLists.kpts_cart;
+    const std::vector<PosType> &kpts = A.SK->KLists.kpts_cart;
     for (int ki=0; ki<Fk.size(); ki++)
     {
       TinyVector<RealType,DIM> k = kpts[ki];
@@ -178,7 +178,7 @@ struct LRHandlerBase: public QMCTraits
     const Matrix<RealType> &e2ikrA_i = A.SK->eikr_i;
     const RealType *rhokB_r = B.SK->rhok_r[specB];
     const RealType *rhokB_i = B.SK->rhok_i[specB];
-    const vector<PosType> &kpts = A.SK->KLists.kpts_cart;
+    const std::vector<PosType> &kpts = A.SK->KLists.kpts_cart;
     for (int ki=0; ki<Fk.size(); ki++)
     {
       TinyVector<RealType,DIM> k = kpts[ki];
@@ -191,7 +191,7 @@ struct LRHandlerBase: public QMCTraits
 #endif
   }
   
-  inline SymTensor<RealType, OHMMS_DIM> evaluateStress(const vector<int>& kshell, const RealType *rhokA_r, const RealType *rhokA_i, const RealType *rhokB_r, const RealType *rhokB_i)
+  inline SymTensor<RealType, OHMMS_DIM> evaluateStress(const std::vector<int>& kshell, const RealType *rhokA_r, const RealType *rhokA_i, const RealType *rhokB_r, const RealType *rhokB_i)
   { 
     SymTensor<RealType, OHMMS_DIM> stress;
     for (int ki=0; ki<dFk_dstrain.size(); ki++)
@@ -202,7 +202,7 @@ struct LRHandlerBase: public QMCTraits
 	return stress;
   }  
   
-  inline SymTensor<RealType, OHMMS_DIM> evaluateStress(const vector<int>& kshell, const ComplexType * rhokA, const ComplexType * rhokB)
+  inline SymTensor<RealType, OHMMS_DIM> evaluateStress(const std::vector<int>& kshell, const ComplexType * rhokA, const ComplexType * rhokB)
   { 
     SymTensor<RealType, OHMMS_DIM> stress;
     for (int ki=0; ki<dFk_dstrain.size(); ki++)

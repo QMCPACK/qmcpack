@@ -8,20 +8,19 @@
 #include <OhmmsData/OhmmsElementBase.h>
 #include <Numerics/HDFSTLAttrib.h>
 using namespace qmcplusplus;
-using namespace std;
 
 int print_help()
 {
-  cerr << "Usage: observable [--fileroot string ] list-of-obervables " << endl;
-  cerr << " Example: observable --fileroot myhdf --first 10 density " << endl;
+  std::cerr << "Usage: observable [--fileroot std::string ] list-of-obervables " << std::endl;
+  std::cerr << " Example: observable --fileroot myhdf --first 10 density " << std::endl;
   return 1;
 }
 
 struct ObservableFile
 {
   int first_block;
-  string h5name;
-  vector<string> olist;
+  std::string h5name;
+  std::vector<std::string> olist;
   ObservableFile(int argc, char** argv);
   int dump_averages();
 
@@ -54,7 +53,7 @@ ObservableFile::ObservableFile(int argc, char** argv)
   int iargc=1;
   while(iargc<argc)
   {
-    string c(argv[iargc]);
+    std::string c(argv[iargc]);
     if(c.find("fileroot")<c.size())
     {
       h5name=argv[++iargc];
@@ -81,7 +80,7 @@ int ObservableFile::dump_averages()
 {
   if(h5name.empty())
   {
-    cerr << "  Invalid file. Provide --fileroot root-of-h5-file " << endl;
+    std::cerr << "  Invalid file. Provide --fileroot root-of-h5-file " << std::endl;
     return 1;
   }
   herr_t status = H5Eset_auto(NULL, NULL);
@@ -93,12 +92,12 @@ int ObservableFile::dump_averages()
   hid_t fileID =  H5Fopen(fname,H5F_ACC_RDWR,H5P_DEFAULT);
   if(fileID<0)
   {
-    cerr << " Cannot find " << fname << endl;
+    std::cerr << " Cannot find " << fname << std::endl;
     return 1;
   }
   if(olist.empty())
   {
-    cerr << "No observables given." << endl;
+    std::cerr << "No observables given." << std::endl;
     print_help();
     return 1;
   }
@@ -107,41 +106,41 @@ int ObservableFile::dump_averages()
     hid_t gid=H5Gopen(fileID,olist[i].c_str());
     if(gid<0)
     {
-      cerr << "Cannot find " << olist[i] << " group. Abort" << endl;
+      std::cerr << "Cannot find " << olist[i] << " group. Abort" << std::endl;
       return 1;
     }
     hid_t dataset = H5Dopen(gid,"value");
     hid_t dataspace = H5Dget_space(dataset);
     //check the dimension of the active observable
     int rank = H5Sget_simple_extent_ndims(dataspace);
-    vector<hsize_t> in_dims(rank);
+    std::vector<hsize_t> in_dims(rank);
     int status_n = H5Sget_simple_extent_dims(dataspace, &in_dims[0], NULL);
-    vector<int> dims(rank-1);
+    std::vector<int> dims(rank-1);
     int num_blocks=static_cast<int>(in_dims[0]);
     int nb=num_blocks-first_block;
     //skip it
     if(nb<0)
       continue;
-    cout << "<<<< Input dimension  " << num_blocks;
+    std::cout << "<<<< Input dimension  " << num_blocks;
     int tot_size=1;
     for(int dim=0; dim<rank-1; ++dim)
     {
       tot_size *= dims[dim]=static_cast<int>(in_dims[dim+1]);
-      cout << " "<< dims[dim] ;
+      std::cout << " "<< dims[dim] ;
     }
-    cout << "\n Total size = " << tot_size << endl;
-    vector<double> odata_in;
+    std::cout << "\n Total size = " << tot_size << std::endl;
+    std::vector<double> odata_in;
     odata_in.resize(tot_size*num_blocks);
     hid_t ret = H5Dread(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &(odata_in[0]));
     H5Dclose(dataset);
     H5Sclose(dataspace);
-    vector<double> odata_tot(tot_size,0.0), odata2_tot(tot_size,0.0);
-    vector<double>::iterator first=odata_in.begin()+first_block*tot_size;
+    std::vector<double> odata_tot(tot_size,0.0), odata2_tot(tot_size,0.0);
+    std::vector<double>::iterator first=odata_in.begin()+first_block*tot_size;
     for(int b=first_block; b<num_blocks; ++b,first+=tot_size)
       accumulate_n(first,first+tot_size,odata_tot.begin());
     double fac=1.0/static_cast<double>(nb);
     scale_n(odata_tot.begin(),odata_tot.end(),fac);
-    HDFAttribIO<vector<double> > dummy(odata_tot,dims);
+    HDFAttribIO<std::vector<double> > dummy(odata_tot,dims);
     dummy.write(gid,"average");
   }
   return 0;

@@ -7,8 +7,8 @@ using namespace ohmmshf;
 inline void FillShellsNucPot(HFAtomicOrbitals& mo,
                              int nmax)
 {
-  //			     vector<int>& cs,
-  //			     vector<double>& cratio){
+  //			     std::vector<int>& cs,
+  //			     std::vector<double>& cratio){
   int up=1;
   int dn=-1;
   switch(nmax)
@@ -279,8 +279,8 @@ inline void FillShellsNucPot(HFAtomicOrbitals& mo,
 inline void FillShellsHarmPot(HFAtomicOrbitals& mo,
                               int nmax)
 {
-  //			      vector<int>& cs,
-  //			      vector<double>& cratio){
+  //			      std::vector<int>& cs,
+  //			      std::vector<double>& cratio){
   int up=1;
   int dn=-1;
   switch(nmax)

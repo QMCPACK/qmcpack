@@ -98,7 +98,7 @@ class LinearGrid : public Grid
   void Write (IOSectionClass &outSection)
   {
     outSection.WriteVar ("Points", grid); 
-    outSection.WriteVar ("Type", string("Linear"));
+    outSection.WriteVar ("Type", std::string("Linear"));
     outSection.WriteVar ("Start", Start);
     outSection.WriteVar ("End", End);
     outSection.WriteVar ("NumPoints", NumPoints);
@@ -170,7 +170,7 @@ class GeneralGrid : public Grid
   void Write (IOSectionClass &outSection)
   {
     outSection.WriteVar ("Points", grid); 
-    outSection.WriteVar ("Type", string("General"));
+    outSection.WriteVar ("Type", std::string("General"));
   }
 
   void Read (IOSectionClass &inSection)
@@ -274,7 +274,7 @@ class OptimalGrid : public Grid
   void Write (IOSectionClass &outSection)
   {
     outSection.WriteVar ("Points", grid); 
-    outSection.WriteVar ("Type", string("Optimal"));
+    outSection.WriteVar ("Type", std::string("Optimal"));
     outSection.WriteVar ("a", a);
     outSection.WriteVar ("b", b);
     outSection.WriteVar ("NumPoints", NumPoints);
@@ -432,7 +432,7 @@ class OptimalGrid2 : public Grid
   void Write (IOSectionClass &outSection)
   {
     outSection.WriteVar ("Points", grid); 
-    outSection.WriteVar ("Type", string("Optimal2"));
+    outSection.WriteVar ("Type", std::string("Optimal2"));
     outSection.WriteVar ("Start", Start);
     outSection.WriteVar ("End", End);
     outSection.WriteVar ("Ratio", Ratio);
@@ -551,7 +551,7 @@ class LogGrid : public Grid
   void Write (IOSectionClass &outSection)
   {
     outSection.WriteVar ("Points", grid); 
-    outSection.WriteVar ("Type", string("Log"));
+    outSection.WriteVar ("Type", std::string("Log"));
     outSection.WriteVar ("r0", r0);
     outSection.WriteVar ("Spacing", Spacing);
   }
@@ -624,7 +624,7 @@ private:
   void Write (IOSectionClass &outSection)
   {
     outSection.WriteVar ("Points", grid); 
-    outSection.WriteVar ("Type", string("Cluster"));
+    outSection.WriteVar ("Type", std::string("Cluster"));
     outSection.WriteVar ("Start", Start);
     outSection.WriteVar ("End", End);
     outSection.WriteVar ("Cluster", Cluster);
@@ -653,7 +653,7 @@ private:
 
 inline Grid* ReadGrid (IOSectionClass &inSection)
 {
-  string Type;
+  std::string Type;
   assert (inSection.ReadVar ("Type", Type));
 
   Grid *newGrid;
@@ -671,7 +671,7 @@ inline Grid* ReadGrid (IOSectionClass &inSection)
     newGrid = new ClusterGrid;
   else
     {
-      cerr << "Unrecognized Grid type " << Type << "\n";
+      std::cerr << "Unrecognized Grid type " << Type << "\n";
       exit(1);
     }
   newGrid->Read(inSection);
@@ -685,7 +685,7 @@ LinearGrid::CheckRoundingMode()
   for (int i=0; i<100; i++) {
     double x = 100.0*drand48()-50.0;
     if (nearbyint(x) != round(x)) {
-      cerr << "Error in rounding mode detected in LinearGrid.  Abort.\n";
+      std::cerr << "Error in rounding mode detected in LinearGrid.  Abort.\n";
       abort();
     }
   }

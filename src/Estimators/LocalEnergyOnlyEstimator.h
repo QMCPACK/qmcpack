@@ -41,7 +41,7 @@ struct LocalEnergyOnlyEstimator: public ScalarEstimatorBase
     }
   }
 
-  void registerObservables(vector<observable_helper*>& h5dec, hid_t gid)
+  void registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid)
   {}
   /**  add the local energy, variance and all the Hamiltonian components to the scalar record container
    * @param record storage of scalar records (name,value)

@@ -50,9 +50,9 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     localPot.resize(ng,0);
     nonLocalPot.resize(ng,0);
   }
-  string ecpFormat("table");
-  string pbc("yes");
-  string forces("no");
+  std::string ecpFormat("table");
+  std::string pbc("yes");
+  std::string forces("no");
   OhmmsAttributeSet pAttrib;
   pAttrib.add(ecpFormat,"format");
   pAttrib.add(pbc,"pbc");
@@ -94,7 +94,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     else
     {
       if (doForces)
-        app_log() << "  Will compute forces in CoulombPBCAB.\n" << endl;
+        app_log() << "  Will compute forces in CoulombPBCAB.\n" << std::endl;
 #ifdef QMC_CUDA
       CoulombPBCAB_CUDA* apot=
         new CoulombPBCAB_CUDA(IonConfig,targetPtcl, doForces);
@@ -147,7 +147,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     }
     app_log() << "\n  Using NonLocalECP potential \n"
               << "    Maximum grid on a sphere for NonLocalECPotential: "
-              << nknot_max << endl;
+              << nknot_max << std::endl;
     targetPtcl.checkBoundBox(2*rc2);
     targetH.addOperator(apot,"NonLocalECP");
     for(int ic=0; ic<IonConfig.getTotalNum(); ic++)
@@ -174,12 +174,12 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
   cur=cur->children;
   while(cur != NULL)
   {
-    string cname((const char*)cur->name);
+    std::string cname((const char*)cur->name);
     if(cname == "pseudo")
     {
-      string href("none");
-      string ionName("none");
-      string format("xml");
+      std::string href("none");
+      std::string ionName("none");
+      std::string format("xml");
       //RealType rc(2.0);//use 2 Bohr
       OhmmsAttributeSet hAttrib;
       hAttrib.add(href,"href");
@@ -192,7 +192,7 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
       int speciesIndex=ion_species.findSpecies(ionName);
       if(speciesIndex < ion_species.getTotalNum())
       {
-        app_log() << endl << "  Adding pseudopotential for " << ionName << endl;
+        app_log() << std::endl << "  Adding pseudopotential for " << ionName << std::endl;
         double rmax=0.0;
 
         ECPComponentBuilder ecp(ionName,myComm);
@@ -234,7 +234,7 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
       }
       else
       {
-        app_error() << "  Ion species " << ionName << " is not found." << endl;
+        app_error() << "  Ion species " << ionName << " is not found." << std::endl;
       }
     }
     cur=cur->next;
@@ -250,10 +250,10 @@ void ECPotentialBuilder::useSimpleTableFormat()
   int icharge(Species.addAttribute("charge"));
   for(int ig=0; ig<ng; ig++)
   {
-    vector<RealType> grid_temp, pp_temp;
-    string species(Species.speciesName[ig]);
-    string fname = species+".psf";
-    ifstream fin(fname.c_str(),ios_base::in);
+    std::vector<RealType> grid_temp, pp_temp;
+    std::string species(Species.speciesName[ig]);
+    std::string fname = species+".psf";
+    std::ifstream fin(fname.c_str(),std::ios_base::in);
     if(!fin)
     {
       ERRORMSG("Could not open file " << fname)
@@ -266,7 +266,7 @@ void ECPotentialBuilder::useSimpleTableFormat()
     int lmax=-1;
     int numnonloc=0;
     RealType rmax(0.0);
-    app_log() << "  ECPotential for " << species << endl;
+    app_log() << "  ECPotential for " << species << std::endl;
     NonLocalECPComponent* mynnloc=0;
     typedef OneDimCubicSpline<RealType> CubicSplineFuncType;
     for (int ij=0; ij<npotentials; ij++)
@@ -284,7 +284,7 @@ void ECPotentialBuilder::useSimpleTableFormat()
         ng=static_cast<int>(rf*100)+1;//use 1e-2 resolution
         GridType * agrid= new LinearGrid<RealType>;
         agrid->set(0,rf,ng);
-        vector<RealType> pp_temp(ng);
+        std::vector<RealType> pp_temp(ng);
         pp_temp[0]=0.0;
         for (int j=1; j<ng; j++)
         {
@@ -295,8 +295,8 @@ void ECPotentialBuilder::useSimpleTableFormat()
         RadialPotentialType *app = new RadialPotentialType(agrid,pp_temp);
         app->spline();
         localPot[ig]=app;
-        app_log() << "    LocalECP l=" << angmom << endl;
-        app_log() << "      Linear grid=[0," << rf << "] npts=" << ng << endl;
+        app_log() << "    LocalECP l=" << angmom << std::endl;
+        app_log() << "      Linear grid=[0," << rf << "] npts=" << ng << std::endl;
         hasLocalPot=true; //will create LocalECPotential
       }
       else
@@ -308,9 +308,9 @@ void ECPotentialBuilder::useSimpleTableFormat()
         GridType * agrid= new LinearGrid<RealType>;
         int ng=static_cast<int>(rf*100)+1;
         agrid->set(0.0,rf,ng);
-        app_log() << "    NonLocalECP l=" << angmom << " rmax = " << rf << endl;
-        app_log() << "      Linear grid=[0," << rf << "] npts=" << ng << endl;
-        vector<RealType> pp_temp(ng);
+        app_log() << "    NonLocalECP l=" << angmom << " rmax = " << rf << std::endl;
+        app_log() << "      Linear grid=[0," << rf << "] npts=" << ng << std::endl;
+        std::vector<RealType> pp_temp(ng);
         //get the value
         pp_temp[0]=inFunc(0);
         for (int j=1; j<ng; j++)
@@ -328,7 +328,7 @@ void ECPotentialBuilder::useSimpleTableFormat()
       {
         mynnloc->lmax=lmax;
         mynnloc->Rmax=rmax;
-        app_log() << "    Maximum cutoff of NonLocalECP " << rmax << endl;
+        app_log() << "    Maximum cutoff of NonLocalECP " << rmax << std::endl;
       }
     }
     fin.close();
@@ -336,11 +336,11 @@ void ECPotentialBuilder::useSimpleTableFormat()
     {
       nonLocalPot[ig]=mynnloc;
       int numsgridpts=0;
-      string fname = species+".sgr";
-      ifstream fin(fname.c_str(),ios_base::in);
+      std::string fname = species+".sgr";
+      std::ifstream fin(fname.c_str(),std::ios_base::in);
       if(!fin)
       {
-        app_error() << "Could not open file " << fname << endl;
+        app_error() << "Could not open file " << fname << std::endl;
         exit(-1);
       }
       PosType xyz;
@@ -350,7 +350,7 @@ void ECPotentialBuilder::useSimpleTableFormat()
         mynnloc->addknot(xyz,weight);
         numsgridpts++;
       }
-      //cout << "Spherical grid : " << numsgridpts << " points" <<endl;
+      //cout << "Spherical grid : " << numsgridpts << " points" << std::endl;
       mynnloc->resize_warrays(numsgridpts,numnonloc,lmax);
     }
   }//species

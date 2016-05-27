@@ -89,18 +89,18 @@ struct MultipleEnergyEstimator: public ScalarEstimatorBase
    * The dimension of esum_name is LE_INDEX by NumCopies. The columns
    * of the same field are bunched together.
    */
-  Matrix<string> esum_name;
+  Matrix<std::string> esum_name;
 
   /** the names of elocal
    *
    * The dimension of elocal_name is NumOperators by NumCopies. The columns
    * of the same field are bunched together.
    */
-  Matrix<string> elocal_name;
+  Matrix<std::string> elocal_name;
 
   /** the names of energy differences
    */
-  vector<string> ediff_name;
+  std::vector<std::string> ediff_name;
 
   /** constructor
    * @param h QMCHamiltonian to define the components
@@ -126,7 +126,7 @@ struct MultipleEnergyEstimator: public ScalarEstimatorBase
    *@param record storage of scalar records (name,value)
    */
   void add2Record(RecordNamedProperty<RealType>& record);
-  void registerObservables(vector<observable_helper*>& h5dec, hid_t gid);
+  void registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid);
   ScalarEstimatorBase* clone();
 
   /////reset all the cumulative sums to zero
@@ -148,8 +148,8 @@ struct MultipleEnergyEstimator: public ScalarEstimatorBase
    * @param require_register if true, use buffer for particle-by-particle
    */
   void initialize(MCWalkerConfiguration& W,
-                  vector<QMCHamiltonian*>& h, vector<TrialWaveFunction*>& psi,
-                  RealType tau, vector<RealType>& Norm, bool require_register=false);
+                  std::vector<QMCHamiltonian*>& h, std::vector<TrialWaveFunction*>& psi,
+                  RealType tau, std::vector<RealType>& Norm, bool require_register=false);
 
   /** update the energy and weight for umbrella sampling
    * @param iw walker index
@@ -162,9 +162,9 @@ struct MultipleEnergyEstimator: public ScalarEstimatorBase
   }
    */
 
-  void initialize(MCWalkerConfiguration& W, vector<ParticleSet*>& WW, SpaceWarp& Warp,
-                  vector<QMCHamiltonian*>& h, vector<TrialWaveFunction*>& psi,
-                  RealType tau, vector<RealType>& Norm, bool require_register=false);
+  void initialize(MCWalkerConfiguration& W, std::vector<ParticleSet*>& WW, SpaceWarp& Warp,
+                  std::vector<QMCHamiltonian*>& h, std::vector<TrialWaveFunction*>& psi,
+                  RealType tau, std::vector<RealType>& Norm, bool require_register=false);
 };
 
 }

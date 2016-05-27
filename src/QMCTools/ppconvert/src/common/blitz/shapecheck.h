@@ -60,8 +60,8 @@ inline bool areShapesConformable(const T_shape& a, const T_shape& b)
     {
         if (a[i] != b[i])
         {
-            BZ_DEBUG_MESSAGE("Incompatible shapes detected: " << endl 
-                 << a << endl << b << endl);
+            BZ_DEBUG_MESSAGE("Incompatible shapes detected: " << std::endl 
+                 << a << std::endl << b << std::endl);
             return false;
         }
     }

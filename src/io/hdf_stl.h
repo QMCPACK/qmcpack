@@ -21,16 +21,16 @@
 #include <deque>
 namespace qmcplusplus
 {
-/** specialization for vector<T>
+/** specialization for std::vector<T>
  *
  * Used with any T with a proper h5_space_type, e.g., intrinsic, TinyVector<T,D>, Tensor<T,D>
  */
-template<typename T> struct h5data_proxy<vector<T> >
+template<typename T> struct h5data_proxy<std::vector<T> >
     : public h5_space_type<T,1>
 {
   using h5_space_type<T,1>::dims;
   using h5_space_type<T,1>::get_address;
-  typedef vector<T> data_type;
+  typedef std::vector<T> data_type;
   data_type& ref_;
 
   inline h5data_proxy(data_type& a): ref_(a)
@@ -51,7 +51,7 @@ template<typename T> struct h5data_proxy<vector<T> >
   }
 };
 
-/** specialization for bitset<N>
+/** specialization for std::bitset<N>
  */
 template<std::size_t N>
 struct h5data_proxy<std::bitset<N> >
@@ -85,7 +85,7 @@ struct h5data_proxy<std::bitset<N> >
 };
 
 
-/** Specialization for string */
+/** Specialization for std::string */
 template<> struct h5data_proxy<std::string>
 {
 
@@ -157,7 +157,7 @@ struct h5data_proxy<std::ostringstream>
   }
 };
 
-///** i/o for deque<T>, internally use vector<T>
+///** i/o for deque<T>, internally use std::vector<T>
 // */
 //template<typename T> struct h5data_proxy<deque<T> >
 //  : public h5_space_type<T,1>
@@ -171,7 +171,7 @@ struct h5data_proxy<std::ostringstream>
 
 //    inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
 //    {
-//      vector<T> temp(ref_.size());
+//      std::vector<T> temp(ref_.size());
 //      if(!h5d_getspace(grp,aname,temp.size(),dims)) {temp.resize(dims[0]);}
 //      if(h5d_read(grp,aname,get_address(&temp[0]),xfer_plist))
 //      {
@@ -185,7 +185,7 @@ struct h5data_proxy<std::ostringstream>
 
 //    inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
 //    {
-//      vector<T> temp(ref_.size());
+//      std::vector<T> temp(ref_.size());
 //      temp.assign(ref_.begin(),ref_.end());
 //      return h5d_write(grp,aname.c_str(),temp.size(),dims,get_address(&temp[0]),xfer_plist);
 //    }

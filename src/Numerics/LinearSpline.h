@@ -56,7 +56,7 @@ struct LinearSplineGrid<T,LINEAR_1DGRID,PBC_CONSTRAINTS>
     Linv=1.0/L;
     GridDelta=L/static_cast<T>(N);
     GridDeltaInv=1.0/GridDelta;
-    std::copy(data.begin(),data.end(),p.data());
+    copy(data.begin(),data.end(),p.data());
     p[N]=p[0];
   }
 
@@ -99,7 +99,7 @@ struct LinearSplineGrid<T,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS>
     Linv=1.0/L;
     GridDelta=L/static_cast<T>(N);
     GridDeltaInv=1.0/GridDelta;
-    std::copy(data.begin(),data.end(),p.begin());
+    copy(data.begin(),data.end(),p.begin());
     //only if the last is missing
     if(!closed)
       p[N]=p[N-1];
@@ -166,7 +166,7 @@ struct LinearSplineGrid<T,CUSTOM_1DGRID,FIRSTDERIV_CONSTRAINTS>
     GridDeltaInv=1.0/GridDelta;
     for(int i=0; i<=N; i++)
       X[i]=i*GridDelta+start;
-    std::copy(data.begin(),data.end(),p.begin());
+    copy(data.begin(),data.end(),p.begin());
   }
 
   void spline(const container_type& ng,
@@ -176,9 +176,9 @@ struct LinearSplineGrid<T,CUSTOM_1DGRID,FIRSTDERIV_CONSTRAINTS>
     GridStart=ng[0];
     GridEnd=ng[N-1];
     X.resize(N);
-    std::copy(ng.begin(), ng.end(), X.begin());
+    copy(ng.begin(), ng.end(), X.begin());
     p.resize(N);
-    std::copy(data.begin(),data.end(),p.begin());
+    copy(data.begin(),data.end(),p.begin());
   }
 };
 

@@ -65,21 +65,21 @@ public:
     }
   }
 
-  inline void accumulate_fw( HDF5_FW_observables& OBS, HDF5_FW_weights& WGTS, vector<int>& Dims )
+  inline void accumulate_fw( HDF5_FW_observables& OBS, HDF5_FW_weights& WGTS, std::vector<int>& Dims )
   {
 //       clear();
-//       cout<<"Calling accumulate"<<endl;
+//       std::cout <<"Calling accumulate"<< std::endl;
 //       int maxV = OBS.getLength();
 //       int maxW = WGTS.getLength(step);
 //       assert (maxV==maxW);
     for(int i=Dims[3]; i<(Dims[2]-Dims[0]); i++)
     {
-      vector<int> weights;
-      vector<double> values;
+      std::vector<int> weights;
+      std::vector<double> values;
       OBS.readStep(i,values);
       WGTS.readStep(Dims[0],i,weights);
-      vector<double>::iterator vit(values.begin());
-      for(vector<int>::iterator wit(weights.begin()); ((wit!=weights.end())&(vit!=values.end())); wit++)
+      std::vector<double>::iterator vit(values.begin());
+      for(std::vector<int>::iterator wit(weights.begin()); ((wit!=weights.end())&(vit!=values.end())); wit++)
         for(int k=0; k<Dims[1]; k++,vit++)
         {
           scalars[2*k]((*vit), (*wit));
@@ -106,10 +106,10 @@ public:
                          , WalkerIterator first, WalkerIterator last, RealType wgt)
   {
     for(; first != last; ++first)
-      accumulate(**first,wgt);
+      std::accumulate(**first,wgt);
   }
   void add2Record(RecordListType& record);
-  void registerObservables(vector<observable_helper*>& h5dec, hid_t gid) {}
+  void registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid) {}
   ScalarEstimatorBase* clone();
   /*@}*/
 };

@@ -40,7 +40,7 @@ class TriCubicSplineSet
   /// read all the wave-functions from the input file
   void readwf(const char*, int ispin, int num);
 
-  std::map<string,int> orbital_map;
+  std::map<std::string,int> orbital_map;
 
 public:
 
@@ -87,9 +87,9 @@ public:
   /// initialising the padded function
   void finit(int);
 
-  inline TriCubicSpline* getOrbital(const string& orbname)
+  inline TriCubicSpline* getOrbital(const std::string& orbname)
   {
-    std::map<string,int>::iterator it = orbital_map.find(orbname);
+    std::map<std::string,int>::iterator it = orbital_map.find(orbname);
     if(it == orbital_map.end())
       return NULL;
     else

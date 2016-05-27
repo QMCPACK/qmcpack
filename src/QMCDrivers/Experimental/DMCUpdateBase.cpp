@@ -123,7 +123,7 @@ void DMCUpdateBase::benchMark(WalkerIter_t it, WalkerIter_t it_end, int ip)
 {
   char fname[16];
   sprintf(fname,"test.%i",ip);
-  ofstream fout(fname,ios::app);
+  std::ofstream fout(fname,std::ios::app);
   int i=0;
   while(it != it_end)
   {
@@ -133,7 +133,7 @@ void DMCUpdateBase::benchMark(WalkerIter_t it, WalkerIter_t it_end, int ip)
     W.update();
     ValueType logpsi(Psi.evaluateLog(W));
     RealType e = H.evaluate(W);
-    fout <<  i << " " << logpsi << " " << e << endl;
+    fout <<  i << " " << logpsi << " " << e << std::endl;
     ++it;
     ++i;
   }

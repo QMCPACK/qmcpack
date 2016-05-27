@@ -51,7 +51,7 @@ namespace qmcplusplus
 
     //local functions
     void update_basis_states(int smax);
-    void report(const string& pad="");
+    void report(const std::string& pad="");
   };
 
 }

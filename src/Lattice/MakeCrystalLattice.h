@@ -19,7 +19,7 @@
 /**@file MakeCrystalLattice.h
  *@brief Functors to create a lattice with command-line options.
  *
- *The arguments are stored in std::vector<string>.
+ *The arguments are stored in std::vector<std::string>.
  *
  */
 
@@ -39,7 +39,7 @@ struct makelattice { };
 template<class T, unsigned D>
 struct makelattice<CrystalLattice<T,D> >
 {
-  inline static void apply(CrystalLattice<T,D>& , std::vector<string>& argv)
+  inline static void apply(CrystalLattice<T,D>& , std::vector<std::string>& argv)
   {
   }
 };
@@ -51,7 +51,7 @@ struct makelattice<CrystalLattice<T,1> >
 
   inline static
   void
-  apply(CrystalLattice<T,1>& lat, std::vector<string>& argv)
+  apply(CrystalLattice<T,1>& lat, std::vector<std::string>& argv)
   {
     int i=0;
     int argc = argv.size();
@@ -74,7 +74,7 @@ struct makelattice<CrystalLattice<T,2> >
 
   inline static
   void
-  apply(CrystalLattice<T,2>& lat, std::vector<string>& argv)
+  apply(CrystalLattice<T,2>& lat, std::vector<std::string>& argv)
   {
     T a0 = 1.0e0;
     int i=0;
@@ -115,7 +115,7 @@ struct makelattice<CrystalLattice<T,3> >
 {
 
   /*! \fn makelattic<CrystalLattice<T,3> >
-   *  ::apply(CrystalLattice<T,3>& lattice, vector<string>& argv)
+   *  ::apply(CrystalLattice<T,3>& lattice, std::vector<std::string>& argv)
    *  \param lattice an CrystalLattice to be set
    *  \param argv   input parameters
    *  \note Keywords to set a speical 3D primitive cell.
@@ -126,7 +126,7 @@ struct makelattice<CrystalLattice<T,3> >
    */
   inline static
   void
-  apply(CrystalLattice<T,3>& lat, std::vector<string>& argv)
+  apply(CrystalLattice<T,3>& lat, std::vector<std::string>& argv)
   {
     T a0 = 1.0e0;
     int i=0;

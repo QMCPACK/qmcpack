@@ -43,8 +43,8 @@ public:
   virtual ~CloneManager();
 
   void makeClones(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& ham);
-  void makeClones(MCWalkerConfiguration& w, vector<TrialWaveFunction*>& psi, vector<QMCHamiltonian*>& ham);
-  void makeClones(vector<MCWalkerConfiguration*>& w, vector<TrialWaveFunction*>& psi, vector<QMCHamiltonian*>& ham);
+  void makeClones(MCWalkerConfiguration& w, std::vector<TrialWaveFunction*>& psi, std::vector<QMCHamiltonian*>& ham);
+  void makeClones(std::vector<MCWalkerConfiguration*>& w, std::vector<TrialWaveFunction*>& psi, std::vector<QMCHamiltonian*>& ham);
   void makeClones_new(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& ham);
   void makeClones(MCWalkerConfiguration& wg, TrialWaveFunction& guide);
   void makeClones(TrialWaveFunction& guide);
@@ -67,35 +67,35 @@ protected:
   ///number of threads
   IndexType NumThreads;
   ///walkers
-  static vector<MCWalkerConfiguration*> wClones;
-  static vector<MCWalkerConfiguration*> wgClones;
+  static std::vector<MCWalkerConfiguration*> wClones;
+  static std::vector<MCWalkerConfiguration*> wgClones;
   ///trial wavefunctions
-  static vector<TrialWaveFunction*> psiClones;
+  static std::vector<TrialWaveFunction*> psiClones;
   ///guide wavefunctions
-  static vector<TrialWaveFunction*> guideClones;
+  static std::vector<TrialWaveFunction*> guideClones;
   ///Hamiltonians
-  static vector<QMCHamiltonian*> hClones;
+  static std::vector<QMCHamiltonian*> hClones;
   ///update engines
-  vector<QMCUpdateBase*> Movers;
+  std::vector<QMCUpdateBase*> Movers;
 //     ///update engines
-//     vector<QMCRenyiUpdateBase*> RenyiMovers;
+//     std::vector<QMCRenyiUpdateBase*> RenyiMovers;
   ///estimator managers
-  vector<EstimatorManager*> estimatorClones;
+  std::vector<EstimatorManager*> estimatorClones;
   ///trace managers
-  vector<TraceManager*> traceClones;
+  std::vector<TraceManager*> traceClones;
   ///Branch engines
-  vector<SimpleFixedNodeBranch*> branchClones;
+  std::vector<SimpleFixedNodeBranch*> branchClones;
   
   //for correlated sampling.
-  static vector<vector<MCWalkerConfiguration*> > WPoolClones; 
-  static vector<vector<TrialWaveFunction*> > PsiPoolClones;
-  static vector<vector<QMCHamiltonian*> > HPoolClones;
-  vector<CSUpdateBase*> CSMovers;
+  static std::vector<std::vector<MCWalkerConfiguration*> > WPoolClones; 
+  static std::vector<std::vector<TrialWaveFunction*> > PsiPoolClones;
+  static std::vector<std::vector<QMCHamiltonian*> > HPoolClones;
+  std::vector<CSUpdateBase*> CSMovers;
 
   
   
   ///Walkers per node
-  vector<int> wPerNode;
+  std::vector<int> wPerNode;
 };
 }
 #endif

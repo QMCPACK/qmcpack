@@ -21,7 +21,7 @@ private:
   typedef CUDA_PRECISION CudaReal;
   //typedef double CudaReal;
 
-  vector<CudaSpline<CudaReal>*> GPUSplines, UniqueSplines;
+  std::vector<CudaSpline<CudaReal>*> GPUSplines, UniqueSplines;
   int MaxCoefs;
   ParticleSet &ElecRef;
   gpu::device_vector<CudaReal> L, Linv;
@@ -35,7 +35,7 @@ private:
   gpu::host_vector<CudaReal*> UpdateListHost;
   gpu::host_vector<CudaReal> SumHost, GradLaplHost, OneGradHost;
   int NumCenterGroups, NumElecGroups;
-  vector<int> CenterFirst, CenterLast;
+  std::vector<int> CenterFirst, CenterLast;
   gpu::host_vector<CudaReal> SplineDerivsHost;
   gpu::device_vector<CudaReal> SplineDerivsGPU;
   gpu::host_vector<CudaReal*> DerivListHost;
@@ -60,37 +60,37 @@ public:
   void addFunc(int ig, FT* j, int jg);
   void recompute(MCWalkerConfiguration &W, bool firstTime);
   void reserve (PointerPool<gpu::device_vector<CudaRealType> > &pool);
-  void addLog (MCWalkerConfiguration &W, vector<RealType> &logPsi);
-  void update (vector<Walker_t*> &walkers, int iat);
-  void update (const vector<Walker_t*> &walkers, const vector<int> &iatList)
+  void addLog (MCWalkerConfiguration &W, std::vector<RealType> &logPsi);
+  void update (std::vector<Walker_t*> &walkers, int iat);
+  void update (const std::vector<Walker_t*> &walkers, const std::vector<int> &iatList)
   {
     /* This function doesn't really need to return the ratio */
   }
   void ratio (MCWalkerConfiguration &W, int iat,
-              vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
-              vector<ValueType> &lapl);
+              std::vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
+              std::vector<ValueType> &lapl);
   void calcRatio (MCWalkerConfiguration &W, int iat,
-                  vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
-                  vector<ValueType> &lapl);
+                  std::vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
+                  std::vector<ValueType> &lapl);
   void addRatio (MCWalkerConfiguration &W, int iat,
-                 vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
-                 vector<ValueType> &lapl);
-  void ratio (vector<Walker_t*> &walkers,    vector<int> &iatList,
-              vector<PosType> &rNew, vector<ValueType> &psi_ratios,
-              vector<GradType>  &grad, vector<ValueType> &lapl)
+                 std::vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
+                 std::vector<ValueType> &lapl);
+  void ratio (std::vector<Walker_t*> &walkers,    std::vector<int> &iatList,
+              std::vector<PosType> &rNew, std::vector<ValueType> &psi_ratios,
+              std::vector<GradType>  &grad, std::vector<ValueType> &lapl)
   {
     /* This function doesn't really need to return the ratio */
   }
 
 
   void calcGradient(MCWalkerConfiguration &W, int iat,
-                    vector<GradType> &grad);
+                    std::vector<GradType> &grad);
   void addGradient(MCWalkerConfiguration &W, int iat,
-                   vector<GradType> &grad);
+                   std::vector<GradType> &grad);
   void gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads,
                  ValueMatrix_t &lapl);
-  void NLratios (MCWalkerConfiguration &W,  vector<NLjob> &jobList,
-                 vector<PosType> &quadPoints, vector<ValueType> &psi_ratios);
+  void NLratios (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
+                 std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios);
   void evaluateDerivatives (MCWalkerConfiguration &W,
                             const opt_variables_type& optvars,
                             ValueMatrix_t &dlogpsi,
@@ -120,7 +120,7 @@ public:
     SpeciesSet &sSet = centers.getSpeciesSet();
     NumCenterGroups = sSet.getTotalNum();
     //      NumCenterGroups = centers.groups();
-    // cerr << "NumCenterGroups = " << NumCenterGroups << endl;
+    // std::cerr << "NumCenterGroups = " << NumCenterGroups << std::endl;
     GPUSplines.resize(NumCenterGroups,0);
     if (UsePBC)
     {

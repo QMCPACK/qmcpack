@@ -66,7 +66,7 @@ void RenyiUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool 
 //             //          all subsequent moves must cross or not cross as the first one
 //             int startingth(get_region((*W_vec[th]).R,r_map(th,iat)));
 //             if(startingth!=starting0)
-//               cerr<<"Starting from different regions"<<endl;
+//               std::cerr <<"Starting from different regions"<< std::endl;
           dr = m_sqrttau*(*deltaR_vec[th])[r_map(th,iat)];
           int nextmove(-1);
           if (W_vec[th]->makeMoveAndCheck(r_map(th,iat),dr))
@@ -83,11 +83,11 @@ void RenyiUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool 
             indx=(indx==RenyiOrder*2?RenyiOrder:indx);
 //               int startingth(get_region((*W_vec[indx]).R,r_map(indx,iat)));
 //               if(startingth!=starting0)
-//                 cerr<<"Starting Ths from different regions"<<endl;
+//                 std::cerr <<"Starting Ths from different regions"<< std::endl;
             dr = (*W_vec[th]).R[r_map(th,iat)] - (*W_vec[indx]).R[r_map(indx,iat)];
             bool x=W_vec[indx]->makeMoveAndCheck(r_map(indx,iat),dr);
 //               if (not x)
-//                 cerr<<"rejected x move ?!"<<endl;
+//                 std::cerr <<"rejected x move ?!"<< std::endl;
           }
           RealType rate(1);
           for (int th(0); th<2*RenyiOrder; th++)
@@ -424,7 +424,7 @@ void RenyiUpdatePbyP::plotSwapAmplitude(WalkerIter_t it, WalkerIter_t it_end, Ma
 //
 // //                 RealType d12=dot((*W_vec[th]).R[iat] - (*W_vec[indx]).R[iat],(*W_vec[th]).R[iat] - (*W_vec[indx]).R[iat]);
 // //                 if( d12>0.001 )
-// //                   cerr<<"broken"<<endl;
+// //                   std::cerr <<"broken"<< std::endl;
 //
 //                 (*drifts[th])[iat] *= 0.5;
 // //                 (*drifts[indx])[iat] = (*drifts[th])[iat];

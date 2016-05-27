@@ -27,7 +27,7 @@ namespace qmcplusplus
     void init_minimum(int np);
     public:
 
-    vector<ValueType> ratios;
+    std::vector<ValueType> ratios;
     /** constructor 
      * @param p ParticleSet whose virtual moves are handled by this object
      * @param nptcl number of virtual particles

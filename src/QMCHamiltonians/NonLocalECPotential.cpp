@@ -70,7 +70,7 @@ void NonLocalECPotential::contribute_particle_quantities()
 void NonLocalECPotential::checkout_particle_quantities(TraceManager& tm)
 {
   streaming_particles = request.streaming_array(myName);
-  if(streaming_particles)
+  if( streaming_particles)
   {
     Ve_sample = tm.checkout_real<1>(myName,Peln);
     Vi_sample = tm.checkout_real<1>(myName,Pion);
@@ -88,7 +88,7 @@ void NonLocalECPotential::checkout_particle_quantities(TraceManager& tm)
 
 void NonLocalECPotential::delete_particle_quantities()
 {
-  if(streaming_particles)
+  if( streaming_particles)
   {
     for(int iat=0; iat<NumIons; iat++)
     {
@@ -110,7 +110,7 @@ NonLocalECPotential::evaluate(ParticleSet& P)
 {
   Value=0.0;
 #if !defined(REMOVE_TRACEMANAGER)
-  if(streaming_particles)
+  if( streaming_particles)
   {
     (*Ve_sample) = 0.0;
     (*Vi_sample) = 0.0;
@@ -139,12 +139,12 @@ NonLocalECPotential::evaluate(ParticleSet& P)
       }
     }
   
-  //  cout << "Original NLPP energy " << endl;
+  //  std::cout << "Original NLPP energy " << std::endl;
   //  for(int iat=0; iat<NumIons; iat++)
-  //    cout << iat << " " << pp_e[iat] << endl;
+  //    std::cout << iat << " " << pp_e[iat] << std::endl;
   }
 #if defined(TRACE_CHECK)
-  if(streaming_particles)
+  if( streaming_particles)
   {
     Return_t Vnow = Value;
     RealType Visum = Vi_sample->sum();
@@ -152,16 +152,16 @@ NonLocalECPotential::evaluate(ParticleSet& P)
     RealType Vsum  = Vesum+Visum;
     if(abs(Vsum-Vnow)>TraceManager::trace_tol)
     {
-      app_log()<<"accumtest: NonLocalECPotential::evaluate()"<<endl;
-      app_log()<<"accumtest:   tot:"<< Vnow <<endl;
-      app_log()<<"accumtest:   sum:"<< Vsum <<endl;
+      app_log()<<"accumtest: NonLocalECPotential::evaluate()"<< std::endl;
+      app_log()<<"accumtest:   tot:"<< Vnow << std::endl;
+      app_log()<<"accumtest:   sum:"<< Vsum << std::endl;
       APP_ABORT("Trace check failed");
     }
     if(abs(Vesum-Visum)>TraceManager::trace_tol)
     {
-      app_log()<<"sharetest: NonLocalECPotential::evaluate()"<<endl;
-      app_log()<<"sharetest:   e share:"<< Vesum <<endl;
-      app_log()<<"sharetest:   i share:"<< Visum <<endl;
+      app_log()<<"sharetest: NonLocalECPotential::evaluate()"<< std::endl;
+      app_log()<<"sharetest:   e share:"<< Vesum << std::endl;
+      app_log()<<"sharetest:   i share:"<< Visum << std::endl;
       APP_ABORT("Trace check failed");
     }
   }
@@ -170,11 +170,11 @@ NonLocalECPotential::evaluate(ParticleSet& P)
 }
 
 NonLocalECPotential::Return_t
-NonLocalECPotential::evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+NonLocalECPotential::evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
 {
   Value=0.0;
 #if !defined(REMOVE_TRACEMANAGER)
-  if(streaming_particles)
+  if( streaming_particles)
   {
     (*Ve_sample) = 0.0;
     (*Vi_sample) = 0.0;
@@ -202,7 +202,7 @@ NonLocalECPotential::evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
     }
   }
 #if defined(TRACE_CHECK)
-  if(streaming_particles)
+  if( streaming_particles)
   {
     Return_t Vnow = Value;
     RealType Visum = Vi_sample->sum();
@@ -210,16 +210,16 @@ NonLocalECPotential::evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
     RealType Vsum  = Vesum+Visum;
     if(abs(Vsum-Vnow)>TraceManager::trace_tol)
     {
-      app_log()<<"accumtest: NonLocalECPotential::evaluate()"<<endl;
-      app_log()<<"accumtest:   tot:"<< Vnow <<endl;
-      app_log()<<"accumtest:   sum:"<< Vsum <<endl;
+      app_log()<<"accumtest: NonLocalECPotential::evaluate()"<< std::endl;
+      app_log()<<"accumtest:   tot:"<< Vnow << std::endl;
+      app_log()<<"accumtest:   sum:"<< Vsum << std::endl;
       APP_ABORT("Trace check failed");
     }
     if(abs(Vesum-Visum)>TraceManager::trace_tol)
     {
-      app_log()<<"sharetest: NonLocalECPotential::evaluate()"<<endl;
-      app_log()<<"sharetest:   e share:"<< Vesum <<endl;
-      app_log()<<"sharetest:   i share:"<< Visum <<endl;
+      app_log()<<"sharetest: NonLocalECPotential::evaluate()"<< std::endl;
+      app_log()<<"sharetest:   e share:"<< Vesum << std::endl;
+      app_log()<<"sharetest:   i share:"<< Visum << std::endl;
       APP_ABORT("Trace check failed");
     }
   }
@@ -293,7 +293,7 @@ void NonLocalECPotential::addObservables(PropertySetType& plist
     {
       for(int x=0; x<OHMMS_DIM; x++)
       {
-        ostringstream obsName1, obsName2;
+        std::ostringstream obsName1, obsName2;
         obsName1 << "FNL" << "_" << iat << "_" << x;
         plist.add(obsName1.str());
         obsName2 << "FNL_Pulay" << "_" << iat << "_" << x;
@@ -304,13 +304,13 @@ void NonLocalECPotential::addObservables(PropertySetType& plist
 }
 
 void
-NonLocalECPotential::registerObservables(vector<observable_helper*>& h5list,
+NonLocalECPotential::registerObservables(std::vector<observable_helper*>& h5list,
     hid_t gid) const
 {
   QMCHamiltonianBase::registerObservables(h5list, gid);
   if (ComputeForces)
   {
-    vector<int> ndim(2);
+    std::vector<int> ndim(2);
     ndim[0]=Nnuc;
     ndim[1]=OHMMS_DIM;
     observable_helper* h5o1 = new observable_helper("FNL");

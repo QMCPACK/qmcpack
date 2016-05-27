@@ -31,7 +31,7 @@ NonLocalTOperator::NonLocalTOperator():Tau(0.01),Alpha(0.0),Gamma(0.0)
  */
 bool NonLocalTOperator::put(xmlNodePtr cur)
 {
-  string use_tmove="no";
+  std::string use_tmove="no";
   ParameterSet m_param;
   m_param.add(Tau,"timeStep","double");
   m_param.add(Tau,"timestep","double");
@@ -85,7 +85,7 @@ int NonLocalTOperator::selectMove(RealType prob)
 }
 
 int NonLocalTOperator::selectMove(RealType prob,
-                                  vector<NonLocalData> &txy)
+                                  std::vector<NonLocalData> &txy)
 {
   RealType wgt_t=1.0;
   for(int i=1; i<txy.size(); i++)

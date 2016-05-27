@@ -51,7 +51,7 @@ string getHostName()
 {
   utsname mysys;
   uname(&mysys);
-  return string(mysys.nodename);
+  return std::string(mysys.nodename);
 }
 #endif
 string getDateAndTime()
@@ -68,7 +68,7 @@ string getDateAndTime(const char* format)
   tm* now_c = localtime(&now);
   char d[32];
   strftime(d,32,format,now_c);
-  return string(d);
+  return std::string(d);
 }
 
 /***************************************************************************

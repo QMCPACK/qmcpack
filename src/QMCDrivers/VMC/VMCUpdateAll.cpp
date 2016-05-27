@@ -47,7 +47,7 @@ void VMCUpdateAll::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool mea
     //W.R = m_sqrttau*deltaR + thisWalker.R;
     //W.update();
     RealType logpsi(Psi.evaluateLog(W));
-   // app_log()<<logpsi<<endl;
+   // app_log()<<logpsi<< std::endl;
     RealType g= std::exp(2.0*(logpsi-thisWalker.Properties(LOGPSI)));
     if (RandomGen() > g)
     {
@@ -67,7 +67,7 @@ void VMCUpdateAll::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool mea
   }
 }
 
-//   void VMCUpdateAll::advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng, vector<RealType>& c_i)
+//   void VMCUpdateAll::advanceCSWalkers(std::vector<TrialWaveFunction*>& pclone, std::vector<MCWalkerConfiguration*>& wclone, std::vector<QMCHamiltonian*>& hclone, std::vector<RandomGenerator_t*>& rng, std::vector<RealType>& c_i)
 //   {
 //     int NumThreads=pclone.size();
 //
@@ -129,11 +129,11 @@ void VMCUpdateAll::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool mea
 //     }
 //   }
 //
-//   void VMCUpdateAll::estimateNormWalkers(vector<TrialWaveFunction*>& pclone
-//     , vector<MCWalkerConfiguration*>& wclone
-//     , vector<QMCHamiltonian*>& hclone
-//     , vector<RandomGenerator_t*>& rng
-//     , vector<RealType>& ratio_i_0)
+//   void VMCUpdateAll::estimateNormWalkers(std::vector<TrialWaveFunction*>& pclone
+//     , std::vector<MCWalkerConfiguration*>& wclone
+//     , std::vector<QMCHamiltonian*>& hclone
+//     , std::vector<RandomGenerator_t*>& rng
+//     , std::vector<RealType>& ratio_i_0)
 //   {
 //     int NumThreads=pclone.size();
 //
@@ -230,13 +230,13 @@ void VMCUpdateAllWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
   }
 }
 
-VMCUpdateAllWithDrift::RealType VMCUpdateAllWithDrift::advanceWalkerForEE(Walker_t& w1, vector<PosType>& dR, vector<int>& iats, vector<int>& rs, vector<RealType>& ratios)
+VMCUpdateAllWithDrift::RealType VMCUpdateAllWithDrift::advanceWalkerForEE(Walker_t& w1, std::vector<PosType>& dR, std::vector<int>& iats, std::vector<int>& rs, std::vector<RealType>& ratios)
 {
 //     Walker_t::Buffer_t& w_buffer(w1.DataSet);
   W.loadWalker(w1,false);
-  vector<RealType> orb_ratios(4,1.0);
+  std::vector<RealType> orb_ratios(4,1.0);
   int nshells(rs.size());
-  vector<RealType> orb_phases0,orb_logs0;
+  std::vector<RealType> orb_phases0,orb_logs0;
   Psi.evaluateLog(W);
   RealType pt=Psi.getPhase();
   RealType lt=Psi.getLogPsi();
@@ -254,7 +254,7 @@ VMCUpdateAllWithDrift::RealType VMCUpdateAllWithDrift::advanceWalkerForEE(Walker
       nmoved++;
     }
     RealType logpsi(Psi.evaluateLog(W));
-    vector<RealType> orb_phases,orb_logs;
+    std::vector<RealType> orb_phases,orb_logs;
     Psi.getPhases(orb_phases);
     Psi.getLogs(orb_logs);
     orb_ratios[0]=std::cos(pt-Psi.getPhase())*std::exp(logpsi-lt);
@@ -275,7 +275,7 @@ VMCUpdateAllWithDrift::RealType VMCUpdateAllWithDrift::advanceWalkerForEE(Walker
   return 0.0;
 }
 
-// void VMCUpdateAllWithDrift::advanceCSWalkers(vector<TrialWaveFunction*>& pclone, vector<MCWalkerConfiguration*>& wclone, vector<QMCHamiltonian*>& hclone, vector<RandomGenerator_t*>& rng, vector<RealType>& c_i)
+// void VMCUpdateAllWithDrift::advanceCSWalkers(std::vector<TrialWaveFunction*>& pclone, std::vector<MCWalkerConfiguration*>& wclone, std::vector<QMCHamiltonian*>& hclone, std::vector<RandomGenerator_t*>& rng, std::vector<RealType>& c_i)
 //   {
 //     int NumThreads=pclone.size();
 //     bool moved(false);

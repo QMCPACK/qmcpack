@@ -36,7 +36,7 @@ BsplineAOBuilder::addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms
     ERRORMSG("m_orbitals, SphericalOrbitals<ROT,GT>*, is not initialized")
     return false;
   }
-  cout << "#### BsplineAOBuilder::addRadialOrbital " << endl;
+  std::cout << "#### BsplineAOBuilder::addRadialOrbital " << std::endl;
   RadialOrbitalType* radorb= new RadialOrbitalType(0.0);
   radorb->put(cur);
   m_orbitals->Rnl.push_back(radorb);

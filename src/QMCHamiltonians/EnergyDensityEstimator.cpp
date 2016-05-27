@@ -28,13 +28,12 @@
 namespace qmcplusplus
 {
 
-EnergyDensityEstimator::EnergyDensityEstimator(PSPool& PSP, const string& defaultKE)
+EnergyDensityEstimator::EnergyDensityEstimator(PSPool& PSP, const std::string& defaultKE)
   : psetpool(PSP),w_trace(0),Td_trace(0),Vd_trace(0),Vs_trace(0),Pdynamic(0),Pstatic(0)
 {
-  using namespace std;
-  bool write=omp_get_thread_num()==0;
+    bool write=omp_get_thread_num()==0;
   if(write)
-    app_log() <<"EnergyDensityEstimator::EnergyDensityEstimator"<< endl;
+    app_log() <<"EnergyDensityEstimator::EnergyDensityEstimator"<< std::endl;
   UpdateMode.set(COLLECTABLE,1);
   defKE = defaultKE;
   nsamples=0;
@@ -42,7 +41,7 @@ EnergyDensityEstimator::EnergyDensityEstimator(PSPool& PSP, const string& defaul
   request.request_array("Kinetic");
   request.request_array("LocalPotential");
   if(write)
-    app_log() <<"end EnergyDensityEstimator::EnergyDensityEstimator"<< endl;
+    app_log() <<"end EnergyDensityEstimator::EnergyDensityEstimator"<< std::endl;
 }
 
 
@@ -66,7 +65,7 @@ bool EnergyDensityEstimator::put(xmlNodePtr cur)
   input_xml = cur;
   //initialize simple xml attributes
   myName="EnergyDensity";
-  string dyn, stat="";
+  std::string dyn, stat="";
   OhmmsAttributeSet attrib;
   attrib.add(myName,"name");
   attrib.add(dyn,"dynamic");
@@ -76,7 +75,7 @@ bool EnergyDensityEstimator::put(xmlNodePtr cur)
   if(!Pdynamic)
     Pdynamic = get_particleset(dyn);
   nparticles = Pdynamic->getTotalNum();
-  vector<ParticleSet*> Pref;
+  std::vector<ParticleSet*> Pref;
   if(stat=="")
   {
     Pstatic = 0;
@@ -99,12 +98,12 @@ bool EnergyDensityEstimator::put(xmlNodePtr cur)
   xmlNodePtr element;
   bool stop=false;
   //initialize reference points
-  app_log() <<"Initializing reference points"<<endl;
+  app_log() <<"Initializing reference points"<< std::endl;
   bool has_ref=false;
   element=cur->children;
   while(element!=NULL)
   {
-    string name((const char*)element->name);
+    std::string name((const char*)element->name);
     if(name=="reference_points")
     {
       if(has_ref)
@@ -132,7 +131,7 @@ bool EnergyDensityEstimator::put(xmlNodePtr cur)
   int i=0;
   while(element!=NULL)
   {
-    string name = (const char*)element->name;
+    std::string name = (const char*)element->name;
     if(name=="spacegrid")
     {
       SpaceGrid* sg = new SpaceGrid(nvalues);
@@ -169,7 +168,7 @@ void EnergyDensityEstimator::set_ptcl()
   int ChargeAttribIndx = species.addAttribute("charge");
   int nspecies = species.TotalNum;
   int nps = P.getTotalNum();
-  vector<RealType> Zspec;
+  std::vector<RealType> Zspec;
   Zspec.resize(nspecies);
   Zptcl.resize(nps);
   for(int spec=0; spec<nspecies; spec++)
@@ -190,11 +189,11 @@ void EnergyDensityEstimator::unset_ptcl()
 }
 
 
-ParticleSet* EnergyDensityEstimator::get_particleset(string& psname)
+ParticleSet* EnergyDensityEstimator::get_particleset( std::string& psname)
 {
   if(psetpool.find(psname)==psetpool.end())
   {
-    app_log()<<"  ParticleSet "<<psname<<" does not exist"<<endl;
+    app_log()<<"  ParticleSet "<<psname<<" does not exist"<< std::endl;
     APP_ABORT("EnergyDensityEstimator::put");
   }
   return psetpool[psname];
@@ -213,26 +212,26 @@ void EnergyDensityEstimator::get_required_traces(TraceManager&tm)
 }
 
 
-void EnergyDensityEstimator::write_description(ostream& os)
+void EnergyDensityEstimator::write_description(std::ostream& os)
 {
-  os <<"EnergyDensityEstimator::write_description"<< endl;
-  os<<endl;
-  os<<"  EnergyDensityEstimator details" <<endl;
-  os<<endl;
-  string indent="    ";
-  os<<indent+"nparticles  = "<<nparticles<<endl;
-  os<<indent+"nspacegrids = "<<spacegrids.size()<<endl;
-  os<<endl;
+  os <<"EnergyDensityEstimator::write_description"<< std::endl;
+  os<< std::endl;
+  os<<"  EnergyDensityEstimator details" << std::endl;
+  os<< std::endl;
+  std::string indent="    ";
+  os<<indent+"nparticles  = "<<nparticles<< std::endl;
+  os<<indent+"nspacegrids = "<<spacegrids.size()<< std::endl;
+  os<< std::endl;
   ref.write_description(os,indent);
-  os<<endl;
+  os<< std::endl;
   for(int i=0; i<spacegrids.size(); i++)
   {
     spacegrids[i]->write_description(os,indent);
   }
-  os<<endl;
-  os<<"  end EnergyDensityEstimator details" <<endl;
-  os<<endl;
-  os <<"end EnergyDensityEstimator::write_description"<< endl;
+  os<< std::endl;
+  os<<"  end EnergyDensityEstimator details" << std::endl;
+  os<< std::endl;
+  os <<"end EnergyDensityEstimator::write_description"<< std::endl;
   return;
 }
 
@@ -241,7 +240,7 @@ void EnergyDensityEstimator::write_description(ostream& os)
 
 bool EnergyDensityEstimator::get(std::ostream& os) const
 {
-  os << "EDM replace this " << endl;
+  os << "EDM replace this " << std::endl;
   APP_ABORT("EnergyDensityEstimator::get");
   return true;
 }
@@ -289,8 +288,8 @@ EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P
     {
       Vd_trace->combine();
       const ParticleSet& Ps = *Pdynamic;
-      const vector<TraceReal>& Ts = Td_trace->sample;
-      const vector<TraceReal>& Vs = Vd_trace->sample;
+      const std::vector<TraceReal>& Ts = Td_trace->sample;
+      const std::vector<TraceReal>& Vs = Vd_trace->sample;
       for(int i=0; i<Ps.getTotalNum(); i++)
       {
         EDValues(p,W) = w;
@@ -303,7 +302,7 @@ EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P
     {
       Vs_trace->combine();
       const ParticleSet& Ps = *Pstatic;
-      const vector<TraceReal>& Vs = Vs_trace->sample;
+      const std::vector<TraceReal>& Vs = Vs_trace->sample;
       for(int i=0; i<Ps.getTotalNum(); i++)
       {
         EDValues(p,W)  = w;
@@ -350,8 +349,8 @@ EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P
       }
       Esum=Tsum+Vsum;
       static int cnt=0;
-      //app_log()<<"eval ED Dsum"<<cnt<<" "<<Dsum<<endl;
-      app_log()<<thread<<" eval ED "<<cnt<<" "<<Tsum<<" "<<Vsum<<" "<<Esum<<endl;
+      //app_log()<<"eval ED Dsum"<<cnt<<" "<<Dsum<< std::endl;
+      app_log()<<thread<<" eval ED "<<cnt<<" "<<Tsum<<" "<<Vsum<<" "<<Esum<< std::endl;
       int nvals=(int)nEDValues;
       RealType edvals[nvals];
       RealType edtmp [nvals];
@@ -366,8 +365,8 @@ EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P
       }
       for(int v=0; v<nvals; v++)
         edvals[v]+=P.Collectables[outside_buffer_offset+v];
-      //app_log()<<"eval ES Dsum"<<cnt<<" "<<edvals[W]<<endl;
-      app_log()<<thread<<" eval ES "<<cnt<<" "<<edvals[T]<<" "<<edvals[V]<<" "<<edvals[T]+edvals[V]<<endl;
+      //app_log()<<"eval ES Dsum"<<cnt<<" "<<edvals[W]<< std::endl;
+      app_log()<<thread<<" eval ES "<<cnt<<" "<<edvals[T]<<" "<<edvals[V]<<" "<<edvals[T]+edvals[V]<< std::endl;
       cnt++;
     }
 #endif
@@ -377,7 +376,7 @@ EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P
 }
 
 
-void EnergyDensityEstimator::write_Collectables(string& label,int& cnt,ParticleSet& P)
+void EnergyDensityEstimator::write_Collectables( std::string& label,int& cnt,ParticleSet& P)
 {
   int v=1;
   //for(int v=0;v<nEDValues;v++){
@@ -385,21 +384,21 @@ void EnergyDensityEstimator::write_Collectables(string& label,int& cnt,ParticleS
   int io = outside_buffer_offset;
   double Ti = P.Collectables[ii+1]/P.Collectables[ii]*12.0;
   double To = P.Collectables[io+1]/P.Collectables[io]*12.0;
-  app_log()<<"EDcoll "<<label<<cnt<<" "<<Ti<<" "<<To<<endl;
+  app_log()<<"EDcoll "<<label<<cnt<<" "<<Ti<<" "<<To<< std::endl;
   //}
 }
 
 
 void EnergyDensityEstimator::write_EDValues(void)
 {
-  app_log()<<"EDValues"<<endl;
+  app_log()<<"EDValues"<< std::endl;
   for(int p=0; p<nparticles; p++)
     fprintf(stdout,"  %d %e %e %e\n",p,EDValues(p,0),EDValues(p,1),EDValues(p,2));
 }
 
 void EnergyDensityEstimator::write_nonzero_domains(const ParticleSet& P)
 {
-  app_log()<<"Nonzero domains"<<endl;
+  app_log()<<"Nonzero domains"<< std::endl;
   int nd=1;
   for(int i=0; i<spacegrids.size(); i++)
     nd+=spacegrids[i]->nDomains();
@@ -409,7 +408,7 @@ void EnergyDensityEstimator::write_nonzero_domains(const ParticleSet& P)
     int n=outside_buffer_offset+i*nEDValues;
     for(int v=0; v<nEDValues; v++)
     {
-      nonzero = nonzero || abs(P.Collectables[n+v])>1e-8;
+      nonzero = nonzero || std::abs(P.Collectables[n+v])>1e-8;
     }
     if(nonzero)
     {
@@ -428,7 +427,7 @@ void EnergyDensityEstimator::addObservables(PropertySetType& plist, BufferType& 
   //allocate space for energy density outside of any spacegrid
   outside_buffer_offset=collectables.size();
   int nvalues=(int)nEDValues;
-  vector<RealType> tmp(nvalues);
+  std::vector<RealType> tmp(nvalues);
   collectables.add(tmp.begin(),tmp.end());
   //allocate space for spacegrids
   for(int i=0; i<spacegrids.size(); i++)
@@ -438,7 +437,7 @@ void EnergyDensityEstimator::addObservables(PropertySetType& plist, BufferType& 
 }
 
 
-void EnergyDensityEstimator::registerCollectables(vector<observable_helper*>& h5desc
+void EnergyDensityEstimator::registerCollectables(std::vector<observable_helper*>& h5desc
     , hid_t gid) const
 {
   hid_t g=H5Gcreate(gid,myName.c_str(),0);
@@ -452,7 +451,7 @@ void EnergyDensityEstimator::registerCollectables(vector<observable_helper*>& h5
   h5desc.push_back(oh);
   ref.save(h5desc,g);
   oh=new observable_helper("outside");
-  vector<int> ng(1);
+  std::vector<int> ng(1);
   ng[0]=(int)nEDValues;
   oh->set_dimensions(ng,outside_buffer_offset);
   oh->open(g);
@@ -467,18 +466,18 @@ void EnergyDensityEstimator::registerCollectables(vector<observable_helper*>& h5
 void EnergyDensityEstimator::setObservables(PropertySetType& plist)
 {
   //remains empty
-  //app_log() <<"EnergyDensityEstimator::setObservables"<< endl;
-  //app_log() <<"  jtk: should remain empty?"<<endl;
-  //app_log() <<"end EnergyDensityEstimator::setObservables"<< endl;
+  //app_log() <<"EnergyDensityEstimator::setObservables"<< std::endl;
+  //app_log() <<"  jtk: should remain empty?"<< std::endl;
+  //app_log() <<"end EnergyDensityEstimator::setObservables"<< std::endl;
 }
 
 void EnergyDensityEstimator::setParticlePropertyList(PropertySetType& plist
     , int offset)
 {
   //remains empty
-  //app_log() <<"EnergyDensityEstimator::setParticlePropertyList"<< endl;
-  //app_log() <<"  jtk: should remain empty?"<<endl;
-  //app_log() <<"end EnergyDensityEstimator::setParticlePropertyList"<< endl;
+  //app_log() <<"EnergyDensityEstimator::setParticlePropertyList"<< std::endl;
+  //app_log() <<"  jtk: should remain empty?"<< std::endl;
+  //app_log() <<"end EnergyDensityEstimator::setParticlePropertyList"<< std::endl;
 }
 
 
@@ -488,11 +487,11 @@ QMCHamiltonianBase* EnergyDensityEstimator::makeClone(ParticleSet& qp
 {
   bool write=omp_get_thread_num()==0;
   if(write)
-    app_log() <<"EnergyDensityEstimator::makeClone"<< endl;
+    app_log() <<"EnergyDensityEstimator::makeClone"<< std::endl;
   EnergyDensityEstimator* edclone = new EnergyDensityEstimator(psetpool,defKE);
   edclone->put(input_xml,qp);
   //int thread = omp_get_thread_num();
-  //app_log()<<thread<<"make edclone"<<endl;
+  //app_log()<<thread<<"make edclone"<< std::endl;
   //edclone->Pdynamic = Pdynamic->get_clone(thread);
   //edclone->Pstatic  = Pstatic->get_clone(thread);
   return edclone;

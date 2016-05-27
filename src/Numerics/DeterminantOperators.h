@@ -47,7 +47,7 @@ LUFactorization(int n, int m, float* restrict a, const int& n0, int* restrict pi
 }
 
 
-/** LU factorization of complex<double> */
+/** LU factorization of std::complex<double> */
 inline void
 LUFactorization(int n, int m, std::complex<double>* restrict a, int n0, int* restrict piv)
 {
@@ -69,7 +69,7 @@ inline void InvertLU(const int& n, float* restrict a, const int& n0,
   sgetri(n,a,n0,piv,work,n1,status);
 }
 
-/** Inversion of a complex<double> matrix after LU factorization*/
+/** Inversion of a std::complex<double> matrix after LU factorization*/
 inline void InvertLU(int n, std::complex<double>* restrict a, int n0
                      , int* restrict piv, std::complex<double>* restrict work, int n1)
 {
@@ -269,8 +269,8 @@ determinant_matrix(MatrixA& M)
 //invert_matrix_log(MatrixA& M, int &sign_det, bool getdet)
 //{
 //  typedef typename MatrixA::value_type value_type;
-//  vector<int> pivot(M.rows());
-//  vector<value_type> work(M.rows());
+//  std::vector<int> pivot(M.rows());
+//  std::vector<value_type> work(M.rows());
 //  int n(M.rows());
 //  int m(M.cols());
 //  MatrixA Mcopy(M);
@@ -290,7 +290,7 @@ determinant_matrix(MatrixA& M)
 //  InvertLU(n,M.data(),m, &pivot[0], &work[0], n);
 //  //value_type det0 = Invert(Mcopy.data(),n,m,&work[0], &pivot[0]);
 //  //double expdetp = sign_det*std::exp(logdet);
-//  //cerr<<"DETS ARE NOW "<<det0<<" "<<expdetp<<" "<<logdet<<endl;
+//  //std::cerr <<"DETS ARE NOW "<<det0<<" "<<expdetp<<" "<<logdet<< std::endl;
 //  return logdet;
 //}
 //

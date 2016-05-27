@@ -43,7 +43,7 @@ void PWRealOrbitalSet::setOrbitalSetSize(int norbs)
 
 void PWRealOrbitalSet::resetTargetParticleSet(ParticleSet& P)
 {
-  app_error() << "PWRealOrbitalSet::resetTargetParticleSet not yet coded." << endl;
+  app_error() << "PWRealOrbitalSet::resetTargetParticleSet not yet coded." << std::endl;
   OHMMS::Controller->abort();
 }
 
@@ -56,7 +56,7 @@ void PWRealOrbitalSet::resize(PWBasisPtr bset, int nbands, bool cleanup)
   CC.resize(OrbitalSetSize,BasisSetSize);
   Temp.resize(OrbitalSetSize,PW_MAXINDEX);
   tempPsi.resize(OrbitalSetSize);
-  app_log() << "  PWRealOrbitalSet::resize OrbitalSetSize =" << OrbitalSetSize << " BasisSetSize = " << BasisSetSize << endl;
+  app_log() << "  PWRealOrbitalSet::resize OrbitalSetSize =" << OrbitalSetSize << " BasisSetSize = " << BasisSetSize << std::endl;
 }
 
 void PWRealOrbitalSet::addVector(const std::vector<RealType>& coefs,int jorb)
@@ -64,11 +64,11 @@ void PWRealOrbitalSet::addVector(const std::vector<RealType>& coefs,int jorb)
   int ng=myBasisSet->inputmap.size();
   if(ng != coefs.size())
   {
-    app_error() << "  Input G map does not match the basis size of wave functions " << endl;
+    app_error() << "  Input G map does not match the basis size of wave functions " << std::endl;
     OHMMS::Controller->abort();
   }
   //drop G points for the given TwistAngle
-  const vector<int> &inputmap(myBasisSet->inputmap);
+  const std::vector<int> &inputmap(myBasisSet->inputmap);
   for(int ig=0; ig<ng; ig++)
   {
     if(inputmap[ig]>-1)
@@ -81,11 +81,11 @@ void PWRealOrbitalSet::addVector(const std::vector<ComplexType>& coefs,int jorb)
   int ng=myBasisSet->inputmap.size();
   if(ng != coefs.size())
   {
-    app_error() << "  Input G map does not match the basis size of wave functions " << endl;
+    app_error() << "  Input G map does not match the basis size of wave functions " << std::endl;
     OHMMS::Controller->abort();
   }
   //drop G points for the given TwistAngle
-  const vector<int> &inputmap(myBasisSet->inputmap);
+  const std::vector<int> &inputmap(myBasisSet->inputmap);
   for(int ig=0; ig<ng; ig++)
   {
     if(inputmap[ig]>-1)

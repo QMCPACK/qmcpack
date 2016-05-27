@@ -31,10 +31,10 @@ struct HeePotential: public QMCHamiltonianBase
     C=12608;
     d_table = DistanceTable::add(I,P);
 //       rc = P.Lattice.WignerSeitzRadius;
-//       app_log()<<" RC is "<<rc<<endl;
+//       app_log()<<" RC is "<<rc<< std::endl;
 //       if (rc>0) trunc= A*std::pow(rc,-4) * ( B/(C+std::pow(rc,6)) - 1 );
 //       else trunc=0;
-//       app_log()<<" trunc "<<trunc<<endl;
+//       app_log()<<" trunc "<<trunc<< std::endl;
   }
 
   ~HeePotential() { }
@@ -67,7 +67,7 @@ struct HeePotential: public QMCHamiltonianBase
     return Value;
   }
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
@@ -76,7 +76,7 @@ struct HeePotential: public QMCHamiltonianBase
   /** Do nothing */
   bool put(xmlNodePtr cur)
   {
-    string tagName("HeePot");
+    std::string tagName("HeePot");
     OhmmsAttributeSet Tattrib;
     Tattrib.add(tagName,"name");
     Tattrib.put(cur);

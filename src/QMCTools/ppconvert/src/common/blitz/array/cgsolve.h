@@ -43,7 +43,7 @@ void dump(const char* name, Array<T_numtype,3>& A)
     }
 
     normA /= A.numElements();
-    cout << "Average magnitude of " << name << " is " << normA << endl;
+    std::cout << "Average magnitude of " << name << " is " << normA << std::endl;
 }
 
 template<typename T_stencil, typename T_numtype, int N_rank, typename T_BCs>
@@ -63,7 +63,7 @@ int conjugateGradientSolver(T_stencil stencil,
     RectDomain<N_rank> interior = interiorDomain(stencil, x, rhs);
 
 cout << "Interior: " << interior.lbound() << ", " << interior.ubound()
-     << endl;
+     << std::endl;
 
     // Calculate initial residual
     Array<T_numtype,N_rank> r = rhs.copy();
@@ -74,9 +74,9 @@ cout << "Interior: " << interior.lbound() << ", " << interior.ubound()
     applyStencil(stencil, r, x);
 
  dump("r after stencil", r);
- cout << "Slice through r: " << endl << r(23,17,Range::all()) << endl;
- cout << "Slice through x: " << endl << x(23,17,Range::all()) << endl;
- cout << "Slice through rhs: " << endl << rhs(23,17,Range::all()) << endl;
+ std::cout << "Slice through r: " << std::endl << r(23,17,Range::all()) << std::endl;
+ std::cout << "Slice through x: " << std::endl << x(23,17,Range::all()) << std::endl;
+ std::cout << "Slice through rhs: " << std::endl << rhs(23,17,Range::all()) << std::endl;
 
     r *= -1.0;
 
@@ -104,7 +104,7 @@ cout << "Interior: " << interior.lbound() << ", " << interior.ubound()
         rho = sum(r * r);
 
         if ((iteration % 20) == 0)
-            cout << "CG: Iter " << iteration << "\t rho = " << rho << endl;
+            std::cout << "CG: Iter " << iteration << "\t rho = " << rho << std::endl;
 
         // Check halting condition
         if (rho < haltrho)
@@ -138,7 +138,7 @@ cout << "Interior: " << interior.lbound() << ", " << interior.ubound()
     }
 
     if (!converged)
-        cout << "Warning: CG solver did not converge" << endl;
+        std::cout << "Warning: CG solver did not converge" << std::endl;
 
     return iteration;
 }

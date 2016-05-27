@@ -18,8 +18,8 @@ public:
 
   VSVBParser(int argc, char** argv);
 
-  streampos pivot_begin;
-  vector<std::string> tags;
+  std::streampos pivot_begin;
+  std::vector<std::string> tags;
   bool usingECP;
   std::string MOtype;
   //int nCartMO;

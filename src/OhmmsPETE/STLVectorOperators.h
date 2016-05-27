@@ -33,1801 +33,1801 @@
 
 template<class T1>
 inline typename MakeReturn<UnaryNode<FnArcCos,
-       typename CreateLeaf<vector<T1> >::Leaf_t> >::Expression_t
-       acos(const vector<T1> & l)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t> >::Expression_t
+       acos(const std::vector<T1> & l)
 {
   typedef UnaryNode<FnArcCos,
-          typename CreateLeaf<vector<T1> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l)));
+                                    CreateLeaf<std::vector<T1> >::make(l)));
 }
 
 template<class T1>
 inline typename MakeReturn<UnaryNode<FnArcSin,
-       typename CreateLeaf<vector<T1> >::Leaf_t> >::Expression_t
-       asin(const vector<T1> & l)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t> >::Expression_t
+       asin(const std::vector<T1> & l)
 {
   typedef UnaryNode<FnArcSin,
-          typename CreateLeaf<vector<T1> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l)));
+                                    CreateLeaf<std::vector<T1> >::make(l)));
 }
 
 template<class T1>
 inline typename MakeReturn<UnaryNode<FnArcTan,
-       typename CreateLeaf<vector<T1> >::Leaf_t> >::Expression_t
-       atan(const vector<T1> & l)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t> >::Expression_t
+       atan(const std::vector<T1> & l)
 {
   typedef UnaryNode<FnArcTan,
-          typename CreateLeaf<vector<T1> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l)));
+                                    CreateLeaf<std::vector<T1> >::make(l)));
 }
 
 template<class T1>
 inline typename MakeReturn<UnaryNode<FnCeil,
-       typename CreateLeaf<vector<T1> >::Leaf_t> >::Expression_t
-       ceil(const vector<T1> & l)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t> >::Expression_t
+       ceil(const std::vector<T1> & l)
 {
   typedef UnaryNode<FnCeil,
-          typename CreateLeaf<vector<T1> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l)));
+                                    CreateLeaf<std::vector<T1> >::make(l)));
 }
 
 template<class T1>
 inline typename MakeReturn<UnaryNode<FnCos,
-       typename CreateLeaf<vector<T1> >::Leaf_t> >::Expression_t
-       cos(const vector<T1> & l)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t> >::Expression_t
+       cos(const std::vector<T1> & l)
 {
   typedef UnaryNode<FnCos,
-          typename CreateLeaf<vector<T1> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l)));
+                                    CreateLeaf<std::vector<T1> >::make(l)));
 }
 
 template<class T1>
 inline typename MakeReturn<UnaryNode<FnHypCos,
-       typename CreateLeaf<vector<T1> >::Leaf_t> >::Expression_t
-       cosh(const vector<T1> & l)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t> >::Expression_t
+       cosh(const std::vector<T1> & l)
 {
   typedef UnaryNode<FnHypCos,
-          typename CreateLeaf<vector<T1> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l)));
+                                    CreateLeaf<std::vector<T1> >::make(l)));
 }
 
 template<class T1>
 inline typename MakeReturn<UnaryNode<FnExp,
-       typename CreateLeaf<vector<T1> >::Leaf_t> >::Expression_t
-       exp(const vector<T1> & l)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t> >::Expression_t
+       exp(const std::vector<T1> & l)
 {
   typedef UnaryNode<FnExp,
-          typename CreateLeaf<vector<T1> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l)));
+                                    CreateLeaf<std::vector<T1> >::make(l)));
 }
 
 template<class T1>
 inline typename MakeReturn<UnaryNode<FnFabs,
-       typename CreateLeaf<vector<T1> >::Leaf_t> >::Expression_t
-       fabs(const vector<T1> & l)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t> >::Expression_t
+       fabs(const std::vector<T1> & l)
 {
   typedef UnaryNode<FnFabs,
-          typename CreateLeaf<vector<T1> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l)));
+                                    CreateLeaf<std::vector<T1> >::make(l)));
 }
 
 template<class T1>
 inline typename MakeReturn<UnaryNode<FnFloor,
-       typename CreateLeaf<vector<T1> >::Leaf_t> >::Expression_t
-       floor(const vector<T1> & l)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t> >::Expression_t
+       floor(const std::vector<T1> & l)
 {
   typedef UnaryNode<FnFloor,
-          typename CreateLeaf<vector<T1> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l)));
+                                    CreateLeaf<std::vector<T1> >::make(l)));
 }
 
 template<class T1>
 inline typename MakeReturn<UnaryNode<FnLog,
-       typename CreateLeaf<vector<T1> >::Leaf_t> >::Expression_t
-       log(const vector<T1> & l)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t> >::Expression_t
+       log(const std::vector<T1> & l)
 {
   typedef UnaryNode<FnLog,
-          typename CreateLeaf<vector<T1> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l)));
+                                    CreateLeaf<std::vector<T1> >::make(l)));
 }
 
 template<class T1>
 inline typename MakeReturn<UnaryNode<FnLog10,
-       typename CreateLeaf<vector<T1> >::Leaf_t> >::Expression_t
-       log10(const vector<T1> & l)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t> >::Expression_t
+       log10(const std::vector<T1> & l)
 {
   typedef UnaryNode<FnLog10,
-          typename CreateLeaf<vector<T1> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l)));
+                                    CreateLeaf<std::vector<T1> >::make(l)));
 }
 
 template<class T1>
 inline typename MakeReturn<UnaryNode<FnSin,
-       typename CreateLeaf<vector<T1> >::Leaf_t> >::Expression_t
-       sin(const vector<T1> & l)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t> >::Expression_t
+       sin(const std::vector<T1> & l)
 {
   typedef UnaryNode<FnSin,
-          typename CreateLeaf<vector<T1> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l)));
+                                    CreateLeaf<std::vector<T1> >::make(l)));
 }
 
 template<class T1>
 inline typename MakeReturn<UnaryNode<FnHypSin,
-       typename CreateLeaf<vector<T1> >::Leaf_t> >::Expression_t
-       sinh(const vector<T1> & l)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t> >::Expression_t
+       sinh(const std::vector<T1> & l)
 {
   typedef UnaryNode<FnHypSin,
-          typename CreateLeaf<vector<T1> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l)));
+                                    CreateLeaf<std::vector<T1> >::make(l)));
 }
 
 template<class T1>
 inline typename MakeReturn<UnaryNode<FnSqrt,
-       typename CreateLeaf<vector<T1> >::Leaf_t> >::Expression_t
-       sqrt(const vector<T1> & l)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t> >::Expression_t
+       sqrt(const std::vector<T1> & l)
 {
   typedef UnaryNode<FnSqrt,
-          typename CreateLeaf<vector<T1> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l)));
+                                    CreateLeaf<std::vector<T1> >::make(l)));
 }
 
 template<class T1>
 inline typename MakeReturn<UnaryNode<FnTan,
-       typename CreateLeaf<vector<T1> >::Leaf_t> >::Expression_t
-       tan(const vector<T1> & l)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t> >::Expression_t
+       tan(const std::vector<T1> & l)
 {
   typedef UnaryNode<FnTan,
-          typename CreateLeaf<vector<T1> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l)));
+                                    CreateLeaf<std::vector<T1> >::make(l)));
 }
 
 template<class T1>
 inline typename MakeReturn<UnaryNode<FnHypTan,
-       typename CreateLeaf<vector<T1> >::Leaf_t> >::Expression_t
-       tanh(const vector<T1> & l)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t> >::Expression_t
+       tanh(const std::vector<T1> & l)
 {
   typedef UnaryNode<FnHypTan,
-          typename CreateLeaf<vector<T1> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l)));
+                                    CreateLeaf<std::vector<T1> >::make(l)));
 }
 
 template<class T1>
 inline typename MakeReturn<UnaryNode<OpUnaryMinus,
-       typename CreateLeaf<vector<T1> >::Leaf_t> >::Expression_t
-       operator-(const vector<T1> & l)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t> >::Expression_t
+       operator-(const std::vector<T1> & l)
 {
   typedef UnaryNode<OpUnaryMinus,
-          typename CreateLeaf<vector<T1> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l)));
+                                    CreateLeaf<std::vector<T1> >::make(l)));
 }
 
 template<class T1>
 inline typename MakeReturn<UnaryNode<OpUnaryPlus,
-       typename CreateLeaf<vector<T1> >::Leaf_t> >::Expression_t
-       operator+(const vector<T1> & l)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t> >::Expression_t
+       operator+(const std::vector<T1> & l)
 {
   typedef UnaryNode<OpUnaryPlus,
-          typename CreateLeaf<vector<T1> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l)));
+                                    CreateLeaf<std::vector<T1> >::make(l)));
 }
 
 template<class T1>
 inline typename MakeReturn<UnaryNode<OpBitwiseNot,
-       typename CreateLeaf<vector<T1> >::Leaf_t> >::Expression_t
-       operator~(const vector<T1> & l)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t> >::Expression_t
+       operator~(const std::vector<T1> & l)
 {
   typedef UnaryNode<OpBitwiseNot,
-          typename CreateLeaf<vector<T1> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l)));
+                                    CreateLeaf<std::vector<T1> >::make(l)));
 }
 
 template<class T1>
 inline typename MakeReturn<UnaryNode<OpIdentity,
-       typename CreateLeaf<vector<T1> >::Leaf_t> >::Expression_t
-       PETE_identity(const vector<T1> & l)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t> >::Expression_t
+       PETE_identity(const std::vector<T1> & l)
 {
   typedef UnaryNode<OpIdentity,
-          typename CreateLeaf<vector<T1> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l)));
+                                    CreateLeaf<std::vector<T1> >::make(l)));
 }
 
 template<class T1>
 inline typename MakeReturn<UnaryNode<OpNot,
-       typename CreateLeaf<vector<T1> >::Leaf_t> >::Expression_t
-       operator!(const vector<T1> & l)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t> >::Expression_t
+       operator!(const std::vector<T1> & l)
 {
   typedef UnaryNode<OpNot,
-          typename CreateLeaf<vector<T1> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l)));
+                                    CreateLeaf<std::vector<T1> >::make(l)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<UnaryNode<OpCast<T1>,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       peteCast(const T1&, const vector<T2> & l)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       peteCast(const T1&, const std::vector<T2> & l)
 {
   typedef UnaryNode<OpCast<T1>,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T2> >::make(l)));
+                                    CreateLeaf<std::vector<T2> >::make(l)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpAdd,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator+(const vector<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator+(const std::vector<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpAdd,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpSubtract,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator-(const vector<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator-(const std::vector<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpSubtract,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpMultiply,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator*(const vector<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator*(const std::vector<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpMultiply,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpDivide,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator/(const vector<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator/(const std::vector<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpDivide,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpMod,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator%(const vector<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator%(const std::vector<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpMod,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpBitwiseAnd,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator&(const vector<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator&(const std::vector<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpBitwiseAnd,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpBitwiseOr,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator|(const vector<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator|(const std::vector<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpBitwiseOr,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpBitwiseXor,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator^(const vector<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator^(const std::vector<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpBitwiseXor,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<FnLdexp,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       ldexp(const vector<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       ldexp(const std::vector<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<FnLdexp,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<FnPow,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       pow(const vector<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       pow(const std::vector<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<FnPow,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<FnFmod,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       fmod(const vector<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       fmod(const std::vector<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<FnFmod,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<FnArcTan2,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       atan2(const vector<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       atan2(const std::vector<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<FnArcTan2,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpLT,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator<(const vector<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator<(const std::vector<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpLT,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpLE,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator<=(const vector<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator<=(const std::vector<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpLE,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpGT,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator>(const vector<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator>(const std::vector<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpGT,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpGE,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator>=(const vector<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator>=(const std::vector<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpGE,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpEQ,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator==(const vector<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator==(const std::vector<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpEQ,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpNE,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator!=(const vector<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator!=(const std::vector<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpNE,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpAnd,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator&&(const vector<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator&&(const std::vector<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpAnd,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpOr,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator||(const vector<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator||(const std::vector<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpOr,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpLeftShift,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator<<(const vector<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator<<(const std::vector<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpLeftShift,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpRightShift,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator>>(const vector<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator>>(const std::vector<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpRightShift,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpAdd,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<Expression<T2> >::Leaf_t> >::Expression_t
-       operator+(const vector<T1> & l,const Expression<T2> & r)
+       operator+(const std::vector<T1> & l,const Expression<T2> & r)
 {
   typedef BinaryNode<OpAdd,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<Expression<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<Expression<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpSubtract,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<Expression<T2> >::Leaf_t> >::Expression_t
-       operator-(const vector<T1> & l,const Expression<T2> & r)
+       operator-(const std::vector<T1> & l,const Expression<T2> & r)
 {
   typedef BinaryNode<OpSubtract,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<Expression<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<Expression<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpMultiply,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<Expression<T2> >::Leaf_t> >::Expression_t
-       operator*(const vector<T1> & l,const Expression<T2> & r)
+       operator*(const std::vector<T1> & l,const Expression<T2> & r)
 {
   typedef BinaryNode<OpMultiply,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<Expression<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<Expression<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpDivide,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<Expression<T2> >::Leaf_t> >::Expression_t
-       operator/(const vector<T1> & l,const Expression<T2> & r)
+       operator/(const std::vector<T1> & l,const Expression<T2> & r)
 {
   typedef BinaryNode<OpDivide,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<Expression<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<Expression<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpMod,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<Expression<T2> >::Leaf_t> >::Expression_t
-       operator%(const vector<T1> & l,const Expression<T2> & r)
+       operator%(const std::vector<T1> & l,const Expression<T2> & r)
 {
   typedef BinaryNode<OpMod,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<Expression<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<Expression<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpBitwiseAnd,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<Expression<T2> >::Leaf_t> >::Expression_t
-       operator&(const vector<T1> & l,const Expression<T2> & r)
+       operator&(const std::vector<T1> & l,const Expression<T2> & r)
 {
   typedef BinaryNode<OpBitwiseAnd,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<Expression<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<Expression<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpBitwiseOr,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<Expression<T2> >::Leaf_t> >::Expression_t
-       operator|(const vector<T1> & l,const Expression<T2> & r)
+       operator|(const std::vector<T1> & l,const Expression<T2> & r)
 {
   typedef BinaryNode<OpBitwiseOr,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<Expression<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<Expression<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpBitwiseXor,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<Expression<T2> >::Leaf_t> >::Expression_t
-       operator^(const vector<T1> & l,const Expression<T2> & r)
+       operator^(const std::vector<T1> & l,const Expression<T2> & r)
 {
   typedef BinaryNode<OpBitwiseXor,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<Expression<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<Expression<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<FnLdexp,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<Expression<T2> >::Leaf_t> >::Expression_t
-       ldexp(const vector<T1> & l,const Expression<T2> & r)
+       ldexp(const std::vector<T1> & l,const Expression<T2> & r)
 {
   typedef BinaryNode<FnLdexp,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<Expression<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<Expression<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<FnPow,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<Expression<T2> >::Leaf_t> >::Expression_t
-       pow(const vector<T1> & l,const Expression<T2> & r)
+       pow(const std::vector<T1> & l,const Expression<T2> & r)
 {
   typedef BinaryNode<FnPow,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<Expression<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<Expression<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<FnFmod,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<Expression<T2> >::Leaf_t> >::Expression_t
-       fmod(const vector<T1> & l,const Expression<T2> & r)
+       fmod(const std::vector<T1> & l,const Expression<T2> & r)
 {
   typedef BinaryNode<FnFmod,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<Expression<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<Expression<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<FnArcTan2,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<Expression<T2> >::Leaf_t> >::Expression_t
-       atan2(const vector<T1> & l,const Expression<T2> & r)
+       atan2(const std::vector<T1> & l,const Expression<T2> & r)
 {
   typedef BinaryNode<FnArcTan2,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<Expression<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<Expression<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpLT,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<Expression<T2> >::Leaf_t> >::Expression_t
-       operator<(const vector<T1> & l,const Expression<T2> & r)
+       operator<(const std::vector<T1> & l,const Expression<T2> & r)
 {
   typedef BinaryNode<OpLT,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<Expression<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<Expression<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpLE,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<Expression<T2> >::Leaf_t> >::Expression_t
-       operator<=(const vector<T1> & l,const Expression<T2> & r)
+       operator<=(const std::vector<T1> & l,const Expression<T2> & r)
 {
   typedef BinaryNode<OpLE,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<Expression<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<Expression<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpGT,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<Expression<T2> >::Leaf_t> >::Expression_t
-       operator>(const vector<T1> & l,const Expression<T2> & r)
+       operator>(const std::vector<T1> & l,const Expression<T2> & r)
 {
   typedef BinaryNode<OpGT,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<Expression<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<Expression<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpGE,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<Expression<T2> >::Leaf_t> >::Expression_t
-       operator>=(const vector<T1> & l,const Expression<T2> & r)
+       operator>=(const std::vector<T1> & l,const Expression<T2> & r)
 {
   typedef BinaryNode<OpGE,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<Expression<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<Expression<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpEQ,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<Expression<T2> >::Leaf_t> >::Expression_t
-       operator==(const vector<T1> & l,const Expression<T2> & r)
+       operator==(const std::vector<T1> & l,const Expression<T2> & r)
 {
   typedef BinaryNode<OpEQ,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<Expression<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<Expression<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpNE,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<Expression<T2> >::Leaf_t> >::Expression_t
-       operator!=(const vector<T1> & l,const Expression<T2> & r)
+       operator!=(const std::vector<T1> & l,const Expression<T2> & r)
 {
   typedef BinaryNode<OpNE,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<Expression<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<Expression<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpAnd,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<Expression<T2> >::Leaf_t> >::Expression_t
-       operator&&(const vector<T1> & l,const Expression<T2> & r)
+       operator&&(const std::vector<T1> & l,const Expression<T2> & r)
 {
   typedef BinaryNode<OpAnd,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<Expression<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<Expression<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpOr,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<Expression<T2> >::Leaf_t> >::Expression_t
-       operator||(const vector<T1> & l,const Expression<T2> & r)
+       operator||(const std::vector<T1> & l,const Expression<T2> & r)
 {
   typedef BinaryNode<OpOr,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<Expression<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<Expression<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpLeftShift,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<Expression<T2> >::Leaf_t> >::Expression_t
-       operator<<(const vector<T1> & l,const Expression<T2> & r)
+       operator<<(const std::vector<T1> & l,const Expression<T2> & r)
 {
   typedef BinaryNode<OpLeftShift,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<Expression<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<Expression<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpRightShift,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<Expression<T2> >::Leaf_t> >::Expression_t
-       operator>>(const vector<T1> & l,const Expression<T2> & r)
+       operator>>(const std::vector<T1> & l,const Expression<T2> & r)
 {
   typedef BinaryNode<OpRightShift,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<Expression<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<Expression<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpAdd,
        typename CreateLeaf<Expression<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator+(const Expression<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator+(const Expression<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpAdd,
           typename CreateLeaf<Expression<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<Expression<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpSubtract,
        typename CreateLeaf<Expression<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator-(const Expression<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator-(const Expression<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpSubtract,
           typename CreateLeaf<Expression<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<Expression<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpMultiply,
        typename CreateLeaf<Expression<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator*(const Expression<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator*(const Expression<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpMultiply,
           typename CreateLeaf<Expression<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<Expression<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpDivide,
        typename CreateLeaf<Expression<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator/(const Expression<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator/(const Expression<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpDivide,
           typename CreateLeaf<Expression<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<Expression<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpMod,
        typename CreateLeaf<Expression<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator%(const Expression<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator%(const Expression<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpMod,
           typename CreateLeaf<Expression<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<Expression<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpBitwiseAnd,
        typename CreateLeaf<Expression<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator&(const Expression<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator&(const Expression<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpBitwiseAnd,
           typename CreateLeaf<Expression<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<Expression<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpBitwiseOr,
        typename CreateLeaf<Expression<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator|(const Expression<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator|(const Expression<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpBitwiseOr,
           typename CreateLeaf<Expression<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<Expression<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpBitwiseXor,
        typename CreateLeaf<Expression<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator^(const Expression<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator^(const Expression<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpBitwiseXor,
           typename CreateLeaf<Expression<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<Expression<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<FnLdexp,
        typename CreateLeaf<Expression<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       ldexp(const Expression<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       ldexp(const Expression<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<FnLdexp,
           typename CreateLeaf<Expression<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<Expression<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<FnPow,
        typename CreateLeaf<Expression<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       pow(const Expression<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       pow(const Expression<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<FnPow,
           typename CreateLeaf<Expression<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<Expression<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<FnFmod,
        typename CreateLeaf<Expression<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       fmod(const Expression<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       fmod(const Expression<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<FnFmod,
           typename CreateLeaf<Expression<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<Expression<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<FnArcTan2,
        typename CreateLeaf<Expression<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       atan2(const Expression<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       atan2(const Expression<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<FnArcTan2,
           typename CreateLeaf<Expression<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<Expression<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpLT,
        typename CreateLeaf<Expression<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator<(const Expression<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator<(const Expression<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpLT,
           typename CreateLeaf<Expression<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<Expression<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpLE,
        typename CreateLeaf<Expression<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator<=(const Expression<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator<=(const Expression<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpLE,
           typename CreateLeaf<Expression<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<Expression<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpGT,
        typename CreateLeaf<Expression<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator>(const Expression<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator>(const Expression<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpGT,
           typename CreateLeaf<Expression<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<Expression<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpGE,
        typename CreateLeaf<Expression<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator>=(const Expression<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator>=(const Expression<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpGE,
           typename CreateLeaf<Expression<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<Expression<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpEQ,
        typename CreateLeaf<Expression<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator==(const Expression<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator==(const Expression<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpEQ,
           typename CreateLeaf<Expression<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<Expression<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpNE,
        typename CreateLeaf<Expression<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator!=(const Expression<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator!=(const Expression<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpNE,
           typename CreateLeaf<Expression<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<Expression<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpAnd,
        typename CreateLeaf<Expression<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator&&(const Expression<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator&&(const Expression<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpAnd,
           typename CreateLeaf<Expression<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<Expression<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpOr,
        typename CreateLeaf<Expression<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator||(const Expression<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator||(const Expression<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpOr,
           typename CreateLeaf<Expression<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<Expression<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpLeftShift,
        typename CreateLeaf<Expression<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator<<(const Expression<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator<<(const Expression<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpLeftShift,
           typename CreateLeaf<Expression<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<Expression<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpRightShift,
        typename CreateLeaf<Expression<T1> >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator>>(const Expression<T1> & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator>>(const Expression<T1> & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpRightShift,
           typename CreateLeaf<Expression<T1> >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<Expression<T1> >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpAdd,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<T2 >::Leaf_t> >::Expression_t
-       operator+(const vector<T1> & l,const T2 & r)
+       operator+(const std::vector<T1> & l,const T2 & r)
 {
   typedef BinaryNode<OpAdd,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<T2 >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<T2 >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpSubtract,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<T2 >::Leaf_t> >::Expression_t
-       operator-(const vector<T1> & l,const T2 & r)
+       operator-(const std::vector<T1> & l,const T2 & r)
 {
   typedef BinaryNode<OpSubtract,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<T2 >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<T2 >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpMultiply,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<T2 >::Leaf_t> >::Expression_t
-       operator*(const vector<T1> & l,const T2 & r)
+       operator*(const std::vector<T1> & l,const T2 & r)
 {
   typedef BinaryNode<OpMultiply,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<T2 >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<T2 >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpDivide,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<T2 >::Leaf_t> >::Expression_t
-       operator/(const vector<T1> & l,const T2 & r)
+       operator/(const std::vector<T1> & l,const T2 & r)
 {
   typedef BinaryNode<OpDivide,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<T2 >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<T2 >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpMod,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<T2 >::Leaf_t> >::Expression_t
-       operator%(const vector<T1> & l,const T2 & r)
+       operator%(const std::vector<T1> & l,const T2 & r)
 {
   typedef BinaryNode<OpMod,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<T2 >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<T2 >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpBitwiseAnd,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<T2 >::Leaf_t> >::Expression_t
-       operator&(const vector<T1> & l,const T2 & r)
+       operator&(const std::vector<T1> & l,const T2 & r)
 {
   typedef BinaryNode<OpBitwiseAnd,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<T2 >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<T2 >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpBitwiseOr,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<T2 >::Leaf_t> >::Expression_t
-       operator|(const vector<T1> & l,const T2 & r)
+       operator|(const std::vector<T1> & l,const T2 & r)
 {
   typedef BinaryNode<OpBitwiseOr,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<T2 >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<T2 >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpBitwiseXor,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<T2 >::Leaf_t> >::Expression_t
-       operator^(const vector<T1> & l,const T2 & r)
+       operator^(const std::vector<T1> & l,const T2 & r)
 {
   typedef BinaryNode<OpBitwiseXor,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<T2 >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<T2 >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<FnLdexp,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<T2 >::Leaf_t> >::Expression_t
-       ldexp(const vector<T1> & l,const T2 & r)
+       ldexp(const std::vector<T1> & l,const T2 & r)
 {
   typedef BinaryNode<FnLdexp,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<T2 >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<T2 >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<FnPow,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<T2 >::Leaf_t> >::Expression_t
-       pow(const vector<T1> & l,const T2 & r)
+       pow(const std::vector<T1> & l,const T2 & r)
 {
   typedef BinaryNode<FnPow,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<T2 >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<T2 >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<FnFmod,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<T2 >::Leaf_t> >::Expression_t
-       fmod(const vector<T1> & l,const T2 & r)
+       fmod(const std::vector<T1> & l,const T2 & r)
 {
   typedef BinaryNode<FnFmod,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<T2 >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<T2 >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<FnArcTan2,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<T2 >::Leaf_t> >::Expression_t
-       atan2(const vector<T1> & l,const T2 & r)
+       atan2(const std::vector<T1> & l,const T2 & r)
 {
   typedef BinaryNode<FnArcTan2,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<T2 >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<T2 >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpLT,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<T2 >::Leaf_t> >::Expression_t
-       operator<(const vector<T1> & l,const T2 & r)
+       operator<(const std::vector<T1> & l,const T2 & r)
 {
   typedef BinaryNode<OpLT,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<T2 >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<T2 >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpLE,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<T2 >::Leaf_t> >::Expression_t
-       operator<=(const vector<T1> & l,const T2 & r)
+       operator<=(const std::vector<T1> & l,const T2 & r)
 {
   typedef BinaryNode<OpLE,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<T2 >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<T2 >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpGT,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<T2 >::Leaf_t> >::Expression_t
-       operator>(const vector<T1> & l,const T2 & r)
+       operator>(const std::vector<T1> & l,const T2 & r)
 {
   typedef BinaryNode<OpGT,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<T2 >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<T2 >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpGE,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<T2 >::Leaf_t> >::Expression_t
-       operator>=(const vector<T1> & l,const T2 & r)
+       operator>=(const std::vector<T1> & l,const T2 & r)
 {
   typedef BinaryNode<OpGE,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<T2 >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<T2 >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpEQ,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<T2 >::Leaf_t> >::Expression_t
-       operator==(const vector<T1> & l,const T2 & r)
+       operator==(const std::vector<T1> & l,const T2 & r)
 {
   typedef BinaryNode<OpEQ,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<T2 >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<T2 >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpNE,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<T2 >::Leaf_t> >::Expression_t
-       operator!=(const vector<T1> & l,const T2 & r)
+       operator!=(const std::vector<T1> & l,const T2 & r)
 {
   typedef BinaryNode<OpNE,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<T2 >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<T2 >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpAnd,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<T2 >::Leaf_t> >::Expression_t
-       operator&&(const vector<T1> & l,const T2 & r)
+       operator&&(const std::vector<T1> & l,const T2 & r)
 {
   typedef BinaryNode<OpAnd,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<T2 >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<T2 >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpOr,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<T2 >::Leaf_t> >::Expression_t
-       operator||(const vector<T1> & l,const T2 & r)
+       operator||(const std::vector<T1> & l,const T2 & r)
 {
   typedef BinaryNode<OpOr,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<T2 >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<T2 >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpLeftShift,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<T2 >::Leaf_t> >::Expression_t
-       operator<<(const vector<T1> & l,const T2 & r)
+       operator<<(const std::vector<T1> & l,const T2 & r)
 {
   typedef BinaryNode<OpLeftShift,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<T2 >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<T2 >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpRightShift,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<T2 >::Leaf_t> >::Expression_t
-       operator>>(const vector<T1> & l,const T2 & r)
+       operator>>(const std::vector<T1> & l,const T2 & r)
 {
   typedef BinaryNode<OpRightShift,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<T2 >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(l),
+                                    CreateLeaf<std::vector<T1> >::make(l),
                                     CreateLeaf<T2 >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpAdd,
        typename CreateLeaf<T1 >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator+(const T1 & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator+(const T1 & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpAdd,
           typename CreateLeaf<T1 >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<T1 >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpSubtract,
        typename CreateLeaf<T1 >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator-(const T1 & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator-(const T1 & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpSubtract,
           typename CreateLeaf<T1 >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<T1 >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpMultiply,
        typename CreateLeaf<T1 >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator*(const T1 & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator*(const T1 & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpMultiply,
           typename CreateLeaf<T1 >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<T1 >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpDivide,
        typename CreateLeaf<T1 >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator/(const T1 & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator/(const T1 & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpDivide,
           typename CreateLeaf<T1 >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<T1 >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpMod,
        typename CreateLeaf<T1 >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator%(const T1 & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator%(const T1 & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpMod,
           typename CreateLeaf<T1 >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<T1 >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpBitwiseAnd,
        typename CreateLeaf<T1 >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator&(const T1 & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator&(const T1 & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpBitwiseAnd,
           typename CreateLeaf<T1 >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<T1 >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpBitwiseOr,
        typename CreateLeaf<T1 >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator|(const T1 & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator|(const T1 & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpBitwiseOr,
           typename CreateLeaf<T1 >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<T1 >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpBitwiseXor,
        typename CreateLeaf<T1 >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator^(const T1 & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator^(const T1 & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpBitwiseXor,
           typename CreateLeaf<T1 >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<T1 >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<FnLdexp,
        typename CreateLeaf<T1 >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       ldexp(const T1 & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       ldexp(const T1 & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<FnLdexp,
           typename CreateLeaf<T1 >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<T1 >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<FnPow,
        typename CreateLeaf<T1 >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       pow(const T1 & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       pow(const T1 & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<FnPow,
           typename CreateLeaf<T1 >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<T1 >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<FnFmod,
        typename CreateLeaf<T1 >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       fmod(const T1 & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       fmod(const T1 & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<FnFmod,
           typename CreateLeaf<T1 >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<T1 >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<FnArcTan2,
        typename CreateLeaf<T1 >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       atan2(const T1 & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       atan2(const T1 & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<FnArcTan2,
           typename CreateLeaf<T1 >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<T1 >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpLT,
        typename CreateLeaf<T1 >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator<(const T1 & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator<(const T1 & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpLT,
           typename CreateLeaf<T1 >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<T1 >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpLE,
        typename CreateLeaf<T1 >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator<=(const T1 & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator<=(const T1 & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpLE,
           typename CreateLeaf<T1 >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<T1 >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpGT,
        typename CreateLeaf<T1 >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator>(const T1 & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator>(const T1 & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpGT,
           typename CreateLeaf<T1 >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<T1 >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpGE,
        typename CreateLeaf<T1 >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator>=(const T1 & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator>=(const T1 & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpGE,
           typename CreateLeaf<T1 >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<T1 >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpEQ,
        typename CreateLeaf<T1 >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator==(const T1 & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator==(const T1 & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpEQ,
           typename CreateLeaf<T1 >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<T1 >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpNE,
        typename CreateLeaf<T1 >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator!=(const T1 & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator!=(const T1 & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpNE,
           typename CreateLeaf<T1 >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<T1 >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpAnd,
        typename CreateLeaf<T1 >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator&&(const T1 & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator&&(const T1 & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpAnd,
           typename CreateLeaf<T1 >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<T1 >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpOr,
        typename CreateLeaf<T1 >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator||(const T1 & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator||(const T1 & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpOr,
           typename CreateLeaf<T1 >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<T1 >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 #ifdef PETE_ALLOW_SCALAR_SHIFT
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpLeftShift,
        typename CreateLeaf<T1 >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator<<(const T1 & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator<<(const T1 & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpLeftShift,
           typename CreateLeaf<T1 >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<T1 >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 
 template<class T1,class T2>
 inline typename MakeReturn<BinaryNode<OpRightShift,
        typename CreateLeaf<T1 >::Leaf_t,
-       typename CreateLeaf<vector<T2> >::Leaf_t> >::Expression_t
-       operator>>(const T1 & l,const vector<T2> & r)
+       typename CreateLeaf<std::vector<T2> >::Leaf_t> >::Expression_t
+       operator>>(const T1 & l,const std::vector<T2> & r)
 {
   typedef BinaryNode<OpRightShift,
           typename CreateLeaf<T1 >::Leaf_t,
-          typename CreateLeaf<vector<T2> >::Leaf_t> Tree_t;
+          typename CreateLeaf<std::vector<T2> >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
                                     CreateLeaf<T1 >::make(l),
-                                    CreateLeaf<vector<T2> >::make(r)));
+                                    CreateLeaf<std::vector<T2> >::make(r)));
 }
 #endif // PETE_ALLOW_SCALAR_SHIFT
 
 template<class T1,class T2,class T3>
 inline typename MakeReturn<TrinaryNode<FnWhere,
-       typename CreateLeaf<vector<T1> >::Leaf_t,
+       typename CreateLeaf<std::vector<T1> >::Leaf_t,
        typename CreateLeaf<T2 >::Leaf_t,
        typename CreateLeaf<T3 >::Leaf_t> >::Expression_t
-       where(const vector<T1> & c,const T2 & t,const T3 & f)
+       where(const std::vector<T1> & c,const T2 & t,const T3 & f)
 {
   typedef TrinaryNode<FnWhere,
-          typename CreateLeaf<vector<T1> >::Leaf_t,
+          typename CreateLeaf<std::vector<T1> >::Leaf_t,
           typename CreateLeaf<T2 >::Leaf_t,
           typename CreateLeaf<T3 >::Leaf_t> Tree_t;
   return MakeReturn<Tree_t>::make(Tree_t(
-                                    CreateLeaf<vector<T1> >::make(c),
+                                    CreateLeaf<std::vector<T1> >::make(c),
                                     CreateLeaf<T2 >::make(t),
                                     CreateLeaf<T3 >::make(f)));
 }
@@ -3022,7 +3022,7 @@ inline typename MakeReturn<TrinaryNode<FnWhere,
 
 template<class T1,class RHS>
 inline
-vector<T1>& assign(vector<T1>& lhs,const RHS& rhs)
+vector<T1>& assign(std::vector<T1>& lhs,const RHS& rhs)
 {
   typedef typename CreateLeaf<RHS>::Leaf_t Leaf_t;
   evaluate(lhs,OpAssign(),MakeReturn<Leaf_t>::make(CreateLeaf<RHS>::make(rhs)));
@@ -3031,7 +3031,7 @@ vector<T1>& assign(vector<T1>& lhs,const RHS& rhs)
 
 template<class T1,class RHS>
 inline
-vector<T1>& operator+=(vector<T1>& lhs,const RHS& rhs)
+vector<T1>& operator+=(std::vector<T1>& lhs,const RHS& rhs)
 {
   typedef typename CreateLeaf<RHS>::Leaf_t Leaf_t;
   evaluate(lhs,OpAddAssign(),MakeReturn<Leaf_t>::make(CreateLeaf<RHS>::make(rhs)));
@@ -3040,7 +3040,7 @@ vector<T1>& operator+=(vector<T1>& lhs,const RHS& rhs)
 
 template<class T1,class RHS>
 inline
-vector<T1>& operator-=(vector<T1>& lhs,const RHS& rhs)
+vector<T1>& operator-=(std::vector<T1>& lhs,const RHS& rhs)
 {
   typedef typename CreateLeaf<RHS>::Leaf_t Leaf_t;
   evaluate(lhs,OpSubtractAssign(),MakeReturn<Leaf_t>::make(CreateLeaf<RHS>::make(rhs)));
@@ -3049,7 +3049,7 @@ vector<T1>& operator-=(vector<T1>& lhs,const RHS& rhs)
 
 template<class T1,class RHS>
 inline
-vector<T1>& operator*=(vector<T1>& lhs,const RHS& rhs)
+vector<T1>& operator*=(std::vector<T1>& lhs,const RHS& rhs)
 {
   typedef typename CreateLeaf<RHS>::Leaf_t Leaf_t;
   evaluate(lhs,OpMultiplyAssign(),MakeReturn<Leaf_t>::make(CreateLeaf<RHS>::make(rhs)));
@@ -3058,7 +3058,7 @@ vector<T1>& operator*=(vector<T1>& lhs,const RHS& rhs)
 
 template<class T1,class RHS>
 inline
-vector<T1>& operator/=(vector<T1>& lhs,const RHS& rhs)
+vector<T1>& operator/=(std::vector<T1>& lhs,const RHS& rhs)
 {
   typedef typename CreateLeaf<RHS>::Leaf_t Leaf_t;
   evaluate(lhs,OpDivideAssign(),MakeReturn<Leaf_t>::make(CreateLeaf<RHS>::make(rhs)));
@@ -3067,7 +3067,7 @@ vector<T1>& operator/=(vector<T1>& lhs,const RHS& rhs)
 
 template<class T1,class RHS>
 inline
-vector<T1>& operator%=(vector<T1>& lhs,const RHS& rhs)
+vector<T1>& operator%=(std::vector<T1>& lhs,const RHS& rhs)
 {
   typedef typename CreateLeaf<RHS>::Leaf_t Leaf_t;
   evaluate(lhs,OpModAssign(),MakeReturn<Leaf_t>::make(CreateLeaf<RHS>::make(rhs)));
@@ -3076,7 +3076,7 @@ vector<T1>& operator%=(vector<T1>& lhs,const RHS& rhs)
 
 template<class T1,class RHS>
 inline
-vector<T1>& operator|=(vector<T1>& lhs,const RHS& rhs)
+vector<T1>& operator|=(std::vector<T1>& lhs,const RHS& rhs)
 {
   typedef typename CreateLeaf<RHS>::Leaf_t Leaf_t;
   evaluate(lhs,OpBitwiseOrAssign(),MakeReturn<Leaf_t>::make(CreateLeaf<RHS>::make(rhs)));
@@ -3085,7 +3085,7 @@ vector<T1>& operator|=(vector<T1>& lhs,const RHS& rhs)
 
 template<class T1,class RHS>
 inline
-vector<T1>& operator&=(vector<T1>& lhs,const RHS& rhs)
+vector<T1>& operator&=(std::vector<T1>& lhs,const RHS& rhs)
 {
   typedef typename CreateLeaf<RHS>::Leaf_t Leaf_t;
   evaluate(lhs,OpBitwiseAndAssign(),MakeReturn<Leaf_t>::make(CreateLeaf<RHS>::make(rhs)));
@@ -3094,7 +3094,7 @@ vector<T1>& operator&=(vector<T1>& lhs,const RHS& rhs)
 
 template<class T1,class RHS>
 inline
-vector<T1>& operator^=(vector<T1>& lhs,const RHS& rhs)
+vector<T1>& operator^=(std::vector<T1>& lhs,const RHS& rhs)
 {
   typedef typename CreateLeaf<RHS>::Leaf_t Leaf_t;
   evaluate(lhs,OpBitwiseXorAssign(),MakeReturn<Leaf_t>::make(CreateLeaf<RHS>::make(rhs)));
@@ -3103,7 +3103,7 @@ vector<T1>& operator^=(vector<T1>& lhs,const RHS& rhs)
 
 template<class T1,class RHS>
 inline
-vector<T1>& operator<<=(vector<T1>& lhs,const RHS& rhs)
+vector<T1>& operator<<=(std::vector<T1>& lhs,const RHS& rhs)
 {
   typedef typename CreateLeaf<RHS>::Leaf_t Leaf_t;
   evaluate(lhs,OpLeftShiftAssign(),MakeReturn<Leaf_t>::make(CreateLeaf<RHS>::make(rhs)));
@@ -3112,7 +3112,7 @@ vector<T1>& operator<<=(vector<T1>& lhs,const RHS& rhs)
 
 template<class T1,class RHS>
 inline
-vector<T1>& operator>>=(vector<T1>& lhs,const RHS& rhs)
+vector<T1>& operator>>=(std::vector<T1>& lhs,const RHS& rhs)
 {
   typedef typename CreateLeaf<RHS>::Leaf_t Leaf_t;
   evaluate(lhs,OpRightShiftAssign(),MakeReturn<Leaf_t>::make(CreateLeaf<RHS>::make(rhs)));

@@ -85,10 +85,10 @@ public:
     myIOMode = imode;
   }
 
-  ///write to a ostream
+  ///write to a std::ostream
   virtual bool get(std::ostream& ) const = 0;
 
-  ///read from istream
+  ///read from std::istream
   virtual bool put(std::istream& ) = 0;
 
   ///read from an xmlNode
@@ -107,7 +107,7 @@ public:
   void put(const std::string& s)
   {
     std::istringstream stream(s);
-    put(stream);
+    put( stream);
   }
 
   ///write the start of a node

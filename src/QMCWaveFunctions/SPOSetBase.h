@@ -48,7 +48,7 @@ public:
   typedef OrbitalSetTraits<ValueType>::GradHessVector_t GGGVector_t;
   typedef OrbitalSetTraits<ValueType>::GradHessMatrix_t GGGMatrix_t;
   typedef ParticleSet::Walker_t                      Walker_t;
-  typedef std::map<string,SPOSetBase*> SPOPool_t;
+  typedef std::map<std::string,SPOSetBase*> SPOPool_t;
 
   ///index in the builder list of sposets
   int builder_index;
@@ -75,12 +75,12 @@ public:
   /// Optimizable variables
   opt_variables_type myVars;
   ///name of the basis set
-  string className;
+  std::string className;
   /** name of the object
    *
    * Several user classes can own SPOSetBase and use objectName as counter
    */
-  string objectName;
+  std::string objectName;
 
   /** constructor
    */
@@ -104,11 +104,11 @@ public:
 
   /** print basic SPOSet information
    */
-  void basic_report(const string& pad="");
+  void basic_report(const std::string& pad="");
   
   /** print SPOSet information
    */
-  virtual void report(const string& pad="")
+  virtual void report(const std::string& pad="")
   {
     basic_report(pad);
   }
@@ -135,8 +135,8 @@ public:
       C.resize(OrbitalSetSize,BasisSetSize);
     else {
       app_error() << "either OrbitalSetSize or BasisSetSize has an invalid value !!\n";
-      app_error() << "OrbitalSetSize = " << OrbitalSetSize << endl;
-      app_error() << "BasisSetSize = " << BasisSetSize << endl;
+      app_error() << "OrbitalSetSize = " << OrbitalSetSize << std::endl;
+      app_error() << "BasisSetSize = " << BasisSetSize << std::endl;
       abort();
     }
 
@@ -274,7 +274,7 @@ public:
   virtual inline void setpm(int x) {};
 
   virtual void copyParamsFromMatrix (const opt_variables_type& active
-                                     , const ValueMatrix_t &mat, vector<RealType> &destVec);
+                                     , const ValueMatrix_t &mat, std::vector<RealType> &destVec);
 
   virtual PosType get_k(int orb)
   {
@@ -299,7 +299,7 @@ public:
    * @param psi values of the SPO
    */
   virtual void
-  evaluate (const ParticleSet& P, const PosType& r, vector<RealType> &psi);
+  evaluate (const ParticleSet& P, const PosType& r, std::vector<RealType> &psi);
 
   virtual void initGPU() {  }
 
@@ -310,22 +310,22 @@ public:
   reserve (PointerPool<gpu::device_vector<CudaRealType> > &pool) { }
 
   virtual void
-  evaluate (vector<Walker_t*> &walkers, int iat, gpu::device_vector<CudaValueType*> &phi);
+  evaluate (std::vector<Walker_t*> &walkers, int iat, gpu::device_vector<CudaValueType*> &phi);
 
-  virtual void evaluate (vector<Walker_t*> &walkers, vector<PosType> &new_pos
+  virtual void evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &new_pos
                          , gpu::device_vector<CudaValueType*> &phi);
 
   virtual void
-  evaluate (vector<Walker_t*> &walkers,
-            vector<PosType> &new_pos,
+  evaluate (std::vector<Walker_t*> &walkers,
+            std::vector<PosType> &new_pos,
             gpu::device_vector<CudaValueType*> &phi,
             gpu::device_vector<CudaValueType*> &grad_lapl_list,
             int row_stride);
 
   virtual void
-  evaluate (vector<PosType> &pos, gpu::device_vector<CudaRealType*> &phi);
+  evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaRealType*> &phi);
   virtual void
-  evaluate (vector<PosType> &pos, gpu::device_vector<CudaComplexType*> &phi);
+  evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaComplexType*> &phi);
 #endif
 
 protected:

@@ -38,8 +38,8 @@ public:
 //           delete_iter(CSMovers.begin(),CSMovers.end());
   }
   bool run();
-//       RealType runCS(vector<RealType>& curParams, vector<RealType>& curDir, vector<RealType>& lambdas);
-//       int runCS(vector<vector<RealType> >& bestParams, RealType& errorbars);
+//       RealType runCS(std::vector<RealType>& curParams, std::vector<RealType>& curDir, std::vector<RealType>& lambdas);
+//       int runCS(std::vector<std::vector<RealType> >& bestParams, RealType& errorbars);
   bool put(xmlNodePtr cur);
 
 //       inline void getDeltaCosts(std::vector<RealType>& cstVec)
@@ -68,7 +68,7 @@ private:
   ///period for walker dump
   int myPeriod4WalkerDump;
   ///option to enable/disable drift equation for VMC
-  string UseDrift;
+  std::string UseDrift;
   ///target errorbars to use to determine when to stop for filling matrix and line minimization
 //       RealType alpha_errorbars, beta_errorbars;
   ///check the run-time environments
@@ -86,15 +86,15 @@ private:
   int NumOptimizables;
   RealType w_beta,w_alpha;
   RealType E_avg, V_avg;
-  string GEVtype;
-  vector<RandomGenerator_t> RngSaved;
+  std::string GEVtype;
+  std::vector<RandomGenerator_t> RngSaved;
 
   ///These are the values we collect to build the Matrices GLOBAL
   Matrix<RealType> Ham, Ham2, Olp, m_vec;
   std::vector<RealType> s_vec;
 //       std::vector<RealType> D_E, HD2, HD, D;
 //       RealType sE,sE2,sE4,sW,sN;
-  string printderivs;
+  std::string printderivs;
   ///Temp matrices
   Matrix<RealType> DerivRecords, HDerivRecords;
 
@@ -149,7 +149,7 @@ private:
 //           thisWalker.DataSet=tbuffer;
 //           thisWalker.Weight = 1.0;
 //           RealType ene = hClones[ip]->evaluate( *wClones[ip]);
-//           //         app_log()<<ene<<" "<<logpsi<<endl;
+//           //         app_log()<<ene<<" "<<logpsi<< std::endl;
 //           thisWalker.resetProperty(logpsi,psiClones[ip]->getPhase(),ene);
 //           hClones[ip]->saveProperty(thisWalker.getPropertyBase());
 //           wClones[ip]->saveWalker(thisWalker);
@@ -162,9 +162,9 @@ private:
   RealType fillComponentMatrices();
 //       Walker_t firstWalker;
 //       Matrix<RealType> CorrelatedH, Norm2s;
-//       vector<RealType> Norms;
-//       vector<RealType> Energies;
-//       vector<RealType> NE_i;
+//       std::vector<RealType> Norms;
+//       std::vector<RealType> Energies;
+//       std::vector<RealType> NE_i;
 
 //       // global quantities for mpi collection
 //       std::vector<RealType> gEnergies, gNorms;
@@ -177,9 +177,9 @@ private:
 
 //       bool moved_right;
 //       bool moved_left;
-//       bool bracketing(vector<RealType>& lambdas, RealType errorbars);
+//       bool bracketing(std::vector<RealType>& lambdas, RealType errorbars);
 //       //     weights for correlated sampling
-//       vector<RealType> w_i;
+//       std::vector<RealType> w_i;
 };
 
 }

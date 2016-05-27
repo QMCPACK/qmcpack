@@ -87,7 +87,7 @@ EinsplineSetBuilder::~EinsplineSetBuilder()
 bool
 EinsplineSetBuilder::put(xmlNodePtr cur)
 {
-  string hdfName;
+  std::string hdfName;
   OhmmsAttributeSet attribs;
   attribs.add (hdfName, "href");
   return attribs.put(XMLRoot);
@@ -105,19 +105,19 @@ EinsplineSetBuilder::CheckLattice()
 
   if(diff>MatchingTol)
   {
-    ostringstream o;
+    std::ostringstream o;
     o.setf(std::ios::scientific, std::ios::floatfield);
     o.precision(6);
     o << "EinsplineSetBuilder::ReadOrbitalInfo_ESHDF \n"
       << "Mismatched supercell lattices.\n";
-    o << " Lattice in ESHDF5 " << endl;
-    o << SuperLattice << endl;
-    o << " Lattice in xml" << endl;
-    o << TargetPtcl.Lattice.R << endl;
-    o << " Difference " << endl;
-    o << SuperLattice-TargetPtcl.Lattice.R << endl;
-    o << " Max difference = "<<diff<<endl;
-    o << " Tolerance      = "<<MatchingTol<<endl;
+    o << " Lattice in ESHDF5 " << std::endl;
+    o << SuperLattice << std::endl;
+    o << " Lattice in xml" << std::endl;
+    o << TargetPtcl.Lattice.R << std::endl;
+    o << " Difference " << std::endl;
+    o << SuperLattice-TargetPtcl.Lattice.R << std::endl;
+    o << " Max difference = "<<diff<< std::endl;
+    o << " Tolerance      = "<<MatchingTol<< std::endl;
     APP_ABORT(o.str());
   }
   return true;
@@ -178,7 +178,7 @@ EinsplineSetBuilder::BroadcastOrbitalInfo()
     TargetPtcl.Density_G.resize(numDensityGvecs);
     AtomicOrbitals.resize(numAtomicOrbitals);
   }
-  vector<int> rgrids_sizes(NumMuffinTins);
+  std::vector<int> rgrids_sizes(NumMuffinTins);
   for (int tin=0; tin<NumMuffinTins; tin++)
     rgrids_sizes[tin] = MT_APW_rgrids[tin].size();
   myComm->bcast(rgrids_sizes);
@@ -221,7 +221,7 @@ EinsplineSetBuilder::BroadcastOrbitalInfo()
               &(TargetPtcl.Density_G[0]) + numDensityGvecs);
   for (int iat=0; iat<numAtomicOrbitals; iat++)
   {
-    AtomicOrbital<complex<double> > &orb = AtomicOrbitals[iat];
+    AtomicOrbital<std::complex<double> > &orb = AtomicOrbitals[iat];
     bibuffer.add (orb.SplinePoints);
     bibuffer.add (orb.PolyOrder);
     bibuffer.add (orb.lMax);
@@ -258,7 +258,7 @@ EinsplineSetBuilder::BroadcastOrbitalInfo()
                 &(TargetPtcl.Density_G[0]) + numDensityGvecs);
     for (int iat=0; iat<numAtomicOrbitals; iat++)
     {
-      AtomicOrbital<complex<double> > &orb = AtomicOrbitals[iat];
+      AtomicOrbital<std::complex<double> > &orb = AtomicOrbitals[iat];
       bibuffer.get (orb.SplinePoints);
       bibuffer.get (orb.PolyOrder);
       bibuffer.get (orb.lMax);
@@ -275,7 +275,7 @@ EinsplineSetBuilder::BroadcastOrbitalInfo()
 //// Create the ion ParticleSet from the data in the HDF file //
 ////////////////////////////////////////////////////////////////
 //void
-//EinsplineSetBuilder::CreateIonParticleSet(string sourceName)
+//EinsplineSetBuilder::CreateIonParticleSet( std::string sourceName)
 //{
 //  //    ParticleSet &pTemp = *(new MCWalkerConfiguration);
 //  ParticleSet &pTemp = *(new ParticleSet);
@@ -311,8 +311,8 @@ EinsplineSetBuilder::TileIons()
 
   IonPos.resize(SourcePtcl->getTotalNum());
   IonTypes.resize(SourcePtcl->getTotalNum());
-  std::copy(SourcePtcl->R.begin(),SourcePtcl->R.end(),IonPos.begin());
-  std::copy(SourcePtcl->GroupID.begin(),SourcePtcl->GroupID.end(),IonTypes.begin());
+  copy(SourcePtcl->R.begin(),SourcePtcl->R.end(),IonPos.begin());
+  copy(SourcePtcl->GroupID.begin(),SourcePtcl->GroupID.end(),IonTypes.begin());
 
   //app_log() << "  Primitive Cell\n";
   //SourcePtcl->PrimitiveLattice.print(app_log());
@@ -322,7 +322,7 @@ EinsplineSetBuilder::TileIons()
 //Don't need to do this, already one by ParticleSetPool.cpp
 //  Vector<TinyVector<double, OHMMS_DIM> > primPos   = IonPos;
 //  Vector<int>                            primTypes = IonTypes;
-//  int numCopies = abs(det(TileMatrix));
+//  int numCopies = std::abs(det(TileMatrix));
 //  IonTypes.resize(primPos.size()*numCopies);
 //  IonPos.resize  (primPos.size()*numCopies);
 //  int maxCopies = 10;
@@ -395,9 +395,9 @@ EinsplineSetBuilder::AnalyzeTwists2()
   for (int i=0; i<3; i++)
     for (int j=0; j<3; j++)
       S(i,j) = (double)TileMatrix(i,j);
-  vector<PosType> superFracs;
+  std::vector<PosType> superFracs;
   // This holds to which supercell kpoint each primitive k-point belongs
-  vector<int> superIndex;
+  std::vector<int> superIndex;
   int numPrimTwists = TwistAngles.size();
   for (int ki=0; ki<numPrimTwists; ki++)
   {
@@ -432,13 +432,13 @@ EinsplineSetBuilder::AnalyzeTwists2()
   app_log() << "Found " << numSuperTwists << " distinct supercell twists.\n";
   // For each supercell twist, create a list of primitive twists which
   // belong to it.
-  vector<vector<int> > superSets;
+  std::vector<std::vector<int> > superSets;
   superSets.resize(numSuperTwists);
   for (int ki=0; ki<numPrimTwists; ki++)
     superSets[superIndex[ki]].push_back(ki);
-  app_log()<<"number of things"<<endl;
-  app_log()<<TwistSymmetry.size()<<endl;
-  app_log()<<TwistWeight.size()<<endl;
+  app_log()<<"number of things"<< std::endl;
+  app_log()<<TwistSymmetry.size()<< std::endl;
+  app_log()<<TwistWeight.size()<< std::endl;
 //     for (int ki=0; ki<TwistSymmetry.size(); ki++)
 //       fprintf (stderr, "%d %d %d\n",ki,TwistSymmetry[ki],TwistWeight[ki]);
   if (myComm->rank() == 0)
@@ -508,7 +508,7 @@ EinsplineSetBuilder::AnalyzeTwists2()
 #endif
   // Now check to see that each supercell twist has the right twists
   // to tile the primitive cell orbitals.
-  int numTwistsNeeded = abs(det(TileMatrix));
+  int numTwistsNeeded = std::abs(det(TileMatrix));
   for (int si=0; si<numSuperTwists; si++)
   {
     // First make sure we have enough points
@@ -538,7 +538,7 @@ EinsplineSetBuilder::AnalyzeTwists2()
         if (dot(superInt_i-superInt_j, superInt_i-superInt_j) < 1.0e-6)
         {
           app_error() << "Identical k-points detected in super twist set "
-                      << si << endl;
+                      << si << std::endl;
           APP_ABORT_TRACE(__FILE__,__LINE__, "AnalyzeTwists2");
         }
       }
@@ -561,7 +561,7 @@ EinsplineSetBuilder::AnalyzeTwists2()
   // Now, find out which twists are distinct
   DistinctTwists.clear();
 #ifndef QMC_COMPLEX
-  vector<int> copyTwists;
+  std::vector<int> copyTwists;
   for (int i=0; i<IncludeTwists.size(); i++)
   {
     int ti        = IncludeTwists[i];
@@ -652,8 +652,8 @@ EinsplineSetBuilder::AnalyzeTwists()
   for (int ti=0; ti<NumTwists; ti++)
     for (int i=0; i<3; i++)
     {
-      minTwist[i] = min (TwistAngles[ti][i], minTwist[i]);
-      maxTwist[i] = max (TwistAngles[ti][i], maxTwist[i]);
+      minTwist[i] = std::min(TwistAngles[ti][i], minTwist[i]);
+      maxTwist[i] = std::max(TwistAngles[ti][i], maxTwist[i]);
     }
   // The difference between maxTwist and minTwist should be of the
   // form (n-1)/n.  Therefore, we determine n by
@@ -728,10 +728,10 @@ EinsplineSetBuilder::AnalyzeTwists()
   offset[0] = TwistNum/(untiledMesh[2]*untiledMesh[1]);
   offset[1] = (TwistNum%(untiledMesh[2]*untiledMesh[1])) / untiledMesh[1];
   offset[2] = (TwistNum%(untiledMesh[2]*untiledMesh[1])) % untiledMesh[1];
-//     map<TinyVector<int,3>, int>::iterator iter;
+//     std::map<TinyVector<int,3>, int>::iterator iter;
 //     for (iter = TwistMap.begin(); iter!=TwistMap.end(); iter++)
-//       cerr << "TwistMap = " << (*iter).first
-// 	   << ", " << (*iter).second << endl;
+//       std::cerr << "TwistMap = " << (*iter).first
+// 	   << ", " << (*iter).second << std::endl;
   app_log() << "  Including twist vectors:\n";
   UseTwists.clear();
   for (int tx=0; tx<TileFactor[0]; tx++)
@@ -767,7 +767,7 @@ EinsplineSetBuilder::OccupyBands(int spin, int sortBands, int numOrbs)
     OccupyBands_ESHDF (spin, sortBands, numOrbs);
     return;
   }
-  string eigenstatesGroup;
+  std::string eigenstatesGroup;
   if (Version[0]==0 && Version[1]== 11)
     eigenstatesGroup = "/eigenstates_3";
   else
@@ -776,11 +776,11 @@ EinsplineSetBuilder::OccupyBands(int spin, int sortBands, int numOrbs)
 
   if(FullBands[spin]->size()) 
   {
-    app_log() << "  FullBand["<<spin<<"] exists. Reuse it. " << endl;
+    app_log() << "  FullBand["<<spin<<"] exists. Reuse it. " << std::endl;
     return; 
   }
 
-  vector<BandInfo>& SortBands(*FullBands[spin]);
+  std::vector<BandInfo>& SortBands(*FullBands[spin]);
 
   SortBands.clear();
   for (int ti=0; ti<DistinctTwists.size(); ti++)
@@ -795,7 +795,7 @@ EinsplineSetBuilder::OccupyBands(int spin, int sortBands, int numOrbs)
       band.BandIndex  = bi;
       band.MakeTwoCopies = MakeTwoCopies[ti];
       // Read eigenenergy from file
-      ostringstream ePath, sPath;
+      std::ostringstream ePath, sPath;
       if ((Version[0]==0 && Version[1]==11) || NumTwists > 1)
       {
         ePath << eigenstatesGroup << "/twist_"
@@ -865,9 +865,9 @@ EinsplineSetBuilder::OccupyBands(int spin, int sortBands, int numOrbs)
 //       {
 //         PosType ku=TwistAngles[tj];
 //         PosType k2 = OrbitalSet->PrimLattice.k_cart(ku);
-//         double dkx = abs(afm_vector[0] - k2[0]);
-//         double dky = abs(afm_vector[1] - k2[1]);
-//         double dkz = abs(afm_vector[2] - k2[2]);
+//         double dkx = std::abs(afm_vector[0] - k2[0]);
+//         double dky = std::abs(afm_vector[1] - k2[1]);
+//         double dkz = std::abs(afm_vector[2] - k2[2]);
 //         bool rightK = ((dkx<qafm+0.0001)&&(dkx>qafm-0.0001)&&(dky<0.0001)&&(dkz<0.0001));
 //         if(rightK)
 //         {
@@ -878,7 +878,7 @@ EinsplineSetBuilder::OccupyBands(int spin, int sortBands, int numOrbs)
 //       }
 //       if(!found)
 //       {
-//         app_log()<<"Need twist: ("<<qafm<<",0,0)"<<endl;
+//         app_log()<<"Need twist: ("<<qafm<<",0,0)"<< std::endl;
 //         APP_ABORT("EinsplineSetBuilder::OccupyBands_ESHDF");
 //       }
 //     }

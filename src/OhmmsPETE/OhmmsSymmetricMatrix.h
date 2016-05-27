@@ -23,9 +23,8 @@
 
 #include <vector>
 #include <iostream>
-using namespace std;
 
-template<class T, class C = vector<T> >
+template<class T, class C = std::vector<T> >
 
 class SymmetricMatrix
 {
@@ -284,14 +283,14 @@ inline void evaluate(SymmetricMatrix<T, C> &lhs, const Op &op,
   }
   else
   {
-    cerr << "Error: LHS and RHS don't conform." << endl;
+    std::cerr << "Error: LHS and RHS don't conform." << std::endl;
     exit(1);
   }
 }
 
 // I/O
 template<class T, class C>
-ostream& operator<<(ostream& out, const SymmetricMatrix<T,C>& rhs)
+ostream& operator<<(std::ostream& out, const SymmetricMatrix<T,C>& rhs)
 {
   int ii=0;
   for(int i=0; i<rhs.nrows(); i++)
@@ -300,7 +299,7 @@ ostream& operator<<(ostream& out, const SymmetricMatrix<T,C>& rhs)
       out << rhs(j,i) << " ";
     for(int j=i; j<rhs.ncols(); j++)
       out << rhs(i,j) << " ";
-    out << endl;
+    out << std::endl;
   }
   return out;
 }

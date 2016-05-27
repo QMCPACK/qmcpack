@@ -37,7 +37,7 @@ public:
 
   int particleIndex;
   int gradientComponentIndex;
-  string outputFile;
+  std::string outputFile;
 };
 
 /** Test the correctness of TrialWaveFunction for the values,
@@ -61,8 +61,8 @@ public:
 private:
   ParticleSetPool &PtclPool;
   ParticleSet::ParticlePos_t deltaR;
-  string checkRatio, checkClone, checkHamPbyP, sourceName, wftricks, checkEloc;
-  string checkBasic, checkRatioV;
+  std::string checkRatio, checkClone, checkHamPbyP, sourceName, wftricks, checkEloc;
+  std::string checkBasic, checkRatioV;
   xmlNodePtr myNode;
   double deltaParam;
   double toleranceParam;
@@ -105,16 +105,16 @@ private:
                       ParticleSet::ParticleLaplacian_t &L,
                       ParticleSet::ParticleGradient_t &G_fd,
                       ParticleSet::ParticleLaplacian_t &L_fd,
-                      stringstream &log,
+                      std::stringstream &log,
                       int indent=0);
 
   bool checkGradientAtConfiguration(MCWalkerConfiguration::Walker_t* W1,
-                                    stringstream &fail_log,
+                                    std::stringstream &fail_log,
                                     bool &ignore);
 
-  //vector<RealType> Mv3(vector<vector<RealType> >& M, vector<RealType>& v);
+  //vector<RealType> Mv3(std::vector<std::vector<RealType> >& M, std::vector<RealType>& v);
 
-  ofstream fout;
+  std::ofstream fout;
 };
 }
 #endif

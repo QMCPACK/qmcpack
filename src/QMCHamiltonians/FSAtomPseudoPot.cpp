@@ -39,7 +39,7 @@ FSAtomPseudoPot::RealType FSAtomPseudoPot::getCutOff(RealType v0)
   RealType r=myFunc.r(ng);
   while(ignore&& ng)
   {
-    cout << r << " " << myFunc(ng) << endl;
+    std::cout << r << " " << myFunc(ng) << std::endl;
     ignore=(std::abs(myFunc(ng)-v0)<1e-12);
     r=myFunc.r(--ng);
   }
@@ -57,7 +57,7 @@ FSAtomPseudoPot::getLocalPot(RealType zeff)
   const RealType del=1.0e-3;
   //int ng=static_cast<int>(2*Rcut/del)+1;
   int ng=static_cast<int>(Rcut/del)+1;
-  app_log() << "  FSAtomPseudoPot::getLocalPot grid = [0," << Rcut << "] npts=" << ng << endl;
+  app_log() << "  FSAtomPseudoPot::getLocalPot grid = [0," << Rcut << "] npts=" << ng << std::endl;
   LinearGrid<RealType> *agrid=new LinearGrid<RealType>;
   agrid->set(0.0,Rcut,ng);
   RealType sc=-1.0/zeff;
@@ -70,15 +70,15 @@ FSAtomPseudoPot::getLocalPot(RealType zeff)
   (*newFunc)(ng-1)=1.0;
   RealType y_prime=((*newFunc)(1)-(*newFunc)(0))/del;
   newFunc->spline(0,y_prime,ng-1,0.0);
-  ofstream fout("pp.loc.dat");
-  fout << "#  Local pseudopotential -rV(r)/Zeff 1 beyond 2*Rcut " << endl;
+  std::ofstream fout("pp.loc.dat");
+  fout << "#  Local pseudopotential -rV(r)/Zeff 1 beyond 2*Rcut " << std::endl;
   fout.setf(std::ios::scientific, std::ios::floatfield);
   fout.precision(12);
   for(int i=1; i<ng; i++)
-    fout << (*agrid)[i] << " " << (*newFunc)(i) << endl;
-  fout << endl;
+    fout << (*agrid)[i] << " " << (*newFunc)(i) << std::endl;
+  fout << std::endl;
   for(int i=0; i<myFunc.size(); i++)
-    fout << myFunc.r(i) << " " <<sc*myFunc.m_Y[i] << endl;
+    fout << myFunc.r(i) << " " <<sc*myFunc.m_Y[i] << std::endl;
   return newFunc;
 }
 
@@ -105,14 +105,14 @@ FSAtomPseudoPot::getNonLocalPot(FSAtomPseudoPot& vloc)
   newFunc->spline();
 //    char fname[32];
 //    sprintf(fname,"pp.L%d.dat",AngL);
-//    ofstream fout(fname);
+//    std::ofstream fout(fname);
 //    fout.setf(std::ios::scientific, std::ios::floatfield);
 //    fout.precision(12);
 //    for(int i=0; i<ng; i++)
-//      fout << (*agrid)[i] << " " << (*newFunc)(i) << endl;
-//    fout <<  endl;
+//      fout << (*agrid)[i] << " " << (*newFunc)(i) << std::endl;
+//    fout <<  std::endl;
 //    for(int i=0; i<myFunc.size(); i++)
-//      fout << myFunc.r(i) << " " <<vFac*myFunc.m_Y[i]/myFunc.r(i) << endl;
+//      fout << myFunc.r(i) << " " <<vFac*myFunc.m_Y[i]/myFunc.r(i) << std::endl;
   return newFunc;
 }
 
@@ -121,13 +121,13 @@ bool FSAtomPseudoPot::put(xmlNodePtr cur)
   cur=cur->children;
   while(cur != NULL)
   {
-    string cname ((const char*)cur->name);
+    std::string cname ((const char*)cur->name);
     if(cname == "radfunc")
     {
       xmlNodePtr cur1=cur->children;
       while(cur1 != NULL)
       {
-        string cname1((const char*)cur1->name);
+        std::string cname1((const char*)cur1->name);
         if(cname1=="data")
         {
           myFunc.m_Y.resize(myFunc.grid().size());
@@ -135,7 +135,7 @@ bool FSAtomPseudoPot::put(xmlNodePtr cur)
         }
         //else if(cname1 =="grid")
         //{
-        //  app_warning() << "    FSAtomPseudoPot::vps/grid is ignored " << endl;
+        //  app_warning() << "    FSAtomPseudoPot::vps/grid is ignored " << std::endl;
         //}
         cur1=cur1->next;
       }

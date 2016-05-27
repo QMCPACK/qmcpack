@@ -72,7 +72,7 @@ int WalkerReconfiguration::getIndexPermutation(MCWalkerConfiguration& W)
   }
   Zeta[nw]=wtot+1.0;
   //for(int iw=0; iw<nw; iw++) {
-  //  fout << iw << " " << Zeta[iw+1]-Zeta[iw] << " " << wConf[iw] << endl;
+  //  fout << iw << " " << Zeta[iw+1]-Zeta[iw] << " " << wConf[iw] << std::endl;
   //}
   //assign negative
   //std::fill(IndexCopy.begin(),IndexCopy.end(),-1);
@@ -81,7 +81,7 @@ int WalkerReconfiguration::getIndexPermutation(MCWalkerConfiguration& W)
   //surviving walkers
   int icdiff=0;
   it=W.begin();
-  vector<int> ipip(nw,0);
+  std::vector<int> ipip(nw,0);
   for(int iw=0; iw<nw; iw++)
   {
     RealType tryp=wCur+abs(wConf[iw]);
@@ -99,9 +99,9 @@ int WalkerReconfiguration::getIndexPermutation(MCWalkerConfiguration& W)
     }
     ipip[iw]=ni;
   }
-  //ofstream fout("check.dat", ios::app);
-  //fout << wtot << " " << icdiff << endl;
-  vector<int> plus,minus;
+  //ofstream fout("check.dat", std::ios::app);
+  //fout << wtot << " " << icdiff << std::endl;
+  std::vector<int> plus,minus;
   for(int iw=0; iw<nw; iw++)
   {
     int m=ipip[iw];
@@ -121,10 +121,10 @@ int WalkerReconfiguration::getIndexPermutation(MCWalkerConfiguration& W)
     W[im]->ID=(++NumWalkersCreated)*NumContexts+MyContext;
   }
   //int killed = shuffleIndex(nw);
-  //fout << "# Total weight " << wtot << " " << killed <<  endl;
-  //cout << "<<<< CopyIndex " << endl;
-  //std::copy(IndexCopy.begin(), IndexCopy.end(), ostream_iterator<int>(cout, " "));
-  //cout << endl << "<<<<<<" << endl;
+  //fout << "# Total weight " << wtot << " " << killed <<  std::endl;
+  //cout << "<<<< CopyIndex " << std::endl;
+  //std::copy(IndexCopy.begin(), IndexCopy.end(), std::ostream_iterator<int>(std::cout, " "));
+  //cout << std::endl << "<<<<<<" << std::endl;
   //for(int iw=0; iw<nw; iw++) {
   //  if(IndexCopy[iw] != iw) {
   //    W[iw]->assign(*(W[IndexCopy[iw]]));
@@ -135,10 +135,10 @@ int WalkerReconfiguration::getIndexPermutation(MCWalkerConfiguration& W)
 
 int WalkerReconfiguration::shuffleIndex(int nw)
 {
-  vector<int> ipip(nw,0);
+  std::vector<int> ipip(nw,0);
   for(int iw=0; iw<nw; iw++)
     ipip[IndexCopy[iw]]+=1;
-  vector<int> indz;
+  std::vector<int> indz;
   for(int iw=0; iw<nw; iw++)
   {
     if(ipip[iw]==0)

@@ -42,14 +42,14 @@ using namespace blitz;
   private:
     nilArraySection n0;
   protected:
-    string Name;
+    std::string Name;
   public:
     virtual int GetRank()            = 0;
     virtual IODataType GetType()     = 0;
     virtual IOFileType GetFileType() = 0;
     virtual void Print(std::ofstream &out) { /* do nothing */ }
-    //    virtual string GetTypeString()   = 0;
-    string GetName () const
+    //    virtual std::string GetTypeString()   = 0;
+    std::string GetName () const
     { return Name; }
     virtual int GetExtent(int dim)   = 0;
 
@@ -211,24 +211,24 @@ using namespace blitz;
   template<> class TypeConvert<int>
   { public: static const IODataType Type = INT_TYPE; };
 
-  template<> class TypeConvert<string>
+  template<> class TypeConvert<std::string>
   { public: static const IODataType Type = STRING_TYPE; };
 
   template<> class TypeConvert<bool>
   { public: static const IODataType Type = BOOL_TYPE; };
 
-  template<> class TypeConvert<complex<double> >
+  template<> class TypeConvert<std::complex<double> >
   { public: static const IODataType Type = COMPLEX_TYPE; };
   
 
 
 
-  template<typename T> inline string TypeString(T &val)     {  return "unknown"; }
-  template<> string inline TypeString(double &val)          {  return "double";  }
-  template<> string inline TypeString(int &val)             {  return "int";     }
-  template<> string inline TypeString(string &val)          {  return "string";  }
-  template<> string inline TypeString(bool &val)            {  return "bool";    }
-  template<> string inline TypeString(complex<double> &val) {  return "complex";    }
+  template<typename T> inline std::string TypeString(T &val)     {  return "unknown"; }
+  template<> std::string inline TypeString(double &val)          {  return "double";  }
+  template<> std::string inline TypeString(int &val)             {  return "int";     }
+  template<> std::string inline TypeString( std::string &val)          {  return "string";  }
+  template<> std::string inline TypeString(bool &val)            {  return "bool";    }
+  template<> std::string inline TypeString(std::complex<double> &val) {  return "complex";    }
 
 }
 

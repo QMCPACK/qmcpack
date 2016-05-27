@@ -75,10 +75,10 @@ struct SimpleFixedNodeBranch: public QMCTraits
   /** booleans to set the branch modes
    * \since 2008-05-05
    */
-  typedef bitset<B_MODE_MAX> BranchModeType;
+  typedef std::bitset<B_MODE_MAX> BranchModeType;
   BranchModeType BranchMode;
 
-  /*! enum for iParam bitset<B_IPARAM_MAX>
+  /*! enum for iParam std::bitset<B_IPARAM_MAX>
    * \since 2008-05-05
    *
    * When introducing a new iParam, check if B_IPARAM_MAX is sufficiently large. Use multiples of 8
@@ -147,11 +147,11 @@ struct SimpleFixedNodeBranch: public QMCTraits
   /////histogram of populations
   //BlockHistogram<RealType> DMCEnergyHist;
   ///root name
-  string RootName;
+  std::string RootName;
   ///set of parameters
   ParameterSet m_param;
   ///string parameters
-  vector<string> sParam;
+  std::vector<std::string> sParam;
 
   /// Used for the average scaling
   RealType ScaleSum;
@@ -160,7 +160,7 @@ struct SimpleFixedNodeBranch: public QMCTraits
   ///LogJacob
   RealType LogJacobRef;
   ///LogNorm
-  vector<RealType> LogNorm;
+  std::vector<RealType> LogNorm;
 
   ///Releasednode
   bool RN;
@@ -178,7 +178,7 @@ struct SimpleFixedNodeBranch: public QMCTraits
 #if defined(QMC_COMPLEX)
     return false;
 #else
-    return std::cos(psi0) < numeric_limits<RealType>::epsilon();
+    return std::cos(psi0) < std::numeric_limits<RealType>::epsilon();
 #endif
   }
 
@@ -372,7 +372,7 @@ struct SimpleFixedNodeBranch: public QMCTraits
    * @param w the walker ensemble
    * @param clones of the branch engine for OpenMP threads
    */
-  void branch(int iter, MCWalkerConfiguration& w, vector<ThisType*>& clones);
+  void branch(int iter, MCWalkerConfiguration& w, std::vector<ThisType*>& clones);
 
   /** update RMC counters and running averages.
    * @param iter the iteration
@@ -381,7 +381,7 @@ struct SimpleFixedNodeBranch: public QMCTraits
    */
 
   void collect(int iter, MCWalkerConfiguration& w);
-  void collect(int iter, MCWalkerConfiguration& w, vector<ThisType*>& clones);
+  void collect(int iter, MCWalkerConfiguration& w, std::vector<ThisType*>& clones);
 
   /** restart averaging
    * @param counter Counter to determine the cummulative average will be reset.
@@ -402,19 +402,19 @@ struct SimpleFixedNodeBranch: public QMCTraits
    * @param fname name of the configuration file
    * @param overwrite NOT USED
    */
-  void write(const string& fname, bool overwrite=true);
+  void write(const std::string& fname, bool overwrite=true);
 
 #ifdef HAVE_ADIOS
   void save_energy();
 #endif
 
-  void read(const string& fname);
+  void read(const std::string& fname);
 
   /** create map between the parameter name and variables */
   void registerParameters();
 
   ///start a run
-  void start(const string& froot, bool append=false);
+  void start(const std::string& froot, bool append=false);
   ///finalize the simulation
   void finalize(MCWalkerConfiguration& w);
 

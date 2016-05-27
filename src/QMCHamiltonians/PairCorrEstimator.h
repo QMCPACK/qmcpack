@@ -35,21 +35,21 @@ public:
    *
    * Use the elns.DistTables to evaluate the pair correlation functions.
    */
-  PairCorrEstimator(ParticleSet& elns, string& sources);
+  PairCorrEstimator(ParticleSet& elns, std::string& sources);
 
   void resetTargetParticleSet(ParticleSet& P);
 
   /* evaluate the pair correlation functions */
   Return_t evaluate(ParticleSet& P);
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
 
   void addObservables(PropertySetType& plist) { }
   void addObservables(PropertySetType& plist, BufferType& collectables);
-  void registerCollectables(vector<observable_helper*>& h5list, hid_t gid) const;
+  void registerCollectables(std::vector<observable_helper*>& h5list, hid_t gid) const;
   void setObservables(PropertySetType& plist);
   void setParticlePropertyList(PropertySetType& plist, int offset);
   bool put(xmlNodePtr cur);
@@ -70,11 +70,11 @@ private:
   /// volume of the cell
   RealType Volume;
   ///save pair indices
-  vector<int> pair_ids;
+  std::vector<int> pair_ids;
   /// table indexs for other type
-  vector<int> other_ids;
+  std::vector<int> other_ids;
   /// offset of the gofr's associated with others_id
-  vector<int> other_offsets;
+  std::vector<int> other_offsets;
   /////save source indices
   //vector<int> source_ids;
   ///normalization factor
@@ -84,7 +84,7 @@ private:
   /////data
   //Matrix<RealType> gof_r;
   ///prefix of each gof_r
-  vector<string> gof_r_prefix;
+  std::vector<std::string> gof_r_prefix;
   /** resize the internal data
    * @param nbins number of bins for the historgram
    */

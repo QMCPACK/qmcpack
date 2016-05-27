@@ -7,31 +7,30 @@
 #include <fstream>
 #include <sstream>
 
-using namespace std;
 
 class XMLAttribute
 {
-  string Name, Content;
+  std::string Name, Content;
 public:
-  void Write (ostream &out);
-  void Write (string  &out);
+  void Write (std::ostream &out);
+  void Write ( std::string  &out);
   
-  XMLAttribute (string name, string content);
+  XMLAttribute ( std::string name, std::string content);
   
-  XMLAttribute (string name, double val);
-  XMLAttribute (string name, int val);
+  XMLAttribute ( std::string name, double val);
+  XMLAttribute ( std::string name, int val);
   XMLAttribute (const XMLAttribute &attr);  
 };
 
 class XMLElement
 {
-  vector<XMLAttribute*> Attributes;
-  vector<XMLElement*> Children;
-  string Name, Content;
+  std::vector<XMLAttribute*> Attributes;
+  std::vector<XMLElement*> Children;
+  std::string Name, Content;
   int Level;
-  void Indent(ostream &out);
+  void Indent(std::ostream &out);
 public:
-  void Write (ostream &out);
+  void Write (std::ostream &out);
 
   inline int GetLevel() { return Level; }
 
@@ -41,12 +40,12 @@ public:
   void AddAttribute (XMLAttribute *attr) 
   { Attributes.push_back(attr); }
 
-  void AddContent (string content) 
+  void AddContent ( std::string content) 
   { Content += content; }
 
-  void AddContent (vector<double> &data);
+  void AddContent (std::vector<double> &data);
 
-  XMLElement (string name, int level=0)
+  XMLElement ( std::string name, int level=0)
   { Name = name; Level = level; }
 
   XMLElement (const XMLElement &elem);
@@ -56,29 +55,29 @@ public:
 class XMLWriterClass
 {
 private:
-  vector<XMLElement*> Elements;
+  std::vector<XMLElement*> Elements;
   void Write ();
-  ofstream Out;
+  std::ofstream Out;
 public:
-  bool StartDocument(string fname, string version="",
-		     string encoding="", string standalone="");
+  bool StartDocument( std::string fname, std::string version="",
+		     std::string encoding="", std::string standalone="");
   bool EndDocument();
-  bool StartElement (string name);
+  bool StartElement ( std::string name);
   bool EndElement();
   bool FullEndElement();
-  bool WriteAttribute (string name, string content);
-  bool WriteAttribute (string name, double val, bool scientific=false);
-  bool WriteAttribute (string name, int val);
-  bool WriteData(vector<double> data);
-  bool WriteData (string content);
-  bool WriteElement(string name, vector<double> data);
+  bool WriteAttribute ( std::string name, std::string content);
+  bool WriteAttribute ( std::string name, double val, bool scientific=false);
+  bool WriteAttribute ( std::string name, int val);
+  bool WriteData(std::vector<double> data);
+  bool WriteData ( std::string content);
+  bool WriteElement( std::string name, std::vector<double> data);
   template<typename T> bool WriteData(T data);
 };
 
 template<typename T> bool
 XMLWriterClass::WriteData(T data)
 {
-  stringstream content;
+  std::stringstream content;
   content << " " << data << " ";
   Elements.back()->AddContent (content.str());
   return true;

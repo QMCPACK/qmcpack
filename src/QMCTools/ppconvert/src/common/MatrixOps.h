@@ -34,22 +34,22 @@ void SVdecomp (Array<double,2> &A,
 	       Array<double,2> &U, Array<double,1> &S,
 	       Array<double,2> &V);
 
-void SVdecomp (Array<complex<double>,2> &A,
-	       Array<complex<double>,2> &U, Array<double,1> &S,
-	       Array<complex<double>,2> &V);
+void SVdecomp (Array<std::complex<double>,2> &A,
+	       Array<std::complex<double>,2> &U, Array<double,1> &S,
+	       Array<std::complex<double>,2> &V);
 
 
 void SymmEigenPairs (const Array<double,2> &A, int NumPairs,
 		     Array<double,1> &Vals,
 		     Array<double,2> &Vectors);
 
-void SymmEigenPairs (const Array<complex<double>,2> &A, int NumPairs,
+void SymmEigenPairs (const Array<std::complex<double>,2> &A, int NumPairs,
 		     Array<double,1> &Vals,
-		     Array<complex<double>,2> &Vectors);
+		     Array<std::complex<double>,2> &Vectors);
 
 // Orthogonalizes matrix A with the polar decomposition.  This returns
 // the matrix closest to A which is orthogonal.  A must be square.
-void PolarOrthogonalize (Array<complex<double>,2> &A);
+void PolarOrthogonalize (Array<std::complex<double>,2> &A);
 
 const Array<double,2> operator*(const Array<double,2> &A,
 				const Array<double,2> &B);
@@ -66,11 +66,11 @@ OuterProduct(const Array<double,1> &A,
 
 void MatMult (const Array<double,2> &A, const Array<double,2> &B,
 	      Array<double,2> &C);
-void MatMult (const Array<complex<double>,2> &A, const Array<complex<double>,2> &B,
-	      Array<complex<double>,2> &C);
+void MatMult (const Array<std::complex<double>,2> &A, const Array<std::complex<double>,2> &B,
+	      Array<std::complex<double>,2> &C);
 
 double Determinant (const Array<double,2> &A);
-complex<double> Determinant (const Array<complex<double>,2> &A);
+complex<double> Determinant (const Array<std::complex<double>,2> &A);
 
 /// This function returns the determinant of A and replaces A with its
 /// cofactors.
@@ -81,8 +81,8 @@ int DetCofactorsWorksize(int N);
 
 
 /// Complex versions of the functions above
-complex<double> ComplexDetCofactors (Array<complex<double>,2> &A, 
-				     Array<complex<double>,1> &work);
+complex<double> ComplexDetCofactors (Array<std::complex<double>,2> &A, 
+				     Array<std::complex<double>,1> &work);
 int ComplexDetCofactorsWorksize(int N);
 
 double GJInverse (Array<double,2> &A);
@@ -102,11 +102,11 @@ inline void OutOfPlaceTranspose (Array<double,2> &A)
   A = Atrans;
 }
 
-inline void OutOfPlaceTranspose (Array<complex<double>,2> &A)
+inline void OutOfPlaceTranspose (Array<std::complex<double>,2> &A)
 {
   int m = A.rows();
   int n = A.cols();
-  Array<complex<double>,2> Atrans (n,m);
+  Array<std::complex<double>,2> Atrans (n,m);
   for (int i=0; i<m; i++)
     for (int j=0; j<n; j++)
       Atrans(j,i) = A(i,j);
@@ -127,7 +127,7 @@ inline void Transpose (Array<double,2> &A)
   }
 }
 
-inline void Transpose (Array<complex<double>,2> &A)
+inline void Transpose (Array<std::complex<double>,2> &A)
 {
   int m = A.rows();
   int n = A.cols();
@@ -170,7 +170,7 @@ inline void CubicFormula (double a, double b, double c, double d,
     }
   else
     {
-      cerr << "Complex roots detected in CubicFormula.\n";
+      std::cerr << "Complex roots detected in CubicFormula.\n";
       exit(1);
     }
 }
@@ -188,9 +188,9 @@ inline void TestCubicFormula()
 
   double y1,y2,y3;
   CubicFormula(a,b,c,d,y1,y2,y3);
-  cerr << "y1 = " << y1 << "\n";
-  cerr << "y2 = " << y2 << "\n";
-  cerr << "y3 = " << y3 << "\n";
+  std::cerr << "y1 = " << y1 << "\n";
+  std::cerr << "y2 = " << y2 << "\n";
+  std::cerr << "y3 = " << y3 << "\n";
 }
 
 
@@ -321,11 +321,11 @@ inline void TestCholesky()
   D(2,0)=0.0; D(2,1)=0.0; D(2,2)=3.0;
 
   C = V * D * Transpose(V);
-  cerr << "C = " << C << "\n";
-  cerr << "V = " << V << "\n";
+  std::cerr << "C = " << C << "\n";
+  std::cerr << "V = " << V << "\n";
   L = Cholesky (C);
-  cerr << "L = " << L << "\n";
-  cerr << "L L^T = " << L*Transpose(L) << "\n";
+  std::cerr << "L = " << L << "\n";
+  std::cerr << "L L^T = " << L*Transpose(L) << "\n";
 
   Mat3 E, U;
   Vec3 Lambda;

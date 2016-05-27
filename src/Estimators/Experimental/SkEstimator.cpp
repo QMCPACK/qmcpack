@@ -45,7 +45,7 @@ SkEstimator::SkEstimator(ParticleSet& source)
   nList.push_back(Title);
   dList.push_back(new VectorEstimatorType(Title,NumK));
 #if defined(PRINT_DEBUG)
-  ofstream fout("Sk.dat");
+  std::ofstream fout("Sk.dat");
 #endif
 }
 
@@ -104,7 +104,7 @@ void SkEstimator::startAccumulate()
 void SkEstimator::accumulate(ParticleSet& p)
 {
   //sum over species
-  std::copy(p.SK->rhok[0],p.SK->rhok[0]+NumK,RhokTot.begin());
+  copy(p.SK->rhok[0],p.SK->rhok[0]+NumK,RhokTot.begin());
   for(int i=1; i<NumSpecies; i++)
     accumulate_elements(p.SK->rhok[i],p.SK->rhok[i]+NumK,RhokTot.begin());
   //accumulate_elements(p.SK->rhok[i],RhokTot.begin(),NumK);

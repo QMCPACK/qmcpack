@@ -94,7 +94,7 @@ bool RQMCMultiplePbyP::run()
           if ((*Reptile)[i]->ptclAge[ptcl]<=(*Reptile)[i]->stepmade)
           {
             (*Reptile)[i]->stepmade=(*Reptile)[i]->ptclAge[ptcl];
-            //              cerr<<(*Reptile)[i]->ptclAge[ptcl]<<" "<<ptcl<<" "<<i<<endl;
+            //              std::cerr <<(*Reptile)[i]->ptclAge[ptcl]<<" "<<ptcl<<" "<<i<< std::endl;
           }
         }
       }
@@ -104,7 +104,7 @@ bool RQMCMultiplePbyP::run()
       for (int i=0; i<ReptileLength; i++)
         if ((*Reptile)[i]->stepmade<min)
           min=(*Reptile)[i]->stepmade;
-      cerr<<Reptile->Age-min<<endl;
+      std::cerr <<Reptile->Age-min<< std::endl;
       step++;
       CurrentStep++;
     }
@@ -173,7 +173,7 @@ void RQMCMultiplePbyP::initReptile()
     Reptile=new MultiChain(NewBead,ReptileLength,InitialGrowthDirection,nPsi);
     if(h5FileRoot.size() && (h5FileRoot != "invalid"))
     {
-      app_log() << "Reading the previous multi-chain configurations" << endl;
+      app_log() << "Reading the previous multi-chain configurations" << std::endl;
       restartmode = Reptile->read(h5FileRoot);
     }
     W.setPolymer(Reptile);
@@ -197,7 +197,7 @@ void RQMCMultiplePbyP::InitBisection(Buffer_t& w_buffer)
   grand_transProb.resize(W.G.size());//dothis better
   lambda=1.0/(2.0*MSS);
   assert(lambda==0.5); //6.059;
-  cout<<"My max level is "<<MaxLevel<<endl;
+  std::cout <<"My max level is "<<MaxLevel<< std::endl;
   assert(MaxLevel!=-1);
   //    MaxLevel=2;
   int num_bisection_slices=std::pow(2.0,(double)MaxLevel);
@@ -279,7 +279,7 @@ void RQMCMultiplePbyP::RegisterMe()
 //     grand_transProb.resize(W.G.size());//dothis better
 //     lambda=1.0/(2.0*MSS);
 //     assert(lambda==0.5); //6.059;
-//     cout<<"My max level is "<<MaxLevel<<endl;
+//     std::cout <<"My max level is "<<MaxLevel<< std::endl;
 //     assert(MaxLevel!=-1);
 //     //    MaxLevel=2;
 //     int num_bisection_slices=std::pow(2.0,(double)MaxLevel);
@@ -380,8 +380,8 @@ RQMCMultiplePbyP::ActionChange_displace(bool oldData)
     DeltaG[ipsi]-=tempReptile2[tempReptile2.size()-1]->Action(ipsi,Directionless)*toMult; //correct the *2
     //      AddPsi-=tempReptile2[tempReptile2.size()-1]->Action(ipsi,Directionless)*toMult; //correct the *2
   }
-  //    cerr<<"ADDPsi is "<<AddPsi<<endl;
-  //    cerr<<"Delta G is "<<DeltaG<<endl;
+  //    std::cerr <<"ADDPsi is "<<AddPsi<< std::endl;
+  //    std::cerr <<"Delta G is "<<DeltaG<< std::endl;
 }
 
 
@@ -446,13 +446,13 @@ void RQMCMultiplePbyP::moveReptile_displace()
       ParticleSet::ParticlePos_t toMove_rand(1);
       for (int dim=0; dim<DIM; dim++)
         toMove_rand[0][dim]=sigma*(Random()-0.5);
-      //	cerr<<toMove_rand[0][0]<<endl;
+      //	std::cerr <<toMove_rand[0][0]<< std::endl;
       for (int i=0; i<tempReptile2.size(); i++)
         tempReptile2[i]->makeMove(movePtcl,toMove_rand[0]);
       for (int i=0; i<tempReptile2.size(); i++)
       {
-        vector<TrialWaveFunction*> &Psi_curr(psiReptile2[i]);
-        vector<QMCHamiltonian*> &H_curr(hReptile2[i]);
+        std::vector<TrialWaveFunction*> &Psi_curr(psiReptile2[i]);
+        std::vector<QMCHamiltonian*> &H_curr(hReptile2[i]);
         for (int ipsi=0; ipsi<nPsi; ipsi++)
         {
           RealType* restrict NewBeadProp=tempReptile2[i]->getPropertyBase(ipsi);
@@ -489,9 +489,9 @@ void RQMCMultiplePbyP::moveReptile_displace()
             tempReptile2[i]->TransProb[MinusDirection]=Dot(grand_transProb,grand_transProb)*0.5/Tau;//a
             deltaR=deltaR-Tau*tempReptile2[i]->G; //not hack any more
             tempReptile2[i]->Action(ipsi,backward)=0.5*m_oneover2tau*Dot(deltaR,deltaR);
-            //	      cerr<<"backward: "<<tempReptile2[i]->Action(ipsi,backward)<<" ";
-            //	      cerr<<tempReptile2[i]->Action_saved(ipsi,backward)<<endl;
-            //	      cerr<<deltaR<<endl;
+            //	      std::cerr <<"backward: "<<tempReptile2[i]->Action(ipsi,backward)<<" ";
+            //	      std::cerr <<tempReptile2[i]->Action_saved(ipsi,backward)<< std::endl;
+            //	      std::cerr <<deltaR<< std::endl;
           }
           if (i!=tempReptile2.size()-1)
           {
@@ -501,9 +501,9 @@ void RQMCMultiplePbyP::moveReptile_displace()
             tempReptile2[i]->TransProb[PlusDirection]=Dot(grand_transProb,grand_transProb)*0.5/Tau;//a
             deltaR=deltaR-Tau*tempReptile2[i]->G; //not hack any more
             tempReptile2[i]->Action(ipsi,forward)=0.5*m_oneover2tau*Dot(deltaR,deltaR);
-            //	      cerr<<"forward: "<<tempReptile2[i]->Action(ipsi,forward)<<" ";
-            //	      cerr<<tempReptile2[i]->Action_saved(ipsi,forward)<<endl;
-            //	      cerr<<deltaR<<endl;
+            //	      std::cerr <<"forward: "<<tempReptile2[i]->Action(ipsi,forward)<<" ";
+            //	      std::cerr <<tempReptile2[i]->Action_saved(ipsi,forward)<< std::endl;
+            //	      std::cerr <<deltaR<< std::endl;
           }
           //checks to see if the refsign and you are the same
           //if refSign==newBeadProb[sign] then beadwgt=1  else beadwgt=0
@@ -532,9 +532,9 @@ void RQMCMultiplePbyP::moveReptile_displace()
       RealType AcceptProb(-1.0),NewGlobalWgt(0.0);
       RealType RefAction(-1.0e20);
       if (someHamiltonian_ok)
-        //	  cerr<<"NOT OVER NODES"<<endl;
+        //	  std::cerr <<"NOT OVER NODES"<< std::endl;
         if (shouldReject)
-          cerr<<"REJECTING DUE TO KE CUTOFF"<<endl;
+          std::cerr <<"REJECTING DUE TO KE CUTOFF"<< std::endl;
       if (someHamiltonian_ok && !shouldReject)
       {
         for (int ipsi=0; ipsi<nPsi; ipsi++)
@@ -547,7 +547,7 @@ void RQMCMultiplePbyP::moveReptile_displace()
           WeightSign[ipsi]=std::max(0,NewGlobalSignWgt[ipsi]-Reptile->Last);
           // Assign Reference Action
           if(WeightSign[ipsi]>0)
-            RefAction=max(RefAction,NewGlobalAction[ipsi]);
+            RefAction= std::max(RefAction,NewGlobalAction[ipsi]);
         }
         //Compute Log of global Wgt
         for(int ipsi=0; ipsi<nPsi; ipsi++)
@@ -559,15 +559,15 @@ void RQMCMultiplePbyP::moveReptile_displace()
         NewGlobalWgt=std::log(NewGlobalWgt)+RefAction;
         ///These forward and backward probs must be changed!
         AcceptProb=std::exp(NewGlobalWgt - Reptile->GlobalWgt );
-        //	  cerr<<"My accept prob is "<<AcceptProb<<endl;
-        //	  cerr<<NewGlobalWgt - Reptile->GlobalWgt - logSampleProb + oldLogSampleProb<<" "<<rdist2_new-rdist2_old<<endl;
+        //	  std::cerr <<"My accept prob is "<<AcceptProb<< std::endl;
+        //	  std::cerr <<NewGlobalWgt - Reptile->GlobalWgt - logSampleProb + oldLogSampleProb<<" "<<rdist2_new-rdist2_old<< std::endl;
       }
       if(Random() < AcceptProb )
       {
-        //	  cerr<<"ACCEPT"<<endl;
+        //	  std::cerr <<"ACCEPT"<< std::endl;
         for (int i=0; i<tempReptile2.size(); i++)
         {
-          vector<TrialWaveFunction*> &Psi_curr(psiReptile2[i]);
+          std::vector<TrialWaveFunction*> &Psi_curr(psiReptile2[i]);
           tempReptile2[i]->acceptMove(movePtcl);
           (*Reptile)[i+startSlice]->ptclAge[movePtcl]=Reptile->Age;
           for (int ipsi=0; ipsi<nPsi; ipsi++)
@@ -592,10 +592,10 @@ void RQMCMultiplePbyP::moveReptile_displace()
       }
       else
       {
-        //	  cerr<<"REJECT;"<<endl;
+        //	  std::cerr <<"REJECT;"<< std::endl;
         for (int i=0; i<tempReptile2.size(); i++)
         {
-          vector<TrialWaveFunction*> &Psi_curr(psiReptile2[i]);
+          std::vector<TrialWaveFunction*> &Psi_curr(psiReptile2[i]);
           tempReptile2[i]->rejectMove(movePtcl);
           tempReptile2[i]->RestoreOldData();
           for (int ipsi=0; ipsi<nPsi; ipsi++)
@@ -644,9 +644,9 @@ void RQMCMultiplePbyP::ChooseSlices(int ReptileLength,int &startSlice,int &endSl
   assert(endSlice<ReptileLength);
 }
 
-RQMCMultiplePbyP::RealType RQMCMultiplePbyP::LogSampleProb(vector<Bead_ParticleSet*> &tempReptile,
+RQMCMultiplePbyP::RealType RQMCMultiplePbyP::LogSampleProb(std::vector<Bead_ParticleSet*> &tempReptile,
     int startSlice, int endSlice,
-    vector<int> &particles, int level)
+    std::vector<int> &particles, int level)
 {
   int NumImage = 0;
   PosType rpp;
@@ -690,11 +690,11 @@ RQMCMultiplePbyP::RealType RQMCMultiplePbyP::LogSampleProb(vector<Bead_ParticleS
 }
 
 RQMCMultiplePbyP::RealType
-RQMCMultiplePbyP::BisectionSample(vector<Bead_ParticleSet*> &tempReptile,
+RQMCMultiplePbyP::BisectionSample(std::vector<Bead_ParticleSet*> &tempReptile,
                                   int particleToMove,
                                   int level)
 {
-  //    cerr<<"Bisection sample called"<<endl;
+  //    std::cerr <<"Bisection sample called"<< std::endl;
   int NumImage = 0;
   //WARNING: This is masking higher level gRand on purpose
   ///SHOULD JSUT RENAME
@@ -734,11 +734,11 @@ RQMCMultiplePbyP::BisectionSample(vector<Bead_ParticleSet*> &tempReptile,
     logNewSampleProb += prefactorOfSampleProb + std::log(GaussProd);
     rpp=rbar+newDelta;
     PosType toMove= rpp-tempReptile[slice+(skip>>1)]->R[ptcl];
-    //      cerr<<slice+(skip>>1)<<" "<<toMove<<endl;
+    //      std::cerr <<slice+(skip>>1)<<" "<<toMove<< std::endl;
     ///Here we've stored the new position in the path
     //      tempReptile[slice+(skip>>1)]->R[ptcl]=rpp;
     W.Lattice.applyMinimumImage(toMove);
-    //      cerr<<toMove<<endl;
+    //      std::cerr <<toMove<< std::endl;
     PosType newPlace=tempReptile[slice+(skip>>1)]->makeMove(ptcl,toMove);
     //tempReptile[slice+(skip>>1)]->R[ptcl]=rpp;
     //      assert(newPlace==rpp);
@@ -780,8 +780,8 @@ RQMCMultiplePbyP::ActionChange_wf(bool oldData,int sliceToThrow)
     DeltaG[ipsi]-=tempReptile[sliceToThrow]->Properties(ipsi,LOGPSI)*toMult;
     DeltaG[ipsi]-=tempReptile[sliceToThrow]->Action(ipsi,Directionless)*toMult; //correct the *2
   }
-  //    cerr<<"Add psi for wf is "<<AddPsi<<endl;
-  //    cerr<<"Delta G for wf is "<<DeltaG<<endl;
+  //    std::cerr <<"Add psi for wf is "<<AddPsi<< std::endl;
+  //    std::cerr <<"Delta G for wf is "<<DeltaG<< std::endl;
 }
 
 
@@ -789,7 +789,7 @@ RQMCMultiplePbyP::ActionChange_wf(bool oldData,int sliceToThrow)
 void
 RQMCMultiplePbyP::PutInBox (PosType &v)
 {
-  cerr<<"My box is of size "<< W.Lattice.R(0,0)<<" "<<W.Lattice.R(1,1)<<" "<<W.Lattice.R(2,2)<<" "<<W.Lattice.R(1,2)<<endl;;
+  std::cerr <<"My box is of size "<< W.Lattice.R(0,0)<<" "<<W.Lattice.R(1,1)<<" "<<W.Lattice.R(2,2)<<" "<<W.Lattice.R(1,2)<< std::endl;;
   for (int i=0; i<DIM; i++)
   {
     double boxLength=W.Lattice.R(i,i);
@@ -873,7 +873,7 @@ void RQMCMultiplePbyP::moveReptile_bisection_end()
       ///save the old data
       for (int i=0; i<tempReptile.size(); i++)
         tempReptile[i]->SaveOldData();
-      vector<int> particleToMove_vector(1,movePtcl);
+      std::vector<int> particleToMove_vector(1,movePtcl);
       RealType oldLogSampleProb=0.0;
       for (int level=MaxLevel; level>0; level--)
         oldLogSampleProb+=LogSampleProb(tempReptile,
@@ -906,8 +906,8 @@ void RQMCMultiplePbyP::moveReptile_bisection_end()
       PosType new_rdiff=tempReptile[tempReptile.size()-1]->R[movePtcl]-tempReptile[0]->R[movePtcl];
       for (int i=0; i<tempReptile.size(); i++)
       {
-        vector<TrialWaveFunction*> &Psi_curr(psiReptile[i]);
-        vector<QMCHamiltonian*> &H_curr(hReptile[i]);
+        std::vector<TrialWaveFunction*> &Psi_curr(psiReptile[i]);
+        std::vector<QMCHamiltonian*> &H_curr(hReptile[i]);
         for (int ipsi=0; ipsi<nPsi; ipsi++)
         {
           RealType* restrict HeadProp=(*Reptile)[0]->getPropertyBase(ipsi);
@@ -1010,7 +1010,7 @@ void RQMCMultiplePbyP::moveReptile_bisection_end()
           WeightSign[ipsi]=std::max(0,NewGlobalSignWgt[ipsi]-Reptile->Last);
           // Assign Reference Action
           if(WeightSign[ipsi]>0)
-            RefAction=max(RefAction,NewGlobalAction[ipsi]);
+            RefAction= std::max(RefAction,NewGlobalAction[ipsi]);
         }
         //Compute Log of global Wgt
         for(int ipsi=0; ipsi<nPsi; ipsi++)
@@ -1025,16 +1025,16 @@ void RQMCMultiplePbyP::moveReptile_bisection_end()
         ///These forward and backward probs must be changed!
         AcceptProb=std::exp(NewGlobalWgt - Reptile->GlobalWgt - logSampleProb + oldLogSampleProb +
                             +rdist2_new-rdist2_old);
-        //	  cerr<<"My accept prob is "<<AcceptProb<<endl;
-        //	  cerr<<NewGlobalWgt - Reptile->GlobalWgt - logSampleProb + oldLogSampleProb<<" "<<rdist2_new-rdist2_old<<endl;
+        //	  std::cerr <<"My accept prob is "<<AcceptProb<< std::endl;
+        //	  std::cerr <<NewGlobalWgt - Reptile->GlobalWgt - logSampleProb + oldLogSampleProb<<" "<<rdist2_new-rdist2_old<< std::endl;
       }
-      //	cerr<<"ACCEpt prob is "<<AcceptProb<<endl;
+      //	std::cerr <<"ACCEpt prob is "<<AcceptProb<< std::endl;
       if(Random() < AcceptProb )
       {
-        //	  cerr<<"ACCEPT end"<<endl;
+        //	  std::cerr <<"ACCEPT end"<< std::endl;
         for (int i=0; i<tempReptile.size(); i++)
         {
-          vector<TrialWaveFunction*> &Psi_curr(psiReptile[i]);
+          std::vector<TrialWaveFunction*> &Psi_curr(psiReptile[i]);
           if (i==sliceToThrow || (i!=0 && i!=tempReptile.size()-1))
           {
             tempReptile[i]->acceptMove(movePtcl);
@@ -1062,10 +1062,10 @@ void RQMCMultiplePbyP::moveReptile_bisection_end()
       }
       else
       {
-        //	  cerr<<"REJECT end"<<endl;
+        //	  std::cerr <<"REJECT end"<< std::endl;
         for (int i=0; i<tempReptile.size(); i++)
         {
-          vector<TrialWaveFunction*> &Psi_curr(psiReptile[i]);
+          std::vector<TrialWaveFunction*> &Psi_curr(psiReptile[i]);
           if (i==sliceToThrow || (i!=0 && i!=tempReptile.size()-1))
             tempReptile[i]->rejectMove(movePtcl);
           tempReptile[i]->RestoreOldData();
@@ -1167,7 +1167,7 @@ void RQMCMultiplePbyP::moveReptile_bisection()
       ///save the old data
       for (int i=0; i<tempReptile.size(); i++)
         tempReptile[i]->SaveOldData();
-      vector<int> particleToMove_vector(1,movePtcl);
+      std::vector<int> particleToMove_vector(1,movePtcl);
       RealType oldLogSampleProb=0.0;
       for (int level=MaxLevel; level>0; level--)
         oldLogSampleProb+=LogSampleProb(tempReptile,
@@ -1179,9 +1179,9 @@ void RQMCMultiplePbyP::moveReptile_bisection()
       myTimers[5]->stop();
       for (int i=0; i<tempReptile.size(); i++)
       {
-        //	  cerr<<i<<endl;
-        vector<TrialWaveFunction*> &Psi_curr(psiReptile[i]);
-        vector<QMCHamiltonian*> &H_curr(hReptile[i]);
+        //	  std::cerr <<i<< std::endl;
+        std::vector<TrialWaveFunction*> &Psi_curr(psiReptile[i]);
+        std::vector<QMCHamiltonian*> &H_curr(hReptile[i]);
         for (int ipsi=0; ipsi<nPsi; ipsi++)
         {
           RealType* restrict HeadProp=(*Reptile)[0]->getPropertyBase(ipsi);
@@ -1281,7 +1281,7 @@ void RQMCMultiplePbyP::moveReptile_bisection()
           WeightSign[ipsi]=std::max(0,NewGlobalSignWgt[ipsi]-Reptile->Last);
           // Assign Reference Action
           if(WeightSign[ipsi]>0)
-            RefAction=max(RefAction,NewGlobalAction[ipsi]);
+            RefAction= std::max(RefAction,NewGlobalAction[ipsi]);
         }
         //Compute Log of global Wgt
         for(int ipsi=0; ipsi<nPsi; ipsi++)
@@ -1296,10 +1296,10 @@ void RQMCMultiplePbyP::moveReptile_bisection()
       }
       if(Random() < AcceptProb )
       {
-        //	  cerr<<"ACCEPT"<<endl;
+        //	  std::cerr <<"ACCEPT"<< std::endl;
         for (int i=0; i<tempReptile.size(); i++)
         {
-          vector<TrialWaveFunction*> &Psi_curr(psiReptile[i]);
+          std::vector<TrialWaveFunction*> &Psi_curr(psiReptile[i]);
           if (i!=0 && i!=tempReptile.size()-1)
           {
             tempReptile[i]->acceptMove(movePtcl);
@@ -1326,10 +1326,10 @@ void RQMCMultiplePbyP::moveReptile_bisection()
       }
       else
       {
-        //	  cerr<<"REJECT"<<endl;
+        //	  std::cerr <<"REJECT"<< std::endl;
         for (int i=0; i<tempReptile.size(); i++)
         {
-          vector<TrialWaveFunction*> &Psi_curr(psiReptile[i]);
+          std::vector<TrialWaveFunction*> &Psi_curr(psiReptile[i]);
           if (i!=0 && i!=tempReptile.size()-1)
             tempReptile[i]->rejectMove(movePtcl);
           tempReptile[i]->RestoreOldData();
@@ -1383,7 +1383,7 @@ void RQMCMultiplePbyP::moveReptile_bisection()
  */
 void RQMCMultiplePbyP::initReptile_new()
 {
-  cerr<<"INIT REPTILE BEING CALLED"<<endl;
+  std::cerr <<"INIT REPTILE BEING CALLED"<< std::endl;
 //     m_oneover2tau=0.5/Tau;
 //     m_sqrttau=std::sqrt(Tau);
 //     Tauoverm = Tau/MSS;
@@ -1419,8 +1419,8 @@ void RQMCMultiplePbyP::initReptile_new()
   //     NewBead->TransProb[MinusDirection]=(0.5*Tau)*Dot(NewBead->Drift,NewBead->Drift) ;
   NewBead->TransProb[MinusDirection]=m_oneover2tau*Dot(NewBead->Drift,NewBead->Drift) ;
   NewBead->TransProb[PlusDirection]=NewBead->TransProb[MinusDirection];
-  cerr<<"STARTINFO: "<<NewBead->TransProb[forward]<<" "<<NewBead->Drift<<endl;
-  cerr<<"STARTINFO: "<<NewBead->TransProb[backward]<<endl;
+  std::cerr <<"STARTINFO: "<<NewBead->TransProb[forward]<<" "<<NewBead->Drift<< std::endl;
+  std::cerr <<"STARTINFO: "<<NewBead->TransProb[backward]<< std::endl;
   //Reptile is made up by replicating the first walker. To be read if restarted.
   //if(Reptile == 0) Reptile=new MultiChain(*W.begin(),ReptileLength,InitialGrowthDirection,nPsi);
   bool restartmode = false;
@@ -1432,7 +1432,7 @@ void RQMCMultiplePbyP::initReptile_new()
     Reptile=new MultiChain(NewBead,ReptileLength,InitialGrowthDirection,nPsi);
     if(h5FileRoot.size() && (h5FileRoot != "invalid"))
     {
-      app_log() << "Reading the previous multi-chain configurations" << endl;
+      app_log() << "Reading the previous multi-chain configurations" << std::endl;
       restartmode = Reptile->read(h5FileRoot);
     }
     W.setPolymer(Reptile);
@@ -1494,7 +1494,7 @@ void RQMCMultiplePbyP::setReptileProperties()
   RealType RefAction(-1.0e20);
   for(int ipsi=0; ipsi<nPsi; ipsi++)
   {
-    RefAction=max(RefAction,Reptile->GlobalAction[ipsi]);
+    RefAction= std::max(RefAction,Reptile->GlobalAction[ipsi]);
   }
   //Compute Total Weight
   Reptile->GlobalWgt=0.0e0;
@@ -1518,12 +1518,12 @@ void RQMCMultiplePbyP::setReptileProperties()
 
 void RQMCMultiplePbyP::checkBeadInfo(int i,bool dontDie)
 {
-  //    cerr<<"Checking bead info "<<i<<endl;
+  //    std::cerr <<"Checking bead info "<<i<< std::endl;
   W.R=tempReptile[i]->R;
   W.update();
-  //    cerr<<"R is "<<W.R<<endl;
+  //    std::cerr <<"R is "<<W.R<< std::endl;
   Psi.evaluateLog(W);
-  //    cerr<<"G is "<<W.G<<endl;
+  //    std::cerr <<"G is "<<W.G<< std::endl;
   tempReptile[i]->SetGradientAndLaplacian(0);
   if (!dontDie)
   {
@@ -1533,9 +1533,9 @@ void RQMCMultiplePbyP::checkBeadInfo(int i,bool dontDie)
       {
         if (!(std::fabs(tempReptile[i]->G[k][j]-W.G[k][j])<1e-6))
         {
-          cerr<<tempReptile[i]->G[k][j]<<" "<<W.G[k][j]<<endl;
-          cerr<<tempReptile[i]->R<<endl;
-          cerr<<W.Lattice.R(0,0)<<endl;
+          std::cerr <<tempReptile[i]->G[k][j]<<" "<<W.G[k][j]<< std::endl;
+          std::cerr <<tempReptile[i]->R<< std::endl;
+          std::cerr <<W.Lattice.R(0,0)<< std::endl;
           noGood=true;
           exit(1);
         }
@@ -1543,11 +1543,11 @@ void RQMCMultiplePbyP::checkBeadInfo(int i,bool dontDie)
     for (int k=0; k<W.R.size(); k++)
       for (int j=0; j<W.R[0].size(); j++)
       {
-        //	  cerr<<tempReptile[i]->G[k][j]<<" "<<W.G[k][j]<<endl;
+        //	  std::cerr <<tempReptile[i]->G[k][j]<<" "<<W.G[k][j]<< std::endl;
         assert(std::fabs(tempReptile[i]->G[k][j]-W.G[k][j])<1e-6);
       }
   }
-  //    cerr<<"tempReptile G is "<<tempReptile[i]->G<<endl;
+  //    std::cerr <<"tempReptile G is "<<tempReptile[i]->G<< std::endl;
   //    W.getDrift(branchEngine->LogNorm);
   //    Bead_ParticleSet &prev(tempReptile[i]);
   ParticleSet::ParticlePos_t deltaR;
@@ -1568,34 +1568,34 @@ void RQMCMultiplePbyP::checkBeadInfo(int i,bool dontDie)
     {
       //	ParticleSet::ParticlePos_t deltaR=deltaR_backward+W.G;
       PAOps<RealType,DIM>::axpy(-Tau,W.G,deltaR_backward,deltaR);
-      cerr<<tempReptile[i]->Action(ipsi,MinusDirection)<<" "<<0.5*m_oneover2tau*Dot(deltaR,deltaR)<<endl;
+      std::cerr <<tempReptile[i]->Action(ipsi,MinusDirection)<<" "<<0.5*m_oneover2tau*Dot(deltaR,deltaR)<< std::endl;
       assert(std::fabs(tempReptile[i]->Action(ipsi,MinusDirection)-0.5*m_oneover2tau*Dot(deltaR,deltaR))<1e-6);
-      cerr<<"Broken: "<<tempReptile[i]->TransProb[MinusDirection]<<" "<<Dot(deltaR,deltaR)*0.5/Tau<<endl;
+      std::cerr <<"Broken: "<<tempReptile[i]->TransProb[MinusDirection]<<" "<<Dot(deltaR,deltaR)*0.5/Tau<< std::endl;
       assert(std::fabs(tempReptile[i]->TransProb[MinusDirection]-Dot(deltaR,deltaR)*0.5/Tau)<1e-6);
     }
     if (i!=tempReptile.size()-1)
     {
       //	ParticleSet::ParticlePos_t deltaR=deltaR_forward-Tau*W.G;
       PAOps<RealType,DIM>::axpy(-Tau,W.G,deltaR_forward,deltaR);
-      //	cerr<<i<<" "<<tempReptile[i]->Action(ipsi,PlusDirection)<<" "<<0.5*m_oneover2tau*Dot(deltaR,deltaR)<<endl;
-      //	cerr<<i<<" "<<tempReptile[i]->Action(ipsi,MinusDirection)<<endl;
-      //	cerr<<" "<<tempReptile[i]->Action(ipsi,PlusDirection)<<" "<<0.5*m_oneover2tau*Dot(deltaR,deltaR)<<" "<<i<<" "<<Tau<<endl;
+      //	std::cerr <<i<<" "<<tempReptile[i]->Action(ipsi,PlusDirection)<<" "<<0.5*m_oneover2tau*Dot(deltaR,deltaR)<< std::endl;
+      //	std::cerr <<i<<" "<<tempReptile[i]->Action(ipsi,MinusDirection)<< std::endl;
+      //	std::cerr <<" "<<tempReptile[i]->Action(ipsi,PlusDirection)<<" "<<0.5*m_oneover2tau*Dot(deltaR,deltaR)<<" "<<i<<" "<<Tau<< std::endl;
       assert(std::fabs(tempReptile[i]->Action(ipsi,PlusDirection)-0.5*m_oneover2tau*Dot(deltaR,deltaR))<1e-6);
       //	deltaR=deltaR_forward-Tau*W.G; //W.Drift;
-      //	cerr<<" "<<tempReptile[i]->TransProb[PlusDirection]<<" "<<Dot(deltaR,deltaR)*0.5/Tau<<" "<<i<<" "<<Tau<<endl;
+      //	std::cerr <<" "<<tempReptile[i]->TransProb[PlusDirection]<<" "<<Dot(deltaR,deltaR)*0.5/Tau<<" "<<i<<" "<<Tau<< std::endl;
       assert(std::fabs(tempReptile[i]->TransProb[PlusDirection]-Dot(deltaR,deltaR)*0.5/Tau)<1e-6);
     }
     RealType eloc= H1[ipsi]->evaluate(W);
-    cerr<<tempReptile[i]->Action(ipsi,Directionless)<<" "<<0.5*Tau*eloc<<endl;
+    std::cerr <<tempReptile[i]->Action(ipsi,Directionless)<<" "<<0.5*Tau*eloc<< std::endl;
     assert(std::fabs(tempReptile[i]->Action(ipsi,Directionless)-0.5*Tau*eloc)<1e-6);
   }
-  //    cerr<<"Done checking bead info"<<endl;
+  //    std::cerr <<"Done checking bead info"<< std::endl;
 }
 
 void RQMCMultiplePbyP::checkReptileProperties()
 {
   //Temporary vector
-  vector<int> SumSign;
+  std::vector<int> SumSign;
   SumSign.resize(nPsi);
   ///Assign a bunch of useful pointers
   MultiChain::iterator first_bead(Reptile->begin()), bead_end(Reptile->end());
@@ -1714,7 +1714,7 @@ void RQMCMultiplePbyP::checkReptileProperties()
   for(int ipsi=0; ipsi<nPsi; ipsi++)
   {
     Reptile->GlobalAction[ipsi]=(*bead)->Properties(ipsi,LOGPSI);
-    //cout << " WF : " << ipsi << " " << Reptile->GlobalAction[ipsi] << endl;
+    //cout << " WF : " << ipsi << " " << Reptile->GlobalAction[ipsi] << std::endl;
   }
   while(bead != last_bead)
   {
@@ -1729,7 +1729,7 @@ void RQMCMultiplePbyP::checkReptileProperties()
   for(int ipsi=0; ipsi<nPsi; ipsi++)
   {
     Reptile->GlobalAction[ipsi]+=(*bead)->Properties(ipsi,LOGPSI);
-    //cout << " WF : " << ipsi << " " << Reptile->GlobalAction[ipsi] << endl;
+    //cout << " WF : " << ipsi << " " << Reptile->GlobalAction[ipsi] << std::endl;
   }
   //Compute Global Sign weight (need to be initialized somewhere)
   bead=first_bead;
@@ -1747,7 +1747,7 @@ void RQMCMultiplePbyP::checkReptileProperties()
   {
     WeightSign[ipsi]=std::max(0,Reptile->GlobalSignWgt[ipsi]-Reptile->Last);
     if(WeightSign[ipsi])
-      RefAction=max(RefAction,Reptile->GlobalAction[ipsi]);
+      RefAction= std::max(RefAction,Reptile->GlobalAction[ipsi]);
   }
   //Compute Total Weight
   Reptile->GlobalWgt=0.0e0;
@@ -1766,10 +1766,10 @@ void RQMCMultiplePbyP::checkReptileProperties()
       Reptile->UmbrellaWeight[ipsi] = std::exp(DeltaAction);
     else
       Reptile->UmbrellaWeight[ipsi] = 0.0e0;
-    app_log() << "GA " << ipsi <<  " : " << Reptile->GlobalAction[ipsi] << endl;
-    app_log() << "UW " << ipsi <<  " : " << Reptile->UmbrellaWeight[ipsi] << endl;
+    app_log() << "GA " << ipsi <<  " : " << Reptile->GlobalAction[ipsi] << std::endl;
+    app_log() << "UW " << ipsi <<  " : " << Reptile->UmbrellaWeight[ipsi] << std::endl;
   }
-  app_log() << "GW " <<  " : " << Reptile->GlobalWgt << endl;
+  app_log() << "GW " <<  " : " << Reptile->GlobalWgt << std::endl;
 }
 
 
@@ -1781,7 +1781,7 @@ void RQMCMultiplePbyP::recordBlock(int block)
   //TEST CACHE
   //Estimators->report(CurrentStep);
   //TEST CACHE
-  //app_error() << " BROKEN RQMCMultiplePbyP::recordBlock(int block) HDFWalkerOutput as 2007-04-16 " << endl;
+  //app_error() << " BROKEN RQMCMultiplePbyP::recordBlock(int block) HDFWalkerOutput as 2007-04-16 " << std::endl;
   //HDFWalkerOutput WO(RootName,false,0);
   //WO.get(W);
   //WO.write(*branchEngine);
@@ -1814,8 +1814,8 @@ void RQMCMultiplePbyP::recordBlock(int block)
 //   }
 bool RQMCMultiplePbyP::put(xmlNodePtr q)
 {
-  cerr<<"PUT BEING CALLED"<<endl;
-  string observ("NONE");
+  std::cerr <<"PUT BEING CALLED"<< std::endl;
+  std::string observ("NONE");
   OhmmsAttributeSet attrib;
   ParameterSet nattrib;
   attrib.add(observ,"observables" );
@@ -1838,13 +1838,13 @@ bool RQMCMultiplePbyP::put(xmlNodePtr q)
     Estimators = new EstimatorManager(myComm);
     if (observ=="NONE")
     {
-      cout<<"Using normal Observables"<<endl;
+      std::cout <<"Using normal Observables"<< std::endl;
       multiEstimator = new CSPolymerEstimator(H,nPsi);
     }
     else
       if (observ=="ZVZB")
       {
-        cout<<"Using ZVZB observables"<<endl;
+        std::cout <<"Using ZVZB observables"<< std::endl;
 //         multiEstimator = new MJPolymerEstimator(H,nPsi);
         MJPolymerEstimator* MJp = new MJPolymerEstimator(H,nPsi);
         MJp->setpNorm(1.0/( W.Lattice.DIM *  W.Lattice.Volume));
@@ -1853,7 +1853,7 @@ bool RQMCMultiplePbyP::put(xmlNodePtr q)
       else
         if (observ=="HFDHE2")
         {
-          cout<<"Using HFDHE2 observables"<<endl;
+          std::cout <<"Using HFDHE2 observables"<< std::endl;
           HFDHE2PolymerEstimator* HFp = new HFDHE2PolymerEstimator(H,nPsi);
           HFp->setpNorm(1.0/( W.Lattice.DIM *  W.Lattice.Volume));
           multiEstimator = HFp;
@@ -1873,8 +1873,8 @@ bool RQMCMultiplePbyP::put(xmlNodePtr q)
   Tauoverm = (Tau*oneovermass);
   m_oneover2tau = 0.5/Tauoverm;
   m_sqrttau = std::sqrt(Tauoverm);
-//     cout<<"  Mass for Propagator is: "<<1.0/oneovermass<<endl;
-//     cout<<"  m_over2t: "<<m_oneover2tau<<endl;
+//     std::cout <<"  Mass for Propagator is: "<<1.0/oneovermass<< std::endl;
+//     std::cout <<"  m_over2t: "<<m_oneover2tau<< std::endl;
   return true;
 }
 
@@ -1968,8 +1968,8 @@ void RQMCMultiplePbyP::moveReptile()
   gRand=deltaR+Tau*NewBead->Drift;
   NewBead->TransProb[backward]=m_oneover2tau*Dot(gRand,gRand);
   oldGrowth= std::sqrt(m_oneover2tau*2.0)*gRand;
-  //    cerr<<"old growth: "<<oldGrowth<<" "<<endl;
-  //    cerr<<"new growth: "<<newGrowth<<endl;
+  //    std::cerr <<"old growth: "<<oldGrowth<<" "<< std::endl;
+  //    std::cerr <<"new growth: "<<newGrowth<< std::endl;
   RealType AcceptProb(-1.0),NewGlobalWgt(0.0);
   RealType RefAction(-1.0e20);
   if(totbeadwgt!=0)
@@ -1990,7 +1990,7 @@ void RQMCMultiplePbyP::moveReptile()
       WeightSign[ipsi]=std::max(0,NewGlobalSignWgt[ipsi]-Reptile->Last);
       // Assign Reference Action
       if(WeightSign[ipsi]>0)
-        RefAction=max(RefAction,NewGlobalAction[ipsi]);
+        RefAction= std::max(RefAction,NewGlobalAction[ipsi]);
     }
     //Compute Log of global Wgt
     for(int ipsi=0; ipsi<nPsi; ipsi++)
@@ -2009,7 +2009,7 @@ void RQMCMultiplePbyP::moveReptile()
     }
     AcceptProb=std::exp(NewGlobalWgt - Reptile->GlobalWgt + head->TransProb[forward] - next->TransProb[backward]); // - (dist2_new) + dist2_old);
   }
-  //    cerr<<"Accept Prob is " <<AcceptProb<<endl;
+  //    std::cerr <<"Accept Prob is " <<AcceptProb<< std::endl;
   if(Random() < AcceptProb)
   {
     //Update Reptile information
@@ -2070,13 +2070,13 @@ void RQMCMultiplePbyP::ActionChange(bool oldData)
     {
       DeltaG[ipsi]+= tempReptile[i]->Action(ipsi,forward)*toMult;
       AddPsi+= tempReptile[i]->Action(ipsi,forward)*toMult;
-      //      cerr<<"CHANGE: "<<i<<" "<<tempReptile[i]->Action(0,1)*toMult<<endl;
+      //      std::cerr <<"CHANGE: "<<i<<" "<<tempReptile[i]->Action(0,1)*toMult<< std::endl;
     }
     for (int i=1; i<tempReptile.size(); i++)
     {
       DeltaG[ipsi]+= tempReptile[i]->Action(ipsi,backward)*toMult;
       AddPsi+= tempReptile[i]->Action(ipsi,backward)*toMult;
-      //      cerr<<"CHANGE2: "<<i<<" "<<tempReptile[i]->Action(ipsi,forward)*toMult<<endl;
+      //      std::cerr <<"CHANGE2: "<<i<<" "<<tempReptile[i]->Action(ipsi,forward)*toMult<< std::endl;
     }
     for (int i=1; i<tempReptile.size()-1; i++)
     {
@@ -2087,8 +2087,8 @@ void RQMCMultiplePbyP::ActionChange(bool oldData)
       DeltaSign[ipsi] -= tempReptile[i]->BeadSignWgt[ipsi]*toMult;
     }
   }
-  //  cerr<<"AddPsi for ActionChange is "<<AddPsi<<endl;
-  //  cerr<<"Delta G for ACtionchange is "<<DeltaG<<endl;
+  //  std::cerr <<"AddPsi for ActionChange is "<<AddPsi<< std::endl;
+  //  std::cerr <<"Delta G for ACtionchange is "<<DeltaG<< std::endl;
 }
 
 

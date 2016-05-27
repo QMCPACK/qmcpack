@@ -41,26 +41,26 @@ public:
   ///Destructor
   ~QMCCostFunctionOMP();
 
-  void getConfigurations(const string& aroot);
+  void getConfigurations(const std::string& aroot);
   void checkConfigurations();
   void resetPsi(bool final_reset=false);
   void resetWalkers();   
-  void GradCost(vector<Return_t>& PGradient, const vector<Return_t>& PM, Return_t FiniteDiff=0);
+  void GradCost(std::vector<Return_t>& PGradient, const std::vector<Return_t>& PM, Return_t FiniteDiff=0);
   Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& H2, Matrix<Return_t>& Hamiltonian, Matrix<Return_t>& Variance, Matrix<Return_t>& Overlap);
   Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matrix<Return_t>& Right, Matrix<Return_t>& Overlap);
 
 protected:
-  vector<QMCHamiltonian*> H_KE_Node;
-  vector<Matrix<Return_t>*> RecordsOnNode;
+  std::vector<QMCHamiltonian*> H_KE_Node;
+  std::vector<Matrix<Return_t>*> RecordsOnNode;
 
   /** Temp derivative properties and Hderivative properties of all the walkers
   */
-  vector<Matrix<Return_t>* > DerivRecords;
-  vector<Matrix<Return_t>* > HDerivRecords;
+  std::vector<Matrix<Return_t>* > DerivRecords;
+  std::vector<Matrix<Return_t>* > HDerivRecords;
   Return_t CSWeight;
 
   ///vmc walkers to clean up
-  vector<int> nVMCWalkers;
+  std::vector<int> nVMCWalkers;
   Return_t correlatedSampling(bool needGrad=true);
 };
 }

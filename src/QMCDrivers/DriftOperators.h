@@ -26,28 +26,28 @@ template<class T, unsigned D>
 inline T getDriftScale(T tau, const ParticleAttrib<TinyVector<T,D> >& ga)
 {
   T vsq=Dot(ga,ga);
-  return (vsq<numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
+  return (vsq<std::numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
 }
 
 template<class T, unsigned D>
-inline T getDriftScale(T tau, const ParticleAttrib<TinyVector<complex<T>,D> >& ga)
+inline T getDriftScale(T tau, const ParticleAttrib<TinyVector<std::complex<T>,D> >& ga)
 {
   T vsq=Dot(ga,ga);
-  return (vsq<numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
+  return (vsq<std::numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
 }
 
 template<class T, unsigned D>
 inline T getDriftScale(T tau, const TinyVector<T,D>& qf)
 {
   T vsq=dot(qf,qf);
-  return (vsq<numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
+  return (vsq<std::numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
 }
 
 template<class T, unsigned D>
-inline T getDriftScale(T tau, const TinyVector<complex<T>,D>& qf)
+inline T getDriftScale(T tau, const TinyVector<std::complex<T>,D>& qf)
 {
   T vsq=OTCDot<T,T,D>::apply(qf,qf);
-  return (vsq<numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
+  return (vsq<std::numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
 }
 
 /** evaluate a drift with a real force
@@ -59,15 +59,15 @@ template<class T, unsigned D>
 inline void getScaledDrift(T tau, const TinyVector<T,D>& qf, TinyVector<T,D>& drift)
 {
   T vsq=dot(qf,qf);
-  vsq= (vsq<numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
+  vsq= (vsq<std::numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
   drift=vsq*qf;
 }
 
 template<class T, unsigned D>
-inline void getScaledDrift(T tau, const TinyVector<complex<T>,D>& qf, TinyVector<T,D>& drift)
+inline void getScaledDrift(T tau, const TinyVector<std::complex<T>,D>& qf, TinyVector<T,D>& drift)
 {
   T vsq=OTCDot<T,T,D>::apply(qf,qf);
-  vsq=(vsq<numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
+  vsq=(vsq<std::numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
   for(int i=0; i<D; ++i)
     convert(vsq*qf[i],drift[i]);
 }
@@ -86,7 +86,7 @@ inline T getNodeCorrectionP(T tau, const ParticleAttrib<TinyVector<T,D> >& ga, T
   {
     T vsq=dot(ga[i],ga[i]);
     T x=a*vsq*tau;
-    T scale= (vsq<numeric_limits<T>::epsilon())? 1.0:((-1.0+std::sqrt(1.0+2.0*x))/x);
+    T scale= (vsq<std::numeric_limits<T>::epsilon())? 1.0:((-1.0+std::sqrt(1.0+2.0*x))/x);
     norm_scaled+=vsq*scale*scale;
     norm+=vsq;
   }
@@ -102,7 +102,7 @@ inline T getNodeCorrectionW(T tau, const ParticleAttrib<TinyVector<T,D> >& ga)
 {
   T vsq=Dot(ga,ga);
   T x=tau*vsq;
-  return (vsq<numeric_limits<T>::epsilon())? 1.0:((-1.0+std::sqrt(1.0+2.0*x))/x);
+  return (vsq<std::numeric_limits<T>::epsilon())? 1.0:((-1.0+std::sqrt(1.0+2.0*x))/x);
 }
 
 
@@ -119,7 +119,7 @@ inline void setScaledDriftPbyP(T tau,
   for(int iat=0; iat<qf.size(); ++iat)
   {
     T vsq=dot(qf[iat],qf[iat]);
-    T sc=(vsq<numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
+    T sc=(vsq<std::numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
     drift[iat]=sc*qf[iat];
   }
 }
@@ -142,7 +142,7 @@ inline T setScaledDriftPbyPandNodeCorr(T tau,
   {
     convert(dot(qf[iat],qf[iat]),vsq);
     //T vsq=dot(qf[iat],qf[iat]);
-    T sc=(vsq<numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
+    T sc=(vsq<std::numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
     norm_scaled+=vsq*sc*sc;
     norm+=vsq*tau2;
     drift[iat]=sc*qf[iat];
@@ -158,7 +158,7 @@ inline T setScaledDriftPbyPandNodeCorr(T tau,
  * @param return correction term
  */
 template<class T, class T1, unsigned D>
-inline T setScaledDriftPbyPandNodeCorr(T tau_au, const vector<T>& massinv,
+inline T setScaledDriftPbyPandNodeCorr(T tau_au, const std::vector<T>& massinv,
                                        const ParticleAttrib<TinyVector<T1,D> >& qf,
                                        ParticleAttrib<TinyVector<T,D> >& drift)
 {
@@ -168,7 +168,7 @@ inline T setScaledDriftPbyPandNodeCorr(T tau_au, const vector<T>& massinv,
     T tau=tau_au*massinv[iat];
     convert(dot(qf[iat],qf[iat]),vsq);
     //T vsq=dot(qf[iat],qf[iat]);
-    T sc=(vsq<numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
+    T sc=(vsq<std::numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
     norm_scaled+=vsq*sc*sc;
     norm+=vsq*tau*tau;
     drift[iat]=sc*qf[iat];
@@ -185,7 +185,7 @@ inline T setLargestScaledDriftPbyP(T tau,
   for(int iat=0; iat<qf.size(); ++iat)
   {
     T vsq=dot(qf[iat],qf[iat]);
-    T sc=(vsq<numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
+    T sc=(vsq<std::numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
     maxSC=(sc<maxSC? sc:maxSC);
   }
   for(int iat=0; iat<qf.size(); ++iat)
@@ -232,7 +232,7 @@ inline void setScaledDrift(T tau,
  */
 template<class T, unsigned D>
 inline void setScaledDrift(T tau,
-                           const ParticleAttrib<TinyVector<complex<T>,D> >& qf,
+                           const ParticleAttrib<TinyVector<std::complex<T>,D> >& qf,
                            ParticleAttrib<TinyVector<T,D> >& drift)
 {
   T s = getDriftScale(tau,qf);
@@ -246,8 +246,8 @@ inline void setScaledDrift(T tau,
  */
 template<class T, unsigned D>
 inline void setScaledDrift(T tau,
-                           const ParticleAttrib<TinyVector<complex<T>,D> >& qf,
-                           ParticleAttrib<TinyVector<complex<T>,D> >& drift)
+                           const ParticleAttrib<TinyVector<std::complex<T>,D> >& qf,
+                           ParticleAttrib<TinyVector<std::complex<T>,D> >& drift)
 {
   T s = getDriftScale(tau,qf);
   ///INCOMPLETE implementation
@@ -264,14 +264,14 @@ inline void assignDrift(T s,
 
 template<class T, unsigned D>
 inline void assignDrift(T s,
-                        const ParticleAttrib<TinyVector<complex<T>,D> >& ga,
+                        const ParticleAttrib<TinyVector<std::complex<T>,D> >& ga,
                         ParticleAttrib<TinyVector<T,D> >& da)
 {
   PAOps<T,D>::scale(s,ga,da);
 }
 
 template<class T, class T1, unsigned D>
-inline void assignDrift(T tau_au, const vector<T>& massinv,
+inline void assignDrift(T tau_au, const std::vector<T>& massinv,
                                        const ParticleAttrib<TinyVector<T1,D> >& qf,
                                        ParticleAttrib<TinyVector<T,D> >& drift)
 {

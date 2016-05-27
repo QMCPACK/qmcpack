@@ -24,8 +24,8 @@ namespace qmcplusplus
 
 struct EEholder
 {
-  vector<vector<int> > g_w_num;
-  vector<vector<vector<int> > > g_w_pindex;
+  std::vector<std::vector<int> > g_w_num;
+  std::vector<std::vector<vector<int> > > g_w_pindex;
 
   int NG, NW; //groups walkers
 
@@ -54,7 +54,7 @@ public:
                    HamiltonianPool& hpool, WaveFunctionPool& ppool);
   bool run();
   bool put(xmlNodePtr cur);
-  //inline vector<RandomGenerator_t*>& getRng() { return Rng;}
+  //inline std::vector<RandomGenerator_t*>& getRng() { return Rng;}
 private:
   ///number of warmup steps
   int myWarmupSteps;
@@ -63,15 +63,15 @@ private:
   ///period for walker dump
   int myPeriod4WalkerDump;
   ///option to enable/disable drift equation or RN for VMC
-  string UseDrift;
+  std::string UseDrift;
   ///compute EE
-  string computeEE, csEE;
+  std::string computeEE, csEE;
   int EEN, EENR;
   RealType EEdR;
   RealType csoffset;
   RealType vsize, rsize;
-  stringstream N_dat, s_dat, ee_dat;
-  void godeeper(int lvl,vector<Matrix<RealType> >& ratios, vector<RealType>& estimateA,vector<RealType>& estimateV,vector<RealType>& estimateS,vector<RealType>& estimateN,vector<RealType>& tv,vector<int>& itr);
+  std::stringstream N_dat, s_dat, ee_dat;
+  void godeeper(int lvl,std::vector<Matrix<RealType> >& ratios, std::vector<RealType>& estimateA,std::vector<RealType>& estimateV,std::vector<RealType>& estimateS,std::vector<RealType>& estimateN,std::vector<RealType>& tv,std::vector<int>& itr);
   fstream file_out;
   ///Ways to set rn constant
   RealType logoffset,logepsilon;

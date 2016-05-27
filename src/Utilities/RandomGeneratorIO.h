@@ -46,7 +46,7 @@ struct HDFAttribIO<RandomGenerator_t>: public HDFAttribIOBase
   inline void read(hid_t grp, const char* name)
   {
     std::string s;
-    HDFAttribIO<string> r(s);
+    HDFAttribIO<std::string> r(s);
     r.read(grp,ref.EngineName.c_str());
     std::istringstream is(s);
     ref.read(is);

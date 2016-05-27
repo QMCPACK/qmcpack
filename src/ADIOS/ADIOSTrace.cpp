@@ -8,7 +8,7 @@
 namespace ADIOS
 {
 
-    Trace::Trace (string group_name, MPI_Comm comm, xmlNodePtr adios_options)
+    Trace::Trace ( std::string group_name, MPI_Comm comm, xmlNodePtr adios_options)
     {
         group = 0;
         scalars_size = 0;
@@ -58,7 +58,7 @@ namespace ADIOS
         transforms.clear();
     }
 
-    int Trace::define_var(string path, int ndim, int *dims, string type)
+    int Trace::define_var( std::string path, int ndim, int *dims, std::string type)
     {
         int asize;
         enum ADIOS_DATATYPES atype;
@@ -81,30 +81,30 @@ namespace ADIOS
         else if (!type.compare("complex"))
         {
             atype = adios_complex; 
-            asize = sizeof (complex<float>);
+            asize = sizeof (std::complex<float>);
             type = "complex";
         }
         else if (!type.compare("complex double"))
         {
             atype = adios_double_complex; 
-            asize = sizeof (complex<double>);
+            asize = sizeof (std::complex<double>);
             type = "complex double";
         }
         else 
         {
-            cerr << "ADIOS:Trace:define_var: Wrong type is given:"<<type<< endl;
+            std::cerr << "ADIOS:Trace:define_var: Wrong type is given:"<<type<< std::endl;
         }
 
         /* Scalars are not supported here */
         if (ndim < 1) 
         {
-            cerr << "ADIOS:Trace:define_var: array is expected but ndim=1 for var "<<path<< endl;
+            std::cerr << "ADIOS:Trace:define_var: array is expected but ndim=1 for var "<<path<< std::endl;
             return 1;
         }
 
-        string ldims = "/aux/max_nrows"; 
-        string gdims = "nrows"; 
-        string offs  = "/aux/offset"; 
+        std::string ldims = "/aux/max_nrows"; 
+        std::string gdims = "nrows"; 
+        std::string offs  = "/aux/offset"; 
 
         /* Single column arrays stay single column (1D array)
          * The rest will get the first dimension as extra dimension
@@ -120,7 +120,7 @@ namespace ADIOS
             }
         }
 
-        qmcplusplus::app_log()<<"  ADIOS define: "<<type<<"\t"<<path<<"  ["<<ldims<<"]"<<endl;
+        qmcplusplus::app_log()<<"  ADIOS define: "<<type<<"\t"<<path<<"  ["<<ldims<<"]"<< std::endl;
 
         int64_t varid = adios_define_var (group, path.c_str(), "", atype, 
                                     ldims.c_str(), gdims.c_str(), offs.c_str());
@@ -128,19 +128,19 @@ namespace ADIOS
         std::map<std::string,std::string>::iterator iter;
         iter = transforms.find(path);
         if (iter != transforms.end()) {
-            qmcplusplus::app_log()<<"        set transform to: "<<iter->second.c_str()<<endl;
+            qmcplusplus::app_log()<<"        set transform to: "<<iter->second.c_str()<< std::endl;
             adios_set_transform (varid, iter->second.c_str());
         }
 
         rowsize += asize;
     }
 
-    void Trace::open (string filename)
+    void Trace::open ( std::string filename)
     {
-        //qmcplusplus::app_log()<<"  ADIOS open: "<<filename<<endl;
+        //qmcplusplus::app_log()<<"  ADIOS open: "<<filename<< std::endl;
         int err = adios_open(&f, groupname.c_str(), filename.c_str(), "w", t_comm);
         if (err) {
-            cerr << "ADIOS:Trace:open failed: "<<adios_get_last_errmsg()<< endl;
+            std::cerr << "ADIOS:Trace:open failed: "<<adios_get_last_errmsg()<< std::endl;
         }
     }
 
@@ -149,16 +149,16 @@ namespace ADIOS
         uint64_t group_size = scalars_size + (uint64_t)nrows * rowsize;
         uint64_t total_size;
         if (f) {
-            //qmcplusplus::app_log()<<"  ADIOS group size: "<<group_size<<" bytes"<<endl;
+            //qmcplusplus::app_log()<<"  ADIOS group size: "<<group_size<<" bytes"<< std::endl;
             adios_group_size (f, group_size, &total_size);
-            //qmcplusplus::app_log()<<"  ADIOS group total size: "<<total_size<<" bytes"<<endl;
+            //qmcplusplus::app_log()<<"  ADIOS group total size: "<<total_size<<" bytes"<< std::endl;
         }
     }
 
-    void Trace::write (string varname, void *data)
+    void Trace::write ( std::string varname, void *data)
     {
         if (f) {
-            //qmcplusplus::app_log()<<"  ADIOS write: "<<varname<<" data="<<data<<endl;
+            //qmcplusplus::app_log()<<"  ADIOS write: "<<varname<<" data="<<data<< std::endl;
             adios_write (f, varname.c_str(), data);
         }
     }
@@ -166,28 +166,28 @@ namespace ADIOS
     void Trace::close()
     {
         if (f) {
-            //qmcplusplus::app_log()<<"  ADIOS close: "<<endl;
+            //qmcplusplus::app_log()<<"  ADIOS close: "<< std::endl;
             adios_close (f);
             f = 0;
             MPI_Barrier (t_comm);
             /*
             int rank;
             MPI_Comm_rank (t_comm, &rank);
-            cout<<"  ADIOS close finished on rank "<<rank<<endl;
+            std::cout <<"  ADIOS close finished on rank "<<rank<< std::endl;
             */
         }
     }
 
     void Trace::process_options (xmlNodePtr adios_options)
     {
-        qmcplusplus::app_log()<<"  Process ADIOS options for traces"<<endl;
+        qmcplusplus::app_log()<<"  Process ADIOS options for traces"<< std::endl;
         xmlNodePtr element = adios_options->children;
         while(element!=NULL)
         {
-            string name((const char*)element->name);
+            std::string name((const char*)element->name);
             if(name=="method")
             {
-                string name = "MPI";
+                std::string name = "MPI";
                 OhmmsAttributeSet eattrib;
                 eattrib.add(name,"name");
                 eattrib.put(element);
@@ -199,22 +199,22 @@ namespace ADIOS
                         method_args = args;
                     }
                 }
-                qmcplusplus::app_log()<<"    Output method: "<<method_name<<endl;
-                qmcplusplus::app_log()<<"        Arguments: "<<method_args<<endl;
+                qmcplusplus::app_log()<<"    Output method: "<<method_name<< std::endl;
+                qmcplusplus::app_log()<<"        Arguments: "<<method_args<< std::endl;
             }
             else if(name=="var")
             {
-                string name = "";
-                string transform = "none";
+                std::string name = "";
+                std::string transform = "none";
                 OhmmsAttributeSet eattrib;
                 eattrib.add(name,"name");
                 eattrib.add(transform,"transform");
                 eattrib.put(element);
                 if (name != "") {
                     transforms[name] = transform;
-                    qmcplusplus::app_log()<<"    Transform "<<name<<"with "<<transform<<endl;
+                    qmcplusplus::app_log()<<"    Transform "<<name<<"with "<<transform<< std::endl;
                 } else {
-                    qmcplusplus::app_log()<<"      No name given. Skip."<<endl;
+                    qmcplusplus::app_log()<<"      No name given. Skip."<< std::endl;
                 } 
             }
             else if (name!="text" && name!="comment")

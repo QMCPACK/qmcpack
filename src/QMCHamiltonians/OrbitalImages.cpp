@@ -29,7 +29,7 @@ namespace qmcplusplus
     clone->Peln = &P;
     for(int i=0;i<sposets.size();++i)
     {
-      clone->sposet_indices[i] = new vector<int>(*sposet_indices[i]);
+      clone->sposet_indices[i] = new std::vector<int>(*sposet_indices[i]);
       clone->sposets[i]        = sposets[i]->makeClone();
     }
     return clone;
@@ -38,7 +38,7 @@ namespace qmcplusplus
 
   bool OrbitalImages::put(xmlNodePtr cur)
   {
-    app_log()<<"OrbitalImages::put"<<endl;
+    app_log()<<"OrbitalImages::put"<< std::endl;
 
     //set defaults
     myName = "OrbitalImages";
@@ -46,8 +46,8 @@ namespace qmcplusplus
     batch_size = -1;
 
     //read simple attributes
-    string write_report = "yes";
-    string ion_psname = "ion0";
+    std::string write_report = "yes";
+    std::string ion_psname = "ion0";
     OhmmsAttributeSet attrib;
     attrib.add(myName,"name");
     attrib.add(ion_psname,"ions");
@@ -62,17 +62,17 @@ namespace qmcplusplus
 
     PosType center;
     Tensor<RealType,DIM> axes;
-    vector<string> valtypes;
-    string file_format = "xsf";
+    std::vector<std::string> valtypes;
+    std::string file_format = "xsf";
 
     xmlNodePtr element = cur->xmlChildrenNode;
-    vector<xmlNodePtr> other_elements;
+    std::vector<xmlNodePtr> other_elements;
     while(element!=NULL)
     {
-      string ename((const char*)element->name);
+      std::string ename((const char*)element->name);
       if(ename=="parameter")
       {
-        string name((const char*)(xmlGetProp(element,(const xmlChar*)"name")));
+        std::string name((const char*)(xmlGetProp(element,(const xmlChar*)"name")));
         if(name=="sposets")
           putContent(sposet_names,element);   
         else if(name=="batch_size") 
@@ -110,14 +110,14 @@ namespace qmcplusplus
     //second pass parameter read to get orbital indices
     //  each parameter is named after the corresponding sposet
     for(int i=0;i<sposet_names.size();++i)
-      sposet_indices.push_back(new vector<int>);
+      sposet_indices.push_back(new std::vector<int>);
     for(int n=0;n<other_elements.size();++n)
     {
       xmlNodePtr element = other_elements[n];
-      string ename((const char*)element->name);
+      std::string ename((const char*)element->name);
       if(ename=="parameter")
       {
-        string name((const char*)(xmlGetProp(element,(const xmlChar*)"name")));
+        std::string name((const char*)(xmlGetProp(element,(const xmlChar*)"name")));
         for(int i=0;i<sposet_names.size();++i)
           if(name==sposet_names[i])
             putContent(*sposet_indices[i],element);
@@ -127,7 +127,7 @@ namespace qmcplusplus
     //check that the value types requested are reasonable
     for(int i=0;i<valtypes.size();++i)
     {
-      const string& valtype = valtypes[i];
+      const std::string& valtype = valtypes[i];
       value_types_enum value_type;
       if(valtype=="real")
         value_type = real_val;
@@ -161,7 +161,7 @@ namespace qmcplusplus
     }
     Pion = psetpool[ion_psname];
 
-    app_log()<<"  getting sposets"<<endl;
+    app_log()<<"  getting sposets"<< std::endl;
 
     // get the sposets for image output
     if(sposet_names.size()==0)
@@ -172,7 +172,7 @@ namespace qmcplusplus
       if(sposet==0)
         APP_ABORT("OrbitalImages::put  sposet "+sposet_names[i]+" does not exist");
       sposets.push_back(sposet);
-      vector<int>& sposet_inds = *sposet_indices[i];
+      std::vector<int>& sposet_inds = *sposet_indices[i];
       if(sposet_inds.size()==0)
         for(int n=0;n<sposet->size();++n)
           sposet_inds.push_back(n);
@@ -181,7 +181,7 @@ namespace qmcplusplus
         int index = sposet_inds[n];
         if(index<0 || index>sposet->size())
         {
-          app_log()<<"\nindex for sposet "<<sposet_names[i]<<" is out of range\nindex must be between 0 and "<<sposet->size()-1<<"\nyou provided: "<<index<<endl;
+          app_log()<<"\nindex for sposet "<<sposet_names[i]<<" is out of range\nindex must be between 0 and "<<sposet->size()-1<<"\nyou provided: "<<index<< std::endl;
           APP_ABORT("OrbitalImages::put  sposet index out of range, see message above");
         }
       }
@@ -219,38 +219,38 @@ namespace qmcplusplus
     if(write_report=="yes")
       report("  ");
 
-    app_log()<<"end OrbitalImages::put"<<endl;
+    app_log()<<"end OrbitalImages::put"<< std::endl;
     return true;
   }
 
 
-  void OrbitalImages::report(const string& pad)
+  void OrbitalImages::report(const std::string& pad)
   {
-    app_log()<<pad<<"OrbitalImages report"<<endl;
-    app_log()<<pad<<"  nsposets = "<<sposets.size()<<" "<<sposet_names.size()<<" "<<sposet_indices.size()<<endl;
+    app_log()<<pad<<"OrbitalImages report"<< std::endl;
+    app_log()<<pad<<"  nsposets = "<<sposets.size()<<" "<<sposet_names.size()<<" "<<sposet_indices.size()<< std::endl;
     for(int i=0;i<sposet_names.size();++i)
     {
-      vector<int>& sposet_inds = *sposet_indices[i];
+      std::vector<int>& sposet_inds = *sposet_indices[i];
       SPOSetBase& sposet = *sposets[i];
       if(sposet_inds.size()==sposet.size())
-        app_log()<<pad<<"  "<<sposet_names[i]<<" = all "<<sposet.size()<<" orbitals"<<endl;
+        app_log()<<pad<<"  "<<sposet_names[i]<<" = all "<<sposet.size()<<" orbitals"<< std::endl;
       else
       {
         app_log()<<pad<<"  "<<sposet_names[i]<<" =";
         for(int n=0;n<sposet_inds.size();++n)
           app_log()<<" "<<sposet_inds[n];
-        app_log()<<endl;
+        app_log()<< std::endl;
       }
     }
-    app_log()<<pad<<"  npoints = "<< npoints <<endl;
-    app_log()<<pad<<"  grid    = "<< grid <<endl;
-    app_log()<<pad<<"  corner  = "<< corner <<endl;
-    app_log()<<pad<<"  center  = "<< corner+cell.Center <<endl;
-    app_log()<<pad<<"  cell " <<endl;
+    app_log()<<pad<<"  npoints = "<< npoints << std::endl;
+    app_log()<<pad<<"  grid    = "<< grid << std::endl;
+    app_log()<<pad<<"  corner  = "<< corner << std::endl;
+    app_log()<<pad<<"  center  = "<< corner+cell.Center << std::endl;
+    app_log()<<pad<<"  cell " << std::endl;
     for(int d=0;d<DIM;++d)
-      app_log()<<pad<<"    "<< d <<" "<< cell.Rv[d] <<endl;
-    app_log()<<pad<<"  end cell " <<endl;
-    app_log()<<pad<<"end OrbitalImages report"<<endl;
+      app_log()<<pad<<"    "<< d <<" "<< cell.Rv[d] << std::endl;
+    app_log()<<pad<<"  end cell " << std::endl;
+    app_log()<<pad<<"end OrbitalImages report"<< std::endl;
   }
 
 
@@ -261,12 +261,12 @@ namespace qmcplusplus
     //only the first thread of the master task writes the orbitals
     if(comm->rank()==0 && omp_get_thread_num()==0)
     {
-      app_log()<<endl;
-      app_log()<<"OrbitalImages::evaluate  writing orbital images"<<endl;
+      app_log()<< std::endl;
+      app_log()<<"OrbitalImages::evaluate  writing orbital images"<< std::endl;
 
       //create the grid points by mapping point index into D-dim points
-      app_log()<<"  generating grid "<<grid<<endl;
-      vector<PosType> rpoints;
+      app_log()<<"  generating grid "<<grid<< std::endl;
+      std::vector<PosType> rpoints;
       rpoints.resize(npoints);
       PosType u,du;
       for(int d=0;d<DIM;++d)
@@ -285,13 +285,13 @@ namespace qmcplusplus
       }
 
       //evaluate and write the orbitals for each sposet
-      app_log()<<"  evaluating all orbitals"<<endl;
+      app_log()<<"  evaluating all orbitals"<< std::endl;
       for(int i=0;i<sposets.size();++i)
       {
         //get sposet information
-        const string& sposet_name = sposet_names[i];
-        app_log()<<"  evaluating orbitals in "+sposet_name+" on the grid"<<endl;
-        vector<int>& sposet_inds = *sposet_indices[i];
+        const std::string& sposet_name = sposet_names[i];
+        app_log()<<"  evaluating orbitals in "+sposet_name+" on the grid"<< std::endl;
+        std::vector<int>& sposet_inds = *sposet_indices[i];
         SPOSetBase& sposet = *sposets[i];
         int nspo = sposet_inds.size();
         
@@ -307,11 +307,11 @@ namespace qmcplusplus
 
         //loop over orbitals one batch at a time (batch_size orbitals)
         int bstart=0;
-        int bend=min(bsize,nspo);
+        int bend= std::min(bsize,nspo);
         while(bstart<nspo)
         {
           //fill up the temporary storage for a batch of orbitals
-          app_log()<<"    evaluating orbital batch "<<bstart<<" to "<<bend<<" out of "<<nspo<<endl;
+          app_log()<<"    evaluating orbital batch "<<bstart<<" to "<<bend<<" out of "<<nspo<< std::endl;
           for(int p=0;p<npoints;++p)
           {
             P.makeMove(0,rpoints[p]-P.R[0]);
@@ -321,7 +321,7 @@ namespace qmcplusplus
               batch_values(p,ib) = spo_vtmp[sposet_inds[b]];
           }
           //write out the batch one orbital at a time for each value type requested
-          app_log()<<"    writing all orbitals in the batch"<<endl;
+          app_log()<<"    writing all orbitals in the batch"<< std::endl;
           for(int b=bstart,ib=0;b<bend;++b,++ib)
           {
             //transfer strided orbital info into contiguous array
@@ -333,11 +333,11 @@ namespace qmcplusplus
           }
           bstart = bend;
           bend += bsize;
-          bend = min(bend,nspo);
+          bend = std::min(bend,nspo);
         }
       }
 
-      app_log()<<"OrbitalImages::evaluate  orbital images written successfully, exiting.\n"<<endl;
+      app_log()<<"OrbitalImages::evaluate  orbital images written successfully, exiting.\n"<< std::endl;
       APP_ABORT("  Not a fatal error, just exiting.");
     }
 
@@ -348,7 +348,7 @@ namespace qmcplusplus
   }
 
 
-  void OrbitalImages::write_orbital(const string& sponame,int index,vector<ValueType>& orb,value_types_enum value_type)
+  void OrbitalImages::write_orbital(const std::string& sponame,int index,std::vector<ValueType>& orb,value_types_enum value_type)
   {
     //only xsf format is supported for now
     if(format==xsf)
@@ -356,7 +356,7 @@ namespace qmcplusplus
   }
 
 
-  void OrbitalImages::write_orbital_xsf(const string& sponame,int index,vector<ValueType>& orb,value_types_enum value_type)
+  void OrbitalImages::write_orbital_xsf(const std::string& sponame,int index,std::vector<ValueType>& orb,value_types_enum value_type)
   {
     using Units::convert;
     using Units::B;
@@ -373,7 +373,7 @@ namespace qmcplusplus
     else if(value_type==abs2_val)
       sprintf(filename,"%s_orbital_%04d_abs2.xsf",sponame.c_str(),index);
 
-    app_log()<<"      writing file: "<<string(filename)<<endl;
+    app_log()<<"      writing file: "<<std::string(filename)<< std::endl;
 
     //get the cell containing the ion positions
     //  assume the evaluation cell if any boundaries are open
@@ -385,10 +385,10 @@ namespace qmcplusplus
       Lbox = &cell; //at least partially open
 
     //open the file
-    ofstream file;
-    file.open(filename,ios::out | ios::trunc);
+    std::ofstream file;
+    file.open(filename,std::ios::out | std::ios::trunc);
     if(!file.is_open())
-      APP_ABORT("OrbitalImages::write_orbital\n  failed to open file for output: "+string(filename));
+      APP_ABORT("OrbitalImages::write_orbital\n  failed to open file for output: "+std::string(filename));
 
     //set the precision & number of columns
     file.precision(6);
@@ -399,41 +399,41 @@ namespace qmcplusplus
     int natoms = Pc.getTotalNum();
 
     //write the cell, atomic positions, and orbital to the file in xsf format
-    file<<" CRYSTAL"<<endl;
-    file<<" PRIMVEC"<<endl;
+    file<<" CRYSTAL"<< std::endl;
+    file<<" PRIMVEC"<< std::endl;
     for(int i=0;i<DIM;++i)
     {
       file<<" ";
       for(int d=0;d<DIM;++d)
         file<<"  "<<convert(Lbox->Rv[i][d],B,A);
-      file<<endl;
+      file<< std::endl;
     }
-    file<<" PRIMCOORD"<<endl;
-    file<<"   "<<natoms<<"   1"<<endl;
+    file<<" PRIMCOORD"<< std::endl;
+    file<<"   "<<natoms<<"   1"<< std::endl;
     for(int i=0;i<natoms;++i)
     {
       file<<"   "<<Pc.species_from_index(i);
       for(int d=0;d<DIM;++d)
         file<<"  "<<convert(Pc.R[i][d],B,A);
-      file<<endl;
+      file<< std::endl;
     }
-    file<<" BEGIN_BLOCK_DATAGRID_3D"<<endl;
-    file<<"   orbital "<<index<<endl;
-    file<<"   DATAGRID_3D_ORBITAL"<<endl;
+    file<<" BEGIN_BLOCK_DATAGRID_3D"<< std::endl;
+    file<<"   orbital "<<index<< std::endl;
+    file<<"   DATAGRID_3D_ORBITAL"<< std::endl;
     file<<"   ";
     for(int d=0;d<DIM;++d)
       file<<"  "<<grid[d];
-    file<<endl;
+    file<< std::endl;
     file<<"   ";
     for(int d=0;d<DIM;++d)
       file<<"  "<<convert(corner[d],B,A);
-    file<<endl;
+    file<< std::endl;
     for(int i=0;i<DIM;++i)
     {
       file<<"   ";
       for(int d=0;d<DIM;++d)
         file<<"  "<<convert(cell.Rv[i][d],B,A);
-      file<<endl;
+      file<< std::endl;
     }
     file<<"   ";
     if(value_type==real_val)      // real part
@@ -441,32 +441,32 @@ namespace qmcplusplus
       {
         file<<"  "<<real(orb[p]);
         if((p+1)%columns==0)
-          file<<endl<<"   ";
+          file<< std::endl<<"   ";
       }
     else if(value_type==imag_val) // imag part
       for(int p=0;p<npoints;++p)
       {
         file<<"  "<<imag(orb[p]);
         if((p+1)%columns==0)
-          file<<endl<<"   ";
+          file<< std::endl<<"   ";
       }
     else if(value_type==abs_val)  // modulus
       for(int p=0;p<npoints;++p)
       {
         file<<"  "<<abs(orb[p]);
         if((p+1)%columns==0)
-          file<<endl<<"   ";
+          file<< std::endl<<"   ";
       }
     else if(value_type==abs2_val) // modulus^2
       for(int p=0;p<npoints;++p)
       {
         file<<"  "<<abs(orb[p])*abs(orb[p]);
         if((p+1)%columns==0)
-          file<<endl<<"   ";
+          file<< std::endl<<"   ";
       }
-    file<<endl;
-    file<<"   END_DATAGRID_3D"<<endl;
-    file<<" END_BLOCK_DATAGRID_3D"<<endl;
+    file<< std::endl;
+    file<<"   END_DATAGRID_3D"<< std::endl;
+    file<<" END_BLOCK_DATAGRID_3D"<< std::endl;
   }
 
 }

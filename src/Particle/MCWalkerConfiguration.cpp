@@ -177,7 +177,7 @@ void MCWalkerConfiguration::createWalkers(int n)
 void MCWalkerConfiguration::resize(int numWalkers, int numPtcls)
 {
   if(GlobalNum && WalkerList.size())
-    app_warning() << "MCWalkerConfiguration::resize cleans up the walker list." << endl;
+    app_warning() << "MCWalkerConfiguration::resize cleans up the walker list." << std::endl;
   ParticleSet::resize(unsigned(numPtcls));
   int dn=numWalkers-WalkerList.size();
   if(dn>0)
@@ -238,7 +238,7 @@ MCWalkerConfiguration::destroyWalkers(int nw)
 {
   if(nw > WalkerList.size())
   {
-    app_warning() << "  Cannot remove walkers. Current Walkers = " << WalkerList.size() << endl;
+    app_warning() << "  Cannot remove walkers. Current Walkers = " << WalkerList.size() << std::endl;
     return;
   }
   nw=WalkerList.size()-nw;
@@ -346,7 +346,7 @@ void MCWalkerConfiguration::reset()
 void MCWalkerConfiguration::resetWalkerProperty(int ncopy)
 {
   int m(PropertyList.size());
-  app_log() << "  Resetting Properties of the walkers " << ncopy << " x " << m << endl;
+  app_log() << "  Resetting Properties of the walkers " << ncopy << " x " << m << std::endl;
   Properties.resize(ncopy,m);
   iterator it(WalkerList.begin()),it_end(WalkerList.end());
   while(it != it_end)
@@ -360,7 +360,7 @@ void MCWalkerConfiguration::resetWalkerProperty(int ncopy)
 
 void MCWalkerConfiguration::resizeWalkerHistories()
 {
-  //using vector<vector<RealType> > is too costly.
+  //using std::vector<std::vector<RealType> > is too costly.
   int np=PropertyHistory.size();
   if(np)
     for(int iw=0; iw<WalkerList.size(); ++iw)
@@ -483,7 +483,7 @@ MCWalkerConfiguration::dumpEnsemble(std::vector<MCWalkerConfiguration*>& others
   int w=wtemp.getActiveWalkers();
   if(w==0)
     return false;
-  vector<int> nwoff(np+1,0);
+  std::vector<int> nwoff(np+1,0);
   for(int ip=0; ip<np; ++ip)
     nwoff[ip+1]=nwoff[ip]+w;
   wtemp.setGlobalNumWalkers(nwoff[np]);
@@ -495,7 +495,7 @@ MCWalkerConfiguration::dumpEnsemble(std::vector<MCWalkerConfiguration*>& others
 
 void MCWalkerConfiguration::loadEnsemble(std::vector<MCWalkerConfiguration*>& others, bool doclean)
 {
-  vector<int> off(others.size()+1,0);
+  std::vector<int> off(others.size()+1,0);
   for(int i=0; i<others.size(); ++i)
   {
     off[i+1]=off[i]+std::min(others[i]->MaxSamples,others[i]->CurSampleCount);
@@ -509,7 +509,7 @@ void MCWalkerConfiguration::loadEnsemble(std::vector<MCWalkerConfiguration*>& ot
     WalkerList.resize(nw_tot);
     for(int i=0; i<others.size(); ++i)
     {
-      vector<MCSample*>& astack(others[i]->SampleStack);
+      std::vector<MCSample*>& astack(others[i]->SampleStack);
       for(int j=0, iw=off[i]; iw<off[i+1]; ++j, ++iw)
       {
         Walker_t* awalker=new Walker_t(GlobalNum);
@@ -562,21 +562,21 @@ void MCWalkerConfiguration::updateLists_GPU()
   for (int iw=0; iw<nw; iw++)
   {
     if (WalkerList[iw]->R_GPU.size() != R.size())
-      cerr << "Error in R_GPU size for iw = " << iw << "!\n";
+      std::cerr << "Error in R_GPU size for iw = " << iw << "!\n";
     hostlist[iw] = (CUDA_PRECISION*)WalkerList[iw]->R_GPU.data();
   }
   RList_GPU = hostlist;
   for (int iw=0; iw<nw; iw++)
   {
     if (WalkerList[iw]->Grad_GPU.size() != R.size())
-      cerr << "Error in Grad_GPU size for iw = " << iw << "!\n";
+      std::cerr << "Error in Grad_GPU size for iw = " << iw << "!\n";
     hostlist[iw] = (CUDA_PRECISION*)WalkerList[iw]->Grad_GPU.data();
   }
   GradList_GPU = hostlist;
   for (int iw=0; iw<nw; iw++)
   {
     if (WalkerList[iw]->Lap_GPU.size() != R.size())
-      cerr << "Error in Lap_GPU size for iw = " << iw << "!\n";
+      std::cerr << "Error in Lap_GPU size for iw = " << iw << "!\n";
     hostlist[iw] = (CUDA_PRECISION*)WalkerList[iw]->Lap_GPU.data();
   }
   LapList_GPU = hostlist;
@@ -637,7 +637,7 @@ void MCWalkerConfiguration::copyWalkerGradToGPU()
 
 
 void MCWalkerConfiguration::proposeMove_GPU
-(vector<PosType> &newPos, int iat)
+(std::vector<PosType> &newPos, int iat)
 {
   if (Rnew_host.size() < newPos.size())
     Rnew_host.resize(newPos.size());
@@ -650,25 +650,25 @@ void MCWalkerConfiguration::proposeMove_GPU
 }
 
 
-void MCWalkerConfiguration::acceptMove_GPU(vector<bool> &toAccept)
+void MCWalkerConfiguration::acceptMove_GPU(std::vector<bool> &toAccept)
 {
   if (AcceptList_host.size() < toAccept.size())
     AcceptList_host.resize(toAccept.size());
   for (int i=0; i<toAccept.size(); i++)
     AcceptList_host[i] = (int)toAccept[i];
   AcceptList_GPU.asyncCopy(AcceptList_host);
-//   app_log() << "toAccept.size()        = " << toAccept.size() << endl;
-//   app_log() << "AcceptList_host.size() = " << AcceptList_host.size() << endl;
-//   app_log() << "AcceptList_GPU.size()  = " << AcceptList_GPU.size() << endl;
-//   app_log() << "WalkerList.size()      = " << WalkerList.size() << endl;
-//   app_log() << "Rnew_GPU.size()        = " << Rnew_GPU.size() << endl;
-//   app_log() << "RList_GPU.size()       = " << RList_GPU.size() << endl;
+//   app_log() << "toAccept.size()        = " << toAccept.size() << std::endl;
+//   app_log() << "AcceptList_host.size() = " << AcceptList_host.size() << std::endl;
+//   app_log() << "AcceptList_GPU.size()  = " << AcceptList_GPU.size() << std::endl;
+//   app_log() << "WalkerList.size()      = " << WalkerList.size() << std::endl;
+//   app_log() << "Rnew_GPU.size()        = " << Rnew_GPU.size() << std::endl;
+//   app_log() << "RList_GPU.size()       = " << RList_GPU.size() << std::endl;
   if (RList_GPU.size() != WalkerList.size())
-    cerr << "Error in RList_GPU size.\n";
+    std::cerr << "Error in RList_GPU size.\n";
   if (Rnew_GPU.size() != WalkerList.size())
-    cerr << "Error in Rnew_GPU size.\n";
+    std::cerr << "Error in Rnew_GPU size.\n";
   if (AcceptList_GPU.size() != WalkerList.size())
-    cerr << "Error in AcceptList_GPU_GPU size.\n";
+    std::cerr << "Error in AcceptList_GPU_GPU size.\n";
   accept_move_GPU_cuda
   (RList_GPU.data(), (CUDA_PRECISION*)Rnew_GPU.data(),
    AcceptList_GPU.data(), CurrentParticle, WalkerList.size());
@@ -676,9 +676,9 @@ void MCWalkerConfiguration::acceptMove_GPU(vector<bool> &toAccept)
 
 
 
-void MCWalkerConfiguration::NLMove_GPU(vector<Walker_t*> &walkers,
-                                       vector<PosType> &newpos,
-                                       vector<int> &iat)
+void MCWalkerConfiguration::NLMove_GPU(std::vector<Walker_t*> &walkers,
+                                       std::vector<PosType> &newpos,
+                                       std::vector<int> &iat)
 {
   int N = walkers.size();
   if (NLlist_GPU.size() < N)

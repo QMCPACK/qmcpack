@@ -26,7 +26,7 @@ struct HeSAPT_smoothed_phy: public QMCHamiltonianBase
 
   Return_t evaluate(ParticleSet& P);
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
@@ -107,7 +107,7 @@ struct HeSAPT_smoothed_aux: public QMCHamiltonianBase
   HeSAPT_smoothed_aux(const HeSAPT_smoothed_phy* orig): phyH(orig)
   {
     Return_t rho = phyH->PtclRef->G.size()/phyH->PtclRef->Lattice.Volume, N0 = phyH->PtclRef->G.size(), rc = phyH->PtclRef->Lattice.WignerSeitzRadius;
-    string warningmsg = string("  Warning: Tail correction is set to ZERO because ...\n")
+    std::string warningmsg = std::string("  Warning: Tail correction is set to ZERO because ...\n")
                         + "  No pre-calculated tail correction value is found for the current\n"
                         + "  system size and density.  Please do a separate calculation\n"
                         + "  of the tail correction and add it onto the LocalEnergy.\n"
@@ -135,7 +135,7 @@ struct HeSAPT_smoothed_aux: public QMCHamiltonianBase
                 else
                 {
                   tailcorr = 0.0;
-                  app_log() << warningmsg << endl;
+                  app_log() << warningmsg << std::endl;
                 }
     }
     else
@@ -161,7 +161,7 @@ struct HeSAPT_smoothed_aux: public QMCHamiltonianBase
                   else
                   {
                     tailcorr = 0.0;
-                    app_log() << warningmsg << endl;
+                    app_log() << warningmsg << std::endl;
                   }
       }
       else
@@ -187,7 +187,7 @@ struct HeSAPT_smoothed_aux: public QMCHamiltonianBase
                     else
                     {
                       tailcorr = 0.0;
-                      app_log() << warningmsg << endl;
+                      app_log() << warningmsg << std::endl;
                     }
         }
         else
@@ -213,13 +213,13 @@ struct HeSAPT_smoothed_aux: public QMCHamiltonianBase
                       else
                       {
                         tailcorr = 0.0;
-                        app_log() << warningmsg << endl;
+                        app_log() << warningmsg << std::endl;
                       }
           }
           else
           {
             tailcorr = 0.0;
-            app_log() << warningmsg << endl;
+            app_log() << warningmsg << std::endl;
           }
 //      tailcorr = -0.000274497151179;	// N = 32, RHO = 0.022 /Angstrom^3 : 11x
     // N = 32, rho = 0.022 Angstroms^-3 = 0.003260063604 a0^-3
@@ -249,7 +249,7 @@ struct HeSAPT_smoothed_aux: public QMCHamiltonianBase
 //      tailcorr = -0.0004817718362;	// N = 64, RHO = 0.4899 sigma^2 : 62x
 //      tailcorr = -0.0004744316477;	// N = 128, RHO = 0.4899 sigma^2 : 63x
 //      tailcorr = -0.0004699888991;	// N = 256, RHO = 0.4899 sigma^2 : 64x
-    app_log() << "  HeSAPT_smoothed_aux tail correction is " << tailcorr << endl;
+    app_log() << "  HeSAPT_smoothed_aux tail correction is " << tailcorr << std::endl;
   }
 
   ~HeSAPT_smoothed_aux() { }
@@ -257,7 +257,7 @@ struct HeSAPT_smoothed_aux: public QMCHamiltonianBase
   void resetTargetParticleSet(ParticleSet& P)
   {
     Return_t rho = phyH->PtclRef->G.size()/phyH->PtclRef->Lattice.Volume, N0 = phyH->PtclRef->G.size(), rc = phyH->PtclRef->Lattice.WignerSeitzRadius;
-    string warningmsg = string("  Warning: Tail correction is set to ZERO because ...\n")
+    std::string warningmsg = std::string("  Warning: Tail correction is set to ZERO because ...\n")
                         + "  No pre-calculated tail correction value is found for the current\n"
                         + "  system size and density.  Please do a separate calculation\n"
                         + "  of the tail correction and add it onto the LocalEnergy.\n"
@@ -285,7 +285,7 @@ struct HeSAPT_smoothed_aux: public QMCHamiltonianBase
                 else
                 {
                   tailcorr = 0.0;
-                  app_log() << warningmsg << endl;
+                  app_log() << warningmsg << std::endl;
                 }
     }
     else
@@ -311,7 +311,7 @@ struct HeSAPT_smoothed_aux: public QMCHamiltonianBase
                   else
                   {
                     tailcorr = 0.0;
-                    app_log() << warningmsg << endl;
+                    app_log() << warningmsg << std::endl;
                   }
       }
       else
@@ -337,7 +337,7 @@ struct HeSAPT_smoothed_aux: public QMCHamiltonianBase
                     else
                     {
                       tailcorr = 0.0;
-                      app_log() << warningmsg << endl;
+                      app_log() << warningmsg << std::endl;
                     }
         }
         else
@@ -363,15 +363,15 @@ struct HeSAPT_smoothed_aux: public QMCHamiltonianBase
                       else
                       {
                         tailcorr = 0.0;
-                        app_log() << warningmsg << endl;
+                        app_log() << warningmsg << std::endl;
                       }
           }
           else
           {
             tailcorr = 0.0;
-            app_log() << warningmsg << endl;
+            app_log() << warningmsg << std::endl;
           }
-    app_log() << "  HeSAPT_smoothed_aux tail correction is " << tailcorr << endl;
+    app_log() << "  HeSAPT_smoothed_aux tail correction is " << tailcorr << std::endl;
   }
 
   inline Return_t evaluate(ParticleSet& P)
@@ -380,7 +380,7 @@ struct HeSAPT_smoothed_aux: public QMCHamiltonianBase
     return Value;
   }
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }

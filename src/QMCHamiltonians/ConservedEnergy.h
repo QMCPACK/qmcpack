@@ -80,7 +80,7 @@ struct ConservedEnergy: public QMCHamiltonianBase
     return 0.0;
   }
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
@@ -108,10 +108,10 @@ struct ConservedEnergy: public QMCHamiltonianBase
   ////////////////////////////////
   // Nothing is done on GPU here, just copy into vector
   void addEnergy(MCWalkerConfiguration &W,
-                 vector<RealType> &LocalEnergy)
+                 std::vector<RealType> &LocalEnergy)
   {
     // Value of LocalEnergy is not used in caller because this is auxiliary H.
-    vector<Walker_t*> &walkers = W.WalkerList;
+    std::vector<Walker_t*> &walkers = W.WalkerList;
     for (int iw=0; iw<walkers.size(); iw++)
     {
       Walker_t &w = *(walkers[iw]);

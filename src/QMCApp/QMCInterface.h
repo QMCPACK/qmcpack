@@ -55,9 +55,9 @@ public:
   bool process();
   bool execute();
   void SetPtclPos(int id, double* newR);
-  void SetPtclPos(string set, int id, double* newR);
-//    vector<double>* GetData();
-//		double GetData(string estimator, string tag);
+  void SetPtclPos( std::string set, int id, double* newR);
+//    std::vector<double>* GetData();
+//		double GetData( std::string estimator, std::string tag);
 private:
 
   /// pointer for xmlNode to be parsed in qmcDriver->process()
@@ -67,12 +67,12 @@ private:
   bool FirstQMC;
 
   ///previous configuration file for next qmc node
-  string PrevConfigFile;
+  std::string PrevConfigFile;
 
   ///xml mcwalkerset elements for output
-  vector<xmlNodePtr> m_walkerset;
+  std::vector<xmlNodePtr> m_walkerset;
   ///xml mcwalkerset read-in elements
-  vector<xmlNodePtr> m_walkerset_in;
+  std::vector<xmlNodePtr> m_walkerset_in;
 
   ///execute &lt;qmc/&gt; element
   bool runQMC(xmlNodePtr cur);

@@ -6,7 +6,6 @@
 //#define debugmsg(msg) {std::cout << msg << std::endl;}
 #define debugmsg(msg) { }
 
-using namespace std;
 
 template<class T>
 class QuasiNewtonOptimizerBase
@@ -35,9 +34,9 @@ public:
     PrintMode = 1;
   }
 
-  void search (int nparam, T* val, ofstream& OutStream)
+  void search (int nparam, T* val, std::ofstream& OutStream)
   {
-    typedef vector<T> Array_t;
+    typedef std::vector<T> Array_t;
     Array_t h;
     Array_t w;
     Array_t xm;
@@ -57,7 +56,7 @@ public:
     int ij, i1;
     T sig, gys, gs0, dgs;
     n = nparam;
-    OutStream << "Entry into va10a" << endl;
+    OutStream << "Entry into va10a" << std::endl;
     np = n+1;
     n1 = n-1;
     nn = (n*np)/2;
@@ -89,9 +88,9 @@ public:
       xm[i] = fabs(x[i]) + 0.01;
       OutStream << x[i] << " ";
     }
-    OutStream << endl;
+    OutStream << std::endl;
     f = Funct(n,&x[1]);
-    OutStream << "f = " << f << endl;
+    OutStream << "f = " << f << std::endl;
     ///Section A
     if(OptMode  != 3)
     {
@@ -150,13 +149,13 @@ public:
     ///Section C
     if(dmin <= 0)
     {
-      OutStream << "dmin <= 0" << endl;
+      OutStream << "dmin <= 0" << std::endl;
       return;
     }
     z = f;
     itn = 0;
     f = Funct(n,&x[1]);
-    OutStream << "f = " << f << endl;
+    OutStream << "f = " << f << std::endl;
     ifn = 1;
     df = DeltaFn;
     if(DeltaFn == 0)
@@ -191,18 +190,18 @@ funct20:
       goto funct21;
     if((itn%PrintMode) != 0)
       goto funct21;
-    OutStream << "itn = " << itn << " ifn = " << ifn << endl;
-    OutStream << "f = " << f << endl;
+    OutStream << "itn = " << itn << " ifn = " << ifn << std::endl;
+    OutStream << "f = " << f << std::endl;
     if(PrintMode < 0)
       goto funct21;
     OutStream << "x = ";
     for(int i=1; i<=n; i++)
       OutStream << x[i] << " ";
-    OutStream << endl;
+    OutStream << std::endl;
     OutStream << "g = ";
     for(int i=1; i<=n; i++)
       OutStream << g[i] << " ";
-    OutStream << endl;
+    OutStream << std::endl;
     goto funct21;
 funct21:
     ;
@@ -478,14 +477,14 @@ funct94:
     ////////////
     if(PrintMode == 0)
       return;
-    OutStream << "itn, ifn, iexit " << itn << " " << ifn << " " << iexit << endl;
-    OutStream << "f = " << f << endl;
+    OutStream << "itn, ifn, iexit " << itn << " " << ifn << " " << iexit << std::endl;
+    OutStream << "f = " << f << std::endl;
     for(int i=1; i<=n; i++)
       OutStream << x[i] << " ";
-    OutStream << endl;
+    OutStream << std::endl;
     for(int i=1; i<=n; i++)
       OutStream << g[i] << " ";
-    OutStream << endl;
+    OutStream << std::endl;
     return;
 funct100:
     ;

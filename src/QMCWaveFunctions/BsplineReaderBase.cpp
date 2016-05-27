@@ -19,13 +19,13 @@ namespace qmcplusplus
     myComm=mybuilder->getCommunicator();
   }
 
-  void BsplineReaderBase::get_psi_g(int ti, int spin, int ib, Vector<complex<double> >& cG)
+  void BsplineReaderBase::get_psi_g(int ti, int spin, int ib, Vector<std::complex<double> >& cG)
   {
     int ncg=0;
     if(myComm->rank()==0)
     {
-      string path=psi_g_path(ti,spin,ib);
-      HDFAttribIO<Vector<complex<double> > >  h_cG(cG);
+      std::string path=psi_g_path(ti,spin,ib);
+      HDFAttribIO<Vector<std::complex<double> > >  h_cG(cG);
       h_cG.read (mybuilder->H5FileID, path.c_str());
       ncg=cG.size();
     }
@@ -41,9 +41,9 @@ namespace qmcplusplus
   {
   }
 
-  inline string make_bandinfo_filename(const string& root, int spin, int twist, const Tensor<int,3>& tilematrix, int gid)
+  inline std::string make_bandinfo_filename(const std::string& root, int spin, int twist, const Tensor<int,3>& tilematrix, int gid)
   {
-    ostringstream oo;
+    std::ostringstream oo;
     oo<<root 
       << ".tile_"
       << tilematrix(0,0) <<tilematrix(0,1) <<tilematrix(0,2)
@@ -56,9 +56,9 @@ namespace qmcplusplus
   }
 
 
-  inline string make_bandgroup_name(const string& root, int spin, int twist, const Tensor<int,3>& tilematrix, int first, int last)
+  inline std::string make_bandgroup_name(const std::string& root, int spin, int twist, const Tensor<int,3>& tilematrix, int first, int last)
   {
-    ostringstream oo;
+    std::ostringstream oo;
     oo<<root 
       << ".tile_"
       << tilematrix(0,0) <<tilematrix(0,1) <<tilematrix(0,2)
@@ -76,8 +76,8 @@ namespace qmcplusplus
     a.add(GridFactor,"dilation");
     a.put(cur);
 
-    app_log() << "Rcut = " << Rcut << endl;
-    app_log() << "dilation = " << GridFactor << endl;
+    app_log() << "Rcut = " << Rcut << std::endl;
+    app_log() << "dilation = " << GridFactor << std::endl;
 
   }
 
@@ -94,7 +94,7 @@ namespace qmcplusplus
     if(spo2band.empty()) 
       spo2band.resize(mybuilder->states.size());
 
-    vector<BandInfo>& fullband=(*(mybuilder->FullBands[spin]));
+    std::vector<BandInfo>& fullband=(*(mybuilder->FullBands[spin]));
 
     if(spo2band[spin].empty())
     {
@@ -143,7 +143,7 @@ namespace qmcplusplus
     if(spo2band.empty()) 
       spo2band.resize(mybuilder->states.size());
 
-    vector<BandInfo>& fullband=(*(mybuilder->FullBands[spin]));
+    std::vector<BandInfo>& fullband=(*(mybuilder->FullBands[spin]));
 
     if(spo2band[spin].empty())
     {
@@ -176,7 +176,7 @@ namespace qmcplusplus
    *
    * At gamma or arbitrary kpoints with complex wavefunctions, spo2band[i]==i
    */
-  void BsplineReaderBase::initialize_spo2band(int spin, const vector<BandInfo>& bigspace, SPOSetInfo& sposet, vector<int>& spo2band)
+  void BsplineReaderBase::initialize_spo2band(int spin, const std::vector<BandInfo>& bigspace, SPOSetInfo& sposet, std::vector<int>& spo2band)
   {
     spo2band.reserve(bigspace.size());
     int ns=0;
@@ -199,16 +199,16 @@ namespace qmcplusplus
     const Communicate* comm=myComm;
     if(comm->rank()) return;
 
-    string aname= make_bandinfo_filename(mybuilder->getName(),spin
+    std::string aname= make_bandinfo_filename(mybuilder->getName(),spin
         , mybuilder->TwistNum, mybuilder->TileMatrix,comm->getGroupID());
     aname+=".bandinfo.dat";
 
-    ofstream o(aname.c_str());
+    std::ofstream o(aname.c_str());
     char s[1024];
     ns=0;
     typedef QMCTraits::PosType PosType;
     const std::vector<PosType>&  TwistAngles(mybuilder->TwistAngles);
-    o << "#  Band    State   TwistIndex BandIndex Energy      Kx      Ky      Kz      K1      K2      K3    KmK " << endl;   
+    o << "#  Band    State   TwistIndex BandIndex Energy      Kx      Ky      Kz      K1      K2      K3    KmK " << std::endl;   
     for(int i=0; i<bigspace.size(); ++i)
     {
       int ti   = bigspace[i].TwistIndex;

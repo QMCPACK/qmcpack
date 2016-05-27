@@ -28,7 +28,7 @@ struct PolyConstraints: public OrbitalConstraintsBase
   ///analytic functor
   typedef PolyFunctor<RealType> BasisGroupType;
   ///typedef for BasisGroupContainer
-  typedef map<string,BasisGroupType*> BGContainerType;
+  typedef std::map<std::string,BasisGroupType*> BGContainerType;
   ///flag to tunr on/off spin-dependent term, always off
   bool IgnoreSpin;
   ///has all the basis groups
@@ -45,7 +45,7 @@ struct PolyConstraints: public OrbitalConstraintsBase
   void addExtra2ComboOrbital(ComboOrbital* jcombo) {}
   bool put(xmlNodePtr cur);
   void addSingleBasisPerSpecies(xmlNodePtr cur);
-  void createBasisGroup(xmlNodePtr cur, const string& elementType, RealType rcut);
+  void createBasisGroup(xmlNodePtr cur, const std::string& elementType, RealType rcut);
 };
 
 }

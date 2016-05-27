@@ -99,7 +99,7 @@ void DMCUpdatePbyPWithRejection::advanceWalkers(WalkerIter_t it, WalkerIter_t it
       RealType ratio=Psi.ratio(W,iat,dG,dL);
       bool valid_move=false;
       //node is crossed reject the move
-      //if(Psi.getPhase() > numeric_limits<RealType>::epsilon())
+      //if(Psi.getPhase() > std::numeric_limits<RealType>::epsilon())
       if(branchEngine->phaseChanged(Psi.getPhaseDiff()))
       {
         ++nRejectTemp;
@@ -236,7 +236,7 @@ DMCUpdatePbyPWithKill::~DMCUpdatePbyPWithKill() { }
 void DMCUpdatePbyPWithKill::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
     bool measure)
 {
-  app_error() << "  DMCUpdatePbyPWithKill::advanceWalkers in not implemented." << endl;
+  app_error() << "  DMCUpdatePbyPWithKill::advanceWalkers in not implemented." << std::endl;
 }
 
 }

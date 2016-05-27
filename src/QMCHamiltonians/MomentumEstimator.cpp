@@ -47,7 +47,7 @@ MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
   nofK=0.0;
   compQ=0.0;
   //will use temp[i].r1 for the Compton profile
-  const vector<DistanceTableData::TempDistType>& temp(P.DistTables[0]->Temp);
+  const std::vector<DistanceTableData::TempDistType>& temp(P.DistTables[0]->Temp);
   Vector<RealType> tmpn_k(nofK);
   for (int s=0; s<M; ++s)
   {
@@ -58,7 +58,7 @@ MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
     newpos=Lattice.toCart(newpos);
     P.makeVirtualMoves(newpos); //updated: temp[i].r1=|newpos-P.R[i]|, temp[i].dr1=newpos-P.R[i]
     refPsi.get_ratios(P,psi_ratios);
-//         for (int i=0; i<np; ++i) app_log()<<i<<" "<<psi_ratios[i].real()<<" "<<psi_ratios[i].imag()<<endl;
+//         for (int i=0; i<np; ++i) app_log()<<i<<" "<<psi_ratios[i].real()<<" "<<psi_ratios[i].imag()<< std::endl;
     P.rejectMove(0); //restore P.R[0] to the orginal position
     for (int ik=0; ik < kPoints.size(); ++ik)
     {
@@ -88,27 +88,27 @@ MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
   return 0.0;
 }
 
-void MomentumEstimator::registerCollectables(vector<observable_helper*>& h5desc
+void MomentumEstimator::registerCollectables(std::vector<observable_helper*>& h5desc
     , hid_t gid) const
 {
   if (hdf5_out)
   {
     //descriptor for the data, 1-D data
-    vector<int> ng(1);
+    std::vector<int> ng(1);
     //add nofk
     ng[0]=nofK.size();
     observable_helper* h5o=new observable_helper("nofk");
     h5o->set_dimensions(ng,myIndex);
     h5o->open(gid);
-    h5o->addProperty(const_cast<vector<PosType>&>(kPoints),"kpoints");
-    h5o->addProperty(const_cast<vector<int>&>(kWeights),"kweights");
+    h5o->addProperty(const_cast<std::vector<PosType>&>(kPoints),"kpoints");
+    h5o->addProperty(const_cast<std::vector<int>&>(kWeights),"kweights");
     h5desc.push_back(h5o);
     //add compQ
     ng[0]=Q.size();
     h5o=new observable_helper("compQ");
     h5o->set_dimensions(ng,myIndex+nofK.size());
     h5o->open(gid);
-    h5o->addProperty(const_cast<vector<RealType>&>(Q),"q");
+    h5o->addProperty(const_cast<std::vector<RealType>&>(Q),"q");
     h5desc.push_back(h5o);
   }
 }
@@ -146,8 +146,8 @@ void MomentumEstimator::setObservables(PropertySetType& plist)
 {
   if (!hdf5_out)
   {
-    std::copy(nofK.begin(),nofK.end(),plist.begin()+myIndex);
-    std::copy(compQ.begin(),compQ.end(),plist.begin()+myIndex+nofK.size());
+    copy(nofK.begin(),nofK.end(),plist.begin()+myIndex);
+    copy(compQ.begin(),compQ.end(),plist.begin()+myIndex+nofK.size());
   }
 }
 
@@ -156,28 +156,28 @@ void MomentumEstimator::setParticlePropertyList(PropertySetType& plist
 {
   if (!hdf5_out)
   {
-    std::copy(nofK.begin(),nofK.end(),plist.begin()+myIndex+offset);
-    std::copy(compQ.begin(),compQ.end(),plist.begin()+myIndex+nofK.size()+offset);
+    copy(nofK.begin(),nofK.end(),plist.begin()+myIndex+offset);
+    copy(compQ.begin(),compQ.end(),plist.begin()+myIndex+nofK.size()+offset);
   }
 }
 
 bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootNode)
 {
   OhmmsAttributeSet pAttrib;
-  string hdf5_flag="yes";
+  std::string hdf5_flag="yes";
   pAttrib.add(hdf5_flag,"hdf5");
   pAttrib.add(M,"samples");
   pAttrib.put(cur);
   hdf5_out = (hdf5_flag=="yes");
-//     app_log()<<" MomentumEstimator::putSpecial "<<endl;
+//     app_log()<<" MomentumEstimator::putSpecial "<< std::endl;
   xmlNodePtr kids=cur->children;
   while (kids!=NULL)
   {
-    string cname((const char*)(kids->name));
-//         app_log()<<" MomentumEstimator::cname : "<<cname<<endl;
+    std::string cname((const char*)(kids->name));
+//         app_log()<<" MomentumEstimator::cname : "<<cname<< std::endl;
     if (cname=="kpoints")
     {
-      string ctype("manual");
+      std::string ctype("manual");
       OhmmsAttributeSet pAttrib;
       pAttrib.add(ctype,"mode");
       pAttrib.add(kgrid,"grid");
@@ -195,7 +195,7 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
         mappedQnorms[3*kgrid+1]=qn/RealType(M);
       if (twist[2]==0)
         mappedQnorms[5*kgrid+2]=qn/RealType(M);
-//             app_log()<<" Jnorm="<<qn<<endl;
+//             app_log()<<" Jnorm="<<qn<< std::endl;
       Q.resize(numqtwists);
       for (int i=-kgrid; i<(kgrid+1); i++)
       {
@@ -208,8 +208,8 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
         Q[i+kgrid+(2*kgrid+1)]=abs(kpt[1]);
         Q[i+kgrid+(4*kgrid+2)]=abs(kpt[2]);
       }
-      app_log()<<" Using all k-space points with (nx^2+ny^2+nz^2)^0.5 < "<< kgrid <<" for Momentum Distribution."<<endl;
-      app_log()<<"  My twist is:"<<twist[0]<<"  "<<twist[1]<<"  "<<twist[2]<<endl;
+      app_log()<<" Using all k-space points with (nx^2+ny^2+nz^2)^0.5 < "<< kgrid <<" for Momentum Distribution."<< std::endl;
+      app_log()<<"  My twist is:"<<twist[0]<<"  "<<twist[1]<<"  "<<twist[2]<< std::endl;
       int indx(0);
       int kgrid_squared=kgrid*kgrid;
       for (int i=-kgrid; i<(kgrid+1); i++)
@@ -247,7 +247,7 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
         mappedQnorms[kgrid]=qn/RealType(M);
       if (twist[1]==0)
         mappedQnorms[3*kgrid+1]=qn/RealType(M);
-//             app_log()<<" Jnorm="<<qn<<endl;
+//             app_log()<<" Jnorm="<<qn<< std::endl;
       Q.resize(numqtwists);
       for (int i=-kgrid; i<(kgrid+1); i++)
       {
@@ -258,8 +258,8 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
         Q[i+kgrid]=abs(kpt[0]);
         Q[i+kgrid+(2*kgrid+1)]=abs(kpt[1]);
       }
-      app_log()<<" Using all k-space points with (nx^2+ny^2)^0.5 < "<< kgrid <<" for Momentum Distribution."<<endl;
-      app_log()<<"  My twist is:"<<twist[0]<<"  "<<twist[1]<<endl;
+      app_log()<<" Using all k-space points with (nx^2+ny^2)^0.5 < "<< kgrid <<" for Momentum Distribution."<< std::endl;
+      app_log()<<"  My twist is:"<<twist[0]<<"  "<<twist[1]<< std::endl;
       int indx(0);
       int kgrid_squared=kgrid*kgrid;
       for (int i=-kgrid; i<(kgrid+1); i++)
@@ -291,19 +291,19 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
     for(int i(0); i<OHMMS_DIM; i++)
       sstr<<"_"<<round(100.0*twist[i]);
     sstr<<".dat";
-    ofstream fout(sstr.str().c_str());
-    fout.setf(ios::scientific, ios::floatfield);
+    std::ofstream fout(sstr.str().c_str());
+    fout.setf(std::ios::scientific, std::ios::floatfield);
     fout << "# mag_k        ";
     for(int i(0); i<OHMMS_DIM; i++)
       fout << "k_"<<i<<"           ";
-    fout <<endl;
+    fout << std::endl;
     for (int i=0; i<kPoints.size(); i++)
     {
       float khere(std::sqrt(dot(kPoints[i],kPoints[i])));
       fout<<khere;
       for(int j(0); j<OHMMS_DIM; j++)
         fout<<"   "<<kPoints[i][j];
-      fout<<endl;
+      fout<< std::endl;
     }
     fout.close();
     sstr.str("");
@@ -311,12 +311,12 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
     for(int i(0); i<OHMMS_DIM; i++)
       sstr<<"_"<<round(100.0*twist[i]);
     sstr<<".dat";
-    ofstream qout(sstr.str().c_str());
-    qout.setf(ios::scientific, ios::floatfield);
-    qout << "# mag_q" << endl;
+    std::ofstream qout(sstr.str().c_str());
+    qout.setf(std::ios::scientific, std::ios::floatfield);
+    qout << "# mag_q" << std::endl;
     for (int i=0; i<Q.size(); i++)
     {
-      qout<<Q[i]<<endl;
+      qout<<Q[i]<< std::endl;
     }
     qout.close();
   }
@@ -347,7 +347,7 @@ QMCHamiltonianBase* MomentumEstimator::makeClone(ParticleSet& qp
   return myclone;
 }
 
-void MomentumEstimator::resize(const vector<PosType>& kin, const vector<RealType>& qin)
+void MomentumEstimator::resize(const std::vector<PosType>& kin, const std::vector<RealType>& qin)
 {
   //copy kpoints
   kPoints=kin;

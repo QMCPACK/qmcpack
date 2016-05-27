@@ -170,14 +170,14 @@ struct RandomVector { };
 template<class RA, class RNG>
 struct RandomSequence { };
 
-// specialized for vector<T> to generate a random sequence of type T
+// specialized for std::vector<T> to generate a random sequence of type T
 template<class T, class RNG>
-struct RandomSequence<vector<T>, RNG>
+struct RandomSequence<std::vector<T>, RNG>
 {
 
-  static void apply(vector<T>& v, RandomVector<T,RNG>& rnd)
+  static void apply(std::vector<T>& v, RandomVector<T,RNG>& rnd)
   {
-    typename vector<T>::iterator it= v.begin();
+    typename std::vector<T>::iterator it= v.begin();
     while(it != v.end())
     {
       (*it) = rnd();
@@ -186,14 +186,14 @@ struct RandomSequence<vector<T>, RNG>
   }
 };
 
-// specialized for vector<double> to generate a random sequence of type T
+// specialized for std::vector<double> to generate a random sequence of type T
 template<class RNG>
-struct RandomSequence<vector<double>, RNG>
+struct RandomSequence<std::vector<double>, RNG>
 {
 
-  static void apply(vector<double>& s, RNG& rnd)
+  static void apply(std::vector<double>& s, RNG& rnd)
   {
-    typename vector<double>::iterator it= s.begin();
+    typename std::vector<double>::iterator it= s.begin();
     while(it != s.end())
     {
       (*it) = rnd();

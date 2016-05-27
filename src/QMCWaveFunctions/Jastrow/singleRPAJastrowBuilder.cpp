@@ -36,7 +36,7 @@ bool singleRPAJastrowBuilder::put(xmlNodePtr cur)
 bool singleRPAJastrowBuilder::put(xmlNodePtr cur, int addOrbital)
 {
   MyName="Jep";
-  string rpafunc="RPA";
+  std::string rpafunc="RPA";
   OhmmsAttributeSet a;
   a.add(MyName,"name");
   a.add(rpafunc,"function");
@@ -58,17 +58,17 @@ bool singleRPAJastrowBuilder::put(xmlNodePtr cur, int addOrbital)
   if (rpafunc=="RPA")
   {
     myHandler= new LRRPAHandlerTemp<EPRPABreakup<RealType>,LPQHIBasis>(targetPtcl,Kc);
-    app_log()<<"  using e-p RPA"<<endl;
+    app_log()<<"  using e-p RPA"<< std::endl;
   }
   else
     if (rpafunc=="dRPA")
     {
       myHandler= new LRRPAHandlerTemp<derivEPRPABreakup<RealType>,LPQHIBasis>(targetPtcl,Kc);
-      app_log()<<"  using e-p derivRPA"<<endl;
+      app_log()<<"  using e-p derivRPA"<< std::endl;
     }
   myHandler->Breakup(targetPtcl,Rs);
-//     app_log() << "  Maximum K shell " << myHandler->MaxKshell << endl;
-//     app_log() << "  Number of k vectors " << myHandler->Fk.size() << endl;
+//     app_log() << "  Maximum K shell " << myHandler->MaxKshell << std::endl;
+//     app_log() << "  Number of k vectors " << myHandler->Fk.size() << std::endl;
   //Add short range part
   Rcut = myHandler->get_rc()-0.1;
   GridType* myGrid = new GridType;
@@ -84,7 +84,7 @@ bool singleRPAJastrowBuilder::put(xmlNodePtr cur, int addOrbital)
   {
     J1s->addFunc(ig,nfunc);
   }
-  app_log()<<" Only Short range part of E-I RPA is implemented"<<endl;
+  app_log()<<" Only Short range part of E-I RPA is implemented"<< std::endl;
   if (addOrbital)
     targetPsi.addOrbital(J1s,MyName);
   return true;
@@ -115,7 +115,7 @@ OrbitalBase* singleRPAJastrowBuilder::getOrbital()
 //       J1s->addFunc(ig,nfunc);
 //     }
   if (J1s==0)
-    app_log()<<"  ERROR!! Must singleRPAJastrowBuilder::put() first!"<<endl;
+    app_log()<<"  ERROR!! Must singleRPAJastrowBuilder::put() first!"<< std::endl;
   return J1s;
 }
 }

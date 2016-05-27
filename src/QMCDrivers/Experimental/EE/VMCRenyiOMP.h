@@ -33,7 +33,7 @@ public:
               HamiltonianPool& hpool, WaveFunctionPool& ppool);
   bool run();
   bool put(xmlNodePtr cur);
-  //inline vector<RandomGenerator_t*>& getRng() { return Rng;}
+  //inline std::vector<RandomGenerator_t*>& getRng() { return Rng;}
 private:
   ///number of warmup steps
   int myWarmupSteps;
@@ -42,23 +42,23 @@ private:
   ///period for walker dump
   int myPeriod4WalkerDump;
   ///option to enable/disable drift equation or RN for VMC
-  string UseDrift;
+  std::string UseDrift;
   ///order or renyi to compute
   int EEN;
   ///patch geometry (sphere,...
-  string computeEE;
+  std::string computeEE;
   ///patch size (sphere:r^2,...
   RealType vsize;
   ///index of particles in region a and b for threads
-  vector<vector<int> > region;
-  vector<RealType> stats_vec;
+  std::vector<std::vector<int> > region;
+  std::vector<RealType> stats_vec;
 
   bool plotSwapAmplitude;
   int grid_spacing;
 
   fstream file_out;
   int Nmin,Nmax;
-  stringstream ee_dat,pe_dat;
+  std::stringstream ee_dat,pe_dat;
   ///check the run-time environments
   void resetRun();
   ///copy constructor

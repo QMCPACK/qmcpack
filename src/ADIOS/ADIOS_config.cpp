@@ -7,7 +7,7 @@ const static std::string empty("");
 static bool rdADIOS = false;
 static bool rdHDF5 = false;
 static bool adios_first_open = true;
-static string trace_file = "trace.bp";
+static std::string trace_file = "trace.bp";
 static bool adios_init_flag = false;
 
 namespace ADIOS
@@ -64,7 +64,7 @@ void setFirstOpen(bool a){
   adios_first_open = a;
 }
 
-string getTraceFileName(){
+std::string getTraceFileName(){
   return trace_file;
 }
 

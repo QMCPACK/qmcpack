@@ -78,7 +78,7 @@ public:
   // index of first parameter in derivative array
   int indexOfFirstParam;
   // temporary storage for derivatives
-  vector<TinyVector<RealType,3> > derivs;
+  std::vector<TinyVector<RealType,3> > derivs;
 
 // mmorales: all quantities produced by BF transformations
 //           should be real, so change everything here to ???<RealType>
@@ -145,7 +145,7 @@ public:
   virtual void
   restore(int iat, int UpdateType)=0;
 
-  virtual void reportStatus(ostream& os)=0;
+  virtual void reportStatus(std::ostream& os)=0;
 
   virtual void resetParameters(const opt_variables_type& active)=0;
 
@@ -193,17 +193,17 @@ public:
   /** calculate quasi-particle coordinates after pbyp move
    */
   virtual void
-  evaluatePbyP(const ParticleSet& P, ParticleSet::ParticlePos_t& newQP, const vector<int>& index)=0;
+  evaluatePbyP(const ParticleSet& P, ParticleSet::ParticlePos_t& newQP, const std::vector<int>& index)=0;
 
   /** calculate quasi-particle coordinates and Amat after pbyp move
    */
   virtual void
-  evaluatePbyP(const ParticleSet& P, ParticleSet::ParticlePos_t& newQP, const vector<int>& index, HessMatrix_t& Amat)=0;
+  evaluatePbyP(const ParticleSet& P, ParticleSet::ParticlePos_t& newQP, const std::vector<int>& index, HessMatrix_t& Amat)=0;
 
   /** calculate quasi-particle coordinates, Bmat and Amat after pbyp move
    */
   virtual void
-  evaluatePbyP(const ParticleSet& P, ParticleSet::ParticlePos_t& newQP, const vector<int>& index, GradMatrix_t& Bmat, HessMatrix_t& Amat)=0;
+  evaluatePbyP(const ParticleSet& P, ParticleSet::ParticlePos_t& newQP, const std::vector<int>& index, GradMatrix_t& Bmat, HessMatrix_t& Amat)=0;
 
   /** calculate quasi-particle coordinates after pbyp move
    */

@@ -43,7 +43,7 @@ public:
   void checkInVariables(opt_variables_type& active);
   void checkOutVariables(const opt_variables_type& active);
   void resetParameters(const opt_variables_type& active);
-  void reportStatus(ostream& os);
+  void reportStatus(std::ostream& os);
   //evaluate the distance table with els
   void resetTargetParticleSet(ParticleSet& P);
 
@@ -114,7 +114,7 @@ public:
   /** temporary value for update */
   RealType diffVal;
   ///root name for Lambda compoenents
-  string ID_Lambda;
+  std::string ID_Lambda;
   /** Y(iat,ibasis) value of the iat-th ortbial, the basis index ibasis
    */
   Matrix<RealType> Y;
@@ -132,11 +132,11 @@ public:
   Matrix<RealType> Lambda;
   /** boolean to enable/disable optmization of Lambda(i,j) component */
   Matrix<int> FreeLambda;
-  vector<IndexType> BlocksPerGroup;
-  vector<IndexType> Blocks;
-  vector<IndexType> BlockOffset;
-  vector<IndexType> BlockID;
-  vector<Matrix<RealType>* > LambdaBlocks;
+  std::vector<IndexType> BlocksPerGroup;
+  std::vector<IndexType> Blocks;
+  std::vector<IndexType> BlockOffset;
+  std::vector<IndexType> BlockID;
+  std::vector<Matrix<RealType>* > LambdaBlocks;
 
   /** Uk[i] = \sum_j dot(U[i],V[j]) */
   Vector<RealType> Uk;

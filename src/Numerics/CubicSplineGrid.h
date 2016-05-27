@@ -72,7 +72,7 @@ struct CubicSplineGrid<T,LINEAR_1DGRID,PBC_CONSTRAINTS>
     int n(datain.size());
     setGrid(start,end,(closed)?n-1:n);
     p.resize(n);
-    std::copy(datain.begin(),datain.end(),p.begin());
+    copy(datain.begin(),datain.end(),p.begin());
     dp.resize(n);
     container_type gr(n),d2p(n);
     //don't forget to include the end point

@@ -40,8 +40,8 @@ HDFWalkerInput_0_4::~HDFWalkerInput_0_4()
 void HDFWalkerInput_0_4::checkOptions(xmlNodePtr cur)
 {
   i_info.reset();
-  string froot,cfile;
-  string collected("no");
+  std::string froot,cfile;
+  std::string collected("no");
   OhmmsAttributeSet pAttrib;
   pAttrib.add(i_info.nprocs,"nprocs");
   pAttrib.add(i_info.rank,"node");
@@ -111,7 +111,7 @@ bool HDFWalkerInput_0_4::put(xmlNodePtr cur)
   checkOptions(cur);
   if(FileStack.empty())
   {
-    app_error() << "  No valid input hdf5 is found." << endl;
+    app_error() << "  No valid input hdf5 is found." << std::endl;
     return false;
   }
 #ifdef HAVE_ADIOS
@@ -122,7 +122,7 @@ bool HDFWalkerInput_0_4::put(xmlNodePtr cur)
   {
     FileName=FileStack.top();
     FileStack.pop();
-    string h5name(FileName);
+    std::string h5name(FileName);
     //success |= read_hdf5_scatter(h5name);
     success |= read_hdf5(h5name);
   }
@@ -130,7 +130,7 @@ bool HDFWalkerInput_0_4::put(xmlNodePtr cur)
 #endif
 }
 
-bool HDFWalkerInput_0_4::read_hdf5(string h5name)
+bool HDFWalkerInput_0_4::read_hdf5( std::string h5name)
 {
 
   int nw_in=0;
@@ -150,16 +150,16 @@ bool HDFWalkerInput_0_4::read_hdf5(string h5name)
   }
   else
   {
-    app_error() << " Mismatched version. xml = " << i_info.version << " hdf = " << aversion << endl;
+    app_error() << " Mismatched version. xml = " << i_info.version << " hdf = " << aversion << std::endl;
   }
 
   if(nw_in==0)
   {
-    app_error() << " No walkers in " << h5name << endl;
+    app_error() << " No walkers in " << h5name << std::endl;
     return false;
   }
 
-  typedef vector<QMCTraits::RealType>  Buffer_t;
+  typedef std::vector<QMCTraits::RealType>  Buffer_t;
   Buffer_t posin;
   TinyVector<size_t,3> dims(nw_in,targetW.getTotalNum(),OHMMS_DIM);
   posin.resize(dims[0]*dims[1]*dims[2]);
@@ -167,18 +167,18 @@ bool HDFWalkerInput_0_4::read_hdf5(string h5name)
   hyperslab_proxy<Buffer_t,3> slab(posin,dims);
   hin.read(slab,hdf::walkers);
 
-  vector<int> woffsets;
+  std::vector<int> woffsets;
   hin.read(woffsets,"walker_partition");
 
   int np1=myComm->size()+1;
-  vector<int> counts(np1);
+  std::vector<int> counts(np1);
   if(woffsets.size()!= np1)
   {
     woffsets.resize(myComm->size()+1,0);
     FairDivideLow(nw_in,myComm->size(),woffsets);
   }
 
-  app_log() << " HDFWalkerInput_0_4::put getting " << dims[0] << " walkers " << posin.size() << endl;
+  app_log() << " HDFWalkerInput_0_4::put getting " << dims[0] << " walkers " << posin.size() << std::endl;
   nw_in=woffsets[myComm->rank()+1]-woffsets[myComm->rank()];
   {
     int nitems=targetW.getTotalNum()*OHMMS_DIM;
@@ -187,7 +187,7 @@ bool HDFWalkerInput_0_4::read_hdf5(string h5name)
     Buffer_t::iterator it(posin.begin()+woffsets[myComm->rank()]*nitems);
     for(int i=0,iw=curWalker; i<nw_in; ++i,++iw)
     {
-      std::copy(it,it+nitems,get_first_address(targetW[iw]->R));
+      copy(it,it+nitems,get_first_address(targetW[iw]->R));
       it += nitems;
     }
   }
@@ -195,22 +195,22 @@ bool HDFWalkerInput_0_4::read_hdf5(string h5name)
   //{
   //  char fname[128];
   //  sprintf(fname,"%s.p%03d.xyz",FileName.c_str(),myComm->rank());
-  //  ofstream fout(fname);
+  //  std::ofstream fout(fname);
   //  MCWalkerConfiguration::iterator it = targetW.begin();
   //  int iw=0;
   //  while(it != targetW.end())
   //  {
-  //    fout << iw << endl;
+  //    fout << iw << std::endl;
   //    MCWalkerConfiguration::Walker_t& thisWalker(**it);
   //    for(int iat=0; iat<targetW.getTotalNum(); ++iat)
-  //      fout << thisWalker.R[iat] << endl;
+  //      fout << thisWalker.R[iat] << std::endl;
   //    ++it; ++iw;
   //  }
   //}
   return true;
 }
 
-bool HDFWalkerInput_0_4::read_hdf5_scatter(string h5name)
+bool HDFWalkerInput_0_4::read_hdf5_scatter( std::string h5name)
 {
 
   int nw_in=0;
@@ -232,7 +232,7 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(string h5name)
     }
     else
     {
-      app_error() << " Mismatched version. xml = " << i_info.version << " hdf = " << aversion << endl;
+      app_error() << " Mismatched version. xml = " << i_info.version << " hdf = " << aversion << std::endl;
     }
   }
 
@@ -241,14 +241,14 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(string h5name)
 
   if(nw_in==0)
   {
-    app_error() << " No walkers in " << h5name << endl;
+    app_error() << " No walkers in " << h5name << std::endl;
     return false;
   }
 
-  typedef vector<QMCTraits::RealType>  Buffer_t;
+  typedef std::vector<QMCTraits::RealType>  Buffer_t;
 
   int np1=myComm->size()+1;
-  vector<int> counts(myComm->size()),woffsets(np1,0);
+  std::vector<int> counts(myComm->size()),woffsets(np1,0);
   FairDivideLow(nw_in,myComm->size(),woffsets);
 
   int nw_loc=woffsets[myComm->rank()+1]-woffsets[myComm->rank()];
@@ -276,13 +276,13 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(string h5name)
   Buffer_t::iterator it(posout.begin());
   for(int i=0,iw=curWalker; i<nw_loc;++i,++iw)
   {
-    std::copy(it,it+nitems,get_first_address(targetW[iw]->R));
+    copy(it,it+nitems,get_first_address(targetW[iw]->R));
     it += nitems;
   }
   return true;
 }
 
-bool HDFWalkerInput_0_4::read_phdf5(string h5name)
+bool HDFWalkerInput_0_4::read_phdf5( std::string h5name)
 {
 //Broken
 //#if defined(H5_HAVE_PARALLEL) && defined(ENABLE_PHDF5)
@@ -294,11 +294,11 @@ bool HDFWalkerInput_0_4::read_phdf5(string h5name)
 //  hin.push(hdf::main_state);
 //  int nw_in=0;
 //  hin.read(nw_in,hdf::num_walkers);
-//  vector<int> woffsets(myComm->size()+1,0);
+//  std::vector<int> woffsets(myComm->size()+1,0);
 //  FairDivideLow(nw_in,myComm->size(),woffsets);
 //  int mynode=myComm->rank();
 //  int nw_loc=woffsets[mynode+1]-woffsets[mynode];
-//  cout << "node =" << mynode << " nw_loc=" << nw_loc << " nw_in=" << nw_in << endl;
+//  std::cout << "node =" << mynode << " nw_loc=" << nw_loc << " nw_in=" << nw_in << std::endl;
 //  //TinyVector<hsize_t,3> gcounts, counts, offset;
 //  hsize_t gcounts[3], counts[3], offset[3];
 //  gcounts[0]=nw_in;
@@ -311,7 +311,7 @@ bool HDFWalkerInput_0_4::read_phdf5(string h5name)
 //  offset[1]=0;
 //  offset[2]=0;
 //  int nitems=targetW.getTotalNum()*OHMMS_DIM;
-//  typedef vector<QMCTraits::RealType>  Buffer_t;
+//  typedef std::vector<QMCTraits::RealType>  Buffer_t;
 //  Buffer_t posin(nw_loc*nitems);
 //  hid_t dataset = H5Dopen(hin.top(),hdf::walkers);
 //  hid_t dataspace = H5Dget_space(dataset);
@@ -329,7 +329,7 @@ bool HDFWalkerInput_0_4::read_phdf5(string h5name)
 //  Buffer_t::iterator it(posin.begin());
 //  for(int i=0,iw=curWalker; i<nw_loc; ++i,++iw)
 //  {
-//    std::copy(it,it+nitems,get_first_address(targetW[iw]->R));
+//    copy(it,it+nitems,get_first_address(targetW[iw]->R));
 //    it += nitems;
 //  }
 //#endif
@@ -342,7 +342,7 @@ bool HDFWalkerInput_0_4::read_adios(xmlNodePtr cur)
   checkOptions(cur);
   if(FileStack.empty())
   {
-    app_error() << "  No valid input hdf5 is found." << endl;
+    app_error() << "  No valid input hdf5 is found." << std::endl;
     return false;
   }
   //use collective I/O  for parallel runs with a file
@@ -351,7 +351,7 @@ bool HDFWalkerInput_0_4::read_adios(xmlNodePtr cur)
   {
     FileName=FileStack.top();
     FileStack.pop();
-    string h5name(FileName);
+    std::string h5name(FileName);
     int success = 0;
     hdf_archive hin(myComm,true);
     if(ADIOS::getRdADIOS())
@@ -367,12 +367,12 @@ bool HDFWalkerInput_0_4::read_adios(xmlNodePtr cur)
     mpi::bcast(*myComm,success);
     if(!success)
     {
-      app_error() << "  HDFWalkerInput_0_4::put Cannot open " << h5name << endl;
+      app_error() << "  HDFWalkerInput_0_4::put Cannot open " << h5name << std::endl;
       continue;
     }
     //check if hdf and xml versions can work together
     HDFVersion aversion;
-    typedef vector<QMCTraits::RealType>  Buffer_t;
+    typedef std::vector<QMCTraits::RealType>  Buffer_t;
     Buffer_t posin;
     if(ADIOS::getRdHDF5())
     {
@@ -380,7 +380,7 @@ bool HDFWalkerInput_0_4::read_adios(xmlNodePtr cur)
       mpi::bcast(*myComm,aversion.version);
       if(aversion < i_info.version)
       {
-        app_error() << " Mismatched version. xml = " << i_info.version << " hdf = " << aversion << endl;
+        app_error() << " Mismatched version. xml = " << i_info.version << " hdf = " << aversion << std::endl;
         continue;
       }
       int found_group=hin.is_group(hdf::main_state);
@@ -408,7 +408,7 @@ bool HDFWalkerInput_0_4::read_adios(xmlNodePtr cur)
     }
     if(nw_in==0)
     {
-      app_error() << "  HDFWalkerInput_0_4::put empty walkers " << endl;
+      app_error() << "  HDFWalkerInput_0_4::put empty walkers " << std::endl;
       continue;
     }
     TinyVector<size_t,3> dims(nw_in,targetW.getTotalNum(),OHMMS_DIM);
@@ -429,7 +429,7 @@ bool HDFWalkerInput_0_4::read_adios(xmlNodePtr cur)
     {
       ADIOS::close();
     }
-    app_log() << " HDFWalkerInput_0_4::put getting " << dims[0] << " walkers " << posin.size() << endl;
+    app_log() << " HDFWalkerInput_0_4::put getting " << dims[0] << " walkers " << posin.size() << std::endl;
     int nitems=targetW.getTotalNum()*OHMMS_DIM;
     int curWalker = targetW.getActiveWalkers();
     if(myComm->size()==1)
@@ -438,13 +438,13 @@ bool HDFWalkerInput_0_4::read_adios(xmlNodePtr cur)
       Buffer_t::iterator it(posin.begin());
       for(int i=0,iw=curWalker; i<nw_in; ++i,++iw)
       {
-        std::copy(it,it+nitems,get_first_address(targetW[iw]->R));
+        copy(it,it+nitems,get_first_address(targetW[iw]->R));
         it += nitems;
       }
     }
     else
     {
-      vector<int> counts(myComm->size()),woffsets(myComm->size()+1,0);
+      std::vector<int> counts(myComm->size()),woffsets(myComm->size()+1,0);
       FairDivideLow(nw_in,myComm->size(),woffsets);
       //reset the number of walkers
       nw_in=woffsets[myComm->rank()+1]-woffsets[myComm->rank()];
@@ -458,7 +458,7 @@ bool HDFWalkerInput_0_4::read_adios(xmlNodePtr cur)
       Buffer_t::iterator it(posout.begin());
       for(int i=0,iw=curWalker; i<nw_in; ++i,++iw)
       {
-        std::copy(it,it+nitems,get_first_address(targetW[iw]->R));
+        copy(it,it+nitems,get_first_address(targetW[iw]->R));
         it += nitems;
       }
     }

@@ -23,7 +23,6 @@
 #include <iostream>
 #include <fstream>
 #include "OhmmsData/FileUtility.h"
-using namespace std;
 #include "Utilities/OhmmsInfo.h"
 #include "IO/ParticleIOUtility.h"
 #include "Utilities/SpeciesCollection.h"
@@ -40,13 +39,13 @@ bool LatticeParser::put(xmlDocPtr doc, xmlNsPtr ns, xmlNodePtr cur)
 {
   double a0 = 1.0;
   cur = cur->xmlChildrenNode;
-  vector<SingleParticleIndex_t> grid(3,SingleParticleIndex_t(1));
-  TinyVector<string,OHMMS_DIM> bconds("p");
+  std::vector<SingleParticleIndex_t> grid(3,SingleParticleIndex_t(1));
+  TinyVector<std::string,OHMMS_DIM> bconds("p");
   while (cur != NULL)
   {
     if(!xmlStrcmp(cur->name, (const xmlChar *)"PARAMETER"))
     {
-      string aname = (const char*)(xmlGetProp(cur, (const xmlChar *) "name"));
+      std::string aname = (const char*)(xmlGetProp(cur, (const xmlChar *) "name"));
       if(aname == "scale")
       {
         putContent(a0,cur);
@@ -96,11 +95,11 @@ bool LatticeParser::put(xmlDocPtr doc, xmlNsPtr ns, xmlNodePtr cur)
 }
 
 
-bool LatticeXMLWriter::get(ostream& os) const
+bool LatticeXMLWriter::get(std::ostream& os) const
 {
-  os<< "<UnitCell>" << endl;
-  os<< "<PARAMETER name=\"lattice\">" << endl;
-  os << ref_.R << "</PARAMETER>" << endl;
+  os<< "<UnitCell>" << std::endl;
+  os<< "<PARAMETER name=\"lattice\">" << std::endl;
+  os << ref_.R << "</PARAMETER>" << std::endl;
   os << "<PARAMETER name=\"bconds\">";
   for(int idir=0; idir<OHMMS_DIM; idir++)
   {
@@ -109,14 +108,14 @@ bool LatticeXMLWriter::get(ostream& os) const
     else
       os << "n ";
   }
-  os << "</PARAMETER>" << endl;
+  os << "</PARAMETER>" << std::endl;
   os << "<PARAMETER name=\"grid\">";
   for(int idir=0; idir<OHMMS_DIM; idir++)
   {
     os <<ref_.Grid[idir] << " ";
   }
-  os << "</PARAMETER>" << endl;
-  os << "</UnitCell>" << endl;
+  os << "</PARAMETER>" << std::endl;
+  os << "</UnitCell>" << std::endl;
   return true;
 }
 
@@ -127,7 +126,7 @@ bool ParticleParser::put(xmlDocPtr doc, xmlNsPtr ns, xmlNodePtr cur)
   {
     const char* fname
     =(const char*)(xmlGetProp(cur, (const xmlChar *) "file"));
-    string pformat = getExtension(fname);
+    std::string pformat = getExtension(fname);
     if(pformat == "xml")
     {
       XMLParticleParser aHandle(ref_);
@@ -136,7 +135,7 @@ bool ParticleParser::put(xmlDocPtr doc, xmlNsPtr ns, xmlNodePtr cur)
     else
     {
       WARNMSG("Using old formats")
-      ifstream fin(fname);
+      std::ifstream fin(fname);
       if(fin)
       {
         ParticleInputFactory::createParticle(ref_,fin);

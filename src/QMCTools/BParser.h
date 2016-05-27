@@ -36,7 +36,7 @@ struct AGPLambda
   int J;
   double X;
   AGPLambda(int i, int j, double x): I(i), J(j), X(x) {}
-  AGPLambda(vector<string>& w)
+  AGPLambda(std::vector<std::string>& w)
   {
     I=atoi(w[0].c_str());
     J=atoi(w[1].c_str());
@@ -61,24 +61,24 @@ public:
 
 
   /** Size of the basis set per atom for the determinant */
-  vector<int> detBasisPerAtom;
+  std::vector<int> detBasisPerAtom;
   /** Size of the basis set per atom for the three-body jastrow */
-  vector<int> j3BasisPerAtom;
+  std::vector<int> j3BasisPerAtom;
   /** Basis set per atom for the determinant*/
-  map<int,vector<BMakeFuncBase*>*> detBasisSet;
+  std::map<int,std::vector<BMakeFuncBase*>*> detBasisSet;
   /** Basis set per atom for the three-body jastrow*/
-  map<int,vector<BMakeFuncBase*>*> j3BasisSet;
+  std::map<int,std::vector<BMakeFuncBase*>*> j3BasisSet;
   /** Occupation mask for the expanded basis set for the determinant */
-  vector<int> detOcc;
+  std::vector<int> detOcc;
   /** Occupation mask for the expanded basis set for the three-body jastrow */
-  vector<int> j3Occ;
+  std::vector<int> j3Occ;
 
   /** non-zero paired Lambda elements for the determinant **/
-  vector<AGPLambda> detPairedLambda;
+  std::vector<AGPLambda> detPairedLambda;
   /** non-zero un-paired Lambda elements for the determinant **/
-  vector<AGPLambda> detUnPairedLambda;
+  std::vector<AGPLambda> detUnPairedLambda;
   /** non-zero Lambda elements for the three-body jastrow **/
-  vector<AGPLambda> j3Lambda;
+  std::vector<AGPLambda> j3Lambda;
 
   ///default constructor
   BParser();
@@ -88,7 +88,7 @@ public:
 
   ///overwrite the virtual function
   void parse(const std::string& fname);
-  void dump(const string& psi_tag, const string& ion_tag);
+  void dump(const std::string& psi_tag, const std::string& ion_tag);
 
   void getGeometry(std::istream& is);
   void getBasisSetForDet(std::istream& is);
@@ -100,8 +100,8 @@ public:
 
   xmlNodePtr createDeterminantSet();
   xmlNodePtr createJ3();
-  xmlNodePtr createBasisSet(map<int,vector<BMakeFuncBase*>*>& bset,
-                            vector<int>& basisPerAtom, vector<int>& occ,
+  xmlNodePtr createBasisSet(std::map<int,std::vector<BMakeFuncBase*>*>& bset,
+                            std::vector<int>& basisPerAtom, std::vector<int>& occ,
                             bool jastrow);
 };
 #endif

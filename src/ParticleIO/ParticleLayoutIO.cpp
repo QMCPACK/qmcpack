@@ -23,7 +23,6 @@
 #include <iostream>
 #include <fstream>
 #include "OhmmsData/FileUtility.h"
-using namespace std;
 #include "Utilities/OhmmsInfo.h"
 #include "ParticleIO/ParticleLayoutIO.h"
 #include "OhmmsData/AttributeSet.h"
@@ -41,18 +40,18 @@ bool LatticeParser::put(xmlNodePtr cur)
   int nsh   =  0; //for backwards compatibility w/ odd heg initialization style
   int pol   =  0;
   typedef ParticleLayout_t::SingleParticleIndex_t SingleParticleIndex_t;
-  vector<SingleParticleIndex_t> grid(DIM,SingleParticleIndex_t(1));
-  TinyVector<string,DIM> bconds("p");
+  std::vector<SingleParticleIndex_t> grid(DIM,SingleParticleIndex_t(1));
+  TinyVector<std::string,DIM> bconds("p");
   std::size_t finegrid =  ParticleLayout_t::SPATIAL_GRID;
   std::size_t ompgrid = ParticleLayout_t::OMP_GRID;
   std::size_t mpigrid = ParticleLayout_t::MPI_GRID;
   cur = cur->xmlChildrenNode;
   while (cur != NULL)
   {
-    string cname((const char*)cur->name);
+    std::string cname((const char*)cur->name);
     if(cname == "parameter")
     {
-      string aname((const char*)(xmlGetProp(cur, (const xmlChar *) "name")));
+      std::string aname((const char*)(xmlGetProp(cur, (const xmlChar *) "name")));
       if(aname == "scale")
       {
         putContent(a0,cur);
@@ -146,7 +145,7 @@ bool LatticeParser::put(xmlNodePtr cur)
           app_log() << "\n     number of up particles = " << nptcl;
         }
     app_log()<< "\n     filled kshells      = " << nsh
-             << "\n     lattice constant    = " << acubic << " bohr"<< endl;
+             << "\n     lattice constant    = " << acubic << " bohr"<< std::endl;
     ref_.R=0.0;
     for(int idim=0; idim<DIM; idim++)
       for(int jdim=0; jdim<DIM; jdim++)
@@ -162,17 +161,17 @@ bool LatticeParser::put(xmlNodePtr cur)
   if(ref_.SuperCellEnum == SUPERCELL_OPEN)
     ref_.WignerSeitzRadius=ref_.SimulationCellRadius;
   app_log() << std::fixed;
-  app_log() << "  Simulation cell radius = " << ref_.SimulationCellRadius << endl;
-  app_log() << "  Wigner-Seitz    radius = " << ref_.WignerSeitzRadius    << endl;
+  app_log() << "  Simulation cell radius = " << ref_.SimulationCellRadius << std::endl;
+  app_log() << "  Wigner-Seitz    radius = " << ref_.WignerSeitzRadius    << std::endl;
   return true;
 }
 
 
-bool LatticeXMLWriter::get(ostream& os) const
+bool LatticeXMLWriter::get(std::ostream& os) const
 {
-  os<< "<unitcell>" << endl;
-  os<< "<parameter name=\"lattice\" datatype=\"tensor\">" << endl;
-  os << ref_.R << "</parameter>" << endl;
+  os<< "<unitcell>" << std::endl;
+  os<< "<parameter name=\"lattice\" datatype=\"tensor\">" << std::endl;
+  os << ref_.R << "</parameter>" << std::endl;
   os << "<parameter name=\"bconds\">";
   const int DIM=ParticleLayout_t::SingleParticlePos_t::Size;
   for(int idir=0; idir<DIM; idir++)
@@ -182,7 +181,7 @@ bool LatticeXMLWriter::get(ostream& os) const
     else
       os << "n ";
   }
-  os << "</parameter>" << endl;
+  os << "</parameter>" << std::endl;
   ///only write the spatial grid but may choose to write mpi and openmp
   std::size_t finegrid =  ParticleLayout_t::SPATIAL_GRID;
   os << "<parameter name=\"grid\">";
@@ -190,9 +189,9 @@ bool LatticeXMLWriter::get(ostream& os) const
   {
     os <<ref_.getGrid(finegrid)->size(idir) << " ";
   }
-  os << "</parameter>" << endl;
-  //os << "<parameter name=\"omega\">" << ref_.ABC << "</parameter>" << endl;
-  os << "</unitcell>" << endl;
+  os << "</parameter>" << std::endl;
+  //os << "<parameter name=\"omega\">" << ref_.ABC << "</parameter>" << std::endl;
+  os << "</unitcell>" << std::endl;
   return true;
 }
 
@@ -200,7 +199,7 @@ xmlNodePtr LatticeXMLWriter::createNode()
 {
   xmlNodePtr cur = xmlNewNode(NULL,(const xmlChar*)"unitcell");
   std::ostringstream l;
-  l.setf(ios_base::scientific);
+  l.setf(std::ios_base::scientific);
   l.precision(12);
   l  << ref_.R;
   xmlNodePtr p=xmlNewTextChild(cur,NULL,

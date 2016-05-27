@@ -71,9 +71,9 @@ HePresetHFBuilder::put(xmlNodePtr cur)
   //DistanceTableData* d_ei = NULL;
   //cur = cur->xmlChildrenNode;
   //while(cur != NULL) {
-  //  string cname((const char*)(cur->name));
+  //  std::string cname((const char*)(cur->name));
   //  if(cname == dtable_tag) {
-  //    string dtable((const char*)(xmlGetProp(cur,(const xmlChar *)"source")));
+  //    std::string dtable((const char*)(xmlGetProp(cur,(const xmlChar *)"source")));
   //    dtable.append((const char*)(xmlGetProp(cur,(const xmlChar *)"target")));
   //    d_ei= DistanceTable::getTable(dtable.c_str());
   //    LOGMSG("DistanceTable is selected = " << dtable)

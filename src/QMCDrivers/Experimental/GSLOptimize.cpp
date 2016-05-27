@@ -73,7 +73,7 @@ GSLOptimize::~GSLOptimize()
 /** Add configuration files for the optimization
  * @param a root of a hdf5 configuration file
  */
-void GSLOptimize::addConfiguration(const string& a)
+void GSLOptimize::addConfiguration(const std::string& a)
 {
   if(a.size())
     ConfigFile.push_back(a);
@@ -90,15 +90,15 @@ GSLOptimize::run()
   //estimator has to collect the data over mpi nodes
   Estimators->setCollectionMode(OHMMS::Controller->ncontexts()>1);
   //overwrite the Etarget by E_T if E_T is zero
-  if(abs(branchEngine->E_T)>numeric_limits<RealType>::epsilon())
+  if(abs(branchEngine->E_T)>std::numeric_limits<RealType>::epsilon())
   {
     Etarget=branchEngine->E_T;
-    app_log() << "Etarget (set from previous runs) = " << Etarget << endl;
+    app_log() << "Etarget (set from previous runs) = " << Etarget << std::endl;
   }
   //evaluate effective target energy
   EtargetEff=(1.0+CorrelationFactor)*Etarget;
-  app_log() << "Effective Target Energy = " << EtargetEff << endl;
-  app_log() << "Cost Function = " << w_en << "*<E> + " << w_var << "*<Var> + " << w_abs << "*|E-E_T|^" << PowerE << endl;
+  app_log() << "Effective Target Energy = " << EtargetEff << std::endl;
+  app_log() << "Cost Function = " << w_en << "*<E> + " << w_var << "*<Var> + " << w_abs << "*|E-E_T|^" << PowerE << std::endl;
   ConjugateGradient CG;
   CG.Tolerance = cg_tolerance;
   CG.StepSize = cg_stepsize;
@@ -169,8 +169,8 @@ GSLOptimize::RealType GSLOptimize::correlatedSampling()
     //////////////////////////////////////////
     //ValueType logpsi2(Psi.evaluateLog(W));
     //RealType et= H.evaluate(W);
-    //if(abs(logpsi+saved[LOGPSI_FIXED]-logpsi2)>1e-10 || abs(et-eloc_new)>1e-3)
-    //  cout << "Check wfs and energy " << logpsi+saved[LOGPSI_FIXED]-logpsi2 << " " << et-eloc_new << endl;
+    //if(abs(logpsi+saved[LOGPSI_FIXED]-logpsi2)>1e-10 || std::abs(et-eloc_new)>1e-3)
+    //  std::cout << "Check wfs and energy " << logpsi+saved[LOGPSI_FIXED]-logpsi2 << " " << et-eloc_new << std::endl;
     saved[ENERGY_NEW]=eloc_new;
     saved[REWEIGHT]=weight;
     RealType delE=pow(abs(eloc_new-EtargetEff),PowerE);
@@ -229,14 +229,14 @@ void GSLOptimize::checkConfigurations()
     ConfigFile.erase(ConfigFile.begin(),ConfigFile.end());
   }
   //Need to sum over the processors
-  vector<RealType> etemp(2);
+  std::vector<RealType> etemp(2);
   etemp[0]=Etarget;
   etemp[1]=static_cast<RealType>(NumSamples);
   gsum(etemp,0);
   Etarget = static_cast<RealType>(etemp[0]/etemp[1]);
   NumSamples = static_cast<int>(etemp[1]);
-  app_log() << "Total number of walkers          = " << NumSamples << endl;
-  app_log() << "Etarget (guess from the average) = " << Etarget << endl;
+  app_log() << "Total number of walkers          = " << NumSamples << std::endl;
+  app_log() << "Etarget (guess from the average) = " << Etarget << std::endl;
 }
 
 /** Reset the Wavefunction \f$ \Psi({\bf R},{{\bf \alpha_i}}) \f$
@@ -292,8 +292,8 @@ void GSLOptimize::Report()
       for(int iparam=0; iparam<result->nodesetval->nodeNr; iparam++)
       {
         xmlNodePtr cur= result->nodesetval->nodeTab[iparam];
-        string aname((const char*)xmlGetProp(cur,(const xmlChar*)"id"));
-        vector<string>::iterator it= find(IDtag.begin(), IDtag.end(), aname);
+        std::string aname((const char*)xmlGetProp(cur,(const xmlChar*)"id"));
+        std::vector<std::string>::iterator it= find(IDtag.begin(), IDtag.end(), aname);
         if(it != IDtag.end())
         {
           int item=it-IDtag.begin();
@@ -356,12 +356,12 @@ GSLOptimize::put(xmlNodePtr q)
 {
   xmlNodePtr qsave=q;
   //Estimators.put(q);
-  vector<xmlNodePtr> oset,cset;
+  std::vector<xmlNodePtr> oset,cset;
   xmlNodePtr cur=qsave->children;
   int pid=OHMMS::Controller->mycontext();
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == "mcwalkerset")
     {
       mcwalkerNodePtr.push_back(cur);
@@ -387,7 +387,7 @@ GSLOptimize::put(xmlNodePtr q)
       NumParts=ng;
       PartID=pid%ng;
       int mygroup=pid/ng;
-      string fname("invalid");
+      std::string fname("invalid");
       OhmmsAttributeSet pAttrib;
       pAttrib.add(fname,"href");
       pAttrib.add(fname,"src");
@@ -402,7 +402,7 @@ GSLOptimize::put(xmlNodePtr q)
       for(int ifile=0; ifile<nfile; ifile++)
       {
         int pid_target=pid;
-        string fname("invalid");
+        std::string fname("invalid");
         OhmmsAttributeSet pAttrib;
         pAttrib.add(pid_target,"node");
         pAttrib.add(fname,"href");
@@ -429,38 +429,38 @@ GSLOptimize::put(xmlNodePtr q)
       if(att)
       {
         optmethod = (const char*)att;
-        LogOut->getStream() << "#Optimization: using " << optmethod << " method." << endl;
+        LogOut->getStream() << "#Optimization: using " << optmethod << " method." << std::endl;
       }
       else
       {
         optmethod = "cg";
-        LogOut->getStream() << "#Optimization: using " << optmethod << " method." << endl;
+        LogOut->getStream() << "#Optimization: using " << optmethod << " method." << std::endl;
       }
-      vector<string> idtag;
+      std::vector<std::string> idtag;
       putContent(idtag,oset[i]);
       IDtag.reserve(idtag.size());
       for(int id=0; id<idtag.size(); id++)
       {
-        vector<string>::iterator it
+        std::vector<std::string>::iterator it
         = std::find(IDtag.begin(), IDtag.end(),idtag[id]);
         if(it == IDtag.end())
           IDtag.push_back(idtag[id]);
       }
-      std::copy(IDtag.begin(),IDtag.end(),
-                ostream_iterator<string>(log_buffer," "));
-      LogOut->getStream() << "#Optimiziable variables " << log_buffer.rdbuf() << endl;
+      copy(IDtag.begin(),IDtag.end(),
+                std::ostream_iterator<std::string>(log_buffer," "));
+      LogOut->getStream() << "#Optimiziable variables " << log_buffer.rdbuf() << std::endl;
       log_buffer.clear();
     }
   }
   if(cset.empty())
   {
-    LogOut->getStream() << "#Using Default Cost Function: Cost = <|E-E_ff|^2>" << endl;
+    LogOut->getStream() << "#Using Default Cost Function: Cost = <|E-E_ff|^2>" << std::endl;
   }
   else
   {
     for(int i=0; i<cset.size(); i++)
     {
-      string pname;
+      std::string pname;
       RealType wgt=1.0;
       OhmmsAttributeSet pAttrib;
       pAttrib.add(pname,"name");
@@ -479,16 +479,16 @@ GSLOptimize::put(xmlNodePtr q)
   LogOut->getStream() << "#" << optmethod << " values: tolerance = "
                       << cg_tolerance << " stepsize = " << cg_stepsize
                       << " epsilon = " << cg_epsilon << " Tau = "
-                      << Tau << endl;
+                      << Tau << std::endl;
   if(!UseWeight)
   {
-    LogOut->getStream() << "#All weights set to 1.0" << endl;
+    LogOut->getStream() << "#All weights set to 1.0" << std::endl;
   }
   putOptParams();
   LogOut->getStream()
-      << "# list of the configuration files used for optimization" << endl;
+      << "# list of the configuration files used for optimization" << std::endl;
   for(int i=0; i<ConfigFile.size(); i++)
-    LogOut->getStream() << "# " << ConfigFile[i] << " part " << PartID << "/" << NumParts << endl;
+    LogOut->getStream() << "# " << ConfigFile[i] << " part " << PartID << "/" << NumParts << std::endl;
   return true;
 }
 
@@ -523,11 +523,11 @@ GSLOptimize::putOptParams()
   {
     paramList[i] = OptParams;
   }
-  log_buffer.setf(ios::scientific, ios::floatfield);
+  log_buffer.setf(std::ios::scientific, std::ios::floatfield);
   log_buffer.precision(8);
   log_buffer << "#Inital Variables ";
-  std::copy(OptParams.begin(),OptParams.end(), ostream_iterator<RealType>(log_buffer," "));
-  LogOut->getStream() << log_buffer.rdbuf() << endl << endl;
+  copy(OptParams.begin(),OptParams.end(), std::ostream_iterator<RealType>(log_buffer," "));
+  LogOut->getStream() << log_buffer.rdbuf() << std::endl << std::endl;
   log_buffer.clear();
   Psi.reset();
   return true;

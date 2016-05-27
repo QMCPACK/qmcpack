@@ -27,7 +27,7 @@ void ECPComponentBuilder::addSemiLocal(xmlNodePtr cur)
   cur=cur->children;
   while(cur != NULL)
   {
-    string cname((const char*)cur->name);
+    std::string cname((const char*)cur->name);
     if(cname == "grid")
     {
       grid_semilocal=createGrid(cur);
@@ -41,7 +41,7 @@ void ECPComponentBuilder::addSemiLocal(xmlNodePtr cur)
       xmlNodePtr cur1=cur->children;
       while(cur1 != NULL)
       {
-        string cname1((const char*)cur1->name);
+        std::string cname1((const char*)cur1->name);
         if(cname1 == "basisGroup")
         {
           pp_nonloc->add(l,createVrWithBasisGroup(cur1,grid_semilocal));
@@ -76,8 +76,8 @@ ECPComponentBuilder::createVrWithBasisGroup(xmlNodePtr cur, GridType* agrid)
     rout-=0.01;
   }
   rout += 0.01;
-  app_log() << "  cutoff for non-local pseudopotential = " << agrid->rmax() << endl;
-  app_log() << "  calculated cutoff for " << eps << " = " << rout << endl;
+  app_log() << "  cutoff for non-local pseudopotential = " << agrid->rmax() << std::endl;
+  app_log() << "  calculated cutoff for " << eps << " = " << rout << std::endl;
   int ng = agrid->size();
   if(agrid->GridTag != LINEAR_1DGRID)// || rout > agrid->rmax())
   {
@@ -86,7 +86,7 @@ ECPComponentBuilder::createVrWithBasisGroup(xmlNodePtr cur, GridType* agrid)
     delete agrid;
     agrid = new LinearGrid<RealType>;
     agrid->set(ri,rf,ng);
-    app_log() << "  Reset the grid for SemiLocal component to a LinearGrid. " << endl;
+    app_log() << "  Reset the grid for SemiLocal component to a LinearGrid. " << std::endl;
   }
   std::vector<RealType> v(ng);
   for(int ig=0; ig<ng; ig++)
@@ -110,7 +110,7 @@ void ECPComponentBuilder::buildLocal(xmlNodePtr cur)
 {
   if(pp_loc)
     return; //something is wrong
-  string vFormat("V");
+  std::string vFormat("V");
   const xmlChar* vptr=xmlGetProp(cur,(const xmlChar*)"format");
   if(vptr != NULL)
   {
@@ -119,12 +119,12 @@ void ECPComponentBuilder::buildLocal(xmlNodePtr cur)
   int vPowerCorrection=1;
   if(vFormat == "r*V")
   {
-    app_log() << "  Local pseudopotential format = r*V" << endl;
+    app_log() << "  Local pseudopotential format = r*V" << std::endl;
     vPowerCorrection=0;
   }
   else
   {
-    app_log() << "  Local pseudopotential format = V" << endl;
+    app_log() << "  Local pseudopotential format = V" << std::endl;
   }
   typedef GaussianTimesRN<RealType> InFuncType;
   GridType* grid_local=0;
@@ -133,7 +133,7 @@ void ECPComponentBuilder::buildLocal(xmlNodePtr cur)
   cur=cur->children;
   while(cur != NULL)
   {
-    string cname((const char*)cur->name);
+    std::string cname((const char*)cur->name);
     if(cname == "grid")
     {
       grid_local=createGrid(cur,true);
@@ -148,7 +148,7 @@ void ECPComponentBuilder::buildLocal(xmlNodePtr cur)
         if(cname == "data")
         {
           pp_loc=createVrWithData(cur,grid_local,vPowerCorrection);
-          app_log() << "  Local pseduopotential in a <data/>" << endl;
+          app_log() << "  Local pseduopotential in a <data/>" << std::endl;
           return;
         }
     cur=cur->next;
@@ -167,10 +167,10 @@ void ECPComponentBuilder::buildLocal(xmlNodePtr cur)
   }
   else
   {
-    vector<RealType> v;
+    std::vector<RealType> v;
     if(bareCoulomb)
     {
-      app_log() << "   Bare Coulomb potential is used." << endl;
+      app_log() << "   Bare Coulomb potential is used." << std::endl;
       grid_local->set(0.0,1.,3);
       v.resize(3);
       for(int ig=0; ig<3; ig++)
@@ -180,7 +180,7 @@ void ECPComponentBuilder::buildLocal(xmlNodePtr cur)
     }
     else
     {
-      app_log() << "   Guassian basisGroup is used: base power " << vr.basePower << endl;
+      app_log() << "   Guassian basisGroup is used: base power " << vr.basePower << std::endl;
       const RealType eps=1e-12;//numeric_limits<RealType>::epsilon();//1e-12;
       RealType zinv=1.0/Zeff;
       RealType r=10.;
@@ -194,11 +194,11 @@ void ECPComponentBuilder::buildLocal(xmlNodePtr cur)
       }
       if(last ==0)
       {
-        app_error() << "  Illegal Local Pseudopotential " <<endl;
+        app_error() << "  Illegal Local Pseudopotential " << std::endl;
       }
       //Add the reset values here
       int ng=static_cast<int>(r/1e-3)+1;
-      app_log() << "     Use a Linear Grid: [0,"<< r << "] Number of points = " << ng << endl;
+      app_log() << "     Use a Linear Grid: [0,"<< r << "] Number of points = " << ng << std::endl;
       grid_local->set(0.0,r,ng);
       v.resize(ng);
       for(int ig=1; ig<ng-1; ig++)
@@ -222,8 +222,8 @@ ECPComponentBuilder::GridType* ECPComponentBuilder::createGrid(xmlNodePtr cur, b
   RealType astep = -1.0;
   //RealType astep = 1.25e-2;
   int npts = 1001;
-  string gridType("log");
-  string gridID("global");
+  std::string gridType("log");
+  std::string gridID("global");
   OhmmsAttributeSet radAttrib;
   radAttrib.add(gridType,"type");
   radAttrib.add(gridID,"grid_id");
@@ -238,7 +238,7 @@ ECPComponentBuilder::GridType* ECPComponentBuilder::createGrid(xmlNodePtr cur, b
   radAttrib.add(ascale,"scale");
   radAttrib.add(astep,"step");
   radAttrib.put(cur);
-  map<string,GridType*>::iterator git(grid_inp.find(gridID));
+  std::map<std::string,GridType*>::iterator git(grid_inp.find(gridID));
   if(git != grid_inp.end())
   {
     return (*git).second; //use the same grid
@@ -254,15 +254,15 @@ ECPComponentBuilder::GridType* ECPComponentBuilder::createGrid(xmlNodePtr cur, b
   {
     if(ascale>0.0)
     {
-      app_log() << "   Log grid scale=" << ascale << " step=" << astep << " npts=" << npts << endl;
+      app_log() << "   Log grid scale=" << ascale << " step=" << astep << " npts=" << npts << std::endl;
       agrid = new LogGridZero<RealType>;
       agrid->set(astep,ascale,npts);
     }
     else
     {
-      if(ri<numeric_limits<RealType>::epsilon())
+      if(ri<std::numeric_limits<RealType>::epsilon())
       {
-        ri=numeric_limits<RealType>::epsilon();
+        ri= std::numeric_limits<RealType>::epsilon();
       }
       agrid = new LogGrid<RealType>;
       agrid->set(ri,rf,npts);
@@ -277,7 +277,7 @@ ECPComponentBuilder::GridType* ECPComponentBuilder::createGrid(xmlNodePtr cur, b
         npts = static_cast<int>((rf-ri)/astep)+1;
       }
       agrid->set(ri,rf,npts);
-      app_log() << "   Linear grid  ri=" << ri << " rf=" << rf << " npts = " << npts << endl;
+      app_log() << "   Linear grid  ri=" << ri << " rf=" << rf << " npts = " << npts << std::endl;
     }
     else
       //accept numerical data
@@ -285,13 +285,13 @@ ECPComponentBuilder::GridType* ECPComponentBuilder::createGrid(xmlNodePtr cur, b
       xmlNodePtr cur1=cur->children;
       while(cur1 != NULL)
       {
-        string cname((const char*)cur1->name);
+        std::string cname((const char*)cur1->name);
         if(cname == "data")
         {
           std::vector<double> gIn(npts);
           putContent(gIn,cur1);
           agrid = new NumericalGrid<RealType>(gIn);
-          app_log() << "   Numerical grid npts = " <<  gIn.size() << endl;
+          app_log() << "   Numerical grid npts = " <<  gIn.size() << std::endl;
         }
         cur1 = cur1->next;
       }
@@ -316,11 +316,11 @@ ECPComponentBuilder::createVrWithData(xmlNodePtr cur, GridType* agrid, int rCorr
   //    newgrid->set(0.0,RcutMax,static_cast<int>(RcutMax*delta)+1);
   //  }
   //  //read the numerical data
-  //  vector<RealType> pdata;
+  //  std::vector<RealType> pdata;
   //  putContent(pdata,cur);
   //  if(pdata.size() != agrid->size())
   //  {
-  //    app_error() << "  ECPComponentBuilder::createVrWithData vsp/data size does not match." << endl;
+  //    app_error() << "  ECPComponentBuilder::createVrWithData vsp/data size does not match." << std::endl;
   //    abort(); //FIXABORT
   //  }
   //  if(rCorrection == 1)

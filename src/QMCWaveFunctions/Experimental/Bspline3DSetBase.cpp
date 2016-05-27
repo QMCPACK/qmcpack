@@ -42,7 +42,7 @@ void Bspline3DSetBase::resetParameters(const opt_variables_type& active)
 {
   //do nothing
 }
-void Bspline3DSetBase::reportStatus(ostream& os)
+void Bspline3DSetBase::reportStatus(std::ostream& os)
 {
   //do nothing
 }
@@ -75,9 +75,9 @@ void Bspline3DSetBase::setGrid(RealType xi, RealType xf,
                                int nx, int ny, int nz,
                                bool pbcx, bool pbcy, bool pbcz, bool openend)
 {
-  cout << "### Bspline3DSetBase::setGrid "
+  std::cout << "### Bspline3DSetBase::setGrid "
        << xf << " " << yf << " " << zf << " "
-       << Orthorhombic << " " << pbcx << " " << pbcy << " " << pbcz << endl;
+       << Orthorhombic << " " << pbcx << " " << pbcy << " " << pbcz << std::endl;
   if(Orthorhombic)
     bKnots.setGrid(xi,xf,yi,yf,zi,zf,nx,ny,nz,pbcx,pbcy,pbcz,openend);
   else
@@ -142,7 +142,7 @@ void Bspline3DSetBase::tileOrbitals(const TinyVector<int,3>& boxdup)
         }
       }
   //for(i=0; i<OrbitalSetSize; i++)
-  //  app_log() << Centers[i] << endl;
+  //  app_log() << Centers[i] << std::endl;
 }
 
 //  void TricubicBsplineSetBuilder::createBsplineBasisSet(xmlNodePtr cur,
@@ -158,7 +158,7 @@ void Bspline3DSetBase::tileOrbitals(const TinyVector<int,3>& boxdup)
 //
 //    bool truncate = (myParam->Rcut>0.0);
 //
-//    vector<int> occSet(norb);
+//    std::vector<int> occSet(norb);
 //    for(int i=0; i<norb; i++) occSet[i]=i;
 //
 //    //set the root name
@@ -168,16 +168,16 @@ void Bspline3DSetBase::tileOrbitals(const TinyVector<int,3>& boxdup)
 //    int spinIndex=0;
 //    cur=cur->children;
 //    while(cur != NULL) {
-//      string cname((const char*)(cur->name));
+//      std::string cname((const char*)(cur->name));
 //      if(cname == "occupation") {
-//        string occ_mode("ground");
+//        std::string occ_mode("ground");
 //        OhmmsAttributeSet oAttrib;
 //        oAttrib.add(occ_mode,"mode");
 //        oAttrib.add(spinIndex,"spindataset");
 //        oAttrib.put(cur);
 //        //Do nothing if mode == ground
 //        if(occ_mode == "excited") {
-//          vector<int> occ_in, occRemoved;
+//          std::vector<int> occ_in, occRemoved;
 //          putContent(occ_in,cur);
 //          for(int k=0; k<occ_in.size(); k++) {
 //            if(occ_in[k]<0)
@@ -217,7 +217,7 @@ void Bspline3DSetBase::tileOrbitals(const TinyVector<int,3>& boxdup)
 //#if defined(QMC_COMPLEX)
 //    if(!complex2real)
 //    {
-//      app_error() << "  Real wavefunctions cannot be used with QMC_COMPLEX=1" << endl;
+//      app_error() << "  Real wavefunctions cannot be used with QMC_COMPLEX=1" << std::endl;
 //      abort(); //FIXABORT
 //    }
 //    complex2real = false;//reset to false
@@ -233,19 +233,19 @@ void Bspline3DSetBase::tileOrbitals(const TinyVector<int,3>& boxdup)
 //      {
 //        if(truncate)
 //        {
-//          string centerName=myParam->getCenterName(hroot,occSet[iorb]);
+//          std::string centerName=myParam->getCenterName(hroot,occSet[iorb]);
 //          HDFAttribIO<PosType > cdummy(center);
 //          cdummy.read(hfileID,centerName.c_str());
 //        }
-//        ostringstream wnshort;
-//        string eigvName=myParam->getEigVectorName(hroot,occSet[iorb]/degeneracy,spinIndex);
+//        std::ostringstream wnshort;
+//        std::string eigvName=myParam->getEigVectorName(hroot,occSet[iorb]/degeneracy,spinIndex);
 //        wnshort<<curH5Fname << "#"<<occSet[iorb]/degeneracy << "#" << spinIndex;
-//        map<string,StorageType*>::iterator it(BigDataSet.find(wnshort.str()));
+//        std::map<std::string,StorageType*>::iterator it(BigDataSet.find(wnshort.str()));
 //        if(it == BigDataSet.end()) {
 //          if(print_log)
 //          {
-//            app_log() << "   Reading spline function " << eigvName << " (" << wnshort.str()  << ")"  << endl;
-//            if(truncate) app_log() << "     center=" << center << endl;
+//            app_log() << "   Reading spline function " << eigvName << " (" << wnshort.str()  << ")"  << std::endl;
+//            if(truncate) app_log() << "     center=" << center << std::endl;
 //          }
 //          StorageType* newP =new StorageType;
 //          HDFAttribIO<Array<ComplexType,3> > dummy(inTemp);
@@ -256,8 +256,8 @@ void Bspline3DSetBase::tileOrbitals(const TinyVector<int,3>& boxdup)
 //        } else {
 //          if(print_log)
 //          {
-//            app_log() << "   Reusing spline function " << eigvName << " (" << wnshort.str()  << ")" << endl;
-//            if(truncate) app_log() << "     center=" << center << endl;
+//            app_log() << "   Reusing spline function " << eigvName << " (" << wnshort.str()  << ")" << std::endl;
+//            if(truncate) app_log() << "     center=" << center << std::endl;
 //          }
 //          abasis->add(iorb,center,(*it).second);
 //        }
@@ -268,19 +268,19 @@ void Bspline3DSetBase::tileOrbitals(const TinyVector<int,3>& boxdup)
 //      for(int iorb=0; iorb<norb; iorb++) {
 //        if(truncate)
 //        {
-//          string centerName=myParam->getCenterName(hroot,occSet[iorb]);
+//          std::string centerName=myParam->getCenterName(hroot,occSet[iorb]);
 //          HDFAttribIO<PosType > cdummy(center);
 //          cdummy.read(hfileID,centerName.c_str());
 //        }
-//        ostringstream wnshort;
-//        string eigvName=myParam->getEigVectorName(hroot,occSet[iorb]/degeneracy,spinIndex);
+//        std::ostringstream wnshort;
+//        std::string eigvName=myParam->getEigVectorName(hroot,occSet[iorb]/degeneracy,spinIndex);
 //        wnshort<<curH5Fname << "#"<<occSet[iorb]/degeneracy << "#" << spinIndex;
-//        map<string,StorageType*>::iterator it(BigDataSet.find(wnshort.str()));
+//        std::map<std::string,StorageType*>::iterator it(BigDataSet.find(wnshort.str()));
 //        if(it == BigDataSet.end()) {
 //          if(print_log)
 //          {
-//            app_log() << "   Reading spline function " << eigvName << " (" << wnshort.str()  << ")"  << endl;
-//            if(truncate) app_log() << "     center=" << center << endl;
+//            app_log() << "   Reading spline function " << eigvName << " (" << wnshort.str()  << ")"  << std::endl;
+//            if(truncate) app_log() << "     center=" << center << std::endl;
 //          }
 //          StorageType* newP=new StorageType;
 //          HDFAttribIO<StorageType> dummy(inData);
@@ -290,8 +290,8 @@ void Bspline3DSetBase::tileOrbitals(const TinyVector<int,3>& boxdup)
 //        } else {
 //          if(print_log)
 //          {
-//            app_log() << "   Reusing spline function " << eigvName << " (" << wnshort.str()  << ")" << endl;
-//            if(truncate) app_log() << "     center=" << center << endl;
+//            app_log() << "   Reusing spline function " << eigvName << " (" << wnshort.str()  << ")" << std::endl;
+//            if(truncate) app_log() << "     center=" << center << std::endl;
 //          }
 //          abasis->add(iorb,center,(*it).second);
 //        }
@@ -299,7 +299,7 @@ void Bspline3DSetBase::tileOrbitals(const TinyVector<int,3>& boxdup)
 //    }
 //    if(truncate) {
 //      if(print_log)
-//        app_log() << "   Truncating orbitals at Rcut= " << myParam->Rcut << endl;
+//        app_log() << "   Truncating orbitals at Rcut= " << myParam->Rcut << std::endl;
 //      abasis->setRcut(myParam->Rcut);
 //    }
 //  }

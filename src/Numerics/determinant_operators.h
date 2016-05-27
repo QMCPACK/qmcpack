@@ -75,7 +75,7 @@ struct const_traits<std::complex<double> >
 //    BLAS::gemv('T', m, m, ratio_inv, pinv, m, tv, 1, T(), temp, 1);
 //    int roffset=rowchanged*m;
 //    temp[rowchanged]=1.0-ratio_inv;
-//    std::copy(pinv+roffset,pinv+roffset+m,rcopy);
+//    copy(pinv+roffset,pinv+roffset+m,rcopy);
 //    for(int i=0,ij=0;i<m;++i)
 //    {
 //      T t=temp[i];
@@ -161,7 +161,7 @@ inline void multidet_row_update(const T* restrict pinv,  const T* restrict tm, c
   double temp[m], rcopy[m];
   int roffset=rowchanged*m;
   int m2=m*m;
-  std::copy(pinv+roffset,pinv+roffset+m,rcopy);
+  copy(pinv+roffset,pinv+roffset+m,rcopy);
   for(int r=0; r<howmany; ++r)
   {
     T ratio_inv=1.0/ratios[r];
@@ -183,7 +183,7 @@ inline void multidet_row_update(const T* restrict pinv,  const T* restrict tm, c
   double temp[m], rcopy[m];
   int roffset=rowchanged*m;
   int m2=m*m;
-  std::copy(pinv+roffset,pinv+roffset+m,rcopy);
+  copy(pinv+roffset,pinv+roffset+m,rcopy);
   for(int k=0; k<ind.size(); ++k)
   {
     int r=ind[k];
@@ -198,12 +198,12 @@ inline void multidet_row_update(const T* restrict pinv,  const T* restrict tm, c
 
 template<typename MAT, typename VV, typename INDARRAY>
 inline void multidet_row_update(const MAT& pinv,  const MAT& tm, const VV& ratios
-                                , vector<MAT*> new_invs, int m, int rowchanged, const INDARRAY& ind)
+                                , std::vector<MAT*> new_invs, int m, int rowchanged, const INDARRAY& ind)
 {
   typedef typename MAT::value_type value_type;
   value_type temp[m], rcopy[m];
   int roffset=rowchanged*m;
-  std::copy(pinv.data()+roffset,pinv.data()+roffset+m,rcopy);
+  copy(pinv.data()+roffset,pinv.data()+roffset+m,rcopy);
   for(int k=0; k<ind.size(); ++k)
   {
     value_type ratio_inv=1.0/ratios[k];

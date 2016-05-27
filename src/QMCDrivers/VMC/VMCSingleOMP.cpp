@@ -116,7 +116,7 @@ bool VMCSingleOMP::run()
   {
     wrotesamples=W.dumpEnsemble(wClones,wOut,myComm->size(),nBlocks);
     if(wrotesamples)
-      app_log() << "  samples are written to the config.h5" << endl;
+      app_log() << "  samples are written to the config.h5" << std::endl;
   }
   //finalize a qmc section
   return finalize(nBlocks,!wrotesamples);
@@ -130,8 +130,8 @@ void VMCSingleOMP::resetRun()
   makeClones(W,Psi,H);
   FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
   app_log() << "  Initial partition of walkers ";
-  std::copy(wPerNode.begin(),wPerNode.end(),ostream_iterator<int>(app_log()," "));
-  app_log() << endl;
+  copy(wPerNode.begin(),wPerNode.end(),std::ostream_iterator<int>(app_log()," "));
+  app_log() << std::endl;
 
   bool movers_created=false;
   if (Movers.empty())
@@ -147,7 +147,7 @@ void VMCSingleOMP::resetRun()
 #endif
     for(int ip=0; ip<NumThreads; ++ip)
     {
-      ostringstream os;
+      std::ostringstream os;
       estimatorClones[ip]= new EstimatorManager(*Estimators);//,*hClones[ip]);
       estimatorClones[ip]->resetTargetParticleSet(*wClones[ip]);
       estimatorClones[ip]->setCollectionMode(false);
@@ -159,13 +159,13 @@ void VMCSingleOMP::resetRun()
       branchClones[ip] = new BranchEngineType(*branchEngine);
       //         if(reweight=="yes")
       //         {
-      //           if (ip== 0) app_log() << "  WFMCUpdateAllWithReweight"<<endl;
+      //           if (ip== 0) app_log() << "  WFMCUpdateAllWithReweight"<< std::endl;
       //           Movers[ip]=new WFMCUpdateAllWithReweight(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip],weightLength,Eindex);
       //         }
       //         else
       //           if (reweight=="psi")
       //           {
-      //             os << "  Sampling Psi to increase number of walkers near nodes"<<endl;
+      //             os << "  Sampling Psi to increase number of walkers near nodes"<< std::endl;
       //             if (QMCDriverMode[QMC_UPDATE_MODE]) Movers[ip]=new VMCUpdatePbyPSamplePsi(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
       //             else Movers[ip]=new VMCUpdateAllSamplePsi(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
       //           }
@@ -174,7 +174,7 @@ void VMCSingleOMP::resetRun()
       {
         //             if (UseDrift == "rn")
         //             {
-        //               os <<"  PbyP moves with RN, using VMCUpdatePbyPSampleRN"<<endl;
+        //               os <<"  PbyP moves with RN, using VMCUpdatePbyPSampleRN"<< std::endl;
         //               Movers[ip]=new VMCUpdatePbyPSampleRN(*wClones[ip],*psiClones[ip],*guideClones[ip],*hClones[ip],*Rng[ip]);
         //               Movers[ip]->setLogEpsilon(logepsilon);
         //               // Movers[ip]=new VMCUpdatePbyPWithDrift(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
@@ -182,13 +182,13 @@ void VMCSingleOMP::resetRun()
         //             else
         if (UseDrift == "yes")
         {
-          os <<"  PbyP moves with drift, using VMCUpdatePbyPWithDriftFast"<<endl;
+          os <<"  PbyP moves with drift, using VMCUpdatePbyPWithDriftFast"<< std::endl;
           Movers[ip]=new VMCUpdatePbyPWithDriftFast(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
           // Movers[ip]=new VMCUpdatePbyPWithDrift(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
         }
         else
         {
-          os <<"  PbyP moves with |psi^2|, using VMCUpdatePbyP"<<endl;
+          os <<"  PbyP moves with |psi^2|, using VMCUpdatePbyP"<< std::endl;
           Movers[ip]=new VMCUpdatePbyP(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
         }
         //Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
@@ -197,26 +197,26 @@ void VMCSingleOMP::resetRun()
       {
         //             if (UseDrift == "rn")
         //             {
-        //               os <<"  walker moves with RN, using VMCUpdateAllSampleRN"<<endl;
+        //               os <<"  walker moves with RN, using VMCUpdateAllSampleRN"<< std::endl;
         //               Movers[ip]=new VMCUpdateAllSampleRN(*wClones[ip],*psiClones[ip],*guideClones[ip],*hClones[ip],*Rng[ip]);
         //               Movers[ip]->setLogEpsilon(logepsilon);
         //             }
         //             else
         if (UseDrift == "yes")
         {
-          os <<"  walker moves with drift, using VMCUpdateAllWithDriftFast"<<endl;
+          os <<"  walker moves with drift, using VMCUpdateAllWithDriftFast"<< std::endl;
           Movers[ip]=new VMCUpdateAllWithDrift(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
         }
         else
         {
-          os <<"  walker moves with |psi|^2, using VMCUpdateAll"<<endl;
+          os <<"  walker moves with |psi|^2, using VMCUpdateAll"<< std::endl;
           Movers[ip]=new VMCUpdateAll(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
         }
         //Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip]);
       }
       Movers[ip]->nSubSteps=nSubSteps;
       if(ip==0)
-        app_log() << os.str() << endl;
+        app_log() << os.str() << std::endl;
     }
   }
 #if !defined(REMOVE_TRACEMANAGER)
@@ -231,13 +231,13 @@ void VMCSingleOMP::resetRun()
     }
   }
 #endif
-  app_log() << "  Total Sample Size   =" << nTargetSamples << endl;
+  app_log() << "  Total Sample Size   =" << nTargetSamples << std::endl;
   app_log() << "  Walker distribution on root = ";
-  std::copy(wPerNode.begin(),wPerNode.end(),ostream_iterator<int>(app_log()," "));
-  app_log() << endl;
-  //app_log() << "  Sample Size per node=" << samples_this_node << endl;
+  copy(wPerNode.begin(),wPerNode.end(),std::ostream_iterator<int>(app_log()," "));
+  app_log() << std::endl;
+  //app_log() << "  Sample Size per node=" << samples_this_node << std::endl;
   //for (int ip=0; ip<NumThreads; ++ip)
-  //  app_log()  << "    Sample size for thread " <<ip<<" = " << samples_th[ip] << endl;
+  //  app_log()  << "    Sample size for thread " <<ip<<" = " << samples_th[ip] << std::endl;
   app_log().flush();
 #if !defined(BGP_BUG)
   #pragma omp parallel for
@@ -263,7 +263,7 @@ void VMCSingleOMP::resetRun()
   if(movers_created)
   {
     size_t before=qmc_common.memory_allocated;
-    app_log() << "  Anonymous Buffer size per walker " << W[0]->DataSet.size() << endl;
+    app_log() << "  Anonymous Buffer size per walker " << W[0]->DataSet.size() << std::endl;
     qmc_common.memory_allocated+=W.getActiveWalkers()*W[0]->DataSet.size()*sizeof(OHMMS_PRECISION);
     qmc_common.print_memory_change("VMCSingleOMP::resetRun",before);
   }
@@ -338,7 +338,7 @@ VMCSingleOMP::put(xmlNodePtr q)
   p.put(q);
 
   app_log() << "\n<vmc function=\"put\">"
-    << "\n  qmc_counter=" << qmc_common.qmc_counter << "  my_counter=" << MyCounter<< endl;
+    << "\n  qmc_counter=" << qmc_common.qmc_counter << "  my_counter=" << MyCounter<< std::endl;
   if(qmc_common.qmc_counter && MyCounter)
   {
     nSteps=prevSteps;
@@ -379,30 +379,30 @@ VMCSingleOMP::put(xmlNodePtr q)
   prevSteps=nSteps;
   prevStepsBetweenSamples=nStepsBetweenSamples;
 
-  app_log() << "  time step      = " << Tau << endl;
-  app_log() << "  blocks         = " << nBlocks << endl;
-  app_log() << "  steps          = " << nSteps << endl;
-  app_log() << "  substeps       = " << nSubSteps << endl;
-  app_log() << "  current        = " << CurrentStep << endl;
-  app_log() << "  target samples = " << nTargetPopulation << endl;
-  app_log() << "  walkers/mpi    = " << W.getActiveWalkers() << endl << endl;
-  app_log() << "  stepsbetweensamples = " << nStepsBetweenSamples << endl;
+  app_log() << "  time step      = " << Tau << std::endl;
+  app_log() << "  blocks         = " << nBlocks << std::endl;
+  app_log() << "  steps          = " << nSteps << std::endl;
+  app_log() << "  substeps       = " << nSubSteps << std::endl;
+  app_log() << "  current        = " << CurrentStep << std::endl;
+  app_log() << "  target samples = " << nTargetPopulation << std::endl;
+  app_log() << "  walkers/mpi    = " << W.getActiveWalkers() << std::endl << std::endl;
+  app_log() << "  stepsbetweensamples = " << nStepsBetweenSamples << std::endl;
 
   m_param.get(app_log());
 
   if(DumpConfig)
   {
-    app_log() << "  DumpConfig==true Configurations are dumped to config.h5 with a period of " << Period4CheckPoint << " blocks" << endl;
+    app_log() << "  DumpConfig==true Configurations are dumped to config.h5 with a period of " << Period4CheckPoint << " blocks" << std::endl;
   }
   else
   {
-    app_log() << "  DumpConfig==false Nothing (configurations, state) will be saved." << endl;
+    app_log() << "  DumpConfig==false Nothing (configurations, state) will be saved." << std::endl;
   }
 
   if (Period4WalkerDump>0)
-    app_log() << "  Walker Samples are dumped every " << Period4WalkerDump << " steps." << endl;
+    app_log() << "  Walker Samples are dumped every " << Period4WalkerDump << " steps." << std::endl;
 
-  app_log() << "</vmc>" << endl;
+  app_log() << "</vmc>" << std::endl;
   app_log().flush();
 
   return true;

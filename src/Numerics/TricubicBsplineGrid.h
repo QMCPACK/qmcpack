@@ -130,7 +130,7 @@ struct TricubicBsplineGrid
 //     void setLattice(const CrystalLattice<real_type,3>& lat)
 //     {
 //       Lattice.set(lat);
-//       Lattice.print(cout);
+//       Lattice.print(std::cout);
 //       GGt=dot(Lattice.G,transpose(Lattice.G));
 //     }
 //   };

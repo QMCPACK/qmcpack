@@ -34,9 +34,9 @@ int main(int argc, char** argv)
   counts[0]=n/comm->size();
   offsets[0]=(n/comm->size())*comm->rank();
 
-  cout << comm->rank() << " " << counts << " " << offsets << endl;
+  std::cout << comm->rank() << " " << counts << " " << offsets << std::endl;
 
-  typedef vector<double> buffer_t;
+  typedef std::vector<double> buffer_t;
   buffer_t mydata(counts[0],comm->rank());
 
   hdf_archive hout(comm,true);

@@ -22,7 +22,6 @@
  */
 #include "QMCApp/WaveFunctionPool.h"
 #include "QMCApp/ParticleSetPool.h"
-using namespace std;
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/OhmmsInfo.h"
 
@@ -50,7 +49,7 @@ WaveFunctionPool::~WaveFunctionPool()
 
 bool WaveFunctionPool::put(xmlNodePtr cur)
 {
-  string id("psi0"), target("e"), role("extra");
+  std::string id("psi0"), target("e"), role("extra");
   OhmmsAttributeSet pAttrib;
   pAttrib.add(id,"id");
   pAttrib.add(id,"name");
@@ -64,7 +63,7 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
     xmlNodePtr tcur=cur->children;
     while(tcur != NULL)
     { //check <determinantset/> or <sposet_builder/> to extract the ionic and electronic structure
-      string cname((const char*)tcur->name);
+      std::string cname((const char*)tcur->name);
       if(cname == OrbitalBuilderBase::detset_tag || cname =="sposet_builder")
       { 
         qp=ptclPool->createESParticleSet(tcur,target,qp);
@@ -85,7 +84,7 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
     psiFactory->setName(id);
     isPrimary = (myPool.empty() || role == "primary");
     myPool[id]=psiFactory;
-    app_log()<<" Adding WavefunctionFactory for "<<psiFactory->getName()<<endl;
+    app_log()<<" Adding WavefunctionFactory for "<<psiFactory->getName()<< std::endl;
   }
   else
   {
@@ -113,11 +112,11 @@ void  WaveFunctionPool::addFactory(WaveFunctionFactory* psifac)
   }
 }
 
-xmlNodePtr WaveFunctionPool::getWaveFunctionNode(const string& id)
+xmlNodePtr WaveFunctionPool::getWaveFunctionNode(const std::string& id)
 {
   if(myPool.empty())
     return NULL;
-  map<string,WaveFunctionFactory*>::iterator it(myPool.find(id));
+  std::map<std::string,WaveFunctionFactory*>::iterator it(myPool.find(id));
   if(it == myPool.end())
   {
     return (*myPool.begin()).second->myNode;

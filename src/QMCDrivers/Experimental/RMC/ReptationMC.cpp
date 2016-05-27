@@ -60,7 +60,7 @@ void ReptationMC::initReptile()
   //overwrite the number of cuts for Bounce algorithm
   if(UseBounce)
     NumCuts = 1;
-  app_log() << "Moving " << NumCuts << " for each reptation step" << endl;
+  app_log() << "Moving " << NumCuts << " for each reptation step" << std::endl;
   //Reptile is NOT allocated. Create one.
   if(Reptile == 0)
   {
@@ -143,7 +143,7 @@ bool ReptationMC::run()
   //Need MPI-IO
   app_log() << "ratio = "
             << static_cast<double>(nAcceptTot)/static_cast<double>(nAcceptTot+nRejectTot)
-            << endl;
+            << std::endl;
   return finalize(block);
 }
 
@@ -248,7 +248,7 @@ ReptationMC::moveReptile()
   //RealType Bounce =  UseBounce ? 1.0-accept: 0.5;
   //if(Random()<Bounce) {
   //  Reptile->flip();
-  //  LogOut->getStream() << "Bounce = " << Bounce << " " << NumTurns << " " << polymer.MoveHead << endl;
+  //  LogOut->getStream() << "Bounce = " << Bounce << " " << NumTurns << " " << polymer.MoveHead << std::endl;
   //  NumTurns++;//increase the number of turns
   //}
 }

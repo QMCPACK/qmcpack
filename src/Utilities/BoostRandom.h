@@ -172,14 +172,14 @@ public:
     curstate.clear();
     std::stringstream otemp;
     otemp << uni.engine();
-    std::copy(std::istream_iterator<uint_type>(otemp)
+    copy(std::istream_iterator<uint_type>(otemp)
               , std::istream_iterator<uint_type>(),back_inserter(curstate));
   }
 
   inline void load(const std::vector<uint_type>& newstate)
   {
     std::stringstream otemp;
-    std::copy(newstate.begin(),newstate.end(),std::ostream_iterator<uint_type>(otemp," "));
+    copy(newstate.begin(),newstate.end(),std::ostream_iterator<uint_type>(otemp," "));
     otemp >> uni.engine();
   }
 

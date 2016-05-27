@@ -48,24 +48,24 @@ private:
   //helper functions
   void fillIDMatrix();
   void fillWalkerPositionsandWeights(int nstep);
-  void readInLong(int step, string IDstring, vector<long>& data_out);
-  void readInFloat(int step, vector<float>& data_out);
+  void readInLong(int step, std::string IDstring, std::vector<long>& data_out);
+  void readInFloat(int step, std::vector<float>& data_out);
   void resetWeights();
   int getNumberOfSamples(int omittedSteps);
   //debugging functions
-  void printIDs(vector<long> vi);
-  void printInts(vector<int> vi);
+  void printIDs(std::vector<long> vi);
+  void printInts(std::vector<int> vi);
 
-  string xmlrootName;
-  stringstream fname;
+  std::string xmlrootName;
+  std::stringstream fname;
   int weightFreq, weightLength, numSteps;
 
-  vector<int> walkersPerBlock;
-  vector<int> pointsToCalculate;
-  vector<vector<int> > Weights;
-  vector<vector<long> > IDs, PIDs, realPIDs, realIDs;
+  std::vector<int> walkersPerBlock;
+  std::vector<int> pointsToCalculate;
+  std::vector<std::vector<int> > Weights;
+  std::vector<std::vector<long> > IDs, PIDs, realPIDs, realIDs;
   hid_t c_file;
-  string WIDstring,PIDstring;
+  std::string WIDstring,PIDstring;
   int verbose,startStep;
   int gensTransferred;
 };

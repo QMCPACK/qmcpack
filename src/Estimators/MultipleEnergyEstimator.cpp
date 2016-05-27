@@ -79,14 +79,14 @@ namespace qmcplusplus {
     return new MultipleEnergyEstimator(*this);
   }
 
-  void MultipleEnergyEstimator::registerObservables(vector<observable_helper*>& h5dec, hid_t gid)
+  void MultipleEnergyEstimator::registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid)
   {
     //leave it empty for a while
   }
 
   void MultipleEnergyEstimator::initialize(MCWalkerConfiguration& W
-      , vector<QMCHamiltonian*>& h, vector<TrialWaveFunction*>& psi
-      , RealType tau,vector<RealType>& Norm, bool require_register) 
+      , std::vector<QMCHamiltonian*>& h, std::vector<TrialWaveFunction*>& psi
+      , RealType tau,std::vector<RealType>& Norm, bool require_register) 
   {
     NumWalkers = W.getActiveWalkers();
     //allocate UmbrellaEnergy
@@ -96,7 +96,7 @@ namespace qmcplusplus {
     MCWalkerConfiguration::iterator it(W.begin()); 
     MCWalkerConfiguration::iterator it_end(W.end()); 
 
-    vector<RealType> sumratio(NumCopies), logpsi(NumCopies);
+    std::vector<RealType> sumratio(NumCopies), logpsi(NumCopies);
     int iw(0);
     int DataSetSize((*it)->DataSet.size());
     while(it != it_end) {
@@ -162,11 +162,11 @@ namespace qmcplusplus {
 
   void 
   MultipleEnergyEstimator
-  ::initialize(MCWalkerConfiguration& W, vector<ParticleSet*>& WW,
+  ::initialize(MCWalkerConfiguration& W, std::vector<ParticleSet*>& WW,
       SpaceWarp& Warp,
-      vector<QMCHamiltonian*>& h, 
-      vector<TrialWaveFunction*>& psi,
-      RealType tau,vector<RealType>& Norm,
+      std::vector<QMCHamiltonian*>& h, 
+      std::vector<TrialWaveFunction*>& psi,
+      RealType tau,std::vector<RealType>& Norm,
       bool require_register) {
 
     APP_ABORT("MultipleEnergyEstimator broken with warp");
@@ -176,14 +176,14 @@ namespace qmcplusplus {
 
     RatioIJ.resize(NumWalkers,NumCopies*(NumCopies-1)/2);
 
-    vector<RealType> invsumratio(NumCopies);
+    std::vector<RealType> invsumratio(NumCopies);
     MCWalkerConfiguration::ParticlePos_t drift(numPtcls);
 
     MCWalkerConfiguration::iterator it(W.begin()); 
     MCWalkerConfiguration::iterator it_end(W.end()); 
 
-    vector<RealType> sumratio(NumCopies), logpsi(NumCopies);
-    vector<RealType> Jacobian(NumCopies);
+    std::vector<RealType> sumratio(NumCopies), logpsi(NumCopies);
+    std::vector<RealType> Jacobian(NumCopies);
 
     int jindex=W.addProperty("Jacobian");
     int iw(0);

@@ -36,7 +36,7 @@ struct JAABuilder: public OrbitalBuilderBase
 
   bool put(xmlNodePtr cur);
 
-  template <class FN> TwoBodyJastrowOrbital<FN>* createJAA(xmlNodePtr cur, const string& jname);
+  template <class FN> TwoBodyJastrowOrbital<FN>* createJAA(xmlNodePtr cur, const std::string& jname);
 
   bool IgnoreSpin;
 

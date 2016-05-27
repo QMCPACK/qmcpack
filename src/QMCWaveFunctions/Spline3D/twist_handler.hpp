@@ -40,11 +40,11 @@ namespace qmcplusplus
       /** type matrix */
       Tensor<int, D> TileMatrix;
       /** boolean to unpack the copies */
-      vector<bool> MakeTwoCopies;
+      std::vector<bool> MakeTwoCopies;
       /** k-points for each orbital */
-      vector<point_type> kPoints;
+      std::vector<point_type> kPoints;
       /** \f$k^2\$ */
-      vector<T> ksq;
+      std::vector<T> ksq;
       /** character of G-vectors with real orbitals
        *
        * HalfG[i]=0, if twist is zero

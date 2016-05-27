@@ -56,7 +56,7 @@ void
 HamiltonianFactory::addMPCPotential(xmlNodePtr cur, bool isphysical)
 {
 #if OHMMS_DIM ==3 && defined(HAVE_LIBFFTW)
-  string a("e"), title("MPC"), physical("no");
+  std::string a("e"), title("MPC"), physical("no");
   OhmmsAttributeSet hAttrib;
   double cutoff = 30.0;
   hAttrib.add(title,"id");
@@ -81,7 +81,7 @@ void
 HamiltonianFactory::addVHXCPotential(xmlNodePtr cur)
 {
 #if OHMMS_DIM==3 && defined(HAVE_LIBFFTW)
-  string a("e"), title("VHXC");
+  std::string a("e"), title("VHXC");
   OhmmsAttributeSet hAttrib;
   bool physical = true;
   hAttrib.add(title,"id");
@@ -90,7 +90,7 @@ HamiltonianFactory::addVHXCPotential(xmlNodePtr cur)
   hAttrib.put(cur);
   renameProperty(a);
   VHXC *vhxc = new VHXC (*targetPtcl);
-  app_log() << "physical = " << physical << endl;
+  app_log() << "physical = " << physical << std::endl;
   targetH->addOperator(vhxc, "VHXC", physical);
 #else
   APP_ABORT("HamiltonianFactory::addVHXCPotential VHXC is disabled because FFTW3 was not found during the build process.");
@@ -102,10 +102,10 @@ HamiltonianFactory::addVHXCPotential(xmlNodePtr cur)
 void
 HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
 {
-  string targetInp(targetPtcl->getName());
-  string sourceInp(targetPtcl->getName());
-  string title("ElecElec"),pbc("yes");
-  string forces("no");
+  std::string targetInp(targetPtcl->getName());
+  std::string sourceInp(targetPtcl->getName());
+  std::string title("ElecElec"),pbc("yes");
+  std::string forces("no");
   bool physical = true;
   bool doForce = false;
   OhmmsAttributeSet hAttrib;
@@ -136,7 +136,7 @@ HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
   {
     if(!applyPBC && ptclA->getTotalNum() == 1)
     {
-      app_log() << "  CoulombAA for " << sourceInp << " is not created.  Number of particles == 1 and nonPeriodic" << endl;
+      app_log() << "  CoulombAA for " << sourceInp << " is not created.  Number of particles == 1 and nonPeriodic" << std::endl;
       return;
     }
     bool quantum = (sourceInp==targetPtcl->getName());
@@ -177,7 +177,7 @@ HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
 
 // void
 // HamiltonianFactory::addPulayForce (xmlNodePtr cur) {
-//   string a("ion0"),targetName("e"),title("Pulay");
+//   std::string a("ion0"),targetName("e"),title("Pulay");
 //   OhmmsAttributeSet hAttrib;
 //   hAttrib.add(a,"source");
 //   hAttrib.add(targetName,"target");
@@ -204,10 +204,10 @@ void
 HamiltonianFactory::addForceHam(xmlNodePtr cur)
 {
 #if OHMMS_DIM==3
-  string a("ion0"),targetName("e"),title("ForceBase"),pbc("yes"),
+  std::string a("ion0"),targetName("e"),title("ForceBase"),pbc("yes"),
          PsiName="psi0";
   OhmmsAttributeSet hAttrib;
-  string mode("bare");
+  std::string mode("bare");
   //hAttrib.add(title,"id");
   hAttrib.add(title,"name");
   hAttrib.add(a,"source");
@@ -216,7 +216,7 @@ HamiltonianFactory::addForceHam(xmlNodePtr cur)
   hAttrib.add(mode,"mode");
   hAttrib.add(PsiName, "psi");
   hAttrib.put(cur);
-  app_log() << "HamFac forceBase mode " << mode << endl;
+  app_log() << "HamFac forceBase mode " << mode << std::endl;
   bool applyPBC= (PBCType && pbc=="yes");
   
   bool quantum = (a==targetPtcl->getName());
@@ -334,7 +334,7 @@ void
 HamiltonianFactory::addPseudoPotential(xmlNodePtr cur)
 {
 #if OHMMS_DIM == 3
-  string src("i"),title("PseudoPot"),wfname("invalid"),format("xml");
+  std::string src("i"),title("PseudoPot"),wfname("invalid"),format("xml");
   OhmmsAttributeSet pAttrib;
   pAttrib.add(title,"name");
   pAttrib.add(src,"source");
@@ -360,7 +360,7 @@ HamiltonianFactory::addPseudoPotential(xmlNodePtr cur)
   {
     if(psiPool.empty())
       return;
-    app_error() << "  Cannot find " << wfname << " in the Wavefunction pool. Using the first wavefunction."<< endl;
+    app_error() << "  Cannot find " << wfname << " in the Wavefunction pool. Using the first wavefunction."<< std::endl;
     psi=(*(psiPool.begin())).second->targetPsi;
   }
   else
@@ -369,7 +369,7 @@ HamiltonianFactory::addPseudoPotential(xmlNodePtr cur)
   }
   //remember the TrialWaveFunction used by this pseudopotential
   psiName=wfname;
-  app_log() << endl << "  ECPotential builder for pseudopotential "<< endl;
+  app_log() << std::endl << "  ECPotential builder for pseudopotential "<< std::endl;
   ECPotentialBuilder ecp(*targetH,*ion,*targetPtcl,*psi,myComm);
   ecp.put(cur);
 #else
@@ -381,7 +381,7 @@ void
 HamiltonianFactory::addCorePolPotential(xmlNodePtr cur)
 {
 #if OHMMS_DIM == 3
-  string src("i"),title("CorePol");
+  std::string src("i"),title("CorePol");
   OhmmsAttributeSet pAttrib;
   pAttrib.add(title,"name");
   pAttrib.add(src,"source");
@@ -402,17 +402,17 @@ HamiltonianFactory::addCorePolPotential(xmlNodePtr cur)
 }
 
 //  void
-//  HamiltonianFactory::addConstCoulombPotential(xmlNodePtr cur, string& nuclei)
+//  HamiltonianFactory::addConstCoulombPotential(xmlNodePtr cur, std::string& nuclei)
 //  {
 //    OhmmsAttributeSet hAttrib;
-//    string hname("IonIon");
-//    string forces("no");
+//    std::string hname("IonIon");
+//    std::string forces("no");
 //    hAttrib.add(forces,"forces");
 //    hAttrib.add(hname,"name");
 //    hAttrib.put(cur);
 //    bool doForces = (forces == "yes") || (forces == "true");
 //
-//    app_log() << "  Creating Coulomb potential " << nuclei << "-" << nuclei << endl;
+//    app_log() << "  Creating Coulomb potential " << nuclei << "-" << nuclei << std::endl;
 //    renameProperty(nuclei);
 //    PtclPoolType::iterator pit(ptclPool.find(nuclei));
 //    if(pit != ptclPool.end()) {

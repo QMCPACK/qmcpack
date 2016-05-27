@@ -30,7 +30,7 @@ struct GTO2Slater
   bool Normalized;
   GridType myGrid;
   xmlNodePtr gridPtr;
-  map<string,xmlNodePtr> sPtr;
+  std::map<std::string,xmlNodePtr> sPtr;
 
   GTO2Slater():Normalized(false),gridPtr(0) {}
   int parse(const char* fname);
@@ -72,7 +72,7 @@ int GTO2Slater::parse(const char* fname)
   {
     for(int ic=0; ic<result->nodesetval->nodeNr; ic++)
     {
-      cout << "Going to optimize" << endl;
+      std::cout << "Going to optimize" << std::endl;
       if(put(result->nodesetval->nodeTab[ic]))
       {
         optimize();
@@ -88,15 +88,15 @@ bool GTO2Slater::put(xmlNodePtr cur)
   cur = cur->children;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == "grid")
       gridPtr = cur;
     else
       if(cname == "basisGroup")
       {
-        string rid("invalid");
-        string rtype("Gaussian");
-        string norm("no");
+        std::string rid("invalid");
+        std::string rtype("Gaussian");
+        std::string norm("no");
         int l=0;
         OhmmsAttributeSet inAttrib;
         inAttrib.add(rid,"rid");
@@ -112,7 +112,7 @@ bool GTO2Slater::put(xmlNodePtr cur)
             Normalized=true;
           else
             Normalized=false;
-          map<string,xmlNodePtr>::iterator it(sPtr.find(rid));
+          std::map<std::string,xmlNodePtr>::iterator it(sPtr.find(rid));
           if(it == sPtr.end())
           {
             sPtr[rid]=cur;
@@ -135,7 +135,7 @@ void GTO2Slater::optimize()
   double ri = 1e-5;
   double rf = 10.0;
   int npts = 101;
-  string gridType("log");
+  std::string gridType("log");
   if(gridPtr)
   {
     OhmmsAttributeSet radAttrib;
@@ -151,7 +151,7 @@ void GTO2Slater::optimize()
   RadialOrbitalType radorb(&myGrid);
   int L= 0;
   //Loop over all the constracted S orbitals
-  map<string,xmlNodePtr>::iterator it(sPtr.begin()),it_end(sPtr.end());
+  std::map<std::string,xmlNodePtr>::iterator it(sPtr.begin()),it_end(sPtr.end());
   while(it != it_end)
   {
     //create contracted gaussian

@@ -33,19 +33,19 @@ namespace qmcplusplus
 {
 
 //initialization of the static wClones
-vector<MCWalkerConfiguration*> CloneManager::wClones;
+std::vector<MCWalkerConfiguration*> CloneManager::wClones;
 //initialization of the static psiClones
-vector<TrialWaveFunction*> CloneManager::psiClones;
+std::vector<TrialWaveFunction*> CloneManager::psiClones;
 //initialization of the static guideClones
-vector<TrialWaveFunction*> CloneManager::guideClones;
+std::vector<TrialWaveFunction*> CloneManager::guideClones;
 
-vector<MCWalkerConfiguration*> CloneManager::wgClones;
+std::vector<MCWalkerConfiguration*> CloneManager::wgClones;
 //initialization of the static hClones
-vector<QMCHamiltonian*> CloneManager::hClones;
+std::vector<QMCHamiltonian*> CloneManager::hClones;
 
-vector<vector<MCWalkerConfiguration*> > CloneManager::WPoolClones; 
-vector<vector<TrialWaveFunction*> > CloneManager::PsiPoolClones;
-vector<vector<QMCHamiltonian*> > CloneManager::HPoolClones;
+std::vector<std::vector<MCWalkerConfiguration*> > CloneManager::WPoolClones; 
+std::vector<std::vector<TrialWaveFunction*> > CloneManager::PsiPoolClones;
+std::vector<std::vector<QMCHamiltonian*> > CloneManager::HPoolClones;
 
 /// Constructor.
 CloneManager::CloneManager(HamiltonianPool& hpool): cloneEngine(hpool)
@@ -72,7 +72,7 @@ void CloneManager::makeClones(MCWalkerConfiguration& w,
 {
   if(wClones.size())
   {
-    app_log() << "  Cannot make clones again. Use existing " << NumThreads << " clones" << endl;
+    app_log() << "  Cannot make clones again. Use existing " << NumThreads << " clones" << std::endl;
     return;
   }
   wClones.resize(NumThreads);
@@ -83,8 +83,8 @@ void CloneManager::makeClones(MCWalkerConfiguration& w,
   hClones[0]=&ham;
   if(NumThreads==1)
     return;
-  app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for W/Psi/H." <<endl;
-  app_log() << "  Cloning methods for both Psi and H are used" << endl;
+  app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for W/Psi/H." << std::endl;
+  app_log() << "  Cloning methods for both Psi and H are used" << std::endl;
   OhmmsInfo::Log->turnoff();
   OhmmsInfo::Warn->turnoff();
 
@@ -103,12 +103,12 @@ void CloneManager::makeClones(MCWalkerConfiguration& w,
   OhmmsInfo::Warn->reset();
 }
 
-void CloneManager::makeClones(vector<MCWalkerConfiguration*>& wpool,
-                              vector<TrialWaveFunction*>& psipool, vector<QMCHamiltonian*>& hampool)
+void CloneManager::makeClones(std::vector<MCWalkerConfiguration*>& wpool,
+                              std::vector<TrialWaveFunction*>& psipool, std::vector<QMCHamiltonian*>& hampool)
 {
  /* if(WPoolClones.size())
   {
-    app_log() << "  Cannot make clones again. Use existing " << NumThreads << " clones" << endl;
+    app_log() << "  Cannot make clones again. Use existing " << NumThreads << " clones" << std::endl;
     return;
   }
   WPoolClones.resize(NumThreads);
@@ -119,8 +119,8 @@ void CloneManager::makeClones(vector<MCWalkerConfiguration*>& wpool,
   HPoolClones[0]=hampool;
   if(NumThreads==1)
     return;
-  app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for W/Psi/H Pools." <<endl;
-  app_log() << "  Cloning methods for both Psi and H are used" << endl;
+  app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for W/Psi/H Pools." << std::endl;
+  app_log() << "  Cloning methods for both Psi and H are used" << std::endl;
   OhmmsInfo::Log->turnoff();
   OhmmsInfo::Warn->turnoff();
 
@@ -153,11 +153,11 @@ void CloneManager::makeClones(vector<MCWalkerConfiguration*>& wpool,
 }
 
 void CloneManager::makeClones(MCWalkerConfiguration& w,
-                              vector<TrialWaveFunction*>& psipool, vector<QMCHamiltonian*>& hampool)
+                              std::vector<TrialWaveFunction*>& psipool, std::vector<QMCHamiltonian*>& hampool)
 {
   if(WPoolClones.size())
   {
-    app_log() << "  Cannot make clones again. Use existing " << NumThreads << " clones" << endl;
+    app_log() << "  Cannot make clones again. Use existing " << NumThreads << " clones" << std::endl;
     return;
   }
   IndexType nPsi=psipool.size();
@@ -172,8 +172,8 @@ void CloneManager::makeClones(MCWalkerConfiguration& w,
 
   if(NumThreads==1)
     return;
-  app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for W/Psi/H Pools." <<endl;
-  app_log() << "  Cloning methods for both Psi and H are used" << endl;
+  app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for W/Psi/H Pools." << std::endl;
+  app_log() << "  Cloning methods for both Psi and H are used" << std::endl;
   OhmmsInfo::Log->turnoff();
   OhmmsInfo::Warn->turnoff();
 
@@ -226,8 +226,8 @@ void CloneManager::makeClones_new(MCWalkerConfiguration& w,
   hClones[0]=&ham;
   if(NumThreads==1)
     return;
-  app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for W/Psi/H." <<endl;
-  app_log() << "  Cloning methods for both Psi and H are used" << endl;
+  app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for W/Psi/H." << std::endl;
+  app_log() << "  Cloning methods for both Psi and H are used" << std::endl;
   OhmmsInfo::Log->turnoff();
   OhmmsInfo::Warn->turnoff();
   char pname[16];
@@ -245,7 +245,7 @@ void CloneManager::makeClones(TrialWaveFunction& guide)
 {
   if(guideClones.size())
   {
-    app_log() << "  Cannot make clones again. Use existing " << NumThreads << " clones" << endl;
+    app_log() << "  Cannot make clones again. Use existing " << NumThreads << " clones" << std::endl;
     return;
   }
   else
@@ -256,7 +256,7 @@ void CloneManager::makeClones(TrialWaveFunction& guide)
   guideClones[0]=&guide;
   if(NumThreads==1)
     return;
-  app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for guide/wg." <<endl;
+  app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for guide/wg." << std::endl;
   OhmmsInfo::Log->turnoff();
   OhmmsInfo::Warn->turnoff();
   char pname[16];
@@ -271,7 +271,7 @@ void CloneManager::makeClones(MCWalkerConfiguration& wg, TrialWaveFunction& guid
 {
   if(guideClones.size())
   {
-    app_log() << "  Cannot make clones again. Use existing " << NumThreads << " clones" << endl;
+    app_log() << "  Cannot make clones again. Use existing " << NumThreads << " clones" << std::endl;
     return;
   }
   else
@@ -285,7 +285,7 @@ void CloneManager::makeClones(MCWalkerConfiguration& wg, TrialWaveFunction& guid
   wgClones[0]=new MCWalkerConfiguration(wg);
   if(NumThreads==1)
     return;
-  app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for guide/wg." <<endl;
+  app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for guide/wg." << std::endl;
   OhmmsInfo::Log->turnoff();
   OhmmsInfo::Warn->turnoff();
   char pname[16];

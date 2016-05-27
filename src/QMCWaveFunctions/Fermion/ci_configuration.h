@@ -25,13 +25,13 @@ namespace qmcplusplus
 struct ci_configuration
 {
   // vector of bits, each bit determines whether the corresponding state is occupied or not
-  vector<bool> occup;
+  std::vector<bool> occup;
   bool taken;
   int nExct; // with respect to base ci_configuration, which we assume is hf
 
   ci_configuration(): taken(false),nExct(0) {}
 
-  ci_configuration(vector<bool> &v, int n): occup(v),taken(false),nExct(n) {}
+  ci_configuration(std::vector<bool> &v, int n): occup(v),taken(false),nExct(n) {}
   ci_configuration(const ci_configuration& c):occup(c.occup),taken(c.taken),nExct(c.nExct) {}
 
   ~ci_configuration() {}
@@ -51,10 +51,10 @@ struct ci_configuration
       app_log() <<"c0: ";
       for(int i=0; i<occup.size(); i++)
         app_log() <<occup[i];
-      app_log() <<endl <<"c1: ";
+      app_log() << std::endl <<"c1: ";
       for(int i=0; i<c.occup.size(); i++)
         app_log() <<c.occup[i];
-      app_log() <<endl;
+      app_log() << std::endl;
       APP_ABORT("ci_configuration::operator==() - ci_configurations are not compatible. Unequal number of occupied states. ");
     }
     for(int i=0; i<occup.size(); i++)
@@ -123,7 +123,7 @@ inline std::ostream& operator<<(std::ostream& out, const ci_configuration& c)
   out<<"ci ci_configuration: ";
   for(int i=0; i<c.occup.size(); i++)
     out <<c.occup[i];
-  out<<endl;
+  out<< std::endl;
   return out;
 };
 

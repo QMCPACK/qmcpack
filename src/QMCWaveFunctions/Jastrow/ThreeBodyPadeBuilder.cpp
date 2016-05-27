@@ -34,7 +34,7 @@ bool ThreeBodyPadeBuilder::put(xmlNodePtr cur)
   cur = cur->xmlChildrenNode;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     /* if(cname == basisset_tag) {
        //call the BasisSet builder
        basisSet = gtoBuilder->addBasisSet(cur);

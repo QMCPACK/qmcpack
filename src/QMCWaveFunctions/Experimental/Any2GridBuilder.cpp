@@ -21,7 +21,6 @@
 #include "Numerics/OneDimCubicSpline.h"
 #include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
 #include "QMCWaveFunctions/MolecularOrbitals/Any2GridBuilder.h"
-using namespace std;
 namespace qmcplusplus
 {
 
@@ -65,14 +64,14 @@ Any2GridBuilder::addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms)
     return false;
   }
   const xmlChar *tptr = xmlGetProp(cur,(const xmlChar*)"type");
-  string radtype("Gaussian");
+  std::string radtype("Gaussian");
   if(tptr)
     radtype = (const char*)tptr;
   tptr = xmlGetProp(cur,(const xmlChar*)"rmax");
   if(tptr)
     m_rcut = atof((const char*)tptr);
   int lastRnl = m_orbitals->Rnl.size();
-  app_log() << "    basisGroup " << radtype << endl;
+  app_log() << "    basisGroup " << radtype << std::endl;
   m_nlms = nlms;
   if(radtype == "Gaussian")
   {
@@ -86,7 +85,7 @@ Any2GridBuilder::addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms)
     else
       if(radtype == "Pade")
       {
-        app_error() << "  Any2GridBuilder::addPade is disabled." << endl;
+        app_error() << "  Any2GridBuilder::addPade is disabled." << std::endl;
         abort();
         //addPade(cur);
       }

@@ -38,10 +38,10 @@ class SlaterDet: public OrbitalBase, public FermionBase
 public:
   typedef DiracDeterminantBase Determinant_t;
   ///container for the DiracDeterminants
-  vector<Determinant_t*>  Dets;
-  vector<int> M;
-  vector<int> DetID;
-  map<string,SPOSetBasePtr> mySPOSet;
+  std::vector<Determinant_t*>  Dets;
+  std::vector<int> M;
+  std::vector<int> DetID;
+  std::map<std::string,SPOSetBasePtr> mySPOSet;
 
   /**  constructor
    * @param targetPtcl target Particleset
@@ -53,7 +53,7 @@ public:
   ~SlaterDet();
 
   ///add a SPOSet
-  void add(SPOSetBasePtr sposet, const string& aname);
+  void add(SPOSetBasePtr sposet, const std::string& aname);
 
   ///add a new DiracDeterminant to the list of determinants
   virtual
@@ -70,7 +70,7 @@ public:
   ///reset all the Dirac determinants, Optimizable is true
   virtual void resetParameters(const opt_variables_type& optVariables);
 
-  void reportStatus(ostream& os);
+  void reportStatus(std::ostream& os);
 
   virtual void resetTargetParticleSet(ParticleSet& P);
 
@@ -147,7 +147,7 @@ public:
   }
 
   virtual
-  inline void evaluateRatios(VirtualParticleSet& VP, vector<ValueType>& ratios)
+  inline void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
   {
     return Dets[VP.activeGroup]->evaluateRatios(VP,ratios);
   }
@@ -271,12 +271,12 @@ public:
   }
 
   virtual
-  void get_ratios(ParticleSet& P, vector<ValueType>& ratios);
+  void get_ratios(ParticleSet& P, std::vector<ValueType>& ratios);
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
-                           vector<RealType>& dlogpsi,
-                           vector<RealType>& dhpsioverpsi)
+                           std::vector<RealType>& dlogpsi,
+                           std::vector<RealType>& dhpsioverpsi)
   {
     // First zero out values, since each determinant only adds on
     // its contribution (i.e. +=) , rather than setting the value
@@ -308,7 +308,7 @@ public:
       Dets[id]->reserve(pool);
   }
 
-  void addLog (MCWalkerConfiguration &W, vector<RealType> &logPsi)
+  void addLog (MCWalkerConfiguration &W, std::vector<RealType> &logPsi)
   {
     for (int id=0; id<Dets.size(); id++)
       Dets[id]->addLog(W, logPsi);
@@ -316,46 +316,46 @@ public:
 
   void
   ratio (MCWalkerConfiguration &W, int iat
-         , vector<ValueType> &psi_ratios,vector<GradType>  &grad, vector<ValueType> &lapl)
+         , std::vector<ValueType> &psi_ratios,std::vector<GradType>  &grad, std::vector<ValueType> &lapl)
   {
     Dets[DetID[iat]]->ratio(W, iat, psi_ratios, grad, lapl);
   }
 
   void
   calcRatio (MCWalkerConfiguration &W, int iat
-             , vector<ValueType> &psi_ratios,vector<GradType>  &grad, vector<ValueType> &lapl)
+             , std::vector<ValueType> &psi_ratios,std::vector<GradType>  &grad, std::vector<ValueType> &lapl)
   {
     Dets[DetID[iat]]->calcRatio(W, iat, psi_ratios, grad, lapl);
   }
 
   void
   addRatio (MCWalkerConfiguration &W, int iat
-            , vector<ValueType> &psi_ratios,vector<GradType>  &grad, vector<ValueType> &lapl)
+            , std::vector<ValueType> &psi_ratios,std::vector<GradType>  &grad, std::vector<ValueType> &lapl)
   {
     Dets[DetID[iat]]->addRatio(W, iat, psi_ratios, grad, lapl);
   }
 
 
-  void ratio (vector<Walker_t*> &walkers,    vector<int> &iatList,
-              vector<PosType> &rNew, vector<ValueType> &psi_ratios,
-              vector<GradType>  &grad, vector<ValueType> &lapl);
+  void ratio (std::vector<Walker_t*> &walkers,    std::vector<int> &iatList,
+              std::vector<PosType> &rNew, std::vector<ValueType> &psi_ratios,
+              std::vector<GradType>  &grad, std::vector<ValueType> &lapl);
 
-  void calcGradient(MCWalkerConfiguration &W, int iat, vector<GradType> &grad)
+  void calcGradient(MCWalkerConfiguration &W, int iat, std::vector<GradType> &grad)
   {
     Dets[DetID[iat]]->calcGradient(W, iat, grad);
   }
 
-  void addGradient(MCWalkerConfiguration &W, int iat, vector<GradType> &grad)
+  void addGradient(MCWalkerConfiguration &W, int iat, std::vector<GradType> &grad)
   {
     Dets[DetID[iat]]->addGradient(W, iat, grad);
   }
 
-  void update (vector<Walker_t*> &walkers, int iat)
+  void update (std::vector<Walker_t*> &walkers, int iat)
   {
     Dets[DetID[iat]]->update(walkers, iat);
   }
 
-  void update (const vector<Walker_t*> &walkers, const vector<int> &iatList);
+  void update (const std::vector<Walker_t*> &walkers, const std::vector<int> &iatList);
 
   void gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads, ValueMatrix_t &lapl)
   {
@@ -363,8 +363,8 @@ public:
       Dets[id]->gradLapl(W, grads, lapl);
   }
 
-  void NLratios (MCWalkerConfiguration &W,  vector<NLjob> &jobList
-                 , vector<PosType> &quadPoints, vector<ValueType> &psi_ratios)
+  void NLratios (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList
+                 , std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios)
   {
     for (int id=0; id<Dets.size(); id++)
       Dets[id]->NLratios(W, jobList, quadPoints, psi_ratios);

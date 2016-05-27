@@ -35,7 +35,7 @@ struct WalkerControlMPI: public WalkerControlBase
   int Cur_pop;
   int Cur_max;
   int Cur_min;
-  vector<NewTimer*> myTimers;
+  std::vector<NewTimer*> myTimers;
   /** default constructor
    *
    * Set the SwapMode to zero so that instantiation can be done

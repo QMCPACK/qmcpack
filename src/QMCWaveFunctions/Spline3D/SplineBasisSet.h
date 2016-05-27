@@ -106,7 +106,7 @@ public:
 
   void evaluateForWalkerMove(const ParticleSet& e)
   {
-    cout << "WHO IS CALLING SplineBasisSet:: evaluateForWalkerMove(P)  " << endl;
+    std::cout << "WHO IS CALLING SplineBasisSet:: evaluateForWalkerMove(P)  " << std::endl;
   }
 
   void evaluateForWalkerMove(const ParticleSet& e, int iat)

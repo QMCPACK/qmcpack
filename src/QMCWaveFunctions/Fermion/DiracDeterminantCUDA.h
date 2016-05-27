@@ -52,7 +52,7 @@ protected:
   gpu::device_vector<CudaRealType*> UpdateList_d;
   gpu::host_vector<updateJob> UpdateJobList;
   gpu::device_vector<updateJob> UpdateJobList_d;
-  vector<CudaRealType*> srcList, destList, AList, AinvList, newRowList,
+  std::vector<CudaRealType*> srcList, destList, AList, AinvList, newRowList,
                         AinvDeltaList, AinvColkList, gradLaplList, newGradLaplList, 
                         AWorkList, AinvWorkList, GLList;
   gpu::device_vector<CudaRealType*> srcList_d, destList_d, AList_d, AinvList_d, newRowList_d, 
@@ -156,8 +156,8 @@ public:
 
 
 
-  void update (vector<Walker_t*> &walkers, int iat);
-  void update (const vector<Walker_t*> &walkers, const vector<int> &iatList);
+  void update (std::vector<Walker_t*> &walkers, int iat);
+  void update (const std::vector<Walker_t*> &walkers, const std::vector<int> &iatList);
 
   void reserve (PointerPool<gpu::device_vector<CudaRealType> > &pool)
   {
@@ -184,42 +184,42 @@ public:
 
   void recompute (MCWalkerConfiguration &W, bool firstTime);
 
-  void addLog (MCWalkerConfiguration &W, vector<RealType> &logPsi);
+  void addLog (MCWalkerConfiguration &W, std::vector<RealType> &logPsi);
 
   void addGradient(MCWalkerConfiguration &W, int iat,
-                   vector<GradType> &grad);
+                   std::vector<GradType> &grad);
 
   void calcGradient(MCWalkerConfiguration &W, int iat,
-                    vector<GradType> &grad);
+                    std::vector<GradType> &grad);
 
   void ratio (MCWalkerConfiguration &W, int iat,
-              vector<ValueType> &psi_ratios);
+              std::vector<ValueType> &psi_ratios);
 
   void ratio (MCWalkerConfiguration &W, int iat,
-              vector<ValueType> &psi_ratios,	vector<GradType>  &grad);
+              std::vector<ValueType> &psi_ratios,	vector<GradType>  &grad);
 
   void ratio (MCWalkerConfiguration &W, int iat,
-              vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
-              vector<ValueType> &lapl);
+              std::vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
+              std::vector<ValueType> &lapl);
   void calcRatio (MCWalkerConfiguration &W, int iat,
-                  vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
-                  vector<ValueType> &lapl);
+                  std::vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
+                  std::vector<ValueType> &lapl);
   void addRatio (MCWalkerConfiguration &W, int iat,
-                 vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
-                 vector<ValueType> &lapl);
+                 std::vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
+                 std::vector<ValueType> &lapl);
 
-  void ratio (vector<Walker_t*> &walkers, vector<int> &iatList,
-              vector<PosType> &rNew, vector<ValueType> &psi_ratios,
-              vector<GradType>  &grad, vector<ValueType> &lapl);
+  void ratio (std::vector<Walker_t*> &walkers, std::vector<int> &iatList,
+              std::vector<PosType> &rNew, std::vector<ValueType> &psi_ratios,
+              std::vector<GradType>  &grad, std::vector<ValueType> &lapl);
 
   void gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads,
                  ValueMatrix_t &lapl);
 
-  void NLratios (MCWalkerConfiguration &W,  vector<NLjob> &jobList,
-                 vector<PosType> &quadPoints, vector<ValueType> &psi_ratios);
+  void NLratios (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
+                 std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios);
 
-  void NLratios_CPU (MCWalkerConfiguration &W,  vector<NLjob> &jobList,
-                     vector<PosType> &quadPoints, vector<ValueType> &psi_ratios);
+  void NLratios_CPU (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
+                     std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios);
 };
 }
 #endif // QMCPLUSPLUS_DIRAC_DETERMINANT_CUDA_H

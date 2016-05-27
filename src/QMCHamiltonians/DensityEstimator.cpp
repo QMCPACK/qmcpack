@@ -87,7 +87,7 @@ DensityEstimator::Return_t DensityEstimator::evaluate(ParticleSet& P)
 
 void
 DensityEstimator::addEnergy(MCWalkerConfiguration &W,
-                            vector<RealType> &LocalEnergy)
+                            std::vector<RealType> &LocalEnergy)
 {
   int nw = W.WalkerList.size();
   int N = W.getTotalNum();
@@ -197,18 +197,18 @@ void DensityEstimator::addObservables(PropertySetType& plist, BufferType& collec
 {
   //current index
   myIndex=collectables.current();
-  vector<RealType> tmp(NumGrids[OHMMS_DIM]);
+  std::vector<RealType> tmp(NumGrids[OHMMS_DIM]);
   collectables.add(tmp.begin(),tmp.end());
   //potentialIndex=collectables.current();
   //vector<RealType> tmp2(NumGrids[OHMMS_DIM]);
   //collectables.add(tmp2.begin(),tmp2.end());
 }
 
-void DensityEstimator::registerCollectables(vector<observable_helper*>& h5desc
+void DensityEstimator::registerCollectables(std::vector<observable_helper*>& h5desc
     , hid_t gid) const
 {
   int loc=h5desc.size();
-  vector<int> ng(OHMMS_DIM);
+  std::vector<int> ng(OHMMS_DIM);
   for(int i=0; i<OHMMS_DIM; ++i)
     ng[i]=NumGrids[i];
   observable_helper* h5o=new observable_helper(myName);
@@ -239,9 +239,9 @@ void DensityEstimator::setParticlePropertyList(PropertySetType& plist
 bool DensityEstimator::put(xmlNodePtr cur)
 {
   Delta=0.1;
-  vector<double> delta;
-  string debug("no");
-  string potential("no");
+  std::vector<double> delta;
+  std::string debug("no");
+  std::string potential("no");
   OhmmsAttributeSet attrib;
   attrib.add(debug,"debug");
   attrib.add(potential,"potential");
@@ -264,7 +264,7 @@ bool DensityEstimator::put(xmlNodePtr cur)
 
 bool DensityEstimator::get(std::ostream& os) const
 {
-  os << myName << " bin =" << Delta << " bohrs " << endl;
+  os << myName << " bin =" << Delta << " bohrs " << std::endl;
   return true;
 }
 
@@ -286,7 +286,7 @@ void  DensityEstimator::resize()
       APP_ABORT("DensityEstimator::resize invalid bin size");
     }
   }
-  app_log() << " DensityEstimator bin_size= " <<NumGrids << " delta = " << Delta << endl;
+  app_log() << " DensityEstimator bin_size= " <<NumGrids << " delta = " << Delta << std::endl;
   NumGrids[OHMMS_DIM]=NumGrids[0]*NumGrids[1]*NumGrids[2];
 }
 

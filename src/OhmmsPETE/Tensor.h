@@ -305,12 +305,12 @@ public:
   }
 
 //  Removed operator using std::pair
-//    Type_t operator()(const pair<int,int> i) const {
+//    Type_t operator()(const std::pair<int,int> i) const {
 //      PAssert ( (i.first>=0) && (i.second>=0) && (i.first<D) && (i.second<D) );
 //      return (*this)(i.first,i.second);
 //    }
 
-//    Type_t& operator()(const pair<int,int> i) {
+//    Type_t& operator()(const std::pair<int,int> i) {
 //      PAssert ( (i.first>=0) && (i.second>=0) && (i.first<D) && (i.second<D) );
 //      return (*this)(i.first,i.second);
 //    }

@@ -103,17 +103,17 @@ inline hid_t get_h5_data_type(T x)
 }
 
 
-/* specialization for vector<T>
+/* specialization for std::vector<T>
  */
 template<typename T>
-struct h5_data_type_traits<vector<T> >
+struct h5_data_type_traits<std::vector<T> >
 {
   enum {is_array_type=1};
   enum {array_dimension=1};
   hsize_t dims[1];
   hid_t h5_data_type;
-  vector<T>& ref_;
-  h5_data_type_traits(vector<T>& a):ref_(a)
+  std::vector<T>& ref_;
+  h5_data_type_traits(std::vector<T>& a):ref_(a)
   {
     dims[0]=ref_.size();
     h5_data_type=get_h5_data_type(T());
@@ -162,18 +162,18 @@ struct h5_data_type_traits<TinyVector<T,D> >
   }
 };
 
-/* specialization for vector<TinyVector<T,D> >
+/* specialization for std::vector<TinyVector<T,D> >
  */
 template<typename T, unsigned D>
-struct h5_data_type_traits<vector<TinyVector<T,D> > >
+struct h5_data_type_traits<std::vector<TinyVector<T,D> > >
 {
   enum {is_array_type=1};
   enum {array_dimension=2};
   hsize_t dims[3];
   hid_t h5_data_type;
-  vector<TinyVector<T,D> >& ref_;
+  std::vector<TinyVector<T,D> >& ref_;
 
-  h5_data_type_traits(vector<TinyVector<T,D> >& a):ref_(a)
+  h5_data_type_traits(std::vector<TinyVector<T,D> >& a):ref_(a)
   {
     dims[0]=ref_.size();
     dims[1]=D;
@@ -250,16 +250,16 @@ struct HDFSource: public h5_data_type_traits<T>//, public HDFAttribIOBase
 
   inline void read()
   {
-    //cout << "h5 datatype = " << this->h5_data_type() << " " << this->ref_ << endl;
-    cout << "h5 datatype = " << h5_data_type << endl;
-    cout << "address = " << this->data() << endl;
+    //cout << "h5 datatype = " << this->h5_data_type() << " " << this->ref_ << std::endl;
+    std::cout << "h5 datatype = " << h5_data_type << std::endl;
+    std::cout << "address = " << this->data() << std::endl;
     if(is_array_type)
     {
-      cout << "This is an array. Its size = " << this->size() << endl;
+      std::cout << "This is an array. Its size = " << this->size() << std::endl;
     }
     else
     {
-      cout << "This is not an array " << endl;
+      std::cout << "This is not an array " << std::endl;
     }
   }
 };

@@ -234,14 +234,14 @@ protected:
 template<typename T_tuple, typename T_container, int N_containers>
 void CartesianProduct<T_tuple,T_container,N_containers>::debugDump()
 {
-    cout << "Dump of CartesianProduct<..,..," << N_containers << ">" << endl;
+    std::cout << "Dump of CartesianProduct<..,..," << N_containers << ">" << std::endl;
     for (int i=0; i < N_containers; ++i)
     {
-        cout << "Container " << (i+1) << ": ";
+        std::cout << "Container " << (i+1) << ": ";
         _bz_typename T_container::const_iterator iter = containers_[i]->begin(),
             end = containers_[i]->end();
         for (; iter != end; ++iter)
-            cout << (*iter) << '\t'; 
+            std::cout << (*iter) << '\t'; 
     }
 }
 

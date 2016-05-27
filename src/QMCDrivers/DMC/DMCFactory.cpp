@@ -33,7 +33,7 @@ QMCDriver* DMCFactory::create(MCWalkerConfiguration& w, TrialWaveFunction& psi
   if (GPU)
     return new DMCcuda (w, psi, h,ppool);
 #endif
-  app_log() << "Creating DMCMP for the qmc driver" << endl;
+  app_log() << "Creating DMCMP for the qmc driver" << std::endl;
   QMCDriver*  qmc = new DMCOMP(w,psi,h,hpool,ppool);
   qmc->setUpdateMode(PbyPUpdate);
   return qmc;

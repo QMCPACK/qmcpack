@@ -62,7 +62,7 @@ CBSOBuilder::addGrid(xmlNodePtr cur)
   attrib.put(cur);
   if(delta>0)
     NumGridPoints = static_cast<int>(m_rcut/delta)+1;
-  app_log() << "   CBSOBuilder::addGrid Rcut = " << m_rcut << "  NumGridPoints = " <<  NumGridPoints << endl;
+  app_log() << "   CBSOBuilder::addGrid Rcut = " << m_rcut << "  NumGridPoints = " <<  NumGridPoints << std::endl;
   return true;
 }
 
@@ -85,7 +85,7 @@ CBSOBuilder::addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms)
     ERRORMSG("m_orbitals, SphericalOrbitals<ROT,GT>*, is not initialized")
     return false;
   }
-  string radtype("Gaussian");
+  std::string radtype("Gaussian");
   OhmmsAttributeSet attrib;
   attrib.add(radtype,"type");
   attrib.put(cur);
@@ -99,7 +99,7 @@ CBSOBuilder::addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms)
   {
     GaussianCombo<RealType> *gset = new GaussianCombo<RealType>(L,Normalized);
     gset->putBasisGroup(cur);
-    app_log() << "   " << L << " basisGroup  contains " << gset->size() << " radial functors." << endl;
+    app_log() << "   " << L << " basisGroup  contains " << gset->size() << " radial functors." << std::endl;
     infunc=gset;
   }
   else
@@ -116,7 +116,7 @@ CBSOBuilder::addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms)
         int nr=0;
         while(tcur != NULL)
         {
-          string cname((const char*)(tcur->name));
+          std::string cname((const char*)(tcur->name));
           if(cname == "radfunc")
           {
             OhmmsAttributeSet rAttrib;
@@ -134,7 +134,7 @@ CBSOBuilder::addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms)
   {
     app_log()
         << "   CBSOBuilder::addRadialOrbital  input " << radtype
-        << " output = CubicBspline " << endl;
+        << " output = CubicBspline " << std::endl;
     RadialOrbitalType *radorb=new RadialOrbitalType;
     radorb->initialize(infunc,m_rcut,NumGridPoints);
     m_orbitals->Rnl.push_back(radorb);

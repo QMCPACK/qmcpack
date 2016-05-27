@@ -27,13 +27,12 @@
 
 #define USE_BOXBCONDS
 
-using namespace std;
 namespace qmcplusplus
 {
 
 /** enumeration to classify a CrystalLattice
  *
- * Use bitset<3> for all the dimension
+ * Use std::bitset<3> for all the dimension
  */
 enum {SUPERCELL_OPEN=0, //nnn
       SUPERCELL_WIRE=1,     //nnp
@@ -130,7 +129,7 @@ struct CrystalLattice
   //angles between the two lattice vectors
   SingleParticlePos_t ABC;
   //save the lattice constant of neighbor cells
-  vector<SingleParticlePos_t> NextUnitCells;
+  std::vector<SingleParticlePos_t> NextUnitCells;
 
   ///default constructor, assign a huge supercell
   CrystalLattice();
@@ -353,7 +352,7 @@ struct CrystalLattice
    *
    *This function is to provide a simple interface for testing.
    */
-  void set(std::vector<string>& argv);
+  void set(std::vector<std::string>& argv);
 
   /** set the lattice vector by an array containing DxD T
    *@param sc a scalar to scale the input lattice parameters
@@ -390,7 +389,7 @@ struct CrystalLattice
 //  template<class PA> void applyBC(const PA& pin, PA& pout, int first, int last) const;
 
   //! Print out CrystalLattice Data
-  void print(ostream& , int level=2) const;
+  void print(std::ostream& , int level=2) const;
 };
 
 }

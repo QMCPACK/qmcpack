@@ -62,17 +62,17 @@ void DMCOMP::resetComponents(xmlNodePtr cur)
   qmcNode=cur;
   m_param.put(cur);
   put(cur);
-  //app_log()<<"DMCOMP::resetComponents"<<endl;
+  //app_log()<<"DMCOMP::resetComponents"<< std::endl;
   Estimators->reset();
   int nw_multi=branchEngine->resetRun(cur);
   if(nw_multi>1)
   {
-    app_log() << " Current population " << W.getActiveWalkers() << " " << W.getGlobalNumWalkers()  << endl;
-    app_log() << " The target population has changed. Multiply walkers by " << nw_multi << endl;
+    app_log() << " Current population " << W.getActiveWalkers() << " " << W.getGlobalNumWalkers()  << std::endl;
+    app_log() << " The target population has changed. Multiply walkers by " << nw_multi << std::endl;
     W.createWalkers((nw_multi-1)*W.getActiveWalkers());
     setWalkerOffsets();
     FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
-    app_log() << " New population " << W.getActiveWalkers() << " per task  total =" << W.getGlobalNumWalkers()  << endl;
+    app_log() << " New population " << W.getActiveWalkers() << " per task  total =" << W.getGlobalNumWalkers()  << std::endl;
   }
   branchEngine->checkParameters(W);
   //delete Movers[0];
@@ -143,9 +143,9 @@ void DMCOMP::resetUpdateEngines()
     FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
     {
       //log file
-      ostringstream o;
+      std::ostringstream o;
       o << "  Initial partition of walkers on a node: ";
-      std::copy(wPerNode.begin(),wPerNode.end(),ostream_iterator<int>(o," "));
+      copy(wPerNode.begin(),wPerNode.end(),std::ostream_iterator<int>(o," "));
       o << "\n";
       if(QMCDriverMode[QMC_UPDATE_MODE])
         o << "  Updates by particle-by-particle moves";
@@ -159,7 +159,7 @@ void DMCOMP::resetUpdateEngines()
         o << "\n  Walkers are killed when a node crossing is detected";
       else
         o << "\n  DMC moves are rejected when a node crossing is detected";
-      app_log() << o.str() << endl;
+      app_log() << o.str() << std::endl;
     }
 #if !defined(BGP_BUG)
     #pragma omp parallel for
@@ -228,7 +228,7 @@ void DMCOMP::resetUpdateEngines()
       Movers[i]->MaxAge=mxage;
   }
   {
-    ostringstream o;
+    std::ostringstream o;
     if(fixW)
       o << "  Fixed population using reconfiguration method\n";
     else
@@ -237,9 +237,9 @@ void DMCOMP::resetUpdateEngines()
     o << "  BranchInterval = " << BranchInterval << "\n";
     o << "  Steps per block = " << nSteps << "\n";
     o << "  Number of blocks = " << nBlocks << "\n";
-    app_log() << o.str() << endl;
+    app_log() << o.str() << std::endl;
   }
-  app_log() << "  DMC Engine Initialization = " << init_timer.elapsed() << " secs " << endl;
+  app_log() << "  DMC Engine Initialization = " << init_timer.elapsed() << " secs " << std::endl;
 }
 
 bool DMCOMP::run()
@@ -359,7 +359,7 @@ void DMCOMP::benchMark()
   {
     char fname[16];
     sprintf(fname,"test.%i",ip);
-    ofstream fout(fname);
+    std::ofstream fout(fname);
   }
   for(int istep=0; istep<nSteps; istep++)
   {
@@ -384,12 +384,12 @@ DMCOMP::put(xmlNodePtr q)
   p.add(BranchInterval,"sub_steps","int");
   p.put(q);
 
-  //app_log() << "\n DMC::put qmc_counter=" << qmc_common.qmc_counter << "  my_counter=" << MyCounter<< endl;
-  //app_log() << "  timestep       = " << Tau << endl;
-  //app_log() << "  blocks         = " << nBlocks << endl;
-  //app_log() << "  steps          = " << nSteps << endl;
-  //app_log() << "  current        = " << CurrentStep << endl;
-  //app_log() << "  walkers/mpi    = " << W.getActiveWalkers() << endl << endl;
+  //app_log() << "\n DMC::put qmc_counter=" << qmc_common.qmc_counter << "  my_counter=" << MyCounter<< std::endl;
+  //app_log() << "  timestep       = " << Tau << std::endl;
+  //app_log() << "  blocks         = " << nBlocks << std::endl;
+  //app_log() << "  steps          = " << nSteps << std::endl;
+  //app_log() << "  current        = " << CurrentStep << std::endl;
+  //app_log() << "  walkers/mpi    = " << W.getActiveWalkers() << std::endl << std::endl;
   //app_log().flush();
   return true;
 }

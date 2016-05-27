@@ -173,11 +173,11 @@ struct BsplineFunctor: public OptimizableFunctorBase
             SplineCoefs[i+2]*(dA[ 8]*tp[0] + dA[ 9]*tp[1] + dA[10]*tp[2] + dA[11]*tp[3])+
             SplineCoefs[i+3]*(dA[12]*tp[0] + dA[13]*tp[1] + dA[14]*tp[2] + dA[15]*tp[3]));
 //       if (std::fabs(dudr_FD-dudr) > 1.0e-8)
-//  cerr << "Error in BsplineFunction:  dudr = " << dudr
-//       << "  dudr_FD = " << dudr_FD << endl;
+//  std::cerr << "Error in BsplineFunction:  dudr = " << dudr
+//       << "  dudr_FD = " << dudr_FD << std::endl;
 //       if (std::fabs(d2udr2_FD-d2udr2) > 1.0e-4)
-//  cerr << "Error in BsplineFunction:  r = " << r << "  d2udr2 = " << dudr
-//       << "  d2udr2_FD = " << d2udr2_FD << "  rcut = " << cutoff_radius << endl;
+//  std::cerr << "Error in BsplineFunction:  r = " << r << "  d2udr2 = " << dudr
+//       << "  d2udr2_FD = " << d2udr2_FD << "  rcut = " << cutoff_radius << std::endl;
     return
       (SplineCoefs[i+0]*(A[ 0]*tp[0] + A[ 1]*tp[1] + A[ 2]*tp[2] + A[ 3]*tp[3])+
        SplineCoefs[i+1]*(A[ 4]*tp[0] + A[ 5]*tp[1] + A[ 6]*tp[2] + A[ 7]*tp[3])+
@@ -226,14 +226,14 @@ struct BsplineFunctor: public OptimizableFunctorBase
             SplineCoefs[i+2]*(dA[ 8]*tp[0] + dA[ 9]*tp[1] + dA[10]*tp[2] + dA[11]*tp[3])+
             SplineCoefs[i+3]*(dA[12]*tp[0] + dA[13]*tp[1] + dA[14]*tp[2] + dA[15]*tp[3]));
 //       if (std::fabs(dudr_FD-dudr) > 1.0e-8)
-//  cerr << "Error in BsplineFunction:  dudr = " << dudr
-//       << "  dudr_FD = " << dudr_FD << endl;
+//  std::cerr << "Error in BsplineFunction:  dudr = " << dudr
+//       << "  dudr_FD = " << dudr_FD << std::endl;
 //       if (std::fabs(d2udr2_FD-d2udr2) > 1.0e-4)
-//  cerr << "Error in BsplineFunction:  r = " << r << "  d2udr2 = " << dudr
-//       << "  d2udr2_FD = " << d2udr2_FD << "  rcut = " << cutoff_radius << endl;
+//  std::cerr << "Error in BsplineFunction:  r = " << r << "  d2udr2 = " << dudr
+//       << "  d2udr2_FD = " << d2udr2_FD << "  rcut = " << cutoff_radius << std::endl;
     // if (std::fabs(d3udr3_FD-d3udr3) > 1.0e-4)
-    //  cerr << "Error in BsplineFunction:  r = " << r << "  d3udr3 = " << dudr
-    //       << "  d3udr3_FD = " << d3udr3_FD << "  rcut = " << cutoff_radius << endl;
+    //  std::cerr << "Error in BsplineFunction:  r = " << r << "  d3udr3 = " << dudr
+    //       << "  d3udr3_FD = " << d3udr3_FD << "  rcut = " << cutoff_radius << std::endl;
     return
       (SplineCoefs[i+0]*(A[ 0]*tp[0] + A[ 1]*tp[1] + A[ 2]*tp[2] + A[ 3]*tp[3])+
        SplineCoefs[i+1]*(A[ 4]*tp[0] + A[ 5]*tp[1] + A[ 6]*tp[2] + A[ 7]*tp[3])+
@@ -244,7 +244,7 @@ struct BsplineFunctor: public OptimizableFunctorBase
 
 
   inline bool
-  evaluateDerivatives(real_type r, vector<TinyVector<real_type,3> >& derivs)
+  evaluateDerivatives(real_type r, std::vector<TinyVector<real_type,3> >& derivs)
   {
     if (r >= cutoff_radius)
       return false;
@@ -310,7 +310,7 @@ struct BsplineFunctor: public OptimizableFunctorBase
     return true;
   }
 
-  inline bool evaluateDerivatives(real_type r, vector<real_type>& derivs)
+  inline bool evaluateDerivatives(real_type r, std::vector<real_type>& derivs)
   {
     if (r >= cutoff_radius) return false;
     real_type tp[4],v[4],ipart,t;
@@ -380,19 +380,19 @@ struct BsplineFunctor: public OptimizableFunctorBase
     {
       PRE.error("You must specify a positive number of parameters for the Bspline jastrow function.",true);
     }
-    app_log() << " size = " << NumParams << " parameters " << endl;
-    app_log() << " cusp = " << CuspValue << endl;
-    app_log() << " rcut = " << cutoff_radius << endl;
+    app_log() << " size = " << NumParams << " parameters " << std::endl;
+    app_log() << " cusp = " << CuspValue << std::endl;
+    app_log() << " rcut = " << cutoff_radius << std::endl;
     resize(NumParams);
     // Now read coefficents
     xmlNodePtr xmlCoefs = cur->xmlChildrenNode;
     while (xmlCoefs != NULL)
     {
-      string cname((const char*)xmlCoefs->name);
+      std::string cname((const char*)xmlCoefs->name);
       if (cname == "coefficients")
       {
-        string type("0"), id("0");
-        string optimize("yes");
+        std::string type("0"), id("0");
+        std::string optimize("yes");
         OhmmsAttributeSet cAttrib;
         cAttrib.add(id, "id");
         cAttrib.add(type, "type");
@@ -403,7 +403,7 @@ struct BsplineFunctor: public OptimizableFunctorBase
           PRE.error("Unknown correlation type " + type + " in BsplineFunctor." + "Resetting to \"Array\"");
           xmlNewProp(xmlCoefs, (const xmlChar*) "type", (const xmlChar*) "Array");
         }
-        vector<real_type> params;
+        std::vector<real_type> params;
         putContent(params, xmlCoefs);
         if (params.size() == NumParams)
           Parameters = params;
@@ -418,9 +418,9 @@ struct BsplineFunctor: public OptimizableFunctorBase
           tmp_func.resize(params.size());
           tmp_func.Parameters = params;
           tmp_func.reset();
-          vector<real_type> y(numPoints);
+          std::vector<real_type> y(numPoints);
           Matrix<real_type> basis(numPoints,NumParams);
-          vector<TinyVector<real_type,3> > derivs(NumParams);
+          std::vector<TinyVector<real_type,3> > derivs(NumParams);
           for (int i=0; i<numPoints; i++)
           {
             real_type r = (real_type)i / (real_type)numPoints * cutoff_radius;
@@ -433,7 +433,7 @@ struct BsplineFunctor: public OptimizableFunctorBase
           LinearFit(y, basis, Parameters);
           app_log() << "New parameters are:\n";
           for (int i=0; i < Parameters.size(); i++)
-            app_log() << "   " << Parameters[i] << endl;
+            app_log() << "   " << Parameters[i] << std::endl;
         }
         if(optimize == "yes")
         {
@@ -461,8 +461,8 @@ struct BsplineFunctor: public OptimizableFunctorBase
     return zeros>1.0e-12; //true if Parameters are not zero
   }
 
-  void initialize(int numPoints, vector<real_type>& x, vector<real_type>& y
-                  , real_type cusp, real_type rcut, string& id, string& optimize )
+  void initialize(int numPoints, std::vector<real_type>& x, std::vector<real_type>& y
+                  , real_type cusp, real_type rcut, std::string& id, std::string& optimize )
   {
     ReportEngine PRE("BsplineFunctor","initialize");
     NumParams = numPoints;
@@ -473,13 +473,13 @@ struct BsplineFunctor: public OptimizableFunctorBase
       PRE.error("You must specify a positive number of parameters for the Bspline jastrow function.",true);
     }
     app_log() << "Initializing BsplineFunctor from array. \n";
-    app_log() << " size = " << NumParams << " parameters " << endl;
-    app_log() << " cusp = " << CuspValue << endl;
-    app_log() << " rcut = " << cutoff_radius << endl;
+    app_log() << " size = " << NumParams << " parameters " << std::endl;
+    app_log() << " cusp = " << CuspValue << std::endl;
+    app_log() << " rcut = " << cutoff_radius << std::endl;
     resize(NumParams);
     int npts = x.size();
     Matrix<real_type> basis(npts,NumParams);
-    vector<TinyVector<real_type,3> > derivs(NumParams);
+    std::vector<TinyVector<real_type,3> > derivs(NumParams);
     for (int i=0; i<npts; i++)
     {
       real_type r = x[i];
@@ -495,7 +495,7 @@ struct BsplineFunctor: public OptimizableFunctorBase
     LinearFit(y, basis, Parameters);
     app_log() << "New parameters are:\n";
     for (int i=0; i < Parameters.size(); i++)
-      app_log() << "   " << Parameters[i] << endl;
+      app_log() << "   " << Parameters[i] << std::endl;
     if(optimize == "yes")
     {
       // Setup parameter names
@@ -517,7 +517,7 @@ struct BsplineFunctor: public OptimizableFunctorBase
     reset();
   }
 
-  void reportStatus(ostream& os)
+  void reportStatus(std::ostream& os)
   {
     if (notOpt)
       return;
@@ -574,7 +574,7 @@ struct BsplineFunctor: public OptimizableFunctorBase
   {
     if(ReportLevel)
     {
-      ofstream fout(fileName.c_str());
+      std::ofstream fout(fileName.c_str());
       this->print(fout);
     }
   }
@@ -588,8 +588,8 @@ struct BsplineFunctor: public OptimizableFunctorBase
     for (int i=0; i<n; ++i)
     {
       u=evaluate(r,du,d2du);
-      os << setw(22) << r << setw(22) << u << setw(22) << du
-         << setw(22) << d2du << std::endl;
+      os << std::setw(22) << r << std::setw(22) << u << std::setw(22) << du
+         << std::setw(22) << d2du << std::endl;
       r+=d;
     }
   }

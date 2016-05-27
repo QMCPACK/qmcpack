@@ -40,7 +40,7 @@ int main(int argc, char** argv)
   dummy.read(h_file,"orb0000");
   H5Fclose(h_file);
   timer.stop();
-  cout << "Time to read image data " << timer.cpu_time() << endl;
+  std::cout << "Time to read image data " << timer.cpu_time() << std::endl;
   //Create XYZCubicGrid
   XYZCubicGrid<double> grid3(&gridX,&gridY,&gridZ);
   //Create a TriCubicSpline with PBC: have to think more about fixed-boundary conditions
@@ -49,7 +49,7 @@ int main(int argc, char** argv)
   timer.start();
   aorb.reset(inData.begin(), inData.end());
   timer.stop();
-  cout << "Time to set up spline coefficients " << timer.cpu_time() << endl;
+  std::cout << "Time to set up spline coefficients " << timer.cpu_time() << std::endl;
   double lap,val;
   TinyVector<double,3> grad;
   //vector<double>::iterator it(inData.begin());
@@ -71,7 +71,7 @@ int main(int argc, char** argv)
     }
   }
   timer.stop();
-  cout << "Time to evaluate the values  " << timer.cpu_time() << endl;
+  std::cout << "Time to evaluate the values  " << timer.cpu_time() << std::endl;
   timer.start();
   h_file = H5Fcreate("spline3d_writeback.h5",H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
   HDFAttribIO<std::vector<double> > dump(inData,npts);
@@ -80,6 +80,6 @@ int main(int argc, char** argv)
   dump1.write(h_file,"spline0000");
   H5Fclose(h_file);
   timer.stop();
-  cout << "Time to write to hdf5 " << timer.cpu_time() << endl;
+  std::cout << "Time to write to hdf5 " << timer.cpu_time() << std::endl;
   return 0;
 }

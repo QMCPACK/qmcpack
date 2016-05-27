@@ -43,8 +43,8 @@ struct QMCGaussianParserBase
   int * ESPAtomicNumberIndex;
   int TotNumMonomer;
   ParticleSet *ESPSystem;
-  std::vector <vector<double> > ESP;
-  std::vector <vector <string> > ESPGroupName;
+  std::vector <std::vector<double> > ESP;
+  std::vector<std::vector<std::string> > ESPGroupName;
   xmlNodePtr createESPSet(int iesp);
   static std::map<int,std::string> ESPName;
   int FMOIndexI,FMOIndexJ,FMOIndexK;
@@ -62,7 +62,7 @@ struct QMCGaussianParserBase
   ParticleSet IonSystem;
 
 
-  std::vector<string> GroupName;
+  std::vector<std::string> GroupName;
 
   std::vector<int> gShell, gNumber, gBound;
   std::vector<int> Occ_alpha, Occ_beta;
@@ -75,8 +75,8 @@ struct QMCGaussianParserBase
   xmlNodePtr gridPtr;
   std::vector<std::string> CIalpha,CIbeta;
   std::vector<std::string> CSFocc;
-  std::vector<vector<std::string> > CSFalpha,CSFbeta;
-  std::vector<vector<double> > CSFexpansion;
+  std::vector<std::vector<std::string> > CSFalpha,CSFbeta;
+  std::vector<std::vector<double> > CSFexpansion;
   std::vector<double> CIcoeff;
   std::vector<int> CIexcitLVL;
   int ci_size,ci_nca,ci_ncb,ci_nea,ci_neb,ci_nstates;
@@ -84,7 +84,7 @@ struct QMCGaussianParserBase
   bool usingCSF;
   bool VSVB;
 
-  std::vector<pair<int,double> > coeff2csf;
+  std::vector<std::pair<int,double> > coeff2csf;
 
   QMCGaussianParserBase();
   QMCGaussianParserBase(int argc, char** argv);
@@ -109,16 +109,16 @@ struct QMCGaussianParserBase
   xmlNodePtr createJ1();
 
 
-  int numberOfExcitationsCSF(string&);
+  int numberOfExcitationsCSF( std::string&);
 
   void map2GridFunctors(xmlNodePtr cur);
   virtual void parse(const std::string& fname) = 0;
 
-  virtual void dump(const string& psi_tag,
-                    const string& ion_tag);
+  virtual void dump(const std::string& psi_tag,
+                    const std::string& ion_tag);
 
-  virtual void Fmodump(const string& psi_tag,
-                                 const string& ion_tag,
+  virtual void Fmodump(const std::string& psi_tag,
+                                 const std::string& ion_tag,
                                  std::string Mytag);
 
   //static std::vector<std::string> IonName;

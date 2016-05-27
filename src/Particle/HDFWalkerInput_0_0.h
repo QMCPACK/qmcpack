@@ -39,14 +39,14 @@ class HDFWalkerInput_0_0
   ///target MCWalkerConfiguration
   MCWalkerConfiguration& targetW;
   ///name of hdf file
-  string FileName;
+  std::string FileName;
 public:
   /** constructor
    * @param W reference configuration to fill in
    * @param c communicator
    * @param aroot fileroot
    */
-  HDFWalkerInput_0_0(MCWalkerConfiguration& W, const string& aroot);
+  HDFWalkerInput_0_0(MCWalkerConfiguration& W, const std::string& aroot);
 
   ~HDFWalkerInput_0_0();
   /** process xml node

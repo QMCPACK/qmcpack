@@ -29,7 +29,7 @@ struct HFDHE2_Moroni1995_phy: public QMCHamiltonianBase
 
   Return_t evaluate(ParticleSet& P);
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
@@ -72,7 +72,7 @@ struct HFDHE2_Moroni1995_phy: public QMCHamiltonianBase
     /*
     for (int i=0; i<plist.Names.size(); i++)
     std::cout<<plist.Names[i];
-    std::cout<< "!!!!!" << endl;
+    std::cout<< "!!!!!" << std::endl;
     */
   }
 
@@ -112,7 +112,7 @@ struct HFDHE2_Moroni1995_aux: public QMCHamiltonianBase
     return Value;
   }
 
-  inline Return_t evaluate(ParticleSet &P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet &P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }

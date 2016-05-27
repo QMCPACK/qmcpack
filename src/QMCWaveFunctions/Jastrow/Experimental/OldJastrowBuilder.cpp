@@ -63,19 +63,19 @@ JastrowBuilder::createTwoBodySpin(xmlNodePtr cur, JeeType* J2)
   int cur_var = targetPsi.VarList.size();
   DistanceTableData* d_table = DistanceTable::getTable(DistanceTable::add(targetPtcl));
   int	ng = targetPtcl.groups();
-  map<string,FuncType*> jastrowMap;
-  vector<FuncType*> jastrow(ng*ng);
+  std::map<std::string,FuncType*> jastrowMap;
+  std::vector<FuncType*> jastrow(ng*ng);
   for(int i=0; i<ng*ng; i++)
     jastrow[i]=0;
   int nj = 0;
   cur = cur->children;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     //if(cname == dtable_tag) {
     //	string source_name((const char*)(xmlGetProp(cur,(const xmlChar *)"source")));
     //  //int iptcl = 0;
-    //  map<string,ParticleSet*>::iterator pit(ptclPool.find(source_name));
+    //  std::map<std::string,ParticleSet*>::iterator pit(ptclPool.find(source_name));
     //  if(pit == ptclPool.end()) return false;
     //  ParticleSet* a = (*pit).second;
     //	d_table = DistanceTable::getTable(DistanceTable::add(*a));
@@ -87,8 +87,8 @@ JastrowBuilder::createTwoBodySpin(xmlNodePtr cur, JeeType* J2)
     //} else if(cname ==corr_tag) {
     if(cname ==corr_tag)
     {
-      string spA((const char*)(xmlGetProp(cur,(const xmlChar *)"speciesA")));
-      string spB((const char*)(xmlGetProp(cur,(const xmlChar *)"speciesB")));
+      std::string spA((const char*)(xmlGetProp(cur,(const xmlChar *)"speciesA")));
+      std::string spB((const char*)(xmlGetProp(cur,(const xmlChar *)"speciesB")));
       const xmlChar* refptr=xmlGetProp(cur,(const xmlChar *)"ref");
       const xmlChar* idptr=xmlGetProp(cur,(const xmlChar *)"id");
       int ia = targetPtcl.getSpeciesSet().findSpecies(spA);
@@ -104,7 +104,7 @@ JastrowBuilder::createTwoBodySpin(xmlNodePtr cur, JeeType* J2)
         }
         else
         {
-          typename map<string,FuncType*>::iterator it(jastrowMap.find((const char*)refptr));
+          typename std::map<std::string,FuncType*>::iterator it(jastrowMap.find((const char*)refptr));
           if(it != jastrowMap.end())
           {
             j2 = new FuncType((*it).second);
@@ -116,7 +116,7 @@ JastrowBuilder::createTwoBodySpin(xmlNodePtr cur, JeeType* J2)
         }
         if(idptr == NULL)
         {
-          ostringstream idassigned;
+          std::ostringstream idassigned;
           idassigned << "j2"<<iab;
           jastrowMap[idassigned.str()]=j2;
         }
@@ -197,10 +197,10 @@ JastrowBuilder::createTwoBodyNoSpin(xmlNodePtr cur, JeeType* J2)
   cur = cur->children;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     //if(cname == dtable_tag) {
     //	string source_name((const char*)(xmlGetProp(cur,(const xmlChar *)"source")));
-    //  map<string,ParticleSet*>::iterator pit(ptclPool.find(source_name));
+    //  std::map<std::string,ParticleSet*>::iterator pit(ptclPool.find(source_name));
     //  if(pit == ptclPool.end()) return false;
     //  ParticleSet* a = (*pit).second;
     //	d_table = DistanceTable::getTable(DistanceTable::add(*a));
@@ -253,13 +253,13 @@ JastrowBuilder::createOneBody(xmlNodePtr cur, JneType* J1)
 {
   typedef typename JneType::FuncType FuncType;
   int cur_var = targetPsi.VarList.size();
-  vector<FuncType*> jastrow;
+  std::vector<FuncType*> jastrow;
   ParticleSet* center=0;
   int ng = 0;
   const xmlChar* s=xmlGetProp(cur,(const xmlChar*)"source");
   if(s != NULL)
   {
-    map<string,ParticleSet*>::iterator pa_it(ptclPool.find((const char*)s));
+    std::map<std::string,ParticleSet*>::iterator pa_it(ptclPool.find((const char*)s));
     if(pa_it == ptclPool.end())
       return false;
     center = (*pa_it).second;
@@ -268,13 +268,13 @@ JastrowBuilder::createOneBody(xmlNodePtr cur, JneType* J1)
   cur = cur->xmlChildrenNode;
   while(cur != NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == dtable_tag)
     {
-      string source_name((const char*)(xmlGetProp(cur,(const xmlChar *)"source")));
-      string target_name((const char*)(xmlGetProp(cur,(const xmlChar *)"target")));
-      map<string,ParticleSet*>::iterator pa_it(ptclPool.find(source_name));
-      map<string,ParticleSet*>::iterator pb_it(ptclPool.find(target_name));
+      std::string source_name((const char*)(xmlGetProp(cur,(const xmlChar *)"source")));
+      std::string target_name((const char*)(xmlGetProp(cur,(const xmlChar *)"target")));
+      std::map<std::string,ParticleSet*>::iterator pa_it(ptclPool.find(source_name));
+      std::map<std::string,ParticleSet*>::iterator pb_it(ptclPool.find(target_name));
       if(pa_it == ptclPool.end()  || pb_it == ptclPool.end())
         return false;
       center = (*pa_it).second;
@@ -286,7 +286,7 @@ JastrowBuilder::createOneBody(xmlNodePtr cur, JneType* J1)
     else
       if(cname == corr_tag)
       {
-        string speciesA((const char*)(xmlGetProp(cur,(const xmlChar *)"speciesA")));
+        std::string speciesA((const char*)(xmlGetProp(cur,(const xmlChar *)"speciesA")));
         //string speciesB((const char*)(xmlGetProp(cur,(const xmlChar *)"speciesB")));
         int ia = center->getSpeciesSet().findSpecies(speciesA);
         if(!(jastrow[ia]))
@@ -322,9 +322,9 @@ JastrowBuilder::createOneBody(xmlNodePtr cur, JneType* J1)
  */
 bool JastrowBuilder::put(xmlNodePtr cur)
 {
-  string jasttype((const char*)(xmlGetProp(cur, (const xmlChar *)"type")));
-  string jastname((const char*)(xmlGetProp(cur, (const xmlChar *)"name")));
-  string jastfunction;
+  std::string jasttype((const char*)(xmlGetProp(cur, (const xmlChar *)"type")));
+  std::string jastname((const char*)(xmlGetProp(cur, (const xmlChar *)"name")));
+  std::string jastfunction;
   xmlChar *ftype = xmlGetProp(cur, (const xmlChar *)"function");
   if(ftype)
     jastfunction = (const char*) ftype;
@@ -391,12 +391,12 @@ bool JastrowBuilder::put(xmlNodePtr cur)
         else
           if(jasttype == "Three-Body-Geminal")
           {
-            app_log() << "  creating Three-Body-Geminal Jastrow function " << endl;
-            string source_name("i");
+            app_log() << "  creating Three-Body-Geminal Jastrow function " << std::endl;
+            std::string source_name("i");
             const xmlChar* iptr = xmlGetProp(cur, (const xmlChar *)"source");
             if(iptr != NULL)
               source_name=(const char*)iptr;
-            map<string,ParticleSet*>::iterator pa_it(ptclPool.find(source_name));
+            std::map<std::string,ParticleSet*>::iterator pa_it(ptclPool.find(source_name));
             if(pa_it != ptclPool.end())
             {
               ThreeBodyGeminalBuilder g(targetPtcl,targetPsi,*((*pa_it).second));
@@ -406,12 +406,12 @@ bool JastrowBuilder::put(xmlNodePtr cur)
           else
             if(jasttype == "Three-Body-Pade")
             {
-              app_log() << "  creating Three-Body-Pade Jastrow function " << endl;
-              cerr << "  creating Three-Body-Pade Jastrow function " << endl;
-              string source_name("i");
+              app_log() << "  creating Three-Body-Pade Jastrow function " << std::endl;
+              std::cerr << "  creating Three-Body-Pade Jastrow function " << std::endl;
+              std::string source_name("i");
               //const xmlChar* iptr = xmlGetProp(cur, (const xmlChar *)"source");
               //if(iptr != NULL) source_name=(const char*)iptr;
-              map<string,ParticleSet*>::iterator pa_it(ptclPool.find(source_name));
+              std::map<std::string,ParticleSet*>::iterator pa_it(ptclPool.find(source_name));
               if(pa_it != ptclPool.end())
               {
                 ThreeBodyPadeBuilder g(targetPtcl,targetPsi,*((*pa_it).second));

@@ -20,7 +20,6 @@
 #include "Numerics/OneDimCubicSpline.h"
 #include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
 #include "QMCWaveFunctions/MolecularOrbitals/NumericalRGFBuilder.h"
-using namespace std;
 #if defined(HAVE_LIBHDF5)
 #include "Numerics/HDFNumericAttrib.h"
 #endif
@@ -38,7 +37,7 @@ NumericalRGFBuilder::NumericalRGFBuilder(xmlNodePtr cur)
 bool NumericalRGFBuilder::putCommon(xmlNodePtr cur)
 {
 #if defined(HAVE_LIBHDF5)
-  string afilename("invalid");
+  std::string afilename("invalid");
   OhmmsAttributeSet aAttrib;
   aAttrib.add(afilename,"href");
   aAttrib.add(afilename,"file");
@@ -88,7 +87,7 @@ NumericalRGFBuilder::addRadialOrbital(xmlNodePtr cur,
   xmlAttrPtr att = cur->properties;
   while(att != NULL)
   {
-    string aname((const char*)(att->name));
+    std::string aname((const char*)(att->name));
     if(aname == "imin")
     {
       imin = atoi((const char*)(att->children->content));
@@ -144,9 +143,9 @@ NumericalRGFBuilder::addRadialOrbital(xmlNodePtr cur,
   m_orbitals->RnlID.push_back(nlms);
   XMLReport("Calculating 1D-Cubic spline, cusp condtion = " << yprime_i)
   //#ifdef PRINT_DEBUG
-  string fname(grpname);
+  std::string fname(grpname);
   fname.append(".dat");
-  ofstream dfile(fname.c_str());
+  std::ofstream dfile(fname.c_str());
   for(int ig=imin; ig<radorb->size(); ig++)
   {
     RealType dr = (radorb->r(ig+1)- radorb->r(ig))/5.0;
@@ -156,9 +155,9 @@ NumericalRGFBuilder::addRadialOrbital(xmlNodePtr cur,
       //Do not need this anymore
       //radorb->setgrid(_r);
       y = radorb->evaluate(_r,1.0/_r,dy,d2y);
-      dfile << setw(15) << _r << setw(20) << setprecision(12) << y
-            << setw(20) << dy << setw(20) << d2y
-            << endl;
+      dfile << std::setw(15) << _r << std::setw(20) << setprecision(12) << y
+            << std::setw(20) << dy << std::setw(20) << d2y
+            << std::endl;
       _r+=dr;
     }
   }

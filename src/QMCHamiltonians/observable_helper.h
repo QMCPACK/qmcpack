@@ -90,7 +90,7 @@ struct observable_helper
     //rank is increased
     hsize_t rank=dims.size()+1;
     mydims.resize(rank,1);
-    std::copy(dims.begin(),dims.end(),mydims.begin()+1);
+    copy(dims.begin(),dims.end(),mydims.begin()+1);
     maxdims=mydims;
     curdims=mydims;
     offsets.resize(rank,0);

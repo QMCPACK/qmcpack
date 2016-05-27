@@ -101,9 +101,9 @@ void RQMCEstimator::initialize(MultiChain* reptileRef, int setDirect, double set
 //  void
 //    RQMCEstimator
 //    ::initialize(MCWalkerConfiguration& W,
-//        vector<QMCHamiltonian*>& h,
-//        vector<TrialWaveFunction*>& psi,
-//        RealType tau,vector<RealType>& Norm,
+//        std::vector<QMCHamiltonian*>& h,
+//        std::vector<TrialWaveFunction*>& psi,
+//        RealType tau,std::vector<RealType>& Norm,
 //        bool require_register) {
 //
 //      NumWalkers = W.getActiveWalkers();
@@ -114,7 +114,7 @@ void RQMCEstimator::initialize(MultiChain* reptileRef, int setDirect, double set
 //      MCWalkerConfiguration::iterator it(W.begin());
 //      MCWalkerConfiguration::iterator it_end(W.end());
 //
-//      vector<RealType> sumratio(NumCopies), logpsi(NumCopies);
+//      std::vector<RealType> sumratio(NumCopies), logpsi(NumCopies);
 //      int iw(0);
 //      int DataSetSize((*it)->DataSet.size());
 //      while(it != it_end) {
@@ -180,11 +180,11 @@ void RQMCEstimator::initialize(MultiChain* reptileRef, int setDirect, double set
 //
 //  void
 //    RQMCEstimator
-//    ::initialize(MCWalkerConfiguration& W, vector<ParticleSet*>& WW,
+//    ::initialize(MCWalkerConfiguration& W, std::vector<ParticleSet*>& WW,
 //        SpaceWarp& Warp,
-//        vector<QMCHamiltonian*>& h,
-//        vector<TrialWaveFunction*>& psi,
-//        RealType tau,vector<RealType>& Norm,
+//        std::vector<QMCHamiltonian*>& h,
+//        std::vector<TrialWaveFunction*>& psi,
+//        RealType tau,std::vector<RealType>& Norm,
 //        bool require_register) {
 //
 //      NumWalkers = W.getActiveWalkers();
@@ -193,14 +193,14 @@ void RQMCEstimator::initialize(MultiChain* reptileRef, int setDirect, double set
 //
 //      RatioIJ.resize(NumWalkers,NumCopies*(NumCopies-1)/2);
 //
-//      vector<RealType> invsumratio(NumCopies);
+//      std::vector<RealType> invsumratio(NumCopies);
 //      MCWalkerConfiguration::ParticlePos_t drift(numPtcls);
 //
 //      MCWalkerConfiguration::iterator it(W.begin());
 //      MCWalkerConfiguration::iterator it_end(W.end());
 //
-//      vector<RealType> sumratio(NumCopies), logpsi(NumCopies);
-//      vector<RealType> Jacobian(NumCopies);
+//      std::vector<RealType> sumratio(NumCopies), logpsi(NumCopies);
+//      std::vector<RealType> Jacobian(NumCopies);
 //
 //      int jindex=W.addProperty("Jacobian");
 //      int iw(0);
@@ -355,7 +355,7 @@ RQMCEstimator::accumulate(const Walker_t& awalker, RealType wgt)
                           +Reptile->back()->Action(ipsi,Directionless) );
     AveEloc[ipsi]+=WeightedEloc;
     AveWeight[ipsi]+=Reptile->UmbrellaWeight[ipsi];
-    //cerr << "  Estim8 " << ipsi << " " << AveEloc[ipsi] << " " << AveWeight[ipsi] << endl;
+    //cerr << "  Estim8 " << ipsi << " " << AveEloc[ipsi] << " " << AveWeight[ipsi] << std::endl;
   }
   ////const RealType* restrict etot=UmbrellaEnergy[CurrentWalker];
   ////const RealType* restrict wsum=UmbrellaWeight[CurrentWalker];
@@ -385,10 +385,10 @@ RQMCEstimator::accumulate(const Walker_t& awalker, RealType wgt)
   //reset to zero
   if(CurrentWalker == NumWalkers)
     CurrentWalker=0;
-  //cerr << "Leaving accumulate" << endl;
+  //cerr << "Leaving accumulate" << std::endl;
 }
 
-void RQMCEstimator::registerObservables(vector<observable_helper*>& h5dec, hid_t gid)
+void RQMCEstimator::registerObservables(std::vector<observable_helper*>& h5dec, hid_t gid)
 {
   //IMPLEMENT for hdf5
 }

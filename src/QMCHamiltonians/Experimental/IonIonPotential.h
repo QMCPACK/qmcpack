@@ -49,7 +49,7 @@ struct IonIonPotential: public QMCHamiltonianBase
   bool FirstTime;
   DistanceTableData* d_ii;
   ParticleSet& PtclRef;
-  vector<RealType> Z;
+  std::vector<RealType> Z;
 
   IonIonPotential(ParticleSet& ref): FirstTime(true), d_ii(0), PtclRef(ref)
   {
@@ -91,7 +91,7 @@ struct IonIonPotential: public QMCHamiltonianBase
     return Value;
   }
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
@@ -129,11 +129,11 @@ struct IonIonPotential: public QMCHamiltonianBase
   void rejectMove(int active) { }
 
 #ifdef QMC_CUDA
-  void addEnergy(MCWalkerConfiguration &W, vector<RealType> &LocalEnergy)
+  void addEnergy(MCWalkerConfiguration &W, std::vector<RealType> &LocalEnergy)
   {
     if (FirstTime)
       evaluate(PtclRef);
-    vector<Walker_t*> &walkers = W.WalkerList;
+    std::vector<Walker_t*> &walkers = W.WalkerList;
     for (int iw=0; iw<walkers.size(); iw++)
     {
       walkers[iw]->getPropertyBase()[NUMPROPERTIES+myIndex] = Value;

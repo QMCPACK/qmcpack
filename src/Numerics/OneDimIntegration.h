@@ -91,7 +91,7 @@ typename GF::value_type
 integrate_RK2_backward(const GF& f, GF& g)
 {
   // typedef typename GF::value_type value_type;
-  //   int last = min(f.size(),g.size())-1;
+  //   int last = std::min(f.size(),g.size())-1;
   //   value_type ysum=0.0;
   //   g(last) = 0.0;
   //   for(int i=last; i > 0; i--){
@@ -100,7 +100,7 @@ integrate_RK2_backward(const GF& f, GF& g)
   //   }
   //   return ysum;
   typedef typename GF::value_type value_type;
-  int last = min(f.size(),g.size())-1;
+  int last = std::min(f.size(),g.size())-1;
   value_type yold = 0.0;
   value_type ynew = 0.0;
   g(last) = 0.0;

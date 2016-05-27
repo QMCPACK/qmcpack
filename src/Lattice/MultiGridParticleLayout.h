@@ -21,7 +21,6 @@
 #define OHMMS_MULTIGRID_PARTICLE_LAYOUT_H
 #include <string>
 #include <vector>
-using std::vector;
 
 #include "Lattice/Region.h"
 #include "Lattice/UniformCartesianGrid.h"
@@ -38,7 +37,7 @@ struct MultiGridParticleLayout
 
   typedef UniformCartesianGrid<T,D> PtclGrid_t;
 
-  vector<PtclGrid_t*> dGrid;
+  std::vector<PtclGrid_t*> dGrid;
 
   MultiGridParticleLayout() { }
   ~MultiGridParticleLayout()
@@ -88,7 +87,7 @@ struct MultiGridParticleLayout
     }
   }
 
-  void printGrid(ostream& os)
+  void printGrid(std::ostream& os)
   {
     for(int i=0; i<dGrid.size(); i++)
       dGrid[i]->print(os);
@@ -227,7 +226,7 @@ template<class T, unsigned D>
 template<class P>
 void MultiGridParticleLayout<T,D>::update(P* ptcl, int imode)
 {
-//  cout << "Calling MultiGridParticleLayout::update" << endl;
+//  std::cout << "Calling MultiGridParticleLayout::update" << std::endl;
 //    typedef P::ParticlePos_t ParticlePos_t;
 //    typedef P::ParticleIndex_t ParticleIndex_t;
 //    ParticlePos_t r;

@@ -312,14 +312,14 @@ operator*(T1 lhs, const TinyMatrix<T2,D1,D2> &rhs)
 //----------------------------------------------------------------------
 // I/O
 template<class T, unsigned D1, unsigned D2>
-ostream& operator<<(ostream& out, const TinyMatrix<T,D1,D2>& rhs)
+ostream& operator<<(std::ostream& out, const TinyMatrix<T,D1,D2>& rhs)
 {
   int ii=0;
   for(int i=0; i<D1; i++)
   {
     for(int j=0; j<D2; j++)
       out << rhs[ii++] << " ";
-    out << endl;
+    out << std::endl;
   }
   return out;
 }

@@ -54,7 +54,7 @@ struct JastrowBuilder: public OrbitalBuilderBase
   PtclPoolType& ptclPool;
 
   /// the element name for Correlation, "correlation"
-  string corr_tag;
+  std::string corr_tag;
 };
 }
 #endif

@@ -21,7 +21,6 @@
 #include "Numerics/OhmmsBlas.h"
 #include "Numerics/LibxmlNumericIO.h"
 #include "Utilities/RandomGenerator.h"
-using namespace std;
 #include "Numerics/MatrixOperators.h"
 #include "OhmmsData/AttributeSet.h"
 
@@ -61,9 +60,9 @@ void ThreeBodyGeminal::checkOutVariables(const opt_variables_type& active)
 {
   myVars.getIndex(active);
   GeminalBasis->checkOutVariables(active);
-  app_log() << "<j3-variables>"<<endl;
+  app_log() << "<j3-variables>"<< std::endl;
   myVars.print(app_log());
-  app_log() << "</j3-variables>"<<endl;
+  app_log() << "</j3-variables>"<< std::endl;
 }
 
 ///reset the value of all the Two-Body Jastrow functions
@@ -93,11 +92,11 @@ void ThreeBodyGeminal::resetParameters(const opt_variables_type& active)
   for(int i=0; i<myVars.size(); ++i)
     if(myVars.where(i)>=0)
       myVars[i]=active[myVars.where(i)];
-  //app_log() << "ThreeBodyGeminal::resetParameters" << endl;
-  //app_log() << Lambda << endl;
+  //app_log() << "ThreeBodyGeminal::resetParameters" << std::endl;
+  //app_log() << Lambda << std::endl;
 }
 
-void ThreeBodyGeminal::reportStatus(ostream& os)
+void ThreeBodyGeminal::reportStatus(std::ostream& os)
 {
   myVars.print(os);
 }
@@ -267,7 +266,7 @@ void ThreeBodyGeminal::update(ParticleSet& P,
                               ParticleSet::ParticleLaplacian_t& dL,
                               int iat)
 {
-  cout << "****  This is to be removed " << endl;
+  std::cout << "****  This is to be removed " << std::endl;
   //dG[iat]+=curGrad-dUk[iat];
   //dL[iat]+=curLap-d2Uk[iat];
   acceptMove(P,iat);
@@ -387,8 +386,8 @@ bool ThreeBodyGeminal::put(xmlNodePtr cur)
   //BasisSize = GeminalBasis->TotalBasis;
   BasisSize = GeminalBasis->getBasisSetSize();
   app_log() << "  The number of Geminal functions "
-            <<"for Three-body Jastrow " << BasisSize << endl;
-  app_log() << "  The number of particles " << NumPtcls << endl;
+            <<"for Three-body Jastrow " << BasisSize << std::endl;
+  app_log() << "  The number of particles " << NumPtcls << std::endl;
   Lambda.resize(BasisSize,BasisSize);
   //disable lambda's so that element-by-element input can be handled
   FreeLambda.resize(BasisSize*(BasisSize+1)/2);
@@ -409,8 +408,8 @@ bool ThreeBodyGeminal::put(xmlNodePtr cur)
   else
   {
     //read from an input nodes
-    string aname("j3");
-    string datatype("no");
+    std::string aname("j3");
+    std::string datatype("no");
     int sizeIn(0);
     IndexOffSet=1;
     OhmmsAttributeSet attrib;
@@ -483,9 +482,9 @@ bool ThreeBodyGeminal::put(xmlNodePtr cur)
       }
     }
   }
-  //app_log() << "  Lambda Variables " << endl;
+  //app_log() << "  Lambda Variables " << std::endl;
   //myVars.print(app_log());
-  //app_log() << endl;
+  //app_log() << std::endl;
   V.resize(NumPtcls,BasisSize);
   Y.resize(NumPtcls,BasisSize);
   dY.resize(NumPtcls,BasisSize);
@@ -500,8 +499,8 @@ bool ThreeBodyGeminal::put(xmlNodePtr cur)
   Uk.resize(NumPtcls);
   dUk.resize(NumPtcls,NumPtcls);
   d2Uk.resize(NumPtcls,NumPtcls);
-  //app_log() << "  Three-body Geminal coefficients " << endl;
-  //app_log() << Lambda << endl;
+  //app_log() << "  Three-body Geminal coefficients " << std::endl;
+  //app_log() << Lambda << std::endl;
   //GeminalBasis->resize(NumPtcls);
   return true;
 }

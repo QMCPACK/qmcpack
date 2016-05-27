@@ -53,14 +53,14 @@ LocalPPotential::LocalPPotential(ParticleSet& ions, ParticleSet& els):
   Centers(ions.GroupID), d_table(NULL)
 {
   d_table = DistanceTable::getTable(DistanceTable::add(ions,els));
-  vector<string> vlist;
+  std::vector<std::string> vlist;
   const SpeciesSet& Species(ions.getSpeciesSet());
   for(int i=0; i< Species.getTotalNum(); i++)
   {
-    vector<double> grid_temp, pp_temp;
-    string species(Species.speciesName[i]);
-    string fname = species+".psf";
-    ifstream fin(fname.c_str(),ios_base::in);
+    std::vector<double> grid_temp, pp_temp;
+    std::string species(Species.speciesName[i]);
+    std::string fname = species+".psf";
+    std::ifstream fin(fname.c_str(),std::ios_base::in);
     if(!fin)
     {
       ERRORMSG("Could not open file " << fname)

@@ -25,8 +25,8 @@ namespace qmcplusplus
 {
 
 int PWBasis::readbasis(hid_t h5basisgroup, RealType ecutoff, ParticleLayout_t &lat,
-                       const string& pwname,
-                       const string& pwmultname,
+                       const std::string& pwname,
+                       const std::string& pwmultname,
                        bool resizeContainer)
 {
   ///make a local copy
@@ -34,21 +34,21 @@ int PWBasis::readbasis(hid_t h5basisgroup, RealType ecutoff, ParticleLayout_t &l
   ecut = ecutoff;
   if(pwmultname[0] != '0')
   {
-    app_log() << "  PWBasis::" << pwmultname << " is found " << endl;
+    app_log() << "  PWBasis::" << pwmultname << " is found " << std::endl;
     HDFAttribIO<std::vector<GIndex_t> >hdfvtv(gvecs);
     hdfvtv.read(h5basisgroup,pwmultname.c_str());
   }
   if(pwname[0] != '0')
   {
-    app_log() << "  PWBasis::" << pwname << " is found " << endl;
-    HDFAttribIO<vector<PosType> > hdfg(kplusgvecs_cart);
+    app_log() << "  PWBasis::" << pwname << " is found " << std::endl;
+    HDFAttribIO<std::vector<PosType> > hdfg(kplusgvecs_cart);
     hdfg.read(h5basisgroup,pwname.c_str()); //"planewaves");
   }
   //hdfvtv.read(h5basisgroup,pwname.c_str()); //"planewaves");
   NumPlaneWaves=std::max(gvecs.size(),kplusgvecs_cart.size());
   if(NumPlaneWaves ==0)
   {
-    app_error() << "  PWBasis::readbasis Basis is missing. Abort " << endl;
+    app_error() << "  PWBasis::readbasis Basis is missing. Abort " << std::endl;
     abort();//FIX_ABORT
   }
   if(kplusgvecs_cart.empty())
@@ -57,10 +57,10 @@ int PWBasis::readbasis(hid_t h5basisgroup, RealType ecutoff, ParticleLayout_t &l
     for(int i=0; i<NumPlaneWaves; i++)
       kplusgvecs_cart[i]=Lattice.k_cart(gvecs[i]);
   }
-  //app_log() << "  Gx Gy Gz " << endl;
+  //app_log() << "  Gx Gy Gz " << std::endl;
   //for(int i=0; i<kplusgvecs_cart.size(); i++)
   //{
-  //  app_log() << kplusgvecs_cart[i] << endl;
+  //  app_log() << kplusgvecs_cart[i] << std::endl;
   //}
   //Now remove elements outside Ecut. At the same time, fill k+G and |k+G| lists.
   //Also keep track of the original index ordering (using indexmap[]) so that
@@ -68,14 +68,14 @@ int PWBasis::readbasis(hid_t h5basisgroup, RealType ecutoff, ParticleLayout_t &l
   //support older parser
   if(resizeContainer)
     reset();
-  //std::copy(gvecs.begin(),gvecs.end(),ostream_iterator<GIndex_t>(cout,"\n"));
+  //std::copy(gvecs.begin(),gvecs.end(),std::ostream_iterator<GIndex_t>(std::cout,"\n"));
   return NumPlaneWaves;
 }
 
 void PWBasis::setTwistAngle(const PosType& tang)
 {
   PosType dang=twist-tang;
-  bool sameTwist = dot(dang,dang)<numeric_limits<RealType>::epsilon();
+  bool sameTwist = dot(dang,dang)<std::numeric_limits<RealType>::epsilon();
   if(maxmaxg && sameTwist)
     return;
   twist=tang;
@@ -99,11 +99,11 @@ void PWBasis::trimforecut()
   //Convert the twist angle to Cartesian coordinates.
   twist_cart = Lattice.k_cart(twist);
   inputmap.resize(NumPlaneWaves);
-  app_log() << "  PWBasis::TwistAngle (unit) =" << twist << endl;
-  app_log() << "  PWBasis::TwistAngle (cart) =" << twist_cart << endl;
-  app_log() << "  PWBasis::trimforecut NumPlaneWaves (before) =" << NumPlaneWaves << endl;
-  vector<GIndex_t> gvecCopy(gvecs);
-  vector<PosType> gcartCopy(kplusgvecs_cart);
+  app_log() << "  PWBasis::TwistAngle (unit) =" << twist << std::endl;
+  app_log() << "  PWBasis::TwistAngle (cart) =" << twist_cart << std::endl;
+  app_log() << "  PWBasis::trimforecut NumPlaneWaves (before) =" << NumPlaneWaves << std::endl;
+  std::vector<GIndex_t> gvecCopy(gvecs);
+  std::vector<PosType> gcartCopy(kplusgvecs_cart);
   gvecs.clear();
   kplusgvecs_cart.clear();
   minusModKplusG2.reserve(NumPlaneWaves);
@@ -133,7 +133,7 @@ void PWBasis::trimforecut()
   for(int ig=0; ig<NumPlaneWaves; ig++)
     for(int i=0; i<OHMMS_DIM; i++)
       if(abs(gvecs[ig][i]) > maxg[i])
-        maxg[i] = abs(gvecs[ig][i]);
+        maxg[i] = std::abs(gvecs[ig][i]);
   gvecs_shifted.resize(NumPlaneWaves);
   for(int ig=0; ig<NumPlaneWaves; ig++)
     gvecs_shifted[ig]=gvecs[ig]+maxg;
@@ -182,7 +182,7 @@ void PWBasis::trimforecut()
   //for(int ig=0; ig<inputmap.size(); ig++)
   //  if(inputmap[ig] == -1)
   //    inputmap[ig] = NumPlaneWaves; //For dumping coefficients of PWs>ecut
-  app_log() << "                       NumPlaneWaves (after)  =" <<NumPlaneWaves << endl;
+  app_log() << "                       NumPlaneWaves (after)  =" <<NumPlaneWaves << std::endl;
 }
 }
 /***************************************************************************

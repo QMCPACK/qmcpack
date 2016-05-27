@@ -32,7 +32,7 @@ struct Domain
     runner[0] += rsinq * cos( phi );
     runner[1] += rsinq * sin( phi );
     runner[2] += radius * cosq;
-    //    cout << "cos1/phi: " << cosq << '\t' << phi << endl;
+    //    std::cout << "cos1/phi: " << cosq << '\t' << phi << std::endl;
     return;
   }
 

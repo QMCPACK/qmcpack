@@ -129,7 +129,7 @@ CartesianTensor<T, Point_t, Tensor_t, GGG_t>::CartesianTensor(const int l_max) :
 {
   if(Lmax < 0 || Lmax > 4)
   {
-    cerr<<"CartesianTensor can't handle Lmax > 4 or Lmax < 0.\n";
+    std::cerr <<"CartesianTensor can't handle Lmax > 4 or Lmax < 0.\n";
     APP_ABORT("");
   }
   int ntot = 0;
@@ -1069,7 +1069,7 @@ void CartesianTensor<T,Point_t, Tensor_t, GGG_t>::getABC(int n, int& a, int& b, 
     break;
 // no H or higher in Gamess
   default:
-    cerr<<"CartesianTensor::getABC() - Incorrect index.\n";
+    std::cerr <<"CartesianTensor::getABC() - Incorrect index.\n";
     APP_ABORT("");
     break;
   }

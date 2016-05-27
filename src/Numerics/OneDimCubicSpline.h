@@ -61,7 +61,7 @@ public:
   OneDimCubicSplineFirst(grid_type* gt, const VV& nv, bool pbc=true): base_type(gt)
   {
     m_Y.resize(nv.size());
-    std::copy(nv.begin(), nv.end(), m_Y.data());
+    copy(nv.begin(), nv.end(), m_Y.data());
   }
 
 
@@ -232,7 +232,7 @@ public:
   OneDimCubicSplinePBC(grid_type* gt, const VV& nv): base_type(gt)
   {
     m_Y.resize(nv.size());
-    std::copy(nv.begin(), nv.end(), m_Y.data());
+    copy(nv.begin(), nv.end(), m_Y.data());
   }
 
   template<class VV>
@@ -240,7 +240,7 @@ public:
   {
     m_grid=gt;
     m_Y.resize(nv.size());
-    std::copy(nv.begin(), nv.end(), m_Y.data());
+    copy(nv.begin(), nv.end(), m_Y.data());
   }
 
   inline value_type
@@ -449,7 +449,7 @@ public:
   {
     m_Y.resize(nv.size());
     m_Y2.resize(nv.size());
-    std::copy(nv.begin(), nv.end(), m_Y.data());
+    copy(nv.begin(), nv.end(), m_Y.data());
   }
 
   OneDimCubicSpline<Td,Tg,CTd,CTg>* makeClone() const

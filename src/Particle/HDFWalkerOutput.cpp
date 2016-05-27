@@ -54,7 +54,7 @@ namespace qmcplusplus
  * the life time of this object. This is necessary so that failures do not lead
  * to unclosed hdf5.
  */
-HDFWalkerOutput::HDFWalkerOutput(MCWalkerConfiguration& W, const string& aroot,Communicate* c)
+HDFWalkerOutput::HDFWalkerOutput(MCWalkerConfiguration& W, const std::string& aroot,Communicate* c)
   : appended_blocks(0), number_of_walkers(0), currentConfigNumber(0)
   , number_of_backups(0), max_number_of_backups(4), myComm(c), RootName(aroot)
 //       , fw_out(myComm)
@@ -66,7 +66,7 @@ HDFWalkerOutput::HDFWalkerOutput(MCWalkerConfiguration& W, const string& aroot,C
   block = -1;
 //     //FileName=myComm->getName()+hdf::config_ext;
 //     //ConfigFileName=myComm->getName()+".storeConfig.h5";
-//     string ConfigFileName=myComm->getName()+".storeConfig.h5";
+//     std::string ConfigFileName=myComm->getName()+".storeConfig.h5";
 //     HDFVersion cur_version;
 //     int dim=OHMMS_DIM;
 //     fw_out.create(ConfigFileName);
@@ -158,11 +158,11 @@ void HDFWalkerOutput::adios_checkpoint_verify(MCWalkerConfiguration& W, ADIOS_FI
  */
 bool HDFWalkerOutput::dump(MCWalkerConfiguration& W, int nblock)
 {
-  string FileName=myComm->getName()+hdf::config_ext;
+  std::string FileName=myComm->getName()+hdf::config_ext;
   //rotate files
   //if(!myComm->rank() && currentConfigNumber)
   //{
-  //  ostringstream o;
+  //  std::ostringstream o;
   //  o<<myComm->getName()<<".b"<<(currentConfigNumber%5) << hdf::config_ext;
   //  rename(prevFile.c_str(),o.str().c_str());
   //}
@@ -215,7 +215,7 @@ void HDFWalkerOutput::write_configuration(MCWalkerConfiguration& W, hdf_archive&
   { //gaterv to the master and master writes it, could use isend/irecv
     if(myComm->size()>1)
     {
-      vector<int> displ(myComm->size()), counts(myComm->size());
+      std::vector<int> displ(myComm->size()), counts(myComm->size());
       for (int i=0; i<myComm->size(); ++i)
       {
         counts[i]=wb*(W.WalkerOffsets[i+1]-W.WalkerOffsets[i]);
@@ -234,7 +234,7 @@ void HDFWalkerOutput::write_configuration(MCWalkerConfiguration& W, hdf_archive&
 /*
 bool HDFWalkerOutput::dump(ForwardWalkingHistoryObject& FWO)
 {
-//     string ConfigFileName=myComm->getName()+".storeConfig.h5";
+//     std::string ConfigFileName=myComm->getName()+".storeConfig.h5";
 //     fw_out.open(ConfigFileName);
 //
 //     if (myComm->size()==1)
@@ -246,11 +246,11 @@ bool HDFWalkerOutput::dump(ForwardWalkingHistoryObject& FWO)
 //         sstr<<"Block_"<<currentConfigNumber;
 //         fw_out.push(sstr.str());//open the group
 //
-//         vector<float> posVecs;
+//         std::vector<float> posVecs;
 //         //reserve enough space
-//         vector<long> IDs(fwdata_size,0);
-//         vector<long> ParentIDs(fwdata_size,0);
-//         vector<float>::iterator tend(posVecs.begin());
+//         std::vector<long> IDs(fwdata_size,0);
+//         std::vector<long> ParentIDs(fwdata_size,0);
+//         std::vector<float>::iterator tend(posVecs.begin());
 //         for (int j=0;j<fwdata_size;j++)
 //         {
 //           const ForwardWalkingData& fwdata(FWO(i,j));
@@ -278,14 +278,14 @@ bool HDFWalkerOutput::dump(ForwardWalkingHistoryObject& FWO)
 //         sstr<<"Block_"<<currentConfigNumber;
 //         fw_out.push(sstr.str());//open the group
 //
-//         vector<int> counts(myComm->size());
+//         std::vector<int> counts(myComm->size());
 //         mpi::all_gather(*myComm,fwdata_size,counts);
 //
-//         vector<float> posVecs;
+//         std::vector<float> posVecs;
 //         //reserve space to minimize the allocation
 //         posVecs.reserve(FWO.number_of_walkers*n3);
-//         vector<long> myIDs(fwdata_size),pIDs(fwdata_size);
-//         vector<float>::iterator tend(posVecs.begin());
+//         std::vector<long> myIDs(fwdata_size),pIDs(fwdata_size);
+//         std::vector<float>::iterator tend(posVecs.begin());
 //         for (int j=0;j<fwdata_size;j++)
 //         {
 //           const ForwardWalkingData& fwdata(FWO(i,j));
@@ -293,12 +293,12 @@ bool HDFWalkerOutput::dump(ForwardWalkingHistoryObject& FWO)
 //           pIDs[j]=fwdata.ParentID;
 //           fwdata.append(posVecs);
 //         }
-//         vector<int> offsets(myComm->size()+1,0);
+//         std::vector<int> offsets(myComm->size()+1,0);
 //         for(int i=0; i<myComm->size();++i) offsets[i+1]=offsets[i]+counts[i];
 //         fwdata_size=offsets.back();
 //         fw_out.write(fwdata_size,hdf::num_walkers);
 //
-//         vector<long> globalIDs;
+//         std::vector<long> globalIDs;
 //         if(myComm->rank()==0) globalIDs.resize(fwdata_size);
 //
 //         //collect WalkerID
@@ -310,7 +310,7 @@ bool HDFWalkerOutput::dump(ForwardWalkingHistoryObject& FWO)
 //
 //         for(int i=0; i<counts.size();++i) counts[i]*=n3;
 //         for(int i=0; i<offsets.size();++i) offsets[i]*=n3;
-//         vector<float> gpos;
+//         std::vector<float> gpos;
 //         if(myComm->rank()==0) gpos.resize(offsets.back());
 //         mpi::gatherv(*myComm, posVecs, gpos, counts, offsets);
 //

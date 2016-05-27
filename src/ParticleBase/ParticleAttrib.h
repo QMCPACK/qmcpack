@@ -28,7 +28,7 @@
  *
  *  Equivalent to blitz::Array<T,1>, pooma::Array<1,T>.
  *
- *  class C is a container class. Default is vector<T>
+ *  class C is a container class. Default is std::vector<T>
  *
  *  \todo Implement openMP compatible container class or evaluate function.
  *  \todo Implement get/put member functions for MPI-like parallelism
@@ -53,7 +53,7 @@ class ParticleAttrib: public OhmmsObject
 public:
 
   typedef T           Type_t;
-  typedef vector<T>   Container_t;//! Using stl::vector as a container
+  typedef std::vector<T>   Container_t;//! Using stl::vector as a container
   typedef typename Container_t::iterator iterator;
   typedef typename Container_t::const_iterator const_iterator;
   typedef ParticleAttrib<T> This_t;
@@ -184,10 +184,10 @@ public:
     return X[i];
   }
 
-  ///write to a ostream
+  ///write to a std::ostream
   bool get(std::ostream& ) const;
 
-  ///read from istream
+  ///read from std::istream
   bool put(std::istream& );
 
   ///read from an xmlNode
@@ -251,7 +251,7 @@ public:
        << "\" datatype=\""<< typeName()
        << "\" size=\""<< size()
        << "\" condition=\"" << InUnit
-       << "\">" << endl;
+       << "\">" << std::endl;
   }
 
   inline void end_node(std::ostream& os) const

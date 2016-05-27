@@ -41,14 +41,14 @@ struct ForceBase
   SymTensor<real_type,OHMMS_DIM> stress_ee;
   SymTensor<real_type,OHMMS_DIM> stress;
   
-  string prefix;
-  string pairName;
+  std::string prefix;
+  std::string pairName;
 
   // Data for variance reduction of Chiesa et al.
   // PRL 94, 036404 (2005)
   real_type Rcut;
   int m;
-  vector<real_type> ck;
+  std::vector<real_type> ck;
   inline real_type g(real_type r)
   {
     if (r > Rcut)
@@ -72,7 +72,7 @@ struct ForceBase
   ForceBase(ParticleSet& ions, ParticleSet& elns);
   virtual ~ForceBase() {}
 
-  void registerObservablesF(vector<observable_helper*>& h5list, hid_t gid) const;
+  void registerObservablesF(std::vector<observable_helper*>& h5list, hid_t gid) const;
 
   void addObservablesF(QMCTraits::PropertySetType& plist);
   void addObservablesStress(QMCTraits::PropertySetType& plist);
@@ -89,12 +89,12 @@ struct BareForce: public QMCHamiltonianBase, public ForceBase
 
   Return_t evaluate(ParticleSet& P);
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
 
-  void registerObservables(vector<observable_helper*>& h5list, hid_t gid) const
+  void registerObservables(std::vector<observable_helper*>& h5list, hid_t gid) const
   {
     registerObservablesF(h5list,gid);
   }

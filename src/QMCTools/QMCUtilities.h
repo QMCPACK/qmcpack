@@ -34,8 +34,8 @@ determineNumOfElectrons(ParticleSet& el, xmlXPathContextPtr acontext)
 {
   //initialize el with the wave function information
   //This is to determine the number of up and down electrons
-  vector<int> N;
-  string sdname("//");
+  std::vector<int> N;
+  std::string sdname("//");
   sdname.append(OrbitalBuilderBase::sd_tag);
   xmlXPathObjectPtr result
   = xmlXPathEvalExpression((const xmlChar*)(sdname.c_str()),acontext);
@@ -44,11 +44,11 @@ determineNumOfElectrons(ParticleSet& el, xmlXPathContextPtr acontext)
   XMLReport("Found " << nsd << " SlaterDeterminant.")
   if(nsd)
   {
-    vector<xmlNodePtr> dset;
+    std::vector<xmlNodePtr> dset;
     xmlNodePtr cur=result->nodesetval->nodeTab[0]->children;
     while(cur != NULL)
     {
-      string cname((const char*)(cur->name));
+      std::string cname((const char*)(cur->name));
       if(cname == OrbitalBuilderBase::det_tag)
         dset.push_back(cur);
       cur=cur->next;
@@ -70,7 +70,7 @@ determineNumOfElectrons(ParticleSet& el, xmlXPathContextPtr acontext)
           cur = dset[i]->children;
           while(cur != NULL)
           {
-            string cname((const char*)(cur->name));
+            std::string cname((const char*)(cur->name));
             if(cname == OrbitalBuilderBase::spo_tag)
               norb++;
             cur=cur->next;
@@ -100,7 +100,7 @@ determineNumOfElectrons(ParticleSet& el, xmlXPathContextPtr acontext)
           found_el=true;
           while(cur != NULL)
           {
-            string cname((const char*)(cur->name));
+            std::string cname((const char*)(cur->name));
             if(cname == "group")
             {
               xmlChar* g= xmlGetProp(cur,(const xmlChar*)"size");

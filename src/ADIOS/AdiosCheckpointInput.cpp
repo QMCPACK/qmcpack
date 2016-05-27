@@ -84,7 +84,7 @@ std::vector<T> AdiosCheckpointInput::retrieveVector(const std::string& var_name)
     return ;
   }
   T* raw_buff = static_cast<T*>(buff_to_return);
-  vector<T> vec_buff(raw_buff, raw_buff + buff_size);
+  std::vector<T> vec_buff(raw_buff, raw_buff + buff_size);
   //free some memory
   free(raw_buff);
   return vec_buff;
@@ -131,7 +131,7 @@ T AdiosCheckpointInput::getScalar(const std::string& var_name)
 
 
 template <typename T>
-void AdiosCheckpointInput::getVector(const std::string& var_name, vector<T>& buffer)
+void AdiosCheckpointInput::getVector(const std::string& var_name, std::vector<T>& buffer)
 {
   ADIOS_VARINFO* adios_inq = adios_inq_var(adios_file_handle, var_name.c_str());
   //Check to make sure the T is the same size as the data type on the disk

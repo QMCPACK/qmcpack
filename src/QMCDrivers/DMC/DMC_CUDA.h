@@ -39,9 +39,9 @@ public:
   void resetUpdateEngine();
 
 private:
-  ///input string to determine to use nonlocal move
-  string NonLocalMove;
-  string ScaleWeight;
+  ///input std::string to determine to use nonlocal move
+  std::string NonLocalMove;
+  std::string ScaleWeight;
   /// tau/mass
   RealType m_tauovermass;
   ///steps before branching
@@ -62,7 +62,7 @@ private:
   { }
 
   bool checkBounds (const PosType &newpos);
-  void checkBounds (vector<PosType> &newpos, vector<bool> &valid);
+  void checkBounds (std::vector<PosType> &newpos, std::vector<bool> &valid);
 
   /// Copy operator (disabled).
   DMCcuda& operator=(const DMCcuda&)

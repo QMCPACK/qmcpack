@@ -5,12 +5,11 @@
 #include <iterator>
 #include "ScalarDataSet.h"
 #include "ScalarDataSetManager.h"
-using namespace std;
 
 ScalarDataSetManager::ScalarDataSetManager() { }
 ScalarDataSetManager::~ScalarDataSetManager()
 {
-  map<string,ScalarDataSet*>::iterator
+  std::map<std::string,ScalarDataSet*>::iterator
   it(Files.begin()),it_end(Files.end());
   while(it != it_end)
   {
@@ -20,10 +19,10 @@ ScalarDataSetManager::~ScalarDataSetManager()
 }
 
 void
-ScalarDataSetManager::registerObservables(map<string, int>& olist)
+ScalarDataSetManager::registerObservables(std::map<std::string, int>& olist)
 {
   Observables.resize(olist.size());
-  map<string,int>::iterator it(olist.begin()), it_end(olist.end());
+  std::map<std::string,int>::iterator it(olist.begin()), it_end(olist.end());
   while(it != it_end)
   {
     Observables[(*it).second]=(*it).first;
@@ -32,10 +31,10 @@ ScalarDataSetManager::registerObservables(map<string, int>& olist)
 }
 
 void
-ScalarDataSetManager::registerCollectables(map<string, int>& olist)
+ScalarDataSetManager::registerCollectables(std::map<std::string, int>& olist)
 {
   Collectables.resize(olist.size());
-  map<string,int>::iterator it(olist.begin()), it_end(olist.end());
+  std::map<std::string,int>::iterator it(olist.begin()), it_end(olist.end());
   while(it != it_end)
   {
     Collectables[(*it).second]=(*it).first;
@@ -43,7 +42,7 @@ ScalarDataSetManager::registerCollectables(map<string, int>& olist)
   }
 }
 
-void ScalarDataSetManager::addDataSet(const string& fname, int first, int last)
+void ScalarDataSetManager::addDataSet(const std::string& fname, int first, int last)
 {
   Files[fname] = new ScalarDataSet(fname,first,last);
 }
@@ -66,12 +65,12 @@ void ScalarDataSetManager::addDataSet(const std::vector<std::string>& flist,
   Files[gname]=g;
 }
 
-void ScalarDataSetManager::write(ostream& os)
+void ScalarDataSetManager::write(std::ostream& os)
 {
-  map<string,ScalarDataSet*>::iterator it(Files.begin()),it_end(Files.end());
+  std::map<std::string,ScalarDataSet*>::iterator it(Files.begin()),it_end(Files.end());
   while(it != it_end)
   {
-    cout << "============================================\n"
+    std::cout << "============================================\n"
          << "\t source = " << (*it).first
          << "\n============================================\n";
     os << "  <dataset src=\""<<(*it).first<<"\" grouped=\"";
@@ -84,19 +83,19 @@ void ScalarDataSetManager::write(ostream& os)
        <<"first=\""<<sdf.FirstRow << "\" "
        <<"last=\"" <<sdf.LastRow << "\" "
        <<"size=\"" <<sdf.NumRows << "\"/>\n";
-    vector<string>::iterator oit(Collectables.begin()), oit_end(Collectables.end());
+    std::vector<std::string>::iterator oit(Collectables.begin()), oit_end(Collectables.end());
     while(oit != oit_end)
     {
       sdf.writeCollect(os,*oit++);
     }
-    cout << endl;
+    std::cout << std::endl;
     oit=Observables.begin();
     oit_end=Observables.end();
     while(oit != oit_end)
     {
       sdf.writeObservable(os,*oit++);
     }
-    os << "  </dataset>" << endl;
+    os << "  </dataset>" << std::endl;
     //write(os, (*it).first, *((*it).second));
     ++it;
   }

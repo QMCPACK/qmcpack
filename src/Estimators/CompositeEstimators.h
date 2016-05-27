@@ -35,13 +35,13 @@ struct CompositeEstimatorBase: public QMCTraits
   ///hdf5 handle of the object
   hid_t GroupID;
   ///name of the object
-  string Title;
+  std::string Title;
   ///name of associated data
-  vector<string>                            nList;
+  std::vector<std::string>                            nList;
   ///VectorEstimatorType
-  vector<VectorEstimatorType*>              dList;
+  std::vector<VectorEstimatorType*>              dList;
   ///h5 engine
-  vector<HDFAttribIO<VectorEstimatorType>*> oList;
+  std::vector<HDFAttribIO<VectorEstimatorType>*> oList;
 
   /** default constructor */
   CompositeEstimatorBase(): GroupID(-1) {}
@@ -115,11 +115,11 @@ struct CompositeEstimatorBase: public QMCTraits
     return cur;
   }
 
-  void print(ostream& os)
+  void print(std::ostream& os)
   {
     for(int i=0; i<dList.size(); i++)
     {
-      os << setw(3) << i;
+      os << std::setw(3) << i;
       dList[i]->print(os);
     }
   }
@@ -147,11 +147,11 @@ struct CompositeEstimatorSet: public QMCTraits
   ///hdf5 handle of the object
   hid_t GroupID;
   ///name of the object
-  string Title;
+  std::string Title;
   ///estimators
-  vector<EstimatorType*> Estimators;
+  std::vector<EstimatorType*> Estimators;
   ///name map
-  map<string,int> EstimatorMap;
+  std::map<std::string,int> EstimatorMap;
 
   ///constructor
   //CompositeEstimatorSet(ParticleSet& p);
@@ -163,7 +163,7 @@ struct CompositeEstimatorSet: public QMCTraits
 
   /** return true if aname does not exisit
    */
-  bool missing(const string& aname)
+  bool missing(const std::string& aname)
   {
     return EstimatorMap.find(aname) == EstimatorMap.end();
   }
@@ -171,7 +171,7 @@ struct CompositeEstimatorSet: public QMCTraits
    * @param est a new estimator
    * @param aname the name of the new estimator
    */
-  void add(EstimatorType* est, const string& aname) ;
+  void add(EstimatorType* est, const std::string& aname) ;
   ///reset the target particle set
   void resetTargetParticleSet(ParticleSet& p);
 
@@ -234,7 +234,7 @@ struct CompositeEstimatorSet: public QMCTraits
     return cur;
   }
 
-  void print(ostream& os)
+  void print(std::ostream& os)
   {
     for(int i=0; i<Estimators.size(); i++)
       Estimators[i]->print(os);

@@ -113,10 +113,10 @@ void QMCUpdateBase::resetRun(BranchEngineType* brancher, EstimatorManager* est)
     for(int iat=0; iat<W.getTotalNum(); ++iat)
       SqrtTauOverMass[iat]=std::sqrt(Tau*MassInvP[iat]);
   }
-  //app_log() << "  QMCUpdateBase::resetRun m/tau=" << m_tauovermass << endl;
+  //app_log() << "  QMCUpdateBase::resetRun m/tau=" << m_tauovermass << std::endl;
   if (m_r2max<0)
     m_r2max =  W.Lattice.LR_rc* W.Lattice.LR_rc;
-  //app_log() << "  Setting the bound for the displacement max(r^2) = " <<  m_r2max << endl;
+  //app_log() << "  Setting the bound for the displacement std::max(r^2) = " <<  m_r2max << std::endl;
 }
 
 
@@ -254,7 +254,7 @@ void QMCUpdateBase::randomize(Walker_t& awalker)
       RealType ratio = Psi.ratioGrad(W,iat,grad_new);
       RealType prob = ratio*ratio;
       //zero is always rejected
-      if (prob<numeric_limits<RealType>::epsilon())
+      if (prob<std::numeric_limits<RealType>::epsilon())
       {
         ++nReject;
         W.rejectMove(iat);
@@ -304,7 +304,7 @@ QMCUpdateBase::getNodeCorrection(const ParticleSet::ParticleGradient_t& g, Parti
   //setScaledDrift(m_tauovermass,g,gscaled);
   //RealType vsq=Dot(g,g);
   //RealType x=m_tauovermass*vsq;
-  //return (vsq<numeric_limits<RealType>::epsilon())? 1.0:((-1.0+std::sqrt(1.0+2.0*x))/x);
+  //return (vsq<std::numeric_limits<RealType>::epsilon())? 1.0:((-1.0+std::sqrt(1.0+2.0*x))/x);
   return  setScaledDriftPbyPandNodeCorr(Tau,MassInvP,g,gscaled);
 }
 
@@ -347,9 +347,9 @@ void QMCUpdateBase::benchMark(WalkerIter_t it, WalkerIter_t it_end, int ip)
 {
   char fname[16];
   sprintf(fname,"test.%i",ip);
-  ofstream fout(fname,ios::app);
+  std::ofstream fout(fname,std::ios::app);
   int i=0;
-  fout << "benchMark started." << endl;
+  fout << "benchMark started." << std::endl;
   for (; it != it_end; ++it,++i)
   {
     Walker_t& thisWalker(**it);
@@ -358,10 +358,10 @@ void QMCUpdateBase::benchMark(WalkerIter_t it, WalkerIter_t it_end, int ip)
     W.update();
     ValueType logpsi(Psi.evaluateLog(W));
     RealType e = H.evaluate(W);
-    fout << W.R[0] << W.G[0] << endl;
-    fout <<  i << " " << logpsi << " " << e << endl;
+    fout << W.R[0] << W.G[0] << std::endl;
+    fout <<  i << " " << logpsi << " " << e << std::endl;
   }
-  fout << "benchMark completed." << endl;
+  fout << "benchMark completed." << std::endl;
 }
 
 /** advance a walker: walker move, use drift and vmc
@@ -445,7 +445,7 @@ void QMCUpdateBase::advancePbyP(Walker_t& thisWalker)
         RealType ratio = Psi.ratioGrad(W,iat,grad_new);
         RealType prob = ratio*ratio;
         //zero is always rejected
-        if (prob<numeric_limits<RealType>::epsilon())
+        if (prob<std::numeric_limits<RealType>::epsilon())
         {
           ++nReject;
           W.rejectMove(iat);

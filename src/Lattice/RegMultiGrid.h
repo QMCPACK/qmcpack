@@ -20,7 +20,6 @@
 #ifndef OHMMS_REGULARMULTIGRID_H
 #define OHMMS_REGULARMULTIGRID_H
 #include <vector>
-using namespace std;
 
 /*! \class RegMultiGrid<class T, unsigned D>
  *  \brief A class for grid layout using octree
@@ -72,7 +71,7 @@ struct RegMultiGrid
   }
 
   this_t* Up;
-  vector<this_t* > Down;
+  std::vector<this_t* > Down;
 };
 
 template<class T, unsigned D>

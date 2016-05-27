@@ -70,7 +70,7 @@ bool PWParameterSet::getEigVectorType(hid_t h)
   int rank=0;
   if(is_manager())
   {
-    ostringstream oss;
+    std::ostringstream oss;
     oss << "/"<<eigTag << "/"<<twistTag<<twistIndex << "/"<< bandTag << 0;
     //if(version[1]==10)
     if(hasSpin)
@@ -91,7 +91,7 @@ bool PWParameterSet::hasComplexData(hid_t h_file)
   int iscomplex=0;
   if(is_manager())
   {
-    ostringstream oss;
+    std::ostringstream oss;
     oss << paramTag << "/complex_coefficients";
     HDFAttribIO<int> creader(iscomplex);
     creader.read(h_file,oss.str().c_str());
@@ -102,7 +102,7 @@ bool PWParameterSet::hasComplexData(hid_t h_file)
 
 string PWParameterSet::getTwistAngleName()
 {
-  ostringstream oss;
+  std::ostringstream oss;
   oss << eigTag << "/" << twistTag << twistIndex << "/twist_angle";
   return oss.str();
 }
@@ -114,14 +114,14 @@ string PWParameterSet::getTwistName()
 
 string PWParameterSet::getTwistName(int i)
 {
-  ostringstream oss;
+  std::ostringstream oss;
   oss << twistTag << i;
   return oss.str();
 }
 
 string PWParameterSet::getBandName(int ib, int ispin)
 {
-  ostringstream oss;
+  std::ostringstream oss;
   oss << bandTag << ib;
   if(version[1]==10)
   {
@@ -130,9 +130,9 @@ string PWParameterSet::getBandName(int ib, int ispin)
   return oss.str();
 }
 
-string PWParameterSet::getEigVectorName(const string& hg, int ib, int ispin)
+string PWParameterSet::getEigVectorName(const std::string& hg, int ib, int ispin)
 {
-  ostringstream oss;
+  std::ostringstream oss;
   oss << hg << "/"<< bandTag << ib;
   //if(version[1]==10)
   if(hasSpin)
@@ -143,23 +143,23 @@ string PWParameterSet::getEigVectorName(const string& hg, int ib, int ispin)
   return oss.str();
 }
 
-string PWParameterSet::getCenterName(const string& hg,int ib)
+string PWParameterSet::getCenterName(const std::string& hg,int ib)
 {
-  ostringstream oss;
+  std::ostringstream oss;
   oss << hg << "/"<< bandTag << ib << "/center";
   return oss.str();
 }
 
-string PWParameterSet::getOriginName(const string& hg,int ib)
+string PWParameterSet::getOriginName(const std::string& hg,int ib)
 {
-  ostringstream oss;
+  std::ostringstream oss;
   oss << hg << "/"<< bandTag << ib << "/origin";
   return oss.str();
 }
 
 string PWParameterSet::getEigVectorName(int ib, int ispin)
 {
-  ostringstream oss;
+  std::ostringstream oss;
   oss << "/" << eigTag << "/" << twistTag<<twistIndex << "/"<< bandTag << ib;
   //if(version[1]==10)
   if(hasSpin)
@@ -172,14 +172,14 @@ string PWParameterSet::getEigVectorName(int ib, int ispin)
 
 string PWParameterSet::getBandName(int ib)
 {
-  ostringstream oss;
+  std::ostringstream oss;
   oss << bandTag << ib;
   return oss.str();
 }
 
 string PWParameterSet::getSpinName(int ispin)
 {
-  ostringstream oss;
+  std::ostringstream oss;
   oss << spinTag << ispin;
   return oss.str();
 }
@@ -213,7 +213,7 @@ void PWParameterSet::checkVersion(hid_t h)
     //}
   }
   myComm->bcast(version);
-  app_log() << "\tWavefunction HDF version: " << version[0] << "." << version[1] << endl;
+  app_log() << "\tWavefunction HDF version: " << version[0] << "." << version[1] << std::endl;
   if(version[0] == 0)
   {
     if(version[1] == 11)

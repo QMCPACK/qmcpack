@@ -31,7 +31,7 @@ struct ProductOrbital: public OrbitalBase
 {
 
   ///A list of OrbitalBase*
-  vector<OrbitalBase*> Psi;
+  std::vector<OrbitalBase*> Psi;
   /** Contraints on Psi
    *
    * Constraints reset optimizable variables that may be shared by Psi.
@@ -62,7 +62,7 @@ struct ProductOrbital: public OrbitalBase
   void checkInVariables(opt_variables_type& o);
 
   /** print the state, e.g., optimizables */
-  void reportStatus(ostream& os);
+  void reportStatus(std::ostream& os);
 
   /** reset the parameters during optimizations
    */

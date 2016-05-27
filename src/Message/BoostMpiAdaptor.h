@@ -24,9 +24,9 @@ Communicate::allreduce(Container& g)                       \
   g=gt;                                                               \
 }
 
-QMCPP_ALLREDUCE_C(vector<double>,MPI_DOUBLE);
+QMCPP_ALLREDUCE_C(std::vector<double>,MPI_DOUBLE);
 
-QMCPP_ALLREDUCE_C(vector<int>,MPI_INT);
+QMCPP_ALLREDUCE_C(std::vector<int>,MPI_INT);
 
 QMCPP_ALLREDUCE_C(qmcplusplus::Matrix<double>,MPI_DOUBLE);
 

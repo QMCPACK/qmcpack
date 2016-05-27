@@ -35,11 +35,11 @@ class HDFMultiChainOutput
   ///version number
   int m_version;
   ///string file name
-  string h5file;
+  std::string h5file;
 
 public:
 
-  HDFMultiChainOutput(const string& fname, int count);
+  HDFMultiChainOutput(const std::string& fname, int count);
   ~HDFMultiChainOutput();
 
   bool get(MultiChain&);
@@ -72,13 +72,13 @@ class HDFMultiChainInput
 
 public:
 
-  HDFMultiChainInput(const string& fname);
+  HDFMultiChainInput(const std::string& fname);
   ~HDFMultiChainInput();
 
   ///version number
   int m_version;
   ///string file name
-  string h5file;
+  std::string h5file;
 
   bool put(MultiChain&);
 

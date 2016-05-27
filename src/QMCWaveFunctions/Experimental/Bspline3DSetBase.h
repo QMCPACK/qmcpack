@@ -64,9 +64,9 @@ struct Bspline3DSetBase: public SPOSetBase
   ///grid for orbitals
   GridType bKnots;
   ///centers
-  vector<PosType> Centers;
+  std::vector<PosType> Centers;
   ///displacement vectors for the grid of localized orbitals
-  vector<PosType> Origins;
+  std::vector<PosType> Origins;
   ///bspline data
   std::vector<const StorageType*> P;
 
@@ -83,7 +83,7 @@ struct Bspline3DSetBase: public SPOSetBase
   void checkInVariables(opt_variables_type& active);
   void checkOutVariables(const opt_variables_type& active);
   void resetParameters(const opt_variables_type& active);
-  void reportStatus(ostream& os);
+  void reportStatus(std::ostream& os);
   void resetTargetParticleSet(ParticleSet& e);
 
   inline void setRcut(RealType rc)

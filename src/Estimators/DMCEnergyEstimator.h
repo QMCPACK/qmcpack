@@ -75,7 +75,7 @@ struct DMCEnergyEstimator: public ScalarEstimatorBase
 
   inline void accumulate(const Walker_t& awalker, RealType wgt)
   {
-    app_error() << "Disabled DMCEnergyEstimator::accumulate(const Walker_t& awalker, T wgt) " << endl;
+    app_error() << "Disabled DMCEnergyEstimator::accumulate(const Walker_t& awalker, T wgt) " << std::endl;
   }
 
   inline void accumulate(ParticleSet& P, MCWalkerConfiguration::Walker_t& awalker)

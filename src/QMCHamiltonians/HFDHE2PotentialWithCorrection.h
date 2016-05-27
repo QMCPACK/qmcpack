@@ -28,7 +28,7 @@ struct HFDHE2Potential: public QMCHamiltonianBase
 
   Return_t evaluate(ParticleSet& P);
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
@@ -115,7 +115,7 @@ struct HFDHE2Potential_tail: public QMCHamiltonianBase
     return Value;
   }
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
@@ -137,7 +137,7 @@ struct HFDHE2Potential_tail: public QMCHamiltonianBase
     return 0;
   }
 
-  void registerObservables(vector<observable_helper*>& h5list, hid_t gid) const;
+  void registerObservables(std::vector<observable_helper*>& h5list, hid_t gid) const;
 
   void addObservables(PropertySetType& plist);
 

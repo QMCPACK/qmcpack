@@ -140,9 +140,9 @@ CoulombPBCAB_CUDA::setupLongRangeGPU()
 
 void
 CoulombPBCAB_CUDA::addEnergy(MCWalkerConfiguration &W,
-                             vector<RealType> &LocalEnergy)
+                             std::vector<RealType> &LocalEnergy)
 {
-  vector<Walker_t*> &walkers = W.WalkerList;
+  std::vector<Walker_t*> &walkers = W.WalkerList;
   // Short-circuit for constant contribution (e.g. fixed ions)
   // if (!is_active) {
   //   for (int iw=0; iw<walkers.size(); iw++) {
@@ -173,7 +173,7 @@ CoulombPBCAB_CUDA::addEnergy(MCWalkerConfiguration &W,
   RhoklistGPU = RhoklistHost;
   SumGPU = SumHost;
   // First, do short-range part
-  vector<double> esum(nw, 0.0);
+  std::vector<double> esum(nw, 0.0);
   for (int sp=0; sp<NumIonSpecies; sp++)
   {
     if (SRSplines[sp])
@@ -207,14 +207,14 @@ CoulombPBCAB_CUDA::addEnergy(MCWalkerConfiguration &W,
 //     gpu::host_vector<CUDA_COULOMB_PRECISION> RhokHost;
 //     RhokHost = RhokGPU;
 //     for (int ik=0; ik<Numk; ik++) {
-//       complex<double> rhok(0.0, 0.0);
+//       std::complex<double> rhok(0.0, 0.0);
 //       PosType k = PtclRef.SK->KLists.kpts_cart[ik];
 //       for (int ir=0; ir<N; ir++) {
 //     	PosType r = walkers[0]->R[ir];
 //     	double s, c;
 //     	double phase = dot(k,r);
 //     	sincos(phase, &s, &c);
-//     	rhok += complex<double>(c,s);
+//     	rhok += std::complex<double>(c,s);
 //       }
 //       fprintf (stderr, "GPU:   %d   %14.6f  %14.6f\n",
 //     	       ik, RhokHost[2*ik+0], RhokHost[2*ik+1]);

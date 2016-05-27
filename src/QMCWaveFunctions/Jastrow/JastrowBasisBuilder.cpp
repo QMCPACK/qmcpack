@@ -29,7 +29,7 @@ namespace qmcplusplus
  * \param ions reference to the ions
  */
 JastrowBasisBuilder::JastrowBasisBuilder(ParticleSet& els, ParticleSet& ions,
-    const string& functype, bool usespline):
+    const std::string& functype, bool usespline):
   targetPtcl(els), sourcePtcl(ions), UseSpline(usespline),FuncType(functype), myBasisSet(0)
 {
 }
@@ -50,17 +50,17 @@ void JastrowBasisBuilder::createLocalizedBasisSet(xmlNodePtr cur)
   cur = cur->xmlChildrenNode;
   while(cur!=NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == "atomicBasisSet")
     {
       const xmlChar* eptr=xmlGetProp(cur,(const xmlChar*)"elementType");
       if(eptr == NULL)
       {
-        app_error() << "   Missing elementType attribute of atomicBasisSet.\n Abort at MOBasisBuilder::put " << endl;
+        app_error() << "   Missing elementType attribute of atomicBasisSet.\n Abort at MOBasisBuilder::put " << std::endl;
         OHMMS::Controller->abort();
       }
-      string elementType((const char*)eptr);
-      map<string,BasisSetBuilder*>::iterator it = aoBuilders.find(elementType);
+      std::string elementType((const char*)eptr);
+      std::map<std::string,BasisSetBuilder*>::iterator it = aoBuilders.find(elementType);
       if(it == aoBuilders.end())
       {
         AtomicBasisBuilder<RFBUILDER>* any = new AtomicBasisBuilder<RFBUILDER>(elementType);
@@ -107,21 +107,21 @@ bool JastrowBasisBuilder::put(xmlNodePtr cur)
 }
 
 template<typename COT>
-void JastrowBasisBuilder::printRadialFunctors(const string& elementType, COT* aoBasis)
+void JastrowBasisBuilder::printRadialFunctors(const std::string& elementType, COT* aoBasis)
 {
 #if !defined(HAVE_MPI)
-  string fname(elementType);
+  std::string fname(elementType);
   fname.append(".j3.dat");
-  ofstream fout(fname.c_str());
+  std::ofstream fout(fname.c_str());
   int nr=aoBasis->Rnl.size();
-  fout << "# number of radial functors = " << nr << endl;
+  fout << "# number of radial functors = " << nr << std::endl;
   double r=0.0;
   while(r<20)
   {
     fout << r ;
     for(int i=0; i<nr; i++)
       fout << " " << aoBasis->Rnl[i]->evaluate(r,1.0/r);
-    fout << endl;
+    fout << std::endl;
     r += 0.013;
   }
 #endif

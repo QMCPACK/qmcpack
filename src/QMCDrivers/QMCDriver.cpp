@@ -191,17 +191,17 @@ void QMCDriver::process(xmlNodePtr cur)
   //use new random seeds
   if(ResetRandom)
   {
-    app_log() << "  Regenerate random seeds." << endl;
+    app_log() << "  Regenerate random seeds." << std::endl;
     RandomNumberControl::make_seeds();
     ResetRandom=false;
   }
-  //flush the ostreams
+  //flush the std::ostreams
   OhmmsInfo::flush();
   //increment QMCCounter of the branch engine
   branchEngine->advanceQMCCounter();
 }
 
-void QMCDriver::setStatus(const string& aname, const string& h5name, bool append)
+void QMCDriver::setStatus(const std::string& aname, const std::string& h5name, bool append)
 {
   RootName = aname;
   app_log() << "\n========================================================="
@@ -211,7 +211,7 @@ void QMCDriver::setStatus(const string& aname, const string& h5name, bool append
     app_log() << " append = yes ";
   else
     app_log() << " append = no ";
-  app_log() << "\n=========================================================" << endl;
+  app_log() << "\n=========================================================" << std::endl;
   if(h5name.size())
     h5FileRoot = h5name;
   AppendRun = append;
@@ -221,7 +221,7 @@ void QMCDriver::setStatus(const string& aname, const string& h5name, bool append
 /** Read walker configurations from *.config.h5 files
  * @param wset list of xml elements containing mcwalkerset
  */
-void QMCDriver::putWalkers(vector<xmlNodePtr>& wset)
+void QMCDriver::putWalkers(std::vector<xmlNodePtr>& wset)
 {
   if(wset.empty()) return;
   int nfile=wset.size();
@@ -235,7 +235,7 @@ void QMCDriver::putWalkers(vector<xmlNodePtr>& wset)
   if(nwtot)
   {
     int np=myComm->size();
-    vector<int> nw(np,0), nwoff(np+1,0);
+    std::vector<int> nw(np,0), nwoff(np+1,0);
     nw[myComm->rank()]=W.getActiveWalkers();
     myComm->allreduce(nw);
     for(int ip=0; ip<np; ++ip)
@@ -248,9 +248,9 @@ void QMCDriver::putWalkers(vector<xmlNodePtr>& wset)
     qmc_common.is_restart=false;
 }
 
-string QMCDriver::getRotationName(string RootName)
+std::string QMCDriver::getRotationName( std::string RootName)
 {
-  string r_RootName;
+  std::string r_RootName;
   if(rotation % 2 == 0)
   {
     r_RootName = RootName;
@@ -263,9 +263,9 @@ string QMCDriver::getRotationName(string RootName)
   return r_RootName;
 }
 
-string QMCDriver::getLastRotationName(string RootName)
+std::string QMCDriver::getLastRotationName( std::string RootName)
 {
-  string r_RootName;
+  std::string r_RootName;
   if((rotation -1)%2 == 0)
   {
     r_RootName = RootName;
@@ -326,7 +326,7 @@ void QMCDriver::adiosCheckpoint(int block)
       ADIOS_READ_METHOD_BP,
       myComm->getMPI());
   if (fp == NULL)
-    app_error() << "Fail to open adios file "<<(getLastRotationName(RootName) + ".config.bp").c_str()<<" Abort. "<<endl;
+    app_error() << "Fail to open adios file "<<(getLastRotationName(RootName) + ".config.bp").c_str()<<" Abort. "<< std::endl;
   //if (myEstimator->is_manager())
   //{
   //  BranchIO hh(*branchEngine,myEstimator->getCommunicator());
@@ -459,7 +459,7 @@ QMCDriver::addWalkers(int nwalkers)
   {
     //add nwalkers walkers to the end of the ensemble
     int nold = W.getActiveWalkers();
-    app_log() << "  Adding " << nwalkers << " walkers to " << nold << " existing sets" << endl;
+    app_log() << "  Adding " << nwalkers << " walkers to " << nold << " existing sets" << std::endl;
     W.createWalkers(nwalkers);
     if(nold)
     {
@@ -471,11 +471,11 @@ QMCDriver::addWalkers(int nwalkers)
   else if(nwalkers<0)
   {
     W.destroyWalkers(-nwalkers);
-    app_log() << "  Removed " << -nwalkers << " walkers. Current number of walkers =" << W.getActiveWalkers() << endl;
+    app_log() << "  Removed " << -nwalkers << " walkers. Current number of walkers =" << W.getActiveWalkers() << std::endl;
   }
   else
   {
-    app_log() << "  Using the current " << W.getActiveWalkers() << " walkers." <<  endl;
+    app_log() << "  Using the current " << W.getActiveWalkers() << " walkers." <<  std::endl;
   }
   setWalkerOffsets();
   ////update the global number of walkers
@@ -485,7 +485,7 @@ QMCDriver::addWalkers(int nwalkers)
 
 void QMCDriver::setWalkerOffsets()
 {
-  vector<int> nw(myComm->size(),0),nwoff(myComm->size()+1,0);
+  std::vector<int> nw(myComm->size(),0),nwoff(myComm->size()+1,0);
   nw[myComm->rank()]=W.getActiveWalkers();
   myComm->allreduce(nw);
   for(int ip=0; ip<myComm->size(); ip++)
@@ -498,8 +498,8 @@ void QMCDriver::setWalkerOffsets()
     W[iw]->ID       = id;
     W[iw]->ParentID = id;
   }
-  app_log() << "  Total number of walkers: " << W.EnsembleProperty.NumSamples  <<  endl;
-  app_log() << "  Total weight: " << W.EnsembleProperty.Weight  <<  endl;
+  app_log() << "  Total number of walkers: " << W.EnsembleProperty.NumSamples  <<  std::endl;
+  app_log() << "  Total weight: " << W.EnsembleProperty.Weight  <<  std::endl;
 }
 
 
@@ -516,7 +516,7 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
 {
   if(!IsQMCDriver)
   {
-    app_log() << getName() << "  Skip QMCDriver::putQMCInfo " << endl;
+    app_log() << getName() << "  Skip QMCDriver::putQMCInfo " << std::endl;
     return true;
   }
 
@@ -539,7 +539,7 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
     //determine how often to print walkers to hdf5 file
     while(tcur != NULL)
     {
-      string cname((const char*)(tcur->name));
+      std::string cname((const char*)(tcur->name));
       if(cname == "record")
       {
         //dump walkers for optimization
@@ -582,7 +582,7 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
   //if walkers are initialized via <mcwalkerset/>, use the existing one
   if(qmc_common.qmc_counter || qmc_common.is_restart)
   {
-    app_log() << "Using existing walkers " << endl;
+    app_log() << "Using existing walkers " << std::endl;
   }
   else
   { //always reset the walkers
@@ -612,7 +612,7 @@ xmlNodePtr QMCDriver::getQMCNode()
   xmlNodePtr cur=newqmc->children;
   while(cur != NULL && current_ptr == NULL)
   {
-    string cname((const char*)(cur->name));
+    std::string cname((const char*)(cur->name));
     if(cname == "parameter")
     {
       const xmlChar* aptr= xmlGetProp(cur, (const xmlChar *) "name");

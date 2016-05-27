@@ -92,7 +92,7 @@ struct MixedBCDTD
     : public BoxBCHandler<T,D,ORTHO>, public DistanceTableData
 {
   const ParticleSet& Target;
-  vector<PosType> RinBox;
+  std::vector<PosType> RinBox;
 
   MixedBCDTD(const ParticleSet& source,
              const ParticleSet& target)

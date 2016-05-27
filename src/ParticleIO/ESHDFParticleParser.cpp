@@ -57,7 +57,7 @@ bool ESHDFIonsParser::put(xmlNodePtr cur)
     return true;
   int nspecies=tspecies.getTotalNum();
   int natoms=ref_.getTotalNum();
-  ostringstream o;
+  std::ostringstream o;
   if(myComm->rank()==0)
   {
     int i=0;
@@ -75,7 +75,7 @@ bool ESHDFIonsParser::put(xmlNodePtr cur)
   myComm->bcast(species_names,bsizes[2]);
   if(myComm->rank())
   {
-    vector<string> vlist;
+    std::vector<std::string> vlist;
     parsewords(species_names,vlist);
     for(int i=0; i<vlist.size(); ++i)
       tspecies.addSpecies(vlist[i]);
@@ -120,11 +120,11 @@ void ESHDFIonsParser::readESHDF()
   //atomic_number is optional
   for(int i=0; i<nspecies; ++i)
   {
-    ostringstream o;
+    std::ostringstream o;
     o << "atoms/species_"<<i;
     hid_t g=H5Gopen(hfile_id,o.str().c_str());
-    string aname;
-    HDFAttribIO<string> a(aname);
+    std::string aname;
+    HDFAttribIO<std::string> a(aname);
     a.read(g,"name");
     int ii=tspecies.addSpecies(aname);
     int q=-1;
@@ -188,7 +188,7 @@ void ESHDFIonsParser::expand(Tensor<int,3>& tmat)
   //  }
   //  if(identity)
   //  {
-  //    cout << "  Identity tiling. Nothing to do " << endl;
+  //    std::cout << "  Identity tiling. Nothing to do " << std::endl;
   //  }
   //  else
   //  {
@@ -197,7 +197,7 @@ void ESHDFIonsParser::expand(Tensor<int,3>& tmat)
   //    ParticleSet::ParticleLayout_t PrimCell(ref_.Lattice);
   //    ref_.Lattice.set(dot(tmat,PrimCell.R));
   //    int natoms=ref_.getTotalNum();
-  //    int numCopies = abs(tmat.det());
+  //    int numCopies = std::abs(tmat.det());
   //    ParticleSet::ParticlePos_t primPos(ref_.R);
   //    ParticleSet::ParticleIndex_t primTypes(ref_.GroupID);
   //    ref_.resize(natoms*numCopies);
@@ -245,12 +245,12 @@ void ESHDFIonsParser::expand(Tensor<int,3>& tmat)
   //{
   //  fout <<  tspecies.speciesName[i] ;
   //  for(int j=0; j<tspecies.numAttributes(); ++j) fout << " " << tspecies(j,i) ;
-  //  fout << endl;
+  //  fout << std::endl;
   //}
   //ref_.Lattice.print(fout);
   //for(int i=0; i<ref_.getTotalNum(); ++i)
   //{
-  //  fout << ref_.GroupID[i] << " " << ref_.R[i] << endl;
+  //  fout << ref_.GroupID[i] << " " << ref_.R[i] << std::endl;
   //}
   //ref_.convert2Unit(ref_.R);
   //if (myComm->rank() == 0) {

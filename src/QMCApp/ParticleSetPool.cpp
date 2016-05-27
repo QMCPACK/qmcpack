@@ -52,9 +52,9 @@ void ParticleSetPool::make_clones(int n)
   }
 }
 
-ParticleSet* ParticleSetPool::getParticleSet(const string& pname)
+ParticleSet* ParticleSetPool::getParticleSet(const std::string& pname)
 {
-  map<string,ParticleSet*>::iterator pit(myPool.find(pname));
+  std::map<std::string,ParticleSet*>::iterator pit(myPool.find(pname));
   if(pit == myPool.end())
   {
     return 0;
@@ -65,7 +65,7 @@ ParticleSet* ParticleSetPool::getParticleSet(const string& pname)
   }
 }
 
-MCWalkerConfiguration* ParticleSetPool::getWalkerSet(const string& pname)
+MCWalkerConfiguration* ParticleSetPool::getWalkerSet(const std::string& pname)
 {
   ParticleSet* mc=0;
   if(myPool.size() ==1)
@@ -109,13 +109,13 @@ bool ParticleSetPool::putLattice(xmlNodePtr cur)
   bool printcell=false;
   if(SimulationCell==0)
   {
-    app_log() << "  Create Global SuperCell " << endl;
+    app_log() << "  Create Global SuperCell " << std::endl;
     SimulationCell = new ParticleSet::ParticleLayout_t;
     printcell=true;
   }
   else
   {
-    app_log() << "  Overwrite Global SuperCell " << endl;
+    app_log() << "  Overwrite Global SuperCell " << std::endl;
   }
   LatticeParser a(*SimulationCell);
   bool success=a.put(cur);
@@ -136,10 +136,10 @@ bool ParticleSetPool::put(xmlNodePtr cur)
   ReportEngine PRE("ParticleSetPool","put");
   //const ParticleSet::ParticleLayout_t* sc=DistanceTable::getSimulationCell();
   //ParticleSet::ParticleLayout_t* sc=0;
-  string id("e");
-  string role("none");
-  string randomR("no");
-  string randomsrc;
+  std::string id("e");
+  std::string role("none");
+  std::string randomR("no");
+  std::string randomsrc;
   OhmmsAttributeSet pAttrib;
   pAttrib.add(id,"id");
   pAttrib.add(id,"name");
@@ -154,7 +154,7 @@ bool ParticleSetPool::put(xmlNodePtr cur)
   ParticleSet* pTemp = getParticleSet(id);
   if(pTemp == 0)
   {
-    app_log() << "  Creating " << id << " particleset" << endl;
+    app_log() << "  Creating " << id << " particleset" << std::endl;
     pTemp = new MCWalkerConfiguration;
     //if(role == "MC")
     //  pTemp = new MCWalkerConfiguration;
@@ -162,7 +162,7 @@ bool ParticleSetPool::put(xmlNodePtr cur)
     //  pTemp = new ParticleSet;
     if(SimulationCell)
     {
-      app_log() << "  Initializing the lattice of " << id << " by the global supercell" << endl;
+      app_log() << "  Initializing the lattice of " << id << " by the global supercell" << std::endl;
       pTemp->Lattice.copy(*SimulationCell);
     }
     myPool[id] = pTemp;
@@ -177,19 +177,19 @@ bool ParticleSetPool::put(xmlNodePtr cur)
       randomize_nodes.push_back(anode);
     }
     pTemp->setName(id);
-    app_log() << pTemp->getName() <<endl;
+    app_log() << pTemp->getName() << std::endl;
     return success;
   }
   else
   {
-    app_warning() << "particleset " << id << " is already created. Ignore this" << endl;
+    app_warning() << "particleset " << id << " is already created. Ignore this" << std::endl;
   }
   return true;
 }
 
 void ParticleSetPool::randomize()
 {
-  app_log()<<"ParticleSetPool::randomize " << endl;
+  app_log()<<"ParticleSetPool::randomize " << std::endl;
   for(int i=0; i<randomize_nodes.size(); ++i)
   {
     InitMolecularSystem moinit(this);
@@ -201,13 +201,13 @@ void ParticleSetPool::randomize()
 
 bool ParticleSetPool::get(std::ostream& os) const
 {
-  os << "ParticleSetPool has: " << endl;
+  os << "ParticleSetPool has: " << std::endl;
   os.setf(std::ios::scientific, std::ios::floatfield);
   os.precision(14);
   PoolType::const_iterator it(myPool.begin()), it_end(myPool.end());
   while(it != it_end)
   {
-    os << endl;
+    os << std::endl;
     (*it).second->get(os);
     ++it;
   }
@@ -230,16 +230,16 @@ void ParticleSetPool::reset()
 /** Create particlesets from ES-HDF file
  */
 ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur, 
-    const string& target, ParticleSet* qp)
+    const std::string& target, ParticleSet* qp)
 {
   //TinyVector<int,OHMMS_DIM> tilefactor;
   Tensor<int,OHMMS_DIM> eshdf_tilematrix(0);
   eshdf_tilematrix.diagonal(1);
   double lr_cut=15;
-  string h5name;
-  string source("i");
-  string bc("p p p");
-  string spotype("0");
+  std::string h5name;
+  std::string source("i");
+  std::string bc("p p p");
+  std::string spotype("0");
   OhmmsAttributeSet attribs;
   attribs.add(h5name, "href");
   attribs.add(eshdf_tilematrix, "tilematrix");
@@ -280,7 +280,7 @@ ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur,
     if(ions->getTotalNum() == 0)
       return 0;
     typedef ParticleSet::SingleParticleIndex_t SingleParticleIndex_t;
-    vector<SingleParticleIndex_t> grid(OHMMS_DIM,SingleParticleIndex_t(1));
+    std::vector<SingleParticleIndex_t> grid(OHMMS_DIM,SingleParticleIndex_t(1));
     ions->Lattice.reset();
     ions->Lattice.makeGrid(grid);
 
@@ -299,8 +299,8 @@ ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur,
     qp->setName(target);
     qp->Lattice.copy(ions->Lattice);
 
-    app_log() << "  Simulation cell radius = " << qp->Lattice.SimulationCellRadius << endl;
-    app_log() << "  Wigner-Seitz    radius = " << qp->Lattice.WignerSeitzRadius    << endl;
+    app_log() << "  Simulation cell radius = " << qp->Lattice.SimulationCellRadius << std::endl;
+    app_log() << "  Wigner-Seitz    radius = " << qp->Lattice.WignerSeitzRadius    << std::endl;
     SimulationCell->print(app_log());
 
     // Goback to the // and OhmmsXPathObject handles it internally
@@ -309,7 +309,7 @@ ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur,
     if(det.size()>2)
       APP_ABORT("Only two electron groups are supported.");
 
-    vector<int> num_spin(det.size(),0);
+    std::vector<int> num_spin(det.size(),0);
     for(int i=0; i<det.size(); ++i)
     {
       OhmmsAttributeSet a;
@@ -360,7 +360,7 @@ ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur,
       qp->R.setUnit(PosUnit::CartesianUnit);
     }
     //for(int i=0; i<qp->getTotalNum(); ++i)
-    //  cout << qp->GroupID[i] << " " << qp->R[i] << endl;
+    //  std::cout << qp->GroupID[i] << " " << qp->R[i] << std::endl;
     if(qp->Lattice.SuperCellEnum)
       qp->createSK();
     qp->resetGroups();

@@ -49,9 +49,9 @@ class ThreeBodyPade: public OrbitalBase
   ValueVectorType U,d2U;
   GradVectorType dU;
   ValueType *FirstAddressOfdU, *LastAddressOfdU;
-  vector<FT*> Fs;
-//    vector<FT*> Funique;
-  vector<Coeff> C;
+  std::vector<FT*> Fs;
+//    std::vector<FT*> Funique;
+  std::vector<Coeff> C;
   // int N;  // number of terms in summation (user-defined)
 public:
 
@@ -84,10 +84,10 @@ public:
     LoadC(14,4,0,4,4.33268);
     LoadC(15,2,2,4,1.52266);
     LoadC(16,2,0,6,-1.15585);
-    cerr << "Hard-wired coefficients: " << endl;
-    cerr << "index m n o c" << endl;
+    std::cerr << "Hard-wired coefficients: " << std::endl;
+    std::cerr << "index m n o c" << std::endl;
     for(int k=0; k<C.size(); k++)
-      cerr << k << "     " << C[k].m << " " << C[k].n << " " << C[k].o << " " << C[k].c << endl;
+      std::cerr << k << "     " << C[k].m << " " << C[k].n << " " << C[k].o << " " << C[k].c << std::endl;
   }
 
 
@@ -136,9 +136,9 @@ public:
         nnI = i;
         nnJ = j;
         int powMax = 6;
-        vector<double> RiPow(powMax);
-        vector<double> RjPow(powMax);
-        vector<double> RijPow(powMax);
+        std::vector<double> RiPow(powMax);
+        std::vector<double> RjPow(powMax);
+        std::vector<double> RijPow(powMax);
         rij = ee_table->r(ee);
         ri = d_table->r(nnI);
         rj = d_table->r(nnJ);
@@ -148,9 +148,9 @@ public:
         Ri = ri*riInv;
         Rj = rj*rjInv;
         Rij = rij*rijInv;
-//cerr << "ri = " << d_table->dr(nnI) << endl;
-//cerr << "rj = " << d_table->dr(nnJ) << endl;
-//cerr << "rij = " << ee_table->dr(ee) << endl; // store powers of the Pade terms rather than recompute
+//cerr << "ri = " << d_table->dr(nnI) << std::endl;
+//cerr << "rj = " << d_table->dr(nnJ) << std::endl;
+//cerr << "rij = " << ee_table->dr(ee) << std::endl; // store powers of the Pade terms rather than recompute
         for(int p = 0; p<=powMax; p++)
         {
           RiPow[p] = pow(Ri,p);
@@ -194,8 +194,8 @@ public:
                          + 2*(m*RjPow[m-1]*RiPow[n] + n*RiPow[m]*RjPow[n-1])*(o*RijPow[o-1])*(dot(drJ,drIJ)*rijInv*rijInv*rjInv*rjInv)
                          + (RiPow[m]*RjPow[n] + RjPow[m]*RiPow[n])*(o*(o-1)*RijPow[o-2]*rijInv*rijInv*rijInv*rijInv)
                          + 2*o*(RiPow[m]*RjPow[n] + RjPow[m]*RiPow[n])*RijPow[o-1]*rijInv*rijInv*rijInv*ee_table->rinv(ee));
-//cerr << "lapI is now " << lapI << " and lapJ " << lapJ << endl;
-//cerr << "  and dot test: " << d_table->dr(nnI) << "*" << ee_table->dr(ee) << " = " << dot(d_table->dr(nnI),ee_table->dr(ee)) << endl;
+//cerr << "lapI is now " << lapI << " and lapJ " << lapJ << std::endl;
+//cerr << "  and dot test: " << d_table->dr(nnI) << "*" << ee_table->dr(ee) << " = " << dot(d_table->dr(nnI),ee_table->dr(ee)) << std::endl;
         }
         /*
         //////////////////////////////////////
@@ -406,7 +406,7 @@ public:
 
   void acceptMove(ParticleSet& P, int iat)
   {
-    cerr << "ThreeBodyPade::acceptMove does nothing right now" << endl;
+    std::cerr << "ThreeBodyPade::acceptMove does nothing right now" << std::endl;
   }
 
   void put(xmlNodePtr cur, VarRegistry<RealType>& vlist)
@@ -422,7 +422,7 @@ public:
     }
     else
     {
-      cerr << "PARSE ERROR: m not found." << endl;
+      std::cerr << "PARSE ERROR: m not found." << std::endl;
     }
     tpr=xmlGetProp(cur, (const xmlChar *)"n");
     if(tpr != NULL)
@@ -431,7 +431,7 @@ public:
     }
     else
     {
-      cerr << "PARSE ERROR: n not found." << endl;
+      std::cerr << "PARSE ERROR: n not found." << std::endl;
     }
     tpr=xmlGetProp(cur, (const xmlChar *)"o");
     if(tpr != NULL)
@@ -440,7 +440,7 @@ public:
     }
     else
     {
-      cerr << "PARSE ERROR: o not found." << endl;
+      std::cerr << "PARSE ERROR: o not found." << std::endl;
     }
     tpr=xmlGetProp(cur, (const xmlChar *)"c");
     if(tpr != NULL)
@@ -449,18 +449,18 @@ public:
     }
     else
     {
-      cerr << "PARSE ERROR: c not found." << endl;
+      std::cerr << "PARSE ERROR: c not found." << std::endl;
     }
     d = Delta(m,n);
     int now=C.size();
     Coeff newCoeff(m,n,o,c,d);
     C.push_back(newCoeff);
     //sprintf(ida.c_str(),id);
-    cerr << "Adding to VarList: " << (const char*)id << ", " << c << " located at " << &C[C.size()].c << " and index " << C.size() << endl;
+    std::cerr << "Adding to VarList: " << (const char*)id << ", " << c << " located at " << &C[C.size()].c << " and index " << C.size() << std::endl;
     vlist[(const char*)id]=C[now].c;
     //vlist.add((const char*)id,&(C[now].c),1);
     XMLReport("Pade (A*r+C*r*r)/(1+Br) = (" << A << "," << B << "," << C << ")")
-    cerr << "Added coefficient set " << newCoeff.m << ", " << newCoeff.n << ", " << newCoeff.o << ", " << newCoeff.c << ", " << newCoeff.d  << endl;
+    std::cerr << "Added coefficient set " << newCoeff.m << ", " << newCoeff.n << ", " << newCoeff.o << ", " << newCoeff.c << ", " << newCoeff.d  << std::endl;
   }
 };
 }

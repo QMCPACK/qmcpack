@@ -25,8 +25,8 @@ class DensityMatrices1B : public QMCHamiltonianBase
   typedef ParticleSet::ParticleLayout_t Lattice_t;
   typedef Vector<Value_t> Vector_t;
   typedef Matrix<Value_t> Matrix_t;
-  typedef vector<PosType>  pts_t;
-  typedef vector<RealType> dens_t;
+  typedef std::vector<PosType>  pts_t;
+  typedef std::vector<RealType> dens_t;
 
   enum integrators {uniform_grid=0,uniform,density,no_integrator};
 
@@ -43,7 +43,7 @@ class DensityMatrices1B : public QMCHamiltonianBase
   ValueVector_t   basis_laplacians;
   ValueVector_t   integrated_values;
   bool warmed_up;
-  vector<PosType> rsamples;
+  std::vector<PosType> rsamples;
   Vector<RealType> sample_weights;
   RealType dens;
   PosType  drift;
@@ -60,7 +60,7 @@ class DensityMatrices1B : public QMCHamiltonianBase
   CombinedTraceSample<TraceReal>* Vqq_trace;
   CombinedTraceSample<TraceReal>* Vqc_trace;
   CombinedTraceSample<TraceReal>* Vcc_trace;
-  vector<Value_t> E_samp;
+  std::vector<Value_t> E_samp;
   CombinedTraceSample<TraceReal>* E_trace;
 
 
@@ -70,18 +70,18 @@ class DensityMatrices1B : public QMCHamiltonianBase
   int samples;
   int nparticles;
   int nspecies;
-  vector<int> species_size;
-  vector<string> species_name;
-  vector<Vector_t*> E_N;
-  vector<Matrix_t*> Phi_NB,Psi_NM,Phi_Psi_NB,N_BB,E_BB;
+  std::vector<int> species_size;
+  std::vector<std::string> species_name;
+  std::vector<Vector_t*> E_N;
+  std::vector<Matrix_t*> Phi_NB,Psi_NM,Phi_Psi_NB,N_BB,E_BB;
   Matrix_t Phi_MB;
   bool check_overlap;
   bool check_derivatives;
 
 //#define DMCHECK
 #ifdef DMCHECK
-  vector<Vector_t*> E_Ntmp;
-  vector<Matrix_t*> Phi_NBtmp,Psi_NMtmp,Phi_Psi_NBtmp,N_BBtmp,E_BBtmp;
+  std::vector<Vector_t*> E_Ntmp;
+  std::vector<Matrix_t*> Phi_NBtmp,Psi_NMtmp,Phi_Psi_NBtmp,N_BBtmp,E_BBtmp;
   Matrix_t Phi_MBtmp;
 #endif
 
@@ -120,7 +120,7 @@ class DensityMatrices1B : public QMCHamiltonianBase
   QMCHamiltonianBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
   bool put(xmlNodePtr cur);
   Return_t evaluate(ParticleSet& P);
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P); 
   }
@@ -131,7 +131,7 @@ class DensityMatrices1B : public QMCHamiltonianBase
 
   //required for Collectables interface
   void addObservables(PropertySetType& plist,BufferType& olist);
-  void registerCollectables(vector<observable_helper*>& h5desc, hid_t gid) const ;
+  void registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const ;
 
   //should be empty for Collectables interface
   void resetTargetParticleSet(ParticleSet& P)                      { }
@@ -154,7 +154,7 @@ class DensityMatrices1B : public QMCHamiltonianBase
   void finalize();
   void normalize();
   //  printing
-  void report(const string& pad="");
+  void report(const std::string& pad="");
   //  sample generation
   void warmup_sampling();
   void generate_samples(RealType weight,int steps=0);
@@ -165,10 +165,10 @@ class DensityMatrices1B : public QMCHamiltonianBase
   void density_only(const PosType& r,RealType& dens);
   void density_drift(const PosType& r,RealType& dens,PosType& drift);
   //  basis & wavefunction ratio matrix construction
-  void get_energies(vector<Vector_t*>& E_n);
+  void get_energies(std::vector<Vector_t*>& E_n);
   void generate_sample_basis(Matrix_t& Phi_mb);
-  void generate_sample_ratios(vector<Matrix_t*> Psi_nm);
-  void generate_particle_basis(ParticleSet& P,vector<Matrix_t*>& Phi_nb);
+  void generate_sample_ratios(std::vector<Matrix_t*> Psi_nm);
+  void generate_particle_basis(ParticleSet& P,std::vector<Matrix_t*>& Phi_nb);
   //  basis set updates
   void update_basis(const PosType& r);
   void update_basis_d012(const PosType& r);
@@ -182,16 +182,16 @@ class DensityMatrices1B : public QMCHamiltonianBase
   Return_t evaluate_check(ParticleSet& P);
   Return_t evaluate_matrix(ParticleSet& P);
   //  postprocessing
-  void postprocess_density(const string& infile,const string& species,
+  void postprocess_density(const std::string& infile,const std::string& species,
                            pts_t& points,dens_t& density,dens_t& density_err);
 
 
   bool match(Value_t e1, Value_t e2, RealType tol=1e-12);
   bool same(Vector_t& v1, Vector_t& v2, RealType tol=1e-6);
   bool same(Matrix_t& m1, Matrix_t& m2, RealType tol=1e-6);
-  void compare(const string& name, Vector_t& v1, Vector_t& v2,
+  void compare(const std::string& name, Vector_t& v1, Vector_t& v2,
                bool write=false,bool diff_only=true);
-  void compare(const string& name, Matrix_t& m1, Matrix_t& m2,
+  void compare(const std::string& name, Matrix_t& m1, Matrix_t& m2,
                       bool write=false,bool diff_only=true);
 
   

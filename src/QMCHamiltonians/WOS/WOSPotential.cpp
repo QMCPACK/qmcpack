@@ -56,8 +56,8 @@ WOSPotential::method0(ParticleSet& P)
   dpe *= m_norm;
   double var = dpe - pe*pe;
   dpe = sqrt(m_norm * fabs ( dpe - pe * pe ));
-  cout << "basic: " << pe << '\t' << dpe << '\t' << branch
-       << '\t' << branch*exp(-0.5*var*tau*tau) << endl;
+  std::cout << "basic: " << pe << '\t' << dpe << '\t' << branch
+       << '\t' << branch*exp(-0.5*var*tau*tau) << std::endl;
   exit(-1);
   return pe;
 }
@@ -120,7 +120,7 @@ WOSPotential::method1(ParticleSet& P)
   pe *= h_norm;
   dpe *= h_norm;
   dpe = sqrt(h_norm * fabs( dpe - pe * pe ));
-  //  cout << "antithetic: " << pe << '\t' << dpe << endl;
+  //  std::cout << "antithetic: " << pe << '\t' << dpe << std::endl;
   //  exit(-1);
   return pe;
 }
@@ -163,7 +163,7 @@ WOSPotential::method2(ParticleSet& P)
   dpe = ( dpe - pe * pe )/static_cast<double>(m_runs-1);
   /// CHANGE FOR DMC, WARNING Tau is zero for VMC WOS
   pe += dpe * Tau; // sigma^2 * Tau
-  //  cout << "VWOS: "<< pe << '\t' << Tau << endl;
+  //  std::cout << "VWOS: "<< pe << '\t' << Tau << std::endl;
   P.Properties(WOSVAR) = -dpe;
   //P.Properties(WOSVAR) = dpe;
   return pe;
@@ -281,7 +281,7 @@ WOSPotential::method3(ParticleSet& P)
   dpe *= m_norm;
   dpe = sqrt(m_norm * fabs ( dpe - pe * pe ));
   double var = dpe - pe * pe;
-  cout << "importance: " << pe << '\t' << dpe << '\t' << var << endl;
+  std::cout << "importance: " << pe << '\t' << dpe << '\t' << var << std::endl;
   exit(-1);
   return pe;
 }
@@ -341,7 +341,7 @@ WOSPotential::method4(ParticleSet& P)
   pe *= m_norm;
   dpe *= m_norm;
   dpe = sqrt(m_norm * fabs ( dpe - pe * pe ));
-  cout << pe << '\t' << dpe << endl;
+  std::cout << pe << '\t' << dpe << std::endl;
   exit(-1);
   return pe;
 }
@@ -381,15 +381,15 @@ WOSPotential::method5(ParticleSet& P)
     double vrun = 0.25*(vol + vbare)/Gwt + vD0;
     pe += vrun;
     dpe += vrun * vrun;
-    //    cout << vrun << '\t' << v0 << '\t' << branch << endl;
+    //    std::cout << vrun << '\t' << v0 << '\t' << branch << std::endl;
   }
   pe *= m_norm;
   branch *= m_norm;
   dpe *= m_norm;
   dpe = sqrt(m_norm * fabs ( dpe - pe * pe ));
   double var = dpe - pe * pe;
-  cout << "correlated: " << pe << '\t' << dpe << '\t' << var << '\t'
-       << branch << '\t' << branch*exp(-0.5*var*tau*tau) << endl;
+  std::cout << "correlated: " << pe << '\t' << dpe << '\t' << var << '\t'
+       << branch << '\t' << branch*exp(-0.5*var*tau*tau) << std::endl;
   exit(-1);
   return pe;
 }

@@ -2,9 +2,8 @@
 #define MYBLITZ_H
 
 #include <complex>
-using namespace std;
 
-#include <string.h>
+#include <std::string.h>
 #include "blitz/array.h"
 #include "blitz/tinyvec-et.h"
 using namespace blitz;
@@ -19,8 +18,8 @@ typedef TinyVector<scalar,3> Vec3;
 typedef TinyVector<scalar,4> Vec4;
 typedef TinyMatrix<scalar,2,2> Mat2;
 typedef TinyMatrix<scalar,3,3> Mat3;
-typedef TinyVector<complex<double>,3>   cVec3;
-typedef TinyMatrix<complex<double>,3,3> cMat3;
+typedef TinyVector<std::complex<double>,3>   cVec3;
+typedef TinyMatrix<std::complex<double>,3,3> cMat3;
 
 //typedef TinyVector<scalar,NDIM> dVec;
 //typedef TinyVector<int,NDIM> dVecInt;
@@ -265,7 +264,7 @@ inline double operator*(const Vec3 &v1, const Vec3 &v2)
   return (v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2]);
 }
 
-inline cMat3 operator*(complex<double> z, const Mat3 &A)
+inline cMat3 operator*(std::complex<double> z, const Mat3 &A)
 {
   cMat3 zA;
   zA(0,0)=z*A(0,0); zA(0,1)=z*A(0,1); zA(0,2)=z*A(0,2);
@@ -274,7 +273,7 @@ inline cMat3 operator*(complex<double> z, const Mat3 &A)
   return zA;
 }
 
-inline cMat3 operator*(const Mat3 &A, complex<double> z)
+inline cMat3 operator*(const Mat3 &A, std::complex<double> z)
 {
   return z*A;
 }
@@ -463,9 +462,9 @@ inline void copy(const blitz::Array<T1,3> &src,
 	dest(ix,iy,iz) = src(ix,iy,iz);
 }
 
-inline complex<float> operator+(complex<float> z, double r)
+inline std::complex<float> operator+(std::complex<float> z, double r)
 {
-  return complex<float>(z.real()+r, z.imag());
+  return std::complex<float>(z.real()+r, z.imag());
 }
 
 

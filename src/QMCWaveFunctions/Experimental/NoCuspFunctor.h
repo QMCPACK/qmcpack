@@ -36,9 +36,9 @@ struct NoCuspFunctor: public OptimizableFunctorBase<T>
   ///coefficients
   real_type A, B, AB2;
   ///id of A
-  string ID_A;
+  std::string ID_A;
   ///id of B
-  string ID_B;
+  std::string ID_B;
   ///constructor
   NoCuspFunctor(real_type a=1.0, real_type b=1.0)
   {
@@ -108,11 +108,11 @@ struct NoCuspFunctor: public OptimizableFunctorBase<T>
     xmlNodePtr tcur = cur->xmlChildrenNode;
     while(tcur != NULL)
     {
-      string cname((const char*)(tcur->name));
+      std::string cname((const char*)(tcur->name));
       if(cname == "parameter" || cname == "Var")
       {
-        string aname((const char*)(xmlGetProp(tcur,(const xmlChar *)"name")));
-        string idname((const char*)(xmlGetProp(tcur,(const xmlChar *)"id")));
+        std::string aname((const char*)(xmlGetProp(tcur,(const xmlChar *)"name")));
+        std::string idname((const char*)(xmlGetProp(tcur,(const xmlChar *)"id")));
         if(aname == "A")
         {
           ID_A = idname;

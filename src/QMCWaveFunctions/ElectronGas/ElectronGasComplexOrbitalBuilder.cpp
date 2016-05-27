@@ -28,7 +28,7 @@ namespace qmcplusplus
  * @param k list of unique k points in Cartesian coordinate excluding gamma
  * @param k2 k2[i]=dot(k[i],k[i])
  */
-EGOSet::EGOSet(const vector<PosType>& k, const vector<RealType>& k2): K(k), mK2(k2)
+EGOSet::EGOSet(const std::vector<PosType>& k, const std::vector<RealType>& k2): K(k), mK2(k2)
 {
   KptMax=k.size();
   Identity=true;
@@ -38,7 +38,7 @@ EGOSet::EGOSet(const vector<PosType>& k, const vector<RealType>& k2): K(k), mK2(
   //assign_energies();
 }
 
-EGOSet::EGOSet(const vector<PosType>& k, const vector<RealType>& k2, const vector<int>& d)
+EGOSet::EGOSet(const std::vector<PosType>& k, const std::vector<RealType>& k2, const std::vector<int>& d)
   : K(k), mK2(k2)
 {
   KptMax=k.size();
@@ -117,11 +117,11 @@ bool ElectronGasBasisBuilder::put(xmlNodePtr cur)
 
 SPOSetBase* ElectronGasBasisBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
-  app_log() << "ElectronGasBasisBuilder::createSPOSet " << endl;
+  app_log() << "ElectronGasBasisBuilder::createSPOSet " << std::endl;
   int nc=0;
   int ns=0;
   PosType twist(0.0);
-  string spo_name("heg");
+  std::string spo_name("heg");
   OhmmsAttributeSet aAttrib;
   aAttrib.add(ns,"size");
   aAttrib.add(twist,"twist");
@@ -134,7 +134,7 @@ SPOSetBase* ElectronGasBasisBuilder::createSPOSetFromXML(xmlNodePtr cur)
     nc = egGrid.getShellIndex(ns);
   if (nc<0)
   {
-    app_error() << "  HEG Invalid Shell." << endl;
+    app_error() << "  HEG Invalid Shell." << std::endl;
     APP_ABORT("ElectronGasBasisBuilder::put");
   }
   egGrid.createGrid(nc,ns,twist);

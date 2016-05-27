@@ -26,7 +26,7 @@ struct LennardJones_smoothed_phy: public QMCHamiltonianBase
 
   Return_t evaluate(ParticleSet& P);
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
@@ -74,7 +74,7 @@ struct LennardJones_smoothed_aux: public QMCHamiltonianBase
     rc = phyH->PtclRef->Lattice.WignerSeitzRadius;
     tailcorr = 8.0*M_PI*epsilon*std::pow(sigma,6.0)*(std::pow(sigma,6.0)-3.0*std::pow(rc,6.0))*std::pow(phyH->PtclRef->getTotalNum(),2.0)/(9.0*std::pow(rc,9.0)*phyH->PtclRef->Lattice.Volume);
     // Note the 2 powers of N
-    app_log() << "  LennardJones_smoothed_aux tail correction is " << tailcorr << endl;
+    app_log() << "  LennardJones_smoothed_aux tail correction is " << tailcorr << std::endl;
   }
 
   ~LennardJones_smoothed_aux() { }
@@ -83,7 +83,7 @@ struct LennardJones_smoothed_aux: public QMCHamiltonianBase
   {
     rc = P.Lattice.WignerSeitzRadius;
     tailcorr = 8.0*M_PI*epsilon*std::pow(sigma,6.0)*(std::pow(sigma,6.0)-3.0*std::pow(rc,6.0))*std::pow(P.getTotalNum(),2.0)/(9.0*std::pow(rc,9.0)*P.Lattice.Volume);
-    app_log() << "  LennardJones_smoothed_aux tail correction is " << tailcorr << endl;
+    app_log() << "  LennardJones_smoothed_aux tail correction is " << tailcorr << std::endl;
   }
 
   inline Return_t evaluate(ParticleSet& P)
@@ -92,7 +92,7 @@ struct LennardJones_smoothed_aux: public QMCHamiltonianBase
     return Value;
   }
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }

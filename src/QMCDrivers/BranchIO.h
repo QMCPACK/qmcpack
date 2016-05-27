@@ -44,13 +44,13 @@ struct BranchIO
 #endif
 #endif
 
-  bool write(const string& fname);
-  bool read(const string& fname);
-  bool read_adios(const string& fname);
+  bool write(const std::string& fname);
+  bool read(const std::string& fname);
+  bool read_adios(const std::string& fname);
   void bcast_state();
 
-  static vector<string> vParamName;
-  static vector<string> iParamName;
+  static std::vector<std::string> vParamName;
+  static std::vector<std::string> iParamName;
 
   static void initAttributes();
 };

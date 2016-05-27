@@ -42,7 +42,7 @@ private:
   ///update engine
   QMCUpdateBase* Mover;
   ///option to enable/disable drift term
-  string UseDrift;
+  std::string UseDrift;
   /// Copy Constructor (disabled)
   VMCSingle(const VMCSingle& a): QMCDriver(a) { }
   /// Copy operator (disabled).

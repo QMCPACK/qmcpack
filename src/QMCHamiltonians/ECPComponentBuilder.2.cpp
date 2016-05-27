@@ -26,25 +26,25 @@
 namespace qmcplusplus
 {
 //this is abinit/siesta format
-void ECPComponentBuilder::buildSemiLocalAndLocal(vector<xmlNodePtr>& semiPtr)
+void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPtr)
 {
-  app_log() << "    ECPComponentBuilder::buildSemiLocalAndLocal " << endl;
+  app_log() << "    ECPComponentBuilder::buildSemiLocalAndLocal " << std::endl;
   if(grid_global == 0)
   {
-    app_error() << "    Global grid needs to be defined." << endl;
+    app_error() << "    Global grid needs to be defined." << std::endl;
     APP_ABORT("ECPComponentBuilder::buildSemiLocalAndLocal");
   }
   // There should only be one semilocal tag
   if (semiPtr.size()> 1)
   {
-    app_error() << "    We have more than one semilocal sections in the PP xml file." << endl;
+    app_error() << "    We have more than one semilocal sections in the PP xml file." << std::endl;
     APP_ABORT("ECPComponentBuilder::buildSemiLocalAndLocal");
   }
   RealType rmax = -1;
   //attributes: initailize by defaults
-  string eunits("hartree");
-  string format("r*V");
-  string lloc;
+  std::string eunits("hartree");
+  std::string format("r*V");
+  std::string lloc;
   int ndown=1;
   int nup=0;
   Llocal = -1;
@@ -60,12 +60,12 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(vector<xmlNodePtr>& semiPtr)
   RealType Vprefactor=1.0;
   if (eunits.find("ydberg") < eunits.size())
   {
-    app_log() << "    Input energy unit = Rydberg " << endl;
+    app_log() << "    Input energy unit = Rydberg " << std::endl;
     Vprefactor = 0.5;
   }
   else
   {
-    app_log() << "    Assuming Hartree unit" << endl;
+    app_log() << "    Assuming Hartree unit" << std::endl;
   }
   bool is_r_times_V(true);
   if (format == "r*V")
@@ -75,24 +75,24 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(vector<xmlNodePtr>& semiPtr)
       is_r_times_V = false;
     else
     {
-      app_error() << "Unrecognized format \"" << format << "\" in PP file." << endl;
+      app_error() << "Unrecognized format \"" << format << "\" in PP file." << std::endl;
       APP_ABORT("ECPComponentBuilder::buildSemiLocalAndLocal");
     }
   // We cannot construct the potentials as we construct them since
   // we may not know which one is local yet.
-  vector<int> angList;
-  vector<xmlNodePtr> vpsPtr;
+  std::vector<int> angList;
+  std::vector<xmlNodePtr> vpsPtr;
   int iLocal=-1;
   Lmax=-1;
   // Now read vps sections
   xmlNodePtr cur_vps = cur_semilocal->children;
   while (cur_vps != NULL)
   {
-    string vname ((const char*)cur_vps->name);
+    std::string vname ((const char*)cur_vps->name);
     if (vname == "vps")
     {
       OhmmsAttributeSet aAttrib;
-      string lstr("s");
+      std::string lstr("s");
       RealType rc=-1.0;
       aAttrib.add(lstr,"l");
       aAttrib.add(rc,"cutoff");
@@ -110,13 +110,13 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(vector<xmlNodePtr>& semiPtr)
   if(angList.size()==1)
   {
     Llocal=Lmax;
-    app_log() << "    Only one vps is found. Set the local component=" << Lmax << endl;
+    app_log() << "    Only one vps is found. Set the local component=" << Lmax << std::endl;
   }
   int npts=grid_global->size();
   Matrix<RealType> vnn(angList.size(),npts);
   for(int l=0; l<angList.size(); l++)
   {
-    vector<RealType>  vt(npts);
+    std::vector<RealType>  vt(npts);
     xmlNodePtr c=vpsPtr[l]->children;
     while(c != NULL)
     {
@@ -133,27 +133,27 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(vector<xmlNodePtr>& semiPtr)
       c=c->next;
     }
     //copy the numerical data with the correct map
-    std::copy(vt.begin(),vt.end(),vnn[angList[l]]);
+    copy(vt.begin(),vt.end(),vnn[angList[l]]);
   }
   ////rather stupid to do this but necessary
   //vector<RealType> temp(npts);
   //for(int i=0; i<npts; i++) temp[i]=grid_global->r(i);
   if(!is_r_times_V)
   {
-    app_log() << "  Input pseudopotential is converted into r*V" << endl;
+    app_log() << "  Input pseudopotential is converted into r*V" << std::endl;
     for(int i=0; i<vnn.rows(); i++)
       for(int j=0; j <npts; j++)
         vnn[i][j] *= grid_global->r(j);
   }
-  app_log() << "   Number of angular momentum channels " << angList.size() << endl;
-  app_log() << "   Maximum angular momentum channel " << Lmax << endl;
+  app_log() << "   Number of angular momentum channels " << angList.size() << std::endl;
+  app_log() << "   Maximum angular momentum channel " << Lmax << std::endl;
   doBreakUp(angList,vnn,rmax,Vprefactor);
 }
 
 bool
 ECPComponentBuilder::parseCasino(const std::string& fname, xmlNodePtr cur)
 {
-  app_log() << "   Start ECPComponentBuilder::parseCasino" << endl;
+  app_log() << "   Start ECPComponentBuilder::parseCasino" << std::endl;
   RealType rmax=2.0;
   Llocal=-1;
   Lmax=-1;
@@ -165,15 +165,15 @@ ECPComponentBuilder::parseCasino(const std::string& fname, xmlNodePtr cur)
   aAttrib.put(cur);
   //const xmlChar* rptr=xmlGetProp(cur,(const xmlChar*)"cutoff");
   //if(rptr != NULL) rmax = atof((const char*)rptr);
-  //app_log() << "   Creating a Linear Grid Rmax=" << rmax << endl;
+  //app_log() << "   Creating a Linear Grid Rmax=" << rmax << std::endl;
   //const RealType d=5e-4;
   //LinearGrid<RealType>* agrid = new LinearGrid<RealType>;
   //int ng=static_cast<int>(rmax/d)+1;
   //agrid->set(0,rmax,ng);
-  ifstream fin(fname.c_str(),ios_base::in);
+  std::ifstream fin(fname.c_str(),std::ios_base::in);
   if(!fin)
   {
-    app_error() << "Could not open file " << fname << endl;
+    app_error() << "Could not open file " << fname << std::endl;
     APP_ABORT("ECPComponentBuilder::parseCasino");
   }
   if(pp_nonloc==0)
@@ -181,15 +181,15 @@ ECPComponentBuilder::parseCasino(const std::string& fname, xmlNodePtr cur)
   OhmmsAsciiParser aParser;
   int atomNumber=0;
   int npts=0, idummy;
-  string eunits("rydberg");
-  app_log() << "    ECPComponentBuilder::parseCasino" <<endl;
+  std::string eunits("rydberg");
+  app_log() << "    ECPComponentBuilder::parseCasino" << std::endl;
   aParser.skiplines(fin,1);//Header
   aParser.skiplines(fin,1);//Atomic number and pseudo-charge
   aParser.getValue(fin,atomNumber,Zeff);
-  app_log() << "      Atomic number = " << atomNumber << "  Zeff = " << Zeff << endl;
+  app_log() << "      Atomic number = " << atomNumber << "  Zeff = " << Zeff << std::endl;
   aParser.skiplines(fin,1);//Energy units (rydberg/hartree/ev):
   aParser.getValue(fin,eunits);
-  app_log() << "      Unit of the potentials = " << eunits << endl;
+  app_log() << "      Unit of the potentials = " << eunits << std::endl;
   RealType Vprefactor = (eunits == "rydberg")?0.5:1.0;
   aParser.skiplines(fin,1);//Angular momentum of local component (0=s,1=p,2=d..)
   aParser.getValue(fin,idummy);
@@ -199,8 +199,8 @@ ECPComponentBuilder::parseCasino(const std::string& fname, xmlNodePtr cur)
   aParser.skiplines(fin,1);//0 0, not sure what to do yet
   aParser.skiplines(fin,1);//Number of grid points
   aParser.getValue(fin,npts);
-  app_log() << "      Input Grid size = " << npts << endl;
-  vector<RealType> temp(npts);
+  app_log() << "      Input Grid size = " << npts << std::endl;
+  std::vector<RealType> temp(npts);
   aParser.skiplines(fin,1);//R(i) in atomic units
   aParser.getValues(fin,temp.begin(),temp.end());
   //create a global grid of numerical type
@@ -211,7 +211,7 @@ ECPComponentBuilder::parseCasino(const std::string& fname, xmlNodePtr cur)
     aParser.skiplines(fin,1);
     aParser.getValues(fin,vnn[l],vnn[l]+npts);
   }
-  vector<int> angList(Lmax+1);
+  std::vector<int> angList(Lmax+1);
   for(int l=0; l<=Lmax; l++)
     angList[l]=l;
   // Now, check to see what maximum cutoff should be
@@ -232,11 +232,11 @@ ECPComponentBuilder::parseCasino(const std::string& fname, xmlNodePtr cur)
         break;
       }
     }
-    app_log() << "  Maxium cutoff for non-local pseudopotentials " << rc_check << endl;
+    app_log() << "  Maxium cutoff for non-local pseudopotentials " << rc_check << std::endl;
   }
   doBreakUp(angList,vnn,rmax,Vprefactor);
   SetQuadratureRule(Nrule);
-  app_log() << "    Non-local pseudopotential parameters" <<endl;
+  app_log() << "    Non-local pseudopotential parameters" << std::endl;
   pp_nonloc->print(app_log());
   return true;
 }
@@ -251,7 +251,7 @@ ECPComponentBuilder::parseCasino(const std::string& fname, xmlNodePtr cur)
  * Note that local pseudopotential is r*V !!!
  */
 void
-ECPComponentBuilder::doBreakUp(const vector<int>& angList,
+ECPComponentBuilder::doBreakUp(const std::vector<int>& angList,
                                const Matrix<RealType>& vnn,
                                RealType rmax, RealType Vprefactor)
 {
@@ -264,7 +264,7 @@ ECPComponentBuilder::doBreakUp(const vector<int>& angList,
 #else
   const int max_points = 100000;
 #endif
-  app_log() << "   Creating a Linear Grid Rmax=" << rmax << endl;
+  app_log() << "   Creating a Linear Grid Rmax=" << rmax << std::endl;
   //this is a new grid
   RealType d=1e-4;
   LinearGrid<RealType>* agrid = new LinearGrid<RealType>;
@@ -276,7 +276,7 @@ ECPComponentBuilder::doBreakUp(const vector<int>& angList,
     if (ng <= max_points)
     {
       app_log() << "  Using global grid with delta = "
-                << grid_global->Delta << endl;
+                << grid_global->Delta << std::endl;
       rmax = grid_global->Delta * (ng-1);
       agrid->set(0.0,rmax,ng);
     }
@@ -285,7 +285,7 @@ ECPComponentBuilder::doBreakUp(const vector<int>& angList,
   }
   else
   {
-    ng = min (max_points, static_cast<int>(rmax/d)+1);
+    ng = std::min(max_points, static_cast<int>(rmax/d)+1);
     agrid->set(0,rmax,ng);
   }
   // This is critical!!!
@@ -304,7 +304,7 @@ ECPComponentBuilder::doBreakUp(const vector<int>& angList,
   for(int l=0; l<angList.size(); l++)
     if(angList[l] == Llocal)
       iLlocal=l;
-  vector<RealType> newP(ng),newPin(ngIn);
+  std::vector<RealType> newP(ng),newPin(ngIn);
   for(int l=0; l<angList.size(); l++)
   {
     if(angList[l] == Llocal)
@@ -360,9 +360,9 @@ ECPComponentBuilder::doBreakUp(const vector<int>& angList,
     grid_loc->set(0.0, loc_max, nloc);
     app_log() << "   Making L=" << Llocal
               << " a local potential with a radial cutoff of "
-              << loc_max << endl;
+              << loc_max << std::endl;
     RealType r=d;
-    vector<RealType> newPloc(nloc);
+    std::vector<RealType> newPloc(nloc);
     for(int i=1; i<nloc-1; i++)
     {
       newPloc[i]=infunc.splint(r);

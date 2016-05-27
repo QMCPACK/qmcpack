@@ -40,9 +40,9 @@ int main(int argc, char** argv)
   Vector<double> psi_d(4);
   Vector<TinyVector<double,3> > dpsi_d(4);
   Vector<double> d2psi_d(4);
-  Vector<complex<double> > psi_z(4);
-  Vector<TinyVector<complex<double> ,3> > dpsi_z(4);
-  Vector<complex<double> > d2psi_z(4);
+  Vector<std::complex<double> > psi_z(4);
+  Vector<TinyVector<std::complex<double> ,3> > dpsi_z(4);
+  Vector<std::complex<double> > d2psi_z(4);
   Vector<float> psi_f(4);
   Vector<TinyVector<float,3> > dpsi_f(4);
   Vector<float> d2psi_f(4);

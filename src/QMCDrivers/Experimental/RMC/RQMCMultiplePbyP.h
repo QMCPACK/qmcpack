@@ -64,14 +64,14 @@ protected:
 
   ///
   int forward,backward,itail,inext;
-  vector<NewTimer*> myTimers;
+  std::vector<NewTimer*> myTimers;
 
   ///the number of turns per block
   int NumTurns;
 
   int nptcl,nObs;
   ///use scaled drift "true" = yes (default) else no
-  string scaleBeadDrift;
+  std::string scaleBeadDrift;
   ///the number of H/Psi pairs
   int nPsi;
   ParticleSet::ParticlePos_t grand_transProb;//a
@@ -124,12 +124,12 @@ private:
   ParticleSet::ParticleGradient_t dG;
   ParticleSet::ParticleLaplacian_t dL;
   void InitBisection(Buffer_t &w_buffer);
-  vector<Bead_ParticleSet*> tempReptile;
-  vector<Bead_ParticleSet*> tempReptile2;
-  vector<vector<TrialWaveFunction*> > psiReptile;
-  vector<vector<QMCHamiltonian*> > hReptile;
-  vector<vector<TrialWaveFunction*> > psiReptile2;
-  vector<vector<QMCHamiltonian*> > hReptile2;
+  std::vector<Bead_ParticleSet*> tempReptile;
+  std::vector<Bead_ParticleSet*> tempReptile2;
+  std::vector<std::vector<TrialWaveFunction*> > psiReptile;
+  std::vector<std::vector<QMCHamiltonian*> > hReptile;
+  std::vector<std::vector<TrialWaveFunction*> > psiReptile2;
+  std::vector<std::vector<QMCHamiltonian*> > hReptile2;
   void ActionChange_displace(bool oldData);
   void moveReptile_displace();
 
@@ -137,20 +137,20 @@ private:
   void RegisterMe();
 
 
-  RealType LogSampleProb(vector<Bead_ParticleSet*> &tempReptile,
+  RealType LogSampleProb(std::vector<Bead_ParticleSet*> &tempReptile,
                          int startSlice, int endSlice,
-                         vector<int> &particles, int level);
+                         std::vector<int> &particles, int level);
 
-  RealType BisectionSample(vector<Bead_ParticleSet*> &tempReptile,
+  RealType BisectionSample(std::vector<Bead_ParticleSet*> &tempReptile,
                            int particleToMove,
                            int level);
 
-  /*    double BisectionSample(vector<Bead*> &tempReptile,  */
+  /*    double BisectionSample(std::vector<Bead*> &tempReptile,  */
   /* 			   int particleToMove, */
   /* 			   int level); */
-  /*     double LogSampleProb(vector<Bead*> &tempReptile, */
+  /*     double LogSampleProb(std::vector<Bead*> &tempReptile, */
   /* 			 int startSlice, int endSlice,  */
-  /* 			 vector<int> particles, int level); */
+  /* 			 std::vector<int> particles, int level); */
 
 
 

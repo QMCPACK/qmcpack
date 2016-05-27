@@ -80,24 +80,24 @@ private:
    *
    * NGOrbitals[name] points to a unique numerical orbital.
    */
-  map<string,NumericalOrbitalType* > NumericalOrbitals;
+  std::map<std::string,NumericalOrbitalType* > NumericalOrbitals;
   /** set of localized orbitals
    */
-  map<string,LOType*>                LocalizedOrbitals;
+  std::map<std::string,LOType*>                LocalizedOrbitals;
 
   /** set of Single-particle orbital set for
    */
-  map<string,SPOSetType*>       SPOSet;
+  std::map<std::string,SPOSetType*>       SPOSet;
 
   /** set of Diract Determinants */
-  map<string,Det_t*>            DetSet;
+  std::map<std::string,Det_t*>            DetSet;
 
   /** set of SlaterDeterminant for multi determinant cases
    */
-  vector<SlaterDeterminant_t*>  SlaterDetSet;
+  std::vector<SlaterDeterminant_t*>  SlaterDetSet;
 
   SlaterDeterminant_t* addSlaterDeterminant(xmlNodePtr cur);
-  SPOSetType* createSPOSet(xmlNodePtr cur, const string& ref, int norb);
+  SPOSetType* createSPOSet(xmlNodePtr cur, const std::string& ref, int norb);
 };
 }
 #endif

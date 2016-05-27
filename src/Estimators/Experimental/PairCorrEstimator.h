@@ -49,7 +49,7 @@ class PairCorrEstimator: public CompositeEstimatorBase
   /** one of bin size */
   RealType DeltaInv;
   /** local copy of pair index */
-  vector<int> PairID;
+  std::vector<int> PairID;
   /** histogram of the distances per measurement*/
   StorageType gofrInst;
   /** gofr */
@@ -59,7 +59,7 @@ class PairCorrEstimator: public CompositeEstimatorBase
   /** running error of gofr */
   StorageType gofrerr;
   ///debug only
-  vector<ofstream*> fout;
+  std::vector<ofstream*> fout;
 
   AppendData* v_h;
   AppendData* v2_h;
@@ -117,7 +117,7 @@ private:
 //  /** histogram of the distances per block */
 //  Vector<RealType> dCBlock;
 //  ///debug only
-//  ofstream* fout;
+//  std::ofstream* fout;
 //  public:
 
 //  /** constructor

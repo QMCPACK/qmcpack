@@ -49,7 +49,7 @@ void EinsplineSetBuilder::ReadBands_ESHDF_Complex(int spin, SPE* orbitalSet)
   myComm->bcast (NumCoreOrbs);
   int N = NumDistinctOrbitals;
   orbitalSet->resizeStorage(N,NumValenceOrbs);
-  vector<int> twist_id(N);
+  std::vector<int> twist_id(N);
   // Read in k-points
   int numOrbs = orbitalSet->getOrbitalSetSize();
   int num = 0;
@@ -107,9 +107,9 @@ void EinsplineSetBuilder::ReadBands_ESHDF_Complex(int spin, SPE* orbitalSet)
 #else
   orbitalSet->allocate(xyz_grid,xyz_bc,NumValenceOrbs);
 #endif
-  //app_log() << "  TEST TWIST " << TargetPtcl.getTwist() << endl;
+  //app_log() << "  TEST TWIST " << TargetPtcl.getTwist() << std::endl;
   //string splinefile=make_spline_filename(H5FileName,TwistNum,MeshSize);
-  string splinefile=make_spline_filename(H5FileName,spin,TwistNum,MeshSize);
+  std::string splinefile=make_spline_filename(H5FileName,spin,TwistNum,MeshSize);
   int foundspline=0;
   Timer now;
   if(root)
@@ -126,7 +126,7 @@ void EinsplineSetBuilder::ReadBands_ESHDF_Complex(int spin, SPE* orbitalSet)
   t_h5 = now.elapsed();
   if(foundspline)
   {
-    app_log() << "Use existing bspline tables in " << splinefile << endl;
+    app_log() << "Use existing bspline tables in " << splinefile << std::endl;
     chunked_bcast(myComm, orbitalSet->MultiSpline);
     t_init+=now.elapsed();
   }
@@ -157,27 +157,27 @@ void EinsplineSetBuilder::ReadBands_ESHDF_Complex(int spin, SPE* orbitalSet)
     if(havePsig)//perform FFT using FFTW
     {
       c_init.restart();
-      Array<complex<double>,3> FFTbox;
+      Array<std::complex<double>,3> FFTbox;
       FFTbox.resize(MeshSize[0], MeshSize[1], MeshSize[2]);
       fftw_plan FFTplan = fftw_plan_dft_3d
                           (MeshSize[0], MeshSize[1], MeshSize[2],
                            reinterpret_cast<fftw_complex*>(FFTbox.data()),
                            reinterpret_cast<fftw_complex*>(FFTbox.data()),
                            +1, FFTW_ESTIMATE);
-      Vector<complex<double> > cG(MaxNumGvecs);
+      Vector<std::complex<double> > cG(MaxNumGvecs);
       //this will be parallelized with OpenMP
       for(int iorb=0,ival=0; iorb<N; ++iorb, ++ival)
       {
-        //Vector<complex<double> > cG;
+        //Vector<std::complex<double> > cG;
         int ncg=0;
         int ti=twist_id[iorb];
         c_h5.restart();
         if(root)
         {
-          ostringstream path;
+          std::ostringstream path;
           path << "/electrons/kpoint_" << ti    //SortBands[iorb].TwistIndex
                << "/spin_" << spin << "/state_" << SortBands[iorb].BandIndex << "/psi_g";
-          HDFAttribIO<Vector<complex<double> > >  h_cG(cG);
+          HDFAttribIO<Vector<std::complex<double> > >  h_cG(cG);
           h_cG.read (H5FileID, path.str().c_str());
           ncg=cG.size();
         }
@@ -217,17 +217,17 @@ void EinsplineSetBuilder::ReadBands_ESHDF_Complex(int spin, SPE* orbitalSet)
     }
     else
     {
-      Array<complex<double>,3> rawData(nx,ny,nz);
+      Array<std::complex<double>,3> rawData(nx,ny,nz);
       //this will be parallelized with OpenMP
       for(int iorb=0,ival=0; iorb<N; ++iorb, ++ival)
       {
         //check dimension
         if(root)
         {
-          ostringstream path;
+          std::ostringstream path;
           path << "/electrons/kpoint_" << SortBands[iorb].TwistIndex
                << "/spin_" << spin << "/state_" << SortBands[iorb].BandIndex << "/psi_r";
-          HDFAttribIO<Array<complex<double>,3> >  h_splineData(rawData);
+          HDFAttribIO<Array<std::complex<double>,3> >  h_splineData(rawData);
           h_splineData.read(H5FileID, path.str().c_str());
 #if defined(SPLINE_PACK_COMPLEX)
           simd::copy(splineData_r.data(),splineData_i.data(),rawData.data(),rawData.size());
@@ -251,18 +251,18 @@ void EinsplineSetBuilder::ReadBands_ESHDF_Complex(int spin, SPE* orbitalSet)
       hdf_archive h5f;
       h5f.create(splinefile);
       einspline_engine<typename SPE::SplineType> bigtable(orbitalSet->MultiSpline);
-      string aname("EinsplineC2XAdoptor");
+      std::string aname("EinsplineC2XAdoptor");
       h5f.write(aname,"bspline_type");
       h5f.write(bigtable,"spline_0");
     }
   }
-  app_log() << "    READBANDS::PREP   = " << t_prep << endl;
-  app_log() << "    READBANDS::H5     = " << t_h5 << endl;
-  app_log() << "    READBANDS::UNPACK = " << t_unpack << endl;
-  app_log() << "    READBANDS::FFT    = " << t_fft << endl;
-  app_log() << "    READBANDS::PHASE  = " << t_phase << endl;
-  app_log() << "    READBANDS::SPLINE = " << t_spline << endl;
-  app_log() << "    READBANDS::SUM    = " << t_init << endl;
+  app_log() << "    READBANDS::PREP   = " << t_prep << std::endl;
+  app_log() << "    READBANDS::H5     = " << t_h5 << std::endl;
+  app_log() << "    READBANDS::UNPACK = " << t_unpack << std::endl;
+  app_log() << "    READBANDS::FFT    = " << t_fft << std::endl;
+  app_log() << "    READBANDS::PHASE  = " << t_phase << std::endl;
+  app_log() << "    READBANDS::SPLINE = " << t_spline << std::endl;
+  app_log() << "    READBANDS::SUM    = " << t_init << std::endl;
   //ExtendedMap_z[set] = orbitalSet->MultiSpline;
 }
 
@@ -284,7 +284,7 @@ void EinsplineSetBuilder::ReadBands_ESHDF_Real(int spin, SPE* orbitalSet)
   orbitalSet->resizeStorage(N,NumValenceOrbs);
   int numOrbs = orbitalSet->getOrbitalSetSize();
   int num = 0;
-  vector<int> twist_id(N);
+  std::vector<int> twist_id(N);
   //twist-related things can be completely ignored but will keep them for now
   if (root)
   {
@@ -313,7 +313,7 @@ void EinsplineSetBuilder::ReadBands_ESHDF_Real(int spin, SPE* orbitalSet)
   // First, check to see if we have already read this in
   H5OrbSet set(H5FileName, spin, N);
   bool havePsir=!ReadGvectors_ESHDF();
-  app_log() << "HalfG = " << orbitalSet->HalfG << endl;
+  app_log() << "HalfG = " << orbitalSet->HalfG << std::endl;
   app_log() << "MeshSize = (" << MeshSize[0] << ", "
             << MeshSize[1] << ", " << MeshSize[2] << ")\n";
   int nx, ny, nz;
@@ -321,7 +321,7 @@ void EinsplineSetBuilder::ReadBands_ESHDF_Real(int spin, SPE* orbitalSet)
   ny=MeshSize[1];
   nz=MeshSize[2];
   orbitalSet->allocate(MeshSize,NumValenceOrbs);
-  string splinefile=make_spline_filename(H5FileName,spin,TwistNum,MeshSize);
+  std::string splinefile=make_spline_filename(H5FileName,spin,TwistNum,MeshSize);
   int foundspline=0;
   Timer now;
   if(root)
@@ -337,7 +337,7 @@ void EinsplineSetBuilder::ReadBands_ESHDF_Real(int spin, SPE* orbitalSet)
   myComm->bcast(foundspline);
   if(foundspline)
   {
-    app_log() << "Use existing bspline tables in " << splinefile << endl;
+    app_log() << "Use existing bspline tables in " << splinefile << std::endl;
     chunked_bcast(myComm, orbitalSet->MultiSpline);
   }
   else
@@ -358,16 +358,16 @@ void EinsplineSetBuilder::ReadBands_ESHDF_Real(int spin, SPE* orbitalSet)
     Array<double,3> splineData(nx,ny,nz);
     for(int iorb=0,ival=0; iorb<N; ++iorb, ++ival)
     {
-      Vector<complex<double> > cG;
+      Vector<std::complex<double> > cG;
       int ncg=0;
       int ti=twist_id[iorb];
       //int ti=SortBands[iorb].TwistIndex;
       if(root)
       {
-        ostringstream path;
+        std::ostringstream path;
         path << "/electrons/kpoint_" << ti    //SortBands[iorb].TwistIndex
              << "/spin_" << spin << "/state_" << SortBands[iorb].BandIndex << "/psi_g";
-        HDFAttribIO<Vector<complex<double> > >  h_cG(cG);
+        HDFAttribIO<Vector<std::complex<double> > >  h_cG(cG);
         h_cG.read (H5FileID, path.str().c_str());
         ncg=cG.size();
       }
@@ -390,12 +390,12 @@ void EinsplineSetBuilder::ReadBands_ESHDF_Real(int spin, SPE* orbitalSet)
       hdf_archive h5f;
       h5f.create(splinefile);
       einspline_engine<typename SPE::SplineType> bigtable(orbitalSet->MultiSpline);
-      string aname("EinsplineR2RAdoptor");
+      std::string aname("EinsplineR2RAdoptor");
       h5f.write(aname,"bspline_type");
       h5f.write(bigtable,"spline_0");
     }
   }
-  app_log() << "TIME READBANDS " << now.elapsed() << endl;
+  app_log() << "TIME READBANDS " << now.elapsed() << std::endl;
   //ExtendedMap_d[set] = orbitalSet->MultiSpline;
 }
 
@@ -418,7 +418,7 @@ void EinsplineSetBuilder::ReadBands_ESHDF_Real(int spin, SPE* orbitalSet)
 
 //  int numOrbs = orbitalSet->getOrbitalSetSize();
 //  int num = 0;
-//  vector<int> twist_id(N);
+//  std::vector<int> twist_id(N);
 
 //  //twist-related things can be completely ignored but will keep them for now
 //  if (root) {
@@ -449,7 +449,7 @@ void EinsplineSetBuilder::ReadBands_ESHDF_Real(int spin, SPE* orbitalSet)
 //
 //  bool havePsir=!ReadGvectors_ESHDF();
 
-//  app_log() << "HalfG = " << orbitalSet->HalfG << endl;
+//  app_log() << "HalfG = " << orbitalSet->HalfG << std::endl;
 //  app_log() << "MeshSize = (" << MeshSize[0] << ", "
 //            << MeshSize[1] << ", " << MeshSize[2] << ")\n";
 
@@ -494,18 +494,18 @@ void EinsplineSetBuilder::ReadBands_ESHDF_Real(int spin, SPE* orbitalSet)
 //  {
 //    if(isComplex)
 //    {
-//      app_log() << "   Reading complex psi_r and convert to real" << endl;
+//      app_log() << "   Reading complex psi_r and convert to real" << std::endl;
 //      Array<spline_data_type,3> splineData(nx,ny,nz);
-//      Array<complex<double>,3> rawData;
+//      Array<std::complex<double>,3> rawData;
 //      for(int iorb=0,ival=0; iorb<N; ++iorb, ++ival)
 //      {
 //        int ti=twist_id[iorb]; //int ti=SortBands[iorb].TwistIndex;
 //        if(root)
 //        {
-//          ostringstream path;
+//          std::ostringstream path;
 //          path << "/electrons/kpoint_" << SortBands[iorb].TwistIndex
 //            << "/spin_" << spin << "/state_" << SortBands[iorb].BandIndex << "/psi_r";
-//          HDFAttribIO<Array<complex<double>,3> >  h_splineData(rawData);
+//          HDFAttribIO<Array<std::complex<double>,3> >  h_splineData(rawData);
 //          h_splineData.read(H5FileID, path.str().c_str());
 //        }
 //        myComm->bcast(rawData);
@@ -517,14 +517,14 @@ void EinsplineSetBuilder::ReadBands_ESHDF_Real(int spin, SPE* orbitalSet)
 //    }
 //    else
 //    {
-//      app_log() << "   Reading real psi_r" << endl;
+//      app_log() << "   Reading real psi_r" << std::endl;
 //      Array<spline_data_type,3> splineData(nx,ny,nz);
 //      Array<double,3> rawData(nx,ny,nz);
 //      for(int iorb=0,ival=0; iorb<N; ++iorb, ++ival)
 //      {
 //        if(root)
 //        {
-//          ostringstream path;
+//          std::ostringstream path;
 //          path << "/electrons/kpoint_" << SortBands[iorb].TwistIndex
 //            << "/spin_" << spin << "/state_" << SortBands[iorb].BandIndex << "/psi_r";
 //          HDFAttribIO<Array<double,3> >  h_splineData(rawData);
@@ -550,16 +550,16 @@ void EinsplineSetBuilder::ReadBands_ESHDF_Real(int spin, SPE* orbitalSet)
 
 //    for(int iorb=0,ival=0; iorb<N; ++iorb, ++ival)
 //    {
-//      Vector<complex<double> > cG;
+//      Vector<std::complex<double> > cG;
 //      int ncg=0;
 //      int ti=twist_id[iorb];
 //      //int ti=SortBands[iorb].TwistIndex;
 //      if(root)
 //      {
-//        ostringstream path;
+//        std::ostringstream path;
 //        path << "/electrons/kpoint_" << ti    //SortBands[iorb].TwistIndex
 //          << "/spin_" << spin << "/state_" << SortBands[iorb].BandIndex << "/psi_g";
-//        HDFAttribIO<Vector<complex<double> > >  h_cG(cG);
+//        HDFAttribIO<Vector<std::complex<double> > >  h_cG(cG);
 //        h_cG.read (H5FileID, path.str().c_str());
 //        ncg=cG.size();
 //      }

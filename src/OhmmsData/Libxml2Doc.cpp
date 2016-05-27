@@ -171,7 +171,7 @@ bool Libxml2Document::parse(const std::string& xmlfile)
   //}
   m_doc = xmlParseMemory(buffer,length);
   delete [] buffer;
-  qmcplusplus::app_log() << " Parsing " << xmlfile << " : " << aClock.elapsed() << " seconds " << endl;
+  qmcplusplus::app_log() << " Parsing " << xmlfile << " : " << aClock.elapsed() << " seconds " << std::endl;
   if (m_doc == NULL)
   {
     return false;

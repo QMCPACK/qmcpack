@@ -34,7 +34,7 @@ IonOrbital::resetTargetParticleSet(ParticleSet& P)
 void IonOrbital::checkInVariables(opt_variables_type& active)        { }
 void IonOrbital::checkOutVariables(const opt_variables_type& active) { }
 void IonOrbital::resetParameters(const opt_variables_type& active)   { }
-void IonOrbital::reportStatus(ostream& os)                           { }
+void IonOrbital::reportStatus(std::ostream& os)                           { }
 
 /**
      *@param P input configuration containing N particles
@@ -181,7 +181,7 @@ IonOrbital::logRatio(ParticleSet& P, int iat,
   // dG[iat] -= 2.0*a*(newdisp - olddisp);
   // dL[iat] -= 0.0*a;
   // RealType lograt = -a*(newdist*newdist - olddist*olddist);
-  // cerr << "lograt = " << lograt << endl;
+  // std::cerr << "lograt = " << lograt << std::endl;
   // return lograt;
 }
 
@@ -305,7 +305,7 @@ IonOrbital::evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
   // }
   // return LogValue;
   // return evaluateLog(P, P.G, P.L);
-  // cerr << "IonOrbital::evaluateLog(ParticleSet& P, PooledData<RealType>& buf) called.\n";
+  // std::cerr << "IonOrbital::evaluateLog(ParticleSet& P, PooledData<RealType>& buf) called.\n";
   // buf.put(U.first_address(), U.last_address());
   // buf.put(d2U.first_address(), d2U.last_address());
   // buf.put(FirstAddressOfdU,LastAddressOfdU);

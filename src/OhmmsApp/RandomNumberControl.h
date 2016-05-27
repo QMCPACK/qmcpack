@@ -62,12 +62,12 @@ public:
    * @param fname file name
    * @param comm communicator so that everyone reads its own data
    */
-  static void read(const string& fname, Communicate* comm);
+  static void read(const std::string& fname, Communicate* comm);
   /** write random state to a hdf file
    * @param fname file name
    * @param comm communicator so that everyone writes its own data
    */
-  static void write(const string& fname, Communicate* comm);
+  static void write(const std::string& fname, Communicate* comm);
 
 private:
 

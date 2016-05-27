@@ -259,14 +259,14 @@ DiracDeterminantBase::ValueType DiracDeterminantBase::ratio(ParticleSet& P, int 
   return curRatio;
 }
 
-void DiracDeterminantBase::evaluateRatios(VirtualParticleSet& VP, vector<ValueType>& ratios)
+void DiracDeterminantBase::evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
 {
   Matrix<ValueType> psiT(ratios.size(),NumOrbitals);
   Phi->evaluateValues(VP,psiT);
   MatrixOperators::product(psiT,psiM[VP.activePtcl-FirstIndex],&ratios[0]);
 }
 
-void DiracDeterminantBase::get_ratios(ParticleSet& P, vector<ValueType>& ratios)
+void DiracDeterminantBase::get_ratios(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   SPOVTimer.start();
   Phi->evaluate(P, 0, psiV);
@@ -323,12 +323,12 @@ DiracDeterminantBase::evalGradSourcep
   ValueMatrix_t &Grad2_phi(d2psiM);
   HessMatrix_t &Grad_phi_alpha(grad_grad_source_psiM);
   GradMatrix_t &Grad2_phi_alpha(grad_lapl_source_psiM);
-  //    vector<ValueType> grad_psi_over_psi_vector;
-  //    vector<ValueType> grad_psi_alpha_over_psi_vector;
+  //    std::vector<ValueType> grad_psi_over_psi_vector;
+  //    std::vector<ValueType> grad_psi_alpha_over_psi_vector;
   GradType Psi_alpha_over_psi;
   Psi_alpha_over_psi = evalGradSource(P, source, iat);
-  ofstream outfile;
-  outfile.open("grad_psi_alpha_over_psi",ios::app);
+  std::ofstream outfile;
+  outfile.open("grad_psi_alpha_over_psi",std::ios::app);
   ValueMatrix_t toDet;
   ValueMatrix_t toDet_l;
   toDet.resize(2,2);
@@ -382,7 +382,7 @@ DiracDeterminantBase::evalGradSourcep
           }
         }
         Grad_psi_alpha_over_psi(dim,el_dim)=one_row_change(dim,el_dim)+two_row_change(dim,el_dim);
-        outfile<<Grad_psi_alpha_over_psi(dim,el_dim)<<endl;
+        outfile<<Grad_psi_alpha_over_psi(dim,el_dim)<< std::endl;
         grad_grad(dim)(ptcl)(el_dim)=one_row_change(dim,el_dim)+two_row_change(dim,el_dim)-
                                      Grad_psi_over_psi(el_dim)*Psi_alpha_over_psi(dim);
       }
@@ -441,9 +441,9 @@ void DiracDeterminantBase::evaluateHessian(ParticleSet& P, HessVector_t& grad_gr
  //     }
      // G(iat) += rv;
      // L(iat) += lap - dot(rv,rv);
-  //    app_log()<<"rv = "<<rv<<endl;
-   //   app_log()<<"outer = "<<outerProduct(rv,rv)<<endl;
-   //   app_log()<<"hess_tmp = "<<hess_tmp<<endl;
+  //    app_log()<<"rv = "<<rv<< std::endl;
+   //   app_log()<<"outer = "<<outerProduct(rv,rv)<< std::endl;
+   //   app_log()<<"hess_tmp = "<<hess_tmp<< std::endl;
       grad_grad_psi[iat]=hess_tmp-outerProduct(rv,rv);
     }
 	 psiM_temp = psiM;
@@ -471,7 +471,7 @@ DiracDeterminantBase::evalGradSource
   // 	  val += psiM(i,k) * psiM_temp(k,j);
   // 	val -= (i == j) ? 1.0 : 0.0;
   // 	if (std::fabs(val) > 1.0e-12)
-  // 	  cerr << "Error in inverse.\n";
+  // 	  std::cerr << "Error in inverse.\n";
   //   }
   // for (int i=0; i<NumPtcls; i++) {
   //   P.G[FirstIndex+i] = GradType();
@@ -610,7 +610,7 @@ DiracDeterminantBase::ValueType DiracDeterminantBase::ratio(ParticleSet& P, int 
   //psiM_temp = psiM;
   curRatio= DetRatioByRow(psiM_temp, psiV, WorkingIndex);
   RatioTimer.stop();
-  if(abs(curRatio)<numeric_limits<RealType>::epsilon())
+  if(abs(curRatio)<std::numeric_limits<RealType>::epsilon())
   {
     UpdateMode=ORB_PBYP_RATIO; //singularity! do not update inverse
     return 0.0;
@@ -859,7 +859,7 @@ DiracDeterminantBase::evaluateLog(ParticleSet& P,
                                   ParticleSet::ParticleGradient_t& G,
                                   ParticleSet::ParticleLaplacian_t& L)
 {
-  //      cerr<<"I'm calling evaluate log"<<endl;
+  //      std::cerr <<"I'm calling evaluate log"<< std::endl;
   SPOVGLTimer.start();
   Phi->evaluate(P, FirstIndex, LastIndex, psiM,dpsiM, d2psiM);
   SPOVGLTimer.stop();
@@ -897,8 +897,8 @@ DiracDeterminantBase::evaluateLog(ParticleSet& P,
 void
 DiracDeterminantBase::evaluateDerivatives(ParticleSet& P,
     const opt_variables_type& active,
-    vector<RealType>& dlogpsi,
-    vector<RealType>& dhpsioverpsi)
+    std::vector<RealType>& dlogpsi,
+    std::vector<RealType>& dhpsioverpsi)
 {
 }
 

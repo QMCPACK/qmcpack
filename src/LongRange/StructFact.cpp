@@ -16,7 +16,7 @@ StructFact::StructFact(ParticleSet& P, RealType kc):
 
   if(qmc_common.use_ewald && P.LRBox.SuperCellEnum == SUPERCELL_SLAB)
   {
-    app_log() << "  Setting StructFact::SuperCellEnum=SUPERCELL_SLAB " << endl;
+    app_log() << "  Setting StructFact::SuperCellEnum=SUPERCELL_SLAB " << std::endl;
     SuperCellEnum=SUPERCELL_SLAB;
   }
 }
@@ -158,10 +158,10 @@ StructFact::FillRhok(ParticleSet& P)
     accumulate_elements(eikr_ref,eikr_ref+KLists.numk,rhok[P.GroupID[i]]);
     //valid version only with orthorohmbic cell, generalized to any cell above
     //  for(int idim=0; idim<3; idim++){
-    //    complex<double> Ctemp;
+    //    std::complex<double> Ctemp;
     //    //start the recursion with the 111 vector.
     //    double phi = (P.R[i])[idim] * k111[idim];
-    //    Ctemp = complex<double>(std::cos(phi), std::sin(phi));
+    //    Ctemp = std::complex<double>(std::cos(phi), std::sin(phi));
     //    C(idim,KLists.mmax[idim]) = 1.0; // K=0 term
     //    //Recursively generate all Cs.
     //    for(int n=1; n<=KLists.mmax[idim]; n++){
@@ -244,10 +244,10 @@ StructFact::UpdateRhok(const PosType& rold,const PosType& rnew,int iat,int Group
 //  //Prepare for subtracting old position
 //  for(unsigned int idim=0; idim<DIM; idim++)
 //  {
-//    complex<double> Ctemp;
+//    std::complex<double> Ctemp;
 //    //start the recursion with the 111 vector.
 //    double phi = rold[idim] * k111[idim];
-//    Ctemp = complex<double>(std::cos(phi), std::sin(phi));
+//    Ctemp = std::complex<double>(std::cos(phi), std::sin(phi));
 //    C(idim,KLists.mmax[idim]) = 1.0; // K=0
 //    //Recursively generate all Cs.
 //    for(int n=1; n<=KLists.mmax[idim]; n++)
@@ -259,7 +259,7 @@ StructFact::UpdateRhok(const PosType& rold,const PosType& rnew,int iat,int Group
 //  //Subtract old position
 //  for(int ki=0; ki<KLists.numk; ki++)
 //  {
-//    complex<double> temp = 1.0;
+//    std::complex<double> temp = 1.0;
 //    for(int idim=0; idim<DIM; idim++)
 //      temp *= C(idim,KLists.kpts[ki][idim]+KLists.mmax[idim]);
 //    rhok(GroupID,ki) -= temp;
@@ -267,10 +267,10 @@ StructFact::UpdateRhok(const PosType& rold,const PosType& rnew,int iat,int Group
 //  //Prepare for adding new position
 //  for(unsigned int idim=0; idim<DIM; idim++)
 //  {
-//    complex<double> Ctemp;
+//    std::complex<double> Ctemp;
 //    //start the recursion with the 111 vector.
 //    double phi = rnew[idim] * k111[idim];
-//    Ctemp = complex<double>(std::cos(phi), std::sin(phi));
+//    Ctemp = std::complex<double>(std::cos(phi), std::sin(phi));
 //    C(idim,KLists.mmax[idim]) = 1.0; // K=0
 //    //Recursively generate all Cs.
 //    for(int n=1; n<=KLists.mmax[idim]; n++)
@@ -282,7 +282,7 @@ StructFact::UpdateRhok(const PosType& rold,const PosType& rnew,int iat,int Group
 //  //Add new position
 //  for(int ki=0; ki<KLists.numk; ki++)
 //  {
-//    complex<double> temp = 1.0;
+//    std::complex<double> temp = 1.0;
 //    for(int idim=0; idim<DIM; idim++)
 //      temp *= C(idim,KLists.kpts[ki][idim]+KLists.mmax[idim]);
 //    rhok(GroupID,ki) += temp;
@@ -312,7 +312,7 @@ void StructFact::acceptMove(int active, int gid)
 #if defined(USE_REAL_STRUCT_FACTOR)
   APP_ABORT("NOT DONE WITH StructFact::acceptMove");
 #else
-  //cout << "StructFact::acceptMove " << active << endl;
+  //cout << "StructFact::acceptMove " << active << std::endl;
   //APP_ABORT("StructFact::acceptMove should not be used yet");
   ComplexType* restrict eikr_ptr=eikr[active];
   ComplexType* restrict rhok_ptr(rhok[gid]);

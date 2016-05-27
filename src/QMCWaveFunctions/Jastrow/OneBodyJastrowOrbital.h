@@ -82,8 +82,8 @@ protected:
   ParticleAttrib<RealType> U,d2U;
   ParticleAttrib<PosType> dU;
   RealType *FirstAddressOfdU, *LastAddressOfdU;
-  vector<FT*> Fs;
-  vector<FT*> Funique;
+  std::vector<FT*> Fs;
+  std::vector<FT*> Funique;
 
 public:
 
@@ -168,7 +168,7 @@ public:
   }
 
   /** print the state, e.g., optimizables */
-  void reportStatus(ostream& os)
+  void reportStatus(std::ostream& os)
   {
     for (int i=0; i<Funique.size(); ++i)
     {
@@ -268,7 +268,7 @@ public:
     return std::exp(U[iat]-curVal);
   }
 
-  inline void evaluateRatios(VirtualParticleSet& VP, vector<ValueType>& ratios)
+  inline void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
   {
     //vector<RealType> myr(ratios.size(),0.0);
     //const DistanceTableData* d_table=VP.DistTables[myTableIndex];
@@ -279,7 +279,7 @@ public:
     //RealType x=U[VP.activePtcl];
     //for(int k=0; k<ratios.size(); ++k)
     //  ratios[k]=std::exp(x-myr[k]);
-    vector<RealType> myr(ratios.size(),U[VP.activePtcl]);
+    std::vector<RealType> myr(ratios.size(),U[VP.activePtcl]);
     const DistanceTableData* d_table=VP.DistTables[myTableIndex];
     for (int i=0; i<d_table->size(SourceIndex); ++i)
       if (Fs[i])
@@ -290,7 +290,7 @@ public:
   }
 
   inline void evaluateDerivRatios(VirtualParticleSet& VP, const opt_variables_type& optvars,
-      vector<ValueType>& ratios, Matrix<ValueType>& dratios)
+      std::vector<ValueType>& ratios, Matrix<ValueType>& dratios)
   {
     evaluateRatios(VP,ratios);
     if(dPsi)
@@ -300,7 +300,7 @@ public:
 
   /** evaluate the ratio
    */
-  inline void get_ratios(ParticleSet& P, vector<ValueType>& ratios)
+  inline void get_ratios(ParticleSet& P, std::vector<ValueType>& ratios)
   {
     const DistanceTableData* d_table=P.DistTables[myTableIndex];
     std::fill(ratios.begin(),ratios.end(),0.0);
@@ -527,8 +527,8 @@ public:
   RealType registerData(ParticleSet& P, PooledData<RealType>& buf)
   {
     const DistanceTableData* d_table=P.DistTables[myTableIndex];
-    // cerr<<"REGISTERING 1 BODY JASTROW "<<endl;
-    // cerr<<d_table->size(VisitorIndex)<<endl;
+    // std::cerr <<"REGISTERING 1 BODY JASTROW "<< std::endl;
+    // std::cerr <<d_table->size(VisitorIndex)<< std::endl;
     //U.resize(d_table->size(VisitorIndex));
     d2U.resize(d_table->size(VisitorIndex));
     dU.resize(d_table->size(VisitorIndex));

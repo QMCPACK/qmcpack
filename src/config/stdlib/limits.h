@@ -4,7 +4,7 @@
 template<typename T>
 inline bool iszero(T a)
 {
-  return (abs(a)<numeric_limits<T>::epsilon());
+  return (abs(a)<std::numeric_limits<T>::epsilon());
 }
 #endif
 

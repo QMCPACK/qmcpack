@@ -16,7 +16,7 @@ namespace qmcplusplus
   : Ps(P)
   {
     legacy = false;
-    app_log()<<"Constructing SHOSetBuilder"<<endl;
+    app_log()<<"Constructing SHOSetBuilder"<< std::endl;
     reset();
   }
 
@@ -40,7 +40,7 @@ namespace qmcplusplus
   {
     APP_ABORT("SHOSetBuilder::createSPOSetFromXML  SHOSetBuilder should not use legacy interface");
 
-    app_log() << "SHOSetBuilder::createSHOSet(xml) " << endl;
+    app_log() << "SHOSetBuilder::createSHOSet(xml) " << std::endl;
 
     SPOSetInputInfo input(cur);
 
@@ -50,7 +50,7 @@ namespace qmcplusplus
 
   SPOSetBase* SHOSetBuilder::createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input)
   {
-    app_log() << "SHOSetBuilder::createSHOSet(indices) " << endl;
+    app_log() << "SHOSetBuilder::createSHOSet(indices) " << std::endl;
 
     using std::sqrt;
     using std::ceil;
@@ -58,7 +58,7 @@ namespace qmcplusplus
     reset();
 
     // read parameters
-    string spo_name = "sho";
+    std::string spo_name = "sho";
     OhmmsAttributeSet attrib;
     attrib.add(spo_name,"name"     );
     attrib.add(spo_name,"id"       );
@@ -81,10 +81,10 @@ namespace qmcplusplus
     // initialize states and/or adjust basis
     int smax = -1;
     if(input.has_index_info)
-      smax = max(smax,input.max_index());
+      smax = std::max(smax,input.max_index());
     if(input.has_energy_info)
     {
-      smax = max(smax,(int)ceil(input.max_energy()/energy));
+      smax = std::max(smax,(int)ceil(input.max_energy()/energy));
     }
     if(smax<0)
       APP_ABORT("SHOSetBuilder::Initialize\n  invalid basis size");
@@ -92,7 +92,7 @@ namespace qmcplusplus
 
     // create sho state request
     indices_t& indices = input.get_indices(states);
-    vector<SHOState*> sho_states;
+    std::vector<SHOState*> sho_states;
     for(int i=0;i<indices.size();++i)
       sho_states.push_back(basis_states[indices[i]]);
 
@@ -186,23 +186,23 @@ namespace qmcplusplus
   }
 
 
-  void SHOSetBuilder::report(const string& pad)
+  void SHOSetBuilder::report(const std::string& pad)
   {
-    app_log()<<pad<<"SHOSetBuilder report"<<endl;
-    app_log()<<pad<<"  dimension = "<< DIM <<endl;
-    app_log()<<pad<<"  mass      = "<< mass <<endl;
-    app_log()<<pad<<"  frequency = "<< energy <<endl;
-    app_log()<<pad<<"  energy    = "<< energy <<endl;
-    app_log()<<pad<<"  length    = "<< length <<endl;
-    app_log()<<pad<<"  center    = "<< center <<endl;
-    app_log()<<pad<<"  nstates   = "<< nstates <<endl;
-    app_log()<<pad<<"  nmax      = "<< nmax <<endl;
-    app_log()<<pad<<"  ind_dims  = "<< ind_dims <<endl;
-    app_log()<<pad<<"  # basis states = "<< basis_states.size() <<endl;
-    app_log()<<pad<<"  basis_states"<<endl;
+    app_log()<<pad<<"SHOSetBuilder report"<< std::endl;
+    app_log()<<pad<<"  dimension = "<< DIM << std::endl;
+    app_log()<<pad<<"  mass      = "<< mass << std::endl;
+    app_log()<<pad<<"  frequency = "<< energy << std::endl;
+    app_log()<<pad<<"  energy    = "<< energy << std::endl;
+    app_log()<<pad<<"  length    = "<< length << std::endl;
+    app_log()<<pad<<"  center    = "<< center << std::endl;
+    app_log()<<pad<<"  nstates   = "<< nstates << std::endl;
+    app_log()<<pad<<"  nmax      = "<< nmax << std::endl;
+    app_log()<<pad<<"  ind_dims  = "<< ind_dims << std::endl;
+    app_log()<<pad<<"  # basis states = "<< basis_states.size() << std::endl;
+    app_log()<<pad<<"  basis_states"<< std::endl;
     for(int s=0;s<basis_states.size();++s)
       basis_states[s]->report(pad+"  "+int2string(s)+" ");
-    app_log()<<pad<<"end SHOSetBuilder report"<<endl;
+    app_log()<<pad<<"end SHOSetBuilder report"<< std::endl;
     app_log().flush();
   }
 

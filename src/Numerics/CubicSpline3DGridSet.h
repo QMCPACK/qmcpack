@@ -152,7 +152,7 @@ struct CubicSpline3DGrid
 };
 
 #include <bitset>
-using std::bitset;
+
 /*! \class template<class T> CubicSpline3D
  * \brief spline functions on 3D regular grid [Rmin, Rmax)^3
  * The number of grids per axis can vary.
@@ -168,9 +168,9 @@ struct CubicSpline3D
   typedef typename grid_type::pos_type pos_type;
 
   int OrbitalID;
-  bitset<4> xyz[8];      // \note possible to make it "static const"
+  std::bitset<4> xyz[8];      // \note possible to make it "static const"
   grid_type myGrid;      // grid
-  vector<orb_type*> Orb; // a set of orbitals
+  std::vector<orb_type*> Orb; // a set of orbitals
   Vector<value_type> Val,Lap;
   Vector<pos_type>   Grad;
 
@@ -207,20 +207,20 @@ struct CubicSpline3D
   {
     //4-bit to calculate the coefficient indices and sign
     //xyz[i](x,y,z,sign): initially, all the bits are set to 0
-    //xyz[0] = bitset<4>(0,0,0,0); // -1(0) 3*0
+    //xyz[0] = std::bitset<4>(0,0,0,0); // -1(0) 3*0
     xyz[1].flip(2);
-    xyz[1].flip(3); //xyz[1] = bitset<4>(0,0,1,1); // +1(1) 2*0
+    xyz[1].flip(3); //xyz[1] = std::bitset<4>(0,0,1,1); // +1(1) 2*0
     xyz[2].flip(1);
-    xyz[2].flip(2); //xyz[2] = bitset<4>(0,1,1,0); // -1(0) 1*0
+    xyz[2].flip(2); //xyz[2] = std::bitset<4>(0,1,1,0); // -1(0) 1*0
     xyz[3].flip(1);
-    xyz[3].flip(3); //xyz[3] = bitset<4>(0,1,0,1); // +1(1) 2*0
+    xyz[3].flip(3); //xyz[3] = std::bitset<4>(0,1,0,1); // +1(1) 2*0
     xyz[4].flip(0);
-    xyz[4].flip(3); //xyz[4] = bitset<4>(1,0,0,1); // +1(1) 2*0
+    xyz[4].flip(3); //xyz[4] = std::bitset<4>(1,0,0,1); // +1(1) 2*0
     xyz[5].flip(0);
-    xyz[5].flip(2); //xyz[5] = bitset<4>(1,0,1,0); // -1(0) 1*0
-    xyz[6].flip();                  //xyz[6] = bitset<4>(1,1,1,1); // +1(1) 0*0
+    xyz[5].flip(2); //xyz[5] = std::bitset<4>(1,0,1,0); // -1(0) 1*0
+    xyz[6].flip();                  //xyz[6] = std::bitset<4>(1,1,1,1); // +1(1) 0*0
     xyz[7].flip(0);
-    xyz[7].flip(1); //xyz[7] = bitset<4>(1,1,0,0); // -1(0) 1*0
+    xyz[7].flip(1); //xyz[7] = std::bitset<4>(1,1,0,0); // -1(0) 1*0
   }
 
   // assign value at (i,j,k) of iorb-th orbital

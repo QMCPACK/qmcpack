@@ -36,7 +36,7 @@ struct HeePotential_tail: public QMCHamiltonianBase
     Value = TCorr;
   }
 
-  inline Return_t evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }

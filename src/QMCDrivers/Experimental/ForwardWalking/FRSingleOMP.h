@@ -31,7 +31,7 @@ class ParticleSetPool;
  */
 class FRSingleOMP: public QMCDriver , public CloneManager
 {
-  typedef map<string,ParticleSet*> PtclPoolType;
+  typedef std::map<std::string,ParticleSet*> PtclPoolType;
 public:
   /// Constructor.
   FRSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
@@ -56,29 +56,29 @@ private:
   void resetWeights();
   int getNumberOfSamples(int omittedSteps);
   //debugging functions
-  void printIDs(vector<long> vi);
-  void printInts(vector<int> vi);
+  void printIDs(std::vector<long> vi);
+  void printInts(std::vector<int> vi);
 
-  string xmlrootName;
-  stringstream fname;
+  std::string xmlrootName;
+  std::stringstream fname;
   int doWeights ;
   int weightFreq, weightLength, numSteps;
   int gridDivs;
   double overL;
   ParticleSetPool&  ptclPool;
-  string ionroot;
+  std::string ionroot;
 
-  vector<int> walkersPerBlock;
-  vector<int> pointsToCalculate;
-  vector<vector<int> > Weights;
-  vector<vector<long> > IDs, PIDs, realPIDs, realIDs;
+  std::vector<int> walkersPerBlock;
+  std::vector<int> pointsToCalculate;
+  std::vector<std::vector<int> > Weights;
+  std::vector<std::vector<long> > IDs, PIDs, realPIDs, realIDs;
 //       HDF5_FW_float hdf_float_data;
   HDF5_FW_long hdf_ID_data,hdf_PID_data;
 
 //       HDF5_FW_weights hdf_WGT_data;
   HDF5_FW_density hdf_Den_data;
   hid_t c_file;
-  string WIDstring,PIDstring;
+  std::string WIDstring,PIDstring;
   int verbose,startStep;
   int gensTransferred;
 };

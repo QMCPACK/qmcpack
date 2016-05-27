@@ -112,7 +112,7 @@ struct h5data_proxy<hyperslab_proxy<CT,MAXDIM> >
   {
     //if(ref_.use_slab)
     //{
-    //  cout << "Everyone writes a part " << ref_.slab_dims_local[0] << endl;
+    //  std::cout << "Everyone writes a part " << ref_.slab_dims_local[0] << std::endl;
     //  return h5d_write(grp,aname.c_str(),
     //      ref_.slab_rank,
     //      ref_.slab_dims.data(), 

@@ -40,7 +40,7 @@ struct OrbitalConstraintsBase: public OrbitalBuilderBase
 
   enum {MULTIPLE=0, LONGRANGE, ONEBODY, TWOBODY, THREEBODY, FOURBODY};
   ///bitset to set the Jastrow component
-  bitset<8> JComponent;
+  std::bitset<8> JComponent;
   /** a common radial grid
    */
   RadialGridType* myGrid;

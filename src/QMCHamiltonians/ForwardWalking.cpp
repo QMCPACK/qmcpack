@@ -38,10 +38,10 @@ bool ForwardWalking::putSpecial(xmlNodePtr cur, QMCHamiltonian& h, ParticleSet& 
   xmlNodePtr tcur = cur->children;
   while(tcur != NULL)
   {
-    string cname((const char*)tcur->name);
+    std::string cname((const char*)tcur->name);
     if(cname == "Observable")
     {
-      string tagName("none");
+      std::string tagName("none");
       int Hindex(-100);
       int blockSeries(0);
       int blockFreq(0);
@@ -50,7 +50,7 @@ bool ForwardWalking::putSpecial(xmlNodePtr cur, QMCHamiltonian& h, ParticleSet& 
       Tattrib.add(blockSeries,"max");
       Tattrib.add(blockFreq,"frequency");
       Tattrib.put(tcur);
-      if (tagName.find("*")==string::npos)
+      if (tagName.find("*")==std::string::npos)
       {
         //Single Observable case
         int numProps = P.PropertyList.Names.size();
@@ -72,17 +72,17 @@ bool ForwardWalking::putSpecial(xmlNodePtr cur, QMCHamiltonian& h, ParticleSet& 
               app_log()<<"Not a valid H element("<<Hindex<<") Valid names are:";
               for (int jk=0; jk<h.sizeOfObservables(); jk++)
                 app_log()<<"  "<<h.getObservableName(jk);
-              app_log()<<endl;
+              app_log()<< std::endl;
               exit(-1);
             }
         Names.push_back(tagName);
         Hindices.push_back( Hindex);
-        app_log()<<" Hamiltonian Element "<<tagName<<" was found at "<< Hindex<<endl;
+        app_log()<<" Hamiltonian Element "<<tagName<<" was found at "<< Hindex<< std::endl;
         int numT=blockSeries/blockFreq ;
         nObservables+=1;
         nValues+=numT;
-        app_log()<<"   "<<numT<<" values will be calculated every "<<blockFreq<<"*tau H^-1"<<endl;
-        vector<int> pms(3);
+        app_log()<<"   "<<numT<<" values will be calculated every "<<blockFreq<<"*tau H^-1"<< std::endl;
+        std::vector<int> pms(3);
         pms[0]=blockFreq;
         pms[1]=numT;
         pms[2]=blockSeries+2;
@@ -102,24 +102,24 @@ bool ForwardWalking::putSpecial(xmlNodePtr cur, QMCHamiltonian& h, ParticleSet& 
         int numProps = P.PropertyList.Names.size();
         for(int j=0; j<h.sizeOfObservables(); j++)
         {
-          string Hname = h.getObservableName(j);
-          if (Hname.find(tagName) != string::npos)
+          std::string Hname = h.getObservableName(j);
+          if (Hname.find(tagName) != std::string::npos)
           {
-            //               vector<int> Parameters;
+            //               std::vector<int> Parameters;
             //               if(blockSeries==0)
             //                 putContent(Parameters,tcur);
             //               else
             //                 for( int pl=blockFreq;pl<=blockSeries;pl+=blockFreq) Parameters.push_back(pl);
             FOUNDH=true;
-            app_log()<<" Hamiltonian Element "<<Hname<<" was found at "<< j<<endl;
+            app_log()<<" Hamiltonian Element "<<Hname<<" was found at "<< j<< std::endl;
             Names.push_back(Hname);
             Hindex = j+NUMPROPERTIES;
             Hindices.push_back( Hindex);
             int numT=blockSeries/blockFreq ;
             nObservables+=1;
             nValues+=numT;
-            app_log()<<"   "<<numT<<" values will be calculated every "<<blockFreq<<"*tau H^-1"<<endl;
-            vector<int> pms(3);
+            app_log()<<"   "<<numT<<" values will be calculated every "<<blockFreq<<"*tau H^-1"<< std::endl;
+            std::vector<int> pms(3);
             pms[0]=blockFreq;
             pms[1]=numT;
             pms[2]=blockSeries+2;
@@ -139,15 +139,15 @@ bool ForwardWalking::putSpecial(xmlNodePtr cur, QMCHamiltonian& h, ParticleSet& 
           app_log()<<"Not a valid H element("<<Hindex<<") Valid names are:";
           for (int jk=0; jk<h.sizeOfObservables(); jk++)
             app_log()<<"  "<<h.getObservableName(jk);
-          app_log()<<endl;
+          app_log()<< std::endl;
           APP_ABORT("ForwardWalking::put");
         }
       }
     }
     tcur = tcur->next;
   }
-  app_log()<<"Total number of observables calculated:"<<nObservables<<endl;
-  app_log()<<"Total number of values calculated:"<<nValues<<endl;
+  app_log()<<"Total number of observables calculated:"<<nObservables<< std::endl;
+  app_log()<<"Total number of values calculated:"<<nValues<< std::endl;
   Values.resize(nValues);
   return true;
 }
@@ -174,9 +174,9 @@ void ForwardWalking::addObservables(PropertySetType& plist, BufferType& collecta
       sstr << "FWE_" << Names[i] << "_" << j*walkerLengths[i][0];
       int id=plist.add(sstr.str());
       //         myIndex=std::min(myIndex,id);
-      //app_log() <<" Observables named "<<sstr.str() << " at " << id <<endl;
+      //app_log() <<" Observables named "<<sstr.str() << " at " << id << std::endl;
     }
-  app_log()<<"ForwardWalking::Observables [" << myIndex << ", " << myIndex+nc << ")" << endl;
+  app_log()<<"ForwardWalking::Observables [" << myIndex << ", " << myIndex+nc << ")" << std::endl;
 }
 }
 /***************************************************************************

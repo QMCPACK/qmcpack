@@ -69,7 +69,7 @@ struct DOMProcessor
   get(const char* apath)
   {
     //if(t_result) xmlXPathFreeObject(t_result);
-    cout << "returning a xpathobject of " << apath << endl;
+    std::cout << "returning a xpathobject of " << apath << std::endl;
     return t_result = xmlXPathEvalExpression((const xmlChar*)apath,m_context);
   }
 };

@@ -39,13 +39,13 @@ public:
   ///Destructor
   ~QMCCostFunctionSingle();
 
-  void getConfigurations(const string& aroot);
+  void getConfigurations(const std::string& aroot);
   void checkConfigurations();
-  void GradCost(vector<QMCTraits::RealType>& PGradient, const vector<QMCTraits::RealType>& PM, QMCTraits::RealType FiniteDiff=0) ;
+  void GradCost(std::vector<QMCTraits::RealType>& PGradient, const std::vector<QMCTraits::RealType>& PM, QMCTraits::RealType FiniteDiff=0) ;
   Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& H2, Matrix<Return_t>& Hamiltonian, Matrix<Return_t>& Variance, Matrix<Return_t>& Overlap);
 protected:
-  vector<vector<Return_t> > TempDerivRecords;
-  vector<vector<Return_t> > TempHDerivRecords;
+  std::vector<std::vector<Return_t> > TempDerivRecords;
+  std::vector<std::vector<Return_t> > TempHDerivRecords;
   Return_t CSWeight;
   void resetPsi(bool final_reset=false);
   Return_t correlatedSampling(bool needGrad=true);

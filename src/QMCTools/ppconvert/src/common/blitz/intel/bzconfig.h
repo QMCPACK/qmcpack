@@ -27,12 +27,12 @@
 #define BZ_HAVE_CLIMITS   
 #endif
 
-/* define if the compiler has complex<T> */
+/* define if the compiler has std::complex<T> */
 #ifndef BZ_HAVE_COMPLEX 
 #define BZ_HAVE_COMPLEX   
 #endif
 
-/* define if the compiler has standard complex<T> functions */
+/* define if the compiler has standard std::complex<T> functions */
 #ifndef BZ_HAVE_COMPLEX_FCNS 
 #define BZ_HAVE_COMPLEX_FCNS   
 #endif
@@ -159,7 +159,7 @@
 #define BZ_HAVE_NCEG_RESTRICT_EGCS   
 #endif
 
-/* define if the compiler has numeric_limits<T> */
+/* define if the compiler has std::numeric_limits<T> */
 #ifndef BZ_HAVE_NUMERIC_LIMITS 
 #define BZ_HAVE_NUMERIC_LIMITS   
 #endif
@@ -217,12 +217,12 @@
 #define BZ_HAVE_STL   
 #endif
 
-/* Define to 1 if you have the <strings.h> header file. */
+/* Define to 1 if you have the <std::strings.h> header file. */
 #ifndef BZ_HAVE_STRINGS_H 
 #define BZ_HAVE_STRINGS_H  1 
 #endif
 
-/* Define to 1 if you have the <string.h> header file. */
+/* Define to 1 if you have the <std::string.h> header file. */
 #ifndef BZ_HAVE_STRING_H 
 #define BZ_HAVE_STRING_H  1 
 #endif

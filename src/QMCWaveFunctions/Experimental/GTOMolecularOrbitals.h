@@ -55,12 +55,12 @@ private:
   ParticleSet& IonSys;
   BasisSetType*      BasisSet;
   DistanceTableData* d_table;
-  map<string,int>    RnlID;
-  map<string,int>    CenterID;
+  std::map<std::string,int>    RnlID;
+  std::map<std::string,int>    CenterID;
   ///map for (n,l,m,s) to its quantum number index
-  map<string,int> nlms_id;
+  std::map<std::string,int> nlms_id;
 
-  int expandYlm(const string& rnl, const QuantumNumberType& nlms,
+  int expandYlm(const std::string& rnl, const QuantumNumberType& nlms,
                 int num, CenteredOrbitalType* aos, xmlNodePtr cur1,
                 int expandlm);
 

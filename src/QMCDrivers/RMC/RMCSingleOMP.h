@@ -21,12 +21,12 @@ namespace qmcplusplus
 		    WaveFunctionPool & ppool);
     bool run ();
     bool put (xmlNodePtr cur);
-    //inline vector<RandomGenerator_t*>& getRng() { return Rng;}
+    //inline std::vector<RandomGenerator_t*>& getRng() { return Rng;}
   private:
     ///period for walker dump
     int myPeriod4WalkerDump;
     ///option to enable/disable drift equation for RMC
-    string rescaleDrift;
+    std::string rescaleDrift;
     ///number of beads on the reptile, beta/tau
     int beads;
     //number of reptiles.  
@@ -55,10 +55,10 @@ namespace qmcplusplus
     //This will resize the MCWalkerConfiguration and initialize the ReptileList.  Does not care for previous runs.  
     void resetReptiles (int nReptiles, int nbeads, RealType tau);
     //This will resize the MCWalkerConfiguration and initialize Reptile list.  It will then reinitialize the MCWC with a list of Reptile coordinates
-    void resetReptiles (vector < ReptileConfig_t > &reptile_samps,
+    void resetReptiles (std::vector< ReptileConfig_t > &reptile_samps,
 			RealType tau);
     //For # of walker samples, create that many reptiles with nbeads each.  Initialize each reptile to have the value of the walker "seed".
-    void resetReptiles (vector < ParticlePos_t > &walker_samps, int nbeads,
+    void resetReptiles (std::vector< ParticlePos_t > &walker_samps, int nbeads,
 			RealType tau);
     ///copy constructor
       RMCSingleOMP (const RMCSingleOMP & a):QMCDriver (a), CloneManager (a)

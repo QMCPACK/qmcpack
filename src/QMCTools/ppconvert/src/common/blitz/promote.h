@@ -66,9 +66,9 @@ BZ_DECLARE_PRECISION(double,600)
 BZ_DECLARE_PRECISION(long double,700)
 
 #ifdef BZ_HAVE_COMPLEX
-BZ_DECLARE_PRECISION(complex<float>,800)
-BZ_DECLARE_PRECISION(complex<double>,900)
-BZ_DECLARE_PRECISION(complex<long double>,1000)
+BZ_DECLARE_PRECISION(std::complex<float>,800)
+BZ_DECLARE_PRECISION(std::complex<double>,900)
+BZ_DECLARE_PRECISION(std::complex<long double>,1000)
 #endif
 
 template<typename T>

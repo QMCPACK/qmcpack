@@ -42,7 +42,7 @@ struct NJAABuilder: public OrbitalBuilderBase
   ///pointer to <grid/>
   xmlNodePtr gridPtr;
   ///unique analytic functions
-  vector<InFuncType*> InFunc;
+  std::vector<InFuncType*> InFunc;
 
   NJAABuilder(ParticleSet& p, TrialWaveFunction& psi);
 
@@ -65,7 +65,7 @@ struct NJAABuilder: public OrbitalBuilderBase
    * Check IgnoreSpin flag and speciesA-speciesB to instantiate a proper
    * function, e.g., PadeJastrow
    */
-  InFuncType* createInFunc(const string& jastfunction, int speciesA, int speciesB);
+  InFuncType* createInFunc(const std::string& jastfunction, int speciesA, int speciesB);
 
 };
 }

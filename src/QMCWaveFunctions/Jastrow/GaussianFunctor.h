@@ -33,9 +33,9 @@ struct GaussianFunctor: public OptimizableFunctorBase
   real_type RC;
   real_type c0,c1,c2,c3,c4;
 
-  string ID_A;
-  string ID_C;
-  string ID_RC;
+  std::string ID_A;
+  std::string ID_C;
+  std::string ID_RC;
   bool optimizable;
 
   /** constructor
@@ -186,7 +186,7 @@ struct GaussianFunctor: public OptimizableFunctorBase
       return 0.0;
   }
   inline bool
-  evaluateDerivatives(real_type r, vector<TinyVector<real_type,3> >& derivs)
+  evaluateDerivatives(real_type r, std::vector<TinyVector<real_type,3> >& derivs)
   {
     if ((r >= RC)||(!optimizable))
       return false;
@@ -235,7 +235,7 @@ struct GaussianFunctor: public OptimizableFunctorBase
   bool put(xmlNodePtr cur)
   {
     RC = cutoff_radius;
-    string opt("yes");
+    std::string opt("yes");
     OhmmsAttributeSet Tattrib;
     Tattrib.add(opt,"optimize");
     Tattrib.put(cur);
@@ -244,11 +244,11 @@ struct GaussianFunctor: public OptimizableFunctorBase
     while (tcur != NULL)
     {
       //@todo Var -> <param(eter) role="opt"/>
-      string cname((const char*)(tcur->name));
+      std::string cname((const char*)(tcur->name));
       if (cname == "parameter" || cname == "Var")
       {
-        string aname((const char*)(xmlGetProp(tcur,(const xmlChar *)"name")));
-//            string idname((const char*)(xmlGetProp(tcur,(const xmlChar *)"id")));
+        std::string aname((const char*)(xmlGetProp(tcur,(const xmlChar *)"name")));
+//            std::string idname((const char*)(xmlGetProp(tcur,(const xmlChar *)"id")));
         if (aname == "A")
         {
           ID_A = (const char*)(xmlGetProp(tcur,(const xmlChar *)"id"));
@@ -289,12 +289,12 @@ struct TruncatedShiftedGaussianFunctor: public OptimizableFunctorBase
   real_type A, B, C, RC;
   real_type c0,c1,c2,c3,c4,c5,c6;
   ///id of A
-  string ID_A;
+  std::string ID_A;
   ///id of B
-  string ID_B;
+  std::string ID_B;
   ///id of rc
-  string ID_RC;
-  string ID_C;
+  std::string ID_RC;
+  std::string ID_C;
   ///constructor
   TruncatedShiftedGaussianFunctor(real_type a=1.0 , real_type b=1.0 , real_type c=1.0):ID_A("SG_A"), ID_B("SG_B"),ID_C("SG_C")
   {
@@ -402,11 +402,11 @@ struct TruncatedShiftedGaussianFunctor: public OptimizableFunctorBase
     xmlNodePtr tcur = cur->xmlChildrenNode;
     while (tcur != NULL)
     {
-      string cname((const char*)(tcur->name));
+      std::string cname((const char*)(tcur->name));
       if (cname == "parameter" || cname == "Var")
       {
-        string aname((const char*)(xmlGetProp(tcur,(const xmlChar *)"name")));
-        string idname((const char*)(xmlGetProp(tcur,(const xmlChar *)"id")));
+        std::string aname((const char*)(xmlGetProp(tcur,(const xmlChar *)"name")));
+        std::string idname((const char*)(xmlGetProp(tcur,(const xmlChar *)"id")));
         if (aname == "A")
         {
           ID_A = idname;

@@ -48,7 +48,7 @@ HartreeFock::HartreeFock(RadialPotentialSet& pot,
  *@param aroot the root for all output files
  */
 
-void HartreeFock::setRoot(const string& aroot)
+void HartreeFock::setRoot(const std::string& aroot)
 {
   RootFileName = aroot;
   LogFileName = RootFileName + ".log";
@@ -84,7 +84,7 @@ bool HartreeFock::put(xmlNodePtr d_root)
     xmlAttrPtr att = cur->properties;
     while(att != NULL)
     {
-      string aname((const char*)(att->name));
+      std::string aname((const char*)(att->name));
       const char *avalue = (const char*)(att->children->content);
       if(aname == "name")
       {
@@ -102,7 +102,7 @@ bool HartreeFock::put(xmlNodePtr d_root)
     xmlNodePtr cur1 = cur->xmlChildrenNode;
     while(cur1 != NULL)
     {
-      string cname1((const char*)(cur1->name));
+      std::string cname1((const char*)(cur1->name));
       if(cname1 == "grid")
       {
         grid_ptr = cur1;
@@ -268,9 +268,9 @@ bool HartreeFock::initOrbitalSet()
   }
   //pass the xmlNode to Psi
   Psi.put(cur);
-  app_log() << "Total number of orbitals = " << Psi.size() << endl;
-  app_log() << "Total number of unique radial orbitals = " <<  Psi.NumUniqueOrb << endl;
-  app_log() << "(Orbital index, Number of Orbitals, n,l,m,s)"<<endl;;
+  app_log() << "Total number of orbitals = " << Psi.size() << std::endl;
+  app_log() << "Total number of unique radial orbitals = " <<  Psi.NumUniqueOrb << std::endl;
+  app_log() << "(Orbital index, Number of Orbitals, n,l,m,s)"<< std::endl;;
   for(int j=0; j < Psi.size(); j++)
   {
     int id = Psi.ID[j];
@@ -279,7 +279,7 @@ bool HartreeFock::initOrbitalSet()
              << ", " << Psi.L[j]
              << ", " << Psi.M[j]
              << ", " << Psi.S[j]
-             << ")" << endl;
+             << ")" << std::endl;
   }
   //return false if there is no wave functions
   return Psi.size() != 0;
@@ -389,20 +389,20 @@ bool HartreeFock::initHamiltonian()
  */
 int HartreeFock::report()
 {
-  string fileforplot(RootFileName);
+  std::string fileforplot(RootFileName);
   fileforplot.append(".orb.dat");
-  ofstream fout(fileforplot.c_str());
+  std::ofstream fout(fileforplot.c_str());
   fout << "#Results for " << AtomName << " with " << PotType
-       << " potential on " << GridType << " grid." <<endl;
-  fout << "#Eigen values " << endl;
+       << " potential on " << GridType << " grid." << std::endl;
+  fout << "#Eigen values " << std::endl;
   fout.precision(10);
-  fout.setf(ios::scientific,ios::floatfield);
+  fout.setf(std::ios::scientific,std::ios::floatfield);
   for(int orb=0; orb<eigVal.size(); orb++)
   {
     fout << "# n=" << Psi.N[orb] << " " <<  " l=" << Psi.L[orb]
-         << setw(25) << eigVal[orb] << " " << endl;
+         << std::setw(25) << eigVal[orb] << " " << std::endl;
   }
-  fout << "#The number of unique radial orbitals " << Psi.NumUniqueOrb << endl;
+  fout << "#The number of unique radial orbitals " << Psi.NumUniqueOrb << std::endl;
   //find the maximum radius for the orbital set
   int max_rad_all = 0;
   int orbindex = 0;
@@ -418,14 +418,14 @@ int HartreeFock::report()
   fout.precision(12);
   for(int ig=0; ig<max_rad_all; ig++)
   {
-    fout << setw(22) << myGrid->r(ig);
+    fout << std::setw(22) << myGrid->r(ig);
     orbindex=0;
     for(int orb=0; orb<Psi.NumUniqueOrb; orb++)
     {
-      fout << setw(22) << Psi(orbindex,ig);
+      fout << std::setw(22) << Psi(orbindex,ig);
       orbindex += Psi.IDcount[orb];
     }
-    fout << endl;
+    fout << std::endl;
   }
   Psi.print_HDF5(RootFileName,GridType,eigVal);
   Psi.print_basis(AtomName,RootFileName,GridType);

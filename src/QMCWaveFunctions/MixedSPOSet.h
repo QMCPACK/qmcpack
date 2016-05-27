@@ -45,7 +45,7 @@ public:
   ///pointer to the localized orbitals
   LOType* LocalizedOrbitals;
   ///a set of numerical orbitals
-  vector<NGOType*> GridOrbitals;
+  std::vector<NGOType*> GridOrbitals;
 
   /** constructor
    */
@@ -216,7 +216,7 @@ public:
   template<class VM, class GM>
   inline void
   evaluate(const WalkerSetRef& W, int first, int last,
-           vector<VM>& logdet, vector<GM>& dlogdet, vector<VM>& d2logdet)
+           std::vector<VM>& logdet, std::vector<GM>& dlogdet, std::vector<VM>& d2logdet)
   {
     //this is useless
   }

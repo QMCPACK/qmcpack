@@ -249,7 +249,7 @@ public:
     return X[((hi+1)*hi/2) + lo];
   }
 
-//    Type_t& operator()(pair<int,int> a) {
+//    Type_t& operator()(std::pair<int,int> a) {
 //      int i = a.first;
 //      int j = a.second;
 //      int lo = i < j ? i : j;
@@ -257,7 +257,7 @@ public:
 //      return X[((hi+1)*hi/2) + lo];
 //    }
 
-//    Type_t operator()( pair<int,int> a) const {
+//    Type_t operator()( std::pair<int,int> a) const {
 //      int i = a.first;
 //      int j = a.second;
 //      int lo = i < j ? i : j;

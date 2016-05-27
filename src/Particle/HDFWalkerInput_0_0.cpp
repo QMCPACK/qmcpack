@@ -25,11 +25,11 @@
 namespace qmcplusplus
 {
 
-HDFWalkerInput_0_0::HDFWalkerInput_0_0(MCWalkerConfiguration& W, const string &aroot):
+HDFWalkerInput_0_0::HDFWalkerInput_0_0(MCWalkerConfiguration& W, const std::string &aroot):
   targetW(W), version(0,0)
 {
   FileName = aroot;
-  string ext=getExtension(aroot);
+  std::string ext=getExtension(aroot);
   if(ext != "h5")
     //if the filename does not h5 extension, add the extension
   {
@@ -45,7 +45,7 @@ bool  HDFWalkerInput_0_0::put(xmlNodePtr cur)
   hid_t h_config = H5Gopen(h_file,"config_collection");
   if(h_config<0)
   {
-    app_error() << " HDFWalkerInput_0_0::put  config_collection is not found in " << FileName << "." << endl;
+    app_error() << " HDFWalkerInput_0_0::put  config_collection is not found in " << FileName << "." << std::endl;
     H5Fclose(h_file);
     return false;
   }
@@ -65,7 +65,7 @@ bool  HDFWalkerInput_0_0::put(xmlNodePtr cur)
   }
   if(!NumSets)
   {
-    app_error() << " HDFWalkerInput_0_0::put  " << FileName << " does not contain walkers!" << endl;
+    app_error() << " HDFWalkerInput_0_0::put  " << FileName << " does not contain walkers!" << std::endl;
     H5Gclose(h_config);
     H5Gclose(h_file);
     return false;
@@ -96,12 +96,12 @@ bool  HDFWalkerInput_0_0::put(xmlNodePtr cur)
   int curWalker = targetW.getActiveWalkers();
   if(curWalker)
   {
-    app_log() << "HDFWalkerInput_0_0::put Adding " << nwt << " walkers to " << curWalker << endl;
+    app_log() << "HDFWalkerInput_0_0::put Adding " << nwt << " walkers to " << curWalker << std::endl;
     targetW.createWalkers(nwt);
   }
   else
   {
-    app_log() << "HDFWalkerInput_0_0::put Creating " << nwt << " walkers." << endl;
+    app_log() << "HDFWalkerInput_0_0::put Creating " << nwt << " walkers." << std::endl;
     targetW.resize(nwt,nptcl);
   }
   //assign configurations to W
@@ -110,7 +110,7 @@ bool  HDFWalkerInput_0_0::put(xmlNodePtr cur)
   MCWalkerConfiguration::iterator it_end = targetW.end();
   while(it != it_end)
   {
-    std::copy(Pos_temp[iw],Pos_temp[iw+1], (*it)->R.begin());
+    copy(Pos_temp[iw],Pos_temp[iw+1], (*it)->R.begin());
     ++it;
     ++iw;
   }

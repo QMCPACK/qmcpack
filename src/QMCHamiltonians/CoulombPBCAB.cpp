@@ -37,8 +37,8 @@ CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns,
   myTableIndex=elns.addTable(ions);
   initBreakup(elns);
   prefix="Flocal";
-  app_log() << "  Maximum K shell " << AB->MaxKshell << endl;
-  app_log() << "  Number of k vectors " << AB->Fk.size() << endl;
+  app_log() << "  Maximum K shell " << AB->MaxKshell << std::endl;
+  app_log() << "  Number of k vectors " << AB->Fk.size() << std::endl;
 }
 
 QMCHamiltonianBase* CoulombPBCAB::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
@@ -95,7 +95,7 @@ void CoulombPBCAB::contribute_particle_quantities()
 void CoulombPBCAB::checkout_particle_quantities(TraceManager& tm)
 {
   streaming_particles = request.streaming_array(myName);
-  if(streaming_particles)
+  if( streaming_particles)
   {
     Ve_sample = tm.checkout_real<1>(myName,Peln);
     Vi_sample = tm.checkout_real<1>(myName,Pion);
@@ -104,7 +104,7 @@ void CoulombPBCAB::checkout_particle_quantities(TraceManager& tm)
 
 void CoulombPBCAB::delete_particle_quantities()
 {
-  if(streaming_particles)
+  if( streaming_particles)
   {
     delete Ve_sample;
     delete Vi_sample;
@@ -123,7 +123,7 @@ CoulombPBCAB::evaluate(ParticleSet& P)
   }
   else
 #if !defined(REMOVE_TRACEMANAGER)
-    if(streaming_particles)
+    if( streaming_particles)
       Value = evaluate_sp(P);
     else
 #endif
@@ -228,51 +228,51 @@ CoulombPBCAB::evaluate_sp(ParticleSet& P)
   RealType Vcorig  = evalConsts_orig(false);
   if(abs(Vsum-Vnow)>TraceManager::trace_tol)
   {
-    app_log()<<"accumtest: CoulombPBCAA::evaluate()"<<endl;
-    app_log()<<"accumtest:   tot:"<< Vnow <<endl;
-    app_log()<<"accumtest:   sum:"<< Vsum  <<endl;
+    app_log()<<"accumtest: CoulombPBCAA::evaluate()"<< std::endl;
+    app_log()<<"accumtest:   tot:"<< Vnow << std::endl;
+    app_log()<<"accumtest:   sum:"<< Vsum  << std::endl;
     APP_ABORT("Trace check failed");
   }
   if(abs(Vcsum-Vcnow)>TraceManager::trace_tol)
   {
-    app_log()<<"accumtest: CoulombPBCAA::evalConsts()"<<endl;
-    app_log()<<"accumtest:   tot:"<< Vcnow <<endl;
-    app_log()<<"accumtest:   sum:"<< Vcsum  <<endl;
+    app_log()<<"accumtest: CoulombPBCAA::evalConsts()"<< std::endl;
+    app_log()<<"accumtest:   tot:"<< Vcnow << std::endl;
+    app_log()<<"accumtest:   sum:"<< Vcsum  << std::endl;
     APP_ABORT("Trace check failed");
   }
   if(abs(Vesum-Visum)>TraceManager::trace_tol)
   {
-    app_log()<<"sharetest: CoulombPBCAB::evaluate()"<<endl;
-    app_log()<<"sharetest:   e share:"<< Vesum  <<endl;
-    app_log()<<"sharetest:   i share:"<< Visum  <<endl;
+    app_log()<<"sharetest: CoulombPBCAB::evaluate()"<< std::endl;
+    app_log()<<"sharetest:   e share:"<< Vesum  << std::endl;
+    app_log()<<"sharetest:   i share:"<< Visum  << std::endl;
   }
   if(abs(Vecsum-Vicsum)>TraceManager::trace_tol)
   {
-    app_log()<<"sharetest: CoulombPBCAB::evalConsts()"<<endl;
-    app_log()<<"sharetest:   e share:"<< Vecsum  <<endl;
-    app_log()<<"sharetest:   i share:"<< Vicsum <<endl;
+    app_log()<<"sharetest: CoulombPBCAB::evalConsts()"<< std::endl;
+    app_log()<<"sharetest:   e share:"<< Vecsum  << std::endl;
+    app_log()<<"sharetest:   i share:"<< Vicsum << std::endl;
   }
   if(abs(Vsrold-Vsrnow)>TraceManager::trace_tol)
   {
-    app_log()<<"versiontest: CoulombPBCAA::evalSR()"<<endl;
-    app_log()<<"versiontest:    old:"<< Vsrold <<endl;
-    app_log()<<"versiontest:    mod:"<< Vsrnow <<endl;
+    app_log()<<"versiontest: CoulombPBCAA::evalSR()"<< std::endl;
+    app_log()<<"versiontest:    old:"<< Vsrold << std::endl;
+    app_log()<<"versiontest:    mod:"<< Vsrnow << std::endl;
     APP_ABORT("Trace check failed");
   }
   if(abs(Vlrold-Vlrnow)>TraceManager::trace_tol)
   {
-    app_log()<<"versiontest: CoulombPBCAA::evalLR()"<<endl;
-    app_log()<<"versiontest:    old:"<< Vlrold <<endl;
-    app_log()<<"versiontest:    mod:"<< Vlrnow <<endl;
+    app_log()<<"versiontest: CoulombPBCAA::evalLR()"<< std::endl;
+    app_log()<<"versiontest:    old:"<< Vlrold << std::endl;
+    app_log()<<"versiontest:    mod:"<< Vlrnow << std::endl;
     APP_ABORT("Trace check failed");
   }
   if(abs(Vcold-Vcorig)>TraceManager::trace_tol ||
-      abs(Vcnow-Vcorig)>TraceManager::trace_tol )
+      std::abs(Vcnow-Vcorig)>TraceManager::trace_tol )
   {
-    app_log()<<"versiontest: CoulombPBCAA::evalConsts()"<<endl;
-    app_log()<<"versiontest:    old:"<< Vcold <<endl;
-    app_log()<<"versiontest:   orig:"<< Vcorig <<endl;
-    app_log()<<"versiontest:    mod:"<< Vcnow <<endl;
+    app_log()<<"versiontest: CoulombPBCAA::evalConsts()"<< std::endl;
+    app_log()<<"versiontest:    old:"<< Vcold << std::endl;
+    app_log()<<"versiontest:   orig:"<< Vcorig << std::endl;
+    app_log()<<"versiontest:    mod:"<< Vcnow << std::endl;
     APP_ABORT("Trace check failed");
   }
 #endif
@@ -326,7 +326,7 @@ CoulombPBCAB::evalConsts(bool report)
     Consts += v1;
   }
   if(report)
-    app_log() << "   Constant of PBCAB " << Consts << endl;
+    app_log() << "   Constant of PBCAB " << Consts << std::endl;
   return Consts;
 }
 
@@ -416,7 +416,7 @@ CoulombPBCAB::evalConsts_orig(bool report)
     }
   }
   if(report)
-    app_log() << "   Constant of PBCAB " << Consts << endl;
+    app_log() << "   Constant of PBCAB " << Consts << std::endl;
   return Consts;
 }
 
@@ -486,7 +486,7 @@ CoulombPBCAB::evalConsts_old(bool report)
     }
   }
   if(report)
-    app_log() << "   Constant of PBCAB " << Consts << endl;
+    app_log() << "   Constant of PBCAB " << Consts << std::endl;
   return Consts;
 }
 
@@ -526,13 +526,13 @@ void CoulombPBCAB::initBreakup(ParticleSet& P)
     totQ+=Zat[iat] = Zspec[PtclA.GroupID[iat]];
   for(int iat=0; iat<NptclB; iat++)
     totQ+=Qat[iat] = Qspec[P.GroupID[iat]];
-//    if(totQ>numeric_limits<RealType>::epsilon())
+//    if(totQ>std::numeric_limits<RealType>::epsilon())
 //    {
 //      LOGMSG("PBCs not yet finished for non-neutral cells");
 //      OHMMS::Controller->abort();
 //    }
   ////Test if the box sizes are same (=> kcut same for fixed dimcut)
-  kcdifferent = (std::abs(PtclA.Lattice.LR_kc - P.Lattice.LR_kc) > numeric_limits<RealType>::epsilon());
+  kcdifferent = (std::abs(PtclA.Lattice.LR_kc - P.Lattice.LR_kc) > std::numeric_limits<RealType>::epsilon());
   minkc = std::min(PtclA.Lattice.LR_kc,P.Lattice.LR_kc);
   //AB->initBreakup(*PtclB);
   //initBreakup is called only once
@@ -546,7 +546,7 @@ void CoulombPBCAB::initBreakup(ParticleSet& P)
     V0 = LRCoulombSingleton::createSpline4RbyVs(AB,myRcut,myGrid);
     if(Vat.size())
     {
-      app_log() << "  Vat is not empty. Something is wrong" << endl;
+      app_log() << "  Vat is not empty. Something is wrong" << std::endl;
       OHMMS::Controller->abort();
     }
     Vat.resize(NptclA,V0);
@@ -563,16 +563,16 @@ void CoulombPBCAB::add(int groupID, RadFunctorType* ppot)
   if(myGrid ==0)
   {
     myGrid = new LinearGrid<RealType>;
-    int ng = min(MaxGridPoints, static_cast<int>(myRcut/1e-3)+1);
+    int ng = std::min(MaxGridPoints, static_cast<int>(myRcut/1e-3)+1);
     app_log() << "    CoulombPBCAB::add \n Setting a linear grid=[0,"
-              << myRcut << ") number of grid =" << ng << endl;
+              << myRcut << ") number of grid =" << ng << std::endl;
     myGrid->set(0,myRcut,ng);
   }
   if(Vspec[groupID]==0)
   {
-    app_log() << "    Creating the short-range pseudopotential for species " << groupID << endl;
+    app_log() << "    Creating the short-range pseudopotential for species " << groupID << std::endl;
     int ng=myGrid->size();
-    vector<RealType> v(ng);
+    std::vector<RealType> v(ng);
     for(int ig=1; ig<ng-2; ig++)
     {
       RealType r=(*myGrid)[ig];
@@ -724,7 +724,7 @@ CoulombPBCAB::evalLRwithForces(ParticleSet& P)
 {
   const StructFact& RhoKA(*(PtclA.SK));
   const StructFact& RhoKB(*(P.SK));
-  vector<TinyVector<RealType,DIM> > grad(PtclA.getTotalNum());
+  std::vector<TinyVector<RealType,DIM> > grad(PtclA.getTotalNum());
   for(int j=0; j<NumSpeciesB; j++)
   {
     for (int iat=0; iat<grad.size(); iat++)

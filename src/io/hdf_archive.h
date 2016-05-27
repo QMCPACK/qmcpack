@@ -43,7 +43,7 @@ struct hdf_archive
    * Mode[IS_PARALLEL] : true, if collective
    * Mode[NOIO] : true, if I/O is not performed
    */
-  bitset<4> Mode;
+  std::bitset<4> Mode;
   ///file id
   hid_t file_id;
   ///access id
@@ -101,7 +101,7 @@ struct hdf_archive
    * @param aname group's name
    * @return true, if aname exists and it is a group
    */
-  bool is_group(const string& aname);
+  bool is_group(const std::string& aname);
 
   /** return the top of the group stack
    */

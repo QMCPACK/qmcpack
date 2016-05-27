@@ -115,7 +115,7 @@ public:
 
   typedef FT FuncType;
   ///container for the Jastrow functions
-  vector<FT*> F;
+  std::vector<FT*> F;
 
   ///constructor
   TwoBodyJastrow(ParticleSet& p, DistanceTableData* dtable): d_table(dtable)
@@ -344,7 +344,7 @@ public:
 
   inline ValueType registerData(ParticleSet& P, PooledData<RealType>& buf)
   {
-    cerr<<"REGISTERING 2 BODY JASTROW "<<endl;
+    std::cerr <<"REGISTERING 2 BODY JASTROW "<< std::endl;
     N=d_table->size(VisitorIndex);
     NN=N*N;
     U.resize(NN+1);
@@ -499,7 +499,7 @@ public:
     const DistanceTableData::IndexVectorType& M = d_table->M;
     const DistanceTableData::IndexVectorType& J = d_table->J;
     const DistanceTableData::IndexVectorType& PairID = d_table->PairID;
-    vector<ValueType> sumu(nw,0.0);
+    std::vector<ValueType> sumu(nw,0.0);
     for(int i=0; i<d_table->size(SourceIndex); i++)
     {
       for(int nn=M[i]; nn<M[i+1]; nn++)

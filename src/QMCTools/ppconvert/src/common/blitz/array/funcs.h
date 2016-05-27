@@ -173,16 +173,16 @@ BZ_DECLARE_ARRAY_ET_BINARY_SCALAR(polar,     Fn_polar, long double)
     
 template<typename T1, typename T2>
 inline _bz_ArrayExprBinaryOp<
-    typename asExpr<complex<T1> >::T_expr,
+    typename asExpr<std::complex<T1> >::T_expr,
     typename asExpr<T2>::T_expr, 
-    Fn_pow<complex<T1>,typename asExpr<T2>::T_expr::T_numtype> >
-pow(const complex<T1> d1, const ETBase<T2>& d2)
+    Fn_pow<std::complex<T1>,typename asExpr<T2>::T_expr::T_numtype> >
+pow(const std::complex<T1> d1, const ETBase<T2>& d2)
 {
     return _bz_ArrayExprBinaryOp<
-        typename asExpr<complex<T1> >::T_expr,
+        typename asExpr<std::complex<T1> >::T_expr,
         typename asExpr<T2>::T_expr,
-        Fn_pow<complex<T1>,typename asExpr<T2>::T_expr::T_numtype> >
-        (asExpr<complex<T1> >::getExpr(d1),
+        Fn_pow<std::complex<T1>,typename asExpr<T2>::T_expr::T_numtype> >
+        (asExpr<std::complex<T1> >::getExpr(d1),
          asExpr<T2>::getExpr(d2.unwrap()));
 }
 

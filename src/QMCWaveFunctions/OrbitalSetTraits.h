@@ -118,7 +118,7 @@ evaluateLogAndPhase(const std::complex<T>& psi, T& phase)
 
 inline double evaluatePhase(const double psi)
 {
-  return (psi<numeric_limits<double>::epsilon())?M_PI:0.0;
+  return (psi<std::numeric_limits<double>::epsilon())?M_PI:0.0;
 }
 
 inline double evaluatePhase(const std::complex<double>& psi)

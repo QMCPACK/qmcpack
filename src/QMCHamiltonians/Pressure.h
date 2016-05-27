@@ -65,7 +65,7 @@ struct Pressure: public QMCHamiltonianBase
   }
 
   inline Return_t
-  evaluate(ParticleSet& P, vector<NonLocalData>& Txy)
+  evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
     return evaluate(P);
   }
@@ -84,8 +84,8 @@ struct Pressure: public QMCHamiltonianBase
 //       xmlNodePtr tcur = cur->children;
 //
 //       double RPAKCut= -1.0;
-//       string RPAPCorr("ZB");
-//       string RPAPfunc("RPA_LR");
+//       std::string RPAPCorr("ZB");
+//       std::string RPAPfunc("RPA_LR");
 //       ParameterSet nattrib;
 //       OhmmsAttributeSet attrib;
 //       attrib.add(RPAPCorr,"etype" );
@@ -132,7 +132,7 @@ struct Pressure: public QMCHamiltonianBase
 //       else if (RPAPCorr=="none"){
 //         ZV=false;
 //         ZB=false;
-//         app_log() <<" using bare estimator "<<endl;;
+//         app_log() <<" using bare estimator "<< std::endl;;
 //       }
 
 //       return true;

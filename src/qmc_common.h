@@ -49,19 +49,19 @@ struct QMCState
   ///vacuum layer for non-periodic dimension
   double vacuum;
   ///store the name of the main eshd file name
-  string master_eshd_name;
+  std::string master_eshd_name;
 
   ///constructor
   QMCState();
   ///initialize options from the command-line
   void initialize(int argc, char **argv);
   ///print command-line options
-  void print_options(ostream& os);
+  void print_options(std::ostream& os);
   /** print memory increase
    * @param who the name of the class/function calling this
    * @param before memory_allocated before calling print
    */
-  void print_memory_change(const string& who, size_t before);
+  void print_memory_change(const std::string& who, size_t before);
 };
 
 ///a unique QMCState during a run

@@ -77,24 +77,24 @@ public:
   typedef Bead_ParticleSet::Scalar_t Scalar_t;
   typedef Bead_ParticleSet::ParticleLaplacian_t ParticleLaplacian_t;
 
-  vector<int> BeadSignWgt;
+  std::vector<int> BeadSignWgt;
   ParticlePos_t Drift;
   //    ParticlePos_t R;
-  vector<ParticleGradient_t*> Gradients;
-  vector<ParticleGradient_t*> DriftVectors;
-  vector<ParticleLaplacian_t*> Laplacians;
-  vector<ParticleGradient_t*> dG_saved;
-  vector<ParticleLaplacian_t*> dL_saved;
+  std::vector<ParticleGradient_t*> Gradients;
+  std::vector<ParticleGradient_t*> DriftVectors;
+  std::vector<ParticleLaplacian_t*> Laplacians;
+  std::vector<ParticleGradient_t*> dG_saved;
+  std::vector<ParticleLaplacian_t*> dL_saved;
   Matrix<RealType> Action;
   RealType TransProb[2];
 
 
   //saved data!
   ParticlePos_t R_saved;
-  vector<int> BeadSignWgt_saved;
-  vector<ParticleGradient_t*> Gradients_saved;
-  vector<ParticleGradient_t*> DriftVectors_saved;
-  vector<ParticleLaplacian_t*> Laplacians_saved;
+  std::vector<int> BeadSignWgt_saved;
+  std::vector<ParticleGradient_t*> Gradients_saved;
+  std::vector<ParticleGradient_t*> DriftVectors_saved;
+  std::vector<ParticleLaplacian_t*> Laplacians_saved;
   Matrix<RealType> Action_saved;
   int nPsi;
   RealType TransProb_saved[2];
@@ -103,13 +103,13 @@ public:
 
   ///true if using scaled drift
   bool ScaleDrift;
-  vector<RealType> Tau_eff;
+  std::vector<RealType> Tau_eff;
 
   void SaveOldData();
   void RestoreOldData();
   void SetGradientAndLaplacian(int ipsi);
-  void CopyFromBead(Bead& b,vector<TrialWaveFunction*> &Psi);
-  void CopyToBead(Bead& b,vector<TrialWaveFunction*> &Psi);
+  void CopyFromBead(Bead& b,std::vector<TrialWaveFunction*> &Psi);
+  void CopyToBead(Bead& b,std::vector<TrialWaveFunction*> &Psi);
 
 
 
@@ -142,10 +142,10 @@ public:
   {
     return R.size();
   }
-  void getDrift(vector<RealType>& LogNorm);
+  void getDrift(std::vector<RealType>& LogNorm);
 
-  void getScaledDrift(vector<RealType>& LogNorm,RealType Tau);
-  void getScaledDriftSingle(vector<RealType>& LogNorm, RealType Tau, int ipsi);
+  void getScaledDrift(std::vector<RealType>& LogNorm,RealType Tau);
+  void getScaledDriftSingle(std::vector<RealType>& LogNorm, RealType Tau, int ipsi);
 
   inline bool updatePbyP() const
   {

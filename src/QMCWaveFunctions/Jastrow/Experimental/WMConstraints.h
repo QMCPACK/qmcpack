@@ -29,7 +29,7 @@ struct WMConstraints: public OrbitalConstraintsBase
   ///basis type
   typedef OptimizableFunctorBase<RealType>  BasisType;
   ///basis set type
-  typedef vector<BasisType*> BasisSetType;
+  typedef std::vector<BasisType*> BasisSetType;
   ///analytic functor
   typedef ComboFunctor<RealType> InFuncType;
   ///numerical functor
@@ -39,9 +39,9 @@ struct WMConstraints: public OrbitalConstraintsBase
   ///cutoff radius
   RealType Rcut;
 
-  map<string,BasisSetType*> myBasisSet;
-  vector<InFuncType*> InFuncList;
-  vector<FuncType*> FuncList;
+  std::map<std::string,BasisSetType*> myBasisSet;
+  std::vector<InFuncType*> InFuncList;
+  std::vector<FuncType*> FuncList;
 
   ~WMConstraints();
   WMConstraints(bool nospin=true):IgnoreSpin(nospin) {}
@@ -58,7 +58,7 @@ struct WMConstraints: public OrbitalConstraintsBase
   bool put(xmlNodePtr cur);
   void addBasisGroup(xmlNodePtr cur);
   InFuncType* createCorrelation(xmlNodePtr cur, BasisSetType* basis);
-  InFuncType* createDefaultTwoBody(xmlNodePtr cur, const string& tname);
+  InFuncType* createDefaultTwoBody(xmlNodePtr cur, const std::string& tname);
 };
 
 }

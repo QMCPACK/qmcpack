@@ -7,7 +7,6 @@
 #include <iostream>
 #include <iomanip>
 #include "Optimize/GSLMinimize.h"
-using namespace std;
 
 double MCost (const gsl_vector *v, void *params)
 {
@@ -27,7 +26,7 @@ void MGradCost(const gsl_vector *v, void *params, gsl_vector *df)
   GSLConjugateGradient &CG = *(GSLConjugateGradient *)params;
   MinimizeFunction &MF = *CG.MinFunc;
   double epsilon = CG.epsilon;
-  vector<scalar> gradient(MF.NumParams());
+  std::vector<scalar> gradient(MF.NumParams());
   //blitz::Array<scalar,1> gradient(MF.NumParams());
   // std::vector<double> gradient;
   //gradient.resize(MF.NumParams());
@@ -82,12 +81,12 @@ GSLConjugateGradient::optimize(ObjectFuncType *atarget)
     if (status)
     {
       if(msg_stream)
-        *msg_stream << "CG: Problem with iteration. " << endl;
+        *msg_stream << "CG: Problem with iteration. " << std::endl;
       break;
     }
     status = gsl_multimin_test_gradient (Minimizer->gradient, Tolerance);
     if (status == GSL_SUCCESS && msg_stream)
-      *msg_stream << "Minimum found at:" << endl;
+      *msg_stream << "Minimum found at:" << std::endl;
     for (int i=0; i<atarget->NumParams(); i++)
       atarget->Params(i) = gsl_vector_get(Minimizer->x,i);
     atarget->Report();
@@ -140,7 +139,7 @@ bool GSLConjugateGradient::put(xmlNodePtr cur)
 //{
 //public:
 //  typedef double scalar;
-//  vector<scalar> x;
+//  std::vector<scalar> x;
 //  int NumParams()
 //  {
 //    return (2);

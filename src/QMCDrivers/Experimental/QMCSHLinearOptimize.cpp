@@ -84,11 +84,11 @@ bool QMCSHLinearOptimize::run()
   numParams = optTarget->NumParams();
   N = numParams + 1;
 //     initialize our parameters
-  vector<RealType> currentOvlp(N,0);
-  vector<RealType> currentHOvlp(N,0);
-  vector<RealType> currentParameters(numParams,0);
+  std::vector<RealType> currentOvlp(N,0);
+  std::vector<RealType> currentHOvlp(N,0);
+  std::vector<RealType> currentParameters(numParams,0);
   RealType E_avg(0);
-  vector<RealType> bestParameters(currentParameters);
+  std::vector<RealType> bestParameters(currentParameters);
   optdir.resize(numParams,0);
   optparm.resize(numParams,0);
   for (int i=0; i<numParams; i++)
@@ -99,7 +99,7 @@ bool QMCSHLinearOptimize::run()
   RealType lastCost(0);
   RealType startCost(0);
   startCost = lastCost = optTarget->Cost(false);
-  app_log()<<"Starting cost: "<<startCost<<endl;
+  app_log()<<"Starting cost: "<<startCost<< std::endl;
   Matrix<RealType> OM;
   OM.resize(N,N);
   dmcEngine->fillVectors(currentOvlp,currentHOvlp,E_avg,OM);
@@ -109,23 +109,23 @@ bool QMCSHLinearOptimize::run()
   for (int i=0; i<numParams; i++)
     dP[i+1]=optdir[i];
   Lambda = getNonLinearRescale(dP,OM);
-  app_log()<<"rescaling factor :"<<Lambda<<endl;
+  app_log()<<"rescaling factor :"<<Lambda<< std::endl;
   RealType bigOptVec(std::abs(optdir[0]));
   for (int i=1; i<numParams; i++)
     bigOptVec =std::max(std::abs(optdir[i]),bigOptVec);
-//     app_log()<<"currentOvlp"<<endl;
+//     app_log()<<"currentOvlp"<< std::endl;
 //     for (int i=0; i<numParams; i++)
 //     app_log()<<optdir[i]<<" ";
-//     app_log()<<endl;
+//     app_log()<< std::endl;
 //
-//     app_log()<<"optparam"<<endl;
+//     app_log()<<"optparam"<< std::endl;
 //     for (int i=0; i<numParams; i++)
 //     app_log()<<optparm[i]<<" ";
-//     app_log()<<endl;
+//     app_log()<< std::endl;
   if (MinMethod=="rescale")
   {
     if (bigOptVec*std::abs(Lambda)>bigChange)
-      app_log()<<"  Failed Step. Largest LM parameter change:"<<bigOptVec*std::abs(Lambda)<<endl;
+      app_log()<<"  Failed Step. Largest LM parameter change:"<<bigOptVec*std::abs(Lambda)<< std::endl;
     else
     {
       for (int i=0; i<numParams; i++)
@@ -138,7 +138,7 @@ bool QMCSHLinearOptimize::run()
     {
       orthoScale(optdir,OM);
       if (bigOptVec>bigChange)
-        app_log()<<"  Failed Step. Largest LM parameter change:"<<bigOptVec<<endl;
+        app_log()<<"  Failed Step. Largest LM parameter change:"<<bigOptVec<< std::endl;
       else
       {
         for (int i=0; i<numParams; i++)
@@ -173,7 +173,7 @@ bool QMCSHLinearOptimize::run()
         RealType biggestParameterChange = bigOptVec*std::abs(Lambda);
         if (biggestParameterChange>bigChange)
         {
-          app_log()<<"  Failed Step. Largest LM parameter change:"<<biggestParameterChange<<endl;
+          app_log()<<"  Failed Step. Largest LM parameter change:"<<biggestParameterChange<< std::endl;
           for (int i=0; i<numParams; i++)
             optTarget->Params(i) = bestParameters[i] = currentParameters[i];
         }
@@ -182,15 +182,15 @@ bool QMCSHLinearOptimize::run()
           for (int i=0; i<numParams; i++)
             optTarget->Params(i) = optparm[i] + Lambda * optdir[i];
           lastCost = optTarget->Cost(false);
-          app_log()<<" Costs: "<<startCost<<" "<<lastCost<<endl;
-          app_log()<<" Optimal rescaling factor :"<<Lambda<<endl;
+          app_log()<<" Costs: "<<startCost<<" "<<lastCost<< std::endl;
+          app_log()<<" Optimal rescaling factor :"<<Lambda<< std::endl;
           if (lastCost<startCost)
             acceptedOneMove = true;
           else
           {
             for (int i=0; i<numParams; i++)
               optTarget->Params(i) = currentParameters[i];
-            app_log()<<"  Failed Step. Cost increase "<<endl;
+            app_log()<<"  Failed Step. Cost increase "<< std::endl;
           }
         }
       }
@@ -201,8 +201,8 @@ bool QMCSHLinearOptimize::run()
 //     if (W.getActiveWalkers()>NumOfVMCWalkers)
 //     {
 //       W.destroyWalkers(W.getActiveWalkers()-NumOfVMCWalkers);
-//       app_log() << "  QMCLinearOptimize::generateSamples removed walkers." << endl;
-//       app_log() << "  Number of Walkers per node " << W.getActiveWalkers() << endl;
+//       app_log() << "  QMCLinearOptimize::generateSamples removed walkers." << std::endl;
+//       app_log() << "  Number of Walkers per node " << W.getActiveWalkers() << std::endl;
 //     }
   finish();
   return (optTarget->getReportCounter() > 0);
@@ -215,8 +215,8 @@ bool QMCSHLinearOptimize::run()
 bool
 QMCSHLinearOptimize::put(xmlNodePtr q)
 {
-  string useGPU("no");
-  string vmcMove("pbyp");
+  std::string useGPU("no");
+  std::string vmcMove("pbyp");
   OhmmsAttributeSet oAttrib;
 //     oAttrib.add(useGPU,"gpu");
   oAttrib.add(vmcMove,"move");
@@ -226,7 +226,7 @@ QMCSHLinearOptimize::put(xmlNodePtr q)
   int pid=OHMMS::Controller->rank();
 //     while (cur != NULL)
 //     {
-//         string cname((const char*)(cur->name));
+//         std::string cname((const char*)(cur->name));
 //         if (cname == "mcwalkerset")
 //         {
 //             mcwalkerNodePtr.push_back(cur);
@@ -249,7 +249,7 @@ QMCSHLinearOptimize::put(xmlNodePtr q)
     dmcEngine->setUpdateMode(vmcMove[0] == 'p');
     dmcEngine->initCommunicator(myComm);
   }
-//     app_log()<<RootName<<"   "<<h5FileRoot<<endl;
+//     app_log()<<RootName<<"   "<<h5FileRoot<< std::endl;
   dmcEngine->setStatus(RootName,h5FileRoot,AppendRun);
   dmcEngine->process(optNode);
 //     dmcEngine->setBranchEngine(branchEngine);

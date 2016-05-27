@@ -5,21 +5,21 @@ namespace qmcplusplus
 {
 
 void
-EinsplineOrb<double,2>::read (hid_t h5file, string groupPath)
+EinsplineOrb<double,2>::read (hid_t h5file, std::string groupPath)
 {
-  cerr << "2D orbital reads not yet implemented.\n";
+  std::cerr << "2D orbital reads not yet implemented.\n";
   abort();
 }
 
 void
-EinsplineOrb<double,3>::read (hid_t h5file, string groupPath)
+EinsplineOrb<double,3>::read (hid_t h5file, std::string groupPath)
 {
-  string centerName = groupPath + "center";
-  string vectorName = groupPath + "eigenvector";
-  string  valueName = groupPath + "eigenvalue";
-  string radiusName = groupPath + "radius";
-  string   uminName = groupPath + "umin";
-  string   umaxName = groupPath + "umax";
+  std::string centerName = groupPath + "center";
+  std::string vectorName = groupPath + "eigenvector";
+  std::string  valueName = groupPath + "eigenvalue";
+  std::string radiusName = groupPath + "radius";
+  std::string   uminName = groupPath + "umin";
+  std::string   umaxName = groupPath + "umax";
   HDFAttribIO<PosType> h_Center(Center);
   HDFAttribIO<PosType> h_uMin(uMin);
   HDFAttribIO<PosType> h_uMax(uMax);
@@ -29,9 +29,9 @@ EinsplineOrb<double,3>::read (hid_t h5file, string groupPath)
   h_Radius.read(h5file, radiusName.c_str());
   h_Energy.read(h5file,  valueName.c_str());
   Localized = Radius > 0.0;
-  Array<complex<double>,3> rawData;
+  Array<std::complex<double>,3> rawData;
   Array<double,3> realData;
-  HDFAttribIO<Array<complex<double>,3> > h_rawData(rawData);
+  HDFAttribIO<Array<std::complex<double>,3> > h_rawData(rawData);
   h_rawData.read(h5file, vectorName.c_str());
   int nx, ny, nz;
   nx = rawData.size(0);
@@ -94,24 +94,24 @@ EinsplineOrb<double,3>::read (hid_t h5file, string groupPath)
 }
 
 void
-EinsplineOrb<complex<double>,2>::read (hid_t h5file, string groupPath)
+EinsplineOrb<std::complex<double>,2>::read (hid_t h5file, std::string groupPath)
 {
-  cerr << "2D orbital reads not yet implemented.\n";
+  std::cerr << "2D orbital reads not yet implemented.\n";
   abort();
 }
 
 void
-EinsplineOrb<complex<double>,3>::read (hid_t h5file, string groupPath)
+EinsplineOrb<std::complex<double>,3>::read (hid_t h5file, std::string groupPath)
 {
   uMin   = PosType(0.0, 0.0, 0.0);
   uMax   = PosType(1.0, 1.0, 1.0);
   Center = PosType(0.5, 0.5, 0.5);
-  string centerName = groupPath + "center";
-  string vectorName = groupPath + "eigenvector";
-  string  valueName = groupPath + "eigenvalue";
-  string radiusName = groupPath + "radius";
-  string   uminName = groupPath + "umin";
-  string   umaxName = groupPath + "umax";
+  std::string centerName = groupPath + "center";
+  std::string vectorName = groupPath + "eigenvector";
+  std::string  valueName = groupPath + "eigenvalue";
+  std::string radiusName = groupPath + "radius";
+  std::string   uminName = groupPath + "umin";
+  std::string   umaxName = groupPath + "umax";
   HDFAttribIO<PosType> h_Center(Center);
   HDFAttribIO<PosType> h_uMin(uMin);
   HDFAttribIO<PosType> h_uMax(uMax);
@@ -124,8 +124,8 @@ EinsplineOrb<complex<double>,3>::read (hid_t h5file, string groupPath)
   h_uMax.read(h5file, umaxName.c_str());
   h_Radius.read(h5file, radiusName.c_str());
   Localized = Radius > 0.0;
-  Array<complex<double>,3> rawData;
-  HDFAttribIO<Array<complex<double>,3> > h_rawData(rawData);
+  Array<std::complex<double>,3> rawData;
+  HDFAttribIO<Array<std::complex<double>,3> > h_rawData(rawData);
   h_rawData.read(h5file, vectorName.c_str());
   int nx, ny, nz;
   nx = rawData.size(0);
@@ -154,7 +154,7 @@ EinsplineOrb<complex<double>,3>::read (hid_t h5file, string groupPath)
   }
   else
   {
-    Array<complex<double>,3> splineData;
+    Array<std::complex<double>,3> splineData;
     splineData.resize(nx-1,ny-1,nz-1);
     for (int ix=0; ix<nx-1; ix++)
       for (int iy=0; iy<ny-1; iy++)
