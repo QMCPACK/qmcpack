@@ -1,0 +1,15 @@
+ ! Simple input file for a single helium atom
+
+ ! Default method is RHF
+ $CONTRL UNITS=bohr RUNTYP=Energy ISPHER=1 $END
+
+ ! Do Coupled-Cluster instead
+ !$CONTRL UNITS=bohr RUNTYP=Energy CCTYP=CCSD ISPHER=1 $END
+ $BASIS  GBASIS=CC5 $END
+
+ $DATA
+Helium atom
+Dnh 2
+
+He 2.0
+ $END

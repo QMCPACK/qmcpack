@@ -1,0 +1,5 @@
+
+simple-H2O.xml - main input file.  It does VMC followed by DMC.
+H2O.HF.wfs.xml - wavefunction (derived from GAMESS output)
+H.BFD.xml - pseudopotential for H
+O.BFD.xml - pseudopotential for O

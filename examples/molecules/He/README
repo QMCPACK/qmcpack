@@ -1,0 +1,80 @@
+Input files for a single helium atom.
+
+
+Simplest correlated wavefunction
+--------------------------------
+he_simple.xml 
+
+The simplest possible wavefunction with electron correlation.  It uses
+Slater Type Orbitals (STO) combined with a Pade form for the electron-electron
+Jastrow.  The exponent of the STO should be fixed to the nuclear charge (Z=2)
+to cancel the -Z/r Coulomb term between the electrons and the nucleus (cusp
+condition).  The Jastrow factor has one adjustable parameter (b).
+This runs Variational Monte Carlo (VMC) to compute the energy.
+
+Analyzing QMCPACK output
+------------------------
+One the output files, `He.s000.scalar.dat` contains scalar values, such as
+the local energy (first column).  There should be one line of data for each
+block (the file should have `<blocks>` lines, plus one for the header).
+
+To analyze this data, use the `qmca` script (in the `nexus/executables` directory)
+on the scalar data file: `qmca He.s000.scalar.dat`.  It should print out average
+values for each scalar along with an error estimate.
+
+The `qmca` script has other features (use `qmca -h` to see the help).
+For instance, to plot a trace of the local energy (matplotlib must be installed):
+`qmca --quantities LocalEnergy --trace He.s000.scalar.dat`.
+
+ 
+
+Optimizing variational parameters
+---------------------------------
+he_simple_opt.xml
+
+This file performs 10 iterations of the optimization loop.  After running with
+QMCPACK, there should be a number of files in the directory with different
+ series (the part the filename with `s000`, `s001`, etc.).   Series 000-009
+are the optimization iterations, and series 010 is the final VMC run.
+The file `He.s009.opt.xml` contains the wavefunction with optimized parameters.
+
+The `qmca` script can plot the average energy for each run.
+Use `qmca --plot --quantities LocalEnergy He.s0*.scalar.dat`.  Because this
+is a simple wavefunction with one parameter, only the first iteration really
+reduced the energy.
+
+
+Diffusion Monte Carlo
+---------------------
+he_simple_dmc.xml
+
+Runs Diffusion Monte Carlo (DMC).  It first runs VMC to generate a set of
+walkers, and then performs DMC.  There will be two series of output files - 000
+for the VMC and 001 for the DMC.
+
+Since there is only one electron of each spin, DMC should reproduce the exact
+non-relativistic ground state energy (-2.90372 Hartree).
+ 
+
+B-Splines
+---------
+he_bspline_jastrow.xml
+
+This uses a B-spline form for the electron-electron Jastrow correlation. There
+are four knots in the B-spline, and so four variational parameters.  The input
+is set to optimize the B-spline coefficients.
+
+
+Orbitals from GAMESS
+--------------------
+he.inp
+he_from_gamess.xml
+
+The orbitals were obtained from the output of GAMESS.  The GAMESS input file
+is he.inp.
+
+The `he_from_gamess.xml` input file does a VMC run by default.  The optimization
+input code is commented out.  Uncomment it and run to optimize the parameters.
+The number of samples (`<parameter name="samples">`) may need to be increased
+for better optimization convergence.
+

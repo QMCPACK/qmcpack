@@ -5,23 +5,76 @@
 
 The following examples should run in serial on a modern workstation in a few hours.
 
+\section{Using QMCPACK directly}
+
+In \texttt{examples/molecules}, there are the following examples.
+Each directory also contains a \texttt{README} file with more details.
+
+\begin{tabular}{l l}
+Directory  & Description \\
+\texttt{H2O} &  H2O molecule from GAMESS orbitals \\
+\texttt{He} &  Helium atom with simple wavefunctions\\
+\end{tabular}
+
+
+
+
 \section{Using Nexus}
 
-\subsection{H$_2$O Molecule with Quantum ESPRESSO Orbitals}
+For more information about Nexus, see the User Guide in \texttt{nexus/documentation}.
 
-The input files are in the directory \texttt{nexus/examples/qmcpack/H2O}.
+For Python to find the Nexus library, the PYTHONPATH environment variable should be set to \texttt{<QMCPACK source>/nexus/library}.
+For these examples to work properly, the executables for Quantum ESPRESSO and QMCPACK either
+need to be on the path, or the paths in the script should be adjusted.
 
-The Nexus script is in \texttt{H2O.py} and \texttt{H2O.xyz} contains the atomic positions.
-To run the example, the BFD pseudopotentials are needed.  Create a \texttt{pseudopotentials} directory, and copy \texttt{O.BFD.upf}, \texttt{O.BFD.xml}, \texttt{H.BFD.upf}, and \texttt{H.BFD.xml} from \texttt{pseudopotentials/BFD} in the QMCPACK distribution.
+These examples can be found under the \texttt{nexus/examples/qmcpack} directory.
+%\begin{itemize}
+%\item \texttt{diamond} Bulk diamond with VMC
+%\item \texttt{graphene} Graphene sheet with DMC
+%\item \texttt{c20} C20 cage molecule
+%\item \texttt{oxygen\_dimer} Binding curve for O$_2$ molecule
+%\item \texttt{H2O} H$_2$O molecule with Quantum ESPRESSO orbitals
+%\item \texttt{LiH} LiH crystal with Quantum ESPRESSO orbitals
+%\end{itemize}
 
-The \texttt{H2O.py} script generates the orbitals using Quantum ESPRESSO, runs QMCPACK to optimize the Jastrow and then performs DMC for H$_2$O in a box.
-The executables for Quantum ESPRESSO and QMCPACK either need to be on the path, or the paths in the script can be adjusted as needed.
+\begin{tabular}{l l}
+Directory  & Description \\
+\texttt{diamond} &  Bulk diamond with VMC \\
+\texttt{graphene} & Graphene sheet with DMC \\
+\texttt{c20} & C20 cage molecule \\
+\texttt{oxygen\_dimer} & Binding curve for O$_2$ molecule \\
+\texttt{H2O} & H$_2$O molecule with Quantum ESPRESSO orbitals \\
+\texttt{LiH} & LiH crystal with Quantum ESPRESSO orbitals \\
+\end{tabular}
 
-For python to find the Nexus library, the PYTHONPATH environment variable should be set to \texttt{/nexus/libraries}
 
 
 
-\subsection{LiH Crystal with Quantum ESPRESSO Orbitals}
-The input files are in the directory \texttt{nexus/examples/qmcpack/LiH}.
 
-The \texttt{LiH.py} Nexus script uses CASINO-formatted Trail-Needs pseudopotentials (see Section \ref{subsec:CASINO}) for Li and H in a subdirectory named \texttt{pseudopotentials} (both UPF and CASINO  formats, named \texttt{Li.TN-DF.upf}, \texttt{Li.pp.data}, \texttt{H.TN-DF.upf}, and \texttt{H.pp.data}, respectively), generates the orbitals using Quantum ESPRESSO, then runs QMCPACK to optimize the Jastrow and run DMC for LiH with periodic boundary conditions.
+%\subsection{Bulk diamond}
+%The input files are in the directory \texttt{nexus/examples/qmcpack/diamond}.
+
+%\subsection{Graphene Sheet}
+%The input files are in the directory \texttt{nexus/examples/qmcpack/graphene}.
+
+%\subsection{C20 cage molecule}
+%The input files are in the directory \texttt{nexus/examples/qmcpack/c20}.
+
+%\subsection{Binding curve for O$_2$ molecule}
+%The input files are in the directory \texttt{nexus/examples/qmcpack/oxygen\_dimer}.
+
+%\subsection{H$_2$O molecule with Quantum ESPRESSO orbitals}
+%
+%The input files are in the directory \texttt{nexus/examples/qmcpack/H2O}.
+
+%The Nexus script is in \texttt{H2O.py} and \texttt{H2O.xyz} contains the atomic positions.
+%To run the example, the BFD pseudopotentials are needed.  Create a \texttt{pseudopotentials} directory, and copy \texttt{O.BFD.upf}, \texttt{O.BFD.xml}, \texttt{H.BFD.upf}, and \texttt{H.BFD.xml} from \texttt{pseudopotentials/BFD} in the QMCPACK distribution.
+%
+%The \texttt{H2O.py} script generates the orbitals using Quantum ESPRESSO, runs QMCPACK to optimize the Jastrow and then performs DMC for H$_2$O in a box.
+%
+%
+%
+%\subsection{LiH crystal with Quantum ESPRESSO orbitals}
+%The input files are in the directory \texttt{nexus/examples/qmcpack/LiH}.
+%
+%The \texttt{LiH.py} Nexus script uses CASINO-formatted Trail-Needs pseudopotentials (see Section \ref{subsec:CASINO}) for Li and H in a subdirectory named \texttt{pseudopotentials} (both UPF and CASINO  formats, named \texttt{Li.TN-DF.upf}, \texttt{Li.pp.data}, \texttt{H.TN-DF.upf}, and \texttt{H.pp.data}, respectively), generates the orbitals using Quantum ESPRESSO, then runs QMCPACK to optimize the Jastrow and run DMC for LiH with periodic boundary conditions.
