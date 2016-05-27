@@ -38,7 +38,7 @@ struct Zip2 {
     { return T_numtype(a,b); }
 
     template<typename T_left, typename T_right>
-    static inline void prettyPrint(BZ_STD_SCOPE( std::string) &str,
+    static inline void prettyPrint(BZ_STD_SCOPE(string) &str,
         prettyPrintFormat& format, const T_left& t1,
         const T_right& t2)
     {

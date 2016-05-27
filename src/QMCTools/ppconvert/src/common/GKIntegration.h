@@ -105,7 +105,7 @@ class GKIntegration {
     }
   };
 
-  list <IntervalResult> ir;
+  std::list <IntervalResult> ir;
   F & f; // could be not const in case where calling f() actually modifies the object
   bool relativeErrors;
 
@@ -172,7 +172,7 @@ class GKIntegration {
   void PrintList() {
     std::cout << "/------------------------------------------\\" << std::endl;
     int i=0;
-    for(typename list <IntervalResult>::iterator p=ir.begin(); p!=ir.end(); p++) {
+    for(typename std::list <IntervalResult>::iterator p=ir.begin(); p!=ir.end(); p++) {
       BMWrite2(i,*p);
       i++;
     }
@@ -182,9 +182,9 @@ class GKIntegration {
   //Print interval with maxium error per interval length
   //(not with maximum error - this is on top of the list)
   void PrintMax() {
-    typename list <IntervalResult>::iterator rMax(ir.begin());
+    typename std::list <IntervalResult>::iterator rMax(ir.begin());
 
-    for(typename list <IntervalResult>::iterator r=ir.begin()++; r!=ir.end(); r++) {
+    for(typename std::list <IntervalResult>::iterator r=ir.begin()++; r!=ir.end(); r++) {
       if ((*r).ErrorL()>(*rMax).ErrorL())
 	rMax=r;
     }
@@ -195,8 +195,8 @@ class GKIntegration {
   void CheckList() {
     if (ir.size()==0) return;
     
-    for(typename list <IntervalResult>::iterator p=ir.begin(); p!=ir.end(); p++) {
-      typename list <IntervalResult>::iterator pn = p;
+    for(typename std::list <IntervalResult>::iterator p=ir.begin(); p!=ir.end(); p++) {
+      typename std::list <IntervalResult>::iterator pn = p;
       pn++;
       if (pn!=ir.end())
 	if ( ((*p).err) < ((*pn).err) ) {
@@ -211,7 +211,7 @@ class GKIntegration {
     double errorSum=0.0;
 
     if (ir.size()>0) {
-      for(typename list <IntervalResult>::iterator p=ir.begin(); p!=ir.end(); p++) {
+      for(typename std::list <IntervalResult>::iterator p=ir.begin(); p!=ir.end(); p++) {
 	errorSum += (*p).err;
       }
     }
@@ -231,7 +231,7 @@ class GKIntegration {
     double errorSum=0.0;
 
     if (ir.size()>0) {
-      for(typename list <IntervalResult>::iterator p=ir.begin(); p!=ir.end(); p++) {
+      for(typename std::list <IntervalResult>::iterator p=ir.begin(); p!=ir.end(); p++) {
 	errorSum += (*p).err;
       }
     }
@@ -259,7 +259,7 @@ class GKIntegration {
     }
 
     // size must be >=2
-    typename list <IntervalResult>::iterator p = ir.end();
+    typename std::list <IntervalResult>::iterator p = ir.end();
     p--;
 
     // p cannot become less the begin() because of check above

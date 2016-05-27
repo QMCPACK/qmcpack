@@ -3,9 +3,10 @@
 
 #include <complex>
 
-#include <std::string.h>
+#include <string.h>
 #include "blitz/array.h"
 #include "blitz/tinyvec-et.h"
+
 using namespace blitz;
 typedef double scalar;
 

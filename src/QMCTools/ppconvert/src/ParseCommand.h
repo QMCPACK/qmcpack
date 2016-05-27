@@ -83,7 +83,7 @@ public:
   inline int NumFiles() { return Files.size(); }
   std::string GetFile(int i) { return Files[i]; }
 
-  CommandLineParserClass (list<ParamClass> &argList);
+  CommandLineParserClass (std::list<ParamClass> &argList);
 };
 
 

@@ -115,7 +115,7 @@
 #endif
 
 #if defined(BZ_MATH_FN_IN_NAMESPACE_STD)
-  #define BZ_MATHFN_SCOPE(x) std::x
+  #define BZ_MATHFN_SCOPE(x) x
 #elif defined(BZ_HAVE_NAMESPACES)
   #define BZ_MATHFN_SCOPE(x) ::x
 #else
@@ -123,7 +123,7 @@
 #endif
 
 #if defined(BZ_HAVE_COMPLEX_MATH_IN_NAMESPACE_STD)
-  #define BZ_CMATHFN_SCOPE(x) std::x
+  #define BZ_CMATHFN_SCOPE(x) x
 #elif defined(BZ_HAVE_NAMESPACES)
   #define BZ_CMATHFN_SCOPE(x) ::x
 #else
@@ -143,7 +143,7 @@
 #endif
 
 #if defined(BZ_HAVE_NAMESPACES) && defined(BZ_HAVE_STD)
-  #define BZ_STD_SCOPE(x) std::x
+  #define BZ_STD_SCOPE(x) x
 #else
   #define BZ_STD_SCOPE(x) ::x
 #endif

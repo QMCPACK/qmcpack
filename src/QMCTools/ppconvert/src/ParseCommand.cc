@@ -1,8 +1,8 @@
 #include "ParseCommand.h"
 
-CommandLineParserClass::CommandLineParserClass(list<ParamClass> &argList)
+CommandLineParserClass::CommandLineParserClass(std::list<ParamClass> &argList)
 {
-  list<ParamClass>::iterator iter;
+  std::list<ParamClass>::iterator iter;
   for (iter=argList.begin(); iter!=argList.end(); iter++) 
     ArgMap[iter->GetName()] = (*iter);
 }
@@ -12,8 +12,8 @@ CommandLineParserClass::Parse(int argc, char **argv)
 {
   for (int i=1; i<argc; i++) {
     if ((argv[i][0]=='-') && (argv[i][1]=='-')) {
-      string name = &(argv[i][2]);
-      map<string, ParamClass>::iterator iter;
+      std::string name = &(argv[i][2]);
+      std::map<std::string, ParamClass>::iterator iter;
       iter = ArgMap.find(name);
       if (iter != ArgMap.end()) {
 	ArgMap[name].Found = true;
@@ -24,7 +24,7 @@ CommandLineParserClass::Parse(int argc, char **argv)
 	    return false;
       }
       else {
-	cerr << "Unrecognized argument """ << name << """" << endl;
+	std::cerr << "Unrecognized argument """ << name << """" << std::endl;
 	return false;
       }
     }

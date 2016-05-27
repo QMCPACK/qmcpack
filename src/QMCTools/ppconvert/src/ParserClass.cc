@@ -8,31 +8,31 @@
 #include <unistd.h>
 #include <cassert>
 
-streamsize ParserClass::FileSize(string fname)
+std::streamsize ParserClass::FileSize(std::string fname)
 {
-  ifstream infile;
-  infile.open(fname.c_str(), ifstream::in);
+  std::ifstream infile;
+  infile.open(fname.c_str(), std::ifstream::in);
   if (!infile.is_open())
     return false;
-  streampos fileSize = 0;
-  infile.seekg(0, ios_base::end);
+  std::streampos fileSize = 0;
+  infile.seekg(0, std::ios_base::end);
   fileSize = infile.tellg();
   infile.close();
   return fileSize;
 }
 
 bool 
-MemParserClass::OpenFile(string fname)
+MemParserClass::OpenFile(std::string fname)
 {
-  ifstream infile;
-  infile.open(fname.c_str(), ifstream::in);
+  std::ifstream infile;
+  infile.open(fname.c_str(), std::ifstream::in);
   if (!infile.is_open())
     return false;
-  streampos fileSize = 0;
-  infile.seekg(fileSize, ios_base::end);
+  std::streampos fileSize = 0;
+  infile.seekg(fileSize, std::ios_base::end);
   fileSize = infile.tellg();
-  infile.seekg(0, ios_base::beg);
-  if (fileSize != (streampos)-1) {
+  infile.seekg(0, std::ios_base::beg);
+  if (fileSize != (std::streampos)-1) {
     Buffer.resize(fileSize);
     infile.read(&(Buffer[0]), fileSize);
     infile.close();
@@ -56,7 +56,7 @@ MemParserClass::CloseFile()
 }
 
 bool
-MemParserClass::FindToken(string token)
+MemParserClass::FindToken(std::string token)
 {
   bool found = false;
   int toklen = token.size();
@@ -124,12 +124,12 @@ void
 FileParserClass::RestorePos()
 {  
   Pos = saved;
-  Infile.seekg(Pos, ios_base::end);
+  Infile.seekg(Pos, std::ios_base::end);
 }
 
 
 bool
-ParserClass::ReadComplex (complex<double> &val)
+ParserClass::ReadComplex (std::complex<double> &val)
 {
   double re, im;
   if (FindToken ("("))
@@ -137,7 +137,7 @@ ParserClass::ReadComplex (complex<double> &val)
       if (FindToken(","))
 	if (ReadDouble(im))
 	  if (FindToken(")")) {
-	    val = complex<double>(re,im);
+	    val = std::complex<double>(re,im);
 	    return true;
 	  }
   return false;
@@ -149,7 +149,7 @@ bool isWhiteSpace (char c)
 }
 
 bool
-MemParserClass::ReadWord (string &word)
+MemParserClass::ReadWord (std::string &word)
 {
   word = "";
   char str[2];
@@ -165,7 +165,7 @@ MemParserClass::ReadWord (string &word)
 }
 
 bool
-MemParserClass::ReadLine (string &word)
+MemParserClass::ReadLine (std::string &word)
 {
   word = "";
   char str[2];
@@ -200,15 +200,15 @@ MemParserClass::Reset()
 
 
 bool
-FileParserClass::OpenFile (string fname)
+FileParserClass::OpenFile (std::string fname)
 {
-  Infile.open(fname.c_str(), ifstream::in);
+  Infile.open(fname.c_str(), std::ifstream::in);
   if (!Infile.is_open())
     return false;
   FileSize = 0;
-  Infile.seekg(FileSize, ios_base::end);
+  Infile.seekg(FileSize, std::ios_base::end);
   FileSize = Infile.tellg();
-  Infile.seekg((streampos) 0, ios_base::beg);
+  Infile.seekg((std::streampos) 0, std::ios_base::beg);
   Pos = 0;
   return true;
 }
@@ -217,24 +217,24 @@ void
 FileParserClass::CloseFile()
 {
   if (!Infile.is_open()) 
-    cerr << "Tried to close a FileParserClass that's not open.\n";
+    std::cerr << "Tried to close a FileParserClass that's not open.\n";
   else
     Infile.close();
 }
 
 bool
-FileParserClass::FindToken(string token)
+FileParserClass::FindToken(std::string token)
 {
   assert (Infile.is_open());
   char compare[token.size()+1];
   Pos = Infile.tellg();
   bool found = false;
   while (!found) {
-    Infile.seekg(Pos, ios_base::beg);
-    Infile.get(compare, (streamsize)token.size()+1, '\0');
+    Infile.seekg(Pos, std::ios_base::beg);
+    Infile.get(compare, (std::streamsize)token.size()+1, '\0');
     if (token == compare) {
       Pos += token.size();
-      Infile.seekg(Pos, ios_base::beg);
+      Infile.seekg(Pos, std::ios_base::beg);
       return true;
     }
     if (Pos >= FileSize)
@@ -266,7 +266,7 @@ FileParserClass::ReadDouble(double &val)
 }
 
 bool
-FileParserClass::ReadComplex (complex<double> &val)
+FileParserClass::ReadComplex (std::complex<double> &val)
 {
   double re, im;
   if (FindToken ("("))
@@ -274,14 +274,14 @@ FileParserClass::ReadComplex (complex<double> &val)
       if (FindToken(","))
 	if (ReadDouble(im))
 	  if (FindToken(")")) {
-	    val = complex<double>(re,im);
+	    val = std::complex<double>(re,im);
 	    return true;
 	  }
   return false;
 }
 
 bool
-FileParserClass::ReadWord (string &word)
+FileParserClass::ReadWord (std::string &word)
 {
   word = "";
   char ch;
@@ -300,7 +300,7 @@ FileParserClass::ReadWord (string &word)
 }
 
 bool
-FileParserClass::ReadLine (string &line)
+FileParserClass::ReadLine (std::string &line)
 {
   line = "";
   char ch;
@@ -330,7 +330,7 @@ FileParserClass::Reset()
 {
   assert (Infile.is_open());
   Pos = 0;
-  Infile.seekg (Pos, ios_base::beg);
+  Infile.seekg (Pos, std::ios_base::beg);
 }
 
 
@@ -340,15 +340,15 @@ FileParserClass::Reset()
 //                   FileParserClass2                     //
 ////////////////////////////////////////////////////////////
 bool
-FileParserClass2::OpenFile(string fname)
+FileParserClass2::OpenFile(std::string fname)
 {
-  Infile.open(fname.c_str(), ifstream::in);
+  Infile.open(fname.c_str(), std::ifstream::in);
   if (!Infile.is_open())
     return false;
   FileSize = 0;
-  Infile.seekg(FileSize, ios_base::end);
+  Infile.seekg(FileSize, std::ios_base::end);
   FileSize = Infile.tellg();
-  Infile.seekg((streampos) 0, ios_base::beg);
+  Infile.seekg((std::streampos) 0, std::ios_base::beg);
   Pos = 0;
   ReadChunk (0);
   return true;
@@ -359,7 +359,7 @@ FileParserClass2::Reset()
 {
   assert (Infile.is_open());
   Pos = 0;
-  Infile.seekg (Pos, ios_base::beg);
+  Infile.seekg (Pos, std::ios_base::beg);
   ReadChunk(0);
 }
 
@@ -368,7 +368,7 @@ void
 FileParserClass2::CloseFile()
 {
   if (!Infile.is_open()) 
-    cerr << "Tried to close a FileParserClass that's not open.\n";
+    std::cerr << "Tried to close a FileParserClass that's not open.\n";
   else
     Infile.close();
   Buffer.resize(0);
@@ -379,17 +379,17 @@ FileParserClass2::CloseFile()
 void
 FileParserClass2::ReadChunk (long start)
 {
-  long n = min(MaxBufferSize, FileSize-start);
+  long n = std::min(MaxBufferSize, FileSize-start);
   if (Buffer.size() != n)
     Buffer.resize(n);
-  Infile.seekg(start, ios_base::beg);
+  Infile.seekg(start, std::ios_base::beg);
   Infile.read(&Buffer[0], n);
   BufferStart = start;
   Pos = start;
 }
 
 bool
-FileParserClass2::FindToken (string token)
+FileParserClass2::FindToken (std::string token)
 {
   bool fileEnd = false;
   if (Pos < BufferStart)
@@ -464,7 +464,7 @@ FileParserClass2::ReadDouble(double &val)
   long offset = Pos - BufferStart;
   val = strtod (&(Buffer[offset]), &endptr);
   if (endptr == &(Buffer[offset])) {
-    cerr << "Couldn't file double.\n";
+    std::cerr << "Couldn't file double.\n";
     return false;
   }
   Pos += endptr - &(Buffer[offset]);
@@ -472,7 +472,7 @@ FileParserClass2::ReadDouble(double &val)
 }
 
 bool
-FileParserClass2::ReadWord (string &word)
+FileParserClass2::ReadWord (std::string &word)
 {
   if (BufferEnd() - Pos < 100)
     ReadChunk (Pos);
@@ -494,7 +494,7 @@ FileParserClass2::ReadWord (string &word)
 }
 
 bool
-FileParserClass2::ReadLine (string &line)
+FileParserClass2::ReadLine (std::string &line)
 {
   if (BufferEnd() - Pos < 100)
     ReadChunk (Pos);

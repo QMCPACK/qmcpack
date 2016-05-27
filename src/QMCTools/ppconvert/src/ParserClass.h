@@ -2,7 +2,7 @@
 #define PARSER_CLASS_H
 
 #include<vector>
-#include<std::string>
+#include<string>
 #include<complex>
 #include<cstdio>
 #include<fstream>
@@ -11,7 +11,7 @@
 class ParserClass
 {
 public:
-  streamsize FileSize ( std::string fname);
+  std::streamsize FileSize ( std::string fname);
   virtual bool OpenFile ( std::string fname)  = 0;
   virtual void CloseFile()              = 0;
   virtual bool FindToken ( std::string token) = 0;

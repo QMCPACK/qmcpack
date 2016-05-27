@@ -195,7 +195,7 @@ public:
         return;
     }
 
-    void prettyPrint(BZ_STD_SCOPE( std::string) &str, 
+    void prettyPrint(BZ_STD_SCOPE(string) &str, 
         prettyPrintFormat& format) const
     {
         // NEEDS_WORK-- do real formatting for reductions

@@ -35,12 +35,12 @@
 
 ////////////////////////////////////////////////
 
-string IntToString(const int i);
-string DoubleToString(const double d);
+std::string IntToString(const int i);
+std::string DoubleToString(const double d);
 int StringToInt(const std::string & s);
 double StringToDouble(const std::string & s);
-string UpperCase(const std::string & s);
-string LowerCase(const std::string & s);
+std::string UpperCase(const std::string & s);
+std::string LowerCase(const std::string & s);
 
 #ifdef __PGI // PG compiler bug
 inline bool getline( std::istream & is, std::string & s) {
@@ -103,19 +103,19 @@ inline double nint(const double x) {
   return int(x+0.5*sign(x));
 }
 
-inline double std::min(double x, double y) {
+inline double min(double x, double y) {
   return (x<=y) ? x : y;
 }
 
-inline int std::min(int x, int y) {
+inline int min(int x, int y) {
   return (x<=y) ? x : y;
 }
 
-inline double std::max(double x, double y) {
+inline double max(double x, double y) {
   return (x>=y) ? x : y;
 }
 
-inline int std::max(int x, int y) {
+inline int max(int x, int y) {
   return (x>=y) ? x : y;
 }
 
@@ -130,7 +130,7 @@ inline int sqr(int x) {
 ///////////////////////////////////////////////////////////////////////////
 
 // Write name fo the variable and its value
-#define write1(i)                    {cout << " "#i"= " << i; }
+#define write1(i)                    {std::cout << " "#i"= " << i; }
 #define write2(i,j)                  {write1(i); write1(j);}
 #define write3(i,j,k)                {write2(i,j); write1(k); }
 #define write4(i,j,k,l)              {write3(i,j,k); write1(l); }
@@ -154,7 +154,7 @@ inline int sqr(int x) {
 
 void Terminate();
 
-inline void WriteError(ostringstream & ss) {
+inline void WriteError(std::ostringstream & ss) {
   const std::string errorString = "Error   ";  
   //  ss << ends;
   // std::cout is redirect into a file which might not yet be opened
@@ -162,7 +162,7 @@ inline void WriteError(ostringstream & ss) {
     std::cout.precision(16);
     std::cout << errorString << ss.str() << std::endl;
   }
-  cerr.precision(16);
+  std::cerr.precision(16);
   std::cerr << errorString << ss.str() << std::endl;
   Terminate();
 }
@@ -222,7 +222,7 @@ void error(char* m, const T& t, const U& u, const V& v, const W& w, const X& x, 
   WriteError(ss);
 }
 
-inline void WriteWarning(ostringstream & ss) {
+inline void WriteWarning(std::ostringstream & ss) {
   const std::string warningString = "WARNING   ";  
   //  ss << ends;
   std::cout << warningString << ss.str() << std::endl;

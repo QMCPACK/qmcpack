@@ -3,7 +3,7 @@
 #include <iomanip>
 
 
-XMLAttribute::XMLAttribute(string name, string content)
+XMLAttribute::XMLAttribute(std::string name, std::string content)
 {
   Name = name;
   Content = content;
@@ -17,9 +17,9 @@ XMLAttribute::XMLAttribute (const XMLAttribute &attr)
 
 
 void
-XMLAttribute::Write(string &out)
+XMLAttribute::Write(std::string &out)
 {
-  stringstream str;
+  std::stringstream str;
   str << Name << "=\"" << Content << "\"";
   out = str.str();
 }
@@ -35,7 +35,7 @@ XMLElement::XMLElement(const XMLElement &elem)
 }
 
 void 
-XMLElement::Indent(ostream &out)
+XMLElement::Indent(std::ostream &out)
 {
   for (int i=0; i<Level; i++)
     out << "  ";
@@ -43,14 +43,14 @@ XMLElement::Indent(ostream &out)
 
 
 void 
-XMLElement::Write(ostream &out)
+XMLElement::Write(std::ostream &out)
 {
   Indent(out);
   out << "<" << Name;
   int lineCount = Name.size()+1;
   for (int i=0; i<Attributes.size(); i++) {
     out << " ";
-    string str;
+    std::string str;
     Attributes[i]->Write(str);
     if (lineCount + str.size() + 2*Level > 73) {
       out << "\n";
@@ -82,11 +82,11 @@ XMLElement::Write(ostream &out)
     
 
 void 
-XMLElement::AddContent(vector<double> &data)
+XMLElement::AddContent(std::vector<double> &data)
 {
-  stringstream str;
-  str.setf(ios_base::scientific, ios_base::floatfield);
-  str << setprecision(14);
+  std::stringstream str;
+  str.setf(std::ios_base::scientific, std::ios_base::floatfield);
+  str << std::setprecision(14);
   for (int i=0; i<data.size(); i++) {
     if ((i%3 == 0)) 
       Indent(str);
@@ -103,10 +103,10 @@ XMLElement::AddContent(vector<double> &data)
 
 
 bool
-XMLWriterClass::StartDocument(string fname, string version,
-			      string encoding, string standalone)
+XMLWriterClass::StartDocument(std::string fname, std::string version,
+			      std::string encoding, std::string standalone)
 {
-  Out.open (fname.c_str(),ofstream::out | ofstream::trunc);
+  Out.open (fname.c_str(),std::ofstream::out | std::ofstream::trunc);
   if (!Out.is_open())
     return false;
   if (version == "")
@@ -130,7 +130,7 @@ XMLWriterClass::EndDocument()
 }
 
 bool
-XMLWriterClass::StartElement(string name)
+XMLWriterClass::StartElement(std::string name)
 {
   int level = Elements.size();
   
@@ -157,7 +157,7 @@ XMLWriterClass::FullEndElement()
 }
 
 bool
-XMLWriterClass::WriteAttribute (string name, string content)
+XMLWriterClass::WriteAttribute (std::string name, std::string content)
 {
   XMLAttribute *attr = new XMLAttribute (name, content);
   Elements.back()->AddAttribute (attr);
@@ -165,12 +165,12 @@ XMLWriterClass::WriteAttribute (string name, string content)
 }
 
 bool
-XMLWriterClass::WriteAttribute (string name, double val, bool scientific)
+XMLWriterClass::WriteAttribute (std::string name, double val, bool scientific)
 {
-  stringstream content;
+  std::stringstream content;
   if (scientific) {
-    content.setf(ios_base::scientific, ios_base::floatfield);
-    content << setprecision(14);
+    content.setf(std::ios_base::scientific, std::ios_base::floatfield);
+    content << std::setprecision(14);
   }
   content << val;
   XMLAttribute *attr = new XMLAttribute (name, content.str());
@@ -179,9 +179,9 @@ XMLWriterClass::WriteAttribute (string name, double val, bool scientific)
 }
 
 bool
-XMLWriterClass::WriteAttribute (string name, int val)
+XMLWriterClass::WriteAttribute (std::string name, int val)
 {
-  stringstream content;
+  std::stringstream content;
   content << val;
   XMLAttribute *attr = new XMLAttribute (name, content.str());
   Elements.back()->AddAttribute (attr);
@@ -189,14 +189,14 @@ XMLWriterClass::WriteAttribute (string name, int val)
 }
 
 bool
-XMLWriterClass::WriteData(vector<double> data)
+XMLWriterClass::WriteData(std::vector<double> data)
 {
   Elements.back()->AddContent (data);
   return true;
 }
 
 bool
-XMLWriterClass::WriteData(string data)
+XMLWriterClass::WriteData(std::string data)
 {
   Elements.back()->AddContent (data);
   return true;
@@ -204,7 +204,7 @@ XMLWriterClass::WriteData(string data)
 
 
 bool
-XMLWriterClass::WriteElement (string name, vector<double> data)
+XMLWriterClass::WriteElement (std::string name, std::vector<double> data)
 {
   int level = Elements.size();
   XMLElement *elem = new XMLElement (name, level);

@@ -6,7 +6,7 @@ CubSpline::Update()
   SimpleGrid &x = grid;
   int N = x.NumPoints();
 
-  vector<double> U(N);
+  std::vector<double> U(N);
 
   if (StartDeriv > 0.99e30) {
     d2y[0] = 0.0;  // Use "Natural" boundary conditions--ie d^2y/dr^2 = 0 

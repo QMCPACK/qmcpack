@@ -276,16 +276,16 @@ public:
     void combine(const dummy<T_numtype2>&)
     { }
 
-    int std::min(int i) const
+    int min(int i) const
     { return min_[i]; }
 
-    int std::max(int i) const
+    int max(int i) const
     { return max_[i]; }
 
-    const TinyVector<int,N_rank>& std::min() const
+    const TinyVector<int,N_rank>& min() const
     { return min_; }
 
-    const TinyVector<int,N_rank>& std::max() const
+    const TinyVector<int,N_rank>& max() const
     { return max_; }
 
     template<typename T>
