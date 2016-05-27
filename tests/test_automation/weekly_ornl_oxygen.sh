@@ -1,8 +1,8 @@
 #!/bin/bash
 
-place=/scratch/pk7/QMCPACK_CI_BUILDS_DO_NOT_REMOVE
+place=/scratch/${USER}/QMCPACK_CI_BUILDS_DO_NOT_REMOVE
 
-if [ -e /scratch/pk7 ]; then
+if [ -e /scratch/${USER} ]; then
 
 if [ ! -e $place ]; then
 mkdir $place
