@@ -185,7 +185,7 @@ template<> struct StorageTypeConverter<std::complex<double>,float>
 {
   typedef std::complex<float> CudaStorageType ;
 };
-template<> struct StorageTypeConverter<std::complex<double>,complex<double> >
+template<> struct StorageTypeConverter<std::complex<double>,std::complex<double> >
 {
   typedef std::complex<double> CudaStorageType;
 };

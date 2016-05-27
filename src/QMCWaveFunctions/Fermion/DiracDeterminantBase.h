@@ -360,7 +360,7 @@ public:
 
   virtual void
   ratio (MCWalkerConfiguration &W, int iat,
-         std::vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
+         std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
          std::vector<ValueType> &lapl)
   {
     std::cerr << "Need specialization of DiracDetermiantBase::ratio.\n";
@@ -368,7 +368,7 @@ public:
   }
   virtual void
   addRatio (MCWalkerConfiguration &W, int iat,
-            std::vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
+            std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
             std::vector<ValueType> &lapl)
   {
     std::cerr << "Need specialization of DiracDetermiantBase::addRatio.\n";
@@ -376,7 +376,7 @@ public:
   }
   virtual void
   calcRatio (MCWalkerConfiguration &W, int iat,
-             std::vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
+             std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
              std::vector<ValueType> &lapl)
   {
     std::cerr << "Need specialization of DiracDetermiantBase::calcRatio.\n";

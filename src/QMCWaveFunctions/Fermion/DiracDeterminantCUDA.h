@@ -196,16 +196,16 @@ public:
               std::vector<ValueType> &psi_ratios);
 
   void ratio (MCWalkerConfiguration &W, int iat,
-              std::vector<ValueType> &psi_ratios,	vector<GradType>  &grad);
+              std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad);
 
   void ratio (MCWalkerConfiguration &W, int iat,
-              std::vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
+              std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
               std::vector<ValueType> &lapl);
   void calcRatio (MCWalkerConfiguration &W, int iat,
-                  std::vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
+                  std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
                   std::vector<ValueType> &lapl);
   void addRatio (MCWalkerConfiguration &W, int iat,
-                 std::vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
+                 std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
                  std::vector<ValueType> &lapl);
 
   void ratio (std::vector<Walker_t*> &walkers, std::vector<int> &iatList,

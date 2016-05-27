@@ -17,7 +17,6 @@
 //   Ohio Supercomputer Center
 //////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-using namespace std;
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/DistanceTable.h"
 #include "ParticleBase/ParticleUtility.h"
@@ -37,7 +36,7 @@ using namespace std;
 #include "Numerics/Blasf.h"
 
 namespace qmcplusplus
-  {
+{
 
 
   WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w,

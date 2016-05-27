@@ -6,7 +6,6 @@
 #include <set>
 #include <map>
 
-using namespace std;
 
 void Cartesian2Spherical(int n, double* Cart, double* Sphe);
 

@@ -201,7 +201,7 @@ void NonLocalECPotential_CUDA::addEnergy(MCWalkerConfiguration &W,
         o << "ERROR: the actual maximum electrons-ion pairs is larger than the value 'MaxPairs' set in NonLocalECPotential_CUDA.cpp" << std::endl;
         o << "       the actual number of maximum electrons-ion pairs is " << ActualMaxPairs << ", MaxPairs = " << MaxPairs << std::endl;
         std::cerr << o.str();
-        cerr.flush();
+        std::cerr.flush();
         abort();
       }
       RatioPos_host = RatioPos_GPU;
@@ -302,8 +302,8 @@ void NonLocalECPotential_CUDA::addEnergy(MCWalkerConfiguration &W,
             RealType costheta = *(cos_ptr++);
             RealType ratio  = RatioList[ratioIndex++] * pp.sgridweight_m[iq];
             // if (std::isnan(ratio)) {
-            // 	cerr << "NAN from ratio number " << ratioIndex-1 << "\n";
-            // 	cerr << "RatioList.size() = " << RatioList.size() << std::endl;
+            // 	std::cerr << "NAN from ratio number " << ratioIndex-1 << "\n";
+            // 	std::cerr << "RatioList.size() = " << RatioList.size() << std::endl;
             // }
             RealType lpolprev=0.0;
             lpol[0] = 1.0;

@@ -9,10 +9,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-using namespace std;
-
-
-
 
 
 GamesFMOParser::GamesFMOParser()
@@ -116,7 +112,7 @@ void GamesFMOParser::parse(const std::string& fname)
   
 
 
-  IDMonomer = new string[NumMonomer];
+  IDMonomer = new std::string[NumMonomer];
   IDDimer = new IDmer[NumDimer];
   ESPSystem = new ParticleSet [NumMonomer];
   ESPIonChargeIndex = new int [NumMonomer];

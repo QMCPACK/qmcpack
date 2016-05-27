@@ -115,7 +115,7 @@ struct ConservedEnergy: public QMCHamiltonianBase
     for (int iw=0; iw<walkers.size(); iw++)
     {
       Walker_t &w = *(walkers[iw]);
-      double flux = 0.0;
+      RealType flux = 0.0;
       for (int ptcl=0; ptcl<w.G.size(); ptcl++)
         flux +=2.0 * dot(w.G[ptcl],w.G[ptcl]) + w.L[ptcl];
       w.getPropertyBase()[NUMPROPERTIES+myIndex] = flux;

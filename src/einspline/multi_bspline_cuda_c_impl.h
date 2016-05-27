@@ -26,7 +26,7 @@ eval_multi_multi_UBspline_1d_c_kernel
   float4 tp;
   s = r * drInv;
   sf = floor(s);
-  index = std::min(std::max(0,(int)sf), dim-1);
+  index = min(max(0,(int)sf), dim-1);
   t = s - sf;
   tp = make_float4(t*t*t, t*t, t, 1.0);
   __shared__ float a[4];
@@ -95,7 +95,7 @@ eval_multi_multi_UBspline_1d_c_vgl_kernel
   float4 tp;
   s = r * drInv;
   sf = floor(s);
-  index = std::min(std::max(0,(int)sf), dim-1);
+  index = min(max(0,(int)sf), dim-1);
   t = s - sf;
   tp = make_float4(t*t*t, t*t, t, 1.0);
   __shared__ float a[12];
@@ -302,15 +302,15 @@ eval_multi_multi_UBspline_3d_c_vgh_kernel
   float4 tp[3];
   s = r.x * drInv.x;
   sf = floor(s);
-  index.x = std::min(std::max(0,(int)sf), dim.x-1);
+  index.x = min(max(0,(int)sf), dim.x-1);
   t.x = s - sf;
   s = r.y * drInv.y;
   sf = floor(s);
-  index.y = std::min(std::max(0,(int)sf), dim.y-1);
+  index.y = min(max(0,(int)sf), dim.y-1);
   t.y = s - sf;
   s = r.z * drInv.z;
   sf = floor(s);
-  index.z = std::min(std::max(0,(int)sf), dim.z-1);
+  index.z = min(max(0,(int)sf), dim.z-1);
   t.z = s - sf;
   tp[0] = make_float4(t.x*t.x*t.x, t.x*t.x, t.x, 1.0);
   tp[1] = make_float4(t.y*t.y*t.y, t.y*t.y, t.y, 1.0);
@@ -445,15 +445,15 @@ eval_multi_multi_UBspline_3d_c_vgl_kernel(float const * __restrict__ pos,
   float s, sf;
   s = rx * drInv.x;
   sf = floor(s);
-  int indx = std::min(std::max(0,(int)sf), dim.x-1);
+  int indx = min(max(0,(int)sf), dim.x-1);
   float tx = s - sf;
   s = ry * drInv.y;
   sf = floor(s);
-  int indy = std::min(std::max(0,(int)sf), dim.y-1);
+  int indy = min(max(0,(int)sf), dim.y-1);
   float ty = s - sf;
   s = rz * drInv.z;
   sf = floor(s);
-  int indz = std::min(std::max(0,(int)sf), dim.z-1);
+  int indz = min(max(0,(int)sf), dim.z-1);
   float tz = s - sf;
 
   float const * __restrict__ coefs = indx < host_Nx_offset ? coefs_GPU:coefs_host;
@@ -607,7 +607,7 @@ eval_multi_multi_UBspline_3d_c_cuda (multi_UBspline_3d_c_cuda *spline,
      synchronization points, we would like run a fair number of thread blocks
      per SM, so limit thread blocks to at most 256 threads.
   */
-  int threadsPerBlock = std::max(64,min(32*((2*spline->num_splines+31)/32),256));
+  int threadsPerBlock = max(64,min(32*((2*spline->num_splines+31)/32),256));
   dim3 dimBlock(threadsPerBlock);
   dim3 dimGrid((2 * spline->num_splines + dimBlock.x - 1) / dimBlock.x, num);
   eval_multi_multi_UBspline_3d_c_kernel<<<dimGrid,dimBlock>>>
@@ -643,7 +643,7 @@ eval_multi_multi_UBspline_3d_c_vgl_cuda (multi_UBspline_3d_c_cuda *spline,
      synchronization points, we would like run a fair number of thread blocks
      per SM, so limit thread blocks to at most 256 threads.
   */
-  int threadsPerBlock = std::max(64,min(32*((2*spline->num_splines+31)/32),256));
+  int threadsPerBlock = max(64,min(32*((2*spline->num_splines+31)/32),256));
   dim3 dimBlock(threadsPerBlock);
   dim3 dimGrid((2 * spline->num_splines + dimBlock.x - 1) / dimBlock.x, num);
   eval_multi_multi_UBspline_3d_c_vgl_kernel<<<dimGrid,dimBlock, 0, gpu::kernelStream>>>

@@ -3,7 +3,7 @@
 #include <complex>
 #include "AtomicOrbitalCuda.h"
 
-using namespace std;
+
 __constant__ float  Acuda[48];
 
 const int MaxQuad = 12;

@@ -2302,7 +2302,7 @@ EinsplineSetExtended<double>::evaluate_notranspose(const ParticleSet& P, int fir
 }
 
 
-template<typename StorageType> string
+template<typename StorageType> std::string
 EinsplineSetExtended<StorageType>::Type()
 {
   return "EinsplineSetExtended";
@@ -2343,7 +2343,7 @@ template class EinsplineSetExtended<        double  >;
 ///////////////////////////////
 // Real StorageType versions //
 ///////////////////////////////
-template<> string
+template<> std::string
 EinsplineSetHybrid<double>::Type()
 {
   return "EinsplineSetHybrid<double>";
@@ -2365,7 +2365,7 @@ EinsplineSetHybrid<StorageType>::makeClone() const
 //////////////////////////////////
 
 
-template<> string
+template<> std::string
 EinsplineSetHybrid<std::complex<double> >::Type()
 {
   return "EinsplineSetHybrid<std::complex<double> >";

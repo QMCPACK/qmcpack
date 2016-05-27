@@ -562,7 +562,7 @@ TwoBodyJastrowOrbitalBspline::evaluateDerivatives
     {
       MaxCoefs = 0;
       for (int i=0; i<UniqueSplines.size(); i++)
-        MaxCoefs = max (MaxCoefs, (int)UniqueSplines[i]->coefs.size());
+        MaxCoefs = std::max(MaxCoefs, (int)UniqueSplines[i]->coefs.size());
       // Round up to nearest 16 to allow coallesced GPU reads
       MaxCoefs = ((MaxCoefs+7)/8)*8;
       SplineDerivsHost.resize(2*MaxCoefs*nw);

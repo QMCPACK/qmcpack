@@ -528,7 +528,7 @@ struct OrbitalBase: public QMCTraits
   // in the respective vectors
   virtual void
   ratio (MCWalkerConfiguration &W, int iat,
-         std::vector<ValueType> &psi_ratios,	vector<GradType>  &grad)
+         std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad)
   {
     app_error() << "Need specialization of OrbitalBase::ratio.\n";
     abort();
@@ -536,7 +536,7 @@ struct OrbitalBase: public QMCTraits
 
   virtual void
   ratio (MCWalkerConfiguration &W, int iat,
-         std::vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
+         std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
          std::vector<ValueType> &lapl)
   {
     app_error() << "Need specialization of OrbitalBase::ratio.\n";
@@ -545,7 +545,7 @@ struct OrbitalBase: public QMCTraits
 
   virtual void
   calcRatio (MCWalkerConfiguration &W, int iat,
-             std::vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
+             std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
              std::vector<ValueType> &lapl)
   {
     app_error() << "Need specialization of OrbitalBase::calcRatio.\n";
@@ -554,7 +554,7 @@ struct OrbitalBase: public QMCTraits
 
   virtual void
   addRatio (MCWalkerConfiguration &W, int iat,
-            std::vector<ValueType> &psi_ratios,	vector<GradType>  &grad,
+            std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
             std::vector<ValueType> &lapl)
   {
     app_error() << "Need specialization of OrbitalBase::addRatio.\n";
