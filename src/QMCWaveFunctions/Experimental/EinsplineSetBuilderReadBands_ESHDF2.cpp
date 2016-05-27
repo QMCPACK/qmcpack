@@ -300,7 +300,7 @@ void EinsplineSetBuilder::ReadBands_ESHDF_Real(int spin, SPE* orbitalSet)
     }
     PosType twist0 = TwistAngles[SortBands[0].TwistIndex];
     for (int i=0; i<OHMMS_DIM; i++)
-      if (std::fabs(std::fabs(twist0[i]) - 0.5) < 1.0e-8)
+      if (std::abs(std::abs(twist0[i]) - 0.5) < 1.0e-8)
         orbitalSet->HalfG[i] = 1;
       else
         orbitalSet->HalfG[i] = 0;
@@ -433,7 +433,7 @@ void EinsplineSetBuilder::ReadBands_ESHDF_Real(int spin, SPE* orbitalSet)
 //    }
 //    PosType twist0 = TwistAngles[SortBands[0].TwistIndex];
 //    for (int i=0; i<OHMMS_DIM; i++)
-//      if (std::fabs(std::fabs(twist0[i]) - 0.5) < 1.0e-8)
+//      if (std::abs(std::abs(twist0[i]) - 0.5) < 1.0e-8)
 //        orbitalSet->HalfG[i] = 1;
 //      else
 //        orbitalSet->HalfG[i] = 0;

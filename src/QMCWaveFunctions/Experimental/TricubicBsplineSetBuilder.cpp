@@ -179,7 +179,7 @@ TricubicBsplineSetBuilder::createSPOSet(xmlNodePtr cur)
   //for(int idim=0; idim<DIM; idim++)
   //  for(int jdim=0; jdim<DIM; jdim++)
   //  {
-  //    if(idim != jdim) offdiag+=abs(targetPtcl.Lattice.R(idim,jdim));
+  //    if(idim != jdim) offdiag+=std::abs(targetPtcl.Lattice.R(idim,jdim));
   //  }
   //bool orthorhombic=(offdiag< std::numeric_limits<RealType>::epsilon());
   bool orthorhombic=basisLattice.DiagonalOnly;

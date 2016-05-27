@@ -192,7 +192,7 @@ bool YlmRnlSet<GT>::print(const std::string& elementName)
               elementName.c_str());
     out = new std::ofstream(sfname);
     int max_rad = m_grid->size()-1;
-    while(fabs(psi[orbindex](max_rad)) < 1e-12)
+    while(std::abs(psi[orbindex](max_rad)) < 1e-12)
       max_rad--;
     max_rad += 2;
     rad_orb.resize(max_rad);

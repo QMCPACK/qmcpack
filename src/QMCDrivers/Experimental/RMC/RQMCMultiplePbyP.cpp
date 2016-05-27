@@ -477,7 +477,7 @@ void RQMCMultiplePbyP::moveReptile_displace()
           Copy(tempReptile2[i]->G,*(tempReptile2[i]->Gradients[ipsi]));
           *(tempReptile2[i]->Laplacians[ipsi])=tempReptile2[i]->L;
           if (ratio<0)
-            NewBeadProp[SIGN]=abs(NewBeadProp[SIGN]-M_PI);
+            NewBeadProp[SIGN]=std::abs(NewBeadProp[SIGN]-M_PI);
           myTimers[8]->start();
           tempReptile2[i]->Action(ipsi,Directionless)=0.5*Tau*eloc;
           tempReptile2[i]->getDrift(branchEngine->LogNorm);//a
@@ -507,7 +507,7 @@ void RQMCMultiplePbyP::moveReptile_displace()
           }
           //checks to see if the refsign and you are the same
           //if refSign==newBeadProb[sign] then beadwgt=1  else beadwgt=0
-          int beadwgt=abs( ( Reptile->getSign(NewBeadProp[SIGN])+Reptile->RefSign[ipsi] )/2 );
+          int beadwgt=std::abs( ( Reptile->getSign(NewBeadProp[SIGN])+Reptile->RefSign[ipsi] )/2 );
           tempReptile2[i]->BeadSignWgt[ipsi]=beadwgt;
           if (NewBeadProp[LOCALENERGY]<= KEcut) // && (Reptile->Age>100))
             shouldReject=false;
@@ -942,7 +942,7 @@ void RQMCMultiplePbyP::moveReptile_bisection_end()
             Copy(tempReptile[i]->G,*(tempReptile[i]->Gradients[ipsi]));
             *(tempReptile[i]->Laplacians[ipsi])=tempReptile[i]->L;
             if (ratio<0)
-              NewBeadProp[SIGN]=abs(NewBeadProp[SIGN]-M_PI);
+              NewBeadProp[SIGN]=std::abs(NewBeadProp[SIGN]-M_PI);
           }
           else
           {
@@ -973,7 +973,7 @@ void RQMCMultiplePbyP::moveReptile_bisection_end()
           }
           //checks to see if the refsign and you are the same
           //if refSign==newBeadProb[sign] then beadwgt=1  else beadwgt=0
-          int beadwgt=abs( ( Reptile->getSign(NewBeadProp[SIGN])+Reptile->RefSign[ipsi] )/2 );
+          int beadwgt=std::abs( ( Reptile->getSign(NewBeadProp[SIGN])+Reptile->RefSign[ipsi] )/2 );
           tempReptile[i]->BeadSignWgt[ipsi]=beadwgt;
           if (NewBeadProp[LOCALENERGY]<= KEcut) // && (Reptile->Age>100))
             shouldReject=false;
@@ -1208,7 +1208,7 @@ void RQMCMultiplePbyP::moveReptile_bisection()
             Copy(tempReptile[i]->G,*(tempReptile[i]->Gradients[ipsi]));
             *(tempReptile[i]->Laplacians[ipsi])=tempReptile[i]->L;
             if (ratio<0)
-              NewBeadProp[SIGN]=abs(NewBeadProp[SIGN]-M_PI);
+              NewBeadProp[SIGN]=std::abs(NewBeadProp[SIGN]-M_PI);
           }
           else
           {
@@ -1238,7 +1238,7 @@ void RQMCMultiplePbyP::moveReptile_bisection()
           }
           //checks to see if the refsign and you are the same
           //if refSign==newBeadProb[sign] then beadwgt=1  else beadwgt=0
-          int beadwgt=abs( ( Reptile->getSign(NewBeadProp[SIGN])+Reptile->RefSign[ipsi] )/2 );
+          int beadwgt=std::abs( ( Reptile->getSign(NewBeadProp[SIGN])+Reptile->RefSign[ipsi] )/2 );
           tempReptile[i]->BeadSignWgt[ipsi]=beadwgt;
           if (NewBeadProp[LOCALENERGY] <= KEcut) // && (Reptile->Age>100))
             shouldReject=false;
@@ -1531,7 +1531,7 @@ void RQMCMultiplePbyP::checkBeadInfo(int i,bool dontDie)
     for (int k=0; k<W.R.size(); k++)
       for (int j=0; j<W.R[0].size(); j++)
       {
-        if (!(std::fabs(tempReptile[i]->G[k][j]-W.G[k][j])<1e-6))
+        if (!(std::abs(tempReptile[i]->G[k][j]-W.G[k][j])<1e-6))
         {
           std::cerr <<tempReptile[i]->G[k][j]<<" "<<W.G[k][j]<< std::endl;
           std::cerr <<tempReptile[i]->R<< std::endl;
@@ -1544,7 +1544,7 @@ void RQMCMultiplePbyP::checkBeadInfo(int i,bool dontDie)
       for (int j=0; j<W.R[0].size(); j++)
       {
         //	  std::cerr <<tempReptile[i]->G[k][j]<<" "<<W.G[k][j]<< std::endl;
-        assert(std::fabs(tempReptile[i]->G[k][j]-W.G[k][j])<1e-6);
+        assert(std::abs(tempReptile[i]->G[k][j]-W.G[k][j])<1e-6);
       }
   }
   //    std::cerr <<"tempReptile G is "<<tempReptile[i]->G<< std::endl;
@@ -1569,9 +1569,9 @@ void RQMCMultiplePbyP::checkBeadInfo(int i,bool dontDie)
       //	ParticleSet::ParticlePos_t deltaR=deltaR_backward+W.G;
       PAOps<RealType,DIM>::axpy(-Tau,W.G,deltaR_backward,deltaR);
       std::cerr <<tempReptile[i]->Action(ipsi,MinusDirection)<<" "<<0.5*m_oneover2tau*Dot(deltaR,deltaR)<< std::endl;
-      assert(std::fabs(tempReptile[i]->Action(ipsi,MinusDirection)-0.5*m_oneover2tau*Dot(deltaR,deltaR))<1e-6);
+      assert(std::abs(tempReptile[i]->Action(ipsi,MinusDirection)-0.5*m_oneover2tau*Dot(deltaR,deltaR))<1e-6);
       std::cerr <<"Broken: "<<tempReptile[i]->TransProb[MinusDirection]<<" "<<Dot(deltaR,deltaR)*0.5/Tau<< std::endl;
-      assert(std::fabs(tempReptile[i]->TransProb[MinusDirection]-Dot(deltaR,deltaR)*0.5/Tau)<1e-6);
+      assert(std::abs(tempReptile[i]->TransProb[MinusDirection]-Dot(deltaR,deltaR)*0.5/Tau)<1e-6);
     }
     if (i!=tempReptile.size()-1)
     {
@@ -1580,14 +1580,14 @@ void RQMCMultiplePbyP::checkBeadInfo(int i,bool dontDie)
       //	std::cerr <<i<<" "<<tempReptile[i]->Action(ipsi,PlusDirection)<<" "<<0.5*m_oneover2tau*Dot(deltaR,deltaR)<< std::endl;
       //	std::cerr <<i<<" "<<tempReptile[i]->Action(ipsi,MinusDirection)<< std::endl;
       //	std::cerr <<" "<<tempReptile[i]->Action(ipsi,PlusDirection)<<" "<<0.5*m_oneover2tau*Dot(deltaR,deltaR)<<" "<<i<<" "<<Tau<< std::endl;
-      assert(std::fabs(tempReptile[i]->Action(ipsi,PlusDirection)-0.5*m_oneover2tau*Dot(deltaR,deltaR))<1e-6);
+      assert(std::abs(tempReptile[i]->Action(ipsi,PlusDirection)-0.5*m_oneover2tau*Dot(deltaR,deltaR))<1e-6);
       //	deltaR=deltaR_forward-Tau*W.G; //W.Drift;
       //	std::cerr <<" "<<tempReptile[i]->TransProb[PlusDirection]<<" "<<Dot(deltaR,deltaR)*0.5/Tau<<" "<<i<<" "<<Tau<< std::endl;
-      assert(std::fabs(tempReptile[i]->TransProb[PlusDirection]-Dot(deltaR,deltaR)*0.5/Tau)<1e-6);
+      assert(std::abs(tempReptile[i]->TransProb[PlusDirection]-Dot(deltaR,deltaR)*0.5/Tau)<1e-6);
     }
     RealType eloc= H1[ipsi]->evaluate(W);
     std::cerr <<tempReptile[i]->Action(ipsi,Directionless)<<" "<<0.5*Tau*eloc<< std::endl;
-    assert(std::fabs(tempReptile[i]->Action(ipsi,Directionless)-0.5*Tau*eloc)<1e-6);
+    assert(std::abs(tempReptile[i]->Action(ipsi,Directionless)-0.5*Tau*eloc)<1e-6);
   }
   //    std::cerr <<"Done checking bead info"<< std::endl;
 }
@@ -1669,7 +1669,7 @@ void RQMCMultiplePbyP::checkReptileProperties()
     for(int ipsi=0; ipsi<nPsi; ipsi++)
     {
       int BeadSign = Reptile->getSign(curW.Properties(ipsi,SIGN));
-      curW.BeadSignWgt[ipsi]=abs((BeadSign+Reptile->RefSign[ipsi])/2);
+      curW.BeadSignWgt[ipsi]=std::abs((BeadSign+Reptile->RefSign[ipsi])/2);
     }
     ++bead;
   }
@@ -1957,7 +1957,7 @@ void RQMCMultiplePbyP::moveReptile()
     PAOps<RealType,DIM>::axpy(Tau,W.G,deltaR,gRand);
     NewBead->Action(ipsi,backward)=0.5*m_oneover2tau*Dot(gRand,gRand);
     NewBead->Action(ipsi,Directionless)=0.5*Tau*eloc;
-    int beadwgt=abs( ( Reptile->getSign(NewBeadProp[SIGN])+Reptile->RefSign[ipsi] )/2 );
+    int beadwgt=std::abs( ( Reptile->getSign(NewBeadProp[SIGN])+Reptile->RefSign[ipsi] )/2 );
     NewBead->BeadSignWgt[ipsi]=beadwgt;
     totbeadwgt+=beadwgt;
   }

@@ -89,7 +89,7 @@ void RQMCMultiWarp::initReptile()
     WW[ipsi]->update();
     NewBead->Properties(ipsi,LOGPSI) = Psi1[ipsi]->evaluateLog(*WW[ipsi]);
     NewBead->Properties(ipsi,SIGN) = Psi1[ipsi]->getPhase();
-    NewBead->Properties(ipsi,LOGJACOB)=std::log(std::fabs(Jacobian[ipsi]));
+    NewBead->Properties(ipsi,LOGJACOB)=std::log(std::abs(Jacobian[ipsi]));
     RealType eloc= H1[ipsi]->evaluate(*WW[ipsi]);
     NewBead->Properties(ipsi,LOCALENERGY)= eloc;
     H1[ipsi]->saveProperty(NewBead->getPropertyBase(ipsi));
@@ -307,7 +307,7 @@ void RQMCMultiWarp::checkReptileProperties()
       H1[ipsi]->saveProperty(curW.getPropertyBase(ipsi));
       //*curW.Gradients[ipsi]=WW[ipsi]->G;
       Copy(WW[ipsi]->G,*curW.Gradients[ipsi]);
-      curW.Properties(ipsi,LOGJACOB)=std::log(std::fabs(Jacobian[ipsi]));
+      curW.Properties(ipsi,LOGJACOB)=std::log(std::abs(Jacobian[ipsi]));
       ///Initialize Kinetic Action
       RealType KinActMinus=0.0;
       RealType KinActPlus=0.0;
@@ -359,7 +359,7 @@ void RQMCMultiWarp::checkReptileProperties()
     {
       //int BeadSign = int(curW.Properties(ipsi,SIGN));
       int BeadSign = Reptile->getSign(curW.Properties(ipsi,SIGN));
-      curW.BeadSignWgt[ipsi]=abs((BeadSign+Reptile->RefSign[ipsi])/2);
+      curW.BeadSignWgt[ipsi]=std::abs((BeadSign+Reptile->RefSign[ipsi])/2);
     }
     ++bead;
   }
@@ -755,7 +755,7 @@ void RQMCMultiWarp::moveReptile()
   }
   //Save the Log of the jacobian
   for(int ipsi=0; ipsi<nPsi; ipsi++)
-    NewBead->Properties(ipsi,LOGJACOB)=std::log(std::fabs(Jacobian[ipsi]));
+    NewBead->Properties(ipsi,LOGJACOB)=std::log(std::abs(Jacobian[ipsi]));
   //Compute deltaR : necessary to compute transition probability
   deltaR= NewBead->R - head->R;
   //Compute Warped_deltaR : necessary to compute actions
@@ -789,8 +789,8 @@ void RQMCMultiWarp::moveReptile()
     PAOps<RealType,DIM>::axpy(Tau,WW[ipsi]->G,Warped_deltaR[ipsi],gRand);
     NewBead->Action(ipsi,backward)=0.5*m_oneover2tau*Dot(gRand,gRand);
     NewBead->Action(ipsi,Directionless)=0.5*Tau*eloc;
-    int beadwgt=abs( ( Reptile->getSign(NewBeadProp[SIGN])+Reptile->RefSign[ipsi] )/2 );
-    //int beadwgt=abs( ( int(NewBeadProp[SIGN])+Reptile->RefSign[ipsi] )/2 );
+    int beadwgt=std::abs( ( Reptile->getSign(NewBeadProp[SIGN])+Reptile->RefSign[ipsi] )/2 );
+    //int beadwgt=std::abs( ( int(NewBeadProp[SIGN])+Reptile->RefSign[ipsi] )/2 );
     NewBead->BeadSignWgt[ipsi]=beadwgt;
     totbeadwgt+=beadwgt;
   }

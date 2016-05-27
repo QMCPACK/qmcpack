@@ -389,7 +389,7 @@ public:
     //       double uz = uMin[2] + dz*(double)iz;
     //       double val;
     //       eval_UBspline_3d_d (Spline, ux, uy, uz, &val);
-    //       if (std::fabs((val - realData(ix,iy,iz))) > 1.0e-12) {
+    //       if (std::abs((val - realData(ix,iy,iz))) > 1.0e-12) {
     //         std::cerr << "Error in spline interpolation at ix=" << ix
     //	        << " iy=" << iy << " iz=" << iz << std::endl;
     //       }

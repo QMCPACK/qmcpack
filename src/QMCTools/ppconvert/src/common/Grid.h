@@ -469,7 +469,7 @@ public:
   int ReverseMap (double x)
   {
     x -= center;
-    double index = copysign (log1p(fabs(x)*aInv)*bInv, x);
+    double index = copysign (log1p(std::abs(x)*aInv)*bInv, x);
     return (int)floor(HalfPoints + index - EvenHalf);
   }
   void Write (IOSectionClass &out) {
@@ -493,7 +493,7 @@ public:
       aInv = 1.0/a;
       for (int i=-HalfPoints; i<=HalfPoints; i++) {
 	double sign = (i<0) ? -1.0 : 1.0;
-	grid(i+HalfPoints) = sign * a*expm1(b*abs(i))+center;
+	grid(i+HalfPoints) = sign * a*expm1(b*std::abs(i))+center;
       }
     }
     else {
@@ -502,7 +502,7 @@ public:
       aInv = 1.0/a;
       for (int i=-HalfPoints; i<HalfPoints; i++) {
 	double sign = (i<0) ? -1.0 : 1.0;
-	grid(i+HalfPoints) = sign * a*expm1(b*fabs(0.5+i)) + center;
+	grid(i+HalfPoints) = sign * a*expm1(b*std::abs(0.5+i)) + center;
       }
     }
   }

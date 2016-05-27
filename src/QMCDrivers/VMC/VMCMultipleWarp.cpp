@@ -196,7 +196,7 @@ bool VMCMultipleWarp::run()
       step++;
       CurrentStep++;
       Estimators->accumulate(W);
-      Jacblk+=std::log(abs((*W.begin())->Properties(1,JACOBIAN)));
+      Jacblk+=std::log(std::abs((*W.begin())->Properties(1,JACOBIAN)));
     }
     while(step<nSteps);
     //Modify Norm.

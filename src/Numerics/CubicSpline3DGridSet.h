@@ -103,8 +103,8 @@ struct CubicSpline3DGrid
   {
     //how much the gain will be???
     //if(dot(CurrentPos,pos) > rcut2) {
-    if(fabs(CurrentPos[0]-pos[0])>1e-6
-        && fabs(CurrentPos[1]-pos[1])>1e-6 && fabs(CurrentPos[2]-pos[2])>1e-6)
+    if(std::abs(CurrentPos[0]-pos[0])>1e-6
+        && std::abs(CurrentPos[1]-pos[1])>1e-6 && std::abs(CurrentPos[2]-pos[2])>1e-6)
     {
       // find the location of pos
       value_type di = (pos[0]-Rmin[0])*drinv[0];

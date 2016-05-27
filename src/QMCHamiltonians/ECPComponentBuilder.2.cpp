@@ -224,7 +224,7 @@ ECPComponentBuilder::parseCasino(const std::string& fname, xmlNodePtr cur)
       bool closeEnough = true;
       for (int i=0; i<vnn.rows(); i++)
         for (int k=i+1; k<vnn.rows(); k++)
-          if (std::fabs(vnn[i][j] - vnn[k][j]) > tolerance)
+          if (std::abs(vnn[i][j] - vnn[k][j]) > tolerance)
             closeEnough = false;
       if (!closeEnough)
       {

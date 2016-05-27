@@ -196,7 +196,7 @@ void HeteroStructure::sample_point(Domain& domain)
   {
     if(hop <= interfaces[ilayer]->prob_d)
     {
-      double d = fabs( interfaces[ilayer]->d_frac );
+      double d = std::abs( interfaces[ilayer]->d_frac );
       double denom = 1.0 - ( 1.0 - d ) * rnd;
       denom = denom * denom;
       double rho = domain.radius * d * sqrt( 1.0 / denom - 1.0 );

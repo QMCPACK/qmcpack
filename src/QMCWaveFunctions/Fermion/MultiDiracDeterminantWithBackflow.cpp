@@ -143,7 +143,7 @@ void MultiDiracDeterminantBase::evaluateForWalkerMoveWithBF(ParticleSet& P, bool
     RealType ratioMag = std::exp(logValueRef);
     ValueType det0 = DetSigns[ReferenceDeterminant]*std::complex<OHMMS_PRECISION>(std::cos(phaseValueRef)*ratioMag,std::sin(phaseValueRef)*ratioMag);
 #else
-    ValueType det0 = DetSigns[ReferenceDeterminant]*std::exp(logValueRef)*std::cos(abs(phaseValueRef));
+    ValueType det0 = DetSigns[ReferenceDeterminant]*std::exp(logValueRef)*std::cos(std::abs(phaseValueRef));
 #endif
     detValues[ReferenceDeterminant] = det0;
     BuildDotProductsAndCalculateRatios(ReferenceDeterminant,0,detValues,psiMinv,TpsiM,dotProducts,detData,uniquePairs,DetSigns);
@@ -236,7 +236,7 @@ void MultiDiracDeterminantBase::evaluateForWalkerMove(ParticleSet& P, bool fromS
     RealType ratioMag = std::exp(logValueRef);
     ValueType det0 = DetSigns[ReferenceDeterminant]*std::complex<OHMMS_PRECISION>(std::cos(phaseValueRef)*ratioMag,std::sin(phaseValueRef)*ratioMag);
 #else
-    ValueType det0 = DetSigns[ReferenceDeterminant]*std::exp(logValueRef)*std::cos(abs(phaseValueRef));
+    ValueType det0 = DetSigns[ReferenceDeterminant]*std::exp(logValueRef)*std::cos(std::abs(phaseValueRef));
 #endif
     detValues[ReferenceDeterminant] = det0;
     BuildDotProductsAndCalculateRatios(ReferenceDeterminant,0,detValues,psiMinv,TpsiM,dotProducts,detData,uniquePairs,DetSigns);

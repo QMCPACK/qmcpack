@@ -289,7 +289,7 @@ void QMCUpdateBase::randomize(Walker_t& awalker)
 #else
   BadState |= isnan(eloc);
 #endif
-  //thisWalker.resetProperty(std::log(abs(psi)), psi,eloc);
+  //thisWalker.resetProperty(std::log(std::abs(psi)), psi,eloc);
   awalker.resetProperty(logpsi,Psi.getPhase(), eloc);
   H.auxHevaluate(W,awalker);
   H.saveProperty(awalker.getPropertyBase());
@@ -482,7 +482,7 @@ void QMCUpdateBase::advancePbyP(Walker_t& thisWalker)
     RealType logpsi = Psi.updateBuffer(W,w_buffer,false);
     W.saveWalker(thisWalker);
     RealType eloc=H.evaluate(W);
-    //thisWalker.resetProperty(std::log(abs(psi)), psi,eloc);
+    //thisWalker.resetProperty(std::log(std::abs(psi)), psi,eloc);
     thisWalker.resetProperty(logpsi,Psi.getPhase(), eloc);
     H.auxHevaluate(W,thisWalker);
     H.saveProperty(thisWalker.getPropertyBase());

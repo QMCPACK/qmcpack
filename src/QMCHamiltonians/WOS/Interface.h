@@ -35,7 +35,7 @@ struct Interface
   {
     z_val = zvalue;
     eps_d = eps_average;
-    d_epsdiff = fabs( eps_difference );
+    d_epsdiff = std::abs( eps_difference );
     sign_eps = sign( eps_difference );
   }
 

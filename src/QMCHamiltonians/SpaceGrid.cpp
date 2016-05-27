@@ -323,7 +323,7 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, std::string& coord, std::
         //  determine number of domains in each interval and the width of each domain
         RealType u1=string2real(tokens[0]);
         umin[iaxis]=u1;
-        if(abs(u1)>1.0000001)
+        if(std::abs(u1)>1.0000001)
         {
           app_log()<<"  interval endparticles cannot be greater than "<<1<< std::endl;
           app_log()<<"  endpoint provided: "<<u1<< std::endl;
@@ -349,7 +349,7 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, std::string& coord, std::
               app_log()<<"  interval ("<<u1<<","<<u2<<") is negative"<< std::endl;
               succeeded=false;
             }
-            if(abs(u2)>1.0000001)
+            if(std::abs(u2)>1.0000001)
             {
               app_log()<<"  interval endparticles cannot be greater than "<<1<< std::endl;
               app_log()<<"  endpoint provided: "<<u2<< std::endl;
@@ -364,7 +364,7 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, std::string& coord, std::
             {
               du_int[interval]=du_i;
               ndom_int[interval]=floor((u2-u1)/du_i+.5);
-              if(abs(u2-u1-du_i*ndom_int[interval])>utol)
+              if(std::abs(u2-u1-du_i*ndom_int[interval])>utol)
               {
                 app_log()<<"  interval ("<<u1<<","<<u2<<") not divisible by du="<<du_i<< std::endl;
                 succeeded=false;
@@ -398,7 +398,7 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, std::string& coord, std::
         for(int i=0; i<du_int.size(); i++)
         {
           ndu_int[i]=floor(du_int[i]/du_min+.5);
-          if(abs(du_int[i]-ndu_int[i]*du_min)>utol)
+          if(std::abs(du_int[i]-ndu_int[i]*du_min)>utol)
           {
             app_log()<<"interval "<<i+1<<" of axis "<<iaxis+1<<" is not divisible by smallest subinterval "<<du_min<< std::endl;
             succeeded=false;
@@ -463,10 +463,10 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, std::string& coord, std::
     else
       if(axlabel[d]=="phi")
       {
-        if(abs(umin[d])+abs(umax[d])>1.0)
+        if(std::abs(umin[d])+std::abs(umax[d])>1.0)
         {
           app_log()<<"  phi interval cannot be longer than 1"<< std::endl;
-          app_log()<<"  interval length provided: "<<abs(umin[d])+abs(umax[d])<< std::endl;
+          app_log()<<"  interval length provided: "<<std::abs(umin[d])+std::abs(umax[d])<< std::endl;
           succeeded=false;
         }
       }
@@ -597,7 +597,7 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, std::string& coord, std::
   //default:
   //  vfrac=vol_tot/volume;
   //}
-  //if(abs(vol_tot/volume-vfrac)>1e-6){
+  //if(std::abs(vol_tot/volume-vfrac)>1e-6){
   //  app_log()<<"  "<<coord<<" relative volume"<< std::endl;
   //  app_log()<<"  spacegrid volume fraction "<<vol_tot/volume<< std::endl;
   //  app_log()<<"                  should be "<<vfrac<< std::endl;

@@ -158,14 +158,14 @@ bool DampedDynamics<T>::optimize()
       Y[i]=c0*Y0[i]+c1*old+c2*gY[i];
     }
     curCost = TargetFunc->Cost();
-    Return_t fx= fabs(*(std::max_element(gY.begin(), gY.end())));
+    Return_t fx= std::abs(*(std::max_element(gY.begin(), gY.end())));
     if(fx<GradTol)
     {
       if(msg_stream)
         *msg_stream << " CGOptimization  has reached gradient max|G| = " << fx << std::endl;
       return false;
     }
-    Return_t dx=fabs((curCost-prevCost)/curCost);
+    Return_t dx=std::abs((curCost-prevCost)/curCost);
     if(dx <= CostTol)
     {
       if(msg_stream)

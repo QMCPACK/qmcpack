@@ -990,7 +990,7 @@ void WaveFunctionTester::runBasicTest()
   for (int iat=0; iat<nat; iat++)
   {
     W.update();
-    //ValueType psi_p = log(fabs(Psi.evaluate(W)));
+    //ValueType psi_p = log(std::abs(Psi.evaluate(W)));
     RealType psi_p = Psi.evaluateLog(W);
     RealType phase_p=Psi.getPhase();
     W.makeMove(iat,deltaR[iat]);
@@ -1001,7 +1001,7 @@ void WaveFunctionTester::runBasicTest()
     Psi.rejectMove(iat);
     W.R[iat] += deltaR[iat];
     W.update();
-    //ValueType psi_m = log(fabs(Psi.evaluate(W)));
+    //ValueType psi_m = log(std::abs(Psi.evaluate(W)));
     RealType psi_m = Psi.evaluateLog(W);
     RealType phase_m=Psi.getPhase();
     

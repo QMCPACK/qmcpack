@@ -119,7 +119,7 @@ EinsplineSetBuilder::CheckLattice()
     for (int j=0; j<OHMMS_DIM; j++)
     {
       RealType diff = SuperLattice(i,j) - TargetPtcl.Lattice.R(i,j);
-      match = match && (std::fabs(diff) < 1.0e-6);
+      match = match && (std::abs(diff) < 1.0e-6);
     }
   if(!match)
   {
@@ -1004,7 +1004,7 @@ EinsplineSetBuilder::createSPOSet(xmlNodePtr cur)
       double rN = std::sqrt(dot(P.R[0]-N, P.R[0]-N));
       OrbitalSet->evaluate(P, 0, phi, grad, lapl);
       // OrbitalSet->evaluate(P, 0, phi);
-      fprintf (fout, "%1.12e ", r*x/std::fabs(x));
+      fprintf (fout, "%1.12e ", r*x/std::abs(x));
       for (int j=0; j<numOrbs; j++)
       {
         double gmag = std::sqrt(dot(grad[j],grad[j]));
@@ -1153,7 +1153,7 @@ bool EinsplineSetBuilder::TwistPair (PosType a, PosType b)
   for (int n=0; n<OHMMS_DIM; n++)
   {
     double d = a[n] + b[n];
-    if (std::fabs(d - round(d)) > 1.0e-8)
+    if (std::abs(d - round(d)) > 1.0e-8)
       pair = false;
   }
   return pair;
@@ -1228,7 +1228,7 @@ EinsplineSetBuilder::AnalyzeTwists2()
   for (int dim=0; dim<OHMMS_DIM; dim++)
   {
     double t = 2.0*superFracs[TwistNum][dim];
-    if (std::fabs(t - round(t)) > 1.0e-10)
+    if (std::abs(t - round(t)) > 1.0e-10)
     {
       app_error() << "Cannot use this super twist with real wavefunctions.\n"
                   << "Please recompile with QMC_COMPLEX=1.\n";
@@ -1330,9 +1330,9 @@ EinsplineSetBuilder::AnalyzeTwists2()
     int ti = DistinctTwists[i];
     PosType twist = TwistAngles[ti];
     for (int j=0; j<OHMMS_DIM; j++)
-      if (std::fabs(twist[j]-0.0) > 1.0e-8 &&
-          std::fabs(twist[j]-0.5) > 1.0e-8 &&
-          std::fabs(twist[j]+0.5) > 1.0e-8)
+      if (std::abs(twist[j]-0.0) > 1.0e-8 &&
+          std::abs(twist[j]-0.5) > 1.0e-8 &&
+          std::abs(twist[j]+0.5) > 1.0e-8)
         UseRealOrbitals = false;
   }
   if (UseRealOrbitals && (DistinctTwists.size() > 1))
@@ -1379,9 +1379,9 @@ EinsplineSetBuilder::AnalyzeTwists()
   nf[2] = -1.0/((maxTwist[2]-minTwist[2]) -1.0);
   bool meshOK = true;
   // Make sure they are close to integers
-  meshOK = meshOK && (std::fabs(nf[0] - round(nf[0]))<1.0e-6);
-  meshOK = meshOK && (std::fabs(nf[1] - round(nf[1]))<1.0e-6);
-  meshOK = meshOK && (std::fabs(nf[2] - round(nf[2]))<1.0e-6);
+  meshOK = meshOK && (std::abs(nf[0] - round(nf[0]))<1.0e-6);
+  meshOK = meshOK && (std::abs(nf[1] - round(nf[1]))<1.0e-6);
+  meshOK = meshOK && (std::abs(nf[2] - round(nf[2]))<1.0e-6);
   if (!meshOK)
   {
     app_error() << "It appears that the twist angles in file "
@@ -1925,7 +1925,7 @@ EinsplineSetBuilder::ReadBands
     }
     PosType twist0 = TwistAngles[SortBands[0].TwistIndex];
     for (int i=0; i<OHMMS_DIM; i++)
-      if (std::fabs(std::fabs(twist0[i]) - 0.5) < 1.0e-8)
+      if (std::abs(std::abs(twist0[i]) - 0.5) < 1.0e-8)
         orbitalSet->HalfG[i] = 1;
       else
         orbitalSet->HalfG[i] = 0;
@@ -2926,7 +2926,7 @@ EinsplineSetBuilder::ReadBands_ESHDF
     }
     PosType twist0 = TwistAngles[SortBands[0].TwistIndex];
     for (int i=0; i<OHMMS_DIM; i++)
-      if (std::fabs(std::fabs(twist0[i]) - 0.5) < 1.0e-8)
+      if (std::abs(std::abs(twist0[i]) - 0.5) < 1.0e-8)
         orbitalSet->HalfG[i] = 1;
       else
         orbitalSet->HalfG[i] = 0;

@@ -216,7 +216,7 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::computedCost()
 //      Return_t eloc_new=saved[ENERGY_NEW];
 //
 //      weight = (weight>wgt_max)? wgt_max:weight;
-//      Return_t delE=pow(abs(eloc_new-EtargetEff),PowerE);
+//      Return_t delE=pow(std::abs(eloc_new-EtargetEff),PowerE);
 //      SumValue[SUM_E_BARE] += eloc_new;
 //      SumValue[SUM_ESQ_BARE] += eloc_new*eloc_new;
 //      SumValue[SUM_ABSE_BARE] += delE;

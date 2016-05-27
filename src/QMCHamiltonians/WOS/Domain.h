@@ -47,7 +47,7 @@ struct Domain
     runner[0] += rsinq * cos( phi );
     runner[1] += rsinq * sin( phi );
     runner[2] += radius * cosq;
-    return fabs(cosq);
+    return std::abs(cosq);
   }
 
 

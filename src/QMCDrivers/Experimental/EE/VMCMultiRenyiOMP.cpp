@@ -442,21 +442,21 @@ bool VMCMultiRenyiOMP::run()
             RealType z=tv[ EEN2+0 ]*ratios3[2](itr[ 1 ],itr[0]);
             RealType a=tv[ EEN3+0 ]*ratios3[3](itr[ 1 ],itr[0]);
             estimateA[0]+=x;
-            estimateV[ 0 ]+=abs(x);
+            estimateV[ 0 ]+=std::abs(x);
             estimateN[0]+=1;
             estimateA[EEN+0]+=y;
-            estimateV[EEN+ 0 ]+=abs(y);
+            estimateV[EEN+ 0 ]+=std::abs(y);
             estimateN[EEN+0]+=1;
             estimateA[EEN2+0]+=z;
-            estimateV[ EEN2+0 ]+=abs(z);
+            estimateV[ EEN2+0 ]+=std::abs(z);
             estimateN[EEN2+0]+=1;
             estimateA[EEN3+0]+=a;
-            estimateV[ EEN3+0 ]+=abs(a);
+            estimateV[ EEN3+0 ]+=std::abs(a);
             estimateN[EEN3+0]+=1;
-//                estimateA[0]+=x; estimateV[ 0 ]+=abs(x); estimateS[0]+=(x>0?1:-1); estimateN[0]+=1;
-//                estimateA[EEN+0]+=y; estimateV[EEN+ 0 ]+=abs(y); estimateS[EEN+0]+=(y>0?1:-1); estimateN[EEN+0]+=1;
-//                estimateA[EEN2+0]+=z; estimateV[ EEN2+0 ]+=abs(z); estimateS[EEN2+0]+=(z>0?1:-1); estimateN[EEN2+0]+=1;
-//                estimateA[EEN3+0]+=a; estimateV[ EEN3+0 ]+=abs(a); estimateS[EEN3+0]+=(a>0?1:-1); estimateN[EEN3+0]+=1;
+//                estimateA[0]+=x; estimateV[ 0 ]+=std::abs(x); estimateS[0]+=(x>0?1:-1); estimateN[0]+=1;
+//                estimateA[EEN+0]+=y; estimateV[EEN+ 0 ]+=std::abs(y); estimateS[EEN+0]+=(y>0?1:-1); estimateN[EEN+0]+=1;
+//                estimateA[EEN2+0]+=z; estimateV[ EEN2+0 ]+=std::abs(z); estimateS[EEN2+0]+=(z>0?1:-1); estimateN[EEN2+0]+=1;
+//                estimateA[EEN3+0]+=a; estimateV[ EEN3+0 ]+=std::abs(a); estimateS[EEN3+0]+=(a>0?1:-1); estimateN[EEN3+0]+=1;
             if(EEN > 1)
               godeeper(1,ratios3,estimateA,estimateV,estimateS,estimateN,tv,itr);
           }
@@ -790,16 +790,16 @@ void VMCMultiRenyiOMP::godeeper(int lvl,std::vector<Matrix<RealType> >& ratios, 
       RealType z=tv[ 2*EEN+lvl ]*ratios[2](itr[ itrl ],itr[0]);
       RealType a=tv[ 3*EEN+lvl ]*ratios[3](itr[ itrl ],itr[0]);
       estimateA[lvl]+=x;
-      estimateV[lvl]+=abs(x);
+      estimateV[lvl]+=std::abs(x);
       estimateN[ lvl]+=1;
       estimateA[EEN+lvl]+=y;
-      estimateV[EEN+lvl]+=abs(y);
+      estimateV[EEN+lvl]+=std::abs(y);
       estimateN[EEN+ lvl]+=1;
       estimateA[2*EEN+lvl]+=z;
-      estimateV[2*EEN+lvl]+=abs(z);
+      estimateV[2*EEN+lvl]+=std::abs(z);
       estimateN[2*EEN+ lvl]+=1;
       estimateA[3*EEN+lvl]+=a;
-      estimateV[3*EEN+lvl]+=abs(a);
+      estimateV[3*EEN+lvl]+=std::abs(a);
       estimateN[3*EEN+ lvl]+=1;
       if(EEN > lvl)
         godeeper(itrl,ratios,estimateA,estimateV,estimateS,estimateN,tv,itr);

@@ -84,7 +84,7 @@ int WalkerReconfiguration::getIndexPermutation(MCWalkerConfiguration& W)
   std::vector<int> ipip(nw,0);
   for(int iw=0; iw<nw; iw++)
   {
-    RealType tryp=wCur+abs(wConf[iw]);
+    RealType tryp=wCur+std::abs(wConf[iw]);
     int ni=0;
     while(Zeta[ind]<tryp && Zeta[ind] >= wCur)
     {
@@ -92,7 +92,7 @@ int WalkerReconfiguration::getIndexPermutation(MCWalkerConfiguration& W)
       ind++;
       ni++;
     }
-    wCur+=abs(wConf[iw]);
+    wCur+=std::abs(wConf[iw]);
     if(ni)
     {
       icdiff++;

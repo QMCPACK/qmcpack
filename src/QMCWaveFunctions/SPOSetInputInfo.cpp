@@ -379,7 +379,7 @@ namespace qmcplusplus
         while(i<states.size())
         {
           const SPOInfo& state = *states[i];
-          while(abs(e-state.energy)<matching_tol)
+          while(std::abs(e-state.energy)<matching_tol)
           {
             ind.push_back(state.index);
             i++;

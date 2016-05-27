@@ -167,7 +167,7 @@ struct CrystalLattice
   //      if ((i!=0) || (j!=0)) {
   //        SingleParticlePos_t L = ((double)i * a[0] +
   //      			   (double)j * a[1]);
-  //        double dist = 0.5*std::fabs(dot(L,L));
+  //        double dist = 0.5*std::abs(dot(L,L));
   //        rMin = std::min(rMin, dist);
   //      }
   //  return rMin;
@@ -255,7 +255,7 @@ struct CrystalLattice
   inline bool outOfBound(const TinyVector<T,D>& u) const
   {
     for(int i=0; i<D; ++i)
-      if(abs(u[i])>0.5)
+      if(std::abs(u[i])>0.5)
         return true;
     return false;
   }

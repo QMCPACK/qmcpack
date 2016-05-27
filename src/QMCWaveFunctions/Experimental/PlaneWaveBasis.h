@@ -116,7 +116,7 @@ public:
     //Store the maximum number of translations, within ecut, of any reciprocal cell vector.
     for(int ig=0; ig<NumPlaneWaves; ig++)
       for(int i=0; i<3; i++)
-        if(abs(gvecs[ig][i]) > maxg[i])
+        if(std::abs(gvecs[ig][i]) > maxg[i])
           maxg[i] = std::abs(gvecs[ig][i]);
     maxmaxg = std::max(maxg[0],max(maxg[1],maxg[2]));
     LOGMSG("\n\tBasisset energy cutoff = " << ecut);

@@ -371,7 +371,7 @@ bool VMCLinearOptOMP::run()
 //
 //       int maxI(0);
 //       RealType maxV(0);
-//       for (int i=0;i<curParams.size();i++) if (maxV<abs(curDir[i+1])){ maxI=i; maxV=abs(curDir[i+1]);};
+//       for (int i=0;i<curParams.size();i++) if (maxV<std::abs(curDir[i+1])){ maxI=i; maxV=std::abs(curDir[i+1]);};
 //       RealType maxPChange(maxV*(lambdas[1]-lambdas[0]));
 //       app_log()<<" Parameter diffs: "<<maxPChange<< std::endl;
 //       if (maxPChange<1e-6)

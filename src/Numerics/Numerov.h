@@ -105,7 +105,7 @@ public:
       oldenergy = trialenergy;
       trialenergy=0.5*(lower+upper);
     }
-    while((fabs(trialenergy-oldenergy))>etol);
+    while((std::abs(trialenergy-oldenergy))>etol);
     return trialenergy;
   }
 
@@ -195,7 +195,7 @@ int Numerov<TransForm,FT>::evaluate(value_type e)
        (1.0+onetwelfth*k2_m2)*y_m2)/(1.0+onetwelfth*k2);
     Z[i] = y;
     //avoid exponential solution
-    if(fabs(y)>MAX_VALUE)
+    if(std::abs(y)>MAX_VALUE)
     {
       value_type yinv = 1.0/y;
       for(int j=0; j<=i; j++)
@@ -237,7 +237,7 @@ int Numerov<TransForm,FT>::evaluate(value_type e)
       {
         return raise_energy;
       }
-      if(fabs(y)>MAX_VALUE)
+      if(std::abs(y)>MAX_VALUE)
       {
         value_type yinv = 1.0/y;
         for(int j=0; j<=i; j++)

@@ -111,7 +111,7 @@ inline typename MakeReturn<UnaryNode<FnExp,
 template<class T1>
 inline typename MakeReturn<UnaryNode<FnFabs,
        typename CreateLeaf<std::vector<T1> >::Leaf_t> >::Expression_t
-       fabs(const std::vector<T1> & l)
+       std::abs(const std::vector<T1> & l)
 {
   typedef UnaryNode<FnFabs,
           typename CreateLeaf<std::vector<T1> >::Leaf_t> Tree_t;
@@ -1914,7 +1914,7 @@ inline typename MakeReturn<UnaryNode<FnExp,
 template<class T1>
 inline typename MakeReturn<UnaryNode<FnFabs,
        typename CreateLeaf<Expression<T1> >::Leaf_t> >::Expression_t
-       fabs(const Expression<T1> & l)
+       std::abs(const Expression<T1> & l)
 {
   typedef UnaryNode<FnFabs,
           typename CreateLeaf<Expression<T1> >::Leaf_t> Tree_t;

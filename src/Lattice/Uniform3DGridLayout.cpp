@@ -87,12 +87,12 @@ void Uniform3DGridLayout::makeShell(std::vector<SingleParticleIndex_t>& RS,
     Scalar_t x= std::abs(ix1)*Delta[0];
     for(int ix2=-nc[1]; ix2<=nc[1]; ix2++)
     {
-      Scalar_t y=abs(ix2)*Delta[1];
+      Scalar_t y=std::abs(ix2)*Delta[1];
       for(int ix3=-nc[2]; ix3<=nc[2]; ix3++)
       {
         if(ix1==0 && ix2 == 0 && ix3 == 0)
           continue;
-        Scalar_t z=abs(ix3)*Delta[2];
+        Scalar_t z=std::abs(ix3)*Delta[2];
         ic++;
         SingleParticlePos_t tc(x-dx,y-dy,z-dz);
         int ih = static_cast<int>(Dot(tc,tc)*scaleL);

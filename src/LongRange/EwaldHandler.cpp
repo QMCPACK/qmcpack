@@ -36,7 +36,7 @@ void EwaldHandler::initBreakup(ParticleSet& ref)
   //See A.18
   if(SuperCellEnum == SUPERCELL_SLAB)
   {
-    Area=abs(ref.Lattice.R(0,0)*ref.Lattice.R(1,1)-ref.Lattice.R(0,1)*ref.Lattice.R(1,0));
+    Area=std::abs(ref.Lattice.R(0,0)*ref.Lattice.R(1,1)-ref.Lattice.R(0,1)*ref.Lattice.R(1,0));
     PreFactors[0]=2.0*M_PI/Area; //\f$ \frac{2\pi}{A}\f$
     PreFactors[1]=2.0*std::sqrt(M_PI)/(Sigma*Area);//\f$  \frac{2\pi}{A}\frac{1}{Sigma\pi}\f$
     PreFactors[2]=1.0/(2*Sigma);//Used for the k-dependent term

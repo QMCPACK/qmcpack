@@ -5,7 +5,7 @@ namespace qmcplusplus
 //template<typename T>
 //  inline T std::abs(const TinyVector<T,3>& a, const TitnyVector<T,3>& b)
 //  {
-//    return std::abs(a[0]-b[0])+abs(a[1]-b[1])+abs(a[2]-b[2]);
+//    return std::abs(a[0]-b[0])+std::abs(a[1]-b[1])+std::abs(a[2]-b[2]);
 //  }
 
 template<typename T1, typename T2>
@@ -15,14 +15,14 @@ bool is_same(int n, const T1* restrict a, const T1* restrict b, T2 eps)
   T2 diff=0.0;
   for(int i=0; i<n; i++)
   {
-    //T2 x=abs((a[i]-b[i])/a[i]);
-    T2 x=abs(a[i]-b[i]);
+    //T2 x=std::abs((a[i]-b[i])/a[i]);
+    T2 x=std::abs(a[i]-b[i]);
     diff=std::max(diff,x);
     if(x>eps)
       yes=false;
     //diff=std::max(diff,std::abs((a[i]-b[i])/a[i]));
-    ////if(abs(a[i]-b[i])>eps) yes=false;
-    //if(abs(1-b[i]/a[i])>eps) yes=false;
+    ////if(std::abs(a[i]-b[i])>eps) yes=false;
+    //if(std::abs(1-b[i]/a[i])>eps) yes=false;
   }
   for(int i=0; i< std::min(n,9); i++)
     std::cout << i << " " << a[i] << " " << b[i] << " " << a[i]-b[i] << std::endl;
@@ -37,8 +37,8 @@ bool is_same(int n, const T1* restrict a, const T1* restrict b, T2 eps)
 //   bool yes=true;
 //   for(int i=0; i<n; i++)
 //   {
-//     if(abs(1-b[i][0]/a[i][0])+abs(1-b[i][1]/a[i][1])+abs(1-b[i][2]/a[i][2])>eps) yes=false;
-//     //if(abs(a[i][0]-b[i][0])+abs(a[i][1]-b[i][1])+abs(a[i][2]-b[i][2])>eps) yes=false;
+//     if(std::abs(1-b[i][0]/a[i][0])+std::abs(1-b[i][1]/a[i][1])+std::abs(1-b[i][2]/a[i][2])>eps) yes=false;
+//     //if(std::abs(a[i][0]-b[i][0])+std::abs(a[i][1]-b[i][1])+std::abs(a[i][2]-b[i][2])>eps) yes=false;
 //     std::cout << a[i] << " " << a[i]-b[i] << std::endl;
 //   }
 //   return yes;
@@ -53,8 +53,8 @@ bool is_same(int n, const T1* restrict a, const T1* restrict b, T2 eps)
 //  {
 //    diff_r=std::max(diff_r,std::abs(1-b[i].real()/a[i].real()));
 //    diff_i=std::max(diff_i,std::abs(1-b[i].real()/a[i].real()));
-//    //if(abs(a[i]-b[i])>eps) yes=false;
-//    if(abs(1-b[i].real()/a[i].real())>eps || std::abs(1-b[i].imag()/a[i].imag())>eps)
+//    //if(std::abs(a[i]-b[i])>eps) yes=false;
+//    if(std::abs(1-b[i].real()/a[i].real())>eps || std::abs(1-b[i].imag()/a[i].imag())>eps)
 //    {
 //      yes=false;
 //    }

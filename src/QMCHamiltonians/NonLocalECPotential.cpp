@@ -150,14 +150,14 @@ NonLocalECPotential::evaluate(ParticleSet& P)
     RealType Visum = Vi_sample->sum();
     RealType Vesum = Ve_sample->sum();
     RealType Vsum  = Vesum+Visum;
-    if(abs(Vsum-Vnow)>TraceManager::trace_tol)
+    if(std::abs(Vsum-Vnow)>TraceManager::trace_tol)
     {
       app_log()<<"accumtest: NonLocalECPotential::evaluate()"<< std::endl;
       app_log()<<"accumtest:   tot:"<< Vnow << std::endl;
       app_log()<<"accumtest:   sum:"<< Vsum << std::endl;
       APP_ABORT("Trace check failed");
     }
-    if(abs(Vesum-Visum)>TraceManager::trace_tol)
+    if(std::abs(Vesum-Visum)>TraceManager::trace_tol)
     {
       app_log()<<"sharetest: NonLocalECPotential::evaluate()"<< std::endl;
       app_log()<<"sharetest:   e share:"<< Vesum << std::endl;
@@ -208,14 +208,14 @@ NonLocalECPotential::evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
     RealType Visum = Vi_sample->sum();
     RealType Vesum = Ve_sample->sum();
     RealType Vsum  = Vesum+Visum;
-    if(abs(Vsum-Vnow)>TraceManager::trace_tol)
+    if(std::abs(Vsum-Vnow)>TraceManager::trace_tol)
     {
       app_log()<<"accumtest: NonLocalECPotential::evaluate()"<< std::endl;
       app_log()<<"accumtest:   tot:"<< Vnow << std::endl;
       app_log()<<"accumtest:   sum:"<< Vsum << std::endl;
       APP_ABORT("Trace check failed");
     }
-    if(abs(Vesum-Visum)>TraceManager::trace_tol)
+    if(std::abs(Vesum-Visum)>TraceManager::trace_tol)
     {
       app_log()<<"sharetest: NonLocalECPotential::evaluate()"<< std::endl;
       app_log()<<"sharetest:   e share:"<< Vesum << std::endl;

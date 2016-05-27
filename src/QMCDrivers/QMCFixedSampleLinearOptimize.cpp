@@ -278,7 +278,7 @@ bool QMCFixedSampleLinearOptimize::run()
             bestParameters[i] = optTarget->Params(i);
           lastCost=newCost;
           acceptedOneMove=true;
-          if(abs(newCost-lastCost)<1e-4)
+          if(std::abs(newCost-lastCost)<1e-4)
           {
             failedTries++;
             stability=nstabilizers;

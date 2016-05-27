@@ -370,7 +370,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
       double rN = std::sqrt(dot(P.R[0]-N, P.R[0]-N));
       OrbitalSet->evaluate(P, 0, phi, grad, lapl);
       // OrbitalSet->evaluate(P, 0, phi);
-      fprintf (fout, "%1.12e ", r*x/std::fabs(x));
+      fprintf (fout, "%1.12e ", r*x/std::abs(x));
       for (int j=0; j<numOrbs; j++)
       {
         double gmag = std::sqrt(dot(grad[j],grad[j]));

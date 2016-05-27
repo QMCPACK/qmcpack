@@ -70,10 +70,10 @@ namespace qmcplusplus
       for(int j=0; j<dt2.centers(); ++j)
       {
         int kv=j*GlobalNum+k;
-        if(abs(dt.Temp[j].r1-dt2.r(kv)) > 1e-12)
+        if(std::abs(dt.Temp[j].r1-dt2.r(kv)) > 1e-12)
           std::cout << "WRONG " << j << " " << dt.Temp[j].r1 << " " << dt2.r(kv) << std::endl;
         SingleParticlePos_t d=dt.Temp[j].dr1-dt2.dr(kv);
-        if(abs(dot(d,d))>1e-12)
+        if(std::abs(dot(d,d))>1e-12)
           std::cout << "WRONG " << j << " " << dt.Temp[j].dr1 << " " << dt2.dr(kv) << std::endl;
       }
     }

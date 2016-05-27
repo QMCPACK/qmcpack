@@ -170,7 +170,7 @@ double PseudoGen::Cost()
   {
     std::cout << "Orbital " <<  Psi.N[ob] << llabel[Psi.L[ob]]
          << slabel[Psi.S[ob]+1] << std::endl;
-    double diff_eig = fabs(1.0-PPeigVal[ob]/AEeigVal[ob]);
+    double diff_eig = std::abs(1.0-PPeigVal[ob]/AEeigVal[ob]);
     std::cout << std::setw(25) << "PPeigVal" << std::setw(25) << "AEeigVal"
          << std::setw(25) << "error" << std::endl;
     std::cout << std::setw(25) << PPeigVal[ob] << std::setw(25)
@@ -182,7 +182,7 @@ double PseudoGen::Cost()
     integrate_RK2_forward(psi_sq,psi_norm);
     //grid index of the matching radius
     int x = Psi.m_grid->index(rmatch);
-    double diff_norm = fabs(1.0-psi_norm(x)/AEorbitals_norm[ob](x));
+    double diff_norm = std::abs(1.0-psi_norm(x)/AEorbitals_norm[ob](x));
     std::cout << std::setw(25) << "PPpnorm" << std::setw(25) << "AEpnorm"
          << std::setw(25) << "error" << std::endl;
     std::cout << std::setw(25) << psi_norm(x) << std::setw(25)
@@ -277,7 +277,7 @@ PseudoGen::runHF(Transform_t* fake, int norb)
     iter++;
     //continue the loop until the kinetic energy converges
   }
-  while(fabs(KEnew-KEold)>scf_tol && iter<maxiter);
+  while(std::abs(KEnew-KEold)>scf_tol && iter<maxiter);
   std::cout.precision(10);
   std::cout << "Total Hartree-Fock iterations = " << iter << std::endl;
   std::cout << "KE    = " << std::setw(15) << KEnew

@@ -124,7 +124,7 @@ KContainer::BuildKLists(ParticleLayout_t& lattice, bool useSphere)
           ksq_tmp.push_back(modk2);
           //Update record of the allowed maximum translation.
           for(int idim=0; idim<3; idim++)
-            if(abs(kvec[idim]) > TempActualMax[idim])
+            if(std::abs(kvec[idim]) > TempActualMax[idim])
               TempActualMax[idim] = std::abs(kvec[idim]);
         }
       }
@@ -195,7 +195,7 @@ KContainer::BuildKLists(ParticleLayout_t& lattice, bool useSphere)
         ksq_tmp.push_back(modk2);
         //Update record of the allowed maximum translation.
         for(int idim=0; idim<3; idim++)
-          if(abs(kvec[idim]) > TempActualMax[idim])
+          if(std::abs(kvec[idim]) > TempActualMax[idim])
             TempActualMax[idim] = std::abs(kvec[idim]);
       }
     }

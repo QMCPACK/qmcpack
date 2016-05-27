@@ -255,8 +255,8 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateDeltaLog(ParticleSet& P, 
 
 /** evalaute the sum of log value of optimizable many-body wavefunctions
 * @param P  input configuration containing N particles
-* @param logpsi_fixed log(abs(psi)) of the invariant orbitals
-* @param logpsi_opt log(abs(psi)) of the variable orbitals
+* @param logpsi_fixed log(std::abs(psi)) of the invariant orbitals
+* @param logpsi_opt log(std::abs(psi)) of the variable orbitals
 * @param fixedG gradients of log(psi) of the fixed wave functions
 * @param fixedL laplacians of log(psi) of the fixed wave functions
 *

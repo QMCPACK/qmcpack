@@ -119,7 +119,7 @@ WOSPotential::method1(ParticleSet& P)
   }
   pe *= h_norm;
   dpe *= h_norm;
-  dpe = sqrt(h_norm * fabs( dpe - pe * pe ));
+  dpe = sqrt(h_norm * std::abs( dpe - pe * pe ));
   //  std::cout << "antithetic: " << pe << '\t' << dpe << std::endl;
   //  exit(-1);
   return pe;

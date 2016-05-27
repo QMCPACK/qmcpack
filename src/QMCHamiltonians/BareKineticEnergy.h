@@ -135,7 +135,7 @@ struct BareKineticEnergy: public QMCHamiltonianBase
     OneOver2M=0.5/M;
     for(int i=0; i<tspecies.size(); ++i)
     {
-      SameMass&=(abs(tspecies(massind,i)-M)<1e-6);
+      SameMass&=(std::abs(tspecies(massind,i)-M)<1e-6);
       MinusOver2M[i]=-1.0/(2.0*tspecies(massind,i));
     }
   }
@@ -254,14 +254,14 @@ struct BareKineticEnergy: public QMCHamiltonianBase
     RealType Vnow = Value;
     RealType Vsum = T_samp.sum();
     RealType Vold = evaluate_orig(P);
-    if(abs(Vsum-Vnow)>TraceManager::trace_tol)
+    if(std::abs(Vsum-Vnow)>TraceManager::trace_tol)
     {
       app_log()<<"accumtest: BareKineticEnergy::evaluate()"<< std::endl;
       app_log()<<"accumtest:   tot:"<< Vnow << std::endl;
       app_log()<<"accumtest:   sum:"<< Vsum << std::endl;
       APP_ABORT("Trace check failed");
     }
-    if(abs(Vold-Vnow)>TraceManager::trace_tol)
+    if(std::abs(Vold-Vnow)>TraceManager::trace_tol)
     {
       app_log()<<"versiontest: BareKineticEnergy::evaluate()"<< std::endl;
       app_log()<<"versiontest:   orig:"<< Vold << std::endl;

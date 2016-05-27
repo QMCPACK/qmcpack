@@ -216,7 +216,7 @@ void AnyConstraints::add2BasisGroup(BasisGroupType* curBG, xmlNodePtr cur)
   //  std::cout << targetPsi.VarList.getName(i) << " " << targetPsi.VarList.getValue(i) << std::endl;
   //}
   //non-zero cusp
-  if(abs(curBG->Cusp)>std::numeric_limits<RealType>::epsilon())
+  if(std::abs(curBG->Cusp)>std::numeric_limits<RealType>::epsilon())
   {
     CuspCorrectionFunctor<RealType> *a  = new CuspCorrectionFunctor<RealType>(2.0,curBG->Rcut);
     app_log() << "  Adding a cusp term: " << curBG->Cusp << "* (-1/b exp(-br)), b=" << a->E << std::endl;

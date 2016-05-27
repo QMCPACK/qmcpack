@@ -83,7 +83,7 @@ const double pi=3.14159265358979323846;
 /* #ifndef __osf__  */
 #if !defined __GNUC__ || (__GNUC__ == 2 || (__GNUC__ == 3 && __GNUC_MINOR__ < 1))
 //inline double std::abs(double x) {  
-//   return fabs(x);  
+//   return std::abs(x);  
 //} 
 #endif
 /* #endif  */

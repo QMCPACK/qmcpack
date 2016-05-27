@@ -1435,8 +1435,8 @@ void DiracDeterminantWithBackflow::testGGG(ParticleSet& P)
           if( std::abs(dG[la].real()) > maxD)
             maxD = std::abs(dG[la].real());
 #else
-          if( std::fabs(dG[la]) > maxD)
-            maxD = std::fabs(dG[la]);
+          if( std::abs(dG[la]) > maxD)
+            maxD = std::abs(dG[la]);
 #endif
         }
         app_log() <<i <<"  " <<j <<"\n"
@@ -1539,7 +1539,7 @@ void DiracDeterminantWithBackflow::testDerivFjj(ParticleSet& P, int pa)
         maxD=std::max(maxD,std::abs(t));
 #else
         av+=dpsiM_0(i,j)[lb]-( dpsiM_1(i,j)[lb]-dpsiM_2(i,j)[lb] )/(2*dh);
-        if( std::fabs(dpsiM_0(i,j)[lb]-( dpsiM_1(i,j)[lb]-dpsiM_2(i,j)[lb] )/(2*dh)) > maxD  )
+        if( std::abs(dpsiM_0(i,j)[lb]-( dpsiM_1(i,j)[lb]-dpsiM_2(i,j)[lb] )/(2*dh)) > maxD  )
           maxD=dpsiM_0(i,j)[lb]-( dpsiM_1(i,j)[lb]-dpsiM_2(i,j)[lb] )/(2*dh);
 #endif
       }

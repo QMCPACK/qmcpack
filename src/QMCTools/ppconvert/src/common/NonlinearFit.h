@@ -159,7 +159,7 @@ NonlinearFitClass<M,ModelType>::Fit (const Array<double,1> &x,
     Solve();
 //     done = true;
 //     for (int i=0; i<M; i++)
-//       if (fabs(Beta[i]) > 1.0e-6)
+//       if (std::abs(Beta[i]) > 1.0e-6)
 // 	done = false;
     if (!done) {
       double chiNew = Chi2 (x, y, sigma, params + dParams);

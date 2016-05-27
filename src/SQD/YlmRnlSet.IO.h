@@ -194,7 +194,7 @@ bool YlmRnlSet<GT>::print_HDF5(const std::string& RootName,
     afile.write(uofr,"uofr");
     //test numerical derivatives to detect the uptake
     int max_rad = m_grid->size()-2;
-    while(abs((uofr[max_rad]-uofr[max_rad-1])/((*m_grid)[max_rad]-(*m_grid)[max_rad-1])) < 1e-4)
+    while(std::abs((uofr[max_rad]-uofr[max_rad-1])/((*m_grid)[max_rad]-(*m_grid)[max_rad-1])) < 1e-4)
       max_rad--;
     rmax_safe=std::max(rmax_safe,max_rad);
     std::cout << "Safe cutoff " << (*m_grid)[max_rad] << std::endl;

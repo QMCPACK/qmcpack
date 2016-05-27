@@ -282,7 +282,7 @@ public:
       else
       {
         //here we relax the CG towards steepest descent. Is this the right thing to do?
-        if ((deltaG > std::fabs(gg-GGnew)) & (CG_ortho>0))
+        if ((deltaG > std::abs(gg-GGnew)) & (CG_ortho>0))
         {
           --CG_ortho;
           if (a_verbose>3)
@@ -448,7 +448,7 @@ public:
     Return_t u(0.0);
     Return_t m(0.5*(x+y));
     int xyit(0);
-    if ((xyit<xycleanup) & (std::fabs(s-t)>GradTol) & (s*t<0.0) &(TargetFunc->IsValid))
+    if ((xyit<xycleanup) & (std::abs(s-t)>GradTol) & (s*t<0.0) &(TargetFunc->IsValid))
     {
       int XYBisectCounter=xybisect;
       do
@@ -462,7 +462,7 @@ public:
         }
         else
         {
-          Return_t ms(std::fabs(s)), mt(std::fabs(t));
+          Return_t ms(std::abs(s)), mt(std::abs(t));
           m= (ms*y + mt*x)/(ms+mt);
         }
         u=lineProduct(Parms , a_gunused , m) ;
@@ -489,7 +489,7 @@ public:
             }
         }
         else
-          if (std::fabs(t)>std::fabs(s))
+          if (std::abs(t)>std::abs(s))
           {
             s=t;
             x=y;
@@ -503,7 +503,7 @@ public:
           }
         xyit++;
       }
-      while ((TargetFunc->IsValid) & (std::fabs(s-t)>GradTol) & (xyit<xycleanup)) ;
+      while ((TargetFunc->IsValid) & (std::abs(s-t)>GradTol) & (xyit<xycleanup)) ;
     }
     else
       if ((s*t>0.0) | (!TargetFunc->IsValid))
@@ -512,14 +512,14 @@ public:
       }
     if (TargetFunc->IsValid)
     {
-      Return_t ms(std::fabs(s)), mt(std::fabs(t));
+      Return_t ms(std::abs(s)), mt(std::abs(t));
       m= (ms*y + mt*x)/(ms+mt);
       step = 0.0;
       for (int i = 0 ; i < NumParams ; i ++)
       {
         tmpd = m * a_h[i] ;
         Parms[i] += tmpd ;
-        step += fabs(tmpd) ;
+        step += std::abs(tmpd) ;
         a_xi[i] = (ms/(ms+mt)) * a_gy[i] + (mt/(ms+mt)) * a_gx[i] ;
       }
       if (a_rich || a_restart)

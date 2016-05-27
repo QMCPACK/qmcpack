@@ -90,7 +90,7 @@ GSLOptimize::run()
   //estimator has to collect the data over mpi nodes
   Estimators->setCollectionMode(OHMMS::Controller->ncontexts()>1);
   //overwrite the Etarget by E_T if E_T is zero
-  if(abs(branchEngine->E_T)>std::numeric_limits<RealType>::epsilon())
+  if(std::abs(branchEngine->E_T)>std::numeric_limits<RealType>::epsilon())
   {
     Etarget=branchEngine->E_T;
     app_log() << "Etarget (set from previous runs) = " << Etarget << std::endl;
@@ -169,11 +169,11 @@ GSLOptimize::RealType GSLOptimize::correlatedSampling()
     //////////////////////////////////////////
     //ValueType logpsi2(Psi.evaluateLog(W));
     //RealType et= H.evaluate(W);
-    //if(abs(logpsi+saved[LOGPSI_FIXED]-logpsi2)>1e-10 || std::abs(et-eloc_new)>1e-3)
+    //if(std::abs(logpsi+saved[LOGPSI_FIXED]-logpsi2)>1e-10 || std::abs(et-eloc_new)>1e-3)
     //  std::cout << "Check wfs and energy " << logpsi+saved[LOGPSI_FIXED]-logpsi2 << " " << et-eloc_new << std::endl;
     saved[ENERGY_NEW]=eloc_new;
     saved[REWEIGHT]=weight;
-    RealType delE=pow(abs(eloc_new-EtargetEff),PowerE);
+    RealType delE=pow(std::abs(eloc_new-EtargetEff),PowerE);
     SumValue[SUM_E_BARE] += eloc_new;
     SumValue[SUM_ESQ_BARE] += eloc_new*eloc_new;
     SumValue[SUM_ABSE_BARE] += delE;

@@ -391,7 +391,7 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
       {
         for(int ip=0; ip<dummyLO1->C.cols(); ip++)
         {
-          if(std::fabs(dummyLO1->C(k,ip)) > 1e-8)
+          if(std::abs(dummyLO1->C(k,ip)) > 1e-8)
           {
             corrO = true;
             break;
@@ -566,7 +566,7 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
          this->evaluate(*targetPtcl,0,psi);
          originalSPOSet->evaluate(*targetPtcl,0,psi_2);
          for(int i=0; i<OrbitalSetSize; i++)
-            v1[i] += std::fabs(psi[i]-psi_2[i]);
+            v1[i] += std::abs(psi[i]-psi_2[i]);
 
          this->evaluate(*targetPtcl,0,psi,dy,d2y);
          originalSPOSet->evaluate(*targetPtcl,0,psi_2,dy_2,d2y_2);
@@ -576,11 +576,11 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
             out9<<psi[i] <<"  " <<psi_2[i] <<"  ";
             out<<dy[i][0] <<"  " <<dy_2[i][0]
                <<d2y[i] <<"  " <<d2y_2[i] <<"  ";
-            v2[i] += std::fabs(psi[i]-psi_2[i]);
-            v3[i] += std::fabs(dy[i][0]-dy_2[i][0]);
-            v4[i] += std::fabs(dy[i][1]-dy_2[i][1]);
-            v5[i] += std::fabs(dy[i][2]-dy_2[i][2]);
-            v6[i] += std::fabs(d2y[i]-d2y_2[i]);
+            v2[i] += std::abs(psi[i]-psi_2[i]);
+            v3[i] += std::abs(dy[i][0]-dy_2[i][0]);
+            v4[i] += std::abs(dy[i][1]-dy_2[i][1]);
+            v5[i] += std::abs(dy[i][2]-dy_2[i][2]);
+            v6[i] += std::abs(d2y[i]-d2y_2[i]);
          }
          out<< std::endl;
          out9<< std::endl;

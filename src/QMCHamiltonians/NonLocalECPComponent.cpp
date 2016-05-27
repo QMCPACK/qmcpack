@@ -225,7 +225,7 @@ NonLocalECPComponent::evaluate(ParticleSet& W, int iat,
       W.makeMoveOnSphere(iel,deltar);
       RealType ratio1 = psiratio[j] = psi.ratio(W,iel)*sgridweight_m[j];
       RealType ratio2 = psi.ratioGrad(W,iel,psigrad[j]) * sgridweight_m[j];
-      if (std::fabs(ratio2 - ratio1) > 1.0e-8)
+      if (std::abs(ratio2 - ratio1) > 1.0e-8)
         fprintf (stderr, "ratio1 = %10.8f  ratio2 = %10.8f\n",
                  ratio1, ratio2);
       psigrad[j] *= psiratio[j];
@@ -344,7 +344,7 @@ NonLocalECPComponent::evaluate(ParticleSet& W, ParticleSet &ions, int iat,
       RealType ratio2 = psi.ratioGrad(W,iel,psigrad[j]) * sgridweight_m[j];
       W.acceptMove (iel);
       psi.acceptMove(W,iel);
-      if (std::fabs(ratio2 - ratio1) > 1.0e-8)
+      if (std::abs(ratio2 - ratio1) > 1.0e-8)
         fprintf (stderr, "ratio1 = %10.8f  ratio2 = %10.8f\n",
                  ratio1, ratio2);
       psigrad[j] *= psiratio[j];
@@ -485,7 +485,7 @@ NonLocalECPComponent::evaluate(ParticleSet& W, ParticleSet &ions, int iat,
 // 	RealType ratio1 = psi.ratio(W,iel)                       * sgridweight_m[j];
 // 	RealType ratio2 = psiratio[j] = psi.ratio (W,iel,dG, dL) * sgridweight_m[j];
 
-//  	if (std::fabs(ratio2 - ratio1) > 1.0e-8)
+//  	if (std::abs(ratio2 - ratio1) > 1.0e-8)
 //  	  fprintf (stderr, "ratio1 = %10.8f  ratio2 = %10.8f\n",
 // 		   ratio1, ratio2);
 

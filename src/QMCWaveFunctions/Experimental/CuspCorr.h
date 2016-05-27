@@ -238,11 +238,11 @@ public:
     TinyVector<RealType,3> ddr=0;
     ddr[0]=Rc;
     evaluate(Psi1,ddr,val1,grad1,lapl1);
-    X[0] = std::log(std::fabs(val1[curOrb]-C));
+    X[0] = std::log(std::abs(val1[curOrb]-C));
     X[1] = grad1[curOrb][0]/(val1[curOrb]-C);  // since vec{r}=vec{x}
     X[2] = (lapl1[curOrb]-2.0*grad1[curOrb][0]/Rc)/(val1[curOrb]-C);
     X[3] = -Z*(valAtZero+eta0)/(valAtZero-C);
-    X[4] = std::log(std::fabs(valAtZero-C));
+    X[4] = std::log(std::abs(valAtZero-C));
   }
 
   void X2alpha(const ValueVector_t X)

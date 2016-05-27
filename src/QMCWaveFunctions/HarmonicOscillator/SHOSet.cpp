@@ -405,9 +405,9 @@ namespace qmcplusplus
           RealType d2phi_diff = 0.0;
           for(int m=0;m<nphi;++m)
             for(int d=0;d<DIM;++d)
-              dphi_diff = std::max<RealType>(dphi_diff,std::abs(dpsi[m][d]-dpsin[m][d])/abs(dpsin[m][d]));
+              dphi_diff = std::max<RealType>(dphi_diff,std::abs(dpsi[m][d]-dpsin[m][d])/std::abs(dpsin[m][d]));
           for(int m=0;m<nphi;++m)
-            d2phi_diff = std::max<RealType>(d2phi_diff,std::abs(d2psi[m]-d2psin[m])/abs(d2psin[m]));
+            d2phi_diff = std::max<RealType>(d2phi_diff,std::abs(d2psi[m]-d2psin[m])/std::abs(d2psin[m]));
           app_log()<<"  "<<p<<" "<<dphi_diff<<" "<<d2phi_diff<< std::endl;
           app_log()<<"    derivatives"<< std::endl;
           for(int m=0;m<nphi;++m)

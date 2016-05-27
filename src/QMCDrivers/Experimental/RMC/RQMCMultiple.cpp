@@ -324,7 +324,7 @@ void RQMCMultiple::checkReptileProperties()
     for(int ipsi=0; ipsi<nPsi; ipsi++)
     {
       int BeadSign = Reptile->getSign(curW.Properties(ipsi,SIGN));
-      curW.BeadSignWgt[ipsi]=abs((BeadSign+Reptile->RefSign[ipsi])/2);
+      curW.BeadSignWgt[ipsi]=std::abs((BeadSign+Reptile->RefSign[ipsi])/2);
     }
     ++bead;
   }
@@ -698,7 +698,7 @@ void RQMCMultiple::moveReptile()
     //       NewBead->Action(ipsi,backward)= 0.5*m_oneover2tau*Dot(gRand,gRand);
     NewBead->Action(ipsi,backward)= 0.5*m_oneover2tau*Dot(gRand,gRand);
     NewBead->Action(ipsi,Directionless)=0.5*Tau*eloc;
-    int beadwgt=abs( ( Reptile->getSign(NewBeadProp[SIGN])+Reptile->RefSign[ipsi] )/2 );
+    int beadwgt=std::abs( ( Reptile->getSign(NewBeadProp[SIGN])+Reptile->RefSign[ipsi] )/2 );
     NewBead->BeadSignWgt[ipsi]=beadwgt;
     totbeadwgt+=beadwgt;
     //       RealType* restrict NewBeadProp=NewBead->getPropertyBase(ipsi);
@@ -719,7 +719,7 @@ void RQMCMultiple::moveReptile()
     //       NewBead->Action(ipsi,backward)=0.5*m_oneover2tau*Dot(gRand,gRand);
     //
     //       NewBead->Action(ipsi,Directionless)=0.5*Tau*eloc;
-    //       int beadwgt=abs( ( Reptile->getSign(NewBeadProp[SIGN])+Reptile->RefSign[ipsi] )/2 );
+    //       int beadwgt=std::abs( ( Reptile->getSign(NewBeadProp[SIGN])+Reptile->RefSign[ipsi] )/2 );
     //       NewBead->BeadSignWgt[ipsi]=beadwgt;
     //       totbeadwgt+=beadwgt;
 //    if ((NewBeadProp[LOCALENERGY] <= Ecut) && (NewBeadProp[LOCALENERGY] < HeadProp[LOCALENERGY]) ) {

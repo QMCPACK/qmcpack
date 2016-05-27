@@ -474,7 +474,7 @@ void VMCUpdatePbyPWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end
       myTimers[3]->start();
       RealType eloc=H.evaluate(W);
       myTimers[3]->stop();
-      //thisWalker.resetProperty(std::log(abs(psi)), psi,eloc);
+      //thisWalker.resetProperty(std::log(std::abs(psi)), psi,eloc);
       thisWalker.resetProperty(logpsi,Psi.getPhase(), eloc);
       H.auxHevaluate(W,thisWalker);
       H.saveProperty(thisWalker.getPropertyBase());
@@ -714,7 +714,7 @@ void VMCUpdatePbyPWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t it
     myTimers[3]->start();
     RealType eloc=H.evaluate(W);
     myTimers[3]->stop();
-    //thisWalker.resetProperty(std::log(abs(psi)), psi,eloc);
+    //thisWalker.resetProperty(std::log(std::abs(psi)), psi,eloc);
     thisWalker.resetProperty(logpsi,Psi.getPhase(), eloc);
     H.auxHevaluate(W,thisWalker);
     H.saveProperty(thisWalker.getPropertyBase());
@@ -823,7 +823,7 @@ void VMCUpdateRenyiWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t i
       myTimers[3]->start();
       RealType eloc=H.evaluate(W);
       myTimers[3]->stop();
-      //thisWalker.resetProperty(std::log(abs(psi)), psi,eloc);
+      //thisWalker.resetProperty(std::log(std::abs(psi)), psi,eloc);
       thisWalker.resetProperty(logpsi,Psi.getPhase(), eloc);
       H.auxHevaluate(W,thisWalker);
       H.saveProperty(thisWalker.getPropertyBase());

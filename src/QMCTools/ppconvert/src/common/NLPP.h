@@ -112,7 +112,7 @@ public:
 inline double
 ChannelPotential::jl(int l, double x)
 {
-  if (fabs(x) > 0.0) {
+  if (std::abs(x) > 0.0) {
     if (l == 0)
       return sin(x)/x;
     else if (l == 1) {

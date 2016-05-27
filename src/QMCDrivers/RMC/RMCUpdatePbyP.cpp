@@ -82,7 +82,7 @@ namespace qmcplusplus
 	//  268   W.saveWalker(awalker);
 	RealType eloc = H.evaluate (W);
 	//   BadState |= isnan(eloc);
-	//thisWalker.resetProperty(std::log(abs(psi)), psi,eloc);
+	//thisWalker.resetProperty(std::log(std::abs(psi)), psi,eloc);
 	awalker.resetProperty (logpsi, Psi.getPhase (), eloc);
 //      randomize(awalker);
       }

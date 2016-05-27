@@ -164,8 +164,8 @@ class GKIntegration {
     resultKronrod *= halfLength;
     
     r.result = resultKronrod;
-    r.err = fabs(resultKronrod - resultGauss);
-    //r.err = pow(200.0 * fabs(resultKronrod - resultGauss), 1.5);
+    r.err = std::abs(resultKronrod - resultGauss);
+    //r.err = pow(200.0 * std::abs(resultKronrod - resultGauss), 1.5);
     //    BMWrite(r);
   }
 
@@ -220,7 +220,7 @@ class GKIntegration {
       if (err!=0.0)
 	error("CheckError",errorSum,err);
     } else {
-      if (err/errorSum-1.0>1e-8 && fabs(err-errorSum)>1e-14) 
+      if (err/errorSum-1.0>1e-8 && std::abs(err-errorSum)>1e-14) 
 	error("CheckError",errorSum,err,errorSum-err);
     }
 
@@ -312,7 +312,7 @@ class GKIntegration {
 	  //	  warning("KC:current result=",result,"error=",err);
 	  if (absErrorFlag) warning("Absolute accuracy = ",absError);
 	  if (relErrorFlag) warning("Relative accuracy = ",relError,
-				    "->absolute accuracy=",relError*fabs(result));
+				    "->absolute accuracy=",relError*std::abs(result));
 	  // this means there is a problem with the integrand->you could exit here
 	  //	  exit(1);
 	  errorUnresolved += rTest.err;
@@ -362,7 +362,7 @@ class GKIntegration {
       //      CheckError(err);
       //       PrintList();
       
-      const bool relOk = (err < relError*fabs(result) || result==0.0);
+      const bool relOk = (err < relError*std::abs(result) || result==0.0);
       const bool absOk = (err < absError);
 
       if (absErrorFlag && relErrorFlag) {
@@ -380,10 +380,10 @@ class GKIntegration {
     if (errorUnresolved>0.0) {
       warning("KC:Unresolved error sum=",errorUnresolved,"for integration interval",a,b);
       warning("KC:--> Result=",result,"total error=",err,"rel. error=",
-	      ((result!=0.0) ? err/fabs(result) : 0.0));
+	      ((result!=0.0) ? err/std::abs(result) : 0.0));
       //      if (absErrorFlag) warning("Absolute accuracy = ",absError);
       //      if (relErrorFlag) warning("Relative accuracy = ",relError,
-      //				"->absolute accuracy=",relError*fabs(result));
+      //				"->absolute accuracy=",relError*std::abs(result));
     }
 
     //    CheckList();
@@ -400,8 +400,8 @@ class GKIntegration {
 //     if (numIntervals > 2000)
 //       std::cerr << "Number of intervals = " << numIntervals << std::endl;
 
-    double badSum = fabs((result-sum) / sum);
-    if ((badSum > 1.0e-7) && (fabs(result-sum) > absError)) {
+    double badSum = std::abs((result-sum) / sum);
+    if ((badSum > 1.0e-7) && (std::abs(result-sum) > absError)) {
       std::cerr << "absError tolerance = " << absError << std::endl;
       std::cerr << "Percent error = " << badSum*100.0 << std::endl;
       std::cerr << "Number of intervals = " << numIntervals << std::endl;

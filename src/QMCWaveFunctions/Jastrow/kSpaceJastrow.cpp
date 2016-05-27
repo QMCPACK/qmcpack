@@ -135,7 +135,7 @@ struct magLess
 bool
 kSpaceJastrow::operator()(PosType G1, PosType G2)
 {
-  if (std::fabs(dot(G1,G1) - dot(G2,G2)) > 1.0e-8)
+  if (std::abs(dot(G1,G1) - dot(G2,G2)) > 1.0e-8)
     return dot(G1,G1) < dot(G2,G2);
   // if (Equivalent(G1,G2)) return false;
   std::vector<ComplexType> rho_G1(NumIonSpecies), rho_G2(NumIonSpecies);
@@ -148,7 +148,7 @@ kSpaceJastrow::operator()(PosType G1, PosType G2)
       ComplexType zG2 = rho_G2[i]*conj(rho_G2[j]);
       double SG1  = std::real(zG1);
       double SG2  = std::real(zG2);
-      if (std::fabs(SG1 - SG2) > 1.0e-8)
+      if (std::abs(SG1 - SG2) > 1.0e-8)
         return SG1 < SG2;
     }
   return false;
@@ -158,7 +158,7 @@ bool
 kSpaceJastrow::Equivalent(PosType G1, PosType G2)
 {
   return (!(*this)(G1,G2) && !(*this)(G2,G1));
-  if (std::fabs(dot(G1,G1) - dot(G2,G2)) > 1.0e-8)
+  if (std::abs(dot(G1,G1) - dot(G2,G2)) > 1.0e-8)
     return false;
   std::vector<ComplexType> rho_G1(NumIonSpecies), rho_G2(NumIonSpecies);
   StructureFactor(G1, rho_G1);
@@ -170,7 +170,7 @@ kSpaceJastrow::Equivalent(PosType G1, PosType G2)
       ComplexType zG2 = rho_G2[i]*conj(rho_G2[j]);
       double SG1  = std::real(zG1);
       double SG2  = std::real(zG2);
-      if (std::fabs(SG1 - SG2) > 1.0e-8)
+      if (std::abs(SG1 - SG2) > 1.0e-8)
         return false;
     }
   return true;
@@ -213,7 +213,7 @@ kSpaceJastrow::sortGvecs(std::vector<PosType> &gvecs,
       for (int i=1; i<gvecs.size(); i++)
       {
         double mag2 = dot(gvecs[i],gvecs[i]);
-        if (std::fabs(mag2-curMag2) < 1.0e-10)
+        if (std::abs(mag2-curMag2) < 1.0e-10)
           coef.lastIndex = i;
         else
         {

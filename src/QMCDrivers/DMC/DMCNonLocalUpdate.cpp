@@ -230,7 +230,7 @@ void DMCNonLocalUpdatePbyP::advanceWalkers(WalkerIter_t it
       myTimers[3]->start();
       enew= H.evaluate(W,nonLocalOps.Txy);
       myTimers[3]->stop();
-      //thisWalker.resetProperty(std::log(abs(psi)),psi,enew,rr_accepted,rr_proposed,1.0);
+      //thisWalker.resetProperty(std::log(std::abs(psi)),psi,enew,rr_accepted,rr_proposed,1.0);
       thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,1.0);
       H.auxHevaluate(W,thisWalker);
       H.saveProperty(thisWalker.getPropertyBase());

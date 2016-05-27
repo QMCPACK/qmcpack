@@ -169,14 +169,14 @@ EwaldSum<PT>::init(ParticleLayout_t& lat, const ParticleScalar_t& q)
   acclog = log(accur);
   Eps =
     M_PI*(pow(static_cast<Scalar_t>(nat)*Tr_over_Tg/(lat.Volume*lat.Volume),1.0/3.0));
-  g2max = 4.0*Eps*fabs(acclog);
-  x2max = fabs(acclog)/Eps;
+  g2max = 4.0*Eps*std::abs(acclog);
+  x2max = std::abs(acclog)/Eps;
   Rmax = sqrt(x2max);
   //Using fixed cutoff
   //Rmax = 6.1;
   //x2max = Rmax*Rmax;
-  //Eps = fabs(acclog)/x2max;
-  //g2max = 4.0*Eps*fabs(acclog);
+  //Eps = std::abs(acclog)/x2max;
+  //g2max = 4.0*Eps*std::abs(acclog);
   sqeps = sqrt(Eps);
   maxG[0] = static_cast<int>(sqrt( g2max/dot(lat.b(0),lat.b(0)))) + 1;
   maxG[1] = static_cast<int>(sqrt( g2max/dot(lat.b(1),lat.b(1)))) + 1;

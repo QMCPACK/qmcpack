@@ -216,35 +216,35 @@ CoulombPBCAA::evaluate_sp(ParticleSet& P)
   RealType Vlrold  = evalLR_old(P);
   RealType Vcold   = evalConsts_old(false);
   RealType Vcorig  = evalConsts_orig(false);
-  if(abs(Vsum-Vnow)>TraceManager::trace_tol)
+  if(std::abs(Vsum-Vnow)>TraceManager::trace_tol)
   {
     app_log()<<"accumtest: CoulombPBCAA::evaluate()"<< std::endl;
     app_log()<<"accumtest:   tot:"<< Vnow << std::endl;
     app_log()<<"accumtest:   sum:"<< Vsum  << std::endl;
     APP_ABORT("Trace check failed");
   }
-  if(abs(Vcsum-Vcnow)>TraceManager::trace_tol)
+  if(std::abs(Vcsum-Vcnow)>TraceManager::trace_tol)
   {
     app_log()<<"accumtest: CoulombPBCAA::evalConsts()"<< std::endl;
     app_log()<<"accumtest:   tot:"<< Vcnow << std::endl;
     app_log()<<"accumtest:   sum:"<< Vcsum  << std::endl;
     APP_ABORT("Trace check failed");
   }
-  if(abs(Vsrold-Vsrnow)>TraceManager::trace_tol)
+  if(std::abs(Vsrold-Vsrnow)>TraceManager::trace_tol)
   {
     app_log()<<"versiontest: CoulombPBCAA::evalSR()"<< std::endl;
     app_log()<<"versiontest:    old:"<< Vsrold << std::endl;
     app_log()<<"versiontest:    mod:"<< Vsrnow << std::endl;
     APP_ABORT("Trace check failed");
   }
-  if(abs(Vlrold-Vlrnow)>TraceManager::trace_tol)
+  if(std::abs(Vlrold-Vlrnow)>TraceManager::trace_tol)
   {
     app_log()<<"versiontest: CoulombPBCAA::evalLR()"<< std::endl;
     app_log()<<"versiontest:    old:"<< Vlrold << std::endl;
     app_log()<<"versiontest:    mod:"<< Vlrnow << std::endl;
     APP_ABORT("Trace check failed");
   }
-  if(abs(Vcold-Vcorig)>TraceManager::trace_tol ||
+  if(std::abs(Vcold-Vcorig)>TraceManager::trace_tol ||
       std::abs(Vcnow-Vcorig)>TraceManager::trace_tol )
   {
     app_log()<<"versiontest: CoulombPBCAA::evalConsts()"<< std::endl;

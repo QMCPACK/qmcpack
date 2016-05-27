@@ -32,7 +32,7 @@ namespace qmcplusplus
  * LOCALPOTENTIAL should be always the last enumeation
  * When a new enum is needed, modify ParticleSet::initPropertyList to match the list
  */
-enum {LOGPSI=0,       /*!< log(fabs(psi)) instead of square of the many-body wavefunction \f$|\Psi|^2\f$ */
+enum {LOGPSI=0,       /*!< log(std::abs(psi)) instead of square of the many-body wavefunction \f$|\Psi|^2\f$ */
       SIGN,           /*!< value of the many-body wavefunction \f$\Psi(\{R\})\f$ */
       UMBRELLAWEIGHT, /*!< sum of wavefunction ratios for multiple H and Psi */
       R2ACCEPTED,     /*!< r^2 for accepted moves */

@@ -86,7 +86,7 @@ void DiracDeterminantIterative::SparseToCSR(std::vector<int> &Arp, std::vector<i
       std::pair<int,double> myPair=*orb;
       int orbitalIndex=myPair.first;
       double value=myPair.second;
-      //	if (abs(myValue)>=cutoff){
+      //	if (std::abs(myValue)>=cutoff){
       Ari.push_back(orbitalIndex);
       Arx.push_back(value);
       nnz_index++;
@@ -137,7 +137,7 @@ DiracDeterminantBase::ValueType DiracDeterminantIterative::ratio(ParticleSet& P,
   particleLists[iat].swap(oldPtcl);
   for (int i=0; i<psiV.size(); i++)
   {
-    if (abs(psiV(i))>=cutoff)
+    if (std::abs(psiV(i))>=cutoff)
     {
       pair <int,double> temp(i,psiV(i));
       particleLists[iat].push_back(temp);
@@ -169,7 +169,7 @@ DiracDeterminantBase::ValueType DiracDeterminantIterative::ratio(ParticleSet& P,
 #else
   curRatio= DetRatio(psiM_temp, psiV.begin(),WorkingIndex);
 #endif
-  if(abs(curRatio)<std::numeric_limits<RealType>::epsilon())
+  if(std::abs(curRatio)<std::numeric_limits<RealType>::epsilon())
   {
     UpdateMode=ORB_PBYP_RATIO; //singularity! do not update inverse
     return 0.0;
@@ -236,7 +236,7 @@ DiracDeterminantIterative::evaluateLog(ParticleSet& P,
     particleLists[ptcl].clear();
     for (int orbital=0; orbital<psiM.extent(0); orbital++)
     {
-      if (abs(psiM(orbital,ptcl))>=cutoff)
+      if (std::abs(psiM(orbital,ptcl))>=cutoff)
       {
         std::pair<int,double> temp(orbital,psiM(orbital,ptcl));
         particleLists[ptcl].push_back(temp);

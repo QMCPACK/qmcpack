@@ -144,7 +144,7 @@ void CrystalLattice<T,D,ORTHO>::reset()
   //  SingleParticlePos_t B = a((i+1)%3);
   //  SingleParticlePos_t C = a((i+2)%3);
   //  SingleParticlePos_t BxC = cross(B,C);
-  //  T dist = 0.5*std::fabs(dot(A,BxC))/std::sqrt(dot(BxC,BxC));
+  //  T dist = 0.5*std::abs(dot(A,BxC))/std::sqrt(dot(BxC,BxC));
   //  SimulationCellRadius = std::min(SimulationCellRadius, dist);
   //}
 }
@@ -248,7 +248,7 @@ inline bool operator==(const CrystalLattice<T,D,ORTHO>& lhs,
                        const CrystalLattice<T,D,ORTHO>& rhs)
 {
   for(int i=0; i<D*D; ++i)
-    if(abs(lhs.R[i]-rhs.R[i]) > std::numeric_limits<T>::epsilon())
+    if(std::abs(lhs.R[i]-rhs.R[i]) > std::numeric_limits<T>::epsilon())
       return false;
   return true;
 }

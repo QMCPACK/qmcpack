@@ -188,7 +188,7 @@ AtomicOrbital<StorageType>::evaluate (PosType r, ComplexValueVector_t &vals)
   PosType rhat = (1.0/rmag)*dr;
   // Evaluate Ylm's
   CalcYlm (rhat, YlmVec, dYlm_dthetaVec, dYlm_dphiVec);
-  if (std::fabs(rmag - rmagLast) > 1.0e-6)
+  if (std::abs(rmag - rmagLast) > 1.0e-6)
   {
     // Evaluate radial functions
     if (rmag > PolyRadius)
@@ -247,7 +247,7 @@ AtomicOrbital<StorageType>::evaluate (PosType r, RealValueVector_t &vals)
   PosType rhat = (1.0/rmag)*dr;
   // Evaluate Ylm's
   CalcYlm (rhat, YlmVec, dYlm_dthetaVec, dYlm_dphiVec);
-  if (std::fabs(rmag - rmagLast) > 1.0e-6)
+  if (std::abs(rmag - rmagLast) > 1.0e-6)
   {
     // Evaluate radial functions
     if (rmag > PolyRadius)

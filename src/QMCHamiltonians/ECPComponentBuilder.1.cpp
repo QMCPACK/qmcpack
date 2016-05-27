@@ -72,7 +72,7 @@ ECPComponentBuilder::createVrWithBasisGroup(xmlNodePtr cur, GridType* agrid)
   RealType rout=agrid->rmax()*2;
   while(ignore&&rout>agrid->rmax())
   {
-    ignore=(abs(a.f(rout))<eps);
+    ignore=(std::abs(a.f(rout))<eps);
     rout-=0.01;
   }
   rout += 0.01;
@@ -189,7 +189,7 @@ void ECPComponentBuilder::buildLocal(xmlNodePtr cur)
       while(ignore&&last)
       {
         r=(*grid_local)[last];
-        ignore=(abs(zinv*vr.f(r))<eps);
+        ignore=(std::abs(zinv*vr.f(r))<eps);
         --last;
       }
       if(last ==0)

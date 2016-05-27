@@ -142,7 +142,7 @@ void zfill(int number,std::string& str,int digits)
 
 
 template<typename T>
-T std::min(std::vector<T>&v)
+T min(std::vector<T>&v)
 {
   if(v.size()>0)
   {

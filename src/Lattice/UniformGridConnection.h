@@ -231,9 +231,9 @@ struct UniformGridConnection<T,3>
   			     basegrid.Node[jg].Ri[1]+displ[1],
   			     basegrid.Node[jg].Ri[2]+displ[2]);
     SingleParticlePos_t dcell = nncell-org;
-    int icx = int(fabs(dcell[0]*dx[0]));
-    int icy = int(fabs(dcell[1]*dx[1]));
-    int icz = int(fabs(dcell[2]*dx[2]));
+    int icx = int(std::abs(dcell[0]*dx[0]));
+    int icy = int(std::abs(dcell[1]*dx[1]));
+    int icz = int(std::abs(dcell[2]*dx[2]));
     bool connected = false;
     if(icx <= 1 && icy <= 1 && icz <= 1) {
       connected = true; // next cells are always included

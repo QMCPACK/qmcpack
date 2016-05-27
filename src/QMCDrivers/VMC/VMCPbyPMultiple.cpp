@@ -227,7 +227,7 @@ bool VMCPbyPMultiple::run()
               //Update G and L in Psi1[i]
               Psi1[ipsi]->G = *G[ipsi];
               Psi1[ipsi]->L += *dL[ipsi];
-              thisWalker.Properties(ipsi,LOGPSI)+=std::log(abs(ratio[ipsi]));
+              thisWalker.Properties(ipsi,LOGPSI)+=std::log(std::abs(ratio[ipsi]));
             }
             // Update Drift
             if(useDrift)

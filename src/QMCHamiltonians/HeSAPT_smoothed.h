@@ -115,22 +115,22 @@ struct HeSAPT_smoothed_aux: public QMCHamiltonianBase
                         + "  to add the new tailcorr value to the database.";
     if (N0 == 32)
     {
-      if (std::fabs(rho - 3.237245782e-3) < 1.0e-7)
+      if (std::abs(rho - 3.237245782e-3) < 1.0e-7)
         tailcorr = -0.0002705961159;	// RHO = 0.3648/sigma^3 : 01x
       else
-        if (std::fabs(rho - 2.910681515e-3) < 1.0e-7)
+        if (std::abs(rho - 2.910681515e-3) < 1.0e-7)
           tailcorr = -0.0002178620081;	// RHO = 0.3280/sigma^3 : 21x
         else
-          if (std::fabs(rho - 3.079288066e-3) < 1.0e-7)
+          if (std::abs(rho - 3.079288066e-3) < 1.0e-7)
             tailcorr = -0.0002443783556;	// RHO = 0.3470/sigma^3 : 31x
           else
-            if (std::fabs(rho - 3.557598229e-3) < 1.0e-7)
+            if (std::abs(rho - 3.557598229e-3) < 1.0e-7)
               tailcorr = -0.0003280694504;	// RHO = 0.4009/sigma^3 : 41x
             else
-              if (std::fabs(rho - 3.885049900e-3) < 1.0e-7)
+              if (std::abs(rho - 3.885049900e-3) < 1.0e-7)
                 tailcorr = -0.0003926875054;	// RHO = 0.4378/sigma^3 : 51x
               else
-                if (std::fabs(rho - 4.347386811e-3) < 1.0e-7)
+                if (std::abs(rho - 4.347386811e-3) < 1.0e-7)
                   tailcorr = -0.0004941981444;	// RHO = 0.4899/sigma^3 : 61x
                 else
                 {
@@ -141,22 +141,22 @@ struct HeSAPT_smoothed_aux: public QMCHamiltonianBase
     else
       if (N0 == 64)
       {
-        if (std::fabs(rho - 3.237245782e-3) < 1.0e-7)
+        if (std::abs(rho - 3.237245782e-3) < 1.0e-7)
           tailcorr = -0.0002651066072;	// RHO = 0.3648/sigma^3 : 02x
         else
-          if (std::fabs(rho - 2.910681515e-3) < 1.0e-7)
+          if (std::abs(rho - 2.910681515e-3) < 1.0e-7)
             tailcorr = -0.0002137701388;	// RHO = 0.3280/sigma^3 : 22x
           else
-            if (std::fabs(rho - 3.079288066e-3) < 1.0e-7)
+            if (std::abs(rho - 3.079288066e-3) < 1.0e-7)
               tailcorr = -0.0002395972888;	// RHO = 0.3470/sigma^3 : 32x
             else
-              if (std::fabs(rho - 3.557598229e-3) < 1.0e-7)
+              if (std::abs(rho - 3.557598229e-3) < 1.0e-7)
                 tailcorr = -0.0003209410359;	// RHO = 0.4009/sigma^3 : 42x
               else
-                if (std::fabs(rho - 3.885049900e-3) < 1.0e-7)
+                if (std::abs(rho - 3.885049900e-3) < 1.0e-7)
                   tailcorr = -0.0003835898243;	// RHO = 0.4378/sigma^3 : 52x
                 else
-                  if (std::fabs(rho - 4.347386811e-3) < 1.0e-7)
+                  if (std::abs(rho - 4.347386811e-3) < 1.0e-7)
                     tailcorr = -0.0004817718362;	// RHO = 0.4899/sigma^3 : 62x
                   else
                   {
@@ -167,22 +167,22 @@ struct HeSAPT_smoothed_aux: public QMCHamiltonianBase
       else
         if (N0 == 128)
         {
-          if (std::fabs(rho - 3.237245782e-3) < 1.0e-7)
+          if (std::abs(rho - 3.237245782e-3) < 1.0e-7)
             tailcorr = -0.0002618281770;	// RHO = 0.3648/sigma^3 : 03x
           else
-            if (std::fabs(rho - 2.910681515e-3) < 1.0e-7)
+            if (std::abs(rho - 2.910681515e-3) < 1.0e-7)
               tailcorr = -0.0002113168481;	// RHO = 0.3280/sigma^3 : 23x
             else
-              if (std::fabs(rho - 3.079288066e-3) < 1.0e-7)
+              if (std::abs(rho - 3.079288066e-3) < 1.0e-7)
                 tailcorr = -0.0002367366424;	// RHO = 0.3470/sigma^3 : 33x
               else
-                if (std::fabs(rho - 3.557598229e-3) < 1.0e-7)
+                if (std::abs(rho - 3.557598229e-3) < 1.0e-7)
                   tailcorr = -0.0003166990570;	// RHO = 0.4009/sigma^3 : 43x
                 else
-                  if (std::fabs(rho - 3.885049900e-3) < 1.0e-7)
+                  if (std::abs(rho - 3.885049900e-3) < 1.0e-7)
                     tailcorr = -0.0003781940744;	// RHO = 0.4378/sigma^3 : 53x
                   else
-                    if (std::fabs(rho - 4.347386811e-3) < 1.0e-7)
+                    if (std::abs(rho - 4.347386811e-3) < 1.0e-7)
                       tailcorr = -0.0004744316477;	// RHO = 0.4899/sigma^3 : 63x
                     else
                     {
@@ -193,22 +193,22 @@ struct HeSAPT_smoothed_aux: public QMCHamiltonianBase
         else
           if (N0 == 256)
           {
-            if (std::fabs(rho - 3.237245782e-3) < 1.0e-7)
+            if (std::abs(rho - 3.237245782e-3) < 1.0e-7)
               tailcorr = -0.0002598285275;	// RHO = 0.3648/sigma^3 : 04x
             else
-              if (std::fabs(rho - 2.910681515e-3) < 1.0e-7)
+              if (std::abs(rho - 2.910681515e-3) < 1.0e-7)
                 tailcorr = -0.0002098169307;	// RHO = 0.3280/sigma^3 : 24x
               else
-                if (std::fabs(rho - 3.079288066e-3) < 1.0e-7)
+                if (std::abs(rho - 3.079288066e-3) < 1.0e-7)
                   tailcorr = -0.0002349898273;	// RHO = 0.3470/sigma^3 : 34x
                 else
-                  if (std::fabs(rho - 3.557598229e-3) < 1.0e-7)
+                  if (std::abs(rho - 3.557598229e-3) < 1.0e-7)
                     tailcorr = -0.0003141175814;	// RHO = 0.4009/sigma^3 : 44x
                   else
-                    if (std::fabs(rho - 3.885049900e-3) < 1.0e-7)
+                    if (std::abs(rho - 3.885049900e-3) < 1.0e-7)
                       tailcorr = -0.0003749179381;	// RHO = 0.4378/sigma^3 : 54x
                     else
-                      if (std::fabs(rho - 4.347386811e-3) < 1.0e-7)
+                      if (std::abs(rho - 4.347386811e-3) < 1.0e-7)
                         tailcorr = -0.0004699888991;	// RHO = 0.4899/sigma^3 : 64x
                       else
                       {
@@ -265,22 +265,22 @@ struct HeSAPT_smoothed_aux: public QMCHamiltonianBase
                         + "  to add the new tailcorr value to the database.";
     if (N0 == 32)
     {
-      if (std::fabs(rho - 3.237245782e-3) < 1.0e-7)
+      if (std::abs(rho - 3.237245782e-3) < 1.0e-7)
         tailcorr = -0.0002705961159;	// RHO = 0.3648/sigma^3 : 01x
       else
-        if (std::fabs(rho - 2.910681515e-3) < 1.0e-7)
+        if (std::abs(rho - 2.910681515e-3) < 1.0e-7)
           tailcorr = -0.0002178620081;	// RHO = 0.3280/sigma^3 : 21x
         else
-          if (std::fabs(rho - 3.079288066e-3) < 1.0e-7)
+          if (std::abs(rho - 3.079288066e-3) < 1.0e-7)
             tailcorr = -0.0002443783556;	// RHO = 0.3470/sigma^3 : 31x
           else
-            if (std::fabs(rho - 3.557598229e-3) < 1.0e-7)
+            if (std::abs(rho - 3.557598229e-3) < 1.0e-7)
               tailcorr = -0.0003280694504;	// RHO = 0.4009/sigma^3 : 41x
             else
-              if (std::fabs(rho - 3.885049900e-3) < 1.0e-7)
+              if (std::abs(rho - 3.885049900e-3) < 1.0e-7)
                 tailcorr = -0.0003926875054;	// RHO = 0.4378/sigma^3 : 51x
               else
-                if (std::fabs(rho - 4.347386811e-3) < 1.0e-7)
+                if (std::abs(rho - 4.347386811e-3) < 1.0e-7)
                   tailcorr = -0.0004941981444;	// RHO = 0.4899/sigma^3 : 61x
                 else
                 {
@@ -291,22 +291,22 @@ struct HeSAPT_smoothed_aux: public QMCHamiltonianBase
     else
       if (N0 == 64)
       {
-        if (std::fabs(rho - 3.237245782e-3) < 1.0e-7)
+        if (std::abs(rho - 3.237245782e-3) < 1.0e-7)
           tailcorr = -0.0002651066072;	// RHO = 0.3648/sigma^3 : 02x
         else
-          if (std::fabs(rho - 2.910681515e-3) < 1.0e-7)
+          if (std::abs(rho - 2.910681515e-3) < 1.0e-7)
             tailcorr = -0.0002137701388;	// RHO = 0.3280/sigma^3 : 22x
           else
-            if (std::fabs(rho - 3.079288066e-3) < 1.0e-7)
+            if (std::abs(rho - 3.079288066e-3) < 1.0e-7)
               tailcorr = -0.0002395972888;	// RHO = 0.3470/sigma^3 : 32x
             else
-              if (std::fabs(rho - 3.557598229e-3) < 1.0e-7)
+              if (std::abs(rho - 3.557598229e-3) < 1.0e-7)
                 tailcorr = -0.0003209410359;	// RHO = 0.4009/sigma^3 : 42x
               else
-                if (std::fabs(rho - 3.885049900e-3) < 1.0e-7)
+                if (std::abs(rho - 3.885049900e-3) < 1.0e-7)
                   tailcorr = -0.0003835898243;	// RHO = 0.4378/sigma^3 : 52x
                 else
-                  if (std::fabs(rho - 4.347386811e-3) < 1.0e-7)
+                  if (std::abs(rho - 4.347386811e-3) < 1.0e-7)
                     tailcorr = -0.0004817718362;	// RHO = 0.4899/sigma^3 : 62x
                   else
                   {
@@ -317,22 +317,22 @@ struct HeSAPT_smoothed_aux: public QMCHamiltonianBase
       else
         if (N0 == 128)
         {
-          if (std::fabs(rho - 3.237245782e-3) < 1.0e-7)
+          if (std::abs(rho - 3.237245782e-3) < 1.0e-7)
             tailcorr = -0.0002618281770;	// RHO = 0.3648/sigma^3 : 03x
           else
-            if (std::fabs(rho - 2.910681515e-3) < 1.0e-7)
+            if (std::abs(rho - 2.910681515e-3) < 1.0e-7)
               tailcorr = -0.0002113168481;	// RHO = 0.3280/sigma^3 : 23x
             else
-              if (std::fabs(rho - 3.079288066e-3) < 1.0e-7)
+              if (std::abs(rho - 3.079288066e-3) < 1.0e-7)
                 tailcorr = -0.0002367366424;	// RHO = 0.3470/sigma^3 : 33x
               else
-                if (std::fabs(rho - 3.557598229e-3) < 1.0e-7)
+                if (std::abs(rho - 3.557598229e-3) < 1.0e-7)
                   tailcorr = -0.0003166990570;	// RHO = 0.4009/sigma^3 : 43x
                 else
-                  if (std::fabs(rho - 3.885049900e-3) < 1.0e-7)
+                  if (std::abs(rho - 3.885049900e-3) < 1.0e-7)
                     tailcorr = -0.0003781940744;	// RHO = 0.4378/sigma^3 : 53x
                   else
-                    if (std::fabs(rho - 4.347386811e-3) < 1.0e-7)
+                    if (std::abs(rho - 4.347386811e-3) < 1.0e-7)
                       tailcorr = -0.0004744316477;	// RHO = 0.4899/sigma^3 : 63x
                     else
                     {
@@ -343,22 +343,22 @@ struct HeSAPT_smoothed_aux: public QMCHamiltonianBase
         else
           if (N0 == 256)
           {
-            if (std::fabs(rho - 3.237245782e-3) < 1.0e-7)
+            if (std::abs(rho - 3.237245782e-3) < 1.0e-7)
               tailcorr = -0.0002598285275;	// RHO = 0.3648/sigma^3 : 04x
             else
-              if (std::fabs(rho - 2.910681515e-3) < 1.0e-7)
+              if (std::abs(rho - 2.910681515e-3) < 1.0e-7)
                 tailcorr = -0.0002098169307;	// RHO = 0.3280/sigma^3 : 24x
               else
-                if (std::fabs(rho - 3.079288066e-3) < 1.0e-7)
+                if (std::abs(rho - 3.079288066e-3) < 1.0e-7)
                   tailcorr = -0.0002349898273;	// RHO = 0.3470/sigma^3 : 34x
                 else
-                  if (std::fabs(rho - 3.557598229e-3) < 1.0e-7)
+                  if (std::abs(rho - 3.557598229e-3) < 1.0e-7)
                     tailcorr = -0.0003141175814;	// RHO = 0.4009/sigma^3 : 44x
                   else
-                    if (std::fabs(rho - 3.885049900e-3) < 1.0e-7)
+                    if (std::abs(rho - 3.885049900e-3) < 1.0e-7)
                       tailcorr = -0.0003749179381;	// RHO = 0.4378/sigma^3 : 54x
                     else
-                      if (std::fabs(rho - 4.347386811e-3) < 1.0e-7)
+                      if (std::abs(rho - 4.347386811e-3) < 1.0e-7)
                         tailcorr = -0.0004699888991;	// RHO = 0.4899/sigma^3 : 64x
                       else
                       {

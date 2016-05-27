@@ -144,7 +144,7 @@ struct HartreeFock
       iter++;
       ///continue the loop until the kinetic energy converges
     }
-    while(fabs(KEnew-KEold)>scf_tol && iter<maxiter);
+    while(std::abs(KEnew-KEold)>scf_tol && iter<maxiter);
   }
 
   inline void solve( std::string pottype, std::string gridtype, int norb)

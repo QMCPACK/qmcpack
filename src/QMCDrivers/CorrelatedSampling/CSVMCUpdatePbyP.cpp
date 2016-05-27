@@ -134,7 +134,7 @@ void CSVMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool 
           //Psi1[ipsi]->G = *G1[ipsi];
          // Psi1[ipsi]->G += *G1[ipsi];
           //Psi1[ipsi]->L += *L1[ipsi];
-          thisWalker.Properties(ipsi,LOGPSI)+=std::log(abs(ratio[ipsi]));
+          thisWalker.Properties(ipsi,LOGPSI)+=std::log(std::abs(ratio[ipsi]));
         }
       }
       else
@@ -323,7 +323,7 @@ void CSVMCUpdatePbyPWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t 
 		  //Psi1[ipsi]->G = *G1[ipsi];
 		 // Psi1[ipsi]->G += *G1[ipsi];
 		  //Psi1[ipsi]->L += *L1[ipsi];
-		  thisWalker.Properties(ipsi,LOGPSI)+=std::log(abs(ratio[ipsi]));
+		  thisWalker.Properties(ipsi,LOGPSI)+=std::log(std::abs(ratio[ipsi]));
 		}
 	      }
 	      else

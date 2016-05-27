@@ -277,7 +277,7 @@ bool VMCPbyPMultiWarp::run()
               // Update G and L in Psi1[i]
               Psi1[ipsi]->G = *G[ipsi];
               Psi1[ipsi]->L += *dL[ipsi];
-              thisWalker.Properties(ipsi,LOGPSI)+=std::log(abs(ratio[ipsi]));
+              thisWalker.Properties(ipsi,LOGPSI)+=std::log(std::abs(ratio[ipsi]));
               thisWalker.Properties(ipsi,JACOBIAN)=new_Jacobian[ipsi];
             }
             // Update Drift
@@ -318,7 +318,7 @@ bool VMCPbyPMultiWarp::run()
             //Properties is used for UmbrellaWeight and UmbrellaEnergy
             thisWalker.Properties(ipsi,UMBRELLAWEIGHT)=UmbrellaWeight[ipsi];
             thisWalker.Properties(ipsi,LOCALENERGY)=et;
-            //thisWalker.Properties(ipsi,LOGPSI)=std::log(abs(psi));
+            //thisWalker.Properties(ipsi,LOGPSI)=std::log(std::abs(psi));
             thisWalker.Properties(ipsi,LOGPSI)=logpsi;
             thisWalker.Properties(ipsi,SIGN)=Psi1[ipsi]->getPhase();
             H1[ipsi]->auxHevaluate(W);

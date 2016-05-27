@@ -249,7 +249,7 @@ void PlaneWaveOrbitalBuilder::ReadHDFWavefunction010(hid_t hfile, RealType& ecut
   {
     //Test that twist = gamma if real coefficients
     for(int idim=0; idim<3; idim++)
-      if(abs(twist[idim]) > 1.e-6)
+      if(std::abs(twist[idim]) > 1.e-6)
       {
         LOGMSG("Error: real wavefunction with non-Gamma twist angle");
         OHMMS::Controller->abort();

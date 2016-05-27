@@ -467,7 +467,7 @@ void DMCWOS::advanceAllWalkers(BRANCHER& Branch)
   //      //RealType backwardGF = exp(-oneover2tau*Dot(deltaR,deltaR));
   //      RealType logbackwardGF = -oneover2tau*Dot(deltaR,deltaR);
   //
-  //      ValueType logpsi(log(abs(psi(iw))));
+  //      ValueType logpsi(log(std::abs(psi(iw))));
   //      prob = std::min(exp(logbackwardGF-forwardGF+2,0*(logpsi-(*it)->Properties(LOGPSI))),1.0);
   //      //prob = std::min(backwardGF/forwardGF*psisq/(*it)->Properties(PSISQ),1.0);
   //      if(Random() > prob) {

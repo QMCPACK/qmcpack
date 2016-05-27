@@ -145,10 +145,10 @@ Make_Loc_Pot(GF& g, const GF& y, const GF& a, const GF& b,
   const double tol = pow(10.0,-10.0);
   for(pt=0; pt < g.size(); pt++)
   {
-    if(fabs(a(pt)) > tol)
+    if(std::abs(a(pt)) > tol)
     {
       ratio = b(pt)/a(pt);
-      if(pt >= max_pt && fabs(ratio) > 1000)
+      if(pt >= max_pt && std::abs(ratio) > 1000)
       {
         ratio = 1000000.0 / ratio;
       }

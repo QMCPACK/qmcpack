@@ -453,14 +453,14 @@ namespace qmcplusplus
     else if(value_type==abs_val)  // modulus
       for(int p=0;p<npoints;++p)
       {
-        file<<"  "<<abs(orb[p]);
+        file<<"  "<<std::abs(orb[p]);
         if((p+1)%columns==0)
           file<< std::endl<<"   ";
       }
     else if(value_type==abs2_val) // modulus^2
       for(int p=0;p<npoints;++p)
       {
-        file<<"  "<<abs(orb[p])*abs(orb[p]);
+        file<<"  "<<std::abs(orb[p])*std::abs(orb[p]);
         if((p+1)%columns==0)
           file<< std::endl<<"   ";
       }

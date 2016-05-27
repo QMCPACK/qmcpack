@@ -172,10 +172,10 @@ struct BsplineFunctor: public OptimizableFunctorBase
             SplineCoefs[i+1]*(dA[ 4]*tp[0] + dA[ 5]*tp[1] + dA[ 6]*tp[2] + dA[ 7]*tp[3])+
             SplineCoefs[i+2]*(dA[ 8]*tp[0] + dA[ 9]*tp[1] + dA[10]*tp[2] + dA[11]*tp[3])+
             SplineCoefs[i+3]*(dA[12]*tp[0] + dA[13]*tp[1] + dA[14]*tp[2] + dA[15]*tp[3]));
-//       if (std::fabs(dudr_FD-dudr) > 1.0e-8)
+//       if (std::abs(dudr_FD-dudr) > 1.0e-8)
 //  std::cerr << "Error in BsplineFunction:  dudr = " << dudr
 //       << "  dudr_FD = " << dudr_FD << std::endl;
-//       if (std::fabs(d2udr2_FD-d2udr2) > 1.0e-4)
+//       if (std::abs(d2udr2_FD-d2udr2) > 1.0e-4)
 //  std::cerr << "Error in BsplineFunction:  r = " << r << "  d2udr2 = " << dudr
 //       << "  d2udr2_FD = " << d2udr2_FD << "  rcut = " << cutoff_radius << std::endl;
     return
@@ -225,13 +225,13 @@ struct BsplineFunctor: public OptimizableFunctorBase
             SplineCoefs[i+1]*(dA[ 4]*tp[0] + dA[ 5]*tp[1] + dA[ 6]*tp[2] + dA[ 7]*tp[3])+
             SplineCoefs[i+2]*(dA[ 8]*tp[0] + dA[ 9]*tp[1] + dA[10]*tp[2] + dA[11]*tp[3])+
             SplineCoefs[i+3]*(dA[12]*tp[0] + dA[13]*tp[1] + dA[14]*tp[2] + dA[15]*tp[3]));
-//       if (std::fabs(dudr_FD-dudr) > 1.0e-8)
+//       if (std::abs(dudr_FD-dudr) > 1.0e-8)
 //  std::cerr << "Error in BsplineFunction:  dudr = " << dudr
 //       << "  dudr_FD = " << dudr_FD << std::endl;
-//       if (std::fabs(d2udr2_FD-d2udr2) > 1.0e-4)
+//       if (std::abs(d2udr2_FD-d2udr2) > 1.0e-4)
 //  std::cerr << "Error in BsplineFunction:  r = " << r << "  d2udr2 = " << dudr
 //       << "  d2udr2_FD = " << d2udr2_FD << "  rcut = " << cutoff_radius << std::endl;
-    // if (std::fabs(d3udr3_FD-d3udr3) > 1.0e-4)
+    // if (std::abs(d3udr3_FD-d3udr3) > 1.0e-4)
     //  std::cerr << "Error in BsplineFunction:  r = " << r << "  d3udr3 = " << dudr
     //       << "  d3udr3_FD = " << d3udr3_FD << "  rcut = " << cutoff_radius << std::endl;
     return

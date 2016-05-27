@@ -235,7 +235,7 @@ bool DMCcuda::run()
 // 	      int elMax = -1;
 // 	      PosType posMax;
 // 	      for (int j=1; j<Txy[iw].size(); j++)
-// 		if (std::fabs(Txy[iw][j].Weight) > std::fabs(maxWeight)) {
+// 		if (std::abs(Txy[iw][j].Weight) > std::abs(maxWeight)) {
 // 		  maxWeight = Txy[iw][j].Weight;
 // 		  elMax = Txy[iw][j].PID;
 // 		  posMax = W[iw]->R[elMax] + Txy[iw][j].Delta;

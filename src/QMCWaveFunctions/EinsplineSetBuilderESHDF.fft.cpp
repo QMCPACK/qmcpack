@@ -417,8 +417,8 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
 //        }
 //        if(!found)
 //        {
-//          if((abs(k1[1])<qafm+0.0001)&&(abs(k1[1])>qafm-0.0001)) k1[1]*=-1;
-//          else if((abs(k1[2])<qafm+0.0001)&&(abs(k1[2])>qafm-0.0001)) k1[2]*=-1;
+//          if((std::abs(k1[1])<qafm+0.0001)&&(std::abs(k1[1])>qafm-0.0001)) k1[1]*=-1;
+//          else if((std::abs(k1[2])<qafm+0.0001)&&(std::abs(k1[2])>qafm-0.0001)) k1[2]*=-1;
 //
 //          for (int tj=0; tj<TwistAngles.size(); tj++)
 //          {

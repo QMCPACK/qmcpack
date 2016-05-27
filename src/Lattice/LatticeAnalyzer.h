@@ -60,7 +60,7 @@ struct LatticeAnalyzer<T,3>
 
   inline bool isDiagonalOnly(const Tensor_t& R) const
   {
-    T offdiag=abs(R(0,1))+abs(R(0,2))+abs(R(1,0))+abs(R(1,2))+abs(R(2,0))+abs(R(2,1));
+    T offdiag=std::abs(R(0,1))+std::abs(R(0,2))+std::abs(R(1,0))+std::abs(R(1,2))+std::abs(R(2,0))+std::abs(R(2,1));
     return (offdiag< std::numeric_limits<T>::epsilon());
   }
 
@@ -199,7 +199,7 @@ struct LatticeAnalyzer<T,2>
 
   inline bool isDiagonalOnly(const Tensor<T,2>& R) const
   {
-    T offdiag=abs(R(0,1))+abs(R(1,0));
+    T offdiag=std::abs(R(0,1))+std::abs(R(1,0));
     return (offdiag< std::numeric_limits<T>::epsilon());
   }
 

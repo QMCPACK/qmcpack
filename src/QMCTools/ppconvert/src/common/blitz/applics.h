@@ -331,7 +331,7 @@ public:
 // Applicative templates for these functions are defined in
 // <blitz/mathfunc.h>, which is included below:
 //
-// std::abs(i), labs(l)                     Absolute value
+// std::abs(i), lstd::abs(l)                     Absolute value
 // acos(d), acols(ld)                  Inverse cosine
 // acosh(d)                            Inverse hyperbolic cosine
 // asin(d), asinl(ld)                  Inverse sine
@@ -350,7 +350,7 @@ public:
 // expm1(d)                            Exp(x)-1     
 // erf(d), erfl(ld)                    Error function
 // erfc(d), erfcl(ld)                  Complementary error function
-// fabs(d), fabsl(ld)                  Floating point absolute value
+// std::abs(d), fabsl(ld)                  Floating point absolute value
 // int finite(d)                       Nonzero if finite
 // floor(d), floor(ld)                 Largest f-int not greater than x
 // fmod(d,d), fmodl(ld,ld)             Floating point remainder

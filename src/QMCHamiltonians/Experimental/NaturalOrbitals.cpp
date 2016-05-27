@@ -214,9 +214,9 @@ bool NaturalOrbitals::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootNod
         kpt[1]=i-twist[1];
         kpt[2]=i-twist[2];
         kpt=Lattice.k_cart(kpt);
-        Q[i+kgrid]=abs(kpt[0]);
-        Q[i+kgrid+(2*kgrid+1)]=abs(kpt[1]);
-        Q[i+kgrid+(4*kgrid+2)]=abs(kpt[2]);
+        Q[i+kgrid]=std::abs(kpt[0]);
+        Q[i+kgrid+(2*kgrid+1)]=std::abs(kpt[1]);
+        Q[i+kgrid+(4*kgrid+2)]=std::abs(kpt[2]);
       }
       app_log()<<" Using all k-space points with (nx^2+ny^2+nz^2)^0.5 < "<< kgrid <<" for Momentum Distribution."<< std::endl;
       app_log()<<"  My twist is:"<<twist[0]<<"  "<<twist[1]<<"  "<<twist[2]<< std::endl;
@@ -265,8 +265,8 @@ bool NaturalOrbitals::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootNod
         kpt[0]=i-twist[0];
         kpt[1]=i-twist[1];
         kpt=Lattice.k_cart(kpt);
-        Q[i+kgrid]=abs(kpt[0]);
-        Q[i+kgrid+(2*kgrid+1)]=abs(kpt[1]);
+        Q[i+kgrid]=std::abs(kpt[0]);
+        Q[i+kgrid+(2*kgrid+1)]=std::abs(kpt[1]);
       }
       app_log()<<" Using all k-space points with (nx^2+ny^2)^0.5 < "<< kgrid <<" for Momentum Distribution."<< std::endl;
       app_log()<<"  My twist is:"<<twist[0]<<"  "<<twist[1]<< std::endl;

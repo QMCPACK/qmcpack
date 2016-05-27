@@ -470,7 +470,7 @@ DiracDeterminantBase::evalGradSource
   // 	for (int k=0; k<NumPtcls; k++)
   // 	  val += psiM(i,k) * psiM_temp(k,j);
   // 	val -= (i == j) ? 1.0 : 0.0;
-  // 	if (std::fabs(val) > 1.0e-12)
+  // 	if (std::abs(val) > 1.0e-12)
   // 	  std::cerr << "Error in inverse.\n";
   //   }
   // for (int i=0; i<NumPtcls; i++) {
@@ -610,7 +610,7 @@ DiracDeterminantBase::ValueType DiracDeterminantBase::ratio(ParticleSet& P, int 
   //psiM_temp = psiM;
   curRatio= DetRatioByRow(psiM_temp, psiV, WorkingIndex);
   RatioTimer.stop();
-  if(abs(curRatio)<std::numeric_limits<RealType>::epsilon())
+  if(std::abs(curRatio)<std::numeric_limits<RealType>::epsilon())
   {
     UpdateMode=ORB_PBYP_RATIO; //singularity! do not update inverse
     return 0.0;

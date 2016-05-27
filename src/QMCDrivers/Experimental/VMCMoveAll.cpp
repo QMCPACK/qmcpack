@@ -213,7 +213,7 @@ void VMCMoveAll::advanceAllWalkers()
   //     for(int iat=0; iat<nptcl; iat++) (*it)->R(iat) = Wref.R(iw,iat);
   //     for(int iat=0; iat<nptcl; iat++) (*it)->Drift(iat) = Wref.G(iw,iat);
   //     (*it)->Properties(PSI) = psi(iw);
-  //     (*it)->Properties(LOGPSI) = logpsi;//log(fabs(psi));
+  //     (*it)->Properties(LOGPSI) = logpsi;//log(std::abs(psi));
   //     (*it)->Properties(LOCALENERGY) = energy(iw);
   //     ++nAccept;
   //   }

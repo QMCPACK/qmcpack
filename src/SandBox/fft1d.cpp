@@ -32,7 +32,7 @@ inline T abs_diff(T a, T b)
 template<typename T>
 inline T abs_diff(std::complex<T>& a, std::complex<T>& b)
 {
-  return std::abs(a.real()-b.real())+abs(a.imag()-b.imag());
+  return std::abs(a.real()-b.real())+std::abs(a.imag()-b.imag());
 }
 
 template<typename T>

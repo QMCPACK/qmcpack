@@ -194,11 +194,11 @@ DiracDeterminantCUDA::update (std::vector<Walker_t*> &walkers, int iat)
         float val = 0.0;
         for (int k=0; k<NumPtcls; k++)
           val += Ainv[i][k]*A[k][j];
-        if (i==j && (std::fabs(val-1.0) > 1.0e-2))
+        if (i==j && (std::abs(val-1.0) > 1.0e-2))
           std::cerr << "Error in inverse at (i,j) = (" << i << ", " << j
                << ")  val = " << val << "  walker = " << iw
                << " of " << walkers.size() << std::endl;
-        else if ((i!=j) && (std::fabs(val) > 1.0e-2))
+        else if ((i!=j) && (std::abs(val) > 1.0e-2))
           std::cerr << "Error in inverse at (i,j) = (" << i << ", " << j
                << ")  val = " << val << "  walker = " << iw
                << " of " << walkers.size() << std::endl;
@@ -310,11 +310,11 @@ DiracDeterminantCUDA::update (const std::vector<Walker_t*> &walkers,
         float val = 0.0;
         for (int k=0; k<NumPtcls; k++)
           val += Ainv[i][k]*A[k][j];
-        if (i==j && (std::fabs(val-1.0) > 1.0e-2))
+        if (i==j && (std::abs(val-1.0) > 1.0e-2))
           std::cerr << "Error in inverse at (i,j) = (" << i << ", " << j
                << ")  val = " << val << "  walker = " << iw
                << " of " << walkers.size() << std::endl;
-        else if ((i!=j) && (std::fabs(val) > 1.0e-2))
+        else if ((i!=j) && (std::abs(val) > 1.0e-2))
           std::cerr << "Error in inverse at (i,j) = (" << i << ", " << j
                << ")  val = " << val << "  walker = " << iw
                << " of " << walkers.size() << std::endl;
@@ -378,7 +378,7 @@ DiracDeterminantCUDA::recompute(MCWalkerConfiguration &W, bool firstTime)
 // 	  int off = i*RowStride+j + AOffset;
 // 	  double oldA = old_data[off];
 // 	  double newA = new_data[off];
-// 	  if (std::fabs(oldA-newA) > 1.0e-9) {
+// 	  if (std::abs(oldA-newA) > 1.0e-9) {
 // 	    char buff[200];
 // 	    snprintf (buff, 200, "(%3d, %3d)  old=%10.6e  new=%10.6e\n",
 // 		      i,j, oldA, newA);
@@ -485,7 +485,7 @@ DiracDeterminantCUDA::addLog (MCWalkerConfiguration &W, std::vector<RealType> &l
     for (int i=0; i<NumPtcls; i++)
       for (int j=0; j<NumOrbitals; j++)
         A[i*NumOrbitals+j] = host_data[AOffset+i*RowStride+j];
-    logPsi[iw] += std::log(std::fabs(Invert(A.data(), NumPtcls, NumOrbitals)));
+    logPsi[iw] += std::log(std::abs(Invert(A.data(), NumPtcls, NumOrbitals)));
     int N = NumPtcls;
     bool passed = true;
     for (int i=0; i<NumPtcls; i++)
@@ -505,13 +505,13 @@ DiracDeterminantCUDA::addLog (MCWalkerConfiguration &W, std::vector<RealType> &l
     // 	    val += aval * ainv;
     // 	  }
     // 	  if (i == j) {
-    // 	    if (std::fabs(val - 1.0) > 1.0e-2) {
+    // 	    if (std::abs(val - 1.0) > 1.0e-2) {
     // 	      app_error() << "Error in inverse, (i,j) = " << i << ", " << j << ".\n";
     // 	      passed = false;
     // 	    }
     // 	  }
     // 	  else
-    // 	    if (std::fabs(val) > 1.0e-2) {
+    // 	    if (std::abs(val) > 1.0e-2) {
     // 	      app_error() << "Error in inverse, (i,j) = " << i << ", " << j << ".\n";
     // 	      passed = false;
     // 	    }
@@ -652,7 +652,7 @@ void DiracDeterminantCUDA::ratio (MCWalkerConfiguration &W, int iat,
     Phi->evaluate(P, iat-FirstIndex, testPhi, testGrad, testLapl);
     for (int iorb=0; iorb<NumOrbitals; iorb++)
     {
-      //if (std::fabs(host_vec[newRowOffset+iorb]-testPhi[iorb]) > 1.0e-6)
+      //if (std::abs(host_vec[newRowOffset+iorb]-testPhi[iorb]) > 1.0e-6)
       //   fprintf (stderr, "CUDA = %1.8e    CPU = %1.8e\n",
       // 	   host_vec[newRowOffset+iorb], testPhi[iorb]);
       fprintf (stderr, "CUDA = %1.8e    CPU = %1.8e\n",
@@ -1180,7 +1180,7 @@ DiracDeterminantCUDA::NLratios (MCWalkerConfiguration &W,
   // DEBUG DEBUG DEBUG
   // for (int i=0; i<psi_ratios.size(); i++) {
   //   double diff = psi_ratios[i] - cpu_ratios[i];
-  //   if (std::fabs(diff) > 1.0e-8)
+  //   if (std::abs(diff) > 1.0e-8)
   // 	fprintf (stderr, "i=%d  GPU=%1.12f  CPU=%1.12f  FirstIndex=%d\n",
   // 		 i, psi_ratios[i], cpu_ratios[i], FirstIndex);
   // }

@@ -929,14 +929,14 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur, std::vector<ci_configuration>
         if(qc_ci == 0.0)
           qc_ci = ci;
         //Can discriminate based on any of 3 criterion
-        if(((abs(qc_ci) < cutoff)&&(CSFChoice=="qchem_coeff"))||((CSFChoice=="exctLvl")&&(exctLvl>cutoff))||((CSFChoice=="coeff")&&(abs(ci) < cutoff)))
+        if(((std::abs(qc_ci) < cutoff)&&(CSFChoice=="qchem_coeff"))||((CSFChoice=="exctLvl")&&(exctLvl>cutoff))||((CSFChoice=="coeff")&&(std::abs(ci) < cutoff)))
         {
           cur = cur->next;
           cnt0++;
           continue;
         }
         cnt0++;
-        if(abs(qc_ci)<zero_cutoff)
+        if(std::abs(qc_ci)<zero_cutoff)
           ci=0.0;
         CSFcoeff.push_back(ci);
         sumsq_qc += qc_ci*qc_ci;
@@ -1043,14 +1043,14 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur, std::vector<ci_configuration>
         confAttrib.put(cur);
         if(qc_ci == 0.0)
           qc_ci = ci;
-        if(abs(qc_ci) < cutoff)
+        if(std::abs(qc_ci) < cutoff)
         {
           cur = cur->next;
           cnt0++;
           continue;
         }
         cnt0++;
-        if(abs(qc_ci) < zero_cutoff)
+        if(std::abs(qc_ci) < zero_cutoff)
           ci=0.0;
         int nq=0,na,nr;
         if(alpha.size() < nstates)

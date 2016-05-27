@@ -62,7 +62,7 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
   PolynomialFunctor3D(real_type ee_cusp=0.0, real_type eI_cusp=0.0) :
     N_eI(0), N_ee(0), ResetCount(0), C(3), scale(1.0), notOpt(false)
   {
-    if (std::fabs(ee_cusp) > 0.0 || std::fabs(eI_cusp) > 0.0)
+    if (std::abs(ee_cusp) > 0.0 || std::abs(eI_cusp) > 0.0)
     {
       app_error() << "PolynomialFunctor3D does not support nonzero cusp.\n";
       abort();
@@ -176,10 +176,10 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
       {
         col++;
         max_loc = row;
-        max_abs = std::fabs(ConstraintMatrix(row,col));
+        max_abs = std::abs(ConstraintMatrix(row,col));
         for (int ri=row+1; ri<NumConstraints; ri++)
         {
-          real_type abs_val = std::fabs(ConstraintMatrix(ri,col));
+          real_type abs_val = std::abs(ConstraintMatrix(ri,col));
           if (abs_val > max_abs)
           {
             max_loc = ri;
@@ -255,7 +255,7 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
       {
         // fprintf (stderr, "constraintMatrix(%d,%d) = %1.10f\n",
         // 	   var, i, ConstraintMatrix(var,i));
-        assert (std::fabs(ConstraintMatrix(var,i) -1.0) < 1.0e-6);
+        assert (std::abs(ConstraintMatrix(var,i) -1.0) < 1.0e-6);
         for (int j=0; j<NumGamma; j++)
           if (i != j)
             GammaVec[i] -= ConstraintMatrix(var,j) * GammaVec[j];
@@ -285,7 +285,7 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
               sum += GammaVec[i];
         }
       }
-      if (std::fabs(sum) > 1.0e-9)
+      if (std::abs(sum) > 1.0e-9)
         std::cerr << "error in k = " << k << "  sum = " << sum << std::endl;
     }
     for (int k=0; k<=2*N_eI; k++)
@@ -301,7 +301,7 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
           sum += gamma(l,m,1);
         }
       }
-      if (std::fabs(sum) > 1.0e-6)
+      if (std::abs(sum) > 1.0e-6)
       {
         app_error() << "e-e constraint not satisfied in PolynomialFunctor3D:  k="
                     << k << "  sum=" << sum << std::endl;
@@ -323,7 +323,7 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
           // 	     k, m, n, gamma(0,m,n), m, n, gamma(1,m,n));
         }
       }
-      if (std::fabs(sum) > 1.0e-6)
+      if (std::abs(sum) > 1.0e-6)
       {
         app_error() << "e-I constraint not satisfied in PolynomialFunctor3D:  k="
                     << k << "  sum=" << sum << std::endl;
@@ -728,7 +728,7 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
           }
           else
             if (i != j)
-              assert (std::fabs(ConstraintMatrix(constraint,j)) < 1.0e-10);
+              assert (std::abs(ConstraintMatrix(constraint,j)) < 1.0e-10);
         constraint++;
       }
     }
@@ -889,8 +889,8 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
         for (int k=0; k<N; k++)
         {
           double r_2I = (real_type)k/(real_type)(N-1) * 0.5*cutoff_radius;
-          double rmin = std::fabs(r_1I - r_2I);
-          double rmax = std::fabs(r_1I + r_2I);
+          double rmin = std::abs(r_1I - r_2I);
+          double rmax = std::abs(r_1I + r_2I);
           double r = rmin + r_12*(rmax-rmin);
           val(i,j,k) = evaluate (r, r_1I, r_2I);
         }

@@ -138,7 +138,7 @@ public:
       // 	  for (int k=0; k<OHMMS_DIM; k++)
       // 	    sum += LHost[OHMMS_DIM*i+k]*LinvHost[OHMMS_DIM*k+j];
       // 	  if (i == j) sum -= 1.0;
-      // 	  if (std::fabs(sum) > 1.0e-5) {
+      // 	  if (std::abs(sum) > 1.0e-5) {
       // 	    app_error() << "sum = " << sum << std::endl;
       // 	    app_error() << "Linv * L != identity.\n";
       // 	    abort();

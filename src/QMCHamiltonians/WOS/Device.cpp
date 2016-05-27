@@ -83,7 +83,7 @@ double Device::contrib0( int i,
     posvec_t rdiff = WP->R[j] - domain.runner;
     double r = sqrt(dot(rdiff,rdiff));
     /// r should be smaller than radius but not too close to centre.
-    contrib += WP->Q[j] * ( fabs( r - domain.radius ) - r + domain.radius )
+    contrib += WP->Q[j] * ( std::abs( r - domain.radius ) - r + domain.radius )
                / ( 2.0 * r * domain.radius + 1.e-20 );
   }
   WP->Q[i] = Qi;
@@ -98,7 +98,7 @@ double Device::contribk( const Domain& domain,
   {
     posvec_t rdiff = WP->R[j] - domain.runner;
     double r = sqrt(dot(rdiff,rdiff));
-    contrib +=  WP->Q[j] * ( fabs( r - domain.radius) - r + domain.radius )
+    contrib +=  WP->Q[j] * ( std::abs( r - domain.radius) - r + domain.radius )
                 / ( 2.0 * r * domain.radius + 1.e-20 );
   }
   return contrib;

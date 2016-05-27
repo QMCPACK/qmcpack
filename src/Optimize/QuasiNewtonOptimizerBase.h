@@ -85,7 +85,7 @@ public:
     for(int i=1; i<=n; i++)
     {
       x[i] = val[i-1];
-      xm[i] = fabs(x[i]) + 0.01;
+      xm[i] = std::abs(x[i]) + 0.01;
       OutStream << x[i] << " ";
     }
     OutStream << std::endl;
@@ -161,7 +161,7 @@ public:
     if(DeltaFn == 0)
       df = f - z;
     if(DeltaFn < 0)
-      df = fabs(df * f);
+      df = std::abs(df * f);
     if(df <= 0)
       df = 1;
 funct17:
@@ -237,8 +237,8 @@ funct21:
     gs0 = 0;
     for(int i=1; i<=n; i++)
     {
-      if(z * xm[i] < fabs(w[is+i]))
-        z = fabs(w[is+i]) / xm[i];
+      if(z * xm[i] < std::abs(w[is+i]))
+        z = std::abs(w[is+i]) / xm[i];
       gs0 += g[i] * w[is+i];
     }
     aeps = Epsilon / z;

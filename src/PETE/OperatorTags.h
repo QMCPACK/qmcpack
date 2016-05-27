@@ -26,6 +26,9 @@
 // ----------------------------------------------------------------------
 // ACL:license
 
+#include <cstdlib>
+#include <cmath>
+
 #ifndef PETE_PETE_OPERATORTAGS_H
 #define PETE_PETE_OPERATORTAGS_H
 
@@ -128,7 +131,7 @@ struct FnFabs
   inline typename UnaryReturn<T, FnFabs >::Type_t
   operator()(const T &a) const
   {
-    return (fabs(a));
+    return (std::abs(a));
   }
 };
 

@@ -298,7 +298,7 @@ void WMJastrowBuilder::add2BasisGroup(BasisGroupType* curBG, xmlNodePtr cur)
     cur=cur->next;
   }
   //non-zero cusp
-  if(abs(curBG->Cusp)>std::numeric_limits<RealType>::epsilon())
+  if(std::abs(curBG->Cusp)>std::numeric_limits<RealType>::epsilon())
   {
     CuspCorrectionFunctor<RealType> *a  = new CuspCorrectionFunctor<RealType>(cusp_exponent,curBG->Rcut);
     app_log() << "  Adding a cusp term: " << curBG->Cusp << "* (-1/b exp(-br)), b=" << a->E << std::endl;

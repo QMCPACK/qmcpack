@@ -28,7 +28,7 @@ public:
     static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
-        str += "abs(";
+        str += "std::abs(";
         a.prettyPrint(str,format);
         str += ")";
     }
@@ -49,7 +49,7 @@ public:
     static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
-        str += "labs(";
+        str += "lstd::abs(";
         a.prettyPrint(str,format);
         str += ")";
     }
@@ -70,7 +70,7 @@ public:
     static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
-        str += "fabs(";
+        str += "std::abs(";
         a.prettyPrint(str,format);
         str += ")";
     }
@@ -90,7 +90,7 @@ public:
     static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
-        str += "fabs(";
+        str += "std::abs(";
         a.prettyPrint(str,format);
         str += ")";
     }
@@ -110,7 +110,7 @@ public:
     static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
-        str += "fabs(";
+        str += "std::abs(";
         a.prettyPrint(str,format);
         str += ")";
     }
@@ -131,7 +131,7 @@ public:
     static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
-        str += "abs(";
+        str += "std::abs(";
         a.prettyPrint(str,format);
         str += ")";
     }
@@ -153,7 +153,7 @@ public:
     static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
-        str += "abs(";
+        str += "std::abs(";
         a.prettyPrint(str,format);
         str += ")";
     }
@@ -175,7 +175,7 @@ public:
     static void prettyPrint(BZ_STD_SCOPE( std::string) &str, prettyPrintFormat& format,
         const T1& a)
     {
-        str += "abs(";
+        str += "std::abs(";
         a.prettyPrint(str,format);
         str += ")";
     }

@@ -133,14 +133,14 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W)
   int icdiff=0;
   for(iw=0; iw<nw; iw++)
   {
-    RealType tryp=wCur+abs(wConf[iw]);
+    RealType tryp=wCur+std::abs(wConf[iw]);
     int ni=0;
     while(Zeta[ind]<tryp && Zeta[ind] >= wCur)
     {
       ind++;
       ni++;
     }
-    wCur+=abs(wConf[iw]);
+    wCur+=std::abs(wConf[iw]);
     if(ni)
     {
       icdiff++;

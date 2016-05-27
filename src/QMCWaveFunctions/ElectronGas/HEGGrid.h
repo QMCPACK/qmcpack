@@ -270,7 +270,7 @@ struct HEGGrid<T,3>
           PosType k(i0+tw[0],i1+tw[1],i2+tw[2]);
           kp->k  = Lattice.k_cart(k);
           kp->k2 = Lattice.ksq(k);
-          if(abs(i0)==(nc+1) || std::abs(i1)==(nc+1) || std::abs(i2)==(nc+1))
+          if(std::abs(i0)==(nc+1) || std::abs(i1)==(nc+1) || std::abs(i2)==(nc+1))
             k2max = std::min(k2max,kp->k2);
           ++kp;
         }

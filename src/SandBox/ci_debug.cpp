@@ -36,7 +36,7 @@ inline void check_ratios(const CT& a, const CT& b, T eps)
   T del;
   std::cout.setf(std::ios::scientific, std::ios::floatfield);
   for(int i=0; i<a.size(); ++i)
-    if(abs(del=(a[i]/b[i]-1.0))>eps)
+    if(std::abs(del=(a[i]/b[i]-1.0))>eps)
       std::cout << i << " recursive=" << a[i] << " error=" << del << std::endl;
 }
 

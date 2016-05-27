@@ -332,7 +332,7 @@ public:
       return 0.0;
     }
 #else
-    if(abs(curRatio)<std::numeric_limits<RealType>::epsilon())
+    if(std::abs(curRatio)<std::numeric_limits<RealType>::epsilon())
     {
       UpdateMode = ORB_PBYP_RATIO;
       return 0.0;

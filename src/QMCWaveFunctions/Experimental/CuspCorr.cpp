@@ -98,8 +98,8 @@ void CuspCorr<BS>::executeWithRCLoop(int curOrb_, int curCenter_, double Zion, L
   xc=xb + 0.4*(xd-xb);
   fc=execute(curOrb_,curCenter_,Zion,Phi,Eta,xgrid,rad_orb,"NULL",xc,data);
   // find minimum
-  //while( std::fabs(xa-xd) > 1e-4*(std::fabs(xb)+std::fabs(xc)) ) // from Num Rec.
-  while( std::fabs(xa-xd) > 0.01 ) // from Num Rec.
+  //while( std::abs(xa-xd) > 1e-4*(std::abs(xb)+std::abs(xc)) ) // from Num Rec.
+  while( std::abs(xa-xd) > 0.01 ) // from Num Rec.
   {
     if(fb > fc)
     {
@@ -218,7 +218,7 @@ double CuspCorr<BS>::execute(int curOrb_, int curCenter_, double Zion, LCOrbital
   xc=xb + 0.4*(xd-xb);
   fc=loop(xc,X);
   // find minimum
-  while( std::fabs(xa-xd) > 1e-5*(std::fabs(xb)+std::fabs(xc)) ) // from Num Rec.
+  while( std::abs(xa-xd) > 1e-5*(std::abs(xb)+std::abs(xc)) ) // from Num Rec.
   {
     //app_log()<<"xa,fa: " <<xa <<"  " <<loop(xa,X) << std::endl
     //   <<"xb,fb: " <<xb <<"  " <<fb << std::endl

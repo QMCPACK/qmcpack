@@ -223,7 +223,7 @@ bool CGOptimization<T>::optimize()
     gdoth = dotProduct(gY,gY0);
     gamma = (gdotg-gdoth)/gdotg0;
     gY0=gY; //save the current gradient
-    if(abs(gamma) < GammaTol)
+    if(std::abs(gamma) < GammaTol)
     {
       if(msg_stream)
         *msg_stream << " CGOptimization::Converged conjugate gradients; gamma = " << gamma << "<" << GammaTol << std::endl;
@@ -235,7 +235,7 @@ bool CGOptimization<T>::optimize()
         *msg_stream << " CGOptimization restart: " << gamma << " is too big." << std::endl;
       RestartCG = true;
     }
-    Return_t dx=abs((curCost-prevCost)/curCost);
+    Return_t dx=std::abs((curCost-prevCost)/curCost);
     if(dx <= CostTol)
     {
       if(msg_stream)

@@ -59,7 +59,7 @@ void Uniform2DGridLayout::makeShell(std::vector<SingleParticleIndex_t>& RS,
     {
       if(ix1==0 && ix2 == 0)
         continue;
-      Scalar_t y=abs(ix2)*Delta[1];
+      Scalar_t y=std::abs(ix2)*Delta[1];
       ic++;
       SingleParticlePos_t tc(x-dx,y-dy);
       int ih = static_cast<int>(Dot(tc,tc)*scaleL);

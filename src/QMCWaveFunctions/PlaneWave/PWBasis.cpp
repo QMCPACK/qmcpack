@@ -132,7 +132,7 @@ void PWBasis::trimforecut()
   //Store the maximum number of translations, within ecut, of any reciprocal cell vector.
   for(int ig=0; ig<NumPlaneWaves; ig++)
     for(int i=0; i<OHMMS_DIM; i++)
-      if(abs(gvecs[ig][i]) > maxg[i])
+      if(std::abs(gvecs[ig][i]) > maxg[i])
         maxg[i] = std::abs(gvecs[ig][i]);
   gvecs_shifted.resize(NumPlaneWaves);
   for(int ig=0; ig<NumPlaneWaves; ig++)

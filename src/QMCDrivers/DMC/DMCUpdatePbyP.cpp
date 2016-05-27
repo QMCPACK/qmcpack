@@ -163,7 +163,7 @@ void DMCUpdatePbyPWithRejection::advanceWalkers(WalkerIter_t it, WalkerIter_t it
       else
         enew= H.evaluate(W);
       myTimers[3]->stop();
-      //thisWalker.resetProperty(std::log(abs(psi)),psi,enew,rr_accepted,rr_proposed,nodecorr);
+      //thisWalker.resetProperty(std::log(std::abs(psi)),psi,enew,rr_accepted,rr_proposed,nodecorr);
       thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,nodecorr );
       H.auxHevaluate(W,thisWalker);
       H.saveProperty(thisWalker.getPropertyBase());

@@ -150,7 +150,7 @@ void VMCParticleByParticle::runBlockWithDrift()
         psi = Psi.evaluate(W,w_buffer);
         thisWalker.R = W.R;
         RealType eloc=H.evaluate(W);
-        thisWalker.resetProperty(log(abs(psi)), psi,eloc);
+        thisWalker.resetProperty(log(std::abs(psi)), psi,eloc);
         H.saveProperty(thisWalker.getPropertyBase());
       }
       else

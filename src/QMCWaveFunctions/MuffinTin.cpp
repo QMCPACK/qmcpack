@@ -282,7 +282,7 @@ MuffinTinClass::init_APW (Vector<double> rgrid,
   RadialGrid =  create_log_grid (rgrid[0], APWRadius, rgrid.size());
   //RadialGrid = create_general_grid (rgrid.data(), rgrid.size());
   for (int i=0; i<rgrid.size(); i++)
-    if (std::fabs(rgrid[i]-RadialGrid->points[i]) > 1.0e-12)
+    if (std::abs(rgrid[i]-RadialGrid->points[i]) > 1.0e-12)
       app_error() << "Error in creating log grid.\n"
                   << "rgrid[i] = " << rgrid[i] << "   "
                   << "RadialGrid->points[i] = "

@@ -100,7 +100,7 @@ void QMCCostFunctionOMP::GradCost(std::vector<Return_t>& PGradient, const std::v
         const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
         Return_t weight=saved[REWEIGHT]*wgtinv;
         Return_t eloc_new=saved[ENERGY_NEW];
-        delE_bar += weight*std::pow(abs(eloc_new-EtargetEff),PowerE);
+        delE_bar += weight*std::pow(std::abs(eloc_new-EtargetEff),PowerE);
         const Return_t* HDsaved= (*HDerivRecords[ip])[iw];
         for (int pm=0; pm<NumOptimizables; pm++)
           HD_avg[pm]+= HDsaved[pm];
@@ -122,8 +122,8 @@ void QMCCostFunctionOMP::GradCost(std::vector<Return_t>& PGradient, const std::v
         bool ltz(true);
         if (eloc_new-EtargetEff<0)
           ltz=false;
-        Return_t delE=std::pow(abs(eloc_new-EtargetEff),PowerE);
-        Return_t ddelE = PowerE*std::pow(abs(eloc_new-EtargetEff),PowerE-1);
+        Return_t delE=std::pow(std::abs(eloc_new-EtargetEff),PowerE);
+        Return_t ddelE = PowerE*std::pow(std::abs(eloc_new-EtargetEff),PowerE-1);
         const Return_t* Dsaved= (*DerivRecords[ip])[iw];
         const Return_t* HDsaved= (*HDerivRecords[ip])[iw];
         for (int pm=0; pm<NumOptimizables; pm++)
@@ -165,13 +165,13 @@ void QMCCostFunctionOMP::GradCost(std::vector<Return_t>& PGradient, const std::v
     for (int j=0; j<NumOptimizables; j++)
     {
       PGradient[j] = 0.0;
-      if (std::fabs(w_var) > 1.0e-10)
+      if (std::abs(w_var) > 1.0e-10)
         PGradient[j] += w_var*E2Dtotals_w[j];
-      if (std::fabs(w_en)  > 1.0e-10)
+      if (std::abs(w_en)  > 1.0e-10)
         PGradient[j] += w_en*EDtotals_w[j];
-      if (std::fabs(w_w)   > 1.0e-10)
+      if (std::abs(w_w)   > 1.0e-10)
         PGradient[j] += w_w*URV[j];
-      if (std::fabs(w_abs) > 1.0e-10)
+      if (std::abs(w_abs) > 1.0e-10)
         PGradient[j] += w_abs*EDtotals[j];
     }
     IsValid=true;
@@ -608,7 +608,7 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::correlatedSampling(bool needGra
       const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
       Return_t weight=saved[REWEIGHT]*wgt_tot;
       Return_t eloc_new=saved[ENERGY_NEW];
-      Return_t delE=std::pow(abs(eloc_new-EtargetEff),PowerE);
+      Return_t delE=std::pow(std::abs(eloc_new-EtargetEff),PowerE);
       SumValue[SUM_E_BARE] += eloc_new;
       SumValue[SUM_ESQ_BARE] += eloc_new*eloc_new;
       SumValue[SUM_ABSE_BARE] += delE;

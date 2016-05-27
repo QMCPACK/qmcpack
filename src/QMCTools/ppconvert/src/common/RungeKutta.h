@@ -21,17 +21,17 @@
 
 inline double mag (double x)
 {
-  return (fabs(x));
+  return (std::abs(x));
 }
 
 inline double mag (const Vec2 &x)
 {
-  return (fabs(x[0]) + fabs(x[1]));
+  return (std::abs(x[0]) + std::abs(x[1]));
 }
 
 inline double mag (const Vec3 &x)
 {
-  return (fabs(x[0])+fabs(x[1])+fabs(x[2]));
+  return (std::abs(x[0])+std::abs(x[1])+std::abs(x[2]));
 }
 
 template <class IntegrandClass, class T>

@@ -91,7 +91,7 @@ bool QMCMain::executeCMCSection(xmlNodePtr cur)
     double logpsi3 = primaryPsi->evaluateLog(*qmcSystem);
     double eloc3  = primaryH->evaluate(*qmcSystem);
 
-    if(abs(eloc1-eloc3)>1e-12)
+    if(std::abs(eloc1-eloc3)>1e-12)
     {
       std::cout << "ERROR Energies are different " << std::endl;
     }

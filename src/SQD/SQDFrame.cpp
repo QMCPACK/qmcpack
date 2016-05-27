@@ -144,7 +144,7 @@ void SQDFrame::showEvent( QShowEvent *event)
 //   for(orb=1; orb<Psi.NumUniqueOrb; orb++){
 //     int n_cur = Psi.N[orb];
 //     int l_cur = Psi.L[orb];
-//     //if(fabs(e-HFSolver->getE(orb))>1e-6 || n_cur != n || l_cur != l ) {
+//     //if(std::abs(e-HFSolver->getE(orb))>1e-6 || n_cur != n || l_cur != l ) {
 //     if(n_cur != n || l_cur != l) {
 //       n=n_cur; l=l_cur;
 //       cname= QString("n=%1.l=%2").arg(n,l);

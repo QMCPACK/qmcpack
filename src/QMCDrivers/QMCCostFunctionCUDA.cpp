@@ -158,7 +158,7 @@ QMCCostFunctionCUDA::Return_t QMCCostFunctionCUDA::correlatedSampling(bool needD
     const Return_t* restrict saved = &(Records(iw,0));
     Return_t weight=saved[REWEIGHT]*wgt_tot;
     Return_t eloc_new=saved[ENERGY_NEW];
-    Return_t delE=std::pow(abs(eloc_new-EtargetEff),PowerE);
+    Return_t delE=std::pow(std::abs(eloc_new-EtargetEff),PowerE);
     SumValue[SUM_E_BARE]    += eloc_new;
     SumValue[SUM_ESQ_BARE]  += eloc_new*eloc_new;
     SumValue[SUM_ABSE_BARE] += delE;
@@ -382,7 +382,7 @@ void QMCCostFunctionCUDA::resetPsi(bool final_reset)
 void
 QMCCostFunctionCUDA::GradCost(std::vector<Return_t>& PGradient, const std::vector<Return_t>& PM, Return_t FiniteDiff)
 {
-  if (std::fabs(FiniteDiff) > 1.0e-10)
+  if (std::abs(FiniteDiff) > 1.0e-10)
   {
     QMCTraits::RealType dh=1.0/(2.0*FiniteDiff);
     for (int i=0; i<NumOptimizables ; i++)
@@ -420,7 +420,7 @@ QMCCostFunctionCUDA::GradCost(std::vector<Return_t>& PGradient, const std::vecto
       const Return_t* restrict saved = &(Records(iw,0));
       Return_t weight=saved[REWEIGHT]*wgtinv;
       Return_t eloc_new=saved[ENERGY_NEW];
-      delE_bar += weight*std::pow(abs(eloc_new-EtargetEff),PowerE);
+      delE_bar += weight*std::pow(std::abs(eloc_new-EtargetEff),PowerE);
       std::vector<Return_t> &Dsaved = TempDerivRecords[iw];
       std::vector<Return_t> &HDsaved= TempHDerivRecords[iw];
       for (int pm=0; pm<NumOptimizables; pm++)
@@ -439,8 +439,8 @@ QMCCostFunctionCUDA::GradCost(std::vector<Return_t>& PGradient, const std::vecto
       bool ltz(true);
       if (eloc_new-EtargetEff<0)
         ltz=false;
-      Return_t delE=std::pow(abs(eloc_new-EtargetEff),PowerE);
-      Return_t ddelE = PowerE*std::pow(abs(eloc_new-EtargetEff),PowerE-1);
+      Return_t delE=std::pow(std::abs(eloc_new-EtargetEff),PowerE);
+      Return_t ddelE = PowerE*std::pow(std::abs(eloc_new-EtargetEff),PowerE-1);
       std::vector<Return_t> &Dsaved=  TempDerivRecords[iw];
       std::vector<Return_t> &HDsaved= TempHDerivRecords[iw];
       for (int pm=0; pm<NumOptimizables; pm++)
@@ -475,13 +475,13 @@ QMCCostFunctionCUDA::GradCost(std::vector<Return_t>& PGradient, const std::vecto
     for (int j=0; j<NumOptimizables; j++)
     {
       PGradient[j] = 0.0;
-      if (std::fabs(w_var) > 1.0e-10)
+      if (std::abs(w_var) > 1.0e-10)
         PGradient[j] += w_var*E2Dtotals_w[j];
-      if (std::fabs(w_en)  > 1.0e-10)
+      if (std::abs(w_en)  > 1.0e-10)
         PGradient[j] += w_en*EDtotals_w[j];
-      if (std::fabs(w_w)   > 1.0e-10)
+      if (std::abs(w_w)   > 1.0e-10)
         PGradient[j] += w_w*URV[j];
-      if (std::fabs(w_abs) > 1.0e-10)
+      if (std::abs(w_abs) > 1.0e-10)
         PGradient[j] += w_abs*EDtotals[j];
     }
     IsValid=true;

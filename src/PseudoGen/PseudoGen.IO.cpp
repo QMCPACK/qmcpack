@@ -649,7 +649,7 @@ int PseudoGen::report()
   for(int orb=0; orb<Psi.NumUniqueOrb; orb++)
   {
     int max_rad = myGrid->size()-1;
-    while(fabs(Psi(orbindex,max_rad)) < 1e-12)
+    while(std::abs(Psi(orbindex,max_rad)) < 1e-12)
       max_rad--;
     max_rad += 2;
     max_rad_all = std::max(max_rad_all,max_rad);

@@ -845,7 +845,7 @@ QMCGaussianParserBase::createMultiDeterminantSet()
     xmlNodePtr detlist = xmlNewNode(NULL,(const xmlChar*)"detlist");
     ci_size=0;
     for(int i=0; i<CIcoeff.size(); i++)
-      if(fabs(CIcoeff[i]) > ci_threshold)
+      if(std::abs(CIcoeff[i]) > ci_threshold)
         ci_size++;
     std::ostringstream nstates,cisize,cinca,cincb,cinea,cineb,ci_thr;
     cisize <<ci_size;
@@ -875,7 +875,7 @@ QMCGaussianParserBase::createMultiDeterminantSet()
     }
     int iv=0;
     /*
-    while(iv < CIcoeff.size() && fabs(CIcoeff[iv]) < ci_threshold) iv++;
+    while(iv < CIcoeff.size() && std::abs(CIcoeff[iv]) < ci_threshold) iv++;
 
     {
       xmlNodePtr ci = xmlNewNode(NULL,(const xmlChar*)"ci");
@@ -889,7 +889,7 @@ QMCGaussianParserBase::createMultiDeterminantSet()
     */
     for(int i=0; i<CIcoeff.size(); i++)
     {
-      if(fabs(CIcoeff[i]) > ci_threshold)
+      if(std::abs(CIcoeff[i]) > ci_threshold)
       {
         xmlNodePtr ci = xmlNewNode(NULL,(const xmlChar*)"ci");
         std::ostringstream coeff;

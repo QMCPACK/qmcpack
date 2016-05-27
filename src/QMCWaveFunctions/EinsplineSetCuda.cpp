@@ -1400,7 +1400,7 @@ EinsplineSetHybrid<std::complex<double> >::evaluate
   for (int iw=0; iw<newpos.size(); iw++)
     if (false && HybridJobs_CPU[iw] == ATOMIC_POLY_JOB)
     {
-      //if (HybridJobs_CPU[iw] != BSPLINE_3D_JOB && std::fabs(rhats_CPU[3*iw+2]) < 1.0e-6) {
+      //if (HybridJobs_CPU[iw] != BSPLINE_3D_JOB && std::abs(rhats_CPU[3*iw+2]) < 1.0e-6) {
       int M = MakeTwoCopies.size();
       ComplexValueVector_t CPUzvals(M), CPUzlapl(M);
       ComplexGradVector_t CPUzgrad(M);
@@ -1531,7 +1531,7 @@ EinsplineSetHybrid<std::complex<double> >::evaluate
       for (int j=0; j<NumOrbitals; j++)
       {
         double lap_ratio = GL_CPU[3*row_stride+j] /  CPUlapl[j];
-        if (std::fabs(GL_CPU[3*row_stride+j] - CPUlapl[j]) > 1.0e-4)
+        if (std::abs(GL_CPU[3*row_stride+j] - CPUlapl[j]) > 1.0e-4)
         {
           fprintf (stderr, "Error:  CPU laplacian = %1.8e  GPU = %1.8e\n",
                    CPUlapl[j],  GL_CPU[3*row_stride+j]);

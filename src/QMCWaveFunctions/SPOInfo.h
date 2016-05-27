@@ -83,7 +83,7 @@ namespace qmcplusplus
       ~EnergyOrder() { };
       inline bool operator()(const SPOInfo* left, const SPOInfo* right)
       {
-        if(abs(left->energy-right->energy)<energy_tol)
+        if(std::abs(left->energy-right->energy)<energy_tol)
           return index_order(left,right);
         else
           return left->energy < right->energy;

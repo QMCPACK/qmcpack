@@ -98,7 +98,7 @@ HartreeFock::run(int norb)
     iter++;
     //continue the loop until the kinetic energy converges
   }
-  while(fabs(KEnew-KEold)>scf_tol && iter<maxiter);
+  while(std::abs(KEnew-KEold)>scf_tol && iter<maxiter);
   log_stream << "V_External = " << energy[0] << std::endl;
   log_stream << "V_Hartree = "  << energy[1] << std::endl;
   log_stream << "V_Exchange = " << energy[2] << std::endl;

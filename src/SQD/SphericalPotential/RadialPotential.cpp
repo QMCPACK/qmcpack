@@ -237,7 +237,7 @@ void HartreePotential::getStorage(const BasisSetType& psi,
     for(int j=i; j<norb; j++, nn++)
     {
       temp = storage[nn];
-      if(fabs(temp) < 1e-12)
+      if(std::abs(temp) < 1e-12)
         temp = 0.0;
       fout << psi.N[i] << llabel[psi.L[i]] << slabel[psi.S[i]+1]
            << '\t' << psi.N[j] << llabel[psi.L[j]] << slabel[psi.S[j]+1]
@@ -372,7 +372,7 @@ void ExchangePotential::getStorage(const BasisSetType& psi,
     for(int j=i; j<norb; j++, nn++)
     {
       temp = storage[nn];
-      if(fabs(temp) < 1e-12)
+      if(std::abs(temp) < 1e-12)
         temp = 0.0;
       fout << psi.N[i] << llabel[psi.L[i]] << slabel[psi.S[i]+1]
            << '\t' << psi.N[j] << llabel[psi.L[j]] << slabel[psi.S[j]+1]

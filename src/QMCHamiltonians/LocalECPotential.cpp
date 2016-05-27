@@ -159,21 +159,21 @@ LocalECPotential::evaluate_sp(ParticleSet& P)
   RealType Vesum = Ve_samp.sum();
   RealType Vsum  = Vesum+Visum;
   RealType Vorig = evaluate_orig(P);
-  if(abs(Vsum-Vnow)>TraceManager::trace_tol)
+  if(std::abs(Vsum-Vnow)>TraceManager::trace_tol)
   {
     app_log()<<"accumtest: LocalECPotential::evaluate()"<< std::endl;
     app_log()<<"accumtest:   tot:"<< Vnow << std::endl;
     app_log()<<"accumtest:   sum:"<< Vsum << std::endl;
     APP_ABORT("Trace check failed");
   }
-  if(abs(Vesum-Visum)>TraceManager::trace_tol)
+  if(std::abs(Vesum-Visum)>TraceManager::trace_tol)
   {
     app_log()<<"sharetest: LocalECPotential::evaluate()"<< std::endl;
     app_log()<<"sharetest:   e share:"<< Vesum << std::endl;
     app_log()<<"sharetest:   i share:"<< Visum << std::endl;
     APP_ABORT("Trace check failed");
   }
-  if(abs(Vorig-Vnow)>TraceManager::trace_tol)
+  if(std::abs(Vorig-Vnow)>TraceManager::trace_tol)
   {
     app_log()<<"versiontest: LocalECPotential::evaluate()"<< std::endl;
     app_log()<<"versiontest:   orig:"<< Vorig << std::endl;

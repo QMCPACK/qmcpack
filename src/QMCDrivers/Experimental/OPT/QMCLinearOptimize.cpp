@@ -222,7 +222,7 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealT
     for (int i=0; i<Nl; i++)
     {
       RealType evi(alphar[i]/beta[i]);
-      if (abs(evi)<1e10)
+      if (std::abs(evi)<1e10)
       {
         mappedEigenvalues[i].first=evi;
         mappedEigenvalues[i].second=i;
@@ -306,7 +306,7 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealT
     for (int i=0; i<Nl; i++)
     {
       RealType evi(alphar[i]/beta[i]);
-      if (abs(evi)<1e10)
+      if (std::abs(evi)<1e10)
       {
         mappedEigenvalues[i].first=evi;
         mappedEigenvalues[i].second=i;
@@ -379,7 +379,7 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealT
 //         for (int i=0; i<Nl; i++)
 //         {
 //             RealType evi(alphar[i]/beta[i]);
-//             if (abs(evi)<1e10)
+//             if (std::abs(evi)<1e10)
 //             {
 //                 mappedEigenvalues[i].first=evi;
 //                 mappedEigenvalues[i].second=i;

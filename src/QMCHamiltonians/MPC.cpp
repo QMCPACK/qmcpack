@@ -203,7 +203,7 @@ MPC::init_f_G()
     TinyVector<double,3> g_124 (g_G_N [iG], g_G_2N[iG], g_G_4N[iG]);
     double linearExtrap = extrap (2*N, g_12);
     double quadExtrap   = extrap (N, g_124);
-    double diff = std::fabs(linearExtrap - quadExtrap);
+    double diff = std::abs(linearExtrap - quadExtrap);
     if (diff > worst)
     {
       worst = diff;

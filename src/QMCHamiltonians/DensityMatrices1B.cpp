@@ -1292,12 +1292,12 @@ namespace qmcplusplus
     app_log()<<"DensityMatrices1B::test_overlap  checking overlap matrix"<< std::endl;
     app_log()<<"  rmin = "<<rmin<< std::endl;
     app_log()<<"  rmax = "<<rmax<< std::endl;
-    app_log()<<"  overlap scale "<<abs(omat(0,0))<< std::endl;
+    app_log()<<"  overlap scale "<<std::abs(omat(0,0))<< std::endl;
     app_log()<<"  overlap matrix:"<< std::endl;
     for(int i=0;i<basis_size;++i){
       app_log()<< std::endl;
       for(int j=0;j<basis_size;++j)
-        app_log()<<abs(omat(i,j))/abs(omat(0,0))<<" ";
+        app_log()<<std::abs(omat(i,j))/std::abs(omat(0,0))<<" ";
     }
     app_log()<< std::endl;
     

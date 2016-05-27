@@ -83,7 +83,7 @@ struct SplineGridHandler
       for(int jdim=0; jdim<D; jdim++)
       {
         if(idim != jdim)
-          offdiag+=abs(Lattice.R(idim,jdim));
+          offdiag+=std::abs(Lattice.R(idim,jdim));
       }
     Orthorhombic=(offdiag< std::numeric_limits<T>::epsilon());
   }

@@ -39,7 +39,7 @@
 //  a = b; b= c; c = d;
 //}
 //double sign(double a, double b) {
-//  return (b > 0.0)? std::abs(a): -abs(a);
+//  return (b > 0.0)? std::abs(a): -std::abs(a);
 //}
 
 template<class T>
@@ -50,7 +50,7 @@ struct sign2<double>
 {
   inline static double apply(double a, double b)
   {
-    return (b > 0.0)? std::abs(a): -abs(a);
+    return (b > 0.0)? std::abs(a): -std::abs(a);
   }
 };
 
@@ -199,7 +199,7 @@ struct NRCOptimization
       if (std::isnan(cost) || cost > start_cost)
         return lineoptimization2();
 #else
-      if (abs(Lambda) > largeQuarticStep || isnan(Lambda))
+      if (std::abs(Lambda) > largeQuarticStep || isnan(Lambda))
         return lineoptimization2();
       cost = Func(Lambda);
       if (isnan(cost) || cost > start_cost)
@@ -323,7 +323,7 @@ struct NRCOptimization
       if (std::isnan(zeroCost) || zeroCost > start_cost)
         return lineoptimization2(largeQuarticStep);
 #else
-      if (abs(Lambda) > largeQuarticStep || isnan(Lambda) || (Lambda==0.0))
+      if (std::abs(Lambda) > largeQuarticStep || isnan(Lambda) || (Lambda==0.0))
         return lineoptimization2(largeQuarticStep);
       zeroCost = Func(Lambda);
 //       std::cout <<"Start Cost:"<< start_cost<<" Lambda:"<<Lambda<<" FinalCost:"<<cost<< std::endl;
@@ -436,7 +436,7 @@ T NRCOptimization<T>::brentNRC(Return_t ax, Return_t bx,  Return_t cx, Return_t&
     if (AbsFuncTol)
     {
       tol2=2.0*(tol1=TOL);
-      if (abs(x-xm) <= tol2)
+      if (std::abs(x-xm) <= tol2)
       {
         xmin=x;
         return fx;
@@ -444,14 +444,14 @@ T NRCOptimization<T>::brentNRC(Return_t ax, Return_t bx,  Return_t cx, Return_t&
     }
     else
     {
-      tol2=2.0*(tol1=TOL*abs(x)+ZEPS);
-      if (abs(x-xm) <= (tol2-0.5*(b-a)))
+      tol2=2.0*(tol1=TOL*std::abs(x)+ZEPS);
+      if (std::abs(x-xm) <= (tol2-0.5*(b-a)))
       {
         xmin=x;
         return fx;
       }
     }
-    if (abs(e) > tol1)
+    if (std::abs(e) > tol1)
     {
       r=(x-w)*(fx-fv);
       q=(x-v)*(fx-fw);
@@ -459,10 +459,10 @@ T NRCOptimization<T>::brentNRC(Return_t ax, Return_t bx,  Return_t cx, Return_t&
       q=2.0*(q-r);
       if (q > 0.0)
         p = -p;
-      q=abs(q);
+      q=std::abs(q);
       etemp=e;
       e=d;
-      if (abs(p) >= std::abs(0.5*q*etemp) || p <= q*(a-x) || p >= q*(b-x))
+      if (std::abs(p) >= std::abs(0.5*q*etemp) || p <= q*(a-x) || p >= q*(b-x))
         d=CGOLD*(e=(x >= xm ? a-x : b-x));
       else
       {
@@ -477,8 +477,8 @@ T NRCOptimization<T>::brentNRC(Return_t ax, Return_t bx,  Return_t cx, Return_t&
     {
       d=CGOLD*(e=(x >= xm ? a-x : b-x));
     }
-    //u=(abs(d) >= tol1 ? x+d : x+sign(tol1,d));
-    u=(abs(d) >= tol1 ? x+d : x+sign2<T>::apply(tol1,d));
+    //u=(std::abs(d) >= tol1 ? x+d : x+sign(tol1,d));
+    u=(std::abs(d) >= tol1 ? x+d : x+sign2<T>::apply(tol1,d));
     fu = Func(u); // fu=(*f)(u);
     if(!validFuncVal)
       return 0.0;
@@ -548,8 +548,8 @@ bool NRCOptimization<T>::mnbrakNRC(Return_t& ax, Return_t& bx, Return_t& cx,
   {
     r=(bx-ax)*(fb-fc);
     q=(bx-cx)*(fb-fa);
-    //u=(bx)-((bx-cx)*q-(bx-ax)*r)/(2.0*sign(std::max<T>(abs(q-r),TINY),q-r));
-    u=(bx)-((bx-cx)*q-(bx-ax)*r)/(2.0*sign2<T>::apply(std::max<T>(abs(q-r),TINY),q-r));
+    //u=(bx)-((bx-cx)*q-(bx-ax)*r)/(2.0*sign(std::max<T>(std::abs(q-r),TINY),q-r));
+    u=(bx)-((bx-cx)*q-(bx-ax)*r)/(2.0*sign2<T>::apply(std::max<T>(std::abs(q-r),TINY),q-r));
     ulim=(bx)+GLIMIT*(cx-bx);
     if ((bx-u)*(u-cx) > 0.0)
     {
@@ -630,7 +630,7 @@ bool NRCOptimization<T>::mnbrakNRC(Return_t& ax, Return_t& bx, Return_t& cx,
     shift(ax,bx,cx,u);
     shift(fa,fb,fc,fu);
 //     if we are out of bounds totally then return false
-    if((abs(ax)>maxStep) and (abs(bx)>maxStep) and (abs(cx)>maxStep))
+    if((std::abs(ax)>maxStep) and (std::abs(bx)>maxStep) and (std::abs(cx)>maxStep))
       return false;
   }
   return true;

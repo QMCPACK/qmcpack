@@ -165,14 +165,14 @@ struct CoulombPotential: public QMCHamiltonianBase
     T Vnow = res;
     T Vsum = Va_samp.sum();
     T Vorig = evaluateAA_orig(d,Z);
-    if(abs(Vsum-Vnow)>TraceManager::trace_tol)
+    if(std::abs(Vsum-Vnow)>TraceManager::trace_tol)
     {
       app_log()<<"accumtest: CoulombPotential::evaluateAA()"<< std::endl;
       app_log()<<"accumtest:   tot:"<< Vnow << std::endl;
       app_log()<<"accumtest:   sum:"<< Vsum << std::endl;
       APP_ABORT("Trace check failed");
     }
-    if(abs(Vorig-Vnow)>TraceManager::trace_tol)
+    if(std::abs(Vorig-Vnow)>TraceManager::trace_tol)
     {
       app_log()<<"versiontest: CoulombPotential::evaluateAA()"<< std::endl;
       app_log()<<"versiontest:   orig:"<< Vorig << std::endl;
@@ -211,21 +211,21 @@ struct CoulombPotential: public QMCHamiltonianBase
     RealType Vbsum = Vb_samp.sum();
     RealType Vsum  = Vasum+Vbsum;
     RealType Vorig = evaluateAB_orig(d,Za,Zb);
-    if(abs(Vsum-Vnow)>TraceManager::trace_tol)
+    if(std::abs(Vsum-Vnow)>TraceManager::trace_tol)
     {
       app_log()<<"accumtest: CoulombPotential::evaluateAB()"<< std::endl;
       app_log()<<"accumtest:   tot:"<< Vnow << std::endl;
       app_log()<<"accumtest:   sum:"<< Vsum << std::endl;
       APP_ABORT("Trace check failed");
     }
-    if(abs(Vasum-Vbsum)>TraceManager::trace_tol)
+    if(std::abs(Vasum-Vbsum)>TraceManager::trace_tol)
     {
       app_log()<<"sharetest: CoulombPotential::evaluateAB()"<< std::endl;
       app_log()<<"sharetest:   a share:"<< Vasum << std::endl;
       app_log()<<"sharetest:   b share:"<< Vbsum << std::endl;
       APP_ABORT("Trace check failed");
     }
-    if(abs(Vorig-Vnow)>TraceManager::trace_tol)
+    if(std::abs(Vorig-Vnow)>TraceManager::trace_tol)
     {
       app_log()<<"versiontest: CoulombPotential::evaluateAB()"<< std::endl;
       app_log()<<"versiontest:   orig:"<< Vorig << std::endl;
