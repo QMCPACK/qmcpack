@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<qmcsystem>
+  <wavefunction name="psi0" target="e">
+<!-- Uncomment this out to use plane-wave basis functions
+    <determinantset type="PW" href="O.q0.pwscf.h5" version="1.10">
+--> 
+      <determinantset type="bspline" href="O.q0.pwscf.h5" sort="1" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" version="0.10">
+        <slaterdeterminant>
+          <determinant id="updet" size="4">
+            <occupation mode="ground" spindataset="0">
+            </occupation>
+          </determinant>
+          <determinant id="downdet" size="2" ref="updet">
+            <occupation mode="ground" spindataset="1">
+            </occupation>
+          </determinant>
+        </slaterdeterminant>
+      </determinantset>
+      <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">
+        <correlation speciesA="u" speciesB="u" size="8" rcut="10.0">
+          <coefficients id="uu" type="Array"> 0.4328326485 0.2404423124 0.1530424383 0.127576165 0.1206797176 0.1136037426 0.143146985 -0.06367204832</coefficients>
+        </correlation>
+        <correlation speciesA="u" speciesB="d" size="8" rcut="10.0">
+          <coefficients id="ud" type="Array"> 0.6314315485 0.3619755654 0.286307665 0.2645900737 0.2574973317 0.2624483459 0.271311093 0.3854645153</coefficients>
+        </correlation>
+      </jastrow>
+      <jastrow name="J1" type="One-Body" function="Bspline" source="ion0" print="yes">
+        <correlation elementType="O" size="8" rcut="5.0">
+          <coefficients id="eO" type="Array"> -0.7555087483 -0.6434974371 -0.4677519563 -0.2918303559 -0.1678745762 -0.08307751789 -0.03319609622 -0.001503020435</coefficients>
+        </correlation>
+      </jastrow>
+    </wavefunction>
+</qmcsystem>

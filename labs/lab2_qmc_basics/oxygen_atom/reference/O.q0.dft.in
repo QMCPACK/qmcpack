@@ -1,8 +1,8 @@
 &CONTROL
    calculation     = 'scf'
    disk_io         = 'low'
-   outdir          = 'q0_output'
    prefix          = 'O.q0'
+   outdir          = './'
    pseudo_dir      = './'
    restart_mode    = 'from_scratch'
    tprnfor         = .false.
@@ -39,14 +39,14 @@ ATOMIC_SPECIES
    O  15.999 O.BFD.upf
 
 ATOMIC_POSITIONS alat
-   O       14.17294600      14.17294741      14.17294883 
+   O     9.44863067       9.44863161       9.44863255
 
 K_POINTS automatic
    1 1 1  0 0 0 
 
 CELL_PARAMETERS cubic
-        28.34589199       0.00000000       0.00000000 
-         0.00000000      28.34589483       0.00000000 
-        -0.00000000       0.00000000      28.34589766 
+        18.89726133       0.00000000       0.00000000 
+         0.00000000      18.89726133       0.00000000 
+         0.00000000       0.00000000      18.89726133
 
 

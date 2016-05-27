@@ -1,0 +1,28 @@
+Jobid: 344434
+qsub --mode script -q default -A QMCPACK -n 32 -t 120 -O O.q1.dmc --mode script --env BG_SHAREDMEMSIZE=32 O.q1.dmc.qsub.in
+Fri May 27 17:01:22 2016 +0000 (UTC) submitted with cwd set to: /gpfs/vesta-fs0/projects/QMCPACk-Training/krogel/prep2/labs/lab2_qmc_basics/oxygen_atom
+jobid 344434 submitted from terminal /dev/pts/1
+Fri May 27 17:01:45 2016 +0000 (UTC) krogel/344434: Initiating boot at location VST-00200-11311-32.
+Fri May 27 17:02:12 2016 +0000 (UTC) 
+Fri May 27 17:02:12 2016 +0000 (UTC) Command: '/gpfs/vesta-fs0/projects/QMCPACk-Training/krogel/prep2/labs/lab2_qmc_basics/oxygen_atom/O.q1.dmc.qsub.in'
+Fri May 27 17:02:12 2016 +0000 (UTC) 
+Fri May 27 17:02:12 2016 +0000 (UTC) Environment:
+Fri May 27 17:02:12 2016 +0000 (UTC) SHELL=/bin/bash
+Fri May 27 17:02:12 2016 +0000 (UTC) COBALT_NODEFILE=/tmp/tmpmpeFCQ
+Fri May 27 17:02:12 2016 +0000 (UTC) COBALT_PARTNAME=VST-00200-11311-32
+Fri May 27 17:02:12 2016 +0000 (UTC) COBALT_JOBID=344434
+Fri May 27 17:02:12 2016 +0000 (UTC) BG_SHAREDMEMSIZE=32
+Fri May 27 17:02:12 2016 +0000 (UTC) COBALT_STARTTIME=1464368484
+Fri May 27 17:02:12 2016 +0000 (UTC) LOGNAME=krogel
+Fri May 27 17:02:12 2016 +0000 (UTC) USER=krogel
+Fri May 27 17:02:12 2016 +0000 (UTC) COBALT_ENDTIME=1464375684
+Fri May 27 17:02:12 2016 +0000 (UTC) COBALT_PARTSIZE=32
+Fri May 27 17:02:12 2016 +0000 (UTC) HOME=/home/krogel
+Fri May 27 17:02:12 2016 +0000 (UTC) COBALT_JOBSIZE=32
+Fri May 27 17:02:12 2016 +0000 (UTC) 
+Fri May 27 17:02:12 2016 +0000 (UTC) Info: stdin received from /dev/null
+Fri May 27 17:02:12 2016 +0000 (UTC) Info: stdout sent to /gpfs/vesta-fs0/projects/QMCPACk-Training/krogel/prep2/labs/lab2_qmc_basics/oxygen_atom/O.q1.dmc.output
+Fri May 27 17:02:12 2016 +0000 (UTC) Info: stderr sent to /gpfs/vesta-fs0/projects/QMCPACk-Training/krogel/prep2/labs/lab2_qmc_basics/oxygen_atom/O.q1.dmc.error
+Fri May 27 17:02:12 2016 +0000 (UTC) 
+Fri May 27 17:02:17 2016 +0000 (UTC) krogel/344434: Block VST-00200-11311-32 for location VST-00200-11311-32 successfully booted (Initiating). 
+Fri May 27 17:06:24 2016 +0000 (UTC) Info: task completed normally with an exit code of 0; initiating job cleanup and removal
