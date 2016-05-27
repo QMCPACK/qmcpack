@@ -34,57 +34,6 @@ else:                                    # running on Vesta
     vesta.queue_size = 2
 #end if
 
-# specify optimization parameters
-linopt1 = linear(
-    energy               = 0.0,
-    unreweightedvariance = 1.0,
-    reweightedvariance   = 0.0,
-    timestep             = 0.4,
-    samples              = 10240, # opt w/ 10240 samples
-    warmupsteps          = 50,
-    blocks               = 200,
-    substeps             = 1,
-    nonlocalpp           = True,
-    usebuffer            = True,
-    walkers              = 1,
-    minwalkers           = 0.5,
-    maxweight            = 1e9, 
-    usedrift             = True,
-    minmethod            = 'quartic',
-    beta                 = 0.025,
-    exp0                 = -16,
-    bigchange            = 15.0,
-    alloweddifference    = 1e-4,
-    stepsize             = 0.2,
-    stabilizerscale      = 1.0,
-    nstabilizers         = 3,
-    )
-
-linopt2 = linopt1.copy()  
-linopt2.samples = 61440 # opt w/ 61440 samples
-
-opt_calcs = [loop(max=4,qmc=linopt1), # loops over opt's
-             loop(max=8,qmc=linopt2)]
-
-# specify DMC parameters
-qmc_calcs = [
-    vmc(
-        walkers     =   1,
-        warmupsteps =  30,
-        blocks      =  20,
-        steps       =  10,
-        substeps    =   2,
-        timestep    =  .4,
-        samples     = 2048
-        ),
-    dmc(
-        warmupsteps   = 100, 
-        blocks        = 400,
-        steps         =  32,
-        timestep      = 0.01,
-        nonlocalmoves = True,
-        )
-    ]
 
 # create DFT, OPT, & DMC sim's for each bond length
 sims = []
@@ -139,11 +88,37 @@ for scale in scales:
             system       = dimer,
             input_type   = 'basic',
             pseudos      = ['O.BFD.xml'],
-            orbitals_h5  = 'O2.pwscf.h5',
             bconds       = 'nnn',
-            jastrows     = [('J1','bspline',8,4.5), # 1 & 2 body Jastrows
-                            ('J2','pade',0.5,0.5)],
-            calculations = opt_calcs,
+            jastrows     = [('J1','bspline',8,5.0), # 1 & 2 body Jastrows
+                            ('J2','bspline',8,10.0)],
+            calculations = [
+                loop(max=12,
+                     qmc=linear(
+                        energy               = 0.0,
+                        unreweightedvariance = 1.0,
+                        reweightedvariance   = 0.0,
+                        timestep             = 0.3,
+                        samples              = 61440,
+                        warmupsteps          = 50,
+                        blocks               = 200,
+                        substeps             = 1,
+                        nonlocalpp           = True,
+                        usebuffer            = True,
+                        walkers              = 1,
+                        minwalkers           = 0.5,
+                        maxweight            = 1e9, 
+                        usedrift             = False,
+                        minmethod            = 'quartic',
+                        beta                 = 0.025,
+                        exp0                 = -16,
+                        bigchange            = 15.0,
+                        alloweddifference    = 1e-4,
+                        stepsize             = 0.2,
+                        stabilizerscale      = 1.0,
+                        nstabilizers         = 3,
+                        )
+                     )
+                ],
             dependencies = (p2q,'orbitals'),
             )
         sims.append(opt)
@@ -157,10 +132,26 @@ for scale in scales:
         system       = dimer,
         input_type   = 'basic',
         pseudos      = ['O.BFD.xml'],
-        orbitals_h5  = 'O2.pwscf.h5',
         bconds       = 'nnn',
         jastrows     = [],            
-        calculations = qmc_calcs,
+        calculations = [
+            vmc(
+                walkers     =   1,
+                warmupsteps =  30,
+                blocks      =  20,
+                steps       =  10,
+                substeps    =   2,
+                timestep    =  .4,
+                samples     = 2048
+                ),
+            dmc(
+                warmupsteps   = 100, 
+                blocks        = 400,
+                steps         =  32,
+                timestep      = 0.01,
+                nonlocalmoves = True,
+                )
+            ],
         dependencies = [(p2q,'orbitals'),(opt,'jastrow') ],
         )
     sims.append(qmc)
