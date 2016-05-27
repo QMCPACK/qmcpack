@@ -589,11 +589,11 @@ AtomicOrbital<StorageType>::CalcYlm (PosType rhat,
     for (int m=0; m<=l; m++)
     {
       Ylm[l*(l+1)+m]  =  XlmVec[l+m]*e2imphi;
-      Ylm[l*(l+1)-m]  =  XlmVec[l-m]*conj(e2imphi);
+      Ylm[l*(l+1)-m]  =  XlmVec[l-m]*qmcplusplus::conj(e2imphi);
       dYlm_dphi[l*(l+1)+m ]  =  (double)m * eye *XlmVec[l+m]*e2imphi;
-      dYlm_dphi[l*(l+1)-m ]  = -(double)m * eye *XlmVec[l-m]*conj(e2imphi);
+      dYlm_dphi[l*(l+1)-m ]  = -(double)m * eye *XlmVec[l-m]*qmcplusplus::conj(e2imphi);
       dYlm_dtheta[l*(l+1)+m] = dXlmVec[l+m]*e2imphi;
-      dYlm_dtheta[l*(l+1)-m] = dXlmVec[l-m]*conj(e2imphi);
+      dYlm_dtheta[l*(l+1)-m] = dXlmVec[l-m]*qmcplusplus::conj(e2imphi);
       e2imphi *= e2iphi;
     }
     dl += 1.0;
