@@ -1,4 +1,5 @@
 \subsection{Spline basis sets}
+\label{sec:spo_spline}
 In this section we describe the use of spline basis sets to expand the \texttt{sposet}.
 Spline basis sets are designed to work seamless with plane wave DFT code, e.g.\ Quantum ESPRESSO as a trial wavefunction generator.
 
@@ -63,6 +64,7 @@ users can perform this step on fat nodes and transfer back the h5 file for QMC c
    &   \texttt{meshfactor}              &  float              &  $\le 1.0$      &               &  Grid spacing ratio. \\
    &   \texttt{precision}               &  text               &  single/double  &               &  Precision of spline coefficients. \\
    &   \texttt{gpu}                    &  text               &  yes/no      &               &  GPU switch. \\
+   &   \texttt{Spline\_Size\_Limit\_MB}  &  integer            &                 &             &  Limit the size of B-spline coefficient table on GPU. \\
    &   \texttt{source}               &  text               &   \textit{any}    &  ion0        & Particle set with the position of atom centers. \\
   \hline
 \end{tabularx}
@@ -106,5 +108,6 @@ Additional information:
 \item \texttt{precision}. Using single precision not only saves memory usage but also speeds up the B-spline evaluation. It is recommended to use single precision since we saw little chance of really compromising the accuracy of calculation.
 \item \texttt{meshfactor}. It is the ratio of actual grid spacing of B-splines used in QMC calculation with respect to the original one calculated from h5. Smaller meshfactor saves memory usage but reduces accuracy. The effects are similar to reducing plane wave cutoff in DFT calculation. Use with caution! 
 \item \texttt{twistnum}. If positive, it is the index. It is recommended not to take this way since the indexing may show some uncertainty. If negative, the super twist is referred by \texttt{twist}.
+\item \texttt{Spline\_Size\_Limit\_MB}. Allows to distribute the B-spline coefficient table between the host and GPU memory. The compute kernels access host memory via zero-copy. Though the performance penaty introduced by it is significant but allows large calculations to go.
 \end{itemize}
 \label{sec:splinebasis}

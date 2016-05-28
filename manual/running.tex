@@ -40,7 +40,7 @@ QMCPACK is fully parallelized with MPI. When performing an ensemble job, all the
 \subsection{Use of OpenMP threads}
 \label{sec:openmprunning}
 Modern processors integrate multiple identical cores even with hardware threads on a single die to increase the total performance and maintain a reasonable power draw. 
-QMCPACK takes advantage of all that compute capability on a processor by using threads via OpenMP programming model as well as threaded linear algebra libraries. By default, QMCPACK is always built with OpenMP enabled. When launching calculations, users should instruct QMCPACK to create the right number of threads per MPI rank by specifying environmental variable OMP\_NUM\_THREADS. Even in the GPU accelerated version, using threads significantly reduces the time spent on the calculations performed on CPU.
+QMCPACK takes advantage of all that compute capability on a processor by using threads via OpenMP programming model as well as threaded linear algebra libraries. By default, QMCPACK is always built with OpenMP enabled. When launching calculations, users should instruct QMCPACK to create the right number of threads per MPI rank by specifying environmental variable OMP\_NUM\_THREADS. Even in the GPU accelerated version, using threads significantly reduces the time spent on the calculations performed by the CPU.
 
 \subsubsection{Performance consideration}
 As walkers are the basic units of workload in QMC algorithms, they are loosely coupled and distributed across all the threads. For this reason, the best strategy to run QMCPACK efficiently is to feed enough walkers to the available threads.
@@ -64,8 +64,8 @@ solid-state and molecular systems using B-spline single-particle
 orbitals is supported. A detailed description of the GPU
 implementation can be found in Ref. \cite{EslerKimCeperleyShulenburger2012}.
 
-Current GPU implementation assumes one MPI process per
-GPU. Vectorization is achieved over walkers, that is, all walkers are
+Current GPU implementation assumes one MPI process per GPU.
+Vectorization is achieved over walkers, that is, all walkers are
 propagated in parallel. In each GPU kernel, loops over electrons,
 atomic cores or orbitals are further vectorized to exploit an
 additional level of parallelism and to allow coalesced memory access.
@@ -81,7 +81,8 @@ additional level of parallelism and to allow coalesced memory access.
     \begin{enumerate}
 	\item Variational Monte Carlo (VMC).
 	\item Diffusion Monte Carlo (DMC).
-	\item Limited support for wavefunction optimization.
+	%\item Limited support for wavefunction optimization.
+	\item Wavefunction optimization.
     \end{enumerate}
 
   \item Boundary conditions:
@@ -97,7 +98,7 @@ additional level of parallelism and to allow coalesced memory access.
     \begin{enumerate}
 	\item Single Slater determinants with 3D B-spline orbitals. Only real-valued wavefunctions is supported, but tiling complex orbitals to supercells is supported as long as each k-point is a multiple of half a G-vector of the supercell.
 	\item Mixed basis representation in which orbitals are represented as 1D splines times spherical harmonics in spherical regions (muffin tins) around atoms, and 3D B-splines in the interstitial region.
-	\item One-body and two-body Jastrows represented as 1D B-splines are supported. Note that only single-precision arithmetic is fully functional at the time of writing. 
+	\item One-body and two-body Jastrows represented as 1D B-splines are supported. %% Note that only single-precision arithmetic is fully functional at the time of writing. 
     \end{enumerate}
 
   \item Interaction types:
@@ -165,11 +166,10 @@ overwrite the default values. \\
 
 \begin{tabular}{l@{: }p{4in}}
 \courier{=float} (default) & single precision arithmetics and data
-                             types will be used for GPU kernels \\
-\courier{=double}           & double precision arithmetics and data
-                                 types will be used for GPU
-                                 kernels (Warning: not fully
-                                 functional!) \\
+                             types will be used for most GPU kernels.
+                             Several precision critical kernels are always in double precision. \\
+\courier{=double}          & double precision arithmetics and data
+                             types will be used for all the GPU kernels. \\
 \end{tabular}
 
 \end{enumerate}
@@ -180,7 +180,7 @@ overwrite the default values. \\
 
 The relative speedup of the GPU implementation increases with both the number of electrons and the number of walkers running on a GPU. Typically, 128-256 walkers per GPU utilize sufficient number of threads to operate the GPU efficiently and to hide memory-access latency. 
 
-To achieve better performance, current implementation utilizes single precision operations on most GPU calculations, except for matrix inversions where double precision is required to retain high accuracy. The single precision GPU code is as accurate as the double precision CPU code up to a certain system size. Cross checking and verification of accuracy are encouraged for systems with more than approximately 1500 electrons.
+To achieve better performance, current implementation utilizes single precision operations on most GPU calculations, except for matrix inversions and Coulomb interation where double precision is required to retain high accuracy. The single precision GPU code is as accurate as the double precision CPU code up to a certain system size. Cross checking and verification of accuracy are encouraged for systems with more than approximately 1500 electrons.
 
 %------------------------------------------------------------------------------%
 
@@ -188,5 +188,7 @@ To achieve better performance, current implementation utilizes single precision 
 
 In the GPU implementation, each walker has an anonymous buffer on the GPU's global memory to store temporary data associated with the wavefunctions. Therefore, the amount of memory available on a GPU limits the number of walkers and eventually the system size that it can process.
 
-If the GPU memory is exhausted, reduce the number of walkers per GPU. Coarsening the grids of the B-splines representation (by decreasing the value of meshfactor in the input file) can also lower the memory usage, at the expense (risk) of obtaining inaccurate results. Proceed with caution if this option has to be considered.
-
+If the GPU memory is exhausted, reduce the number of walkers per GPU.
+Coarsening the grids of the B-splines representation (by decreasing the value of meshfactor in the input file) can also lower the memory usage,
+at the expense (risk) of obtaining inaccurate results. Proceed with caution if this option has to be considered.
+It is also possible to distrubte the B-spline coefficients table between the host and GPU memory, see option Spline\_Size\_Limit\_MB in Sec.~\ref{sec:spo_spline}.
