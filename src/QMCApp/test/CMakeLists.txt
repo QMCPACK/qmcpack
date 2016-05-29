@@ -257,7 +257,7 @@ ENDIF()
 
   LIST(APPEND DIAMOND_SCALARS "totenergy" "-10.491445 0.002")
   LIST(APPEND DIAMOND_SCALARS "samples" "128000 0.0")
-  LIST(APPEND DIAMOND_SCALARS "flux" "0.0 0.2")
+  LIST(APPEND DIAMOND_SCALARS "flux" "0.0 0.4")
 
   QMC_RUN_AND_CHECK(short-diamondC_1x1x1_pp-vmc_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
@@ -270,7 +270,7 @@ ENDIF()
 
   LIST(APPEND DIAMOND2_SCALARS "totenergy" "-21.668293 0.007")
   LIST(APPEND DIAMOND2_SCALARS "samples" "32000 0.0")
-  LIST(APPEND DIAMOND2_SCALARS "flux" "0.0 0.5")
+  LIST(APPEND DIAMOND2_SCALARS "flux" "0.0 0.7")
 
   QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-vmc_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
