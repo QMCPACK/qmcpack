@@ -180,7 +180,7 @@ overwrite the default values. \\
 
 The relative speedup of the GPU implementation increases with both the number of electrons and the number of walkers running on a GPU. Typically, 128-256 walkers per GPU utilize sufficient number of threads to operate the GPU efficiently and to hide memory-access latency. 
 
-To achieve better performance, current implementation utilizes single precision operations on most GPU calculations, except for matrix inversions and Coulomb interation where double precision is required to retain high accuracy. The single precision GPU code is as accurate as the double precision CPU code up to a certain system size. Cross checking and verification of accuracy are encouraged for systems with more than approximately 1500 electrons.
+To achieve better performance, current implementation utilizes single precision operations on most GPU calculations, except for matrix inversions and Coulomb interaction where double precision is required to retain high accuracy. The single precision GPU code is as accurate as the double precision CPU code up to a certain system size. Cross checking and verification of accuracy are encouraged for systems with more than approximately 1500 electrons.
 
 %------------------------------------------------------------------------------%
 
