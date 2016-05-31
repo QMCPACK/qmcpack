@@ -1,0 +1,27 @@
+Jobid: 344463
+qsub --mode script -q default -A QMCPACK -n 32 -t 60 -O dft --mode script --env BG_SHAREDMEMSIZE=32 dft.qsub.in
+Fri May 27 18:52:40 2016 +0000 (UTC) submitted with cwd set to: /gpfs/vesta-fs0/projects/QMCPACk-Training/krogel/prep2/labs/lab2_qmc_basics/oxygen_dimer/scale_1.05
+Fri May 27 18:53:07 2016 +0000 (UTC) krogel/344463: Initiating boot at location VST-00000-11111-32.
+Fri May 27 18:53:27 2016 +0000 (UTC) 
+Fri May 27 18:53:27 2016 +0000 (UTC) Command: '/gpfs/vesta-fs0/projects/QMCPACk-Training/krogel/prep2/labs/lab2_qmc_basics/oxygen_dimer/scale_1.05/dft.qsub.in'
+Fri May 27 18:53:27 2016 +0000 (UTC) 
+Fri May 27 18:53:27 2016 +0000 (UTC) Environment:
+Fri May 27 18:53:27 2016 +0000 (UTC) SHELL=/bin/bash
+Fri May 27 18:53:27 2016 +0000 (UTC) COBALT_NODEFILE=/tmp/tmpJGys9e
+Fri May 27 18:53:27 2016 +0000 (UTC) COBALT_PARTNAME=VST-00000-11111-32
+Fri May 27 18:53:27 2016 +0000 (UTC) COBALT_JOBID=344463
+Fri May 27 18:53:27 2016 +0000 (UTC) BG_SHAREDMEMSIZE=32
+Fri May 27 18:53:27 2016 +0000 (UTC) COBALT_STARTTIME=1464375168
+Fri May 27 18:53:27 2016 +0000 (UTC) LOGNAME=krogel
+Fri May 27 18:53:27 2016 +0000 (UTC) USER=krogel
+Fri May 27 18:53:27 2016 +0000 (UTC) COBALT_ENDTIME=1464378768
+Fri May 27 18:53:27 2016 +0000 (UTC) COBALT_PARTSIZE=32
+Fri May 27 18:53:27 2016 +0000 (UTC) HOME=/home/krogel
+Fri May 27 18:53:27 2016 +0000 (UTC) COBALT_JOBSIZE=32
+Fri May 27 18:53:27 2016 +0000 (UTC) 
+Fri May 27 18:53:27 2016 +0000 (UTC) Info: stdin received from /dev/null
+Fri May 27 18:53:27 2016 +0000 (UTC) Info: stdout sent to /gpfs/vesta-fs0/projects/QMCPACk-Training/krogel/prep2/labs/lab2_qmc_basics/oxygen_dimer/scale_1.05/dft.output
+Fri May 27 18:53:27 2016 +0000 (UTC) Info: stderr sent to /gpfs/vesta-fs0/projects/QMCPACk-Training/krogel/prep2/labs/lab2_qmc_basics/oxygen_dimer/scale_1.05/dft.error
+Fri May 27 18:53:27 2016 +0000 (UTC) 
+Fri May 27 18:53:28 2016 +0000 (UTC) krogel/344463: Block VST-00000-11111-32 for location VST-00000-11111-32 successfully booted (Initiating). 
+Fri May 27 18:55:14 2016 +0000 (UTC) Info: task completed normally with an exit code of 0; initiating job cleanup and removal
