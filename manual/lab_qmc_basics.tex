@@ -37,13 +37,13 @@ This lab focuses on the basics of performing quality QMC calculations.  As an ex
 
 
 \section{Lab directories and files}
+%│
+%├── docs                  - documentation 
+%│   └── Lab_2_Slides.pdf     - slides presented during the lab
 
 \begin{shaded}
 \begin{verbatim}
 labs/lab2_qmc_basics/
-│
-├── docs                  - documentation 
-│   └── Lab_2_Slides.pdf     - slides presented during the lab
 │
 ├── oxygen_atom           - oxygen atom calculations 
 │   ├── O.q0.dft.in          - Quantum Espresso input for DFT run
@@ -53,11 +53,17 @@ labs/lab2_qmc_basics/
 │   ├── ip_conv.py           - tool to fit oxygen IP vs timestep
 │   └── reference            - directory w/ completed runs
 │
-└── oxygen_dimer          - oxygen dimer calculations
-    ├── dimer_fit.py         - tool to fit dimer binding curve
-    ├── O_dimer.py           - automation script for dimer calculations
-    ├── pseudopotentials     - directory for pseudopotentials
+├── oxygen_dimer          - oxygen dimer calculations
+│   ├── dimer_fit.py         - tool to fit dimer binding curve
+│   ├── O_dimer.py           - automation script for dimer calculations
+│   ├── pseudopotentials     - directory for pseudopotentials
+│   └── reference            - directory w/ completed runs
+│
+└── your_system           - performing calculations for an arbitrary system (yours)
+    ├── example.py           - example nexus file for periodic diamond
+    ├── pseudopotentials     - directory containing C pseudopotentials
     └── reference            - directory w/ completed runs
+
 \end{verbatim}
 \end{shaded}
 
@@ -76,7 +82,10 @@ cd labs/lab2_qmc_basics/oxygen_atom/
 \noindent
 Throughout the rest of the lab, locations will be specified with respect to \texttt{labs/lab2\_qmc\_basics} (e.g. \texttt{oxygen\_atom}).
 
-We will use a potential from the Burkatzki-Filippi-Dolg pseudopotential database.  To obtain the pseudopotential, go to 
+We will use a potential from the Burkatzki-Filippi-Dolg pseudopotential database.  
+Although the full database is available in QMCPACK distribution (\texttt{trunk/pseudopotentials/BFD/}), 
+we use a BFD pseudopotential to illustrate the process of converting and testing an 
+external potential for use with QMCPACK.   To obtain the pseudopotential, go to 
 \href{http://www.burkatzki.com/pseudos/index.2.html}{http://www.burkatzki.com/pseudos/index.2.html}
 and click on the ``Select Pseudopotential'' button.  Next click on oxygen in the 
 periodic table.  Click on the empty circle next to ``V5Z'' (a large gaussian 
@@ -109,7 +118,7 @@ jobrun_vesta ppconvert --gamess_pot O.BFD.gamess --s_ref "1s(2)2p(4)" \
 \noindent
 Observe the notation used to describe the reference valence configuration for this helium-core PP: \texttt{1s(2)2p(4)}.  The \texttt{ppconvert} tool uses the following convention for the valence states: the first $s$ state is labeled \texttt{1s} (\texttt{1s}, \texttt{2s}, \texttt{3s}, \ldots), the first $p$ state is labeled \texttt{2p} (\texttt{2p}, \texttt{3p}, \ldots), the first $d$ state is labeled \texttt{3d} (\texttt{3d}, \texttt{4d}, \ldots). Copy the resulting xml file into the \texttt{oxygen\_atom} directory.
 
-Note: the command to convert the PP into QM Espresso's UPF format is similar:
+Note: the command to convert the PP into QM Espresso's UPF format is similar (both formats are required):
 
 \noindent
 \ifws
@@ -141,7 +150,7 @@ O-QMC GEN 2 1
 
 \end{lstlisting}
 \noindent
-The full QMCPACK pseudopotential is also included in \texttt{oxygen\_atom/reference/O.BFD.xml}.
+The full QMCPACK pseudopotential is also included in \texttt{oxygen\_atom/reference/O.BFD.*}.
 
 
 \section{DFT with Quantum Espresso to obtain the orbital part of the wavefunction}
@@ -191,15 +200,15 @@ ATOMIC_SPECIES
    O  15.999 O.BFD.upf
 
 ATOMIC_POSITIONS alat
-   O       14.17294600      14.17294600      14.17294600 
+   O     9.44863067       9.44863161       9.44863255
 
 K_POINTS automatic
    1 1 1  0 0 0 
 
 CELL_PARAMETERS cubic
-        28.34589199       0.00000000       0.00000000 
-         0.00000000      28.34589199       0.00000000 
-         0.00000000       0.00000000      28.34589199 
+        18.89726133       0.00000000       0.00000000 
+         0.00000000      18.89726133       0.00000000 
+         0.00000000       0.00000000      18.89726133
 \end{lstlisting}
 
 Run Quantum Espresso by typing 
@@ -220,9 +229,13 @@ jobrun_vesta pw.x O.q0.dft.in
 The DFT run should take a few minutes to complete.  If desired, you can track the progress of the DFT run by typing ``\ifws\verb|tail -f O.q0.dft.out|\else\verb|tail -f O.q0.dft.output|\fi''. Once finished, you should check the LDA total energy in \texttt{\labsw{O.q0.dft.out}{O.q0.dft.output}} by typing ``\ifws\verb|grep '!  ' O.q0.dft.out|\else\verb|grep '!  ' O.q0.dft.output|\fi''.  The result should be close to
 \begin{shaded}
 \begin{verbatim}
-!    total energy              =     -31.56730213 Ry
+!    total energy              =     -31.56729415 Ry
 \end{verbatim}
 \end{shaded} 
+% 15 Angstrom cell
+%!    total energy              =     -31.56730213 Ry
+
+
 
 The orbitals have been written in a format native to Quantum Espresso in the \texttt{O.q0.save} directory.  We will convert them into the ESHDF format expected by QMCPACK by using the \texttt{pw2qmcpack.x} tool.  The input for \texttt{pw2qmcpack.x} can be found in the file \texttt{O.q0.p2q.in} and also in listing \ref{lst:O_q0_p2q} below. 
 
@@ -444,54 +457,54 @@ Log file output will appear in \labsw{\texttt{O.q0.opt.out}}{\texttt{O.q0.opt.ou
 At the end of each optimization section the change in cost function, new values for the Jastrow parameters, and elapsed wallclock time are reported:
 \begin{shaded}
 \begin{verbatim}
- OldCost: 7.1637471800e-01 NewCost: 7.1635425970e-01 Delta Cost:-2.0458302174e-05
+ OldCost: 7.0598901869e-01 NewCost: 7.0592576381e-01 Delta Cost:-6.3254886314e-05
 ...
-  <optVariables href="O.q0.opt.s010.opt.xml">
-uu_0 -7.1521288964e-01 1 1  ON 0
-uu_1 -9.2877240336e-01 1 1  ON 1
-uu_2 -1.0467103153e+00 1 1  ON 2
-uu_3 -1.0953972230e+00 1 1  ON 3
-uu_4 -1.1070130734e+00 1 1  ON 4
-uu_5 -1.0874728130e+00 1 1  ON 5
-uu_6 -1.0258488995e+00 1 1  ON 6
-uu_7 -1.4467669332e+00 1 1  ON 7
-ud_0 2.6875014571e-01 1 1  ON 8
-ud_1 -1.5766165503e-02 1 1  ON 9
-ud_2 -1.4123427373e-01 1 1  ON 10
-ud_3 -1.8739730188e-01 1 1  ON 11
-ud_4 -1.8070740017e-01 1 1  ON 12
-ud_5 -1.2069963316e-01 1 1  ON 13
-ud_6 -1.7982920869e-01 1 1  ON 14
-ud_7 -4.2474426156e-01 1 1  ON 15
-eO_0 -1.0520981758e+00 1 1  ON 16
-eO_1 -9.1814574396e-01 1 1  ON 17
-eO_2 -6.9775892269e-01 1 1  ON 18
-eO_3 -4.5411507428e-01 1 1  ON 19
-eO_4 -2.5743489506e-01 1 1  ON 20
-eO_5 -1.0879610780e-01 1 1  ON 21
-eO_6 -2.4139449229e-02 1 1  ON 22
-eO_7 2.1037749269e-02 1 1  ON 23
+  <optVariables href="O.q0.opt.s011.opt.xml">
+uu_0 6.9392504232e-01 1 1  ON 0
+uu_1 4.9690781460e-01 1 1  ON 1
+uu_2 4.0934542375e-01 1 1  ON 2
+uu_3 3.7875640157e-01 1 1  ON 3
+uu_4 3.7308380014e-01 1 1  ON 4
+uu_5 3.5419786809e-01 1 1  ON 5
+uu_6 4.3139019377e-01 1 1  ON 6
+uu_7 1.9344371667e-01 1 1  ON 7
+ud_0 3.9219009713e-01 1 1  ON 8
+ud_1 1.2352664647e-01 1 1  ON 9
+ud_2 4.4048945133e-02 1 1  ON 10
+ud_3 2.1415676741e-02 1 1  ON 11
+ud_4 1.5201803731e-02 1 1  ON 12
+ud_5 2.3708169445e-02 1 1  ON 13
+ud_6 3.4279064930e-02 1 1  ON 14
+ud_7 4.3334583596e-02 1 1  ON 15
+eO_0 -7.8490123937e-01 1 1  ON 16
+eO_1 -6.6726618338e-01 1 1  ON 17
+eO_2 -4.8753453838e-01 1 1  ON 18
+eO_3 -3.0913993774e-01 1 1  ON 19
+eO_4 -1.7901872177e-01 1 1  ON 20
+eO_5 -8.6199000697e-02 1 1  ON 21
+eO_6 -4.0601160841e-02 1 1  ON 22
+eO_7 -4.1358075061e-03 1 1  ON 23
   </optVariables>
 ...
-  QMC Execution time = 2.6048565362e+01 secs
+  QMC Execution time = 2.8218972974e+01 secs
 \end{verbatim}
 \end{shaded}
 \noindent
 The cost function should decrease during each linear optimization (\texttt{Delta cost < 0}).  Try ``\labsw{\texttt{grep OldCost *opt.out}}{\texttt{grep OldCost *opt.output}}''.  You should see something like this:
 \begin{shaded}
 \begin{verbatim}
- OldCost: 1.3134592963e+00 NewCost: 7.7188924330e-01 Delta Cost:-5.4157005302e-01
- OldCost: 7.4845000981e-01 NewCost: 7.2064323018e-01 Delta Cost:-2.7806779628e-02
- OldCost: 6.7191694349e-01 NewCost: 6.7190823880e-01 Delta Cost:-8.7046816816e-06
- OldCost: 7.1515211999e-01 NewCost: 7.1420521174e-01 Delta Cost:-9.4690825078e-04
- OldCost: 3.0887809677e+00 NewCost: 3.0318584021e+00 Delta Cost:-5.6922565616e-02
- OldCost: 9.9369152107e-01 NewCost: 9.5254988608e-01 Delta Cost:-4.1141634997e-02
- OldCost: 7.1198030212e-01 NewCost: 7.1163560440e-01 Delta Cost:-3.4469771549e-04
- OldCost: 7.4114649965e-01 NewCost: 7.4022000532e-01 Delta Cost:-9.2649432275e-04
- OldCost: 7.2092937088e-01 NewCost: 7.2054430351e-01 Delta Cost:-3.8506736720e-04
- OldCost: 7.5929893734e-01 NewCost: 7.5713646616e-01 Delta Cost:-2.1624711826e-03
- OldCost: 7.1637471800e-01 NewCost: 7.1635425970e-01 Delta Cost:-2.0458302174e-05
- OldCost: 7.4630768329e-01 NewCost: 7.3689350610e-01 Delta Cost:-9.4141771893e-03
+ OldCost: 1.2655186572e+00 NewCost: 7.2443875597e-01 Delta Cost:-5.4107990118e-01
+ OldCost: 7.2229830632e-01 NewCost: 6.9833678217e-01 Delta Cost:-2.3961524143e-02
+ OldCost: 8.0649629434e-01 NewCost: 8.0551871147e-01 Delta Cost:-9.7758287036e-04
+ OldCost: 6.6821241388e-01 NewCost: 6.6797703487e-01 Delta Cost:-2.3537901148e-04
+ OldCost: 7.0106275099e-01 NewCost: 7.0078055426e-01 Delta Cost:-2.8219672877e-04
+ OldCost: 6.9538522411e-01 NewCost: 6.9419186712e-01 Delta Cost:-1.1933569922e-03
+ OldCost: 6.7709626744e-01 NewCost: 6.7501251165e-01 Delta Cost:-2.0837557922e-03
+ OldCost: 6.6659923822e-01 NewCost: 6.6651737755e-01 Delta Cost:-8.1860671682e-05
+ OldCost: 7.7828995609e-01 NewCost: 7.7735482525e-01 Delta Cost:-9.3513083900e-04
+ OldCost: 7.2717974404e-01 NewCost: 7.2715201115e-01 Delta Cost:-2.7732880747e-05
+ OldCost: 6.9400639873e-01 NewCost: 6.9257183689e-01 Delta Cost:-1.4345618444e-03
+ OldCost: 7.0598901869e-01 NewCost: 7.0592576381e-01 Delta Cost:-6.3254886314e-05
 \end{verbatim}
 \end{shaded}
 
@@ -501,14 +514,14 @@ When the job has finished, use the \texttt{qmca} tool to assess the effectivenes
 \begin{shaded}
 \begin{verbatim}
                             LocalEnergy               Variance           ratio 
-O.q0.opt  series 0  -15.752691 +/- 0.006638   1.308990 +/- 0.020904   0.0831 
-O.q0.opt  series 1  -15.854499 +/- 0.007304   0.754957 +/- 0.017430   0.0476 
-O.q0.opt  series 2  -15.866341 +/- 0.007299   0.685069 +/- 0.011021   0.0432 
-O.q0.opt  series 3  -15.860209 +/- 0.006086   0.706933 +/- 0.013362   0.0446 
-O.q0.opt  series 4  -15.823484 +/- 0.008361   3.435846 +/- 1.077998   0.2171 
-O.q0.opt  series 5  -15.855915 +/- 0.006224   0.988390 +/- 0.036496   0.0623 
-O.q0.opt  series 6  -15.871419 +/- 0.004609   0.723626 +/- 0.019255   0.0456 
-O.q0.opt  series 7  -15.874430 +/- 0.009471   0.707508 +/- 0.022512   0.0446 
+O.q0.opt  series 0  -15.740261 +/- 0.008137   1.264368 +/- 0.014608   0.0803 
+O.q0.opt  series 1  -15.860120 +/- 0.004668   0.713099 +/- 0.014019   0.0450 
+O.q0.opt  series 2  -15.859298 +/- 0.006211   0.802800 +/- 0.092671   0.0506 
+O.q0.opt  series 3  -15.862090 +/- 0.004050   0.666984 +/- 0.013441   0.0420 
+O.q0.opt  series 4  -15.862034 +/- 0.004927   0.707145 +/- 0.017703   0.0446 
+O.q0.opt  series 5  -15.857459 +/- 0.005889   0.681408 +/- 0.012828   0.0430 
+O.q0.opt  series 6  -15.860377 +/- 0.004632   0.675006 +/- 0.012995   0.0426 
+O.q0.opt  series 7  -15.865476 +/- 0.004331   0.669623 +/- 0.015134   0.0422 
 ...
 \end{verbatim}
 \end{shaded}
@@ -710,6 +723,22 @@ Obtaining the timestep extrapolated DMC total energy for ionized oxygen should t
      <include href="O.q1.wfs.xml"/>
      ...
     \end{verbatim}
+    \item{Edit the particle XML file (O.q1.ptcl.xml) to have open boundary conditions}
+    \begin{verbatim}
+      <parameter name="bconds">
+        n n n 
+      </parameter>
+    \end{verbatim}
+    \item{Add cutoffs to the Jastrow factors in the wavefunction XML file (O.q1.wfs.xml)}
+    \begin{verbatim}
+      ...
+      <correlation speciesA="u" speciesB="u" size="8" rcut="10.0">
+      ...
+      <correlation speciesA="u" speciesB="d" size="8" rcut="10.0">
+      ...
+      <correlation elementType="O" size="8" rcut="5.0">
+      ...
+    \end{verbatim}
     \item{Perform the Jastrow optimization run: \ifws\verb|mpirun -np 4 qmcpack O.q1.opt.in.xml >&O.q1.opt.out&|\else\verb|jobrun_vesta qmcpack O.q1.opt.in.xml|\fi}
     \item{Identify the optimal set of parameters with \texttt{qmca} (\verb|[your opt.xml]|).}
   \end{enumerate}
@@ -717,10 +746,10 @@ Obtaining the timestep extrapolated DMC total energy for ionized oxygen should t
   \item{DMC timestep study with QMCPACK}
   \begin{enumerate}
     \item{Copy the DMC input (\texttt{O.q0.dmc.in.xml}) to \texttt{O.q1.dmc.in.xml}}
-    \item{Edit \texttt{O.q1.opt.in.xml} to use the DFT prefix and the optimal Jastrow}
+    \item{Edit \texttt{O.q1.dmc.in.xml} to use the DFT prefix and the optimal Jastrow}
     \begin{verbatim}
      ...
-     <project id="O.q1.opt" series="0">
+     <project id="O.q1.dmc" series="0">
      ...
      <include href="O.q1.ptcl.xml"/>
      ...
@@ -741,7 +770,7 @@ The process listed above, which excludes additional steps for orbital generation
   \item{What is the $\tau\rightarrow 0$ extrapolated DMC value for the 1st ionization potential of oxygen?}
   \item{How does the extrapolated value compare to the experimental IP?  Go to\newline \href{http://physics.nist.gov/PhysRefData/ASD/ionEnergy.html}{http://physics.nist.gov/PhysRefData/ASD/ionEnergy.html} and enter ``\texttt{O I}'' in the box labeled ``\texttt{Spectra}'' and click on the ``\texttt{Retrieve Data}'' button.  For comparison the LDA value is $12.25$ eV.}
   \item{What can we conclude about the accuracy of the pseudopotential?  What factors complicate this assessment?}
-  \item{Explore the sensitivity of the IP to the choice of timestep.  Type ``\texttt{ip\_conv.py}'' to view three timestep extrapolation plots: two for the $q=0,1$ total energies and one for the IP.  Is the IP more, less, or similarly sensitive to timestep than the total energy?}
+  \item{Explore the sensitivity of the IP to the choice of timestep.  Type ``\verb|./ip_conv.py|'' to view three timestep extrapolation plots: two for the $q=0,1$ total energies and one for the IP.  Is the IP more, less, or similarly sensitive to timestep than the total energy?}
   \item{What is the maximum timestep you should use if you want to calculate the ionization potential to an accuracy of $0.05$ eV?  What factor of cpu time is saved by assessing timestep convergence on the IP (a total energy difference) vs. a single total energy?}
   \item{Are the acceptance ratio and population fluctuations reasonable for the $q=1$ calculations?}
 \end{enumerate}
@@ -761,7 +790,9 @@ Simulation workflows quickly become more complex with increasing costs in terms 
 
 The set of automation tools we will be using is known as Nexus \cite{Krogel2016nexus}, which is distributed with QMCPACK.  Nexus is capable of generating input files, submitting and monitoring compute jobs, passing data between simulations (such as relaxed structures, orbital files, optimized Jastrow parameters, etc.), and data analysis.  The user interface to Nexus is through a set of functions defined in the Python programming language.  User scripts that execute simple workflows resemble input files and do not require programming experience.  More complex workflows require only basic programming constructs (\emph{e.g.} for loops and if statements).  Nexus input files/scripts should be easier to navigate than QMCPACK input files and more efficient than submitting all the jobs by hand.
 
-Nexus is driven by simple user-defined scripts that resemble keyword-driven input files.  An example Nexus input file that performs a single VMC calculation (with pre-generated orbitals) is shown below.  Take a moment to read it over and especially note the comments (prefixed with ``\texttt{\#}'') explaining most of the contents.  If the input syntax is unclear you may want to consult portions of appendix \ref{app:python_basics}, which gives a condensed summary of Python constructs.  For more information about the functionality and effective use of Nexus, consult \texttt{docs/Nexus.pdf}.  Details about the inner workings of Nexus can be found in the reference publication \cite{Krogel2016nexus}. 
+Nexus is driven by simple user-defined scripts that resemble keyword-driven input files.  An example Nexus input file that performs a single VMC calculation (with pre-generated orbitals) is shown below.  Take a moment to read it over and especially note the comments (prefixed with ``\texttt{\#}'') explaining most of the contents.  If the input syntax is unclear you may want to consult portions of appendix \ref{app:python_basics}, which gives a condensed summary of Python constructs.  An additional example and details about the inner workings of Nexus can be found in the reference publication \cite{Krogel2016nexus}. 
+
+%For more information about the functionality and effective use of Nexus, consult \texttt{docs/Nexus.pdf}.  
 
 %More information can be found in the user guide distributed with QMCPACK, although examples in this lab series and \texttt{Nexus.pdf} are more up to date (if \texttt{qmcpack} is the location of your QMCPACK distribution, the user guide can be found at \texttt{qmcpack/nexus/documentation/nexus\_user\_guide.pdf}).
 
@@ -976,7 +1007,7 @@ dimer = generate_physical_system(
     type       = 'dimer',
     dimer      = ('O','O'),
     separation = 1.2074*scale,
-    Lbox       = 15.0,
+    Lbox       = 10.0,
     units      = 'A',
     net_spin   = 2,
     O          = 6
@@ -1352,11 +1383,11 @@ Let's actually submit the jobs in the dimer workflow now.  Reset the state of th
 
   \item{Evaluate the traces of the local energy and the DMC walker population for each separation distance with the \texttt{qmca} tool.  Are there any anomalies in the runs?  Is the acceptance ratio reasonable?  Is the wavefunction of similar quality across all separation distances?}
 
-  \item{Use the \texttt{dimer\_fit.py} tool located in \texttt{oxygen\_dimer} to fit the oxygen dimer binding curve.   To get the binding energy of the dimer, we will need the DMC energy of the atom.  Before performing the fit, answer: What DMC timestep should be used for the oxygen atom results?  The tool accepts three arguments (``\texttt{dimer\_fit.py P N E Eerr}''}), \texttt{P} is the prefix of the DMC input files (should be ``\texttt{qmc}'' at this point), \texttt{N} is the order of the fit (use 2 to start), \texttt{E} and \texttt{Eerr} are your DMC total energy and error bar, respectively for the oxygen atom (in eV).  A plot of the dimer data will be displayed and text output will show the DMC equilibrium bond length and binding energy as well as experimental values.  How accurately does your fit to the DMC data reproduce the experimental values?  What factors affect the accuracy of your results? 
+  \item{Use the \texttt{dimer\_fit.py} tool located in \texttt{oxygen\_dimer} to fit the oxygen dimer binding curve.   To get the binding energy of the dimer, we will need the DMC energy of the atom.  Before performing the fit, answer: What DMC timestep should be used for the oxygen atom results?  The tool accepts three arguments (``\verb|./dimer_fit.py P N E Eerr|''}), \texttt{P} is the prefix of the DMC input files (should be ``\texttt{qmc}'' at this point), \texttt{N} is the order of the fit (use 2 to start), \texttt{E} and \texttt{Eerr} are your DMC total energy and error bar, respectively for the oxygen atom (in eV).  A plot of the dimer data will be displayed and text output will show the DMC equilibrium bond length and binding energy as well as experimental values.  How accurately does your fit to the DMC data reproduce the experimental values?  What factors affect the accuracy of your results? 
 
   \item{Refit your data with a fourth-order polynomial.  How do your predictions change with a fourth-order fit?  Is a fourth-order fit appropriate for the available data?}
  
-  \item{Add new ``\texttt{scale}'' values to the list in \texttt{O\_dimer.py} that interpolate between the original set (e.g. expand to \texttt{[1.00,0.90,0.925,0.95,0.975,1.05,1.075,1.10]}).  Perform the DMC calculations and redo the fits.  How accurately does your fit to the DMC data reproduce the experimental values?  Should this pseudopotential be used in production calculations?}
+  \item{Add new ``\texttt{scale}'' values to the list in \texttt{O\_dimer.py} that interpolate between the original set (e.g. expand to \texttt{[1.00,0.90,0.925,0.95,0.975,1.025,1.05,1.075,1.10]}).  Perform the DMC calculations and redo the fits.  How accurately does your fit to the DMC data reproduce the experimental values?  Should this pseudopotential be used in production calculations?}
 
   \item{(Optional) Perform optimization runs at the extremal separation distances corresponding to \texttt{scale=[0.90,1.10]}}.  Are the individually optimized wavefunctions of significantly better quality than the one imported from \texttt{scale=1.00}?  Why?  What form of Jastrow factor might give an even better improvement? 
 \end{enumerate}
