@@ -42,6 +42,8 @@ namespace qmcplusplus
 
     //set defaults
     myName = "OrbitalImages";
+    derivatives = false;
+    center_grid = false;
     corner = 0.0;
     batch_size = -1;
 
@@ -63,7 +65,10 @@ namespace qmcplusplus
     PosType center;
     Tensor<RealType,DIM> axes;
     std::vector<std::string> valtypes;
+    std::vector<std::string> dertypes;
     std::string file_format = "xsf";
+    std::string der_str = "no";
+    std::string cg_str  = "no";
 
     xmlNodePtr element = cur->xmlChildrenNode;
     std::vector<xmlNodePtr> other_elements;
@@ -82,6 +87,8 @@ namespace qmcplusplus
           have_grid = true;
           putContent(grid,element);        
         }
+        else if(name=="center_grid") 
+          putContent(cg_str,element);        
         else if(name=="corner") 
         {
           have_corner = true;
@@ -99,6 +106,8 @@ namespace qmcplusplus
         }
         else if(name=="value") 
           putContent(valtypes,element);        
+        else if(name=="derivatives") 
+          putContent(der_str,element);        
         else if(name=="format") 
           putContent(file_format,element);        
         else
@@ -106,6 +115,9 @@ namespace qmcplusplus
       }
       element = element->next;
     }
+
+    derivatives = der_str=="yes";
+    center_grid = cg_str=="yes";
 
     //second pass parameter read to get orbital indices
     //  each parameter is named after the corresponding sposet
@@ -227,7 +239,8 @@ namespace qmcplusplus
   void OrbitalImages::report(const std::string& pad)
   {
     app_log()<<pad<<"OrbitalImages report"<< std::endl;
-    app_log()<<pad<<"  nsposets = "<<sposets.size()<<" "<<sposet_names.size()<<" "<<sposet_indices.size()<< std::endl;
+    app_log()<<pad<<"  derivatives = "<< derivatives << std::endl;
+    app_log()<<pad<<"  nsposets    = "<<sposets.size()<<" "<<sposet_names.size()<<" "<<sposet_indices.size()<< std::endl;
     for(int i=0;i<sposet_names.size();++i)
     {
       std::vector<int>& sposet_inds = *sposet_indices[i];
@@ -242,10 +255,11 @@ namespace qmcplusplus
         app_log()<< std::endl;
       }
     }
-    app_log()<<pad<<"  npoints = "<< npoints << std::endl;
-    app_log()<<pad<<"  grid    = "<< grid << std::endl;
-    app_log()<<pad<<"  corner  = "<< corner << std::endl;
-    app_log()<<pad<<"  center  = "<< corner+cell.Center << std::endl;
+    app_log()<<pad<<"  npoints     = "<< npoints << std::endl;
+    app_log()<<pad<<"  grid        = "<< grid << std::endl;
+    app_log()<<pad<<"  corner      = "<< corner << std::endl;
+    app_log()<<pad<<"  center      = "<< corner+cell.Center << std::endl;
+    app_log()<<pad<<"  center_grid = "<< center_grid << std::endl;
     app_log()<<pad<<"  cell " << std::endl;
     for(int d=0;d<DIM;++d)
       app_log()<<pad<<"    "<< d <<" "<< cell.Rv[d] << std::endl;
@@ -281,6 +295,8 @@ namespace qmcplusplus
           nrem-= ind*gdims[d];
         }
         u[0] = nrem*du[0];
+        if(center_grid)
+          u += 0.5*du;
         rpoints[p] = cell.toCart(u) + corner;
       }
 
@@ -304,6 +320,13 @@ namespace qmcplusplus
         spo_vtmp.resize(sposet.size());
         batch_values.resize(npoints,bsize);
         orbital.resize(npoints);
+        if(derivatives)
+        {
+          spo_gtmp.resize(sposet.size());
+          spo_ltmp.resize(sposet.size());
+          batch_gradients.resize(npoints,bsize);
+          batch_laplacians.resize(npoints,bsize);
+        }
 
         //loop over orbitals one batch at a time (batch_size orbitals)
         int bstart=0;
@@ -315,10 +338,23 @@ namespace qmcplusplus
           for(int p=0;p<npoints;++p)
           {
             P.makeMove(0,rpoints[p]-P.R[0]);
-            sposet.evaluate(P,0,spo_vtmp); //note that ALL orbitals are evaluated each time
+            if(!derivatives)
+            {
+              sposet.evaluate(P,0,spo_vtmp); //note that ALL orbitals are evaluated each time
+              for(int b=bstart,ib=0;b<bend;++b,++ib)
+                batch_values(p,ib) = spo_vtmp[sposet_inds[b]];
+            }
+            else
+            {
+              sposet.evaluate(P,0,spo_vtmp,spo_gtmp,spo_ltmp);
+              for(int b=bstart,ib=0;b<bend;++b,++ib)
+                batch_values(p,ib) = spo_vtmp[sposet_inds[b]];
+              for(int b=bstart,ib=0;b<bend;++b,++ib)
+                batch_gradients(p,ib) = spo_gtmp[sposet_inds[b]];
+              for(int b=bstart,ib=0;b<bend;++b,++ib)
+                batch_laplacians(p,ib) = spo_ltmp[sposet_inds[b]];
+            }
             P.rejectMove(0);
-            for(int b=bstart,ib=0;b<bend;++b,++ib)
-              batch_values(p,ib) = spo_vtmp[sposet_inds[b]];
           }
           //write out the batch one orbital at a time for each value type requested
           app_log()<<"    writing all orbitals in the batch"<< std::endl;
@@ -330,6 +366,26 @@ namespace qmcplusplus
             //write one file for each value type (real, imag, etc) selected
             for(int iv=0;iv<value_types.size();++iv)
               write_orbital(sposet_name,sposet_inds[b],orbital,value_types[iv]);
+          }
+          if(derivatives)
+          {
+            for(int b=bstart,ib=0;b<bend;++b,++ib)
+            {
+              for(int d=0;d<DIM;++d)
+              {
+                for(int p=0;p<npoints;++p)
+                  orbital[p] = batch_gradients(p,ib)[d];
+                for(int iv=0;iv<value_types.size();++iv)
+                  write_orbital(sposet_name,sposet_inds[b],orbital,value_types[iv],gradient_d,d);
+              }
+            }
+            for(int b=bstart,ib=0;b<bend;++b,++ib)
+            {
+              for(int p=0;p<npoints;++p)
+                orbital[p] = batch_laplacians(p,ib);
+              for(int iv=0;iv<value_types.size();++iv)
+                write_orbital(sposet_name,sposet_inds[b],orbital,value_types[iv],laplacian_d);
+            }
           }
           bstart = bend;
           bend += bsize;
@@ -348,15 +404,15 @@ namespace qmcplusplus
   }
 
 
-  void OrbitalImages::write_orbital(const std::string& sponame,int index,std::vector<ValueType>& orb,value_types_enum value_type)
+  void OrbitalImages::write_orbital(const std::string& sponame,int index,std::vector<ValueType>& orb,value_types_enum value_type,derivative_types_enum derivative_type,int dimension)
   {
     //only xsf format is supported for now
     if(format==xsf)
-      write_orbital_xsf(sponame,index,orb,value_type);
+      write_orbital_xsf(sponame,index,orb,value_type,derivative_type,dimension);
   }
 
 
-  void OrbitalImages::write_orbital_xsf(const std::string& sponame,int index,std::vector<ValueType>& orb,value_types_enum value_type)
+  void OrbitalImages::write_orbital_xsf(const std::string& sponame,int index,std::vector<ValueType>& orb,value_types_enum value_type,derivative_types_enum derivative_type,int dimension)
   {
     using Units::convert;
     using Units::B;
@@ -364,14 +420,39 @@ namespace qmcplusplus
 
     //generate file name
     char filename[100];
-    if(value_type==real_val)
-      sprintf(filename,"%s_orbital_%04d.xsf",sponame.c_str(),index);
-    else if(value_type==imag_val)
-      sprintf(filename,"%s_orbital_%04d_imag.xsf",sponame.c_str(),index);
-    else if(value_type==abs_val)
-      sprintf(filename,"%s_orbital_%04d_abs.xsf",sponame.c_str(),index);
-    else if(value_type==abs2_val)
-      sprintf(filename,"%s_orbital_%04d_abs2.xsf",sponame.c_str(),index);
+    if(derivative_type==value_d)
+    {
+      if(value_type==real_val)
+        sprintf(filename,"%s_orbital_%04d.xsf",sponame.c_str(),index);
+      else if(value_type==imag_val)
+        sprintf(filename,"%s_orbital_%04d_imag.xsf",sponame.c_str(),index);
+      else if(value_type==abs_val)
+        sprintf(filename,"%s_orbital_%04d_abs.xsf",sponame.c_str(),index);
+      else if(value_type==abs2_val)
+        sprintf(filename,"%s_orbital_%04d_abs2.xsf",sponame.c_str(),index);
+    }
+    else if(derivative_type==gradient_d)
+    {
+      if(value_type==real_val)
+        sprintf(filename,"%s_orbital_%04d_grad%1d.xsf",sponame.c_str(),index,dimension);
+      else if(value_type==imag_val)
+        sprintf(filename,"%s_orbital_%04d_grad%1d_imag.xsf",sponame.c_str(),index,dimension);
+      else if(value_type==abs_val)
+        sprintf(filename,"%s_orbital_%04d_grad%1d_abs.xsf",sponame.c_str(),index,dimension);
+      else if(value_type==abs2_val)
+        sprintf(filename,"%s_orbital_%04d_grad%1d_abs2.xsf",sponame.c_str(),index,dimension);
+    }
+    else if(derivative_type==laplacian_d)
+    {
+      if(value_type==real_val)
+        sprintf(filename,"%s_orbital_%04d_lap.xsf",sponame.c_str(),index);
+      else if(value_type==imag_val)
+        sprintf(filename,"%s_orbital_%04d_lap_imag.xsf",sponame.c_str(),index);
+      else if(value_type==abs_val)
+        sprintf(filename,"%s_orbital_%04d_lap_abs.xsf",sponame.c_str(),index);
+      else if(value_type==abs2_val)
+        sprintf(filename,"%s_orbital_%04d_lap_abs2.xsf",sponame.c_str(),index);
+    }
 
     app_log()<<"      writing file: "<<std::string(filename)<< std::endl;
 

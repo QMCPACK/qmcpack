@@ -100,8 +100,14 @@ class OrbitalImages : public QMCHamiltonianBase
   enum{DIM=OHMMS_DIM};
 
   typedef SPOSetBase::ValueVector_t ValueVector_t;
+  typedef SPOSetBase::GradVector_t  GradVector_t;
   typedef ParticleSet::ParticleLayout_t Lattice_t;
   typedef std::map<std::string,ParticleSet*> PSPool;
+
+  
+  ///derivative types
+  enum derivative_types_enum{value_d=0,gradient_d,laplacian_d};
+
 
   ///options for orbital value to write
   enum value_types_enum {real_val=0,imag_val,abs_val,abs2_val};
@@ -128,6 +134,9 @@ class OrbitalImages : public QMCHamiltonianBase
   ///orbital value selections
   std::vector<value_types_enum> value_types;
 
+  ///write out derivatives in addition to values
+  bool derivatives;
+
   ///names of sposets to evaluate
   std::vector<std::string> sposet_names;
 
@@ -136,6 +145,9 @@ class OrbitalImages : public QMCHamiltonianBase
 
   ///sposets obtained by name from BasisSetFactory
   std::vector<SPOSetBase*> sposets;
+
+  ///evaluate points at grid cell centers instead of edges
+  bool center_grid;
 
   ///cell bounding the evaluation grid, default is simulation cell
   Lattice_t cell;
@@ -158,8 +170,20 @@ class OrbitalImages : public QMCHamiltonianBase
   ///temporary vector to hold values of all orbitals at a single point
   ValueVector_t   spo_vtmp;
 
+  ///temporary vector to hold gradients of all orbitals at a single point
+  GradVector_t    spo_gtmp;
+
+  ///temporary vector to hold laplacians of all orbitals at a single point
+  ValueVector_t   spo_ltmp;
+
   ///temporary array to hold values of a batch of orbitals at all grid points
   Array<ValueType,2> batch_values;
+
+  ///temporary array to hold gradients of a batch of orbitals at all grid points
+  Array<GradType,2> batch_gradients;
+
+  ///temporary array to hold laplacians of a batch of orbitals at all grid points
+  Array<ValueType,2> batch_laplacians;
 
   ///temporary array to hold values of a single orbital at all grid points
   std::vector<ValueType> orbital;
@@ -210,11 +234,15 @@ class OrbitalImages : public QMCHamiltonianBase
 
   ///write a single orbital to file
   void write_orbital(const std::string& sponame,int index,
-                     std::vector<ValueType>& orb,value_types_enum value_type);
+                     std::vector<ValueType>& orb,value_types_enum value_type,
+                     derivative_types_enum derivative_type=value_d,
+                     int dimension=0);
 
   ///write a single orbital to an xsf file
   void write_orbital_xsf(const std::string& sponame,int index,
-                         std::vector<ValueType>& orb,value_types_enum value_type);
+                         std::vector<ValueType>& orb,value_types_enum value_type,
+                         derivative_types_enum derivative_type=value_d,
+                         int dimension=0);
 
 };
 
