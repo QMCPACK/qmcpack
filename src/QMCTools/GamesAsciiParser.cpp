@@ -37,6 +37,11 @@ GamesAsciiParser::GamesAsciiParser(int argc, char** argv):
 void GamesAsciiParser::parse(const std::string& fname)
 {
   std::ifstream fin(fname.c_str());
+  if (fin.fail())
+  {
+    std::cerr << "Error when opening file: " << fname << std::endl;
+    abort();
+  }
   pivot_begin= fin.tellg();
   std::string aline;
   // if basis functions are removed, this will be modified below
@@ -209,6 +214,11 @@ void GamesAsciiParser::parse(const std::string& fname)
   if(multideterminant)
   {
     fin.open(outputFile.c_str());
+    if (fin.fail())
+    {
+      std::cerr << "Error when opening file: " << outputFile << std::endl;
+      abort();
+    }
     pivot_begin= fin.tellg();
 //cout<<"looking for dets " << std::endl;
 //cout.flush();
