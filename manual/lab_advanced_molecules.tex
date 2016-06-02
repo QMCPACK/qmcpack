@@ -37,7 +37,91 @@ This lab covers molecular QMC calculations with wavefunctions of increasing soph
 \begin{shaded}
 \begin{verbatim}
 labs/lab3_advanced_molecules/
-  ...
+
+ex1_first-run-hartree-fock - basic work flow from Hatree-Fock to DMC
+├── gms                      - Hatree-Fock calculation using GAMESS
+│   ├── h2o.hf.inp               - GAMESS input
+│   ├── h2o.hf.dat               - GAMESS punch file containing orbitals
+│   └── h2o.hf.out               - GAMESS output with orbitals and other info
+├── convert                  - Convert GAMESS wavefunction to QMCPACK format
+│   ├── h2o.hf.out               - GAMESS output
+│   ├── h2o.ptcl.xml             - converted particle positions
+│   └── h2o.wfs.xml              - converted wave function
+├── opt                    - VMC optimization
+│   ├── optm.xml                - QMCPACK VMC optimization input
+│   ├── h2o.ptcl.xml            - converted particle positions
+│   └── h2o.wfs.xml             - converted wave function 
+├── dmc_timestep           - Check DMC timestep bias
+│   ├── dmc_ts.xml              - QMCPACK DMC input
+│   └── h2o.ptcl.xml            - converted particle positions
+└── dmc_walkers            - Check DMC population control bias
+
+ex2_slater-jastrow-wf-options - explore jastrow and orbital options
+├── jastrow                    - Jastrow options
+│   ├── 12j                      - no 3-body Jastrow
+│   │   ├── optm.xml               - QMCPACK VMC optimization input
+│   │   ├── h2o.ptcl.xml           - converted particle positions
+│   │   └── h2o.wfs.xml            - converted wave function 
+│   ├── 1j                       - only 1-body Jastrow
+│   │   ├── optm.xml               - QMCPACK VMC optimization input
+│   │   ├── h2o.ptcl.xml           - converted particle positions
+│   │   └── h2o.wfs.xml            - converted wave function 
+│   └── 2j                       - only 2-body Jastrow
+│       ├── optm.xml               - QMCPACK VMC optimization input
+│       ├── h2o.ptcl.xml           - converted particle positions
+│       └── h2o.wfs.xml            - converted wave function 
+└── orbitals                   - Orbital options
+    ├── pbe                      - PBE orbitals
+    │   ├── gms                    - DFT calculation using GAMESS
+    │   │   ├── h2o.pbe.inp          - GAMESS DFT input
+    │   │   ├── h2o.pbe.dat          - GAMESS punch file containing orbitals
+    │   │   └── h2o.pbe.out          - GAMESS output with orbitals and other info
+    │   ├── convert                - Convert GAMESS wavefunction to QMCPACK format
+    │   │   ├── h2o.pbe.out          - GAMESS output
+    │   │   ├── h2o.ptcl.xml         - converted particle positions
+    │   │   └── h2o.wfs.xml          - converted wave function
+    │   └── opt                    - VMC optimization
+    │       ├── optm.xml             - QMCPACK VMC optimization input
+    │       ├── h2o.ptcl.xml         - converted particle positions
+    │       └── h2o.wfs.xml          - converted wave function 
+    ├── pbe0                     - PBE0  orbitals
+    ├── blyp                     - BLYP  orbitals
+    └── b3lyp                    - B3LYP orbitals
+    
+ex3_multi-slater-jastrow
+├── cisd                   - CISD wave function
+│   ├── gms                  - CISD calculation using GAMESS
+│   │   ├── h2o.cisd.inp           - GAMESS input
+│   │   ├── h2o.cisd.dat           - GAMESS punch file containing orbitals
+│   │   └── h2o.cisd.out           - GAMESS output with orbitals and other info
+│   ├── convert              - Convert GAMESS wavefunction to QMCPACK format
+│   │   ├── h2o.hf.out           - GAMESS output
+│   │   ├── h2o.ptcl.xml         - converted particle positions
+│   │   └── h2o.wfs.xml          - converted wave function
+│   ├── thres0.01            - VMC optimization with few determinants
+│   │   ├── optm.xml            - QMCPACK VMC optimization input
+│   │   ├── h2o.ptcl.xml        - converted particle positions
+│   │   └── h2o.wfs.xml         - converted wave function 
+│   └── thres0.075           - VMC optimization with more determinants
+│       ├── optm.xml            - QMCPACK VMC optimization input
+│       ├── h2o.ptcl.xml        - converted particle positions
+│       └── h2o.wfs.xml         - converted wave function 
+├── casci                  - CASCI wave function
+│   ├── gms                  - CASCI calculation using GAMESS
+│   ├── convert              - Convert GAMESS wavefunction to QMCPACK format
+│   ├── thres0.01            - VMC optimization with few determinants
+│   └── thres0.075           - VMC optimization with more determinants
+└── soci                  - SOCI wave function
+    ├── gms                  - SOCI calculation using GAMESS
+    ├── convert              - Convert GAMESS wavefunction to QMCPACK format
+    ├── thres0.01            - VMC optimization with few determinants
+    └── thres0.075           - VMC optimization with more determinants
+
+pseudo
+├── H.BFD.gamess             - BFD pseudopotential for H in GAMESS format
+├── O.BFD.CCT.gamess         - BFD pseudopotential for O in GAMESS format
+├── H.xml                    - BFD pseudopotential for H in QMCPACK format
+└── O.xml                    - BFD pseudopotential for H in QMCPACK format
 \end{verbatim}
 \end{shaded}
 
@@ -52,58 +136,68 @@ The exercise will be performed on a water molecule at the equilibrium geometry.
 
 \subsection{Generation of a HF wave-function with GAMESS}
 
-From the top directory, go to ``GAMESS/DFT/HF''. This directory contains an input
+From the top directory, go to ``ex1\_first-run-hartree-fock/gms''. This directory contains an input
 file for a HF calculation of a water molecule using BFD ECPs and the corresponding
-cc-pVTZ basis set. The input file should be named: “H2O.HF.inp”. Study the input
+cc-pVTZ basis set. The input file should be named: “h2o.hf.inp”. Study the input
 file. If the student wishes, he can refer to section A for a more detailed description of the
 GAMESS input syntax. There will be a better time to do this soon, so we recommend
 that the student continues with the exercise at this point. After you are done, execute
-GAMESS with this input and store the standard output in a file named ``H2O.HF.output''.
-Finally, use convert4qmc to generate the QMCPACK particleset and wavefunction files. It
+GAMESS with this input and store the standard output in a file named ``h2o.hf.output''.
+Finally, in the ``convert'' folder, use convert4qmc to generate the QMCPACK particleset and wavefunction files. It
 is always useful to rename the files generated by convert4qmc to something meaningful,
 since by default they are called sample.Gaussian-G2.xml and sample.Gaussian-G2.ptcl.xml.
 In a standard computer (without cross-compilation), these tasks could be accomplished by
 the following commands.
 \begin{shaded}
 \begin{verbatim}
-cd ${TRAINING TOP}/GAMESS/DFT/HF
-rungms H2O.HF.inp > H2O.HF.out
-convert4qmc -gamessAscii H2O.HF.output -add3BodyJ
-mv sample.Gaussian-G2.xml H2O.HF.wfs.xml
-mv sample.Gaussian-G2.ptcl.xml H2O.ptcl.xml
+cd ${TRAINING TOP}/ex1_first-run-hartree-fock/gms
+jobrun_vesta rungms h2o.hf.inp > h2o.hf.out
+cd ../convert
+ln -s ../gms/h2o.hf.out
+jobrun_vesta convert4qmc -gamessAscii h2o.hf.out -add3BodyJ
+mv sample.Gaussian-G2.xml h2o.wfs.xml
+mv sample.Gaussian-G2.ptcl.xml h2o.ptcl.xml
 \end{verbatim}
 \end{shaded}
 \noindent
 
-Due to the particular requirements of Vesta these executions can not be performed on
-the login nodes, they must be performed in the compute nodes. In order to accomplish
-this, we must make a submission script with the appropriate commands and submit it to
-the batch system. Two submission scripts have been provided, one for the GAMESS 
-execution called submit gamess.csh and one for the submission of convert4qmc, with a similar
-descriptive name. Study these input files. (In this and all other exercises, you will need
-to make all submission scripts executables with the command chmod u+x script.csh.)
-When you are ready, start by submitting the GAMESS execution to the batch system
-using ``./script gamess.csh'' (This script calls the GAMESS run script, which itself calls
-qsub. Do not attempt to submit this specific script with qsub). The HF energy of the
-system is ``-16.9600590022''. To search for the energy in the output file quickly, you can
-use grep“TOTAL ENERGY =” H2O.HF.output. When the calculation completes,
-submit the execution of the converter using ``qsub submit convert.csh'' (all QMCPACK execution 
-scripts will be submitted with qsub). This is a good time to review section B, which
-contains a description on the use of the converter.
+%Due to the particular requirements of Vesta these executions can not be performed on
+%the login nodes, they must be performed in the compute nodes. In order to accomplish
+%this, we must make a submission script with the appropriate commands and submit it to
+%the batch system. Two submission scripts have been provided, one for the GAMESS 
+%execution called submit gamess.csh and one for the submission of convert4qmc, with a similar
+%descriptive name. Study these input files. (In this and all other exercises, you will need
+%to make all submission scripts executables with the command chmod u+x script.csh.)
+%When you are ready, start by submitting the GAMESS execution to the batch system
+%using ``./script gamess.csh'' (This script calls the GAMESS run script, which itself calls
+%qsub. Do not attempt to submit this specific script with qsub). 
+The HF energy of the
+system is -16.9600590022 Ha. To search for the energy in the output file quickly, you can
+use 
+\begin{shaded}
+\begin{verbatim}
+grep "TOTAL ENERGY =" h2o.hf.out
+\end{verbatim}
+\end{shaded}
+%When the calculation completes,
+%submit the execution of the converter using ``qsub submit convert.csh'' (all QMCPACK execution 
+%scripts will be submitted with qsub). This is a good time to review section B, which
+%contains a description on the use of the converter.
+As the job runs on VESTA, it is a good time to review section B, which contains a description on the use of the converter.
 
 
 \subsection{Optimize the wave-function}
 When the execution of the previous steps is completed, there should be 2 new
-files called H2O.HF.wfs.xml and H2O.ptcl.xml. Now we will use VMC to optimize the 
+files called h2o.wfs.xml and h2o.ptcl.xml. Now we will use VMC to optimize the 
 Jastrow parameters in the wave-function.  From the top directory, go to
-``QMCPACK/SJ/First Run/Optimize''. Copy the xml files generated in the previous step
+``ex1\_first-run-hartree-fock/opt''. Link the xml files generated in the previous step
 to the current directory. This directory should already contain a basic QMCPACK input
-file for an optimization calculation (optm.xml) and a submission script (submit.csh). Open
-optm.xml with your favorite text editor and modify the name of the files that contain the
+file for an optimization calculation (optm.xml) %and a submission script (submit.csh). 
+Open optm.xml with your favorite text editor and modify the name of the files that contain the
 wavefunction and particleset XML blocks. These files are included with the commands:
 <include href=”ptcl.xml”/ > and <include href=wfs.xml”/ > (the particle set must be
-defined before the wave-function). The name of the files should now be H2O.ptcl.xml
-and H2O.HF.wfs.xml. Study both files and submit when you are ready. Notice that the
+defined before the wave-function). The name of the files should now be h2o.ptcl.xml
+and h2o.wfs.xml. Study both files and submit when you are ready. Notice that the
 location of the ECPs has been set for you, in your own calculations you have to make
 sure you obtain the ECPs from the appropriate libraries and convert them to QMCPACK
 format using ppconvert. This is a good time to study section C, which contains a review
@@ -111,16 +205,23 @@ of the main parameters in the optimization XML block, while this calculation fin
 previous steps can be accomplished by the following commands:
 \begin{shaded}
 \begin{verbatim}
-cd ${TRAINING TOP}/QMCPACK/SJ/First Run/Optimize
-cp ${TRAINING TOP}/GAMESS/DFT/HF/H2O.*.xml .
-qsub ./submit.csh
+cd ${TRAINING TOP}/ex1_first-run-hartree-fock/opt
+ln -s ../convert/h2o.wfs.xml .
+ln -s ../convert/h2o.ptcl.xml .
+# edit optm.xml to include the correct ptcl.xml and wfs.xml
+jobrun_vesta qmcpack optm.xml
 \end{verbatim}
 \end{shaded}
 
 Use the analysis tool qmca to analyze the results of the calculation. Obtain the VMC
 energy and variance for each step in the optimization and plot it using your favorite program.
-Remember that qmca has built-in functions to plot the analyzed data. The resulting energy
-as a function of optimization step should look qualitatively similar to figure \ref{fig:lam_opt_conv} below.
+Remember that qmca has built-in functions to plot the analyzed data.
+\begin{shaded}
+\begin{verbatim}
+qmca -q e *scalar.dat -p
+\end{verbatim}
+\end{shaded}
+The resulting energy as a function of optimization step should look qualitatively similar to figure \ref{fig:lam_opt_conv} below.
 
 \begin{figure}
 \begin{center}
@@ -131,8 +232,7 @@ as a function of optimization step should look qualitatively similar to figure \
 }
 \end{figure}
 
-The energy should decrease quickly as a function of the number of optimization steps.
-After 6-8 steps, the energy should be converged to $\sim$2-3mHa. To improve convergence,
+The energy should decrease quickly as a function of the number of optimization steps. After 6-8 steps, the energy should be converged to $\sim$2-3mHa. To improve convergence,
 we would need to increase the number of samples used during the optimization. You can
 check this for yourself on your free time. With optimized wave-functions we are in a position
 to perform VMC and DMC calculations. The modified wave-function files after each step
@@ -143,28 +243,25 @@ NNN is a series number which increases with every executable xml block in the in
 
 \subsection{Time-step Study}
 Now we will study the dependence of the DMC energy with time-step. From the top directory, 
-go to “QMCPACK/SJ/First Run/TimeStep”. This folder contains a basic xml input
-file (vmc dmc.xml) that performs a short VMC calculation and three DMC calculations
-with varying time-steps (0.1, 0.05, 0.01). Copy the particle set and the last optimization
+go to “ex1\_first-run-hartree-fock/dmc\_timestep”. This folder contains a basic xml input
+file (dmc\_ts.xml) that performs a short VMC calculation and three DMC calculations
+with varying time-steps (0.1, 0.05, 0.01). Link the particle set and the last optimization
 file from the previous folder (the file called H2O.sNNN.opt.xml with the largest value of
 NNN). Rename the optimized wave-function to any suitable name if you wish, for example
-H2O.HF.opt.xml, and change the name of the particle set and wave-function files in the
+h2o.opt.xml, and change the name of the particle set and wave-function files in the
 input file. An optimized wave-function can be found in the reference files (same location)
-in case it is needed. Using the submission script of the previous exercise as a base, create a
-submission script for this step and submit the run. Set the number of nodes to 32 (2 places
-must be changed), the number of threads to 16 and leave the number of tasks at 1.
+in case it is needed. %Using the submission script of the previous exercise as a base, create a
+%submission script for this step and submit the run. Set the number of nodes to 32 (2 places
+%must be changed), the number of threads to 16 and leave the number of tasks at 1.
 
 The main steps needed to perform this exercise are:
 \begin{shaded}
 \begin{verbatim}
-cd ${TRAINING TOP}/QMCPACK/SJ/First Run/Timestep
-cp ${TRAINING TOP}/QMCPACK/SJ/First Run/Optimize/H2O.HF.s007.xml
-H2O.HF.opt.xml
-cp ${TRAINING TOP}/QMCPACK/SJ/First Run/Optimize/H2O.ptcl.xml .
-cp ${TRAINING TOP}/QMCPACK/SJ/First Run/Optimize/submit.csh .
-vim vmc dmc.xml
-vim submit.csh
-qsub ./submit.csh
+cd ${TRAINING TOP}/ex1_first-run-hartree-fock/dmc_timestep
+ln -s ../opt/h2o.ptcl.xml .
+ln -s ../opt/jopt-h2o.s007.opt.xml h2o.opt.xml
+# edit dmc_ts.xml to include the correct ptcl.xml and wfs.xml
+jobrun_vesta qmcpack dmc_ts.xml
 \end{verbatim}
 \end{shaded}
 While these runs complete, go to section D and review the basic VMC and DMC input
@@ -202,7 +299,7 @@ used when running QMC calculations on large parallel computers since we can redu
 statistical error bars efficiently by running with large walker populations distributed across
 all processors.
 
-From the top directory, go to ``QMCPACK/SJ/First Run/NumberWalkers''. Copy the
+From the top directory, go to ``ex1\_first-run-hartree-fock/dmc\_walkers''. Copy the
 optimized wave-function and particle set files used in the previous calculations to the current
 folder, these are the ones generated on step 2 of this exercise. Optimized wave-functions files
 can also be found in ``REFERENCE/QMCPACK/SJ/First Run/Optimize''. The directory
@@ -259,18 +356,18 @@ molecule at equilibrium.
 
 \subsection{Influence of Jastrow on VMC energy with HF wave-function}
 In this section we will study the dependence of the VMC energy on the various Jastrow
-terms, e.g. one-body, two-body and three-body. From the top directory, go to ``QMCPACK/SJ/Jastrow''. 
+terms, e.g. one-body, two-body and three-body. From the top directory, go to ``ex2\_slater-jastrow-wf-options/jastrow''. 
 We will compare the single determinant VMC energy using a two-body 
 Jastrow term, both one- and two-body terms and finally one-, two- and three-body
 terms. Since we are interested in the influence of the Jastrow, we will use the HF orbitals
 calculated in exercise \#1. Make three folders named 2J, 1-2J and 1-2-3J. For both 2J and
 1-2J (we have already optimized a wave-function for the 1-2-3J case, so the steps will be
-slightly different in this case), copy the file optm vmc.xml and the sample submission file
-from ``QMCPACK/Generic Files'' . This input file performs both wave-function optimization 
+slightly different in this case), copy the input file optm.xml %and the sample submission file
+from ``ex1\_first-run-hartree-fock/opt'' . This input file performs both wave-function optimization 
 and a VMC calculation. Copy the un-optimized HF wave-function and particle set files
-from ``GAMESS/DFT/HF'', if you followed the instructions in exercise \#1 these should be
-named H2O.HF.wfs.xml and H2O.ptcl.xml. Otherwise, you can obtained them from the
-REFERENCE files. Modify the file H2O.HF.wfs.xml to remove the appropriate jastrow
+from ``ex1\_first-run-hartree-fock/convert'', if you followed the instructions in exercise \#1 these should be
+named h2o.wfs.xml and h2o.ptcl.xml. Otherwise, you can obtained them from the
+REFERENCE files. Modify the file h2o.wfs.xml to remove the appropriate jastrow
 blocks. For example, for a two-body Jastrow (only), you need to eliminate the jastrow
 blocks named \texttt{<jastrow name="J1"} and \texttt{<jastrow name="J3"}. In the case of 1-2J, remove
 only \texttt{<jastrow name="J3"}. Recommended settings for the optimization run are: nodes=32,
@@ -279,10 +376,8 @@ VMC section we recommend walkers=16, blocks=1000, steps=1, substeps=100. Notice 
 samples should always be set to blocks*threads per node*nodes = 32*16*250=128000. Repeat 
 the process in both 2J and 1-2J cases. For the 1-2-3J case, the wave-function has
 already been optimized in the previous exercise. Copy the optimized HF wave-function and
-the particle set from QMCPACK/SJ/First Runs/Optimize. Copy the input file and submission 
-script from any of the previous runs and remove the optimization block from the
-input, just leave the VMC step. In all three cases, modify the submission script and submit
-the run.
+the particle set from ``ex1\_first-run-hartree-fock/opt''. Copy the input file from any of the previous runs and remove the optimization block from the
+input, just leave the VMC step. In all three cases, modify the submission script and submit the run.
 
 \begin{figure}
 \begin{center}
@@ -306,16 +401,16 @@ walkers, etc) are also reduced with improved wave-functions.
 
 \subsection{Generation of wave-functions from DFT using GAMESS}
 In this section we will use GAMESS to generate wave-functions for QMCPACK from
-DFT calculations. From the top folder, go to ``GAMESS/DFT''. In order to demonstrate
+DFT calculations. From the top folder, go to ``ex2\_slater-jastrow-wf-options/orbitals''. In order to demonstrate
 the variation in DMC energies with the choice of DFT orbitals, we will choose the following
 set of exchange-correlation functionals (PBE, PBE0, BLYP, B3LYP). For each functional,
 make a directory using your preferred naming convention (e.g. the name of the functional).
-Go into each folder and copy a generic GAMESS input file for a ROHF calculation from
-``GAMESS/Generic Files'', a file named rohf.inp should exist. Rename the file with your
-preferred naming convention, we suggest using H2O.DFT.inp, where DFT is the name of
+Go into each folder and copy a generic GAMESS input file from %for a ROHF calculation from
+``ex1\_first-run-hartree-fock/gms'' .%, a file named rohf.inp should exist.
+Rename the file with your preferred naming convention, we suggest using h2o.[dft].inp, where [dft] is the name of
 the functional used in the calculation. At this point, this input file should be identical to the
 one used to generic the HF wave-function used in exercise \#1. In order to perform a DFT
-calculation we only need to define ``DFTTYP'' in the \texttt{\$CONTRL ... \$END} section and set
+calculation we only need to add ``DFTTYP'' to the \texttt{\$CONTRL ... \$END} section and set
 it to the desired functional type, for example ``DFTTYP=PBE'' for a PBE functional. This
 variable must be set to (PBE, PBE0, BLYP, B3LYP) to obtain the appropriate functional in
 GAMESS. For a complete list of implemented functionals, see the GAMESS input manual.
@@ -323,13 +418,13 @@ GAMESS. For a complete list of implemented functionals, see the GAMESS input man
 
 \subsection{Optimization and DMC calculations with DFT wave-functions}
 In this section we will optimize the wave-function generated in the previous step and
-perform DMC calculations. From the top directory, go to “QMCPACK/SJ/SPOrbitals”.
+perform DMC calculations. From the top directory, go to “ex2\_slater-jastrow-wf-options/orbitals”.
 The steps required to achieve this are identical to those used to optimize the wave-function
 with HF orbitals. Make individual folders for each calculation and obtain the necessary files
-to perform optimization, VMC and DMC calculations from “QMCPACK/Generic Files”.
-A file named optm vmc dmc.xml should exist that contains all three execution blocks. For
-each functional, make the appropriate modifications to the input files and copy the particle 
-set and wave-function files from the appropriate directory in “GAMESS/DFT”. We
+to perform optimization, VMC and DMC calculations from ``ex1\_first-run-hartree-fock/opt'' and ``ex1\_first-run-hartree-fock/dmc\_ts'', for example.
+%A file named optm vmc dmc.xml should exist that contains all three execution blocks. 
+For each functional, make the appropriate modifications to the input files and copy the particle 
+set and wave-function files from the appropriate directory in “ex2\_slater-jastrow-wf-options/orbitals/[dft]”. We
 recommend the following settings: nodes=32, threads=16, (in optimization) blocks=250,
 samples=128000, timestep=0.5, 8 optimization loops, (in VMC) walkers=16, blocks=100,
 steps=1, substeps=100, (in DMC) blocks 400, targetWalkers=960, timestep=0.01. Submit
@@ -368,9 +463,9 @@ In this section we will optimize the wave-function generated in the previous ste
 is no difference in the optimization steps if a single determinant and a multi-determinant
 wave-function.
 QMCPACK will recognize the presence of a multi-determinant wavefunction and will automatically 
-optimize the linear coefficients by default. Go to “QMCPACK/MSD/CISD” and make a folder called 
+optimize the linear coefficients by default. Go to ``ex3\_multi-slater-jastrow/cisd'' and make a folder called 
 thr0.01. Copy the particle set and wavefunction files created in the previous step to the current 
-directory. With your favorite text editor, open the wave-function file H2O.CISD.wfs.xml. Look for 
+directory. With your favorite text editor, open the wave-function file h2o.wfs.xml. Look for 
 the multideterminant XML block and change the “cutoff” parameter in detlist to 0.01. Then follow 
 the same steps used in the subsection “Optimization and DMC calculations with DFT wave-functions” 
 to optimize the wave-function. Similar to this case, design a QMCPACK input file that performs
@@ -395,7 +490,7 @@ calculation.
 \end{figure}
 
 When you are done, use qmca to analyze the results. Compare the energies at these two
-coefficient cutoffs with the energies obtained with DFT orbitals. Do to the time limitations
+coefficient cutoffs with the energies obtained with DFT orbitals. Due to the time limitations
 of this tutorial it is not practical to optimize the wave-functions with a smaller cutoff, since
 this would require more samples and longer runs due to the larger number of optimizable
 parameters. Figure \ref{fig:lam_dmc_ci_cisd} shows the results of such exercise, the DMC energy as a function of the
@@ -408,9 +503,8 @@ In this exercise we will study the dependence of the DMC energy on the set of or
 and the type of configurations included in a multi-determinant wave-function. Since the
 un-optimized wave-functions were generated in subsection “Generation of a CISD wavefunctions 
 using GAMESS” of exercise \#2, we can skip this section and go straight to the
-wave-function optimization. Go to “QMCPACK/MSD” and make folders for the remaining
-wave-function types: CASCI and SOCI. The exercise has already been performed with a
-CISD wave-function in exercise \#2.
+wave-function optimization. Go to “ex3\_multi-slater-jastrow” and make folders for the remaining
+wave-function types: CASCI and SOCI. The exercise has already been performed with a CISD wave-function in exercise \#2.
 
 A CASCI wave-function is produced from a CI calculation that includes all the determinants 
 in a CAS calculation, in this case using the orbitals from a previous CASSCF
