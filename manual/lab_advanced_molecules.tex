@@ -1,37 +1,18 @@
 \chapter{Lab 3: Advanced Molecular Calculations}
 \label{chap:lab_advanced_molecules}
 
-
-
 \section{Topics covered in this Lab}
 This lab covers molecular QMC calculations with wavefunctions of increasing sophistication.  All of the trial wavefunctions are initially generated with the GAMESS code.  Topics covered include:
 \begin{itemize}
   \item{Generating single determinant trial wavefunctions with GAMESS (HF and DFT)}
-  \item{Generating multi-determinant trial wavefunctions with GAMESS (CISD, CASSCF, CASCI, SOCI)}
+  \item{Generating multi-determinant trial wavefunctions with GAMESS (CISD, CASCI, SOCI)}
   \item{Optimizing wavefunctions (Jastrow factors and CSF coefficients) with QMC}
   \item{DMC timestep and walker population convergence studies}
   \item{Systematic progressions of Jastrow factors in VMC}
   \item{Systematic convergence of DMC energies with multi-determinant wavefunctions}
-  \item{Influence of orbitals basis choice on rate of multi-determinant DMC convergence}
+  \item{Influence of orbitals basis choice on DMC energy}
+  %\item{Influence of orbitals basis choice on rate of multi-determinant DMC convergence}
 \end{itemize}
-
-%\section{Lab outline}
-%\begin{enumerate}
-%  \item{download and conversion of oxygen atom pseudopotential}
-%  \item{DMC timestep study of the neutral oxygen atom}
-%  \begin{enumerate}
-%    \item{DFT orbital generation with Quantum Espresso}
-%    \item{orbital conversion with \texttt{pw2qmcpack.x}}
-%    \item{optimization of Jastrow correlation factor with QMCPACK}
-%    \item{DMC run with multiple timesteps}
-%  \end{enumerate}
-%  \item{DMC timestep study of the first ionization potential of oxygen}
-%  \begin{enumerate}
-%    \item{repetition of a-d above for ionized oxygen atom}
-%  \end{enumerate}
-%  \item{automated DMC calculations of the oxygen dimer binding curve}
-%\end{enumerate}
-
 
 \section{Lab directories and files}
 \begin{shaded}
@@ -59,63 +40,63 @@ ex1_first-run-hartree-fock - basic work flow from Hatree-Fock to DMC
 ex2_slater-jastrow-wf-options - explore jastrow and orbital options
 ├── jastrow                    - Jastrow options
 │   ├── 12j                      - no 3-body Jastrow
-│   │   ├── optm.xml               - QMCPACK VMC optimization input
-│   │   ├── h2o.ptcl.xml           - converted particle positions
-│   │   └── h2o.wfs.xml            - converted wave function 
+│   │   ├── optm.xml                - QMCPACK VMC optimization input
+│   │   ├── h2o.ptcl.xml            - converted particle positions
+│   │   └── h2o.wfs.xml             - converted wave function 
 │   ├── 1j                       - only 1-body Jastrow
-│   │   ├── optm.xml               - QMCPACK VMC optimization input
-│   │   ├── h2o.ptcl.xml           - converted particle positions
-│   │   └── h2o.wfs.xml            - converted wave function 
+│   │   ├── optm.xml                - QMCPACK VMC optimization input
+│   │   ├── h2o.ptcl.xml            - converted particle positions
+│   │   └── h2o.wfs.xml             - converted wave function 
 │   └── 2j                       - only 2-body Jastrow
-│       ├── optm.xml               - QMCPACK VMC optimization input
-│       ├── h2o.ptcl.xml           - converted particle positions
-│       └── h2o.wfs.xml            - converted wave function 
+│       ├── optm.xml                - QMCPACK VMC optimization input
+│       ├── h2o.ptcl.xml            - converted particle positions
+│       └── h2o.wfs.xml             - converted wave function 
 └── orbitals                   - Orbital options
     ├── pbe                      - PBE orbitals
-    │   ├── gms                    - DFT calculation using GAMESS
-    │   │   ├── h2o.pbe.inp          - GAMESS DFT input
-    │   │   ├── h2o.pbe.dat          - GAMESS punch file containing orbitals
-    │   │   └── h2o.pbe.out          - GAMESS output with orbitals and other info
-    │   ├── convert                - Convert GAMESS wavefunction to QMCPACK format
-    │   │   ├── h2o.pbe.out          - GAMESS output
-    │   │   ├── h2o.ptcl.xml         - converted particle positions
-    │   │   └── h2o.wfs.xml          - converted wave function
-    │   └── opt                    - VMC optimization
-    │       ├── optm.xml             - QMCPACK VMC optimization input
-    │       ├── h2o.ptcl.xml         - converted particle positions
-    │       └── h2o.wfs.xml          - converted wave function 
-    ├── pbe0                     - PBE0  orbitals
-    ├── blyp                     - BLYP  orbitals
-    └── b3lyp                    - B3LYP orbitals
+    │   ├── gms                     - DFT calculation using GAMESS
+    │   │   ├── h2o.pbe.inp           - GAMESS DFT input
+    │   │   ├── h2o.pbe.dat           - GAMESS punch file containing orbitals
+    │   │   └── h2o.pbe.out           - GAMESS output with orbitals and other info
+    │   ├── convert                 - Convert GAMESS wavefunction to QMCPACK format
+    │   │   ├── h2o.pbe.out           - GAMESS output
+    │   │   ├── h2o.ptcl.xml          - converted particle positions
+    │   │   └── h2o.wfs.xml           - converted wave function
+    │   └── opt                     - VMC optimization
+    │       ├── optm.xml              - QMCPACK VMC optimization input
+    │       ├── h2o.ptcl.xml          - converted particle positions
+    │       └── h2o.wfs.xml           - converted wave function 
+    ├── pbe0                      - PBE0  orbitals
+    ├── blyp                      - BLYP  orbitals
+    └── b3lyp                     - B3LYP orbitals
     
 ex3_multi-slater-jastrow
 ├── cisd                   - CISD wave function
 │   ├── gms                  - CISD calculation using GAMESS
-│   │   ├── h2o.cisd.inp           - GAMESS input
-│   │   ├── h2o.cisd.dat           - GAMESS punch file containing orbitals
-│   │   └── h2o.cisd.out           - GAMESS output with orbitals and other info
+│   │   ├── h2o.cisd.inp         - GAMESS input
+│   │   ├── h2o.cisd.dat         - GAMESS punch file containing orbitals
+│   │   └── h2o.cisd.out         - GAMESS output with orbitals and other info
 │   ├── convert              - Convert GAMESS wavefunction to QMCPACK format
 │   │   ├── h2o.hf.out           - GAMESS output
 │   │   ├── h2o.ptcl.xml         - converted particle positions
 │   │   └── h2o.wfs.xml          - converted wave function
 │   ├── thres0.01            - VMC optimization with few determinants
-│   │   ├── optm.xml            - QMCPACK VMC optimization input
-│   │   ├── h2o.ptcl.xml        - converted particle positions
-│   │   └── h2o.wfs.xml         - converted wave function 
-│   └── thres0.075           - VMC optimization with more determinants
-│       ├── optm.xml            - QMCPACK VMC optimization input
-│       ├── h2o.ptcl.xml        - converted particle positions
-│       └── h2o.wfs.xml         - converted wave function 
+│   │   ├── optm.xml             - QMCPACK VMC optimization input
+│   │   ├── h2o.ptcl.xml         - converted particle positions
+│   │   └── h2o.wfs.xml          - converted wave function 
+│   └── thres0.0075           - VMC optimization with more determinants
+│       ├── optm.xml             - QMCPACK VMC optimization input
+│       ├── h2o.ptcl.xml         - converted particle positions
+│       └── h2o.wfs.xml          - converted wave function 
 ├── casci                  - CASCI wave function
 │   ├── gms                  - CASCI calculation using GAMESS
 │   ├── convert              - Convert GAMESS wavefunction to QMCPACK format
 │   ├── thres0.01            - VMC optimization with few determinants
-│   └── thres0.075           - VMC optimization with more determinants
+│   └── thres0.0075           - VMC optimization with more determinants
 └── soci                  - SOCI wave function
     ├── gms                  - SOCI calculation using GAMESS
     ├── convert              - Convert GAMESS wavefunction to QMCPACK format
     ├── thres0.01            - VMC optimization with few determinants
-    └── thres0.075           - VMC optimization with more determinants
+    └── thres0.0075           - VMC optimization with more determinants
 
 pseudo
 ├── H.BFD.gamess             - BFD pseudopotential for H in GAMESS format
@@ -134,7 +115,7 @@ followed by a study of the time-step and walker population dependence of DMC ene
 The exercise will be performed on a water molecule at the equilibrium geometry.
 
 
-\subsection{Generation of a HF wave-function with GAMESS}
+\subsection{Generation of a Hatree-Fock wave-function with GAMESS}
 
 From the top directory, go to ``ex1\_first-run-hartree-fock/gms''. This directory contains an input
 file for a HF calculation of a water molecule using BFD ECPs and the corresponding
@@ -151,7 +132,7 @@ the following commands.
 \begin{shaded}
 \begin{verbatim}
 cd ${TRAINING TOP}/ex1_first-run-hartree-fock/gms
-jobrun_vesta rungms h2o.hf.inp > h2o.hf.out
+jobrun_vesta rungms h2o.hf > h2o.hf.out
 cd ../convert
 ln -s ../gms/h2o.hf.out
 jobrun_vesta convert4qmc -gamessAscii h2o.hf.out -add3BodyJ
@@ -195,9 +176,15 @@ to the current directory. This directory should already contain a basic QMCPACK 
 file for an optimization calculation (optm.xml) %and a submission script (submit.csh). 
 Open optm.xml with your favorite text editor and modify the name of the files that contain the
 wavefunction and particleset XML blocks. These files are included with the commands:
-<include href=”ptcl.xml”/ > and <include href=wfs.xml”/ > (the particle set must be
-defined before the wave-function). The name of the files should now be h2o.ptcl.xml
-and h2o.wfs.xml. Study both files and submit when you are ready. Notice that the
+\begin{shaded}
+\begin{verbatim}
+<include href=”ptcl.xml”/ >
+<include href=wfs.xml”/ >
+\end{verbatim}
+\end{shaded}
+(the particle set must be
+defined before the wave-function). The name of the particle set and wave-function files should now be h2o.ptcl.xml
+and h2o.wfs.xml, respectively. Study both files and submit when you are ready. Notice that the
 location of the ECPs has been set for you, in your own calculations you have to make
 sure you obtain the ECPs from the appropriate libraries and convert them to QMCPACK
 format using ppconvert. This is a good time to study section C, which contains a review
@@ -221,7 +208,6 @@ Remember that qmca has built-in functions to plot the analyzed data.
 qmca -q e *scalar.dat -p
 \end{verbatim}
 \end{shaded}
-The resulting energy as a function of optimization step should look qualitatively similar to figure \ref{fig:lam_opt_conv} below.
 
 \begin{figure}
 \begin{center}
@@ -232,6 +218,7 @@ The resulting energy as a function of optimization step should look qualitativel
 }
 \end{figure}
 
+The resulting energy as a function of optimization step should look qualitatively similar to figure \ref{fig:lam_opt_conv}.
 The energy should decrease quickly as a function of the number of optimization steps. After 6-8 steps, the energy should be converged to $\sim$2-3mHa. To improve convergence,
 we would need to increase the number of samples used during the optimization. You can
 check this for yourself on your free time. With optimized wave-functions we are in a position
@@ -246,7 +233,7 @@ Now we will study the dependence of the DMC energy with time-step. From the top 
 go to “ex1\_first-run-hartree-fock/dmc\_timestep”. This folder contains a basic xml input
 file (dmc\_ts.xml) that performs a short VMC calculation and three DMC calculations
 with varying time-steps (0.1, 0.05, 0.01). Link the particle set and the last optimization
-file from the previous folder (the file called H2O.sNNN.opt.xml with the largest value of
+file from the previous folder (the file called jopt-h2o.sNNN.opt.xml with the largest value of
 NNN). Rename the optimized wave-function to any suitable name if you wish, for example
 h2o.opt.xml, and change the name of the particle set and wave-function files in the
 input file. An optimized wave-function can be found in the reference files (same location)
@@ -265,8 +252,7 @@ jobrun_vesta qmcpack dmc_ts.xml
 \end{verbatim}
 \end{shaded}
 While these runs complete, go to section D and review the basic VMC and DMC input
-blocks. Notice that in the current DMC blocks, as the time-step is decreased the number of
-blocks is also increased. Why is this?
+blocks. Notice that in the current DMC blocks, as the time-step is decreased the number of blocks is also increased. Why is this?
 
 When the simulations are finished, use qmca to analyze the output files and to plot the
 DMC energy as a function of time-step. Results should be qualitatively similar to those
@@ -301,12 +287,12 @@ all processors.
 
 From the top directory, go to ``ex1\_first-run-hartree-fock/dmc\_walkers''. Copy the
 optimized wave-function and particle set files used in the previous calculations to the current
-folder, these are the ones generated on step 2 of this exercise. Optimized wave-functions files
+folder, these are the ones generated on step 2 of this exercise. Optimized wave-function files
 can also be found in ``REFERENCE/QMCPACK/SJ/First Run/Optimize''. The directory
 contains a sample DMC input file and submission script. Make 3 directories named NWx,
 with x values 60,120,480 and copy the input file and submission script to each one. Go
 to ``NW60'', and, in the input file, change the name of the wave-function and particle set
-files (in this case they will be located one directory above, so use ``../H2O.HF.opt.xml'' for
+files (in this case they will be located one directory above, so use ``../dmc\_timestep/h2.opt.xml'' for
 example), change ``targetWalkers'' to 60, change the number of steps to 100, the time-step
 to 0.04 and the number of blocks to 400. Notice that ``targetWalkers'' is one way to set the
 desired (average) number of walkers in a DMC calculation. Modify the submission script
@@ -333,7 +319,7 @@ dependence of the energy on the number of walkers for a single water molecule. A
 less than 240 walkers are needed to obtain an accuracy of 0.1 mHa.
 
 
-\section{Exercise \#2 Wave-Function Options}
+\section{Exercise \#2 Slater-Jastrow Wave-Function Options}
 From this point on in the tutorial we assume familiarity with the basic parameters in the
 optimization, VMC and DMC XML input blocks of QMCPACK. In addition, we assume
 familiarity with the submission system. As a result, the folder structure will not contain
@@ -360,21 +346,22 @@ terms, e.g. one-body, two-body and three-body. From the top directory, go to ``e
 We will compare the single determinant VMC energy using a two-body 
 Jastrow term, both one- and two-body terms and finally one-, two- and three-body
 terms. Since we are interested in the influence of the Jastrow, we will use the HF orbitals
-calculated in exercise \#1. Make three folders named 2J, 1-2J and 1-2-3J. For both 2J and
-1-2J (we have already optimized a wave-function for the 1-2-3J case, so the steps will be
-slightly different in this case), copy the input file optm.xml %and the sample submission file
+calculated in exercise \#1. Make three folders named 2j,12j,123j. For both 2j and
+12j %(we have already optimized a wave-function for the 1-2-3J case, so the steps will be
+%slightly different in this case)
+, copy the input file optm.xml %and the sample submission file
 from ``ex1\_first-run-hartree-fock/opt'' . This input file performs both wave-function optimization 
 and a VMC calculation. Copy the un-optimized HF wave-function and particle set files
 from ``ex1\_first-run-hartree-fock/convert'', if you followed the instructions in exercise \#1 these should be
 named h2o.wfs.xml and h2o.ptcl.xml. Otherwise, you can obtained them from the
 REFERENCE files. Modify the file h2o.wfs.xml to remove the appropriate jastrow
 blocks. For example, for a two-body Jastrow (only), you need to eliminate the jastrow
-blocks named \texttt{<jastrow name="J1"} and \texttt{<jastrow name="J3"}. In the case of 1-2J, remove
+blocks named \texttt{<jastrow name="J1"} and \texttt{<jastrow name="J3"}. In the case of 12j, remove
 only \texttt{<jastrow name="J3"}. Recommended settings for the optimization run are: nodes=32,
 threads=16, blocks=250, samples=128000, time-step=0.5, 8 optimization loops, and in the
 VMC section we recommend walkers=16, blocks=1000, steps=1, substeps=100. Notice that
 samples should always be set to blocks*threads per node*nodes = 32*16*250=128000. Repeat 
-the process in both 2J and 1-2J cases. For the 1-2-3J case, the wave-function has
+the process in both 2j and 12j cases. For the 123j case, the wave-function has
 already been optimized in the previous exercise. Copy the optimized HF wave-function and
 the particle set from ``ex1\_first-run-hartree-fock/opt''. Copy the input file from any of the previous runs and remove the optimization block from the
 input, just leave the VMC step. In all three cases, modify the submission script and submit the run.
@@ -409,7 +396,7 @@ Go into each folder and copy a generic GAMESS input file from %for a ROHF calcul
 ``ex1\_first-run-hartree-fock/gms'' .%, a file named rohf.inp should exist.
 Rename the file with your preferred naming convention, we suggest using h2o.[dft].inp, where [dft] is the name of
 the functional used in the calculation. At this point, this input file should be identical to the
-one used to generic the HF wave-function used in exercise \#1. In order to perform a DFT
+one used to generate the HF wave-function in exercise \#1. In order to perform a DFT
 calculation we only need to add ``DFTTYP'' to the \texttt{\$CONTRL ... \$END} section and set
 it to the desired functional type, for example ``DFTTYP=PBE'' for a PBE functional. This
 variable must be set to (PBE, PBE0, BLYP, B3LYP) to obtain the appropriate functional in
@@ -432,53 +419,58 @@ the runs and analyze the results using qmca .
 
 How do the energies compare against each other? How do they compare against DMC
 energies with HF orbitals?
-
+%Orbital Sets and Configurations in 
+\section{Exercise \#3: Multi-Determinant Wave-Functions}
+In this exercise we will study the dependence of the DMC energy on the set of orbitals
+and the type of configurations included in a multi-determinant wave-function. 
 
 \subsection{Generation of a CISD wave-functions using GAMESS}
 In this section we will use GAMESS to generate a multi-determinant wave-function with
-CISD. In CISD, the Schrodinger equation is solved exactly in a basis of determinants 
-including the HF determinant and all its single and double excitations.
+Configuration Interaction with Single and Double excitations (CISD). In CISD, the Schrodinger equation is solved exactly in a basis of determinants 
+including the HF determinant and all its single and double excitations. 
 
-Due to technical problems with GAMESS in the BGQ architecture of VESTA, we are
-unable to use CISD properly in GAMESS. For this reason, the output of the calculation is 
-already provided in the directory.You’ll see several input and output files named H2O.XXX.inp
-and H2O.XXX.out, where XXX is one of the following multi-determinant methods: CISD,
-CASSCF, CASCI, SOCI. There will be time in the next step to study the GAMESS input
-files and the description in section A. In the next exercise we will use the CISD output, in
-the next exercise we will use the remaining files. Since the output is already provided, the
-only thing ended is to use the converter to generate the appropriate QMCPACK files. Copy
-a submission script from GAMESS/Generic Files and execute the converter for all the output 
-files in the directory (with the exception of CASSCF, which is used to generate orbitals
-but it doesn’t contain appropriate CI coefficients). In all cases we used PRTMO=.T. in the
-GUESS section, so you should read these orbitals from the output (-readInitialGuess 40).
-The highest occupied orbital in any determinant should be 34, so reading 40 orbitals is a
-safe choice. In this case, it is important to rename the xml files with meaningful names, for
-example H2O.CISD.wfs.xml. A threshold of 0.0075 is sufficient for the calculations in the
-training.
+Go to ``ex3\_multi-slater-jastrow/cisd/gms'' and you'll see input and output files named h2o.cisd.inp and h2o.cisd.out. Due to technical problems with GAMESS in the BGQ architecture of VESTA, we are unable to use CISD properly in GAMESS. For this reason, the output of the calculation is  already provided in the directory. 
+
+%You'll see several input and output files named h2o.XXX.inp
+%and h2o.XXX.out, where XXX is one of the following multi-determinant methods: CISD,
+%CASSCF, CASCI, SOCI. 
+
+There will be time in the next step to study the GAMESS input
+files and the description in section A. %In the next exercise we will use the CISD output, in
+%the next exercise we will use the remaining files. 
+Since the output is already provided, the
+only thing needed is to use the converter to generate the appropriate QMCPACK files.  %Copy a submission script from GAMESS/Generic Files and execute the converter for all the output 
+%files in the directory (with the exception of CASSCF, which is used to generate orbitals).
+%but it doesn’t contain appropriate CI coefficients). 
+\begin{shaded}
+\begin{verbatim}
+jobrun_vesta convert4qmc h2o.cisd.out -ci h2o.cisd.out \
+-readInitialGuess 57 -threshold 0.0075
+\end{verbatim}
+\end{shaded}
+
+We used the PRTMO=.T. flag in the GUESS section, to include orbitals in the output file. You should read these orbitals from the output (-readInitialGuess 40).
+The highest occupied orbital in any determinant should be 34, so reading 40 orbitals is a safe choice. In this case, it is important to rename the xml files with meaningful names, for example h2o.cisd.wfs.xml. A threshold of 0.0075 is sufficient for the calculations in the training.
 
 
 \subsection{Optimization of Multi-Determinant wave-function}
 
 In this section we will optimize the wave-function generated in the previous step. There
-is no difference in the optimization steps if a single determinant and a multi-determinant
-wave-function.
+is no difference in the optimization steps if a single determinant and a multi-determinant wave-function.
 QMCPACK will recognize the presence of a multi-determinant wavefunction and will automatically 
 optimize the linear coefficients by default. Go to ``ex3\_multi-slater-jastrow/cisd'' and make a folder called 
-thr0.01. Copy the particle set and wavefunction files created in the previous step to the current 
+thres0.01. Copy the particle set and wavefunction files created in the previous step to the current 
 directory. With your favorite text editor, open the wave-function file h2o.wfs.xml. Look for 
-the multideterminant XML block and change the “cutoff” parameter in detlist to 0.01. Then follow 
-the same steps used in the subsection “Optimization and DMC calculations with DFT wave-functions” 
+the multideterminant XML block and change the ``cutoff'' parameter in detlist to 0.01. Then follow 
+the same steps used in the subsection ``Optimization and DMC calculations with DFT wave-functions''
 to optimize the wave-function. Similar to this case, design a QMCPACK input file that performs
-wave-funtion optimization followed by VMC and DMC calculations. Submit the calculation.
+wave-function optimization followed by VMC and DMC calculations. Submit the calculation.
 
-While this run is completed, go to section A and review the GAMESS input file description. 
+This is a good time to review the GAMESS input file description in Appendix section A. 
 When the run is completed, go to the previous directory and make a new folder named
-thr0.0075. Repeat the steps performed above to optimize the wave-function with a cutoff
-of 0.01, but use a cutoff of 0.0075 this time. This will increase the number of determinants
-used in the calculation. Instead of starting from an un-optimized wave-function, start from
-optimized wave-function from thr0.01. You will need to modify the file and change the
-cutoff in detlist to 0.0075 with a text editor. Repeat the optimization steps and submit the
-calculation.
+thres0.0075. Repeat the steps performed above to optimize the wave-function with a cutoff of 0.01, but use a cutoff of 0.0075 this time. This will increase the number of determinants used in the calculation. Notice the ``cutoff'' parameter in the XML should be less than the ``-threshold 0.0075'' flag passed to the converted, which is further bounded by the PRTTOL flag in the GAMESS input.
+
+After the wave-function is generated, we are ready to optimize. Instead of starting from an un-optimized wave-function, we can start from optimized wave-function from thres0.01 to speed up convergence. You will need to modify the file and change the cutoff in detlist to 0.0075 with a text editor. Repeat the optimization steps and submit the calculation.
 
 \begin{figure}
 \begin{center}
@@ -490,30 +482,25 @@ calculation.
 \end{figure}
 
 When you are done, use qmca to analyze the results. Compare the energies at these two
-coefficient cutoffs with the energies obtained with DFT orbitals. Due to the time limitations
-of this tutorial it is not practical to optimize the wave-functions with a smaller cutoff, since
-this would require more samples and longer runs due to the larger number of optimizable
-parameters. Figure \ref{fig:lam_dmc_ci_cisd} shows the results of such exercise, the DMC energy as a function of the
-cutoff in the wave-function. As can be seen, a large improvement in the energy is obtained
-as the number of configurations is increased.
+coefficient cutoffs with the energies obtained with DFT orbitals. Due to the time limitations of this tutorial it is not practical to optimize the wave-functions with a smaller cutoff, since this would require more samples and longer runs due to the larger number of optimizable parameters. Figure \ref{fig:lam_dmc_ci_cisd} shows the results of such exercise, the DMC energy as a function of the cutoff in the wave-function. As can be seen, a large improvement in the energy is obtained as the number of configurations is increased.
 
 
-\section{Exercise \#3: Orbital Sets and Configurations in Multi-Determinant Wave-Functions}
-In this exercise we will study the dependence of the DMC energy on the set of orbitals
-and the type of configurations included in a multi-determinant wave-function. Since the
-un-optimized wave-functions were generated in subsection “Generation of a CISD wavefunctions 
-using GAMESS” of exercise \#2, we can skip this section and go straight to the
-wave-function optimization. Go to “ex3\_multi-slater-jastrow” and make folders for the remaining
-wave-function types: CASCI and SOCI. The exercise has already been performed with a CISD wave-function in exercise \#2.
+%Since the un-optimized wave-functions were generated in subsection “Generation of a CISD wavefunctions 
+%using GAMESS” of exercise \#2, we can skip this section and go straight to the
+%wave-function optimization. 
+
+\subsection{CISD, CASCI and SOCI}
+
+Go to “ex3\_multi-slater-jastrow” and inspect folders for the remaining wave-function types: CASCI and SOCI. Follow steps in the previous exercise and obtain the optimized wave-functions for these determinant choices. Notice the SOCI GAMESS output is not included because it is large. Already converted XML inputs can be found in ``ex3\_multi-slater-jastrow/soci/thres*''. %The exercise has already been performed with a CISD wave-function in exercise \#2.
 
 A CASCI wave-function is produced from a CI calculation that includes all the determinants 
-in a CAS calculation, in this case using the orbitals from a previous CASSCF
+in a complete active space (CAS) calculation, in this case using the orbitals from a previous CASSCF
 calculation. In this case we used a CAS(8,8) active space, that includes all determinants
-generated by distributing 8 electrons in the lowest 8 orbitals. A SOCI calculation is similar
+generated by distributing 8 electrons in the lowest 8 orbitals. A second-order CI (SOCI) calculation is similar
 to the CAS-CI calculation, but in addition to the determinants in the CAS it also includes
 all single and double excitations from all of them, leading to a much larger determinant
 set. Since we now have considerable experience optimizing wave-functions and calculating
-DMC energies, we will eave it to the student to complete the remaining tasks on its own.
+DMC energies, we will leave it to the student to complete the remaining tasks on its own.
 If you need help, refer to previous exercises in the tutorial. Perform optimizations for both
 wave-functions using cutoffs in the CI expansion of 0.01 an 0.0075. If there is enough time
 left, try to optimize the wave-functions with a cutoff of 0.005. Analyze the results and plot
@@ -521,7 +508,7 @@ the energy as a function of cutoff for all three cases, CISD, CAS-CI and SOCI.
 
 Figure  \ref{fig:lam_dmc_ci_cisd} shows the result of similar calculations using more samples and smaller cutoffs.
 The results should be similar to those produced in the tutorial. For reference, the exact
-energy of the water molecule with ECPs is approximately -17.276. From the results of the
+energy of the water molecule with ECPs is approximately -17.276 Ha. From the results of the
 tutorial, how does the selection of determinants is related to the expected DMC energy?
 What about the choice in the set of orbitals?
 
