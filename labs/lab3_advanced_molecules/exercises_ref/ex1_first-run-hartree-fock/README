@@ -10,7 +10,7 @@ convert BFD pseudopotential from GAMESS format to QMCPACK format
 
 Step 4. opt: optimize Jastrow coefficients
 
-Diffusion Monte Carlo Systematic Biases 
+Diffusion Monte Carlo Systemmatic Biases 
 ====
 Step 5. dmc_timestep: check timestep bias
 Step 6. dmc_walkers : check population control bias
