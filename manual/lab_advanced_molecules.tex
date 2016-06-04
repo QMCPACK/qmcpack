@@ -157,7 +157,7 @@ system is -16.9600590022 Ha. To search for the energy in the output file quickly
 use 
 \begin{shaded}
 \begin{verbatim}
-grep "TOTAL ENERGY =" h2o.hf.out
+grep "TOTAL ENERGY =" h2o.hf.output
 \end{verbatim}
 \end{shaded}
 %When the calculation completes,
@@ -171,7 +171,7 @@ As the job runs on VESTA, it is a good time to review section B, which contains 
 When the execution of the previous steps is completed, there should be 2 new
 files called h2o.wfs.xml and h2o.ptcl.xml. Now we will use VMC to optimize the 
 Jastrow parameters in the wave-function.  From the top directory, go to
-``ex1\_first-run-hartree-fock/opt''. Link the xml files generated in the previous step
+``ex1\_first-run-hartree-fock/opt''. Copy the xml files generated in the previous step
 to the current directory. This directory should already contain a basic QMCPACK input
 file for an optimization calculation (optm.xml) %and a submission script (submit.csh). 
 Open optm.xml with your favorite text editor and modify the name of the files that contain the
