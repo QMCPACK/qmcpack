@@ -193,8 +193,8 @@ previous steps can be accomplished by the following commands:
 \begin{shaded}
 \begin{verbatim}
 cd ${TRAINING TOP}/ex1_first-run-hartree-fock/opt
-ln -s ../convert/h2o.wfs.xml .
-ln -s ../convert/h2o.ptcl.xml .
+cp ../convert/h2o.wfs.xml ./
+cp ../convert/h2o.ptcl.xml ./
 # edit optm.xml to include the correct ptcl.xml and wfs.xml
 jobrun_vesta qmcpack optm.xml
 \end{verbatim}
