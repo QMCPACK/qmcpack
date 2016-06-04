@@ -289,15 +289,13 @@ From the top directory, go to ``ex1\_first-run-hartree-fock/dmc\_walkers''. Copy
 optimized wave-function and particle set files used in the previous calculations to the current
 folder, these are the ones generated on step 2 of this exercise. An optimized wave-function can be found in the reference files (same location) in case it is needed. The directory
 contains a sample DMC input file and submission script. Make 3 directories named NWx,
-with x values 60,120,480 and copy the input file and submission script to each one. Go
-to ``NW60'', and, in the input file, change the name of the wave-function and particle set
+with x values 120,240,480 and copy the input file to each one. Go
+to ``NW120'', and, in the input file, change the name of the wave-function and particle set
 files (in this case they will be located one directory above, so use ``../dmc\_timestep/h2.opt.xml'' for
-example), change ``targetWalkers'' to 60, change the number of steps to 100, the time-step
+example), change the pseudopotential directory to point to one directory above, change ``targetWalkers'' to 120, change the number of steps to 100, the time-step
 to 0.04 and the number of blocks to 400. Notice that ``targetWalkers'' is one way to set the
-desired (average) number of walkers in a DMC calculation. Modify the submission script
-to use 2 nodes and 16 threads and submit the run. We recommend setting $\sim$2*(\#threads)
-walkers per node (slightly smaller than this value), which is the reason why we use 2 nodes
-when we want 60 walkers in total.
+desired (average) number of walkers in a DMC calculation.   For your own simulations we generally recommend setting $\sim$2*(\#threads)
+walkers per node (slightly smaller than this value).
 
 \begin{figure}
 \begin{center}
@@ -308,9 +306,9 @@ when we want 60 walkers in total.
 }
 \end{figure}
 
-Repeat the same procedure in the other folders by setting (targetWalkers=120,
-steps=100, timestep=0.04, blocks=200,nodes=4,threads=16) in NW120 and (targetWalkers=480, 
-steps=100, timestep=0.04, blocks=100,nodes=16,threads=16) in NW480. When
+Repeat the same procedure in the other folders by setting (targetWalkers=240,
+steps=100, timestep=0.04, blocks=200) in NW240 and (targetWalkers=480, 
+steps=100, timestep=0.04, blocks=100) in NW480. When
 the simulations complete, use qmca to analyze and plot the energy as a function of the
 number of walkers in the calculation. As always, figure \ref{fig:lam_dmc_popcont} 
 shows representative results of the
