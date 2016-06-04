@@ -132,10 +132,10 @@ the following commands.
 \begin{shaded}
 \begin{verbatim}
 cd ${TRAINING TOP}/ex1_first-run-hartree-fock/gms
-jobrun_vesta rungms h2o.hf > h2o.hf.out
+jobrun_vesta rungms h2o.hf 
 cd ../convert
-ln -s ../gms/h2o.hf.out
-jobrun_vesta convert4qmc -gamessAscii h2o.hf.out -add3BodyJ
+ln -s ../gms/h2o.hf.output
+jobrun_vesta convert4qmc -gamessAscii h2o.hf.output -add3BodyJ
 mv sample.Gaussian-G2.xml h2o.wfs.xml
 mv sample.Gaussian-G2.ptcl.xml h2o.ptcl.xml
 \end{verbatim}
