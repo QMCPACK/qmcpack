@@ -3,8 +3,8 @@
   <project id="ts-h2o" series="0"/>
 
   <!-- input from gaussian converter -->
-  <include href="h2o.ptcl.xml"/>
-  <include href="h2o.opt.wfs.xml"/>
+  <include href="ptcl.xml"/>
+  <include href="opt.wfs.xml"/>
 
   <!--  Hamiltonian -->
   <hamiltonian name="h0" type="generic" target="e">

@@ -245,8 +245,8 @@ The main steps needed to perform this exercise are:
 \begin{shaded}
 \begin{verbatim}
 cd ${TRAINING TOP}/ex1_first-run-hartree-fock/dmc_timestep
-ln -s ../opt/h2o.ptcl.xml .
-ln -s ../opt/jopt-h2o.s007.opt.xml h2o.opt.xml
+cp ../opt/h2o.ptcl.xml ./
+cp ../opt/jopt-h2o.s007.opt.xml h2o.opt.wfs.xml
 # edit dmc_ts.xml to include the correct ptcl.xml and wfs.xml
 jobrun_vesta qmcpack dmc_ts.xml
 \end{verbatim}
