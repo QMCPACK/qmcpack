@@ -320,8 +320,8 @@ less than 240 walkers are needed to obtain an accuracy of 0.1 mHa.
 From this point on in the tutorial we assume familiarity with the basic parameters in the
 optimization, VMC and DMC XML input blocks of QMCPACK. In addition, we assume
 familiarity with the submission system. As a result, the folder structure will not contain
-any prepared input or submission files, the student will generate them using generic versions
-provided in ``QMCPACK/Generic Files'' and ``GAMESS/Generic Files''. In the case of QMCPACK sample 
+any prepared input or submission files, the student will generate them using 
+input files from exercise 1. In the case of QMCPACK sample 
 files, you will find optm.xml, vmc dmc.xml and submit.csh files. Some of
 the options in these files can be left unaltered, but many of them will need to be tailored to
 the particular calculation.
@@ -389,7 +389,7 @@ DFT calculations. From the top folder, go to ``ex2\_slater-jastrow-wf-options/or
 the variation in DMC energies with the choice of DFT orbitals, we will choose the following
 set of exchange-correlation functionals (PBE, PBE0, BLYP, B3LYP). For each functional,
 make a directory using your preferred naming convention (e.g. the name of the functional).
-Go into each folder and copy a generic GAMESS input file from %for a ROHF calculation from
+Go into each folder and copy a GAMESS input file from %for a ROHF calculation from
 ``ex1\_first-run-hartree-fock/gms'' .%, a file named rohf.inp should exist.
 Rename the file with your preferred naming convention, we suggest using h2o.[dft].inp, where [dft] is the name of
 the functional used in the calculation. At this point, this input file should be identical to the
