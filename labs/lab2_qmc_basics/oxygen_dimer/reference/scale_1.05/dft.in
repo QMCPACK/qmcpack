@@ -14,8 +14,8 @@
 &SYSTEM
    celldm(1)       = 1.0
    degauss         = 0.0001
-   ecutrho         = 800
-   ecutwfc         = 200
+   ecutrho         = 1200
+   ecutwfc         = 300
    ibrav           = 0
    input_dft       = 'lda'
    nat             = 2

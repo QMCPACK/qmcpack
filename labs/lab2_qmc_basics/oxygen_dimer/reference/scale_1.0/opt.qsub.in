@@ -1,6 +1,6 @@
 #!/bin/bash
-#COBALT -q default
-#COBALT -A QMCPACK
+#COBALT -q qmcpack
+#COBALT -A QMCPACK-Training
 #COBALT -n 32
 #COBALT -t 60
 #COBALT -O opt

@@ -2,7 +2,7 @@
 <simulation>
    <project id="qmc" series="2">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
-   <host>Q02-I0-J00.vesta.itd</host><date>Fri May 27 19:04:48 2016
+   <host>Q02-I2-J01.vesta.itd</host><date>Mon Jun  6 20:04:20 2016
 </date><user>krogel</user></project>
    <qmcsystem>
       <simulationcell>
@@ -51,22 +51,22 @@
          <jastrow type="One-Body" name="J1" function="bspline" source="ion0" print="yes">
             <correlation elementType="O" size="8" rcut="5.0" cusp="0.0">
                <coefficients id="eO" type="Array">                  
--0.842181519 -0.7291968116 -0.5520847744 -0.3686607912 -0.2261907695 -0.1312926813 
--0.06299929988 -0.02555863963
+-0.7857603664 -0.6843346811 -0.5091444542 -0.3353601601 -0.2004474919 -0.114436947 
+-0.05287575538 -0.01890909871
                </coefficients>
             </correlation>
          </jastrow>
          <jastrow type="Two-Body" name="J2" function="bspline" print="yes">
             <correlation speciesA="u" speciesB="u" size="8" rcut="10.0">
                <coefficients id="uu" type="Array">                  
-0.2619158102 0.06445575836 -0.01749443536 -0.04073690015 -0.05840367649 
--0.05957523779 -0.06021332612 -0.06946967625
+0.2821859019 0.09389035346 0.01316517271 -0.004058492659 -0.02245807246 
+-0.01897277894 -0.02462026309 -0.01389903401
                </coefficients>
             </correlation>
             <correlation speciesA="u" speciesB="d" size="8" rcut="10.0">
                <coefficients id="ud" type="Array">                  
-0.3112910937 0.04408577224 -0.03875036798 -0.06140795581 -0.07485029804 
--0.07448947463 -0.07416498898 -0.02753437321
+0.3177092588 0.05144120505 -0.0259842962 -0.04491477992 -0.05950871316 
+-0.05510682604 -0.05833604399 -0.05519770851
                </coefficients>
             </correlation>
          </jastrow>

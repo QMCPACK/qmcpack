@@ -19,13 +19,13 @@
   Input XML = qmc.in.xml
 
   Project = qmc
-  date    = 2016-05-27 19:12:50 UTC
-  host    = Q02-I0-J01.vesta.itd
+  date    = 2016-06-06 20:14:37 UTC
+  host    = Q02-I2-J04.vesta.itd
   user    = krogel
 
   DO NOT READ DENSITY
-  Offset for the random number seeds based on time 50
-  Random number offset = 50  seeds = 239-4093
+  Offset for the random number seeds based on time 429
+  Random number offset = 429  seeds = 3001-7451
   Create Global SuperCell 
   Simulation cell radius = 9.448631
   Wigner-Seitz    radius = 9.448631
@@ -105,8 +105,8 @@ atomic orbital=0
 Atom type(0) = 8
 Atom type(1) = 8
    Skip initialization of the density
-TIMER  EinsplineSetBuilder::ReadOrbitalInfo 0.0604188825
-TIMER  EinsplineSetBuilder::BroadcastOrbitalInfo 0.0001089025
+TIMER  EinsplineSetBuilder::ReadOrbitalInfo 0.0611160175
+TIMER  EinsplineSetBuilder::BroadcastOrbitalInfo 0.0001089800
 Found 1 distinct supercell twists.
 number of things
 1
@@ -137,15 +137,15 @@ NumDistinctOrbitals 7 numOrbs = 7
    HalfG =                  0                 0                 0
 TOKEN=8 ReadGvectors_ESHDF /soft/applications/qmcpack/src/QMCWaveFunctions/EinsplineSetBuilderReadBands_ESHDF.cpp 669
 B-spline mesh factor is 1.0000000000
-B-spline mesh size is (180, 180, 180)
-Maxmimum number of Gvecs 322453
-  Using meshsize=               180               180               180
-  vs input meshsize=               180               180               180
-  Time to read the table in einspline.tile_100010001.spin_0.tw_0.l0u7.g180x180x180.h5 = 0.0014135144
-  SplineAdoptorReader initialize_spline_pio 3.2852065275 sec
-MEMORY increase 187 MB BsplineSetReader
-  MEMORY allocated SplineAdoptorReader 187 MB
-TIMER  EinsplineSetBuilder::ReadBands 3.5004892925
+B-spline mesh size is (216, 216, 216)
+Maxmimum number of Gvecs 591889
+  Using meshsize=               216               216               216
+  vs input meshsize=               216               216               216
+  Time to read the table in einspline.tile_100010001.spin_0.tw_0.l0u7.g216x216x216.h5 = 0.0014196794
+  SplineAdoptorReader initialize_spline_pio 6.5557386975 sec
+MEMORY increase 320 MB BsplineSetReader
+  MEMORY allocated SplineAdoptorReader 320 MB
+TIMER  EinsplineSetBuilder::ReadBands 6.8955289050
    Using Identity for the LCOrbitalSet 
   Building SPOSet "spo_d" with bspline BasisSetBuilder
 TOKEN=9 createSPOSetFromXML /soft/applications/qmcpack/src/QMCWaveFunctions/EinsplineSetBuilder_createSPOs.cpp 42
@@ -171,15 +171,15 @@ NumDistinctOrbitals 5 numOrbs = 5
    HalfG =                  0                 0                 0
 TOKEN=13 ReadGvectors_ESHDF /soft/applications/qmcpack/src/QMCWaveFunctions/EinsplineSetBuilderReadBands_ESHDF.cpp 669
 B-spline mesh factor is 1.0000000000
-B-spline mesh size is (180, 180, 180)
-Maxmimum number of Gvecs 322453
-  Using meshsize=               180               180               180
-  vs input meshsize=               180               180               180
-  Time to read the table in einspline.tile_100010001.spin_1.tw_0.l0u5.g180x180x180.h5 = 0.0014848163
-  SplineAdoptorReader initialize_spline_pio 3.1026273900 sec
-MEMORY increase 187 MB BsplineSetReader
-  MEMORY allocated SplineAdoptorReader 187 MB
-TIMER  EinsplineSetBuilder::ReadBands 3.2017934275
+B-spline mesh size is (216, 216, 216)
+Maxmimum number of Gvecs 591889
+  Using meshsize=               216               216               216
+  vs input meshsize=               216               216               216
+  Time to read the table in einspline.tile_100010001.spin_1.tw_0.l0u5.g216x216x216.h5 = 0.0014306812
+  SplineAdoptorReader initialize_spline_pio 6.2146675800 sec
+MEMORY increase 320 MB BsplineSetReader
+  MEMORY allocated SplineAdoptorReader 320 MB
+TIMER  EinsplineSetBuilder::ReadBands 6.3609176075
    Using Identity for the LCOrbitalSet 
   Creating a determinant updet group=0 sposet=spo_u
   Reusing a SPO set spo_u
@@ -196,40 +196,40 @@ TIMER  EinsplineSetBuilder::ReadBands 3.2017934275
  cusp = 0.0000000000
  rcut = 5.0000000000
 Parameter     Name      Value
-eO_0 -0.8421815190 1 1  ON 0
-eO_1 -0.7291968116 1 1  ON 1
-eO_2 -0.5520847744 1 1  ON 2
-eO_3 -0.3686607912 1 1  ON 3
-eO_4 -0.2261907695 1 1  ON 4
-eO_5 -0.1312926813 1 1  ON 5
-eO_6 -0.0629992999 1 1  ON 6
-eO_7 -0.0255586396 1 1  ON 7
+eO_0 -0.7857603664 1 1  ON 0
+eO_1 -0.6843346811 1 1  ON 1
+eO_2 -0.5091444542 1 1  ON 2
+eO_3 -0.3353601601 1 1  ON 3
+eO_4 -0.2004474919 1 1  ON 4
+eO_5 -0.1144369470 1 1  ON 5
+eO_6 -0.0528757554 1 1  ON 6
+eO_7 -0.0189090987 1 1  ON 7
   BsplineJastrowBuilder adds a functor with cusp = -0.2500000000
  size = 8 parameters 
  cusp = -0.2500000000
  rcut = 10.0000000000
 Parameter     Name      Value
-uu_0 0.2619158102 1 1  ON 0
-uu_1 0.0644557584 1 1  ON 1
-uu_2 -0.0174944354 1 1  ON 2
-uu_3 -0.0407369001 1 1  ON 3
-uu_4 -0.0584036765 1 1  ON 4
-uu_5 -0.0595752378 1 1  ON 5
-uu_6 -0.0602133261 1 1  ON 6
-uu_7 -0.0694696763 1 1  ON 7
+uu_0 0.2821859019 1 1  ON 0
+uu_1 0.0938903535 1 1  ON 1
+uu_2 0.0131651727 1 1  ON 2
+uu_3 -0.0040584927 1 1  ON 3
+uu_4 -0.0224580725 1 1  ON 4
+uu_5 -0.0189727789 1 1  ON 5
+uu_6 -0.0246202631 1 1  ON 6
+uu_7 -0.0138990340 1 1  ON 7
   BsplineJastrowBuilder adds a functor with cusp = -0.5000000000
  size = 8 parameters 
  cusp = -0.5000000000
  rcut = 10.0000000000
 Parameter     Name      Value
-ud_0 0.3112910937 1 1  ON 0
-ud_1 0.0440857722 1 1  ON 1
-ud_2 -0.0387503680 1 1  ON 2
-ud_3 -0.0614079558 1 1  ON 3
-ud_4 -0.0748502980 1 1  ON 4
-ud_5 -0.0744894746 1 1  ON 5
-ud_6 -0.0741649890 1 1  ON 6
-ud_7 -0.0275343732 1 1  ON 7
+ud_0 0.3177092588 1 1  ON 0
+ud_1 0.0514412051 1 1  ON 1
+ud_2 -0.0259842962 1 1  ON 2
+ud_3 -0.0449147799 1 1  ON 3
+ud_4 -0.0595087132 1 1  ON 4
+ud_5 -0.0551068260 1 1  ON 5
+ud_6 -0.0583360440 1 1  ON 6
+ud_7 -0.0551977085 1 1  ON 7
   QMCHamiltonian::addOperator Kinetic to H, physical Hamiltonian 
   ... ParticleSet::addTable Reuse Table #0 e_e
   QMCHamiltonian::addOperator ElecElec to H, physical Hamiltonian 
@@ -300,18 +300,18 @@ ParticleSetPool has:
 
     12
 
-    u  8.6500610453e+00  9.3463195337e+00  1.0336976101e+01
-    u  9.1898297289e+00  9.3446778950e+00  9.5181419307e+00
-    u  7.5987649774e+00  1.0222435959e+01  9.6834193631e+00
-    u  1.0706493343e+01  8.6805197663e+00  8.8022027312e+00
-    u  1.0103269637e+01  8.8707121728e+00  1.0008591838e+01
-    u  1.0386565012e+01  1.0233567805e+01  8.9089344816e+00
-    u  1.1730334741e+01  8.9370750285e+00  1.3890357863e+01
-    d  7.5113478357e+00  1.0150460628e+01  9.2257523533e+00
-    d  8.1239902943e+00  1.0449959168e+01  9.4673678743e+00
-    d  8.0143826417e+00  9.5352742320e+00  8.4646575665e+00
-    d  1.1665328423e+01  9.1940000782e+00  9.5827967515e+00
-    d  9.7926925708e+00  9.8599932673e+00  9.3537207552e+00
+    u  8.3225796080e+00  9.0290346508e+00  8.5457427502e+00
+    u  8.7768991150e+00  9.9614756639e+00  8.8124195959e+00
+    u  7.8767585380e+00  9.3964769072e+00  1.0399781226e+01
+    u  1.1137258988e+01  1.0210191205e+01  8.9589507061e+00
+    u  9.7696500845e+00  9.6507475035e+00  9.7566379337e+00
+    u  1.0822255354e+01  1.0245448656e+01  1.0047680019e+01
+    u  1.0092927555e+01  7.3506506138e+00  4.9341911110e+00
+    d  7.8727283064e+00  9.8839911510e+00  1.0294383316e+01
+    d  7.6817115060e+00  8.7317457713e+00  9.9300818525e+00
+    d  8.6748136852e+00  8.5916397627e+00  9.2437213698e+00
+    d  1.1610295934e+01  9.5576541342e+00  9.0317593591e+00
+    d  1.1082627454e+01  1.0373034470e+01  9.3504305590e+00
 
   ParticleSet ion0 : 0 2 
 
@@ -393,10 +393,10 @@ MEMORY increase 0 MB VMCSingleOMP::resetRun
   SimpleFixedNodeBranch::finalize after a VMC block
     QMC counter        = 0
     time step          = 0.4
-    reference energy   = -31.8467
-    reference variance = 1.3
+    reference energy   = -31.8226
+    reference variance = 0.828253
 ====================================================
-  QMC Execution time = 9.2468448500e-01 secs 
+  QMC Execution time = 9.2250013875e-01 secs 
 Creating DMCMP for the qmc driver
 
 =========================================================
@@ -418,10 +418,10 @@ Using existing walkers
   QMC counter      = 1
   time step        = 1.0000000000e-02
   effective time step = 1.0000000000e-02
-  trial energy     = -3.1846710470e+01
-  reference energy = -3.1846710470e+01
+  trial energy     = -3.1822635184e+01
+  reference energy = -3.1822635184e+01
   Feedback = 1.0000000000e+00
-  reference variance = 1.3000007672e+00
+  reference variance = 8.2825299771e-01
   target walkers = 2048
   branch cutoff = 5.0000000000e+01 7.5000000000e+01
   Max and mimum walkers per node= 129 13
@@ -430,8 +430,8 @@ Using existing walkers
   Updates by particle-by-particle moves using fast gradient version 
   DMC moves are rejected when a node crossing is detected
 SimpleFixedNodeBranch::checkParameters 
-  Average Energy of a population  = -31.8731
-  Energy Variance = 1.22345
+  Average Energy of a population  = -31.8744
+  Energy Variance = 0.794774
 
   Fluctuating population
   Persistent walkers are killed after 1 MC sweeps
@@ -439,32 +439,32 @@ SimpleFixedNodeBranch::checkParameters
   Steps per block = 32
   Number of blocks = 400
 
-  DMC Engine Initialization = 2.8927922500e-02 secs 
+  DMC Engine Initialization = 2.9462407500e-02 secs 
 
  Warmup is completed after 100
 
-  TauEff     = 9.8671413773e-03
- TauEff/Tau = 9.8671413773e-01
-  Etrial     = -3.1962535153e+01
- Running average of energy = -3.1925299938e+01
-                  Variance = 1.5324331888e+00
-branch cutoff = 1.5324331888e+01 2.2986497832e+01
+  TauEff     = 9.8664698156e-03
+ TauEff/Tau = 9.8664698156e-01
+  Etrial     = -3.1954490175e+01
+ Running average of energy = -3.1926312202e+01
+                  Variance = 7.2041879058e-01
+branch cutoff = 1.0000000000e+01 1.5000000000e+01
 ====================================================
   SimpleFixedNodeBranch::finalize after a DMC block
     QMC counter                   = 1
     time step                     = 0.01
-    effective time step           = 0.0098674
-    trial energy                  = -31.9462
-    reference energy              = -31.956
-    reference variance            = 1.53243
+    effective time step           = 0.00986808
+    trial energy                  = -31.9366
+    reference energy              = -31.9534
+    reference variance            = 0.720419
     target walkers                = 2048
-    branch cutoff                 = 15.3243 22.9865
+    branch cutoff                 = 10 15
     Max and mimum walkers per node= 129 13
     Feedback                      = 1
     QMC Status (BranchMode)       = 0000001111
 ====================================================
-  QMC Execution time = 1.3076197169e+02 secs 
-  Total Execution time = 1.3173218589e+02 secs
+  QMC Execution time = 1.3001853841e+02 secs 
+  Total Execution time = 1.3098624754e+02 secs
 
 =========================================================
   A new xml input file : qmc.s001.cont.xml

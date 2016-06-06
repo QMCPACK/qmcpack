@@ -1,12 +1,13 @@
-Cobalt location args: --block VST-00200-11311-32    
-2016-05-27 19:01:10.063 (INFO ) [0xfff8c20c530] ibm.runjob.AbstractOptions: using properties file /bgsys/local/etc/bg.properties
-2016-05-27 19:01:10.064 (INFO ) [0xfff8c20c530] ibm.runjob.AbstractOptions: max open file descriptors: 65536
-2016-05-27 19:01:10.064 (INFO ) [0xfff8c20c530] ibm.runjob.AbstractOptions: core file limit: 18446744073709551615
-2016-05-27 19:01:10.067 (INFO ) [0xfff8c20c530] 20769:tatu.runjob.client: scheduler job id is 344469
-2016-05-27 19:01:10.072 (INFO ) [0xfff9c443610] 20769:tatu.runjob.monitor: monitor started
-2016-05-27 19:01:10.438 (INFO ) [0xfff9c443610] 20769:tatu.runjob.monitor: task record 1401642 created
-2016-05-27 19:01:10.438 (INFO ) [0xfff8c20c530] VST-00200-11311-32:20769:ibm.runjob.client.options.Parser: set local socket to runjob_mux from properties file
-2016-05-27 19:01:12.638 (INFO ) [0xfff8c20c530] VST-00200-11311-32:1584965:ibm.runjob.client.Job: job 1584965 started
+Cobalt location args: --block VST-00060-11171-32    
+2016-06-06 19:29:31.729 (INFO ) [0xfff82bec530] ibm.runjob.AbstractOptions: using properties file /bgsys/local/etc/bg.properties
+2016-06-06 19:29:31.730 (INFO ) [0xfff82bec530] ibm.runjob.AbstractOptions: max open file descriptors: 65536
+2016-06-06 19:29:31.730 (INFO ) [0xfff82bec530] ibm.runjob.AbstractOptions: core file limit: 18446744073709551615
+2016-06-06 19:29:31.733 (INFO ) [0xfff82bec530] 10532:tatu.runjob.client: scheduler job id is 344916
+2016-06-06 19:29:31.733 (INFO ) [0xfff82bec530] 10532:tatu.runjob.client: scheduler reservation id is 213
+2016-06-06 19:29:31.737 (INFO ) [0xfffa6163610] 10532:tatu.runjob.monitor: monitor started
+2016-06-06 19:29:32.053 (INFO ) [0xfffa6163610] 10532:tatu.runjob.monitor: task record 1402434 created
+2016-06-06 19:29:32.053 (INFO ) [0xfff82bec530] VST-00060-11171-32:10532:ibm.runjob.client.options.Parser: set local socket to runjob_mux from properties file
+2016-06-06 19:29:34.326 (INFO ) [0xfff82bec530] VST-00060-11171-32:1585743:ibm.runjob.client.Job: job 1585743 started
 Rank =    0  Free Memory =    57 MB
 Rank =    1  Free Memory =    57 MB
 Rank =    2  Free Memory =    57 MB
@@ -39,8 +40,8 @@ Rank =   28  Free Memory =    57 MB
 Rank =   29  Free Memory =    57 MB
 Rank =   30  Free Memory =    57 MB
 Rank =   31  Free Memory =    57 MB
-2016-05-27 19:01:23.549 (INFO ) [0xfff9c443610] 20769:tatu.runjob.monitor: tracklib completed
-2016-05-27 19:03:34.907 (INFO ) [0xfff8c20c530] VST-00200-11311-32:1584965:ibm.runjob.client.Job: exited with status 0
-2016-05-27 19:03:34.907 (INFO ) [0xfff8c20c530] tatu.runjob.client: task exited with status 0
-2016-05-27 19:03:34.907 (INFO ) [0xfff9c443610] 20769:tatu.runjob.monitor: monitor terminating
-2016-05-27 19:03:34.911 (INFO ) [0xfff8c20c530] tatu.runjob.client: monitor completed
+2016-06-06 19:29:45.007 (INFO ) [0xfffa6163610] 10532:tatu.runjob.monitor: tracklib completed
+2016-06-06 19:32:03.409 (INFO ) [0xfff82bec530] VST-00060-11171-32:1585743:ibm.runjob.client.Job: exited with status 0
+2016-06-06 19:32:03.410 (INFO ) [0xfff82bec530] tatu.runjob.client: task exited with status 0
+2016-06-06 19:32:03.410 (INFO ) [0xfffa6163610] 10532:tatu.runjob.monitor: monitor terminating
+2016-06-06 19:32:03.413 (INFO ) [0xfff82bec530] tatu.runjob.client: monitor completed

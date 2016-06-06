@@ -1,5 +1,5 @@
 
-     Program pw2qmcpack v.5.0   starts on 27May2016 at 19:10:47 
+     Program pw2qmcpack v.5.0   starts on  6Jun2016 at 20:12:24 
 
      This program is part of the open-source Quantum ESPRESSO suite
      for quantum simulation of materials; please cite
@@ -26,12 +26,12 @@
      G-vector sticks info
      --------------------
      sticks:   dense  smooth     PW     G-vecs:    dense   smooth      PW
-     Sum       22733   22733   5689              2578383  2578383  322453
+     Sum       34109   34109   8529              4738093  4738093  591889
  
- exclusive time read charge density (s) 2.94999999999999929
- exclusive time fft charge density (s) 4.55999999999999872
- exclusive time read wave function (s) 4.02999999999999758
- inclusive time in read_file_lite (s) 21.5800000000000018
+ exclusive time read charge density (s) 5.44000000000000128
+ exclusive time fft charge density (s) 9.01000000000000156
+ exclusive time read wave function (s) 7.98999999999999488
+ inclusive time in read_file_lite (s) 40.7500000000000000
 esh5 create pwscf_output/pwscf.pwscf.h5
- inclusive time in big loop (s) 3.50000000000000000
- inclusive time in compute_qmcpack (s) 5.61999999999999744
+ inclusive time in big loop (s) 6.17999999999999972
+ inclusive time in compute_qmcpack (s) 10.3099999999999952

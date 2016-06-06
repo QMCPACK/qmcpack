@@ -16,8 +16,7 @@ settings(
     sleep         = 3,
     #machine       = 'ws4',
     machine       = 'vesta',
-    #account       = 'QMCPACK-Training',
-    account       = 'QMCPACK',
+    account       = 'QMCPACK-Training',
     ) 
 
 # specify job details
@@ -27,9 +26,9 @@ if settings.machine.startswith('ws'):    # running on workstation
     qmcjob = job(cores=4,app='qmcpack')
 else:                                    # running on Vesta
     appdir = '/soft/applications/qmcpack/Binaries/'
-    dftjob  = job(nodes=32,threads= 1,hours=1,app=appdir+'pw.x')
-    p2qjob  = job(cores= 1,threads= 1,hours=1,app=appdir+'pw2qmcpack.x')
-    qmcjob  = job(nodes=32,threads=16,hours=1,app=appdir+'qmcpack')
+    dftjob  = job(nodes=32,threads= 1,queue='qmcpack',hours=1,app=appdir+'pw.x')
+    p2qjob  = job(cores= 1,threads= 1,queue='qmcpack',hours=1,app=appdir+'pw2qmcpack.x')
+    qmcjob  = job(nodes=32,threads=16,queue='qmcpack',hours=1,app=appdir+'qmcpack')
 
     vesta = get_machine('vesta') # allow one job at a time (lab only)
     vesta.queue_size = 2
@@ -38,7 +37,7 @@ else:                                    # running on Vesta
 
 # create DFT, OPT, & DMC sim's for each bond length
 sims = []
-scales = [1.00,0.90,0.95,1.05,1.10]
+scales = [1.00,0.90,0.925,0.95,0.975,1.025,1.05,1.075,1.10]
 for scale in scales:
     directory = 'scale_'+str(scale)
 
@@ -62,7 +61,7 @@ for scale in scales:
         input_type   = 'scf',
         pseudos      = ['O.BFD.upf'],
         input_dft    = 'lda', 
-        ecut         = 200,
+        ecut         = 300,
         conv_thr     = 1e-7, 
         mixing_beta  = .7,
         nosym        = True,

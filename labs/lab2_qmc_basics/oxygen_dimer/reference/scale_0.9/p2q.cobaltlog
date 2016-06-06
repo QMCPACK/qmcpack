@@ -1,27 +1,28 @@
-Jobid: 344468
-qsub --mode script -q default -A QMCPACK -n 1 -t 60 -O p2q --mode script --env BG_SHAREDMEMSIZE=32 p2q.qsub.in
-Fri May 27 18:58:55 2016 +0000 (UTC) submitted with cwd set to: /gpfs/vesta-fs0/projects/QMCPACk-Training/krogel/prep2/labs/lab2_qmc_basics/oxygen_dimer/scale_0.9
-Fri May 27 18:59:29 2016 +0000 (UTC) krogel/344468: Initiating boot at location VST-00000-11111-32.
-Fri May 27 18:59:46 2016 +0000 (UTC) 
-Fri May 27 18:59:46 2016 +0000 (UTC) Command: '/gpfs/vesta-fs0/projects/QMCPACk-Training/krogel/prep2/labs/lab2_qmc_basics/oxygen_dimer/scale_0.9/p2q.qsub.in'
-Fri May 27 18:59:46 2016 +0000 (UTC) 
-Fri May 27 18:59:46 2016 +0000 (UTC) Environment:
-Fri May 27 18:59:46 2016 +0000 (UTC) SHELL=/bin/bash
-Fri May 27 18:59:46 2016 +0000 (UTC) COBALT_NODEFILE=/tmp/tmpjRUwvz
-Fri May 27 18:59:46 2016 +0000 (UTC) COBALT_PARTNAME=VST-00000-11111-32
-Fri May 27 18:59:46 2016 +0000 (UTC) COBALT_JOBID=344468
-Fri May 27 18:59:46 2016 +0000 (UTC) BG_SHAREDMEMSIZE=32
-Fri May 27 18:59:46 2016 +0000 (UTC) COBALT_STARTTIME=1464375545
-Fri May 27 18:59:46 2016 +0000 (UTC) LOGNAME=krogel
-Fri May 27 18:59:46 2016 +0000 (UTC) USER=krogel
-Fri May 27 18:59:46 2016 +0000 (UTC) COBALT_ENDTIME=1464379145
-Fri May 27 18:59:46 2016 +0000 (UTC) COBALT_PARTSIZE=32
-Fri May 27 18:59:46 2016 +0000 (UTC) HOME=/home/krogel
-Fri May 27 18:59:46 2016 +0000 (UTC) COBALT_JOBSIZE=1
-Fri May 27 18:59:46 2016 +0000 (UTC) 
-Fri May 27 18:59:46 2016 +0000 (UTC) Info: stdin received from /dev/null
-Fri May 27 18:59:46 2016 +0000 (UTC) Info: stdout sent to /gpfs/vesta-fs0/projects/QMCPACk-Training/krogel/prep2/labs/lab2_qmc_basics/oxygen_dimer/scale_0.9/p2q.output
-Fri May 27 18:59:46 2016 +0000 (UTC) Info: stderr sent to /gpfs/vesta-fs0/projects/QMCPACk-Training/krogel/prep2/labs/lab2_qmc_basics/oxygen_dimer/scale_0.9/p2q.error
-Fri May 27 18:59:46 2016 +0000 (UTC) 
-Fri May 27 18:59:51 2016 +0000 (UTC) krogel/344468: Block VST-00000-11111-32 for location VST-00000-11111-32 successfully booted (Initiating). 
-Fri May 27 19:00:34 2016 +0000 (UTC) Info: task completed normally with an exit code of 0; initiating job cleanup and removal
+Jobid: 344939
+qsub --mode script -q qmcpack -A QMCPACK-Training -n 1 -t 60 -O p2q --mode script --env BG_SHAREDMEMSIZE=32 p2q.qsub.in
+Mon Jun 06 19:55:31 2016 +0000 (UTC) submitted with cwd set to: /gpfs/vesta-fs0/projects/QMCPACk-Training/krogel/prep4/labs/lab2_qmc_basics/oxygen_dimer/scale_0.9
+Mon Jun 06 19:59:11 2016 +0000 (UTC) krogel/344939: Initiating boot at location VST-00040-11151-32.
+Mon Jun 06 19:59:30 2016 +0000 (UTC) 
+Mon Jun 06 19:59:30 2016 +0000 (UTC) Command: '/gpfs/vesta-fs0/projects/QMCPACk-Training/krogel/prep4/labs/lab2_qmc_basics/oxygen_dimer/scale_0.9/p2q.qsub.in'
+Mon Jun 06 19:59:30 2016 +0000 (UTC) 
+Mon Jun 06 19:59:30 2016 +0000 (UTC) Environment:
+Mon Jun 06 19:59:30 2016 +0000 (UTC) COBALT_RESID=213
+Mon Jun 06 19:59:30 2016 +0000 (UTC) SHELL=/bin/bash
+Mon Jun 06 19:59:30 2016 +0000 (UTC) COBALT_NODEFILE=/tmp/tmpHnsVGz
+Mon Jun 06 19:59:30 2016 +0000 (UTC) COBALT_PARTNAME=VST-00040-11151-32
+Mon Jun 06 19:59:30 2016 +0000 (UTC) COBALT_JOBID=344939
+Mon Jun 06 19:59:30 2016 +0000 (UTC) BG_SHAREDMEMSIZE=32
+Mon Jun 06 19:59:30 2016 +0000 (UTC) COBALT_STARTTIME=1465243132
+Mon Jun 06 19:59:30 2016 +0000 (UTC) LOGNAME=krogel
+Mon Jun 06 19:59:30 2016 +0000 (UTC) USER=krogel
+Mon Jun 06 19:59:30 2016 +0000 (UTC) COBALT_ENDTIME=1465246732
+Mon Jun 06 19:59:30 2016 +0000 (UTC) COBALT_PARTSIZE=32
+Mon Jun 06 19:59:30 2016 +0000 (UTC) HOME=/home/krogel
+Mon Jun 06 19:59:30 2016 +0000 (UTC) COBALT_JOBSIZE=1
+Mon Jun 06 19:59:30 2016 +0000 (UTC) 
+Mon Jun 06 19:59:30 2016 +0000 (UTC) Info: stdin received from /dev/null
+Mon Jun 06 19:59:30 2016 +0000 (UTC) Info: stdout sent to /gpfs/vesta-fs0/projects/QMCPACk-Training/krogel/prep4/labs/lab2_qmc_basics/oxygen_dimer/scale_0.9/p2q.output
+Mon Jun 06 19:59:30 2016 +0000 (UTC) Info: stderr sent to /gpfs/vesta-fs0/projects/QMCPACk-Training/krogel/prep4/labs/lab2_qmc_basics/oxygen_dimer/scale_0.9/p2q.error
+Mon Jun 06 19:59:30 2016 +0000 (UTC) 
+Mon Jun 06 19:59:32 2016 +0000 (UTC) krogel/344939: Block VST-00040-11151-32 for location VST-00040-11151-32 successfully booted (Initiating). 
+Mon Jun 06 20:00:42 2016 +0000 (UTC) Info: task completed normally with an exit code of 0; initiating job cleanup and removal

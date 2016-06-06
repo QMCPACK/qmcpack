@@ -13,15 +13,15 @@
          </determinantset>
          <jastrow type="One-Body" name="J1" function="bspline" source="ion0" print="yes">
             <correlation elementType="O" size="8" rcut="5.0" cusp="0.0">
-               <coefficients id="eO" type="Array"> -0.8464816066 -0.7331490594 -0.555470404 -0.3712915851 -0.2280307524 -0.1323592953 -0.06360089023 -0.02576553984</coefficients>
+               <coefficients id="eO" type="Array"> -0.7992094943 -0.6959869051 -0.5190893387 -0.342865915 -0.2056406212 -0.1167345346 -0.05418506816 -0.01869230954</coefficients>
             </correlation>
          </jastrow>
          <jastrow type="Two-Body" name="J2" function="bspline" print="yes">
             <correlation speciesA="u" speciesB="u" size="8" rcut="10.0">
-               <coefficients id="uu" type="Array"> 0.2619200744 0.06429506477 -0.01798489336 -0.04155291071 -0.05923998151 -0.06052474558 -0.06093365898 -0.07080527285</coefficients>
+               <coefficients id="uu" type="Array"> 0.2862810279 0.09644318112 0.01529409675 -0.00342211754 -0.02163298476 -0.01842444372 -0.02351726982 -0.01761848071</coefficients>
             </correlation>
             <correlation speciesA="u" speciesB="d" size="8" rcut="10.0">
-               <coefficients id="ud" type="Array"> 0.313051435 0.0454244545 -0.03787454615 -0.0608454273 -0.07431898634 -0.07402596299 -0.07353271898 -0.02671093779</coefficients>
+               <coefficients id="ud" type="Array"> 0.3213932591 0.05447289216 -0.02483414186 -0.04462761959 -0.05930624458 -0.0546415767 -0.05816549559 -0.05367608124</coefficients>
             </correlation>
          </jastrow>
       </wavefunction>

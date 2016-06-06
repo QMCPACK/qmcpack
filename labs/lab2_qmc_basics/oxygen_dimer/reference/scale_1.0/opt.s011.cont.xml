@@ -2,7 +2,7 @@
 <simulation>
    <project id="opt" series="12">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
-   <host>Q02-I0-J01.vesta.itd</host><date>Fri May 27 18:56:35 2016
+   <host>Q02-I2-J01.vesta.itd</host><date>Mon Jun  6 19:26:19 2016
 </date><user>krogel</user></project>
    <qmcsystem>
       <simulationcell>
