@@ -61,7 +61,7 @@ for scale in scales:
         input_type   = 'scf',
         pseudos      = ['O.BFD.upf'],
         input_dft    = 'lda', 
-        ecut         = 200,
+        ecut         = 300,
         conv_thr     = 1e-7, 
         mixing_beta  = .7,
         nosym        = True,
