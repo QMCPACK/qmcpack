@@ -34,9 +34,9 @@ dft_pps   = ['Be.ncpp']   # pwscf pseudopotentials
 qmc_pps   = ['Be.xml']   # qmcpack pseudopotentials
 
 # job details
-dft_job = job(cores=16,hours=2,app=pwscf)
-p2q_job = job(cores=1,hours=2,app=pw2qmcpack)
-qmc_job = job(nodes=32,hours=2,threads=16,app=qmcpack)
+dft_job = job(cores=16,hours=2,queue="qmcpack",app=pwscf)
+p2q_job = job(cores=1,hours=2,queue="qmcpack",app=pw2qmcpack)
+qmc_job = job(nodes=32,hours=2,threads=16,queue="qmcpack",app=qmcpack)
 
 # specify k-point grids
 kgrids = [(2,2,2),(3,3,3)]

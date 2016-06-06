@@ -34,9 +34,9 @@ dft_pps   = ['Be.ncpp']   # pwscf pseudopotentials
 qmc_pps   = ['Be.xml']   # qmcpack pseudopotentials
 
 # job details
-dft_job = job(cores=16,minutes=10,app=pwscf)
-p2q_job = job(cores=1,minutes=10,app=pw2qmcpack)
-qmc_job = job(nodes=32,minutes=30,threads=16,app=qmcpack)
+dft_job = job(cores=16,minutes=10,queue="qmcpack",app=pwscf)
+p2q_job = job(cores=1,minutes=10,queue="qmcpack",app=pw2qmcpack)
+qmc_job = job(nodes=32,minutes=30,threads=16,queue="qmcpack",app=qmcpack)
 
 # specify k-point grids
 kgrids = [(2,2,2),(3,3,3)]
@@ -168,7 +168,7 @@ for kgrid in kgrids:
     qmc = generate_qmcpack(
         identifier   = 'dmc',
         path         = directory+'/dmc-16at_'+ks,
-        job          = job(nodes=ntwists,minutes=20,threads=16,app=qmcpack,queue="R.qmc"),
+        job          = job(nodes=ntwists,minutes=20,threads=16,queue="qmcpack",app=qmcpack,queue="R.qmc"),
         input_type   = 'basic',
         system       = bcc_Be,
         bconds       = 'ppp',

@@ -34,9 +34,9 @@ dft_pps   = ['C.BFD.upf']   # pwscf pseudopotentials
 qmc_pps   = ['C.BFD.xml']   # qmcpack pseudopotentials
 
 # job details
-dft_job = job(nodes=1,minutes=20,app=pwscf)
-p2q_job = job(cores=1,minutes=20,app=pw2qmcpack)
-qmc_job = job(nodes=32,minutes=20,threads=16,app=qmcpack)
+dft_job = job(nodes=1,minutes=20,queue="qmcpack",app=pwscf)
+p2q_job = job(cores=1,minutes=20,queue="qmcpack",app=pw2qmcpack)
+qmc_job = job(nodes=32,minutes=20,threads=16,queue="qmcpack",app=qmcpack)
 
 # create 2 atom sheet of graphene
 graphene = generate_physical_system(

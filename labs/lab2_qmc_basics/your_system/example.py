@@ -27,9 +27,9 @@ if settings.machine.startswith('ws'):    # running on workstation
     qmcjob = job(cores=4,app='qmcpack')
 else:                                    # running on Vesta
     appdir = '/soft/applications/qmcpack/Binaries/'
-    dftjob  = job(nodes= 4,threads= 1,hours=1,app=appdir+'pw.x')
-    p2qjob  = job(cores= 1,threads= 1,hours=1,app=appdir+'pw2qmcpack.x')
-    qmcjob  = job(nodes=32,threads=16,hours=1,app=appdir+'qmcpack')
+    dftjob  = job(nodes= 4,threads= 1,hours=1,queue='qmcpack',app=appdir+'pw.x')
+    p2qjob  = job(cores= 1,threads= 1,hours=1,queue='qmcpack',app=appdir+'pw2qmcpack.x')
+    qmcjob  = job(nodes=32,threads=16,hours=1,queue='qmcpack',app=appdir+'qmcpack')
 
     vesta = get_machine('vesta') # allow one job at a time (lab only)
     vesta.queue_size = 1
