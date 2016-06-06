@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <simulation>
-  <project id="ts-h2o" series="0"/>
+  <project id="wk-h2o" series="0"/>
 
   <!-- input from gaussian converter -->
   <include href="h2o.ptcl.xml"/>
@@ -29,15 +29,15 @@
     <parameter name="walkers">30</parameter>
     <parameter name="timestep">0.3</parameter>
     <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="samples">120</parameter> <!-- number of VMC configurations to pass to DMC -->
   </qmc>
 
   <!-- DMC -->
   <qmc method="dmc" move="pbyp" checkpoint="-1">
     <parameter name="nonlocalmoves">yes</parameter>
-    <parameter name="targetWalkers">60</parameter>
-    <parameter name="blocks">100</parameter>
-    <parameter name="steps">50</parameter>
-    <parameter name="timestep">0.04</parameter>
+    <parameter name="blocks">250</parameter>
+    <parameter name="steps">100</parameter>
+    <parameter name="timestep">0.01</parameter>
     <estimator name="LocalEnergy" hdf5="no"/>
   </qmc>
 
