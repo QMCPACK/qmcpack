@@ -128,7 +128,7 @@ if exe_name=='ppconvert':
     nodes   = 1
     procs   = 1
     threads = 1
-    time    = 120
+    time    = 60
     argstr  = ' '+join_args(exe_arg_list)+'\n'
     runstr  = exe+argstr
     
@@ -200,7 +200,7 @@ elif exe_name=='pw.x':
     nodes   = 32
     procs   = 16
     threads = 1
-    time    = 120
+    time    = 60
     argstr  =  ' -input '''+infile+'\n'
 
 elif exe_name=='pw2qmcpack.x':
@@ -226,7 +226,7 @@ elif exe_name=='pw2qmcpack.x':
     nodes   = 1
     procs   = 1
     threads = 1
-    time    = 120
+    time    = 60
     argstr  = '<'+infile+'\n'
 
 elif exe_name=='qmcpack' or exe_name=='qmcpack_comp':
@@ -257,7 +257,7 @@ elif exe_name=='qmcpack' or exe_name=='qmcpack_comp':
     procs   = 1
     threads = 16
     #threads = 64
-    time    = 120
+    time    = 60
     argstr  = ' '+infile+'\n'
 #end if
 
