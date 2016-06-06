@@ -7,7 +7,7 @@
    <include href="O.q0.ptcl.xml"/>
 
    <!-- OPT_XML is from optimization, e.g. O.q0.opt.s008.opt.xml -->
-   <include href="O.q0.opt.s007.opt.xml"/>
+   <include href="OPT_XML"/>
 
    <hamiltonian name="h0" type="generic" target="e">
       <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
@@ -19,50 +19,22 @@
 
    <!-- fill in VWARMUP, VBLOCKS, VSTEPS, VTIMESTEP, DWALKERS -->
    <qmc method="vmc" move="pbyp">
-      <parameter name="walkers"             >    1          </parameter>
-      <parameter name="warmupSteps"         >    30         </parameter>
-      <parameter name="blocks"              >    20         </parameter>
-      <parameter name="steps"               >    10         </parameter>
-      <parameter name="timestep"            >    0.3        </parameter>
-      <parameter name="samples"             >    2048       </parameter>
+      <parameter name="walkers"             >    1               </parameter>
+      <parameter name="warmupSteps"         >    VWARMUP         </parameter>
+      <parameter name="blocks"              >    VBLOCKS         </parameter>
+      <parameter name="steps"               >    VSTEPS          </parameter>
+      <parameter name="timestep"            >    VTIMESTEP       </parameter>
+      <parameter name="samples"             >    DWALKERS        </parameter>
    </qmc>
 
    <!-- fill in DWARMUP, DBLOCKS, DSTEPS, DTIMESTEP -->
    <!-- make multiple copies w/ different timesteps (largest first) -->
    <!--  (blocks*steps*timestep = const1, warmup*timestep = const2) -->
    <qmc method="dmc" move="pbyp">
-      <parameter name="warmupSteps"         >    100        </parameter>
-      <parameter name="blocks"              >    400        </parameter>
-      <parameter name="steps"               >      4        </parameter>
-      <parameter name="timestep"            >   0.04        </parameter>
-      <parameter name="nonlocalmoves"       >    yes        </parameter>
-   </qmc>
-   <qmc method="dmc" move="pbyp">
-      <parameter name="warmupSteps"         >     40        </parameter>
-      <parameter name="blocks"              >    400        </parameter>
-      <parameter name="steps"               >      8        </parameter>
-      <parameter name="timestep"            >   0.02        </parameter>
-      <parameter name="nonlocalmoves"       >    yes        </parameter>
-   </qmc>
-   <qmc method="dmc" move="pbyp">
-      <parameter name="warmupSteps"         >     80        </parameter>
-      <parameter name="blocks"              >    400        </parameter>
-      <parameter name="steps"               >     16        </parameter>
-      <parameter name="timestep"            >   0.01        </parameter>
-      <parameter name="nonlocalmoves"       >    yes        </parameter>
-   </qmc>
-   <qmc method="dmc" move="pbyp">
-      <parameter name="warmupSteps"         >    160        </parameter>
-      <parameter name="blocks"              >    400        </parameter>
-      <parameter name="steps"               >     32        </parameter>
-      <parameter name="timestep"            >   0.005       </parameter>
-      <parameter name="nonlocalmoves"       >    yes        </parameter>
-   </qmc>
-   <qmc method="dmc" move="pbyp">
-      <parameter name="warmupSteps"         >    320        </parameter>
-      <parameter name="blocks"              >    400        </parameter>
-      <parameter name="steps"               >     64        </parameter>
-      <parameter name="timestep"            >   0.0025      </parameter>
-      <parameter name="nonlocalmoves"       >    yes        </parameter>
+      <parameter name="warmupSteps"         >    DWARMUP         </parameter>
+      <parameter name="blocks"              >    DBLOCKS         </parameter>
+      <parameter name="steps"               >    DSTEPS          </parameter>
+      <parameter name="timestep"            >    DTIMESTEP       </parameter>
+      <parameter name="nonlocalmoves"       >    yes             </parameter>
    </qmc>
 </simulation>
