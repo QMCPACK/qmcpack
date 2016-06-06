@@ -17,86 +17,51 @@ This lab covers molecular QMC calculations with wavefunctions of increasing soph
 \section{Lab directories and files}
 \begin{shaded}
 \begin{verbatim}
-labs/lab3_advanced_molecules/
+labs/lab3_advanced_molecules/exercises
 
-ex1_first-run-hartree-fock - basic work flow from Hatree-Fock to DMC
-├── gms                      - Hatree-Fock calculation using GAMESS
+ex1_first-run-hartree-fock    - basic work flow from Hatree-Fock to DMC
+├── gms                        - Hatree-Fock calculation using GAMESS
 │   ├── h2o.hf.inp               - GAMESS input
 │   ├── h2o.hf.dat               - GAMESS punch file containing orbitals
 │   └── h2o.hf.out               - GAMESS output with orbitals and other info
-├── convert                  - Convert GAMESS wavefunction to QMCPACK format
+├── convert                    - Convert GAMESS wavefunction to QMCPACK format
 │   ├── h2o.hf.out               - GAMESS output
 │   ├── h2o.ptcl.xml             - converted particle positions
 │   └── h2o.wfs.xml              - converted wave function
-├── opt                    - VMC optimization
-│   ├── optm.xml                - QMCPACK VMC optimization input
-│   ├── h2o.ptcl.xml            - converted particle positions
-│   └── h2o.wfs.xml             - converted wave function 
-├── dmc_timestep           - Check DMC timestep bias
-│   ├── dmc_ts.xml              - QMCPACK DMC input
-│   └── h2o.ptcl.xml            - converted particle positions
-└── dmc_walkers            - Check DMC population control bias
+├── opt                        - VMC optimization
+│   └── optm.xml                 - QMCPACK VMC optimization input
+├── dmc_timestep               - Check DMC timestep bias
+│   └── dmc_ts.xml               - QMCPACK DMC input
+└── dmc_walkers                - Check DMC population control bias
+    └── dmc_wk.xml               - QMCPACK DMC input template
 
 ex2_slater-jastrow-wf-options - explore jastrow and orbital options
 ├── jastrow                    - Jastrow options
 │   ├── 12j                      - no 3-body Jastrow
-│   │   ├── optm.xml                - QMCPACK VMC optimization input
-│   │   ├── h2o.ptcl.xml            - converted particle positions
-│   │   └── h2o.wfs.xml             - converted wave function 
 │   ├── 1j                       - only 1-body Jastrow
-│   │   ├── optm.xml                - QMCPACK VMC optimization input
-│   │   ├── h2o.ptcl.xml            - converted particle positions
-│   │   └── h2o.wfs.xml             - converted wave function 
 │   └── 2j                       - only 2-body Jastrow
-│       ├── optm.xml                - QMCPACK VMC optimization input
-│       ├── h2o.ptcl.xml            - converted particle positions
-│       └── h2o.wfs.xml             - converted wave function 
 └── orbitals                   - Orbital options
     ├── pbe                      - PBE orbitals
-    │   ├── gms                     - DFT calculation using GAMESS
-    │   │   ├── h2o.pbe.inp           - GAMESS DFT input
-    │   │   ├── h2o.pbe.dat           - GAMESS punch file containing orbitals
-    │   │   └── h2o.pbe.out           - GAMESS output with orbitals and other info
-    │   ├── convert                 - Convert GAMESS wavefunction to QMCPACK format
-    │   │   ├── h2o.pbe.out           - GAMESS output
-    │   │   ├── h2o.ptcl.xml          - converted particle positions
-    │   │   └── h2o.wfs.xml           - converted wave function
-    │   └── opt                     - VMC optimization
-    │       ├── optm.xml              - QMCPACK VMC optimization input
-    │       ├── h2o.ptcl.xml          - converted particle positions
-    │       └── h2o.wfs.xml           - converted wave function 
-    ├── pbe0                      - PBE0  orbitals
-    ├── blyp                      - BLYP  orbitals
-    └── b3lyp                     - B3LYP orbitals
+    │   └── gms                    - DFT calculation using GAMESS
+    │       └── h2o.pbe.inp          - GAMESS DFT input
+    ├── pbe0                     - PBE0  orbitals
+    ├── blyp                     - BLYP  orbitals
+    └── b3lyp                    - B3LYP orbitals
     
 ex3_multi-slater-jastrow
-├── cisd                   - CISD wave function
-│   ├── gms                  - CISD calculation using GAMESS
-│   │   ├── h2o.cisd.inp         - GAMESS input
-│   │   ├── h2o.cisd.dat         - GAMESS punch file containing orbitals
-│   │   └── h2o.cisd.out         - GAMESS output with orbitals and other info
-│   ├── convert              - Convert GAMESS wavefunction to QMCPACK format
-│   │   ├── h2o.hf.out           - GAMESS output
-│   │   ├── h2o.ptcl.xml         - converted particle positions
-│   │   └── h2o.wfs.xml          - converted wave function
-│   ├── thres0.01            - VMC optimization with few determinants
-│   │   ├── optm.xml             - QMCPACK VMC optimization input
-│   │   ├── h2o.ptcl.xml         - converted particle positions
-│   │   └── h2o.wfs.xml          - converted wave function 
-│   └── thres0.0075           - VMC optimization with more determinants
-│       ├── optm.xml             - QMCPACK VMC optimization input
-│       ├── h2o.ptcl.xml         - converted particle positions
-│       └── h2o.wfs.xml          - converted wave function 
-├── casci                  - CASCI wave function
-│   ├── gms                  - CASCI calculation using GAMESS
-│   ├── convert              - Convert GAMESS wavefunction to QMCPACK format
-│   ├── thres0.01            - VMC optimization with few determinants
-│   └── thres0.0075           - VMC optimization with more determinants
-└── soci                  - SOCI wave function
-    ├── gms                  - SOCI calculation using GAMESS
-    ├── convert              - Convert GAMESS wavefunction to QMCPACK format
-    ├── thres0.01            - VMC optimization with few determinants
-    └── thres0.0075           - VMC optimization with more determinants
+├── cisd                      - CISD wave function
+│   ├── gms                     - CISD calculation using GAMESS
+│   │   ├── h2o.cisd.inp           - GAMESS input
+│   │   ├── h2o.cisd.dat           - GAMESS punch file containing orbitals
+│   │   └── h2o.cisd.out           - GAMESS output with orbitals and other info
+│   └── convert                 - Convert GAMESS wavefunction to QMCPACK format
+│       └── h2o.hf.out             - GAMESS output
+├── casci                     - CASCI wave function
+│   └── gms                     - CASCI calculation using GAMESS
+└── soci                      - SOCI wave function
+    ├── gms                     - SOCI calculation using GAMESS
+    ├── thres0.01               - VMC optimization with few determinants
+    └── thres0.0075             - VMC optimization with more determinants
 
 pseudo
 ├── H.BFD.gamess             - BFD pseudopotential for H in GAMESS format
@@ -134,7 +99,7 @@ the following commands.
 cd ${TRAINING TOP}/ex1_first-run-hartree-fock/gms
 jobrun_vesta rungms h2o.hf 
 cd ../convert
-ln -s ../gms/h2o.hf.output
+cp ../gms/h2o.hf.output
 jobrun_vesta convert4qmc -gamessAscii h2o.hf.output -add3BodyJ
 mv sample.Gaussian-G2.xml h2o.wfs.xml
 mv sample.Gaussian-G2.ptcl.xml h2o.ptcl.xml
@@ -178,8 +143,8 @@ Open optm.xml with your favorite text editor and modify the name of the files th
 wavefunction and particleset XML blocks. These files are included with the commands:
 \begin{shaded}
 \begin{verbatim}
-<include href=”ptcl.xml”/ >
-<include href=wfs.xml”/ >
+<include href=ptcl.xml/>
+<include href=wfs.xml/>
 \end{verbatim}
 \end{shaded}
 (the particle set must be
@@ -293,9 +258,25 @@ with x values 120,240,480 and copy the input file to each one. Go
 to ``NW120'', and, in the input file, change the name of the wave-function and particle set
 files (in this case they will be located one directory above, so use ``../dmc\_timestep/h2.opt.xml'' for
 example), change the pseudopotential directory to point to one directory above, change ``targetWalkers'' to 120, change the number of steps to 100, the time-step
-to 0.04 and the number of blocks to 400. Notice that ``targetWalkers'' is one way to set the
-desired (average) number of walkers in a DMC calculation.   For your own simulations we generally recommend setting $\sim$2*(\#threads)
+to 0.01 and the number of blocks to 400. Notice that ``targetWalkers'' is one way to set the desired (average) number of walkers in a DMC calculation. One can alternatively set ``samples'' in the \texttt{<qmc method=``vmc''} block to carry over de-correlated VMC configurations as DMC walkers. For your own simulations we generally recommend setting $\sim$2*(\#threads)
 walkers per node (slightly smaller than this value).
+
+The main steps needed to perform this exercise are:
+\begin{shaded}
+\begin{verbatim}
+cd ${TRAINING TOP}/ex1_first-run-hartree-fock/dmc_walkers
+cp ../opt/h2o.ptcl.xml ./
+cp ../opt/jopt-h2o.s007.opt.xml h2o.opt.wfs.xml
+# edit dmc_wk.xml to include the correct ptcl.xml and wfs.xml and 
+#  use the correct pseudopotential directory
+mkdir NW120
+cp dmc_wk.xml NW120
+# edit dmc_wk.xml to use the desired number of walkers, 
+#  and collect the desired amount of statistics
+jobrun_vesta qmcpack dmc_wk.xml
+# repeat for NW240, NW480
+\end{verbatim}
+\end{shaded}
 
 \begin{figure}
 \begin{center}
@@ -307,8 +288,8 @@ walkers per node (slightly smaller than this value).
 \end{figure}
 
 Repeat the same procedure in the other folders by setting (targetWalkers=240,
-steps=100, timestep=0.04, blocks=200) in NW240 and (targetWalkers=480, 
-steps=100, timestep=0.04, blocks=100) in NW480. When
+steps=100, timestep=0.01, blocks=200) in NW240 and (targetWalkers=480, 
+steps=100, timestep=0.01, blocks=100) in NW480. When
 the simulations complete, use qmca to analyze and plot the energy as a function of the
 number of walkers in the calculation. As always, figure \ref{fig:lam_dmc_popcont} 
 shows representative results of the
@@ -348,7 +329,7 @@ calculated in exercise \#1. Make three folders named 2j,12j,123j. For both 2j an
 %slightly different in this case)
 , copy the input file optm.xml %and the sample submission file
 from ``ex1\_first-run-hartree-fock/opt'' . This input file performs both wave-function optimization 
-and a VMC calculation. Copy the un-optimized HF wave-function and particle set files
+and a VMC calculation. Remember to correct relative paths to the pseudopotential directory. Copy the un-optimized HF wave-function and particle set files
 from ``ex1\_first-run-hartree-fock/convert'', if you followed the instructions in exercise \#1 these should be
 named h2o.wfs.xml and h2o.ptcl.xml. Otherwise, you can obtained them from the
 REFERENCE files. Modify the file h2o.wfs.xml to remove the appropriate jastrow
@@ -446,7 +427,7 @@ jobrun_vesta convert4qmc h2o.cisd.out -ci h2o.cisd.out \
 \end{verbatim}
 \end{shaded}
 
-We used the PRTMO=.T. flag in the GUESS section, to include orbitals in the output file. You should read these orbitals from the output (-readInitialGuess 40).
+We used the PRTMO=.T. flag in the GUESS section to include orbitals in the output file. You should read these orbitals from the output (-readInitialGuess 40).
 The highest occupied orbital in any determinant should be 34, so reading 40 orbitals is a safe choice. In this case, it is important to rename the xml files with meaningful names, for example h2o.cisd.wfs.xml. A threshold of 0.0075 is sufficient for the calculations in the training.
 
 
