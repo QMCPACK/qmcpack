@@ -2,13 +2,13 @@
 <simulation>
    <project id="O.q1.dmc" series="6">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
-   <host>Q02-I0-J00.vesta.itd</host><date>Fri May 27 17:02:15 2016
+   <host>Q02-I2-J03.vesta.itd</host><date>Mon Jun  6 20:34:28 2016
 </date><user>krogel</user></project>
 
    <include href="O.q1.ptcl.xml"/>
 
    <!-- OPT_XML is from optimization, e.g. O.q0.opt.s008.opt.xml -->
-   <include href="O.q1.opt.s008.opt.xml"/>
+   <include href="O.q1.opt.s010.opt.xml"/>
 
    <hamiltonian name="h0" type="generic" target="e">
       <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>

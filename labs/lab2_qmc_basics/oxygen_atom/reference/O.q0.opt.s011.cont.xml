@@ -4,7 +4,7 @@
    <!-- all output files will be prefixed by "O.q0.opt" -->
    <project id="O.q0.opt" series="12">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
-   <host>Q02-I1-J00.vesta.itd</host><date>Tue May 24 16:57:21 2016
+   <host>Q02-I3-J04.vesta.itd</host><date>Mon Jun  6 19:38:30 2016
 </date><user>krogel</user></project>
 
 

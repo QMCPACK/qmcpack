@@ -19,13 +19,13 @@
   Input XML = O.q0.dmc.in.xml
 
   Project = O.q0.dmc
-  date    = 2016-05-27 15:29:08 UTC
-  host    = Q02-I6-J04.vesta.itd
+  date    = 2016-06-06 19:48:47 UTC
+  host    = Q02-I2-J01.vesta.itd
   user    = krogel
 
   DO NOT READ DENSITY
-  Offset for the random number seeds based on time 964
-  Random number offset = 964  seeds = 7603-12379
+  Offset for the random number seeds based on time 927
+  Random number offset = 927  seeds = 7283-12037
   Create Global SuperCell 
   Simulation cell radius = 9.448631
   Wigner-Seitz    radius = 9.448631
@@ -103,8 +103,8 @@ bands=8, elecs=6, spins=2, twists=1, muffin tins=0, core states=0
 atomic orbital=0
 Atom type(0) = 8
    Skip initialization of the density
-TIMER  EinsplineSetBuilder::ReadOrbitalInfo 0.1208115200
-TIMER  EinsplineSetBuilder::BroadcastOrbitalInfo 0.0001078988
+TIMER  EinsplineSetBuilder::ReadOrbitalInfo 0.0793897675
+TIMER  EinsplineSetBuilder::BroadcastOrbitalInfo 0.0001074738
 Found 1 distinct supercell twists.
 number of things
 1
@@ -135,15 +135,15 @@ NumDistinctOrbitals 4 numOrbs = 4
    HalfG =                  0                 0                 0
 TOKEN=8 ReadGvectors_ESHDF /soft/applications/qmcpack/src/QMCWaveFunctions/EinsplineSetBuilderReadBands_ESHDF.cpp 669
 B-spline mesh factor is 1.0000000000
-B-spline mesh size is (180, 180, 180)
-Maxmimum number of Gvecs 322453
-  Using meshsize=               180               180               180
-  vs input meshsize=               180               180               180
-  Time to read the table in einspline.tile_100010001.spin_0.tw_0.l0u4.g180x180x180.h5 = 0.0014998150
-  SplineAdoptorReader initialize_spline_pio 3.0276373425 sec
-MEMORY increase 187 MB BsplineSetReader
-  MEMORY allocated SplineAdoptorReader 187 MB
-TIMER  EinsplineSetBuilder::ReadBands 3.2973200213
+B-spline mesh size is (216, 216, 216)
+Maxmimum number of Gvecs 591889
+  Using meshsize=               216               216               216
+  vs input meshsize=               216               216               216
+  Time to read the table in einspline.tile_100010001.spin_0.tw_0.l0u4.g216x216x216.h5 = 0.0014677825
+  SplineAdoptorReader initialize_spline_pio 6.0774259050 sec
+MEMORY increase 320 MB BsplineSetReader
+  MEMORY allocated SplineAdoptorReader 320 MB
+TIMER  EinsplineSetBuilder::ReadBands 6.4855948100
    Using Identity for the LCOrbitalSet 
 Reuse BasisSetBuilder "bspline" type bspline
  Building SPOset  with  basis set.
@@ -170,15 +170,15 @@ NumDistinctOrbitals 2 numOrbs = 2
    HalfG =                  0                 0                 0
 TOKEN=13 ReadGvectors_ESHDF /soft/applications/qmcpack/src/QMCWaveFunctions/EinsplineSetBuilderReadBands_ESHDF.cpp 669
 B-spline mesh factor is 1.0000000000
-B-spline mesh size is (180, 180, 180)
-Maxmimum number of Gvecs 322453
-  Using meshsize=               180               180               180
-  vs input meshsize=               180               180               180
-  Time to read the table in einspline.tile_100010001.spin_1.tw_0.l0u2.g180x180x180.h5 = 0.0014502125
-  SplineAdoptorReader initialize_spline_pio 2.8833711225 sec
-MEMORY increase 187 MB BsplineSetReader
-  MEMORY allocated SplineAdoptorReader 187 MB
-TIMER  EinsplineSetBuilder::ReadBands 2.9798790887
+B-spline mesh size is (216, 216, 216)
+Maxmimum number of Gvecs 591889
+  Using meshsize=               216               216               216
+  vs input meshsize=               216               216               216
+  Time to read the table in einspline.tile_100010001.spin_1.tw_0.l0u2.g216x216x216.h5 = 0.0015482125
+  SplineAdoptorReader initialize_spline_pio 5.7576231225 sec
+MEMORY increase 320 MB BsplineSetReader
+  MEMORY allocated SplineAdoptorReader 320 MB
+TIMER  EinsplineSetBuilder::ReadBands 5.9019750275
    Using Identity for the LCOrbitalSet 
   Creating a determinant updet group=0 sposet=updet
   Reusing a SPO set updet
@@ -192,27 +192,27 @@ TIMER  EinsplineSetBuilder::ReadBands 2.9798790887
  cusp = -0.2500000000
  rcut = 10.0000000000
 Parameter     Name      Value
-uu_0 0.8834543332 1 1  ON 0
-uu_1 0.6898255642 1 1  ON 1
-uu_2 0.6003336813 1 1  ON 2
-uu_3 0.5708126065 1 1  ON 3
-uu_4 0.5634153809 1 1  ON 4
-uu_5 0.5585725926 1 1  ON 5
-uu_6 0.5870662740 1 1  ON 6
-uu_7 0.5335605404 1 1  ON 7
+uu_0 0.3122131228 1 1  ON 0
+uu_1 0.1129216488 1 1  ON 1
+uu_2 0.0292329763 1 1  ON 2
+uu_3 0.0067481266 1 1  ON 3
+uu_4 -0.0030261086 1 1  ON 4
+uu_5 -0.0037258671 1 1  ON 5
+uu_6 0.0315546197 1 1  ON 6
+uu_7 -0.0375206936 1 1  ON 7
   BsplineJastrowBuilder adds a functor with cusp = -0.5000000000
  size = 8 parameters 
  cusp = -0.5000000000
  rcut = 10.0000000000
 Parameter     Name      Value
-ud_0 0.5322602903 1 1  ON 0
-ud_1 0.2652489309 1 1  ON 1
-ud_2 0.1842178692 1 1  ON 2
-ud_3 0.1618292095 1 1  ON 3
-ud_4 0.1551164953 1 1  ON 4
-ud_5 0.1685197223 1 1  ON 5
-ud_6 0.1509918184 1 1  ON 6
-ud_7 0.3299171211 1 1  ON 7
+ud_0 0.3420356433 1 1  ON 0
+ud_1 0.0754861271 1 1  ON 1
+ud_2 0.0019019663 1 1  ON 2
+ud_3 -0.0179777117 1 1  ON 3
+ud_4 -0.0234467424 1 1  ON 4
+ud_5 -0.0195459235 1 1  ON 5
+ud_6 -0.0058688325 1 1  ON 6
+ud_7 -0.0463276949 1 1  ON 7
 
   Using BsplineBuilder for one-body jastrow with B-spline functions
   ... ParticleSet::addTable Reuse Table #1 ion0_e
@@ -221,14 +221,14 @@ ud_7 0.3299171211 1 1  ON 7
  cusp = 0.0000000000
  rcut = 5.0000000000
 Parameter     Name      Value
-eO_0 -0.7692959944 1 1  ON 0
-eO_1 -0.6562533929 1 1  ON 1
-eO_2 -0.4761358822 1 1  ON 2
-eO_3 -0.2957758412 1 1  ON 3
-eO_4 -0.1657705857 1 1  ON 4
-eO_5 -0.0739298808 1 1  ON 5
-eO_6 -0.0259634625 1 1  ON 6
-eO_7 0.0095946275 1 1  ON 7
+eO_0 -0.7281978474 1 1  ON 0
+eO_1 -0.6262003183 1 1  ON 1
+eO_2 -0.4506890625 1 1  ON 2
+eO_3 -0.2804368711 1 1  ON 3
+eO_4 -0.1591149617 1 1  ON 4
+eO_5 -0.0790700478 1 1  ON 5
+eO_6 -0.0344229020 1 1  ON 6
+eO_7 -0.0020596592 1 1  ON 7
   QMCHamiltonian::addOperator Kinetic to H, physical Hamiltonian 
   ... ParticleSet::addTable Reuse Table #0 e_e
   QMCHamiltonian::addOperator ElecElec to H, physical Hamiltonian 
@@ -293,12 +293,12 @@ ParticleSetPool has:
 
     6
 
-    u  9.3349110398e+00  7.8149252827e+00  1.1794842187e+01
-    u  1.0548612558e+01  8.4261234246e+00  9.3016596252e+00
-    u  8.5122823891e+00  1.0552922464e+01  1.0609007883e+01
-    u  1.0740794433e+01  1.0974105304e+01  8.0418777773e+00
-    d  1.0240243422e+01  8.7401211603e+00  7.7453824919e+00
-    d  8.4259755351e+00  9.7104561977e+00  8.2214552907e+00
+    u  8.7836431945e+00  1.0430076346e+01  8.8250774675e+00
+    u  1.0292490490e+01  1.0231755809e+01  8.8208235384e+00
+    u  9.1288882663e+00  7.8301765622e+00  1.1256603849e+01
+    u  6.9134200818e+00  8.6665401988e+00  1.1423839257e+01
+    d  9.6077273200e+00  1.0148128526e+01  1.1555351137e+01
+    d  1.0006563222e+01  1.0358223960e+01  8.7960116837e+00
 
   ParticleSet ion0 : 0 1 
 
@@ -377,10 +377,10 @@ MEMORY increase 0 MB VMCSingleOMP::resetRun
   SimpleFixedNodeBranch::finalize after a VMC block
     QMC counter        = 0
     time step          = 0.3
-    reference energy   = -15.771
-    reference variance = 2.09554
+    reference energy   = -15.911
+    reference variance = 0.526016
 ====================================================
-  QMC Execution time = 5.1862803500e-01 secs 
+  QMC Execution time = 5.1856453625e-01 secs 
 Creating DMCMP for the qmc driver
 
 =========================================================
@@ -402,10 +402,10 @@ Using existing walkers
   QMC counter      = 1
   time step        = 4.0000000000e-02
   effective time step = 4.0000000000e-02
-  trial energy     = -1.5771006524e+01
-  reference energy = -1.5771006524e+01
+  trial energy     = -1.5911026949e+01
+  reference energy = -1.5911026949e+01
   Feedback = 1.0000000000e+00
-  reference variance = 2.0955362429e+00
+  reference variance = 5.2601647353e-01
   target walkers = 2048
   branch cutoff = 5.0000000000e+01 7.5000000000e+01
   Max and mimum walkers per node= 129 13
@@ -414,8 +414,8 @@ Using existing walkers
   Updates by particle-by-particle moves using fast gradient version 
   DMC moves are rejected when a node crossing is detected
 SimpleFixedNodeBranch::checkParameters 
-  Average Energy of a population  = -15.8625
-  Energy Variance = 0.869658
+  Average Energy of a population  = -15.8756
+  Energy Variance = 0.545087
 
   Fluctuating population
   Persistent walkers are killed after 1 MC sweeps
@@ -423,31 +423,31 @@ SimpleFixedNodeBranch::checkParameters
   Steps per block = 4
   Number of blocks = 400
 
-  DMC Engine Initialization = 2.3750600000e-02 secs 
+  DMC Engine Initialization = 2.2975358750e-02 secs 
 
  Warmup is completed after 100
 
-  TauEff     = 3.7166880201e-02
- TauEff/Tau = 9.2917200503e-01
-  Etrial     = -1.5901940848e+01
- Running average of energy = -1.5904825369e+01
-                  Variance = 7.4138750256e-01
+  TauEff     = 3.7128316531e-02
+ TauEff/Tau = 9.2820791328e-01
+  Etrial     = -1.5928865818e+01
+ Running average of energy = -1.5894234211e+01
+                  Variance = 3.1507779879e-01
 branch cutoff = 1.0000000000e+01 1.5000000000e+01
 ====================================================
   SimpleFixedNodeBranch::finalize after a DMC block
     QMC counter                   = 1
     time step                     = 0.04
-    effective time step           = 0.0371261
-    trial energy                  = -15.8933
-    reference energy              = -15.9027
-    reference variance            = 0.741388
+    effective time step           = 0.0371264
+    trial energy                  = -15.8826
+    reference energy              = -15.8954
+    reference variance            = 0.315078
     target walkers                = 2048
     branch cutoff                 = 10 15
     Max and mimum walkers per node= 129 13
     Feedback                      = 1
     QMC Status (BranchMode)       = 0000001111
 ====================================================
-  QMC Execution time = 1.8031364040e+01 secs 
+  QMC Execution time = 1.7633552140e+01 secs 
   Reusing DMCOMP
 BRANCH resetRun
  SimpleFixedNodeBranch::resetRun detected changes in <parameter>'s 
@@ -458,11 +458,11 @@ BRANCH resetRun
    Min Walkers per node 13
  iParam (old): 0                 1                 1                 2048              129               13                1                 0                 
  iParam (new): 40                1                 1                 2048              129               13                1                 0                 
- vParam (old): 4.0000000000e-02  3.7126118912e-02  -1.5893332874e+01 -1.5902653520e+01 -1.5878596494e+01 1.5000000000e+01  1.0000000000e+01  2.0000000000e-01  7.4138750256e-01  -2.3869858877e+04 1.5010000000e+03  1.0000000000e+00  1.0000000000e+01  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  
- vParam (new): 2.0000000000e-02  3.7126118912e-02  -1.5893332874e+01 -1.5902653520e+01 -1.5878596494e+01 1.5000000000e+01  1.0000000000e+01  2.0000000000e-01  7.4138750256e-01  -2.3869858877e+04 1.5010000000e+03  1.0000000000e+00  1.0000000000e+01  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  
+ vParam (old): 4.0000000000e-02  3.7126406476e-02  -1.5882589256e+01 -1.5895365843e+01 -1.5865390620e+01 1.5000000000e+01  1.0000000000e+01  2.0000000000e-01  3.1507779879e-01  -2.3858914155e+04 1.5010000000e+03  1.0000000000e+00  1.0000000000e+01  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  
+ vParam (new): 2.0000000000e-02  3.7126406476e-02  -1.5882589256e+01 -1.5895365843e+01 -1.5865390620e+01 1.5000000000e+01  1.0000000000e+01  2.0000000000e-01  3.1507779879e-01  -2.3858914155e+04 1.5010000000e+03  1.0000000000e+00  1.0000000000e+01  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  
 SimpleFixedNodeBranch::checkParameters 
-  Average Energy of a population  = -15.8774
-  Energy Variance = 1.13426
+  Average Energy of a population  = -15.8643
+  Energy Variance = 0.554883
 
 
 =========================================================
@@ -473,8 +473,8 @@ Using existing walkers
   Resetting Properties of the walkers 1 x 13
   Cannot make clones again. Use existing 16 clones
 SimpleFixedNodeBranch::checkParameters 
-  Average Energy of a population  = -15.9001
-  Energy Variance = 0.869659
+  Average Energy of a population  = -15.876
+  Energy Variance = 0.565674
 
   Fluctuating population
   Persistent walkers are killed after 1 MC sweeps
@@ -482,31 +482,31 @@ SimpleFixedNodeBranch::checkParameters
   Steps per block = 8
   Number of blocks = 400
 
-  DMC Engine Initialization = 1.8447887500e-03 secs 
+  DMC Engine Initialization = 1.9575962500e-03 secs 
 
  Warmup is completed after 40
 
-  TauEff     = 1.9365900013e-02
- TauEff/Tau = 9.6829500065e-01
-  Etrial     = -1.5926346101e+01
- Running average of energy = -1.5892676160e+01
-                  Variance = 6.8621246185e-01
+  TauEff     = 1.9379554696e-02
+ TauEff/Tau = 9.6897773478e-01
+  Etrial     = -1.5903209390e+01
+ Running average of energy = -1.5895120050e+01
+                  Variance = 2.7818217963e-01
 branch cutoff = 1.0000000000e+01 1.5000000000e+01
 ====================================================
   SimpleFixedNodeBranch::finalize after a DMC block
     QMC counter                   = 2
     time step                     = 0.02
-    effective time step           = 0.0193691
-    trial energy                  = -15.8973
-    reference energy              = -15.8943
-    reference variance            = 0.686212
+    effective time step           = 0.0193724
+    trial energy                  = -15.9011
+    reference energy              = -15.8923
+    reference variance            = 0.278182
     target walkers                = 2048
     branch cutoff                 = 10 15
     Max and mimum walkers per node= 129 13
     Feedback                      = 1
     QMC Status (BranchMode)       = 0000001111
 ====================================================
-  QMC Execution time = 2.3894954924e+01 secs 
+  QMC Execution time = 2.3874008816e+01 secs 
   Reusing DMCOMP
 BRANCH resetRun
  SimpleFixedNodeBranch::resetRun detected changes in <parameter>'s 
@@ -517,11 +517,11 @@ BRANCH resetRun
    Min Walkers per node 13
  iParam (old): 0                 1                 2                 2048              129               13                1                 0                 
  iParam (new): 80                1                 2                 2048              129               13                1                 0                 
- vParam (old): 2.0000000000e-02  1.9369116460e-02  -1.5897274403e+01 -1.5894348998e+01 -1.5888568711e+01 1.5000000000e+01  1.0000000000e+01  2.0000000000e-01  6.8621246185e-01  -5.0242031403e+04 3.1610000000e+03  1.0000000000e+00  1.0000000000e+01  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  
- vParam (new): 1.0000000000e-02  1.9369116460e-02  -1.5897274403e+01 -1.5894348998e+01 -1.5888568711e+01 1.5000000000e+01  1.0000000000e+01  2.0000000000e-01  6.8621246185e-01  -5.0242031403e+04 3.1610000000e+03  1.0000000000e+00  1.0000000000e+01  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  
+ vParam (old): 2.0000000000e-02  1.9372350841e-02  -1.5901094420e+01 -1.5892343756e+01 -1.5888410344e+01 1.5000000000e+01  1.0000000000e+01  2.0000000000e-01  2.7818217963e-01  -5.0235694680e+04 3.1610000000e+03  1.0000000000e+00  1.0000000000e+01  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  
+ vParam (new): 1.0000000000e-02  1.9372350841e-02  -1.5901094420e+01 -1.5892343756e+01 -1.5888410344e+01 1.5000000000e+01  1.0000000000e+01  2.0000000000e-01  2.7818217963e-01  -5.0235694680e+04 3.1610000000e+03  1.0000000000e+00  1.0000000000e+01  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  
 SimpleFixedNodeBranch::checkParameters 
-  Average Energy of a population  = -15.8886
-  Energy Variance = 0.805124
+  Average Energy of a population  = -15.8896
+  Energy Variance = 0.511148
 
 
 =========================================================
@@ -532,8 +532,8 @@ Using existing walkers
   Resetting Properties of the walkers 1 x 13
   Cannot make clones again. Use existing 16 clones
 SimpleFixedNodeBranch::checkParameters 
-  Average Energy of a population  = -15.9064
-  Energy Variance = 0.802077
+  Average Energy of a population  = -15.8948
+  Energy Variance = 0.509294
 
   Fluctuating population
   Persistent walkers are killed after 1 MC sweeps
@@ -541,31 +541,31 @@ SimpleFixedNodeBranch::checkParameters
   Steps per block = 16
   Number of blocks = 400
 
-  DMC Engine Initialization = 1.8451100000e-03 secs 
+  DMC Engine Initialization = 1.9874787500e-03 secs 
 
  Warmup is completed after 80
 
-  TauEff     = 9.8698040732e-03
- TauEff/Tau = 9.8698040732e-01
-  Etrial     = -1.5904397608e+01
- Running average of energy = -1.5892578676e+01
-                  Variance = 6.9602922640e-01
+  TauEff     = 9.8684729137e-03
+ TauEff/Tau = 9.8684729137e-01
+  Etrial     = -1.5908806426e+01
+ Running average of energy = -1.5893384294e+01
+                  Variance = 2.8645045392e-01
 branch cutoff = 1.0000000000e+01 1.5000000000e+01
 ====================================================
   SimpleFixedNodeBranch::finalize after a DMC block
     QMC counter                   = 3
     time step                     = 0.01
-    effective time step           = 0.00986889
-    trial energy                  = -15.8862
-    reference energy              = -15.8916
-    reference variance            = 0.696029
+    effective time step           = 0.00986962
+    trial energy                  = -15.8961
+    reference energy              = -15.8922
+    reference variance            = 0.28645
     target walkers                = 2048
     branch cutoff                 = 10 15
     Max and mimum walkers per node= 129 13
     Feedback                      = 1
     QMC Status (BranchMode)       = 0000001111
 ====================================================
-  QMC Execution time = 3.6467461812e+01 secs 
+  QMC Execution time = 3.6473866541e+01 secs 
   Reusing DMCOMP
 BRANCH resetRun
  SimpleFixedNodeBranch::resetRun detected changes in <parameter>'s 
@@ -576,11 +576,11 @@ BRANCH resetRun
    Min Walkers per node 13
  iParam (old): 0                 1                 3                 2048              129               13                1                 0                 
  iParam (new): 160               1                 3                 2048              129               13                1                 0                 
- vParam (old): 1.0000000000e-02  9.8688878272e-03  -1.5886241470e+01 -1.5891627040e+01 -1.5927039397e+01 1.5000000000e+01  1.0000000000e+01  2.0000000000e-01  6.9602922640e-01  -1.0045100993e+05 6.3210000000e+03  1.0000000000e+00  1.0000000000e+01  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  
- vParam (new): 5.0000000000e-03  9.8688878272e-03  -1.5886241470e+01 -1.5891627040e+01 -1.5927039397e+01 1.5000000000e+01  1.0000000000e+01  2.0000000000e-01  6.9602922640e-01  -1.0045100993e+05 6.3210000000e+03  1.0000000000e+00  1.0000000000e+01  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  
+ vParam (old): 1.0000000000e-02  9.8696202048e-03  -1.5896120403e+01 -1.5892221763e+01 -1.5906143280e+01 1.5000000000e+01  1.0000000000e+01  2.0000000000e-01  2.8645045392e-01  -1.0045474768e+05 6.3210000000e+03  1.0000000000e+00  1.0000000000e+01  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  
+ vParam (new): 5.0000000000e-03  9.8696202048e-03  -1.5896120403e+01 -1.5892221763e+01 -1.5906143280e+01 1.5000000000e+01  1.0000000000e+01  2.0000000000e-01  2.8645045392e-01  -1.0045474768e+05 6.3210000000e+03  1.0000000000e+00  1.0000000000e+01  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  
 SimpleFixedNodeBranch::checkParameters 
-  Average Energy of a population  = -15.9302
-  Energy Variance = 0.786045
+  Average Energy of a population  = -15.9062
+  Energy Variance = 0.51591
 
 
 =========================================================
@@ -591,8 +591,8 @@ Using existing walkers
   Resetting Properties of the walkers 1 x 13
   Cannot make clones again. Use existing 16 clones
 SimpleFixedNodeBranch::checkParameters 
-  Average Energy of a population  = -15.9156
-  Energy Variance = 0.858975
+  Average Energy of a population  = -15.8956
+  Energy Variance = 0.495378
 
   Fluctuating population
   Persistent walkers are killed after 1 MC sweeps
@@ -600,31 +600,31 @@ SimpleFixedNodeBranch::checkParameters
   Steps per block = 32
   Number of blocks = 400
 
-  DMC Engine Initialization = 1.9154300000e-03 secs 
+  DMC Engine Initialization = 2.0623612500e-03 secs 
 
  Warmup is completed after 160
 
-  TauEff     = 4.9735180773e-03
- TauEff/Tau = 9.9470361546e-01
-  Etrial     = -1.5890674545e+01
- Running average of energy = -1.5894062690e+01
-                  Variance = 6.8688275150e-01
+  TauEff     = 4.9747552458e-03
+ TauEff/Tau = 9.9495104915e-01
+  Etrial     = -1.5931780390e+01
+ Running average of energy = -1.5899326331e+01
+                  Variance = 2.7800562392e-01
 branch cutoff = 1.0000000000e+01 1.5000000000e+01
 ====================================================
   SimpleFixedNodeBranch::finalize after a DMC block
     QMC counter                   = 4
     time step                     = 0.005
-    effective time step           = 0.0049737
-    trial energy                  = -15.8995
-    reference energy              = -15.8932
-    reference variance            = 0.686883
+    effective time step           = 0.00497378
+    trial energy                  = -15.894
+    reference energy              = -15.8925
+    reference variance            = 0.278006
     target walkers                = 2048
     branch cutoff                 = 10 15
     Max and mimum walkers per node= 129 13
     Feedback                      = 1
     QMC Status (BranchMode)       = 0000001111
 ====================================================
-  QMC Execution time = 6.1467787105e+01 secs 
+  QMC Execution time = 6.1736194723e+01 secs 
   Reusing DMCOMP
 BRANCH resetRun
  SimpleFixedNodeBranch::resetRun detected changes in <parameter>'s 
@@ -635,11 +635,11 @@ BRANCH resetRun
    Min Walkers per node 13
  iParam (old): 0                 1                 4                 2048              129               13                1                 0                 
  iParam (new): 320               1                 4                 2048              129               13                1                 0                 
- vParam (old): 5.0000000000e-03  4.9737002744e-03  -1.5899508840e+01 -1.5893181245e+01 -1.5871443481e+01 1.5000000000e+01  1.0000000000e+01  2.0000000000e-01  6.8688275150e-01  -2.0090568238e+05 1.2641000000e+04  1.0000000000e+00  1.0000000000e+01  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  
- vParam (new): 2.5000000000e-03  4.9737002744e-03  -1.5899508840e+01 -1.5893181245e+01 -1.5871443481e+01 1.5000000000e+01  1.0000000000e+01  2.0000000000e-01  6.8688275150e-01  -2.0090568238e+05 1.2641000000e+04  1.0000000000e+00  1.0000000000e+01  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  
+ vParam (old): 5.0000000000e-03  4.9737845856e-03  -1.5893977969e+01 -1.5892514197e+01 -1.5884468629e+01 1.5000000000e+01  1.0000000000e+01  2.0000000000e-01  2.7800562392e-01  -2.0089726392e+05 1.2641000000e+04  1.0000000000e+00  1.0000000000e+01  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  
+ vParam (new): 2.5000000000e-03  4.9737845856e-03  -1.5893977969e+01 -1.5892514197e+01 -1.5884468629e+01 1.5000000000e+01  1.0000000000e+01  2.0000000000e-01  2.7800562392e-01  -2.0089726392e+05 1.2641000000e+04  1.0000000000e+00  1.0000000000e+01  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  
 SimpleFixedNodeBranch::checkParameters 
-  Average Energy of a population  = -15.8707
-  Energy Variance = 0.797346
+  Average Energy of a population  = -15.8839
+  Energy Variance = 0.494993
 
 
 =========================================================
@@ -650,8 +650,8 @@ Using existing walkers
   Resetting Properties of the walkers 1 x 13
   Cannot make clones again. Use existing 16 clones
 SimpleFixedNodeBranch::checkParameters 
-  Average Energy of a population  = -15.8755
-  Energy Variance = 0.851678
+  Average Energy of a population  = -15.8817
+  Energy Variance = 0.512153
 
   Fluctuating population
   Persistent walkers are killed after 1 MC sweeps
@@ -659,32 +659,32 @@ SimpleFixedNodeBranch::checkParameters
   Steps per block = 64
   Number of blocks = 400
 
-  DMC Engine Initialization = 2.0813987500e-03 secs 
+  DMC Engine Initialization = 2.0687787500e-03 secs 
 
  Warmup is completed after 320
 
-  TauEff     = 2.4948470418e-03
- TauEff/Tau = 9.9793881672e-01
-  Etrial     = -1.5900018978e+01
- Running average of energy = -1.5895708230e+01
-                  Variance = 6.9394419833e-01
+  TauEff     = 2.4947976405e-03
+ TauEff/Tau = 9.9791905621e-01
+  Etrial     = -1.5872329047e+01
+ Running average of energy = -1.5896900324e+01
+                  Variance = 2.8968769517e-01
 branch cutoff = 1.0000000000e+01 1.5000000000e+01
 ====================================================
   SimpleFixedNodeBranch::finalize after a DMC block
     QMC counter                   = 5
     time step                     = 0.0025
-    effective time step           = 0.00249482
-    trial energy                  = -15.8994
-    reference energy              = -15.8921
-    reference variance            = 0.693944
+    effective time step           = 0.00249483
+    trial energy                  = -15.8966
+    reference energy              = -15.8942
+    reference variance            = 0.289688
     target walkers                = 2048
     branch cutoff                 = 10 15
     Max and mimum walkers per node= 129 13
     Feedback                      = 1
     QMC Status (BranchMode)       = 0000001111
 ====================================================
-  QMC Execution time = 1.1298920021e+02 secs 
-  Total Execution time = 2.5358368893e+02 secs
+  QMC Execution time = 1.1213174474e+02 secs 
+  Total Execution time = 2.5257747381e+02 secs
 
 =========================================================
   A new xml input file : O.q0.dmc.s005.cont.xml

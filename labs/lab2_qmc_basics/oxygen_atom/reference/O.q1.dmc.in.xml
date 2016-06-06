@@ -7,7 +7,7 @@
    <include href="O.q1.ptcl.xml"/>
 
    <!-- OPT_XML is from optimization, e.g. O.q0.opt.s008.opt.xml -->
-   <include href="O.q1.opt.s008.opt.xml"/>
+   <include href="O.q1.opt.s010.opt.xml"/>
 
    <hamiltonian name="h0" type="generic" target="e">
       <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>

@@ -5,8 +5,8 @@
 
   (c) Copyright 2003-  QMCPACK developers            
 
-  Subversion branch 6920
-  Last modified     2016-05-18 01:53:58 +0000 (Wed, 18 May 2016)
+  Subversion branch 6936
+  Last modified     2016-05-23 14:12:59 +0000 (Mon, 23 May 2016)
 =====================================================
   Global options 
   async_swap=0 : using blocking send/recv for walker swaps 
@@ -15,16 +15,17 @@
   MPI Nodes per group  = 32
   MPI Group ID         = 0
   OMP_NUM_THREADS      = 16
+
   Input XML = O.q0.opt.in.xml
 
   Project = O.q0.opt
-  date    = 2016-05-24 16:57:21 UTC
-  host    = Q02-I1-J00.vesta.itd
+  date    = 2016-06-06 19:38:30 UTC
+  host    = Q02-I3-J04.vesta.itd
   user    = krogel
 
   DO NOT READ DENSITY
-  Offset for the random number seeds based on time 1009
-  Random number offset = 1009  seeds = 8039-12763
+  Offset for the random number seeds based on time 310
+  Random number offset = 310  seeds = 2069-6329
   Create Global SuperCell 
   Simulation cell radius = 9.448631
   Wigner-Seitz    radius = 9.448631
@@ -102,8 +103,8 @@ bands=8, elecs=6, spins=2, twists=1, muffin tins=0, core states=0
 atomic orbital=0
 Atom type(0) = 8
    Skip initialization of the density
-TIMER  EinsplineSetBuilder::ReadOrbitalInfo 0.1424932000
-TIMER  EinsplineSetBuilder::BroadcastOrbitalInfo 0.0001052538
+TIMER  EinsplineSetBuilder::ReadOrbitalInfo 0.1360903638
+TIMER  EinsplineSetBuilder::BroadcastOrbitalInfo 0.0001081412
 Found 1 distinct supercell twists.
 number of things
 1
@@ -112,7 +113,7 @@ Super twist #0:  [   0.00000   0.00000   0.00000 ]
   Using supercell twist 0:  [   0.00000   0.00000   0.00000]
 Using 1 copies of twist angle [-0.000, -0.000, -0.000]
 Using real orbitals.
-TOKEN=4 OccupyBands /soft/applications/qmcpack/src/QMCWaveFunctions/EinsplineSetBuilderCommon.cpp 759
+TOKEN=4 OccupyBands /soft/applications/qmcpack/src/QMCWaveFunctions/EinsplineSetBuilderCommon.cpp 763
 TOKEN=5 OccupyBands_ESHDF /soft/applications/qmcpack/src/QMCWaveFunctions/EinsplineSetBuilderESHDF.fft.cpp 307
 Sorting the bands now:
 We will read 4 distinct orbitals.
@@ -132,22 +133,23 @@ BandInfoGroup::selectBands using distinct orbitals [0,4)
 NumDistinctOrbitals 4 numOrbs = 4
   TwistIndex = 0 TwistAngle      -0.0000000000     -0.0000000000     -0.0000000000
    HalfG =                  0                 0                 0
-TOKEN=8 ReadGvectors_ESHDF /soft/applications/qmcpack/src/QMCWaveFunctions/EinsplineSetBuilderReadBands_ESHDF.cpp 660
+TOKEN=8 ReadGvectors_ESHDF /soft/applications/qmcpack/src/QMCWaveFunctions/EinsplineSetBuilderReadBands_ESHDF.cpp 669
 B-spline mesh factor is 1.0000000000
-B-spline mesh size is (180, 180, 180)
-Maxmimum number of Gvecs 322453
-  Using meshsize=               180               180               180
-  vs input meshsize=               180               180               180
-  Time to read the table in einspline.tile_100010001.spin_0.tw_0.l0u4.g180x180x180.h5 = 0.0014379431
-  SplineAdoptorReader initialize_spline_pio 3.0493158825 sec
-MEMORY increase 187 MB BsplineSetReader
-TIMER  EinsplineSetBuilder::ReadBands 3.2698406462
+B-spline mesh size is (216, 216, 216)
+Maxmimum number of Gvecs 591889
+  Using meshsize=               216               216               216
+  vs input meshsize=               216               216               216
+  Time to read the table in einspline.tile_100010001.spin_0.tw_0.l0u4.g216x216x216.h5 = 0.0014462800
+  SplineAdoptorReader initialize_spline_pio 6.0589048200 sec
+MEMORY increase 320 MB BsplineSetReader
+  MEMORY allocated SplineAdoptorReader 320 MB
+TIMER  EinsplineSetBuilder::ReadBands 6.4012390538
    Using Identity for the LCOrbitalSet 
 Reuse BasisSetBuilder "bspline" type bspline
  Building SPOset  with  basis set.
 TOKEN=9 createSPOSetFromXML /soft/applications/qmcpack/src/QMCWaveFunctions/EinsplineSetBuilder_createSPOs.cpp 42
   ... ParticleSet::addTable Reuse Table #1 ion0_e
-TOKEN=10 OccupyBands /soft/applications/qmcpack/src/QMCWaveFunctions/EinsplineSetBuilderCommon.cpp 759
+TOKEN=10 OccupyBands /soft/applications/qmcpack/src/QMCWaveFunctions/EinsplineSetBuilderCommon.cpp 763
 TOKEN=11 OccupyBands_ESHDF /soft/applications/qmcpack/src/QMCWaveFunctions/EinsplineSetBuilderESHDF.fft.cpp 307
 Sorting the bands now:
 We will read 2 distinct orbitals.
@@ -166,16 +168,17 @@ BandInfoGroup::selectBands using distinct orbitals [0,2)
 NumDistinctOrbitals 2 numOrbs = 2
   TwistIndex = 0 TwistAngle      -0.0000000000     -0.0000000000     -0.0000000000
    HalfG =                  0                 0                 0
-TOKEN=13 ReadGvectors_ESHDF /soft/applications/qmcpack/src/QMCWaveFunctions/EinsplineSetBuilderReadBands_ESHDF.cpp 660
+TOKEN=13 ReadGvectors_ESHDF /soft/applications/qmcpack/src/QMCWaveFunctions/EinsplineSetBuilderReadBands_ESHDF.cpp 669
 B-spline mesh factor is 1.0000000000
-B-spline mesh size is (180, 180, 180)
-Maxmimum number of Gvecs 322453
-  Using meshsize=               180               180               180
-  vs input meshsize=               180               180               180
-  Time to read the table in einspline.tile_100010001.spin_1.tw_0.l0u2.g180x180x180.h5 = 0.0014434306
-  SplineAdoptorReader initialize_spline_pio 2.9270365725 sec
-MEMORY increase 187 MB BsplineSetReader
-TIMER  EinsplineSetBuilder::ReadBands 3.0198939375
+B-spline mesh size is (216, 216, 216)
+Maxmimum number of Gvecs 591889
+  Using meshsize=               216               216               216
+  vs input meshsize=               216               216               216
+  Time to read the table in einspline.tile_100010001.spin_1.tw_0.l0u2.g216x216x216.h5 = 0.0014245575
+  SplineAdoptorReader initialize_spline_pio 5.8162394550 sec
+MEMORY increase 320 MB BsplineSetReader
+  MEMORY allocated SplineAdoptorReader 320 MB
+TIMER  EinsplineSetBuilder::ReadBands 5.9554986450
    Using Identity for the LCOrbitalSet 
   Creating a determinant updet group=0 sposet=updet
   Reusing a SPO set updet
@@ -290,12 +293,12 @@ ParticleSetPool has:
 
     6
 
-    u  8.5806651271e+00  8.8875544462e+00  9.7012019988e+00
-    u  1.0291339741e+01  1.0152072516e+01  8.7136001216e+00
-    u  9.0524917864e+00  9.2602311857e+00  8.9107745399e+00
-    u  9.5267320974e+00  9.7813701856e+00  1.1624840933e+01
-    d  9.3600327676e+00  9.9591523924e+00  1.0171426079e+01
-    d  6.7788889327e+00  1.2140630647e+01  9.5050824568e+00
+    u  9.4537950083e+00  7.3965552699e+00  8.7678602074e+00
+    u  1.0350296390e+01  6.5219018409e+00  9.4167452957e+00
+    u  1.0137004696e+01  9.9662593376e+00  8.1074345405e+00
+    u  8.5680929244e+00  7.3356275200e+00  7.9112505492e+00
+    d  9.8507431793e+00  8.7019813906e+00  1.1987567993e+01
+    d  9.6945372442e+00  9.3058863587e+00  9.6673787986e+00
 
   ParticleSet ion0 : 0 1 
 
@@ -389,10 +392,10 @@ MEMORY increase 0 MB VMCSingleOMP::resetRun
   SimpleFixedNodeBranch::finalize after a VMC block
     QMC counter        = 0
     time step          = 0.3
-    reference energy   = -15.8456
-    reference variance = 1.05393
+    reference energy   = -15.7063
+    reference variance = 0.916508
 ====================================================
-  Execution time = 5.5587140325e+00
+  Execution time = 5.5314491125e+00
 </vmc>
 <opt stage="setup">
   <log>
@@ -412,58 +415,58 @@ Orbitals only:           1.6000000000e-04      2.5600000000e-01
 Orbitals + dervs:        5.7600000000e-04      9.2160000000e-01
 Inverse:                 0.0000000000e+00      0.0000000000e+00
 Determinants:            0.0000000000e+00      0.0000000000e+00
-  VMC Eavg = -1.5740798777e+01
-  VMC Evar = 1.2655186572e+00
+  VMC Eavg = -1.5738698623e+01
+  VMC Evar = 8.9282315220e-01
   Total weights = 5.1200000000e+04
-  Execution time = 1.8015055000e-01
+  Execution time = 1.8101211875e-01
   </log>
 </opt>
 <opt stage="main" walkers="51200">
   <log>
 Iteration: 1/1
-od_largest 6.8219152643e+01
+od_largest 2.1013247930e+01
   stabilityBase -1.6000000000e+01
   stabilizerScale 1.0000000000e+00
   Using XS:-1.6000000000e+01 0 0
-  Good Step. Largest LM parameter change:5.7703507187e-01
- OldCost: 1.2655186572e+00 NewCost: 7.2443875597e-01 Delta Cost:-5.4107990118e-01
-      Current ene:     -1.5843739612e+01
-      Current var:     6.8219982886e-01
-      Current ene_urw:     -1.5796047314e+01
-      Current var_urw: 7.2443875597e-01
+  Good Step. Largest LM parameter change:5.3335182160e-01
+ OldCost: 8.9282315220e-01 NewCost: 3.6002920738e-01 Delta Cost:-5.3279394482e-01
+      Current ene:     -1.5845425810e+01
+      Current var:     3.2161102035e-01
+      Current ene_urw:     -1.5795913777e+01
+      Current var_urw: 3.6002920738e-01
 Setting new Parameters
-ERROR   Execution time = 1.1546454929e+01
+ERROR   Execution time = 6.1747499362e+00
   </log>
   <optVariables href="O.q0.opt.s000.opt.xml">
-uu_0 -1.4368623058e-01 1 1  ON 0
-uu_1 -3.5310402773e-01 1 1  ON 1
-uu_2 -3.9456804412e-01 1 1  ON 2
-uu_3 -4.2035420261e-01 1 1  ON 3
-uu_4 -4.2177218188e-01 1 1  ON 4
-uu_5 -4.2934025614e-01 1 1  ON 5
-uu_6 -4.2424655372e-01 1 1  ON 6
-uu_7 -3.5508540874e-01 1 1  ON 7
-ud_0 2.0728631959e-01 1 1  ON 8
-ud_1 -4.3015812873e-02 1 1  ON 9
-ud_2 -7.5335179629e-02 1 1  ON 10
-ud_3 -1.0037570823e-01 1 1  ON 11
-ud_4 -9.6187572496e-02 1 1  ON 12
-ud_5 -1.0961967267e-01 1 1  ON 13
-ud_6 -9.1532103453e-02 1 1  ON 14
-ud_7 -1.1693799744e-01 1 1  ON 15
-eO_0 -5.7703507187e-01 1 1  ON 16
-eO_1 -4.7134715803e-01 1 1  ON 17
-eO_2 -3.4091344776e-01 1 1  ON 18
-eO_3 -2.1413648589e-01 1 1  ON 19
-eO_4 -1.3494237908e-01 1 1  ON 20
-eO_5 -7.3656432033e-02 1 1  ON 21
-eO_6 -4.2953399091e-02 1 1  ON 22
-eO_7 -1.0373235895e-02 1 1  ON 23
+uu_0 2.8474447692e-01 1 1  ON 0
+uu_1 8.0781448756e-02 1 1  ON 1
+uu_2 3.8172313471e-02 1 1  ON 2
+uu_3 1.6643089433e-02 1 1  ON 3
+uu_4 1.5307948310e-02 1 1  ON 4
+uu_5 6.1250180752e-03 1 1  ON 5
+uu_6 4.1707925060e-02 1 1  ON 6
+uu_7 -4.0086603978e-02 1 1  ON 7
+ud_0 3.1981204830e-01 1 1  ON 8
+ud_1 7.0242038224e-02 1 1  ON 9
+ud_2 4.0392144286e-02 1 1  ON 10
+ud_3 1.6464503520e-02 1 1  ON 11
+ud_4 2.0877267960e-02 1 1  ON 12
+ud_5 1.3567054031e-02 1 1  ON 13
+ud_6 2.2446735462e-02 1 1  ON 14
+ud_7 2.5848924916e-02 1 1  ON 15
+eO_0 -5.3335182160e-01 1 1  ON 16
+eO_1 -4.4489305162e-01 1 1  ON 17
+eO_2 -3.1017939080e-01 1 1  ON 18
+eO_3 -1.9000244036e-01 1 1  ON 19
+eO_4 -1.1183520630e-01 1 1  ON 20
+eO_5 -5.7984150245e-02 1 1  ON 21
+eO_6 -2.5875814990e-02 1 1  ON 22
+eO_7 -7.6931276201e-03 1 1  ON 23
   </optVariables>
    Restore the number of walkers to 16, removing 84 walkers.
 </opt>
 </optimization-report>
-  QMC Execution time = 1.1568727857e+01 secs 
+  QMC Execution time = 6.1961078612e+00 secs 
   Reusing QMCFixedSampleLinearOptimize
  Using QMCCostFunctionOMP::QMCCostFunctionOMP
 
@@ -532,10 +535,10 @@ Using existing walkers
   SimpleFixedNodeBranch::finalize after a VMC block
     QMC counter        = 1
     time step          = 0.3
-    reference energy   = -15.8534
-    reference variance = 0.86236
+    reference energy   = -15.8394
+    reference variance = 0.521346
 ====================================================
-  Execution time = 1.3248118068e+01
+  Execution time = 5.5205675312e+00
 </vmc>
 <opt stage="setup">
   <log>
@@ -555,58 +558,58 @@ Orbitals only:           1.6000000000e-04      2.5600000000e-01
 Orbitals + dervs:        5.7600000000e-04      9.2160000000e-01
 Inverse:                 0.0000000000e+00      0.0000000000e+00
 Determinants:            0.0000000000e+00      0.0000000000e+00
-  VMC Eavg = -1.5861291435e+01
-  VMC Evar = 7.2229830632e-01
+  VMC Eavg = -1.5849989648e+01
+  VMC Evar = 3.1657556858e-01
   Total weights = 5.1200000000e+04
-  Execution time = 2.2814583588e+00
+  Execution time = 1.7836935250e-01
   </log>
 </opt>
 <opt stage="main" walkers="51200">
   <log>
 Iteration: 1/1
-od_largest 4.3292031280e+01
+od_largest 1.6992063425e+01
   stabilityBase -1.6000000000e+01
   stabilizerScale 1.0000000000e+00
   Using XS:-1.6000000000e+01 0 0
-  Good Step. Largest LM parameter change:6.0556152438e-01
- OldCost: 7.2229830632e-01 NewCost: 6.9833678217e-01 Delta Cost:-2.3961524143e-02
-      Current ene:     -1.5874385787e+01
-      Current var:     6.9204813688e-01
-      Current ene_urw:     -1.5865218962e+01
-      Current var_urw: 6.9833678217e-01
+  Good Step. Largest LM parameter change:2.2199364677e-01
+ OldCost: 3.1657556858e-01 NewCost: 2.9282764157e-01 Delta Cost:-2.3747927007e-02
+      Current ene:     -1.5863907355e+01
+      Current var:     2.8567101983e-01
+      Current ene_urw:     -1.5854259078e+01
+      Current var_urw: 2.9282764157e-01
 Setting new Parameters
-ERROR   Execution time = 3.3457816080e+01
+ERROR   Execution time = 6.1580935350e+00
   </log>
   <optVariables href="O.q0.opt.s001.opt.xml">
-uu_0 4.4949745297e-01 1 1  ON 0
-uu_1 2.5245749665e-01 1 1  ON 1
-uu_2 1.6353774150e-01 1 1  ON 2
-uu_3 1.3705359795e-01 1 1  ON 3
-uu_4 1.2842752740e-01 1 1  ON 4
-uu_5 1.2859990988e-01 1 1  ON 5
-uu_6 1.0893842706e-01 1 1  ON 6
-uu_7 2.2108814597e-01 1 1  ON 7
-ud_0 3.1091542958e-01 1 1  ON 8
-ud_1 3.9939927651e-02 1 1  ON 9
-ud_2 -3.8855135379e-02 1 1  ON 10
-ud_3 -6.1525039692e-02 1 1  ON 11
-ud_4 -6.7266640135e-02 1 1  ON 12
-ud_5 -6.8329187584e-02 1 1  ON 13
-ud_6 -3.6922684683e-02 1 1  ON 14
-ud_7 -6.0439790172e-02 1 1  ON 15
-eO_0 -7.8248434545e-01 1 1  ON 16
-eO_1 -6.6856410486e-01 1 1  ON 17
-eO_2 -4.8995993156e-01 1 1  ON 18
-eO_3 -3.0926577718e-01 1 1  ON 19
-eO_4 -1.8138901239e-01 1 1  ON 20
-eO_5 -9.4122762637e-02 1 1  ON 21
-eO_6 -4.0766615355e-02 1 1  ON 22
-eO_7 -9.2939265618e-03 1 1  ON 23
+uu_0 3.4761179172e-01 1 1  ON 0
+uu_1 1.4662705380e-01 1 1  ON 1
+uu_2 5.9154535576e-02 1 1  ON 2
+uu_3 3.4629741275e-02 1 1  ON 3
+uu_4 2.5344470786e-02 1 1  ON 4
+uu_5 2.6338114299e-02 1 1  ON 5
+uu_6 5.5270756340e-02 1 1  ON 6
+uu_7 -5.5135608431e-03 1 1  ON 7
+ud_0 3.4251094046e-01 1 1  ON 8
+ud_1 7.3148095511e-02 1 1  ON 9
+ud_2 -5.5204449613e-03 1 1  ON 10
+ud_3 -2.6702515924e-02 1 1  ON 11
+ud_4 -3.1721036475e-02 1 1  ON 12
+ud_5 -2.6007021802e-02 1 1  ON 13
+ud_6 -1.4480359326e-02 1 1  ON 14
+ud_7 -5.0885676909e-02 1 1  ON 15
+eO_0 -7.5534546837e-01 1 1  ON 16
+eO_1 -6.5093550845e-01 1 1  ON 17
+eO_2 -4.7044727392e-01 1 1  ON 18
+eO_3 -2.9334766546e-01 1 1  ON 19
+eO_4 -1.6534366673e-01 1 1  ON 20
+eO_5 -8.0804075762e-02 1 1  ON 21
+eO_6 -3.3224596763e-02 1 1  ON 22
+eO_7 -1.2626061514e-03 1 1  ON 23
   </optVariables>
    Restore the number of walkers to 16, removing 84 walkers.
 </opt>
 </optimization-report>
-  QMC Execution time = 3.3484391466e+01 secs 
+  QMC Execution time = 6.1788636713e+00 secs 
   Reusing QMCFixedSampleLinearOptimize
  Using QMCCostFunctionOMP::QMCCostFunctionOMP
 
@@ -675,10 +678,10 @@ Using existing walkers
   SimpleFixedNodeBranch::finalize after a VMC block
     QMC counter        = 2
     time step          = 0.3
-    reference energy   = -15.849
-    reference variance = 0.767746
+    reference energy   = -15.8308
+    reference variance = 0.590901
 ====================================================
-  Execution time = 1.1812234221e+01
+  Execution time = 5.5189886712e+00
 </vmc>
 <opt stage="setup">
   <log>
@@ -698,58 +701,58 @@ Orbitals only:           1.6000000000e-04      2.5600000000e-01
 Orbitals + dervs:        5.7600000000e-04      9.2160000000e-01
 Inverse:                 0.0000000000e+00      0.0000000000e+00
 Determinants:            0.0000000000e+00      0.0000000000e+00
-  VMC Eavg = -1.5859354451e+01
-  VMC Evar = 8.0649629434e-01
+  VMC Eavg = -1.5866141121e+01
+  VMC Evar = 3.0285578257e-01
   Total weights = 5.1200000000e+04
-  Execution time = 1.7413350675e+00
+  Execution time = 1.7633687875e-01
   </log>
 </opt>
 <opt stage="main" walkers="51200">
   <log>
 Iteration: 1/1
-od_largest 3.2461111424e+01
+od_largest 2.2278726700e+01
   stabilityBase -1.6000000000e+01
   stabilizerScale 1.0000000000e+00
   Using XS:-1.6000000000e+01 0 0
-  Good Step. Largest LM parameter change:5.0117178872e-01
- OldCost: 8.0649629434e-01 NewCost: 8.0551871147e-01 Delta Cost:-9.7758287036e-04
-      Current ene:     -1.5845338892e+01
-      Current var:     1.1277572278e+00
-      Current ene_urw:     -1.5859508378e+01
-      Current var_urw: 8.0551871147e-01
+  Good Step. Largest LM parameter change:1.0419713536e-02
+ OldCost: 3.0285578257e-01 NewCost: 3.0281004339e-01 Delta Cost:-4.5739177292e-05
+      Current ene:     -1.5865626544e+01
+      Current var:     3.0315251130e-01
+      Current ene_urw:     -1.5866114751e+01
+      Current var_urw: 3.0281004339e-01
 Setting new Parameters
-ERROR   Execution time = 2.8390751344e+01
+ERROR   Execution time = 6.1612911450e+00
   </log>
   <optVariables href="O.q0.opt.s002.opt.xml">
-uu_0 4.5255990870e-01 1 1  ON 0
-uu_1 2.6220230391e-01 1 1  ON 1
-uu_2 1.7816015547e-01 1 1  ON 2
-uu_3 1.5471013898e-01 1 1  ON 3
-uu_4 1.4807507522e-01 1 1  ON 4
-uu_5 1.3720893615e-01 1 1  ON 5
-uu_6 1.7704415964e-01 1 1  ON 6
-uu_7 -6.4318871300e-02 1 1  ON 7
-ud_0 6.7093534385e-01 1 1  ON 8
-ud_1 4.0399005340e-01 1 1  ON 9
-ud_2 3.3312976192e-01 1 1  ON 10
-ud_3 3.1242539279e-01 1 1  ON 11
-ud_4 3.0454059403e-01 1 1  ON 12
-ud_5 3.0817912404e-01 1 1  ON 13
-ud_6 3.1808929291e-01 1 1  ON 14
-ud_7 4.4073199855e-01 1 1  ON 15
-eO_0 -7.3288995195e-01 1 1  ON 16
-eO_1 -6.2311223930e-01 1 1  ON 17
-eO_2 -4.5193019454e-01 1 1  ON 18
-eO_3 -2.8247819310e-01 1 1  ON 19
-eO_4 -1.6430066050e-01 1 1  ON 20
-eO_5 -8.3235418816e-02 1 1  ON 21
-eO_6 -3.6104162270e-02 1 1  ON 22
-eO_7 -6.2527669275e-03 1 1  ON 23
+uu_0 3.3899359421e-01 1 1  ON 0
+uu_1 1.3874720354e-01 1 1  ON 1
+uu_2 5.2869834019e-02 1 1  ON 2
+uu_3 2.9124387482e-02 1 1  ON 3
+uu_4 1.9764434836e-02 1 1  ON 4
+uu_5 1.9581713654e-02 1 1  ON 5
+uu_6 5.0531560370e-02 1 1  ON 6
+uu_7 -1.1401361246e-02 1 1  ON 7
+ud_0 3.4220107874e-01 1 1  ON 8
+ud_1 7.3952861553e-02 1 1  ON 9
+ud_2 -2.5928015948e-03 1 1  ON 10
+ud_3 -2.3219702791e-02 1 1  ON 11
+ud_4 -2.8528912679e-02 1 1  ON 12
+ud_5 -2.3789435206e-02 1 1  ON 13
+ud_6 -1.0210590969e-02 1 1  ON 14
+ud_7 -5.0746996126e-02 1 1  ON 15
+eO_0 -7.4492575483e-01 1 1  ON 16
+eO_1 -6.4158514707e-01 1 1  ON 17
+eO_2 -4.6314689102e-01 1 1  ON 18
+eO_3 -2.8891878973e-01 1 1  ON 19
+eO_4 -1.6359538339e-01 1 1  ON 20
+eO_5 -8.0814656117e-02 1 1  ON 21
+eO_6 -3.4578844992e-02 1 1  ON 22
+eO_7 -2.2653376326e-03 1 1  ON 23
   </optVariables>
    Restore the number of walkers to 16, removing 84 walkers.
 </opt>
 </optimization-report>
-  QMC Execution time = 2.8418770829e+01 secs 
+  QMC Execution time = 6.1821040688e+00 secs 
   Reusing QMCFixedSampleLinearOptimize
  Using QMCCostFunctionOMP::QMCCostFunctionOMP
 
@@ -818,10 +821,10 @@ Using existing walkers
   SimpleFixedNodeBranch::finalize after a VMC block
     QMC counter        = 3
     time step          = 0.3
-    reference energy   = -15.8461
-    reference variance = 0.799612
+    reference energy   = -15.884
+    reference variance = 0.504362
 ====================================================
-  Execution time = 1.2068360445e+01
+  Execution time = 5.5236498312e+00
 </vmc>
 <opt stage="setup">
   <log>
@@ -841,58 +844,58 @@ Orbitals only:           1.6000000000e-04      2.5600000000e-01
 Orbitals + dervs:        5.7600000000e-04      9.2160000000e-01
 Inverse:                 0.0000000000e+00      0.0000000000e+00
 Determinants:            0.0000000000e+00      0.0000000000e+00
-  VMC Eavg = -1.5861647245e+01
-  VMC Evar = 6.6821241388e-01
+  VMC Eavg = -1.5871976075e+01
+  VMC Evar = 2.7381026122e-01
   Total weights = 5.1200000000e+04
-  Execution time = 1.8564093350e+00
+  Execution time = 1.7712341625e-01
   </log>
 </opt>
 <opt stage="main" walkers="51200">
   <log>
 Iteration: 1/1
-od_largest 1.4201953773e+01
+od_largest 2.5768661979e+01
   stabilityBase -1.6000000000e+01
   stabilizerScale 1.0000000000e+00
   Using XS:-1.6000000000e+01 0 0
-  Good Step. Largest LM parameter change:5.5267483270e-02
- OldCost: 6.6821241388e-01 NewCost: 6.6797703487e-01 Delta Cost:-2.3537901148e-04
-      Current ene:     -1.5862849527e+01
-      Current var:     6.6624932341e-01
-      Current ene_urw:     -1.5861637229e+01
-      Current var_urw: 6.6797703487e-01
+  Good Step. Largest LM parameter change:2.6780471386e-02
+ OldCost: 2.7381026122e-01 NewCost: 2.7372048009e-01 Delta Cost:-8.9781134006e-05
+      Current ene:     -1.5871398484e+01
+      Current var:     2.7422628061e-01
+      Current ene_urw:     -1.5872080739e+01
+      Current var_urw: 2.7372048009e-01
 Setting new Parameters
-ERROR   Execution time = 2.9544267859e+01
+ERROR   Execution time = 6.1577367450e+00
   </log>
   <optVariables href="O.q0.opt.s003.opt.xml">
-uu_0 4.3283264845e-01 1 1  ON 0
-uu_1 2.4044231240e-01 1 1  ON 1
-uu_2 1.5304243831e-01 1 1  ON 2
-uu_3 1.2757616496e-01 1 1  ON 3
-uu_4 1.2067971757e-01 1 1  ON 4
-uu_5 1.1360374258e-01 1 1  ON 5
-uu_6 1.4314698502e-01 1 1  ON 6
-uu_7 -6.3672048319e-02 1 1  ON 7
-ud_0 6.3143154853e-01 1 1  ON 8
-ud_1 3.6197556545e-01 1 1  ON 9
-ud_2 2.8630766504e-01 1 1  ON 10
-ud_3 2.6459007373e-01 1 1  ON 11
-ud_4 2.5749733171e-01 1 1  ON 12
-ud_5 2.6244834587e-01 1 1  ON 13
-ud_6 2.7131109296e-01 1 1  ON 14
-ud_7 3.8546451528e-01 1 1  ON 15
-eO_0 -7.5550874827e-01 1 1  ON 16
-eO_1 -6.4349743712e-01 1 1  ON 17
-eO_2 -4.6775195634e-01 1 1  ON 18
-eO_3 -2.9183035590e-01 1 1  ON 19
-eO_4 -1.6787457618e-01 1 1  ON 20
-eO_5 -8.3077517886e-02 1 1  ON 21
-eO_6 -3.3196096217e-02 1 1  ON 22
-eO_7 -1.5030204353e-03 1 1  ON 23
+uu_0 3.1221312282e-01 1 1  ON 0
+uu_1 1.1292164884e-01 1 1  ON 1
+uu_2 2.9232976351e-02 1 1  ON 2
+uu_3 6.7481266169e-03 1 1  ON 3
+uu_4 -3.0261086442e-03 1 1  ON 4
+uu_5 -3.7258670842e-03 1 1  ON 5
+uu_6 3.1554619667e-02 1 1  ON 6
+uu_7 -3.7520693563e-02 1 1  ON 7
+ud_0 3.4203564334e-01 1 1  ON 8
+ud_1 7.5486127118e-02 1 1  ON 9
+ud_2 1.9019663356e-03 1 1  ON 10
+ud_3 -1.7977711675e-02 1 1  ON 11
+ud_4 -2.3446742445e-02 1 1  ON 12
+ud_5 -1.9545923500e-02 1 1  ON 13
+ud_6 -5.8688324857e-03 1 1  ON 14
+ud_7 -4.6327694876e-02 1 1  ON 15
+eO_0 -7.2819784741e-01 1 1  ON 16
+eO_1 -6.2620031831e-01 1 1  ON 17
+eO_2 -4.5068906249e-01 1 1  ON 18
+eO_3 -2.8043687107e-01 1 1  ON 19
+eO_4 -1.5911496166e-01 1 1  ON 20
+eO_5 -7.9070047809e-02 1 1  ON 21
+eO_6 -3.4422902005e-02 1 1  ON 22
+eO_7 -2.0596591696e-03 1 1  ON 23
   </optVariables>
    Restore the number of walkers to 16, removing 84 walkers.
 </opt>
 </optimization-report>
-  QMC Execution time = 2.9571018554e+01 secs 
+  QMC Execution time = 6.1787735388e+00 secs 
   Reusing QMCFixedSampleLinearOptimize
  Using QMCCostFunctionOMP::QMCCostFunctionOMP
 
@@ -961,10 +964,10 @@ Using existing walkers
   SimpleFixedNodeBranch::finalize after a VMC block
     QMC counter        = 4
     time step          = 0.3
-    reference energy   = -15.8532
-    reference variance = 0.810047
+    reference energy   = -15.8643
+    reference variance = 0.452614
 ====================================================
-  Execution time = 1.1804797235e+01
+  Execution time = 5.5190427062e+00
 </vmc>
 <opt stage="setup">
   <log>
@@ -984,58 +987,58 @@ Orbitals only:           1.6000000000e-04      2.5600000000e-01
 Orbitals + dervs:        5.7600000000e-04      9.2160000000e-01
 Inverse:                 0.0000000000e+00      0.0000000000e+00
 Determinants:            0.0000000000e+00      0.0000000000e+00
-  VMC Eavg = -1.5861719471e+01
-  VMC Evar = 7.0106275099e-01
+  VMC Eavg = -1.5863238407e+01
+  VMC Evar = 2.7223390546e-01
   Total weights = 5.1200000000e+04
-  Execution time = 1.7975811588e+00
+  Execution time = 1.8200871125e-01
   </log>
 </opt>
 <opt stage="main" walkers="51200">
   <log>
 Iteration: 1/1
-od_largest 3.6595698854e+01
+od_largest 4.1263781295e+02
   stabilityBase -1.6000000000e+01
   stabilizerScale 1.0000000000e+00
   Using XS:-1.6000000000e+01 0 0
-  Good Step. Largest LM parameter change:3.4509464245e-01
- OldCost: 7.0106275099e-01 NewCost: 7.0078055426e-01 Delta Cost:-2.8219672877e-04
-      Current ene:     -1.5862998438e+01
-      Current var:     6.9945976038e-01
-      Current ene_urw:     -1.5861787146e+01
-      Current var_urw: 7.0078055426e-01
+  Good Step. Largest LM parameter change:5.8081924120e-03
+ OldCost: 2.7223390546e-01 NewCost: 2.7223339041e-01 Delta Cost:-5.1504931320e-07
+      Current ene:     -1.5863289073e+01
+      Current var:     2.7218859788e-01
+      Current ene_urw:     -1.5863233498e+01
+      Current var_urw: 2.7223339041e-01
 Setting new Parameters
-ERROR   Execution time = 2.8297059512e+01
+ERROR   Execution time = 6.1525639650e+00
   </log>
   <optVariables href="O.q0.opt.s004.opt.xml">
-uu_0 1.1387682670e-01 1 1  ON 0
-uu_1 -8.1764006414e-02 1 1  ON 1
-uu_2 -1.7261142344e-01 1 1  ON 2
-uu_3 -2.0022014367e-01 1 1  ON 3
-uu_4 -2.0730774709e-01 1 1  ON 4
-uu_5 -2.1165863808e-01 1 1  ON 5
-uu_6 -1.7976419045e-01 1 1  ON 6
-uu_7 -4.0876669077e-01 1 1  ON 7
-ud_0 6.4963838965e-01 1 1  ON 8
-ud_1 3.7815090727e-01 1 1  ON 9
-ud_2 2.9704199377e-01 1 1  ON 10
-ud_3 2.7427810652e-01 1 1  ON 11
-ud_4 2.6752757360e-01 1 1  ON 12
-ud_5 2.7551892910e-01 1 1  ON 13
-ud_6 2.8519267411e-01 1 1  ON 14
-ud_7 4.0095780731e-01 1 1  ON 15
-eO_0 -7.8157331536e-01 1 1  ON 16
-eO_1 -6.6596184678e-01 1 1  ON 17
-eO_2 -4.8535648704e-01 1 1  ON 18
-eO_3 -3.0237908282e-01 1 1  ON 19
-eO_4 -1.7168281565e-01 1 1  ON 20
-eO_5 -8.2297805307e-02 1 1  ON 21
-eO_6 -2.9511074757e-02 1 1  ON 22
-eO_7 2.4772180804e-03 1 1  ON 23
+uu_0 3.1802131524e-01 1 1  ON 0
+uu_1 1.1863948734e-01 1 1  ON 1
+uu_2 3.4788691456e-02 1 1  ON 2
+uu_3 1.2203029001e-02 1 1  ON 3
+uu_4 2.4603271428e-03 1 1  ON 4
+uu_5 1.8119204350e-03 1 1  ON 5
+uu_6 3.7042004485e-02 1 1  ON 6
+uu_7 -3.1740679767e-02 1 1  ON 7
+ud_0 3.4178310793e-01 1 1  ON 8
+ud_1 7.5100362098e-02 1 1  ON 9
+ud_2 1.3005460226e-03 1 1  ON 10
+ud_3 -1.8648430620e-02 1 1  ON 11
+ud_4 -2.4074985906e-02 1 1  ON 12
+ud_5 -2.0166172835e-02 1 1  ON 13
+ud_6 -6.3285619918e-03 1 1  ON 14
+ud_7 -4.6970982413e-02 1 1  ON 15
+eO_0 -7.2940287249e-01 1 1  ON 16
+eO_1 -6.2729594504e-01 1 1  ON 17
+eO_2 -4.5156520710e-01 1 1  ON 18
+eO_3 -2.8101174185e-01 1 1  ON 19
+eO_4 -1.5940031215e-01 1 1  ON 20
+eO_5 -7.9145400342e-02 1 1  ON 21
+eO_6 -3.4404713940e-02 1 1  ON 22
+eO_7 -1.9950928337e-03 1 1  ON 23
   </optVariables>
    Restore the number of walkers to 16, removing 84 walkers.
 </opt>
 </optimization-report>
-  QMC Execution time = 2.8326088767e+01 secs 
+  QMC Execution time = 6.1736677525e+00 secs 
   Reusing QMCFixedSampleLinearOptimize
  Using QMCCostFunctionOMP::QMCCostFunctionOMP
 
@@ -1104,10 +1107,10 @@ Using existing walkers
   SimpleFixedNodeBranch::finalize after a VMC block
     QMC counter        = 5
     time step          = 0.3
-    reference energy   = -15.8874
-    reference variance = 0.891915
+    reference energy   = -15.8676
+    reference variance = 0.518197
 ====================================================
-  Execution time = 1.1605410737e+01
+  Execution time = 5.4992630400e+00
 </vmc>
 <opt stage="setup">
   <log>
@@ -1127,58 +1130,58 @@ Orbitals only:           1.6000000000e-04      2.5600000000e-01
 Orbitals + dervs:        5.7600000000e-04      9.2160000000e-01
 Inverse:                 0.0000000000e+00      0.0000000000e+00
 Determinants:            0.0000000000e+00      0.0000000000e+00
-  VMC Eavg = -1.5855797195e+01
-  VMC Evar = 6.9538522412e-01
+  VMC Eavg = -1.5865721173e+01
+  VMC Evar = 2.8142671226e-01
   Total weights = 5.1200000000e+04
-  Execution time = 1.7784695212e+00
+  Execution time = 1.7884460000e-01
   </log>
 </opt>
 <opt stage="main" walkers="51200">
   <log>
 Iteration: 1/1
-od_largest 3.2885347218e+01
+od_largest 1.3397002483e+01
   stabilityBase -1.6000000000e+01
   stabilizerScale 1.0000000000e+00
   Using XS:-1.6000000000e+01 0 0
-  Good Step. Largest LM parameter change:6.8779029815e-01
- OldCost: 6.9538522411e-01 NewCost: 6.9419186712e-01 Delta Cost:-1.1933569922e-03
-      Current ene:     -1.5858936168e+01
-      Current var:     6.8594430409e-01
-      Current ene_urw:     -1.5856349916e+01
-      Current var_urw: 6.9419186712e-01
+  Good Step. Largest LM parameter change:8.0158024092e-03
+ OldCost: 2.8142671226e-01 NewCost: 2.8140501203e-01 Delta Cost:-2.1700235765e-05
+      Current ene:     -1.5866048834e+01
+      Current var:     2.8112399219e-01
+      Current ene_urw:     -1.5865696475e+01
+      Current var_urw: 2.8140501203e-01
 Setting new Parameters
-ERROR   Execution time = 2.7809224328e+01
+ERROR   Execution time = 6.1225075275e+00
   </log>
   <optVariables href="O.q0.opt.s005.opt.xml">
-uu_0 6.4076773310e-01 1 1  ON 0
-uu_1 4.4093565620e-01 1 1  ON 1
-uu_2 3.4403232413e-01 1 1  ON 2
-uu_3 3.1119792834e-01 1 1  ON 3
-uu_4 3.0410537939e-01 1 1  ON 4
-uu_5 3.0783156394e-01 1 1  ON 5
-uu_6 3.1317094778e-01 1 1  ON 6
-uu_7 2.7902360737e-01 1 1  ON 7
-ud_0 4.2247735249e-01 1 1  ON 8
-ud_1 1.4668983836e-01 1 1  ON 9
-ud_2 5.6498701695e-02 1 1  ON 10
-ud_3 2.9889666398e-02 1 1  ON 11
-ud_4 2.6217705999e-02 1 1  ON 12
-ud_5 3.7150686285e-02 1 1  ON 13
-ud_6 3.0119339393e-02 1 1  ON 14
-ud_7 1.9886255672e-01 1 1  ON 15
-eO_0 -8.3122598881e-01 1 1  ON 16
-eO_1 -7.1168181838e-01 1 1  ON 17
-eO_2 -5.2228192318e-01 1 1  ON 18
-eO_3 -3.2654542960e-01 1 1  ON 19
-eO_4 -1.8268118201e-01 1 1  ON 20
-eO_5 -8.2549078191e-02 1 1  ON 21
-eO_6 -2.5827995498e-02 1 1  ON 22
-eO_7 6.9348193923e-03 1 1  ON 23
+uu_0 3.2058251188e-01 1 1  ON 0
+uu_1 1.2067843242e-01 1 1  ON 1
+uu_2 3.5738746247e-02 1 1  ON 2
+uu_3 1.2498247470e-02 1 1  ON 3
+uu_4 3.0474100923e-03 1 1  ON 4
+uu_5 2.5263195445e-03 1 1  ON 5
+uu_6 3.7378360599e-02 1 1  ON 6
+uu_7 -3.1537039373e-02 1 1  ON 7
+ud_0 3.4178526075e-01 1 1  ON 8
+ud_1 7.4309467520e-02 1 1  ON 9
+ud_2 -9.6495176894e-04 1 1  ON 10
+ud_3 -2.1324381892e-02 1 1  ON 11
+ud_4 -2.6704910665e-02 1 1  ON 12
+ud_5 -2.2311401797e-02 1 1  ON 13
+ud_6 -8.7227419559e-03 1 1  ON 14
+ud_7 -4.9869715146e-02 1 1  ON 15
+eO_0 -7.3741867490e-01 1 1  ON 16
+eO_1 -6.3462117827e-01 1 1  ON 17
+eO_2 -4.5742830756e-01 1 1  ON 18
+eO_3 -2.8484253714e-01 1 1  ON 19
+eO_4 -1.6135430691e-01 1 1  ON 20
+eO_5 -7.9734762677e-02 1 1  ON 21
+eO_6 -3.4216918211e-02 1 1  ON 22
+eO_7 -1.6223086149e-03 1 1  ON 23
   </optVariables>
    Restore the number of walkers to 16, removing 84 walkers.
 </opt>
 </optimization-report>
-  QMC Execution time = 2.7832029360e+01 secs 
+  QMC Execution time = 6.1438856588e+00 secs 
   Reusing QMCFixedSampleLinearOptimize
  Using QMCCostFunctionOMP::QMCCostFunctionOMP
 
@@ -1247,10 +1250,10 @@ Using existing walkers
   SimpleFixedNodeBranch::finalize after a VMC block
     QMC counter        = 6
     time step          = 0.3
-    reference energy   = -15.8612
-    reference variance = 0.74355
+    reference energy   = -15.8299
+    reference variance = 0.532885
 ====================================================
-  Execution time = 1.1398138604e+01
+  Execution time = 5.5329580125e+00
 </vmc>
 <opt stage="setup">
   <log>
@@ -1270,58 +1273,58 @@ Orbitals only:           1.6000000000e-04      2.5600000000e-01
 Orbitals + dervs:        5.7600000000e-04      9.2160000000e-01
 Inverse:                 0.0000000000e+00      0.0000000000e+00
 Determinants:            0.0000000000e+00      0.0000000000e+00
-  VMC Eavg = -1.5860878529e+01
-  VMC Evar = 6.7709626744e-01
+  VMC Eavg = -1.5868438634e+01
+  VMC Evar = 2.7904848005e-01
   Total weights = 5.1200000000e+04
-  Execution time = 1.6971138425e+00
+  Execution time = 1.8070756500e-01
   </log>
 </opt>
 <opt stage="main" walkers="51200">
   <log>
 Iteration: 1/1
-od_largest 2.2894751841e+01
+od_largest 4.1854246140e+01
   stabilityBase -1.6000000000e+01
   stabilizerScale 1.0000000000e+00
   Using XS:-1.6000000000e+01 0 0
-  Good Step. Largest LM parameter change:1.8038265048e-01
- OldCost: 6.7709626744e-01 NewCost: 6.7501251165e-01 Delta Cost:-2.0837557922e-03
-      Current ene:     -1.5857411196e+01
-      Current var:     6.7827385774e-01
-      Current ene_urw:     -1.5861023517e+01
-      Current var_urw: 6.7501251165e-01
+  Good Step. Largest LM parameter change:5.6842985524e-02
+ OldCost: 2.7904848005e-01 NewCost: 2.7882509212e-01 Delta Cost:-2.2338792980e-04
+      Current ene:     -1.5869324962e+01
+      Current var:     2.7814235689e-01
+      Current ene_urw:     -1.5868297867e+01
+      Current var_urw: 2.7882509212e-01
 Setting new Parameters
-ERROR   Execution time = 2.7792851723e+01
+ERROR   Execution time = 6.1732700000e+00
   </log>
   <optVariables href="O.q0.opt.s006.opt.xml">
-uu_0 7.8893216427e-01 1 1  ON 0
-uu_1 5.9723434731e-01 1 1  ON 1
-uu_2 5.0934286392e-01 1 1  ON 2
-uu_3 4.8077545284e-01 1 1  ON 3
-uu_4 4.7329609104e-01 1 1  ON 4
-uu_5 4.6885247489e-01 1 1  ON 5
-uu_6 4.9355359825e-01 1 1  ON 6
-uu_7 4.4453234576e-01 1 1  ON 7
-ud_0 4.7412076917e-01 1 1  ON 8
-ud_1 2.0880274731e-01 1 1  ON 9
-ud_2 1.3010272770e-01 1 1  ON 10
-ud_3 1.0849693846e-01 1 1  ON 11
-ud_4 1.0196148071e-01 1 1  ON 12
-ud_5 1.1573418030e-01 1 1  ON 13
-ud_6 9.4783477300e-02 1 1  ON 14
-ud_7 2.8179070528e-01 1 1  ON 15
-eO_0 -7.5356292420e-01 1 1  ON 16
-eO_1 -6.4227152049e-01 1 1  ON 17
-eO_2 -4.6438031871e-01 1 1  ON 18
-eO_3 -2.8776918384e-01 1 1  ON 19
-eO_4 -1.6088730281e-01 1 1  ON 20
-eO_5 -7.1042884845e-02 1 1  ON 21
-eO_6 -2.5600568414e-02 1 1  ON 22
-eO_7 1.0452547902e-02 1 1  ON 23
+uu_0 3.6895279700e-01 1 1  ON 0
+uu_1 1.6833583062e-01 1 1  ON 1
+uu_2 7.9578771392e-02 1 1  ON 2
+uu_3 5.4236249589e-02 1 1  ON 3
+uu_4 4.5275303129e-02 1 1  ON 4
+uu_5 4.5562278940e-02 1 1  ON 5
+uu_6 7.7533238342e-02 1 1  ON 6
+uu_7 2.5305946151e-02 1 1  ON 7
+ud_0 3.4499126288e-01 1 1  ON 8
+ud_1 7.5236717894e-02 1 1  ON 9
+ud_2 -4.8942190655e-03 1 1  ON 10
+ud_3 -2.6844423868e-02 1 1  ON 11
+ud_4 -3.1292205470e-02 1 1  ON 12
+ud_5 -2.5905566149e-02 1 1  ON 13
+ud_6 -1.3482486083e-02 1 1  ON 14
+ud_7 -5.6387987079e-02 1 1  ON 15
+eO_0 -7.6431362405e-01 1 1  ON 16
+eO_1 -6.5937147906e-01 1 1  ON 17
+eO_2 -4.7740958057e-01 1 1  ON 18
+eO_3 -2.9823588317e-01 1 1  ON 19
+eO_4 -1.6836704287e-01 1 1  ON 20
+eO_5 -8.2136517512e-02 1 1  ON 21
+eO_6 -3.3794081242e-02 1 1  ON 22
+eO_7 -1.7115632330e-03 1 1  ON 23
   </optVariables>
    Restore the number of walkers to 16, removing 84 walkers.
 </opt>
 </optimization-report>
-  QMC Execution time = 2.7815514167e+01 secs 
+  QMC Execution time = 6.1939877037e+00 secs 
   Reusing QMCFixedSampleLinearOptimize
  Using QMCCostFunctionOMP::QMCCostFunctionOMP
 
@@ -1390,10 +1393,10 @@ Using existing walkers
   SimpleFixedNodeBranch::finalize after a VMC block
     QMC counter        = 7
     time step          = 0.3
-    reference energy   = -15.8295
-    reference variance = 0.816432
+    reference energy   = -15.8558
+    reference variance = 0.509524
 ====================================================
-  Execution time = 1.1779303701e+01
+  Execution time = 5.5347173562e+00
 </vmc>
 <opt stage="setup">
   <log>
@@ -1413,58 +1416,58 @@ Orbitals only:           1.6000000000e-04      2.5600000000e-01
 Orbitals + dervs:        5.7600000000e-04      9.2160000000e-01
 Inverse:                 0.0000000000e+00      0.0000000000e+00
 Determinants:            0.0000000000e+00      0.0000000000e+00
-  VMC Eavg = -1.5863530573e+01
-  VMC Evar = 6.6659923822e-01
+  VMC Eavg = -1.5869391555e+01
+  VMC Evar = 2.8472271357e-01
   Total weights = 5.1200000000e+04
-  Execution time = 1.8153370213e+00
+  Execution time = 1.7579941125e-01
   </log>
 </opt>
 <opt stage="main" walkers="51200">
   <log>
 Iteration: 1/1
-od_largest 1.6908754968e+02
+od_largest 2.8015186990e+02
   stabilityBase -1.6000000000e+01
   stabilizerScale 1.0000000000e+00
   Using XS:-1.6000000000e+01 0 0
-  Good Step. Largest LM parameter change:9.4522168920e-02
- OldCost: 6.6659923822e-01 NewCost: 6.6651737755e-01 Delta Cost:-8.1860671682e-05
-      Current ene:     -1.5864255687e+01
-      Current var:     6.6624708381e-01
-      Current ene_urw:     -1.5863675731e+01
-      Current var_urw: 6.6651737755e-01
+  Good Step. Largest LM parameter change:3.0673958287e-02
+ OldCost: 2.8472271357e-01 NewCost: 2.8464159954e-01 Delta Cost:-8.1114029931e-05
+      Current ene:     -1.5868866580e+01
+      Current var:     2.8512449035e-01
+      Current ene_urw:     -1.5869488499e+01
+      Current var_urw: 2.8464159954e-01
 Setting new Parameters
-ERROR   Execution time = 2.8559564299e+01
+ERROR   Execution time = 6.1671077587e+00
   </log>
   <optVariables href="O.q0.opt.s007.opt.xml">
-uu_0 8.8345433319e-01 1 1  ON 0
-uu_1 6.8982556416e-01 1 1  ON 1
-uu_2 6.0033368129e-01 1 1  ON 2
-uu_3 5.7081260654e-01 1 1  ON 3
-uu_4 5.6341538093e-01 1 1  ON 4
-uu_5 5.5857259265e-01 1 1  ON 5
-uu_6 5.8706627404e-01 1 1  ON 6
-uu_7 5.3356054043e-01 1 1  ON 7
-ud_0 5.3226029029e-01 1 1  ON 8
-ud_1 2.6524893092e-01 1 1  ON 9
-ud_2 1.8421786924e-01 1 1  ON 10
-ud_3 1.6182920946e-01 1 1  ON 11
-ud_4 1.5511649531e-01 1 1  ON 12
-ud_5 1.6851972227e-01 1 1  ON 13
-ud_6 1.5099181843e-01 1 1  ON 14
-ud_7 3.2991712113e-01 1 1  ON 15
-eO_0 -7.6929599444e-01 1 1  ON 16
-eO_1 -6.5625339288e-01 1 1  ON 17
-eO_2 -4.7613588222e-01 1 1  ON 18
-eO_3 -2.9577584123e-01 1 1  ON 19
-eO_4 -1.6577058567e-01 1 1  ON 20
-eO_5 -7.3929880781e-02 1 1  ON 21
-eO_6 -2.5963462516e-02 1 1  ON 22
-eO_7 9.5946274668e-03 1 1  ON 23
+uu_0 3.5122805554e-01 1 1  ON 0
+uu_1 1.5147785305e-01 1 1  ON 1
+uu_2 6.4795271427e-02 1 1  ON 2
+uu_3 4.0801946470e-02 1 1  ON 3
+uu_4 3.1488262892e-02 1 1  ON 4
+uu_5 3.0619459697e-02 1 1  ON 5
+uu_6 6.5653962647e-02 1 1  ON 6
+uu_7 9.8134883492e-03 1 1  ON 7
+ud_0 3.1909774364e-01 1 1  ON 8
+ud_1 5.0729802394e-02 1 1  ON 9
+ud_2 -2.6510402527e-02 1 1  ON 10
+ud_3 -4.7507940230e-02 1 1  ON 11
+ud_4 -5.2364315381e-02 1 1  ON 12
+ud_5 -4.8010605568e-02 1 1  ON 13
+ud_6 -3.3293085985e-02 1 1  ON 14
+ud_7 -8.7061945366e-02 1 1  ON 15
+eO_0 -7.4932233655e-01 1 1  ON 16
+eO_1 -6.4604703773e-01 1 1  ON 17
+eO_2 -4.6675141239e-01 1 1  ON 18
+eO_3 -2.9144208061e-01 1 1  ON 19
+eO_4 -1.6544169538e-01 1 1  ON 20
+eO_5 -8.2070169792e-02 1 1  ON 21
+eO_6 -3.5062342088e-02 1 1  ON 22
+eO_7 -3.5269192125e-03 1 1  ON 23
   </optVariables>
    Restore the number of walkers to 16, removing 84 walkers.
 </opt>
 </optimization-report>
-  QMC Execution time = 2.8582500227e+01 secs 
+  QMC Execution time = 6.1884548062e+00 secs 
   Reusing QMCFixedSampleLinearOptimize
  Using QMCCostFunctionOMP::QMCCostFunctionOMP
 
@@ -1533,10 +1536,10 @@ Using existing walkers
   SimpleFixedNodeBranch::finalize after a VMC block
     QMC counter        = 8
     time step          = 0.3
-    reference energy   = -15.9051
-    reference variance = 0.769368
+    reference energy   = -15.8633
+    reference variance = 0.55471
 ====================================================
-  Execution time = 1.1897651714e+01
+  Execution time = 5.5367022325e+00
 </vmc>
 <opt stage="setup">
   <log>
@@ -1556,58 +1559,58 @@ Orbitals only:           1.6000000000e-04      2.5600000000e-01
 Orbitals + dervs:        5.7600000000e-04      9.2160000000e-01
 Inverse:                 0.0000000000e+00      0.0000000000e+00
 Determinants:            0.0000000000e+00      0.0000000000e+00
-  VMC Eavg = -1.5866055793e+01
-  VMC Evar = 7.7828995609e-01
+  VMC Eavg = -1.5869839707e+01
+  VMC Evar = 2.8474178407e-01
   Total weights = 5.1200000000e+04
-  Execution time = 1.7793831800e+00
+  Execution time = 1.8017183500e-01
   </log>
 </opt>
 <opt stage="main" walkers="51200">
   <log>
 Iteration: 1/1
-od_largest 1.7324150684e+01
+od_largest 3.3627774834e+01
   stabilityBase -1.6000000000e+01
   stabilizerScale 1.0000000000e+00
   Using XS:-1.6000000000e+01 0 0
-  Good Step. Largest LM parameter change:2.6240115151e-01
- OldCost: 7.7828995609e-01 NewCost: 7.7735482525e-01 Delta Cost:-9.3513083900e-04
-      Current ene:     -1.5869751541e+01
-      Current var:     6.9837782079e-01
-      Current ene_urw:     -1.5865935993e+01
-      Current var_urw: 7.7735482525e-01
+  Good Step. Largest LM parameter change:5.1373044798e-03
+ OldCost: 2.8474178407e-01 NewCost: 2.8473964870e-01 Delta Cost:-2.1353777027e-06
+      Current ene:     -1.5869955070e+01
+      Current var:     2.8467064906e-01
+      Current ene_urw:     -1.5869850384e+01
+      Current var_urw: 2.8473964870e-01
 Setting new Parameters
-ERROR   Execution time = 2.8429057763e+01
+ERROR   Execution time = 6.1774558513e+00
   </log>
   <optVariables href="O.q0.opt.s008.opt.xml">
-uu_0 7.3963941789e-01 1 1  ON 0
-uu_1 5.3930083370e-01 1 1  ON 1
-uu_2 4.4622380590e-01 1 1  ON 2
-uu_3 4.1376489245e-01 1 1  ON 3
-uu_4 4.0729799062e-01 1 1  ON 4
-uu_5 4.0079176051e-01 1 1  ON 5
-uu_6 4.5545213395e-01 1 1  ON 6
-uu_7 2.7115938892e-01 1 1  ON 7
-ud_0 4.0973246802e-01 1 1  ON 8
-ud_1 1.3827621087e-01 1 1  ON 9
-ud_2 5.1314216722e-02 1 1  ON 10
-ud_3 2.6691702792e-02 1 1  ON 11
-ud_4 2.0655886227e-02 1 1  ON 12
-ud_5 3.2876834058e-02 1 1  ON 13
-ud_6 3.6270041260e-02 1 1  ON 14
-ud_7 1.0583660164e-01 1 1  ON 15
-eO_0 -8.1027345551e-01 1 1  ON 16
-eO_1 -6.9268794076e-01 1 1  ON 17
-eO_2 -5.0635009621e-01 1 1  ON 18
-eO_3 -3.1730516775e-01 1 1  ON 19
-eO_4 -1.7952071009e-01 1 1  ON 20
-eO_5 -8.1042221882e-02 1 1  ON 21
-eO_6 -2.9145324393e-02 1 1  ON 22
-eO_7 6.4299212002e-03 1 1  ON 23
+uu_0 3.5636536002e-01 1 1  ON 0
+uu_1 1.5647777982e-01 1 1  ON 1
+uu_2 6.9456514278e-02 1 1  ON 2
+uu_3 4.5287295162e-02 1 1  ON 3
+uu_4 3.6014302691e-02 1 1  ON 4
+uu_5 3.5232311730e-02 1 1  ON 5
+uu_6 6.9855720048e-02 1 1  ON 6
+uu_7 1.4870488725e-02 1 1  ON 7
+ud_0 3.2141319259e-01 1 1  ON 8
+ud_1 5.2798989661e-02 1 1  ON 9
+ud_2 -2.4894649771e-02 1 1  ON 10
+ud_3 -4.6014259196e-02 1 1  ON 11
+ud_4 -5.0815224168e-02 1 1  ON 12
+ud_5 -4.6360946443e-02 1 1  ON 13
+ud_6 -3.1838032343e-02 1 1  ON 14
+ud_7 -8.4480496650e-02 1 1  ON 15
+eO_0 -7.5179136781e-01 1 1  ON 16
+eO_1 -6.4825828026e-01 1 1  ON 17
+eO_2 -4.6853550908e-01 1 1  ON 18
+eO_3 -2.9259813649e-01 1 1  ON 19
+eO_4 -1.6604918308e-01 1 1  ON 20
+eO_5 -8.2251057275e-02 1 1  ON 21
+eO_6 -3.5031707261e-02 1 1  ON 22
+eO_7 -3.4951396117e-03 1 1  ON 23
   </optVariables>
    Restore the number of walkers to 16, removing 84 walkers.
 </opt>
 </optimization-report>
-  QMC Execution time = 2.8451634776e+01 secs 
+  QMC Execution time = 6.1983355525e+00 secs 
   Reusing QMCFixedSampleLinearOptimize
  Using QMCCostFunctionOMP::QMCCostFunctionOMP
 
@@ -1676,10 +1679,10 @@ Using existing walkers
   SimpleFixedNodeBranch::finalize after a VMC block
     QMC counter        = 9
     time step          = 0.3
-    reference energy   = -15.8977
-    reference variance = 0.801833
+    reference energy   = -15.9251
+    reference variance = 0.680017
 ====================================================
-  Execution time = 1.1584684705e+01
+  Execution time = 5.5081698462e+00
 </vmc>
 <opt stage="setup">
   <log>
@@ -1699,58 +1702,58 @@ Orbitals only:           1.6000000000e-04      2.5600000000e-01
 Orbitals + dervs:        5.7600000000e-04      9.2160000000e-01
 Inverse:                 0.0000000000e+00      0.0000000000e+00
 Determinants:            0.0000000000e+00      0.0000000000e+00
-  VMC Eavg = -1.5870690120e+01
-  VMC Evar = 7.2717974404e-01
+  VMC Eavg = -1.5864748274e+01
+  VMC Evar = 2.8617958292e-01
   Total weights = 5.1200000000e+04
-  Execution time = 1.7239092863e+00
+  Execution time = 1.7911973625e-01
   </log>
 </opt>
 <opt stage="main" walkers="51200">
   <log>
 Iteration: 1/1
-od_largest 4.7183787905e+01
+od_largest 1.7002720840e+01
   stabilityBase -1.6000000000e+01
   stabilizerScale 1.0000000000e+00
   Using XS:-1.6000000000e+01 0 0
-  Good Step. Largest LM parameter change:1.8448161364e-02
- OldCost: 7.2717974404e-01 NewCost: 7.2715201115e-01 Delta Cost:-2.7732880747e-05
-      Current ene:     -1.5871056078e+01
-      Current var:     7.2704550639e-01
-      Current ene_urw:     -1.5870712363e+01
-      Current var_urw: 7.2715201115e-01
+  Good Step. Largest LM parameter change:4.6511457213e-02
+ OldCost: 2.8617958292e-01 NewCost: 2.8598430208e-01 Delta Cost:-1.9528083558e-04
+      Current ene:     -1.5863691792e+01
+      Current var:     2.8681128237e-01
+      Current ene_urw:     -1.5864792140e+01
+      Current var_urw: 2.8598430208e-01
 Setting new Parameters
-ERROR   Execution time = 2.7772372080e+01
+ERROR   Execution time = 6.1441731963e+00
   </log>
   <optVariables href="O.q0.opt.s009.opt.xml">
-uu_0 7.4836797625e-01 1 1  ON 0
-uu_1 5.4721121619e-01 1 1  ON 1
-uu_2 4.5327376675e-01 1 1  ON 2
-uu_3 4.2007443577e-01 1 1  ON 3
-uu_4 4.1425782650e-01 1 1  ON 4
-uu_5 4.0790137645e-01 1 1  ON 5
-uu_6 4.6560043140e-01 1 1  ON 6
-uu_7 2.7324691304e-01 1 1  ON 7
-ud_0 3.9570980657e-01 1 1  ON 8
-ud_1 1.2327992617e-01 1 1  ON 9
-ud_2 3.4911819709e-02 1 1  ON 10
-ud_3 9.8056520117e-03 1 1  ON 11
-ud_4 4.6709087508e-03 1 1  ON 12
-ud_5 1.6700313909e-02 1 1  ON 13
-ud_6 2.1011201818e-02 1 1  ON 14
-ud_7 8.7388440280e-02 1 1  ON 15
-eO_0 -8.1649488912e-01 1 1  ON 16
-eO_1 -6.9774848888e-01 1 1  ON 17
-eO_2 -5.1014760378e-01 1 1  ON 18
-eO_3 -3.1903795850e-01 1 1  ON 19
-eO_4 -1.7925730392e-01 1 1  ON 20
-eO_5 -7.9836621235e-02 1 1  ON 21
-eO_6 -2.7398923371e-02 1 1  ON 22
-eO_7 7.6654466197e-03 1 1  ON 23
+uu_0 3.8297859878e-01 1 1  ON 0
+uu_1 1.8456950339e-01 1 1  ON 1
+uu_2 1.0066767691e-01 1 1  ON 2
+uu_3 7.8557156815e-02 1 1  ON 3
+uu_4 6.8585425057e-02 1 1  ON 4
+uu_5 6.7269007860e-02 1 1  ON 5
+uu_6 1.0084254655e-01 1 1  ON 6
+uu_7 6.1381945938e-02 1 1  ON 7
+ud_0 3.1118533469e-01 1 1  ON 8
+ud_1 4.5088245306e-02 1 1  ON 9
+ud_2 -2.8307717840e-02 1 1  ON 10
+ud_3 -4.8061076398e-02 1 1  ON 11
+ud_4 -5.3133416117e-02 1 1  ON 12
+ud_5 -5.0268330794e-02 1 1  ON 13
+ud_6 -3.5004611283e-02 1 1  ON 14
+ud_7 -9.1923045874e-02 1 1  ON 15
+eO_0 -7.2810920892e-01 1 1  ON 16
+eO_1 -6.2683078380e-01 1 1  ON 17
+eO_2 -4.5143601292e-01 1 1  ON 18
+eO_3 -2.8123685152e-01 1 1  ON 19
+eO_4 -1.6087550932e-01 1 1  ON 20
+eO_5 -8.1220694398e-02 1 1  ON 21
+eO_6 -3.6727626101e-02 1 1  ON 22
+eO_7 -5.9568757611e-03 1 1  ON 23
   </optVariables>
    Restore the number of walkers to 16, removing 84 walkers.
 </opt>
 </optimization-report>
-  QMC Execution time = 2.7798087232e+01 secs 
+  QMC Execution time = 6.1653930625e+00 secs 
   Reusing QMCFixedSampleLinearOptimize
  Using QMCCostFunctionOMP::QMCCostFunctionOMP
 
@@ -1819,10 +1822,10 @@ Using existing walkers
   SimpleFixedNodeBranch::finalize after a VMC block
     QMC counter        = 10
     time step          = 0.3
-    reference energy   = -15.8431
-    reference variance = 0.804669
+    reference energy   = -15.8727
+    reference variance = 0.489224
 ====================================================
-  Execution time = 1.1602678616e+01
+  Execution time = 5.5354687725e+00
 </vmc>
 <opt stage="setup">
   <log>
@@ -1842,58 +1845,58 @@ Orbitals only:           1.6000000000e-04      2.5600000000e-01
 Orbitals + dervs:        5.7600000000e-04      9.2160000000e-01
 Inverse:                 0.0000000000e+00      0.0000000000e+00
 Determinants:            0.0000000000e+00      0.0000000000e+00
-  VMC Eavg = -1.5858502328e+01
-  VMC Evar = 6.9400639873e-01
+  VMC Eavg = -1.5861097136e+01
+  VMC Evar = 3.0181108389e-01
   Total weights = 5.1200000000e+04
-  Execution time = 1.7498992050e+00
+  Execution time = 1.7512208625e-01
   </log>
 </opt>
 <opt stage="main" walkers="51200">
   <log>
 Iteration: 1/1
-od_largest 2.3641918147e+01
+od_largest 2.0639680639e+02
   stabilityBase -1.6000000000e+01
   stabilizerScale 1.0000000000e+00
   Using XS:-1.6000000000e+01 0 0
-  Good Step. Largest LM parameter change:6.8849399124e-02
- OldCost: 6.9400639873e-01 NewCost: 6.9257183689e-01 Delta Cost:-1.4345618444e-03
-      Current ene:     -1.5856114591e+01
-      Current var:     6.9737684677e-01
-      Current ene_urw:     -1.5858769650e+01
-      Current var_urw: 6.9257183689e-01
+  Good Step. Largest LM parameter change:6.0624953500e-02
+ OldCost: 3.0181108389e-01 NewCost: 3.0163813838e-01 Delta Cost:-1.7294550824e-04
+      Current ene:     -1.5860008598e+01
+      Current var:     3.0241279905e-01
+      Current ene_urw:     -1.5861126066e+01
+      Current var_urw: 3.0163813838e-01
 Setting new Parameters
-ERROR   Execution time = 2.7984902016e+01
+ERROR   Execution time = 6.1665893812e+00
   </log>
   <optVariables href="O.q0.opt.s010.opt.xml">
-uu_0 7.3513937696e-01 1 1  ON 0
-uu_1 5.3933608741e-01 1 1  ON 1
-uu_2 4.5322456414e-01 1 1  ON 2
-uu_3 4.2353264201e-01 1 1  ON 3
-uu_4 4.1762114568e-01 1 1  ON 4
-uu_5 3.9678520756e-01 1 1  ON 5
-uu_6 4.7773061812e-01 1 1  ON 6
-uu_7 2.1305783310e-01 1 1  ON 7
-ud_0 3.7077923822e-01 1 1  ON 8
-ud_1 1.0347705763e-01 1 1  ON 9
-ud_2 2.6137148513e-02 1 1  ON 10
-ud_3 4.1127239222e-03 1 1  ON 11
-ud_4 -2.4106370107e-03 1 1  ON 12
-ud_5 5.4611855364e-03 1 1  ON 13
-ud_6 1.8203841942e-02 1 1  ON 14
-ud_7 1.8539041156e-02 1 1  ON 15
-eO_0 -7.7545649033e-01 1 1  ON 16
-eO_1 -6.5804970275e-01 1 1  ON 17
-eO_2 -4.8032078568e-01 1 1  ON 18
-eO_3 -3.0512191161e-01 1 1  ON 19
-eO_4 -1.7769033001e-01 1 1  ON 20
-eO_5 -8.6298069506e-02 1 1  ON 21
-eO_6 -4.2746106145e-02 1 1  ON 22
-eO_7 -4.6668911821e-03 1 1  ON 23
+uu_0 4.3693828023e-01 1 1  ON 0
+uu_1 2.3952029546e-01 1 1  ON 1
+uu_2 1.5882419256e-01 1 1  ON 2
+uu_3 1.3835544562e-01 1 1  ON 3
+uu_4 1.2759246977e-01 1 1  ON 4
+uu_5 1.2444085759e-01 1 1  ON 5
+uu_6 1.6146750005e-01 1 1  ON 6
+uu_7 1.2156504137e-01 1 1  ON 7
+ud_0 2.9978434036e-01 1 1  ON 8
+ud_1 3.6146393924e-02 1 1  ON 9
+ud_2 -3.3263433475e-02 1 1  ON 10
+ud_3 -5.2017475425e-02 1 1  ON 11
+ud_4 -5.7428555910e-02 1 1  ON 12
+ud_5 -5.6160002803e-02 1 1  ON 13
+ud_6 -3.6766356368e-02 1 1  ON 14
+ud_7 -1.0276263162e-01 1 1  ON 15
+eO_0 -7.0730800560e-01 1 1  ON 16
+eO_1 -6.0803080835e-01 1 1  ON 17
+eO_2 -4.3652054293e-01 1 1  ON 18
+eO_3 -2.7180599791e-01 1 1  ON 19
+eO_4 -1.5691067155e-01 1 1  ON 20
+eO_5 -8.0616390123e-02 1 1  ON 21
+eO_6 -3.7945857224e-02 1 1  ON 22
+eO_7 -7.4608071080e-03 1 1  ON 23
   </optVariables>
    Restore the number of walkers to 16, removing 84 walkers.
 </opt>
 </optimization-report>
-  QMC Execution time = 2.8007562678e+01 secs 
+  QMC Execution time = 6.1873668025e+00 secs 
   Reusing QMCFixedSampleLinearOptimize
  Using QMCCostFunctionOMP::QMCCostFunctionOMP
 
@@ -1962,10 +1965,10 @@ Using existing walkers
   SimpleFixedNodeBranch::finalize after a VMC block
     QMC counter        = 11
     time step          = 0.3
-    reference energy   = -15.8352
-    reference variance = 0.775386
+    reference energy   = -15.8615
+    reference variance = 0.490947
 ====================================================
-  Execution time = 1.1803519015e+01
+  Execution time = 5.5285358288e+00
 </vmc>
 <opt stage="setup">
   <log>
@@ -1985,59 +1988,59 @@ Orbitals only:           1.6000000000e-04      2.5600000000e-01
 Orbitals + dervs:        5.7600000000e-04      9.2160000000e-01
 Inverse:                 0.0000000000e+00      0.0000000000e+00
 Determinants:            0.0000000000e+00      0.0000000000e+00
-  VMC Eavg = -1.5850880226e+01
-  VMC Evar = 7.0598901869e-01
+  VMC Eavg = -1.5864156256e+01
+  VMC Evar = 2.9188306280e-01
   Total weights = 5.1200000000e+04
-  Execution time = 1.7764163587e+00
+  Execution time = 1.7620841250e-01
   </log>
 </opt>
 <opt stage="main" walkers="51200">
   <log>
 Iteration: 1/1
-od_largest 1.3385266685e+01
+od_largest 5.5255100172e+01
   stabilityBase -1.6000000000e+01
   stabilizerScale 1.0000000000e+00
   Using XS:-1.6000000000e+01 0 0
-  Good Step. Largest LM parameter change:4.6340424357e-02
- OldCost: 7.0598901869e-01 NewCost: 7.0592576381e-01 Delta Cost:-6.3254886314e-05
-      Current ene:     -1.5851627199e+01
-      Current var:     6.9950819478e-01
-      Current ene_urw:     -1.5850958038e+01
-      Current var_urw: 7.0592576381e-01
+  Good Step. Largest LM parameter change:2.0567440307e-02
+ OldCost: 2.9188306280e-01 NewCost: 2.9171097927e-01 Delta Cost:-1.7208352639e-04
+      Current ene:     -1.5863249786e+01
+      Current var:     2.9251667951e-01
+      Current ene_urw:     -1.5864283594e+01
+      Current var_urw: 2.9171097927e-01
 Setting new Parameters
-ERROR   Execution time = 2.8196412791e+01
+ERROR   Execution time = 6.1534038412e+00
   </log>
   <optVariables href="O.q0.opt.s011.opt.xml">
-uu_0 6.9392504232e-01 1 1  ON 0
-uu_1 4.9690781460e-01 1 1  ON 1
-uu_2 4.0934542375e-01 1 1  ON 2
-uu_3 3.7875640157e-01 1 1  ON 3
-uu_4 3.7308380014e-01 1 1  ON 4
-uu_5 3.5419786809e-01 1 1  ON 5
-uu_6 4.3139019377e-01 1 1  ON 6
-uu_7 1.9344371667e-01 1 1  ON 7
-ud_0 3.9219009713e-01 1 1  ON 8
-ud_1 1.2352664647e-01 1 1  ON 9
-ud_2 4.4048945133e-02 1 1  ON 10
-ud_3 2.1415676741e-02 1 1  ON 11
-ud_4 1.5201803731e-02 1 1  ON 12
-ud_5 2.3708169445e-02 1 1  ON 13
-ud_6 3.4279064930e-02 1 1  ON 14
-ud_7 4.3334583596e-02 1 1  ON 15
-eO_0 -7.8490123937e-01 1 1  ON 16
-eO_1 -6.6726618338e-01 1 1  ON 17
-eO_2 -4.8753453838e-01 1 1  ON 18
-eO_3 -3.0913993774e-01 1 1  ON 19
-eO_4 -1.7901872177e-01 1 1  ON 20
-eO_5 -8.6199000697e-02 1 1  ON 21
-eO_6 -4.0601160841e-02 1 1  ON 22
-eO_7 -4.1358075061e-03 1 1  ON 23
+uu_0 4.2435308113e-01 1 1  ON 0
+uu_1 2.2846870686e-01 1 1  ON 1
+uu_2 1.5070843135e-01 1 1  ON 2
+uu_3 1.3169496840e-01 1 1  ON 3
+uu_4 1.2087107029e-01 1 1  ON 4
+uu_5 1.1468156112e-01 1 1  ON 5
+uu_6 1.5705731449e-01 1 1  ON 6
+uu_7 1.0917951448e-01 1 1  ON 7
+ud_0 2.9270212689e-01 1 1  ON 8
+ud_1 3.1528741081e-02 1 1  ON 9
+ud_2 -3.3961801930e-02 1 1  ON 10
+ud_3 -5.1850227680e-02 1 1  ON 11
+ud_4 -5.7151182468e-02 1 1  ON 12
+ud_5 -5.8404473046e-02 1 1  ON 13
+ud_6 -3.4327327089e-02 1 1  ON 14
+ud_7 -1.0615372785e-01 1 1  ON 15
+eO_0 -6.8674056529e-01 1 1  ON 16
+eO_1 -5.8938725052e-01 1 1  ON 17
+eO_2 -4.2181512150e-01 1 1  ON 18
+eO_3 -2.6229646726e-01 1 1  ON 19
+eO_4 -1.5241912053e-01 1 1  ON 20
+eO_5 -7.9709062529e-02 1 1  ON 21
+eO_6 -3.9292192753e-02 1 1  ON 22
+eO_7 -8.4868277871e-03 1 1  ON 23
   </optVariables>
    Restore the number of walkers to 16, removing 84 walkers.
 </opt>
 </optimization-report>
-  QMC Execution time = 2.8218972974e+01 secs 
-  Total Execution time = 3.2872749530e+02 secs
+  QMC Execution time = 6.1743776687e+00 secs 
+  Total Execution time = 7.4800192445e+01 secs
 
 =========================================================
   A new xml input file : O.q0.opt.s011.cont.xml
