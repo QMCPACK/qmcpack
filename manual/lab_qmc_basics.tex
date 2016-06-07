@@ -157,7 +157,7 @@ The full QMCPACK pseudopotential is also included in \texttt{oxygen\_atom/refere
 \label{sec:lqb_dft}
 With the pseudopotential in hand, the next step toward a QMC calculation is to obtain the Fermionic part of the wavefunction, in this case a single Slater determinant constructed from DFT-LDA orbitals for a neutral oxygen atom.  If you had trouble with the pseudopotential conversion step, pre-converted pseudopotential files are located in the \texttt{oxygen\_atom/reference} directory.  
 
-Quantum Espresso input for the DFT-LDA ground state of the neutral oxygen atom can be found in \texttt{O.q0.dft.in} and also listing \ref{lst:O_q0_dft} below.  Setting \texttt{wf\_collect=.true.} instructs Quantum Espresso to write the orbitals to disk at the end of the run.  Note that the plane-wave energy cutoff has been set to a reasonable value of 200 Ry here (\texttt{ecutwfc=200}).  This value depends on the pseudopotentials used, and in general should be selected by running DFT$\rightarrow$(orbital conversion)$\rightarrow$VMC with increasing energy cutoffs until the lowest VMC total energy and variance is reached.
+Quantum Espresso input for the DFT-LDA ground state of the neutral oxygen atom can be found in \texttt{O.q0.dft.in} and also listing \ref{lst:O_q0_dft} below.  Setting \texttt{wf\_collect=.true.} instructs Quantum Espresso to write the orbitals to disk at the end of the run.  Note that the plane-wave energy cutoff has been set to a reasonable value of 300 Ry here (\texttt{ecutwfc=300}).  This value depends on the pseudopotentials used, and in general should be selected by running DFT$\rightarrow$(orbital conversion)$\rightarrow$VMC with increasing energy cutoffs until the lowest VMC total energy and variance is reached.
 
 \begin{lstlisting}[caption={Quantum Espresso input file for the neutral oxygen atom (\texttt{O.q0.dft.in})\label{lst:O_q0_dft}}]
 &CONTROL
@@ -179,8 +179,8 @@ Quantum Espresso input for the DFT-LDA ground state of the neutral oxygen atom c
    tot_charge        = 0
    tot_magnetization = 2
    input_dft         = 'lda'
-   ecutwfc           = 200
-   ecutrho           = 800
+   ecutwfc           = 300
+   ecutrho           = 1200
    nosym             = .true.
    occupations       = 'smearing'
    smearing          = 'fermi-dirac'
@@ -229,9 +229,12 @@ jobrun_vesta pw.x O.q0.dft.in
 The DFT run should take a few minutes to complete.  If desired, you can track the progress of the DFT run by typing ``\ifws\verb|tail -f O.q0.dft.out|\else\verb|tail -f O.q0.dft.output|\fi''. Once finished, you should check the LDA total energy in \texttt{\labsw{O.q0.dft.out}{O.q0.dft.output}} by typing ``\ifws\verb|grep '!  ' O.q0.dft.out|\else\verb|grep '!  ' O.q0.dft.output|\fi''.  The result should be close to
 \begin{shaded}
 \begin{verbatim}
-!    total energy              =     -31.56729415 Ry
+!    total energy              =     -31.57553905 Ry
 \end{verbatim}
 \end{shaded} 
+% both of the numbers below are for 200 Ry (too small as it turns out)
+% 10 Angstrom cell
+%!    total energy              =     -31.56729415 Ry
 % 15 Angstrom cell
 %!    total energy              =     -31.56730213 Ry
 
@@ -513,15 +516,15 @@ Blocked averages of energy data, including the kinetic energy and components of 
 When the job has finished, use the \texttt{qmca} tool to assess the effectiveness of the optimization process.  To look at just the total energy and the variance, type ``\verb|qmca -q ev O.q0.opt*scalar*|''.  This will print the energy, variance, and the variance/energy ratio in Hartree units:
 \begin{shaded}
 \begin{verbatim}
-                            LocalEnergy               Variance           ratio 
-O.q0.opt  series 0  -15.740261 +/- 0.008137   1.264368 +/- 0.014608   0.0803 
-O.q0.opt  series 1  -15.860120 +/- 0.004668   0.713099 +/- 0.014019   0.0450 
-O.q0.opt  series 2  -15.859298 +/- 0.006211   0.802800 +/- 0.092671   0.0506 
-O.q0.opt  series 3  -15.862090 +/- 0.004050   0.666984 +/- 0.013441   0.0420 
-O.q0.opt  series 4  -15.862034 +/- 0.004927   0.707145 +/- 0.017703   0.0446 
-O.q0.opt  series 5  -15.857459 +/- 0.005889   0.681408 +/- 0.012828   0.0430 
-O.q0.opt  series 6  -15.860377 +/- 0.004632   0.675006 +/- 0.012995   0.0426 
-O.q0.opt  series 7  -15.865476 +/- 0.004331   0.669623 +/- 0.015134   0.0422 
+                            LocalEnergy               Variance           ratio
+O.q0.opt  series 0  -15.739585 +/- 0.007656   0.887412 +/- 0.010728   0.0564
+O.q0.opt  series 1  -15.848347 +/- 0.004089   0.318490 +/- 0.006404   0.0201
+O.q0.opt  series 2  -15.867494 +/- 0.004831   0.292309 +/- 0.007786   0.0184
+O.q0.opt  series 3  -15.871508 +/- 0.003025   0.275364 +/- 0.006045   0.0173
+O.q0.opt  series 4  -15.865512 +/- 0.002997   0.278056 +/- 0.006523   0.0175
+O.q0.opt  series 5  -15.864967 +/- 0.002733   0.278065 +/- 0.004413   0.0175
+O.q0.opt  series 6  -15.869644 +/- 0.002949   0.273497 +/- 0.006141   0.0172
+O.q0.opt  series 7  -15.868397 +/- 0.003838   0.285451 +/- 0.007570   0.0180
 ...
 \end{verbatim}
 \end{shaded}
@@ -537,8 +540,8 @@ Identify which optimization series is the ``best'' according to your cost functi
 \begin{enumerate}
   \item{What is the acceptance ratio of your optimization runs? (use ``\verb|qmca -q ar O.q0.opt*scalar*|'')  Do you expect the Monte Carlo sampling to be efficient?}
   \item{How do you know when the optimization process has converged?}
-  \item{Why is the mean and the error of the variance sometimes large?  Consider using \newline``\verb|qmca -t -q ev O.q0.opt*scalar*|'' to investigate.}
-  \item{Optimization is sometimes sensitive to initial guesses of the parameters.  If you have time, try varying the initial parameters, including the cutoff radius (\texttt{rcut}) of the Jastrow factors (remember to change \texttt{id} in the \texttt{<project/>} element).  Do you arrive at a similar set of final Jastrow parameters?  What is the lowest variance you are able to achieve?}
+%  \item{Why is the mean and the error of the variance sometimes large?  Consider using \newline``\verb|qmca -t -q ev O.q0.opt*scalar*|'' to investigate.}
+  \item{(optional) Optimization is sometimes sensitive to initial guesses of the parameters.  If you have time, try varying the initial parameters, including the cutoff radius (\texttt{rcut}) of the Jastrow factors (remember to change \texttt{id} in the \texttt{<project/>} element).  Do you arrive at a similar set of final Jastrow parameters?  What is the lowest variance you are able to achieve?}
 \end{enumerate}
 
 
@@ -649,8 +652,8 @@ Use the \texttt{PlotTstepConv.pl} to obtain a linear fit to the timestep data (t
 Final set of parameters            Asymptotic Standard Error
 =======================            ==========================
 
-a               = -15.8911         +/- 0.000756     (0.004757%)
-b               = -0.221687        +/- 0.03757      (16.95%)
+a               = -15.8925         +/- 0.0007442    (0.004683%)
+b               = -0.0457479       +/- 0.0422       (92.24%)
 ...
 \end{verbatim}
 \end{shaded}
@@ -768,7 +771,9 @@ The process listed above, which excludes additional steps for orbital generation
 \end{flushleft}
 \begin{enumerate}
   \item{What is the $\tau\rightarrow 0$ extrapolated DMC value for the 1st ionization potential of oxygen?}
-  \item{How does the extrapolated value compare to the experimental IP?  Go to\newline \href{http://physics.nist.gov/PhysRefData/ASD/ionEnergy.html}{http://physics.nist.gov/PhysRefData/ASD/ionEnergy.html} and enter ``\texttt{O I}'' in the box labeled ``\texttt{Spectra}'' and click on the ``\texttt{Retrieve Data}'' button.  For comparison the LDA value is $12.25$ eV.}
+  \item{How does the extrapolated value compare to the experimental IP?  Go to\newline \href{http://physics.nist.gov/PhysRefData/ASD/ionEnergy.html}{http://physics.nist.gov/PhysRefData/ASD/ionEnergy.html} and enter ``\texttt{O I}'' in the box labeled ``\texttt{Spectra}'' and click on the ``\texttt{Retrieve Data}'' button.  
+%For comparison the LDA value is $12.25$ eV.
+}
   \item{What can we conclude about the accuracy of the pseudopotential?  What factors complicate this assessment?}
   \item{Explore the sensitivity of the IP to the choice of timestep.  Type ``\verb|./ip_conv.py|'' to view three timestep extrapolation plots: two for the $q=0,1$ total energies and one for the IP.  Is the IP more, less, or similarly sensitive to timestep than the total energy?}
   \item{What is the maximum timestep you should use if you want to calculate the ionization potential to an accuracy of $0.05$ eV?  What factor of cpu time is saved by assessing timestep convergence on the IP (a total energy difference) vs. a single total energy?}
@@ -936,71 +941,73 @@ Enter the \texttt{oxygen\_dimer} directory.  Copy your BFD pseudopotential from 
 %The header material, including Nexus imports, settings, and the job parameters for QMC are identical.  
 The main difference is that a full workflow of runs (DFT orbital generation, orbital conversion, optimization and DMC) are being performed rather than a single VMC run.  
 
-Following the job parameters, inputs for the optimization method are given.  The keywords should all be familiar from the QMCPACK XML input files you used previously:
-\begin{lstlisting}
-linopt1 = linear(
-    energy               = 0.0,
-    unreweightedvariance = 1.0,
-    reweightedvariance   = 0.0,
-    timestep             = 0.4,
-    samples              = 10240, 
-    warmupsteps          = 50,
-    blocks               = 200,
-    substeps             = 1,
-    nonlocalpp           = True,
-    usebuffer            = True,
-    walkers              = 1,
-    minwalkers           = 0.5,
-    maxweight            = 1e9,
-    usedrift             = True,
-    minmethod            = 'quartic',
-    beta                 = 0.025,
-    exp0                 = -16,
-    bigchange            = 15.0,
-    alloweddifference    = 1e-4,
-    stepsize             = 0.2,
-    stabilizerscale      = 1.0,
-    nstabilizers         = 3
-    )
-\end{lstlisting}
 
-%\hide{
-\noindent
-Requesting multiple loop's with different numbers of samples is more compact than in XML:
-\begin{lstlisting}
-linopt1 = ...
+%Following the job parameters, inputs for the optimization method are given.  The keywords should all be familiar from the QMCPACK XML input files you used previously:
+%\begin{lstlisting}
+%linopt1 = linear(
+%    energy               = 0.0,
+%    unreweightedvariance = 1.0,
+%    reweightedvariance   = 0.0,
+%    timestep             = 0.4,
+%    samples              = 10240, 
+%    warmupsteps          = 50,
+%    blocks               = 200,
+%    substeps             = 1,
+%    nonlocalpp           = True,
+%    usebuffer            = True,
+%    walkers              = 1,
+%    minwalkers           = 0.5,
+%    maxweight            = 1e9,
+%    usedrift             = True,
+%    minmethod            = 'quartic',
+%    beta                 = 0.025,
+%    exp0                 = -16,
+%    bigchange            = 15.0,
+%    alloweddifference    = 1e-4,
+%    stepsize             = 0.2,
+%    stabilizerscale      = 1.0,
+%    nstabilizers         = 3
+%    )
+%\end{lstlisting}
+%
+%%\hide{
+%\noindent
+%Requesting multiple loop's with different numbers of samples is more compact than in XML:
+%\begin{lstlisting}
+%linopt1 = ...
+%
+%linopt2 = linopt1.copy()  
+%linopt2.samples = 61440 # opt w/ 61440 samples
+%
+%opt_calcs = [loop(max=4,qmc=linopt1), # loops over opt's
+%             loop(max=8,qmc=linopt2)]
+%\end{lstlisting}
+%%}
+%
+%\noindent
+%The VMC/DMC method inputs should also look familiar:
+%\begin{lstlisting}
+%qmc_calcs = [
+%    vmc(
+%        walkers     =   1,
+%        warmupsteps =  30,
+%        blocks      =  20,
+%        steps       =  10,
+%        substeps    =   2,
+%        timestep    =  .4,
+%        samples     = 2048
+%        ),
+%    dmc(
+%        warmupsteps   = 100, 
+%        blocks        = 400,
+%        steps         =  32,
+%        timestep      = 0.01,
+%        nonlocalmoves = True
+%        )
+%    ]
+%\end{lstlisting}
 
-linopt2 = linopt1.copy()  
-linopt2.samples = 61440 # opt w/ 61440 samples
 
-opt_calcs = [loop(max=4,qmc=linopt1), # loops over opt's
-             loop(max=8,qmc=linopt2)]
-\end{lstlisting}
-%}
-
-\noindent
-The VMC/DMC method inputs should also look familiar:
-\begin{lstlisting}
-qmc_calcs = [
-    vmc(
-        walkers     =   1,
-        warmupsteps =  30,
-        blocks      =  20,
-        steps       =  10,
-        substeps    =   2,
-        timestep    =  .4,
-        samples     = 2048
-        ),
-    dmc(
-        warmupsteps   = 100, 
-        blocks        = 400,
-        steps         =  32,
-        timestep      = 0.01,
-        nonlocalmoves = True
-        )
-    ]
-\end{lstlisting}
-\noindent
 As in the example in the last section, the oxygen dimer is generated with the \texttt{generate\_physical\_system} function:
 \begin{lstlisting}
 dimer = generate_physical_system(
@@ -1041,9 +1048,36 @@ Objects representing QMCPACK simulations are then constructed with the \texttt{g
 opt = generate_qmcpack(
     identifier   = 'opt',
     ...
-    jastrows     = [('J1','bspline',8,4.5), 
-                    ('J2','pade',0.5,0.5)],
-    calculations = opt_calcs,
+    jastrows     = [('J1','bspline',8,5.0), 
+                    ('J2','bspline',8,10.0)],
+    calculations = [
+        loop(max=12,
+             qmc=linear(
+                energy               = 0.0,
+                unreweightedvariance = 1.0,
+                reweightedvariance   = 0.0,
+                timestep             = 0.3,
+                samples              = 61440,
+                warmupsteps          = 50,
+                blocks               = 200,
+                substeps             = 1,
+                nonlocalpp           = True,
+                usebuffer            = True,
+                walkers              = 1,
+                minwalkers           = 0.5,
+                maxweight            = 1e9,
+                usedrift             = False,
+                minmethod            = 'quartic',
+                beta                 = 0.025,
+                exp0                 = -16,
+                bigchange            = 15.0,
+                alloweddifference    = 1e-4,
+                stepsize             = 0.2,
+                stabilizerscale      = 1.0,
+                nstabilizers         = 3,
+                )
+             )
+        ],
     dependencies = (p2q,'orbitals'),
     )
 sims.append(opt)
@@ -1052,13 +1086,30 @@ qmc = generate_qmcpack(
     identifier   = 'qmc',
     ...
     jastrows     = [],            
-    calculations = qmc_calcs,
+    calculations = [
+        vmc(
+            walkers     =   1,
+            warmupsteps =  30,
+            blocks      =  20,
+            steps       =  10,
+            substeps    =   2,
+            timestep    =  .4,
+            samples     = 2048
+            ),
+        dmc(
+            warmupsteps   = 100,
+            blocks        = 400,
+            steps         =  32,
+            timestep      = 0.01,
+            nonlocalmoves = True,
+            )
+        ],
     dependencies = [(p2q,'orbitals'),(opt,'jastrow')],
     )
 sims.append(qmc)
 \end{lstlisting}
 \noindent
-Shared details such as the run directory, job, pseudopotentials, and orbital file have been omitted (\texttt{...}).  The ``\texttt{opt}'' run will optimize a 1-body B-spline Jastrow with 8 knots having a cutoff of 4.5 Bohr and a 2-body Pad\'{e} Jastrow with up-up and up-down ``\texttt{B}'' parameters set to 0.5 1/Bohr.  The Jastrow list for the DMC run is empty and the usage of \texttt{dependencies} above indicates that the DMC run depends on the optimization run for the Jastrow factor.  Nexus will submit the ``\texttt{opt}'' run first and upon completion it will scan the output, select the optimal set of parameters, pass the Jastrow information to the ``\texttt{qmc}'' run and then submit the DMC job.  Independent job workflows are submitted in parallel when permitted (we have explicitly prevented this for this lab by setting \texttt{queue\_size=1} for Vesta).  No input files are written or job submissions made until the ``\texttt{run\_project}'' function is reached:
+Shared details such as the run directory, job, pseudopotentials, and orbital file have been omitted (\texttt{...}).  The ``\texttt{opt}'' run will optimize a 1-body B-spline Jastrow with 8 knots having a cutoff of 5.0 Bohr and a B-spline Jastrow (for up-up and up-down correlations) with 8 knots and cutoffs of 10.0 Bohr.  The Jastrow list for the DMC run is empty and the usage of \texttt{dependencies} above indicates that the DMC run depends on the optimization run for the Jastrow factor.  Nexus will submit the ``\texttt{opt}'' run first and upon completion it will scan the output, select the optimal set of parameters, pass the Jastrow information to the ``\texttt{qmc}'' run and then submit the DMC job.  Independent job workflows are submitted in parallel when permitted \labsw{}{(we have explicitly limited this for this lab by setting \texttt{queue\_size=2} for Vesta)}.  No input files are written or job submissions made until the ``\texttt{run\_project}'' function is reached:
 \begin{lstlisting}
 run_project(sims)
 \end{lstlisting}
@@ -1372,7 +1423,7 @@ Project finished
 \noindent
 This way one can continue to add to the \texttt{O\_dimer.py} file (\emph{e.g.} adding more separation distances) without worrying about duplicate job submissions.
 
-Let's actually submit the jobs in the dimer workflow now.  Reset the state of the simulations by removing the \texttt{sim.p} files (``\texttt{rm ./scale*/sim*/sim.p}''), set ``\texttt{generate\_only}'' to \texttt{0}, and rerun \texttt{O\_dimer.py}.  It should take about 15 minutes for all the jobs to complete.  You may wish to open another terminal to monitor the progress of the individual jobs while the current terminal runs \texttt{O\_dimer.py} in the foreground.  You can begin the first exercise below once the optimization job completes.
+Let's actually submit the jobs in the dimer workflow now.  Reset the state of the simulations by removing the \texttt{sim.p} files (``\texttt{rm ./scale*/sim*/sim.p}''), set ``\texttt{generate\_only}'' to \texttt{0}, and rerun \texttt{O\_dimer.py}.  It should take about 20 minutes for all the jobs to complete.  You may wish to open another terminal to monitor the progress of the individual jobs while the current terminal runs \texttt{O\_dimer.py} in the foreground.  You can begin the first exercise below once the optimization job completes.
 
 \vspace{3cm}
 \begin{flushleft}
