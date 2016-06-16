@@ -95,7 +95,7 @@ if __name__ == '__main__':
     parser.add_argument('test_name',
                         help='Name of test to run (name of directory)')
     parser.add_argument('--exe',
-                        default='conver4qmc',
+                        default='convert4qmc',
                         help='Location of convert4qmc executable')
     args = parser.parse_args()
 
