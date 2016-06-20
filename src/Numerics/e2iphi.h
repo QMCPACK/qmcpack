@@ -33,13 +33,13 @@ namespace std
 /* additional translations for AMD libm */
 
 #undef vrda_sincos
-#define vrda_sincos amd_vrda_sincos
+#define vrda_sincos std::amd_vrda_sincos
 
 #undef vrsa_sincosf
-#define vrsa_sincosf amd_vrsa_sincosf
+#define vrsa_sincosf std::amd_vrsa_sincosf
 
 #undef vrsa_sincos
-#define vrsa_sincos amd_vrsa_sincosf
+#define vrsa_sincos std::amd_vrsa_sincosf
 
 inline void
 eval_e2iphi(int n, double* restrict phi, double* restrict c, double *restrict s)
