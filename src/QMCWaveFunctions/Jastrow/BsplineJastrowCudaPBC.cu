@@ -31,7 +31,7 @@ void CMC_profileSample(const char *function, float msec)
     cudaEventRecord(start); \
   }
 
-#define CMC_PROFILING_END() \
+#define CMC_PROFILING_END(lineno) \
   if (CMC_profile) { \
     cudaEventRecord(stop); \
     cudaEventSynchronize(stop); \
@@ -42,7 +42,7 @@ void CMC_profileSample(const char *function, float msec)
     CMC_profileSample(__FUNCTION__, time); \
   } \
   cudaError_t error = cudaGetLastError(); \
-  if (error) { printf("%s\nCUDA ERROR!!! Detected at end of CMC_PROFILING_END in BsplineJastrowCudaPBC!!!\n", cudaGetErrorString(error)); exit(1); }
+  if (error) { printf("%s\nCUDA ERROR!!! Detected at end of CMC_PROFILING_END in BsplineJastrowCudaPBC line %d!!!\n", cudaGetErrorString(error), lineno); exit(1); }
 
 #define COPY_LATTICE_DP_TO_SP() \
   cudaMemcpyToSymbolAsync(CMC_L,    lattice,    sizeof(CMC_L),    0, cudaMemcpyDeviceToDevice, gpu::kernelStream); \
@@ -977,7 +977,7 @@ two_body_ratio_grad_PBC(float *R[], int first, int last,
     (R, first, last, Rnew, inew, spline_coefs, numCoefs, rMax,
      lattice, latticeInv, zero, ratio_grad);
   }
-  CMC_PROFILING_END();
+  CMC_PROFILING_END(__LINE__);
 }
 
 
@@ -1008,7 +1008,7 @@ two_body_ratio_grad_PBC(double *R[], int first, int last,
     (R, first, last, Rnew, inew, spline_coefs, numCoefs, rMax,
      lattice, latticeInv, zero, ratio_grad);
   }
-  //CMC_PROFILING_END();
+  //CMC_PROFILING_END(__LINE__);
 }
 
 
@@ -1232,6 +1232,7 @@ two_body_NLratios_PBC(NLjobGPU<float> jobs[], int first, int last,
                       float lattice[], float latticeInv[], float sim_cell_radius,
                       int numjobs)
 {
+  if (numjobs==0) return;
   if (!AisInitializedPBC)
     cuda_spline_init_PBC();
   const int BS=32;
@@ -1247,10 +1248,11 @@ two_body_NLratios_PBC(NLjobGPU<float> jobs[], int first, int last,
     numjobs -= 65535;
   }
   dim3 dimGrid(numjobs);
+  fprintf(stdout, " numjobs %d\n", numjobs);
   two_body_NLratio_PBC_kernel<float, BS><<<dimGrid,dimBlock>>>
   (jobs, first, last, spline_coefs, numCoefs, rMax,
    lattice, latticeInv, sim_cell_radius);
-  CMC_PROFILING_END();
+  CMC_PROFILING_END(__LINE__);
 }
 
 void
@@ -1259,6 +1261,7 @@ two_body_NLratios_PBC(NLjobGPU<double> jobs[], int first, int last,
                       double lattice[], double latticeInv[],
                       double sim_cell_radius, int numjobs)
 {
+  if (numjobs==0) return;
   if (!AisInitializedPBC)
     cuda_spline_init_PBC();
   const int BS=32;
@@ -1278,7 +1281,7 @@ two_body_NLratios_PBC(NLjobGPU<double> jobs[], int first, int last,
   two_body_NLratio_PBC_kernel<double, BS><<<dimGrid,dimBlock>>>
   (jobs, first, last, spline_coefs, numCoefs, rMax,
    lattice, latticeInv, sim_cell_radius);
-  //CMC_PROFILING_END();
+  //CMC_PROFILING_END(__LINE__);
 }
 
 
@@ -1513,7 +1516,7 @@ two_body_grad_lapl_PBC(float *R[], int e1_first, int e1_last,
     (R, e1_first, e1_last, e2_first, e2_last, spline_coefs, numCoefs,
      rMax, lattice, latticeInv,  gradLapl, row_stride);
   }
-  CMC_PROFILING_END();
+  CMC_PROFILING_END(__LINE__);
 }
 
 
@@ -1546,7 +1549,7 @@ two_body_grad_lapl_PBC(double *R[], int e1_first, int e1_last,
     (R, e1_first, e1_last, e2_first, e2_last, spline_coefs, numCoefs,
      rMax, lattice, latticeInv,  gradLapl, row_stride);
   }
-  //CMC_PROFILING_END();
+  //CMC_PROFILING_END(__LINE__);
 }
 
 
@@ -1740,7 +1743,7 @@ two_body_gradient_PBC (float *R[], int first, int last, int iat,
     two_body_grad_PBC_kernel<float,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
     (R, first, last, iat, spline_coefs, numCoefs,
      rMax, lattice, latticeInv,  zeroOut, grad);
-  CMC_PROFILING_END();
+  CMC_PROFILING_END(__LINE__);
 }
 
 
@@ -1766,7 +1769,7 @@ two_body_gradient_PBC (double *R[], int first, int last, int iat,
     two_body_grad_PBC_kernel<double,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
     (R, first, last, iat, spline_coefs, numCoefs,
      rMax, lattice, latticeInv,  zeroOut, grad);
-  //CMC_PROFILING_END();
+  //CMC_PROFILING_END(__LINE__);
 }
 
 
@@ -2440,7 +2443,7 @@ one_body_ratio_grad_PBC (float C[], float *R[], int first, int last,
   one_body_ratio_grad_PBC_kernel<float,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
   (C, R, first, last, Rnew, inew, spline_coefs, numCoefs, rMax,
    lattice, latticeInv, zero, ratio_grad);
-  CMC_PROFILING_END();
+  CMC_PROFILING_END(__LINE__);
 }
 
 
@@ -2466,7 +2469,7 @@ one_body_ratio_grad_PBC (double C[], double *R[], int first, int last,
   one_body_ratio_grad_PBC_kernel<double,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
   (C, R, first, last, Rnew, inew, spline_coefs, numCoefs, rMax,
    lattice, latticeInv, zero, ratio_grad);
-  //CMC_PROFILING_END();
+  //CMC_PROFILING_END(__LINE__);
 }
 
 
@@ -2952,6 +2955,7 @@ one_body_NLratios_PBC(NLjobGPU<float> jobs[], float C[], int first, int last,
                       float lattice[], float latticeInv[], float sim_cell_radius,
                       int numjobs)
 {
+  if (numjobs==0) return;
   if (!AisInitializedPBC)
     cuda_spline_init_PBC();
   const int BS=32;
@@ -2992,7 +2996,7 @@ one_body_NLratios_PBC(NLjobGPU<float> jobs[], float C[], int first, int last,
     (jobs, C, first, last, spline_coefs, numCoefs, rMax,
      lattice, latticeInv);
   }
-  CMC_PROFILING_END();
+  CMC_PROFILING_END(__LINE__);
 }
 
 
@@ -3002,6 +3006,7 @@ one_body_NLratios_PBC(NLjobGPU<double> jobs[], double C[], int first, int last,
                       double lattice[], double latticeInv[], double sim_cell_radius,
                       int numjobs)
 {
+  if (numjobs==0) return;
   if (!AisInitializedPBC)
     cuda_spline_init_PBC();
   //CMC_PROFILING_BEGIN();
@@ -3051,7 +3056,7 @@ one_body_NLratios_PBC(NLjobGPU<double> jobs[], double C[], int first, int last,
     (jobs, C, first, last, spline_coefs, numCoefs, rMax,
      lattice, latticeInv);
   }
-  //CMC_PROFILING_END();
+  //CMC_PROFILING_END(__LINE__);
 }
 
 
@@ -3264,7 +3269,7 @@ one_body_gradient_PBC (float *Rlist[], int iat, float C[], int first, int last,
   one_body_grad_PBC_kernel<float,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
   (Rlist, iat, C, first, last, spline_coefs, num_coefs, rMax,
    lattice, latticeInv, zeroSum, grad);
-  CMC_PROFILING_END();
+  CMC_PROFILING_END(__LINE__);
 }
 
 
@@ -3284,7 +3289,7 @@ one_body_gradient_PBC (double *Rlist[], int iat, double C[], int first, int last
   one_body_grad_PBC_kernel<double,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
   (Rlist, iat, C, first, last, spline_coefs, num_coefs, rMax,
    lattice, latticeInv, zeroSum, grad);
-  //CMC_PROFILING_END();
+  //CMC_PROFILING_END(__LINE__);
 }
 
 

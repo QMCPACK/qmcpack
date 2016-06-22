@@ -86,8 +86,8 @@ else()
 
 FUNCTION(QMC_RUN_AND_CHECK BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SCALAR_VALUES SHOULD_SUCCEED)
     # Map from name of check to appropriate flag for check_scalars.py
-    LIST(APPEND SCALAR_CHECK_TYPE "kinetic" "totenergy" "eeenergy" "samples" "potential" "localpotential" "flux")
-    LIST(APPEND CHECK_SCALAR_FLAG "--ke"    "--le"      "--ee"     "--ts"    "--lp"      "--lpp"          "--fl")
+    LIST(APPEND SCALAR_CHECK_TYPE "kinetic" "totenergy" "eeenergy" "samples" "potential" "ionion" "localecp" "nonlocalecp" "flux")
+    LIST(APPEND CHECK_SCALAR_FLAG "--ke"    "--le"      "--ee"     "--ts"    "--lp"      "--ii"       "--lpp"    "--nlpp"      "--fl")
 
     SET( TEST_ADDED FALSE )
     SET( FULL_NAME "${BASE_NAME}-${PROCS}-${THREADS}" )
@@ -191,7 +191,7 @@ ENDIF()
 # Wavefunctions from quantum espresso. Reference energies obtained via pw2casino option
 #
   LIST(APPEND LIH_GAMMA_SCALARS "kinetic" "7.4145221704067854 0.024")
-  LIST(APPEND LIH_GAMMA_SCALARS "localpotential" "-11.718808431876706 0.025")
+  LIST(APPEND LIH_GAMMA_SCALARS "localecp" "-11.718808431876706 0.025")
   LIST(APPEND LIH_GAMMA_SCALARS "samples" "1600000 0.0")
   LIST(APPEND LIH_GAMMA_SCALARS "flux" "0.0 0.05")
 
@@ -205,7 +205,7 @@ ENDIF()
 
 
   LIST(APPEND LIH_X_SCALARS "kinetic" "7.3772282047321536 0.024")
-  LIST(APPEND LIH_X_SCALARS "localpotential" "-11.414410381100344 0.025")
+  LIST(APPEND LIH_X_SCALARS "localecp" "-11.414410381100344 0.025")
   LIST(APPEND LIH_X_SCALARS "samples" "1600000 0.0")
   LIST(APPEND LIH_X_SCALARS "flux" "0.0 0.05")
 
@@ -220,7 +220,7 @@ ENDIF()
 
 # Arbitrary k-point requires complex build to run. Ensure fails with real/non-complex build
   LIST(APPEND LIH_ARB_SCALARS "kinetic" "7.4201207734399359 0.024")
-  LIST(APPEND LIH_ARB_SCALARS "localpotential" "-11.615276430529056 0.025")
+  LIST(APPEND LIH_ARB_SCALARS "localecp" "-11.615276430529056 0.025")
   LIST(APPEND LIH_ARB_SCALARS "samples" "1600000 0.0") # samples
   LIST(APPEND LIH_ARB_SCALARS "flux" "0.0 0.05")
 
@@ -256,6 +256,12 @@ ENDIF()
 
 
   LIST(APPEND DIAMOND_SCALARS "totenergy" "-10.491445 0.002")
+  LIST(APPEND DIAMOND_SCALARS "kinetic" "11.434392 0.018")
+  LIST(APPEND DIAMOND_SCALARS "potential" "-21.925822 0.018")
+  LIST(APPEND DIAMOND_SCALARS "eeenergy" "-2.700534 0.0043")
+  LIST(APPEND DIAMOND_SCALARS "ionion" "-12.77566752 0.001")
+  LIST(APPEND DIAMOND_SCALARS "localecp" "-7.046740 0.020")
+  LIST(APPEND DIAMOND_SCALARS "nonlocalecp" "0.597119 0.0056")
   LIST(APPEND DIAMOND_SCALARS "samples" "128000 0.0")
   LIST(APPEND DIAMOND_SCALARS "flux" "0.0 0.4")
 
@@ -269,6 +275,12 @@ ENDIF()
 
 
   LIST(APPEND DIAMOND2_SCALARS "totenergy" "-21.668293 0.007")
+  LIST(APPEND DIAMOND2_SCALARS "kinetic" "20.065151 0.044")
+  LIST(APPEND DIAMOND2_SCALARS "potential" "-41.733377 0.045")
+  LIST(APPEND DIAMOND2_SCALARS "eeenergy" "-5.428561 0.012")
+  LIST(APPEND DIAMOND2_SCALARS "ionion" "-25.5513269 0.001")
+  LIST(APPEND DIAMOND2_SCALARS "localecp" "-12.29402 0.051")
+  LIST(APPEND DIAMOND2_SCALARS "nonlocalecp" "1.540530 0.018")
   LIST(APPEND DIAMOND2_SCALARS "samples" "32000 0.0")
   LIST(APPEND DIAMOND2_SCALARS "flux" "0.0 0.7")
 

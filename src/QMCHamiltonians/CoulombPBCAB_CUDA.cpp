@@ -160,7 +160,7 @@ CoulombPBCAB_CUDA::addEnergy(MCWalkerConfiguration &W,
     RhokElecGPU.resize(2*nw*Numk);
     RhokIonsGPU.resize(NumIonSpecies);
     for (int sp=0; sp<NumIonSpecies; sp++)
-      RhokIonsGPU.resize(2*Numk);
+      RhokIonsGPU[sp].resize(2*Numk);
     SumHost.resize(nw);
     RhoklistGPU.resize(nw);
     RhoklistHost.resize(nw);
