@@ -1248,7 +1248,7 @@ two_body_NLratios_PBC(NLjobGPU<float> jobs[], int first, int last,
     numjobs -= 65535;
   }
   dim3 dimGrid(numjobs);
-  fprintf(stdout, " numjobs %d\n", numjobs);
+  //fprintf(stdout, " numjobs %d\n", numjobs);
   two_body_NLratio_PBC_kernel<float, BS><<<dimGrid,dimBlock>>>
   (jobs, first, last, spline_coefs, numCoefs, rMax,
    lattice, latticeInv, sim_cell_radius);
