@@ -66,7 +66,7 @@ CoulombPBCAB_CUDA::CoulombPBCAB_CUDA
     IonLast.push_back(index-1);
   }
   IGPU = I_host;
-  SRSplines.resize(NumIonSpecies,0);
+  initBreakup(elns);
   setupLongRangeGPU();
 #endif
 }
