@@ -210,6 +210,7 @@ Communicate::~Communicate() {}
 
 void Communicate::initialize(int argc, char **argv)
 {
+  qmcplusplus::qmc_common.initialize(argc,argv);
   std::string when="qmc."+getDateAndTime("%Y%m%d_%H%M");
 }
 
