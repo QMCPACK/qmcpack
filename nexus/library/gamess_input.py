@@ -1118,7 +1118,9 @@ def generate_any_gamess_input(**kwargs):
                 bss = nexus_noncore.basissets.bases_by_atom(*pskw.bases)
             else:
                 bss = obj()
-                gi.contrl.coord = 'cart'
+                if 'coord' not in gi.contrl:
+                    gi.contrl.coord = 'unique'
+                #end if
             #end if
             for i in range(len(elem)):
                 a = elem[i]
