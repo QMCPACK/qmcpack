@@ -780,23 +780,24 @@ class Structure(Sobj):
 
 
     def any_periodic(self):
-        periodic = False
-        nocell = len(self.axes)==0 or len(self.bconds)==0
+        has_cell    = len(self.axes)>0
+        has_kpoints = len(self.kpoints)>0
+        pbc = False
         for bc in self.bconds:
-            periodic |= bc=='p'
+            pbc |= bc=='p'
         #end if
-        periodic &= not nocell
+        periodic = has_cell and (pbc or has_kpoints)
         return periodic
     #end def any_periodic
 
     
     def all_periodic(self):
-        periodic = True
-        nocell = len(self.axes)==0 or len(self.bconds)==0
+        has_cell = len(self.axes)>0
+        pbc = True
         for bc in self.bconds:
-            periodic &= bc=='p'
+            pbc &= bc=='p'
         #end if
-        periodic &= not nocell
+        periodic = has_cell and pbc
         return periodic
     #end def all_periodic
 

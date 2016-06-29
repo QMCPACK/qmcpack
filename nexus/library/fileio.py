@@ -343,7 +343,11 @@ class XsfFile(DevBase):
                             force.extend(tokens[4:7])
                         #end if
                     #end for
-                    elem = array(elem,dtype=int)
+                    try:
+                        elem = array(elem,dtype=int)
+                    except:
+                        elem = array(elem,dtype=str)
+                    #end try
                     pos  = array(pos,dtype=float)
                     pos.shape = natoms,3
                     self.add_to_image(image,'elem',elem)

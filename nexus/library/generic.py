@@ -608,7 +608,7 @@ class obj(object_interface):
         if key in self:
             value = self[key]
         else:
-            obj.error(self,'a required key is not present\nkey required: {0}\nkey present: {1}'.format(key,sorted(self._keys())))
+            obj.error(self,'a required key is not present\nkey required: {0}\nkeys present: {1}'.format(key,sorted(self._keys())))
         #end if
         return value
     #end def get_required
@@ -645,6 +645,16 @@ class obj(object_interface):
         #end if
         return value
     #end def delete_required
+
+    def add(self,key,value):
+        self[key] = value
+    #end def add
+
+    def add_optional(self,key,value):
+        if key not in self:
+            self[key] = value
+        #end if
+    #end def add_optional
 
     def transfer_from(self,other,keys=None,copy=False,overwrite=True):
         if keys==None:
@@ -787,6 +797,10 @@ class obj(object_interface):
         obj.delete_optional(self,*args,**kwargs)
     def _delete_required(self,*args,**kwargs):
         obj.delete_required(self,*args,**kwargs)
+    def _add(self,*args,**kwargs):
+        obj.add(self,*args,**kwargs)
+    def _add_optional(self,*args,**kwargs):
+        obj.add_optional(self,*args,**kwargs)
     def _transfer_from(self,*args,**kwargs):
         obj.transfer_from(self,*args,**kwargs)
     def _transfer_to(self,*args,**kwargs):

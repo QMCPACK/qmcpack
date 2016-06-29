@@ -1157,6 +1157,7 @@ class GaussianPP(SemilocalPP):
         return text
     #end def write_basis
 
+
     def evaluate_rV(self,r,l=None):
         r = array(r)
         v = zeros(r.shape)
@@ -1164,7 +1165,11 @@ class GaussianPP(SemilocalPP):
             v += -self.Zval
         #end if
         for g in self.get_channel(l):
-            v += g.coeff * r**(g.rpow-1) * exp(-g.expon*r**2)
+            if g.rpow==1:
+                v += g.coeff * exp(-g.expon*r**2)
+            else:
+                v += g.coeff * r**(g.rpow-1) * exp(-g.expon*r**2)
+            #end if
         #end for
         return v
     #end def evaluate_rV
