@@ -1,6 +1,6 @@
 
 import os
-from developer import obj,ci,error as dev_error,devlog
+from developer import obj,ci,error as dev_error,devlog,DevBase
 from pwscf import generate_pwscf
 from qmcpack_converters import generate_pw2qmcpack
 from qmcpack_input import generate_jastrow,loop,linear,cslinear,vmc,dmc
@@ -21,33 +21,176 @@ defaults_version = 'v1'
 
 
 
+class Missing:
+    def __call__(self,value):
+        return isinstance(value,Missing)
+    #end def __call__
+#end class Missing
+missing = Missing()
 
 
+class CallBase(object):
+    strict = True
+    defs   = obj()
+    location = 'unknown location'
+#end class CallBase
+
+
+class Defaults(CallBase):
+    def __call__(self,name,value):
+        if not missing(value):
+            return value
+        elif name in self.defs:
+            return self.defs[name]
+        elif self.strict:
+            error('default value is missing for variable named {0}'.format(name),self.location)
+        #end if
+    #end def __call__
+#end class Defaults
+default = Defaults()
+
+
+class Requirement(CallBase):
+    def __call__(self,name,value):
+        if missing(value):
+            error('a value has not been provided for required variable named {0}'.format(name),self.location)
+        #end if
+        return value
+    #end def __call__
+#end class Requirement
+require = Requirement()
+
+
+class Assignment(CallBase):
+    def __call__(self,o,name,value):
+        if not missing(value):
+            o[name] = value
+        #end if
+    #end def __call__
+#end class Assignment
+assign = Assignment()
+
+
+class RequireAssignment(CallBase):
+    def __call__(self,o,name,value):
+        if missing(value):
+            error('a value has not been provided for required variable named {0}'.format(name),self.location)
+        #end if
+        o[name] = value
+    #end def __call__
+#end class RequireAssignment
+assign_require = RequireAssignment()
+
+
+class DefaultAssignment(CallBase):
+    def __call__(self,o,name,value):
+        if not missing(value):
+            o[name] = value
+        elif name in self.defs:
+            o[name] = self.defs[name]
+        elif self.strict:
+            error('default value is missing for variable named {0}'.format(name),self.location)
+        #end if
+    #end def __call__
+#end class DefaultAssignment
+assign_default = DefaultAssignment()
+
+
+def set_def_loc(defs,loc,strict=True):
+    CallBase.defs     = defs
+    CallBase.location = loc
+    CallBase.strict   = strict
+#end def set_def_loc
+
+
+def set_loc(loc):
+    CallBase.location = loc
+#end def set_loc
+
+
+def assign_defaults(o,defs):
+    for name,value in defs.iteritems():
+        if name not in o:
+            o[name] = value
+        #end if
+    #end for
+#end def assign_defaults
+
+
+def extract_keywords(o,names,optional=False):
+    k = obj()
+    if not optional:
+        missing = set(names)-set(o.keys())
+        if len(missing)>0:
+            error('keywords are missing, please provide them\nmissing keywords: {0}\nfunction location: {1}'.format(sorted(missing),CallBase.location))
+        #end if
+        for name in names:
+            k[name] = o[name]
+            del o[name]
+        #end for
+    else:
+        for name in names:
+            if name in o:
+                k[name] = o[name]
+                del o[name]
+            #end if
+        #end for
+    #end if
+    return k
+#end def extract_keywords
+
+
+def prevent_invalid_input(invalid,loc):
+    if len(invalid)>0:
+        if isinstance(invalid,(dict,obj)):
+            invalid = invalid.keys()
+        #end if
+        error('invalid input keywords encountered\ninvalid keywords: {0}\nfunction location: {1}'.format(sorted(invalid),loc))
+    #end if
+#end def prevent_invalid_input
+
+
+
+
+
+jastrow_factor_keys = ['J1','J2','J3',
+                       'J1_size','J1_rcut',
+                       'J2_size','J2_rcut','J2_init',
+                       'J3_isize','J3_esize','J3_rcut',
+                       'J1_rcut_open','J2_rcut_open']
 jastrow_factor_defaults = obj(
     v1 = obj(
-        J1       = True,
-        J2       = True,
-        J3       = False,
-        system   = None,
-        J1_size  = 10,
-        J1_rcut  = None,
-        J2_size  = 10,
-        J2_rcut  = None,
-        J2_init  = 'zero',
-        J3_isize = 3,
-        J3_esize = 3,
-        J3_rcut  = 5.0,
-        J1_rcut_open =  5.0,
+        J1           = True,
+        J2           = True,
+        J3           = False,
+        J1_size      = 10,
+        J1_rcut      = None,
+        J2_size      = 10,
+        J2_rcut      = None,
+        J2_init      = 'zero',
+        J3_isize     = 3,
+        J3_esize     = 3,
+        J3_rcut      = 5.0,
+        J1_rcut_open = 5.0,
         J2_rcut_open = 10.0,
         ),
     )
 
 
-opt_sections_options = '''
-    method cost cycles var_cycles defaults opt_calcs
-    '''.split()
 
-opt_sections_required = ['method','cost','cycles','var_cycles','defaults']
+opt_sections_keys = [
+    'method','cost','cycles','var_cycles','opt_calcs','blocks',
+    'warmupsteps','stepsbetweensamples','timestep','samples',
+    'minwalkers','maxweight','usedrift','minmethod','beta',
+    'exp0','bigchange','alloweddifference','stepsize',
+    'stabilizerscale','nstabilizers','max_its','cgsteps',
+    'eigcg','walkers','nonlocalpp','usebuffer','gevmethod',
+    'steps','substeps','stabilizermethod','cswarmupsteps',
+    'alpha_error','gevsplit','beta_error'
+    ]
+
+
+
 opt_sections_defaults = obj(
     v1 = obj(
         method     = 'linear',
@@ -157,14 +300,33 @@ opt_method_defaults = obj(
     )
 
 
-vmc_sections_options = [
+vmc_sections_keys = [
     'walkers','warmupsteps','blocks','steps',
     'substeps','timestep','checkpoint',
     'J0_warmupsteps','J0_blocks','J0_steps',
     'test_warmupsteps','test_blocks','test_steps',
     ]
+vmc_sections_defaults = obj(
+    v1 = obj(
+        walkers          = 1,
+        warmupsteps      = 50,
+        blocks           = 800,
+        steps            = 10,
+        substeps         = 3,
+        timestep         = 0.3,
+        checkpoint       = -1,
+        test_warmupsteps = 10,
+        test_blocks      = 20,
+        test_steps       =  4,
+        J0_warmupsteps   = 200,
+        J0_blocks        = 800,
+        J0_steps         = 100,
+        ),
+    )
 
-dmc_sections_options = [
+
+
+dmc_sections_keys = [
     'walkers','warmupsteps','blocks','steps',
     'timestep','checkpoint',
     'vmc_samples','vmc_samplesperthread',
@@ -179,9 +341,8 @@ dmc_sections_required = ['nlmove']
 
 
 
-scf_workflow = ['totmag_sys']
-scf_required = ['job']
-scf_defaults = obj(
+scf_workflow_keys = ['totmag_sys']
+scf_input_defaults = obj(
     minimal = obj(
         identifier       = 'scf',
         input_type       = 'generic',
@@ -209,9 +370,8 @@ scf_defaults = obj(
         ),
     )
 
-p2q_workflow = []
-p2q_required = ['job']
-p2q_defaults = obj(
+p2q_workflow_keys = []
+p2q_input_defaults = obj(
     minimal = obj(
         identifier = 'p2q',
         write_psir = False,
@@ -222,14 +382,13 @@ p2q_defaults = obj(
         ),
     )
 
-opt_workflow = ['J2_prod','J3_prod','J_defaults']+opt_sections_options
-opt_required = ['job']
+opt_workflow_keys = ['J2_prod','J3_prod','J_defaults']
 fixed_defaults = obj(
     J2_prod    = False,
     J3_prod    = False,
     J_defaults = defaults_version,
     )
-opt_defaults = obj(
+opt_input_defaults = obj(
     minimal = obj(
         identifier   = 'opt',
         input_type   = 'basic',
@@ -242,10 +401,10 @@ opt_defaults = obj(
         ),
     )
 
-vmc_workflow = ['J0_prod','J2_prod','J3_prod',
-                'J0_test','J2_test','J3_test',
-                ] + vmc_sections_options
-vmc_required = ['job']
+vmc_workflow_keys = [
+    'J0_prod','J2_prod','J3_prod',
+    'J0_test','J2_test','J3_test',
+    ] 
 fixed_defaults = obj(
     J0_prod = False,
     J2_prod = False,
@@ -254,7 +413,7 @@ fixed_defaults = obj(
     J2_test = False,
     J3_test = False,
     )
-vmc_defaults = obj(
+vmc_input_defaults = obj(
     minimal = obj(
         identifier   = 'vmc',
         input_type   = 'basic',
@@ -280,10 +439,10 @@ vmc_defaults = obj(
         ),
     )
 
-dmc_workflow = ['J0_prod','J2_prod','J3_prod',
-                'J0_test','J2_test','J3_test',
-                ]
-dmc_required = ['job']
+dmc_workflow_keys = [
+    'J0_prod','J2_prod','J3_prod',
+    'J0_test','J2_test','J3_test',
+    ]
 fixed_defaults = obj(
     J0_prod  = False,
     J2_prod  = False,
@@ -294,7 +453,7 @@ fixed_defaults = obj(
     tmoves   = False,
     locality = False,
     )
-dmc_defaults = obj(
+dmc_input_defaults = obj(
     minimal = obj(
         identifier   = 'qmc',
         input_type   = 'basic',
@@ -309,21 +468,6 @@ dmc_defaults = obj(
 
 
 
-def set_null_default(defaults):
-    defaults.none = obj()
-    defaults[None] = defaults.none
-#end def set_null_default
-
-set_null_default(scf_defaults)
-set_null_default(p2q_defaults)
-set_null_default(opt_defaults)
-set_null_default(vmc_defaults)
-set_null_default(dmc_defaults)
-set_null_default(jastrow_factor_defaults)
-set_null_default(opt_sections_defaults)
-for method_defaults in opt_method_defaults:
-    set_null_default(method_defaults)
-#end for
 
 
 
@@ -331,85 +475,6 @@ for method_defaults in opt_method_defaults:
 
 
 
-
-def extract_kwargs(kwargs,required=None,optional=None,defaults=None,default_sources=None,workflow=None,require_empty=False,allow_none=False,contains_defaults=False,encapsulate=True,loc='extract_kwargs'):
-    if allow_none and kwargs is None:
-        kwargs = {}
-    #end if
-    if encapsulate:
-        kwargs = dict(**kwargs)
-    #end if
-    kw = obj()
-    if contains_defaults:
-        if 'defaults' in kwargs:
-            defaults = kwargs['defaults']
-            del kwargs['defaults']
-        #end if
-    #end if
-    if defaults is not None:
-        if isinstance(defaults,str):
-            if default_sources is None:
-                error('sources for defaults not provided\ndefault set requested: {0}'.format(defaults),loc)
-            elif defaults not in default_sources:
-                error('invalid default request encountered\ninvalid default set: {0}\nvalid_options_are: {1}'.format(defaults,sorted(default_sources.keys())),loc)
-            #end if
-            defaults = default_sources[defaults].copy()
-        #end if
-        defaults = defaults.copy()
-        for key,value in defaults.iteritems():
-            if key in kwargs:
-                value = kwargs[key]
-                del kwargs[key]
-            #end if
-            kw[key] = value
-        #end for
-    #end if
-    if required is not None:
-        for key in required:
-            if key in kwargs:
-                kw[key] = kwargs[key]
-                del kwargs[key]
-            elif key in kw:
-                pass # allow defaults to fill in for required keywords
-            else:
-                error('a required keyword argument is missing\nmissing keyword argument: {0}'.format(key),loc)
-            #end if
-        #end for
-    #end if
-    if optional is not None:
-        for key in optional:
-            if key in kwargs:
-                kw[key] = kwargs[key]
-                del kwargs[key]
-            #end if
-        #end for
-    #end if
-    if workflow is None:
-        return kw
-    else:
-        wfkw = obj()
-        for key in workflow:
-            if key in kw:
-                wfkw[key] = kw[key]
-                del kw[key]
-            elif key in kwargs:
-                wfkw[key] = kwargs[key]
-                del kwargs[key]
-            #end if
-        #end for
-        return kw,wfkw
-    #end if
-    if require_empty:
-        require_empty_kwargs(kwargs,loc)
-    #end if
-#end def extract_kwargs
-
-
-def require_empty_kwargs(kwargs,loc='require_empty_kwargs'):
-    if len(kwargs)>0:
-        error('invalid/unprocessed keywords encountered\ninvalid keywords: {0}'.format(sorted(kwargs.keys())),loc)
-    #end if
-#end def require_empty_kwargs
 
 
 def resolve_deps(name,sims,deps,loc='resolve_deps'):
@@ -451,31 +516,43 @@ def process_jastrow(J,system):
 
 
 
-def jastrow_factor(**kwargs):
-    loc           = kwargs.pop('loc','jastrow_factor')
-    defaults      = kwargs.pop('defaults',defaults_version)
-    kw = extract_kwargs(
-        kwargs          = kwargs,
-        defaults        = defaults,
-        default_sources = jastrow_factor_defaults,
-        require_empty   = True,
-        loc             = loc,
-        )
-    J1           = kw.J1      
-    J2           = kw.J2      
-    J3           = kw.J3      
-    system       = kw.system  
-    J1_size      = kw.J1_size 
-    J1_rcut      = kw.J1_rcut 
-    J2_size      = kw.J2_size 
-    J2_rcut      = kw.J2_rcut 
-    J2_init      = kw.J2_init 
-    J3_isize     = kw.J3_isize
-    J3_esize     = kw.J3_esize
-    J3_rcut      = kw.J3_rcut 
-    J1_rcut_open = kw.J1_rcut_open
-    J2_rcut_open = kw.J2_rcut_open
+def jastrow_factor(
+    J1           = missing,
+    J2           = missing,
+    J3           = missing,
+    system       = missing,
+    J1_size      = missing,
+    J1_rcut      = missing,
+    J2_size      = missing,
+    J2_rcut      = missing,
+    J2_init      = missing,
+    J3_isize     = missing,
+    J3_esize     = missing,
+    J3_rcut      = missing,
+    J1_rcut_open = missing,
+    J2_rcut_open = missing,
+    defaults     = defaults_version,
+    loc          = 'jastrow_factor',
+    ):
+
+    set_def_loc(jastrow_factor_defaults[defaults],loc)
+
+    J1           = default('J1'          ,J1          )
+    J2           = default('J2'          ,J2          )
+    J3           = default('J3'          ,J3          )
+    J1_size      = default('J1_size'     ,J1_size     )
+    J1_rcut      = default('J1_rcut'     ,J1_rcut     )
+    J2_size      = default('J2_size'     ,J2_size     )
+    J2_rcut      = default('J2_rcut'     ,J2_rcut     )
+    J2_init      = default('J2_init'     ,J2_init     )
+    J3_isize     = default('J3_isize'    ,J3_isize    )
+    J3_esize     = default('J3_esize'    ,J3_esize    )
+    J3_rcut      = default('J3_rcut'     ,J3_rcut     )
+    J1_rcut_open = default('J1_rcut_open',J1_rcut_open) 
+    J2_rcut_open = default('J2_rcut_open',J2_rcut_open) 
     
+    require('system',system)
+
     openbc = system.structure.is_open()
 
     J1 = process_jastrow(J1,system)
@@ -515,26 +592,57 @@ def jastrow_factor(**kwargs):
 
 
 
-def opt_sections(**kwargs):
-    if 'opt_calcs' in kwargs:
-        return kwargs['opt_calcs']
+def opt_sections(
+    method              = missing,
+    cost                = missing,
+    cycles              = missing,
+    var_cycles          = missing,
+    opt_calcs           = missing,
+    # linear/cslinear inputs
+    blocks              = missing,
+    warmupsteps         = missing,
+    stepsbetweensamples = missing,
+    timestep            = missing,
+    samples             = missing,
+    minwalkers          = missing,
+    maxweight           = missing,
+    usedrift            = missing,
+    minmethod           = missing,
+    beta                = missing,
+    exp0                = missing,
+    bigchange           = missing,
+    alloweddifference   = missing,
+    stepsize            = missing,
+    stabilizerscale     = missing,
+    nstabilizers        = missing,
+    max_its             = missing,
+    cgsteps             = missing,
+    eigcg               = missing,
+    walkers             = missing,
+    nonlocalpp          = missing,
+    usebuffer           = missing,
+    gevmethod           = missing,
+    steps               = missing,
+    substeps            = missing, 
+    stabilizermethod    = missing,
+    cswarmupsteps       = missing,
+    alpha_error         = missing,
+    gevsplit            = missing,
+    beta_error          = missing,
+    defaults            = defaults_version,
+    loc                 = 'opt_sections',
+    ):
+
+    if not missing(opt_calcs):
+        return opt_calcs
     #end if
-    loc      = kwargs.pop('loc','opt_sections')
-    defaults = kwargs.pop('loop_defaults',defaults_version)
-    kw = extract_kwargs(
-        kwargs          = kwargs,
-        required        = opt_sections_required,
-        defaults        = defaults,
-        default_sources = opt_sections_defaults,
-        encapsulate     = False,
-        loc             = loc
-        )
-    method     = kw.method
-    cost       = kw.cost
-    cycles     = kw.cycles
-    var_cycles = kw.var_cycles
-    defaults   = kw.defaults
-    del kw
+
+    set_def_loc(opt_sections_defaults[defaults],loc)
+
+    method     = default('method'    ,method    )
+    cost       = default('cost'      ,cost      )
+    cycles     = default('cycles'    ,cycles    )
+    var_cycles = default('var_cycles',var_cycles)
 
     methods = obj(linear=linear,cslinear=cslinear)
     if method not in methods:
@@ -542,21 +650,40 @@ def opt_sections(**kwargs):
     #end if
     opt = methods[method]
 
-    if len(kwargs)>0:
-        valid = set(opt.attributes + opt.parameters)
-        invalid = set(kwargs.keys()) - valid
-        if len(invalid)>0:
-            error('invalid keywords encountered for {0} optimization\ninvalid keywords: {1}\nvalid options are: {2}'.format(method,sorted(invalid),sorted(valid)),loc)
-        #end if
-    #end if
+    set_def_loc(opt_method_defaults[method][defaults],loc,strict=False)
 
-    opt_inputs = extract_kwargs(
-        kwargs          = kwargs,
-        defaults        = defaults,
-        default_sources = opt_method_defaults[method],
-        encapsulate     = False,
-        loc             = loc,
-        )
+    opt_inputs = obj()
+    assign_default(opt_inputs,'blocks'             ,blocks             )
+    assign_default(opt_inputs,'warmupsteps'        ,warmupsteps        )
+    assign_default(opt_inputs,'stepsbetweensamples',stepsbetweensamples)
+    assign_default(opt_inputs,'timestep'           ,timestep           )
+    assign_default(opt_inputs,'samples'            ,samples            )
+    assign_default(opt_inputs,'minwalkers'         ,minwalkers         )
+    assign_default(opt_inputs,'maxweight'          ,maxweight          )
+    assign_default(opt_inputs,'usedrift'           ,usedrift           )
+    assign_default(opt_inputs,'minmethod'          ,minmethod          )
+    assign_default(opt_inputs,'beta'               ,beta               )
+    assign_default(opt_inputs,'exp0'               ,exp0               )
+    assign_default(opt_inputs,'bigchange'          ,bigchange          )
+    assign_default(opt_inputs,'alloweddifference'  ,alloweddifference  )
+    assign_default(opt_inputs,'stepsize'           ,stepsize           )
+    assign_default(opt_inputs,'stabilizerscale'    ,stabilizerscale    )
+    assign_default(opt_inputs,'nstabilizers'       ,nstabilizers       )
+    assign_default(opt_inputs,'max_its'            ,max_its            )
+    assign_default(opt_inputs,'cgsteps'            ,cgsteps            )
+    assign_default(opt_inputs,'eigcg'              ,eigcg              )
+    assign_default(opt_inputs,'walkers'            ,walkers            )
+    assign_default(opt_inputs,'nonlocalpp'         ,nonlocalpp         )
+    assign_default(opt_inputs,'usebuffer'          ,usebuffer          )
+    assign_default(opt_inputs,'gevmethod'          ,gevmethod          )
+    assign_default(opt_inputs,'steps'              ,steps              )
+    assign_default(opt_inputs,'substeps'           ,substeps           ) 
+    assign_default(opt_inputs,'stabilizermethod'   ,stabilizermethod   )
+    assign_default(opt_inputs,'cswarmupsteps'      ,cswarmupsteps      )
+    assign_default(opt_inputs,'alpha_error'        ,alpha_error        )
+    assign_default(opt_inputs,'gevsplit'           ,gevsplit           )
+    assign_default(opt_inputs,'beta_error'         ,beta_error         )
+
     if cost=='variance':
         cost = (0.0,1.0,0.0)
     elif cost=='energy':
@@ -590,44 +717,69 @@ def opt_sections(**kwargs):
 
 
 
-def vmc_sections(**kwargs):
-    if 'vmc_calcs' in kwargs:
-        return kwargs['vmc_calcs']
+def vmc_sections(
+    walkers          = missing,
+    warmupsteps      = missing,
+    blocks           = missing,
+    steps            = missing,
+    substeps         = missing,
+    timestep         = missing,
+    checkpoint       = missing,
+    J0_warmupsteps   = missing,
+    J0_blocks        = missing,
+    J0_steps         = missing,
+    test_warmupsteps = missing,
+    test_blocks      = missing,
+    test_steps       = missing,
+    vmc_calcs        = missing,
+    J0               = False,
+    test             = False,
+    defaults         = defaults_version,
+    loc              = 'vmc_sections',
+    ):
+
+    if not missing(vmc_calcs):
+        return vmc_calcs
     #end if
-    loc      = kwargs.pop('loc','vmc_sections')
-    defaults = kwargs.pop('defaults',defaults_version)
-    J0       = kwargs.pop('J0',False)
-    test     = kwargs.pop('test',False)
-    kw = extract_kwargs(
-        kwargs          = kwargs,
-        optional        = vmc_sections_options,
-        defaults        = defaults,
-        default_sources = vmc_defaults,
-        require_empty   = True,
-        encapsulate     = False,
-        )
+
+    set_def_loc(vmc_sections_defaults[defaults],loc)
+
+    walkers          = default('walkers'         ,walkers         )
+    warmupsteps      = default('warmupsteps'     ,warmupsteps     )
+    blocks           = default('blocks'          ,blocks          )
+    steps            = default('steps'           ,steps           )
+    substeps         = default('substeps'        ,substeps        )
+    timestep         = default('timestep'        ,timestep        )
+    checkpoint       = default('checkpoint'      ,checkpoint      )
+    J0_warmupsteps   = default('J0_warmupsteps'  ,J0_warmupsteps  )
+    J0_blocks        = default('J0_blocks'       ,J0_blocks       )
+    J0_steps         = default('J0_steps'        ,J0_steps        )
+    test_warmupsteps = default('test_warmupsteps',test_warmupsteps)
+    test_blocks      = default('test_blocks'     ,test_blocks     )
+    test_steps       = default('test_steps'      ,test_steps      )
+    
     if test:
-        warmup = kw.test_warmupsteps,
-        blocks = kw.test_blocks,
-        steps  = kw.test_steps,
+        warmup = test_warmupsteps,
+        blocks = test_blocks,
+        steps  = test_steps,
     elif J0:
-        warmup = kw.J0_warmupsteps
-        blocks = kw.J0_blocks
-        steps  = kw.J0_steps
+        warmup = J0_warmupsteps
+        blocks = J0_blocks
+        steps  = J0_steps
     else:
-        warmup = kw.warmupsteps
-        blocks = kw.blocks
-        steps  = kw.steps
+        warmup = warmupsteps
+        blocks = blocks
+        steps  = steps
     #end if
     vmc_calcs = [
         vmc(
-            walkers     = kw.walkers,
+            walkers     = walkers,
             warmupsteps = warmup,
             blocks      = blocks,
             steps       = steps,
-            substeps    = kw.substeps,
-            timestep    = kw.timestep,
-            checkpoint  = kw.checkpoint,
+            substeps    = substeps,
+            timestep    = timestep,
+            checkpoint  = checkpoint,
             )
         ]
     return vmc_calcs
@@ -637,7 +789,7 @@ def vmc_sections(**kwargs):
 
 def dmc_sections(**kwargs):
     if 'dmc_calcs' in kwargs:
-        return kwargs['vmc_calcs']
+        return kwargs['dmc_calcs']
     #end if
     loc      = kwargs.pop('loc','dmc_sections')
     defaults = kwargs.pop('defaults',defaults_version)
@@ -681,22 +833,6 @@ def dmc_sections(**kwargs):
 
 
 
-#  opt_inputs = obj(
-#      J2_prod = True,
-#      J3_prod = True,
-#      )
-#  vmc_inputs = obj(
-#      J0_test = True,
-#      J0_prod = True,
-#      J2_prod = True,
-#      J3_prod = True,
-#      )
-#  dmc_inputs = obj(
-#      J3_test = True,
-#      J3_prod = True,
-#      test_calcs = [],  # has a default
-#      prod_calcs = [],
-#      )
 
 
 qmcpack_chain_required = ['system','sim_list','dft_pseudos','qmc_pseudos']
@@ -723,29 +859,71 @@ qmcpack_chain_defaults = obj(
     )
 
 
-def process_qmcpack_chain_kwargs(kwargs,
-                                 defaults      = None,
-                                 require_empty = True,
-                                 loc           = None,
-                                 ):
-    if loc is None:
-        inloc = None
-        loc   = 'process_qmcpack_chain_kwargs'
-    else:
-        inloc = loc
-    #end if
-    if defaults is None:
+def process_qmcpack_chain_kwargs(
+    system        = missing,
+    sim_list      = missing,
+    dft_pseudos   = missing,
+    qmc_pseudos   = missing,
+    scf           = missing,
+    p2q           = missing,
+    opt           = missing,
+    vmc           = missing,
+    dmc           = missing,
+    scf_inputs    = missing,
+    p2q_inputs    = missing,
+    opt_inputs    = missing,
+    vmc_inputs    = missing,
+    dmc_inputs    = missing,
+    scf_defaults  = missing,
+    p2q_defaults  = missing,
+    opt_defaults  = missing,
+    vmc_defaults  = missing,
+    dmc_defaults  = missing,
+    orb_source    = missing,
+    J2_source     = missing,
+    J3_source     = missing,
+    defaults      = missing,
+    loc           = 'process_qmcpack_chain_kwargs',
+    processed     = False,
+    **invalid_kwargs
+    ):
+
+    prevent_invalid_input(invalid_kwargs,loc)
+
+    if missing(defaults):
         defaults = qmcpack_chain_defaults,
     else:
         defaults.set_optional(**qmcpack_chain_defaults)
     #end if
-    kw = extract_kwargs(
-        kwargs        = kwargs,
-        required      = qmcpack_chain_required,
-        defaults      = defaults,
-        require_empty = require_empty,
-        loc           = loc,
-        )
+
+    set_def_loc(defaults,loc)
+
+    kw = obj()
+
+    assign_require(kw,'system'     ,system     )
+    assign_require(kw,'sim_list'   ,sim_list   )
+    assign_require(kw,'dft_pseudos',dft_pseudos)
+    assign_require(kw,'qmc_pseudos',qmc_pseudos)
+
+    assign_default(kw,'scf'         ,scf         )
+    assign_default(kw,'p2q'         ,p2q         )
+    assign_default(kw,'opt'         ,opt         )
+    assign_default(kw,'vmc'         ,vmc         )
+    assign_default(kw,'dmc'         ,dmc         )
+    assign_default(kw,'scf_inputs'  ,scf_inputs  )
+    assign_default(kw,'p2q_inputs'  ,p2q_inputs  )
+    assign_default(kw,'opt_inputs'  ,opt_inputs  )
+    assign_default(kw,'vmc_inputs'  ,vmc_inputs  )
+    assign_default(kw,'dmc_inputs'  ,dmc_inputs  )
+    assign_default(kw,'scf_defaults',scf_defaults)
+    assign_default(kw,'p2q_defaults',p2q_defaults)
+    assign_default(kw,'opt_defaults',opt_defaults)
+    assign_default(kw,'vmc_defaults',vmc_defaults)
+    assign_default(kw,'dmc_defaults',dmc_defaults)
+    assign_default(kw,'orb_source'  ,orb_source  )
+    assign_default(kw,'J2_source'   ,J2_source   )
+    assign_default(kw,'J3_source'   ,J3_source   )
+
     kw.scf |= kw.scf_inputs!=None
     kw.p2q |= kw.p2q_inputs!=None
     kw.opt |= kw.opt_inputs!=None
@@ -753,108 +931,71 @@ def process_qmcpack_chain_kwargs(kwargs,
     kw.dmc |= kw.dmc_inputs!=None
     
     if kw.scf:
-        kw.scf_inputs,kw.scf_workflow = extract_kwargs(
-            kwargs            = kw.scf_inputs,
-            required          = scf_required,
-            defaults          = kw.scf_defaults,
-            default_sources   = scf_defaults,
-            workflow          = scf_workflow,
-            contains_defaults = True,
-            allow_none        = True,
-            loc               = loc+' scf_inputs',
+        # kw.scf_inputs contains inputs to generate_pwscf after this
+        set_loc(loc+' scf_inputs')
+        kw.scf_inputs = obj(**kw.scf_inputs)
+        assign_defaults(kw.scf_inputs,scf_input_defaults[kw.scf_defaults])
+        kw.scf_inputs.set(
+            system  = kw.system,
+            pseudos = kw.dft_pseudos,
             )
-        kw.scf_inputs.system  = kw.system
-        kw.scf_inputs.pseudos = kw.dft_pseudos
+        kw.scf_workflow = extract_keywords(kw.scf_inputs,scf_workflow_keys)
     #end if
     if kw.p2q:
-        kw.p2q_inputs,kw.p2q_workflow = extract_kwargs(
-            kwargs            = kw.p2q_inputs,
-            required          = p2q_required,
-            defaults          = kw.p2q_defaults,
-            default_sources   = p2q_defaults,
-            workflow          = p2q_workflow,
-            contains_defaults = True,
-            allow_none        = True,
-            loc               = loc+' p2q_inputs',
-            )
+        # kw.p2q_inputs contains inputs to generate_pw2qmcpack after this
+        set_loc(loc+' p2q_inputs')
+        kw.p2q_inputs = obj(**kw.p2q_inputs)
+        assign_defaults(kw.p2q_inputs,p2q_input_defaults[kw.p2q_defaults])
+        kw.p2q_workflow = extract_keywords(kw.p2q_inputs,p2q_workflow_keys)
     #end if
     if kw.opt:
-        kw.opt_inputs,kw.opt_workflow = extract_kwargs(
-            kwargs            = kw.opt_inputs,
-            required          = opt_required,
-            defaults          = kw.opt_defaults,
-            default_sources   = opt_defaults,
-            workflow          = opt_workflow,
-            contains_defaults = True,
-            allow_none        = True,
-            require_empty     = True,
-            loc               = loc+' opt_inputs',
+        set_loc(loc+' opt_inputs')
+        kw.opt_inputs = obj(**kw.opt_inputs)
+        assign_defaults(kw.opt_inputs,opt_input_defaults[kw.opt_defaults])
+        kw.opt_inputs.set(
+            system  = kw.system,
+            pseudos = kw.qmc_pseudos,
             )
-        kw.opt_inputs.system  = kw.system
-        kw.opt_inputs.pseudos = kw.qmc_pseudos
+        kw.opt_workflow = extract_keywords(kw.opt_inputs,opt_workflow_keys)
 
-        J_defaults = kw.opt_workflow.delete_required('J_defaults')
-        jkw = extract_kwargs(
-            kwargs          = kw.opt_workflow,
-            defaults        = J_defaults,
-            default_sources = jastrow_factor_defaults,
-            require_empty   = False,
-            loc             = loc+' opt_inputs jastrows'
-            )
+        set_loc(loc+'opt_inputs jastrows')
+        #assign_defaults(kw.opt_inputs,jastrow_factor_defaults[kw.opt_workflow.J_defaults])
+        jkw = extract_keywords(kw.opt_inputs,jastrow_factor_keys,optional=True)
         jkw.system = kw.system
+        jkw.defaults = kw.opt_workflow.J_defaults
         j2kw = jkw.copy()
         j2kw.set(J1=1,J2=1,J3=0)
         j3kw = jkw.copy()
         j3kw.set(J1=1,J2=1,J3=1)
         kw.J2_inputs = j2kw
         kw.J3_inputs = j3kw
-        kw.opt_sec_inputs = extract_kwargs(
-            kwargs          = kw.opt_workflow,
-            optional        = opt_sections_options,
-            require_empty   = False,
-            loc             = loc+' opt_inputs opt_methods'
-            )
+
+        set_loc(loc+'opt_inputs opt_methods')
+        kw.opt_sec_inputs = extract_keywords(kw.opt_inputs,opt_sections_keys,optional=True)
     #end if
     if kw.vmc:
-        kw.vmc_inputs,kw.vmc_workflow = extract_kwargs(
-            kwargs            = kw.vmc_inputs,
-            required          = vmc_required,
-            defaults          = kw.vmc_defaults,
-            default_sources   = vmc_defaults,
-            workflow          = vmc_workflow,
-            contains_defaults = True,
-            allow_none        = True,
-            require_empty     = True,
-            loc               = loc+' vmc_inputs',
+        set_loc(loc+' vmc_inputs')
+        kw.vmc_inputs = obj(**kw.vmc_inputs)
+        assign_defaults(kw.vmc_inputs,vmc_input_defaults[kw.vmc_defaults])
+        kw.vmc_inputs.set(
+            system  = kw.system,
+            pseudos = kw.qmc_pseudos,
             )
-        kw.vmc_inputs.system  = kw.system
-        kw.vmc_inputs.pseudos = kw.qmc_pseudos
-        kw.vmc_sec_inputs = extract_kwargs(
-            kwargs        = kw.vmc_workflow,
-            optional      = vmc_sections_options,
-            require_empty = False,
-            loc           = loc+' vmc_inputs vmc_methods'
-            )
+        kw.vmc_workflow = extract_keywords(kw.vmc_inputs,vmc_workflow_keys)
+
+        kw.vmc_sec_inputs = extract_keywords(kw.vmc_inputs,vmc_sections_keys,optional=True)
     #end if
     if kw.dmc:
-        kw.dmc_inputs,kw.dmc_workflow = extract_kwargs(
-            kwargs            = kw.dmc_inputs,
-            required          = dmc_required,
-            defaults          = kw.dmc_defaults,
-            default_sources   = dmc_defaults,
-            workflow          = dmc_workflow,
-            contains_defaults = True,
-            allow_none        = True,
-            loc               = loc+' dmc_inputs',
+        set_loc(loc+' dmc_inputs')
+        kw.dmc_inputs = obj(**kw.dmc_inputs)
+        assign_defaults(kw.dmc_inputs,dmc_input_defaults[kw.dmc_defaults])
+        kw.dmc_inputs.set(
+            system  = kw.system,
+            pseudos = kw.qmc_pseudos,
             )
-        kw.dmc_inputs.system  = kw.system
-        kw.dmc_inputs.pseudos = kw.qmc_pseudos
-        kw.dmc_sec_inputs = extract_kwargs(
-            kwargs        = kw.dmc_workflow,
-            optional      = dmc_sections_options,
-            require_empty = False,
-            loc           = loc+' dmc_inputs dmc_methods'
-            )
+        kw.dmc_workflow = extract_keywords(kw.dmc_inputs,dmc_workflow_keys)
+
+        kw.dmc_sec_inputs = extract_keywords(kw.dmc_inputs,dmc_sections_keys,optional=True)
     #end if
 
     del kw.scf_defaults
@@ -863,9 +1004,6 @@ def process_qmcpack_chain_kwargs(kwargs,
     del kw.vmc_defaults
     del kw.dmc_defaults
 
-    if inloc!=None:
-        kw.loc = loc
-    #end if
     kw.processed = True
 
     return kw
@@ -878,7 +1016,7 @@ def qmcpack_chain(**kwargs):
     if processed:
         kw = obj(**kwargs)
     else:
-        kw = process_qmcpack_chain_kwargs(kwargs,require_empty=True,loc=loc)
+        kw = process_qmcpack_chain_kwargs(loc=loc,**kwargs)
     #end if
     basepath = kw.basepath
     sim_list = kw.sim_list
@@ -1121,25 +1259,29 @@ ecut_scan_chain_defaults = obj(
     opt = True,
     vmc = True,
     )
-def ecut_scan(**kwargs):
-    loc = kwargs.pop('loc','ecut_scan')
-    kw = extract_kwargs(
-        kwargs   = kwargs,
-        required = ecut_scan_required,
-        defaults = ecut_scan_defaults,
-        loc      = loc
-        )
+def ecut_scan(
+    ecuts        = missing,
+    basepath     = missing,
+    dirname      = 'ecut_scan',
+    same_jastrow = True,
+    ecut_jastrow = None,
+    **kwargs
+    ):
+
+    loc = 'ecut_scan'
+
+    set_def_loc(obj(),loc)
+
+    require('ecuts'   ,ecuts   )
+    require('basepath',basepath)
+
+    ecuts = list(ecuts)
+
     qckw = process_qmcpack_chain_kwargs(
-        kwargs   = kwargs,
         defaults = ecut_scan_chain_defaults,
-        loc      = loc
+        loc      = loc,
+        **kwargs
         )
-    basepath     = kw.basepath
-    dirname      = kw.dirname
-    ecuts        = list(kw.ecuts)
-    same_jastrow = kw.same_jastrow
-    ecut_jastrow = kw.ecut_jastrow
-    del kw
 
     if not qckw.scf:
         error('cannot perform ecut scan, no inputs given for scf calculations',loc)

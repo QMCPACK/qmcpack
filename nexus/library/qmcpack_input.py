@@ -4579,6 +4579,9 @@ def generate_jastrow(descriptor,*args,**kwargs):
     #end if
     system = kwargs['system']
     del kwargs['system']
+    if system!=None:
+        system.change_units('B')
+    #end if
     if isinstance(descriptor,str):
         descriptor = [descriptor]
     #end if
