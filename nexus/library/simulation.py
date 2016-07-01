@@ -756,6 +756,22 @@ class Simulation(NexusCore):
             self.save_image()
             self.input.save(os.path.join(self.imlocdir,self.input_image))
         #end if
+        #try to also write structure information
+        if self.system!=None:
+            filebase = os.path.join(self.locdir,self.identifier+'.struct')
+            try:
+                self.system.structure.write(filebase+'.xyz')
+            except:
+                None
+            #end try
+            try:
+                if self.system.structure.has_axes():
+                    self.system.structure.write(filebase+'.xsf')
+                #end if
+            except:
+                None
+            #end try
+        #end if
     #end def write_inputs
 
 

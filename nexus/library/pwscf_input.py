@@ -1496,21 +1496,14 @@ def generate_any_pwscf_input(**kwargs):
 
     single_point = kgrid != None and tuple(kgrid)==(1,1,1)
     no_info      = kgrid is None and system is None
-    at_gamma = zero_shift and (single_point or no_info)
-    at_gamma |= 'specifier' in pw.k_points and pw.k_points.specifier=='gamma'
-    auto     = kgrid!=None and kshift!=None
-    shifted  = not zero_shift and kshift!=None
+    at_gamma  = zero_shift and (single_point or no_info)
+    sys_gamma = 'specifier' in pw.k_points and pw.k_points.specifier=='gamma'
+    auto      = kgrid!=None and kshift!=None
+    shifted   = not zero_shift and kshift!=None
 
     if at_gamma and not nogamma:
         pw.k_points.clear()
         pw.k_points.specifier = 'gamma'
-    elif at_gamma and nogamma:
-        pw.k_points.clear()
-        pw.k_points.set(
-            specifier = 'automatic',
-            grid      = (1,1,1),
-            shift     = (0,0,0)
-            )
     elif auto:
         pw.k_points.clear()
         pw.k_points.set(
@@ -1518,13 +1511,23 @@ def generate_any_pwscf_input(**kwargs):
             grid      = kgrid,
             shift     = kshift
             )
-    elif shifted:
+    elif sys_gamma and not nogamma:
+        pw.k_points.clear()
+        pw.k_points.specifier = 'gamma'
+    elif (at_gamma or sys_gamma) and nogamma:
         pw.k_points.clear()
         pw.k_points.set(
             specifier = 'automatic',
             grid      = (1,1,1),
-            shift     = kshift
+            shift     = (0,0,0)
             )
+    #elif shifted:
+    #    pw.k_points.clear()
+    #    pw.k_points.set(
+    #        specifier = 'automatic',
+    #        grid      = (1,1,1),
+    #        shift     = kshift
+    #        )
     #end if
 
     # check for misformatted kpoints

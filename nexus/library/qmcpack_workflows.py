@@ -1,5 +1,6 @@
 
 import os
+from numpy import ndarray
 from developer import obj,ci,error as dev_error,devlog,DevBase
 from pwscf import generate_pwscf
 from qmcpack_converters import generate_pw2qmcpack
@@ -19,6 +20,15 @@ def error(msg,loc=None,exit=True,trace=True,indent='    ',logfile=devlog):
 
 defaults_version = 'v1'
 
+
+def hashable(v):
+    try:
+        hash(v)
+    except:
+        return False
+    #end try
+    return True
+#end def hashable
 
 
 class Missing:
@@ -341,8 +351,10 @@ dmc_sections_required = ['nlmove']
 
 
 
-scf_workflow_keys = ['totmag_sys']
+scf_workflow_keys = []
 scf_input_defaults = obj(
+    none    = obj(
+        ),
     minimal = obj(
         identifier       = 'scf',
         input_type       = 'generic',
@@ -350,7 +362,6 @@ scf_input_defaults = obj(
         wf_collect       = True,
         use_folded       = True,
         nogamma          = True,
-        totmag_sys       = False,
         ),
     v1 = obj(
         identifier       = 'scf',
@@ -366,7 +377,6 @@ scf_input_defaults = obj(
         wf_collect       = True,
         use_folded       = True,
         nogamma          = True,
-        totmag_sys       = False,
         ),
     )
 
@@ -1439,10 +1449,27 @@ def system_parameter_scan(
             params.set(**fixed)
         #end if
         system = sysfunc(**params)
-        sysdir = '{0}_{1}'.format(variable,v)
+        if isinstance(v,list):
+            vkey = tuple(v)
+        elif isinstance(v,ndarray):
+            vkey = tuple(v.ravel())
+        else:
+            vkey = v
+        #end if
+        if not hashable(vkey):
+            error('inputted system generation variable value is not hashable\nvalue provided: {0}\nvalue type: {1}\nplease restrict system generation variables to basic types such as str,int,float,tuple and combinations of these'.format(v,v.__class__.__name__),loc)
+        #end if
+        if isinstance(vkey,(int,float,str)):
+            vstr = str(vkey)
+        elif isinstance(vkey,tuple):
+            vstr = str(vkey).replace('(','').replace(')','').replace(' ','').replace(',','_')
+        else:
+            error('cannot convert system generation variable value into a directory name\nvalue provided: {0}\nvalue type: {1}\nplease restrict system generation variables to basic types such as str,int,float,tuple and combinations of these'.format(v,v.__class__.__name__),loc)
+        #end if
+        sysdir = '{0}_{1}'.format(variable,vstr)
         systems.append(system)
         sysdirs.append(sysdir)
-        syskeys.append(v)
+        syskeys.append(vkey)
     #end for
 
     sp_sims = system_scan(
@@ -1456,6 +1483,8 @@ def system_parameter_scan(
 
     return sp_sims
 #end def system_parameter_scan
+
+
 
 
 
