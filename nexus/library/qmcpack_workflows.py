@@ -903,7 +903,6 @@ def process_qmcpack_chain_kwargs(
     assign_require(kw,'system'     ,system     )
     assign_require(kw,'sim_list'   ,sim_list   )
     assign_require(kw,'dft_pseudos',dft_pseudos)
-    assign_require(kw,'qmc_pseudos',qmc_pseudos)
 
     assign_default(kw,'scf'         ,scf         )
     assign_default(kw,'p2q'         ,p2q         )
@@ -929,6 +928,11 @@ def process_qmcpack_chain_kwargs(
     kw.opt |= kw.opt_inputs!=None
     kw.vmc |= kw.vmc_inputs!=None
     kw.dmc |= kw.dmc_inputs!=None
+
+    if kw.opt or kw.vmc or kw.dmc:
+        assign_require(kw,'qmc_pseudos',qmc_pseudos)
+    #end if
+
     
     if kw.scf:
         # kw.scf_inputs contains inputs to generate_pwscf after this
@@ -1247,12 +1251,6 @@ def qmcpack_chain(**kwargs):
 #end def qmcpack_chain
 
 
-ecut_scan_required = ['ecuts','basepath']
-ecut_scan_defaults = obj(
-    dirname      = 'ecut_scan',
-    same_jastrow = True,
-    ecut_jastrow = None,
-    )
 ecut_scan_chain_defaults = obj(
     scf = True,
     p2q = True,
@@ -1328,6 +1326,136 @@ def ecut_scan(
     return sims
 #end def ecut_scan
 
+
+
+def system_scan(
+    basepath     = missing,
+    dirname      = 'system_scan',
+    systems      = missing,
+    sysdirs      = missing,
+    syskeys      = None,
+    same_jastrow = False,
+    jastrow_key  = missing,
+    loc          = 'system_scan',
+    **kwargs
+    ):
+    set_loc(loc)
+
+    require('basepath',basepath)
+    require('systems' ,systems )
+    require('sysdirs' ,sysdirs )
+
+    if syskeys is None:
+        syskeys = sysdirs
+    #end if
+
+    if len(systems)==0:
+        error('no systems provided',loc)
+    #end if
+    if len(sysdirs)!=len(systems):
+        error('must provide one directory per system via sysdirs keyword\nnumber of directories provided: {0}\nnumber of systems: {1}'.format(len(sysdirs),len(systems)),loc)
+    #end if
+    if len(syskeys)!=len(systems):
+        error('must provide one key per system via syskeys keyword\nnumber of keys provided: {0}\nnumber of systems: {1}'.format(len(syskeys),len(systems)),loc)
+    #end if
+
+    if same_jastrow:
+        if missing(jastrow_key):
+            error('requested same jastrow across scan but no system key was provided via jastrow_key keyword',loc)
+        elif jastrow_key not in set(syskeys):
+            error('key used to identify jastrow for use across scan was not found\njastrow key provided: {0}\nsystem keys present: {1}'.format(jastrow_key,sorted(system_keys)),loc)
+        #end if
+        sys = obj()
+        for n in xrange(len(systems)):
+            sys[syskeys[n]] = systems[n],sysdirs[n]
+        #end for
+        key_system,key_sysdir = sys[jastrow_key]
+        del sys[jastrow_key]
+        systems = [key_system]
+        sysdirs = [key_sysdir]
+        syskeys = [jastrow_key]
+        for syskey in sys.keys():
+            system,sydir = sys[syskey]
+            systems.append(system)
+            sysdirs.append(sysdir)
+            syskeys.append(syskey)
+        #end for
+    #end if
+
+    J2_source = None
+    J3_source = None
+    sims = obj()
+    for n in xrange(len(systems)):
+        qckw = process_qmcpack_chain_kwargs(
+            defaults = qmcpack_chain_defaults,
+            system   = systems[n],
+            loc      = loc,
+            **kwargs
+            )
+        qckw.basepath = os.path.join(basepath,dirname,sysdirs[n])
+        if J2_source is not None:
+            qckw.J2_source = J2_source
+        #end if
+        if J3_source is not None:
+            qckw.J3_source = J3_source
+        #end if
+        qcsims = qmcpack_chain(**qckw)
+        if same_jastrow:
+            J2_source = qcsims.get_optional('optJ2',None)
+            J3_source = qcsims.get_optional('optJ3',None)
+        #end if
+        sims[syskeys[n]] = qcsims
+    #end for
+    return sims
+#end def system_scan
+
+
+
+def system_parameter_scan(
+    basepath = missing,
+    dirname  = 'system_param_scan',
+    sysfunc  = missing,
+    variable = missing,
+    values   = missing,
+    fixed    = None,
+    loc      = 'system_parameter_scan',
+    **kwargs
+    ):
+
+    set_loc(loc)
+
+    require('basepath',basepath)
+    require('sysfunc' ,sysfunc )
+    require('variable',variable)
+    require('values'  ,values  )
+
+    systems = []
+    sysdirs = []
+    syskeys = []
+    for v in values:
+        params = obj()
+        params[variable] = v
+        if fixed!=None:
+            params.set(**fixed)
+        #end if
+        system = sysfunc(**params)
+        sysdir = '{0}_{1}'.format(variable,v)
+        systems.append(system)
+        sysdirs.append(sysdir)
+        syskeys.append(v)
+    #end for
+
+    sp_sims = system_scan(
+        basepath = basepath,
+        dirname  = dirname,
+        systems  = systems,
+        sysdirs  = sysdirs,
+        syskeys  = syskeys,
+        **kwargs
+        )
+
+    return sp_sims
+#end def system_parameter_scan
 
 
 
