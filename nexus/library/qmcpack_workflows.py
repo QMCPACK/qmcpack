@@ -1385,7 +1385,7 @@ def system_scan(
         sysdirs = [key_sysdir]
         syskeys = [jastrow_key]
         for syskey in sys.keys():
-            system,sydir = sys[syskey]
+            system,sysdir = sys[syskey]
             systems.append(system)
             sysdirs.append(sysdir)
             syskeys.append(syskey)
@@ -1478,6 +1478,7 @@ def system_parameter_scan(
         systems  = systems,
         sysdirs  = sysdirs,
         syskeys  = syskeys,
+        loc      = loc,
         **kwargs
         )
 
