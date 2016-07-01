@@ -166,6 +166,7 @@ before doing significant production. i.e. Check the details below. We
 give examples for a number of common systems in Section \ref{sec:installexamples}.
 
 \subsection{Environment variables}
+\label{sec:envvar}
 A number of environmental variables affect the build.  In particular
 they can control the default paths for libraries, the default
 compilers, etc.  The list of environmental variables is given below:
@@ -396,14 +397,11 @@ ls -l bin/qmcpack
 
 \subsection{Installing on Mac OS X using Macports}
 These instructions assume a fresh installation of macports
-and for consistency with current Linux distributions, use the gcc 4.8.2
-compiler. More recent versions are fine, but it is vital to ensure
+and use the gcc 6.1 compiler. Older versions are fine, but it is vital to ensure
 matching compilers and libraries are used for all
-packages and to force use of what is installed in /opt/local. As with
-the Linux examples above, this build is very good if not optimal, and
-is easily good enough to learn QMCPACK or experiment on a travel laptop.
-
-Note that we utilize the Apple provided Accelerate framework for optimized BLAS.
+packages and to force use of what is installed in /opt/local.  Performance should be very reasonable.
+Note that we utilize the Apple provided Accelerate framework for
+optimized BLAS.
 
 Follow the Macports install instructions \url{https://www.macports.org/}
 
@@ -417,40 +415,37 @@ Follow the Macports install instructions \url{https://www.macports.org/}
 Install the required tools:
 
 \begin{verbatim} 
-sudo port install gcc48
-sudo port select gcc mp-gcc48  # Set default
+sudo port install gcc6
+sudo port select gcc mp-gcc6
+sudo port install openmpi-devel-gcc6
+sudo port select --set mpi openmpi-devel-gcc61-fortran
 
-sudo port install openmpi-devel-gcc48
-sudo port select —set mpi openmpi-devel-gcc48-fortran  # Set default
-
-# Sanity check
-mpiCXX -v 
-#should return … “gcc version 4.8.2 (MacPorts gcc48 4.8.2_2)” or similar.
-
-sudo port install fftw-3 +gcc48
-sudo port install cmake
-
-sudo port install boost +gcc48
+sudo port install fftw-3 +gcc6
 sudo port install libxml2
-sudo port install hdf5-18 +gcc48
+sudo port install cmake
+sudo post install boost +gcc6
+sudo port install hdf5 +gcc6
 
-sudo port select —set python python27
-sudo port install py27-matplotlib  # For qmca
+sudo port select --set python python27
+sudo port install py27-numpy +gcc6 
+sudo port install py27-matplotlib  #For graphical plots with qmca
 \end{verbatim}
 
 QMCPACK build:
 \begin{verbatim}
-export CXX=mpiCXX
-export CC=/opt/local/bin/gcc
-export LIBXML2_HOME=/opt/local/
-export HDF5_HOME=/opt/local
-export BOOST_HOME=/opt/local
-export FFTW_HOME=/opt/local
 cd build
-cmake ..
+cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpiCXX ..
 make -j 6 # Adjust for available core count
 ls -l bin/qmcpack 
 \end{verbatim}
+
+Cmake should pickup the versions of HDF5, libxml (etc.) installed in
+/opt/local by macports. If you have other copies of these libraries
+installed and wish to force use of a specific version, use the
+environment variables detailed in Sec. \ref{sec:envvar}.
+
+This recipe was verified on 1 July 2016 on a Mac running OS X 10.11.5
+``El Capitain''.
 
 \subsection{Installing on Mac OS X using Homebrew (brew)}
 Homebrew is a package manager for OS X that provides a convenient
