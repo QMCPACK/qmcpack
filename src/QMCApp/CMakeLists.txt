@@ -47,8 +47,3 @@ ENDIF()
 
 ENDFOREACH(p ${QMCSRCS})
 
-####################################
-# Add test subdirectory
-####################################
-ADD_SUBDIRECTORY(test)
-
