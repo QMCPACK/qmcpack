@@ -10,6 +10,13 @@
 // Supported by
 //   National Center for Supercomputing Applications, UIUC
 //////////////////////////////////////////////////////////////////
+
+// Supported libraries and defines:
+//
+// HAVE_AMDLIBM : AMD libm
+// HAVE_MKL_VML : Intel MKL VML, include with MKL 
+// HAVE_MASSV   : IBM MASSV library
+
 #ifndef QMCPLUSPLUS_E2IPHI_H
 #define QMCPLUSPLUS_E2IPHI_H
 
