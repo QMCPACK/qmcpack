@@ -283,9 +283,8 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   #------------------------
   # On Cray's machine
   #------------------------
-  IF($ENV{CRAYOS_VERSION} MATCHES ".")
-    MESSAGE(STATUS "Running on a Cray machine. OS version : $ENV{CRAYOS_VERSION}")
-    #SET(CPU_IDENTITY "bulldozer")   
+  IF($ENV{CRAYPE_VERSION} MATCHES ".")
+    MESSAGE(STATUS "Running on a Cray machine.")
     SET(CMAKE_SKIP_RPATH TRUE)
 
     # Flags for ctest
@@ -296,10 +295,6 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
       FIND_PROGRAM(MPIEXEC srun)
     ENDIF(NOT MPIEXEC)
     SET(MPIEXEC_NUMPROC_FLAG "-n")
-
-    IF($ENV{HOST} MATCHES "eos")
-      SET(BOOST_ROOT $ENV{BOOST_DIR})
-    ENDIF($ENV{HOST} MATCHES "eos")
 
     IF(QMC_CUDA)
       MESSAGE(STATUS "Building GPU code. Linking dynamically.")
@@ -315,7 +310,7 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
         SET(CMAKE_${type}_LINK_DYNAMIC_CXX_FLAGS "-static")
       ENDFOREACH(type)
     ENDIF(QMC_CUDA)
-  ENDIF($ENV{CRAYOS_VERSION} MATCHES ".")
+  ENDIF($ENV{CRAYPE_VERSION} MATCHES ".")
 
   #------------------------------------
   # Identify the compiler
@@ -487,8 +482,9 @@ ENDIF(FFTW_FOUND)
 SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${FORTRAN_LIBRARIES})
 
 find_package(ZLIB)
-find_package(LibXml2)
-
+#find_package(LibXml2) 
+INCLUDE(CMake/FindLibxml2QMC.cmake)
+   
 IF(LIBXML2_FOUND)
   INCLUDE_DIRECTORIES(${LIBXML2_INCLUDE_DIR})
   SET(HAVE_LIBXML2 1)
