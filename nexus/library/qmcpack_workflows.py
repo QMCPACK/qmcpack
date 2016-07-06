@@ -1150,7 +1150,7 @@ def qmcpack_chain(**kwargs):
             sims.vmcJ3_test = vmcJ3_test
         #end if
         if kw.vmc_workflow.J3_prod:
-            deps = resolve_deps('vmcJ3',sims,J2dep,loc)
+            deps = resolve_deps('vmcJ3',sims,J3dep,loc)
             vmcJ3 = generate_qmcpack(
                 path         = os.path.join(basepath,'vmcJ3'),
                 jastrows     = [],
