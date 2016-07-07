@@ -11,7 +11,7 @@ fi
 if [ -e $place ]; then
 
 
-for sys in build_gcc build_intel2016 build_intel2015 build_gcc_complex build_intel2016_complex build_intel2015_complex build_gcc_cuda build_intel2015_cuda
+for sys in build_gcc build_intel2016 build_intel2015 build_gcc_complex build_intel2016_complex build_intel2015_complex build_gcc_cuda build_intel2015_cuda build_gcc_mkl build_gcc_mkl_complex 
 do
 
 cd $place
@@ -43,6 +43,16 @@ case $sys in
     ctest -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -S $PWD/../CMake/ctest_script.cmake,release -R 'short|converter' -VV
     module unload mpi
     ;;
+"build_gcc_mkl")
+    module() { eval `/usr/bin/modulecmd sh $*`; }
+    module load mpi
+    ORIGMKLROOT=$MKLROOT
+    source /opt/intel2016/bin/compilervars.sh intel64
+    export QMCPACK_TEST_SUBMIT_NAME=GCC-MKL-Release
+    ctest -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -S $PWD/../CMake/ctest_script.cmake,release -R 'short|converter' -VV
+    export MKLROOT=$ORIGMKLROOT
+    module unload mpi
+    ;;
 "build_intel2016")
     ORIGPATH=$PATH
     source /opt/intel2016/bin/compilervars.sh intel64
@@ -63,6 +73,16 @@ case $sys in
     module load mpi
     export QMCPACK_TEST_SUBMIT_NAME=GCC-Complex-Release
     ctest -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -S $PWD/../CMake/ctest_script.cmake,release -R 'short|converter' -VV
+    module unload mpi
+    ;;
+"build_gcc_mkl_complex")
+    module() { eval `/usr/bin/modulecmd sh $*`; }
+    module load mpi
+    ORIGMKLROOT=$MKLROOT
+    source /opt/intel2016/bin/compilervars.sh intel64
+    export QMCPACK_TEST_SUBMIT_NAME=GCC-MKL-Release
+    ctest -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -S $PWD/../CMake/ctest_script.cmake,release -R 'short|converter' -VV
+    export MKLROOT=$ORIGMKLROOT
     module unload mpi
     ;;
 "build_intel2016_complex")
