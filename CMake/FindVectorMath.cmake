@@ -22,7 +22,7 @@ IF ( NOT HAVE_VECTOR_MATH )
         CMAKE_FLAGS "${CMAKE_CXX_FLAGS}" )
   IF (HAVE_MKL_VML)
     SET ( HAVE_VECTOR_MATH 1 )
-    MESSAGE(STATUS "Using MKL Vector Math functions")
+    MESSAGE(STATUS "Using MKL Vector Math functions (compilation check passed)")
   ENDIF()
 ENDIF()
 
