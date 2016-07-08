@@ -69,6 +69,7 @@ import os
 import shutil
 import string
 from subprocess import Popen,PIPE
+from developer import unavailable
 from generic import obj
 from periodic_table import is_element
 from physical_system import PhysicalSystem
@@ -1484,3 +1485,53 @@ def generate_simulation(**kwargs):
         Simulation.class_error('sim_type {0} is unrecognized'.format(sim_type),'generate_simulation')
     #end if
 #end def generate_simulation
+
+
+
+
+# ability to graph simulation workflows
+try:
+    from pydot import Dot,Node,Edge
+except:
+    Dot,Node,Edge = unavailable('pydot','Dot','Node','Edge')
+#end try
+try:
+    import Image
+except:
+    Image = unavailable('Image')
+#end try
+import tempfile
+def graph_sims(sims):
+    graph = Dot(graph_type='digraph')
+    graph.set_label('simulation workflows')
+    graph.set_labelloc('t')
+    nodes = obj()
+    for sim in sims:
+        node = obj(
+            id    = sim.simid,
+            sim   = sim,
+            node  = Node(sim.identifier+' '+str(sim.simid),style='filled',shape='Mrecord'),
+            edges = obj(),
+            )
+        nodes[node.id] = node
+        graph.add_node(node.node)
+    #end for
+    for node in nodes:
+        for simid,dep in node.sim.dependencies.iteritems():
+            other = nodes[simid].node
+            for quantity in dep.result_names:
+                edge = Edge(other,node.node,label=quantity,fontsize='10.0')
+                graph.add_edge(edge)
+            #end for
+        #end for
+    #end for
+
+    fout = tempfile.NamedTemporaryFile(suffix='png')
+    savefile = fout.name
+    graph.write(savefile,format='png',prog='dot')
+
+    image = Image.open(savefile)
+    image.show()
+
+    exit()
+#end def graph_sims
