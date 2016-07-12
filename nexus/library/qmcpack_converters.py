@@ -45,7 +45,7 @@
 #      Placeholder class for output analysis.                        #
 #                                                                    #
 #    Convert4qmc                                                     #
-#      Class representing conver4qmc instance.                       #
+#      Class representing convert4qmc instance.                      #
 #                                                                    #
 #    generate_convert4qmc_input                                      #
 #      Function to generate arbitrary convert4qmc input.             #
