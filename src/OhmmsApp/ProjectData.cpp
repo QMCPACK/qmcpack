@@ -28,7 +28,6 @@ namespace qmcplusplus
 // constructors and destructors
 ProjectData::ProjectData(const char* aname):
   m_title("asample"),
-  m_user("none"),
   m_host("none"),
   m_date("none"),
   m_series(0),
@@ -54,7 +53,6 @@ bool ProjectData::get(std::ostream& os) const
   os << "  Project = " << m_title << "\n";
   os << "  date    = " << getDateAndTime("%Y-%m-%d %H:%M:%S %Z\n");
   os << "  host    = " << m_host << "\n";
-  os << "  user    = " << m_user << "\n";
   return true;
 }
 
@@ -75,8 +73,6 @@ bool ProjectData::put( std::istream& is)
   m_host = wxGetFullHostName();
   temp->SetValue(m_host.c_str());
   temp = (wxTextCtrl*)(wxWindow::FindWindowById(ID_USER_ID));
-  m_user = wxGetUserId();
-  temp->SetValue(m_user.c_str());
 #else
   std::string t1;
   while(!is.eof())
@@ -86,8 +82,6 @@ bool ProjectData::put( std::istream& is)
     is >> t1;
     if(t1 == "series")
       is >> m_series;
-    else if(t1 == "user")
-      is >> m_user;
     else if(t1 == "host")
       is >> m_host;
     else if(t1 == "date")
@@ -220,8 +214,7 @@ bool ProjectData::put(xmlNodePtr cur)
     std::string cname((const char*)(cur->name));
     if(cname == "user")
     {
-      m_user = getUserName();
-      xmlNodeSetContent(cur,(const xmlChar*)(m_user.c_str()));
+        // Removed
     }
     if (cname == "host")
     {
@@ -247,12 +240,6 @@ bool ProjectData::put(xmlNodePtr cur)
     m_date = getDateAndTime();
     xmlNewChild(m_cur,m_cur->ns,
                 (const xmlChar*)"date",(const xmlChar*)(m_date.c_str()));
-  }
-  if(m_user == "none")
-  {
-    m_user = getUserName();
-    xmlNewChild(m_cur,m_cur->ns,
-                (const xmlChar*)"user",(const xmlChar*)(m_user.c_str()));
   }
   reset();
   return true;

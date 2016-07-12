@@ -21,9 +21,6 @@
  */
 #include <string>
 
-//!< return the user name
-std::string getUserName();
-
 //!< return the host name
 std::string getHostName();
 

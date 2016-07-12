@@ -23,29 +23,18 @@
 using std::string;
 #include <time.h>
 
+
+// Dummy version of getHostName, in case its needed
+#if 0
 #if defined(_CRAYMPI) || defined(XT_CATAMOUNT)
-string getUserName()
-{
-  return "auser";
-}
 string getHostName()
 {
   return "jaguar";
 }
-#else
-#include <unistd.h>
-#include <sys/utsname.h>
-#include <pwd.h>
+#endif
+#endif
 
-string getUserName()
-{
-  struct passwd *who;
-  if((who = getpwuid(getuid())) != NULL)
-  {
-    return who->pw_name;
-  }
-  return "auser";
-}
+#include <sys/utsname.h>
 
 string getHostName()
 {
@@ -53,7 +42,7 @@ string getHostName()
   uname(&mysys);
   return std::string(mysys.nodename);
 }
-#endif
+
 string getDateAndTime()
 {
   time_t now;

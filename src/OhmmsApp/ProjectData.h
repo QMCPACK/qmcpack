@@ -85,9 +85,6 @@ struct ProjectData: public OhmmsElementBase
   ///title of the project
   std::string m_title;
 
-  ///user name
-  std::string m_user;
-
   ///name of the host where the job is running
   std::string m_host;
 
