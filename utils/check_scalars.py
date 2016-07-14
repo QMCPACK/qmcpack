@@ -4,14 +4,16 @@ from __future__ import print_function
 # Statical error checking code for use by testing framework
 # Jaron Krogel/ORNL
 
+# To maximize portability, only standard Python modules should
+# be used (that is, no numpy)
+
 import os
 from optparse import OptionParser
-from numpy import loadtxt,array,sqrt
+import math
 
 
 # standalone definition of error function from Abramowitz & Stegun
 # credit: http://www.johndcook.com/blog/2009/01/19/stand-alone-error-function-erf/
-import math
 def erf(x):
     # constants
     a1 =  0.254829592
@@ -56,6 +58,19 @@ def exit_pass(msg=None):
     exit(0)
 #end def exit_pass
 
+def compute_mean(v):
+    if len(v) == 0:
+        return 0.0
+    return sum(v)/len(v)
+
+
+def compute_variance(v):
+    if len(v) == 0:
+        return 0.0
+    mean = compute_mean(v)
+    return sum([(x-mean)**2 for x in v])/len(v)
+
+
 
 # Calculates the mean, variance, errorbar, and autocorrelation time
 # for a 1-d array of statistical data values.
@@ -67,8 +82,8 @@ def simstats(x,exclude=None):
     #end if
 
     N    = len(x)
-    mean = x.mean()
-    var  = x.var()
+    mean = compute_mean(x)
+    var = compute_variance(x)
 
     i=0          
     tempC=0.5
@@ -80,7 +95,7 @@ def simstats(x,exclude=None):
         while (tempC>0 and i<(N-1)):
             kappa=kappa+2.0*tempC
             i=i+1
-            tempC = ovar/(N-i)*((x[0:N-i]-mean)*(x[i:N]-mean)).sum()
+            tempC = ovar/(N-i)*sum([ (x[idx]-mean)*(x[idx+i]-mean) for idx in range(N-i) ])
         #end while
         if kappa == 0.0:
             kappa = 1.0
@@ -90,7 +105,7 @@ def simstats(x,exclude=None):
     if (Neff == 0.0):
         Neff = 1.0
     #end if
-    error=sqrt(var/Neff)
+    error=math.sqrt(var/Neff)
 
     return (mean,var,error,kappa)
 #end def simstats
@@ -173,10 +188,10 @@ def read_command_line():
             exit()
         #end if
 
-        options.series         = array(options.series.split(),dtype=int)
-        options.equilibration  = array(options.equilibration.split(),dtype=int)
+        options.series         = [int(a) for a in options.series.split()]
+        options.equilibration  = [int(a) for a in options.equilibration.split()]
         if len(options.series)>0 and len(options.equilibration)==1:
-            options.equilibration = array(len(options.series)*[options.equilibration[0]],dtype=int)
+            options.equilibration = len(options.series)*[options.equilibration[0]]
         #end if
         options.nsigma         = float(options.nsigma)
 
@@ -184,7 +199,7 @@ def read_command_line():
         for q in quantities.values():
             v = options.__dict__[q]
             if v!=None:
-                vref = array(v.split(),dtype=float)
+                vref = [float(a) for a in v.split()]
                 if len(vref)!=2*len(options.series):
                     exit_fail('must provide one reference value and errorbar for '+q)
                 #end if
@@ -212,11 +227,29 @@ def process_scalar_files(options,quants_check):
             scalar_file = options.prefix+'.s'+str(int(s)).zfill(3)+'.scalar.dat'
 
             if os.path.exists(scalar_file):
-                rawdata = loadtxt(scalar_file)[:,1:].transpose()
-
                 fobj = open(scalar_file,'r')
                 quantities = fobj.readline().split()[2:]
+                rawdata_list = []
+                for line in fobj:
+                    vals = line.strip().split()[1:]
+                    fp_vals = [float(v) for v in vals]
+                    rawdata_list.append(fp_vals)
                 fobj.close()
+
+                rawdata = [[]]
+                if len(rawdata_list) == 0:
+                    exit_fail('scalar file has no data: '+scalar_file)
+                # end if
+
+                # transpose
+                ncols = len(rawdata_list[0])
+                rawdata = [[] for i in range(ncols)]
+                for line in rawdata_list:
+                    for i in range(ncols):
+                        rawdata[i].append(line[i])
+                    # end for
+                # end for
+
 
                 equil = options.equilibration[ns]
 
@@ -224,18 +257,18 @@ def process_scalar_files(options,quants_check):
                 stats = dict()
                 for i in range(len(quantities)):
                     q = quantities[i]
-                    d = rawdata[i,:]
+                    d = rawdata[i]
                     data[q]  = d
                     stats[q] = simstats(d,equil)
                 #end for
 
                 if 'LocalEnergy_sq' in data and 'LocalEnergy' in data:
-                    v = data['LocalEnergy_sq'] - data['LocalEnergy']**2
+                    v = [(le_sq-le**2) for le_sq,le in zip(data['LocalEnergy_sq'],data['LocalEnergy'])]
                     stats['Variance'] = simstats(v,equil)
                 #end if
 
                 if 'BlockWeight' in data:
-                    ts = data['BlockWeight'].sum()
+                    ts = sum(data['BlockWeight'])
                     stats['TotalSamples'] = (ts,0.0,0.0,1.0) # mean, var, error, kappa
                 #end if
 
@@ -286,16 +319,18 @@ def check_values(options,quants_check,values):
                 success &= quant_success
 
                 delta = mean_comp-mean_ref
-                delta_err = sqrt(error_comp**2+error_ref**2)
+                delta_err = math.sqrt(error_comp**2+error_ref**2)
 
                 msg+='    reference mean value     : {0: 12.8f}\n'.format(mean_ref)
                 msg+='    reference error bar      : {0: 12.8f}\n'.format(error_ref)
                 msg+='    computed  mean value     : {0: 12.8f}\n'.format(mean_comp)
                 msg+='    computed  error bar      : {0: 12.8f}\n'.format(error_comp)
                 msg+='    pass tolerance           : {0: 12.8f}  ({1: 12.8f} sigma)\n'.format(options.nsigma*error_ref,options.nsigma)
-                msg+='    deviation from reference : {0: 12.8f}  ({1: 12.8f} sigma)\n'.format(delta,delta/error_ref)
+                if error_ref > 0.0:
+                    msg+='    deviation from reference : {0: 12.8f}  ({1: 12.8f} sigma)\n'.format(delta,delta/error_ref)
                 msg+='    error bar of deviation   : {0: 12.8f}\n'.format(delta_err)
-                msg+='    significance probability : {0: 12.8f}  (gaussian statistics)\n'.format(erf(abs(delta/error_ref)/sqrt(2.0)))
+                if error_ref > 0.0:
+                    msg+='    significance probability : {0: 12.8f}  (gaussian statistics)\n'.format(erf(abs(delta/error_ref)/math.sqrt(2.0)))
                 msg+='    status of this test      :   {0}\n'.format(passfail[quant_success])
             #end for
             ns+=1
