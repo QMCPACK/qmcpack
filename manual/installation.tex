@@ -613,22 +613,27 @@ Currently Loaded Modulefiles:
 
 \subsection{Installing on NERSC Cori (Phase 1) Cray XC40}
 Cori is a Cray XC40 with 16-core Intel "Haswell" nodes 
-installed at NERSC. The build settings are identical to eos. 
+installed at NERSC. The build settings are similar to eos at OLCF, but
+a workround is needed for the newer Cray OS which does not include a static
+libXml2 library. A NERSC installed version and its dependencies are used:
 
 \begin{verbatim}
+module load subversion
 module load cray-hdf5
 module load cmake
 module load fftw
 export FFTW_HOME=$FFTW_DIR/..
 module load boost
+export LIBXML2_HOME=/usr/common/software/libxml2/2.9.3/hsw 
 mkdir build_cori
 cd build_cori
 cmake ..
+cmake -DQMC_EXTRA_LIBS=/usr/common/software/liblzma/20160630/hsw/lib/liblzma.a ..
 make -j 8  
 ls -l bin/qmcpack 
 \end{verbatim}
 
-When the above was tested on 1 February 2016, the following module and
+When the above was tested on 15 July 2016, the following module and
 software versions were present:
 
 \begin{verbatim}
@@ -696,7 +701,8 @@ Note that the number of tests that are run varies between the
 standard, complex, and GPU compilations.
 
 The  full set of tests consist of significantly longer versions of the short
-tests. They require several hours each to run yielding a much more
+tests, as well as tests of the conversion utilities. The runs require
+several hours each for improved statistics and a much more
 stringent test of the code. To run all the tests simply run ctest in the build
 directory:
 
@@ -738,7 +744,8 @@ the following combinations nights (workstation) or weekly (supercomputers):
 \item On a Red Hat Linux workstation:
   \begin{itemize}
   \item GCC 4.8.2 with OpenMPI and CUDA 7.0 (GPU build, run on NVIDIA K40s) 
-  \item GCC 4.8.2 with OpenMPI 
+  \item GCC 4.8.2 with OpenMPI with netlib BLAS
+  \item GCC 4.8.2 with OpenMPI with Intel MKL
   \item Intel 2016 with Intel MPI and MKL
   \item Intel 2015 with Intel MPI and MKL and CUDA 7.0 (GPU build, run on NVIDIA K40s) 
   \item Intel 2015 with Intel MPI  and MKL
@@ -823,8 +830,8 @@ To build the fastest version of QMCPACK we recommend the following:
   years.
 \item Use a vendor optimized BLAS library such as Intel MKL and AMD ACML. Although
   QMC does not make extensive use of linear algebra, it is used in the
-  VMC wavefunction optimizer and also to apply the orbital coefficients in local basis
-  calculations.
+  VMC wavefunction optimizer, to apply the orbital coefficients in local basis
+  calculations, and in the Slater determinant update.
 \item Use a vector math library such as Intel VML.  For periodic
   calculations, the calculation of the structure factor and Ewald
   potential benefit from vectorized evaluation of sin and
