@@ -707,7 +707,7 @@ Additional information:
 
 \subsection{Static structure factor, $S(k)$}
 
-Let $\rho^e_\mathbf{k}=\sum_j e^{i \mathbf{k}\cdot\mathbf{r}_j^e}$ be the Fourier space electron density, with $\mathbf{r}^e_j$ being the coordinate of the j-th electron.  $\mathbf{k}$ is a wavevector commensurate with the simulation cell.  QMCPACK allows the user to accumulate the static electron structure factor $S(\mathbf{k})$ at all commensurate $\mathbf{k}$ such that $|\mathbf{k}| \leq (LR\_DIM\_CUTOFF) r_c$.  $N^e$ is the number of electrons, \texttt{LR\_DIM\_CUTOFF} is the optimized breakup parameter, and $r_c$ is the Wigner-Seitz radius.  It is defined as follows:
+Let $\rho^e_{\mathbf{k}}=\sum_j e^{i \mathbf{k}\cdot\mathbf{r}_j^e}$ be the Fourier space electron density, with $\mathbf{r}^e_j$ being the coordinate of the j-th electron.  $\mathbf{k}$ is a wavevector commensurate with the simulation cell.  QMCPACK allows the user to accumulate the static electron structure factor $S(\mathbf{k})$ at all commensurate $\mathbf{k}$ such that $|\mathbf{k}| \leq (LR\_DIM\_CUTOFF) r_c$.  $N^e$ is the number of electrons, \texttt{LR\_DIM\_CUTOFF} is the optimized breakup parameter, and $r_c$ is the Wigner-Seitz radius.  It is defined as follows:
 \begin{equation}
 S(\mathbf{k}) = \frac{1}{N^e}\langle \rho^e_{-\mathbf{k}} \rho^e_{\mathbf{k}} \rangle
 \end{equation}

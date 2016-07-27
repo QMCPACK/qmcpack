@@ -4,8 +4,8 @@
 This chapter introduces XML as it is used in QMCPACK's input file.  The focus is on the XML file format itself and the general structure of the input file rather than an exhaustive discussion of all keywords and structure elements.  
 
 QMCPACK uses XML to represent structured data in its input file.  Instead of text blocks like
-\begin{shaded}
-\begin{verbatim}
+
+\begin{shade}
 begin project
   id     = vmc
   series = 0
@@ -17,11 +17,9 @@ begin vmc
   steps    =  10
   timestep = 0.4
 end vmc
-\end{verbatim}
-\end{shaded}
+\end{shade} 
 QMCPACK input looks like
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
    <project id="vmc" series="0">
    </project>
 
@@ -30,13 +28,11 @@ QMCPACK input looks like
       <parameter name="steps"   >   10 </parameter>
       <parameter name="timestep">  0.4 </parameter>
    </qmc>
-\end{verbatim}
-\end{shaded}
+\end{shade}
 XML elements start with \texttt{<element\_name>}, end with \texttt{</element\_name>}, and can be nested within each other to denote substructure (the trial wavefunction is composed of a Slater determinant and a Jastrow factor, which are each further composed of \ldots).  \texttt{id} and \texttt{series} are attributes of the \texttt{<project/>} element.  XML attributes are generally used to represent simple values, like names, integers, or real values.  Similar functionality is also commonly provided by \texttt{<parameter/>} elements like those shown above.
 
 The overall structure of the input file reflects different aspects of the QMC simulation: the simulation cell, particles, trial wavefunction, Hamiltonian, and QMC run parameters.  A condensed version of the actual input file is shown below:
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 <?xml version="1.0"?>
 <simulation>
 
@@ -91,6 +87,6 @@ The overall structure of the input file reflects different aspects of the QMC si
    </qmc>
 
 </simulation>
-\end{verbatim}
-\end{shaded}
+\end{shade}
 The omitted portions (\texttt{...}) are more fine-grained inputs such as the axes of the simulation cell, the number of up and down electrons, positions of atomic species, external orbital files, starting Jastrow parameters, and external pseudopotential files.  
+

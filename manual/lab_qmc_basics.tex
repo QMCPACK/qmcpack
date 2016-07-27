@@ -41,8 +41,7 @@ This lab focuses on the basics of performing quality QMC calculations.  As an ex
 %├── docs                  - documentation 
 %│   └── Lab_2_Slides.pdf     - slides presented during the lab
 
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 labs/lab2_qmc_basics/
 │
 ├── oxygen_atom           - oxygen atom calculations 
@@ -64,8 +63,7 @@ labs/lab2_qmc_basics/
     ├── pseudopotentials     - directory containing C pseudopotentials
     └── reference            - directory w/ completed runs
 
-\end{verbatim}
-\end{shaded}
+\end{shade}
 
 
 
@@ -74,11 +72,9 @@ labs/lab2_qmc_basics/
 \section{Obtaining and converting a pseudopotential for oxygen}
 \label{sec:lqb_pseudo}
 First enter the \texttt{oxygen\_atom} directory:
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 cd labs/lab2_qmc_basics/oxygen_atom/
-\end{verbatim}
-\end{shaded}
+\end{shade}
 \noindent
 Throughout the rest of the lab, locations will be specified with respect to \texttt{labs/lab2\_qmc\_basics} (e.g. \texttt{oxygen\_atom}).
 
@@ -100,19 +96,15 @@ tool:
 
 \noindent
 \ifws
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 ppconvert --gamess_pot O.BFD.gamess --s_ref "1s(2)2p(4)" \
  --p_ref "1s(2)2p(4)" --d_ref "1s(2)2p(4)" --xml O.BFD.xml
-\end{verbatim}
-\end{shaded}
+\end{shade}
 \else
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 jobrun_vesta ppconvert --gamess_pot O.BFD.gamess --s_ref "1s(2)2p(4)" \
  --p_ref "1s(2)2p(4)" --d_ref "1s(2)2p(4)" --xml O.BFD.xml
-\end{verbatim}
-\end{shaded}
+\end{shade}
 \fi
 
 \noindent
@@ -122,19 +114,15 @@ Note: the command to convert the PP into QM Espresso's UPF format is similar (bo
 
 \noindent
 \ifws
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 ppconvert --gamess_pot O.BFD.gamess --s_ref "1s(2)2p(4)" \
  --p_ref "1s(2)2p(4)" --d_ref "1s(2)2p(4)" --log_grid --upf O.BFD.upf
-\end{verbatim}
-\end{shaded}
+\end{shade}
 \else
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 jobrun_vesta ppconvert --gamess_pot O.BFD.gamess --s_ref "1s(2)2p(4)" \
  --p_ref "1s(2)2p(4)" --d_ref "1s(2)2p(4)" --log_grid --upf O.BFD.upf
-\end{verbatim}
-\end{shaded}
+\end{shade}
 \noindent
 \fi
 
@@ -213,25 +201,19 @@ CELL_PARAMETERS cubic
 
 Run Quantum Espresso by typing 
 \ifws
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 mpirun -np 4 pw.x -input O.q0.dft.in >&O.q0.dft.out&
-\end{verbatim}
-\end{shaded}
+\end{shade}
 \else
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 jobrun_vesta pw.x O.q0.dft.in
-\end{verbatim} 
-\end{shaded}
+\end{shade}
 \fi
 
 The DFT run should take a few minutes to complete.  If desired, you can track the progress of the DFT run by typing ``\ifws\verb|tail -f O.q0.dft.out|\else\verb|tail -f O.q0.dft.output|\fi''. Once finished, you should check the LDA total energy in \texttt{\labsw{O.q0.dft.out}{O.q0.dft.output}} by typing ``\ifws\verb|grep '!  ' O.q0.dft.out|\else\verb|grep '!  ' O.q0.dft.output|\fi''.  The result should be close to
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 !    total energy              =     -31.57553905 Ry
-\end{verbatim}
-\end{shaded} 
+\end{shade} 
 % both of the numbers below are for 200 Ry (too small as it turns out)
 % 10 Angstrom cell
 %!    total energy              =     -31.56729415 Ry
@@ -252,17 +234,13 @@ The orbitals have been written in a format native to Quantum Espresso in the \te
 
 Perform the orbital conversion now by typing the following:
 \ifws
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 mpirun -np 1 pw2qmcpack.x<O.q0.p2q.in>&O.q0.p2q.out&
-\end{verbatim}
-\end{shaded}
+\end{shade}
 \else
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 jobrun_vesta pw2qmcpack.x O.q0.p2q.in
-\end{verbatim}
-\end{shaded}
+\end{shade}
 \fi
 \noindent
 Upon completion of the run, a new file should be present containing the orbitals for QMCPACK: \texttt{O.q0.pwscf.h5}.  Template XML files for particle (\texttt{O.q0.ptcl.xml}) and wavefunction (\texttt{O.q0.wfs.xml}) inputs to QMCPACK should also be present.  
@@ -305,7 +283,7 @@ for transition metal species or when high accuracy is desired for molecules.
 
 \begin{figure}
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{./figures/lab_qmc_basics_J1}
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{figures/lab_qmc_basics_J1.png}
 \end{center}
 \caption{Optimized $U_1$ function for 1-body Jastrow factor of an oxygen atom.
 \label{fig:u1_spline}
@@ -432,34 +410,27 @@ The cost function defines the quantity to be minimized during optimization. The 
 
 Replace \texttt{MAX}, \texttt{EVCOST}, \texttt{UVCOST}, \texttt{RVCOST}, \texttt{TS}, and \texttt{SAMPLES} in the \texttt{loop} with appropriate starting values in the \texttt{O.q0.opt.in.xml} input file.  Perform the optimization run by typing
 \ifws
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 mpirun -np 4 qmcpack O.q0.opt.in.xml >&O.q0.opt.out&
-\end{verbatim}
-\end{shaded}
+\end{shade}
 \else
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 jobrun_vesta qmcpack O.q0.opt.in.xml
-\end{verbatim}
-\end{shaded}
+\end{shade}
 \fi
 \noindent
 The run should only take a few minutes for reasonable values of loop \texttt{max} and \texttt{samples}.  
 
 Log file output will appear in \labsw{\texttt{O.q0.opt.out}}{\texttt{O.q0.opt.output}}.  The beginning of each linear optimization will be marked with text similar to
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 =========================================================
   Start QMCFixedSampleLinearOptimize
   File Root O.q0.opt.s011 append = no 
 =========================================================
-\end{verbatim}
-\end{shaded}
+\end{shade}
 \noindent
 At the end of each optimization section the change in cost function, new values for the Jastrow parameters, and elapsed wallclock time are reported:
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
  OldCost: 7.0598901869e-01 NewCost: 7.0592576381e-01 Delta Cost:-6.3254886314e-05
 ...
   <optVariables href="O.q0.opt.s011.opt.xml">
@@ -490,12 +461,10 @@ eO_7 -4.1358075061e-03 1 1  ON 23
   </optVariables>
 ...
   QMC Execution time = 2.8218972974e+01 secs
-\end{verbatim}
-\end{shaded}
+\end{shade}
 \noindent
 The cost function should decrease during each linear optimization (\texttt{Delta cost < 0}).  Try ``\labsw{\texttt{grep OldCost *opt.out}}{\texttt{grep OldCost *opt.output}}''.  You should see something like this:
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
  OldCost: 1.2655186572e+00 NewCost: 7.2443875597e-01 Delta Cost:-5.4107990118e-01
  OldCost: 7.2229830632e-01 NewCost: 6.9833678217e-01 Delta Cost:-2.3961524143e-02
  OldCost: 8.0649629434e-01 NewCost: 8.0551871147e-01 Delta Cost:-9.7758287036e-04
@@ -508,14 +477,12 @@ The cost function should decrease during each linear optimization (\texttt{Delta
  OldCost: 7.2717974404e-01 NewCost: 7.2715201115e-01 Delta Cost:-2.7732880747e-05
  OldCost: 6.9400639873e-01 NewCost: 6.9257183689e-01 Delta Cost:-1.4345618444e-03
  OldCost: 7.0598901869e-01 NewCost: 7.0592576381e-01 Delta Cost:-6.3254886314e-05
-\end{verbatim}
-\end{shaded}
+\end{shade}
 
 Blocked averages of energy data, including the kinetic energy and components of the potential energy, are written to \texttt{scalar.dat} files.  The first is named ``\texttt{O.q0.opt.s000.scalar.dat}'', with a series number of zero (\texttt{s000}).  In the end there will be \texttt{MAX} of them, one for each series. 
 
 When the job has finished, use the \texttt{qmca} tool to assess the effectiveness of the optimization process.  To look at just the total energy and the variance, type ``\verb|qmca -q ev O.q0.opt*scalar*|''.  This will print the energy, variance, and the variance/energy ratio in Hartree units:
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
                             LocalEnergy               Variance           ratio
 O.q0.opt  series 0  -15.739585 +/- 0.007656   0.887412 +/- 0.010728   0.0564
 O.q0.opt  series 1  -15.848347 +/- 0.004089   0.318490 +/- 0.006404   0.0201
@@ -526,8 +493,7 @@ O.q0.opt  series 5  -15.864967 +/- 0.002733   0.278065 +/- 0.004413   0.0175
 O.q0.opt  series 6  -15.869644 +/- 0.002949   0.273497 +/- 0.006141   0.0172
 O.q0.opt  series 7  -15.868397 +/- 0.003838   0.285451 +/- 0.007570   0.0180
 ...
-\end{verbatim}
-\end{shaded}
+\end{shade}
 \noindent
 Plots of the data can also be obtained with the ``\texttt{-p}'' option (``\verb|qmca -p -q ev O.q0.opt*scalar*|'').
 
@@ -627,17 +593,13 @@ Choose an initial DMC timestep and create a sequence of $N$ timesteps according 
 \noindent
 Fill in \texttt{DWARMUP}, \texttt{DBLOCKS}, \texttt{DSTEPS}, and \texttt{DTIMESTEP} for each DMC run according to \ref{eq:timestep_iter}.  Start the DMC timestep extrapolation run by typing:  
 \ifws
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 mpirun -np 4 qmcpack O.q0.dmc.in.xml >&O.q0.dmc.out&
-\end{verbatim}
-\end{shaded}
+\end{shade}
 \else
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 jobrun_vesta qmcpack O.q0.dmc.in.xml
-\end{verbatim}
-\end{shaded}
+\end{shade}
 \fi
 \noindent
 The run should take only a few minutes to complete.
@@ -646,8 +608,7 @@ QMCPACK will create files prefixed with \texttt{O.q0.dmc}.  The log file is \lab
 
 Use the \texttt{PlotTstepConv.pl} to obtain a linear fit to the timestep data (type ``\texttt{PlotTstepConv.pl O.q0.dmc.in.xml 40}'').  You should see a plot similar to fig. \ref{fig:timestep_conv}.  The tail end of the text output displays the parameters for the linear fit.  The ``\texttt{a}'' parameter is the total energy extrapolated to zero timestep in Hartree units. 
 
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 ...
 Final set of parameters            Asymptotic Standard Error
 =======================            ==========================
@@ -655,12 +616,11 @@ Final set of parameters            Asymptotic Standard Error
 a               = -15.8925         +/- 0.0007442    (0.004683%)
 b               = -0.0457479       +/- 0.0422       (92.24%)
 ...
-\end{verbatim}
-\end{shaded}
+\end{shade}
 
 \begin{figure}
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{./figures/lab_qmc_basics_timestep_conv}
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{figures/lab_qmc_basics_timestep_conv.pdf}
 \end{center}
 \caption{Linear fit to DMC timestep data from \texttt{PlotTstepConv.pl}.
 \label{fig:timestep_conv}
@@ -1124,8 +1084,7 @@ scales = [1.00,0.90,0.95,1.05,1.10]
 Note that ``\texttt{1.00}'' is left in front because we are going to optimize the Jastrow factor first at the equilibrium separation and reuse this Jastrow factor for all other separation distances.  This procedure is used because it can reduce variations in localization errors (due to pseudopotentials in DMC) along the binding curve. 
 
 Change the ``\texttt{status\_only}'' parameter in the ``\texttt{settings}'' function to \texttt{1} and type ``./O\_dimer.py'' at the command line.  This will print the status of all simulations:
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 Project starting 
   checking for file collisions 
   loading cascade images 
@@ -1156,15 +1115,13 @@ Project starting
     000000  p2q     ./scale_1.1 
     000000  qmc     ./scale_1.1 
     setup, sent_files, submitted, finished, got_output, analyzed 
-\end{verbatim}
-\end{shaded}
+\end{shade}
 \noindent
 In this case, five simulation ``cascades'' (workflows) have been identified, each one starting and ending with ``\texttt{dft}'' and ``\texttt{qmc}'' runs, respectively.  The six status flags (\texttt{setup}, \texttt{sent\_files}, \texttt{submitted}, \texttt{finished}, \texttt{got\_output}, \texttt{analyzed}) each show \texttt{0}, indicating that no work has been done yet.  
 
 Now change ``\texttt{status\_only}'' back to \texttt{0}, set ``\texttt{generate\_only}'' to \texttt{1}, and run \texttt{O\_dimer.py} again.  This will perform a dry-run of all simulations.  The dry-run should finish in about 20 seconds:
 \ifws
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 Project starting 
   checking for file collisions 
   loading cascade images 
@@ -1248,11 +1205,9 @@ Project starting
   ...
   poll 17  memory 93.06 MB 
 Project finished
-\end{verbatim}
-\end{shaded}
+\end{shade}
 \else
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 Project starting 
   checking for file collisions 
   loading cascade images 
@@ -1330,15 +1285,13 @@ Project starting
 
   poll 17  memory 93.00 MB 
 Project finished
-\end{verbatim}
-\end{shaded}
+\end{shade}
 \fi
 
 \noindent
 Nexus polls the simulation status every 3 seconds and sleeps in between.  The ``scale\_*'' directories should now contain several files:
 \ifws
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 scale_1.0
 ├── dft.in
 ├── O.BFD.upf
@@ -1363,11 +1316,9 @@ scale_1.0
     ├── analyzer.p
     ├── input.p
     └── sim.p
-\end{verbatim}
-\end{shaded}
+\end{shade}
 \else
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 scale_1.0
 ├── dft.in
 ├── dft.qsub.in
@@ -1396,13 +1347,11 @@ scale_1.0
     ├── analyzer.p
     ├── input.p
     └── sim.p
-\end{verbatim}
-\end{shaded}
+\end{shade}
 \fi
 \noindent
 Take a minute to inspect the generated input (\texttt{dft.in}, \texttt{p2q.in}, \texttt{opt.in.xml}, \texttt{qmc.in.xml}) \labsw{}{and submission (\texttt{dft.qsub.in}, \texttt{p2q.qsub.in}, \texttt{opt.qsub.in}, \texttt{qmc.qsub.in})} files.  The pseudopotential files (\texttt{O.BFD.upf} and \texttt{O.BFD.xml}) have been copied into each local directory. Four additional directories have been created: \texttt{sim\_dft},  \texttt{sim\_p2q}, \texttt{sim\_opt} and \texttt{sim\_qmc}.  The \texttt{sim.p} files in each directory contain the current status of each simulation.  If you run \texttt{O\_dimer.py} again, it should not attempt to rerun any of the simulations:   
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 Project starting 
   checking for file collisions 
   loading cascade images 
@@ -1418,8 +1367,7 @@ Project starting
   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
   poll 0  memory 64.25 MB 
 Project finished
-\end{verbatim}
-\end{shaded}
+\end{shade}
 \noindent
 This way one can continue to add to the \texttt{O\_dimer.py} file (\emph{e.g.} adding more separation distances) without worrying about duplicate job submissions.
 
@@ -1533,39 +1481,31 @@ If desired, you can submit the runs directly with \texttt{example.py}.  To do th
 
 Alternatively the runs can be submitted by hand:
 \ifws
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 mpirun -np 4 pw.x<scf.in>&scf.out&
 
 (wait until JOB DONE appears in scf.out)
 
 mpirun -np 1 pw2qmcpack.x<p2q.in>&p2q.out&
-\end{verbatim}
-\end{shaded}
+\end{shade}
 \else
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 qsub --mode script --env BG_SHAREDMEMSIZE=32 scf.qsub.in
 
 (wait until JOB DONE appears in scf.output)
 
 qsub --mode script --env BG_SHAREDMEMSIZE=32 p2q.qsub.in
-\end{verbatim}
-\end{shaded}
+\end{shade}
 \fi
 Once the conversion process has finished the orbitals should be located in the file \newline \texttt{diamond\_vmc/pwscf\_output/pwscf.pwscf.h5}.  Open \texttt{diamond\_vmc/vmc.in.xml} and replace ``\texttt{MISSING.h5}'' with ``\texttt{./pwscf\_output/pwscf.pwscf.h5}''.  Next submit the VMC run:
 \ifws
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 mpirun -np 4 qmcpack vmc.in.xml>&vmc.out&
-\end{verbatim}
-\end{shaded}
+\end{shade}
 \else
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 qsub --mode script --env BG_SHAREDMEMSIZE=32 vmc.qsub.in
-\end{verbatim}
-\end{shaded}
+\end{shade}
 \fi
 Note: If your system is large, the above process may not complete within the time frame of this lab.  Working with a stripped down (but relevant) example is a good idea for exploratory runs.
 
@@ -1589,8 +1529,7 @@ Once the runs have finished, you may want to begin exploring Jastrow optimizatio
 Basic Python data types (\texttt{int}, \texttt{float}, \texttt{str}, \texttt{tuple}, \texttt{list}, \texttt{array}, \texttt{dict}, \texttt{obj}) and programming constructs (\texttt{if} statements, \texttt{for} loops, functions w/ keyword arguments) are briefly overviewed below.  All examples can be executed interactively in Python.  To do this, type ``\texttt{python}'' at the command line and paste any of the shaded text below at the ``\texttt{>>>}'' prompt.  For more information about effective use of Python, consult the detailed online documentation: \href{https://docs.python.org/2/}{https://docs.python.org/2/}.
 
 \subsubsection{Intrinsic types: \texttt{int, float, str}}
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 #this is a comment
 i=5                     # integer
 f=3.6                   # float
@@ -1603,13 +1542,11 @@ str(i)                  # int to string: '5'
 s+'/simulations'        # joining strings: 'quantum/monte/carlo/simulations'
 'i={0}'.format(i)       # format string: 'i=5'
 
-\end{verbatim}
-\end{shaded}
+\end{shade}
 
  
 \subsubsection{Container types: \texttt{tuple, list, array, dict, obj}}
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 from numpy import array  # get array from numpy module
 from generic import obj  # get obj from Nexus' generic module 
 
@@ -1665,11 +1602,9 @@ d.values()              #   get element values: [5, 7, 6]
 o.c = 7                 #   add/assign element
 o.set(c=7,d=8)          #   add/assign multiple elements
 
-\end{verbatim}
-\end{shaded}
+\end{shade}
 An important feature of Python to be aware of is that assignment is most often by reference, \emph{i.e.} new values are not always created.  This point is illustrated below with an \texttt{obj} instance, but it also holds for \texttt{list}, \texttt{array}, \texttt{dict}, and others.
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 >>> o = obj(a=5,b=6)
 >>> 
 >>> p=o
@@ -1687,15 +1622,13 @@ An important feature of Python to be aware of is that assignment is most often b
 >>> print o
   a               = 7
   b               = 6
-\end{verbatim}
-\end{shaded}
+\end{shade}
 \noindent
 Here \texttt{p} is just another name for \texttt{o}, while \texttt{q} is a fully independent copy of it.
 
 
 \subsubsection{Conditional Statements: \texttt{if/elif/else}}
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 a = 5
 if a is None:
     print 'a is None'
@@ -1711,13 +1644,11 @@ else:
     print 'a is 10'
 #end if
 
-\end{verbatim}
-\end{shaded}
+\end{shade}
 The ``\texttt{\#end if}'' is not part of Python syntax, but you will see text like this throughout Nexus for clear encapsulation.
 
 \subsubsection{Iteration: \texttt{for}}
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 from generic import obj
 
 l = [1,2,3]              
@@ -1751,13 +1682,11 @@ for n,v in o.iteritems():# loop over name/value pairs in obj
 
 print d                  # d is {'a': 10, 'b': 10}
 
-\end{verbatim}
-\end{shaded}
+\end{shade}
 
 
 \subsubsection{Functions: \texttt{def}, argument syntax}
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 def f(a,b,c=5):          # basic function, c has a default value
     print a,b,c
 #end def f
@@ -1798,6 +1727,5 @@ o = obj(                 # obj w/ indented kw. args
 f(**o)                   # kw. args from obj, prints:
                          #   ()
                          #   {'timestep': 0.02, 'blocks': 100, 'steps': 5}
-\end{verbatim}
-\end{shaded}
+\end{shade}
 %}

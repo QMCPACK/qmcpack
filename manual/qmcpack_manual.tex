@@ -7,9 +7,9 @@
 %\usepackage{url}
 \usepackage{tabularx}
 \usepackage{placeins}
-\usepackage{xcolor}
+% environment for shaded verbatim
+\usepackage{verbatim}
 \usepackage{graphicx}
-\usepackage{framed}
 
 % making listing behave properly
 %   with setting below, listings now render correctly
@@ -36,10 +36,40 @@
 }
 
 
+\ifpdf
+\usepackage{framed}
+\usepackage{xcolor}
+\pagecolor{white}
+\definecolor{shadecolor}{rgb}{.9, .9, .9}
+
+\newenvironment{shade}%
+   {\snugshade\verbatim}%
+   {\endverbatim\endsnugshade}
+
+
+\else
+
+\usepackage{xcolor}
+\definecolor{verbgray}{gray}{0.9}
+
+\lstnewenvironment{shade}{%
+  \lstset{backgroundcolor=\color{verbgray},
+  frame=single,
+  framerule=0pt,
+  basicstyle=\ttfamily,
+  columns=fullflexible}}{}
+
+%\newenvironment{shade}
+%    {\HCode{<div class='code'>}\verbatim}
+%    {\endverbatim\HCode{</div>}}
+
+\fi
+
+
 % set margins for whole document, lots of wasted space at top and bottom originally
 \usepackage[left=1.0in,right=1.0in,top=1.0in,bottom=1.0in]{geometry}
 
-\pagecolor{white}
+
 
 
 \newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
@@ -74,9 +104,6 @@
 \oddsidemargin 0cm
 \evensidemargin 0cm
 \textwidth 6.5in
-
-% for shaded environment from framed package
-\definecolor{shadecolor}{gray}{0.95}
 
 
 % proper rendering of qmcpack

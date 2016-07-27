@@ -30,8 +30,7 @@ DE-AC04-94AL85000.}
 
 \section{Lab directories and files}
 
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 labs/lab4_condensed_matter/
 ├── Be-2at-setup.py           - DFT only for prim to conv cell
 ├── Be-2at-qmc.py             - QMC only for prim to conv cell
@@ -45,8 +44,7 @@ labs/lab4_condensed_matter/
     ├── Be.xml                  - Be PP for QMCPACK
     ├── C.BFD.upf               - C  PP for Quantum Espresso
     └── C.BFD.xml               - C  PP for QMCPACK
-\end{verbatim}
-\end{shaded}
+\end{shade}
 
 
 The goal of this lab will be to introduce you to the somewhat specialized problems involved in performing diffusion Monte Carlo calculations on condensed matter as opposed to the atoms and molecules that were the focus of earlier labs.   Calculations will be performed on two different systems.  Firstly, we will perform a series of calculations on BCC beryllium focusing on the necessary methodology to limit finite size effects.  Secondly, we will perform calculations on graphene as an example of a system where qmcpack’s ability to handle cases with mixed periodic and open boundary conditions is useful.  This example will also focus on strategies to limit memory usage for such systems.
@@ -147,8 +145,7 @@ qmcpack    = '/soft/applications/qmcpack/Binaries/qmcpack_comp'
 and rerun the script.
 
 When the optimiztion calculation has finished, check that everything as proceeded correctly by looking at the output in the opt-2at directory.  Firstly, you can grep the output file for Delta to see if the cost function has indeed been decreasing during the optimization.  You should find something like:
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
  OldCost: 4.8789147e-02 NewCost: 4.0695360e-02 Delta Cost:-8.0937871e-03
  OldCost: 3.8507795e-02 NewCost: 3.8338486e-02 Delta Cost:-1.6930674e-04
  OldCost: 4.1079105e-02 NewCost: 4.0898345e-02 Delta Cost:-1.8076319e-04
@@ -157,11 +154,9 @@ When the optimiztion calculation has finished, check that everything as proceede
  OldCost: 4.2176276e-02 NewCost: 4.2083371e-02 Delta Cost:-9.2903058e-05
  OldCost: 4.3977361e-02 NewCost: 4.2865751e-02 Delta Cost:-1.11161830-03
  OldCost: 4.1420944e-02 NewCost: 4.0779569e-02 Delta Cost:-6.4137501e-04
-\end{verbatim}
-\end{shaded}
+\end{shade}
 Which shows that the starting wavefunction was fairly good and that most of the optimizaiton occurred in the first step.  Confirm this by using qmca to look at how the energy and variance changed over the course of the calculation with teh comand: qmca -q ev -e 10 *.scalar.dat executed in the opt-2at directory.  You should get output like the following:
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
                  LocalEnergy               Variance             ratio
 opt  series 0  -2.159139 +/- 0.001897   0.047343 +/- 0.000758   0.0219 
 opt  series 1  -2.163752 +/- 0.001305   0.039389 +/- 0.000666   0.0182 
@@ -171,8 +166,7 @@ opt  series 4  -2.162441 +/- 0.000865   0.039597 +/- 0.000342   0.0183
 opt  series 5  -2.161287 +/- 0.000732   0.039954 +/- 0.000498   0.0185 
 opt  series 6  -2.163458 +/- 0.000973   0.044431 +/- 0.003583   0.0205 
 opt  series 7  -2.163495 +/- 0.001027   0.040783 +/- 0.000413   0.0189 
-\end{verbatim}
-\end{shaded}
+\end{shade}
 
 Now that the optimization has completed successfully, we can perform dmc calculations.  The first goal of the calculations will be to try to eliminate the one body finite size effects by twist averaging.  The script Be-2at-qmc.py has the necessary input.  Note on line 42 two twist grids are specified, (2,2,2) and (3,3,3).  Change the tiling matrix in this input file as in Be-2at-qmc.py and start the calculations.  Note that this workflow takes advantage of qmcpack's ability to group jobs.  If you look in the directory dmc-2at\_222 at the job submission script, (dmc.qsub.in) you will note that rather than operating on an xml input file, qmcapp is targeting a text file called dmc.in.  This file is a simple text file that contains the names of the 8 xml input files needed for this job, one for each twist.  When operated in this mode, qmcpack will use mpi groups to run multiple copies of itself within the same mpi context.  This is often useful both in terms of organizing calculations and also for taking advantage of the large job sizes that computer centers often encourage.
 

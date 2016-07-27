@@ -36,8 +36,7 @@ ultimate result of the MC simulations.
 
 \section{Lab directories and files}
 
-\begin{shaded} 
-\begin{verbatim}
+\begin{shade}
 labs/lab1_qmc_statistics/
 
  atom                              - H atom VMC calculation
@@ -136,8 +135,7 @@ labs/lab1_qmc_statistics/
     32_C2H4C2H4.s000.scalar.dat       - ethene dimer   "   "
     nelectron_tcpu.dat                - data for gnuplot
     Nelectron_tCPU.plt                - gnuplot for N_elec vs. t_CPU
-\end{verbatim}
-\end{shaded}
+\end{shade}
 
 
 \section{Atomic units} 
@@ -182,13 +180,11 @@ available in the \texttt{average} directory):
 
 Then, press \textbf{[Enter]} to get:
 
-\begin{shaded} 
-\begin{verbatim}
+\begin{shade}
 >>> ((-0.45298911858) + (-0.45481953564) + (-0.48066105923) + 
 (-0.47316713469) + (-0.4620473302))/5.  
 -0.46473683566800006
-\end{verbatim}
-\end{shaded}
+\end{shade}
 
 To understand the significance of the mean, we also need the standard deviation
 around the mean of the data (also called the error bar), given by:
@@ -212,15 +208,13 @@ five data points, put in:
 
 Then, press \textbf{[Enter]} to get:
 
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 >>> ( (1./(5.*(5.-1.))) * ( (-0.45298911858-(-0.464736835668))**2 +
 (-0.45481953564-(-0.464736835668))**2 + (-0.48066105923-(-0.464736835668))**2 + 
 (-0.47316713469-(-0.464736835668))**2 + (-0.46204733302-(-0.464736835668))**2 
 ) )**0.5
 0.0053303187464332066
-\end{verbatim}
-\end{shaded}
+\end{shade}
 
 Thus, we might report this data as having a value -0.465 +/- 0.005 hartrees.
 This calculation of the standard deviation assumes that the average for this
@@ -248,15 +242,13 @@ corresponding local energy:
 
 and press \textbf{[Enter]} to get:
 
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 >>> ((1./(5.-1.))*((0.60984565298-(-0.45298911858)**2)+ 
 (0.61641291630-(-0.45481953564)**2)+(1.35860151160-(-0.48066105923)**2)+ 
 (0.78720769003-(-0.47316713469)**2)+(0.56393677687-(-0.46204733302)**2))
 )**0.5
 0.84491636672906634
-\end{verbatim}
-\end{shaded}
+\end{shade}
 
 This much larger standard deviation, acknowledging that the mean of this small
 data set is not the average in the limit of infinite sampling more accurately,
@@ -276,8 +268,7 @@ scalar.dat with a text editor (e.g., \textbf{vi *.scalar.dat} or \textbf{emacs
 *.scalar.dat}.  If possible, adjust the terminal so that lines do not wrap.
 The data will begin as follows (broken into three groups to fit on this page):
 
-\begin{shaded} 
-\begin{verbatim}
+\begin{shade}
 #   index    LocalEnergy         LocalEnergy_sq      LocalPotential     ...
          0   -4.5298911858e-01    6.0984565298e-01   -1.1708693521e+00    
          1   -4.5481953564e-01    6.1641291630e-01   -1.1863425644e+00    
@@ -289,8 +280,7 @@ The data will begin as follows (broken into three groups to fit on this page):
          7   -4.5687452611e-01    5.8139614676e-01   -1.1423627617e+00    
          8   -4.5018503739e-01    8.4147849706e-01   -1.1842075439e+00    
          9   -4.3862013841e-01    5.5477715836e-01   -1.2080979177e+00    
-\end{verbatim}
-\end{shaded}
+\end{shade}
 
 The first line begins with a \#, indicating that this line does not contain MC
 data but rather the labels of the columns.  After a blank line, the remaining
@@ -305,8 +295,7 @@ the smaller these fluctuations will be.  The next column contains an important
 ingredient in estimating the error in the MC average--the square of the local
 energy--found by evaluating the square of the Hamiltonian.  
 
-\begin{shaded} 
-\begin{verbatim} 
+\begin{shade} 
 ...   Kinetic             Coulomb             BlockWeight        ... 
        7.1788023352e-01   -1.1708693521e+00    1.2800000000e+04   
        7.3152302871e-01   -1.1863425644e+00    1.2800000000e+04   
@@ -318,8 +307,7 @@ energy--found by evaluating the square of the Hamiltonian.
        6.8548823555e-01   -1.1423627617e+00    1.2800000000e+04   
        7.3402250655e-01   -1.1842075439e+00    1.2800000000e+04   
        7.6947777925e-01   -1.2080979177e+00    1.2800000000e+04   
-\end{verbatim} 
-\end{shaded}
+\end{shade}
 
 The fourth column from the left consists of the values of the local potential
 energy.  In this simulation, it is identical to the Coulomb potential
@@ -333,8 +321,7 @@ column shows the local Coulomb interaction energy.  The seventh column displays
 the weight each line of data has in the average (the weights are identical in
 this simulation).   
 
-\begin{shaded} 
-\begin{verbatim} 
+\begin{shade} 
 ...    BlockCPU            AcceptRatio         
        6.0178991748e-03    9.8515625000e-01
        5.8323097461e-03    9.8562500000e-01
@@ -346,8 +333,7 @@ this simulation).
        5.8258469971e-03    9.8726562500e-01
        5.8158433545e-03    9.8468750000e-01
        5.7959401123e-03    9.8539062500e-01
-\end{verbatim} 
-\end{shaded}
+\end{shade}
 
 The eighth column shows the CPU time (in seconds) to calculate the data in that
 line.  The ninth column from the left contains the acceptance ratio (1 being
@@ -366,8 +352,7 @@ the average of each column with a quantity in the scalar.dat file as follows.
 
 Execute qmca by \textbf{qmca *.scalar.dat}, which for this data outputs:
 
-\begin{shaded} 
-\begin{verbatim}
+\begin{shade}
 
 H  series 0 
 LocalEnergy           =          -0.45446 +/-          0.00057
@@ -380,8 +365,7 @@ BlockWeight           =    12800.00000000 +/-       0.00000000
 BlockCPU              =        0.00582002 +/-       0.00000067 
 AcceptRatio           =          0.985508 +/-         0.000048
 Efficiency            =        0.00000000 +/-       0.00000000 
-\end{verbatim} 
-\end{shaded}
+\end{shade}
 
 After one blank, qmca prints the title of the subsequent data, gleaned from the
 data file name.  In this case, H.s000.scalar.dat became ``H  series 0''.
@@ -402,11 +386,9 @@ To view only one value, \textbf{qmca} takes the \textbf{-q (quantity)} flag.
 For example, the output of \textbf{qmca -q LocalEnergy *.scalar.dat} in this
 directory produces a single line of output:
 
-\begin{shaded} 
-\begin{verbatim} 
+\begin{shade} 
 H  series 0  LocalEnergy = -0.454460 +/- 0.000568 
-\end{verbatim} 
-\end{shaded}
+\end{shade}
 
 Type \textbf{qmca --help} to see the list of all quantities and their
 abbreviations.
@@ -432,7 +414,7 @@ trace of the local energy:
 \FloatBarrier
 \begin{figure}[ht!]
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{./figures/lab_qmc_statistics_tracing1}
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{figures/lab_qmc_statistics_tracing1.png}
 \end{center}
 \end{figure}
 \FloatBarrier
@@ -456,7 +438,7 @@ H.s000.scalar.dat} to produce this graph:
 \FloatBarrier
 \begin{figure}[ht!]
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{./figures/lab_qmc_statistics_tracing2}
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{figures/lab_qmc_statistics_tracing2.png}
 \end{center}
 \end{figure}
 \FloatBarrier
@@ -480,11 +462,9 @@ outputs autocorrelation when given the {-}{-}sac flag.
 Change to directory \texttt{autocorrelation} and type \textbf{qmca -q e
 {-}{-}sac H.s000.scalar.dat}.  
 
-\begin{shaded} 
-\begin{verbatim} 
+\begin{shade} 
 H  series 0  LocalEnergy = -0.454982 +/- 0.000430    1.0 
-\end{verbatim} 
-\end{shaded}
+\end{shade}
 
 The value after the error bar on the quantity is the autocorrelation (1.0 in
 this case).
@@ -494,8 +474,7 @@ can lead to autocorrelation since the new samples will be in the neighborhood
 of previous samples.  Type \textbf{grep timestep H.xml} to see the varying time
 step values in this QMCPACK input file (H.xml):
 
-\begin{shaded} 
-\begin{verbatim} 
+\begin{shade} 
 <parameter name="timestep">10</parameter>
 <parameter name="timestep">5</parameter> 
 <parameter name="timestep">2</parameter> 
@@ -512,8 +491,7 @@ step values in this QMCPACK input file (H.xml):
 <parameter name="timestep">0.0005</parameter> 
 <parameter name="timestep">0.0002</parameter> 
 <parameter name="timestep">0.0001</parameter> 
-\end{verbatim} 
-\end{shaded}
+\end{shade}
 
 Generally, as the time step decreases, the autocorrelation will increase
 (caveat: very large time steps will also have increasing autocorrelation). To
@@ -524,7 +502,7 @@ H.plt}:
 \FloatBarrier
 \begin{figure}[ht!]
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{./figures/lab_qmc_statistics_blocking1}
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{figures/lab_qmc_statistics_blocking1.png}
 \end{center}
 \end{figure}
 \FloatBarrier
@@ -578,7 +556,7 @@ visualize the data:
 \FloatBarrier
 \begin{figure}[ht!]
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{./figures/lab_qmc_statistics_blocking2}
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{figures/lab_qmc_statistics_blocking2.png}
 \end{center}
 \end{figure}
 \FloatBarrier
@@ -604,8 +582,7 @@ memory on the time steps in this set of simulations by \textbf{grep timestep
 H.xml}. Then, type \textbf{qmca -q ar *scalar.dat} to see the acceptance ratio
 as it varies with decreasing time step:
 
-\begin{shaded} 
-\begin{verbatim} 
+\begin{shade} 
 H  series 0  AcceptRatio = 0.047646 +/- 0.000206 
 H  series 1  AcceptRatio = 0.125361 +/- 0.000308 
 H  series 2  AcceptRatio = 0.328590 +/- 0.000340 
@@ -622,8 +599,7 @@ H  series 12  AcceptRatio = 0.999958 +/- 0.000003
 H  series 13  AcceptRatio = 0.999986 +/- 0.000002 
 H  series 14  AcceptRatio = 0.999995 +/- 0.000001 
 H  series 15  AcceptRatio = 0.999999 +/- 0.000000 
-\end{verbatim} 
-\end{shaded}
+\end{shade}
 
 By series 8 (time step = 0.02), the acceptance ratio is in excess of 99\%.  
 
@@ -645,11 +621,9 @@ from the local energy and local energy squared columns of the scalar.dat.
 Type \textbf{qmca -q v H.s009.scalar.dat} to calculate the variance on the run
 with time step balancing autocorrelation and acceptance ratio:
 
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 H  series 9  Variance = 0.513570 +/- 0.010589  
-\end{verbatim}
-\end{shaded}
+\end{shade}
 
 Just as the total energy doesn't tell us much by itself, neither does the
 variance.  However, comparing the ratio of the variance to the energy indicates
@@ -657,12 +631,10 @@ how the magnitude of the fluctuations compares to the energy itself.   Type
 \textbf{qmca -q ev H.s009.scalar.dat} to calculate the energy and variance on
 the run side by side with the ratio:
 
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
                      LocalEnergy               Variance        ratio
 H  series 0  -0.454460 +/- 0.000568   0.529496 +/- 0.018445   1.1651
-\end{verbatim}
-\end{shaded}
+\end{shade}
 
 1.1651 is a very high ratio indicating the square of the fluctuations is on
 average larger than the value itself.  In the next section, we will approach
@@ -687,7 +659,7 @@ nodes.  Visualize this with \textbf{gnuplot H.plt}:
 \FloatBarrier
 \begin{figure}[ht!]
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{./figures/lab_qmc_statistics_nodes}
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{figures/lab_qmc_statistics_nodes.png}
 \end{center}
 \end{figure}
 \FloatBarrier
@@ -708,7 +680,7 @@ increasing the total number of samples.   Visualize the tradeoff by inputting
 \FloatBarrier
 \begin{figure}[ht!]
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{./figures/lab_qmc_statistics_blocks}
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{figures/lab_qmc_statistics_blocks.png}
 \end{center}
 \end{figure}
 \FloatBarrier
@@ -732,15 +704,13 @@ change within some threshold.
 Change to the directory \texttt{basis} and look at the total energy and
 variance as we change the wave function by typing \textbf{qmca -q ev H\_*}:
 
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
                             LocalEnergy               Variance        ratio 
 H_STO-2G  series 0  -0.454460 +/- 0.000568   0.529496 +/- 0.018445   1.1651 
 H_STO-3G  series 0  -0.465386 +/- 0.000502   0.410491 +/- 0.010051   0.8820 
 H_STO-6G  series 0  -0.471332 +/- 0.000491   0.213919 +/- 0.012954   0.4539 
 H__exact  series 0  -0.500000 +/- 0.000000   0.000000 +/- 0.000000   -0.0000 
-\end{verbatim}
-\end{shaded}
+\end{shade}
 
 qmca also puts out the ratio of the variance to the local energy in a column to
 the right of the variance error bar.  A typical high quality value for this
@@ -765,13 +735,11 @@ Change directories to \texttt{dimer} and put in \textbf{qmca -q ev *scalar.dat}
 to see the result of adding a simple, one-parameter Jastrow to the STO basis
 for the hydrogen dimer at experimental bond length:
 
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
                                LocalEnergy               Variance           
 H2_STO___no_jastrow  series 0  -0.876548 +/- 0.005313   0.473526 +/- 0.014910
 H2_STO_with_jastrow  series 0  -0.912763 +/- 0.004470   0.279651 +/- 0.016405
-\end{verbatim}
-\end{shaded}
+\end{shade}
 
 The energy reduces by 0.044 +/- 0.006 hartrees and the variance by 0.19 +/- 0.02.
 This is still 20\% above the ground state energy, and subsequent labs will cover how
@@ -787,12 +755,10 @@ The inverse of the product of CPU time and the variance measures the
 typing \textbf{qmca -q eff *scalar.dat} to see the efficiency of these two
 H$_2$ calculations:
 
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
 H2_STO___no_jastrow  series 0  Efficiency = 16698.725453 +/- 0.000000 
 H2_STO_with_jastrow  series 0  Efficiency = 52912.365609 +/- 0.000000 
-\end{verbatim}
-\end{shaded}
+\end{shade}
 
 The Jastrow factor increased the efficiency in these calculations by a factor
 of three, largely through the reduction in variance (check the average block
@@ -812,7 +778,7 @@ time of the simulation by \textbf{gnuplot Nelectron\_tCPU.plt}:
 \FloatBarrier
 \begin{figure}[ht!]
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{./figures/lab_qmc_statistics_scaling}
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{figures/lab_qmc_statistics_scaling.png}
 \end{center}
 \end{figure}
 \FloatBarrier
@@ -828,8 +794,7 @@ This isn't the whole story, however.  The variance of the energy also increases
 with a fixed basis set as the number of particles increases at a faster rate
 than the energy decreases.  To see this, type \textbf{qmca -q ev *scalar.dat}:
 
-\begin{shaded}
-\begin{verbatim}
+\begin{shade}
                             LocalEnergy               Variance           
 01________H  series 0  -0.471352 +/- 0.000493      0.213020 +/- 0.012950 
 02_______H2  series 0  -0.898875 +/- 0.000998      0.545717 +/- 0.009980 
@@ -839,8 +804,7 @@ than the energy decreases.  To see this, type \textbf{qmca -q ev *scalar.dat}:
 16_____C2H4  series 0  -75.488701 +/- 0.042919   404.218115 +/- 60.196642
 18___CH4CH4  series 0  -58.459857 +/- 0.039309   498.579645 +/- 92.480126
 32_C2H4C2H4  series 0  -91.567283 +/- 0.048392   632.114026 +/- 69.637760
-\end{verbatim}
-\end{shaded}
+\end{shade}
 
 The increase in variance is not uniform, but the general trend is upward with a
 fixed wave function form and basis set.  Subsequent labs will address how to
