@@ -580,8 +580,6 @@ class ProjwfcAnalyzer(SimulationAnalyzer):
                 self.warn('analysis failed, some data will not be available\noperations failed: {0}'.format(failures))
             #end if
         #end if
-        print self
-        exit()
     #end def analyze
 
 
@@ -615,7 +613,150 @@ class ProjwfcAnalyzer(SimulationAnalyzer):
     def read_lowdin(self):
         log = self.log
         log.seek('Lowdin Charges')
+        lowdin = obj()
+        has_ud = False
+        nmax = len(self.states.elem)*20
+        n  = 0
+        ls = ''
+        cur_atom = -1
+        while n<nmax and not ls.startswith('Spilling'):
+            n+=1
+            ls = log.readline().strip()
+            if ls.startswith('Atom'):
+                astr,ls = ls.split(':')
+                cur_atom = int(astr.split('#')[1])-1
+                if cur_atom not in lowdin:
+                    lowdin[cur_atom] = obj(tot=obj(),up=obj(),down=obj())
+                #end if
+                lc = lowdin[cur_atom]                
+            #end if
+            if 'tot' in ls:
+                lc_comp = lc.tot
+            elif 'up' in ls:
+                lc_comp = lc.up
+            elif 'down' in ls:
+                lc_comp = lc.down
+            else:
+                continue
+            #end if
+            tokens = ls.replace(' ','').rstrip(',').split(',')
+            for t in tokens:
+                name,value = t.split('=')
+                if 'spin' in name:
+                    has_ud = True
+                    name = 'charge'
+                elif 'charge' in name:
+                    name = 'charge'
+                #end if
+                lc_comp[name] = float(value)
+            #end for
+        #end while
+        if has_ud:
+            for lc in lowdin:
+                u = lc.up
+                d = lc.down
+                lc.pol = obj()
+                for k,uv in u.iteritems():
+                    dv = d[k]
+                    lc.tot[k] = uv + dv
+                    lc.pol[k] = uv - dv
+                #end for
+            #end for
+        else:
+            for lc in lowdin:
+                del lc.up
+                del lc.down
+            #end for
+        #end if
+        self.lowdin = lowdin
     #end def read_lowdin
+
+    def write_lowdin(self,filepath=None,sum=None,tot=None,pol=None,up=None,down=None,all=True,long=False):
+        if tot is None:
+            tot = all
+        #end if
+        if pol is None:
+            pol = all
+        #end if
+        if up is None:
+            up = all
+        #end if
+        if down is None:
+            down = all
+        #end if
+        if sum is None:
+            sum = all
+        #end if
+        sections = [('tot',tot),('pol',pol),('up',up),('down',down)]
+        elem=None
+        if 'states' in self:
+            elem = self.states.elem
+        #end if
+        lowdin = self.lowdin
+        text   = ''
+        if sum:
+            nelec = '?'
+            npol  = '?'
+            if len(lowdin)>0:
+                if 'tot' in lowdin[0]:
+                    nelec = 0
+                    for lc in lowdin:
+                        nelec += lc.tot.charge
+                    #end for
+                #end if
+                if 'pol' in lowdin[0]:
+                    npol = 0
+                    for lc in lowdin:
+                        npol += lc.pol.charge
+                    #end for
+                #end if
+            #end if
+            text += 'nup+ndn = {0}\n'.format(nelec)
+            text += 'nup-ndn = {0}\n'.format(npol)
+            text += '\n'
+        #end if
+        lvals  = 'spdfg'
+        for q,qwrite in sections:
+            if qwrite and len(lowdin)>0 and q in lowdin[0]:
+                text+=q+'\n'
+                for n in range(len(lowdin)):
+                    lc = lowdin[n][q]
+                    if elem is None:
+                        text += '  {0:>3}  {1: 3.2f}  '.format(n,lc.charge)
+                    else:
+                        text += '  {0:>3}  {1:>2}  {2: 3.2f}  '.format(n,elem[n],lc.charge)
+                    #end if
+                    if not long:
+                        for l in lvals:
+                            if l in lc:
+                                text += '{0}({1: 3.2f})'.format(l,lc[l])
+                            #end if
+                        #end for
+                    else:
+                        for l in lvals:
+                            if l in lc:
+                                lset = []
+                                for k in lc.keys():
+                                    if k.startswith(l) and (len(k)>1 or k=='s'):
+                                        lset.append(k)
+                                    #end if
+                                #end for
+                                for k in sorted(lset):
+                                    text += '{0}({1: 3.2f})'.format(k,lc[k])
+                                #end for
+                            #end if
+                        #end for
+                    #end if
+                    text+='\n'
+                #end for
+                text+='\n'
+            #end if
+        #end for
+        if filepath!=None:
+            open(filepath,'w').write(text)
+        #end if
+        return text
+    #end def write_lowdin
 
     def close_log(self):
         if 'log' in self:
