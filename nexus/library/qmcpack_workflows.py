@@ -3,6 +3,7 @@ import os
 from numpy import ndarray
 from developer import obj,ci,error as dev_error,devlog,DevBase
 from pwscf import generate_pwscf
+from pwscf_postprocessors import generate_projwfc
 from qmcpack_converters import generate_pw2qmcpack
 from qmcpack_input import generate_jastrow,loop,linear,cslinear,vmc,dmc
 from qmcpack import generate_qmcpack
@@ -389,6 +390,16 @@ p2q_input_defaults = obj(
     v1 = obj(
         identifier = 'p2q',
         write_psir = False,
+        ),
+    )
+
+pwf_workflow_keys = []
+pwf_input_defaults = obj(
+    minimal = obj(
+        identifier = 'pwf',
+        ),
+    v1 = obj(
+        identifier = 'pwf',
         ),
     )
 
@@ -847,24 +858,27 @@ def dmc_sections(**kwargs):
 
 qmcpack_chain_required = ['system','sim_list','dft_pseudos','qmc_pseudos']
 qmcpack_chain_defaults = obj(
-    scf            = False,
-    p2q            = False,
-    opt            = False,
-    vmc            = False,
-    dmc            = False,
-    scf_inputs     = None,
-    p2q_inputs     = None,
-    opt_inputs     = None,
-    vmc_inputs     = None,
-    dmc_inputs     = None,
-    scf_defaults   = defaults_version,
-    p2q_defaults   = defaults_version,
-    opt_defaults   = defaults_version,
-    vmc_defaults   = defaults_version,
-    dmc_defaults   = defaults_version,
     orb_source     = None,
     J2_source      = None,
     J3_source      = None,
+    scf            = False,
+    scf_inputs     = None,
+    scf_defaults   = defaults_version,
+    p2q            = False,
+    p2q_inputs     = None,
+    p2q_defaults   = defaults_version,
+    pwf            = False,
+    pwf_inputs     = None,
+    pwf_defaults   = defaults_version,
+    opt            = False,
+    opt_inputs     = None,
+    opt_defaults   = defaults_version,
+    vmc            = False,
+    vmc_inputs     = None,
+    vmc_defaults   = defaults_version,
+    dmc            = False,
+    dmc_inputs     = None,
+    dmc_defaults   = defaults_version,
     processed      = False,
     )
 
@@ -874,24 +888,27 @@ def process_qmcpack_chain_kwargs(
     sim_list      = missing,
     dft_pseudos   = missing,
     qmc_pseudos   = missing,
-    scf           = missing,
-    p2q           = missing,
-    opt           = missing,
-    vmc           = missing,
-    dmc           = missing,
-    scf_inputs    = missing,
-    p2q_inputs    = missing,
-    opt_inputs    = missing,
-    vmc_inputs    = missing,
-    dmc_inputs    = missing,
-    scf_defaults  = missing,
-    p2q_defaults  = missing,
-    opt_defaults  = missing,
-    vmc_defaults  = missing,
-    dmc_defaults  = missing,
     orb_source    = missing,
     J2_source     = missing,
     J3_source     = missing,
+    scf           = missing,
+    scf_inputs    = missing,
+    scf_defaults  = missing,
+    p2q           = missing,
+    p2q_inputs    = missing,
+    p2q_defaults  = missing,
+    pwf           = missing,
+    pwf_inputs    = missing,
+    pwf_defaults  = missing,
+    opt           = missing,
+    opt_inputs    = missing,
+    opt_defaults  = missing,
+    vmc           = missing,
+    vmc_inputs    = missing,
+    vmc_defaults  = missing,
+    dmc           = missing,
+    dmc_inputs    = missing,
+    dmc_defaults  = missing,
     defaults      = missing,
     loc           = 'process_qmcpack_chain_kwargs',
     processed     = False,
@@ -914,27 +931,37 @@ def process_qmcpack_chain_kwargs(
     assign_require(kw,'sim_list'   ,sim_list   )
     assign_require(kw,'dft_pseudos',dft_pseudos)
 
-    assign_default(kw,'scf'         ,scf         )
-    assign_default(kw,'p2q'         ,p2q         )
-    assign_default(kw,'opt'         ,opt         )
-    assign_default(kw,'vmc'         ,vmc         )
-    assign_default(kw,'dmc'         ,dmc         )
-    assign_default(kw,'scf_inputs'  ,scf_inputs  )
-    assign_default(kw,'p2q_inputs'  ,p2q_inputs  )
-    assign_default(kw,'opt_inputs'  ,opt_inputs  )
-    assign_default(kw,'vmc_inputs'  ,vmc_inputs  )
-    assign_default(kw,'dmc_inputs'  ,dmc_inputs  )
-    assign_default(kw,'scf_defaults',scf_defaults)
-    assign_default(kw,'p2q_defaults',p2q_defaults)
-    assign_default(kw,'opt_defaults',opt_defaults)
-    assign_default(kw,'vmc_defaults',vmc_defaults)
-    assign_default(kw,'dmc_defaults',dmc_defaults)
     assign_default(kw,'orb_source'  ,orb_source  )
     assign_default(kw,'J2_source'   ,J2_source   )
     assign_default(kw,'J3_source'   ,J3_source   )
 
+    assign_default(kw,'scf'         ,scf         )
+    assign_default(kw,'scf_inputs'  ,scf_inputs  )
+    assign_default(kw,'scf_defaults',scf_defaults)
+
+    assign_default(kw,'p2q'         ,p2q         )
+    assign_default(kw,'p2q_inputs'  ,p2q_inputs  )
+    assign_default(kw,'p2q_defaults',p2q_defaults)
+
+    assign_default(kw,'pwf'         ,pwf         )
+    assign_default(kw,'pwf_inputs'  ,pwf_inputs  )
+    assign_default(kw,'pwf_defaults',pwf_defaults)
+
+    assign_default(kw,'opt'         ,opt         )
+    assign_default(kw,'opt_inputs'  ,opt_inputs  )
+    assign_default(kw,'opt_defaults',opt_defaults)
+
+    assign_default(kw,'vmc'         ,vmc         )
+    assign_default(kw,'vmc_inputs'  ,vmc_inputs  )
+    assign_default(kw,'vmc_defaults',vmc_defaults)
+
+    assign_default(kw,'dmc'         ,dmc         )
+    assign_default(kw,'dmc_inputs'  ,dmc_inputs  )
+    assign_default(kw,'dmc_defaults',dmc_defaults)
+
     kw.scf |= kw.scf_inputs!=None
     kw.p2q |= kw.p2q_inputs!=None
+    kw.pwf |= kw.pwf_inputs!=None
     kw.opt |= kw.opt_inputs!=None
     kw.vmc |= kw.vmc_inputs!=None
     kw.dmc |= kw.dmc_inputs!=None
@@ -955,6 +982,7 @@ def process_qmcpack_chain_kwargs(
             )
         kw.scf_workflow = extract_keywords(kw.scf_inputs,scf_workflow_keys)
     #end if
+
     if kw.p2q:
         # kw.p2q_inputs contains inputs to generate_pw2qmcpack after this
         set_loc(loc+' p2q_inputs')
@@ -962,6 +990,15 @@ def process_qmcpack_chain_kwargs(
         assign_defaults(kw.p2q_inputs,p2q_input_defaults[kw.p2q_defaults])
         kw.p2q_workflow = extract_keywords(kw.p2q_inputs,p2q_workflow_keys)
     #end if
+
+    if kw.pwf:
+        # kw.pwf_inputs contains inputs to generate_projwfc after this
+        set_loc(loc+' pwf_inputs')
+        kw.pwf_inputs = obj(**kw.pwf_inputs)
+        assign_defaults(kw.pwf_inputs,pwf_input_defaults[kw.pwf_defaults])
+        kw.pwf_workflow = extract_keywords(kw.pwf_inputs,pwf_workflow_keys)
+    #end if
+
     if kw.opt:
         set_loc(loc+' opt_inputs')
         kw.opt_inputs = obj(**kw.opt_inputs)
@@ -987,6 +1024,7 @@ def process_qmcpack_chain_kwargs(
         set_loc(loc+'opt_inputs opt_methods')
         kw.opt_sec_inputs = extract_keywords(kw.opt_inputs,opt_sections_keys,optional=True)
     #end if
+
     if kw.vmc:
         set_loc(loc+' vmc_inputs')
         kw.vmc_inputs = obj(**kw.vmc_inputs)
@@ -999,6 +1037,7 @@ def process_qmcpack_chain_kwargs(
 
         kw.vmc_sec_inputs = extract_keywords(kw.vmc_inputs,vmc_sections_keys,optional=True)
     #end if
+
     if kw.dmc:
         set_loc(loc+' dmc_inputs')
         kw.dmc_inputs = obj(**kw.dmc_inputs)
@@ -1014,6 +1053,7 @@ def process_qmcpack_chain_kwargs(
 
     del kw.scf_defaults
     del kw.p2q_defaults
+    del kw.pwf_defaults
     del kw.opt_defaults
     del kw.vmc_defaults
     del kw.dmc_defaults
@@ -1055,6 +1095,16 @@ def qmcpack_chain(**kwargs):
                 **kw.p2q_inputs
                 )
             sims.p2q = p2q
+        #end if
+
+        if kw.pwf:
+            deps = resolve_deps('pwf',sims,[('scf','other')],loc)
+            pwf = generate_projwfc(
+                path         = os.path.join(basepath,'scf'),
+                dependencies = deps,
+                **kw.pwf_inputs
+                )
+            sims.pwf = pwf
         #end if
     #end if
         

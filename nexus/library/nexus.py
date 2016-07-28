@@ -49,6 +49,13 @@ from qmcpack_converters import Wfconvert  , WfconvertInput  , WfconvertAnalyzer 
 from qmcpack_converters import Convert4qmc, Convert4qmcInput, Convert4qmcAnalyzer, generate_convert4qmc_input, generate_convert4qmc
 from pw2casino          import Pw2casino  , Pw2casinoInput  , Pw2casinoAnalyzer  , generate_pw2casino_input  , generate_pw2casino
 
+from pwscf_postprocessors import PP      , PPInput      , PPAnalyzer      , generate_pp_input      , generate_pp
+from pwscf_postprocessors import Dos     , DosInput     , DosAnalyzer     , generate_dos_input     , generate_dos
+from pwscf_postprocessors import Bands   , BandsInput   , BandsAnalyzer   , generate_bands_input   , generate_bands
+from pwscf_postprocessors import Projwfc , ProjwfcInput , ProjwfcAnalyzer , generate_projwfc_input , generate_projwfc
+from pwscf_postprocessors import Cppp    , CpppInput    , CpppAnalyzer    , generate_cppp_input    , generate_cppp
+from pwscf_postprocessors import Pwexport, PwexportInput, PwexportAnalyzer, generate_pwexport_input, generate_pwexport
+
 from qmcpack import loop,linear,cslinear,vmc,dmc
 from qmcpack import generate_jastrows,generate_jastrow,generate_jastrow1,generate_jastrow2,generate_jastrow3,generate_opt,generate_opts
 from qmcpack import generate_cusp_correction

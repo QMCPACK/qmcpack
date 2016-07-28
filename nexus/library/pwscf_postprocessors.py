@@ -419,6 +419,9 @@ class PPInput(NamelistInput):
 #end class PPInput
 
 
+PPAnalyzer = NullSimulationAnalyzer
+
+
 class PP(PostProcessSimulation):
     input_type         = PPInput
     generic_identifier = 'pp'
@@ -448,6 +451,9 @@ class DosInput(NamelistInput):
         dos = DosNamelist,
         )
 #end class DosInput
+
+
+DosAnalyzer = NullSimulationAnalyzer
 
 
 class Dos(PostProcessSimulation):
@@ -482,6 +488,9 @@ class BandsInput(NamelistInput):
 #end class BandsInput
 
 
+BandsAnalyzer = NullSimulationAnalyzer
+
+
 class Bands(PostProcessSimulation):
     input_type         = BandsInput
     generic_identifier = 'bands'
@@ -512,8 +521,6 @@ class ProjwfcInput(NamelistInput):
         projwfc = ProjwfcNamelist,
         )
 #end class ProjwfcInput
-
-
 
 
 class ProjwfcAnalyzer(SimulationAnalyzer):
@@ -772,13 +779,32 @@ class Projwfc(PostProcessSimulation):
     analyzer_type      = ProjwfcAnalyzer
     generic_identifier = 'projwfc'
     application        = 'projwfc.x'
+
+    def post_analyze(self,analyzer):
+        # try to write lowdin output data file
+        try:
+            lowdin_file = self.identifier+'.lowdin'
+            filepath = os.path.join(self.locdir,lowdin_file)
+            analyzer.write_lowdin(filepath)
+        except:
+            None
+        #end try
+    #end def post_analyze
 #end class Projwfc
 
 
-generate_projwfc_input = ProjwfcInput
+def generate_projwfc_input(prefix='pwscf',outdir='pwscf_output',**vals):
+    pp = ProjwfcInput(
+        prefix = prefix,
+        outdir = outdir,
+        **vals
+        )
+    return pp
+#end def generate_projwfc_input
+
 
 def generate_projwfc(**kwargs):
-    return generate_ppsim(ProjwfcInput,Projwfc,**kwargs)
+    return generate_ppsim(generate_projwfc_input,Projwfc,**kwargs)
 #end def generate_projwfc
 
 
@@ -799,6 +825,9 @@ class CpppInput(NamelistInput):
         inputpp = CpppInputppNamelist,
         )
 #end class CpppInput
+
+
+CpppAnalyzer = NullSimulationAnalyzer
 
 
 class Cppp(PostProcessSimulation):
@@ -830,6 +859,9 @@ class PwexportInput(NamelistInput):
         inputpp = PwexportInputppNamelist,
         )
 #end class PwexportInput
+
+
+PwexportAnalyzer = NullSimulationAnalyzer
 
 
 class Pwexport(PostProcessSimulation):
