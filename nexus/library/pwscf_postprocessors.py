@@ -786,6 +786,7 @@ class Projwfc(PostProcessSimulation):
             lowdin_file = self.identifier+'.lowdin'
             filepath = os.path.join(self.locdir,lowdin_file)
             analyzer.write_lowdin(filepath)
+            analyzer.write_lowdin(filepath+'_long',long=True)
         except:
             None
         #end try
