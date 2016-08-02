@@ -1,0 +1,57 @@
+#! /usr/bin/env python
+
+import os
+import sys
+from developer import error,obj 
+
+from pwscf_analyzer import PwscfAnalyzer
+
+def produce_pwscf(quantity,file):
+    path_prefix = file.rsplit('.',1)[0]
+    pa = PwscfAnalyzer(file,analyze=True,xml=True,warn=False)
+    if quantity=='electron_counts':
+        flag = pa.write_electron_counts(path_prefix+'.electron_counts',return_flag=True)
+    #end if
+    return flag
+#end def produce_pwscf
+
+
+
+
+args = sys.argv[1:]
+if len(args)<3:
+    print 'usage: produce code quantity files'
+    exit()
+#end if
+
+code,quantity = args[0:2]
+files         = args[2:]
+
+
+produce = obj(
+    pwscf = produce_pwscf,
+    )
+
+quantities = obj(
+    pwscf = set(['electron_counts']),
+    )
+
+if code not in produce:
+    error('requested code is not supported\ncode requested: {0}\nsupported codes: {1}'.format(code,sorted(produce.keys())))
+elif quantity not in quantities[code]:
+    error('requested quantity is not available for {0}\nrequested quantity: {1}\navailable quantities: {2}'.format(code,quantity,sorted(quantities[code])))
+#end if
+for file in files:
+    if not os.path.exists(file):
+        error('file does not exist: {0}'.format(file))
+    #end if
+#end for
+
+for file in files:
+    print 'producing {0} from {1} file {2}'.format(quantity,code,file)
+    suceeded = produce[code](quantity,file)
+    if not suceeded:
+        print '  (failed)'
+    #end if
+#end for
+

@@ -83,15 +83,24 @@ class PwscfAnalyzer(SimulationAnalyzer):
         if isinstance(arg0,Simulation):
             sim = arg0
             path = sim.locdir
-            self.infile_name = sim.infile
-            self.outfile_name= sim.outfile
+            infile_name = sim.infile
+            outfile_name= sim.outfile
         elif arg0!=None:
-            path = arg0
-            self.infile_name = infile_name
-            self.outfile_name = outfile_name
+            if infile_name!=None:
+                path = arg0
+            else:
+                path,infile_name = os.path.split(arg0)
+            #end if
+            if outfile_name is None:
+                outfile_name = infile_name.rsplit('.',1)[0]+'.out'
+            #end if
         else:
             return
         #end if
+
+        self.infile_name  = infile_name
+        self.outfile_name = outfile_name
+
         self.path = path
         self.abspath = os.path.abspath(path)
         self.pw2c_outfile_name = pw2c_outfile_name
@@ -465,11 +474,65 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     kpoints = kpoints
                     )
             except Exception,e:
-                self.warn('encountered an exception during xml read, this data will not be available\nexception encountered: '+str(e))
+                if self.info.warn:
+                    self.warn('encountered an exception during xml read, this data will not be available\nexception encountered: '+str(e))
+                #end if
                 self.xmldata.failed = True
             #end try
         #end if
     #end def analyze
+
+
+    def write_electron_counts(self,filepath=None,return_flag=False):
+        if not return_flag:
+            if not self.info.xml:
+                self.error('xml data has not been processed\ncannot write electron counts')
+            elif self.xmldata.failed:
+                self.error('xml data processing failed\ncannot write electron counts')
+            #end if
+        elif not self.info.xml or self.xmldata.failed:
+            return False
+        #end if
+        kpoints = self.xmldata.kpoints
+        if 'down' in kpoints[1]:
+            spins = obj(up='up',down='down')
+        else:
+            spins = obj(up='up',down='up')
+        #end if
+        tot = obj(up=0,down=0)
+        for kp in kpoints:
+            w = kp.weight
+            for s,sl in spins.iteritems():
+                tot[s] += w*kp[sl].occupations.sum()
+            #end for
+        #end for
+        text = 'total electron counts\n'
+        text += '  {0: 3.2f}  {1: 3.2f}  {2: 3.2f}  {3: 3.2f}\n'.format(tot.up+tot.down,tot.up-tot.down,tot.up,tot.down)
+        text += '\nkpoint electron counts\n'
+        weights = []
+        for kp in kpoints:
+            weights.append(kp.weight)
+        #end for
+        weights = array(weights,dtype=float)
+        mult = (weights/weights.min()).sum()
+        for ik in sorted(kpoints.keys()):
+            kp = kpoints[ik]
+            kpt = obj()
+            for s,sl in spins.iteritems():
+                kpt[s] = w*kp[sl].occupations.sum()*mult
+            #end for
+            #text+='  {0:>3}  {1: 8.6f}    {2: 3.2f}  {3: 3.2f}  {4: 3.2f}    {5}\n'.format(ik,kp.weight,kpt.up+kpt.down,kpt.up,kpt.down,kp.kpoint[0])
+            text+='  {0:>3}  {1: 8.6f}    {2: 3.2f}  {3: 3.2f}  {4: 3.2f}  {5: 3.2f}\n'.format(ik,kp.weight,kpt.up+kpt.down,kpt.up-kpt.down,kpt.up,kpt.down)
+        #end for
+        if filepath!=None:
+            open(filepath,'w').write(text)
+        #end if
+        if not return_flag:
+            return text
+        else:
+            return True
+        #end if
+    #end def write_electron_counts
 
 
     def make_movie(self,filename,filepath=None):
