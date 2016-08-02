@@ -40,6 +40,22 @@ class Missing:
 missing = Missing()
 
 
+class Novalue:
+    def __call__(self,value):
+        return isinstance(value,Novalue)
+    #end def __call__
+
+    def __str__(self):
+        return ''
+    #end def __str__
+
+    def __repr__(self):
+        return ''
+    #end def __repr__
+#end class Novalue
+novalue = Novalue()
+
+
 class CallBase(object):
     strict = True
     defs   = obj()
@@ -1550,17 +1566,18 @@ def system_parameter_scan(
 
 
 def input_parameter_scan(
-    basepath    = missing,
-    dirname     = 'input_param_scan',
-    section     = missing,
-    parameter   = missing,
-    variable    = missing, # same as parameter, to be deprecated
-    values      = missing,
-    tags        = missing,
-    jastrow_key = missing,
-    J2_source   = None,
-    J3_source   = None,
-    loc         = 'input_parameter_scan',
+    basepath     = missing,
+    dirname      = 'input_param_scan',
+    section      = missing,
+    parameter    = missing,
+    parameterset = missing,
+    variable     = missing, # same as parameter, to be deprecated
+    values       = missing,
+    tags         = missing,
+    jastrow_key  = missing,
+    J2_source    = None,
+    J3_source    = None,
+    loc          = 'input_parameter_scan',
     **kwargs
     ):
 
@@ -1572,28 +1589,42 @@ def input_parameter_scan(
 
     require('basepath' ,basepath )
     require('section'  ,section  )
-    require('parameter',parameter)
-    require('values'   ,values   ) 
-
-    if not missing(tags) and len(tags)!=len(values):
-        error('must provide one tag (directory label) per parameter value\nnumber of values: {0}\nnumber of tags: {1}\nvalues provided: {2}\ntags provided: {3}'.format(len(values),len(tags),values,tags),loc)
+    if missing('parameterset'):
+        require('parameter',parameter)
+        require('values'   ,values   ) 
+        if not missing(tags) and len(tags)!=len(values):
+            error('must provide one tag (directory label) per parameter value\nnumber of values: {0}\nnumber of tags: {1}\nvalues provided: {2}\ntags provided: {3}'.format(len(values),len(tags),values,tags),loc)
+        #end if
+    else:
+        require('tags',tags)
+        for pname,pvalues in parameterset.iteritems():
+            if len(tags)!=len(pvalues):
+                error('must provide one tag (directory label) per parameter value\nparameter name: {0}\nnumber of values: {1}\nnumber of tags: {2}\nvalues provided: {3}\ntags provided: {4}'.format(pname,len(pvalues),len(tags),pvalues,tags),loc)
+            #end if
+        #end for
     #end if
+
 
     paramdirs = []
     paramkeys = []
-    n = 0
-    for v in values:
-        if not missing(tags):
-            vkey = tags[n]
-        else:
-            vkey = render_parameter_key(v,loc)
-        #end if
-        vlabel = render_parameter_label(vkey,loc)
-        paramdir = '{0}_{1}'.format(parameter,vlabel)
-        paramdirs.append(paramdir)
-        paramkeys.append(vkey)
-        n+=1
-    #end for
+    if missing(parameterset):
+        n = 0
+        for v in values:
+            if not missing(tags):
+                vkey = tags[n]
+            else:
+                vkey = render_parameter_key(v,loc)
+            #end if
+            vlabel = render_parameter_label(vkey,loc)
+            paramdir = '{0}_{1}'.format(parameter,vlabel)
+            paramdirs.append(paramdir)
+            paramkeys.append(vkey)
+            n+=1
+        #end for
+    else:
+        paramdirs.extend(tags)
+        paramkeys.extend(tags)
+    #end if
 
     same_jastrow = not missing(jastrow_key)
     if same_jastrow:
@@ -1601,11 +1632,19 @@ def input_parameter_scan(
         if not jastrow_key in set(paramkeys):
             error('input parameter value for fixed Jastrow not found\njastrow key provided: {0}\nparameter keys present: {1}'.format(jastrow_key,paramkeys),loc)
         #end if
-        values = list(values)
         index = paramkeys.index(jastrow_key)
         paramdirs.insert(0,paramdirs.pop(index))
         paramkeys.insert(0,paramkeys.pop(index))
-        values.insert(0,values.pop(index))
+        if missing(parameterset):
+            values = list(values)
+            values.insert(0,values.pop(index))
+        else:
+            for pname,pvalues in parameterset.iteritems():
+                pvalues = list(pvalues)
+                pvalues.insert(0,pvalues.pop(index))
+                parameterset[pname] = pvalues
+            #end for
+        #end if
     #end if
 
     ip_sims = obj()
@@ -1622,7 +1661,17 @@ def input_parameter_scan(
         elif section not in qckw:
             error('input section not found\ninput section provided: {0}\ninput sections present: {1}'.format(section,[s for s in sorted(qckw.keys()) if 'inputs' in s]),loc)
         #end if
-        qckw[section][parameter] = values[n]
+        if missing(parameterset):
+            qckw[section][parameter] = values[n]
+        else:
+            sec = qckw[section]
+            for pname,pvalues in parameterset.iteritems():
+                pvalue = pvalues[n]
+                if not novalue(pvalue):
+                    sec[pname] = pvalue
+                #end if
+            #end for
+        #end if
 
         qckw.basepath  = os.path.join(basepath,dirname,paramdirs[n])
         qckw.J2_source = J2_source
