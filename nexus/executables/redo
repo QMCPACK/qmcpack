@@ -1,0 +1,93 @@
+#! /usr/bin/env python
+
+import os
+from optparse import OptionParser
+
+usage  = '''usage: %prog [options] [file(s)]'''
+parser = OptionParser(usage=usage,add_help_option=False,version='%prog 0.1')
+parser.add_option('-h','--help',dest='help',
+                  action='store_true',default=False,
+                  help='Print help information and exit (default=%default).'
+                  )
+parser.add_option('-v','--verbose',dest='verbose',
+                          action='store_true',default=False,
+                          help='Print detailed information (default=%default).'
+                          )
+parser.add_option('-n','--dry-run',dest='dryrun',
+                  action='store_true',default=False,
+                  help="Print directories to be backed up as previous attempts, but don't actually do anything (default=%default)."
+                  )
+
+options,paths_in = parser.parse_args()
+
+help    = options.__dict__['help']
+verbose = options.__dict__['verbose']
+dryrun  = options.__dict__['dryrun']
+
+if help:
+    print parser.format_help()
+    exit()
+#end if
+
+paths = dict()
+for path in paths_in:
+    if os.path.exists(path) and os.path.isdir(path):
+        simdir    = False
+        attempts  = []
+        contents  = []
+        for item in os.listdir(path):
+            isdir = os.path.isdir(os.path.join(path,item))
+            simdir |= item.startswith('sim') and isdir
+            if item.startswith('attempt') and isdir:
+                attempts.append(item)
+            else:
+                contents.append(item)
+            #end if
+        #end for
+        if simdir:
+            paths[path] = attempts,contents
+        #end if
+    #end if
+#end for
+
+if len(paths)>0:
+    if verbose:
+        print 'redo: backing up attempted sim runs'
+    #end if
+else:
+    print 'redo: no simulation directories found'
+    exit()
+#end if
+cwd = os.getcwd()
+for path in sorted(paths.keys()):
+    if verbose:
+        print '  Entering '+path
+    #end if
+    os.chdir(path)
+    attempts,contents = paths[path]
+    attempt_dir = 'attempt'+str(len(attempts)+1)
+    if verbose:
+        if len(contents)==0:
+            print '    no contents to backup'
+        elif dryrun:
+            print '    would have created backup of {0} files in directory {1}'.format(len(contents),attempt_dir)
+        else:
+            print '    creating backup of {0} files in directory {1}'.format(len(contents),attempt_dir)
+        #end if
+    #end if
+    if not dryrun and len(contents)>0:
+        os.mkdir(attempt_dir)
+        if os.path.exists(attempt_dir) and os.path.isdir(attempt_dir):
+            for item in contents:
+                os.system('mv {0} {1}'.format(item,attempt_dir))
+            #end for
+        else:
+            print '  failed to create backup directory '+os.path.join(path,attempt_dir)
+        #end if
+    #end if
+    os.chdir(cwd)
+#end for
+
+if verbose:
+    print 'redo: backup complete'
+#end if
