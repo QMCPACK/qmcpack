@@ -408,6 +408,8 @@ scf_input_defaults = obj(
     v1 = obj(
         identifier       = 'scf',
         input_type       = 'generic',
+        verbosity        = 'high',
+        disk_io          = 'low',
         diagonalization  = 'david',
         electron_maxstep = 1000,
         conv_thr         = 1e-8,
@@ -899,6 +901,7 @@ def dmc_sections(**kwargs):
 
 qmcpack_chain_required = ['system','sim_list','dft_pseudos','qmc_pseudos']
 qmcpack_chain_defaults = obj(
+    basepath       = '',
     orb_source     = None,
     J2_source      = None,
     J3_source      = None,
@@ -925,6 +928,7 @@ qmcpack_chain_defaults = obj(
 
 
 def process_qmcpack_chain_kwargs(
+    basepath      = missing,
     system        = missing,
     sim_list      = missing,
     dft_pseudos   = missing,
@@ -959,7 +963,7 @@ def process_qmcpack_chain_kwargs(
     prevent_invalid_input(invalid_kwargs,loc)
 
     if missing(defaults):
-        defaults = qmcpack_chain_defaults,
+        defaults = qmcpack_chain_defaults
     else:
         defaults.set_optional(**qmcpack_chain_defaults)
     #end if
@@ -968,9 +972,10 @@ def process_qmcpack_chain_kwargs(
 
     kw = obj()
 
-    assign_require(kw,'system'     ,system     )
-    assign_require(kw,'sim_list'   ,sim_list   )
-    assign_require(kw,'dft_pseudos',dft_pseudos)
+    assign_require(kw,'system'     ,system       )
+    assign_require(kw,'sim_list'   ,sim_list     )
+    assign_require(kw,'dft_pseudos',dft_pseudos  )
+    assign_default(kw,'basepath'   ,basepath     )
 
     assign_default(kw,'orb_source'  ,orb_source  )
     assign_default(kw,'J2_source'   ,J2_source   )
@@ -1352,6 +1357,11 @@ def qmcpack_chain(**kwargs):
 #end def qmcpack_chain
 
 
+# alias to qmcpack_workflow for user interaction
+qmcpack_workflow = qmcpack_chain
+
+
+
 ecut_scan_chain_defaults = obj(
     scf = True,
     p2q = True,
@@ -1589,7 +1599,7 @@ def input_parameter_scan(
 
     require('basepath' ,basepath )
     require('section'  ,section  )
-    if missing('parameterset'):
+    if missing(parameterset):
         require('parameter',parameter)
         require('values'   ,values   ) 
         if not missing(tags) and len(tags)!=len(values):

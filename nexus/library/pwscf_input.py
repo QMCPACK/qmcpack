@@ -1420,6 +1420,7 @@ def generate_any_pwscf_input(**kwargs):
     kgrid      = kwargs.delete_required('kgrid')
     kshift     = kwargs.delete_required('kshift')
     nogamma    = kwargs.delete_optional('nogamma',False)
+    totmag_sys = kwargs.delete_optional('totmag_sys',False)
 
     #  pseudopotentials
     pseudopotentials = obj()
@@ -1485,6 +1486,11 @@ def generate_any_pwscf_input(**kwargs):
             PwscfInput.class_error('input start_mag must be of type dict or obj','generate_pwscf_input')
         #end if
         pw.system.start_mag = deepcopy(start_mag)
+    #end if
+
+    #  tot_magnetization from system
+    if totmag_sys and 'tot_magnetization' not in pw.system:
+        pw.system.tot_magnetization = system.net_spin
     #end if
 
     #  kpoints
