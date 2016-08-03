@@ -2,10 +2,14 @@
 
 ################################################################
 ## * This script builds available configurations of QMCPACK   ##
-##   on EOS, Oak Ridge National Lab.                          ##
+##   on EOS, at Oak Ridge Leadership Computing Facility,      ##
+##   Oak Ridge National Lab.                                  ##
 ##                                                            ##
 ## * Execute this script in trunk/                            ##
-##   ./config/build_eos.sh                                    ##
+##   ./config/build_olcf_eos.sh                               ##
+##                                                            ##
+## Settings should be consistent with test scripts e.g.       ##
+##  ./tests/test_automation/night_ornl_olcf_eos.job           ##
 ##                                                            ##
 ## Last modified: Aug 3, 2016                                 ##
 ################################################################
