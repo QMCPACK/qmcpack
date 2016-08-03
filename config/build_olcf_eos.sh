@@ -38,24 +38,24 @@ CMAKE_FLAGS="-DCMAKE_C_COMPILER=cc \
 echo ""
 echo ""
 echo "building qmcpack for cpu real"
-mkdir build_cpu_real
-cd build_cpu_real
+mkdir build_eos_cpu_real
+cd build_eos_cpu_real
 cmake $CMAKE_FLAGS .. 
 make -j 32
 cd ..
-ln -s ./build_cpu_real/bin/qmcpack ./qmcpack_cpu_real
+ln -s ./build_eos_cpu_real/bin/qmcpack ./qmcpack_eos_cpu_real
 
 
 # Configure and build cpu complex
 echo ""
 echo ""
 echo "building qmcpack for cpu complex"
-mkdir build_cpu_comp
-cd build_cpu_comp
+mkdir build_eos_cpu_comp
+cd build_eos_cpu_comp
 cmake -DQMC_COMPLEX=1 $CMAKE_FLAGS .. 
 make -j 32
 cd ..
-ln -s ./build_cpu_comp/bin/qmcpack ./qmcpack_cpu_comp
+ln -s ./build_eos_cpu_comp/bin/qmcpack ./qmcpack_eos_cpu_comp
 
 
 
