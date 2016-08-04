@@ -1464,6 +1464,12 @@ def generate_any_pwscf_input(**kwargs):
         pw.incorporate_system(system)
     #end if
 
+    #  tot_magnetization from system
+    if totmag_sys and 'tot_magnetization' not in pw.system:
+        tot_magnetization = system.net_spin
+        pw.system.tot_magnetization = tot_magnetization
+    #end if
+
     # set the number of spins
     if start_mag is None and nspin is None and (tot_magnetization is None or tot_magnetization==0):
         pw.system.nspin = 1
@@ -1486,11 +1492,6 @@ def generate_any_pwscf_input(**kwargs):
             PwscfInput.class_error('input start_mag must be of type dict or obj','generate_pwscf_input')
         #end if
         pw.system.start_mag = deepcopy(start_mag)
-    #end if
-
-    #  tot_magnetization from system
-    if totmag_sys and 'tot_magnetization' not in pw.system:
-        pw.system.tot_magnetization = system.net_spin
     #end if
 
     #  kpoints
