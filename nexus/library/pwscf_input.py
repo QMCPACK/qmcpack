@@ -1470,8 +1470,10 @@ def generate_any_pwscf_input(**kwargs):
         pw.system.tot_magnetization = tot_magnetization
     #end if
 
-    # set the number of spins
-    if start_mag is None and nspin is None and (tot_magnetization is None or tot_magnetization==0):
+    # set the number of spins (totmag=0 still needs nspin=2)
+    if nspin is not None:
+        pw.system.nspin = nspin
+    elif start_mag is None and tot_magnetization is None:
         pw.system.nspin = 1
     else:
         pw.system.nspin = 2
