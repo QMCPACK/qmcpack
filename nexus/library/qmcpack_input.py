@@ -4163,7 +4163,7 @@ def generate_bspline_builder(type           = 'bspline',
         bsb.buffer = buffer
     #end if
     if twist!=None:
-        bsb.twist = tuple(twist)
+        bsb.twistnum = system.structure.select_twist(twist)
     elif twistnum!=None:
         bsb.twistnum = twistnum
     elif len(system.structure.kpoints)==1:
@@ -4287,11 +4287,13 @@ def generate_determinantset_old(type           = 'bspline',
             )
         )
     if twist!=None:
-        dset.twist = tuple(twist)
+        dset.twistnum = system.structure.select_twist(twist)
     elif twistnum!=None:
         dset.twistnum = twistnum
-    #else:
-    #    dset.twistnum = 0
+    elif len(system.structure.kpoints)==1:
+        dset.twistnum = 0
+    else:
+        dset.twistnum = None
     #end if
     return dset
 #end def generate_determinantset_old

@@ -2870,6 +2870,38 @@ class Structure(Sobj):
     #end def kmap
 
 
+    def select_twist(self,selector='smallest',tol=1e-6):
+        index = None
+        invalid_selector = False
+        if isinstance(selector,str):
+            if selector=='smallest':
+                index = (self.kpoints**2).sum(1).argmin()
+            else:
+                invalid_selector = True
+            #end if
+        elif isinstance(selector,(tuple,list,ndarray)):
+            ku_sel = array(selector,dtype=float)
+            n = 0
+            for ku in self.kpoints_unit():
+                if norm(ku-ku_sel)<tol:
+                    index = n
+                    break
+                #end if
+                n+=1
+            #end for
+            if index is None:
+                self.error('cannot identify twist number\ntwist requested: {0}\ntwists present: {1}'.format(ku_sel,sorted([tuple(k) for k in self.kpoints_unit()])))
+            #end if
+        else:
+            invalid_selector = True
+        #end if
+        if invalid_selector:
+            self.error('cannot identify twist number\ninvalid selector provided: {0}\nvalid string inputs for selector: smallest\nselector can also be a length 3 tuple, list or array (a twist vector)'.format(selector))
+        #end if
+        return index
+    #end def select_twist
+
+
     def pos_unit(self,pos=None):
         if pos is None:
             pos = self.pos

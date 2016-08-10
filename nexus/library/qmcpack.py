@@ -60,19 +60,11 @@ class Qmcpack(Simulation):
 
 
     def post_init(self):
-        #jtk mark
-        #  may need to put this back
-        #  removed because particleset is not required by qmcpack
-        #   and thus the system cannot be determined without access to the h5file
-        #if self.system is None:
-        #    self.error('system must be specified to determine type of run')
-        ##end if
-
         generic_input = self.has_generic_input()
 
         if self.system is None:
             if not generic_input:
-                self.warn('system must be specified to determine whether to twist average\n  proceeding under the assumption of no twist averaging')
+                self.warn('system must be specified to determine whether to twist average\nproceeding under the assumption of no twist averaging')
             #end if
             self.should_twist_average = False
         else:
@@ -166,7 +158,7 @@ class Qmcpack(Simulation):
                     orb_elem.tilematrix = array(system.structure.tmatrix)
                 #end if
                 defs = obj(
-                    twistnum   = 0,
+                    #twistnum   = 0,
                     meshfactor = 1.0
                     )
                 for var,val in defs.iteritems():
@@ -174,6 +166,11 @@ class Qmcpack(Simulation):
                         orb_elem[var] = val
                     #end if
                 #end for
+                has_twist    = 'twist' in orb_elem
+                has_twistnum = 'twistnum' in orb_elem
+                if  not has_twist and not has_twistnum:
+                    orb_elem.twistnum = 0
+                #end if
 
                 system = self.system
                 structure = system.structure
@@ -189,7 +186,7 @@ class Qmcpack(Simulation):
                 twistnums = range(len(structure.kpoints))
                 if self.should_twist_average:
                     self.twist_average(twistnums)
-                elif orb_elem.twistnum is None:
+                elif not has_twist and orb_elem.twistnum is None:
                     orb_elem.twistnum = twistnums[0]
                 #end if
 
