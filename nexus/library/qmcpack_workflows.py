@@ -204,6 +204,16 @@ def render_parameter_label(vkey,loc='render_parameter_label'):
 #end def render_parameter_label
 
 
+def capture_inputs(inputs):
+    if inputs is None:
+        capture = obj()
+    else:
+        capture = obj(**inputs)
+    #end if
+    return capture
+#end def capture_inputs
+
+
 
 jastrow_factor_keys = ['J1','J2','J3',
                        'J1_size','J1_rcut',
@@ -400,6 +410,7 @@ scf_input_defaults = obj(
     minimal = obj(
         identifier       = 'scf',
         input_type       = 'generic',
+        calculation      = 'scf',
         nosym            = True,
         wf_collect       = True,
         use_folded       = True,
@@ -408,6 +419,7 @@ scf_input_defaults = obj(
     v1 = obj(
         identifier       = 'scf',
         input_type       = 'generic',
+        calculation      = 'scf',
         verbosity        = 'high',
         disk_io          = 'low',
         diagonalization  = 'david',
@@ -417,8 +429,37 @@ scf_input_defaults = obj(
         occupations      = 'smearing',
         smearing         = 'fermi-dirac',
         degauss          = 0.0001,
-        nosym            = True,
-        wf_collect       = True,
+        nosym            = True, # should be False if nscf is next
+        wf_collect       = True, # should be False if nscf is next
+        use_folded       = True,
+        nogamma          = True,
+        ),
+    )
+
+nscf_workflow_keys = []
+nscf_input_defaults = obj(
+    none    = obj(
+        ),
+    minimal = obj(
+        identifier       = 'nscf',
+        input_type       = 'generic',
+        calculation      = 'nscf',
+        use_folded       = True,
+        nogamma          = True,
+        ),
+    v1 = obj(
+        identifier       = 'nscf',
+        input_type       = 'generic',
+        calculation      = 'nscf',
+        verbosity        = 'high',
+        disk_io          = 'low',
+        diagonalization  = 'david',
+        electron_maxstep = 1000,
+        conv_thr         = 1e-8,
+        mixing_beta      = 0.2,
+        occupations      = 'smearing',
+        smearing         = 'fermi-dirac',
+        degauss          = 0.0001,
         use_folded       = True,
         nogamma          = True,
         ),
@@ -468,14 +509,17 @@ opt_input_defaults = obj(
 vmc_workflow_keys = [
     'J0_prod','J2_prod','J3_prod',
     'J0_test','J2_test','J3_test',
+    'job','test_job',
     ] 
 fixed_defaults = obj(
-    J0_prod = False,
-    J2_prod = False,
-    J3_prod = False,
-    J0_test = False,
-    J2_test = False,
-    J3_test = False,
+    J0_prod  = False,
+    J2_prod  = False,
+    J3_prod  = False,
+    J0_test  = False,
+    J2_test  = False,
+    J3_test  = False,
+    job      = None,
+    test_job = None,
     )
 vmc_input_defaults = obj(
     minimal = obj(
@@ -908,6 +952,10 @@ qmcpack_chain_defaults = obj(
     scf            = False,
     scf_inputs     = None,
     scf_defaults   = defaults_version,
+    nscf           = False,
+    nscf_inputs    = None,
+    nscf_defaults  = defaults_version,
+    nscf_transfer  = True,
     p2q            = False,
     p2q_inputs     = None,
     p2q_defaults   = defaults_version,
@@ -939,6 +987,10 @@ def process_qmcpack_chain_kwargs(
     scf           = missing,
     scf_inputs    = missing,
     scf_defaults  = missing,
+    nscf          = missing,
+    nscf_inputs   = missing,
+    nscf_defaults = missing,
+    nscf_transfer = missing,
     p2q           = missing,
     p2q_inputs    = missing,
     p2q_defaults  = missing,
@@ -970,6 +1022,9 @@ def process_qmcpack_chain_kwargs(
 
     set_def_loc(defaults,loc)
 
+    # capture scf_inputs for nscf, if present
+    scf_inputs_capture = capture_inputs(scf_inputs)
+
     kw = obj()
 
     assign_require(kw,'system'     ,system       )
@@ -984,6 +1039,11 @@ def process_qmcpack_chain_kwargs(
     assign_default(kw,'scf'         ,scf         )
     assign_default(kw,'scf_inputs'  ,scf_inputs  )
     assign_default(kw,'scf_defaults',scf_defaults)
+
+    assign_default(kw,'nscf'         ,nscf         )
+    assign_default(kw,'nscf_inputs'  ,nscf_inputs  )
+    assign_default(kw,'nscf_defaults',nscf_defaults)
+    assign_default(kw,'nscf_transfer',nscf_transfer)
 
     assign_default(kw,'p2q'         ,p2q         )
     assign_default(kw,'p2q_inputs'  ,p2q_inputs  )
@@ -1005,12 +1065,13 @@ def process_qmcpack_chain_kwargs(
     assign_default(kw,'dmc_inputs'  ,dmc_inputs  )
     assign_default(kw,'dmc_defaults',dmc_defaults)
 
-    kw.scf |= kw.scf_inputs!=None
-    kw.p2q |= kw.p2q_inputs!=None
-    kw.pwf |= kw.pwf_inputs!=None
-    kw.opt |= kw.opt_inputs!=None
-    kw.vmc |= kw.vmc_inputs!=None
-    kw.dmc |= kw.dmc_inputs!=None
+    kw.scf  |= kw.scf_inputs !=None
+    kw.nscf |= kw.nscf_inputs!=None
+    kw.p2q  |= kw.p2q_inputs !=None
+    kw.pwf  |= kw.pwf_inputs !=None
+    kw.opt  |= kw.opt_inputs !=None
+    kw.vmc  |= kw.vmc_inputs !=None
+    kw.dmc  |= kw.dmc_inputs !=None
 
     if kw.opt or kw.vmc or kw.dmc:
         assign_require(kw,'qmc_pseudos',qmc_pseudos)
@@ -1020,7 +1081,7 @@ def process_qmcpack_chain_kwargs(
     if kw.scf:
         # kw.scf_inputs contains inputs to generate_pwscf after this
         set_loc(loc+' scf_inputs')
-        kw.scf_inputs = obj(**kw.scf_inputs)
+        kw.scf_inputs = capture_inputs(kw.scf_inputs)
         assign_defaults(kw.scf_inputs,scf_input_defaults[kw.scf_defaults])
         kw.scf_inputs.set(
             system  = kw.system,
@@ -1028,11 +1089,30 @@ def process_qmcpack_chain_kwargs(
             )
         kw.scf_workflow = extract_keywords(kw.scf_inputs,scf_workflow_keys)
     #end if
+    
+    if kw.nscf:
+        # kw.nscf_inputs contains inputs to generate_pwscf after this
+        set_loc(loc+' nscf_inputs')
+        kw.nscf_inputs = capture_inputs(kw.nscf_inputs)
+        if kw.nscf_transfer:
+            scf_inputs_capture.delete_optional('kgrid')
+            scf_inputs_capture.delete_optional('kshift')
+            assign_defaults(kw.nscf_inputs,scf_inputs_capture)
+        #end if
+        assign_defaults(kw.nscf_inputs,nscf_input_defaults[kw.nscf_defaults])
+        kw.nscf_inputs.set(
+            nosym      = True,
+            wf_collect = True,
+            system     = kw.system,
+            pseudos    = kw.dft_pseudos,
+            )
+        kw.nscf_workflow = extract_keywords(kw.nscf_inputs,nscf_workflow_keys)
+    #end if
 
     if kw.p2q:
         # kw.p2q_inputs contains inputs to generate_pw2qmcpack after this
         set_loc(loc+' p2q_inputs')
-        kw.p2q_inputs = obj(**kw.p2q_inputs)
+        kw.p2q_inputs = capture_inputs(kw.p2q_inputs)
         assign_defaults(kw.p2q_inputs,p2q_input_defaults[kw.p2q_defaults])
         kw.p2q_workflow = extract_keywords(kw.p2q_inputs,p2q_workflow_keys)
     #end if
@@ -1040,14 +1120,14 @@ def process_qmcpack_chain_kwargs(
     if kw.pwf:
         # kw.pwf_inputs contains inputs to generate_projwfc after this
         set_loc(loc+' pwf_inputs')
-        kw.pwf_inputs = obj(**kw.pwf_inputs)
+        kw.pwf_inputs = capture_inputs(kw.pwf_inputs)
         assign_defaults(kw.pwf_inputs,pwf_input_defaults[kw.pwf_defaults])
         kw.pwf_workflow = extract_keywords(kw.pwf_inputs,pwf_workflow_keys)
     #end if
 
     if kw.opt:
         set_loc(loc+' opt_inputs')
-        kw.opt_inputs = obj(**kw.opt_inputs)
+        kw.opt_inputs = capture_inputs(kw.opt_inputs)
         assign_defaults(kw.opt_inputs,opt_input_defaults[kw.opt_defaults])
         kw.opt_inputs.set(
             system  = kw.system,
@@ -1073,7 +1153,7 @@ def process_qmcpack_chain_kwargs(
 
     if kw.vmc:
         set_loc(loc+' vmc_inputs')
-        kw.vmc_inputs = obj(**kw.vmc_inputs)
+        kw.vmc_inputs = capture_inputs(kw.vmc_inputs)
         assign_defaults(kw.vmc_inputs,vmc_input_defaults[kw.vmc_defaults])
         kw.vmc_inputs.set(
             system  = kw.system,
@@ -1086,7 +1166,7 @@ def process_qmcpack_chain_kwargs(
 
     if kw.dmc:
         set_loc(loc+' dmc_inputs')
-        kw.dmc_inputs = obj(**kw.dmc_inputs)
+        kw.dmc_inputs = capture_inputs(kw.dmc_inputs)
         assign_defaults(kw.dmc_inputs,dmc_input_defaults[kw.dmc_defaults])
         kw.dmc_inputs.set(
             system  = kw.system,
@@ -1098,6 +1178,7 @@ def process_qmcpack_chain_kwargs(
     #end if
 
     del kw.scf_defaults
+    del kw.nscf_defaults
     del kw.p2q_defaults
     del kw.pwf_defaults
     del kw.opt_defaults
@@ -1133,10 +1214,26 @@ def qmcpack_chain(**kwargs):
             sims.scf = scf
         #end if
 
+        if kw.nscf:
+            deps = resolve_deps('nscf',sims,[('scf','charge_density')],loc)
+            nscf = generate_pwscf(
+                path = os.path.join(basepath,'nscf'),
+                dependencies = deps,
+                **kw.nscf_inputs
+                )
+            sims.nscf = nscf
+        #end if
+
         if kw.p2q:
-            deps = resolve_deps('p2q',sims,[('scf','orbitals')],loc)
+            if kw.nscf:
+                p2q_path = os.path.join(basepath,'nscf')
+                deps = resolve_deps('p2q',sims,[('nscf','orbitals')],loc)
+            else:
+                p2q_path = os.path.join(basepath,'scf')
+                deps = resolve_deps('p2q',sims,[('scf','orbitals')],loc)
+            #end if
             p2q = generate_pw2qmcpack(
-                path         = os.path.join(basepath,'scf'),
+                path         = p2q_path,
                 dependencies = deps,
                 **kw.p2q_inputs
                 )
@@ -1194,6 +1291,7 @@ def qmcpack_chain(**kwargs):
             deps = resolve_deps('vmcJ0_test',sims,orbdep,loc)
             vmcJ0_test = generate_qmcpack(
                 path         = os.path.join(basepath,'vmcJ0_test'),
+                job          = kw.vmc_workflow.test_job,
                 jastrows     = [],
                 calculations = vmc_sections(test=1,J0=1,**kw.vmc_sec_inputs),
                 dependencies = deps,
@@ -1205,6 +1303,7 @@ def qmcpack_chain(**kwargs):
             deps = resolve_deps('vmcJ0',sims,orbdep,loc)
             vmcJ0 = generate_qmcpack(
                 path         = os.path.join(basepath,'vmcJ0'),
+                job          = kw.vmc_workflow.job,
                 jastrows     = [],
                 calculations = vmc_sections(J0=1,**kw.vmc_sec_inputs),
                 dependencies = deps,
@@ -1216,6 +1315,7 @@ def qmcpack_chain(**kwargs):
             deps = resolve_deps('vmcJ2_test',sims,J2dep,loc)
             vmcJ2_test = generate_qmcpack(
                 path         = os.path.join(basepath,'vmcJ2_test'),
+                job          = kw.vmc_workflow.test_job,
                 jastrows     = [],
                 calculations = vmc_sections(test=1,**kw.vmc_sec_inputs),
                 dependencies = deps,
@@ -1227,6 +1327,7 @@ def qmcpack_chain(**kwargs):
             deps = resolve_deps('vmcJ2',sims,J2dep,loc)
             vmcJ2 = generate_qmcpack(
                 path         = os.path.join(basepath,'vmcJ2'),
+                job          = kw.vmc_workflow.job,
                 jastrows     = [],
                 calculations = vmc_sections(**kw.vmc_sec_inputs),
                 dependencies = deps,
@@ -1238,6 +1339,7 @@ def qmcpack_chain(**kwargs):
             deps = resolve_deps('vmcJ3_test',sims,J3dep,loc)
             vmcJ3_test = generate_qmcpack(
                 path         = os.path.join(basepath,'vmcJ3_test'),
+                job          = kw.vmc_workflow.test_job,
                 jastrows     = [],
                 calculations = vmc_sections(test=1,**kw.vmc_sec_inputs),
                 dependencies = deps,
@@ -1249,6 +1351,7 @@ def qmcpack_chain(**kwargs):
             deps = resolve_deps('vmcJ3',sims,J3dep,loc)
             vmcJ3 = generate_qmcpack(
                 path         = os.path.join(basepath,'vmcJ3'),
+                job          = kw.vmc_workflow.job,
                 jastrows     = [],
                 calculations = vmc_sections(**kw.vmc_sec_inputs),
                 dependencies = deps,

@@ -28,6 +28,7 @@
 
 import os
 from copy import deepcopy
+from random import randint
 from numpy import array,floor,empty,dot,diag,sqrt,pi,mgrid,exp,append,arange,ceil,cross,cos,sin,identity,ndarray,atleast_2d,around,ones,zeros,logical_not,flipud
 from numpy.linalg import inv,det,norm
 from types import NoneType
@@ -2876,6 +2877,8 @@ class Structure(Sobj):
         if isinstance(selector,str):
             if selector=='smallest':
                 index = (self.kpoints**2).sum(1).argmin()
+            elif selector=='random':
+                index = randint(0,len(self.kpoints)-1)
             else:
                 invalid_selector = True
             #end if
@@ -2896,7 +2899,7 @@ class Structure(Sobj):
             invalid_selector = True
         #end if
         if invalid_selector:
-            self.error('cannot identify twist number\ninvalid selector provided: {0}\nvalid string inputs for selector: smallest\nselector can also be a length 3 tuple, list or array (a twist vector)'.format(selector))
+            self.error('cannot identify twist number\ninvalid selector provided: {0}\nvalid string inputs for selector: smallest, random\nselector can also be a length 3 tuple, list or array (a twist vector)'.format(selector))
         #end if
         return index
     #end def select_twist
