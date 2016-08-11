@@ -198,6 +198,7 @@ else()
   if (BUILD_UNIT_TESTS)
     #Unit test directories
     INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/external_codes/catch)
+    INCLUDE(${PROJECT_SOURCE_DIR}/CMake/unit_test.cmake)
     SUBDIRS(Numerics/tests)
     SUBDIRS(Utilities/tests)
     SUBDIRS(einspline/tests)
