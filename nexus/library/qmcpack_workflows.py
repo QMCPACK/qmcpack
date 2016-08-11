@@ -389,7 +389,7 @@ vmc_sections_defaults = obj(
 
 
 dmc_sections_keys = [
-    'walkers','warmupsteps','blocks','steps',
+    'warmupsteps','blocks','steps',
     'timestep','checkpoint',
     'vmc_samples','vmc_samplesperthread',
     'vmc_walkers','vmc_warmupsteps','vmc_blocks','vmc_steps',
@@ -397,9 +397,41 @@ dmc_sections_keys = [
     'eq_dmc','eq_warmupsteps','eq_blocks','eq_steps','eq_timestep','eq_checkpoint',
     'J0_warmupsteps','J0_blocks','J0_steps','J0_checkpoint',
     'test_warmupsteps','test_blocks','test_steps',
-    'ntimesteps','timestep_factor',
+    'ntimesteps','timestep_factor','nlmove',
     ]
-dmc_sections_required = ['nlmove']
+dmc_sections_defaults = obj(
+    v1 = obj(
+        warmupsteps          = 20,
+        blocks               = 200,
+        steps                = 10,
+        timestep             = 0.01,
+        checkpoint           = -1,
+        vmc_samples          = 2048,
+        #vmc_samplesperthread = missing, 
+        vmc_walkers          = 1,
+        vmc_warmupsteps      = 30,
+        vmc_blocks           = 20,
+        vmc_steps            = 10,
+        vmc_substeps         = 3,
+        vmc_timestep         = 0.3,
+        vmc_checkpoint       = -1,
+        eq_dmc               = False,
+        eq_warmupsteps       = 20,
+        eq_blocks            = 20,
+        eq_steps             = 5,
+        eq_timestep          = 0.02,
+        eq_checkpoint        = -1,
+        J0_warmupsteps       = 40,
+        J0_blocks            = 400,
+        J0_steps             = 20,
+        test_warmupsteps     = 2,
+        test_blocks          = 10,
+        test_steps           = 2,
+        ntimesteps           = 1,
+        timestep_factor      = 0.5,    
+        nlmove               = None,
+        ),
+    )
 
 
 
@@ -550,6 +582,7 @@ vmc_input_defaults = obj(
 dmc_workflow_keys = [
     'J0_prod','J2_prod','J3_prod',
     'J0_test','J2_test','J3_test',
+    'tmoves','locality'
     ]
 fixed_defaults = obj(
     J0_prod  = False,
@@ -895,47 +928,137 @@ def vmc_sections(
 
 
 
-def dmc_sections(**kwargs):
-    if 'dmc_calcs' in kwargs:
-        return kwargs['dmc_calcs']
-    #end if
-    loc      = kwargs.pop('loc','dmc_sections')
-    defaults = kwargs.pop('defaults',defaults_version)
-    J0       = kwargs.pop('J0',False)
-    test     = kwargs.pop('test',False)
-    kw = extract_kwargs(
-        kwargs          = kwargs,
-        required        = dmc_sections_required,
-        optional        = dmc_sections_options,
-        defaults        = defaults,
-        default_sources = vmc_defaults,
-        require_empty   = True,
-        encapsulate     = False,
-        )
-    if 'vmc_samples' not in kw and 'vmc_samplesperthread' not in kw:
-        error('vmc samples (dmc walkers) not specified\nplease provide one of the following keywords: vmc_samples, vmc_samplesperthread',loc)
-    #end if
-    vsec = vmc(
-        walkers     = kw.vmc_walkers,
-        warmupsteps = kw.vmc_warmupsteps,
-        blocks      = kw.vmc_blocks,
-        steps       = kw.vmc_steps,
-        substeps    = kw.vmc_substeps,
-        timestep    = kw.vmc_timestep,
-        checkpoint  = kw.vmc_checkpoint,
-        )
-    if 'vmc_samples' in kw:
-        vsec.samples = kw.vmc_samples
-    elif 'vmc_samplesperthread' in kw:
-        vsec.samplesperthread = kw.vmc_samplesperthread
-    #end if
-    dmc_calcs = [vsec]
-    if kw.eq_dmc:
-        deqsec = dmc(
-            walkers 
-            )
+def dmc_sections(
+    warmupsteps          = missing,
+    blocks               = missing,
+    steps                = missing,
+    timestep             = missing,
+    checkpoint           = missing,
+    vmc_samples          = missing,
+    vmc_samplesperthread = missing, 
+    vmc_walkers          = missing,
+    vmc_warmupsteps      = missing,
+    vmc_blocks           = missing,
+    vmc_steps            = missing,
+    vmc_substeps         = missing,
+    vmc_timestep         = missing,
+    vmc_checkpoint       = missing,
+    eq_dmc               = missing,
+    eq_warmupsteps       = missing,
+    eq_blocks            = missing,
+    eq_steps             = missing,
+    eq_timestep          = missing,
+    eq_checkpoint        = missing,
+    J0_warmupsteps       = missing,
+    J0_blocks            = missing,
+    J0_steps             = missing,
+    test_warmupsteps     = missing,
+    test_blocks          = missing,
+    test_steps           = missing,
+    ntimesteps           = missing,
+    timestep_factor      = missing,    
+    nlmove               = missing,
+    dmc_calcs            = missing,
+    J0                   = False,
+    test                 = False,
+    defaults             = defaults_version,
+    loc                  = 'dmc_sections',
+    ):
+
+    if not missing(dmc_calcs):
+        return dmc_calcs
     #end if
 
+    set_def_loc(dmc_sections_defaults[defaults],loc)
+
+    warmupsteps      = default('warmupsteps'     ,warmupsteps     )
+    blocks           = default('blocks'          ,blocks          )
+    steps            = default('steps'           ,steps           )
+    timestep         = default('timestep'        ,timestep        )
+    checkpoint       = default('checkpoint'      ,checkpoint      )
+    vmc_samples      = default('vmc_samples'     ,vmc_samples     )
+    vmc_walkers      = default('vmc_walkers'     ,vmc_walkers     )
+    vmc_warmupsteps  = default('vmc_warmupsteps' ,vmc_warmupsteps )
+    vmc_blocks       = default('vmc_blocks'      ,vmc_blocks      )
+    vmc_steps        = default('vmc_steps'       ,vmc_steps       )
+    vmc_substeps     = default('vmc_substeps'    ,vmc_substeps    )
+    vmc_timestep     = default('vmc_timestep'    ,vmc_timestep    )
+    vmc_checkpoint   = default('vmc_checkpoint'  ,vmc_checkpoint  )
+    eq_dmc           = default('eq_dmc'          ,eq_dmc          )
+    eq_warmupsteps   = default('eq_warmupsteps'  ,eq_warmupsteps  )
+    eq_blocks        = default('eq_blocks'       ,eq_blocks       )
+    eq_steps         = default('eq_steps'        ,eq_steps        )
+    eq_timestep      = default('eq_timestep'     ,eq_timestep     )
+    eq_checkpoint    = default('eq_checkpoint'   ,eq_checkpoint   )
+    J0_warmupsteps   = default('J0_warmupsteps'  ,J0_warmupsteps  )
+    J0_blocks        = default('J0_blocks'       ,J0_blocks       )
+    J0_steps         = default('J0_steps'        ,J0_steps        )
+    test_warmupsteps = default('test_warmupsteps',test_warmupsteps)
+    test_blocks      = default('test_blocks'     ,test_blocks     )
+    test_steps       = default('test_steps'      ,test_steps      )
+    ntimesteps       = default('ntimesteps'      ,ntimesteps      )
+    timestep_factor  = default('timestep_factor' ,timestep_factor )    
+    nlmove           = default('nlmove'          ,nlmove          )
+
+    if missing(vmc_samples) and missing(vmc_samplesperthread):
+        error('vmc samples (dmc walkers) not specified\nplease provide one of the following keywords: vmc_samples, vmc_samplesperthread',loc)
+    #end if
+
+    vsec = vmc(
+        walkers     = vmc_walkers,
+        warmupsteps = vmc_warmupsteps,
+        blocks      = vmc_blocks,
+        steps       = vmc_steps,
+        substeps    = vmc_substeps,
+        timestep    = vmc_timestep,
+        checkpoint  = vmc_checkpoint,
+        )
+    if not missing(vmc_samplesperthread):
+        vsec.samplesperthread = vmc_samplesperthread
+    elif not missing(vmc_samples):
+        vsec.samples = vmc_samples
+    #end if
+
+    if J0:
+        warmupsteps = J0_warmupsteps
+        blocks      = J0_blocks
+        steps       = J0_steps
+    elif test:
+        warmupsteps = test_warmupsteps
+        blocks      = test_blocks
+        steps       = test_steps
+    #end if
+
+    dmc_calcs = [vsec]
+    if eq_dmc:
+        dmc_calcs.append(
+            dmc(
+                warmupsteps   = eq_warmupsteps,
+                blocks        = eq_blocks,
+                steps         = eq_steps,
+                timestep      = eq_timestep,
+                checkpoint    = eq_checkpoint,
+                nonlocalmoves = nlmove,
+                )
+            )
+    #end if
+    tfac = 1.0
+    for n in range(ntimesteps):
+        sfac = 1.0/tfac
+        dmc_calcs.append(
+            dmc(
+                warmupsteps   = int(sfac*warmupsteps),
+                blocks        = blocks,
+                steps         = int(sfac*steps),
+                timestep      = tfac*timestep,
+                checkpoint    = checkpoint,
+                nonlocalmoves = nlmove,
+                )
+            )
+        tfac *= timestep_factor
+    #end for
+    
+    return dmc_calcs
 #end def dmc_sections
 
 
@@ -1364,7 +1487,7 @@ def qmcpack_chain(**kwargs):
     if kw.dmc:
         nonloc_labels = {None:'',True:'_tm',False:'_la'}
         nonlocalmoves_default = None
-        if system.is_pseudized():
+        if kw.system.pseudized:
             nonlocalmoves_default = True
         #end if
         nloc_moves = []
@@ -1375,7 +1498,7 @@ def qmcpack_chain(**kwargs):
             nloc_moves.append(False)
         #end if
         if not kw.dmc_workflow.tmoves and not kw.dmc_workflow.locality:
-            nloc_moves.append(nonlocal_moves_default)
+            nloc_moves.append(nonlocalmoves_default)
         #end if
         for nlmove in nloc_moves:
             nll = nonloc_labels[nlmove]
@@ -1441,7 +1564,7 @@ def qmcpack_chain(**kwargs):
             #end if
             if kw.dmc_workflow.J3_prod:
                 label = 'dmcJ3'+nll
-                deps = resolve_deps(label,sims,J2dep,loc)
+                deps = resolve_deps(label,sims,J3dep,loc)
                 dmcJ3 = generate_qmcpack(
                     path         = os.path.join(basepath,label),
                     jastrows     = [],
@@ -1451,7 +1574,7 @@ def qmcpack_chain(**kwargs):
                     )
                 sims[label] = dmcJ3
             #end if
-        #end if
+        #end for
     #end if
 
     sim_list.extend(sims.list())
