@@ -1,0 +1,23 @@
+Index: catch.hpp
+===================================================================
+--- catch.hpp	(revision 7053)
++++ catch.hpp	(revision 7054)
+@@ -183,6 +183,7 @@
+ #if ( defined _MSC_VER && _MSC_VER > 1400 && !defined __EDGE__) || \
+     ( defined __WAVE__ && __WAVE_HAS_VARIADICS ) || \
+     ( defined __GNUC__ && __GNUC__ >= 3 ) || \
++    ( defined __xlC_ver__ && __xlC_ver__ >= 0x00000003 ) || \
+     ( !defined __cplusplus && __STDC_VERSION__ >= 199901L || __cplusplus >= 201103L )
+ 
+ #define CATCH_INTERNAL_CONFIG_VARIADIC_MACROS
+@@ -323,8 +324,9 @@
+         NonCopyable& operator = ( NonCopyable const& ) = delete;
+         NonCopyable& operator = ( NonCopyable && )     = delete;
+ #else
++        NonCopyable& operator = ( NonCopyable const& );
++    protected:
+         NonCopyable( NonCopyable const& info );
+-        NonCopyable& operator = ( NonCopyable const& );
+ #endif
+ 
+     protected:

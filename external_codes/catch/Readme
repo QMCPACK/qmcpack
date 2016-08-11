@@ -1,0 +1,8 @@
+C++ Unit test framework
+
+https://github.com/philsquared/Catch
+
+The single include file is downloaded from here:
+https://raw.githubusercontent.com/philsquared/Catch/master/single_include/catch.hpp
+
+There are some patches to make it work on the IBM Blue Gene, located in diff_ibm.txt
