@@ -88,6 +88,7 @@ SET(QMC_COMPLEX 0 CACHE INTEGER "Build for complex binary")
 SET(PRINT_DEBUG 0 CACHE BOOL "Enable/disable debug printing")
 SET(QMC_CUDA 0 CACHE BOOL "Build with GPU support through CUDA")
 SET(QMC_ADIOS 0 CACHE BOOL "Build with ADIOS")
+SET(BUILD_UNIT_TESTS 1 CACHE BOOL "Build unit tests")
 
 ######################################################################
 # set debug printout
@@ -221,6 +222,8 @@ IF(QMC_ADIOS)
 		ADD_DEFINITIONS(-DHAVE_ADIOS)
   endif()
 ENDIF(QMC_ADIOS)
+
+SET(QMCPACK_UNIT_TEST_DIR ${qmcpack_BINARY_DIR}/tests/bin)
 
 ######################################################
 # Get the current SVN version

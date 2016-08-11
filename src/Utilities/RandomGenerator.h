@@ -40,6 +40,16 @@ inline uint32_t make_seed(int i, int n)
   return static_cast<uint32_t>(std::time(0))%10474949+(i+1)*n+i;
 }
 
+// The definition of the fake RNG should always be available for unit testing
+#include "Utilities/FakeRandom.h"
+#ifdef USE_FAKE_RNG
+namespace qmcplusplus
+{
+typedef FakeRandom RandomGenerator_t;
+extern RandomGenerator_t Random;
+}
+#else
+
 #ifdef HAVE_LIBBOOST
 
 #include "Utilities/BoostRandom.h"
@@ -64,6 +74,7 @@ namespace qmcplusplus
 typedef SimpleRandom<MTRand> RandomGenerator_t;
 extern RandomGenerator_t Random;
 }
+#endif
 #endif
 #endif
 #endif

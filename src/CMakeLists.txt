@@ -54,6 +54,18 @@ else()
   ELSE(QMC_CUDA)
     ADD_LIBRARY(qmcutil ${UTILITIES} ${ADIOS})
   ENDIF(QMC_CUDA)
+  
+  # For unit tests, enable use for the fake RNG
+  FUNCTION( USE_FAKE_RNG TARGET )
+    TARGET_COMPILE_DEFINITIONS(${TARGET} PRIVATE "USE_FAKE_RNG")
+  ENDFUNCTION()
+
+  # Put the fake RNG in a separate library so production code doesn't
+  # accidentally link to it
+  SET(UNIT_TEST_UTILITIES
+    Utilities/FakeRandom.cpp 
+  ) 
+  ADD_LIBRARY(qmcfakerng ${UNIT_TEST_UTILITIES})
 
   #IF(QMC_BUILD_STATIC)
   #  ADD_LIBRARY(qmcutil STATIC ${UTILITIES})
@@ -182,4 +194,9 @@ else()
   IF(BUILD_SQD)
     SUBDIRS(SQD)
   ENDIF(BUILD_SQD)
+
+  if (BUILD_UNIT_TESTS)
+    #Unit test directories
+    INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/external_codes/catch)
+  endif()
 endif()
