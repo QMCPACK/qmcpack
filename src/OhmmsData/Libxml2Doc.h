@@ -85,6 +85,7 @@ struct Libxml2Document
   ~Libxml2Document();
 
   bool parse(const std::string& fname);
+  bool parseFromString(const std::string& data);
 
   inline xmlDocPtr getDocument()
   {
