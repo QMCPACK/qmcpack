@@ -359,6 +359,7 @@ class QAanalyzer(QAobject):
             initialized = False,
             data_loaded = False,
             analyzed    = False,
+            failed      = False,
             nindent     = nindent
             )
         self.vlog('building '+self.__class__.__name__)

@@ -371,14 +371,15 @@ class QmcpackAnalyzer(SimulationAnalyzer,QAanalyzer):
                 if series in request.calculations:
                     if method in self.opt_methods:
                         qma = OptAnalyzer(series,calc,input,nindent=subindent)
-                        self.opt[series] = qma
+                        primary = self.opt
                     elif method in self.vmc_methods:
                         qma = VmcAnalyzer(series,calc,input,nindent=subindent)
-                        self.vmc[series] = qma
+                        primary = self.vmc
                     elif method in self.dmc_methods:
                         qma = DmcAnalyzer(series,calc,input,nindent=subindent)
-                        self.dmc[series] = qma
+                        primary = self.dmc
                     #end if
+                    primary[series]  = qma
                     self.qmc[series] = qma
                 #end if
             #end if

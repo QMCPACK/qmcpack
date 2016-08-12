@@ -149,6 +149,15 @@ class SimulationBundle(Simulation):
             )
     #end def bundle_jobs
 
+
+    def pre_create_directories(self):
+        for sim in self.sims:
+            if not sim.created_directories:
+                sim.create_directories()
+            #end if
+        #end for
+    #end def pre_create_directories
+
         
     def pre_write_inputs(self,save_image):
         for sim in self.sims:

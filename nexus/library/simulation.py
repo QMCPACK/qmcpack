@@ -511,6 +511,10 @@ class Simulation(NexusCore):
         None
     #end def post_init
 
+    def pre_create_directories(self):
+        None
+    #end def pre_create_directories
+
     def write_prep(self):
         None
     #end def write_prep
@@ -571,6 +575,7 @@ class Simulation(NexusCore):
     #end def _create_dir
 
     def create_directories(self):
+        self.pre_create_directories()
         self._create_dir(self.locdir)
         self._create_dir(self.imlocdir)
         self.created_directories = True

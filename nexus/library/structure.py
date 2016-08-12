@@ -501,7 +501,7 @@ class Structure(Sobj):
             #end if
         #end if
         self.magnetize(magnetization)
-        if tiling!=None:
+        if tiling is not None:
             self.tile(tiling,
                       in_place = True,
                       magnetic_order = magnetic_order,
@@ -4287,7 +4287,7 @@ class Crystal(Structure):
                 self.error('must provide as many basis coordinates as basis atoms\n  atoms provided: '+str(atoms)+'\n  basis provided: '+str(basis))
             #end if
         #end if
-        if basis_vectors!=None and not isinstance(basis_vectors,str) and len(basis_vectors)!=3:
+        if basis_vectors is not None and not isinstance(basis_vectors,str) and len(basis_vectors)!=3:
             self.error('3 basis vectors must be given, you provided '+str(len(basis))+':\n  '+str(basis_vectors))
         #end if
 
@@ -4427,9 +4427,9 @@ class Crystal(Structure):
         pos  = []
         if basis_vectors is None:
             basis_vectors = axes
-        elif basis_vectors=='primitive':
+        elif basis_vectors is 'primitive':
             basis_vectors = axes_prim
-        elif basis_vectors=='conventional':
+        elif basis_vectors is 'conventional':
             basis_vectors = axes_conv
         #end if
         nbasis = len(atoms)

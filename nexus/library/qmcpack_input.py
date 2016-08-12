@@ -3606,7 +3606,7 @@ class QmcpackInput(SimulationInput,Names):
             if elem is None:
                 self.error('could not read ions from ion particleset')
             #end if
-            if axes==None:
+            if axes is None:
                 center = (0,0,0)
             else:
                 md = input._metadata

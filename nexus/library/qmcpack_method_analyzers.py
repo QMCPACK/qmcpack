@@ -36,6 +36,17 @@ class MethodAnalyzer(QAanalyzer):
     #end def __init__
         
 
+    
+
+    #def init_sub_analyzers(self,series,calc,input):
+    #    try:
+    #        self.init_sub_analyzers_direct(series,calc,input)
+    #    except:
+    #        self.info.failed = True
+    #    #end if
+    ##end def init_sub_analyzers
+
+
     def init_sub_analyzers(self,series,calc,input):
         request  = QAanalyzer.request
         run_info = QAanalyzer.run_info 
@@ -110,82 +121,86 @@ class MethodAnalyzer(QAanalyzer):
 
         self.set_global_info()
 
-        analyzers = self.capabilities.analyzers
-        if 'scalar' in data_sources:
-            filepath = os.path.join(source_path,files.scalar)
-            self.scalars = analyzers.scalars_dat(filepath,equilibration='LocalEnergy',nindent=self.subindent())
-        #end if
-        if 'stat' in data_sources:
-            #determine scalars and analyzer quantities
-            analyzer_quantities = self.capabilities.analyzer_quantities
-            analyzer_quants = obj()
-            ignored_quantities = set()
-            ham = input.get('hamiltonian')
-            ham = ham.get_single('h0')
-            ham_est  = ham.get('estimator')
-            calc_est = calc.get('estimator')
-            estimators = obj()
-            if ham_est!=None:
-                estimators.transfer_from(ham_est)
+        try:
+            analyzers = self.capabilities.analyzers
+            if 'scalar' in data_sources:
+                filepath = os.path.join(source_path,files.scalar)
+                self.scalars = analyzers.scalars_dat(filepath,equilibration='LocalEnergy',nindent=self.subindent())
             #end if
-            if calc_est!=None:
-                estimators.transfer_from(calc_est)
-            #end if
-            for estname,est in estimators.iteritems():
-                if est==None:
-                    self.error('estimators have not been read properly by QmcpackInput',trace=False)
+            if 'stat' in data_sources:
+                #determine scalars and analyzer quantities
+                analyzer_quantities = self.capabilities.analyzer_quantities
+                analyzer_quants = obj()
+                ignored_quantities = set()
+                ham = input.get('hamiltonian')
+                ham = ham.get_single('h0')
+                ham_est  = ham.get('estimator')
+                calc_est = calc.get('estimator')
+                estimators = obj()
+                if ham_est!=None:
+                    estimators.transfer_from(ham_est)
                 #end if
-                has_type = 'type' in est
-                has_name = 'name' in est
-                if has_type and has_name:
-                    type = est.type
-                    name = est.name
-                elif has_name:
-                    type = est.name
-                    name = est.name
-                elif has_type:
-                    type = est.type
-                    name = est.type
-                else:
-                    self.error('estimator '+estname+' has no type or name')
+                if calc_est!=None:
+                    estimators.transfer_from(calc_est)
                 #end if
-                cname = self.condense_name(name)
-                ctype = self.condense_name(type)
-
-                if ctype=='density' and not has_name:
-                    name = 'any'
-                #end if
-
-                if ctype in analyzer_quantities:
-                    analyzer_quants[name] = self.condense_name(type)
-                #end if
-            #end for
-            not_scalars = set(analyzer_quants.keys())
-
-            self.scalars_hdf = analyzers.scalars_hdf(not_scalars,nindent=self.subindent())
-
-            analyzer_quantities = analyzer_quantities & request.quantities
-            for name,type in analyzer_quants.iteritems():
-                if type in analyzer_quantities:
-                    if type in analyzers:
-                        qqa = analyzers[type](name,nindent=self.subindent())
-                        qqa.init_sub_analyzers()
-                        self[name] = qqa
-                    else:
-                        ignored_quantities.add(name)
+                for estname,est in estimators.iteritems():
+                    if est==None:
+                        self.error('estimators have not been read properly by QmcpackInput',trace=False)
                     #end if
-                #end if
-            #end for
-            self.info.ignored_quantities = ignored_quantities
-        #end if
-        if 'dmc' in data_sources:
-            filepath = os.path.join(source_path,files.dmc)
-            self.dmc = analyzers.dmc_dat(filepath,nindent=self.subindent())
-        #end if
-        if 'traces' in data_sources and 'traces' in files:
-            self.traces = analyzers.traces(source_path,files.traces,nindent=self.subindent())
-        #end if
-        
+                    has_type = 'type' in est
+                    has_name = 'name' in est
+                    if has_type and has_name:
+                        type = est.type
+                        name = est.name
+                    elif has_name:
+                        type = est.name
+                        name = est.name
+                    elif has_type:
+                        type = est.type
+                        name = est.type
+                    else:
+                        self.error('estimator '+estname+' has no type or name')
+                    #end if
+                    cname = self.condense_name(name)
+                    ctype = self.condense_name(type)
+
+                    if ctype=='density' and not has_name:
+                        name = 'any'
+                    #end if
+
+                    if ctype in analyzer_quantities:
+                        analyzer_quants[name] = self.condense_name(type)
+                    #end if
+                #end for
+                not_scalars = set(analyzer_quants.keys())
+
+                self.scalars_hdf = analyzers.scalars_hdf(not_scalars,nindent=self.subindent())
+
+                analyzer_quantities = analyzer_quantities & request.quantities
+                for name,type in analyzer_quants.iteritems():
+                    if type in analyzer_quantities:
+                        if type in analyzers:
+                            qqa = analyzers[type](name,nindent=self.subindent())
+                            qqa.init_sub_analyzers()
+                            self[name] = qqa
+                        else:
+                            ignored_quantities.add(name)
+                        #end if
+                    #end if
+                #end for
+                self.info.ignored_quantities = ignored_quantities
+            #end if
+            if 'dmc' in data_sources:
+                filepath = os.path.join(source_path,files.dmc)
+                self.dmc = analyzers.dmc_dat(filepath,nindent=self.subindent())
+            #end if
+            if 'traces' in data_sources and 'traces' in files:
+                self.traces = analyzers.traces(source_path,files.traces,nindent=self.subindent())
+            #end if
+        except:
+            self.info.complete = False
+        #end try
+
         self.unset_global_info()
 
         return
