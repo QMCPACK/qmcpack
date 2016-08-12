@@ -1,6 +1,5 @@
 
-#define CATCH_CONFIG_MAIN
-#include "catch.hpp"
+#include "Message/catch_mpi_main.hpp"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
