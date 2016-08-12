@@ -444,7 +444,7 @@ class Structure(Sobj):
                  operations=None,background_charge=0,frozen=None,bconds=None,
                  posu=None):
         if center is None:
-            if axes !=None:
+            if axes is not None:
                 center = array(axes,dtype=float).sum(0)/2
             else:
                 center = dim*[0]

@@ -993,7 +993,7 @@ class PwscfInput(SimulationInput):
         for var in vars:
             if var in loc:
                 val = loc[var]
-                if val==None:
+                if val is None:
                     self.error('requested variable '+var+' was not found',exit=False)
                     errors = True
                 #end if

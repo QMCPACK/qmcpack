@@ -532,8 +532,9 @@ opt_input_defaults = obj(
         **fixed_defaults
         ),
     v1 = obj(
-        identifier   = 'opt',
-        input_type   = 'basic',
+        identifier     = 'opt',
+        input_type     = 'basic',
+        spin_polarized = True,
         **fixed_defaults
         ),
     )
@@ -575,6 +576,7 @@ vmc_input_defaults = obj(
         J0_warmupsteps   = 200,
         J0_blocks        = 800,
         J0_steps         = 100,
+        spin_polarized   = True,
         **fixed_defaults
         ),
     )
@@ -601,8 +603,9 @@ dmc_input_defaults = obj(
         **fixed_defaults
         ),
     v1 = obj(
-        identifier   = 'qmc',
-        input_type   = 'basic',
+        identifier     = 'qmc',
+        input_type     = 'basic',
+        spin_polarized = True,
         **fixed_defaults
         ),
     )
