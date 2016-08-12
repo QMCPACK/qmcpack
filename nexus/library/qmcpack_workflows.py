@@ -206,7 +206,7 @@ def render_parameter_label(vkey,loc='render_parameter_label'):
 
 
 def capture_inputs(inputs):
-    if inputs is None:
+    if inputs is None or missing(inputs):
         capture = obj()
     else:
         capture = obj(**inputs)
