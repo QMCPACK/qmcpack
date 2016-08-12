@@ -2,6 +2,7 @@
 import os
 from numpy import ndarray
 from developer import obj,ci,error as dev_error,devlog,DevBase
+from vasp  import generate_vasp
 from pwscf import generate_pwscf
 from pwscf_postprocessors import generate_projwfc
 from qmcpack_converters import generate_pw2qmcpack
@@ -430,6 +431,21 @@ dmc_sections_defaults = obj(
         ntimesteps           = 1,
         timestep_factor      = 0.5,    
         nlmove               = None,
+        ),
+    )
+
+
+
+
+vasp_workflow_keys = []
+vasp_input_defaults = obj(
+    none = obj(
+        ),
+    minimal = obj(
+        identifier = 'vasp',
+        ),
+    v1 = obj(
+        identifier = 'vasp',
         ),
     )
 
@@ -1075,6 +1091,9 @@ qmcpack_chain_defaults = obj(
     orb_source     = None,
     J2_source      = None,
     J3_source      = None,
+    vasp           = False,
+    vasp_inputs    = None,
+    vasp_defaults  = defaults_version,
     scf            = False,
     scf_inputs     = None,
     scf_defaults   = defaults_version,
@@ -1110,6 +1129,9 @@ def process_qmcpack_chain_kwargs(
     orb_source    = missing,
     J2_source     = missing,
     J3_source     = missing,
+    vasp          = missing,
+    vasp_inputs   = missing,
+    vasp_defaults = missing,
     scf           = missing,
     scf_inputs    = missing,
     scf_defaults  = missing,
@@ -1155,12 +1177,15 @@ def process_qmcpack_chain_kwargs(
 
     assign_require(kw,'system'     ,system       )
     assign_require(kw,'sim_list'   ,sim_list     )
-    assign_require(kw,'dft_pseudos',dft_pseudos  )
     assign_default(kw,'basepath'   ,basepath     )
 
     assign_default(kw,'orb_source'  ,orb_source  )
     assign_default(kw,'J2_source'   ,J2_source   )
     assign_default(kw,'J3_source'   ,J3_source   )
+
+    assign_default(kw,'vasp'         ,vasp         )
+    assign_default(kw,'vasp_inputs'  ,vasp_inputs  )
+    assign_default(kw,'vasp_defaults',vasp_defaults)
 
     assign_default(kw,'scf'         ,scf         )
     assign_default(kw,'scf_inputs'  ,scf_inputs  )
@@ -1191,6 +1216,7 @@ def process_qmcpack_chain_kwargs(
     assign_default(kw,'dmc_inputs'  ,dmc_inputs  )
     assign_default(kw,'dmc_defaults',dmc_defaults)
 
+    kw.vasp |= kw.vasp_inputs !=None
     kw.scf  |= kw.scf_inputs !=None
     kw.nscf |= kw.nscf_inputs!=None
     kw.p2q  |= kw.p2q_inputs !=None
@@ -1199,10 +1225,24 @@ def process_qmcpack_chain_kwargs(
     kw.vmc  |= kw.vmc_inputs !=None
     kw.dmc  |= kw.dmc_inputs !=None
 
+    if kw.scf or kw.nscf:
+        assign_require(kw,'dft_pseudos',dft_pseudos)
+    #end if
     if kw.opt or kw.vmc or kw.dmc:
         assign_require(kw,'qmc_pseudos',qmc_pseudos)
     #end if
 
+    
+    if kw.vasp:
+        # kw.vasp_inputs contains inputs to generate_vasp after this
+        set_loc(loc+' vasp_inputs')
+        kw.vasp_inputs = capture_inputs(kw.vasp_inputs)
+        assign_defaults(kw.vasp_inputs,vasp_input_defaults[kw.vasp_defaults])
+        kw.vasp_inputs.set(
+            system  = kw.system,
+            )
+        kw.vasp_workflow = extract_keywords(kw.vasp_inputs,vasp_workflow_keys)
+    #end if
     
     if kw.scf:
         # kw.scf_inputs contains inputs to generate_pwscf after this
@@ -1303,6 +1343,7 @@ def process_qmcpack_chain_kwargs(
         kw.dmc_sec_inputs = extract_keywords(kw.dmc_inputs,dmc_sections_keys,optional=True)
     #end if
 
+    del kw.vasp_defaults
     del kw.scf_defaults
     del kw.nscf_defaults
     del kw.p2q_defaults
@@ -1328,6 +1369,14 @@ def qmcpack_chain(**kwargs):
     basepath = kw.basepath
     sim_list = kw.sim_list
     sims = obj()
+
+    if kw.vasp:
+        vasp = generate_vasp(
+            path = os.path.join(basepath,'vasp'),
+            **kw.vasp_inputs
+            )
+        sims.vasp = vasp
+    #end if
 
     if kw.orb_source!=None:
         sims.p2q = kw.orb_source
