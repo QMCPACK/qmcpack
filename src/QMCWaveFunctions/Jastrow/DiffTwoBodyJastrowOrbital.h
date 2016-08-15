@@ -164,6 +164,23 @@ public:
     }
     if (recalculate)
     {
+      ///precomputed recalculation switch
+      std::vector<bool> RecalcSwitch(F.size(),false);
+      for (int i=0; i<F.size(); ++i)
+      {
+        if(OffSet[i].first<0)
+        {
+          // nothing to optimize
+          RecalcSwitch[i]=false;
+        }
+        else
+        {
+          bool recalcFunc(false);
+          for (int rcs=OffSet[i].first; rcs<OffSet[i].second; rcs++)
+            if (rcsingles[rcs]==true) recalcFunc=true;
+          RecalcSwitch[i]=recalcFunc;
+        }
+      }
       dLogPsi=0.0;
       for (int p=0; p<NumVars; ++p)
         (*gradLogPsi[p])=0.0;
@@ -176,11 +193,7 @@ public:
         for (int nn=d_table->M[i]; nn<d_table->M[i+1]; ++nn)
         {
           int ptype=d_table->PairID[nn];
-          if(OffSet[ptype].first<0) continue; // nothing to optimize
-          bool recalcFunc(false);
-          for (int rcs=OffSet[ptype].first; rcs<OffSet[ptype].second; rcs++)
-            if (rcsingles[rcs]==true) recalcFunc=true;
-          if (recalcFunc)
+          if (RecalcSwitch[ptype])
           {
             std::fill(derivs.begin(),derivs.end(),0.0);
             if (!F[ptype]->evaluateDerivatives(d_table->r(nn),derivs)) continue;
