@@ -49,7 +49,7 @@ import time
 from socket import gethostname
 from subprocess import Popen,PIPE
 from random import randint
-from numpy import array,mod,floor,ceil,round,log
+from numpy import array,mod,floor,ceil,round,log,empty
 from generic import obj
 from developer import DevBase
 from nexus_base import NexusCore,nexus_core
@@ -1067,7 +1067,18 @@ class Workstation(Machine):
             core_req.append(job.cores)
         #end for
         core_req = array(core_req,dtype=int)
-        job_req  = array(job_req ,dtype=object)
+
+        # The following line does not work correctly under Numpy 1.10 or greater.
+        # It should create an ndarray of Job objects from a list of Job objects.
+        # Instead it creates nested ndarray's with inner type of bool
+        #job_req  = array(job_req ,dtype=object)
+
+        job_req_tmp = job_req
+        job_req  = empty(len(job_req_tmp) ,dtype=object)
+        for idx,job in enumerate(job_req_tmp):
+            job_req[idx] = job
+        #end for
+    
         order    = core_req.argsort()
         job_req  = job_req[order]
 
