@@ -734,6 +734,7 @@ QMCCostFunctionCUDA::Return_t QMCCostFunctionCUDA::fillOverlapHamiltonianMatrice
         Right(pm+1,pm2+1) += b1*H2_avg*varij; //(b1*H2_avg)*wfe*(HDsaved[pm2]+ Dsaved[pm2]*(eloc_new - curAvg_w));
       }
     } */
+    #pragma omp parallel for
     for (int pm=0; pm<NumParams(); pm++)
     {
       Return_t wfe = (HDsaved[pm] +(Dsaved[pm]-D_avg[pm])*eloc_new)*weight;
