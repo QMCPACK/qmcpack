@@ -84,6 +84,11 @@ class MethodAnalyzer(QAanalyzer):
                 self.vlog('match found: '+file,n=3)
             #end if
         #end for
+        complete = matched
+        complete &= 'scalar' in files
+        if 'linear' in method or method=='opt':
+            complete &= 'opt' in files
+        #end if
         equil = request.equilibration
         nblocks_exclude = -1
         if isinstance(equil,int):
@@ -104,7 +109,7 @@ class MethodAnalyzer(QAanalyzer):
             data_sources = data_sources,
             method_input = calc.copy(),
             nblocks_exclude = nblocks_exclude,
-            complete     = matched
+            complete     = complete,
             )
         self.info.transfer_from(method_info)
 

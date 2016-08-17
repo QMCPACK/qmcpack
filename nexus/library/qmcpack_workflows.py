@@ -1392,7 +1392,7 @@ def qmcpack_chain(**kwargs):
         if kw.nscf:
             deps = resolve_deps('nscf',sims,[('scf','charge_density')],loc)
             nscf = generate_pwscf(
-                path = os.path.join(basepath,'nscf'),
+                path = os.path.join(basepath,'scf'),
                 dependencies = deps,
                 **kw.nscf_inputs
                 )
@@ -1401,7 +1401,7 @@ def qmcpack_chain(**kwargs):
 
         if kw.p2q:
             if kw.nscf:
-                p2q_path = os.path.join(basepath,'nscf')
+                p2q_path = os.path.join(basepath,'scf')
                 deps = resolve_deps('p2q',sims,[('nscf','orbitals')],loc)
             else:
                 p2q_path = os.path.join(basepath,'scf')
