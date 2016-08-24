@@ -26,6 +26,7 @@ SET(BUILD_SANDBOX 1)
 
 SET(MPIEXEC "sh")
 SET(MPIEXEC_NUMPROC_FLAG "${qmcpack_SOURCE_DIR}/utils/bgrunjobhelper.sh")
+SET(QE_BIN /soft/applications/quantum_espresso/5.3.0-bgq-omp/bin)
 
 SET(BOOST_ROOT /home/projects/qmcpack/boost_1_45_0)
 

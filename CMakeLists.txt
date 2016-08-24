@@ -759,6 +759,11 @@ SUBDIRS(src)
 SUBDIRS(tests/converter)
 SUBDIRS(tests/system)
 SUBDIRS(examples)
+
+IF(QE_BIN)
+  MESSAGE(STATUS "QE binary path ${QE_BIN}")
+  SUBDIRS(tests/pw2qmcpack)
+ENDIF()
 #ADD_CUSTOM_TARGET(print_settings ALL
 #      ${CMAKE_COMMAND} -E echo "Print build settings"
 #          VERBATIM)

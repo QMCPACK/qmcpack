@@ -1,11 +1,10 @@
  &control
-    calculation='scf'
+    calculation = 'nscf'
     restart_mode='from_scratch',
     tstress = .true.
     prefix='LiH',
     pseudo_dir = './',
     outdir='out'
-    wf_collect=.true.
     disk_io='low'
  /
  &system
@@ -16,6 +15,8 @@
     occupations='smearing',
     ecutwfc = 450
     ecutrho =1800
+    nosym=.true.
+    noinv=.true.
  /
  &electrons
     conv_thr =  1.0d-10
@@ -27,5 +28,7 @@ ATOMIC_SPECIES
 ATOMIC_POSITIONS
  Li 0.00 0.00 0.00
  H  0.50 0.50 0.50
-K_POINTS AUTOMATIC
-8 8 8 1 1 1
+K_POINTS {crystal}
+2
+0.0 0.0 0.0 2.0
+0.5 0.0 0.0 2.0

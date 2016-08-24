@@ -30,5 +30,6 @@ ATOMIC_POSITIONS
  Li 0.00 0.00 0.00
  H  0.50 0.50 0.50
 K_POINTS {crystal}
-1
+2
 0.0 0.0 0.0 2.0
+0.5 0.0 0.0 2.0

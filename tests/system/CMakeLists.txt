@@ -1,28 +1,8 @@
 #############################################################
 # Add tests to ctest
 #############################################################
-# Useful macros to compile and run an executable:
-#   ADD_QMC_PROVISIONAL_TEST( EXECFILE )
-#       Add a provisional test that will be compiled 
-#       but not executed
-#   ADD_QMC_TEST( EXECFILE ARGS )
-#       Add a serial test passing the given args to the test
-#   ADD_QMC_TEST_PARALLEL( EXECFILE PROCS ARGS )
-#       Add a parallel test with the given number of
-#       processors and arguments
-#   ADD_QMC_TEST_1_2_4( EXECFILE args )
-#       Add a test that will run on 1, 2, and 4 processors
-#   ADD_QMC_WEEKLY_TEST( EXECFILE PROCS ARGS )
-#       Add a "WEEKLY" parallel test with the given number 
-#       of processors and arguments
-#   ADD_QMC_TEST_THREAD_MPI( EXECFILE PROCS THREADS ARGS )
-#       Add a parallel test with the given number of threads
-#       per processes
-# Useful macros to run an existing executable:
-#   RUN_QMC_APP( TESTNAME SRC_DIR PROCS THREADS ARGS )
-#############################################################
 
-message("Adding tests for QMCAPP")
+message("Adding tests for QMCPACK")
 
 IF (NOT TEST_MAX_PROCS )
 SET ( TEST_MAX_PROCS 16 )
@@ -69,61 +49,6 @@ else()
 #   COPY_DIRECTORY("${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_ae" "${CMAKE_CURRENT_BINARY_DIR}/short-LiH_dimer_ae") 
 #    SET (USE_EXT_MPI_FOR_SERIAL_TESTS)
 
-
-# Add a test run and associated scalar checks
-# BASE_NAME - name of test (number of MPI processes, number of threads, and value to check (if applicable)
-#             will be appended to get the full test name)
-# BASE_DIR - source location of test input files
-# PREFIX - prefix for output files
-# INPUT_FILE - XML input file to QMCPACK
-# PROCS - number of MPI processes
-# THREADS - number of OpenMP threads
-# SCALAR_VALUES - list of output values to check with check_scalars.py
-#                 The list entries alternate between the value name and the value (usually a string with the
-#                 both the average and error).
-# SHOULD_SUCCEED - whether the test is expected to pass or fail.  Expected failing tests will not have
-#                  the scalar tests added.
-
-FUNCTION(QMC_RUN_AND_CHECK BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SCALAR_VALUES SHOULD_SUCCEED)
-    # Map from name of check to appropriate flag for check_scalars.py
-    LIST(APPEND SCALAR_CHECK_TYPE "kinetic" "totenergy" "eeenergy" "samples" "potential" "ionion" "localecp" "nonlocalecp" "flux")
-    LIST(APPEND CHECK_SCALAR_FLAG "--ke"    "--le"      "--ee"     "--ts"    "--lp"      "--ii"       "--lpp"    "--nlpp"      "--fl")
-
-    SET( TEST_ADDED FALSE )
-    SET( FULL_NAME "${BASE_NAME}-${PROCS}-${THREADS}" )
-    MESSAGE("Adding test ${FULL_NAME}")
-    RUN_QMC_APP(${FULL_NAME} ${BASE_DIR} ${PROCS} ${THREADS} TEST_ADDED ${INPUT_FILE})
-
-
-    IF ( TEST_ADDED AND NOT SHOULD_SUCCEED)
-        SET_PROPERTY(TEST ${FULL_NAME} APPEND PROPERTY WILL_FAIL TRUE)
-        #MESSAGE("Test ${FULL_NAME} should fail")
-    ENDIF()
-
-    IF ( TEST_ADDED AND SHOULD_SUCCEED)
-        FOREACH(SCALAR_CHECK IN LISTS SCALAR_CHECK_TYPE)
-            LIST(FIND ${SCALAR_VALUES} ${SCALAR_CHECK} IDX1)
-            IF (IDX1 GREATER -1)
-                LIST(FIND SCALAR_CHECK_TYPE ${SCALAR_CHECK} IDX)
-                LIST(GET CHECK_SCALAR_FLAG ${IDX} FLAG)
-
-                MATH( EXPR IDX2 "${IDX1} + 1")
-                LIST(GET ${SCALAR_VALUES} ${IDX2} VALUE)
-
-                SET( TEST_NAME "${FULL_NAME}-${SCALAR_CHECK}" )
-                #MESSAGE("Adding scalar check ${TEST_NAME}")
-                SET(CHECK_CMD ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 -p ${PREFIX} -e 2 ${FLAG} ${VALUE})
-                #MESSAGE("check command = ${CHECK_CMD}")
-                ADD_TEST( NAME ${TEST_NAME}
-                    COMMAND ${CHECK_CMD}
-                    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${FULL_NAME}"
-                )
-                SET_PROPERTY( TEST ${TEST_NAME} APPEND PROPERTY DEPENDS ${FULL_NAME} )
-            ENDIF()
-        ENDFOREACH(SCALAR_CHECK)
-    ENDIF()
-ENDFUNCTION()
-
 IF(NOT QMC_CUDA)
 
 IF (NOT QMC_COMPLEX)
@@ -143,6 +68,7 @@ IF (NOT QMC_COMPLEX)
                     vmc_hf_noj.in.xml
                     16 1
                     LIH_SCALARS
+                    0 # VMC
                     TRUE)
 
   QMC_RUN_AND_CHECK(short-LiH_dimer_ae-vmc_hf_noj
@@ -151,6 +77,7 @@ IF (NOT QMC_COMPLEX)
                     vmc_hf_noj.in.xml
                     4 4
                     LIH_SCALARS
+                    0 # VMC
                     TRUE)
 
   QMC_RUN_AND_CHECK(short-LiH_dimer_ae-vmc_hf_noj
@@ -159,6 +86,7 @@ IF (NOT QMC_COMPLEX)
                     vmc_hf_noj.in.xml
                     1 16
                     LIH_SCALARS
+                    0 # VMC
                     TRUE)
 
 #
@@ -177,6 +105,7 @@ IF (NOT QMC_COMPLEX)
                     vmc_hf_noj.in.xml
                     1 16
                     LIH_PP_SCALARS
+                    0 # VMC
                     TRUE)
 
  ELSE()
@@ -201,6 +130,7 @@ ENDIF()
                     hf_vmc_LiH-gamma.xml
                     1 16
                     LIH_GAMMA_SCALARS
+                    0 # VMC
                     TRUE)
 
 
@@ -215,6 +145,7 @@ ENDIF()
                     hf_vmc_LiH-x.xml
                     1 16
                     LIH_X_SCALARS
+                    0 # VMC
                     TRUE)
 
 
@@ -237,6 +168,7 @@ ENDIF()
                     hf_vmc_LiH-arb.xml
                     1 16
                     LIH_ARB_SCALARS
+                    0 # VMC
                     ${LIH_ARB_SUCCEED})
 
 #
@@ -252,6 +184,7 @@ ENDIF()
                     qmc_short.in.xml
                     1 16
                     BCC_H_SCALARS
+                    0 # VMC
                     TRUE)
 
 
@@ -271,6 +204,7 @@ ENDIF()
                     qmc_short.in.xml
                     1 16
                     DIAMOND_SCALARS
+                    0 # VMC
                     TRUE)
 
 
@@ -290,6 +224,7 @@ ENDIF()
                     qmc_short.in.xml
                     1 16
                     DIAMOND2_SCALARS
+                    0 # VMC
                     TRUE)
 
 
@@ -303,6 +238,7 @@ ENDIF()
                     qmc_short.in.xml
                     1 16
                     HCP_BE_SCALARS
+                    0 # VMC
                     TRUE)
 
 
@@ -316,6 +252,7 @@ ENDIF()
                     qmc_short.in.xml
                     1 16
                     MONO_O_SCALARS
+                    0 # VMC
                     TRUE)
 
 
@@ -332,6 +269,7 @@ ENDIF()
                     qmc_long.in.xml
                     1 16
                     LONG_BCC_H_SCALARS
+                    0 # VMC
                     TRUE)
 
 
@@ -345,6 +283,7 @@ ENDIF()
                     qmc_long.in.xml
                     1 16
                     LONG_DIAMOND_SCALARS
+                    0 # VMC
                     TRUE)
   
 
@@ -358,6 +297,7 @@ ENDIF()
                     qmc_long.in.xml
                     1 16
                     LONG_DIAMOND2_SCALARS
+                    0 # VMC
                     TRUE)
 
 
@@ -371,6 +311,7 @@ ENDIF()
                     qmc_long.in.xml
                     1 16
                     LONG_HCP_BE_SCALARS
+                    0 # VMC
                     TRUE)
 
 
@@ -384,6 +325,7 @@ ENDIF()
                     qmc_long.in.xml
                     1 16
                     LONG_MONO_O_SCALARS
+                    0 # VMC
                     TRUE)
 
 endif()

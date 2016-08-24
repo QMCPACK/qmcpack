@@ -5,7 +5,6 @@
     prefix='LiH',
     pseudo_dir = './',
     outdir='out'
-    wf_collect=.true.
     disk_io='low'
  /
  &system
