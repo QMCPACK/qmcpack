@@ -225,9 +225,6 @@ FUNCTION( RUN_QMC_APP TESTNAME SRC_DIR PROCS THREADS TEST_ADDED ${ARGN} )
 ENDFUNCTION()
 
 
-# This function was copied and modified from src/QMCApp/test/CMakeLists.txt
-# Changes: add 'example' label, and add SERIES parameter
-
 # Add a test run and associated scalar checks
 # BASE_NAME - name of test (number of MPI processes, number of threads, and value to check (if applicable)
 #             will be appended to get the full test name)
@@ -252,7 +249,7 @@ FUNCTION(QMC_RUN_AND_CHECK BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SC
     SET( FULL_NAME "${BASE_NAME}-${PROCS}-${THREADS}" )
     MESSAGE("Adding test ${FULL_NAME}")
     RUN_QMC_APP(${FULL_NAME} ${BASE_DIR} ${PROCS} ${THREADS} TEST_ADDED ${INPUT_FILE})
-    #SET_PROPERTY(TEST ${FULL_NAME} APPEND PROPERTY LABELS "example")
+    SET_PROPERTY(TEST ${FULL_NAME} APPEND PROPERTY LABELS "QMCPACK")
 
 
     IF ( TEST_ADDED AND NOT SHOULD_SUCCEED)
@@ -279,7 +276,7 @@ FUNCTION(QMC_RUN_AND_CHECK BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SC
                     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${FULL_NAME}"
                 )
                 SET_PROPERTY( TEST ${TEST_NAME} APPEND PROPERTY DEPENDS ${FULL_NAME} )
-                SET_PROPERTY( TEST ${TEST_NAME} APPEND PROPERTY LABELS "example" )
+                SET_PROPERTY( TEST ${TEST_NAME} APPEND PROPERTY LABELS "QMCPACK-checking-results" )
             ENDIF()
         ENDFOREACH(SCALAR_CHECK)
     ENDIF()

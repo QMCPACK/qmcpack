@@ -19,12 +19,13 @@ if(NOT ${QMCAPP_ERR} STREQUAL "")
   message("${QMCAPP_ERR}  skipping tests")
 else()
   INCLUDE( "${qmcpack_SOURCE_DIR}/CMake/run_qe.cmake" )
+  SET(LAST_TEST_NAME "NONE")
 
   RUN_QE_TEST(qe-LiH-unpolarized ${CMAKE_SOURCE_DIR}/examples/solids/dft-inputs
               16 16 1 16 1 1 LiH )
 
   SOFTLINK_H5( qe-LiH-unpolarized-np-16-16-1-nk-16-1-1
-               LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16/LiH-gamma.pwscf.h5 LiH )
+               LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16 LiH LiH-gamma.pwscf.h5 LAST_TEST_NAME )
 
   LIST(APPEND LIH_GAMMA_SCALARS "kinetic" "7.4145221704067854 0.024")
   LIST(APPEND LIH_GAMMA_SCALARS "localecp" "-11.718808431876706 0.025")
@@ -40,8 +41,11 @@ else()
                     0 # VMC
                     TRUE)
 
+  SET_TESTS_PROPERTIES( qe-LiH-unpolarized-np-16-16-1-nk-16-1-1-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16 
+                        PROPERTIES DEPENDS ${LAST_TEST_NAME} )
+
   SOFTLINK_H5( qe-LiH-unpolarized-np-16-16-1-nk-16-1-1
-               LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16/LiH-x.pwscf.h5 LiH )
+               LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16 LiH LiH-x.pwscf.h5 LAST_TEST_NAME )
 
   LIST(APPEND LIH_X_SCALARS "kinetic" "7.3772282047321536 0.024")
   LIST(APPEND LIH_X_SCALARS "localecp" "-11.414410381100344 0.025")
@@ -57,11 +61,14 @@ else()
                     0 # VMC
                     TRUE)
 
+  SET_TESTS_PROPERTIES( qe-LiH-unpolarized-np-16-16-1-nk-16-1-1-LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16 
+                        PROPERTIES DEPENDS ${LAST_TEST_NAME} )
+
   RUN_QE_TEST(qe-LiH-unpolarized ${CMAKE_SOURCE_DIR}/examples/solids/dft-inputs
               16 16 2 16 2 2 LiH )
 
   SOFTLINK_H5( qe-LiH-unpolarized-np-16-16-2-nk-16-2-2
-               LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16/LiH-gamma.pwscf.h5 LiH )
+               LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16 LiH LiH-gamma.pwscf.h5 LAST_TEST_NAME )
 
   QMC_RUN_AND_CHECK(qe-LiH-unpolarized-np-16-16-2-nk-16-2-2-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
                     "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
@@ -72,8 +79,11 @@ else()
                     0 # VMC
                     TRUE)
 
+  SET_TESTS_PROPERTIES( qe-LiH-unpolarized-np-16-16-2-nk-16-2-2-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16 
+                        PROPERTIES DEPENDS ${LAST_TEST_NAME} )
+
   SOFTLINK_H5( qe-LiH-unpolarized-np-16-16-2-nk-16-2-2
-               LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16/LiH-x.pwscf.h5 LiH )
+               LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16 LiH LiH-x.pwscf.h5 LAST_TEST_NAME )
 
   QMC_RUN_AND_CHECK(qe-LiH-unpolarized-np-16-16-2-nk-16-2-2-LiH_solid_1x1x1_pp-x-vmc_hf_noj
                     "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
@@ -84,12 +94,15 @@ else()
                     0 # VMC
                     TRUE)
 
+  SET_TESTS_PROPERTIES( qe-LiH-unpolarized-np-16-16-2-nk-16-2-2-LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16 
+                        PROPERTIES DEPENDS ${LAST_TEST_NAME} )
+
   # test case for no wf_collect
   RUN_QE_TEST(qe-LiH-unpolarized-no-collect ${CMAKE_SOURCE_DIR}/examples/solids/dft-inputs-no-collect
               16 16 16 16 1 1 LiH )
 
   SOFTLINK_H5( qe-LiH-unpolarized-no-collect-np-16-16-16-nk-16-1-1
-               LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16/LiH-gamma.pwscf.h5 LiH )
+               LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16 LiH LiH-gamma.pwscf.h5 LAST_TEST_NAME )
 
   QMC_RUN_AND_CHECK(qe-LiH-unpolarized-no-collect-np-16-16-16-nk-16-1-1-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
                     "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
@@ -100,8 +113,11 @@ else()
                     0 # VMC
                     TRUE)
 
+  SET_TESTS_PROPERTIES( qe-LiH-unpolarized-no-collect-np-16-16-16-nk-16-1-1-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16 
+                        PROPERTIES DEPENDS ${LAST_TEST_NAME} )
+
   SOFTLINK_H5( qe-LiH-unpolarized-no-collect-np-16-16-16-nk-16-1-1
-               LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16/LiH-x.pwscf.h5 LiH )
+               LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16 LiH LiH-x.pwscf.h5 LAST_TEST_NAME )
 
   QMC_RUN_AND_CHECK(qe-LiH-unpolarized-no-collect-np-16-16-16-nk-16-1-1-LiH_solid_1x1x1_pp-x-vmc_hf_noj
                     "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
@@ -112,11 +128,14 @@ else()
                     0 # VMC
                     TRUE)
 
+  SET_TESTS_PROPERTIES( qe-LiH-unpolarized-no-collect-np-16-16-16-nk-16-1-1-LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16 
+                        PROPERTIES DEPENDS ${LAST_TEST_NAME} )
+
   RUN_QE_TEST(qe-LiH-unpolarized-no-collect ${CMAKE_SOURCE_DIR}/examples/solids/dft-inputs-no-collect
               16 16 16 16 2 2 LiH )
 
   SOFTLINK_H5( qe-LiH-unpolarized-no-collect-np-16-16-16-nk-16-2-2
-               LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16/LiH-gamma.pwscf.h5 LiH )
+               LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16 LiH LiH-gamma.pwscf.h5 LAST_TEST_NAME )
 
   QMC_RUN_AND_CHECK(qe-LiH-unpolarized-no-collect-np-16-16-16-nk-16-2-2-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
                     "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
@@ -127,8 +146,11 @@ else()
                     0 # VMC
                     TRUE)
 
+  SET_TESTS_PROPERTIES( qe-LiH-unpolarized-no-collect-np-16-16-16-nk-16-2-2-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16 
+                        PROPERTIES DEPENDS ${LAST_TEST_NAME} )
+
   SOFTLINK_H5( qe-LiH-unpolarized-no-collect-np-16-16-16-nk-16-2-2
-               LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16/LiH-x.pwscf.h5 LiH )
+               LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16 LiH LiH-x.pwscf.h5 LAST_TEST_NAME )
 
   QMC_RUN_AND_CHECK(qe-LiH-unpolarized-no-collect-np-16-16-16-nk-16-2-2-LiH_solid_1x1x1_pp-x-vmc_hf_noj
                     "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
@@ -138,5 +160,8 @@ else()
                     LIH_X_SCALARS
                     0 # VMC
                     TRUE)
+
+  SET_TESTS_PROPERTIES( qe-LiH-unpolarized-no-collect-np-16-16-16-nk-16-2-2-LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16 
+                        PROPERTIES DEPENDS ${LAST_TEST_NAME} )
 
 endif()
