@@ -27,8 +27,10 @@ else()
   SOFTLINK_H5( qe-LiH-unpolarized-np-16-16-1-nk-16-1-1
                LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16 LiH LiH-gamma.pwscf.h5 LAST_TEST_NAME )
 
-  LIST(APPEND LIH_GAMMA_SCALARS "kinetic" "7.4145221704067854 0.024")
-  LIST(APPEND LIH_GAMMA_SCALARS "localecp" "-11.718808431876706 0.025")
+  # These values are slightly different from those in tests/systems
+  # because the h5 is generated in different ways.
+  LIST(APPEND LIH_GAMMA_SCALARS "kinetic" "7.46326 0.024")
+  LIST(APPEND LIH_GAMMA_SCALARS "localecp" "-11.78311 0.025")
   LIST(APPEND LIH_GAMMA_SCALARS "samples" "1600000 0.0")
   LIST(APPEND LIH_GAMMA_SCALARS "flux" "0.0 0.05")
 
@@ -47,8 +49,10 @@ else()
   SOFTLINK_H5( qe-LiH-unpolarized-np-16-16-1-nk-16-1-1
                LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16 LiH LiH-x.pwscf.h5 LAST_TEST_NAME )
 
-  LIST(APPEND LIH_X_SCALARS "kinetic" "7.3772282047321536 0.024")
-  LIST(APPEND LIH_X_SCALARS "localecp" "-11.414410381100344 0.025")
+  # These values are slightly different from those in tests/systems
+  # because the h5 is generated in different ways.
+  LIST(APPEND LIH_X_SCALARS "kinetic" "7.33899 0.024")
+  LIST(APPEND LIH_X_SCALARS "localecp" "-11.37256 0.025")
   LIST(APPEND LIH_X_SCALARS "samples" "1600000 0.0")
   LIST(APPEND LIH_X_SCALARS "flux" "0.0 0.05")
 
