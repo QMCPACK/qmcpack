@@ -262,9 +262,9 @@ class Settings(NexusCore):
         #end if
         if 'status' in kw:
             if kw.status==None or kw.status==False:
-                nexus_core.status = status_modes.none
+                nexus_core.status = nexus_core.status_modes.none
             elif kw.status==True:
-                nexus_core.status = status_modes.standard
+                nexus_core.status = nexus_core.status_modes.standard
             elif kw.status in nexus_core.status_modes:
                 nexus_core.status = nexus_core.status_modes[kw.status]
             else:

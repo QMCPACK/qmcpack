@@ -988,7 +988,6 @@ class Simulation(NexusCore):
             del analyzer
             self.analyzed = True
             self.save_image()
-
         #end if
     #end def analyze
 
@@ -1097,7 +1096,9 @@ class Simulation(NexusCore):
             #end if
             if progress and not self.block_subcascade and not self.failed:
                 for sim in self.dependents:
-                    sim.progress(self.simid)
+                    if not sim.bundled:
+                        sim.progress(self.simid)
+                    #end if
                 #end for
             #end if
         elif len(self.wait_ids)==0 and self.force_write:

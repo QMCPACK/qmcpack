@@ -385,7 +385,9 @@ class ProjectManager(NexusCore):
             cascade.reset_wait_ids()
         #end for
         for cid,cascade in progressing_cascades.iteritems():
-            cascade.progress()
+            if not cascade.bundled:
+                cascade.progress()
+            #end if
             cascade.check_subcascade()
             if cascade.subcascade_finished:
                 finished.append(cid)
