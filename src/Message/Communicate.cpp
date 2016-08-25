@@ -224,13 +224,13 @@ void Communicate::finalize()
 
 void Communicate::abort()
 {
-  abort();
+  std::abort();
 }
 
 void Communicate::abort(const char* msg)
 {
   std::cerr << msg << std::endl;
-  abort();
+  std::abort();
 }
 
 void Communicate::barrier()
