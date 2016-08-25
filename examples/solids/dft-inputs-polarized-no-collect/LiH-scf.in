@@ -1,0 +1,31 @@
+ &control
+    calculation='scf'
+    restart_mode='from_scratch',
+    tstress = .true.
+    prefix='LiH',
+    pseudo_dir = './',
+    outdir='out'
+    disk_io='low'
+ /
+ &system
+    ibrav=2, celldm(1) =7.100, nat=  2, ntyp= 2,
+    nspin=2,
+    tot_magnetization = 0,
+    degauss=0.001,
+    smearing='mp',
+    occupations='smearing',
+    ecutwfc = 450
+    ecutrho =1800
+ /
+ &electrons
+    conv_thr =  1.0d-10
+    mixing_beta = 0.7
+ /
+ATOMIC_SPECIES
+ Li  9.01  Li.ncpp
+ H   1.01  H.ncpp
+ATOMIC_POSITIONS
+ Li 0.00 0.00 0.00
+ H  0.50 0.50 0.50
+K_POINTS AUTOMATIC
+8 8 8 1 1 1
