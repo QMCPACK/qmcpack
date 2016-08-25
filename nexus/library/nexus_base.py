@@ -39,6 +39,13 @@ from developer import DevBase
 nexus_core    = obj()
 nexus_noncore = obj()
 
+status_modes = obj(
+    none     = 0,
+    standard = 1,
+    active   = 2,
+    failed   = 3,
+    ready    = 4,
+    )
 
 modes = obj(
     none       = 0,
@@ -87,6 +94,8 @@ nexus_core.set(
     debug             = False,             # used by: NexusCore
     trace             = False,             # used by: NexusCore
     indent            = '  ',              # used by: NexusCore
+    status_modes      = status_modes,      # used by: ProjectManager
+    status            = status_modes.none, # used by: ProjectManager
     emulate           = False,             # unused
     **nexus_core_noncore
     )

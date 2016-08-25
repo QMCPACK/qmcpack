@@ -263,6 +263,8 @@ class Simulation(NexusCore):
     analyzer_imagefile = 'analyzer.p'
     image_directory    = 'sim'
 
+    is_bundle = False
+
     sim_count = 0
 
     sim_directories = dict()
@@ -360,6 +362,8 @@ class Simulation(NexusCore):
         self.infile         = None
         self.outfile        = None
         self.errfile        = None
+        self.bundled        = False
+        self.bundler        = None
 
         #variables determined by derived classes
         self.outputs = None  #object representing output data 
@@ -477,6 +481,36 @@ class Simulation(NexusCore):
         self.got_output     = False
         self.analyzed       = False
     #end def reset_indicators
+
+    def completed(self):
+        completed  = self.setup
+        completed &= self.sent_files 
+        completed &= self.submitted  
+        completed &= self.finished   
+        completed &= self.got_output 
+        completed &= self.analyzed   
+        completed &= not self.failed
+        return completed
+    #end def completed
+
+    def active(self):
+        deps_completed = True
+        for dep in self.dependencies:
+            deps_completed &= dep.sim.completed()
+        #end for
+        active = deps_completed and not self.completed()
+        return active
+    #end def active
+
+    def ready(self):
+        ready = self.active()
+        ready &= not self.submitted
+        ready &= not self.finished
+        ready &= not self.got_output
+        ready &= not self.analyzed
+        ready &= not self.failed
+        return ready
+    #end def ready
 
     def check_result(self,result_name):
         self.not_implemented()

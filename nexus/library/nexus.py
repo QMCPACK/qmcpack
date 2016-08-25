@@ -88,7 +88,7 @@ class Settings(NexusCore):
         '''.split())
 
     core_process_vars = set('''
-        file_locations  mode
+        file_locations  mode  status
         '''.split())
 
     noncore_assign_vars = set('''
@@ -146,7 +146,7 @@ class Settings(NexusCore):
         # guard against invalid settings
         not_allowed = set(kwargs.keys()) - Settings.allowed_vars
         if len(not_allowed)>0:
-            self.error('unrecognized variables provided.\nYou provided: {0}\nAllowed variables are: {1}'.format(sorted(not_allowed),sorted(Settings.allowed_vars)))
+            self.error('unrecognized variables provided\nyou provided: {0}\nallowed variables are: {1}'.format(sorted(not_allowed),sorted(Settings.allowed_vars)))
         #end if
 
         # assign simple variables
@@ -260,14 +260,28 @@ class Settings(NexusCore):
         if nexus_core.debug:
             nexus_core.verbose = True
         #end if
+        if 'status' in kw:
+            if kw.status==None or kw.status==False:
+                nexus_core.status = status_modes.none
+            elif kw.status==True:
+                nexus_core.status = status_modes.standard
+            elif kw.status in nexus_core.status_modes:
+                nexus_core.status = nexus_core.status_modes[kw.status]
+            else:
+                self.error('invalid status mode specified: {0}\nvalid status modes are: {1}'.format(kw.status,sorted(nexus_core.status_modes.keys())))
+            #end if
+        #end if
+        if nexus_core.status_only and nexus_core.status==nexus_core.status_modes.none:
+            nexus_core.status = nexus_core.status_modes.standard
+        #end if
         if 'mode' in kw:
             if kw.mode in nexus_core.modes:
                 nexus_core.mode = kw.mode
             else:
-                self.error('invalid mode specified: {0}\nvalid modes are {1}'.format(kw.mode,sorted(nexus_core.modes.keys())))
+                self.error('invalid mode specified: {0}\nvalid modes are: {1}'.format(kw.mode,sorted(nexus_core.modes.keys())))
             #end if
         #end if
-        mode = nexus_core.mode
+        mode  = nexus_core.mode
         modes = nexus_core.modes
         if mode==modes.stages:
             stages = nexus_core.stages
@@ -290,6 +304,8 @@ class Settings(NexusCore):
                 self.error('some stages provided are not primary stages.\n  You provided '+str(list(forbidden))+'\n  Options are '+str(list(allowed_stages)))
             #end if
         #end if
+        # overide user input and always use stages mode 
+        # keep processing code above in case a change is desired in the future
         nexus_core.mode       = modes.stages
         nexus_core.stages     = stages
         nexus_core.stages_set = set(nexus_core.stages)

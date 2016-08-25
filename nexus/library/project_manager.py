@@ -80,7 +80,7 @@ class ProjectManager(NexusCore):
         self.log('\nProject starting',n=0)
         self.init_cascades()
         status_only = status_only or nexus_core.status_only
-        status = status or status_only
+        status = status or status_only or nexus_core.status!=nexus_core.status_modes.none
         if status:
             self.write_simulation_status()
             if status_only:
@@ -196,20 +196,86 @@ class ProjectManager(NexusCore):
     #end def propagate_values
 
         
-    def write_simulation_status(self):
-        self.log('\ncascade status',n=1)
-        self.log('setup, sent_files, submitted, finished, got_output, analyzed',n=2)
+    def status_line(self,sim,extra=''):
         indicators = ('setup','sent_files','submitted','finished','got_output','analyzed')
-        for isim in self.simulations.keys():
-            sim = self.simulations[isim]
-            stats = sim.tuple(*indicators)
-            status = ''
-            for stat in stats:
-                status+=str(int(stat))
-            #end for
-            self.log('{0}  {1:<6}  {2}'.format(status,sim.identifier,sim.locdir),n=2)
+        stats = sim.tuple(*indicators)
+        status = ''
+        for stat in stats:
+            status+=str(int(stat))
         #end for
-        self.log('setup, sent_files, submitted, finished, got_output, analyzed',n=2)
+        if sim.process_id is None:
+            pid = '------'
+        else:
+            pid = sim.process_id
+        #end if
+        sline = '{0}  {1}  {2:<8}  {3:<6}  {4}'.format(status,str(int(sim.failed)),pid,sim.identifier,sim.locdir)
+        self.log(sline,extra,n=2)
+
+        #os.system('ls '+sim.locdir)
+        #os.system('redo '+sim.locdir)
+    #end def status_line
+
+    def write_simulation_status(self):
+        status       = nexus_core.status
+        status_modes = nexus_core.status_modes
+        self.log('\ncascade status',n=1)
+        self.log('setup, sent_files, submitted, finished, got_output, analyzed, failed',n=2)
+        all_sids = set()
+        for sim in self.simulations:
+            add = False
+            if status==status_modes.active:
+                add = sim.active()
+            elif status==status_modes.ready:
+                add = sim.ready()
+            elif status==status_modes.failed:
+                add = sim.failed
+            else:
+                add = True
+            #end if
+            if add:
+                all_sids.add(sim.simid)
+            #end if
+        #end for
+        sids = set()
+        for isim in sorted(all_sids):
+            sim = self.simulations[isim]
+            if not sim.bundled:
+                if status==status_modes.active and not sim.active():
+                    continue
+                #end if
+                self.status_line(sim)
+                sids.add(sim.simid)
+                if sim.is_bundle:
+                    for s in sim.sims:
+                        self.status_line(s)
+                        sids.add(s.simid)
+                    #end for
+                #end if
+            #end if
+        #end for
+        sids = all_sids-sids
+        if len(sids)>0:
+            self.log('==== sims missed, part of bundles? ====',n=2)
+            for isim in sorted(sids):
+                sim = self.simulations[isim]
+                self.status_line(sim)
+            #end for
+            #self.log('==== bundles for missed sims ====',n=2)
+            #bsids = set()
+            #for isim in sorted(sids):
+            #    sim = self.simulations[isim]
+            #    if sim.bundled and sim.simid not in bsids:
+            #        bsim = sim.bundler
+            #        self.status_line(bsim)
+            #        bsids.add(bsim.simid)
+            #        for s in bsim.sims:
+            #            self.status_line(s)
+            #            bsids.add(s.simid)
+            #        #end for
+            #    #end if
+            ##end for
+        #end if
+        self.log('setup, sent_files, submitted, finished, got_output, analyzed, failed',n=2)
     #end def write_simulation_status
 
 

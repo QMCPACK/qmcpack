@@ -46,6 +46,8 @@ class SimulationBundle(Simulation):
     generic_identifier = 'bundle'
     image_directory    = 'bundle'
 
+    is_bundle = True
+
     def __init__(self,*sims,**kwargs):
         if len(sims)==1 and isinstance(sims[0],list):
             sims = sims[0]
@@ -58,6 +60,8 @@ class SimulationBundle(Simulation):
             if not isinstance(sim,Simulation):
                 self.error('attempted to bundle non-simulation object: '+sim.__class__.__name__)
             #end if
+            sim.bundled = True
+            sim.bundler = self
         #end for
         relative_paths = False
         if 'relative' in kwargs:
@@ -148,6 +152,15 @@ class SimulationBundle(Simulation):
             **time
             )
     #end def bundle_jobs
+
+
+    def completed(self):
+        bsims_comp = True
+        for sim in self.sims:
+            bsims_comp &= sim.completed()
+        #end for
+        return Simulation.completed(self) & bsims_comp
+    #end def completed
 
 
     def pre_create_directories(self):
