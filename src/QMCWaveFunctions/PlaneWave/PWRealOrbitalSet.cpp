@@ -32,6 +32,14 @@ PWRealOrbitalSet::~PWRealOrbitalSet()
 #endif
 }
 
+SPOSetBase* PWRealOrbitalSet::makeClone() const
+{
+  PWRealOrbitalSet *myclone=new PWRealOrbitalSet(*this);
+  myclone->myBasisSet = new PWBasis(*myBasisSet);
+  return myclone;
+}
+
+
 void PWRealOrbitalSet::resetParameters(const opt_variables_type& active)
 {
   //DO NOTHING FOR NOW
@@ -43,8 +51,9 @@ void PWRealOrbitalSet::setOrbitalSetSize(int norbs)
 
 void PWRealOrbitalSet::resetTargetParticleSet(ParticleSet& P)
 {
-  app_error() << "PWRealOrbitalSet::resetTargetParticleSet not yet coded." << std::endl;
-  OHMMS::Controller->abort();
+  //  Not sure what to do here, if anything
+  //app_error() << "PWRealOrbitalSet::resetTargetParticleSet not yet coded." << std::endl;
+  //OHMMS::Controller->abort();
 }
 
 void PWRealOrbitalSet::resize(PWBasisPtr bset, int nbands, bool cleanup)
@@ -56,6 +65,7 @@ void PWRealOrbitalSet::resize(PWBasisPtr bset, int nbands, bool cleanup)
   CC.resize(OrbitalSetSize,BasisSetSize);
   Temp.resize(OrbitalSetSize,PW_MAXINDEX);
   tempPsi.resize(OrbitalSetSize);
+  t_logpsi.resize(OrbitalSetSize, OrbitalSetSize);
   app_log() << "  PWRealOrbitalSet::resize OrbitalSetSize =" << OrbitalSetSize << " BasisSetSize = " << BasisSetSize << std::endl;
 }
 

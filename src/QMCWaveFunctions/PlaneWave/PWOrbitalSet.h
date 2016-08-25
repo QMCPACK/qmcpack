@@ -95,6 +95,12 @@ public:
   void evaluate_notranspose(const ParticleSet& P, int first, int last,
                             ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
 
+ void evaluate(const ParticleSet& P, int iat,
+                ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& gg_psi)
+  {
+    APP_ABORT("Need specialization of evaluate(iat) for HessVector. \n");
+  }
+
   /** boolean
    *
    * If true, this has to delete the BasisSet

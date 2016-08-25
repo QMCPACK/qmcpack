@@ -32,19 +32,9 @@ int PWBasis::readbasis(hid_t h5basisgroup, RealType ecutoff, ParticleLayout_t &l
   ///make a local copy
   Lattice=lat;
   ecut = ecutoff;
-  if(pwmultname[0] != '0')
-  {
-    app_log() << "  PWBasis::" << pwmultname << " is found " << std::endl;
-    HDFAttribIO<std::vector<GIndex_t> >hdfvtv(gvecs);
-    hdfvtv.read(h5basisgroup,pwmultname.c_str());
-  }
-  if(pwname[0] != '0')
-  {
-    app_log() << "  PWBasis::" << pwname << " is found " << std::endl;
-    HDFAttribIO<std::vector<PosType> > hdfg(kplusgvecs_cart);
-    hdfg.read(h5basisgroup,pwname.c_str()); //"planewaves");
-  }
-  //hdfvtv.read(h5basisgroup,pwname.c_str()); //"planewaves");
+  app_log() << "  PWBasis::" << pwmultname << " is found " << std::endl;
+  HDFAttribIO<std::vector<GIndex_t> >hdfvtv(gvecs);
+  hdfvtv.read(h5basisgroup,"/electrons/kpoint_0/gvectors");
   NumPlaneWaves=std::max(gvecs.size(),kplusgvecs_cart.size());
   if(NumPlaneWaves ==0)
   {
@@ -114,6 +104,19 @@ void PWBasis::trimforecut()
     //PosType tempvec = Lattice.k_cart(gvecCopy[ig]+twist);
     PosType tempvec = gcartCopy[ig]+twist_cart;
     RealType mod2 = dot(tempvec,tempvec);
+
+   // Keep all the g-vectors
+   // The cutoff energy is not stored in the HDF file now.
+   // Is truncating the gvectors to a spherical shell necessary?
+   if (true)
+   {
+      gvecs.push_back(gvecCopy[ig]);
+      kplusgvecs_cart.push_back(tempvec);
+      minusModKplusG2.push_back(-mod2);
+      //Remember which position in the HDF5 file this came from...for coefficients
+      inputmap[ig] = newig++;
+    }
+#if 0
     if(mod2<=kcutoff2)
     {
       gvecs.push_back(gvecCopy[ig]);
@@ -127,6 +130,7 @@ void PWBasis::trimforecut()
       inputmap[ig] = -1; //Temporary value...need to know final NumPlaneWaves.
       NumPlaneWaves--;
     }
+#endif
   }
 #if defined(PWBASIS_USE_RECURSIVE)
   //Store the maximum number of translations, within ecut, of any reciprocal cell vector.

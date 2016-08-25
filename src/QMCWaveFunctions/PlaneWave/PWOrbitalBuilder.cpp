@@ -129,7 +129,7 @@ bool PWOrbitalBuilder::putSlaterDet(xmlNodePtr cur)
       int firstIndex=targetPtcl.first(spin_group);
       std::map<std::string,SPOSetBasePtr>::iterator lit(spo_ref.find(ref));
       Det_t* adet=0;
-      int spin_group=0;
+      //int spin_group=0;
       if(lit == spo_ref.end())
       {
         app_log() << "  Create a PWOrbitalSet" << std::endl;;
@@ -180,18 +180,18 @@ bool PWOrbitalBuilder::createPWBasis(xmlNodePtr cur)
   HDFAttribIO<int> hdfint(idata);
   HDFAttribIO<double> hdfdbl(ddata);
   //start of parameters
-  hid_t grp_id = H5Gopen(hfileID,myParam->paramTag.c_str());
-  hdfint.read(grp_id,"num_twists");
+  hdfint.read(hfileID,"electrons/number_of_kpoints");
   int nkpts = idata;
-  hdfint.read(grp_id,"num_bands");
+  hdfint.read(hfileID,"electrons/number_of_spins");
+  int nspin = idata;
+  hdfint.read(hfileID,"electrons/kpoint_0/spin_0/number_of_states");
   int nbands = idata;
   myParam->numBands = nbands;
-  hdfint.read(grp_id,"complex_coefficients");
-  bool h5coefsreal = (idata==0);
-  hdfdbl.read(grp_id,"maximum_ecut");
-  RealType h5ecut = ddata;
-  RealType ecut = ddata;
-  H5Gclose(grp_id);
+  app_log() << "Number of bands = " << nbands << std::endl;
+  bool h5coefsreal = true;
+  // Cutoff no longer present in the HDF file
+  RealType h5ecut = 0.0;
+  RealType ecut = 0.0;
   //end of parameters
   //check if input parameters are valid
   int nup=targetPtcl.last(0);
@@ -202,10 +202,8 @@ bool PWOrbitalBuilder::createPWBasis(xmlNodePtr cur)
     OHMMS::Controller->abort();
   }
   std::string tname=myParam->getTwistAngleName();
-  //hid_t es_grp_id = H5Gopen(hfile,myParam->eigTag.c_str());
-  //hid_t twist_grp_id = H5Gopen(es_grp_id,tname.c_str());
   HDFAttribIO<PosType> hdfobj_twist(TwistAngle);
-  hdfobj_twist.read(hfileID,tname.c_str());
+  hdfobj_twist.read(hfileID,"/electrons/kpoint_0/reduced_k");
 #if defined(ENABLE_SMARTPOINTER)
   if(myBasisSet.get() ==0)
   {
@@ -222,11 +220,9 @@ bool PWOrbitalBuilder::createPWBasis(xmlNodePtr cur)
   //h5 file (which may become very large).
   //return the ecut to be used by the basis set
   RealType real_ecut = myParam->getEcut(ecut);
-  grp_id = H5Gopen(hfileID,myParam->basisTag.c_str());
   //create at least one basis set but do resize the containers
-  int nh5gvecs=myBasisSet->readbasis(grp_id,real_ecut,targetPtcl.Lattice,
+  int nh5gvecs=myBasisSet->readbasis(hfileID,real_ecut,targetPtcl.Lattice,
                                      myParam->pwTag, myParam->pwMultTag);
-  H5Gclose(grp_id); //Close PW Basis group
   app_log() << "  num_twist = " << nkpts << std::endl;
   app_log() << "  twist angle = " << TwistAngle << std::endl;
   app_log() << "  num_bands = " << nbands << std::endl;
@@ -293,9 +289,14 @@ PWOrbitalBuilder::createPW(xmlNodePtr cur, int spinIndex)
       }
     cur=cur->next;
   }
-  std::string tname=myParam->getTwistName();
-  hid_t es_grp_id = H5Gopen(hfileID,myParam->eigTag.c_str());
-  hid_t twist_grp_id = H5Gopen(es_grp_id,tname.c_str());
+  //std::string tname=myParam->getTwistName();
+  std::string tname="kpoint_0";
+  //hid_t es_grp_id = H5Gopen(hfileID,myParam->eigTag.c_str());
+  //hid_t es_grp_id = H5Gopen(hfileID,"electrons/kpoint_0/spin_0/state_0");
+  hid_t es_grp_id = H5Gopen(hfileID,"electrons");
+  
+  //hid_t twist_grp_id = H5Gopen(es_grp_id,tname.c_str());
+  hid_t twist_grp_id = H5Gopen(es_grp_id,"kpoint_0");
   //create a single-particle orbital set
   SPOSetType* psi=new SPOSetType;
   if(transform2grid)
@@ -309,7 +310,7 @@ PWOrbitalBuilder::createPW(xmlNodePtr cur, int spinIndex)
   psi->resize(myBasisSet,nb,true);
   if(myParam->hasComplexData(hfileID))//input is complex
   {
-    app_log() << "  PW coefficients are complex." << std::endl;
+    //app_log() << "  PW coefficients are complex." << std::endl;
     typedef std::vector<std::complex<RealType> > TempVecType;
     TempVecType coefs(myBasisSet->inputmap.size());
     HDFAttribIO<TempVecType> hdfobj_coefs(coefs);
@@ -317,9 +318,9 @@ PWOrbitalBuilder::createPW(xmlNodePtr cur, int spinIndex)
     while(ib<nb)
     {
       std::string bname(myParam->getBandName(occBand[ib],spinIndex));
-      app_log() << "  Reading " << myParam->eigTag << "/" << tname <<"/"<< bname << std::endl;
+      app_log() << "  Reading " << tname <<"/"<< bname << std::endl;
       hid_t band_grp_id =  H5Gopen(twist_grp_id,bname.c_str());
-      hdfobj_coefs.read(band_grp_id,myParam->eigvecTag.c_str());
+      hdfobj_coefs.read(band_grp_id,"psi_g");
       psi->addVector(coefs,ib);
       H5Gclose(band_grp_id);
       ++ib;
@@ -327,18 +328,22 @@ PWOrbitalBuilder::createPW(xmlNodePtr cur, int spinIndex)
   }
   else
   {
-    app_log() << "  PW coefficients are real." << std::endl;
+    // It appears the coefficients are always stored as complex in the HDF file?
+    //app_log() << "  PW coefficients are real." << std::endl;
     typedef std::vector<RealType> TempVecType;
+    typedef std::vector<std::complex<RealType> > ComplexTempVecType;
     TempVecType coefs(myBasisSet->inputmap.size());
+    ComplexTempVecType complex_coefs(myBasisSet->inputmap.size());
     HDFAttribIO<TempVecType> hdfobj_coefs(coefs);
+    HDFAttribIO<ComplexTempVecType> hdfobj_complex_coefs(complex_coefs);
     int ib=0;
     while(ib<nb)
     {
       std::string bname(myParam->getBandName(occBand[ib],spinIndex));
-      app_log() << "  Reading " << myParam->eigTag << "/" << tname <<"/"<< bname << std::endl;
+      app_log() << "  Reading " << tname <<"/"<< bname << std::endl;
       hid_t band_grp_id =  H5Gopen(twist_grp_id,bname.c_str());
-      hdfobj_coefs.read(band_grp_id,myParam->eigvecTag.c_str());
-      psi->addVector(coefs,ib);
+      hdfobj_complex_coefs.read(band_grp_id,"psi_g");
+      psi->addVector(complex_coefs,ib);
       H5Gclose(band_grp_id);
       ++ib;
     }

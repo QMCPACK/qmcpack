@@ -112,17 +112,26 @@ IF(OHMMS_DIM MATCHES 3)
 
   #  IF(QMC_BUILD_LEVEL GREATER 1)
   #
-  #    SET(FERMION_SRCS ${FERMION_SRCS}
+      SET(FERMION_SRCS ${FERMION_SRCS}
   #      Bspline3DSetBase.cpp
   #      Bspline3DSet.cpp
   #      Bspline3DSetTrunc.cpp
   #      TricubicBsplineSetBuilder.cpp
   #      TricubicBsplineSetBuilder.1.cpp
   #      TricubicBsplineSetBuilder.2.cpp
-  #      PlaneWave/PWBasis.cpp
-  #      PlaneWave/PWParameterSet.cpp
-  #      PlaneWave/PWOrbitalBuilder.cpp
-  #      )
+        PlaneWave/PWBasis.cpp
+        PlaneWave/PWParameterSet.cpp
+        PlaneWave/PWOrbitalBuilder.cpp
+        )
+     IF(QMC_COMPLEX)
+       SET(FERMION_SRCS ${FERMION_SRCS}
+        PlaneWave/PWOrbitalSet.cpp
+       )
+     ELSE()
+       SET(FERMION_SRCS ${FERMION_SRCS}
+        PlaneWave/PWRealOrbitalSet.cpp
+       )
+     ENDIF(QMC_COMPLEX)
   #  ENDIF(QMC_BUILD_LEVEL GREATER 1)
 
   #only experimental version

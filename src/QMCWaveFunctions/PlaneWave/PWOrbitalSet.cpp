@@ -32,8 +32,9 @@ void PWOrbitalSet::setOrbitalSetSize(int norbs)
 
 void PWOrbitalSet::resetTargetParticleSet(ParticleSet& P)
 {
-  app_error() << "PWOrbitalSet::resetTargetParticleSet not yet coded." << std::endl;
-  OHMMS::Controller->abort();
+  // Not sure what to do here, if anything
+  //app_error() << "PWOrbitalSet::resetTargetParticleSet not yet coded." << std::endl;
+  //OHMMS::Controller->abort();
 }
 
 void PWOrbitalSet::resize(PWBasisPtr bset, int nbands, bool cleanup)
@@ -44,6 +45,7 @@ void PWOrbitalSet::resize(PWBasisPtr bset, int nbands, bool cleanup)
   BasisSetSize=myBasisSet->NumPlaneWaves;
   C.resize(OrbitalSetSize,BasisSetSize);
   Temp.resize(OrbitalSetSize,PW_MAXINDEX);
+  t_logpsi.resize(OrbitalSetSize, OrbitalSetSize);
   app_log() << "  PWOrbitalSet::resize OrbitalSetSize =" << OrbitalSetSize << " BasisSetSize = " << BasisSetSize << std::endl;
 }
 
