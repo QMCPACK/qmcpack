@@ -321,22 +321,39 @@ def reduce_tilematrix(tiling):
         Tnew = array(T,dtype=float) #sheared/orthogonal tiling matrix
         tbar = identity(dim) #basis for shearing
         dr = range(dim)
-        dr = [1,0,2]
+        #dr = [1,0,2]
         other = dim*[0] # other[d] = dimensions other than d
         for d in dr: 
-            #other.append(set(dr)-set([d]))
             other[d] = set(dr)-set([d])
         #end for
         #move each axis to be parallel to barred directions
         # these are volume preserving shears of the supercell
         # each shear keeps two cell face planes fixed while moving the others
+        for dp in [(0,1,2),(2,0,1),(1,2,0),(2,1,0),(0,2,1),(1,0,2)]:
+            success = True
+            for d in dr:
+                tb = tbar[dp[d]] 
+                t  = T[d]
+                d2,d3 = other[d]
+                n = cross(Tnew[d2],Tnew[d3])  #vector normal to 2 cell faces
+                vol   = dot(n,t)
+                bcomp = dot(n,tb)
+                if abs(bcomp)<1e-6:
+                    success = False
+                    break
+                #end if
+                tn = vol*1./bcomp*tb #new axis vector
+                Tnew[d] = tn
+            #end for
+            if success:
+                break
+            #end if
+        #end for
+        # apply inverse permutation, if needed
+        Tn = Tnew.copy()
         for d in dr:
-            tb = tbar[d] 
-            t  = T[d]
-            d2,d3 = other[d]
-            n = cross(Tnew[d2],Tnew[d3])  #vector normal to 2 cell faces
-            tn = dot(n,t)*1./dot(n,tb)*tb #new axis vector
-            Tnew[d] = tn
+            d2 = dp[d]
+            Tnew[d2] = Tn[d]
         #end for
         #the resulting tiling matrix should be diagonal and integer
         tr = diag(Tnew)
@@ -830,15 +847,16 @@ class Structure(Sobj):
     #end def volume
 
 
-    def rwigner(self):
+    def rwigner(self,nc=5):
         if self.dim!=3:
             self.error('rwigner is currently only implemented for 3 dimensions')
         #end if
         rmin = 1e90
         n=empty((1,3))
-        for k in range(-1,2):
-            for j in range(-1,2):
-                for i in range(-1,2):
+        rng = tuple(range(-nc,nc+1))
+        for k in rng:
+            for j in rng:
+                for i in rng:
                     if i!=0 or j!=0 or k!=0:
                         n[:] = i,j,k
                         rmin = min(rmin,.5*norm(dot(n,self.axes)))
@@ -2527,18 +2545,9 @@ class Structure(Sobj):
 
 
     def tile(self,*td,**kwargs):
-        in_place = False
-        magnetic_order = None
-        magnetic_primitive = True
-        if 'in_place' in kwargs:
-            in_place = kwargs['in_place']
-        #end if
-        if 'magnetic_order' in kwargs:
-            magnetic_order = kwargs['magnetic_order']
-        #end if
-        if 'magnetic_primitive' in kwargs:
-            magnetic_primitive = kwargs['magnetic_primitive']
-        #end if
+        in_place           = kwargs.pop('in_place',False)
+        magnetic_order     = kwargs.pop('magnetic_order',None)
+        magnetic_primitive = kwargs.pop('magnetic_primitive',True)
 
         dim = self.dim
         if len(td)==1:
@@ -2610,6 +2619,17 @@ class Structure(Sobj):
 
         return ts
     #end def tile
+
+
+    def opt_tilematrix(self,volfac,dn=1,tol=1e-3):
+        return optimal_tilematrix(self,volfac,dn,tol)
+    #end def opt_tilematrix
+
+
+    def tile_opt(self,volfac,dn=1,tol=1e-3):
+        Topt = self.opt_tilematrix(volfac,dn,tol)
+        return self.tile(Topt)
+    #end def tile_opt
 
 
     def kfold(self,tiling,kpoints,kweights):
@@ -4852,6 +4872,73 @@ def read_structure(filepath,elem=None):
     s.read(filepath,elem=elem)
     return s
 #end def read_structure
+
+
+
+opt_tm_matrices = obj()
+
+def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3):
+    dim = 3
+    if isinstance(axes,Structure):
+        axes = axes.axes
+    else:
+        axes = array(axes,dtype=float)
+    #end if
+    volume = abs(det(axes))*volfac
+    axinv  = inv(axes)
+    cube   = volume**(1./3)*identity(dim)
+    Tref   = array(around(dot(cube,axinv)),dtype=int)
+    rng = tuple(range(-dn,dn+1))
+    if dn not in opt_tm_matrices:
+        mats = []
+        for n1 in rng:
+            for n2 in rng:
+                for n3 in rng:
+                    for n4 in rng:
+                        for n5 in rng:
+                            for n6 in rng:
+                                for n7 in rng:
+                                    for n8 in rng:
+                                        for n9 in rng:
+                                            mats.append((n1,n2,n3,n4,n5,n6,n7,n8,n9))
+                                        #end for
+                                    #end for
+                                #end for
+                            #end for
+                        #end for
+                    #end for
+                #end for
+            #end for
+        #end for
+        mats = array(mats,dtype=int)
+        mats.shape = (2*dn+1)**(dim*dim),dim,dim
+        opt_tm_matrices[dn] = mats
+    else:
+        mats = opt_tm_matrices[dn]
+    #end if
+    ropt = -1e99
+    Topt = None
+    Taxopt = None
+    for mat in mats:
+        T = Tref + mat
+        if abs(abs(det(T))-volfac)<tol:
+            Taxes = dot(T,axes)
+            rc1 = norm(cross(Taxes[0],Taxes[1]))
+            rc2 = norm(cross(Taxes[1],Taxes[2]))
+            rc3 = norm(cross(Taxes[2],Taxes[0]))
+            r   = 0.5*volume/max(rc1,rc2,rc3)
+            if r>ropt:
+                ropt = r
+                Topt = T
+                Taxopt = Taxes
+            #end if
+        #end if
+    #end for
+    if det(Taxopt)<0:
+        Topt = -Topt
+    #end if
+    return Topt,ropt
+#end def optimal_tilematrix
 
 
 #if __name__=='__main__':
