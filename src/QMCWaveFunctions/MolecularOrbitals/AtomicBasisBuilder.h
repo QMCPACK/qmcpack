@@ -28,7 +28,7 @@ struct AtomicBasisBuilder: public BasisSetBuilder
 
   typedef typename RFB::CenteredOrbitalType COT;
 
-  enum {DONOT_EXPAND=0, GAUSSIAN_EXPAND=1, NATURAL_EXPAND, CARTESIAN_EXPAND};
+  enum {DONOT_EXPAND=0, GAUSSIAN_EXPAND=1, NATURAL_EXPAND, CARTESIAN_EXPAND, MOD_NATURAL_EXPAND};
 
   RFB radFuncBuilder;
 
@@ -101,6 +101,13 @@ bool AtomicBasisBuilder<RFB>::put(xmlNodePtr cur)
   {
     expandlm = DONOT_EXPAND;
   }
+  else if(Morder == "pyscf")
+  {
+    expandlm = MOD_NATURAL_EXPAND; 
+    if(sph != "spherical") {
+      APP_ABORT(" Error: expandYlm='pwscf' only compatible with angular='spherical'. Aborting.\n");
+    }
+  }
   if(sph == "cartesian" || Morder == "Gamess")
   {
     expandlm = CARTESIAN_EXPAND;
@@ -129,6 +136,9 @@ AtomicBasisBuilder<RFB>::createAOSet(xmlNodePtr cur)
     break;
   case(NATURAL_EXPAND):
     app_log() << "   Angular momentum m expanded as -l, ... ,l" << std::endl;
+    break;
+  case(MOD_NATURAL_EXPAND):
+    app_log() << "   Angular momentum m expanded as -l, ... ,l, with the exception of L=1 (1,-1,0)" << std::endl;
     break;
   case(CARTESIAN_EXPAND):
     app_log() << "   Angular momentum expanded in cartesian functions x^lx y^ly z^lz according to Gamess" << std::endl;
@@ -267,6 +277,40 @@ int AtomicBasisBuilder<RFB>::expandYlm(const std::string& rnl, const QuantumNumb
       }
     }
   }
+  else
+    if(expandlm == MOD_NATURAL_EXPAND)
+    {
+      app_log() << "Expanding Ylm as L=1 as (1,-1,0) and L>1 as -l,-l+1,...,l-1,l" << std::endl;
+      std::map<std::string,int>::iterator rnl_it = RnlID.find(rnl);
+      if(rnl_it == RnlID.end())
+      {
+        int nl = aos->Rnl.size();
+        if(radFuncBuilder.addRadialOrbital(cur1,nlms))
+        {
+          RnlID[rnl] = nl;
+          int l = nlms[q_l];
+          app_log()<< "   Adding " << 2*l+1 << " spherical orbitals"<< std::endl;
+          if(l==1) {
+            //px(1),py(-1),pz(0)
+            aos->LM[num] = aos->Ylm.index(1,1);
+            aos->NL[num] = nl;
+            num++;
+            aos->LM[num] = aos->Ylm.index(1,-1);
+            aos->NL[num] = nl;
+            num++;
+            aos->LM[num] = aos->Ylm.index(1,0);
+            aos->NL[num] = nl;
+            num++;
+          } else {
+            for(int tm=-l; tm<=l; tm++,num++)
+            {
+              aos->LM[num] = aos->Ylm.index(l,tm);
+              aos->NL[num] = nl;
+            }
+          }
+        }
+      }
+    }
   else
     if(expandlm == NATURAL_EXPAND)
     {
