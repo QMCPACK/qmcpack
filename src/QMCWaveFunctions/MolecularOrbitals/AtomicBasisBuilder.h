@@ -87,6 +87,7 @@ bool AtomicBasisBuilder<RFB>::put(xmlNodePtr cur)
   aAttrib.add(Morder,"expandYlm");
   aAttrib.put(cur);
   PRE.echo(cur);
+  auto tmp_addsignforM=addsignforM;
   if(sph == "spherical")
     addsignforM=1; //include (-1)^m
   if(Morder == "gaussian")
@@ -104,6 +105,7 @@ bool AtomicBasisBuilder<RFB>::put(xmlNodePtr cur)
   else if(Morder == "pyscf")
   {
     expandlm = MOD_NATURAL_EXPAND; 
+    addsignforM=tmp_addsignforM;
     if(sph != "spherical") {
       APP_ABORT(" Error: expandYlm='pwscf' only compatible with angular='spherical'. Aborting.\n");
     }
