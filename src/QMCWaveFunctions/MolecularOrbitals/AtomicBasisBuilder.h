@@ -87,7 +87,7 @@ bool AtomicBasisBuilder<RFB>::put(xmlNodePtr cur)
   aAttrib.add(Morder,"expandYlm");
   aAttrib.put(cur);
   PRE.echo(cur);
-  auto tmp_addsignforM=addsignforM;
+  bool tmp_addsignforM=addsignforM;
   if(sph == "spherical")
     addsignforM=1; //include (-1)^m
   if(Morder == "gaussian")
