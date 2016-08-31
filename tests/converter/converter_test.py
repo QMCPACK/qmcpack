@@ -20,7 +20,7 @@ import sys
 # Structure conversion (gold.Gaussian-G2.ptcl.xml) is not tested.
 
 
-def run_test(test_name, c4q_exe, conv_inp, gold_file, expect_fail):
+def run_test(test_name, c4q_exe, conv_inp, gold_file, expect_fail, extra_cmd_args):
     okay = True
 
     # Example invocation of converter
@@ -28,6 +28,12 @@ def run_test(test_name, c4q_exe, conv_inp, gold_file, expect_fail):
 
     cmd = c4q_exe.split()
     cmd.extend(['-nojastrow', '-prefix', 'test', '-gamessAscii', conv_inp])
+    for ex_arg in extra_cmd_args:
+        if ex_arg == '-ci':
+            cmd.extend(['-ci', conv_inp])
+        else:
+            cmd.append(ex_arg)
+
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = p.communicate()
 
@@ -66,6 +72,17 @@ def run_test(test_name, c4q_exe, conv_inp, gold_file, expect_fail):
 
     return okay
 
+def read_extra_args():
+    extra_cmd_args = []
+    if os.path.exists('cmd_args.txt'):
+        with open('cmd_args.txt', 'r') as f_cmd_args:
+            for line in f_cmd_args:
+                line = line.strip()
+                if line.startswith('#'):
+                    continue
+                extra_cmd_args.append(line)
+    return extra_cmd_args
+
 
 def run_one_converter_test(c4q_exe):
     test_name = os.path.split(os.getcwd())[-1]
@@ -77,6 +94,8 @@ def run_one_converter_test(c4q_exe):
         return False
     conv_input_file = conv_input_files[0]
 
+    extra_cmd_args = read_extra_args()
+
     expect_fail = os.path.exists('expect_fail.txt')
     gold_file = 'gold.Gaussian-G2.xml'
     if expect_fail:
@@ -87,7 +106,7 @@ def run_one_converter_test(c4q_exe):
             return False
 
     return run_test(test_name, c4q_exe, conv_input_file, gold_file,
-                    expect_fail)
+                    expect_fail, extra_cmd_args)
 
 
 if __name__ == '__main__':

@@ -1,0 +1,14 @@
+ $SYSTEM MWORDS=200 MEMDDI=100 $END
+ $BASIS GBASIS=CCD $END
+ $CONTRL SCFTYP=mcscf ispher=1 $END
+ $mcscf cistep=aldet $end
+ $DET ncore=0 nact=5 nels=2 nstate=1 $end
+ $GUESS  GUESS=hcore $END
+
+ $DATA
+h2
+dnh 4
+
+H 1  0.00 0.00 0.37
+ $END
+       
