@@ -1354,12 +1354,12 @@ void GamesAsciiParser::getCI(std::istream& is)
       std::cerr <<"Could not find CI expansion. \n";
       abort();
     }
-    getwords(currentWords,is);
-    if(currentWords.size() < 5 )
+    getwords(currentWords,is,0,std::string("|"));
+    if(currentWords.size() < 3 )
       continue;
-    if(currentWords[0] == "ALPHA" &&
-        currentWords[2] == "BETA" &&
-        currentWords[4] == "COEFFICIENT" )
+    if(currentWords[0].find("ALP") == 0 &&
+        currentWords[1].find("BET") == 0 &&
+        currentWords[2] == "COEFFICIENT" )
     {
       getwords(currentWords,is);  // --------
       notfound=false;

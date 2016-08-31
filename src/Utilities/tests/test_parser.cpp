@@ -26,6 +26,7 @@ TEST_CASE("parsewords_empty", "[utilities]")
 struct ParseCase
 {
   string input; // input string
+  string extra_split; // extra characters to split on
   vector<string> output; // expected tokens
 
   ParseCase(const string &in) : input(in) {}
@@ -81,11 +82,21 @@ TEST_CASE("parsewords", "[utilities]")
   p6.output.push_back("j");
   tlist.push_back(p6);
 
+  ParseCase p7("k|m");
+  p7.output.push_back("k|m");
+  tlist.push_back(p7);
+
+  ParseCase p8("n|o");
+  p8.extra_split = "|";
+  p8.output.push_back("n");
+  p8.output.push_back("o");
+  tlist.push_back(p8);
+
 
   for (ParseCaseVector_t::iterator tc = tlist.begin(); tc != tlist.end(); tc++) {
     SECTION(tc->input) {
       vector<string> outlist;
-      unsigned int num = parsewords(tc->input.c_str(), outlist);
+      unsigned int num = parsewords(tc->input.c_str(), outlist, tc->extra_split);
       REQUIRE(num == tc->output.size());
       REQUIRE(outlist.size() == tc->output.size());
       for (int i = 0; i < tc->output.size(); i++) {
@@ -161,11 +172,21 @@ TEST_CASE("getwords", "[utilities]")
   p2.output.push_back("two");
   tlist.push_back(p2);
 
+  ParseCase p3("one|two\n");
+  p3.output.push_back("one|two");
+  tlist.push_back(p3);
+
+  ParseCase p4("a|b\n");
+  p4.output.push_back("a");
+  p4.output.push_back("b");
+  p4.extra_split = "|";
+  tlist.push_back(p4);
+
   for (ParseCaseVector_t::iterator tc = tlist.begin(); tc != tlist.end(); tc++) {
     SECTION(tc->input) {
       vector<string> outlist;
       std::istringstream input(tc->input);
-      int num = getwords(outlist, input);
+      int num = getwords(outlist, input, 0, tc->extra_split);
       REQUIRE(num == tc->output.size());
       REQUIRE(outlist.size() == tc->output.size());
       for (int i = 0; i < tc->output.size(); i++) {

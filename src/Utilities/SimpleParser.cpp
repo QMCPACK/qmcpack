@@ -60,19 +60,21 @@ char* readLine(char *s, int max, std::istream &fp)
 
 
 // NOTE that it only adds strings
-unsigned parsewords(const char *inbuf, std::vector<std::string>& slist)
+unsigned parsewords(const char *inbuf, std::vector<std::string>& slist, const std::string &extra_tokens /* = "" */)
 {
-  const char* token = "=, \t\n\"";
+  std::string token = "=, \t\n\"";
+  token.append(extra_tokens);
+
   char *tmpstr = new char[strlen(inbuf)+1];
   strcpy(tmpstr, inbuf);
   slist.erase(slist.begin(), slist.end());
   int num = 0;
-  char* tokenp = strtok(tmpstr, token);
+  char* tokenp = strtok(tmpstr,token.c_str());
   while(tokenp && tokenp[0] != '#')
   {
     num++;
     slist.push_back( std::string(tokenp));
-    tokenp = strtok(0,token);
+    tokenp = strtok(0,token.c_str());
   }
   delete [] tmpstr;
   return num;
@@ -110,13 +112,16 @@ int getwords(std::vector<std::string>& slist, std::istream &fp, std::string& ali
     return -1;
 }
 
+/* dummy argument present so function's type signature can be distinguished
+   from previous function */
 
-int getwords(std::vector<std::string>& slist, std::istream &fp)
+int getwords(std::vector<std::string>& slist, std::istream &fp, int dummy /* = 0*/,
+             const std::string &extra_tokens /* ="" */)
 {
   const int max = 1024;
   char s[max];
   if(readLine(s,max,fp))
-    return parsewords(s,slist);
+    return parsewords(s,slist,extra_tokens);
   else
     return -1;
 }
