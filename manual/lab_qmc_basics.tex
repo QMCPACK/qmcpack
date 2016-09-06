@@ -7,7 +7,7 @@
 This lab focuses on the basics of performing quality QMC calculations.  As an example participants test an oxygen pseudopotential within DMC by calculating atomic and dimer properties, a common step prior to production runs.  Topics covered include:
 \begin{itemize}
   \item{converting pseudopotentials into QMCPACK's FSATOM format}
-  \item{generating orbitals with Quantum Espresso}
+  \item{generating orbitals with Quantum ESPRESSO}
   \item{converting orbitals into QMCPACK's ESHDF format with pw2qmcpack}
   \item{optimizing Jastrow factors with QMCPACK}
   \item{removing DMC timestep error via extrapolation}
@@ -23,7 +23,7 @@ This lab focuses on the basics of performing quality QMC calculations.  As an ex
   \item{download and conversion of oxygen atom pseudopotential}
   \item{DMC timestep study of the neutral oxygen atom}
   \begin{enumerate}
-    \item{DFT orbital generation with Quantum Espresso}
+    \item{DFT orbital generation with Quantum ESPRESSO}
     \item{orbital conversion with \texttt{pw2qmcpack.x}}
     \item{optimization of Jastrow correlation factor with QMCPACK}
     \item{DMC run with multiple timesteps}
@@ -45,7 +45,7 @@ This lab focuses on the basics of performing quality QMC calculations.  As an ex
 labs/lab2_qmc_basics/
 │
 ├── oxygen_atom           - oxygen atom calculations 
-│   ├── O.q0.dft.in          - Quantum Espresso input for DFT run
+│   ├── O.q0.dft.in          - Quantum ESPRESSO input for DFT run
 │   ├── O.q0.p2q.in          - pw2qmcpack.x input for orbital conversion run
 │   ├── O.q0.opt.in.xml      - QMCPACK input for Jastrow optimization run
 │   ├── O.q0.dmc.in.xml      - QMCPACK input file for neutral O DMC
@@ -141,13 +141,13 @@ O-QMC GEN 2 1
 The full QMCPACK pseudopotential is also included in \texttt{oxygen\_atom/reference/O.BFD.*}.
 
 
-\section{DFT with Quantum Espresso to obtain the orbital part of the wavefunction}
+\section{DFT with Quantum ESPRESSO to obtain the orbital part of the wavefunction}
 \label{sec:lqb_dft}
 With the pseudopotential in hand, the next step toward a QMC calculation is to obtain the Fermionic part of the wavefunction, in this case a single Slater determinant constructed from DFT-LDA orbitals for a neutral oxygen atom.  If you had trouble with the pseudopotential conversion step, pre-converted pseudopotential files are located in the \texttt{oxygen\_atom/reference} directory.  
 
-Quantum Espresso input for the DFT-LDA ground state of the neutral oxygen atom can be found in \texttt{O.q0.dft.in} and also listing \ref{lst:O_q0_dft} below.  Setting \texttt{wf\_collect=.true.} instructs Quantum Espresso to write the orbitals to disk at the end of the run.  Note that the plane-wave energy cutoff has been set to a reasonable value of 300 Ry here (\texttt{ecutwfc=300}).  This value depends on the pseudopotentials used, and in general should be selected by running DFT$\rightarrow$(orbital conversion)$\rightarrow$VMC with increasing energy cutoffs until the lowest VMC total energy and variance is reached.
+Quantum ESPRESSO input for the DFT-LDA ground state of the neutral oxygen atom can be found in \texttt{O.q0.dft.in} and also listing \ref{lst:O_q0_dft} below.  Setting \texttt{wf\_collect=.true.} instructs Quantum Espresso to write the orbitals to disk at the end of the run. Option \texttt{wf\_collect=.true.} may be a potential problem in large simulations, it is recommended to avoid it and use the converter pw2qmcpack in parallel, see details in Sec.~\ref{app:pw2qmcpack}. Note that the plane-wave energy cutoff has been set to a reasonable value of 300 Ry here (\texttt{ecutwfc=300}).  This value depends on the pseudopotentials used, and in general should be selected by running DFT$\rightarrow$(orbital conversion)$\rightarrow$VMC with increasing energy cutoffs until the lowest VMC total energy and variance is reached.
 
-\begin{lstlisting}[caption={Quantum Espresso input file for the neutral oxygen atom (\texttt{O.q0.dft.in})\label{lst:O_q0_dft}}]
+\begin{lstlisting}[caption={Quantum ESPRESSO input file for the neutral oxygen atom (\texttt{O.q0.dft.in})\label{lst:O_q0_dft}}]
 &CONTROL
    calculation       = 'scf'
    restart_mode      = 'from_scratch'
@@ -199,7 +199,7 @@ CELL_PARAMETERS cubic
          0.00000000       0.00000000      18.89726133
 \end{lstlisting}
 
-Run Quantum Espresso by typing 
+Run Quantum ESPRESSO by typing 
 \ifws
 \begin{shade}
 mpirun -np 4 pw.x -input O.q0.dft.in >&O.q0.dft.out&
@@ -222,7 +222,7 @@ The DFT run should take a few minutes to complete.  If desired, you can track th
 
 
 
-The orbitals have been written in a format native to Quantum Espresso in the \texttt{O.q0.save} directory.  We will convert them into the ESHDF format expected by QMCPACK by using the \texttt{pw2qmcpack.x} tool.  The input for \texttt{pw2qmcpack.x} can be found in the file \texttt{O.q0.p2q.in} and also in listing \ref{lst:O_q0_p2q} below. 
+The orbitals have been written in a format native to Quantum ESPRESSO in the \texttt{O.q0.save} directory.  We will convert them into the ESHDF format expected by QMCPACK by using the \texttt{pw2qmcpack.x} tool.  The input for \texttt{pw2qmcpack.x} can be found in the file \texttt{O.q0.p2q.in} and also in listing \ref{lst:O_q0_p2q} below. 
 
 \begin{lstlisting}[caption={\texttt{pw2qmcpack.x} input file for orbital conversion (\texttt{O.q0.p2q.in})\label{lst:O_q0_p2q}}]
 &inputpp
@@ -266,7 +266,7 @@ standard Slater-Jastrow form:
   \Psi_T = e^{-(J_1+J_2)}D^\uparrow(\{\phi_u^\uparrow\}_{u=1}^{N^\uparrow})D^\downarrow(\{\phi_d^\downarrow\}_{d=1}^{N^\uparrow})
 \end{align}
 The orbitals forming the spin-restricted Slater determinants 
-($D^\uparrow/D^\downarrow$) are obtained from DFT or Hartree-Fock (\emph{e.g.} via Quantum Espresso) 
+($D^\uparrow/D^\downarrow$) are obtained from DFT or Hartree-Fock (\emph{e.g.} via Quantum ESPRESSO) 
 and are fixed.  The ground state of the (pseudo) oxygen atom is spin polarized 
 with $N^{\uparrow}=4$ and $N^{\downarrow}=2$.  
 
@@ -646,7 +646,7 @@ In this section, we will repeat the calculations of the prior two sections (opti
 
 Obtaining the timestep extrapolated DMC total energy for ionized oxygen should take much less (human) time than for the neutral case.  For convenience, the necessary steps are briefly summarized below.
 \begin{enumerate}
-  \item{Obtain DFT orbitals with Quantum Espresso}
+  \item{Obtain DFT orbitals with Quantum ESPRESSO}
   \begin{enumerate}
     \item{Copy the DFT input (\texttt{O.q0.dft.in}) to \texttt{O.q1.dft.in}}
     \item{Edit \texttt{O.q1.dft.in} to match the +1 charge state of the oxygen atom}
@@ -746,7 +746,7 @@ The process listed above, which excludes additional steps for orbital generation
 \section{DMC workflow automation with Nexus}
 Production QMC projects are often composed of many similar workflows.  The simplest of these is a single DMC calculation involving four different compute jobs:
 \begin{enumerate}
-  \item{Orbital generation via Quantum Espresso or GAMESS.}
+  \item{Orbital generation via Quantum ESPRESSO or GAMESS.}
   \item{Conversion of orbital data via \texttt{pw2qmcpack.x} or \texttt{convert4qmc}.}
   \item{Optimization of Jastrow factors via QMCPACK.}
   \item{DMC calculation via QMCPACK.}
@@ -983,7 +983,7 @@ dimer = generate_physical_system(
 \noindent
 Similar syntax can be used to generate crystal structures or to specify systems with arbitrary atomic configurations and simulation cells.  Notice that a ``\texttt{scale}'' variable has been introduced to stretch or compress the dimer.  
 
-Next, objects representing a Quantum Espresso (PWSCF) run and subsequent orbital conversion step are constructed with respective \texttt{generate\_*} functions:
+Next, objects representing a Quantum ESPRESSO (PWSCF) run and subsequent orbital conversion step are constructed with respective \texttt{generate\_*} functions:
 \begin{lstlisting}
 dft = generate_pwscf(
     identifier   = 'dft',
@@ -1728,4 +1728,22 @@ f(**o)                   # kw. args from obj, prints:
                          #   ()
                          #   {'timestep': 0.02, 'blocks': 100, 'steps': 5}
 \end{shade}
+\section{Appendix B: pw2qmcpack in parallel\label{app:pw2qmcpack}}
+
+pw2qmcpack is a converter which extracts the orbitals calculated by DFT with Quantum ESPRESSO and packs them into a HDF5 file for QMCPACK.
+It used to be used in serial without problems in small systems and becomes a severe bottleneck for a large system.
+Due to the large energy cutoff in the calculation with pw.x required by the pseudopotentials and the increasing sizes of systems we are interested in, one limitation of QE can be easily reached
+that \texttt{wf\_collect=.true.} results in problems of writing and loading correct plane wave coefficients on disks by pw.x because of the 32bit integer issue. Thus, pw2qmcpack.x fails to convert the orbitals for QMCPACK.
+
+Since Quantum ESPRESSO 5.3.0, the new converter has been fully parallelized to overcome that limitation completely.
+By removing \texttt{wf\_collect=.true.} (by default \texttt{wf\_collect=.false.}), pw.x doesn't collect the whole wave function into individual files for each k point but write one small file for each processor instead.
+By just running pw2qmcpack.x in the same parallel setup (MPI tasks and k-pools) as the last scf/nscf calculation with pw.x,
+the orbitals distributed among processors will first be aggregated by the converter into individual temporal HDF5 files for each k-pool and then merged into the final file.
+In large calculations, users should benefit from a significant reduction of time in writing the wave function by pw.x thanks to avoiding the wavefunction collection.
+
+pw2qmcpack has been included in the test suite of QMCPACK, see instructions about how to activate the tests in Sec.~\ref{sec:buildqe}.
+There are tests labeled ``no-collect'' running the pw.x without setting \texttt{wf\_collect}.
+The input files are stored at examples/solids/dft-inputs-polarized-no-collect.
+The scf, nscf, pw2qmcpack runs are performed on 16, 12, 12 MPI tasks with 16, 2, 2 k-pools respectively.
+
 %}

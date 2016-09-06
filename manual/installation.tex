@@ -3,7 +3,7 @@
 
 This chapter describes how to obtain, build and validate QMCPACK. This process is designed to be as simple as
 possible and should be no harder than building a modern plane-wave density
-functional theory code such as Quantum Espresso, QBox, or
+functional theory code such as Quantum ESPRESSO, QBox, or
 VASP. Parallel builds enable a complete
 compilation in under 2 minutes on a fast multicore system. If you
 are unfamiliar with building codes we suggest working with your system
@@ -21,7 +21,7 @@ each step are given in the referenced sections.
   systems are given in Section \ref{sec:installexamples}.
 \item Run the tests to verify QMCPACK, Section \ref{sec:testing}.
 \item Build the ppconvert utility in QMCPACK, Section \ref{sec:buildppconvert}.
-\item Download and patch Quantum Espresso. This patch adds the
+\item Download and patch Quantum ESPRESSO. This patch adds the
   pw2qmcpack utility, Section \ref{sec:buildqe}.
 \end{enumerate}
 
@@ -63,7 +63,7 @@ updates can be made via the standard \texttt{svn update}.
 The subversion repository contains the day-to-day development source
 with the latest updates, bugfixes etc. This may be useful
 for updates to the build system to support new machines, for support
-of the latest versions of Quantum Espresso, or for updates to the
+of the latest versions of Quantum ESPRESSO, or for updates to the
 documentation.  Note that the development version may not be fully
 consistent with the online documentation.  We attempt to keep
 the development version fully working. However, please be sure to run the tests and
@@ -779,7 +779,7 @@ the following combinations nights (workstation) or weekly (supercomputers):
 \label{sec:buildppconvert}
 QMCPACK includes a utility, ppconvert, to convert between different
 pseudopotential formats. Examples include effective core potential
-formats (in gaussians), the UPF format used by Quantum Espresso, and
+formats (in gaussians), the UPF format used by Quantum ESPRESSO, and
 the XML format used by QMCPACK itself. The utility also enables the
 atomic orbitals to recomputed via a numerical density functional
 calculation if they need to be reconstructed for use in an
@@ -792,18 +792,18 @@ must be updated to refer to suitable C++ compiler and link in
 BLAS. Due to the small size of the calculations, optimal settings are
 not essential.
 
-\section{Installing and patching Quantum Espresso}
+\section{Installing and patching Quantum ESPRESSO}
 \label{sec:buildqe}
 For trial wavefunctions obtained in a plane-wave basis we mainly
-support Quantum Espresso. Note that ABINIT and QBox were supported historically
+support Quantum ESPRESSO. Note that ABINIT and QBox were supported historically
 and could be reactivated.
 
-Quantum Espresso currently stores wavefunctions in a non-standard internal
+Quantum ESPRESSO currently stores wavefunctions in a non-standard internal
 ``save'' format. To convert these to a conventional HDF5 format file
 we have developed a converter, pw2qmcpack. This is an add on to the
-Quantum Espresso distribution.
+Quantum ESPRESSO distribution.
 
-To simplify the process of patching Quantum Espresso we have developed
+To simplify the process of patching Quantum ESPRESSO we have developed
 a script that will automatically download and patch the source
 code. The patches are specific to each version. e.g. To download and
 patch QE v5.3.0:
@@ -811,7 +811,7 @@ patch QE v5.3.0:
 cd external_codes/quantum_espresso
 ./download_and_patch_qe5.3.0.sh
 \end{verbatim}
-After running the patch, you must configure Quantum Espresso with
+After running the patch, you must configure Quantum ESPRESSO with
 the HDF5 capability enabled, i.e.
 \begin{verbatim}
 cd espresso-5.3.0
@@ -820,6 +820,13 @@ cd espresso-5.3.0
 
 The complete process is described in external\_codes/quantum\_espresso/README.
 
+The tests involving pw.x and pw2qmcpack.x have been integrated in the test suite of QMCPACK.
+By add \texttt{-D QE\_BIN=your\_QE\_binary\_path} in the cmake command line when building your QMCPACK,
+tests named with ``qe-'' prefix will be included in the test set of your build.
+You can test the whole pw$\to$pw2qmcpack$\to$qmcpack workflow by
+\begin{verbatim}
+ctest -R qe
+\end{verbatim}
 
 \section{How to build the fastest executable version of QMCPACK}
 \label{sec:buildperformance}
