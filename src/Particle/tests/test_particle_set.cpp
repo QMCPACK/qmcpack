@@ -33,7 +33,7 @@ TEST_CASE("particle set open bc", "[particle]")
 
   source.setName("electrons");
 
-  source.R.resize(2);
+  source.create(2);
   source.R[0][0] = 0.0;
   source.R[0][1] = 1.0;
   source.R[0][2] = 2.0;
@@ -67,7 +67,7 @@ TEST_CASE("particle set lattice", "[particle]")
   source.setName("electrons");
   source.Lattice.copy(grid);
 
-  source.R.resize(2);
+  source.create(2);
   source.R[0][0] = 0.0;
   source.R[0][1] = 1.0;
   source.R[0][2] = 2.0;

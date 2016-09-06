@@ -36,14 +36,13 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   ParticleSet elec;
 
   ions.setName("ion");
-  ions.R.resize(2);
+  ions.create(2);
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
   ions.R[1][0] = 1.88972614;
   ions.R[1][1] = 1.88972614;
   ions.R[1][2] = 1.88972614;
-  ions.create(2);
 
 
   std::vector<int> agroup(2);
@@ -52,7 +51,6 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   elec.create(agroup);
 
   elec.setName("elec");
-  elec.R.resize(2);
   elec.R[0][0] = 0.0;
   elec.R[0][1] = 0.0;
   elec.R[0][2] = 0.0;
@@ -191,14 +189,13 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
   ParticleSet elec;
 
   ions.setName("ion");
-  ions.R.resize(2);
+  ions.create(2);
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
   ions.R[1][0] = 3.55;
   ions.R[1][1] = 3.55;
   ions.R[1][2] = 3.55;
-  ions.create(2);
 
 
   std::vector<int> agroup(2);
@@ -207,7 +204,6 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
   elec.create(agroup);
 
   elec.setName("elec");
-  elec.R.resize(4);
   elec.R[0][0] = 0.0;
   elec.R[0][1] = 0.0;
   elec.R[0][2] = 0.0;

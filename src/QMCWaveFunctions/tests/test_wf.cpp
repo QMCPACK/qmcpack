@@ -47,21 +47,19 @@ TEST_CASE("Pade Jastrow", "[wavefunction]")
     ParticleSet elec_;
 
     ions_.setName("ion");
-    ions_.R.resize(1);
+    ions_.create(1);
     ions_.R[0][0] = 0.0;
     ions_.R[0][1] = 0.0;
     ions_.R[0][2] = 0.0;
-    ions_.create(1);
 
     elec_.setName("elec");
-    elec_.R.resize(2);
+    elec_.create(2);
     elec_.R[0][0] = -0.28;
     elec_.R[0][1] = 0.0225;
     elec_.R[0][2] = -2.709;
     elec_.R[1][0] = -1.08389;
     elec_.R[1][1] = 1.9679;
     elec_.R[1][2] = -0.0128914;
-    elec_.create(2);
 
     SpeciesSet &tspecies =  elec_.getSpeciesSet();
     int upIdx = tspecies.addSpecies("u");

@@ -43,15 +43,13 @@ TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
   MCWalkerConfiguration elec;
 
   ions.setName("ion");
-  ions.R.resize(1);
+  ions.create(1);
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
-  ions.create(1);
 
   elec.setName("elec");
   elec.setBoundBox(false);
-  //elec.R.resize(2);
   std::vector<int> agroup(1);
   agroup[0] = 2;
   elec.create(agroup);

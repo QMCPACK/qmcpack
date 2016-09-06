@@ -42,11 +42,10 @@ TEST_CASE("Coulomb PBC A-A", "[hamiltonian]")
   ParticleSet elec;
 
   ions.setName("ion");
-  ions.R.resize(1);
+  ions.create(1);
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
-  ions.create(1);
   ions.Lattice.copy(grid);
 
   SpeciesSet &ion_species =  ions.getSpeciesSet();
@@ -93,7 +92,6 @@ TEST_CASE("Coulomb PBC A-A BCC H", "[hamiltonian]")
 
   ions.setName("ion");
   ions.create(2);
-  //ions.R.resize(2);
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;

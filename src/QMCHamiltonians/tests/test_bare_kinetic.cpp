@@ -33,11 +33,10 @@ TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
   ParticleSet elec;
 
   ions.setName("ion");
-  ions.R.resize(1);
+  ions.create(1);
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
-  ions.create(1);
 
   elec.setName("elec");
   elec.create(2);

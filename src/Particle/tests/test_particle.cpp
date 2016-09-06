@@ -30,7 +30,7 @@ TEST_CASE("symmetric_distance_table", "[particle]")
   typedef SymmetricDTD<double, 3, SUPERCELL_OPEN> sym_dtd_t;
   ParticleSet source;
 
-  source.R.resize(2);
+  source.create(2);
   source.R[0][0] = 0.0;
   source.R[0][1] = 1.0;
   source.R[0][2] = 2.0;
