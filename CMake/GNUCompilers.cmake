@@ -16,8 +16,8 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 ADD_DEFINITIONS( -Drestrict=__restrict__ )
 ADD_DEFINITIONS( -DADD_ )
 ADD_DEFINITIONS( -DINLINE_ALL=inline )
-SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -malign-double -fomit-frame-pointer -finline-limit=1000 -fstrict-aliasing -funroll-all-loops")
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -malign-double -fomit-frame-pointer -finline-limit=1000 -fstrict-aliasing -funroll-all-loops")
+SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fomit-frame-pointer -finline-limit=1000 -fstrict-aliasing -funroll-all-loops")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fomit-frame-pointer -finline-limit=1000 -fstrict-aliasing -funroll-all-loops")
 
 # Suppress compile warnings
 SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-deprecated")
