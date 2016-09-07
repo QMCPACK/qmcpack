@@ -719,13 +719,13 @@ ctest -V -R short   # Verbose short tests
 The test system includes specific tests for the complex version of the code.
 
 The data files for the tests are located in the tests directory. The
-runs occur in build/src/QMCApp/test/test\_name. The numerical
+runs occur in build/tests/system/test\_name. The numerical
 comparisons and test definitions are in
-src/QMCApp/test/CMakeLists.txt. If \textit{all} the QMC tests fail it is likely
+tests/system/CMakeLists.txt. If \textit{all} the QMC tests fail it is likely
 that the appropriate mpiexec (or aprun, srun) is not being
 called or found. If the QMC runs appear to work but all the other
 tests fail it is possible that python is not working on your system -
-we suggest checking some of the test outputs in build/src/QMCApp/test/test\_name.
+we suggest checking some of the test outputs in build/test/system/test\_name.
 
 Note that because the tests are very small, consisting of only a few
 electrons, the performance is not representative of larger
@@ -733,6 +733,39 @@ calculations. For example, while the calculations might fit in cache,
 there will be essentially no vectorization due to the small electron
 counts. \textbf{The tests should not be used for any benchmarking or
 performance analysis}. Dedicated larger runs are required.
+
+\subsection{Unit tests}
+
+QMCPACK has a set of unit tests.
+All of the unit tests can be run with the following command (in the build directory):
+\begin{verbatim}
+ctest -L unit
+\end{verbatim}
+
+The output should look similar to the following:
+\begin{verbatim}
+Test project qmcpack/build
+      Start  1: unit_test_numerics
+ 1/11 Test  #1: unit_test_numerics ...............   Passed    0.06 sec
+      Start  2: unit_test_utilities
+ 2/11 Test  #2: unit_test_utilities ..............   Passed    0.02 sec
+      Start  3: unit_test_einspline
+ ...
+10/11 Test #10: unit_test_hamiltonian ............   Passed    1.88 sec
+      Start 11: unit_test_drivers
+11/11 Test #11: unit_test_drivers ................   Passed    0.01 sec
+
+100% tests passed, 0 tests failed out of 11
+
+Label Time Summary:
+unit    =   2.20 sec
+
+Total Test time (real) =   2.31 sec
+\end{verbatim}
+
+Individual unit test executables can be found in build/tests/bin.
+The source for the unit tests is located in the \texttt{tests} directory under each directory in \texttt{src} (e.g. src/QMCWavefunctions/tests).
+
 
 \subsection{Automatic tests of QMCPACK}
 
