@@ -227,6 +227,15 @@ ENDIF()
                     0 # VMC
                     TRUE)
 
+  QMC_RUN_AND_CHECK(short-diamondC_1x1x1_pp-vmc_sdj-meshf
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+                    qmc_short-meshf
+                    qmc_short-meshf.in.xml
+                    1 16
+                    DIAMOND_SCALARS
+                    0 # VMC
+                    TRUE)
+
 
   LIST(APPEND HCP_BE_SCALARS "totenergy" "-1.481656 0.0005")
   LIST(APPEND HCP_BE_SCALARS "samples" "416000 0.0")
@@ -285,7 +294,16 @@ ENDIF()
                     LONG_DIAMOND_SCALARS
                     0 # VMC
                     TRUE)
-  
+
+  QMC_RUN_AND_CHECK(long-diamondC_1x1x1_pp-vmc_sdj-meshf
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+                    qmc_long-meshf
+                    qmc_long-meshf.in.xml
+                    1 16
+                    LONG_DIAMOND_SCALARS
+                    0 # VMC
+                    TRUE)
+
 
   LIST(APPEND LONG_DIAMOND2_SCALARS "totenergy" "-21.668293 0.00023")
   LIST(APPEND LONG_DIAMOND2_SCALARS "samples" "30720000 0.0")
