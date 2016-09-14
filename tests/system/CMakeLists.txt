@@ -134,6 +134,16 @@ ENDIF()
                     TRUE)
 
 
+  QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-gamma-drift-vmc_hf_noj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+                    hf_vmc_LiH-gamma-drift
+                    hf_vmc_LiH-gamma-drift.xml
+                    1 16
+                    LIH_GAMMA_SCALARS
+                    0 # VMC
+                    TRUE)
+
+
   LIST(APPEND LIH_X_SCALARS "kinetic" "7.3772282047321536 0.024")
   LIST(APPEND LIH_X_SCALARS "localecp" "-11.414410381100344 0.025")
   LIST(APPEND LIH_X_SCALARS "samples" "1600000 0.0")
@@ -170,6 +180,16 @@ ENDIF()
                     0 # VMC
                     ${LIH_ARB_SUCCEED})
 
+
+  QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-arb-drift-vmc_hf_noj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+                    hf_vmc_LiH-arb-drift
+                    hf_vmc_LiH-arb-drift.xml
+                    1 16
+                    LIH_ARB_SCALARS
+                    0 # VMC
+                    ${LIH_ARB_SUCCEED})
+
 #
 # Short tests, about 2-3 seconds on 16 cores
 #
@@ -185,6 +205,17 @@ ENDIF()
                     BCC_H_SCALARS
                     0 # VMC
                     TRUE)
+
+# Plane wave test of bccH (no pp, so faster than typical solids)
+# Currently disabled since take 90s to run
+#  QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-vmc_sdj-pw
+#                    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+#                    qmc_short_pw
+#                    qmc_short_pw.in.xml
+#                    1 16
+#                    BCC_H_SCALARS
+#                    0 # VMC
+#                    TRUE)
 
 
   LIST(APPEND DIAMOND_SCALARS "totenergy" "-10.491445 0.002")
