@@ -62,6 +62,13 @@ namespace qmcplusplus
  of \f$ \Psi_T, \f$ e.g. the gradient and laplacian.
  The expectation value of this estimator should fluctuate
  around zero.
+
+ For complex wavefunctions, the
+ \f[ \nabla \Psi_T \cdot \nabla \Psi_T^* \f] term from the divergence
+ theorem should use the complex conjugate.
+ The \f[ \nabla \Psi_T \cdot \nabla \Psi_T \f] term from expressing
+ \f[\Psi\f] in terms of \f[\ln \Psi\] should use normal complex
+ multiplication.
 */
 struct ConservedEnergy: public QMCHamiltonianBase
 {
@@ -76,7 +83,12 @@ struct ConservedEnergy: public QMCHamiltonianBase
   {
     RealType gradsq = Dot(P.G,P.G);
     RealType lap = Sum(P.L);
-    Value = lap+2.0*gradsq;
+#ifdef QMC_COMPLEX
+    RealType gradsq_cc = Dot_CC(P.G,P.G);
+    Value = lap + gradsq + gradsq_cc;
+#else
+    Value = lap + 2*gradsq;
+#endif
     return 0.0;
   }
 

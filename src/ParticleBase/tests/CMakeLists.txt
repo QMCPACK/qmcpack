@@ -6,7 +6,7 @@ SET(UTEST_EXE test_${SRC_DIR})
 SET(UTEST_NAME unit_test_${SRC_DIR})
 
 
-ADD_EXECUTABLE(${UTEST_EXE} test_particle_attrib.cpp test_random_seq.cpp)
+ADD_EXECUTABLE(${UTEST_EXE} test_particle_attrib.cpp test_random_seq.cpp test_attrib_ops.cpp)
 USE_FAKE_RNG(${UTEST_EXE})
 TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcbase qmcutil qmcfakerng ${QMC_UTIL_LIBS} ${MPI_LIBRARY})
 

@@ -48,9 +48,24 @@ struct OTCDot
   inline static Type_t
   apply(const TinyVector<std::complex<T1>,D>& lhs, const TinyVector<std::complex<T2>,D>& rhs)
   {
-    Type_t res = lhs[0].real()*rhs[0].real()+lhs[0].imag()*rhs[0].imag();
+    Type_t res = lhs[0].real()*rhs[0].real()-lhs[0].imag()*rhs[0].imag();
     for (unsigned d=1; d<D; ++d)
       res += lhs[d].real()*rhs[d].real()-lhs[d].imag()*rhs[d].imag();
+    return res;
+  }
+};
+
+// Use complex conjugate of the second argument
+template<class T1, class T2, unsigned D>
+struct OTCDot_CC
+{
+  typedef typename BinaryReturn<T1,T2,OpMultiply>::Type_t Type_t;
+  inline static Type_t
+  apply(const TinyVector<std::complex<T1>,D>& lhs, const TinyVector<std::complex<T2>,D>& rhs)
+  {
+    Type_t res = lhs[0].real()*rhs[0].real()+lhs[0].imag()*rhs[0].imag();
+    for (unsigned d=1; d<D; ++d)
+      res += lhs[d].real()*rhs[d].real()+lhs[d].imag()*rhs[d].imag();
     return res;
   }
 };
@@ -92,6 +107,21 @@ struct OTCDot<T1,T2,3>
   }
 };
 
+// Use complex conjugate of the second argument
+template<class T1, class T2>
+struct OTCDot_CC<T1,T2,3>
+{
+  typedef typename BinaryReturn<T1,T2,OpMultiply>::Type_t Type_t;
+  inline static Type_t
+  apply(const TinyVector<std::complex<T1>,3>& lhs, const
+        TinyVector<std::complex<T2>,3>& rhs)
+  {
+    return lhs[0].real()*rhs[0].real()+lhs[0].imag()*rhs[0].imag()
+           + lhs[1].real()*rhs[1].real()+lhs[1].imag()*rhs[1].imag()
+           + lhs[2].real()*rhs[2].real()+lhs[2].imag()*rhs[2].imag();
+  }
+};
+
 template<unsigned D>
 inline double Dot(const ParticleAttrib<TinyVector<std::complex<double>, D> >& pa,
                   const ParticleAttrib<TinyVector<std::complex<double>, D> >& pb)
@@ -100,6 +130,19 @@ inline double Dot(const ParticleAttrib<TinyVector<std::complex<double>, D> >& pa
   for(int i=0; i<pa.size(); i++)
   {
     sum += OTCDot<double,double,D>::apply(pa[i],pb[i]);
+  }
+  return sum;
+}
+
+// Use complex conjugate of the second argument
+template<unsigned D>
+inline double Dot_CC(const ParticleAttrib<TinyVector<std::complex<double>, D> >& pa,
+                  const ParticleAttrib<TinyVector<std::complex<double>, D> >& pb)
+{
+  double sum = 0;
+  for(int i=0; i<pa.size(); i++)
+  {
+    sum += OTCDot_CC<double,double,D>::apply(pa[i],pb[i]);
   }
   return sum;
 }
