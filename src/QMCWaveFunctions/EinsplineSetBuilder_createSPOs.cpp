@@ -47,6 +47,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   qafm=0;
   int sortBands(1);
   int spinSet = 0;
+  int TwistNum_inp=0;
 
   std::string sourceName;
   std::string spo_prec("double");
@@ -64,7 +65,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     a.add (sortBands,  "sort");
     a.add (qafm,  "afmshift");
     a.add (TileMatrix, "tilematrix");
-    a.add (TwistNum,   "twistnum");
+    a.add (TwistNum_inp,   "twistnum");
     a.add (givenTwist,   "twist");
     a.add (sourceName, "source");
     a.add (MeshFactor, "meshfactor");
@@ -167,67 +168,68 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   Timer mytimer;
   if(spinSet==0)
   {
-  // The tiling can be set by a simple vector, (e.g. 2x2x2), or by a
-  // full 3x3 matrix of integers.  If the tilematrix was not set in
-  // the input file...
-  bool matrixNotSet = true;
-  for (int i=0; i<3; i++)
-    for (int j=0; j<3; j++)
-      matrixNotSet = matrixNotSet && (TileMatrix(i,j) == 0);
-  // then set the matrix to what may have been specified in the
-  // tiling vector
-  if (matrixNotSet)
+    // The tiling can be set by a simple vector, (e.g. 2x2x2), or by a
+    // full 3x3 matrix of integers.  If the tilematrix was not set in
+    // the input file...
+    bool matrixNotSet = true;
     for (int i=0; i<3; i++)
       for (int j=0; j<3; j++)
-        TileMatrix(i,j) = (i==j) ? TileFactor(i) : 0;
-  char buff[1000];
-  if (myComm->rank() == 0)
-  {
-    snprintf (buff, 1000, "  TileMatrix = \n [ %2d %2d %2d\n   %2d %2d %2d\n   %2d %2d %2d ]\n",
-             TileMatrix(0,0), TileMatrix(0,1), TileMatrix(0,2),
-             TileMatrix(1,0), TileMatrix(1,1), TileMatrix(1,2),
-             TileMatrix(2,0), TileMatrix(2,1), TileMatrix(2,2));
-    app_log() << buff;
-  }  
-  if (numOrbs == 0)
-  {
-    app_error() << "You must specify the number of orbitals in the input file.\n";
-    APP_ABORT("EinsplineSetBuilder::createSPOSet");
-  }
-  else
-    app_log() << "  Reading " << numOrbs << " orbitals from HDF5 file.\n";
-  mytimer.restart();
-  /////////////////////////////////////////////////////////////////
-  // Read the basic orbital information, without reading all the //
-  // orbitals themselves.                                        //
-  /////////////////////////////////////////////////////////////////
-  if (myComm->rank() == 0)
-    if (!ReadOrbitalInfo())
+        matrixNotSet = matrixNotSet && (TileMatrix(i,j) == 0);
+    // then set the matrix to what may have been specified in the
+    // tiling vector
+    if (matrixNotSet)
+      for (int i=0; i<3; i++)
+        for (int j=0; j<3; j++)
+          TileMatrix(i,j) = (i==j) ? TileFactor(i) : 0;
+    char buff[1000];
+    if (myComm->rank() == 0)
     {
-      app_error() << "Error reading orbital info from HDF5 file.  Aborting.\n";
+      snprintf (buff, 1000, "  TileMatrix = \n [ %2d %2d %2d\n   %2d %2d %2d\n   %2d %2d %2d ]\n",
+               TileMatrix(0,0), TileMatrix(0,1), TileMatrix(0,2),
+               TileMatrix(1,0), TileMatrix(1,1), TileMatrix(1,2),
+               TileMatrix(2,0), TileMatrix(2,1), TileMatrix(2,2));
+      app_log() << buff;
+    }  
+    if (numOrbs == 0)
+    {
+      app_error() << "You must specify the number of orbitals in the input file.\n";
       APP_ABORT("EinsplineSetBuilder::createSPOSet");
     }
-  app_log() <<  "TIMER  EinsplineSetBuilder::ReadOrbitalInfo " << mytimer.elapsed() << std::endl;
-  myComm->barrier();
-  mytimer.restart();
-  BroadcastOrbitalInfo();
+    else
+      app_log() << "  Reading " << numOrbs << " orbitals from HDF5 file.\n";
+    mytimer.restart();
+    /////////////////////////////////////////////////////////////////
+    // Read the basic orbital information, without reading all the //
+    // orbitals themselves.                                        //
+    /////////////////////////////////////////////////////////////////
+    if (myComm->rank() == 0)
+      if (!ReadOrbitalInfo())
+      {
+        app_error() << "Error reading orbital info from HDF5 file.  Aborting.\n";
+        APP_ABORT("EinsplineSetBuilder::createSPOSet");
+      }
+    app_log() <<  "TIMER  EinsplineSetBuilder::ReadOrbitalInfo " << mytimer.elapsed() << std::endl;
+    myComm->barrier();
+    mytimer.restart();
+    BroadcastOrbitalInfo();
 
-  app_log() <<  "TIMER  EinsplineSetBuilder::BroadcastOrbitalInfo " << mytimer.elapsed() << std::endl;
-  app_log().flush();
+    app_log() <<  "TIMER  EinsplineSetBuilder::BroadcastOrbitalInfo " << mytimer.elapsed() << std::endl;
+    app_log().flush();
 
-  // Now, analyze the k-point mesh to figure out the what k-points  are needed                                                    //
-  PrimCell.set(Lattice);
-  SuperCell.set(SuperLattice);
-  GGt=dot(transpose(PrimCell.G), PrimCell.G);
+    // Now, analyze the k-point mesh to figure out the what k-points  are needed                                                    //
+    PrimCell.set(Lattice);
+    SuperCell.set(SuperLattice);
+    GGt=dot(transpose(PrimCell.G), PrimCell.G);
 
-  for (int iat=0; iat<AtomicOrbitals.size(); iat++)
-    AtomicOrbitals[iat].Lattice = Lattice;
-  // Copy supercell into the ParticleSets
-//     app_log() << "Overwriting XML lattice with that from the ESHDF file.\n";
-//     PtclPoolType::iterator piter;
-//     for(piter = ParticleSets.begin(); piter != ParticleSets.end(); piter++)
-//       piter->second->Lattice.copy(SuperCell);
-  AnalyzeTwists2();
+    for (int iat=0; iat<AtomicOrbitals.size(); iat++)
+      AtomicOrbitals[iat].Lattice = Lattice;
+    // Copy supercell into the ParticleSets
+    // app_log() << "Overwriting XML lattice with that from the ESHDF file.\n";
+    // PtclPoolType::iterator piter;
+    // for(piter = ParticleSets.begin(); piter != ParticleSets.end(); piter++)
+    //   piter->second->Lattice.copy(SuperCell);
+    TwistNum = TwistNum_inp;
+    AnalyzeTwists2();
 
   } //use spinSet==0 to initialize shared properties of orbitals
 

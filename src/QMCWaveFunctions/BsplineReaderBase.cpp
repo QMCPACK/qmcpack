@@ -107,7 +107,7 @@ namespace qmcplusplus
     BandInfoGroup vals;
     vals.TwistIndex=fullband[0].TwistIndex;
     vals.GroupID=0;
-    vals.myName=make_bandgroup_name(mybuilder->getName(),spin,fullband[0].TwistIndex,mybuilder->TileMatrix,0,ns);
+    vals.myName=make_bandgroup_name(mybuilder->getName(),spin,mybuilder->TwistNum,mybuilder->TileMatrix,0,ns);
     vals.selectBands(fullband,0, ns, false);
 
     size_t mem_now=qmc_common.memory_allocated;
@@ -200,7 +200,7 @@ namespace qmcplusplus
     if(comm->rank()) return;
 
     std::string aname= make_bandinfo_filename(mybuilder->getName(),spin
-        , bigspace[spin].TwistIndex, mybuilder->TileMatrix,comm->getGroupID());
+        , mybuilder->TwistNum, mybuilder->TileMatrix,comm->getGroupID());
     aname+=".bandinfo.dat";
 
     std::ofstream o(aname.c_str());
