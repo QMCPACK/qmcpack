@@ -31,7 +31,7 @@ namespace qmcplusplus
 struct IonData
 {
   typedef std::vector<int> eListType;
-  double cutoff_radius;
+  OrbitalBase::RealType cutoff_radius;
   eListType elecs_inside;
   IonData() : cutoff_radius(0.0) { }
 };
@@ -182,7 +182,7 @@ public:
     }
     if(j)
     {
-      double rcut = 0.5 * j->cutoff_radius;
+      RealType rcut = 0.5 * j->cutoff_radius;
       for (int i=0; i<Nion; i++)
         if (IRef->GroupID[i] == iSpecies)
           IonDataList[i].cutoff_radius = rcut;
@@ -239,7 +239,7 @@ public:
       if(F(i,0,0)!=0)
       {
         bool radii_match = true;
-        double rcut = F(i,0,0)->cutoff_radius;
+        RealType rcut = F(i,0,0)->cutoff_radius;
         for(int e1=0; e1<ne; ++e1)
           for(int e2=0; e2<ne; ++e2)
             radii_match = radii_match && F(i,e1,e2)->cutoff_radius==rcut;

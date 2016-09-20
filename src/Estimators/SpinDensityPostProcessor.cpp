@@ -272,7 +272,7 @@ namespace qmcplusplus
     }
     else if(normalization=="max")
     {
-      RealType dmax = -1e99;
+      RealType dmax = -std::numeric_limits<RealType>::max();
       for(int p=0;p<npoints;++p)
         dmax = std::max(dmax,std::abs(density[p]));
       norm = 1.0/dmax;

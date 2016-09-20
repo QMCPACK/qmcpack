@@ -193,7 +193,7 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
       if(speciesIndex < ion_species.getTotalNum())
       {
         app_log() << std::endl << "  Adding pseudopotential for " << ionName << std::endl;
-        double rmax=0.0;
+        RealType rmax=0.0;
 
         ECPComponentBuilder ecp(ionName,myComm);
         bool success=false;

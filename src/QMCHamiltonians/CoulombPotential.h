@@ -96,7 +96,7 @@ struct CoulombPotential: public QMCHamiltonianBase
 #endif
 
   /** evaluate AA-type interactions */
-  inline T evaluateAA(const DistanceTableData* d, const T* restrict Z)
+  inline T evaluateAA(const DistanceTableData* d, const ParticleScalar_t* restrict Z)
   {
     T res=0.0;
 #if !defined(REMOVE_TRACEMANAGER)
@@ -118,7 +118,7 @@ struct CoulombPotential: public QMCHamiltonianBase
   }
 
 
-  inline T evaluateAB(const DistanceTableData* d, const T* restrict Za, const T* restrict Zb)
+  inline T evaluateAB(const DistanceTableData* d, const ParticleScalar_t* restrict Za, const ParticleScalar_t* restrict Zb)
   {
     T res=0.0;
 #if !defined(REMOVE_TRACEMANAGER)
@@ -142,7 +142,7 @@ struct CoulombPotential: public QMCHamiltonianBase
 
 #if !defined(REMOVE_TRACEMANAGER)
   /** evaluate AA-type interactions */
-  inline T evaluate_spAA(const DistanceTableData* d, const T* restrict Z)
+  inline T evaluate_spAA(const DistanceTableData* d, const ParticleScalar_t* restrict Z)
   {
     const int* restrict M=d->M.data();
     const int* restrict J=d->J.data();
@@ -184,7 +184,7 @@ struct CoulombPotential: public QMCHamiltonianBase
   }
 
 
-  inline T evaluate_spAB(const DistanceTableData* d, const T* restrict Za, const T* restrict Zb)
+  inline T evaluate_spAB(const DistanceTableData* d, const ParticleScalar_t* restrict Za, const ParticleScalar_t* restrict Zb)
   {
     const int* restrict M=d->M.data();
     const int* restrict J=d->J.data();
@@ -240,7 +240,7 @@ struct CoulombPotential: public QMCHamiltonianBase
 
 
   /** evaluate AA-type interactions */
-  inline T evaluateAA_orig(const DistanceTableData* d, const T* restrict Z)
+  inline T evaluateAA_orig(const DistanceTableData* d, const ParticleScalar_t* restrict Z)
   {
     T res=0.0;
     const int* restrict M=d->M.data();
@@ -255,7 +255,7 @@ struct CoulombPotential: public QMCHamiltonianBase
   }
 
 
-  inline T evaluateAB_orig(const DistanceTableData* d, const T* restrict Za, const T* restrict Zb)
+  inline T evaluateAB_orig(const DistanceTableData* d, const ParticleScalar_t* restrict Za, const ParticleScalar_t* restrict Zb)
   {
     T res=0.0;
     const int* restrict M=d->M.data();

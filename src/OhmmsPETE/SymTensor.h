@@ -104,11 +104,12 @@ public:
   }
 
   // Copy Constructor
-  SymTensor(const SymTensor<T,D> &rhs)
-  {
-    OTAssign< SymTensor<T,D> , SymTensor<T,D> ,OpAssign > ::
-    apply(*this,rhs, OpAssign());
-  }
+  template<typename T1>
+    SymTensor(const SymTensor<T1,D>& rhs)
+    {
+      OTAssign< SymTensor<T,D> , SymTensor<T1,D> ,OpAssign > ::
+        apply(*this,rhs, OpAssign());
+    }
 
   // Construct from a Tensor.
   // Extract the symmetric part.

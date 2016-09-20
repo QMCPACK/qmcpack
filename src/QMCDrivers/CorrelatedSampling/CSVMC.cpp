@@ -109,7 +109,7 @@ bool CSVMC::put(xmlNodePtr q)
       if(target_min>0) 
       { 
         nTargetSamples=std::max(nTargetSamples,target_min);
-        nTargetPopulation=std::max(nTargetPopulation,static_cast<double>(target_min));
+        nTargetPopulation=std::max(nTargetPopulation,static_cast<RealType>(target_min));
       }
       nTargetSamples=((nTargetSamples+nwtot-1)/nwtot)*nwtot; // nTargetSamples are always multiples of total number of walkers
       nSamplesPerThread=nTargetSamples/Nprocs/Nthreads;

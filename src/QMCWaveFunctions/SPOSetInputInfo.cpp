@@ -12,7 +12,7 @@ namespace qmcplusplus
   typedef QMCTraits::RealType RealType;
 
   const int      inone = std::numeric_limits<int>::min();
-  const RealType rnone = 1e99;
+  const RealType rnone = std::numeric_limits<RealType>::max();
   const std::string&  snone = "none";
 
 
@@ -191,11 +191,11 @@ namespace qmcplusplus
   {
     if(has_energy_info)
     {
-      lowest_energy  =  1e99;
-      highest_energy = -1e99;
+      lowest_energy  =  rnone;
+      highest_energy = -rnone;
       if(has_ecut)
       {
-        lowest_energy  = std::min(lowest_energy,-1e99);
+        lowest_energy  = std::min(lowest_energy,-rnone);
         highest_energy = std::max(highest_energy,ecut);
       }
       if(has_energy_range)

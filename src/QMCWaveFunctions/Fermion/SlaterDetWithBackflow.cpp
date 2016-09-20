@@ -269,7 +269,7 @@ void SlaterDetWithBackflow::testDerivGL(ParticleSet& P)
   ValueType psi0 = 1.0;
   ValueType psi1 = 1.0;
   ValueType psi2 = 1.0;
-  double dh=0.00001;
+  RealType dh=0.00001;
   for(int k=0; k<Dets.size(); k++)
   {
     DiracDeterminantWithBackflow* Dets_ = (DiracDeterminantWithBackflow*) Dets[k];
@@ -312,17 +312,17 @@ void SlaterDetWithBackflow::testDerivGL(ParticleSet& P)
     BFTrans->evaluate(P);
     for(int k=0; k<Dets.size(); k++)
       psi2 += Dets[k]->evaluateLog(P,G2,L2);
-    ValueType tmp=0.0;
+    ParticleSet::ParticleValue_t tmp=0.0;
     for(int q=0; q<P.getTotalNum(); q++)
-      tmp+=(L1[q]-L2[q])/(2*dh);
+      tmp+=(L1[q]-L2[q])/(2.0*dh);
     app_log() <<i <<"\n"
               <<"Ldiff : " <<L0[0] <<"  " <<tmp
               <<"  " <<L0[0]-tmp << std::endl;
     for(int k=0; k<P.getTotalNum(); k++)
     {
       app_log()<<G0[k] << std::endl
-               <<(G1[k]-G2[k])/(2*dh) << std::endl
-               <<"Gdiff: " <<G0[k]-(G1[k]-G2[k])/(2*dh) << std::endl << std::endl;
+               <<(G1[k]-G2[k])/(2.0*dh) << std::endl
+               <<"Gdiff: " <<G0[k]-(G1[k]-G2[k])/(2.0*dh) << std::endl << std::endl;
     }
   }
   resetParameters(wfVars);

@@ -589,7 +589,7 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
 
   inline bool
   evaluateDerivatives (real_type r_12, real_type r_1I, real_type r_2I,
-                       std::vector<double> &d_vals,
+                       std::vector<real_type> &d_vals,
                        std::vector<TinyVector<real_type,3> >& d_grads,
                        std::vector<Tensor<real_type,3> > &d_hess)
   {
@@ -898,8 +898,10 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
     }
     // HDFAttribIO<Array<real_type,3> > coefs_attrib (SplineCoefs);
     // HDFAttribIO<Array<real_type,3> > param_attrib (ParamArray);
-    HDFAttribIO<Array<real_type,3> > val_attrib (val);
-    val_attrib.write (hid, "val");
+    Array<double,3> val_DP(N,N,N);
+    val_DP = val;
+    HDFAttribIO<Array<double,3> > val_attrib(val_DP);
+    val_attrib.write(hid, "val");
     // coefs_attrib.write (hid, "coefs");
     // param_attrib.write (hid, "params");
     H5Fclose(hid);

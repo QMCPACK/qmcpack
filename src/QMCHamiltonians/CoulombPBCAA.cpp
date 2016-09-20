@@ -338,7 +338,7 @@ CoulombPBCAA::evaluatePbyP(ParticleSet& P, int active)
     const std::vector<DistanceTableData::TempDistType> &temp(P.DistTables[0]->Temp);
     Return_t z=0.5*Zat[active];
     Return_t sr=0;
-    const Return_t* restrict sr_ptr=SR2[active];
+    const RealType* restrict sr_ptr=SR2[active];
     for(int iat=0; iat<NumCenters; ++iat,++sr_ptr)
     {
       if(iat==active)
@@ -384,8 +384,8 @@ void CoulombPBCAA::acceptMove(int active)
 {
   if(is_active)
   {
-    Return_t* restrict sr_ptr=SR2[active];
-    Return_t* restrict pr_ptr=SR2.data()+active;
+    RealType* restrict sr_ptr=SR2[active];
+    RealType* restrict pr_ptr=SR2.data()+active;
     for(int iat=0; iat<NumCenters; ++iat, ++sr_ptr,pr_ptr+=NumCenters)
       *pr_ptr = *sr_ptr += dSR[iat];
     Value=NewValue;
@@ -455,10 +455,10 @@ CoulombPBCAA::Return_t
 CoulombPBCAA::evalSRwithForces(ParticleSet& P)
 {
   const DistanceTableData *d_aa = P.DistTables[0];
-  RealType SR=0.0;
+  mRealType SR=0.0;
   for(int ipart=0; ipart<NumCenters; ipart++)
   {
-    RealType esum = 0.0;
+    mRealType esum = 0.0;
     for(int nn=d_aa->M[ipart],jpart=ipart+1; nn<d_aa->M[ipart+1]; nn++,jpart++)
     {
       RealType rV, d_rV_dr, d2_rV_dr2;
@@ -490,13 +490,13 @@ CoulombPBCAA::evalSRwithForces(ParticleSet& P)
 CoulombPBCAA::Return_t
 CoulombPBCAA::evalConsts(bool report)
 {
-  RealType Consts=0.0; // constant term
-  RealType v1; //single particle energy
+  mRealType Consts=0.0; // constant term
+  mRealType v1; //single particle energy
 #if !defined(REMOVE_TRACEMANAGER)
   V_const = 0.0;
 #endif
   //v_l(r=0) including correction due to the non-periodic direction
-  RealType vl_r0 = AA->evaluateLR_r0();
+  mRealType vl_r0 = AA->evaluateLR_r0();
   for(int ipart=0; ipart<NumCenters; ipart++)
   {
     v1 =  -.5*Zat[ipart]*Zat[ipart]*vl_r0;
@@ -513,7 +513,7 @@ CoulombPBCAA::evalConsts(bool report)
     MC0 += AA->Fk[i];
   MC0 = 0.5*(MC0 - vl_r0);
   //Neutraling background term
-  RealType vs_k0=AA->evaluateSR_k0(); //v_s(k=0)
+  mRealType vs_k0=AA->evaluateSR_k0(); //v_s(k=0)
   for(int ipart=0; ipart<NumCenters; ipart++)
   {
     v1 = 0.0;
@@ -539,10 +539,10 @@ CoulombPBCAA::Return_t
 CoulombPBCAA::evalSR(ParticleSet& P)
 {
   const DistanceTableData &d_aa(*P.DistTables[0]);
-  RealType SR=0.0;
+  mRealType SR=0.0;
   for(int ipart=0; ipart<NumCenters; ipart++)
   {
-    RealType esum = 0.0;
+    mRealType esum = 0.0;
     for(int nn=d_aa.M[ipart],jpart=ipart+1; nn<d_aa.M[ipart+1]; nn++,jpart++)
     {
       //if(d_aa->r(nn)>=myRcut) continue;
@@ -559,7 +559,7 @@ CoulombPBCAA::Return_t
 CoulombPBCAA::evalLR(ParticleSet& P)
 {
   const int slab_dir=OHMMS_DIM-1;
-  RealType res=0.0;
+  mRealType res=0.0;
   const StructFact& PtclRhoK(*(P.SK));
   if(PtclRhoK.SuperCellEnum==SUPERCELL_SLAB)
   {
@@ -567,7 +567,7 @@ CoulombPBCAA::evalLR(ParticleSet& P)
     //distance table handles jat>iat
     for(int iat=0; iat<NumCenters; ++iat)
     {
-      RealType u=0;
+      mRealType u=0;
 #if !defined(USE_REAL_STRUCT_FACTOR)
       for(int nn=d_aa.M[iat], jat=iat+1; nn<d_aa.M[iat+1]; ++nn,++jat)
         u += Zat[jat]*AA->evaluate_slab(d_aa.dr(nn)[slab_dir]
@@ -580,15 +580,15 @@ CoulombPBCAA::evalLR(ParticleSet& P)
   {
     for(int spec1=0; spec1<NumSpecies; spec1++)
     {
-      RealType Z1 = Zspec[spec1];
+      mRealType Z1 = Zspec[spec1];
       for(int spec2=spec1; spec2<NumSpecies; spec2++)
       {
 #if defined(USE_REAL_STRUCT_FACTOR)
-        RealType temp=AA->evaluate(PtclRhoK.KLists.kshell
+        mRealType temp=AA->evaluate(PtclRhoK.KLists.kshell
                                    , PtclRhoK.rhok_r[spec1], PtclRhoK.rhok_i[spec1]
                                    , PtclRhoK.rhok_r[spec2], PtclRhoK.rhok_i[spec2]);
 #else
-        RealType temp=AA->evaluate(PtclRhoK.KLists.kshell, PtclRhoK.rhok[spec1], PtclRhoK.rhok[spec2]);
+        mRealType temp=AA->evaluate(PtclRhoK.KLists.kshell, PtclRhoK.rhok[spec1], PtclRhoK.rhok[spec2]);
 #endif
         if(spec2==spec1)
           temp*=0.5;

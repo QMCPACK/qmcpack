@@ -18,22 +18,22 @@ class LPQHISRCoulombBasis: public LRBasis
 {
 private:
   int NumKnots; //Number of knots for basis.
-  RealType delta, deltainv;
-  Matrix<RealType> S; //Coefficients for LPQHI
-  Matrix<RealType> S1; //First derivatives
-  Matrix<RealType> S2; //Second derivatives
-  RealType Mfactor[3];
-  std::vector<RealType> tvec; //Coefficients
+  mRealType delta, deltainv;
+  Matrix<mRealType> S; //Coefficients for LPQHI
+  Matrix<mRealType> S1; //First derivatives
+  Matrix<mRealType> S2; //Second derivatives
+  mRealType Mfactor[3];
+  std::vector<mRealType> tvec; //Coefficients
 
   //Helper functions for computing FT of basis functions (used in c(n,k))
-  inline std::complex<RealType> Eplus(int i, RealType k, int n);
-  inline std::complex<RealType> Eminus(int i, RealType k, int n);
-  inline std::complex<RealType> Eplus_dG(int i, RealType k, int n);
-  inline std::complex<RealType> Eminus_dG(int i, RealType k, int n);
-  inline RealType Dplus(int i, RealType k, int n);
-  inline RealType Dminus(int i, RealType k, int n);
-  inline RealType Dplus_dG(int i, RealType k, int n);
-  inline RealType Dminus_dG(int i, RealType k, int n);
+  inline std::complex<mRealType> Eplus(int i, mRealType k, int n);
+  inline std::complex<mRealType> Eminus(int i, mRealType k, int n);
+  inline std::complex<mRealType> Eplus_dG(int i, mRealType k, int n);
+  inline std::complex<mRealType> Eminus_dG(int i, mRealType k, int n);
+  inline mRealType Dplus(int i, mRealType k, int n);
+  inline mRealType Dminus(int i, mRealType k, int n);
+  inline mRealType Dplus_dG(int i, mRealType k, int n);
+  inline mRealType Dminus_dG(int i, mRealType k, int n);
   
 
 public:
@@ -50,91 +50,91 @@ public:
     m_rc=b.m_rc;
   }
 
-  inline RealType get_delta() const
+  inline mRealType get_delta() const
   {
     return delta;
   }
   //inline int NumBasisElem() const {return 3*NumKnots;}
   void set_NumKnots(int n); // n >= 2 required
-  void set_rc(RealType rc);
-  inline RealType h(int n, RealType r) const
+  void set_rc(mRealType rc);
+  inline mRealType h(int n, mRealType r) const
   {
     int i=n/3;
     int alpha = n-3*i;
-    RealType ra = delta*(i-1);
-    RealType rb = delta*i;
-    RealType rc = delta*(i+1);
-    RealType rinv = 1.0/r;
+    mRealType ra = delta*(i-1);
+    mRealType rb = delta*i;
+    mRealType rc = delta*(i+1);
+    mRealType rinv = 1.0/r;
     rc = std::min(m_rc, rc);
-    const RealType* restrict Sa(S[alpha]);
+    const mRealType* restrict Sa(S[alpha]);
     if(r<ra || r>rc)
       return 0.0;
     if (r <= rb)
     {
-      RealType x=(rb-r)*deltainv;
+      mRealType x=(rb-r)*deltainv;
       return std::pow(delta,alpha)*Mfactor[alpha]*rinv*(Sa[0]+x*(Sa[1]+x*(Sa[2]+x*(Sa[3]+x*(Sa[4]+x*Sa[5])))));
     }
     else
     {
-      RealType x=(r-rb)*deltainv;
+      mRealType x=(r-rb)*deltainv;
       return std::pow(delta,alpha)*rinv*(Sa[0]+x*(Sa[1]+x*(Sa[2]+x*(Sa[3]+x*(Sa[4]+x*Sa[5])))));
     }
   }
-  inline RealType rh(int n, RealType r) const
+  inline mRealType rh(int n, mRealType r) const
   {
     int i=n/3;
     int alpha = n-3*i;
-    RealType ra = delta*(i-1);
-    RealType rb = delta*i;
-    RealType rc = delta*(i+1);
-    RealType rinv = 1.0/r;
+    mRealType ra = delta*(i-1);
+    mRealType rb = delta*i;
+    mRealType rc = delta*(i+1);
+    mRealType rinv = 1.0/r;
     rc = std::min(m_rc, rc);
-    const RealType* restrict Sa(S[alpha]);
+    const mRealType* restrict Sa(S[alpha]);
     if(r<ra || r>rc)
       return 0.0;
     if (r <= rb)
     {
-      RealType x=(rb-r)*deltainv;
+      mRealType x=(rb-r)*deltainv;
       return std::pow(delta,alpha)*Mfactor[alpha]*(Sa[0]+x*(Sa[1]+x*(Sa[2]+x*(Sa[3]+x*(Sa[4]+x*Sa[5])))));
     }
     else
     {
-      RealType x=(r-rb)*deltainv;
+      mRealType x=(r-rb)*deltainv;
       return std::pow(delta,alpha)*(Sa[0]+x*(Sa[1]+x*(Sa[2]+x*(Sa[3]+x*(Sa[4]+x*Sa[5])))));
     }
   }
   
-  inline RealType dh_dr(int n, RealType r) const
+  inline mRealType dh_dr(int n, mRealType r) const
   {
     int i=n/3;
     int alpha = n-3*i;
-    RealType ra = delta*(i-1);
-    RealType rb = delta*i;
-    RealType rc = delta*(i+1);
+    mRealType ra = delta*(i-1);
+    mRealType rb = delta*i;
+    mRealType rc = delta*(i+1);
     rc = std::min(m_rc, rc);
 
-    RealType polyderiv=0.0;
-    RealType rinv=1.0/r;
-    RealType hval=h(n,r);
+    mRealType polyderiv=0.0;
+    mRealType rinv=1.0/r;
+    mRealType hval=h(n,r);
   
-    const RealType* restrict Sa(S1[alpha]);
+    const mRealType* restrict Sa(S1[alpha]);
     if(r<ra || r>rc)
       return 0.0;
     if (r <= rb)
     {
-      RealType x=(rb-r)*deltainv;
+      mRealType x=(rb-r)*deltainv;
       polyderiv=-std::pow(delta,alpha-1)*Mfactor[alpha]*( Sa[0]+x*(Sa[1]+x*(Sa[2]+x*(Sa[3]+x*Sa[4]))));
     }
     else
     {
-      RealType x=(r-rb)*deltainv;
+      mRealType x=(r-rb)*deltainv;
       polyderiv = std::pow(delta,alpha-1)*(Sa[0]+x*(Sa[1]+x*(Sa[2]+x*(Sa[3]+x*Sa[4]))));
     }
 
     return rinv*(polyderiv-hval);
   }
   
-  inline RealType dh_ddelta(int n, RealType r) const
+  inline mRealType dh_ddelta(int n, mRealType r) const
   {
     int i=n/3;
     int alpha = n-3*i;
@@ -143,26 +143,26 @@ public:
   }
   
   
-//    inline TinyVector<RealType,3> getTriplet(int n, RealType r) const {
-//      typedef TinyVector<RealType,3> Return_t;
+//    inline TinyVector<mRealType,3> getTriplet(int n, mRealType r) const {
+//      typedef TinyVector<mRealType,3> Return_t;
 //      int i=n/3;
 //      int alpha = n-3*i;
-//      RealType ra = delta*(i-1);
-//      RealType rb = delta*i;
-//      RealType rc = delta*(i+1);
+//      mRealType ra = delta*(i-1);
+//      mRealType rb = delta*i;
+//      mRealType rc = delta*(i+1);
 //      rc = std::min(m_rc, rc);
 //      if(r<ra || r>rc) return Return_t;
-//      const RealType* restrict Sa(S[alpha]);
-//      const RealType* restrict S1a(S1[alpha]);
-//      const RealType* restrict S2a(S2[alpha]);
+//      const mRealType* restrict Sa(S[alpha]);
+//      const mRealType* restrict S1a(S1[alpha]);
+//      const mRealType* restrict S2a(S2[alpha]);
 //      if (r <= rb) {
-//        RealType x=(rb-r)*deltainv;
+//        mRealType x=(rb-r)*deltainv;
 //        return Return_t(
 //            Mfactor[alpha]*(Sa[0] +x*(Sa[1] +x*(Sa[2] +x*(Sa[3] +x*(Sa[4]+x*Sa[5]))))),
 //            Mfactor[alpha]*(S1a[0]+x*(S1a[1]+x*(S1a[2]+x*(S1a[3]+x*S1a[4])))),
 //            Mfactor[alpha]*(S2a[0]+x*(S2a[1]+x*(S2a[2]+x*S2a[3]))));
 //      } else {
-//        RealType x=(r-rb)*deltainv;
+//        mRealType x=(r-rb)*deltainv;
 //        return Return_t(
 //            Sa[0] +x*(Sa[1] +x*(Sa[2] +x*(Sa[3] +x*(Sa[4]+x*Sa[5])))),
 //            S1a[0]+x*(S1a[1]+x*(S1a[2]+x*(S1a[3]+x*S1a[4]))),
@@ -170,9 +170,9 @@ public:
 //      }
 //    }
 
-  RealType hintr2(int n);
-  RealType c(int n, RealType k);
-  RealType dc_dk(int n, RealType k);
+  mRealType hintr2(int n);
+  mRealType c(int n, mRealType k);
+  mRealType dc_dk(int n, mRealType k);
   //Constructor...fill S matrix...call correct base-class constructor
   LPQHISRCoulombBasis(ParticleLayout_t& ref) : LRBasis(ref), NumKnots(0), delta(0.0)
   {

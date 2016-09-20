@@ -85,7 +85,7 @@ public:
 
   //@{ public data members
   ///property of an ensemble represented by this ParticleSet
-  MCDataType<RealType> EnsembleProperty;
+  MCDataType<EstimatorRealType> EnsembleProperty;
 
   ///gradients of the particles
   ParticleGradient_t G;
@@ -193,7 +193,7 @@ public:
   std::vector<ParticleSet*> myClones;
 
   ///Property history vector
-  std::vector<std::vector<RealType> >  PropertyHistory;
+  std::vector<std::vector<EstimatorRealType> >  PropertyHistory;
   std::vector<int> PHindex;
   ///@}
 
@@ -451,25 +451,25 @@ public:
   //void copyFromBuffer(Buffer_t& buf);
 
   //return the address of the values of Hamiltonian terms
-  inline RealType* restrict getPropertyBase()
+  inline EstimatorRealType* restrict getPropertyBase()
   {
     return Properties.data();
   }
 
   //return the address of the values of Hamiltonian terms
-  inline const RealType* restrict getPropertyBase() const
+  inline const EstimatorRealType* restrict getPropertyBase() const
   {
     return Properties.data();
   }
 
   ///return the address of the i-th properties
-  inline RealType* restrict getPropertyBase(int i)
+  inline EstimatorRealType* restrict getPropertyBase(int i)
   {
     return Properties[i];
   }
 
   ///return the address of the i-th properties
-  inline const RealType* restrict getPropertyBase(int i) const
+  inline const EstimatorRealType* restrict getPropertyBase(int i) const
   {
     return Properties[i];
   }

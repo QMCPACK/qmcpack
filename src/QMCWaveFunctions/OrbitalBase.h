@@ -222,6 +222,11 @@ struct OrbitalBase: public QMCTraits
   evaluateLog(ParticleSet& P,
               ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) = 0;
 
+  /** recompute the value of the orbitals which require critical accuracy.
+   * needed for Slater Determinants but not needed for most types of orbitals
+   */
+  virtual void recompute(ParticleSet& P) {};
+
   /** evaluate the value of the orbital
    * @param P active ParticleSet
    * @param G Gradients, \f$\nabla\ln\Psi\f$

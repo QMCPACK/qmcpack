@@ -84,6 +84,8 @@ public:
                        ,ParticleSet::ParticleGradient_t& G
                        ,ParticleSet::ParticleLaplacian_t& L);
 
+  virtual void recompute(ParticleSet& P);
+
   virtual
   RealType evaluateLog(ParticleSet& P,
                        ParticleSet::ParticleGradient_t& G,

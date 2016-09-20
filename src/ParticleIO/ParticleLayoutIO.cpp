@@ -45,6 +45,9 @@ bool LatticeParser::put(xmlNodePtr cur)
   std::size_t finegrid =  ParticleLayout_t::SPATIAL_GRID;
   std::size_t ompgrid = ParticleLayout_t::OMP_GRID;
   std::size_t mpigrid = ParticleLayout_t::MPI_GRID;
+
+  Tensor<double,DIM> lattice_in;
+
   cur = cur->xmlChildrenNode;
   while (cur != NULL)
   {
@@ -58,7 +61,8 @@ bool LatticeParser::put(xmlNodePtr cur)
       }
       else if(aname == "lattice")
       {
-        putContent(ref_.R,cur);
+        putContent(lattice_in,cur);
+        //putContent(ref_.R,cur);
       }
       else if(aname == "grid")
       {
@@ -117,7 +121,7 @@ bool LatticeParser::put(xmlNodePtr cur)
   //special heg processing
   if(rs>0.0)
   {
-    HEGGrid<double,OHMMS_DIM> heg(ref_);
+    HEGGrid<ParticleLayout_t::Scalar_t,OHMMS_DIM> heg(ref_);
     if(pol==0)
     {
       if(nsh>0)
@@ -132,7 +136,7 @@ bool LatticeParser::put(xmlNodePtr cur)
       else
         nsh=heg.getShellIndex(nptcl);
     }
-    double acubic=heg.getCellLength(nptcl,rs);
+    ParticleLayout_t::Scalar_t acubic=heg.getCellLength(nptcl,rs);
     app_log() << "  " << OHMMS_DIM << "D HEG system"
               << "\n     rs  = " << rs;
     if(pol==0)
@@ -141,28 +145,28 @@ bool LatticeParser::put(xmlNodePtr cur)
                 << "\n     number of dn particles = " << nptcl/2 ;
     }
     else
-        {
-          app_log() << "\n     number of up particles = " << nptcl;
-        }
+    {
+      app_log() << "\n     number of up particles = " << nptcl;
+    }
     app_log()<< "\n     filled kshells      = " << nsh
              << "\n     lattice constant    = " << acubic << " bohr"<< std::endl;
-    ref_.R=0.0;
+    lattice_in=0.0;
     for(int idim=0; idim<DIM; idim++)
-      for(int jdim=0; jdim<DIM; jdim++)
-        if (idim==jdim)
-          ref_.R(idim,jdim)=acubic;
-        else
-          ref_.R(idim,jdim)=0.0;
+      lattice_in(idim,idim)=acubic;
     a0=1.0;
   }
-  ref_.R *= a0;
-  ref_.reset();
+
+  lattice_in *= a0;
+  ref_.set(lattice_in);
   ref_.makeGrid(grid);
   if(ref_.SuperCellEnum == SUPERCELL_OPEN)
     ref_.WignerSeitzRadius=ref_.SimulationCellRadius;
   app_log() << std::fixed;
   app_log() << "  Simulation cell radius = " << ref_.SimulationCellRadius << std::endl;
   app_log() << "  Wigner-Seitz    radius = " << ref_.WignerSeitzRadius    << std::endl;
+
+  //initialize the global cell
+  //qmc_common.theSuperCell=lattice_in;
   return true;
 }
 

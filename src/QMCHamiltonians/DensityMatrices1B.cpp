@@ -893,10 +893,10 @@ namespace qmcplusplus
     // temporary check
     if(write_rstats && omp_get_thread_num()==0)
     {
-      PosType rmin=1e99;
-      PosType rmax=-1e99;
-      PosType rmean=0.0;
-      PosType rstd=0.0;
+      PosType rmin = std::numeric_limits<RealType>::max();
+      PosType rmax = -std::numeric_limits<RealType>::max();
+      PosType rmean = 0.0;
+      PosType rstd = 0.0;
       for(int s=0;s<rsamples.size();++s)
         for(int d=0;d<DIM;++d)
         {
@@ -1251,8 +1251,8 @@ namespace qmcplusplus
     RealType du = scale/ngrid;
     RealType dV = volume/ngtot;
 
-    PosType rmin = 1e99;
-    PosType rmax = -1e99;
+    PosType rmin = std::numeric_limits<RealType>::max();
+    PosType rmax = -std::numeric_limits<RealType>::max();
     int gdims[DIM];
     gdims[0] = pow(ngrid,DIM-1);
     for(int d=1;d<DIM;++d)

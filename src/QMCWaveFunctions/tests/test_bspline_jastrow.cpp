@@ -112,7 +112,7 @@ const char *particles = \
 
   OrbitalBase *orb = psi.getOrbitals()[0];
 
-  typedef TwoBodyJastrowOrbital<BsplineFunctor<double> > J2Type;
+  typedef TwoBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> > J2Type;
   J2Type *j2 = dynamic_cast<J2Type *>(orb);
   REQUIRE(j2 != NULL);
 

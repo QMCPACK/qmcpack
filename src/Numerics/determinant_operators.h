@@ -67,6 +67,42 @@ struct const_traits<std::complex<double> >
   }
 };
 
+template<>
+struct const_traits<float>
+{
+  typedef float value_type;
+  inline static float zero()
+  {
+    return 0.0f;
+  }
+  inline static float one()
+  {
+    return 1.0f;
+  }
+  inline static float minus_one()
+  {
+    return -1.0f;
+  }
+};
+
+template<>
+struct const_traits<std::complex<float> >
+{
+  typedef std::complex<float> value_type;
+  inline static std::complex<float> zero()
+  {
+    return value_type();
+  }
+  inline static std::complex<float> one()
+  {
+    return value_type(1.0f,0.0f);
+  }
+  inline static std::complex<float> minus_one()
+  {
+    return value_type(-1.0f,0.0f);
+  }
+};
+
 //template<typename T>
 //  inline void det_row_update(T* restrict pinv,  const T* restrict tv, int m, int rowchanged, T c_ratio)
 //  {
@@ -89,7 +125,7 @@ inline void det_row_update(T* restrict pinv, const T* restrict tv
                            , T* restrict temp, T* restrict rcopy)//pass buffer
 {
   //const T ratio_inv(1.0/c_ratio);
-  c_ratio=1.0/c_ratio;
+  c_ratio=T(1)/c_ratio;
   BLAS::gemv('T', m, m, c_ratio, pinv, m, tv, 1, const_traits<T>::zero(), temp, 1);
   temp[rowchanged]=const_traits<T>::one()-c_ratio;
   memcpy(rcopy,pinv+m*rowchanged,m*sizeof(T));
@@ -140,9 +176,10 @@ template<typename T>
 inline void det_col_update(T* restrict pinv,  const T* restrict tv, int m, int colchanged, T c_ratio
                            , T* restrict temp, T* restrict rcopy)
 {
-  c_ratio=1.0/c_ratio;
+  const T cone(1);
+  c_ratio=cone/c_ratio;
   BLAS::gemv('N', m, m, c_ratio, pinv, m, tv, 1, T(), temp, 1);
-  temp[colchanged]=1.0-c_ratio;
+  temp[colchanged]=cone-c_ratio;
   BLAS::copy(m,pinv+colchanged,m,rcopy,1);
   BLAS::ger(m,m,-1.0,temp,1,rcopy,1,pinv,m);
 }

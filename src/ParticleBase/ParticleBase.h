@@ -48,6 +48,7 @@ public:
   typedef typename PT::SingleParticleIndex_t SingleParticleIndex_t;
   typedef typename PT::SingleParticlePos_t   SingleParticlePos_t;
   typedef typename PT::Tensor_t              Tensor_t;
+  typedef typename PT::ParticleValue_t       ParticleValue_t;
 
   //@{containers
   //! Three types of particle attributes are available.
@@ -169,8 +170,10 @@ public:
     return TENZOR[i];
   }
 
-#if defined(QMC_COMPLEX)
+#if defined(MIXED_PRECISION) || defined(QMC_COMPLEX)
   int addAttribute(ParticleGradient_t& pa);
+#endif
+#if defined(QMC_COMPLEX)
   int addAttribute(ParticleLaplacian_t& pa);
 #endif
 
@@ -260,8 +263,10 @@ protected:
   std::vector<ParticleScalar_t*>   VAL;
   std::vector<ParticlePos_t*>      POS;
   std::vector<ParticleTensor_t*>   TENZOR;
-#if defined(QMC_COMPLEX)
+#if defined(MIXED_PRECISION) || defined(QMC_COMPLEX)
   std::vector<ParticleGradient_t*>   GRADS;
+#endif
+#if defined(QMC_COMPLEX)
   std::vector<ParticleLaplacian_t*>  LAPS;
 #endif
   std::vector<OhmmsObject*>        myAttribList;

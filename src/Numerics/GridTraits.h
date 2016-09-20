@@ -47,6 +47,20 @@ struct GridTraits<std::complex<double> >
   typedef double               point_type;
   typedef std::complex<double> value_type;
 };
+
+template<>
+struct GridTraits<float>
+{
+  typedef float          point_type;
+  typedef float          value_type;
+};
+
+template<>
+struct GridTraits<std::complex<float> >
+{
+  typedef float               point_type;
+  typedef std::complex<float> value_type;
+};
 #endif
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $

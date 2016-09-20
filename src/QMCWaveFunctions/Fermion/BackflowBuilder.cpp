@@ -256,14 +256,14 @@ void BackflowBuilder::addOneBody(xmlNodePtr cur)
     if(funct == "Bspline")
     {
       app_log() <<"Using BsplineFunctor type. \n";
-      tbf = (BackflowFunctionBase *) new Backflow_eI<BsplineFunctor<double> >(*ions,targetPtcl);
-      Backflow_eI<BsplineFunctor<double> > *dum = (Backflow_eI<BsplineFunctor<double> >*) tbf;
+      tbf = (BackflowFunctionBase *) new Backflow_eI<BsplineFunctor<RealType> >(*ions,targetPtcl);
+      Backflow_eI<BsplineFunctor<RealType> > *dum = (Backflow_eI<BsplineFunctor<RealType> >*) tbf;
       tbf->numParams=0;
       std::vector<int> offsets;
       for(int i=0; i<funs.size(); i++)
       {
-        //           BsplineFunctor<double> *bsp = new BsplineFunctor<double>(cusps[i]);
-        BsplineFunctor<double> *bsp = new BsplineFunctor<double>();
+        //           BsplineFunctor<RealType> *bsp = new BsplineFunctor<RealType>(cusps[i]);
+        BsplineFunctor<RealType> *bsp = new BsplineFunctor<RealType>();
         bsp->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
         bsp->put(funs[i]);
         if(bsp->cutoff_radius > cutOff)
@@ -308,8 +308,8 @@ void BackflowBuilder::addTwoBody(xmlNodePtr cur)
   trAttrib.add (funct, "function");
   trAttrib.put(cur);
   xmlNodePtr curRoot=cur;
-  //BackflowFunctionBase *tbf = (BackflowFunctionBase *) new Backflow_ee<BsplineFunctor<double> >(targetPtcl,targetPtcl);
-  Backflow_ee<BsplineFunctor<double> > *tbf = new Backflow_ee<BsplineFunctor<double> >(targetPtcl,targetPtcl);
+  //BackflowFunctionBase *tbf = (BackflowFunctionBase *) new Backflow_ee<BsplineFunctor<RealType> >(targetPtcl,targetPtcl);
+  Backflow_ee<BsplineFunctor<RealType> > *tbf = new Backflow_ee<BsplineFunctor<RealType> >(targetPtcl,targetPtcl);
   SpeciesSet& species(targetPtcl.getSpeciesSet());
   std::vector<int> offsets;
   if(funct == "Gaussian")
@@ -320,7 +320,7 @@ void BackflowBuilder::addTwoBody(xmlNodePtr cur)
     if(funct == "Bspline")
     {
       app_log() <<"Using BsplineFunctor type. \n";
-//         BsplineFunctor<double> *bsp = new BsplineFunctor<double>(cusp);
+//         BsplineFunctor<RealType> *bsp = new BsplineFunctor<RealType>(cusp);
       std::string cname;
       cur = curRoot->children;
       while (cur != NULL)
@@ -344,7 +344,7 @@ void BackflowBuilder::addTwoBody(xmlNodePtr cur)
             APP_ABORT("Failed. Species are incorrect in e-e backflow.");
           }
           app_log() <<"Adding radial component for species: " <<spA <<" " <<spB <<" " <<ia <<"  " <<ib << std::endl;
-          BsplineFunctor<double> *bsp = new BsplineFunctor<double>();
+          BsplineFunctor<RealType> *bsp = new BsplineFunctor<RealType>();
           bsp->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
           bsp->put(cur);
           if(bsp->cutoff_radius > cutOff)
@@ -414,9 +414,9 @@ void BackflowBuilder::addRPA(xmlNodePtr cur)
   anAttrib0.add (Kc,"kc");
   anAttrib0.put(cur);
   //ParameterSet params;
-  //params.add(Rs,"rs","double");
-  //params.add(Kc,"kc","double");
-  //params.add(Kc,"Kc","double");
+  //params.add(Rs,"rs","RealType");
+  //params.add(Kc,"kc","RealType");
+  //params.add(Kc,"Kc","RealType");
   //params.put(cur);
   RealType tlen = std::pow(3.0/4.0/M_PI*targetPtcl.Lattice.Volume/ static_cast<RealType>(targetPtcl.getTotalNum()) ,1.0/3.0);
   if(Rs<0)
@@ -432,7 +432,7 @@ void BackflowBuilder::addRPA(xmlNodePtr cur)
     }
   }
   int indx = targetPtcl.SK->KLists.ksq.size()-1;
-  double Kc_max=std::pow(targetPtcl.SK->KLists.ksq[indx],0.5);
+  RealType Kc_max=std::pow(targetPtcl.SK->KLists.ksq[indx],0.5);
   if(Kc<0)
   {
     Kc = 2.0*  std::pow(2.25*M_PI,1.0/3.0)/tlen ;
@@ -451,7 +451,7 @@ void BackflowBuilder::addRPA(xmlNodePtr cur)
   app_log() << "  Number of k vectors " << myHandler->Fk.size() << std::endl;
   std::vector<int> offsetsSR;
   std::vector<int> offsetsLR;
-  Backflow_ee<BsplineFunctor<double> > *tbf = 0;
+  Backflow_ee<BsplineFunctor<RealType> > *tbf = 0;
   Backflow_ee_kSpace *tbfks = 0;
   // now look for components
   std::string cname;
@@ -470,7 +470,7 @@ void BackflowBuilder::addRPA(xmlNodePtr cur)
       {
         if(tbf==0)
         {
-          tbf = new Backflow_ee<BsplineFunctor<double> >(targetPtcl,targetPtcl);
+          tbf = new Backflow_ee<BsplineFunctor<RealType> >(targetPtcl,targetPtcl);
         }
         makeShortRange_twoBody(cur,tbf,offsetsSR);
       }
@@ -599,7 +599,7 @@ void BackflowBuilder::makeLongRange_twoBody(xmlNodePtr cur, Backflow_ee_kSpace *
 }
 
 void BackflowBuilder::makeShortRange_oneBody() {}
-void BackflowBuilder::makeShortRange_twoBody(xmlNodePtr cur, Backflow_ee<BsplineFunctor<double> > *tbf, std::vector<int>& offsets)
+void BackflowBuilder::makeShortRange_twoBody(xmlNodePtr cur, Backflow_ee<BsplineFunctor<RealType> > *tbf, std::vector<int>& offsets)
 {
   int size=-1;
   SpeciesSet& species(targetPtcl.getSpeciesSet());
@@ -640,7 +640,7 @@ void BackflowBuilder::makeShortRange_twoBody(xmlNodePtr cur, Backflow_ee<Bspline
       {
         APP_ABORT("Unknown correlation type " + type + " in Backflow.");
       }
-      BsplineFunctor<double> *bsp = new BsplineFunctor<double>();
+      BsplineFunctor<RealType> *bsp = new BsplineFunctor<RealType>();
       if(init == "true" || init == "yes")
       {
         app_log() <<"Initializing backflow radial functions with RPA.";
@@ -685,7 +685,7 @@ void BackflowBuilder::makeShortRange_twoBody(xmlNodePtr cur, Backflow_ee<Bspline
 //              for (int j=0; j<nfitgaussians; j++) y1_c+=gb[j]*(std::exp(-x[1]*x[1]/((j+1)*Rcut*Rcut)));
 //              for (int j=0; j<nfitgaussians; j++) y2_c+=gb[j]*(std::exp(-x[2]*x[2]/((j+1)*Rcut*Rcut)));
 //make a temp functor to ensure right BC's (Necessary?)
-        BsplineFunctor<double> *tmp_bsp = new BsplineFunctor<double>();
+        BsplineFunctor<RealType> *tmp_bsp = new BsplineFunctor<RealType>();
         tmp_bsp->initialize(12,x,y,cusp,Rcut,id,optimize);
 //              tmp_bsp->print(app_log());
         for  (int i = 0; i < myGrid->size(); i++)

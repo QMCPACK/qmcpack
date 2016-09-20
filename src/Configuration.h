@@ -78,6 +78,7 @@ struct QMCTraits
   enum {DIM = OHMMS_DIM};
   typedef OHMMS_INDEXTYPE                IndexType;
   typedef OHMMS_PRECISION                RealType;
+  typedef double                         EstimatorRealType;
 #if defined(QMC_COMPLEX)
   typedef std::complex<OHMMS_PRECISION>  ValueType;
 #ifdef QMC_CUDA
@@ -94,7 +95,7 @@ struct QMCTraits
   typedef TinyVector<ValueType,DIM>      GradType;
   typedef Tensor<RealType,DIM>           TensorType;
   ///define PropertyList_t
-  typedef RecordNamedProperty<RealType> PropertySetType;
+  typedef RecordNamedProperty<EstimatorRealType>    PropertySetType;
 #ifdef QMC_CUDA
   typedef CUDA_PRECISION                 CudaRealType;
   typedef TinyVector<CudaValueType,DIM>  CudaGradType;
@@ -116,7 +117,7 @@ struct PtclOnLatticeTraits
 #endif
 
   typedef int                                          Index_t;
-  typedef OHMMS_PRECISION                              Scalar_t;
+  typedef double                                       Scalar_t;
   typedef std::complex<Scalar_t>                       Complex_t;
 
   typedef ParticleLayout_t::SingleParticleIndex_t      SingleParticleIndex_t;
@@ -131,9 +132,11 @@ struct PtclOnLatticeTraits
 #if defined(QMC_COMPLEX)
   typedef ParticleAttrib<TinyVector<Complex_t,OHMMS_DIM> > ParticleGradient_t;
   typedef ParticleAttrib<Complex_t>                      ParticleLaplacian_t;
+  typedef Complex_t                                      ParticleValue_t;
 #else
-  typedef ParticleAttrib<SingleParticlePos_t>            ParticleGradient_t;
+  typedef ParticleAttrib<TinyVector<Scalar_t,OHMMS_DIM> > ParticleGradient_t;
   typedef ParticleAttrib<Scalar_t>                       ParticleLaplacian_t;
+  typedef Scalar_t                                       ParticleValue_t;
 #endif
 };
 

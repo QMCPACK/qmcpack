@@ -69,7 +69,7 @@ void VMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool me
         RealType sqrttau = std::sqrt(Tau*MassInvS[ig]);
         for (int iat=W.first(ig); iat<W.last(ig); ++iat)
         {
-          PosType dr = sqrttau*deltaR[iat];
+          mPosType dr = sqrttau*deltaR[iat];
           //replace makeMove by makeMoveAndCheck
           //PosType newpos = W.makeMove(iat,dr);
           if (W.makeMoveAndCheck(iat,dr))
@@ -114,7 +114,7 @@ void VMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool me
     //RealType logpsi = Psi.evaluate(W,w_buffer);
     myTimers[2]->stop();
     myTimers[3]->start();
-    RealType eloc=H.evaluate(W);
+    EstimatorRealType eloc=H.evaluate(W);
     myTimers[3]->stop();
     thisWalker.resetProperty(logpsi,Psi.getPhase(),eloc);
     H.auxHevaluate(W,thisWalker);
@@ -271,7 +271,7 @@ VMCUpdatePbyP::RealType VMCUpdatePbyP::advanceWalkerForEE(Walker_t& w1, std::vec
 //
 //         for (int iat=0; iat<nptcl; ++iat)
 //         {
-//           PosType dr=m_sqrttau*deltaR[iat];
+//           mPosType dr=m_sqrttau*deltaR[iat];
 //
 //           bool movePtcl = wclone[ip]->makeMoveAndCheck(iat,dr);
 //           //everyone should skip this; could be a problem with compilers
@@ -348,7 +348,7 @@ VMCUpdatePbyP::RealType VMCUpdatePbyP::advanceWalkerForEE(Walker_t& w1, std::vec
 //
 //         for (int iat=0; iat<nptcl; ++iat)
 //         {
-//           PosType dr=m_sqrttau*deltaR[iat];
+//           mPosType dr=m_sqrttau*deltaR[iat];
 //
 //           bool movePtcl = wclone[ip]->makeMoveAndCheck(iat,dr);
 //           //everyone should skip this; could be a problem with compilers
@@ -417,7 +417,7 @@ void VMCUpdatePbyPWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end
         RealType sqrttau = std::sqrt(tauovermass);
         for (int iat=W.first(ig); iat<W.last(ig); ++iat)
         {
-          PosType dr;
+          mPosType dr;
           getScaledDrift(tauovermass,W.G[iat],dr);
           dr += sqrttau*deltaR[iat];
           if (!W.makeMoveAndCheck(iat,dr))//reject illegal moves
@@ -472,7 +472,7 @@ void VMCUpdatePbyPWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end
       W.saveWalker(thisWalker);
       myTimers[2]->stop();
       myTimers[3]->start();
-      RealType eloc=H.evaluate(W);
+      EstimatorRealType eloc=H.evaluate(W);
       myTimers[3]->stop();
       //thisWalker.resetProperty(std::log(std::abs(psi)), psi,eloc);
       thisWalker.resetProperty(logpsi,Psi.getPhase(), eloc);
@@ -662,7 +662,7 @@ void VMCUpdatePbyPWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t it
         for (int iat=W.first(ig); iat<W.last(ig); ++iat)
         {
           GradType grad_now=Psi.evalGrad(W,iat), grad_new;
-          PosType dr;
+          mPosType dr;
           getScaledDrift(tauovermass,grad_now,dr);
           dr += sqrttau*deltaR[iat];
           if (!W.makeMoveAndCheck(iat,dr))
@@ -712,7 +712,7 @@ void VMCUpdatePbyPWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t it
     W.saveWalker(thisWalker);
     myTimers[2]->stop();
     myTimers[3]->start();
-    RealType eloc=H.evaluate(W);
+    EstimatorRealType eloc=H.evaluate(W);
     myTimers[3]->stop();
     //thisWalker.resetProperty(std::log(std::abs(psi)), psi,eloc);
     thisWalker.resetProperty(logpsi,Psi.getPhase(), eloc);
@@ -766,7 +766,7 @@ void VMCUpdateRenyiWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t i
         for (int iat=W.first(ig); iat<W.last(ig); ++iat)
         {
           GradType grad_now=Psi.evalGrad(W,iat), grad_new;
-          PosType dr;
+          mPosType dr;
           getScaledDrift(tauovermass,grad_now,dr);
           dr += sqrttau*deltaR[iat];
           if (!W.makeMoveAndCheck(iat,dr))
@@ -821,7 +821,7 @@ void VMCUpdateRenyiWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t i
       W.saveWalker(thisWalker);
       myTimers[2]->stop();
       myTimers[3]->start();
-      RealType eloc=H.evaluate(W);
+      EstimatorRealType eloc=H.evaluate(W);
       myTimers[3]->stop();
       //thisWalker.resetProperty(std::log(std::abs(psi)), psi,eloc);
       thisWalker.resetProperty(logpsi,Psi.getPhase(), eloc);
@@ -886,7 +886,7 @@ void VMCUpdateRenyiWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t i
 //         for (int ip=0; ip<NumThreads; ++ip)
 //           grad_now += std::exp(psi2_i_now[ip]-psi2_i_now[0])/psi2_now*grad_i_now[ip];
 //
-//         PosType dr;
+//         mPosType dr;
 //         getScaledDrift(m_tauovermass,grad_now,dr);
 //         dr += m_sqrttau*deltaR[iat];
 //
@@ -974,7 +974,7 @@ void VMCUpdateRenyiWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t i
 //       {
 //         RealType logpsi = pclone[ip]->updateBuffer(*wclone[ip],w_buffer,false);
 //         wclone[ip]->saveWalker(*W[ip]);
-//         RealType eloc=hclone[ip]->evaluate(*wclone[ip]);
+//         EstimatorRealType eloc=hclone[ip]->evaluate(*wclone[ip]);
 //         //           thisWalker.resetProperty(0.5*psi2_i_now[ip],pclone[ip]->getPhase(), eloc);
 //         thisWalker.resetProperty(logpsi,pclone[ip]->getPhase(), eloc);
 //         hclone[ip]->auxHevaluate(*wclone[ip],thisWalker);
@@ -1053,7 +1053,7 @@ void VMCUpdateRenyiWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t i
 //         bool stucked=true;
 //         for (int iat=0; iat<W.getTotalNum(); ++iat)
 //         {
-//           PosType dr = m_sqrttau*deltaR[iat];
+//           mPosType dr = m_sqrttau*deltaR[iat];
 //           //ignore illegal moves
 //           if (!W.makeMoveAndCheck(iat,dr))
 //           {
@@ -1108,7 +1108,7 @@ void VMCUpdateRenyiWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t i
 //       myTimers[2]->stop();
 //
 //       myTimers[3]->start();
-//       RealType eloc=H.evaluate(W);
+//       EstimatorRealType eloc=H.evaluate(W);
 //       myTimers[3]->stop();
 //
 //       thisWalker.resetProperty(logpsi,Psi.getPhase(),eloc);
@@ -1156,7 +1156,7 @@ void VMCUpdateRenyiWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t i
 //
 //         for (int iat=0; iat<nptcl; ++iat)
 //         {
-//           PosType dr=m_sqrttau*deltaR[iat];
+//           mPosType dr=m_sqrttau*deltaR[iat];
 //
 //           bool movePtcl = wclone[ip]->makeMoveAndCheck(iat,dr);
 //           //everyone should skip this; could be a problem with compilers
@@ -1233,7 +1233,7 @@ void VMCUpdateRenyiWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t i
 //
 //         for (int iat=0; iat<nptcl; ++iat)
 //         {
-//           PosType dr=m_sqrttau*deltaR[iat];
+//           mPosType dr=m_sqrttau*deltaR[iat];
 //
 //           bool movePtcl = wclone[ip]->makeMoveAndCheck(iat,dr);
 //           //everyone should skip this; could be a problem with compilers

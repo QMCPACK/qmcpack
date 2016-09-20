@@ -54,14 +54,16 @@ public:
 
   ~CuspCorr() {}
 
-  double execute(int curOrb_, int curCenter_, double Zion, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta, Vector<double>& xgrid, Vector<double>& rad_orb, std::string file, double cutoff,double* data);
+/* 
+  RealType execute(int curOrb_, int curCenter_, RealType Zion, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta, Vector<RealType>& xgrid, Vector<RealType>& rad_orb, std::string file, RealType cutoff,RealType* data);
 
-  void executeWithRCLoop(int curOrb_, int curCenter_, double Zion, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta, Vector<double>& xgrid, Vector<double>& rad_orb, std::string file, double cutoff,double* data);
+  void executeWithRCLoop(int curOrb_, int curCenter_, RealType Zion, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta, Vector<RealType>& xgrid, Vector<RealType>& rad_orb, std::string file, RealType cutoff,RealType* data);
 
-  void fillRadFunWithPhiBar(int curOrb_, int curCenter_, double Zion, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta, Vector<double>& xgrid, Vector<double>& rad_orb, double* data);
+  void fillRadFunWithPhiBar(int curOrb_, int curCenter_, RealType Zion, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta, Vector<RealType>& xgrid, Vector<RealType>& rad_orb, RealType* data);
 
-  void fillRadFunWithPhi(int curOrb_, int curCenter_, double Zion, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta, Vector<double>& xgrid, Vector<double>& rad_orb);
+  void fillRadFunWithPhi(int curOrb_, int curCenter_, RealType Zion, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta, Vector<RealType>& xgrid, Vector<RealType>& rad_orb);
 
+*/
 
   RealType loop(RealType phi0, ValueVector_t X)
   {
@@ -259,6 +261,8 @@ public:
                - 0.5*X[1]*X[1]*RcInv2;
   }
 
+#include "QMCWaveFunctions/Experimental/CuspCorr.cpp"
+
 private:
   ///target ParticleSet
   ParticleSet *targetPtcl;
@@ -289,8 +293,6 @@ private:
   ValueVector_t pos;
 
 };
-
-#include "QMCWaveFunctions/Experimental/CuspCorr.cpp"
 
 }
 

@@ -407,6 +407,7 @@ void FiniteDifference::computeFiniteDiffLowOrder(RealType delta,
     ValueType c1 = 1.0/delta/2.0;
     ValueType c2 = 1.0/delta/delta;
 
+    const RealType twoD(2*OHMMS_DIM);
     const int pt_per_deriv = 2; // number of points per derivative
     for (int pt_i = 1; pt_i < values.size(); pt_i += pt_per_deriv*OHMMS_DIM)
     {
@@ -426,7 +427,8 @@ void FiniteDifference::computeFiniteDiffLowOrder(RealType delta,
       GradType g = c1*g0;
       G_fd[iat] = g;
 
-      ValueType lap = c2*(lap0 - 2.0*OHMMS_DIM*logpsi);
+      ValueType lap = c2*(lap0 - twoD*logpsi);
+      //ValueType lap = c2*(lap0 - 2.0*OHMMS_DIM*logpsi);
       L_fd[iat] = lap;
     }
 }
@@ -460,16 +462,21 @@ void FiniteDifference::computeFiniteDiffRichardson(RealType delta,
 
     // Initial gradients and Laplacians at different deltas.
     RealType dd = delta;
+    const ValueType ctwo(2);
     for (int inr = 0; inr < m_RichardsonSize+1; inr++)
     {
+      RealType twodd = 2*dd;
+      RealType ddsq = dd*dd;
         l_base[inr] = 0.0;
         for (int idim=0; idim<OHMMS_DIM; idim++)
         {
            int idx = pt_i + idim*pt_per_deriv + 2*inr;
            ValueType logpsi_m = values[idx];
            ValueType logpsi_p = values[idx + 1];
-           g_base[inr][idim] = (logpsi_p - logpsi_m)/dd/2.0;
-           l_base[inr] += (logpsi_p + logpsi_m - 2.0*logpsi)/(dd*dd);
+           g_base[inr][idim] = (logpsi_p - logpsi_m)/twodd;
+           l_base[inr] += (logpsi_p + logpsi_m - ctwo*logpsi)/ddsq;
+           //g_base[inr][idim] = (logpsi_p - logpsi_m)/dd/2.0;
+           //l_base[inr] += (logpsi_p + logpsi_m - 2.0*logpsi)/(dd*dd);
         }
         dd = dd/2;
     }
@@ -602,8 +609,8 @@ bool WaveFunctionTester::checkGradients(int lower_iat, int upper_iat,
                                            int indent /* = 0 */)
 {
 
-  RealType rel_tol = 1e-3;
-  RealType abs_tol = 1e-7;
+  ParticleSet::Scalar_t rel_tol = 1e-3;
+  ParticleSet::Scalar_t abs_tol = 1e-7;
   if (toleranceParam > 0.0)
   {
     rel_tol = toleranceParam;
@@ -615,9 +622,9 @@ bool WaveFunctionTester::checkGradients(int lower_iat, int upper_iat,
   
   for (int iat=lower_iat; iat<upper_iat; iat++)
   {
-    RealType L_err = std::abs(L[iat]-L_fd[iat]);
-    RealType L_rel_denom = std::max( std::abs(L[iat]), std::abs(L_fd[iat]) );
-    RealType L_err_rel = std::abs( L_err / L_rel_denom );
+    ParticleSet::Scalar_t L_err = std::abs(L[iat]-L_fd[iat]);
+    ParticleSet::Scalar_t L_rel_denom = std::max( std::abs(L[iat]), std::abs(L_fd[iat]) );
+    ParticleSet::Scalar_t L_err_rel = std::abs( L_err / L_rel_denom );
     
     if (L_err_rel > rel_tol && L_err > abs_tol)
     {
@@ -635,11 +642,11 @@ bool WaveFunctionTester::checkGradients(int lower_iat, int upper_iat,
       all_okay = false;
     }
 
-    RealType G_err_rel[OHMMS_DIM];
+    ParticleSet::Scalar_t G_err_rel[OHMMS_DIM];
     for (int idim=0; idim<OHMMS_DIM; idim++)
     {
-      RealType G_err = std::abs(G[iat][idim]-G_fd[iat][idim]);
-      RealType G_rel_denom = std::max( std::abs(G[iat][idim]), std::abs(G_fd[iat][idim]) );
+      ParticleSet::Scalar_t G_err = std::abs(G[iat][idim]-G_fd[iat][idim]);
+      ParticleSet::Scalar_t G_rel_denom = std::max( std::abs(G[iat][idim]), std::abs(G_fd[iat][idim]) );
       G_err_rel[idim] = std::abs( G_err / G[iat][idim] );
 
       if (G_err_rel[idim] > rel_tol && G_err > abs_tol)
@@ -964,10 +971,10 @@ void WaveFunctionTester::runBasicTest()
         Psi.evaluateLog(W);
 
         computeNumericalGrad(delta, G1, L1);
-        RealType L_err = std::abs(L[iat]-L1[iat]);
-        RealType L_err_rel = std::abs( L_err/L[iat] );
-        RealType G_err = std::abs(G[iat][ig]-G1[iat][ig]);
-        RealType G_err_rel = std::abs(G_err/G[iat][ig]);
+        ParticleSet::Scalar_t L_err = std::abs(L[iat]-L1[iat]);
+        ParticleSet::Scalar_t L_err_rel = std::abs( L_err/L[iat] );
+        ParticleSet::Scalar_t G_err = std::abs(G[iat][ig]-G1[iat][ig]);
+        ParticleSet::Scalar_t G_err_rel = std::abs(G_err/G[iat][ig]);
         dout << std::setw(12) << delta;
         dout << std::setw(14) << std::abs(G_err_rel) << std::setw(14) << std::abs(L_err_rel);
         dout << std::endl;
@@ -1274,7 +1281,8 @@ void WaveFunctionTester::runRatioTest2()
       RealType ratio_accum(1.0);
       for (int iat=0; iat<nat; iat++)
       {
-        GradType grad_now=Psi.evalGrad(W,iat), grad_new;
+        TinyVector<ParticleSet::ParticleValue_t,OHMMS_DIM> grad_now=Psi.evalGrad(W,iat);
+        GradType grad_new;
         for(int sds=0; sds<3; sds++)
           fout<< realGrad[iat][sds]-grad_now[sds]<<" ";
         PosType dr(Tau*deltaR[iat]);
@@ -1343,7 +1351,7 @@ void WaveFunctionTester::runRatioV()
       {
         register RealType r(dt_ie->r(nn));
         if(r>Rmax) continue;
-        randomize(sphere,0.5);
+        randomize(sphere,(RealType)0.5);
         
         for(int k=0; k<sphere.size(); ++k)
         {
@@ -1447,11 +1455,12 @@ void WaveFunctionTester::runGradSourceTest()
         W.update();
         //Psi.evaluateLog(W);
       }
+      const ValueType six(6);
       for (int iondim=0; iondim<OHMMS_DIM; iondim++)
       {
         for (int eldim=0; eldim<OHMMS_DIM; eldim++)
           grad_grad_FD[iondim][iat][eldim] = c1*gFD[eldim][iondim];
-        lapl_grad_FD[iondim][iat] = c2*(lapFD[iondim]-6.0*grad_log[iondim]);
+        lapl_grad_FD[iondim][iat] = c2*(lapFD[iondim]-six*grad_log[iondim]);
       }
     }
     for (int dimsrc=0; dimsrc<OHMMS_DIM; dimsrc++)
@@ -2348,7 +2357,8 @@ FiniteDiffErrData::put(xmlNodePtr q)
   param.add(outputFile,"file","string");
   param.add(particleIndex,"particle_index","none");
   param.add(gradientComponentIndex,"gradient_index","none");
-  param.put(q);
+  bool s=param.put(q);
+  return s;
 }
 
 

@@ -103,7 +103,7 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
           attribs.add (hdfName, "name");
           if (hdfName=="twistAngle")
           {
-            std::vector<double> tsts(3,0);
+            std::vector<ParticleSet::RealType> tsts(3,0);
             putContent(tsts,kcur);
             targetPsi->setTwist(tsts);
             foundtwist=true;
@@ -114,7 +114,7 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
       if(!foundtwist)
       {
         //default twist is [0 0 0]
-        std::vector<double> tsts(3,0);
+        std::vector<ParticleSet::RealType> tsts(3,0);
         targetPsi->setTwist(tsts);
       }
     }

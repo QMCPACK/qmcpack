@@ -87,10 +87,10 @@ void StressPBC::InitMatrix()
   c.resize(N_basis);
   for(int k=0; k<N_basis; k++)
   {
-    h[k] = std::pow(Rcut, (k+2))/static_cast<double>(k+2);
+    h[k] = std::pow(Rcut, (k+2))/static_cast<RealType>(k+2);
     for(int j=0; j<N_basis; j++)
     {
-      Sinv(k,j) = std::pow(Rcut, (m_exp+k+j+3))/static_cast<double>(m_exp+k+j+3);
+      Sinv(k,j) = std::pow(Rcut, (m_exp+k+j+3))/static_cast<RealType>(m_exp+k+j+3);
     }
   }
   // in Numerics/DeterminantOperators.h
@@ -296,9 +296,11 @@ StressPBC::evalConsts_AB()
   int nelns = PtclTarg.getTotalNum();
   int nions = PtclA.getTotalNum();
 
-  SymTensor<RealType, OHMMS_DIM> Consts=0.0;
-  SymTensor<RealType, OHMMS_DIM> vs_k0 = AA->evaluateSR_k0_dstrain();
-  RealType v1; //single particle energy
+  typedef LRHandlerType::mRealType mRealType;
+
+  SymTensor<mRealType, OHMMS_DIM> Consts=0.0;
+  SymTensor<mRealType, OHMMS_DIM> vs_k0 = AA->evaluateSR_k0_dstrain();
+  mRealType v1; //single particle energy
   for(int i=0; i<nelns; ++i)
   {
     v1=0.0;
@@ -318,7 +320,7 @@ StressPBC::evalConsts_AB()
     Consts += -.5*Zat[i]*vs_k0*v1;
   }
 
-  return Consts;
+  return SymTensor<RealType,OHMMS_DIM>(Consts);
 }
 
 SymTensor<StressPBC::RealType, OHMMS_DIM>
@@ -398,7 +400,9 @@ StressPBC::evaluate(ParticleSet& P)
 
   stress+=evaluateKineticSymTensor(P);
  
-  stress/=(-1.0*P.Lattice.Volume);
+  //stress/=(-1.0*P.Lattice.Volume);
+  const RealType vinv(-1.0/P.Lattice.Volume);
+  stress *= vinv;
 
   return 0.0;
 }
@@ -413,7 +417,10 @@ SymTensor<StressPBC::RealType,OHMMS_DIM> StressPBC::evaluateKineticSymTensor(Par
   
   for (int iat=0; iat<P.getTotalNum(); iat++)
   {
-      complex_ktensor+=(grad_grad_psi[iat] + outerProduct(P.G[iat],P.G[iat]))*(1.0/(P.Mass[iat]));
+    const RealType minv(1.0/P.Mass[iat]);
+    complex_ktensor+=outerProduct(P.G[iat],P.G[iat])*static_cast<ParticleSet::ParticleValue_t>(minv);
+    complex_ktensor+=grad_grad_psi[iat]*minv;
+    //complex_ktensor+=(grad_grad_psi[iat] + outerProduct(P.G[iat],P.G[iat]))*(1.0/(P.Mass[iat]));
   }
   
   for (int i=0; i<OHMMS_DIM; i++)

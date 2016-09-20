@@ -45,12 +45,12 @@ enum
  */
 struct VariableSet
 {
-  typedef APP_PRECISION                           real_type;
+  typedef OHMMS_PRECISION                         real_type;
   typedef std::pair<std::string,real_type>        pair_type;
-  typedef std::pair<std::string,int>             indx_pair_type;
-  typedef std::vector<pair_type>::iterator       iterator;
-  typedef std::vector<pair_type>::const_iterator const_iterator;
-  typedef std::vector<pair_type>::size_type      size_type;
+  typedef std::pair<std::string,int>              indx_pair_type;
+  typedef std::vector<pair_type>::iterator        iterator;
+  typedef std::vector<pair_type>::const_iterator  const_iterator;
+  typedef std::vector<pair_type>::size_type       size_type;
   typedef std::map<std::string,real_type>         variable_map_type;
 
   ///number of active variables

@@ -139,7 +139,7 @@ namespace qmcplusplus
     else
       assignDrift (m_tauovermass, W.G, drift);
     fromdeltaR = curhead.R - W.R - drift;
-    RealType *restrict new_headProp (W.getPropertyBase ());
+    EstimatorRealType *restrict new_headProp (W.getPropertyBase ());
 
     RealType logGb = -m_oneover2tau * Dot (fromdeltaR, fromdeltaR);
     RealType Action_backward = -0.5 * logGb;
@@ -394,7 +394,7 @@ namespace qmcplusplus
     else
       assignDrift (m_tauovermass, W.G, drift);
     fromdeltaR = curhead.R - W.R - drift;
-    RealType *restrict new_headProp (W.getPropertyBase ());
+    EstimatorRealType *restrict new_headProp (W.getPropertyBase ());
     W.Properties (W.reptile->TransProb[backward]) =
       -m_oneover2tau * Dot (fromdeltaR, fromdeltaR);
     W.Properties (W.reptile->Action[backward]) =
@@ -512,7 +512,7 @@ namespace qmcplusplus
 				       nextlastbead.Properties (LOCALENERGY));
 	//dS=branchEngine->DMCLinkAction(eloc,curhead.Properties(LOCALENERGY)) - branchEngine->DMCLinkAction(lastbead.Properties(LOCALENERGY),nextlastbead.Properties(LOCALENERGY));
 	dS = dS_head - dS_tail;
-	acceptProb = std::min (1.0, std::exp (-dS));
+	acceptProb = std::min ((RealType)1.0, std::exp (-dS));
 
       }
 

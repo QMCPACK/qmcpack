@@ -114,7 +114,7 @@ struct SimpleFixedNodeBranch: public QMCTraits
    *
    * Mostly internal
    */
-  typedef TinyVector<RealType,B_VPARAM_MAX> VParamType;
+  typedef TinyVector<EstimatorRealType,B_VPARAM_MAX> VParamType;
   VParamType vParam;
 
   /** number of remaning steps for a specific tasks
@@ -123,7 +123,7 @@ struct SimpleFixedNodeBranch: public QMCTraits
    */
   int ToDoSteps;
   ///Feed*log(N)
-  RealType logN;
+  EstimatorRealType logN;
   ///save xml element
   xmlNodePtr myNode;
   ///WalkerController
@@ -133,9 +133,9 @@ struct SimpleFixedNodeBranch: public QMCTraits
   ///EstimatorManager
   EstimatorManager*  MyEstimator;
   ///a simple accumulator for energy
-  accumulator_set<RealType> EnergyHist;
+  accumulator_set<EstimatorRealType> EnergyHist;
   ///a simple accumulator for variance
-  accumulator_set<RealType> VarianceHist;
+  accumulator_set<EstimatorRealType> VarianceHist;
   ///a simple accumulator for energy
   accumulator_set<RealType> R2Accepted;
   ///a simple accumulator for energy
@@ -154,7 +154,7 @@ struct SimpleFixedNodeBranch: public QMCTraits
   std::vector<std::string> sParam;
 
   /// Used for the average scaling
-  RealType ScaleSum;
+  EstimatorRealType ScaleSum;
   unsigned long ScaleNum;
   //@TODO move these to private
   ///LogJacob
@@ -249,10 +249,10 @@ struct SimpleFixedNodeBranch: public QMCTraits
    *
    * Cutoff values are set by the variance
    */
-  inline RealType branchWeight(RealType enew, RealType eold) const
+  inline RealType branchWeight(EstimatorRealType enew, EstimatorRealType eold) const
   {
-    RealType taueff_=vParam[B_TAUEFF]*0.5;
-    RealType x=std::max(vParam[B_EREF]-enew,vParam[B_EREF]-eold);
+    EstimatorRealType taueff_=vParam[B_TAUEFF]*0.5;
+    EstimatorRealType x=std::max(vParam[B_EREF]-enew,vParam[B_EREF]-eold);
     if(x>vParam[B_BRANCHMAX])
       taueff_=0.0;
     else if(x>vParam[B_BRANCHCUTOFF])
@@ -301,8 +301,8 @@ struct SimpleFixedNodeBranch: public QMCTraits
    */
   inline RealType branchWeight(RealType enew, RealType eold, RealType scnew, RealType scold) const
   {
-    RealType s1=(vParam[B_ETRIAL]-vParam[B_EREF])+(vParam[B_EREF]-enew)*scnew;
-    RealType s0=(vParam[B_ETRIAL]-vParam[B_EREF])+(vParam[B_EREF]-eold)*scold;
+    EstimatorRealType s1=(vParam[B_ETRIAL]-vParam[B_EREF])+(vParam[B_EREF]-enew)*scnew;
+    EstimatorRealType s0=(vParam[B_ETRIAL]-vParam[B_EREF])+(vParam[B_EREF]-eold)*scold;
     return std::exp(vParam[B_TAUEFF]*0.5*(s1+s0));
   }
 
@@ -315,8 +315,8 @@ struct SimpleFixedNodeBranch: public QMCTraits
    */
   inline RealType branchWeight(RealType enew, RealType eold, RealType scnew, RealType scold, RealType p) const
   {
-    RealType s1=(vParam[B_ETRIAL]-vParam[B_EREF])+(vParam[B_EREF]-enew)*scnew;
-    RealType s0=(vParam[B_ETRIAL]-vParam[B_EREF])+(vParam[B_EREF]-eold)*scold;
+    EstimatorRealType s1=(vParam[B_ETRIAL]-vParam[B_EREF])+(vParam[B_EREF]-enew)*scnew;
+    EstimatorRealType s0=(vParam[B_ETRIAL]-vParam[B_EREF])+(vParam[B_EREF]-eold)*scold;
     return std::exp(vParam[B_TAUEFF]*(p*0.5*(s1-s0)+s0));
     //return std::exp(TauEff*(p*0.5*(sp-sq)+sq));
   }
@@ -332,9 +332,9 @@ struct SimpleFixedNodeBranch: public QMCTraits
   {
     ScaleSum += scnew + scold;
     ScaleNum +=2;
-    RealType scavg = (ScaleNum > 10000) ? ScaleSum/(RealType)ScaleNum : 1.0;
-    RealType s1=(vParam[B_ETRIAL]-vParam[B_EREF])+(vParam[B_EREF]-enew)*scnew/scavg;
-    RealType s0=(vParam[B_ETRIAL]-vParam[B_EREF])+(vParam[B_EREF]-eold)*scold/scavg;
+    EstimatorRealType scavg = (ScaleNum > 10000) ? ScaleSum/(RealType)ScaleNum : 1.0;
+    EstimatorRealType s1=(vParam[B_ETRIAL]-vParam[B_EREF])+(vParam[B_EREF]-enew)*scnew/scavg;
+    EstimatorRealType s0=(vParam[B_ETRIAL]-vParam[B_EREF])+(vParam[B_EREF]-eold)*scold/scavg;
     return std::exp(taueff*0.5*(s1+s0));
   }
 

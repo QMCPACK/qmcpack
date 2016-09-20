@@ -41,7 +41,7 @@ protected:
   ValueMatrix_t Gamma, L_gamma;
 
   //
-  std::vector<PosType> MyG;
+  std::vector<TinyVector<ParticleSet::ParticleValue_t,OHMMS_DIM> > MyG;
 
 public:
   DiracDeterminantBase* makeCopy(SPOSetBase* spo) const;

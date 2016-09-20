@@ -152,6 +152,10 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   spo_prec="double"; //overwrite
   truncate="no"; //overwrite
 #endif
+#if defined(MIXED_PRECISION)
+  app_log() << "\t  MIXED_PRECISION=1 Overwriting the precision of the einspline storage.\n";
+  spo_prec="single"; //overwrite
+#endif
   H5OrbSet aset(H5FileName, spinSet, numOrbs);
   std::map<H5OrbSet,SPOSetBase*,H5OrbSet>::iterator iter;
   iter = SPOSetMap.find (aset);
@@ -253,28 +257,28 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
         if(use_single)
         {
           if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_OPEN)
-            MixedSplineReader= new SplineMixedAdoptorReader<SplineOpenAdoptor<float,double,3> >(this);
+            MixedSplineReader= new SplineMixedAdoptorReader<SplineOpenAdoptor<float,RealType,3> >(this);
           else if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_SLAB)
-            MixedSplineReader= new SplineMixedAdoptorReader<SplineMixedAdoptor<float,double,3> >(this);
+            MixedSplineReader= new SplineMixedAdoptorReader<SplineMixedAdoptor<float,RealType,3> >(this);
           else
-            MixedSplineReader= new SplineAdoptorReader<SplineR2RAdoptor<float,double,3> >(this);
+            MixedSplineReader= new SplineAdoptorReader<SplineR2RAdoptor<float,RealType,3> >(this);
         }
         else
         {
           if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_OPEN)
-            MixedSplineReader= new SplineMixedAdoptorReader<SplineOpenAdoptor<double,double,3> >(this);
+            MixedSplineReader= new SplineMixedAdoptorReader<SplineOpenAdoptor<double,RealType,3> >(this);
           else if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_SLAB)
-            MixedSplineReader= new SplineMixedAdoptorReader<SplineMixedAdoptor<double,double,3> >(this);
+            MixedSplineReader= new SplineMixedAdoptorReader<SplineMixedAdoptor<double,RealType,3> >(this);
           else
-            MixedSplineReader= new SplineAdoptorReader<SplineR2RAdoptor<double,double,3> >(this);
+            MixedSplineReader= new SplineAdoptorReader<SplineR2RAdoptor<double,RealType,3> >(this);
         }
       }
       else
       {
         if(use_single)
-          MixedSplineReader= new SplineAdoptorReader<SplineR2RAdoptor<float,double,3> >(this);
+          MixedSplineReader= new SplineAdoptorReader<SplineR2RAdoptor<float,RealType,3> >(this);
         else
-          MixedSplineReader= new SplineAdoptorReader<SplineR2RAdoptor<double,double,3> >(this);
+          MixedSplineReader= new SplineAdoptorReader<SplineR2RAdoptor<double,RealType,3> >(this);
       }
     }
   }
@@ -289,17 +293,17 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
       if(use_single)
       {
 #if defined(QMC_COMPLEX)
-        MixedSplineReader= new SplineAdoptorReader<SplineC2CPackedAdoptor<float,double,3> >(this);
+        MixedSplineReader= new SplineAdoptorReader<SplineC2CPackedAdoptor<float,RealType,3> >(this);
 #else
-        MixedSplineReader= new SplineAdoptorReader<SplineC2RPackedAdoptor<float,double,3> >(this);
+        MixedSplineReader= new SplineAdoptorReader<SplineC2RPackedAdoptor<float,RealType,3> >(this);
 #endif
       }
       else
       {
 #if defined(QMC_COMPLEX)
-        MixedSplineReader= new SplineAdoptorReader<SplineC2CPackedAdoptor<double,double,3> >(this);
+        MixedSplineReader= new SplineAdoptorReader<SplineC2CPackedAdoptor<double,RealType,3> >(this);
 #else
-        MixedSplineReader= new SplineAdoptorReader<SplineC2RPackedAdoptor<double,double,3> >(this);
+        MixedSplineReader= new SplineAdoptorReader<SplineC2RPackedAdoptor<double,RealType,3> >(this);
 #endif
       }
     }

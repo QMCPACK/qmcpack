@@ -153,6 +153,12 @@ SlaterDet::RealType SlaterDet::evaluateLog(ParticleSet& P,
   return LogValue;
 }
 
+void SlaterDet::recompute(ParticleSet& P)
+{
+  for (int i = 0; i < Dets.size(); ++i)
+    Dets[i]->recompute(P);
+}
+
 void SlaterDet::registerDataForDerivatives(ParticleSet& P, BufferType& buf, int storageType)
 {
   for (int i = 0; i < Dets.size(); ++i)

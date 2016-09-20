@@ -39,10 +39,10 @@ class observable_helper;
  * - report : evaluate the block average and variance
  * ScalarEstimatorBase and its derived classes do not perform any I/O function.
  */
-struct ScalarEstimatorBase: public QMCTraits
+struct ScalarEstimatorBase
 {
-
-  typedef accumulator_set<RealType> accumulator_type;
+  typedef QMCTraits::EstimatorRealType          RealType;
+  typedef accumulator_set<RealType>             accumulator_type;
   typedef MCWalkerConfiguration::Walker_t       Walker_t;
   typedef MCWalkerConfiguration::const_iterator WalkerIterator;
   typedef RecordNamedProperty<RealType>         RecordListType;

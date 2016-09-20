@@ -50,15 +50,15 @@ public:
   //Typedef for the lattice-type.
   typedef ParticleSet::ParticleLayout_t ParticleLayout_t;
   typedef BreakupBasis BreakupBasisType;
-  typedef LinearGrid<RealType>                               GridType;
-  typedef OneDimCubicSpline<RealType>                       RadFunctorType;
+  typedef LinearGrid<mRealType>                               GridType;
+  typedef OneDimCubicSpline<mRealType>                       RadFunctorType;
 
   bool FirstTime;
-  RealType rs;
+  mRealType rs;
   BreakupBasisType Basis; //This needs a Lattice for the constructor...
   Func myFunc;
 
-  std::vector<RealType> Fk_copy;
+  std::vector<mRealType> Fk_copy;
   
   GridType* aGrid;
   
@@ -70,7 +70,7 @@ public:
   
 
   //Constructor
-  LRHandlerSRCoulomb(ParticleSet& ref, RealType kc_in=-1.0):
+  LRHandlerSRCoulomb(ParticleSet& ref, mRealType kc_in=-1.0):
     LRHandlerBase(kc_in),FirstTime(true), Basis(ref.LRBox), aGrid(0), 
     rV_force(0), rV_energy(0), drV_force(0), rV_stress(0), drV_stress(0)
 
@@ -87,7 +87,7 @@ public:
 //     delete rV_stress;
 //     delete drV_stress;  
   }
-  //LRHandlerSRCoulomb(ParticleSet& ref, RealType rs, RealType kc=-1.0): LRHandlerBase(kc), Basis(ref.LRBox)
+  //LRHandlerSRCoulomb(ParticleSet& ref, mRealType rs, mRealType kc=-1.0): LRHandlerBase(kc), Basis(ref.LRBox)
   //{
   //  myFunc.reset(ref,rs);
   //}
@@ -139,7 +139,7 @@ public:
     //makeSplines(1000);
   }
 
-  void Breakup(ParticleSet& ref, RealType rs_ext)
+  void Breakup(ParticleSet& ref, mRealType rs_ext)
   {
     //ref.LRBox.Volume=ref.getTotalNum()*4.0*M_PI/3.0*rs*rs*rs;
     rs=rs_ext;
@@ -159,15 +159,15 @@ public:
        aGrid->set(0.0,Basis.get_rc(),ngrid);
      }
      
-     std::vector<RealType> vE(ngrid);
-     std::vector<RealType> vF(ngrid);
-     std::vector<RealType> dvF(ngrid);
-     std::vector<RealType> vS(ngrid);
-     std::vector<RealType> dvS(ngrid);
+     std::vector<mRealType> vE(ngrid);
+     std::vector<mRealType> vF(ngrid);
+     std::vector<mRealType> dvF(ngrid);
+     std::vector<mRealType> vS(ngrid);
+     std::vector<mRealType> dvS(ngrid);
      
      for( int i=1; i<ngrid; i++)
      {
-		RealType r=(*aGrid)[i];
+		mRealType r=(*aGrid)[i];
 		
 		vE[i]=r*Basis.f(r,coefs);
 		vF[i]=r*Basis.f(r,gcoefs);
@@ -204,15 +204,15 @@ public:
        aGrid->set(0.0,Basis.get_rc(),ngrid);
      }
      
-     std::vector<RealType> vE(ngrid);
-     std::vector<RealType> vF(ngrid);
-     std::vector<RealType> dvF(ngrid);
-     std::vector<RealType> vS(ngrid);
-     std::vector<RealType> dvS(ngrid);
+     std::vector<mRealType> vE(ngrid);
+     std::vector<mRealType> vF(ngrid);
+     std::vector<mRealType> dvF(ngrid);
+     std::vector<mRealType> vS(ngrid);
+     std::vector<mRealType> dvS(ngrid);
      
      for( int i=1; i<ngrid; i++)
      {
-		RealType r=(*aGrid)[i];
+		mRealType r=(*aGrid)[i];
 		
 		vE[i]=r*Basis.f(r,coefs);
 		vF[i]=r*Basis.f(r,gcoefs);
@@ -247,14 +247,14 @@ public:
     myFunc.reset(ref);
   }
 
-  void resetTargetParticleSet(ParticleSet& ref, RealType rs)
+  void resetTargetParticleSet(ParticleSet& ref, mRealType rs)
   {
     myFunc.reset(ref,rs);
   }
 
-  inline RealType evaluate(RealType r, RealType rinv)
+  inline mRealType evaluate(mRealType r, mRealType rinv)
   {
-    RealType v = Basis.f(r, coefs);
+    mRealType v = Basis.f(r, coefs);
     //app_log()<<"evaluate() #"<<omp_get_num_threads()<<" rmax="<<aGrid->rmax()<<" size="<<aGrid->size()<< std::endl;
    
   //  return df;
@@ -266,67 +266,67 @@ public:
    * @param r  radius
    * @param rinv 1/r
    */
-  inline RealType srDf(RealType r, RealType rinv)
+  inline mRealType srDf(mRealType r, mRealType rinv)
   {
-   // RealType df = Basis.df_dr(r, gcoefs);
+   // mRealType df = Basis.df_dr(r, gcoefs);
      //app_log()<<"evaluate() #"<<omp_get_thread_num()<<" rmax="<<aGrid->rmax()<<" size="<<aGrid->size()<< std::endl;
  //    return df; 
 //    std::stringstream wee;
 //    wee<<"srDf() #"<<omp_get_thread_num()<<" dspl= "<<rinv*rinv*du-df<<" ref= "<<df<<" r= "<<r<< std::endl;
 //   app_log()<<wee.str();  
-    return drV_force->splint(r)/RealType(r*r) ; 
+    return drV_force->splint(r)/mRealType(r*r) ; 
   }
 
-  inline RealType srDf_strain(RealType r, RealType rinv)
+  inline mRealType srDf_strain(mRealType r, mRealType rinv)
   {
-  //  RealType df = Basis.df_dr(r, gstraincoefs);
+  //  mRealType df = Basis.df_dr(r, gstraincoefs);
   //  return df;
     
-    RealType du=drV_stress->splint(r);
+    mRealType du=drV_stress->splint(r);
     return rinv*rinv*du; 
   }
 
   /** evaluate the contribution from the long-range part for for spline
    */
-  inline RealType evaluateLR(RealType r)
+  inline mRealType evaluateLR(mRealType r)
   {
-    RealType v=0.0;
+    mRealType v=0.0;
    
   // for(int n=0; n<coefs.size(); n++)
   //    v -= coefs[n]*Basis.h(n,r);
     return v;
   }
 
-  inline RealType evaluateSR_k0()
+  inline mRealType evaluateSR_k0()
   {
-    RealType v0=0.0;
+    mRealType v0=0.0;
     for(int n=0; n<coefs.size(); n++)
       v0 += coefs[n]*Basis.hintr2(n);
     return v0*2.0*TWOPI/Basis.get_CellVolume();
   }
 
 
-  inline RealType evaluateLR_r0()
+  inline mRealType evaluateLR_r0()
   {
 	//this is because the constraint v(r)=sigma(r) as r-->0.  
 	// so v(r)-sigma(r)="0".  Divergence prevents me from coding this.
-    RealType v0=0.0;
+    mRealType v0=0.0;
 //    for(int n=0; n<coefs.size(); n++)
 //      v0 += coefs[n]*Basis.h(n,0.0);
     return v0;
   }
   
     //This returns the stress derivative of Fk, except for the explicit volume dependence.  The explicit volume dependence is factored away into V.
-  inline SymTensor<RealType, OHMMS_DIM> evaluateLR_dstrain(TinyVector<RealType, OHMMS_DIM> k, RealType kmag)
+  inline SymTensor<mRealType, OHMMS_DIM> evaluateLR_dstrain(TinyVector<mRealType, OHMMS_DIM> k, mRealType kmag)
   {
-	  SymTensor<RealType, OHMMS_DIM> deriv_tensor = 0;
-	 // RealType derivconst = Basis.fk(kmag, dcoefs);
+	  SymTensor<mRealType, OHMMS_DIM> deriv_tensor = 0;
+	 // mRealType derivconst = Basis.fk(kmag, dcoefs);
 	//  app_log()<<"squoo "<<derivconst<< std::endl;
 	  
 	  for (int dim1=0; dim1<OHMMS_DIM; dim1++)
 		for(int dim2=dim1; dim2<OHMMS_DIM; dim2++)
 		{
-		  RealType v=0.0;
+		  mRealType v=0.0;
           deriv_tensor(dim1,dim2)=- evaldYkgstrain(kmag)*k[dim1]*k[dim2]/kmag; //- evaldFk_dk(kmag)*k[dim1]*k[dim2]/kmag ;
           
           if (dim1==dim2) deriv_tensor(dim1,dim2)-= evalYkgstrain(kmag); //+ derivconst;
@@ -338,17 +338,17 @@ public:
   }
   
   
-  inline SymTensor<RealType, OHMMS_DIM> evaluateSR_dstrain(TinyVector<RealType, OHMMS_DIM> r, RealType rmag)
+  inline SymTensor<mRealType, OHMMS_DIM> evaluateSR_dstrain(TinyVector<mRealType, OHMMS_DIM> r, mRealType rmag)
   {
-    SymTensor<RealType, OHMMS_DIM> deriv_tensor=0;
+    SymTensor<mRealType, OHMMS_DIM> deriv_tensor=0;
 
-    RealType Sr_r=srDf_strain(rmag, 1.0/RealType(rmag))/RealType(rmag);
+    mRealType Sr_r=srDf_strain(rmag, 1.0/mRealType(rmag))/mRealType(rmag);
 
     for (int dim1=0; dim1<OHMMS_DIM; dim1++)
     {
 		for(int dim2=dim1; dim2<OHMMS_DIM; dim2++)
 		{
-	       RealType v=0.0;
+	       mRealType v=0.0;
 
 	       deriv_tensor(dim1,dim2)=r[dim1]*r[dim2]*Sr_r;
 
@@ -359,10 +359,10 @@ public:
 	return deriv_tensor;
   }
   
-/*  inline RealType evaluateSR_k0_dstrain()
+/*  inline mRealType evaluateSR_k0_dstrain()
   {
-    RealType v0=0.0;
-    RealType norm=2.0*TWOPI/Basis.get_CellVolume();
+    mRealType v0=0.0;
+    mRealType norm=2.0*TWOPI/Basis.get_CellVolume();
    
     for(int n=0; n<coefs.size(); n++)
       v0 += gstraincoefs[n]*Basis.hintr2(n);
@@ -372,65 +372,65 @@ public:
     return stress;
  }
    */
-  inline SymTensor<RealType, OHMMS_DIM> evaluateSR_k0_dstrain()
+  inline SymTensor<mRealType, OHMMS_DIM> evaluateSR_k0_dstrain()
   {
-    RealType v0=0.0;
-    RealType norm=2.0*TWOPI/Basis.get_CellVolume();
+    mRealType v0=0.0;
+    mRealType norm=2.0*TWOPI/Basis.get_CellVolume();
    
     for(int n=0; n<coefs.size(); n++)
       v0 += gstraincoefs[n]*Basis.hintr2(n);
     
     v0*=-norm;
-    SymTensor<RealType, OHMMS_DIM> stress;
+    SymTensor<mRealType, OHMMS_DIM> stress;
     for (int i=0; i<OHMMS_DIM; i++) stress(i,i)=v0;
     
     return stress;
   }
   
-  inline RealType evaluateLR_r0_dstrain(int i, int j)
+  inline mRealType evaluateLR_r0_dstrain(int i, int j)
   {
 	//the t derivative for the relevant basis elements are all zero because of constraints.
     return 0.0; //Basis.f(0,dcoefs(i,j));
   }
   
-  inline SymTensor<RealType, OHMMS_DIM> evaluateLR_r0_dstrain()
+  inline SymTensor<mRealType, OHMMS_DIM> evaluateLR_r0_dstrain()
   {
-    SymTensor<RealType, OHMMS_DIM> stress;
+    SymTensor<mRealType, OHMMS_DIM> stress;
 	return stress;
   }
 
 private:
 
 
-  inline RealType evalYk(RealType k)
+  inline mRealType evalYk(mRealType k)
   {
     //FatK = 4.0*M_PI/(Basis.get_CellVolume()*k*k)* std::cos(k*Basis.get_rc());
-    RealType FatK=myFunc.Vk(k)- Basis.fk(k,coefs);
+    mRealType FatK=myFunc.Vk(k)- Basis.fk(k,coefs);
   //  for(int n=0; n<Basis.NumBasisElem(); n++)
   //    FatK -= coefs[n]*Basis.c(n,k);
     return FatK;
   }
-  inline RealType evalYkg(RealType k)
+  inline mRealType evalYkg(mRealType k)
   {
-    RealType FatK=myFunc.Vk(k) - Basis.fk(k,gcoefs);
+    mRealType FatK=myFunc.Vk(k) - Basis.fk(k,gcoefs);
     //for(int n=0; n<Basis.NumBasisElem(); n++)
    //   FatK -= gcoefs[n]*Basis.c(n,k);
     return FatK;
     
   }
-  inline RealType evalYkgstrain(RealType k)
+  inline mRealType evalYkgstrain(mRealType k)
   {
-    RealType FatK=myFunc.Vk(k) - Basis.fk(k,gstraincoefs);
+    mRealType FatK=myFunc.Vk(k) - Basis.fk(k,gstraincoefs);
     //for(int n=0; n<Basis.NumBasisElem(); n++)
    //   FatK -= gcoefs[n]*Basis.c(n,k);
     return FatK;
     
   }
   
-  inline RealType evaldYkgstrain(RealType k)
+  inline mRealType evaldYkgstrain(mRealType k)
   {
-    RealType dFk_dk = myFunc.dVk_dk(k) - Basis.dfk_dk(k,gstraincoefs);
-  //  RealType dFk_dk = myFunc.dVk_dk(k,Basis.get_rc()) - Basis.dfk_dk(k,coefs);
+    mRealType dFk_dk = myFunc.dVk_dk(k) - Basis.dfk_dk(k,gstraincoefs);
+  //  mRealType dFk_dk = myFunc.dVk_dk(k,Basis.get_rc()) - Basis.dfk_dk(k,coefs);
     return dFk_dk;
   }
 
@@ -443,9 +443,9 @@ private:
    */
   void InitBreakup(ParticleLayout_t& ref,int NumFunctions)
   {
-    RealType chisqr_f=0.0;
-    RealType chisqr_df=0.0;
-    RealType chisqr_strain=0.0; 
+    mRealType chisqr_f=0.0;
+    mRealType chisqr_df=0.0;
+    mRealType chisqr_strain=0.0; 
     //First we send the new Lattice to the Basis, in case it has been updated.
     Basis.set_Lattice(ref);
     //Compute RC from box-size - in constructor?
@@ -456,16 +456,16 @@ private:
     //Initialise the breakup - pass in basis.
     LRBreakup<BreakupBasis> breakuphandler(Basis);
     //Find size of basis from cutoffs
-    RealType kc = (LR_kc<0)?ref.LR_kc:LR_kc;
-    //RealType kc(ref.LR_kc); //User cutoff parameter...
+    mRealType kc = (LR_kc<0)?ref.LR_kc:LR_kc;
+    //mRealType kc(ref.LR_kc); //User cutoff parameter...
     //kcut is the cutoff for switching to approximate k-point degeneracies for
     //better performance in making the breakup. A good bet is 30*K-spacing so that
     //there are 30 "boxes" in each direction that are treated with exact degeneracies.
     //Assume orthorhombic cell just for deriving this cutoff - should be insensitive.
     //K-Spacing = (kpt_vol)**1/3 = 2*pi/(cellvol**1/3)
-    RealType kcut = 60*M_PI*std::pow(Basis.get_CellVolume(),-1.0/3.0);
+    mRealType kcut = 60*M_PI*std::pow(Basis.get_CellVolume(),-1.0/3.0);
     //Use 3000/LMax here...==6000/rc for non-ortho cells
-    RealType kmax(6000.0/ref.LR_rc);
+    mRealType kmax(6000.0/ref.LR_rc);
     MaxKshell = static_cast<int>(breakuphandler.SetupKVecs(kc,kcut,kmax));
     if(FirstTime)
     {
@@ -482,7 +482,7 @@ private:
     //of V_l(r) after the breakup has been done.
     fillVk(breakuphandler.KList);
     //Allocate the space for the coefficients.
-    IndexType Nbasis=Basis.NumBasisElem();
+    int Nbasis=Basis.NumBasisElem();
     coefs.resize(Nbasis); //This must be after SetupKVecs.
     gcoefs.resize(Nbasis);
     gstraincoefs.resize(Nbasis);
@@ -493,15 +493,15 @@ private:
 
 
    
-    Vector<RealType> constraints;
-    //Vector<RealType> strainconstraints;
+    Vector<mRealType> constraints;
+    //Vector<mRealType> strainconstraints;
 
     constraints.resize(Nbasis);
   //  strainconstraints.resize(Nbasis);
     for (int i=0; i < Nbasis; i++) constraints[i]=1;
     
 
-   // RealType rc=Basis.get_rc();
+   // mRealType rc=Basis.get_rc();
     
     ///This is to make sure there's no cusp in the LR part.  
     gstraincoefs[0]=gcoefs[0]=coefs[0] = 1.0;
@@ -529,7 +529,7 @@ private:
     
 
 
-    Vector<RealType> chisqr(3);
+    Vector<mRealType> chisqr(3);
   //  chisqr_f=breakuphandler.DoBreakup(Fk.data(),coefs.data(),constraints.data()); //Fill array of coefficients.
   //  chisqr_df=breakuphandler.DoGradBreakup(Fkg.data(), gcoefs.data(), constraints.data());
   //  chisqr_strain=breakuphandler.DoStrainBreakup(Fk.data(), Fkgstrain.data(), gstraincoefs.data(), strainconstraints.data());   
@@ -549,7 +549,7 @@ private:
 
 
 
-  void fillVk(std::vector<TinyVector<RealType,2> >& KList)
+  void fillVk(std::vector<TinyVector<mRealType,2> >& KList)
   {
     Fk.resize(KList.size());
     Fkg.resize(KList.size());
@@ -557,7 +557,7 @@ private:
    // Fk_copy.resize(KList.size());
     for(int ki=0; ki<KList.size(); ki++)
     {
-      RealType k=KList[ki][0];
+      mRealType k=KList[ki][0];
       Fk[ki] = myFunc.Vk(k); //Call derived fn.
       Fkg[ki]= myFunc.Vk(k);
       Fkgstrain[ki] = myFunc.dVk_dk(k);
@@ -574,13 +574,13 @@ private:
     Fk_symm.resize(MaxKshell);
     for(int ks=0,ki=0; ks<Fk_symm.size(); ks++)
     {
-      RealType uk=evalYk(std::sqrt(KList.ksq[ki]));
+      mRealType uk=evalYk(std::sqrt(KList.ksq[ki]));
       Fk_symm[ks]=uk;
       while(ki<KList.kshell[ks+1] && ki<Fk.size())
         Fk[ki++]=uk;
     }
     //for(int ki=0; ki<KList.kpts_cart.size(); ki++){
-    //  RealType k=dot(KList.kpts_cart[ki],KList.kpts_cart[ki]);
+    //  mRealType k=dot(KList.kpts_cart[ki],KList.kpts_cart[ki]);
     //  k=std::sqrt(k);
     //  Fk[ki] = evalFk(k); //Call derived fn.
     //}
@@ -594,7 +594,7 @@ private:
 
     for(int ks=0,ki=0; ks<MaxKshell; ks++)
     {
-      RealType uk=evalYkg(std::sqrt(KList.ksq[ki]));
+      mRealType uk=evalYkg(std::sqrt(KList.ksq[ki]));
 
       while(ki<KList.kshell[ks+1] && ki<Fkg.size())
         Fkg[ki++]=uk;
@@ -609,7 +609,7 @@ private:
       MaxKshell=kshell.size()-1;
     for(int ks=0,ki=0; ks<MaxKshell; ks++)
     {
-      RealType uk=evalYkgstrain(std::sqrt(KList.ksq[ki]));
+      mRealType uk=evalYkgstrain(std::sqrt(KList.ksq[ki]));
       while(ki<KList.kshell[ks+1] && ki<Fkgstrain.size())
         Fkgstrain[ki++]=uk;
     }

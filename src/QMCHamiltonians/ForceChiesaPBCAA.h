@@ -33,12 +33,12 @@ struct ForceChiesaPBCAA: public QMCHamiltonianBase, public ForceBase
   typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
 
 
-  double Rcut; // parameter: radial distance within which estimator is used
+  RealType Rcut; // parameter: radial distance within which estimator is used
   int m_exp; // parameter: exponent in polynomial fit
   int N_basis; // parameter: size of polynomial basis set
   Matrix<RealType> Sinv; // terms in fitting polynomial
-  Vector<double> h; // terms in fitting polynomial
-  Vector<double> c; // polynomial coefficients
+  Vector<RealType> h; // terms in fitting polynomial
+  Vector<RealType> c; // polynomial coefficients
   // container for short-range force estimator
   
   bool kcdifferent;

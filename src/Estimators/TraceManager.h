@@ -43,7 +43,7 @@ namespace qmcplusplus
 
 const unsigned int DMAX=4;
 typedef long   TraceInt;
-typedef double TraceReal;
+typedef OHMMS_PRECISION TraceReal;
 typedef std::complex<TraceReal> TraceComp;
 
 

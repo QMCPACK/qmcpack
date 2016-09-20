@@ -105,7 +105,7 @@ void CSVMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool 
         for(int ipsi=0; ipsi< nPsi ; ipsi++)
           invsumratio[ipsi]=1.0/sumratio[ipsi];
         RealType td=ratio[0]*ratio[0]*sumratio[0]/(*it)->Multiplicity;
-        accept_move=Random()<std::min(1.0,td);
+        accept_move=Random()<std::min((RealType)1.0,td);
       }
       //RealType prob = std::min(1.0,td);
       //if(Random() < prob)
@@ -294,7 +294,7 @@ void CSVMCUpdatePbyPWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t 
 		logGb = -oneover2tau*dot(dr,dr);
 		
 		RealType td=ratio[0]*ratio[0]*sumratio[0]/(*it)->Multiplicity*std::exp(logGb-logGf);
-		accept_move=Random()<std::min(1.0,td);
+		accept_move=Random()<std::min((RealType)1.0,td);
 	      }
 	      //RealType prob = std::min(1.0,td);
 	      //if(Random() < prob)

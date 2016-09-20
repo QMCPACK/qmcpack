@@ -157,8 +157,11 @@ void ESHDFIonsParser::readESHDF()
     a.read(hfile_id,"atoms/number_of_atoms");
     ref_.create(natoms);
     ref_.R.InUnit=PosUnit::CartesianUnit;
-    HDFAttribIO<ParticleSet::ParticlePos_t> b(ref_.R);
+    typedef ParticleAttrib<TinyVector<double, OHMMS_DIM> > ParticlePos_t;
+    ParticlePos_t R_temp(natoms);
+    HDFAttribIO<ParticlePos_t> b(R_temp);
     b.read(hfile_id,"atoms/positions");
+    ref_.R=R_temp;
 
     ref_.applyBC(ref_.R); //force them [0,1)
 

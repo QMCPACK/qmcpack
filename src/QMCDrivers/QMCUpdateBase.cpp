@@ -245,7 +245,7 @@ void QMCUpdateBase::randomize(Walker_t& awalker)
     for (int iat=W.first(ig); iat<W.last(ig); ++iat)
     {
       GradType grad_now=Psi.evalGrad(W,iat), grad_new;
-      PosType dr;
+      mPosType dr;
       getScaledDrift(tauovermass,grad_now,dr);
       dr += sqrttau*deltaR[iat];
       if (!W.makeMoveAndCheck(iat,dr))
@@ -320,6 +320,18 @@ void QMCUpdateBase::updateWalkers(WalkerIter_t it, WalkerIter_t it_end)
   }
 }
 
+void QMCUpdateBase::recomputePsi(WalkerIter_t it, WalkerIter_t it_end)
+{
+  for (; it != it_end; ++it)
+  {
+    Walker_t::Buffer_t& w_buffer((*it)->DataSet);
+    Psi.copyFromBuffer(W,w_buffer);
+    Psi.recompute(W);
+    //RealType logpsi=Psi.updateBuffer(W,w_buffer,false);
+    RealType logpsi=Psi.evaluateLog(W,w_buffer);
+  }
+}
+
 void QMCUpdateBase::setReleasedNodeMultiplicity(WalkerIter_t it, WalkerIter_t it_end)
 {
   for (; it != it_end; ++it)
@@ -335,10 +347,10 @@ void QMCUpdateBase::setMultiplicity(WalkerIter_t it, WalkerIter_t it_end)
   {
     RealType M=(*it)->Weight;
     if ((*it)->Age>MaxAge)
-      M = std::min(0.5,M);
+      M = std::min((RealType)0.5,M);
     else
       if ((*it)->Age > 0)
-        M = std::min(1.0,M);
+        M = std::min((RealType)1.0,M);
     (*it)->Multiplicity = M + RandomGen();
   }
 }
@@ -366,6 +378,7 @@ void QMCUpdateBase::benchMark(WalkerIter_t it, WalkerIter_t it_end, int ip)
 
 /** advance a walker: walker move, use drift and vmc
  */
+/* seems legacy. Ye Luo
 void QMCUpdateBase::advanceWalker(Walker_t& thisWalker)
 {
   W.loadWalker(thisWalker,false);
@@ -375,7 +388,7 @@ void QMCUpdateBase::advanceWalker(Walker_t& thisWalker)
   {
     RealType nodecorr=setScaledDriftPbyPandNodeCorr(Tau,MassInvP,W.G,drift);
     makeGaussRandomWithEngine(deltaR,RandomGen);
-    if (!W.makeMoveWithDrift(thisWalker,drift ,deltaR, m_sqrttau))
+    if (!W.makeMoveWithDrift(thisWalker, drift, deltaR, m_sqrttau))
     {
       ++nReject;
       continue;
@@ -413,8 +426,10 @@ void QMCUpdateBase::advanceWalker(Walker_t& thisWalker)
   H.auxHevaluate(W,thisWalker);
   H.saveProperty(thisWalker.getPropertyBase());
 }
+*/
 
 /** advance of a walker using VMC+drift */
+/* seems legacy. Ye Luo
 void QMCUpdateBase::advancePbyP(Walker_t& thisWalker)
 {
   Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
@@ -433,7 +448,7 @@ void QMCUpdateBase::advancePbyP(Walker_t& thisWalker)
       for (int iat=W.first(ig); iat<W.last(ig); ++iat)
       {
         GradType grad_now=Psi.evalGrad(W,iat), grad_new;
-        PosType dr;
+        mPosType dr;
         getScaledDrift(tauovermass,grad_now,dr);
         dr += sqrttau*deltaR[iat];
         if (!W.makeMoveAndCheck(iat,dr))
@@ -490,6 +505,7 @@ void QMCUpdateBase::advancePbyP(Walker_t& thisWalker)
   if(!moved)
     ++nAllRejected;
 }
+*/
 }
 
 /***************************************************************************

@@ -207,7 +207,6 @@ namespace qmcplusplus
     char s[1024];
     ns=0;
     typedef QMCTraits::PosType PosType;
-    const std::vector<PosType>&  TwistAngles(mybuilder->TwistAngles);
     o << "#  Band    State   TwistIndex BandIndex Energy      Kx      Ky      Kz      K1      K2      K3    KmK " << std::endl;   
     for(int i=0; i<bigspace.size(); ++i)
     {
@@ -218,7 +217,7 @@ namespace qmcplusplus
       PosType k= mybuilder->PrimCell.k_cart(mybuilder->TwistAngles[ti]);
       sprintf (s, "%8d %8d %8d %8d %12.6f %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f %6d\n", 
           i, ns, ti, bi, e, k[0], k[1], k[2], 
-          TwistAngles[ti][0], TwistAngles[ti][1], TwistAngles[ti][2],nd);
+          mybuilder->TwistAngles[ti][0], mybuilder->TwistAngles[ti][1], mybuilder->TwistAngles[ti][2],nd);
       o<<s;
       ns+=nd;
     }

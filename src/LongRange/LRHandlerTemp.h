@@ -18,7 +18,7 @@
  */
 #ifndef QMCPLUSPLUS_LRHANLDERTEMP_H
 #define QMCPLUSPLUS_LRHANLDERTEMP_H
-
+#include "coulomb_types.h"
 #include "LongRange/LRHandlerBase.h"
 #include "LongRange/LPQHIBasis.h"
 #include "LongRange/LRBreakup.h"
@@ -45,18 +45,18 @@ public:
   typedef BreakupBasis BreakupBasisType;
 
   bool FirstTime;
-  RealType rs;
+  mRealType rs;
   BreakupBasisType Basis; //This needs a Lattice for the constructor...
   Func myFunc;
 
   //Constructor
-  LRHandlerTemp(ParticleSet& ref, RealType kc_in=-1.0):
+  LRHandlerTemp(ParticleSet& ref, mRealType kc_in=-1.0):
     LRHandlerBase(kc_in),FirstTime(true), Basis(ref.LRBox)
   {
     myFunc.reset(ref);
   }
 
-  //LRHandlerTemp(ParticleSet& ref, RealType rs, RealType kc=-1.0): LRHandlerBase(kc), Basis(ref.LRBox)
+  //LRHandlerTemp(ParticleSet& ref, mRealType rs, mRealType kc=-1.0): LRHandlerBase(kc), Basis(ref.LRBox)
   //{
   //  myFunc.reset(ref,rs);
   //}
@@ -87,7 +87,7 @@ public:
     LR_rc=Basis.get_rc();
   }
 
-  void Breakup(ParticleSet& ref, RealType rs_ext)
+  void Breakup(ParticleSet& ref, mRealType rs_ext)
   {
     //ref.LRBox.Volume=ref.getTotalNum()*4.0*M_PI/3.0*rs*rs*rs;
     rs=rs_ext;
@@ -102,14 +102,14 @@ public:
     myFunc.reset(ref);
   }
 
-  void resetTargetParticleSet(ParticleSet& ref, RealType rs)
+  void resetTargetParticleSet(ParticleSet& ref, mRealType rs)
   {
     myFunc.reset(ref,rs);
   }
 
-  inline RealType evaluate(RealType r, RealType rinv)
+  inline mRealType evaluate(mRealType r, mRealType rinv)
   {
-    RealType v=myFunc(r,rinv);
+    mRealType v=myFunc(r,rinv);
     for(int n=0; n<coefs.size(); n++)
       v -= coefs[n]*Basis.h(n,r);
     return v;
@@ -120,9 +120,9 @@ public:
    * @param r  radius
    * @param rinv 1/r
    */
-  inline RealType srDf(RealType r, RealType rinv)
+  inline mRealType srDf(mRealType r, mRealType rinv)
   {
-    RealType df = myFunc.df(r);
+    mRealType df = myFunc.df(r);
     //RealType df = myFunc.df(r, rinv);
     for(int n=0; n<coefs.size(); n++)
       df -= coefs[n]*Basis.df(n,r);
@@ -132,25 +132,25 @@ public:
 
   /** evaluate the contribution from the long-range part for for spline
    */
-  inline RealType evaluateLR(RealType r)
+  inline mRealType evaluateLR(mRealType r)
   {
-    RealType v=0.0;
+    mRealType v=0.0;
     for(int n=0; n<coefs.size(); n++)
       v -= coefs[n]*Basis.h(n,r);
     return v;
   }
 
-  inline RealType evaluateSR_k0()
+  inline mRealType evaluateSR_k0()
   {
-    RealType v0=myFunc.integrate_r2(Basis.get_rc());
+    mRealType v0=myFunc.integrate_r2(Basis.get_rc());
     for(int n=0; n<coefs.size(); n++)
       v0 -= coefs[n]*Basis.hintr2(n);
     return v0*2.0*TWOPI/Basis.get_CellVolume();
   }
 
-  inline RealType evaluateLR_r0()
+  inline mRealType evaluateLR_r0()
   {
-    RealType v0=0.0;
+    mRealType v0=0.0;
     for(int n=0; n<coefs.size(); n++)
       v0 += coefs[n]*Basis.h(n,0.0);
     return v0;
@@ -158,15 +158,15 @@ public:
 
 private:
 
-  inline RealType evalFk(RealType k)
+  inline mRealType evalFk(mRealType k)
   {
     //FatK = 4.0*M_PI/(Basis.get_CellVolume()*k*k)* std::cos(k*Basis.get_rc());
-    RealType FatK=myFunc.Fk(k,Basis.get_rc());
+    mRealType FatK=myFunc.Fk(k,Basis.get_rc());
     for(int n=0; n<Basis.NumBasisElem(); n++)
       FatK += coefs[n]*Basis.c(n,k);
     return FatK;
   }
-  inline RealType evalXk(RealType k)
+  inline mRealType evalXk(mRealType k)
   {
     //RealType FatK;
     //FatK = -4.0*M_PI/(Basis.get_CellVolume()*k*k)* std::cos(k*Basis.get_rc());
@@ -193,16 +193,16 @@ private:
     //Initialise the breakup - pass in basis.
     LRBreakup<BreakupBasis> breakuphandler(Basis);
     //Find size of basis from cutoffs
-    RealType kc = (LR_kc<0)?ref.LR_kc:LR_kc;
+    mRealType kc = (LR_kc<0)?ref.LR_kc:LR_kc;
     //RealType kc(ref.LR_kc); //User cutoff parameter...
     //kcut is the cutoff for switching to approximate k-point degeneracies for
     //better performance in making the breakup. A good bet is 30*K-spacing so that
     //there are 30 "boxes" in each direction that are treated with exact degeneracies.
     //Assume orthorhombic cell just for deriving this cutoff - should be insensitive.
     //K-Spacing = (kpt_vol)**1/3 = 2*pi/(cellvol**1/3)
-    RealType kcut = 60*M_PI*std::pow(Basis.get_CellVolume(),-1.0/3.0);
+    mRealType kcut = 60*M_PI*std::pow(Basis.get_CellVolume(),-1.0/3.0);
     //Use 3000/LMax here...==6000/rc for non-ortho cells
-    RealType kmax(6000.0/ref.LR_rc);
+    mRealType kmax(6000.0/ref.LR_rc);
     MaxKshell = static_cast<int>(breakuphandler.SetupKVecs(kc,kcut,kmax));
     if(FirstTime)
     {
@@ -222,12 +222,12 @@ private:
     breakuphandler.DoBreakup(Fk.data(),coefs.data()); //Fill array of coefficients.
   }
 
-  void fillXk(std::vector<TinyVector<RealType,2> >& KList)
+  void fillXk(std::vector<TinyVector<mRealType,2> >& KList)
   {
     Fk.resize(KList.size());
     for(int ki=0; ki<KList.size(); ki++)
     {
-      RealType k=KList[ki][0];
+      mRealType k=KList[ki][0];
       Fk[ki] = evalXk(k); //Call derived fn.
     }
   }
@@ -241,7 +241,7 @@ private:
     Fk_symm.resize(MaxKshell);
     for(int ks=0,ki=0; ks<Fk_symm.size(); ks++)
     {
-      RealType uk=evalFk(std::sqrt(KList.ksq[ki]));
+      mRealType uk=evalFk(std::sqrt(KList.ksq[ki]));
       Fk_symm[ks]=uk;
       while(ki<KList.kshell[ks+1] && ki<Fk.size())
         Fk[ki++]=uk;

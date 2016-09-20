@@ -113,10 +113,10 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
     app_log() << "    Only one vps is found. Set the local component=" << Lmax << std::endl;
   }
   int npts=grid_global->size();
-  Matrix<RealType> vnn(angList.size(),npts);
+  Matrix<mRealType> vnn(angList.size(),npts);
   for(int l=0; l<angList.size(); l++)
   {
-    std::vector<RealType>  vt(npts);
+    std::vector<mRealType>  vt(npts);
     xmlNodePtr c=vpsPtr[l]->children;
     while(c != NULL)
     {
@@ -190,7 +190,7 @@ ECPComponentBuilder::parseCasino(const std::string& fname, xmlNodePtr cur)
   aParser.skiplines(fin,1);//Energy units (rydberg/hartree/ev):
   aParser.getValue(fin,eunits);
   app_log() << "      Unit of the potentials = " << eunits << std::endl;
-  RealType Vprefactor = (eunits == "rydberg")?0.5:1.0;
+  mRealType Vprefactor = (eunits == "rydberg")?0.5:1.0;
   aParser.skiplines(fin,1);//Angular momentum of local component (0=s,1=p,2=d..)
   aParser.getValue(fin,idummy);
   if(Lmax<0)
@@ -200,12 +200,12 @@ ECPComponentBuilder::parseCasino(const std::string& fname, xmlNodePtr cur)
   aParser.skiplines(fin,1);//Number of grid points
   aParser.getValue(fin,npts);
   app_log() << "      Input Grid size = " << npts << std::endl;
-  std::vector<RealType> temp(npts);
+  std::vector<mRealType> temp(npts);
   aParser.skiplines(fin,1);//R(i) in atomic units
   aParser.getValues(fin,temp.begin(),temp.end());
   //create a global grid of numerical type
-  grid_global= new NumericalGrid<RealType>(temp);
-  Matrix<RealType> vnn(Lmax+1,npts);
+  grid_global= new NumericalGrid<mRealType>(temp);
+  Matrix<mRealType> vnn(Lmax+1,npts);
   for(int l=0; l<=Lmax; l++)
   {
     aParser.skiplines(fin,1);
@@ -252,8 +252,8 @@ ECPComponentBuilder::parseCasino(const std::string& fname, xmlNodePtr cur)
  */
 void
 ECPComponentBuilder::doBreakUp(const std::vector<int>& angList,
-                               const Matrix<RealType>& vnn,
-                               RealType rmax, RealType Vprefactor)
+                               const Matrix<mRealType>& vnn,
+                               RealType rmax, mRealType Vprefactor)
 {
 #ifdef QMC_CUDA
   int device;
@@ -266,13 +266,13 @@ ECPComponentBuilder::doBreakUp(const std::vector<int>& angList,
 #endif
   app_log() << "   Creating a Linear Grid Rmax=" << rmax << std::endl;
   //this is a new grid
-  RealType d=1e-4;
+  mRealType d=1e-4;
   LinearGrid<RealType>* agrid = new LinearGrid<RealType>;
   // If the global grid is already linear, do not interpolate the data
   int ng;
   if (grid_global->getGridTag() == LINEAR_1DGRID)
   {
-    ng = (int)std::ceil(rmax/grid_global->Delta) + 1;
+    ng = (int)std::ceil(rmax*grid_global->DeltaInv) + 1;
     if (ng <= max_points)
     {
       app_log() << "  Using global grid with delta = "
@@ -304,23 +304,23 @@ ECPComponentBuilder::doBreakUp(const std::vector<int>& angList,
   for(int l=0; l<angList.size(); l++)
     if(angList[l] == Llocal)
       iLlocal=l;
-  std::vector<RealType> newP(ng),newPin(ngIn);
+  std::vector<RealType> newP(ng);
+  std::vector<mRealType> newPin(ngIn);
   for(int l=0; l<angList.size(); l++)
   {
     if(angList[l] == Llocal)
       continue;
-    const RealType* restrict vp=vnn[angList[l]];
-    const RealType* restrict vpLoc=vnn[iLlocal];
+    const mRealType* restrict vp=vnn[angList[l]];
+    const mRealType* restrict vpLoc=vnn[iLlocal];
     int ll=angList[l];
     for(int i=0; i<ngIn; i++)
       newPin[i]=Vprefactor*(vp[i]-vpLoc[i]);
-    OneDimCubicSpline<RealType> infunc(grid_global,newPin);
+    OneDimCubicSpline<mRealType> infunc(grid_global,newPin);
     infunc.spline(0,0.0,ngIn-1,0.0);
-    RealType r=d;
     for(int i=1; i<ng-1; i++)
     {
+      mRealType r=d*i;
       newP[i]=infunc.splint(r)/r;
-      r+=d;
     }
     newP[0]=newP[1];
     newP[ng-1]=0.0;
@@ -345,12 +345,12 @@ ECPComponentBuilder::doBreakUp(const std::vector<int>& angList,
   {
     // Spline local potential on original grid
     newPin[0]=0.0;
-    RealType vfac=-Vprefactor/Zeff;
-    const RealType* restrict vpLoc=vnn[iLlocal];
+    mRealType vfac=-Vprefactor/Zeff;
+    const mRealType* restrict vpLoc=vnn[iLlocal];
     for(int i=0; i<ngIn; i++)
       newPin[i]=vfac*vpLoc[i];
     double dy0 = (newPin[1] - newPin[0])/((*grid_global)[1]-(*grid_global)[0]);
-    OneDimCubicSpline<RealType> infunc(grid_global,newPin);
+    OneDimCubicSpline<mRealType> infunc(grid_global,newPin);
     infunc.spline(0,dy0,ngIn-1,0.0);
     int m = grid_global->size();
     double loc_max = grid_global->r(m-1);
@@ -361,12 +361,11 @@ ECPComponentBuilder::doBreakUp(const std::vector<int>& angList,
     app_log() << "   Making L=" << Llocal
               << " a local potential with a radial cutoff of "
               << loc_max << std::endl;
-    RealType r=d;
     std::vector<RealType> newPloc(nloc);
     for(int i=1; i<nloc-1; i++)
     {
+      mRealType r=d*i;
       newPloc[i]=infunc.splint(r);
-      r+=d;
     }
     newPloc[0]      = 0.0;
     newPloc[nloc-1] = 1.0;

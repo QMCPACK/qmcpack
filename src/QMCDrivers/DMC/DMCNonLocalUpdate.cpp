@@ -150,7 +150,6 @@ void DMCNonLocalUpdatePbyP::advanceWalkers(WalkerIter_t it
     Walker_t& thisWalker(**it);
     Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
     RealType eold(thisWalker.Properties(LOCALENERGY));
-    RealType vqold(thisWalker.Properties(DRIFTSCALE));
     //RealType emixed(eold), enew(eold);
     RealType enew(eold);
     W.R = thisWalker.R;
@@ -308,7 +307,6 @@ void DMCNonLocalUpdatePbyPFast::advanceWalkers(WalkerIter_t it, WalkerIter_t it_
     int nRejectTemp(0);
     //copy the old energy and scale factor of drift
     RealType eold(thisWalker.Properties(LOCALENERGY));
-    RealType vqold(thisWalker.Properties(DRIFTSCALE));
     RealType enew(eold);
     RealType rr_proposed=0.0;
     RealType rr_accepted=0.0;

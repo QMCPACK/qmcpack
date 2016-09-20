@@ -42,7 +42,7 @@ EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, xm
   //assume one, not safe!! 
   myTableIndex=1;
 
-  MatchingTol=1.0e-8;
+  MatchingTol=10*std::numeric_limits<float>::epsilon();
 //     for (int i=0; i<3; i++) afm_vector[i]=0;
   for (int i=0; i<3; i++)
     for (int j=0; j<3; j++)
@@ -644,6 +644,7 @@ EinsplineSetBuilder::AnalyzeTwists2()
 // valid k-point mesh.  It flags errors an aborts if they do not.
 // As a side-effect, it sets up TwistMap, which maps [ix,iy,iz] into
 // a single integer twist index.
+/* seems legacy. Ye Luo
 void
 EinsplineSetBuilder::AnalyzeTwists()
 {
@@ -755,6 +756,7 @@ EinsplineSetBuilder::AnalyzeTwists()
         app_log() << buff;
       }
 }
+*/
 
 
 void

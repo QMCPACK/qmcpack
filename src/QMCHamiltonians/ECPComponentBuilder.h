@@ -30,6 +30,8 @@ struct ECPComponentBuilder: public MPIObjectBase, public QMCTraits
 {
 
   typedef LocalECPotential::GridType GridType;
+  typedef ParticleSet::Scalar_t mRealType;
+  typedef OneDimGridBase<mRealType> mGridType;
   typedef LocalECPotential::RadialPotentialType RadialPotentialType;
 
   int NumNonLocal;
@@ -37,8 +39,8 @@ struct ECPComponentBuilder: public MPIObjectBase, public QMCTraits
   RealType Zeff;
   RealType RcutMax;
   std::string Species;
-  GridType *grid_global;
-  std::map<std::string,GridType*> grid_inp;
+  mGridType *grid_global;
+  std::map<std::string,mGridType*> grid_inp;
   RadialPotentialType* pp_loc;
   NonLocalECPComponent* pp_nonloc;
   std::map<std::string,int> angMon;
@@ -67,12 +69,12 @@ struct ECPComponentBuilder: public MPIObjectBase, public QMCTraits
   void SetQuadratureRule(int rule);
   void CheckQuadratureRule(int lexact);
 
-  GridType* createGrid(xmlNodePtr cur, bool useLinear=false);
-  RadialPotentialType* createVrWithBasisGroup(xmlNodePtr cur, GridType* agrid);
-  RadialPotentialType* createVrWithData(xmlNodePtr cur, GridType* agrid, int rCorrection=0);
+  mGridType* createGrid(xmlNodePtr cur, bool useLinear=false);
+  RadialPotentialType* createVrWithBasisGroup(xmlNodePtr cur, mGridType* agrid);
+  RadialPotentialType* createVrWithData(xmlNodePtr cur, mGridType* agrid, int rCorrection=0);
 
-  void doBreakUp(const std::vector<int>& angList, const Matrix<RealType>& vnn,
-                 RealType rmax, RealType Vprefactor=1.0);
+  void doBreakUp(const std::vector<int>& angList, const Matrix<mRealType>& vnn,
+                 RealType rmax, mRealType Vprefactor=1.0);
 
   void printECPTable();
 };

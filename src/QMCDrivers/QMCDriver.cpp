@@ -114,6 +114,8 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamilt
   m_param.add(Tau,"tau","AU");
   MaxCPUSecs=360000; //100 hours
   m_param.add(MaxCPUSecs,"maxcpusecs","real");
+  nBlocksBetweenRecompute = -1;
+  m_param.add(nBlocksBetweenRecompute,"blocks_between_recompute","int");
   QMCType="invalid";
   ////add each QMCHamiltonianBase to W.PropertyList so that averages can be taken
   //H.add2WalkerProperty(W);
@@ -572,6 +574,12 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
   }
   //set the minimum blocks
   if (nBlocks<1) nBlocks=1;
+  // by default call recomputePsi at the end of each block.
+#ifdef MIXED_PRECISION
+  if(nBlocksBetweenRecompute < 0) nBlocksBetweenRecompute = 1;
+#else
+  if(nBlocksBetweenRecompute < 0) nBlocksBetweenRecompute = 0;
+#endif
 
   DumpConfig=(Period4CheckPoint>=0);
   if(Period4CheckPoint<1)

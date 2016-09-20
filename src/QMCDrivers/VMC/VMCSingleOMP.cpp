@@ -90,6 +90,8 @@ bool VMCSingleOMP::run()
 //           if(storeConfigs && (now_loc%storeConfigs == 0))
 //             ForwardWalkingHistory.storeConfigsForForwardWalking(*wClones[ip]);
       }
+      if ( nBlocksBetweenRecompute && (1+block)%nBlocksBetweenRecompute == 0 )
+        Movers[ip]->recomputePsi(wit,wit_end);
       Movers[ip]->stopBlock(false);
     }//end-of-parallel for
     //Estimators->accumulateCollectables(wClones,nSteps);
@@ -361,7 +363,7 @@ VMCSingleOMP::put(xmlNodePtr q)
       if(target_min>0) 
       { 
         nTargetSamples=std::max(nTargetSamples,target_min);
-        nTargetPopulation=std::max(nTargetPopulation,static_cast<double>(target_min));
+        nTargetPopulation=std::max(nTargetPopulation,static_cast<RealType>(target_min));
       }
       nTargetSamples=((nTargetSamples+nwtot-1)/nwtot)*nwtot; // nTargetSamples are always multiples of total number of walkers
       nSamplesPerThread=nTargetSamples/Nprocs/Nthreads;

@@ -202,6 +202,54 @@ struct SolveFirstDerivInterp1D<std::complex<double> >
       p[i] = value_type(pReal[i], pImag[i]);
   }
 };
+
+template<>
+struct SolveFirstDerivInterp1D<float>
+{
+  template<class CT>
+  static inline void apply(const CT& data, CT& p, int N, float* bcLower, float* bcUpper)
+  {
+    std::vector<double> data_d(N), p_d(N);
+    std::copy(data.begin(),data.end(),data_d.begin());
+    double bcLower_d[4];
+    double bcUpper_d[4];
+    std::copy(bcLower,bcLower+4,bcLower_d);
+    std::copy(bcUpper,bcUpper+4,bcUpper_d);
+
+    SolveFirstDerivInterp1D<double>::apply(data_d,p_d,N,bcLower_d,bcUpper_d);
+
+    std::copy(p_d.begin(),p_d.end(),p.begin());
+  }
+};
+
+template<>
+struct SolveFirstDerivInterp1D<std::complex<float> >
+{
+
+  typedef std::complex<float> value_type;
+  typedef float real_type;
+
+  template<class CT>
+  static inline void apply(const CT& data, CT& p, int N, float* bcLower, float* bcUpper)
+  {
+    std::vector<double> dataReal(N), dataImag(N), pReal(N), pImag(N);
+    for (int i=0; i<N; i++)
+    {
+      dataReal[i] = data[i].real();
+      dataImag[i] = data[i].imag();
+    }
+
+    double bcLower_d[4];
+    double bcUpper_d[4];
+    std::copy(bcLower,bcLower+4,bcLower_d);
+    std::copy(bcUpper,bcUpper+4,bcUpper_d);
+    SolveFirstDerivInterp1D<double>::apply(dataReal, pReal, N, bcLower_d, bcUpper_d);
+    SolveFirstDerivInterp1D<double>::apply(dataImag, pImag, N, bcLower_d, bcUpper_d);
+
+    for (int i=0; i<N; i++)
+      p[i] = value_type(static_cast<float>(pReal[i]), static_cast<float>(pImag[i]));
+  }
+};
 #endif
 /***************************************************************************
  * $RCSfile$   $Author$

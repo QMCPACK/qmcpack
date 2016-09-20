@@ -73,8 +73,12 @@ SET (EXECUTABLE_OUTPUT_PATH ${qmcpack_BINARY_DIR}/bin CACHE PATH "Single output 
 ######################################################################
 SET(OHMMS_DIM 3 CACHE INTEGER "Select physical dimension")
 SET(OHMMS_INDEXTYPE int)
-SET(OHMMS_PRECISION double)
-SET(APP_PRECISION double)
+SET(MIXED_PRECISION 0 CACHE BOOL "Enable/disable mixed precision")
+IF(MIXED_PRECISION)
+  SET(OHMMS_PRECISION float)
+ELSE(MIXED_PRECISION)
+  SET(OHMMS_PRECISION double)
+ENDIF(MIXED_PRECISION)
 SET(CUDA_PRECISION float CACHE STRING "Select the precision of CUDA kernels")
 SET(CUDA_COULOMB_PRECISION double)
 

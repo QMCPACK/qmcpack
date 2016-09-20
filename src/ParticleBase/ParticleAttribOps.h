@@ -122,14 +122,14 @@ struct OTCDot_CC<T1,T2,3>
   }
 };
 
-template<unsigned D>
-inline double Dot(const ParticleAttrib<TinyVector<std::complex<double>, D> >& pa,
-                  const ParticleAttrib<TinyVector<std::complex<double>, D> >& pb)
+template<typename T, unsigned D>
+inline T Dot(const ParticleAttrib<TinyVector<std::complex<T>, D> >& pa,
+                  const ParticleAttrib<TinyVector<std::complex<T>, D> >& pb)
 {
-  double sum = 0;
+  T sum = 0;
   for(int i=0; i<pa.size(); i++)
   {
-    sum += OTCDot<double,double,D>::apply(pa[i],pb[i]);
+    sum += OTCDot<T,T,D>::apply(pa[i],pb[i]);
   }
   return sum;
 }
@@ -147,9 +147,10 @@ inline double Dot_CC(const ParticleAttrib<TinyVector<std::complex<double>, D> >&
   return sum;
 }
 
-inline double Sum(const ParticleAttrib<std::complex<double> >& pa)
+template<typename T>
+inline T Sum(const ParticleAttrib<std::complex<T> >& pa)
 {
-  double sum = 0;
+  T sum = 0;
   for(int i=0; i<pa.size(); i++)
   {
     sum += pa[i].real();
@@ -179,17 +180,18 @@ inline void Copy(const ParticleAttrib<TinyVector<T,D> >& c,
 
 /** generic PAOps
  */
-template<class T, unsigned D> struct PAOps { };
+template<class T, unsigned D, class T1=T> struct PAOps { };
 
 ///specialization for three-dimension
-template<class T>
-struct PAOps<T,3>
+template<class T, class T1>
+struct PAOps<T,3,T1>
 {
 
   typedef T                        real_type;
   typedef std::complex<T>               complex_type;
   typedef TinyVector<T,3>          rpos_type;
-  typedef TinyVector<std::complex<T>,3> cpos_type;
+  typedef TinyVector<T1,3>         ipos_type;
+  typedef TinyVector<std::complex<T1>,3> cpos_type;
 
   static inline
   void scale(T a, const ParticleAttrib<cpos_type>& pa,
@@ -204,7 +206,7 @@ struct PAOps<T,3>
   }
 
   static inline
-  void scale(T a, const ParticleAttrib<rpos_type>& pa,
+  void scale(T a, const ParticleAttrib<ipos_type>& pa,
              ParticleAttrib<rpos_type>& pb)
   {
     pb=a*pa;
@@ -222,7 +224,7 @@ struct PAOps<T,3>
   }
 
   static inline
-  void axpy(T a, const ParticleAttrib<rpos_type>& pa, ParticleAttrib<rpos_type>& pb)
+  void axpy(T a, const ParticleAttrib<ipos_type>& pa, ParticleAttrib<rpos_type>& pb)
   {
     for(int i=0; i<pa.size(); ++i)
     {
@@ -233,7 +235,7 @@ struct PAOps<T,3>
   }
 
   static inline
-  void axpy(T a, const ParticleAttrib<cpos_type>& pa, const ParticleAttrib<rpos_type>& pb,
+  void axpy(T a, const ParticleAttrib<cpos_type>& pa, const ParticleAttrib<ipos_type>& pb,
             ParticleAttrib<rpos_type>& py)
   {
     for(int i=0; i<pa.size(); ++i)
@@ -245,7 +247,7 @@ struct PAOps<T,3>
   }
 
   static inline
-  void axpy(T a, const ParticleAttrib<rpos_type>& pa, const ParticleAttrib<rpos_type>& pb,
+  void axpy(T a, const ParticleAttrib<ipos_type>& pa, const ParticleAttrib<ipos_type>& pb,
             ParticleAttrib<rpos_type>& py)
   {
     for(int i=0; i<pa.size(); ++i)
@@ -257,7 +259,7 @@ struct PAOps<T,3>
   }
 
   static inline
-  void copy(const ParticleAttrib<rpos_type>& px, ParticleAttrib<rpos_type>& py)
+  void copy(const ParticleAttrib<ipos_type>& px, ParticleAttrib<rpos_type>& py)
   {
     py=px;
   }
@@ -275,14 +277,15 @@ struct PAOps<T,3>
 };
 
 ///specialization for 2-dimension
-template<class T>
-struct PAOps<T,2>
+template<class T, class T1>
+struct PAOps<T,2,T1>
 {
 
   typedef T                        real_type;
   typedef std::complex<T>               complex_type;
   typedef TinyVector<T,2>          rpos_type;
-  typedef TinyVector<std::complex<T>,2> cpos_type;
+  typedef TinyVector<T1,2>         ipos_type;
+  typedef TinyVector<std::complex<T1>,2> cpos_type;
 
   static inline
   void scale(T a, const ParticleAttrib<cpos_type>& pa,
@@ -296,7 +299,7 @@ struct PAOps<T,2>
   }
 
   static inline
-  void scale(T a, const ParticleAttrib<rpos_type>& pa,
+  void scale(T a, const ParticleAttrib<ipos_type>& pa,
              ParticleAttrib<rpos_type>& pb)
   {
     pb=a*pa;
@@ -314,7 +317,7 @@ struct PAOps<T,2>
   }
 
   static inline
-  void axpy(T a, const ParticleAttrib<rpos_type>& pa, ParticleAttrib<rpos_type>& pb)
+  void axpy(T a, const ParticleAttrib<ipos_type>& pa, ParticleAttrib<rpos_type>& pb)
   {
     for(int i=0; i<pa.size(); i++)
     {
@@ -324,7 +327,7 @@ struct PAOps<T,2>
   }
 
   static inline
-  void axpy(T a, const ParticleAttrib<cpos_type>& pa, const ParticleAttrib<rpos_type>& pb,
+  void axpy(T a, const ParticleAttrib<cpos_type>& pa, const ParticleAttrib<ipos_type>& pb,
             ParticleAttrib<rpos_type>& py)
   {
     for(int i=0; i<pa.size(); i++)
@@ -335,7 +338,7 @@ struct PAOps<T,2>
   }
 
   static inline
-  void axpy(T a, const ParticleAttrib<rpos_type>& pa, const ParticleAttrib<rpos_type>& pb,
+  void axpy(T a, const ParticleAttrib<ipos_type>& pa, const ParticleAttrib<ipos_type>& pb,
             ParticleAttrib<rpos_type>& py)
   {
     for(int i=0; i<pa.size(); i++)

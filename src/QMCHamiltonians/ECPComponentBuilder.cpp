@@ -395,15 +395,16 @@ void ECPComponentBuilder::SetQuadratureRule(int rule)
   assert (pp_nonloc->sgridxyz_m.size() == nk);
   assert (pp_nonloc->sgridweight_m.size() == nk);
   double wSum = 0.0;
+  const RealType delta=2*std::numeric_limits<float>::epsilon();
   for (int k=0; k < nk; k++)
   {
     PosType r = pp_nonloc->sgridxyz_m[k];
     double nrm = dot(r,r);
-    assert (std::abs(nrm-1.0) < 1.0e-14);
+    assert (std::abs(nrm-1.0) < delta);
     wSum += pp_nonloc->sgridweight_m[k];
     //cout << pp_nonloc->sgridxyz_m[k] << " " << pp_nonloc->sgridweight_m[k] << std::endl;
   }
-  assert (std::abs(wSum - 1.0) < 1.0e-14);
+  assert (std::abs(wSum - 1.0) < delta);
   // Check the quadrature rule
   CheckQuadratureRule(lexact);
 }
@@ -510,7 +511,7 @@ void ECPComponentBuilder::CheckQuadratureRule(int lexact)
           double im = imag (sum);
           if ((l1==l2) && (m1==m2))
             re -= 1.0;
-          if ((std::abs(im) > 1.0e-14) || (std::abs(re) > 1.0e-14))
+          if ((std::abs(im) > 5*std::numeric_limits<RealType>::epsilon()) || (std::abs(re) > 5*std::numeric_limits<RealType>::epsilon()))
           {
             app_error() << "Broken spherical quadrature for " << grid.size() << "-point rule.\n" << std::endl;
             APP_ABORT("Give up");

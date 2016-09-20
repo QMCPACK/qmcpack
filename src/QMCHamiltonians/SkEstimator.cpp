@@ -159,7 +159,7 @@ void SkEstimator::registerCollectables(std::vector<observable_helper*>& h5desc
     hid_t k_space = H5Screate_simple(2,kdims, NULL);
     hid_t k_set   = H5Dcreate (gid, kpath.c_str(), H5T_NATIVE_DOUBLE, k_space, H5P_DEFAULT);
     hid_t mem_space = H5Screate_simple (2, kdims, NULL);
-    double *ptr = &(sourcePtcl->SK->KLists.kpts_cart[0][0]);
+    RealType *ptr = &(sourcePtcl->SK->KLists.kpts_cart[0][0]);
     herr_t ret = H5Dwrite(k_set, H5T_NATIVE_DOUBLE, mem_space, k_space, H5P_DEFAULT, ptr);
     H5Dclose (k_set);
     H5Sclose (mem_space);

@@ -221,12 +221,14 @@ struct BareKineticEnergy: public QMCHamiltonianBase
     Array<std::complex<RealType>,1>& T_samp_comp = *T_sample_comp;
     Array<std::complex<RealType>,2>& p_samp = *p_sample;
     std::complex<RealType> t1=0.0;
+    const RealType clambda(-OneOver2M);
     Value = 0.0;
     if(SameMass)
     {
       for(int i=0; i<P.getTotalNum(); i++)
       {
-        t1 = -OneOver2M*( P.L[i] + dot(P.G[i],P.G[i]) );
+        t1 = P.L[i] + dot(P.G[i],P.G[i]);
+        t1 = clambda*t1;
         T_samp(i) = real(t1);
         T_samp_comp(i) = t1;
         for(int d=0; d<DIM; ++d)
@@ -241,7 +243,9 @@ struct BareKineticEnergy: public QMCHamiltonianBase
         T mlambda = MinusOver2M[s];
         for(int i=P.first(s); i<P.last(s); ++i)
         {
-          t1 = mlambda*( P.L[i] + dot(P.G[i],P.G[i]) );
+          //t1 = mlambda*( P.L[i] + dot(P.G[i],P.G[i]) );
+          t1 =  P.L[i] + dot(P.G[i],P.G[i]);
+          t1 *= mlambda;
           T_samp(i) = real(t1);
           T_samp_comp(i) = t1;
           for(int d=0; d<DIM; ++d)

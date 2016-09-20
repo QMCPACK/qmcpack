@@ -218,7 +218,8 @@ public:
   /** evalaute the log of the trial wave function */
   RealType evaluateLog(ParticleSet& P);
   
-
+  /** recompute the value of the orbitals which require critical accuracy */
+  void recompute(ParticleSet& P);
 
   RealType evaluateDeltaLog(ParticleSet& P, bool recompute=false);
 
@@ -257,6 +258,9 @@ public:
   RealType ratio(ParticleSet& P, int iat,
                  ParticleSet::ParticleGradient_t& dG,
                  ParticleSet::ParticleLaplacian_t& dL);
+
+  void printGL(ParticleSet::ParticleGradient_t& G,
+               ParticleSet::ParticleLaplacian_t& L, std::string tag = "GL");
 
   /** Returns the logarithmic gradient of the trial wave function
    *  with respect to the iat^th atom of the source ParticleSet. */
@@ -364,6 +368,9 @@ private:
 
   ///starting index of the buffer
   size_t BufferCursor;
+
+  ///starting index of the buffer DP
+  size_t BufferCursor_DP;
 
   ///sign of the trial wave function
   RealType PhaseValue;

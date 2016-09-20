@@ -117,8 +117,8 @@ ZeroVarianceForce::evaluate(ParticleSet& P)
 {
   forces = forces_IonIon;
   const DistanceTableData* d_ab=P.DistTables[myTableIndex];
-  const real_type* restrict Zat=Ions.Z.first_address();
-  const real_type* restrict Qat=P.Z.first_address();
+  const ParticleScalar_t* restrict Zat=Ions.Z.first_address();
+  const ParticleScalar_t* restrict Qat=P.Z.first_address();
   //Loop over distinct eln-ion pairs
   for(int iat=0; iat<Nnuc; iat++)
   {

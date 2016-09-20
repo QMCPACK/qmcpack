@@ -44,39 +44,42 @@ namespace MatrixOperators
    *
    * Call dgemm
    */
-  inline void product(const Matrix<double>& A,
-                      const Matrix<double>& B, Matrix<double>& C)
+  template<typename T>
+  inline void product(const Matrix<T>& A,
+                      const Matrix<T>& B, Matrix<T>& C)
   {
     const char transa = 'N';
     const char transb = 'N';
-    const double one=1.0;
-    const double zero=0.0;
-    dgemm(transa, transb, B.cols(), A.rows(), B.rows(),
+    const T one=1.0;
+    const T zero=0.0;
+    BLAS::gemm(transa, transb, B.cols(), A.rows(), B.rows(),
           one, B.data(), B.cols(), A.data(), A.cols(),
           zero, C.data(), C.cols());
   }
 
 
-  inline void product_ABt(const Matrix<double>& A,
-      const Matrix<double >& B, Matrix<double >& C)
+  template<typename T>
+  inline void product_ABt(const Matrix<T>& A,
+      const Matrix<T>& B, Matrix<T>& C)
   {
     const char transa = 't';
     const char transb = 'n';
-    const double zone(1.0);
-    const double zero(0.0);
-    dgemm(transa, transb, B.rows(), A.rows(), B.cols(),
+    const T zone(1.0);
+    const T zero(0.0);
+    BLAS::gemm(transa, transb, B.rows(), A.rows(), B.cols(),
         zone, B.data(), B.cols(), A.data(), A.cols(),
         zero, C.data(), C.cols());
   }
 
-  inline void product_AtB(const Matrix<double>& A,
-      const Matrix<double >& B, Matrix<double >& C)
+  template<typename T>
+  inline void product_AtB(const Matrix<T>& A,
+      const Matrix<T >& B, Matrix<T >& C)
   {
     const char transa = 'n';
     const char transb = 't';
-    const double zone(1.0);
-    const double zero(0.0);
-    dgemm(transa, transb, B.cols(), A.cols(), B.rows(),
+    const T zone(1.0);
+    const T zero(0.0);
+    BLAS::gemm(transa, transb, B.cols(), A.cols(), B.rows(),
         zone, B.data(), B.cols(), A.data(), A.cols(),
         zero, C.data(), C.cols());
   }
@@ -228,48 +231,50 @@ namespace MatrixOperators
 
   /** static function to perform y=Ax for generic matrix and vector
    */
-  inline void product(const Matrix<double>& A, const Vector<double>& x, double* restrict yptr)
+  template<typename T>
+  inline void product(const Matrix<T>& A, const Vector<T>& x, T* restrict yptr)
   {
     const char transa = 'T';
-    const double one=1.0;
-    const double zero=0.0;
-    dgemv(transa, A.cols(), A.rows(), one, A.data(), A.cols(), x.data(), 1, zero, yptr, 1);
+    const T one=1.0;
+    const T zero=0.0;
+    BLAS::gemv(transa, A.cols(), A.rows(), one, A.data(), A.cols(), x.data(), 1, zero, yptr, 1);
   }
 
   /** static function to perform y=Ax for generic matrix and vector
    */
-  inline void product(const Matrix<double>& A, const double* restrict xptr, double* restrict yptr)
+  template<typename T>
+  inline void product(const Matrix<T>& A, const T* restrict xptr, T* restrict yptr)
   {
     const char transa = 'T';
-    const double one=1.0;
-    const double zero=0.0;
-    dgemv(transa, A.cols(), A.rows(), one, A.data(), A.cols(), xptr, 1, zero, yptr, 1);
+    const T one=1.0;
+    const T zero=0.0;
+    BLAS::gemv(transa, A.cols(), A.rows(), one, A.data(), A.cols(), xptr, 1, zero, yptr, 1);
   }
 
   /** static function to perform y=Ax for generic matrix and vector
    */
-  template<unsigned D>
-    inline void product(const Matrix<double>& A, const TinyVector<double,D>* xvPtr,
-                        TinyVector<double,D>* restrict yptr)
+  template<typename T, unsigned D>
+    inline void product(const Matrix<T>& A, const TinyVector<T,D>* xvPtr,
+                        TinyVector<T,D>* restrict yptr)
   {
-    const double one=1.0;
-    const double zero=0.0;
+    const T one=1.0;
+    const T zero=0.0;
     const char transa = 'N';
     const char transb = 'N';
-    dgemm(transa, transb, D, A.rows(), A.cols(),
+    BLAS::gemm(transa, transb, D, A.rows(), A.cols(),
           one, xvPtr->begin(), D, A.data(), A.cols(),
           zero, yptr->begin(), D);
   }
 
-  template<unsigned D>
-    inline void product(const Matrix<double>& A, const Tensor<double,D>* xvPtr,
-                        Tensor<double,D>* restrict yptr)
+  template<typename T, unsigned D>
+    inline void product(const Matrix<T>& A, const Tensor<T,D>* xvPtr,
+                        Tensor<T,D>* restrict yptr)
   {
-    const double one=1.0;
-    const double zero=0.0;
+    const T one=1.0;
+    const T zero=0.0;
     const char transa = 'N';
     const char transb = 'N';
-    dgemm(transa, transb, D*D, A.rows(), A.cols(),
+    BLAS::gemm(transa, transb, D*D, A.rows(), A.cols(),
           one, xvPtr->begin(), D*D, A.data(), A.cols(),
           zero, yptr->begin(), D*D);
   }

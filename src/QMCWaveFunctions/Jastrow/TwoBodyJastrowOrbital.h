@@ -585,7 +585,7 @@ public:
         U[ji]=u;
         //dU[ij] = gr; dU[ji] = -1.0*gr;
         dU[ij] = gr;
-        dU[ji] = gr*-1.0;
+        dU[ji] = gr*(RealType)(-1.0);
         d2U[ij] = -lap;
         d2U[ji] = -lap;
         //add gradient and laplacian contribution

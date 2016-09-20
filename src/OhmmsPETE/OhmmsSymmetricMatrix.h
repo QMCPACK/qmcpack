@@ -283,7 +283,7 @@ inline void evaluate(SymmetricMatrix<T, C> &lhs, const Op &op,
   }
   else
   {
-    std::cerr << "Error: LHS and RHS don't conform." << std::endl;
+    std::cerr << "Error: LHS and RHS don't conform in OhmmsSymmetricMatrix." << std::endl;
     exit(1);
   }
 }

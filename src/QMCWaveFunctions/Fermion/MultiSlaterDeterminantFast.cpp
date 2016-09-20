@@ -202,7 +202,7 @@ OrbitalBase::ValueType MultiSlaterDeterminantFast::evaluate(ParticleSet& P
     upC++;
     dnC++;
   }
-  ValueType psiinv = 1.0/psiCurrent;
+  ValueType psiinv = (RealType)1.0/psiCurrent;
   myG *= psiinv;
   myL *= psiinv;
   G += myG;
@@ -270,7 +270,7 @@ OrbitalBase::RealType MultiSlaterDeterminantFast::evaluateLog(ParticleSet& P,
     upC++;
     dnC++;
   }
-  ValueType psiinv = 1.0/psiCurrent;
+  ValueType psiinv = (RealType)1.0/psiCurrent;
   myG *= psiinv;
   myL *= psiinv;
   G += myG;
@@ -305,7 +305,7 @@ OrbitalBase::GradType MultiSlaterDeterminantFast::evalGrad(ParticleSet& P, int i
       upC++;
       dnC++;
     }
-    grad_iat *= 1.0/psi;
+    grad_iat *= (RealType)1.0/psi;
     return grad_iat;
   }
   else
@@ -326,7 +326,7 @@ OrbitalBase::GradType MultiSlaterDeterminantFast::evalGrad(ParticleSet& P, int i
       upC++;
       dnC++;
     }
-    grad_iat *= 1.0/psi;
+    grad_iat *= (RealType)1.0/psi;
     return grad_iat;
   }
 }
@@ -458,7 +458,7 @@ OrbitalBase::ValueType  MultiSlaterDeterminantFast::ratio(ParticleSet& P, int ia
       upC++;
       dnC++;
     }
-    ValueType psiNinv=1.0/psiNew;
+    ValueType psiNinv=(RealType)1.0/psiNew;
     myG_temp *= psiNinv;
     myL_temp *= psiNinv;
     dG += myG_temp-myG;
@@ -507,7 +507,7 @@ OrbitalBase::ValueType  MultiSlaterDeterminantFast::ratio(ParticleSet& P, int ia
       upC++;
       dnC++;
     }
-    ValueType psiNinv=1.0/psiNew;
+    ValueType psiNinv=(RealType)1.0/psiNew;
     myG_temp *= psiNinv;
     myL_temp *= psiNinv;
     dG += myG_temp-myG;
@@ -727,7 +727,7 @@ OrbitalBase::RealType MultiSlaterDeterminantFast::updateBuffer(ParticleSet& P, B
     upC++;
     dnC++;
   }
-  ValueType psiinv = 1.0/psiCurrent;
+  ValueType psiinv = (RealType)1.0/psiCurrent;
   myG *= psiinv;
   myL *= psiinv;
   P.G += myG;
@@ -858,7 +858,7 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
       int NP2 = Dets[1]->NumPtcls;
 // myG,myL should already be calculated
       int n = P.getTotalNum();
-      ValueType psiinv = 1.0/psiCurrent;
+      ValueType psiinv = (RealType)1.0/psiCurrent;
       ValueType lapl_sum=0.0;
       ValueType gg=0.0, ggP=0.0;
       myG_temp=0.0;
@@ -924,13 +924,13 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
           cdet+=CSFexpansion[cnt]*detValues_up[upC]*detValues_dn[dnC]*psiinv;
           q0 += (tmp1*laplSum_up[upC] + tmp2*laplSum_dn[dnC]);
           for(int l=0,j=N1; l<NP1; l++,j++)
-            v1 += tmp1*(dot(P.G[j],grads_up(upC,l))-dot(myG_temp[j],grads_up(upC,l)) );
+            v1 += tmp1*static_cast<ValueType>(dot(P.G[j],grads_up(upC,l))-dot(myG_temp[j],grads_up(upC,l)));
           for(int l=0,j=N2; l<NP2; l++,j++)
-            v2 += tmp2*(dot(P.G[j],grads_dn(dnC,l))-dot(myG_temp[j],grads_dn(dnC,l)));
+            v2 += tmp2*static_cast<ValueType>(dot(P.G[j],grads_dn(dnC,l))-dot(myG_temp[j],grads_dn(dnC,l)));
           cnt++;
         }
         convert(cdet,dlogpsi[kk]);
-        ValueType dhpsi =  -0.5*(q0-cdet*lapl_sum)
+        ValueType dhpsi =  (RealType)-0.5*(q0-cdet*lapl_sum)
                            -cdet*gg-v1-v2;
         //ValueType dhpsi =  -0.5*(tmp1*laplSum_up[upC]+tmp2*laplSum_dn[dnC]
         //                         -cdet*lapl_sum)
@@ -959,7 +959,7 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
       int NP1 = Dets[0]->NumPtcls;
       int NP2 = Dets[1]->NumPtcls;
       int n = P.getTotalNum();
-      ValueType psiinv = 1.0/psiCurrent;
+      ValueType psiinv = (RealType)1.0/psiCurrent;
       ValueType lapl_sum=0.0;
       ValueType gg=0.0, ggP=0.0;
       myG_temp=0.0;
@@ -1017,7 +1017,7 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
           v1 += (dot(P.G[j],grads_up(upC,k))-dot(myG_temp[j],grads_up(upC,k)) );
         for(int k=0,j=N2; k<NP2; k++,j++)
           v2 += (dot(P.G[j],grads_dn(dnC,k))-dot(myG_temp[j],grads_dn(dnC,k)));
-        ValueType dhpsi =  -0.5*(tmp1*laplSum_up[upC]+tmp2*laplSum_dn[dnC]
+        ValueType dhpsi =  (RealType)-0.5*(tmp1*laplSum_up[upC]+tmp2*laplSum_dn[dnC]
                                  -cdet*lapl_sum)
                            -cdet*gg-(tmp1*v1+tmp2*v2);
         convert(dhpsi,dhpsioverpsi[kk]);

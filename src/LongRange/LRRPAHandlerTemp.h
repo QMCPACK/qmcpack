@@ -35,28 +35,29 @@ namespace qmcplusplus
  * LRHandlerBase is introduced to enable run-time options. See RPAContstraints.h
  */
 template<class Func, class BreakupBasis=LPQHIBasis>
-class LRRPAHandlerTemp: public LRHandlerBase
+struct LRRPAHandlerTemp: public LRHandlerBase
 {
 
-public:
+  DECLARE_COULOMB_TYPES
+
   //Typedef for the lattice-type.
   typedef ParticleSet::ParticleLayout_t ParticleLayout_t;
   typedef BreakupBasis BreakupBasisType;
 
   bool FirstTime;
-  RealType rs;
-  RealType kc;
+  mRealType rs;
+  mRealType kc;
   BreakupBasisType Basis; //This needs a Lattice for the constructor...
   Func myFunc;
 
   //Constructor
-  LRRPAHandlerTemp(ParticleSet& ref, RealType kc_in=-1.0):
+  LRRPAHandlerTemp(ParticleSet& ref, mRealType kc_in=-1.0):
     LRHandlerBase(kc_in),FirstTime(true), Basis(ref.Lattice)
   {
     myFunc.reset(ref);
   }
 
-  //LRHandlerTemp(ParticleSet& ref, RealType rs, RealType kc=-1.0): LRHandlerBase(kc), Basis(ref.Lattice)
+  //LRHandlerTemp(ParticleSet& ref, mRealType rs, mRealType kc=-1.0): LRHandlerBase(kc), Basis(ref.Lattice)
   //{
   //  myFunc.reset(ref,rs);
   //}
@@ -87,13 +88,13 @@ public:
     LR_rc=Basis.get_rc();
   }
 
-  void Breakup(ParticleSet& ref, RealType rs_ext)
+  void Breakup(ParticleSet& ref, mRealType rs_ext)
   {
     //ref.Lattice.Volume=ref.getTotalNum()*4.0*M_PI/3.0*rs*rs*rs;
     if(rs_ext>0)
       rs=rs_ext;
     else
-      rs = std::pow(3.0/4.0/M_PI*ref.Lattice.Volume/static_cast<RealType>(ref.getTotalNum()) ,1.0/3.0);
+      rs = std::pow(3.0/4.0/M_PI*ref.Lattice.Volume/static_cast<mRealType>(ref.getTotalNum()) ,1.0/3.0);
     myFunc.reset(ref,rs);
     InitBreakup(ref.Lattice,1);
     fillFk(ref.SK->KLists);
@@ -105,14 +106,14 @@ public:
     myFunc.reset(ref);
   }
 
-  void resetTargetParticleSet(ParticleSet& ref, RealType rs)
+  void resetTargetParticleSet(ParticleSet& ref, mRealType rs)
   {
     myFunc.reset(ref,rs);
   }
 
-  inline RealType evaluate(RealType r, RealType rinv)
+  inline mRealType evaluate(mRealType r, mRealType rinv)
   {
-    RealType v=0.0;
+    mRealType v=0.0;
     for(int n=0; n<coefs.size(); n++)
       v += coefs[n]*Basis.h(n,r);
     return v;
@@ -123,10 +124,10 @@ public:
    * @param r  radius
    * @param rinv 1/r
    */
-  inline RealType srDf(RealType r, RealType rinv)
+  inline mRealType srDf(mRealType r, mRealType rinv)
   {
-    RealType df = 0.0;
-    //RealType df = myFunc.df(r, rinv);
+    mRealType df = 0.0;
+    //mRealType df = myFunc.df(r, rinv);
     for(int n=0; n<coefs.size(); n++)
       df += coefs[n]*Basis.df(n,r);
     return df;
@@ -135,9 +136,9 @@ public:
 
   /** evaluate the contribution from the long-range part for for spline
    */
-  inline RealType evaluateLR(RealType r)
+  inline mRealType evaluateLR(mRealType r)
   {
-    RealType vk=0.0;
+    mRealType vk=0.0;
     return vk;
 //       for(int n=0; n<coefs.size(); n++) v -= coefs[n]*Basis.h(n,r);
   }
@@ -149,13 +150,13 @@ public:
    *
    * Valid for the strictly ordered k and \f$F_{k}\f$.
    */
-  inline RealType evaluate(const std::vector<int>& kshell,
-                           const ComplexType* restrict rk1, const ComplexType* restrict rk2)
+  inline mRealType evaluate(const std::vector<int>& kshell,
+                           const pComplexType* restrict rk1, const pComplexType* restrict rk2)
   {
-    RealType vk=0.0;
+    mRealType vk=0.0;
     for(int ks=0,ki=0; ks<MaxKshell; ks++)
     {
-      RealType u=0;
+      mRealType u=0;
       for(; ki<kshell[ks+1]; ki++,rk1++,rk2++)
         u += ((*rk1).real()*(*rk2).real()+(*rk1).imag()*(*rk2).imag());
       vk += Fk_symm[ks]*u;
@@ -169,18 +170,18 @@ public:
 
 private:
 
-  inline RealType evalFk(RealType k)
+  inline mRealType evalFk(mRealType k)
   {
     //FatK = 4.0*M_PI/(Basis.get_CellVolume()*k*k)* std::cos(k*Basis.get_rc());
-    RealType FatK=myFunc.Fk(k,Basis.get_rc());
+    mRealType FatK=myFunc.Fk(k,Basis.get_rc());
     for(int n=0; n<Basis.NumBasisElem(); n++)
       FatK += coefs[n]*Basis.c(n,k);
     return FatK;
   }
 
-  inline RealType evalXk(RealType k)
+  inline mRealType evalXk(mRealType k)
   {
-    //RealType FatK;
+    //mRealType FatK;
     //FatK = -4.0*M_PI/(Basis.get_CellVolume()*k*k)* std::cos(k*Basis.get_rc());
     //return (FatK);
     return myFunc.Xk(k,Basis.get_rc());
@@ -207,15 +208,15 @@ private:
 //       std::cout<<" finding kc:  "<<ref.LR_kc<<" , "<<LR_kc<< std::endl;
     //Find size of basis from cutoffs
     kc = (LR_kc<0)?ref.LR_kc:LR_kc;
-    //RealType kc(ref.LR_kc); //User cutoff parameter...
+    //mRealType kc(ref.LR_kc); //User cutoff parameter...
     //kcut is the cutoff for switching to approximate k-point degeneracies for
     //better performance in making the breakup. A good bet is 30*K-spacing so that
     //there are 30 "boxes" in each direction that are treated with exact degeneracies.
     //Assume orthorhombic cell just for deriving this cutoff - should be insensitive.
     //K-Spacing = (kpt_vol)**1/3 = 2*pi/(cellvol**1/3)
-    RealType kcut = (30.0)*2*M_PI*std::pow(Basis.get_CellVolume(),-1.0/3.0);
+    mRealType kcut = (30.0)*2*M_PI*std::pow(Basis.get_CellVolume(),-1.0/3.0);
     //Use 3000/LMax here...==6000/rc for non-ortho cells
-    RealType kmax(6000.0/ref.LR_rc);
+    mRealType kmax(6000.0/ref.LR_rc);
 //       std::cout<<"K_STATS !!!  "<<kcut<<"  "<<kmax<<std::endl;
     MaxKshell = static_cast<int>(breakuphandler.SetupKVecs(kc,kcut,kmax));
     if(FirstTime)
@@ -236,12 +237,12 @@ private:
     breakuphandler.DoBreakup(Fk.data(),coefs.data()); //Fill array of coefficients.
   }
 
-  void fillXk(std::vector<TinyVector<RealType,2> >& KList)
+  void fillXk(std::vector<TinyVector<mRealType,2> >& KList)
   {
     Fk.resize(KList.size());
     for(int ki=0; ki<KList.size(); ki++)
     {
-      RealType k=KList[ki][0];
+      mRealType k=KList[ki][0];
       Fk[ki] = evalXk(k); //Call derived fn.
     }
   }
@@ -256,15 +257,15 @@ private:
 //       std::cout<<"Filling FK :"<<std::endl;
     for(int ks=0,ki=0; ks<Fk_symm.size(); ks++)
     {
-      RealType k=std::pow(KList.ksq[ki],0.5);
-      RealType uk=-1.0*evalFk(k);
+      mRealType k=std::pow(KList.ksq[ki],0.5);
+      mRealType uk=-1.0*evalFk(k);
       Fk_symm[ks]=uk;
 //         std::cout<<uk<<std::endl;
       while(ki<KList.kshell[ks+1] && ki<Fk.size())
         Fk[ki++]=uk;
     }
     //for(int ki=0; ki<KList.kpts_cart.size(); ki++){
-    //  RealType k=dot(KList.kpts_cart[ki],KList.kpts_cart[ki]);
+    //  mRealType k=dot(KList.kpts_cart[ki],KList.kpts_cart[ki]);
     //  k=std::sqrt(k);
     //  Fk[ki] = evalFk(k); //Call derived fn.
     //}

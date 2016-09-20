@@ -138,8 +138,8 @@ EinsplineSetBuilder::ReadOrbitalInfo()
     std::string MTgroup = MTstream.str();
     HDFAttribIO<int> h_lmax(MT_APW_lmax[tin]),
                 h_num_radial_points(MT_APW_num_radial_points[tin]);
-    HDFAttribIO<RealType> h_radius (MT_APW_radii[tin]);
-    HDFAttribIO<PosType> h_center (MT_centers[tin]);
+    HDFAttribIO<double> h_radius (MT_APW_radii[tin]);
+    HDFAttribIO<TinyVector<double, OHMMS_DIM> > h_center (MT_centers[tin]);
     HDFAttribIO<Vector<double> > h_rgrid (MT_APW_rgrids[tin]);
     h_lmax.read              (H5FileID, (MTgroup+"/lmax").c_str());
     h_num_radial_points.read (H5FileID, (MTgroup+"/num_radial_points").c_str());
@@ -165,8 +165,10 @@ EinsplineSetBuilder::ReadOrbitalInfo()
       path << eigenstatesGroup << "/twist_" << ti << "/twist_angle";
     else
       path << eigenstatesGroup << "/twist/twist_angle";
-    HDFAttribIO<PosType> h_Twist(TwistAngles[ti]);
+    TinyVector<double, OHMMS_DIM> TwistAngles_DP;
+    HDFAttribIO<TinyVector<double, OHMMS_DIM> > h_Twist(TwistAngles_DP);
     h_Twist.read (H5FileID, path.str().c_str());
+    TwistAngles[ti] = TwistAngles_DP;
     snprintf (buff, 1000, "  Found twist angle (%6.3f, %6.3f, %6.3f)\n",
               TwistAngles[ti][0], TwistAngles[ti][1], TwistAngles[ti][2]);
     app_log() << buff;
@@ -180,10 +182,11 @@ EinsplineSetBuilder::ReadOrbitalInfo()
   {
     HDFAttribIO<std::vector<TinyVector<int,OHMMS_DIM> > >
     h_reduced_gvecs(TargetPtcl.DensityReducedGvecs);
-    HDFAttribIO<Array<RealType,OHMMS_DIM> >
-    h_density_r (TargetPtcl.Density_r);
+    Array<double, OHMMS_DIM> Density_r_DP;
+    HDFAttribIO<Array<double, OHMMS_DIM> >  h_density_r (Density_r_DP);
     h_reduced_gvecs.read (H5FileID, "/density/reduced_gvecs");
     h_density_r.read (H5FileID,     "/density/rho_r");
+    TargetPtcl.Density_r = Density_r_DP;
     int numG = TargetPtcl.DensityReducedGvecs.size();
     // Convert primitive G-vectors to supercell G-vectors
     for (int iG=0; iG < numG; iG++)
@@ -193,8 +196,10 @@ EinsplineSetBuilder::ReadOrbitalInfo()
     if (TargetPtcl.DensityReducedGvecs.size())
     {
       app_log() << "  EinsplineSetBuilder found density in the HDF5 file.\n";
-      HDFAttribIO<std::vector<ComplexType > > h_density_G (TargetPtcl.Density_G);
+      std::vector<std::complex<double> > Density_G_DP;
+      HDFAttribIO<std::vector<std::complex<double> > > h_density_G (Density_G_DP);
       h_density_G.read (H5FileID, "/density/rho_G");
+      TargetPtcl.Density_G.assign(Density_G_DP.begin(),Density_G_DP.end());
       if (!TargetPtcl.Density_G.size())
       {
         app_error() << "  Density reduced G-vectors defined, but not the"

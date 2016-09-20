@@ -48,6 +48,7 @@ struct OneDimGridBase
   value_type upper_bound;
   ///differential spacing of the grid
   value_type Delta;
+  double     DeltaInv;
   value_type dL;
   value_type dLinv;
   value_type cL;
@@ -307,10 +308,8 @@ struct LinearGrid: public OneDimGridBase<T,CT>
   using OneDimGridBase<T,CT>::lower_bound;
   using OneDimGridBase<T,CT>::upper_bound;
   using OneDimGridBase<T,CT>::Delta;
+  using OneDimGridBase<T,CT>::DeltaInv;
   using OneDimGridBase<T,CT>::X;
-
-  // T Delta;
-  T DeltaInv;
 
   OneDimGridBase<T,CT>* makeClone() const
   {
@@ -319,7 +318,7 @@ struct LinearGrid: public OneDimGridBase<T,CT>
 
   inline void locate(T r)
   {
-    Loc = static_cast<int>((r-X[0])*DeltaInv);
+    Loc = static_cast<int>((static_cast<double>(r)-X[0])*DeltaInv);
   }
 
   inline void set(T ri, T rf, int n)
@@ -330,11 +329,11 @@ struct LinearGrid: public OneDimGridBase<T,CT>
     num_points=n;
     // Delta is the differential spacing
     X.resize(n);
-    Delta = (rf-ri)/static_cast<T>(n-1);
-    DeltaInv = 1.0/Delta;
-    X[0] = ri;
-    for(int i=0; i<n-1; i++)
-      X[i+1] = X[i]+Delta;
+    double Delta_DP = (static_cast<double>(rf)-static_cast<double>(ri))/static_cast<double>(n-1);
+    Delta = Delta_DP;
+    DeltaInv = 1.0/Delta_DP;
+    for(int i=0; i<n; i++)
+      X[i] = ri+Delta_DP*i;
   }
 
 };

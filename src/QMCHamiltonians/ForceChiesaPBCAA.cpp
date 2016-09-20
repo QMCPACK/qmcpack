@@ -80,10 +80,10 @@ void ForceChiesaPBCAA::InitMatrix()
   c.resize(N_basis);
   for(int k=0; k<N_basis; k++)
   {
-    h[k] = std::pow(Rcut, (k+2))/static_cast<double>(k+2);
+    h[k] = std::pow(Rcut, (k+2))/static_cast<RealType>(k+2);
     for(int j=0; j<N_basis; j++)
     {
-      Sinv(k,j) = std::pow(Rcut, (m_exp+k+j+3))/static_cast<double>(m_exp+k+j+3);
+      Sinv(k,j) = std::pow(Rcut, (m_exp+k+j+3))/static_cast<RealType>(m_exp+k+j+3);
     }
   }
   // in Numerics/DeterminantOperators.h

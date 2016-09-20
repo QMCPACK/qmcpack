@@ -248,7 +248,7 @@ public:
    * @param bs pointer to the BasisSet
    * @param id identifier of thisLCOrbitalSetWithCorrection
    */
-  LCOrbitalSetWithCorrection(BS* bs=0, ParticleSet* els=0, ParticleSet* ions=0, int rl=0, double rc=-1.0, std::string cusp_info="", std::string algorithm=""): myBasisSet(0),corrBasisSet(0),targetPtcl(els),sourcePtcl(ions),ReportLevel(rl),Rcut(rc),cuspInfoFile(cusp_info)
+  LCOrbitalSetWithCorrection(BS* bs=0, ParticleSet* els=0, ParticleSet* ions=0, int rl=0, RealType rc=-1.0, std::string cusp_info="", std::string algorithm=""): myBasisSet(0),corrBasisSet(0),targetPtcl(els),sourcePtcl(ions),ReportLevel(rl),Rcut(rc),cuspInfoFile(cusp_info)
   {
     if(algorithm=="legacy_gemv")
     {
@@ -692,8 +692,8 @@ private:
 
   BS* extractHighYLM(std::vector<bool> &rmv);
   LCOrbitalSet<BS,false>* originalSPOSet;
-  double Rcut;
-  std::vector<double> Z;
+  RealType Rcut;
+  std::vector<RealType> Z;
   std::string cuspInfoFile;
 
   void createLCOSets(int centr, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta);
