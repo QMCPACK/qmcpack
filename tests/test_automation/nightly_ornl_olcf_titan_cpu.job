@@ -76,7 +76,7 @@ case $sys in
     fi
 
     module load cray-hdf5
-    module load cmake
+    module load cmake/2.8.11.2
     module load fftw
     export FFTW_HOME=$FFTW_DIR/..
     module load boost
@@ -97,7 +97,7 @@ case $sys in
     fi
 
     module load cray-hdf5
-    module load cmake
+    module load cmake/2.8.11.2
     module load fftw
     export FFTW_HOME=$FFTW_DIR/..
     module load boost
@@ -112,7 +112,7 @@ case $sys in
 
     module load cudatoolkit
     module load cray-hdf5
-    module load cmake
+    module load cmake/2.8.11.2
     module load fftw
     export FFTW_HOME=$FFTW_DIR/..
     module load boost
