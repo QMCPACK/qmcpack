@@ -517,7 +517,10 @@ ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ)
   if (UseBoundBox)
   {
     if (Lattice.outOfBound(Lattice.toUnit(displ)))
+    {
+      myTimers[0]->stop();
       return false;
+    }
     activePos=R[iat]; //save the current position
     SingleParticlePos_t newpos(activePos+displ);
     newRedPos=Lattice.toUnit(newpos);
