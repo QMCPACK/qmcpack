@@ -28,6 +28,7 @@
 #include "HDFVersion.h"
 #include <qmc_common.h>
 #include <limits>
+#include <typeinfo>
 
 #include <ADIOS/ADIOS_config.cpp>
 #ifdef HAVE_ADIOS
@@ -574,11 +575,26 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
   }
   //set the minimum blocks
   if (nBlocks<1) nBlocks=1;
-  // by default call recomputePsi at the end of each block.
+  // by default call recompute at the end of each block in the mixed precision case.
+#ifdef QMC_CUDA
+  if (typeid(CudaRealType) == typeid(float))
+  {
+    // gpu mixed precision
+    if(nBlocksBetweenRecompute < 0) nBlocksBetweenRecompute = 1;
+  }
+  else if (typeid(CudaRealType) == typeid(double))
+  {
+    // gpu double precision
+    if(nBlocksBetweenRecompute < 0) nBlocksBetweenRecompute = 0;
+  }
+#else
 #ifdef MIXED_PRECISION
+  // cpu mixed precision
   if(nBlocksBetweenRecompute < 0) nBlocksBetweenRecompute = 1;
 #else
+  // cpu double precision
   if(nBlocksBetweenRecompute < 0) nBlocksBetweenRecompute = 0;
+#endif
 #endif
 
   DumpConfig=(Period4CheckPoint>=0);

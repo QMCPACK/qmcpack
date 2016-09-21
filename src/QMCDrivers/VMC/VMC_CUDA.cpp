@@ -147,7 +147,7 @@ bool VMCcuda::run()
       Estimators->accumulate(W);
     }
     while(step<nSteps);
-    Psi.recompute(W);
+    if ( nBlocksBetweenRecompute && (1+block)%nBlocksBetweenRecompute == 0 ) Psi.recompute(W);
     if(forOpt)
     {
       d_logpsi_dalpha=0.0;
@@ -322,7 +322,7 @@ bool VMCcuda::runWithDrift()
       Estimators->accumulate(W);
     }
     while(step<nSteps);
-    Psi.recompute(W);
+    if ( nBlocksBetweenRecompute && (1+block)%nBlocksBetweenRecompute == 0 ) Psi.recompute(W);
     if(forOpt)
     {
       d_logpsi_dalpha=0.0;
