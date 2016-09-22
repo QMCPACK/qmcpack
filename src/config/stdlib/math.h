@@ -33,7 +33,7 @@
 template<typename T> inline T round(T x)
 {
   T dmy;
-  x=modf(x,&dmy);
+  x=std::modf(x,&dmy);
   return x-static_cast<int>(x*2.0);
 }
 #endif
