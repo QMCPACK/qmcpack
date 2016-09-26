@@ -1024,11 +1024,8 @@ class PwscfInput(SimulationInput):
         ndn = p.down_electron.count
 
         self.system.ibrav        = 0
-        if 'celldm(1)' in self.system:
-            scale = self.system['celldm(1)']
-        else:
-            scale = 1.0e0
-            self.system['celldm(1)'] = scale
+        if 'celldm(1)' not in self.system:
+            self.system['celldm(1)'] = 1.0e0
         #end if
         nions,nspecies = p.count_ions(species=True)
         self.system.nat          = nions
@@ -1081,7 +1078,7 @@ class PwscfInput(SimulationInput):
         #end for
 
         self.atomic_positions.specifier = 'alat'
-        self.atomic_positions.positions = s.pos.copy()*scale
+        self.atomic_positions.positions = s.pos.copy()
         self.atomic_positions.atoms     = list(s.elem)
         if s.frozen!=None:
             frozen = s.frozen
