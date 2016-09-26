@@ -143,6 +143,7 @@ from superstring import string2val
 from generic import obj,hidden
 from xmlreader import XMLreader,XMLelement
 from developer import DevBase
+from periodic_table import is_element
 from structure import Structure,Jellium
 from physical_system import PhysicalSystem
 from simulation import SimulationInput,SimulationInputTemplate
@@ -4358,10 +4359,11 @@ def generate_hamiltonian(name         = 'h0',
                 #end if
                 pseudos = collection()
                 for ion in ions:
-                    if not ion.name in ppfiles:
-                        QmcpackInput.class_error('pseudos provided to generate_hamilonian are incomplete\n  a pseudopotential for ion of type {0} is missing\n  pseudos provided:\n{1}'.format(ion.name,str(ppfiles)))
+                    iselem,ion_type = is_element(ion.name,symbol=True)
+                    if not ion_type in ppfiles:
+                        QmcpackInput.class_error('pseudos provided to generate_hamilonian are incomplete\n  a pseudopotential for ion of type {0} is missing\n  pseudos provided:\n{1}'.format(ion_type,str(ppfiles)))
                     #end if
-                    pseudos.add(pseudo(elementtype=ion.name,href=ppfiles[ion.name]))
+                    pseudos.add(pseudo(elementtype=ion.name,href=ppfiles[ion_type]))
                 #end for
                 pp = pseudopotential(name='PseudoPot',type='pseudo',source=iname,wavefunction=wfname,format=format,pseudos=pseudos)
                 pairpots.append(pp)
