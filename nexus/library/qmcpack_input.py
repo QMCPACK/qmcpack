@@ -4359,11 +4359,16 @@ def generate_hamiltonian(name         = 'h0',
                 #end if
                 pseudos = collection()
                 for ion in ions:
-                    iselem,ion_type = is_element(ion.name,symbol=True)
-                    if not ion_type in ppfiles:
-                        QmcpackInput.class_error('pseudos provided to generate_hamilonian are incomplete\n  a pseudopotential for ion of type {0} is missing\n  pseudos provided:\n{1}'.format(ion_type,str(ppfiles)))
+                    label = ion.name
+                    iselem,symbol = is_element(ion.name,symbol=True)
+                    if label in ppfiles:
+                        ppfile = ppfiles[label]
+                    elif symbol in ppfiles:
+                        ppfile = ppfiles[symbol]
+                    else:
+                        QmcpackInput.class_error('pseudos provided to generate_hamiltonian are incomplete\n  a pseudopotential for ion of type {0} is missing\n  pseudos provided:\n{1}'.format(ion.name,str(ppfiles)))
                     #end if
-                    pseudos.add(pseudo(elementtype=ion.name,href=ppfiles[ion_type]))
+                    pseudos.add(pseudo(elementtype=label,href=ppfile))
                 #end for
                 pp = pseudopotential(name='PseudoPot',type='pseudo',source=iname,wavefunction=wfname,format=format,pseudos=pseudos)
                 pairpots.append(pp)
@@ -4632,7 +4637,7 @@ def generate_jastrow1(function='bspline',size=8,rcut=None,coeff=None,cusp=0.,ena
     noelemargs = len(elemargs)==0
     isopen     = False
     isperiodic = False
-    rinscribe = 1e99
+    rwigner = 1e99
     if noelements and nosystem and noelemargs:
         QmcpackInput.class_error('must specify elements or system','generate_jastrow1')
     #end if
@@ -4644,7 +4649,7 @@ def generate_jastrow1(function='bspline',size=8,rcut=None,coeff=None,cusp=0.,ena
         isopen     = system.structure.is_open()
         isperiodic = system.structure.is_periodic()
         if not isopen and isperiodic:
-            rinscribe = system.structure.rinscribe()
+            rwigner = system.structure.rwigner()
         #end if
     #end if
     if not noelemargs:
@@ -4696,14 +4701,14 @@ def generate_jastrow1(function='bspline',size=8,rcut=None,coeff=None,cusp=0.,ena
                 )
             )            
         if lrcut!=None:
-            if isperiodic and lrcut>rinscribe:
-                QmcpackInput.class_error('rcut must not be greater than the simulation cell incribing radius\nyou provided: {0}\nincribing radius: {1}'.format(lrcut,rinscribe),'generate_jastrow1')
+            if isperiodic and lrcut>rwigner:
+                QmcpackInput.class_error('rcut must not be greater than the simulation cell incribing radius\nyou provided: {0}\nincribing radius: {1}'.format(lrcut,rwigner),'generate_jastrow1')
                 
             corr.rcut = lrcut
         elif isopen:
             QmcpackInput.class_error('rcut must be provided for an open system','generate_jastrow1')
         elif isperiodic:
-            corr.rcut = rinscribe
+            corr.rcut = rwigner
         #end if
         corrs.append(corr)
     #end for
@@ -4733,7 +4738,7 @@ def generate_bspline_jastrow2(size=8,rcut=None,coeff=None,spins=('u','d'),densit
         isperiodic  = system.structure.is_periodic()
         allperiodic = system.structure.all_periodic()
         if not isopen and isperiodic:
-            rinscribe = system.structure.rinscribe()
+            rwigner = system.structure.rwigner()
         #end if
         volume = system.structure.volume()
         if isopen: 
@@ -4745,7 +4750,7 @@ def generate_bspline_jastrow2(size=8,rcut=None,coeff=None,spins=('u','d'),densit
             #end if
         else:
             if rcut is None and isperiodic:
-                rcut = rinscribe
+                rcut = rwigner
             #end if
             nelectrons = system.particles.count_electrons()
             density = nelectrons/volume
@@ -4783,8 +4788,8 @@ def generate_bspline_jastrow2(size=8,rcut=None,coeff=None,spins=('u','d'),densit
                     coefficients=section(id=udname,type='Array',coeff=coeff[1]))
         ]
     if rcut!=None:
-        if isperiodic and rcut>rinscribe:
-            QmcpackInput.class_error('rcut must not be greater than the simulation cell  incribing radius\nyou provided: {0}\nincribing radius: {1}'.format(rcut,rinscribe),'generate_jastrow2')
+        if isperiodic and rcut>rwigner:
+            QmcpackInput.class_error('rcut must not be greater than the simulation cell incribing radius\nyou provided: {0}\nincribing radius: {1}'.format(rcut,rwigner),'generate_jastrow2')
         #end if
         for corr in corrs:
             corr.rcut=rcut
@@ -5041,12 +5046,13 @@ def generate_qmcpack_input(selector,*args,**kwargs):
         #end if
     #end if
     if selector=='basic':
-        return generate_basic_input(**kwargs)
+        inp = generate_basic_input(**kwargs)
     elif selector=='opt_jastrow':
-        return generate_opt_jastrow_input(*args,**kwargs)
+        inp = generate_opt_jastrow_input(*args,**kwargs)
     else:
         QmcpackInput.class_error('selection '+str(selector)+' has not been implemented for qmcpack input generation')
     #end if
+    return inp
 #end def generate_qmcpack_input
 
 
@@ -5056,7 +5062,7 @@ def generate_basic_input(id             = 'qmc',
                          series         = 0,
                          purpose        = '',
                          seed           = None,
-                         bconds         = 'ppp',
+                         bconds         = None,
                          truncate       = False,
                          buffer         = None,
                          lr_dim_cutoff  = 15,
@@ -5082,6 +5088,13 @@ def generate_basic_input(id             = 'qmc',
                          ):
     if system=='missing':
         QmcpackInput.class_error('generate_basic_input argument system is missing\n  if you really do not want particlesets to be generated, set system to None')
+    #end if
+    if bconds is None:
+        if system!=None:
+            bconds = system.structure.bconds
+        else:
+            bconds = 'ppp'
+        #end if
     #end if
     if corrections=='default' and tuple(bconds)==tuple('ppp'):
         corrections = ['mpc','chiesa']
