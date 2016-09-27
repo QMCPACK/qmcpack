@@ -11,7 +11,8 @@
 // File created by: Ken Esler, kpesler@gmail.com, StoneRidge Inc.
 //////////////////////////////////////////////////////////////////////////////////////
     
-    
+#ifndef LOCAL_ECPOTENTIAL_CUDA_H
+#define LOCAL_ECPOTENTIAL_CUDA_H
 
 #include "QMCHamiltonians/LocalECPotential.h"
 #include "QMCHamiltonians/CudaCoulomb.h"
