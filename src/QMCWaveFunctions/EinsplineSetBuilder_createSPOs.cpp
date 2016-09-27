@@ -11,7 +11,6 @@
 //                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
 //                    Ying Wai Li, yingwaili@ornl.gov, Oak Ridge National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
-//                    mistake
 //                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
 // File created by: Jeremy McMinnis, jmcminis@gmail.com, Navar Inc.

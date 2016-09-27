@@ -7,7 +7,6 @@
 // File developed by: Ken Esler, kpesler@gmail.com, StoneRidge Inc.
 //                    Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //                    Jeremy McMinnis, jmcminis@gmail.com, Navar Inc.
-//                    r5802.
 //                    Jeongnim Kim, jeongnim.kim@intel.com, Intel Inc.
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
 //

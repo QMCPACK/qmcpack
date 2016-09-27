@@ -5,7 +5,6 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by: Jeremy McMinnis, jmcminis@gmail.com, Navar Inc.
-//                    r5802.
 //                    Jeongnim Kim, jeongnim.kim@intel.com, Intel Inc.
 //                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //                    Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory

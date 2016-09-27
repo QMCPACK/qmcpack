@@ -7,7 +7,6 @@
 // File developed by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Inc.
 //                    Paul R. C. Kent, kentpr@ornl.gov, Oak Ridge National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
-//                    mistake
 //                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Inc.
