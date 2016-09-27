@@ -5,7 +5,7 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by: Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
-//                    Jeremy McMinnis, jmcminis@gmail.com, Navar Inc.
+//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories

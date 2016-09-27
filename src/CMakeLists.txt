@@ -4,17 +4,17 @@
 #//
 #// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 #//
-#// File developed by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Inc.
-#//                    Jeremy McMinnis, jmcminis@gmail.com, Navar Inc.  
-#//                    Ken Esler, kpesler@gmail.com, StoneRidge Inc.
+#// File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+#//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign  
+#//                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 #//                    Cynthia Gu, zg1@ornl.gov, Oak Ridge National Laboratory
 #//                    Norbert Podhorszki, pnorbert@ornl.gov, Oak Ridge National Laboratory
 #//                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
 #//                    Ying Wai Li, yingwaili@ornl.gov, Oak Ridge National Laboratory
-#//                    Marl Dewing, markdewing@gmail.com, University of Illinois at Urbana Champain
+#//                    Marl Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//		       Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//
-#// File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Inc.
+#// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
 CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/config.h.cmake.in

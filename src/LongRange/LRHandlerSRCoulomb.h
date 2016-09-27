@@ -7,7 +7,7 @@
 // File developed by: Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
 //
-// File created by: Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
+// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
     
     

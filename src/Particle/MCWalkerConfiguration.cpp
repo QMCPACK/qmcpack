@@ -4,16 +4,16 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: Jordan E. Vincent, University of Illinois at Urbana Champain
+// File developed by: Jordan E. Vincent, University of Illinois at Urbana-Champaign
 //                    Bryan Clark, bclark@Princeton.edu, Princeton University
-//                    Ken Esler, kpesler@gmail.com, StoneRidge Inc.
-//                    Jeremy McMinnis, jmcminis@gmail.com, Navar Inc.
-//                    Jeongnim Kim, jeongnim.kim@intel.com, Intel Inc.
+//                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
+//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
+//                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Cynthia Gu, zg1@ornl.gov, Oak Ridge National Laboratory
 //                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
 //
-// File created by: Jordan E. Vincent, University of Illinois at Urbana Champain
+// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
     
     

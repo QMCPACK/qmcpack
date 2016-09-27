@@ -6,7 +6,7 @@
 #//
 #// File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//
-#// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana Champain
+#// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})

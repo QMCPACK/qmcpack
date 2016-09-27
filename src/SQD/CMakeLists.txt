@@ -5,7 +5,7 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
-//		      Jeremy McMinnis, jmcminis@gmail.com, Navar Inc.
+//		      Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //
 // File created by:  Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////

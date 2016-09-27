@@ -5,7 +5,7 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by: Bryan Clark, bclark@Princeton.edu, Princeton University
-//                    Jeremy McMinnis, jmcminis@gmail.com, Navar Inc.
+//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //
 // File created by: Bryan Clark, bclark@Princeton.edu, Princeton University
 //////////////////////////////////////////////////////////////////////////////////////

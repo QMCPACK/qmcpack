@@ -6,8 +6,8 @@
 //
 // File developed by: Bryan Clark, bclark@Princeton.edu, Princeton University
 //                    Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
-//                    Jeongnim Kim, jeongnim.kim@intel.com, Intel Inc.
-//                    Jeremy McMinnis, jmcminis@gmail.com, Navar Inc.
+//                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Bryan Clark, bclark@Princeton.edu, Princeton University

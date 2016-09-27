@@ -4,9 +4,9 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana Champain
+// File developed by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //
-// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana Champain
+// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
 

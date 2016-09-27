@@ -4,11 +4,11 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: Ken Esler, kpesler@gmail.com, StoneRidge Inc 
+// File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //		      Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
-//  		      Jeremy McMinnis, jmcminis@gmail.com, Navar Inc.   
+//  		      Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign   
 //
-// File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Inc. 
+// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign 
 //////////////////////////////////////////////////////////////////////////////////////
 
 #ifndef OHMMS_PETE_MATRIX_H
