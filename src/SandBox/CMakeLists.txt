@@ -1,3 +1,21 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: Ken Esler, kpesler@gmail.com, StoneRidge Inc.
+//                    Jeremy McMinnis, jmcminis@gmail.com, Navar Inc.
+//                    Jeongnim Kim, jeongnim.kim@intel.com, Intel Inc.
+//                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//
+// File created by: Ken Esler, kpesler@gmail.com, StoneRidge Inc.
+//////////////////////////////////////////////////////////////////////////////////////
+    
+    
+
+
+
 PROJECT(sandbox)
 
 SET(SANDBOX)

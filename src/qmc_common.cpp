@@ -1,10 +1,22 @@
-//////////////////////////////////////////////////////////////////
-// (c) Copyright 2003-  by Jeongnim Kim
-//////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////
-// jnkim@ornl.gov
-//////////////////////////////////////////////////////////////////
-// -*- C++ -*-
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: Jeremy McMinnis, jmcminis@gmail.com, Navar Inc.
+//                    Anouar Benali, benali@anl.gov, Argonne National Laboratory
+//                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
+//                    Jeongnim Kim, jeongnim.kim@intel.com, Intel Inc.
+//                    Paul R. C. Kent, kentpr@ornl.gov, Oak Ridge National Laboratory
+//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//
+// File created by: Jeremy McMinnis, jmcminis@gmail.com, Navar Inc.
+//////////////////////////////////////////////////////////////////////////////////////
+    
+    
+
+
 #include <qmc_common.h>
 #include <Platforms/sysutil.h>
 

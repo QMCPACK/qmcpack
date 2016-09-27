@@ -1,19 +1,24 @@
-//////////////////////////////////////////////////////////////////
-// (c) Copyright 2003- by Jeongnim Kim
-//////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////
-//   Jeongnim Kim
-//   National Center for Supercomputing Applications &
-//   Materials Computation Center
-//   University of Illinois, Urbana-Champaign
-//   Urbana, IL 61801
-//   e-mail: jnkim@ncsa.uiuc.edu
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
 //
-// Supported by
-//   National Center for Supercomputing Applications, UIUC
-//   Materials Computation Center, UIUC
-//////////////////////////////////////////////////////////////////
-// -*- C++ -*-
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: Jordan E. Vincent, University of Illinois at Urbana Champain
+//                    Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
+//                    Jeremy McMinnis, jmcminis@gmail.com, Navar Inc.
+//                    Jeongnim Kim, jeongnim.kim@intel.com, Intel Inc.
+//                    Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
+//                    Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana Champain
+//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//
+// File created by: Jordan E. Vincent, University of Illinois at Urbana Champain
+//////////////////////////////////////////////////////////////////////////////////////
+    
+    
+
+
+
 /**@file InitMolecularSystem.cpp
  * @brief Implements InitMolecuarSystem operators.
  */

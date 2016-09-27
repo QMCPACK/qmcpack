@@ -1,19 +1,23 @@
-/////////////////////////////////////////////////////////////////
-// (c) Copyright 2003- by Jeongnim Kim
-//////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////
-//   Jeongnim Kim
-//   National Center for Supercomputing Applications &
-//   Materials Computation Center
-//   University of Illinois, Urbana-Champaign
-//   Urbana, IL 61801
-//   e-mail: jnkim@ncsa.uiuc.edu
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
 //
-// Supported by
-//   National Center for Supercomputing Applications, UIUC
-//   Materials Computation Center, UIUC
-//////////////////////////////////////////////////////////////////
-// -*- C++ -*-
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: Ken Esler, kpesler@gmail.com, StoneRidge Inc.
+//                    Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
+//                    Jeremy McMinnis, jmcminis@gmail.com, Navar Inc.
+//                    Jeongnim Kim, jeongnim.kim@intel.com, Intel Inc.
+//                    Cynthia Gu, zg1@ornl.gov, Oak Ridge National Laboratory
+//                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
+//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//
+// File created by: Ken Esler, kpesler@gmail.com, StoneRidge Inc.
+//////////////////////////////////////////////////////////////////////////////////////
+    
+    
+
+
 #include "QMCDrivers/QMCDriver.h"
 #include "Utilities/OhmmsInfo.h"
 #include "Particle/MCWalkerConfiguration.h"

@@ -1,3 +1,21 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: Bryan Clark, bclark@Princeton.edu, Princeton University
+//                    Jeremy McMinnis, jmcminis@gmail.com, Navar Inc.
+//                    Jeongnim Kim, jeongnim.kim@intel.com, Intel Inc.
+//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//
+// File created by: Bryan Clark, bclark@Princeton.edu, Princeton University
+//////////////////////////////////////////////////////////////////////////////////////
+    
+    
+
+
+
 #include <LongRange/StructFact.h>
 #include <config/stdlib/math.h>
 #include <Numerics/e2iphi.h>

@@ -1,6 +1,24 @@
-//////////////////////////////////////////////////////////////////
-// (c) Copyright 2013-  by Jaron T. Krogel                      //
-//////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Inc.
+//                    Cynthia Gu, zg1@ornl.gov, Oak Ridge National Laboratory
+//                    Norbert Podhorszki, pnorbert@ornl.gov, Oak Ridge National Laboratory
+//                    Paul R. C. Kent, kentpr@ornl.gov, Oak Ridge National Laboratory
+//                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
+//                    Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana Champain
+//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//
+// File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Inc.
+//////////////////////////////////////////////////////////////////////////////////////
+    
+    
+
+
+
 #ifndef QMCPLUSPLUS_TRACEMANAGER_H
 #define QMCPLUSPLUS_TRACEMANAGER_H
 

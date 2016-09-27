@@ -1,22 +1,17 @@
-/////////////////////////////////////////////////////////////////////////////
-//  einspline:  a library for creating and evaluating B-splines            //
-//  Copyright (C) 2007 Kenneth P. Esler, Jr.                               //
-//                                                                         //
-//  This program is free software; you can redistribute it and/or modify   //
-//  it under the terms of the GNU General Public License as published by   //
-//  the Free Software Foundation; either version 2 of the License, or      //
-//  (at your option) any later version.                                    //
-//                                                                         //
-//  This program is distributed in the hope that it will be useful,        //
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of         //
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          //
-//  GNU General Public License for more details.                           //
-//                                                                         //
-//  You should have received a copy of the GNU General Public License      //
-//  along with this program; if not, write to the Free Software            //
-//  Foundation, Inc., 51 Franklin Street, Fifth Floor,                     //
-//  Boston, MA  02110-1301  USA                                            //
-/////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Inc.
+//                    Jeremy McMinnis, jmcminis@gmail.com, Navar Inc.
+//                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//
+// File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Inc.
+//////////////////////////////////////////////////////////////////////////////////////
+    
+    
 
 #include "einspline/multi_bspline.h"
 #include "einspline/multi_nubspline.h"

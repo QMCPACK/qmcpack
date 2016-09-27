@@ -1,3 +1,22 @@
+#//////////////////////////////////////////////////////////////////////////////////////
+#// This file is distributed under the University of Illinois/NCSA Open Source License.
+#// See LICENSE file in top directory for details.
+#//
+#// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+#//
+#// File developed by: John R. Gergely,  University of Illinois at Urbana Champain
+#//                    D.C. Yang, University of Illinois at Urbana Champain
+#//                    Ken Esler, kpesler@gmail.com, StoneRidge Inc.
+#//                    Jeremy McMinnis, jmcminis@gmail.com, Navar Inc.
+#//                    Jeongnim Kim, jeongnim.kim@intel.com, Intel Inc.
+#//                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
+#//                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+#//                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
+#//
+#// File created by: John R. Gergely,  University of Illinois at Urbana Champain
+#//////////////////////////////////////////////////////////////////////////////////////
+    
+    
 SET(HAMSRCS
   QMCHamiltonianBase.cpp
   QMCHamiltonian.cpp

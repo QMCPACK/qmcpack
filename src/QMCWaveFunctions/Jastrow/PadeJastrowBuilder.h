@@ -1,18 +1,16 @@
-//////////////////////////////////////////////////////////////////
-// (c) Copyright 2003-  by Jeongnim Kim
-//////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////
-//   National Center for Supercomputing Applications &
-//   Materials Computation Center
-//   University of Illinois, Urbana-Champaign
-//   Urbana, IL 61801
-//   e-mail: jnkim@ncsa.uiuc.edu
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
 //
-// Supported by
-//   National Center for Supercomputing Applications, UIUC
-//   Materials Computation Center, UIUC
-//////////////////////////////////////////////////////////////////
-// -*- C++ -*-
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Inc.
+//                    Jeremy McMinnis, jmcminis@gmail.com, Navar Inc.
+//
+// File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Inc.
+//////////////////////////////////////////////////////////////////////////////////////
+    
+    
 #ifndef QMCPLUSPLUS_PADE_JASTROW_BUILDER_H
 #define QMCPLUSPLUS_PADE_JASTROW_BUILDER_H
 #include "QMCWaveFunctions/Jastrow/PadeFunctors.h"

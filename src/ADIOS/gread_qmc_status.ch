@@ -1,3 +1,17 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Inc.
+//
+// File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Inc.
+//////////////////////////////////////////////////////////////////////////////////////
+    
+    
+
+
 s = adios_selection_writeblock (rank);
 adios_schedule_read (fp, s, "energy", 1, 1, energy);
 adios_schedule_read (fp, s, "r2accepted", 1, 1, r2accepted);

@@ -1,4 +1,20 @@
-// -*- C++ -*-
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Inc.
+//                    Anouar Benali, benali@anl.gov, Argonne National Laboratory
+//                    Jeremy McMinnis, jmcminis@gmail.com, Navar Inc.
+//
+// File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Inc.
+//////////////////////////////////////////////////////////////////////////////////////
+    
+    
+
+
+
 /** @file PrimeNumberSet.h
  * @brief define a class to generate prime numbers for random number generators
  */

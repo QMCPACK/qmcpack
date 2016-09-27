@@ -1,15 +1,22 @@
-//////////////////////////////////////////////////////////////////
-// (c) Copyright 2007-  Ken Esler
-//////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////
-//   National Center for Supercomputing Applications &
-//   University of Illinois, Urbana-Champaign
-//   Urbana, IL 61801
-//   e-mail: esler@uiuc.edu
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
 //
-// Supported by
-//   National Center for Supercomputing Applications, UIUC
-//////////////////////////////////////////////////////////////////
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: Ken Esler, kpesler@gmail.com, StoneRidge Inc.
+//                    Jeremy McMinnis, jmcminis@gmail.com, Navar Inc.
+//                    Jeongnim Kim, jeongnim.kim@intel.com, Intel Inc.
+//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana Champain
+//                    Paul R. C. Kent, kentpr@ornl.gov, Oak Ridge National Laboratory
+//
+// File created by: Ken Esler, kpesler@gmail.com, StoneRidge Inc.
+//////////////////////////////////////////////////////////////////////////////////////
+    
+    
+
+
 
 // Supported libraries and defines:
 //

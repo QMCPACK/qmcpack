@@ -1,6 +1,16 @@
-//////////////////////////////////////////////////////////////////
-// (c) Copyright 2012-  by Jeongnim Kim and Ken Esler           //
-//////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Inc.
+//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//
+// File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Inc.
+//////////////////////////////////////////////////////////////////////////////////////
+    
+    
 #ifndef QMCPLUSPLUS_EINSPLINE_MULTIGRID_ADOPTOR_H
 #define QMCPLUSPLUS_EINSPLINE_MULTIGRID_ADOPTOR_H
 

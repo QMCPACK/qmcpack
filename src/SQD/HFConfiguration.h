@@ -1,3 +1,18 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Inc.
+//                    Jeremy McMinnis, jmcminis@gmail.com, Navar Inc.
+//
+// File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Inc.
+//////////////////////////////////////////////////////////////////////////////////////
+    
+    
+
+
 #ifndef OHMMS_MAIN_HFCONFIGURATION_H
 #define OHMMS_MAIN_HFCONFIGURATION_H
 /*!\mainpage AtomicHF
@@ -76,7 +91,7 @@
  *@brief  Define basic data types for the applications.
  *
  * In order to reduce complier-time complexity and to enable switching
- * between C++ libraries for array and expression template,
+ * between CPLUSPLUS libraries for array and expression template,
  * basic data types are defined.
  */
 namespace ohmmshf

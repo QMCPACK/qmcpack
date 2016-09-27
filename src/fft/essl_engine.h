@@ -1,19 +1,16 @@
-//////////////////////////////////////////////////////////////////
-// (c) Copyright 2010-  by Jeongnim Kim
-//////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////
-//   National Center for Supercomputing Applications &
-//   University of Illinois, Urbana-Champaign
-//   Urbana, IL 61801
-//   e-mail: jnkim@ncsa.uiuc.edu
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
 //
-// Supported by
-//   National Center for Supercomputing Applications, UIUC
-//////////////////////////////////////////////////////////////////
-// -*- C++ -*-
-/** @file mkl_engine.h
- * @brief definition of fft_engine_base<fftw_real,FFTMKL_ENG>
- */
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Inc
+//		      Jeremy McMinnis, jmcminis@gmail.com, Navar Inc.   
+//
+// File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Inc. 
+//////////////////////////////////////////////////////////////////////////////////////
+
+
 #ifndef QMCPLUSPLUS_ESSL_FFT_ENGINE_H
 #define QMCPLUSPLUS_ESSL_FFT_ENGINE_H
 #include <vector>

@@ -1,3 +1,21 @@
+#//////////////////////////////////////////////////////////////////////////////////////
+#// This file is distributed under the University of Illinois/NCSA Open Source License.
+#// See LICENSE file in top directory for details.
+#//
+#// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+#//
+#// File developed by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Inc.
+#//                    Jeremy McMinnis, jmcminis@gmail.com, Navar Inc.  
+#//                    Ken Esler, kpesler@gmail.com, StoneRidge Inc.
+#//                    Cynthia Gu, zg1@ornl.gov, Oak Ridge National Laboratory
+#//                    Norbert Podhorszki, pnorbert@ornl.gov, Oak Ridge National Laboratory
+#//                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
+#//                    Ying Wai Li, yingwaili@ornl.gov, Oak Ridge National Laboratory
+#//                    Marl Dewing, markdewing@gmail.com, University of Illinois at Urbana Champain
+#//		       Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+#//
+#// File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Inc.
+#//////////////////////////////////////////////////////////////////////////////////////
 
 CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/config.h.cmake.in
   ${qmcpack_BINARY_DIR}/src/config.h)

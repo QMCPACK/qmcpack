@@ -1,3 +1,20 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: Ken Esler, kpesler@gmail.com, StoneRidge Inc.
+//                    Jeremy McMinnis, jmcminis@gmail.com, Navar Inc.
+//                    Jeongnim Kim, jeongnim.kim@intel.com, Intel Inc.
+//                    Ying Wai Li, yingwaili@ornl.gov, Oak Ridge National Laboratory
+//                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//
+// File created by: Ken Esler, kpesler@gmail.com, StoneRidge Inc.
+//////////////////////////////////////////////////////////////////////////////////////
+    
+    
 #include <cstdio>
 #include <vector>
 #include <complex>
@@ -830,11 +847,13 @@ evaluateHybridSplineReal (HybridJobType *job_types, T *rhats,
 }
 
 
-//////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////
+/************************************************************
+*************************************************************
 //// Complex splines to real orbitals evaluation routines ////
-//////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////
+************************************************************
+************************************************************/
+
+
 
 // The spline coefficients should be reordered so that the
 // orbital is the fastest index.
@@ -2988,9 +3007,9 @@ evaluate3DSplineReal (HybridJobType *job_types, T *pos, T *kpoints,
 }
 
 
-//////////////////////////////////////////////////////
+/***************************************************
 // 3D B-spline complex-to-real evaluation functions //
-//////////////////////////////////////////////////////
+***************************************************/
 
 template<typename T, int BS> __global__ void
 evaluate3DSplineComplexToReal_kernel
@@ -3504,9 +3523,9 @@ evaluate3DSplineComplexToReal
    multispline->dim, multispline->stride, Linv, vals, N);
 }
 
-/////////////////////////////////////////////////////////////////////////////////////
+/**********************************************************************************
 // The followings are the explicit instantiations for the above template functions //
-/////////////////////////////////////////////////////////////////////////////////////
+**********************************************************************************/
 
 // MakeHyridJobList
 template void MakeHybridJobList <float>

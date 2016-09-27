@@ -1,19 +1,17 @@
-//////////////////////////////////////////////////////////////////
-// (c) Copyright 1998-2002 by Jeongnim Kim
-//////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////
-//   Jeongnim Kim
-//   National Center for Supercomputing Applications &
-//   Materials Computation Center
-//   University of Illinois, Urbana-Champaign
-//   Urbana, IL 61801
-//   e-mail: jnkim@ncsa.uiuc.edu
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
 //
-// Supported by
-//   National Center for Supercomputing Applications, UIUC
-//   Materials Computation Center, UIUC
-//////////////////////////////////////////////////////////////////
-// -*- C++ -*-
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: Jeremy McMinnis, jmcminis@gmail.com, Navar Inc.   
+//
+// File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Inc. 
+//////////////////////////////////////////////////////////////////////////////////////
+
+
+#ifndef QMCPLUSPLUS_HDF_DATASPACE_TRAITS_H
+#define QMCPLUSPLUS_HDF_DATASPACE_TRAITS_H
 /**@file hdf_dataspace.h
  * @brief define h5_space_type to handle basic datatype for hdf5
  *
@@ -25,8 +23,7 @@
  * - h5_space_type<Tensor<T,D>,DS>
  * - h5_space_type<Tensor<std::complex<T>,D>,DS>
  */
-#ifndef QMCPLUSPLUS_HDF_DATASPACE_TRAITS_H
-#define QMCPLUSPLUS_HDF_DATASPACE_TRAITS_H
+
 
 #include <io/hdf_datatype.h>
 #include <complex>

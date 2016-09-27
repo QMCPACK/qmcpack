@@ -1,19 +1,16 @@
-//////////////////////////////////////////////////////////////////
-// (c) Copyright 2010-  by Jeongnim Kim
-//////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////
-//   National Center for Supercomputing Applications &
-//   University of Illinois, Urbana-Champaign
-//   Urbana, IL 61801
-//   e-mail: jnkim@ncsa.uiuc.edu
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
 //
-// Supported by
-//   National Center for Supercomputing Applications, UIUC
-//////////////////////////////////////////////////////////////////
-// -*- C++ -*-
-/** @file fft1d.h
- * @brief A master header file to define 1d fft interfaces
- */
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Inc
+//		      Jeremy McMinnis, jmcminis@gmail.com, Navar Inc.   
+//
+// File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Inc. 
+//////////////////////////////////////////////////////////////////////////////////////
+
+
 #ifndef QMCPLUSPLUS_FFT_1D_H
 #define QMCPLUSPLUS_FFT_1D_H
 

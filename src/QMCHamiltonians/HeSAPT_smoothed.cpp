@@ -1,3 +1,17 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: D.C. Yang, University of Illinois at Urbana Champain
+//                    Jeremy McMinnis, jmcminis@gmail.com, Navar Inc.
+//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//
+// File created by: D.C. Yang, University of Illinois at Urbana Champain
+//////////////////////////////////////////////////////////////////////////////////////
+    
+    
 #include "QMCHamiltonians/HeSAPT_smoothed.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Particle/DistanceTableData.h"
