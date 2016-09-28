@@ -207,6 +207,19 @@ ENDIF()
                     0 # VMC
                     TRUE)
 
+# qmc_ref_vmc_dmc  series 1  -1.84143
+# qmc_short_vmc_dmc  series 1  -1.844059 +/- 0.001850
+  LIST(APPEND BCC_H_DMC_SCALARS "totenergy" "-1.841430 0.001850")
+  QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-dmc_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+                    qmc_short_vmc_dmc
+                    qmc_short_vmc_dmc.in.xml
+                    1 16
+                    BCC_H_DMC_SCALARS
+                    1 # DMC
+                    TRUE)
+
+
 # Plane wave test of bccH (no pp, so faster than typical solids)
 # Currently disabled since take 90s to run
 #  QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-vmc_sdj-pw
@@ -332,6 +345,20 @@ ENDIF()
                     LONG_BCC_H_SCALARS
                     0 # VMC
                     TRUE)
+
+
+# qmc_ref_vmc_dmc  series 1  -1.84143
+# qmc_long_vmc_dmc  series 1  -1.842355 +/- 0.000778
+  LIST(APPEND LONG_BCC_H_DMC_SCALARS "totenergy" "-1.841430 0.000778")
+  QMC_RUN_AND_CHECK(long-bccH_1x1x1_ae-dmc_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+                    qmc_long_vmc_dmc
+                    qmc_long_vmc_dmc.in.xml
+                    1 16
+                    LONG_BCC_H_DMC_SCALARS
+                    1 # DMC
+                    TRUE)
+
 
 
   LIST(APPEND LONG_DIAMOND_SCALARS "totenergy" "-10.491445 0.000065")
