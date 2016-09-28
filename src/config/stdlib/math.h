@@ -26,9 +26,9 @@
 #if !defined(HAVE_STD_ROUND)
 template<typename T> inline T round(T x)
 {
-  T dmy;
-  x=modf(x,&dmy);
-  return x-static_cast<int>(x*2.0);
+  T i;
+  T frac=std::modf(x,&i);
+  return i+static_cast<int>(frac*2.0);
 }
 #endif
 
