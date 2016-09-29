@@ -1814,7 +1814,12 @@ def generate_relax_input(prefix       = 'pwscf',
                          pseudos      = None,
                          system       = None,
                          use_folded   = False,
-                         group_atoms  = False):
+                         group_atoms  = False,
+                         forc_conv_thr= None,
+                         disk_io      = 'low',
+                         wf_collect   = False,
+                         verbosity    = 'high',
+                         ):
     if pseudos is None:
         pseudos = []
     #end if
@@ -1840,9 +1845,9 @@ def generate_relax_input(prefix       = 'pwscf',
         #tprnfor      = True,
         pseudo_dir   = './',
         outdir       = outdir,
-        disk_io      = 'low',
-        verbosity    = 'high',
-        wf_collect   = False
+        disk_io      = disk_io,
+        verbosity    = verbosity,
+        wf_collect   = wf_collect
         )
     pw.system.set(
         ibrav       = 0,
@@ -1962,6 +1967,10 @@ def generate_relax_input(prefix       = 'pwscf',
             )
     #end if
 
+    if forc_conv_thr is not None:
+        pw.control.forc_conv_thr = forc_conv_thr
+    # end if
+
     return pw
 #end def generate_relax_input
 
@@ -1985,7 +1994,7 @@ def generate_vcrelax_input(
     # expand this section if you need more control over the input
     if forc_conv_thr is not None:
         pw.control.forc_conv_thr = forc_conv_thr
-    # end ifsd
+    # end if
     if cell_factor is not None:
         pw.cell.set(cell_factor=cell_factor)
     # end if
