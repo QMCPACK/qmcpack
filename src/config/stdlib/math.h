@@ -29,14 +29,11 @@
 #endif /* M_PI */
 #endif /* TWOPI */
 
-#if !defined(HAVE_STD_ROUND)
-template<typename T> inline T round(T x)
+
+inline float round(float x)
 {
-  T dmy;
-  x=std::modf(x,&dmy);
-  return x-static_cast<int>(x*2.0);
+  return roundf(x);
 }
-#endif
 
 #if defined(HAVE_SINCOS)
 inline void sincos(float a, float* s, float* c)

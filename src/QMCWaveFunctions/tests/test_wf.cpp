@@ -32,7 +32,7 @@ TEST_CASE("Pade functor", "[wavefunction]")
 
   double r = 1.2;
   double u = pf.evaluate(r);
-  REQUIRE(u == 2.232142857142857);
+  REQUIRE(u == Approx(2.232142857142857));
 }
 
 TEST_CASE("Pade Jastrow", "[wavefunction]")
@@ -101,7 +101,7 @@ const char *particles = \
 
   //target->update();
   double logpsi = psi.evaluateLog(elec_);
-  REQUIRE(logpsi == -1.862821769493147);
+  REQUIRE(logpsi == Approx(-1.862821769493147));
 
 }
 }
