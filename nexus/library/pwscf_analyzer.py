@@ -260,41 +260,9 @@ class PwscfAnalyzer(SimulationAnalyzer):
 
         #begin added by Yubo "Paul" Yang: cell, stress, pressure and volume
         # 01/21/2016: grab cells in a vc-relax run, one at each optimization step
-        try:
-            cells = obj()
-            i=0
-            found = False
-            while i<len(lines):
-                l = lines[i]
-                if l.find('CELL_PARAMETERS')!=-1:
-                    found = True
-                    self.alat=float(l.split()[2][:-2])
-                    conf = obj()
-                    positions = []
-                    i+=1
-                    tokens = lines[i].split()
+        # 09/29/2016: obselete after rev7131
 
-                    while len(tokens)>0 and tokens[0].lower()!='end' and len(tokens)==3:
-                        positions.append(array(tokens[0:3],dtype=float))
-                        i+=1
-                        tokens = lines[i].split()
-                    #end while
-                    conf.positions = array(positions)
-                    nconf = len(cells)
-                    cells[nconf]=conf
-                #end if
-                i+=1
-            #end while
-            if found:
-                self.cells = cells
-            #end if
-        except:
-            nx+=1
-            if self.info.warn:
-                self.warn('structure read failed')
-            #end if
-        #end try
-         
+        # grab stress, pressure and volume
         try:
             press= 0.
             vol=   0.
