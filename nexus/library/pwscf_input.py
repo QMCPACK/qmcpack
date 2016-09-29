@@ -1274,6 +1274,8 @@ def generate_pwscf_input(selector,**kwargs):
         return generate_nscf_input(**kwargs)
     elif selector=='relax':
         return generate_relax_input(**kwargs)
+    elif selector=='vc-relax':
+        return generate_vcrelax_input(**kwargs)
     else:
         PwscfInput.class_error('selection '+str(selector)+' has not been implemented for pwscf input generation')
     #end if
@@ -1962,6 +1964,40 @@ def generate_relax_input(prefix       = 'pwscf',
 
     return pw
 #end def generate_relax_input
+
+def generate_vcrelax_input(
+    press          = None, # None = use pw.x default
+    cell_factor    = None, 
+    forc_conv_thr  = None,
+    ion_dynamics   = None,
+    press_conv_thr = None,
+    **kwargs):
+
+    pw = generate_scf_input(**kwargs)
+    pw.control.set(
+        calculation = 'vc-relax'
+    )
+    pw['ions'] = pw.element_types['ions']()
+    pw['cell'] = pw.element_types['cell'](
+        press       = press,
+    )
+
+    # expand this section if you need more control over the input
+    if forc_conv_thr is not None:
+        pw.control.forc_conv_thr = forc_conv_thr
+    # end ifsd
+    if cell_factor is not None:
+        pw.cell.set(cell_factor=cell_factor)
+    # end if
+    if ion_dynamics is not None:
+        pw.ions.set(ion_dynamics=ion_dynamics)
+    # end if
+    if press_conv_thr is not None:
+        pw.cell.set(press_conv_thr=press_conv_thr)
+    # end if
+
+    return pw
+# end def
 
 
 #def generate_nscf_input(prefix='pwscf',outdir='pwscf_output',ecut=200.,kpoints=None,weights=None,pseudos=None,system=None):
