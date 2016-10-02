@@ -4,9 +4,9 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+// File developed by: Cynthia Gu, zg1@ornl.gov, Oak Ridge National Laboratory 
 //
-// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+// File created by: Cynthia Gu, zg1@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
     
     
