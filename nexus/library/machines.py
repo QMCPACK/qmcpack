@@ -547,6 +547,15 @@ class Job(NexusCore):
     #end def pbs_walltime
 
 
+    def sbatch_walltime(self):
+        walltime=\
+            str(int(24*self.days+self.hours)).zfill(2)+':'\
+            +str(int(self.minutes)).zfill(2)+':'\
+            +str(int(self.seconds)).zfill(2)
+        return walltime
+    #end def sbatch_walltime
+
+
     def normalize_time(self):
         t = self.total_seconds()
         d = int(t/(24*3600))
@@ -1502,13 +1511,20 @@ class Supercomputer(Machine):
                     else:
                         spid = tokens[0]
                     #endif
-                    if spid.isdigit() and len(tokens)==8:
+                    if spid.isdigit():
                         pid = int(spid)
-                        jid,loc,name,uname,status,wtime,nodes,reason = tokens
-                        if status in self.job_states:
-                            self.system_queue[pid] = self.job_states[status]
-                        else:
-                            self.error('job state '+status+' is unrecognized')
+                        status = None
+                        if len(tokens)==8:
+                            jid,loc,name,uname,status,wtime,nodes,reason = tokens
+                        elif len(tokens)==11: # nersc squeue output
+                            jid,uname,acc,jname,part,qos,nodes,tlimit,wtime,status,start_time = tokens
+                        #end if
+                        if status is not None:
+                            if status in self.job_states:
+                                self.system_queue[pid] = self.job_states[status]
+                            else:
+                                self.error('job state '+status+' is unrecognized')
+                            #end if
                         #end if
                     #end if
                 #end if
@@ -2264,35 +2280,26 @@ cd $PBS_O_WORKDIR
 class NerscMachine(Supercomputer):
     batch_capable = True
 
-    def process_job_extra(self,job):
-        if job.threads>1:
-            if 'ss' not in job.run_options and mod(8,job.threads)==0:
-                job.run_options.add(ss='-ss')
-            #end if
-            if job.compiler!=None and job.compiler=='intel' and 'cc' not in job.run_options:
-                job.run_options.add(cc='-cc numa_node')
-            #end if
-        #end if
-    #end def process_job_extra
-
     def write_job_header(self,job):
         if job.queue is None:
             job.queue = 'regular'
         #end if
 
         c='#!/bin/bash\n'
-        c+='#PBS -q '+job.queue+'\n'
-        c+='#PBS -N '+str(job.name)+'\n'
-        c+='#PBS -l walltime='+job.pbs_walltime()+'\n'
-        c+='#PBS -l mppwidth={0}\n'.format(job.tot_cores)
-        c+='#PBS -o '+job.outfile+'\n'
-        c+='#PBS -e '+job.errfile+'\n'
+        c+='#SBATCH -p '+job.queue+'\n'
+        c+='#SBATCH -J '+str(job.name)+'\n'
+        c+='#SBATCH -t '+job.sbatch_walltime()+'\n'
+        c+='#SBATCH -N '+str(job.nodes)+'\n'
+        c+='#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
+        c+='#SBATCH --cpus-per-task={0}\n'.format(job.threads)
+        c+='#SBATCH -o '+job.outfile+'\n'
+        c+='#SBATCH -e '+job.errfile+'\n'
         if job.user_env:
-            c+='#PBS -V\n'
+            c+='#SBATCH --export=ALL\n'   # equiv to PBS -V
         #end if
         c+='''
-echo $PBS_O_WORKDIR
-cd $PBS_O_WORKDIR
+echo $SLURM_SUBMIT_DIR
+cd $SLURM_SUBMIT_DIR
 '''
         return c
     #end def write_job_header
@@ -2302,10 +2309,6 @@ cd $PBS_O_WORKDIR
 class Edison(NerscMachine):
     name = 'edison'
 #end class Edison
-
-class Hopper(NerscMachine):
-    name = 'hopper'
-#end class Hopper
 
 
 
@@ -2666,8 +2669,7 @@ Jaguar(      18688,   2,     8,   32,  100,  'aprun',   'qsub',   'qstat',    'q
 Kraken(       9408,   2,     6,   16,  100,  'aprun',   'qsub',   'qstat',    'qdel')
 Taub(          400,   2,     6,   24,   50, 'mpirun',   'qsub',   'qstat',    'qdel')
 OIC5(           28,   2,    16,  128, 1000, 'mpirun',   'qsub',   'qstat',    'qdel')
-Hopper(       6384,   2,    12,   64, 1000,  'aprun',   'qsub',   'qstat',    'qdel')
-Edison(        664,   2,    12,   64,  100,  'aprun',   'qsub',   'qstat',    'qdel')
+Edison(        664,   2,    12,   64,  100,   'srun', 'sbatch',  'squeue', 'scancel')
 BlueWatersXK( 3072,   1,    16,   32,  100,  'aprun',   'qsub',   'qstat',    'qdel')
 BlueWatersXE(22640,   2,    16,   64,  100,  'aprun',   'qsub',   'qstat',    'qdel')
 Titan(       18688,   1,    16,   32,  100,  'aprun',   'qsub',   'qstat',    'qdel')
