@@ -1,19 +1,23 @@
-//////////////////////////////////////////////////////////////////
-// (c) Copyright 1998-2002 by Jeongnim Kim
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
 //
-//   National Center for Supercomputing Applications &
-//   Materials Computation Center
-//   University of Illinois, Urbana-Champaign
-//   Urbana, IL 61801
-//   e-mail: jnkim@ncsa.uiuc.edu
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// Supported by
-//   National Center for Supercomputing Applications, UIUC
-//   Materials Computation Center, UIUC
-//   Department of Physics, Ohio State University
-//   Ohio Supercomputer Center
-//////////////////////////////////////////////////////////////////
-// -*- C++ -*-
+// File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
+//		      Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
+//		      Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
+// 		      Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign 
+//
+// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign 
+//////////////////////////////////////////////////////////////////////////////////////
+
+
+#ifndef	OHMMS_TENSOR_H
+#define	OHMMS_TENSOR_H
+
+#include "PETE/PETE.h"
+#include "OhmmsPETE/OhmmsTinyMeta.h"
 /***************************************************************************
  *
  * The POOMA Framework
@@ -32,11 +36,7 @@
  *
  ***************************************************************************/
 
-#ifndef	OHMMS_TENSOR_H
-#define	OHMMS_TENSOR_H
 
-#include "PETE/PETE.h"
-#include "OhmmsPETE/OhmmsTinyMeta.h"
 
 namespace qmcplusplus
 {

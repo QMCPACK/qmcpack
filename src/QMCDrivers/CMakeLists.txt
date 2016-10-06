@@ -1,3 +1,22 @@
+#//////////////////////////////////////////////////////////////////////////////////////
+#// This file is distributed under the University of Illinois/NCSA Open Source License.
+#// See LICENSE file in top directory for details.
+#//
+#// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+#//
+#// File developed by: Bryan Clark, bclark@Princeton.edu, Princeton University
+#//                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
+#//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
+#//                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+#//                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
+#//                    Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
+#//
+#// File created by: Bryan Clark, bclark@Princeton.edu, Princeton University
+#//////////////////////////////////////////////////////////////////////////////////////
+    
+    
+
+
 ####################################
 # QMC Drivers which implements various QMC algorithms
 ####################################
@@ -103,8 +122,10 @@ ENDIF(QMC_BUILD_LEVEL GREATER 1)
 # create libqmc 
 ####################################
 ADD_LIBRARY(qmcdriver ${QMCDRIVERS})
-ADD_LIBRARY(qmcdriver_unit ${QMCDRIVERS})
-USE_FAKE_RNG(qmcdriver_unit)
+IF (HAS_TARGET_COMPILE_DEFINITIONS)
+  ADD_LIBRARY(qmcdriver_unit ${QMCDRIVERS})
+  USE_FAKE_RNG(qmcdriver_unit)
+ENDIF()
 #IF(QMC_BUILD_STATIC)
 #  ADD_LIBRARY(qmcdriver STATIC ${QMCDRIVERS})
 #ELSE(QMC_BUILD_STATIC)

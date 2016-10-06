@@ -25,6 +25,7 @@ from qmcpack_converters import Pw2qmcpack
 from simulation import Simulation
 from pwscf_input import PwscfInput,generate_pwscf_input
 from pwscf_analyzer import PwscfAnalyzer
+from debug import ci
 
 
 class Pwscf(Simulation):
@@ -103,7 +104,9 @@ class Pwscf(Simulation):
         elif result_name=='structure':
             pa = self.load_analyzer_image()
             structs = pa.structures
-            pos,atoms = structs[len(structs)-1].tuple('positions','atoms')
+            struct  = structs[len(structs)-1]
+            pos   = struct.positions
+            atoms = struct.atoms
             scale = self.input.system['celldm(1)']
             pos   = scale*array(pos)
             
@@ -111,6 +114,9 @@ class Pwscf(Simulation):
             structure.change_units('B')
             structure.pos = pos
             structure.set_elem(atoms)
+            if 'axes' in struct:
+                structure.axes = struct.axes.copy()
+            #end if
             result.structure = structure
 
             #atoms = array(atoms)

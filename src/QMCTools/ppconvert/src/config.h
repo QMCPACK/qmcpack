@@ -1,3 +1,18 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: Paul R. C. Kent, kentpr@ornl.gov, Oak Ridge National Laboratory
+//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//
+// File created by: Paul R. C. Kent, kentpr@ornl.gov, Oak Ridge National Laboratory
+//////////////////////////////////////////////////////////////////////////////////////
+    
+    
+
+
 /* src/config.h.  Generated from config.h.in by configure.  */
 /* src/config.h.in.  Generated from configure.ac by autoheader.  */
 
@@ -131,7 +146,7 @@
    nothing if this is not supported.  Do not define if restrict is
    supported directly.  */
 /* #define restrict __restrict */
-/* Work around a bug in Sun C++: it does not support _Restrict or
+/* Work around a bug in Sun CPlusPlus: it does not support _Restrict or
    __restrict__, even though the corresponding Sun C compiler ends up with
    "#define restrict _Restrict" or "#define restrict __restrict__" in the
    previous line.  Perhaps some future version of Sun C++ will work with

@@ -1,3 +1,21 @@
+#//////////////////////////////////////////////////////////////////////////////////////
+#// This file is distributed under the University of Illinois/NCSA Open Source License.
+#// See LICENSE file in top directory for details.
+#//
+#// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+#//
+#// File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+#//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign  
+#//                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
+#//                    Cynthia Gu, zg1@ornl.gov, Oak Ridge National Laboratory
+#//                    Norbert Podhorszki, pnorbert@ornl.gov, Oak Ridge National Laboratory
+#//                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
+#//                    Ying Wai Li, yingwaili@ornl.gov, Oak Ridge National Laboratory
+#//                    Marl Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
+#//		       Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+#//
+#// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+#//////////////////////////////////////////////////////////////////////////////////////
 
 CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/config.h.cmake.in
   ${qmcpack_BINARY_DIR}/src/config.h)
@@ -187,15 +205,16 @@ else()
     SUBDIRS(SandBox)
   ENDIF(BUILD_SANDBOX)
 
-  IF(BUILD_BENCHMARK)
-    SUBDIRS(benchmark)
-  ENDIF(BUILD_BENCHMARK)
-
   IF(BUILD_SQD)
     SUBDIRS(SQD)
   ENDIF(BUILD_SQD)
 
   if (BUILD_UNIT_TESTS)
+    SET(HAS_TARGET_COMPILE_DEFINITIONS 1)
+    IF (CMAKE_VERSION VERSION_LESS "2.8.11")
+      MESSAGE("CMake version 2.8.10 - some unit tests will not be built")
+      SET(HAS_TARGET_COMPILE_DEFINITIONS 0)
+    ENDIF()
     #Unit test directories
     INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/external_codes/catch)
     INCLUDE(${PROJECT_SOURCE_DIR}/CMake/unit_test.cmake)
@@ -204,11 +223,13 @@ else()
     SUBDIRS(einspline/tests)
     SUBDIRS(OhmmsData/tests)
     SUBDIRS(Lattice/tests)
-    SUBDIRS(ParticleBase/tests)
     SUBDIRS(Particle/tests)
     SUBDIRS(ParticleIO/tests)
     SUBDIRS(QMCWaveFunctions/tests)
     SUBDIRS(QMCHamiltonians/tests)
-    SUBDIRS(QMCDrivers/tests)
+    IF (HAS_TARGET_COMPILE_DEFINITIONS)
+      SUBDIRS(ParticleBase/tests)
+      SUBDIRS(QMCDrivers/tests)
+    ENDIF()
   endif()
 endif()

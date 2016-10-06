@@ -1,3 +1,20 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
+//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
+//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//
+// File created by: Luke Shulenburger, lshulen@sandia.gov, Sandia National Laboratories
+//////////////////////////////////////////////////////////////////////////////////////
+    
+    
+
+
+
 #include "hdf5.h"
 #include <iostream>
 #include <string>

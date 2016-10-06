@@ -27,7 +27,7 @@ module load cray-hdf5
 module load fftw
 module load boost
 module load subversion
-module load cmake
+module load cmake/2.8.11.2
 
 
 # Set environment variables

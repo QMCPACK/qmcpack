@@ -66,6 +66,7 @@ SET (EXECUTABLE_OUTPUT_PATH ${qmcpack_BINARY_DIR}/bin CACHE PATH "Single output 
 # OHMMS_DIM =  dimension of the problem
 # OHMMS_INDEXTYPE = type of index
 # OHMMS_PRECISION  = base precision, float, double etc
+# OHMMS_PRECISION_FULL  = full precision, double etc
 # QMC_COMPLEX = true if using complex wavefunctions
 # QMC_MPI =  enable MPI 
 # QMC_OMP = enable OMP 
@@ -73,8 +74,8 @@ SET (EXECUTABLE_OUTPUT_PATH ${qmcpack_BINARY_DIR}/bin CACHE PATH "Single output 
 ######################################################################
 SET(OHMMS_DIM 3 CACHE INTEGER "Select physical dimension")
 SET(OHMMS_INDEXTYPE int)
-SET(OHMMS_PRECISION_FULL double)
 MESSAGE(STATUS "defining the float point precision")
+SET(OHMMS_PRECISION_FULL double)
 IF(QMC_CUDA)
   SET(QMC_MIXED_PRECISION 1 CACHE BOOL "Enable/disable mixed precision")
   SET(OHMMS_PRECISION double)

@@ -11,9 +11,10 @@ fi
 if [ -e $place ]; then
 
 
-#for sys in build_gcc build_intel2016 build_intel2015 build_gcc_complex build_intel2016_complex build_intel2015_complex build_gcc_cuda build_intel2015_cuda build_gcc_mkl build_gcc_mkl_complex 
 # No CUDA in long tests - far too slow with current configuration
-for sys in build_gcc build_intel2016 build_intel2015 build_gcc_complex build_intel2016_complex build_intel2015_complex build_gcc_mkl build_gcc_mkl_complex 
+# Note non-MKL gcc tests are slow unless vectorized trig is utilized 
+#for sys in build_gcc build_intel2016 build_intel2015 build_gcc_complex build_intel2016_complex build_intel2015_complex build_gcc_cuda build_intel2015_cuda build_gcc_mkl build_gcc_mkl_complex 
+for sys in build_gcc build_intel2016 build_gcc_complex build_intel2016_complex build_gcc_mkl build_gcc_mkl_complex 
 do
 
 cd $place
@@ -42,7 +43,7 @@ case $sys in
 	module() { eval `/usr/bin/modulecmd sh $*`; }
 	module load mpi
 	export QMCPACK_TEST_SUBMIT_NAME=GCC-Release
-	ctest -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -S $PWD/../CMake/ctest_script.cmake,release  -VV --timeout 50000
+	ctest -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -S $PWD/../CMake/ctest_script.cmake,release -VV --timeout 50000
 	module unload mpi
 	;;
     "build_gcc_mkl")
@@ -55,9 +56,9 @@ case $sys in
 	export OLD_MKLROOT=$MKLROOT
 	module() { eval `/usr/bin/modulecmd sh $*`; }
 	module load mpi
-	source /opt/intel2016/bin/compilervars.sh intel64
+	source /opt/intel2016/mkl/bin/mklvars.sh intel64
 	export QMCPACK_TEST_SUBMIT_NAME=GCC-MKL-Release
-	ctest -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -S $PWD/../CMake/ctest_script.cmake,release  -VV --timeout 50000
+	ctest -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -S $PWD/../CMake/ctest_script.cmake,release -VV --timeout 50000
 	module unload mpi
 	export PATH=$OLD_PATH
 	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
@@ -78,7 +79,7 @@ case $sys in
 	source /opt/intel2016/bin/compilervars.sh intel64
 	source /opt/intel2016/impi/5.1.1.109/bin64/mpivars.sh
 	export QMCPACK_TEST_SUBMIT_NAME=Intel2016-Release
-	ctest -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -S $PWD/../CMake/ctest_script.cmake,release  -VV --timeout 50000
+	ctest -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -S $PWD/../CMake/ctest_script.cmake,release -VV --timeout 50000
 	export PATH=$OLD_PATH
 	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
 	export MANPATH=$OLD_MANPATH
@@ -98,7 +99,7 @@ case $sys in
 	source /opt/intel/bin/compilervars.sh intel64
 	source /opt/intel/impi_latest/bin64/mpivars.sh
 	export QMCPACK_TEST_SUBMIT_NAME=Intel2015-Release
-	ctest -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -S $PWD/../CMake/ctest_script.cmake,release  -VV --timeout 50000
+	ctest -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -S $PWD/../CMake/ctest_script.cmake,release -VV --timeout 50000
 	export PATH=$OLD_PATH
 	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
 	export MANPATH=$OLD_MANPATH
@@ -111,7 +112,7 @@ case $sys in
 	module() { eval `/usr/bin/modulecmd sh $*`; }
 	module load mpi
 	export QMCPACK_TEST_SUBMIT_NAME=GCC-Complex-Release
-	ctest -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -S $PWD/../CMake/ctest_script.cmake,release  -VV --timeout 50000
+	ctest -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -S $PWD/../CMake/ctest_script.cmake,release -VV --timeout 50000
 	module unload mpi
 	;;
     "build_gcc_mkl_complex")
@@ -124,9 +125,9 @@ case $sys in
 	export OLD_MKLROOT=$MKLROOT
 	module() { eval `/usr/bin/modulecmd sh $*`; }
 	module load mpi
-	source /opt/intel2016/bin/compilervars.sh intel64
+	source /opt/intel2016/mkl/bin/mklvars.sh intel64
 	export QMCPACK_TEST_SUBMIT_NAME=GCC-MKL-Complex-Release
-	ctest -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -S $PWD/../CMake/ctest_script.cmake,release  -VV --timeout 50000
+	ctest -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -S $PWD/../CMake/ctest_script.cmake,release -VV --timeout 50000
 	module unload mpi
 	export PATH=$OLD_PATH
 	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
@@ -147,7 +148,7 @@ case $sys in
 	source /opt/intel2016/bin/compilervars.sh intel64
 	source /opt/intel2016/impi/5.1.1.109/bin64/mpivars.sh
 	export QMCPACK_TEST_SUBMIT_NAME=Intel2016-Complex-Release
-	ctest -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -S $PWD/../CMake/ctest_script.cmake,release  -VV --timeout 50000
+	ctest -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -S $PWD/../CMake/ctest_script.cmake,release -VV --timeout 50000
 	export PATH=$OLD_PATH
 	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
 	export MANPATH=$OLD_MANPATH
@@ -167,7 +168,7 @@ case $sys in
 	source /opt/intel/bin/compilervars.sh intel64
 	source /opt/intel/impi_latest/bin64/mpivars.sh
 	export QMCPACK_TEST_SUBMIT_NAME=Intel2015-Complex-Release
-	ctest -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -S $PWD/../CMake/ctest_script.cmake,release  -VV --timeout 50000
+	ctest -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -S $PWD/../CMake/ctest_script.cmake,release -VV --timeout 50000
 	export PATH=$OLD_PATH
 	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
 	export MANPATH=$OLD_MANPATH
@@ -180,7 +181,7 @@ case $sys in
 	module() { eval `/usr/bin/modulecmd sh $*`; }
 	module load mpi
 	export QMCPACK_TEST_SUBMIT_NAME=GCC-CUDA-Release
-	ctest -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_CUDA=1 -S $PWD/../CMake/ctest_script.cmake,release  -VV --timeout 50000
+	ctest -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_CUDA=1 -S $PWD/../CMake/ctest_script.cmake,release -VV --timeout 50000
 	module unload mpi
 	;;
     "build_intel2015_cuda")
@@ -194,7 +195,7 @@ case $sys in
 	source /opt/intel/bin/compilervars.sh intel64
 	source /opt/intel/impi_latest/bin64/mpivars.sh
 	export QMCPACK_TEST_SUBMIT_NAME=Intel2015-CUDA-Release
-	ctest -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DQMC_CUDA=1 -S $PWD/../CMake/ctest_script.cmake,release  -VV --timeout 50000
+	ctest -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DQMC_CUDA=1 -S $PWD/../CMake/ctest_script.cmake,release -VV --timeout 50000
 	export PATH=$OLD_PATH
 	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
 	export MANPATH=$OLD_MANPATH

@@ -1,3 +1,18 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: Norbert Podhorszki, pnorbert@ornl.gov, Oak Ridge National Laboratory
+//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//
+// File created by: Norbert Podhorszki, pnorbert@ornl.gov, Oak Ridge National Laboratory
+//////////////////////////////////////////////////////////////////////////////////////
+    
+    
+
+
 #ifndef ADIOS_TRACE_H
 #define ADIOS_TRACE_H
 

@@ -207,6 +207,19 @@ ENDIF()
                     0 # VMC
                     TRUE)
 
+# qmc_ref_vmc_dmc  series 1  -1.84143
+# qmc_short_vmc_dmc  series 1  -1.844059 +/- 0.001850
+  LIST(APPEND BCC_H_DMC_SCALARS "totenergy" "-1.841430 0.001850")
+  QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-dmc_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+                    qmc_short_vmc_dmc
+                    qmc_short_vmc_dmc.in.xml
+                    1 16
+                    BCC_H_DMC_SCALARS
+                    1 # DMC
+                    TRUE)
+
+
 # Plane wave test of bccH (no pp, so faster than typical solids)
 # Currently disabled since take 90s to run
 #  QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-vmc_sdj-pw
@@ -238,6 +251,25 @@ ENDIF()
                     0 # VMC
                     TRUE)
 
+  QMC_RUN_AND_CHECK(short-diamondC_1x1x1_pp-vmc_sdj-meshf
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+                    qmc_short-meshf
+                    qmc_short-meshf.in.xml
+                    1 16
+                    DIAMOND_SCALARS
+                    0 # VMC
+                    TRUE)
+
+# Reference DMC run in qmc-ref "-10.531583 0.000265"
+  LIST(APPEND DIAMOND_DMC_SCALARS "totenergy" "-10.531583 0.0024")
+  QMC_RUN_AND_CHECK(short-diamondC_1x1x1_pp-dmc_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+                    qmc_short_vmc_dmc
+                    qmc_short_vmc_dmc.in.xml
+                    1 16
+                    DIAMOND_DMC_SCALARS
+                    1 # DMC
+                    TRUE)
 
   LIST(APPEND DIAMOND2_SCALARS "totenergy" "-21.668293 0.007")
   LIST(APPEND DIAMOND2_SCALARS "kinetic" "20.065151 0.044")
@@ -258,13 +290,15 @@ ENDIF()
                     0 # VMC
                     TRUE)
 
-  QMC_RUN_AND_CHECK(short-diamondC_1x1x1_pp-vmc_sdj-meshf
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-                    qmc_short-meshf
-                    qmc_short-meshf.in.xml
+# Reference DMC run in qmc-ref "-21.844975 0.001113"
+  LIST(APPEND DIAMOND2_DMC_SCALARS "totenergy" "-21.844975 0.00779")
+  QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-dmc_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    qmc_short_vmc_dmc
+                    qmc_short_vmc_dmc.in.xml
                     1 16
-                    DIAMOND_SCALARS
-                    0 # VMC
+                    DIAMOND2_DMC_SCALARS
+                    1 # DMC
                     TRUE)
 
 
@@ -313,6 +347,20 @@ ENDIF()
                     TRUE)
 
 
+# qmc_ref_vmc_dmc  series 1  -1.84143
+# qmc_long_vmc_dmc  series 1  -1.842355 +/- 0.000778
+  LIST(APPEND LONG_BCC_H_DMC_SCALARS "totenergy" "-1.841430 0.000778")
+  QMC_RUN_AND_CHECK(long-bccH_1x1x1_ae-dmc_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+                    qmc_long_vmc_dmc
+                    qmc_long_vmc_dmc.in.xml
+                    1 16
+                    LONG_BCC_H_DMC_SCALARS
+                    1 # DMC
+                    TRUE)
+
+
+
   LIST(APPEND LONG_DIAMOND_SCALARS "totenergy" "-10.491445 0.000065")
   LIST(APPEND LONG_DIAMOND_SCALARS "samples" "122880000 0.0")
   LIST(APPEND LONG_DIAMOND_SCALARS "flux" "0.0 0.03")
@@ -335,6 +383,17 @@ ENDIF()
                     0 # VMC
                     TRUE)
 
+# Reference DMC run in qmc-ref "-10.531583 0.000265"
+  LIST(APPEND LONG_DIAMOND_DMC_SCALARS "totenergy" "-10.531583 0.000815")
+  QMC_RUN_AND_CHECK(long-diamondC_1x1x1_pp-dmc_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+                    qmc_short_vmc_dmc
+                    qmc_short_vmc_dmc.in.xml
+                    1 16
+                    LONG_DIAMOND_DMC_SCALARS
+                    1 # DMC
+                    TRUE)
+
 
   LIST(APPEND LONG_DIAMOND2_SCALARS "totenergy" "-21.668293 0.00023")
   LIST(APPEND LONG_DIAMOND2_SCALARS "samples" "30720000 0.0")
@@ -347,6 +406,17 @@ ENDIF()
                     1 16
                     LONG_DIAMOND2_SCALARS
                     0 # VMC
+                    TRUE)
+
+# Reference DMC run in qmc-ref "-21.844975 0.001113"
+  LIST(APPEND LONG_DIAMOND2_DMC_SCALARS "totenergy" "-21.844975 0.002879")
+  QMC_RUN_AND_CHECK(long-diamondC_2x1x1_pp-dmc_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    qmc_long_vmc_dmc
+                    qmc_long_vmc_dmc.in.xml
+                    1 16
+                    LONG_DIAMOND2_DMC_SCALARS
+                    1 # DMC
                     TRUE)
 
 

@@ -80,7 +80,7 @@
 /* Define the base precision: float, double */
 #cmakedefine OHMMS_PRECISION @OHMMS_PRECISION@
 
-/* Define the full precision: float, double */
+/* Define the full precision: double, long double */
 #cmakedefine OHMMS_PRECISION_FULL @OHMMS_PRECISION_FULL@
 
 /* Define to 1 if precision is mixed, only for the CPU code */

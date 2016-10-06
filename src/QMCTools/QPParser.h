@@ -1,3 +1,19 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: Anouar Benali, benali@anl.gov, Argonne National Laboratory
+//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//
+// File created by: Anouar Benali, benali@anl.gov, Argonne National Laboratory
+//////////////////////////////////////////////////////////////////////////////////////
+    
+    
+
+
+
 //#ifndef QMCPLUSPLUS_TOOLS_GAMESS_OUT_H
 //#define QMCPLUSPLUS_TOOLS_GAMESS_OUT_H
 #include "QMCTools/QMCGaussianParserBase.h"

@@ -1,16 +1,22 @@
-//////////////////////////////////////////////////////////////////
-// (c) Copyright 2003-  by Ken Esler and Jeongnim Kim           //
-//////////////////////////////////////////////////////////////////
-//   National Center for Supercomputing Applications &          //
-//   Materials Computation Center                               //
-//   University of Illinois, Urbana-Champaign                   //
-//   Urbana, IL 61801                                           //
-//   e-mail: jnkim@ncsa.uiuc.edu                                //
-//                                                              //
-// Supported by                                                 //
-//   National Center for Supercomputing Applications, UIUC      //
-//   Materials Computation Center, UIUC                         //
-//////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
+//                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
+//                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+//                    Paul R. C. Kent, kentpr@ornl.gov, Oak Ridge National Laboratory
+//                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
+//                    Ying Wai Li, yingwaili@ornl.gov, Oak Ridge National Laboratory
+//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//
+// File created by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
+//////////////////////////////////////////////////////////////////////////////////////
+    
+    
 #include "Numerics/e2iphi.h"
 #include "simd/vmath.hpp"
 #include "qmc_common.h"

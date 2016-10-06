@@ -1,20 +1,19 @@
-//////////////////////////////////////////////////////////////////
-// (c) Copyright 1998-2002 by Jeongnim Kim
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
 //
-//   National Center for Supercomputing Applications &
-//   Materials Computation Center
-//   University of Illinois, Urbana-Champaign
-//   Urbana, IL 61801
-//   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// Supported by
-//   National Center for Supercomputing Applications, UIUC
-//   Materials Computation Center, UIUC
-//   Department of Physics, Ohio State University
-//   Ohio Supercomputer Center
-//////////////////////////////////////////////////////////////////
-// -*- C++ -*-
+// File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
+//		      Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign   
+//
+// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign 
+//////////////////////////////////////////////////////////////////////////////////////
+
+
+#ifndef OHMMS_PETE_VECTOR_H
+#define OHMMS_PETE_VECTOR_H
+
 /** A one-dimensional vector class based on PETE
  *
  *  Closely related to PETE STL vector example.
@@ -23,8 +22,7 @@
  *  \todo Implement openMP compatible container class or evaluate function.
  *  \todo Implement get/put member functions for MPI-like parallelism
  */
-#ifndef OHMMS_PETE_VECTOR_H
-#define OHMMS_PETE_VECTOR_H
+
 
 #include "PETE/PETE.h"
 

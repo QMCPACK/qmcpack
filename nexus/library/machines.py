@@ -1744,6 +1744,397 @@ export MPI_MSGS_PER_PROC=32768
 
 
 
+# SANDIA test
+class Chama(Supercomputer):
+    name = 'chama'
+
+    requires_account   = True
+    batch_capable      = True
+    #executable_subfile = True
+
+    prefixed_output    = True
+    outfile_extension  = '.output'
+    errfile_extension  = '.error'
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue='batch'
+
+        job.total_hours = job.days*24 + job.hours + job.minutes/60.0 + job.seconds/3600.0
+        if job.total_hours > 96:   # warn if job will take more than 96 hrs.
+            self.warn('!!! ATTENTION !!!\n  the maximum runtime on {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_time,job.total_hours))
+            job.hours   = max_time
+            job.minutes =0
+            job.seconds =0
+        #end if
+
+        #end if
+        c='#!/bin/bash\n'
+        c+='#SBATCH --job-name '+str(job.name)+'\n'
+        c+='#SBATCH --account='+str(job.account)+'\n'
+        c+='#SBATCH -N '+str(job.nodes)+'\n'
+        c+='#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
+        c+='#SBATCH --cpus-per-task={0}\n'.format(job.threads)
+        c+='#SBATCH -t {0}:{1}:{2}\n'.format(str(job.hours+24*job.days).zfill(2),str(job.minutes).zfill(2),str(job.seconds).zfill(2))
+        #c+='#SBATCH --export=ALL\n'   # equiv to PBS -V
+        c+='#SBATCH -o {0}\n'.format(job.outfile)
+        c+='#SBATCH -e {0}\n'.format(job.errfile)
+        c+='\n'
+        c+='module purge\n'
+        c+='module add intel/intel-16.0.1.150\n'
+        c+='module add libraries/intel-mkl-16.0.1.150\n'
+        c+='module add mvapich2-intel-psm/1.7\n'
+        return c
+    #end def write_job_header
+
+    '''# jpt - It seems that chama is not compatible with this function, and it seems to be superfluous. *shrug*
+    def read_process_id(self,output):
+        pid = None
+        lines = output.splitlines()
+        for line in lines:
+            if 'oic.ornl.gov' in line:
+                spid = line.split('.')[0]
+                if spid.isdigit():
+                    pid = int(spid)
+                #end if
+            #end if
+        #end for
+        return pid
+    '''
+    #end def read_process_id
+#end class Jaguar
+##### SANDIA test
+
+
+
+class Uno(Supercomputer):
+    name = 'uno'
+
+    requires_account   = True
+    batch_capable      = True
+    #executable_subfile = True
+
+    prefixed_output    = True
+    outfile_extension  = '.output'
+    errfile_extension  = '.error'
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue='batch'
+
+        job.total_hours = job.days*24 + job.hours + job.minutes/60.0 + job.seconds/3600.0
+        if job.total_hours > 96:   # warn if job will take more than 96 hrs.
+            self.warn('!!! ATTENTION !!!\n  the maximum runtime on {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_time,job.total_hours))
+            job.hours   = max_time
+            job.minutes =0
+            job.seconds =0
+        #end if
+
+        #end if
+        c='#!/bin/bash\n'
+        c+='#SBATCH --job-name '+str(job.name)+'\n'
+        c+='#SBATCH --account='+str(job.account)+'\n'
+        c+='#SBATCH -N '+str(job.nodes)+'\n'
+        c+='#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
+        c+='#SBATCH --cpus-per-task={0}\n'.format(job.threads)
+        c+='#SBATCH -t {0}:{1}:{2}\n'.format(str(job.hours+24*job.days).zfill(2),str(job.minutes).zfill(2),str(job.seconds).zfill(2))
+        #c+='#SBATCH --export=ALL\n'   # equiv to PBS -V
+        c+='#SBATCH -o {0}\n'.format(job.outfile)
+        c+='#SBATCH -e {0}\n'.format(job.errfile)
+        c+='#SBATCH -p quad\n'
+        c+='\n'
+        c+='module purge\n'
+        c+='module add intel/intel-16.0.1.150\n'
+        c+='module add libraries/intel-mkl-16.0.1.150\n'
+        c+='module add mvapich2-intel-psm/1.7\n'
+        return c
+    #end def write_job_header
+
+    '''# jpt - It seems that chama is not compatible with this function, and it seems to be superfluous. *shrug*
+    def read_process_id(self,output):
+        pid = None
+        lines = output.splitlines()
+        for line in lines:
+            if 'oic.ornl.gov' in line:
+                spid = line.split('.')[0]
+                if spid.isdigit():
+                    pid = int(spid)
+                #end if
+            #end if
+        #end for
+        return pid
+    '''
+    #end def read_process_id
+#end class Jaguar
+##### SANDIA test
+
+
+
+
+## Added 09/23/2016 by JP Townsend
+class Serrano(Supercomputer):
+    name = 'serrano'
+
+    requires_account   = True
+    batch_capable      = True
+    #executable_subfile = True
+
+    prefixed_output    = True
+    outfile_extension  = '.output'
+    errfile_extension  = '.error'
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue='batch'
+
+        job.total_hours = job.days*24 + job.hours + job.minutes/60.0 + job.seconds/3600.0
+        if job.total_hours > 96:   # warn if job will take more than 96 hrs.
+            self.warn('!!! ATTENTION !!!\n  the maximum runtime on {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_time,job.total_hours))
+            job.hours   = max_time
+            job.minutes =0
+            job.seconds =0
+        #end if
+
+        #end if
+        c='#!/bin/bash\n'
+        c+='#SBATCH --job-name '+str(job.name)+'\n'
+        c+='#SBATCH --account='+str(job.account)+'\n'
+        c+='#SBATCH -N '+str(job.nodes)+'\n'
+        c+='#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
+        c+='#SBATCH --cpus-per-task={0}\n'.format(job.threads)
+        c+='#SBATCH -t {0}:{1}:{2}\n'.format(str(job.hours+24*job.days).zfill(2),str(job.minutes).zfill(2),str(job.seconds).zfill(2))
+        #c+='#SBATCH --export=ALL\n'   # equiv to PBS -V
+        c+='#SBATCH -o {0}\n'.format(job.outfile)
+        c+='#SBATCH -e {0}\n'.format(job.errfile)
+        #c+='#SBATCH -p quad\n'
+        c+='\n'
+        c+='module purge\n'
+        c+='module add intel/16.0.3\n'
+        c+='module add mkl/16.0\n'
+        c+='module add mvapich2-intel-psm2/2.2rc1\n'
+        return c
+    #end def write_job_header
+
+    # jpt - It seems that slurm is not compatible with this function, and it seems not to matter. *shrug*
+    '''
+    def read_process_id(self,output):
+        pid = None
+        lines = output.splitlines()
+        for line in lines:
+            if 'oic.ornl.gov' in line:
+                spid = line.split('.')[0]
+                if spid.isdigit():
+                    pid = int(spid)
+                #end if
+            #end if
+        #end for
+        return pid
+    '''
+    #end def read_process_id
+#end class Jaguar
+##### SANDIA test
+
+
+
+
+## Added 09/23/2016 by JP Townsend
+class Skybridge(Supercomputer):
+    name = 'skybridge'
+
+    requires_account   = True
+    batch_capable      = True
+    #executable_subfile = True
+
+    prefixed_output    = True
+    outfile_extension  = '.output'
+    errfile_extension  = '.error'
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue='batch'
+
+        job.total_hours = job.days*24 + job.hours + job.minutes/60.0 + job.seconds/3600.0
+        if job.total_hours > 96:   # warn if job will take more than 96 hrs.
+            self.warn('!!! ATTENTION !!!\n  the maximum runtime on {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_time,job.total_hours))
+            job.hours   = max_time
+            job.minutes =0
+            job.seconds =0
+        #end if
+
+        #end if
+        c='#!/bin/bash\n'
+        c+='#SBATCH --job-name '+str(job.name)+'\n'
+        c+='#SBATCH --account='+str(job.account)+'\n'
+        c+='#SBATCH -N '+str(job.nodes)+'\n'
+        c+='#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
+        c+='#SBATCH --cpus-per-task={0}\n'.format(job.threads)
+        c+='#SBATCH -t {0}:{1}:{2}\n'.format(str(job.hours+24*job.days).zfill(2),str(job.minutes).zfill(2),str(job.seconds).zfill(2))
+        #c+='#SBATCH --export=ALL\n'   # equiv to PBS -V
+        c+='#SBATCH -o {0}\n'.format(job.outfile)
+        c+='#SBATCH -e {0}\n'.format(job.errfile)
+        #c+='#SBATCH -p quad\n'
+        c+='\n'
+        c+='module purge\n'
+        c+='module add intel/intel-16.0.1.150\n'
+        c+='module add libraries/intel-mkl-16.0.1.150\n'
+        c+='module add mvapich2-intel-psm/1.7\n'
+        return c
+    #end def write_job_header
+
+    # jpt - It seems that slurm is not compatible with this function, and it seems not to matter. *shrug*
+    '''
+    def read_process_id(self,output):
+        pid = None
+        lines = output.splitlines()
+        for line in lines:
+            if 'oic.ornl.gov' in line:
+                spid = line.split('.')[0]
+                if spid.isdigit():
+                    pid = int(spid)
+                #end if
+            #end if
+        #end for
+        return pid
+    '''
+    #end def read_process_id
+#end class Jaguar
+##### SANDIA test
+
+
+
+
+## Added 09/23/2016 by JP Townsend
+class Redsky(Supercomputer):
+    name = 'redsky'
+
+    requires_account   = True
+    batch_capable      = True
+    #executable_subfile = True
+
+    prefixed_output    = True
+    outfile_extension  = '.output'
+    errfile_extension  = '.error'
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue='batch'
+
+        job.total_hours = job.days*24 + job.hours + job.minutes/60.0 + job.seconds/3600.0
+        if job.total_hours > 96:   # warn if job will take more than 96 hrs.
+            self.warn('!!! ATTENTION !!!\n  the maximum runtime on {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_time,job.total_hours))
+            job.hours   = max_time
+            job.minutes =0
+            job.seconds =0
+        #end if
+
+        #end if
+        c='#!/bin/bash\n'
+        c+='#SBATCH --job-name '+str(job.name)+'\n'
+        c+='#SBATCH --account='+str(job.account)+'\n'
+        c+='#SBATCH -N '+str(job.nodes)+'\n'
+        c+='#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
+        c+='#SBATCH --cpus-per-task={0}\n'.format(job.threads)
+        c+='#SBATCH -t {0}:{1}:{2}\n'.format(str(job.hours+24*job.days).zfill(2),str(job.minutes).zfill(2),str(job.seconds).zfill(2))
+        #c+='#SBATCH --export=ALL\n'   # equiv to PBS -V
+        c+='#SBATCH -o {0}\n'.format(job.outfile)
+        c+='#SBATCH -e {0}\n'.format(job.errfile)
+        #c+='#SBATCH -p quad\n'
+        c+='\n'
+        c+='module purge\n'
+        c+='module add intel/intel-16.0.1.150\n'
+        c+='module add libraries/intel-mkl-16.0.1.150\n'
+        c+='module add mvapich2-intel-psm/1.7\n'
+        return c
+    #end def write_job_header
+
+    # jpt - It seems that slurm is not compatible with this function, and it seems not to matter. *shrug*
+    '''
+    def read_process_id(self,output):
+        pid = None
+        lines = output.splitlines()
+        for line in lines:
+            if 'oic.ornl.gov' in line:
+                spid = line.split('.')[0]
+                if spid.isdigit():
+                    pid = int(spid)
+                #end if
+            #end if
+        #end for
+        return pid
+    '''
+    #end def read_process_id
+#end class Jaguar
+##### SANDIA test
+
+
+
+
+## Added 09/23/2016 by JP Townsend
+class Solo(Supercomputer):
+    name = 'solo'
+
+    requires_account   = True
+    batch_capable      = True
+    #executable_subfile = True
+
+    prefixed_output    = True
+    outfile_extension  = '.output'
+    errfile_extension  = '.error'
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue='batch'
+
+        job.total_hours = job.days*24 + job.hours + job.minutes/60.0 + job.seconds/3600.0
+        if job.total_hours > 96:   # warn if job will take more than 96 hrs.
+            self.warn('!!! ATTENTION !!!\n  the maximum runtime on {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_time,job.total_hours))
+            job.hours   = max_time
+            job.minutes =0
+            job.seconds =0
+        #end if
+
+        #end if
+        c='#!/bin/bash\n'
+        c+='#SBATCH --job-name '+str(job.name)+'\n'
+        c+='#SBATCH --account='+str(job.account)+'\n'
+        c+='#SBATCH -N '+str(job.nodes)+'\n'
+        c+='#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
+        c+='#SBATCH --cpus-per-task={0}\n'.format(job.threads)
+        c+='#SBATCH -t {0}:{1}:{2}\n'.format(str(job.hours+24*job.days).zfill(2),str(job.minutes).zfill(2),str(job.seconds).zfill(2))
+        #c+='#SBATCH --export=ALL\n'   # equiv to PBS -V
+        c+='#SBATCH -o {0}\n'.format(job.outfile)
+        c+='#SBATCH -e {0}\n'.format(job.errfile)
+        #c+='#SBATCH -p quad\n'
+        c+='\n'
+        c+='module purge\n'
+        c+='module add intel/16.0.3\n'
+        c+='module add mkl/16.0\n'
+        c+='module add mvapich2-intel-psm2/2.2rc1\n'
+        return c
+    #end def write_job_header
+
+    # jpt - It seems that slurm is not compatible with this function, and it seems not to matter. *shrug*
+    '''
+    def read_process_id(self,output):
+        pid = None
+        lines = output.splitlines()
+        for line in lines:
+            if 'oic.ornl.gov' in line:
+                spid = line.split('.')[0]
+                if spid.isdigit():
+                    pid = int(spid)
+                #end if
+            #end if
+        #end for
+        return pid
+    '''
+    #end def read_process_id
+#end class Jaguar
+##### SANDIA test
+
+
+
+
 
 class Jaguar(Supercomputer):
     name = 'jaguar'
@@ -2288,6 +2679,13 @@ Lonestar(    22656,   2,     6,   12,  128,  'ibrun',   'qsub',   'qstat',    'q
 Matisse(        20,   2,     8,   64,    2, 'mpirun', 'sbatch',   'sacct', 'scancel')
 Komodo(         24,   2,     6,   48,    2, 'mpirun', 'sbatch',   'sacct', 'scancel')
 Amos(         5120,   1,    16,   16,  128,   'srun', 'sbatch',   'sacct', 'scancel')
+Chama(        1220,   2,    16,   64, 1000,   'srun', 'sbatch',  'squeue', 'scancel')
+Uno(             4,   4,    32,  128, 1000,   'srun', 'sbatch',  'squeue', 'scancel')
+Serrano(      1122,   2,    18,  128, 1000,   'srun', 'sbatch',  'squeue', 'scancel')
+Skybridge(    1848,   2,    16,   64, 1000,   'srun', 'sbatch',  'squeue', 'scancel')
+Redsky(       2302,   2,     8,   12, 1000,   'srun', 'sbatch',  'squeue', 'scancel')
+Solo(          187,   2,    18,  128, 1000,   'srun', 'sbatch',  'squeue', 'scancel')
+
 
 #machine accessor functions
 get_machine_name = Machine.get_hostname

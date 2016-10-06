@@ -1,6 +1,17 @@
-//////////////////////////////////////////////////////////////////
-// (c) Copyright 2013-  by Jeongnim Kim and Ken Esler           //
-//////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
+//                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//
+// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+//////////////////////////////////////////////////////////////////////////////////////
+    
+    
 /** @file EsinplineMixedAdoptor.h
  *
  * SplineAdoptor to save memory for the vacuum for 3D systems

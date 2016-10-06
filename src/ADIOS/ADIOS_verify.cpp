@@ -1,3 +1,18 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, Oak Ridge National Laboratory
+//                    Cynthia Gu, zg1@ornl.gov, Oak Ridge National Laboratory
+//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//
+// File created by: Cynthia Gu, zg1@ornl.gov, Oak Ridge National Laboratory
+//////////////////////////////////////////////////////////////////////////////////////
+    
+    
+
 
 #if defined(ADIOS_VERIFY) && defined(HAVE_ADIOS)
 #include "ADIOS/ADIOS_verify.h"

@@ -1,16 +1,15 @@
-//////////////////////////////////////////////////////////////////
-// (c) Copyright 1998-  by Jeongnim Kim
-//////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////
-//   Jeongnim Kim
-//////////////////////////////////////////////////////////////////
-// -*- C++ -*-
-/** @file  mpi_datatype.h
- *
- * data type compatible with MPI. Provides minimalistic interfaces to MPI
- * Do not use "using namespace mpi". Always use with mpi::
- * Expect to be replaced by boost::mpi
- */
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign   
+//
+// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign 
+//////////////////////////////////////////////////////////////////////////////////////
+
+
 #ifndef QMCPLUSPLUS_MPI_DATATYPEDEFINE_H
 #define QMCPLUSPLUS_MPI_DATATYPEDEFINE_H
 

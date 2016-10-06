@@ -1,3 +1,16 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: Bryan Clark, bclark@Princeton.edu, Princeton University
+//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
+//
+// File created by: Bryan Clark, bclark@Princeton.edu, Princeton University
+//////////////////////////////////////////////////////////////////////////////////////
+    
+    
 #include <stdio.h>
 #include "ILUGMRESInterface.h"
 #include <stdlib.h>

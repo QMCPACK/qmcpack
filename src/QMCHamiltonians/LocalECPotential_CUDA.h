@@ -1,19 +1,18 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
+//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
+//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//
+// File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
+//////////////////////////////////////////////////////////////////////////////////////
+    
 #ifndef LOCAL_ECPOTENTIAL_CUDA_H
 #define LOCAL_ECPOTENTIAL_CUDA_H
-
-//////////////////////////////////////////////////////////////////
-// (c) Copyright 2010-  by Ken Esler and Jeongnim Kim
-//////////////////////////////////////////////////////////////////
-//   National Center for Supercomputing Applications &
-//   Materials Computation Center
-//   University of Illinois, Urbana-Champaign
-//   Urbana, IL 61801
-//   e-mail: esler@uiuc.edu
-//
-// Supported by
-//   National Center for Supercomputing Applications, UIUC
-//   Materials Computation Center, UIUC
-//////////////////////////////////////////////////////////////////
 
 #include "QMCHamiltonians/LocalECPotential.h"
 #include "QMCHamiltonians/CudaCoulomb.h"

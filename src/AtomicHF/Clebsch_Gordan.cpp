@@ -1,4 +1,27 @@
-// -*- C++ -*-
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
+//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//
+// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+//////////////////////////////////////////////////////////////////////////////////////
+    
+    
+
+
+
+#include <math.h>
+#include <stdlib.h>
+#include "AtomicHF/Clebsch_Gordan.h"
+#include <iostream>
+
+//Additional File description----------------------------------
+// -*-  -*-
 /*! \author Jordan Vincent
  *  \author Curry Taylor
  *  \note  The original Prim was written in F90 by Tim Wilkens.
@@ -11,7 +34,7 @@
 // < l1 m1; l2 m2 | L m1+m2 >    <--->    cg[l1][l2][L][m1+6][m2+6]
 //
 // The "+6" offsets are due to the need to index arrays from 0 to
-// whatever in C++. Therefore, for example, in the case of
+// whatever in . Therefore, for example, in the case of
 // m1 = m2 = 0, the last two indices to the cg array are both *6*.
 //
 // This routine was adopted from a FORTRAN 77 algorithm taken from
@@ -25,10 +48,7 @@
 // l values greater than 6 are not allowed and will cause error.
 //
 
-#include <math.h>
-#include <stdlib.h>
-#include "AtomicHF/Clebsch_Gordan.h"
-#include <iostream>
+
 
 /*!\fn Clebsch_Gordan::Clebsch_Gordan(const int lmax)
  * \param lmax the maximum angular momentum
@@ -43,7 +63,7 @@
  Note: the indexing of the array is as follows:
  \f[ cg(l1,l2,L,m1+Lmax,m2+Lmax) \f]
  this is due to the need to index arrays from 0 to N-1
- in C++.
+ in .
  Note: As the main routine is statically defined (hard-coded),
  l values greater than 6 are not allowed and will cause error.
  *
