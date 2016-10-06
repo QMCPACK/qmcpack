@@ -83,10 +83,11 @@ QMCMain::QMCMain(Communicate* c)
       << "\n  OMP_NUM_THREADS      = " << omp_get_max_threads()
       << std::endl;
   app_log()
-      << "\n  BASE PRECISION          = " << GET_MACRO_VAL(OHMMS_PRECISION)
+      << "\n  Base precision          = " << GET_MACRO_VAL(OHMMS_PRECISION)
+      << "\n  Full precision          = " << GET_MACRO_VAL(OHMMS_PRECISION_FULL)
 #ifdef QMC_CUDA
-      << "\n  CUDA_PRECISION          = " << GET_MACRO_VAL(CUDA_PRECISION) 
-      << "\n  CUDA_COULOMB_PRECISION  = " << GET_MACRO_VAL(CUDA_COULOMB_PRECISION)
+      << "\n  CUDA base precision          = " << GET_MACRO_VAL(CUDA_PRECISION) 
+      << "\n  CUDA precision in coulomb  = " << GET_MACRO_VAL(CUDA_COULOMB_PRECISION)
 #endif
       << std::endl;
   app_log() << std::endl;
