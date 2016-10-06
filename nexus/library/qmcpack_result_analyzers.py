@@ -180,6 +180,8 @@ class OptimizationAnalyzer(ResultAnalyzer):
             vw = 0.0
         elif optimize=='energy_within_variance_tol' or optimize=='ewvt':
             None
+        elif optimize=='last':
+            None
         elif isinstance(optimize,(tuple,list)) and len(optimize)==2:
             ew,vw = optimize
         else:
@@ -197,6 +199,9 @@ class OptimizationAnalyzer(ResultAnalyzer):
                 vmin    = va.min()
                 vind    = indices[abs(va-vmin)/vmin<vartol]
                 index   = vind[en[vind].argmin()]
+                opt_series = series[index]
+            elif optimize=='last':
+                index = len(en)-1
                 opt_series = series[index]
             else:
                 cost = en*ew+va*vw
