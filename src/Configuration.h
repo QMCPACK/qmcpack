@@ -78,7 +78,7 @@ struct QMCTraits
   enum {DIM = OHMMS_DIM};
   typedef OHMMS_INDEXTYPE                IndexType;
   typedef OHMMS_PRECISION                RealType;
-  typedef double                         EstimatorRealType;
+  typedef OHMMS_PRECISION_FULL           EstimatorRealType;
 #if defined(QMC_COMPLEX)
   typedef std::complex<OHMMS_PRECISION>  ValueType;
 #ifdef QMC_CUDA
@@ -117,7 +117,7 @@ struct PtclOnLatticeTraits
 #endif
 
   typedef int                                          Index_t;
-  typedef double                                       Scalar_t;
+  typedef OHMMS_PRECISION_FULL                         Scalar_t;
   typedef std::complex<Scalar_t>                       Complex_t;
 
   typedef ParticleLayout_t::SingleParticleIndex_t      SingleParticleIndex_t;

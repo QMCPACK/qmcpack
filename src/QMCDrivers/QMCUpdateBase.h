@@ -46,7 +46,7 @@ public:
   typedef MCWalkerConfiguration::iterator WalkerIter_t;
   typedef SimpleFixedNodeBranch           BranchEngineType;
 #ifdef MIXED_PRECISION
-  typedef TinyVector<double, DIM>         mPosType;
+  typedef TinyVector<OHMMS_PRECISION_FULL, DIM>         mPosType;
 #else
   typedef PosType                         mPosType;
 #endif

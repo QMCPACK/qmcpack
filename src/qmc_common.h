@@ -47,9 +47,9 @@ struct QMCState
    */
   size_t memory_allocated;
   ///vacuum layer for non-periodic dimension
-  double vacuum;
-  ///supercell in double precision
-  Tensor<double,OHMMS_DIM> theSuperCell;
+  OHMMS_PRECISION_FULL vacuum;
+  ///supercell in full precision
+  Tensor<OHMMS_PRECISION_FULL,OHMMS_DIM> theSuperCell;
 
   ///store the name of the main eshd file name
   std::string master_eshd_name;

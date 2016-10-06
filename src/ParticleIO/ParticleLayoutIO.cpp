@@ -46,7 +46,7 @@ bool LatticeParser::put(xmlNodePtr cur)
   std::size_t ompgrid = ParticleLayout_t::OMP_GRID;
   std::size_t mpigrid = ParticleLayout_t::MPI_GRID;
 
-  Tensor<double,DIM> lattice_in;
+  Tensor<OHMMS_PRECISION_FULL,DIM> lattice_in;
 
   cur = cur->xmlChildrenNode;
   while (cur != NULL)

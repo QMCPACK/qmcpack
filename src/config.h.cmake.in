@@ -80,7 +80,10 @@
 /* Define the base precision: float, double */
 #cmakedefine OHMMS_PRECISION @OHMMS_PRECISION@
 
-/* Define to 1 if precision is mixed */
+/* Define the full precision: float, double */
+#cmakedefine OHMMS_PRECISION_FULL @OHMMS_PRECISION_FULL@
+
+/* Define to 1 if precision is mixed, only for the CPU code */
 #cmakedefine MIXED_PRECISION @MIXED_PRECISION@
 
 /* Define to 1 if complex wavefunctions are used */

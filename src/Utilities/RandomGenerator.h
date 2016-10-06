@@ -55,7 +55,7 @@ extern RandomGenerator_t Random;
 #include "Utilities/BoostRandom.h"
 namespace qmcplusplus
 {
-typedef BoostRandom<double> RandomGenerator_t;
+typedef BoostRandom<OHMMS_PRECISION_FULL> RandomGenerator_t;
 extern RandomGenerator_t Random;
 }
 #else

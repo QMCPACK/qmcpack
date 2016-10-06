@@ -131,7 +131,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
   {
     targetH  = new QMCHamiltonian;
     targetH->setName(myName);
-    targetH->addOperator(new BareKineticEnergy<double>(*targetPtcl),"Kinetic");
+    targetH->addOperator(new BareKineticEnergy<OHMMS_PRECISION_FULL>(*targetPtcl),"Kinetic");
   }
   OrbitalPoolType::iterator psi_it(psiPool.find(psiName));
   if(psi_it == psiPool.end())

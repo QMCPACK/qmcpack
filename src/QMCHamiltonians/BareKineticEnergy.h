@@ -372,7 +372,7 @@ struct BareKineticEnergy: public QMCHamiltonianBase
     for (int iw=0; iw<walkers.size(); iw++)
     {
       Walker_t &w = *(walkers[iw]);
-      double KE = 0.0;
+      RealType KE = 0.0;
       for (int ptcl=0; ptcl<w.G.size(); ptcl++)
         KE -= 0.5*(dot (w.G[ptcl],w.G[ptcl])  + w.L[ptcl]);
       w.getPropertyBase()[NUMPROPERTIES+myIndex] = KE;

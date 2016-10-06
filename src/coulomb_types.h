@@ -6,18 +6,18 @@
 
 #define DECLARE_COULOMB_TYPES \
   using pRealType=OHMMS_PRECISION;              \
-  using mRealType=double;                       \
+  using mRealType=OHMMS_PRECISION_FULL;                       \
   using pComplexType=std::complex<pRealType>;   \
-  using mComplexType=std::complex<double>;      \
+  using mComplexType=std::complex<OHMMS_PRECISION_FULL>;      \
   using PosType=TinyVector<pRealType,OHMMS_DIM>; 
 
 #else
 
 #define DECLARE_COULOMB_TYPES \
   typedef OHMMS_PRECISION pRealType;               \
-  typedef double mRealType;                        \
+  typedef OHMMS_PRECISION_FULL mRealType;                        \
   typedef std::complex<pRealType> pComplexType;    \
-  typedef std::complex<double> mComplexType;       \
+  typedef std::complex<OHMMS_PRECISION_FULL> mComplexType;       \
   typedef TinyVector<pRealType,OHMMS_DIM> PosType;
 
 #endif
