@@ -68,7 +68,7 @@ SET(HAVE_SSSE3 0)
 SET(HAVE_SSE3 0)
 SET(HAVE_SSE2 0)
 SET(HAVE_SSE 0)
-SET(SET_HAVE_SSE_FLAGS 1 CACHE BOOL "Use einspline routines with SSE intrinsics")
+SET(SET_HAVE_SSE_FLAGS 0 CACHE BOOL "Use einspline routines with SSE intrinsics")
 
 #check if the user has already specified -x option for cross-compiling.
 if(CMAKE_CXX_FLAGS MATCHES "-x" OR CMAKE_C_FLAGS MATCHES "-x")
