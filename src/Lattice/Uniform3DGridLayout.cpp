@@ -42,7 +42,7 @@ void Uniform3DGridLayout::SetLRCutoffs()
     value_type beta2 = (dot(v1,v1)*dot(c,v2) - dot (v1,v2)*dot(c,v1))/
                        (dot(v1,v1)*dot(v2,v2) - dot(v1,v2)*dot(v1,v2));
     TinyVector<value_type,3> p = beta1*v1 + beta2 * v2;
-    double dist = sqrt (dot(p-c,p-c));
+    value_type dist = sqrt (dot(p-c,p-c));
     LR_rc = std::min(LR_rc,dist);
 //       b = cross(a(Cyclic(i,1)),a(Cyclic(i,2)));
 //       value_type binv=1.0/std::sqrt(dot(b,b));

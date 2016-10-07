@@ -49,6 +49,7 @@ struct HEGGrid<T,3>
 {
   typedef CrystalLattice<T,3> PL_t;
   typedef typename PL_t::SingleParticlePos_t PosType;
+  typedef typename PL_t::Scalar_t            RealType;
 
   ///number of kpoints of a half sphere excluding gamma
   int NumKptsHalf;
@@ -262,7 +263,7 @@ struct HEGGrid<T,3>
     app_log()<<"  cubic size = "<<kpoints.size()<< std::endl;
     typename kpoints_t::iterator kptmp,kp=kpoints.begin(),kp_end=kpoints.end();
     // make the kpoint grid
-    T k2max = 1e99;
+    T k2max = std::numeric_limits<RealType>::max();
     for(int i0=-nc-1; i0<=nc+1; ++i0)
       for(int i1=-nc-1; i1<=nc+1; ++i1)
         for(int i2=-nc-1; i2<=nc+1; ++i2)

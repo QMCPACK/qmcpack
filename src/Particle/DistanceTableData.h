@@ -23,6 +23,7 @@
 #include "Utilities/PooledData.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
+#include <limits>
 #include <bitset>
 
 namespace qmcplusplus

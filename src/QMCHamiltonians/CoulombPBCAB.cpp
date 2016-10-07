@@ -301,9 +301,9 @@ CoulombPBCAB::evalConsts(bool report)
   Ve_const = 0.0;
   Vi_const = 0.0;
 #endif
-  RealType Consts=0.0;
-  RealType vs_k0 = AB->evaluateSR_k0();
-  RealType v1; //single particle energy
+  mRealType Consts=0.0;
+  mRealType vs_k0 = AB->evaluateSR_k0();
+  mRealType v1; //single particle energy
   for(int i=0; i<nelns; ++i)
   {
     v1=0.0;
@@ -340,11 +340,11 @@ CoulombPBCAB::Return_t
 CoulombPBCAB::evalSR(ParticleSet& P)
 {
   const DistanceTableData &d_ab(*P.DistTables[myTableIndex]);
-  RealType res=0.0;
+  mRealType res=0.0;
   //Loop over distinct eln-ion pairs
   for(int iat=0; iat<NptclA; iat++)
   {
-    RealType esum = 0.0;
+    mRealType esum = 0.0;
     RadFunctorType* rVs=Vat[iat];
     for(int nn=d_ab.M[iat], jat=0; nn<d_ab.M[iat+1]; ++nn,++jat)
     {
@@ -362,7 +362,7 @@ CoulombPBCAB::Return_t
 CoulombPBCAB::evalLR(ParticleSet& P)
 {
   const int slab_dir=OHMMS_DIM-1;
-  RealType res=0.0;
+  mRealType res=0.0;
   const StructFact& RhoKA(*(PtclA.SK));
   const StructFact& RhoKB(*(P.SK));
   if(RhoKA.SuperCellEnum==SUPERCELL_SLAB)
@@ -370,7 +370,7 @@ CoulombPBCAB::evalLR(ParticleSet& P)
     const DistanceTableData &d_ab(*P.DistTables[myTableIndex]);
     for(int iat=0; iat<NptclA; ++iat)
     {
-      RealType u=0;
+      mRealType u=0;
 #if !defined(USE_REAL_STRUCT_FACTOR)
       for(int nn=d_ab.M[iat], jat=0; nn<d_ab.M[iat+1]; ++nn,++jat)
         u += Qat[jat]*AB->evaluate_slab(d_ab.dr(nn)[slab_dir], RhoKA.KLists.kshell, RhoKA.eikr[iat], RhoKB.eikr[jat]);
@@ -382,7 +382,7 @@ CoulombPBCAB::evalLR(ParticleSet& P)
   {
     for(int i=0; i<NumSpeciesA; i++)
     {
-      RealType esum=0.0;
+      mRealType esum=0.0;
       for(int j=0; j<NumSpeciesB; j++)
       {
 #if defined(USE_REAL_STRUCT_FACTOR)
@@ -599,10 +599,10 @@ void CoulombPBCAB::add(int groupID, RadFunctorType* ppot)
     if(OHMMS::Controller->rank()==0)
     {
       FILE *fout = fopen ("Vlocal.dat", "w");
-      for (double r=1.0e-8; r<myRcut; r+=1.0e-2)
+      for (RealType r=1.0e-8; r<myRcut; r+=1.0e-2)
       {
-        double d_rV_dr, d2_rV_dr2;
-        double Vr = Vat[0]->splint(r, d_rV_dr, d2_rV_dr2);
+        RealType d_rV_dr, d2_rV_dr2;
+        RealType Vr = Vat[0]->splint(r, d_rV_dr, d2_rV_dr2);
         Vr = Vat[0]->splint(r);
         fprintf (fout, "%1.8e %1.12e %1.12e %1.12e\n", r, Vr, d_rV_dr, d2_rV_dr2);
       }
@@ -741,11 +741,11 @@ CoulombPBCAB::Return_t
 CoulombPBCAB::evalSRwithForces(ParticleSet& P)
 {
   const DistanceTableData &d_ab(*P.DistTables[myTableIndex]);
-  RealType res=0.0;
+  mRealType res=0.0;
   //Loop over distinct eln-ion pairs
   for(int iat=0; iat<NptclA; iat++)
   {
-    RealType esum = 0.0;
+    mRealType esum = 0.0;
     RadFunctorType* rVs=Vat[iat];
     for(int nn=d_ab.M[iat], jat=0; nn<d_ab.M[iat+1]; ++nn,++jat)
     {

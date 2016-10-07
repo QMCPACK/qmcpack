@@ -279,7 +279,7 @@ struct LatticeAnalyzer<T,1>
 template<typename T>
 inline bool found_shorter_base(TinyVector<TinyVector<T,3>,3>& rb)
 {
-  const T eps=2.0*std::numeric_limits<float>::epsilon();
+  const T eps=10.0*std::numeric_limits<float>::epsilon();
   int imax=0;
   T r2max=dot(rb[0],rb[0]);
   for(int i=1; i<3; i++)

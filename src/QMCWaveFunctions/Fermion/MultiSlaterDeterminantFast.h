@@ -175,8 +175,8 @@ public:
   ValueType curRatio;
   ValueType psiCurrent;
 
-  ValueType* FirstAddressOfG;
-  ValueType* LastAddressOfG;
+  ParticleSet::ParticleValue_t *FirstAddressOfG;
+  ParticleSet::ParticleValue_t *LastAddressOfG;
 
   ParticleSet::ParticleGradient_t myG,myG_temp;
   ParticleSet::ParticleLaplacian_t myL,myL_temp;

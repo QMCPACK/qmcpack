@@ -37,7 +37,7 @@ const hsize_t h5_observable_type=H5T_NATIVE_DOUBLE;
  */
 struct observable_helper
 {
-  typedef OHMMS_PRECISION value_type;
+  typedef QMCTraits::EstimatorRealType value_type;
   ///this can be handled by template argument
   //enum {type_id=H5T_NATIVE_DOUBLE};
   ///starting index
@@ -136,6 +136,52 @@ struct observable_helper
   inline void addProperty(T& p, const std::string& pname)
   {
     HDFAttribIO<T> a(p);
+    a.write(data_id,pname.c_str());
+  }
+
+  inline void addProperty(float& p, const std::string& pname)
+  {
+    double p_DP(p);
+    HDFAttribIO<double> a(p_DP);
+    a.write(data_id,pname.c_str());
+  }
+
+  inline void addProperty(Tensor<float, OHMMS_DIM>& p, const std::string& pname)
+  {
+    Tensor<double, OHMMS_DIM> p_DP;
+    p_DP = p;
+    HDFAttribIO<Tensor<double, OHMMS_DIM> > a(p_DP);
+    a.write(data_id,pname.c_str());
+  }
+
+  inline void addProperty(Matrix<float>& p, const std::string& pname)
+  {
+    Matrix<double> p_DP;
+    p_DP = p;
+    HDFAttribIO<Matrix<double> > a(p_DP);
+    a.write(data_id,pname.c_str());
+  }
+
+  inline void addProperty(TinyVector<float, OHMMS_DIM>& p, const std::string& pname)
+  {
+    TinyVector<double, OHMMS_DIM> p_DP(p);
+    HDFAttribIO<TinyVector<double, OHMMS_DIM> > a(p_DP);
+    a.write(data_id,pname.c_str());
+  }
+
+  inline void addProperty(std::vector<float>& p, const std::string& pname)
+  {
+    std::vector<double> p_DP;
+    p_DP.assign(p.begin(), p.end());
+    HDFAttribIO<std::vector<double> > a(p_DP);
+    a.write(data_id,pname.c_str());
+  }
+
+  inline void addProperty(std::vector<TinyVector<float, OHMMS_DIM> >& p, const std::string& pname)
+  {
+    std::vector<TinyVector<double, OHMMS_DIM> > p_DP;
+    p_DP.assign(p.begin(), p.end());
+    HDFAttribIO<std::vector<TinyVector<double, OHMMS_DIM> > > a(p_DP);
     a.write(data_id,pname.c_str());
   }
 

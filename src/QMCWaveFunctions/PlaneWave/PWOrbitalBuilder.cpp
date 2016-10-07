@@ -201,8 +201,10 @@ bool PWOrbitalBuilder::createPWBasis(xmlNodePtr cur)
     OHMMS::Controller->abort();
   }
   std::string tname=myParam->getTwistAngleName();
-  HDFAttribIO<PosType> hdfobj_twist(TwistAngle);
+  TinyVector<double, OHMMS_DIM> TwistAngle_DP;
+  HDFAttribIO<TinyVector<double, OHMMS_DIM> > hdfobj_twist(TwistAngle_DP);
   hdfobj_twist.read(hfileID,"/electrons/kpoint_0/reduced_k");
+  TwistAngle=TwistAngle_DP;
 #if defined(ENABLE_SMARTPOINTER)
   if(myBasisSet.get() ==0)
   {
@@ -311,8 +313,9 @@ PWOrbitalBuilder::createPW(xmlNodePtr cur, int spinIndex)
   {
     //app_log() << "  PW coefficients are complex." << std::endl;
     typedef std::vector<std::complex<RealType> > TempVecType;
-    TempVecType coefs(myBasisSet->inputmap.size());
-    HDFAttribIO<TempVecType> hdfobj_coefs(coefs);
+    typedef std::vector<std::complex<double> > TempVecType_DP;
+    TempVecType_DP coefs_DP(myBasisSet->inputmap.size());
+    HDFAttribIO<TempVecType_DP> hdfobj_coefs(coefs_DP);
     int ib=0;
     while(ib<nb)
     {
@@ -320,6 +323,7 @@ PWOrbitalBuilder::createPW(xmlNodePtr cur, int spinIndex)
       app_log() << "  Reading " << tname <<"/"<< bname << std::endl;
       hid_t band_grp_id =  H5Gopen(twist_grp_id,bname.c_str());
       hdfobj_coefs.read(band_grp_id,"psi_g");
+      TempVecType coefs(coefs_DP.begin(), coefs_DP.end());
       psi->addVector(coefs,ib);
       H5Gclose(band_grp_id);
       ++ib;
@@ -329,12 +333,10 @@ PWOrbitalBuilder::createPW(xmlNodePtr cur, int spinIndex)
   {
     // It appears the coefficients are always stored as complex in the HDF file?
     //app_log() << "  PW coefficients are real." << std::endl;
-    typedef std::vector<RealType> TempVecType;
     typedef std::vector<std::complex<RealType> > ComplexTempVecType;
-    TempVecType coefs(myBasisSet->inputmap.size());
-    ComplexTempVecType complex_coefs(myBasisSet->inputmap.size());
-    HDFAttribIO<TempVecType> hdfobj_coefs(coefs);
-    HDFAttribIO<ComplexTempVecType> hdfobj_complex_coefs(complex_coefs);
+    typedef std::vector<std::complex<double> > ComplexTempVecType_DP;
+    ComplexTempVecType_DP complex_coefs_DP(myBasisSet->inputmap.size());
+    HDFAttribIO<ComplexTempVecType_DP> hdfobj_complex_coefs(complex_coefs_DP);
     int ib=0;
     while(ib<nb)
     {
@@ -342,6 +344,7 @@ PWOrbitalBuilder::createPW(xmlNodePtr cur, int spinIndex)
       app_log() << "  Reading " << tname <<"/"<< bname << std::endl;
       hid_t band_grp_id =  H5Gopen(twist_grp_id,bname.c_str());
       hdfobj_complex_coefs.read(band_grp_id,"psi_g");
+      ComplexTempVecType complex_coefs(complex_coefs_DP.begin(),complex_coefs_DP.end());
       psi->addVector(complex_coefs,ib);
       H5Gclose(band_grp_id);
       ++ib;
@@ -385,14 +388,16 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
     twist_grp_id = H5Gcreate(es_grp_id,tname.c_str(),0);
   else
     twist_grp_id = H5Gopen(es_grp_id,tname.c_str());
-  HDFAttribIO<PosType> hdfobj_twist(TwistAngle);
+  TinyVector<double, OHMMS_DIM> TwistAngle_DP;
+  TwistAngle_DP=TwistAngle;
+  HDFAttribIO<TinyVector<double, OHMMS_DIM> > hdfobj_twist(TwistAngle_DP);
   hdfobj_twist.write(twist_grp_id,"twist_angle");
   ParticleSet::ParticleLayout_t& lattice(targetPtcl.Lattice);
   RealType dx=1.0/static_cast<RealType>(nG[0]-1);
   RealType dy=1.0/static_cast<RealType>(nG[1]-1);
   RealType dz=1.0/static_cast<RealType>(nG[2]-1);
 #if defined(VERYTINYMEMORY)
-  typedef Array<ValueType,3> StorageType;
+  typedef Array<ParticleSet::ParticleValue_t,3> StorageType;
   StorageType inData(nG[0],nG[1],nG[2]);
   int ib=0;
   while(ib<myParam->numBands)
@@ -444,7 +449,7 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
     ++ib;
   }
 #else
-  typedef Array<ValueType,3> StorageType;
+  typedef Array<ParticleSet::ParticleValue_t,3> StorageType;
   std::vector<StorageType*> inData;
   int nb=myParam->numBands;
   for(int ib=0; ib<nb; ib++)

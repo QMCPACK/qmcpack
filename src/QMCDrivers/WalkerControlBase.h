@@ -44,12 +44,16 @@ namespace qmcplusplus
  * - 2007/11/07
  * -- added functions to dump dmc histograms
  */
-class WalkerControlBase: public QMCTraits, public MPIObjectBase
+class WalkerControlBase: public MPIObjectBase
 {
 
 public:
   ///typedef of Walker_t
-  typedef MCWalkerConfiguration::Walker_t Walker_t;
+  typedef MCWalkerConfiguration::Walker_t  Walker_t;
+  ///typedef of RealType
+  typedef QMCTraits::EstimatorRealType     RealType;
+  ///typedef of IndexType
+  typedef QMCTraits::IndexType             IndexType;
 
   ///@enum enumeration to access curData and accumData for reduction
   enum {ENERGY_INDEX=0

@@ -32,9 +32,10 @@ namespace qmcplusplus
 struct CoulombPBCAA: public QMCHamiltonianBase, public ForceBase
 {
 
-  typedef LRCoulombSingleton::LRHandlerType LRHandlerType;
+  typedef LRCoulombSingleton::LRHandlerType  LRHandlerType;
   typedef LRCoulombSingleton::GridType       GridType;
   typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
+  typedef LRHandlerType::mRealType           mRealType;
   LRHandlerType* AA;
   GridType* myGrid;
   RadFunctorType* rVs;

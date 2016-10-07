@@ -33,6 +33,8 @@
 namespace qmcplusplus
 {
 
+typedef QMCTraits::RealType RealType;
+
 InitMolecularSystem::InitMolecularSystem(ParticleSetPool* pset,
     const char* aname):
   OhmmsElementBase(aname), ptclPool(pset) { }
@@ -76,7 +78,7 @@ void InitMolecularSystem::initAtom(ParticleSet* ions, ParticleSet* els)
   //3N-dimensional Gaussian
   ParticleSet::ParticlePos_t chi(els->getTotalNum());
   makeGaussRandom(chi);
-  double q=std::sqrt(static_cast<double>(els->getTotalNum()))*0.5;
+  RealType q=std::sqrt(static_cast<RealType>(els->getTotalNum()))*0.5;
   int nel(els->getTotalNum()), items(0);
   while(nel)
   {
@@ -89,8 +91,8 @@ void InitMolecularSystem::initAtom(ParticleSet* ions, ParticleSet* els)
 struct LoneElectron
 {
   int ID;
-  double BondLength;
-  inline LoneElectron(int id, double bl):ID(id),BondLength(bl) {}
+  RealType BondLength;
+  inline LoneElectron(int id, RealType bl):ID(id),BondLength(bl) {}
 };
 
 void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
@@ -111,7 +113,7 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
   for(int iat=0; iat<Centers; iat++)
     Qtot[iat] = static_cast<int>(Species(icharge,grID[iat]));
   //cutoff radius (Bohr) this a random choice
-  double cutoff = 4.0;
+  RealType cutoff = 4.0;
   ParticleSet::ParticlePos_t chi(els->getTotalNum());
   //makeGaussRandom(chi);
   makeSphereRandom(chi);
@@ -120,7 +122,7 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
   int item = 0;
   int nup_tot=0, ndown_tot=numUp;
   std::vector<LoneElectron> loneQ;
-  double rmin=cutoff;
+  RealType rmin=cutoff;
   ParticleSet::SingleParticlePos_t cm;
   for(int iat=0; iat<Centers; iat++)
   {
@@ -130,7 +132,7 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
       rmin = std::min(rmin,d_ii->r(nn));
     }
     //use 40% of the minimum bond
-    double sep=rmin*0.4;
+    RealType sep=rmin*0.4;
     int v2=Qtot[iat]/2;
     if(Qtot[iat]>v2*2)
     {
@@ -173,11 +175,11 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
     }
   }
   //extra electrons around the geometric center
-  double cnorm=1.0/static_cast<double>(Centers);
+  RealType cnorm=1.0/static_cast<RealType>(Centers);
   cm=cnorm*cm;
   if(nup_tot<numUp)
   {
-    double sep=rmin*2;
+    RealType sep=rmin*2;
     int iu=0;
     while(nup_tot<numUp)
     {
@@ -186,7 +188,7 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
   }
   if(ndown_tot<numDown)
   {
-    double sep=rmin*2;
+    RealType sep=rmin*2;
     int iu=0;
     while(ndown_tot<numDown)
     {
@@ -218,8 +220,8 @@ inline TinyVector<T,3> upper_bound(const TinyVector<T,3>& a, const TinyVector<T,
 
 void InitMolecularSystem::initWithVolume(ParticleSet* ions, ParticleSet* els)
 {
-  TinyVector<double,OHMMS_DIM> start(1.0);
-  TinyVector<double,OHMMS_DIM> end(0.0);
+  TinyVector<RealType,OHMMS_DIM> start(1.0);
+  TinyVector<RealType,OHMMS_DIM> end(0.0);
 
   ParticleSet::ParticlePos_t Ru(ions->getTotalNum());
   Ru.setUnit(PosUnit::LatticeUnit);
@@ -231,10 +233,10 @@ void InitMolecularSystem::initWithVolume(ParticleSet* ions, ParticleSet* els)
     end=upper_bound(Ru[iat],end);
   }
 
-  TinyVector<double,OHMMS_DIM> shift;
-  Tensor<double,OHMMS_DIM> newbox(ions->Lattice.R);
+  TinyVector<RealType,OHMMS_DIM> shift;
+  Tensor<RealType,OHMMS_DIM> newbox(ions->Lattice.R);
 
-  double buffer=2.0; //buffer 2 bohr
+  RealType buffer=2.0; //buffer 2 bohr
   for(int idim=0; idim<OHMMS_DIM; ++idim)
   {
     //if(ions->Lattice.BoxBConds[idim]) 
@@ -245,9 +247,9 @@ void InitMolecularSystem::initWithVolume(ParticleSet* ions, ParticleSet* els)
     //}
     //else
     {
-      double buffer_r=buffer*ions->Lattice.OneOverLength[idim];
-      start[idim]= std::max(0.0,(start[idim]-buffer_r));
-      end[idim]  = std::min(1.0,(end[idim]  +buffer_r));
+      RealType buffer_r=buffer*ions->Lattice.OneOverLength[idim];
+      start[idim]=std::max((RealType)0.0,(start[idim]-buffer_r));
+      end[idim]  =std::min((RealType)1.0,(end[idim]  +buffer_r));
       shift[idim]=start[idim]*ions->Lattice.Length[idim];
       if(std::abs(end[idim]=start[idim])<buffer)
       {//handle singular case

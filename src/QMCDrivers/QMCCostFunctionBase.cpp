@@ -901,11 +901,11 @@ QMCCostFunctionBase::lineoptimization(const std::vector<Return_t>& x0, const std
     //js(0,j)=x0[j];
     gr_norm+=gr[j]*gr[j];
   }
-  Return_t nw=1.0/static_cast<double>(NumSamples);
+  Return_t nw=1.0/static_cast<QMCTraits::RealType>(NumSamples);
   //Return_t MaxDispl=0.04;
   gr_norm=std::sqrt(gr_norm);
   Return_t dx=lambda_max/gr_norm;
-  dx=std::min(0.25,dx);
+  dx=std::min((QMCTraits::RealType)0.25,dx);
   if (val0<1e12)
   {
     y[0]=val0;
@@ -940,8 +940,8 @@ QMCCostFunctionBase::lineoptimization(const std::vector<Return_t>& x0, const std
     app_log() << " (" << dxmax << "," << y[i] << ")";
   }
   app_log() << std::endl;
-  Vector<double> polys(max_poly);
-  Vector<double> errors(max_poly);
+  Vector<QMCTraits::RealType> polys(max_poly);
+  Vector<QMCTraits::RealType> errors(max_poly);
   LeastSquaredFitLU(y,sigma,A,polys,errors);
   dl=-polys[1]/polys[2]*0.5;
   val_proj=polys[0]+dl*(polys[1]+dl*polys[2]);

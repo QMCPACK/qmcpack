@@ -235,7 +235,7 @@ NonLocalECPComponent::evaluate(ParticleSet& W, int iat,
     // Compute radial potential
     for(int ip=0; ip< nchannel; ip++)
     {
-      double dummy;
+      RealType dummy;
       vrad[ip]=nlpp_m[ip]->splint(r,dvrad[ip],dummy)*wgt_angpp_m[ip];
       dvrad[ip] *= wgt_angpp_m[ip];
     }
@@ -362,7 +362,7 @@ NonLocalECPComponent::evaluate(ParticleSet& W, ParticleSet &ions, int iat,
     // Compute radial potential
     for(int ip=0; ip< nchannel; ip++)
     {
-      double dummy;
+      RealType dummy;
       vrad[ip]=nlpp_m[ip]->splint(r,dvrad[ip],dummy)*wgt_angpp_m[ip];
       dvrad[ip] *= wgt_angpp_m[ip];
     }
@@ -507,7 +507,7 @@ NonLocalECPComponent::evaluate(ParticleSet& W, ParticleSet &ions, int iat,
 //       }
 //       // Compute radial potential
 //       for(int ip=0;ip< nchannel; ip++){
-// 	double dummy;
+// 	RealType dummy;
 //         vrad[ip]=nlpp_m[ip]->splint(r,dvrad[ip],dummy)*wgt_angpp_m[ip];
 // 	dvrad[ip] *= wgt_angpp_m[ip];
 //       }
@@ -698,7 +698,7 @@ NonLocalECPComponent::evaluate(ParticleSet& W, TrialWaveFunction& psi,int iat,
     // Compute radial potential
     for(int ip=0; ip< nchannel; ip++)
     {
-      double dummy;
+      RealType dummy;
       vrad[ip]=nlpp_m[ip]->splint(r,dvrad[ip],dummy)*wgt_angpp_m[ip];
       dvrad[ip] *= wgt_angpp_m[ip];
     }

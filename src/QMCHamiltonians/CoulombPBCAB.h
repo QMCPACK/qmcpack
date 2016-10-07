@@ -35,9 +35,10 @@ namespace qmcplusplus
 struct CoulombPBCAB: public QMCHamiltonianBase, public ForceBase
 {
 
-  typedef LRCoulombSingleton::LRHandlerType LRHandlerType;
-  typedef LRCoulombSingleton::GridType GridType;
+  typedef LRCoulombSingleton::LRHandlerType  LRHandlerType;
+  typedef LRCoulombSingleton::GridType       GridType;
   typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
+  typedef LRHandlerType::mRealType           mRealType;
 
   ///source particle set
   ParticleSet& PtclA;

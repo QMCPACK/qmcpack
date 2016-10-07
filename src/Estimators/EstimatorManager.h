@@ -40,13 +40,14 @@ class QMCHamiltonian;
 class CollectablesEstimator;
 
 /**Class to manage a set of ScalarEstimators */
-class EstimatorManager: public QMCTraits
+class EstimatorManager
 {
 
 public:
 
-  typedef ScalarEstimatorBase  EstimatorType;
-  typedef std::vector<RealType>     BufferType;
+  typedef QMCTraits::EstimatorRealType  RealType;
+  typedef ScalarEstimatorBase           EstimatorType;
+  typedef std::vector<RealType>              BufferType;
   //enum { WEIGHT_INDEX=0, BLOCK_CPU_INDEX, ACCEPT_RATIO_INDEX, TOTAL_INDEX};
 
   ///name of the primary estimator name

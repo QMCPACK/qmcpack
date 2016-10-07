@@ -935,7 +935,7 @@ void ParticleSet::clearDistanceTables()
 int ParticleSet::addPropertyHistory(int leng)
 {
   int newL = PropertyHistory.size();
-  std::vector<RealType> newVecHistory = std::vector<RealType>(leng,0.0);
+  std::vector<EstimatorRealType> newVecHistory=std::vector<EstimatorRealType>(leng,0.0);
   PropertyHistory.push_back(newVecHistory);
   PHindex.push_back(0);
   return newL;

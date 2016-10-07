@@ -201,12 +201,33 @@ Communicate::allreduce(long& g)
 
 template<>
 inline void
+Communicate::allreduce(float& g)
+{
+  if(d_ncontexts==1)
+    return;
+  float gt = g;
+  MPI_Allreduce(&(gt), &(g), 1, MPI_FLOAT, MPI_SUM, myMPI);
+}
+
+template<>
+inline void
 Communicate::allreduce(double& g)
 {
   if(d_ncontexts==1)
     return;
   double gt = g;
   MPI_Allreduce(&(gt), &(g), 1, MPI_DOUBLE, MPI_SUM, myMPI);
+}
+
+template<>
+inline void
+Communicate::allreduce(qmcplusplus::TinyVector<float,OHMMS_DIM>& g)
+{
+  if(d_ncontexts==1)
+    return;
+  qmcplusplus::TinyVector<float,OHMMS_DIM> gt(g);
+  MPI_Allreduce(g.begin(), gt.begin(), OHMMS_DIM, MPI_FLOAT, MPI_SUM, myMPI);
+  g = gt;
 }
 
 template<>
@@ -255,11 +276,33 @@ Communicate::allreduce(std::vector<long>& g)
 
 template<>
 inline void
+Communicate::allreduce(std::vector<float>& g)
+{
+  std::vector<float> gt(g.size(), 0.0f);
+  MPI_Allreduce(&(g[0]),&(gt[0]),g.size(),MPI_FLOAT,MPI_SUM,
+                myMPI);
+  g = gt;
+}
+
+template<>
+inline void
 Communicate::allreduce(std::vector<double>& g)
 {
   std::vector<double> gt(g.size(), 0.0);
   MPI_Allreduce(&(g[0]),&(gt[0]),g.size(),MPI_DOUBLE,MPI_SUM,
                 myMPI);
+  g = gt;
+}
+
+template<>
+inline void
+Communicate::allreduce(PooledData<float>& g)
+{
+  PooledData<float> gt(g.size(), g.size_DP());
+  MPI_Allreduce(g.data(),gt.data(),g.size(),MPI_FLOAT,MPI_SUM,
+                myMPI);
+  if (g.size_DP()) MPI_Allreduce(g.data_DP(),gt.data_DP(),g.size_DP(),
+                                 MPI_DOUBLE,MPI_SUM,myMPI);
   g = gt;
 }
 
@@ -275,12 +318,13 @@ Communicate::allreduce(PooledData<double>& g)
 
 template<>
 inline void
-Communicate::reduce(std::vector<double>& g)
+Communicate::allreduce(qmcplusplus::Matrix<float>& g)
 {
-  std::vector<double> gt(g.size(), 0);
-  MPI_Reduce(&(g[0]),&(gt[0]),g.size(),MPI_DOUBLE,MPI_SUM,0,myMPI);
-  if(!d_mycontext)
-    g = gt;
+  std::vector<float> gt(g.size());
+  std::copy(g.begin(),g.end(),gt.begin());
+  MPI_Allreduce(g.data(), &gt[0], g.size(), MPI_FLOAT, MPI_SUM,
+                myMPI);
+  std::copy(gt.begin(),gt.end(),g.data());
 }
 
 template<>
@@ -292,6 +336,26 @@ Communicate::allreduce(qmcplusplus::Matrix<double>& g)
   MPI_Allreduce(g.data(), &gt[0], g.size(), MPI_DOUBLE, MPI_SUM,
                 myMPI);
   copy(gt.begin(),gt.end(),g.data());
+}
+
+template<>
+inline void
+Communicate::reduce(std::vector<float>& g)
+{
+  std::vector<float> gt(g.size(), 0.0f);
+  MPI_Reduce(&(g[0]),&(gt[0]),g.size(),MPI_FLOAT,MPI_SUM,0,myMPI);
+  if(!d_mycontext)
+    g = gt;
+}
+
+template<>
+inline void
+Communicate::reduce(std::vector<double>& g)
+{
+  std::vector<double> gt(g.size(), 0.0);
+  MPI_Reduce(&(g[0]),&(gt[0]),g.size(),MPI_DOUBLE,MPI_SUM,0,myMPI);
+  if(!d_mycontext)
+    g = gt;
 }
 
 template<>
@@ -336,7 +400,6 @@ Communicate::bcast(float& g)
 {
   MPI_Bcast(&g,1,MPI_FLOAT,0,myMPI);
 }
-
 
 template<>
 inline void
@@ -405,6 +468,13 @@ Communicate::bcast(qmcplusplus::Tensor<double,3>& g)
 
 template<>
 inline void
+Communicate::bcast(qmcplusplus::Tensor<float,3>& g)
+{
+  MPI_Bcast(&(g[0]),9,MPI_FLOAT,0,myMPI);
+}
+
+template<>
+inline void
 Communicate::bcast(qmcplusplus::Vector<double>& g)
 {
   MPI_Bcast(&(g[0]),g.size(),MPI_DOUBLE,0,myMPI);
@@ -412,9 +482,23 @@ Communicate::bcast(qmcplusplus::Vector<double>& g)
 
 template<>
 inline void
+Communicate::bcast(qmcplusplus::Vector<float>& g)
+{
+  MPI_Bcast(&(g[0]),g.size(),MPI_FLOAT,0,myMPI);
+}
+
+template<>
+inline void
 Communicate::bcast(qmcplusplus::Vector<std::complex<double> >& g)
 {
   MPI_Bcast(&(g[0]),2*g.size(),MPI_DOUBLE,0,myMPI);
+}
+
+template<>
+inline void
+Communicate::bcast(qmcplusplus::Vector<complex<float> >& g)
+{
+  MPI_Bcast(&(g[0]),2*g.size(),MPI_FLOAT,0,myMPI);
 }
 
 template<>
@@ -455,6 +539,13 @@ Communicate::bcast(Array<double,3> &g)
 
 template<>
 inline void
+Communicate::bcast(Array<float,3> &g)
+{
+  MPI_Bcast(g.data(), g.size(), MPI_FLOAT, 0, myMPI);
+}
+
+template<>
+inline void
 Communicate::bcast(Array<int,1> &g)
 {
   MPI_Bcast(g.data(), g.size(), MPI_INT, 0, myMPI);
@@ -483,12 +574,26 @@ Communicate::bcast(Array<std::complex<double>,3> &g)
   MPI_Bcast(g.data(), 2*g.size(), MPI_DOUBLE, 0, myMPI);
 }
 
+template<>
+inline void
+Communicate::bcast(Array<complex<float>,3> &g)
+{
+  MPI_Bcast(g.data(), 2*g.size(), MPI_FLOAT, 0, myMPI);
+}
+
 
 template<>
 inline void
 Communicate::bcast(std::vector<double>& g)
 {
   MPI_Bcast(&(g[0]),g.size(),MPI_DOUBLE,0,myMPI);
+}
+
+template<>
+inline void
+Communicate::bcast(std::vector<float>& g)
+{
+  MPI_Bcast(&(g[0]),g.size(),MPI_FLOAT,0,myMPI);
 }
 
 template<>
@@ -500,11 +605,18 @@ Communicate::bcast(PooledData<double>& g)
 
 template<>
 inline void
+Communicate::bcast(PooledData<float>& g)
+{
+  MPI_Bcast(g.data(),g.size(),MPI_FLOAT,0,myMPI);
+  if (g.size_DP()) MPI_Bcast(g.data_DP(),g.size_DP(),MPI_DOUBLE,0,myMPI);
+}
+
+template<>
+inline void
 Communicate::bcast(PooledData<int>& g)
 {
   MPI_Bcast(g.data(),g.size(),MPI_INT,0,myMPI);
 }
-
 
 template<>
 inline void

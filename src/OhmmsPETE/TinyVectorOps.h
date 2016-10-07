@@ -127,15 +127,27 @@ struct OTAssign< TinyVector<T1,3> , TinyVector<T2,3> , OP >
   }
 };
 
-template<class T1, class OP>
-struct OTAssign< TinyVector<T1,3> , TinyVector<std::complex<T1>,3> , OP >
+template<class T1, class T2, class OP>
+struct OTAssign< TinyVector<T1,3> , TinyVector<std::complex<T2>,3> , OP >
 {
   inline static void
-  apply( TinyVector<T1,3>& lhs, const TinyVector<std::complex<T1>,3>& rhs, OP op)
+  apply( TinyVector<T1,3>& lhs, const TinyVector<std::complex<T2>,3>& rhs, OP op)
   {
     op(lhs[0] , rhs[0].real() );
     op(lhs[1] , rhs[1].real() );
     op(lhs[2] , rhs[2].real() );
+  }
+};
+
+template<class T1, class T2, class OP>
+struct OTAssign< TinyVector<std::complex<T1>,3> , TinyVector<std::complex<T2>,3> , OP >
+{
+  inline static void
+  apply( TinyVector<std::complex<T1>,3>& lhs, const TinyVector<std::complex<T2>,3>& rhs, OP op)
+  {
+    op(lhs[0] , rhs[0] );
+    op(lhs[1] , rhs[1] );
+    op(lhs[2] , rhs[2] );
   }
 };
 
@@ -398,17 +410,33 @@ struct OTDot< TinyVector<T1,3> , TinyVector<std::complex<T1>,3> >
 };
 
 /** specialization for complex-real TinyVector */
-template<class T1>
-struct OTDot< TinyVector<std::complex<T1>,3> , TinyVector<T1,3> >
+template<class T1, class T2>
+struct OTDot< TinyVector<std::complex<T1>,3> , TinyVector<T2,3> >
 {
   typedef T1 Type_t;
   inline static Type_t
-  apply(const TinyVector<std::complex<T1>,3>& lhs, const TinyVector<T1,3>& rhs)
+  apply(const TinyVector<std::complex<T1>,3>& lhs, const TinyVector<T2,3>& rhs)
   {
     return lhs[0].real()*rhs[0] + lhs[1].real()*rhs[1] + lhs[2].real()*rhs[2];
   }
 };
 
+/** specialization for complex-complex TinyVector */
+template<class T1, class T2>
+struct OTDot< TinyVector<std::complex<T1>,3> , TinyVector<std::complex<T2>,3> >
+{
+  typedef typename BinaryReturn<std::complex<T1>, std::complex<T2>, OpMultiply>::Type_t Type_t;
+  inline static Type_t
+  apply(const TinyVector<std::complex<T1>,3>& lhs, const TinyVector<std::complex<T2>,3>& rhs)
+  {
+    return std::complex<T1>(lhs[0].real()*rhs[0].real() - lhs[0].imag()*rhs[0].imag() + 
+                            lhs[1].real()*rhs[1].real() - lhs[1].imag()*rhs[1].imag() + 
+                            lhs[2].real()*rhs[2].real() - lhs[2].imag()*rhs[2].imag() ,
+                            lhs[0].real()*rhs[0].imag() + lhs[0].imag()*rhs[0].real() + 
+                            lhs[1].real()*rhs[1].imag() + lhs[1].imag()*rhs[1].real() + 
+                            lhs[2].real()*rhs[2].imag() + lhs[2].imag()*rhs[2].real() );
+  }
+};
 
 //////////////////////////////////////////////////////////////////////
 //

@@ -76,9 +76,8 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalkers(WalkerIter_t it, WalkerIter_
     int nAcceptTemp(0);
     int nRejectTemp(0);
     //copy the old energy and scale factor of drift
-    RealType eold(thisWalker.Properties(LOCALENERGY));
-    RealType vqold(thisWalker.Properties(DRIFTSCALE));
-    RealType enew(eold);
+    EstimatorRealType eold(thisWalker.Properties(LOCALENERGY));
+    EstimatorRealType enew(eold);
     RealType rr_proposed=0.0;
     RealType rr_accepted=0.0;
     RealType gf_acc=1.0;
@@ -92,7 +91,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalkers(WalkerIter_t it, WalkerIter_
       {
         //get the displacement
         GradType grad_iat=Psi.evalGrad(W,iat);
-        PosType dr;
+        mPosType dr;
         getScaledDrift(tauovermass, grad_iat, dr);
         dr += sqrttau * deltaR[iat];
         //RealType rr=dot(dr,dr);
@@ -121,13 +120,13 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalkers(WalkerIter_t it, WalkerIter_
         }
         else
         {
-          RealType logGf = -0.5*dot(deltaR[iat],deltaR[iat]);
+          EstimatorRealType logGf = -0.5*dot(deltaR[iat],deltaR[iat]);
           //Use the force of the particle iat
           //RealType scale=getDriftScale(m_tauovermass,grad_iat);
           //dr = thisWalker.R[iat]-newpos-scale*real(grad_iat);
           getScaledDrift(tauovermass, grad_iat, dr);
           dr = thisWalker.R[iat] - newpos - dr;
-          RealType logGb = -oneover2tau*dot(dr,dr);
+          EstimatorRealType logGb = -oneover2tau*dot(dr,dr);
           RealType prob = ratio*ratio*std::exp(logGb-logGf);
           if(RandomGen() < prob)
           {

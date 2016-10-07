@@ -47,11 +47,11 @@ struct DiffOrbitalBase
        };
 
   //@{typedefs inherited from OrbitalBase
-  typedef OrbitalBase::RealType           RealType;
-  typedef OrbitalBase::ValueType          ValueType;
-  typedef OrbitalBase::PosType            PosType;
-  typedef OrbitalBase::GradVectorType     GradVectorType;
-  typedef OrbitalBase::ValueVectorType    ValueVectorType;
+  typedef OrbitalBase::RealType             RealType;
+  typedef OrbitalBase::ValueType            ValueType;
+  typedef OrbitalBase::PosType              PosType;
+  typedef ParticleSet::ParticleGradient_t   GradVectorType;
+  typedef ParticleSet::ParticleLaplacian_t  ValueVectorType;
   //@}
   /** list of reference orbitals which contribute to the derivatives
    */

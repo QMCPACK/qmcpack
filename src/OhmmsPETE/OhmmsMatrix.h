@@ -493,7 +493,7 @@ inline void evaluate(Matrix<T, C> &lhs, const Op &op,
   }
   else
   {
-    std::cerr << "Error: LHS and RHS don't conform." << std::endl;
+    std::cerr << "Error: LHS and RHS don't conform in OhmmsMatrix." << std::endl;
     abort();
   }
 }

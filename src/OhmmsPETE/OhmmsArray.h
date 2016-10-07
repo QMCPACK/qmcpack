@@ -18,23 +18,35 @@
  *
  *  Equivalent to blitz::Array<T,D>, pooma::Array<D,T>.
  *  No operators are provided.
- *  \todo PETE
+ *  \todo use aligned_vector<T>
  */
 #include <vector>
 #include <iostream>
 
 template<class T, unsigned D>
-class Array
+struct Array
 {
-public:
 
   typedef T          Type_t;
-  typedef std::vector<T>  Container_t;
+  typedef std::vector<T>  Container_t; 
   typedef Array<T,D> This_t;
 
-  Array();
+  size_t Length[D];
+  Container_t X;
 
-  Array(const Array<T,D>& rhs);// copy contructor
+  //default constructor
+  Array()
+  {
+    for(int i=0; i<D; i++)
+      Length[i] = 0;
+  }
+
+  //copy constructor
+  Array(const Array& rhs)
+  {
+    resize(rhs);
+    std::copy(rhs.begin(),rhs.end(),X.begin());
+  }
 
   // specialized for 1-Dim
   Array(size_t n)
@@ -67,7 +79,7 @@ public:
     resize(dims);
   }
 
-  // Destructor
+  // do nothing Destructor
   ~Array() {}
 
   inline unsigned dim() const
@@ -91,6 +103,15 @@ public:
   {
     return X;
   }
+
+  template<typename TT>
+    void resize(const Array<TT,D>& rhs)
+    {
+      X.resize(rhs.size());
+      for(int i=0; i<D; i++)
+        Length[i] = rhs.Length[i];
+    }
+
 
   template<typename ST1>
   void resize(ST1* newdims)
@@ -162,6 +183,24 @@ public:
     return *this;
   }
 
+  This_t& operator=(const Array& rhs)
+  {
+    if(&rhs != this)
+    {
+      resize(rhs);
+      std::copy(rhs.begin(),rhs.end(),X.begin());
+    }
+    return *this;
+  }
+
+  template<typename TT>
+  This_t& operator=(const Array<TT, D>& rhs)
+  {
+    resize(rhs);
+    std::copy(rhs.begin(),rhs.end(),X.begin());
+    return *this;
+  }
+
   // Get and Set Operations
   inline Type_t& operator()(size_t i)
   {
@@ -207,30 +246,10 @@ public:
     return s;
   }
 
-private:
-  size_t Length[D];
-  Container_t X;
 };
 
 
-template<class T, unsigned D>
-Array<T,D>::Array()
-{
-  for(int i=0; i<D; i++)
-    Length[i] = 0;
-}
-
-template<class T, unsigned D>
-Array<T,D>::Array(const Array<T,D>& rhs)
-{
-  // resize the matrix
-  resize(rhs.X.size());
-  // assign the D-dimension indices
-  for(int i=0; i<D; i++)
-    Length[i] = rhs.Length[i];
-  copy(rhs.begin(),rhs.end(),X.begin());
-}
-
+//need to assert
 template<class T, unsigned D>
 void Array<T,D>::resize(size_t n)
 {
@@ -253,6 +272,16 @@ void Array<T,D>::resize(size_t l, size_t m, size_t n)
   Length[1] = m;
   Length[2] = n;
   X.resize(l*m*n);//,T());
+}
+
+template<class T, unsigned D>
+void Array<T,D>::resize(size_t l, size_t m, size_t n, size_t o)
+{
+  Length[0] = l;
+  Length[1] = m;
+  Length[2] = n;
+  Length[3] = o;
+  X.resize(l*m*n*o);//,T());
 }
 #endif //OHMMS_PETE_ARRAY_H
 

@@ -29,7 +29,7 @@ struct ForwardWalking: public QMCHamiltonianBase
   std::vector<int> Hindices;
   std::vector<int> Pindices;
   std::vector<std::vector<int> > walkerLengths;
-  std::vector<double> Values;
+  std::vector<RealType> Values;
   std::vector<std::string> Names;
   int blockT,nObservables,nValues,FirstHamiltonian;
   double count;
@@ -61,7 +61,7 @@ struct ForwardWalking: public QMCHamiltonianBase
 
   inline Return_t calculate(ParticleSet& P)
   {
-    std::vector<Return_t>::iterator Vit=Values.begin();
+    std::vector<RealType>::iterator Vit=Values.begin();
     for(int i=0; i<nObservables; i++)
     {
       int j=0;

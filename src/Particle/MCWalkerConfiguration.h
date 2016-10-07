@@ -93,7 +93,7 @@ public:
 #ifdef QMC_CUDA
   gpu::device_vector<CUDA_PRECISION*> RList_GPU, GradList_GPU, LapList_GPU;
   // First index is the species.  The second index is the walker
-  std::vector<gpu::device_vector<CUDA_COULOMB_PRECISION*> > RhokLists_GPU;
+  std::vector<gpu::device_vector<CUDA_PRECISION_FULL*> > RhokLists_GPU;
   gpu::device_vector<CUDA_PRECISION*> DataList_GPU;
   gpu::device_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > Rnew_GPU;
   gpu::host_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > Rnew_host;
@@ -105,7 +105,7 @@ public:
   gpu::device_vector<int> AcceptList_GPU;
   gpu::host_vector<int> AcceptList_host;
   gpu::host_vector<CUDA_PRECISION*> hostlist;
-  gpu::host_vector<CUDA_COULOMB_PRECISION*> hostlist_AA;
+  gpu::host_vector<CUDA_PRECISION_FULL*> hostlist_AA;
   gpu::host_vector<TinyVector<CUDA_PRECISION, OHMMS_DIM> > R_host;
   gpu::host_vector<TinyVector<CudaValueType, OHMMS_DIM> > Grad_host;
   void allocateGPU(size_t buffersize);

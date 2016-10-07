@@ -80,12 +80,17 @@ QMCMain::QMCMain(Communicate* c)
       << "\n  MPI Nodes            = " << OHMMS::Controller->size()
       << "\n  MPI Nodes per group  = " << myComm->size()
       << "\n  MPI Group ID         = " << myComm->getGroupID()
-      << "\n  OMP_NUM_THREADS      = " << omp_get_max_threads() << std::endl;
-#ifdef QMC_CUDA
+      << "\n  OMP_NUM_THREADS      = " << omp_get_max_threads()
+      << std::endl;
   app_log()
-      << "\n  CUDA_PRECISION          = " << GET_MACRO_VAL(CUDA_PRECISION) 
-      << "\n  CUDA_COULOMB_PRECISION  = " << GET_MACRO_VAL(CUDA_COULOMB_PRECISION) << std::endl;
+      << "\n  Precision used in this calculation, see definitions in the manual:"
+      << "\n  Base precision      = " << GET_MACRO_VAL(OHMMS_PRECISION)
+      << "\n  Full precision      = " << GET_MACRO_VAL(OHMMS_PRECISION_FULL)
+#ifdef QMC_CUDA
+      << "\n  CUDA base precision = " << GET_MACRO_VAL(CUDA_PRECISION) 
+      << "\n  CUDA full precision = " << GET_MACRO_VAL(CUDA_PRECISION_FULL)
 #endif
+      << std::endl;
   app_log() << std::endl;
   app_log().flush();
 }

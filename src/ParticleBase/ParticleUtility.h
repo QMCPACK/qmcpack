@@ -219,11 +219,11 @@ void wrapAroundBox(const PL& lat, const PV& pin, PV& pout)
  * \return a dot product of an array
  */
 /////////////////////////////////////////////////////////////////
-template<unsigned D>
-inline double Dot(const ParticleAttrib<TinyVector<double, D> >& pa,
-                  const ParticleAttrib<TinyVector<double, D> >& pb)
+template<typename T, unsigned D>
+inline T Dot(const ParticleAttrib<TinyVector<T, D> >& pa,
+                  const ParticleAttrib<TinyVector<T, D> >& pb)
 {
-  double sum = 0;
+  T sum = 0;
   for(int i=0; i<pa.size(); i++)
   {
     sum += dot(pa[i],pb[i]);
@@ -231,10 +231,10 @@ inline double Dot(const ParticleAttrib<TinyVector<double, D> >& pa,
   return sum;
 }
 
-
-inline double Sum (const ParticleAttrib<double>& pa)
+template<typename T>
+inline T Sum (const ParticleAttrib<T>& pa)
 {
-  double sum = 0;
+  T sum = 0;
   for(int i=0; i<pa.size(); i++)
   {
     sum += pa[i];

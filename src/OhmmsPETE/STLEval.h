@@ -190,7 +190,7 @@ inline void evaluate(std::vector<T, Allocator> &lhs, const Op &op,
   }
   else
   {
-    std::cerr << "Error: LHS and RHS don't conform." << std::endl;
+    std::cerr << "Error: LHS and RHS don't conform in TLEval." << std::endl;
     exit(1);
   }
 }

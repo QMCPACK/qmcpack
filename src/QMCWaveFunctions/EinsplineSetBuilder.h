@@ -126,7 +126,7 @@ class EinsplineSetBuilder : public BasisSetBuilder
 public:
 
   typedef std::map<std::string,ParticleSet*> PtclPoolType;
-  typedef ParticleSet::ParticleLayout_t UnitCellType;
+  typedef CrystalLattice<ParticleSet::Scalar_t,DIM> UnitCellType;
 
   ///reference to the particleset pool
   PtclPoolType &ParticleSets;
@@ -234,7 +234,7 @@ public:
   // This stores which "true" twist number I am using
   int TwistNum;
   TinyVector<double,OHMMS_DIM> givenTwist;
-  std::vector<PosType> TwistAngles;
+  std::vector<TinyVector<double,OHMMS_DIM> > TwistAngles;
 //     integer index of sym operation from the irreducible brillion zone
   std::vector<int> TwistSymmetry;
 //     number of twists equivalent to this one in the big DFT grid
@@ -256,7 +256,7 @@ public:
   inline bool TwistPair (PosType a, PosType b);
   // This maps a 3-integer twist index into the twist number in the file
   std::map<TinyVector<int,OHMMS_DIM>,int,Int3less> TwistMap;
-  void AnalyzeTwists();
+  //void AnalyzeTwists();
   void AnalyzeTwists2();
   void TileIons();
   void OccupyBands(int spin, int sortBands, int numOrbs);
@@ -275,11 +275,11 @@ public:
   // Muffin-tin information  //
   /////////////////////////////
   int NumMuffinTins;
-  std::vector<RealType> MT_APW_radii;
+  std::vector<double> MT_APW_radii;
   std::vector<Vector<double> > MT_APW_rgrids;
   std::vector<int> MT_APW_lmax;
   std::vector<int> MT_APW_num_radial_points;
-  std::vector<PosType> MT_centers;
+  std::vector<TinyVector<double, OHMMS_DIM> > MT_centers;
 
   ////////////////////////////////
   // Atomic orbital information //

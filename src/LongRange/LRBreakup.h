@@ -23,60 +23,60 @@
 #include "Configuration.h"
 #include "Particle/ParticleSet.h"
 #include "LongRange/KContainer.h"
-#include "Numerics/Blasf.h"
+#include "Numerics/OhmmsBlas.h"
 #include <cassert>
 
 namespace qmcplusplus
 {
 
 template<class BreakupBasis>
-class LRBreakup: public QMCTraits
+struct LRBreakup
 {
 
-private:
+  DECLARE_COULOMB_TYPES
+
   //Typedef for the lattice-type. We don't need the full particle-set.
   typedef ParticleSet::ParticleLayout_t ParticleLayout_t;
 
   //We use an internal k-list with degeneracies to do the breakup.
   //We do this because the number of vectors is much larger than we'd
   //use elsewhere.
-  void AddKToList(RealType k, RealType degeneracy=1.0);
+  void AddKToList(mRealType k, mRealType degeneracy=1.0);
 
-public:
   ///The basis to be used for breakup.
   BreakupBasis& Basis;
   /// For each k,  KList[k][0] = |k| and KList[k][1] = degeneracy
-  std::vector<TinyVector<RealType,2> > KList;
+  std::vector<TinyVector<mRealType,2> > KList;
   /** setup KList
    * @param kc k-space cutoff for long-range sums
    * @param kcont  k at which approximate (spherical shell) degeneracies are used.
    * @param kmax largest k used for performing the breakup
    * @return the maximum kshell for the given kc
    */
-  IndexType SetupKVecs(RealType kc, RealType kcont, RealType kmax);
+  int SetupKVecs(mRealType kc, mRealType kcont, mRealType kmax);
 
   //Fk is FT of F_full(r) up to kmax
   //adjust is used for constraining values in the breakup
 
   /* REPLACED SO WE CAN USE TYPES OTHER THAN STL VECTOR.
-      RealType DoBreakup(const std::vector<RealType> &Fk, std::vector<RealType> &t,
+      mRealType DoBreakup(const std::vector<mRealType> &Fk, std::vector<mRealType> &t,
   		       const std::vector<bool> &adjust);
-      RealType DoBreakup(const std::vector<RealType> &Fk, std::vector<RealType> &t);
+      mRealType DoBreakup(const std::vector<mRealType> &Fk, std::vector<mRealType> &t);
   */
-  RealType DoBreakup(RealType *Fk, RealType *t, RealType *adjust);
-  RealType DoGradBreakup(RealType *Fk, RealType *t, RealType *adjust);
-  RealType DoStrainBreakup(RealType *Fk, RealType *dFk, RealType *t, RealType *adjust);
-  void DoAllBreakup(RealType *chisqr, RealType *Fk, RealType *dFk, RealType *t, 
-                    RealType *gt, RealType *dt, RealType *adjust); 
-  RealType DoBreakup(RealType *Fk, RealType *t)
+  mRealType DoBreakup(mRealType *Fk, mRealType *t, mRealType *adjust);
+  mRealType DoGradBreakup(mRealType *Fk, mRealType *t, mRealType *adjust);
+  mRealType DoStrainBreakup(mRealType *Fk, mRealType *dFk, mRealType *t, mRealType *adjust);
+  void DoAllBreakup(mRealType *chisqr, mRealType *Fk, mRealType *dFk, mRealType *t, 
+                    mRealType *gt, mRealType *dt, mRealType *adjust); 
+  mRealType DoBreakup(mRealType *Fk, mRealType *t)
   {
-    const RealType tolerance = std::numeric_limits<RealType>::epsilon();
+    const mRealType tolerance = std::numeric_limits<mRealType>::epsilon();
     //t must be allocated up to Basis.NumBasisElem();
     //Fk must be allocated and filled up to KList.size();
     //  assert(t.size()==Basis.NumBasisElem());
-    Matrix<RealType> A;
-    std::vector<RealType> b;
-    Matrix<RealType> cnk;
+    Matrix<mRealType> A;
+    std::vector<mRealType> b;
+    Matrix<mRealType> cnk;
     int numElem = Basis.NumBasisElem(); //t.size();
     A.resize(numElem, numElem);
     b.resize(numElem,0.0);
@@ -88,7 +88,7 @@ public:
     {
       for (int ki=0; ki<KList.size(); ki++)
       {
-        RealType k = KList[ki][0];
+        mRealType k = KList[ki][0];
         cnk(n,ki) = Basis.c(n,k);
       }
     }
@@ -105,18 +105,18 @@ public:
     }
     //////////////////////////
     //Do the SVD:
-    // Matrix<RealType> U(numElem, numElem), V(numElem, numElem);
-    // std::vector<RealType> S(numElem), Sinv(numElem);
+    // Matrix<mRealType> U(numElem, numElem), V(numElem, numElem);
+    // std::vector<mRealType> S(numElem), Sinv(numElem);
     //////////////////////////
     //  SVdecomp(A, U, S, V);
     //////////////////////////
     int M = A.rows();
     int N = A.cols();
-    Matrix<RealType> Atrans(N,M);
-    Matrix<RealType> U, V;
+    Matrix<mRealType> Atrans(N,M);
+    Matrix<mRealType> U, V;
     U.resize(std::min(M,N),M);
     V.resize(N,std::min(M,N));
-    std::vector<RealType> S, Sinv;
+    std::vector<mRealType> S, Sinv;
     S.resize(std::min(N,M));
     //Do the transpose
     for(int i=0; i<M; i++)
@@ -130,14 +130,14 @@ public:
     int LDU = M;
     int LDVT = std::min(M,N);
     int LWORK = 10*std::max(3*std::min(N,M)+std::max(M,N),5*std::min(M,N));
-    std::vector<RealType> WORK(LWORK);
+    std::vector<mRealType> WORK(LWORK);
     int INFO;
-    dgesvd(&JOBU,&JOBVT,&M,&N,Atrans.data(),&LDA,&S[0],U.data(),
+    LAPACK::gesvd(&JOBU,&JOBVT,&M,&N,Atrans.data(),&LDA,&S[0],U.data(),
            &LDU,V.data(),&LDVT,&WORK[0],&LWORK,&INFO);
     assert(INFO==0);
     int ur = U.rows();
     int uc = U.cols();
-    Matrix<RealType> Utrans(uc,ur);
+    Matrix<mRealType> Utrans(uc,ur);
     for(int i=0; i<ur; i++)
     {
       for(int j=0; j<uc; j++)
@@ -147,7 +147,7 @@ public:
     U=Utrans;
     ///////////////////////////////////
     // Zero out near-singular values
-    RealType Smax=S[0];
+    mRealType Smax=S[0];
     for (int i=1; i<S.size(); i++)
       Smax = std::max(S[i],Smax);
     Sinv.resize(S.size());
@@ -164,7 +164,7 @@ public:
     // Compute t_n, removing singular values
     for (int i=0; i<numElem; i++)
     {
-      RealType coef = 0.0;
+      mRealType coef = 0.0;
       for (int j=0; j<numElem; j++)
         coef += U(j,i) * b[j];
       coef *= Sinv[i];
@@ -172,7 +172,7 @@ public:
         t[k] += coef * V(k,i);
     }
     // Calculate chi-squared
-    RealType Yk, chi2;
+    mRealType Yk, chi2;
     chi2 = 0.0;
     for (int ki=0; ki<KList.size(); ki++)
     {
@@ -195,15 +195,15 @@ public:
   }
 
 
-  RealType DoGradBreakup(RealType *Fk, RealType *t)
+  mRealType DoGradBreakup(mRealType *Fk, mRealType *t)
   {
-    const RealType tolerance = std::numeric_limits<RealType>::epsilon();
+    const mRealType tolerance = std::numeric_limits<mRealType>::epsilon();
     //t must be allocated up to Basis.NumBasisElem();
     //Fk must be allocated and filled up to KList.size();
     //  assert(t.size()==Basis.NumBasisElem());
-    Matrix<RealType> A;
-    std::vector<RealType> b;
-    Matrix<RealType> cnk;
+    Matrix<mRealType> A;
+    std::vector<mRealType> b;
+    Matrix<mRealType> cnk;
     int numElem = Basis.NumBasisElem(); //t.size();
     A.resize(numElem, numElem);
     b.resize(numElem,0.0);
@@ -213,7 +213,7 @@ public:
     {
       for (int ki=0; ki<KList.size(); ki++)
       {
-        RealType k = KList[ki][0];
+        mRealType k = KList[ki][0];
         cnk(n,ki) = Basis.c(n,k);
       }
     }
@@ -224,7 +224,7 @@ public:
     {
       for (int ki=0; ki<KList.size(); ki++)
       {
-		RealType k2=KList[ki][0]*KList[ki][0];
+		mRealType k2=KList[ki][0]*KList[ki][0];
         b[l] += k2*KList[ki][1]*Fk[ki] * cnk(l, ki);
         for (int n=0; n<numElem; n++)
           A(l,n) += k2*KList[ki][1]*cnk(l,ki)*cnk(n,ki);
@@ -232,18 +232,18 @@ public:
     }
     //////////////////////////
     //Do the SVD:
-    // Matrix<RealType> U(numElem, numElem), V(numElem, numElem);
-    // std::vector<RealType> S(numElem), Sinv(numElem);
+    // Matrix<mRealType> U(numElem, numElem), V(numElem, numElem);
+    // std::vector<mRealType> S(numElem), Sinv(numElem);
     //////////////////////////
     //  SVdecomp(A, U, S, V);
     //////////////////////////
     int M = A.rows();
     int N = A.cols();
-    Matrix<RealType> Atrans(N,M);
-    Matrix<RealType> U, V;
+    Matrix<mRealType> Atrans(N,M);
+    Matrix<mRealType> U, V;
     U.resize(std::min(M,N),M);
     V.resize(N,std::min(M,N));
-    std::vector<RealType> S, Sinv;
+    std::vector<mRealType> S, Sinv;
     S.resize(std::min(N,M));
     //Do the transpose
     for(int i=0; i<M; i++)
@@ -257,14 +257,14 @@ public:
     int LDU = M;
     int LDVT = std::min(M,N);
     int LWORK = 10*std::max(3*std::min(N,M)+std::max(M,N),5*std::min(M,N));
-    std::vector<RealType> WORK(LWORK);
+    std::vector<mRealType> WORK(LWORK);
     int INFO;
-    dgesvd(&JOBU,&JOBVT,&M,&N,Atrans.data(),&LDA,&S[0],U.data(),
+    LAPACK::gesvd(&JOBU,&JOBVT,&M,&N,Atrans.data(),&LDA,&S[0],U.data(),
            &LDU,V.data(),&LDVT,&WORK[0],&LWORK,&INFO);
     assert(INFO==0);
     int ur = U.rows();
     int uc = U.cols();
-    Matrix<RealType> Utrans(uc,ur);
+    Matrix<mRealType> Utrans(uc,ur);
     for(int i=0; i<ur; i++)
     {
       for(int j=0; j<uc; j++)
@@ -274,7 +274,7 @@ public:
     U=Utrans;
     ///////////////////////////////////
     // Zero out near-singular values
-    RealType Smax=S[0];
+    mRealType Smax=S[0];
     for (int i=1; i<S.size(); i++)
       Smax = std::max(S[i],Smax);
     Sinv.resize(S.size());
@@ -291,7 +291,7 @@ public:
     // Compute t_n, removing singular values
     for (int i=0; i<numElem; i++)
     {
-      RealType coef = 0.0;
+      mRealType coef = 0.0;
       for (int j=0; j<numElem; j++)
         coef += U(j,i) * b[j];
       coef *= Sinv[i];
@@ -299,11 +299,11 @@ public:
         t[k] += coef * V(k,i);
     }
     // Calculate chi-squared
-    RealType Yk, chi2;
+    mRealType Yk, chi2;
     chi2 = 0.0;
     for (int ki=0; ki<KList.size(); ki++)
     {
-	  RealType k2=KList[ki][0]*KList[ki][0];
+	  mRealType k2=KList[ki][0]*KList[ki][0];
       Yk = Fk[ki];
       for (int n=0; n<numElem; n++)
       {
@@ -318,8 +318,8 @@ public:
 
 template<class BreakupBasis>
 void
-LRBreakup<BreakupBasis>::AddKToList(RealType k,
-                                    RealType degeneracy /* =1.0 */)
+LRBreakup<BreakupBasis>::AddKToList(mRealType k,
+                                    mRealType degeneracy /* =1.0 */)
 {
   //Search for this k already in list
   int ki=0;
@@ -327,7 +327,7 @@ LRBreakup<BreakupBasis>::AddKToList(RealType k,
     ki++;
   if(ki==KList.size())
   {
-    TinyVector<RealType,2> temp(k,degeneracy);
+    TinyVector<mRealType,2> temp(k,degeneracy);
     KList.push_back(temp);
   }
   else
@@ -336,17 +336,17 @@ LRBreakup<BreakupBasis>::AddKToList(RealType k,
 
 
 template<class BreakupBasis>
-typename LRBreakup<BreakupBasis>::IndexType
-LRBreakup<BreakupBasis>::SetupKVecs(RealType kc, RealType kcont, RealType kmax)
+int
+LRBreakup<BreakupBasis>::SetupKVecs(mRealType kc, mRealType kcont, mRealType kmax)
 {
   //Add low |k| ( < kcont) k-points with exact degeneracy
   KContainer kexact;
   kexact.UpdateKLists(Basis.get_Lattice(),kcont);
   bool findK=true;
-  RealType kc2=kc*kc;
+  mRealType kc2=kc*kc;
   //use at least one shell
   size_t ks=0;
-  kc2 = std::max(kc2,kexact.ksq[kexact.kshell[ks]]);
+  kc2 = std::max(kc2,static_cast<mRealType>(kexact.ksq[kexact.kshell[ks]]));
   while(findK)
   {
     if(kexact.ksq[kexact.kshell[ks]]>kc2)
@@ -360,7 +360,7 @@ LRBreakup<BreakupBasis>::SetupKVecs(RealType kc, RealType kcont, RealType kmax)
     AddKToList(std::sqrt(kexact.ksq[kexact.kshell[ks]]), kexact.kshell[ks+1]-kexact.kshell[ks]);
   ////Add these vectors to the internal list
   //int numk=0;
-  //RealType modk2;
+  //mRealType modk2;
   //for(int ki=0; ki<kexact.numk; ki++) {
   //  modk2 = dot(kexact.kpts_cart[ki],kexact.kpts_cart[ki]);
   //  if(modk2 > (kc*kc)) { //Breakup needs kc < k < kcont.
@@ -371,32 +371,32 @@ LRBreakup<BreakupBasis>::SetupKVecs(RealType kc, RealType kcont, RealType kmax)
   //Add high |k| ( >kcont, <kmax) k-points with approximate degeneracy
   //Volume of 1 K-point is (2pi)^3/(a1.a2^a3)
 #if OHMMS_DIM==3
-  RealType kelemvol = 8*M_PI*M_PI*M_PI/Basis.get_CellVolume();
+  mRealType kelemvol = 8*M_PI*M_PI*M_PI/Basis.get_CellVolume();
   //Generate 4000 shells:
   const int N=4000;
-  RealType deltak = (kmax-kcont)/N;
+  mRealType deltak = (kmax-kcont)/N;
   for(int i=0; i<N; i++)
   {
-    RealType k1 = kcont + deltak*i;
-    RealType k2 = k1 + deltak;
-    RealType kmid = 0.5*(k1+k2);
-    RealType shellvol = 4.0*M_PI*(k2*k2*k2-k1*k1*k1)/3.0;
-    RealType degeneracy = shellvol/kelemvol;
+    mRealType k1 = kcont + deltak*i;
+    mRealType k2 = k1 + deltak;
+    mRealType kmid = 0.5*(k1+k2);
+    mRealType shellvol = 4.0*M_PI*(k2*k2*k2-k1*k1*k1)/3.0;
+    mRealType degeneracy = shellvol/kelemvol;
     AddKToList(kmid,degeneracy);
     numk += static_cast<int>(degeneracy);
   }
 #elif OHMMS_DIM==2
-  RealType kelemvol = 4*M_PI*M_PI/Basis.get_CellVolume();
+  mRealType kelemvol = 4*M_PI*M_PI/Basis.get_CellVolume();
   //Generate 8000 shells:
   const int N=8000;
-  RealType deltak = (kmax-kcont)/N;
+  mRealType deltak = (kmax-kcont)/N;
   for(int i=0; i<N; i++)
   {
-    RealType k1 = kcont + deltak*i;
-    RealType k2 = k1 + deltak;
-    RealType kmid = 0.5*(k1+k2);
-    RealType shellvol = M_PI*(k2*k2-k1*k1);
-    RealType degeneracy = shellvol/kelemvol;
+    mRealType k1 = kcont + deltak*i;
+    mRealType k2 = k1 + deltak;
+    mRealType kmid = 0.5*(k1+k2);
+    mRealType shellvol = M_PI*(k2*k2-k1*k1);
+    mRealType degeneracy = shellvol/kelemvol;
     AddKToList(kmid,degeneracy);
     numk += static_cast<int>(degeneracy);
   }
@@ -410,19 +410,19 @@ LRBreakup<BreakupBasis>::SetupKVecs(RealType kc, RealType kcont, RealType kmax)
 
 //Do the constrained breakup
 template<class BreakupBasis>
-typename LRBreakup<BreakupBasis>::RealType
-LRBreakup<BreakupBasis>::DoBreakup(RealType *Fk,
-                                   RealType *t,
-                                   RealType *adjust)
+typename LRBreakup<BreakupBasis>::mRealType
+LRBreakup<BreakupBasis>::DoBreakup(mRealType *Fk,
+                                   mRealType *t,
+                                   mRealType *adjust)
 {
-  const RealType tolerance = std::numeric_limits<RealType>::epsilon();
+  const mRealType tolerance = std::numeric_limits<mRealType>::epsilon();
   //t and adjust must be allocated up to Basis.NumBasisElem();
   //Fk must be allocated and filled up to KList.size();
   //  assert(t.size()==adjust.size());
   //  assert(t.size()==Basis.NumBasisElem());
-  Matrix<RealType> A;
-  std::vector<RealType> b;
-  Matrix<RealType> cnk;
+  Matrix<mRealType> A;
+  std::vector<mRealType> b;
+  Matrix<mRealType> cnk;
   int N = Basis.NumBasisElem(); //t.size();
   A.resize(N,N);
   b.resize(N,0.0);
@@ -432,7 +432,7 @@ LRBreakup<BreakupBasis>::DoBreakup(RealType *Fk,
   {
     for (int ki=0; ki<KList.size(); ki++)
     {
-      RealType k = KList[ki][0];
+      mRealType k = KList[ki][0];
       cnk(n,ki) = Basis.c(n,k);
     }
   }
@@ -453,9 +453,9 @@ LRBreakup<BreakupBasis>::DoBreakup(RealType *Fk,
     if (!adjust[i])
       M--;
   //The c is for "constrained"
-  Matrix<RealType> Ac;
+  Matrix<mRealType> Ac;
   Ac.resize(M,M);
-  std::vector<RealType> bc(M,0.0), tc(M,0.0);
+  std::vector<mRealType> bc(M,0.0), tc(M,0.0);
   //Build constrained Ac and bc
   int j=0;
   for (int col=0; col<N; col++)
@@ -488,17 +488,17 @@ LRBreakup<BreakupBasis>::DoBreakup(RealType *Fk,
     }
   // Do SVD:
   // -------
-  // Matrix<RealType> U(M, M), V(M, M);
-  // std::vector<RealType> S(M), Sinv(M);
+  // Matrix<mRealType> U(M, M), V(M, M);
+  // std::vector<mRealType> S(M), Sinv(M);
   // SVdecomp(Ac, U, S, V);
   ////////////////////////////////
   int m = Ac.rows();
   int n = Ac.cols();
-  Matrix<RealType> Atrans(n,m);
-  Matrix<RealType> U, V;
+  Matrix<mRealType> Atrans(n,m);
+  Matrix<mRealType> U, V;
   U.resize(std::min(m,n),m);
   V.resize(n,std::min(m,n));
-  std::vector<RealType> S, Sinv;
+  std::vector<mRealType> S, Sinv;
   S.resize(std::min(n,m));
   //do the transpose
   for(int i=0; i<m; i++)
@@ -512,14 +512,14 @@ LRBreakup<BreakupBasis>::DoBreakup(RealType *Fk,
   int LDU = m;
   int LDVT = std::min(m,n);
   int LWORK = 10*std::max(3*std::min(n,m)+std::max(m,n),5*std::min(m,n));
-  std::vector<RealType> WORK(LWORK);
+  std::vector<mRealType> WORK(LWORK);
   int INFO;
-  dgesvd(&JOBU,&JOBVT,&m,&n,Atrans.data(),&LDA,&S[0],U.data(),
+  LAPACK::gesvd(&JOBU,&JOBVT,&m,&n,Atrans.data(),&LDA,&S[0],U.data(),
          &LDU,V.data(),&LDVT,&WORK[0],&LWORK,&INFO);
   assert(INFO==0);
   int ur = U.rows();
   int uc = U.cols();
-  Matrix<RealType> Utrans(uc,ur);
+  Matrix<mRealType> Utrans(uc,ur);
   for(int i=0; i<ur; i++)
   {
     for(int j=0; j<uc; j++)
@@ -529,7 +529,7 @@ LRBreakup<BreakupBasis>::DoBreakup(RealType *Fk,
   U=Utrans;
   //////////////////////////////////
   // Zero out near-singular values
-  RealType Smax=S[0];
+  mRealType Smax=S[0];
   for (int i=1; i<M; i++)
     Smax = std::max(S[i],Smax);
   for (int i=0; i<M; i++)
@@ -548,7 +548,7 @@ LRBreakup<BreakupBasis>::DoBreakup(RealType *Fk,
   // Compute t_n, removing singular values
   for (int i=0; i<M; i++)
   {
-    RealType coef = 0.0;
+    mRealType coef = 0.0;
     for (int j=0; j<M; j++)
       coef += U(j,i) * bc[j];
     coef *= Sinv[i];
@@ -564,7 +564,7 @@ LRBreakup<BreakupBasis>::DoBreakup(RealType *Fk,
       j++;
     }
   // Calculate chi-squared
-  RealType Yk, chi2;
+  mRealType Yk, chi2;
   chi2 = 0.0;
   for (int ki=0; ki<KList.size(); ki++)
   {
@@ -580,19 +580,19 @@ LRBreakup<BreakupBasis>::DoBreakup(RealType *Fk,
 
 
 template<class BreakupBasis>
-typename LRBreakup<BreakupBasis>::RealType
-LRBreakup<BreakupBasis>::DoGradBreakup(RealType *Fk,
-                                   RealType *t,
-                                   RealType *adjust)
+typename LRBreakup<BreakupBasis>::mRealType
+LRBreakup<BreakupBasis>::DoGradBreakup(mRealType *Fk,
+                                   mRealType *t,
+                                   mRealType *adjust)
 {
-  const RealType tolerance = std::numeric_limits<RealType>::epsilon();
+  const mRealType tolerance = std::numeric_limits<mRealType>::epsilon();
   //t and adjust must be allocated up to Basis.NumBasisElem();
   //Fk must be allocated and filled up to KList.size();
   //  assert(t.size()==adjust.size());
   //  assert(t.size()==Basis.NumBasisElem());
-  Matrix<RealType> A;
-  std::vector<RealType> b;
-  Matrix<RealType> cnk;
+  Matrix<mRealType> A;
+  std::vector<mRealType> b;
+  Matrix<mRealType> cnk;
   int N = Basis.NumBasisElem(); //t.size();
   A.resize(N,N);
   b.resize(N,0.0);
@@ -602,7 +602,7 @@ LRBreakup<BreakupBasis>::DoGradBreakup(RealType *Fk,
   {
     for (int ki=0; ki<KList.size(); ki++)
     {
-      RealType k = KList[ki][0];
+      mRealType k = KList[ki][0];
       cnk(n,ki) = Basis.c(n,k);
     }
   }
@@ -612,7 +612,7 @@ LRBreakup<BreakupBasis>::DoGradBreakup(RealType *Fk,
   {
     for (int ki=0; ki<KList.size(); ki++)
     {
-      RealType k2=KList[ki][0]*KList[ki][0];
+      mRealType k2=KList[ki][0]*KList[ki][0];
       b[l] += k2*KList[ki][1]*Fk[ki] * cnk(l, ki);
       for (int n=0; n<N; n++)
         A(l,n) += k2*KList[ki][1]*cnk(l,ki)*cnk(n,ki);
@@ -624,9 +624,9 @@ LRBreakup<BreakupBasis>::DoGradBreakup(RealType *Fk,
     if (!adjust[i])
       M--;
   //The c is for "constrained"
-  Matrix<RealType> Ac;
+  Matrix<mRealType> Ac;
   Ac.resize(M,M);
-  std::vector<RealType> bc(M,0.0), tc(M,0.0);
+  std::vector<mRealType> bc(M,0.0), tc(M,0.0);
   //Build constrained Ac and bc
   int j=0;
   for (int col=0; col<N; col++)
@@ -659,17 +659,17 @@ LRBreakup<BreakupBasis>::DoGradBreakup(RealType *Fk,
     }
   // Do SVD:
   // -------
-  // Matrix<RealType> U(M, M), V(M, M);
-  // std::vector<RealType> S(M), Sinv(M);
+  // Matrix<mRealType> U(M, M), V(M, M);
+  // std::vector<mRealType> S(M), Sinv(M);
   // SVdecomp(Ac, U, S, V);
   ////////////////////////////////
   int m = Ac.rows();
   int n = Ac.cols();
-  Matrix<RealType> Atrans(n,m);
-  Matrix<RealType> U, V;
+  Matrix<mRealType> Atrans(n,m);
+  Matrix<mRealType> U, V;
   U.resize(std::min(m,n),m);
   V.resize(n,std::min(m,n));
-  std::vector<RealType> S, Sinv;
+  std::vector<mRealType> S, Sinv;
   S.resize(std::min(n,m));
   //do the transpose
   for(int i=0; i<m; i++)
@@ -683,14 +683,14 @@ LRBreakup<BreakupBasis>::DoGradBreakup(RealType *Fk,
   int LDU = m;
   int LDVT = std::min(m,n);
   int LWORK = 10*std::max(3*std::min(n,m)+std::max(m,n),5*std::min(m,n));
-  std::vector<RealType> WORK(LWORK);
+  std::vector<mRealType> WORK(LWORK);
   int INFO;
-  dgesvd(&JOBU,&JOBVT,&m,&n,Atrans.data(),&LDA,&S[0],U.data(),
+  LAPACK::gesvd(&JOBU,&JOBVT,&m,&n,Atrans.data(),&LDA,&S[0],U.data(),
          &LDU,V.data(),&LDVT,&WORK[0],&LWORK,&INFO);
   assert(INFO==0);
   int ur = U.rows();
   int uc = U.cols();
-  Matrix<RealType> Utrans(uc,ur);
+  Matrix<mRealType> Utrans(uc,ur);
   for(int i=0; i<ur; i++)
   {
     for(int j=0; j<uc; j++)
@@ -700,7 +700,7 @@ LRBreakup<BreakupBasis>::DoGradBreakup(RealType *Fk,
   U=Utrans;
   //////////////////////////////////
   // Zero out near-singular values
-  RealType Smax=S[0];
+  mRealType Smax=S[0];
   for (int i=1; i<M; i++)
     Smax = std::max(S[i],Smax);
   for (int i=0; i<M; i++)
@@ -719,7 +719,7 @@ LRBreakup<BreakupBasis>::DoGradBreakup(RealType *Fk,
   // Compute t_n, removing singular values
   for (int i=0; i<M; i++)
   {
-    RealType coef = 0.0;
+    mRealType coef = 0.0;
     for (int j=0; j<M; j++)
       coef += U(j,i) * bc[j];
     coef *= Sinv[i];
@@ -735,7 +735,7 @@ LRBreakup<BreakupBasis>::DoGradBreakup(RealType *Fk,
       j++;
     }
   // Calculate chi-squared
-  RealType Yk, chi2;
+  mRealType Yk, chi2;
   chi2 = 0.0;
   for (int ki=0; ki<KList.size(); ki++)
   {
@@ -749,19 +749,19 @@ LRBreakup<BreakupBasis>::DoGradBreakup(RealType *Fk,
   return (chi2);
 }
 template<class BreakupBasis>
-typename LRBreakup<BreakupBasis>::RealType
-LRBreakup<BreakupBasis>::DoStrainBreakup(RealType *Fk, RealType *dFk,
-                                   RealType *t,
-                                   RealType *adjust)
+typename LRBreakup<BreakupBasis>::mRealType
+LRBreakup<BreakupBasis>::DoStrainBreakup(mRealType *Fk, mRealType *dFk,
+                                   mRealType *t,
+                                   mRealType *adjust)
 {
-  const RealType tolerance = std::numeric_limits<RealType>::epsilon();
+  const mRealType tolerance = std::numeric_limits<mRealType>::epsilon();
   //t and adjust must be allocated up to Basis.NumBasisElem();
   //Fk must be allocated and filled up to KList.size();
   //  assert(t.size()==adjust.size());
   //  assert(t.size()==Basis.NumBasisElem());
-  Matrix<RealType> A;
-  std::vector<RealType> b;
-  Matrix<RealType> dcnk;
+  Matrix<mRealType> A;
+  std::vector<mRealType> b;
+  Matrix<mRealType> dcnk;
   int N = Basis.NumBasisElem(); //t.size();
   A.resize(N,N);
   b.resize(N,0.0);
@@ -771,7 +771,7 @@ LRBreakup<BreakupBasis>::DoStrainBreakup(RealType *Fk, RealType *dFk,
   {
     for (int ki=0; ki<KList.size(); ki++)
     {
-      RealType k = KList[ki][0];
+      mRealType k = KList[ki][0];
       dcnk(n,ki) = Basis.dc_dk(n,k); //-Basis.c(n,k);
     }
   }
@@ -781,7 +781,7 @@ LRBreakup<BreakupBasis>::DoStrainBreakup(RealType *Fk, RealType *dFk,
   {
     for (int ki=0; ki<KList.size(); ki++)
     {
-      RealType k2=KList[ki][0]*KList[ki][0];
+      mRealType k2=KList[ki][0]*KList[ki][0];
   //    b[l] += k2*KList[ki][1]*(dFk[ki]-Fk[ki]) * dcnk(l, ki);
        b[l] += k2*KList[ki][1]*(dFk[ki]) * dcnk(l, ki);
       for (int n=0; n<N; n++)
@@ -794,9 +794,9 @@ LRBreakup<BreakupBasis>::DoStrainBreakup(RealType *Fk, RealType *dFk,
     if (!adjust[i])
       M--;
   //The c is for "constrained"
-  Matrix<RealType> Ac;
+  Matrix<mRealType> Ac;
   Ac.resize(M,M);
-  std::vector<RealType> bc(M,0.0), tc(M,0.0);
+  std::vector<mRealType> bc(M,0.0), tc(M,0.0);
   //Build constrained Ac and bc
   int j=0;
   for (int col=0; col<N; col++)
@@ -829,17 +829,17 @@ LRBreakup<BreakupBasis>::DoStrainBreakup(RealType *Fk, RealType *dFk,
     }
   // Do SVD:
   // -------
-  // Matrix<RealType> U(M, M), V(M, M);
-  // std::vector<RealType> S(M), Sinv(M);
+  // Matrix<mRealType> U(M, M), V(M, M);
+  // std::vector<mRealType> S(M), Sinv(M);
   // SVdecomp(Ac, U, S, V);
   ////////////////////////////////
   int m = Ac.rows();
   int n = Ac.cols();
-  Matrix<RealType> Atrans(n,m);
-  Matrix<RealType> U, V;
+  Matrix<mRealType> Atrans(n,m);
+  Matrix<mRealType> U, V;
   U.resize(std::min(m,n),m);
   V.resize(n,std::min(m,n));
-  std::vector<RealType> S, Sinv;
+  std::vector<mRealType> S, Sinv;
   S.resize(std::min(n,m));
   //do the transpose
   for(int i=0; i<m; i++)
@@ -853,14 +853,14 @@ LRBreakup<BreakupBasis>::DoStrainBreakup(RealType *Fk, RealType *dFk,
   int LDU = m;
   int LDVT = std::min(m,n);
   int LWORK = 10*std::max(3*std::min(n,m)+std::max(m,n),5*std::min(m,n));
-  std::vector<RealType> WORK(LWORK);
+  std::vector<mRealType> WORK(LWORK);
   int INFO;
-  dgesvd(&JOBU,&JOBVT,&m,&n,Atrans.data(),&LDA,&S[0],U.data(),
+  LAPACK::gesvd(&JOBU,&JOBVT,&m,&n,Atrans.data(),&LDA,&S[0],U.data(),
          &LDU,V.data(),&LDVT,&WORK[0],&LWORK,&INFO);
   assert(INFO==0);
   int ur = U.rows();
   int uc = U.cols();
-  Matrix<RealType> Utrans(uc,ur);
+  Matrix<mRealType> Utrans(uc,ur);
   for(int i=0; i<ur; i++)
   {
     for(int j=0; j<uc; j++)
@@ -870,7 +870,7 @@ LRBreakup<BreakupBasis>::DoStrainBreakup(RealType *Fk, RealType *dFk,
   U=Utrans;
   //////////////////////////////////
   // Zero out near-singular values
-  RealType Smax=S[0];
+  mRealType Smax=S[0];
   for (int i=1; i<M; i++)
     Smax = std::max(S[i],Smax);
   for (int i=0; i<M; i++)
@@ -889,7 +889,7 @@ LRBreakup<BreakupBasis>::DoStrainBreakup(RealType *Fk, RealType *dFk,
   // Compute t_n, removing singular values
   for (int i=0; i<M; i++)
   {
-    RealType coef = 0.0;
+    mRealType coef = 0.0;
     for (int j=0; j<M; j++)
       coef += U(j,i) * bc[j];
     coef *= Sinv[i];
@@ -905,7 +905,7 @@ LRBreakup<BreakupBasis>::DoStrainBreakup(RealType *Fk, RealType *dFk,
       j++;
     }
   // Calculate chi-squared
-  RealType Yk, chi2;
+  mRealType Yk, chi2;
   chi2 = 0.0;
   for (int ki=0; ki<KList.size(); ki++)
   {
@@ -920,23 +920,23 @@ LRBreakup<BreakupBasis>::DoStrainBreakup(RealType *Fk, RealType *dFk,
 }
 
 template<class BreakupBasis>
-void LRBreakup<BreakupBasis>::DoAllBreakup(RealType *chisqrlist, RealType *Fk, RealType *dFk, RealType *t, RealType *gt, RealType *dt, RealType *adjust)
+void LRBreakup<BreakupBasis>::DoAllBreakup(mRealType *chisqrlist, mRealType *Fk, mRealType *dFk, mRealType *t, mRealType *gt, mRealType *dt, mRealType *adjust)
 {
-  const RealType tolerance = std::numeric_limits<RealType>::epsilon();
+  const mRealType tolerance = std::numeric_limits<mRealType>::epsilon();
   //t and adjust must be allocated up to Basis.NumBasisElem();
   //Fk must be allocated and filled up to KList.size();
   //  assert(t.size()==adjust.size());
   //  assert(t.size()==Basis.NumBasisElem());
-  Matrix<RealType> A;
-  Matrix<RealType> Af;
-  Matrix<RealType> As;
+  Matrix<mRealType> A;
+  Matrix<mRealType> Af;
+  Matrix<mRealType> As;
   
-  std::vector<RealType> b;
-  std::vector<RealType> bf;
-  std::vector<RealType> bs;
+  std::vector<mRealType> b;
+  std::vector<mRealType> bf;
+  std::vector<mRealType> bs;
   
-  Matrix<RealType> cnk;
-  Matrix<RealType> dcnk;
+  Matrix<mRealType> cnk;
+  Matrix<mRealType> dcnk;
   
   int N = Basis.NumBasisElem(); //t.size();
  
@@ -955,7 +955,7 @@ void LRBreakup<BreakupBasis>::DoAllBreakup(RealType *chisqrlist, RealType *Fk, R
   {
     for (int ki=0; ki<KList.size(); ki++)
     {
-      RealType k = KList[ki][0];
+      mRealType k = KList[ki][0];
       cnk(n,ki) = Basis.c(n,k);
       dcnk(n,ki) = Basis.dc_dk(n,k); //-Basis.c(n,k);
     }
@@ -969,9 +969,9 @@ void LRBreakup<BreakupBasis>::DoAllBreakup(RealType *chisqrlist, RealType *Fk, R
   {
     for (int ki=0; ki<KList.size(); ki++)
     {
-      RealType k2=KList[ki][0]*KList[ki][0];
+      mRealType k2=KList[ki][0]*KList[ki][0];
       
-      RealType temp=KList[ki][1]*Fk[ki]*cnk(l,ki);
+      mRealType temp=KList[ki][1]*Fk[ki]*cnk(l,ki);
   //    b[l] += k2*KList[ki][1]*(dFk[ki]-Fk[ki]) * dcnk(l, ki);
       b[l] += temp;
       bf[l] += k2*temp;
@@ -996,13 +996,13 @@ void LRBreakup<BreakupBasis>::DoAllBreakup(RealType *chisqrlist, RealType *Fk, R
     if (!adjust[i])
       M--;
   //The c is for "constrained"
-  Matrix<RealType> Ac;
-  Matrix<RealType> Afc;
-  Matrix<RealType> Asc;
+  Matrix<mRealType> Ac;
+  Matrix<mRealType> Afc;
+  Matrix<mRealType> Asc;
   Ac.resize(M,M);
   Afc.resize(M,M);
   Asc.resize(M,M);
-  std::vector<RealType> bc(M,0.0), bfc(M,0.0), bsc(M,0.0),
+  std::vector<mRealType> bc(M,0.0), bfc(M,0.0), bsc(M,0.0),
                    tc(M,0.0), tfc(M,0.0), tsc(M,0.0);
   //Build constrained Ac and bc
   int j=0;
@@ -1044,18 +1044,18 @@ void LRBreakup<BreakupBasis>::DoAllBreakup(RealType *chisqrlist, RealType *Fk, R
     }
   // Do SVD:
   // -------
-  // Matrix<RealType> U(M, M), V(M, M);
-  // std::vector<RealType> S(M), Sinv(M);
+  // Matrix<mRealType> U(M, M), V(M, M);
+  // std::vector<mRealType> S(M), Sinv(M);
   // SVdecomp(Ac, U, S, V);
   ////////////////////////////////
   int m = Ac.rows();
   int n = Ac.cols();
-  Matrix<RealType> A_trans(n,m);
-  Matrix<RealType> Af_trans(n,m);
-  Matrix<RealType> As_trans(n,m);
-  Matrix<RealType> U, V;
-  Matrix<RealType> Uf, Vf;
-  Matrix<RealType> Us, Vs;
+  Matrix<mRealType> A_trans(n,m);
+  Matrix<mRealType> Af_trans(n,m);
+  Matrix<mRealType> As_trans(n,m);
+  Matrix<mRealType> U, V;
+  Matrix<mRealType> Uf, Vf;
+  Matrix<mRealType> Us, Vs;
   
   U.resize(std::min(m,n),m);
   V.resize(n,std::min(m,n));
@@ -1066,13 +1066,13 @@ void LRBreakup<BreakupBasis>::DoAllBreakup(RealType *chisqrlist, RealType *Fk, R
   Us.resize(std::min(m,n),m);
   Vs.resize(n,std::min(m,n));
   
-  std::vector<RealType> S, Sinv;
+  std::vector<mRealType> S, Sinv;
   S.resize(std::min(n,m));
   
-  std::vector<RealType> Sf, Sfinv;
+  std::vector<mRealType> Sf, Sfinv;
   Sf.resize(std::min(n,m));
   
-  std::vector<RealType> Ss, Ssinv;
+  std::vector<mRealType> Ss, Ssinv;
   Ss.resize(std::min(n,m));
   //do the transpose
   for(int i=0; i<m; i++)
@@ -1090,25 +1090,25 @@ void LRBreakup<BreakupBasis>::DoAllBreakup(RealType *chisqrlist, RealType *Fk, R
   int LDU = m;
   int LDVT = std::min(m,n);
   int LWORK = 10*std::max(3*std::min(n,m)+std::max(m,n),5*std::min(m,n));
-  std::vector<RealType> WORK(LWORK);
+  std::vector<mRealType> WORK(LWORK);
   int INFO;
-  dgesvd(&JOBU,&JOBVT,&m,&n,A_trans.data(),&LDA,&S[0],U.data(),
+  LAPACK::gesvd(&JOBU,&JOBVT,&m,&n,A_trans.data(),&LDA,&S[0],U.data(),
          &LDU,V.data(),&LDVT,&WORK[0],&LWORK,&INFO);
   assert(INFO==0);
   
-  dgesvd(&JOBU,&JOBVT,&m,&n,Af_trans.data(),&LDA,&Sf[0],Uf.data(),
+  LAPACK::gesvd(&JOBU,&JOBVT,&m,&n,Af_trans.data(),&LDA,&Sf[0],Uf.data(),
          &LDU,Vf.data(),&LDVT,&WORK[0],&LWORK,&INFO);
   assert(INFO==0);
 
-  dgesvd(&JOBU,&JOBVT,&m,&n,As_trans.data(),&LDA,&Ss[0],Us.data(),
+  LAPACK::gesvd(&JOBU,&JOBVT,&m,&n,As_trans.data(),&LDA,&Ss[0],Us.data(),
          &LDU,Vs.data(),&LDVT,&WORK[0],&LWORK,&INFO);
   assert(INFO==0);
 
   int ur = U.rows();
   int uc = U.cols();
-  Matrix<RealType> U_trans(uc,ur);
-  Matrix<RealType> Uf_trans(uc,ur);
-  Matrix<RealType> Us_trans(uc,ur);
+  Matrix<mRealType> U_trans(uc,ur);
+  Matrix<mRealType> Uf_trans(uc,ur);
+  Matrix<mRealType> Us_trans(uc,ur);
   for(int i=0; i<ur; i++)
   {
     for(int j=0; j<uc; j++)
@@ -1130,7 +1130,7 @@ void LRBreakup<BreakupBasis>::DoAllBreakup(RealType *chisqrlist, RealType *Fk, R
   // Zero out near-singular values
   
   //First, do normal breakup.
-  RealType Smax=S[0];
+  mRealType Smax=S[0];
   for (int i=1; i<M; i++)
     Smax = std::max(S[i],Smax);
   for (int i=0; i<M; i++)
@@ -1188,9 +1188,9 @@ void LRBreakup<BreakupBasis>::DoAllBreakup(RealType *chisqrlist, RealType *Fk, R
   
   for (int i=0; i<M; i++)
   {
-    RealType coef = 0.0;
-    RealType coef_f=0.0;
-    RealType coef_s=0.0;
+    mRealType coef = 0.0;
+    mRealType coef_f=0.0;
+    mRealType coef_s=0.0;
     
     for (int j=0; j<M; j++)
     {
@@ -1221,9 +1221,9 @@ void LRBreakup<BreakupBasis>::DoAllBreakup(RealType *chisqrlist, RealType *Fk, R
       j++;
     }
   // Calculate chi-squared
-  RealType Yk(0.0), chi2(0.0);
-  RealType Yk_f(0.0), chi2_f(0.0);
-  RealType Yk_s(0.0), chi2_s(0.0);
+  mRealType Yk(0.0), chi2(0.0);
+  mRealType Yk_f(0.0), chi2_f(0.0);
+  mRealType Yk_s(0.0), chi2_s(0.0);
 
   for (int ki=0; ki<KList.size(); ki++)
   {
@@ -1241,7 +1241,7 @@ void LRBreakup<BreakupBasis>::DoAllBreakup(RealType *chisqrlist, RealType *Fk, R
     chi2_f += KList[ki][0]*KList[ki][0]*KList[ki][1]*Yk_f*Yk_f;
     chi2_s += KList[ki][0]*KList[ki][0]*KList[ki][1]*Yk_s*Yk_s;
   }
-//  std::vector<RealType> chisqrtmp(3);
+//  std::vector<mRealType> chisqrtmp(3);
   
   chisqrlist[0]=chi2;
   chisqrlist[1]=chi2_f;

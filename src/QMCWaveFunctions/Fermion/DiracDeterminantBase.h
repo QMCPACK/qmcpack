@@ -50,6 +50,14 @@ public:
   typedef SPOSetBase::HessVector_t  HessVector_t;
   typedef SPOSetBase::HessType      HessType;
 
+#ifdef MIXED_PRECISION
+  typedef ParticleSet::ParticleValue_t mValueType;
+  typedef OrbitalSetTraits<mValueType>::ValueMatrix_t ValueMatrix_hp_t;
+#else
+  typedef ValueType mValueType;
+#endif
+  typedef TinyVector<mValueType,DIM> mGradType;
+
   /** constructor
    *@param spos the single-particle orbital set
    *@param first index of the first particle
@@ -257,6 +265,7 @@ public:
               ParticleSet::ParticleGradient_t& G,
               ParticleSet::ParticleLaplacian_t& L) ;
 
+  virtual void recompute(ParticleSet& P);
 
   virtual ValueType
   evaluate(ParticleSet& P,
@@ -322,12 +331,18 @@ public:
   ValueVector_t workV1, workV2;
   GradVector_t workG;
 
+#ifdef MIXED_PRECISION
+  /// temporal matrix and workspace in higher precision for the accurate inversion.
+  ValueMatrix_hp_t psiM_hp;
+  Vector<ParticleSet::ParticleValue_t> WorkSpace_hp;
+#endif
+
   Vector<ValueType> WorkSpace;
   Vector<IndexType> Pivot;
 
   ValueType curRatio,cumRatio;
-  ValueType *FirstAddressOfG;
-  ValueType *LastAddressOfG;
+  ParticleSet::ParticleValue_t *FirstAddressOfG;
+  ParticleSet::ParticleValue_t *LastAddressOfG;
   ValueType *FirstAddressOfdV;
   ValueType *LastAddressOfdV;
   //    double ComputeExtraTerms(int ptcl_gradient, int elDim,int ionDim);

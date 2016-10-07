@@ -72,15 +72,14 @@ typedef optimize::VariableSet  opt_variables_type;
 typedef optimize::VariableSet::variable_map_type variable_map_type;
 
 
-template<typename T> inline double evaluatePhase(T sign_v)
+template<typename T> inline T evaluatePhase(T sign_v)
 {
-  return (sign_v>0)?0.0:M_PI;
+  return (T)((sign_v>0)?0.0:M_PI);
 }
 
-template<>
-inline double evaluatePhase(const std::complex<double>& psi)
+template<typename T> inline T evaluatePhase(const std::complex<T>& psi)
 {
-  return std::arg(psi);
+  return (T)(std::arg(psi));
 }
 
 /** evaluate the log(|psi|) and phase

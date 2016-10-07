@@ -374,7 +374,8 @@ struct CrystalLattice
   /** set the lattice vector from the command-line options
    *@param lat a tensor representing a supercell
    */
-  void set(const Tensor<T,D>& lat);
+  template<class TT>
+  void set(const Tensor<TT,D>& lat);
 
   /** Evaluate the reciprocal vectors, volume and metric tensor
    */

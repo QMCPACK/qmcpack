@@ -108,7 +108,8 @@ bool NGOBuilder::addGrid(xmlNodePtr cur)
     HDFAttribIO<std::string> gtypestr(gridtype);
     gtypestr.read(gid,"type");
     int npts=0;
-    RealType ri=0.0,rf=10.0,rmax_safe=10,tt=0;
+    RealType ri=0.0,rf=10.0,rmax_safe=10;
+    double tt=0;
     HDFAttribIO<double> ri_in(tt);
     ri_in.read(gid,"ri");
     ri=tt;

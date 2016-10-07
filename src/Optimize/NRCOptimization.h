@@ -51,6 +51,15 @@ struct sign2<double>
   }
 };
 
+template<>
+struct sign2<float>
+{
+  inline static float apply(float a, float b)
+  {
+    return (b > 0.0)? abs(a): -abs(a);
+  }
+};
+
 template<class T>
 struct NRCOptimization
 {

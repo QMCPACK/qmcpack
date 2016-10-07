@@ -94,7 +94,7 @@ struct SymmetricDTD
       ri[i].first  = r_m[IJ[shift+i]];
       ri[i].second = i;
     }
-    ri[n].first  = 1e99;
+    ri[n].first  = std::numeric_limits<RealType>::max();
     ri[n].second = n;
     shift = M[n];
     for(int i=n+1; i<m; ++i)

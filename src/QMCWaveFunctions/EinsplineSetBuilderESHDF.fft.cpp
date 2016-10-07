@@ -139,12 +139,14 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
     int lmax, polynomial_order, spline_points;
     RealType cutoff_radius, polynomial_radius, spline_radius;
     PosType position;
+    double cutoff_radius_DP, polynomial_radius_DP, spline_radius_DP;
+    TinyVector<double, OHMMS_DIM> position_DP;
     HDFAttribIO<int> h_lmax(lmax), h_polynomial_order(polynomial_order),
                 h_spline_points(spline_points);
-    HDFAttribIO<RealType> h_cutoff_radius(cutoff_radius),
-                h_polynomial_radius(polynomial_radius),
-                h_spline_radius(spline_radius);
-    HDFAttribIO<PosType> h_position(position);
+    HDFAttribIO<double> h_cutoff_radius(cutoff_radius_DP),
+                h_polynomial_radius(polynomial_radius_DP),
+                h_spline_radius(spline_radius_DP);
+    HDFAttribIO<TinyVector<double, OHMMS_DIM> > h_position(position_DP);
     std::ostringstream groupstream;
     groupstream << "/electrons/atomic_orbital_" << iat << "/";
     std::string groupname = groupstream.str();
@@ -155,6 +157,10 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
     h_polynomial_radius.read (H5FileID, (groupname + "polynomial_radius").c_str());
     h_spline_radius.read     (H5FileID, (groupname + "spline_radius"    ).c_str());
     h_position.read          (H5FileID, (groupname + "position"         ).c_str());
+    cutoff_radius = cutoff_radius_DP;
+    polynomial_radius = polynomial_radius_DP;
+    spline_radius = spline_radius_DP;
+    position = position_DP;
     orb.set_pos (position);
     orb.set_lmax (lmax);
     orb.set_cutoff (cutoff_radius);
@@ -171,8 +177,10 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
   {
     std::ostringstream path;
     path << "/electrons/kpoint_" << ti << "/reduced_k";
-    HDFAttribIO<PosType> h_Twist(TwistAngles[ti]);
+    TinyVector<double, OHMMS_DIM> TwistAngles_DP;
+    HDFAttribIO<TinyVector<double, OHMMS_DIM> > h_Twist(TwistAngles_DP);
     h_Twist.read (H5FileID, path.str().c_str());
+    TwistAngles[ti] = TwistAngles_DP;
     if ((Version[0] >= 2) and (Version[1] >= 1))
     {
       std::ostringstream sym_path;
@@ -208,8 +216,8 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
       {
         HDFAttribIO<std::vector<TinyVector<int,OHMMS_DIM> > >
         h_reduced_gvecs(TargetPtcl.DensityReducedGvecs);
-        HDFAttribIO<Array<RealType,OHMMS_DIM> >
-        h_density_r (TargetPtcl.Density_r);
+        Array<double, OHMMS_DIM> Density_r_DP;
+        HDFAttribIO<Array<double, OHMMS_DIM> >  h_density_r (Density_r_DP);
         TinyVector<int,3> mesh;
         h_reduced_gvecs.read (H5FileID, "/electrons/density/gvectors");
         int numG = TargetPtcl.DensityReducedGvecs.size();
@@ -226,12 +234,15 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
           density_r_path << "/electrons/density/spin_" << ispin << "/density_r";
           density_g_path << "/electrons/density/spin_" << ispin << "/density_g";
           h_density_r.read (H5FileID, density_r_path.str().c_str());
+          TargetPtcl.Density_r = Density_r_DP;
           if (TargetPtcl.DensityReducedGvecs.size())
           {
             app_log() << "  EinsplineSetBuilder found density in the HDF5 file.\n";
             std::vector<ComplexType> density_G;
-            HDFAttribIO<std::vector<ComplexType > > h_density_G (density_G);
+            std::vector<std::complex<double> > Density_G_DP;
+            HDFAttribIO<std::vector<std::complex<double> > > h_density_G (Density_G_DP);
             h_density_G.read (H5FileID, density_g_path.str().c_str());
+            density_G.assign(Density_G_DP.begin(),Density_G_DP.end());
             if (!density_G.size())
             {
               app_error() << "  Density reduced G-vectors defined, but not the"
@@ -271,18 +282,21 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
         app_log() << "  Read " << numG << " VHXC G-vectors.\n";
         for (int ispin=0; ispin<NumSpins; ispin++)
         {
-          HDFAttribIO<Array<RealType,OHMMS_DIM> >
-          h_VHXC_r (TargetPtcl.VHXC_r[ispin]);
+          Array<double, OHMMS_DIM> VHXC_r_DP;
+          HDFAttribIO<Array<double,OHMMS_DIM> > h_VHXC_r (VHXC_r_DP);
           std::ostringstream VHXC_r_path, VHXC_g_path;
           VHXC_r_path << "/electrons/VHXC/spin_" << ispin << "/VHXC_r";
           VHXC_g_path << "/electrons/VHXC/spin_" << ispin << "/VHXC_g";
           h_VHXC_r.read (H5FileID, VHXC_r_path.str().c_str());
+          TargetPtcl.VHXC_r[ispin] = VHXC_r_DP;
           if (TargetPtcl.VHXCReducedGvecs.size())
           {
             app_log() << "  EinsplineSetBuilder found VHXC in the HDF5 file.\n";
+            std::vector<std::complex<double> > VHXC_G_DP;
             std::vector<ComplexType> VHXC_G;
-            HDFAttribIO<std::vector<ComplexType > > h_VHXC_G (VHXC_G);
+            HDFAttribIO<std::vector<std::complex<double> > > h_VHXC_G (VHXC_G_DP);
             h_VHXC_G.read (H5FileID, VHXC_g_path.str().c_str());
+            VHXC_G.assign(VHXC_G_DP.begin(), VHXC_G_DP.end());
             if (!VHXC_G.size())
             {
               app_error() << "  VHXC reduced G-vectors defined, but not the"

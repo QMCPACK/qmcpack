@@ -502,7 +502,7 @@ bool EstimatorManager::put(MCWalkerConfiguration& W, QMCHamiltonian& H, xmlNodeP
         else if ( est_name=="CSLocalEnergy" )
         {
           OhmmsAttributeSet hAttrib;
-          IndexType nPsi=1;
+          int nPsi=1;
           hAttrib.add(nPsi, "nPsi");
           hAttrib.put(cur);	      
 	      add(new CSEnergyEstimator(H,nPsi), MainEstimatorName);

@@ -513,7 +513,7 @@ namespace qmcplusplus
 				   curhead.Properties (LOCALENERGY)) -
       branchEngine->DMCLinkAction (lastbead.Properties (LOCALENERGY),
 				   nextlastbead.Properties (LOCALENERGY));
-    RealType acceptProb = std::min (1.0, std::exp (-dS));
+    RealType acceptProb = std::min ((RealType)1.0, std::exp (-dS));
     if ((RandomGen () <= acceptProb)
 	|| (prophead.Age >= MaxAge || lastbead.Age >= MaxAge))
       {

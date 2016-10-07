@@ -240,7 +240,7 @@ public:
   // create necessary structures used in the evaluation of the determinants
   // this works with confgList, which shouldn't change during a simulation
   void createDetData(ci_configuration2& ref, std::vector<int>& data,
-                     std::vector<std::pair<int,int> >& pairs, std::vector<double>& sign);
+                     std::vector<std::pair<int,int> >& pairs, std::vector<RealType>& sign);
   /*
       void testDets() {
 
@@ -255,7 +255,7 @@ public:
             in>>Mat(i,j);
          in.close();
 
-         std::vector<double> dets(9);
+         std::vector<RealType> dets(9);
          dets[2] =  -0.085167; // 2x2
          dets[3] = 0.051971; // 3x3
          dets[4] = 0.029865; // 4x4
@@ -284,13 +284,13 @@ public:
          for(int i=0; i<1000; i++)
            res=CalculateRatioFromMatrixElements(4,Mat,indx.begin());
          dummy.stop();
-         double direct = dummy.get_total();
+         RealType direct = dummy.get_total();
          dummy.reset();
          dummy.start();
          for(int i=0; i<1000; i++)
            res=NewCalculateRatioFromMatrixElements(4,Mat,indx.begin());
          dummy.stop();
-         double func = dummy.get_total();
+         RealType func = dummy.get_total();
          std::cout <<"Direct, function: " <<direct <<"  " <<func << std::endl << std::endl;
 
          k=0;
@@ -465,7 +465,7 @@ public:
       }
   */
 
-  inline void BuildDotProductsAndCalculateRatios(int ref, int iat, ValueVector_t& ratios, ValueMatrix_t &psiinv, ValueMatrix_t &psi, ValueMatrix_t& dotProducts, std::vector<int>& data, std::vector<std::pair<int,int> >& pairs, std::vector<double>& sign)
+  inline void BuildDotProductsAndCalculateRatios(int ref, int iat, ValueVector_t& ratios, ValueMatrix_t &psiinv, ValueMatrix_t &psi, ValueMatrix_t& dotProducts, std::vector<int>& data, std::vector<std::pair<int,int> >& pairs, std::vector<RealType>& sign)
   {
     ValueType det0 = ratios[ref];
     buildTableTimer.start();
@@ -480,7 +480,7 @@ public:
     readMatTimer.start();
     std::vector<int>::iterator it2 = data.begin();
     //ValueVector_t::iterator itr = ratios.begin();
-    //vector<double>::iterator its = sign.begin();
+    //vector<RealType>::iterator its = sign.begin();
     int count= 0;  // number of determinants processed
     while(it2 != data.end())
     {
@@ -501,7 +501,7 @@ public:
     readMatTimer.stop();
   }
 
-  inline void BuildDotProductsAndCalculateRatios(int ref, int iat, GradMatrix_t& ratios, ValueMatrix_t& psiinv, ValueMatrix_t& psi, ValueMatrix_t& dotProducts, std::vector<int>& data, std::vector<std::pair<int,int> >& pairs, std::vector<double>& sign, int dx)
+  inline void BuildDotProductsAndCalculateRatios(int ref, int iat, GradMatrix_t& ratios, ValueMatrix_t& psiinv, ValueMatrix_t& psi, ValueMatrix_t& dotProducts, std::vector<int>& data, std::vector<std::pair<int,int> >& pairs, std::vector<RealType>& sign, int dx)
   {
     ValueType det0 = ratios(ref,iat)[dx];
     buildTableGradTimer.start();
@@ -532,7 +532,7 @@ public:
     readMatGradTimer.stop();
   }
 
-  inline void BuildDotProductsAndCalculateRatios(int ref, int iat, ValueMatrix_t& ratios, ValueMatrix_t& psiinv, ValueMatrix_t& psi, ValueMatrix_t& dotProducts, std::vector<int>& data, std::vector<std::pair<int,int> >& pairs, std::vector<double>& sign)
+  inline void BuildDotProductsAndCalculateRatios(int ref, int iat, ValueMatrix_t& ratios, ValueMatrix_t& psiinv, ValueMatrix_t& psi, ValueMatrix_t& dotProducts, std::vector<int>& data, std::vector<std::pair<int,int> >& pairs, std::vector<RealType>& sign)
   {
     ValueType det0 = ratios(ref,iat);
     int num=psi.extent(1);
@@ -565,10 +565,10 @@ public:
                                          , ValueVector_t& rvecinv, int colchanged
                                          , ValueType c_ratio, int dx)
   {
-    c_ratio=1.0/c_ratio;
+    c_ratio=(RealType)1.0/c_ratio;
     int m = Minv.rows();
     BLAS::gemv('N', m, m, c_ratio, Minv.data(), m, newcol[0].data()+dx, 3, 0.0, rvec.data(), 1);
-    rvec[colchanged]=1.0-c_ratio;
+    rvec[colchanged]=(RealType)1.0-c_ratio;
     BLAS::copy(m,Minv.data()+colchanged,m,rvecinv.data(),1);
     BLAS::ger(m,m,-1.0,rvec.data(),1,rvecinv.data(),1,Minv.data(),m);
   }
@@ -928,12 +928,12 @@ public:
    */
   std::vector<int> detData;
   std::vector<std::pair<int,int> > uniquePairs;
-  std::vector<double> DetSigns;
+  std::vector<RealType> DetSigns;
 
   int backup_reference;
   std::vector<int> backup_detData;
   std::vector<std::pair<int,int> > backup_uniquePairs;
-  std::vector<double> backup_DetSigns;
+  std::vector<RealType> backup_DetSigns;
 
   MyDeterminant<ValueType> DetCalculator;
 

@@ -14,8 +14,7 @@
     
 #include<iostream>
 
-template<class BS>
-void CuspCorr<BS>::fillRadFunWithPhiBar(int curOrb_, int curCenter_, double Zion, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta, Vector<double>& xgrid, Vector<double>& rad_orb, double* data)
+void fillRadFunWithPhiBar(int curOrb_, int curCenter_, RealType Zion, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta, Vector<RealType>& xgrid, Vector<RealType>& rad_orb, RealType* data)
 {
   Psi1=Phi;
   Psi2=Eta;
@@ -40,8 +39,7 @@ void CuspCorr<BS>::fillRadFunWithPhiBar(int curOrb_, int curCenter_, double Zion
   }
 }
 
-template<class BS>
-void CuspCorr<BS>::fillRadFunWithPhi(int curOrb_, int curCenter_, double Zion, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta, Vector<double>& xgrid, Vector<double>& rad_orb)
+void fillRadFunWithPhi(int curOrb_, int curCenter_, RealType Zion, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta, Vector<RealType>& xgrid, Vector<RealType>& rad_orb)
 {
   Psi1=Phi;
   Psi2=Eta;
@@ -58,12 +56,11 @@ void CuspCorr<BS>::fillRadFunWithPhi(int curOrb_, int curCenter_, double Zion, L
   }
 }
 
-template<class BS>
-void CuspCorr<BS>::executeWithRCLoop(int curOrb_, int curCenter_, double Zion, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta, Vector<double>& xgrid, Vector<double>& rad_orb, std::string file, double cutoff, double* data)
+void executeWithRCLoop(int curOrb_, int curCenter_, RealType Zion, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta, Vector<RealType>& xgrid, Vector<RealType>& rad_orb, std::string file, RealType cutoff, RealType* data)
 {
-  double bestRc = cutoff, smallX2;
-  double xa, xb, xc, xd;
-  double fa,fb,fc, fd,delx;
+  RealType bestRc = cutoff, smallX2;
+  RealType xa, xb, xc, xd;
+  RealType fa,fb,fc, fd,delx;
   int cnt=0;
   // FIX FIX FIX
   // bracket the minimum and use golden search to
@@ -144,8 +141,7 @@ void CuspCorr<BS>::executeWithRCLoop(int curOrb_, int curCenter_, double Zion, L
   }
 }
 
-template<class BS>
-double CuspCorr<BS>::execute(int curOrb_, int curCenter_, double Zion, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta, Vector<double>& xgrid, Vector<double>& rad_orb, std::string thisFile, double cutoff, double* data)
+RealType execute(int curOrb_, int curCenter_, RealType Zion, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta, Vector<RealType>& xgrid, Vector<RealType>& rad_orb, std::string thisFile, RealType cutoff, RealType* data)
 {
   bool writeout=(thisFile!="NULL");
   Psi1=Phi;
@@ -183,8 +179,8 @@ double CuspCorr<BS>::execute(int curOrb_, int curCenter_, double Zion, LCOrbital
 //    valAtZero = phi(0.0);
 //    RealType chi2,chi2Min,phi0=valAtZero,phiMin;
 ///*
-  double xa, xb, xc, xd;
-  double fa,fb,fc, fd,delx;
+  RealType xa, xb, xc, xd;
+  RealType fa,fb,fc, fd,delx;
   int cnt=0;
   // FIX FIX FIX
   // bracket the minimum and use golden search to
@@ -321,7 +317,7 @@ double CuspCorr<BS>::execute(int curOrb_, int curCenter_, double Zion, LCOrbital
     int nx = 500;
     for(int i=0; i<nx; i++)
     {
-      double xp = i*5.0/(nx-1.0);
+      RealType xp = i*5.0/(nx-1.0);
       out<<xp <<"  "
          <<phi(xp) << std::endl;
     }

@@ -335,7 +335,7 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
   //int indexRc=-1;
   originalSPOSet = clone2LCOrbitalSet();
   corrBasisSet = new CorrectingOrbitalBasisSet<COT>(myBasisSet->myTable,*sourcePtcl,myBasisSet->NumTargets);
-  TinyVector<double,3> dr=0, storeR = targetPtcl->R[0];
+  TinyVector<RealType,3> dr=0, storeR = targetPtcl->R[0];
   int numCentr = myBasisSet->NumCenters;
   LCOrbitalSet<BS,false> *dummyLO1, *dummyLO2;
 //       GridType_ *mygrid = myBasisSet->LOBasis[0]->Grids[0];
@@ -366,7 +366,7 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
   targetPtcl->R[0]=0;
   CuspCorr<BS> myCorr(0.2,500,targetPtcl,sourcePtcl,true);
   char buff1[10],buff2[10];
-  Vector<double> rad_orb, xgrid;
+  Vector<RealType> rad_orb, xgrid;
   std::vector<bool> rmv;
   rmv.resize(myBasisSet->BasisSetSize);
   xgrid.resize(mygrid->size());
@@ -568,12 +568,12 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
        psi_2.resize(OrbitalSetSize);
        d2y_2.resize(OrbitalSetSize);
        dy_2.resize(OrbitalSetSize);
-       std::vector<double> v1(OrbitalSetSize,0.0),v2(OrbitalSetSize,0.0);
-       std::vector<double> v3(OrbitalSetSize,0.0),v4(OrbitalSetSize,0.0);
-       std::vector<double> v5(OrbitalSetSize,0.0),v6(OrbitalSetSize,0.0);
-       std::vector<double> v7(OrbitalSetSize,0.0),v8(OrbitalSetSize,0.0);
-       std::vector<double> v9(OrbitalSetSize,0.0),v10(OrbitalSetSize,0.0);
-       std::vector<double> v11(OrbitalSetSize,0.0),v12(OrbitalSetSize,0.0);
+       std::vector<RealType> v1(OrbitalSetSize,0.0),v2(OrbitalSetSize,0.0);
+       std::vector<RealType> v3(OrbitalSetSize,0.0),v4(OrbitalSetSize,0.0);
+       std::vector<RealType> v5(OrbitalSetSize,0.0),v6(OrbitalSetSize,0.0);
+       std::vector<RealType> v7(OrbitalSetSize,0.0),v8(OrbitalSetSize,0.0);
+       std::vector<RealType> v9(OrbitalSetSize,0.0),v10(OrbitalSetSize,0.0);
+       std::vector<RealType> v11(OrbitalSetSize,0.0),v12(OrbitalSetSize,0.0);
        (targetPtcl->R[0]) = 0.0;
        for(int ig=0; ig<xgrid.size(); ++ig)
        {
@@ -655,7 +655,7 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
        std::ofstream out1("test2.txt");
        out1<<xgrid[400] << std::endl << std::endl;
        out1<<corrBasisSet->d2Phi[0] << std::endl << std::endl;
-       double tmp1=0.0,tmp2=0.0;
+       RealType tmp1=0.0,tmp2=0.0;
        for(int i=0; i<myBasisSet->Phi.size(); i++) {
           out1<<i <<"  " <<C(0,i) <<"  " <<myBasisSet->d2Phi[i] <<"  " <<originalSPOSet->myBasisSet->d2Phi[i] <<"  " <<myBasisSet->d2Phi[i]-originalSPOSet->myBasisSet->d2Phi[i] << std::endl;
           tmp1+=C(0,i)*myBasisSet->d2Phi[i];

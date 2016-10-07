@@ -47,6 +47,11 @@ public:
   typedef MCWalkerConfiguration::Walker_t Walker_t;
   typedef MCWalkerConfiguration::iterator WalkerIter_t;
   typedef SimpleFixedNodeBranch           BranchEngineType;
+#ifdef MIXED_PRECISION
+  typedef TinyVector<OHMMS_PRECISION_FULL, DIM>         mPosType;
+#else
+  typedef PosType                         mPosType;
+#endif
 
   ///If true, terminate the simulation
   bool BadState;
@@ -163,6 +168,10 @@ public:
    */
   void updateWalkers(WalkerIter_t it, WalkerIter_t it_end);
 
+  /** trigger the trial WF recompute
+   */
+  void recomputePsi(WalkerIter_t it, WalkerIter_t it_end);
+
   /** simple routine to test the performance
    */
   void benchMark(WalkerIter_t it, WalkerIter_t it_end, int ip);
@@ -177,9 +186,9 @@ public:
   }
 
   ///move a walker, all-particle (waler) move, using drift
-  void advanceWalker(Walker_t& thisWalker);
+  // void advanceWalker(Walker_t& thisWalker);
   ///move a walker, by particle-by-particle move using fast drift
-  void advancePbyP(Walker_t& thisWalker);
+  // void advancePbyP(Walker_t& thisWalker);
 
   /** advance walkers executed at each step
    *

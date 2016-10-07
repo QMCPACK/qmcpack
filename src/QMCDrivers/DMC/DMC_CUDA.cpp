@@ -317,7 +317,7 @@ bool DMCcuda::run()
       BranchTimer.stop();
     }
     while(step<nSteps);
-    Psi.recompute(W, true);
+    if ( nBlocksBetweenRecompute && (1+block)%nBlocksBetweenRecompute == 0 ) Psi.recompute(W, true);
     double accept_ratio = (double)nAccept/(double)(nAccept+nReject);
     Estimators->stopBlock(accept_ratio);
     nAcceptTot += nAccept;
@@ -492,7 +492,7 @@ bool DMCcuda::runWithNonlocal()
         LocalEnergyOld[iw] = W[iw]->getPropertyBase()[LOCALENERGY];
     }
     while(step<nSteps);
-    Psi.recompute(W, true);
+    if ( nBlocksBetweenRecompute && (1+block)%nBlocksBetweenRecompute == 0 ) Psi.recompute(W, true);
     double accept_ratio = (double)nAccept/(double)(nAccept+nReject);
     Estimators->stopBlock(accept_ratio);
     nAcceptTot += nAccept;

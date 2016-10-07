@@ -101,6 +101,7 @@ HamiltonianFactory::addVHXCPotential(xmlNodePtr cur)
 void
 HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
 {
+  typedef QMCTraits::RealType RealType;
   std::string targetInp(targetPtcl->getName());
   std::string sourceInp(targetPtcl->getName());
   std::string title("ElecElec"),pbc("yes");
@@ -147,14 +148,14 @@ HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
       if(quantum)
         targetH->addOperator(new CoulombPotentialAA_CUDA(ptclA,true), title, physical);
       else
-        targetH->addOperator(new CoulombPotential<double>(ptclA,0,quantum), title, physical);
+        targetH->addOperator(new CoulombPotential<RealType>(ptclA,0,quantum), title, physical);
     }
 #else
     if(applyPBC)
       targetH->addOperator(new CoulombPBCAA(*ptclA,quantum,doForces),title,physical);
     else
     {
-      targetH->addOperator(new CoulombPotential<double>(ptclA,0,quantum), title, physical);
+      targetH->addOperator(new CoulombPotential<RealType>(ptclA,0,quantum), title, physical);
     }
 #endif
   }
@@ -169,7 +170,7 @@ HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
     if(applyPBC)
       targetH->addOperator(new CoulombPBCAB(*ptclA,*targetPtcl),title);
     else
-      targetH->addOperator(new CoulombPotential<double>(ptclA,targetPtcl,true),title);
+      targetH->addOperator(new CoulombPotential<RealType>(ptclA,targetPtcl,true),title);
 #endif
   }
 }
@@ -425,7 +426,7 @@ HamiltonianFactory::addCorePolPotential(xmlNodePtr cur)
 //#endif
 //      } else {
 //        if(ion->getTotalNum()>1)
-//          targetH->addOperator(new CoulombPotential<double>(ion),hname);
+//          targetH->addOperator(new CoulombPotential<RealType>(ion),hname);
 //          //targetH->addOperator(new IonIonPotential(*ion),hname);
 //      }
 //    }

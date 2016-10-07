@@ -70,6 +70,8 @@ struct Walker
   enum {DIM=t_traits::DIM};
   /** typedef for real data type */
   typedef typename t_traits::RealType RealType;
+  /** typedef for estimator real data type */
+  typedef typename t_traits::EstimatorRealType EstimatorRealType;
   /** typedef for value data type. */
   typedef typename t_traits::ValueType ValueType;
 #ifdef QMC_CUDA
@@ -84,9 +86,11 @@ struct Walker
   typedef typename p_traits::ParticleGradient_t ParticleGradient_t;
   /** array of laplacians */
   typedef typename p_traits::ParticleLaplacian_t ParticleLaplacian_t;
+  /** typedef for value data type. */
+  typedef typename p_traits::ParticleValue_t ParticleValue_t;
 
   ///typedef for the property container, fixed size
-  typedef Matrix<RealType>      PropertyContainer_t;
+  typedef Matrix<EstimatorRealType>      PropertyContainer_t;
   typedef PooledData<RealType>  Buffer_t;
 
   ///id reserved for forward walking
@@ -100,7 +104,7 @@ struct Walker
   ///Age of this walker age is incremented when a walker is not moved after a sweep
   int ReleasedNodeAge;
   ///Weight of the walker
-  RealType Weight;
+  EstimatorRealType Weight;
   ///Weight of the walker
   RealType ReleasedNodeWeight;
   /** Number of copies for branching
@@ -123,7 +127,7 @@ struct Walker
   PropertyContainer_t  Properties;
 
   ///Property history vector
-  std::vector<std::vector<RealType> >  PropertyHistory;
+  std::vector<std::vector<EstimatorRealType> >  PropertyHistory;
   std::vector<int> PHindex;
 
   ///buffer for the data for particle-by-particle update
@@ -143,7 +147,7 @@ struct Walker
   gpu::device_vector<TinyVector<CudaRealType,OHMMS_DIM> > R_GPU;
   gpu::device_vector<TinyVector<CudaValueType,OHMMS_DIM> > Grad_GPU;
   gpu::device_vector<CUDA_PRECISION> Lap_GPU;
-  gpu::device_vector<CUDA_COULOMB_PRECISION> Rhok_GPU;
+  gpu::device_vector<CUDA_PRECISION_FULL> Rhok_GPU;
   int k_species_stride;
   inline void resizeCuda(int size, int num_species, int num_k)
   {
@@ -158,11 +162,11 @@ struct Walker
     if (num_k)
       Rhok_GPU.resize (num_species * k_species_stride);
   }
-  inline CUDA_COULOMB_PRECISION* get_rhok_ptr ()
+  inline CUDA_PRECISION_FULL* get_rhok_ptr ()
   {
     return Rhok_GPU.data();
   }
-  inline CUDA_COULOMB_PRECISION* get_rhok_ptr (int isp)
+  inline CUDA_PRECISION_FULL* get_rhok_ptr (int isp)
   {
     return Rhok_GPU.data() + k_species_stride * isp;
   }
@@ -217,7 +221,7 @@ struct Walker
     }
   }
 
-  inline void addPropertyHistoryPoint(int index, RealType data)
+  inline void addPropertyHistoryPoint(int index, EstimatorRealType data)
   {
     PropertyHistory[index][PHindex[index]]=(data);
     PHindex[index]++;
@@ -226,10 +230,10 @@ struct Walker
 //       PropertyHistory[index].pop_back();
   }
 
-  inline RealType getPropertyHistorySum(int index, int endN)
+  inline EstimatorRealType getPropertyHistorySum(int index, int endN)
   {
-    RealType mean=0.0;
-    typename std::vector<RealType>::const_iterator phStart;
+    EstimatorRealType mean=0.0;
+    typename std::vector<EstimatorRealType>::const_iterator phStart;
     phStart=PropertyHistory[index].begin()+PHindex[index];
     for (int i=0; i<endN; phStart++,i++)
     {
@@ -303,25 +307,25 @@ struct Walker
   }
 
   //return the address of the values of Hamiltonian terms
-  inline RealType* restrict getPropertyBase()
+  inline EstimatorRealType* restrict getPropertyBase()
   {
     return Properties.data();
   }
 
   //return the address of the values of Hamiltonian terms
-  inline const RealType* restrict getPropertyBase() const
+  inline const EstimatorRealType* restrict getPropertyBase() const
   {
     return Properties.data();
   }
 
   ///return the address of the i-th properties
-  inline RealType* restrict getPropertyBase(int i)
+  inline EstimatorRealType* restrict getPropertyBase(int i)
   {
     return Properties[i];
   }
 
   ///return the address of the i-th properties
-  inline const RealType* restrict getPropertyBase(int i) const
+  inline const EstimatorRealType* restrict getPropertyBase(int i) const
   {
     return Properties[i];
   }
@@ -335,7 +339,7 @@ struct Walker
    *Assign the values and reset the age
    * but leave the weight and multiplicity
    */
-  inline void resetProperty(RealType logpsi, RealType sigN, RealType ene)
+  inline void resetProperty(EstimatorRealType logpsi, EstimatorRealType sigN, EstimatorRealType ene)
   {
     Age=0;
     //Weight=1.0;
@@ -344,13 +348,13 @@ struct Walker
     Properties(LOCALENERGY) = ene;
   }
 
-  inline void resetReleasedNodeProperty(RealType localenergy, RealType alternateEnergy, RealType altR)
+  inline void resetReleasedNodeProperty(EstimatorRealType localenergy, EstimatorRealType alternateEnergy, EstimatorRealType altR)
   {
     Properties(ALTERNATEENERGY)=alternateEnergy;
     Properties(LOCALENERGY) = localenergy;
     Properties(SIGN) = altR;
   }
-  inline void resetReleasedNodeProperty(RealType localenergy, RealType alternateEnergy)
+  inline void resetReleasedNodeProperty(EstimatorRealType localenergy, EstimatorRealType alternateEnergy)
   {
     Properties(ALTERNATEENERGY)=alternateEnergy;
     Properties(LOCALENERGY) = localenergy;
@@ -366,7 +370,7 @@ struct Walker
    *Assign the values and reset the age
    * but leave the weight and multiplicity
    */
-  inline void resetProperty(RealType logpsi, RealType sigN, RealType ene, RealType r2a, RealType r2p, RealType vq)
+  inline void resetProperty(EstimatorRealType logpsi, EstimatorRealType sigN, EstimatorRealType ene, EstimatorRealType r2a, EstimatorRealType r2p, EstimatorRealType vq)
   {
     Age=0;
     Properties(LOGPSI)=logpsi;
@@ -412,8 +416,8 @@ struct Walker
       numPH += PropertyHistory[iat].size();
     int bsize =
       2*sizeof(long)+3*sizeof(int)+ PHindex.size()*sizeof(int)
-      +(Properties.size()+DataSet.size()+ numPH + 1)*sizeof(RealType)
-      +R.size()*(DIM*sizeof(RealType)+(DIM+1)*sizeof(ValueType));//R+G+L
+      +Properties.size()*sizeof(EstimatorRealType)+(numPH+1)*sizeof(RealType)+DataSet.byteSize()
+      +R.size()*(DIM*sizeof(RealType)+(DIM+1)*sizeof(ParticleValue_t));//R+G+L
     //+R.size()*(DIM*2*sizeof(RealType)+(DIM+1)*sizeof(ValueType));//R+Drift+G+L
 #ifdef QMC_CUDA
     bsize += 3 *sizeof (int); // size and N and M
@@ -421,7 +425,7 @@ struct Walker
     bsize += R.size()        * OHMMS_DIM * sizeof(CUDA_PRECISION); // R_GPU
     bsize += R.size()        * OHMMS_DIM * sizeof(CudaValueType); // Grad_GPU
     bsize += R.size()        * 1         * sizeof(CUDA_PRECISION); // Lap_GPU
-    bsize += Rhok_GPU.size()             * sizeof(CUDA_COULOMB_PRECISION); // Rhok
+    bsize += Rhok_GPU.size()             * sizeof(CUDA_PRECISION_FULL); // Rhok
 #endif
     return bsize;
   }
@@ -441,6 +445,7 @@ struct Walker
 #endif
     m.Pack(Properties.data(),Properties.size());
     m.Pack(DataSet.data(),DataSet.size());
+    m.Pack(DataSet.data_DP(),DataSet.size_DP());
     //Properties.putMessage(m);
     //DataSet.putMessage(m);
     for (int iat=0; iat<PropertyHistory.size(); iat++)
@@ -449,7 +454,7 @@ struct Walker
 #ifdef QMC_CUDA
     // Pack GPU data
     std::vector<CUDA_PRECISION> host_data;
-    std::vector<CUDA_COULOMB_PRECISION> host_rhok;
+    std::vector<CUDA_PRECISION_FULL> host_rhok;
     std::vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > R_host;
     std::vector<TinyVector<CudaValueType,OHMMS_DIM> > Grad_host;
     std::vector<CUDA_PRECISION> host_lapl;
@@ -488,6 +493,7 @@ struct Walker
 #endif
     m.Unpack(Properties.data(),Properties.size());
     m.Unpack(DataSet.data(),DataSet.size());
+    m.Unpack(DataSet.data_DP(),DataSet.size_DP());
     //Properties.getMessage(m);
     //DataSet.getMessage(m);
     for (int iat=0; iat<PropertyHistory.size(); iat++)
@@ -496,7 +502,7 @@ struct Walker
 #ifdef QMC_CUDA
     // Pack GPU data
     std::vector<CUDA_PRECISION> host_data;
-    std::vector<CUDA_COULOMB_PRECISION> host_rhok;
+    std::vector<CUDA_PRECISION_FULL> host_rhok;
     std::vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > R_host;
     std::vector<CUDA_PRECISION> host_lapl;
     int size, N;

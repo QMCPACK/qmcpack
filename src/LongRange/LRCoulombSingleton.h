@@ -36,11 +36,11 @@ namespace qmcplusplus
 struct LRCoulombSingleton
 {
 
-  typedef OHMMS_PRECISION                                    RealType;
-  typedef LRHandlerBase                                      LRHandlerType;
-  typedef LinearGrid<RealType>                               GridType;
-  //    typedef OneDimLinearSpline<RealType>                 RadFunctorType;
-  typedef OneDimCubicSpline<RealType>                       RadFunctorType;
+  DECLARE_COULOMB_TYPES
+
+  typedef LRHandlerBase                LRHandlerType;
+  typedef LinearGrid<pRealType>        GridType;
+  typedef OneDimCubicSpline<pRealType> RadFunctorType;
 
   static LRHandlerType* CoulombHandler;
   static LRHandlerType* CoulombDerivHandler;
@@ -55,7 +55,7 @@ struct LRCoulombSingleton
    * The spline function is the short-range term after breaking up
    * \f$r V_{S} = r \times (V(r)-V_{L})\f$
    */
-  static RadFunctorType* createSpline4RbyVs(LRHandlerType* aLR, RealType rcut,
+  static RadFunctorType* createSpline4RbyVs(LRHandlerType* aLR, mRealType rcut,
       GridType* agrid=0);
 };
 

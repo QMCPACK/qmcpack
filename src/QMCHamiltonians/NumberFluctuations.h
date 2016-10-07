@@ -210,7 +210,7 @@ struct NumberFluctuations: public QMCHamiltonianBase
       {
         Return_t z=(*L)[iat][0];
         for (int x=1; x<DIM; x++)
-          z=std::max(z,(*L)[iat][x]);
+          z=std::max(z,static_cast<Return_t>((*L)[iat][x]));
         int a(nreg-1);
         while((z<regions[a])&&(a>=0))
         {

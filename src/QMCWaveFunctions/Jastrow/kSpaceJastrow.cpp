@@ -1041,7 +1041,8 @@ void kSpaceJastrow::evaluateDerivatives(ParticleSet& P,
           {
             //real part of coeff
             dlogpsi[kk] += Prefactor*real(z);
-            convert(dot(OneBodyGvecs[i],P.G[iat]),tmp_dot);
+            //convert(dot(OneBodyGvecs[i],P.G[iat]),tmp_dot);
+            convert(dot(P.G[iat],OneBodyGvecs[i]),tmp_dot);
             dhpsioverpsi[kk] +=  0.5*Prefactor*dot(OneBodyGvecs[i],OneBodyGvecs[i])*real(z) + Prefactor*real(z*eye)*tmp_dot;
             //	+ Prefactor*real(z*eye)*real(dot(OneBodyGvecs[i],P.G[iat]));
             //imaginary part of coeff,

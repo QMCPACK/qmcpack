@@ -231,11 +231,11 @@ struct BsplineFunctor3D: public OptimizableFunctorBase
     r_2I *= DeltaRInv_eI;
     real_type ipart, t, u, v;
     int i, j, k;
-    t = modf(x, &ipart);
+    t = std::modf(x, &ipart);
     i = (int) ipart;
-    u = modf(r_1I, &ipart);
+    u = std::modf(r_1I, &ipart);
     j = (int) ipart;
-    v = modf(r_2I, &ipart);
+    v = std::modf(r_2I, &ipart);
     k = (int) ipart;
     real_type tp[4], up[4], vp[4], a[4], b[4], c[4];
     tp[0] = t*t*t;
@@ -293,11 +293,11 @@ struct BsplineFunctor3D: public OptimizableFunctorBase
     r_2I *= DeltaRInv_eI;
     real_type ipart, t, u, v;
     int i, j, k;
-    t = modf(x, &ipart);
+    t = std::modf(x, &ipart);
     i = (int) ipart;
-    u = modf(r_1I, &ipart);
+    u = std::modf(r_1I, &ipart);
     j = (int) ipart;
-    v = modf(r_2I, &ipart);
+    v = std::modf(r_2I, &ipart);
     k = (int) ipart;
     real_type tp[4], up[4], vp[4], a[4], b[4], c[4],
               da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
@@ -400,7 +400,7 @@ struct BsplineFunctor3D: public OptimizableFunctorBase
 
   inline bool
   evaluateDerivatives (real_type r_12, real_type r_1I, real_type r_2I,
-                       std::vector<double> &d_vals,
+                       std::vector<real_type> &d_vals,
                        std::vector<TinyVector<real_type,3> >& d_grads,
                        std::vector<Tensor<real_type,3> > &d_hess)
   {
@@ -548,9 +548,15 @@ struct BsplineFunctor3D: public OptimizableFunctorBase
         }
       }
     }
-    HDFAttribIO<Array<real_type,3> > coefs_attrib(SplineCoefs);
-    HDFAttribIO<Array<real_type,3> > param_attrib(ParamArray);
-    HDFAttribIO<Array<real_type,3> > val_attrib(val);
+    Array<double,3> SplineCoefs_DP(NumParams_ee + 4, NumParams_eI + 4, NumParams_eI + 4);
+    Array<double,3> ParamArray_DP(NumParams_ee, NumParams_eI, NumParams_eI);
+    Array<double,3> val_DP(N,N,N);
+    HDFAttribIO<Array<double,3> > coefs_attrib(SplineCoefs_DP);
+    HDFAttribIO<Array<double,3> > param_attrib(ParamArray_DP);
+    HDFAttribIO<Array<double,3> > val_attrib(val_DP);
+    SplineCoefs_DP = SplineCoefs;
+    ParamArray_DP = ParamArray;
+    val_DP = val;
     val_attrib.write(hid, "val");
     coefs_attrib.write(hid, "coefs");
     param_attrib.write(hid, "params");

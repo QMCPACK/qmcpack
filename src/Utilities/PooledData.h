@@ -19,264 +19,42 @@
 /** @file PooledData.h
  * @brief Define a serialized buffer to store anonymous data
  *
- * Two implementations differ in how the iterators are handled.
- * USE_POOLED_DATA_ITERATOR selects an implementation using std::vector<T>::iterator
- * Otherwise, the original implementation using an index Current is used.
+ * JK: Remove iterator version on 2016-01-04
  */
 #ifndef QMCPLUSPLUS_POOLEDDATA_H
 #define QMCPLUSPLUS_POOLEDDATA_H
 #include <vector>
 #include <complex>
 #include <limits>
+#include <iterator>
 
-//#define USE_POOLED_DATA_ITERATOR 1
-//typedef double RealType;
+using std::complex;
 
-#if defined(USE_POOLED_DATA_ITERATOR)
-
-template<class T>
-struct PooledData
-{
-
-  //typedef for iterator
-  typedef typename  std::vector<T>::size_type size_type;
-  typedef typename  std::vector<T>::iterator iterator;
-  typedef typename  std::vector<T>::const_iterator const_iterator;
-
-  //default constructor
-  inline PooledData()
-  {
-    Anchor=myData.begin();
-  }
-
-  //constructor with a size
-  explicit inline PooledData(int n): myData(n)
-  {
-    Anchor=myData.begin();
-  }
-
-  ////assignement operator
-  //PooledData<T>& operator=(const PooledData<T>& a)
-  //{
-  //  myData.clear();
-  //  if(a.size()) {
-  //    myData.reserve(a.size());
-  //    myData.insert(myData.begin(), a.begin(), a.end());
-  //  }
-  //  return *this;
-  //}
-
-  inline size_type size() const
-  {
-    return myData.size();
-  }
-  inline size_type capacity() const
-  {
-    return myData.capacity();
-  }
-
-  ///return the location of the Anchor
-  inline int current() const
-  {
-    return Anchor-myData.begin();
-  }
-
-  ///set the Anchor at the first iterator
-  inline void rewind()
-  {
-    Anchor=myData.begin();
-  }
-
-  inline iterator begin()
-  {
-    return myData.begin();
-  }
-  inline iterator end()
-  {
-    return myData.end();
-  }
-  inline const_iterator begin() const
-  {
-    return myData.begin();
-  }
-  inline const_iterator end() const
-  {
-    return myData.end();
-  }
-
-  inline void reserve(size_type n)
-  {
-    myData.reserve(n);
-  }
-  inline void clear()
-  {
-    myData.clear();
-    Anchor=myData.begin();
-    Current=0;
-  }
-
-  ///@{Add data to the pool
-  template<class T1>
-  inline void add(T1 x)
-  {
-    myData.push_back(static_cast<T>(x));
-  }
-
-  inline void add(T x)
-  {
-    myData.push_back(x);
-  }
-
-  inline void add(std::complex<T>& x)
-  {
-    myData.push_back(x.real());
-    myData.push_back(x.imag());
-  }
-
-  template<class _InputIterator>
-  inline void add(_InputIterator first, _InputIterator last)
-  {
-    myData.insert(myData.end(),first,last);
-  }
-
-  inline void add(std::complex<T>* first,std::complex<T>* last)
-  {
-    while(first != last)
-    {
-      myData.push_back((*first).real());
-      myData.push_back((*first).imag());
-      ++first;
-    }
-  }
-  ///@}
-
-  ///@{Assign value to the arguments from the pool and advance the Anchor
-  template<class T1>
-  inline void get(T1& x)
-  {
-    x = static_cast<T1>(*Anchor++);
-  }
-
-  inline void get(T& x)
-  {
-    x = *Anchor++;
-  }
-
-  inline void get(std::complex<T>& x)
-  {
-    x.real()=*Anchor++;
-    x.imag()=*Anchor++;
-  }
-
-  template<class _ForwardIterator>
-  inline void get(_ForwardIterator first, _ForwardIterator last)
-  {
-    //typename std::vector<T>::iterator here=Anchor;
-    size_type dn=last-first;
-    copy(Anchor,Anchor+dn,first);
-    Anchor += dn;
-  }
-
-  inline void get(std::complex<T>* first, std::complex<T>* last)
-  {
-    while(first != last)
-    {
-      (*first).real()=*Anchor++;
-      (*first).imag()=*Anchor++;
-      ++first;
-    }
-  }
-  ///@}
-
-  ///@{Assign value from the arguments to the pool and advnace the Anchor
-  /** Add  a value
-   * @param x value to add
-   */
-  inline void put(T x)
-  {
-    *Anchor++ = x;
-  }
-  /** Add a std::complex<T>
-   * @param x a complex value to add
-   */
-  inline void put(std::complex<T>& x)
-  {
-    *Anchor++ = x.real();
-    *Anchor++ = x.imag();
-  }
-
-  /** Add values from [first,last)
-   * @param first starting iterator
-   * @param last ending iterator
-   */
-  template<class _FowardIterator>
-  inline void put(_FowardIterator first, _FowardIterator last)
-  {
-    copy(first,last,Anchor);
-    Anchor += last-first;
-  }
-
-  /** Add complex values from [first,last)
-   * @param first starting iterator
-   * @param last ending iterator
-   */
-  inline void put(std::complex<T>* first, std::complex<T>* last)
-  {
-    while(first != last)
-    {
-      *Anchor++ = (*first).real();
-      *Anchor++ = (*first).imag();
-      ++first;
-    }
-  }
-  ///@}
-
-
-  /** return the address of the first element **/
-  inline T* data()
-  {
-    return &(myData[0]);
-  }
-
-  inline void print(std::ostream& os)
-  {
-    copy(myData.begin(), myData.end(), std::ostream_iterator<T>(os," "));
-  }
-
-  template<class Msg>
-  inline Msg& putMessage(Msg& m)
-  {
-    m.Pack(&(myData[0]),myData.size());
-    return m;
-  }
-
-  template<class Msg>
-  inline Msg& getMessage(Msg& m)
-  {
-    m.Unpack(&(myData[0]),myData.size());
-    return m;
-  }
-
-  iterator Anchor;
-  std::vector<T> myData;
-};
-#else
 template<class T>
 struct PooledData
 {
   typedef T value_type;
   typedef typename std::vector<T>::size_type size_type;
 
-  size_type Current;
+  size_type Current, Current_DP;
   std::vector<T> myData;
+  /// only active when T!=double
+  std::vector<double> myData_DP;
 
   ///default constructor
-  inline PooledData(): Current(0) { }
+  inline PooledData(): Current(0), Current_DP(0) { }
 
   ///constructor with a size
-  inline PooledData(size_type n):Current(0)
+  inline PooledData(size_type n, size_type n1=0): Current(0), Current_DP(0)
   {
     myData.resize(n,T());
+    myData_DP.resize(n1,double());
+  }
+
+  ///return the size of the data
+  inline size_type byteSize() const
+  {
+    return sizeof(T)*myData.size() + sizeof(double)*myData_DP.size();
   }
 
   ///return the size of the data
@@ -285,18 +63,30 @@ struct PooledData
     return myData.size();
   }
 
+  ///return the size of the DP data
+  inline size_type size_DP() const
+  {
+    return myData_DP.size();
+  }
+
   //inline void clear() { std::vector<T>::clear(); Current=0;}
   inline size_type current() const
   {
     return Current;
   }
 
+   inline size_type current_DP() const
+  {
+    return Current_DP;
+  }
+
   /** set the Current to a cursor
    * @param cur locator to which Current is assigned
    */
-  inline void rewind(size_type cur=0)
+  inline void rewind(size_type cur=0, size_type cur_DP=0)
   {
     Current = cur;
+    Current_DP = cur_DP;
   }
 
   ///return the starting iterator
@@ -315,7 +105,9 @@ struct PooledData
   inline void clear()
   {
     myData.clear();
+    myData_DP.clear();
     Current=0;
+    Current_DP=0;
   }
   ///reserve the memory using std::vector<T>::reserve
   inline void reserve(size_type n)
@@ -366,27 +158,36 @@ struct PooledData
   {
     Current += last-first;
     myData.insert(myData.end(),first,last);
-    //while(first != last) {
-    //  Current++; this->push_back(*first++);
-    //}
+  }
+
+  inline void add(T* first, T* last)
+  {
+    Current += last-first;
+    myData.insert(myData.end(),first,last);
+  }
+
+  template<class T1>
+  inline void add(T1* first, T1* last)
+  {
+    Current_DP += last-first;
+    myData_DP.insert(myData_DP.end(),first,last);
   }
 
   inline void add(std::complex<T>* first,std::complex<T>* last)
   {
     size_type dn=2*(last-first);
-    //TEMPORARY FIX FOR SGI-IA64
-#if defined(SGI_IA64)  || defined(PROFILING_ON)
-    for(; first != last; ++first)
-    {
-      myData.push_back((*first).real());
-      myData.push_back((*first).imag());
-    }
-#else
     T* t=reinterpret_cast<T*>(first);
     myData.insert(myData.end(),t,t+dn);
-    //myData.insert(myData.end(),&(first->real()),&(first->real())+dn);
-#endif
     Current += dn;
+  }
+
+  template<typename T1>
+  inline void add(std::complex<T1>* first,std::complex<T1>* last)
+  {
+    size_type dn=2*(last-first);
+    T1* t=reinterpret_cast<T1*>(first);
+    myData_DP.insert(myData_DP.end(),t,t+dn);
+    Current_DP += dn;
   }
 
   template<class T1>
@@ -412,9 +213,21 @@ struct PooledData
     size_type now=Current;
     Current+=last-first;
     copy(myData.begin()+now,myData.begin()+Current,first);
-    //while(first != last) {
-    //  *first++ = (*this)[Current++];
-    //}
+  }
+
+  inline void get(T* first, T* last)
+  {
+    size_type now=Current;
+    Current+=last-first;
+    std::copy(myData.begin()+now,myData.begin()+Current,first);
+  }
+
+  template<class T1>
+  inline void get(T1* first, T1* last)
+  {
+    size_type now=Current_DP;
+    Current_DP+=last-first;
+    std::copy(myData_DP.begin()+now,myData_DP.begin()+Current_DP,first);
   }
 
   inline void get(std::complex<T>* first, std::complex<T>* last)
@@ -424,6 +237,17 @@ struct PooledData
       (*first)=std::complex<T>(myData[Current],myData[Current+1]);
       ++first;
       Current+=2;
+    }
+  }
+
+  template<typename T1>
+  inline void get(std::complex<T1>* first, std::complex<T1>* last)
+  {
+    while(first != last)
+    {
+      (*first)=std::complex<T1>(myData_DP[Current_DP],myData_DP[Current_DP+1]);
+      ++first;
+      Current_DP+=2;
     }
   }
 
@@ -442,9 +266,19 @@ struct PooledData
   {
     copy(first,last,myData.begin()+Current);
     Current+=last-first;
-    //while(first != last) {
-    //  (*this)[Current++] = *first++;
-    //}
+  }
+
+  inline void put(T* first, T* last)
+  {
+    std::copy(first,last,myData.begin()+Current);
+    Current+=last-first;
+  }
+
+  template<class T1>
+  inline void put(T1* first, T1* last)
+  {
+    std::copy(first,last,myData_DP.begin()+Current_DP);
+    Current_DP+=last-first;
   }
 
   inline void put(std::complex<T>* first, std::complex<T>* last)
@@ -457,11 +291,28 @@ struct PooledData
     }
   }
 
+  template<typename T1>
+  inline void put(std::complex<T1>* first, std::complex<T1>* last)
+  {
+    while(first != last)
+    {
+      myData_DP[Current_DP++] = (*first).real();
+      myData_DP[Current_DP++] = (*first).imag();
+      ++first;
+    }
+  }
+
 
   /** return the address of the first element **/
   inline T* data()
   {
     return &(myData[0]);
+  }
+
+  /** return the address of the first DP element **/
+  inline double* data_DP()
+  {
+    return &(myData_DP[0]);
   }
 
   inline void print(std::ostream& os)
@@ -473,6 +324,7 @@ struct PooledData
   inline Msg& putMessage(Msg& m)
   {
     m.Pack(&(myData[0]),myData.size());
+    m.Pack(&(myData_DP[0]),myData_DP.size());
     return m;
   }
 
@@ -480,6 +332,7 @@ struct PooledData
   inline Msg& getMessage(Msg& m)
   {
     m.Unpack(&(myData[0]),myData.size());
+    m.Unpack(&(myData_DP[0]),myData_DP.size());
     return m;
   }
 
@@ -496,7 +349,6 @@ struct PooledData
     return *this;
   }
 };
-#endif
 
 /** operator to check if two buffers are identical */
 template<class T>

@@ -109,7 +109,7 @@ DiracDeterminantAFM::evaluateDerivatives(ParticleSet& P,
   dlapl_dC=0;
   for (int i=0; i<NumOrbitals; i++)
     for (int j=0; j<NumOrbitals; j++)
-      dlapl_dC(i,i) += -0.5*L_gamma(i,j)*psiM(i,j);
+      dlapl_dC(i,i) += -(RealType)0.5*L_gamma(i,j)*psiM(i,j);
   for (int ptcl=0; ptcl<NumOrbitals; ptcl++)
   {
     MyG[ptcl] = PosType();

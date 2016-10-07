@@ -65,7 +65,8 @@ void CrystalLattice<T,D,ORTHO>::set(std::vector<std::string>& argv)
 
 
 template<class T, unsigned D,bool ORTHO>
-void CrystalLattice<T,D,ORTHO>::set(const Tensor<T,D>& lat)
+template<class TT>
+void CrystalLattice<T,D,ORTHO>::set(const Tensor<TT,D>& lat)
 {
   R = lat;
   reset();

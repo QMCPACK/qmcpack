@@ -54,9 +54,9 @@ namespace qmcplusplus
    * @param out output real data
    * @param twist vector to correct phase
    */
-  template<typename T, typename T1>
+  template<typename T, typename T1, typename T2>
     inline void fix_phase_c2r(const Array<std::complex<T>,3>& in, Array<T1,3>& out
-        , const TinyVector<T,3>& twist
+        , const TinyVector<T2,3>& twist
         )
   {
     const T1 two_pi=-2.0*M_PI;
@@ -116,9 +116,9 @@ namespace qmcplusplus
    * zero.  This sometimes happens in crystals with high
    * symmetry at special k-points.
    */
-  template<typename T, typename T1>
+  template<typename T, typename T1, typename T2>
     inline void fix_phase_rotate_c2r(Array<std::complex<T>,3>& in
-    , Array<T1,3>& out, const TinyVector<T,3>& twist
+    , Array<T1,3>& out, const TinyVector<T2,3>& twist
     )
     {
       const T two_pi=-2.0*M_PI;
@@ -170,9 +170,9 @@ namespace qmcplusplus
       }
     }
 
-  template<typename T, typename T1>
+  template<typename T, typename T1, typename T2>
   inline void fix_phase_rotate_c2c(const Array<std::complex<T>,3>& in
-      , Array<std::complex<T1>,3>& out, const TinyVector<T,3>& twist)
+      , Array<std::complex<T1>,3>& out, const TinyVector<T2,3>& twist)
   {
     const T two_pi=-2.0*M_PI;
     const int nx=in.size(0);
@@ -237,9 +237,9 @@ namespace qmcplusplus
     }
   }
 
-  template<typename T, typename T1>
+  template<typename T, typename T1, typename T2>
   inline void fix_phase_rotate_c2c(const Array<std::complex<T>,3>& in
-      , Array<T1,3>& out_r, Array<T1,3>& out_i, const TinyVector<T,3>& twist)
+      , Array<T1,3>& out_r, Array<T1,3>& out_i, const TinyVector<T2,3>& twist)
   {
     const T two_pi=-2.0*M_PI;
     const int nx=in.size(0);

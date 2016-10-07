@@ -64,13 +64,13 @@ void EwaldHandler::fillFk(KContainer& KList)
   kMag.resize(MaxKshell);
   if(SuperCellEnum==SUPERCELL_SLAB)
   {
-    RealType knorm=M_PI/Area;
-    RealType ksum=0.0;
-    RealType oneovertwosigma=1.0/(2.0*Sigma);
+    mRealType knorm=M_PI/Area;
+    mRealType ksum=0.0;
+    mRealType oneovertwosigma=1.0/(2.0*Sigma);
     for(int ks=0,ki=0; ks<Fk_symm.size(); ks++)
     {
       kMag[ks]=std::sqrt(KList.ksq[ki]);
-      RealType uk=knorm/kMag[ks];//pi/(A*k)
+      mRealType uk=knorm/kMag[ks];//pi/(A*k)
       Fk_symm[ks]=uk;
       while(ki<KList.kshell[ks+1] && ki<Fk.size())
         Fk[ki++]=uk;
@@ -82,26 +82,26 @@ void EwaldHandler::fillFk(KContainer& KList)
   else
   {
 #if OHMMS_DIM==2
-    RealType kgauss=1.0/(4*Sigma*Sigma);
-    RealType knorm=2*M_PI/Volume;
-    const RealType acclog=std::abs(std::log(1.0e-10));
+    mRealType kgauss=1.0/(4*Sigma*Sigma);
+    mRealType knorm=2*M_PI/Volume;
+    const mRealType acclog=std::abs(std::log(1.0e-10));
     for(int ks=0,ki=0; ks<Fk_symm.size(); ks++)
     {
-      RealType t2e=KList.ksq[ki]*kgauss;
-      RealType uk=knorm*std::exp(-t2e)/KList.ksq[ki];
+      mRealType t2e=KList.ksq[ki]*kgauss;
+      mRealType uk=knorm*std::exp(-t2e)/KList.ksq[ki];
       Fk_symm[ks]=uk;
       while(ki<KList.kshell[ks+1] && ki<Fk.size())
         Fk[ki++]=uk;
     }
     PreFactors[3]=0.0;
 #elif OHMMS_DIM==3
-    RealType kgauss=1.0/(4*Sigma*Sigma);
-    RealType knorm=4*M_PI/Volume;
-    const RealType acclog=std::abs(std::log(1.0e-10));
+    mRealType kgauss=1.0/(4*Sigma*Sigma);
+    mRealType knorm=4*M_PI/Volume;
+    const mRealType acclog=std::abs(std::log(1.0e-10));
     for(int ks=0,ki=0; ks<Fk_symm.size(); ks++)
     {
-      RealType t2e=KList.ksq[ki]*kgauss;
-      RealType uk=knorm*std::exp(-t2e)/KList.ksq[ki];
+      mRealType t2e=KList.ksq[ki]*kgauss;
+      mRealType uk=knorm*std::exp(-t2e)/KList.ksq[ki];
       Fk_symm[ks]=uk;
       while(ki<KList.kshell[ks+1] && ki<Fk.size())
         Fk[ki++]=uk;
@@ -112,16 +112,16 @@ void EwaldHandler::fillFk(KContainer& KList)
   app_log().flush();
 }
 
-EwaldHandler::RealType
-EwaldHandler::evaluate_slab(RealType z, const std::vector<int>& kshell
-                            , const ComplexType* restrict eikr_i, const ComplexType* restrict eikr_j)
+EwaldHandler::mRealType
+EwaldHandler::evaluate_slab(mRealType z, const std::vector<int>& kshell
+                            , const pComplexType* restrict eikr_i, const pComplexType* restrict eikr_j)
 {
-  RealType zp=z*Sigma;
-  RealType vk=-SlabFunc0(z,zp);
+  mRealType zp=z*Sigma;
+  mRealType vk=-SlabFunc0(z,zp);
   //cout << "### SLAB " << z << " " << zp << std::endl;
   for(int ks=0,ki=0; ks<MaxKshell; ks++)
   {
-    RealType u=0;//\sum Real (e^ikr_i e^(-ikr_j))
+    mRealType u=0;//\sum Real (e^ikr_i e^(-ikr_j))
     for(; ki<kshell[ks+1]; ki++,eikr_i++,eikr_j++)
       u += ((*eikr_i).real()*(*eikr_j).real()+(*eikr_i).imag()*(*eikr_j).imag());
     vk += u*Fk_symm[ks]*SlabFuncK(ks,z,zp);

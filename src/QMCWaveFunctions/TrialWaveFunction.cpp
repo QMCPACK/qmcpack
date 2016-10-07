@@ -26,7 +26,7 @@ namespace qmcplusplus
 
 TrialWaveFunction::TrialWaveFunction(Communicate* c)
   : MPIObjectBase(c)
-  , Ordered(true), NumPtcls(0), TotalDim(0), BufferCursor(0)
+  , Ordered(true), NumPtcls(0), TotalDim(0), BufferCursor(0), BufferCursor_DP(0)
   , PhaseValue(0.0),LogValue(0.0),OneOverM(1.0), PhaseDiff(0.0), FermionWF(0)
 {
   ClassName="TrialWaveFunction";
@@ -36,7 +36,7 @@ TrialWaveFunction::TrialWaveFunction(Communicate* c)
 ///private and cannot be used
 TrialWaveFunction::TrialWaveFunction()
   : MPIObjectBase(0)
-  , Ordered(true), NumPtcls(0), TotalDim(0), BufferCursor(0)
+  , Ordered(true), NumPtcls(0), TotalDim(0), BufferCursor(0), BufferCursor_DP(0)
   ,  PhaseValue(0.0),LogValue(0.0) ,OneOverM(1.0), PhaseDiff(0.0)
 {
   ClassName="TrialWaveFunction";
@@ -148,6 +148,14 @@ TrialWaveFunction::evaluateLog(ParticleSet& P)
   //return LogValue=real(logpsi);
 }
 
+void TrialWaveFunction::recompute(ParticleSet& P)
+{
+  std::vector<OrbitalBase*>::iterator it(Z.begin());
+  std::vector<OrbitalBase*>::iterator it_end(Z.end());
+  for (; it!=it_end; ++it)
+    (*it)->recompute(P);
+}
+
 /** return log(|psi|)
 *
 * PhaseValue is the phase for the complex wave function
@@ -228,6 +236,7 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateDeltaLog(ParticleSet& P, 
   convert(logpsi,LogValue);
   return LogValue;
 }
+
 TrialWaveFunction::RealType TrialWaveFunction::evaluateDeltaLog(ParticleSet& P, PooledData<RealType>& buf)
 {
   P.G = 0.0;
@@ -601,6 +610,18 @@ TrialWaveFunction::RealType TrialWaveFunction::ratio(ParticleSet& P, int iat
 #endif
 }
 
+void TrialWaveFunction::printGL(ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L, std::string tag)
+{
+  std::ostringstream o;
+  o << "---  reporting " << tag << std::endl << "  ---" << std::endl;
+  for(int iat=0; iat<L.size(); iat++)
+    o << "index: " << std::fixed << iat << std::scientific
+      << "   G: " << G[iat][0] << "  " << G[iat][1] << "  " << G[iat][2]
+      << "   L: " << L[iat] << std::endl;
+  o << "---  end  ---" << std::endl;
+  std::cout << o.str();
+}
+
 /** restore to the original state
  * @param iat index of the particle with a trial move
  *
@@ -689,6 +710,7 @@ TrialWaveFunction::RealType TrialWaveFunction::registerData(ParticleSet& P, Pool
   P.L = 0.0;
   //save the current position
   BufferCursor=buf.current();
+  BufferCursor_DP=buf.current_DP();
   ValueType logpsi(0.0);
   PhaseValue=0.0;
   std::vector<OrbitalBase*>::iterator it(Z.begin());
@@ -734,7 +756,7 @@ TrialWaveFunction::RealType TrialWaveFunction::updateBuffer(ParticleSet& P
   //TAU_PROFILE("TrialWaveFunction::updateBuffer","(P,..)", TAU_USER);
   P.G = 0.0;
   P.L = 0.0;
-  buf.rewind(BufferCursor);
+  buf.rewind(BufferCursor,BufferCursor_DP);
   ValueType logpsi(0.0);
   PhaseValue=0.0;
   std::vector<OrbitalBase*>::iterator it(Z.begin());
@@ -744,6 +766,7 @@ TrialWaveFunction::RealType TrialWaveFunction::updateBuffer(ParticleSet& P
     logpsi += (*it)->updateBuffer(P,buf,fromscratch);
     PhaseValue += (*it)->PhaseValue;
   }
+  //printGL(P.G,P.L);
   convert(logpsi,LogValue);
   //LogValue=real(logpsi);
   buf.put(PhaseValue);
@@ -755,7 +778,7 @@ TrialWaveFunction::RealType TrialWaveFunction::updateBuffer(ParticleSet& P
 
 void TrialWaveFunction::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
 {
-  buf.rewind(BufferCursor);
+  buf.rewind(BufferCursor,BufferCursor_DP);
   //TAU_PROFILE("TrialWaveFunction::copyFromBuffer","(P,..)", TAU_USER);
   for (int i=0; i<Z.size(); i++)
     Z[i]->copyFromBuffer(P,buf);
@@ -776,7 +799,7 @@ void TrialWaveFunction::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf
 */
 void TrialWaveFunction::dumpToBuffer(ParticleSet& P, BufferType& buf)
 {
-  buf.rewind(BufferCursor);
+  buf.rewind(BufferCursor,BufferCursor_DP);
   std::vector<OrbitalBase*>::iterator it(Z.begin());
   std::vector<OrbitalBase*>::iterator it_end(Z.end());
   for (; it!=it_end; ++it)
@@ -795,7 +818,7 @@ void TrialWaveFunction::dumpToBuffer(ParticleSet& P, BufferType& buf)
 */
 void TrialWaveFunction::dumpFromBuffer(ParticleSet& P, BufferType& buf)
 {
-  buf.rewind(BufferCursor);
+  buf.rewind(BufferCursor,BufferCursor_DP);
   std::vector<OrbitalBase*>::iterator it(Z.begin());
   std::vector<OrbitalBase*>::iterator it_end(Z.end());
   for (; it!=it_end; ++it)
@@ -805,7 +828,7 @@ void TrialWaveFunction::dumpFromBuffer(ParticleSet& P, BufferType& buf)
 TrialWaveFunction::RealType
 TrialWaveFunction::evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
 {
-  buf.rewind(BufferCursor);
+  buf.rewind(BufferCursor,BufferCursor_DP);
   LogValue=0.0;
   PhaseValue=0.0;
   for (int i=0; i<Z.size(); i++)
@@ -924,6 +947,7 @@ TrialWaveFunction* TrialWaveFunction::makeClone(ParticleSet& tqp)  const
 {
   TrialWaveFunction* myclone = new TrialWaveFunction(myComm);
   myclone->BufferCursor=BufferCursor;
+  myclone->BufferCursor_DP=BufferCursor_DP;
   for (int i=0; i<Z.size(); ++i)
     myclone->addOrbital(Z[i]->makeClone(tqp),"dummy",Z[i]->IsFermionWF);
   myclone->OneOverM=OneOverM;

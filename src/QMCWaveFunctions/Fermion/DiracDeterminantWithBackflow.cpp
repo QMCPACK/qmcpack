@@ -564,12 +564,12 @@ void DiracDeterminantWithBackflow::testL(ParticleSet& P)
       for(int j=0; j<NumPtcls; j++)
         for(int b=0; b<3; b++)
         {
-          (Kij(i,j))(a,b) = ( (Fdiag_p(j))(b) - (Fdiag_m(j))(b)   )/(2.0*dr);
+          (Kij(i,j))(a,b) = ( (Fdiag_p(j))(b) - (Fdiag_m(j))(b)   )/((RealType)2.0*dr);
         }
       for(int j=0; j<NumPtcls; j++)
         for(int b=0; b<3; b++)
         {
-          (dAij(i,j))(b) += ( (Aij_p(i,j))(a,b) - (Aij_m(i,j))(a,b) ) / (2.0*dr);
+          (dAij(i,j))(b) += ( (Aij_p(i,j))(a,b) - (Aij_m(i,j))(a,b) ) / ((RealType)2.0*dr);
         }
     }
   }
@@ -989,10 +989,10 @@ DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
     int kk = BFTrans->optIndexMap[pa];
 #if defined(QMC_COMPLEX)
     dlogpsi[kk]+=real(dpsia);
-    dhpsioverpsi[kk] -= real(0.5*dLa+Dot(P.G,Gtemp));
+    dhpsioverpsi[kk] -= real(0.5*static_cast<ParticleSet::ParticleValue_t>(dLa)+Dot(P.G,Gtemp));
 #else
     dlogpsi[kk]+=dpsia;
-    dhpsioverpsi[kk] -= (0.5*dLa+Dot(P.G,Gtemp));
+    dhpsioverpsi[kk] -= (0.5*static_cast<ParticleSet::ParticleValue_t>(dLa)+Dot(P.G,Gtemp));
 #endif
   }
 }
@@ -1124,14 +1124,14 @@ DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
     }   // j
 #if defined(QMC_COMPLEX)
     convert(dpsia,dlogpsi(offset,pa));
-    convert(dLa + sumL*dpsia + dotG*dpsia + 2.0*Dot(myG,Gtemp), dL(offset,pa));
+    convert(dLa + sumL*dpsia + dotG*dpsia + static_cast<ValueType>(2.0*Dot(myG,Gtemp)), dL(offset,pa));
 #else
     dlogpsi(offset,pa) = dpsia; // \nabla_pa ln(D)
-    dL(offset,pa) = dLa + sumL*dpsia + dotG*dpsia + 2.0*Dot(myG,Gtemp);
+    dL(offset,pa) = dLa + sumL*dpsia + dotG*dpsia + static_cast<ValueType>(2.0*Dot(myG,Gtemp));
 #endif
     // \sum_i (\nabla_pa  \nabla2_i D) / D
     for(int k=0; k<num; k++)
-      dG(offset,pa,k) = Gtemp(k) + dpsia*myG(k);  // (\nabla_pa \nabla_i D) / D
+      dG(offset,pa,k) = Gtemp(k) + myG(k)*static_cast<ParticleSet::ParticleValue_t>(dpsia);  // (\nabla_pa \nabla_i D) / D
   }
 }
 
@@ -1245,10 +1245,10 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
     int kk = pa; //BFTrans->optIndexMap[pa];
 #if defined(QMC_COMPLEX)
     dlogpsi[kk]+=real(dpsia);
-    dhpsioverpsi[kk] -= real(0.5*(La1+La2+La3)+Dot(P.G,Gtemp));
+    dhpsioverpsi[kk] -= real(0.5*static_cast<ParticleSet::ParticleValue_t>(La1+La2+La3)+Dot(P.G,Gtemp));
 #else
     dlogpsi[kk]+=dpsia;
-    dhpsioverpsi[kk] -= (0.5*(La1+La2+La3)+Dot(P.G,Gtemp));
+    dhpsioverpsi[kk] -= (0.5*static_cast<ParticleSet::ParticleValue_t>(La1+La2+La3)+Dot(P.G,Gtemp));
 #endif
     *G0 += Gtemp;
     (*L0)[0] += La1+La2+La3;
@@ -1301,7 +1301,7 @@ void DiracDeterminantWithBackflow::testGG(ParticleSet& P)
   dgM.resize(NumPtcls,NumOrbitals);
   ggM.resize(NumPtcls,NumOrbitals);
   ggM0.resize(NumPtcls,NumOrbitals);
-  double dh = 0.0000000001;
+  const RealType dh = 0.0000000001;//PREC_WARNING
   for(int i=0; i<BFTrans->QP.getTotalNum(); i++)
     qp_0[i] = BFTrans->QP.R[i];
   Phi->evaluate_notranspose(BFTrans->QP, FirstIndex, LastIndex, psiM,dpsiM,ggM);
@@ -1330,7 +1330,7 @@ void DiracDeterminantWithBackflow::testGG(ParticleSet& P)
         Phi->evaluate(BFTrans->QP, FirstIndex, LastIndex, psiM_3,dpsiM_1,ggM0);
         for(int i=0; i<NumPtcls; i++)
           for(int j=0; j<NumOrbitals; j++)
-            (dgM(i,j))(lx,ly) = (psiM_1(i,j)+psiM_2(i,j)-2.0*psiM_3(i,j))/(dh*dh);
+            (dgM(i,j))(lx,ly) = (psiM_1(i,j)+psiM_2(i,j)-(RealType)2.0*psiM_3(i,j))/(dh*dh);
       }
       else
       {
@@ -1368,7 +1368,7 @@ void DiracDeterminantWithBackflow::testGG(ParticleSet& P)
         Phi->evaluate(BFTrans->QP, FirstIndex, LastIndex, psiM_4,dpsiM_1,ggM0);
         for(int i=0; i<NumPtcls; i++)
           for(int j=0; j<NumOrbitals; j++)
-            (dgM(i,j))(lx,ly) = (psiM_1(i,j)+psiM_2(i,j)-psiM_3(i,j)-psiM_4(i,j))/(4.0*dh*dh);
+            (dgM(i,j))(lx,ly) = (psiM_1(i,j)+psiM_2(i,j)-psiM_3(i,j)-psiM_4(i,j))/((RealType)4.0*dh*dh);
       }
     }
   }
@@ -1403,7 +1403,7 @@ void DiracDeterminantWithBackflow::testGGG(ParticleSet& P)
   GGGMatrix_t  ggg_psiM1,ggg_psiM2;
   ggg_psiM1.resize(NumPtcls,NumOrbitals);
   ggg_psiM2.resize(NumPtcls,NumOrbitals);
-  double dh = 0.000001;
+  const RealType dh = 0.000001; //PREC_WARNING
   for(int i=0; i<BFTrans->QP.getTotalNum(); i++)
     qp_0[i] = BFTrans->QP.R[i];
   Phi->evaluate(BFTrans->QP, FirstIndex, LastIndex, psiM,dpsiM,grad_grad_psiM,grad_grad_grad_psiM);
@@ -1420,12 +1420,15 @@ void DiracDeterminantWithBackflow::testGGG(ParticleSet& P)
       BFTrans->QP.R[i][lc] = qp_0[i][lc] - dh;
     BFTrans->QP.update();
     Phi->evaluate(BFTrans->QP, FirstIndex, LastIndex, psiM_2,dpsiM_2,ggM_2,ggg_psiM2);
-    ValueType av=0.0;
-    RealType cnt=0.0,maxD=0.0;
+    const RealType dh2=RealType(0.5/dh);
+    RealType maxD(0);
+    ValueType av(0);
+    RealType cnt(0);
     for(int i=0; i<NumPtcls; i++)
       for(int j=0; j<NumOrbitals; j++)
       {
-        HessType dG = (ggM_1(i,j)-ggM_2(i,j))/(2.0*dh)-(grad_grad_grad_psiM(i,j))[lc];
+        //HessType dG = (ggM_1(i,j)-ggM_2(i,j))/((RealType)2.0*dh)-(grad_grad_grad_psiM(i,j))[lc];
+        HessType dG = (ggM_1(i,j)-ggM_2(i,j))*dh2-grad_grad_grad_psiM(i,j)[lc];
         for(int la=0; la<9; la++)
         {
           cnt++;
@@ -1462,7 +1465,7 @@ void DiracDeterminantWithBackflow::testDerivFjj(ParticleSet& P, int pa)
   dpsiM_0.resize(NumPtcls,NumOrbitals);
   dpsiM_1.resize(NumPtcls,NumOrbitals);
   dpsiM_2.resize(NumPtcls,NumOrbitals);
-  double dh=0.00001;
+  const RealType dh(0.00001); //PREC_WARN
   int pr = pa;
   for (int j=0; j<Nvars; j++)
     wfvar_prime[j]=wfVars[j];
@@ -1520,7 +1523,8 @@ void DiracDeterminantWithBackflow::testDerivFjj(ParticleSet& P, int pa)
     {
       Fmat(i,j)=simd::dot(psiMinv[i],dpsiM[j],NumOrbitals);
     }
-  double cnt=0,av=0,maxD=0;
+  RealType cnt=0,av=0;
+  RealType maxD(0);
   for(int i=0; i<NumPtcls; i++)
     for(int j=0; j<NumPtcls; j++)
       for(int lb=0; lb<3; lb++)
@@ -1555,7 +1559,7 @@ void DiracDeterminantWithBackflow::testDerivLi(ParticleSet& P, int pa)
   BFTrans->checkOutVariables(wfVars);
   int Nvars= wfVars.size();
   wfvar_prime= wfVars;
-  double dh=0.00001;
+  RealType dh=0.00001;
   //BFTrans->evaluate(P);
   ValueType L1a,L2a,L3a,L0a;
   ValueType L1b,L2b,L3b,L0b;

@@ -225,6 +225,9 @@ ParticleBase<PL>::addAttribute(typename ParticleBase<PL>::ParticleLaplacian_t& p
   AttribList[pa.objName()]=&pa;
   return oid;
 }
+#endif
+
+#if defined(MIXED_PRECISION) || defined(QMC_COMPLEX)
 /** Add ParticleGradient_t  attribute, if not found
  * \param pa  ParticleGradient_t to be added
  * \return true the locator (iterator) of the pa in the std::vector<ParticlePos_t*>
@@ -336,9 +339,11 @@ void ParticleBase<PL>::create(unsigned m)
     POS[i]->create(m);
   for(int i=0; i< TENZOR.size(); i++)
     TENZOR[i]->create(m);
-#if defined(QMC_COMPLEX)
+#if defined(MIXED_PRECISION) || defined(QMC_COMPLEX)
   for(int i=0; i< GRADS.size(); i++)
     GRADS[i]->create(m);
+#endif
+#if defined(QMC_COMPLEX)
   for(int i=0; i< LAPS.size(); i++)
     LAPS[i]->create(m);
 #endif
@@ -358,9 +363,11 @@ void ParticleBase<PL>::resize(unsigned m)
     POS[i]->resize(m);
   for(int i=0; i< TENZOR.size(); i++)
     TENZOR[i]->resize(m);
-#if defined(QMC_COMPLEX)
+#if defined(MIXED_PRECISION) || defined(QMC_COMPLEX)
   for(int i=0; i< GRADS.size(); i++)
     GRADS[i]->resize(m);
+#endif
+#if defined(QMC_COMPLEX)
   for(int i=0; i< LAPS.size(); i++)
     LAPS[i]->resize(m);
 #endif
@@ -380,9 +387,11 @@ void ParticleBase<PL>::clear()
     POS[i]->clear();
   for(int i=0; i< TENZOR.size(); i++)
     TENZOR[i]->clear();
-#if defined(QMC_COMPLEX)
+#if defined(MIXED_PRECISION) || defined(QMC_COMPLEX)
   for(int i=0; i< GRADS.size(); i++)
     GRADS[i]->clear();
+#endif
+#if defined(QMC_COMPLEX)
   for(int i=0; i< LAPS.size(); i++)
     LAPS[i]->clear();
 #endif

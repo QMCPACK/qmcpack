@@ -42,7 +42,7 @@ public:
   //////////////////////
   // Type definitions //
   //////////////////////
-  typedef CrystalLattice<RealType,OHMMS_DIM> UnitCellType;
+  typedef CrystalLattice<ParticleSet::Scalar_t,OHMMS_DIM> UnitCellType;
 
   ///////////
   // Flags //

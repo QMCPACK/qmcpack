@@ -97,7 +97,7 @@ void NumericalDiffOrbital::evaluateDerivatives(ParticleSet& P,
       v[jj]=curvar;
       refOrbital[i]->resetParameters(v);
     }
-    const RealType dh=1.0/(2.0*delta);
+    const ParticleSet::Scalar_t dh=1.0/(2.0*delta);
     gradLogPsi=dh*(dg_p-dg_m);
     lapLogPsi=dh*(dl_p-dl_m);
     RealType dLogPsi=dh*(plus-minus);

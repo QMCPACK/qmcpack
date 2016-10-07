@@ -296,7 +296,7 @@ void CSVMCUpdateAllWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_en
     for(int ipsi=0; ipsi<nPsi; ipsi++)
     {
       invsumratio[ipsi]=1.0/sumratio[ipsi];
-      cumGrad+=Psi1[ipsi]->G*invsumratio[ipsi];
+      cumGrad+=Psi1[ipsi]->G*static_cast<Walker_t::ParticleValue_t>(invsumratio[ipsi]);
     }
     
     if (measure==true)

@@ -128,7 +128,7 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
   //check if tau is different and set the initial values
   //vParam[B_TAU]=tau;
   bool fromscratch=false;
-  RealType tau=vParam[B_TAU];
+  EstimatorRealType tau=vParam[B_TAU];
 
   int nwtot_now=walkers.getGlobalNumWalkers();
 
@@ -184,7 +184,7 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
   {
     //determine the branch cutoff to limit wild weights based on the sigma and sigmaBound
     //RealType sigma=std::max(std::sqrt(static_cast<RealType>(iParam[B_TARGETWALKERS]))*vParam[B_SIGMA]*WalkerController->targetSigma,100.0);
-    RealType sigma=std::max(std::sqrt(vParam[B_SIGMA])*WalkerController->targetSigma,50.0);
+    EstimatorRealType sigma=std::max(std::sqrt(vParam[B_SIGMA])*WalkerController->targetSigma,50.0);
     vParam[B_BRANCHCUTOFF]=std::min(sigma,2.5/tau);
     //vParam[B_BRANCHCUTOFF]=vParam[B_SIGMA]*WalkerController->targetSigma;
     vParam[B_BRANCHMAX]=vParam[B_BRANCHCUTOFF]*1.5;
@@ -219,7 +219,7 @@ void SimpleFixedNodeBranch::initReptile(MCWalkerConfiguration& W)
   //check if tau is different and set the initial values
   //vParam[B_TAU]=tau;
   bool fromscratch=false;
-  RealType tau=vParam[B_TAU];
+  EstimatorRealType tau=vParam[B_TAU];
   //this is the first time DMC is used
   if(WalkerController == 0)
   {
@@ -255,7 +255,7 @@ void SimpleFixedNodeBranch::initReptile(MCWalkerConfiguration& W)
   {
     //determine the branch cutoff to limit wild weights based on the sigma and sigmaBound
     //RealType sigma=std::max(std::sqrt(static_cast<RealType>(iParam[B_TARGETWALKERS]))*vParam[B_SIGMA]*WalkerController->targetSigma,100.0);
-    RealType sigma=std::max(std::sqrt(vParam[B_SIGMA])*allowedFlux,50.0);
+    EstimatorRealType sigma=std::max(std::sqrt(vParam[B_SIGMA])*allowedFlux,50.0);
     vParam[B_BRANCHCUTOFF]=std::min(sigma,2.5/tau);
     //vParam[B_BRANCHCUTOFF]=vParam[B_SIGMA]*WalkerController->targetSigma;
     vParam[B_BRANCHMAX]=vParam[B_BRANCHCUTOFF]*1.5;
@@ -283,7 +283,7 @@ void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& walkers)
 {
   //collect the total weights and redistribute the walkers accordingly, using a fixed tolerance
   //RealType pop_now= WalkerController->branch(iter,walkers,0.1);
-  RealType pop_now;
+  EstimatorRealType pop_now;
   if(BranchMode[B_DMCSTAGE]||iter)
     pop_now= WalkerController->branch(iter,walkers,0.1);
   else
@@ -343,7 +343,7 @@ void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& walkers)
       //RealType sigma_eq=VarianceHist.mean();//use the variance
       vParam[B_SIGMA]=VarianceHist.mean();
       //RealType sigma=std::max(std::sqrt(vParam[B_SIGMA])*WalkerController->targetSigma,10.0);
-      RealType sigma=std::max(vParam[B_SIGMA]*WalkerController->targetSigma,10.0);
+      EstimatorRealType sigma=std::max(vParam[B_SIGMA]*WalkerController->targetSigma,10.0);
       vParam[B_BRANCHCUTOFF]=std::min(sigma,2.5/vParam[B_TAU]);
       vParam[B_BRANCHMAX]=vParam[B_BRANCHCUTOFF]*1.5;
       vParam[B_BRANCHFILTER]=1.0/(vParam[B_BRANCHMAX]-vParam[B_BRANCHCUTOFF]);
@@ -379,7 +379,7 @@ void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& walkers)
   }
   WalkerController->setTrialEnergy(vParam[B_ETRIAL]);
   //accumulate collectables and energies for scalar.dat
-  RealType wgt_inv=WalkerController->NumContexts/WalkerController->EnsembleProperty.Weight;
+  EstimatorRealType wgt_inv=WalkerController->NumContexts/WalkerController->EnsembleProperty.Weight;
   walkers.Collectables *= wgt_inv;
   MyEstimator->accumulate(walkers);
 }
@@ -472,7 +472,7 @@ void SimpleFixedNodeBranch::collect(int iter, MCWalkerConfiguration& W)
       vParam[B_TAUEFF]=vParam[B_TAU]*R2Accepted.result()/R2Proposed.result();
       //vParam[B_SIGMA]=std::sqrt(VarianceHist.mean()-std::pow(EnergyHist.mean(),2));
       vParam[B_SIGMA]=VarianceHist.mean();
-      RealType sigma=std::max(vParam[B_SIGMA]*vParam[B_FILTERSCALE],vParam[B_FILTERSCALE]);
+      EstimatorRealType sigma=std::max(vParam[B_SIGMA]*vParam[B_FILTERSCALE],vParam[B_FILTERSCALE]);
       vParam[B_BRANCHCUTOFF]=std::min(sigma,2.5/vParam[B_TAU]);
       vParam[B_BRANCHMAX]=vParam[B_BRANCHCUTOFF]*1.5;
       vParam[B_BRANCHFILTER]=1.0/(vParam[B_BRANCHMAX]-vParam[B_BRANCHCUTOFF]);
@@ -532,7 +532,7 @@ void SimpleFixedNodeBranch::reset()
     if(BranchMode[B_POPCONTROL])
     {
       //logN = Feedback*std::log(static_cast<RealType>(iParam[B_TARGETWALKERS]));
-      logN = std::log(static_cast<RealType>(iParam[B_TARGETWALKERS]));
+      logN = std::log(static_cast<EstimatorRealType>(iParam[B_TARGETWALKERS]));
       vParam[B_FEEDBACK]=1.0;
     }
     else
@@ -677,7 +677,7 @@ void SimpleFixedNodeBranch::checkParameters(MCWalkerConfiguration& w)
   std::ostringstream o;
   if(!BranchMode[B_DMCSTAGE])
   {
-    RealType e, sigma2;
+    EstimatorRealType e, sigma2;
     MyEstimator->getCurrentStatistics(w,e,sigma2);
     vParam[B_ETRIAL]=vParam[B_EREF]=e;
     //vParam[B_SIGMA]=std::sqrt(iParam[B_TARGETWALKERS]*sigma2);
@@ -733,7 +733,7 @@ void SimpleFixedNodeBranch::finalize(MCWalkerConfiguration& w)
   else
   {
     //running VMC
-    RealType e, sigma2;
+    EstimatorRealType e, sigma2;
     //MyEstimator->getEnergyAndWeight(e,w,sigma2);
     MyEstimator->getCurrentStatistics(w,e,sigma2);
     vParam[B_ETRIAL]=vParam[B_EREF]=e;

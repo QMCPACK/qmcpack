@@ -32,6 +32,7 @@
 #include "HDFVersion.h"
 #include <qmc_common.h>
 #include <limits>
+#include <typeinfo>
 
 #include <ADIOS/ADIOS_config.cpp>
 #ifdef HAVE_ADIOS
@@ -118,6 +119,28 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamilt
   m_param.add(Tau,"tau","AU");
   MaxCPUSecs=360000; //100 hours
   m_param.add(MaxCPUSecs,"maxcpusecs","real");
+  // by default call recompute at the end of each block in the mixed precision case.
+#ifdef QMC_CUDA
+  if (typeid(CudaRealType) == typeid(float))
+  {
+    // gpu mixed precision
+    nBlocksBetweenRecompute = 1;
+  }
+  else if (typeid(CudaRealType) == typeid(double))
+  {
+    // gpu double precision
+    nBlocksBetweenRecompute = 0;
+  }
+#else
+#ifdef MIXED_PRECISION
+  // cpu mixed precision
+  nBlocksBetweenRecompute = 1;
+#else
+  // cpu double precision
+  nBlocksBetweenRecompute = 0;
+#endif
+#endif
+  m_param.add(nBlocksBetweenRecompute,"blocks_between_recompute","int");
   QMCType="invalid";
   ////add each QMCHamiltonianBase to W.PropertyList so that averages can be taken
   //H.add2WalkerProperty(W);

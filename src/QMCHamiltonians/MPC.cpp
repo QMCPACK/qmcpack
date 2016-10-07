@@ -101,10 +101,10 @@ MPC::compute_g_G(double &g_0, std::vector<double> &g_G, int N)
   Array<std::complex<double>,3> GBox(N,N,N);
   // app_log() << "Doing " << N << " x " << N << " x " << N << " FFT.\n";
   //create BC handler
-  DTD_BConds<double,3,SUPERCELL_BULK> mybc(PtclRef->Lattice);
+  DTD_BConds<RealType,3,SUPERCELL_BULK> mybc(PtclRef->Lattice);
   // Fill the real-space array with f(r)
   double Ninv = 1.0/(double)N;
-  TinyVector<double,3> u, r;
+  TinyVector<RealType,3> u, r;
   for (int ix=0; ix<N; ix++)
   {
     u[0] = Ninv*ix;
@@ -253,8 +253,9 @@ MPC::init_spline()
   GBox = std::complex<double>();
   Vconst = 0.0;
   // Now fill in elements of GBox
-  double vol = PtclRef->Lattice.Volume;
-  double volInv = 1.0/vol;
+  const RealType vol = PtclRef->Lattice.Volume;
+  const RealType volInv = 1.0/PtclRef->Lattice.Volume;
+  const RealType halfvol=vol/2.0;
   for (int iG=0; iG < Gvecs.size(); iG++)
   {
     TinyVector<int,OHMMS_DIM> gint = Gints[iG];
@@ -263,17 +264,25 @@ MPC::init_spline()
     TinyVector<int,OHMMS_DIM> index;
     for (int j=0; j<OHMMS_DIM; j++)
       index[j] = (gint[j] + SplineDim[j]) % SplineDim[j];
+
+    const RealType xxx(vol*(4.0*M_PI*volInv/G2-f_G[iG]));
     if (!(index[0]==0 && index[1]==0 && index[2]==0))
     {
-      GBox(index[0], index[1], index[2]) = vol *
-                                           Rho_G[iG] * (4.0*M_PI*volInv/G2 - f_G[iG]);
-      Vconst -= 0.5 * vol * vol * norm(Rho_G[iG])
-                * (4.0*M_PI*volInv/G2 - f_G[iG]);
+      GBox(index[0], index[1], index[2]) = xxx*Rho_G[iG];
+      Vconst -= halfvol*xxx*norm(Rho_G[iG]);
+      //GBox(index[0], index[1], index[2]) = vol *
+      //                                     Rho_G[iG] * (4.0*M_PI*volInv/G2 - f_G[iG]);
+      //Vconst -= 0.5 * vol * vol * norm(Rho_G[iG])
+      //          * (4.0*M_PI*volInv/G2 - f_G[iG]);
     }
   }
   // G=0 component calculated seperately
-  GBox(0,0,0) = -vol * f_0 * Rho_G[0];
-  Vconst += 0.5 * vol * vol * f_0 * norm(Rho_G[0]);
+  //GBox(0,0,0) = -vol * f_0 * Rho_G[0];
+  //Vconst += 0.5 * vol * vol * f_0 * norm(Rho_G[0]);
+  const RealType volf=vol*f_0;
+  GBox(0,0,0) = -volf * Rho_G[0];
+  Vconst += halfvol * volf * norm(Rho_G[0]);
+
   app_log() << "  Constant potential = " << Vconst << std::endl;
   fftw_plan fft = fftw_plan_dft_3d
                   (SplineDim[0], SplineDim[1], SplineDim[2], (fftw_complex*)GBox.data(),

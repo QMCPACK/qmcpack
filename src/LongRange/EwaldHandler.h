@@ -41,11 +41,11 @@ public:
   ///type of supercell
   int SuperCellEnum;
   /// Related to the Gaussian width: \f$ v_l = v(r)erf(\sigma r)\f$
-  RealType Sigma;
+  mRealType Sigma;
   ///Volume of the supercell
-  RealType Volume;
+  mRealType Volume;
   ///Area of the supercell: always z is the slab direction
-  RealType Area;
+  mRealType Area;
   /** Define prefactors for the mixed boundary conditions
    *
    * For quasi-2D (see Appendix A of JPC)
@@ -54,11 +54,11 @@ public:
    * PreFactors[2] = \f$ \frac{2\pi}{A}\frac{1}{\sigma\pi}\f$
    * PreFactors[3] = \f$ 2\frac{\sqrt{\pi}}{A*\sigma}-\frac{2\pi}{k*A} erfc(\frac{k}{2\sigma}\f$
    */
-  TinyVector<RealType,4> PreFactors;
+  TinyVector<mRealType,4> PreFactors;
   ///store |k|
-  std::vector<RealType> kMag;
+  std::vector<mRealType> kMag;
   /// Constructor
-  EwaldHandler(ParticleSet& ref, RealType kc_in=-1.0)
+  EwaldHandler(ParticleSet& ref, mRealType kc_in=-1.0)
     : LRHandlerBase(kc_in)
   {
     Sigma=LR_kc=ref.Lattice.LR_kc;
@@ -80,31 +80,31 @@ public:
 
   void initBreakup(ParticleSet& ref);
 
-  void Breakup(ParticleSet& ref, RealType rs_in)
+  void Breakup(ParticleSet& ref, mRealType rs_in)
   {
     initBreakup(ref);
   }
 
   void resetTargetParticleSet(ParticleSet& ref) { }
 
-  inline RealType evaluate(RealType r, RealType rinv)
+  inline mRealType evaluate(mRealType r, mRealType rinv)
   {
     return erfc(r*Sigma)*rinv;
   }
 
   /** evaluate the contribution from the long-range part for for spline
    */
-  inline RealType evaluateLR(RealType r)
+  inline mRealType evaluateLR(mRealType r)
   {
     return -erf(r*Sigma)/r;
   }
 
-  inline RealType evaluateSR_k0()
+  inline mRealType evaluateSR_k0()
   {
     return 0.0;
   }
 
-  inline RealType evaluateLR_r0()
+  inline mRealType evaluateLR_r0()
   {
     return 2.0*Sigma/std::sqrt(M_PI)+PreFactors[3];
   }
@@ -114,7 +114,7 @@ public:
    * @param r  radius
    * @param rinv 1/r
    */
-  inline RealType srDf(RealType r, RealType rinv)
+  inline mRealType srDf(mRealType r, mRealType rinv)
   {
     return 0.0;
   }
@@ -123,8 +123,8 @@ public:
 
   /** evaluate k-dependent
    */
-  RealType evaluate_slab(RealType z, const std::vector<int>& kshell
-                         , const ComplexType* restrict rk1, const ComplexType* restrict rk2);
+  mRealType evaluate_slab(mRealType z, const std::vector<int>& kshell
+                         , const pComplexType* restrict rk1, const pComplexType* restrict rk2);
 
   /** evaluate k=0 term at z
    * @param z distance in the slab direction
@@ -133,7 +133,7 @@ public:
    *
    * Here \f$ X=\frac{2\pi}{A}\f$ and \f$ Y=\frac{2\sqrt{\pi}}{A*Simga}\f$
    */
-  inline RealType SlabFunc0(RealType z, RealType zp)
+  inline mRealType SlabFunc0(mRealType z, mRealType zp)
   {
     return PreFactors[0]*z*erf(zp)+PreFactors[1]*std::exp(-zp*zp);
   }
@@ -143,10 +143,10 @@ public:
    * @param z distance in the slab direction
    * @param zp z*Sigma
    */
-  inline RealType SlabFuncK(int ks, RealType z, RealType zp)
+  inline mRealType SlabFuncK(int ks, mRealType z, mRealType zp)
   {
-    RealType expkz=std::exp(kMag[ks]*z);
-    RealType kz0=PreFactors[2]*kMag[ks];//could save this
+    mRealType expkz=std::exp(kMag[ks]*z);
+    mRealType kz0=PreFactors[2]*kMag[ks];//could save this
     return erfc(kz0-zp)/expkz+erfc(kz0+zp)*expkz;
   }
 };

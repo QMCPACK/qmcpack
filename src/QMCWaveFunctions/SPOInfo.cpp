@@ -23,7 +23,7 @@ namespace qmcplusplus
 
   const int      SPOInfo::no_index       = -1;
   const int      SPOInfo::no_degeneracy  = -1;
-  const RealType SPOInfo::no_energy      = 1e99;
+  const RealType SPOInfo::no_energy      = std::numeric_limits<RealType>::max();
 
   SPOInfo::SPOInfo()
   {

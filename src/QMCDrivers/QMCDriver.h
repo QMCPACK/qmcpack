@@ -288,6 +288,9 @@ protected:
   ///counter for number of moves /rejected
   IndexType nReject;
 
+  /// the number of blocks between recomptePsi
+  IndexType nBlocksBetweenRecompute;
+
   ///the number of walkers
   IndexType nTargetWalkers;
   ///the number of saved samples

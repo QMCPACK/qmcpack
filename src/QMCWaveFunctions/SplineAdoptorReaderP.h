@@ -180,8 +180,10 @@ struct SplineAdoptorReader: public BsplineReaderBase
         foundspline = (sizeD == sizeof(typename adoptor_type::DataType));
       }
       if(foundspline)
+      {
         bspline->read_splines(h5f);
-      app_log() << "  Time to read the table in " << splinefile << " = " << now.elapsed() << std::endl;;
+        app_log() << "  Time to read the table in " << splinefile << " = " << now.elapsed() << std::endl;;
+      }
     }
     myComm->bcast(foundspline);
     if(foundspline)

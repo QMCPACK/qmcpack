@@ -66,6 +66,7 @@ SET (EXECUTABLE_OUTPUT_PATH ${qmcpack_BINARY_DIR}/bin CACHE PATH "Single output 
 # OHMMS_DIM =  dimension of the problem
 # OHMMS_INDEXTYPE = type of index
 # OHMMS_PRECISION  = base precision, float, double etc
+# OHMMS_PRECISION_FULL  = full precision, double etc
 # QMC_COMPLEX = true if using complex wavefunctions
 # QMC_MPI =  enable MPI 
 # QMC_OMP = enable OMP 
@@ -73,10 +74,32 @@ SET (EXECUTABLE_OUTPUT_PATH ${qmcpack_BINARY_DIR}/bin CACHE PATH "Single output 
 ######################################################################
 SET(OHMMS_DIM 3 CACHE INTEGER "Select physical dimension")
 SET(OHMMS_INDEXTYPE int)
-SET(OHMMS_PRECISION double)
-SET(APP_PRECISION double)
-SET(CUDA_PRECISION float CACHE STRING "Select the precision of CUDA kernels")
-SET(CUDA_COULOMB_PRECISION double)
+MESSAGE(STATUS "defining the float point precision")
+SET(OHMMS_PRECISION_FULL double)
+IF(QMC_CUDA)
+  SET(QMC_MIXED_PRECISION 1 CACHE BOOL "Enable/disable mixed precision")
+  SET(OHMMS_PRECISION double)
+  SET(CUDA_PRECISION_FULL double)
+  IF(QMC_MIXED_PRECISION)
+    SET(CUDA_PRECISION float)
+  ELSE(QMC_MIXED_PRECISION)
+    SET(CUDA_PRECISION double)
+  ENDIF(QMC_MIXED_PRECISION)
+  MESSAGE("   Base precision = ${OHMMS_PRECISION}")
+  MESSAGE("   Full precision = ${OHMMS_PRECISION_FULL}")
+  MESSAGE("   CUDA base precision = ${CUDA_PRECISION}")
+  MESSAGE("   CUDA full precision = ${CUDA_PRECISION_FULL}")
+ELSE(QMC_CUDA)
+  SET(QMC_MIXED_PRECISION 0 CACHE BOOL "Enable/disable mixed precision")
+  IF(QMC_MIXED_PRECISION)
+    SET(OHMMS_PRECISION float)
+    SET(MIXED_PRECISION 1)
+  ELSE(QMC_MIXED_PRECISION)
+    SET(OHMMS_PRECISION double)
+  ENDIF(QMC_MIXED_PRECISION)
+  MESSAGE("   Base precision = ${OHMMS_PRECISION}")
+  MESSAGE("   Full precision = ${OHMMS_PRECISION_FULL}")
+ENDIF(QMC_CUDA)
 
 ######################################################################
 # enable MPI and OPNEMP  if possible
@@ -571,7 +594,6 @@ IF(QMC_CUDA)
     endif()
   endif(CUDA_NVCC_FLAGS MATCHES "arch")
   set(HAVE_CUDA 1)
-  MESSAGE("   CUDA_PRECISION=${CUDA_PRECISION}")
   MESSAGE("   CUDA_NVCC_FLAGS=${CUDA_NVCC_FLAGS}")
 ELSE(QMC_CUDA)
   MESSAGE(STATUS "Disabling CUDA")

@@ -72,9 +72,13 @@ VHXC::init_spline()
   bc2.lCode = bc2.rCode = PERIODIC;
   for (int spin=0; spin < 2; spin++)
     if (PtclRef->VHXC_r[spin].size())
+    {
+      Array<double,OHMMS_DIM> VHXC_r_DP;
+      VHXC_r_DP = PtclRef->VHXC_r[spin];
       VSpline[spin] = create_UBspline_3d_d
                       (grid0, grid1, grid2, bc0, bc1, bc2,
-                       PtclRef->VHXC_r[spin].data());
+                       VHXC_r_DP.data());
+    }
   if (!VSpline[1])
     VSpline[1] = VSpline[1];
 }

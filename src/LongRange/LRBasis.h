@@ -21,6 +21,7 @@
 
 #include "Particle/ParticleSet.h"
 #include "Utilities/PooledData.h"
+#include "coulomb_types.h"
 
 namespace qmcplusplus
 {
@@ -33,13 +34,15 @@ namespace qmcplusplus
  *  \f[ hintr2_n = \int dr h_n(r) r^2, \f]
  */
 
-class LRBasis: public QMCTraits
+struct  LRBasis
 {
-protected:
+
+  DECLARE_COULOMB_TYPES
+
   ///size of the basis elements
   int BasisSize;
   ///Real-space cutoff for short-range part
-  RealType m_rc;
+  mRealType m_rc;
 
   ///Typedef for the lattice-type. We don't need the full particle-set.
   typedef ParticleSet::ParticleLayout_t ParticleLayout_t;
@@ -63,19 +66,19 @@ public:
   }
 
   //Real-space basis function + integral: override these
-  virtual RealType h(int n, RealType r) const = 0;
-  virtual RealType hintr2(int n) = 0;
-  virtual RealType dh_dr(int n, RealType r) const {return 0.0;};
+  virtual mRealType h(int n, mRealType r) const = 0;
+  virtual mRealType hintr2(int n) = 0;
+  virtual mRealType dh_dr(int n, mRealType r) const {return 0.0;};
   //k-space basis function: override this
-  virtual RealType c(int m, RealType k) = 0;
+  virtual mRealType c(int m, mRealType k) = 0;
   //k-space basis function k space derivative.
-  virtual RealType dc_dk(int m, RealType k) {return 0.0;};
+  virtual mRealType dc_dk(int m, mRealType k) {return 0.0;};
   
 //
 // df(m,r) is included for legacy reasons.  Please use dh_dr
 //
 
-  inline RealType df(int m, RealType r) const { return dh_dr(m,r); };
+  inline mRealType df(int m, mRealType r) const { return dh_dr(m,r); };
   
   ///$f(r,{tn})$ returns the value of $\sum_n t_n*h_{\alpha n}(r)$ 
   ///   r is radial position (scalar)
@@ -90,9 +93,9 @@ public:
  * 
  */
   
-  inline RealType f(RealType r, std::vector<RealType>& coefs)
+  inline mRealType f(mRealType r, std::vector<mRealType>& coefs)
   {
-    RealType f = 0.0;
+    mRealType f = 0.0;
     //RealType df = myFunc.df(r, rinv);
     for(int n=0; n<coefs.size(); n++)
       f += coefs[n]*h(n,r);
@@ -108,9 +111,9 @@ public:
  * 
  */
   
-  inline RealType df_dr(RealType r, std::vector<RealType>& coefs)
+  inline mRealType df_dr(mRealType r, std::vector<mRealType>& coefs)
   {
-    RealType df = 0.0;
+    mRealType df = 0.0;
     //RealType df = myFunc.df(r, rinv);
     for(int n=0; n<coefs.size(); n++)
       df += coefs[n]*dh_dr(n,r);
@@ -127,9 +130,9 @@ public:
  */
   
   
-  inline RealType fk(RealType k, std::vector<RealType> coefs)
+  inline mRealType fk(mRealType k, std::vector<mRealType> coefs)
   {
-	RealType fk = 0.0;
+	mRealType fk = 0.0;
 	for (int n=0; n<coefs.size(); n++)
 	  fk += coefs[n]*c(n,k);
 	return fk;	  
@@ -144,21 +147,21 @@ public:
  * 
  */
   
-  inline RealType dfk_dk(RealType k, std::vector<RealType> coefs)
+  inline mRealType dfk_dk(mRealType k, std::vector<mRealType> coefs)
   {
-	RealType dfk = 0.0;
+	mRealType dfk = 0.0;
 	for (int n=0; n<coefs.size(); n++)
 	  dfk += coefs[n]*dc_dk(n,k);
 	return dfk;
   }
     
   //May need extra functionality when resetting rc. Override this.
-  virtual void set_rc(RealType rc) = 0;
-  inline RealType get_rc()
+  virtual void set_rc(mRealType rc) = 0;
+  inline mRealType get_rc()
   {
     return m_rc;
   }
-  inline RealType get_CellVolume()
+  inline mRealType get_CellVolume()
   {
     return Lattice.Volume;
   }

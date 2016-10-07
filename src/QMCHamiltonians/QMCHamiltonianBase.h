@@ -65,7 +65,7 @@ struct QMCHamiltonianBase: public QMCTraits
 
   /** type of return value of evaluate
    */
-  typedef RealType Return_t;
+  typedef EstimatorRealType Return_t;
   /** typedef for the serialized buffer
    *
    * PooledData<RealType> is used to serialized an anonymous buffer
@@ -73,6 +73,8 @@ struct QMCHamiltonianBase: public QMCTraits
   typedef ParticleSet::Buffer_t  BufferType;
   ///typedef for the walker
   typedef ParticleSet::Walker_t  Walker_t;
+  ///typedef for the ParticleScalar
+  typedef ParticleSet::Scalar_t  ParticleScalar_t;
 
   ///enum to denote energy domain of operators
   enum energy_domains {kinetic=0,potential,no_energy_domain};
@@ -101,9 +103,9 @@ struct QMCHamiltonianBase: public QMCTraits
   ///number of dependents: to be removed
   int Dependants;
   ///current value
-  RealType Value;
+  Return_t Value;
   ///a new value for a proposed move
-  RealType NewValue;
+  Return_t NewValue;
   /// This is used to store the value for force on the source
   /// ParticleSet.  It is accumulated if setComputeForces(true).
   ParticleSet::ParticlePos_t IonForce;

@@ -50,10 +50,10 @@ void ForceCeperley::InitMatrix()
   c.resize(N_basis);
   for(int k=0; k<N_basis; k++)
   {
-    h[k] = std::pow(Rcut, (k+2))/static_cast<double>(k+2);
+    h[k] = std::pow(Rcut, (k+2))/static_cast<RealType>(k+2);
     for(int j=0; j<N_basis; j++)
     {
-      Sinv(k,j) = std::pow(Rcut, (m_exp+k+j+3))/static_cast<double>(m_exp+k+j+3);
+      Sinv(k,j) = std::pow(Rcut, (m_exp+k+j+3))/static_cast<RealType>(m_exp+k+j+3);
     }
   }
   // in Numerics/DeterminantOperators.h
@@ -68,8 +68,8 @@ ForceCeperley::evaluate(ParticleSet& P)
   forces = forces_IonIon;
   forces_ShortRange = forces_IonIon;
   const DistanceTableData* d_ab=P.DistTables[myTableIndex];
-  const real_type* restrict Zat=Ions.Z.first_address();
-  const real_type* restrict Qat=P.Z.first_address();
+  const ParticleScalar_t* restrict Zat=Ions.Z.first_address();
+  const ParticleScalar_t* restrict Qat=P.Z.first_address();
   for(int iat=0; iat<Nnuc; iat++)
   {
     RealType esum = 0.0;

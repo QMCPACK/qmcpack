@@ -52,7 +52,7 @@ void MultiDiracDeterminantBase::set(int first, int nel,int norb)
 }
 
 void MultiDiracDeterminantBase::createDetData(ci_configuration2& ref, std::vector<int>& data,
-    std::vector<std::pair<int,int> >& pairs, std::vector<double>& sign)
+    std::vector<std::pair<int,int> >& pairs, std::vector<RealType>& sign)
 {
   int nci = confgList.size(), nex;
   std::vector<int> pos(NumPtcls);

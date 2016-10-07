@@ -180,7 +180,7 @@ public:
     YlmTimer("AtomicOrbital::CalcYlm"),
     SplineTimer("AtomicOrbital::1D spline"),
     SumTimer("AtomicOrbital::Summation"),
-    rmagLast(1.0e50)
+    rmagLast(std::numeric_limits<RealType>::max())
   {
     // Nothing else for now
   }

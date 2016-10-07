@@ -77,7 +77,8 @@ int main(int argc, char** argv)
   ParticleSet ions;
   typedef ParticleSet::ParticleLayout_t LatticeType;
   typedef ParticleSet::TensorType       TensorType;
-  double scale=5.432;
+  typedef ParticleSet::RealType         RealType;
+  RealType scale=5.432;
   TensorType fcc(0.1,0.5,0.5,0.5,-0.1,0.5,0.5,0.5,0.0);
   TensorType lat=scale*fcc;
   //set the BC to be periodic

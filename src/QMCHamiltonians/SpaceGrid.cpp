@@ -141,7 +141,7 @@ bool SpaceGrid::initialize_voronoi(std::map<std::string,Point>& points)
       for(int d=0; d<DIM; d++)
         domain_centers(i,d) = R[i][d]-origin[d]; //cell centers are ion positions
     for(int i=0; i<ndparticles; i++)
-      nearcell[i].r = 1e99;
+      nearcell[i].r = std::numeric_limits<RealType>::max();
     volume = 1.0;
     if(chempot)
     {
@@ -926,7 +926,7 @@ void SpaceGrid::evaluate(const ParticlePos_t& R,
         particles_outside[p]=false;
       //reset distances
       for(p=0; p<ndparticles; p++)
-        nearcell[p].r = 1e99;
+        nearcell[p].r = std::numeric_limits<RealType>::max();
       break;
     default:
       app_log()<<"  coordinate type must be cartesian, cylindrical, spherical, or voronoi"<< std::endl;
@@ -1038,7 +1038,7 @@ void SpaceGrid::evaluate(const ParticlePos_t& R,
         particles_outside[p]=false;
       //reset distances
       for(p=0; p<ndparticles; p++)
-        nearcell[p].r = 1e99;
+        nearcell[p].r = std::numeric_limits<RealType>::max();
       break;
     default:
       app_log()<<"  coordinate type must be cartesian, cylindrical, spherical, or voronoi"<< std::endl;

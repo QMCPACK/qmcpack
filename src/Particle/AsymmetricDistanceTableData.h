@@ -104,7 +104,7 @@ struct AsymmetricDTD
     if(transposed)
     {
       for(int n=0; n<ri.size(); ++n)
-        ri[n].first = 1e99;
+        ri[n].first = std::numeric_limits<RealType>::max();
       const int m = N[SourceIndex];
       const int nv = N[VisitorIndex];
       int shift = 0;
@@ -127,7 +127,7 @@ struct AsymmetricDTD
       {
         const int shift = M[n];
         ripair& rin = ri[n];
-        rin.first = 1e99;
+        rin.first = std::numeric_limits<RealType>::max();
         for(int i=0; i<m; ++i)
         {
           RealType rp = r_m[shift+i];
