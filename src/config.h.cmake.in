@@ -204,11 +204,11 @@
 /* Using CUDA for GPU execution */
 #cmakedefine QMC_CUDA @QMC_CUDA@
 
-/* Setting precision for CUDA core kernels */
+/* Setting base precision for CUDA kernels */
 #cmakedefine CUDA_PRECISION @CUDA_PRECISION@
 
-/* Setting precision for CUDA CoulombPBCAA kernel */
-#cmakedefine CUDA_COULOMB_PRECISION @CUDA_COULOMB_PRECISION@
+/* Setting full precision for CUDA kernels */
+#cmakedefine CUDA_PRECISION_FULL @CUDA_PRECISION_FULL@
 
 #cmakedefine DEBUG_PSIBUFFER_ON @DEBUG_PSIBUFFER_ON@
 

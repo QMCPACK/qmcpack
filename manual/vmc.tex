@@ -20,6 +20,7 @@
    &   \texttt{stepsbetweensamples } &  integer  & $> 0$   & 1   & period of the sample accumulation\\
    &   \texttt{samplesperthread    } &  integer  & $\ge 0$ & 0   & number of samples per thread  \\
    &   \texttt{storeconfigs        } &  integer  & all values & 0   & store configurations  \\
+   &   \texttt{blocks\_between\_recompute} &  integer  & $\ge 0$ & dep.  & wavefunction recompute frequency  \\
   \hline
 \end{tabularx}
 \end{center}
@@ -54,6 +55,8 @@ Because the local energy is evaluated not at each substep but at each step, incr
 \frac{\textrm{blocks}\cdot\textrm{steps}}{\textrm{stepsbetweensamples}}
 \]
 \item \texttt{storeconfigs}. If storeconfigs is set to a non-zero value, then electron configurations during the VMC run will be saved to the files.
+
+\item \texttt{blocks\_between\_recompute}. For every few blocks, recompute the accuracy critical part of the wavefunction from scratch. =1 by default when using mixed precision. =0 (no recompute) by default when not using mixed precision. Recomputing introduces a performance penalty but it is small using $>1$ recompute period.
 
 The following is an example of VMC section.
 \begin{lstlisting}

@@ -147,7 +147,7 @@ struct Walker
   gpu::device_vector<TinyVector<CudaRealType,OHMMS_DIM> > R_GPU;
   gpu::device_vector<TinyVector<CudaValueType,OHMMS_DIM> > Grad_GPU;
   gpu::device_vector<CUDA_PRECISION> Lap_GPU;
-  gpu::device_vector<CUDA_COULOMB_PRECISION> Rhok_GPU;
+  gpu::device_vector<CUDA_PRECISION_FULL> Rhok_GPU;
   int k_species_stride;
   inline void resizeCuda(int size, int num_species, int num_k)
   {
@@ -162,11 +162,11 @@ struct Walker
     if (num_k)
       Rhok_GPU.resize (num_species * k_species_stride);
   }
-  inline CUDA_COULOMB_PRECISION* get_rhok_ptr ()
+  inline CUDA_PRECISION_FULL* get_rhok_ptr ()
   {
     return Rhok_GPU.data();
   }
-  inline CUDA_COULOMB_PRECISION* get_rhok_ptr (int isp)
+  inline CUDA_PRECISION_FULL* get_rhok_ptr (int isp)
   {
     return Rhok_GPU.data() + k_species_stride * isp;
   }
@@ -425,7 +425,7 @@ struct Walker
     bsize += R.size()        * OHMMS_DIM * sizeof(CUDA_PRECISION); // R_GPU
     bsize += R.size()        * OHMMS_DIM * sizeof(CudaValueType); // Grad_GPU
     bsize += R.size()        * 1         * sizeof(CUDA_PRECISION); // Lap_GPU
-    bsize += Rhok_GPU.size()             * sizeof(CUDA_COULOMB_PRECISION); // Rhok
+    bsize += Rhok_GPU.size()             * sizeof(CUDA_PRECISION_FULL); // Rhok
 #endif
     return bsize;
   }
@@ -454,7 +454,7 @@ struct Walker
 #ifdef QMC_CUDA
     // Pack GPU data
     std::vector<CUDA_PRECISION> host_data;
-    std::vector<CUDA_COULOMB_PRECISION> host_rhok;
+    std::vector<CUDA_PRECISION_FULL> host_rhok;
     std::vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > R_host;
     std::vector<TinyVector<CudaValueType,OHMMS_DIM> > Grad_host;
     std::vector<CUDA_PRECISION> host_lapl;
@@ -502,7 +502,7 @@ struct Walker
 #ifdef QMC_CUDA
     // Pack GPU data
     std::vector<CUDA_PRECISION> host_data;
-    std::vector<CUDA_COULOMB_PRECISION> host_rhok;
+    std::vector<CUDA_PRECISION_FULL> host_rhok;
     std::vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > R_host;
     std::vector<CUDA_PRECISION> host_lapl;
     int size, N;

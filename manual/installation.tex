@@ -192,8 +192,15 @@ the path to the source directory.
 \begin{itemize}
 \item  Key QMCPACK build options
 \begin{verbatim}
-QMC_CUDA           Enable CUDA and GPU acceleration (1:yes, 0:no)
-QMC_COMPLEX        Build the complex (general twist/k-point) version (1:yes, 0:no)
+QMC_CUDA            Enable CUDA and GPU acceleration (1:yes, 0:no)
+QMC_COMPLEX         Build the complex (general twist/k-point) version (1:yes, 0:no)
+QMC_MIXED_PRECISION Build the mixed precision (mixing double/float) version 
+                    (1:yes (GPU default), 0:no (CPU default)).
+                    The CPU support is experimental.
+                    Use float and double for base and full precision.
+                    The GPU support is quite mature.
+                    Use always double for host side base and full precision
+                    and use float and double for CUDA base and full precision.
 \end{verbatim}
   \item General build options
 \begin{verbatim}
