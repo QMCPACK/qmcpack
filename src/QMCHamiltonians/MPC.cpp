@@ -254,7 +254,7 @@ MPC::init_spline()
   Vconst = 0.0;
   // Now fill in elements of GBox
   const RealType vol = PtclRef->Lattice.Volume;
-  const RealType volInv = 1.0/vol;
+  const RealType volInv = 1.0/PtclRef->Lattice.Volume;
   const RealType halfvol=vol/2.0;
   for (int iG=0; iG < Gvecs.size(); iG++)
   {
@@ -265,7 +265,7 @@ MPC::init_spline()
     for (int j=0; j<OHMMS_DIM; j++)
       index[j] = (gint[j] + SplineDim[j]) % SplineDim[j];
 
-    const RealType xxx(vol*4.0*M_PI*volInv/G2-f_G[iG]);
+    const RealType xxx(vol*(4.0*M_PI*volInv/G2-f_G[iG]));
     if (!(index[0]==0 && index[1]==0 && index[2]==0))
     {
       GBox(index[0], index[1], index[2]) = xxx*Rho_G[iG];
