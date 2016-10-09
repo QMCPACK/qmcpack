@@ -427,8 +427,8 @@ struct NRCOptimization
 template<class T>
 T NRCOptimization<T>::brentNRC(Return_t ax, Return_t bx,  Return_t cx, Return_t& xmin)
 {
-  Return_t a,b,d,etemp,fu,fv,fw,fx,p,q,r,tol1,tol2,u,v,w,x,xm;
-  Return_t e=0.0e0;
+  Return_t a,b,etemp,fu,fv,fw,fx,p,q,r,tol1,tol2,u,v,w,x,xm;
+  Return_t e=0.0, d=0.0;
   validFuncVal=true;
   a=((ax < cx) ? ax : cx);
   b=((ax > cx) ? ax : cx);
