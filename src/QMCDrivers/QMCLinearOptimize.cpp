@@ -277,6 +277,8 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealT
 //     app_log()<< std::endl;
     return mappedEigenvalues[0].first;
     */
+    // a fake return to reduce warning.
+    return RealType(0.0);
   }
   else
   {

@@ -406,7 +406,7 @@ public:
     if (func == 0)
       return GradType();
     GradType G(0.0);
-    RealType dudr, d2udr2, d3udr3;
+    RealType dudr, d2udr2, d3udr3=0.0;
     const DistanceTableData* d_table=P.DistTables[myTableIndex];
     for (int nn=d_table->M[isrc],iel=0; nn<d_table->M[isrc+1]; nn++,iel++)
     {

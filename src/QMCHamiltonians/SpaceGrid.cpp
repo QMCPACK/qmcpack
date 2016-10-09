@@ -330,7 +330,7 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, std::string& coord, std::
         bool is_int=false;
         bool has_paren_val=false;
         RealType du_i;
-        int ndom_i;
+        int ndom_i=1;
         int interval=-1;
         for(int i=1; i<tokens.size(); i++)
         {

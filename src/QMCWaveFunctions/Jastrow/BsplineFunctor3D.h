@@ -573,6 +573,7 @@ struct BsplineFunctor3D: public OptimizableFunctorBase
 
   void print(std::ostream& os)
   {
+    /* no longer correct. Ye Luo
     int n=100;
     real_type d=cutoff_radius/100.,r=0;
     real_type u,du,d2du;
@@ -583,6 +584,7 @@ struct BsplineFunctor3D: public OptimizableFunctorBase
          << std::setw(22) << d2du << std::endl;
       r+=d;
     }
+    */
   }
 };
 }

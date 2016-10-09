@@ -451,13 +451,13 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
     if (r_1I >= L || r_2I >= L)
       return 0.0;
     real_type val = 0.0;
-    real_type r2l(1.0), r2l_1(0.0), r2l_2(0.0), r2l_3, lf(0.0);
+    real_type r2l(1.0), r2l_1(0.0), r2l_2(0.0), r2l_3(0.0), lf(0.0);
     for (int l=0; l<=N_eI; l++)
     {
-      real_type r2m(1.0), r2m_1(0.0), r2m_2(0.0), r2m_3, mf(0.0);
+      real_type r2m(1.0), r2m_1(0.0), r2m_2(0.0), r2m_3(0.0), mf(0.0);
       for (int m=0; m<=N_eI; m++)
       {
-        real_type r2n(1.0), r2n_1(0.0), r2n_2(0.0), r2n_3, nf(0.0);
+        real_type r2n(1.0), r2n_1(0.0), r2n_2(0.0), r2n_3(0.0), nf(0.0);
         for (int n=0; n<=N_ee; n++)
         {
           real_type g = gamma(l,m,n);
@@ -917,6 +917,7 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
 
   void print(std::ostream& os)
   {
+    /* no longer correct. Ye Luo
     int n=100;
     real_type d=cutoff_radius/100.,r=0;
     real_type u,du,d2du;
@@ -927,6 +928,7 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
          << std::setw(22) << d2du << std::endl;
       r+=d;
     }
+    */
   }
 
   inline int getNumParameters()

@@ -76,12 +76,12 @@ public:
 
   virtual RealType evaluateLog(ParticleSet& P,BufferType& buf)
   {
-    return 1.0;
+    return 0.0;
   }
 
-  virtual RealType registerData(ParticleSet& P, BufferType& buf) {}
+  virtual RealType registerData(ParticleSet& P, BufferType& buf) {return 0.0;}
 
-  virtual RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false) {}
+  virtual RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false) {return 0.0;}
 
   virtual void copyFromBuffer(ParticleSet& P, BufferType& buf) {}
 
