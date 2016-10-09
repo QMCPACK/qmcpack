@@ -564,8 +564,7 @@ update_inverse_cuda(float **data, int iat,
   update_inverse_kernel1<float,BS1><<<dimGrid1,dimBlock1>>>
   (data, iat, A_off, Ainv_off, newRow_off, AinvDelta_off, AinvColk_off,
    N, rowstride);
-  // YY
-  /* ref
+  /* reference implementation, replaced by _subblock version. Ye Luo
   update_inverse_kernel2<float,BS2><<<dimGrid2,dimBlock2>>>
   (data, iat, A_off, Ainv_off, newRow_off, AinvDelta_off, AinvColk_off,
    N, rowstride);
@@ -589,8 +588,8 @@ update_inverse_cuda(double **data, int iat,
                     int AinvDelta_off, int AinvColk_off,
                     int N, int rowstride, int numWalkers)
 {
-  const int BS1 = 32;
-  const int BS2 = 32;
+  const int BS1 = 64;
+  const int BS2 = 64;
   int NB1 = (N+BS1-1)/BS1;
   int NB2 = (N+BS2-1)/BS2;
   dim3 dimBlock1(BS1);
@@ -600,7 +599,13 @@ update_inverse_cuda(double **data, int iat,
   update_inverse_kernel1<double,BS1><<<dimGrid1,dimBlock1>>>
   (data, iat, A_off, Ainv_off, newRow_off, AinvDelta_off, AinvColk_off,
    N, rowstride);
+  /* reference implementation, replaced by _subblock version. Ye Luo
   update_inverse_kernel2<double,BS2><<<dimGrid2,dimBlock2>>>
+  (data, iat, A_off, Ainv_off, newRow_off, AinvDelta_off, AinvColk_off,
+   N, rowstride);
+  */
+  dim3 dimGrid3(numWalkers, NB2, NB2);
+  update_inverse_kernel2_subblock<double,BS2><<<dimGrid3,dimBlock2>>>
   (data, iat, A_off, Ainv_off, newRow_off, AinvDelta_off, AinvColk_off,
    N, rowstride);
   cudaError_t err = cudaGetLastError();
