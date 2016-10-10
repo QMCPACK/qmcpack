@@ -78,6 +78,10 @@
 #define dtgevc dtgevc_
 #endif
 
+// Clang issues a warning if the C return type is std::complex<double>
+// Use the C return type instead
+#define complex_ret double _Complex
+
 // declaring Fortran interfaces
 extern "C" {
 
@@ -85,11 +89,11 @@ extern "C" {
 
   float sdot(const int& n, const float *dx, const int& incx,  const float *dy, const int &incy);
 
-  std::complex<double>
+  complex_ret
   zdot(const int& n, const std::complex<double> *dx, const int& incx,
        const std::complex<double> *dy, const int &incy);
 
-  std::complex<double>
+  complex_ret
   zdotu(const int& n, const std::complex<double> *dx, const int& incx,
         const std::complex<double> *dy, const int &incy);
 
