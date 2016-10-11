@@ -27,6 +27,12 @@
 #include <deque>
 #include <set>
 
+#ifdef HAVE_LMY_ENGINE
+//#include "Eigen/Dense"
+#include "formic/utils/matrix.h"
+#include "formic/utils/lmyengine/engine.h"
+#endif
+
 namespace qmcplusplus
 {
 
@@ -90,6 +96,10 @@ public:
   inline int getNumSamples()
   {
     return NumSamples;
+  }
+  inline void setNumSamples(int newNumSamples)
+  {  
+    NumSamples = newNumSamples;     
   }
   ///reset the wavefunction
   virtual void resetPsi(bool final_reset=false)=0;
@@ -160,11 +170,20 @@ public:
     return 1;
   }
 
+  Return_t LMYEngineCost(const bool needDeriv, cqmc::engine::LMYEngine * EngineObj);
+
   virtual void getConfigurations(const std::string& aroot)=0;
 
   virtual void checkConfigurations()=0;
 
+  virtual void engine_checkConfigurations(cqmc::engine::LMYEngine * EngineObj)=0;
+
   void setRng(std::vector<RandomGenerator_t*>& r);
+
+  inline bool getneedGrads() const
+  {
+    return needGrads;
+  }
 
   inline void setneedGrads(bool tf)
   {
@@ -239,6 +258,12 @@ protected:
   std::string GEVType;
   Return_t vmc_or_dmc;
   bool needGrads;
+  ///whether we are targeting an excited state
+  std::string targetExcitedStr;
+  ///whether we are targeting an excited state
+  bool targetExcited;
+  ///the shift to use when targeting an excited state
+  double omega_shift;
   /** Rescaling factor to correct the target energy Etarget=(1+CorrelationFactor)*Etarget
    *
    * default CorrelationFactor=0.0;
@@ -327,6 +352,15 @@ protected:
 
 
   virtual Return_t correlatedSampling(bool needGrad=true)=0;
+
+  #ifdef HAVE_LMY_ENGINE
+  virtual Return_t LMYEngineCost_detail(cqmc::engine::LMYEngine * EngineObj)
+  {
+    APP_ABORT("NOT IMPLEMENTED");
+    return 0;
+  }
+  #endif
+
 };
 }
 #endif

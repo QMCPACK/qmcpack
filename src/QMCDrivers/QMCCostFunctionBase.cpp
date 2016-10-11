@@ -37,7 +37,7 @@ QMCCostFunctionBase::QMCCostFunctionBase(MCWalkerConfiguration& w, TrialWaveFunc
   w_en(0.0), w_var(1.0), w_abs(0.0),w_w(0.0),w_beta(0.0), GEVType("mixed"),
   CorrelationFactor(0.0), m_wfPtr(NULL), m_doc_out(NULL), msg_stream(0), debug_stream(0),
   SmallWeight(0),usebuffer("no"), includeNonlocalH("no"),needGrads(true), vmc_or_dmc(2.0),
-  StoreDerivInfo(true),DerivStorageLevel(-1)
+  StoreDerivInfo(true),DerivStorageLevel(-1), targetExcitedStr("no"), targetExcited(false), omega_shift(0.0)
 {
   GEVType="mixed";
   //paramList.resize(10);
@@ -486,7 +486,13 @@ QMCCostFunctionBase::put(xmlNodePtr q)
   m_param.add(computeNLPPderiv,"use_nonlocalpp_deriv","string");
   m_param.add(w_beta,"beta","double");
   m_param.add(GEVType,"GEVMethod","string");
+  m_param.add(targetExcitedStr,"targetExcited","string");
+  m_param.add(omega_shift,"omega","double");
   m_param.put(q);
+
+  tolower(targetExcitedStr);
+  targetExcited = ( targetExcitedStr == "yes" );
+
   if (includeNonlocalH=="yes")
     includeNonlocalH="NonLocalECP";
 
@@ -901,11 +907,11 @@ QMCCostFunctionBase::lineoptimization(const std::vector<Return_t>& x0, const std
     //js(0,j)=x0[j];
     gr_norm+=gr[j]*gr[j];
   }
-  Return_t nw=1.0/static_cast<QMCTraits::RealType>(NumSamples);
+  Return_t nw=1.0/static_cast<double>(NumSamples);
   //Return_t MaxDispl=0.04;
   gr_norm=std::sqrt(gr_norm);
   Return_t dx=lambda_max/gr_norm;
-  dx=std::min((QMCTraits::RealType)0.25,dx);
+  dx=std::min(0.25,dx);
   if (val0<1e12)
   {
     y[0]=val0;
@@ -940,8 +946,8 @@ QMCCostFunctionBase::lineoptimization(const std::vector<Return_t>& x0, const std
     app_log() << " (" << dxmax << "," << y[i] << ")";
   }
   app_log() << std::endl;
-  Vector<QMCTraits::RealType> polys(max_poly);
-  Vector<QMCTraits::RealType> errors(max_poly);
+  Vector<double> polys(max_poly);
+  Vector<double> errors(max_poly);
   LeastSquaredFitLU(y,sigma,A,polys,errors);
   dl=-polys[1]/polys[2]*0.5;
   val_proj=polys[0]+dl*(polys[1]+dl*polys[2]);
@@ -957,6 +963,28 @@ QMCCostFunctionBase::lineoptimization(const std::vector<Return_t>& x0, const std
   //Psi.reportStatus(app_log());
   //return false;
   return true;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+/// \brief  If the LMYEngine is available, returns the cost function calculated by the engine.
+///         Otherwise, returns the usual cost function.
+///
+/// \param[in]      needDeriv             whether derivative vectors should be computed
+///
+///////////////////////////////////////////////////////////////////////////////////////////////////
+QMCCostFunctionBase::Return_t QMCCostFunctionBase::LMYEngineCost(const bool needDeriv, cqmc::engine::LMYEngine * EngineObj) {
+
+  // prepare local energies, weights, and possibly derivative vectors, and compute standard cost
+  const Return_t standardCost = this->Cost(needDeriv);
+
+  // if we are using the LMYEngine, compute and return it's cost function value
+  #ifdef HAVE_LMY_ENGINE
+  return this->LMYEngineCost_detail(EngineObj);
+  #endif
+
+  // otherwise return the standard cost function
+  return standardCost;
+
 }
 
 }

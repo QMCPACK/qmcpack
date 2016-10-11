@@ -21,6 +21,10 @@
 
 #include "QMCDrivers/QMCLinearOptimize.h"
 #include "Optimize/NRCOptimization.h"
+#ifdef HAVE_MY_ENGINE
+#include "formic/utils/matrix.h"
+#include "formic/utils/lmyengine/engine.h"
+#endif
 
 namespace qmcplusplus
 {
@@ -56,6 +60,34 @@ private:
     return valid;
   }
 
+  // check if the proposed new cost function value is the best available
+  bool is_best_cost(const int ii, const std::vector<RealType> & cv, const RealType ic) const;
+
+  // perform the adaptive three-shift update
+  bool adaptive_three_shift_run();
+
+  void solveShiftsWithoutLMYEngine(const std::vector<double> & shifts_i,
+                                   const std::vector<double> & shiffts_s,
+                                   std::vector<std::vector<RealType> > & parameterDirections);
+
+  #ifdef HAVE_LMY_ENGINE
+  void solveShiftsWithLMYEngine(const RealType eval_target,
+                                const std::vector<double> & shifts_i,
+                                const std::vector<double> & shiffts_s,
+                                std::vector<std::vector<RealType> > & parameterDirections);
+  formic::VarDeps vdeps;
+  cqmc::engine::LMYEngine * EngineObj;
+  #endif
+
+  // prepare a vector of shifts to try
+  std::vector<double> prepare_shifts(const double central_shift) const;
+
+  // previous update
+  std::vector<formic::ColVec<double> > previous_update;
+
+  void print_cost_summary_header();
+  void print_cost_summary(const double si, const double ss, const RealType mc, const RealType cv, const int ind, const int bi, const bool gu);
+
   int NumOfVMCWalkers;
   ///Number of iterations maximum before generating new configurations.
   int Max_iterations;
@@ -67,6 +99,45 @@ private:
   int eigCG;
   /// total number of cg steps per iterations
   int  TotalCGSteps;
+  /// whether to use the adaptive three-shift scheme
+  std::string doAdaptiveThreeShiftStr;
+  bool doAdaptiveThreeShift;
+  /// the previous best identity shift
+  static double bestShift_i;
+  /// the previous best overlap shift
+  static double bestShift_s;
+  double shift_i;
+  double shift_s;
+  /// number of shifts we will try
+  int num_shifts;
+  /// the maximum relative change in the cost function for the adaptive three-shift scheme
+  double max_relative_cost_change;
+  ///max amount a parameter may change relative to current wave function weight
+  double max_param_change;
+  ///whether we are targeting an excited state
+  std::string targetExcitedStr;
+  ///whether we are targeting an excited state
+  bool targetExcited;
+  ///whether we are doing block algorithm
+  std::string block_lmStr;
+  ///whether we are doing block algorithm
+  bool block_lm;
+  ///number of blocks used in block algorithm
+  int nblocks;
+  ///number of old updates kept
+  int nolds;
+  ///number of directions kept
+  int nkept;
+  ///number of samples to do in correlated sampling part
+  int nsamp_comp; 
+  ///the shift to use when targeting an excited state
+  double omega_shift;
+  ///whether to do the first part of block lm
+  bool block_first;
+  ///whether to do the second part of block lm
+  bool block_second;
+  ///whethe to do the third part of blocl lm
+  bool block_third;
 };
 }
 #endif

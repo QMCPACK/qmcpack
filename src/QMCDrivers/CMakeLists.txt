@@ -20,6 +20,11 @@
 ####################################
 # QMC Drivers which implements various QMC algorithms
 ####################################
+# formic dependencies
+FIND_PATH(LMYENGINE_INCLUDE_DIR formic/fqmc/engine/var_dependencies.h)
+MESSAGE("-- LMYENGINE_INCLUDE_DIR=${LMYENGINE_INCLUDE_DIR}")
+INCLUDE_DIRECTORIES(${LMYENGINE_INCLUDE_DIR})
+
 SET(QMCDRIVERS 
   SimpleFixedNodeBranch.cpp
   BranchIO.cpp
@@ -131,3 +136,8 @@ ENDIF()
 #ELSE(QMC_BUILD_STATIC)
 #  ADD_LIBRARY(qmcdriver SHARED ${QMCDRIVERS})
 #ENDIF(QMC_BUILD_STATIC)
+
+# if using the LMYEngine interface, make sure we link in the necessary functions
+IF(BUILD_LMYENGINE_INTERFACE)
+  TARGET_LINK_LIBRARIES(qmcdriver lmy_engine_interface)
+ENDIF(BUILD_LMYENGINE_INTERFACE)

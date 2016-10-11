@@ -25,6 +25,10 @@
 #include "Optimize/OptimizeBase.h"
 #include "QMCApp/WaveFunctionPool.h"
 #include "Numerics/LinearFit.h"
+#ifdef HAVE_LMY_ENGINE
+#include "formic/utils/matrix.h"
+#include "formic/utils/lmyengine/engine.h"
+#endif
 
 
 namespace qmcplusplus
@@ -165,6 +169,7 @@ public:
 
   ///common operation to start optimization, used by the derived classes
   void start();
+  void engine_start( cqmc::engine::LMYEngine * EngineObj);
   ///common operation to finish optimization, used by the derived classes
   void finish();
   //asymmetric generalized EV

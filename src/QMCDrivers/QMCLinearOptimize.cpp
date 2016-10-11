@@ -40,6 +40,11 @@
 #include <iostream>
 #include <fstream>
 
+#ifdef HAVE_LMY_ENGINE
+#include "formic/utils/matrix.h"
+#include "formic/utils/lmyengine/engine.h"
+#endif
+
 /*#include "Message/Communicate.h"*/
 
 namespace qmcplusplus
@@ -116,6 +121,41 @@ void QMCLinearOptimize::start()
   t1.restart();
 }
 
+void QMCLinearOptimize::engine_start( cqmc::engine::LMYEngine * EngineObj ) 
+{
+  app_log() << "entering engine_start function" << std::endl;
+  optTarget->initCommunicator(myComm);
+
+  // generate samples
+  myTimers[0]->start();
+  generateSamples();
+  myTimers[0]->stop();
+
+  // store active number of walkers
+  NumOfVMCWalkers=W.getActiveWalkers();
+  app_log() << "<opt stage=\"setup\">" << std::endl;
+  app_log() << "  <log>"<<std::endl;
+
+  // reset the root name
+  optTarget->setRootName(RootName);
+  optTarget->setWaveFunctionNode(wfNode);
+  app_log() << "     Reading configurations from h5FileRoot " << h5FileRoot << std::endl;
+
+  // get configuration from the previous run 
+  Timer t1;
+  myTimers[1]->start();
+  optTarget->getConfigurations(h5FileRoot);
+  optTarget->setRng(vmcEngine->getRng());
+  optTarget->engine_checkConfigurations(EngineObj); // computes derivative ratios and pass into engine
+  myTimers[1]->stop();
+  app_log() << "  Execution time = " << t1.elapsed() << std::endl;
+  app_log() << "  </log>"<<std::endl;
+  app_log() << "</opt>" << std::endl;
+  app_log() << "<opt stage=\"main\" walkers=\""<< optTarget->getNumSamples() << "\">" << std::endl;
+  app_log() << "  <log>" << std::endl;
+  t1.restart();
+}
+
 void QMCLinearOptimize::finish()
 {
   MyCounter++;
@@ -167,7 +207,7 @@ void QMCLinearOptimize::generateSamples()
   app_log() << "  Execution time = " << t1.elapsed() << std::endl;
   app_log() << "</vmc>" << std::endl;
   //write parameter history and energies to the parameter file in the trial wave function through opttarget
-  EstimatorRealType e,w,var;
+  RealType e,w,var;
   vmcEngine->Estimators->getEnergyAndWeight(e,w,var);
   optTarget->recordParametersToPsi(e,var);
 //     NumOfVMCWalkers=W.getActiveWalkers();
@@ -185,7 +225,6 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealT
   bool singleEV(false);
   if (singleEV)
   {
-    /*
     Matrix<double> TAU(Nl,Nl);
     int INFO;
     int LWORK(-1);
@@ -276,9 +315,6 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealT
 //     for (int i=0; i<Nl; i++) app_log()<<ev[i]<<" ";
 //     app_log()<< std::endl;
     return mappedEigenvalues[0].first;
-    */
-    // a fake return to reduce warning.
-    return RealType(0.0);
   }
   else
   {
@@ -293,7 +329,7 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealT
     std::vector<RealType> work(1);
     RealType tt(0);
     int t(1);
-    LAPACK::ggev(&jl, &jr, &Nl, A.data(), &Nl, B.data(), &Nl, &alphar[0], &alphai[0], &beta[0],&tt,&t, eigenT.data(), &Nl, &work[0], &lwork, &info);
+    dggev(&jl, &jr, &Nl, A.data(), &Nl, B.data(), &Nl, &alphar[0], &alphai[0], &beta[0],&tt,&t, eigenT.data(), &Nl, &work[0], &lwork, &info);
     lwork=int(work[0]);
     work.resize(lwork);
     //~ //Get an estimate of E_lin
@@ -308,7 +344,7 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealT
     //~ E_lin=alphar[i]/beta[i];
     //~ e_min_indx=i;
     //~ }
-    LAPACK::ggev(&jl, &jr, &Nl, A.data(), &Nl, B.data(), &Nl, &alphar[0], &alphai[0], &beta[0],&tt,&t, eigenT.data(), &Nl, &work[0], &lwork, &info);
+    dggev(&jl, &jr, &Nl, A.data(), &Nl, B.data(), &Nl, &alphar[0], &alphai[0], &beta[0],&tt,&t, eigenT.data(), &Nl, &work[0], &lwork, &info);
     if (info!=0)
     {
       APP_ABORT("Invalid Matrix Diagonalization Function!");
@@ -324,7 +360,7 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealT
       }
       else
       {
-        mappedEigenvalues[i].first=std::numeric_limits<RealType>::max();
+        mappedEigenvalues[i].first=1e100;
         mappedEigenvalues[i].second=i;
       }
     }
@@ -452,7 +488,7 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealT
   std::vector<RealType> work(1);
   RealType tt(0);
   int t(1);
-  LAPACK::geev(&jl, &jr, &Nl, A.data(), &Nl,  &alphar[0], &alphai[0], eigenD.data(), &Nl, eigenT.data(), &Nl, &work[0], &lwork, &info);
+  dgeev(&jl, &jr, &Nl, A.data(), &Nl,  &alphar[0], &alphai[0], eigenD.data(), &Nl, eigenT.data(), &Nl, &work[0], &lwork, &info);
   lwork=int(work[0]);
   work.resize(lwork);
   //~ //Get an estimate of E_lin
@@ -467,7 +503,7 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealT
   //~ E_lin=alphar[i]/beta[i];
   //~ e_min_indx=i;
   //~ }
-  LAPACK::geev(&jl, &jr, &Nl, A.data(), &Nl,  &alphar[0], &alphai[0], eigenD.data(), &Nl, eigenT.data(), &Nl, &work[0], &lwork, &info);
+  dgeev(&jl, &jr, &Nl, A.data(), &Nl,  &alphar[0], &alphai[0], eigenD.data(), &Nl, eigenT.data(), &Nl, &work[0], &lwork, &info);
   if (info!=0)
   {
     APP_ABORT("Invalid Matrix Diagonalization Function!");
@@ -483,7 +519,7 @@ QMCLinearOptimize::RealType QMCLinearOptimize::getLowestEigenvector(Matrix<RealT
     }
     else
     {
-      mappedEigenvalues[i].first=std::numeric_limits<RealType>::max();
+      mappedEigenvalues[i].first=1e100;
       mappedEigenvalues[i].second=i;
     }
   }
