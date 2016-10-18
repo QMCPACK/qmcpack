@@ -56,7 +56,7 @@ struct sign2<float>
 {
   inline static float apply(float a, float b)
   {
-    return (b > 0.0)? abs(a): -abs(a);
+    return (b > 0.0)? std::abs(a): -std::abs(a);
   }
 };
 
