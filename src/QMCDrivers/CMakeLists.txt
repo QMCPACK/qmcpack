@@ -21,9 +21,9 @@
 # QMC Drivers which implements various QMC algorithms
 ####################################
 # formic dependencies
-FIND_PATH(LMYENGINE_INCLUDE_DIR formic/fqmc/engine/var_dependencies.h)
-MESSAGE("-- LMYENGINE_INCLUDE_DIR=${LMYENGINE_INCLUDE_DIR}")
-INCLUDE_DIRECTORIES(${LMYENGINE_INCLUDE_DIR})
+#FIND_PATH(LMYENGINE_INCLUDE_DIR formic/fqmc/engine/var_dependencies.h)
+#MESSAGE("-- LMYENGINE_INCLUDE_DIR=${LMYENGINE_INCLUDE_DIR}")
+#INCLUDE_DIRECTORIES(${LMYENGINE_INCLUDE_DIR})
 
 SET(QMCDRIVERS 
   SimpleFixedNodeBranch.cpp
