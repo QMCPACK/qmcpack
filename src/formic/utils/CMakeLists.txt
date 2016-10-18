@@ -1,5 +1,13 @@
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
+# Really ugly hack to see if we're using MKL - replace it
+STRING(FIND "${BLAS_LIBRARIES}" "mkl" apos)
+MESSAGE("BLAS_LIBRARIES FIND = ${apos}")
+IF (NOT apos EQUAL -1)
+    MESSAGE("mkl found")
+    SET(MKL_FOUND 1)
+ENDIF()
+
 # determine how to declare and how to mangle the blas/lapack functions
 if(MKL_FOUND)
   set(LAPACK_DECLARE_INC formic/utils/declare_mkl.h)
@@ -75,34 +83,34 @@ target_link_libraries(formic_utils ${FORMIC_LAPACK_BLAS_LIBS})
 set_property(TARGET formic_utils PROPERTY CXX_STANDARD 11)
 set_property(TARGET formic_utils PROPERTY CXX_STANDARD_REQUIRED ON)
 
-file(MAKE_DIRECTORY ${FORMIC_BINARY_DIR}/lib)
-file(MAKE_DIRECTORY ${FORMIC_BINARY_DIR}/include)
-file(MAKE_DIRECTORY ${FORMIC_BINARY_DIR}/include/formic)
-file(MAKE_DIRECTORY ${FORMIC_BINARY_DIR}/include/formic/utils)
-file(MAKE_DIRECTORY ${FORMIC_BINARY_DIR}/include/formic/utils/lmyengine)
+#file(MAKE_DIRECTORY ${FORMIC_BINARY_DIR}/lib)
+#file(MAKE_DIRECTORY ${FORMIC_BINARY_DIR}/include)
+#file(MAKE_DIRECTORY ${FORMIC_BINARY_DIR}/include/formic)
+#file(MAKE_DIRECTORY ${FORMIC_BINARY_DIR}/include/formic/utils)
+#file(MAKE_DIRECTORY ${FORMIC_BINARY_DIR}/include/formic/utils/lmyengine)
 
-add_custom_command( TARGET formic_utils
-                    POST_BUILD
-                    COMMAND cp ${FORMIC_BINARY_DIR}/src/formic/utils/libformic_utils.* ${FORMIC_BINARY_DIR}/lib
-                    COMMAND cp ${FORMIC_BINARY_DIR}/src/formic/utils/*.h ${FORMIC_BINARY_DIR}/include/formic/utils
-                    COMMAND cp ${FORMIC_SOURCE_DIR}/src/formic/utils/*.h ${FORMIC_BINARY_DIR}/include/formic/utils
-                    COMMAND cp ${FORMIC_SOURCE_DIR}/src/formic/utils/lmyengine/*.h ${FORMIC_BINARY_DIR}/include/formic/utils/lmyengine
-                    COMMAND ${CMAKE_COMMAND} -E echo ""
-                    COMMAND ${CMAKE_COMMAND} -E echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-                    COMMAND ${CMAKE_COMMAND} -E echo "!!  The formic utilities library has been built and is located in lib.  !!"
-                    COMMAND ${CMAKE_COMMAND} -E echo "!!  The associated headers are located in include.                      !!"
-                    COMMAND ${CMAKE_COMMAND} -E echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-                    COMMAND ${CMAKE_COMMAND} -E echo ""
-                    WORKING_DIRECTORY ${FORMIC_BINARY_DIR}
-                  )
+#add_custom_command( TARGET formic_utils
+#                    POST_BUILD
+#                    COMMAND cp ${FORMIC_BINARY_DIR}/src/formic/utils/libformic_utils.* ${FORMIC_BINARY_DIR}/lib
+#                    COMMAND cp ${FORMIC_BINARY_DIR}/src/formic/utils/*.h ${FORMIC_BINARY_DIR}/include/formic/utils
+#                    COMMAND cp ${FORMIC_SOURCE_DIR}/src/formic/utils/*.h ${FORMIC_BINARY_DIR}/include/formic/utils
+#                    COMMAND cp ${FORMIC_SOURCE_DIR}/src/formic/utils/lmyengine/*.h ${FORMIC_BINARY_DIR}/include/formic/utils/lmyengine
+#                    COMMAND ${CMAKE_COMMAND} -E echo ""
+#                    COMMAND ${CMAKE_COMMAND} -E echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+#                    COMMAND ${CMAKE_COMMAND} -E echo "!!  The formic utilities library has been built and is located in lib.  !!"
+#                    COMMAND ${CMAKE_COMMAND} -E echo "!!  The associated headers are located in include.                      !!"
+#                    COMMAND ${CMAKE_COMMAND} -E echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+#                    COMMAND ${CMAKE_COMMAND} -E echo ""
+#                    WORKING_DIRECTORY ${FORMIC_BINARY_DIR}
+#                  )
 
-install(
-        TARGETS
-          formic_utils
-        RUNTIME DESTINATION
-          bin
-        LIBRARY DESTINATION
-          lib
-        ARCHIVE DESTINATION
-          lib
-       )
+#install(
+#        TARGETS
+#          formic_utils
+#        RUNTIME DESTINATION
+#          bin
+#        LIBRARY DESTINATION
+#          lib
+#        ARCHIVE DESTINATION
+#          lib
+#       )
