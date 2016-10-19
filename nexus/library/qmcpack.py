@@ -81,6 +81,17 @@ class Qmcpack(Simulation):
             user_twist_given |= isinstance(tnh,htypes) and tnh.twistnum!=None
             many_kpoints = len(self.system.structure.kpoints)>1
             self.should_twist_average = many_kpoints and not user_twist_given
+            if self.should_twist_average:
+                # correct the job app command to account for the change in input file name
+                # this is necessary for twist averaged runs in bundles
+                app_comm = self.app_command()
+                prefix,ext = self.infile.split('.',1)
+                self.infile = prefix+'.in'
+                app_comm_new = self.app_command()
+                if self.job.app_command==app_comm:
+                    self.job.app_command=app_comm_new
+                #end if
+            #end if
         #end if
     #end def post_init
 
