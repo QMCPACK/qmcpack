@@ -80,7 +80,11 @@
 
 // Clang issues a warning if the C return type is std::complex<double>
 // Use the C return type instead
+#if __clang__
 #define complex_ret double _Complex
+#else
+#define complex_ret std::complex<double>
+#endif
 
 // declaring Fortran interfaces
 extern "C" {
