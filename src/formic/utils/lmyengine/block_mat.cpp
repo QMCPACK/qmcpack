@@ -13,12 +13,13 @@
 #include<algorithm>
 #include<cmath>
 #include<sstream>
-#include<mpi.h>
+//#include<mpi.h>
 
 #include<boost/format.hpp>
 #include<boost/shared_ptr.hpp>
 
 #include<formic/utils/matrix.h>
+#include<formic/utils/mpi_interface.h>
 #include<formic/utils/lmyengine/block_mat.h>
 #include<formic/utils/lmyengine/block_detail.h>
 
@@ -260,10 +261,7 @@ void cqmc::engine::LMBlockerMatData::finalize(const double total_weight) {
 void cqmc::engine::LMBlockerMatData::mpi_finalize(const double total_weight) {
   
   // get rank number and number of ranks
-  int my_rank;
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank();
 
   // loop over blocks
   //for (int b = 0; b < this->nb(); b++) {
@@ -277,7 +275,8 @@ void cqmc::engine::LMBlockerMatData::mpi_finalize(const double total_weight) {
 
   // <wfn|wfn>
   double m_ww_tot = 0.0;
-  MPI_Reduce(&m_ww, &m_ww_tot, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  formic::mpi::reduce(&m_ww, &m_ww_tot, 1, MPI::SUM);
+  //MPI_Reduce(&m_ww, &m_ww_tot, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   m_ww = m_ww_tot / total_weight;
 
   // get space for MPI reduce 
@@ -296,14 +295,14 @@ void cqmc::engine::LMBlockerMatData::mpi_finalize(const double total_weight) {
 
   // do MPI reduce
   for (int i = 0; i < this->nb(); i++) {
-    MPI_Reduce(&m_wv.at(i).at(0), &m_wv_tot.at(i).at(0), this->bl(i), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&m_vw.at(i).at(0), &m_vw_tot.at(i).at(0), this->bl(i), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&m_vv.at(i).at(0,0), &m_vv_tot.at(i).at(0,0), m_vv.at(i).size(), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&m_wo.at(i).at(0), &m_wo_tot.at(i).at(0), m_nou, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&m_ow.at(i).at(0), &m_ow_tot.at(i).at(0), m_nou, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD); 
-    MPI_Reduce(&m_ov.at(i).at(0,0), &m_ov_tot.at(i).at(0,0), m_ov.at(i).size(), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&m_vo.at(i).at(0,0), &m_vo_tot.at(i).at(0,0), m_vo.at(i).size(), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&m_oo.at(i).at(0,0), &m_oo_tot.at(i).at(0,0), m_oo.at(i).size(), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    formic::mpi::reduce(&m_wv.at(i).at(0), &m_wv_tot.at(i).at(0), this->bl(i), MPI::SUM);
+    formic::mpi::reduce(&m_vw.at(i).at(0), &m_vw_tot.at(i).at(0), this->bl(i), MPI::SUM);
+    formic::mpi::reduce(&m_vv.at(i).at(0,0), &m_vv_tot.at(i).at(0,0), m_vv.at(i).size(), MPI::SUM);
+    formic::mpi::reduce(&m_wo.at(i).at(0), &m_wo_tot.at(i).at(0), m_nou, MPI::SUM);
+    formic::mpi::reduce(&m_ow.at(i).at(0), &m_ow_tot.at(i).at(0), m_nou, MPI::SUM); 
+    formic::mpi::reduce(&m_ov.at(i).at(0,0), &m_ov_tot.at(i).at(0,0), m_ov.at(i).size(), MPI::SUM);
+    formic::mpi::reduce(&m_vo.at(i).at(0,0), &m_vo_tot.at(i).at(0,0), m_vo.at(i).size(), MPI::SUM);
+    formic::mpi::reduce(&m_oo.at(i).at(0,0), &m_oo_tot.at(i).at(0,0), m_oo.at(i).size(), MPI::SUM);
   }
 
   // evaluate the average across all processors

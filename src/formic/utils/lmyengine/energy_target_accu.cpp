@@ -12,12 +12,13 @@
 #include<numeric>
 #include<cassert>
 #include<algorithm>
-#include<mpi.h>
+//#include<mpi.h>
 
 #include<boost/format.hpp>
 #include<boost/shared_ptr.hpp>
 
 #include<formic/utils/exception.h>
+#include<formic/utils/mpi_interface.h>
 #include<formic/utils/lmyengine/engine_numeric.h>
 #include<formic/utils/lmyengine/energy_target_accu.h>
 
@@ -111,8 +112,8 @@ double cqmc::engine::ETCompute::bvar(const int nblocks) const
   assert( nblocks > 0);
 
   // get the number of ranks 
-  int rank_num;
-  MPI_Comm_size(MPI_COMM_WORLD, &rank_num);
+  int rank_num = formic::mpi::size();
+  //MPI_Comm_size(MPI_COMM_WORLD, &rank_num);
 
   // get block length (last block will be longer if division does not result in an integer)
   const int bl = _le_history.size() / nblocks;
@@ -129,7 +130,7 @@ double cqmc::engine::ETCompute::bvar(const int nblocks) const
   // compute avergae of each block across all processes
   std::vector<double> full_avgs; 
   full_avgs.assign(nblocks, 0.0);
-  MPI_Reduce(&avgs.at(0), &full_avgs.at(0), nblocks, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  formic::mpi::reduce(&avgs.at(0), &full_avgs.at(0), nblocks, MPI::SUM);
   for (int i = 0; i < nblocks; i++) {
     full_avgs.at(i) /= double(rank_num);
   }
@@ -146,7 +147,7 @@ double cqmc::engine::ETCompute::bvar(const int nblocks) const
   var /= double(nblocks);
 
   // return the variance on all processes 
-  MPI_Bcast(&var, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  formic::mpi::bcast(&var, 1);
   return var;
 }
 
@@ -159,10 +160,10 @@ double cqmc::engine::ETCompute::bvar(const int nblocks) const
 double cqmc::engine::ETCompute::recursive_blocking(std::ostream & fout, const bool print) 
 {
   // get rank number and number of ranks 
-  int my_rank; 
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank(); 
+  int num_rank = formic::mpi::size();
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // make sure the sample was not exact sample
   if ( _exact_sampling )
@@ -225,10 +226,10 @@ double cqmc::engine::ETCompute::target_fn_nuerr(std::ostream & fout, const bool 
 {
     
   // get rank number and number of ranks 
-  int my_rank; 
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank(); 
+  int num_rank = formic::mpi::size();
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // make sure the sample was not exact sample
   if ( _exact_sampling )
@@ -293,10 +294,10 @@ double cqmc::engine::ETCompute::target_fn_dnerr(std::ostream & fout, const bool 
 {
       
   // get rank number and number of ranks 
-  int my_rank; 
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank(); 
+  int num_rank = formic::mpi::size();
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // make sure the sample was not exact sample 
   if ( _exact_sampling)
@@ -449,10 +450,10 @@ void cqmc::engine::ETCompute::print_statistics(std::ostream & fout)
 {
     
   // get rank number and number of ranks 
-  int my_rank; 
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank(); 
+  int num_rank = formic::mpi::size();
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // compute mean and variance 
   double mean = 0.0;

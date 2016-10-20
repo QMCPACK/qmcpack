@@ -13,13 +13,14 @@
 #include<algorithm>
 #include<cmath>
 #include<sstream>
-#include<mpi.h>
+//#include<mpi.h>
 
 #include<boost/format.hpp>
 #include<boost/shared_ptr.hpp>
 
 #include<formic/utils/matrix.h>
 #include<formic/utils/numeric.h>
+#include<formic/utils/mpi_interface.h>
 #include<formic/utils/lmyengine/block_detail.h>
 #include<formic/utils/lmyengine/var_dependencies.h>
 #include<formic/utils/lmyengine/eigen_solver.h>
@@ -331,10 +332,7 @@ formic::Matrix<double> cqmc::engine::get_important_brlm_dirs_davidson(const form
 
 
   // get rank number and number of ranks
-  int my_rank;
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank();
 
   // check to see whether nkeep is one and throw out an error if not
   if ( nkeep != 1 ) 
@@ -342,7 +340,8 @@ formic::Matrix<double> cqmc::engine::get_important_brlm_dirs_davidson(const form
 
   // get the number of vectors in basis 1
   int nd = hh.rows();
-  MPI_Bcast(&nd, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  formic::mpi::bcast(&nd, 1);
+  //MPI_Bcast(&nd, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
   // get the flag that whether we will use variable dependency system
   const bool use_var_deps = ( dep_ptr->n_ind() != dep_ptr->n_tot() );
@@ -351,13 +350,15 @@ formic::Matrix<double> cqmc::engine::get_important_brlm_dirs_davidson(const form
   bool ground = true;
   if ( my_rank == 0 ) 
     ground = ( std::abs(ss.at(0,0) - 1.0) < 1.0e-6 );
-  MPI_Bcast(&ground, 1, MPI::BOOL, 0, MPI_COMM_WORLD);
+  formic::mpi::bcast(&ground, 1);
+  //MPI_Bcast(&ground, 1, MPI::BOOL, 0, MPI_COMM_WORLD);
 
   // initial energy/target fn value
   double init_cost = 0.0;
   if ( my_rank == 0 ) 
     init_cost = hh.at(0,0)/ss.at(0,0);
-  MPI_Bcast(&init_cost, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  formic::mpi::bcast(&init_cost, 1);
+  //MPI_Bcast(&init_cost, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
   // sanity checks
   if ( my_rank == 0 ) { 

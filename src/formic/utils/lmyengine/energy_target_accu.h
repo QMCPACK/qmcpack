@@ -19,7 +19,7 @@
 #include<boost/format.hpp>
 #include<boost/shared_ptr.hpp>
 
-#include<mpi.h>
+//#include<mpi.h>
 
 
 namespace cqmc {

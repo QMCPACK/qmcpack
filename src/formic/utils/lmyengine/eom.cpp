@@ -12,13 +12,14 @@
 #include<utility>
 #include<numeric>
 #include<algorithm>
-#include<mpi.h>
+//#include<mpi.h>
 
 #include<boost/format.hpp>
 #include<boost/shared_ptr.hpp>
 
 #include<formic/utils/matrix.h>
 #include<formic/utils/exception.h>
+#include<formic/utils/mpi_interface.h>
 #include<formic/utils/lapack_interface.h>
 #include<formic/utils/lmyengine/eom.h>
 
@@ -258,10 +259,10 @@ void cqmc::engine::EOM::eom_calculation_simple(std::ostream & fout)
 {
   
   // get rank number and the number of ranks 
-  int my_rank;
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank();
+  int num_rank = formic::mpi::size();
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // solve the eigenvalue problem on root process 
   if (my_rank == 0) {
@@ -374,10 +375,10 @@ formic::Matrix<double> cqmc::engine::EOM::ovlp_pseudo_inv(std::ostream & fout)
 {
   
   // get rank number and number of ranks 
-  int my_rank;
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank();
+  int num_rank = formic::mpi::size();
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
  
   // compute SVD on root process 
   formic::Matrix<double> u;
@@ -417,10 +418,10 @@ void cqmc::engine::EOM::eom_print(std::ostream & fout)
 {
   
   // get rank number and number of ranks 
-  int my_rank;
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank();
+  int num_rank = formic::mpi::size();
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // print statistics on root process 
   if (my_rank == 0) {

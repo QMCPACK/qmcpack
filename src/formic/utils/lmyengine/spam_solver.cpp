@@ -14,7 +14,7 @@
 #include<cmath>
 #include<complex>
 #include<iostream>
-#include<mpi.h>
+//#include<mpi.h>
 
 #include<boost/format.hpp>
 #include<boost/shared_ptr.hpp>
@@ -22,6 +22,7 @@
 #include<formic/utils/exception.h>
 #include<formic/utils/matrix.h>
 #include<formic/utils/lapack_interface.h>
+#include<formic/utils/mpi_interface.h>
 #include<formic/utils/lmyengine/eigen_solver.h>
 #include<formic/utils/lmyengine/spam_solver.h>
 
@@ -36,10 +37,10 @@ void cqmc::engine::SpamLMHD::solve_subspace_nonsymmetric(const bool outer)
 {
   
   // get rank number and number of rank
-  int my_rank;
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank();
+  int num_rank = formic::mpi::rank();
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // one in complex form
   const std::complex<double> complex_one(1.0, 0.0);
@@ -349,10 +350,10 @@ void cqmc::engine::SpamLMHD::add_krylov_vector_inner(const formic::ColVec<double
 {
   
   // get rank number and number of rank
-  int my_rank;
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank();
+  int num_rank = formic::mpi::size();
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // check vector length
   if (my_rank == 0 && v.size() != _der_rat.cols())
@@ -372,19 +373,19 @@ void cqmc::engine::SpamLMHD::add_krylov_vector_inner(const formic::ColVec<double
   }
 
   // broadcast this vector to all processes
-  MPI_Bcast(&_wv1.at(0), _wv1.size(), MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  formic::mpi::bcast(&_wv1.at(0), _wv1.size());
 
   // compute the product of approximate hamiltonian times the new krylov vector
   formic::ColVec<double> hs(_nfds);
   this -> HMatVecOp(_wv1, hs, false, true);
   formic::ColVec<double> hs_avg(hs.size());
-  MPI_Reduce(&hs.at(0), &hs_avg.at(0), hs.size(), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  formic::mpi::reduce(&hs.at(0), &hs_avg.at(0), hs.size(), MPI::SUM);
   hs = hs_avg.clone();
 
   // compute the product of approximate overlap matrix times this new krylov vector
   this -> SMatVecOp(_wv1, _wv2, true);
   formic::ColVec<double> _wv2_avg(_wv2.size());
-  MPI_Reduce(&_wv2.at(0), &_wv2_avg.at(0), _wv2.size(), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  formic::mpi::reduce(&_wv2.at(0), &_wv2_avg.at(0), _wv2.size(), MPI::SUM);
   _wv2 = _wv2_avg.clone();
 
 
@@ -499,10 +500,8 @@ void cqmc::engine::SpamLMHD::add_krylov_vectors_outer(const formic::Matrix<doubl
 {
  
   // get rank number and number of ranks
-  int my_rank;
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank();
+  int num_rank = formic::mpi::size();
 
   // check matrix size
   if (my_rank == 0 && m.rows() != _der_rat.cols())
@@ -529,20 +528,20 @@ void cqmc::engine::SpamLMHD::add_krylov_vectors_outer(const formic::Matrix<doubl
   formic::Matrix<double> hs(_nfds, Nnew);
   this -> HMatMatOp(_wm1, hs, false, false);
   formic::Matrix<double> hs_avg(_nfds, Nnew);
-  MPI_Reduce(&hs.at(0,0), &hs_avg.at(0,0), hs.size(), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  formic::mpi::reduce(&hs.at(0,0), &hs_avg.at(0,0), hs.size(), MPI::SUM);
   hs = hs_avg.clone();
 
   // compute the product of Hamiltonian transpose times these new krylov vectors
   formic::Matrix<double> ths(_nfds, Nnew);
   this -> HMatMatOp(_wm1, ths, true, false);
   formic::Matrix<double> ths_avg(ths.rows(), ths.cols());
-  MPI_Reduce(&ths.at(0,0), &ths_avg.at(0,0), ths.size(), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  formic::mpi::reduce(&ths.at(0,0), &ths_avg.at(0,0), ths.size(), MPI::SUM);
   ths = ths_avg.clone();
 
   // compute the product of the overlap matrix times these new krylov vectors
   this -> SMatMatOp(_wm1, _wm2, false);
   formic::Matrix<double> _wm2_avg(_wm2.rows(), _wm2.cols());
-  MPI_Reduce(&_wm2.at(0,0), &_wm2_avg.at(0,0), _wm2.size(), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  formic::mpi::reduce(&_wm2.at(0,0), &_wm2_avg.at(0,0), _wm2.size(), MPI::SUM);
   _wm2 = _wm2_avg.clone();
 
   // modify hamiltonian product to account for "identity" shift
@@ -651,10 +650,11 @@ void cqmc::engine::SpamLMHD::add_krylov_vectors_outer(const formic::Matrix<doubl
 void cqmc::engine::SpamLMHD::HMatVecOp(const formic::ColVec<double> & x, formic::ColVec<double> & y, const bool transpose, const bool approximate)
 {
 
-  int my_rank; 
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+
+  int my_rank = formic::mpi::rank(); 
+  int num_rank = formic::mpi::size();
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // size the resulting vector correctly
   y.reset(x.size());
@@ -862,10 +862,12 @@ void cqmc::engine::SpamLMHD::HMatVecOp(const formic::ColVec<double> & x, formic:
 void cqmc::engine::SpamLMHD::HMatMatOp(const formic::Matrix<double> & x, formic::Matrix<double> & y, const bool transpose, const bool approximate)
 {
   
-  int my_rank;
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank(); 
+  int num_rank = formic::mpi::size();
+  //int my_rank;
+  //int num_rank;
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // size the resulting matrix correctly
   y.reset(x.rows(), x.cols());
@@ -1131,10 +1133,12 @@ void cqmc::engine::SpamLMHD::SMatVecOp(const formic::ColVec<double> & x, formic:
 void cqmc::engine::SpamLMHD::SMatMatOp(const formic::Matrix<double> & x, formic::Matrix<double> & y, const bool approximate)
 {
   
-  int my_rank;
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank(); 
+  int num_rank = formic::mpi::size();
+  //int my_rank;
+  //int num_rank;
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // size the resulting matrix correctly
   y.reset(x.rows(), x.cols());
@@ -1271,10 +1275,12 @@ _smallest_sin_value_inner(0.0),
 _smallest_sin_value_outer(0.0)
 {
   // get rank number and number of ranks 
-  int my_rank; 
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank(); 
+  int num_rank = formic::mpi::size();
+  //int my_rank; 
+  //int num_rank;
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 		
 }
 
@@ -1289,10 +1295,12 @@ bool cqmc::engine::SpamLMHD::iterative_solve(double & eval, std::ostream & outpu
 {
 
   // get rank number and number of rank 
-  int my_rank;
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank(); 
+  int num_rank = formic::mpi::size();
+  //int my_rank;
+  //int num_rank;
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // initialize the solution vector to the unit vector along the first direction 
   _evecs.reset( ( _var_deps_use ? 1 + _dep_ptr->n_tot() : _nfds ), 0.0 );
@@ -1338,11 +1346,11 @@ bool cqmc::engine::SpamLMHD::iterative_solve(double & eval, std::ostream & outpu
     }
 
     // send resulting eigenvalues to all processes and record it as the new best estimate
-    MPI_Bcast(&_energy_outer, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    formic::mpi::bcast(&_energy_outer, 1);
     eval = _energy_outer;
 
     // check if the energy has an imaginary component and stop iteration when it does
-    MPI_Bcast(&_eval_was_complex, 1, MPI::BOOL, 0, MPI_COMM_WORLD);
+    formic::mpi::bcast(&_eval_was_complex, 1);
     if ( _eval_was_complex ) {
       if ( my_rank == 0 ) 
         output << boost::format("spam iteration %4i: stopping due to imaginary component in energy") % iter_outer << std::endl;
@@ -1358,7 +1366,7 @@ bool cqmc::engine::SpamLMHD::iterative_solve(double & eval, std::ostream & outpu
     }
 
     // if the overlap matrix becomes singular, stop iterating
-    MPI_Bcast(&_smallest_sin_value_outer, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    formic::mpi::bcast(&_smallest_sin_value_outer, 1);
     if (std::abs(_smallest_sin_value_outer) < _singular_value_threshold) {
       if (my_rank == 0) 
         output << boost::format("spam iteration %4i stopping due to small subspace S singular value of %.2e") % iter_outer % _smallest_sin_value_outer << std::endl;
@@ -1383,12 +1391,12 @@ bool cqmc::engine::SpamLMHD::iterative_solve(double & eval, std::ostream & outpu
     }
 
     // send this new vector to all processes
-    MPI_Bcast(&_wv1.at(0), _wv1.size(), MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    formic::mpi::bcast(&_wv1.at(0), _wv1.size());
 
     // compute the residual norm and send it to all processes
     double current_outer_residual;
     current_outer_residual = _wv1.norm2();
-    MPI_Bcast(&current_outer_residual, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    formic::mpi::bcast(&current_outer_residual, 1);
 
     // if this is the best residual, save it and save the new eigenvector estimate
     if (my_rank == 0 && current_outer_residual < _best_residual_outer) {
@@ -1474,10 +1482,10 @@ bool cqmc::engine::SpamLMHD::iterative_solve(double & eval, std::ostream & outpu
       }
 
       // send resulting eigenvalues to all processes and record it as the new best estimate
-      MPI_Bcast(&_energy_inner, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+      formic::mpi::bcast(&_energy_inner, 1);
       
       // check if the energy(or target function) has an imaginary component and stop iteration when it does
-      MPI_Bcast(&_eval_was_complex, 1, MPI::BOOL, 0, MPI_COMM_WORLD);
+      formic::mpi::bcast(&_eval_was_complex, 1);
       if ( _eval_was_complex ) {
         if ( my_rank == 0 ) 
           output << boost::format("spam outer iteration %4i inner iteration %4i: stopping due to imaginary component in energy") % iter_outer % iter_inner << std::endl;
@@ -1493,7 +1501,7 @@ bool cqmc::engine::SpamLMHD::iterative_solve(double & eval, std::ostream & outpu
       }
 
       // if the overlap matrix becomes singular, stop iterating
-      MPI_Bcast(&_smallest_sin_value_inner, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+      formic::mpi::bcast(&_smallest_sin_value_inner, 1);
       if (std::abs(_smallest_sin_value_inner) < _singular_value_threshold) {
         if (my_rank == 0) 
           output << boost::format("spam outer iteration %4i inner iteration %4i: stopping due to too small S singular value of %.2e") % iter_outer % iter_inner % _smallest_sin_value_inner << std::endl;
@@ -1517,12 +1525,12 @@ bool cqmc::engine::SpamLMHD::iterative_solve(double & eval, std::ostream & outpu
       }
 
       // send this new vector to all processes
-      MPI_Bcast(&_wv1.at(0), _wv1.size(), MPI_DOUBLE, 0, MPI_COMM_WORLD);
+      formic::mpi::bcast(&_wv1.at(0), _wv1.size());
       
       // compute the residual norm and send it to all processes
       double current_inner_residual;
       current_inner_residual = _wv1.norm2();
-      MPI_Bcast(&current_inner_residual, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+      formic::mpi::bcast(&current_inner_residual, 1);
 
       // if this is the best residual, save it and save the new eigenvector estimate
       if (my_rank == 0 && current_inner_residual < _best_residual_inner) 
@@ -1576,7 +1584,7 @@ bool cqmc::engine::SpamLMHD::iterative_solve(double & eval, std::ostream & outpu
       _kvecs_about_to_add.reset(_nfds, _nkry - _nkry_full);
       
     // broadcast intermediate vectors that will be added to full krylov space 
-    MPI_Bcast(&_kvecs_about_to_add.at(0, 0), _kvecs_about_to_add.size(), MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    formic::mpi::bcast(&_kvecs_about_to_add.at(0, 0), _kvecs_about_to_add.size());
 
     // add these new krylov vectors to outer loop 
     this -> add_krylov_vectors_outer(_kvecs_about_to_add);
@@ -1624,10 +1632,10 @@ void cqmc::engine::SpamLMHD::update_hvecs_sub(const double new_i_shift, const do
 {
   
   // get rank number and number of ranks
-  int my_rank;
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank();
+  int num_rank = formic::mpi::size();
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // get the different between new shift and old shift
   const double diff_shift_i = new_i_shift - _hshift_i;

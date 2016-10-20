@@ -14,13 +14,14 @@
 #include<cmath>
 #include<complex>
 #include<iostream>
-#include<mpi.h>
+//#include<mpi.h>
 
 #include<boost/format.hpp>
 #include<boost/shared_ptr.hpp>
 
 #include<formic/utils/exception.h>
 #include<formic/utils/matrix.h>
+#include<formic/utils/mpi_interface.h>
 #include<formic/utils/lapack_interface.h>
 #include<formic/utils/lmyengine/eigen_solver.h>
 #include<formic/utils/lmyengine/davidson_solver.h>
@@ -37,10 +38,10 @@ void cqmc::engine::DavidsonLMHD::solve_subspace_nonsymmetric(const bool outer)
 {
 
   // get rank number and number of ranks 
-  int my_rank; 
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank(); 
+  //int num_rank;
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   //one and zero in complex form
   const std::complex<double> complex_one(1.0, 0.0);
@@ -284,10 +285,10 @@ _smallest_sin_value(0.0)
 {
 
   // get rank number and number of ranks 
-  int my_rank; 
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank(); 
+  //int num_rank;
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // compute preconditioning matrix as S^(-1/2)
 //  if ( _build_lm_matrix ) {
@@ -413,10 +414,10 @@ _smallest_sin_value(0.0)
 void cqmc::engine::DavidsonLMHD::tau_and_correct_ham()
 {
   // get rank number and number of ranks
-  int my_rank;
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_rank(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank();
+  //int num_rank;
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_rank(MPI_COMM_WORLD, & num_rank);
 
   if ( my_rank == 0 ) {
     
@@ -449,10 +450,10 @@ void cqmc::engine::DavidsonLMHD::add_krylov_vector(const formic::ColVec<double> 
 {
 	
   // get rank number and number of ranks 
-  int my_rank; 
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank(); 
+  //int num_rank;
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // check vector length
   if (my_rank == 0 && !_build_lm_matrix && v.size() != _der_rat.cols())  
@@ -477,7 +478,8 @@ void cqmc::engine::DavidsonLMHD::add_krylov_vector(const formic::ColVec<double> 
 
   // if we don't build the matrix, we need to broadcast this vector to all processes
   if ( !_build_lm_matrix ) 
-    MPI_Bcast(&_wv1.at(0), _wv1.size(), MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    formic::mpi::bcast(&_wv1.at(0), _wv1.size());
+    //MPI_Bcast(&_wv1.at(0), _wv1.size(), MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
   // compute the product of the overlap matrix times the new krylov vector on the root process
   if ( _build_lm_matrix ) {
@@ -492,7 +494,7 @@ void cqmc::engine::DavidsonLMHD::add_krylov_vector(const formic::ColVec<double> 
     this -> SMatVecOp(_wv1, _wv2);
     // reduce the result vector
     formic::ColVec<double> _wv2_avg(_wv2.size());
-    MPI_Reduce(&_wv2.at(0), &_wv2_avg.at(0), _wv2.size(), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    formic::mpi::reduce(&_wv2.at(0), &_wv2_avg.at(0), _wv2.size(), MPI::SUM);
     _wv2 = _wv2_avg.clone();
   }
 
@@ -509,7 +511,7 @@ void cqmc::engine::DavidsonLMHD::add_krylov_vector(const formic::ColVec<double> 
     this -> HMatVecOp(_wv1, hs);
     // reduce the result vector 
     formic::ColVec<double> hs_avg(hs.size());
-    MPI_Reduce(&hs.at(0), &hs_avg.at(0), hs.size(), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    formic::mpi::reduce(&hs.at(0), &hs_avg.at(0), hs.size(), MPI::SUM);
     hs = hs_avg.clone();
     //if (my_rank == 0) {
     //  for (int i = 0; i < hs_avg.size(); i++) 
@@ -583,10 +585,10 @@ void cqmc::engine::DavidsonLMHD::add_krylov_vector(const formic::ColVec<double> 
 void cqmc::engine::DavidsonLMHD::HMatVecOp(const formic::ColVec<double> & x, formic::ColVec<double> & y, const bool transpose, const bool approximate)
 {
 
-  int my_rank; 
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank(); 
+  //int num_rank;
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // size the resulting vector correctly
   y.reset(x.size());
@@ -903,10 +905,10 @@ void cqmc::engine::DavidsonLMHD::update_hvecs_sub(const double new_i_shift, cons
 {
 
   // get rank number and number of ranks 
-  int my_rank;
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank();
+  //int num_rank;
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // get the different between new shift and old shift 
   const double diff_shift_i = new_i_shift - _hshift_i;
@@ -944,10 +946,10 @@ void cqmc::engine::DavidsonLMHD::update_hamovlp(formic::Matrix<double> & hmat, f
 {
 	
   // get rank number and number of ranks 
-  int my_rank; 
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank(); 
+  //int num_rank;
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // check if the input matrices have the right size 
   bool right_size = (hmat.rows() == _nfds && hmat.cols() == _nfds && smat.rows() == _nfds && smat.cols()); 
@@ -1014,10 +1016,10 @@ bool cqmc::engine::DavidsonLMHD::iterative_solve(double & eval, std::ostream & o
 	
 	
   // get rank number and number of ranks 
-  int my_rank; 
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank(); 
+  //int num_rank;
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // initialize the solution vector to the unit vector along the first direction
   _evecs.reset( ( _var_deps_use ? 1 + _dep_ptr->n_tot() : _nfds ), 0.0 );
@@ -1054,11 +1056,11 @@ bool cqmc::engine::DavidsonLMHD::iterative_solve(double & eval, std::ostream & o
     }
 
     // send resulting eigenvalues to all processes and record it as the new best estimate(if we build the matrix)
-    MPI_Bcast(&_cost, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    formic::mpi::bcast(&_cost, 1);
     eval = _cost;
 
     // check if the cost function has imaginary component and stop iterating when it does
-    MPI_Bcast(&_eval_was_complex, 1, MPI::BOOL, 0, MPI_COMM_WORLD);
+    formic::mpi::bcast(&_eval_was_complex, 1);
     if (_eval_was_complex){
       if(my_rank == 0)
         output << boost::format("davidson iteration %4i: stopping due to imaginary component in cost function") % iter << std::endl;
@@ -1074,7 +1076,7 @@ bool cqmc::engine::DavidsonLMHD::iterative_solve(double & eval, std::ostream & o
     }
 
     // if the overlap matrix becomes singular, stop iterating 
-    MPI_Bcast(&_smallest_sin_value, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    formic::mpi::bcast(&_smallest_sin_value, 1);
     if (std::abs(_smallest_sin_value) < _singular_value_threshold) {
       if (my_rank == 0)
         output << boost::format("davidson iteration %4i stopping due to small subspace S singular value of %.2e") % iter % _smallest_sin_value << std::endl;
@@ -1099,14 +1101,14 @@ bool cqmc::engine::DavidsonLMHD::iterative_solve(double & eval, std::ostream & o
 
     // if we don't build matrix, then send this new vector to all processes 
     if ( !_build_lm_matrix ) 
-      MPI_Bcast(&_wv1.at(0), _wv1.size(), MPI_DOUBLE, 0, MPI_COMM_WORLD);
+      formic::mpi::bcast(&_wv1.at(0), _wv1.size());
 
     // compute the residual norm and send it to all processes
     double current_residual;
     double current_residual_avg;
 
     current_residual = _wv1.norm2();
-    MPI_Bcast(&current_residual, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    formic::mpi::bcast(&current_residual, 1);
 
     // if this is the best residual, save it and save the new eigenvector estimate
     if (my_rank == 0 && current_residual < _best_residual){
@@ -1211,10 +1213,10 @@ bool cqmc::engine::DavidsonLMHD::solve(double & eval, std::ostream & output)
   //if (! _spam_use)
 
   // get rank number and number of ranks 
-  int my_rank; 
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank(); 
+  //int num_rank;
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   if ( !_variance_correct ) 
     return this -> iterative_solve(eval, output);
@@ -1225,7 +1227,7 @@ bool cqmc::engine::DavidsonLMHD::solve(double & eval, std::ostream & output)
     this -> tau_and_correct_ham();
 
     // bcast tau 
-    MPI_Bcast(&_tau, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    formic::mpi::bcast(&_tau, 1);
     
     // flag to tell whether tau is converged
     bool tau_converged = false;

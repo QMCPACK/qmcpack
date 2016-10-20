@@ -11,9 +11,10 @@
 #include<boost/format.hpp>
 #include<boost/shared_ptr.hpp>
 
-#include<mpi.h>
+//#include<mpi.h>
 
 #include<formic/utils/matrix.h>
+#include<formic/utils/mpi_interface.h>
 #include<formic/utils/lmyengine/updater.h>
 #include<formic/utils/lmyengine/matrix_builder.h>
 #include<formic/utils/lmyengine/eigen_solver.h>
@@ -84,10 +85,12 @@ void cqmc::engine::HDLinMethodUpdater::engine_update_build_matrix(const formic::
 {
 
   // get rank number and number of ranks 
-  int my_rank; 
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank();
+  int num_rank = formic::mpi::size();
+  //int my_rank; 
+  //int num_rank;
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // creates matrix builder 
   boost::shared_ptr< cqmc::engine::HamOvlpBuilderHD > mbuilder( new cqmc::engine::HamOvlpBuilderHD(_der_rat, 
@@ -234,7 +237,7 @@ void cqmc::engine::HDLinMethodUpdater::engine_update_build_matrix(const formic::
 
   //std::cout << "before broadcast update vector" << std::endl;
   // save the wavefunction variables resulting from the update 
-  MPI_Bcast(&vf_var.at(0), vf_var.size(), MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  formic::mpi::bcast(&vf_var.at(0), vf_var.size());
   //std::cout << "after broadcast update vector" << std::endl;
 
   // save the solve results
@@ -278,10 +281,12 @@ void cqmc::engine::HDLinMethodUpdater::engine_update_build_matrix(const formic::
 {
 
   // get rank number and number of ranks 
-  int my_rank; 
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank();
+  int num_rank = formic::mpi::size();
+  //int my_rank; 
+  //int num_rank;
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   const bool print_mats = false;
 
@@ -377,7 +382,7 @@ void cqmc::engine::HDLinMethodUpdater::engine_update_build_matrix(const formic::
 
   //std::cout << "before broadcast update vector" << std::endl;
   // save the wavefunction variables resulting from the update 
-  MPI_Bcast(&vf_var.at(0), vf_var.size(), MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  formic::mpi::bcast(&vf_var.at(0), vf_var.size());
   //std::cout << "after broadcast update vector" << std::endl;
 }
 
@@ -413,10 +418,12 @@ void cqmc::engine::HDLinMethodUpdater::engine_update_no_matrix(const formic::Var
 {
 
   // get rank number and number of ranks 
-  int my_rank; 
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank();
+  int num_rank = formic::mpi::size();
+  //int my_rank; 
+  //int num_rank;
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // get the number of total variables + 1
   const int Ntot = (var_deps_use ? (dep_ptr -> n_tot() + 1) : _der_rat.cols());
@@ -544,7 +551,7 @@ void cqmc::engine::HDLinMethodUpdater::engine_update_no_matrix(const formic::Var
 
     // broadcast solve results to all processes
     //MPI_Bcast(&good_solve, 1, MPI::BOOL, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&previous_solve, 1, MPI::BOOL, 0, MPI_COMM_WORLD);
+    formic::mpi::bcast(&previous_solve, 1);
 
     // if the previous solve fails(imaginary energy gained), reset eigensolver 
     if ( !previous_solve && my_rank == 0 ) {
@@ -555,7 +562,7 @@ void cqmc::engine::HDLinMethodUpdater::engine_update_no_matrix(const formic::Var
   }
 
   // save the wavefunction variables resulting from the update 
-  MPI_Bcast(&vf_var.at(0), vf_var.size(), MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  formic::mpi::bcast(&vf_var.at(0), vf_var.size());
 
   // after solve for eigenvector, we recover the original derivative vectors
   mbuilder -> MatrixRecover(); 
@@ -595,10 +602,12 @@ void cqmc::engine::HDLinMethodUpdater::engine_update_spam(const formic::VarDeps 
 {
 
   // get rank number and number of ranks 
-  int my_rank; 
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank();
+  int num_rank = formic::mpi::size();
+  //int my_rank; 
+  //int num_rank;
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // get the number of total variables + 1 
   const int Ntot = ( var_deps_use ? (dep_ptr -> n_tot() + 1) : _der_rat.cols());
@@ -716,7 +725,7 @@ void cqmc::engine::HDLinMethodUpdater::engine_update_spam(const formic::VarDeps 
     
     // broadcast solve results to all processes
     //MPI_Bcast(&good_solve, 1, MPI::BOOL, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&previous_solve, 1, MPI::BOOL, 0, MPI_COMM_WORLD);
+    formic::mpi::bcast(&previous_solve, 1);
     
     // if the previous solve fails(imaginary energy gained), reset eigensolver 
     if ( !previous_solve ) {
@@ -728,7 +737,7 @@ void cqmc::engine::HDLinMethodUpdater::engine_update_spam(const formic::VarDeps 
   }
 
   // save the wavefunction variables resulting from the update 
-  MPI_Bcast(&vf_var.at(0), vf_var.size(), MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  formic::mpi::bcast(&vf_var.at(0), vf_var.size());
 
   // after solve for eigenvector, we recover the original derivative vectors
   mbuilder -> MatrixRecover(); 

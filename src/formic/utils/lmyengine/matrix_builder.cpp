@@ -11,7 +11,7 @@
 #include<numeric>
 #include<cassert>
 #include<algorithm>
-#include<mpi.h>
+//#include<mpi.h>
 
 #include<boost/format.hpp>
 #include<boost/shared_ptr.hpp>
@@ -20,6 +20,7 @@
 
 #include<formic/utils/exception.h>
 #include<formic/utils/lapack_interface.h>
+#include<formic/utils/mpi_interface.h>
 #include<formic/utils/lmyengine/matrix_builder.h>
 
 
@@ -176,10 +177,10 @@ void cqmc::engine::HamOvlpBuilderHD::finish_sample(const double total_weight)
 {
 
   // get rank number and number of ranks 
-  int my_rank; 
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank(); 
+  int num_rank = formic::mpi::size();
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // temporary matrices used in mpi reduce
   _hmat.reset(_hmat_temp.rows(), _hmat_temp.cols(), 0.0);
@@ -188,10 +189,10 @@ void cqmc::engine::HamOvlpBuilderHD::finish_sample(const double total_weight)
     _ssmat.reset(_ssmat_temp.rows(), _ssmat_temp.cols(), 0.0);
 
   // mpi reduce 
-  MPI_Reduce(&_hmat_temp.at(0,0), &_hmat.at(0,0), _hmat_temp.size(), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&_smat_temp.at(0,0), &_smat.at(0,0), _smat_temp.size(), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  formic::mpi::reduce(&_hmat_temp.at(0,0), &_hmat.at(0,0), _hmat_temp.size(), MPI::SUM);
+  formic::mpi::reduce(&_smat_temp.at(0,0), &_smat.at(0,0), _smat_temp.size(), MPI::SUM);
   if ( _ss_build ) 
-    MPI_Reduce(&_ssmat_temp.at(0,0), &_ssmat.at(0,0), _ssmat_temp.size(), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);   
+    formic::mpi::reduce(&_ssmat_temp.at(0,0), &_ssmat.at(0,0), _ssmat_temp.size(), MPI::SUM);   
  
   // compute the average 
   _hmat /= total_weight; 
@@ -228,10 +229,10 @@ void cqmc::engine::HamOvlpBuilderHD::MatrixBuild(std::ostream & output)
 {
 
   // get rank number and number of ranks 
-  int my_rank; 
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank(); 
+  int num_rank = formic::mpi::size();
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // before computing the matrix, first combine bare derivative ratio and local energy derivative with respect to harmonic davidson shift 
   formic::Matrix<double> _hle_der;
@@ -342,23 +343,23 @@ void cqmc::engine::HamOvlpBuilderHD::MatrixBuild(std::ostream & output)
   x[1] = _vgsa;
 
   // all reduce 
-  MPI_Allreduce(x, y, nred, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  formic::mpi::allreduce(x, y, nred, MPI::SUM);
 
   // record results
   _total_weight = y[0];
   _vgsa = y[1] / _total_weight;
 
   // now do mpi reduce 
-  MPI_Reduce(&_hmat_temp.at(0,0), &_hmat.at(0,0), _hmat_temp.size(), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&_smat_temp.at(0,0), &_smat.at(0,0), _smat_temp.size(), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  formic::mpi::reduce(&_hmat_temp.at(0,0), &_hmat.at(0,0), _hmat_temp.size(), MPI::SUM);
+  formic::mpi::reduce(&_smat_temp.at(0,0), &_smat.at(0,0), _smat_temp.size(), MPI::SUM);
 
   // if doing variance correct calculation, reduce nomral linear method overlap matrix 
   if ( _variance_correct ) 
-    MPI_Reduce(&_lsmat_temp.at(0,0), &_lsmat.at(0,0), _lsmat_temp.size(), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    formic::mpi::reduce(&_lsmat_temp.at(0,0), &_lsmat.at(0,0), _lsmat_temp.size(), MPI::SUM);
 
   // if requested, also reduce S^2 matrix 
   if ( _ss_build ) 
-    MPI_Reduce(&_ssmat_temp.at(0,0), &_ssmat.at(0,0), _ssmat_temp.size(), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    formic::mpi::reduce(&_ssmat_temp.at(0,0), &_ssmat.at(0,0), _ssmat_temp.size(), MPI::SUM);
 
   // finally
   _hmat /= (_total_weight * _vgsa);
@@ -432,8 +433,8 @@ double cqmc::engine::HamOvlpBuilderHD::MatrixAbsorb()
   x_appro[1] = _vgsa_appro;
 
   // all reduce 
-  MPI_Allreduce(x, y, nred, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-  MPI_Allreduce(x_appro, y_appro, nred, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  formic::mpi::allreduce(x, y, nred, MPI::SUM);
+  formic::mpi::allreduce(x_appro, y_appro, nred, MPI::SUM);
 
   // record results
   _total_weight = y[0];
@@ -546,10 +547,10 @@ void cqmc::engine::HamOvlpBuilderHD::convert_to_ind_var_form(const formic::VarDe
 void cqmc::engine::HamOvlpBuilderHD::d_inv_half_trans()
 {  
   // get rank number and number of ranks 
-  int my_rank;
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank();
+  int num_rank = formic::mpi::size();
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   if (my_rank == 0) {
     // first get D^(-1/2) matrix 
@@ -578,10 +579,10 @@ void cqmc::engine::HamOvlpBuilderHD::d_inv_half_trans()
 void cqmc::engine::HamOvlpBuilderHD::proj_ground_out_fder()
 {
   // get rank number and number of ranks 
-  int my_rank;
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank();
+  int num_rank = formic::mpi::size();
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   if ( my_rank == 0 ) {
     // get matrix dimension 
@@ -631,10 +632,10 @@ formic::Matrix<double> cqmc::engine::HamOvlpBuilderHD::ovlp_pseudo_inv(const dou
 {
   
   // get rank number and number of ranks 
-  int my_rank;
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank();
+  int num_rank = formic::mpi::size();
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
  
   // compute SVD on root process 
   formic::Matrix<double> u;
@@ -669,10 +670,10 @@ formic::Matrix<double> cqmc::engine::HamOvlpBuilderHD::ovlp_pseudo_inv(const dou
 void cqmc::engine::HamOvlpBuilderHD::derivative_analyze(std::ostream & fout)
 {
   // get rank number and number of ranks 
-  int my_rank;
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank();
+  int num_rank = formic::mpi::size();
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // analyze derivative vectors on root process
   if ( my_rank == 0 ) {

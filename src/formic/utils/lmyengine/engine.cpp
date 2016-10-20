@@ -8,7 +8,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 #include<vector>
-#include<mpi.h>
+//#include<mpi.h>
 #include<string>
 #include<algorithm>
 #include<utility>
@@ -24,6 +24,7 @@
 #include <formic/utils/lmyengine/engine_timing.h>
 #include <formic/utils/exception.h>
 #include <formic/utils/lapack_interface.h>
+#include <formic/utils/mpi_interface.h>
 
 /////////////////////////////////////////////////////////////////////////////////
 /// \brief constructor with given parameters
@@ -534,10 +535,10 @@ void cqmc::engine::LMYEngine::take_sample(double local_en,
 void cqmc::engine::LMYEngine::sample_finish() {
   
   // get rank number and number of ranks
-  int my_rank;
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank();
+  int num_rank = formic::mpi::size();
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // evaluate total weight 
   double _tw = 0.0;
@@ -545,7 +546,7 @@ void cqmc::engine::LMYEngine::sample_finish() {
     _tw += _weight.at(i) * _vg.at(i);
 
   double total_weight = 0.0;
-  MPI_Allreduce(&_tw, &total_weight, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  formic::mpi::allreduce(&_tw, &total_weight, 1, MPI::SUM);
 
   // for energy evaluation only calculation, do nothing
   if ( !_wfn_update )
@@ -604,7 +605,7 @@ void cqmc::engine::LMYEngine::sample_finish() {
       double all_samp_weight = 0.0;
 
       // mpi all reduce
-      MPI_Allreduce(&total_weight, &all_samp_weight, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+      formic::mpi::allreduce(&total_weight, &all_samp_weight, 1, MPI::SUM);
 
       // call the finalize function for the block algorithm object
       _lmb.mpi_finalize(all_samp_weight);
@@ -625,15 +626,15 @@ void cqmc::engine::LMYEngine::sample_finish() {
       double all_samp_weight = 0.0;
 
       // mpi all reduce
-      MPI_Allreduce(&tot_weight, &all_samp_weight, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+      formic::mpi::allreduce(&tot_weight, &all_samp_weight, 1, MPI::SUM);
 
       // get space for mpi reduce
       formic::Matrix<double> hh_block_tot(hh_block.rows(), hh_block.cols());
       formic::Matrix<double> ss_block_tot(ss_block.rows(), ss_block.cols());
 
       // compute average of matrices
-      MPI_Reduce(&hh_block.at(0,0), &hh_block_tot.at(0,0), hh_block.size(), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-      MPI_Reduce(&ss_block.at(0,0), &ss_block_tot.at(0,0), ss_block.size(), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD); 
+      formic::mpi::reduce(&hh_block.at(0,0), &hh_block_tot.at(0,0), hh_block.size(), MPI::SUM);
+      formic::mpi::reduce(&ss_block.at(0,0), &ss_block_tot.at(0,0), ss_block.size(), MPI::SUM); 
 
       // compute average on root process
       if ( my_rank == 0 ) {
@@ -703,10 +704,10 @@ void cqmc::engine::LMYEngine::energy_target_compute() {
 void cqmc::engine::LMYEngine::wfn_update_prep() {
 
    // get rank number and number of ranks
-  int my_rank;
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank();
+  int num_rank = formic::mpi::size();
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
   //std::cout << "entering wfn_update_prep on rank " << my_rank << std::endl;
  
   // if we are not doing block algorithm, do nothing
@@ -859,8 +860,8 @@ void cqmc::engine::LMYEngine::call_engine(const bool exact_sampling,
                                           std::ostream & output) {
 
   // get rank number
-  int my_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  int my_rank = formic::mpi::rank();
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
 
   // simply, just call energy and target function calculation function
   cqmc::engine::et(exact_sampling,
@@ -926,8 +927,8 @@ void cqmc::engine::LMYEngine::call_engine(const formic::VarDeps * dep_ptr,
   cqmc::start_timer("eigen solver");
 
   // get rank number
-  int my_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  int my_rank = formic::mpi::rank();
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
 
   // get the number of input shift
   const int num_shift = shift_scale.size();
@@ -1104,10 +1105,10 @@ void cqmc::engine::LMYEngine::call_engine(const bool print_matrix,
   
   
   // get rank number and number of ranks 
-  int my_rank;
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank();
+  int num_rank = formic::mpi::size();
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // if this calculation is not ground state calculation, EOM will not be performed
   if ( !ground_state )
@@ -1189,10 +1190,10 @@ void cqmc::engine::LMYEngine::get_brlm_update_alg_part_one(const formic::VarDeps
 
 
   // get rank number of number of ranks
-  int my_rank;
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank();
+  int num_rank = formic::mpi::size();
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
 
   // prepare vectors telling which shifts are solved healthily
@@ -1257,10 +1258,10 @@ void cqmc::engine::LMYEngine::get_brlm_update_alg_part_two(const formic::VarDeps
                                                            std::ostream & output) {
 
   // get rank number and number of ranks
-  int my_rank;
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+  int my_rank = formic::mpi::rank();
+  int num_rank = formic::mpi::size();
+  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
   // size update vector correctly
   //std::cout << shift_scale.size() << "  " << 1 + _dep_ptr->n_tot() << std::endl;
@@ -1379,7 +1380,7 @@ void cqmc::engine::LMYEngine::get_brlm_update_alg_part_two(const formic::VarDeps
   }
 
   // broadcast solve results and wavefunction updates to all processes
-  MPI_Bcast(&updates.at(0), updates.size(), MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  formic::mpi::bcast(&updates.at(0), updates.size());
   //for (int i = 0; i < updates.size(); i++) 
   //  output << boost::format("%12.6f ") % updates.at(i);
 

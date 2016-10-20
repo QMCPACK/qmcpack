@@ -13,12 +13,13 @@
 #include<algorithm>
 #include<cmath>
 #include<sstream>
-#include<mpi.h>
+//#include<mpi.h>
 
 #include<boost/format.hpp>
 #include<boost/shared_ptr.hpp>
 
 #include<formic/utils/matrix.h>
+#include<formic/utils/mpi_interface.h>
 #include<formic/utils/lmyengine/block_alg.h>
 #include<formic/utils/lmyengine/block_detail.h>
 #include<formic/utils/lmyengine/eigen_solver.h>
@@ -162,11 +163,8 @@ void cqmc::engine::LMBlocker::solve_for_block_dirs(const formic::VarDeps * dep_p
                                                    const double omega) {
 
   // get rank number and number of ranks
-  int my_rank;
-  int num_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
-
+  int my_rank = formic::mpi::rank();
+  
   // clear eigenvectors
   m_ou_dd.clear();
 
@@ -272,7 +270,8 @@ void cqmc::engine::LMBlocker::solve_for_block_dirs(const formic::VarDeps * dep_p
   // broadcast thie vector to all process
   for (int b = 0; b < m_hdata.nb(); b++) {
     for (int s = 0; s < shift_scale.size(); s++) {
-      MPI_Bcast(&mat_size.at(b).at(s).at(0), 2, MPI_INT, 0, MPI_COMM_WORLD);
+      formic::mpi::bcast(&mat_size.at(b).at(s).at(0), 2);
+      //MPI_Bcast(&mat_size.at(b).at(s).at(0), 2, MPI_INT, 0, MPI_COMM_WORLD);
     }
   }
 
@@ -290,7 +289,8 @@ void cqmc::engine::LMBlocker::solve_for_block_dirs(const formic::VarDeps * dep_p
   // broadcast the solve results for each block and each shift to all processes
   for (int b = 0; b < m_hdata.nb(); b++) {
     for (int s = 0; s < shift_scale.size(); s++) {
-      MPI_Bcast(&block_ups.at(b).at(s).at(0,0), block_ups.at(b).at(s).size(), MPI_DOUBLE, 0, MPI_COMM_WORLD);
+      formic::mpi::bcast(&block_ups.at(b).at(s).at(0,0), block_ups.at(b).at(s).size());
+      //MPI_Bcast(&block_ups.at(b).at(s).at(0,0), block_ups.at(b).at(s).size(), MPI_DOUBLE, 0, MPI_COMM_WORLD);
     }
   }
 }

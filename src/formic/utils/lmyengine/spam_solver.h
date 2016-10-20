@@ -57,7 +57,7 @@
 #include<boost/format.hpp>
 #include<boost/shared_ptr.hpp>
 
-#include<mpi.h>
+//#include<mpi.h>
 
 #include<formic/utils/lmyengine/var_dependencies.h>
 #include<formic/utils/lmyengine/eigen_solver.h>
