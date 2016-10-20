@@ -170,13 +170,17 @@ public:
     return 1;
   }
 
+#ifdef HAVE_LMY_ENGINE
   Return_t LMYEngineCost(const bool needDeriv, cqmc::engine::LMYEngine * EngineObj);
+#endif
 
   virtual void getConfigurations(const std::string& aroot)=0;
 
   virtual void checkConfigurations()=0;
 
+#ifdef HAVE_LMY_ENGINE
   virtual void engine_checkConfigurations(cqmc::engine::LMYEngine * EngineObj)=0;
+#endif
 
   void setRng(std::vector<RandomGenerator_t*>& r);
 

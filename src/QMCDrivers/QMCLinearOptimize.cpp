@@ -121,6 +121,7 @@ void QMCLinearOptimize::start()
   t1.restart();
 }
 
+#ifdef HAVE_LMY_ENGINE
 void QMCLinearOptimize::engine_start( cqmc::engine::LMYEngine * EngineObj ) 
 {
   app_log() << "entering engine_start function" << std::endl;
@@ -155,6 +156,7 @@ void QMCLinearOptimize::engine_start( cqmc::engine::LMYEngine * EngineObj )
   app_log() << "  <log>" << std::endl;
   t1.restart();
 }
+#endif
 
 void QMCLinearOptimize::finish()
 {

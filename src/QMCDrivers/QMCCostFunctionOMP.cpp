@@ -610,8 +610,10 @@ void QMCCostFunctionOMP::engine_checkConfigurations(cqmc::engine::LMYEngine * En
         for (int i = 0; i < HDsaved.size(); i++) 
           le_der_samp.at(i+1) = HDsaved.at(i) + etmp * Dsaved.at(i);
         
+#ifdef HAVE_LMY_ENGINE
         // pass into engine
         EngineObj->take_sample(der_rat_samp, le_der_samp, le_der_samp, 1.0, saved[REWEIGHT]);
+#endif
 
         //etmp= hClones[ip]->evaluate(wRef);
       }
@@ -624,8 +626,10 @@ void QMCCostFunctionOMP::engine_checkConfigurations(cqmc::engine::LMYEngine * En
       if(nlpp)
         saved[ENERGY_FIXED] -= nlpp->Value;
     }
+#ifdef HAVE_LMY_ENGINE
     // engine finish taking samples 
     EngineObj->sample_finish();
+#endif
 
     //add them all using reduction
     et_tot+=e0;

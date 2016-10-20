@@ -972,20 +972,20 @@ QMCCostFunctionBase::lineoptimization(const std::vector<Return_t>& x0, const std
 /// \param[in]      needDeriv             whether derivative vectors should be computed
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
+#ifdef HAVE_LMY_ENGINE
 QMCCostFunctionBase::Return_t QMCCostFunctionBase::LMYEngineCost(const bool needDeriv, cqmc::engine::LMYEngine * EngineObj) {
 
   // prepare local energies, weights, and possibly derivative vectors, and compute standard cost
   const Return_t standardCost = this->Cost(needDeriv);
 
   // if we are using the LMYEngine, compute and return it's cost function value
-  #ifdef HAVE_LMY_ENGINE
   return this->LMYEngineCost_detail(EngineObj);
-  #endif
 
   // otherwise return the standard cost function
   return standardCost;
 
 }
+#endif
 
 }
 /***************************************************************************

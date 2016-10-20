@@ -83,7 +83,9 @@ private:
   std::vector<double> prepare_shifts(const double central_shift) const;
 
   // previous update
+#ifdef HAVE_LMY_ENGINE
   std::vector<formic::ColVec<double> > previous_update;
+#endif
 
   void print_cost_summary_header();
   void print_cost_summary(const double si, const double ss, const RealType mc, const RealType cv, const int ind, const int bi, const bool gu);

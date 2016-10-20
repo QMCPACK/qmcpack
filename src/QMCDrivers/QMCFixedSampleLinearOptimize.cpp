@@ -59,7 +59,11 @@ namespace qmcplusplus
 
 QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration& w,
     TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool):
-  QMCLinearOptimize(w,psi,h,hpool,ppool), vdeps(1,std::vector<double>()), Max_iterations(1), exp0(-16), nstabilizers(3),
+  QMCLinearOptimize(w,psi,h,hpool,ppool), 
+#ifdef HAVE_LMY_ENGINE
+vdeps(1,std::vector<double>()),
+#endif
+ Max_iterations(1), exp0(-16), nstabilizers(3),
   stabilizerScale(2.0), bigChange(50), w_beta(0.0),  MinMethod("quartic"), GEVtype("mixed"),
   StabilizerMethod("best"), GEVSplit("no"), stepsize(0.25), doAdaptiveThreeShiftStr("no"), doAdaptiveThreeShift(false),
   targetExcitedStr("no"), targetExcited(false), block_lmStr("no"), block_lm(false), shift_i(0.01), shift_s(1.00),
@@ -93,7 +97,7 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
   m_param.add(shift_s, "shift_s", "double");
   m_param.add(num_shifts, "num_shifts", "int");
 
-  #ifdef HAVE_LMY_ENGINE
+#ifdef HAVE_LMY_ENGINE
   //app_log() << "construct QMCFixedSampleLinearOptimize" << endl;
   std::vector<double> shift_scales(3, 1.0);
   EngineObj = new cqmc::engine::LMYEngine(&vdeps, 
@@ -168,9 +172,12 @@ bool QMCFixedSampleLinearOptimize::run()
 {
 
   // if requested, perform the update via the adaptive three-shift method
+
+#ifdef HAVE_LMY_ENGINE
   if ( this->doAdaptiveThreeShift ) {
     return this->adaptive_three_shift_run();
   }
+#endif
 
   start();
   bool Valid(true);
@@ -722,6 +729,7 @@ void QMCFixedSampleLinearOptimize::solveShiftsWithoutLMYEngine(const std::vector
 /// \return  ???
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
+#ifdef HAVE_LMY_ENGINE
 bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
 
   // remember what the cost function grads flag was
@@ -1031,6 +1039,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
   return (optTarget->getReportCounter() > 0);
 
 }
+#endif
 
 }
 /***************************************************************************
