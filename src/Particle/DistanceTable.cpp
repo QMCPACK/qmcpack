@@ -30,7 +30,7 @@ namespace qmcplusplus
  *\param s source/target particle set
  *\return index of the distance table with the name
  */
-DistanceTableData* createDistanceTable(ParticleSet& s)
+DistanceTableData* createDistanceTable(ParticleSet& s, int dt_type)
 {
   typedef OHMMS_PRECISION RealType;
   enum {DIM=OHMMS_DIM};
@@ -95,6 +95,7 @@ DistanceTableData* createDistanceTable(ParticleSet& s)
     dt = new SymmetricDTD<RealType,DIM,SUPERCELL_OPEN>(s,s);
   }
   dt->CellType=sc;
+  dt->DTType=dt_type;
   std::ostringstream p;
   p << s.getName() << "_" << s.getName();
   dt->Name=p.str();//assign the table name
@@ -114,7 +115,7 @@ DistanceTableData* createDistanceTable(ParticleSet& s)
  *\param s source/target particle set
  *\return index of the distance table with the name
  */
-DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t)
+DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int dt_type)
 {
   typedef OHMMS_PRECISION RealType;
   enum {DIM=OHMMS_DIM};
@@ -180,6 +181,7 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t)
   }
 
   dt->CellType=sc;
+  dt->DTType=dt_type;
   std::ostringstream p;
   p << s.getName() << "_" << t.getName();
   dt->Name=p.str();//assign the table name
@@ -200,9 +202,9 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t)
  *\param s source/target particle set
  *\return DistanceTableData*
  */
-DistanceTableData* DistanceTable::add(ParticleSet& s)
+DistanceTableData* DistanceTable::add(ParticleSet& s, int dt_type)
 {
-  int tid=s.addTable(s);
+  int tid=s.addTable(s,dt_type);
   return s.DistTables[tid];
 }
 
@@ -211,9 +213,9 @@ DistanceTableData* DistanceTable::add(ParticleSet& s)
  *\param t target particle set
  *\return DistanceTableData*
  */
-DistanceTableData* DistanceTable::add(const ParticleSet& s, ParticleSet& t)
+DistanceTableData* DistanceTable::add(const ParticleSet& s, ParticleSet& t, int dt_type)
 {
-  int tid=t.addTable(s);
+  int tid=t.addTable(s,dt_type);
   return t.DistTables[tid];
 }
 

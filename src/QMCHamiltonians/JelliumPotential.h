@@ -48,7 +48,7 @@ struct JelliumPotential: public QMCHamiltonianBase
   JelliumPotential(ParticleSet& ions, ParticleSet& els):
     sourcePtcl(ions), d_table(0)
   {
-    d_table = DistanceTable::add(ions,els);
+    d_table = DistanceTable::add(ions,els,DT_AOS);
     //index for attribute charge
     SpeciesSet& tspecies(ions.getSpeciesSet());
     int iz = tspecies.addAttribute("charge");
@@ -74,7 +74,7 @@ struct JelliumPotential: public QMCHamiltonianBase
 
   void resetTargetParticleSet(ParticleSet& P)
   {
-    d_table = DistanceTable::add(sourcePtcl,P);
+    d_table = DistanceTable::add(sourcePtcl,P,DT_AOS);
   }
 
   ~JelliumPotential() { }

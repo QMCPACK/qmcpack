@@ -35,7 +35,7 @@ CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns,
   two_body_quantum_domain(ions,elns);
   //Use singleton pattern
   //AB = new LRHandlerType(ions);
-  myTableIndex=elns.addTable(ions);
+  myTableIndex=elns.addTable(ions,DT_AOS);
   initBreakup(elns);
   prefix="Flocal";
   app_log() << "  Maximum K shell " << AB->MaxKshell << std::endl;
@@ -71,7 +71,7 @@ CoulombPBCAB:: ~CoulombPBCAB()
 
 void CoulombPBCAB::resetTargetParticleSet(ParticleSet& P)
 {
-  int tid=P.addTable(PtclA);
+  int tid=P.addTable(PtclA,DT_AOS);
   if(tid != myTableIndex)
   {
     APP_ABORT("CoulombPBCAB::resetTargetParticleSet found inconsistent table index");

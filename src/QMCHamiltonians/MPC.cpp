@@ -37,7 +37,7 @@ MPC::MPC(ParticleSet& ptcl, double cutoff) :
   PtclRef(&ptcl), Ecut(cutoff), FirstTime(true),
   VlongSpline(0), DensitySpline(0)
 {
-  int it=ptcl.addTable(ptcl);
+  int it=ptcl.addTable(ptcl,DT_AOS);
   initBreakup();
 }
 

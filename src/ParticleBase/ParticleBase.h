@@ -83,13 +83,10 @@ public:
   ParticleIndex_t   ID;
   //!< Species ID
   ParticleIndex_t   GroupID;
-
   //!< Position
   ParticlePos_t    R;
-
   //!< Instantaneous Position in unit used by layout/nnlist engines, not added to myAttribList
   ParticlePos_t    curR;
-
   //!< Default constructor
   ParticleBase();
 
@@ -173,8 +170,8 @@ public:
   int addAttribute(ParticleLaplacian_t& pa);
 #endif
 
-  void create(unsigned m);
-  void create(const std::vector<int>& agroup);
+  void createBase(unsigned m);
+  void createBase(const std::vector<int>& agroup);
 
   void resize(unsigned m);
   void clear();

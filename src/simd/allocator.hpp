@@ -10,16 +10,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 /** @file allocator.hpp
- *
- * Define alignment and aligned allocators
- * e-mail: jeongnim.kim@intel.com
- *
- * Define the macros for alignment hint
- * QMC_CLINE 
- * QMC_ALIGNAS  
- *  usage: struct QMC_ALIGNAS  a {double x; double y;};
- * ASSUME_ALIGNED 
- *  usage: double *a=&A[0]; ASSUME_ALIGNED(a);
  */
 #ifndef QMCPLUSPLUS_ALLOCATOR_H
 #define QMCPLUSPLUS_ALLOCATOR_H

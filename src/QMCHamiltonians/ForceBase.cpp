@@ -32,7 +32,7 @@ ForceBase::ForceBase(ParticleSet& ions, ParticleSet& elns)
   : FirstForceIndex(-1),tries(0), Ions(ions), addionion(true)
 {
   ReportEngine PRE("ForceBase","ForceBase");
-  myTableIndex=elns.addTable(ions);
+  myTableIndex=elns.addTable(ions,DT_AOS);
   FirstTime = true;
   Nnuc = ions.getTotalNum();
   Nel = elns.getTotalNum();
@@ -94,7 +94,7 @@ void ForceBase::setObservablesF(QMCTraits::PropertySetType& plist)
   {
     FirstTime = false;
     forces_IonIon = 0.0;
-    DistanceTableData* d_aa=DistanceTable::add(Ions);
+    DistanceTableData* d_aa=DistanceTable::add(Ions,DT_AOS);
     if(addionion==true)
     {
       const ParticleSet::Scalar_t* restrict Zat=Ions.Z.first_address();

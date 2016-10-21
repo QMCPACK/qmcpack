@@ -42,7 +42,7 @@ struct GaussianPot: public QMCHamiltonianBase
     Centers=P.getTotalNum();
     d = 1.0;
     Q=1.0;
-    const DistanceTableData* d_table = DistanceTable::add(P);
+    const DistanceTableData* d_table = DistanceTable::add(P,DT_AOS);
   }
 
   ~GaussianPot() { }

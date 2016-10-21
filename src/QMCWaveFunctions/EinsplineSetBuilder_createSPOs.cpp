@@ -27,6 +27,7 @@
 #include "Numerics/HDFSTLAttrib.h"
 #include "ParticleIO/ESHDFParticleParser.h"
 #include "ParticleBase/RandomSeqGenerator.h"
+#include "Particle/DistanceTableData.h"
 #include <fftw3.h>
 #include <Utilities/ProgressReportEngine.h>
 #include <QMCWaveFunctions/einspline_helper.hpp>
@@ -101,7 +102,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   }
   else
   { //keep the one-body distance table index 
-    myTableIndex=TargetPtcl.addTable(*SourcePtcl);
+    myTableIndex=TargetPtcl.addTable(*SourcePtcl,DT_AOS);
   }
 
   ///////////////////////////////////////////////

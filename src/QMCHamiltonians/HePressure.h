@@ -48,7 +48,7 @@ struct HePressure: public QMCHamiltonianBase
   HePressure(ParticleSet& P ): sourcePtcl(&P)
   {
     UpdateMode.set(OPTIMIZABLE,1);
-    d_table = DistanceTable::add(P);
+    d_table = DistanceTable::add(P,DT_AOS);
     Return_t rho = P.G.size()/P.Lattice.Volume;
     Return_t N0 = P.G.size();
     rcutoff = P.Lattice.WignerSeitzRadius;
@@ -82,7 +82,7 @@ struct HePressure: public QMCHamiltonianBase
 
   void resetTargetParticleSet(ParticleSet& P)
   {
-    d_table = DistanceTable::add(P);
+    d_table = DistanceTable::add(P,DT_AOS);
     sourcePtcl= &P;
     Return_t rho = P.G.size()/P.Lattice.Volume;
     Return_t N0 = P.G.size();

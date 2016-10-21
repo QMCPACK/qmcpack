@@ -66,9 +66,9 @@ struct CoulombPotential: public QMCHamiltonianBase
       two_body_quantum_domain(*s,*s);
     nCenters=s->getTotalNum();
     if(t) // add source particle to target distance table
-      myTableIndex=t->addTable(*s);//add source to the target distance table list
+      myTableIndex=t->addTable(*s,DT_AOS);//add source to the target distance table list
     else // a-a
-      myTableIndex=s->addTable(*s);
+      myTableIndex=s->addTable(*s,DT_AOS);
     if(!is_active) //precompute the value
     {
       if(!copy) s->DistTables[0]->evaluate(*s);

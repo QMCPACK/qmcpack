@@ -98,7 +98,7 @@ public:
     : CenterRef(centers), FirstAddressOfdU(0), LastAddressOfdU(0)
   {
     U.resize(els.getTotalNum());
-    myTableIndex=els.addTable(CenterRef);
+    myTableIndex=els.addTable(CenterRef,DT_AOS);
     //allocate vector of proper size  and set them to 0
     Funique.resize(CenterRef.getSpeciesSet().getTotalNum(),0);
     Fs.resize(CenterRef.getTotalNum(),0);

@@ -37,7 +37,7 @@ struct HusePot: public QMCHamiltonianBase
   HusePot(ParticleSet& P):m(0),V(0),pf(0),K(0),L(0)
   {
     root3=std::sqrt(3);
-    const DistanceTableData* d_table = DistanceTable::add(P);
+    const DistanceTableData* d_table = DistanceTable::add(P,DT_AOS);
   }
 
   ~HusePot() { }

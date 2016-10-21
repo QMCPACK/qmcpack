@@ -100,7 +100,7 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
   if(ions->getTotalNum()==1)
     return initAtom(ions,els);
 
-  DistanceTableData* d_ii = DistanceTable::add(*ions);
+  DistanceTableData* d_ii = DistanceTable::add(*ions,DT_AOS);
   //d_ii->create(1);
   d_ii->evaluate(*ions);
   const ParticleSet::ParticleIndex_t& grID(ions->GroupID);

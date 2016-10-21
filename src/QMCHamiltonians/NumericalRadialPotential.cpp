@@ -24,7 +24,7 @@ NumericalRadialPotential::NumericalRadialPotential(ParticleSet& center): sourceP
   VofR(0)
 {
   IsPairPotential=true;
-  d_table = DistanceTable::add(center);
+  d_table = DistanceTable::add(center,DT_AOS);
   Centers = center.getTotalNum();
 }
 
@@ -32,7 +32,7 @@ NumericalRadialPotential::NumericalRadialPotential(ParticleSet& center, Particle
   sourcePtcl(center), VofR(0)
 {
   IsPairPotential=false;
-  d_table = DistanceTable::add(center,visitor);
+  d_table = DistanceTable::add(center,visitor,DT_AOS);
   Centers = center.getTotalNum();
 }
 
@@ -46,9 +46,9 @@ NumericalRadialPotential::~NumericalRadialPotential()
 void NumericalRadialPotential::resetTargetParticleSet(ParticleSet& P)
 {
   if(IsPairPotential)
-    d_table = DistanceTable::add(P);
+    d_table = DistanceTable::add(P,DT_AOS);
   else
-    d_table = DistanceTable::add(sourcePtcl,P);
+    d_table = DistanceTable::add(sourcePtcl,P,DT_AOS);
 }
 
 QMCHamiltonianBase::Return_t

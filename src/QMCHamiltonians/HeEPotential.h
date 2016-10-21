@@ -42,7 +42,7 @@ struct HeePotential: public QMCHamiltonianBase
     A=0.655;
     B=89099;
     C=12608;
-    d_table = DistanceTable::add(I,P);
+    d_table = DistanceTable::add(I,P,DT_AOS);
 //       rc = P.Lattice.WignerSeitzRadius;
 //       app_log()<<" RC is "<<rc<< std::endl;
 //       if (rc>0) trunc= A*std::pow(rc,-4) * ( B/(C+std::pow(rc,6)) - 1 );
@@ -60,7 +60,7 @@ struct HeePotential: public QMCHamiltonianBase
 
   void resetTargetParticleSet(ParticleSet& P)
   {
-    d_table = DistanceTable::add(P);
+    d_table = DistanceTable::add(P,DT_AOS);
     PtclRef=&P;
   }
 

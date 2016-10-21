@@ -85,9 +85,9 @@ ParticleSet::ParticleSet(const ParticleSet& p)
   if(p.DistTables.size())
   {
     app_log() << "  Cloning distance tables. It has " << p.DistTables.size() << std::endl;
-    addTable(*this); //first is always for this-this paier
+    addTable(*this,DistTables[0]->DTType); //first is always for this-this paier
     for (int i=1; i<p.DistTables.size(); ++i)
-      addTable(p.DistTables[i]->origin());
+      addTable(p.DistTables[i]->origin(),DistTables[i]->DTType);
   }
   if(p.SK)
   {
@@ -110,6 +110,22 @@ ParticleSet::~ParticleSet()
   if (SK)
     delete SK;
   delete_iter(Sphere.begin(), Sphere.end());
+}
+
+void ParticleSet::create(unsigned n)
+{
+  createBase(n);
+#if ENABLE_PTCL_SOA
+  RSoA.resize(n);
+#endif
+}
+
+void ParticleSet::create(const std::vector<int>& agroup)
+{
+  createBase(agroup);
+#if ENABLE_PTCL_SOA
+  RSoA.resize(getTotalNum());
+#endif
 }
 
 void ParticleSet::set_quantum_domain(quantum_domains qdomain)
@@ -152,27 +168,20 @@ void ParticleSet::initParticleSet()
   Mass.setObjName("mass");
   SameMass=true; //default is SameMass
   addAttribute(Mass);
+
   Z.setTypeName(ParticleTags::scalartype_tag);
   Z.setObjName("charge");
   addAttribute(Z);
-  IndirectID.setTypeName(ParticleTags::indextype_tag); //add PCID tags
-  IndirectID.setObjName("pcid");
+
+  PCID.setTypeName(ParticleTags::indextype_tag); //add PCID tags
+  PCID.setObjName("pcid");
   addAttribute(PCID);
+
   IndirectID.setTypeName(ParticleTags::indextype_tag); //add IndirectID tags
   IndirectID.setObjName("id1");
   addAttribute(IndirectID);
-  //orgID.setTypeName(ParticleTags::indextype_tag); //add ID tags
-  //orgID.setObjName("id0");
-  //addAttribute(orgID);
-  //
-  //orgGroupID.setTypeName(ParticleTags::indextype_tag); //add ID tags
-  //orgGroupID.setObjName("gid0");
-  //addAttribute(orgGroupID);
+
   myTwist=0.0;
-  ////this has to be in unit
-  Runit.setObjName("posunit");
-  Runit.InUnit=PosUnit::LatticeUnit;
-  addAttribute(Runit);
 }
 
 void ParticleSet::resetGroups()
@@ -394,12 +403,12 @@ void ParticleSet::checkBoundBox(RealType rb)
 //  }
 //  DistTables.push_back(d_table);
 //}
-int ParticleSet::addTable(const ParticleSet& psrc)
+int ParticleSet::addTable(const ParticleSet& psrc, int dt_type)
 {
   if (DistTables.empty())
   {
     DistTables.reserve(4);
-    DistTables.push_back(createDistanceTable(*this));
+    DistTables.push_back(createDistanceTable(*this,dt_type));
     //add  this-this pair
     myDistTableMap.clear();
     myDistTableMap[ObjectTag]=0;
@@ -411,6 +420,10 @@ int ParticleSet::addTable(const ParticleSet& psrc)
   if (psrc.tag() == ObjectTag)
   {
     app_log() << "  ... ParticleSet::addTable Reuse Table #" << 0 << " " << DistTables[0]->Name << std::endl;
+    if(DistTables[0]->DTType != dt_type)
+    {
+      APP_ABORT("ParticleSet::addTable Cannot mix AoS and SoA distance tables.\n");
+    }
     return 0;
   }
   int tsize=DistTables.size(),tid;
@@ -418,7 +431,7 @@ int ParticleSet::addTable(const ParticleSet& psrc)
   if (tit == myDistTableMap.end())
   {
     tid=DistTables.size();
-    DistTables.push_back(createDistanceTable(psrc,*this));
+    DistTables.push_back(createDistanceTable(psrc,*this,dt_type));
     myDistTableMap[psrc.tag()]=tid;
     DistTables[tid]->ID=tid;
     app_log() << "  ... ParticleSet::addTable Create Table #" << tid << " " << DistTables[tid]->Name << std::endl;
@@ -427,6 +440,10 @@ int ParticleSet::addTable(const ParticleSet& psrc)
   {
     tid = (*tit).second;
     app_log() << "  ... ParticleSet::addTable Reuse Table #" << tid << " " << DistTables[tid]->Name << std::endl;
+    if(DistTables[tid]->DTType != dt_type)
+    {
+      APP_ABORT("ParticleSet::addTable Cannot mix AoS and SoA distance tables.\n");
+    }
   }
   app_log().flush();
   return tid;
@@ -767,12 +784,6 @@ void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
   R = awalker.R;
   G = awalker.G;
   L = awalker.L;
-  //awalker.DataSet.rewind();
-  //identical to copyFromBuffer but forbid using buffer
-//#if defined(PACK_DISTANCETABLES)
-//    for(int i=0; i< DistTables.size(); i++) DistTables[i]->copyFromBuffer(buf);
-//    if(SK) SK->copyFromBuffer(buf);
-//#else
   if (pbyp)
   {
     for (int i=0; i< DistTables.size(); i++)
@@ -781,7 +792,6 @@ void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
     if(SK && SK->DoUpdate)
       SK->UpdateAllPart(*this);
   }
-//#endif
 }
 
 void ParticleSet::saveWalker(Walker_t& awalker)
@@ -795,113 +805,6 @@ void ParticleSet::saveWalker(Walker_t& awalker)
   //awalker.DataSet.rewind();
 }
 
-
-//  void
-//  ParticleSet::registerData(Walker_t& awalker, PooledData<RealType>& buf) {
-//    R = awalker.R;
-//#if defined(PACK_DISTANCETABLES)
-//    for(int i=0; i< DistTables.size(); i++)
-//    {
-//      DistTables[i]->evaluate(*this);
-//      DistTables[i]->registerData(buf);
-//    }
-//    if(SK)
-//    {
-//      SK->UpdateAllPart();
-//      SK->registerData(buf);
-//    }
-//#else
-//    for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
-//    if(SK) SK->UpdateAllPart();
-//#endif
-//  }
-//
-//  void
-//  ParticleSet::registerData(PooledData<RealType>& buf) {
-//#if defined(PACK_DISTANCETABLES)
-//    for(int i=0; i< DistTables.size(); i++)
-//    {
-//      DistTables[i]->evaluate(*this);
-//      DistTables[i]->registerData(buf);
-//    }
-//    if(SK)
-//    {
-//      SK->UpdateAllPart();
-//      SK->registerData(buf);
-//    }
-//#else
-//    for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
-//    if(SK) SK->UpdateAllPart();
-//#endif
-//  }
-//
-//  void
-//  ParticleSet::updateBuffer(Walker_t& awalker, PooledData<RealType>& buf) {
-//    R = awalker.R;
-//#if defined(PACK_DISTANCETABLES)
-//    for(int i=0; i< DistTables.size(); i++)
-//    {
-//      DistTables[i]->evaluate(*this);
-//      DistTables[i]->updateBuffer(buf);
-//    }
-//    if(SK)
-//    {
-//      SK->UpdateAllPart();
-//      SK->updateBuffer(buf);
-//    }
-//#else
-//    for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
-//    if(SK) SK->UpdateAllPart();
-//#endif
-//  }
-//
-//  void
-//  ParticleSet::updateBuffer(PooledData<RealType>& buf) {
-//#if defined(PACK_DISTANCETABLES)
-//    for(int i=0; i< DistTables.size(); i++)
-//    {
-//      DistTables[i]->evaluate(*this);
-//      DistTables[i]->updateBuffer(buf);
-//    }
-//    if(SK)
-//    {
-//      SK->UpdateAllPart();
-//      SK->updateBuffer(buf);
-//    }
-//#else
-//    //for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
-//    if(SK) SK->UpdateAllPart();
-//#endif
-//  }
-//
-//  void
-//  ParticleSet::copyToBuffer(PooledData<RealType>& buf) {
-//#if defined(PACK_DISTANCETABLES)
-//    for(int i=0; i< DistTables.size(); i++) DistTables[i]->copyToBuffer(buf);
-//    //Do not change SK: 2007-05-18
-//    //if(SK) SK->copyToBuffer(buf);
-//    if(SK)
-//    {//need to calculate the Sk with the current position
-//      if(!SK->DoUpdate) SK->UpdateAllPart();
-//      SK->copyToBuffer(buf);
-//    }
-//#else
-//    if(SK && !SK->DoUpdate) SK->UpdateAllPart();
-//#endif
-//  }
-//
-//  void
-//  ParticleSet::copyFromBuffer(PooledData<RealType>& buf)
-//  {
-//#if defined(PACK_DISTANCETABLES)
-//    for(int i=0; i< DistTables.size(); i++) DistTables[i]->copyFromBuffer(buf);
-//    if(SK) SK->copyFromBuffer(buf);
-//#else
-//    for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
-//    if(SK) SK->UpdateAllPart();
-//#endif
-//  }
-//
 void ParticleSet::initPropertyList()
 {
   PropertyList.clear();

@@ -35,7 +35,7 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active,
   //save source tag
   SourceID=ref.tag();
   //create a distance table: just to get the table name
-  DistanceTableData *d_aa = DistanceTable::add(ref);
+  DistanceTableData *d_aa = DistanceTable::add(ref,DT_AOS);
   PtclRefName=d_aa->Name;
   initBreakup(ref);
   prefix="F_AA";

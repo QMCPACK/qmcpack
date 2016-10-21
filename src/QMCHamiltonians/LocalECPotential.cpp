@@ -28,7 +28,7 @@ LocalECPotential::LocalECPotential(const ParticleSet& ions, ParticleSet& els):
   set_energy_domain(potential);
   two_body_quantum_domain(ions,els);
   NumIons=ions.getTotalNum();
-  myTableIndex=els.addTable(ions);
+  myTableIndex=els.addTable(ions,DT_AOS);
   //allocate null
   PPset.resize(ions.getSpeciesSet().getTotalNum(),0);
   PP.resize(NumIons,0);
@@ -48,7 +48,7 @@ LocalECPotential::~LocalECPotential()
 
 void LocalECPotential::resetTargetParticleSet(ParticleSet& P)
 {
-  int tid=P.addTable(IonConfig);
+  int tid=P.addTable(IonConfig,DT_AOS);
   if(tid != myTableIndex)
   {
     APP_ABORT("  LocalECPotential::resetTargetParticleSet found a different distance table index.");

@@ -1318,6 +1318,7 @@ inline void randomize(ParticleAttrib<TinyVector<T,D> >& displ, T fac)
 
 void WaveFunctionTester::runRatioV()
 {
+#if 0
   app_log() << "WaveFunctionTester::runRatioV " << std::endl;
   int nat = W.getTotalNum();
   Tau=0.025;
@@ -1375,6 +1376,7 @@ void WaveFunctionTester::runRatioV()
     }
     ++it;
   }
+#endif
 }
 
 void WaveFunctionTester::runGradSourceTest()

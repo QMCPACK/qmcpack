@@ -329,7 +329,7 @@ ParticleBase<PL>::getTensorAttrib(const std::string& aname)
 /*@}*/
 
 template<class PL>
-void ParticleBase<PL>::create(unsigned m)
+void ParticleBase<PL>::createBase(unsigned m)
 {
   for(int i=0; i< INDEX.size(); i++)
     INDEX[i]->create(m);
@@ -408,7 +408,7 @@ void ParticleBase<PL>::clear()
  *is used to efficient evaluate the subgroup properties.
  */
 template<class PL>
-void ParticleBase<PL>::create(const std::vector<int>& agroup)
+void ParticleBase<PL>::createBase(const std::vector<int>& agroup)
 {
   SubPtcl.resize(agroup.size()+1);
   SubPtcl[0] = 0;

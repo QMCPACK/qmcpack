@@ -44,18 +44,18 @@ namespace qmcplusplus
 namespace DistanceTable
 {
   ///add a named DistanceTableData_t of Symmectric type
-  DistanceTableData* add(ParticleSet& s);//, const char* aname = NULL);
+  DistanceTableData* add(ParticleSet& s, int dt_type);//, const char* aname = NULL);
 
   ///add a named DistanceTableData_t of Asymmectric type
-  DistanceTableData* add(const ParticleSet& s, ParticleSet& t);//, const char* aname = NULL);
+  DistanceTableData* add(const ParticleSet& s, ParticleSet& t, int dt_type);//, const char* aname = NULL);
 
 }
 
 ///free function to create a distable table of s-s
-DistanceTableData* createDistanceTable(ParticleSet& s);
+DistanceTableData* createDistanceTable(ParticleSet& s, int dt_type);
 
 ///free function create a distable table of s-t
-DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t);
+DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int dt_type);
 
 }
 #endif

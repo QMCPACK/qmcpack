@@ -55,7 +55,7 @@ struct NumberFluctuations: public QMCHamiltonianBase
       i--;
     }
     PBCType=(P.Lattice.SuperCellEnum>1);
-    d_table = DistanceTable::add(P);
+    d_table = DistanceTable::add(P,DT_AOS);
   }
 
   ~NumberFluctuations() { }

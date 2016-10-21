@@ -96,6 +96,7 @@ struct TempDisplacement
   //inline void reset() {r1=0.0;rinv1=0.0;dr1=0.0;r0=0.0;rinv0=0.0;dr0=0.0;}
 };
 
+enum DistTableType {DT_AOS=0, DT_SOA};
 
 /** @ingroup nnlist
  * @brief Abstract class to manage pair data between two ParticleSets.
@@ -124,6 +125,8 @@ public:
   int CellType;
   ///ID of this table among many
   int ID;
+  ///Type of DT
+  int DTType;
   ///Index of the particle  with a trial move
   IndexType activePtcl;
   ///size of indicies

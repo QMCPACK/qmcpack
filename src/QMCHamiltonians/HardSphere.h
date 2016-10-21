@@ -41,7 +41,7 @@ struct HardSphere: public QMCHamiltonianBase
   {
     Centers=P.getTotalNum();
     d = 1.0;//cheating, need to fix this
-    const DistanceTableData* d_table = DistanceTable::add(P);
+    const DistanceTableData* d_table = DistanceTable::add(P,DT_AOS);
   }
 
   ~HardSphere() { }

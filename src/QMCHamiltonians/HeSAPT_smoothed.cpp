@@ -21,7 +21,7 @@ namespace qmcplusplus
 HeSAPT_smoothed_phy::HeSAPT_smoothed_phy(ParticleSet& P): PtclRef(&P)
 {
   Dependants = 1;
-  d_table = DistanceTable::add(P);
+  d_table = DistanceTable::add(P,DT_AOS);
   Return_t rho = P.G.size()/P.Lattice.Volume, N0 = P.G.size();
   rc = P.Lattice.WignerSeitzRadius;
   mirrorshift = -2.0*((-4.27467067939-32.3451957988*rc-37.5775397337*rc*rc+4.0/rc)*std::exp(-5.72036885319*rc) + (18.2962387439-6.16632555293*rc+6.91482730781*rc*rc)*std::exp(-2.80857770752*rc) - damp(7,rc)*1.460977837725/std::pow(rc,6.) - damp(9,rc)*14.11785737/std::pow(rc,8.) - damp(11,rc)*183.691075/std::pow(rc,10.) + damp(12,rc)*76.70/std::pow(rc,11.) - damp(13,rc)*3372./std::pow(rc,12.) + damp(14,rc)*3806./std::pow(rc,13.) - damp(15,rc)*85340./std::pow(rc,14.) + damp(16,rc)*171000./std::pow(rc,15.) - damp(17,rc)*2860000./std::pow(rc,16.));
@@ -29,7 +29,7 @@ HeSAPT_smoothed_phy::HeSAPT_smoothed_phy(ParticleSet& P): PtclRef(&P)
 
 void HeSAPT_smoothed_phy::resetTargetParticleSet (ParticleSet& P)
 {
-  d_table = DistanceTable::add(P);
+  d_table = DistanceTable::add(P,DT_AOS);
   PtclRef=&P;
   rc = P.Lattice.WignerSeitzRadius;
   mirrorshift = -2.0*((-4.27467067939-32.3451957988*rc-37.5775397337*rc*rc+4.0/rc)*std::exp(-5.72036885319*rc) + (18.2962387439-6.16632555293*rc+6.91482730781*rc*rc)*std::exp(-2.80857770752*rc) - damp(7,rc)*1.460977837725/std::pow(rc,6.) - damp(9,rc)*14.11785737/std::pow(rc,8.) - damp(11,rc)*183.691075/std::pow(rc,10.) + damp(12,rc)*76.70/std::pow(rc,11.) - damp(13,rc)*3372./std::pow(rc,12.) + damp(14,rc)*3806./std::pow(rc,13.) - damp(15,rc)*85340./std::pow(rc,14.) + damp(16,rc)*171000./std::pow(rc,15.) - damp(17,rc)*2860000./std::pow(rc,16.));

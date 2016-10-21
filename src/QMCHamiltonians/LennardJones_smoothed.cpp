@@ -22,7 +22,7 @@ LennardJones_smoothed_phy::LennardJones_smoothed_phy(ParticleSet& P, RealType e 
 {
   Dependants = 1;
   s6 = sigma*sigma*sigma*sigma*sigma*sigma;
-  d_table = DistanceTable::add(P);
+  d_table = DistanceTable::add(P,DT_AOS);
   rc = P.Lattice.WignerSeitzRadius;
   RealType rc6i = std::pow(rc,-6.0);
   mirrorshift = -2.0*(s6*rc6i - 1.0)*rc6i;
@@ -32,7 +32,7 @@ LennardJones_smoothed_phy::LennardJones_smoothed_phy(ParticleSet& P, RealType e 
 void LennardJones_smoothed_phy::resetTargetParticleSet(ParticleSet& P)
 {
   PtclRef=&P;
-  d_table = DistanceTable::add(P);
+  d_table = DistanceTable::add(P,DT_AOS);
   rc = P.Lattice.WignerSeitzRadius;
   RealType rc6i = std::pow(rc,-6.0);
   mirrorshift = -2.0*(s6*rc6i - 1.0)*rc6i;

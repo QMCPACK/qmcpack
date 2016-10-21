@@ -38,14 +38,14 @@ struct OscillatoryPotential: public QMCHamiltonianBase
     k0=1.0;
     r0=1.0;
     r1=1.0;
-    const DistanceTableData* d_table = DistanceTable::add(P);
+    const DistanceTableData* d_table = DistanceTable::add(P,DT_AOS);
   }
 
   ~OscillatoryPotential() { }
 
   void resetTargetParticleSet(ParticleSet& P)
   {
-    //d_table = DistanceTable::add(P);
+    //d_table = DistanceTable::add(P,DT_AOS);
     //PtclRef=&P;
   }
 

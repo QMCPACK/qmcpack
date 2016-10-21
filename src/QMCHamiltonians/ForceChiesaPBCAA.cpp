@@ -41,7 +41,7 @@ ForceChiesaPBCAA::ForceChiesaPBCAA(ParticleSet& ions, ParticleSet& elns, bool fi
   
   //This sets up the long range breakups. 
   kcdifferent=false;
-  myTableIndex=elns.addTable(ions);
+  myTableIndex=elns.addTable(ions,DT_AOS);
   initBreakup(elns);
  // app_log()<< "IonIon Force" << std::endl;
  // app_log()<<forces_IonIon<< std::endl; 
@@ -312,7 +312,7 @@ bool ForceChiesaPBCAA::put(xmlNodePtr cur)
 
 void ForceChiesaPBCAA::resetTargetParticleSet(ParticleSet& P)
 {
-  int tid=P.addTable(PtclA);
+  int tid=P.addTable(PtclA,DT_AOS);
   if(tid != myTableIndex)
   {
     APP_ABORT("ForceChiesaPBCAA::resetTargetParticleSet found inconsistent table index");

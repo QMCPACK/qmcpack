@@ -27,7 +27,7 @@ HFDHE2_Moroni1995_phy::HFDHE2_Moroni1995_phy(ParticleSet& P): PtclRef(&P)
   c2=14.22016431;
   c3=187.2033646;
   D = 6.960524706;
-  d_table = DistanceTable::add(P);
+  d_table = DistanceTable::add(P,DT_AOS);
   Return_t rho = P.G.size()/P.Lattice.Volume, N0 = P.G.size();
   rc = P.Lattice.WignerSeitzRadius;
   Return_t rcm2 = 1.0/(rc*rc), rcm6 = rcm2*rcm2*rcm2, rcm8 = rcm6*rcm2, rcm10 = rcm8*rcm2;
@@ -36,7 +36,7 @@ HFDHE2_Moroni1995_phy::HFDHE2_Moroni1995_phy(ParticleSet& P): PtclRef(&P)
 
 void HFDHE2_Moroni1995_phy::resetTargetParticleSet(ParticleSet& P)
 {
-  d_table = DistanceTable::add(P);
+  d_table = DistanceTable::add(P,DT_AOS);
   PtclRef=&P;
   Return_t rc = P.Lattice.WignerSeitzRadius;
   Return_t rcm2 = 1.0/(rc*rc), rcm6 = rcm2*rcm2*rcm2, rcm8 = rcm6*rcm2, rcm10 = rcm8*rcm2;

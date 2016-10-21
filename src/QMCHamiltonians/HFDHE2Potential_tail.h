@@ -43,7 +43,7 @@ struct HFDHE2Potential_tail: public QMCHamiltonianBase
     c2=14.22016431;
     c3=187.2033646;
     D = 6.960524706;
-    d_table = DistanceTable::add(P);
+    d_table = DistanceTable::add(P,DT_AOS);
     Return_t rho = P.G.size()/P.Lattice.Volume;
     Return_t N0 = P.G.size();
     Kpre = 3.157733e+5/N0;
@@ -57,7 +57,7 @@ struct HFDHE2Potential_tail: public QMCHamiltonianBase
 
   void resetTargetParticleSet(ParticleSet& P)
   {
-    d_table = DistanceTable::add(P);
+    d_table = DistanceTable::add(P,DT_AOS);
     PtclRef=&P;
     Return_t rho = P.G.size()/P.Lattice.Volume;
     Return_t N0 = P.G.size();

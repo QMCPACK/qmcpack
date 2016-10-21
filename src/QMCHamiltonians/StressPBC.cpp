@@ -44,7 +44,7 @@ StressPBC::StressPBC(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& Ps
   //This sets up the long range breakups. 
   
   kcdifferent=false;
-  myTableIndex=elns.addTable(PtclA);
+  myTableIndex=elns.addTable(PtclA,DT_AOS);
   initBreakup(PtclTarg);
   
   targetconsts=0.0;

@@ -29,7 +29,7 @@ namespace qmcplusplus
 ThreeBodyGeminal::ThreeBodyGeminal(const ParticleSet& ions, ParticleSet& els):
   CenterRef(ions), GeminalBasis(0), IndexOffSet(1), ID_Lambda("j3")
 {
-  d_table = DistanceTable::add(ions,els);
+  d_table = DistanceTable::add(ions,els,DT_AOS);
   NumPtcls=els.getTotalNum();
   NormFac=1.0/static_cast<RealType>(NumPtcls*NumPtcls);
   Optimizable=true;
@@ -42,7 +42,7 @@ ThreeBodyGeminal::~ThreeBodyGeminal()
 
 void ThreeBodyGeminal::resetTargetParticleSet(ParticleSet& P)
 {
-  d_table = DistanceTable::add(CenterRef,P);
+  d_table = DistanceTable::add(CenterRef,P,DT_AOS);
   GeminalBasis->resetTargetParticleSet(P);
 }
 

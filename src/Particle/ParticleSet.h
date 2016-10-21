@@ -28,7 +28,9 @@
 #include <Utilities/PooledData.h>
 #include <OhmmsPETE/OhmmsArray.h>
 #include <Utilities/NewTimer.h>
-
+#if ENABLE_PTCL_SOA
+#include <OhmmsSoA/Container.h>
+#endif
 
 namespace qmcplusplus
 {
@@ -105,9 +107,10 @@ public:
   ///differential laplacians of the particles
   ParticleLaplacian_t dL;
 
-  ///current position after applying PBC in the Lattice Unit
-  ParticlePos_t Runit;
-
+#if ENABLE_PTCL_SOA
+  ///SoA copy of R
+  VectorSoaContainer<RealType,DIM> RSoA;
+#endif
   ///index to the primitice cell with tiling
   ParticleIndex_t PCID;
   /** ID map that reflects species group
@@ -215,6 +218,15 @@ public:
   ///default destructor
   virtual ~ParticleSet();
 
+  /** create  particles
+   * @param n number of particles
+   */
+  void create(unsigned n);
+  /** create grouped particles
+   * @param agroup number of particles per group
+   */
+  void create(const std::vector<int>& agroup);
+
   ///write to a std::ostream
   bool get(std::ostream& ) const;
 
@@ -270,7 +282,7 @@ public:
    *
    * Ensure that the distance for this-this is always created first.
    */
-  int  addTable(const ParticleSet& psrc);
+  int  addTable(const ParticleSet& psrc, int dt_type);
 
   /** returns index of a distance table, -1 if not present
    * @param psrc source particle set
@@ -449,12 +461,8 @@ public:
    */
   void saveWalker(Walker_t& awalker);
 
-  //void registerData(Buffer_t& buf);
-  //void registerData(Walker_t& awalker, Buffer_t& buf);
-  //void updateBuffer(Walker_t& awalker, Buffer_t& buf);
-  //void updateBuffer(Buffer_t& buf);
-  //void copyToBuffer(Buffer_t& buf);
-  //void copyFromBuffer(Buffer_t& buf);
+  /** update the buffer */
+  void doneSweep();
 
   //return the address of the values of Hamiltonian terms
   inline EstimatorRealType* restrict getPropertyBase()

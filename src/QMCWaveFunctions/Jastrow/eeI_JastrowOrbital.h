@@ -112,7 +112,7 @@ public:
   {
     eRef = &elecs;
     IRef = &ions;
-    myTableIndex=elecs.addTable(ions);
+    myTableIndex=elecs.addTable(ions,DT_AOS);
     init(elecs);
     FirstTime = true;
     NumVars=0;

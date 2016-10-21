@@ -98,11 +98,11 @@ const char *particles =
   REQUIRE( electrons.SameMass );
 
   // calculate particle distances
-  electrons.addTable(ions);
+  electrons.addTable(ions,DT_AOS);
   electrons.update();
 
   // get target particle set's distance table data
-  int tid = electrons.getTable(ions);
+  int tid = electrons.getTable(ions); //this is bad
   DistanceTableData* dtable = electrons.DistTables[tid];
   REQUIRE(dtable->getName() == "ion0_e");
 
@@ -192,7 +192,7 @@ const char *particles =
   REQUIRE( electrons.SameMass );
 
   // calculate particle distances
-  electrons.addTable(ions);
+  electrons.addTable(ions,DT_AOS);
   electrons.update();
 
   // get distance table attached to target particle set (electrons)
@@ -290,7 +290,7 @@ const char *particles =
   REQUIRE( electrons.SameMass );
 
   // calculate particle distances
-  electrons.addTable(ions);
+  electrons.addTable(ions,DT_AOS);
   electrons.update();
 
   // get distance table attached to target particle set (electrons)
@@ -427,7 +427,7 @@ const char *particles =
   electrons.Lattice.copy(*SimulationCell);
   ions.Lattice.copy(*SimulationCell); // is this applied in qmcpack executable?
   // better be, electron-proton distances used in PairCorrelation estimator
-  electrons.addTable(ions);
+  electrons.addTable(ions,DT_AOS);
   electrons.update();
 
   // get target particle set's distance table data

@@ -38,7 +38,7 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions, ParticleSet& els,
 {
   set_energy_domain(potential);
   two_body_quantum_domain(ions,els);
-  myTableIndex=els.addTable(ions);
+  myTableIndex=els.addTable(ions,DT_AOS);
   NumIons=ions.getTotalNum();
   //els.resizeSphere(NumIons);
   PP.resize(NumIons,0);
