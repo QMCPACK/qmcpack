@@ -1,0 +1,243 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: 
+//
+// File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
+//////////////////////////////////////////////////////////////////////////////////////
+// -*- C++ -*-
+/** @file VectorSoaContainer.h
+ * Soa Container for D-dim vectors
+ *
+ * Alternative to Container<TinyVector<T,D> > to support SoA algorithms
+ */
+#ifndef QMCPLUSPLUS_VECTOR_SOA_H
+#define QMCPLUSPLUS_VECTOR_SOA_H
+#include <simd/allocator.hpp>
+
+namespace qmcplusplus
+{
+  /** SoA adaptor class for ParticleAttrib<TinyVector<T,D> >
+   * @tparm T data type, float, double, complex<float>, complex<double>
+   */
+  template<typename T, unsigned D>
+    struct VectorSoaContainer
+    {
+      using Type_t   =TinyVector<T,D>;
+      using Element_t=T;
+      ///alias to ParticleAttrib<T1,D>
+      template <class T1> using PosArray = ParticleAttrib<TinyVector<T1,D> >;
+      ///the unit type
+      int InUnit;
+      ///number of elements
+      int nLocal;
+      ///number of elements + padded
+      int nGhosts;
+      ///number of elements allocated by myAlloc
+      int nAllocated;
+      ///pointer: what type????
+      T* myData;
+      ///allocator
+      aligned_allocator<T> myAlloc;
+      ///default constructor
+      VectorSoaContainer() 
+      {
+        setDefaults();
+      }
+      ///destructor
+      ~VectorSoaContainer() 
+      { 
+        if(nAllocated>0) 
+          myAlloc.deallocate(myData,nAllocated);
+      }
+
+      ///default copy constructor
+      VectorSoaContainer(const VectorSoaContainer& in)
+      {
+        setDefaults();
+        InUnit=in.InUnit;
+        resize(nLocal);
+        std::copy_n(in.myData,nLocal*D,myData);
+      }
+
+      ///default copy operator
+      VectorSoaContainer& operator=(const VectorSoaContainer& in)
+      {
+        if(myData!=in.myData) 
+        {
+          InUnit=in.InUnit;
+          resize(in.nLocal);
+          std::copy_n(in.myData,nGhosts*D,myData);
+        }
+        return *this;
+      }
+
+      ///move constructor
+      VectorSoaContainer(VectorSoaContainer&& in): InUnit(in.InUnit),nLocal(in.nLocal),nGhosts(in.nGhosts)
+      { 
+        nAllocated=in.nAllocated;
+        myData=in.myData;
+        myAlloc=std::move(in.myAlloc);
+        in.myData=nullptr;
+        in.nAllocated=0;
+      }
+
+      /** constructor with size n  without initialization
+       */
+      explicit VectorSoaContainer(int n)
+      { setDefaults(); resize(n); }
+
+      /** constructor with ParticleAttrib<T1,D> */
+      template<typename T1>
+      VectorSoaContainer(const PosArray<T1>& in)
+      {
+        setDefaults();
+        resize(in.size());
+        copyIn(in);
+      }
+
+      template<typename T1>
+      VectorSoaContainer& operator=(const PosArray<T1>& in)
+      {
+        if(nLocal!=in.size()) resize(in.size());
+        copyIn(in);
+        return *this;
+      }
+
+      /** need A=0.0;
+       */
+      template<typename T1>
+      VectorSoaContainer& operator=(T1 in)
+      {
+        std::fill(myData,myData+nGhosts*D,static_cast<T>(in));
+        return *this;
+      }
+
+      ///initialize the data members 
+      __forceinline void setDefaults()
+      {
+        InUnit=0;nLocal=0; nGhosts=0;nAllocated=0;myData=nullptr;
+      }
+
+      /** resize myData
+       * @param n nLocal
+       *
+       * nAllocated is used to ensure no memory leak
+       */
+      __forceinline void resize(int n)
+      {
+        if(nAllocated) myAlloc.deallocate(myData,nAllocated);
+        nLocal=n;
+        nGhosts=getAlignedSize<T>(n);
+        nAllocated=nGhosts*D;
+        myData=myAlloc.allocate(nAllocated);
+      }
+
+      /** reset by pre-allocated data
+       * @param n new nLocal 
+       * @param n_padded new nGhosts
+       * @param ptr new myData
+       *
+       * Free existing memory and reset the internal variables
+       */
+      __forceinline void resetByRef(int n, int n_padded, T* ptr)
+      {
+        if(nAllocated) myAlloc.deallocate(myData,nAllocated);
+        nAllocated=0;
+        nLocal=n;
+        nGhosts=n_padded;
+        myData=ptr;
+      }
+
+      ///return the physical size
+      __forceinline int size() const { return nLocal;}
+      ///return the physical size
+      __forceinline int capacity() const { return nGhosts;}
+
+      /** AoS to SoA : copy from ParticleAttrib<>
+       *
+       * The same sizes are assumed.
+       */
+      template<typename T1>
+      void copyIn(const PosArray<T1>& in)
+      {
+        //if(nLocal!=in.size()) resize(in.size());
+        PosAoS2SoA(nLocal,D,reinterpret_cast<const T1*>(in.first_address()),D,myData,nGhosts);
+      }
+
+      /** SoA to AoS : copy to ParticleAttrib<>
+       *
+       * The same sizes are assumed.
+       */
+      template<typename T1>
+      void copyOut(PosArray<T1>& out) const
+      {
+        PosSoA2AoS(nLocal,D,myData,nGhosts, reinterpret_cast<T1*>(out.first_address()),D);
+      }
+
+      /** return TinyVector<T,D>
+       */
+      __forceinline Type_t operator[](int i) const
+      {
+        return Type_t(myData+i,nGhosts); 
+      }
+
+      ///helper class for operator ()(int i) to assign a value
+      struct Accessor
+      {
+        int M;
+        T* _base;
+        __forceinline Accessor(T* a, int ng) : _base(a), M(ng){}
+        __forceinline Accessor& operator=(const TinyVector<T,D>& rhs)
+        {
+#pragma unroll(D)
+          for(int i=0; i<D; ++i) *(_base+M*i)=rhs[i];
+          return *this;
+        }
+
+        /** asign value */
+        template<typename T1>
+        __forceinline Accessor& operator=(T1 rhs)
+        {
+#pragma unroll(D)
+          for(int i=0; i<D; ++i) *(_base+M*i)=rhs;
+          return *this;
+        }
+      };
+
+      /** access operator for assignment of the i-th value
+       *
+       * Use for (*this)[i]=TinyVector<T,D>;
+       */
+      __forceinline Accessor operator()(int i) 
+      {
+        return Accessor(myData+i,nGhosts);
+      }
+      ///return the base
+      __forceinline T* data() { return myData;}
+      ///return the base
+      __forceinline const T* data() const { return myData;}
+      ///return the pointer of the i-th components
+      __forceinline T* restrict data(int i) { return myData+i*nGhosts;}
+      ///return the const pointer of the i-th components
+      __forceinline const T* restrict data(int i) const { return myData+i*nGhosts;}
+
+      /** serialization function */
+      template<class Archive>
+        void serialize(Archive & ar, const unsigned int version)
+        {
+          //ar & m_data;
+          ar & nLocal & nGhosts & myData;
+        }
+    };
+
+//Incorrect: provide wrapper class
+//BOOST_CLASS_TRACKING(Pos3DSoA<double,3>, boost::serialization::track_never)
+//BOOST_CLASS_TRACKING(Pos3DSoA<float,3>, boost::serialization::track_never)
+}
+
+#endif
+

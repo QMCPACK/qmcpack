@@ -22,7 +22,7 @@
 #include <OhmmsPETE/OhmmsVector.h>
 #include <OhmmsPETE/OhmmsMatrix.h>
 #include <OhmmsPETE/OhmmsArray.h>
-#include <simd/allocator.h>
+#include <simd/allocator.hpp>
 //#include <spline2/einspline_engine.hpp>
 #include <spline2/MultiBspline.hpp>
 
