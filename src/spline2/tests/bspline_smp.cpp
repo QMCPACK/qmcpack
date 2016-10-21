@@ -19,6 +19,7 @@
 #include <Message/Communicate.h>
 #include <mpi/collectives.h>
 #include <getopt.h>
+using namespace std;
 #include <spline2/tests/einspline_benchmark.h>
 using namespace qmcplusplus;
 

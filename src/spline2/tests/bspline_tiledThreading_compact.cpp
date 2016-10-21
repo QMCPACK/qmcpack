@@ -24,7 +24,7 @@
 #include <spline2/tests/einspline_shared_woNested.h>
 #include <getopt.h>
 #include <stdio.h>
-#include "random/random.h"
+#include "random/random.hpp"
 using namespace qmcplusplus;
 
 int main(int argc, char** argv)

@@ -17,7 +17,7 @@
 #ifndef QMCPLUSPLUS_EINSPLINE3D_BENCHMARK_H
 #define QMCPLUSPLUS_EINSPLINE3D_BENCHMARK_H
 #include <omp.h>
-#include <random/random.h>
+#include <random/random.hpp>
 #include <Utilities/Timer.h>
 #include <OhmmsPETE/OhmmsVector.h>
 #include <OhmmsPETE/OhmmsMatrix.h>

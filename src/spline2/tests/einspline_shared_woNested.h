@@ -17,13 +17,14 @@
 #ifndef QMCPLUSPLUS_EINSPLINE3D_BENCHMARK_H
 #define QMCPLUSPLUS_EINSPLINE3D_BENCHMARK_H
 #include <omp.h>
-#include <random/random.h>
+#include <random/random.hpp>
 #include <Utilities/Timer.h>
 #include <OhmmsPETE/OhmmsVector.h>
 #include <OhmmsPETE/OhmmsMatrix.h>
 #include <OhmmsPETE/OhmmsArray.h>
 #include <simd/allocator.hpp>
 #include <spline2/MultiBspline.hpp>
+using namespace std;
 
 namespace qmcplusplus
 {

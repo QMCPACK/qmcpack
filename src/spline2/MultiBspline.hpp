@@ -71,7 +71,7 @@ namespace qmcplusplus
       ///actual einspline multi-bspline object
       spliner_type* spline_m;
       ///offset
-      vector<int> offset;
+      std::vector<int> offset;
       ///use allocator
       einspline::Allocator myAllocator;
 

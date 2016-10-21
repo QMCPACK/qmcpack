@@ -20,8 +20,67 @@
 CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/config.h.cmake.in
   ${qmcpack_BINARY_DIR}/src/config.h)
 
-if(QMC_PHI)
-  MESSAGE(STATUS "Minimal build to test codelets on phi")
+####################################
+# create liboompi
+####################################
+IF(HAVE_OOMPI)
+  CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/oompi-config.h.cmake.in 
+    ${qmcpack_BINARY_DIR}/src/oompi-config.h)
+  INCLUDE_DIRECTORIES(${qmcpack_SOURCE_DIR}/src/OOMPI)
+  SUBDIRS(OOMPI)
+  IF ( MPI_LIBRARY )
+     SET(MPI_LIBRARY oompi ${MPI_LIBRARY})
+  ELSE()
+     SET(MPI_LIBRARY oompi )
+  ENDIF()
+ENDIF(HAVE_OOMPI)
+
+if(QMC_BUILD_LEVEL GREATER 4)
+  MESSAGE(STATUS "Minimal build to test codelets in miniapps")
+  SET(BASE
+    qmc_common.cpp
+    Platforms/sysutil.cpp
+    Utilities/OhmmsInform.cpp 
+    Utilities/OhmmsInfo.cpp 
+    Utilities/OhmmsObject.cpp 
+    Utilities/NewTimer.cpp
+    Utilities/SpeciesSet.cpp 
+    Message/Communicate.cpp 
+    Message/MPIObjectBase.cpp 
+    random/random.cpp 
+    OhmmsData/Libxml2Doc.cpp
+    )
+  SET(PTCL
+    Lattice/Uniform3DGridLayout.cpp
+    ParticleTags.cpp 
+    Particle/ParticleSet.cpp 
+    Particle/ParticleSet.BC.cpp 
+    Particle/make_clones.cpp
+    LongRange/KContainer.cpp
+    LongRange/StructFact.cpp
+    LongRange/LPQHIBasis.cpp
+    LongRange/LPQHISRCoulombBasis.cpp
+    LongRange/EwaldHandler.cpp
+    LongRange/LRCoulombSingleton.cpp
+    ParticleIO/ParticleIOUtility.cpp 
+    Optimize/VariableSet.cpp
+    QMCWaveFunctions/OrbitalBase.cpp
+    spline2/einspline_allocator.c
+    spline2/bspline_allocator.cpp
+    spline2/MultiBspline.cpp
+    )
+    IF(ENABLE_PTCL_SOA)
+      SET(PTCL Particle2/DistanceTableFactory.cpp ${PTCL})
+    ELSE()
+      SET(PTCL Particle/DistanceTable.cpp ${PTCL})
+    ENDIF()
+
+    ADD_LIBRARY(qmcutil ${BASE} ${PTCL})
+
+    #build boost library
+    #SUBDIRS(boost)
+    #build miniapps
+    SUBDIRS(spline2)
 else()
   ####################################
   # create libqmcutil
@@ -91,20 +150,6 @@ else()
   #  ADD_LIBRARY(qmcutil SHARED ${UTILITIES})
   #ENDIF(QMC_BUILD_STATIC)
 
-  ####################################
-  # create liboompi
-  ####################################
-  IF(HAVE_OOMPI)
-    CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/oompi-config.h.cmake.in 
-      ${qmcpack_BINARY_DIR}/src/oompi-config.h)
-    INCLUDE_DIRECTORIES(${qmcpack_SOURCE_DIR}/src/OOMPI)
-    SUBDIRS(OOMPI)
-    IF ( MPI_LIBRARY )
-       SET(MPI_LIBRARY oompi ${MPI_LIBRARY})
-    ELSE()
-       SET(MPI_LIBRARY oompi )
-    ENDIF()
-  ENDIF(HAVE_OOMPI)
 
   IF(OHMMS_DIM MATCHES 3)
     SET(PARTICLE Lattice/Uniform3DGridLayout.cpp)
