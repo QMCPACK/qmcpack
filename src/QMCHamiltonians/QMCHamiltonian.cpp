@@ -456,7 +456,6 @@ void QMCHamiltonian::finalize_traces()
 QMCHamiltonian::Return_t
 QMCHamiltonian::evaluate(ParticleSet& P)
 {
-  //if(EnableVirtualMoves) P.initVirtualMoves();
   LocalEnergy = 0.0;
   for(int i=0; i<H.size(); ++i)
   {
@@ -483,7 +482,6 @@ QMCHamiltonian::evaluateValueAndDerivatives(ParticleSet& P,
     std::vector<RealType>& dhpsioverpsi,
     bool compute_deriv)
 {
-  //if(EnableVirtualMoves) P.initVirtualMoves();
 
   LocalEnergy=KineticEnergy=H[0]->evaluate(P);
   if(compute_deriv)
@@ -498,7 +496,6 @@ QMCHamiltonian::evaluateValueAndDerivatives(ParticleSet& P,
 QMCHamiltonian::RealType 
 QMCHamiltonian::evaluateVariableEnergy(ParticleSet& P, bool free_nlpp)
 {
-  //if(EnableVirtualMoves) P.initVirtualMoves();
   RealType nlpp=0.0;
   RealType ke=H[0]->evaluate(P);
   if(free_nlpp)
@@ -560,7 +557,6 @@ void QMCHamiltonian::rejectedMove(ParticleSet& P, Walker_t& ThisWalker )
 QMCHamiltonian::Return_t
 QMCHamiltonian::evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
 {
-  //if(EnableVirtualMoves) P.initVirtualMoves();
   LocalEnergy = 0.0;
   for(int i=0; i<H.size(); ++i)
   {

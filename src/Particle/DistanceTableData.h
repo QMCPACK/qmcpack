@@ -23,6 +23,7 @@
 #include "Utilities/PooledData.h"
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
+#include "simd/allocator.hpp"
 #include <limits>
 #include <bitset>
 
@@ -86,14 +87,6 @@ struct TempDisplacement
     rinv1=0.0;
     dr1=0.0;
   }
-  /////old distance
-  //T r0;
-  /////inverse of old distance
-  //T rinv0;
-  /////old displacement
-  //TinyVector<T,N> dr0;
-  //inline TempDisplacement():r1(0.0),rinv1(0.0),r0(0.0),rinv0(0.0) {}
-  //inline void reset() {r1=0.0;rinv1=0.0;dr1=0.0;r0=0.0;rinv0=0.0;dr0=0.0;}
 };
 
 enum DistTableType {DT_AOS=0, DT_SOA};
@@ -116,9 +109,13 @@ public:
    */
   enum {WalkerIndex=0, SourceIndex, VisitorIndex, PairIndex};
 
-  typedef std::vector<IndexType>         IndexVectorType;
+#if (__cplusplus >= 201103L)
+  typedef aligned_vector<IndexType>      IndexVectorType;
+#else
+  typedef std::vector<IndexType>      IndexVectorType;
+#endif
+
   typedef TempDisplacement<RealType,DIM> TempDistType;
-  typedef PooledData<RealType>           BufferType;
   typedef std::pair<RealType,IndexType>  ripair;
 
   ///type of cell
@@ -159,13 +156,7 @@ public:
   IndexVectorType PairID;
 
   /** Locator of the pair  */
-  std::vector<IndexType> IJ;
-
-  /** full distance matrix with the transposed form */
-  Matrix<RealType> trans_r;
-
-  /** full displacement matrix with the transposed form */
-  Matrix<PosType> trans_dr;
+  IndexVectorType IJ;
 
   /** @brief A NN relation of all the source particles with respect to an activePtcl
    *
@@ -175,8 +166,6 @@ public:
    * If the move is rejected, nothing is done and new data will be overwritten.
    */
   std::vector<TempDistType> Temp;
-  std::vector<RealType> temp_r;
-  std::vector<PosType> temp_dr;
 
   ///name of the table
   std::string Name;
@@ -211,33 +200,6 @@ public:
     Origin=newcenter;
   }
   //@{access functions to the distance, inverse of the distance and directional consine vector
-#ifdef USE_FASTWALKER
-  inline PosType dr(int iw, int iat) const
-  {
-    return dr2_m(iat,iw);
-  }
-  inline RealType r(int iw, int iat) const
-  {
-    return r2_m(iat,iw);
-  }
-  inline RealType rinv(int iw, int iat) const
-  {
-    return rinv2_m(iat,iw);
-  }
-#else
-  inline PosType dr(int iw, int iat) const
-  {
-    return dr2_m(iw,iat);
-  }
-  inline RealType r(int iw, int iat) const
-  {
-    return r2_m(iw,iat);
-  }
-  inline RealType rinv(int iw, int iat) const
-  {
-    return rinv2_m(iw,iat);
-  }
-#endif
   inline PosType dr(int j) const
   {
     return dr_m[j];
@@ -270,7 +232,6 @@ public:
     return N[i];
   }
 
-  //inline IndexType getTotNadj() const { return M[M.size()-1];}
   inline IndexType getTotNadj() const
   {
     return npairs_m;
@@ -331,39 +292,17 @@ public:
     return -1;
   }
 
-  /** resiste trans_r and trans_dr
-   */
-  void resizeTranspose()
-  {
-    trans_r.resize(N[VisitorIndex],N[SourceIndex]);
-    if(NeedDisplacement)
-      trans_dr.resize(N[VisitorIndex],N[SourceIndex]);
-  }
-
-  /** set trans_r, trans_dr
-   */
-  virtual void setTranspose()=0;
-
-  ///evaluate the Distance Table using ActiveWalkers
-  //virtual void evaluate(const WalkerSetRef& W) = 0;
-
   ///evaluate the Distance Table using only with position array
   virtual void evaluate(const ParticleSet& P) = 0;
 
   ///evaluate the temporary pair relations
   virtual void move(const ParticleSet& P, const PosType& rnew, IndexType jat) =0;
 
-  ///evaluate the temporary pair relations
-  virtual void moveby(const ParticleSet& P, const PosType& displ, IndexType jat) =0;
-
   ///evaluate the distance tables with a sphere move
-  virtual void moveOnSphere(const ParticleSet& P, const PosType& displ, IndexType jat) =0;
+  virtual void moveOnSphere(const ParticleSet& P, const PosType& rnew, IndexType jat) =0;
 
   ///update the distance table by the pair relations
   virtual void update(IndexType jat) = 0;
-
-  ///create storage for nwalkers
-  virtual void create(int walkers) = 0;
 
   /// find index and distance of each nearest neighbor particle
   virtual void nearest_neighbor(std::vector<ripair>& ri,bool transposed=false) const
@@ -394,56 +333,6 @@ public:
       APP_ABORT("DistanceTableData::check_neighbor_size  distance/index vector length is not equal to the number of neighbor particles");
   }
 
-  /** @brief register nnlist data to buf so that it can copyToBuffer and copyFromBuffer
-   *
-   * This function is used for particle-by-particle MC methods to register distance-table data
-   * to an anonymous buffer.
-   */
-  inline void registerData(BufferType& buf)
-  {
-    RealType* first = &(dr_m[0][0]);
-    buf.add(first,first+npairs_m*DIM);
-    buf.add(r_m.begin(), r_m.end());
-    buf.add(rinv_m.begin(), rinv_m.end());
-  }
-
-  /** @brief register nnlist data to buf so that it can copyToBuffer and copyFromBuffer
-   *
-   * This function is used for particle-by-particle MC methods to register distance-table data
-   * to an anonymous buffer.
-   */
-  inline void updateBuffer(BufferType& buf)
-  {
-    RealType* first = &(dr_m[0][0]);
-    buf.put(first,first+npairs_m*DIM);
-    buf.put(r_m.begin(), r_m.end());
-    buf.put(rinv_m.begin(), rinv_m.end());
-  }
-
-  /** @brief copy the data to an anonymous buffer
-   *
-   * Any data that will be used by the next iteration will be copied to a buffer.
-   */
-  inline void copyToBuffer(BufferType& buf)
-  {
-    RealType* first = &(dr_m[0][0]);
-    buf.put(first,first+npairs_m*DIM);
-    buf.put(r_m.begin(), r_m.end());
-    buf.put(rinv_m.begin(), rinv_m.end());
-  }
-
-  /** @brief copy the data from an anonymous buffer
-   *
-   * Any data that is used by the previous iteration will be copied from a buffer.
-   */
-  inline void copyFromBuffer(BufferType& buf)
-  {
-    RealType* first = &(dr_m[0][0]);
-    buf.get(first,first+npairs_m*DIM);
-    buf.get(r_m.begin(), r_m.end());
-    buf.get(rinv_m.begin(), rinv_m.end());
-  }
-
   inline void print(std::ostream& os)
   {
     os << "Table " << Origin->getName() << std::endl;
@@ -470,8 +359,8 @@ protected:
   std::vector<PosType> dr_m;
   /*@}*/
 
-  Matrix<PosType> dr2_m;
-  Matrix<RealType> r2_m, rinv2_m;
+  //Matrix<PosType> dr2_m;
+  //Matrix<RealType> r2_m, rinv2_m;
 
   /**resize the storage
    *@param npairs number of pairs which is evaluated by a derived class
@@ -487,30 +376,15 @@ protected:
    * responsible to call this function for memory allocation and any
    * change in the indices N.
    */
-  void resize(int npairs, int nw=1)
+  void resize(int npairs, int nw)
   {
     N[WalkerIndex] =nw;
-    if(nw==1)
+    //if(nw==1)
     {
       dr_m.resize(npairs);
       r_m.resize(npairs);
-      //rr_m.resize(npairs);
       rinv_m.resize(npairs);
       Temp.resize(N[SourceIndex]);
-      temp_r.resize(N[SourceIndex]);
-      temp_dr.resize(N[SourceIndex]);
-    }
-    else
-    {
-#ifdef USE_FASTWALKER
-      dr2_m.resize(npairs,nw);
-      r2_m.resize(npairs,nw);
-      rinv2_m.resize(npairs,nw);
-#else
-      dr2_m.resize(nw,npairs);
-      r2_m.resize(nw,npairs);
-      rinv2_m.resize(nw,npairs);
-#endif
     }
   }
 

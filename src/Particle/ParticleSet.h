@@ -306,13 +306,6 @@ public:
    */
   void update(const ParticlePos_t& pos);
   
-  /** prepare internal data to be able to handle virutal moves*/
-  void enableVirtualMoves();
-  
-  /** prepare distance tables to perform virtual moves, e.g., nlpp evals
-   */ 
-  void initVirtualMoves();
-
   /** create Structure Factor with PBCs
    */
   void createSK();

@@ -40,13 +40,7 @@ struct AsymmetricDTD
     : DTD_BConds<T,D,SC>(source.Lattice), DistanceTableData(source,target)
     , Target(target)
   {
-    create(1);
-  }
-
-  void create(int walkers)
-  {
-    int nw = (walkers>0)? walkers:1;
-    reset(Origin->getTotalNum(),Target.getTotalNum(),nw);
+    reset(Origin->getTotalNum(),Target.getTotalNum(),1);
   }
 
   /*!\fn  void reset(int n1, int n2, int nactive){
@@ -85,20 +79,6 @@ struct AsymmetricDTD
     }
   }
        
-  inline void setTranspose()
-  {
-    const int ns = N[SourceIndex];
-    const int nv = N[VisitorIndex];
-    for(int i=0; i<nv; i++)
-      for(int j=0; j<ns; j++)
-        trans_r(i,j)=r_m[j*nv+i];
-  
-    if(NeedDisplacement)
-      for(int i=0; i<nv; i++)
-        for(int j=0; j<ns; j++)
-          trans_dr(i,j)=dr_m[j*nv+i];
-  }
-
   inline virtual void nearest_neighbor(std::vector<ripair>& ri,bool transposed=false) const
   {
     if(transposed)
@@ -260,17 +240,6 @@ struct AsymmetricDTD
       //Temp[iat].dr0=dr_m[loc];
     }
   }
-
-  ///evaluate the temporary pair relations
-  inline void moveby(const ParticleSet& P, const PosType& displ, IndexType jat)
-  {
-    activePtcl=jat;
-    for(int ic=0, loc=jat; ic<N[SourceIndex]; ic++,loc+=N[VisitorIndex])
-      temp_dr[ic]=displ+dr_m[loc];
-    DTD_BConds<T,D,SC>::apply_bc(temp_dr,temp_r);
-    //DTD_BConds<T,D,SC>::get_min_distanceX(P.Lattice,Temp);
-  }
-
 
   ///evaluate the temporary pair relations
   inline void moveOnSphere(const ParticleSet& P, const PosType& rnew, IndexType jat)
