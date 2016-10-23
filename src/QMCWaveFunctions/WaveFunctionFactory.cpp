@@ -30,12 +30,9 @@
 #include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
 #endif
 
-#if OHMMS_DIM==3 && QMC_BUILD_LEVEL>1
 #include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
-//AGP is experimental and only valid with real
-#if QMC_BUILD_LEVEL>2 && !defined(QMC_COMPLEX)
+#if OHMMS_DIM==3 && QMC_BUILD_LEVEL>1 && !defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/AGPDeterminantBuilder.h"
-#endif
 #endif
 
 #include "Utilities/ProgressReportEngine.h"

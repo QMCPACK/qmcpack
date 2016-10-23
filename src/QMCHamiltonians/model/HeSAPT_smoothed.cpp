@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-#include "QMCHamiltonians/HeSAPT_smoothed.h"
+#include "QMCHamiltonians/model/HeSAPT_smoothed.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Particle/DistanceTableData.h"
 

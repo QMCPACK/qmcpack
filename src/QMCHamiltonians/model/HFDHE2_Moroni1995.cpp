@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-#include "QMCHamiltonians/HFDHE2_Moroni1995.h"
+#include "QMCHamiltonians/model/HFDHE2_Moroni1995.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Particle/DistanceTableData.h"
 

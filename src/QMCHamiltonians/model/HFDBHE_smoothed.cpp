@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-#include "QMCHamiltonians/HFDBHE_smoothed.h"
+#include "QMCHamiltonians/model/HFDBHE_smoothed.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Particle/DistanceTableData.h"
 

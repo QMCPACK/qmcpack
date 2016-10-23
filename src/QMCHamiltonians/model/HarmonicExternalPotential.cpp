@@ -13,7 +13,7 @@
     
 
 
-#include <QMCHamiltonians/HarmonicExternalPotential.h>
+#include <QMCHamiltonians/model/HarmonicExternalPotential.h>
 #include <OhmmsData/AttributeSet.h>
 
 

@@ -20,7 +20,7 @@
 #include "Particle/DistanceTable.h"
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 
-#include "QMCHamiltonians/HFDHE2Potential_tail.h"
+#include "QMCHamiltonians/model/HFDHE2Potential_tail.h"
 
 
 namespace qmcplusplus

@@ -19,7 +19,7 @@
 #include "Particle/DistanceTable.h"
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 
-#include "QMCHamiltonians/HeEPotential_tail.h"
+#include "QMCHamiltonians/model/HeEPotential_tail.h"
 
 
 namespace qmcplusplus

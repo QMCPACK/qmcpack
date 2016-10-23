@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-#include "QMCHamiltonians/HFDHE2Potential.h"
+#include "QMCHamiltonians/model/HFDHE2Potential.h"
 #include "Particle/DistanceTableData.h"
 namespace qmcplusplus
 {

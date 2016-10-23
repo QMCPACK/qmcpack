@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-#include "QMCHamiltonians/LennardJones_smoothed.h"
+#include "QMCHamiltonians/model/LennardJones_smoothed.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Particle/DistanceTableData.h"
 
