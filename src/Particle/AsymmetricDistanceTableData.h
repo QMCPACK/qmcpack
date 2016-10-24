@@ -171,56 +171,21 @@ struct AsymmetricDTD
     partial_sort(ri.begin(),ri.begin()+neighbors,ri.end());
   }
 
-  ///evaluate the Distance Table using a set of Particle Positions
-  //inline void evaluate(const WalkerSetRef& W) {
-  //  int copies = W.walkers();
-  //  int visitors = W.particles();
-  //  int ns = Origin.getTotalNum();
-
-  //  reset(ns,visitors,copies);
-  //  for(int iw=0; iw<copies; iw++) {
-  //    int nn=0;
-  //    for(int i=0; i<ns; i++) {
-  //      PosType r0 = Origin.R(i);
-  //      for(int j=0; j<visitors; j++,nn++) {
-  //        PosType drij = W.R(iw,j)-r0;
-  //        RealType sep = sqrt(BC::apply(Origin.Lattice,drij));
-  //#ifdef USE_FASTWALKER
-  //        r2_m(nn,iw) = sep;
-  //        rinv2_m(nn,iw) = 1.0/sep;
-  //        dr2_m(nn,iw) = drij;
-  //#else
-  //        r2_m(iw,nn) = sep;
-  //        rinv2_m(iw,nn) = 1.0/sep;
-  //        dr2_m(iw,nn) = drij;
-  //#endif
-  //      }
-  //    }
-  //  }
-  //}
-
   ///not so useful inline but who knows
-  inline void evaluate(const ParticleSet& P)
+  inline void evaluate(ParticleSet& P)
   {
-    for(int i=0,ij=0; i<N[SourceIndex]; i++)
-      for(int j=0; j<N[VisitorIndex]; j++,ij++)
-        dr_m[ij]=P.R[j]-Origin->R[i];
-    //BC::apply(Origin.Lattice,dr_m,r_m,rinv_m);
+    const int ns=N[SourceIndex];
+    const int nt=N[VisitorIndex];
+    for(int i=0; i<ns; i++)
+      for(int j=0; j<nt; j++)
+        dr_m[i*nt+j]=P.R[j]-Origin->R[i];
     DTD_BConds<T,D,SC>::apply_bc(dr_m,r_m,rinv_m);
-    ////reset(Origin.getTotalNum(),P.getTotalNum(),1);
-    //int nn=0;
-    //for(int i=0; i<N[SourceIndex]; i++) {
-    //  PosType r0(Origin.R[i]);
-    //  for(int j=0; j<N[VisitorIndex]; j++,nn++) {
-    //    PosType drij(P.R[j]-r0);
-    //    RealType sep2(BC::apply(Origin.Lattice,drij));
-    //    RealType sep(sqrt(sep2));
-    //    r_m[nn]    = sep;
-    //    //rr_m[nn]   = sep2;
-    //    rinv_m[nn] = 1.0/sep;
-    //    dr_m[nn]   = drij;
-    //  }
-    //}
+  }
+
+  inline void evaluate(ParticleSet& P, int jat)
+  {
+    //based on full evaluation. Only compute it if jat==0
+    if(jat==0) evaluate(P);
   }
 
   ///evaluate the temporary pair relations

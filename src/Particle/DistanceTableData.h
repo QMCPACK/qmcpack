@@ -24,6 +24,7 @@
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "simd/allocator.hpp"
+#include <OhmmsSoA/VectorSoaContainer.h>
 #include <limits>
 #include <bitset>
 
@@ -96,10 +97,10 @@ enum DistTableType {DT_AOS=0, DT_SOA};
  *
  * Each DistanceTableData object is fined by Source and Target of ParticleSet types.
  */
-class DistanceTableData: public QMCTraits
+struct DistanceTableData 
 {
 
-public:
+  constexpr static int DIM=OHMMS_DIM;
 
   /**enum for index ordering and storage.
    *@brief Equivalent to using three-dimensional array with (i,j,k)
@@ -109,14 +110,13 @@ public:
    */
   enum {WalkerIndex=0, SourceIndex, VisitorIndex, PairIndex};
 
-#if (__cplusplus >= 201103L)
-  typedef aligned_vector<IndexType>      IndexVectorType;
-#else
-  typedef std::vector<IndexType>      IndexVectorType;
-#endif
-
-  typedef TempDisplacement<RealType,DIM> TempDistType;
-  typedef std::pair<RealType,IndexType>  ripair;
+  using IndexType=QMCTraits::IndexType;
+  using RealType=QMCTraits::RealType;
+  using PosType=QMCTraits::PosType;
+  using IndexVectorType=aligned_vector<IndexType>;
+  using TempDistType=TempDisplacement<RealType,DIM>;
+  using ripair=std::pair<RealType,IndexType>;
+  using RowContainer=VectorSoaContainer<RealType,DIM>;
 
   ///type of cell
   int CellType;
@@ -166,6 +166,24 @@ public:
    * If the move is rejected, nothing is done and new data will be overwritten.
    */
   std::vector<TempDistType> Temp;
+
+  /**defgroup SoA data */
+  /*@{*/
+  /** Distances[i][j] , [Nsources][Ntargets] */
+  Matrix<RealType, aligned_vector<RealType> > Distances;
+
+  /** Displacements[Nsources]x[3][Ntargets] */
+  std::vector<RowContainer> Displacements;
+
+  ///actual memory for Displacements
+  aligned_vector<RealType> memoryPool;
+
+  /** temp_r */
+  aligned_vector<RealType> Temp_r;
+
+  /** temp_dr */
+  RowContainer Temp_dr;
+  /*@}*/
 
   ///name of the table
   std::string Name;
@@ -292,8 +310,17 @@ public:
     return -1;
   }
 
+  ///prepare particle-by-particle moves
+  virtual void setPbyP() { }
+
+  ///update internal data after completing particle-by-particle moves
+  virtual void donePbyP() { }
+
   ///evaluate the Distance Table using only with position array
-  virtual void evaluate(const ParticleSet& P) = 0;
+  virtual void evaluate(ParticleSet& P) = 0;
+
+  /// evaluate the Distance Table
+  virtual void evaluate(ParticleSet& P, int jat)=0;
 
   ///evaluate the temporary pair relations
   virtual void move(const ParticleSet& P, const PosType& rnew, IndexType jat) =0;
@@ -341,8 +368,6 @@ public:
     os << std::endl;
   }
 
-protected:
-
   const ParticleSet* Origin;
 
   ///number of pairs
@@ -357,10 +382,13 @@ protected:
   std::vector<RealType> rinv_m;
   /** displacement vectors \f$dr(i,j) = R(j)-R(i)\f$  */
   std::vector<PosType> dr_m;
+  /** full distance AB or AA  return r2_m(iat,jat) */
+  Matrix<RealType,aligned_vector<RealType> > r_m2;
+  /** full displacement  AB or AA  */
+  Matrix<PosType> dr_m2;
+  /** J2 for compact neighbors */
+  Matrix<int,aligned_vector<int> > J2;
   /*@}*/
-
-  //Matrix<PosType> dr2_m;
-  //Matrix<RealType> r2_m, rinv2_m;
 
   /**resize the storage
    *@param npairs number of pairs which is evaluated by a derived class

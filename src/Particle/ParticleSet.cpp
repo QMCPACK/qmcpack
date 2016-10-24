@@ -101,6 +101,8 @@ ParticleSet::ParticleSet(const ParticleSet& p)
     resizeSphere(p.Sphere.size());
   add_p_timer(myTimers);
   myTwist=p.myTwist;
+
+  RSoA.resize(getLocalNum());
 }
 
 ParticleSet::~ParticleSet()
@@ -115,17 +117,13 @@ ParticleSet::~ParticleSet()
 void ParticleSet::create(unsigned n)
 {
   createBase(n);
-#if ENABLE_PTCL_SOA
   RSoA.resize(n);
-#endif
 }
 
 void ParticleSet::create(const std::vector<int>& agroup)
 {
   createBase(agroup);
-#if ENABLE_PTCL_SOA
   RSoA.resize(getTotalNum());
-#endif
 }
 
 void ParticleSet::set_quantum_domain(quantum_domains qdomain)
@@ -509,6 +507,13 @@ ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ)
   return newpos;
 }
 
+void ParticleSet::setActive(int iat)
+{
+  for (int i=0,n=DistTables.size(); i< n; i++)
+    DistTables[i]->evaluate(*this,iat);
+}
+
+
 /** move a particle iat
  * @param iat the index of the particle to be moved
  * @param displ the displacement of the iath-particle position
@@ -718,10 +723,14 @@ void ParticleSet::acceptMove(Index_t iat)
   if (iat == activePtcl)
   {
     //Update position + distance-table
-    for (int i=0; i< DistTables.size(); i++)
-    {
+    for (int i=0,n=DistTables.size(); i< n; i++)
       DistTables[i]->update(iat);
-    }
+
+    if(RSoA.size() != getLocalNum())
+      std::cout << "Die here " << RSoA.size() << std::endl;
+
+    RSoA(iat)=R[iat];
+
     //Do not change SK: 2007-05-18
     if (SK && SK->DoUpdate)
       SK->acceptMove(iat,GroupID[iat]);
@@ -734,6 +743,18 @@ void ParticleSet::acceptMove(Index_t iat)
   }
 }
 
+void ParticleSet::rejectMove(Index_t iat)
+{
+  //restore the position by the saved activePos
+  R[iat]=activePos;
+}
+
+void ParticleSet::donePbyP()
+{
+  for (int i=0,nt=DistTables.size(); i< nt; i++)
+    DistTables[i]->donePbyP();
+}
+
 void ParticleSet::makeVirtualMoves(const SingleParticlePos_t& newpos)
 {
   activePtcl=0;
@@ -743,13 +764,6 @@ void ParticleSet::makeVirtualMoves(const SingleParticlePos_t& newpos)
   R[0]=newpos;
 }
 
-void ParticleSet::rejectMove(Index_t iat)
-{
-  //restore the position by the saved activePos
-  R[iat]=activePos;
-  //Do not change SK: 2007-05-18
-  //if(SK && SK->DoUpdate) SK->rejectMove(iat);
-}
 
 /** resize Sphere by the LocalNum
  * @param nc number of centers to which Spherical grid will be assigned.

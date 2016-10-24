@@ -28,9 +28,7 @@
 #include <Utilities/PooledData.h>
 #include <OhmmsPETE/OhmmsArray.h>
 #include <Utilities/NewTimer.h>
-#if ENABLE_PTCL_SOA
 #include <OhmmsSoA/Container.h>
-#endif
 
 namespace qmcplusplus
 {
@@ -106,11 +104,8 @@ public:
 
   ///differential laplacians of the particles
   ParticleLaplacian_t dL;
-
-#if ENABLE_PTCL_SOA
   ///SoA copy of R
   VectorSoaContainer<RealType,DIM> RSoA;
-#endif
   ///index to the primitice cell with tiling
   ParticleIndex_t PCID;
   /** ID map that reflects species group
@@ -305,7 +300,7 @@ public:
    *@param pos position vector assigned to R
    */
   void update(const ParticlePos_t& pos);
-  
+
   /** create Structure Factor with PBCs
    */
   void createSK();
@@ -354,6 +349,14 @@ public:
 
   void resetGroups();
 
+  /** set active particle
+   * @param iat particle index
+   *
+   * Compute internal data based on current R[iat]
+   * Introduced to work with update-only methods.
+   */
+  void setActive(int iat);
+  
   /**move a particle
    *@param iat the index of the particle to be moved
    *@param displ random displacement of the iat-th particle
@@ -455,7 +458,7 @@ public:
   void saveWalker(Walker_t& awalker);
 
   /** update the buffer */
-  void doneSweep();
+  void donePbyP();
 
   //return the address of the values of Hamiltonian terms
   inline EstimatorRealType* restrict getPropertyBase()

@@ -124,7 +124,7 @@ struct SymmetricDTD
   //   }
   // }
 
-  inline void evaluate(const ParticleSet& P)
+  inline void evaluate(ParticleSet& P)
   {
     const int n = N[SourceIndex];
     for(int i=0,ij=0; i<n; i++)
@@ -133,6 +133,12 @@ struct SymmetricDTD
     //old with static type
     //BC::apply(Origin.Lattice,dr_m,r_m,rinv_m);
     DTD_BConds<T,D,SC>::apply_bc(dr_m,r_m,rinv_m);
+  }
+
+  inline void evaluate(ParticleSet& P, int jat)
+  {
+    //based on full evaluation. Only compute it if jat==0
+    if(jat==0) evaluate(P);
   }
 
   ///evaluate the temporary pair relations

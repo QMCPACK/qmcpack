@@ -23,6 +23,9 @@
 #include "Lattice/ParticleBConds.h"
 #include "Particle/SymmetricDistanceTableData.h"
 #include "Particle/AsymmetricDistanceTableData.h"
+#include "Lattice/ParticleBConds3DSoa.h"
+#include "Particle/SoaDistanceTableAA.h"
+#include "Particle/SoaDistanceTableBA.h"
 namespace qmcplusplus
 {
 
@@ -52,13 +55,19 @@ DistanceTableData* createDistanceTable(ParticleSet& s, int dt_type)
       {
         o << "  Using SymmetricDTD<T,D,PPPG> " << PPPG << std::endl;
         dt = new  SymmetricDTD<RealType,DIM,PPPG>(s,s);
-        //o << "    PBC=bulk Orthorhombic=no SymmetricDTD<T,DIM,PPPX> " << PPPX << std::endl;
-        //dt = new  SymmetricDTD<RealType,DIM,PPPX>(s,s);
       }
       else
       {
-        o << "  Using SymmetricDTD<T,D,PPPS> " << PPPS << std::endl;
-        dt = new  SymmetricDTD<RealType,DIM,PPPS>(s,s);
+        if(dt_type == DT_SOA)
+        {
+          o << "  Using SoaDistanceTableAA<T,D,PPPS> of SoA layout " << PPPS << std::endl;
+          dt = new  SoaDistanceTableAA<RealType,DIM,PPPS+SOA_OFFSET>(s);
+        }
+        else
+        {
+          o << "  Using SymmetricDTD<T,D,PPPS> " << PPPS << std::endl;
+          dt = new  SymmetricDTD<RealType,DIM,PPPS>(s,s);
+        }
       }
       o << "\n    Setting Rmax = " << s.Lattice.SimulationCellRadius;
     }
@@ -108,6 +117,7 @@ DistanceTableData* createDistanceTable(ParticleSet& s, int dt_type)
     app_log() << o.str() << std::endl;
     app_log().flush();
   }
+
   return dt;
 }
 
@@ -141,8 +151,16 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int
       }
       else
       {
-        o << " Using AsymmetricDTD<T,D,PPPS> " << PPPS << std::endl;
-        dt = new AsymmetricDTD<RealType,DIM,PPPS>(s,t);
+        if(dt_type == DT_SOA)
+        {
+          o << " Using SoaDistanceTableBA<T,D,PPPS> with SoA layout " << PPPS << std::endl;
+          dt = new SoaDistanceTableBA<RealType,DIM,PPPS+SOA_OFFSET>(s,t);
+        }
+        else
+        {
+          o << " Using AsymmetricDTD<T,D,PPPS> " << PPPS << std::endl;
+          dt = new AsymmetricDTD<RealType,DIM,PPPS>(s,t);
+        }
       }
       o << "    Setting Rmax = " << s.Lattice.SimulationCellRadius;
     }

@@ -16,6 +16,7 @@ These files are modifed to use DT_AOS. These classes need to be modified to use 
   QMCApp/InitMolecularSystem.cpp
   QMCDrivers/WaveFunctionTester.cpp
   QMCDrivers/tests/test_vmc.cpp
+  QMCTools/MolecularOrbitalBasis.h
 
   QMCHamiltonians/GaussianPot.h
   QMCHamiltonians/HFDHE2Potential.h
