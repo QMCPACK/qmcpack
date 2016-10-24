@@ -120,27 +120,27 @@ namespace qmcplusplus
       using Func=typename J2Type::FuncType;
       using RealType=typename Func::real_type;
       const int npts=10;
-      string optimize("no");
+      std::string optimize("no");
       RealType rcut=6.4;
       RealType dr=rcut/static_cast<RealType>(npts);
-      vector<RealType> X(npts+1);
+      std::vector<RealType> X(npts+1);
       for(int i=0; i<npts; ++i) X[i]=static_cast<RealType>(i)*dr;
 
       { //add uu/dd
-        vector<RealType> Y=
+        std::vector<RealType> Y=
         {0.4711f, 0.3478f, 0.2445f, 0.1677f, 0.1118f,
          0.0733f, 0.0462f, 0.0273f, 0.0145f, 0.0063f, 0.0f};
-        string suu("uu");
+        std::string suu("uu");
         Func* f=new Func;
         f->initialize(npts,X,Y,-0.25,rcut,suu,optimize);
         J2.addFunc(0,0,f);
       }
       { //add ud/du
-        vector<RealType> Y=
+        std::vector<RealType> Y=
         {0.6715f, 0.4433f, 0.2901f, 0.1889f, 0.1227f,
          0.0793f, 0.0496f, 0.0292f, 0.0152f, 0.0061f, 0.0f};
 
-        string suu("ud");
+        std::string suu("ud");
         Func* f=new Func;
         f->initialize(npts,X,Y,-0.5,rcut,suu,optimize);
         J2.addFunc(0,1,f);
