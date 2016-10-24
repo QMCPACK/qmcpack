@@ -114,7 +114,7 @@ public:
   void resetTargetParticleSet(ParticleSet& P)
   {
     LOGMSG("MolecularOrbitalBasis::resetTargetParticleSet")
-    myTable = DistanceTable::add(*IonConfig,P);
+    myTable = DistanceTable::add(*IonConfig,P,DT_AOS);
     for(int i=0; i<AOs.size(); i++)
       AOs[i]->setTable(myTable);
   }
