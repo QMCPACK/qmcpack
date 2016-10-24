@@ -46,7 +46,7 @@ namespace qmcplusplus
      using aligned_vector = std::vector<T,aligned_allocator<T> >;
 
    template<typename T>
-   __forceinline int getAlignedSize(int n)
+   inline int getAlignedSize(int n)
    {
      constexpr int ND=QMC_CLINE/sizeof(T);
      return ((n+ND-1)/ND)*ND;

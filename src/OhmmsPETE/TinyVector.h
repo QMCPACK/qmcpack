@@ -44,62 +44,58 @@
 
 namespace qmcplusplus
 {
-//////////////////////////////////////////////////////////////////////
-//
-// Definition of class TinyVector.
-//
-//////////////////////////////////////////////////////////////////////
+/** Fixed-size array. candidate for array<T,D>
+ */
 template<class T, unsigned D>
-class TinyVector
+struct TinyVector
 {
-public:
-
   typedef T Type_t;
   enum { Size = D };
+  T X[Size];
 
   // Default Constructor initializes to zero.
-  TinyVector()
+  inline TinyVector()
   {
     OTAssign<TinyVector<T,D>, T, OpAssign>::apply(*this,T(0), OpAssign());
   }
 
   // A noninitializing ctor.
   class DontInitialize {};
-  TinyVector(DontInitialize) {}
+  inline TinyVector(DontInitialize) {}
 
   // Copy Constructor
-  TinyVector(const TinyVector<T,D> &rhs)
+  inline TinyVector(const TinyVector& rhs)
   {
     OTAssign< TinyVector<T,D> , TinyVector<T,D> ,OpAssign>::apply(*this,rhs, OpAssign());
   }
 
   // Templated TinyVector constructor.
   template<class T1, unsigned D1>
-  TinyVector(const TinyVector<T1,D1> &rhs)
+  inline TinyVector(const TinyVector<T1,D1> &rhs)
   {
     for (unsigned d=0; d<D; ++d)
       X[d] = (d < D1) ? rhs[d] : T1(0);
   }
 
   // Constructor from a single T
-  TinyVector(const T& x00)
+  inline TinyVector(const T& x00)
   {
     OTAssign<TinyVector<T,D>,T,OpAssign>::apply(*this,x00,OpAssign());
   }
 
   // Constructors for fixed dimension
-  TinyVector(const T& x00, const T& x01)
+  inline TinyVector(const T& x00, const T& x01)
   {
     X[0] = x00;
     X[1] = x01;
   }
-  TinyVector(const T& x00, const T& x01, const T& x02)
+  inline TinyVector(const T& x00, const T& x01, const T& x02)
   {
     X[0] = x00;
     X[1] = x01;
     X[2] = x02;
   }
-  TinyVector(const T& x00, const T& x01, const T& x02, const T& x03)
+  inline TinyVector(const T& x00, const T& x01, const T& x02, const T& x03)
   {
     X[0] = x00;
     X[1] = x01;
@@ -107,7 +103,7 @@ public:
     X[3] = x03;
   }
 
-  TinyVector(const T& x00, const T& x01, const T& x02, const T& x03,
+  inline TinyVector(const T& x00, const T& x01, const T& x02, const T& x03,
              const T& x10, const T& x11, const T& x12, const T& x13,
              const T& x20, const T& x21, const T& x22, const T& x23,
              const T& x30, const T& x31, const T& x32, const T& x33)
@@ -130,6 +126,13 @@ public:
     X[15] = x33;
   }
 
+  inline TinyVector(const T* restrict base, int offset)
+  {
+#pragma unroll(D)
+    for(int i=0; i<D; ++i)
+      X[i]=base[i*offset];
+  }
+
   // Destructor
   ~TinyVector() { }
 
@@ -143,7 +146,7 @@ public:
     return D*sizeof(T);
   }
 
-  inline TinyVector<T,D>& operator=(const TinyVector<T,D> &rhs)
+  inline TinyVector& operator=(const TinyVector& rhs)
   {
     OTAssign<TinyVector<T,D>,TinyVector<T,D>,OpAssign>::apply(*this,rhs,OpAssign());
     return *this;
@@ -238,11 +241,6 @@ public:
     m.Unpack(X,Size);
     return m;
   }
-
-private:
-
-  // Just store D elements of type T.
-  T X[Size];
 
 };
 
