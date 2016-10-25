@@ -62,8 +62,6 @@ struct MCDataType
 };
 
 
-
-
 /** Specialized paritlce class for atomistic simulations
  *
  * Derived from QMCTraits, ParticleBase<PtclOnLatticeTraits> and OhmmsElementBase.
@@ -128,6 +126,8 @@ public:
   bool IsGrouped;
   ///true if the particles have the same mass
   bool SameMass;
+  /// true if all the internal state is ready for estimators
+  bool Ready4Measure;
   ///threa id
   Index_t ThreadID;
   ///the index of the active particle for particle-by-particle moves

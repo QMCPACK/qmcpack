@@ -34,6 +34,15 @@ namespace qmcplusplus {
         for(size_t i=0; i<count;  ++i) result[i]=first[i];
         return result; 
       }
+
+    template<typename T1, typename T2>
+    inline T2 accumulate_n(const T1* restrict in, int n, T2 res)
+      {
+#pragma omp simd reduction(+:res)
+        for(int i=0; i<n; ++i)
+          res += in[i];
+        return res;
+      }
   } //simd namepsace
 
 }

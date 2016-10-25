@@ -500,6 +500,7 @@ struct BsplineFunctor: public OptimizableFunctorBase
     app_log() << "New parameters are:\n";
     for (int i=0; i < Parameters.size(); i++)
       app_log() << "   " << Parameters[i] << std::endl;
+#if QMC_BUILD_LEVEL < 5
     if(optimize == "yes")
     {
       // Setup parameter names
@@ -513,6 +514,7 @@ struct BsplineFunctor: public OptimizableFunctorBase
       myVars.print(app_log());
     }
     else
+#endif
     {
       notOpt=true;
       app_log() << "Parameters of BsplineFunctor id:"
