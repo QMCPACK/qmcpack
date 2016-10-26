@@ -182,7 +182,7 @@ BsplineFunctorSoA<T>::evaluate(real_type r) const
 
   r *= DeltaRInv;
   real_type ipart, t;
-  t = modf(r, &ipart);
+  t = std::modf(r, &ipart);
   int i = (int) ipart;
   real_type tp[4];
   tp[0] = t*t*t;
@@ -208,7 +208,7 @@ BsplineFunctorSoA<T>::evaluate(real_type r, real_type& dudr, real_type& d2udr2) 
   }
   r *= DeltaRInv;
   real_type ipart, t;
-  t = modf(r, &ipart);
+  t = std::modf(r, &ipart);
   int i = (int) ipart;
   real_type tp[4];
   tp[0] = t*t*t;
@@ -242,7 +242,7 @@ BsplineFunctorSoA<T>::evaluate(real_type r, real_type& dudr, real_type& d2udr2, 
   }
   r *= DeltaRInv;
   real_type ipart, t;
-  t = modf(r, &ipart);
+  t = std::modf(r, &ipart);
   int i = (int) ipart;
   real_type tp[4];
   tp[0] = t*t*t;
@@ -278,7 +278,7 @@ BsplineFunctorSoA<T>::evaluateDerivatives(real_type r, std::vector<TinyVector<re
   if (r >= cutoff_radius) return false;
   r *= DeltaRInv;
   real_type ipart, t;
-  t = modf(r, &ipart);
+  t = std::modf(r, &ipart);
   int i = (int) ipart;
   real_type tp[4];
   tp[0] = t*t*t;
@@ -318,7 +318,7 @@ BsplineFunctorSoA<T>::evaluateDerivatives(real_type r, std::vector<real_type>& d
 {
   if (r >= cutoff_radius) return false;
   real_type tp[4],v[4],ipart,t;
-  t = modf(r*DeltaRInv, &ipart);
+  t = std::modf(r*DeltaRInv, &ipart);
   tp[0] = t*t*t;
   tp[1] = t*t;
   tp[2] = t;
