@@ -1,9 +1,13 @@
-//////////////////////////////////////////////////////////////////
-// (c) Copyright 2015- by Jeongnim Kim
-//////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////
-// e-mail: jeongnim.kim@intel.com
-//////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: 
+//
+// File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
+//////////////////////////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 /** @file j2debug.cpp
  * @brief Debugging J2OribitalSoA 
@@ -19,9 +23,9 @@
 #include <Utilities/Timer.h>
 #include <miniapps/common.hpp>
 #include <QMCWaveFunctions/Jastrow/BsplineFunctor.h>
-#include <QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h>
+#include <QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h>
 #include <miniapps/BsplineFunctorSoA.h>
-#include <miniapps/J2OrbitalSoA.h>
+#include <miniapps/J1OrbitalSoA.h>
 #include <getopt.h>
 
 using namespace std;
@@ -47,7 +51,7 @@ int main(int argc, char** argv)
   int nc=1;
   int nsteps=100;
   int iseed=11;
-  RealType Rmax(1.7);
+  RealType Rmax(2.7);
 
   char *g_opt_arg;
   int opt;
@@ -89,7 +93,6 @@ int main(int argc, char** argv)
 
   PrimeNumberSet<uint32_t> myPrimes;
 
-#pragma omp parallel reduction(+:t0,ratio)
   {
     ParticleSet ions, els;
     OHMMS_PRECISION scale=1.0;
@@ -101,6 +104,7 @@ int main(int argc, char** argv)
     RandomGenerator<RealType> random_th(myPrimes[ip]);
 
     tile_graphite(ions,tmat,scale);
+    ions.RSoA=ions.R; //fill the SoA
 
     const int nions=ions.getTotalNum();
     const int nels=4*nions;
@@ -123,6 +127,7 @@ int main(int argc, char** argv)
 
     //create tables
     DistanceTableData* d_ee=DistanceTable::add(els,DT_SOA);
+
     DistanceTableData* d_ee_aos=DistanceTable::add(els_aos,DT_AOS);
 
     ParticlePos_t delta(nels);
@@ -133,13 +138,15 @@ int main(int argc, char** argv)
     vector<RealType> ur(nels);
     random_th.generate_uniform(ur.data(),nels);
 
-    J2OrbitalSoA<BsplineFunctorSoA<RealType> > J(els,ip);
-    TwoBodyJastrowOrbital<BsplineFunctor<RealType> > J_aos(els_aos,ip);
+    J1OrbitalSoA<BsplineFunctorSoA<RealType> > J(ions,els,ip);
+    OneBodyJastrowOrbital<BsplineFunctor<RealType> > J_aos(ions,els_aos);
 
-    buildJ2(J);
-    cout << "Done with the J2 " << endl;
-    buildJ2(J_aos);
-    cout << "Done with the J2_aos " << endl;
+    DistanceTableData* d_ie=DistanceTable::add(ions,els,DT_SOA);
+
+    buildJ1(J);
+    cout << "Done with the J1 " << endl;
+    buildJ1(J_aos);
+    cout << "Done with the J1_aos " << endl;
 
     constexpr RealType czero(0);
 
@@ -158,6 +165,7 @@ int main(int argc, char** argv)
       els_aos.G=czero;
       els_aos.L=czero;
       J_aos.evaluateLogAndStore(els_aos,els_aos.G,els_aos.L);
+
 
       cout << "Check values " << J.LogValue << " " << els.G[0] << " " << els.L[0] << endl;
       cout << "evaluateLog::V Error = " << J.LogValue-J_aos.LogValue<< endl;
@@ -232,7 +240,6 @@ int main(int argc, char** argv)
       cout << "ratioGrad::G     Error = " << g_ratio/nels << endl;
       cout << "ratioGrad::Ratio Error = " << r_ratio/nels << endl;
 
-      //nothing to do with J2 but needs for general cases
       els.donePbyP();
       els_aos.donePbyP();
 
@@ -266,22 +273,32 @@ int main(int argc, char** argv)
       //now ratio only
       r_ratio=0.0;
       constexpr int nknots=12;
-      for(int iel=0; iel<nels; ++iel)
+      int nsphere=0;
+      for(int i=0; i<nions; ++i)
       {
-        random_th.generate_uniform(&delta[0][0],nknots*3);
-        for(int k=0; k<nknots;++k)
+        for(int nj=0, jmax=d_ie->M[i]; nj<jmax; ++nj)
         {
-          els.makeMoveOnSphere(iel,delta[k]);
-          RealType r_soa=J.ratio(els,iel);
-          els.rejectMove(iel);
+          RealType r=d_ie->r_m2(i,nj);
+          if(r<Rmax) 
+          {
+            int iel=d_ie->J2(i,nj);
+            nsphere++;
+            random_th.generate_uniform(&delta[0][0],nknots*3);
+            for(int k=0; k<nknots;++k)
+            {
+              els.makeMoveOnSphere(iel,delta[k]);
+              RealType r_soa=J.ratio(els,iel);
+              els.rejectMove(iel);
 
-          els_aos.makeMoveOnSphere(iel,delta[k]);
-          RealType r_aos=J_aos.ratio(els_aos,iel);
-          els_aos.rejectMove(iel);
-          r_ratio += abs(r_soa/r_aos-1);
+              els_aos.makeMoveOnSphere(iel,delta[k]);
+              RealType r_aos=J_aos.ratio(els_aos,iel);
+              els_aos.rejectMove(iel);
+              r_ratio += abs(r_soa/r_aos-1);
+            }
+          }
         }
       }
-    cout << "ratio with SphereMove  Error = " << r_ratio/(nels*nknots) << endl;
+      cout << "ratio with SphereMove  Error = " << r_ratio/nsphere << " # of moves =" << nsphere << endl;
     }
   } //end of omp parallel
 

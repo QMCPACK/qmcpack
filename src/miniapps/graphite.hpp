@@ -39,6 +39,8 @@ namespace qmcplusplus
 
       expandSuperCell(ions,tmat);
 
+      ions.resetGroups();
+
       return graphite;
     }
 
@@ -145,5 +147,26 @@ namespace qmcplusplus
         f->initialize(npts,X,Y,-0.5,rcut,suu,optimize);
         J2.addFunc(0,1,f);
       }
+    }
+
+  template<typename J1Type>
+    void buildJ1(J1Type&  J1)
+    {
+      using Func=typename J1Type::FuncType;
+      using RealType=typename Func::real_type;
+      const int npts=10;
+      std::string optimize("no");
+      RealType rcut=6.4;
+      RealType dr=rcut/static_cast<RealType>(npts);
+      std::vector<RealType> X(npts+1);
+      for(int i=0; i<npts; ++i) X[i]=static_cast<RealType>(i)*dr;
+
+      std::vector<RealType> Y=
+      {0.4711f, 0.3478f, 0.2445f, 0.1677f, 0.1118f,
+        0.0733f, 0.0462f, 0.0273f, 0.0145f, 0.0063f, 0.0f};
+      std::string suu("uu");
+      Func* f=new Func;
+      f->initialize(npts,X,Y,-0.25,rcut,suu,optimize);
+      J1.addFunc(0,f);
     }
 }
