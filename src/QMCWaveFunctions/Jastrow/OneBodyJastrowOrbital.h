@@ -98,10 +98,15 @@ public:
     : CenterRef(centers), FirstAddressOfdU(0), LastAddressOfdU(0)
   {
     U.resize(els.getTotalNum());
+    dU.resize(els.getTotalNum());
+    d2U.resize(els.getTotalNum());
+
     myTableIndex=els.addTable(CenterRef,DT_AOS);
     //allocate vector of proper size  and set them to 0
-    Funique.resize(CenterRef.getSpeciesSet().getTotalNum(),0);
-    Fs.resize(CenterRef.getTotalNum(),0);
+    Funique.resize(CenterRef.getSpeciesSet().getTotalNum(),nullptr);
+    Fs.resize(CenterRef.getTotalNum(),nullptr);
+    
+    std::cout << "<<<<< SIZE " << Funique.size() << " " << Fs.size() << std::endl;
     OrbitalName = "OneBodyJastrow";
   }
 
@@ -146,7 +151,7 @@ public:
     myVars.getIndex(active);
     Optimizable=myVars.is_optimizable();
     for (int i=0; i<Funique.size(); ++i)
-      if (Funique[i])
+      if (Funique[i] != nullptr)
         Funique[i]->checkOutVariables(active);
     if (dPsi)
       dPsi->checkOutVariables(active);
@@ -205,8 +210,7 @@ public:
     for (int i=0; i<d_table->size(SourceIndex); i++)
     {
       FT* func=Fs[i];
-      if (func == 0)
-        continue;
+      if (func == nullptr) continue;
       for (int nn=d_table->M[i]; nn<d_table->M[i+1]; nn++)
       {
         int j = d_table->J[nn];
@@ -243,8 +247,7 @@ public:
     for (int i=0; i<d_table->size(SourceIndex); i++)
     {
       FT* func=Fs[i];
-      if (func == 0)
-        continue;
+      if (func == nullptr) continue;
       for (int nn=d_table->M[i]; nn<d_table->M[i+1]; nn++)
       {
         int j = d_table->J[nn];
@@ -266,7 +269,7 @@ public:
     const DistanceTableData* d_table=P.DistTables[myTableIndex];
     curVal=0.0;
     for (int i=0; i<d_table->size(SourceIndex); ++i)
-      if (Fs[i])
+      if (Fs[i] != nullptr)
         curVal += Fs[i]->evaluate(d_table->Temp[i].r1);
     return std::exp(U[iat]-curVal);
   }
@@ -285,7 +288,7 @@ public:
     std::vector<RealType> myr(ratios.size(),U[VP.activePtcl]);
     const DistanceTableData* d_table=VP.DistTables[myTableIndex];
     for (int i=0; i<d_table->size(SourceIndex); ++i)
-      if (Fs[i])
+      if (Fs[i]!=nullptr)
         for (int nn=d_table->M[i],j=0; nn<d_table->M[i+1]; ++nn,++j)
           myr[j]-=Fs[i]->evaluate(d_table->r(nn));
     for(int k=0; k<ratios.size(); ++k)
@@ -309,7 +312,7 @@ public:
     std::fill(ratios.begin(),ratios.end(),0.0);
     for (int i=0; i<d_table->size(SourceIndex); ++i)
     {
-      if (Fs[i])
+      if (Fs[i] != nullptr)
       {
         RealType up=Fs[i]->evaluate(d_table->Temp[i].r1);
         for (int nn=d_table->M[i],j=0; nn<d_table->M[i+1]; ++nn,++j)
@@ -364,7 +367,7 @@ public:
     RealType ur,dudr, d2udr2;
     for (int i=0, nn=iat; i<d_table->size(SourceIndex); ++i,nn+= n)
     {
-      if (Fs[i])
+      if (Fs[i] != nullptr)
       {
         ur=Fs[i]->evaluate(d_table->r(nn),dudr,d2udr2);
         dudr *= d_table->rinv(nn);
@@ -436,7 +439,7 @@ public:
     RealType dudr, d2udr2;
     for (int i=0; i<d_table->size(SourceIndex); ++i)
     {
-      if (Fs[i])
+      if (Fs[i] != nullptr)
       {
         curVal += Fs[i]->evaluate(d_table->Temp[i].r1,dudr,d2udr2);
         dudr *= d_table->Temp[i].rinv1;
@@ -459,7 +462,7 @@ public:
     RealType dudr, d2udr2;
     for (int i=0, nn=iat; i<d_table->size(SourceIndex); i++,nn+= n)
     {
-      if (Fs[i])
+      if (Fs[i] != nullptr)
       {
         curVal += Fs[i]->evaluate(d_table->Temp[i].r1,dudr,d2udr2);
         dudr *= d_table->Temp[i].rinv1;
@@ -504,11 +507,10 @@ public:
     d2U=0.0;
     RealType uij, dudr, d2udr2;
     const DistanceTableData* d_table=P.DistTables[myTableIndex];
-    for (int i=0; i<d_table->size(SourceIndex); i++)
+    for (int i=0,ns=d_table->size(SourceIndex); i<ns; i++)
     {
       FT* func=Fs[i];
-      if (func == 0)
-        continue;
+      if (func ==  nullptr) continue;
       for (int nn=d_table->M[i]; nn<d_table->M[i+1]; nn++)
       {
         int j = d_table->J[nn];
@@ -533,8 +535,6 @@ public:
     // std::cerr <<"REGISTERING 1 BODY JASTROW "<< std::endl;
     // std::cerr <<d_table->size(VisitorIndex)<< std::endl;
     //U.resize(d_table->size(VisitorIndex));
-    d2U.resize(d_table->size(VisitorIndex));
-    dU.resize(d_table->size(VisitorIndex));
     FirstAddressOfdU = &(dU[0][0]);
     LastAddressOfdU = FirstAddressOfdU + dU.size()*DIM;
     evaluateLogAndStore(P,P.G,P.L);
@@ -545,6 +545,11 @@ public:
     buf.add(FirstAddressOfdU,LastAddressOfdU);
     DEBUG_PSIBUFFER(" OneBodyJastrow::registerData ",buf.current());
     return LogValue;
+  }
+
+  void evaluateGL(ParticleSet& P)
+  {
+    evaluateLogAndStore(P,P.G,P.L);
   }
 
   RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false)
