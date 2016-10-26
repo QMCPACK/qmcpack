@@ -282,25 +282,24 @@ J2OrbitalSoA<FT>::ratio(ParticleSet& P, int iat)
 {
   const DistanceTableData* d_table=P.DistTables[0];
   const auto dist=d_table->Temp_r.data();
-  RealType d(0);
   if(P.Ready4Measure)
   { // no change in the internal data and only evaluate the sum
+    curAt=valT(0);
     const int igt=P.GroupID[iat]*NumGroups;
     for(int jg=0; jg<NumGroups; ++jg)
     {
       const FuncType& f2(*F[igt+jg]);
       int iStart = P.first(jg);
       int iEnd = P.last(jg);
-      d += f2.evaluateU( iStart, iEnd, dist, DistCompressed.data() );
+      curAt += f2.evaluateU( iStart, iEnd, dist, DistCompressed.data() );
     }
   }
   else
   { //compute u, du, d2u so that acceptMove & evalueGL are ready 
     computeU3(P,iat,dist,cur_u.data(),cur_du.data(),cur_d2u.data());
     curAt=simd::accumulate_n(cur_u.data(),N,valT());
-    d=Uat[iat]-curAt;
   }
-  return std::exp(Uat[iat]-d);
+  return std::exp(Uat[iat]-curAt);
 }
 
 template<typename FT>

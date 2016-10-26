@@ -178,7 +178,6 @@ struct  J1OrbitalSoA
     else
     {
       evaluateU3(P,iat,P.DistTables[myTableID]->Temp_r.data());
-      curGrad=valT();
       curLap=valT();
       accumulateGL(dU.data(),d2U.data(),P.DistTables[myTableID]->Temp_dr,curGrad,curLap);
       curAt=simd::accumulate_n(U.data(),Nions,valT());
@@ -192,7 +191,7 @@ struct  J1OrbitalSoA
                   ParticleSet::ParticleLaplacian_t& dL)
   {
     APP_ABORT("OrbitalBase::ratio(P,iat,dG,dL) shuold not Used")
-    return std::exp(DiffVal);
+    return 1;
   }
 
   /** compute gradient and lap
@@ -269,7 +268,6 @@ struct  J1OrbitalSoA
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
     evaluateU3(P,iat,P.DistTables[myTableID]->Temp_r.data());
-    curGrad=valT();
     curLap=valT();
     accumulateGL(dU.data(),d2U.data(),P.DistTables[myTableID]->Temp_dr,curGrad,curLap);
     curAt=simd::accumulate_n(U.data(),Nions,valT());
