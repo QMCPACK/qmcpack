@@ -471,9 +471,9 @@ template<typename T> void
       PRE.error("You must specify a positive number of parameters for the Bspline jastrow function.",true);
     }
     app_log() << "Initializing BsplineFunctorSoA from array. \n";
-    app_log() << " size = " << NumParams << " parameters " << endl;
-    app_log() << " cusp = " << CuspValue << endl;
-    app_log() << " rcut = " << cutoff_radius << endl;
+    app_log() << " size = " << NumParams << " parameters " << std::endl;
+    app_log() << " cusp = " << CuspValue << std::endl;
+    app_log() << " rcut = " << cutoff_radius << std::endl;
     resize(NumParams);
     int npts = x.size();
     Matrix<real_type> basis(npts,NumParams);
@@ -493,7 +493,7 @@ template<typename T> void
     LinearFit(y, basis, Parameters);
     app_log() << "New parameters are:\n";
     for (int i=0; i < Parameters.size(); i++)
-      app_log() << "   " << Parameters[i] << endl;
+      app_log() << "   " << Parameters[i] << std::endl;
 #if QMC_BUILD_LEVEL < 5
     if(optimize == "yes")
     {
