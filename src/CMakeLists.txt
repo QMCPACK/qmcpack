@@ -61,13 +61,6 @@ SET(UTILITIES
   Optimize/VariableSet.cpp
   io/hdf_archive.cpp
   )
-if(QMC_BUILD_LEVEL GREATER 4)
-  SET(UTILITIES ${UTILITIES}
-    spline2/einspline_allocator.c
-    spline2/bspline_allocator.cpp
-    spline2/MultiBspline.cpp
-    )
-endif()
 
 IF(QMC_ADIOS)
   SET(UTILITIES ${UTILITIES}
@@ -195,12 +188,21 @@ SET(ADIOS ${ADIOS}
 
 ADD_LIBRARY(adios_config ${ADIOS})
 
-
 If(QMC_BUILD_LEVEL GREATER 4)
-  SUBDIRS(spline2 miniapps)
+
+  SET(X 
+    spline2/einspline_allocator.c
+    spline2/bspline_allocator.cpp
+    spline2/MultiBspline.cpp
+    )
+
   SET(WFSTEMP QMCWaveFunctions/OrbitalBase.cpp) 
-  ADD_LIBRARY(qmcbase ${PARTICLE}  ${PARTICLEIO} ${WFSTEMP})
+  ADD_LIBRARY(qmcbase ${PARTICLE}  ${PARTICLEIO} ${WFSTEMP} ${X})
+
+  SUBDIRS(spline2 miniapps)
+
 ELSE()
+
   ADD_LIBRARY(qmcbase ${PARTICLE}  ${PARTICLEIO}) 
   SUBDIRS(QMCWaveFunctions)
   SUBDIRS(QMCHamiltonians)

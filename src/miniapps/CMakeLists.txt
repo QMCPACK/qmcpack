@@ -6,7 +6,7 @@ SET(ESTEST distancetable_soa j2debug j1debug einspline_spo einspline_spo_nested)
 
 FOREACH(p ${ESTEST})
   ADD_EXECUTABLE( ${p}  ${p}.cpp)
-  TARGET_LINK_LIBRARIES(${p} ${QMC_UTIL_LIBS}  qmcutil qmcbase ${MPI_LIBRARY})
+  TARGET_LINK_LIBRARIES(${p} qmcbase qmcutil ${QMC_UTIL_LIBS} ${MPI_LIBRARY})
 ENDFOREACH(p ${ESTEST})
 
 

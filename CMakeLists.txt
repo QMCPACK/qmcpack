@@ -670,7 +670,7 @@ set(build_einspline 1)
 if(build_einspline)
   SUBDIRS(src/einspline)
   INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/include)
-  SET(QMC_UTIL_LIBS einspline ${QMC_UTIL_LIBS})
+  SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} einspline)
 endif()
 
 #include(ExternalProject)
