@@ -87,7 +87,7 @@ struct BsplineFunctorSoA
    * @param distArrayCompressed temp storage to filter r_j < cutoff_radius
    * @return \f$\sum u(r_j)\f$ for r_j < cutoff_radius
    */
-  T evaluateU(const int iStart, const int iEnd, 
+  T evaluateV(const int iStart, const int iEnd, 
       const real_type* restrict _distArray, 
       real_type* restrict distArrayCompressed) const;
 
@@ -342,7 +342,7 @@ BsplineFunctorSoA<T>::evaluateDerivatives(real_type r, std::vector<real_type>& d
 
 template<typename T>
 inline T 
-BsplineFunctorSoA<T>::evaluateU(const int iStart, const int iEnd,
+BsplineFunctorSoA<T>::evaluateV(const int iStart, const int iEnd,
     const real_type* restrict _distArray, real_type* restrict distArrayCompressed ) const
 {
   const real_type* restrict distArray = _distArray + iStart;

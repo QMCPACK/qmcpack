@@ -40,16 +40,8 @@ namespace qmcplusplus
  * - Memory use is 3*N*N+3N. 
  */
 template<class FT>
-struct  J1OrbitalSoA
-#if QMC_BUILD_LEVEL<5
-: public OrbitalBase
-#endif
+struct  J1OrbitalSoA : public OrbitalBase
 {
-#if QMC_BUILD_LEVEL==5
-  using RealType=OHMMS_PRECISION;
-  using ValueType=OHMMS_PRECISION;
-  using GradType=TinyVector<ValueType,OHMMS_DIM>;
-#endif
   ///alias FuncType
   using FuncType=FT;
   ///type of each component U, dU, d2U;
@@ -126,17 +118,6 @@ struct  J1OrbitalSoA
     F[source_type]=afunc;
   }
 
-  //evaluate the distance table with els
-  void resetTargetParticleSet(ParticleSet& P)
-  {
-  }
-
-
-  /** print the state, e.g., optimizables */
-  void reportStatus(std::ostream& os)
-  {
-  }
-
   RealType evaluateLog(ParticleSet& P,
                        ParticleSet::ParticleGradient_t& G,
                        ParticleSet::ParticleLaplacian_t& L)
@@ -163,7 +144,7 @@ struct  J1OrbitalSoA
         for(int jg=0; jg<NumGroups; ++jg)
         {
           if(F[jg]!=nullptr) 
-            curAt += F[jg]->evaluateU(Ions.first(jg), Ions.last(jg), dist, DistCompressed.data() );
+            curAt += F[jg]->evaluateV(Ions.first(jg), Ions.last(jg), dist, DistCompressed.data() );
         }
       }
       else
@@ -185,13 +166,11 @@ struct  J1OrbitalSoA
     return std::exp(Vat[iat]-curAt);
   }
 
-  /** must be removed */
-  ValueType ratio(ParticleSet& P, int iat,
-                  ParticleSet::ParticleGradient_t& dG,
-                  ParticleSet::ParticleLaplacian_t& dL)
+  inline void evaluateGL(ParticleSet& P)
   {
-    APP_ABORT("OrbitalBase::ratio(P,iat,dG,dL) shuold not Used")
-    return 1;
+    const int n=P.getTotalNum();
+    for(int iat=0; iat<n; ++iat) P.G[iat]+=Grad[iat];
+    for(int iat=0; iat<n; ++iat) P.L[iat]-=Lap[iat];
   }
 
   /** compute gradient and lap
@@ -288,15 +267,6 @@ struct  J1OrbitalSoA
   }
 
 
-  inline void update(ParticleSet& P,
-                     ParticleSet::ParticleGradient_t& dG,
-                     ParticleSet::ParticleLaplacian_t& dL,
-                     int iat)
-  {
-    APP_ABORT("J1OrbitalSoA::update must not be used");
-  }
-
-
   inline void evaluateLogAndStore(ParticleSet& P, 
       ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL )
   {
@@ -315,7 +285,6 @@ struct  J1OrbitalSoA
     }
   }
 
-
   inline RealType registerData(ParticleSet& P, PooledData<RealType>& buf)
   {
     evaluateLogAndStore(P,P.G,P.L);
@@ -330,9 +299,7 @@ struct  J1OrbitalSoA
     return LogValue;
   }
 
-  inline void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
-  {
-  }
+  inline void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) { }
 
   inline RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
   {
@@ -340,12 +307,34 @@ struct  J1OrbitalSoA
     return LogValue;
   }
 
-  inline void evaluateGL(ParticleSet& P)
+  /**@{ OrbitalBase virtual functions that are not essential for the development */
+  void resetTargetParticleSet(ParticleSet& P){}
+  void reportStatus(std::ostream& os){}
+  void checkInVariables(opt_variables_type& active){}
+  void checkOutVariables(const opt_variables_type& active){}
+  void resetParameters(const opt_variables_type& active){}
+  /**@} */
+
+  /** must be removed */
+  ValueType ratio(ParticleSet& P, int iat,
+                  ParticleSet::ParticleGradient_t& dG,
+                  ParticleSet::ParticleLaplacian_t& dL)
   {
-    const int n=P.getTotalNum();
-    for(int iat=0; iat<n; ++iat) P.G[iat]+=Grad[iat];
-    for(int iat=0; iat<n; ++iat) P.L[iat]-=Lap[iat];
+    APP_ABORT("OrbitalBase::ratio(P,iat,dG,dL) shuold not Used")
+    return 1;
   }
+
+  /** must be removed */
+  inline void update(ParticleSet& P,
+                     ParticleSet::ParticleGradient_t& dG,
+                     ParticleSet::ParticleLaplacian_t& dL,
+                     int iat)
+  {
+    APP_ABORT("J1OrbitalSoA::update must not be used");
+  }
+
+
+
 
 };
 

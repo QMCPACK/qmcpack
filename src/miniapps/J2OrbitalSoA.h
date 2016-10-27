@@ -44,16 +44,8 @@ namespace qmcplusplus
  * - Memory use is 3*N*N+3N. 
  */
 template<class FT>
-struct  J2OrbitalSoA
-#if QMC_BUILD_LEVEL<5
-: public OrbitalBase
-#endif
+struct  J2OrbitalSoA : public OrbitalBase
 {
-#if QMC_BUILD_LEVEL==5
-  using RealType=OHMMS_PRECISION;
-  using ValueType=OHMMS_PRECISION;
-  using GradType=TinyVector<ValueType,OHMMS_DIM>;
-#endif
   ///alias FuncType
   using FuncType=FT;
   ///type of each component U, dU, d2U;
@@ -131,15 +123,29 @@ struct  J2OrbitalSoA
    */
   void evaluateGL(ParticleSet& P);
 
-#if QMC_BUILD_LEVEL < 5
-  inline RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
-  RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false)
+  /**@{ OrbitalBase virtual functions that are not essential for the development */
+  void resetTargetParticleSet(ParticleSet& P){}
+  void reportStatus(std::ostream& os){}
+  void checkInVariables(opt_variables_type& active){}
+  void checkOutVariables(const opt_variables_type& active){}
+  void resetParameters(const opt_variables_type& active){}
+  /**@} */
+
+  //not needed with SoA and algorithm improvement
+  inline RealType registerData(ParticleSet& P, PooledData<RealType>& buf){ return RealType();}
+  RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false){ return RealType();}
   inline void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) { }
   inline RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf) { return LogValue;}
-  void resetTargetParticleSet(ParticleSet& P);
-  void reportStatus(ostream& os);
-#endif
+  //to be removed from QMCPACK: these are not used anymore with PbyPFast
+  void update(ParticleSet& P,
+              ParticleSet::ParticleGradient_t& dG,
+              ParticleSet::ParticleLaplacian_t& dL,
+              int iat) {}
+  ValueType ratio(ParticleSet& P, int iat,
+      ParticleSet::ParticleGradient_t& dG,
+      ParticleSet::ParticleLaplacian_t& dL){ return ValueType(1);}
 
+  
   /*@{ internal compute engines*/
   inline void computeU3(ParticleSet& P, int iat, const RealType* restrict dist,
       RealType* restrict u, RealType* restrict du, RealType* restrict d2u);
@@ -291,7 +297,7 @@ J2OrbitalSoA<FT>::ratio(ParticleSet& P, int iat)
       const FuncType& f2(*F[igt+jg]);
       int iStart = P.first(jg);
       int iEnd = P.last(jg);
-      curAt += f2.evaluateU( iStart, iEnd, dist, DistCompressed.data() );
+      curAt += f2.evaluateV( iStart, iEnd, dist, DistCompressed.data() );
     }
   }
   else
