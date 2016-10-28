@@ -53,8 +53,16 @@ DistanceTableData* createDistanceTable(ParticleSet& s, int dt_type)
       o << "    PBC=bulk Orthorhombic=no ";
       if(s.Lattice.WignerSeitzRadius>s.Lattice.SimulationCellRadius)
       {
-        o << "  Using SymmetricDTD<T,D,PPPG> " << PPPG << std::endl;
-        dt = new  SymmetricDTD<RealType,DIM,PPPG>(s,s);
+        if(dt_type == DT_SOA)
+        {
+          o << "  Using SoaDistanceTableAA<T,D,PPPG> of SoA layout " << PPPG << std::endl;
+          dt = new  SoaDistanceTableAA<RealType,DIM,PPPG+SOA_OFFSET>(s);
+        }
+        else
+        {
+          o << "  Using SymmetricDTD<T,D,PPPG> " << PPPG << std::endl;
+          dt = new  SymmetricDTD<RealType,DIM,PPPG>(s,s);
+        }
       }
       else
       {
@@ -146,8 +154,16 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int
       o << "    PBC=bulk Orthorhombic=no ";
       if(s.Lattice.WignerSeitzRadius>s.Lattice.SimulationCellRadius)
       {
-        o << " Using AsymmetricDTD<T,D,PPPG> " << PPPG << std::endl;
-        dt = new AsymmetricDTD<RealType,DIM,PPPG>(s,t);
+        if(dt_type == DT_SOA)
+        {
+          o << "  Using SoaDistanceTableBA<T,D,PPPG> of SoA layout " << PPPG << std::endl;
+          dt = new  SoaDistanceTableBA<RealType,DIM,PPPG+SOA_OFFSET>(s,t);
+        }
+        else
+        {
+          o << " Using AsymmetricDTD<T,D,PPPG> " << PPPG << std::endl;
+          dt = new AsymmetricDTD<RealType,DIM,PPPG>(s,t);
+        }
       }
       else
       {
