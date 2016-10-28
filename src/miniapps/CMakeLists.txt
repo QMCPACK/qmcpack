@@ -9,4 +9,12 @@ FOREACH(p ${ESTEST})
   TARGET_LINK_LIBRARIES(${p} qmcbase qmcutil ${QMC_UTIL_LIBS} ${MPI_LIBRARY})
 ENDFOREACH(p ${ESTEST})
 
+ADD_LIBRARY(miniwfs AoSWaveFunction.cpp SoAWaveFunction.cpp)
+
+ADD_EXECUTABLE(miniqmc miniqmc.cpp)
+TARGET_LINK_LIBRARIES(miniqmc miniwfs qmcbase qmcutil ${QMC_UTIL_LIBS} ${MPI_LIBRARY})
+
+ADD_EXECUTABLE(diff_wfs diff_wfs.cpp)
+TARGET_LINK_LIBRARIES(wfsdebug miniwfs qmcbase qmcutil ${QMC_UTIL_LIBS} ${MPI_LIBRARY})
+
 
