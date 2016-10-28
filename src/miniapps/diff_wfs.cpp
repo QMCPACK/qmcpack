@@ -255,14 +255,15 @@ int main(int argc, char** argv)
       r_ratio=0.0;
       constexpr int nknots=12;
       int nsphere=0;
-      for(int i=0; i<nions; ++i)
+      for(int iat=0; iat<nions; ++iat)
       {
-        for(int nj=0, jmax=d_ie->M[i]; nj<jmax; ++nj)
+        const auto centerP=ions.R[iat];
+        for(int nj=0, jmax=d_ie->nadj(iat); nj<jmax; ++nj)
         {
-          RealType r=d_ie->r_m2(i,nj);
-          if(r<Rmax) 
+          const auto r=d_ie->distance(iat,nj);
+          if(r<Rmax)
           {
-            int iel=d_ie->J2(i,nj);
+            const int iel=d_ie->iadj(iat,nj);
             nsphere++;
             random_th.generate_uniform(&delta[0][0],nknots*3);
             for(int k=0; k<nknots;++k)

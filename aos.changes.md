@@ -1,5 +1,7 @@
 aos branch
 ----------
+
+
 Main changes in DistanceTableData instantiation
   Particle/DistanceTable.cpp
   Particle/DistanceTable.h
@@ -8,6 +10,40 @@ Main changes in DistanceTableData instantiation
   Particle/ParticleSet.h
   ParticleBase/ParticleBase.cpp
   ParticleBase/ParticleBase.h
+
+Important to note that DistanceTableData supports both AoS and SoA data
+structures. Once the major classes in QMCWaveFunctions and QMCHamiltonians
+adopt the SoA structure and there is no conflict between the two data types,
+DistanceTableData has to be modified to eliminate inefficient code sections.
+
+I'm not aware of any use of these in the performance critical sections and
+advise everyone to use them only during the development stage.
+
+\code
+  /// return the distance |R[iadj(i,nj)]-R[i]|
+  inline RealType distance(int i, int nj) const
+  {
+    return (DTType)? r_m2(i,nj): r_m[M[i]+nj];
+  }
+
+  /// return the displacement R[iadj(i,nj)]-R[i]
+  inline PosType displacement(int i, int nj) const
+  {
+    return (DTType)? dr_m2(i,nj): dr_m[M[i]+nj];
+  }
+
+  //!< Returns a number of neighbors of the i-th ptcl.
+  inline IndexType nadj(int i) const
+  {
+    return (DTType)? M[i]:M[i+1]-M[i];
+  }
+
+  //!< Returns the id of nj-th neighbor for i-th ptcl
+  inline IndexType iadj(int i, int nj) const
+  {
+    return (DTType)? J2(i,nj):J[M[i] +nj];
+  }
+\endcode
 
 These files are modifed to use DT_AOS. These classes need to be modified to use DT_SOA later.
 
@@ -64,3 +100,4 @@ These files are modifed to use DT_AOS. These classes need to be modified to use 
   QMCWaveFunctions/tests/test_einset.cpp
   QMCWaveFunctions/tests/test_pw.cpp
   QMCWaveFunctions/tests/test_wf.cpp
+ 

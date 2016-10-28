@@ -198,6 +198,9 @@ int main(int argc, char** argv)
     else
       Jastrow=new AoSWaveFunction(ions,els);
 
+    //set Rmax for ion-el distance table for PP
+    Jastrow->setRmax(Rmax);
+
     //create pseudopp
     NonLocalPP<OHMMS_PRECISION> ecp(random_th);
 
@@ -266,8 +269,33 @@ int main(int argc, char** argv)
           }
         } // iel
       } //sub branch
+
       els.donePbyP();
       Jastrow->evaluateGL(els);
+
+      ecp.randomize(rOnSphere); // pick random sphere
+      const DistanceTableData* d_ie=Jastrow->d_ie;
+      for(int iat=0; iat<nions; ++iat)
+      {
+        const auto centerP=ions.R[iat];
+        for(int nj=0, jmax=d_ie->nadj(iat); nj<jmax; ++nj)
+        {
+          const auto r=d_ie->distance(iat,nj);
+          if(r<Rmax)
+          {
+            const int iel=d_ie->iadj(iat,nj);
+            const auto dr=d_ie->displacement(iat,nj);
+            for (int k=0; k < nknots ; k++)
+            {
+              PosType deltar(r*rOnSphere[k]-dr);
+              els.makeMoveOnSphere(iel,deltar);
+              spo.evaluate_v(els.R[iel]);
+              Jastrow->ratio(els,iel);
+              els.rejectMove(iel);
+            }
+          }
+        }
+      }
     }
 
     //cleanup

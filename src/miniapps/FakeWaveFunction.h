@@ -30,6 +30,11 @@ namespace qmcplusplus
     DistanceTableData* d_ee;
     DistanceTableData* d_ie;
 
+    inline void setRmax(valT x)
+    {
+      d_ie->setRmax(x);
+    }
+
     virtual ~FakeWaveFunctionBase(){}
     virtual void evaluateLog(ParticleSet& P)=0;
     virtual posT evalGrad(ParticleSet& P, int iat)=0;
