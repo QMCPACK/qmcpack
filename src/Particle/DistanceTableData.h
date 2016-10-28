@@ -131,7 +131,7 @@ struct DistanceTableData
   ///true, if ratio computations need displacement, e.g. LCAO type
   bool NeedDisplacement;
   ///** Maximum radius */
-  //RealType Rmax;
+  RealType Rmax;
   ///** Maximum square */
   //RealType Rmax2;
 
@@ -189,8 +189,10 @@ struct DistanceTableData
   std::string Name;
   ///constructor using source and target ParticleSet
   DistanceTableData(const ParticleSet& source, const ParticleSet& target)
-    : Origin(&source), N(0), NeedDisplacement(false)//, Rmax(1e6), Rmax2(1e12)
-  {  }
+    : Origin(&source), N(0), NeedDisplacement(false)
+  {  
+    Rmax=source.Lattice.WignerSeitzRadius;   
+  }
 
   ///virutal destructor
   virtual ~DistanceTableData() { }
@@ -205,8 +207,9 @@ struct DistanceTableData
   {
     Name = tname;
   }
-  /////set the maximum radius
-  //inline void setRmax(RealType rc) { Rmax=rc;Rmax2=rc*rc;}
+  ///set the maximum radius
+  inline void setRmax(RealType rc) { Rmax=rc;}
+
   ///returns the reference the origin particleset
   const ParticleSet& origin() const
   {
@@ -230,6 +233,7 @@ struct DistanceTableData
   {
     return rinv_m[j];
   }
+
   //@}
 
   ///returns the number of centers
@@ -255,18 +259,28 @@ struct DistanceTableData
     return npairs_m;
   }
 
+  /// return the distance |R[iadj(i,nj)]-R[i]|
+  inline RealType distance(int i, int nj) const
+  {
+    return (DTType)? r_m2(i,nj): r_m[M[i]+nj];
+  }
+
+  /// return the displacement R[iadj(i,nj)]-R[i]
+  inline PosType displacement(int i, int nj) const
+  {
+    return (DTType)? dr_m2(i,nj): dr_m[M[i]+nj];
+  }
+
   //!< Returns a number of neighbors of the i-th ptcl.
   inline IndexType nadj(int i) const
   {
-    return M[i+1]-M[i];
+    return (DTType)? M[i]:M[i+1]-M[i];
   }
-
-  //!< Returns the id of j-th neighbor for i-th ptcl
-  inline IndexType iadj(int i, int j) const
+  //!< Returns the id of nj-th neighbor for i-th ptcl
+  inline IndexType iadj(int i, int nj) const
   {
-    return J[M[i] +j];
+    return (DTType)? J2(i,nj):J[M[i] +nj];
   }
-
   //!< Returns the id of j-th neighbor for i-th ptcl
   inline IndexType loc(int i, int j) const
   {

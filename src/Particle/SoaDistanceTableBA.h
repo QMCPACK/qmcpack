@@ -107,7 +107,6 @@ struct SoaDistanceTableBA: public DTD_BConds<T,D,SC>, public DistanceTableData
   inline void donePbyP()
   { 
     constexpr T cminus(-1);
-    const RealType rcut=Origin->Lattice.WignerSeitzRadius;
     for(int iat=0; iat<Nsources; ++iat)
     {
       int nn=0;
@@ -117,7 +116,7 @@ struct SoaDistanceTableBA: public DTD_BConds<T,D,SC>, public DistanceTableData
       for(int jat=0; jat<Ntargets; ++jat)
       {
         RealType rij=Distances[jat][iat];
-        if(rij<rcut) 
+        if(rij<Rmax) 
         {//make the compact list
           rptr[nn]=rij;
           dptr[nn]=cminus*Displacements[jat][iat];
