@@ -40,20 +40,29 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int
   //int sc=s.Lattice.SuperCellEnum;
   int sc=t.Lattice.SuperCellEnum;
   std::ostringstream o;
+  bool useSoA=(dt_type == DT_SOA || dt_type == DT_SOA_PREFERRED);
   o << "  Distance table for AB: source = " << s.getName() << " target = " << t.getName() << "\n";
   if(sc == SUPERCELL_BULK)
   {
     if(s.Lattice.DiagonalOnly)
     {
-      o << "    PBC=bulk Orthorhombic=yes Using AsymmetricDTD<T,D,PPPO> " << PPPO << std::endl;
-      dt = new AsymmetricDTD<RealType,DIM,PPPO>(s,t);
+      if(useSoA)
+      {
+        o << "  Using SoaDistanceTableBA<T,D,PPPO> of SoA layout " << PPPO << std::endl;
+        dt = new  SoaDistanceTableBA<RealType,DIM,PPPO+SOA_OFFSET>(s,t);
+      }
+      else
+      {
+        o << "    PBC=bulk Orthorhombic=yes Using AsymmetricDTD<T,D,PPPO> " << PPPO << std::endl;
+        dt = new AsymmetricDTD<RealType,DIM,PPPO>(s,t);
+      }
     }
     else
     {
       o << "    PBC=bulk Orthorhombic=no ";
       if(s.Lattice.WignerSeitzRadius>s.Lattice.SimulationCellRadius)
       {
-        if(dt_type == DT_SOA)
+        if(useSoA)
         {
           o << "  Using SoaDistanceTableBA<T,D,PPPG> of SoA layout " << PPPG << std::endl;
           dt = new  SoaDistanceTableBA<RealType,DIM,PPPG+SOA_OFFSET>(s,t);
@@ -66,7 +75,7 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int
       }
       else
       {
-        if(dt_type == DT_SOA)
+        if(useSoA)
         {
           o << " Using SoaDistanceTableBA<T,D,PPPS> with SoA layout " << PPPS << std::endl;
           dt = new SoaDistanceTableBA<RealType,DIM,PPPS+SOA_OFFSET>(s,t);
@@ -109,15 +118,25 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int
   }
   else  //open boundary condition
   {
-    o << "    PBC=open Orthorhombic=NA\n";
-    dt = new AsymmetricDTD<RealType,DIM,SUPERCELL_OPEN>(s,t);
+    if(useSoA)
+    {
+      o << "  Using SoaDistanceTableBA<T,D,PPPG> of SoA layout " << SUPERCELL_OPEN << std::endl;
+      dt = new  SoaDistanceTableBA<RealType,DIM,SUPERCELL_OPEN+SOA_OFFSET>(s,t);
+    }
+    else
+    {
+      o << "    PBC=open Orthorhombic=NA\n";
+      dt = new AsymmetricDTD<RealType,DIM,SUPERCELL_OPEN>(s,t);
+    }
   }
 
+  //set dt properties
   dt->CellType=sc;
-  dt->DTType=dt_type;
+  dt->DTType=(useSoA)? DT_SOA: DT_AOS;
   std::ostringstream p;
   p << s.getName() << "_" << t.getName();
   dt->Name=p.str();//assign the table name
+
   if(sc!=SUPERCELL_OPEN)
     o << " Using bonding box/reduced coordinates ";
   else

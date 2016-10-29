@@ -48,7 +48,7 @@ struct DTD_BConds<T,3,SUPERCELL_OPEN+SOA_OFFSET>
       dx[iat]=px[iat]-x0;
       dy[iat]=py[iat]-y0;
       dz[iat]=pz[iat]-z0;
-      temp_r[iat]=sqrt(dx[iat]*dx[iat]+dy[iat]*dy[iat]+dz[iat]*dz[iat]);
+      temp_r[iat]=std::sqrt(dx[iat]*dx[iat]+dy[iat]*dy[iat]+dz[iat]*dz[iat]);
     }
   }
 };
@@ -90,7 +90,7 @@ struct DTD_BConds<T,3,PPPO+SOA_OFFSET>
       dx[iat]=L0*(x-round(x));
       dy[iat]=L1*(y-round(y));
       dz[iat]=L2*(z-round(z));
-      temp_r[iat]=sqrt(dx[iat]*dx[iat]+dy[iat]*dy[iat]+dz[iat]*dz[iat]);
+      temp_r[iat]=std::sqrt(dx[iat]*dx[iat]+dy[iat]*dy[iat]+dz[iat]*dz[iat]);
     }
   }
 };
@@ -330,7 +330,7 @@ struct DTD_BConds<T,3,PPNO+SOA_OFFSET>
       T  x=(px[iat]-x0)*Linv0; dx[iat]=L0*(x-round(x));
       T  y=(py[iat]-y0)*Linv1; dy[iat]=L1*(y-round(y));
                                dz[iat]=pz[iat]-z0;
-      temp_r[iat]=sqrt(dx[iat]*dx[iat]+dy[iat]*dy[iat]+dz[iat]*dz[iat]);
+      temp_r[iat]=std::sqrt(dx[iat]*dx[iat]+dy[iat]*dy[iat]+dz[iat]*dz[iat]);
     }
   }
 
@@ -421,7 +421,7 @@ struct DTD_BConds<T,3,SUPERCELL_WIRE+SOA_OFFSET>
       T  x=(px[iat]-x0)*Linv0; dx[iat]=L0*(x-round(x));
                                dy[iat]=py[iat]-y0; 
                                dz[iat]=pz[iat]-z0; 
-      temp_r[iat]=sqrt(dx[iat]*dx[iat]+dy[iat]*dy[iat]+dz[iat]*dz[iat]);
+      temp_r[iat]=std::sqrt(dx[iat]*dx[iat]+dy[iat]*dy[iat]+dz[iat]*dz[iat]);
     }
   }
 };

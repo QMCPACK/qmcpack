@@ -24,10 +24,12 @@
 #endif /* TWOPI */
 
 
+#if (__cplusplus < 201103L)
 inline float round(float x)
 {
   return roundf(x);
 }
+#endif
 
 #if defined(HAVE_SINCOS)
 inline void sincos(float a, float* s, float* c)

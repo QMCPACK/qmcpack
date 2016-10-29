@@ -418,9 +418,9 @@ int ParticleSet::addTable(const ParticleSet& psrc, int dt_type)
   if (psrc.tag() == ObjectTag)
   {
     app_log() << "  ... ParticleSet::addTable Reuse Table #" << 0 << " " << DistTables[0]->Name << std::endl;
-    if(DistTables[0]->DTType != dt_type)
-    {
-      APP_ABORT("ParticleSet::addTable Cannot mix AoS and SoA distance tables.\n");
+    if(!DistTables[0]->is_same_type(dt_type))
+    {//itself is special, cannot mix them: some of the users do not check the index
+      APP_ABORT("ParticleSet::addTable for itself Cannot mix AoS and SoA distance tables.\n");
     }
     return 0;
   }
@@ -437,11 +437,17 @@ int ParticleSet::addTable(const ParticleSet& psrc, int dt_type)
   else
   {
     tid = (*tit).second;
-    app_log() << "  ... ParticleSet::addTable Reuse Table #" << tid << " " << DistTables[tid]->Name << std::endl;
-    if(DistTables[tid]->DTType != dt_type)
+    if(DistTables[tid]->is_same_type(dt_type))  //good to reuse
+    {
+      app_log() << "  ... ParticleSet::addTable Reuse Table #" << tid << " " << DistTables[tid]->Name << std::endl;
+      return tid;
+    }
+    if(dt_type == DT_SOA || dt_type == DT_AOS) //not compatible
     {
       APP_ABORT("ParticleSet::addTable Cannot mix AoS and SoA distance tables.\n");
     }
+    //for DT_SOA_PREFERRED or DT_AOS_PREFERRED, return the existing table
+    return tid;
   }
   app_log().flush();
   return tid;

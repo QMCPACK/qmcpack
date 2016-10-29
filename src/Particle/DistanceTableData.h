@@ -90,7 +90,16 @@ struct TempDisplacement
   }
 };
 
-enum DistTableType {DT_AOS=0, DT_SOA};
+/** enumerator for DistanceTableData::DTType
+ *
+ * - DT_AOS Use original AoS type
+ * - DT_SOA Use SoA type
+ * - DT_AOS_PREFERRED Create AoS type, if possible.
+ * - DT_SOA_PREFERRED Create SoA type, if possible.
+ * The first user of each pair will decide the type of distance table.
+ * It is the responsibility of the user class to check DTType.
+ */
+enum DistTableType {DT_AOS=0,  DT_SOA, DT_AOS_PREFERRED, DT_SOA_PREFERRED};
 
 /** @ingroup nnlist
  * @brief Abstract class to manage pair data between two ParticleSets.
@@ -215,11 +224,16 @@ struct DistanceTableData
   {
     return *Origin;
   }
-
   inline void reset(const ParticleSet* newcenter)
   {
     Origin=newcenter;
   }
+
+  inline bool is_same_type(int dt_type) const
+  {
+    return DTType == dt_type;
+  }
+
   //@{access functions to the distance, inverse of the distance and directional consine vector
   inline PosType dr(int j) const
   {
