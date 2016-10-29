@@ -219,7 +219,6 @@ struct DTD_BConds<T,3,PPPG+SOA_OFFSET>
     T* restrict dy=temp_dr.data(1); ASSUME_ALIGNED(dy);
     T* restrict dz=temp_dr.data(2); ASSUME_ALIGNED(dz);
 
-    constexpr int M=8;
     const T* restrict cellx=corners.data(0); ASSUME_ALIGNED(dx);
     const T* restrict celly=corners.data(1); ASSUME_ALIGNED(dy);
     const T* restrict cellz=corners.data(2); ASSUME_ALIGNED(dz);
@@ -244,10 +243,10 @@ struct DTD_BConds<T,3,PPPG+SOA_OFFSET>
       const T dely = ar_0*r01+ar_1*r11+ar_2*r21;
       const T delz = ar_0*r02+ar_1*r12+ar_2*r22;
 
-      constexpr T rmin=std::numeric_limits<T>::max();
+      T rmin=std::numeric_limits<T>::max();
       int ic{0};
-#pragma unroll(M)
-      for(int c=0; c<M; ++c)
+#pragma unroll(8)
+      for(int c=0; c<8; ++c)
       {
         const T x=delx+cellx[c];
         const T y=dely+celly[c];

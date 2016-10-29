@@ -120,6 +120,8 @@ SET(PARTICLE ${PARTICLE}
   Particle/ParticleSet.BC.cpp 
   Particle/MCWalkerConfiguration.cpp 
   Particle/DistanceTable.cpp
+  Particle/DistanceTableAA.cpp
+  Particle/DistanceTableAB.cpp
   Particle/HDFWalkerInputManager.cpp
   Particle/make_clones.cpp
   LongRange/KContainer.cpp

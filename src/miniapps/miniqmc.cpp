@@ -58,6 +58,7 @@ int main(int argc, char** argv)
   //int ncrews=1; //default is 1
   int tileSize=-1;
   int ncrews=1;
+  int nsubsteps=1;
   RealType Rmax(1.7);
   bool useSoA=false;
 
@@ -81,8 +82,8 @@ int main(int argc, char** argv)
       case 'i': //number of MC steps
         nsteps=atoi(optarg);
         break;
-      case 's'://random seed
-        iseed=atoi(optarg);
+      case 's'://the number of sub steps for drift/diffusion
+        nsubsteps=atoi(optarg);
         break;
       case 'c'://number of crews per team
         ncrews=atoi(optarg);
@@ -150,12 +151,14 @@ int main(int argc, char** argv)
   double vgh_t_iter[time_array_size] = {0}; // c++11 array.
   double val_t_iter[time_array_size] = {0}; // c++11 array.
 
+  double t_diffusion=0.0, t_pseudo=0.0;
+
   Timer bigClock;
   bigClock.restart();
-#pragma omp parallel reduction(+:t0,tInit,ratio,vgh_t,val_t,nspheremoves,dNumVGHCalls,d_t0,d_t1,j_t0,j_t1, j_t2, j_t3, j_t4, j_t5) 
+#pragma omp parallel reduction(+:t0,tInit,t_diffusion,t_pseudo)
   {
-    Timer initClock;
-    initClock.restart();
+    Timer clock, clock_mc;
+    clock.restart();
 
     ParticleSet ions, els;
     const OHMMS_PRECISION scale=1.0;
@@ -228,17 +231,18 @@ int main(int argc, char** argv)
     els.update();
     Jastrow->evaluateLog(els);
 
+    double t_diffusion_loc=0.0, t_pseudo_loc=0.0;
+    double t_init_loc= clock.elapsed();
     int my_accepted=0;
+    clock.restart();
     for(int mc=0; mc<nsteps; ++mc)
     {
-      random_th.generate_normal(&delta[0][0],nels3);
-      random_th.generate_uniform(ur.data(),nels);
-
       Jastrow->evaluateLog(els);
 
-      //drift-and-diffusion
-      for(int l=0; l<5; ++l) 
+      clock_mc.restart();
+      for(int l=0; l<nsubsteps; ++l)//drift-and-diffusion
       {
+        random_th.generate_normal(&delta[0][0],nels3);
         for(int iel=0; iel<nels; ++iel)
         {
           //compute G[iel] with the current position to make a move
@@ -269,12 +273,15 @@ int main(int argc, char** argv)
           }
         } // iel
       } //sub branch
+      t_diffusion_loc+=clock_mc.elapsed();
 
       els.donePbyP();
       Jastrow->evaluateGL(els);
 
       ecp.randomize(rOnSphere); // pick random sphere
       const DistanceTableData* d_ie=Jastrow->d_ie;
+
+      clock_mc.restart();
       for(int iat=0; iat<nions; ++iat)
       {
         const auto centerP=ions.R[iat];
@@ -296,11 +303,28 @@ int main(int argc, char** argv)
           }
         }
       }
+      t_pseudo_loc+=clock_mc.elapsed();
     }
+
+    t0+=clock.elapsed();
+    t_pseudo += t_pseudo_loc;
+    t_diffusion += t_diffusion_loc;
+    tInit += t_init_loc;
 
     //cleanup
     delete Jastrow;
   } //end of omp parallel
+
+  int nthreads=omp_get_max_threads();
+  double omp_fac=1.0/nthreads;
+
+  cout << "miniqmc Init " << tInit*omp_fac  << " Tcomp " << t0*omp_fac 
+  << " diffusion_tot " << t_diffusion*omp_fac << " pseudo_tot  " << t_pseudo*omp_fac << endl;
+
+  t_diffusion*=1.0/static_cast<double>(nsteps*nsubsteps*nthreads);
+  t_pseudo   *=1.0/static_cast<double>(nsteps*nthreads);
+  cout << "#per MC step steps " << nsteps << " substeps " << nsubsteps << endl;
+  cout << "diffusion_mc " << t_diffusion << " pseudo_mc  " << t_pseudo << endl;
 
   OHMMS::Controller->finalize();
 
