@@ -23,54 +23,42 @@ namespace qmcplusplus
 {
   /**@{Determinant utilities */
   /** Inversion of a double matrix after LU factorization*/
-  inline void getri(int n, double* restrict a, int lda, 
-      int* restrict piv, double* restrict work, int& lwork)
+  inline void getri(int n, double* restrict a, int lda, int* restrict piv, double* restrict work, int& lwork)
   {
     int status;
     dgetri(n,a,lda,piv,work,lwork,status);
   }
 
   /** Inversion of a float matrix after LU factorization*/
-  inline void getri(int n, float* restrict a, int lda,
-      int* restrict piv, float* restrict work, int& lwork)
+  inline void getri(int n, float* restrict a, int lda, int* restrict piv, float* restrict work, int& lwork)
   {
     int status;
     sgetri(n,a,lda,piv,work,lwork,status);
   }
 
   /** Inversion of a std::complex<double> matrix after LU factorization*/
-  inline void getri(int n, std::complex<double>* restrict a, int lda,
-      int* restrict piv, std::complex<double>* restrict work, int& lwork)
+  inline void getri(int n, std::complex<double>* restrict a, int lda, int* restrict piv, std::complex<double>* restrict work, int& lwork)
   {
     int status;
     zgetri(n,a,lda,piv,work,lwork,status);
   }
 
   /** Inversion of a complex<float> matrix after LU factorization*/
-  inline void getri(int n, std::complex<float>* restrict a, int lda, 
-      int* restrict piv, std::complex<float>* restrict work, int& lwork)
+  inline void getri(int n, std::complex<float>* restrict a, int lda, int* restrict piv, std::complex<float>* restrict work, int& lwork)
   {
     int status;
     cgetri(n,a,lda,piv,work,lwork,status);
   }
 
+  /** query the size of workspace for Xgetri after LU decompisiton */
   template<class T>
-    inline int
-    getGetriWorkspace(T* restrict x, int n, int lda, int* restrict pivot)
+    inline int getGetriWorkspace(T* restrict x, int n, int lda, int* restrict pivot)
     {
       T work;
       int lwork=-1;
       getri(n, x, lda, pivot, &work, lwork);
       lwork=static_cast<int>(work);
       return lwork;
-    }
-
-  template<class T>
-    inline void
-    InvertOnly(T* restrict x, int n, int lda, T* restrict work, int* restrict pivot, int lwork)
-    {
-      LUFactorization(n,n,x,lda,pivot);
-      getri(n, x, lda, pivot, work, lwork);
     }
 
   ///inner product
@@ -81,6 +69,10 @@ namespace qmcplusplus
       return res;
     }
 
+  /** transpose in to out
+   *
+   * Assume: in[n][lda] and out[n][lda]
+   */
   template<typename TIN, typename TOUT>
     inline void transpose(const TIN* restrict in, TOUT* restrict out, int n, int lda)
     {
@@ -89,10 +81,39 @@ namespace qmcplusplus
           out[i*lda+j]=in[i+j*lda];
     }
 
+  ///used only for debugging or walker move
+  template<class T>
+    inline T
+    InvertWithLog(T* restrict x, int n, int lda,
+        T* restrict work, int lwork, int* restrict pivot, T& phase)
+    {
+      T logdet(0.0);
+      LUFactorization(n,n,x,lda,pivot);
+      int sign_det=1;
+      for(int i=0; i<n; i++)
+      {
+        sign_det *= (pivot[i] == i+1)?1:-1;
+        sign_det *= (x[i*lda+i]>0)?1:-1;
+        logdet += std::log(std::abs(x[i*lda+i]));
+      }
+      getri(n, x, lda, pivot, work, lwork);
+      phase=(sign_det>0)?0.0:M_PI;
+      return logdet;
+    }
+
+  ///recompute inverse, do not evaluate log|det|
+  template<class T>
+    inline void
+    InvertOnly(T* restrict x, int n, int lda, T* restrict work, int* restrict pivot, int lwork)
+    {
+      LUFactorization(n,n,x,lda,pivot);
+      getri(n, x, lda, pivot, work, lwork);
+    }
+
   /** update Row as implemented in the full code */
   template<typename T, typename RT>
   inline void 
-  inverseRowUpdate(T* restrict pinv,  const T* restrict tv, int m, int rowchanged, RT c_ratio_in)
+  inverseRowUpdate(T* restrict pinv,  const T* restrict tv, int m, int lda, int rowchanged, RT c_ratio_in)
   {
     constexpr T cone(1);
     constexpr T czero(0);
@@ -152,7 +173,7 @@ struct DiracDet
 
     INVT phase;
     transpose(psiMsave.data(),psiM.data(),nels,nels);
-    LogValue=InvertWithLog(psiM.data(),nels,nels,work.data(),pivot.data(),phase);
+    LogValue=InvertWithLog(psiM.data(),nels,nels,work.data(),LWork,pivot.data(),phase);
     copy_n(psiM.data(),nels*nels,psiMinv.data());
 
     if(omp_get_num_threads()==1)
@@ -163,6 +184,7 @@ struct DiracDet
     }
   }
 
+  ///recompute the inverse
   inline void recompute()
   {
     const int nels=psiV.size();
@@ -172,6 +194,9 @@ struct DiracDet
     copy_n(psiM.data(),nels*nels,psiMinv.data());
   }
 
+  /** return determinant ratio for the row replacement
+   * @param iel the row (active particle) index
+   */
   inline INVT ratio(int iel)
   {
     const int nels=psiV.size();
@@ -182,13 +207,13 @@ struct DiracDet
     return curRatio;
   }
 
+  /** accept the row and update the inverse */
   inline void accept(int iel)
   {
     const int nels=psiV.size();
-    inverseRowUpdate(psiMinv.data(),psiV.data(),nels,iel,curRatio);
+    inverseRowUpdate(psiMinv.data(),psiV.data(),nels,nels,iel,curRatio);
     copy_n(psiV.data(),nels,psiMsave[iel]);
   }
-
 
   void debug()
   {
