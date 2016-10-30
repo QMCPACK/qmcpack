@@ -9,15 +9,102 @@
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
 // -*- C++ -*-
+/**@file detemrinant.hpp
+ *
+ * Standalone determinant class for determinant miniapps
+ */
 #ifndef QMCPLUSPLUS_DETERMINANT_MINIAPPS_H
 #define QMCPLUSPLUS_DETERMINANT_MINIAPPS_H
 #include <OhmmsPETE/OhmmsMatrix.h>
-#include <simd/simd.hpp>
 #include <simd/allocator.hpp>
-#include <simd/algorithm.hpp>
 #include <Numerics/DeterminantOperators.h>
+
 namespace qmcplusplus
 {
+  /**@{Determinant utilities */
+  /** Inversion of a double matrix after LU factorization*/
+  inline void getri(int n, double* restrict a, int lda, 
+      int* restrict piv, double* restrict work, int& lwork)
+  {
+    int status;
+    dgetri(n,a,lda,piv,work,lwork,status);
+  }
+
+  /** Inversion of a float matrix after LU factorization*/
+  inline void getri(int n, float* restrict a, int lda,
+      int* restrict piv, float* restrict work, int& lwork)
+  {
+    int status;
+    sgetri(n,a,lda,piv,work,lwork,status);
+  }
+
+  /** Inversion of a std::complex<double> matrix after LU factorization*/
+  inline void getri(int n, std::complex<double>* restrict a, int lda,
+      int* restrict piv, std::complex<double>* restrict work, int& lwork)
+  {
+    int status;
+    zgetri(n,a,lda,piv,work,lwork,status);
+  }
+
+  /** Inversion of a complex<float> matrix after LU factorization*/
+  inline void getri(int n, std::complex<float>* restrict a, int lda, 
+      int* restrict piv, std::complex<float>* restrict work, int& lwork)
+  {
+    int status;
+    cgetri(n,a,lda,piv,work,lwork,status);
+  }
+
+  template<class T>
+    inline int
+    getGetriWorkspace(T* restrict x, int n, int lda, int* restrict pivot)
+    {
+      T work;
+      int lwork=-1;
+      getri(n, x, lda, pivot, &work, lwork);
+      lwork=static_cast<int>(work);
+      return lwork;
+    }
+
+  template<class T>
+    inline void
+    InvertOnly(T* restrict x, int n, int lda, T* restrict work, int* restrict pivot, int lwork)
+    {
+      LUFactorization(n,n,x,lda,pivot);
+      getri(n, x, lda, pivot, work, lwork);
+    }
+
+  ///inner product
+  template<typename T1, typename T2, typename T3>
+    inline T3 inner_product_n(const T1* restrict a, const T2* restrict b, int n, T3 res)
+    {
+      for(int i=0; i<n; ++i) res += a[i]*b[i];
+      return res;
+    }
+
+  template<typename TIN, typename TOUT>
+    inline void transpose(const TIN* restrict in, TOUT* restrict out, int n, int lda)
+    {
+      for(int i=0; i<n; ++i)
+        for(int j=0; j<n; ++j) 
+          out[i*lda+j]=in[i+j*lda];
+    }
+
+  /** update Row as implemented in the full code */
+  template<typename T, typename RT>
+  inline void 
+  inverseRowUpdate(T* restrict pinv,  const T* restrict tv, int m, int rowchanged, RT c_ratio_in)
+  {
+    constexpr T cone(1);
+    constexpr T czero(0);
+    T temp[m], rcopy[m];
+    T c_ratio=cone/c_ratio_in;
+    BLAS::gemv('T', m, m, c_ratio, pinv, m, tv, 1, czero, temp, 1);
+    temp[rowchanged]=cone-c_ratio;
+    copy_n(pinv+m*rowchanged,m,rcopy);
+    BLAS::ger(m,m,-cone,rcopy,1,temp,1,pinv,m);
+  }
+  /**@}*/
+
 template<typename T, typename INVT=double>
 struct DiracDet
 {
@@ -25,6 +112,8 @@ struct DiracDet
   INVT LogValue;
   ///current ratio
   INVT curRatio;
+  ///workspace size
+  int LWork;
   ///inverse matrix to be update
   Matrix<T> psiMinv; 
   ///a SPO set for the row update
@@ -37,7 +126,6 @@ struct DiracDet
   //temporary workspace for inversion
   aligned_vector<int> pivot;
   aligned_vector<INVT> work;
-  aligned_vector<T> workV1,workV2;
   Matrix<T> psiMsave;
 
   explicit DiracDet(int nels)
@@ -47,22 +135,25 @@ struct DiracDet
     psiM.resize(nels,nels);
 
     pivot.resize(nels);
-    work.resize(nels);
-    workV1.resize(nels);
-    workV2.resize(nels);
-
     psiMsave.resize(nels,nels);
   }
 
   void initialize(RandomGenerator<T> RNG)
   {
+    int nels=psiM.rows();
+    //get lwork and resize workspace
+    LWork=getGetriWorkspace(psiM.data(),nels,nels,pivot.data());
+    work.resize(LWork);
+
     myRandom=RNG;
     constexpr T shift(0.5);
-    int nels=psiM.rows();
     RNG.generate_uniform(psiMsave.data(),nels*nels);
     psiMsave -= shift;
 
-    recompute();
+    INVT phase;
+    transpose(psiMsave.data(),psiM.data(),nels,nels);
+    LogValue=InvertWithLog(psiM.data(),nels,nels,work.data(),pivot.data(),phase);
+    copy_n(psiM.data(),nels*nels,psiMinv.data());
 
     if(omp_get_num_threads()==1)
     {
@@ -72,13 +163,13 @@ struct DiracDet
     }
   }
 
-  void recompute()
+  inline void recompute()
   {
     const int nels=psiV.size();
     INVT phase;
-    simd::transpose(psiMsave.data(),psiM.data(),nels,nels);
-    LogValue=InvertWithLog(psiM.data(),nels,nels,work.data(),pivot.data(),phase);
-    simd::copy_n(psiM.data(),nels*nels,psiMinv.data());
+    transpose(psiMsave.data(),psiM.data(),nels,nels);
+    InvertOnly(psiM.data(),nels,nels,work.data(),pivot.data(),LWork);
+    copy_n(psiM.data(),nels*nels,psiMinv.data());
   }
 
   inline INVT ratio(int iel)
@@ -87,14 +178,15 @@ struct DiracDet
     constexpr T shift(0.5);
     constexpr INVT czero(0);
     for(int j=0; j<nels; ++j) psiV[j]=myRandom()-shift;
-    curRatio=simd::inner_product_n(psiV.data(),psiMinv[iel],nels,czero);
+    curRatio=inner_product_n(psiV.data(),psiMinv[iel],nels,czero);
     return curRatio;
   }
 
   inline void accept(int iel)
   {
-    InverseUpdateByRow(psiMinv,psiV,workV1,workV2,iel,curRatio);
-    simd::copy_n(psiV.data(),psiV.size(),psiMsave[iel]);
+    const int nels=psiV.size();
+    inverseRowUpdate(psiMinv.data(),psiV.data(),nels,iel,curRatio);
+    copy_n(psiV.data(),nels,psiMsave[iel]);
   }
 
 
@@ -115,8 +207,8 @@ struct DiracDet
         {
           accept(i);
           //update A0
-          simd::copy_n(psiV.data(),nels,psiMsave[i]);
-          simd::transpose(psiMsave.data(),psiM.data(),nels,nels);
+          copy_n(psiV.data(),nels,psiMsave[i]);
+          transpose(psiMsave.data(),psiM.data(),nels,nels);
           auto  newlog=InvertWithLog(psiM.data(), nels, nels, work.data(), pivot.data(), phase);
 
           ratio_full=std::exp(newlog-LogValue);
@@ -150,7 +242,7 @@ void checkIdentity(const MT1& a, const MT2& b, const string& tag)
   {
     for(int j=0; j<nrows; ++j)
     {
-      double e=simd::inner_product_n(a[i],b[j],ncols,czero);
+      double e=inner_product_n(a[i],b[j],ncols,czero);
       error += (i==j)? std::abs(e-cone):std::abs(e);
     }
   }
