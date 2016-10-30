@@ -2,7 +2,7 @@ PROJECT(miniapps)
 
 # add apps XYZ.cpp, e.g., qmc_particles.cpp
 #SET(ESTEST einspline_smp einspline_spo qmc_particles moveonsphere twobody ptclset)
-SET(ESTEST diff_distancetables diff_j2 diff_j1 einspline_spo einspline_spo_nested)
+SET(ESTEST diff_distancetables diff_j2 diff_j1 einspline_spo einspline_spo_nested determinant)
 
 FOREACH(p ${ESTEST})
   ADD_EXECUTABLE( ${p}  ${p}.cpp)

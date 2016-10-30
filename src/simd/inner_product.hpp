@@ -221,8 +221,8 @@ namespace qmcplusplus {
      *
      * in(n,m) -> out(m,n)
      */
-    template<typename T>
-      inline void transpose(const T* restrict in, T* restrict out, int n, int m)
+    template<typename T, typename TO>
+      inline void transpose(const T* restrict in, TO* restrict out, int n, int m)
       {
         for(int i=0; i<m; ++i)
           for(int j=0,jj=i; j<n; ++j,jj+=m) *out++ = in[jj];
