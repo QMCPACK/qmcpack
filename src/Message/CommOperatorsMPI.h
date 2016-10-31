@@ -93,28 +93,28 @@ template<typename T> inline Communicate::request
 Communicate::irecv(int source, int tag, T& )
 {
   APP_ABORT("Need specialization for irecv(int source, int tag, T& )");
-  return 1;
+  return MPI_REQUEST_NULL;
 }
 
 template<typename T> inline Communicate::request
 Communicate::isend(int dest, int tag, T&)
 {
   APP_ABORT("Need specialization for isend(int source, int tag, T& )");
-  return 1;
+  return MPI_REQUEST_NULL;
 }
 
 template<typename T> inline Communicate::request
 Communicate::irecv(int source, int tag, T* , int n)
 {
   APP_ABORT("Need specialization for irecv(int source, int tag, T*, int )");
-  return 1;
+  return MPI_REQUEST_NULL;
 }
 
 template<typename T> inline Communicate::request
 Communicate::isend(int dest, int tag, T*, int n)
 {
   APP_ABORT("Need specialization for isend(int source, int tag, T*, int )");
-  return 1;
+  return MPI_REQUEST_NULL;
 }
 
 template<>
