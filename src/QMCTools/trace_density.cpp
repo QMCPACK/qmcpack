@@ -695,6 +695,8 @@ struct QuantityAnalyzer
     block_size = 0;
   }
 
+  virtual ~QuantityAnalyzer() {}
+
   void init(xmlNodePtr xml,int s)
   {
     series_index = s;
