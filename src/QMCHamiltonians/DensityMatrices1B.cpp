@@ -894,10 +894,16 @@ namespace qmcplusplus
       generate_density_samples(save,steps,rng);
     
     if(save)
+    {
       if(sampling==metropolis)
+      {
         sample_weights*=weight;
+      }
       else
+      {
         fill(sample_weights.begin(),sample_weights.end(),weight);
+      }
+    }
 
 
     // temporary check

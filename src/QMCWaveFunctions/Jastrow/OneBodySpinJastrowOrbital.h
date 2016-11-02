@@ -94,14 +94,20 @@ public:
   ~OneBodySpinJastrowOrbital()
   {
     if(Spin)
+    {
       for(int sg=0; sg<F.rows(); ++sg)
         for(int tg=0; tg<F.cols(); ++tg)
           if(F(sg,tg))
+          {
             delete F(sg,tg);
+          }
           else
+          {
             for(int sg=0; sg<F.rows(); ++sg)
               if(F(sg,0))
                 delete F(sg,0);
+          }
+    }
   }
 
   //evaluate the distance table with P

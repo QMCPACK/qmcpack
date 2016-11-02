@@ -465,11 +465,17 @@ struct Input
       for(int p=0;p<tot_procs;++p)
         procs.push_back(p);
     if(groups.size()==0)
+    {
       if(tot_groups>0)
+      {
         for(int p=0;p<tot_groups;++p)
           groups.push_back(p);
+      }
       else
+      {
         groups.push_back(-1);
+      }
+    }
     Peln = get_particleset(elns);
     Pion = get_particleset(ions);
     if(tot_series<1)
