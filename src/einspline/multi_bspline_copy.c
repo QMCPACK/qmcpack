@@ -49,20 +49,38 @@ extern "C" {
   void copy_UBspline_3d_d_s(multi_UBspline_3d_s* multi, int i
       , const UBspline_3d_d* single, const int* offset, const int* N)
   {
-    intptr_t z_stride=multi->z_stride;
-
-    for(int ix=0; ix<N[0]; ++ix)
-      for(int iy=0; iy<N[1]; ++iy)
+    intptr_t x_stride_in=single->x_stride;
+    intptr_t y_stride_in=single->y_stride;
+    intptr_t x_stride_out=multi->x_stride;
+    intptr_t y_stride_out=multi->y_stride;
+    intptr_t z_stride_out=multi->z_stride;
+    intptr_t offset0=(intptr_t)offset[0];
+    intptr_t offset1=(intptr_t)offset[1];
+    intptr_t offset2=(intptr_t)offset[2];
+    const intptr_t istart=(intptr_t)i;
+    const intptr_t n0=N[0],n1=N[1],n2=N[2];
+    for(intptr_t ix=0; ix<n0; ++ix)
+      for(intptr_t iy=0; iy<n1; ++iy)
       {
-        intptr_t out=ix*multi->x_stride+iy*multi->y_stride+i;
-        intptr_t in =(ix+offset[0])*single->x_stride+(iy+offset[1])*single->y_stride+offset[2];
-        for(int iz=0; iz<N[2]; ++iz, in++, out +=z_stride)
+        float* restrict out=multi->coefs+ix*x_stride_out+iy*y_stride_out+istart;
+        const double* restrict in =single->coefs+(ix+offset0)*x_stride_in+(iy+offset1)*y_stride_in+offset2;
+        for(intptr_t iz=0; iz<n2; ++iz)
         {
-          multi->coefs[out]=(float)single->coefs[in];
+          out[iz*z_stride_out]=(float)in[iz];
         }
       }
+//
+//    for(int ix=0; ix<N[0]; ++ix)
+//      for(int iy=0; iy<N[1]; ++iy)
+//      {
+//        intptr_t out=ix*multi->x_stride+iy*multi->y_stride+i;
+//        intptr_t in =(ix+offset[0])*single->x_stride+(iy+offset[1])*single->y_stride+offset[2];
+//        for(int iz=0; iz<N[2]; ++iz, in++, out +=z_stride)
+//        {
+//          multi->coefs[out]=(float)single->coefs[in];
+//        }
+//      }
   }
-
 
   // Create 3D uniform single-precision, real Bspline
   multi_UBspline_3d_s *
