@@ -156,8 +156,12 @@ else()
       Particle/HDFWalkerOutput.cpp
       Particle/HDFWalkerInput_0_0.cpp
       Particle/HDFWalkerInput_0_4.cpp
-      ADIOS/ADIOS_verify.cpp
       )
+    IF(HAVE_ADIOS)
+      SET(PARTICLEIO ${PARTICLEIO}
+        ADIOS/ADIOS_verify.cpp
+      )
+    ENDIF(HAVE_ADIOS)
 
     IF(OHMMS_DIM  MATCHES 3)
       SET(PARTICLEIO ${PARTICLEIO} ParticleIO/ESHDFParticleParser.cpp)
@@ -181,14 +185,14 @@ else()
 
 
   SET(ADIOS ADIOS/ADIOS_config.cpp)
-  #if(HAVE_ADIOS)
+  IF(HAVE_ADIOS)
     SET(ADIOS ${ADIOS}
     Particle/AdiosWalkerInput.cpp
     ADIOS/ADIOS_profile.cpp
     ADIOS/ADIOS_verify.cpp
     ADIOS/ADIOSTrace.cpp
     )
-  #endif(HAVE_ADIOS)
+  ENDIF(HAVE_ADIOS)
 
   ADD_LIBRARY(adios_config ${ADIOS})
 
