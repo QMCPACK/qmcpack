@@ -1669,3 +1669,7 @@ def graph_sims(sims,useid=False,exit=True,quants=True):
         exit_call()
     #end if
 #end def graph_sims
+
+
+
+#def write_sims(sims,

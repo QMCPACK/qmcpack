@@ -318,7 +318,7 @@ class SimHolder(GenericSimulation):
     cls_simlabel = None
     def __init__(self,*args,**kwargs):
         cls = self.__class__
-        Simulation.__init__(self,path='',job=job(app_command=''))
+        Simulation.__init__(self,path='',job=job(app_command='',fake=True))
         if cls.cls_simlabel!=None:
             self.simlabel = cls.cls_simlabel
         #end if

@@ -210,7 +210,8 @@ class Job(NexusCore):
                  procs        = None,
                  processes    = None,
                  processes_per_proc = None,
-                 processes_per_node = None
+                 processes_per_node = None,
+                 fake         = False,
                  ):
 
         self.directory   = directory
@@ -259,6 +260,7 @@ class Job(NexusCore):
         self.overtime    = False
         self.successful  = False
         self.finished    = False
+        self.fake_job    = fake
 
         if app != None:
             self.app_name = app
@@ -1364,6 +1366,9 @@ class Supercomputer(Machine):
 
 
     def process_job(self,job):
+        if job.fake_job:
+            return
+        #end if
         job.subfile = job.name+'.'+self.sub_launcher+'.in'
         no_cores = job.cores==None
         no_nodes = job.nodes==None

@@ -5098,6 +5098,8 @@ def generate_basic_input(id             = 'qmc',
     #end if
     if corrections=='default' and tuple(bconds)==tuple('ppp'):
         corrections = ['mpc','chiesa']
+    elif isinstance(corrections,(list,tuple)):
+        None
     else:
         corrections = []
     #end if
