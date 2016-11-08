@@ -208,6 +208,18 @@ class Particles(Matter):
         #end for
         return nelectrons
     #end def count_electrons
+
+    def electron_counts(self):
+        counts = []
+        for electron in ('up_electron','down_electron'):
+            if electron in self:
+                counts.append(self[electron].count)
+            else:
+                counts.append(0)
+            #end if
+        #end for
+        return counts
+    #end def electron_counts
 #end class Particles
 
 me_amu = convert(1.,'me','amu')
@@ -613,7 +625,6 @@ def generate_physical_system(**kwargs):
         is_str = isinstance(s,str)
         if is_str and os.path.exists(s):# and '.' in os.path.split(s)[1]:
             if 'elem' in kwargs:
-                print 'system using elem'
                 kwargs['structure'] = read_structure(s,elem=kwargs['elem'])
             else:
                 kwargs['structure'] = read_structure(s)

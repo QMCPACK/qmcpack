@@ -33,7 +33,7 @@ from project_manager import ProjectManager
 
 from structure       import Structure,generate_structure,generate_cell,read_structure
 from physical_system import PhysicalSystem,generate_physical_system
-from pseudopotential import Pseudopotential,Pseudopotentials
+from pseudopotential import Pseudopotential,Pseudopotentials,ppset
 from basisset        import BasisSets
 from bundle          import bundle
 
@@ -100,15 +100,15 @@ class Settings(NexusCore):
     gamess_vars  = set('''
         ericfmt         mcppath
         '''.split())
-
-    pwscf_vars   = set('''
-        vdw_table
-        '''.split())
     
+    pwscf_vars   = set('''                                                                              
+        vdw_table                                                                                       
+        '''.split())  
+
     nexus_core_vars    = core_assign_vars    | core_process_vars
     nexus_noncore_vars = noncore_assign_vars | noncore_process_vars
     nexus_vars         = nexus_core_vars     | nexus_noncore_vars
-    allowed_vars       = nexus_vars | machine_vars | gamess_vars | pwscf_vars
+    allowed_vars       = nexus_vars | machine_vars | gamess_vars | pwscf_vars 
 
 
     @staticmethod
@@ -203,8 +203,8 @@ class Settings(NexusCore):
         # process gamess settings
         Gamess.settings(**gamess_kw)
 
-        # process pwscf settings
-        Pwscf.settings(**pwscf_kw)
+        # process pwscf settings                                                                        
+        Pwscf.settings(**pwscf_kw)   
 
         return
     #end def __call__

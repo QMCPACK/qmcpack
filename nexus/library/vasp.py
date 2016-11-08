@@ -186,7 +186,7 @@ class Vasp(Simulation):
 
 
 def generate_vasp(**kwargs):
-    sim_args,inp_args = Simulation.separate_inputs(kwargs,copy_pseudos=False)
+    sim_args,inp_args = Vasp.separate_inputs(kwargs,copy_pseudos=False)
 
     sim_args.input = generate_vasp_input(**inp_args)
     vasp = Vasp(**sim_args)

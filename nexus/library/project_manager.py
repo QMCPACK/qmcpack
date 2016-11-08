@@ -44,10 +44,12 @@ class ProjectManager(NexusCore):
             simulations = simulations[0]
         #end if
         for sim in simulations:
-            if len(sim.dependencies)==0:
-                self.add_cascade(sim)
+            if not sim.fake():
+                if len(sim.dependencies)==0:
+                    self.add_cascade(sim)
+                #end if
+                self.simulations[sim.simid]=sim
             #end if
-            self.simulations[sim.simid]=sim
         #end for
     #end def add_simulations
 
@@ -59,6 +61,7 @@ class ProjectManager(NexusCore):
 
 
     def init_cascades(self):
+        self.screen_fake_sims()
         self.resolve_file_collisions()
         self.propagate_blockages()
         self.log('loading cascade images',n=1)
@@ -170,6 +173,24 @@ class ProjectManager(NexusCore):
         #end def save
         self.traverse_cascades(save)
     #end def save_cascades
+
+
+    def screen_fake_sims(self):
+        def collect_fake(sim,fake):
+            if sim.fake():
+                fake.append(sim)
+            #end if
+        #end def collect_fake
+        fake = []
+        self.traverse_cascades(collect_fake,fake)
+        if len(fake)>0:
+            msg = 'fake/temporary simulation objects detected in cascade\nthis is a developer error\nlist of fake sims and directories:\n'
+            for sim in fake:
+                msg +='  {0:>8}  {1}\n'.format(sim.simid,sim.locdir)
+            #end for
+            self.error(msg)
+        #end if
+    #end def screen_fake_sims
 
 
     def propagate_blockages(self):

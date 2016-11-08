@@ -220,6 +220,72 @@ class object_interface(object):
         return eq
     #end def __eq__
 
+    def tree(self,depth=None,all=False,types=False,nindent=1):
+        if depth==nindent-1:
+            return ''
+        #end if
+        pad = '  '
+        npad = nindent*pad
+        s=''
+        normal = []
+        qable  = []
+        for k,v in self._iteritems():
+            if not isinstance(k,str) or k[0]!='_':
+                if isinstance(v,object_interface):
+                    qable.append(k)
+                else:
+                    normal.append(k)
+                #end if
+            #end if
+        #end for
+        normal.sort()
+        qable.sort()
+        indent = npad+18*' '
+        if all:
+            for k in normal:
+                v = self[k]
+                if types:
+                    s+=npad+'{0:<15} = '.format(k)
+                    if hasattr(v,'__class__'):
+                        s+='{0:<20}'.format(v.__class__.__name__)
+                    else:
+                        s+='{0:<20}'.format(type(v))
+                    #end if
+                else:
+                    s+=npad+str(k)
+                #end if
+                s+='\n'
+            #end for
+        #end if
+        if all and depth!=nindent:
+            for k in qable:
+                v = self[k]
+                s+=npad+str(k)+'\n'
+                s+=v.tree(depth,all,types,nindent+1)
+                if isinstance(k,str):
+                    s+=npad+'end '+k+'\n'
+                #end if
+            #end for
+        else:
+            for k in qable:
+                v = self[k]
+                if types:
+                    s+=npad+'{0:<15} = '.format(k)
+                    if hasattr(v,'__class__'):
+                        s+='{0:<20}'.format(v.__class__.__name__)
+                    else:
+                        s+='{0:<20}'.format(type(v))
+                    #end if
+                else:
+                    s+=npad+str(k)
+                #end if
+                s+='\n'
+                s+=v.tree(depth,all,types,nindent+1)
+            #end for
+        #end if
+        return s
+    #end def tree
+
 
     # dict interface
     def keys(self):
@@ -589,6 +655,39 @@ class obj(object_interface):
         #end for
         o[path[-1]] = value
     #end def set_path
+
+    def get_path(self,path,value=None):
+        o = self
+        if isinstance(path,str):
+            path = path.split('/')
+        #end if
+        for p in path[0:-1]:
+            if not p in o:
+                return value
+            #end if
+            o = o[p]
+        #end for
+        lp = path[-1]
+        if lp not in o:
+            return value
+        else:
+            return o[lp]
+        #end if
+    #end def get_path
+
+    def path_exists(self,path):
+        o = self
+        if isinstance(path,str):
+            path = path.split('/')
+        #end if
+        for p in path:
+            if not p in o:
+                return False
+            #end if
+            o = o[p]
+        #end for
+        return True
+    #end def path_exists
 
     def get(self,key,value=None): # follow dict interface, no plural
         if key in self:
