@@ -429,7 +429,12 @@ class Simulation(NexusCore):
             self.depends(*kw['dependencies'])
             del kw['dependencies']
         #end if
-        allowed = set(kw.keys()) & self.allowed_inputs
+        kwset = set(kw.keys())
+        invalid = kwset - self.allowed_inputs
+        if len(invalid)>0:
+            self.error('received invalid inputs\ninvalid inputs: {0}\nallowed inputs are: {1}'.format(sorted(invalid),sorted(self.allowed_inputs)))
+        #end if
+        allowed =  kwset & self.allowed_inputs
         for name in allowed:
             self[name] = kw[name]
         #end for
@@ -467,7 +472,6 @@ class Simulation(NexusCore):
         self.resdir = os.path.join(nexus_core.local_directory,nexus_core.results,nexus_core.runs,self.path)
         
         if not self.fake():
-
             print '  creating sim {0} in {1}'.format(self.simid,self.locdir)
 
             if not self.locdir in self.sim_directories:

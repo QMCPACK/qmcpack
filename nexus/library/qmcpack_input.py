@@ -2574,7 +2574,12 @@ localenergy.defaults.set(
 dm1b.defaults.set(
     type = 'dm1b',name='DensityMatrices'
     )
-
+density.defaults.set(
+    type='density',name='Density'
+    )
+spindensity.defaults.set(
+    type='spindensity',name='SpinDensity'
+    )
 
 
 

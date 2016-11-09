@@ -318,11 +318,10 @@ class SimHolder(GenericSimulation):
     cls_simlabel = None
     def __init__(self,*args,**kwargs):
         cls = self.__class__
-        Simulation.__init__(self,path='',job=job(app_command='',fake=True))
+        Simulation.__init__(self,path='',job=job(app_command='',fake=True),fake_sim=True)
         if cls.cls_simlabel!=None:
             self.simlabel = cls.cls_simlabel
         #end if
-        self.fake_sim = True
     #end def __init__
 #end class SimHolder
 
@@ -1836,7 +1835,11 @@ def gen_opt_chain(ch,loc):
         optJ2_dep = orbdep + [('opt_J2','jastrow')]
     #end if
     if wf.J3_src is None:
-        optJ3_dep = J2dep
+        if wf.J2_run:
+            optJ3_dep = J2dep
+        else:
+            optJ3_dep = orbdep
+        #end if
     else:
         optJ3_dep = orbdep + [('opt_J3','jastrow')]
     #end if
@@ -1936,13 +1939,16 @@ def gen_dmc(simlabel,ch,depset,J,nlmove=None,test=0,loc=''):
     else:
         qmcjob = wf.job
     #end if
+    other_inputs = obj(task.inputs)
+    if 'calculations' not in other_inputs:
+        other_inputs.calculations = dmc_sections(nlmove=nlmove,test=test,J0=J=='J0',**task.sec_inputs)
+    #end if
     qmc = generate_qmcpack(
         path         = os.path.join(wf.basepath,simlabel),
         job          = qmcjob,
         jastrows     = [],
-        calculations = dmc_sections(nlmove=nlmove,test=test,J0=J=='J0',**task.sec_inputs),
         dependencies = deps,
-        **task.inputs
+        **other_inputs
         )
     sims[simlabel] = qmc
 #end def gen_dmc
