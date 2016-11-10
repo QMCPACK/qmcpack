@@ -303,6 +303,19 @@ struct CrystalLattice
 #endif
   }
 
+  /** conversion of a caresian reciprocal-vector to unit k-vector
+   *@param kin an input reciprocal vector in cartesian form
+   *@return k(reciprocal vector) as unit vector
+  */
+  inline SingleParticlePos_t k_unit(const SingleParticlePos_t& kin) const
+  {
+#ifdef OHMMS_LATTICEOPERATORS_H
+    return DotProduct<SingleParticlePos_t,Tensor_t,ORTHO>::apply(R,kin)/TWOPI;
+#else
+    return dot(R,kin)/TWOPI;
+#endif
+  }
+
   /** evaluate \f$k^2\f$
    *
    *@param kin an input reciprocal vector in reciprocal-vector unit
