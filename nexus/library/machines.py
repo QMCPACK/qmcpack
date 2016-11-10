@@ -2516,6 +2516,10 @@ class Cooley(Supercomputer):
     errfile_extension  = '.error'
 
     def process_job_extra(self,job):
+        if job.processes_per_node is None and job.threads!=1:
+            self.error('threads must be 1,2,3,4,6, or 12 on Cooley\nyou provided: {0}'.format(job.threads))
+        #end if
+
         job.run_options.add(
             f   = '-f $COBALT_NODEFILE',
             ppn = '-ppn {0}'.format(job.processes_per_node),

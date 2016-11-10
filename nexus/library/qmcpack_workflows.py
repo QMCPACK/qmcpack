@@ -1165,7 +1165,7 @@ def opt_sections(
         error('invalid optimization cost function encountered\ninvalid cost fuction: {0}\nvalid options are: variance, energy, (0.95,0.05), etc'.format(cost),loc)
     #end if
     opt_calcs = []
-    if abs(cost[0])>1e-6:
+    if abs(cost[0])>1e-6 and var_cycles>0:
         vmin_opt = opt(
             energy               = 0.0,
             unreweightedvariance = 1.0,
