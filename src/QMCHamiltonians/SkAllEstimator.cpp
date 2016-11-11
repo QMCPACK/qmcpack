@@ -47,7 +47,7 @@ SkAllEstimator::SkAllEstimator(ParticleSet& source, ParticleSet& target)
 #endif
   //for values, we are including e-e structure factor, and e-Ion.  So a total of NumIonSpecies+1 structure factors.  
   //+2 for the real and imaginary parts of rho_k^e
-  values.resize((NumIonSpecies+1+2)*NumK);
+  values.resize(3*NumK);
   Kmag.resize(MaxKshell);
   OneOverDnk.resize(MaxKshell);
   for(int ks=0, k=0; ks<MaxKshell; ks++)
@@ -67,54 +67,41 @@ void SkAllEstimator::resetTargetParticleSet(ParticleSet& P)
 
 void SkAllEstimator::evaluateIonIon()
 {
-  int NUniqIonPairs=(NumIonSpecies*(NumIonSpecies-1))/2;
-  std::vector<Vector<RealType> > Sk_AB(0);
-  Vector<RealType> Sk_tmp(NumK);
   std::stringstream ss;
-  ss << " kx ky kz ";
-  for (int specA=0; specA<NumIonSpecies; specA++) 
-    for (int specB=specA; specB<NumIonSpecies; specB++)
-    {
- 	 for (int k=0; k<NumK; k++)
-	 {
-#if defined(USE_REAL_STRUCT_FACTOR)
- 	 //sum over species
-           double rhok_A_r(ions->SK->rhok_r[specA][k]), rhok_A_i(ions->SK->rhok_i[specA][k]);
-           double rhok_B_r(ions->SK->rhok_r[specB][k]), rhok_B_i(ions->SK->rhok_i[specB][k]);
-#else
-  //sum over species
-           double rhok_A_r(ions->SK->rhok[specA][k].real()), rhok_A_i(ions->SK->rhok[specA][k].imag());
-           double rhok_B_r(ions->SK->rhok[specB][k].real()), rhok_B_i(ions->SK->rhok[specB][k].imag());
-#endif
-	
-	   Sk_tmp[k]=rhok_A_r*rhok_B_r+rhok_A_i*rhok_B_i;
-	 }	
-	    Sk_AB.push_back(Sk_tmp);
-	    
-//  app_log()<<"Assign Sk_tmp -> Sk_AB\n";
-	 //   Sk_AB[specA*NumIonSpecies+specB]=Sk_tmp;
-
-	    ss<<" rhok_"<<specA<<"_"<<specB;
-    }
+  ss << " kx ky kz";
 
   std::ofstream skfile;
   std::stringstream filebuffer;
   skfile.open("rhok_IonIon.dat");
+  for(int i=0; i<NumIonSpecies; i++)
+    ss<<" rho_"<<i<<"_r"<<" rho_"<<i<<"_i";
+  
   filebuffer<<ss.str()<<std::endl;
-
+ 
   for (int k=0; k<NumK; k++)
   {
-   PosType kvec= ions->SK->KLists.kpts_cart[k];
+    PosType kvec= ions->SK->KLists.kpts_cart[k];
    
-   filebuffer<<kvec;
-    for (int i=0; i<NUniqIonPairs+NumIonSpecies; i++) 
-      {
-	 filebuffer<<" "<<Sk_AB[i][k];
-      }
+    filebuffer<<kvec;
+    for (int i=0; i<NumIonSpecies; i++) 
+    {
+      double rho_i(0.0);
+      double rho_r(0.0);
+       
+#if defined(USE_REAL_STRUCT_FACTOR)
+      rho_r=ions->SK->rhok_r[i][k];
+      rho_i=ions->SK->rhok_i[i][k];
+#else
+      rho_r=ions->SK->rhok[i][k].real();
+      rho_i=ions->SK->rhok[i][k].imag();
+#endif
+      filebuffer<<" "<<rho_r<<" "<<rho_i;
+    } 
    
-     filebuffer<<std::endl;
+    filebuffer<<std::endl;
   }
- skfile<<filebuffer.str();
+  
+  skfile<<filebuffer.str();
 
   skfile.close();	
 }
@@ -133,19 +120,19 @@ SkAllEstimator::Return_t SkAllEstimator::evaluate(ParticleSet& P)
     for(int k=0; k<NumK; k++)
       values[k]=RhokTot_r[k]*RhokTot_r[k]+RhokTot_i[k]*RhokTot_i[k];
 
-    for (int ionSpec=0; ionSpec<NumIonSpecies; ionSpec++)
-    {
-   	 for(int k=0; k<NumK; k++)
-   	 {
-		RealType rhok_A_r(ions->SK->rhok_r[ionSpec][k]), rhok_A_i(ions->SK->rhok_i[ionSpec][k]);
-		values[(ionSpec+1)*NumK+k]=RhokTot_r[k]*rhok_A_r+RhokTot_i[k]*rhok_A_i;
-   	 }	
-    } 
+//    for (int ionSpec=0; ionSpec<NumIonSpecies; ionSpec++)
+//    {
+//   	 for(int k=0; k<NumK; k++)
+//   	 {
+//		RealType rhok_A_r(ions->SK->rhok_r[ionSpec][k]), rhok_A_i(ions->SK->rhok_i[ionSpec][k]);
+//		values[(ionSpec+1)*NumK+k]=RhokTot_r[k]*rhok_A_r+RhokTot_i[k]*rhok_A_i;
+//   	 }	
+//    } 
     
     for(int k=0,count=0; k<NumK; k++)
     {
-	values[(NumIonSpecies+1)*NumK+2*k]=RhokTot_r[k];
-	values[(NumIonSpecies+1)*NumK+2*k+1]=RhokTot_i[k];
+	values[NumK+2*k]=RhokTot_r[k];
+	values[NumK+2*k+1]=RhokTot_i[k];
     }
 #else
   //sum over species
@@ -156,19 +143,19 @@ SkAllEstimator::Return_t SkAllEstimator::evaluate(ParticleSet& P)
     for(int k=0; k<NumK; k++)
       values[k]=rhok[k].real()*rhok[k].real()+rhok[k].imag()*rhok[k].imag();
 
-    for (int ionSpec=0; ionSpec<NumIonSpecies; ionSpec++)
-    {
-   	 for(int k=0; k<NumK; k++)
-   	 {
-		RealType rhok_A_r(ions->SK->rhok[ionSpec][k].real()), rhok_A_i(ions->SK->rhok[ionSpec][k].imag());
-		values[(ionSpec+1)*NumK+k]=rhok[k].real()*rhok_A_r+rho_k[k].imag()*rhok_A_i;
-   	 }	
-    } 
+//    for (int ionSpec=0; ionSpec<NumIonSpecies; ionSpec++)
+//    {
+//   	 for(int k=0; k<NumK; k++)
+//   	 {
+//		RealType rhok_A_r(ions->SK->rhok[ionSpec][k].real()), rhok_A_i(ions->SK->rhok[ionSpec][k].imag());
+//		values[(ionSpec+1)*NumK+k]=rhok[k].real()*rhok_A_r+rho_k[k].imag()*rhok_A_i;
+//  	 }	
+//    } 
     for(int k=0,count=0; k<NumK; k++)
     {
-	value[(NumIonSpecies+1)*NumK+count]=rhok[k].real();
+	value[NumK+count]=rhok[k].real();
 	count++;
-	value[(NumIonSpecies+1)*NumK+count]=rhok[k].imag();
+	value[NumK+count]=rhok[k].imag();
 	count++;
     }
 #endif
@@ -195,15 +182,15 @@ void SkAllEstimator::addObservables(PropertySetType& plist, BufferType& collecta
       int id=plist.add(sstr.str());
     }
 //Now the e-Ion structure factors.  IonIon are dumped to file, and not evaluated.  
-    for (int ionSpec=0; ionSpec<NumIonSpecies; ionSpec++)
-    { 
-       for (int i=0; i<NumK; i++)
-       {
-         std::stringstream sstr;
-         sstr << "rhok_e_" <<ionSpec<<"_"<<i;
-         int id=plist.add(sstr.str());
-       }
-    }
+//    for (int ionSpec=0; ionSpec<NumIonSpecies; ionSpec++)
+//    { 
+//       for (int i=0; i<NumK; i++)
+//       {
+//         std::stringstream sstr;
+//         sstr << "rhok_e_" <<ionSpec<<"_"<<i;
+//         int id=plist.add(sstr.str());
+//       }
+//    }
 
     for(int k=0; k<NumK; k++)
     {
@@ -229,15 +216,15 @@ void SkAllEstimator::addObservables(PropertySetType& plist )
       int id=plist.add(sstr.str());
     }
 //Now the e-Ion structure factors.  IonIon are dumped to file, and not evaluated.  
-    for (int ionSpec=0; ionSpec<NumIonSpecies; ionSpec++)
-    { 
-       for (int i=0; i<NumK; i++)
-       {
-         std::stringstream sstr;
-         sstr << "rhok_e_" <<ionSpec<<"_"<<i;
-         int id=plist.add(sstr.str());
-       }
-    }
+//    for (int ionSpec=0; ionSpec<NumIonSpecies; ionSpec++)
+//    { 
+//       for (int i=0; i<NumK; i++)
+//       {
+//         std::stringstream sstr;
+//         sstr << "rhok_e_" <<ionSpec<<"_"<<i;
+//         int id=plist.add(sstr.str());
+//       }
+//    }
     for(int k=0; k<NumK; k++)
     {
          std::stringstream sstr1,sstr2;
