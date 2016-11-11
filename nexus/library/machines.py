@@ -1384,7 +1384,11 @@ class Supercomputer(Machine):
         else:
             job.cores = min(job.cores,job.nodes*self.cores_per_node)
         #end if
-        job.processes = max(1,int(float(job.cores)/job.threads))
+        if job.processes_per_node!=None:
+            job.processes=job.nodes*job.processes_per_node
+        else:
+            job.processes = max(1,int(float(job.cores)/job.threads))
+        #end if
         job.tot_cores = job.nodes*self.cores_per_node
         job.procs = job.nodes*self.procs_per_node
 
