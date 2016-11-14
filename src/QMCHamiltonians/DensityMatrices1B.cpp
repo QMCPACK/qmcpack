@@ -471,8 +471,6 @@ namespace qmcplusplus
   void DensityMatrices1B::get_required_traces(TraceManager& tm)
   {
     app_log()<<"dm1b get_required_traces"<< std::endl;
-    if(&Pq==NULL)
-      APP_ABORT("DensityMatrices1B::get_required_traces  quantum particleset reference is NULL");
     w_trace = tm.get_real_trace("weight");
     if(energy_mat)
     {
