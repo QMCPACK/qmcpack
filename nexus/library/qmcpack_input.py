@@ -2574,7 +2574,12 @@ localenergy.defaults.set(
 dm1b.defaults.set(
     type = 'dm1b',name='DensityMatrices'
     )
-
+density.defaults.set(
+    type='density',name='Density'
+    )
+spindensity.defaults.set(
+    type='spindensity',name='SpinDensity'
+    )
 
 
 
@@ -5098,6 +5103,8 @@ def generate_basic_input(id             = 'qmc',
     #end if
     if corrections=='default' and tuple(bconds)==tuple('ppp'):
         corrections = ['mpc','chiesa']
+    elif isinstance(corrections,(list,tuple)):
+        None
     else:
         corrections = []
     #end if

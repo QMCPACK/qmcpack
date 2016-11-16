@@ -80,7 +80,7 @@ void QMCHamiltonianBase::two_body_quantum_domain(const ParticleSet& P1,const Par
   bool q2 = P2.is_quantum();
   if(c1 && c2)
     quantum_domain = classical_classical;
-  else if(q1 && c2 || c1 && q2)
+  else if((q1 && c2) || (c1 && q2))
     quantum_domain = quantum_classical;
   else if(q1 && q2)
     quantum_domain = quantum_quantum;

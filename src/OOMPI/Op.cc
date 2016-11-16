@@ -27,12 +27,14 @@
 static int 
 Free_mpi_op(MPI_Op *op_wrapper)
 {
-  if (op_wrapper != 0 && *op_wrapper != MPI_OP_NULL )
-    if (OOMPI_COMM_WORLD.Finalized()) 
+  if (op_wrapper != 0 && *op_wrapper != MPI_OP_NULL ) {
+    if (OOMPI_COMM_WORLD.Finalized()) {
       std::cerr << "Attempt to free operator after finalize (ignored, probably resulting in memory leak)." 
 		<< std::endl;
-    else
+    } else {
       MPI_Op_free(op_wrapper);
+    }
+  }
 
   return MPI_SUCCESS;
 }

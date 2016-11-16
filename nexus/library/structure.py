@@ -460,6 +460,7 @@ class Structure(Sobj):
                  magnetization=None,magnetic_order=None,magnetic_prim=True,
                  operations=None,background_charge=0,frozen=None,bconds=None,
                  posu=None):
+
         if center is None:
             if axes is not None:
                 center = array(axes,dtype=float).sum(0)/2
@@ -489,16 +490,16 @@ class Structure(Sobj):
         if mag is None:
             mag = len(elem)*[None]
         #end if
-        self.scale  = 1.
-        self.units  = units
-        self.dim    = dim
-        self.center = array(center,dtype=float)
-        self.axes   = array(axes,dtype=float)
+        self.scale    = 1.
+        self.units    = units
+        self.dim      = dim
+        self.center   = array(center,dtype=float)
+        self.axes     = array(axes,dtype=float)
         self.set_bconds(bconds)
         self.set_elem(elem)
-        self.pos    = array(pos,dtype=float)
-        self.frozen = None
-        self.mag    = array(mag,dtype=object)
+        self.pos      = array(pos,dtype=float)
+        self.frozen   = None
+        self.mag      = array(mag,dtype=object)
         self.kpoints  = empty((0,dim))            
         self.kweights = empty((0,))         
         self.background_charge = background_charge
@@ -674,6 +675,60 @@ class Structure(Sobj):
         #end if
     #end def reshape_axes
 
+    
+    def corners(self):
+        a = self.axes
+        c = array([(0,0,0),
+                   a[0],
+                   a[1],
+                   a[2],
+                   a[0]+a[1],
+                   a[1]+a[2],
+                   a[2]+a[0],
+                   a[0]+a[1]+a[2],
+                   ])
+        return c
+    #end def corners
+
+    
+    def miller_direction(self,h,k,l,normalize=False):
+        d = dot((h,k,l),self.axes)
+        if normalize:
+            d/=norm(d)
+        #end if
+        return d
+    #end def miller_direction
+
+    
+    def miller_normal(self,h,k,l,normalize=False):
+        d = dot((h,k,l),self.kaxes)
+        if normalize:
+            d/=norm(d)
+        #end if
+        return d
+    #end def miller_normal
+
+
+    def project_plane(self,a1,a2,points=None):
+        # a1/a2: in plane vectors
+        if points is None:
+            points = self.pos
+        #end if
+        a1n = norm(a1)
+        a2n = norm(a2)
+        a1/=a1n
+        a2/=a2n
+        n = cross(a1,a2)
+        plane_coords = []
+        for p in points:
+            p -= dot(n,p)*n # project point into plane
+            c1 = dot(a1,p)/a1n
+            c2 = dot(a2,p)/a2n
+            plane_coords.append((c1,c2))
+        #end for
+        return array(plane_coords,dtype=float)
+    #end def project_plane
+
         
     def bounding_box(self,scale=1.0,box='tight',recenter=False):
         pmin    = self.pos.min(0)
@@ -736,7 +791,7 @@ class Structure(Sobj):
             P[:,i] = pv[:]
         #end for
         self.center = dot(self.center,P)
-        if len(self.axes)>0:
+        if self.has_axes():
             self.axes = dot(self.axes,P)
         #end if
         if len(self.pos)>0:
@@ -798,19 +853,18 @@ class Structure(Sobj):
 
 
     def any_periodic(self):
-        has_cell    = len(self.axes)>0
-        has_kpoints = len(self.kpoints)>0
+        has_cell    = self.has_axes()
         pbc = False
         for bc in self.bconds:
             pbc |= bc=='p'
         #end if
-        periodic = has_cell and (pbc or has_kpoints)
+        periodic = has_cell and pbc
         return periodic
     #end def any_periodic
 
     
     def all_periodic(self):
-        has_cell = len(self.axes)>0
+        has_cell = self.has_axes()
         pbc = True
         for bc in self.bconds:
             pbc &= bc=='p'
@@ -839,7 +893,7 @@ class Structure(Sobj):
 
     
     def volume(self):
-        if len(self.axes)==0:
+        if not self.has_axes():
             return None
         else:
             return abs(det(self.axes))
@@ -883,6 +937,22 @@ class Structure(Sobj):
         #end for
         return radius
     #end def rinscribe
+
+
+    def rwigner_cube(self,*args,**kwargs):
+        cube = Structure()
+        a = self.volume()**(1./3)
+        cube.set_axes([[a,0,0],[0,a,0],[0,0,a]])
+        return cube.rwigner(*args,**kwargs)
+    #end def rwigner_cube
+
+
+    def rinscribe_cube(self,*args,**kwargs):
+        cube = Structure()
+        a = self.volume()**(1./3)
+        cube.set_axes([[a,0,0],[0,a,0],[0,0,a]])
+        return cube.rinscribe(*args,**kwargs)
+    #end def rinscribe_cube
 
 
     def rmin(self):
@@ -1038,7 +1108,7 @@ class Structure(Sobj):
             v = -v # preserve the normal direction for atom identification, but reverse the shift direction
         #end if
         self.recorner()  # want box contents to be static
-        if len(self.axes)>0:
+        if self.has_axes():
             components = 0
             dim = self.dim
             axes = self.axes
@@ -2627,7 +2697,7 @@ class Structure(Sobj):
 
 
     def tile_opt(self,volfac,dn=1,tol=1e-3):
-        Topt = self.opt_tilematrix(volfac,dn,tol)
+        Topt,ropt = self.opt_tilematrix(volfac,dn,tol)
         return self.tile(Topt)
     #end def tile_opt
 
@@ -3332,8 +3402,13 @@ class Structure(Sobj):
             self.read_poscar(filepath,elem=elem)
         elif format=='cif':
             self.read_cif(filepath,block=block,grammar=grammar,cell=cell)
+        elif format=='fhi-aims':
+            self.read_fhi_aims(filepath)
         else:
             self.error('cannot read structure from file\nunsupported file format: {0}'.format(format))
+        #end if
+        if self.has_axes():
+            self.set_bconds('ppp')
         #end if
     #end def read
 
@@ -3489,11 +3564,46 @@ class Structure(Sobj):
 
     def read_cif(self,filepath,block=None,grammar='1.1',cell='prim'):
         axes,elem,pos,units = read_cif(filepath,block,grammar,cell,args_only=True)
+        self.dim = 3
         self.set_axes(axes)
         self.set_elem(elem)
         self.pos = pos
         self.units = units
     #end def read_cif
+
+
+    def read_fhi_aims(self,filepath):
+        if os.path.exists(filepath):
+            lines = open(filepath,'r').read().splitlines()
+        else:
+            lines = filepath.splitlines() # "filepath" is contents
+        #end if
+        axes = []
+        posu = []
+        elem = []
+        for line in lines:
+            ls = line.strip()
+            if len(ls)>0 and ls[0]!='#':
+                tokens = ls.split()
+                if ls.startswith('lattice_vector'):
+                    axes.append(tokens[1:])
+                elif ls.startswith('atom_frac'):
+                    posu.append(tokens[1:4])
+                    elem.append(tokens[4])
+                else:
+                    None
+                    #self.error('unrecogonized or not yet supported token in fhi-aims geometry file: {0}'.format(tokens[0]))
+                #end if
+            #end if
+        #end for
+        axes = array(axes,dtype=float)
+        pos  = dot(array(posu,dtype=float),axes)
+        self.dim = 3
+        self.set_axes(axes)
+        self.set_elem(elem)
+        self.pos   = pos
+        self.units = 'A'
+    #end def read_fhi_aims
 
 
     def write(self,filepath=None,format=None):
@@ -3511,6 +3621,8 @@ class Structure(Sobj):
             c = self.write_xyz(filepath)
         elif format=='xsf':
             c = self.write_xsf(filepath)
+        elif format=='fhi-aims':
+            c = self.write_fhi_aims(filepath)
         else:
             self.error('file format {0} is unrecognized'.format(format))
         #end if
@@ -3576,6 +3688,25 @@ class Structure(Sobj):
         #end if
         return c
     #end def write_xsf
+
+
+    def write_fhi_aims(self,filepath=None):
+        s = self.copy()
+        s.change_units('A')
+        c = ''
+        c+='\n'
+        for a in s.axes:
+            c += 'lattice_vector   {0: 12.8f}  {1: 12.8f}  {2: 12.8f}\n'.format(*a)
+        #end for
+        c+='\n'
+        for p,e in zip(self.pos,self.elem):
+            c += 'atom_frac   {0: 12.8f}  {1: 12.8f}  {2: 12.8f}  {3}\n'.format(p[0],p[1],p[2],e)
+        #end for
+        if filepath!=None:
+            open(filepath,'w').write(c)
+        #end if
+        return c
+    #end def write_fhi_aims
 
 
     def plot2d_ax(self,ix,iy,*args,**kwargs):
@@ -4600,7 +4731,7 @@ def generate_structure(type='crystal',*args,**kwargs):
 
 
 
-def generate_atom_structure(atom=None,units='A',Lbox=None,skew=0,axes=None,kgrid=(1,1,1),kshift=(0,0,0),struct_type=Structure):
+def generate_atom_structure(atom=None,units='A',Lbox=None,skew=0,axes=None,kgrid=(1,1,1),kshift=(0,0,0),bconds=tuple('nnn'),struct_type=Structure):
     if atom is None:
         Structure.class_error('atom must be provided','generate_atom_structure')
     #end if
@@ -4608,16 +4739,17 @@ def generate_atom_structure(atom=None,units='A',Lbox=None,skew=0,axes=None,kgrid
         axes = [[Lbox*(1-skew),0,0],[0,Lbox,0],[0,0,Lbox*(1+skew)]]
     #end if
     if axes is None:
-        s = Structure(elem=[atom],pos=[[0,0,0]],units=units)
+        s = Structure(elem=[atom],pos=[[0,0,0]],units=units,bconds=bconds)
     else:
-        s = Structure(elem=[atom],pos=[[0,0,0]],axes=axes,kgrid=kgrid,kshift=kshift,units=units)
+        s = Structure(elem=[atom],pos=[[0,0,0]],axes=axes,kgrid=kgrid,kshift=kshift,bconds=bconds,units=units)
         s.center_molecule()
     #end if
+
     return s
 #end def generate_atom_structure
 
 
-def generate_dimer_structure(dimer=None,units='A',separation=None,Lbox=None,skew=0,axes=None,kgrid=(1,1,1),kshift=(0,0,0),struct_type=Structure,axis='x'):
+def generate_dimer_structure(dimer=None,units='A',separation=None,Lbox=None,skew=0,axes=None,kgrid=(1,1,1),kshift=(0,0,0),bconds=tuple('nnn'),struct_type=Structure,axis='x'):
     if dimer is None:
         Structure.class_error('dimer atoms must be provided to construct dimer','generate_dimer_structure')
     #end if
@@ -4637,9 +4769,9 @@ def generate_dimer_structure(dimer=None,units='A',separation=None,Lbox=None,skew
         Structure.class_error('dimer orientation axis must be x,y,z\n  you provided: {0}'.format(axis),'generate_dimer_structure')
     #end if
     if axes is None:
-        s = Structure(elem=dimer,pos=[[0,0,0],p2],units=units)
+        s = Structure(elem=dimer,pos=[[0,0,0],p2],units=units,bconds=bconds)
     else:
-        s = Structure(elem=dimer,pos=[[0,0,0],p2],axes=axes,kgrid=kgrid,kshift=kshift,units=units)
+        s = Structure(elem=dimer,pos=[[0,0,0],p2],axes=axes,kgrid=kgrid,kshift=kshift,units=units,bconds=bconds)
         s.center_molecule()
     #end if
     return s

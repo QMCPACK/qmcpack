@@ -67,15 +67,15 @@ namespace qmcplusplus
       APP_ABORT("PostProcessor::put  xml input is incomplete, see messages above.");
     }
 
-    ParticleSet&       Pq  = *ppool.getParticleSet(Pqname);
-    ParticleSet&       Pc  = *ppool.getParticleSet(Pcname);
-    TrialWaveFunction& Psi = *wpool.getWaveFunction(Psiname);
-    QMCHamiltonian&    H   = *hpool.getHamiltonian(Hname);
+    ParticleSet*       Pq  = ppool.getParticleSet(Pqname);
+    ParticleSet*       Pc  = ppool.getParticleSet(Pcname);
+    TrialWaveFunction* Psi = wpool.getWaveFunction(Psiname);
+    QMCHamiltonian*    H   = hpool.getHamiltonian(Hname);
 
-    notPq  =  &Pq==0 ||  Pq.getName()!=Pqname;
-    notPc  =  &Pc==0 ||  Pc.getName()!=Pcname;
-    notPsi = &Psi==0 || Psi.getName()!=Psiname;
-    notH   =   &H==0 ||   H.getName()!=Hname;
+    notPq  =  Pq==0 ||  Pq->getName()!=Pqname;
+    notPc  =  Pc==0 ||  Pc->getName()!=Pcname;
+    notPsi = Psi==0 || Psi->getName()!=Psiname;
+    notH   =   H==0 ||   H->getName()!=Hname;
     if(notPq||notPc||notPsi||notH)
     {
       if(notPq)
@@ -96,7 +96,7 @@ namespace qmcplusplus
       bool not_text = cname!="text";
       PostProcessorBase* pp = 0;
       if(cname=="spindensity")
-        pp = new SpinDensityPostProcessor(Pq,Pc,H);
+        pp = new SpinDensityPostProcessor(*Pq,*Pc,*H);
       else if(not_text)
         APP_ABORT("PostProcessor::put  "+cname+" is not a valid element of postprocess");
       if(not_text)

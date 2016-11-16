@@ -27,6 +27,7 @@
 #include <cmath>
 #include "OhmmsPETE/OhmmsVector.h"
 #include "Numerics/GridTraits.h"
+#include "einspline/bspline_base.h"
 
 namespace qmcplusplus
 {
@@ -68,6 +69,8 @@ struct OneDimGridBase
 
   virtual OneDimGridBase<T,CT>* makeClone() const =0;
 
+  virtual ~OneDimGridBase() {}
+
   inline int getGridTag() const
   {
     return GridTag;
@@ -83,7 +86,7 @@ struct OneDimGridBase
   {
     int k;
     int klo=0;
-    int khi=this->size()-1;
+    int khi=this->size();
     while(khi-klo > 1)
     {
       k=(khi+klo) >> 1;
@@ -337,7 +340,18 @@ struct LinearGrid: public OneDimGridBase<T,CT>
     for(int i=0; i<n; i++)
       X[i] = ri+Delta_DP*i;
   }
+  
+  inline Ugrid einspline_grid()
+  {
+    Ugrid grid;
+    grid.start = lower_bound;
+    grid.end   = upper_bound;
+    grid.num   = num_points;
+    grid.delta = Delta;
+    grid.delta_inv= DeltaInv;
 
+    return grid;   
+  }
 };
 
 /** One-Dimensional logarithmic-grid.
@@ -505,7 +519,7 @@ struct NumericalGrid: public OneDimGridBase<T,CT>
   {
     int k;
     int klo=0;
-    int khi=num_points-1;
+    int khi=num_points;
     //int khi=this->size()-1;
     while(khi-klo > 1)
     {

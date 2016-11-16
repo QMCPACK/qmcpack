@@ -224,7 +224,10 @@ private:
     fillXk(breakuphandler.KList);
     //Allocate the space for the coefficients.
     coefs.resize(Basis.NumBasisElem()); //This must be after SetupKVecs.
-    breakuphandler.DoBreakup(Fk.data(),coefs.data()); //Fill array of coefficients.
+    
+    mRealType chisqr(0.0);
+    chisqr=breakuphandler.DoBreakup(Fk.data(),coefs.data()); //Fill array of coefficients.
+    app_log()<<"\n   LR Breakup chi^2 = "<<chisqr<<std::endl;
   }
 
   void fillXk(std::vector<TinyVector<mRealType,2> >& KList)

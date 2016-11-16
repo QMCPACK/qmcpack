@@ -183,7 +183,7 @@ class Gamess(Simulation):
 
 
 def generate_gamess(**kwargs):
-    sim_args,inp_args = Simulation.separate_inputs(kwargs,copy_pseudos=False)
+    sim_args,inp_args = Gamess.separate_inputs(kwargs,copy_pseudos=False)
 
     if not 'input' in sim_args:
         sim_args.input = generate_gamess_input(**inp_args)

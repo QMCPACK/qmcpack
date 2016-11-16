@@ -20,6 +20,13 @@
 #Must be an absolute path
 place=/projects/QMCSim/QMCPACK_CI_BUILDS_DO_NOT_REMOVE
 
+#define compiler
+compiler=XL
+#compiler=Clang++11
+
+. /soft/environment/softenv/etc/softenv-aliases.sh
+resoft ~/.soft.clang
+
 if [ ! -e $place ]; then
 mkdir $place
 fi
@@ -38,7 +45,7 @@ entry=trunk
 if [ -e $entry/CMakeLists.txt ]; then
 cd $entry
 
-for sys in build_BGQ_XL_real #build_BGQ_XL_complex
+for sys in build_BGQ_${compiler}_real build_BGQ_${compiler}_complex build_BGQ_${compiler}_MP_real build_BGQ_${compiler}_MP_complex
 do
 
 mkdir $sys
@@ -53,15 +60,25 @@ then
 fi
 
 case $sys in
-"build_BGQ_XL_real")
-# Build the real version with XL compiler on BGQ
-    export QMCPACK_TEST_SUBMIT_NAME=BGQ-XL-Real-Release
-    ctest -DCMAKE_TOOLCHAIN_FILE=../config/BGQToolChain.cmake -DQMC_COMPLEX=0 -S $PWD/../CMake/ctest_script.cmake,release -R short -VV &> $place/log/$entry/$mydate/${QMCPACK_TEST_SUBMIT_NAME}.log
+"build_BGQ_${compiler}_real")
+# Build the real version with ${compiler} compiler on BGQ
+    export QMCPACK_TEST_SUBMIT_NAME=BGQ-${compiler}-Real-Release
+    ctest -DCMAKE_TOOLCHAIN_FILE=../config/BGQ_${compiler}_ToolChain.cmake -DQMC_COMPLEX=0 -S $PWD/../CMake/ctest_script.cmake,release -R short -E "dmc" -VV &> $place/log/$entry/$mydate/${QMCPACK_TEST_SUBMIT_NAME}.log
     ;;
-"build_BGQ_XL_complex")
-# Build the complex version with XL compiler on BGQ
-    export QMCPACK_TEST_SUBMIT_NAME=BGQ-XL-Complex-Release
-    ctest -DCMAKE_TOOLCHAIN_FILE=../config/BGQToolChain.cmake -DQMC_COMPLEX=1 -S $PWD/../CMake/ctest_script.cmake,release -R "short|unit|qe-LiH-unpolarized-no-collect" -VV &> $place/log/$entry/$mydate/${QMCPACK_TEST_SUBMIT_NAME}.log
+"build_BGQ_${compiler}_complex")
+# Build the complex version with ${compiler} compiler on BGQ
+    export QMCPACK_TEST_SUBMIT_NAME=BGQ-${compiler}-Complex-Release
+    ctest -DCMAKE_TOOLCHAIN_FILE=../config/BGQ_${compiler}_ToolChain.cmake -DQMC_COMPLEX=1 -S $PWD/../CMake/ctest_script.cmake,release -R "unit|short|qe-LiH-unpolarized-no-collect-np-16-12-12-nk-16-2-2" -E "dmc" -VV &> $place/log/$entry/$mydate/${QMCPACK_TEST_SUBMIT_NAME}.log
+    ;;
+"build_BGQ_${compiler}_MP_real")
+# Build the real version with ${compiler} compiler on BGQ
+    export QMCPACK_TEST_SUBMIT_NAME=BGQ-${compiler}-MixedPrec-Real-Release
+    ctest -DCMAKE_TOOLCHAIN_FILE=../config/BGQ_${compiler}_ToolChain.cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=1 -S $PWD/../CMake/ctest_script.cmake,release -R short -E "dmc" -VV &> $place/log/$entry/$mydate/${QMCPACK_TEST_SUBMIT_NAME}.log
+    ;;
+"build_BGQ_${compiler}_MP_complex")
+# Build the complex version with ${compiler} compiler on BGQ
+    export QMCPACK_TEST_SUBMIT_NAME=BGQ-${compiler}-MixedPrec-Complex-Release
+    ctest -DCMAKE_TOOLCHAIN_FILE=../config/BGQ_${compiler}_ToolChain.cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=1 -S $PWD/../CMake/ctest_script.cmake,release -R "unit|short|qe-LiH-unpolarized-no-collect-np-16-12-12-nk-16-2-2" -E "dmc" -VV &> $place/log/$entry/$mydate/${QMCPACK_TEST_SUBMIT_NAME}.log
     ;;
 *)
     echo "ERROR: Unknown build type $sys"

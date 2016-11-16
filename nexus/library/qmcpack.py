@@ -41,6 +41,7 @@ from qmcpack_converters import Pw2qmcpack,Wfconvert,Convert4qmc
 from sqd import Sqd
 from debug import ci,ls,gs
 from developer import unavailable
+from nexus_base import nexus_core
 try:
     import h5py
 except ImportError:
@@ -81,6 +82,17 @@ class Qmcpack(Simulation):
             user_twist_given |= isinstance(tnh,htypes) and tnh.twistnum!=None
             many_kpoints = len(self.system.structure.kpoints)>1
             self.should_twist_average = many_kpoints and not user_twist_given
+            if self.should_twist_average:
+                # correct the job app command to account for the change in input file name
+                # this is necessary for twist averaged runs in bundles
+                app_comm = self.app_command()
+                prefix,ext = self.infile.split('.',1)
+                self.infile = prefix+'.in'
+                app_comm_new = self.app_command()
+                if self.job.app_command==app_comm:
+                    self.job.app_command=app_comm_new
+                #end if
+            #end if
         #end if
     #end def post_init
 
@@ -90,6 +102,17 @@ class Qmcpack(Simulation):
             self.input.simulation.project.id = self.identifier
         #end if
     #end def propagate_identifier
+
+
+    def pre_write_inputs(self,save_image):
+        # fix to make twist averaged input file under generate_only
+        if nexus_core.generate_only:
+            twistnums = range(len(self.system.structure.kpoints))
+            if self.should_twist_average:
+                self.twist_average(twistnums)
+            #end if
+        #end if
+    #end def pre_write_inputs
 
 
     def check_result(self,result_name,sim):
@@ -493,7 +516,7 @@ class Qmcpack(Simulation):
 
 
 def generate_qmcpack(**kwargs):
-    sim_args,inp_args = Simulation.separate_inputs(kwargs)
+    sim_args,inp_args = Qmcpack.separate_inputs(kwargs)
 
     if not 'input' in sim_args:
         input_type = inp_args.input_type

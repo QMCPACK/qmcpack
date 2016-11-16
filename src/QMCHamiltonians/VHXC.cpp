@@ -42,8 +42,10 @@ VHXC::VHXC(ParticleSet& ptcl) :
 
 VHXC::~VHXC()
 {
-  if (VSpline)
-    destroy_Bspline(VSpline);
+  if (VSpline[0])
+    destroy_Bspline(VSpline[0]);
+  if (VSpline[1])
+    destroy_Bspline(VSpline[1]);
 }
 
 
@@ -79,8 +81,12 @@ VHXC::init_spline()
                       (grid0, grid1, grid2, bc0, bc1, bc2,
                        VHXC_r_DP.data());
     }
-  if (!VSpline[1])
-    VSpline[1] = VSpline[1];
+  // The following code does nothing, but I don't know what it is
+  // supposed to do.  Maybe set VSpline[1] = VSpline[0]?  If so, the
+  // destructor would need to be updated to hande the case where both
+  // VSpline elements points to the same spline structure.
+  //if (!VSpline[1])
+  //  VSpline[1] = VSpline[1];
 }
 
 
@@ -116,7 +122,7 @@ VHXC::evaluate (ParticleSet& P)
 VHXC::VHXC(ParticleSet& ptcl) :
   PtclRef(&ptcl), FirstTime(true)
 {
-  APP_ABORT("VHXC::VHXC cannot be used with einspline/fftw ");
+  APP_ABORT("VHXC::VHXC cannot be used without einspline/fftw ");
 }
 
 VHXC::~VHXC()

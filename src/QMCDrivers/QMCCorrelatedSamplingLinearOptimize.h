@@ -16,7 +16,7 @@
 /** @file QMCCorrelatedSamplingLinearOptimize.h
  * @brief Definition of QMCDriver which performs VMC and optimization.
  */
-#ifndef QMCPLUSPLUS_QMCCSINEAROPTIMIZATION_VMCSINGLE_H
+#ifndef QMCPLUSPLUS_QMCCSLINEAROPTIMIZATION_VMCSINGLE_H
 #define QMCPLUSPLUS_QMCCSLINEAROPTIMIZATION_VMCSINGLE_H
 
 #include "QMCDrivers/QMCLinearOptimize.h"

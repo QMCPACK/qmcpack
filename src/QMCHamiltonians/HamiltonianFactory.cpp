@@ -46,6 +46,7 @@
 #endif
 #if OHMMS_DIM == 3
 #include "QMCHamiltonians/ChiesaCorrection.h"
+#include "QMCHamiltonians/SkAllEstimator.h"
 #if defined(HAVE_LIBFFTW_LS)
 #include "QMCHamiltonians/ModInsKineticEnergy.h"
 #include "QMCHamiltonians/MomentumDistribution.h"
@@ -468,6 +469,30 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         ChiesaCorrection *chiesa = new ChiesaCorrection (source, psi);
         targetH->addOperator(chiesa,"KEcorr",false);
       }
+      else if(potType == "skall")
+      {
+        std::string SourceName = "";
+        OhmmsAttributeSet attrib;
+        attrib.add(SourceName,"source");
+        attrib.put(cur);
+
+        PtclPoolType::iterator pit(ptclPool.find(SourceName));
+        if(pit == ptclPool.end())
+        {
+          APP_ABORT("Unknown source \"" + SourceName + "\" for LocalMoment.");
+        }
+        ParticleSet* source = (*pit).second;
+
+        if(PBCType)
+        {
+
+                SkAllEstimator* apot=new SkAllEstimator(*source, *targetPtcl);
+                apot->put(cur);
+                targetH->addOperator(apot,potName,false);
+                app_log()<<"Adding S(k) ALL estimator"<<std::endl;
+        }
+      }
+
 #endif
       else if(potType == "Pressure")
       {

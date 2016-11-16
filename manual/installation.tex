@@ -502,8 +502,8 @@ Mira/Cetus is a Blue Gene/Q supercomputer at Argonne National Laboratory's Argon
 
 \begin{verbatim}
 cd build
-cmake -DCMAKE_TOOLCHAIN_FILE=../config/BGQToolChain.cmake ..
-cmake -DCMAKE_TOOLCHAIN_FILE=../config/BGQToolChain.cmake ..
+cmake -DCMAKE_TOOLCHAIN_FILE=../config/BGQ_XL_ToolChain.cmake ..
+cmake -DCMAKE_TOOLCHAIN_FILE=../config/BGQ_XL_ToolChain.cmake ..
 make -j 16
 ls -l bin/qmcpack
 \end{verbatim}
@@ -770,8 +770,10 @@ unit    =   2.20 sec
 Total Test time (real) =   2.31 sec
 \end{verbatim}
 
-Individual unit test executables can be found in build/tests/bin.
-The source for the unit tests is located in the \texttt{tests} directory under each directory in \texttt{src} (e.g. src/QMCWavefunctions/tests).
+Individual unit test executables can be found in \texttt{build/tests/bin}.
+The source for the unit tests is located in the \texttt{tests} directory under each directory in \texttt{src} (e.g. \texttt{src/QMCWavefunctions/tests}).
+
+See Chapter \ref{chap:unit_testing} for more details about unit tests.
 
 
 \subsection{Automatic tests of QMCPACK}
