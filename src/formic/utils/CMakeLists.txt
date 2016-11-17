@@ -15,7 +15,7 @@ if(MKL_FOUND)
 else(MKL_FOUND)
   # use the fortran-C interface mangling determined by cmake
   # this should be correct so long as the same compilers were used to build blas/lapack
-  FortranCInterface_HEADER(${FORMIC_BINARY_DIR}/src/formic/utils/mangle_other.h MACRO_NAMESPACE "FC_")
+  # FortranCInterface_HEADER(${FORMIC_BINARY_DIR}/src/formic/utils/mangle_other.h MACRO_NAMESPACE "FC_")
   set(LAPACK_DECLARE_INC formic/utils/declare_other.h)
   set(LAPACK_MANGLE_INC formic/utils/mangle_other.h)
 endif(MKL_FOUND)

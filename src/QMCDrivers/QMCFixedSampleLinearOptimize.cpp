@@ -749,7 +749,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
   const std::vector<double> shifts_s = this->prepare_shifts(this->bestShift_s);
   std::vector<double> shift_scales(shifts_i.size(), 1.0);
   for (int i = 0; i < shift_scales.size(); i++) 
-    shift_scales.at(i) = shifts_i.at(i) / shifts_i.at(central_index);
+    shift_scales.at(i) = shifts_i.at(i) / shift_i;
 
   // ensure the cost function is set to compute derivative vectors
   this->optTarget->setneedGrads(true);
