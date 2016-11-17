@@ -2305,7 +2305,7 @@ class linear(QIxml):
                   'walkers','nonlocalpp','usebuffer','gevmethod','steps','substeps',
                   'stabilizermethod','rnwarmupsteps','walkersperthread','minke',
                   'gradtol','alpha','tries','min_walkers','samplesperthread',
-                  'use_nonlocalpp_deriv']
+                  'use_nonlocalpp_deriv','adaptivethreeshift']
     costs      = ['energy','unreweightedvariance','reweightedvariance','variance','difference']
     write_types = obj(gpu=yesno,usedrift=yesno,nonlocalpp=yesno,usebuffer=yesno,use_nonlocalpp_deriv=yesno)
 #end class linear
