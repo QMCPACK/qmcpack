@@ -107,15 +107,27 @@ except ImportError:
 def numerics_error(*args,**kwargs):
     error(*args,**kwargs)
 #end def numerics_error
-# minimizers
+# cost functions
 least_squares = lambda p,x,y,f: ((f(p,x)-y)**2).sum()
 absmin        = lambda p,x,y,f: abs(f(p,x)-y).sum()
 madmin        = lambda p,x,y,f: abs(f(p,x)-y).max()
+
+cost_functions = obj(
+    least_squares = least_squares,
+    absmin        = absmin,
+    madmin        = madmin,
+    )
  
 # curve fit based on fmin from scipy
-def curve_fit(x,y,f,p0,minimizer=least_squares,optimizer='fmin'):
+def curve_fit(x,y,f,p0,cost='least_squares',optimizer='fmin'):
+    if isinstance(cost,str):
+        if cost not in cost_functions:
+            numerics_error('"{0}" is an invalid cost function\nvalid options are: {1}'.format(cost,sorted(cost_functions.keys())))
+        #end if
+        cost = cost_functions[cost]
+    #end if
     if optimizer=='fmin':
-        p = fmin(minimizer,p0,args=(x,y,f),maxiter=10000,maxfun=10000,disp=0)
+        p = fmin(cost,p0,args=(x,y,f),maxiter=10000,maxfun=10000,disp=0)
     else:
         numerics_error('optimizers other than fmin are not supported yet','curve_fit')
     return p
@@ -246,7 +258,7 @@ def morse_rDw_fit(re,De,w,m1,m2=None,Einf=0.0,Dunit='eV'):
 #    pf    = morse_fit(r,E)                           returns fitted parameters
 #  jackknife statistical fits, E is two dimensional with blocks as first dimension
 #    pf,pmean,perror = morse_fit(r,E,jackknife=True)  returns jackknife estimates of parameters
-def morse_fit(r,E,p0=None,jackknife=False,minimizer=least_squares,auxfuncs=None,auxres=None,capture=None):
+def morse_fit(r,E,p0=None,jackknife=False,cost=least_squares,auxfuncs=None,auxres=None,capture=None):
     if isinstance(E,(list,tuple)):
         E = array(E,dtype=float)
     #end if
@@ -280,7 +292,7 @@ def morse_fit(r,E,p0=None,jackknife=False,minimizer=least_squares,auxfuncs=None,
         capture.E         = E
         capture.p0        = p0
         capture.jackknife = jackknife
-        capture.minimizer = minimizer
+        capture.cost = cost
         capture.auxfuncs  = auxfuncs
         capture.auxres    = auxres
         capture.Edata     = Edata
@@ -290,7 +302,7 @@ def morse_fit(r,E,p0=None,jackknife=False,minimizer=least_squares,auxfuncs=None,
     #end if
 
     # get an optimized morse fit of the means
-    pf = curve_fit(r,E,morse,p0,minimizer)
+    pf = curve_fit(r,E,morse,p0,cost)
 
     # obtain jackknife (mean+error) estimates of fitted parameters and/or fitted curves
     pmean  = None
@@ -301,7 +313,7 @@ def morse_fit(r,E,p0=None,jackknife=False,minimizer=least_squares,auxfuncs=None,
         #end if
         pmean,perror = numerics_jackknife(data     = Edata,
                                           function = curve_fit,
-                                          args     = [r,None,morse,pf,minimizer],
+                                          args     = [r,None,morse,pf,cost],
                                           position = 1,
                                           capture  = jcapture)
         # compute auxilliary jackknife quantities, if desired (e.g. morse_freq, etc)
@@ -337,7 +349,7 @@ def morse_fit(r,E,p0=None,jackknife=False,minimizer=least_squares,auxfuncs=None,
 # morse_fit_fine: fit data to a morse potential and interpolate on a fine grid
 #   compute direct jackknife variations in the fitted curves 
 #   by using morse as an auxilliary jackknife function
-def morse_fit_fine(r,E,p0=None,rfine=None,both=False,jackknife=False,minimizer=least_squares,capture=None):  
+def morse_fit_fine(r,E,p0=None,rfine=None,both=False,jackknife=False,cost=least_squares,capture=None):  
     if rfine is None:
         rfine = linspace(r.min(),r.max(),400)
     #end if
@@ -346,7 +358,7 @@ def morse_fit_fine(r,E,p0=None,rfine=None,both=False,jackknife=False,minimizer=l
         )
     auxres = obj()
 
-    res = morse_fit(r,E,p0,jackknife,minimizer,auxfuncs,auxres,capture)
+    res = morse_fit(r,E,p0,jackknife,cost,auxfuncs,auxres,capture)
 
     if not jackknife:
         pf = res
@@ -381,6 +393,80 @@ vinet      = lambda p,V: p[0] + 2*p[1]*p[2]/(p[3]-1)**2*( 2 - (2+3*(p[3]-1)*((V/
 murnaghan_pressure = lambda p,V: p[1]/p[2]*((p[0]/V)**p[2]-1)
 birch_pressure     = lambda p,V: 1.5*p[1]*(p[0]/V)**(5./3)*((p[0]/V)**(2./3)-1)*(1.+.75*(p[2]-1)*((p[0]/V)**(2./3)-1))
 vinet_pressure     = lambda p,V: 3.*p[1]*(1.-(V/p[0])**(1./3))*(p[0]/V)**(2./3)*exp(1.5*(p[2]-1)*(1.-(V/p[0])**(1./3)))
+
+
+eos_funcs = obj(
+    murnaghan = murnaghan,
+    birch     = birch,
+    vinet     = vinet,
+    )
+
+
+eos_Einf = lambda p: p[0]  # energy at infinite separation
+eos_V    = lambda p: p[1]  # equilibrium volume
+eos_B    = lambda p: p[2]  # bulk modulus
+eos_Bp   = lambda p: p[3]  # B prime
+
+eos_param_tmp = obj(
+    Einf = eos_Einf,
+    V    = eos_V,
+    B    = eos_B,
+    Bp   = eos_Bp,
+    )
+eos_param_funcs = obj(
+    murnaghan = eos_param_tmp,
+    birch     = eos_param_tmp,
+    vinet     = eos_param_tmp,
+    )
+
+def eos_eval(p,V,type='vinet'):
+    if type not in eos_funcs:
+        numerics_error('"{0}" is not a valid EOS type\nvalid options are: {1}'.format(sorted(eos_funcs.keys())))
+    #end if
+    return eos_funcs[type](p,V)
+#end def eos_eval
+
+
+def eos_param(p,param,type='vinet'):
+    if type not in eos_param_funcs:
+        numerics_error('"{0}" is not a valid EOS type\nvalid options are: {1}'.format(sorted(eos_param_funcs.keys())))
+    #end if
+    eos_pfuncs = eos_param_funcs[type]
+    if param not in eos_pfuncs:
+        numerics_error('"{0}" is not an available parameter for a {1} fit\navailable parameters are: {2}'.format(param,type,sorted(eos_pfuncs.keys())))
+    #end if
+    return eos_pfuncs[param](p)
+#end def eos_param
+
+
+def eos_fit(V,E,type='vinet',p0=None,cost='least_squares',optimizer='fmin',jackknife=False):
+    if isinstance(V,(list,tuple)):
+        V = array(V,dtype=float)
+    #end if
+    if isinstance(E,(list,tuple)):
+        E = array(E,dtype=float)
+    #end if
+    
+    if type not in eos_funcs:
+        numerics_error('"{0}" is not a valid EOS type\nvalid options are: {1}'.format(sorted(eos_funcs.keys())))
+    #end if
+    eos_func = eos_funcs[type]
+
+    if p0 is None:
+        pp = polyfit(V,E,2)
+        V0   = -pp[1]/(2*pp[0])
+        B0   = -pp[1]
+        Bp0  = 0.0
+        Einf = E[-1] 
+        p0 = Einf,V0,B0,Bp0
+    #end if
+
+    # get an optimized fit of the means
+    pf = curve_fit(V,E,eos_func,p0,cost)
+
+    return pf
+#end def eos_fit
+
 
 
 
@@ -1093,9 +1179,9 @@ def simple_surface(origin,axes,grid):
 
 #least_squares = lambda p,x,y,f: ((f(p,x)-y)**2).sum()
 
-def func_fit(x,y,fitting_function,p0,minimizer=least_squares):
+def func_fit(x,y,fitting_function,p0,cost=least_squares):
     f = fitting_function
-    p = fmin(minimizer,p0,args=(x,y,f),maxiter=10000,maxfun=10000)
+    p = fmin(cost,p0,args=(x,y,f),maxiter=10000,maxfun=10000)
     return p
 #end def func_fit
 
