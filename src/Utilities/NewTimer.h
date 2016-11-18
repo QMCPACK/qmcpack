@@ -30,6 +30,48 @@ class Communicate;
 namespace qmcplusplus
 {
 
+class NewTimer;
+
+class TimerManagerClass
+{
+protected:
+  std::vector<NewTimer*> TimerList;
+  std::vector<NewTimer*> CurrentTimerStack;
+public:
+  inline void addTimer (NewTimer* t)
+  {
+    #pragma omp critical
+    {
+      TimerList.push_back(t);
+    }
+  }
+
+  void push_timer(NewTimer *t)
+  {
+    CurrentTimerStack.push_back(t);
+  }
+
+  void pop_timer()
+  {
+    CurrentTimerStack.pop_back();
+  }
+
+  NewTimer *current_timer()
+  {
+    if (CurrentTimerStack.size() > 0)
+    {
+      return CurrentTimerStack.back();
+    }
+    return NULL;
+  }
+
+
+  void reset();
+  void print (Communicate* comm);
+};
+
+extern TimerManagerClass TimerManager;
+
 /* Timer using omp_get_wtime  */
 class NewTimer
 {
@@ -45,6 +87,7 @@ public:
 #else
   inline void start()
   {
+    TimerManager.push_timer(this);
     start_time = cpu_clock();
   }
 
@@ -52,6 +95,7 @@ public:
   {
     total_time += cpu_clock() - start_time;
     num_calls++;
+    TimerManager.pop_timer();
   }
 #endif
 
@@ -95,24 +139,8 @@ struct TimerComparator
 };
 
 
-class TimerManagerClass
-{
-protected:
-  std::vector<NewTimer*> TimerList;
-public:
-  inline void addTimer (NewTimer* t)
-  {
-    #pragma omp critical
-    {
-      TimerList.push_back(t);
-    }
-  }
 
-  void reset();
-  void print (Communicate* comm);
-};
 
-extern TimerManagerClass TimerManager;
 }
 
 #endif
