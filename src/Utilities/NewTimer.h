@@ -24,6 +24,7 @@
 #include <vector>
 #include <string>
 #include <algorithm>
+#include <map>
 
 class Communicate;
 
@@ -38,36 +39,47 @@ protected:
   std::vector<NewTimer*> TimerList;
   std::vector<NewTimer*> CurrentTimerStack;
 public:
-  inline void addTimer (NewTimer* t)
-  {
-    #pragma omp critical
-    {
-      TimerList.push_back(t);
-    }
-  }
+  void addTimer (NewTimer* t);
 
   void push_timer(NewTimer *t)
   {
-    CurrentTimerStack.push_back(t);
+    #pragma omp master
+    {
+      CurrentTimerStack.push_back(t);
+    }
   }
 
   void pop_timer()
   {
-    CurrentTimerStack.pop_back();
+    #pragma omp master
+    {
+      CurrentTimerStack.pop_back();
+    }
   }
 
   NewTimer *current_timer()
   {
+    NewTimer *current = NULL;
+    # pragma omp critical
     if (CurrentTimerStack.size() > 0)
     {
-      return CurrentTimerStack.back();
+       current = CurrentTimerStack.back();
     }
-    return NULL;
+    return current;
   }
 
 
   void reset();
   void print (Communicate* comm);
+
+  typedef std::map<std::string, int> nameList_t;
+  typedef std::vector<double> timeList_t;
+  typedef std::vector<long> callList_t;
+  void compute_flat_profile(Communicate *comm,
+                                        std::map<std::string, int> &nameList,
+                                        std::vector<double> &timeList,
+                                        std::vector<long> &callList);
+
 };
 
 extern TimerManagerClass TimerManager;
@@ -80,6 +92,7 @@ protected:
   double total_time;
   long num_calls;
   std::string name;
+  TimerManagerClass *manager;
 public:
 #if not(ENABLE_TIMER)
   inline void start() {}
@@ -87,7 +100,10 @@ public:
 #else
   inline void start()
   {
-    TimerManager.push_timer(this);
+    if (manager)
+    {
+      manager->push_timer(this);
+    }
     start_time = cpu_clock();
   }
 
@@ -95,7 +111,10 @@ public:
   {
     total_time += cpu_clock() - start_time;
     num_calls++;
-    TimerManager.pop_timer();
+    if (manager)
+    {
+      manager->pop_timer();
+    }
   }
 #endif
 
@@ -121,12 +140,17 @@ public:
   }
 
   NewTimer(const std::string& myname) :
-    total_time(0.0), num_calls(0), name(myname)
+    total_time(0.0), num_calls(0), name(myname), manager(NULL)
   { }
 
   void set_name(const std::string& myname)
   {
     name=myname;
+  }
+
+  void set_manager(TimerManagerClass *mymanager)
+  {
+    manager = mymanager;
   }
 };
 

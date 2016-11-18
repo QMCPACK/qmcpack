@@ -27,22 +27,26 @@ namespace qmcplusplus
 {
 TimerManagerClass TimerManager;
 
+void TimerManagerClass::addTimer(NewTimer* t)
+{
+  #pragma omp critical
+  {
+    t->set_manager(this);
+    TimerList.push_back(t);
+  }
+}
+
 void TimerManagerClass::reset()
 {
   for (int i=0; i<TimerList.size(); i++)
     TimerList[i]->reset();
 }
 
-void
-TimerManagerClass::print(Communicate* comm)
+void TimerManagerClass::compute_flat_profile(Communicate *comm,
+                                        std::map<std::string, int> &nameList,
+                                        std::vector<double> &timeList,
+                                        std::vector<long> &callList)
 {
-#if ENABLE_TIMER
-  std::map<std::string,int> nameList;
-  std::vector<double> timeList;
-  std::vector<long>   callList;
-  //std::vector<int>    callers;
-  //timeList.reserve(TimerList.size());
-  //callList.reserve(TimerList.size());
   for(int i=0; i<TimerList.size(); ++i)
   {
     NewTimer &timer = *TimerList[i];
@@ -61,8 +65,24 @@ TimerManagerClass::print(Communicate* comm)
       callList[ind]+=timer.get_num_calls();
     }
   }
-  comm->allreduce(timeList);
-  comm->allreduce(callList);
+
+  if (comm)
+  {
+    comm->allreduce(timeList);
+    comm->allreduce(callList);
+  }
+}
+
+void
+TimerManagerClass::print(Communicate* comm)
+{
+#if ENABLE_TIMER
+  std::map<std::string,int> nameList;
+  std::vector<double> timeList;
+  std::vector<long>   callList;
+
+  compute_flat_profile(comm, nameList, timeList, callList);
+
   if(comm->rank() == 0)
   {
     #pragma omp master
