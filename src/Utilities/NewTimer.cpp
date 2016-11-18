@@ -36,7 +36,7 @@ void TimerManagerClass::reset()
 void
 TimerManagerClass::print(Communicate* comm)
 {
-#if !defined(DISABLE_TIMER)
+#if ENABLE_TIMER
   std::map<std::string,int> nameList;
   std::vector<double> timeList;
   std::vector<long>   callList;
@@ -75,7 +75,7 @@ TimerManagerClass::print(Communicate* comm)
         fprintf (stderr, "%-40s  %9.4f  %13ld  %16.9f  %12.6f TIMER\n"
         , (*it).first.c_str()
         , timeList[i], callList[i]
-        , timeList[i]/(static_cast<double>(callList[i])+numeric_limits<double>::epsilon())
+        , timeList[i]/(static_cast<double>(callList[i])+std::numeric_limits<double>::epsilon())
         , timeList[i]/static_cast<double>(omp_get_max_threads()*comm->size()));
         ++it;
       }

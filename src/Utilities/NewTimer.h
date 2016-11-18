@@ -39,7 +39,7 @@ protected:
   long num_calls;
   std::string name;
 public:
-#if defined(DISABLE_TIMER)
+#if not(ENABLE_TIMER)
   inline void start() {}
   inline void stop() {}
 #else
