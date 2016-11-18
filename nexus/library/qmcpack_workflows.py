@@ -639,10 +639,12 @@ scf_input_defaults = obj(
 
 nscf_workflow_keys = [
     'struct_src','dens_src',
+    'use_scf_dir',
     ]
 fixed_defaults = obj(
-    struct_src = None,
-    dens_src   = None,
+    struct_src  = None,
+    dens_src    = None,
+    use_scf_dir = False,
     )
 nscf_input_defaults = obj(
     none    = obj(
@@ -832,6 +834,7 @@ def resolve_label(name,ch,loc='resolve_label',inp=False,quant=None,index=None,in
     wf   = task.workflow
     if index is None:
         index = 1
+        # def_srcs tracks the last occurring sim source in the workflow chain
         if name in kw.def_srcs:
             index = kw.def_srcs[name]
         #end if
@@ -1769,7 +1772,11 @@ def gen_nscf_chain(ch,loc):
     scf_inputs.delete_optional('kshift')
     task.inputs.set_optional(**scf_inputs)
     # generate the nscf sim
-    path = resolve_path('scf',ch,loc) # added to always run in scf dir
+    if wf.use_scf_dir:
+        path = resolve_path('scf',ch,loc) # added to always run in scf dir
+    else:
+        path = wf.path
+    #end if
     nscf = generate_pwscf(
         path         = path,
         dependencies = deps,
@@ -1785,13 +1792,21 @@ def gen_p2q_chain(ch,loc):
     wf   = task.workflow
     run  = kw.run
     if run.nscf:
-        source = 'nscf'
+        nscf_label,nscf_index = resolve_label('scf',ch,loc,ind=True)
+        use_scf_dir = ch.tasks.nscf[nscf_index].workflow.use_scf_dir
+        orb_source = 'nscf'
+        if use_scf_dir:
+            path_source = 'scf'
+        else:
+            path_source = 'nscf'
+        #end if
     else:
-        source = 'scf'
+        orb_source  = 'scf'
+        path_source = 'scf'
     #end if
-    #path = resolve_path(source,ch,loc)
-    path = resolve_path('scf',ch,loc)  # added to always run in scf dir
-    deps = resolve_deps('p2q',[(source,'orbitals')],ch,loc)
+    path = resolve_path(path_source,ch,loc)
+    #path = resolve_path('scf',ch,loc)  # added to always run in scf dir
+    deps = resolve_deps('p2q',[(orb_source,'orbitals')],ch,loc)
     p2q = generate_pw2qmcpack(
         path         = path,
         dependencies = deps,

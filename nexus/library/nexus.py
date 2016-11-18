@@ -60,6 +60,8 @@ from qmcpack import loop,linear,cslinear,vmc,dmc
 from qmcpack import generate_jastrows,generate_jastrow,generate_jastrow1,generate_jastrow2,generate_jastrow3,generate_opt,generate_opts
 from qmcpack import generate_cusp_correction
 
+from qmcpack_workflows import qmcpack_workflow
+
 from debug import *
 
 

@@ -5089,8 +5089,21 @@ def generate_basic_input(id             = 'qmc',
                          estimators     = None,
                          traces         = None,
                          calculations   = None,
-                         det_format     = 'new'
+                         det_format     = 'new',
+                         **invalid_kwargs
                          ):
+
+    if len(invalid_kwargs)>0:
+        valid = ['id','series','purpose','seed','bconds','truncate',
+                 'buffer','lr_dim_cutoff','remove_cell','randomsrc',
+                 'meshfactor','orbspline','precision','twistnum',
+                 'twist','spin_polarized','orbitals_h5','system',
+                 'pseudos','jastrows','interactions','corrections',
+                 'observables','estimators','traces','calculations',
+                 'det_format']
+        QmcpackInput.class_error('invalid input parameters encountered\ninvalid input parameters: {0}\nvalid options are: {1}'.format(sorted(invalid_kwargs.keys()),sorted(valid)),'generate_qmcpack_input')
+    #end if
+
     if system=='missing':
         QmcpackInput.class_error('generate_basic_input argument system is missing\n  if you really do not want particlesets to be generated, set system to None')
     #end if

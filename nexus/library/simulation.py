@@ -472,7 +472,7 @@ class Simulation(NexusCore):
         self.resdir = os.path.join(nexus_core.local_directory,nexus_core.results,nexus_core.runs,self.path)
         
         if not self.fake():
-            print '  creating sim {0} in {1}'.format(self.simid,self.locdir)
+            #print '  creating sim {0} in {1}'.format(self.simid,self.locdir)
 
             if not self.locdir in self.sim_directories:
                 self.sim_directories[self.locdir] = set([self.identifier])
