@@ -787,7 +787,7 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::correlatedSampling(bool needGra
     for (int iw=0; iw<nw; iw++)
     {
       Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
-      saved[REWEIGHT] = std::min(std::exp(saved[REWEIGHT]-wgtnorm), std::numeric_limits<Return_t>::max()*0.1 );
+      saved[REWEIGHT] = std::min(std::exp(saved[REWEIGHT]-wgtnorm), std::numeric_limits<Return_t>::max()*(RealType)0.1 );
       wgt_tot+= inv_n_samples*saved[REWEIGHT];
     }
   }

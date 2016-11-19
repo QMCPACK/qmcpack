@@ -112,7 +112,7 @@ SET(PRINT_DEBUG 0 CACHE BOOL "Enable/disable debug printing")
 SET(QMC_CUDA 0 CACHE BOOL "Build with GPU support through CUDA")
 SET(QMC_ADIOS 0 CACHE BOOL "Build with ADIOS")
 SET(BUILD_UNIT_TESTS 1 CACHE BOOL "Build unit tests")
-SET(BUILD_LMYENGINE_INTERFACE 1 CACHE BOOL "Build LMY engine")
+SET(BUILD_LMYENGINE_INTERFACE 0 CACHE BOOL "Build LMY engine")
 
 ######################################################################
 # set debug printout
