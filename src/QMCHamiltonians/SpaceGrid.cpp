@@ -152,10 +152,14 @@ bool SpaceGrid::initialize_voronoi(std::map<std::string,Point>& points)
         fill(reference_count.begin(),reference_count.end(),0.0);
         break;
       case(neutral):
+        {
         const std::vector<RealType>& Z = *Zptcl;
         for(int i=0; i<ndomains; i++)
           reference_count[i] = (int)Z[i] + 1;//+1 is for ion itself
         Zptcl = 0;
+        }
+        break;
+      default:
         break;
       }
     }
@@ -198,6 +202,8 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, std::string& coord, std::
       cmap[ax_spherical[d]]=d;
       axlabel[d]=ax_spherical[d];
     }
+    break;
+  default:
     break;
   }
   //loop over spacegrid xml elements
@@ -561,6 +567,8 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, std::string& coord, std::
           ubc[1]=uc[0]*sin(uc[2])*sin(uc[1]);
           ubc[2]=uc[0]*cos(uc[2]);
           break;
+        default:
+          break;
         }
         vol*=vscale;
         vol_tot+=vol;
@@ -626,6 +634,8 @@ bool SpaceGrid::initialize_rectilinear(xmlNodePtr cur, std::string& coord, std::
         *du[1]                                //theta
         *2.0*sin(uc[2])*sin(.5*du[2]);        //phi
     break;
+  default:
+    break;
   }
   volume = vol*det(axes);
   if(chempot)
@@ -654,6 +664,8 @@ void SpaceGrid::write_description(std::ostream& os, std::string& indent)
     break;
   case spherical:
     s="spherical";
+    break;
+  default:
     break;
   }
   os<<indent+"  coordinates   = "+s<< std::endl;
@@ -1106,6 +1118,8 @@ bool SpaceGrid::check_grid(void)
       u[0] = sqrt(ub[0]*ub[0]+ub[1]*ub[1]+ub[2]*ub[2]);
       u[1] = atan2(ub[1],ub[0])*o2pi+.5;
       u[2] = acos(ub[2]/u[0])*o2pi*2.0;
+      break;
+    default:
       break;
     }
     iu[0] = gmap[0][floor((u[0]-umin[0])*odu[0])];
