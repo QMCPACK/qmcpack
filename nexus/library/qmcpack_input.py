@@ -2150,6 +2150,13 @@ class sk(QIxml):
     write_types = obj(hdf5=yesno)
 #end class sk
 
+class skall(QIxml):
+    tag = 'estimator'
+    attributes = ['name','type','hdf5','source','target','writeionion']
+    identifier = 'name'
+    write_types = obj(hdf5=yesno)
+#end class skall
+
 class gofr(QIxml):
     tag = 'estimator'
     attributes = ['type','name','num_bin','rmax','source']
@@ -2173,6 +2180,7 @@ estimator = QIxmlFactory(
                  nofk                = nofk,
                  mpc                 = mpc_est,
                  sk                  = sk,
+                 skall               = skall,
                  gofr                = gofr,
                  ),
     typekey  = 'type',
@@ -2404,7 +2412,7 @@ classes = [   #standard classes
     optimize,cg_optimizer,flex_optimizer,optimize_qmc,wftest,kspace_jastrow,
     header,local,force,forwardwalking,observable,record,rmc,pressure,dmccorrection,
     nofk,mpc_est,distancetable,cpp,element,spline,setparams,
-    backflow,transformation,cubicgrid,molecular_orbital_builder,cmc,sk,gofr,
+    backflow,transformation,cubicgrid,molecular_orbital_builder,cmc,sk,skall,gofr,
     host,date,user,
     ]
 types = dict( #simple types and factories
