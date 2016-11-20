@@ -4877,7 +4877,7 @@ def generate_crystal_structure(lattice=None,cell=None,centering=None,
 
     #interface for total manual specification
     # this is only here because 'crystal' is default and must handle other cases
-    if elem!=None and (pos!=None or posu!=None):  
+    if elem is not None and (pos is not None or posu is not None):  
         return Structure(
             axes           = axes,
             elem           = elem,
@@ -5051,9 +5051,14 @@ def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3):
     ropt = -1e99
     Topt = None
     Taxopt = None
+    vol_diff_min = 1e99
     for mat in mats:
         T = Tref + mat
-        if abs(abs(det(T))-volfac)<tol:
+        vol_diff = abs(abs(det(T))-volfac)
+        if vol_diff < vol_diff_min:
+            vol_diff_min = vol_diff
+        # end if
+        if vol_diff<tol:
             Taxes = dot(T,axes)
             rc1 = norm(cross(Taxes[0],Taxes[1]))
             rc2 = norm(cross(Taxes[1],Taxes[2]))
@@ -5066,6 +5071,9 @@ def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3):
             #end if
         #end if
     #end for
+    if Taxopt is None:
+        error("optimal tilematrix for volfac=%4.2f not found with tolerance %5.4f\n minimum volume difference was %5.4f" % (volfac,tol,vol_diff_min) )
+    # end if
     if det(Taxopt)<0:
         Topt = -Topt
     #end if
