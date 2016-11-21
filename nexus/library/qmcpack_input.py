@@ -239,7 +239,21 @@ bool_write_types = set([yesno,onezero,truefalse])
 
 
 class QIobj(DevBase):
-    None
+    # user settings
+    permissive_read  = False
+    permissive_write = False
+    permissive_init  = False
+
+    @staticmethod
+    def settings(
+        permissive_read  = False,
+        permissive_write = False,
+        permissive_init  = False,
+        ):
+        QIobj.permissive_read  = permissive_read 
+        QIobj.permissive_write = permissive_write
+        QIobj.permissive_init  = permissive_init 
+    #end def settings
 #end class QIobj
 
 
@@ -526,7 +540,9 @@ class QIxml(Names):
 
     def write(self,indent_level=0,pad='   ',first=False):
         param.set_precision(self.get_precision())
-        self.check_junk(exit=True)
+        if not QIobj.permissive_write:
+            self.check_junk(exit=True)
+        #end if
         indent  = indent_level*pad
         ip = indent+pad
         ipp= ip+pad
@@ -688,7 +704,9 @@ class QIxml(Names):
         if QmcpackInput.profile_collection!=None:
             self.collect_profile(xml,al,el,junk)
         #end for
-        self.check_junk(junk)
+        if not QIobj.permissive_read:
+            self.check_junk(junk)
+        #end if
         if self.attr_types!=None:
             typed_attr = attr & set(self.attr_types.keys())
             attr -= typed_attr
@@ -748,8 +766,10 @@ class QIxml(Names):
         else:
             text = set()
         #end if
-        junk = ks -attr -elem -plur -h5tags -costs -parameters -attribs -text
-        self.check_junk(junk,exit=True)
+        if not QIobj.permissive_init:
+            junk = ks -attr -elem -plur -h5tags -costs -parameters -attribs -text
+            self.check_junk(junk,exit=True)
+        #end if
 
         for v in h5tags:
             self[v] = param(kwargs[v])
@@ -2721,6 +2741,11 @@ class QmcpackInput(SimulationInput,Names):
         ionid      = dict(datatype='stringArray'),
         position   = dict(datatype='posArray', condition=0)
         )
+
+    @staticmethod
+    def settings(**kwargs):
+        QIobj.settings(**kwargs)
+    #end def settings
 
     def __init__(self,arg0=None,arg1=None):
         Param.metadata = None
