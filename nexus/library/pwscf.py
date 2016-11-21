@@ -167,7 +167,9 @@ class Pwscf(Simulation):
             elif self.sync_from_scf: # rsync output into nscf dir
                 outdir = os.path.join(self.locdir,c.outdir)
                 command = 'rsync -avz {0}/* {1}/'.format(result.outdir,outdir)
-                os.makedirs(outdir)
+                if not os.path.exists(outdir):
+                    os.makedirs(outdir)
+                #end if
                 execute(command)
             else: # attempt to use symbolic links instead
                 link_loc = os.path.join(self.locdir,c.outdir,c.prefix+'.save')

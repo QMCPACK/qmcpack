@@ -69,7 +69,7 @@ import os
 import shutil
 import string
 from subprocess import Popen,PIPE
-from developer import unavailable
+from developer import unavailable,ci
 from generic import obj
 from periodic_table import is_element
 from physical_system import PhysicalSystem
