@@ -71,23 +71,34 @@ public:
     return current;
   }
 
+  void get_stack_roots(std::vector<NewTimer *> &roots);
+
 
   void reset();
   void print (Communicate* comm);
+  void print_flat (Communicate* comm);
+  void print_stack (Communicate* comm);
 
   typedef std::map<std::string, int> nameList_t;
   typedef std::vector<double> timeList_t;
   typedef std::vector<long> callList_t;
-  void collate_flat_profile(Communicate *comm,
-                            std::map<std::string, int> &nameList,
-                            std::vector<double> &timeList,
-                            std::vector<long> &callList);
 
-  void collate_stack_profile(Communicate *comm,
-                             std::map<std::string, int> &nameList,
-                             std::vector<double> &timeList,
-                             std::vector<double> &timeExclList,
-                             std::vector<long> &callList);
+  struct FlatProfileData {
+    nameList_t nameList;
+    timeList_t timeList;
+    callList_t callList;
+  };
+
+  struct StackProfileData {
+    nameList_t nameList;
+    timeList_t timeList;
+    timeList_t timeExclList;
+    callList_t callList;
+  };
+
+  void collate_flat_profile(Communicate *comm, FlatProfileData &p);
+
+  void collate_stack_profile(Communicate *comm, StackProfileData &p);
 
 };
 
@@ -103,8 +114,8 @@ protected:
   std::string name;
 #ifdef USE_STACK_TIMERS
   TimerManagerClass *manager;
-
   NewTimer *parent;
+
   std::vector<NewTimer *> children;
   std::map<std::string, double> per_stack_total_time;
   std::map<std::string, long> per_stack_num_calls;
@@ -206,6 +217,11 @@ public:
   void set_manager(TimerManagerClass *mymanager)
   {
     manager = mymanager;
+  }
+
+  NewTimer *get_parent()
+  {
+    return parent;
   }
 
   void add_child(NewTimer *t)

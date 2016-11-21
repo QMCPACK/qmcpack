@@ -42,42 +42,46 @@ void TimerManagerClass::reset()
     TimerList[i]->reset();
 }
 
-void TimerManagerClass::collate_flat_profile(Communicate *comm,
-                                        std::map<std::string, int> &nameList,
-                                        std::vector<double> &timeList,
-                                        std::vector<long> &callList)
+void TimerManagerClass::get_stack_roots(std::vector<NewTimer *> &roots)
+{
+  for (int i = 0; i < TimerList.size(); i++)
+  {
+    if (TimerList[i]->get_parent() == NULL)
+    {
+      roots.push_back(TimerList[i]);
+    }
+  }
+}
+
+void TimerManagerClass::collate_flat_profile(Communicate *comm, FlatProfileData &p)
 {
   for(int i=0; i<TimerList.size(); ++i)
   {
     NewTimer &timer = *TimerList[i];
-    nameList_t::iterator it(nameList.find(timer.get_name()));
-    if(it == nameList.end())
+    nameList_t::iterator it(p.nameList.find(timer.get_name()));
+    if(it == p.nameList.end())
     {
-      int ind=nameList.size();
-      nameList[timer.get_name()]=ind;
-      timeList.push_back(timer.get_total());
-      callList.push_back(timer.get_num_calls());
+      int ind=p.nameList.size();
+      p.nameList[timer.get_name()]=ind;
+      p.timeList.push_back(timer.get_total());
+      p.callList.push_back(timer.get_num_calls());
     }
     else
     {
       int ind=(*it).second;
-      timeList[ind]+=timer.get_total();
-      callList[ind]+=timer.get_num_calls();
+      p.timeList[ind]+=timer.get_total();
+      p.callList[ind]+=timer.get_num_calls();
     }
   }
 
   if (comm)
   {
-    comm->allreduce(timeList);
-    comm->allreduce(callList);
+    comm->allreduce(p.timeList);
+    comm->allreduce(p.callList);
   }
 }
 
-void TimerManagerClass::collate_stack_profile(Communicate *comm,
-                                        std::map<std::string, int> &nameList,
-                                        std::vector<double> &timeList,
-                                        std::vector<double> &timeExclList,
-                                        std::vector<long> &callList)
+void TimerManagerClass::collate_stack_profile(Communicate *comm, StackProfileData &p)
 {
   for(int i=0; i<TimerList.size(); ++i)
   {
@@ -87,66 +91,84 @@ void TimerManagerClass::collate_stack_profile(Communicate *comm,
     for (; stack_name_it != timer.get_per_stack_total_time().end(); stack_name_it++)
     {
       const std::string &stack_name = stack_name_it->first;
-      nameList_t::iterator it(nameList.find(stack_name));
+      nameList_t::iterator it(p.nameList.find(stack_name));
 
       double totalTime = timer.get_total(stack_name);
       double exclTime = timer.get_exclusive_time(stack_name);
       int ncalls = timer.get_num_calls(stack_name);
 
-      if(it == nameList.end())
+      if(it == p.nameList.end())
       {
-        int ind=nameList.size();
-        nameList[stack_name]=ind;
-        timeList.push_back(totalTime);
-        timeExclList.push_back(exclTime);
-        callList.push_back(ncalls);
+        int ind=p.nameList.size();
+        p.nameList[stack_name]=ind;
+        p.timeList.push_back(totalTime);
+        p.timeExclList.push_back(exclTime);
+        p.callList.push_back(ncalls);
       }
       else
       {
         int ind=(*it).second;
-        timeList[ind]+=totalTime;
-        timeExclList[ind]+=exclTime;
-        callList[ind]+=timer.get_num_calls();
+        p.timeList[ind]+=totalTime;
+        p.timeExclList[ind]+=exclTime;
+        p.callList[ind]+=timer.get_num_calls();
       }
     }
   }
 
   if (comm)
   {
-    comm->allreduce(timeList);
-    comm->allreduce(timeExclList);
-    comm->allreduce(callList);
+    comm->allreduce(p.timeList);
+    comm->allreduce(p.timeExclList);
+    comm->allreduce(p.callList);
   }
 }
 
 void
 TimerManagerClass::print(Communicate* comm)
 {
-#if ENABLE_TIMER
-  std::map<std::string,int> nameList;
-  std::vector<double> timeList;
-  std::vector<long>   callList;
+  printf("Stack timer profile\n");
+  print_stack(comm);
+  printf("\nFlat profile\n");
+  print_flat(comm);
 
-  collate_flat_profile(comm, nameList, timeList, callList);
+}
+
+void
+TimerManagerClass::print_flat(Communicate* comm)
+{
+#if ENABLE_TIMER
+  FlatProfileData p;
+
+  collate_flat_profile(comm, p);
 
   if(comm->rank() == 0)
   {
     #pragma omp master
     {
-      std::map<std::string,int>::iterator it(nameList.begin()), it_end(nameList.end());
+      std::map<std::string,int>::iterator it(p.nameList.begin()), it_end(p.nameList.end());
       while(it != it_end)
       {
         int i=(*it).second;
         //if(callList[i]) //skip zeros
-        fprintf (stderr, "%-40s  %9.4f  %13ld  %16.9f  %12.6f TIMER\n"
+        printf ("%-40s  %9.4f  %13ld  %16.9f  %12.6f TIMER\n"
         , (*it).first.c_str()
-        , timeList[i], callList[i]
-        , timeList[i]/(static_cast<double>(callList[i])+std::numeric_limits<double>::epsilon())
-        , timeList[i]/static_cast<double>(omp_get_max_threads()*comm->size()));
+        , p.timeList[i], p.callList[i]
+        , p.timeList[i]/(static_cast<double>(p.callList[i])+std::numeric_limits<double>::epsilon())
+        , p.timeList[i]/static_cast<double>(omp_get_max_threads()*comm->size()));
         ++it;
       }
     }
   }
+#endif
+}
+
+void
+TimerManagerClass::print_stack(Communicate* comm)
+{
+#if ENABLE_TIMER
+  StackProfileData p;
+
+  collate_stack_profile(comm, p);
 #endif
 }
 

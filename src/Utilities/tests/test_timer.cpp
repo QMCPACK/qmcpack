@@ -67,17 +67,15 @@ TEST_CASE("test_timer_flat_profile", "[utilities]")
   t1.set_total_time(1.1);
   t1.set_num_calls(2);
 
-  TimerManagerClass::nameList_t nameList;
-  TimerManagerClass::timeList_t timeList;
-  TimerManagerClass::callList_t callList;
-  tm.collate_flat_profile(NULL, nameList, timeList, callList);
+  TimerManagerClass::FlatProfileData p;
+  tm.collate_flat_profile(NULL, p);
 
-  REQUIRE(nameList.size() == 1);
-  REQUIRE(nameList.at("timer1") == 0);
-  REQUIRE(timeList.size() == 1);
-  REQUIRE(timeList[0] == Approx(1.1));
-  REQUIRE(callList.size() == 1);
-  REQUIRE(callList[0] == 2);
+  REQUIRE(p.nameList.size() == 1);
+  REQUIRE(p.nameList.at("timer1") == 0);
+  REQUIRE(p.timeList.size() == 1);
+  REQUIRE(p.timeList[0] == Approx(1.1));
+  REQUIRE(p.callList.size() == 1);
+  REQUIRE(p.callList[0] == 2);
 }
 
 TEST_CASE("test_timer_flat_profile_same_name", "[utilities]")
@@ -105,21 +103,20 @@ TEST_CASE("test_timer_flat_profile_same_name", "[utilities]")
   t3.start();
   t3.stop();
 
-  TimerManagerClass::nameList_t nameList;
-  TimerManagerClass::timeList_t timeList;
-  TimerManagerClass::callList_t callList;
-  tm.collate_flat_profile(NULL, nameList, timeList, callList);
+  TimerManagerClass::FlatProfileData p;
+  
+  tm.collate_flat_profile(NULL, p);
 
-  REQUIRE(nameList.size() == 2);
-  int idx1 = nameList.at("timer1");
-  int idx2 = nameList.at("timer2");
-  REQUIRE(timeList.size() == 2);
-  REQUIRE(timeList[idx1] == Approx(5.9));
-  REQUIRE(timeList[idx2] == Approx(3.6));
+  REQUIRE(p.nameList.size() == 2);
+  int idx1 = p.nameList.at("timer1");
+  int idx2 = p.nameList.at("timer2");
+  REQUIRE(p.timeList.size() == 2);
+  REQUIRE(p.timeList[idx1] == Approx(5.9));
+  REQUIRE(p.timeList[idx2] == Approx(3.6));
 
-  REQUIRE(callList.size() == 2);
-  REQUIRE(callList[idx1] == 5);
-  REQUIRE(callList[idx2] == 3);
+  REQUIRE(p.callList.size() == 2);
+  REQUIRE(p.callList[idx1] == 5);
+  REQUIRE(p.callList[idx2] == 3);
 }
 
 TEST_CASE("test_timer_nested_profile", "[utilities]")
@@ -136,35 +133,35 @@ TEST_CASE("test_timer_nested_profile", "[utilities]")
   t2.stop();
   t1.stop();
 
-  TimerManagerClass::nameList_t nameList;
-  TimerManagerClass::timeList_t timeList;
-  TimerManagerClass::callList_t callList;
-  tm.collate_flat_profile(NULL, nameList, timeList, callList);
+  TimerManagerClass::FlatProfileData p;
+  tm.collate_flat_profile(NULL, p);
 
-  REQUIRE(nameList.size() == 2);
-  int idx1 = nameList.at("timer1");
-  int idx2 = nameList.at("timer2");
-  REQUIRE(timeList.size() == 2);
-  REQUIRE(timeList[idx1] == Approx(3*fake_cpu_clock_increment));
-  REQUIRE(timeList[idx2] == Approx(fake_cpu_clock_increment));
+  REQUIRE(p.nameList.size() == 2);
+  int idx1 = p.nameList.at("timer1");
+  int idx2 = p.nameList.at("timer2");
+  REQUIRE(p.timeList.size() == 2);
+  REQUIRE(p.timeList[idx1] == Approx(3*fake_cpu_clock_increment));
+  REQUIRE(p.timeList[idx2] == Approx(fake_cpu_clock_increment));
 
-  TimerManagerClass::nameList_t nameList2;
-  TimerManagerClass::timeList_t timeList2;
-  TimerManagerClass::timeList_t timeExclList2;
-  TimerManagerClass::callList_t callList2;
-  tm.collate_stack_profile(NULL, nameList2, timeList2, timeExclList2, callList2);
+  TimerManagerClass::StackProfileData p2;
+  tm.collate_stack_profile(NULL, p2);
 
-  REQUIRE(nameList2.size() == 2);
-  idx1 = nameList2.at("timer1");
-  idx2 = nameList2.at("timer2/timer1");
-  REQUIRE(timeList2.size() == 2);
-  REQUIRE(timeExclList2.size() == 2);
-  REQUIRE(timeList2[idx1] == Approx(3*fake_cpu_clock_increment));
-  REQUIRE(timeList2[idx2] == Approx(fake_cpu_clock_increment));
+  REQUIRE(p2.nameList.size() == 2);
+  idx1 = p2.nameList.at("timer1");
+  idx2 = p2.nameList.at("timer2/timer1");
+  REQUIRE(p2.timeList.size() == 2);
+  REQUIRE(p2.timeExclList.size() == 2);
+  REQUIRE(p2.timeList[idx1] == Approx(3*fake_cpu_clock_increment));
+  REQUIRE(p2.timeList[idx2] == Approx(fake_cpu_clock_increment));
 
   // Time in t1 minus time inside t2
-  REQUIRE(timeExclList2[idx1] == Approx(2*fake_cpu_clock_increment));
-  REQUIRE(timeExclList2[idx2] == Approx(fake_cpu_clock_increment));
+  REQUIRE(p2.timeExclList[idx1] == Approx(2*fake_cpu_clock_increment));
+  REQUIRE(p2.timeExclList[idx2] == Approx(fake_cpu_clock_increment));
+
+  std::vector<NewTimer *> roots;
+  tm.get_stack_roots(roots);
+  REQUIRE(roots.size() == 1);
+  REQUIRE(roots[0] == &t1);
 }
 
 }
