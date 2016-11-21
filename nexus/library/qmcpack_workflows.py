@@ -2570,7 +2570,7 @@ class SegRep(WFRep):
     #end def check_constraint
 
 
-    def generate_workflow(self,basepath=None,cur_sims=None,cur_inds=None,cur_vals=None,sim_coll=None):
+    def generate_workflow(self,basepath=None,cur_sims=None,cur_inds=None,cur_vals=None,sim_coll=None,system_inputs=None):
         if self.invariant:
             basepath = self.fixed_inputs.basepath
         elif basepath is None:
@@ -2583,6 +2583,10 @@ class SegRep(WFRep):
             chain_inputs[section] = obj(**inputs)
         #end for
         chain_inputs.transfer_from(self.placeholders)
+        # enable passing of system_inputs
+        if system_inputs!=None:
+            chain_inputs.system_inputs = system_inputs
+        #end if
         new_sims = SimSet()
         if self.invariant:
             sim_coll = SimColl()
@@ -2649,9 +2653,13 @@ class SegRep(WFRep):
                     nsims[k] = cur_sims[k]
                 #end for
                 sim_coll.add_sims(nsims,cinds,cvals)
+                # pass along system_inputs if scanning over it
+                if self.label=='system_inputs':
+                    system_inputs = sec_vary
+                #end if
                 # make scanned sub-workflows
                 for seg in self.dependents:
-                    ns = seg.generate_workflow(bpath,cur_sims,cinds,cvals,sim_coll)
+                    ns = seg.generate_workflow(bpath,cur_sims,cinds,cvals,sim_coll,system_inputs=system_inputs)
                     nsims[seg.label] = ns
                 #end for
                 new_sims[akey] = nsims
