@@ -1,4 +1,7 @@
 #!/bin/bash
+# source environment
+# MPI wrappers, MKL, and Intel and GCC compiler
+source /opt/intel/2017/parallel_studio_xe_2017.1.043/bin/psxevars.sh intel64
 
 # timeout
 timeout=1800
@@ -37,8 +40,8 @@ mkdir $sys
 cd $sys
 echo --- Building for $sys `date`
 
-export PATH=/opt/local/bin:/opt/local/sbin:/usr/local/cuda/bin/:/usr/lib64/openmpi/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
-export LD_LIBRARY_PATH=/usr/lib64/openmpi/lib:/usr/local/cuda-7.0/lib64
+# export PATH=/opt/local/bin:/opt/local/sbin:/usr/local/cuda/bin/:/usr/lib64/openmpi/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+# export LD_LIBRARY_PATH=/usr/lib64/openmpi/lib:/usr/local/cuda-7.0/lib64
 
 case $sys in
     "build_gcc")
