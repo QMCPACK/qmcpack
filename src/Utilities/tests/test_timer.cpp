@@ -104,7 +104,7 @@ TEST_CASE("test_timer_flat_profile_same_name", "[utilities]")
   t3.stop();
 
   TimerManagerClass::FlatProfileData p;
-  
+
   tm.collate_flat_profile(NULL, p);
 
   REQUIRE(p.nameList.size() == 2);
@@ -162,6 +162,51 @@ TEST_CASE("test_timer_nested_profile", "[utilities]")
   tm.get_stack_roots(roots);
   REQUIRE(roots.size() == 1);
   REQUIRE(roots[0] == &t1);
+
+  TimerDFS dfs(&t1);
+
+  NewTimer *t = dfs.next();
+  REQUIRE(t == &t2);
+  t = dfs.next();
+  REQUIRE(t == NULL);
+
+}
+
+TEST_CASE("test_timer_nested_profile_two_children", "[utilities]")
+{
+  TimerManagerClass tm;
+  NewTimer t1("timer1");
+  tm.addTimer(&t1);
+  NewTimer t2("timer2");
+  tm.addTimer(&t2);
+  NewTimer t3("timer3");
+  tm.addTimer(&t3);
+
+  fake_cpu_clock_increment = 1.1;
+  t1.start();
+  t2.start();
+  t2.stop();
+  t3.start();
+  t3.stop();
+  t1.stop();
+
+  TimerManagerClass::StackProfileData p2;
+  tm.collate_stack_profile(NULL, p2);
+
+  std::vector<NewTimer *> roots;
+  tm.get_stack_roots(roots);
+  REQUIRE(roots.size() == 1);
+  REQUIRE(roots[0] == &t1);
+
+  TimerDFS dfs(&t1);
+
+  NewTimer *t = dfs.next();
+  REQUIRE(t == &t2);
+  t = dfs.next();
+  REQUIRE(t == &t3);
+  t = dfs.next();
+  REQUIRE(t == NULL);
+
 }
 
 }

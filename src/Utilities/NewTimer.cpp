@@ -126,11 +126,14 @@ void TimerManagerClass::collate_stack_profile(Communicate *comm, StackProfileDat
 void
 TimerManagerClass::print(Communicate* comm)
 {
+#if ENABLE_TIMER
+#ifdef USE_STACK_TIMERS
   printf("Stack timer profile\n");
   print_stack(comm);
+#endif
   printf("\nFlat profile\n");
   print_flat(comm);
-
+#endif
 }
 
 void
@@ -162,6 +165,55 @@ TimerManagerClass::print_flat(Communicate* comm)
 #endif
 }
 
+TimerDFS::TimerDFS (NewTimer *t) : m_timer(t), m_indent(0)
+{
+  m_stack.push_back(t);
+  m_child_idx.push_back(0);
+}
+
+NewTimer * TimerDFS::next() 
+  {
+    while (true) {
+      if (m_stack.empty())
+      {
+        break;
+      }
+      else
+      {
+        NewTimer *current = m_stack.back();
+        int idx = m_child_idx.back();
+        // Is first visit to new node
+        if (idx == 0 && current->get_children().size() !=0 )
+        {
+          NewTimer *next_timer = current->get_children()[idx];
+          m_stack.push_back(next_timer);
+          m_child_idx.push_back(0);
+          m_indent++;
+          return next_timer;
+        }
+        // Subsequent visits to children
+        if (idx < current->get_children().size())
+        {
+          idx = m_child_idx.back();
+          m_child_idx.back()++;
+          return current->get_children()[idx];
+        }
+        else // Done with this node
+        { 
+          m_stack.pop_back();
+          m_child_idx.pop_back();
+          if (!m_child_idx.empty())
+          {
+            m_child_idx.back()++;
+          }
+          m_indent--;
+        }
+      }
+    }
+
+    return NULL;
+  }
+
 void
 TimerManagerClass::print_stack(Communicate* comm)
 {
@@ -169,6 +221,41 @@ TimerManagerClass::print_stack(Communicate* comm)
   StackProfileData p;
 
   collate_stack_profile(comm, p);
+
+  std::vector<NewTimer *> roots;
+  get_stack_roots(roots);
+
+
+  printf("Timer                   Inclusive_time    Exclusive_time   Calls   Time_per_call\n");
+  std::vector<NewTimer *>::iterator ri = roots.begin();
+  for (;ri != roots.end(); ++ri)
+  {
+    TimerDFS dfs(*ri);
+    NewTimer *current = *ri; 
+    while (true)
+    {
+      std::map<std::string, int>::iterator it = p.nameList.find(current->get_stack_name());
+      if (it == p.nameList.end())
+      {
+        //printf("timer stack name not found: %s\n",current->get_stack_name().c_str());
+        break;
+      }
+
+      std::string indent_str(2*dfs.indent(), ' ');
+      int i = (*it).second;
+
+      printf ("%s%-40s  %9.4f  %9.4f  %13ld  %16.9f  TIMER\n"
+            , indent_str.c_str()
+            , current->get_name().c_str()
+            , p.timeList[i]
+            , p.timeExclList[i]
+            , p.callList[i]
+            , p.timeList[i]/(static_cast<double>(p.callList[i])+std::numeric_limits<double>::epsilon()));
+
+      current = dfs.next(); 
+      if (!current) break;
+    }
+  }
 #endif
 }
 

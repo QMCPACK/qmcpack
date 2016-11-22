@@ -224,12 +224,18 @@ public:
     return parent;
   }
 
+  std::vector<NewTimer *> &get_children()
+  {
+    return children;
+  }
+
+
   void add_child(NewTimer *t)
   {
     bool found = false;
     for (int i = 0; i < children.size(); i++)
     {
-       if (t = children[i]) 
+       if (t == children[i]) 
        {
          found = true;
          break;
@@ -251,6 +257,21 @@ struct TimerComparator
   }
 };
 
+// Depth-first traversal of the timer tree
+class TimerDFS
+{
+public:
+  TimerDFS(NewTimer *t);
+  NewTimer *next();
+
+  NewTimer *timer() { return m_timer; }
+  int indent() { return m_indent; }
+private:
+  int m_indent;
+  NewTimer *m_timer;
+  std::vector<NewTimer *> m_stack;
+  std::vector<int> m_child_idx;
+};
 
 
 
