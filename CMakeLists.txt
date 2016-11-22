@@ -679,6 +679,13 @@ IF(BUILD_LMYENGINE_INTERFACE)
   SET(FORMIC_BINARY_DIR ${qmcpack_BINARY_DIR})
   SUBDIRS(src/formic/utils)
   SET(QMC_UTIL_LIBS formic_utils ${QMC_UTIL_LIBS})
+  # Turn C++11 for this code
+  IF (CMAKE_VERSION VERSION_LESS "3.1")
+    # Works for GCC.  Might need a check for compiler type here.
+    SET (CMAKE_CXX_FLAGS "--std=c++11 ${CMAKE_CXX_FLAGS}")
+  ELSE()
+    SET (CMAKE_CXX_STANDARD 11)
+  ENDIF()
 ENDIF(BUILD_LMYENGINE_INTERFACE)
 
 #include(ExternalProject)
