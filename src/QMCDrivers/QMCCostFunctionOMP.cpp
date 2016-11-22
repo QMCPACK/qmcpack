@@ -454,6 +454,7 @@ void QMCCostFunctionOMP::checkConfigurations()
   ReportCounter=0;
 }
 
+#ifdef HAVE_LMY_ENGINE
 /** evaluate everything before optimization */
 void QMCCostFunctionOMP::engine_checkConfigurations(cqmc::engine::LMYEngine * EngineObj)
 {
@@ -659,6 +660,7 @@ void QMCCostFunctionOMP::engine_checkConfigurations(cqmc::engine::LMYEngine * En
   setTargetEnergy(Etarget);
   ReportCounter=0;
 }
+#endif
 
 void QMCCostFunctionOMP::resetPsi(bool final_reset)
 {

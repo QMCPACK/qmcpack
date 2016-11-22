@@ -39,10 +39,11 @@
 #include "QMCDrivers/VMC/VMC_CUDA.h"
 #include "QMCDrivers/QMCCostFunctionCUDA.h"
 #endif
-#include "formic/utils/lmyengine/engine.h"
+#ifdef HAVE_LMY_ENGINE
 #include "formic/utils/matrix.h"
 #include "formic/utils/random.h"
 #include "formic/utils/lmyengine/var_dependencies.h"
+#endif
 #include <iostream>
 #include <fstream>
 

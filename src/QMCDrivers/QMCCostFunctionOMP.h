@@ -20,7 +20,6 @@
 #include "QMCDrivers/QMCCostFunctionBase.h"
 #include "QMCDrivers/CloneManager.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
-#include "formic/utils/lmyengine/engine.h"
 
 namespace qmcplusplus
 {
@@ -44,7 +43,9 @@ public:
 
   void getConfigurations(const std::string& aroot);
   void checkConfigurations();
+#ifdef HAVE_LMY_ENGINE
   void engine_checkConfigurations(cqmc::engine::LMYEngine * EngineObj);
+#endif
   void resetPsi(bool final_reset=false);
   void resetWalkers();   
   void GradCost(std::vector<Return_t>& PGradient, const std::vector<Return_t>& PM, Return_t FiniteDiff=0);

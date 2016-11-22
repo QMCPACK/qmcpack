@@ -40,11 +40,6 @@
 #include <iostream>
 #include <fstream>
 
-#ifdef HAVE_LMY_ENGINE
-#include "formic/utils/matrix.h"
-#include "formic/utils/lmyengine/engine.h"
-#endif
-
 /*#include "Message/Communicate.h"*/
 
 namespace qmcplusplus
