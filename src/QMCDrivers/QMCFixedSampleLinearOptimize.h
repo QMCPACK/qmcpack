@@ -21,7 +21,7 @@
 
 #include "QMCDrivers/QMCLinearOptimize.h"
 #include "Optimize/NRCOptimization.h"
-#ifdef HAVE_MY_ENGINE
+#ifdef HAVE_LMY_ENGINE
 #include "formic/utils/matrix.h"
 #include "formic/utils/lmyengine/engine.h"
 #endif
