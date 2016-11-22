@@ -145,6 +145,9 @@ int main(int argc, char **argv)
     validInput=qmc->parse(inputs[0]);
   if(validInput)
     qmc->execute();
+ 
+  TimerManager.print(qmcComm);
+
   if(qmc)
     delete qmc;
   if(useGPU)

@@ -257,7 +257,7 @@ struct TimerComparator
   }
 };
 
-// Depth-first traversal of the timer tree
+// Depth-first pre-order traversal of the timer tree
 class TimerDFS
 {
 public:

@@ -31,6 +31,7 @@
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Utilities/OhmmsInfo.h"
 #include "Utilities/Timer.h"
+#include "Utilities/NewTimer.h"
 #include "Particle/HDFWalkerIO.h"
 #include "QMCApp/InitMolecularSystem.h"
 #include "Particle/DistanceTable.h"
@@ -131,6 +132,9 @@ bool QMCMain::execute()
     APP_ABORT("QMCMain::execute");
   }
   Timer t1;
+  NewTimer *t2 = new NewTimer("Total");
+  TimerManager.addTimer(t2);
+  t2->start();
   curMethod = std::string("invalid");
   qmc_common.qmc_counter=0;
   for(int qa=0; qa<m_qmcaction.size(); qa++)
@@ -167,6 +171,7 @@ bool QMCMain::execute()
     }
   }
   m_qmcaction.clear();
+  t2->stop();
   app_log() << "  Total Execution time = " << t1.elapsed() << " secs" << std::endl;
   if(is_manager())
   {
@@ -539,7 +544,11 @@ bool QMCMain::runQMC(xmlNodePtr cur)
     qmcDriver->process(cur);
     OhmmsInfo::flush();
     Timer qmcTimer;
+    NewTimer *t1 = new NewTimer(qmcDriver->getEngineName());
+    TimerManager.addTimer(t1);
+    t1->start();
     qmcDriver->run();
+    t1->stop();
     app_log() << "  QMC Execution time = " << qmcTimer.elapsed() << " secs " << std::endl;
     //keeps track of the configuration file
     PrevConfigFile = myProject.CurrentMainRoot();

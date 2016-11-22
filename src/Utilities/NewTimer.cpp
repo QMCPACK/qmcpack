@@ -171,48 +171,39 @@ TimerDFS::TimerDFS (NewTimer *t) : m_timer(t), m_indent(0)
   m_child_idx.push_back(0);
 }
 
-NewTimer * TimerDFS::next() 
+// Iterate over the timer tree.
+// Uses a non-recursive implementation.
+// The root node (first node) is not returned - must handle it separately.
+// In practice this means the call to 'next' should be at the end of the loop.
+// Returns NULL when the iteration is done.
+NewTimer * TimerDFS::next()
+{
+  int n = m_stack.size();
+  for (int i = 0; i < n; i++)
   {
-    while (true) {
-      if (m_stack.empty())
-      {
-        break;
-      }
-      else
-      {
-        NewTimer *current = m_stack.back();
-        int idx = m_child_idx.back();
-        // Is first visit to new node
-        if (idx == 0 && current->get_children().size() !=0 )
-        {
-          NewTimer *next_timer = current->get_children()[idx];
-          m_stack.push_back(next_timer);
-          m_child_idx.push_back(0);
-          m_indent++;
-          return next_timer;
-        }
-        // Subsequent visits to children
-        if (idx < current->get_children().size())
-        {
-          idx = m_child_idx.back();
-          m_child_idx.back()++;
-          return current->get_children()[idx];
-        }
-        else // Done with this node
-        { 
-          m_stack.pop_back();
-          m_child_idx.pop_back();
-          if (!m_child_idx.empty())
-          {
-            m_child_idx.back()++;
-          }
-          m_indent--;
-        }
-      }
-    }
+    NewTimer *current = m_stack.back();
+    int idx = m_child_idx.back();
 
-    return NULL;
+    // Find the next node
+    // Are there more children of the current node?
+    if (idx < current->get_children().size())
+    {
+      NewTimer *next = current->get_children()[idx];
+      m_child_idx.back()++;
+      m_stack.push_back(next);
+      m_child_idx.push_back(0);
+      m_indent++;
+      return next;
+    }
+    else // no more children, backtrack to the next node up the stack.
+    {
+      m_stack.pop_back();
+      m_child_idx.pop_back();
+      m_indent--;
+    }
   }
+  return NULL;
+}
 
 void
 TimerManagerClass::print_stack(Communicate* comm)
@@ -231,7 +222,7 @@ TimerManagerClass::print_stack(Communicate* comm)
   for (;ri != roots.end(); ++ri)
   {
     TimerDFS dfs(*ri);
-    NewTimer *current = *ri; 
+    NewTimer *current = *ri;
     while (true)
     {
       std::map<std::string, int>::iterator it = p.nameList.find(current->get_stack_name());
@@ -252,7 +243,7 @@ TimerManagerClass::print_stack(Communicate* comm)
             , p.callList[i]
             , p.timeList[i]/(static_cast<double>(p.callList[i])+std::numeric_limits<double>::epsilon()));
 
-      current = dfs.next(); 
+      current = dfs.next();
       if (!current) break;
     }
   }
