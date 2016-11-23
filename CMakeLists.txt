@@ -461,7 +461,8 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
 ENDIF(CMAKE_TOOLCHAIN_FILE)
 
 #check if the CXX compiler supports -std=c++11 option
-CHECK_CXX_COMPILER_FLAG(-std=c++11 CXX_COMPILER_SUPPORT_C++11)
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG(-std=c++11 CXX_COMPILER_SUPPORT_CXX11)
 
 # setup ctest variables
 IF ( HAVE_MPI )
@@ -682,7 +683,7 @@ IF(BUILD_LMYENGINE_INTERFACE)
   SUBDIRS(src/formic/utils)
   SET(QMC_UTIL_LIBS formic_utils ${QMC_UTIL_LIBS})
   # Turn C++11 for this code
-  IF (CXX_COMPILER_SUPPORT_C++11)
+  IF (CXX_COMPILER_SUPPORT_CXX11)
     IF(NOT CMAKE_CXX_FLAGS MATCHES "-std=c\\+\\+11")
       SET (CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
     ENDIF()
