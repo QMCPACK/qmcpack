@@ -100,6 +100,8 @@ public:
 
   void collate_stack_profile(Communicate *comm, StackProfileData &p);
 
+  void output_timing(Communicate *comm, const std::string &id);
+
 };
 
 extern TimerManagerClass TimerManager;

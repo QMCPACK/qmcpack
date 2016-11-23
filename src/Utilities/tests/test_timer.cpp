@@ -207,6 +207,10 @@ TEST_CASE("test_timer_nested_profile_two_children", "[utilities]")
   t = dfs.next();
   REQUIRE(t == NULL);
 
+  tm.output_timing(NULL, "tmp");
+  // To really test this, should read the file in and inspect the contents.
+  // For now, it makes for quick iterations on writing the file.
+
 }
 
 }

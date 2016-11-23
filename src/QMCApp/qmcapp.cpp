@@ -146,6 +146,7 @@ int main(int argc, char **argv)
   if(validInput)
     qmc->execute();
  
+  TimerManager.output_timing(qmcComm, qmc->getTitle());
   TimerManager.print(qmcComm);
 
   if(qmc)

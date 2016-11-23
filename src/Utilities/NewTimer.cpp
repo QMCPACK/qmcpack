@@ -17,12 +17,14 @@
 /** @file NewTimer.cpp
  * @brief Implements TimerManager
  */
+#include <libxml/xmlwriter.h>
 #include "Utilities/NewTimer.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
 #include <map>
 #include <limits>
 #include <cstdio>
+
 namespace qmcplusplus
 {
 TimerManagerClass TimerManager;
@@ -247,6 +249,84 @@ TimerManagerClass::print_stack(Communicate* comm)
       if (!current) break;
     }
   }
+#endif
+}
+
+void
+TimerManagerClass::output_timing(Communicate *comm, const std::string &id)
+{
+#if ENABLE_TIMER
+#ifdef USE_STACK_TIMERS
+  StackProfileData p;
+
+  collate_stack_profile(comm, p);
+
+  std::vector<NewTimer *> roots;
+  get_stack_roots(roots);
+
+  xmlTextWriterPtr writer = xmlNewTextWriterFilename(std::string(id+".info.xml").c_str(), 0);
+  if (writer == NULL)
+  {
+    printf("Faied to create xml writer\n");
+    return;
+  }
+
+  xmlTextWriterSetIndent(writer, 2);
+
+  xmlTextWriterStartDocument(writer, NULL, NULL, NULL);
+
+
+  xmlTextWriterStartElement(writer, BAD_CAST "timing");
+  std::vector<NewTimer *>::iterator ri = roots.begin();
+  for (;ri != roots.end(); ++ri)
+  {
+    TimerDFS dfs(*ri);
+    NewTimer *current = *ri;
+    int current_level = 0;
+    while (true)
+    {
+      std::map<std::string, int>::iterator it = p.nameList.find(current->get_stack_name());
+      if (it != p.nameList.end())
+      {
+        int i = (*it).second;
+        xmlTextWriterStartElement(writer, BAD_CAST "timer");
+        xmlTextWriterWriteElement(writer, BAD_CAST "name", BAD_CAST current->get_name().c_str());
+        std::stringstream time_inclusive;
+        time_inclusive << p.timeList[i];
+        xmlTextWriterWriteElement(writer, BAD_CAST "time_incl", BAD_CAST time_inclusive.str().c_str());
+        std::stringstream time_exclusive;
+        time_exclusive << p.timeExclList[i];
+        xmlTextWriterWriteElement(writer, BAD_CAST "time_excl", BAD_CAST time_exclusive.str().c_str());
+        std::stringstream ncalls;
+        ncalls << p.callList[i];
+        xmlTextWriterWriteElement(writer, BAD_CAST "calls", BAD_CAST ncalls.str().c_str());
+      }
+
+      current_level = dfs.indent();
+      current = dfs.next();
+      if (current_level < dfs.indent())
+      {
+        xmlTextWriterStartElement(writer, BAD_CAST "includes");
+      }
+      if (current_level >= dfs.indent())
+      {
+        xmlTextWriterEndElement(writer);
+      }
+
+      if (current_level > dfs.indent() && current_level!=0)
+      {
+        xmlTextWriterEndElement(writer);
+      }
+
+      if (!current) break;
+    }
+  }
+
+
+  xmlTextWriterEndElement(writer);
+  xmlTextWriterEndDocument(writer);
+
+#endif
 #endif
 }
 
