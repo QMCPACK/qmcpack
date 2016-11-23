@@ -1,4 +1,5 @@
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+# -std=c++11 is handled at the top level. Ye
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 # Really ugly hack to see if we're using MKL - replace it
 STRING(FIND "${BLAS_LIBRARIES}" "mkl" apos)
@@ -78,10 +79,10 @@ add_library(formic_utils matrix.cpp
                          lmyengine/updater.cpp
                          lmyengine/var_dependencies.cpp)
 
-target_link_libraries(formic_utils ${FORMIC_LAPACK_BLAS_LIBS})
+#target_link_libraries(formic_utils ${FORMIC_LAPACK_BLAS_LIBS})
 
-set_property(TARGET formic_utils PROPERTY CXX_STANDARD 11)
-set_property(TARGET formic_utils PROPERTY CXX_STANDARD_REQUIRED ON)
+#set_property(TARGET formic_utils PROPERTY CXX_STANDARD 11)
+#set_property(TARGET formic_utils PROPERTY CXX_STANDARD_REQUIRED ON)
 
 #file(MAKE_DIRECTORY ${FORMIC_BINARY_DIR}/lib)
 #file(MAKE_DIRECTORY ${FORMIC_BINARY_DIR}/include)

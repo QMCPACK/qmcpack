@@ -271,8 +271,8 @@ ENDIF()
 #If the automatic detection does not work, comment out everything 
 #upto COMPILER MANUAL SELECTION and use one of the customized cmake file.
 ######################################################
-INCLUDE(${CMAKE_ROOT}/Modules/TestCXXAcceptsFlag.cmake)
 INCLUDE(${CMAKE_ROOT}/Modules/CheckCCompilerFlag.cmake)
+INCLUDE(${CMAKE_ROOT}/Modules/CheckCXXCompilerFlag.cmake)
 
 
 ######################################################
@@ -460,6 +460,8 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
 
 ENDIF(CMAKE_TOOLCHAIN_FILE)
 
+#check if the CXX compiler supports -std=c++11 option
+CHECK_CXX_COMPILER_FLAG(-std=c++11 CXX_COMPILER_SUPPORT_C++11)
 
 # setup ctest variables
 IF ( HAVE_MPI )
@@ -680,11 +682,12 @@ IF(BUILD_LMYENGINE_INTERFACE)
   SUBDIRS(src/formic/utils)
   SET(QMC_UTIL_LIBS formic_utils ${QMC_UTIL_LIBS})
   # Turn C++11 for this code
-  IF (CMAKE_VERSION VERSION_LESS "3.1")
-    # Works for GCC.  Might need a check for compiler type here.
-    SET (CMAKE_CXX_FLAGS "--std=c++11 ${CMAKE_CXX_FLAGS}")
+  IF (CXX_COMPILER_SUPPORT_C++11)
+    IF(NOT CMAKE_CXX_FLAGS MATCHES "-std=c\\+\\+11")
+      SET (CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
+    ENDIF()
   ELSE()
-    SET (CMAKE_CXX_STANDARD 11)
+    MESSAGE(FATAL_ERROR "LMY engine requires c++11 compiler support!")
   ENDIF()
 ENDIF(BUILD_LMYENGINE_INTERFACE)
 
