@@ -461,6 +461,9 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
 
 ENDIF(CMAKE_TOOLCHAIN_FILE)
 
+#check if the CXX compiler supports -std=c++11 option
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG(-std=c++11 CXX_COMPILER_SUPPORT_CXX11)
 
 # setup ctest variables
 IF ( HAVE_MPI )
@@ -674,6 +677,16 @@ if(build_einspline)
   INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/include)
   SET(QMC_UTIL_LIBS einspline ${QMC_UTIL_LIBS})
 endif()
+
+IF (WITH_AFQMC)
+  IF (CXX_COMPILER_SUPPORT_CXX11)
+    IF(NOT CMAKE_CXX_FLAGS MATCHES "-std=c\\+\\+11")
+      SET (CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
+    ENDIF()
+  ELSE()
+    MESSAGE(FATAL_ERROR "LMY engine requires c++11 compiler support!")
+  ENDIF()
+ENDIF(WITH_AFQMC)
 
 #include(ExternalProject)
 #  set(einspline_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/einspline")
