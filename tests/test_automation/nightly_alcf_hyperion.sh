@@ -54,11 +54,11 @@ case $sys in
 	;;
     "build_gcc_mixed")
 	export QMCPACK_TEST_SUBMIT_NAME=GCC-Mixed-Release
-	ctest -DQMC_COMPLEX=0 -DMIXED_PRECISION=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -S $PWD/../CMake/ctest_script.cmake,release -E 'long' -VV --timeout $timeout
+	ctest -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -S $PWD/../CMake/ctest_script.cmake,release -E 'long' -VV --timeout $timeout
 	;;
     "build_gcc_complex_mixed")
 	export QMCPACK_TEST_SUBMIT_NAME=GCC-Complex-Mixed-Release
-	ctest -DQMC_COMPLEX=1 -DMIXED_PRECISION=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -S $PWD/../CMake/ctest_script.cmake,release -E 'long' -VV --timeout $timeout
+	ctest -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -S $PWD/../CMake/ctest_script.cmake,release -E 'long' -VV --timeout $timeout
 	;;
     "build_intel2017")
 	source /opt/intel/2017/parallel_studio_xe_2017.1.043/bin/psxevars.sh intel64
