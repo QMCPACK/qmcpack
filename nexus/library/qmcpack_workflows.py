@@ -6,7 +6,7 @@ from numpy import ndarray,ceil
 from developer import obj,ci,error as dev_error,devlog,DevBase
 from physical_system import generate_physical_system
 from simulation import Simulation,GenericSimulation,graph_sims
-from machines import job
+from machines import job,Job
 from vasp  import generate_vasp
 from pwscf import generate_pwscf
 from pwscf_postprocessors import generate_projwfc
@@ -639,10 +639,12 @@ scf_input_defaults = obj(
 
 nscf_workflow_keys = [
     'struct_src','dens_src',
+    'use_scf_dir',
     ]
 fixed_defaults = obj(
-    struct_src = None,
-    dens_src   = None,
+    struct_src  = None,
+    dens_src    = None,
+    use_scf_dir = False,
     )
 nscf_input_defaults = obj(
     none    = obj(
@@ -832,6 +834,7 @@ def resolve_label(name,ch,loc='resolve_label',inp=False,quant=None,index=None,in
     wf   = task.workflow
     if index is None:
         index = 1
+        # def_srcs tracks the last occurring sim source in the workflow chain
         if name in kw.def_srcs:
             index = kw.def_srcs[name]
         #end if
@@ -1531,16 +1534,38 @@ def process_sim_inputs(name,inputs_in,defaults,shared,task,loc):
 
 
 qmcpack_chain_sim_names = ['system','vasp','scf','nscf','p2q','pwf','opt','vmc','dmc']
-def capture_qmcpack_chain_inputs(**kwargs):
-    kwcap = obj(**kwargs)
-    for name in qmcpack_chain_sim_names:
-        section = name+'_inputs'
-        if section in kwcap:
-            inputs = kwcap[section]
-            if inputs is not None:
-                kwcap[section] = obj(**inputs)
+def capture_qmcpack_chain_inputs(kwargs):
+    kw_deep    = obj()
+    kw_shallow = obj()
+    inp_shallow = obj()
+    shallow_types = tuple([Simulation])#(Job,Simulation)
+    for k,v in kwargs.iteritems():
+        if '_inputs' not in k or isinstance(v,(tuple,list)):
+            if isinstance(v,shallow_types):
+                kw_shallow[k] = v
+            else:
+                kw_deep[k] = v
             #end if
+        else:
+            shallow = obj()
+            deep    = obj()
+            for kk,vv in v.iteritems():
+                if isinstance(vv,shallow_types):
+                    shallow[kk]=vv
+                else:
+                    deep[kk]=vv
+                #end if
+            #end for
+            inp_shallow[k] = shallow
+            kw_deep[k] = deep
         #end if
+    #end for
+    # deep copy
+    kwcap = kw_deep.copy()
+    # shallow copy
+    kwcap.set(**kw_shallow)
+    for k,v in inp_shallow.iteritems():
+        kwcap[k].set(**v)
     #end for
     return kwcap
 #end def capture_qmcpack_chain_inputs
@@ -1769,7 +1794,11 @@ def gen_nscf_chain(ch,loc):
     scf_inputs.delete_optional('kshift')
     task.inputs.set_optional(**scf_inputs)
     # generate the nscf sim
-    path = resolve_path('scf',ch,loc) # added to always run in scf dir
+    if wf.use_scf_dir:
+        path = resolve_path('scf',ch,loc) # added to always run in scf dir
+    else:
+        path = wf.path
+    #end if
     nscf = generate_pwscf(
         path         = path,
         dependencies = deps,
@@ -1785,13 +1814,21 @@ def gen_p2q_chain(ch,loc):
     wf   = task.workflow
     run  = kw.run
     if run.nscf:
-        source = 'nscf'
+        nscf_label,nscf_index = resolve_label('scf',ch,loc,ind=True)
+        use_scf_dir = ch.tasks.nscf[nscf_index].workflow.use_scf_dir
+        orb_source = 'nscf'
+        if use_scf_dir:
+            path_source = 'scf'
+        else:
+            path_source = 'nscf'
+        #end if
     else:
-        source = 'scf'
+        orb_source  = 'scf'
+        path_source = 'scf'
     #end if
-    #path = resolve_path(source,ch,loc)
-    path = resolve_path('scf',ch,loc)  # added to always run in scf dir
-    deps = resolve_deps('p2q',[(source,'orbitals')],ch,loc)
+    path = resolve_path(path_source,ch,loc)
+    #path = resolve_path('scf',ch,loc)  # added to always run in scf dir
+    deps = resolve_deps('p2q',[(orb_source,'orbitals')],ch,loc)
     p2q = generate_pw2qmcpack(
         path         = path,
         dependencies = deps,
@@ -2533,7 +2570,7 @@ class SegRep(WFRep):
     #end def check_constraint
 
 
-    def generate_workflow(self,basepath=None,cur_sims=None,cur_inds=None,cur_vals=None,sim_coll=None):
+    def generate_workflow(self,basepath=None,cur_sims=None,cur_inds=None,cur_vals=None,sim_coll=None,system_inputs=None):
         if self.invariant:
             basepath = self.fixed_inputs.basepath
         elif basepath is None:
@@ -2546,6 +2583,10 @@ class SegRep(WFRep):
             chain_inputs[section] = obj(**inputs)
         #end for
         chain_inputs.transfer_from(self.placeholders)
+        # enable passing of system_inputs
+        if system_inputs!=None:
+            chain_inputs.system_inputs = system_inputs
+        #end if
         new_sims = SimSet()
         if self.invariant:
             sim_coll = SimColl()
@@ -2612,9 +2653,13 @@ class SegRep(WFRep):
                     nsims[k] = cur_sims[k]
                 #end for
                 sim_coll.add_sims(nsims,cinds,cvals)
+                # pass along system_inputs if scanning over it
+                if self.label=='system_inputs':
+                    system_inputs = sec_vary
+                #end if
                 # make scanned sub-workflows
                 for seg in self.dependents:
-                    ns = seg.generate_workflow(bpath,cur_sims,cinds,cvals,sim_coll)
+                    ns = seg.generate_workflow(bpath,cur_sims,cinds,cvals,sim_coll,system_inputs=system_inputs)
                     nsims[seg.label] = ns
                 #end for
                 new_sims[akey] = nsims
@@ -2749,8 +2794,8 @@ def qmcpack_workflow(
 
     # obtain an example simulation workflow (chain)
     #   convert sims into simpler representation class 
-    #   jtk mark: this deep copy could be costly, look into replacing
-    sims = qmcpack_chain(fake=True,**obj(**kwargs).copy())
+    kwcap = capture_qmcpack_chain_inputs(kwargs)
+    sims = qmcpack_chain(fake=True,**kwcap)
     for sim in sims:
         sim.simrep = SimRep(sim)
     #end for
@@ -2763,7 +2808,6 @@ def qmcpack_workflow(
     for sim in sims:
         simrep = sim.simrep
         del sim.simrep
-        sim.clear()
         simreps[simrep.simlabel] = simrep
     #end for
     del sims
@@ -2879,8 +2923,8 @@ def qmcpack_workflow(
 
     # expand chain inputs
     #   this allows information to flow e.g. from *_inputs to *_inputs2 
-    #   jtk mark: this deep copy could be costly, look into replacing
-    kwp = process_qmcpack_chain_kwargs(**obj(kwargs).copy())
+    kwcap = capture_qmcpack_chain_inputs(kwargs)
+    kwp = process_qmcpack_chain_kwargs(**kwcap)
     for name,tasklist in kwp.tasks.iteritems():
         #print name
         if tasklist is not None:

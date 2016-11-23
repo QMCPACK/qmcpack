@@ -239,7 +239,21 @@ bool_write_types = set([yesno,onezero,truefalse])
 
 
 class QIobj(DevBase):
-    None
+    # user settings
+    permissive_read  = False
+    permissive_write = False
+    permissive_init  = False
+
+    @staticmethod
+    def settings(
+        permissive_read  = False,
+        permissive_write = False,
+        permissive_init  = False,
+        ):
+        QIobj.permissive_read  = permissive_read 
+        QIobj.permissive_write = permissive_write
+        QIobj.permissive_init  = permissive_init 
+    #end def settings
 #end class QIobj
 
 
@@ -526,7 +540,9 @@ class QIxml(Names):
 
     def write(self,indent_level=0,pad='   ',first=False):
         param.set_precision(self.get_precision())
-        self.check_junk(exit=True)
+        if not QIobj.permissive_write:
+            self.check_junk(exit=True)
+        #end if
         indent  = indent_level*pad
         ip = indent+pad
         ipp= ip+pad
@@ -688,7 +704,9 @@ class QIxml(Names):
         if QmcpackInput.profile_collection!=None:
             self.collect_profile(xml,al,el,junk)
         #end for
-        self.check_junk(junk)
+        if not QIobj.permissive_read:
+            self.check_junk(junk)
+        #end if
         if self.attr_types!=None:
             typed_attr = attr & set(self.attr_types.keys())
             attr -= typed_attr
@@ -718,6 +736,8 @@ class QIxml(Names):
         if len(args)>0:
             if len(args)==1 and isinstance(args[0],self.__class__):
                 self.transfer_from(args[0])
+            elif len(args)==1 and isinstance(args[0],dict):
+                self.init_from_kwargs(args[0])
             else:
                 self.init_from_args(args)
             #end if
@@ -748,8 +768,10 @@ class QIxml(Names):
         else:
             text = set()
         #end if
-        junk = ks -attr -elem -plur -h5tags -costs -parameters -attribs -text
-        self.check_junk(junk,exit=True)
+        if not QIobj.permissive_init:
+            junk = ks -attr -elem -plur -h5tags -costs -parameters -attribs -text
+            self.check_junk(junk,exit=True)
+        #end if
 
         for v in h5tags:
             self[v] = param(kwargs[v])
@@ -2150,6 +2172,13 @@ class sk(QIxml):
     write_types = obj(hdf5=yesno)
 #end class sk
 
+class skall(QIxml):
+    tag = 'estimator'
+    attributes = ['name','type','hdf5','source','target','writeionion']
+    identifier = 'name'
+    write_types = obj(hdf5=yesno)
+#end class skall
+
 class gofr(QIxml):
     tag = 'estimator'
     attributes = ['type','name','num_bin','rmax','source']
@@ -2173,6 +2202,7 @@ estimator = QIxmlFactory(
                  nofk                = nofk,
                  mpc                 = mpc_est,
                  sk                  = sk,
+                 skall               = skall,
                  gofr                = gofr,
                  ),
     typekey  = 'type',
@@ -2404,7 +2434,7 @@ classes = [   #standard classes
     optimize,cg_optimizer,flex_optimizer,optimize_qmc,wftest,kspace_jastrow,
     header,local,force,forwardwalking,observable,record,rmc,pressure,dmccorrection,
     nofk,mpc_est,distancetable,cpp,element,spline,setparams,
-    backflow,transformation,cubicgrid,molecular_orbital_builder,cmc,sk,gofr,
+    backflow,transformation,cubicgrid,molecular_orbital_builder,cmc,sk,skall,gofr,
     host,date,user,
     ]
 types = dict( #simple types and factories
@@ -2713,6 +2743,11 @@ class QmcpackInput(SimulationInput,Names):
         ionid      = dict(datatype='stringArray'),
         position   = dict(datatype='posArray', condition=0)
         )
+
+    @staticmethod
+    def settings(**kwargs):
+        QIobj.settings(**kwargs)
+    #end def settings
 
     def __init__(self,arg0=None,arg1=None):
         Param.metadata = None
@@ -5089,8 +5124,21 @@ def generate_basic_input(id             = 'qmc',
                          estimators     = None,
                          traces         = None,
                          calculations   = None,
-                         det_format     = 'new'
+                         det_format     = 'new',
+                         **invalid_kwargs
                          ):
+
+    if len(invalid_kwargs)>0:
+        valid = ['id','series','purpose','seed','bconds','truncate',
+                 'buffer','lr_dim_cutoff','remove_cell','randomsrc',
+                 'meshfactor','orbspline','precision','twistnum',
+                 'twist','spin_polarized','orbitals_h5','system',
+                 'pseudos','jastrows','interactions','corrections',
+                 'observables','estimators','traces','calculations',
+                 'det_format']
+        QmcpackInput.class_error('invalid input parameters encountered\ninvalid input parameters: {0}\nvalid options are: {1}'.format(sorted(invalid_kwargs.keys()),sorted(valid)),'generate_qmcpack_input')
+    #end if
+
     if system=='missing':
         QmcpackInput.class_error('generate_basic_input argument system is missing\n  if you really do not want particlesets to be generated, set system to None')
     #end if

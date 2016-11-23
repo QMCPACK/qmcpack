@@ -24,6 +24,13 @@ ELSEIF( ${HOSTNAME} MATCHES "oxygen" )
     SET( CC ${CMAKE_C_COMPILER} )
     SET( CXX ${CMAKE_CXX_COMPILER} )
     SET( CTEST_CMAKE_GENERATOR "Unix Makefiles")
+ELSEIF( ${HOSTNAME} MATCHES "hyperion" )
+# Setup for hyperion.alcf.anl.gov
+    SET( CC ${CMAKE_C_COMPILER} )
+    SET( CXX ${CMAKE_CXX_COMPILER} )
+    SET( CTEST_CMAKE_GENERATOR "Unix Makefiles")
+    SET( CTEST_SITE "hyperion.alcf.anl.gov" )
+    SET( N_PROCS 32)
 ELSEIF( ${HOSTNAME} MATCHES "cori" )
 # Setup for cori.nersc.gov phase 1
     SET( CC ${CMAKE_C_COMPILER} )

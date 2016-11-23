@@ -257,46 +257,6 @@ def kmesh(kaxes,dim,shift=None):
 #end def kmesh
 
 
-def tile_points(points,tilevec,axin):
-    if not isinstance(points,ndarray):
-        points = array(points)
-    #end if
-    if not isinstance(tilevec,ndarray):
-        tilevec = array(tilevec)
-    #end if
-    if not isinstance(axin,ndarray):
-        axin = array(axin)
-    #end if
-    t = tilevec
-    if len(points.shape)==1:
-        npoints,dim = len(points),1
-    else:
-        npoints,dim = points.shape
-    #end if
-    ntpoints = npoints*t.prod()
-    if ntpoints==0:
-        tpoints = array([])
-    else:
-        tpoints  = empty((ntpoints,dim))
-        ns=0
-        ne=npoints
-        for k in range(t[2]):
-            for j in range(t[1]):
-                for i in range(t[0]):
-                    v = dot(array([[i,j,k]]),axin)
-                    for d in range(dim):
-                        tpoints[ns:ne,d] = points[:,d]+v[0,d]
-                    #end for
-                    ns+=npoints 
-                    ne+=npoints
-                #end for
-            #end for
-        #end for
-    #end if
-    axes = dot(diag(t),axin)
-    return tpoints,axes
-#end def tile_points
-
 
 def reduce_tilematrix(tiling):
     tiling = array(tiling)
@@ -363,10 +323,12 @@ def reduce_tilematrix(tiling):
         if nondiagonal:
             Structure.class_error('could not find a diagonal tiling matrix for generating tiled coordinates')
         #end if
-        if noninteger:
-            Structure.class_error('calculated diagonal tiling matrix is non-integer\n  tiled coordinates cannot be determined')
-        #end if
-        tilevector = abs(t)
+        #non-integer tile vectors are handled directly by tile_points now
+        #if noninteger:
+        #    Structure.class_error('calculated diagonal tiling matrix is non-integer\n  tiled coordinates cannot be determined')
+        ##end if
+        #tilevector = abs(t)
+        tilevector = abs(tr)
     else:
         tilevector = t
         tilematrix = diag(t)
@@ -2635,7 +2597,7 @@ class Structure(Sobj):
 
         tilematrix,tilevector = reduce_tilematrix(tiling)
 
-        ncells = tilevector.prod()
+        ncells = abs(det(tilematrix))
 
         if ncells==1 and abs(tilematrix-identity(self.dim)).sum()<1e-1:
             if in_place:
@@ -2648,14 +2610,11 @@ class Structure(Sobj):
         self.recenter()
 
         elem = array(ncells*list(self.elem))
-        pos,axes = tile_points(self.pos,tilevector,self.axes)
-        if matrix_tiling:
-            #axes = dot(self.axes,tilematrix)
-            axes = dot(tilematrix,self.axes)
-        #end if
+        pos  = self.tile_points(self.pos,self.axes,tilematrix,tilevector)
+        axes = dot(tilematrix,self.axes)
+
         center   = axes.sum(0)/2
         mag      = tile_magnetization(self.mag,tilevector,magnetic_order,magnetic_primitive)
-        #kaxes    = dot(inv(tilematrix),self.kaxes)
         kaxes    = dot(inv(tilematrix.T),self.kaxes)
         kpoints  = array(self.kpoints)
         kweights = array(self.kweights)
@@ -2691,6 +2650,69 @@ class Structure(Sobj):
     #end def tile
 
 
+    def tile_points(self,points,axes,tilemat,tilevec=None):
+        if tilevec is None:
+            tilemat,tilevec = reduce_tilematrix(tilemat)
+        #end if
+        if not isinstance(points,ndarray):
+            points = array(points)
+        #end if
+        if not isinstance(tilevec,ndarray):
+            tilevec = array(tilevec)
+        #end if
+        if not isinstance(axes,ndarray):
+            axes = array(axes)
+        #end if
+        t = tilevec
+        ti = array(around(t),dtype=int)
+        noninteger = abs(t-ti).sum()>1e-6
+        if len(points.shape)==1:
+            npoints,dim = len(points),1
+        else:
+            npoints,dim = points.shape
+        #end if
+        ntpoints = npoints*t.prod()
+        if not noninteger:
+            t = ti
+            if ntpoints==0:
+                tpoints = array([])
+            else:
+                tpoints  = empty((ntpoints,dim))
+                ns=0
+                ne=npoints
+                for k in range(t[2]):
+                    for j in range(t[1]):
+                        for i in range(t[0]):
+                            v = dot(array([[i,j,k]]),axes)
+                            for d in range(dim):
+                                tpoints[ns:ne,d] = points[:,d]+v[0,d]
+                            #end for
+                            ns+=npoints 
+                            ne+=npoints
+                        #end for
+                    #end for
+                #end for
+            #end if
+        else:
+            if abs(ntpoints-int(around(ntpoints)))>1e-6:
+                self.error('tiling vector does not correspond to an integer volume change\ntiling vector: {0}\nvolume change: {1}  {2}  {3}'.format(tilevec,tilevec.prod(),ntpoints,int(ntpoints)))
+            #end if
+            ntpoints = int(around(ntpoints))
+            # round up to larger tiling
+            t = array(ceil(t),dtype=int)
+            # get the tiled points
+            tpoints = self.tile_points(points,axes,tilemat,t)
+            # remove any that are not unique
+            taxes = dot(tilemat,axes)
+            tpoints,weights,pmap = self.unique_points(tpoints,taxes)
+            if len(tpoints)!=ntpoints:
+                self.error('tiling by non-integer tiling vector failed\npoints expected after tiling: {0}\npoints resulted from tiling: {1}'.format(ntpoints,len(tpoints)))
+            #end if
+        #end if
+        return tpoints
+    #end def tile_points
+
+
     def opt_tilematrix(self,volfac,dn=1,tol=1e-3):
         return optimal_tilematrix(self,volfac,dn,tol)
     #end def opt_tilematrix
@@ -2711,9 +2733,9 @@ class Structure(Sobj):
             tiling = tiling.T
         #end if
         tilematrix,tilevector = reduce_tilematrix(tiling)
-        ncells    = tilevector.prod()
-        kp,kaxnew = tile_points(kpoints,tilevector,self.kaxes)
-        kw        = array(ncells*list(kweights),dtype=float)/ncells
+        ncells = abs(det(tilematrix))
+        kp     = self.tile_points(kpoints,self.kaxes,tilematrix,tilevector)
+        kw     = array(ncells*list(kweights),dtype=float)/ncells
         return kp,kw
     #end def kfold
 
@@ -2905,6 +2927,59 @@ class Structure(Sobj):
         #end if
     #end def inversion_symmetrize_kpoints
 
+
+    def unique_points(self,points,axes,weights=None,tol=1e-10):
+        pmap = obj()
+        npoints = len(points)
+        if npoints>0:
+            if weights is None:
+                weights = ones((npoints,),dtype=int)
+            #end if
+            ntable,dtable = self.neighbor_table(points,points,axes,distances=True)
+            keep = empty((npoints,),dtype=bool)
+            keep[:] = True
+            pmo = obj()
+            for i in xrange(npoints):
+                if keep[i]:
+                    pm = []
+                    jn=0
+                    while jn<npoints and dtable[i,jn]<tol:
+                        j = ntable[i,jn]
+                        pm.append(j)
+                        if j!=i and keep[j]:
+                            keep[j] = False
+                            weights[i] += weights[j]
+                        #end if
+                        jn+=1
+                    #end while
+                    pmo[i] = set(pm)
+                #end if
+            #end for
+            points  = points[keep]
+            weights = weights[keep]
+            j=0
+            for i in xrange(len(keep)):
+                if keep[i]:
+                    pmap[j] = pmo[i]
+                    j+=1
+                #end if
+            #end for
+        #end if
+        return points,weights,pmap
+    #end def unique_points
+
+
+    def unique_positions(self,tol=1e-10,folded=False):
+        pos,weights,pmap = self.unique_points(self.pos,self.axes)
+        if len(pos)!=len(self.pos):
+            self.pos = pos
+        #end if
+        if folded and self.folded_structure!=None:
+            self.folded_structure.unique_positions(tol)
+        #end if
+        return pmap
+    #end def unique_positions
+
         
     def unique_kpoints(self,tol=1e-10,folded=False):
         kmap = obj()
@@ -2916,7 +2991,7 @@ class Structure(Sobj):
             keep = empty((len(kp),),dtype=bool)
             keep[:] = True
             kmo = obj()
-            for i in range(npoints):
+            for i in xrange(npoints):
                 if keep[i]:
                     km = []
                     jn=0
@@ -2935,7 +3010,7 @@ class Structure(Sobj):
             self.kpoints  = self.kpoints[keep]
             self.kweights = self.kweights[keep]
             j=0
-            for i in range(len(keep)):
+            for i in xrange(len(keep)):
                 if keep[i]:
                     kmap[j] = kmo[i]
                     j+=1
@@ -4877,7 +4952,7 @@ def generate_crystal_structure(lattice=None,cell=None,centering=None,
 
     #interface for total manual specification
     # this is only here because 'crystal' is default and must handle other cases
-    if elem!=None and (pos!=None or posu!=None):  
+    if elem is not None and (pos is not None or posu is not None):  
         return Structure(
             axes           = axes,
             elem           = elem,
@@ -5051,9 +5126,14 @@ def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3):
     ropt = -1e99
     Topt = None
     Taxopt = None
+    vol_diff_min = 1e99
     for mat in mats:
         T = Tref + mat
-        if abs(abs(det(T))-volfac)<tol:
+        vol_diff = abs(abs(det(T))-volfac)
+        if vol_diff < vol_diff_min:
+            vol_diff_min = vol_diff
+        # end if
+        if vol_diff<tol:
             Taxes = dot(T,axes)
             rc1 = norm(cross(Taxes[0],Taxes[1]))
             rc2 = norm(cross(Taxes[1],Taxes[2]))
@@ -5066,6 +5146,9 @@ def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3):
             #end if
         #end if
     #end for
+    if Taxopt is None:
+        error("optimal tilematrix for volfac=%4.2f not found with tolerance %5.4f\n minimum volume difference was %5.4f" % (volfac,tol,vol_diff_min) )
+    # end if
     if det(Taxopt)<0:
         Topt = -Topt
     #end if

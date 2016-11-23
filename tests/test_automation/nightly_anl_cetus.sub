@@ -24,9 +24,6 @@ place=/projects/QMCSim/QMCPACK_CI_BUILDS_DO_NOT_REMOVE
 compiler=XL
 #compiler=Clang++11
 
-. /soft/environment/softenv/etc/softenv-aliases.sh
-resoft ~/.soft.clang
-
 if [ ! -e $place ]; then
 mkdir $place
 fi
