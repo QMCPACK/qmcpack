@@ -146,7 +146,10 @@ int main(int argc, char **argv)
   if(validInput)
     qmc->execute();
  
-  TimerManager.output_timing(qmcComm, qmc->getTitle());
+  Libxml2Document timingDoc;
+  timingDoc.newDoc("resources");
+  TimerManager.output_timing(qmcComm, timingDoc, timingDoc.getRoot());
+  timingDoc.dump(qmc->getTitle() + ".info.xml");
   TimerManager.print(qmcComm);
 
   if(qmc)

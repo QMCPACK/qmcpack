@@ -21,6 +21,7 @@
 #define QMCPLUSPLUS_NEW_TIMER_H
 
 #include <Utilities/Clock.h>
+#include <OhmmsData/Libxml2Doc.h>
 #include <vector>
 #include <string>
 #include <algorithm>
@@ -100,7 +101,7 @@ public:
 
   void collate_stack_profile(Communicate *comm, StackProfileData &p);
 
-  void output_timing(Communicate *comm, const std::string &id);
+  void output_timing(Communicate *comm, Libxml2Document &doc, xmlNodePtr root);
 
 };
 

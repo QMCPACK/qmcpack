@@ -10,8 +10,8 @@
 //
 // File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+ 
 
 
 /** @file NewTimer.cpp
@@ -253,7 +253,7 @@ TimerManagerClass::print_stack(Communicate* comm)
 }
 
 void
-TimerManagerClass::output_timing(Communicate *comm, const std::string &id)
+TimerManagerClass::output_timing(Communicate *comm, Libxml2Document &doc, xmlNodePtr root)
 {
 #if ENABLE_TIMER
 #ifdef USE_STACK_TIMERS
@@ -264,19 +264,11 @@ TimerManagerClass::output_timing(Communicate *comm, const std::string &id)
   std::vector<NewTimer *> roots;
   get_stack_roots(roots);
 
-  xmlTextWriterPtr writer = xmlNewTextWriterFilename(std::string(id+".info.xml").c_str(), 0);
-  if (writer == NULL)
-  {
-    printf("Faied to create xml writer\n");
-    return;
-  }
 
-  xmlTextWriterSetIndent(writer, 2);
-
-  xmlTextWriterStartDocument(writer, NULL, NULL, NULL);
-
-
-  xmlTextWriterStartElement(writer, BAD_CAST "timing");
+  xmlNodePtr timing_root = doc.addChild(root, "timing");
+  std::vector<xmlNodePtr> node_stack;
+  node_stack.push_back(timing_root);
+  xmlNodePtr current_root = timing_root;
   std::vector<NewTimer *>::iterator ri = roots.begin();
   for (;ri != roots.end(); ++ri)
   {
@@ -285,46 +277,35 @@ TimerManagerClass::output_timing(Communicate *comm, const std::string &id)
     int current_level = 0;
     while (true)
     {
+      xmlNodePtr timer = NULL;
       std::map<std::string, int>::iterator it = p.nameList.find(current->get_stack_name());
       if (it != p.nameList.end())
       {
         int i = (*it).second;
-        xmlTextWriterStartElement(writer, BAD_CAST "timer");
-        xmlTextWriterWriteElement(writer, BAD_CAST "name", BAD_CAST current->get_name().c_str());
-        std::stringstream time_inclusive;
-        time_inclusive << p.timeList[i];
-        xmlTextWriterWriteElement(writer, BAD_CAST "time_incl", BAD_CAST time_inclusive.str().c_str());
-        std::stringstream time_exclusive;
-        time_exclusive << p.timeExclList[i];
-        xmlTextWriterWriteElement(writer, BAD_CAST "time_excl", BAD_CAST time_exclusive.str().c_str());
-        std::stringstream ncalls;
-        ncalls << p.callList[i];
-        xmlTextWriterWriteElement(writer, BAD_CAST "calls", BAD_CAST ncalls.str().c_str());
+        timer = doc.addChild(current_root, "timer");
+        doc.addChild(timer, "name", current->get_name());
+        doc.addChild(timer, "time_incl", p.timeList[i]);
+        doc.addChild(timer, "time_excl", p.timeExclList[i]);
+        doc.addChild(timer, "calls", p.callList[i]);
       }
 
       current_level = dfs.indent();
       current = dfs.next();
       if (current_level < dfs.indent())
       {
-        xmlTextWriterStartElement(writer, BAD_CAST "includes");
+        xmlNodePtr next_node = doc.addChild(timer, "includes");
+        node_stack.push_back(next_node);
+        current_root = next_node;
       }
-      if (current_level >= dfs.indent())
+      if (current_level > dfs.indent() && current_level != 0)
       {
-        xmlTextWriterEndElement(writer);
-      }
-
-      if (current_level > dfs.indent() && current_level!=0)
-      {
-        xmlTextWriterEndElement(writer);
+        node_stack.pop_back();
+        current_root = node_stack.back();
       }
 
       if (!current) break;
     }
   }
-
-
-  xmlTextWriterEndElement(writer);
-  xmlTextWriterEndDocument(writer);
 
 #endif
 #endif
