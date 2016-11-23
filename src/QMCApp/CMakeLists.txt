@@ -49,8 +49,19 @@ ELSE()
   ADD_EXECUTABLE(${p} ${p}.cpp) 
 ENDIF()
 
-  TARGET_LINK_LIBRARIES(${p} qmc qmcdriver qmcham qmcwfs qmcbase qmcutil adios_config)
-
+  # MMORALES: not a cmake expert, someone make this look nice?  
+  IF(WITH_AFQMC)
+    IF(WITH_FCIQMC)
+      TARGET_LINK_LIBRARIES(${p} qmc qmcdriver qmcham qmcwfs qmcbase qmcutil
+                          adios_config afqmc fciqmc)
+    ELSE(WITH_FCIQMC)
+      TARGET_LINK_LIBRARIES(${p} qmc qmcdriver qmcham qmcwfs qmcbase qmcutil
+                          adios_config afqmc)
+    ENDIF(WITH_FCIQMC)
+  ELSE(WITH_AFQMC)
+    TARGET_LINK_LIBRARIES(${p} qmc qmcdriver qmcham qmcwfs qmcbase qmcutil adios_config)
+  ENDIF(WITH_AFQMC)
+   
   FOREACH(l ${QMC_UTIL_LIBS})
     TARGET_LINK_LIBRARIES(${p} ${l})
   ENDFOREACH(l ${QMC_UTIL_LIBS})

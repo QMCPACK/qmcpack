@@ -210,6 +210,12 @@
 /* Setting full precision for CUDA kernels */
 #cmakedefine CUDA_PRECISION_FULL @CUDA_PRECISION_FULL@
 
+/* For AFQMC compilation  */
+#cmakedefine WITH_AFQMC @WITH_AFQMC@
+
+/* For FCIQMC compilation  */
+#cmakedefine WITH_FCIQMC @WITH_FCIQMC@
+
 #cmakedefine DEBUG_PSIBUFFER_ON @DEBUG_PSIBUFFER_ON@
 
 /* Disable trace manager and associated features */

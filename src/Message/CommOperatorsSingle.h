@@ -74,6 +74,63 @@ template<typename T, typename IT>
 inline void Communicate::scatterv(T& sb, T& rb, IT&, IT&, int source)
 {
 }
+
+template<typename T> 
+void allreduce(T&,mpi_comm_type comm)
+{ }
+
+template<typename T> 
+void bcast(T&,mpi_comm_type)
+{ }
+
+template<typename T> 
+void bcast(T* restrict, int n,mpi_comm_type comm)
+{ }
+
+template<typename T> 
+void bcast(T* restrict, int n, int orig, mpi_comm_type comm)
+{ }
+
+template<typename T> 
+void send(T* restrict, int n, int dest, int tag, mpi_comm_type comm)
+{ }
+
+template<typename T> 
+void recv(T* restrict, int n, int dest, int tag, mpi_comm_type comm, MPI_Status*)
+{ }
+
+template<typename T, typename IT> 
+void gatherv(T* sb, T* rb, int n, IT& counts, IT& displ, int dest)
+{ }
+
+template<typename T, typename IT> 
+void gatherv(T* sb, T* rb, int n,IT& counts, IT& displ, int dest, MPI_Comm comm)
+{ }
+
+template<typename T> 
+void allgather(T& sb, T& rb, int count, mpi_comm_type comm)
+{ }
+
+template<typename T> 
+void allgather(T* sb, T* rb, int count)
+{ }
+
+template<typename T, typename IT> 
+void scatterv(T* sb, T* rb, int n, IT& counts, IT& displ, int source, MPI_Comm)
+{ }
+
+template<typename T> 
+void gsum(T&)
+{ }
+
+template<typename T> 
+void gsum(T&,mpi_comm_type comm)
+{ }
+
+template<typename T> 
+void gmax(T&,mpi_comm_type comm)
+{ }
+
 #endif
 
 /***************************************************************************

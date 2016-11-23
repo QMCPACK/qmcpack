@@ -52,6 +52,12 @@ extern "C" {
 #include <adios_error.h>
 }
 #endif
+#ifdef WITH_AFQMC
+#include "AFQMC/AFQMCFactory.h"
+#endif
+#ifdef WITH_FCIQMC
+#include "FCIQMC/App/SQCFactory.h" 
+#endif
 
 #define STR_VAL(arg) #arg
 #define GET_MACRO_VAL(arg) STR_VAL(arg)
@@ -108,6 +114,72 @@ bool QMCMain::execute()
     ERRORMSG("No valid input file exists! Aborting QMCMain::execute")
     return false;
   }
+
+  std::string simulationType = "realspaceQMC";
+  {  // mmorales: is this necessary??? Don't want to leave xmlNodes lying around unused 
+    xmlNodePtr cur=XmlDocStack.top()->getRoot();
+    OhmmsAttributeSet simType;
+    simType.add (simulationType, "type");
+    simType.add (simulationType, "name");
+    simType.add (simulationType, "method");
+    simType.put(cur);
+  }
+
+#ifdef WITH_AFQMC
+  if(simulationType == "afqmc") {
+    app_log() << std::endl << "/*************************************************\n"
+                      << " ********  This is an AFQMC calculation   ********\n"
+                      << " *************************************************" <<std::endl;
+    xmlNodePtr cur=XmlDocStack.top()->getRoot(); 
+
+    xmlXPathContextPtr m_context = XmlDocStack.top()->getXPathContext();
+    //initialize the random number generator
+    xmlNodePtr rptr = myRandomControl.initialize(m_context);
+
+    AFQMCFactory afqmc_fac(myComm,myRandomControl);
+    if(!afqmc_fac.parse(cur)) {
+      app_log()<<" Error in AFQMCFactory::parse() ." <<std::endl;
+      return false;
+    }
+    cur=XmlDocStack.top()->getRoot(); 
+    return afqmc_fac.execute(cur);
+  } else
+#else
+  if(simulationType == "afqmc") {
+    app_error()<<" Executable not compiled with AFQMC. Recompile with WITH_AFQMC set to 1." <<std::endl; 
+    return false;
+  }
+#endif
+
+#ifdef WITH_FCIQMC
+
+  if(simulationType == "fciqmc") {
+    app_log() << std::endl << "/*************************************************\n"
+                      << " ********  This is a FCIQMC calculation   ********\n"
+                      << " *************************************************" <<std::endl;
+
+    xmlNodePtr cur=XmlDocStack.top()->getRoot();
+
+    xmlXPathContextPtr m_context = XmlDocStack.top()->getXPathContext();
+    //initialize the random number generator
+    xmlNodePtr rptr = myRandomControl.initialize(m_context);
+
+    SQCFactory fciqmc_fac(myComm,myRandomControl);
+    if(!fciqmc_fac.parse(cur)) {
+      app_log()<<" Error in SQCFactory::parse() ." <<std::endl;
+      return false;
+    }
+    cur=XmlDocStack.top()->getRoot();
+    return fciqmc_fac.execute(cur);
+  }
+#else
+  if(simulationType == "fciqmc") {
+    app_error()<<" Executable not compiled with FCIQMC. Recompile with WITH_FCIQMC set to 1." <<std::endl; 
+    return false;
+  }
+#endif
+
+
   //validate the input file
   bool success = validateXML();
   if(!success)

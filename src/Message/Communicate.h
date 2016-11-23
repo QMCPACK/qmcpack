@@ -61,7 +61,8 @@ struct CommunicatorTraits
 #include <string>
 #include <vector>
 #include <utility>
-
+#include <unistd.h>
+#include <cstring>
 
 /**@class Communicate
  * @ingroup Message
@@ -170,6 +171,33 @@ public:
     return myName;
   }
 
+  // MMORALES: leaving this here temprarily, but it doesn;t belong here.
+  // MMORALES: FIX FIX FIX
+  inline bool head_nodes(MPI_Comm& MPI_COMM_HEAD_OF_NODES) {
+    char hostname[HOST_NAME_MAX];
+    gethostname(hostname,HOST_NAME_MAX);
+    int myrank=rank(),nprocs=size();
+    char *dummy = new char[nprocs*HOST_NAME_MAX];
+    MPI_Allgather(hostname,HOST_NAME_MAX,MPI_CHAR,dummy,HOST_NAME_MAX,MPI_CHAR,myMPI);
+    bool head_of_node=true;
+    for(int i=0; i<myrank; i++)
+      if( strcmp(hostname,dummy+i*HOST_NAME_MAX)==0 ) { head_of_node=false; break;}
+    int key = head_of_node?0:10;
+    MPI_Comm_split(myMPI,key,myrank,&MPI_COMM_HEAD_OF_NODES);
+    delete dummy;
+    return head_of_node;
+  }
+
+  // MMORALES:
+  // right now there is no easy way to use Communicate
+  // for generic processor subgroups, so calling split on myMPI
+  // and managing the communicator directly  
+  // THIS MUST BE FIXED!!!
+  inline void split_comm(int key, MPI_Comm& comm) {
+    int myrank=rank(),nprocs=size();
+    MPI_Comm_split(myMPI,key,myrank,&comm);
+  }
+
   template<typename T> void allreduce(T&);
   template<typename T> void reduce(T&);
   template<typename T> void reduce(T* restrict, T* restrict, int n);
@@ -186,6 +214,25 @@ public:
   template<typename T> request isend(int dest, int tag, T&);
   template<typename T> request irecv(int source, int tag, T*, int n);
   template<typename T> request isend(int dest, int tag, T*, int n);
+
+  // MMORALES: this is just a temporary fix for the communicator problem
+  //           Adding needed routines with explicit communicator arguments
+  //           until I fix the problem.
+  template<typename T> void allreduce(T&,mpi_comm_type comm);
+  template<typename T> void bcast(T&,mpi_comm_type);
+  template<typename T> void bcast(T* restrict, int n,mpi_comm_type comm);
+  template<typename T> void bcast(T* restrict, int n, int orig, mpi_comm_type comm); 
+  template<typename T> void send(T* restrict, int n, int dest, int tag, mpi_comm_type comm);
+  template<typename T> void recv(T* restrict, int n, int dest, int tag, mpi_comm_type comm, MPI_Status*);
+  template<typename T, typename IT> void gatherv(T* sb, T* rb, int n, IT& counts, IT& displ, int dest=0);
+  template<typename T, typename IT> void gatherv(T* sb, T* rb, int n,IT& counts, IT& displ, int dest, MPI_Comm comm);
+  template<typename T> void allgather(T& sb, T& rb, int count, mpi_comm_type comm);
+  template<typename T> void allgather(T* sb, T* rb, int count);
+  template<typename T, typename IT> void scatterv(T* sb, T* rb, int n, IT& counts, IT& displ, int source, MPI_Comm);
+  template<typename T> void gsum(T&);
+  template<typename T> void gsum(T&,mpi_comm_type comm);
+  template<typename T> void gmax(T&,mpi_comm_type comm);
+
 
 protected:
 
