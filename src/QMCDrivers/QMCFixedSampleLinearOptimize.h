@@ -66,6 +66,9 @@ private:
   // perform the adaptive three-shift update
   bool adaptive_three_shift_run();
 
+  // perform the single-shift update, no sample regeneration
+  bool one_shift_run();
+
   void solveShiftsWithoutLMYEngine(const std::vector<double> & shifts_i,
                                    const std::vector<double> & shiffts_s,
                                    std::vector<std::vector<RealType> > & parameterDirections);
@@ -102,20 +105,21 @@ private:
   /// total number of cg steps per iterations
   int  TotalCGSteps;
   /// whether to use the adaptive three-shift scheme
-  std::string doAdaptiveThreeShiftStr;
   bool doAdaptiveThreeShift;
+  /// whether to use the single-shift scheme
+  bool doOneShiftOnly;
   /// the previous best identity shift
-  static double bestShift_i;
+  RealType bestShift_i;
   /// the previous best overlap shift
-  static double bestShift_s;
-  double shift_i;
-  double shift_s;
+  RealType bestShift_s;
+  /// current shift_i, shift_s input values
+  RealType shift_i_input,shift_s_input;
   /// number of shifts we will try
   int num_shifts;
   /// the maximum relative change in the cost function for the adaptive three-shift scheme
-  double max_relative_cost_change;
+  RealType max_relative_cost_change;
   ///max amount a parameter may change relative to current wave function weight
-  double max_param_change;
+  RealType max_param_change;
   ///whether we are targeting an excited state
   std::string targetExcitedStr;
   ///whether we are targeting an excited state
@@ -133,7 +137,7 @@ private:
   ///number of samples to do in correlated sampling part
   int nsamp_comp; 
   ///the shift to use when targeting an excited state
-  double omega_shift;
+  RealType omega_shift;
   ///whether to do the first part of block lm
   bool block_first;
   ///whether to do the second part of block lm

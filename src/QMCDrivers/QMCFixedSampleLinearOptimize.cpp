@@ -46,11 +46,9 @@
 #endif
 #include <iostream>
 #include <fstream>
+#include <stdexcept>
 
 /*#include "Message/Communicate.h"*/
-
-double qmcplusplus::QMCFixedSampleLinearOptimize::bestShift_i = -1.0;
-double qmcplusplus::QMCFixedSampleLinearOptimize::bestShift_s = -1.0;
 
 namespace qmcplusplus
 {
@@ -66,8 +64,9 @@ vdeps(1,std::vector<double>()),
 #endif
  Max_iterations(1), exp0(-16), nstabilizers(3),
   stabilizerScale(2.0), bigChange(50), w_beta(0.0),  MinMethod("quartic"), GEVtype("mixed"),
-  StabilizerMethod("best"), GEVSplit("no"), stepsize(0.25), doAdaptiveThreeShiftStr("no"), doAdaptiveThreeShift(false),
-  targetExcitedStr("no"), targetExcited(false), block_lmStr("no"), block_lm(false), shift_i(0.01), shift_s(1.00),
+  StabilizerMethod("best"), GEVSplit("no"), stepsize(0.25), doAdaptiveThreeShift(false),
+  targetExcitedStr("no"), targetExcited(false), block_lmStr("no"), block_lm(false),
+  bestShift_i(-1.0), bestShift_s(-1.0), shift_i_input(0.01), shift_s_input(1.00), doOneShiftOnly(false),
   num_shifts(3), nblocks(1), nolds(1), nkept(1), nsamp_comp(0), omega_shift(0.0), max_param_change(0.5),
   max_relative_cost_change(1.0), block_first(true), block_second(false), block_third(false)
 {
@@ -83,9 +82,9 @@ vdeps(1,std::vector<double>()),
   m_param.add(stabilizerScale,"stabilizerscale","double");
   m_param.add(bigChange,"bigchange","double");
   m_param.add(MinMethod,"MinMethod","string");
+  m_param.add(stepsize,"stepsize","double");
   m_param.add(exp0,"exp0","double");
   m_param.add(targetExcitedStr,"targetExcited","string");
-  m_param.add(doAdaptiveThreeShiftStr, "AdaptiveThreeShift", "string");
   m_param.add(block_lmStr, "block_lm", "string");
   m_param.add(nblocks, "nblocks", "int");
   m_param.add(nolds, "nolds", "int");
@@ -94,8 +93,8 @@ vdeps(1,std::vector<double>()),
   m_param.add(omega_shift,"omega","double");
   m_param.add(max_relative_cost_change,"max_relative_cost_change","double");
   m_param.add(max_param_change,"max_param_change","double");
-  m_param.add(shift_i, "shift_i", "double");
-  m_param.add(shift_s, "shift_s", "double");
+  m_param.add(shift_i_input, "shift_i", "double");
+  m_param.add(shift_s_input, "shift_s", "double");
   m_param.add(num_shifts, "num_shifts", "int");
 
 #ifdef HAVE_LMY_ENGINE
@@ -143,7 +142,6 @@ vdeps(1,std::vector<double>()),
 //   m_param.add(w_beta,"beta","double");
 //   quadstep=-1.0;
 //   m_param.add(quadstep,"quadstep","double");
-//   m_param.add(stepsize,"stepsize","double");
 //   m_param.add(exp1,"exp1","double");
 //   m_param.add(GEVtype,"GEVMethod","string");
 //   m_param.add(GEVSplit,"GEVSplit","string");
@@ -172,13 +170,11 @@ QMCFixedSampleLinearOptimize::RealType QMCFixedSampleLinearOptimize::Func(RealTy
 bool QMCFixedSampleLinearOptimize::run()
 {
 
-  // if requested, perform the update via the adaptive three-shift method
-
+  // if requested, perform the update via the adaptive three-shift or single-shift method
 #ifdef HAVE_LMY_ENGINE
-  if ( this->doAdaptiveThreeShift ) {
-    return this->adaptive_three_shift_run();
-  }
+  if ( doAdaptiveThreeShift ) return adaptive_three_shift_run();
 #endif
+  if ( doOneShiftOnly ) return one_shift_run();
 
   start();
   bool Valid(true);
@@ -328,6 +324,7 @@ bool QMCFixedSampleLinearOptimize::run()
           app_log()<<"  Good Step. Largest LM parameter change:"<<biggestParameterChange<< std::endl;
         }
       }
+
       if (goodStep)
       {
 // 	this may have been evaluated allready
@@ -406,15 +403,9 @@ QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
 {
   std::string useGPU("yes");
   std::string vmcMove("pbyp");
-  //std::string adaptive_three_shift("no");
-  //double shift_i = 0.01;
-  //double shift_s = 1.00;
   OhmmsAttributeSet oAttrib;
   oAttrib.add(useGPU,"gpu");
   oAttrib.add(vmcMove,"move");
-  //oAttrib.add(adaptive_three_shift, "AdaptiveThreeShift");
-  //oAttrib.add(shift_i, "shift_i");
-  //oAttrib.add(shift_s, "shift_s");
   oAttrib.put(q);
   m_param.put(q);
 
@@ -424,10 +415,12 @@ QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   tolower(block_lmStr);
   block_lm = ( block_lmStr == "yes" );
 
-  tolower(doAdaptiveThreeShiftStr);
-  doAdaptiveThreeShift = ( doAdaptiveThreeShiftStr == "yes" );
+  // get whether to use the adaptive three-shift version of the update
+  doAdaptiveThreeShift = ( MinMethod == "adaptive" );
+  doOneShiftOnly = ( MinMethod == "OneShiftOnly" );
+
 #ifdef ENABLE_OPENMP
-  if (omp_get_max_threads() > 1) {
+  if ( doAdaptiveThreeShift && (omp_get_max_threads() > 1) ) {
         throw std::runtime_error("OpenMP threading not enabled with AdaptiveThreeShift optimizer.  Use MPI for parallelism instead, and set OMP_NUM_THREADS to 1.");
   }
 #endif
@@ -439,15 +432,13 @@ QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   if ( max_relative_cost_change <= 0.0 ) throw std::runtime_error("max_relative_cost_change must be positive in QMCFixedSampleLinearOptimize::put");
 
   // check shift sanity
-  if ( shift_i <= 0.0 ) throw std::runtime_error("shift_i must be positive in QMCFixedSampleLinearOptimize::put");
-  if ( shift_s <= 0.0 ) throw std::runtime_error("shift_s must be positive in QMCFixedSampleLinearOptimize::put");
+  if ( shift_i_input <= 0.0 ) throw std::runtime_error("shift_i must be positive in QMCFixedSampleLinearOptimize::put");
+  if ( shift_s_input <= 0.0 ) throw std::runtime_error("shift_s must be positive in QMCFixedSampleLinearOptimize::put");
 
   // if this is the first time this function has been called, set the initial shifts
-  if ( this->bestShift_i < 0.0 ) this->bestShift_i = shift_i;
-  if ( this->bestShift_s < 0.0 ) this->bestShift_s = shift_s;
-
-  // get whether to use the adaptive three-shift version of the update
-  this->doAdaptiveThreeShift = ( doAdaptiveThreeShiftStr == "yes" );
+  if ( bestShift_i < 0.0 && doAdaptiveThreeShift ) bestShift_i = shift_i_input;
+  if ( doOneShiftOnly ) bestShift_i = shift_i_input;
+  if ( bestShift_s < 0.0 ) bestShift_s = shift_s_input;
 
   xmlNodePtr qsave=q;
   xmlNodePtr cur=qsave->children;
@@ -755,7 +746,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
   const std::vector<double> shifts_s = this->prepare_shifts(this->bestShift_s);
   std::vector<double> shift_scales(shifts_i.size(), 1.0);
   for (int i = 0; i < shift_scales.size(); i++) 
-    shift_scales.at(i) = shifts_i.at(i) / shift_i;
+    shift_scales.at(i) = shifts_i.at(i) / shift_i_input;
 
   // ensure the cost function is set to compute derivative vectors
   this->optTarget->setneedGrads(true);
@@ -1046,6 +1037,143 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
 
 }
 #endif
+
+bool QMCFixedSampleLinearOptimize::one_shift_run() {
+
+  // ensure the cost function is set to compute derivative vectors
+  optTarget->setneedGrads(true);
+
+  // generate samples and compute weights, local energies, and derivative vectors
+  start();
+
+  // get number of optimizable parameters
+  numParams = optTarget->NumParams();
+
+  // get dimension of the linear method matrices
+  N = numParams + 1;
+
+  // prepare vectors to hold the initial and current parameters
+  std::vector<RealType> currentParameters(numParams, 0.0);
+
+  // initialize the initial and current parameter vectors
+  for (int i=0; i<numParams; i++)
+    currentParameters.at(i) = optTarget->Params(i);
+
+  // prepare vectors to hold the parameter update directions for each shift
+  std::vector<RealType> parameterDirections;
+  parameterDirections.assign(N, 0.0);
+
+  // have the cost function prepare derivative vectors for the matrix build and compute the initial cost
+  const RealType initCost = optTarget->Cost(true);
+
+  // say what we are doing
+  app_log() << std::endl
+            << "*****************************************" << std::endl
+            << "Building overlap and Hamiltonian matrices" << std::endl
+            << "*****************************************" << std::endl;
+
+  // allocate the matrices we will need
+  Matrix<RealType> ovlMat(N,N); ovlMat = 0.0;
+  Matrix<RealType> hamMat(N,N); hamMat = 0.0;
+  Matrix<RealType> invMat(N,N); invMat = 0.0;
+  Matrix<RealType> prdMat(N,N); prdMat = 0.0;
+
+  // build the overlap and hamiltonian matrices
+  optTarget->fillOverlapHamiltonianMatrices(hamMat, ovlMat, invMat);
+
+  // compute the inverse of the overlap matrix
+  invMat.copy(ovlMat);
+  invert_matrix(invMat, false);
+
+  // prepare vector to hold largest parameter change for each shift
+  RealType max_change(0.0);
+
+  // apply the identity shift
+  for (int i=1; i<N; i++)
+    hamMat(i,i) += bestShift_i;
+
+  // apply the overlap shift
+  for (int i=1; i<N; i++)
+    for (int j=1; j<N; j++)
+      hamMat(i,j) += bestShift_s * ovlMat(i,j);
+
+  // multiply the shifted hamiltonian matrix by the inverse of the overlap matrix
+  qmcplusplus::MatrixOperators::product(invMat, hamMat, prdMat);
+
+  // transpose the result (why?)
+  for (int i=0; i<N; i++)
+    for (int j=i+1; j<N; j++)
+      std::swap(prdMat(i,j), prdMat(j,i));
+
+  // compute the lowest eigenvalue of the product matrix and the corresponding eigenvector
+  const RealType lowestEV = getLowestEigenvector(prdMat, parameterDirections);
+
+  // compute the scaling constant to apply to the update
+  Lambda = getNonLinearRescale(parameterDirections, ovlMat) * stepsize;
+
+  // scale the update by the scaling constant
+  for (int i=0; i<numParams; i++)
+    parameterDirections.at(i+1) *= Lambda;
+
+  // now that we are done building the matrices, prevent further computation of derivative vectors
+  optTarget->setneedGrads(false);
+
+  // prepare to use the middle shift's update as the guiding function for a new sample
+  for (int i=0; i<numParams; i++)
+    optTarget->Params(i) = currentParameters.at(i) + parameterDirections.at(i+1);
+
+  RealType bigVec(0);
+  for (int i=0; i<numParams; i++)
+    bigVec = std::max(bigVec,std::abs(parameterDirections.at(i+1)));
+  app_log() << std::endl
+            << "Largest LM parameter change : "
+            << bigVec << std::endl;
+
+  // compute the new cost
+  optTarget->IsValid = true;
+  const RealType newCost = optTarget->Cost(false);
+
+  app_log() << std::endl
+            << "******************************************************************************" << std::endl
+            << "Init Cost = "
+            << std::scientific << std::right << std::setw(12) << std::setprecision(4) << initCost
+            << "    New Cost = "
+            << std::scientific << std::right << std::setw(12) << std::setprecision(4) << newCost
+            << "  Delta Cost = "
+            << std::scientific << std::right << std::setw(12) << std::setprecision(4) << newCost - initCost
+            << std::endl
+            << "******************************************************************************" << std::endl;
+
+  if ( !optTarget->IsValid || std::isnan(newCost)) {
+    app_log() << "Too high newCost. Revert to the old paramaters" << std::endl;
+    for (int i=0; i<numParams; i++)
+      optTarget->Params(i) = currentParameters.at(i);
+    bestShift_s=bestShift_s*4.0;
+  } else {
+    if ( bestShift_s > 1.0e-2 ) bestShift_s=bestShift_s/4.0;
+    // say what we are doing
+    app_log() << std::endl
+              << "*****************************" << std::endl
+              << "Updating the guiding function" << std::endl
+              << "*****************************" << std::endl;
+  }
+
+  app_log() << std::endl
+            << "*****************************************************************************" << std::endl
+            << "Applying the update for shift_i = "
+            << std::scientific << std::right << std::setw(12) << std::setprecision(4) << bestShift_i
+            << "     and shift_s = "
+            << std::scientific << std::right << std::setw(12) << std::setprecision(4) << bestShift_s
+            << std::endl
+            << "*****************************************************************************" << std::endl;
+
+  // perform some finishing touches for this linear method iteration
+  finish();
+
+  // return whether the cost function's report counter is positive
+  return (optTarget->getReportCounter() > 0);
+
+}
 
 }
 /***************************************************************************
