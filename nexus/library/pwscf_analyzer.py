@@ -205,6 +205,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
         #end try
 
         try:
+            # read structures
             structures = obj()
             i=0
             found = False
@@ -384,6 +385,48 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 self.warn('time read failed')
             #end if
         #end try
+
+
+        try:
+            # read symmetrized k-points
+            nkpoints = None
+            i=0
+            for l in lines:
+                if 'number of k points' in l:
+                    tokens = l.replace('=',' ').split()
+                    nkpoints = int(tokens[4])
+                    break
+                #end if
+                i+=1
+            #end for
+            if nkpoints is not None:
+                i+=2
+                klines_cart = lines[i:i+nkpoints]
+                i+=nkpoints+2
+                klines_unit = lines[i:i+nkpoints]
+                kpoints_cart = []
+                for l in klines_cart:
+                    tokens = l.replace('= (',':').replace('), wk =',':').split(':')
+                    kpoints_cart.append(tokens[1].split())
+                #end for
+                kpoints_unit = []
+                kweights = []
+                for l in klines_unit:
+                    tokens = l.replace('= (',':').replace('), wk =',':').split(':')
+                    kpoints_unit.append(tokens[1].split())
+                    kweights.append(tokens[2])
+                #end for
+                self.kpoints_cart = array(kpoints_cart,dtype=float)
+                self.kpoints_unit = array(kpoints_unit,dtype=float)
+                self.kweights     = array(kweights,dtype=float)
+            #end if
+        except:
+            nx+=1
+            if self.info.warn:
+                self.warn('symmetrized kpoint read failed')
+            #end if
+        #end try
+            
 
         try:
             if pw2c_outfile_name!=None:
