@@ -435,6 +435,10 @@ void DistWalkerHandler::loadBalance()
     nwalk_counts_new[0] = nW;
     // in case iallgather is not available
     //myComm->allgather(nwalk_counts_new,nwalk_counts_old,1,MPI_COMM_TG_LOCAL_HEADS);
+#if MPI_VERSION >= 3
+#define HAVE_MPI_IALLGATHER
+#endif
+#ifdef HAVE_MPI_IALLGATHER
     MPI_Iallgather(nwalk_counts_new.data(), 1, MPI_INT, nwalk_counts_old.data(), 1, MPI_INT, MPI_COMM_TG_LOCAL_HEADS,&request); 
 
     // push empty spots to the end of the list 
@@ -442,6 +446,10 @@ void DistWalkerHandler::loadBalance()
 
     // wait for mpi_iallgather 
     MPI_Wait(&request, MPI_STATUS_IGNORE); 
+#else
+    MPI_Allgather(nwalk_counts_new.data(), 1, MPI_INT, nwalk_counts_old.data(), 1, MPI_INT, MPI_COMM_TG_LOCAL_HEADS); 
+    push_walkers_to_front();
+#endif
       
     nwalk_global=0;
     for(int i=0; i<nproc_heads; i++) 
