@@ -2189,22 +2189,60 @@ def unpack_scan_inputs(scan,loc='unpack_scan_inputs'):
         misformatted|= (len(scan_list)-1)%2!=0 or not isinstance(scan_list[0],str)
         if not misformatted:
             section = scan_list[0]
-            vars    = scan_list[1::2]
-            vals    = scan_list[2::2]
+            vars_in = scan_list[1::2]
+            vals_in = scan_list[2::2]
+            all_vars = set(vars_in)
+            vars = []
             values_in = obj()
-            for var,val_list in zip(vars,vals):
-                values_in[var] = val_list
+            labels_in = obj()
+            for var,val_list in zip(vars_in,vals_in):
                 misformatted |= not isinstance(var,str) or not isinstance(val_list,(tuple,list,ndarray))
+                if isinstance(var,str):
+                    if var.endswith('_labels'):
+                        vname = var.rsplit('_',1)[0]
+                        if vname in all_vars:
+                            labels_in[vname] = val_list
+                        else:
+                            values_in[var] = val_list
+                            vars.append(var)
+                        #end if
+                    else:
+                        values_in[var] = val_list
+                        vars.append(var)
+                    #end if
+                #end if
             #end for
+            vals = []
+            labs = []
+            for var in vars_in:
+                if var in values_in:
+                    vin = values_in[var]
+                    vals.append(vin)
+                    if var in labels_in:
+                        lin = labels_in[var]
+                        if len(lin)!=len(vin):
+                            error('scan list for parameter "scan" is formatted improperly\nincorrect number of labels provided for scan parameter "{0}"\nnumber of parameter values provided: {1}\nnumber of parameter labels provided: {2}\nparameter labels provided: {3}'.format(var,len(vin),len(lin),lin),loc=loc)
+                        #end if
+                        labs.append(lin)
+                    else:
+                        labs.append(len(vin)*[None])
+                    #end if
+                #end if
+            #end for
+            del vars_in
+            del vals_in
             if not misformatted:
                 if len(vars)==1:
                     vals_in = vals[0]
+                    labs_in = labs[0]
                     vals = []
                     inds = []
+                    labs = []
                     i = 1
-                    for v in vals_in:
+                    for v,l in zip(vals_in,labs_in):
                         vals.append((v,))
                         inds.append((i,))
+                        labs.append((l,))
                         i+=1
                     #end for
                 else:
@@ -2212,20 +2250,22 @@ def unpack_scan_inputs(scan,loc='unpack_scan_inputs'):
                     n=1
                     for vals_in in vals[1:]:
                         if len(vals_in)!=len(vals[0]):
-                            error('problem with "scan" input\nall value_lists must have the same length (they are covarying)\nvar_list "{0}" has length {1}\nvar_list "{2}" has length {3}'.format(vars[0],len(vals[0]),vars[n],len(vals[n])),loc=loc)
+                            error('problem with "scan" input\nall value_lists for section "{0}" must have the same length (they are covarying)\nvar_list "{1}" has length {2}\nvar_list "{3}" has length {4}'.format(section,vars[0],len(vals[0]),vars[n],len(vals[n])),loc=loc)
                         #end if
                         n+=1
                     #end for
                     vals = zip(*vals)
+                    labs = zip(*labs)
                     r = range(1,len(vals)+1)
                     inds = zip(*[r for n in range(len(vars))])
                 #end if
                 if section not in scans:
-                    sec = obj(parameters=list(vars),values=vals,indices=inds,values_in=values_in)
+                    sec = obj(parameters=list(vars),values=vals,indices=inds,labels=labs,values_in=values_in,labels_in=labels_in)
                     scans[section] = sec
                 else:
                     sec = scans[section]
                     sec.values_in.transfer_from(values_in)
+                    sec.labels_in.transfer_from(labels_in)
                     sec.parameters.extend(vars)
                     values = []
                     for v in sec.values:
@@ -2243,6 +2283,14 @@ def unpack_scan_inputs(scan,loc='unpack_scan_inputs'):
                         #end for
                     #end for
                     sec.indices = indices
+                    labels = []
+                    for l in sec.labels:
+                        for l2 in labs:
+                            lab = tuple(list(l)+list(l2))
+                            labels.append(lab)
+                        #end for
+                    #end for
+                    sec.labels = labels
                 #end if
             #end if
         #end if
@@ -2250,6 +2298,7 @@ def unpack_scan_inputs(scan,loc='unpack_scan_inputs'):
             error('scan list for parameter "scan" is formatted improperly\nlist must have input section name (string) followed by variable-value_list pairs\nnumber of entries present (should be odd): {0}\nvalue_lists must be of type tuple/list/array\nscan list contents: {1}'.format(len(scan_list),scan_list,loc))
         #end if
     #end for
+
     return scans
 #end def unpack_scan_inputs
 
@@ -2617,23 +2666,48 @@ class SegRep(WFRep):
             scan_params  = self.scan_data.parameters
             scan_values  = self.scan_data.values
             scan_indices = self.scan_data.indices
+            scan_labels  = self.scan_data.labels
             sec_vary = chain_inputs[self.label]
             cur_sim_keys = set(cur_sims.keys())
             n = 0
             for vset in scan_values:
                 iset = scan_indices[n]
+                lset = scan_labels[n]
                 bpath = basepath
                 cinds = obj(cur_inds)
                 cvals = obj(cur_vals)
                 akey = []
-                for k,v,i in zip(scan_params,vset,iset):
-                    if isinstance(v,(str,int,float)):
-                        dlabel = v
+                for k,v,i,l in zip(scan_params,vset,iset,lset):
+                    if l is not None:
+                        dlabel = l
+                        dkey   = l
+                        dname  = l
+                    elif isinstance(v,(tuple,list,ndarray)):
+                        all_basic = True
+                        dlabel = ''
+                        for vv in v:
+                            all_basic &= isinstance(vv,(str,int,float))
+                            dlabel += str(vv)+'_'
+                        #end if
+                        if all_basic and len(v)>0:
+                            dkey   = tuple(v)
+                            dlabel = dlabel[:-1]
+                        else:
+                            dkey   = i
+                            dlabel = i
+                        #end if
+                        dname = '{0}_{1}'.format(k,dlabel)
                     else:
-                        dlabel = i
+                        if isinstance(v,(str,int,float)):
+                            dkey = v
+                        else:
+                            dkey = i
+                        #end if
+                        dlabel = dkey
+                        dname = '{0}_{1}'.format(k,dlabel)
                     #end if
-                    bpath = os.path.join(bpath,'{0}_{1}'.format(k,dlabel))
-                    akey.append(dlabel)
+                    bpath = os.path.join(bpath,dname)
+                    akey.append(dkey)
                     sec_vary[k] = v
                     cinds[k] = i
                     cvals[k] = v
