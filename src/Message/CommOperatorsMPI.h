@@ -1223,6 +1223,20 @@ Communicate::scatterv(char* sb, char* rb, int n,
 
 template<>
 inline void
+Communicate::scatterv(std::vector<char>& sb, std::vector<char>& rb,
+                     std::vector<int>& counts, std::vector<int>& displ, int source)
+{
+#if defined(_CRAYMPI)
+  const int cray_short_msg_size=128000;
+  if(l.size()*sizeof(char)<cray_short_msg_size)
+    this->barrier();
+#endif
+  int ierr = MPI_Scatterv(&sb[0], &counts[0], &displ[0],  MPI_CHAR,
+                         &rb[0], rb.size(), MPI_CHAR, source, myMPI);
+}
+
+template<>
+inline void
 Communicate::gatherv(char* l, char* g, int n,
                      std::vector<int>& counts, std::vector<int>& displ, int dest, MPI_Comm comm)
 {

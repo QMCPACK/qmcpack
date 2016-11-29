@@ -39,10 +39,6 @@ void product_SD(const IndexType K,
   ComplexType* rit;
   for(int cnt1=0; cnt1<nterms; cnt1++) {
     std::tie(ii,kk,aik) = *(A++); 
-//    if(!(ii>=0 && ii<28 && kk>=0 && kk <28))
-//      std::cout<<ii <<" " <<kk <<std::endl;
-    assert(ii>=0 && ii<28 && kk>=0 && kk <28);
-//std::cout<<" SD: " <<cnt1 <<" " <<ii <<" " <<kk <<" " <<aik <<std::endl;
     lit=C+ii*LDC;
     rit=B+kk*LDB;  
     for(int cnt2=0; cnt2<K; cnt2++)
