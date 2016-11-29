@@ -1,3 +1,9 @@
+#!/bin/bash
+
+if [ -z $OMP_NUM_THREADS ]; then
+  export OMP_NUM_THREADS=1
+fi
+
 echo "COBALT_PARTNAME " $COBALT_PARTNAME
 echo "MPI tasks       " $1
 echo "Threads         " $OMP_NUM_THREADS
