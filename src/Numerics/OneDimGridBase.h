@@ -396,18 +396,15 @@ struct LogGrid: public OneDimGridBase<T,CT>
     // r(i) = ri*exp(dlog_ratio*i)
     // where dlog_ratio = (1/(n-1))*log(rf/ri)
     // dlog_ratio is the differential spacing
-    T ratio = rf/ri;
-    T log_ratio = std::log(ratio);
-    T dlog_ratio = log_ratio/static_cast<T>(n-1);
-    T expdr = std::exp(dlog_ratio);
+    double ratio = rf/ri;
+    double log_ratio = std::log(ratio);
+    double dlog_ratio = log_ratio/static_cast<double>(n-1);
     X.resize(n);
     X[0] = ri;
-    for(int i=0; i < n-1; i++)
-    {
-      X[i+1] = X[i]*expdr;
-    }
+    for(int i=1; i < n; i++)
+      X[i] = ri*std::exp(i*dlog_ratio);
     Delta = dlog_ratio;
-    OneOverLogDelta = 1.0/Delta;
+    OneOverLogDelta = 1.0/dlog_ratio;
   }
 };
 
