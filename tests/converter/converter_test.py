@@ -77,7 +77,8 @@ def run_test(test_name, c4q_exe, conv_inp, gold_file, expect_fail, extra_cmd_arg
                 if diff_lines > diff_line_limit:
                     print('< diff truncated due to line limit >')
                     break
-                
+        else:
+            okay = True
 
     if okay:
         print("  pass")
