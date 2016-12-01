@@ -168,32 +168,40 @@ public:
   }
 #endif
 
+#ifdef USE_STACK_TIMERS
   std::string get_stack_name();
+#endif
 
+#ifdef USE_STACK_TIMERS
   std::map<std::string, double>& get_per_stack_total_time()
   {
     return per_stack_total_time;
   }
+#endif
 
   inline double    get_total() const
   {
     return total_time;
   }
 
+#ifdef USE_STACK_TIMERS
   inline double get_total(const std::string &stack_name)
   {
     return per_stack_total_time[stack_name];
   }
+#endif
 
   inline long  get_num_calls() const
   {
     return num_calls;
   }
 
+#ifdef USE_STACK_TIMERS
   inline long  get_num_calls(const std::string &stack_name)
   {
     return per_stack_num_calls[stack_name];
   }
+#endif
 
   inline std::string get_name() const
   {
@@ -207,7 +215,10 @@ public:
   }
 
   NewTimer(const std::string& myname) :
-    total_time(0.0), num_calls(0), name(myname), manager(NULL), parent(NULL)
+    total_time(0.0), num_calls(0), name(myname)
+#ifdef USE_STACK_TIMERS
+  ,manager(NULL), parent(NULL)
+#endif
   { }
 
   void set_name(const std::string& myname)
@@ -217,20 +228,27 @@ public:
 
   void set_manager(TimerManagerClass *mymanager)
   {
+#ifdef USE_STACK_TIMERS
     manager = mymanager;
+#endif
   }
 
+#ifdef USE_STACK_TIMERS
   NewTimer *get_parent()
   {
     return parent;
   }
+#endif
 
+#ifdef USE_STACK_TIMERS
   std::vector<NewTimer *> &get_children()
   {
     return children;
   }
+#endif
 
 
+#ifdef USE_STACK_TIMERS
   void add_child(NewTimer *t)
   {
     bool found = false;
@@ -246,8 +264,8 @@ public:
     {
       children.push_back(t);
     }
-
   }
+#endif
 };
 
 struct TimerComparator

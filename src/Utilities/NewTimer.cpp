@@ -113,6 +113,7 @@ get_leaf_name(const std::string &stack_name)
 
 void TimerManagerClass::collate_stack_profile(Communicate *comm, StackProfileData &p)
 {
+#ifdef USE_STACK_TIMERS
   // Put stacks from all timers into one data structure
   // By naming the timer stacks as 'timer1/timer2', etc, the ordering done by the
   // map's keys will also place the stacks in depth-first order.
@@ -172,6 +173,7 @@ void TimerManagerClass::collate_stack_profile(Communicate *comm, StackProfileDat
     comm->allreduce(p.timeExclList);
     comm->allreduce(p.callList);
   }
+#endif
 }
 
 void
@@ -298,6 +300,7 @@ TimerManagerClass::output_timing(Communicate *comm, Libxml2Document &doc, xmlNod
 }
 
 
+#ifdef USE_STACK_TIMERS
 std::string
 NewTimer::get_stack_name()
 {
@@ -311,5 +314,6 @@ NewTimer::get_stack_name()
   }
   return stack_name;
 }
+#endif
 
 }
