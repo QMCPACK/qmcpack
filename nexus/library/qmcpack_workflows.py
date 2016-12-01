@@ -678,10 +678,11 @@ nscf_input_defaults = obj(
     )
 
 p2q_workflow_keys = [
-    'orb_src',
+    'orb_src','orb_src_type',
     ]
 fixed_defaults = obj(
-    orb_src = None,
+    orb_src      = None,
+    orb_src_type = None,
     )
 p2q_input_defaults = obj(
     minimal = obj(
@@ -1813,8 +1814,12 @@ def gen_p2q_chain(ch,loc):
     task = ch.task
     wf   = task.workflow
     run  = kw.run
-    if run.nscf:
-        nscf_label,nscf_index = resolve_label('scf',ch,loc,ind=True)
+    if run.nscf and wf.orb_src_type!='scf':
+        if wf.orb_src is None:
+            nscf_label,nscf_index = resolve_label('scf',ch,loc,ind=True)
+        else:
+            nscf_index = wf.orb_src
+        #end if
         use_scf_dir = ch.tasks.nscf[nscf_index].workflow.use_scf_dir
         orb_source = 'nscf'
         if use_scf_dir:
