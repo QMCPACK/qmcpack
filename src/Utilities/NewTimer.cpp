@@ -11,7 +11,7 @@
 // File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
- 
+
 
 
 /** @file NewTimer.cpp
@@ -44,17 +44,6 @@ void TimerManagerClass::reset()
     TimerList[i]->reset();
 }
 
-void TimerManagerClass::get_stack_roots(std::vector<NewTimer *> &roots)
-{
-  for (int i = 0; i < TimerList.size(); i++)
-  {
-    if (TimerList[i]->get_parent() == NULL)
-    {
-      roots.push_back(TimerList[i]);
-    }
-  }
-}
-
 void TimerManagerClass::collate_flat_profile(Communicate *comm, FlatProfileData &p)
 {
   for(int i=0; i<TimerList.size(); ++i)
@@ -83,36 +72,96 @@ void TimerManagerClass::collate_flat_profile(Communicate *comm, FlatProfileData 
   }
 }
 
+struct ProfileData
+{
+    double time;
+    double calls;
+
+    ProfileData &operator+=(const ProfileData &pd)
+    {
+        time += pd.time;
+        calls += pd.calls;
+        return *this;
+    }
+};
+
+int
+get_level(const std::string &stack_name)
+{
+  int level = 0;
+  for (int i = 0; i < stack_name.length(); i++)
+  {
+    if (stack_name[i] == '/')
+    {
+      level++;
+    }
+  }
+  return level;
+}
+
+std::string
+get_leaf_name(const std::string &stack_name)
+{
+  int pos = stack_name.find_last_of('/');
+  if (pos == std::string::npos)
+  {
+    return stack_name;
+  }
+
+  return stack_name.substr(pos+1, stack_name.length()-pos);
+}
+
 void TimerManagerClass::collate_stack_profile(Communicate *comm, StackProfileData &p)
 {
+  // Put stacks from all timers into one data structure
+  // By naming the timer stacks as 'timer1/timer2', etc, the ordering done by the
+  // map's keys will also place the stacks in depth-first order.
+  // The order in which sibling timers are encountered in the code is not
+  // preserved. They will be ordered alphabetically instead.
+  std::map<std::string, ProfileData> all_stacks;
   for(int i=0; i<TimerList.size(); ++i)
   {
     NewTimer &timer = *TimerList[i];
-
     std::map<std::string,double>::iterator stack_name_it = timer.get_per_stack_total_time().begin();
     for (; stack_name_it != timer.get_per_stack_total_time().end(); stack_name_it++)
     {
-      const std::string &stack_name = stack_name_it->first;
-      nameList_t::iterator it(p.nameList.find(stack_name));
+        ProfileData pd;
+        const std::string &stack_name = stack_name_it->first;
+        pd.time = timer.get_total(stack_name);
+        pd.calls = timer.get_num_calls(stack_name);
 
-      double totalTime = timer.get_total(stack_name);
-      double exclTime = timer.get_exclusive_time(stack_name);
-      int ncalls = timer.get_num_calls(stack_name);
+        all_stacks[stack_name] += pd;
+    }
+  }
 
-      if(it == p.nameList.end())
+  // Fill in the output data structure (but don't compute exclusive time yet)
+  std::map<std::string, ProfileData>::iterator si = all_stacks.begin();
+  int idx = 0;
+  for(;si != all_stacks.end(); ++si)
+  {
+    std::string stack_name = si->first;
+    p.nameList[stack_name] = idx;
+    p.names.push_back(stack_name);
+    p.timeList.push_back(si->second.time);
+    p.timeExclList.push_back(si->second.time);
+    p.callList.push_back(si->second.calls);
+    idx++;
+  }
+
+  // Subtract times of immediate children to get exclusive time
+  for (idx = 0; idx < p.timeList.size(); idx++)
+  {
+    int start_level = get_level(p.names[idx]);
+    for (int i = idx+1; i < p.timeList.size(); i++)
+    {
+      int level = get_level(p.names[i]);
+      if (level == start_level+1)
       {
-        int ind=p.nameList.size();
-        p.nameList[stack_name]=ind;
-        p.timeList.push_back(totalTime);
-        p.timeExclList.push_back(exclTime);
-        p.callList.push_back(ncalls);
+        p.timeExclList[idx] -= p.timeExclList[i];
       }
-      else
+      if (level == start_level)
       {
-        int ind=(*it).second;
-        p.timeList[ind]+=totalTime;
-        p.timeExclList[ind]+=exclTime;
-        p.callList[ind]+=timer.get_num_calls();
+        break;
       }
     }
   }
@@ -167,45 +216,6 @@ TimerManagerClass::print_flat(Communicate* comm)
 #endif
 }
 
-TimerDFS::TimerDFS (NewTimer *t) : m_timer(t), m_indent(0)
-{
-  m_stack.push_back(t);
-  m_child_idx.push_back(0);
-}
-
-// Iterate over the timer tree.
-// Uses a non-recursive implementation.
-// The root node (first node) is not returned - must handle it separately.
-// In practice this means the call to 'next' should be at the end of the loop.
-// Returns NULL when the iteration is done.
-NewTimer * TimerDFS::next()
-{
-  int n = m_stack.size();
-  for (int i = 0; i < n; i++)
-  {
-    NewTimer *current = m_stack.back();
-    int idx = m_child_idx.back();
-
-    // Find the next node
-    // Are there more children of the current node?
-    if (idx < current->get_children().size())
-    {
-      NewTimer *next = current->get_children()[idx];
-      m_child_idx.back()++;
-      m_stack.push_back(next);
-      m_child_idx.push_back(0);
-      m_indent++;
-      return next;
-    }
-    else // no more children, backtrack to the next node up the stack.
-    {
-      m_stack.pop_back();
-      m_child_idx.pop_back();
-      m_indent--;
-    }
-  }
-  return NULL;
-}
 
 void
 TimerManagerClass::print_stack(Communicate* comm)
@@ -215,39 +225,20 @@ TimerManagerClass::print_stack(Communicate* comm)
 
   collate_stack_profile(comm, p);
 
-  std::vector<NewTimer *> roots;
-  get_stack_roots(roots);
-
-
   printf("Timer                   Inclusive_time    Exclusive_time   Calls   Time_per_call\n");
-  std::vector<NewTimer *>::iterator ri = roots.begin();
-  for (;ri != roots.end(); ++ri)
+  for (int i = 0; i < p.names.size(); i++)
   {
-    TimerDFS dfs(*ri);
-    NewTimer *current = *ri;
-    while (true)
-    {
-      std::map<std::string, int>::iterator it = p.nameList.find(current->get_stack_name());
-      if (it == p.nameList.end())
-      {
-        //printf("timer stack name not found: %s\n",current->get_stack_name().c_str());
-        break;
-      }
-
-      std::string indent_str(2*dfs.indent(), ' ');
-      int i = (*it).second;
-
-      printf ("%s%-40s  %9.4f  %9.4f  %13ld  %16.9f  TIMER\n"
+    std::string stack_name = p.names[i];
+    int level = get_level(stack_name);
+    std::string name = get_leaf_name(stack_name);
+    std::string indent_str(2*level, ' ');
+    printf ("%s%-40s  %9.4f  %9.4f  %13ld  %16.9f  TIMER\n"
             , indent_str.c_str()
-            , current->get_name().c_str()
+            , name.c_str()
             , p.timeList[i]
             , p.timeExclList[i]
             , p.callList[i]
             , p.timeList[i]/(static_cast<double>(p.callList[i])+std::numeric_limits<double>::epsilon()));
-
-      current = dfs.next();
-      if (!current) break;
-    }
   }
 #endif
 }
@@ -261,49 +252,44 @@ TimerManagerClass::output_timing(Communicate *comm, Libxml2Document &doc, xmlNod
 
   collate_stack_profile(comm, p);
 
-  std::vector<NewTimer *> roots;
-  get_stack_roots(roots);
-
-
   xmlNodePtr timing_root = doc.addChild(root, "timing");
   std::vector<xmlNodePtr> node_stack;
   node_stack.push_back(timing_root);
   xmlNodePtr current_root = timing_root;
-  std::vector<NewTimer *>::iterator ri = roots.begin();
-  for (;ri != roots.end(); ++ri)
-  {
-    TimerDFS dfs(*ri);
-    NewTimer *current = *ri;
-    int current_level = 0;
-    while (true)
-    {
-      xmlNodePtr timer = NULL;
-      std::map<std::string, int>::iterator it = p.nameList.find(current->get_stack_name());
-      if (it != p.nameList.end())
-      {
-        int i = (*it).second;
-        timer = doc.addChild(current_root, "timer");
-        doc.addChild(timer, "name", current->get_name());
-        doc.addChild(timer, "time_incl", p.timeList[i]);
-        doc.addChild(timer, "time_excl", p.timeExclList[i]);
-        doc.addChild(timer, "calls", p.callList[i]);
-      }
 
-      current_level = dfs.indent();
-      current = dfs.next();
-      if (current_level < dfs.indent())
-      {
-        xmlNodePtr next_node = doc.addChild(timer, "includes");
-        node_stack.push_back(next_node);
-        current_root = next_node;
-      }
-      if (current_level > dfs.indent() && current_level != 0)
+  for (int i = 0; i < p.names.size(); i++)
+  {
+    std::string stack_name = p.names[i];
+    int level = get_level(stack_name);
+    std::string name = get_leaf_name(stack_name);
+
+    std::string indent_str(2*level, ' ');
+
+    xmlNodePtr timer = doc.addChild(current_root, "timer");
+    doc.addChild(timer, "name", name);
+    doc.addChild(timer, "time_incl", p.timeList[i]);
+    doc.addChild(timer, "time_excl", p.timeExclList[i]);
+    doc.addChild(timer, "calls", p.callList[i]);
+
+    int next_level = level;
+    if (i+1 < p.names.size())
+    {
+      next_level = get_level(p.names[i+1]);
+    }
+
+    if (next_level > level)
+    {
+      xmlNodePtr next_node = doc.addChild(timer, "includes");
+      node_stack.push_back(next_node);
+      current_root = next_node;
+    }
+    if (next_level < level)
+    {
+      for (int j = 0; j < level-next_level; j++)
       {
         node_stack.pop_back();
         current_root = node_stack.back();
       }
-
-      if (!current) break;
     }
   }
 
@@ -319,26 +305,11 @@ NewTimer::get_stack_name()
   NewTimer *current = parent;
   while (current)
   {
-    stack_name += "/";
-    stack_name += current->get_name();
+    std::string tmp = current->get_name() + "/" + stack_name;
+    stack_name = tmp;
     current = current->parent;
   }
   return stack_name;
-}
-
-double
-NewTimer::get_exclusive_time(const std::string &stack_name)
-{
-  double exclusive_total = per_stack_total_time[stack_name];
-  for (int i = 0; i < children.size(); i++)
-  {
-    std::string tmp_stack = children[i]->get_name();
-    tmp_stack += "/";
-    tmp_stack += stack_name;
-
-    exclusive_total -= children[i]->get_total(tmp_stack);
-  }
-  return exclusive_total;
 }
 
 }

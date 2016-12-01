@@ -10,8 +10,8 @@
 //
 // File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 
 
 /** @file NewTimer.h
@@ -72,8 +72,6 @@ public:
     return current;
   }
 
-  void get_stack_roots(std::vector<NewTimer *> &roots);
-
 
   void reset();
   void print (Communicate* comm);
@@ -83,6 +81,7 @@ public:
   typedef std::map<std::string, int> nameList_t;
   typedef std::vector<double> timeList_t;
   typedef std::vector<long> callList_t;
+  typedef std::vector<std::string> names_t;
 
   struct FlatProfileData {
     nameList_t nameList;
@@ -91,6 +90,7 @@ public:
   };
 
   struct StackProfileData {
+    names_t    names;
     nameList_t nameList;
     timeList_t timeList;
     timeList_t timeExclList;
@@ -185,8 +185,6 @@ public:
     return per_stack_total_time[stack_name];
   }
 
-  double get_exclusive_time(const std::string &stack_name);
-
   inline long  get_num_calls() const
   {
     return num_calls;
@@ -238,11 +236,11 @@ public:
     bool found = false;
     for (int i = 0; i < children.size(); i++)
     {
-       if (t == children[i]) 
+       if (t == children[i])
        {
          found = true;
          break;
-       } 
+       }
     }
     if (!found)
     {
@@ -259,24 +257,6 @@ struct TimerComparator
     return a->get_name() < b->get_name();
   }
 };
-
-// Depth-first pre-order traversal of the timer tree
-class TimerDFS
-{
-public:
-  TimerDFS(NewTimer *t);
-  NewTimer *next();
-
-  NewTimer *timer() { return m_timer; }
-  int indent() { return m_indent; }
-private:
-  int m_indent;
-  NewTimer *m_timer;
-  std::vector<NewTimer *> m_stack;
-  std::vector<int> m_child_idx;
-};
-
-
 
 }
 
