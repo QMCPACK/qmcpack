@@ -131,6 +131,7 @@ public:
   void start()
   {
 #ifdef USE_STACK_TIMERS
+    #pragma omp master
     if (manager)
     {
       if (this == manager->current_timer())
@@ -155,14 +156,18 @@ public:
     total_time += elapsed;
     num_calls++;
 
-#ifdef USE_STACK_TIMERS
-    std::string stack_name = get_stack_name();
-    per_stack_total_time[stack_name] += elapsed;
-    per_stack_num_calls[stack_name] += 1;
 
-    if (manager)
+#ifdef USE_STACK_TIMERS
+    #pragma omp master
     {
-      manager->pop_timer();
+      std::string stack_name = get_stack_name();
+      per_stack_total_time[stack_name] += elapsed;
+      per_stack_num_calls[stack_name] += 1;
+
+      if (manager)
+      {
+        manager->pop_timer();
+      }
     }
 #endif
   }

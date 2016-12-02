@@ -166,13 +166,6 @@ void TimerManagerClass::collate_stack_profile(Communicate *comm, StackProfileDat
       }
     }
   }
-
-  if (comm)
-  {
-    comm->allreduce(p.timeList);
-    comm->allreduce(p.timeExclList);
-    comm->allreduce(p.callList);
-  }
 #endif
 }
 
@@ -181,10 +174,16 @@ TimerManagerClass::print(Communicate* comm)
 {
 #if ENABLE_TIMER
 #ifdef USE_STACK_TIMERS
-  printf("Stack timer profile\n");
+  if(comm == NULL || comm->rank() == 0)
+  {
+    printf("Stack timer profile\n");
+  }
   print_stack(comm);
 #endif
-  printf("\nFlat profile\n");
+  if(comm == NULL || comm->rank() == 0)
+  {
+    printf("\nFlat profile\n");
+  }
   print_flat(comm);
 #endif
 }
@@ -197,7 +196,7 @@ TimerManagerClass::print_flat(Communicate* comm)
 
   collate_flat_profile(comm, p);
 
-  if(comm->rank() == 0)
+  if(comm == NULL || comm->rank() == 0)
   {
     #pragma omp master
     {
@@ -227,20 +226,23 @@ TimerManagerClass::print_stack(Communicate* comm)
 
   collate_stack_profile(comm, p);
 
-  printf("Timer                   Inclusive_time    Exclusive_time   Calls   Time_per_call\n");
-  for (int i = 0; i < p.names.size(); i++)
+  if(comm == NULL || comm->rank() == 0)
   {
-    std::string stack_name = p.names[i];
-    int level = get_level(stack_name);
-    std::string name = get_leaf_name(stack_name);
-    std::string indent_str(2*level, ' ');
-    printf ("%s%-40s  %9.4f  %9.4f  %13ld  %16.9f  TIMER\n"
-            , indent_str.c_str()
-            , name.c_str()
-            , p.timeList[i]
-            , p.timeExclList[i]
-            , p.callList[i]
-            , p.timeList[i]/(static_cast<double>(p.callList[i])+std::numeric_limits<double>::epsilon()));
+    printf("Timer                   Inclusive_time    Exclusive_time   Calls   Time_per_call\n");
+    for (int i = 0; i < p.names.size(); i++)
+    {
+      std::string stack_name = p.names[i];
+      int level = get_level(stack_name);
+      std::string name = get_leaf_name(stack_name);
+      std::string indent_str(2*level, ' ');
+      printf ("%s%-40s  %9.4f  %9.4f  %13ld  %16.9f  TIMER\n"
+              , indent_str.c_str()
+              , name.c_str()
+              , p.timeList[i]
+              , p.timeExclList[i]
+              , p.callList[i]
+              , p.timeList[i]/(static_cast<double>(p.callList[i])+std::numeric_limits<double>::epsilon()));
+    }
   }
 #endif
 }
@@ -254,43 +256,46 @@ TimerManagerClass::output_timing(Communicate *comm, Libxml2Document &doc, xmlNod
 
   collate_stack_profile(comm, p);
 
-  xmlNodePtr timing_root = doc.addChild(root, "timing");
-  std::vector<xmlNodePtr> node_stack;
-  node_stack.push_back(timing_root);
-  xmlNodePtr current_root = timing_root;
-
-  for (int i = 0; i < p.names.size(); i++)
+  if(comm == NULL || comm->rank() == 0)
   {
-    std::string stack_name = p.names[i];
-    int level = get_level(stack_name);
-    std::string name = get_leaf_name(stack_name);
+    xmlNodePtr timing_root = doc.addChild(root, "timing");
+    std::vector<xmlNodePtr> node_stack;
+    node_stack.push_back(timing_root);
+    xmlNodePtr current_root = timing_root;
 
-    std::string indent_str(2*level, ' ');
-
-    xmlNodePtr timer = doc.addChild(current_root, "timer");
-    doc.addChild(timer, "name", name);
-    doc.addChild(timer, "time_incl", p.timeList[i]);
-    doc.addChild(timer, "time_excl", p.timeExclList[i]);
-    doc.addChild(timer, "calls", p.callList[i]);
-
-    int next_level = level;
-    if (i+1 < p.names.size())
+    for (int i = 0; i < p.names.size(); i++)
     {
-      next_level = get_level(p.names[i+1]);
-    }
+      std::string stack_name = p.names[i];
+      int level = get_level(stack_name);
+      std::string name = get_leaf_name(stack_name);
 
-    if (next_level > level)
-    {
-      xmlNodePtr next_node = doc.addChild(timer, "includes");
-      node_stack.push_back(next_node);
-      current_root = next_node;
-    }
-    if (next_level < level)
-    {
-      for (int j = 0; j < level-next_level; j++)
+      std::string indent_str(2*level, ' ');
+
+      xmlNodePtr timer = doc.addChild(current_root, "timer");
+      doc.addChild(timer, "name", name);
+      doc.addChild(timer, "time_incl", p.timeList[i]);
+      doc.addChild(timer, "time_excl", p.timeExclList[i]);
+      doc.addChild(timer, "calls", p.callList[i]);
+
+      int next_level = level;
+      if (i+1 < p.names.size())
       {
-        node_stack.pop_back();
-        current_root = node_stack.back();
+        next_level = get_level(p.names[i+1]);
+      }
+
+      if (next_level > level)
+      {
+        xmlNodePtr next_node = doc.addChild(timer, "includes");
+        node_stack.push_back(next_node);
+        current_root = next_node;
+      }
+      if (next_level < level)
+      {
+        for (int j = 0; j < level-next_level; j++)
+        {
+          node_stack.pop_back();
+          current_root = node_stack.back();
+        }
       }
     }
   }
