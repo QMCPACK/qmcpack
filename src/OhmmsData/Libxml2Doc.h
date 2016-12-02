@@ -108,6 +108,13 @@ struct Libxml2Document
 
   xmlNodePtr addChild(xmlNodePtr parent, const std::string &nodeName);
 
+  xmlNodePtr addChild(xmlNodePtr parent, const std::string &nodeName, const bool &value)
+  { 
+    std::string s = value ? "true" : "false";
+    xmlNodePtr node = xmlNewChild(parent, NULL, BAD_CAST nodeName.c_str(), BAD_CAST s.c_str());
+    return node;
+  }
+
   template<typename T>
   xmlNodePtr addChild(xmlNodePtr parent, const std::string &nodeName, const T &value)
   { 

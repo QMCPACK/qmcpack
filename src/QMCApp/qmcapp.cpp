@@ -33,6 +33,7 @@
 #include "qmc_common.h"
 //#include "tau/profiler.h"
 
+void output_hardware_info(Communicate *comm, Libxml2Document &doc, xmlNodePtr root);
 
 /** @file qmcapp.cpp
  *@brief a main function for QMC simulation.
@@ -148,6 +149,7 @@ int main(int argc, char **argv)
  
   Libxml2Document timingDoc;
   timingDoc.newDoc("resources");
+  output_hardware_info(qmcComm, timingDoc, timingDoc.getRoot());
   TimerManager.output_timing(qmcComm, timingDoc, timingDoc.getRoot());
   timingDoc.dump(qmc->getTitle() + ".info.xml");
   TimerManager.print(qmcComm);
@@ -158,6 +160,32 @@ int main(int argc, char **argv)
     Finalize_CUDA();
   OHMMS::Controller->finalize();
   return 0;
+}
+
+void output_hardware_info(Communicate *comm, Libxml2Document &doc, xmlNodePtr root)
+{
+  xmlNodePtr hardware = doc.addChild(root, "hardware");
+
+  bool using_mpi = false;
+#ifdef HAVE_MPI
+  using_mpi = true;
+  doc.addChild(hardware, "mpi_size", comm->size());
+#endif
+  doc.addChild(hardware, "mpi", using_mpi);
+
+  bool using_openmp = false;
+#ifdef ENABLE_OPENMP
+  using_openmp = true;
+  doc.addChild(hardware, "openmp_threads", omp_get_max_threads());
+#endif
+  doc.addChild(hardware, "openmp", using_openmp);
+
+  bool using_gpu = false;
+#ifdef QMC_CUDA
+  using_gpu = true;
+#endif
+  doc.addChild(hardware, "gpu", using_gpu);
+
 }
 /***************************************************************************
  * $RCSfile$   $Author$
