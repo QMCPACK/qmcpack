@@ -8,8 +8,6 @@
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 
@@ -21,8 +19,12 @@
 class FakeRandom
 {
 public:
+  FakeRandom();
   typedef unsigned int uint_type;
   double operator()();
+  void set_value(double val);
+private:
+  double m_val;
 };
 
 #endif

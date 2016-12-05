@@ -48,16 +48,18 @@ namespace qmcplusplus
 template<class T, class RG>
 inline void assignGaussRand(T* restrict a, unsigned n, RG& rng)
 {
+  OHMMS_PRECISION_FULL slightly_less_than_one = 1.0 - 
+    std::numeric_limits<OHMMS_PRECISION_FULL>::epsilon();
   for (int i=0; i+1<n; i+=2)
   {
-    OHMMS_PRECISION_FULL temp1=1-0.9999999999*rng(), temp2=rng();
-    a[i]  =std::sqrt(-2.0*std::log(temp1))*std::cos(6.283185306*temp2);
-    a[i+1]=std::sqrt(-2.0*std::log(temp1))*std::sin(6.283185306*temp2);
+    OHMMS_PRECISION_FULL temp1=1-slightly_less_than_one*rng(), temp2=rng();
+    a[i]  =std::sqrt(-2.0*std::log(temp1))*std::cos(2*M_PI*temp2);
+    a[i+1]=std::sqrt(-2.0*std::log(temp1))*std::sin(2*M_PI*temp2);
   }
   if (n%2==1)
   {
-    OHMMS_PRECISION_FULL temp1=1-0.9999999999*rng(), temp2=rng();
-    a[n-1]=std::sqrt(-2.0*std::log(temp1))*std::cos(6.283185306*temp2);
+    OHMMS_PRECISION_FULL temp1=1-slightly_less_than_one*rng(), temp2=rng();
+    a[n-1]=std::sqrt(-2.0*std::log(temp1))*std::cos(2*M_PI*temp2);
   }
 }
 /*!\fn template<class T> void assignUniformRand(T* restrict a, unsigned n)
