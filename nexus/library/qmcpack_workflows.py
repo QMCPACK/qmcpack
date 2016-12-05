@@ -6,6 +6,7 @@ from numpy import ndarray,ceil
 from developer import obj,ci,error as dev_error,devlog,DevBase
 from physical_system import generate_physical_system
 from simulation import Simulation,GenericSimulation,graph_sims
+from bundle import bundle as bundle_function
 from machines import job,Job
 from vasp  import generate_vasp
 from pwscf import generate_pwscf
@@ -2790,6 +2791,7 @@ class SimColl(DevBase):
 def qmcpack_workflow(
     scan           = missing,
     fix            = missing,
+    bundle         = missing,
     parameter      = missing,
     values         = missing,
     fix_value      = missing,
@@ -2835,7 +2837,7 @@ def qmcpack_workflow(
     #end if
 
 
-    # handle input form for a single parameter scan
+    # handle input for a single parameter scan
     if isinstance(scan,str):
         require('parameter',parameter)
         require('values'   ,values   )
@@ -2859,6 +2861,22 @@ def qmcpack_workflow(
     # unpack fix/merge information
     if not missing(fix):
         constraints = unpack_fix_inputs(fix,loc=loc)
+    #end if
+
+    # handle bundle input
+    if not missing(bundle):
+        if isinstance(bundle,str):
+            bundle = bundle.split()
+        elif not isinstance(bundle,(tuple,list)):
+            error('problem with "bundle" parameter input\nmust be a list of simulation names to bundle together as a single job\nreceived type: {0}\nwith value: {1}'.format(bundle.__class__.__name__,bundle),loc=loc)
+        else:
+            for b in bundle:
+                if not isinstance(b,str):
+                    error('problem with "bundle" parameter input\nmust be a list of simulation names to bundle together as a single job\nsome names provided are not simple strings\nreceived type {0}\nwith value: {1}\nall values provided: {2}'.format(b.__class__.__name__,b,bundle),loc=loc)
+                #end if
+            #end for
+        #end if
+        bundle = list(set(bundle))
     #end if
 
     # make placeholders for input sections to keep track of upstream tasks
@@ -3035,7 +3053,7 @@ def qmcpack_workflow(
     if not missing(scan):
         for sec_name,sec in scans.iteritems():
             if sec_name not in secreps:
-                error('problem with "scan" parameter input\nno user input was provided for section "{0}"\ninput sections provided: {1}'.format(sec_name,sorted(secreps.keys())))
+                error('problem with "scan" parameter input\nno user input was provided for section "{0}"\ninput sections provided: {1}'.format(sec_name,sorted(secreps.keys())),loc=loc)
             #end if
         #end for
     #end if
@@ -3105,6 +3123,27 @@ def qmcpack_workflow(
                     #end if
                 #end for
             #end if
+        #end for
+    #end if
+
+    # bundle requested simulation jobs together
+    if not missing(bundle) and len(bundle)>0:
+        bsims = SimSet()
+        sims.bundle = bsims
+        for sim_name in bundle:
+            if sim_name not in sim_coll:
+                error('problem with "bundle" parameter input\nsimulations with requested name are not present\nsimulation name requested for bundling: {0}\nsimulation names present: {1}'.format(sim_name,sorted(sim_coll.keys())),loc=loc)
+            #end if
+            bsim_list = []
+            for scoll in sim_coll[sim_name]:
+                sim = scoll[0]
+                if not sim.fake():
+                    bsim_list.append(sim)
+                #end if
+            #end for
+            bsim = bundle_function(bsim_list)
+            loc_sims.append(bsim)
+            bsims[sim_name] = bsim
         #end for
     #end if
 
