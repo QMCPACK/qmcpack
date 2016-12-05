@@ -1374,7 +1374,7 @@ bool MultiPureSingleDeterminant::diagonalizeTrialWavefunction(std::vector<RealTy
   ComplexType zero = ComplexType(0.0,0.0);
   bool sucess;
   //int nci = ci.size(); 
-
+  
   if(rotated_hamiltonian) { 
 
    // serial for now

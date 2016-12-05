@@ -245,6 +245,13 @@ class DistWalkerHandler: public WalkerHandlerBase
     ob = (walkers)[walker_size*n+data_displ[OVLP_B]];
     return &((walkers)[walker_size*n+data_displ[SM]]); 
   }
+  ComplexType* getWalker2(int n, ComplexType& eloc, ComplexType& oa, ComplexType& ob) {
+    if(n>=tot_num_walkers) {return NULL;} 
+    eloc = (walkers)[walker_size*n+data_displ[ELOC]+1]; 
+    oa = (walkers)[walker_size*n+data_displ[OVLP_A]+1];
+    ob = (walkers)[walker_size*n+data_displ[OVLP_B]+1];
+    return &((walkers)[walker_size*n+data_displ[SM]+1]); 
+  }
   ComplexType* getWalker(int n, ComplexType& w, ComplexType& eloc, ComplexType& oa, ComplexType& ob) {
     if(n>=tot_num_walkers) {return NULL;}
     w = (walkers)[walker_size*n+data_displ[WEIGHT]];

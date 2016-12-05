@@ -40,18 +40,18 @@ class BasicEstimator: public EstimatorBase
   void accumulate_block(WSetPtr wlkBucket)
   {
 
-    int nW = wlkBucket->numWalkers();
+    int nW = wlkBucket->numWalkers(true);
     ComplexType *sm,eloc,dum,oa,ob,w,ooa,oob;
     LocalTimer->start("Block::EstimatorEloc");
 
     if(EstimEloc) {
       wfn0->evaluateLocalEnergyAndOverlap("Estimator",-1,wlkBucket);
-
       if(core_rank==0) {
         for(int i=0, cnt=0; i<nW; i++) {
           if(!wlkBucket->isAlive(i) || std::abs(wlkBucket->getWeight(i)) <= 1e-6 || std::isnan(wlkBucket->getWeight(i).real())) continue;
       
-          sm = wlkBucket->getWalker(i,w,dum,ooa,oob);
+          sm = wlkBucket->getWalker(i,w,dum,ooa,oob);  // "impsampl"
+          sm = wlkBucket->getWalker2(i,eloc,oa,ob);     // "estimator"
           if(std::isnan(ooa.real()) || std::isnan(oob.real()) || std::abs(oa*ob) < 1e-8  || std::abs(ooa*oob) < 1e-8) w=0;
           dum = w*oa*ob/(ooa*oob);
           edeno2 += dum; 
@@ -70,7 +70,7 @@ class BasicEstimator: public EstimatorBase
     int nw=0;
     RealType instant_weight=0.0;
     if(core_rank==0) {
-      int nW = wlkBucket->numWalkers();
+      int nW = wlkBucket->numWalkers(true);
       enume_sub = edeno_sub = 0.0;
       ComplexType w,oa,ob,eloc;
       for(int i=0; i<nW; i++) {
@@ -122,7 +122,7 @@ class BasicEstimator: public EstimatorBase
 
     if(core_rank != 0) return;
     ncalls_substep++;
-    int nW = wlkBucket->numWalkers();
+    int nW = wlkBucket->numWalkers(true);
     ComplexType w,oa,ob,eloc;
     int cnt1=0; 
     RealType sumo=0;
@@ -172,7 +172,7 @@ class BasicEstimator: public EstimatorBase
       data[7] = ovlp/num_heads_tg;
 
       data[5] = 0.0;
-      int nW = wlkBucket->numWalkers();
+      int nW = wlkBucket->numWalkers(true);
       for(int i=0; i<nW; i++) 
        if(wlkBucket->isAlive(i)) data[5] += std::abs(wlkBucket->getWeight(i));
       myComm->allreduce(data,MPI_COMM_TG_LOCAL_HEADS);

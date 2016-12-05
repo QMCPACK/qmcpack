@@ -203,6 +203,12 @@ class LocalWalkerHandler: public WalkerHandlerBase
     ob = std::get<0>(walkers[n].overlap_beta);
     return (walkers[n].SlaterMat).data();
   }
+  ComplexType* getWalker2(int n, ComplexType& eloc, ComplexType& oa, ComplexType& ob) {
+    eloc = std::get<1>(walkers[n].eloc);
+    oa = std::get<1>(walkers[n].overlap_alpha);
+    ob = std::get<1>(walkers[n].overlap_beta);
+    return (walkers[n].SlaterMat).data();
+  }
   void getOldWalker(int n, ComplexType& eloc, ComplexType& oa, ComplexType& ob) {
     eloc = std::get<0>(walkers[n].eloc_old);
     oa = std::get<0>(walkers[n].old_overlap_alpha);

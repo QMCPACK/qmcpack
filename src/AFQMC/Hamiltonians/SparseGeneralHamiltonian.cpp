@@ -1953,6 +1953,10 @@ namespace qmcplusplus
     Timer.stop("Generic");
     app_log()<<" -- Time to initialize Hamiltonian from h5 file: " <<Timer.average("Generic") <<"\n";
 
+    if(rank() == 0) {
+      ascii_write();
+    }
+
     return true;
 
   }
@@ -1967,6 +1971,24 @@ namespace qmcplusplus
       return;
     }
 
+// hack to write sparse matrix in ascii for testing
+/*
+   if(!factorizedHamiltonian) 
+     APP_ABORT("Error: Matrix dump only for factorized hamiltonian \n\n\n");
+   if(rank()!=0) return;
+   int nvecs=V2_fact.rows();
+   out<<"# nrows: " <<nvecs <<" ncols: " <<V2_fact.cols() <<"\n";
+   for(ComplexSMSpMat::indxType i=0; i<nvecs; i++) {
+     int k1 = *(V2_fact.rowIndex_begin()+i+1); 
+     for(int k=*(V2_fact.rowIndex_begin()+i); k<k1; k++) 
+       out<<i <<" " <<*(V2_fact.cols_begin()+k) <<" "
+          <<std::setprecision(12) <<*(V2_fact.vals_begin()+k) <<"\n";
+   }
+   out<<std::endl;
+   out.close();
+   APP_ABORT(" FINISHED DUMPING ASCII FILE. \n\n\n");   
+*/
+ 
     out<<"&FCI NORB=" <<NMO <<",NELEC=" <<NAEA+NAEB <<",MS2=" <<MS2 <<"," <<"\n"
        <<"ISYM=" <<ISYM <<"," <<"\n/\n"; 
 

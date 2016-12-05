@@ -109,6 +109,7 @@ class WalkerHandlerBase: public MPIObjectBase, public AFQMCInfo
   virtual void setWalker(int,ComplexType,ComplexType,ComplexType,ComplexType)=0; 
   virtual void setWalker2(int,ComplexType,ComplexType,ComplexType)=0; 
   virtual ComplexType* getWalker(int,ComplexType&,ComplexType&,ComplexType&)=0; 
+  virtual ComplexType* getWalker2(int,ComplexType&,ComplexType&,ComplexType&)=0; 
   virtual ComplexType* getWalker(int,ComplexType&,ComplexType&,ComplexType&,ComplexType&)=0; 
   virtual void getOldWalker(int,ComplexType&,ComplexType&,ComplexType&)=0; 
 
