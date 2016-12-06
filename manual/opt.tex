@@ -155,7 +155,7 @@ to 0 and do a single inner iteration (max its=1) per sample of configurations.}
 \end{lstlisting}
 
 \subsubsection{adaptive}
-To activate this optimizer, add ``-D BUILD_LMYENGINE_INTERFACE=1'' in the CMake command line.
+To activate this optimizer, add ``-D BUILD\_LMYENGINE\_INTERFACE=1'' in the CMake command line.
 
 Manual is needed here.
 
@@ -231,7 +231,7 @@ It is recommended to use this optimizer in two sections with a very small minwal
 Here are a few reminders to make wavefunction easier.
 \begin{itemize}
 \item All electron wavefunctions are more difficult to optimize than pseudopotential ones especially when the cusp is not removed.
-\item Two body Jastrow contributes the largest portion of correlation energy from bare slater determinants. It's also the easiest part for optimier and gains most. For this reason, the recommend order optimizing wavefunction components is two-body, one-body, three-body Jastrows and MSD coefficients.
+\item Two body Jastrow contributes the largest portion of correlation energy from bare Slater determinants. It's also the easiest part for optimizer and gains most. For this reason, the recommend order optimizing wavefunction components is two-body, one-body, three-body Jastrow factors and MSD coefficients.
 \item Never use all-zero two-body spline Jastrow and always start from a reasonable one. 
       You might want to bang your head agaist a brick wall for a bad two-body Jastrow.
 \item One-body spline Jastrow from old calculations can be good starting point.
