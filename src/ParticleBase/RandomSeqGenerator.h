@@ -48,20 +48,25 @@ namespace qmcplusplus
 template<class T, class RG>
 inline void assignGaussRand(T* restrict a, unsigned n, RG& rng)
 {
-  OHMMS_PRECISION_FULL slightly_less_than_one = 1.0 - 
+  OHMMS_PRECISION_FULL slightly_less_than_one = 1.0 -
     std::numeric_limits<OHMMS_PRECISION_FULL>::epsilon();
-  for (int i=0; i+1<n; i+=2)
+  int nm1=n-1;
+  OHMMS_PRECISION_FULL temp1, temp2;
+  for (int i=0; i<nm1; i+=2)
   {
-    OHMMS_PRECISION_FULL temp1=1-slightly_less_than_one*rng(), temp2=rng();
-    a[i]  =std::sqrt(-2.0*std::log(temp1))*std::cos(2*M_PI*temp2);
-    a[i+1]=std::sqrt(-2.0*std::log(temp1))*std::sin(2*M_PI*temp2);
+    temp1=std::sqrt(-2.0*std::log(1.0-slightly_less_than_one*rng()));
+    temp2=2.0*M_PI*rng();
+    a[i]  =temp1*std::cos(temp2);
+    a[i+1]=temp1*std::sin(temp2);
   }
   if (n%2==1)
   {
-    OHMMS_PRECISION_FULL temp1=1-slightly_less_than_one*rng(), temp2=rng();
-    a[n-1]=std::sqrt(-2.0*std::log(temp1))*std::cos(2*M_PI*temp2);
+    temp1=std::sqrt(-2.0*std::log(1.0-slightly_less_than_one*rng()));
+    temp2=2.0*M_PI*rng();
+    a[nm1]=temp1*std::cos(temp2);
   }
 }
+
 /*!\fn template<class T> void assignUniformRand(T* restrict a, unsigned n)
   *\param a the starting pointer
   *\param n the number of type T to be assigned
