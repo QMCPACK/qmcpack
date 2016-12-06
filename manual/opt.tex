@@ -35,7 +35,6 @@ A typical optimization block looks like the following. It starts with method=``l
     <parameter name="MinMethod">quartic</parameter>
     <parameter name="exp0">-6</parameter>
     <parameter name="alloweddifference"> 1.0e-4 </parameter>
-    <parameter name="stepsize">  0.35 </parameter>
     <parameter name="nstabilizers"> 1 </parameter>
     <parameter name="bigchange">15.0</parameter>
     ...
@@ -77,8 +76,8 @@ The input parameters are listed in the following table.
    &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
    &   \texttt{usebuffer} &  text     & yes, minimum, no & no  & buffer info to speed up the correlated sampling\\
    &   \texttt{nonlocalpp} &  text     & yes, no & no  & include non-local PP energy in the cost function\\
-   &   \texttt{GEVMethod} &  text     & mixed, H2 & mixed  & methods of generalized eigenvalue problem\\
-   &   \texttt{beta} &  real     & any value & 0.0  & a parameter for GEVMethod\\
+%   &   \texttt{GEVMethod} &  text     & mixed, H2 & mixed  & methods of generalized eigenvalue problem\\
+%   &   \texttt{beta} &  real     & any value & 0.0  & a parameter for GEVMethod\\
 %   &   \texttt{use\_nonlocalpp\_deriv} &  text     & yes, no & no  & include the derivatives of non-local PP\\
    &   \texttt{minwalkers} &  real     & 0--1   & 0.3 & lower bound of the effective weight\\
    &   \texttt{maxWeight} &  real     & $>1$   & 1e6 & Maximum weight allowed in reweighting\\
@@ -89,7 +88,7 @@ The input parameters are listed in the following table.
 
 Additional information:
 \begin{itemize}
-\item \texttt{GEVMethod, beta, maxWeight}. The default should be good.
+\item \texttt{maxWeight}. The default should be good.
 \item \texttt{usebuffer}. It saves a lot of computation especially with the `quartic' optimizer.
 \item \texttt{nonlocalpp}. It is recommended to enable it when 3 body Jastrow is on. GPU code has a implementation issue that large amount of memory is consumed with this option.
 \item \texttt{minwalkers}. A CRITICAL parameter. When the ratio of effective samples to actual number of walkers in a reweighting step, 
@@ -121,7 +120,7 @@ This optimizer is very robust but a bit conservative to accept new steps especia
 \hline
 \multicolumn{2}{l}{parameters}  & \multicolumn{4}{l}{}\\
    &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
-   &   \texttt{stepsize} &  real     & 0--1 & 0.25  & Step size for moving parameters\\
+   %&   \texttt{stepsize} &  real     & 0--1 & 0.25  & Step size for moving parameters\\
    &   \texttt{bigchange} &  real     & $>0$ & 50.0  & Largest parameter change allowed\\
    &   \texttt{alloweddifference} &  real     & $>0$ & 1e-4 & Allowed increased in energy\\
    &   \texttt{exp0} &  real     & any value & -16.0 & Initial value for stabilizer\\
@@ -149,7 +148,6 @@ to 0 and do a single inner iteration (max its=1) per sample of configurations.}
     <parameter name="MinMethod">quartic</parameter>
     <parameter name="exp0">-6</parameter>
     <parameter name="alloweddifference"> 1.0e-4 </parameter>
-    <parameter name="stepsize">  0.35 </parameter>
     <parameter name="nstabilizers"> 1 </parameter>
     <parameter name="bigchange">15.0</parameter>
 \end{lstlisting}
@@ -172,7 +170,6 @@ If a proposed set is rejected, the standard output prints the measured ratio of 
 \hline
 \multicolumn{2}{l}{parameters}  & \multicolumn{4}{l}{}\\
    &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
-   &   \texttt{stepsize} &  real     & 0--1 & 0.25  & Step size for moving parameters\\
    &   \texttt{shift\_i} &  real     & $>0$ & 0.01 & Direct stabilizer added to the Hamiltonian matrix\\
    &   \texttt{shift\_s} &  real     & $>0$ & 1.00 & Initial stabilizer based on the overlap matrix\\
   \hline
@@ -182,7 +179,6 @@ If a proposed set is rejected, the standard output prints the measured ratio of 
 
 Additional information:
 \begin{itemize}
-\item \texttt{stepsize}. The initial proposed direct for moving parameters is rescaled by stepsize.
 \item \texttt{shift\_i}. This is the direct term added to the diagonal of the Hamiltonian matrix.
                          More stable but slower optimization with a large value.
 \item \texttt{shift\_s}. This is the initial value of the stabilizer based on the overlap matrix added to the Hamiltonian matrix. 
@@ -192,7 +188,6 @@ Additional information:
 
 Recommendations:
 \begin{itemize}
-  \item Use large stepsize. 0.9 is very OK with this optimizer.
   \item Default shift\_i, shift\_s should be fine.
   \item If the VMC energy of the last optimization iterations grows significantly, increase minwalkers closer to 1.
   \item If the first iterations of optimization are rejected on a reasonable initial wavefunction, 
@@ -210,7 +205,6 @@ It is recommended to use this optimizer in two sections with a very small minwal
     ...
     <!-- Specify the optimizer options -->
     <parameter name="MinMethod">OneShiftOnly</parameter>
-    <parameter name="stepsize">0.9</parameter>
   </qmc>
  </loop>
  <loop max="12">
@@ -222,7 +216,6 @@ It is recommended to use this optimizer in two sections with a very small minwal
     ...
     <!-- Specify the optimizer options -->
     <parameter name="MinMethod">OneShiftOnly</parameter>
-    <parameter name="stepsize">0.9</parameter>
   </qmc>
  </loop>
 \end{lstlisting}

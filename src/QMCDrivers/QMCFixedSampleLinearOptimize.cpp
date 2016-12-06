@@ -82,7 +82,6 @@ vdeps(1,std::vector<double>()),
   m_param.add(stabilizerScale,"stabilizerscale","double");
   m_param.add(bigChange,"bigchange","double");
   m_param.add(MinMethod,"MinMethod","string");
-  m_param.add(stepsize,"stepsize","double");
   m_param.add(exp0,"exp0","double");
   m_param.add(targetExcitedStr,"targetExcited","string");
   m_param.add(block_lmStr, "block_lm", "string");
@@ -142,6 +141,7 @@ vdeps(1,std::vector<double>()),
 //   m_param.add(w_beta,"beta","double");
 //   quadstep=-1.0;
 //   m_param.add(quadstep,"quadstep","double");
+//   m_param.add(stepsize,"stepsize","double");
 //   m_param.add(exp1,"exp1","double");
 //   m_param.add(GEVtype,"GEVMethod","string");
 //   m_param.add(GEVSplit,"GEVSplit","string");
@@ -1109,7 +1109,7 @@ bool QMCFixedSampleLinearOptimize::one_shift_run() {
   const RealType lowestEV = getLowestEigenvector(prdMat, parameterDirections);
 
   // compute the scaling constant to apply to the update
-  Lambda = getNonLinearRescale(parameterDirections, ovlMat) * stepsize;
+  Lambda = getNonLinearRescale(parameterDirections, ovlMat);
 
   // scale the update by the scaling constant
   for (int i=0; i<numParams; i++)
