@@ -1145,7 +1145,7 @@ bool QMCFixedSampleLinearOptimize::one_shift_run() {
             << "******************************************************************************" << std::endl;
 
   if ( !optTarget->IsValid || std::isnan(newCost)) {
-    app_log() << "Too high newCost. Revert to the old paramaters" << std::endl;
+    app_log() << "The new set of parameters is not valid. Revert to the old set!" << std::endl;
     for (int i=0; i<numParams; i++)
       optTarget->Params(i) = currentParameters.at(i);
     bestShift_s=bestShift_s*4.0;
