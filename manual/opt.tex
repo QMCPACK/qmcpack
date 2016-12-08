@@ -189,7 +189,8 @@ Additional information:
 Recommendations:
 \begin{itemize}
   \item Default shift\_i, shift\_s should be fine.
-  \item If the VMC energy of the last optimization iterations grows significantly, increase minwalkers closer to 1.
+  \item For hard cases, increasing shift\_i (factor of 5 or 10) can significantly stabilize the optimization by reducing the pace towards the optimal parameter set.
+  \item If the VMC energy of the last optimization iterations grows significantly, increase minwalkers closer to 1 and make the optimization stable.
   \item If the first iterations of optimization are rejected on a reasonable initial wavefunction, 
         lower the minwalkers value based on the measured value printed in the standard output to accept the move.
 \end{itemize}
