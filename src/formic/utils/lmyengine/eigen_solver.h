@@ -408,7 +408,7 @@ protected:
   //
   //////////////////////////////////////////////////////////////////////////////////////////////
   
-  virtual const formic::Matrix<double> debug_build() = 0;
+  //virtual const formic::Matrix<double> debug_build() = 0;
 
 
 };

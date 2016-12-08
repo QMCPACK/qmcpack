@@ -332,13 +332,13 @@ public:
   //
   //////////////////////////////////////////////////////////////////////////////////////////////
   
-  const formic::Matrix<double> debug_build()
-  {
-    formic::Matrix<double> retval(2, 2, 0.0);
-    retval.at(0,0) = 1.0;
-    retval.at(1,1) = 1.0;
-    return retval;
-  }
+  //const formic::Matrix<double> debug_build()
+  //{
+  //  formic::Matrix<double> retval(2, 2, 0.0);
+  //  retval.at(0,0) = 1.0;
+  //  retval.at(1,1) = 1.0;
+  //  return retval;
+  //}
 
 	//////////////////////////////////////////////////////////////////////////////////////////////
 	// \brief return the wave function coefficients
