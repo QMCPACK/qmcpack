@@ -433,7 +433,7 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
    INCLUDE(CMake/FindMKL.cmake)
   ENDIF(INTEL_COMPILER)
   IF ( HAVE_MKL )
-    # We found mkl, add the link library
+    # We found MKL, add the link library
     SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${MKL_FLAGS}")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MKL_FLAGS}")
     SET(LAPACK_FOUND 1)
@@ -447,6 +447,12 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   ELSE()	 
     # Search for Blas/Lapack
     find_package(LAPACK)
+    # When cmake finds and sets up the MKL libraries with a non-Intel compiler, set the flag
+    # This should be tidied up when FindMKL.cmake supports non-Intel compilers.
+    IF("${LAPACK_LIBRARIES}" MATCHES "mkl")
+      MESSAGE(STATUS "MKL found via LAPACK/BLAS")
+      SET( MKL_FOUND 1 )
+    ENDIF()
   ENDIF()
   IF(LAPACK_FOUND)
     MESSAGE(STATUS "LAPACK libraries: ${LAPACK_LIBRARIES}")

@@ -6,6 +6,7 @@ from numpy import ndarray,ceil
 from developer import obj,ci,error as dev_error,devlog,DevBase
 from physical_system import generate_physical_system
 from simulation import Simulation,GenericSimulation,graph_sims
+from bundle import bundle as bundle_function
 from machines import job,Job
 from vasp  import generate_vasp
 from pwscf import generate_pwscf
@@ -678,10 +679,11 @@ nscf_input_defaults = obj(
     )
 
 p2q_workflow_keys = [
-    'orb_src',
+    'orb_src','orb_src_type',
     ]
 fixed_defaults = obj(
-    orb_src = None,
+    orb_src      = None,
+    orb_src_type = None,
     )
 p2q_input_defaults = obj(
     minimal = obj(
@@ -1813,8 +1815,12 @@ def gen_p2q_chain(ch,loc):
     task = ch.task
     wf   = task.workflow
     run  = kw.run
-    if run.nscf:
-        nscf_label,nscf_index = resolve_label('scf',ch,loc,ind=True)
+    if run.nscf and wf.orb_src_type!='scf':
+        if wf.orb_src is None:
+            nscf_label,nscf_index = resolve_label('scf',ch,loc,ind=True)
+        else:
+            nscf_index = wf.orb_src
+        #end if
         use_scf_dir = ch.tasks.nscf[nscf_index].workflow.use_scf_dir
         orb_source = 'nscf'
         if use_scf_dir:
@@ -2189,22 +2195,60 @@ def unpack_scan_inputs(scan,loc='unpack_scan_inputs'):
         misformatted|= (len(scan_list)-1)%2!=0 or not isinstance(scan_list[0],str)
         if not misformatted:
             section = scan_list[0]
-            vars    = scan_list[1::2]
-            vals    = scan_list[2::2]
+            vars_in = scan_list[1::2]
+            vals_in = scan_list[2::2]
+            all_vars = set(vars_in)
+            vars = []
             values_in = obj()
-            for var,val_list in zip(vars,vals):
-                values_in[var] = val_list
+            labels_in = obj()
+            for var,val_list in zip(vars_in,vals_in):
                 misformatted |= not isinstance(var,str) or not isinstance(val_list,(tuple,list,ndarray))
+                if isinstance(var,str):
+                    if var.endswith('_labels'):
+                        vname = var.rsplit('_',1)[0]
+                        if vname in all_vars:
+                            labels_in[vname] = val_list
+                        else:
+                            values_in[var] = val_list
+                            vars.append(var)
+                        #end if
+                    else:
+                        values_in[var] = val_list
+                        vars.append(var)
+                    #end if
+                #end if
             #end for
+            vals = []
+            labs = []
+            for var in vars_in:
+                if var in values_in:
+                    vin = values_in[var]
+                    vals.append(vin)
+                    if var in labels_in:
+                        lin = labels_in[var]
+                        if len(lin)!=len(vin):
+                            error('scan list for parameter "scan" is formatted improperly\nincorrect number of labels provided for scan parameter "{0}"\nnumber of parameter values provided: {1}\nnumber of parameter labels provided: {2}\nparameter labels provided: {3}'.format(var,len(vin),len(lin),lin),loc=loc)
+                        #end if
+                        labs.append(lin)
+                    else:
+                        labs.append(len(vin)*[None])
+                    #end if
+                #end if
+            #end for
+            del vars_in
+            del vals_in
             if not misformatted:
                 if len(vars)==1:
                     vals_in = vals[0]
+                    labs_in = labs[0]
                     vals = []
                     inds = []
+                    labs = []
                     i = 1
-                    for v in vals_in:
+                    for v,l in zip(vals_in,labs_in):
                         vals.append((v,))
                         inds.append((i,))
+                        labs.append((l,))
                         i+=1
                     #end for
                 else:
@@ -2212,20 +2256,22 @@ def unpack_scan_inputs(scan,loc='unpack_scan_inputs'):
                     n=1
                     for vals_in in vals[1:]:
                         if len(vals_in)!=len(vals[0]):
-                            error('problem with "scan" input\nall value_lists must have the same length (they are covarying)\nvar_list "{0}" has length {1}\nvar_list "{2}" has length {3}'.format(vars[0],len(vals[0]),vars[n],len(vals[n])),loc=loc)
+                            error('problem with "scan" input\nall value_lists for section "{0}" must have the same length (they are covarying)\nvar_list "{1}" has length {2}\nvar_list "{3}" has length {4}'.format(section,vars[0],len(vals[0]),vars[n],len(vals[n])),loc=loc)
                         #end if
                         n+=1
                     #end for
                     vals = zip(*vals)
+                    labs = zip(*labs)
                     r = range(1,len(vals)+1)
                     inds = zip(*[r for n in range(len(vars))])
                 #end if
                 if section not in scans:
-                    sec = obj(parameters=list(vars),values=vals,indices=inds,values_in=values_in)
+                    sec = obj(parameters=list(vars),values=vals,indices=inds,labels=labs,values_in=values_in,labels_in=labels_in)
                     scans[section] = sec
                 else:
                     sec = scans[section]
                     sec.values_in.transfer_from(values_in)
+                    sec.labels_in.transfer_from(labels_in)
                     sec.parameters.extend(vars)
                     values = []
                     for v in sec.values:
@@ -2243,6 +2289,14 @@ def unpack_scan_inputs(scan,loc='unpack_scan_inputs'):
                         #end for
                     #end for
                     sec.indices = indices
+                    labels = []
+                    for l in sec.labels:
+                        for l2 in labs:
+                            lab = tuple(list(l)+list(l2))
+                            labels.append(lab)
+                        #end for
+                    #end for
+                    sec.labels = labels
                 #end if
             #end if
         #end if
@@ -2250,6 +2304,7 @@ def unpack_scan_inputs(scan,loc='unpack_scan_inputs'):
             error('scan list for parameter "scan" is formatted improperly\nlist must have input section name (string) followed by variable-value_list pairs\nnumber of entries present (should be odd): {0}\nvalue_lists must be of type tuple/list/array\nscan list contents: {1}'.format(len(scan_list),scan_list,loc))
         #end if
     #end for
+
     return scans
 #end def unpack_scan_inputs
 
@@ -2617,23 +2672,48 @@ class SegRep(WFRep):
             scan_params  = self.scan_data.parameters
             scan_values  = self.scan_data.values
             scan_indices = self.scan_data.indices
+            scan_labels  = self.scan_data.labels
             sec_vary = chain_inputs[self.label]
             cur_sim_keys = set(cur_sims.keys())
             n = 0
             for vset in scan_values:
                 iset = scan_indices[n]
+                lset = scan_labels[n]
                 bpath = basepath
                 cinds = obj(cur_inds)
                 cvals = obj(cur_vals)
                 akey = []
-                for k,v,i in zip(scan_params,vset,iset):
-                    if isinstance(v,(str,int,float)):
-                        dlabel = v
+                for k,v,i,l in zip(scan_params,vset,iset,lset):
+                    if l is not None:
+                        dlabel = l
+                        dkey   = l
+                        dname  = l
+                    elif isinstance(v,(tuple,list,ndarray)):
+                        all_basic = True
+                        dlabel = ''
+                        for vv in v:
+                            all_basic &= isinstance(vv,(str,int,float))
+                            dlabel += str(vv)+'_'
+                        #end if
+                        if all_basic and len(v)>0:
+                            dkey   = tuple(v)
+                            dlabel = dlabel[:-1]
+                        else:
+                            dkey   = i
+                            dlabel = i
+                        #end if
+                        dname = '{0}_{1}'.format(k,dlabel)
                     else:
-                        dlabel = i
+                        if isinstance(v,(str,int,float)):
+                            dkey = v
+                        else:
+                            dkey = i
+                        #end if
+                        dlabel = dkey
+                        dname = '{0}_{1}'.format(k,dlabel)
                     #end if
-                    bpath = os.path.join(bpath,'{0}_{1}'.format(k,dlabel))
-                    akey.append(dlabel)
+                    bpath = os.path.join(bpath,dname)
+                    akey.append(dkey)
                     sec_vary[k] = v
                     cinds[k] = i
                     cvals[k] = v
@@ -2711,6 +2791,7 @@ class SimColl(DevBase):
 def qmcpack_workflow(
     scan           = missing,
     fix            = missing,
+    bundle         = missing,
     parameter      = missing,
     values         = missing,
     fix_value      = missing,
@@ -2756,7 +2837,7 @@ def qmcpack_workflow(
     #end if
 
 
-    # handle input form for a single parameter scan
+    # handle input for a single parameter scan
     if isinstance(scan,str):
         require('parameter',parameter)
         require('values'   ,values   )
@@ -2780,6 +2861,22 @@ def qmcpack_workflow(
     # unpack fix/merge information
     if not missing(fix):
         constraints = unpack_fix_inputs(fix,loc=loc)
+    #end if
+
+    # handle bundle input
+    if not missing(bundle):
+        if isinstance(bundle,str):
+            bundle = bundle.split()
+        elif not isinstance(bundle,(tuple,list)):
+            error('problem with "bundle" parameter input\nmust be a list of simulation names to bundle together as a single job\nreceived type: {0}\nwith value: {1}'.format(bundle.__class__.__name__,bundle),loc=loc)
+        else:
+            for b in bundle:
+                if not isinstance(b,str):
+                    error('problem with "bundle" parameter input\nmust be a list of simulation names to bundle together as a single job\nsome names provided are not simple strings\nreceived type {0}\nwith value: {1}\nall values provided: {2}'.format(b.__class__.__name__,b,bundle),loc=loc)
+                #end if
+            #end for
+        #end if
+        bundle = list(set(bundle))
     #end if
 
     # make placeholders for input sections to keep track of upstream tasks
@@ -2956,7 +3053,7 @@ def qmcpack_workflow(
     if not missing(scan):
         for sec_name,sec in scans.iteritems():
             if sec_name not in secreps:
-                error('problem with "scan" parameter input\nno user input was provided for section "{0}"\ninput sections provided: {1}'.format(sec_name,sorted(secreps.keys())))
+                error('problem with "scan" parameter input\nno user input was provided for section "{0}"\ninput sections provided: {1}'.format(sec_name,sorted(secreps.keys())),loc=loc)
             #end if
         #end for
     #end if
@@ -3026,6 +3123,27 @@ def qmcpack_workflow(
                     #end if
                 #end for
             #end if
+        #end for
+    #end if
+
+    # bundle requested simulation jobs together
+    if not missing(bundle) and len(bundle)>0:
+        bsims = SimSet()
+        sims.bundle = bsims
+        for sim_name in bundle:
+            if sim_name not in sim_coll:
+                error('problem with "bundle" parameter input\nsimulations with requested name are not present\nsimulation name requested for bundling: {0}\nsimulation names present: {1}'.format(sim_name,sorted(sim_coll.keys())),loc=loc)
+            #end if
+            bsim_list = []
+            for scoll in sim_coll[sim_name]:
+                sim = scoll[0]
+                if not sim.fake():
+                    bsim_list.append(sim)
+                #end if
+            #end for
+            bsim = bundle_function(bsim_list)
+            loc_sims.append(bsim)
+            bsims[sim_name] = bsim
         #end for
     #end if
 

@@ -1742,7 +1742,8 @@ class sposet(QIxml):
                   'index_min','index_max','energy_min','energy_max',
                   'spindataset','cuspinfo','sort','gpu','href','twistnum',
                   'gs_sposet','basis_sposet','same_k','frequency','mass',
-                  'source','version','precision','tilematrix']
+                  'source','version','precision','tilematrix',
+                  'meshfactor']
     elements   = ['occupation','coefficient','coefficients']
     text       = 'spos'
     identifier = 'name'
@@ -4241,6 +4242,77 @@ def generate_heg_builder(twist          = None,
 #end def generate_heg_builder
 
 
+def partition_sposets(sposet_builder,partition,partition_meshfactors=None):
+    ssb = sposet_builder
+    spos_in =ssb.sposets
+    del ssb.sposets
+    if isinstance(partition,(dict,obj)):
+        partition_indices  = sorted(partition.keys())
+        partition_contents = partition
+    else:
+        partition_indices  = list(partition)
+        partition_contents = None
+    #end if
+    if partition_meshfactors is not None:
+        if partition_contents is None:
+            partition_contents = obj()
+            for p in partition_indices:
+                partition_contents[p] = obj()
+            #end for
+        #end if
+        for p,mf in zip(partition_indices,partition_meshfactors):
+            partition_contents[p].meshfactor = mf
+        #end for
+    #end if
+    # partition each spo in the builder and create a corresponding composite spo
+    comp_spos = []
+    part_spos = []
+    for spo in spos_in.list():
+        part_spo_names = []
+        part_ranges = partition_indices+[spo.size]
+        for i in range(len(partition_indices)):
+            index_min = part_ranges[i]
+            index_max = part_ranges[i+1]
+            if index_min>spo.size:
+                break
+            elif index_max>spo.size:
+                index_max = spo.size
+            #end if
+            part_spo_name = spo.name+'_'+str(index_min)
+            part_spo = sposet(**spo)
+            part_spo.name = part_spo_name
+            if index_min==0:
+                part_spo.size = index_max
+            else:
+                part_spo.index_min = index_min
+                part_spo.index_max = index_max
+                del part_spo.size
+            #end if
+            if partition_contents is not None:
+                part_spo.set(**partition_contents[index_min])
+            #end if
+            part_spos.append(part_spo)
+            part_spo_names.append(part_spo_name)
+        #end for
+        comp_spo = sposet(
+            name = spo.name,
+            size = spo.size,
+            spos = part_spo_names,
+            )
+        comp_spos.append(comp_spo)
+    #end for
+        
+    ssb.sposets = make_collection(part_spos)
+
+    cssb = composite_builder(
+        type = 'composite',
+        sposets = make_collection(comp_spos),
+        )
+
+    return [ssb,cssb]
+#end def partition_sposets
+
+
 def generate_determinantset(up             = 'u',
                             down           = 'd',
                             spo_up         = 'spo_u',
@@ -5114,6 +5186,8 @@ def generate_basic_input(id             = 'qmc',
                          twistnum       = None, 
                          twist          = None,
                          spin_polarized = None,
+                         partition      = None,
+                         partition_mf   = None,
                          orbitals_h5    = 'MISSING.h5',
                          system         = 'missing',
                          pseudos        = None,
@@ -5132,10 +5206,10 @@ def generate_basic_input(id             = 'qmc',
         valid = ['id','series','purpose','seed','bconds','truncate',
                  'buffer','lr_dim_cutoff','remove_cell','randomsrc',
                  'meshfactor','orbspline','precision','twistnum',
-                 'twist','spin_polarized','orbitals_h5','system',
-                 'pseudos','jastrows','interactions','corrections',
-                 'observables','estimators','traces','calculations',
-                 'det_format']
+                 'twist','spin_polarized','partition','orbitals_h5',
+                 'system','pseudos','jastrows','interactions',
+                 'corrections','observables','estimators','traces',
+                 'calculations','det_format']
         QmcpackInput.class_error('invalid input parameters encountered\ninvalid input parameters: {0}\nvalid options are: {1}'.format(sorted(invalid_kwargs.keys()),sorted(valid)),'generate_qmcpack_input')
     #end if
 
@@ -5170,6 +5244,9 @@ def generate_basic_input(id             = 'qmc',
     if spin_polarized is None:
         spin_polarized = system.net_spin>0
     #end if
+    if partition!=None:
+        det_format = 'new'
+    #end if
 
     metadata = QmcpackInput.default_metadata.copy()
 
@@ -5192,6 +5269,7 @@ def generate_basic_input(id             = 'qmc',
             randomsrc = randomsrc or tuple(bconds)!=('p','p','p')
             )
     #end if
+
 
     if det_format=='new':
         if system!=None and isinstance(system.structure,Jellium):
@@ -5218,7 +5296,15 @@ def generate_basic_input(id             = 'qmc',
                 system         = system
                 )
         #end if
-        spobuilders = [ssb]
+        if partition is None:
+            spobuilders = [ssb]
+        else:
+            spobuilders = partition_sposets(
+                sposet_builder = ssb,
+                partition      = partition,
+                partition_meshfactors = partition_mf,
+                )
+        #end if
 
         dset = generate_determinantset(
             spin_polarized = spin_polarized,
