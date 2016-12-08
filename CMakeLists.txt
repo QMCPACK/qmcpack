@@ -176,7 +176,7 @@ CHECK_INCLUDE_FILE(unistd.h HAVE_UNISTD_H)
 ######################################################################
 SET(QMC_ADIOS 0 CACHE BOOL "Build with ADIOS")
 SET(BUILD_UNIT_TESTS 1 CACHE BOOL "Build unit tests")
-SET(BUILD_LMYENGINE_INTERFACE 0 CACHE BOOL "Build LMY engine")
+SET(BUILD_LMYENGINE_INTERFACE 1 CACHE BOOL "Build LMY engine")
 IF(MIXED_PRECISION AND BUILD_LMYENGINE_INTERFACE)
   MESSAGE(STATUS "LMY engine is not compatiable with CPU mixed precision build! Disabling LMY engine")
   SET(BUILD_LMYENGINE_INTERFACE 0)
@@ -470,10 +470,30 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
 
 ENDIF(CMAKE_TOOLCHAIN_FILE)
 
-#check if the CXX compiler supports -std=c++11 option
-include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG(-std=c++11 CXX_COMPILER_SUPPORT_CXX11)
-
+# check if C++11 is needed by QMCPACK features
+SET(CXX11_NEEDED FALSE)
+IF(BUILD_LMYENGINE_INTERFACE)
+  SET(CXX11_NEEDED TRUE)
+ENDIF()
+## add AFQMC checker here
+# once C++11 is needed
+IF(CXX11_NEEDED)
+  #check if the CXX compiler supports -std=c++11 option
+  include(CheckCXXCompilerFlag)
+  CHECK_CXX_COMPILER_FLAG(-std=c++11 CXX_COMPILER_SUPPORT_CXX11)
+  # Turn on C++11 for this code
+  IF (CXX_COMPILER_SUPPORT_CXX11)
+    # avoid repeated -std=c++11 flag
+    IF(NOT CMAKE_CXX_FLAGS MATCHES "-std=c\\+\\+11")
+      SET (CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
+    ENDIF()
+  ELSE()
+    MESSAGE(STATUS "Disabling features requring C++11 due to the lack of compiler support")
+    SET(BUILD_LMYENGINE_INTERFACE 0)
+    ## disable AFQMC here
+  ENDIF()
+ENDIF(CXX11_NEEDED)
+  
 # setup ctest variables
 IF ( HAVE_MPI )
   SET( USE_MPI 1 )
@@ -687,14 +707,6 @@ if(build_einspline)
 endif()
 
 IF(BUILD_LMYENGINE_INTERFACE)
-  # Turn C++11 for this code
-  IF (CXX_COMPILER_SUPPORT_CXX11)
-    IF(NOT CMAKE_CXX_FLAGS MATCHES "-std=c\\+\\+11")
-      SET (CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
-    ENDIF()
-  ELSE()
-    MESSAGE(FATAL_ERROR "LMY engine requires C++11 compiler support! Either choose a compiler supporting C++11 or disable LMY engine by adding -DBUILD_LMYENGINE_INTERFACE=0 in CMake command line.")
-  ENDIF()
   ADD_DEFINITIONS(-DHAVE_LMY_ENGINE)
   SET(FORMIC_BINARY_DIR ${qmcpack_BINARY_DIR})
   SUBDIRS(src/formic/utils)
