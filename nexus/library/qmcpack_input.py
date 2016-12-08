@@ -4814,7 +4814,7 @@ def generate_jastrow1(function='bspline',size=8,rcut=None,coeff=None,cusp=0.,ena
             )            
         if lrcut!=None:
             if isperiodic and lrcut>rwigner:
-                QmcpackInput.class_error('rcut must not be greater than the simulation cell incribing radius\nyou provided: {0}\nincribing radius: {1}'.format(lrcut,rwigner),'generate_jastrow1')
+                QmcpackInput.class_error('rcut must not be greater than the simulation cell wigner radius\nyou provided: {0}\nwigner radius: {1}'.format(lrcut,rwigner),'generate_jastrow1')
                 
             corr.rcut = lrcut
         elif isopen:
@@ -4844,7 +4844,7 @@ def generate_bspline_jastrow2(size=8,rcut=None,coeff=None,spins=('u','d'),densit
     isopen      = False
     isperiodic  = False
     allperiodic = False
-    rincribe    = 1e99
+    rwigner     = 1e99
     if system!=None:
         isopen      = system.structure.is_open()
         isperiodic  = system.structure.is_periodic()
@@ -4901,7 +4901,7 @@ def generate_bspline_jastrow2(size=8,rcut=None,coeff=None,spins=('u','d'),densit
         ]
     if rcut!=None:
         if isperiodic and rcut>rwigner:
-            QmcpackInput.class_error('rcut must not be greater than the simulation cell incribing radius\nyou provided: {0}\nincribing radius: {1}'.format(rcut,rwigner),'generate_jastrow2')
+            QmcpackInput.class_error('rcut must not be greater than the simulation cell wigner radius\nyou provided: {0}\nwigner radius: {1}'.format(rcut,rwigner),'generate_jastrow2')
         #end if
         for corr in corrs:
             corr.rcut=rcut
@@ -4984,9 +4984,9 @@ def generate_jastrow3(function='polynomial',esize=3,isize=3,rcut=4.,coeff=None,i
         QmcpackInput.class_error('must specify rcut','generate_jastrow3')
     #end if
     if system!=None and system.structure.is_periodic():
-        rinscribe = system.structure.rinscribe()
-        if rcut>rinscribe:
-            QmcpackInput.class_error('rcut must not be greater than the simulation cell incribing radius\nyou provided: {0}\nincribing radius: {1}'.format(rcut,rinscribe),'generate_jastrow3')
+        rwigner = system.structure.rwigner()
+        if rcut>rwigner:
+            QmcpackInput.class_error('rcut must not be greater than the simulation cell wigner radius\nyou provided: {0}\nwigner radius: {1}'.format(rcut,rwigner),'generate_jastrow3')
         #end if
     #end if
     uname,dname = spins

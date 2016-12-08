@@ -747,6 +747,7 @@ vmc_workflow_keys = [
     'J0_test','J2_test','J3_test',
     'struct_src','orb_src','J2_src','J3_src',
     'job','test_job',
+    'prior_opt',
     ] 
 fixed_defaults = obj(
     J0_run     = False,
@@ -761,6 +762,7 @@ fixed_defaults = obj(
     J3_src     = None,
     job        = None,
     test_job   = None,
+    prior_opt  = True,
     )
 vmc_input_defaults = obj(
     minimal = obj(
@@ -1012,6 +1014,11 @@ def jastrow_factor(
     J2_rcut_open = default('J2_rcut_open',J2_rcut_open) 
     
     require('system',system)
+
+    if system.structure.units!='B':
+        system = system.copy()
+        system.structure.change_units('B')
+    #end if
 
     openbc = system.structure.is_open()
 
@@ -1475,6 +1482,18 @@ def process_vmc_inputs(inputs,shared,task,loc):
         system  = shared.system,
         pseudos = get_pseudos('qmcpack',shared),
         )
+
+    set_loc(loc+'vmc_inputs jastrows')
+    jkw = extract_keywords(inputs,jastrow_factor_keys,optional=True)
+    jkw.system   = shared.system
+    j2kw = jkw.copy()
+    j2kw.set(J1=1,J2=1,J3=0)
+    j3kw = jkw.copy()
+    j3kw.set(J1=1,J2=1,J3=1)
+    task.J2_inputs = j2kw
+    task.J3_inputs = j3kw
+
+    set_loc(loc+'vmc_inputs vmc_methods')
     task.sec_inputs = extract_keywords(inputs,vmc_sections_keys,optional=True)
     return inputs
 #end def process_vmc_inputs
@@ -1485,6 +1504,18 @@ def process_dmc_inputs(inputs,shared,task,loc):
         system  = shared.system,
         pseudos = get_pseudos('qmcpack',shared),
         )
+
+    set_loc(loc+'dmc_inputs jastrows')
+    jkw = extract_keywords(inputs,jastrow_factor_keys,optional=True)
+    jkw.system   = shared.system
+    j2kw = jkw.copy()
+    j2kw.set(J1=1,J2=1,J3=0)
+    j3kw = jkw.copy()
+    j3kw.set(J1=1,J2=1,J3=1)
+    task.J2_inputs = j2kw
+    task.J3_inputs = j3kw
+
+    set_loc(loc+'dmc_inputs dmc_methods')
     task.sec_inputs = extract_keywords(inputs,dmc_sections_keys,optional=True)
     return inputs
 #end def process_dmc_inputs
@@ -1926,10 +1957,17 @@ def gen_vmc(simlabel,ch,depset,J,test=0,loc=''):
     else:
         qmcjob = wf.job
     #end if
+    if J=='J0':
+        jastrows = []
+    elif J=='J2':
+        jastrows = jastrow_factor(**task.J2_inputs)
+    elif J=='J3':
+        jastrows = jastrow_factor(**task.J3_inputs)
+    #end if
     qmc = generate_qmcpack(
         path         = os.path.join(wf.basepath,simlabel),
         job          = qmcjob,
-        jastrows     = [],
+        jastrows     = jastrows,
         calculations = vmc_sections(test=test,J0=J=='J0',**task.sec_inputs),
         dependencies = deps,
         **task.inputs
@@ -1942,8 +1980,13 @@ def gen_vmc_chain(ch,loc):
     task = ch.task
     wf   = task.workflow
     orbdep = [('p2q','orbitals')]
-    J2dep  = orbdep + [('opt_J2','jastrow')]
-    J3dep  = orbdep + [('opt_J3','jastrow')]
+    if wf.prior_opt:
+        J2dep = orbdep + [('opt_J2','jastrow')]
+        J3dep = orbdep + [('opt_J3','jastrow')]
+    else:
+        J2dep = orbdep
+        J3dep = orbdep
+    #end if
     depset = obj(
         J0 = orbdep,
         J2 = J2dep,
@@ -1982,6 +2025,13 @@ def gen_dmc(simlabel,ch,depset,J,nlmove=None,test=0,loc=''):
     else:
         qmcjob = wf.job
     #end if
+    if J=='J0':
+        jastrows = []
+    elif J=='J2':
+        jastrows = jastrow_factor(**task.J2_inputs)
+    elif J=='J3':
+        jastrows = jastrow_factor(**task.J3_inputs)
+    #end if
     other_inputs = obj(task.inputs)
     if 'calculations' not in other_inputs:
         other_inputs.calculations = dmc_sections(nlmove=nlmove,test=test,J0=J=='J0',**task.sec_inputs)
@@ -1989,7 +2039,7 @@ def gen_dmc(simlabel,ch,depset,J,nlmove=None,test=0,loc=''):
     qmc = generate_qmcpack(
         path         = os.path.join(wf.basepath,simlabel),
         job          = qmcjob,
-        jastrows     = [],
+        jastrows     = jastrows,
         dependencies = deps,
         **other_inputs
         )
