@@ -1,6 +1,8 @@
 # -std=c++11 is handled at the top level. Ye
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
+REMOVE_DEFINITIONS(-DMPICH_SKIP_MPICXX)
+
 # Really ugly hack to see if we're using MKL - replace it
 #STRING(FIND "${BLAS_LIBRARIES}" "mkl" apos)
 #MESSAGE("BLAS_LIBRARIES FIND = ${apos}")
