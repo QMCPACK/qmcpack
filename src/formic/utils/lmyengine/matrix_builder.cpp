@@ -657,8 +657,8 @@ formic::Matrix<double> cqmc::engine::HamOvlpBuilderHD::ovlp_pseudo_inv(const dou
       vt.scale_row_by(i, scaler);
     }
 
-    return vt.t() * u.t();
   }
+  return vt.t() * u.t();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////

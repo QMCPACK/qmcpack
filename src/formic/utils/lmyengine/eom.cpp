@@ -404,8 +404,8 @@ formic::Matrix<double> cqmc::engine::EOM::ovlp_pseudo_inv(std::ostream & fout)
       v.scale_col_by(i, scaler);
     }
 
-    return v * u.t();
   }
+  return v * u.t();
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////

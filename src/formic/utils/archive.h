@@ -48,8 +48,8 @@ namespace formic {
       /// \brief  returns null (i.e. false) if the internal stream's state is bad and a pointer to the object itself otherwise
       operator void*() const { return ( this->fail() ? 0 : (void*)this ); }
 
-      virtual Archive & getline(std::string & str) = 0;
-      virtual Archive & getline(std::string & str, char delim) = 0;
+      virtual int getline(std::string & str) = 0;
+      virtual int getline(std::string & str, char delim) = 0;
 
       virtual Archive & operator>>(                              bool& val ) = 0;
       virtual Archive & operator>>(                             short& val ) = 0;
@@ -261,8 +261,8 @@ namespace formic {
 
       ~TextArchiveTemplate() {} //{ std::cout << "destroyed TextArchiveTemplate" << std::endl; }
 
-      Archive & getline(std::string & str) { std::getline(*_s, str); }
-      Archive & getline(std::string & str, char delim) { std::getline(*_s, str, delim); }
+      int getline(std::string & str) { std::getline(*_s, str); return 0; }
+      int getline(std::string & str, char delim) { std::getline(*_s, str, delim); return 0; }
 
       Archive & operator>>(                              bool& val ) { *_s >> std::boolalpha >> val; return *this; }
       Archive & operator>>(                             short& val ) { *_s >> val; return *this; }
@@ -560,8 +560,8 @@ namespace formic {
 
       ~BinaryArchiveTemplate() {} //{ std::cout << "destroyed BinaryArchiveTemplate" << std::endl; }
 
-      Archive & getline(std::string & str) { std::getline(*_s, str); }
-      Archive & getline(std::string & str, char delim) { std::getline(*_s, str, delim); }
+      int getline(std::string & str) { std::getline(*_s, str); return 0; }
+      int getline(std::string & str, char delim) { std::getline(*_s, str, delim); return 0; }
 
       // define input operators
       Archive & operator>>(                              bool& val ) { return this->read(val); }
