@@ -110,8 +110,6 @@ SET(QMC_BITS 64 CACHE INTEGER "Select OS bit")
 SET(QMC_COMPLEX 0 CACHE INTEGER "Build for complex binary")
 SET(PRINT_DEBUG 0 CACHE BOOL "Enable/disable debug printing")
 SET(QMC_CUDA 0 CACHE BOOL "Build with GPU support through CUDA")
-SET(QMC_ADIOS 0 CACHE BOOL "Build with ADIOS")
-SET(BUILD_UNIT_TESTS 1 CACHE BOOL "Build unit tests")
 
 ######################################################################
 # set debug printout
@@ -176,6 +174,13 @@ CHECK_INCLUDE_FILE(unistd.h HAVE_UNISTD_H)
 # BUILD_SANDBOX    build test programs
 # MPIP_PROFILE     profile mpi performance
 ######################################################################
+SET(QMC_ADIOS 0 CACHE BOOL "Build with ADIOS")
+SET(BUILD_UNIT_TESTS 1 CACHE BOOL "Build unit tests")
+SET(BUILD_LMYENGINE_INTERFACE 0 CACHE BOOL "Build LMY engine")
+IF(MIXED_PRECISION AND BUILD_LMYENGINE_INTERFACE)
+  MESSAGE(STATUS "LMY engine is not compatiable with CPU mixed precision build! Disabling LMY engine")
+  SET(BUILD_LMYENGINE_INTERFACE 0)
+ENDIF()
 #SET(BUILD_QMCTOOLS 1 CACHE BOOL "Build tools for QMCPACK")
 #SET(BUILD_SANDBOX 0 CACHE BOOL "Build snadbox for testing")
 #SET(MPIP_PROFILE 0 CACHE BOOL "Build with mpip for mpi profile")
@@ -241,9 +246,9 @@ IF(QMC_ADIOS)
       MESSAGE(STATUS "Couldn't find ADIOS")
       MESSAGE(FATAL_ERROR "ADIOS_HOME: export ADIOS_HOME=/path/to/adios")
     ENDIF()
-	ELSE()
-		ADD_DEFINITIONS(-DHAVE_ADIOS)
-  endif()
+  ELSE()
+    ADD_DEFINITIONS(-DHAVE_ADIOS)
+  ENDIF()
 ENDIF(QMC_ADIOS)
 
 SET(QMCPACK_UNIT_TEST_DIR ${qmcpack_BINARY_DIR}/tests/bin)
@@ -270,8 +275,8 @@ ENDIF()
 #If the automatic detection does not work, comment out everything 
 #upto COMPILER MANUAL SELECTION and use one of the customized cmake file.
 ######################################################
-INCLUDE(${CMAKE_ROOT}/Modules/TestCXXAcceptsFlag.cmake)
 INCLUDE(${CMAKE_ROOT}/Modules/CheckCCompilerFlag.cmake)
+INCLUDE(${CMAKE_ROOT}/Modules/CheckCXXCompilerFlag.cmake)
 
 
 ######################################################
@@ -465,6 +470,9 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
 
 ENDIF(CMAKE_TOOLCHAIN_FILE)
 
+#check if the CXX compiler supports -std=c++11 option
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG(-std=c++11 CXX_COMPILER_SUPPORT_CXX11)
 
 # setup ctest variables
 IF ( HAVE_MPI )
@@ -483,7 +491,6 @@ IF ( HAVE_MPI )
 
   MESSAGE(STATUS "MPI runner is ${MPIEXEC}")
 ENDIF(HAVE_MPI)
-
 
 MESSAGE(STATUS "CXX compiler flags: ${CMAKE_CXX_FLAGS}")
 MESSAGE(STATUS "CC  compiler flags: ${CMAKE_C_FLAGS}")
@@ -678,6 +685,21 @@ if(build_einspline)
   INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/include)
   SET(QMC_UTIL_LIBS einspline ${QMC_UTIL_LIBS})
 endif()
+
+IF(BUILD_LMYENGINE_INTERFACE)
+  # Turn C++11 for this code
+  IF (CXX_COMPILER_SUPPORT_CXX11)
+    IF(NOT CMAKE_CXX_FLAGS MATCHES "-std=c\\+\\+11")
+      SET (CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
+    ENDIF()
+  ELSE()
+    MESSAGE(FATAL_ERROR "LMY engine requires C++11 compiler support! Either choose a compiler supporting C++11 or disable LMY engine by adding -DBUILD_LMYENGINE_INTERFACE=0 in CMake command line.")
+  ENDIF()
+  ADD_DEFINITIONS(-DHAVE_LMY_ENGINE)
+  SET(FORMIC_BINARY_DIR ${qmcpack_BINARY_DIR})
+  SUBDIRS(src/formic/utils)
+  SET(QMC_UTIL_LIBS formic_utils ${QMC_UTIL_LIBS})
+ENDIF(BUILD_LMYENGINE_INTERFACE)
 
 #include(ExternalProject)
 #  set(einspline_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/einspline")

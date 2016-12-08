@@ -52,6 +52,8 @@ struct QMCGaussianParserBase
   int AtomicNumberIndex;
   int NumberOfAtoms;
   int NumberOfEls;
+  // targeted state number
+  int target_state;
   int SpinMultiplicity;
   int NumberOfAlpha, NumberOfBeta;
   int SizeOfBasisSet;

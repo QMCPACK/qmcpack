@@ -20,6 +20,7 @@
 ####################################
 # QMC Drivers which implements various QMC algorithms
 ####################################
+
 SET(QMCDRIVERS 
   SimpleFixedNodeBranch.cpp
   BranchIO.cpp
@@ -90,6 +91,13 @@ IF(HAVE_MPI)
   DMC/WalkerReconfigurationMPI.cpp)
 ENDIF(HAVE_MPI) 
 
+# if using the LMYEngine interface, make sure we add the necessary functions
+IF(BUILD_LMYENGINE_INTERFACE)
+  SET(QMCDRIVERS ${QMCDRIVERS} 
+      LMYEngineInterface/LMYE_QMCCostFunctionOMP.cpp
+      LMYEngineInterface/LMYE_QMCFixedSampleLinearOptimize.cpp
+     )
+ENDIF(BUILD_LMYENGINE_INTERFACE)
 
 IF(QMC_BUILD_LEVEL GREATER 1)
   SET(QMCDRIVERS ${QMCDRIVERS}
