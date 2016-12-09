@@ -132,7 +132,7 @@ bool QMCMain::execute()
     APP_ABORT("QMCMain::execute");
   }
   Timer t1;
-  NewTimer *t2 = new NewTimer("Total");
+  NewTimer *t2 = new NewTimer("Total", timer_level_coarse);
   TimerManager.addTimer(t2);
   t2->start();
   curMethod = std::string("invalid");
@@ -544,7 +544,7 @@ bool QMCMain::runQMC(xmlNodePtr cur)
     qmcDriver->process(cur);
     OhmmsInfo::flush();
     Timer qmcTimer;
-    NewTimer *t1 = new NewTimer(qmcDriver->getEngineName());
+    NewTimer *t1 = new NewTimer(qmcDriver->getEngineName(), timer_level_coarse);
     TimerManager.addTimer(t1);
     t1->start();
     qmcDriver->run();

@@ -37,12 +37,22 @@ namespace qmcplusplus
 
 class NewTimer;
 
+enum timer_levels {
+  timer_level_none,   // The 'none' settting is not for individual timers.
+                      // It is for setting a threshold to turn all timers off.
+  timer_level_coarse,
+  timer_level_medium,
+  timer_level_fine
+};
+
 class TimerManagerClass
 {
 protected:
   std::vector<NewTimer*> TimerList;
   std::vector<NewTimer*> CurrentTimerStack;
+  timer_levels timer_threshold;
 public:
+  TimerManagerClass():timer_threshold(timer_level_coarse) {}
   void addTimer (NewTimer* t);
 
   void push_timer(NewTimer *t)
@@ -72,6 +82,7 @@ public:
     return current;
   }
 
+  void set_timer_threshold(const timer_levels threshold);
 
   void reset();
   void print (Communicate* comm);
@@ -115,6 +126,8 @@ protected:
   double total_time;
   long num_calls;
   std::string name;
+  bool active;
+  timer_levels timer_level;
 #ifdef USE_STACK_TIMERS
   TimerManagerClass *manager;
   NewTimer *parent;
@@ -130,57 +143,62 @@ public:
 #else
   void start()
   {
-#ifdef USE_STACK_TIMERS
-    #pragma omp master
+    if (active)
     {
-      if (manager)
+#ifdef USE_STACK_TIMERS
+      #pragma omp master
       {
-        if (this == manager->current_timer())
+        if (manager)
         {
-           std::cerr << "Timer loop: " << name << std::endl;
-        }
-        if (parent != manager->current_timer())
-        {
-          parent = manager->current_timer();
-          if (parent)
+          if (this == manager->current_timer())
           {
-            current_stack_name = parent->get_stack_name() + "/" + name;
+             std::cerr << "Timer loop: " << name << std::endl;
           }
-          else
+          if (parent != manager->current_timer())
           {
-            current_stack_name = name;
+            parent = manager->current_timer();
+            if (parent)
+            {
+              current_stack_name = parent->get_stack_name() + "/" + name;
+            }
+            else
+            {
+              current_stack_name = name;
+            }
           }
+          manager->push_timer(this);
         }
-        manager->push_timer(this);
+        start_time = cpu_clock();
       }
-      start_time = cpu_clock();
-    }
 #else
-    start_time = cpu_clock();
+      start_time = cpu_clock();
 #endif
+    }
   }
 
   void stop()
   {
-#ifdef USE_STACK_TIMERS
-    #pragma omp master
-#endif
+    if (active)
     {
-      double elapsed = cpu_clock() - start_time;
-      total_time += elapsed;
-      num_calls++;
-
+#ifdef USE_STACK_TIMERS
+      #pragma omp master
+#endif
+      {
+        double elapsed = cpu_clock() - start_time;
+        total_time += elapsed;
+        num_calls++;
 
 #ifdef USE_STACK_TIMERS
-      std::string stack_name = get_stack_name();
-      per_stack_total_time[stack_name] += elapsed;
-      per_stack_num_calls[stack_name] += 1;
+        std::string stack_name = get_stack_name();
+        per_stack_total_time[stack_name] += elapsed;
+        per_stack_num_calls[stack_name] += 1;
 
-      if (manager)
-      {
-        manager->pop_timer();
-      }
+        if (manager)
+        {
+          manager->pop_timer();
+        }
 #endif
+      }
     }
   }
 #endif
@@ -234,8 +252,8 @@ public:
     total_time=0.0;
   }
 
-  NewTimer(const std::string& myname) :
-    total_time(0.0), num_calls(0), name(myname)
+  NewTimer(const std::string& myname, timer_levels mytimer = timer_level_fine) :
+    total_time(0.0), num_calls(0), name(myname), active(true), timer_level(mytimer)
 #ifdef USE_STACK_TIMERS
   ,manager(NULL), parent(NULL), current_stack_name(name)
 #endif
@@ -245,6 +263,13 @@ public:
   {
     name=myname;
   }
+
+  void set_active(const bool &is_active)
+  {
+    active = is_active;
+  }
+
+  void set_active_by_timer_threshold(const timer_levels threshold);
 
   void set_manager(TimerManagerClass *mymanager)
   {

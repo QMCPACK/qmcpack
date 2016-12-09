@@ -88,7 +88,7 @@ QMCHamiltonian::addOperator(QMCHamiltonianBase* h, const std::string& aname, boo
     h->myName=aname;
     H.push_back(h);
     std::string tname="Hamiltonian::"+aname;
-    NewTimer *atimer=new NewTimer(tname);
+    NewTimer *atimer=new NewTimer(tname, timer_level_fine);
     myTimers.push_back(atimer);
     TimerManager.addTimer(atimer);
   }

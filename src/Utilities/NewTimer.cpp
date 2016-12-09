@@ -34,6 +34,7 @@ void TimerManagerClass::addTimer(NewTimer* t)
   #pragma omp critical
   {
     t->set_manager(this);
+    t->set_active_by_timer_threshold(timer_threshold);
     TimerList.push_back(t);
   }
 }
@@ -42,6 +43,15 @@ void TimerManagerClass::reset()
 {
   for (int i=0; i<TimerList.size(); i++)
     TimerList[i]->reset();
+}
+
+void TimerManagerClass::set_timer_threshold(const timer_levels threshold)
+{
+  timer_threshold = threshold;
+  for (int i=0; i<TimerList.size(); i++)
+  {
+    TimerList[i]->set_active_by_timer_threshold(timer_threshold);
+  }
 }
 
 void TimerManagerClass::collate_flat_profile(Communicate *comm, FlatProfileData &p)
@@ -302,6 +312,20 @@ TimerManagerClass::output_timing(Communicate *comm, Libxml2Document &doc, xmlNod
 
 #endif
 #endif
+}
+
+void
+NewTimer::set_active_by_timer_threshold(const timer_levels threshold)
+{
+  if (timer_level <= threshold)
+  {
+    active = true;
+  }
+  else
+  {
+    active = false;
+  }
+
 }
 
 }

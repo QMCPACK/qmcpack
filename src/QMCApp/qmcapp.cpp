@@ -66,6 +66,34 @@ int main(int argc, char **argv)
         clones=atoi(argv[++i]);
       if (c == "-debug")
         ReportEngine::enableOutput();
+      if (c == "-disable-timers")
+        TimerManager.set_timer_threshold(timer_level_none);
+
+      // Default setting is 'timer_level_coarse'
+      if (c.find("-enable-timers") < c.size())
+      {
+        int pos = c.find("=");
+        if (pos != std::string::npos)
+        {
+          std::string timer_level = c.substr(pos+1);
+          if (timer_level == "coarse")
+          {
+            TimerManager.set_timer_threshold(timer_level_coarse);
+          }
+          else if (timer_level == "medium")
+          {
+            TimerManager.set_timer_threshold(timer_level_medium);
+          }
+          else if (timer_level == "fine")
+          {
+            TimerManager.set_timer_threshold(timer_level_fine);
+          }
+          else
+          {
+            std::cerr << "Unknown timer level: " << timer_level << std::endl;
+          }
+        }
+      }
     }
     else
     {
