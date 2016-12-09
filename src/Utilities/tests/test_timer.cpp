@@ -47,7 +47,7 @@ TEST_CASE("test_timer_stack", "[utilities]")
   // Use a local version rather than the global TimerManager, otherwise
   //  changes will persist from test to test.
   TimerManagerClass tm;
-  NewTimer t1("timer1");
+  NewTimer t1("timer1", timer_level_coarse);
   tm.addTimer(&t1);
 #if ENABLE_TIMER
 #ifdef USE_STACK_TIMERS
@@ -81,6 +81,7 @@ TEST_CASE("test_timer_flat_profile", "[utilities]")
 TEST_CASE("test_timer_flat_profile_same_name", "[utilities]")
 {
   TimerManagerClass tm;
+  tm.set_timer_threshold(timer_level_fine);
   FakeTimer t1("timer1");
   tm.addTimer(&t1);
   FakeTimer t2("timer2");
@@ -122,6 +123,7 @@ TEST_CASE("test_timer_flat_profile_same_name", "[utilities]")
 TEST_CASE("test_timer_nested_profile", "[utilities]")
 {
   TimerManagerClass tm;
+  tm.set_timer_threshold(timer_level_fine);
   FakeTimer t1("timer1");
   tm.addTimer(&t1);
   FakeTimer t2("timer2");
@@ -163,6 +165,7 @@ TEST_CASE("test_timer_nested_profile", "[utilities]")
 TEST_CASE("test_timer_nested_profile_two_children", "[utilities]")
 {
   TimerManagerClass tm;
+  tm.set_timer_threshold(timer_level_fine);
   NewTimer t1("timer1");
   tm.addTimer(&t1);
   NewTimer t2("timer2");
@@ -199,6 +202,7 @@ TEST_CASE("test_timer_nested_profile_two_children", "[utilities]")
 TEST_CASE("test_timer_nested_profile_alt_routes", "[utilities]")
 {
   TimerManagerClass tm;
+  tm.set_timer_threshold(timer_level_fine);
   NewTimer t1("timer1");
   tm.addTimer(&t1);
   NewTimer t2("timer2");
@@ -253,6 +257,7 @@ TEST_CASE("test_timer_nested_profile_alt_routes", "[utilities]")
 TEST_CASE("test_timer_nested_profile_collate", "[utilities]")
 {
   TimerManagerClass tm;
+  tm.set_timer_threshold(timer_level_fine);
   NewTimer t1("timer1");
   tm.addTimer(&t1);
   NewTimer t2("timer2");

@@ -195,6 +195,7 @@ public:
 
         if (manager)
         {
+          manager->current_timer()->set_parent(NULL);
           manager->pop_timer();
         }
 #endif
@@ -282,6 +283,11 @@ public:
   NewTimer *get_parent()
   {
     return parent;
+  }
+
+  void set_parent(NewTimer *new_parent)
+  {
+    parent = new_parent;
   }
 #endif
 };
