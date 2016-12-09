@@ -797,6 +797,7 @@ dmc_workflow_keys = [
     'struct_src','orb_src','J2_src','J3_src',
     'job','test_job',
     'tmoves','locality',
+    'prior_opt',
     ]
 fixed_defaults = obj(
     J0_run     = False,
@@ -813,6 +814,7 @@ fixed_defaults = obj(
     test_job   = None,
     tmoves     = False,
     locality   = False,
+    prior_opt  = True,
     )
 dmc_input_defaults = obj(
     minimal = obj(
@@ -2052,8 +2054,13 @@ def gen_dmc_chain(ch,loc):
     task = ch.task
     wf   = task.workflow
     orbdep = [('p2q','orbitals')]
-    J2dep  = orbdep + [('opt_J2','jastrow')]
-    J3dep  = orbdep + [('opt_J3','jastrow')]
+    if wf.prior_opt:
+        J2dep = orbdep + [('opt_J2','jastrow')]
+        J3dep = orbdep + [('opt_J3','jastrow')]
+    else:
+        J2dep = orbdep
+        J3dep = orbdep
+    #end if
     depset = obj(
         J0 = orbdep,
         J2 = J2dep,
