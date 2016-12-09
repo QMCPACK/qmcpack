@@ -304,21 +304,4 @@ TimerManagerClass::output_timing(Communicate *comm, Libxml2Document &doc, xmlNod
 #endif
 }
 
-
-#ifdef USE_STACK_TIMERS
-std::string
-NewTimer::get_stack_name()
-{
-  std::string stack_name = name;
-  NewTimer *current = parent;
-  while (current)
-  {
-    std::string tmp = current->get_name() + "/" + stack_name;
-    stack_name = tmp;
-    current = current->parent;
-  }
-  return stack_name;
-}
-#endif
-
 }

@@ -118,8 +118,8 @@ protected:
 #ifdef USE_STACK_TIMERS
   TimerManagerClass *manager;
   NewTimer *parent;
+  std::string current_stack_name;
 
-  std::vector<NewTimer *> children;
   std::map<std::string, double> per_stack_total_time;
   std::map<std::string, long> per_stack_num_calls;
 #endif
@@ -132,34 +132,46 @@ public:
   {
 #ifdef USE_STACK_TIMERS
     #pragma omp master
-    if (manager)
     {
-      if (this == manager->current_timer())
+      if (manager)
       {
-         std::cerr << "Timer loop: " << name << std::endl;
+        if (this == manager->current_timer())
+        {
+           std::cerr << "Timer loop: " << name << std::endl;
+        }
+        if (parent != manager->current_timer())
+        {
+          parent = manager->current_timer();
+          if (parent)
+          {
+            current_stack_name = parent->get_stack_name() + "/" + name;
+          }
+          else
+          {
+            current_stack_name = name;
+          }
+        }
+        manager->push_timer(this);
       }
-      parent = manager->current_timer();
-      if (parent)
-      {
-        parent->add_child(this);
-      }
-      manager->push_timer(this);
+      start_time = cpu_clock();
     }
-
-#endif
+#else
     start_time = cpu_clock();
+#endif
   }
 
   void stop()
   {
-    double elapsed = cpu_clock() - start_time;
-    total_time += elapsed;
-    num_calls++;
+#ifdef USE_STACK_TIMERS
+    #pragma omp master
+#endif
+    {
+      double elapsed = cpu_clock() - start_time;
+      total_time += elapsed;
+      num_calls++;
 
 
 #ifdef USE_STACK_TIMERS
-    #pragma omp master
-    {
       std::string stack_name = get_stack_name();
       per_stack_total_time[stack_name] += elapsed;
       per_stack_num_calls[stack_name] += 1;
@@ -168,13 +180,16 @@ public:
       {
         manager->pop_timer();
       }
-    }
 #endif
+    }
   }
 #endif
 
 #ifdef USE_STACK_TIMERS
-  std::string get_stack_name();
+  std::string get_stack_name()
+  {
+    return current_stack_name;
+  }
 #endif
 
 #ifdef USE_STACK_TIMERS
@@ -222,7 +237,7 @@ public:
   NewTimer(const std::string& myname) :
     total_time(0.0), num_calls(0), name(myname)
 #ifdef USE_STACK_TIMERS
-  ,manager(NULL), parent(NULL)
+  ,manager(NULL), parent(NULL), current_stack_name(name)
 #endif
   { }
 
@@ -242,33 +257,6 @@ public:
   NewTimer *get_parent()
   {
     return parent;
-  }
-#endif
-
-#ifdef USE_STACK_TIMERS
-  std::vector<NewTimer *> &get_children()
-  {
-    return children;
-  }
-#endif
-
-
-#ifdef USE_STACK_TIMERS
-  void add_child(NewTimer *t)
-  {
-    bool found = false;
-    for (int i = 0; i < children.size(); i++)
-    {
-       if (t == children[i])
-       {
-         found = true;
-         break;
-       }
-    }
-    if (!found)
-    {
-      children.push_back(t);
-    }
   }
 #endif
 };
