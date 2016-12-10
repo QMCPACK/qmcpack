@@ -1,3 +1,15 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: Luning Zhao, zhaoln@berkeley.edu, University of California, Berkeley
+//                    Eric Neuscamman, eneuscamman@berkeley.edu, University of California, Berkeley
+//
+// File created by: Luning Zhao, zhaoln@berkeley.edu, University of California, Berkeley
+//////////////////////////////////////////////////////////////////////////////////////
+
 #include "QMCDrivers/QMCCostFunctionOMP.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"

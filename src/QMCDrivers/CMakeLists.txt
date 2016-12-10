@@ -95,7 +95,6 @@ ENDIF(HAVE_MPI)
 IF(BUILD_LMYENGINE_INTERFACE)
   SET(QMCDRIVERS ${QMCDRIVERS} 
       LMYEngineInterface/LMYE_QMCCostFunctionOMP.cpp
-      LMYEngineInterface/LMYE_QMCFixedSampleLinearOptimize.cpp
      )
 ENDIF(BUILD_LMYENGINE_INTERFACE)
 

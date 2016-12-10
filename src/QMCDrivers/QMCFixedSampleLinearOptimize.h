@@ -74,10 +74,6 @@ private:
                                    std::vector<std::vector<RealType> > & parameterDirections);
 
   #ifdef HAVE_LMY_ENGINE
-  void solveShiftsWithLMYEngine(const RealType eval_target,
-                                const std::vector<double> & shifts_i,
-                                const std::vector<double> & shiffts_s,
-                                std::vector<std::vector<RealType> > & parameterDirections);
   formic::VarDeps vdeps;
   cqmc::engine::LMYEngine * EngineObj;
   #endif
