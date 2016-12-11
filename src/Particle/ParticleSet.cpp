@@ -85,9 +85,9 @@ ParticleSet::ParticleSet(const ParticleSet& p)
   if(p.DistTables.size())
   {
     app_log() << "  Cloning distance tables. It has " << p.DistTables.size() << std::endl;
-    addTable(*this,DistTables[0]->DTType); //first is always for this-this paier
+    addTable(*this,p.DistTables[0]->DTType); //first is always for this-this paier
     for (int i=1; i<p.DistTables.size(); ++i)
-      addTable(p.DistTables[i]->origin(),DistTables[i]->DTType);
+      addTable(p.DistTables[i]->origin(),p.DistTables[i]->DTType);
   }
   if(p.SK)
   {
