@@ -36,6 +36,7 @@
 #include <Lattice/CrystalLattice.h>
 #include <spline/einspline_engine.hpp>
 #include <spline/einspline_util.hpp>
+#include <simd/allocator.hpp>
 #include <Numerics/VectorViewer.h>
 
 namespace qmcplusplus
@@ -59,16 +60,6 @@ struct einspline_traits<double,3>
   typedef double              DataType;
 };
 
-/** specialization for 3D std::complex<double> */
-template<>
-struct einspline_traits<std::complex<double>,3>
-{
-  typedef multi_UBspline_3d_z SplineType;
-  typedef UBspline_3d_z       SingleSplineType;
-  typedef BCtype_z            BCType;
-  typedef std::complex<double>     DataType;
-};
-
 /** specialization for 3D float */
 template<>
 struct einspline_traits<float,3>
@@ -77,6 +68,17 @@ struct einspline_traits<float,3>
   typedef UBspline_3d_s       SingleSplineType;
   typedef BCtype_s            BCType;
   typedef float               DataType;
+};
+
+#if 0
+/** specialization for 3D std::complex<double> */
+template<>
+struct einspline_traits<std::complex<double>,3>
+{
+  typedef multi_UBspline_3d_z SplineType;
+  typedef UBspline_3d_z       SingleSplineType;
+  typedef BCtype_z            BCType;
+  typedef std::complex<double>     DataType;
 };
 
 /** specialization for 3D std::complex<float> */
@@ -88,6 +90,7 @@ struct einspline_traits<std::complex<float>,3>
   typedef BCtype_c            BCType;
   typedef std::complex<float>      DataType;
 };
+#endif
 
 /** symmetric outer product
  * @param v a vector
@@ -119,8 +122,10 @@ inline Tensor<T,D> outerProductSymm(const TinyVector<T,D>& v, const TinyVector<T
 template<typename ST, unsigned D>
 struct SplineAdoptorBase
 {
-  typedef TinyVector<ST,D>   PointType;
-  typedef UBspline_3d_d      SingleSplineType;
+  using PointType=TinyVector<ST,3>;
+  using SingleSplineType=UBspline_3d_d;
+  using DataType=ST; 
+
   ///true, if this for complex, each derived class has to set this
   bool is_complex;
   ///Index of this adoptor, when multiple adoptors are used for NUMA or distributed cases
@@ -139,25 +144,21 @@ struct SplineAdoptorBase
   CrystalLattice<ST,D>       PrimLattice;
   /// flags to unpack sin/cos
   std::vector<bool>               MakeTwoCopies;
-  /// kpoints for each unique orbitals
+  ///kpoints for each unique orbitals
   std::vector<TinyVector<ST,D> >  kPoints;
+  ///remap band
+  aligned_vector<int> BandIndexMap;
 
   ///name of the adoptor
   std::string AdoptorName;
   ///keyword used to match hdf5
   std::string KeyWord;
 
-  typedef typename einspline_traits<ST,D>::DataType   DataType;
-  typename OrbitalSetTraits<ST>::ValueVector_t     myV;
-  typename OrbitalSetTraits<ST>::ValueVector_t     myL;
-  typename OrbitalSetTraits<ST>::GradVector_t      myG;
-  typename OrbitalSetTraits<ST>::HessVector_t      myH;
-  typename OrbitalSetTraits<ST>::GradHessVector_t  myGH;
-
   SplineAdoptorBase()
     :is_complex(false),MyIndex(0),nunique_orbitals(0),first_spo(0),last_spo(0)
-  {
-  }
+  { }
+
+  SplineAdoptorBase(const SplineAdoptorBase& rhs)=default;
 
   inline void init_base(int n)
   {
@@ -165,6 +166,34 @@ struct SplineAdoptorBase
     GGt=dot(transpose(PrimLattice.G),PrimLattice.G);
     kPoints.resize(n);
     MakeTwoCopies.resize(n);
+  }
+
+  ///remap kpoints to group general kpoints & special kpoints
+  int remap_kpoints()
+  {
+    std::vector<TinyVector<ST,D> >  k_copy(kPoints);
+    const int nk=kPoints.size();
+    BandIndexMap.resize(nk);
+    int nCB=0;
+    //two pass
+    for(int i=0; i<nk; ++i)
+    {
+      if(MakeTwoCopies[i]) 
+      {
+        kPoints[nCB]=k_copy[i];
+        BandIndexMap[i]=nCB++;
+      }
+    }
+    int nRealBands=nCB;
+    for(int i=0; i<nk; ++i)
+    {
+      if(!MakeTwoCopies[i]) 
+      {
+        kPoints[nRealBands]=k_copy[i];
+        BandIndexMap[i]=nRealBands++;
+      }
+    }
+    return nCB; //return the number of complex bands
   }
 };
 
@@ -183,6 +212,7 @@ struct BsplineSet: public SPOSetBase, public SplineAdoptor
 {
   typedef typename SplineAdoptor::SplineType SplineType;
   typedef typename SplineAdoptor::PointType  PointType;
+  bool UseSoA=false;
 
   ///** default constructor */
   //BsplineSet() { }

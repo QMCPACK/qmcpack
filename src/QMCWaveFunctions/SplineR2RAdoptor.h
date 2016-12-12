@@ -37,11 +37,12 @@ struct SplineR2RAdoptor: public SplineAdoptorBase<ST,D>
   using SplineAdoptorBase<ST,D>::GGt;
   using SplineAdoptorBase<ST,D>::PrimLattice;
 
-  using SplineAdoptorBase<ST,D>::myV;
-  using SplineAdoptorBase<ST,D>::myL;
-  using SplineAdoptorBase<ST,D>::myG;
-  using SplineAdoptorBase<ST,D>::myH;
-  using SplineAdoptorBase<ST,D>::myGH;
+  typename OrbitalSetTraits<ST>::ValueVector_t     myV;
+  typename OrbitalSetTraits<ST>::ValueVector_t     myL;
+  typename OrbitalSetTraits<ST>::GradVector_t      myG;
+  typename OrbitalSetTraits<ST>::HessVector_t      myH;
+  typename OrbitalSetTraits<ST>::GradHessVector_t  myGH;
+
   SplineType *MultiSpline;
 
   ///number of points of the original grid

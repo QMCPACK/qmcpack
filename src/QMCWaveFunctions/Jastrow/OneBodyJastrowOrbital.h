@@ -105,8 +105,6 @@ public:
     //allocate vector of proper size  and set them to 0
     Funique.resize(CenterRef.getSpeciesSet().getTotalNum(),nullptr);
     Fs.resize(CenterRef.getTotalNum(),nullptr);
-    
-    std::cout << "<<<<< SIZE " << Funique.size() << " " << Fs.size() << std::endl;
     OrbitalName = "OneBodyJastrow";
   }
 

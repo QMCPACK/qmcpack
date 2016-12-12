@@ -110,7 +110,7 @@ struct BsplineFunctorSoA
   }
 
   void setReportLevel(int i, const std::string& fname);
-  void reportStatus(ostream& os);
+  void reportStatus(std::ostream& os);
   void print();
   void print(std::ostream& os);
 #endif
