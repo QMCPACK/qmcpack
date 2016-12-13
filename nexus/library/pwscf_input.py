@@ -1902,6 +1902,7 @@ def generate_scf_input(prefix       = 'pwscf',
                        use_folded   = True,
                        group_atoms  = False,
                        la2F         = None,
+                       nbnd         = None
                        ):
     if pseudos is None:
         pseudos = []
@@ -1938,9 +1939,12 @@ def generate_scf_input(prefix       = 'pwscf',
         ecutrho     = ecutrho,
         nosym       = nosym,
         )
-    if la2F!=None:
+    if la2F is not None:
         pw.system.la2F = la2F
     #end if
+    if nbnd is not None:
+        pw.system.nbnd = nbnd
+    # end if
     if assume_isolated!=None:
         pw.system.assume_isolated = assume_isolated
     #end if
