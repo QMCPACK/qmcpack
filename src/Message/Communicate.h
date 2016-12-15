@@ -173,6 +173,7 @@ public:
 
   // MMORALES: leaving this here temprarily, but it doesn;t belong here.
   // MMORALES: FIX FIX FIX
+#ifdef HAVE_MPI
   inline bool head_nodes(MPI_Comm& MPI_COMM_HEAD_OF_NODES) {
     char hostname[HOST_NAME_MAX];
     gethostname(hostname,HOST_NAME_MAX);
@@ -187,16 +188,19 @@ public:
     delete dummy;
     return head_of_node;
   }
+#endif
 
   // MMORALES:
   // right now there is no easy way to use Communicate
   // for generic processor subgroups, so calling split on myMPI
   // and managing the communicator directly  
   // THIS MUST BE FIXED!!!
+#ifdef HAVE_MPI
   inline void split_comm(int key, MPI_Comm& comm) {
     int myrank=rank(),nprocs=size();
     MPI_Comm_split(myMPI,key,myrank,&comm);
   }
+#endif
 
   template<typename T> void allreduce(T&);
   template<typename T> void reduce(T&);
@@ -223,12 +227,18 @@ public:
   template<typename T> void bcast(T* restrict, int n,mpi_comm_type comm);
   template<typename T> void bcast(T* restrict, int n, int orig, mpi_comm_type comm); 
   template<typename T> void send(T* restrict, int n, int dest, int tag, mpi_comm_type comm);
+#ifdef HAVE_MPI
   template<typename T> void recv(T* restrict, int n, int dest, int tag, mpi_comm_type comm, MPI_Status*);
+#endif
   template<typename T, typename IT> void gatherv(T* sb, T* rb, int n, IT& counts, IT& displ, int dest=0);
+#ifdef HAVE_MPI
   template<typename T, typename IT> void gatherv(T* sb, T* rb, int n,IT& counts, IT& displ, int dest, MPI_Comm comm);
+#endif
   template<typename T> void allgather(T& sb, T& rb, int count, mpi_comm_type comm);
   template<typename T> void allgather(T* sb, T* rb, int count);
+#ifdef HAVE_MPI
   template<typename T, typename IT> void scatterv(T* sb, T* rb, int n, IT& counts, IT& displ, int source, MPI_Comm);
+#endif
   template<typename T> void gsum(T&);
   template<typename T> void gsum(T&,mpi_comm_type comm);
   template<typename T> void gmax(T&,mpi_comm_type comm);
