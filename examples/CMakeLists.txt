@@ -2,6 +2,6 @@
 
 SUBDIRS(molecules/H2O)
 SUBDIRS(molecules/He)
-IF (WITH_AFQMC)
+IF (BUILD_AFQMC)
   SUBDIRS(afqmc/n2_vdz)
 ENDIF()

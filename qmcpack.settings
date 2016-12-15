@@ -6,8 +6,8 @@ QMC_MPI                = @QMC_MPI@
 QMC_OMP                = @QMC_OMP@
 QMC_CUDA               = @QMC_CUDA@
 QMC_COMPLEX            = @QMC_COMPLEX@
-WITH_AFQMC             = @WITH_AFQMC@
-WITH_FCIQMC            = @WITH_FCIQMC@
+BUILD_AFQMC            = @BUILD_AFQMC@
+BUILD_FCIQMC           = @BUILD_FCIQMC@
 
 #system variables
 QMC_HOSTNAME           = @QMC_HOSTNAME@

@@ -52,10 +52,10 @@ extern "C" {
 #include <adios_error.h>
 }
 #endif
-#ifdef WITH_AFQMC
+#ifdef BUILD_AFQMC
 #include "AFQMC/AFQMCFactory.h"
 #endif
-#ifdef WITH_FCIQMC
+#ifdef BUILD_FCIQMC
 #include "FCIQMC/App/SQCFactory.h" 
 #endif
 
@@ -125,7 +125,7 @@ bool QMCMain::execute()
     simType.put(cur);
   }
 
-#ifdef WITH_AFQMC
+#ifdef BUILD_AFQMC
   if(simulationType == "afqmc") {
     app_log() << std::endl << "/*************************************************\n"
                       << " ********  This is an AFQMC calculation   ********\n"
@@ -146,12 +146,12 @@ bool QMCMain::execute()
   } else
 #else
   if(simulationType == "afqmc") {
-    app_error()<<" Executable not compiled with AFQMC. Recompile with WITH_AFQMC set to 1." <<std::endl; 
+    app_error()<<" Executable not compiled with AFQMC. Recompile with BUILD_AFQMC set to 1." <<std::endl; 
     return false;
   }
 #endif
 
-#ifdef WITH_FCIQMC
+#ifdef BUILD_FCIQMC
 
   if(simulationType == "fciqmc") {
     app_log() << std::endl << "/*************************************************\n"
@@ -174,7 +174,7 @@ bool QMCMain::execute()
   }
 #else
   if(simulationType == "fciqmc") {
-    app_error()<<" Executable not compiled with FCIQMC. Recompile with WITH_FCIQMC set to 1." <<std::endl; 
+    app_error()<<" Executable not compiled with FCIQMC. Recompile with BUILD_FCIQMC set to 1." <<std::endl; 
     return false;
   }
 #endif

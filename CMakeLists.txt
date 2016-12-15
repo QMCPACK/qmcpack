@@ -110,8 +110,8 @@ SET(QMC_BITS 64 CACHE INTEGER "Select OS bit")
 SET(QMC_COMPLEX 0 CACHE INTEGER "Build for complex binary")
 SET(PRINT_DEBUG 0 CACHE BOOL "Enable/disable debug printing")
 SET(QMC_CUDA 0 CACHE BOOL "Build with GPU support through CUDA")
-SET(WITH_AFQMC 1 CACHE BOOL "Build with AFQMC")
-SET(WITH_FCIQMC 0 CACHE BOOL "Build with FCIQMC")
+SET(BUILD_AFQMC 1 CACHE BOOL "Build with AFQMC")
+SET(BUILD_FCIQMC 0 CACHE BOOL "Build with FCIQMC")
 
 ######################################################################
 # set debug printout
@@ -481,8 +481,7 @@ SET(CXX11_NEEDED FALSE)
 IF(BUILD_LMYENGINE_INTERFACE)
   SET(CXX11_NEEDED TRUE)
 ENDIF()
-## add AFQMC checker here
-IF(WITH_AFQMC)
+IF(BUILD_AFQMC)
   SET(CXX11_NEEDED TRUE)
 ENDIF()
 # once C++11 is needed
@@ -499,7 +498,7 @@ IF(CXX11_NEEDED)
   ELSE()
     MESSAGE(STATUS "Disabling features requring C++11 due to the lack of compiler support")
     SET(BUILD_LMYENGINE_INTERFACE 0)
-    ## disable AFQMC here
+    SET(BUILD_AFQMC 0)
   ENDIF()
 ENDIF(CXX11_NEEDED)
   

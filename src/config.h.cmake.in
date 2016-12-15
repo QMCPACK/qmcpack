@@ -211,10 +211,10 @@
 #cmakedefine CUDA_PRECISION_FULL @CUDA_PRECISION_FULL@
 
 /* For AFQMC compilation  */
-#cmakedefine WITH_AFQMC @WITH_AFQMC@
+#cmakedefine BUILD_AFQMC @BUILD_AFQMC@
 
 /* For FCIQMC compilation  */
-#cmakedefine WITH_FCIQMC @WITH_FCIQMC@
+#cmakedefine BUILD_FCIQMC @BUILD_FCIQMC@
 
 #cmakedefine DEBUG_PSIBUFFER_ON @DEBUG_PSIBUFFER_ON@
 
