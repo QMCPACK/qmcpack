@@ -45,6 +45,8 @@ enum timer_levels {
   timer_level_fine
 };
 
+const char TIMER_STACK_SEPARATOR='/';
+
 class TimerManagerClass
 {
 protected:
@@ -159,7 +161,7 @@ public:
             parent = manager->current_timer();
             if (parent)
             {
-              current_stack_name = parent->get_stack_name() + "/" + name;
+              current_stack_name = parent->get_stack_name() + TIMER_STACK_SEPARATOR + name;
             }
             else
             {

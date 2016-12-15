@@ -18,6 +18,7 @@
  * @brief Implements TimerManager
  */
 #include <libxml/xmlwriter.h>
+#include "Configuration.h"
 #include "Utilities/NewTimer.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
@@ -33,6 +34,12 @@ void TimerManagerClass::addTimer(NewTimer* t)
 {
   #pragma omp critical
   {
+    if (t->get_name().find(TIMER_STACK_SEPARATOR) != std::string::npos)
+    { 
+      app_log() << "Warning: Timer name (" << t->get_name()
+                << ") should not contain the character "
+                << TIMER_STACK_SEPARATOR << std::endl;
+    }
     t->set_manager(this);
     t->set_active_by_timer_threshold(timer_threshold);
     TimerList.push_back(t);
@@ -101,7 +108,7 @@ get_level(const std::string &stack_name)
   int level = 0;
   for (int i = 0; i < stack_name.length(); i++)
   {
-    if (stack_name[i] == '/')
+    if (stack_name[i] == TIMER_STACK_SEPARATOR)
     {
       level++;
     }
@@ -112,7 +119,7 @@ get_level(const std::string &stack_name)
 std::string
 get_leaf_name(const std::string &stack_name)
 {
-  int pos = stack_name.find_last_of('/');
+  int pos = stack_name.find_last_of(TIMER_STACK_SEPARATOR);
   if (pos == std::string::npos)
   {
     return stack_name;
