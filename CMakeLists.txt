@@ -501,6 +501,12 @@ IF(CXX11_NEEDED)
     SET(BUILD_AFQMC 0)
   ENDIF()
 ENDIF(CXX11_NEEDED)
+
+# AFQMC requires MKL sparse
+IF (BUILD_AFQMC AND NOT MKL_FOUND)
+  MESSAGE(STATUS "AFQMC requires MKL sparse libraries. Disabling AFQMC")
+  SET (BUILD_AFQMC 0)
+ENDIF()
   
 # setup ctest variables
 IF ( HAVE_MPI )
