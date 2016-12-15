@@ -45,19 +45,19 @@ echo --- Building for $sys `date`
 
 case $sys in
     "build_gcc")
-	export QMCPACK_TEST_SUBMIT_NAME=GCC-Release
+	export QMCPACK_TEST_SUBMIT_NAME=GCC-MKL-Release
 	ctest -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=0 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -S $PWD/../CMake/ctest_script.cmake,release -E 'long' -VV --timeout $timeout
 	;;
     "build_gcc_complex")
-	export QMCPACK_TEST_SUBMIT_NAME=GCC-Complex-Release
+	export QMCPACK_TEST_SUBMIT_NAME=GCC-MKL-Complex-Release
 	ctest -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=0 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -S $PWD/../CMake/ctest_script.cmake,release -E 'long' -VV --timeout $timeout
 	;;
     "build_gcc_mixed")
-	export QMCPACK_TEST_SUBMIT_NAME=GCC-Mixed-Release
+	export QMCPACK_TEST_SUBMIT_NAME=GCC-MKL-Mixed-Release
 	ctest -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -S $PWD/../CMake/ctest_script.cmake,release -E 'long' -VV --timeout $timeout
 	;;
     "build_gcc_complex_mixed")
-	export QMCPACK_TEST_SUBMIT_NAME=GCC-Complex-Mixed-Release
+	export QMCPACK_TEST_SUBMIT_NAME=GCC-MKL-Complex-Mixed-Release
 	ctest -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -S $PWD/../CMake/ctest_script.cmake,release -E 'long' -VV --timeout $timeout
 	;;
     "build_intel2017")

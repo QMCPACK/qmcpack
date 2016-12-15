@@ -37,7 +37,7 @@ QMCCostFunctionBase::QMCCostFunctionBase(MCWalkerConfiguration& w, TrialWaveFunc
   w_en(0.0), w_var(1.0), w_abs(0.0),w_w(0.0),w_beta(0.0), GEVType("mixed"),
   CorrelationFactor(0.0), m_wfPtr(NULL), m_doc_out(NULL), msg_stream(0), debug_stream(0),
   SmallWeight(0),usebuffer("no"), includeNonlocalH("no"),needGrads(true), vmc_or_dmc(2.0),
-  StoreDerivInfo(true),DerivStorageLevel(-1)
+  StoreDerivInfo(true),DerivStorageLevel(-1), targetExcitedStr("no"), targetExcited(false), omega_shift(0.0)
 {
   GEVType="mixed";
   //paramList.resize(10);
@@ -486,7 +486,13 @@ QMCCostFunctionBase::put(xmlNodePtr q)
   m_param.add(computeNLPPderiv,"use_nonlocalpp_deriv","string");
   m_param.add(w_beta,"beta","double");
   m_param.add(GEVType,"GEVMethod","string");
+  m_param.add(targetExcitedStr,"targetExcited","string");
+  m_param.add(omega_shift,"omega","double");
   m_param.put(q);
+
+  tolower(targetExcitedStr);
+  targetExcited = ( targetExcitedStr == "yes" );
+
   if (includeNonlocalH=="yes")
     includeNonlocalH="NonLocalECP";
 
@@ -958,6 +964,28 @@ QMCCostFunctionBase::lineoptimization(const std::vector<Return_t>& x0, const std
   //return false;
   return true;
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+/// \brief  If the LMYEngine is available, returns the cost function calculated by the engine.
+///         Otherwise, returns the usual cost function.
+///
+/// \param[in]      needDeriv             whether derivative vectors should be computed
+///
+///////////////////////////////////////////////////////////////////////////////////////////////////
+#ifdef HAVE_LMY_ENGINE
+QMCCostFunctionBase::Return_t QMCCostFunctionBase::LMYEngineCost(const bool needDeriv, cqmc::engine::LMYEngine * EngineObj) {
+
+  // prepare local energies, weights, and possibly derivative vectors, and compute standard cost
+  const Return_t standardCost = this->Cost(needDeriv);
+
+  // if we are using the LMYEngine, compute and return it's cost function value
+  return this->LMYEngineCost_detail(EngineObj);
+
+  // otherwise return the standard cost function
+  return standardCost;
+
+}
+#endif
 
 }
 /***************************************************************************

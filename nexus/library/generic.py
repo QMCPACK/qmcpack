@@ -714,17 +714,24 @@ class obj(object_interface):
 
     def delete(self,*keys):
         nkeys = len(keys)
+        single = False
         if nkeys==0:
             keys = sorted(self._keys())
         elif nkeys==1 and isinstance(keys[0],(list,tuple)):
             keys = keys[0]
+        elif nkeys==1:
+            single = True
         #end if
         values = []
         for key in keys:
             values.append(self[key])
             del self[key]
         #end for
-        return values
+        if single:
+            return values[0]
+        else:
+            return values
+        #end if
     #end def delete
 
     def delete_optional(self,key,value=None):

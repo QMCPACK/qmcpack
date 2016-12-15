@@ -39,6 +39,7 @@
 // }
 
 #if defined(HAVE_AMDLIBM)
+#include <emmintrin.h>
 namespace std
 {
 #include <amdlibm.h>
@@ -52,9 +53,6 @@ namespace std
 #undef vrsa_sincosf
 #define vrsa_sincosf std::amd_vrsa_sincosf
 
-#undef vrsa_sincos
-#define vrsa_sincos std::amd_vrsa_sincosf
-
 inline void
 eval_e2iphi(int n, double* restrict phi, double* restrict c, double *restrict s)
 {
@@ -64,7 +62,7 @@ eval_e2iphi(int n, double* restrict phi, double* restrict c, double *restrict s)
 inline void
 eval_e2iphi(int n, float* restrict phi, float* restrict c, float *restrict s)
 {
-  vrsa_sincos(n, phi, s, c);
+  vrsa_sincosf(n, phi, s, c);
 }
 
 inline void

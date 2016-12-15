@@ -278,6 +278,11 @@ void EstimatorManager::stop()
   {
     delete Archive;
     Archive=0;
+  } 
+  if (h_file != -1)
+  {
+    H5Fclose(h_file);
+    h_file = -1;
   }
 }
 

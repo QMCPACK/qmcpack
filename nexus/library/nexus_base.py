@@ -97,6 +97,7 @@ nexus_core.set(
     status_modes      = status_modes,      # used by: ProjectManager
     status            = status_modes.none, # used by: ProjectManager
     emulate           = False,             # unused
+    progress_tty      = False,             # used by: ProjectManager
     **nexus_core_noncore
     )
 
@@ -155,18 +156,31 @@ _____________________________________________________
     #end def mem_usage
 
     def log(self,*texts,**kwargs):
+        """Write output to log file.
+           Keyword arguments
+            n - spaces to indent
+            progress - if True and output is to a terminal, overwrite and
+                       update the last line, rather than scrolling.
+        """
         if nexus_core.verbose:
             if len(kwargs)>0:
                 n = kwargs['n']
             else:
                 n=0
             #end if
+            is_progress = kwargs.get('progress',False)
             text=''
             for t in texts:
                 text+=str(t)+' '
             #end for
             pad = n*nexus_core.indent
-            self._logfile.write(pad+text.replace('\n','\n'+pad)+'\n')
+            output_text = pad+text.replace('\n','\n'+pad)
+            if nexus_core.progress_tty and is_progress and self._logfile.isatty():
+                # spaces to ensure previous line is overwritten.  Need better solution.
+                self._logfile.write(output_text+'        \r')
+                self._logfile.flush()
+            else:
+                self._logfile.write(output_text+'\n')
         #end if
         NexusCore.wrote_something = True
     #end def log

@@ -350,7 +350,7 @@ def tile_magnetization(mag,tilevec,mag_order,mag_prim):
     #  if magnetic primitive is requested, a small tiling vector should first be used
     #   (ie 221,212,122,222 periods all involve a 211 prim tiling w/ a simple reshaping/reassignment of the cell axes
     #  Structure should have a function providing labels to each magnetic species
-    mag = array(tilevec.prod()*list(mag),dtype=object)
+    mag = array(int(round( tilevec.prod() ))*list(mag),dtype=object)
     return mag
 #end def tile_magnetization
 
@@ -2597,7 +2597,7 @@ class Structure(Sobj):
 
         tilematrix,tilevector = reduce_tilematrix(tiling)
 
-        ncells = abs(det(tilematrix))
+        ncells = int(round( abs(det(tilematrix)) ))
 
         if ncells==1 and abs(tilematrix-identity(self.dim)).sum()<1e-1:
             if in_place:
@@ -2671,7 +2671,7 @@ class Structure(Sobj):
         else:
             npoints,dim = points.shape
         #end if
-        ntpoints = npoints*t.prod()
+        ntpoints = npoints*int(round( t.prod() ))
         if not noninteger:
             t = ti
             if ntpoints==0:
@@ -2733,7 +2733,7 @@ class Structure(Sobj):
             tiling = tiling.T
         #end if
         tilematrix,tilevector = reduce_tilematrix(tiling)
-        ncells = abs(det(tilematrix))
+        ncells = int(round( abs(det(tilematrix)) ))
         kp     = self.tile_points(kpoints,self.kaxes,tilematrix,tilevector)
         kw     = array(ncells*list(kweights),dtype=float)/ncells
         return kp,kw
@@ -5074,9 +5074,9 @@ def generate_defect_structure(defect,structure,shape=None,element=None,
 #end def generate_defect_structure
 
 
-def read_structure(filepath,elem=None):
+def read_structure(filepath,elem=None,format=None):
     s = generate_structure('empty')
-    s.read(filepath,elem=elem)
+    s.read(filepath,elem=elem,format=format)
     return s
 #end def read_structure
 

@@ -86,7 +86,7 @@ class Settings(NexusCore):
         status_only     generate_only   runs            results 
         pseudo_dir      sleep           local_directory remote_directory 
         monitor         skip_submit     load_images     stages          
-        verbose         debug           trace
+        verbose         debug           trace           progress_tty
         '''.split())
 
     core_process_vars = set('''
