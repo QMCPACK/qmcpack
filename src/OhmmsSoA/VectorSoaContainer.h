@@ -60,7 +60,7 @@ namespace qmcplusplus
         setDefaults();
         InUnit=in.InUnit;
         resize(in.nLocal);
-        std::copy_n(in.myData,nLocal*D,myData);
+        std::copy_n(in.myData,nGhosts*D,myData);
       }
 
       ///default copy operator
