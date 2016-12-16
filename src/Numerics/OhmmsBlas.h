@@ -300,19 +300,6 @@ struct BLAS
 //     csymv(&UPLO,&n,&cone,a,&n,x,&INCX,&czero,y,&INCY);
 //   }
 
-  //template<typename T>
-  inline static
-  double dot(int n, const double* restrict a, const int incx, const double* restrict b, const int incy )
-  {
-    return ddot(n,a,incx,b,incy);
-  }
-
-  inline static
-  complex_ret dot(int n, const std::complex<double>* restrict a, const int incx, const std::complex<double>* restrict b, const int incy )
-  {
-    return zdotu(n,a,incx,b,incy);
-  }
-
   template<typename T>
   inline static
   T dot(int n, const T* restrict a, const T* restrict b)

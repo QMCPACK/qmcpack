@@ -80,23 +80,15 @@ namespace qmcplusplus {
     template<typename T>
       inline T dot(const T* restrict a, const T* restrict b, int n, T res=0.0) 
       {
-#if defined(USE_BLAS_DOT)
-        return BLAS::dot(n,a,1,b,1);
-#else
         for(int i=0; i<n; i++) res += a[i]*b[i];
         return res;
-#endif
       }
 
     /** dot product specialized for double */
     inline double dot(const double* restrict a, const double* restrict b, int n, double res=0.0) 
     {
-#if defined(USE_BLAS_DOT)
-      return ddot(n,a,1,b,1);
-#else
       for(int i=0;i<n; ++i) res += a[i]*b[i];
       return res;
-#endif
     }
 
     /** dot product of mixed type

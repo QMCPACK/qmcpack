@@ -52,7 +52,7 @@ namespace qmcplusplus {
       inline TSUM dot(const T* restrict a, const T* restrict b, int n, TSUM res) 
       {
         ASSUMED_ALIGNED(a); ASSUMED_ALIGNED(b);
-#pragma omp simd reduction(+:res)
+        #pragma omp simd reduction(+:res)
         for(int i=0; i<n; i++) res += a[i]*b[i];
         return res;
       }
@@ -81,7 +81,7 @@ namespace qmcplusplus {
       inline void axpy(T alpha, const T* restrict in, T* restrict out, int n)
       {
         ASSUME_ALIGNED(in); ASSUME_ALIGNED(out);
-#pragma omp simd
+        #pragma omp simd
         for(int i=0; i<n; ++i)
           out[i]=alpha*in[i];
       }
@@ -90,7 +90,7 @@ namespace qmcplusplus {
       inline void scal(T alpha, T* restrict inout, int n)
       {
         ASSUME_ALIGNED(inout);
-#pragma omp simd
+        #pragma omp simd
         for(int i=0; i<n; ++i)
           inout[i]*=alpha;
       }
