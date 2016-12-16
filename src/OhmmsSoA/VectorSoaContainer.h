@@ -30,14 +30,12 @@ namespace qmcplusplus
       using Element_t=T;
       ///alias to ParticleAttrib<T1,D>
       template <class T1> using PosArray = ParticleAttrib<TinyVector<T1,D> >;
-      ///the unit type
-      int InUnit;
       ///number of elements
-      int nLocal;
+      size_t nLocal;
       ///number of elements + padded
-      int nGhosts;
+      size_t nGhosts;
       ///number of elements allocated by myAlloc
-      int nAllocated;
+      size_t nAllocated;
       ///pointer: what type????
       T* myData;
       ///allocator
@@ -58,7 +56,6 @@ namespace qmcplusplus
       VectorSoaContainer(const VectorSoaContainer& in)
       {
         setDefaults();
-        InUnit=in.InUnit;
         resize(in.nLocal);
         std::copy_n(in.myData,nGhosts*D,myData);
       }
@@ -68,7 +65,6 @@ namespace qmcplusplus
       {
         if(myData!=in.myData) 
         {
-          InUnit=in.InUnit;
           resize(in.nLocal);
           std::copy_n(in.myData,nGhosts*D,myData);
         }
@@ -76,7 +72,7 @@ namespace qmcplusplus
       }
 
       ///move constructor
-      VectorSoaContainer(VectorSoaContainer&& in): InUnit(in.InUnit),nLocal(in.nLocal),nGhosts(in.nGhosts)
+      VectorSoaContainer(VectorSoaContainer&& in): nLocal(in.nLocal),nGhosts(in.nGhosts)
       { 
         nAllocated=in.nAllocated;
         myData=in.myData;
@@ -87,7 +83,7 @@ namespace qmcplusplus
 
       /** constructor with size n  without initialization
        */
-      explicit VectorSoaContainer(int n)
+      explicit VectorSoaContainer(size_t n)
       { setDefaults(); resize(n); }
 
       /** constructor with ParticleAttrib<T1,D> */
@@ -119,7 +115,7 @@ namespace qmcplusplus
       ///initialize the data members 
       __forceinline void setDefaults()
       {
-        InUnit=0;nLocal=0; nGhosts=0;nAllocated=0;myData=nullptr;
+        nLocal=0; nGhosts=0;nAllocated=0;myData=nullptr;
       }
 
       /** resize myData
@@ -127,7 +123,7 @@ namespace qmcplusplus
        *
        * nAllocated is used to ensure no memory leak
        */
-      __forceinline void resize(int n)
+      __forceinline void resize(size_t n)
       {
         if(nAllocated) myAlloc.deallocate(myData,nAllocated);
         nLocal=n;
@@ -143,7 +139,7 @@ namespace qmcplusplus
        *
        * Free existing memory and reset the internal variables
        */
-      __forceinline void resetByRef(int n, int n_padded, T* ptr)
+      __forceinline void resetByRef(size_t n, size_t n_padded, T* ptr)
       {
         if(nAllocated) myAlloc.deallocate(myData,nAllocated);
         nAllocated=0;
@@ -153,9 +149,9 @@ namespace qmcplusplus
       }
 
       ///return the physical size
-      __forceinline int size() const { return nLocal;}
+      __forceinline size_t size() const { return nLocal;}
       ///return the physical size
-      __forceinline int capacity() const { return nGhosts;}
+      __forceinline size_t capacity() const { return nGhosts;}
 
       /** AoS to SoA : copy from ParticleAttrib<>
        *
@@ -180,21 +176,21 @@ namespace qmcplusplus
 
       /** return TinyVector<T,D>
        */
-      __forceinline Type_t operator[](int i) const
+      __forceinline Type_t operator[](size_t i) const
       {
         return Type_t(myData+i,nGhosts); 
       }
 
-      ///helper class for operator ()(int i) to assign a value
+      ///helper class for operator ()(size_t i) to assign a value
       struct Accessor
       {
-        int M;
+        size_t M;
         T* _base;
-        __forceinline Accessor(T* a, int ng) : _base(a), M(ng){}
+        __forceinline Accessor(T* a, size_t ng) : _base(a), M(ng){}
         __forceinline Accessor& operator=(const TinyVector<T,D>& rhs)
         {
 #pragma unroll(D)
-          for(int i=0; i<D; ++i) *(_base+M*i)=rhs[i];
+          for(size_t i=0; i<D; ++i) *(_base+M*i)=rhs[i];
           return *this;
         }
 
@@ -203,7 +199,7 @@ namespace qmcplusplus
         __forceinline Accessor& operator=(T1 rhs)
         {
 #pragma unroll(D)
-          for(int i=0; i<D; ++i) *(_base+M*i)=rhs;
+          for(size_t i=0; i<D; ++i) *(_base+M*i)=rhs;
           return *this;
         }
       };
@@ -212,7 +208,7 @@ namespace qmcplusplus
        *
        * Use for (*this)[i]=TinyVector<T,D>;
        */
-      __forceinline Accessor operator()(int i) 
+      __forceinline Accessor operator()(size_t i) 
       {
         return Accessor(myData+i,nGhosts);
       }
@@ -221,9 +217,9 @@ namespace qmcplusplus
       ///return the base
       __forceinline const T* data() const { return myData;}
       ///return the pointer of the i-th components
-      __forceinline T* restrict data(int i) { return myData+i*nGhosts;}
+      __forceinline T* restrict data(size_t i) { return myData+i*nGhosts;}
       ///return the const pointer of the i-th components
-      __forceinline const T* restrict data(int i) const { return myData+i*nGhosts;}
+      __forceinline const T* restrict data(size_t i) const { return myData+i*nGhosts;}
 
       /** serialization function */
       template<class Archive>
