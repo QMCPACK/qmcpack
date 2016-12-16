@@ -165,8 +165,9 @@ else()
   SET(PARTICLE ${PARTICLE}
     Particle/ParticleSet.cpp 
     Particle/ParticleSet.BC.cpp 
-    Particle/VirtualParticleSet.cpp 
     Particle/MCWalkerConfiguration.cpp 
+    Particle/DistanceTableAA.cpp
+    Particle/DistanceTableAB.cpp
     Particle/DistanceTable.cpp
     Particle/HDFWalkerInputManager.cpp
     Particle/make_clones.cpp
