@@ -2445,5 +2445,6 @@ GAMESS numerical results:
       <parameter name="subSteps"            >    3               </parameter>
       <parameter name="timestep"            >    0.4             </parameter>
       <parameter name="warmupSteps"         >    50              </parameter>
+      <parameter name="samples"             >    1600000         </parameter>
    </qmc>
 </simulation>
