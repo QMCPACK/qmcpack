@@ -46,7 +46,6 @@ namespace qmcplusplus
 
 }
 #else
-#include <cstdlib>
 namespace qmcplusplus
 {
   /** dummy inherited class to use aligned_vector<T> */
