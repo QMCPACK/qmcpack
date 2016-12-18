@@ -10,7 +10,7 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 
 # Set the std
 SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -std=c99")
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 
 # Set gnu specfic flags (which we always want)
 ADD_DEFINITIONS( -Drestrict=__restrict__ )

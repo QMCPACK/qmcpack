@@ -172,10 +172,12 @@ CHECK_INCLUDE_FILE(unistd.h HAVE_UNISTD_H)
 # QMC_BUILD_STATIC build static/dynamic  libraries
 # BUILD_QMCTOOLS   build utility programs
 # BUILD_SANDBOX    build test programs
+# BUILD_MINIAPPS   build miniapps (Incomplete)
 # MPIP_PROFILE     profile mpi performance
 ######################################################################
 SET(QMC_ADIOS 0 CACHE BOOL "Build with ADIOS")
 SET(BUILD_UNIT_TESTS 1 CACHE BOOL "Build unit tests")
+SET(BUILD_MINIAPPS 1 CACHE BOOL "Build miniapps")
 SET(BUILD_LMYENGINE_INTERFACE 1 CACHE BOOL "Build LMY engine")
 IF (QMC_CUDA AND BUILD_LMYENGINE_INTERFACE)
   MESSAGE(STATUS "LMY engine is not compatiable with CUDA build! Disabling LMY engine")
@@ -476,7 +478,7 @@ ENDIF(CMAKE_TOOLCHAIN_FILE)
 
 # check if C++11 is needed by QMCPACK features
 SET(CXX11_NEEDED FALSE)
-IF(BUILD_LMYENGINE_INTERFACE)
+IF(BUILD_LMYENGINE_INTERFACE OR  BUILD_MINIAPPS)
   SET(CXX11_NEEDED TRUE)
 ENDIF()
 ## add AFQMC checker here
@@ -494,6 +496,7 @@ IF(CXX11_NEEDED)
   ELSE()
     MESSAGE(STATUS "Disabling features requring C++11 due to the lack of compiler support")
     SET(BUILD_LMYENGINE_INTERFACE 0)
+    SET(BUILD_MINIAPPS 0)
     ## disable AFQMC here
   ENDIF()
 ENDIF(CXX11_NEEDED)

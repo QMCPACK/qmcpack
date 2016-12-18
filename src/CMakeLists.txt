@@ -35,53 +35,6 @@ IF(HAVE_OOMPI)
   ENDIF()
 ENDIF(HAVE_OOMPI)
 
-if(QMC_BUILD_LEVEL GREATER 4)
-  MESSAGE(STATUS "Minimal build to test codelets in miniapps")
-  SET(BASE
-    qmc_common.cpp
-    Platforms/sysutil.cpp
-    Utilities/OhmmsInform.cpp 
-    Utilities/OhmmsInfo.cpp 
-    Utilities/OhmmsObject.cpp 
-    Utilities/NewTimer.cpp
-    Utilities/SpeciesSet.cpp 
-    Message/Communicate.cpp 
-    Message/MPIObjectBase.cpp 
-    random/random.cpp 
-    OhmmsData/Libxml2Doc.cpp
-    )
-  SET(PTCL
-    Lattice/Uniform3DGridLayout.cpp
-    ParticleTags.cpp 
-    Particle/ParticleSet.cpp 
-    Particle/ParticleSet.BC.cpp 
-    Particle/make_clones.cpp
-    LongRange/KContainer.cpp
-    LongRange/StructFact.cpp
-    LongRange/LPQHIBasis.cpp
-    LongRange/LPQHISRCoulombBasis.cpp
-    LongRange/EwaldHandler.cpp
-    LongRange/LRCoulombSingleton.cpp
-    ParticleIO/ParticleIOUtility.cpp 
-    Optimize/VariableSet.cpp
-    QMCWaveFunctions/OrbitalBase.cpp
-    spline2/einspline_allocator.c
-    spline2/bspline_allocator.cpp
-    spline2/MultiBspline.cpp
-    )
-    IF(ENABLE_PTCL_SOA)
-      SET(PTCL Particle2/DistanceTableFactory.cpp ${PTCL})
-    ELSE()
-      SET(PTCL Particle/DistanceTable.cpp ${PTCL})
-    ENDIF()
-
-    ADD_LIBRARY(qmcutil ${BASE} ${PTCL})
-
-    #build boost library
-    #SUBDIRS(boost)
-    #build miniapps
-    SUBDIRS(spline2)
-else()
   ####################################
   # create libqmcutil
   ####################################
@@ -107,6 +60,9 @@ else()
     Message/MPIObjectBase.cpp 
     Optimize/VariableSet.cpp
     io/hdf_archive.cpp
+    spline2/einspline_allocator.c
+    spline2/bspline_allocator.cpp
+    spline2/MultiBspline.cpp
     )
 
   IF(QMC_ADIOS)
@@ -215,6 +171,11 @@ else()
 
   ENDIF(HAVE_LIBHDF5 OR HAVE_ADIOS)
 
+  #Need to add this if nothing else but miniapps is compiled
+  if(QMC_BUILD_LEVEL GREATER 4)
+    set(PARTICLE  ${PARTICLE} QMCWaveFunctions/OrbitalBase.cpp)
+  endif()
+
   ADD_LIBRARY(qmcbase ${PARTICLE}  ${PARTICLEIO}) 
 
   #IF(QMC_BUILD_STATIC)
@@ -225,10 +186,16 @@ else()
 
   #SUBDIRS(einspline)
 
+  if(QMC_BUILD_LEVEL GREATER 4)
+
+    MESSAGE(STATUS "Minimal build: only miniapps")
+    SUBDIRS(miniapps)
+
+  else() #{{{
+
   #############################
   # Creating ADIOS
   #############################
-
 
   SET(ADIOS ADIOS/ADIOS_config.cpp)
   IF(HAVE_ADIOS)
@@ -241,6 +208,7 @@ else()
   ENDIF(HAVE_ADIOS)
 
   ADD_LIBRARY(adios_config ${ADIOS})
+
 
   SUBDIRS(QMCWaveFunctions)
   SUBDIRS(QMCHamiltonians)
@@ -259,7 +227,7 @@ else()
     SUBDIRS(SQD)
   ENDIF(BUILD_SQD)
 
-  if (BUILD_UNIT_TESTS)
+  if (BUILD_UNIT_TESTS) #{
     SET(HAS_TARGET_COMPILE_DEFINITIONS 1)
     IF (CMAKE_VERSION VERSION_LESS "2.8.11")
       MESSAGE("CMake version 2.8.10 - some unit tests will not be built")
@@ -281,5 +249,6 @@ else()
       SUBDIRS(ParticleBase/tests)
       SUBDIRS(QMCDrivers/tests)
     ENDIF()
-  endif()
-endif()
+  endif() #}
+
+endif() #}}}
