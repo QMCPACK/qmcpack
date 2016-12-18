@@ -58,8 +58,10 @@ struct SoaDistanceTableBA: public DTD_BConds<T,D,SC>, public DistanceTableData
     J2.resize(Nsources,Ntargets_padded);
   }
 
+#if (__cplusplus >= 201103L)
   SoaDistanceTableBA()=delete;
   SoaDistanceTableBA(const SoaDistanceTableBA&)=delete;
+#endif
   ~SoaDistanceTableBA() {}
 
   /** evaluate the full table */
@@ -106,7 +108,7 @@ struct SoaDistanceTableBA: public DTD_BConds<T,D,SC>, public DistanceTableData
 
   inline void donePbyP()
   { 
-    constexpr T cminus(-1);
+    CONSTEXPR T cminus(-1);
     for(int iat=0; iat<Nsources; ++iat)
     {
       int nn=0;

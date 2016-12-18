@@ -102,8 +102,8 @@ struct SoaDistanceTableAB: public DTD_BConds<T,D,SC>, public DistanceTableData
   inline void update(IndexType iat)
   {
     if(iat!=activePtcl) return;
-    constexpr bool MINUS=true;
-    constexpr bool PLUS=false;
+    CONSTEXPR bool MINUS=true;
+    CONSTEXPR bool PLUS=false;
 
     ColUpdate<PLUS>::apply(Nsources,Temp_r.data(),Distances.data()+iat,Ntargets_padded);
     for(int idim=0;idim<D; ++idim)

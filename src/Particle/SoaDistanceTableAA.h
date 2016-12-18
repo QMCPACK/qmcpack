@@ -34,8 +34,10 @@ struct SoaDistanceTableAA: public DTD_BConds<T,D,SC>, public DistanceTableData
     resize(target.getTotalNum());
   }
 
+#if (__cplusplus >= 201103L)
   SoaDistanceTableAA()=delete;
   SoaDistanceTableAA(const SoaDistanceTableAA&)=delete;
+#endif
   ~SoaDistanceTableAA() {}
 
   void resize(int n)
@@ -56,7 +58,7 @@ struct SoaDistanceTableAA: public DTD_BConds<T,D,SC>, public DistanceTableData
 
   inline void evaluate(ParticleSet& P)
   {
-    constexpr T BigR= std::numeric_limits<T>::max();
+    CONSTEXPR T BigR= std::numeric_limits<T>::max();
     P.RSoA.copyIn(P.R); 
     for(int iat=0; iat<Ntargets; ++iat)
     {
