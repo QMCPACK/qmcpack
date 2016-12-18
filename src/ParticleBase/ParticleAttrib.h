@@ -86,7 +86,7 @@ public:
   }
 
   /**@brief n-element without type and object names **/
-  explicit inline ParticleAttrib(unsigned n):InUnit(0), nLocal(0), nGhosts(0)
+  explicit inline ParticleAttrib(size_t n):InUnit(0), nLocal(0), nGhosts(0)
   {
     resize(n);
     for(int i=0; i<n; i++)
@@ -98,16 +98,16 @@ public:
   inline ~ParticleAttrib() { }
 
   //! return the current size
-  inline unsigned size() const
+  inline size_t size() const
   {
     return nLocal; //return X.size()-nGhosts;
   }
 
   //! resize the container (probably, should be removed)
-  void resize(unsigned n);
+  void resize(size_t n);
 
   //! add n elements
-  void create(unsigned n);
+  void create(size_t n);
 
   //@{handling ghost elements
   //! return the number of ghost attributes
@@ -162,22 +162,22 @@ public:
   }
 
   // Get and Set Operations
-  inline Type_t& operator[](unsigned int i)
+  inline Type_t& operator[](size_t i)
   {
     return X[i];
   }
 
-  inline Type_t operator[](unsigned int i) const
+  inline Type_t operator[](size_t i) const
   {
     return X[i];
   }
 
-  inline Type_t& operator()(unsigned int i)
+  inline Type_t& operator()(size_t i)
   {
     return X[i];
   }
 
-  inline Type_t operator()( unsigned int i) const
+  inline Type_t operator()( size_t i) const
   {
     return X[i];
   }
@@ -288,7 +288,7 @@ private:
  * KCC on other platforms work perfectly fine.
  */
 template<class T>
-void ParticleAttrib<T>::resize(unsigned n)
+void ParticleAttrib<T>::resize(size_t n)
 {
   if(n)
   {
@@ -302,7 +302,7 @@ void ParticleAttrib<T>::resize(unsigned n)
  * @param n number of elements to be appended.
  */
 template<class T>
-void ParticleAttrib<T>::create(unsigned n)
+void ParticleAttrib<T>::create(size_t n)
 {
   Container_t y(X);
   X = Container_t(n+y.size());

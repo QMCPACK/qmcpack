@@ -46,16 +46,14 @@ void ParticleBase<PL>::initBase()
   addAttribute(ID);
   addAttribute(GroupID);
   //curR is always in unit
-  curR.setUnit(PosUnit::LatticeUnit);
+  //curR.setUnit(PosUnit::LatticeUnit);
 }
 
 template<class PL>
 ParticleBase<PL>::~ParticleBase()
 {
-  //LOGMSG("Calling ParticleBase<PL>::~ParticleBase")
-  //remove only those created by addAttribute(tname,oname)
-  for(int i=0; i<myAttribList.size(); i++)
-    delete myAttribList[i];
+  for(int i=0; i<AllocatedList.size(); i++)
+    delete AllocatedList[i];
 }
 
 /** check if named attribute exists
@@ -71,58 +69,82 @@ bool ParticleBase<PL>::hasAttrib(const std::string& aname)
 /** Search the name in VarMap and add the attribute if not found.
  *  \param tname String for the attribute type in ParticleTags
  *  \param oname String for the name of the new attribute
- *  \return the iterator of a new attribute
+ *  \param pa an attribute object
+ *  \return index of the added object
+ *
+ * Name2Index connects the name of an object to a location in the vector of a specific type
+ * An object with oname exists. Return the value of oname
  */
 template<class PL>
 int ParticleBase<PL>::addAttribute(const std::string& tname,
-                                   const std::string& oname)
+                                   const std::string& oname, OhmmsObject* pa)
 {
-  ///Name2Index connects the name of an object to a location in the vector of a specific type
-  ///An object with oname exists. Return the value of oname
   std::map<std::string,int>::iterator it= Name2Index.find(oname);
-  if(it != Name2Index.end())
-    return  (*it).second;
-  ///a new object to be added either INDEX, VAL, POS or TENZOR
-  ///update Name2Index and AttribList
+  if(it != Name2Index.end()) return  (*it).second;
+
+  int t_id=-1;
+  std::map<std::string,int>::iterator tit= AttribTypeMap.find(tname);
+  if(tit!= AttribTypeMap.end()) t_id=(*tit).second;
+
   int o_id=-1;
-  int t_id=AttribTypeMap[tname];
-  OhmmsObject* obj = NULL;
+  OhmmsObject* obj = nullptr;
   if(t_id == PA_IndexType)
   {
-    o_id = INDEX.size();
-    INDEX.push_back(new  ParticleIndex_t(ParticleTags::indextype_tag,oname,getLocalNum()));
-    obj = INDEX.back();
+    o_id=INDEX.size();
+    if(pa==nullptr)
+      INDEX.push_back(new  ParticleIndex_t(ParticleTags::indextype_tag,oname,getLocalNum()));
+    else
+      INDEX.push_back(dynamic_cast<ParticleIndex_t*>(pa));
+    obj=INDEX.back();
+  }
+  else if(t_id ==  PA_ScalarType)
+  {
+    o_id=VAL.size();
+    if(pa==nullptr)
+      VAL.push_back(new  ParticleScalar_t(ParticleTags::scalartype_tag,oname,getLocalNum()));
+    else
+      VAL.push_back(dynamic_cast<ParticleScalar_t*>(pa));
+    obj=VAL.back();
+  }
+  else if(t_id == PA_PositionType)
+  {
+    o_id=POS.size();
+    if(pa==nullptr)
+      POS.push_back(new  ParticlePos_t(ParticleTags::postype_tag,oname,getLocalNum()));
+    else
+      POS.push_back(dynamic_cast<ParticlePos_t*>(pa));
+    obj=POS.back();
+  }
+  else if(t_id == PA_TensorType)
+  {
+    o_id=TENZOR.size();
+    if(pa==nullptr)
+      TENZOR.push_back(new  ParticleTensor_t(ParticleTags::tensortype_tag,oname,getLocalNum()));
+    else
+      TENZOR.push_back(dynamic_cast<ParticleTensor_t*>(pa));
+    obj=TENZOR.back();
   }
   else
-    if(t_id ==  PA_ScalarType)
-    {
-      o_id = VAL.size();
-      VAL.push_back(new  ParticleScalar_t(ParticleTags::scalartype_tag,oname,getLocalNum()));
-      obj = VAL.back();
-    }
-    else
-      if(t_id == PA_PositionType)
-      {
-        o_id = POS.size();
-        POS.push_back(new  ParticlePos_t(ParticleTags::postype_tag,oname,getLocalNum()));
-        obj = POS.back();
-      }
-      else
-        if(t_id == PA_TensorType)
-        {
-          o_id = TENZOR.size();
-          TENZOR.push_back(new  ParticleTensor_t(ParticleTags::tensortype_tag,oname,getLocalNum()));
-          obj = TENZOR.back();
-        }
-  if(obj)
   {
-    Name2Index[oname]=o_id;
-    obj->setID(o_id);
-    myAttribList.push_back(obj);
+    if(pa!=nullptr)
+    {
+      o_id=UnKnown.size(); 
+      pa->setID(o_id);
+      UnKnown.push_back(pa);
+      obj=pa;
+    }
   }
+  if(o_id>=0)
+  {
+    obj->setID(o_id);
+    Name2Index[oname]=o_id;
+    AttribList[obj->objName()]=obj;
+  }
+
   return o_id;
 }
 
+#if 0
 /** Add ParticleIndex_t attribute, if not found
  * \param pa  ParticleIndex_t to be added
  * \return true the locator (iterator) of the pa in the std::vector<ParticleIndex_t*>
@@ -250,12 +272,11 @@ ParticleBase<PL>::addAttribute(typename ParticleBase<PL>::ParticleGradient_t& pa
   return oid;
 }
 #endif
+#endif
 
-/*@{
- * \fn ParticlePos_t* ParticleBase<PL>::getVectorAttrib(const std::string& aname)
- * \param aname String for the attribute name
- * \return A pointer to the vector attribute with the name.
- * \brief If the named attribute does not exist, create an attribute and add to the list.
+
+/*@{ getXYZAttrib
+ * return named Attribute of the known types. Allocate a new attribute 
  */
 template<class PL>
 typename ParticleBase<PL>::ParticleIndex_t*
@@ -271,6 +292,7 @@ ParticleBase<PL>::getIndexAttrib(const std::string& aname)
   int oid=Name2Index[aname]=INDEX.size();
   INDEX.push_back(pa);
   AttribList[aname]=pa;
+  AllocatedList.push_back(pa);
   pa->setID(oid);
   return pa;
 }
@@ -289,6 +311,7 @@ ParticleBase<PL>::getScalarAttrib(const std::string& aname)
   int oid=Name2Index[aname]=VAL.size();
   VAL.push_back(pa);
   AttribList[aname]=pa;
+  AllocatedList.push_back(pa);
   pa->setID(oid);
   return pa;
 }
@@ -307,6 +330,7 @@ ParticleBase<PL>::getVectorAttrib(const std::string&  aname)
   int oid=Name2Index[aname]=POS.size();
   POS.push_back(pa);
   AttribList[aname]=pa;
+  AllocatedList.push_back(pa);
   pa->setID(oid);
   return pa;
 }
@@ -323,55 +347,38 @@ ParticleBase<PL>::getTensorAttrib(const std::string& aname)
   int oid=Name2Index[aname]=TENZOR.size();
   TENZOR.push_back(pa);
   AttribList[aname]=pa;
+  AllocatedList.push_back(pa);
   pa->setID(oid);
   return pa;
 }
 /*@}*/
 
 template<class PL>
-void ParticleBase<PL>::createBase(unsigned m)
+void ParticleBase<PL>::createBase(size_t m)
 {
-  for(int i=0; i< INDEX.size(); i++)
-    INDEX[i]->create(m);
-  for(int i=0; i< VAL.size(); i++)
-    VAL[i]->create(m);
-  for(int i=0; i< POS.size(); i++)
-    POS[i]->create(m);
-  for(int i=0; i< TENZOR.size(); i++)
-    TENZOR[i]->create(m);
-#if defined(MIXED_PRECISION) || defined(QMC_COMPLEX)
-  for(int i=0; i< GRADS.size(); i++)
-    GRADS[i]->create(m);
-#endif
-#if defined(QMC_COMPLEX)
-  for(int i=0; i< LAPS.size(); i++)
-    LAPS[i]->create(m);
-#endif
-  curR.create(m);
+  std::map<std::string,OhmmsObject*>::iterator it= AttribList.begin();
+  while(it!=AttribList.end())
+  {
+    (*it).second->create(m);
+    ++it;
+  }
+
+  //curR.create(m);
   LocalNum += m;
   GlobalNum += m;
 }
 
 template<class PL>
-void ParticleBase<PL>::resize(unsigned m)
+void ParticleBase<PL>::resize(size_t m)
 {
-  for(int i=0; i< INDEX.size(); i++)
-    INDEX[i]->resize(m);
-  for(int i=0; i< VAL.size(); i++)
-    VAL[i]->resize(m);
-  for(int i=0; i< POS.size(); i++)
-    POS[i]->resize(m);
-  for(int i=0; i< TENZOR.size(); i++)
-    TENZOR[i]->resize(m);
-#if defined(MIXED_PRECISION) || defined(QMC_COMPLEX)
-  for(int i=0; i< GRADS.size(); i++)
-    GRADS[i]->resize(m);
-#endif
-#if defined(QMC_COMPLEX)
-  for(int i=0; i< LAPS.size(); i++)
-    LAPS[i]->resize(m);
-#endif
-  curR.resize(m);
+  std::map<std::string,OhmmsObject*>::iterator it= AttribList.begin();
+  while(it!=AttribList.end())
+  {
+    (*it).second->resize(m);
+    ++it;
+  }
+
+  //curR.resize(m);
   LocalNum = m;
   GlobalNum = m;
 }
@@ -379,23 +386,13 @@ void ParticleBase<PL>::resize(unsigned m)
 template<class PL>
 void ParticleBase<PL>::clear()
 {
-  for(int i=0; i< INDEX.size(); i++)
-    INDEX[i]->clear();
-  for(int i=0; i< VAL.size(); i++)
-    VAL[i]->clear();
-  for(int i=0; i< POS.size(); i++)
-    POS[i]->clear();
-  for(int i=0; i< TENZOR.size(); i++)
-    TENZOR[i]->clear();
-#if defined(MIXED_PRECISION) || defined(QMC_COMPLEX)
-  for(int i=0; i< GRADS.size(); i++)
-    GRADS[i]->clear();
-#endif
-#if defined(QMC_COMPLEX)
-  for(int i=0; i< LAPS.size(); i++)
-    LAPS[i]->clear();
-#endif
-  curR.clear();
+  std::map<std::string,OhmmsObject*>::iterator it= AttribList.begin();
+  while(it!=AttribList.end())
+  {
+    (*it).second->clear();
+    ++it;
+  }
+  //curR.clear();
   LocalNum = 0;
   GlobalNum = 0;
 }
@@ -414,7 +411,7 @@ void ParticleBase<PL>::createBase(const std::vector<int>& agroup)
   SubPtcl[0] = 0;
   for(int is=0; is<agroup.size(); is++)
     SubPtcl[is+1] = SubPtcl[is]+agroup[is];
-  int nsum = SubPtcl[agroup.size()];
+  size_t nsum = SubPtcl[agroup.size()];
   resize(nsum);
   int loc=0;
   for(int i=0; i<agroup.size(); i++)

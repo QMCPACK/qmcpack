@@ -86,11 +86,11 @@ public:
   //!< Position
   ParticlePos_t    R;
   //!< Instantaneous Position in unit used by layout/nnlist engines, not added to myAttribList
-  ParticlePos_t    curR;
+  //ParticlePos_t    curR;
   //!< Default constructor
   ParticleBase();
 
-  ParticleBase(const ParticleBase<PT>& P): Counter(0), LocalNum(0), GlobalNum(0)
+  ParticleBase(const ParticleBase& P): Counter(0), LocalNum(0), GlobalNum(0)
   {
     initBase();
     assign(P);
@@ -119,61 +119,29 @@ public:
 
   bool hasAttrib(const std::string& attrib_name);
 
-  int addAttribute(const std::string& tname, const std::string& oname);
-  int addAttribute(ParticleIndex_t& pa);
-  int addAttribute(ParticleScalar_t& pa);
-  int addAttribute(ParticlePos_t& pa);
-  int addAttribute(ParticleTensor_t& pa);
+  /** generic get function */
+  template<typename AT> 
+    void getAttribute(const std::string& aname, ParticleAttrib<AT>*  pa)
+  {
+    typedef ParticleAttrib<AT> attrib_type;
+    PAListIterator it=AttribTypeMap.find(aname);
+    while(it != last_attrib())
+    {
+      OhmmsObjects* o=(*it).second;
+      if(o->getTypeName() == pa->getTypeName())
+        pa=dynamic_cast<attrib_type*>(o);
+    }
+  }
 
   ParticleIndex_t*  getIndexAttrib(const std::string& aname);
   ParticleScalar_t* getScalarAttrib(const std::string& aname);
   ParticlePos_t*    getVectorAttrib(const std::string& aname);
   ParticleTensor_t* getTensorAttrib(const std::string& aname);
 
-  inline const ParticleIndex_t*  getIndexAttrib(int i) const
-  {
-    return INDEX[i];
-  }
-  inline const ParticleScalar_t* getScalarAttrib(int i) const
-  {
-    return VAL[i];
-  }
-  inline const ParticlePos_t*    getVectorAttrib(int i) const
-  {
-    return POS[i];
-  }
-  inline const ParticleTensor_t* getTensorAttrib(int i) const
-  {
-    return TENZOR[i];
-  }
-  inline ParticleIndex_t*  getIndexAttrib(int i)
-  {
-    return INDEX[i];
-  }
-  inline ParticleScalar_t* getScalarAttrib(int i)
-  {
-    return VAL[i];
-  }
-  inline ParticlePos_t*    getVectorAttrib(int i)
-  {
-    return POS[i];
-  }
-  inline ParticleTensor_t* getTensorAttrib(int i)
-  {
-    return TENZOR[i];
-  }
-
-#if defined(MIXED_PRECISION) || defined(QMC_COMPLEX)
-  int addAttribute(ParticleGradient_t& pa);
-#endif
-#if defined(QMC_COMPLEX)
-  int addAttribute(ParticleLaplacian_t& pa);
-#endif
-
-  void createBase(unsigned m);
+  void createBase(size_t m);
   void createBase(const std::vector<int>& agroup);
 
-  void resize(unsigned m);
+  void resize(size_t m);
   void clear();
 
   virtual void assign(const ParticleBase<PT>& ptclin)
@@ -252,17 +220,40 @@ protected:
   std::map<std::string,int>             AttribTypeMap;
   std::map<std::string,int>             Name2Index;
   std::map<std::string,OhmmsObject*>    AttribList;
+  /** container for known AttribType */
   std::vector<ParticleIndex_t*>    INDEX;
   std::vector<ParticleScalar_t*>   VAL;
   std::vector<ParticlePos_t*>      POS;
   std::vector<ParticleTensor_t*>   TENZOR;
-#if defined(MIXED_PRECISION) || defined(QMC_COMPLEX)
-  std::vector<ParticleGradient_t*>   GRADS;
-#endif
-#if defined(QMC_COMPLEX)
-  std::vector<ParticleLaplacian_t*>  LAPS;
-#endif
-  std::vector<OhmmsObject*>        myAttribList;
+  /** container for unknown AttribType */
+  std::vector<OhmmsObject*>        UnKnown;
+  /** objects created by getXYZAttrib(aname) */
+  std::vector<OhmmsObject*>        AllocatedList;
+
+  /** add an attribute
+   * @param tname type name
+   * @param oname object name
+   * @param pa object to be added 
+   */
+  int addAttribute(const std::string& tname, const std::string& oname, OhmmsObject* pa);
+
+
+  /** add ParticleAttrib<AT>
+   * @tparm AT any element type, int, double, float ...
+   */
+  template<typename AT> 
+    int addAttribute(ParticleAttrib<AT>& pa)
+  {
+    if(pa.size() < getLocalNum()) pa.resize(getLocalNum());
+
+    //pa already exists, send the index
+    std::map<std::string,int>::iterator it= Name2Index.find(pa.objName());
+    if(it != Name2Index.end()) return  (*it).second;
+
+    int oid=addAttribute(pa.typeName(),pa.objName(),&pa);
+    return oid;
+  }
+
 };
 
 template<class T, unsigned D>

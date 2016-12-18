@@ -512,10 +512,10 @@ void XMLSaveParticle::get(std::ostream& fxml, int olevel) const
       ooref->begin_node(fxml);
       if(t_id == PA_IndexType)
       {
-        const ParticleIndex_t& itmp = *(ref_.getIndexAttrib(o_id));
+        const ParticleIndex_t* itmp=dynamic_cast<ParticleIndex_t*>(ooref);
         for(int iat=0; iat<nloc; iat++)
         {
-          fxml << itmp[iat] << " ";
+          fxml << (*itmp)[iat] << " ";
           if(iat%20 == 19)
             fxml << std::endl;
         }
@@ -523,10 +523,10 @@ void XMLSaveParticle::get(std::ostream& fxml, int olevel) const
       else if(t_id == PA_ScalarType)
       {
         fxml.precision(6);
-        const ParticleScalar_t& stmp =*(ref_.getScalarAttrib(o_id));
+        const ParticleScalar_t* stmp=dynamic_cast<ParticleScalar_t*>(ooref);
         for(int iat=0; iat<nloc; iat++)
         {
-          fxml << stmp[iat] << " ";
+          fxml << (*stmp)[iat] << " ";
           if(iat%5 == 4)
             fxml << std::endl;
         }
@@ -536,19 +536,19 @@ void XMLSaveParticle::get(std::ostream& fxml, int olevel) const
       else if (t_id == PA_PositionType)
       {
         fxml.precision(15);
-        const ParticlePos_t& rtmp =*(ref_.getVectorAttrib(o_id));
+        const ParticlePos_t* rtmp=dynamic_cast<ParticlePos_t*>(ooref);
         for(int iat=0; iat<nloc; iat++)
         {
-          fxml << rtmp[iat] << std::endl;
+          fxml << (*rtmp)[iat] << std::endl;
         }
       }
       else if (t_id == PA_TensorType)
       {
         fxml.precision(15);
-        const ParticleTensor_t& ttmp =*(ref_.getTensorAttrib(o_id));
+        const ParticleTensor_t* ttmp=dynamic_cast<ParticleTensor_t*>(ooref);
         for(int iat=0; iat<nloc; iat++)
         {
-          fxml << ttmp[iat];
+          fxml << (*ttmp)[iat];
         }
       }
       ooref->end_node(fxml);

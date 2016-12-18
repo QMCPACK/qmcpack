@@ -141,21 +141,17 @@ void ParticleSet::initParticleSet()
     ObjectTag = PtclObjectCounter;
     PtclObjectCounter++;
   }
-#if defined(QMC_COMPLEX)
+
   G.setTypeName(ParticleTags::gradtype_tag);
   L.setTypeName(ParticleTags::laptype_tag);
   dG.setTypeName(ParticleTags::gradtype_tag);
   dL.setTypeName(ParticleTags::laptype_tag);
-#else
-  G.setTypeName(ParticleTags::postype_tag);
-  L.setTypeName(ParticleTags::scalartype_tag);
-  dG.setTypeName(ParticleTags::postype_tag);
-  dL.setTypeName(ParticleTags::scalartype_tag);
-#endif
+
   G.setObjName("grad");
   L.setObjName("lap");
   dG.setObjName("dgrad");
   dL.setObjName("dlap");
+
   addAttribute(G);
   addAttribute(L);
   addAttribute(dG);

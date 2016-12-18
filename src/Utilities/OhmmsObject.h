@@ -92,6 +92,13 @@ public:
     return myName;
   }
 
+  /** add m elements to the object */
+  virtual void create(size_t m) {}
+  /** resize the object */
+  virtual void resize(size_t m) {}
+  /** clear the object */
+  virtual void clear() {}
+
 protected:
 
   ///the type name of this object
