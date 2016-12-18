@@ -108,8 +108,7 @@ enum DistTableType {DT_AOS=0,  DT_SOA, DT_AOS_PREFERRED, DT_SOA_PREFERRED};
  */
 struct DistanceTableData 
 {
-
-  constexpr static int DIM=OHMMS_DIM;
+  CONSTEXPR static unsigned DIM=OHMMS_DIM;
 
   /**enum for index ordering and storage.
    *@brief Equivalent to using three-dimensional array with (i,j,k)
@@ -118,7 +117,7 @@ struct DistanceTableData
    *     k = copies (walkers) index.
    */
   enum {WalkerIndex=0, SourceIndex, VisitorIndex, PairIndex};
-
+#if (__cplusplus >= 201103L)
   using IndexType=QMCTraits::IndexType;
   using RealType=QMCTraits::RealType;
   using PosType=QMCTraits::PosType;
@@ -126,6 +125,15 @@ struct DistanceTableData
   using TempDistType=TempDisplacement<RealType,DIM>;
   using ripair=std::pair<RealType,IndexType>;
   using RowContainer=VectorSoaContainer<RealType,DIM>;
+#else
+  typedef QMCTraits::IndexType IndexType;
+  typedef QMCTraits::RealType RealType;
+  typedef QMCTraits::PosType PosType;
+  typedef aligned_vector<IndexType> IndexVectorType;
+  typedef TempDisplacement<RealType,DIM> TempDistType;
+  typedef std::pair<RealType,IndexType> ripair;
+  typedef VectorSoaContainer<RealType,DIM> RowContainer;
+#endif
 
   ///type of cell
   int CellType;

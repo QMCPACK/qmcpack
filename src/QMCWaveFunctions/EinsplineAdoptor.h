@@ -122,11 +122,16 @@ inline Tensor<T,D> outerProductSymm(const TinyVector<T,D>& v, const TinyVector<T
 template<typename ST, unsigned D>
 struct SplineAdoptorBase
 {
-  using PointType=TinyVector<ST,3>;
+#if (__cplusplus >= 201103L)
+  using PointType=TinyVector<ST,D>;
   using SingleSplineType=UBspline_3d_d;
   using DataType=ST; 
+#else
+  typedef TinyVector<ST,D> PointType;
+  typedef UBspline_3d_d SingleSplineType;
+  typedef ST DataType;
+#endif
 
-  ///true, if this for complex, each derived class has to set this
   bool is_complex;
   ///Index of this adoptor, when multiple adoptors are used for NUMA or distributed cases
   int MyIndex;
@@ -158,7 +163,9 @@ struct SplineAdoptorBase
     :is_complex(false),MyIndex(0),nunique_orbitals(0),first_spo(0),last_spo(0)
   { }
 
+#if (__cplusplus >= 201103L)
   SplineAdoptorBase(const SplineAdoptorBase& rhs)=default;
+#endif
 
   inline void init_base(int n)
   {
@@ -212,7 +219,6 @@ struct BsplineSet: public SPOSetBase, public SplineAdoptor
 {
   typedef typename SplineAdoptor::SplineType SplineType;
   typedef typename SplineAdoptor::PointType  PointType;
-  bool UseSoA=false;
 
   ///** default constructor */
   //BsplineSet() { }

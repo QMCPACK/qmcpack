@@ -25,7 +25,11 @@ namespace qmcplusplus
 template<typename T>
 struct VectorViewer
 {
+#if (__cplusplus >= 201103L)
   using value_type=T;
+#else
+  typedef T value_type;
+#endif
 
   T* data_ptr;
   size_t data_size;

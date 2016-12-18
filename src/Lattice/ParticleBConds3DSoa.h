@@ -189,8 +189,8 @@ struct DTD_BConds<T,3,PPPG+SOA_OFFSET>
     g01=g(1); g11=g(4); g21=g(7);
     g02=g(2); g12=g(5); g22=g(8);
 
-    constexpr T minusone(-1);
-    constexpr T zero(0);
+    CONSTEXPR T minusone(-1);
+    CONSTEXPR T zero(0);
 
     corners.resize(8);
     corners(0)=zero;
@@ -244,7 +244,7 @@ struct DTD_BConds<T,3,PPPG+SOA_OFFSET>
       const T delz = ar_0*r02+ar_1*r12+ar_2*r22;
 
       T rmin=std::numeric_limits<T>::max();
-      int ic{0};
+      int ic=0;
 #pragma unroll(8)
       for(int c=0; c<8; ++c)
       {

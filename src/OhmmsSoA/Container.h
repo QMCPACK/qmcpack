@@ -22,5 +22,5 @@
 #include <ParticleBase/ParticleAttrib.h>
 #include <OhmmsSoA/PosTransformer.h>
 #include <OhmmsSoA/VectorSoaContainer.h>
-#include <OhmmsSoA/TensorSoaContainer.h>
+//#include <OhmmsSoA/TensorSoaContainer.h>
 #endif

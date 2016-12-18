@@ -217,7 +217,7 @@
 
 /* Fully remove trace manager and associated features */
 #cmakedefine REMOVE_TRACEMANAGER @REMOVE_TRACEMANAGER@
-#if __cplusplus >= 201103L
+#if (__cplusplus >= 201103L)
   #if defined(__INTEL_COMPILER)
     #if defined(__KNC__) || defined(__AVX512F__)
       #define QMC_CLINE 64
@@ -237,6 +237,7 @@
    #define QMC_ALIGNAS
    #define ASSUME_ALIGNED(x)
   #endif
+  #define CONSTEXPR constexpr
 #else //capture both C or non-c++11
   #if defined(__KNC__) || defined(__AVX512F__)
     #define QMC_CLINE 64
@@ -245,6 +246,10 @@
   #endif
   #define QMC_ALIGNAS
   #define ASSUME_ALIGNED(x)
+  #define CONSTEXPR const
+  #ifndef nullptr
+  #define nullptr NULL
+  #endif
 #endif
 
 #endif // QMCPLUSPLUS_CONFIGURATION_H

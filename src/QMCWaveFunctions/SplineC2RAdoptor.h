@@ -252,8 +252,8 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   inline void assign_vgl(const PointType& r, int bc_sign, VV& psi, GV& dpsi, VV& d2psi)
   {
     const int N=kPoints.size();
-    constexpr ST zero(0);
-    constexpr ST two(2);
+    CONSTEXPR ST zero(0);
+    CONSTEXPR ST two(2);
     const ST g00=PrimLattice.G(0), g01=PrimLattice.G(1), g02=PrimLattice.G(2),
              g10=PrimLattice.G(3), g11=PrimLattice.G(4), g12=PrimLattice.G(5),
              g20=PrimLattice.G(6), g21=PrimLattice.G(7), g22=PrimLattice.G(8);
@@ -404,8 +404,8 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   inline void assign_vgl_soa(const PointType& r, int bc_sign, VV& psi, GL& dpsi)
   {
     const int N=kPoints.size();
-    constexpr ST zero(0);
-    constexpr ST two(2);
+    CONSTEXPR ST zero(0);
+    CONSTEXPR ST two(2);
     const ST g00=PrimLattice.G(0), g01=PrimLattice.G(1), g02=PrimLattice.G(2),
              g10=PrimLattice.G(3), g11=PrimLattice.G(4), g12=PrimLattice.G(5),
              g20=PrimLattice.G(6), g21=PrimLattice.G(7), g22=PrimLattice.G(8);
@@ -724,8 +724,8 @@ struct SplineC2RAdoptor: public SplineAdoptorBase<ST,D>
   inline void assign_vgl(const PointType& r, int bc_sign, VV& psi, GV& dpsi, VV& d2psi)
   {
     const size_t N=kPoints.size();
-    constexpr ST zero(0);
-    constexpr ST two(2);
+    CONSTEXPR ST zero(0);
+    CONSTEXPR ST two(2);
     for(size_t j=0; j<N; ++j)
       KdotR[j]=-dot(r,kPoints[j]);
     eval_e2iphi(N,KdotR.data(),CosV.data(),SinV.data());
@@ -1041,8 +1041,8 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   inline void assign_vgl(const PointType& r, int bc_sign, VV& psi, GV& dpsi, VV& d2psi)
   {
     const int N=kPoints.size();
-    constexpr ST zero(0);
-    constexpr ST two(2);
+    CONSTEXPR ST zero(0);
+    CONSTEXPR ST two(2);
     const ST g00=PrimLattice.G(0), g01=PrimLattice.G(1), g02=PrimLattice.G(2),
              g10=PrimLattice.G(3), g11=PrimLattice.G(4), g12=PrimLattice.G(5),
              g20=PrimLattice.G(6), g21=PrimLattice.G(7), g22=PrimLattice.G(8);

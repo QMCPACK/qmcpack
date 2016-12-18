@@ -14,11 +14,10 @@
 #ifndef QMCPLUSPLUS_ALLOCATOR_H
 #define QMCPLUSPLUS_ALLOCATOR_H
 
-#if (__cplusplus >= 201103L)
-
 #include <config.h>
 #include <vector>
 
+#if (__cplusplus >= 201103L)
 #if defined(__INTEL_COMPILER)
  #include <tbb/cache_aligned_allocator.h>
 #else
@@ -34,25 +33,35 @@ namespace qmcplusplus
   template<class T>
     using aligned_allocator=tbb::cache_aligned_allocator<T>;
 #else
- #if defined(HAVE_LIBBOOST)
-  template<class T>
-    using aligned_allocator=boost::alignment::aligned_allocator<T, QMC_CLINE>;
- #else
+ //#if defined(HAVE_LIBBOOST)
+ // template<class T>
+ //   using aligned_allocator=boost::alignment::aligned_allocator<T, QMC_CLINE>;
+ //#else
   template<class T>
     using aligned_allocator=std::allocator<T>;
- #endif
+ //#endif
 #endif
    template<class T> 
      using aligned_vector = std::vector<T,aligned_allocator<T> >;
 
-   template<typename T>
-   inline int getAlignedSize(int n)
-   {
-     constexpr int ND=QMC_CLINE/sizeof(T);
-     return ((n+ND-1)/ND)*ND;
-   }
+}
+#else
+#include <cstdlib>
+namespace qmcplusplus
+{
+  /** dummy inherited class to use aligned_vector<T> */
+  template<class T> struct aligned_vector: public std::vector<T> { };
 
+  /** dummy inherited class to use aligned_allocator<T> */
+  template<class T> struct aligned_allocator: public std::allocator<T> { };
 }
 #endif
+
+template<typename T> inline size_t getAlignedSize(size_t n)
+{
+  CONSTEXPR size_t ND=QMC_CLINE/sizeof(T);
+  return ((n+ND-1)/ND)*ND;
+}
+
 
 #endif

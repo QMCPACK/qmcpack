@@ -17,6 +17,7 @@
 #ifndef QMCPLUSPLUS_VECTOR_SOA_H
 #define QMCPLUSPLUS_VECTOR_SOA_H
 #include <simd/allocator.hpp>
+#include <simd/algorithm.hpp>
 
 namespace qmcplusplus
 {
@@ -26,10 +27,15 @@ namespace qmcplusplus
   template<typename T, unsigned D>
     struct VectorSoaContainer
     {
+#if (__cplusplus >= 201103L)
       using Type_t   =TinyVector<T,D>;
       using Element_t=T;
-      ///alias to ParticleAttrib<T1,D>
-      template <class T1> using PosArray = ParticleAttrib<TinyVector<T1,D> >;
+#else
+      typedef TinyVector<T,D> Type_t;
+      typedef T Element_t;
+#endif
+      /////alias to ParticleAttrib<T1,D>
+      //template <class T1> using PosArray = ParticleAttrib<TinyVector<T1,D> >;
       ///number of elements
       size_t nLocal;
       ///number of elements + padded
@@ -57,7 +63,7 @@ namespace qmcplusplus
       {
         setDefaults();
         resize(in.nLocal);
-        std::copy_n(in.myData,nGhosts*D,myData);
+        simd::copy_n(in.myData,nGhosts*D,myData);
       }
 
       ///default copy operator
@@ -66,11 +72,12 @@ namespace qmcplusplus
         if(myData!=in.myData) 
         {
           resize(in.nLocal);
-          std::copy_n(in.myData,nGhosts*D,myData);
+          simd::copy_n(in.myData,nGhosts*D,myData);
         }
         return *this;
       }
 
+#if (__cplusplus >= 201103L)
       ///move constructor
       VectorSoaContainer(VectorSoaContainer&& in): nLocal(in.nLocal),nGhosts(in.nGhosts)
       { 
@@ -80,6 +87,7 @@ namespace qmcplusplus
         in.myData=nullptr;
         in.nAllocated=0;
       }
+#endif
 
       /** constructor with size n  without initialization
        */
@@ -88,7 +96,7 @@ namespace qmcplusplus
 
       /** constructor with ParticleAttrib<T1,D> */
       template<typename T1>
-      VectorSoaContainer(const PosArray<T1>& in)
+      VectorSoaContainer(const ParticleAttrib<TinyVector<T1,D> >& in)
       {
         setDefaults();
         resize(in.size());
@@ -96,7 +104,7 @@ namespace qmcplusplus
       }
 
       template<typename T1>
-      VectorSoaContainer& operator=(const PosArray<T1>& in)
+      VectorSoaContainer& operator=(const ParticleAttrib<TinyVector<T1,D> >& in)
       {
         if(nLocal!=in.size()) resize(in.size());
         copyIn(in);
@@ -158,7 +166,7 @@ namespace qmcplusplus
        * The same sizes are assumed.
        */
       template<typename T1>
-      void copyIn(const PosArray<T1>& in)
+      void copyIn(const ParticleAttrib<TinyVector<T1,D> >& in)
       {
         //if(nLocal!=in.size()) resize(in.size());
         PosAoS2SoA(nLocal,D,reinterpret_cast<const T1*>(in.first_address()),D,myData,nGhosts);
@@ -169,7 +177,7 @@ namespace qmcplusplus
        * The same sizes are assumed.
        */
       template<typename T1>
-      void copyOut(PosArray<T1>& out) const
+      void copyOut(ParticleAttrib<TinyVector<T1,D> >& out) const
       {
         PosSoA2AoS(nLocal,D,myData,nGhosts, reinterpret_cast<T1*>(out.first_address()),D);
       }

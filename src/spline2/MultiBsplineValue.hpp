@@ -47,7 +47,7 @@ namespace qmcplusplus
       const intptr_t ys = spline_m->y_stride;
       const intptr_t zs = spline_m->z_stride;
 
-      const T zero(0);
+      CONSTEXPR T zero(0);
       const int num_splines=last-first;
       ASSUME_ALIGNED(vals);
       std::fill(vals,vals+num_splines,zero);
