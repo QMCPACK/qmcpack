@@ -99,6 +99,8 @@ public:
   /** clear the object */
   virtual void clear() {}
 
+  virtual OhmmsObject* makeClone() const = 0;
+
 protected:
 
   ///the type name of this object

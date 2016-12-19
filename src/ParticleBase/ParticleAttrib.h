@@ -94,6 +94,10 @@ public:
     //assign(*this, T());
   }
 
+#if (__cplusplus >= 201103L)
+  ParticleAttrib(const ParticleAttrib& rhs) = default;
+#endif
+
   //! Destructor
   inline ~ParticleAttrib() { }
 
@@ -159,6 +163,11 @@ public:
   inline This_t& operator=(const RHS& rhs)
   {
     return assign(*this,rhs);
+  }
+
+  OhmmsObject* makeClone() const
+  {
+    return new ParticleAttrib<T>(*this);
   }
 
   // Get and Set Operations

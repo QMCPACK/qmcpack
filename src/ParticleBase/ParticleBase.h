@@ -160,6 +160,18 @@ public:
 
   virtual void assign(const ParticleBase<PT>& ptclin)
   {
+    size_t nextra=ptclin.AllocatedList.size();
+    if(nextra)
+    {
+      AllocatedList.resize(nextra);
+      for(size_t i=0; i<nextra; ++i)
+      {
+        OhmmsObject* o=ptclin.AllocatedList[i]->makeClone();
+        AllocatedList[i]=o;
+        AttribList[o->objName()]=o;
+      }
+    }
+
     resize(ptclin.getLocalNum());
     Lattice = ptclin.Lattice;
     PrimitiveLattice = ptclin.PrimitiveLattice;
