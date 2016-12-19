@@ -132,15 +132,16 @@ struct SplineAdoptorBase
   typedef ST DataType;
 #endif
 
+  ///true if the computed values are complex
   bool is_complex;
   ///Index of this adoptor, when multiple adoptors are used for NUMA or distributed cases
-  int MyIndex;
+  size_t MyIndex;
   ///number of unique orbitals
-  int nunique_orbitals;
+  size_t nunique_orbitals;
   ///first index of the SPOs this Spline handles
-  int first_spo;
+  size_t first_spo;
   ///last index of the SPOs this Spline handles
-  int last_spo;
+  size_t last_spo;
   ///sign bits at the G/2 boundaries
   TinyVector<int,D>          HalfG;
   ///\f$GGt=G^t G \f$, transformation for tensor in LatticeUnit to CartesianUnit, e.g. Hessian
@@ -160,7 +161,7 @@ struct SplineAdoptorBase
   std::string KeyWord;
 
   SplineAdoptorBase()
-    :is_complex(false),MyIndex(0),nunique_orbitals(0),first_spo(0),last_spo(0)
+    :CanHandleSoA(false),is_complex(false),MyIndex(0),nunique_orbitals(0),first_spo(0),last_spo(0)
   { }
 
 #if (__cplusplus >= 201103L)
@@ -262,6 +263,26 @@ struct BsplineSet: public SPOSetBase, public SplineAdoptor
                        ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
   {
     SplineAdoptor::evaluate_vgl(P.R[iat],psi,dpsi,d2psi);
+#if 0
+    //debug GL combo
+    ValueVector_t psi_copy(psi);
+    GLVector_t gl(psi.size());
+    SplineAdoptor::evaluate_vgl_combo(P.R[iat],psi_copy,gl);
+    auto gradX=gl.data(0);
+    auto gradY=gl.data(1);
+    auto gradZ=gl.data(2);
+    auto lap=gl.data(3);
+     
+    double v_err=0, g_err=0, l_err=0;
+    for(size_t i=0; i<psi.size(); ++i)
+    {
+      v_err+=std::abs(psi[i]-psi_copy[i]);
+      g_err+=std::sqrt((dpsi[i][0]-gradX[i])*(dpsi[i][0]-gradX[i])+ (dpsi[i][1]-gradY[i])*(dpsi[i][1]-gradY[i])+(dpsi[i][2]-gradZ[i])*(dpsi[i][2]-gradZ[i]));
+      l_err+=std::abs(d2psi[i]-lap[i]);
+    }
+    std::cout << "ERROR " << v_err << " " << g_err << " " << l_err << std::endl;
+    abort();
+#endif
   }
   inline void evaluate(const ParticleSet& P, int iat,
                        ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi)
@@ -310,6 +331,11 @@ struct BsplineSet: public SPOSetBase, public SplineAdoptor
       VectorViewer<hess_type> h(grad_grad_logdet[i],OrbitalSetSize);
       SplineAdoptor::evaluate_vgh(P.R[iat],v,g,h);
     }
+  }
+
+  void evaluateVGL(const ParticleSet& P, int iat, RefVector_t& val, GLVector_t& gl)
+  {
+    SplineAdoptor::evaluate_vgl_combo(P.R[iat],val,gl);
   }
 
 };

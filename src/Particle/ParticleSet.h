@@ -138,6 +138,8 @@ public:
   Index_t activeBead;
   ///the direction reptile traveling
   Index_t direction;
+  ///pointer to the working walker
+  Walker_t*  activeWalker;
 
   /** the position of the active particle for particle-by-particle moves
    *
@@ -456,6 +458,12 @@ public:
   /** save this to awalker
    */
   void saveWalker(Walker_t& awalker);
+
+  /** load a walker : R <= awalker->R 
+   *
+   * No other copy is made
+   */
+  void loadWalker(Walker_t* awalker);
 
   /** update the buffer */
   void donePbyP();

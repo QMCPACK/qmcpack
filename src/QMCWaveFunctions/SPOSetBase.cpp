@@ -61,6 +61,11 @@ void SPOSetBase::evaluate(const ParticleSet& P, int first, int last,
   //MatrixOperators::transpose(logdet);
 }
 
+void SPOSetBase::evaluateVGL(const ParticleSet& P, int iat, RefVector_t& psiv, GLVector_t& gl)
+{
+  APP_ABORT("SPOSetBase::evaluateVGL not implemented.");
+}
+
 void SPOSetBase::evaluateValues(const ParticleSet& P, ValueMatrix_t& psiM)
 {
   APP_ABORT("SPOSetBase::evaluate(P,psiM) not implemented.");

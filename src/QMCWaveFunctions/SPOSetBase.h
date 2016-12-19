@@ -50,6 +50,8 @@ public:
   typedef OrbitalSetTraits<ValueType>::GradHessType  GGGType;
   typedef OrbitalSetTraits<ValueType>::GradHessVector_t GGGVector_t;
   typedef OrbitalSetTraits<ValueType>::GradHessMatrix_t GGGMatrix_t;
+  typedef OrbitalSetTraits<ValueType>::RefVector_t      RefVector_t;
+  typedef OrbitalSetTraits<ValueType>::GLVector_t       GLVector_t;
   typedef ParticleSet::Walker_t                      Walker_t;
   typedef std::map<std::string,SPOSetBase*> SPOPool_t;
 
@@ -200,6 +202,9 @@ public:
    */
   virtual void
   evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)=0;
+
+  virtual void
+    evaluateVGL(const ParticleSet& P, int iat, RefVector_t& psiv, GLVector_t& gl);
 
   /** evaluate values for the virtual moves, e.g., sphere move for nonlocalPP
    * @param VP virtual particle set
