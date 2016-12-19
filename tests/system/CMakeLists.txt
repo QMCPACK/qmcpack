@@ -266,7 +266,7 @@ ENDIF()
 
 # Plane wave test of bccH (no pp, so faster than typical solids)
 # Reduced number of blocks and samples compared to other short bccH tests
-  LIST(APPEND BCC_H_PW_SCALARS "totenergy" "-1.834032 0.0003")
+  LIST(APPEND BCC_H_PW_SCALARS "totenergy" "-1.834032 0.001")
   LIST(APPEND BCC_H_PW_SCALARS "samples" "96000 0.0")
   LIST(APPEND BCC_H_PW_SCALARS "flux" "0.0 0.03")
   IF(NOT QMC_CUDA)
