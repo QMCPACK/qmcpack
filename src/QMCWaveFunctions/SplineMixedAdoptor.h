@@ -198,6 +198,11 @@ struct SplineMixedAdoptor: public SplineR2RAdoptor<ST,TT,D>
       einspline::evaluate_vgh(MultiSpline,ru,myV,myG,myH);
     this->assign_vgh(r,bc_sign,psi,dpsi,grad_grad_psi);
   }
+
+  template<typename VV, typename GL>
+  inline void evaluate_vgl_combo(const PointType& r,VV& psi, GL& dpsi)
+  {
+  }
 };
 
 /** adoptor class for the non-periodic systems
@@ -390,6 +395,11 @@ struct SplineOpenAdoptor: public SplineAdoptorBase<ST,D>
       dpsi[j]=myG[j];
     for(int j=0; j<N; ++j)
       grad_grad_psi[j]=myH[j];
+  }
+
+  template<typename VV, typename GL>
+  inline void evaluate_vgl_combo(const PointType& r,VV& psi, GL& dpsi)
+  {
   }
 };
 

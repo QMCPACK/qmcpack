@@ -248,6 +248,10 @@ struct SplineC2CPackedAdoptor: public SplineAdoptorBase<ST,D>
     einspline::evaluate_vgh(MultiSpline,ru,myV,myG,myH);
     assign_vgh(r,0,psi,dpsi,grad_grad_psi);
   }
+
+  template<typename VV, typename GL>
+  void evaluate_vgl_combo(const PointType& r,VV& psi, GL& dpsi)
+  { }
 };
 
 /** adoptor class to match std::complex<ST> spline with TT real SPOs
@@ -493,6 +497,11 @@ struct SplineC2RPackedAdoptor: public SplineAdoptorBase<ST,D>
     einspline::evaluate_vgh(MultiSpline,ru,myV,myG,myH);
     assign_vgh(r,0,psi,dpsi,grad_grad_psi);
   }
+
+  template<typename VV, typename GL>
+  void evaluate_vgl_combo(const PointType& r,VV& psi, GL& dpsi)
+  { }
+
 };
 
 //  /** adoptor class to match std::complex<ST> spline with std::complex<TT> SPOs, just references

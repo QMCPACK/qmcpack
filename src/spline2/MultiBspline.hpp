@@ -46,6 +46,15 @@ namespace qmcplusplus
     }
   };
 
+  /** compute Trace(H*G) */
+  template<typename T>
+    inline T SymTrace(T h00, T h01, T h02, T h11, T h12, T h22, const T* restrict gg)
+    {
+      return h00*gg[0]+h01*(gg[1]+gg[3])+h02*(gg[2]+gg[6])
+        +h11*gg[4]+h12*(gg[5]+gg[7])+h22*gg[8];
+    }
+
+
   template<typename T>
     struct MultiBspline
     {

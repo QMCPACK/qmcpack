@@ -241,6 +241,10 @@ struct SplineR2RAdoptor: public SplineAdoptorBase<ST,D>
     einspline::evaluate_vgh(MultiSpline,ru,myV,myG,myH);
     assign_vgh(r,bc_sign,psi,dpsi,grad_grad_psi);
   }
+
+  template<typename VV, typename GL>
+  void evaluate_vgl_combo(const PointType& r,VV& psi, GL& dpsi)
+  { }
 };
 
 }

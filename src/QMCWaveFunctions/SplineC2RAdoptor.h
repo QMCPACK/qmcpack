@@ -28,13 +28,6 @@
 namespace qmcplusplus
 {
 
-  template<typename T>
-    inline T SymTrace(T h00, T h01, T h02, T h11, T h12, T h22, const T* gg)
-    {
-      return h00*gg[0]+h01*(gg[1]+gg[3])+h02*(gg[2]+gg[6])
-        +h11*gg[4]+h12*(gg[5]+gg[7])+h22*gg[8];
-    }
-
 /** adoptor class to match std::complex<ST> spline with TT real SPOs
  * @tparam ST precision of spline
  * @tparam TT precision of SPOs
@@ -199,11 +192,11 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     const ST* restrict kz=myKcart.data(2);
 #if defined(USE_VECTOR_ML)
     {
-      for(ind_t j=0; j<N; ++j)
+      for(size_t j=0; j<N; ++j)
         KdotR[j]=-(x*kx[j]+y*ky[j]+z*kz[j]);
       eval_e2iphi(nk,KdotR.data(),CosV.data(),SinV.data());
     }
-    for (intex_t j=0,psiIndex=first_spo; j<nComplexBands; j++, psiIndex+=2)
+    for (size_t j=0,psiIndex=first_spo; j<nComplexBands; j++, psiIndex+=2)
     {
       const ST val_r=myV[2*j  ];
       const ST val_i=myV[2*j+1];
@@ -211,7 +204,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
       psi[psiIndex+1] = val_i*CosV[j]+val_r*SinV[j];
     }
 
-    for (intex_t j=nComplexBands,psiIndex=first_spo+2*nComplexBands; j<N; j++,psiIndex++)
+    for (size_t j=nComplexBands,psiIndex=first_spo+2*nComplexBands; j<N; j++,psiIndex++)
     {
       const ST val_r=myV[2*j  ];
       const ST val_i=myV[2*j+1];
@@ -251,7 +244,6 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   template<typename VV, typename GV>
   inline void assign_vgl(const PointType& r, int bc_sign, VV& psi, GV& dpsi, VV& d2psi)
   {
-    const int N=kPoints.size();
     CONSTEXPR ST zero(0);
     CONSTEXPR ST two(2);
     const ST g00=PrimLattice.G(0), g01=PrimLattice.G(1), g02=PrimLattice.G(2),
@@ -272,6 +264,8 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     const ST* restrict h11=myH.data(3);
     const ST* restrict h12=myH.data(4);
     const ST* restrict h22=myH.data(5);
+
+    const size_t N=kPoints.size();
     const size_t nsplines=myL.size();
 #if defined(PRECOMPUTE_L)
     for(size_t j=0; j<nsplines; ++j)
@@ -283,8 +277,8 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
 #pragma omp simd
     for (size_t j=0, psiIndex=first_spo; j<nComplexBands; j++,psiIndex+=2)
     {
-      const int jr=j<<1;
-      const int ji=jr+1;
+      const size_t jr=j<<1;
+      const size_t ji=jr+1;
 
       const ST kX=k0[j];
       const ST kY=k1[j];
@@ -341,8 +335,8 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
 #pragma omp simd
     for (size_t j=nComplexBands,psiIndex=first_spo+nComputed; j<N; j++,psiIndex++)
     {
-      const int jr=j<<1;
-      const int ji=jr+1;
+      const size_t jr=j<<1;
+      const size_t ji=jr+1;
 
       const ST kX=k0[j];
       const ST kY=k1[j];
@@ -397,7 +391,6 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     assign_vgl(r,0,psi,dpsi,d2psi);
   }
 
-#if 0
   /** identical to assign_vgl but the output container is SoA container
    */
   template<typename VV, typename GL>
@@ -425,19 +418,21 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     const ST* restrict h12=myH.data(4);
     const ST* restrict h22=myH.data(5);
     const size_t nsplines=myL.size();
+#if defined(PRECOMPUTE_L)
     for(size_t j=0; j<nsplines; ++j)
     {
       myL[j]=SymTrace(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],GGt.data());
     }
+#endif
 
-    ST* restrict vl_x=dpsi.data(0);
-    ST* restrict vl_y=dpsi.data(1);
-    ST* restrict vl_z=dpsi.data(2);
-    ST* restrict vl_l=dpsi.data(3);
+    TT* restrict vl_x=dpsi.data(0);
+    TT* restrict vl_y=dpsi.data(1);
+    TT* restrict vl_z=dpsi.data(2);
+    TT* restrict vl_l=dpsi.data(3);
     for (size_t j=0, psiIndex=first_spo; j<nComplexBands; j++,psiIndex+=2)
     {
-      const int jr=j<<1;
-      const int ji=jr+1;
+      const size_t jr=j<<1;
+      const size_t ji=jr+1;
 
       const ST kX=k0[j];
       const ST kY=k1[j];
@@ -466,32 +461,33 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
       const ST gY_i=dY_i-val_r*kY;
       const ST gZ_i=dZ_i-val_r*kZ;
 
-      //const ST lcart_r=SymTrace(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],GGt.data());
-      //const ST lcart_i=SymTrace(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],GGt.data());
-      //const ST lap_r=lcart_r+mKK[j]*val_r+two*(kX*dX_i+kY*dY_i+kZ*dZ_i);
-      //const ST lap_i=lcart_i+mKK[j]*val_i-two*(kX*dX_r+kY*dY_r+kZ*dZ_r);
-      
+#if defined(PRECOMPUTE_L)
       const ST lap_r=myL[jr]+mKK[j]*val_r+two*(kX*dX_i+kY*dY_i+kZ*dZ_i);
       const ST lap_i=myL[ji]+mKK[j]*val_i-two*(kX*dX_r+kY*dY_r+kZ*dZ_r);
-
+#else
+      const ST lcart_r=SymTrace(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],GGt.data());
+      const ST lcart_i=SymTrace(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],GGt.data());
+      const ST lap_r=lcart_r+mKK[j]*val_r+two*(kX*dX_i+kY*dY_i+kZ*dZ_i);
+      const ST lap_i=lcart_i+mKK[j]*val_i-two*(kX*dX_r+kY*dY_r+kZ*dZ_r);
+#endif
+      
       //this will be fixed later
       psi[psiIndex   ]=c*val_r-s*val_i;
+      psi[psiIndex+1 ]=c*val_i+s*val_r;
       vl_x[psiIndex  ]=c*gX_r-s*gX_i;
-      vl_y[psiIndex  ]=c*gY_r-s*gY_i;
-      vl_z[psiIndex  ]=c*gZ_r-s*gZ_i;
-      vl_l[psiIndex  ]=c*lap_r-s*lap_i;
-
-      psi[psiIndex+1] =c*val_i+s*val_r;
       vl_x[psiIndex+1]=c*gX_i+s*gX_r;
+      vl_y[psiIndex  ]=c*gY_r-s*gY_i;
       vl_y[psiIndex+1]=c*gY_i+s*gY_r;
-      vl_l[psiIndex+1]=c*gZ_i+s*gZ_r;
+      vl_z[psiIndex  ]=c*gZ_r-s*gZ_i;
+      vl_z[psiIndex+1]=c*gZ_i+s*gZ_r;
+      vl_l[psiIndex  ]=c*lap_r-s*lap_i;
       vl_l[psiIndex+1]=c*lap_i+s*lap_r;
     }
 
     for (size_t j=nComplexBands,psiIndex=first_spo+2*nComplexBands; j<N; j++,psiIndex++)
     {
-      const int jr=j<<1;
-      const int ji=jr+1;
+      const size_t jr=j<<1;
+      const size_t ji=jr+1;
 
       const ST kX=k0[j];
       const ST kY=k1[j];
@@ -519,15 +515,21 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
       const ST gX_i=dX_i-val_r*kX;
       const ST gY_i=dY_i-val_r*kY;
       const ST gZ_i=dZ_i-val_r*kZ;
+#if defined(PRECOMPUTE_L)
       const ST lap_r=myL[jr]+mKK[j]*val_r+two*(kX*dX_i+kY*dY_i+kZ*dZ_i);
       const ST lap_i=myL[ji]+mKK[j]*val_i-two*(kX*dX_r+kY*dY_r+kZ*dZ_r);
+#else
+      const ST lcart_r=SymTrace(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],GGt.data());
+      const ST lcart_i=SymTrace(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],GGt.data());
+      const ST lap_r=lcart_r+mKK[j]*val_r+two*(kX*dX_i+kY*dY_i+kZ*dZ_i);
+      const ST lap_i=lcart_i+mKK[j]*val_i-two*(kX*dX_r+kY*dY_r+kZ*dZ_r);
+#endif
 
       psi[psiIndex   ]=c*val_r-s*val_i;
       vl_x[psiIndex  ]=c*gX_r-s*gX_i;
       vl_y[psiIndex  ]=c*gY_r-s*gY_i;
       vl_z[psiIndex  ]=c*gZ_r-s*gZ_i;
       vl_l[psiIndex  ]=c*lap_r-s*lap_i;
-      psi[psiIndex  ]=c*val_r-s*val_i;
     }
   }
 
@@ -537,13 +539,12 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
    * @param dpsi gradient-laplacian container
    */
   template<typename VV, typename GL>
-  inline void evaluate_vgl_soa(const PointType& r, VV& psi, GL& dpsi)
+  inline void evaluate_vgl_combo(const PointType& r, VV& psi, GL& dpsi)
   {
     PointType ru(PrimLattice.toUnit_floor(r));
     SplineInst->evaluate_vgh(ru,myV,myG,myH);
     assign_vgl_soa(r,0,psi,dpsi);
   }
-#endif
 
   template<typename VV, typename GV, typename GGV>
   void assign_vgh(const PointType& r, int bc_sign, VV& psi, GV& dpsi, GGV& grad_grad_psi)
@@ -558,6 +559,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   }
 };
 
+#if 0
 /** adoptor class to match std::complex<ST> spline with TT real SPOs
  *
  * Reimplement SplineC2RPackedAdoptor with internal grouping
@@ -835,354 +837,7 @@ struct SplineC2RAdoptor: public SplineAdoptorBase<ST,D>
     assign_vgh(r,0,psi,dpsi,grad_grad_psi);
   }
 };
-
-
-#if 0
-/** adoptor class to match std::complex<ST> spline with TT real SPOs
- * @tparam ST precision of spline
- * @tparam TT precision of SPOs
- * @tparam D dimension
- *
- * Requires temporage storage and multiplication of phase vectors
- */
-template<typename ST, typename TT>
-struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
-{
-  using SplineType=typename bspline_traits<ST,3>::SplineType;
-  using BCType=typename bspline_traits<ST,3>::BCType;
-  using PointType=typename SplineAdoptorBase<ST>::PointType; 
-  using SingleSplineType=typename SplineAdoptorBase<ST>::SingleSplineType;
-
-  using vContainer_type=aligned_vector<ST>;
-  using gContainer_type=VectorSoaContainer<ST,3>;
-  using hContainer_type=VectorSoaContainer<ST,6>;
-
-  using SplineAdoptorSoABase<ST>::first_spo;
-  using SplineAdoptorSoABase<ST>::last_spo;
-  using SplineAdoptorSoABase<ST>::GGt;
-  using SplineAdoptorSoABase<ST>::PrimLattice;
-  using SplineAdoptorSoABase<ST>::kPoints;
-  using SplineAdoptorSoABase<ST>::MakeTwoCopies;
-
-  ///number of complex bands
-  int nComplexBands;
-  ///number of points of the original grid
-  int BaseN[3];
-  ///offset of the original grid, always 0
-  int BaseOffset[3];
-  ///number of complex splines
-  aligned_vector<int> BandIndexMap;
-  ///multi bspline set
-  MultiBspline<ST> SplineInst;
-  vContainer_type  KdotR;
-  vContainer_type  CosV;
-  vContainer_type  SinV;
-  vContainer_type  mKK;
-  VectorSoAContainer<ST,3>  myKcart;
-
-  vContainer_type myV;
-  vContainer_type myL;
-  gContainer_type myG;
-  hContainer_type myH;
-
-  SplineC2RSoA(): SplineAdoptorBase<ST>()
-  {
-    this->is_complex=true;
-    this->AdoptorName="SplineC2RSoA";
-    this->KeyWord="C2RSoA";
-  }
-
-  SplineC2RSoA(const SplineC2RSoA& a)=delete;
-
-  ~SplineC2RSoA() {}
-
-  inline void resizeStorage(int n, int nvals)
-  {
-    SplineAdoptorBase<ST>::init_base(n);
-    myV.resize(2*n);
-    myG.resize(2*n);
-    myL.resize(2*n);
-    myH.resize(2*n);
-  }
-
-  template<typename GT, typename BCT>
-  void create_spline(GT& xyz_g, BCT& xyz_bc)
-  {
-    resize_kpoints();
-    SplineInst.create(xyz_g,xyz_bc,myV.size());
-    for(int i=0; i<D; ++i)
-    {
-      BaseOffset[i]=0;
-      BaseN[i]=xyz_g[i].num+3;
-    }
-    qmc_common.memory_allocated += SplineInst.sizeInByte();
-  }
-
-  /** remap kPoints to pack the double copy */
-  inline void resize_kpoints()
-  {
-    nComplexBands=this->remap_kpoints();
-    int nk=kPoints.size();
-    mKK.resize(nk);
-    myKcart.resize(nk);
-    for(int i=0; i<nk; ++i)
-    {
-      int i0=BandIndexMap[i];
-      mKK[i0]=-dot(kPoints[i],kPoints[i]);
-    }
-
-    //CosV.resize(nk);
-    //SinV.resize(nk);
-    //KdotR.resize(nk);
-  }
-
-  void set_spline(ST* restrict psi_r, ST* restrict psi_i, int twist, int ispline, int level)
-  {
-    int iband=BandIndexMap[ispline];
-    SplineInst.set(2*iband  ,psi_r);
-    SplineInst.set(2*iband+1,psi_i);
-  }
-
-  inline void set_spline(SingleSplineType* spline_r, SingleSplineType* spline_i, int twist, int ispline, int level)
-  {
-    //if(mKK.empty()) resize_kk();
-    //einspline::set(MultiSpline, 2*ispline,spline_r, BaseOffset, BaseN);
-    //einspline::set(MultiSpline, 2*ispline+1,spline_i, BaseOffset, BaseN);
-  }
-
-  inline void set_spline_domain(SingleSplineType* spline_r, SingleSplineType* spline_i, 
-      int twist, int ispline, const int* offset_l, const int* mesh_l)
-  {
-    //if(mKK.empty()) resize_kk();
-    //einspline::set(MultiSpline, 2*ispline,  spline_r, offset_l, mesh_l);
-    //einspline::set(MultiSpline, 2*ispline+1,spline_i, offset_l, mesh_l);
-  }
-
-  bool read_splines(hdf_archive& h5f)
-  {
-    //std::ostringstream o;
-    //o<<"spline_" << SplineAdoptorBase<ST,D>::MyIndex;
-    //einspline_engine<SplineType> bigtable(MultiSpline);
-    //return h5f.read(bigtable,o.str().c_str());//"spline_0");
-  }
-
-  bool write_splines(hdf_archive& h5f)
-  {
-    //std::ostringstream o;
-    //o<<"spline_" << SplineAdoptorBase<ST,D>::MyIndex;
-    //einspline_engine<SplineType> bigtable(MultiSpline);
-    //return h5f.write(bigtable,o.str().c_str());//"spline_0");
-  }
-
-  template<typename VV>
-  inline void assign_v(const PointType& r, int bc_sign, VV& psi)
-  {
-#if defined(USE_VECTOR_ML)
-    const intex_t N=kPoints.size();
-    {
-      const ST x=r[0], y=r[1], z=r[2];
-      const ST* restrict kx=myKcart.data(0);
-      const ST* restrict ky=myKcart.data(1);
-      const ST* restrict kz=myKcart.data(2);
-      for(ind_t j=0; j<N; ++j)
-        KdotR[j]=-(x*kx[j]+y*ky[j]+z*kz[j]);
-      eval_e2iphi(nk,KdotR.data(),CosV.data(),SinV.data());
-    }
-    for (intex_t j=0,psiIndex=first_spo; j<nComplexBands; j++, psiIndex+=2)
-    {
-      const ST val_r=myV[2*j  ];
-      const ST val_i=myV[2*j+1];
-      psi[psiIndex  ] = val_r*CosV[j]-val_i*SinV[j];
-      psi[psiIndex+1] = val_i*CosV[j]+val_r*SinV[j];
-    }
-
-    for (intex_t j=nComplexBands,psiIndex=first_spo+2*nComplexBands; j<N; j++,psiIndex++)
-    {
-      const ST val_r=myV[2*j  ];
-      const ST val_i=myV[2*j+1];
-      psi[psiIndex  ] = val_r*CosV[j]-val_i*SinV[j];
-    }
-#else
-    const ST x=r[0], y=r[1], z=r[2];
-    const ST* restrict kx=myKcart.data(0);
-    const ST* restrict ky=myKcart.data(1);
-    const ST* restrict kz=myKcart.data(2);
-    ST s, c;
-#pragma omp simd private(s,c)
-    for (intex_t j=0,psiIndex=first_spo; j<nComplexBands; j++, psiIndex+=2)
-    {
-      const ST val_r=myV[2*j  ];
-      const ST val_i=myV[2*j+1];
-      sincos(-(x*kx[j]+y*ky[j]+z*kz[j]),&s,&c);
-      psi[psiIndex  ] = val_r*c-val_i*s;
-      psi[psiIndex+1] = val_i*c+val_r*s;
-    }
-
-#pragma omp simd private(s,c)
-    for (intex_t j=nComplexBands,psiIndex=first_spo+2*nComplexBands; j<N; j++,psiIndex++)
-    {
-      const ST val_r=myV[2*j  ];
-      const ST val_i=myV[2*j+1];
-      sincos(-(x*kx[j]+y*ky[j]+z*kz[j]),&s,&c);
-      psi[psiIndex  ] = val_r*c-val_i*s;
-    }
 #endif
-  }
 
-  template<typename VV>
-  inline void evaluate_v(const PointType& r, VV& psi)
-  {
-    PointType ru(PrimLattice.toUnit_floor(r));
-    SplineInst.evaluate(ru,myV);
-    assign_v(r,0,psi);
-  }
-
-  template<typename VV, typename GV>
-  inline void assign_vgl(const PointType& r, int bc_sign, VV& psi, GV& dpsi, VV& d2psi)
-  {
-    const int N=kPoints.size();
-    CONSTEXPR ST zero(0);
-    CONSTEXPR ST two(2);
-    const ST g00=PrimLattice.G(0), g01=PrimLattice.G(1), g02=PrimLattice.G(2),
-             g10=PrimLattice.G(3), g11=PrimLattice.G(4), g12=PrimLattice.G(5),
-             g20=PrimLattice.G(6), g21=PrimLattice.G(7), g22=PrimLattice.G(8);
-
-    const ST x=r[0], y=r[1], z=r[2];
-    const ST* restrict k0=myKcart.data(0);
-    const ST* restrict k1=myKcart.data(1);
-    const ST* restrict k2=myKcart.data(2);
-
-    const ST* restrict g0=myG.data(0);
-    const ST* restrict g1=myG.data(1);
-    const ST* restrict g2=myG.data(2);
-    const ST* restrict h00=myH.data(0);
-    const ST* restrict h01=myH.data(1);
-    const ST* restrict h02=myH.data(2);
-    const ST* restrict h11=myH.data(3);
-    const ST* restrict h12=myH.data(4);
-    const ST* restrict h22=myH.data(5);
-    const size_t nsplines=myL.size();
-    for(size_t j=0; j<nsplines; ++j)
-      myL[j]=SymTrace(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],GGt.data());
-
-    const ST x=r[0]; const ST y=r[1]; const ST z=r[2]; int psiIndex=first_spo;
-
-    for (size_t j=0, psiIndex=first_spo; j<nComplexBands; j++,psiIndex+=2)
-    {
-      const int jr=j<<1;
-      const int ji=jr+1;
-
-      const ST kX=k0[j];
-      const ST kY=k1[j];
-      const ST kZ=k2[j];
-      const ST val_r=myV[jr];
-      const ST val_i=myV[ji];
-
-      //phase
-      ST s, c;
-      sincos(-(x*kX+y*kY+z*kZ),&s,&c);
-
-      //dot(PrimLattice.G,myG[j])
-      const ST dX_r = g00*g0[jr]+g01*g1[jr]+g02*g2[jr];
-      const ST dY_r = g10*g0[jr]+g11*g1[jr]+g12*g2[jr];
-      const ST dZ_r = g20*g0[jr]+g21*g1[jr]+g22*g2[jr];
-
-      const ST dX_i = g00*g0[ji]+g01*g1[ji]+g02*g2[ji];
-      const ST dY_i = g10*g0[ji]+g11*g1[ji]+g12*g2[ji];
-      const ST dZ_i = g20*g0[ji]+g21*g1[ji]+g22*g2[ji];
-
-      // \f$\nabla \psi_r + {\bf k}\psi_i\f$
-      const ST gX_r=dX_r+val_i*kX;
-      const ST gY_r=dY_r+val_i*kY;
-      const ST gZ_r=dZ_r+val_i*kZ;
-      const ST gX_i=dX_i-val_r*kX;
-      const ST gY_i=dY_i-val_r*kY;
-      const ST gZ_i=dZ_i-val_r*kZ;
-      //const ST lcart_r=SymTrace(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],GGt.data());
-      //const ST lcart_i=SymTrace(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],GGt.data());
-      //const ST lap_r=lcart_r+mKK[j]*val_r+two*(kY*dX_i+kY*dY_i+kZ*dZ_i);
-      //const ST lap_i=lcart_i+mKK[j]*val_i-two*(kY*dX_r+kY*dY_r+kZ*dZ_r);
-      const ST lap_r=myL[jr]+mKK[j]*val_r+two*(kY*dX_i+kY*dY_i+kZ*dZ_i);
-      const ST lap_i=myL[ji]+mKK[j]*val_i-two*(kY*dX_r+kY*dY_r+kZ*dZ_r);
-
-      //this will be fixed later
-      psi[psiIndex  ]=c*val_r-s*val_i;
-      psi[psiIndex+1]=c*val_i+s*val_r;
-      d2psi[psiindex  ]=c*lap_r-s*lap_i;
-      d2psi[psiindex+1]=c*lap_i+s*lap_r;
-      //this will go way with Determinant
-      dpsi[psiIndex  ][0]=c*gX_r-s*gX_i;
-      dpsi[psiIndex  ][1]=c*gY_r-s*gY_i;
-      dpsi[psiIndex  ][2]=c*gZ_r-s*gZ_i;
-      dpsi[psiIndex+1][0]=c*gX_i+s*gX_r;
-      dpsi[psiIndex+1][1]=c*gY_i+s*gY_r;
-      dpsi[psiIndex+1][2]=c*gZ_i+s*gZ_r;
-    }
-
-    for (size_t j=nComplexBands,psiIndex=first_spo+2*nComplexBands; j<N; j++,psiIndex++)
-    {
-      const int jr=j<<1;
-      const int ji=jr+1;
-
-      const ST kX=k0[j];
-      const ST kY=k1[j];
-      const ST kZ=k2[j];
-      const ST val_r=myV[jr];
-      const ST val_i=myV[ji];
-
-      //phase
-      ST s, c;
-      sincos(-(x*kX+y*kY+z*kZ),&s,&c);
-
-      //dot(PrimLattice.G,myG[j])
-      const ST dX_r = g00*g0[jr]+g01*g1[jr]+g02*g2[jr];
-      const ST dY_r = g10*g0[jr]+g11*g1[jr]+g12*g2[jr];
-      const ST dZ_r = g20*g0[jr]+g21*g1[jr]+g22*g2[jr];
-
-      const ST dX_i = g00*g0[ji]+g01*g1[ji]+g02*g2[ji];
-      const ST dY_i = g10*g0[ji]+g11*g1[ji]+g12*g2[ji];
-      const ST dZ_i = g20*g0[ji]+g21*g1[ji]+g22*g2[ji];
-
-      // \f$\nabla \psi_r + {\bf k}\psi_i\f$
-      const ST gX_r=dX_r+val_i*kX;
-      const ST gY_r=dY_r+val_i*kY;
-      const ST gZ_r=dZ_r+val_i*kZ;
-      const ST gX_i=dX_i-val_r*kX;
-      const ST gY_i=dY_i-val_r*kY;
-      const ST gZ_i=dZ_i-val_r*kZ;
-      psi[psiIndex  ]=c*val_r-s*val_i;
-      //this will be fixed later
-      dpsi[psiIndex  ][0]=c*gX_r-s*gX_i;
-      dpsi[psiIndex  ][1]=c*gY_r-s*gY_i;
-      dpsi[psiIndex  ][2]=c*gZ_r-s*gZ_i;
-      const ST lap_r=myL[jr]+mKK[j]*val_r+two*(kY*dX_i+kY*dY_i+kZ*dZ_i);
-      const ST lap_i=myL[ji]+mKK[j]*val_i-two*(kY*dX_r+kY*dY_r+kZ*dZ_r);
-      //const ST lap_r=lcart_r+mKK[j]*val_r+two*(kY*dX_i+kY*dY_i+kZ*dZ_i);
-      //const ST lap_i=lcart_i+mKK[j]*val_i-two*(kY*dX_r+kY*dY_r+kZ*dZ_r);
-      d2psi[psiindex  ]=c*lap_r-s*lap_i;
-    }
-  }
-
-  template<typename VV, typename GV>
-  inline void evaluate_vgl(const PointType& r, VV& psi, GV& dpsi, VV& d2psi)
-  {
-    PointType ru(PrimLattice.toUnit_floor(r));
-    SplineInst.evaluate_vgh(ru,myV,myG,myH);
-    assign_vgl(r,0,psi,dpsi,d2psi);
-  }
-
-  template<typename VV, typename GV, typename GGV>
-  void assign_vgh(const PointType& r, int bc_sign, VV& psi, GV& dpsi, GGV& grad_grad_psi)
-  {
-    //missing
-  }
-
-  template<typename VV, typename GV, typename GGV>
-  void evaluate_vgh(const PointType& r, VV& psi, GV& dpsi, GGV& grad_grad_psi)
-  {
-    //missing
-  }
-};
-#endif
 }
 #endif
