@@ -412,6 +412,7 @@ void XMLParticleParser::getPtclAttrib(xmlNodePtr cur, int nat, int nloc)
     return;
   }
   int t_id = ref_.getAttribType(otype);
+
   if(oname == ionid_tag)
   {
     if(otype == stringtype_tag)
@@ -432,24 +433,34 @@ void XMLParticleParser::getPtclAttrib(xmlNodePtr cur, int nat, int nloc)
   }
   else
   {
+    //very permissive in that a unregistered attribute will be created and stored by ParticleSet
+    //cloning is not going to work
     if(t_id == PA_IndexType)
     {
-      ParticleAttribXmlNode<ParticleIndex_t> a(*(ref_.getIndexAttrib(oname)),utype);
+      ParticleIndex_t* obj=nullptr;
+      obj=ref_.getAttribute(otype,oname,obj);
+      ParticleAttribXmlNode<ParticleIndex_t> a(*obj,utype);
       a.put(cur,nat,nloc);
     }
     else if(t_id == PA_ScalarType)
     {
-      ParticleAttribXmlNode<ParticleScalar_t> a(*(ref_.getScalarAttrib(oname)),utype);
+      ParticleScalar_t* obj=nullptr;
+      obj=ref_.getAttribute(otype,oname,obj);
+      ParticleAttribXmlNode<ParticleScalar_t> a(*obj,utype);
       a.put(cur,nat,nloc);
     }
     else if(t_id == PA_PositionType)
     {
-      ParticleAttribXmlNode<ParticlePos_t> a(*(ref_.getVectorAttrib(oname)),utype);
+      ParticlePos_t* obj=nullptr;
+      obj=ref_.getAttribute(otype,oname,obj);
+      ParticleAttribXmlNode<ParticlePos_t> a(*obj,utype);
       a.put(cur,nat,nloc);
     }
     else if(t_id == PA_TensorType)
     {
-      ParticleAttribXmlNode<ParticleTensor_t> a(*(ref_.getTensorAttrib(oname)),utype);
+      ParticleTensor_t* obj=nullptr;
+      obj=ref_.getAttribute(otype,oname,obj);
+      ParticleAttribXmlNode<ParticleTensor_t> a(*obj,utype);
       a.put(cur,nat,nloc);
     }
   }

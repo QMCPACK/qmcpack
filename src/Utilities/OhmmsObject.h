@@ -111,7 +111,7 @@ protected:
   int ElementByteSize;
 
 private:
-  static int ObjectCounter;
+  //static int ObjectCounter;
 };
 #endif
 

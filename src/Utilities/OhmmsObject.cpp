@@ -21,7 +21,7 @@
  */
 
 // initialize the object counter
-int OhmmsObject::ObjectCounter = 0;
+//int OhmmsObject::ObjectCounter = 0;
 
 /**default constructor
  *
@@ -33,11 +33,11 @@ OhmmsObject::OhmmsObject():
   TypeName("none"),
   ElementByteSize(0)
 {
-  #pragma omp critical 
-  {
-    ObjectID = ObjectCounter;
-    ObjectCounter++;
-  }
+//  #pragma omp critical 
+//  {
+//    ObjectID = ObjectCounter;
+//    ObjectCounter++;
+//  }
 }
 
 /**contructor
@@ -50,11 +50,11 @@ OhmmsObject::OhmmsObject(const std::string& tname, const std::string& oname):
   TypeName(tname.c_str()),
   ElementByteSize(0)
 {
-  #pragma omp critical 
-  {
-    ObjectID = ObjectCounter;
-    ObjectCounter++;
-  }
+//  #pragma omp critical 
+//  {
+//    ObjectID = ObjectCounter;
+//    ObjectCounter++;
+//  }
 }
 
 OhmmsObject::~OhmmsObject()
