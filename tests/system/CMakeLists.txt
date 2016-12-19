@@ -268,7 +268,7 @@ ENDIF()
 # Reduced number of blocks and samples compared to other short bccH tests
   LIST(APPEND BCC_H_PW_SCALARS "totenergy" "-1.834032 0.001")
   LIST(APPEND BCC_H_PW_SCALARS "samples" "96000 0.0")
-  LIST(APPEND BCC_H_PW_SCALARS "flux" "0.0 0.03")
+  LIST(APPEND BCC_H_PW_SCALARS "flux" "0.0 0.1")
   IF(NOT QMC_CUDA)
 # No GPU implementation. Would be fast if implemented
   QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-vmc_sdj-pw
