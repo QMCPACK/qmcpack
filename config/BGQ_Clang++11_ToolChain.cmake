@@ -24,7 +24,7 @@ SET(MPIEXEC "sh")
 SET(MPIEXEC_NUMPROC_FLAG "${qmcpack_SOURCE_DIR}/utils/bgrunjobhelper.sh")
 SET(QE_BIN /soft/applications/quantum_espresso/5.3.0-bgq-omp/bin)
 
-SET(BOOST_ROOT /home/projects/qmcpack/boost_1_45_0)
+SET(BOOST_ROOT /soft/libraries/boost/1.62.0/cnk-bgclang++11/current/)
 
 SET(CMAKE_FIND_ROOT_PATH
      /home/projects/qmcpack/libXML2-2.9.1

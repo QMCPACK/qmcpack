@@ -45,7 +45,10 @@ einspline_free (void *ptr)
 
 #ifdef HAVE_POSIX_MEMALIGN
 
-// int posix_memalign(void **memptr, size_t alignment, size_t size);
+#if (defined(__IBMCPP__)) && ( __IBMCPP__ <= 1210 )
+#else
+int posix_memalign(void **memptr, size_t alignment, size_t size);
+#endif
 
 inline void *
 einspline_alloc (size_t size, size_t alignment)
