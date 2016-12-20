@@ -20,7 +20,7 @@
 /** @file einspline_allocator.c
  *
  * Gather only 3d_d/3d_s allocation routines.
- * Original implementations are einspline/*_create.c
+ * Original implementations are einspline/ *_create.c
  */
 #include <stdlib.h>
 #include <stdio.h>

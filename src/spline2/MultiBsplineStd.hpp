@@ -31,7 +31,7 @@ namespace qmcplusplus
   template<typename T>
     inline void 
     MultiBspline<T>::evaluate_vgl_impl(T x, T y, T z, 
-        T* restrict vals, T* restrict grads, T* restrict lapl, int first, int last,size_t out_offset) const
+        T* restrict vals, T* restrict grads, T* restrict lapl, int first, int last, size_t out_offset) const
     {
       x -= spline_m->x_grid.start;
       y -= spline_m->y_grid.start;
@@ -364,12 +364,14 @@ namespace qmcplusplus
 #else
 
 // this is only experimental, not protected for general use.
+#ifdef __xlC__
 #include <builtins.h>
+#endif
 
   template<typename T>
-    inline void 
-    MultiBspline<T>::evaluate_vgl_impl(T x, T y, T z, 
-        T* restrict vals, T* restrict grads, T* restrict lapl, int first, int last,int out_offset) const
+    inline void
+    MultiBspline<T>::evaluate_vgl_impl(T x, T y, T z,
+        T* restrict vals, T* restrict grads, T* restrict lapl, int first, int last, size_t out_offset) const
     {
       x -= spline_m->x_grid.start;
       y -= spline_m->y_grid.start;
@@ -527,7 +529,7 @@ namespace qmcplusplus
   template<typename T>
     inline void 
     MultiBspline<T>::evaluate_vgh_impl(T x, T y, T z, 
-        T* restrict vals, T* restrict grads, T* restrict hess, int first, int last, int out_offset) const
+        T* restrict vals, T* restrict grads, T* restrict hess, int first, int last, size_t out_offset) const
     {
       x -= spline_m->x_grid.start;
       y -= spline_m->y_grid.start;

@@ -152,7 +152,10 @@ namespace qmcplusplus
       T2* restrict y=out+  ldb; ASSUME_ALIGNED(y);
       T2* restrict z=out+2*ldb; ASSUME_ALIGNED(z);
 //#pragma vector nontemporal
-#pragma omp simd
+#if (defined(__IBMCPP__)) && ( __IBMCPP__ <= 1210 )
+#else
+      #pragma omp simd
+#endif
       for(int i=0; i<nrows;++i)
       {
         x[i]=iptr[i*ncols  ]; //x[i]=in[i][0];
@@ -178,7 +181,10 @@ namespace qmcplusplus
       const T1* restrict y=iptr+  lda; ASSUME_ALIGNED(y);
       const T1* restrict z=iptr+2*lda; ASSUME_ALIGNED(z);
 //#pragma vector nontemporal
-#pragma omp simd
+#if (defined(__IBMCPP__)) && ( __IBMCPP__ <= 1210 )
+#else
+      #pragma omp simd
+#endif
       for(int i=0; i<nrows;++i)
       {
         out[i*ldb  ]=x[i]; //out[i][0]=x[i];
