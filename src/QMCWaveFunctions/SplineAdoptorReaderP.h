@@ -213,7 +213,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
         splineData_r.resize(nx,ny,nz);
         if(bspline->is_complex) splineData_i.resize(nx,ny,nz);
 
-        if(myComm->size() > 1)
+        //if(myComm->size() > 1)
         {
           int np=std::min(N,myComm->size());
           OrbGroups.resize(np+1,0);
@@ -244,12 +244,12 @@ struct SplineAdoptorReader: public BsplineReaderBase
             app_log() << "  SplineAdoptorReader initialize_spline_pio " << now.elapsed() << " sec" << std::endl;
           }
         }
-        else
-        {
-          now.restart();
-          initialize_spline_serial(spin, bandgroup);
-          app_log() << "  SplineAdoptorReader initialize_spline_serial " << now.elapsed() << " sec" << std::endl;
-        }
+        //else
+        //{
+        //  now.restart();
+        //  initialize_spline_serial(spin, bandgroup);
+        //  app_log() << "  SplineAdoptorReader initialize_spline_serial " << now.elapsed() << " sec" << std::endl;
+        //}
 
         fftw_destroy_plan(FFTplan);
         FFTplan=NULL;
@@ -345,11 +345,9 @@ struct SplineAdoptorReader: public BsplineReaderBase
     int nx=MeshSize[0];
     int ny=MeshSize[1];
     int nz=MeshSize[2];
-    Array<double,3> data_r(nx,ny,nz), data_i;
     if(bspline->is_complex)
     {
       tspline_i=einspline::create(dummy,start,end,MeshSize,bspline->HalfG);
-      data_i.resize(ny,ny,nz);
     }
     Vector<std::complex<double> > cG(mybuilder->MaxNumGvecs);
     const std::vector<BandInfo>& cur_bands=bandgroup.myBands;
