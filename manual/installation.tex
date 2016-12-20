@@ -635,7 +635,6 @@ module load boost
 export LIBXML2_HOME=/usr/common/software/libxml2/2.9.3/hsw 
 mkdir build_cori
 cd build_cori
-cmake ..
 cmake -DQMC_EXTRA_LIBS=/usr/common/software/liblzma/20160630/hsw/lib/liblzma.a ..
 make -j 8  
 ls -l bin/qmcpack 
