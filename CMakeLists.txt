@@ -487,14 +487,29 @@ IF(BUILD_AFQMC)
 ENDIF()
 # once C++11 is needed
 IF(CXX11_NEEDED)
-  #check if the CXX compiler supports -std=c++11 option
-  include(CheckCXXCompilerFlag)
-  CHECK_CXX_COMPILER_FLAG(-std=c++11 CXX_COMPILER_SUPPORT_CXX11)
-  # Turn on C++11 for this code
+  # Force the flag on Cray with Intel compiler, because the Cray wrapper
+  #  prints an warning that interferes with the flag detection code
+  #  with older versions of CMake.
+  IF($ENV{CRAYPE_VERSION} MATCHES ".")
+    IF( ${COMPILER} MATCHES "Intel" )
+      SET(CXX11_FLAG "--std=c++11")  
+    ENDIF()
+  ENDIF()
+
+  IF (CXX11_FLAG)
+    SET(CXX_COMPILER_SUPPORT_CXX11 TRUE)
+  ELSE()
+    SET(CXX11_FLAG "-std=c++11")
+    #check if the CXX compiler supports -std=c++11 option
+    include(CheckCXXCompilerFlag)
+    CHECK_CXX_COMPILER_FLAG(${CXX11_FLAG} CXX_COMPILER_SUPPORT_CXX11)
+    # Turn on C++11 for this code
+  ENDIF()
   IF (CXX_COMPILER_SUPPORT_CXX11)
     # avoid repeated -std=c++11 flag
-    IF(NOT CMAKE_CXX_FLAGS MATCHES "-std=c\\+\\+11")
-      SET (CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
+    STRING(REPLACE "++" "\\+\\+" CXX11_FLAG_MATCH ${CXX11_FLAG})
+    IF(NOT CMAKE_CXX_FLAGS MATCHES ${CXX11_FLAG_MATCH})
+      SET (CMAKE_CXX_FLAGS "${CXX11_FLAG} ${CMAKE_CXX_FLAGS}")
     ENDIF()
   ELSE()
     MESSAGE(STATUS "Disabling features requring C++11 due to the lack of compiler support")
