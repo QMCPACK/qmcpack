@@ -135,25 +135,31 @@ TrialWaveFunction::evaluateLog(ParticleSet& P)
   P.L = 0.0;
   ValueType logpsi(0.0);
   PhaseValue=0.0;
-  std::vector<OrbitalBase*>::iterator it(Z.begin());
-  std::vector<OrbitalBase*>::iterator it_end(Z.end());
-  //WARNING: multiplication for PhaseValue is not correct, fix this!!
-  for (; it!=it_end; ++it)
+  for(size_t i=0,n=Z.size(); i<n; ++i)
   {
-    logpsi += (*it)->evaluateLog(P, P.G, P.L);
-    PhaseValue += (*it)->PhaseValue;
+    logpsi += Z[i]->evaluateLog(P, P.G, P.L);
+    PhaseValue += Z[i]->PhaseValue;
   }
+
   convert(logpsi,LogValue);
   return LogValue;
   //return LogValue=real(logpsi);
 }
 
+void
+TrialWaveFunction::updateAfterSweep(ParticleSet& P)
+{
+  //TAU_PROFILE("TrialWaveFunction::evaluateLog","ParticleSet& P", TAU_USER);
+  P.G = RealType(0);
+  P.L = RealType(0);
+  for(size_t i=0,n=Z.size(); i<n; ++i)
+    Z[i]->updateAfterSweep(P,P.G,P.L);
+}
+
 void TrialWaveFunction::recompute(ParticleSet& P)
 {
-  std::vector<OrbitalBase*>::iterator it(Z.begin());
-  std::vector<OrbitalBase*>::iterator it_end(Z.end());
-  for (; it!=it_end; ++it)
-    (*it)->recompute(P);
+  for(size_t i=0,n=Z.size(); i<n; ++i)
+    Z[i]->recompute(P);
 }
 
 /** return log(|psi|)
@@ -390,7 +396,7 @@ TrialWaveFunction::ValueType TrialWaveFunction::evaluate(ParticleSet& P)
   P.G = 0.0;
   P.L = 0.0;
   ValueType psi(1.0);
-  for (int i=0; i<Z.size(); i++)
+  for(size_t i=0,n=Z.size(); i<n; ++i)
   {
     psi *= Z[i]->evaluate(P, P.G, P.L);
   }
@@ -404,7 +410,7 @@ TrialWaveFunction::RealType TrialWaveFunction::ratio(ParticleSet& P,int iat)
 {
   //TAU_PROFILE("TrialWaveFunction::ratio","(ParticleSet& P,int iat)", TAU_USER);
   ValueType r(1.0);
-  for (int i=0,ii=0; i<Z.size(); ++i,ii+=2)
+  for(size_t i=0,n=Z.size(); i<n; ++i)
   {
     r *= Z[i]->ratio(P,iat);
   }
@@ -423,7 +429,7 @@ TrialWaveFunction::RealType TrialWaveFunction::ratio(ParticleSet& P,int iat)
 TrialWaveFunction::ValueType TrialWaveFunction::full_ratio(ParticleSet& P,int iat)
 {
   ValueType r(1.0);
-  for(int i=0;i<Z.size();++i)
+  for(size_t i=0,n=Z.size(); i<n; ++i)
     r *= Z[i]->ratio(P,iat);
   return r;
 }
@@ -433,7 +439,7 @@ TrialWaveFunction::RealType TrialWaveFunction::ratioVector(ParticleSet& P, int i
   //TAU_PROFILE("TrialWaveFunction::ratio","(ParticleSet& P,int iat)", TAU_USER);
   ratios.resize(Z.size(),0);
   ValueType r(1.0);
-  for (int i=0,ii=0; i<Z.size(); ++i,ii+=2)
+  for(size_t i=0,n=Z.size(); i<n; ++i)
   {
     ValueType zr=Z[i]->ratio(P,iat);
     r *= zr;
@@ -459,7 +465,7 @@ TrialWaveFunction::RealType TrialWaveFunction::alternateRatio(ParticleSet& P)
 {
   //TAU_PROFILE("TrialWaveFunction::ratio","(ParticleSet& P,int iat)", TAU_USER);
   ValueType r(1.0);
-  for (int i=0,ii=0; i<Z.size(); ++i,ii+=2)
+  for(size_t i=0,n=Z.size(); i<n; ++i)
   {
     r *= Z[i]->alternateRatio(P);
   }
@@ -478,7 +484,7 @@ TrialWaveFunction::GradType TrialWaveFunction::evalGrad(ParticleSet& P,int iat)
 {
   //TAU_PROFILE("TrialWaveFunction::evalGrad","(ParticleSet& P,int iat)", TAU_USER);
   GradType grad_iat;
-  for (int i=0; i<Z.size(); ++i)
+  for(size_t i=0,n=Z.size(); i<n; ++i)
     grad_iat += Z[i]->evalGrad(P,iat);
   return grad_iat;
 }
@@ -487,7 +493,7 @@ TrialWaveFunction::GradType TrialWaveFunction::alternateEvalGrad(ParticleSet& P,
 {
   //TAU_PROFILE("TrialWaveFunction::evalGrad","(ParticleSet& P,int iat)", TAU_USER);
   GradType grad_iat;
-  for (int i=0; i<Z.size(); ++i)
+  for(size_t i=0,n=Z.size(); i<n; ++i)
     grad_iat += Z[i]->alternateEvalGrad(P,iat);
   return grad_iat;
 }

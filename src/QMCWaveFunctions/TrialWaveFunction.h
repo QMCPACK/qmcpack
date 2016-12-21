@@ -224,6 +224,9 @@ public:
   /** recompute the value of the orbitals which require critical accuracy */
   void recompute(ParticleSet& P);
 
+  /** done PbyP update, prepare for the measurements */
+  void updateAfterSweep(ParticleSet& P);
+
   RealType evaluateDeltaLog(ParticleSet& P, bool recompute=false);
 
   void evaluateDeltaLog(ParticleSet& P,
