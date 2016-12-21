@@ -161,7 +161,7 @@ struct SplineAdoptorBase
   std::string KeyWord;
 
   SplineAdoptorBase()
-    :CanHandleSoA(false),is_complex(false),MyIndex(0),nunique_orbitals(0),first_spo(0),last_spo(0)
+    :is_complex(false),MyIndex(0),nunique_orbitals(0),first_spo(0),last_spo(0)
   { }
 
 #if (__cplusplus >= 201103L)
@@ -333,7 +333,8 @@ struct BsplineSet: public SPOSetBase, public SplineAdoptor
     }
   }
 
-  void evaluateVGL(const ParticleSet& P, int iat, RefVector_t& val, GLVector_t& gl)
+  /** einspline does not need any other state data */
+  void evaluateVGL(const ParticleSet& P, int iat, RefVector_t& val, GLVector_t& gl, bool newp)
   {
     SplineAdoptor::evaluate_vgl_combo(P.R[iat],val,gl);
   }

@@ -203,8 +203,12 @@ public:
   virtual void
   evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)=0;
 
+  /** evaluate VGL using SoA container for gl
+   *
+   * If newp is true, use particle set data for the proposed move
+   */
   virtual void
-    evaluateVGL(const ParticleSet& P, int iat, RefVector_t& psiv, GLVector_t& gl);
+    evaluateVGL(const ParticleSet& P, int iat, RefVector_t& psiv, GLVector_t& gl, bool newp);
 
   /** evaluate values for the virtual moves, e.g., sphere move for nonlocalPP
    * @param VP virtual particle set

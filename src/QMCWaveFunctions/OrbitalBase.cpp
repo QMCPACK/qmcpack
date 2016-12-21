@@ -28,7 +28,7 @@ OrbitalBase::OrbitalBase():
   ,dPsi(0), ionDerivs(false)
 #endif
 { 
-  HaveRatiosForVP=false;
+  ReCompute=false;
 }
 
 // OrbitalBase::OrbitalBase(const OrbitalBase& old):
