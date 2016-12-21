@@ -710,16 +710,15 @@ We \textbf{strongly encourage} running the included tests each time
 QMCPACK is built. These compare the results from the executable with
 known-good mean-field, quantum chemical, and other QMC results. 
 
-The tests included with QMCPACK currently test only the VMC code with
+The tests included with QMCPACK currently mainly test the VMC code with
 single determinant wavefunction and simple spline Jastrow
 wavefunctions, and for gaussian and periodic spline basis
-sets. Although not yet comprehensive, it is extremely unlikely that,
-e.g., DMC will be correct if the VMC tests do not pass.  We check that the known mean
+sets. We check that the known mean
 field results are obtained with no Jastrow. When Jastrow functions are
 included we test against previous QMC data. The tests are statistical
 with a generous 3 $\sigma$ tolerance, however the system sizes are
 small, typically $<10$ electrons, so the error bars are typically
-small.
+small. Limited DMC and optimizer tests included and are scheduled for expansion.
 
  The ``short'' tests only take a few minutes on a 16
 core machine. You can run these tests using the command below in the
