@@ -619,7 +619,7 @@ Currently Loaded Modulefiles:
  15) dvs/2.5_0.9.0-1.0502.1958.2.55.ari      30) boost/1.54                           
 \end{verbatim}
 
-\subsection{Installing on NERSC Cori (Phase 1) Cray XC40}
+\subsection{Installing on NERSC Cori, Haswell Partition, Cray XC40}
 Cori is a Cray XC40 with 16-core Intel "Haswell" nodes 
 installed at NERSC. The build settings are similar to eos at OLCF, but
 a workround is needed for the newer Cray OS which does not include a static
@@ -660,6 +660,44 @@ Currently Loaded Modulefiles:
  12) dmapp/7.0.1-1.0502.11080.8.76.ari     26) cmake/3.3.2                                    
  13) gni-headers/4.0-1.0502.10859.7.8.ari  27) fftw/3.3.4.5                                   
  14) xpmem/0.1-2.0502.64982.5.3.ari        28) boost/1.59                                     
+\end{verbatim}
+
+\subsection{Installing on NERSC Cori, Xeon Phi KNL Knight's Landing partition, Cray XC40}
+The second phase of NERSC's Cori uses Intel
+Xeon Phi Knight's Landing (KNL) nodes. Substantive optimizations for QMCPACK on KNL will
+be forthcoming. The following build recipe ensures that the code
+generation is appropriate for the KNL nodes:
+
+\begin{verbatim}
+module load subversion
+module load cray-hdf5
+module load cmake
+module load fftw
+export FFTW_HOME=$FFTW_DIR/..
+module load boost
+export LIBXML2_HOME=/usr/common/software/libxml2/2.9.3/hsw
+module swap craype-haswell craype-mic-knl
+cmake -DQMC_EXTRA_LIBS=/usr/common/software/liblzma/20160630/hsw/lib/liblzma.a \
+       -DCMAKE_CXX_FLAGS="-xMIC-AVX512" -DCMAKE_C_FLAGS="-xMIC-AVX512" ..
+make -j 16
+ls -l bin/qmcpack 
+\end{verbatim}
+
+When the above was tested on 21 December 2016, the following module and
+software versions were present:
+
+\begin{verbatim}
+build_cori_knl> module list
+Currently Loaded Modulefiles:
+  1) modules/3.2.6.7                  11) dmapp/7.1.0-12.37                21) cray-shmem/7.4.4
+  2) nsg/1.2.0                        12) gni-headers/5.0.7-3.1            22) cray-mpich/7.4.4
+  3) modules/3.2.10.5                 13) xpmem/0.1-4.5                    23) altd/2.0
+  4) intel/17.0.1.132                 14) job/1.5.5-3.58                   24) darshan/3.0.1
+  5) craype-network-aries             15) dvs/2.7_0.9.0-2.221              25) subversion/1.7.22
+  6) craype/2.5.7                     16) alps/6.1.3-17.12                 26) cray-hdf5/1.8.16
+  7) cray-libsci/16.09.1              17) rca/1.0.0-8.1                    27) cmake/3.3.2
+  8) udreg/2.3.2-4.6                  18) atp/2.0.3                        28) fftw/3.3.4.10
+  9) ugni/6.0.12-2.1                  19) PrgEnv-intel/6.0.3               29) boost/1.61
 \end{verbatim}
 
 \subsection{Installing on Windows}
