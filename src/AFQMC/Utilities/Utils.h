@@ -5,6 +5,7 @@
 #include<cstdlib>
 #include<vector>
 #include<string>
+#include<AFQMC/config.h>
 #include<AFQMC/config.0.h>
 #include<Message/Communicate.h>
 

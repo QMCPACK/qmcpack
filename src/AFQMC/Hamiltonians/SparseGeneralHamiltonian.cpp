@@ -1288,7 +1288,7 @@ namespace qmcplusplus
  
          }
        } else if(a==0 && b==0 && c==0 && d==0) {
-         if( val==0 && !spinRestricted ) {
+         if( val==0.0 && !spinRestricted ) {
            uhf_block++;
          }
        } else if(a!=0 && b==0 && c==0 && d==0) {
@@ -1511,7 +1511,7 @@ namespace qmcplusplus
 // reserved for non c++11 compliant compiler
 #endif
        } else if(a==0 && b==0 && c==0 && d==0) {
-         if( val==0 && !spinRestricted ) {
+         if( val==0.0 && !spinRestricted ) {
            uhf_block++;
          } else {
            NuclearCoulombEnergy = val;
@@ -2965,7 +2965,7 @@ namespace qmcplusplus
       for(IndexType k=0; k<NMO; k++,nt++) {
         if(nt<ik0 || nt>ik1) continue;
         Duv[ik] = H(i,k,k,i);  
-        if(Duv[ik] < ValueType(0)) {
+        if(toComplex(Duv[ik]).real() < RealType(0.0)) {
           app_log()<<" WARNING: Found negative Duv: " <<i <<" " <<k <<" " <<Duv[ik] <<std::endl;  
           if(zero_bad_diag_2eints) 
             Duv[ik] = ValueType(0);

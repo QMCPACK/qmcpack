@@ -93,19 +93,38 @@ inline void setImag(std::complex<RealType>& a, RealType b)
 template<typename T>
 inline T myconj(const T& a) 
 {
-  if(isComplex<T>(a))
-    return std::conj(a);
-  return a; 
+  return a;
+}
+
+template<typename T>
+inline std::complex<T> myconj(const std::complex<T>& a) 
+{
+  return std::conj(a);
 }
 
 template<typename T>
 inline RealType mynorm(const T& a)
 {
-  if(isComplex<T>(a))
-    return std::norm(a);
   return a*a;
 }
 
+template<typename T>
+inline RealType mynorm(const std::complex<T> &a)
+{
+  return std::norm(a);
+}
+
+template<typename T>
+inline std::complex<T> operator*(const int &lhs, const std::complex<T> &rhs)
+{
+  return T(lhs) * rhs;
+}
+
+template<typename T>
+inline std::complex<T> operator*(const std::complex<T> &lhs, const int &rhs)
+{
+  return lhs * T(rhs);
+}
 
 inline bool sortDecreasing (int i,int j) { return (i>j); }
 
@@ -187,6 +206,19 @@ struct _myEqv_snD_ {
 }; 
 
 
+}
+
+
+namespace std {
+template<typename T>
+inline bool operator<(const std::complex<T> &lhs, const std::complex<T> &rhs)
+{
+  if (lhs.real() != rhs.real())
+  {
+    return lhs.real() < rhs.real();
+  }
+  return lhs.imag() < rhs.imag();
+}
 }
 
 #endif

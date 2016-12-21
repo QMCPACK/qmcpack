@@ -631,7 +631,7 @@ bool selectedCI::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
     return false; 
   }   
 
-  NuclearCoulombEnergy = static_cast<ValueType>(sHam->NuclearCoulombEnergy);
+  NuclearCoulombEnergy = toComplex(sHam->NuclearCoulombEnergy).real();
 
   app_log()<<"\n****************************************************\n"   
            <<"****************************************************\n"   
