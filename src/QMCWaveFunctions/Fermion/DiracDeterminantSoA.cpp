@@ -15,73 +15,74 @@
 #include "QMCWaveFunctions/Fermion/DiracDeterminantSoA.h"
 namespace qmcplusplus
 {
-  DiracDeterminantSoA(SPOSetBasePtr const &spos, int first): DiracDeterminantBase(spo,first)
+  DiracDeterminantSoA::DiracDeterminantSoA(SPOSetBasePtr const &spos, int first): 
+    DiracDeterminantBase(spos,first)
   { }
 
   /** nothing useful yet */
   DiracDeterminantSoA::~DiracDeterminantSoA() {}
-  DiracDeterminantSoA(const DiracDeterminantSoA& s){}
-  DiracDeterminantSoA& DiracDeterminantSoA::operator=(const DiracDeterminantSoA& s) {}
+  DiracDeterminantSoA::DiracDeterminantSoA(const DiracDeterminantSoA& s):DiracDeterminantBase(s){}
 
-  void DiracDeterminantSoA::set(int first, int nel)
-  {
-    FirstIndex = first;
-    resize(nel,nel);
-  }
+  //void DiracDeterminantSoA::set(int first, int nel)
+  //{
+  //  FirstIndex = first;
+  //  resize(nel,nel);
+  //}
 
-  void DiracDeterminantBase::resize(int nel, int morb)
+  void DiracDeterminantSoA::resize(int nel, int morb)
   {
     int norb=morb;
     if(norb <= 0) norb = nel; // for morb == -1 (default)
-    psiM.resize(nel,norb);
-    psiV.resize(norb);
-#ifdef MIXED_PRECISION
-    psiM_hp.resize(nel,norb);
-    WorkSpace_hp.resize(nel);
-#endif
-    WorkSpace.resize(nel);
-    Pivot.resize(nel);
-    LastIndex = FirstIndex + nel;
+
+    //compute the sizes to ensure alignment
     NumPtcls=nel;
     NumOrbitals=norb;
-
-    /** allocate GL combo */
     NorbPad=getAlignedSize<ValueType>(norb);
     BlockSize=NorbPad*(OHMMS_DIM+1);
+
+    /** use aligned sized */
+    Phi->t_logpsi.resize(nel,NorbPad);
+    psiM.resize(nel,NorbPad);
+    psiV.resize(norb);
+
+#ifdef MIXED_PRECISION
+    psiM_hp.resize(nel,NorbPad);
+#endif
+    LastIndex = FirstIndex + nel;
+
     memoryPool.resize(nel*BlockSize);
     mGL.resize(nel);
     for(size_t i=0; i<nel; ++i)
-      mGL[i].resetByRef(Norb, NorbPad,memoryPool.data()+i*BlockSize);
-    vGL.resize(Norb);
+      mGL[i].resetByRef(norb,NorbPad,memoryPool.data()+i*BlockSize);
+    vGL.resize(norb);
   }
 
   template<typename T>
-  inline void computeGL(const VectorViwer<T>& row, const VectorSoaContainer<T>& gl_v, TinyVector<T,3>& grad, T& lap)
+  inline void computeGL(T* row, VectorSoaContainer<T,4>& gl_v, TinyVector<T,3>& grad, T& lap)
   {
-    constexpr char trans='T';
     constexpr T czero(0);
     constexpr T cone(1);
     int four=4;
     int na=gl_v.size();
     int lda=gl_v.capacity();
     T y[]={czero,czero,czero,czero};
-    BLAS::gemv(transa,na,four,cone,gl_v.data(),lda,row.data(),1,czero,y,1);
+    BLAS::gemv('T',na,four,cone,gl_v.data(),lda,row,1,czero,y,1);
     grad[0]=y[0]; grad[1]=y[1]; grad[2]=y[2]; lap=y[3];
   }
 
   template<typename T>
-  inline TinyVector<T,3> computeG(const VectorViwer<T>& row, const VectorSoaContainer<T>& gl_v)
+  inline TinyVector<T,3> computeG(T* row, VectorSoaContainer<T,4>& gl_v)
   {
-    TinyVector<T,3> grad;
-    constexpr char trans='T';
     constexpr T czero(0);
     constexpr T cone(1);
     int three=3;
     int na=gl_v.size();
     int lda=gl_v.capacity();
-    BLAS::gemv(transa,na,three,cone,gl_v.data(),lda,row.data(),1,czero,grad.data(),1);
-    return grad;
+    T y[]={czero,czero,czero,czero};
+    BLAS::gemv('T',na,three,cone,gl_v.data(),lda,row,1,czero,y,1);
+    return TinyVector<T,3>(y[0],y[1],y[2]);
   }
+
 
   DiracDeterminantSoA::RealType
     DiracDeterminantSoA::evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
@@ -99,28 +100,12 @@ namespace qmcplusplus
       }
       else
       {
-        SPOVGLTimer.start();
-        for(size_t i=0,iat=FirstIndex; i<NumPtcls; ++i,++iat)
-          Phi->evaluate(P, iat, VectorViewer<ValueType>(psiM[i]), mGL[i]); 
-        SPOVGLTimer.stop();
-        InverseTimer.start();
-#ifdef MIXED_PRECISION
-        psiM_hp = psiM;
-        ParticleSet::Scalar_t PhaseValue_hp;
-        LogValue = InvertWithLog(psiM_hp.data(),NumPtcls,NumOrbitals,WorkSpace_hp.data(),Pivot.data(),PhaseValue_hp);
-        psiM = psiM_hp;
-        PhaseValue = PhaseValue_hp;
-#else
-        LogValue = InvertWithLog(psiM.data(),NumPtcls,NumOrbitals,WorkSpace.data(),Pivot.data(),PhaseValue);
-#endif
-        InverseTimer.stop();
-        RatioTimer.start();
-
-        mGradType rv;
-        mValueType lap;
+        recompute(P);
+        GradType rv;
+        ValueType lap;
         for(size_t i=0,iat=FirstIndex; i<NumPtcls; ++i,++iat)
         {
-          computeGL(VectorView<ValueType>(psiM[i]),mGL[i],rv,lap);
+          computeGL(psiM[i],mGL[i],rv,lap);
           P.G[iat]+=rv;
           P.L[iat]+=lap-dot(rv,rv);
         }
@@ -131,18 +116,38 @@ namespace qmcplusplus
       return LogValue;
     }
 
+  DiracDeterminantBase::ValueType 
+    DiracDeterminantSoA::ratio(ParticleSet& P, int iat)
+    {
+      UpdateMode=ORB_PBYP_RATIO;
+      WorkingIndex = iat-FirstIndex;
+      SPOVTimer.start();
+      Phi->evaluate(P, iat, psiV);
+      SPOVTimer.stop();
+      RatioTimer.start();
+      curRatio=simd::dot(psiM[WorkingIndex],psiV.data(),NumOrbitals);
+      RatioTimer.stop();
+      return curRatio;
+    }
+
   DiracDeterminantBase::GradType
-    DiracDeterminantBase::evalGrad(ParticleSet& P, int iat)
+    DiracDeterminantSoA::evalGrad(ParticleSet& P, int iat)
     {
       WorkingIndex = iat-FirstIndex;
-      return computeG(VectorView<ValueType>(psiM[WorkingIndex]),mGL[WorkingIndex]);
+      if(ReCompute)
+      {//need to compute mGL
+        VectorViewer<ValueType> arow(psiV.data(),NumOrbitals);
+        Phi->evaluateVGL(P, iat, arow, mGL[WorkingIndex],false); 
+      }
+      return computeG(psiM[WorkingIndex],mGL[WorkingIndex]);
     }
 
   DiracDeterminantSoA::ValueType
     DiracDeterminantSoA::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
     {
       SPOVGLTimer.start();
-      Phi->evaluate(P, iat, VectorViewer<ValueType>(psiV.data()), vGL);
+      VectorViewer<ValueType> arow(psiV.data(),NumOrbitals);
+      Phi->evaluateVGL(P, iat, arow, vGL,true); //use the new position
       SPOVGLTimer.stop();
       RatioTimer.start();
       WorkingIndex = iat-FirstIndex;
@@ -152,26 +157,26 @@ namespace qmcplusplus
       constexpr RealType cone(1);
 
       //GradType rv=simd::dot(psiM[WorkingIndex],dpsiV.data(),NumOrbitals);
-      GradType rv= computeG(VectorView<ValueType>(psiM[WorkingIndex]),vGL);
+      GradType rv= computeG(psiM[WorkingIndex],vGL);
       grad_iat += (cone/curRatio) * rv;
       RatioTimer.stop();
       return curRatio;
     }
 
-  void DiracDeterminantBase::restore(int iat)
+  void DiracDeterminantSoA::restore(int iat)
   {
     curRatio=1.0;
   }
 
   /** move was accepted, update the real container
   */
-  void DiracDeterminantBase::acceptMove(ParticleSet& P, int iat)
+  void DiracDeterminantSoA::acceptMove(ParticleSet& P, int iat)
   {
     PhaseValue += evaluatePhase(curRatio);
     LogValue +=std::log(std::abs(curRatio));
     UpdateTimer.start();
 
-    InverseUpdateByRow(psiM,psiV,workV1,workV2,WorkingIndex,curRatio);
+    detEng.updateRow(psiM,psiV.data(),WorkingIndex,curRatio);
 
     if(UpdateMode==ORB_PBYP_PARTIAL)
       simd::copy_n(vGL.data(), BlockSize, mGL[WorkingIndex].data());
@@ -182,16 +187,23 @@ namespace qmcplusplus
 
   void DiracDeterminantSoA::recompute(ParticleSet& P)
   {
+    bool newp=false;
     for(size_t i=0,iat=FirstIndex; i<NumPtcls; ++i,++iat)
-      Phi->evaluate(P, iat, VectorViewer<ValueType>(psiM[i]), mGL[i]); 
+    {
+      VectorViewer<ValueType> arow(Phi->t_logpsi[i],NumOrbitals);
+      Phi->evaluateVGL(P, iat, arow, mGL[i],newp); 
+    }
 #ifdef MIXED_PRECISION
-    psiM_hp = psiM;
-    ParticleSet::Scalar_t PhaseValue_hp;
-    LogValue = InvertWithLog(psiM_hp.data(),NumPtcls,NumOrbitals,WorkSpace_hp.data(),Pivot.data(),PhaseValue_hp);
-    psiM = psiM_hp;
-    PhaseValue = PhaseValue_hp;
+    simd::transpose(Phi->t_logpsi.data(), NumOrbitals, NorbPad, psiM_hp.data(), NumOrbitals, NorbPad);
+    detEng_hp.invert(psiM_hp,true);
+    LogValue  =static_cast<RealType>(detEng_hp.LogDet);
+    PhaseValue=static_cast<RealType>(detEng_hp.Phase);
+    psiM=psiM_hp;
 #else
-    LogValue = InvertWithLog(psiM.data(),NumPtcls,NumOrbitals,WorkSpace.data(),Pivot.data(),PhaseValue);
+    simd::transpose(Phi->t_logpsi.data(), NumOrbitals, NorbPad, psiM.data(), NumOrbitals, NorbPad);
+    detEng.invert(psiM,true);
+    LogValue  =detEng.LogDet;
+    PhaseValue=detEng.Phase;
 #endif
   }
 
@@ -199,67 +211,62 @@ namespace qmcplusplus
   DiracDeterminantSoA::RealType
     DiracDeterminantSoA::registerData(ParticleSet& P, PooledData<RealType>& buf)
     {
-      if(NP == 0) 
-      {
-        workV1.resize(NumOrbitals);
-        workV2.resize(NumOrbitals);
-        NP=P.getTotalNum();
-      }
+      NP=P.getTotalNum();
       LogValue=evaluateLog(P,P.G,P.L);
       //add the data: determinant, inverse, gradient and laplacians
       buf.add(psiM.first_address(),psiM.last_address());
-      buf.add(mGL.first_address(),mGL.last_address());
+      if(!ReCompute) buf.add(memoryPool.begin(),memoryPool.end());
       buf.add(LogValue);
       buf.add(PhaseValue);
       return LogValue;
     }
 
-  DiracDeterminantSoA::RealType DiracDeterminantBase::updateBuffer(ParticleSet& P,
-      PooledData<RealType>& buf, bool fromscratch)
-  {
-    if(fromscratch)
+  DiracDeterminantSoA::RealType 
+    DiracDeterminantSoA::updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch)
     {
-      LogValue=evaluateLog(P,P.G,P.L);
-    }
-    else
-    {
-      mGradType grad;
-      mValueType lap;
-      if(UpdateMode == ORB_PBYP_RATIO) //ratio only method does not compute GL
+      if(fromscratch)
       {
-        for(size_t i=0; i<NP; ++i)
-        {
-          VectorView arow(psiM[i]);
-          Phi->evaluate(P, i, arow, mGL[i]); 
-          computeGL(arow,mGL[i],grad,lap);
-          P.G[iat]+=grad;
-          P.L[iat]+=lap-dot(grad,grad);
-        }
+        LogValue=evaluateLog(P,P.G,P.L);
       }
       else
       {
-        for(size_t i=0,iat=FirstIndex; i<NumPtcls; ++i,++iat)
+        GradType grad;
+        ValueType lap;
+        if(UpdateMode == ORB_PBYP_RATIO) //ratio only method does not compute GL
         {
-          computeGL(VectorView<ValueType>(psiM[i]),mGL[i],grad,lap);
-          P.G[iat]+=grad;
-          P.L[iat]+=lap-dot(grad,grad);
+          for(size_t i=0,iat=FirstIndex; i<NumPtcls; ++i,++iat)
+          {
+            VectorViewer<ValueType> arow(psiV.data(),NumOrbitals);
+            Phi->evaluateVGL(P, i, arow, mGL[i], true); 
+            computeGL(psiM[i],mGL[i],grad,lap);
+            P.G[iat]+=grad;
+            P.L[iat]+=lap-dot(grad,grad);
+          }
+        }
+        else
+        {
+          for(size_t i=0,iat=FirstIndex; i<NumPtcls; ++i,++iat)
+          {
+            computeGL(psiM[i],mGL[i],grad,lap);
+            P.G[iat]+=grad;
+            P.L[iat]+=lap-dot(grad,grad);
+          }
         }
       }
-    }
 
-    BufferTimer.start();
-    buf.put(psiM.first_address(),psiM.last_address());
-    buf.put(mGL.first_address(),mGL.last_address());
-    buf.put(LogValue);
-    buf.put(PhaseValue);
-    BufferTimer.stop();
-    return LogValue;
-  }
+      BufferTimer.start();
+      buf.put(psiM.first_address(),psiM.last_address());
+      if(!ReCompute) buf.put(memoryPool.begin(),memoryPool.end());
+      buf.put(LogValue);
+      buf.put(PhaseValue);
+      BufferTimer.stop();
+      return LogValue;
+    }
 
   void DiracDeterminantSoA::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
   {
     buf.get(psiM.first_address(),psiM.last_address());
-    buf.get(mGL.first_address(),mGL.last_address());
+    if(!ReCompute) buf.get(memoryPool.begin(),memoryPool.end());
     buf.get(LogValue);
     buf.get(PhaseValue);
   }

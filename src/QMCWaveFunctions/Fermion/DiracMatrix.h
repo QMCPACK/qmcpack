@@ -18,7 +18,6 @@
 
 namespace qmcplusplus { 
 
-#if 0
   inline void Xgetrf(int n, int m, float* restrict a, int lda, int* restrict piv)
   {
     int status;
@@ -38,12 +37,11 @@ namespace qmcplusplus {
   }
 
   /** inversion of a float matrix after lu factorization*/
-  inline void Xgetri(int n, std::complex<float>* restrict a, int lda, int* restrict piv, float* restrict work, int& lwork)
+  inline void Xgetri(int n, std::complex<float>* restrict a, int lda, int* restrict piv, std::complex<float>* restrict work, int& lwork)
   {
     int status;
-    sgetri(n,a,lda,piv,work,lwork,status);
+    cgetri(n,a,lda,piv,work,lwork,status);
   }
-#endif
 
   inline void Xgetrf(int n, int m, double* restrict a, int lda, int* restrict piv)
   {
@@ -145,19 +143,32 @@ namespace qmcplusplus {
 
       inline void reset(Matrix<T>& amat,int n, int lda)
       {
-        Lwork=n;
-        m_work.resize(n);
-        m_pivot.resize(n);
-        //m_pivot.resize(lda);
-        //Lwork=-1;
-        //T tmp;
-        //real_type lw;
-        //Xgetri(n, amat.data(),lda,m_pivot.data(),&tmp,Lwork);
-        //convert(tmp,lw);
-        //Lwork=static_cast<int>(lw);
-        //m_work.resize(Lwork); 
+        //Lwork=n;
+        //m_work.resize(n);
+        //m_pivot.resize(n);
+        m_pivot.resize(lda);
+        Lwork=-1;
+        T tmp;
+        real_type lw;
+        Xgetri(n, amat.data(),lda,m_pivot.data(),&tmp,Lwork);
+        convert(tmp,lw);
+        Lwork=static_cast<int>(lw);
+        m_work.resize(Lwork); 
       }
 
+      inline void updateRow(Matrix<T>& a, T* arow, int rowchanged, T c_ratio_in)
+      {
+        const int m=a.rows();
+        const int lda=a.cols();
+        CONSTEXPR T cone(1);
+        CONSTEXPR T czero(0);
+        T temp[lda], rcopy[lda];
+        T c_ratio=cone/c_ratio_in;
+        BLAS::gemv('T', m, m, c_ratio, a.data(), lda, arow, 1, czero, temp, 1);
+        temp[rowchanged]=cone-c_ratio;
+        simd::copy_n(a[rowchanged],m,rcopy);
+        BLAS::ger(m,m,-cone,rcopy,1,temp,1,a.data(),lda);
+      }
     };
 }
 
