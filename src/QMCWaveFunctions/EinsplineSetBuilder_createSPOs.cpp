@@ -31,17 +31,28 @@
 #include <fftw3.h>
 #include <Utilities/ProgressReportEngine.h>
 #include <QMCWaveFunctions/einspline_helper.hpp>
-#include "QMCWaveFunctions/EinsplineAdoptor.h"
-#include "QMCWaveFunctions/SplineC2XAdoptor.h"
-#include "QMCWaveFunctions/SplineR2RAdoptor.h"
-#include "QMCWaveFunctions/SplineMixedAdoptor.h"
-
 #include "QMCWaveFunctions/BsplineReaderBase.h"
-#include "QMCWaveFunctions/SplineAdoptorReaderP.h"
-#include "QMCWaveFunctions/SplineMixedAdoptorReaderP.h"
 
 namespace qmcplusplus
 {
+
+  ///create R2R, real wavefunction in double
+  BsplineReaderBase* createBsplineRealDouble(EinsplineSetBuilder* e, int numOrbs);
+  ///create R2R, real wavefunction in float
+  BsplineReaderBase* createBsplineRealSingle(EinsplineSetBuilder* e, int numOrbs);
+  ///create C2C or C2R, complex wavefunction in double
+  BsplineReaderBase* createBsplineComplexDouble(EinsplineSetBuilder* e, int numOrbs);
+  ///create C2C or C2R, complex wavefunction in single
+  BsplineReaderBase* createBsplineComplexSingle(EinsplineSetBuilder* e, int numOrbs);
+  ///disable truncated orbitals for now
+  BsplineReaderBase* createTruncatedSingle(EinsplineSetBuilder* e, int numOrbs, int celltype)
+  {
+    return nullptr;
+  }
+  BsplineReaderBase* createTruncatedDouble(EinsplineSetBuilder* e, int numOrbs, int celltype)
+  {
+    return nullptr;
+  }
 
 SPOSetBase*
 EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
@@ -254,6 +265,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 
   bool use_single= (spo_prec == "single" || spo_prec == "float");
 
+#if !defined(QMC_COMPLEX)
   if (UseRealOrbitals)
   {
     //if(TargetPtcl.Lattice.SuperCellEnum != SUPERCELL_BULK && truncate=="yes")
@@ -262,34 +274,21 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
       if(truncate=="yes")
       {
         if(use_single)
-        {
-          if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_OPEN)
-            MixedSplineReader= new SplineMixedAdoptorReader<SplineOpenAdoptor<float,RealType,3> >(this);
-          else if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_SLAB)
-            MixedSplineReader= new SplineMixedAdoptorReader<SplineMixedAdoptor<float,RealType,3> >(this);
-          else
-            MixedSplineReader= new SplineAdoptorReader<SplineR2RAdoptor<float,RealType,3> >(this);
-        }
+          MixedSplineReader=createTruncatedSingle(this,numOrbs,TargetPtcl.Lattice.SuperCellEnum);
         else
-        {
-          if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_OPEN)
-            MixedSplineReader= new SplineMixedAdoptorReader<SplineOpenAdoptor<double,RealType,3> >(this);
-          else if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_SLAB)
-            MixedSplineReader= new SplineMixedAdoptorReader<SplineMixedAdoptor<double,RealType,3> >(this);
-          else
-            MixedSplineReader= new SplineAdoptorReader<SplineR2RAdoptor<double,RealType,3> >(this);
-        }
+          MixedSplineReader=createTruncatedDouble(this,numOrbs,TargetPtcl.Lattice.SuperCellEnum);
       }
       else
       {
         if(use_single)
-          MixedSplineReader= new SplineAdoptorReader<SplineR2RAdoptor<float,RealType,3> >(this);
+          MixedSplineReader= createBsplineRealSingle(this,numOrbs);
         else
-          MixedSplineReader= new SplineAdoptorReader<SplineR2RAdoptor<double,RealType,3> >(this);
+          MixedSplineReader= createBsplineRealDouble(this,numOrbs);
       }
     }
   }
   else
+#endif
   {
     if(MixedSplineReader==0)
     {
@@ -298,21 +297,9 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
         app_log() << "  Truncated orbitals with multiple kpoints are not supported yet!" << std::endl;
       }
       if(use_single)
-      {
-#if defined(QMC_COMPLEX)
-        MixedSplineReader= new SplineAdoptorReader<SplineC2CPackedAdoptor<float,RealType,3> >(this);
-#else
-        MixedSplineReader= new SplineAdoptorReader<SplineC2RPackedAdoptor<float,RealType,3> >(this);
-#endif
-      }
+        MixedSplineReader= createBsplineComplexSingle(this,numOrbs);
       else
-      {
-#if defined(QMC_COMPLEX)
-        MixedSplineReader= new SplineAdoptorReader<SplineC2CPackedAdoptor<double,RealType,3> >(this);
-#else
-        MixedSplineReader= new SplineAdoptorReader<SplineC2RPackedAdoptor<double,RealType,3> >(this);
-#endif
-      }
+        MixedSplineReader= createBsplineComplexDouble(this,numOrbs);
     }
   }
 

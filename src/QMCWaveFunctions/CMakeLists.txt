@@ -125,6 +125,10 @@ IF(OHMMS_DIM MATCHES 3)
       EinsplineSetBuilderReadBands_ESHDF.cpp
       EinsplineSetBuilderESHDF.fft.cpp
       EinsplineSetBuilder_createSPOs.cpp
+      BsplineFactory/createComplexDouble.cpp
+      BsplineFactory/createComplexSingle.cpp
+      BsplineFactory/createRealSingle.cpp
+      BsplineFactory/createRealDouble.cpp
       BandInfo.cpp
       BsplineReaderBase.cpp
       )
@@ -167,6 +171,7 @@ ENDIF(OHMMS_DIM MATCHES 3)
 
 SET(FERMION_SRCS ${FERMION_SRCS}
   Fermion/DiracDeterminantBase.cpp
+  Fermion/DiracDeterminantSoA.cpp
   Fermion/DiracDeterminantOpt.cpp
   Fermion/DiracDeterminantAFM.cpp
   Fermion/SlaterDet.cpp
