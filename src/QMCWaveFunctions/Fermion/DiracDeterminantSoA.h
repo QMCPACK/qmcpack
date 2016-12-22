@@ -68,8 +68,8 @@ class DiracDeterminantSoA: public DiracDeterminantBase
 
   ///reset the size: with the number of particles and number of orbtials
   void resize(int nel, int morb);
-  ///cloning
-  OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+  ///cloning with spo
+  DiracDeterminantBase* makeCopy(SPOSetBase* spo) const;
 
   RealType evaluateLog(ParticleSet& P,
               ParticleSet::ParticleGradient_t& G,
@@ -77,11 +77,14 @@ class DiracDeterminantSoA: public DiracDeterminantBase
 
   void recompute(ParticleSet& P);
 
-  /** functions to perform particle-by-particle */
+
   RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
 
+  void updateAfterSweep(ParticleSet& P,
+      ParticleSet::ParticleGradient_t& G,
+      ParticleSet::ParticleLaplacian_t& L);
+ 
   RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
-
   void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
 
   GradType evalGrad(ParticleSet& P, int iat);
@@ -96,13 +99,13 @@ class DiracDeterminantSoA: public DiracDeterminantBase
    */
   void restore(int iat);
 
+
 #if 0
   void update(ParticleSet& P,
       ParticleSet::ParticleGradient_t& dG,
       ParticleSet::ParticleLaplacian_t& dL,
       int iat);
 
-  DiracDeterminantBase* makeCopy(SPOSetBase* spo) const;
   RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
   GradType evalGrad(ParticleSet& P, int iat);
