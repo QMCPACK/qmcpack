@@ -146,6 +146,40 @@ DiracDeterminantBase::registerData(ParticleSet& P, PooledData<RealType>& buf)
   return LogValue;
 }
 
+void DiracDeterminantBase::updateAfterSweep(ParticleSet& P,
+      ParticleSet::ParticleGradient_t& G,
+      ParticleSet::ParticleLaplacian_t& L)
+{
+  if(UpdateMode == ORB_PBYP_RATIO)
+  {
+    SPOVGLTimer.start();
+    Phi->evaluate(P, FirstIndex, LastIndex, psiM_temp, dpsiM, d2psiM);
+    SPOVGLTimer.stop();
+  }
+  UpdateTimer.start();
+  if(NumPtcls==1)
+  {
+    ValueType y = psiM(0,0);
+    GradType rv = y*dpsiM(0,0);
+    P.G[FirstIndex]+=(myG[FirstIndex]=rv);
+    P.L[FirstIndex]+=(myL[FirstIndex]=y*d2psiM(0,0)-dot(rv,rv));
+  }
+  else
+  {
+    for(size_t i=0,iat=FirstIndex; i<NumPtcls; ++i,++iat)
+    {
+      myG[iat]=simd::dot(psiM[i],dpsiM[i],NumOrbitals);
+      mValueType dot_temp=simd::dot(psiM[i],d2psiM[i],NumOrbitals);
+      myL[iat]=dot_temp-dot(myG[iat],myG[iat]);
+    }
+    for(size_t iat=FirstIndex; iat<LastIndex; ++iat)
+    {
+      P.G[iat] += myG[iat];
+      P.L[iat] += myL[iat];
+    }
+  }
+}
+
 DiracDeterminantBase::RealType DiracDeterminantBase::updateBuffer(ParticleSet& P,
     PooledData<RealType>& buf, bool fromscratch)
 {
@@ -158,43 +192,7 @@ DiracDeterminantBase::RealType DiracDeterminantBase::updateBuffer(ParticleSet& P
   }
   else
   {
-    if(UpdateMode == ORB_PBYP_RATIO)
-    {
-      SPOVGLTimer.start();
-      Phi->evaluate(P, FirstIndex, LastIndex, psiM_temp, dpsiM, d2psiM);
-      SPOVGLTimer.stop();
-    }
-    UpdateTimer.start();
-    if(NumPtcls==1)
-    {
-      // ValueType y=1.0/psiM_temp(0,0);
-      // psiM(0,0)=y;
-      // GradType rv = y*dpsiM(0,0);
-      // myG(FirstIndex) += rv;
-      // myL(FirstIndex) += y*d2psiM(0,0) - dot(rv,rv);
-      ValueType y = psiM(0,0);
-      GradType rv = y*dpsiM(0,0);
-      P.G[FirstIndex]+=(myG[FirstIndex]=rv);
-      P.L[FirstIndex]+=(myL[FirstIndex]=y*d2psiM(0,0)-dot(rv,rv));
-      //myG(FirstIndex) += rv;
-      //myL(FirstIndex) += y*d2psiM(0,0) - dot(rv,rv);
-      //P.G += myG;
-      //P.L += myL;
-    }
-    else
-    {
-      for(int i=0,iat=FirstIndex; i<NumPtcls; ++i,++iat)
-      {
-        myG[iat]=simd::dot(psiM[i],dpsiM[i],NumOrbitals);
-        mValueType dot_temp=simd::dot(psiM[i],d2psiM[i],NumOrbitals);
-        myL[iat]=dot_temp-dot(myG[iat],myG[iat]);
-      }
-      for(int iat=FirstIndex; iat<LastIndex; ++iat)
-      {
-        P.G[iat] += myG[iat];
-        P.L[iat] += myL[iat];
-      }
-    }
+    updateAfterSweep(P,P.G,P.L);
   }
   UpdateTimer.stop();
   BufferTimer.start();

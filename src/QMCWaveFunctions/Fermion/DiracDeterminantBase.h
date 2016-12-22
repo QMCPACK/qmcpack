@@ -167,6 +167,10 @@ public:
 
   virtual RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
 
+  virtual void updateAfterSweep(ParticleSet& P,
+      ParticleSet::ParticleGradient_t& G,
+      ParticleSet::ParticleLaplacian_t& L);
+
   virtual void registerDataForDerivatives(ParticleSet& P, PooledData<RealType>& buf, int storageType=0);
 
   virtual void memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only, long& orbs, long& invs, long& dets)

@@ -233,6 +233,16 @@ SlaterDet::RealType SlaterDet::registerData(ParticleSet& P,
   return LogValue;
 }
 
+void SlaterDet::updateAfterSweep(ParticleSet& P,
+      ParticleSet::ParticleGradient_t& G,
+      ParticleSet::ParticleLaplacian_t& L)
+{
+  for (size_t i = 0, n=Dets.size(); i < n; ++i)
+  {
+    Dets[i]->updateAfterSweep(P,G,L);
+  }
+}
+
 SlaterDet::RealType SlaterDet::updateBuffer(ParticleSet& P,
     PooledData<RealType>& buf, bool fromscratch)
 {
