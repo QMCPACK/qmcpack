@@ -19,12 +19,14 @@
 #include "Numerics/MatrixOperators.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/Communicate.h"
+#include <simd/simd.hpp>
 #include <io/hdf_archive.h>
 #include <limits>
 
 namespace qmcplusplus
 {
 
+#if 0
 template<typename T>
 inline void transpose(const T* restrict in, T* restrict out, int m)
 {
@@ -32,23 +34,32 @@ inline void transpose(const T* restrict in, T* restrict out, int m)
     for(int j=0,jj=i; j<m; ++j,jj+=m)
       out[ii++]=in[jj];
 }
+#endif
+
+SPOSetBase::SPOSetBase()
+:Identity(false),TotalOrbitalSize(0),OrbitalSetSize(0),BasisSetSize(0),
+  ActivePtcl(-1),Optimizable(false),ionDerivs(false),builder_index(-1)
+{
+  CanUseGLCombo=false;
+  className="invalid";
+}
 
 void SPOSetBase::evaluate(const ParticleSet& P, int first, int last,
                           ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
 {
   evaluate_notranspose(P,first,last,t_logpsi,dlogdet,d2logdet);
-  transpose(t_logpsi.data(),logdet.data(),OrbitalSetSize);
-  //evaluate_notranspose(P,first,last,logdet,dlogdet,d2logdet);
-  //MatrixOperators::transpose(logdet);
+  simd::transpose(t_logpsi.data(), OrbitalSetSize, t_logpsi.cols(), 
+      logdet.data(), OrbitalSetSize, logdet.cols());
+  //transpose(t_logpsi.data(),logdet.data(),OrbitalSetSize);
 }
 
 void SPOSetBase::evaluate(const ParticleSet& P, int first, int last,
                           ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
 {
   evaluate_notranspose(P,first,last,t_logpsi,dlogdet,grad_grad_logdet);
-  transpose(t_logpsi.data(),logdet.data(),OrbitalSetSize);
-  //evaluate_notranspose(P,first,last,logdet,dlogdet,d2logdet);
-  //MatrixOperators::transpose(logdet);
+  simd::transpose(t_logpsi.data(), OrbitalSetSize, t_logpsi.cols(), 
+      logdet.data(), OrbitalSetSize, logdet.cols());
+  //transpose(t_logpsi.data(),logdet.data(),OrbitalSetSize);
 }
 
 void SPOSetBase::evaluate(const ParticleSet& P, int first, int last,
@@ -56,9 +67,9 @@ void SPOSetBase::evaluate(const ParticleSet& P, int first, int last,
 {
   logdet=0;
   evaluate_notranspose(P,first,last,t_logpsi,dlogdet,grad_grad_logdet,grad_grad_grad_logdet);
-  transpose(t_logpsi.data(),logdet.data(),OrbitalSetSize);
-  //evaluate_notranspose(P,first,last,logdet,dlogdet,d2logdet);
-  //MatrixOperators::transpose(logdet);
+  simd::transpose(t_logpsi.data(), OrbitalSetSize, t_logpsi.cols(), 
+      logdet.data(), OrbitalSetSize, logdet.cols());
+  //transpose(t_logpsi.data(),logdet.data(),OrbitalSetSize);
 }
 
 void SPOSetBase::evaluateVGL(const ParticleSet& P, int iat, RefVector_t& psiv, GLVector_t& gl, bool newp)
