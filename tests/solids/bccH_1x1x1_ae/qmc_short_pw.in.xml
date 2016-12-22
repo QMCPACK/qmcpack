@@ -80,7 +80,7 @@
    </qmcsystem>
    <qmc method="vmc" move="pbyp">
       <parameter name="walkers"             >    16              </parameter>
-      <parameter name="blocks"              >    1000            </parameter>
+      <parameter name="blocks"              >    100             </parameter>
       <parameter name="steps"               >    60.0            </parameter>
       <parameter name="subSteps"            >    2               </parameter>
       <parameter name="timestep"            >    0.3             </parameter>

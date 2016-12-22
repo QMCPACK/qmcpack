@@ -23,7 +23,7 @@
 #include "Numerics/HDFSTLAttrib.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include "Message/Communicate.h"
-#include <complex>
+#include "Numerics/e2iphi.h"
 
 /** If defined, use recursive method to build the basis set for each position
  *
@@ -96,6 +96,9 @@ public:
    * basis is spherically ordered. However, when a twist-angle is used, the "sphere"
    * of allowed planewaves is shifted.
    */
+
+  Vector<RealType> phi;
+
   std::vector<int> inputmap;
 
   ///total number of basis functions
@@ -291,21 +294,19 @@ public:
   {
     //Evaluate the planewaves for particle iat.
     for(int ig=0; ig<NumPlaneWaves; ig++)
-    {
-      RealType phi(dot(kplusgvecs_cart[ig],pos));
-      Zv[ig]=ComplexType(std::cos(phi),std::sin(phi));
-    }
+      phi[ig]=dot(kplusgvecs_cart[ig],pos);
+    eval_e2iphi(NumPlaneWaves, phi.data(), Zv.data());
   }
   inline void
   evaluateAll(const ParticleSet& P, int iat)
   {
     ComplexType* restrict zptr=Z.data();
+    evaluate(P.R[iat]);
     for(int ig=0; ig<NumPlaneWaves; ig++,zptr+=5)
     {
       //PW is initialized as exp(i*twist.r) so that the final basis evaluations
       //are for (twist+G).r
-      RealType phi(dot(kplusgvecs_cart[ig],P.R[iat]));
-      ComplexType pw(std::cos(phi),std::sin(phi));
+      ComplexType &pw=Zv[ig];
       zptr[0]= pw;
       zptr[1]= minusModKplusG2[ig]*pw;
       zptr[2]= kplusgvecs_cart[ig][0]*ComplexType(-pw.imag(),pw.real());

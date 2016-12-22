@@ -16,4 +16,4 @@ Running all tests requires several hours due to strict statistics. You
 can increase verbosity with "ctest -V".
 
 The test definitions and configuration are in
-src/QMCApp/test/CMakeLists.txt
+src/tests/system/CMakeLists.txt

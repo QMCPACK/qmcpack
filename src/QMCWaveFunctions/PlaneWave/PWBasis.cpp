@@ -77,6 +77,7 @@ void PWBasis::reset()
   //logC.resize(3,2*maxmaxg+1);
   Z.resize(NumPlaneWaves,2+DIM);
   Zv.resize(NumPlaneWaves);
+  phi.resize(NumPlaneWaves);
 }
 
 /** Remove basis elements if kinetic energy > ecut.
