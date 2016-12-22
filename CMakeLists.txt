@@ -479,10 +479,7 @@ ENDIF(CMAKE_TOOLCHAIN_FILE)
 
 # check if C++11 is needed by QMCPACK features
 SET(CXX11_NEEDED FALSE)
-IF(BUILD_LMYENGINE_INTERFACE)
-  SET(CXX11_NEEDED TRUE)
-ENDIF()
-IF(BUILD_AFQMC)
+IF(BUILD_LMYENGINE_INTERFACE OR BUILD_AFQMC)
   SET(CXX11_NEEDED TRUE)
 ENDIF()
 # once C++11 is needed
@@ -497,8 +494,9 @@ IF(CXX11_NEEDED)
   #  prints an warning that interferes with the flag detection code
   #  with older versions of CMake.
   IF($ENV{CRAYPE_VERSION} MATCHES ".")
-    IF( ${COMPILER} MATCHES "Intel" )
-      SET(CXX_COMPILER_SUPPORT_CXX11 TRUE)  
+    IF( ${COMPILER} MATCHES "Intel" AND NOT CXX_COMPILER_SUPPORT_CXX11)
+      SET(CXX_COMPILER_SUPPORT_CXX11 TRUE)
+      MESSAGE(STATUS "Forcing C++11 support on Cray with Intel")
     ENDIF()
   ENDIF()
 
