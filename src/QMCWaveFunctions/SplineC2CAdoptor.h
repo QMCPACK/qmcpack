@@ -20,6 +20,7 @@
 #include <Numerics/VectorViewer.h>
 #include <OhmmsSoA/Container.h>
 #include <spline2/MultiBspline.hpp>
+//#define USE_VECTOR_ML 1
 
 namespace qmcplusplus
 {
@@ -61,11 +62,13 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   ///expose the pointer to reuse the reader and only assigned with create_spline
   SplineType* MultiSpline;
 
-  //vContainer_type  KdotR;
-  //vContainer_type  CosV;
-  //vContainer_type  SinV;
   vContainer_type  mKK;
   VectorSoaContainer<ST,3>  myKcart;
+#if defined(USE_VECTOR_ML)
+  vContainer_type  KdotR;
+  vContainer_type  CosV;
+  vContainer_type  SinV;
+#endif
 
   vContainer_type myV;
   vContainer_type myL;
@@ -107,6 +110,11 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
     myG.resize(2*n);
     myL.resize(2*n);
     myH.resize(2*n);
+#if defined(USE_VECTOR_ML)
+    KdotR.resize(n);
+    CosV.resize(n);
+    SinV.resize(n);
+#endif
   }
 
   template<typename GT, typename BCT>
@@ -186,7 +194,7 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
     {
       for(size_t j=0; j<N; ++j)
         KdotR[j]=-(x*kx[j]+y*ky[j]+z*kz[j]);
-      eval_e2iphi(nk,KdotR.data(),CosV.data(),SinV.data());
+      eval_e2iphi(N,KdotR.data(),CosV.data(),SinV.data());
     }
     for (size_t j=0, psiIndex=first_spo; psiIndex<last_spo; j++,psiIndex++)
     {
@@ -196,6 +204,16 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
     }
 #else
     ST s, c;
+#if 0
+    for (size_t j=0, psiIndex=first_spo; psiIndex<last_spo; j++,psiIndex++)
+    {
+      const ST val_r=myV[2*j  ];
+      const ST val_i=myV[2*j+1];
+      sincos(-(x*kx[j]+y*ky[j]+z*kz[j]),&s,&c);
+      psi[psiIndex  ] = ComplexT(val_r*c-val_i*s,val_i*c+val_r*s);
+    }
+#endif
+    TT* restrict psi_p=reinterpret_cast<TT*>(psi.data()+first_spo);
 //#pragma omp simd private(s,c)
     for (size_t j=0, psiIndex=first_spo; psiIndex<last_spo; j++,psiIndex++)
     {
@@ -243,9 +261,8 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
     const ST* restrict h22=myH.data(5);
 
     const size_t N=kPoints.size();
-    const size_t nsplines=myL.size();
 #if defined(PRECOMPUTE_L)
-    for(size_t j=0; j<nsplines; ++j)
+    for(size_t j=0,nsplines=myL.size(); j<nsplines; ++j)
     {
       myL[j]=SymTrace(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],GGt.data());
     }
