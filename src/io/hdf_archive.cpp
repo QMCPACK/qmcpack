@@ -89,7 +89,7 @@ bool hdf_archive::create(const std::string& fname, unsigned flags)
   return file_id != is_closed;
 }
 
-bool hdf_archive::open(const std::string& fname,unsigned flags)
+bool hdf_archive::open(const std::string& fname,unsigned flags,bool create_if_fail)
 {
   if(Mode[NOIO])
     return true;
@@ -97,6 +97,10 @@ bool hdf_archive::open(const std::string& fname,unsigned flags)
   file_id = H5Fopen(fname.c_str(),flags,access_id);
   // if(file_id==is_closed)
   //   file_id = H5Fcreate(fname.c_str(),flags,H5P_DEFAULT,access_id);
+// mmorales: flags for open and create are different.
+//           not sure this did anything before, hopefully it doesn't break old code 
+  if(file_id==is_closed && create_if_fail)
+      file_id = H5Fcreate(fname.c_str(),H5F_ACC_EXCL,H5P_DEFAULT,access_id);
   return file_id != is_closed;
 }
 

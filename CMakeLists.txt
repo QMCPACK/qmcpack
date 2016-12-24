@@ -185,6 +185,8 @@ IF(MIXED_PRECISION AND BUILD_LMYENGINE_INTERFACE)
   MESSAGE(STATUS "LMY engine is not compatiable with CPU mixed precision build! Disabling LMY engine")
   SET(BUILD_LMYENGINE_INTERFACE 0)
 ENDIF()
+SET(BUILD_AFQMC 0 CACHE BOOL "Build with AFQMC")
+SET(BUILD_FCIQMC 0 CACHE BOOL "Build with FCIQMC")
 #SET(BUILD_QMCTOOLS 1 CACHE BOOL "Build tools for QMCPACK")
 #SET(BUILD_SANDBOX 0 CACHE BOOL "Build snadbox for testing")
 #SET(MPIP_PROFILE 0 CACHE BOOL "Build with mpip for mpi profile")
@@ -460,6 +462,7 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
     IF("${LAPACK_LIBRARIES}" MATCHES "mkl")
       MESSAGE(STATUS "MKL found via LAPACK/BLAS")
       SET( MKL_FOUND 1 )
+      SET( HAVE_MKL 1 )
     ENDIF()
   ENDIF()
   IF(LAPACK_FOUND)
@@ -476,27 +479,58 @@ ENDIF(CMAKE_TOOLCHAIN_FILE)
 
 # check if C++11 is needed by QMCPACK features
 SET(CXX11_NEEDED FALSE)
-IF(BUILD_LMYENGINE_INTERFACE)
+IF(BUILD_LMYENGINE_INTERFACE OR BUILD_AFQMC)
   SET(CXX11_NEEDED TRUE)
 ENDIF()
-## add AFQMC checker here
 # once C++11 is needed
 IF(CXX11_NEEDED)
+  SET(CXX11_FLAG "-std=c++11")
   #check if the CXX compiler supports -std=c++11 option
   include(CheckCXXCompilerFlag)
-  CHECK_CXX_COMPILER_FLAG(-std=c++11 CXX_COMPILER_SUPPORT_CXX11)
+  CHECK_CXX_COMPILER_FLAG(${CXX11_FLAG} CXX_COMPILER_SUPPORT_CXX11)
   # Turn on C++11 for this code
+
+  # Force the flag on Cray with Intel compiler, because the Cray wrapper
+  #  prints an warning that interferes with the flag detection code
+  #  with older versions of CMake.
+  IF($ENV{CRAYPE_VERSION} MATCHES ".")
+    IF( ${COMPILER} MATCHES "Intel" AND NOT CXX_COMPILER_SUPPORT_CXX11)
+      SET(CXX_COMPILER_SUPPORT_CXX11 TRUE)
+      MESSAGE(STATUS "Forcing C++11 support on Cray with Intel")
+    ENDIF()
+  ENDIF()
+
   IF (CXX_COMPILER_SUPPORT_CXX11)
     # avoid repeated -std=c++11 flag
-    IF(NOT CMAKE_CXX_FLAGS MATCHES "-std=c\\+\\+11")
-      SET (CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
+    STRING(REPLACE "++" "\\+\\+" CXX11_FLAG_MATCH ${CXX11_FLAG})
+    IF(NOT CMAKE_CXX_FLAGS MATCHES ${CXX11_FLAG_MATCH})
+      SET (CMAKE_CXX_FLAGS "${CXX11_FLAG} ${CMAKE_CXX_FLAGS}")
     ENDIF()
   ELSE()
     MESSAGE(STATUS "Disabling features requring C++11 due to the lack of compiler support")
     SET(BUILD_LMYENGINE_INTERFACE 0)
-    ## disable AFQMC here
+    SET(BUILD_AFQMC 0)
   ENDIF()
 ENDIF(CXX11_NEEDED)
+
+# AFQMC requires MKL sparse
+IF (BUILD_AFQMC AND NOT MKL_FOUND)
+  MESSAGE(STATUS "AFQMC requires MKL sparse libraries. Disabling AFQMC")
+  SET (BUILD_AFQMC 0)
+ENDIF()
+
+# AFQMC requires MPI
+If (BUILD_AFQMC AND NOT QMC_MPI)
+  MESSAGE(FATAL_ERROR "AFQMC requires building with MPI (QMC_MPI=1)")
+ENDIF()
+
+If (BUILD_AFQMC AND QMC_COMPLEX)
+  MESSAGE(STATUS "Warning: Complex wavefunctions are not yet supported by AFQMC.")
+ENDIF()
+
+IF (BUILD_AFQMC AND CMAKE_COMPILER_IS_GNUCXX AND MKL_FOUND)
+  LINK_LIBRARIES("rt")
+ENDIF()
   
 # setup ctest variables
 IF ( HAVE_MPI )

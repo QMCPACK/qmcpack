@@ -55,6 +55,14 @@ ENDIF()
 
   TARGET_LINK_LIBRARIES(${p} qmc qmcdriver qmcham qmcwfs qmcbase qmcutil adios_config)
 
+  IF(BUILD_AFQMC)
+    TARGET_LINK_LIBRARIES(${p} afqmc)
+  ENDIF(BUILD_AFQMC)
+
+  IF(BUILD_FCIQMC)
+    TARGET_LINK_LIBRARIES(${p} fciqmc)
+  ENDIF(BUILD_FCIQMC)
+
   FOREACH(l ${QMC_UTIL_LIBS})
     TARGET_LINK_LIBRARIES(${p} ${l})
   ENDFOREACH(l ${QMC_UTIL_LIBS})
