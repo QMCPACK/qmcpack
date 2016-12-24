@@ -174,6 +174,14 @@ public:
   // MMORALES: leaving this here temprarily, but it doesn;t belong here.
   // MMORALES: FIX FIX FIX
 #ifdef HAVE_MPI
+
+// For Mac OS X
+#ifndef HOST_NAME_MAX
+#ifdef _POSIX_HOST_NAME_MAX
+#define HOST_NAME_MAX _POSIX_HOST_NAME_MAX
+#endif
+#endif
+
   inline bool head_nodes(MPI_Comm& MPI_COMM_HEAD_OF_NODES) {
     char hostname[HOST_NAME_MAX];
     gethostname(hostname,HOST_NAME_MAX);
@@ -185,7 +193,7 @@ public:
       if( strcmp(hostname,dummy+i*HOST_NAME_MAX)==0 ) { head_of_node=false; break;}
     int key = head_of_node?0:10;
     MPI_Comm_split(myMPI,key,myrank,&MPI_COMM_HEAD_OF_NODES);
-    delete dummy;
+    delete[] dummy;
     return head_of_node;
   }
 #endif
