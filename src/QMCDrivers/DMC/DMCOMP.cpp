@@ -44,7 +44,7 @@ namespace qmcplusplus
 /// Constructor.
 DMCOMP::DMCOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool,WaveFunctionPool& ppool)
   : QMCDriver(w,psi,h,ppool), CloneManager(hpool)
-  , KillNodeCrossing(0) ,Reconfiguration("no"), BenchMarkRun("no"), UseFastGrad("yes")
+  , KillNodeCrossing(0) ,Reconfiguration("no"), BenchMarkRun("no")
   , BranchInterval(-1),mover_MaxAge(-1)
 {
   RootName = "dmc";
@@ -57,7 +57,6 @@ DMCOMP::DMCOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian&
   m_param.add(NonLocalMove,"nonlocalmove","string");
   m_param.add(NonLocalMove,"nonlocalmoves","string");
   m_param.add(mover_MaxAge,"MaxAge","double");
-  m_param.add(UseFastGrad,"fastgrad", "string");
   //DMC overwrites ConstPopulation
   ConstPopulation=false;
 }
@@ -101,10 +100,7 @@ void DMCOMP::resetComponents(xmlNodePtr cur)
   {
     if(QMCDriverMode[QMC_UPDATE_MODE])
     {
-      if(UseFastGrad == "yes")
-        Movers[ip] = new DMCUpdatePbyPWithRejectionFast(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
-      else
-        Movers[ip] = new DMCUpdatePbyPWithRejection(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
+      Movers[ip] = new DMCUpdatePbyPWithRejectionFast(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
       Movers[ip]->put(cur);
       Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip],traceClones[ip]);
       Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
@@ -156,10 +152,6 @@ void DMCOMP::resetUpdateEngines()
         o << "  Updates by particle-by-particle moves";
       else
         o << "  Updates by walker moves";
-      if(UseFastGrad == "yes")
-        o << " using fast gradient version ";
-      else
-        o << " using full-ratio version ";
       if(KillNodeCrossing)
         o << "\n  Walkers are killed when a node crossing is detected";
       else
@@ -181,10 +173,7 @@ void DMCOMP::resetUpdateEngines()
       branchClones[ip] = new BranchEngineType(*branchEngine);
       if(QMCDriverMode[QMC_UPDATE_MODE])
       {
-        if(UseFastGrad == "yes")
-          Movers[ip] = new DMCUpdatePbyPWithRejectionFast(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
-        else
-          Movers[ip] = new DMCUpdatePbyPWithRejection(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
+        Movers[ip] = new DMCUpdatePbyPWithRejectionFast(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
         Movers[ip]->put(qmcNode);
         Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip],traceClones[ip]);
         Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
