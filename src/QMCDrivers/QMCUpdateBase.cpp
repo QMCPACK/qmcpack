@@ -360,6 +360,14 @@ void QMCUpdateBase::setMultiplicity(WalkerIter_t it, WalkerIter_t it_end)
   }
 }
 
+void QMCUpdateBase::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure)
+{
+  for (; it != it_end; ++it)
+  {
+    advanceWalker(**it);
+  }
+}
+
 void QMCUpdateBase::benchMark(WalkerIter_t it, WalkerIter_t it_end, int ip)
 {
   char fname[16];

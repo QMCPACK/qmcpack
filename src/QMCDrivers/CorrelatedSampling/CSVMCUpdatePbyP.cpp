@@ -38,6 +38,10 @@ CSVMCUpdatePbyP::CSVMCUpdatePbyP(MCWalkerConfiguration& w,
 
 CSVMCUpdatePbyP::~CSVMCUpdatePbyP() { }
 
+void CSVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker)
+{
+}
+
 void CSVMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure)
 {
   int iwalker=0;
@@ -77,6 +81,7 @@ void CSVMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool 
       for(int ipsi=0; ipsi<nPsi; ipsi++)
       {
         // Compute ratios before and after the move
+        // JNKIM 2016-12-24 THIS RATIO needs to be fixed.
         ratio_check *= ratio[ipsi] = Psi1[ipsi]->ratio(W,iat,*G1[ipsi],*L1[ipsi]);
         logpsi[ipsi]=std::log(ratio[ipsi]*ratio[ipsi]);
         // Compute Gradient in new position
@@ -194,6 +199,11 @@ CSVMCUpdatePbyPWithDriftFast::CSVMCUpdatePbyPWithDriftFast(MCWalkerConfiguration
 }
 
 CSVMCUpdatePbyPWithDriftFast::~CSVMCUpdatePbyPWithDriftFast() { }
+
+void CSVMCUpdatePbyPWithDriftFast::advanceWalker(Walker_t& thisWalker)
+{
+}
+
 void CSVMCUpdatePbyPWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure)
 {
   int iwalker=0;

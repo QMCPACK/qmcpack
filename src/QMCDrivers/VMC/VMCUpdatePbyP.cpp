@@ -52,75 +52,79 @@ VMCUpdatePbyP::~VMCUpdatePbyP()
 {
 }
 
+void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker)
+{
+  W.loadWalker(thisWalker,true);
+  Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
+  Psi.copyFromBuffer(W,w_buffer);
+  myTimers[1]->start();
+  for (int iter=0; iter<nSubSteps; ++iter)
+  {
+    makeGaussRandomWithEngine(deltaR,RandomGen);
+    bool stucked=true;
+    for(int ig=0; ig<W.groups(); ++ig) //loop over species
+    {
+      RealType sqrttau = std::sqrt(Tau*MassInvS[ig]);
+      for (int iat=W.first(ig); iat<W.last(ig); ++iat)
+      {
+        mPosType dr = sqrttau*deltaR[iat];
+        //replace makeMove by makeMoveAndCheck
+        //PosType newpos = W.makeMove(iat,dr);
+        if (W.makeMoveAndCheck(iat,dr))
+        {
+          RealType ratio = Psi.ratio(W,iat);
+          RealType prob = ratio*ratio;
+          //RealType prob = std::min(1.0e0,ratio*ratio);
+          if (RandomGen() < prob)
+          {
+            stucked=false;
+            ++nAccept;
+            W.acceptMove(iat);
+            Psi.acceptMove(W,iat);
+          }
+          else
+          {
+            ++nReject;
+            W.rejectMove(iat);
+            Psi.rejectMove(iat);
+          }
+        }
+        else //reject illegal moves
+          ++nReject;
+      } //iat
+    }//ig for the species
+    if (stucked)
+    {
+      ++nAllRejected;
+      //H.rejectedMove(W,thisWalker);
+    }
+    thisWalker.R=W.R;
+  }
+  myTimers[1]->stop();
+  myTimers[2]->start();
+  //thisWalker.R = W.R;
+  //PAOps<RealType,OHMMS_DIM>::copy(W.G,thisWalker.Drift);
+  //w_buffer.rewind();
+  //W.updateBuffer(w_buffer);
+  RealType logpsi = Psi.updateBuffer(W,w_buffer,false);
+  W.saveWalker(thisWalker);
+  //W.copyToBuffer(w_buffer);
+  //RealType logpsi = Psi.evaluate(W,w_buffer);
+  myTimers[2]->stop();
+  myTimers[3]->start();
+  EstimatorRealType eloc=H.evaluate(W);
+  myTimers[3]->stop();
+  thisWalker.resetProperty(logpsi,Psi.getPhase(),eloc);
+  H.auxHevaluate(W,thisWalker);
+  H.saveProperty(thisWalker.getPropertyBase());
+}
+
 void VMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure)
 {
   myTimers[0]->start();
   for (; it != it_end; ++it)
   {
-    Walker_t& thisWalker(**it);
-    W.loadWalker(thisWalker,true);
-    Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
-    Psi.copyFromBuffer(W,w_buffer);
-    myTimers[1]->start();
-    for (int iter=0; iter<nSubSteps; ++iter)
-    {
-      makeGaussRandomWithEngine(deltaR,RandomGen);
-      bool stucked=true;
-      for(int ig=0; ig<W.groups(); ++ig) //loop over species
-      {
-        RealType sqrttau = std::sqrt(Tau*MassInvS[ig]);
-        for (int iat=W.first(ig); iat<W.last(ig); ++iat)
-        {
-          mPosType dr = sqrttau*deltaR[iat];
-          //replace makeMove by makeMoveAndCheck
-          //PosType newpos = W.makeMove(iat,dr);
-          if (W.makeMoveAndCheck(iat,dr))
-          {
-            RealType ratio = Psi.ratio(W,iat);
-            RealType prob = ratio*ratio;
-            //RealType prob = std::min(1.0e0,ratio*ratio);
-            if (RandomGen() < prob)
-            {
-              stucked=false;
-              ++nAccept;
-              W.acceptMove(iat);
-              Psi.acceptMove(W,iat);
-            }
-            else
-            {
-              ++nReject;
-              W.rejectMove(iat);
-              Psi.rejectMove(iat);
-            }
-          }
-          else //reject illegal moves
-            ++nReject;
-        } //iat
-      }//ig for the species
-      if (stucked)
-      {
-        ++nAllRejected;
-        //H.rejectedMove(W,thisWalker);
-      }
-      thisWalker.R=W.R;
-    }
-    myTimers[1]->stop();
-    myTimers[2]->start();
-    //thisWalker.R = W.R;
-    //PAOps<RealType,OHMMS_DIM>::copy(W.G,thisWalker.Drift);
-    //w_buffer.rewind();
-    //W.updateBuffer(w_buffer);
-    RealType logpsi = Psi.updateBuffer(W,w_buffer,false);
-    W.saveWalker(thisWalker);
-    //W.copyToBuffer(w_buffer);
-    //RealType logpsi = Psi.evaluate(W,w_buffer);
-    myTimers[2]->stop();
-    myTimers[3]->start();
-    EstimatorRealType eloc=H.evaluate(W);
-    myTimers[3]->stop();
-    thisWalker.resetProperty(logpsi,Psi.getPhase(),eloc);
-    H.auxHevaluate(W,thisWalker);
-    H.saveProperty(thisWalker.getPropertyBase());
+    advanceWalker(**it);
   }
   myTimers[0]->stop();
 }
@@ -266,94 +270,95 @@ VMCUpdatePbyPWithDriftFast::RealType VMCUpdatePbyPWithDriftFast::advanceWalkerFo
 }
 
 
+void VMCUpdatePbyPWithDriftFast::advanceWalker(Walker_t& thisWalker)
+{
+  Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
+  W.loadWalker(thisWalker,true);
+  Psi.copyFromBuffer(W,w_buffer);
+  myTimers[1]->start();
+  bool moved = false;
+  for (int iter=0; iter<nSubSteps; ++iter)
+  {
+    //create a 3N-Dimensional Gaussian with variance=1
+    makeGaussRandomWithEngine(deltaR,RandomGen);
+    moved = false;
+    for(int ig=0; ig<W.groups(); ++ig) //loop over species
+    {
+      RealType tauovermass = Tau*MassInvS[ig];
+      RealType oneover2tau = 0.5/(tauovermass);
+      RealType sqrttau = std::sqrt(tauovermass);
+      for (int iat=W.first(ig); iat<W.last(ig); ++iat)
+      {
+        GradType grad_now=Psi.evalGrad(W,iat), grad_new;
+        mPosType dr;
+        getScaledDrift(tauovermass,grad_now,dr);
+        dr += sqrttau*deltaR[iat];
+        if (!W.makeMoveAndCheck(iat,dr))
+        {
+          ++nReject;
+          continue;
+        }
+        //PosType newpos = W.makeMove(iat,dr);
+        RealType ratio = Psi.ratioGrad(W,iat,grad_new);
+        RealType prob = ratio*ratio;
+        //zero is always rejected
+        if (prob<std::numeric_limits<RealType>::epsilon())
+        {
+          ++nReject;
+          W.rejectMove(iat);
+          Psi.rejectMove(iat);
+          continue;
+        }
+        RealType logGf = -0.5e0*dot(deltaR[iat],deltaR[iat]);
+        getScaledDrift(tauovermass,grad_new,dr);
+        dr = thisWalker.R[iat]-W.R[iat]-dr;
+        RealType logGb = -oneover2tau*dot(dr,dr);
+        //RealType prob = std::min(1.0e0,ratio*ratio*std::exp(logGb-logGf));
+        if (RandomGen() < prob*std::exp(logGb-logGf))
+        {
+          moved = true;
+          ++nAccept;
+          W.acceptMove(iat);
+          Psi.acceptMove(W,iat);
+        }
+        else
+        {
+          ++nReject;
+          W.rejectMove(iat);
+          Psi.rejectMove(iat);
+        }
+      }
+    }
+    //for subSteps must update thiswalker
+    thisWalker.R=W.R;
+    thisWalker.G=W.G;
+    thisWalker.L=W.L;
+  }
+  myTimers[1]->stop();
+  myTimers[2]->start();
+  RealType logpsi = Psi.updateBuffer(W,w_buffer,false);
+  W.saveWalker(thisWalker);
+  myTimers[2]->stop();
+  myTimers[3]->start();
+  EstimatorRealType eloc=H.evaluate(W);
+  myTimers[3]->stop();
+  //thisWalker.resetProperty(std::log(std::abs(psi)), psi,eloc);
+  thisWalker.resetProperty(logpsi,Psi.getPhase(), eloc);
+  H.auxHevaluate(W,thisWalker);
+  H.saveProperty(thisWalker.getPropertyBase());
+#if !defined(REMOVE_TRACEMANAGER)
+  Traces->buffer_sample(W.current_step);
+#endif
+  if(!moved)
+    ++nAllRejected;
+}
+
 void VMCUpdatePbyPWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure)
 {
   myTimers[0]->start();
   for (; it != it_end; ++it)
   {
-    Walker_t& thisWalker(**it);
-    Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
-    W.loadWalker(thisWalker,true);
-    //W.R = thisWalker.R;
-    //w_buffer.rewind();
-    //W.copyFromBuffer(w_buffer);
-    Psi.copyFromBuffer(W,w_buffer);
-    myTimers[1]->start();
-    bool moved = false;
-    for (int iter=0; iter<nSubSteps; ++iter)
-    {
-      //create a 3N-Dimensional Gaussian with variance=1
-      makeGaussRandomWithEngine(deltaR,RandomGen);
-      moved = false;
-      for(int ig=0; ig<W.groups(); ++ig) //loop over species
-      {
-        RealType tauovermass = Tau*MassInvS[ig];
-        RealType oneover2tau = 0.5/(tauovermass);
-        RealType sqrttau = std::sqrt(tauovermass);
-        for (int iat=W.first(ig); iat<W.last(ig); ++iat)
-        {
-          GradType grad_now=Psi.evalGrad(W,iat), grad_new;
-          mPosType dr;
-          getScaledDrift(tauovermass,grad_now,dr);
-          dr += sqrttau*deltaR[iat];
-          if (!W.makeMoveAndCheck(iat,dr))
-          {
-            ++nReject;
-            continue;
-          }
-          //PosType newpos = W.makeMove(iat,dr);
-          RealType ratio = Psi.ratioGrad(W,iat,grad_new);
-          RealType prob = ratio*ratio;
-          //zero is always rejected
-          if (prob<std::numeric_limits<RealType>::epsilon())
-          {
-            ++nReject;
-            W.rejectMove(iat);
-            Psi.rejectMove(iat);
-            continue;
-          }
-          RealType logGf = -0.5e0*dot(deltaR[iat],deltaR[iat]);
-          getScaledDrift(tauovermass,grad_new,dr);
-          dr = thisWalker.R[iat]-W.R[iat]-dr;
-          RealType logGb = -oneover2tau*dot(dr,dr);
-          //RealType prob = std::min(1.0e0,ratio*ratio*std::exp(logGb-logGf));
-          if (RandomGen() < prob*std::exp(logGb-logGf))
-          {
-            moved = true;
-            ++nAccept;
-            W.acceptMove(iat);
-            Psi.acceptMove(W,iat);
-          }
-          else
-          {
-            ++nReject;
-            W.rejectMove(iat);
-            Psi.rejectMove(iat);
-          }
-        }
-      }
-      //for subSteps must update thiswalker
-      thisWalker.R=W.R;
-      thisWalker.G=W.G;
-      thisWalker.L=W.L;
-    }
-    myTimers[1]->stop();
-    myTimers[2]->start();
-    RealType logpsi = Psi.updateBuffer(W,w_buffer,false);
-    W.saveWalker(thisWalker);
-    myTimers[2]->stop();
-    myTimers[3]->start();
-    EstimatorRealType eloc=H.evaluate(W);
-    myTimers[3]->stop();
-    //thisWalker.resetProperty(std::log(std::abs(psi)), psi,eloc);
-    thisWalker.resetProperty(logpsi,Psi.getPhase(), eloc);
-    H.auxHevaluate(W,thisWalker);
-    H.saveProperty(thisWalker.getPropertyBase());
-#if !defined(REMOVE_TRACEMANAGER)
-    Traces->buffer_sample(W.current_step);
-#endif
-    if(!moved)
-      ++nAllRejected;
+    advanceWalker(**it);
   }
   myTimers[0]->stop();
 }

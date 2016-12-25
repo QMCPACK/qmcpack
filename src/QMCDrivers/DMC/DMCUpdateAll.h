@@ -29,9 +29,12 @@ public:
   ///destructor
   ~DMCUpdateAllWithRejection();
 
-  //void initWalkers(WalkerIter_t it, WalkerIter_t it_end);
-  //void updateWalkers(WalkerIter_t it, WalkerIter_t it_end);
-  void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+  void advanceWalker(Walker_t& thisWalker);
+
+#if (__cplusplus >= 201103L)
+  DMCUpdateAllWithRejection(const DMCUpdateAllWithRejection& a)=delete;
+  DMCUpdateAllWithRejection& operator=(const DMCUpdateAllWithRejection&)=delete;
+#else
 private:
   /// Copy Constructor (disabled)
   DMCUpdateAllWithRejection(const DMCUpdateAllWithRejection& a): QMCUpdateBase(a) {}
@@ -40,6 +43,7 @@ private:
   {
     return *this;
   }
+#endif
 };
 
 class DMCUpdateAllWithKill: public QMCUpdateBase
@@ -52,9 +56,12 @@ public:
   ///destructor
   ~DMCUpdateAllWithKill();
 
-  //void initWalkers(WalkerIter_t it, WalkerIter_t it_end);
-  //void updateWalkers(WalkerIter_t it, WalkerIter_t it_end);
-  void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+  void advanceWalker(Walker_t& thisWalker);
+
+#if (__cplusplus >= 201103L)
+  DMCUpdateAllWithKill(const DMCUpdateAllWithKill& a)=delete;
+  DMCUpdateAllWithKill& operator=(const DMCUpdateAllWithKill&)=delete;
+#else
 private:
   /// Copy Constructor (disabled)
   DMCUpdateAllWithKill(const DMCUpdateAllWithKill& a): QMCUpdateBase(a) {}
@@ -63,6 +70,7 @@ private:
   {
     return *this;
   }
+#endif
 };
 }
 

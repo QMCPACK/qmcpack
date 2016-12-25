@@ -549,6 +549,11 @@ namespace qmcplusplus
       }
   }
 
+  void RMCUpdatePbyPWithDrift::advanceWalker (Walker_t& thisWalker)
+  {
+    //empty function to 
+  }
+
   void RMCUpdatePbyPWithDrift::advanceWalkers (WalkerIter_t it,
 					       WalkerIter_t it_end, bool init)
   {

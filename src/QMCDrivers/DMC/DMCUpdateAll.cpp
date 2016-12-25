@@ -45,12 +45,8 @@ DMCUpdateAllWithRejection::~DMCUpdateAllWithRejection() { }
  * When killnode==no, any move resulting in node-crossing is treated
  * as a normal rejection.
  */
-void DMCUpdateAllWithRejection::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
-    bool measure)
+void DMCUpdateAllWithRejection::advanceWalker(Walker_t& thisWalker)
 {
-  for(; it != it_end; ++it)
-  {
-    Walker_t& thisWalker(**it);
     W.loadWalker(thisWalker,false);
     //create a 3N-Dimensional Gaussian with variance=1
     RealType nodecorr=setScaledDriftPbyPandNodeCorr(Tau,MassInvP,W.G,drift);
@@ -60,7 +56,7 @@ void DMCUpdateAllWithRejection::advanceWalkers(WalkerIter_t it, WalkerIter_t it_
     if (!W.makeMoveWithDrift(thisWalker,drift ,deltaR,SqrtTauOverMass))
     {
       H.rejectedMove(W,thisWalker);
-      continue;
+      return;
     }
     //save old local energy
     RealType eold    = thisWalker.Properties(LOCALENERGY);
@@ -136,7 +132,6 @@ void DMCUpdateAllWithRejection::advanceWalkers(WalkerIter_t it, WalkerIter_t it_
       ++nAccept;
     else
       ++nReject;
-  }
 }
 
 /*
@@ -152,19 +147,10 @@ DMCUpdateAllWithKill::DMCUpdateAllWithKill(MCWalkerConfiguration& w,
 /// destructor
 DMCUpdateAllWithKill::~DMCUpdateAllWithKill() { }
 
-//void DMCUpdateAllWithKill::initWalkers(WalkerIter_t it, WalkerIter_t it_end){
-//}
-
-//void DMCUpdateAllWithKill::updateWalkers(WalkerIter_t it, WalkerIter_t it_end){
-//}
 /** advance all the walkers with killnode==yes
  */
-void DMCUpdateAllWithKill::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
-    bool measure)
+void DMCUpdateAllWithKill::advanceWalker(Walker_t& thisWalker)
 {
-  for(; it != it_end; ++it)
-  {
-    Walker_t& thisWalker(**it);
     W.loadWalker(thisWalker,false);
     //RealType nodecorr = setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
     RealType nodecorr=setScaledDriftPbyPandNodeCorr(Tau,MassInvP,W.G,drift);
@@ -174,7 +160,7 @@ void DMCUpdateAllWithKill::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
     if (!W.makeMoveWithDrift(thisWalker,drift ,deltaR,SqrtTauOverMass))
     {
       H.rejectedMove(W,thisWalker);
-      continue;
+      return;
     }
     //save old local energy
     RealType eold = thisWalker.Properties(LOCALENERGY);
@@ -227,7 +213,6 @@ void DMCUpdateAllWithKill::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
       ++nAccept;
     else
       ++nReject;
-  }
 }
 }
 

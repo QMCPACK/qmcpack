@@ -185,17 +185,16 @@ public:
     Estimators->accumulate(W,it,it_end);
   }
 
-  ///move a walker, all-particle (waler) move, using drift
-  // void advanceWalker(Walker_t& thisWalker);
-  ///move a walker, by particle-by-particle move using fast drift
-  // void advancePbyP(Walker_t& thisWalker);
-
   /** advance walkers executed at each step
    *
    * Derived classes implement how to move walkers and accept/reject
    * moves.
    */
-  virtual void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure)=0;
+  virtual void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+
+  ///move a walker
+  virtual void advanceWalker(Walker_t& thisWalker)=0;
+
   virtual RealType advanceWalkerForEE(Walker_t& w1, std::vector<PosType>& dR, std::vector<int>& iats, std::vector<int>& rs, std::vector<RealType>& ratios)
   {
     return 0.0;

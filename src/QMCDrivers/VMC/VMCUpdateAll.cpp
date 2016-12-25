@@ -33,17 +33,14 @@ VMCUpdateAll::~VMCUpdateAll()
 {
 }
 
-void VMCUpdateAll::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure)
+void VMCUpdateAll::advanceWalker(Walker_t& thisWalker)
 {
-  for (; it!= it_end; ++it)
-  {
-    MCWalkerConfiguration::Walker_t& thisWalker(**it);
     makeGaussRandomWithEngine(deltaR,RandomGen);
     //if (!W.makeMove(thisWalker,deltaR, m_sqrttau))
     if (!W.makeMove(thisWalker,deltaR,SqrtTauOverMass))
     {
       H.rejectedMove(W,thisWalker);
-      continue;
+      return;
     }
     //W.R = m_sqrttau*deltaR + thisWalker.R;
     //W.update();
@@ -65,7 +62,6 @@ void VMCUpdateAll::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool mea
       H.saveProperty(thisWalker.getPropertyBase());
       ++nAccept;
     }
-  }
 }
 
 //   void VMCUpdateAll::advanceCSWalkers(std::vector<TrialWaveFunction*>& pclone, std::vector<MCWalkerConfiguration*>& wclone, std::vector<QMCHamiltonian*>& hclone, std::vector<RandomGenerator_t*>& rng, std::vector<RealType>& c_i)
@@ -185,11 +181,8 @@ VMCUpdateAllWithDrift::~VMCUpdateAllWithDrift()
 {
 }
 
-void VMCUpdateAllWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure)
+void VMCUpdateAllWithDrift::advanceWalker(Walker_t& thisWalker)
 {
-  for (; it != it_end; ++it)
-  {
-    MCWalkerConfiguration::Walker_t& thisWalker(**it);
     W.loadWalker(thisWalker,false);
   //  RealType nodecorr=setScaledDriftPbyPandNodeCorr(Tau,MassInvP,W.G,drift);
     assignDrift(Tau,MassInvP,W.G,drift);
@@ -199,7 +192,7 @@ void VMCUpdateAllWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
     if (!W.makeMoveWithDrift(thisWalker,drift ,deltaR,SqrtTauOverMass))
     {
       H.rejectedMove(W,thisWalker);
-      continue;
+      return;
     }
     RealType logpsi(Psi.evaluateLog(W));
     RealType logGf = -0.5*Dot(deltaR,deltaR);
@@ -228,7 +221,6 @@ void VMCUpdateAllWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
       H.saveProperty(thisWalker.getPropertyBase());
       ++nAccept;
     }
-  }
 }
 
 VMCUpdateAllWithDrift::RealType VMCUpdateAllWithDrift::advanceWalkerForEE(Walker_t& w1, std::vector<PosType>& dR, std::vector<int>& iats, std::vector<int>& rs, std::vector<RealType>& ratios)

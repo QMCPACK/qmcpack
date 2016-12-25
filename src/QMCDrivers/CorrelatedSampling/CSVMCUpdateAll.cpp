@@ -37,6 +37,10 @@ CSVMCUpdateAll::CSVMCUpdateAll(MCWalkerConfiguration& w,
   UpdatePbyP=false;	
 }
 
+void CSVMCUpdateAll::advanceWalker(Walker_t& thisWalker)
+{
+}
+
 /**  Advance all the walkers one timstep.
  */
 void CSVMCUpdateAll::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure)
@@ -201,6 +205,10 @@ CSVMCUpdateAllWithDrift::CSVMCUpdateAllWithDrift(MCWalkerConfiguration& w,
   CSUpdateBase(w,psi,h,rg)
 { 
   UpdatePbyP=false;
+}
+
+void CSVMCUpdateAllWithDrift::advanceWalker(Walker_t& thisWalker)
+{
 }
 
 void CSVMCUpdateAllWithDrift::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure)

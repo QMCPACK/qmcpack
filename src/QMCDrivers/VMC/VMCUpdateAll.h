@@ -33,7 +33,7 @@ public:
 
   ~VMCUpdateAll();
 
-  void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+  void advanceWalker(Walker_t& thisWalker);
 //       void advanceCSWalkers(std::vector<TrialWaveFunction*>& pclone, std::vector<MCWalkerConfiguration*>& wclone, std::vector<QMCHamiltonian*>& hclone, std::vector<RandomGenerator_t*>& rng, std::vector<RealType>& c_i);
 //       void estimateNormWalkers(std::vector<TrialWaveFunction*>& pclone
 //     , std::vector<MCWalkerConfiguration*>& wclone
@@ -63,7 +63,7 @@ public:
 
   ~VMCUpdateAllWithDrift();
 
-  void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+  void advanceWalker(Walker_t& thisWalker);
 //       void advanceCSWalkers(std::vector<TrialWaveFunction*>& pclone, std::vector<MCWalkerConfiguration*>& wclone, std::vector<QMCHamiltonian*>& hclone, std::vector<RandomGenerator_t*>& rng, std::vector<RealType>& c_i);
 
   RealType advanceWalkerForEE(Walker_t& w1, std::vector<PosType>& dR, std::vector<int>& iats, std::vector<int>& rs, std::vector<RealType>& ratios);
