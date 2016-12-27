@@ -9,6 +9,7 @@
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
     
+#include "QMCWaveFunctions/BsplineFactory/macro.h"
 #include "Numerics/e2iphi.h"
 #include "simd/vmath.hpp"
 #include "qmc_common.h"

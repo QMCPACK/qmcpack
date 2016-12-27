@@ -64,6 +64,9 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
 
   vContainer_type  mKK;
   VectorSoaContainer<ST,3>  myKcart;
+
+  VectorSoaContainer<std::complex<ST>,3>  myGL;
+
 #if defined(USE_VECTOR_ML)
   vContainer_type  KdotR;
   vContainer_type  CosV;
@@ -106,10 +109,11 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   inline void resizeStorage(size_t n, size_t nvals)
   {
     BaseType::init_base(n);
-    myV.resize(2*n);
-    myG.resize(2*n);
-    myL.resize(2*n);
-    myH.resize(2*n);
+    size_t npad=getAlignedSize<ST>(2*n);
+    myV.resize(npad);
+    myG.resize(npad);
+    myL.resize(npad);
+    myH.resize(npad);
 #if defined(USE_VECTOR_ML)
     KdotR.resize(n);
     CosV.resize(n);
@@ -124,7 +128,6 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
     SplineInst=new MultiBspline<ST>();
     SplineInst->create(xyz_g,xyz_bc,myV.size());
     MultiSpline=SplineInst->spline_m;
-
     for(size_t i=0; i<D; ++i)
     {
       BaseOffset[i]=0;
@@ -204,17 +207,6 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
     }
 #else
     ST s, c;
-#if 0
-    for (size_t j=0, psiIndex=first_spo; psiIndex<last_spo; j++,psiIndex++)
-    {
-      const ST val_r=myV[2*j  ];
-      const ST val_i=myV[2*j+1];
-      sincos(-(x*kx[j]+y*ky[j]+z*kz[j]),&s,&c);
-      psi[psiIndex  ] = ComplexT(val_r*c-val_i*s,val_i*c+val_r*s);
-    }
-#endif
-    TT* restrict psi_p=reinterpret_cast<TT*>(psi.data()+first_spo);
-//#pragma omp simd private(s,c)
     for (size_t j=0, psiIndex=first_spo; psiIndex<last_spo; j++,psiIndex++)
     {
       const ST val_r=myV[2*j  ];

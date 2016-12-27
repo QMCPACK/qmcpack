@@ -9,10 +9,12 @@
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
 #include "qmc_common.h"
+#include "QMCWaveFunctions/BsplineFactory/macro.h"
 #include <Utilities/ProgressReportEngine.h>
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/EinsplineAdoptor.h"
 #include "QMCWaveFunctions/SplineR2RAdoptor.h"
+#include "QMCWaveFunctions/BsplineFactory/SplineR2RAdoptor.h"
 #include <fftw3.h>
 #include <QMCWaveFunctions/einspline_helper.hpp>
 #include "QMCWaveFunctions/BsplineReaderBase.h"
@@ -24,6 +26,7 @@ namespace qmcplusplus
   BsplineReaderBase* createBsplineRealSingle(EinsplineSetBuilder* e, int numOrbs)
   {
     BsplineReaderBase* aReader=nullptr;
+
 #if defined(QMC_ENABLE_SOA_DET)
     if(numOrbs>1)
       aReader= new SplineAdoptorReader<SplineR2RSoA<float,OHMMS_PRECISION> >(e);

@@ -109,10 +109,11 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   inline void resizeStorage(size_t n, size_t nvals)
   {
     BaseType::init_base(n);
-    myV.resize(2*n);
-    myG.resize(2*n);
-    myL.resize(2*n);
-    myH.resize(2*n);
+    size_t npad=getAlignedSize<ST>(2*n);
+    myV.resize(npad);
+    myG.resize(npad);
+    myL.resize(npad);
+    myH.resize(npad);
   }
 
   template<typename GT, typename BCT>

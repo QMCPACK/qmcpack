@@ -127,11 +127,17 @@ IF(OHMMS_DIM MATCHES 3)
       EinsplineSetBuilder_createSPOs.cpp
       BsplineFactory/createComplexDouble.cpp
       BsplineFactory/createComplexSingle.cpp
-      BsplineFactory/createRealSingle.cpp
-      BsplineFactory/createRealDouble.cpp
       BandInfo.cpp
       BsplineReaderBase.cpp
       )
+
+    IF(NOT QMC_COMPLEX)
+      SET(FERMION_SRCS ${FERMION_SRCS}
+        BsplineFactory/createRealSingle.cpp
+        BsplineFactory/createRealDouble.cpp
+        )
+    ENDIF()
+
   ENDIF(HAVE_EINSPLINE)
 
   #  IF(QMC_BUILD_LEVEL GREATER 1)

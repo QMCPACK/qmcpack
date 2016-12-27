@@ -8,6 +8,7 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
+#include "QMCWaveFunctions/BsplineFactory/macro.h"
 #include "Numerics/e2iphi.h"
 #include "simd/vmath.hpp"
 #include "qmc_common.h"
@@ -33,7 +34,6 @@ namespace qmcplusplus
     BsplineReaderBase* aReader=nullptr;
 
 #if defined(QMC_COMPLEX)
-
   #if defined(QMC_ENABLE_SOA_DET)
     if(numOrbs>1)
       aReader= new SplineAdoptorReader<SplineC2CSoA<float,RealType> >(e);

@@ -241,65 +241,83 @@ namespace qmcplusplus
   inline void fix_phase_rotate_c2c(const Array<std::complex<T>,3>& in
       , Array<T1,3>& out_r, Array<T1,3>& out_i, const TinyVector<T2,3>& twist)
   {
-    const T two_pi=-2.0*M_PI;
-    const int nx=in.size(0);
-    const int ny=in.size(1);
-    const int nz=in.size(2);
-    T nx_i=1.0/static_cast<T>(nx);
-    T ny_i=1.0/static_cast<T>(ny);
-    T nz_i=1.0/static_cast<T>(nz);
 
-    T rNorm=0.0, iNorm=0.0, riNorm=0.0;
-#pragma omp parallel for reduction(+:rNorm,iNorm,riNorm), firstprivate(nx_i,ny_i,nz_i)
-    for (int ix=0; ix<nx; ++ix) 
+    const T2 eps=std::numeric_limits<float>::epsilon();
+    const T2 k2=dot(twist,twist);
+
+    const T two_pi=-2.0*M_PI;
+    const size_t nx=in.size(0);
+    const size_t ny=in.size(1);
+    const size_t nz=in.size(2);
+    if(k2 <eps) 
     {
-      T s, c, r, i;
-      const std::complex<T>* restrict in_ptr=in.data()+ix*ny*nz;
-      T rux=static_cast<T>(ix)*nx_i*twist[0];
-      T rsum=0, isum=0,risum=0.0;
-      for (int iy=0; iy<ny; ++iy)
+      const T2 czero(0);
+      const size_t ntot=in.size();
+      const std::complex<T>* restrict in_ptr=in.data();
+      T1* restrict r_p=out_r.data();
+      T1* restrict i_p=out_i.data();
+      for(size_t i=0;i<ntot; ++i)
       {
-        T ruy=static_cast<T>(iy)*ny_i*twist[1];
-        for (int iz=0; iz<nz; ++iz)
+        r_p[i]=in_ptr[i].real();
+        i_p[i]=czero;
+      }
+    }
+    else 
+    {
+      const T nx_i=1.0/static_cast<T>(nx);
+      const T ny_i=1.0/static_cast<T>(ny);
+      const T nz_i=1.0/static_cast<T>(nz);
+
+      T rNorm=0.0, iNorm=0.0, riNorm=0.0;
+#pragma omp parallel for reduction(+:rNorm,iNorm,riNorm), firstprivate(nx_i,ny_i,nz_i)
+      for (size_t ix=0; ix<nx; ++ix) 
+      {
+        for (size_t iy=0; iy<ny; ++iy)
         {
-          T ruz=static_cast<T>(iz)*nz_i*twist[2];
-          sincos(two_pi*(rux+ruy+ruz), &s, &c);
-          r = c*in_ptr->real()-s*in_ptr->imag();
-          i = s*in_ptr->real()+c*in_ptr->imag();
-          ++in_ptr;
-          rsum += r*r;
-          isum += i*i;
-          risum+= r*i;
+          const T rux=static_cast<T>(ix)*nx_i*twist[0];
+          T s, c;
+          T rsum=0, isum=0,risum=0.0;
+          const T ruy=static_cast<T>(iy)*ny_i*twist[1];
+          const std::complex<T>* restrict in_ptr=in.data()+ix*ny*nz+iy*nz;
+          for (size_t iz=0; iz<nz; ++iz)
+          {
+            const T ruz=static_cast<T>(iz)*nz_i*twist[2];
+            sincos(two_pi*(rux+ruy+ruz), &s, &c);
+            const T re=c*in_ptr[iz].real()-s*in_ptr[iz].imag();
+            const T im=s*in_ptr[iz].real()+c*in_ptr[iz].imag();
+            rsum += re*re;
+            isum += im*im;
+            risum += re*im;
+          }
+          rNorm += rsum;
+          iNorm += isum;
+          riNorm+= risum;
         }
       }
-      rNorm += rsum;
-      iNorm += isum;
-      riNorm+= risum;
-    }
 
-//    T arg = std::atan2(iNorm, rNorm);
-//    //cerr << "Phase = " << arg/M_PI << " pi.\n";
-//    T phase_r, phase_i;
-//    sincos(0.5*(0.25*M_PI-arg), &phase_i, &phase_r);
-     T x=(rNorm-iNorm)/riNorm;
-     x=1.0/std::sqrt(x*x+4.0);
-     T phs=(x>0.5)? std::sqrt(0.5+x):std::sqrt(0.5-x);
-     T phase_r=phs*phs/(rNorm+iNorm);
-     T phase_i=(1.0-phs*phs)/(rNorm+iNorm);
+      //    T arg = std::atan2(iNorm, rNorm);
+      //    //cerr << "Phase = " << arg/M_PI << " pi.\n";
+      //    T phase_r, phase_i;
+      //    sincos(0.5*(0.25*M_PI-arg), &phase_i, &phase_r);
+      T x=(rNorm-iNorm)/riNorm;
+      x=1.0/std::sqrt(x*x+4.0);
+      const T phs=(x>0.5)? std::sqrt(0.5+x):std::sqrt(0.5-x);
+      const T phase_r=phs*phs/(rNorm+iNorm);
+      const T phase_i=(1.0-phs*phs)/(rNorm+iNorm);
 
-#pragma omp parallel for firstprivate(phase_r,phase_i)
-    for (int ix=0; ix<nx; ++ix)
-    {
-      const std::complex<T>* restrict in_ptr=in.data()+ix*ny*nz;
-      T1* restrict r_ptr=out_r.data()+ix*ny*nz;
-      T1* restrict i_ptr=out_i.data()+ix*ny*nz;
-      //std::complex<T1>* restrict out_ptr=out.data()+ix*ny*nz;
-      for (int iy=0; iy<ny; ++iy)
-        for (int iz=0; iz<nz; ++iz) 
+#pragma omp parallel for 
+      for (size_t ix=0; ix<nx; ++ix)
+        for (size_t iy=0; iy<ny; ++iy)
         {
-          *r_ptr++=static_cast<T1>(phase_r*in_ptr->real()-phase_i*in_ptr->imag());
-          *i_ptr++=static_cast<T1>(phase_i*in_ptr->real()+phase_r*in_ptr->imag());
-          ++in_ptr;
+          const size_t offset=ix*ny*nz+iy*nz;
+          const std::complex<T>* restrict in_ptr=in.data()+offset;
+          T1* restrict r_ptr=out_r.data()+offset;
+          T1* restrict i_ptr=out_i.data()+offset;
+          for (size_t iz=0; iz<nz; ++iz) 
+          {
+            r_ptr[iz]=static_cast<T1>(phase_r*in_ptr[iz].real()-phase_i*in_ptr[iz].imag());
+            i_ptr[iz]=static_cast<T1>(phase_i*in_ptr[iz].real()+phase_r*in_ptr[iz].imag());
+          }
         }
     }
   }

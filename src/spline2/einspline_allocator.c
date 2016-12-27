@@ -91,17 +91,36 @@ einspline_create_multi_UBspline_3d_s (Ugrid x_grid, Ugrid y_grid, Ugrid z_grid,
   const size_t N=((num_splines+ND-1)/ND)*ND;
   //int N= (num_splines%ND) ? (num_splines+ND-num_splines%ND) : num_splines;
   spline->x_stride = (size_t)Ny*(size_t)Nz*(size_t)N;
-  spline->y_stride      = Nz*N;
-  spline->z_stride      = N;
+  spline->y_stride = (size_t)Nz*N;
+  spline->z_stride = N;
 
   spline->coefs_size=(size_t)Nx*spline->x_stride;
   spline->coefs = (float*)einspline_alloc(sizeof(float)*spline->coefs_size,QMC_CLINE);
-  //printf("Einepline allocator %d %d %d %d %u %d\n",Nx,Ny,Nz,N,spline->coefs_size,QMC_CLINE);
+  printf("Einepline allocator %d %d %d %d (%d)  %u %d\n",Nx,Ny,Nz,N,num_splines,spline->coefs_size,QMC_CLINE);
 
   if (!spline->coefs) {
     fprintf (stderr, "Out of memory allocating spline coefficients in create_multi_UBspline_3d_s.\n");
     abort();
   }
+
+#if 0
+  //test first-touch later
+  const size_t xs = spline->x_stride;
+  const size_t ys = spline->y_stride;
+  const size_t zs = spline->z_stride;
+
+  const float czero=0;
+#pragma omp parallel for collapse(3)
+  for(size_t i=0; i<Nx; ++i)
+    for(size_t j=0; j<Ny; ++j)
+      for(size_t k=0; k<Nz; ++k)
+      {
+        float* restrict coefs = spline->coefs + i*xs + j*ys + k*zs; 
+        for(size_t s=0; s<N; ++s)
+          coefs[s]=czero;
+      }
+#endif
+
   return spline;
 }
 
