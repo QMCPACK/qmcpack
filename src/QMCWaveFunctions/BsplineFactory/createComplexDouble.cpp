@@ -18,8 +18,8 @@
 #include "QMCWaveFunctions/EinsplineAdoptor.h"
 #include "QMCWaveFunctions/SplineC2XAdoptor.h"
 #if defined(QMC_ENABLE_SOA_DET)
-#include "QMCWaveFunctions/SplineC2RAdoptor.h"
-#include "QMCWaveFunctions/SplineC2CAdoptor.h"
+#include "QMCWaveFunctions/BsplineFactory/SplineC2RAdoptor.h"
+#include "QMCWaveFunctions/BsplineFactory/SplineC2CAdoptor.h"
 #endif
 #include <fftw3.h>
 #include <QMCWaveFunctions/einspline_helper.hpp>
