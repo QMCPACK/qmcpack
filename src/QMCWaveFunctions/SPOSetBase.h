@@ -65,6 +65,8 @@ public:
   bool ionDerivs;
   ///if true, can use GL type, default=false
   bool CanUseGLCombo;
+  ///if true, need distance tables
+  bool NeedDistanceTables;
   ///total number of orbitals
   IndexType TotalOrbitalSize;
   ///number of Single-particle orbitals

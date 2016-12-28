@@ -324,6 +324,7 @@ void QMCUpdateBase::updateWalkers(WalkerIter_t it, WalkerIter_t it_end)
 
 void QMCUpdateBase::recomputePsi(WalkerIter_t it, WalkerIter_t it_end)
 {
+  //@warning THIS IS WRONG WITH MO
   for (; it != it_end; ++it)
   {
     Walker_t& thisWalker(**it);

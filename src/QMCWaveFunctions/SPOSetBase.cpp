@@ -42,6 +42,8 @@ SPOSetBase::SPOSetBase()
 {
   CanUseGLCombo=false;
   className="invalid";
+  //default is false: LCOrbitalSet.h needs to set this true and recompute needs to check
+  NeedDistanceTables=false;
 }
 
 void SPOSetBase::evaluate(const ParticleSet& P, int first, int last,

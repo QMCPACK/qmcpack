@@ -92,6 +92,13 @@ bool LatticeParser::put(xmlNodePtr cur)
             boxsum++;
           }
         }
+        if(boxsum==0)
+        {
+          lattice_in=0;
+          for(int idir=0; idir<DIM; idir++)
+            lattice_in(idir,idir)=1e6;
+          ref_.SimulationCellRadius=1e3; //1000 bohr is far enough
+        }
         //if(boxsum>0 && boxsum<DIM)
         //{
         //  APP_ABORT(" LatticeParser::put \n   Mixed boundary is not supported. Set \n   <parameter name=\"bconds\">p p p </parameter>\n");

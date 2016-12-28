@@ -793,10 +793,8 @@ void ParticleSet::resizeSphere(int nc)
 void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
 {
   R = awalker.R;
-#if !defined(SOA_MEMORY_OPTIMIZED)
   G = awalker.G;
   L = awalker.L;
-#endif
   if (pbyp)
   {
     for (int i=0; i< DistTables.size(); i++)
@@ -819,10 +817,8 @@ void ParticleSet::loadWalker(Walker_t* awalker)
 void ParticleSet::saveWalker(Walker_t& awalker)
 {
   awalker.R=R;
-#if !defined(SOA_MEMORY_OPTIMIZED)
   awalker.G=G;
   awalker.L=L;
-#endif
   //PAOps<RealType,OHMMS_DIM>::copy(G,awalker.Drift);
   if (SK)
     SK->UpdateAllPart(*this);
