@@ -365,11 +365,10 @@ class Qmcpack(Simulation):
                 self.error('incorporating particles from '+sim.__class__.__name__+' has not been implemented')
             # end if
         elif result_name=='structure':
-
-            structure = self.system.structure
-            relstruct = result.structure
-            structure.pos = relstruct.positions.copy()
-            structure.set_elem(relstruct.atoms)
+            relstruct = result.structure.copy()
+            relstruct.change_units('B')
+            self.system.structure = relstruct
+            self.system.remove_folded()
             self.input.incorporate_system(self.system)
 
         elif result_name=='cuspcorr':

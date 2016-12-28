@@ -190,6 +190,7 @@ class Pwscf(Simulation):
             relstruct = result.structure.copy()
             relstruct.change_units('B')
             self.system.structure = relstruct
+            self.system.remove_folded()
 
             #structure = self.system.structure
             #structure.change_units('B')
