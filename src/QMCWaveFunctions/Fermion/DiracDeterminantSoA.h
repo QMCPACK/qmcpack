@@ -43,12 +43,6 @@ class DiracDeterminantSoA: public DiracDeterminantBase
   /** NorbPad*(OHMMS_DIM+1) for the internal size */
   size_t BlockSize;
 
-  /** handle inverse, update */
-  DiracMatrix<ValueType> detEng;
-#ifdef MIXED_PRECISION
-  DiracMatrix<mValueType> detEng_hp;
-#endif
-
   /** constructor
    *@param spos the single-particle orbital set
    *@param first index of the first particle
@@ -77,28 +71,19 @@ class DiracDeterminantSoA: public DiracDeterminantBase
 
   void recompute(ParticleSet& P);
 
-
-  RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
-
   void updateAfterSweep(ParticleSet& P,
       ParticleSet::ParticleGradient_t& G,
       ParticleSet::ParticleLaplacian_t& L);
- 
-  RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
-  void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
 
   GradType evalGrad(ParticleSet& P, int iat);
   ValueType ratio(ParticleSet& P, int iat);
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
-
-  /** move was accepted, update the real container
-   */
   void acceptMove(ParticleSet& P, int iat);
 
-  /** move was rejected. copy the real container to the temporary to move on
-   */
-  void restore(int iat);
-
+  RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
+  RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
+  RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
+  void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
 
 #if 0
   void update(ParticleSet& P,
@@ -106,7 +91,6 @@ class DiracDeterminantSoA: public DiracDeterminantBase
       ParticleSet::ParticleLaplacian_t& dL,
       int iat);
 
-  RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
   GradType evalGrad(ParticleSet& P, int iat);
   GradType evalGradSource(ParticleSet &P, ParticleSet &source, int iat);
