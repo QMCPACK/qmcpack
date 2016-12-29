@@ -15,8 +15,8 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -qopenmp")
 ENDIF()
 
 # Set the std
-SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -std=c99")
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -g -debug inline-debug-info -std=c99")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -debug inline-debug-info")
 
 # Set intel specfic flags (which we always want)
 ADD_DEFINITIONS( -DADD_ )
