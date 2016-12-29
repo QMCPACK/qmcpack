@@ -81,6 +81,7 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   SplineC2CSoA(): BaseType(),SplineInst(nullptr), MultiSpline(nullptr)
   {
     this->is_complex=true;
+    this->is_soa_ready=true;
     this->AdoptorName="SplineC2CSoA";
     this->KeyWord="C2CSoA";
   }

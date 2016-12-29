@@ -131,9 +131,12 @@ struct SplineAdoptorBase
   typedef UBspline_3d_d SingleSplineType;
   typedef ST DataType;
 #endif
-
   ///true if the computed values are complex
   bool is_complex;
+  ///true, if it has only one k point and Gamma
+  bool is_gamma_only;
+  ///true, if it has only one k point and Gamma
+  bool is_soa_ready;
   ///Index of this adoptor, when multiple adoptors are used for NUMA or distributed cases
   size_t MyIndex;
   ///number of unique orbitals
@@ -161,7 +164,8 @@ struct SplineAdoptorBase
   std::string KeyWord;
 
   SplineAdoptorBase()
-    :is_complex(false),MyIndex(0),nunique_orbitals(0),first_spo(0),last_spo(0)
+    :is_complex(false),is_gamma_only(false), is_soa_ready(false),
+    MyIndex(0),nunique_orbitals(0),first_spo(0),last_spo(0)
   { }
 
 #if (__cplusplus >= 201103L)

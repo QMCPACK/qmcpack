@@ -144,6 +144,8 @@ struct SplineAdoptorReader: public BsplineReaderBase
       app_log() << "  Using complex einspline table" << std::endl;
     else
       app_log() << "  Using real einspline table" << std::endl;
+    if(bspline->is_soa_ready)
+      app_log() << "  Can use SoA implementation for mGL" << std::endl;
 
     //baseclass handles twists
     check_twists(bspline,bandgroup);
