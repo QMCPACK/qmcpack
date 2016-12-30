@@ -431,6 +431,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     TT* restrict vl_y=dpsi.data(1);
     TT* restrict vl_z=dpsi.data(2);
     TT* restrict vl_l=dpsi.data(3);
+#pragma omp simd
     for (size_t j=0, psiIndex=first_spo; j<nComplexBands; j++,psiIndex+=2)
     {
       const size_t jr=j<<1;
@@ -486,6 +487,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
       vl_l[psiIndex+1]=c*lap_i+s*lap_r;
     }
 
+#pragma omp simd
     for (size_t j=nComplexBands,psiIndex=first_spo+2*nComplexBands; j<N; j++,psiIndex++)
     {
       const size_t jr=j<<1;

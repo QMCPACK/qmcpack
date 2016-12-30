@@ -21,6 +21,7 @@
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 
+#include "QMCWaveFunctions/Fermion/DiracDeterminantSoA.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantFast.h"
 //this is only for Bryan
@@ -419,6 +420,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   std::string detname("0"), refname("0");
   std::string s_detSize("0");
   std::string afm("no");
+  std::string usesoa("no");
 
   OhmmsAttributeSet aAttrib;
   aAttrib.add(basisName,basisset_tag);
@@ -427,6 +429,8 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   aAttrib.add(refname,"ref");
   aAttrib.add(afm,"type");
   aAttrib.add(s_detSize,"DetSize");
+  aAttrib.add(usesoa,"soa");
+
   std::string s_cutoff("0.0");
   std::string s_radius("0.0");
   int s_smallnumber(-999999);
@@ -554,7 +558,18 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
     else if (psi->Optimizable)
       adet = new DiracDeterminantOpt(targetPtcl, psi, firstIndex);
     else
-      adet = new DiracDeterminantBase(psi,firstIndex);
+    {
+      if((usesoa=="yes") && psi->CanUseGLCombo)
+      {
+        app_log()<<"Using DiracDeterminantSoA "<< std::endl;
+        adet = new DiracDeterminantSoA(psi,firstIndex);
+      }
+      else
+      {
+        app_log()<<"Using DiracDeterminantBase "<< std::endl;
+        adet = new DiracDeterminantBase(psi,firstIndex);
+      }
+    }
 #endif
   }
   adet->set(firstIndex,lastIndex-firstIndex);
