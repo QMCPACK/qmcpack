@@ -106,6 +106,7 @@ class EstimatorHandler: public MPIObjectBase, public AFQMCInfo
       cur = cur->next;
     } 
 
+    return true;
   }
 
   // Estimator does not use TGs right now
@@ -129,6 +130,7 @@ class EstimatorHandler: public MPIObjectBase, public AFQMCInfo
     for(std::vector<EstimatorBase*>::iterator it=estimators.begin(); it!=estimators.end(); it++)
       (*it)->setup(TGdata,v,ham0,wfn0,LocalTimer,heads_comm,tg_comm,node_comm,head_tgs);
 
+    return true;
   }
 
   void setTargetWeight(RealType w0) { estimators[0]->setTargetWeight(w0); }

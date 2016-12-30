@@ -345,7 +345,7 @@ class SparseGeneralHamiltonian: public HamiltonianBase
        return false;
   } 
 
-  bool initFromXML(const std::string& fileName) {} 
+  bool initFromXML(const std::string& fileName) {return true;} 
 
   bool initFromHDF5(const std::string& fileName); 
 
@@ -531,15 +531,13 @@ class SparseGeneralHamiltonian: public HamiltonianBase
       APP_ABORT(" Error in mapUT_woD: This should not happen. \n");
     } else if(j > i)
       return N*i + j - (i*(i+1))/2 - i-1;
-    else
-      return N*j + i - (j*(j+1))/2 - j-1;
+    return N*j + i - (j*(j+1))/2 - j-1;
   }
 
   inline int mapUT(int i, int j, int N) {
     if(j >= i)
       return N*i + j - (i*(i+1))/2;
-    else
-      return N*j + i - (j*(j+1))/2;
+    return N*j + i - (j*(j+1))/2;
   }
 
   inline int mapUT_woD(int i, int j, int N) {
@@ -547,8 +545,7 @@ class SparseGeneralHamiltonian: public HamiltonianBase
       APP_ABORT(" Error in mapUT_woD: This should not happen. \n");
     } else if(j > i)
       return N*i + j - (i*(i+1))/2 - i-1;
-    else
-      return N*j + i - (j*(j+1))/2 - j-1;
+    return N*j + i - (j*(j+1))/2 - j-1;
   }
 
   bool communicate_Vijkl(ComplexSMSpMat&);

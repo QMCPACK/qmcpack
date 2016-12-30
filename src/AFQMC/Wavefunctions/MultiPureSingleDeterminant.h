@@ -119,8 +119,8 @@ class MultiPureSingleDeterminant: public WavefunctionBase
     double IterCI_cut; 
 
     bool initFromAscii(std::string fileName);
-    bool initFromHDF5(hdf_archive&,const std::string&) {}
-    bool initFromXML(std::string fileName) {}
+    bool initFromHDF5(hdf_archive&,const std::string&) {return true;}
+    bool initFromXML(std::string fileName) {return true;}
 
 
     bool getHamiltonian(HamPtr ); 

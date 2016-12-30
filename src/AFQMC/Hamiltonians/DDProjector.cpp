@@ -39,12 +39,13 @@ namespace qmcplusplus
     // start by just setting to zero
     Pmat.resize(2*NMO,2*NMO); 
     Pmat=0;
-  
+    return true;
   }
 
   bool DDProjector::initFromHDF5(const std::string& fileName)
   {
 
+    return false;
 /*
     hdf_archive dump(myComm);
     if(!dump.open(fileName,H5F_ACC_RDONLY,false)) {

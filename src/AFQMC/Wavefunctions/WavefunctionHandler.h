@@ -306,6 +306,7 @@ class WavefunctionHandler: public MPIObjectBase, public AFQMCInfo
       } else {
         APP_ABORT("Unknown wavefunction type in isOccupAlpha. \n");
       }
+      return false;
     } 
  
     bool isOccupBeta( const std::string& type, int i) {
@@ -320,6 +321,7 @@ class WavefunctionHandler: public MPIObjectBase, public AFQMCInfo
       } else {
         APP_ABORT("Unknown wavefunction type in isOccupBeta. \n");
       }
+      return false;
     }
 
     bool check_initialized(const std::string& type)

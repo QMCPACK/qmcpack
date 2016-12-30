@@ -313,6 +313,7 @@ bool phaseless_ImpSamp_ForceBias::hdf_write(hdf_archive& dump,const std::string&
     return true;
   } 
  
+  return false;
 }
 
 bool phaseless_ImpSamp_ForceBias::hdf_read(hdf_archive& dump,const std::string& tag)

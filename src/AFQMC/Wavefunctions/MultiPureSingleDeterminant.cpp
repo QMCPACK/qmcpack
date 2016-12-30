@@ -468,6 +468,7 @@ bool MultiPureSingleDeterminant::initFromAscii(std::string fileName)
   // calculate relations between determinants
   // setup necessary data structures for low-rank updates
 
+  return true;
 }
 
 bool MultiPureSingleDeterminant::getHamiltonian(HamPtr h)
@@ -635,10 +636,10 @@ bool MultiPureSingleDeterminant::getHamiltonian(HamPtr h)
 }
 
 bool MultiPureSingleDeterminant::hdf_write(hdf_archive& read, const std::string& tag, bool include_tensors) 
-{}
+{return true;}
 
 bool MultiPureSingleDeterminant::hdf_write()
-{}
+{return true;}
 
 void MultiPureSingleDeterminant::local_evaluateOneBodyMixedDensityMatrixFull(const ComplexType* SlaterMat, ComplexType& ovl, ComplexMatrix& dm, bool full)
 {

@@ -95,6 +95,7 @@ class WavefunctionBase: public MPIObjectBase, public AFQMCInfo
     virtual int sizeOfInfoForDistributedPropagation() 
     {  
       APP_ABORT("WavefunctionBase::sizeOfInfoForDistributedPropagation() not implemented for this wavefunction type. \n");
+      return 0;
     }
 
     virtual void calculateMeanFieldMatrixElementOfOneBodyOperators(bool addBetaBeta, ComplexSpMat&, std::vector<ComplexType>& v, const int n=-1 )=0;

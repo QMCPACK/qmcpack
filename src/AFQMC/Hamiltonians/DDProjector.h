@@ -56,9 +56,9 @@ class DDProjector: public ProjectorBase
   // P(i,j) == 0, P(i,j)==P(j,i)
   ValueMatrix Pmat;
   
-  bool initFromASCII(const std::string& fileName) {}; 
+  bool initFromASCII(const std::string& fileName) {return true;}; 
 
-  bool initFromXML(const std::string& fileName) {};
+  bool initFromXML(const std::string& fileName) {return true;};
 
   bool initFromHDF5(const std::string& fileName); 
   

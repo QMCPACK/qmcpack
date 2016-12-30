@@ -110,7 +110,7 @@ class GeneralSingleDeterminant: public WavefunctionBase
   
     bool initFromAscii(std::string fileName); 
     bool initFromHDF5(hdf_archive&,const std::string&); 
-    bool initFromXML(std::string fileName) {} 
+    bool initFromXML(std::string fileName) {return true;} 
 
     bool getHamiltonian(HamPtr ); 
 
