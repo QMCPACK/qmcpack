@@ -25,6 +25,7 @@
 #include "QMCWaveFunctions/SPOSetBase.h"
 #include "Utilities/NewTimer.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
+#include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 
 namespace qmcplusplus
 {
@@ -33,6 +34,7 @@ class DiracDeterminantBase: public OrbitalBase
 {
 protected:
   ParticleSet *targetPtcl;
+  int BufferMode;
 public:
   bool Optimizable;
   void registerTimers();
@@ -139,6 +141,9 @@ public:
         myVars[i]= active[ii];
     }
   }
+
+  ///invert psiM or its copies
+  void invertPsiM(ValueMatrix_t& amat);
 
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& active,
@@ -339,7 +344,9 @@ public:
   /// temporal matrix and workspace in higher precision for the accurate inversion.
   ValueMatrix_hp_t psiM_hp;
   Vector<ParticleSet::ParticleValue_t> WorkSpace_hp;
+  DiracMatrix<mValueType> detEng_hp;
 #endif
+  DiracMatrix<ValueType> detEng;
 
   Vector<ValueType> WorkSpace;
   Vector<IndexType> Pivot;
