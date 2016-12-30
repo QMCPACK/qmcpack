@@ -261,9 +261,11 @@ public:
 
   void update(ParticleSet& P, int iat);
 
+#if 0
   RealType ratio(ParticleSet& P, int iat,
                  ParticleSet::ParticleGradient_t& dG,
                  ParticleSet::ParticleLaplacian_t& dL);
+#endif
 
   void printGL(ParticleSet::ParticleGradient_t& G,
                ParticleSet::ParticleLaplacian_t& L, std::string tag = "GL");
@@ -294,6 +296,9 @@ public:
   RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
   void copyFromBuffer(ParticleSet& P, BufferType& buf);
   RealType evaluateLog(ParticleSet& P, BufferType& buf);
+
+  //new function to streamline tmove computation
+  RealType acceptTMove(ParticleSet& P, int iat, PooledData<RealType>& buf);
 
   void dumpToBuffer(ParticleSet& P, BufferType& buf);
   void dumpFromBuffer(ParticleSet& P, BufferType& buf);

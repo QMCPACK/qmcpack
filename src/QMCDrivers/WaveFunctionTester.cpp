@@ -98,7 +98,7 @@ WaveFunctionTester::run()
   put(qmcNode);
   if (checkRatio == "yes")
   {
-    runRatioTest();
+    //runRatioTest();
     runRatioTest2();
   }
   else if (checkClone == "yes")
@@ -1045,6 +1045,7 @@ void WaveFunctionTester::runBasicTest()
 
 void WaveFunctionTester::runRatioTest()
 {
+#if 0
   int nat = W.getTotalNum();
   ParticleSet::ParticleGradient_t Gp(nat), dGp(nat);
   ParticleSet::ParticleLaplacian_t Lp(nat), dLp(nat);
@@ -1234,6 +1235,7 @@ void WaveFunctionTester::runRatioTest()
   //  W.updateBuffer(**it,w_buffer);
   //  RealType logpsi=Psi.updateBuffer(W,w_buffer,true);
   //}
+ #endif
 }
 
 void WaveFunctionTester::runRatioTest2()

@@ -193,22 +193,16 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker)
       int iat=nonLocalOps.id(ibar);
       if(!W.makeMoveAndCheck(iat,nonLocalOps.delta(ibar))) return;
       myTimers[2]->start();
-      /////RealType ratio=Psi.ratio(W,iat);
-      /////W.acceptMove(iat);
-      /////Psi.acceptMove(W,iat);
-      /////thisWalker.R[iat]=W.R[iat];
-      /////w_buffer.rewind();
-      /////W.copyToBuffer(w_buffer);
-      /////RealType logpsi = Psi.updateBuffer(W,w_buffer,false);
+      Psi.acceptTMove(W,iat,w_buffer);
+#if 0
       RealType ratio=Psi.ratio(W,iat,dG,dL);
-      W.acceptMove(iat);
-      Psi.acceptMove(W,iat);
       W.G += dG;
       W.L += dL;
       //thisWalker.R[iat]=W.R[iat];
       //w_buffer.rewind();
       //W.copyToBuffer(w_buffer);
       RealType logpsi = Psi.evaluateLog(W,w_buffer);
+#endif
       W.saveWalker(thisWalker);
       //PAOps<RealType,OHMMS_DIM>::copy(W.G,thisWalker.Drift);
       ++NonLocalMoveAccepted;

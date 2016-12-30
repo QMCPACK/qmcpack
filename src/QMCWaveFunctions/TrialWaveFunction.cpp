@@ -586,6 +586,7 @@ void   TrialWaveFunction::update(ParticleSet& P,int iat)
 }
 
 
+#if 0
 /** evaluate \f$ frac{\Psi({\bf R}_i^{'})}{\Psi({\bf R}_i)}\f$
  * @param P ParticleSet
  * @param iat index of the particle with a trial move
@@ -602,7 +603,7 @@ TrialWaveFunction::RealType TrialWaveFunction::ratio(ParticleSet& P, int iat
   dG = 0.0;
   dL = 0.0;
   ValueType r(1.0);
-  for (int i=0, ii=1; i<Z.size(); ++i, ii+=2)
+  for (size_t i=0, n=Z.size(); i<Z.size(); ++i)
   {
     r *= Z[i]->ratio(P,iat,dG,dL);
   }
@@ -615,6 +616,7 @@ TrialWaveFunction::RealType TrialWaveFunction::ratio(ParticleSet& P, int iat
   return r;
 #endif
 }
+#endif
 
 void TrialWaveFunction::printGL(ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L, std::string tag)
 {
@@ -733,8 +735,8 @@ TrialWaveFunction::RealType TrialWaveFunction::registerData(ParticleSet& P, Pool
   TotalDim = PosType::Size*NumPtcls;
   buf.add(PhaseValue);
   buf.add(LogValue);
-  buf.add(&(P.G[0][0]), &(P.G[0][0])+TotalDim);
-  buf.add(&(P.L[0]), &(P.L[P.getTotalNum()]));
+  //buf.add(&(P.G[0][0]), &(P.G[0][0])+TotalDim);
+  //buf.add(&(P.L[0]), &(P.L[P.getTotalNum()]));
   return LogValue;
 }
 
@@ -777,8 +779,6 @@ TrialWaveFunction::RealType TrialWaveFunction::updateBuffer(ParticleSet& P
   //LogValue=real(logpsi);
   buf.put(PhaseValue);
   buf.put(LogValue);
-  buf.put(&(P.G[0][0]), &(P.G[0][0])+TotalDim);
-  buf.put(&(P.L[0]), &(P.L[0])+NumPtcls);
   return LogValue;
 }
 
@@ -791,8 +791,6 @@ void TrialWaveFunction::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf
   //get the gradients and laplacians from the buffer
   buf.get(PhaseValue);
   buf.get(LogValue);
-  buf.get(&(P.G[0][0]), &(P.G[0][0])+TotalDim);
-  buf.get(&(P.L[0]), &(P.L[0])+NumPtcls);
 }
 
 /** Dump data that are required to evaluate ratios to the buffer
@@ -832,6 +830,34 @@ void TrialWaveFunction::dumpFromBuffer(ParticleSet& P, BufferType& buf)
 }
 
 TrialWaveFunction::RealType
+TrialWaveFunction::acceptTMove(ParticleSet& P, int iat, PooledData<RealType>& buf)
+{
+
+  CONSTEXPR RealType czero(0);
+  P.G=czero;
+  P.L=czero;
+  ValueType logpsi=czero;
+  PhaseValue=czero;
+
+  buf.rewind(BufferCursor,BufferCursor_DP);
+  GradType grad;
+  const size_t nz=Z.size();
+  for (size_t i=0; i<nz; i++)
+  {
+    Z[i]->ratioGrad(P,iat,grad);
+    Z[i]->acceptMove(P,iat);
+    logpsi += Z[i]->updateBuffer(P,buf,false);
+    PhaseValue += Z[i]->PhaseValue;
+  }
+
+  buf.put(PhaseValue);
+  buf.put(LogValue);
+
+  convert(logpsi,LogValue);
+  return LogValue;
+}
+
+TrialWaveFunction::RealType
 TrialWaveFunction::evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
 {
   buf.rewind(BufferCursor,BufferCursor_DP);
@@ -842,10 +868,10 @@ TrialWaveFunction::evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
     LogValue += Z[i]->evaluateLog(P,buf);
     PhaseValue += Z[i]->PhaseValue;
   }
+
   buf.put(PhaseValue);
   buf.put(LogValue);
-  //buf.put(&(P.G[0][0]), &(P.G[0][0])+TotalDim);
-  //buf.put(&(P.L[0]), &(P.L[0])+NumPtcls);
+
   return LogValue;
 }
 
