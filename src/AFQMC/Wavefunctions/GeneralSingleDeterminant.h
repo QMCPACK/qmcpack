@@ -56,7 +56,7 @@ class GeneralSingleDeterminant: public WavefunctionBase
       else if(filetype == "hdf5") {
         hdf_archive readF(myComm);
         if(head_of_nodes)
-          if(!readF.open(filename,H5F_ACC_RDONLY,false))
+          if(!readF.open(filename,H5F_ACC_RDONLY))
             APP_ABORT(" Problems reading hdf5 file in WavefunctionBase::init()");
         if(!initFromHDF5(readF,hdf_read_tag)) {
           app_error()<<" Problems reading hdf5 file in WavefunctionBase::init()";

@@ -1571,7 +1571,7 @@ namespace qmcplusplus
     if(myComm->rank() == 0) {
 
       hdf_archive dump(myComm);
-      if(!dump.open(fileName,H5F_ACC_RDONLY,false)) {
+      if(!dump.open(fileName,H5F_ACC_RDONLY)) {
         app_error()<<" Error opening integral file in SparseGeneralHamiltonian. \n";
         return false;
       }

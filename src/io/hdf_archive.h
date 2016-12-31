@@ -81,7 +81,7 @@ struct hdf_archive
    * @param flags i/o mode
    * @return file_id, if open is successful
    */
-  bool open(const std::string& fname,unsigned flags=H5F_ACC_RDWR,bool create_if_fail=true);
+  bool open(const std::string& fname,unsigned flags=H5F_ACC_RDWR);
 
   ///close all the open groups and file
   void close();

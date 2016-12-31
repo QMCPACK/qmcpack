@@ -173,7 +173,7 @@ bool VMCDriver::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
   if(myComm->rank() == 0) {
     if(hdf_read_restart != std::string("")) {
 
-      if(read.open(hdf_read_restart,H5F_ACC_RDONLY,false))
+      if(read.open(hdf_read_restart,H5F_ACC_RDONLY))
         restarted = restart(read);
 
       if(!restarted) {

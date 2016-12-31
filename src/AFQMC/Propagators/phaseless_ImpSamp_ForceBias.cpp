@@ -577,7 +577,7 @@ bool phaseless_ImpSamp_ForceBias::setup(std::vector<int>& TGdata, ComplexSMVecto
     if(hdf_read_file!=std::string("")) {
 
       hdf_archive dump(myComm);
-      if(dump.open(hdf_read_file,H5F_ACC_RDONLY,false)) { 
+      if(dump.open(hdf_read_file,H5F_ACC_RDONLY)) { 
         read_Spvn_from_file = hdf_read(dump,hdf_read_tag);
         dump.close();
         if(read_Spvn_from_file) 
