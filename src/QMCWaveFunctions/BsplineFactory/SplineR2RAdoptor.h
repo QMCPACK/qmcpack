@@ -213,6 +213,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     const ST g00=PrimLattice.G(0), g01=PrimLattice.G(1), g02=PrimLattice.G(2),
              g10=PrimLattice.G(3), g11=PrimLattice.G(4), g12=PrimLattice.G(5),
              g20=PrimLattice.G(6), g21=PrimLattice.G(7), g22=PrimLattice.G(8);
+    const ST symGG[6]={GGt[0],GGt[1]+GGt[3],GGt[2]+GGt[6],GGt[4],GGt[5]+GGt[7],GGt[8]};
 
     const ST* restrict g0=myG.data(0);
     const ST* restrict g1=myG.data(1);
@@ -233,7 +234,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
         dpsi[psiIndex][0]=-(g00*g0[j]+g01*g1[j]+g02*g2[j]);
         dpsi[psiIndex][1]=-(g10*g0[j]+g11*g1[j]+g12*g2[j]);
         dpsi[psiIndex][2]=-(g20*g0[j]+g21*g1[j]+g22*g2[j]);
-        d2psi[psiIndex]=-SymTrace(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],GGt.data());
+        d2psi[psiIndex]=-SymTrace(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],symGG);
       }
     }
     else
@@ -245,7 +246,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
         dpsi[psiIndex][0]=(g00*g0[j]+g01*g1[j]+g02*g2[j]);
         dpsi[psiIndex][1]=(g10*g0[j]+g11*g1[j]+g12*g2[j]);
         dpsi[psiIndex][2]=(g20*g0[j]+g21*g1[j]+g22*g2[j]);
-        d2psi[psiIndex]=SymTrace(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],GGt.data());
+        d2psi[psiIndex]=SymTrace(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],symGG);
       }
     }
   }
@@ -267,6 +268,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     const ST g00=PrimLattice.G(0), g01=PrimLattice.G(1), g02=PrimLattice.G(2),
              g10=PrimLattice.G(3), g11=PrimLattice.G(4), g12=PrimLattice.G(5),
              g20=PrimLattice.G(6), g21=PrimLattice.G(7), g22=PrimLattice.G(8);
+    const ST symGG[6]={GGt[0],GGt[1]+GGt[3],GGt[2]+GGt[6],GGt[4],GGt[5]+GGt[7],GGt[8]};
 
     const ST* restrict g0=myG.data(0);
     const ST* restrict g1=myG.data(1);
@@ -292,7 +294,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
         vg_x[psiIndex]=-(g00*g0[j]+g01*g1[j]+g02*g2[j]);
         vg_y[psiIndex]=-(g10*g0[j]+g11*g1[j]+g12*g2[j]);
         vg_z[psiIndex]=-(g20*g0[j]+g21*g1[j]+g22*g2[j]);
-        vl_l[psiIndex]=-SymTrace(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],GGt.data());
+        vl_l[psiIndex]=-SymTrace(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],symGG);
       }
     }
     else
@@ -304,7 +306,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
         vg_x[psiIndex]=(g00*g0[j]+g01*g1[j]+g02*g2[j]);
         vg_y[psiIndex]=(g10*g0[j]+g11*g1[j]+g12*g2[j]);
         vg_z[psiIndex]=(g20*g0[j]+g21*g1[j]+g22*g2[j]);
-        vl_l[psiIndex]=SymTrace(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],GGt.data());
+        vl_l[psiIndex]=SymTrace(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],symGG);
       }
     }
   }
