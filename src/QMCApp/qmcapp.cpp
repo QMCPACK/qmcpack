@@ -179,7 +179,10 @@ int main(int argc, char **argv)
   timingDoc.newDoc("resources");
   output_hardware_info(qmcComm, timingDoc, timingDoc.getRoot());
   TimerManager.output_timing(qmcComm, timingDoc, timingDoc.getRoot());
-  timingDoc.dump(qmc->getTitle() + ".info.xml");
+  if(OHMMS::Controller->rank()==0)
+  {
+    timingDoc.dump(qmc->getTitle() + ".info.xml");
+  }
   TimerManager.print(qmcComm);
 
   if(qmc)
