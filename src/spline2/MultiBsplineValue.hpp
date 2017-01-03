@@ -48,10 +48,20 @@ namespace qmcplusplus
       const intptr_t zs = spline_m->z_stride;
 
       CONSTEXPR T zero(0);
-      const int num_splines=last-first;
+      const size_t num_splines=last-first;
       ASSUME_ALIGNED(vals);
       std::fill(vals,vals+num_splines,zero);
 
+      for (size_t i=0; i<4; i++)
+        for (size_t j=0; j<4; j++){
+          const T pre00 =  a[i]*b[j];
+          const T* restrict coefs = spline_m->coefs + ((ix+i)*xs + (iy+j)*ys + iz*zs)+first; ASSUME_ALIGNED(coefs);
+//#pragma omp simd
+          for(size_t n=0; n<num_splines; n++)
+            vals[n] += pre00*(c[0]*coefs[n] + c[1]*coefs[n+zs] + c[2]*coefs[n+2*zs] + c[3]*coefs[n+3*zs]);
+        }
+
+#if 0
       constexpr int iSIMD=QMC_CLINE/sizeof(T);
       const int nBlocks = num_splines/iSIMD;
       //unnecessary
@@ -98,7 +108,7 @@ namespace qmcplusplus
 
         } // j loop
       } // i loop 
-      
+#endif  
     }
 }
 #endif
