@@ -44,6 +44,9 @@ private:
   typedef PWRealOrbitalSet::PWBasisPtr PWBasisPtr;
 #endif
 
+  std::map<std::string,SPOSetBasePtr> spomap;
+  PtclPoolType& ptclPool;
+
   ///Read routine for HDF wavefunction file version 0.10
   void ReadHDFWavefunction(hid_t hfile);
 
@@ -62,7 +65,7 @@ private:
 public:
 
   ///constructor
-  PWOrbitalBuilder(ParticleSet& els, TrialWaveFunction& wfs);
+  PWOrbitalBuilder(ParticleSet& els, TrialWaveFunction& wfs, PtclPoolType& psets);
   ~PWOrbitalBuilder();
 
   ///implement vritual function
