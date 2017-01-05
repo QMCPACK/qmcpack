@@ -25,6 +25,7 @@ from qmcpack_converters import Pw2qmcpack
 from simulation import Simulation
 from pwscf_input import PwscfInput,generate_pwscf_input
 from pwscf_analyzer import PwscfAnalyzer
+from execute import execute
 from debug import ci
 
 
@@ -52,13 +53,14 @@ class Pwscf(Simulation):
 
 
     def __init__(self,**sim_args):
-        has_group_atoms = 'group_atoms' in sim_args
-        group_atoms = False
-        if has_group_atoms:
-            group_atoms = sim_args['group_atoms']
-            del sim_args['group_atoms']
-        #end if
+        group_atoms   = sim_args.pop('group_atoms',False)
+        sync_from_scf = sim_args.pop('sync_from_scf',True)
         Simulation.__init__(self,**sim_args)
+        self.sync_from_scf = False
+        calc = self.input.control.get('calculation',None)
+        if calc=='nscf':
+            self.sync_from_scf = sync_from_scf
+        #end if
         if group_atoms and isinstance(self.system,PhysicalSystem):
             self.warn('requested grouping by atomic species, but pwscf does not group atoms anymore!')
             #self.system.structure.group_atoms()
@@ -119,6 +121,8 @@ class Pwscf(Simulation):
             outdir = outdir[2:]
         #end if
         if result_name=='charge_density':
+            result.locdir   = self.locdir
+            result.outdir   = os.path.join(self.locdir,outdir)
             result.location = os.path.join(self.locdir,outdir,prefix+'.save','charge-density.dat')
             result.spin_location = os.path.join(self.locdir,outdir,prefix+'.save','spin-polarization.dat')
         elif result_name=='orbitals':
@@ -156,23 +160,37 @@ class Pwscf(Simulation):
     def incorporate_result(self,result_name,result,sim):
         if result_name=='charge_density':
             c = self.input.control
-            link_loc = os.path.join(self.locdir,c.outdir,c.prefix+'.save')
-            cd_loc = result.location
-            cd_rel = os.path.relpath(cd_loc,link_loc)
-            sp_loc = result.spin_location
-            sp_rel = os.path.relpath(sp_loc,link_loc)
-            cwd = os.getcwd()
-            if not os.path.exists(link_loc):
-                os.makedirs(link_loc)
+            res_path = os.path.abspath(result.locdir)
+            loc_path = os.path.abspath(self.locdir)
+            if res_path==loc_path:
+                None # don't need to do anything if in same directory
+            elif self.sync_from_scf: # rsync output into nscf dir
+                outdir = os.path.join(self.locdir,c.outdir)
+                command = 'rsync -avz {0}/* {1}/'.format(result.outdir,outdir)
+                if not os.path.exists(outdir):
+                    os.makedirs(outdir)
+                #end if
+                execute(command)
+            else: # attempt to use symbolic links instead
+                link_loc = os.path.join(self.locdir,c.outdir,c.prefix+'.save')
+                cd_loc = result.location
+                cd_rel = os.path.relpath(cd_loc,link_loc)
+                sp_loc = result.spin_location
+                sp_rel = os.path.relpath(sp_loc,link_loc)
+                cwd = os.getcwd()
+                if not os.path.exists(link_loc):
+                    os.makedirs(link_loc)
+                #end if
+                os.chdir(link_loc)
+                os.system('ln -s '+cd_rel+' charge-density.dat')
+                os.system('ln -s '+sp_rel+' spin-polarization.dat')
+                os.chdir(cwd)
             #end if
-            os.chdir(link_loc)
-            os.system('ln -s '+cd_rel+' charge-density.dat')
-            os.system('ln -s '+sp_rel+' spin-polarization.dat')
-            os.chdir(cwd)
         elif result_name=='structure':
             relstruct = result.structure.copy()
             relstruct.change_units('B')
             self.system.structure = relstruct
+            self.system.remove_folded()
 
             #structure = self.system.structure
             #structure.change_units('B')

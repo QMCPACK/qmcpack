@@ -43,6 +43,9 @@ public:
 
   void getConfigurations(const std::string& aroot);
   void checkConfigurations();
+#ifdef HAVE_LMY_ENGINE
+  void engine_checkConfigurations(cqmc::engine::LMYEngine * EngineObj);
+#endif
   void resetPsi(bool final_reset=false);
   void resetWalkers();   
   void GradCost(std::vector<Return_t>& PGradient, const std::vector<Return_t>& PM, Return_t FiniteDiff=0);
@@ -62,6 +65,12 @@ protected:
   ///vmc walkers to clean up
   std::vector<int> nVMCWalkers;
   Return_t correlatedSampling(bool needGrad=true);
+
+    #ifdef HAVE_LMY_ENGINE
+  int total_samples();
+  Return_t LMYEngineCost_detail(cqmc::engine::LMYEngine * EngineObj);
+  #endif
+
 };
 }
 #endif

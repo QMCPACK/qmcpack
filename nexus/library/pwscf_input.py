@@ -1657,6 +1657,16 @@ def generate_any_pwscf_input(**kwargs):
     #move values into a more convenient representation
     kwargs = obj(**kwargs)
 
+    # setup for k-point symmetry run
+    #   ecutwfc is set to 1 so that pwscf will crash after initialization
+    #   symmetrized k-points will still be written to log output
+    ksymm_run = kwargs.delete_optional('ksymm_run',False)
+    if ksymm_run:
+        kwargs.ecutwfc    = 1
+        kwargs.nosym      = False
+        kwargs.use_folded = False
+    #end if
+
     #assign default values
     if 'defaults' in kwargs:
         defaults = kwargs.defaults
@@ -1681,6 +1691,10 @@ def generate_any_pwscf_input(**kwargs):
             #end if
         #end if
     #end for
+
+    if ksymm_run and 'calculation' in kwargs and kwargs.calculation!='scf':
+        PwscfInput.class_error('input parameter "calculation" must be set to "scf" when ksymm_run is requested')
+    #end if
 
     #copy certain keywords
     tot_magnetization = kwargs.get_optional('tot_magnetization',None)
@@ -1888,6 +1902,7 @@ def generate_scf_input(prefix       = 'pwscf',
                        use_folded   = True,
                        group_atoms  = False,
                        la2F         = None,
+                       nbnd         = None
                        ):
     if pseudos is None:
         pseudos = []
@@ -1924,9 +1939,12 @@ def generate_scf_input(prefix       = 'pwscf',
         ecutrho     = ecutrho,
         nosym       = nosym,
         )
-    if la2F!=None:
+    if la2F is not None:
         pw.system.la2F = la2F
     #end if
+    if nbnd is not None:
+        pw.system.nbnd = nbnd
+    # end if
     if assume_isolated!=None:
         pw.system.assume_isolated = assume_isolated
     #end if

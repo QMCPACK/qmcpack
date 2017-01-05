@@ -109,7 +109,7 @@ void QMCLinearOptimize::start()
   optTarget->setRng(vmcEngine->getRng());
   optTarget->checkConfigurations();
   myTimers[1]->stop();
-  app_log() << "  Execution time = " << t1.elapsed() << std::endl;
+  app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
   app_log() << "  </log>"<< std::endl;
   app_log() << "</opt>" << std::endl;
   app_log() << "<opt stage=\"main\" walkers=\""<< optTarget->getNumSamples() << "\">" << std::endl;
@@ -117,10 +117,47 @@ void QMCLinearOptimize::start()
   t1.restart();
 }
 
+#ifdef HAVE_LMY_ENGINE
+void QMCLinearOptimize::engine_start( cqmc::engine::LMYEngine * EngineObj ) 
+{
+  app_log() << "entering engine_start function" << std::endl;
+  optTarget->initCommunicator(myComm);
+
+  // generate samples
+  myTimers[0]->start();
+  generateSamples();
+  myTimers[0]->stop();
+
+  // store active number of walkers
+  NumOfVMCWalkers=W.getActiveWalkers();
+  app_log() << "<opt stage=\"setup\">" << std::endl;
+  app_log() << "  <log>"<<std::endl;
+
+  // reset the root name
+  optTarget->setRootName(RootName);
+  optTarget->setWaveFunctionNode(wfNode);
+  app_log() << "     Reading configurations from h5FileRoot " << h5FileRoot << std::endl;
+
+  // get configuration from the previous run 
+  Timer t1;
+  myTimers[1]->start();
+  optTarget->getConfigurations(h5FileRoot);
+  optTarget->setRng(vmcEngine->getRng());
+  optTarget->engine_checkConfigurations(EngineObj); // computes derivative ratios and pass into engine
+  myTimers[1]->stop();
+  app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
+  app_log() << "  </log>"<<std::endl;
+  app_log() << "</opt>" << std::endl;
+  app_log() << "<opt stage=\"main\" walkers=\""<< optTarget->getNumSamples() << "\">" << std::endl;
+  app_log() << "  <log>" << std::endl;
+  t1.restart();
+}
+#endif
+
 void QMCLinearOptimize::finish()
 {
   MyCounter++;
-  app_log() << "  Execution time = " << t1.elapsed() << std::endl;
+  app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
   app_log() << "  </log>" << std::endl;
   optTarget->reportParameters();
   int nw_removed=W.getActiveWalkers()-NumOfVMCWalkers;
@@ -144,7 +181,7 @@ void QMCLinearOptimize::generateSamples()
   vmcEngine->QMCDriverMode.set(QMC_WARMUP,1);
   //  vmcEngine->run();
   //  vmcEngine->setValue("blocks",nBlocks);
-  //  app_log() << "  Execution time = " << t1.elapsed() << std::endl;
+  //  app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
   //  app_log() << "</vmc>" << std::endl;
   //}
 //     if (W.getActiveWalkers()>NumOfVMCWalkers)
@@ -163,7 +200,7 @@ void QMCLinearOptimize::generateSamples()
   branchEngine->flush(0);
   branchEngine->reset();
   vmcEngine->run();
-  app_log() << "  Execution time = " << t1.elapsed() << std::endl;
+  app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
   app_log() << "</vmc>" << std::endl;
   //write parameter history and energies to the parameter file in the trial wave function through opttarget
   EstimatorRealType e,w,var;

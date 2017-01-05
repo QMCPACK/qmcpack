@@ -17,6 +17,10 @@
     
     
 PROJECT(qmcapp)
+# formic dependencies
+#FIND_PATH(LMYENGINE_INCLUDE_DIR formic/fqmc/engine/var_dependencies.h)
+#MESSAGE("-- LMYENGINE_INCLUDE_DIR=${LMYENGINE_INCLUDE_DIR}")
+#INCLUDE_DIRECTORIES(${LMYENGINE_INCLUDE_DIR})
 
 ####################################
 # create libqmc 
@@ -50,6 +54,14 @@ ELSE()
 ENDIF()
 
   TARGET_LINK_LIBRARIES(${p} qmc qmcdriver qmcham qmcwfs qmcbase qmcutil adios_config)
+
+  IF(BUILD_AFQMC)
+    TARGET_LINK_LIBRARIES(${p} afqmc)
+  ENDIF(BUILD_AFQMC)
+
+  IF(BUILD_FCIQMC)
+    TARGET_LINK_LIBRARIES(${p} fciqmc)
+  ENDIF(BUILD_FCIQMC)
 
   FOREACH(l ${QMC_UTIL_LIBS})
     TARGET_LINK_LIBRARIES(${p} ${l})

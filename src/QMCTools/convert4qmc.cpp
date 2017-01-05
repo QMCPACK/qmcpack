@@ -38,9 +38,9 @@ int main(int argc, char **argv)
   if(argc<2)
   {
     std::cout << "Usage: convert [-gaussian|-casino|-gamesxml|-gamessAscii|-gamessFMO |-VSVB| -QP] filename ";
-     std::cout << "[-nojastrow -hdf5 -psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf -size npts -ci file.out -threshold cimin -NaturalOrbitals NumToRead -add3BodyJ -prefix title -addCusp]"
+     std::cout << "[-nojastrow -hdf5 -psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf -size npts -ci file.out -threshold cimin -TargetState state_number -NaturalOrbitals NumToRead -add3BodyJ -prefix title -addCusp]"
               << std::endl;
-    std::cout << "Defaults : -gridtype log -first 1e-6 -last 100 -size 1001 -ci required -threshold 0.01 -prefix sample" << std::endl;
+    std::cout << "Defaults : -gridtype log -first 1e-6 -last 100 -size 1001 -ci required -threshold 0.01 -TargetState 0 -prefix sample" << std::endl;
     std::cout << "When the input format is missing, the  extension of filename is used to determine the parser " << std::endl;
     std::cout << " *.Fchk -> gaussian; *.out -> gamessAscii; *.data -> casino; *.xml -> gamesxml" << std::endl;
     return 1;
@@ -59,6 +59,7 @@ int main(int argc, char **argv)
   std::string psi_tag("psi0");
   std::string ion_tag("ion0");
   std::string prefix("sample");
+  int TargetState=0;
   bool usehdf5=false;
   bool ci=false,zeroCI=false,orderByExcitation=false,VSVB=false, fmo=false,addCusp=false;
   double thres=0.01;
@@ -138,6 +139,10 @@ int main(int argc, char **argv)
     {
       thres = atof(argv[++iargc]);
     }
+    else if(a == "-TargetState" )
+    {
+      TargetState = atoi(argv[++iargc]);
+    }
     else if(a == "-NaturalOrbitals")
     {
       readNO = atoi(argv[++iargc]);
@@ -216,6 +221,7 @@ int main(int argc, char **argv)
     parser->IonSystem.setName(ion_tag);
     parser->multideterminant=ci;
     parser->ci_threshold=thres;
+    parser->target_state=TargetState;
     parser->readNO=readNO;
     parser->orderByExcitation=orderByExcitation;
     parser->zeroCI = zeroCI;

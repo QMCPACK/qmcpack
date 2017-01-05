@@ -23,6 +23,12 @@
 #define QMCPLUSPLUS_VECTORIZED_STDMATH_HPP
 
 #include <cmath>
+#if defined(HAVE_MKL_VML)
+#include <mkl_vml_functions.h>
+#elif defined(HAVE_MASSV)
+#include <mass.h>
+#include <massv.h>
+#endif
 
 namespace qmcplusplus {
 
@@ -61,8 +67,6 @@ namespace qmcplusplus {
       }
 
 #if defined(HAVE_MKL_VML)
-#include <mkl_vml_functions.h>
-
     inline void sqrt(const double* restrict in, double* restrict out, int n)
     {
       vdSqrt(n,in,out);
@@ -94,8 +98,6 @@ namespace qmcplusplus {
     }
 
 #elif defined(HAVE_MASSV)
-#include <mass.h>
-#include <massv.h>
     inline void sqrt(double* restrict in, double* restrict out, int n)
     {
       vsqrt(out,in,&n);

@@ -59,6 +59,8 @@ std::string OrbitalBuilderBase::backflow_tag="backflow";
 
 std::string OrbitalBuilderBase::multisd_tag="multideterminant";
 
+std::string OrbitalBuilderBase::sposcanner_tag="spo_scanner";
+
 OrbitalBuilderBase::OrbitalBuilderBase(ParticleSet& p, TrialWaveFunction& psi):
   MPIObjectBase(psi.getCommunicator()),
   targetPtcl(p), targetPsi(psi), myNode(NULL)

@@ -339,6 +339,7 @@ points to check to obtain highest performance and
 Section \ref{sec:troubleshoot} for troubleshooting hints.
 
 \subsection{Installing on Ubuntu Linux or other apt-get based distributions}
+\label{sec:buildubuntu}
 
 The following is designed to obtain a working QMCPACK build on e.g. a
 student laptop, starting from a basic Linux installation with none of
@@ -618,7 +619,7 @@ Currently Loaded Modulefiles:
  15) dvs/2.5_0.9.0-1.0502.1958.2.55.ari      30) boost/1.54                           
 \end{verbatim}
 
-\subsection{Installing on NERSC Cori (Phase 1) Cray XC40}
+\subsection{Installing on NERSC Cori, Haswell Partition, Cray XC40}
 Cori is a Cray XC40 with 16-core Intel "Haswell" nodes 
 installed at NERSC. The build settings are similar to eos at OLCF, but
 a workround is needed for the newer Cray OS which does not include a static
@@ -634,7 +635,6 @@ module load boost
 export LIBXML2_HOME=/usr/common/software/libxml2/2.9.3/hsw 
 mkdir build_cori
 cd build_cori
-cmake ..
 cmake -DQMC_EXTRA_LIBS=/usr/common/software/liblzma/20160630/hsw/lib/liblzma.a ..
 make -j 8  
 ls -l bin/qmcpack 
@@ -662,22 +662,63 @@ Currently Loaded Modulefiles:
  14) xpmem/0.1-2.0502.64982.5.3.ari        28) boost/1.59                                     
 \end{verbatim}
 
+\subsection{Installing on NERSC Cori, Xeon Phi KNL Knight's Landing partition, Cray XC40}
+The second phase of NERSC's Cori uses Intel
+Xeon Phi Knight's Landing (KNL) nodes. Substantive optimizations for QMCPACK on KNL will
+be forthcoming. The following build recipe ensures that the code
+generation is appropriate for the KNL nodes:
+
+\begin{verbatim}
+module load subversion
+module load cray-hdf5
+module load cmake
+module load fftw
+export FFTW_HOME=$FFTW_DIR/..
+module load boost
+export LIBXML2_HOME=/usr/common/software/libxml2/2.9.3/hsw
+module swap craype-haswell craype-mic-knl
+cmake -DQMC_EXTRA_LIBS=/usr/common/software/liblzma/20160630/hsw/lib/liblzma.a \
+       -DCMAKE_CXX_FLAGS="-xMIC-AVX512" -DCMAKE_C_FLAGS="-xMIC-AVX512" ..
+make -j 16
+ls -l bin/qmcpack 
+\end{verbatim}
+
+When the above was tested on 21 December 2016, the following module and
+software versions were present:
+
+\begin{verbatim}
+build_cori_knl> module list
+Currently Loaded Modulefiles:
+  1) modules/3.2.6.7                  11) dmapp/7.1.0-12.37                21) cray-shmem/7.4.4
+  2) nsg/1.2.0                        12) gni-headers/5.0.7-3.1            22) cray-mpich/7.4.4
+  3) modules/3.2.10.5                 13) xpmem/0.1-4.5                    23) altd/2.0
+  4) intel/17.0.1.132                 14) job/1.5.5-3.58                   24) darshan/3.0.1
+  5) craype-network-aries             15) dvs/2.7_0.9.0-2.221              25) subversion/1.7.22
+  6) craype/2.5.7                     16) alps/6.1.3-17.12                 26) cray-hdf5/1.8.16
+  7) cray-libsci/16.09.1              17) rca/1.0.0-8.1                    27) cmake/3.3.2
+  8) udreg/2.3.2-4.6                  18) atp/2.0.3                        28) fftw/3.3.4.10
+  9) ugni/6.0.12-2.1                  19) PrgEnv-intel/6.0.3               29) boost/1.61
+\end{verbatim}
+
+\subsection{Installing on Windows}
+Install the Windows Subsystem for Linux and Bash on Windows.
+Open a bash shell and follow the install directions for Ubuntu in Section \ref{sec:buildubuntu}.
+
 \section{Testing and validation of QMCPACK}
 \label{sec:testing}
 We \textbf{strongly encourage} running the included tests each time
 QMCPACK is built. These compare the results from the executable with
 known-good mean-field, quantum chemical, and other QMC results. 
 
-The tests included with QMCPACK currently test only the VMC code with
+The tests included with QMCPACK currently mainly test the VMC code with
 single determinant wavefunction and simple spline Jastrow
 wavefunctions, and for gaussian and periodic spline basis
-sets. Although not yet comprehensive, it is extremely unlikely that,
-e.g., DMC will be correct if the VMC tests do not pass.  We check that the known mean
+sets. We check that the known mean
 field results are obtained with no Jastrow. When Jastrow functions are
 included we test against previous QMC data. The tests are statistical
 with a generous 3 $\sigma$ tolerance, however the system sizes are
 small, typically $<10$ electrons, so the error bars are typically
-small.
+small. Limited DMC and optimizer tests included and are scheduled for expansion.
 
  The ``short'' tests only take a few minutes on a 16
 core machine. You can run these tests using the command below in the

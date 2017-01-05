@@ -1002,6 +1002,12 @@ void GamesAsciiParser::getCSF(std::istream& is)
   CSFbeta.clear();
   coeff2csf.clear();
   usingCSF=true;
+
+  // set a count to check if we arrive our target state or not 
+  int state_num = -1;
+  
+  std::cout << "Target State Number is " << target_state << std::endl;
+
   do
   {
     if(is.eof())
@@ -1016,6 +1022,14 @@ void GamesAsciiParser::getCSF(std::istream& is)
         currentWords[1] == "COEF" &&
         currentWords[2] == "OCCUPANCY" )
     {
+      
+      // add the state number by one
+      state_num++;
+
+      // if we have not reached target state, continue
+      if (state_num != target_state)
+        continue;
+
       getwords(currentWords,is);  // --------
       notfound=false;
       getwords(currentWords,is);

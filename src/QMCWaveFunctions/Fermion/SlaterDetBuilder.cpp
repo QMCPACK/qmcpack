@@ -17,6 +17,7 @@
     
     
 #include "QMCWaveFunctions/BasisSetFactory.h"
+#include "QMCWaveFunctions/SPOSetScanner.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
@@ -97,7 +98,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
 
   if (myBasisSetFactory == 0)
   {//always create one, using singleton and just to access the member functions
-    myBasisSetFactory = new BasisSetFactory(targetPtcl,targetPsi, ptclPool);
+    myBasisSetFactory = new BasisSetFactory(targetPtcl, targetPsi, ptclPool);
     myBasisSetFactory->setReportLevel(ReportLevel);
   }
 
@@ -224,7 +225,15 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
   while (cur != NULL)//check the basis set
   {
     getNodeName(cname,cur);
-    if (cname == sd_tag)
+    if (cname == sposcanner_tag)
+    {
+      if(myComm->rank()==0)
+      {
+        SPOSetScanner ascanner(spomap, targetPtcl, ptclPool);
+        ascanner.put(cur);
+      }
+    }
+    else if (cname == sd_tag)
     {
       multiDet=false;
       if(slaterdet_0)

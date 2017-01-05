@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import argparse
+import difflib
 import filecmp
 import glob
 import os
@@ -63,7 +64,21 @@ def run_test(test_name, c4q_exe, conv_inp, gold_file, expect_fail, extra_cmd_arg
         if not filecmp.cmp(gold_file, test_file):
             print("Gold file comparison failed")
             okay = False
-        # TODO: use difflib module to print out the diff
+            with open(gold_file, 'r') as f_gold:
+                gold_lines = f_gold.readlines()
+            with open(test_file, 'r') as f_test:
+                test_lines = f_test.readlines()
+
+            diff = difflib.unified_diff(gold_lines, test_lines, fromfile=gold_file, tofile=test_file)
+            diff_line_limit = 200
+            diff_lines = 0
+            for diff_line in diff:
+                print(diff_line,end="")
+                if diff_lines > diff_line_limit:
+                    print('< diff truncated due to line limit >')
+                    break
+        else:
+            okay = True
 
     if okay:
         print("  pass")

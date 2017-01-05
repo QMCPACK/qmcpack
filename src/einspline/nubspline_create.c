@@ -1083,6 +1083,8 @@ destroy_NUBspline(Bspline *spline)
     destroy_NUBasis (((NUBspline_3d*)spline)->y_basis);
     destroy_NUBasis (((NUBspline_3d*)spline)->z_basis);
     break;
+  default:
+    break;
   }
 }
     

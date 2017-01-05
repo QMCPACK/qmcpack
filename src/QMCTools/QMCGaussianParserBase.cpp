@@ -39,7 +39,7 @@ std::vector<int> QMCGaussianParserBase::gShellID;
 QMCGaussianParserBase::QMCGaussianParserBase():
   Title("sample"),basisType("Gaussian"),basisName("generic"),DoCusp(false),
   Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01)
-  ,usingCSF(false),readNO(0),readGuess(0),zeroCI(false)
+  ,usingCSF(false),readNO(0),readGuess(0),zeroCI(false),target_state(0)
   ,orderByExcitation(false), addJastrow(true), addJastrow3Body(false),QP(false)
 {
 }
@@ -48,7 +48,7 @@ QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv):
   BohrUnit(true),SpinRestricted(false),NumberOfAtoms(0),NumberOfEls(0),DoCusp(false),
   SpinMultiplicity(0),NumberOfAlpha(0),NumberOfBeta(0),SizeOfBasisSet(0),
   Title("sample"),basisType("Gaussian"),basisName("generic"),numMO(0),numMO2print(-1),
-  Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01),
+  Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01),target_state(0),
   angular_type("spherical"),usingCSF(false),readNO(0),readGuess(0),zeroCI(false)
   ,orderByExcitation(false), addJastrow(true), addJastrow3Body(false), QP(false)
 {

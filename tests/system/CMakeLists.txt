@@ -108,6 +108,50 @@ IF (NOT QMC_COMPLEX)
                     0 # VMC
                     TRUE)
 
+#
+# 4 H atom cluster gaussian tests, all electron
+# Also check results for different number of mpi tasks and threads keeping total constant
+#
+  LIST(APPEND H4_OPT_SCALARS "totenergy" "-2.140786 0.0009") # total energy
+
+  QMC_RUN_AND_CHECK(short-H4-opt-linear
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    H4-linear
+                    optm-linear.xml
+                    16 1
+                    H4_OPT_SCALARS
+                    5 # OPT step 5
+                    TRUE)
+
+IF(BUILD_LMYENGINE_INTERFACE)
+  QMC_RUN_AND_CHECK(short-H4-opt-adaptive
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    H4-adaptive
+                    optm-adaptive.xml
+                    16 1
+                    H4_OPT_SCALARS
+                    5 # OPT step 5
+                    TRUE)
+ENDIF(BUILD_LMYENGINE_INTERFACE)
+
+  QMC_RUN_AND_CHECK(short-H4-opt-OneShiftOnly
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    H4-OneShiftOnly
+                    optm-OneShiftOnly.xml
+                    16 1
+                    H4_OPT_SCALARS
+                    5 # OPT step 5
+                    TRUE)
+
+  QMC_RUN_AND_CHECK(short-H4-opt-OneShiftOnly
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    H4-OneShiftOnly
+                    optm-OneShiftOnly.xml
+                    1 16
+                    H4_OPT_SCALARS
+                    5 # OPT step 5
+                    TRUE)
+
  ELSE()
     MESSAGE("Skipping all gaussian basis tests because they are not supported by complex build (QMC_COMPLEX=1)")  
  ENDIF()
@@ -221,16 +265,21 @@ ENDIF()
 
 
 # Plane wave test of bccH (no pp, so faster than typical solids)
-# Currently disabled since take 90s to run
-#  QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-vmc_sdj-pw
-#                    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
-#                    qmc_short_pw
-#                    qmc_short_pw.in.xml
-#                    1 16
-#                    BCC_H_SCALARS
-#                    0 # VMC
-#                    TRUE)
-
+# Reduced number of blocks and samples compared to other short bccH tests
+  LIST(APPEND BCC_H_PW_SCALARS "totenergy" "-1.834032 0.001")
+  LIST(APPEND BCC_H_PW_SCALARS "samples" "96000 0.0")
+  LIST(APPEND BCC_H_PW_SCALARS "flux" "0.0 0.1")
+  IF(NOT QMC_CUDA)
+# No GPU implementation. Would be fast if implemented
+  QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-vmc_sdj-pw
+                    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+                    qmc_short_pw
+                    qmc_short_pw.in.xml
+                    1 16
+                    BCC_H_PW_SCALARS
+                    0 # VMC
+                    TRUE)
+  ENDIF()
 
   LIST(APPEND DIAMOND_SCALARS "totenergy" "-10.491445 0.002")
   LIST(APPEND DIAMOND_SCALARS "kinetic" "11.434392 0.018")

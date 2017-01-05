@@ -127,7 +127,7 @@ const char *particles =
   xmlNodePtr pw1 = xmlFirstElementChild(root);
 
 
-  PWOrbitalBuilder pw_builder(elec, psi);
+  PWOrbitalBuilder pw_builder(elec, psi, ptcl.getPool());
   pw_builder.put(pw1);
 
   REQUIRE(psi.getOrbitals().size() == 1);
@@ -286,7 +286,7 @@ const char *particles =
   xmlNodePtr pw1 = xmlFirstElementChild(root);
 
 
-  PWOrbitalBuilder pw_builder(elec, psi);
+  PWOrbitalBuilder pw_builder(elec, psi, ptcl.getPool());
   pw_builder.put(pw1);
 
   REQUIRE(psi.getOrbitals().size() == 1);

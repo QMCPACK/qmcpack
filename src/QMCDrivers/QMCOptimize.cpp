@@ -98,7 +98,7 @@ QMCOptimize::run()
   Timer t1;
   optTarget->getConfigurations(h5FileRoot);
   optTarget->checkConfigurations();
-  app_log() << "  Execution time = " << t1.elapsed() << std::endl;
+  app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
   app_log() << "  </log>"<< std::endl;
   app_log() << "</opt>" << std::endl;
   app_log() << "<opt stage=\"main\" walkers=\""<< optTarget->getNumSamples() << "\">" << std::endl;
@@ -109,7 +109,7 @@ QMCOptimize::run()
 //     W.reset();
 //     branchEngine->flush(0);
 //     branchEngine->reset();
-  app_log() << "  Execution time = " << t1.elapsed() << std::endl;;
+  app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;;
   app_log() << "  </log>" << std::endl;
   optTarget->reportParameters();
 
@@ -143,7 +143,7 @@ void QMCOptimize::generateSamples()
   branchEngine->flush(0);
   branchEngine->reset();
   vmcEngine->run();
-  app_log() << "  Execution time = " << t1.elapsed() << std::endl;
+  app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
   app_log() << "</vmc>" << std::endl;
   //write parameter history and energies to the parameter file in the trial wave function through opttarget
   EstimatorRealType e,w,var;

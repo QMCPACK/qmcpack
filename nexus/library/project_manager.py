@@ -22,6 +22,7 @@ import memory
 from generic import obj
 from nexus_base import NexusCore,nexus_core
 from simulation import Simulation
+from debug import ci
 
 
 def trivial(sim,*args,**kwargs):
@@ -94,9 +95,13 @@ class ProjectManager(NexusCore):
         self.log('\nstarting runs:\n'+30*'~',n=1)
         if nexus_core.dependent_modes <= nexus_core.stages_set:
             if nexus_core.monitor:
+                start_time = time.time()
                 ipoll = 0
                 while len(self.progressing_cascades)>0:
-                    self.log('poll',ipoll,' memory %3.2f MB'%(memory.resident()/1e6),n=1)
+                    elapsed_time = time.time() - start_time
+                    self.log('elapsed time %.1f s'%elapsed_time,
+                             ' memory %3.2f MB'%(memory.resident()/1e6),
+                             n=1,progress=True)
                     NexusCore.wrote_something = False
                     ipoll+=1
                     self.machine.query_queue()

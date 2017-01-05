@@ -43,8 +43,9 @@ Additional information:
 
 \item \texttt{gpu}. When the executable is compiled with CUDA, the target computing device can be chosen by this switch. With a regular CPU only compilation, this option is not effective.
 
-\item \texttt{checkpoints}. If Checkpoint=``-1'' no checkpoint will be done (default setting). If Checkpoint=``0'' dump after the completion of a qmc section. When dumconfig=``n'' is present with Checkpoint=``0'', the configurations will be dumped at the end of the run (due to Checkpoint=``0''), but also at every n block. If Checkpoint=``n'', configurations will be dump every n block.\\ 
-All the dumped data will be written in a *.config.h5. The config.h5 file will contain the state of a population to continue a run including the random number sequences; the list of what is included in the .congig.h5 is: number of walkers, status of the run, branch mode, energy dataset, ratio to accepted moves, ratio to proposed moves, variance dataset, vParam\{tau, taueff. E\_trial, E\_ref, Branch\_Max, BranchCutOff, BranchFilter, Sigma, Accepted\_Energy, Accepted\_Samples\}, IParam{warmumSteps, Energy\_Update\_Interval, Counter, targetwalkers, Maxwalkers, MinWalkers, Branching Interval}, Walker coordinates, Random number size, Random number sequence, version of the code.
+\item \texttt{checkpoints}. If Checkpoint=``-1'' no checkpoint will be done (default setting). If Checkpoint=``0'' dump after the completion of a qmc section. When dumconfig=``n'' is present with Checkpoint=``0'', the configurations will be dumped at the end of the run (due to Checkpoint=``0''), but also at every n block. If Checkpoint=``n'', configurations will be dump every n block. 
+
+All the dumped data will be written in a *.config.h5. The config.h5 file will contain the state of a population to continue a run including the random number sequences; the list of what is included in the .config.h5 is: number of walkers, status of the run, branch mode, energy dataset, ratio to accepted moves, ratio to proposed moves, variance dataset, vParam\{tau, taueff. E\_trial, E\_ref, Branch\_Max, BranchCutOff, BranchFilter, Sigma, Accepted\_Energy, Accepted\_Samples\}, IParam{warmumSteps, Energy\_Update\_Interval, Counter, targetwalkers, Maxwalkers, MinWalkers, Branching Interval}, Walker coordinates, Random number size, Random number sequence, version of the code.
 
 \begin{lstlisting}[caption=The following is an example of running a simulation that can be restarted . ]
   <qmc method="dmc" move="pbyp"  checkpoint="0" dumpconfig="5">
@@ -68,6 +69,8 @@ To continue a run, specify the following before your VM/DMC block:
     <parameter name="steps">            400    </parameter>
   </qmc>
 \end{lstlisting}
-where, BH is the project id and s002 is the calculation number to read in the walkers from the previous run.\\ In the project id section, make sure that the series number is different than any existing one to avoid rewriting on it. 
+where, BH is the project id and s002 is the calculation number to read in the walkers from the previous run.
+
+In the project id section, make sure that the series number is different than any existing one to avoid rewriting on it. 
 
 \end{itemize}
