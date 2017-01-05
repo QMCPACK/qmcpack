@@ -196,12 +196,13 @@ TimerManagerClass::print(Communicate* comm)
     printf("Stack timer profile\n");
   }
   print_stack(comm);
-#endif
+#else
   if(comm == NULL || comm->rank() == 0)
   {
     printf("\nFlat profile\n");
   }
   print_flat(comm);
+#endif
 #endif
 }
 
@@ -245,16 +246,16 @@ TimerManagerClass::print_stack(Communicate* comm)
 
   if(comm == NULL || comm->rank() == 0)
   {
-    printf("Timer                   Inclusive_time    Exclusive_time   Calls   Time_per_call\n");
+    printf("%-38s  %-9s  %-9s  %-10s  %-13s\n","Timer","Inclusive_time","Exclusive_time","Calls","Time_per_call");
     for (int i = 0; i < p.names.size(); i++)
     {
       std::string stack_name = p.names[i];
       int level = get_level(stack_name);
       std::string name = get_leaf_name(stack_name);
       std::string indent_str(2*level, ' ');
-      printf ("%s%-40s  %9.4f  %9.4f  %13ld  %16.9f  TIMER\n"
-              , indent_str.c_str()
-              , name.c_str()
+      std::string indented_str = indent_str + name;
+      printf ("%-40s  %9.4f  %9.4f  %13ld  %16.9f\n"
+              , indented_str.c_str()
               , p.timeList[i]
               , p.timeExclList[i]
               , p.callList[i]
