@@ -49,7 +49,7 @@ TEST_CASE("test_timer_stack", "[utilities]")
   TimerManagerClass tm;
   NewTimer t1("timer1", timer_level_coarse);
   tm.addTimer(&t1);
-#if ENABLE_TIMER
+#if ENABLE_TIMERS
 #ifdef USE_STACK_TIMERS
   t1.start();
   REQUIRE(tm.current_timer() == &t1);
@@ -108,6 +108,7 @@ TEST_CASE("test_timer_flat_profile_same_name", "[utilities]")
 
   tm.collate_flat_profile(NULL, p);
 
+#ifdef ENABLE_TIMERS
   REQUIRE(p.nameList.size() == 2);
   int idx1 = p.nameList.at("timer1");
   int idx2 = p.nameList.at("timer2");
@@ -118,6 +119,7 @@ TEST_CASE("test_timer_flat_profile_same_name", "[utilities]")
   REQUIRE(p.callList.size() == 2);
   REQUIRE(p.callList[idx1] == 5);
   REQUIRE(p.callList[idx2] == 3);
+#endif
 }
 
 TEST_CASE("test_timer_nested_profile", "[utilities]")
@@ -138,16 +140,19 @@ TEST_CASE("test_timer_nested_profile", "[utilities]")
   TimerManagerClass::FlatProfileData p;
   tm.collate_flat_profile(NULL, p);
 
+#ifdef ENABLE_TIMERS
   REQUIRE(p.nameList.size() == 2);
   int idx1 = p.nameList.at("timer1");
   int idx2 = p.nameList.at("timer2");
   REQUIRE(p.timeList.size() == 2);
   REQUIRE(p.timeList[idx1] == Approx(3*fake_cpu_clock_increment));
   REQUIRE(p.timeList[idx2] == Approx(fake_cpu_clock_increment));
+#endif
 
   TimerManagerClass::StackProfileData p2;
   tm.collate_stack_profile(NULL, p2);
 
+#ifdef ENABLE_TIMERS
   REQUIRE(p2.nameList.size() == 2);
   idx1 = p2.nameList.at("timer1");
   idx2 = p2.nameList.at("timer1/timer2");
@@ -159,6 +164,7 @@ TEST_CASE("test_timer_nested_profile", "[utilities]")
   // Time in t1 minus time inside t2
   REQUIRE(p2.timeExclList[idx1] == Approx(2*fake_cpu_clock_increment));
   REQUIRE(p2.timeExclList[idx2] == Approx(fake_cpu_clock_increment));
+#endif
 
 }
 
@@ -184,10 +190,12 @@ TEST_CASE("test_timer_nested_profile_two_children", "[utilities]")
   TimerManagerClass::StackProfileData p2;
   tm.collate_stack_profile(NULL, p2);
 
+#ifdef ENABLE_TIMERS
   REQUIRE(p2.names.size() == 3);
   REQUIRE(p2.names[0] == "timer1");
   REQUIRE(p2.names[1] == "timer1/timer2");
   REQUIRE(p2.names[2] == "timer1/timer3");
+#endif
 
 
   Libxml2Document doc;
@@ -234,6 +242,7 @@ TEST_CASE("test_timer_nested_profile_alt_routes", "[utilities]")
   TimerManagerClass::StackProfileData p2;
   tm.collate_stack_profile(NULL, p2);
   //tm.print_stack(NULL);
+#ifdef ENABLE_TIMERS
   REQUIRE(p2.names.size() == 7);
   REQUIRE(p2.names[0] == "timer1");
   REQUIRE(p2.names[1] == "timer1/timer2");
@@ -247,6 +256,7 @@ TEST_CASE("test_timer_nested_profile_alt_routes", "[utilities]")
   REQUIRE(p2.timeExclList[0] == Approx(3.3));
   REQUIRE(p2.timeList[1] == Approx(7.7));
   REQUIRE(p2.timeExclList[1] == Approx(2.2));
+#endif
 
   Libxml2Document doc;
   doc.newDoc("resources");
@@ -292,10 +302,12 @@ TEST_CASE("test_timer_nested_profile_collate", "[utilities]")
   TimerManagerClass::StackProfileData p2;
   tm.collate_stack_profile(NULL, p2);
   //tm.print_stack(NULL);
+#ifdef ENABLE_TIMERS
   REQUIRE(p2.names.size() == 3);
   REQUIRE(p2.names[0] == "timer1");
   REQUIRE(p2.names[1] == "timer1/timer2");
   REQUIRE(p2.names[2] == "timer1/timer2/timer3");
+#endif
 
   Libxml2Document doc;
   doc.newDoc("resources");

@@ -139,7 +139,7 @@ protected:
   std::map<std::string, long> per_stack_num_calls;
 #endif
 public:
-#if not(ENABLE_TIMER)
+#if not(ENABLE_TIMERS)
   inline void start() {}
   inline void stop() {}
 #else

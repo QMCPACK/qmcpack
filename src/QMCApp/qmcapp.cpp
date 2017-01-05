@@ -72,6 +72,9 @@ int main(int argc, char **argv)
       // Default setting is 'timer_level_coarse'
       if (c.find("-enable-timers") < c.size())
       {
+#ifndef ENABLE_TIMERS
+        std::cerr << "The '-enable-timers' command line option will have no effect. This executable was built without ENABLE_TIMER set." << std::endl;
+#endif
         int pos = c.find("=");
         if (pos != std::string::npos)
         {

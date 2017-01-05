@@ -189,7 +189,7 @@ void TimerManagerClass::collate_stack_profile(Communicate *comm, StackProfileDat
 void
 TimerManagerClass::print(Communicate* comm)
 {
-#if ENABLE_TIMER
+#if ENABLE_TIMERS
 #ifdef USE_STACK_TIMERS
   if(comm == NULL || comm->rank() == 0)
   {
@@ -208,7 +208,7 @@ TimerManagerClass::print(Communicate* comm)
 void
 TimerManagerClass::print_flat(Communicate* comm)
 {
-#if ENABLE_TIMER
+#if ENABLE_TIMERS
   FlatProfileData p;
 
   collate_flat_profile(comm, p);
@@ -238,7 +238,7 @@ TimerManagerClass::print_flat(Communicate* comm)
 void
 TimerManagerClass::print_stack(Communicate* comm)
 {
-#if ENABLE_TIMER
+#if ENABLE_TIMERS
   StackProfileData p;
 
   collate_stack_profile(comm, p);
@@ -267,7 +267,7 @@ TimerManagerClass::print_stack(Communicate* comm)
 void
 TimerManagerClass::output_timing(Communicate *comm, Libxml2Document &doc, xmlNodePtr root)
 {
-#if ENABLE_TIMER
+#if ENABLE_TIMERS
 #ifdef USE_STACK_TIMERS
   StackProfileData p;
 

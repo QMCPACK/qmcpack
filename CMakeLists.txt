@@ -194,6 +194,7 @@ SET(BUILD_FCIQMC 0 CACHE BOOL "Build with FCIQMC")
 #SET(BUILD_SANDBOX 0)
 #SET(MPIP_PROFILE 0)
 #option(QMC_BUILD_STATIC "Link to static libraries" OFF)
+SET(ENABLE_TIMERS 0 CACHE BOOL "Enable internal timers")
 
 ######################################################################
 # Performance-related macros
@@ -831,7 +832,7 @@ MESSAGE(STATUS "Ready to build qmcpack")
 #  -DMPICH_SKIP_MPICXX : disable C++ binding of MPICH
 ####################################################################
 
-ADD_DEFINITIONS(-DHAVE_CONFIG_H -DH5_USE_16_API -DENABLE_TIMER=1 -DUSE_REAL_STRUCT_FACTOR -DINLINE_ALL=inline)
+ADD_DEFINITIONS(-DHAVE_CONFIG_H -DH5_USE_16_API -DUSE_REAL_STRUCT_FACTOR -DINLINE_ALL=inline)
 
 IF(CMAKE_COMPILER_IS_GNUCXX) 
   ADD_DEFINITIONS(-DADD_)
