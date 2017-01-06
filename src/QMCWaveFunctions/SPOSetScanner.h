@@ -28,11 +28,16 @@ namespace qmcplusplus
   public:
     typedef std::map<std::string,ParticleSet*>         PtclPoolType;
     typedef std::map<std::string,SPOSetBasePtr>        SPOMapType;
+    typedef QMCTraits::RealType                        RealType;
     typedef QMCTraits::ValueType                       ValueType;
     typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
     typedef OrbitalSetTraits<ValueType>::GradVector_t  GradVector_t;
     typedef OrbitalSetTraits<ValueType>::HessVector_t  HessVector_t;
     
+    RealType myfabs(RealType s) { return std::fabs(s); }
+    template<typename T> std::complex<T> myfabs(std::complex<T>& s) { return std::complex<T>(myfabs(s.real()),myfabs(s.imag())); }
+    template<typename T> TinyVector<T, OHMMS_DIM> myfabs(TinyVector<T, OHMMS_DIM>& s) { return TinyVector<T, OHMMS_DIM>(myfabs(s[0]),myfabs(s[1]),myfabs(s[2])); }
+
     SPOMapType& SPOMap;
     PtclPoolType& PtclPool;
     ParticleSet* ions;
@@ -77,7 +82,7 @@ namespace qmcplusplus
           std::string prefix(spo_iter->first+"_"+cname+"_"+trace_name);
           if (cname == "path")
           {
-            app_log() << "    Scanning a " << cname << " called " << trace_name << " and writing to " << prefix+"_v/g/l.dat" << std::endl;
+            app_log() << "    Scanning a " << cname << " called " << trace_name << " and writing to " << prefix+"_v/g/l/report.dat" << std::endl;
             scan_path(cur, mySPOSet, prefix);
           }
           else
@@ -100,6 +105,8 @@ namespace qmcplusplus
       std::ofstream output_g(file_name.c_str());
       file_name=prefix+"_l.dat";
       std::ofstream output_l(file_name.c_str());
+      file_name=prefix+"_report.dat";
+      std::ofstream output_report(file_name.c_str());
 
       int nknots(2);
       int from_atom(-1);
@@ -127,12 +134,18 @@ namespace qmcplusplus
       }
 
       // prepare a fake particle set
-      ValueVector_t SPO_v, SPO_l;
-      GradVector_t SPO_g;
+      ValueVector_t SPO_v, SPO_l, SPO_v_avg, SPO_l_avg;
+      GradVector_t SPO_g, SPO_g_avg;
       int OrbitalSize(mySPOSet->size());
       SPO_v.resize(OrbitalSize);
       SPO_g.resize(OrbitalSize);
       SPO_l.resize(OrbitalSize);
+      SPO_v_avg.resize(OrbitalSize);
+      SPO_g_avg.resize(OrbitalSize);
+      SPO_l_avg.resize(OrbitalSize);
+      SPO_v_avg=0.0;
+      SPO_g_avg=0.0;
+      SPO_l_avg=0.0;
       double Delta= 1.0/(nknots-1);
       int elec_count=target.R.size();
       ParticleSet::SingleParticlePos_t zero_pos(0.0,0.0,0.0);
@@ -151,6 +164,9 @@ namespace qmcplusplus
         output_l << o.str() << " : "  << std::scientific << std::setprecision(12);
         for(int iorb=0; iorb<OrbitalSize; iorb++)
         {
+          SPO_v_avg[iorb] += myfabs(SPO_v[iorb]);
+          SPO_g_avg[iorb] += myfabs(SPO_g[iorb]);
+          SPO_l_avg[iorb] += myfabs(SPO_l[iorb]);
           output_v << SPO_v[iorb] << "  ";
           output_g << SPO_g[iorb][0] << "  " << SPO_g[iorb][1] << "  " << SPO_g[iorb][2] << "  ";
           output_l << SPO_l[iorb] << "  ";
@@ -159,9 +175,23 @@ namespace qmcplusplus
         output_g << std::endl;
         output_l << std::endl;
       }
+#ifdef QMC_COMPLEX
+      output_report << "#   Report: Orb   Value_avg I/R  Gradients_avg  Laplacian_avg" << std::endl;
+#else
+      output_report << "#   Report: Orb   Value_avg   Gradients_avg   Laplacian_avg" << std::endl;
+#endif
+      for(int iorb=0; iorb<OrbitalSize; iorb++)
+        output_report << "\t" << iorb << "    " << std::scientific << SPO_v_avg[iorb]*static_cast<RealType>(1.0/nknots) << "   "
+#ifdef QMC_COMPLEX
+                  << SPO_v_avg[iorb].imag()/SPO_v_avg[iorb].real() << "   "
+#endif
+                  << SPO_g_avg[iorb][0]*static_cast<RealType>(1.0/nknots) << "   " << SPO_g_avg[iorb][1]*static_cast<RealType>(1.0/nknots) << "   "
+                  << SPO_g_avg[iorb][2]*static_cast<RealType>(1.0/nknots) << "   " << SPO_l_avg[iorb]*static_cast<RealType>(1.0/nknots)
+                  << std::fixed << std::endl;
       output_v.close();
       output_g.close();
       output_l.close();
+      output_report.close();
     }
   };
 }
