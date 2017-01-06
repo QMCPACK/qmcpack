@@ -57,6 +57,7 @@ echo --- Building for $sys `date`
 case $sys in
 "build_intel")
 # Build with default Intel PrgEnv on eos. This is not checked!
+    module load gcc
     module load cray-hdf5
     module load cmake
     module load fftw
@@ -68,6 +69,7 @@ case $sys in
     ;;
 "build_intel_complex")
 # Build with default Intel PrgEnv on eos. This is not checked!
+    module load gcc
     module load cray-hdf5
     module load cmake
     module load fftw
