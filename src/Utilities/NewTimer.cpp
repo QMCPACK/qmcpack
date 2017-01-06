@@ -236,6 +236,14 @@ TimerManagerClass::print_flat(Communicate* comm)
 }
 
 
+void pad_string(const std::string &in, std::string &out, int field_len)
+{
+    int len = in.size();
+    int pad_len = std::max(field_len - len, 0);
+    std::string pad_str(pad_len, ' ');
+    out = in + pad_str;
+}
+
 void
 TimerManagerClass::print_stack(Communicate* comm)
 {
@@ -246,16 +254,31 @@ TimerManagerClass::print_stack(Communicate* comm)
 
   if(comm == NULL || comm->rank() == 0)
   {
-    printf("%-38s  %-9s  %-9s  %-10s  %-13s\n","Timer","Inclusive_time","Exclusive_time","Calls","Time_per_call");
+    int indent_len = 2;
+    int max_name_len = 0;
     for (int i = 0; i < p.names.size(); i++)
     {
       std::string stack_name = p.names[i];
       int level = get_level(stack_name);
       std::string name = get_leaf_name(stack_name);
-      std::string indent_str(2*level, ' ');
+      int name_len = name.size()  + indent_len*level;
+      max_name_len = std::max(name_len, max_name_len);
+    }
+
+    std::string timer_name;
+    pad_string("Timer", timer_name, max_name_len);
+    printf("%s  %-9s  %-9s  %-10s  %-13s\n",timer_name.c_str(),"Inclusive_time","Exclusive_time","Calls","Time_per_call");
+    for (int i = 0; i < p.names.size(); i++)
+    {
+      std::string stack_name = p.names[i];
+      int level = get_level(stack_name);
+      std::string name = get_leaf_name(stack_name);
+      std::string indent_str(indent_len*level, ' ');
       std::string indented_str = indent_str + name;
-      printf ("%-40s  %9.4f  %9.4f  %13ld  %16.9f\n"
-              , indented_str.c_str()
+      std::string padded_name_str;
+      pad_string(indented_str, padded_name_str, max_name_len);
+      printf ("%s  %9.4f  %9.4f  %13ld  %16.9f\n"
+              , padded_name_str.c_str()
               , p.timeList[i]
               , p.timeExclList[i]
               , p.callList[i]
