@@ -1,6 +1,6 @@
 #!/bin/bash
 #COBALT -q default
-#COBALT -A QMCSim
+#COBALT -A PSFMat
 #COBALT -n 128
 #COBALT -t 60
 #COBALT -O validation
@@ -18,7 +18,7 @@
 #
 
 #Must be an absolute path
-place=/projects/QMCSim/QMCPACK_CI_BUILDS_DO_NOT_REMOVE
+place=/projects/PSFMat/QMCPACK_CI_BUILDS_DO_NOT_REMOVE
 
 #define compiler
 compiler=XL
