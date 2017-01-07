@@ -68,7 +68,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   {
     this->is_complex=false;
     this->is_soa_ready=true;
-    this->AdoptorName="SplineR2RSoA";
+    this->AdoptorName="SplineR2RSoAAdoptor";
     this->KeyWord="R2RSoA";
   }
 
@@ -135,7 +135,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
       BaseN[i]=xyz_grid[i].num+3;
     }
     SplineInst=new MultiBspline<ST>();
-    SplineInst->create(xyz_g,xyz_bc,n);
+    SplineInst->create(xyz_grid,xyz_bc,n);
     MultiSpline=SplineInst->spline_m;
     qmc_common.memory_allocated += MultiSpline->coefs_size*sizeof(ST);
   }
