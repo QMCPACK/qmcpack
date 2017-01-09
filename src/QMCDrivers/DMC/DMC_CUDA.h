@@ -56,7 +56,7 @@ private:
   /// Copy Constructor (disabled)
   DMCcuda(const DMCcuda& a): QMCDriver(a),
     ResizeTimer("DMCcuda::resize"),
-    DriftDiffuseTimer("DMCcuda::Drift/Diffuse"),
+    DriftDiffuseTimer("DMCcuda::Drift_Diffuse"),
     BranchTimer("DMCcuda::Branch"),
     HTimer("DMCcuda::Hamiltonian")
 

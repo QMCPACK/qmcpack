@@ -97,6 +97,13 @@ Libxml2Document::~Libxml2Document()
     xmlFreeDoc(m_doc);
 }
 
+void
+Libxml2Document::newDoc(const std::string &rootName)
+{
+  m_doc = xmlNewDoc(BAD_CAST "1.0");
+  m_root = xmlNewNode(NULL, BAD_CAST rootName.c_str());
+  xmlDocSetRootElement(m_doc, m_root);
+}
 
 xmlXPathContextPtr Libxml2Document::getXPathContext()
 {
@@ -128,6 +135,13 @@ void Libxml2Document::addChild(const std::string& expression,
     xmlAddChild(res[0],newnode);
   }
 }
+
+xmlNodePtr Libxml2Document::addChild(xmlNodePtr parent, const std::string &nodeName)
+{
+  xmlNodePtr node = xmlNewChild(parent, NULL, BAD_CAST nodeName.c_str(), NULL);
+  return node;
+}
+
 
 #if defined(HAVE_MPI2)
 /** this parse function uses MPI_Bcast but is not used for the moment */

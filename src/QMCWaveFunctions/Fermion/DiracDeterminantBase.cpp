@@ -33,12 +33,12 @@ namespace qmcplusplus
  */
 DiracDeterminantBase::DiracDeterminantBase(SPOSetBasePtr const &spos, int first):
   NP(0), Phi(spos), FirstIndex(first)
-  ,UpdateTimer("DiracDeterminantBase::update")
-  ,RatioTimer("DiracDeterminantBase::ratio")
-  ,InverseTimer("DiracDeterminantBase::inverse")
-  ,BufferTimer("DiracDeterminantBase::buffer")
-  ,SPOVTimer("DiracDeterminantBase::spoval")
-  ,SPOVGLTimer("DiracDeterminantBase::spovgl")
+  ,UpdateTimer("DiracDeterminantBase::update",timer_level_fine)
+  ,RatioTimer("DiracDeterminantBase::ratio",timer_level_fine)
+  ,InverseTimer("DiracDeterminantBase::inverse",timer_level_fine)
+  ,BufferTimer("DiracDeterminantBase::buffer",timer_level_fine)
+  ,SPOVTimer("DiracDeterminantBase::spoval",timer_level_fine)
+  ,SPOVGLTimer("DiracDeterminantBase::spovgl",timer_level_fine)
 {
   Optimizable=false;
   if(Phi->Optimizable)

@@ -85,6 +85,8 @@ struct Libxml2Document
   Libxml2Document(const std::string& fname);
   ~Libxml2Document();
 
+  void newDoc(const std::string &rootName);
+
   bool parse(const std::string& fname);
   bool parseFromString(const std::string& data);
 
@@ -102,6 +104,25 @@ struct Libxml2Document
   void addChild(xmlNodePtr newnode);
 
   void addChild(const std::string& expression, xmlNodePtr newnode);
+
+
+  xmlNodePtr addChild(xmlNodePtr parent, const std::string &nodeName);
+
+  xmlNodePtr addChild(xmlNodePtr parent, const std::string &nodeName, const bool &value)
+  { 
+    std::string s = value ? "true" : "false";
+    xmlNodePtr node = xmlNewChild(parent, NULL, BAD_CAST nodeName.c_str(), BAD_CAST s.c_str());
+    return node;
+  }
+
+  template<typename T>
+  xmlNodePtr addChild(xmlNodePtr parent, const std::string &nodeName, const T &value)
+  { 
+    std::stringstream s;
+    s << value;
+    xmlNodePtr node = xmlNewChild(parent, NULL, BAD_CAST nodeName.c_str(), BAD_CAST s.str().c_str());
+    return node;
+  }
 
   xmlDocPtr m_doc;
   xmlNodePtr m_root;

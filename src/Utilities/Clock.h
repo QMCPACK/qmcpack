@@ -29,6 +29,16 @@
 
 namespace qmcplusplus
 {
+#if defined(USE_FAKE_CLOCK)
+extern double fake_cpu_clock_value;
+extern double fake_cpu_clock_increment;
+double fake_cpu_clock()
+{
+    fake_cpu_clock_value += fake_cpu_clock_increment;
+    return fake_cpu_clock_value;
+}
+#define cpu_clock fake_cpu_clock
+#else
 #if defined(__bgp__)
 
 inline double cpu_clock()
@@ -76,6 +86,7 @@ inline double cpu_clock()
   return (double)tv.tv_sec+(1.e-6)*tv.tv_usec;
 }
 #endif //
+#endif
 #endif
 }
 #endif

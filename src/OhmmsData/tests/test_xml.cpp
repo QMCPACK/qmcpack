@@ -157,3 +157,15 @@ TEST_CASE("ParameterSet", "[xml]")
   REQUIRE(p2_val == 2);
   REQUIRE(p3_val == 0);
 }
+
+TEST_CASE("write_file", "[xml]")
+{
+  Libxml2Document doc;
+  doc.newDoc("root");
+
+  xmlNodePtr node1 = doc.addChild(doc.getRoot(), "node1");
+  doc.addChild(node1, "value1", 1);
+  doc.addChild(node1, "value2", 3.2);
+  doc.dump("tmp.out.xml");
+}
+

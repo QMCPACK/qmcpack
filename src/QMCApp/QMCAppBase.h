@@ -63,6 +63,8 @@ public:
   /** execute the main function */
   virtual bool execute() = 0;
 
+  std::string &getTitle();
+
 protected:
 
   ///stack of xml document
