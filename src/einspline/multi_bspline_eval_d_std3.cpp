@@ -496,9 +496,9 @@ eval_multi_UBspline_3d_d (const multi_UBspline_3d_d *spline,
   double uy = y*spline->y_grid.delta_inv;
   double uz = z*spline->z_grid.delta_inv;
   double ipartx, iparty, ipartz, tx, ty, tz;
-  tx = modf (ux, &ipartx);  int ix = (int) ipartx;
-  ty = modf (uy, &iparty);  int iy = (int) iparty;
-  tz = modf (uz, &ipartz);  int iz = (int) ipartz;
+  tx = modf (ux, &ipartx);  int ix = std::min(std::max(0,(int) ipartx),spline->x_grid.num-1);
+  ty = modf (uy, &iparty);  int iy = std::min(std::max(0,(int) iparty),spline->y_grid.num-1);
+  tz = modf (uz, &ipartz);  int iz = std::min(std::max(0,(int) ipartz),spline->z_grid.num-1);
   
   double  a[4], b[4], c[4];
 
@@ -591,9 +591,12 @@ eval_multi_UBspline_3d_d_vgh (const multi_UBspline_3d_d *spline,
   double uz = z*spline->z_grid.delta_inv;
   double ipartx, iparty, ipartz, tx, ty, tz;
 
-  tx = modf(ux, &ipartx);  int ix = (int) ipartx;
-  ty = modf(uy, &iparty);  int iy = (int) iparty;
-  tz = modf(uz, &ipartz);  int iz = (int) ipartz;
+  //tx = modf(ux, &ipartx);  int ix = (int) ipartx;
+  //ty = modf(uy, &iparty);  int iy = (int) iparty;
+  //tz = modf(uz, &ipartz);  int iz = (int) ipartz;
+  tx = modf (ux, &ipartx);  int ix = std::min(std::max(0,(int) ipartx),spline->x_grid.num-1);
+  ty = modf (uy, &iparty);  int iy = std::min(std::max(0,(int) iparty),spline->y_grid.num-1);
+  tz = modf (uz, &ipartz);  int iz = std::min(std::max(0,(int) ipartz),spline->z_grid.num-1);
   
   double a[4], b[4], c[4],da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
 
@@ -855,10 +858,10 @@ eval_multi_UBspline_3d_d (const multi_UBspline_3d_d *spline,
   double uy = y*spline->y_grid.delta_inv;
   double uz = z*spline->z_grid.delta_inv;
   double ipartx, iparty, ipartz, tx, ty, tz;
-  tx = modf (ux, &ipartx);  int ix = (int) ipartx;
-  ty = modf (uy, &iparty);  int iy = (int) iparty;
-  tz = modf (uz, &ipartz);  int iz = (int) ipartz;
-  
+  tx = modf (ux, &ipartx);  int ix = std::min(std::max(0,(int) ipartx),spline->x_grid.num-1);
+  ty = modf (uy, &iparty);  int iy = std::min(std::max(0,(int) iparty),spline->y_grid.num-1);
+  tz = modf (uz, &ipartz);  int iz = std::min(std::max(0,(int) ipartz),spline->z_grid.num-1);
+   
   double  a[4], b[4], c[4];
 
   a[0] = ( ( Ad[0]  * tx + Ad[1] ) * tx + Ad[2] ) * tx + Ad[3];
@@ -908,9 +911,12 @@ eval_multi_UBspline_3d_d_vgh (const multi_UBspline_3d_d *spline,
   double uz = z*spline->z_grid.delta_inv;
   double ipartx, iparty, ipartz, tx, ty, tz;
 
-  tx = modf (ux, &ipartx);  int ix = (int) ipartx;
-  ty = modf (uy, &iparty);  int iy = (int) iparty;
-  tz = modf (uz, &ipartz);  int iz = (int) ipartz;
+  //tx = modf (ux, &ipartx);  int ix = (int) ipartx;
+  //ty = modf (uy, &iparty);  int iy = (int) iparty;
+  //tz = modf (uz, &ipartz);  int iz = (int) ipartz;
+  tx = modf (ux, &ipartx);  int ix = std::min(std::max(0,(int) ipartx),spline->x_grid.num-1);
+  ty = modf (uy, &iparty);  int iy = std::min(std::max(0,(int) iparty),spline->y_grid.num-1);
+  tz = modf (uz, &ipartz);  int iz = std::min(std::max(0,(int) ipartz),spline->z_grid.num-1);
 
   double a[4], b[4], c[4],da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
   double* restrict coefs = spline->coefs;
@@ -1122,10 +1128,13 @@ eval_multi_UBspline_3d_d_vgl (const multi_UBspline_3d_d *spline,
   double uy = y*spline->y_grid.delta_inv;
   double uz = z*spline->z_grid.delta_inv;
   double ipartx, iparty, ipartz, tx, ty, tz;
-  tx = modf (ux, &ipartx);  int ix = (int) ipartx;
-  ty = modf (uy, &iparty);  int iy = (int) iparty;
-  tz = modf (uz, &ipartz);  int iz = (int) ipartz;
-  
+  //tx = modf (ux, &ipartx);  int ix = (int) ipartx;
+  //ty = modf (uy, &iparty);  int iy = (int) iparty;
+  //tz = modf (uz, &ipartz);  int iz = (int) ipartz;
+  tx = modf (ux, &ipartx);  int ix = std::min(std::max(0,(int) ipartx),spline->x_grid.num-1);
+  ty = modf (uy, &iparty);  int iy = std::min(std::max(0,(int) iparty),spline->y_grid.num-1);
+  tz = modf (uz, &ipartz);  int iz = std::min(std::max(0,(int) ipartz),spline->z_grid.num-1);  
+
   double tpx[4], tpy[4], tpz[4], a[4], b[4], c[4], 
     da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
   tpx[0] = tx*tx*tx;  tpx[1] = tx*tx;  tpx[2] = tx;  tpx[3] = 1.0;
