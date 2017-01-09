@@ -211,13 +211,12 @@ struct CrystalLattice
   inline SingleParticlePos_t toUnit_floor(const TinyVector<T1,D> &r) const
   {
     SingleParticlePos_t val_dot;
-#ifdef OHMMS_LATTICEOPERATORS_H
-    val_dot = DotProduct<TinyVector<T1,D>,Tensor<T,D>,ORTHO>::apply(r,G);
-#else
-    val_dot = dot(r,G);
-#endif
+    val_dot = toUnit(r);
     for (int i=0; i<D; i++)
-      val_dot[i] -= std::floor (val_dot[i]);
+      if( -std::numeric_limits<T1>::epsilon() < val_dot[i] && val_dot[i] < 0 )
+        val_dot[i] = T1(0.0);
+      else
+        val_dot[i] -= std::floor (val_dot[i]);
     return val_dot;
   }
 
