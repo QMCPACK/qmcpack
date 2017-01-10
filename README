@@ -172,6 +172,7 @@ below:
 
 
 3.7.  Additional examples:
+
 QMCPACK includes validation tests to ensure the correctness of the
 code, compilers, tools, and runtime. The tests should ideally be run
 each compilation, and certainly before any research use. The tests
