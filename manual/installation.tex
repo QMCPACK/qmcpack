@@ -55,12 +55,12 @@ corresponding to the release.
 \label{sec:obdevelopment}
 The most recent development version of QMCPACK can be obtained anonymously via 
 \begin{verbatim}
-svn checkout https://svn.qmcpack.org/svn/trunk 
+git clone https://github.com/QMCPACK/qmcpack.git
 \end{verbatim}
 Once checked-out,
-updates can be made via the standard \texttt{svn update}.
+updates can be made via the standard \texttt{git pull}.
 
-The subversion repository contains the day-to-day development source
+The 'develop' branch of the git repository contains the day-to-day development source
 with the latest updates, bugfixes etc. This may be useful
 for updates to the build system to support new machines, for support
 of the latest versions of Quantum ESPRESSO, or for updates to the
@@ -349,7 +349,7 @@ installation. Note that for convenience we use a generic BLAS. For
 production a platform optimized BLAS should be used.
 
 \begin{verbatim}
-apt-get subversion cmake g++ openmpi-bin libopenmpi-dev libboost-dev
+apt-get cmake g++ openmpi-bin libopenmpi-dev libboost-dev
 apt-get libatlas-base-dev liblapack-dev libhdf5-dev libxml2-dev fftw3-dev
 export CXX=mpiCC
 cd build
@@ -374,7 +374,7 @@ default. Note that for convenience we use a generic BLAS. For
 production a platform optimized BLAS should be used.
 
 \begin{verbatim}
-sudo yum install make cmake gcc gcc-c++ subversion openmpi openmpi-devel fftw fftw-devel \
+sudo yum install make cmake gcc gcc-c++ openmpi openmpi-devel fftw fftw-devel \
                   boost boost-devel libxml2 libxml2-devel
 sudo yum install blas-devel lapack-devel atlas-devel
 module load mpi 
