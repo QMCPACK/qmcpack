@@ -28,6 +28,7 @@ public:
   /// Constructor.
   DummyQMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h);
 
+  /// A run method
   bool run();
   bool put(xmlNodePtr cur);
 
