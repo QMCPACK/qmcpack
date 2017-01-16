@@ -30,7 +30,7 @@ if [ -e qmcpack/CMakeLists.txt ]; then
 
 echo --- Starting test builds and tests
 
-for sys in build_intel2017 build_intel2015 build_gcc build_gcc_complex build_intel2017_complex build_intel2017_mixed build_intel2017_complex_mixed build_intel2015_complex build_gcc_cuda build_intel2015_cuda build_gcc_mkl build_gcc_mkl_complex 
+for sys in build_intel2017 build_intel2017_complex build_gcc_mkl build_gcc_cuda build_intel2017_mixed build_intel2017_complex_mixed build_gcc_mkl_complex build_intel2015 build_intel2015_complex build_intel2015_cuda build_gcc build_gcc_complex   
 do
 
 echo --- Building for $sys `date`
