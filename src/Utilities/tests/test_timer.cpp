@@ -14,6 +14,7 @@
 
 #define USE_FAKE_CLOCK
 #include "Utilities/NewTimer.h"
+#include "Utilities/OhmmsInfo.h"
 #include <stdio.h>
 #include <string>
 #include <vector>
@@ -314,5 +315,72 @@ TEST_CASE("test_timer_nested_profile_collate", "[utilities]")
   tm.output_timing(NULL, doc, doc.getRoot());
   doc.dump("tmp3.xml");
 }
+
+#ifdef ENABLE_TIMERS
+TEST_CASE("test stack key")
+{
+  StackKey sk;
+  REQUIRE(timer_max_level_exceeded == false);
+  for (int i = 0; i < StackKey::max_level+1; i++)
+  {
+    sk.add_id(1);
+  }
+  REQUIRE(timer_max_level_exceeded == true);
+}
+
+TEST_CASE("test stack exceeded message")
+{
+  TimerManagerClass tm;
+  tm.set_timer_threshold(timer_level_fine);
+  std::vector<NewTimer *> timer_list;
+  for (int i = 0; i < StackKey::max_level+1; i++)
+  {
+    std::ostringstream name;
+    name << "timer" << i;
+    NewTimer *t = new NewTimer(name.str());
+    tm.addTimer(t);
+    timer_list.push_back(t);
+  }
+  for (int i = 0; i < StackKey::max_level+1; i++)
+  {
+    timer_list[i]->start();
+  }
+  for (int i = 0; i < StackKey::max_level+1; i++)
+  {
+    timer_list[i]->stop();
+  }
+  REQUIRE(timer_max_level_exceeded == true);
+
+  //tm.print_stack(NULL);
+
+  Libxml2Document doc;
+  doc.newDoc("resources");
+  tm.output_timing(NULL, doc, doc.getRoot());
+  doc.dump("tmp4.xml");
+}
+
+TEST_CASE("test max exceeded message")
+{
+  // initialize app_log
+  OhmmsInfo("testlogfile");
+
+  TimerManagerClass tm;
+  tm.set_timer_threshold(timer_level_fine);
+  std::vector<NewTimer *> timer_list;
+  for (int i = 0; i < std::numeric_limits<timer_id_t>::max()+1; i++)
+  {
+    std::ostringstream name;
+    name << "timer" << i;
+    NewTimer *t = new NewTimer(name.str());
+    tm.addTimer(t);
+    timer_list.push_back(t);
+  }
+
+  Libxml2Document doc;
+  doc.newDoc("resources");
+  tm.output_timing(NULL, doc, doc.getRoot());
+  doc.dump("tmp5.xml");
+}
+#endif
 
 }

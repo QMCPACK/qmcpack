@@ -47,14 +47,98 @@ enum timer_levels {
 
 const char TIMER_STACK_SEPARATOR='/';
 
+// Unsigned char gives 254 timers (0 is reserved).
+// Use a longer type (eg. unsigned short) to increase the limit.
+typedef unsigned char timer_id_t;
+
+extern bool timer_max_level_exceeded;
+
+// Key for tracking time per stack.  Parametered by size.
+
+template<int N> class StackKeyParam
+{
+public:
+    // The union is for a performance hack
+    // Use the array of small types to store the stack of timer id's.
+    // Use the larger types for fast comparison for storage in a map.
+
+    // If timer_id_t is char, there can be up to 254 timers.
+    // N is the number of long ints to store timer nesting levels.
+    // Each N gives (64 bits/long int) / (8 bits/char) = 8 levels
+    union {
+        long int long_buckets[N];
+        timer_id_t short_buckets[sizeof(long int)*N/sizeof(timer_id_t)];
+    };
+
+    static const int max_level = sizeof(long int)*N;
+
+    StackKeyParam() : level(0) {
+      for (int j = 0; j < N; j++) {
+        long_buckets[j] = 0;
+      }
+    }
+
+    int level;
+
+    void add_id(timer_id_t c1)
+    {
+      short_buckets[level] = c1;
+      if (level >= max_level-1) {
+        timer_max_level_exceeded = true;
+      } else {
+        level++;
+      }
+    }
+
+    void put_id(timer_id_t c1)
+    {
+        short_buckets[level] = c1;
+    }
+
+    timer_id_t get_id(int idx) const
+    {
+      return short_buckets[idx];
+    }
+
+    bool operator==(const StackKeyParam &rhs)
+    {
+        bool same = false;
+        for (int j = 0; j < N; j++)
+        {
+            same &= this->long_buckets[j] ==  rhs.long_buckets[j];
+        }
+        return same;
+    }
+
+    bool operator<(const StackKeyParam &rhs) const
+    {
+        for (int j = 0; j < N; j++)
+        {
+            if (!(this->long_buckets[j] == rhs.long_buckets[j]))
+            {
+              return this->long_buckets[j] < rhs.long_buckets[j];
+            }
+        }
+        return this->long_buckets[N-1] < rhs.long_buckets[N-1];
+    }
+};
+
+// N = 2 gives 16 nesting levels
+typedef StackKeyParam<2> StackKey;
+
 class TimerManagerClass
 {
 protected:
   std::vector<NewTimer*> TimerList;
   std::vector<NewTimer*> CurrentTimerStack;
   timer_levels timer_threshold;
+  timer_id_t max_timer_id;
+  bool max_timers_exceeded;
+  std::map<timer_id_t, std::string> timer_id_name;
+  std::map<std::string, timer_id_t> timer_name_to_id;
 public:
-  TimerManagerClass():timer_threshold(timer_level_coarse) {}
+  TimerManagerClass():timer_threshold(timer_level_coarse),max_timer_id(1),
+    max_timers_exceeded(false) {}
   void addTimer (NewTimer* t);
 
   void push_timer(NewTimer *t)
@@ -86,6 +170,11 @@ public:
 
   void set_timer_threshold(const timer_levels threshold);
 
+  bool maximum_number_of_timers_exceeded() const
+  {
+    return max_timers_exceeded;
+  }
+
   void reset();
   void print (Communicate* comm);
   void print_flat (Communicate* comm);
@@ -116,9 +205,12 @@ public:
 
   void output_timing(Communicate *comm, Libxml2Document &doc, xmlNodePtr root);
 
+  void get_stack_name_from_id(const StackKey &key, std::string &name);
+
 };
 
 extern TimerManagerClass TimerManager;
+
 
 /* Timer using omp_get_wtime  */
 class NewTimer
@@ -130,13 +222,14 @@ protected:
   std::string name;
   bool active;
   timer_levels timer_level;
+  timer_id_t timer_id;
 #ifdef USE_STACK_TIMERS
   TimerManagerClass *manager;
   NewTimer *parent;
-  std::string current_stack_name;
+  StackKey current_stack_key;
 
-  std::map<std::string, double> per_stack_total_time;
-  std::map<std::string, long> per_stack_num_calls;
+  std::map<StackKey, double> per_stack_total_time;
+  std::map<StackKey, long> per_stack_num_calls;
 #endif
 public:
 #if not(ENABLE_TIMERS)
@@ -161,12 +254,14 @@ public:
             parent = manager->current_timer();
             if (parent)
             {
-              current_stack_name = parent->get_stack_name() + TIMER_STACK_SEPARATOR + name;
+              current_stack_key = parent->get_stack_key();
+              current_stack_key.add_id(timer_id);
             }
-            else
-            {
-              current_stack_name = name;
-            }
+          }
+          if (parent == NULL)
+          {
+            current_stack_key = StackKey();
+            current_stack_key.add_id(timer_id);
           }
           manager->push_timer(this);
         }
@@ -191,9 +286,8 @@ public:
         num_calls++;
 
 #ifdef USE_STACK_TIMERS
-        std::string stack_name = get_stack_name();
-        per_stack_total_time[stack_name] += elapsed;
-        per_stack_num_calls[stack_name] += 1;
+        per_stack_total_time[current_stack_key] += elapsed;
+        per_stack_num_calls[current_stack_key] += 1;
 
         if (manager)
         {
@@ -207,18 +301,18 @@ public:
 #endif
 
 #ifdef USE_STACK_TIMERS
-  std::string get_stack_name()
-  {
-    return current_stack_name;
-  }
-#endif
-
-#ifdef USE_STACK_TIMERS
-  std::map<std::string, double>& get_per_stack_total_time()
+  std::map<StackKey, double>& get_per_stack_total_time()
   {
     return per_stack_total_time;
   }
+
+  StackKey &get_stack_key()
+  {
+    return current_stack_key;
+  }
 #endif
+
+
 
   inline double    get_total() const
   {
@@ -226,9 +320,9 @@ public:
   }
 
 #ifdef USE_STACK_TIMERS
-  inline double get_total(const std::string &stack_name)
+  inline double get_total(const StackKey &key)
   {
-    return per_stack_total_time[stack_name];
+    return per_stack_total_time[key];
   }
 #endif
 
@@ -238,11 +332,21 @@ public:
   }
 
 #ifdef USE_STACK_TIMERS
-  inline long  get_num_calls(const std::string &stack_name)
+  inline long  get_num_calls(const StackKey &key)
   {
-    return per_stack_num_calls[stack_name];
+    return per_stack_num_calls[key];
   }
 #endif
+
+  timer_id_t get_id() const
+  {
+    return timer_id;
+  }
+
+  void set_id(timer_id_t id)
+  {
+    timer_id = id;
+  }
 
   inline std::string get_name() const
   {
@@ -257,10 +361,13 @@ public:
 
   NewTimer(const std::string& myname, timer_levels mytimer = timer_level_fine) :
     total_time(0.0), num_calls(0), name(myname), active(true), timer_level(mytimer)
+    ,timer_id(0)
 #ifdef USE_STACK_TIMERS
-  ,manager(NULL), parent(NULL), current_stack_name(name)
+  ,manager(NULL), parent(NULL)
 #endif
   { }
+
+
 
   void set_name(const std::string& myname)
   {
