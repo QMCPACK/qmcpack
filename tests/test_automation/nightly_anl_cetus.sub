@@ -33,14 +33,24 @@ cd $place
 
 echo --- Hostname --- $HOSTNAME
 echo --- Checkout for $sys `date`
-svn checkout https://svn.qmcpack.org/svn/trunk
-#svn checkout https://subversion.assembla.com/svn/qmcdev/branches/GPU_precision_validation
 
-entry=trunk
-#entry=GPU_precision_validation
+branch=develop
+entry=qmcpack-${branch}
+
+if [ ! -e $entry ]; then
+echo --- Cloning QMCPACK git `date`
+git clone --depth 1 https://github.com/QMCPACK/qmcpack.git $entry
+else
+echo --- Updating local QMCPACK git `date`
+cd $entry
+git pull
+cd ..
+fi
 
 if [ -e $entry/CMakeLists.txt ]; then
 cd $entry
+
+git checkout $branch
 
 for sys in build_BGQ_${compiler}_real build_BGQ_${compiler}_complex build_BGQ_${compiler}_MP_real build_BGQ_${compiler}_MP_complex
 do
@@ -87,7 +97,7 @@ echo --- Finished $sys `date`
 done
 
 else
-echo  "ERROR: No CMakeLists. Bad svn checkout."
+echo  "ERROR: No CMakeLists. Bad git clone."
 exit 1
 fi
 
