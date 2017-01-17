@@ -143,7 +143,6 @@ public:
 
   void push_timer(NewTimer *t)
   {
-    #pragma omp master
     {
       CurrentTimerStack.push_back(t);
     }
@@ -151,7 +150,6 @@ public:
 
   void pop_timer()
   {
-    #pragma omp master
     {
       CurrentTimerStack.pop_back();
     }
@@ -160,7 +158,6 @@ public:
   NewTimer *current_timer()
   {
     NewTimer *current = NULL;
-    # pragma omp critical
     if (CurrentTimerStack.size() > 0)
     {
        current = CurrentTimerStack.back();
