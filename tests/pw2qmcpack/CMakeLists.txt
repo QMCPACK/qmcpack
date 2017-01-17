@@ -226,4 +226,39 @@ else()
   SET_TESTS_PROPERTIES( ${QE_TEST_NAME}-LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16 
                         PROPERTIES DEPENDS ${LAST_TEST_NAME} )
 
+  # test case for O atom
+  # from a long run
+  # totenergy 
+  # LocalEnergy           =        -15.870084 +/-         0.000055 
+  # Kinetic               =          11.85262 +/-          0.00052 
+  # LocalPotential        =         -27.72271 +/-          0.00051 
+  # ElecElec              =          10.36870 +/-          0.00018 
+  # LocalECP              =         -40.15674 +/-          0.00071 
+  # NonLocalECP           =           2.06533 +/-          0.00030
+  LIST(APPEND O_ATOM_SCALARS "totenergy"   "-15.870084 0.0045")
+  LIST(APPEND O_ATOM_SCALARS "kinetic"     "11.85262 0.04")
+  LIST(APPEND O_ATOM_SCALARS "localecp"    "-40.15674 0.057")
+  LIST(APPEND O_ATOM_SCALARS "nonlocalecp" "2.06533 0.020")
+  LIST(APPEND O_ATOM_SCALARS "eeenergy"    "10.36870 0.014")
+  LIST(APPEND O_ATOM_SCALARS "samples"     "64000 0.0")
+  LIST(APPEND O_ATOM_SCALARS "flux"        "0.0 0.25")
+
+
+  RUN_QE_TEST(qe-atomO-polarized-no-collect ${CMAKE_SOURCE_DIR}/tests/solids/atomO_pp/dft-inputs
+              16 0 16 1 0 1 atomO QE_TEST_NAME )
+
+  SOFTLINK_H5( ${QE_TEST_NAME} atomO_pp-vmc_sdj-1-16 atomO atomO.pwscf.h5 LAST_TEST_NAME )
+
+  QMC_RUN_AND_CHECK(${QE_TEST_NAME}-atomO_pp-vmc_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/atomO_pp"
+                    qmc_short
+                    qmc_short.in.xml
+                    1 16
+                    O_ATOM_SCALARS
+                    0 # VMC
+                    TRUE)
+
+  SET_TESTS_PROPERTIES( ${QE_TEST_NAME}-atomO_pp-vmc_sdj-1-16 
+                        PROPERTIES DEPENDS ${LAST_TEST_NAME} )
+
 endif()
