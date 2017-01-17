@@ -367,7 +367,7 @@ ENDIF()
 
   LIST(APPEND MONO_O_SCALARS "totenergy" "-31.776596 0.006")
   LIST(APPEND MONO_O_SCALARS "samples" "64000 0.0")
-  LIST(APPEND HCP_BE_SCALARS "flux" "0.0 0.5")
+  LIST(APPEND MONO_O_SCALARS "flux" "0.0 0.5")
 
   QMC_RUN_AND_CHECK(short-monoO_1x1x1_pp-vmc_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/monoO_1x1x1_pp"
