@@ -152,10 +152,10 @@ fi
 if [ -e ${test_dir}/${machine_name}_build_gnu/bin/qmcpack ]; then
 echo "--- Found a built qmcpack executable. Will requeue."
 cd $HOME/.qmcpack_test_jobs
-if [ -e nightly_ornl_olcf_titan_cpu.job ]; then
+if [ -e nightly_ornl_olcf_titan_gpu.job ]; then
 # Run after 11.21pm following Tuesday. This is usually the evening after maintenance
 echo -- Qsub
-qsub -a `date -d "next Tuesday" +%m%d2321` nightly_ornl_olcf_titan_cpu.job
+qsub -a `date -d "next Tuesday" +%m%d2321` nightly_ornl_olcf_titan_gpu.job
 # Run after 11.01pm next day
 #qsub -a 2301 $HOME/.qmcpack_test_jobs/nightly_ornl_olcf_titan_cpu.job
 # Run after one week
