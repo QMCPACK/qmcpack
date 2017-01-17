@@ -30,15 +30,39 @@ namespace qmcplusplus
 {
 TimerManagerClass TimerManager;
 
+bool timer_max_level_exceeded = false;
+
 void TimerManagerClass::addTimer(NewTimer* t)
 {
   #pragma omp critical
   {
     if (t->get_name().find(TIMER_STACK_SEPARATOR) != std::string::npos)
-    { 
+    {
       app_log() << "Warning: Timer name (" << t->get_name()
                 << ") should not contain the character "
                 << TIMER_STACK_SEPARATOR << std::endl;
+    }
+
+
+    if (timer_name_to_id.find(t->get_name()) == timer_name_to_id.end())
+    {
+      t->set_id(max_timer_id);
+      timer_id_name[t->get_id()] = t->get_name();
+      timer_name_to_id[t->get_name()] = t->get_id();
+      if (max_timer_id >= std::numeric_limits<timer_id_t>::max())
+      {
+        max_timers_exceeded = true;
+        app_log() << "Number of timers exceeds limit (" << static_cast<int>(std::numeric_limits<timer_id_t>::max())
+                  << ").   Adjust timer_id_t in NewTimer.h and recompile."  << std::endl;
+      }
+      else
+      {
+        max_timer_id++;
+      }
+    }
+    else
+    {
+      t->set_id(timer_name_to_id[t->get_name()]);
     }
     t->set_manager(this);
     t->set_active_by_timer_threshold(timer_threshold);
@@ -128,6 +152,19 @@ get_leaf_name(const std::string &stack_name)
   return stack_name.substr(pos+1, stack_name.length()-pos);
 }
 
+void TimerManagerClass::get_stack_name_from_id(const StackKey &key, std::string &stack_name)
+{
+  for (int i = 0; i < StackKey::max_level; i++) {
+    std::string &timer_name = timer_id_name[key.get_id(i)];
+    if (key.get_id(i) == 0) break;
+    if (i > 0)
+    {
+      stack_name += TIMER_STACK_SEPARATOR;
+    }
+    stack_name += timer_name;
+  }
+}
+
 void TimerManagerClass::collate_stack_profile(Communicate *comm, StackProfileData &p)
 {
 #ifdef USE_STACK_TIMERS
@@ -140,13 +177,15 @@ void TimerManagerClass::collate_stack_profile(Communicate *comm, StackProfileDat
   for(int i=0; i<TimerList.size(); ++i)
   {
     NewTimer &timer = *TimerList[i];
-    std::map<std::string,double>::iterator stack_name_it = timer.get_per_stack_total_time().begin();
-    for (; stack_name_it != timer.get_per_stack_total_time().end(); stack_name_it++)
+    std::map<StackKey,double>::iterator stack_id_it = timer.get_per_stack_total_time().begin();
+    for (; stack_id_it != timer.get_per_stack_total_time().end(); stack_id_it++)
     {
         ProfileData pd;
-        const std::string &stack_name = stack_name_it->first;
-        pd.time = timer.get_total(stack_name);
-        pd.calls = timer.get_num_calls(stack_name);
+        const StackKey &key = stack_id_it->first;
+        std::string stack_name;
+        get_stack_name_from_id(key, stack_name);
+        pd.time = timer.get_total(key);
+        pd.calls = timer.get_num_calls(key);
 
         all_stacks[stack_name] += pd;
     }
@@ -254,6 +293,12 @@ TimerManagerClass::print_stack(Communicate* comm)
 
   if(comm == NULL || comm->rank() == 0)
   {
+    if (timer_max_level_exceeded)
+    {
+      printf("Warning: Maximum stack level (%d) exceeded.  Results may be incorrect.\n",StackKey::max_level);
+      printf("Adjust StackKey in NewTimer.h and recompile.\n");
+    }
+
     int indent_len = 2;
     int max_name_len = 0;
     for (int i = 0; i < p.names.size(); i++)
@@ -300,6 +345,8 @@ TimerManagerClass::output_timing(Communicate *comm, Libxml2Document &doc, xmlNod
   if(comm == NULL || comm->rank() == 0)
   {
     xmlNodePtr timing_root = doc.addChild(root, "timing");
+    doc.addChild(timing_root, "max_stack_level_exceeded", timer_max_level_exceeded?"yes":"no");
+    doc.addChild(timing_root, "max_timers_exceeded", max_timers_exceeded?"yes":"no");
     std::vector<xmlNodePtr> node_stack;
     node_stack.push_back(timing_root);
     xmlNodePtr current_root = timing_root;
