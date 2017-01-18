@@ -261,7 +261,7 @@ else()
   SET_TESTS_PROPERTIES( ${QE_TEST_NAME}-atomO_pp-vmc_sdj-1-16 
                         PROPERTIES DEPENDS ${LAST_TEST_NAME} )
 
-  # pw2casino Kinetic 11.64963538 affected by smearing.
+  # pw2casino Kinetic 11.64963538
   # measued   Kinetic 11.64798 +/- 0.00017
   LIST(APPEND O_ATOM_NOJ_SCALARS "kinetic"     "11.64798 0.04")
   #LIST(APPEND O_ATOM_NOJ_SCALARS "flux"        "0.0 0.3")
