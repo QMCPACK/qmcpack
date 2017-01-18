@@ -30,6 +30,7 @@ if [ -e qmcpack/CMakeLists.txt ]; then
 
 echo --- Starting test builds and tests
 
+#Caution: intel2015 also builds QE and sets QE_BIN directory. Should be run ahead of intel2015_complex, intel2015_cuda
 for sys in build_intel2017 build_intel2017_complex build_gcc_mkl build_gcc_cuda build_intel2017_mixed build_intel2017_complex_mixed build_gcc_mkl_complex build_intel2015 build_intel2015_complex build_intel2015_cuda build_gcc build_gcc_complex   
 do
 
@@ -107,7 +108,34 @@ case $sys in
 	source /opt/intel/bin/compilervars.sh intel64
 	source /opt/intel/impi_latest/bin64/mpivars.sh
 	export QMCPACK_TEST_SUBMIT_NAME=Intel2015-Release
-	ctest -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV -E 'long' --timeout 1800
+	#For Intel2015 we also setup QE
+	export QE_VERSION=5.3.0
+	export QE_BIN=${test_dir}/${sys}_QE/espresso-${QE_VERSION}/bin
+	echo --- QE_BIN set to ${QE_BIN}
+	if [ ! -e ${QE_BIN}/pw.x ]; then
+	    # Start from clean build if no final executable present
+	    if [ -e ${test_dir}/${sys}_QE ]; then
+		rm -r -f ${test_dir}/${sys}_QE
+	    fi
+	    mkdir ${test_dir}/${sys}_QE
+		
+	    cd ${test_dir}/${sys}_QE
+	    cp -p ../qmcpack/external_codes/quantum_espresso/*${QE_VERSION}* .
+	    ./download_and_patch_qe${QE_VERSION}.sh
+	    cd espresso-${QE_VERSION}
+	    ./configure --with-hdf5 HDF5_DIR=/usr/local/ MPIF90=mpiifort F90=mpiifort
+	    # Espresso incorrect assumes we are using OpenMPI when IntelMPI is enabled.
+	    # Update make.sys so correct MKL BLACS linked
+	    mv make.sys make.sys_orig
+	    sed 's/mkl_blacs_openmpi_lp64/mkl_blacs_intelmpi_lp64/' make.sys_orig >make.sys
+	    make -j 24 pwall
+	    cd ..
+	    
+	    cd ${test_dir}/${sys}
+	else
+	    echo -- Found existing QE ${QE_VERSION} executable
+	fi
+	ctest -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DQE_BIN=${QE_BIN} -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV -E 'long' --timeout 1800
 	export PATH=$OLD_PATH
 	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
 	export MANPATH=$OLD_MANPATH
@@ -214,7 +242,7 @@ case $sys in
 	source /opt/intel/bin/compilervars.sh intel64
 	source /opt/intel/impi_latest/bin64/mpivars.sh
 	export QMCPACK_TEST_SUBMIT_NAME=Intel2015-Complex-Release
-	ctest -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV -E 'long' --timeout 1800
+	ctest -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DQE_BIN=${QE_BIN} -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV -E 'long' --timeout 1800
 	export PATH=$OLD_PATH
 	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
 	export MANPATH=$OLD_MANPATH
@@ -241,7 +269,7 @@ case $sys in
 	source /opt/intel/bin/compilervars.sh intel64
 	source /opt/intel/impi_latest/bin64/mpivars.sh
 	export QMCPACK_TEST_SUBMIT_NAME=Intel2015-CUDA-Release
-	ctest -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DQMC_CUDA=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV -E 'long' --timeout 1800
+	ctest -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DQMC_CUDA=1 -DQE_BIN=${QE_BIN} -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV -E 'long' --timeout 1800
 	export PATH=$OLD_PATH
 	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
 	export MANPATH=$OLD_MANPATH
@@ -270,7 +298,5 @@ fi
 else
 echo "ERROR: No directory ${test_path}"
 exit 1
-fi
-
 fi
 
