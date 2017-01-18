@@ -228,18 +228,18 @@ else()
 
   # test case for O atom
   # from a long run
-  # totenergy 
-  # LocalEnergy           =        -15.870084 +/-         0.000055 
-  # Kinetic               =          11.85262 +/-          0.00052 
-  # LocalPotential        =         -27.72271 +/-          0.00051 
-  # ElecElec              =          10.36870 +/-          0.00018 
-  # LocalECP              =         -40.15674 +/-          0.00071 
-  # NonLocalECP           =           2.06533 +/-          0.00030
-  LIST(APPEND O_ATOM_SCALARS "totenergy"   "-15.870084 0.0045")
-  LIST(APPEND O_ATOM_SCALARS "kinetic"     "11.85262 0.04")
-  LIST(APPEND O_ATOM_SCALARS "localecp"    "-40.15674 0.057")
-  LIST(APPEND O_ATOM_SCALARS "nonlocalecp" "2.06533 0.020")
-  LIST(APPEND O_ATOM_SCALARS "eeenergy"    "10.36870 0.014")
+  # totenergy
+  # LocalEnergy           =        -15.870035 +/-         0.000016
+  # Kinetic               =          11.85233 +/-          0.00014
+  # ElecElec              =         10.368642 +/-         0.000050
+  # LocalECP              =         -40.15639 +/-          0.00020
+  # NonLocalECP           =          2.065389 +/-         0.000083
+
+  LIST(APPEND O_ATOM_SCALARS "totenergy"   "-15.870035 0.0045")
+  LIST(APPEND O_ATOM_SCALARS "kinetic"     "11.85233 0.04")
+  LIST(APPEND O_ATOM_SCALARS "localecp"    "-40.15639 0.057")
+  LIST(APPEND O_ATOM_SCALARS "nonlocalecp" "2.065389 0.020")
+  LIST(APPEND O_ATOM_SCALARS "eeenergy"    "10.368642 0.014")
   LIST(APPEND O_ATOM_SCALARS "samples"     "64000 0.0")
   LIST(APPEND O_ATOM_SCALARS "flux"        "0.0 0.25")
 
@@ -259,6 +259,25 @@ else()
                     TRUE)
 
   SET_TESTS_PROPERTIES( ${QE_TEST_NAME}-atomO_pp-vmc_sdj-1-16 
+                        PROPERTIES DEPENDS ${LAST_TEST_NAME} )
+
+  # pw2casino Kinetic 11.64963538 affected by smearing.
+  # measued   Kinetic 11.64798 +/- 0.00017
+  LIST(APPEND O_ATOM_NOJ_SCALARS "kinetic"     "11.64798 0.04")
+  #LIST(APPEND O_ATOM_NOJ_SCALARS "flux"        "0.0 0.3")
+
+  SOFTLINK_H5( ${QE_TEST_NAME} atomO_pp-vmc_noj-1-16 atomO atomO.pwscf.h5 LAST_TEST_NAME )
+
+  QMC_RUN_AND_CHECK(${QE_TEST_NAME}-atomO_pp-vmc_noj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/atomO_pp"
+                    qmc_short_noj
+                    qmc_short_noj.in.xml
+                    1 16
+                    O_ATOM_NOJ_SCALARS
+                    0 # VMC
+                    TRUE)
+
+  SET_TESTS_PROPERTIES( ${QE_TEST_NAME}-atomO_pp-vmc_noj-1-16 
                         PROPERTIES DEPENDS ${LAST_TEST_NAME} )
 
 endif()
