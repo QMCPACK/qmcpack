@@ -7,38 +7,47 @@ source /opt/intel/2017/parallel_studio_xe_2017.1.043/bin/psxevars.sh intel64
 timeout=1800
 
 # topdir must exist, otherwise it fails
-topdir=/home/naromero/ci
-place=${topdir}/scratch/QMCPACK_CI_BUILDS_DO_NOT_REMOVE
+topdir=/home/wcrusher/ci
+testdir=${topdir}/scratch/QMCPACK_CI_BUILDS_DO_NOT_REMOVE
 
 if [ -e $topdir ]; then
 
-if [ ! -e $place ]; then
-mkdir -p $place
+if [ ! -e $testdir ]; then
+mkdir -p $testdir
 fi
 
-if [ -e $place ]; then
+if [ -e $testdir ]; then
+cd $testdir
 
+# Minimize load of GitHub by maintaining a local cloned git used for all builds
+if [ ! -e qmcpack ]; then
+echo --- Cloning QMCPACK git `date`
+git clone https://github.com/naromero77/qmcpack.git --depth 1
+else
+cd qmcpack
+echo --- Updating local QMCPACK git `date`
+git pull
+cd ..
+fi
+
+
+# Sanity check cmake config file present
+if [ -e qmcpack/CMakeLists.txt ]; then
+
+echo --- Starting test builds and tests
 
 for sys in build_gcc build_gcc_complex build_gcc_mixed build_gcc_complex_mixed build_intel2017 build_intel2017_complex build_intel2017_mixed build_intel2017_complex_mixed
 do
 
-cd $place
+echo --- Building for $sys `date`
+
+cd ${test_dir}
 
 if [ -e $sys ]; then
 rm -rf $sys
 fi
 mkdir $sys
 cd $sys
-
-echo --- Checkout for $sys `date`
-svn checkout https://svn.qmcpack.org/svn/trunk
-#svn checkout https://subversion.assembla.com/svn/qmcdev/trunk
-
-if [ -e trunk/CMakeLists.txt ]; then
-cd trunk
-mkdir $sys
-cd $sys
-echo --- Building for $sys `date`
 
 # export PATH=/opt/local/bin:/opt/local/sbin:/usr/local/cuda/bin/:/usr/lib64/openmpi/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
 # export LD_LIBRARY_PATH=/usr/lib64/openmpi/lib:/usr/local/cuda-7.0/lib64
@@ -88,17 +97,23 @@ case $sys in
 	;;
 esac
 
+done # termination for $sys loop
+
 else
-    echo  "ERROR: No CMakeLists. Bad svn checkout."
+    echo  "ERROR: No CMakeLists. Bad git clone or update."
     exit 1
-fi
+fi # termination for if block which checks CMakeLists.txt
 
-done
 
 else
-echo "ERROR: No directory $place"
+echo "ERROR: Unable to make test directory ${test_dir}"
 exit 1
-fi
+fi # termination for if block which checks testing directory
 
-fi
+else
+echo "ERROR: No top level directory"
+exit 1
+fi # termination for if block which checks top level directory
+
+
 
