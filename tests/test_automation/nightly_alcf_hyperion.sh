@@ -22,7 +22,7 @@ cd $testdir
 # Minimize load of GitHub by maintaining a local cloned git used for all builds
 if [ ! -e qmcpack ]; then
 echo --- Cloning QMCPACK git `date`
-git clone https://github.com/naromero77/qmcpack.git --depth 1
+git clone https://github.com/QMCPACK/qmcpack.git --depth 1
 else
 cd qmcpack
 echo --- Updating local QMCPACK git `date`
