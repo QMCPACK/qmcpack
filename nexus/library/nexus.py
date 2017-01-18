@@ -110,7 +110,7 @@ class Settings(NexusCore):
     nexus_core_vars    = core_assign_vars    | core_process_vars
     nexus_noncore_vars = noncore_assign_vars | noncore_process_vars
     nexus_vars         = nexus_core_vars     | nexus_noncore_vars
-    allowed_vars       = nexus_vars | machine_vars | gamess_vars | pwscf_vars 
+    allowed_vars       = nexus_vars | machine_vars | gamess_vars | pwscf_vars
 
 
     @staticmethod
