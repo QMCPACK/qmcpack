@@ -11,10 +11,10 @@ ENDIF(COMMAND cmake_policy)
 ######################################################################
 # Version 
 ######################################################################
-SET(QMCPLUSPLUS_VERSION_MAJOR 1)
-SET(QMCPLUSPLUS_VERSION_MINOR 0)
-SET(QMCPLUSPLUS_VERSION_PATCH 0)
-SET(QMCPLUSPLUS_VERSION "${QMCPLUSPLUS_VERSION_MAJOR}.${QMCPLUSPLUS_VERSION_MINOR}.${QMCPLUSPLUS_VERSION_PATCH}")
+SET(QMCPACK_VERSION_MAJOR 1)
+SET(QMCPACK_VERSION_MINOR 0)
+SET(QMCPACK_VERSION_PATCH 0)
+SET(QMCPACK_VERSION "${QMCPACK_VERSION_MAJOR}.${QMCPACK_VERSION_MINOR}.${QMCPACK_VERSION_PATCH}")
 
 ######################################################################
 # CTest 
@@ -261,20 +261,31 @@ ENDIF(QMC_ADIOS)
 SET(QMCPACK_UNIT_TEST_DIR ${qmcpack_BINARY_DIR}/tests/bin)
 
 ######################################################
-# Get the current SVN version
+# Git information (see src/CMakeLists.txt for the
+# command to get repository information)
 ######################################################
-SET(QMCPLUSPLUS_SVN_LAST_CHANGED "2008-05-12")
-SET(QMCPLUSPLUS_BRANCH "00000") # Will be edited on export, do not edit. Exact match required.
-SET(QMCPLUSPLUS_LAST_CHANGED_DATE "2001-01-01") # Will be edited on export, do not edit. Exact match required.
-FIND_PACKAGE(Subversion) 
-IF(Subversion_FOUND) 
-  IF (EXISTS "${PROJECT_SOURCE_DIR}/.svn") # Avoid using svn with exported files
-    Subversion_WC_INFO(${PROJECT_SOURCE_DIR} my) 
-    MESSAGE(STATUS "Current revision : ${my_WC_REVISION} modified on ${Project_WC_LAST_CHANGED_DATE}") 
-    SET(QMCPLUSPLUS_BRANCH ${my_WC_REVISION}) 
-    SET(QMCPLUSPLUS_LAST_CHANGED_DATE ${my_WC_LAST_CHANGED_DATE}) 
-  ENDIF()
+FIND_PACKAGE(Git)
+
+SET(IS_GIT_PROJECT false)
+IF (EXISTS "${PROJECT_SOURCE_DIR}/.git")
+  SET(IS_GIT_PROJECT true)
 ENDIF()
+
+SET(GITREV_BARE_FILE git-rev.h)
+SET(GITREV_BARE_TMP git-rev-tmp.h)
+SET(GITREV_FILE ${CMAKE_BINARY_DIR}/src/${GITREV_BARE_FILE})
+SET(GITREV_TMP ${CMAKE_BINARY_DIR}/src/${GITREV_BARE_TMP})
+
+IF (NOT (GIT_FOUND AND IS_GIT_PROJECT))
+  # Output a blank git version file
+  EXECUTE_PROCESS(
+    COMMAND ${CMAKE_COMMAND} -E remove ${GITREV_FILE}
+    COMMAND ${CMAKE_COMMAND} -E touch ${GITREV_FILE}
+    COMMAND ${CMAKE_COMMAND} -E remove ${GITREV_TMP}
+    COMMAND ${CMAKE_COMMAND} -E touch ${GITREV_TMP}
+  )
+ENDIF()
+
 
 ######################################################
 #COMPILER choose one of the cmake files to customize the compiler options

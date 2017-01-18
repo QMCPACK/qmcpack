@@ -46,6 +46,7 @@
 #include "HDFVersion.h"
 #include "OhmmsData/AttributeSet.h"
 #include "qmc_common.h"
+#include "qmcpack_version.h"
 #ifdef HAVE_ADIOS
 #include "ADIOS/ADIOS_config.h"
 #include <adios_read.h>
@@ -75,11 +76,12 @@ QMCMain::QMCMain(Communicate* c)
   app_log()
       << "\n=====================================================\n"
       <<  "                    QMCPACK "
-      << QMCPLUSPLUS_VERSION_MAJOR << "." << QMCPLUSPLUS_VERSION_MINOR << "." << QMCPLUSPLUS_VERSION_PATCH << " \n"
+      << QMCPACK_VERSION_MAJOR << "." << QMCPACK_VERSION_MINOR << "." << QMCPACK_VERSION_PATCH << " \n"
       << "\n  (c) Copyright 2003-  QMCPACK developers            \n"
-#if defined(QMCPLUSPLUS_BRANCH)
-      << "\n  Subversion branch " << QMCPLUSPLUS_BRANCH
-      << "\n  Last modified     " << QMCPLUSPLUS_LAST_CHANGED_DATE
+#if defined(QMCPACK_GIT_BRANCH)
+      << "\n  Git branch: " << QMCPACK_GIT_BRANCH
+      << "\n  Last git commit: " << QMCPACK_GIT_HASH
+      << "\n  Last commit date: " << QMCPACK_GIT_COMMIT_LAST_CHANGED
 #endif
       << "\n=====================================================\n";
   qmc_common.print_options(app_log());
