@@ -98,12 +98,6 @@
 /* Define if sincos function exists */
 #cmakedefine HAVE_SINCOS @HAVE_SINCOS@
 
-/* Define if std::round function exists */
-#cmakedefine HAVE_STD_ROUND @HAVE_STD_ROUND@
-
-/* Define if floor function exists */
-#cmakedefine HAVE_FLOOR @HAVE_FLOOR@
-
 /* Define if einspline lib exists */
 #cmakedefine HAVE_EINSPLINE @HAVE_EINSPLINE@
 
@@ -114,12 +108,6 @@
 
 /* Define if posix_memalign function exists */
 #cmakedefine HAVE_POSIX_MEMALIGN @HAVE_POSIX_MEMALIGN@
-
-/* Define if pow function exists */
-#cmakedefine HAVE_POW @HAVE_POW@
-
-/* Define if sqrt function exists */
-#cmakedefine HAVE_SQRT @HAVE_SQRT@
 
 /* Define if dlfcn.h exists */
 #cmakedefine HAVE_DLFCN_H @HAVE_DLFCN_H@
