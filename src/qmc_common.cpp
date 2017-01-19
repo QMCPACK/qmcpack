@@ -19,6 +19,7 @@
 
 #include <qmc_common.h>
 #include <Platforms/sysutil.h>
+#include "qmcpack_version.h"
 
 namespace qmcplusplus
 {
@@ -88,9 +89,14 @@ void QMCState::initialize(int argc, char **argv)
   }
   if(stopit)
   {
-    std::cerr << std::endl << "QMCPACK version "<< QMCPLUSPLUS_VERSION_MAJOR <<"." << QMCPLUSPLUS_VERSION_MINOR << "." << QMCPLUSPLUS_VERSION_PATCH
-        << " subversion " << QMCPLUSPLUS_BRANCH
-        << " build on " << getDateAndTime("%Y%m%d_%H%M") << std::endl;
+    std::cerr << std::endl << "QMCPACK version "<< QMCPACK_VERSION_MAJOR <<"." << QMCPACK_VERSION_MINOR << "." << QMCPACK_VERSION_PATCH
+        << " built on " << __DATE__ << std::endl;
+#ifdef QMCPACK_GIT_BRANCH
+    std::cerr << " git branch: " << QMCPACK_GIT_BRANCH << std::endl;
+    std::cerr << " git last commit: " << QMCPACK_GIT_HASH << std::endl;
+    std::cerr << " git last commit date: " << QMCPACK_GIT_COMMIT_LAST_CHANGED << std::endl;
+    std::cerr << " git last commit subject: " << QMCPACK_GIT_COMMIT_SUBJECT << std::endl;
+#endif
     std::cerr << "Usage: qmcpack input [--dryrun --save_wfs[=no] --async_swap[=no] --gpu]" << std::endl << std::endl;
   }
 }

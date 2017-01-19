@@ -20,6 +20,51 @@
 CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/config.h.cmake.in
   ${qmcpack_BINARY_DIR}/src/config.h)
 
+SET(GITREV_BARE_FILE git-rev.h)
+SET(GITREV_BARE_TMP git-rev-tmp.h)
+SET(GITREV_FILE ${CMAKE_BINARY_DIR}/src/${GITREV_BARE_FILE})
+SET(GITREV_TMP ${CMAKE_BINARY_DIR}/src/${GITREV_BARE_TMP})
+
+IF (GIT_FOUND AND IS_GIT_PROJECT)
+  # The following custom command picks up changes to the git revision information
+  # every time the project is rebuilt. Even if the repositiory is updated (git pull)
+  # without re-running cmake. It also appends '-dirty' to the commit hash if there are
+  # unsaved changes to the repository.
+  #
+  # To avoid triggering a relink every time, the repository info is saved to
+  # a temporary file, and the temporary file is copied over the actual file
+  # only if the contents changed (using 'copy_if_different').
+  # The temporary file is deleted to force the custom command to run on
+  # the next build.
+  #
+  # Apparently custom commands need to be defined where the output is used.
+  # If this in the main CMakeLists.txt it does not work.
+  ADD_CUSTOM_COMMAND(
+    OUTPUT ${GITREV_TMP}
+    COMMAND ${CMAKE_COMMAND} -E echo_append "#define GIT_BRANCH_RAW " > ${GITREV_TMP}
+    COMMAND ${GIT_EXECUTABLE} rev-parse --abbrev-ref HEAD >> ${GITREV_TMP}
+    COMMAND ${CMAKE_COMMAND} -E echo_append "#define GIT_HASH_RAW " >> ${GITREV_TMP}
+    COMMAND ${GIT_EXECUTABLE} describe --always --dirty --abbrev=40 --match="NoTagWithThisName" >> ${GITREV_TMP}
+    COMMAND ${CMAKE_COMMAND} -E echo_append "#define GIT_COMMIT_LAST_CHANGED_RAW " >> ${GITREV_TMP}
+    COMMAND ${GIT_EXECUTABLE} log -1 --format=%ad >> ${GITREV_TMP}
+    COMMAND ${CMAKE_COMMAND} -E echo_append "#define GIT_COMMIT_SUBJECT_RAW " >> ${GITREV_TMP}
+    COMMAND ${GIT_EXECUTABLE} log -1 --format=%s >> ${GITREV_TMP}
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${GITREV_TMP} ${GITREV_FILE}
+    COMMAND ${CMAKE_COMMAND} -E remove ${GITREV_TMP}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    VERBATIM
+  )
+ELSE()
+  # Output a blank git version file
+  EXECUTE_PROCESS(
+    COMMAND ${CMAKE_COMMAND} -E remove ${GITREV_FILE}
+    COMMAND ${CMAKE_COMMAND} -E touch ${GITREV_FILE}
+    COMMAND ${CMAKE_COMMAND} -E remove ${GITREV_TMP}
+    COMMAND ${CMAKE_COMMAND} -E touch ${GITREV_TMP}
+  )
+ENDIF()
+
+
 if(QMC_PHI)
   MESSAGE(STATUS "Minimal build to test codelets on phi")
 else()
@@ -48,6 +93,7 @@ else()
     Message/MPIObjectBase.cpp 
     Optimize/VariableSet.cpp
     io/hdf_archive.cpp
+    ${GITREV_TMP}
     )
 
   IF(QMC_ADIOS)

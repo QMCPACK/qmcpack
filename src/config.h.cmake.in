@@ -9,25 +9,19 @@
 #define QMCPLUSPLUS_CONFIGURATION_H
 
 /* define the major version */
-#define QMCPLUSPLUS_VERSION_MAJOR  @QMCPLUSPLUS_VERSION_MAJOR@
+#define QMCPACK_VERSION_MAJOR  @QMCPACK_VERSION_MAJOR@
 
 /* define the minor version */
-#define QMCPLUSPLUS_VERSION_MINOR  @QMCPLUSPLUS_VERSION_MINOR@
+#define QMCPACK_VERSION_MINOR  @QMCPACK_VERSION_MINOR@
 
 /* define the patch version */
-#define QMCPLUSPLUS_VERSION_PATCH  @QMCPLUSPLUS_VERSION_PATCH@
+#define QMCPACK_VERSION_PATCH  @QMCPACK_VERSION_PATCH@
 
 /* define the release version */
-#cmakedefine QMCPLUSPLUS_RELEASE  @QMCPLUSPLUS_RELEASE@
+#cmakedefine QMCPACK_RELEASE  @QMCAPCK_RELEASE@
 
-/* define the linearscale version */
-#cmakedefine QMCPLUSPLUS_LINEARSCALE  @QMCPLUSPLUS_LINEARSCALE@
-
-/* define the subversion branch */
-#cmakedefine QMCPLUSPLUS_BRANCH  @QMCPLUSPLUS_BRANCH@
-
-/* define the subversion last changed date */
-#cmakedefine QMCPLUSPLUS_LAST_CHANGED_DATE  "@QMCPLUSPLUS_LAST_CHANGED_DATE@"
+/* define the git last commit date */
+// #cmakedefine QMCPLUSPLUS_LAST_CHANGED_DATE  "@QMCPLUSPLUS_LAST_CHANGED_DATE@"
 
 /* define QMC_BUILD_LEVEL */
 #cmakedefine QMC_BUILD_LEVEL @QMC_BUILD_LEVEL@
