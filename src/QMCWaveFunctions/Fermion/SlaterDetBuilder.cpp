@@ -221,10 +221,11 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
     APP_ABORT_TRACE(__FILE__,__LINE__," No sposet is found to build slaterdeterminant or multideterminant");
   }
 
+  // check if any of the SPO set requires distance tables
   bool SPOSetNeedsDistanceTable = false;
   for (std::map<std::string,SPOSetBasePtr>::iterator iter=spomap.begin(); iter!=spomap.end(); iter++)
     if (iter->second->NeedsDistanceTable) SPOSetNeedsDistanceTable = true;
-  if (SPOSetNeedsDistanceTable) app_log() << " At least one SPO Set requires precomputed distance tables." << std::endl;
+  if (SPOSetNeedsDistanceTable) app_log() << "  At least one SPO Set requires precomputed distance tables." << std::endl;
 
   cur = curRoot->children;
   while (cur != NULL)//check the basis set
