@@ -271,21 +271,6 @@ IF (EXISTS "${PROJECT_SOURCE_DIR}/.git")
   SET(IS_GIT_PROJECT true)
 ENDIF()
 
-SET(GITREV_BARE_FILE git-rev.h)
-SET(GITREV_BARE_TMP git-rev-tmp.h)
-SET(GITREV_FILE ${CMAKE_BINARY_DIR}/src/${GITREV_BARE_FILE})
-SET(GITREV_TMP ${CMAKE_BINARY_DIR}/src/${GITREV_BARE_TMP})
-
-IF (NOT (GIT_FOUND AND IS_GIT_PROJECT))
-  # Output a blank git version file
-  EXECUTE_PROCESS(
-    COMMAND ${CMAKE_COMMAND} -E remove ${GITREV_FILE}
-    COMMAND ${CMAKE_COMMAND} -E touch ${GITREV_FILE}
-    COMMAND ${CMAKE_COMMAND} -E remove ${GITREV_TMP}
-    COMMAND ${CMAKE_COMMAND} -E touch ${GITREV_TMP}
-  )
-ENDIF()
-
 
 ######################################################
 #COMPILER choose one of the cmake files to customize the compiler options

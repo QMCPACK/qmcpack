@@ -20,6 +20,11 @@
 CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/config.h.cmake.in
   ${qmcpack_BINARY_DIR}/src/config.h)
 
+SET(GITREV_BARE_FILE git-rev.h)
+SET(GITREV_BARE_TMP git-rev-tmp.h)
+SET(GITREV_FILE ${CMAKE_BINARY_DIR}/src/${GITREV_BARE_FILE})
+SET(GITREV_TMP ${CMAKE_BINARY_DIR}/src/${GITREV_BARE_TMP})
+
 IF (GIT_FOUND AND IS_GIT_PROJECT)
   # The following custom command picks up changes to the git revision information
   # every time the project is rebuilt. Even if the repositiory is updated (git pull)
@@ -48,6 +53,14 @@ IF (GIT_FOUND AND IS_GIT_PROJECT)
     COMMAND ${CMAKE_COMMAND} -E remove ${GITREV_TMP}
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     VERBATIM
+  )
+ELSE()
+  # Output a blank git version file
+  EXECUTE_PROCESS(
+    COMMAND ${CMAKE_COMMAND} -E remove ${GITREV_FILE}
+    COMMAND ${CMAKE_COMMAND} -E touch ${GITREV_FILE}
+    COMMAND ${CMAKE_COMMAND} -E remove ${GITREV_TMP}
+    COMMAND ${CMAKE_COMMAND} -E touch ${GITREV_TMP}
   )
 ENDIF()
 
