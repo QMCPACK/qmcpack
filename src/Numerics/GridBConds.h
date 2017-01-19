@@ -20,6 +20,8 @@
 #ifndef QMCPLUSPLUS_GRIDBC_HANDLER_H
 #define QMCPLUSPLUS_GRIDBC_HANDLER_H
 
+#include <config/stdlib/math.h>
+
 namespace qmcplusplus
 {
 
