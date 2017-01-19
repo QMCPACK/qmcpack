@@ -258,11 +258,13 @@ class Simulation(NexusCore):
     allowed_inputs = set(['identifier','path','infile','outfile','errfile','imagefile',
                           'input','job','files','dependencies','analysis_request',
                           'block','block_subcascade','app_name','app_props','system',
-                          'skip_submit','force_write','simlabel','fake_sim'])
+                          'skip_submit','force_write','simlabel','fake_sim',
+                          'restartable','force_restart'])
     sim_imagefile      = 'sim.p'
     input_imagefile    = 'input.p'
     analyzer_imagefile = 'analyzer.p'
     image_directory    = 'sim'
+    supports_restarts  = False
 
     is_bundle = False
 
@@ -344,9 +346,11 @@ class Simulation(NexusCore):
 
     def __init__(self,**kwargs):
         #user specified variables
-        self.path         = None   #directory where sim will be run
-        self.job          = None   #Job object for machine
-        self.dependencies = obj()  #Simulation results on which sim serially depends
+        self.path          = None   #directory where sim will be run
+        self.job           = None   #Job object for machine
+        self.dependencies  = obj()  #Simulation results on which sim serially depends
+        self.restartable   = False  #if True, job can be automatically restarted as deemed appropriate
+        self.force_restart = False  #force a restart of the run
 
         #variables determined by self
         self.identifier     = self.generic_identifier
@@ -425,6 +429,7 @@ class Simulation(NexusCore):
 
 
     def set(self,**kw):
+        cls = self.__class__
         if 'dependencies' in kw:
             self.depends(*kw['dependencies'])
             del kw['dependencies']
@@ -462,6 +467,11 @@ class Simulation(NexusCore):
             self.system = self.system.copy()
         elif self.system!=None:
             self.error('system must be a PhysicalSystem object\nyou provided an object of type: {0}'.format(self.system.__class__.__name__))
+        #end if
+        if self.restartable or self.force_restart:
+            if not cls.supports_restarts:
+                self.warn('restarts are not supported by {0}, request ignored'.format(cls.__name__))
+            #end if
         #end if
     #end def set
 
@@ -507,7 +517,8 @@ class Simulation(NexusCore):
 
 
     def reset_indicators(self):
-        self.error('remove this error call if you really want to use reset_indicators')
+        #this is now needed to enable restart support
+        #self.error('remove this error call if you really want to use reset_indicators')
         self.got_dependencies = False
         self.setup          = False
         self.sent_files     = False
@@ -857,6 +868,38 @@ class Simulation(NexusCore):
         analyzer.load(imagepath)
         return analyzer
     #end def load_analyzer_image
+
+
+    def save_attempt(self):
+        local = [self.infile,self.outfile,self.errfile]
+        filepaths = []
+        for file in local:
+            filepath = os.path.join(self.locdir,file)
+            if os.path.exists(filepath):
+                filepaths.append(filepath)
+            #end if
+        #end for
+        if len(filepaths)>0:
+            prefix = self.identifier+'_attempt'
+            n=1
+            for dir in os.listdir(self.locdir):
+                if dir.startswith(prefix):
+                    n=max(n,int(dir.replace(prefix,'')))
+                #end if
+            #end for
+            attempt_dir = os.path.join(self.locdir,prefix+str(n))
+            os.makedirs(attempt_dir)
+            for filepath in filepaths:
+                os.system('mv {0} {1}'.format(filepath,attempt_dir))
+            #end for
+            #print self.locdir
+            #os.system('ls '+self.locdir)
+            #print attempt_dir
+            #os.system('ls '+attempt_dir)
+            #exit()
+        #end if
+        #self.error('save_attempt')
+    #end def save_attempt
 
 
     def idstr(self):
