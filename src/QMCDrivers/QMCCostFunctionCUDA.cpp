@@ -124,8 +124,13 @@ QMCCostFunctionCUDA::Return_t QMCCostFunctionCUDA::correlatedSampling(bool needD
     if (needDerivs)
       for (int ip=0; ip<NumOptimizables; ip++)
       {
+#ifdef QMC_COMPLEX
+        TempDerivRecords[iw][ip]  =      std::abs(d_logpsi_dalpha(iw,ip));
+        TempHDerivRecords[iw][ip] = std::abs(d_hpsioverpsi_dalpha(iw,ip));
+#else
         TempDerivRecords[iw][ip]  =      d_logpsi_dalpha(iw,ip);
         TempHDerivRecords[iw][ip] = d_hpsioverpsi_dalpha(iw,ip);
+#endif
       }
   }
   //this is MPI barrier
@@ -290,8 +295,13 @@ QMCCostFunctionCUDA::checkConfigurations()
     if (needGrads)
       for (int ip=0; ip<OptVariables.size(); ip++)
       {
+#ifdef QMC_COMPLEX
+        TempDerivRecords[iw][ip] = std::abs(LogPsi_Derivs(iw,ip));
+        TempHDerivRecords[iw][ip] = std::abs(LocE_Derivs(iw,ip));
+#else
         TempDerivRecords[iw][ip] = LogPsi_Derivs(iw,ip);
         TempHDerivRecords[iw][ip] = LocE_Derivs(iw,ip);
+#endif
       }
     if (includeNonlocalH != "no")
       for (int iat=0; iat<nat; iat++)

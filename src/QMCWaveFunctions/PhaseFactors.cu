@@ -15,6 +15,7 @@
     
     
 #include <assert.h>
+#include <thrust/complex.h>
 
 /*                   !!!WARNING!!!
    Kernels in this file strongly depend on warp-synchronous behavior
@@ -550,6 +551,7 @@ void apply_phase_factors(double kPoints[], int makeTwoCopies[],
    GL_in, GL_out, num_splines, num_walkers, row_stride);
 }
 
+
 void apply_phase_factors(double kPoints[], int makeTwoCopies[], int TwoCopiesIndex[],
                          double pos[], double *phi_in[], double *phi_out[],
                          double *GL_in[], double *GL_out[],
@@ -721,7 +723,7 @@ void phase_factor_kernel (T *kPoints, int *makeTwoCopies,
         if (tid < 5)
           out_shared[tid][outIndex] = in_shared[tid][2*i+1];
         outIndex++;
-	if (BS > WARP_SIZE) __syncthreads();
+        if (BS > WARP_SIZE) __syncthreads();
         if (outIndex == BS)
         {
           // Write back to global memory
@@ -771,5 +773,226 @@ void apply_phase_factors(float kPoints[], int makeTwoCopies[],
        GL_in, GL_out, num_splines, num_walkers, row_stride);
   }
 }
+#endif
+
+
+// YingWai's implementation for complex wavefunctions
+// * The use of shared memory can be further optimized.
+// * Thread count can be further optimized.
+
+#ifdef QMC_COMPLEX
+// blockIdx.x = counter for walker
+// 32 threads per block
+template<typename T, typename T2, int BS> __global__
+void phase_factor_kernel (T *kPoints,
+                          T *pos, T2 **phi_in, T2 **phi_out,
+                          int num_splines)
+{
+  __shared__ T pos_s[3], kPoints_s[BS][3];
+  __shared__ T2 in_shared[BS];
+  __shared__ T2 *phi_in_ptr, *phi_out_ptr;
+
+  int tid = threadIdx.x;
+
+  // Copy electron position into shared memory
+  if (tid < 3)
+    pos_s[tid] = pos[3*blockIdx.x+tid];
+
+  // Set pointers to point to the address (of the 1st element) where phi for that walker is stored
+  if (tid == 0)
+  {
+    phi_in_ptr = phi_in[blockIdx.x];
+    phi_out_ptr = phi_out[blockIdx.x];
+  }
+  // "ib" is NOT the thread block! This is just a "block" of BS(=32) splines that the 32 threads
+  // process together at one time, so it has to repeat NB times to take care of all the splines
+  int NB = (num_splines+BS-1)/BS;
+  for (int ib=0; ib<NB; ib++)
+  {
+    // Load kpoints into shared memory
+    for (int i=0; i<3; i++)
+      kPoints_s[0][i*BS+tid] = kPoints[(3*ib+i)*BS+tid];
+    // Load phi_in with coallesced reads
+    if (ib*BS+tid < num_splines)
+      in_shared[tid] = phi_in_ptr[ib*BS+tid];
+    // Now add on phase factors
+    T phase = -(kPoints_s[tid][0]*pos_s[0] +
+                kPoints_s[tid][1]*pos_s[1] +
+                kPoints_s[tid][2]*pos_s[2]);
+    T s, c;
+    sincos (phase, &s, &c);
+    T2 e_mikr = T2(c,s);
+
+    // Apply e^(-ikr) to the wavefunction
+    in_shared[tid] *= e_mikr;
+
+    // Write back to global memory directly
+    if (ib*BS+tid < num_splines)
+      phi_out_ptr[ib*BS+tid] = in_shared[tid];
+  }
+}
+
+
+template<typename T, typename T2, int BS> __global__
+void phase_factor_kernel (T *kPoints,
+                          T *pos, T2 **phi_in, T2 **phi_out,
+                          T2 **grad_lapl_in, T2 **grad_lapl_out,
+                          int num_splines, int num_walkers,
+                          int row_stride)
+{
+  // Dummy quantities to make use of shared memory
+  __shared__ T2 in_shared[5][BS+1]; 
+  __shared__ T kPoints_s[BS][3];
+  __shared__ T  pos_s[3];
+  __shared__ T2 *my_phi_in, *my_phi_out, *my_GL_in, *my_GL_out;
+  __syncthreads();
+
+  int tid = threadIdx.x;
+  T2 imag_one = T2(0.0,1.0);    // the imaginary number i
+
+  // Set pointers to point to the address (of the 1st element) where phi for that walker is stored
+  if (tid == 0)
+  {
+    my_phi_in  = phi_in[blockIdx.x];
+    my_phi_out = phi_out[blockIdx.x];
+    my_GL_in   = grad_lapl_in[blockIdx.x];
+    my_GL_out  = grad_lapl_out[blockIdx.x];
+  }
+  // Copy electron position into shared memory
+  if (tid < 3)
+    pos_s[tid] = pos[3*blockIdx.x+tid];
+  __syncthreads();
+
+  // "block" is NOT the thread block! This is just a "block" of BS(=32) splines that the 32 threads
+  // process together at one time, so it has to repeat nb times to take care of all the splines
+  int nb = (num_splines + BS-1)/BS;
+  for (int block=0; block<nb; block++)
+  {
+    // Load kpoints into shared memory
+    for (int i=0; i<3; i++)
+    {
+      int off = (3*block+i)*BS + tid;
+      if (off < 3*num_splines)
+        kPoints_s[0][i*BS+tid] = kPoints[off];
+    }
+    // Load phi_in with coallesced reads
+    if (block*BS+tid < num_splines)
+    {
+      in_shared[0][tid] = my_phi_in[block*BS+tid];
+      for (int j=0; j<4; j++)
+        in_shared[j+1][tid] = my_GL_in[j*num_splines+block*BS+tid];
+    }
+    __syncthreads();
+    // Now add on phase factors
+    T phase = -(pos_s[0]*kPoints_s[tid][0] +
+                pos_s[1]*kPoints_s[tid][1] +
+                pos_s[2]*kPoints_s[tid][2]);
+    T s, c;
+    sincos (phase, &s, &c);
+    T2 e_mikr = T2(c,s);
+
+    // Temp. storage for phi, grad, lapl in the registers
+    T2 u, gradu[3], laplu;
+    u        = in_shared[0][tid];
+    gradu[0] = in_shared[1][tid];
+    gradu[1] = in_shared[2][tid];
+    gradu[2] = in_shared[3][tid];
+    laplu    = in_shared[4][tid];
+
+    // Apply e^(-ikr) to the wavefunction
+    in_shared[0][tid] = u * e_mikr;
+
+    // Gradient = e^(-ikr)*(-i*u*k + gradu)
+    for (int dim=0; dim<3; dim++)
+    {
+      T2 g;
+      g = gradu[dim] - (imag_one * u * kPoints_s[tid][dim]);
+      in_shared[dim+1][tid] = g * e_mikr;
+    }
+
+    // Laplacian = e^(-ikr)*(laplu - u*k^2 - 2ik*gradu)
+    T k2 = (kPoints_s[tid][0]*kPoints_s[tid][0] +
+            kPoints_s[tid][1]*kPoints_s[tid][1] +
+            kPoints_s[tid][2]*kPoints_s[tid][2]);
+    T2 l = laplu - k2*u - T2(2.0,0.0)*imag_one*(kPoints_s[tid][0]*gradu[0]+
+                                                kPoints_s[tid][1]*gradu[1]+
+                                                kPoints_s[tid][2]*gradu[2]);
+    in_shared[4][tid] = l * e_mikr;
+
+    /*
+    YingWai: some codes are deleted at this location compared to real code:
+    * MakeTwoCopies is always false for Complex, no need in here
+    * No need to serialize in_shared to output buffer as there is not a MakeTwoCopies headache
+    */
+    // Write back to global memory directly
+    if (block*BS+tid < num_splines)
+    {
+      my_phi_out[block*BS+tid] = in_shared[0][tid];
+      for (int j=0; j<4; j++)
+        my_GL_out[j*row_stride +block*BS+tid] = in_shared[j+1][tid];
+        // YingWai: or should it be... 
+        // AT: I vote no, tests 59 and 71 produce horribly wrong results with this line...
+//        my_GL_out[j*num_splines +block*BS+tid] = in_shared[j+1][tid];
+    }
+  }
+}
+
+
+// YingWai's implementation for complex wavefunction
+
+void apply_phase_factors(float kPoints[], float pos[],
+                         std::complex<float>* phi_in[], std::complex<float>* phi_out[],
+                         int num_splines, int num_walkers)
+{
+  const int BS = 32;
+  dim3 dimBlock(BS);
+  dim3 dimGrid (num_walkers);
+
+  phase_factor_kernel<float,thrust::complex<float>,BS><<<dimGrid,dimBlock>>>
+  (kPoints, pos, (thrust::complex<float>**)phi_in, (thrust::complex<float>**)phi_out, num_splines);
+}
+
+void apply_phase_factors(double kPoints[], double pos[],
+                         std::complex<double>* phi_in[], std::complex<double>* phi_out[],
+                         int num_splines, int num_walkers)
+{
+  const int BS = 32;
+  dim3 dimBlock(BS);
+  dim3 dimGrid (num_walkers);
+
+  phase_factor_kernel<double,thrust::complex<double>,BS><<<dimGrid,dimBlock>>>
+  (kPoints, pos, (thrust::complex<double>**)phi_in, (thrust::complex<double>**)phi_out, num_splines);
+}
+
+void apply_phase_factors(float kPoints[], float pos[],
+                         std::complex<float>* phi_in[], std::complex<float>* phi_out[],
+                         std::complex<float>* GL_in[], std::complex<float>* GL_out[],
+                         int num_splines, int num_walkers, int row_stride)
+{
+
+  const int BS = 32; 
+  dim3 dimBlock(BS);
+  dim3 dimGrid (num_walkers);
+
+  phase_factor_kernel<float,thrust::complex<float>,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
+  (kPoints, pos, (thrust::complex<float>**)phi_in, (thrust::complex<float>**)phi_out, (thrust::complex<float>**)GL_in, (thrust::complex<float>**)GL_out, 
+  num_splines, num_walkers, row_stride);
+}
+
+
+void apply_phase_factors(double kPoints[], double pos[],
+                         std::complex<double>* phi_in[], std::complex<double>* phi_out[],
+                         std::complex<double>* GL_in[], std::complex<double>* GL_out[],
+                         int num_splines, int num_walkers, int row_stride)
+{
+  const int BS = 32; 
+  dim3 dimBlock(BS);
+  dim3 dimGrid (num_walkers);
+
+  phase_factor_kernel<double,thrust::complex<double>,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
+  (kPoints, pos, (thrust::complex<double>**)phi_in, (thrust::complex<double>**)phi_out, (thrust::complex<double>**)GL_in, (thrust::complex<double>**)GL_out, 
+  num_splines, num_walkers, row_stride);
+}
+
 #endif
 

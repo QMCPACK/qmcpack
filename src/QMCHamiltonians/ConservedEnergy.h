@@ -128,7 +128,11 @@ struct ConservedEnergy: public QMCHamiltonianBase
       Walker_t &w = *(walkers[iw]);
       RealType flux = 0.0;
       for (int ptcl=0; ptcl<w.G.size(); ptcl++)
+#if defined QMC_COMPLEX
+        flux +=real(dot(w.G[ptcl],w.G[ptcl]) + dot_cc(w.G[ptcl],w.G[ptcl]) + w.L[ptcl]);
+#else
         flux +=2.0 * dot(w.G[ptcl],w.G[ptcl]) + w.L[ptcl];
+#endif
       w.getPropertyBase()[NUMPROPERTIES+myIndex] = flux;
     }
   }
@@ -139,8 +143,8 @@ struct ConservedEnergy: public QMCHamiltonianBase
 #endif
 
 /***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
+ * $RCSfile$   $Author: tillackaf $
+ * $Revision: 7408 $   $Date: 2017-01-10 13:29:49 -0500 (Tue, 10 Jan 2017) $
+ * $Id: ConservedEnergy.h 7408 2017-01-10 18:29:49Z tillackaf $
  ***************************************************************************/
 

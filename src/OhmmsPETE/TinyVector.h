@@ -271,6 +271,18 @@ dot(const TinyVector<T1,D> &lhs, const TinyVector<T2,D> &rhs)
   return OTDot< TinyVector<T1,D> , TinyVector<T2,D> > :: apply(lhs,rhs);
 }
 
+#ifdef QMC_COMPLEX
+//----------------------------------------------------------------------
+// complex conjugate dot product
+//----------------------------------------------------------------------
+template < class T1, class T2, unsigned D >
+inline typename BinaryReturn<T1,T2,OpMultiply>::Type_t
+dot_cc(const TinyVector<T1,D> &lhs, const TinyVector<T2,D> &rhs)
+{
+  return OTDot_CC< TinyVector<T1,D> , TinyVector<T2,D> > :: apply(lhs,rhs);
+}
+#endif
+
 //----------------------------------------------------------------------
 // cross product
 //----------------------------------------------------------------------
