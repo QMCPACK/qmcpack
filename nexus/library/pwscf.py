@@ -221,16 +221,17 @@ class Pwscf(Simulation):
         fobj.close()
         not_converged = 'convergence NOT achieved'  in output
         time_exceeded = 'Maximum CPU time exceeded' in output
+        user_stop     = 'Program stopped by user request' in output
         run_finished  = 'JOB DONE' in output
-        restart = run_finished and self.restartable \
-                  and (not_converged or time_exceeded)
+        restartable = not_converged or time_exceeded or user_stop
+        restart = run_finished and self.restartable and restartable
         if restart:
             self.save_attempt()
             self.input.control.restart_mode = 'restart'
             self.reset_indicators()
         else:
             self.finished = run_finished
-            self.failed = not_converged or time_exceeded
+            self.failed   = restartable
         #end if
     #end def check_sim_status
 
