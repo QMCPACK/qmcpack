@@ -54,6 +54,36 @@ IF (GIT_FOUND AND IS_GIT_PROJECT)
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     VERBATIM
   )
+
+  # Print some configure-time git info (useful for understanding what commits
+  # are in particular build for the nightly CDash reports)
+
+  EXECUTE_PROCESS(
+    COMMAND ${GIT_EXECUTABLE} rev-parse --abbrev-ref HEAD
+    OUTPUT_VARIABLE GIT_CONFIG_BRANCH
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+
+  # Breaking down the arguments to 'git describe'
+  #  --abbrev=40     Size of hash to print.  This should print the entire hash.
+  #  --dirty         Append hash with '-dirty' if there are uncommited changes.
+  # The behavior of describe looks for a tag in the parents first, and then falls
+  # back to the commit hash (if --always is specified)
+  #  --always        Show the commit hash as fallback
+  #  --match="NoTagWithThisName"
+  #     If a tag is found, the output looks like:
+  #       second_annotated_tag-29-g1fd38cccc0fd2f683ec223ca0783bb671bfedd4e
+  #     In order to always get just the commit hash, specify a tag pattern
+  #     that should never match.
+  EXECUTE_PROCESS(
+    COMMAND ${GIT_EXECUTABLE} describe --always --dirty --abbrev=40 --match="NoTagWithThisName"
+    OUTPUT_VARIABLE GIT_CONFIG_COMMIT_HASH
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  MESSAGE("Git branch: ${GIT_CONFIG_BRANCH}")
+  MESSAGE("Git commit hash: ${GIT_CONFIG_COMMIT_HASH}")
 ELSE()
   # Output a blank git version file
   EXECUTE_PROCESS(
