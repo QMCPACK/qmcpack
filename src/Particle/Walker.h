@@ -79,14 +79,12 @@ struct Walker
   typedef typename t_traits::CudaRealType CudaRealType;
   /** typedef for CUDA value data type. */
   typedef typename t_traits::CudaValueType CudaValueType;
-#ifdef QMC_COMPLEX
   /** array of particles */
   typedef typename t_traits::CudaPosType CudaPosType;
   /** array of gradients */
   typedef typename t_traits::CudaGradType CudaGradType;
   /** array of laplacians */
   typedef typename t_traits::CudaValueType CudaLapType;
-#endif
 #endif
   /** array of particles */
   typedef typename p_traits::ParticlePos_t ParticlePos_t;
