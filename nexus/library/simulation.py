@@ -881,12 +881,13 @@ class Simulation(NexusCore):
         #end for
         if len(filepaths)>0:
             prefix = self.identifier+'_attempt'
-            n=1
+            n=0
             for dir in os.listdir(self.locdir):
                 if dir.startswith(prefix):
                     n=max(n,int(dir.replace(prefix,'')))
                 #end if
             #end for
+            n+=1
             attempt_dir = os.path.join(self.locdir,prefix+str(n))
             os.makedirs(attempt_dir)
             for filepath in filepaths:
