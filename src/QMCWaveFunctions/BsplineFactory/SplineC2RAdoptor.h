@@ -258,19 +258,19 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     const ST x=r[0], y=r[1], z=r[2];
     const ST symGG[6]={GGt[0],GGt[1]+GGt[3],GGt[2]+GGt[6],GGt[4],GGt[5]+GGt[7],GGt[8]};
 
-    const ST* restrict k0=myKcart.data(0);
-    const ST* restrict k1=myKcart.data(1);
-    const ST* restrict k2=myKcart.data(2);
+    const ST* restrict k0=myKcart.data(0); ASSUME_ALIGNED(k0);
+    const ST* restrict k1=myKcart.data(1); ASSUME_ALIGNED(k1);
+    const ST* restrict k2=myKcart.data(2); ASSUME_ALIGNED(k2);
 
-    const ST* restrict g0=myG.data(0);
-    const ST* restrict g1=myG.data(1);
-    const ST* restrict g2=myG.data(2);
-    const ST* restrict h00=myH.data(0);
-    const ST* restrict h01=myH.data(1);
-    const ST* restrict h02=myH.data(2);
-    const ST* restrict h11=myH.data(3);
-    const ST* restrict h12=myH.data(4);
-    const ST* restrict h22=myH.data(5);
+    const ST* restrict g0=myG.data(0); ASSUME_ALIGNED(g0);
+    const ST* restrict g1=myG.data(1); ASSUME_ALIGNED(g1);
+    const ST* restrict g2=myG.data(2); ASSUME_ALIGNED(g2);
+    const ST* restrict h00=myH.data(0); ASSUME_ALIGNED(h00);
+    const ST* restrict h01=myH.data(1); ASSUME_ALIGNED(h01);
+    const ST* restrict h02=myH.data(2); ASSUME_ALIGNED(h02);
+    const ST* restrict h11=myH.data(3); ASSUME_ALIGNED(h11);
+    const ST* restrict h12=myH.data(4); ASSUME_ALIGNED(h12);
+    const ST* restrict h22=myH.data(5); ASSUME_ALIGNED(h22);
 
     const size_t N=kPoints.size();
     const size_t nsplines=myL.size();
@@ -412,19 +412,19 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     const ST x=r[0], y=r[1], z=r[2];
     const ST symGG[6]={GGt[0],GGt[1]+GGt[3],GGt[2]+GGt[6],GGt[4],GGt[5]+GGt[7],GGt[8]};
 
-    const ST* restrict k0=myKcart.data(0);
-    const ST* restrict k1=myKcart.data(1);
-    const ST* restrict k2=myKcart.data(2);
+    const ST* restrict k0=myKcart.data(0); ASSUME_ALIGNED(k0);
+    const ST* restrict k1=myKcart.data(1); ASSUME_ALIGNED(k1);
+    const ST* restrict k2=myKcart.data(2); ASSUME_ALIGNED(k2);
 
-    const ST* restrict g0=myG.data(0);
-    const ST* restrict g1=myG.data(1);
-    const ST* restrict g2=myG.data(2);
-    const ST* restrict h00=myH.data(0);
-    const ST* restrict h01=myH.data(1);
-    const ST* restrict h02=myH.data(2);
-    const ST* restrict h11=myH.data(3);
-    const ST* restrict h12=myH.data(4);
-    const ST* restrict h22=myH.data(5);
+    const ST* restrict g0=myG.data(0); ASSUME_ALIGNED(g0);
+    const ST* restrict g1=myG.data(1); ASSUME_ALIGNED(g1);
+    const ST* restrict g2=myG.data(2); ASSUME_ALIGNED(g2);
+    const ST* restrict h00=myH.data(0); ASSUME_ALIGNED(h00);
+    const ST* restrict h01=myH.data(1); ASSUME_ALIGNED(h01);
+    const ST* restrict h02=myH.data(2); ASSUME_ALIGNED(h02);
+    const ST* restrict h11=myH.data(3); ASSUME_ALIGNED(h11);
+    const ST* restrict h12=myH.data(4); ASSUME_ALIGNED(h12);
+    const ST* restrict h22=myH.data(5); ASSUME_ALIGNED(h22);
     const size_t nsplines=myL.size();
 #if defined(PRECOMPUTE_L)
 #pragma omp simd
@@ -434,10 +434,11 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     }
 #endif
 
-    TT* restrict vl_x=dpsi.data(0);
-    TT* restrict vl_y=dpsi.data(1);
-    TT* restrict vl_z=dpsi.data(2);
-    TT* restrict vl_l=dpsi.data(3);
+    TT* restrict vl_x=dpsi.data(0); ASSUME_ALIGNED(vl_x);
+    TT* restrict vl_y=dpsi.data(1); ASSUME_ALIGNED(vl_y);
+    TT* restrict vl_z=dpsi.data(2); ASSUME_ALIGNED(vl_z);
+    TT* restrict vl_l=dpsi.data(3); ASSUME_ALIGNED(vl_l);
+
 #pragma omp simd
     for (size_t j=0, psiIndex=first_spo; j<nComplexBands; j++,psiIndex+=2)
     {
