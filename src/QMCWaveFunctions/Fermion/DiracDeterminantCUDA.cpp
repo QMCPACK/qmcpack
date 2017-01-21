@@ -54,13 +54,8 @@ DiracDeterminantCUDA::DiracDeterminantCUDA(SPOSetBasePtr const &spos, int first)
   NLelecList_d("DiracDeterminantBase::NLelecList_d"),
   NLratioList_d("DiracDeterminantBase::NLratioList_d")
 {
-#ifdef QMC_COMPLEX
   for(int i = 0; i < 2; ++i)
     NLratios_d[i] = gpu::device_vector<CudaValueType>("DiracDeterminantBase::NLratios_d");
-#else
-  for(int i = 0; i < 2; ++i)
-    NLratios_d[i] = gpu::device_vector<CudaRealType>("DiracDeterminantBase::NLratios_d");
-#endif
 }
 
 DiracDeterminantCUDA::DiracDeterminantCUDA(const DiracDeterminantCUDA& s) :
@@ -90,13 +85,8 @@ DiracDeterminantCUDA::DiracDeterminantCUDA(const DiracDeterminantCUDA& s) :
   NLelecList_d("DiracDeterminantBase::NLelecList_d"),
   NLratioList_d("DiracDeterminantBase::NLratioList_d")
 {
-#ifdef QMC_COMPLEX
   for(int i = 0; i < 2; ++i)
     NLratios_d[i] = gpu::device_vector<CudaValueType>("DiracDeterminantBase::NLratios_d");
-#else
-  for(int i = 0; i < 2; ++i)
-    NLratios_d[i] = gpu::device_vector<CudaRealType>("DiracDeterminantBase::NLratios_d");
-#endif
 }
 
 
@@ -523,14 +513,8 @@ DiracDeterminantCUDA::addLog (MCWalkerConfiguration &W, std::vector<RealType> &l
   for (int iw=0; iw<walkers.size(); iw++)
   {
     Walker_t::cuda_Buffer_t& data = walkers[iw]->cuda_DataSet;
-#ifdef QMC_COMPLEX
     gpu::host_vector<CudaValueType> host_data;
     Vector<CudaValueType> A(NumPtcls*NumOrbitals);
-#else
-    gpu::host_vector<CUDA_PRECISION> host_data;
-    //Vector<double> A(NumPtcls*NumOrbitals);
-    Vector<CUDA_PRECISION> A(NumPtcls*NumOrbitals);
-#endif
     host_data = data;
     for (int i=0; i<NumPtcls; i++)
       for (int j=0; j<NumOrbitals; j++)
@@ -717,13 +701,8 @@ void DiracDeterminantCUDA::ratio (MCWalkerConfiguration &W, int iat,
   ratio_host = ratio_d;
 #ifdef CUDA_DEBUG
   // Now, check against CPU
-#ifdef QMC_COMPLEX
   gpu::host_vector<CudaValueType> host_data;
-  vector<CudaValueType> cpu_ratios(walkers.size(), 0.0f);
-#else
-  gpu::host_vector<CudaRealType> host_data;
-  std::vector<CudaRealType> cpu_ratios(walkers.size(), 0.0f);
-#endif
+  std::vector<CudaValueType> cpu_ratios(walkers.size(), 0.0f);
   for (int iw=0; iw<walkers.size(); iw++)
   {
     host_data = walkers[iw]->cuda_DataSet;
@@ -751,13 +730,8 @@ void DiracDeterminantCUDA::ratio (MCWalkerConfiguration &W, int iat,
 #ifdef CUDA_DEBUG
   if (NumOrbitals == 31)
   {
-#ifdef QMC_COMPLEX
     gpu::host_vector<CudaValueType> host_data;
-    vector<CudaValueType> cpu_ratios(walkers.size(), 0.0f);
-#else
-    gpu::host_vector<CudaRealType> host_data;
-    std::vector<CudaRealType> cpu_ratios(walkers.size(), 0.0f);
-#endif
+    std::vector<CudaValueType> cpu_ratios(walkers.size(), 0.0f);
     for (int iw=0; iw<walkers.size(); iw++)
     {
       host_data = walkers[iw]->cuda_DataSet;
@@ -822,13 +796,8 @@ void DiracDeterminantCUDA::calcRatio (MCWalkerConfiguration &W, int iat,
   cudaEventRecord(gpu::ratioSyncDiracEvent, gpu::memoryStream);
 #ifdef CUDA_DEBUG
   // Now, check against CPU
-#ifdef QMC_COMPLEX
   gpu::host_vector<CudaValueType> host_data;
-  vector<CudaValueType> cpu_ratios(walkers.size(), 0.0f);
-#else
-  gpu::host_vector<CudaRealType> host_data;
-  std::vector<CudaRealType> cpu_ratios(walkers.size(), 0.0f);
-#endif
+  std::vector<CudaValueType> cpu_ratios(walkers.size(), 0.0f);
   for (int iw=0; iw<walkers.size(); iw++)
   {
     host_data = walkers[iw]->cuda_DataSet;
@@ -863,13 +832,8 @@ void DiracDeterminantCUDA::addRatio (MCWalkerConfiguration &W, int iat,
 #ifdef CUDA_DEBUG
   if (NumOrbitals == 31)
   {
-#ifdef QMC_COMPLEX
     gpu::host_vector<CudaValueType> host_data;
-    vector<CudaValueType> cpu_ratios(walkers.size(), 0.0f);
-#else
-    gpu::host_vector<CudaRealType> host_data;
-    std::vector<CudaRealType> cpu_ratios(walkers.size(), 0.0f);
-#endif
+    std::vector<CudaValueType> cpu_ratios(walkers.size(), 0.0f);
     for (int iw=0; iw<walkers.size(); iw++)
     {
       host_data = walkers[iw]->cuda_DataSet;
@@ -982,11 +946,7 @@ DiracDeterminantCUDA::gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads,
         int dev;
         cudaGetDevice(&dev);
         fprintf (stderr, "Offending device = %d\n", dev);
-#ifdef QMC_COMPLEX
         gpu::host_vector<CudaValueType> host_data;
-#else
-        gpu::host_vector<CUDA_PRECISION> host_data;
-#endif
         host_data = walkers[iw]->cuda_DataSet;
         FILE *Amat = fopen ("Amat.dat", "w");
         FILE *Ainv = fopen ("Ainv.dat", "w");
@@ -1053,11 +1013,7 @@ DiracDeterminantCUDA::gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads,
   }
 #ifdef CUDA_DEBUG
   // Now do it on the CPU
-#ifdef QMC_COMPLEX
   gpu::host_vector<CudaValueType> host_data;
-#else
-  gpu::host_vector<CudaRealType> host_data;
-#endif
   GradMatrix_t cpu_grads(grads.rows(), grads.cols());
   ValueMatrix_t cpu_lapl(grads.rows(), grads.cols());
   for (int iw=0; iw<walkers.size(); iw++)
@@ -1088,20 +1044,12 @@ DiracDeterminantCUDA::NLratios_CPU
   std::vector<ValueMatrix_t> Ainv_host;
   int nw = walkers.size();
   Ainv_host.resize(nw);
-#ifdef QMC_COMPLEX
   int mat_size = NumOrbitals*NumOrbitals*sizeof(CudaValueType);
-#else
-  int mat_size = NumOrbitals*NumOrbitals*sizeof(CudaRealType);
-#endif
   for (int iw=0; iw<nw; iw++)
   {
     Ainv_host[iw].resize(NumOrbitals, NumOrbitals);
     ValueType *dest = &(Ainv_host[iw](0,0));
-#ifdef QMC_COMPLEX
     CudaValueType *src = &(walkers[iw]->cuda_DataSet.data()[AinvOffset]);
-#else
-    CudaRealType *src = &(walkers[iw]->cuda_DataSet.data()[AinvOffset]);
-#endif
     cudaMemcpy(dest, src, mat_size, cudaMemcpyDeviceToHost);
   }
   std::vector<RealType> phi(NumOrbitals);

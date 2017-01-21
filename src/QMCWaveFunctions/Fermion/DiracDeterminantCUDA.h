@@ -50,18 +50,10 @@ protected:
   size_t AOffset, AinvOffset, newRowOffset, AinvDeltaOffset,
          AinvColkOffset, gradLaplOffset, newGradLaplOffset, 
          AWorkOffset, AinvWorkOffset;
-#ifdef QMC_COMPLEX
   gpu::host_vector<CudaValueType*> UpdateList;
   gpu::device_vector<CudaValueType*> UpdateList_d;
-#else
-  gpu::host_vector<CudaRealType*> UpdateList;
-  gpu::device_vector<CudaRealType*> UpdateList_d;
-#endif
-
   gpu::host_vector<updateJob> UpdateJobList;
   gpu::device_vector<updateJob> UpdateJobList_d;
-
-#ifdef QMC_COMPLEX
   std::vector<CudaValueType*> srcList, destList, AList, AinvList, newRowList,
                               AinvDeltaList, AinvColkList, gradLaplList, newGradLaplList, 
                               AWorkList, AinvWorkList, GLList;
@@ -72,66 +64,30 @@ protected:
   gpu::host_vector<CudaValueType> ratio_host;
   gpu::device_vector<CudaValueType> gradLapl_d;
   gpu::host_vector<CudaValueType> gradLapl_host;
-#else
-  std::vector<CudaRealType*> srcList, destList, AList, AinvList, newRowList,
-                        AinvDeltaList, AinvColkList, gradLaplList, newGradLaplList, 
-                        AWorkList, AinvWorkList, GLList;
-  gpu::device_vector<CudaRealType*> srcList_d, destList_d, AList_d, AinvList_d, newRowList_d, 
-                                    AinvDeltaList_d, AinvColkList_d, gradLaplList_d, 
-                                    newGradLaplList_d, AWorkList_d, AinvWorkList_d, GLList_d;
-  gpu::device_vector<CudaRealType> ratio_d;
-  gpu::host_vector<CudaRealType> ratio_host;
-  gpu::device_vector<CudaRealType> gradLapl_d;
-  gpu::host_vector<CudaRealType> gradLapl_host;
-#endif
   gpu::device_vector<int> iatList_d;
   gpu::host_vector<int> iatList;
 
   // Data members for nonlocal psuedopotential ratio evaluation
   static const int NLrowBufferRows = 4800;
 
-#ifdef QMC_COMPLEX
   gpu::device_vector<CudaValueType> NLrowBuffer_d;
   gpu::host_vector<CudaValueType> NLrowBuffer_host;
   gpu::device_vector<CudaValueType*> SplineRowList_d;
   gpu::host_vector<CudaValueType*> SplineRowList_host;
   gpu::device_vector<CudaValueType*> RatioRowList_d;
   gpu::host_vector<CudaValueType*> RatioRowList_host[2];
-#else
-  gpu::device_vector<CudaRealType> NLrowBuffer_d;
-  gpu::host_vector<CudaRealType> NLrowBuffer_host;
-  gpu::device_vector<CudaRealType*> SplineRowList_d;
-  gpu::host_vector<CudaRealType*> SplineRowList_host;
-  gpu::device_vector<CudaRealType*> RatioRowList_d;
-  gpu::host_vector<CudaRealType*> RatioRowList_host[2];
-#endif
-
   gpu::device_vector<CudaRealType> NLposBuffer_d;
   gpu::host_vector<CudaRealType> NLposBuffer_host;
-
-#ifdef QMC_COMPLEX
   gpu::device_vector<CudaValueType*> NLAinvList_d;
   gpu::host_vector<CudaValueType*> NLAinvList_host[2];
-#else
-  gpu::device_vector<CudaRealType*> NLAinvList_d;
-  gpu::host_vector<CudaRealType*> NLAinvList_host[2];
-#endif
   gpu::device_vector<int> NLnumRatioList_d;
   gpu::host_vector<int> NLnumRatioList_host[2];
   gpu::device_vector<int> NLelecList_d;
   gpu::host_vector<int> NLelecList_host[2];
-
-#ifdef QMC_COMPLEX
   gpu::device_vector<CudaValueType> NLratios_d[2];
   gpu::host_vector<CudaValueType> NLratios_host;
   gpu::device_vector<CudaValueType*> NLratioList_d;
   gpu::host_vector<CudaValueType*> NLratioList_host[2];
-#else
-  gpu::device_vector<CudaRealType> NLratios_d[2];
-  gpu::host_vector<CudaRealType> NLratios_host;
-  gpu::device_vector<CudaRealType*> NLratioList_d;
-  gpu::host_vector<CudaRealType*> NLratioList_host[2];
-#endif
 
   void resizeLists(int numWalkers)
   {
@@ -205,11 +161,7 @@ public:
   void update (std::vector<Walker_t*> &walkers, int iat);
   void update (const std::vector<Walker_t*> &walkers, const std::vector<int> &iatList);
 
-#ifdef QMC_COMPLEX
   void reserve (PointerPool<gpu::device_vector<CudaValueType> > &pool) {
-#else
-  void reserve (PointerPool<gpu::device_vector<CudaRealType> > &pool) {
-#endif
     RowStride = ((NumOrbitals + 31)/32) * 32;
     AOffset           = pool.reserve((size_t)    NumPtcls * RowStride);
     AinvOffset        = pool.reserve((size_t)    NumPtcls * RowStride);
@@ -225,13 +177,8 @@ public:
     }
     else if (typeid(CudaRealType) == typeid(double))
     {
-#ifdef QMC_COMPLEX
-      AWorkOffset       = pool.reserve((size_t)2 * NumPtcls * RowStride);
-      AinvWorkOffset    = 0;
-#else
       AWorkOffset       = pool.reserve((size_t)    NumPtcls * RowStride);
       AinvWorkOffset    = 0;                  // not needed for inversion
-#endif
     }
     Phi->reserve(pool);
   }
