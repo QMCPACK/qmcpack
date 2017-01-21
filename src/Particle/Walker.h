@@ -459,40 +459,28 @@ struct Walker
     m.Pack(&(PHindex[0]),PHindex.size());
 #ifdef QMC_CUDA
     // Pack GPU data
-#ifdef QMC_COMPLEX
     std::vector<CudaValueType> host_data;
     std::vector<CUDA_PRECISION_FULL> host_rhok;
     std::vector<CudaPosType> R_host;
     std::vector<CudaGradType> Grad_host;
     std::vector<CudaLapType>  host_lapl;
-#else
-    std::vector<CUDA_PRECISION> host_data;
-    std::vector<CUDA_PRECISION_FULL> host_rhok;
-    std::vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > R_host;
-    std::vector<TinyVector<CudaValueType,OHMMS_DIM> > Grad_host;
-    std::vector<CUDA_PRECISION> host_lapl;
-#endif
 
     cuda_DataSet.copyFromGPU(host_data);
     R_GPU.copyFromGPU(R_host);
+    Grad_GPU.copyFromGPU(Grad_host);
+    Lap_GPU.copyFromGPU(host_lapl);
     int size = host_data.size();
     int N = R_host.size();
     m.Pack(size);
     m.Pack(N);
+    m.Pack(&(R_host[0][0]), OHMMS_DIM*R_host.size());
 #ifdef QMC_COMPLEX
     m.Pack(reinterpret_cast<CudaRealType*>(&(host_data[0])), host_data.size()*2);
-#else
-    m.Pack(&(host_data[0]), host_data.size());
-#endif
-    m.Pack(&(R_host[0][0]), OHMMS_DIM*R_host.size());
-    Grad_GPU.copyFromGPU(Grad_host);
-#ifdef QMC_COMPLEX
     m.Pack(reinterpret_cast<CudaRealType*>(&(Grad_host[0][0])),OHMMS_DIM*Grad_host.size()*2);
-    Lap_GPU.copyFromGPU(host_lapl);
     m.Pack(reinterpret_cast<CudaRealType*>(&(host_lapl[0])), host_lapl.size()*2);
 #else
+    m.Pack(&(host_data[0]), host_data.size());
     m.Pack(&(Grad_host[0][0]), OHMMS_DIM*Grad_host.size());
-    Lap_GPU.copyFromGPU(host_lapl);
     m.Pack(&(host_lapl[0]), host_lapl.size());
 #endif
     Rhok_GPU.copyFromGPU(host_rhok);
@@ -525,21 +513,12 @@ struct Walker
       m.Unpack(&(PropertyHistory[iat][0]),PropertyHistory[iat].size());
     m.Unpack(&(PHindex[0]),PHindex.size());
 #ifdef QMC_CUDA
-
     // Unpack GPU data
-#ifdef QMC_COMPLEX
     std::vector<CudaValueType> host_data;
     std::vector<CUDA_PRECISION_FULL> host_rhok;
     std::vector<CudaPosType> R_host;
     std::vector<CudaGradType> Grad_host;
     std::vector<CudaLapType>  host_lapl;
-#else
-    std::vector<CUDA_PRECISION> host_data;
-    std::vector<CUDA_PRECISION_FULL> host_rhok;
-    std::vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > R_host;
-    std::vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > Grad_host;
-    std::vector<CUDA_PRECISION> host_lapl;
-#endif
 
     int size, N;
     m.Unpack(size);
@@ -547,22 +526,18 @@ struct Walker
     host_data.resize(size);
     R_host.resize(N);
     host_lapl.resize(N);
-#ifdef QMC_COMPLEX
-    m.Unpack(reinterpret_cast<CudaRealType*>(&(host_data[0])), size*2);
-#else
-    m.Unpack(&(host_data[0]), size);
-#endif
-    cuda_DataSet = host_data;
     m.Unpack(&(R_host[0][0]), OHMMS_DIM*N);
     R_GPU = R_host;
-
 #ifdef QMC_COMPLEX
+    m.Unpack(reinterpret_cast<CudaRealType*>(&(host_data[0])), size*2);
     m.Unpack(reinterpret_cast<CudaRealType*>(&(Grad_host[0][0])),OHMMS_DIM*N*2);
     m.Unpack(reinterpret_cast<CudaRealType*>(&(host_lapl[0])), N*2);
 #else
+    m.Unpack(&(host_data[0]), size);
     m.Unpack(&(Grad_host[0][0]), OHMMS_DIM*N);
     m.Unpack(&(host_lapl[0]), N);
 #endif
+    cuda_DataSet = host_data;
     Grad_GPU = Grad_host;
     Lap_GPU = host_lapl;
     int M;

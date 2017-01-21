@@ -92,7 +92,6 @@ public:
   // passed to GPU kernels.
 #ifdef QMC_CUDA
 
-#ifdef QMC_COMPLEX
   gpu::device_vector<CudaRealType*>  RList_GPU;
   gpu::device_vector<CudaValueType*> GradList_GPU, LapList_GPU;
   // First index is the species.  The second index is the walker
@@ -108,21 +107,6 @@ public:
   gpu::host_vector<CUDA_PRECISION_FULL*> hostlist_AA; 
   gpu::host_vector<CudaPosType>      R_host;
   gpu::host_vector<CudaGradType>     Grad_host;
-#else
-  gpu::device_vector<CUDA_PRECISION*> RList_GPU, GradList_GPU, LapList_GPU;
-  // First index is the species.  The second index is the walker
-  std::vector<gpu::device_vector<CUDA_PRECISION_FULL*> > RhokLists_GPU;
-  gpu::device_vector<CUDA_PRECISION*> DataList_GPU;
-  gpu::device_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > Rnew_GPU;
-  gpu::host_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > Rnew_host;
-  gpu::device_vector<CUDA_PRECISION*> NLlist_GPU;
-  gpu::host_vector<CUDA_PRECISION*> NLlist_host;
-  std::vector<PosType>                                         Rnew;
-  gpu::host_vector<CUDA_PRECISION*> hostlist;
-  gpu::host_vector<CUDA_PRECISION_FULL*> hostlist_AA;
-  gpu::host_vector<TinyVector<CUDA_PRECISION, OHMMS_DIM> > R_host;
-  gpu::host_vector<TinyVector<CudaValueType, OHMMS_DIM> > Grad_host;
-#endif
   gpu::device_vector<int> iatList_GPU;
   gpu::host_vector<int> iatList_host;
   gpu::device_vector<int> AcceptList_GPU;

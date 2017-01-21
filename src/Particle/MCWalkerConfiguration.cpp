@@ -565,10 +565,8 @@ void MCWalkerConfiguration::updateLists_GPU()
     DataList_GPU.resize(nw);
   }
   hostlist.resize(nw);
-  hostlist_AA.resize(nw);
-#ifdef QMC_COMPLEX
   hostlist_valueType.resize(nw);
-#endif
+  hostlist_AA.resize(nw);
 
   for (int iw=0; iw<nw; iw++)
   {
@@ -582,39 +580,21 @@ void MCWalkerConfiguration::updateLists_GPU()
   {
     if (WalkerList[iw]->Grad_GPU.size() != R.size())
       std::cerr << "Error in Grad_GPU size for iw = " << iw << "!\n";
-#ifdef QMC_COMPLEX
     hostlist_valueType[iw] = (CudaValueType*)WalkerList[iw]->Grad_GPU.data();
   }
   GradList_GPU = hostlist_valueType;
-#else
-    hostlist[iw] = (CudaRealType*)WalkerList[iw]->Grad_GPU.data();
-  }
-  GradList_GPU = hostlist;
-#endif
 
   for (int iw=0; iw<nw; iw++)
   {
     if (WalkerList[iw]->Lap_GPU.size() != R.size())
       std::cerr << "Error in Lap_GPU size for iw = " << iw << "!\n";
-#ifdef QMC_COMPLEX
     hostlist_valueType[iw] = (CudaValueType*)WalkerList[iw]->Lap_GPU.data();
   }
   LapList_GPU = hostlist_valueType;
-#else
-    hostlist[iw] = (CudaRealType*)WalkerList[iw]->Lap_GPU.data();
-  }
-  LapList_GPU = hostlist;
-#endif
 
-#ifdef QMC_COMPLEX
   for (int iw=0; iw<nw; iw++)
     hostlist_valueType[iw] = WalkerList[iw]->cuda_DataSet.data();
   DataList_GPU = hostlist_valueType;
-#else
-  for (int iw=0; iw<nw; iw++)
-    hostlist[iw] = WalkerList[iw]->cuda_DataSet.data();
-  DataList_GPU = hostlist;
-#endif
 
   for (int isp=0; isp<NumSpecies; isp++)
   {
