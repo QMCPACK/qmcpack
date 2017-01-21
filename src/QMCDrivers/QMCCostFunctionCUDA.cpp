@@ -65,11 +65,11 @@ QMCCostFunctionCUDA::Return_t QMCCostFunctionCUDA::correlatedSampling(bool needD
   int numParams = OptVariablesForPsi.size();
   int numPtcl   = W.getTotalNum();
   std::vector<RealType> logpsi_new(nw), logpsi_fixed(nw), KE(nw);
-  TrialWaveFunction::ValueMatrix_t d_logpsi_dalpha, d_hpsioverpsi_dalpha;
-  TrialWaveFunction::GradMatrix_t  fixedG(nw, numPtcl);
-  TrialWaveFunction::ValueMatrix_t fixedL(nw, numPtcl);
-  TrialWaveFunction::GradMatrix_t  newG(nw, numPtcl);
-  TrialWaveFunction::ValueMatrix_t newL(nw, numPtcl);
+  RealMatrix_t d_logpsi_dalpha, d_hpsioverpsi_dalpha;
+  GradMatrix_t  fixedG(nw, numPtcl);
+  ValueMatrix_t fixedL(nw, numPtcl);
+  GradMatrix_t  newG(nw, numPtcl);
+  ValueMatrix_t newL(nw, numPtcl);
   if (needDerivs)
   {
     d_logpsi_dalpha.resize(nw, numParams);
@@ -124,13 +124,8 @@ QMCCostFunctionCUDA::Return_t QMCCostFunctionCUDA::correlatedSampling(bool needD
     if (needDerivs)
       for (int ip=0; ip<NumOptimizables; ip++)
       {
-#ifdef QMC_COMPLEX
-        TempDerivRecords[iw][ip]  =      std::abs(d_logpsi_dalpha(iw,ip));
-        TempHDerivRecords[iw][ip] = std::abs(d_hpsioverpsi_dalpha(iw,ip));
-#else
         TempDerivRecords[iw][ip]  =      d_logpsi_dalpha(iw,ip);
         TempHDerivRecords[iw][ip] = d_hpsioverpsi_dalpha(iw,ip);
-#endif
       }
   }
   //this is MPI barrier
@@ -295,13 +290,8 @@ QMCCostFunctionCUDA::checkConfigurations()
     if (needGrads)
       for (int ip=0; ip<OptVariables.size(); ip++)
       {
-#ifdef QMC_COMPLEX
-        TempDerivRecords[iw][ip] = std::abs(LogPsi_Derivs(iw,ip));
-        TempHDerivRecords[iw][ip] = std::abs(LocE_Derivs(iw,ip));
-#else
         TempDerivRecords[iw][ip] = LogPsi_Derivs(iw,ip);
         TempHDerivRecords[iw][ip] = LocE_Derivs(iw,ip);
-#endif
       }
     if (includeNonlocalH != "no")
       for (int iat=0; iat<nat; iat++)

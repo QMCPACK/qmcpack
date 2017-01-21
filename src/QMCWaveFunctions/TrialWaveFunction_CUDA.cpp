@@ -401,8 +401,8 @@ TrialWaveFunction::evaluateOptimizableLog (MCWalkerConfiguration &W,
 void
 TrialWaveFunction::evaluateDerivatives (MCWalkerConfiguration &W,
                                         const opt_variables_type& optvars,
-                                        ValueMatrix_t &dlogpsi,
-                                        ValueMatrix_t &dhpsioverpsi)
+                                        RealMatrix_t &dlogpsi,
+                                        RealMatrix_t &dhpsioverpsi)
 {
   for (int i=0,ii=DERIVS_TIMER; i<Z.size(); i++,ii+=TIMER_SKIP)
   {

@@ -182,13 +182,8 @@ bool VMCcuda::run()
         sN+=1;
         for (int i=0; i<numParams; i++)
         {
-#ifdef QMC_COMPLEX
-          RealType di  = std::abs(d_logpsi_dalpha(ip,i));
-          RealType hdi = std::abs(d_hpsioverpsi_dalpha(ip,i));
-#else 
           RealType di  = d_logpsi_dalpha(ip,i);
           RealType hdi = d_hpsioverpsi_dalpha(ip,i);
-#endif
           //             vectors
           D_E[i]+= di*E_L;
           HD[i]+=  hdi;
@@ -196,13 +191,8 @@ bool VMCcuda::run()
           D[i]+=   di;
           for (int j=0; j<numParams; j++)
           {
-#ifdef QMC_COMPLEX
-            RealType dj  = std::abs(d_logpsi_dalpha(ip,j));
-            RealType hdj = std::abs(d_hpsioverpsi_dalpha(ip,j));
-#else
             RealType dj  = d_logpsi_dalpha(ip,j);
             RealType hdj = d_hpsioverpsi_dalpha(ip,j);
-#endif
             Olp(i,j) += di*dj;
             Ham(i,j) += di*(hdj+dj*E_L);
             Ham2(i,j)+= (hdj+dj*E_L)*(hdi+di*E_L);
@@ -397,13 +387,8 @@ bool VMCcuda::runWithDrift()
         sN+=1;
         for (int i=0; i<numParams; i++)
         {
-#ifdef QMC_COMPLEX
-          RealType di = std::abs(d_logpsi_dalpha(ip,i));
-          RealType hdi = std::abs(d_hpsioverpsi_dalpha(ip,i));
-#else
           RealType di  = d_logpsi_dalpha(ip,i);
           RealType hdi = d_hpsioverpsi_dalpha(ip,i);
-#endif
           //             vectors
           D_E[i]+= di*E_L;
           HD[i]+=  hdi;
@@ -411,13 +396,8 @@ bool VMCcuda::runWithDrift()
           D[i]+=   di;
           for (int j=0; j<numParams; j++)
           {
-#ifdef QMC_COMPLEX
-            RealType dj = std::abs(d_logpsi_dalpha(ip,j));
-            RealType hdj = std::abs(d_hpsioverpsi_dalpha(ip,j));
-#else
             RealType dj  = d_logpsi_dalpha(ip,j);
             RealType hdj = d_hpsioverpsi_dalpha(ip,j);
-#endif
             Olp(i,j) += di*dj;
             Ham(i,j) += di*(hdj+dj*E_L);
             Ham2(i,j)+= (hdj+dj*E_L)*(hdi+di*E_L);

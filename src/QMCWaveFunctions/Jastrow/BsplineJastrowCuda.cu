@@ -17,7 +17,6 @@
     
 #define MAX_SPLINES 100
 #include <stdio.h>
-#include <thrust/complex.h>
 #include "BsplineJastrowCuda.h"
 #include "../../CUDA/gpu_misc.h"
 
@@ -942,7 +941,7 @@ two_body_gradient (double *R[], int first, int last, int iat,
 
 
 
-template<typename T, int BS>
+template<typename T, int BS, unsigned COMPLEX>
 __global__ void
 two_body_derivs_kernel(T **R, T **gradLogPsi,
                        int e1_first, int e1_last,
@@ -992,7 +991,7 @@ two_body_derivs_kernel(T **R, T **gradLogPsi,
         int outoff = i*BS+tid;
         int inoff  = outoff + 3*e1_first + 3*b1*BS;
         r1[0][outoff]    =    myR[inoff];//[3*e1_first + (3*b1+i)*BS + tid];
-        sGrad[0][outoff] = myGrad[inoff];
+        sGrad[0][outoff] = myGrad[inoff*COMPLEX];
       }
     __syncthreads();
     int ptcl1 = e1_first+b1*BS + tid;
@@ -1073,145 +1072,6 @@ two_body_derivs_kernel(T **R, T **gradLogPsi,
     myDerivs[tid+BS] = sderivs[0][tid+BS];
 }
 
-
-//YingWai: Quick hack only to make things work.
-//      Memory usage can be further optimized.
-#ifdef QMC_COMPLEX
-template<typename T, typename T2, int BS>
-__global__ void
-two_body_derivs_kernel(T **R, T2 **gradLogPsi,
-                       int e1_first, int e1_last,
-                       int e2_first, int e2_last,
-                       int numCoefs, T rMax,
-                       T **derivs)
-{
-  T dr = rMax/(T)(numCoefs-3);
-  T drInv = 1.0f/dr;
-  __syncthreads();
-  // Safety for rounding error
-  rMax *= 0.999999f;
-  int tid = threadIdx.x;
-  __shared__ T *myR, *myDerivs;
-  __shared__ T2 *myGrad;
-  if (tid == 0)
-  {
-    myR      =          R[blockIdx.x];
-    myGrad   = gradLogPsi[blockIdx.x];
-    myDerivs =     derivs[blockIdx.x];
-  }
-  __shared__ T sderivs[MAX_COEFS][2];
-  // __shared__ T coefs[MAX_COEFS];
-  // if (tid < numCoefs)
-  //   coefs[tid] = spline_coefs[tid];
-  __shared__ T r1[BS][3], r2[BS][3];
-  __shared__ T A[12][4];
-  if (tid < 16)
-  {
-    A[0+(tid>>2)][tid&3] = (T)AcudaSpline[tid+0];
-    A[4+(tid>>2)][tid&3] = (T)AcudaSpline[tid+16];
-    A[8+(tid>>2)][tid&3] = (T)AcudaSpline[tid+32];
-  }
-  __syncthreads();
-  sderivs[tid][0] = T();
-  sderivs[tid][1] = T();
-  int N1 = e1_last - e1_first + 1;
-  int N2 = e2_last - e2_first + 1;
-  int NB1 = N1/BS + ((N1 % BS) ? 1 : 0);
-  int NB2 = N2/BS + ((N2 % BS) ? 1 : 0);
-  __shared__ T sGrad[BS][3];
-  for (int b1=0; b1 < NB1; b1++)
-  {
-    // Load block of positions from global memory
-    for (int i=0; i<3; i++)
-      if ((3*b1+i)*BS + tid < 3*N1)
-      {
-        int outoff = i*BS+tid;
-        int inoff  = outoff + 3*e1_first + 3*b1*BS;
-        r1[0][outoff]    =    myR[inoff];//[3*e1_first + (3*b1+i)*BS + tid];
-        sGrad[0][outoff] = myGrad[inoff].real();
-      }
-    __syncthreads();
-    int ptcl1 = e1_first+b1*BS + tid;
-    for (int b2=0; b2 < NB2; b2++)
-    {
-      // Load block of positions from global memory
-      for (int i=0; i<3; i++)
-        if ((3*b2+i)*BS + tid < 3*N2)
-          r2[0][i*BS + tid] = myR[3*e2_first + (3*b2+i)*BS + tid];
-      __syncthreads();
-      // Now, loop over particles
-      int end = (b2+1)*BS < N2 ? BS : N2-b2*BS;
-      for (int j=0; j<end; j++)
-      {
-        int ptcl2 = e2_first + b2*BS+j;
-        T dx, dy, dz;
-        dx = r2[j][0] - r1[tid][0];
-        dy = r2[j][1] - r1[tid][1];
-        dz = r2[j][2] - r1[tid][2];
-        T d = dist(dx, dy, dz);
-        T dInv = 1.0f/d;
-        T s = d * drInv;
-        T sf = floorf (s);
-        int index = (int)sf;
-        T t = s - sf;
-        T t2 = t*t;
-        T t3 = t*t2;
-        T v0, v1, v2, v3;
-        // sderivs[index+0][0] += (A[0][0]*t3 + A[0][1]*t2 + A[0][2]*t + A[0][3]);
-        // sderivs[index+1][0] += (A[1][0]*t3 + A[1][1]*t2 + A[1][2]*t + A[1][3]);
-        // sderivs[index+2][0] += (A[2][0]*t3 + A[2][1]*t2 + A[2][2]*t + A[2][3]);
-        // sderivs[index+3][0] += (A[3][0]*t3 + A[3][1]*t2 + A[3][2]*t + A[3][3]);
-        v0 = (A[0][0]*t3 + A[0][1]*t2 + A[0][2]*t + A[0][3]);
-        v1 = (A[1][0]*t3 + A[1][1]*t2 + A[1][2]*t + A[1][3]);
-        v2 = (A[2][0]*t3 + A[2][1]*t2 + A[2][2]*t + A[2][3]);
-        v3 = (A[3][0]*t3 + A[3][1]*t2 + A[3][2]*t + A[3][3]);
-        for (int id=0; id<BS; id++)
-          if (tid == id && ptcl1 != ptcl2 && ptcl1 <= e1_last && (d < rMax))
-          {
-            sderivs[index+0][0] += v0;
-            sderivs[index+1][0] += v1;
-            sderivs[index+2][0] += v2;
-            sderivs[index+3][0] += v3;
-          }
-        // YingWai: Hacked this line.   (Sep 16, 16)
-        // AT: Unhacked (Dec 20, 2016)
-        T prefact = (dx*sGrad[tid][0] + dy*sGrad[tid][1] + dz*sGrad[tid][2])*dInv;
-        T du0 = drInv * (A[4][0]*t3 + A[4][1]*t2 + A[4][2]*t + A[4][3]);
-        T du1 = drInv * (A[5][0]*t3 + A[5][1]*t2 + A[5][2]*t + A[5][3]);
-        T du2 = drInv * (A[6][0]*t3 + A[6][1]*t2 + A[6][2]*t + A[6][3]);
-        T du3 = drInv * (A[7][0]*t3 + A[7][1]*t2 + A[7][2]*t + A[7][3]);
-        // This is the dot (gradu, grad_log_psi) term.
-        v0 = 2.0f* prefact * du0;
-        v1 = 2.0f* prefact * du1;
-        v2 = 2.0f* prefact * du2;
-        v3 = 2.0f* prefact * du3;
-        // This is the lapl u term
-        v0 -= drInv*drInv*(A[ 8][0]*t3 + A[ 8][1]*t2 + A[ 8][2]*t + A[ 8][3]) + 2.0f*du0*dInv;
-        v1 -= drInv*drInv*(A[ 9][0]*t3 + A[ 9][1]*t2 + A[ 9][2]*t + A[ 9][3]) + 2.0f*du1*dInv;
-        v2 -= drInv*drInv*(A[10][0]*t3 + A[10][1]*t2 + A[10][2]*t + A[10][3]) + 2.0f*du2*dInv;
-        v3 -= drInv*drInv*(A[11][0]*t3 + A[11][1]*t2 + A[11][2]*t + A[11][3]) + 2.0f*du3*dInv;
-        for (int id=0; id<BS; id++)
-          if (tid == id && ptcl1 != ptcl2 && ptcl1 <= e1_last && (d < rMax))
-          {
-            sderivs[index+0][1] += v0;
-            sderivs[index+1][1] += v1;
-            sderivs[index+2][1] += v2;
-            sderivs[index+3][1] += v3;
-          }
-      }
-      __syncthreads();
-    }
-  }
-  //  if (e1_first == e2_first)
-  sderivs[tid][0] *= 0.5f;
-  sderivs[tid][1] *= 0.5f;
-  if (tid < 2*numCoefs)
-    myDerivs[tid] = -sderivs[0][tid];
-  if (tid+BS < 2*numCoefs)
-    myDerivs[tid+BS] = sderivs[0][tid+BS];
-}
-
-#endif
 
 void
 two_body_derivs(float *R[], float *gradLogPsi[], int e1_first, int e1_last,
@@ -1222,7 +1082,7 @@ two_body_derivs(float *R[], float *gradLogPsi[], int e1_first, int e1_last,
   const int BS=32;
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
-  two_body_derivs_kernel<float,BS><<<dimGrid,dimBlock>>>
+  two_body_derivs_kernel<float,BS,1><<<dimGrid,dimBlock>>>
   (R, gradLogPsi, e1_first, e1_last, e2_first, e2_last, numCoefs,
    rMax, derivs);
 }
@@ -1236,7 +1096,7 @@ two_body_derivs(double *R[], double *gradLogPsi[], int e1_first, int e1_last,
   const int BS=32;
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
-  two_body_derivs_kernel<double,BS><<<dimGrid,dimBlock>>>
+  two_body_derivs_kernel<double,BS,1><<<dimGrid,dimBlock>>>
   (R, gradLogPsi, e1_first, e1_last, e2_first, e2_last, numCoefs,
    rMax, derivs);
 }
@@ -1255,8 +1115,8 @@ two_body_derivs(float *R[], std::complex<float> *gradLogPsi[], int e1_first, int
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
 
-  two_body_derivs_kernel<float,thrust::complex<float>,BS><<<dimGrid,dimBlock>>>
-  (R, (thrust::complex<float>**)gradLogPsi, e1_first, e1_last, e2_first, e2_last, numCoefs,
+  two_body_derivs_kernel<float,BS,2><<<dimGrid,dimBlock>>>
+  (R, (float**)gradLogPsi, e1_first, e1_last, e2_first, e2_last, numCoefs,
    rMax, derivs);
 }
 
@@ -1270,8 +1130,8 @@ two_body_derivs(double *R[], std::complex<double> *gradLogPsi[], int e1_first, i
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
 
-  two_body_derivs_kernel<double,thrust::complex<double>,BS><<<dimGrid,dimBlock>>>
-  (R, (thrust::complex<double>**)gradLogPsi, e1_first, e1_last, e2_first, e2_last, numCoefs,
+  two_body_derivs_kernel<double,BS,2><<<dimGrid,dimBlock>>>
+  (R, (double**)gradLogPsi, e1_first, e1_last, e2_first, e2_last, numCoefs,
    rMax, derivs);
 }
 #endif
@@ -2066,7 +1926,7 @@ one_body_gradient (double *Rlist[], int iat, double C[], int first, int last,
 
 
 
-template<typename T, int BS>
+template<typename T, int BS, unsigned COMPLEX>
 __global__ void
 one_body_derivs_kernel(T* C, T **R, T **gradLogPsi,
                        int cfirst, int clast,
@@ -2113,7 +1973,7 @@ one_body_derivs_kernel(T* C, T **R, T **gradLogPsi,
         int outoff = i*BS+tid;
         int inoff  = outoff + 3*efirst + 3*be*BS;
         r[0][outoff]    =     myR[inoff];
-        sGrad[0][outoff] = myGrad[inoff];
+        sGrad[0][outoff] = myGrad[inoff*COMPLEX];
       }
     __syncthreads();
     int eptcl = efirst+be*BS + tid;
@@ -2185,133 +2045,6 @@ one_body_derivs_kernel(T* C, T **R, T **gradLogPsi,
   if (tid+BS < 2*numCoefs)
     myDerivs[tid+BS] = -sderivs[0][tid+BS];
 }
-
-//YingWai: Quick hack only to make things work.
-//      Memory usage can be further optimized.
-#ifdef QMC_COMPLEX
-template<typename T, typename T2, int BS>
-__global__ void
-one_body_derivs_kernel(T* C, T **R, T2 **gradLogPsi,
-                       int cfirst, int clast,
-                       int efirst, int elast,
-                       int numCoefs, T rMax,
-                       T **derivs)
-{
-  T dr = rMax/(T)(numCoefs-3);
-  T drInv = 1.0/dr;
-  __syncthreads();
-  // Safety for rounding error
-  rMax *= 0.999999f;
-  int tid = threadIdx.x;
-  __shared__ T *myR, *myDerivs;
-  __shared__ T2 *myGrad;
-  if (tid == 0)
-  {
-    myR      =          R[blockIdx.x];
-    myGrad   = gradLogPsi[blockIdx.x];
-    myDerivs =     derivs[blockIdx.x];
-  }
-  __shared__ T sderivs[MAX_COEFS][2];
-  __shared__ T r[BS][3], c[BS][3];
-  __shared__ T A[12][4];
-  if (tid < 16)
-  {
-    A[0+(tid>>2)][tid&3] = (T)AcudaSpline[tid+0];
-    A[4+(tid>>2)][tid&3] = (T)AcudaSpline[tid+16];
-    A[8+(tid>>2)][tid&3] = (T)AcudaSpline[tid+32];
-  }
-  __syncthreads();
-  sderivs[tid][0] = T();
-  sderivs[tid][1] = T();
-  int Nc = clast - cfirst + 1;
-  int Ne = elast - efirst + 1;
-  int NBc = (Nc+BS-1)/BS;
-  int NBe = (Ne+BS-1)/BS;
-  __shared__ T sGrad[BS][3];
-  for (int be=0; be < NBe; be++)
-  {
-    // Load block of positions from global memory
-    for (int i=0; i<3; i++)
-      if ((3*be+i)*BS + tid < 3*Ne)
-      {
-        int outoff = i*BS+tid;
-        int inoff  = outoff + 3*efirst + 3*be*BS;
-        r[0][outoff]    =     myR[inoff];
-        sGrad[0][outoff] = myGrad[inoff].real();
-      }
-    __syncthreads();
-    int eptcl = efirst+be*BS + tid;
-    for (int bc=0; bc < NBc; bc++)
-    {
-      // Load block of positions from global memory
-      for (int i=0; i<3; i++)
-        if ((3*bc+i)*BS + tid < 3*Nc)
-          c[0][i*BS + tid] = C[3*cfirst + (3*bc+i)*BS + tid];
-      __syncthreads();
-      // Now, loop over particles
-      int end = min(BS, Nc-bc*BS);
-      for (int j=0; j<end; j++)
-      {
-        T dx, dy, dz;
-        dx = c[j][0] - r[tid][0];
-        dy = c[j][1] - r[tid][1];
-        dz = c[j][2] - r[tid][2];
-        T d = dist(dx, dy, dz);
-        T dInv = 1.0f/d;
-        T s = d * drInv;
-        T sf = floorf (s);
-        int index = (int)sf;
-        T t = s - sf;
-        T t2 = t*t;
-        T t3 = t*t2;
-        T v0 = (A[0][0]*t3 + A[0][1]*t2 + A[0][2]*t + A[0][3]);
-        T v1 = (A[1][0]*t3 + A[1][1]*t2 + A[1][2]*t + A[1][3]);
-        T v2 = (A[2][0]*t3 + A[2][1]*t2 + A[2][2]*t + A[2][3]);
-        T v3 = (A[3][0]*t3 + A[3][1]*t2 + A[3][2]*t + A[3][3]);
-        for (int id=0; id<BS; id++)
-          if (tid == id && eptcl <= elast && (d < rMax))
-          {
-            sderivs[index+0][0] += v0;
-            sderivs[index+1][0] += v1;
-            sderivs[index+2][0] += v2;
-            sderivs[index+3][0] += v3;
-          }
-        // YingWai: Hacked this line.   (Sep 16, 16)
-        // AT: Unhacked (Dec 20, 2016)
-        T prefact = (dx*sGrad[tid][0] + dy*sGrad[tid][1] + dz*sGrad[tid][2])*dInv;
-        T du0 = drInv * (A[4][0]*t3 + A[4][1]*t2 + A[4][2]*t + A[4][3]);
-        T du1 = drInv * (A[5][0]*t3 + A[5][1]*t2 + A[5][2]*t + A[5][3]);
-        T du2 = drInv * (A[6][0]*t3 + A[6][1]*t2 + A[6][2]*t + A[6][3]);
-        T du3 = drInv * (A[7][0]*t3 + A[7][1]*t2 + A[7][2]*t + A[7][3]);
-        // This is the dot (gradu, grad_log_psi) term.
-        v0 = 2.0f* prefact * du0;
-        v1 = 2.0f* prefact * du1;
-        v2 = 2.0f* prefact * du2;
-        v3 = 2.0f* prefact * du3;
-        // This is the lapl u term
-        v0 -= drInv*drInv*(A[ 8][0]*t3 + A[ 8][1]*t2 + A[ 8][2]*t + A[ 8][3]) + 2.0f*du0*dInv;
-        v1 -= drInv*drInv*(A[ 9][0]*t3 + A[ 9][1]*t2 + A[ 9][2]*t + A[ 9][3]) + 2.0f*du1*dInv;
-        v2 -= drInv*drInv*(A[10][0]*t3 + A[10][1]*t2 + A[10][2]*t + A[10][3]) + 2.0f*du2*dInv;
-        v3 -= drInv*drInv*(A[11][0]*t3 + A[11][1]*t2 + A[11][2]*t + A[11][3]) + 2.0f*du3*dInv;
-        for (int id=0; id<BS; id++)
-          if (tid == id && eptcl <= elast && (d < rMax))
-          {
-            sderivs[index+0][1] += v0;
-            sderivs[index+1][1] += v1;
-            sderivs[index+2][1] += v2;
-            sderivs[index+3][1] += v3;
-          }
-      }
-      __syncthreads();
-    }
-  }
-  sderivs[tid][1] *= 0.5f;
-  if (tid < 2*numCoefs)
-    myDerivs[tid] = -sderivs[0][tid];
-  if (tid+BS < 2*numCoefs)
-    myDerivs[tid+BS] = -sderivs[0][tid+BS];
-}
-#endif
 
 
 void
@@ -2324,7 +2057,7 @@ one_body_derivs(float C[], float *R[], float *gradLogPsi[],
   const int BS=32;
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
-  one_body_derivs_kernel<float,BS><<<dimGrid,dimBlock>>>
+  one_body_derivs_kernel<float,BS,1><<<dimGrid,dimBlock>>>
   (C, R, gradLogPsi, cfirst, clast, efirst, elast, numCoefs,
    rMax, derivs);
 }
@@ -2341,7 +2074,7 @@ one_body_derivs(double C[], double *R[], double *gradLogPsi[],
   const int BS=32;
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
-  one_body_derivs_kernel<double,BS><<<dimGrid,dimBlock>>>
+  one_body_derivs_kernel<double,BS,1><<<dimGrid,dimBlock>>>
   (C, R, gradLogPsi, cfirst, clast, efirst, elast, numCoefs,
    rMax, derivs);
 }
@@ -2360,8 +2093,8 @@ one_body_derivs(float C[], float *R[], std::complex<float> *gradLogPsi[],
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
 
-  one_body_derivs_kernel<float,thrust::complex<float>,BS><<<dimGrid,dimBlock>>>
-  (C, R, (thrust::complex<float>**)gradLogPsi, cfirst, clast, efirst, elast, numCoefs,
+  one_body_derivs_kernel<float,BS,2><<<dimGrid,dimBlock>>>
+  (C, R, (float**)gradLogPsi, cfirst, clast, efirst, elast, numCoefs,
    rMax, derivs);
 }
 
@@ -2377,8 +2110,8 @@ one_body_derivs(double C[], double *R[], std::complex<double> *gradLogPsi[],
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
 
-  one_body_derivs_kernel<double,thrust::complex<double>,BS><<<dimGrid,dimBlock>>>
-  (C, R, (thrust::complex<double>**)gradLogPsi, cfirst, clast, efirst, elast, numCoefs,
+  one_body_derivs_kernel<double,BS,2><<<dimGrid,dimBlock>>>
+  (C, R, (double**)gradLogPsi, cfirst, clast, efirst, elast, numCoefs,
    rMax, derivs);
 }
 

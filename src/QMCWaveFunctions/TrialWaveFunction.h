@@ -113,6 +113,7 @@ public:
   typedef OrbitalBase::CudaValueType   CudaValueType;
   typedef OrbitalBase::CudaGradType    CudaGradType;
   typedef OrbitalBase::CudaRealType    CudaRealType;
+  typedef OrbitalBase::RealMatrix_t    RealMatrix_t;
   typedef OrbitalBase::ValueMatrix_t   ValueMatrix_t;
   typedef OrbitalBase::GradMatrix_t    GradMatrix_t;
   typedef ParticleSet::Walker_t        Walker_t;
@@ -493,8 +494,8 @@ public:
 
   void evaluateDerivatives (MCWalkerConfiguration &W,
                             const opt_variables_type& optvars,
-                            ValueMatrix_t &dlogpsi,
-                            ValueMatrix_t &dhpsioverpsi);
+                            RealMatrix_t &dlogpsi,
+                            RealMatrix_t &dhpsioverpsi);
 
 #endif
 
