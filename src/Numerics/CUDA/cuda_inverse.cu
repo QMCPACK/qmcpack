@@ -334,15 +334,19 @@ cublas_inverse (cublasHandle_t handle,
   int *infoArray;
   callAndCheckError( cudaMalloc((void**) &infoArray, numMats * sizeof(int)), __LINE__ );
 
-  // (i)  call cublas functions to do inversion
-  //      LU decomposition
-  callAndCheckError( cublasZgetrfBatched( handle, N, (cuDoubleComplex**)Alist_d, rowStride, NULL, infoArray, numMats), __LINE__ );
+  // (i)   copy all the elements of Alist to AWorklist
+  dim3 dimBlockConvert (CONVERT_BS);
+  dim3 dimGridConvert ((N*rowStride + (CONVERT_BS-1)) / CONVERT_BS, numMats);
+  convert_complex<cuDoubleComplex, double, cuDoubleComplex> <<< dimGridConvert, dimBlockConvert >>> ((cuDoubleComplex**)AWorklist_d, (cuDoubleComplex**)Alist_d, N*rowStride);
 
-  //      Inversion
+  // (ii)  call cublas to do matrix inversion
+  //       LU decomposition
+  callAndCheckError( cublasZgetrfBatched( handle, N, (cuDoubleComplex**)AWorklist_d, rowStride, NULL, infoArray, numMats), __LINE__ );
+  //       Inversion
 #if (CUDA_VERSION >= 6050)
-  callAndCheckError( cublasZgetriBatched( handle, N, (const cuDoubleComplex**)Alist_d, rowStride, NULL, (cuDoubleComplex**)Ainvlist_d, rowStride, infoArray, numMats), __LINE__ );
+  callAndCheckError( cublasZgetriBatched( handle, N, (const cuDoubleComplex**)AWorklist_d, rowStride, NULL, (cuDoubleComplex**)Ainvlist_d, rowStride, infoArray, numMats), __LINE__ );
 #else
-  callAndCheckError( cublasZgetriBatched( handle, N, (cuDoubleComplex**)Alist_d, rowStride, NULL, (cuDoubleComplex**)Ainvlist_d, rowStride, infoArray, numMats), __LINE__ );
+  callAndCheckError( cublasZgetriBatched( handle, N, (cuDoubleComplex**)AWorklist_d, rowStride, NULL, (cuDoubleComplex**)Ainvlist_d, rowStride, infoArray, numMats), __LINE__ );
 #endif
 
   cudaDeviceSynchronize();
