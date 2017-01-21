@@ -45,17 +45,10 @@ TrialWaveFunction::recompute
 }
 
 
-#ifdef QMC_COMPLEX
 void
 TrialWaveFunction::reserve
 (PointerPool<gpu::device_vector<CudaValueType> > &pool,
  bool onlyOptimizable)
-#else
-void
-TrialWaveFunction::reserve
-(PointerPool<gpu::device_vector<CudaRealType> > &pool,
- bool onlyOptimizable)
-#endif
 {
   for(int i=0; i<Z.size(); i++)
     if (!onlyOptimizable || Z[i]->Optimizable)

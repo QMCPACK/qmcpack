@@ -306,11 +306,7 @@ public:
       Dets[id]->recompute(W, firstTime);
   }
 
-#ifdef QMC_COMPLEX
   void reserve (PointerPool<gpu::device_vector<CudaValueType> > &pool)
-#else
-  void reserve (PointerPool<gpu::device_vector<CudaRealType> > &pool)
-#endif
   {
     for (int id=0; id<Dets.size(); id++)
       Dets[id]->reserve(pool);
