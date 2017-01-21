@@ -21,49 +21,9 @@
 #include <einspline/multi_bspline_eval_cuda.h>
 #include "Configuration.h"
 #include "AtomicOrbitalCuda.h"
+#include "PhaseFactors.h"
 #ifdef HAVE_MKL
 #include <mkl_vml.h>
-#endif
-
-#ifdef QMC_COMPLEX
-//YingWai's implementation for complex; moving to a new header file PhaseFactors.h
-// These functions need further integration
-#include "PhaseFactors.h"
-#else
-void apply_phase_factors(float kPoints[], int makeTwoCopies[],
-                         float pos[], float *phi_in[], float *phi_out[],
-                         int num_splines, int num_walkers);
-#ifdef ALGO_CHRISTOS
-void apply_phase_factors(float kPoints[], int makeTwoCopies[],
-                         float pos[], float *phi_in[], float *phi_out[],
-                         float *GL_in[], float *GL_out[],
-                         int num_splines, int num_walkers, int row_stride,
-                         bool dontMakeTwoCopies);
-#else
-void apply_phase_factors(float kPoints[], int makeTwoCopies[],
-                         float pos[], float *phi_in[], float *phi_out[],
-                         float *GL_in[], float *GL_out[],
-                         int num_splines, int num_walkers, int row_stride);
-#endif
-
-void apply_phase_factors(float kPoints[], int makeTwoCopies[], int TwoCopiesIndex[],
-                         float pos[], float *phi_in[], float *phi_out[],
-                         float *GL_in[], float *GL_out[],
-                         int num_splines, int num_walkers, int row_stride);
-
-void apply_phase_factors(double kPoints[], int makeTwoCopies[],
-                         double pos[], double *phi_in[], double *phi_out[],
-                         int num_splines, int num_walkers);
-
-void apply_phase_factors(double kPoints[], int makeTwoCopies[],
-                         double pos[], double *phi_in[], double *phi_out[],
-                         double *GL_in[], double *GL_out[],
-                         int num_splines, int num_walkers, int row_stride);
-
-void apply_phase_factors(double kPoints[], int makeTwoCopies[], int TwoCopiesIndex[],
-                         double pos[], double *phi_in[], double *phi_out[],
-                         double *GL_in[], double *GL_out[],
-                         int num_splines, int num_walkers, int row_stride);
 #endif
 
 namespace qmcplusplus
