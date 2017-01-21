@@ -639,11 +639,7 @@ void DMCcuda::resetRun()
   PointerPool<Walker_t::cuda_Buffer_t > pool;
   Psi.reserve (pool);
   app_log() << "Each walker requires "
-#ifdef QMC_COMPLEX
             << pool.getTotalSize() * sizeof(CudaValueType)
-#else
-            << pool.getTotalSize() * sizeof(CudaRealType)
-#endif
             << " bytes in GPU memory.\n";
   app_log() << "Preparing to allocate " << W.WalkerList.size()
             << " walkers.\n";

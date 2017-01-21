@@ -457,13 +457,8 @@ void VMCcuda::resetRun()
   PointerPool<Walker_t::cuda_Buffer_t > pool;
   app_log() << "Starting VMCcuda::resetRun() " << std::endl;
   Psi.reserve (pool);
-#ifdef QMC_COMPLEX
   app_log() << "Each walker requires " << pool.getTotalSize() * sizeof(CudaValueType)
             << " bytes in GPU memory.\n";
-#else
-  app_log() << "Each walker requires " << pool.getTotalSize() * sizeof(CudaRealType)
-            << " bytes in GPU memory.\n";
-#endif
   // Now allocate memory on the GPU card for each walker
   // for (int iw=0; iw<W.WalkerList.size(); iw++) {
   //   Walker_t &walker = *(W.WalkerList[iw]);
