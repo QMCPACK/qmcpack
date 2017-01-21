@@ -38,8 +38,6 @@ template<class T1, class T2, class OP> struct OTBinary {};
 
 // generic Dot-product functors
 template<class T1, class T2> struct OTDot {};
-template<class T1, class T2> struct OTDot_CC {};
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////

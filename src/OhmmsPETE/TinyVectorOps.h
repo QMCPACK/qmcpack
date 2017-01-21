@@ -438,25 +438,6 @@ struct OTDot< TinyVector<std::complex<T1>,3> , TinyVector<std::complex<T2>,3> >
   }
 };
 
-#ifdef QMC_COMPLEX
-/** specialization for complex-complex-conjugate TinyVector */
-template<class T1, class T2>
-struct OTDot_CC< TinyVector<std::complex<T1>,3> , TinyVector<std::complex<T2>,3> >
-{
-  typedef typename BinaryReturn<std::complex<T1>, std::complex<T2>, OpMultiply>::Type_t Type_t;
-  inline static Type_t
-  apply(const TinyVector<std::complex<T1>,3>& lhs, const TinyVector<std::complex<T2>,3>& rhs)
-  {
-    return std::complex<T1>(lhs[0].real()*rhs[0].real() + lhs[0].imag()*rhs[0].imag() + 
-                            lhs[1].real()*rhs[1].real() + lhs[1].imag()*rhs[1].imag() + 
-                            lhs[2].real()*rhs[2].real() + lhs[2].imag()*rhs[2].imag() ,
-                            lhs[0].imag()*rhs[0].real() - lhs[0].real()*rhs[0].imag() - 
-                            lhs[1].real()*rhs[1].imag() + lhs[1].imag()*rhs[1].real() - 
-                            lhs[2].real()*rhs[2].imag() + lhs[2].imag()*rhs[2].real() );
-  }
-};
-#endif
-
 //////////////////////////////////////////////////////////////////////
 //
 // Definition of the struct OTCross.
