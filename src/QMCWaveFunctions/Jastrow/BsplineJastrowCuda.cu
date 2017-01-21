@@ -1102,8 +1102,8 @@ two_body_derivs(double *R[], double *gradLogPsi[], int e1_first, int e1_last,
 }
 
 
-//YingWai: Quick hack only to make things work.
-//      Memory usage can be further optimized.
+// Ye: use offset to recycle the old routines
+// block size can be further optimized.
 #ifdef QMC_COMPLEX
 void
 two_body_derivs(float *R[], std::complex<float> *gradLogPsi[], int e1_first, int e1_last,
@@ -2079,8 +2079,8 @@ one_body_derivs(double C[], double *R[], double *gradLogPsi[],
    rMax, derivs);
 }
 
-//YingWai: Quick hack only to make things work.
-//      Memory usage can be further optimized.
+// Ye: use offset to recycle the old routines
+// block size can be further optimized.
 #ifdef QMC_COMPLEX
 void
 one_body_derivs(float C[], float *R[], std::complex<float> *gradLogPsi[],
