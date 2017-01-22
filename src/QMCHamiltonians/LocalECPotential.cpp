@@ -28,10 +28,10 @@ LocalECPotential::LocalECPotential(const ParticleSet& ions, ParticleSet& els):
   set_energy_domain(potential);
   two_body_quantum_domain(ions,els);
   NumIons=ions.getTotalNum();
-  myTableIndex=els.addTable(ions,DT_AOS);
+  myTableIndex=els.addTable(ions,DT_SOA_PREFERRED);
   //allocate null
   PPset.resize(ions.getSpeciesSet().getTotalNum(),0);
-  PP.resize(NumIons,0);
+  PP.resize(NumIons,nullptr);
   Zeff.resize(NumIons,0.0);
   gZeff.resize(ions.getSpeciesSet().getTotalNum(),0);
 }
@@ -48,7 +48,7 @@ LocalECPotential::~LocalECPotential()
 
 void LocalECPotential::resetTargetParticleSet(ParticleSet& P)
 {
-  int tid=P.addTable(IonConfig,DT_AOS);
+  int tid=P.addTable(IonConfig,DT_SOA_PREFERRED);
   if(tid != myTableIndex)
   {
     APP_ABORT("  LocalECPotential::resetTargetParticleSet found a different distance table index.");
@@ -107,17 +107,34 @@ LocalECPotential::evaluate(ParticleSet& P)
   {
     const DistanceTableData& d_table(*P.DistTables[myTableIndex]);
     Value=0.0;
-    //loop over all the ions
-    for(int iat=0; iat<NumIons; iat++)
+    if(d_table.DTType==DT_SOA)
     {
-      RadialPotentialType* ppot(PP[iat]);
-      if(ppot==0)
-        continue;
-      Return_t esum(0.0);
-      for(int nn=d_table.M[iat]; nn<d_table.M[iat+1]; ++nn)
-        esum += ppot->splint(d_table.r(nn))*d_table.rinv(nn);
-      //count the sign and effective charge
-      Value -= esum*Zeff[iat];
+      for(int iat=0; iat<NumIons; ++iat)
+      {
+        RadialPotentialType* ppot(PP[iat]);
+        if(ppot==nullptr) continue;
+        RealType esum(0);
+        const RealType* restrict dist=d_table.r_m2[iat];
+        for(int nj=0, jmax=d_table.nadj(iat); nj<jmax; ++nj)
+        {
+          esum += ppot->splint(dist[nj])/dist[nj];
+        }
+        Value -= esum*Zeff[iat];
+      }
+    }
+    else
+    {
+      //loop over all the ions
+      for(int iat=0; iat<NumIons; iat++)
+      {
+        RadialPotentialType* ppot(PP[iat]);
+        if(ppot==nullptr) continue;
+        RealType esum(0);
+        for(int nn=d_table.M[iat]; nn<d_table.M[iat+1]; ++nn)
+          esum += ppot->splint(d_table.r(nn))*d_table.rinv(nn);
+        //count the sign and effective charge
+        Value -= esum*Zeff[iat];
+      }
     }
   }
   return Value;

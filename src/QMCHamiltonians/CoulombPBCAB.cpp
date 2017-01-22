@@ -35,10 +35,12 @@ CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns,
   two_body_quantum_domain(ions,elns);
   //Use singleton pattern
   //AB = new LRHandlerType(ions);
-  myTableIndex=elns.addTable(ions,DT_AOS);
+  myTableIndex=elns.addTable(ions,DT_SOA_PREFERRED);
   initBreakup(elns);
+  elns.DistTables[myTableIndex]->setRmax(myRcut);
   prefix="Flocal";
-  app_log() << "  Maximum K shell " << AB->MaxKshell << std::endl;
+  app_log() << "  Rcut                " << myRcut << std::endl;
+  app_log() << "  Maximum K shell     " << AB->MaxKshell << std::endl;
   app_log() << "  Number of k vectors " << AB->Fk.size() << std::endl;
 }
 
@@ -71,7 +73,7 @@ CoulombPBCAB:: ~CoulombPBCAB()
 
 void CoulombPBCAB::resetTargetParticleSet(ParticleSet& P)
 {
-  int tid=P.addTable(PtclA,DT_AOS);
+  int tid=P.addTable(PtclA,DT_SOA_PREFERRED);
   if(tid != myTableIndex)
   {
     APP_ABORT("CoulombPBCAB::resetTargetParticleSet found inconsistent table index");
@@ -339,20 +341,35 @@ CoulombPBCAB::evalConsts(bool report)
 CoulombPBCAB::Return_t
 CoulombPBCAB::evalSR(ParticleSet& P)
 {
+  CONSTEXPR mRealType czero(0);
   const DistanceTableData &d_ab(*P.DistTables[myTableIndex]);
-  mRealType res=0.0;
-  //Loop over distinct eln-ion pairs
-  for(int iat=0; iat<NptclA; iat++)
-  {
-    mRealType esum = 0.0;
-    RadFunctorType* rVs=Vat[iat];
-    for(int nn=d_ab.M[iat], jat=0; nn<d_ab.M[iat+1]; ++nn,++jat)
+  mRealType res=czero;
+  if(d_ab.DTType == DT_SOA)
+  {//can be optimized but not important enough
+    for(size_t b=0; b<NptclB; ++b)
     {
-      // if(d_ab.r(nn)>=(myRcut-0.1)) continue;
-      esum += Qat[jat]*d_ab.rinv(nn)*rVs->splint(d_ab.r(nn));;
+      const RealType* restrict dist=d_ab.Distances[b];
+      mRealType esum=czero;
+      for(size_t a=0; a<NptclA; ++a)
+        esum += Zat[a]*Vat[a]->splint(dist[a])/dist[a];
+      res += esum*Qat[b];
     }
-    //Accumulate pair sums...species charge for atom i.
-    res += Zat[iat]*esum;
+  }
+  else
+  {
+    //Loop over distinct eln-ion pairs
+    for(int iat=0; iat<NptclA; iat++)
+    {
+      mRealType esum = czero;
+      RadFunctorType* rVs=Vat[iat];
+      for(int nn=d_ab.M[iat], jat=0; nn<d_ab.M[iat+1]; ++nn,++jat)
+      {
+        // if(d_ab.r(nn)>=(myRcut-0.1)) continue;
+        esum += Qat[jat]*d_ab.rinv(nn)*rVs->splint(d_ab.r(nn));;
+      }
+      //Accumulate pair sums...species charge for atom i.
+      res += Zat[iat]*esum;
+    }
   }
   return res;
 }

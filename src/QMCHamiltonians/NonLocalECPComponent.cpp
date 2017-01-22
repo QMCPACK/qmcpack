@@ -79,8 +79,12 @@ void NonLocalECPComponent::resize_warrays(int n,int m,int l)
   //for(int nl=1; nl<nlpp_m.size(); nl++) nlpp_m[nl]->setGridManager(false);
   if(lmax)
   {
-    Lfactor1.resize(lmax);
-    Lfactor2.resize(lmax);
+    if(lmax>7) 
+    {
+      APP_ABORT("Increase the maximum angular momentum in NonLocalECPComponet.h");
+    }
+    //Lfactor1.resize(lmax);
+    //Lfactor2.resize(lmax);
     for(int nl=0; nl<lmax; nl++)
     {
       Lfactor1[nl]=static_cast<RealType>(2*nl+1);
@@ -100,6 +104,75 @@ void NonLocalECPComponent::print(std::ostream& os)
   for(int ik=0; ik<nknot; ik++)
     os << "       " << sgridxyz_m[ik] << std::setw(20) << sgridweight_m[ik] << std::endl;
 }
+
+NonLocalECPComponent::RealType
+NonLocalECPComponent::evaluateOne(ParticleSet& W, int iat, TrialWaveFunction& psi, 
+    int iel, RealType r, const PosType& dr, 
+    bool Tmove, std::vector<NonLocalData>& Txy) const
+{
+  CONSTEXPR RealType czero(0);
+  CONSTEXPR RealType cone(1);
+
+  RealType lpol_[lmax+1];
+  RealType vrad_[nchannel];
+  RealType psiratio_[nknot];
+  PosType deltaV[16];
+
+  // Compute ratio of wave functions
+  for (int j=0; j < nknot ; j++)
+  {
+    deltaV[j]=r*rrotsgrid_m[j]-dr;
+    W.makeMoveOnSphere(iel,deltaV[j]);
+#if defined(QMC_COMPLEX)
+    psiratio_[j]=psi.ratio(W,iel)*sgridweight_m[j]*std::cos(psi.getPhaseDiff());
+#else
+    psiratio_[j]=psi.ratio(W,iel)*sgridweight_m[j];
+#endif
+    W.rejectMove(iel);
+    psi.resetPhaseDiff();
+    //psi.rejectMove(iel);
+  }
+  // Compute radial potential
+  for(int ip=0; ip< nchannel; ip++)
+    vrad_[ip]=nlpp_m[ip]->splint(r)*wgt_angpp_m[ip];
+
+  const RealType rinv=cone/r;
+  RealType pairpot=0; 
+  // Compute spherical harmonics on grid
+  for (int j=0, jl=0; j<nknot ; j++)
+  {
+    RealType zz=dot(dr,rrotsgrid_m[j])*rinv;
+    // Forming the Legendre polynomials
+    lpol_[0]=cone;
+    RealType lpolprev=czero;
+    for (int l=0 ; l< lmax ; l++)
+    {
+      //Not a big difference
+      //lpol[l+1]=(2*l+1)*zz*lpol[l]-l*lpolprev;
+      //lpol[l+1]/=(l+1);
+      lpol_[l+1]=Lfactor1[l]*zz*lpol_[l]-l*lpolprev;
+      lpol_[l+1]*=Lfactor2[l];
+      lpolprev=lpol_[l];
+    }
+
+    RealType lsum=czero;
+    for(int l=0; l <nchannel; l++)
+      lsum += vrad_[l]*lpol_[ angpp_m[l] ];
+    lsum *= psiratio_[j];
+    if(Tmove) Txy.push_back(NonLocalData(iel,lsum,deltaV[j]));
+    pairpot+=lsum;
+  }
+
+#if !defined(REMOVE_TRACEMANAGER)
+  if( streaming_particles)
+  {
+    (*Vi_sample)(iat) += .5*pairpot;
+    (*Ve_sample)(iel) += .5*pairpot;
+  }
+#endif
+  return pairpot;
+}
+
 /** evaluate the non-local potential of the iat-th ionic center
  * @param W electron configuration
  * @param iat ionic index
@@ -113,6 +186,7 @@ NonLocalECPComponent::RealType
 NonLocalECPComponent::evaluate(ParticleSet& W, int iat, TrialWaveFunction& psi)
 {
   RealType esum=0.0;
+#if 0
   RealType pairpot;
   std::vector<PosType> deltarV(nknot);
   DistanceTableData* myTable = W.DistTables[myTableIndex];
@@ -194,6 +268,7 @@ NonLocalECPComponent::evaluate(ParticleSet& W, int iat, TrialWaveFunction& psi)
     ////////////////////////////////////
     //iel++;
   }   /* end loop over electron */
+#endif
   return esum;
 }
 
@@ -595,8 +670,9 @@ NonLocalECPComponent::evaluate(ParticleSet& W, ParticleSet &ions, int iat,
 NonLocalECPComponent::RealType
 NonLocalECPComponent::evaluate(ParticleSet& W, TrialWaveFunction& psi,int iat, std::vector<NonLocalData>& Txy)
 {
-  DistanceTableData* myTable = W.DistTables[myTableIndex];
   RealType esum=0.0;
+#if 0
+  DistanceTableData* myTable = W.DistTables[myTableIndex];
   std::vector<PosType> deltaV(nknot);
   for(int nn=myTable->M[iat],iel=0; nn<myTable->M[iat+1]; nn++,iel++)
   {
@@ -660,6 +736,7 @@ NonLocalECPComponent::evaluate(ParticleSet& W, TrialWaveFunction& psi,int iat, s
     //BLAS::gemv(nknot, nchannel, &Amat[0], &psiratio[0], &wvec[0]);
     //esum += BLAS::dot(nchannel, &vrad[0], &wvec[0]);
   }   /* end loop over electron */
+#endif
   return esum;
 }
 

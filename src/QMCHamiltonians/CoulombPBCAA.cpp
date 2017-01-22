@@ -35,35 +35,17 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active,
   //save source tag
   SourceID=ref.tag();
   //create a distance table: just to get the table name
-  DistanceTableData *d_aa = DistanceTable::add(ref,DT_AOS);
+  DistanceTableData *d_aa = DistanceTable::add(ref,DT_SOA_PREFERRED);
   PtclRefName=d_aa->Name;
   initBreakup(ref);
+  if(!is_active)
+  {
+    //d_aa->evaluate(ref);
+    update_source(ref);
+  }
   prefix="F_AA";
   app_log() << "  Maximum K shell " << AA->MaxKshell << std::endl;
   app_log() << "  Number of k vectors " << AA->Fk.size() << std::endl;
-  if(!is_active)
-  {
-    d_aa->evaluate(ref);
-    update_source(ref);
-    //RealType eL(0.0), eS(0.0);
-    //if (computeForces)
-    //{
-    //  forces = 0.0;
-    //  eS=evalSRwithForces(ref);
-    //  // 1.3978248322
-    //  eL=evalLRwithForces(ref);
-    //  // 2.130267378
-    //}
-    //else
-    //{
-    //  eL=evalLR(ref);
-    //  eS=evalSR(ref);
-    //}
-    //NewValue=Value = eL+eS+myConst;
-    //app_log() << "  Fixed Coulomb potential for " << ref.getName();
-    //app_log() << "\n    e-e Madelung Const. =" << MC0
-    //          << "\n    Vtot     =" << Value << std::endl;
-  }
   app_log() << "  Fixed Coulomb potential for " << ref.getName();
   app_log() << "\n    e-e Madelung Const. =" << MC0
             << "\n    Vtot     =" << Value << std::endl;
@@ -163,15 +145,33 @@ CoulombPBCAA::evaluate_sp(ParticleSet& P)
     const DistanceTableData &d_aa(*P.DistTables[0]);
     RealType pairpot; //energy for single pair
     RealType z;
-    for(int ipart=0; ipart<NumCenters; ipart++)
+    if(d_aa.DTType == DT_SOA)
     {
-      z = .5*Zat[ipart];
-      for(int nn=d_aa.M[ipart],jpart=ipart+1; nn<d_aa.M[ipart+1]; nn++,jpart++)
+      for(int ipart=1; ipart<NumCenters; ipart++)
       {
-        pairpot = z*Zat[jpart]*d_aa.rinv(nn)*rVs->splint(d_aa.r(nn));
-        V_samp(ipart)+=pairpot;
-        V_samp(jpart)+=pairpot;
-        Vsr += pairpot;
+        z = .5*Zat[ipart];
+        const RealType* dist=d_aa.Distances[ipart];
+        for(int jpart=0; jpart<ipart; ++jpart)
+        {
+          pairpot = z*Zat[jpart]*rVs->splint(dist[jpart])/dist[jpart];
+          V_samp(ipart)+=pairpot;
+          V_samp(jpart)+=pairpot;
+          Vsr += pairpot;
+        }
+      }
+    }
+    else
+    {
+      for(int ipart=0; ipart<NumCenters; ipart++)
+      {
+        z = .5*Zat[ipart];
+        for(int nn=d_aa.M[ipart],jpart=ipart+1; nn<d_aa.M[ipart+1]; nn++,jpart++)
+        {
+          pairpot = z*Zat[jpart]*d_aa.rinv(nn)*rVs->splint(d_aa.r(nn));
+          V_samp(ipart)+=pairpot;
+          V_samp(jpart)+=pairpot;
+          Vsr += pairpot;
+        }
       }
     }
     Vsr *= 2.0;
@@ -430,6 +430,8 @@ void CoulombPBCAA::initBreakup(ParticleSet& P)
   {
     rVs = LRCoulombSingleton::createSpline4RbyVs(AA,myRcut,myGrid);
   }
+
+  P.DistTables[0]->evaluate(P);
 }
 
 
@@ -542,17 +544,33 @@ CoulombPBCAA::evalSR(ParticleSet& P)
 {
   const DistanceTableData &d_aa(*P.DistTables[0]);
   mRealType SR=0.0;
-  for(int ipart=0; ipart<NumCenters; ipart++)
+  if(d_aa.DTType == DT_SOA)
   {
-    mRealType esum = 0.0;
-    for(int nn=d_aa.M[ipart],jpart=ipart+1; nn<d_aa.M[ipart+1]; nn++,jpart++)
+    for(size_t ipart=1; ipart<NumCenters; ipart++)
     {
-      //if(d_aa->r(nn)>=myRcut) continue;
-      //esum += Zat[jpart]*AA->evaluate(d_aa->r(nn),d_aa->rinv(nn));
-      esum += Zat[jpart]*d_aa.rinv(nn)*rVs->splint(d_aa.r(nn));
+      mRealType esum = 0.0;
+      const RealType* restrict dist=d_aa.Distances[ipart];
+      for(size_t j=0; j<ipart; ++j)
+      {
+        esum += Zat[j]*rVs->splint(dist[j])/dist[j];
+      }
+      SR += Zat[ipart]*esum;
     }
-    //Accumulate pair sums...species charge for atom i.
-    SR += Zat[ipart]*esum;
+  }
+  else
+  {//this will be removed
+    for(int ipart=0; ipart<NumCenters; ipart++)
+    {
+      mRealType esum = 0.0;
+      for(int nn=d_aa.M[ipart],jpart=ipart+1; nn<d_aa.M[ipart+1]; nn++,jpart++)
+      {
+        //if(d_aa->r(nn)>=myRcut) continue;
+        //esum += Zat[jpart]*AA->evaluate(d_aa->r(nn),d_aa->rinv(nn));
+        esum += Zat[jpart]*d_aa.rinv(nn)*rVs->splint(d_aa.r(nn));
+      }
+      //Accumulate pair sums...species charge for atom i.
+      SR += Zat[ipart]*esum;
+    }
   }
   return SR;
 }
@@ -566,16 +584,34 @@ CoulombPBCAA::evalLR(ParticleSet& P)
   if(PtclRhoK.SuperCellEnum==SUPERCELL_SLAB)
   {
     const DistanceTableData &d_aa(*P.DistTables[0]);
-    //distance table handles jat>iat
-    for(int iat=0; iat<NumCenters; ++iat)
+    if(d_aa.DTType == DT_SOA)
     {
-      mRealType u=0;
+      //distance table handles jat<iat
+      for(int iat=1; iat<NumCenters; ++iat)
+      {
+        mRealType u=0;
 #if !defined(USE_REAL_STRUCT_FACTOR)
-      for(int nn=d_aa.M[iat], jat=iat+1; nn<d_aa.M[iat+1]; ++nn,++jat)
-        u += Zat[jat]*AA->evaluate_slab(d_aa.dr(nn)[slab_dir]
-                                        , PtclRhoK.KLists.kshell , PtclRhoK.eikr[iat], PtclRhoK.eikr[jat]);
+        const RealType* restrict d_slab=d_aa.Displacements[iat].data(slab_dir);
+        for(int jat=0; jat<iat; ++jat)
+          u += Zat[jat]*AA->evaluate_slab(-d_slab[jat],  //JK: Could be wrong. Check the SIGN
+              PtclRhoK.KLists.kshell , PtclRhoK.eikr[iat], PtclRhoK.eikr[jat]);
 #endif
-      res += Zat[iat]*u;
+        res += Zat[iat]*u;
+      }
+    } 
+    else
+    {
+      //distance table handles jat>iat
+      for(int iat=0; iat<NumCenters; ++iat)
+      {
+        mRealType u=0;
+#if !defined(USE_REAL_STRUCT_FACTOR)
+        for(int nn=d_aa.M[iat], jat=iat+1; nn<d_aa.M[iat+1]; ++nn,++jat)
+          u += Zat[jat]*AA->evaluate_slab(d_aa.dr(nn)[slab_dir]
+              , PtclRhoK.KLists.kshell , PtclRhoK.eikr[iat], PtclRhoK.eikr[jat]);
+#endif
+        res += Zat[iat]*u;
+      }
     }
   }
   else

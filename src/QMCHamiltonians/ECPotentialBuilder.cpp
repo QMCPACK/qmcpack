@@ -70,9 +70,14 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   {
     useSimpleTableFormat();
   }
+
+  RealType rcore_max=0;
+
   ///create LocalECPotential
   bool usePBC =
     !(IonConfig.Lattice.SuperCellEnum == SUPERCELL_OPEN || pbc =="no");
+
+
   if(hasLocalPot)
   {
     if(IonConfig.Lattice.SuperCellEnum == SUPERCELL_OPEN || pbc =="no")
@@ -86,7 +91,10 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
       for(int i=0; i<localPot.size(); i++)
       {
         if(localPot[i])
+        {
           apot->add(i,localPot[i],localZeff[i]);
+          rcore_max=std::max(rcore_max,localPot[i]->r_max);
+        }
       }
       targetH.addOperator(apot,"LocalECP");
     }
@@ -108,19 +116,6 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
       }
       targetH.addOperator(apot,"LocalECP");
     }
-    //if(IonConfig.Lattice.BoxBConds[0]) {
-    //  CoulombPBCAB* apot=new CoulombPBCAB(IonConfig,targetPtcl);
-    //  for(int i=0; i<localPot.size(); i++) {
-    //    if(localPot[i]) apot->add(i,localPot[i]);
-    //  }
-    //  targetH.addOperator(apot,"LocalECP");
-    //} else {
-    //  LocalECPotential* apot = new LocalECPotential(IonConfig,targetPtcl);
-    //  for(int i=0; i<localPot.size(); i++) {
-    //    if(localPot[i]) apot->add(i,localPot[i],localZeff[i]);
-    //  }
-    //  targetH.addOperator(apot,"LocalECP");
-    //}
   }
   if(hasNonLocalPot)
   {
@@ -147,7 +142,10 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     app_log() << "\n  Using NonLocalECP potential \n"
               << "    Maximum grid on a sphere for NonLocalECPotential: "
               << nknot_max << std::endl;
+
+    rcore_max=std::max(rc2,rcore_max);
     targetPtcl.checkBoundBox(2*rc2);
+
     targetH.addOperator(apot,"NonLocalECP");
     for(int ic=0; ic<IonConfig.getTotalNum(); ic++)
     {
@@ -164,6 +162,13 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
       }
     }
   }
+
+  app_log() << "Checking THIS " << std::endl;
+  //DEV::OPTIMIZE_SOA
+  int tid=targetPtcl.addTable(IonConfig,DT_SOA_PREFERRED);
+  targetPtcl.DistTables[tid]->setRmax(rcore_max); //For the optimization only
+  app_log() << "  ECPotential::Rmax " << targetPtcl.DistTables[tid]->Rmax << std::endl;
+
   app_log().flush();
   return true;
 }

@@ -49,13 +49,13 @@ struct NonLocalECPComponent: public QMCTraits
   ///random number generator
   RandomGenerator_t* myRNG;
   ///Angular momentum map
-  std::vector<int> angpp_m;
+  aligned_vector<int> angpp_m;
   ///Weight of the angular momentum
-  std::vector<RealType> wgt_angpp_m;
+  aligned_vector<RealType> wgt_angpp_m;
   /// Lfactor1[l]=(2*l+1)/(l+1)
-  std::vector<RealType> Lfactor1;
+  RealType Lfactor1[8];
   /// Lfactor1[l]=(l)/(l+1)
-  std::vector<RealType> Lfactor2;
+  RealType Lfactor2[8];
   ///Non-Local part of the pseudo-potential
   std::vector<RadialPotentialType*> nlpp_m;
   ///fixed Spherical Grid for species
@@ -114,6 +114,9 @@ struct NonLocalECPComponent: public QMCTraits
   template<typename T> void randomize_grid(std::vector<T> &sphere);
 
   RealType evaluate(ParticleSet& W, int iat, TrialWaveFunction& Psi);
+
+  RealType evaluateOne(ParticleSet& W, int iat, TrialWaveFunction& Psi, 
+      int iel, RealType r, const PosType& dr, bool Tmove, std::vector<NonLocalData>& Txy) const;
 
   RealType evaluate(ParticleSet& W, int iat, TrialWaveFunction& Psi,
                     PosType &force_iat);

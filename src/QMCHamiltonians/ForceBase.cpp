@@ -32,7 +32,11 @@ ForceBase::ForceBase(ParticleSet& ions, ParticleSet& elns)
   : FirstForceIndex(-1),tries(0), Ions(ions), addionion(true)
 {
   ReportEngine PRE("ForceBase","ForceBase");
+#if defined(ENABLE_AA_SOA)
+  myTableIndex=elns.addTable(ions,DT_SOA_PREFERRED);
+#else
   myTableIndex=elns.addTable(ions,DT_AOS);
+#endif
   FirstTime = true;
   Nnuc = ions.getTotalNum();
   Nel = elns.getTotalNum();

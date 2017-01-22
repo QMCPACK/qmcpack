@@ -38,10 +38,10 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions, ParticleSet& els,
 {
   set_energy_domain(potential);
   two_body_quantum_domain(ions,els);
-  myTableIndex=els.addTable(ions,DT_AOS);
+  myTableIndex=els.addTable(ions,DT_SOA_PREFERRED);
   NumIons=ions.getTotalNum();
   //els.resizeSphere(NumIons);
-  PP.resize(NumIons,0);
+  PP.resize(NumIons,nullptr);
   prefix="FNL";
   PPset.resize(IonConfig.getSpeciesSet().getTotalNum(),0);
   PulayTerm.resize(NumIons);
@@ -131,18 +131,57 @@ NonLocalECPotential::evaluate(ParticleSet& P)
   }
   else
   {
-    for(int iat=0; iat<NumIons; iat++)
+    std::vector<NonLocalData> Txy;
+    const DistanceTableData* myTable = P.DistTables[myTableIndex];
+#if 0
+    if(myTable->DTType == DT_SOA)
     {
-      if(PP[iat])
+      int J[16];
+      RealType Dist[16];
+      PosType Displ[16];
+      for(int iat=0; iat<NumIons; iat++)
       {
+        if(PP[iat]==nullptr) continue;
         PP[iat]->randomize_grid(*(P.Sphere[iat]),UpdateMode[PRIMARY]);
-        Value += PP[iat]->evaluate(P,iat,Psi);
+        size_t nn=myTable->get_neighbors(iat,PP[iat]->Rmax, J, Dist, Displ);
+        for(size_t nj=0; nj<nn; ++nj)
+        {
+          Value += PP[iat]->evaluateOne(P,iat,Psi,J[nj],Dist[nj],Displ[nj],false,Txy);
+        }
       }
     }
-  
-  //  std::cout << "Original NLPP energy " << std::endl;
-  //  for(int iat=0; iat<NumIons; iat++)
-  //    std::cout << iat << " " << pp_e[iat] << std::endl;
+    else
+#endif
+    if(myTable->DTType == DT_SOA)
+    {
+      for(int iat=0; iat<NumIons; iat++)
+      {
+        if(PP[iat]==nullptr) continue;
+        PP[iat]->randomize_grid(*(P.Sphere[iat]),UpdateMode[PRIMARY]);
+        const int* restrict J=myTable->J2[iat];
+        const RealType* restrict dist=myTable->r_m2[iat];
+        const PosType* restrict displ=myTable->dr_m2[iat];
+        for(size_t nj=0,nn=myTable->M[iat]; nj<nn; ++nj)
+        {
+          if(dist[nj]<PP[iat]->Rmax)
+            Value += PP[iat]->evaluateOne(P,iat,Psi,J[nj],dist[nj],displ[nj],false,Txy);
+        }
+      }
+    }
+    else
+    {
+      for(int iat=0; iat<NumIons; iat++)
+      {
+        if(PP[iat]==nullptr) continue;
+        PP[iat]->randomize_grid(*(P.Sphere[iat]),UpdateMode[PRIMARY]);
+        for(int nn=myTable->M[iat],iel=0; nn<myTable->M[iat+1]; nn++,iel++)
+        {
+          const RealType r(myTable->r(nn));
+          if(r>PP[iat]->Rmax) continue;
+          Value += PP[iat]->evaluateOne(P,iat,Psi,iel,r,myTable->dr(nn),false,Txy);
+        }
+      }
+    }
   }
 #if defined(TRACE_CHECK)
   if( streaming_particles)
@@ -193,12 +232,35 @@ NonLocalECPotential::evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   }
   else
   {
-    for(int iat=0; iat<NumIons; iat++)
+    const DistanceTableData* myTable = P.DistTables[myTableIndex];
+    if(myTable->DTType == DT_SOA)
     {
-      if(PP[iat])
+      for(int iat=0; iat<NumIons; iat++)
       {
+        if(PP[iat]==nullptr) continue;
         PP[iat]->randomize_grid(*(P.Sphere[iat]),UpdateMode[PRIMARY]);
-        Value += PP[iat]->evaluate(P,Psi,iat,Txy);
+        const int* restrict J=myTable->J2[iat];
+        const RealType* restrict dist=myTable->r_m2[iat];
+        const PosType* restrict displ=myTable->dr_m2[iat];
+        for(size_t nj=0,nn=myTable->M[iat]; nj<nn; ++nj)
+        {
+          if(dist[nj]<PP[iat]->Rmax)
+            Value += PP[iat]->evaluateOne(P,iat,Psi,J[nj],dist[nj],displ[nj],true,Txy);
+        }
+      }
+    }
+    else
+    {
+      for(int iat=0; iat<NumIons; iat++)
+      {
+        if(PP[iat]==nullptr) continue;
+        PP[iat]->randomize_grid(*(P.Sphere[iat]),UpdateMode[PRIMARY]);
+        for(int nn=myTable->M[iat],iel=0; nn<myTable->M[iat+1]; nn++,iel++)
+        {
+          const RealType r(myTable->r(nn));
+          if(r>PP[iat]->Rmax) continue;
+          Value += PP[iat]->evaluateOne(P,iat,Psi,iel,r,myTable->dr(nn),true,Txy);
+        }
       }
     }
   }
