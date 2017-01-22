@@ -60,7 +60,7 @@ public:
   DiffOneBodySpinJastrowOrbital(const ParticleSet& centers, ParticleSet& els)
     :Spin(false),CenterRef(centers),NumVars(0),VarOffset(0)
   {
-    myTableIndex=els.addTable(CenterRef,DT_AOS);
+    myTableIndex=els.addTable(CenterRef,DT_SOA_PREFERRED);
     NumPtcls=els.getTotalNum();
     F.resize(CenterRef.groups(), els.groups());
     for(int i=0; i<F.size(); ++i)

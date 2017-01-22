@@ -57,7 +57,7 @@ public:
     :CenterRef(centers),NumVars(0)
   {
     NumPtcls=els.getTotalNum();
-    myTableIndex=els.addTable(CenterRef,DT_AOS);
+    myTableIndex=els.addTable(CenterRef,DT_SOA_PREFERRED);
   }
 
   ~DiffOneBodyJastrowOrbital()

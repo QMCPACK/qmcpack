@@ -23,6 +23,8 @@
 #include "QMCWaveFunctions/Jastrow/OneBodySpinJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/DiffOneBodySpinJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
+#include "QMCWaveFunctions/Jastrow/J1OrbitalSoA.h"
+#include "QMCWaveFunctions/Jastrow/J2OrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
 #ifdef QMC_CUDA
 #include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbitalBspline.h"
@@ -214,7 +216,12 @@ bool BsplineJastrowBuilder::put(xmlNodePtr cur)
     if(j1spin=="yes")
       return createOneBodyJastrow<OneBodySpinJastrowOrbital<RadFuncType>,DiffOneBodySpinJastrowOrbital<RadFuncType> >(cur);
     else
+#if defined(ENABLE_AA_SOA)
+      return createOneBodyJastrow<J1OrbitalSoA<RadFuncType>,DiffOneBodyJastrowOrbital<RadFuncType> >(cur);
+#else
       return createOneBodyJastrow<OneBodyJastrowOrbital<RadFuncType>,DiffOneBodyJastrowOrbital<RadFuncType> >(cur);
+#endif
+
 #endif
   }
   else // Create a two-body Jastrow
@@ -230,7 +237,13 @@ bool BsplineJastrowBuilder::put(xmlNodePtr cur)
 #ifdef QMC_CUDA
     typedef TwoBodyJastrowOrbitalBspline J2Type;
 #else
+
+#if defined(ENABLE_AA_SOA)
+    typedef J2OrbitalSoA<BsplineFunctor<RealType> > J2Type;
+#else
     typedef TwoBodyJastrowOrbital<BsplineFunctor<RealType> > J2Type;
+#endif
+
 #endif
     typedef DiffTwoBodyJastrowOrbital<BsplineFunctor<RealType> > dJ2Type;
     int taskid=(targetPsi.is_manager())?targetPsi.getGroupID():-1;
@@ -325,6 +338,7 @@ bool BsplineJastrowBuilder::put(xmlNodePtr cur)
     J2->dPsi=dJ2;
     targetPsi.addOrbital(J2,"J2_bspline");
     J2->setOptimizable(Opt);
+
   }
   return true;
 }

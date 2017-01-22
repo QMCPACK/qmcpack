@@ -34,7 +34,7 @@ namespace qmcplusplus
  * For electrons, distinct pair correlation functions are used
  * for spins up-up/down-down and up-down/down-up.
  *
- * Based on TwoBodyJatrowOrbital.h with these considerations
+ * Based on J2OrbitalSoA.h with these considerations
  * - DistanceTableData using SoA containers
  * - support mixed precision: FT::real_type != OHMMS_PRECISION
  * - loops over the groups: elminated PairID
@@ -327,8 +327,7 @@ void J2OrbitalSoA<FT>::addFunc(int ia, int ib, FT* j)
 template<typename FT>
 OrbitalBasePtr J2OrbitalSoA<FT>::makeClone(ParticleSet& tqp) const
 {
-  //TwoBodyJastrowOrbital<FT>* j2copy=new TwoBodyJastrowOrbital<FT>(tqp,Write_Chiesa_Correction);
-  TwoBodyJastrowOrbital<FT>* j2copy=new TwoBodyJastrowOrbital<FT>(tqp,-1);
+  J2OrbitalSoA<FT>* j2copy=new J2OrbitalSoA<FT>(tqp,-1);
   if (dPsi)
     j2copy->dPsi = dPsi->makeClone(tqp);
   std::map<const FT*,FT*> fcmap;
