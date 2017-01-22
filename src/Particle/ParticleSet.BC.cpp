@@ -120,6 +120,7 @@ void ParticleSet::createSK()
   for(int iat=0; iat<GroupID.size(); iat++)
     Mass[iat]=mySpecies(massind,GroupID[iat]);
 
+  RSoA=R;
 }
 
 void ParticleSet::convert(const ParticlePos_t& pin, ParticlePos_t& pout)

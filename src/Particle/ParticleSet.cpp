@@ -404,7 +404,12 @@ int ParticleSet::addTable(const ParticleSet& psrc, int dt_type)
   if (DistTables.empty())
   {
     DistTables.reserve(4);
+#if defined(ENABLE_AA_SOA)
+    DistTables.push_back(createDistanceTable(*this,DT_SOA));
+#else
+    //if(dt_type==DT_SOA_PREFERRED) dt_type=DT_AOS; //safety
     DistTables.push_back(createDistanceTable(*this,dt_type));
+#endif
     //add  this-this pair
     myDistTableMap.clear();
     myDistTableMap[ObjectTag]=0;
@@ -416,10 +421,10 @@ int ParticleSet::addTable(const ParticleSet& psrc, int dt_type)
   if (psrc.tag() == ObjectTag)
   {
     app_log() << "  ... ParticleSet::addTable Reuse Table #" << 0 << " " << DistTables[0]->Name << std::endl;
-    if(!DistTables[0]->is_same_type(dt_type))
-    {//itself is special, cannot mix them: some of the users do not check the index
-      APP_ABORT("ParticleSet::addTable for itself Cannot mix AoS and SoA distance tables.\n");
-    }
+    //if(!DistTables[0]->is_same_type(dt_type))
+    //{//itself is special, cannot mix them: some of the users do not check the index
+    //  APP_ABORT("ParticleSet::addTable for itself Cannot mix AoS and SoA distance tables.\n");
+    //}
     return 0;
   }
   int tsize=DistTables.size(),tid;
@@ -435,17 +440,18 @@ int ParticleSet::addTable(const ParticleSet& psrc, int dt_type)
   else
   {
     tid = (*tit).second;
-    if(DistTables[tid]->is_same_type(dt_type))  //good to reuse
+    if(dt_type == DT_SOA_PREFERRED || DistTables[tid]->is_same_type(dt_type))  //good to reuse
     {
       app_log() << "  ... ParticleSet::addTable Reuse Table #" << tid << " " << DistTables[tid]->Name << std::endl;
-      return tid;
     }
-    if(dt_type == DT_SOA || dt_type == DT_AOS) //not compatible
+    else
     {
       APP_ABORT("ParticleSet::addTable Cannot mix AoS and SoA distance tables.\n");
     }
+    //if(dt_type == DT_SOA || dt_type == DT_AOS) //not compatible
+    //{
+    //}
     //for DT_SOA_PREFERRED or DT_AOS_PREFERRED, return the existing table
-    return tid;
   }
   app_log().flush();
   return tid;
@@ -517,7 +523,7 @@ ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ)
 
 void ParticleSet::setActive(int iat)
 {
-  for (int i=0,n=DistTables.size(); i< n; i++)
+  for (size_t i=0,n=DistTables.size(); i< n; i++)
     DistTables[i]->evaluate(*this,iat);
 }
 
@@ -762,8 +768,10 @@ void ParticleSet::rejectMove(Index_t iat)
 
 void ParticleSet::donePbyP()
 {
-  for (int i=0,nt=DistTables.size(); i< nt; i++)
+  for (size_t i=0,nt=DistTables.size(); i< nt; i++)
     DistTables[i]->donePbyP();
+  if (SK && !SK->DoUpdate)
+    SK->UpdateAllPart(*this);
   Ready4Measure=true;
 }
 
@@ -771,7 +779,7 @@ void ParticleSet::makeVirtualMoves(const SingleParticlePos_t& newpos)
 {
   activePtcl=0;
   activePos=R[0];
-  for (int i=0; i< DistTables.size(); ++i)
+  for (size_t i=0; i< DistTables.size(); ++i)
     DistTables[i]->move(*this,newpos,0);
   R[0]=newpos;
 }
@@ -793,16 +801,25 @@ void ParticleSet::resizeSphere(int nc)
 void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
 {
   R = awalker.R;
+#if defined(ENABLE_AA_SOA)
+  RSoA.copyIn(R); 
+#endif
+#if !defined(SOA_MEMORY_OPTIMIZED)
   G = awalker.G;
   L = awalker.L;
+#endif
   if (pbyp)
   {
-    for (int i=0; i< DistTables.size(); i++)
-      DistTables[i]->evaluate(*this);
+    //for (size_t i=0,nt=DistTables.sie(); i< nt; i++)
+    //{
+    //  if(DistTables[i]!= DT_SOA) DistTables[i]->evaluate(*this);
+    //}
     //computed so that other objects can use them, e.g., kSpaceJastrow
     if(SK && SK->DoUpdate)
       SK->UpdateAllPart(*this);
   }
+
+  Ready4Measure=false;
 }
 
 void ParticleSet::loadWalker(Walker_t* awalker)
@@ -817,11 +834,13 @@ void ParticleSet::loadWalker(Walker_t* awalker)
 void ParticleSet::saveWalker(Walker_t& awalker)
 {
   awalker.R=R;
+#if !defined(SOA_MEMORY_OPTIMIZED)
   awalker.G=G;
   awalker.L=L;
+#endif
   //PAOps<RealType,OHMMS_DIM>::copy(G,awalker.Drift);
-  if (SK)
-    SK->UpdateAllPart(*this);
+  //if (SK)
+  //  SK->UpdateAllPart(*this);
   //awalker.DataSet.rewind();
 }
 

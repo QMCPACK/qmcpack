@@ -147,7 +147,7 @@ struct DistanceTableData
   TinyVector<IndexType,4> N;
   ///true, if ratio computations need displacement, e.g. LCAO type
   bool NeedDisplacement;
-  ///** Maximum radius */
+  ///Maximum radius set by a Hamiltonian
   RealType Rmax;
   ///** Maximum square */
   //RealType Rmax2;
@@ -208,7 +208,8 @@ struct DistanceTableData
   DistanceTableData(const ParticleSet& source, const ParticleSet& target)
     : Origin(&source), N(0), NeedDisplacement(false)
   {  
-    Rmax=source.Lattice.WignerSeitzRadius;   
+    Rmax=0; //set 0
+    //Rmax=source.Lattice.WignerSeitzRadius;   
   }
 
   ///virutal destructor
@@ -225,7 +226,7 @@ struct DistanceTableData
     Name = tname;
   }
   ///set the maximum radius
-  inline void setRmax(RealType rc) { Rmax=rc;}
+  inline void setRmax(RealType rc) { Rmax=std::max(Rmax,rc);}
 
   ///returns the reference the origin particleset
   const ParticleSet& origin() const
@@ -366,6 +367,30 @@ struct DistanceTableData
 
   ///update the distance table by the pair relations
   virtual void update(IndexType jat) = 0;
+
+  /** build a compact list of a neighbor for the iat source
+   * @param iat source particle id
+   * @param rcut cutoff radius
+   * @param jid compressed index
+   * @param dist compressed distance
+   * @param displ compressed displacement
+   * @return number of target particles within rcut
+   */
+  virtual size_t get_neighbors(int iat, RealType rcut, int* restrict jid, RealType* restrict dist, PosType* restrict displ) const
+  {
+    return 0;
+  }
+
+  /** build a compact list of a neighbor for the iat source
+   * @param iat source particle id
+   * @param rcut cutoff radius
+   * @param dist compressed distance
+   * @return number of target particles within rcut
+   */
+  virtual size_t get_neighbors(int iat, RealType rcut, RealType* restrict dist) const
+  {
+    return 0;
+  }
 
   /// find index and distance of each nearest neighbor particle
   virtual void nearest_neighbor(std::vector<ripair>& ri,bool transposed=false) const

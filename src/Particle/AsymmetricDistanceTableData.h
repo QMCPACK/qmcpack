@@ -228,6 +228,24 @@ struct AsymmetricDTD
       dr_m[loc]=Temp[iat].dr1;
     }
   }
+
+  size_t get_neighbors(int iat, RealType rcut, int* restrict jid, RealType* restrict dist, PosType* restrict displ) const
+  {
+    size_t nn=0;
+    const int nt=N[VisitorIndex];
+    for(int jat=0,loc=iat*nt; jat<nt; ++jat,++loc)
+    {
+      RealType rij=r_m[loc];
+      if(rij<rcut) 
+      {//make the compact list
+        jid[nn]=jat;
+        dist[nn]=rij;
+        displ[nn]=dr_m[loc];
+        nn++;
+      }
+    }
+    return nn;
+  }
 };
 
 }

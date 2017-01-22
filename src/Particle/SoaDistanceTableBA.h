@@ -106,8 +106,44 @@ struct SoaDistanceTableBA: public DTD_BConds<T,D,SC>, public DistanceTableData
       simd::copy_n(Temp_dr.data(idim),Nsources,Displacements[iat].data(idim));
   }
 
+  size_t get_neighbors(int iat, RealType rcut, int* restrict jid, RealType* restrict dist, PosType* restrict displ) const
+  {
+    CONSTEXPR T cminus(-1);
+    size_t nn=0;
+    for(int jat=0; jat<Ntargets; ++jat)
+    {
+      const RealType rij=Distances[jat][iat];
+      if(rij<rcut) 
+      {//make the compact list
+        jid[nn]=jat;
+        dist[nn]=rij;
+        displ[nn]=cminus*Displacements[jat][iat];
+        nn++;
+      }
+    }
+    return nn;
+  }
+
+  size_t get_neighbors(int iat, RealType rcut, RealType* restrict dist) const
+  {
+    size_t nn=0;
+    for(int jat=0; jat<Ntargets; ++jat)
+    {
+      const RealType rij=Distances[jat][iat];
+      if(rij<rcut) 
+      {//make the compact list
+        dist[nn]=rij;
+        nn++;
+      }
+    }
+    return nn;
+  }
+
   inline void donePbyP()
   { 
+    //Rmax is zero: no need to transpose the table.
+    if(Rmax<std::numeric_limits<T>::epsilon()) return;
+
     CONSTEXPR T cminus(-1);
     for(int iat=0; iat<Nsources; ++iat)
     {
@@ -117,7 +153,7 @@ struct SoaDistanceTableBA: public DTD_BConds<T,D,SC>, public DistanceTableData
       PosType* restrict dptr=dr_m2[iat];
       for(int jat=0; jat<Ntargets; ++jat)
       {
-        RealType rij=Distances[jat][iat];
+        const RealType rij=Distances[jat][iat];
         if(rij<Rmax) 
         {//make the compact list
           rptr[nn]=rij;
