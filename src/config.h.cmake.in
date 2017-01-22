@@ -217,6 +217,10 @@
 
 /* Fully remove trace manager and associated features */
 #cmakedefine REMOVE_TRACEMANAGER @REMOVE_TRACEMANAGER@
+
+/* Use SOA version of AA distance table */
+#cmakedefine ENABLE_AA_SOA  @ENABLE_AA_SOA@
+
 #if (__cplusplus >= 201103L)
   #if defined(__INTEL_COMPILER)
     #if defined(__KNC__) || defined(__AVX512F__)
