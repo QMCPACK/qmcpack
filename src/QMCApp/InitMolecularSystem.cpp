@@ -100,7 +100,7 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
   if(ions->getTotalNum()==1)
     return initAtom(ions,els);
 
-  DistanceTableData* d_ii = DistanceTable::add(*ions,DT_AOS);
+  DistanceTableData* d_ii = DistanceTable::add(*ions,DT_SOA_PREFERRED);
   //d_ii->create(1);
   d_ii->evaluate(*ions);
   const ParticleSet::ParticleIndex_t& grID(ions->GroupID);
@@ -124,26 +124,56 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
   std::vector<LoneElectron> loneQ;
   RealType rmin=cutoff;
   ParticleSet::SingleParticlePos_t cm;
-  for(int iat=0; iat<Centers; iat++)
+
+  if(d_ii->DTType == DT_SOA)
   {
-    cm += ions->R[iat];
-    for(int nn=d_ii->M[iat]; nn<d_ii->M[iat+1]; nn++)
+    for(size_t iat=0; iat<Centers; iat++)
     {
-      rmin = std::min(rmin,d_ii->r(nn));
+      cm += ions->R[iat];
+      const RealType* restrict dist=d_ii->Distances[iat];
+      for(size_t jat=iat+1; jat<Centers; ++jat)
+      {
+        rmin = std::min(rmin,dist[jat]);
+      }
+      //use 40% of the minimum bond
+      RealType sep=rmin*0.4;
+      int v2=Qtot[iat]/2;
+      if(Qtot[iat]>v2*2)
+      {
+        loneQ.push_back(LoneElectron(iat,sep));
+      }
+      for(int k=0; k<v2; k++)
+      {
+        if(nup_tot<numUp)
+          els->R[nup_tot++]=ions->R[iat]+sep*chi[item++];
+        if(ndown_tot<numDown)
+          els->R[ndown_tot++]=ions->R[iat]+sep*chi[item++];
+      }
     }
-    //use 40% of the minimum bond
-    RealType sep=rmin*0.4;
-    int v2=Qtot[iat]/2;
-    if(Qtot[iat]>v2*2)
+  }
+  else
+  {
+    for(int iat=0; iat<Centers; iat++)
     {
-      loneQ.push_back(LoneElectron(iat,sep));
-    }
-    for(int k=0; k<v2; k++)
-    {
-      if(nup_tot<numUp)
-        els->R[nup_tot++]=ions->R[iat]+sep*chi[item++];
-      if(ndown_tot<numDown)
-        els->R[ndown_tot++]=ions->R[iat]+sep*chi[item++];
+      cm += ions->R[iat];
+      for(int nn=d_ii->M[iat]; nn<d_ii->M[iat+1]; nn++)
+      {
+        rmin = std::min(rmin,d_ii->r(nn));
+      }
+      //use 40% of the minimum bond
+      RealType sep=rmin*0.4;
+      int v2=Qtot[iat]/2;
+      if(Qtot[iat]>v2*2)
+      {
+        loneQ.push_back(LoneElectron(iat,sep));
+      }
+      for(int k=0; k<v2; k++)
+      {
+        if(nup_tot<numUp)
+          els->R[nup_tot++]=ions->R[iat]+sep*chi[item++];
+        if(ndown_tot<numDown)
+          els->R[ndown_tot++]=ions->R[iat]+sep*chi[item++];
+      }
     }
   }
 

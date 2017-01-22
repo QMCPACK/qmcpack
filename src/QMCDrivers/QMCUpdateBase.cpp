@@ -246,6 +246,7 @@ void QMCUpdateBase::randomize(Walker_t& awalker)
     RealType sqrttau = std::sqrt(tauovermass);
     for (int iat=W.first(ig); iat<W.last(ig); ++iat)
     {
+      W.setActive(iat);
       GradType grad_now=Psi.evalGrad(W,iat), grad_new;
       mPosType dr;
       getScaledDrift(tauovermass,grad_now,dr);
@@ -279,12 +280,15 @@ void QMCUpdateBase::randomize(Walker_t& awalker)
       }
     }
   }
+
+  W.donePbyP();
   //for subSteps must update thiswalker
-  awalker.R=W.R;
-  awalker.G=W.G;
-  awalker.L=W.L;
+  //awalker.R=W.R;
+  //awalker.G=W.G;
+  //awalker.L=W.L;
   RealType logpsi = Psi.updateBuffer(W,awalker.DataSet,false);
   W.saveWalker(awalker);
+
   RealType eloc=H.evaluate(W);
 #if (__cplusplus >= 201103L)
   BadState |= std::isnan(eloc);
@@ -298,6 +302,11 @@ void QMCUpdateBase::randomize(Walker_t& awalker)
   awalker.ReleasedNodeAge=0;
   awalker.ReleasedNodeWeight=0;
   awalker.Weight=1;
+
+//  printf("energy  %.3f\n",eloc);
+//  for(size_t i=0, n=W.getTotalNum(); i<n; ++i)
+//    printf("evalGrad  %.3f %.3f %.3f %.3f\n",W.G[i][0],W.G[i][1],W.G[i][2],W.L[i]);
+//
 }
 
 QMCUpdateBase::RealType

@@ -67,6 +67,7 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker)
       RealType sqrttau = std::sqrt(Tau*MassInvS[ig]);
       for (int iat=W.first(ig); iat<W.last(ig); ++iat)
       {
+        W.setActive(iat);
         mPosType dr = sqrttau*deltaR[iat];
         //replace makeMove by makeMoveAndCheck
         //PosType newpos = W.makeMove(iat,dr);
@@ -102,6 +103,9 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker)
   }
   myTimers[1]->stop();
   myTimers[2]->start();
+
+  W.donePbyP();
+
   //thisWalker.R = W.R;
   //PAOps<RealType,OHMMS_DIM>::copy(W.G,thisWalker.Drift);
   //w_buffer.rewind();
@@ -277,6 +281,7 @@ void VMCUpdatePbyPWithDriftFast::advanceWalker(Walker_t& thisWalker)
   Psi.copyFromBuffer(W,w_buffer);
   myTimers[1]->start();
   bool moved = false;
+  CONSTEXPR RealType mhalf(-0.5);
   for (int iter=0; iter<nSubSteps; ++iter)
   {
     //create a 3N-Dimensional Gaussian with variance=1
@@ -289,6 +294,7 @@ void VMCUpdatePbyPWithDriftFast::advanceWalker(Walker_t& thisWalker)
       RealType sqrttau = std::sqrt(tauovermass);
       for (int iat=W.first(ig); iat<W.last(ig); ++iat)
       {
+        W.setActive(iat);
         GradType grad_now=Psi.evalGrad(W,iat), grad_new;
         mPosType dr;
         getScaledDrift(tauovermass,grad_now,dr);
@@ -309,7 +315,8 @@ void VMCUpdatePbyPWithDriftFast::advanceWalker(Walker_t& thisWalker)
           Psi.rejectMove(iat);
           continue;
         }
-        RealType logGf = -0.5e0*dot(deltaR[iat],deltaR[iat]);
+        //RealType logGf = -0.5e0*dot(deltaR[iat],deltaR[iat]);
+        RealType logGf = mhalf*dot(deltaR[iat],deltaR[iat]);
         getScaledDrift(tauovermass,grad_new,dr);
         dr = thisWalker.R[iat]-W.R[iat]-dr;
         RealType logGb = -oneover2tau*dot(dr,dr);
@@ -329,13 +336,11 @@ void VMCUpdatePbyPWithDriftFast::advanceWalker(Walker_t& thisWalker)
         }
       }
     }
-    //for subSteps must update thiswalker
     thisWalker.R=W.R;
-    thisWalker.G=W.G;
-    thisWalker.L=W.L;
   }
   myTimers[1]->stop();
   myTimers[2]->start();
+  W.donePbyP();
   RealType logpsi = Psi.updateBuffer(W,w_buffer,false);
   W.saveWalker(thisWalker);
   myTimers[2]->stop();

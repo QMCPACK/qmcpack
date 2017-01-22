@@ -77,6 +77,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker)
     RealType sqrttau = std::sqrt(tauovermass);
     for (int iat=W.first(ig); iat<W.last(ig); ++iat)
     {
+      W.setActive(iat);
       //get the displacement
       GradType grad_iat=Psi.evalGrad(W,iat);
       mPosType dr;
@@ -139,6 +140,9 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker)
   //RealType nodecorr=nodecorr_old;
   if(UseTMove)
     nonLocalOps.reset();
+
+  W.donePbyP();
+
   bool advanced=true;
   if(nAcceptTemp>0)
   {
