@@ -194,6 +194,7 @@ OrbitalBasePtr SlaterDetWithBackflow::makeClone(ParticleSet& tqp) const
 //    tr->resetTargetParticleSet(tqp);
   SlaterDetWithBackflow* myclone=new SlaterDetWithBackflow(tqp,tr);
   myclone->Optimizable=Optimizable;
+  myclone->RecomputeNeedsDistanceTable=RecomputeNeedsDistanceTable;
   if(mySPOSet.size()>1)//each determinant owns its own set
   {
     for(int i=0; i<Dets.size(); ++i)
