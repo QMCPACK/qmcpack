@@ -525,6 +525,7 @@ struct Walker
     m.Unpack(N);
     host_data.resize(size);
     R_host.resize(N);
+    Grad_host.resize(N);
     host_lapl.resize(N);
     m.Unpack(&(R_host[0][0]), OHMMS_DIM*N);
     R_GPU = R_host;
