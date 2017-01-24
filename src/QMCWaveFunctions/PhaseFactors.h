@@ -7,18 +7,10 @@ void apply_phase_factors(float kPoints[], int makeTwoCopies[],
                          float pos[], float *phi_in[], float *phi_out[],
                          int num_splines, int num_walkers);
 
-#ifdef ALGO_CHRISTOS
-void apply_phase_factors(float kPoints[], int makeTwoCopies[],
-                         float pos[], float *phi_in[], float *phi_out[],
-                         float *GL_in[], float *GL_out[],
-                         int num_splines, int num_walkers, int row_stride,
-                         bool dontMakeTwoCopies);
-#else
 void apply_phase_factors(float kPoints[], int makeTwoCopies[],
                          float pos[], float *phi_in[], float *phi_out[],
                          float *GL_in[], float *GL_out[],
                          int num_splines, int num_walkers, int row_stride);
-#endif
 
 void apply_phase_factors(float kPoints[], int makeTwoCopies[], int TwoCopiesIndex[],
                          float pos[], float *phi_in[], float *phi_out[],

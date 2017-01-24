@@ -569,25 +569,6 @@ EinsplineSetExtended<std::complex<double> >::evaluate
     hostPos[iw] = newpos[iw];
   cudapos = hostPos;
 
-#ifdef ALGO_CHRISTOS
-  // Slower for some runs
-  // christos: is MakeTwoCopies consistent with CudaMakeTwoCopies?
-  bool noTwoCopies = true;
-  for (int i=0 ; i<MakeTwoCopies.size() ; i++)
-    if (MakeTwoCopies[i]) {
-      noTwoCopies = false;
-      break;
-    }
-  //  std::cout << "noTwoCopies=" << noTwoCopies << std::endl;
-  
-  apply_phase_factors ((CUDA_PRECISION*) CudakPoints.data(),
-                       CudaMakeTwoCopies.data(),
-                       (CudaRealType*)cudapos.data(),
-                       (CudaRealType**)CudaValuePointers.data(), phi.data(),
-                       (CudaRealType**)CudaGradLaplPointers.data(), grad_lapl.data(),
-                       CudaMultiSpline->num_splines,  walkers.size(), row_stride, 
-                       noTwoCopies);
-#else
   /* Original implementation
   apply_phase_factors ((CudaRealType*) CudakPoints.data(),
                        CudaMakeTwoCopies.data(),
@@ -604,7 +585,6 @@ EinsplineSetExtended<std::complex<double> >::evaluate
                        (CudaRealType**)CudaValuePointers.data(), phi.data(),
                        (CudaRealType**)CudaGradLaplPointers.data(), grad_lapl.data(),
                        CudaMultiSpline->num_splines,  walkers.size(), row_stride);
-#endif
 }
 
 
