@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <sys/time.h>
 #include <thrust/complex.h>
+#include <thrust/system/cuda/detail/bulk/uninitialized.hpp>
 
 #include "determinant_update.h"
 #include "../../CUDA/gpu_misc.h"
@@ -227,9 +228,10 @@ void update_inverse_core1 (const T * __restrict__ A,
                            T * __restrict__ Ainv_colk,
                            int k, int N, int rowstride)
 {
-  __shared__ T Ainv_colk_shared[BS], delta[BS];
 #ifdef QMC_COMPLEX
-  __syncthreads();
+  __shared__ bulk::uninitialized_array<T,BS> Ainv_colk_shared, delta;
+#else
+  __shared__ T Ainv_colk_shared[BS], delta[BS];
 #endif
   T sum = (T)0, corr = (T)0;// compensated dot-product delta*Ainv(*,col_Ainv)
   int tidx = threadIdx.x;
@@ -322,9 +324,11 @@ void update_inverse_core2 (T * __restrict__ A,
                            int k, int N, int rowstride)
 {
   T delta_Ainv_shared;
-  __shared__ T Ainv_colk_shared[BS];
+
 #ifdef QMC_COMPLEX
-  __syncthreads();
+  __shared__ bulk::uninitialized_array<T,BS> Ainv_colk_shared;
+#else
+  __shared__ T Ainv_colk_shared[BS];
 #endif
   T prefact;
   int tidx = threadIdx.x;
@@ -508,6 +512,7 @@ update_inverse_cuda(double **data, int iat[],
 }
 
 #ifdef QMC_COMPLEX
+
 void
 update_inverse_cuda(std::complex<float> **data, int iat[],
                     int A_off, int Ainv_off, int newRow_off,
@@ -1093,28 +1098,27 @@ calc_ratios (T **Ainv_list, T **new_row_list,
     Ainv = Ainv_list[blockIdx.x];
     new_row = new_row_list[blockIdx.x];
   }
+  __syncthreads();
 #ifdef QMC_COMPLEX
-  __shared__ T new_row_shared[BS];
-  __syncthreads();
+  __shared__ bulk::uninitialized_array<T,BS> new_row_shared;
 #else
-  __syncthreads();
   __shared__ T new_row_shared[BS];
 #endif
   if (col < N)
     new_row_shared[tid] = new_row[tid];
-  __shared__ T Ainv_colk_shared[BS];
 #ifdef QMC_COMPLEX
-  __syncthreads();
+  __shared__ bulk::uninitialized_array<T,BS> Ainv_colk_shared;
+#else
+  __shared__ T Ainv_colk_shared[BS];
 #endif
   // This is *highly* uncoallesced, but we just have to eat it to allow
   // other kernels to operate quickly.
   if (col < N)
     Ainv_colk_shared[tid] = Ainv[col*row_stride + elec];
+  __syncthreads();
 #ifdef QMC_COMPLEX
-  __shared__ T Ainv_new_row[BS];
-  __syncthreads();
+  __shared__ bulk::uninitialized_array<T,BS> Ainv_new_row;
 #else
-  __syncthreads();
   __shared__ T Ainv_new_row[BS];
 #endif
   if (col < N)
@@ -1251,20 +1255,23 @@ calc_ratio_grad_lapl (T **Ainv_list, T **new_row_list, T **grad_lapl_list,
     new_row = new_row_list[blockIdx.x];
     grad_lapl = grad_lapl_list[blockIdx.x];
   }
+  const int BS1=BS+1;
+  const int BS2=2*BS1;
+  const int BS3=3*BS1;
+  const int BS4=4*BS1;
+  __syncthreads();
 #ifdef QMC_COMPLEX
-  __shared__ T Ainv_colk_shared[BS];
-  __shared__ T ratio_prod[5][BS+1];
-  __syncthreads();
+  __shared__ bulk::uninitialized_array<T,BS> Ainv_colk_shared;
+  __shared__ bulk::uninitialized_array<T,5*BS1> ratio_prod;
 #else
-  __syncthreads();
   __shared__ T Ainv_colk_shared[BS];
-  __shared__ T ratio_prod[5][BS+1];
+  __shared__ T ratio_prod[5*BS1];
 #endif
-  ratio_prod[0][tid] = 0.0f;
-  ratio_prod[1][tid] = 0.0f;
-  ratio_prod[2][tid] = 0.0f;
-  ratio_prod[3][tid] = 0.0f;
-  ratio_prod[4][tid] = 0.0f;
+  ratio_prod[tid] = 0.0f;
+  ratio_prod[BS1+tid] = 0.0f;
+  ratio_prod[BS2+tid] = 0.0f;
+  ratio_prod[BS3+tid] = 0.0f;
+  ratio_prod[BS4+tid] = 0.0f;
   // This is *highly* uncoallesced, but we just have to eat it to allow
   // other kernels to operate quickly.
   __syncthreads();
@@ -1276,11 +1283,11 @@ calc_ratio_grad_lapl (T **Ainv_list, T **new_row_list, T **grad_lapl_list,
     __syncthreads();
     if (col < N)
     {
-      ratio_prod[0][tid] += Ainv_colk_shared[tid] * new_row[col];
-      ratio_prod[1][tid] += Ainv_colk_shared[tid] * grad_lapl[0*row_stride+col];
-      ratio_prod[2][tid] += Ainv_colk_shared[tid] * grad_lapl[1*row_stride+col];
-      ratio_prod[3][tid] += Ainv_colk_shared[tid] * grad_lapl[2*row_stride+col];
-      ratio_prod[4][tid] += Ainv_colk_shared[tid] * grad_lapl[3*row_stride+col];
+      ratio_prod[tid] += Ainv_colk_shared[tid] * new_row[col];
+      ratio_prod[BS1+tid] += Ainv_colk_shared[tid] * grad_lapl[0*row_stride+col];
+      ratio_prod[BS2+tid] += Ainv_colk_shared[tid] * grad_lapl[1*row_stride+col];
+      ratio_prod[BS3+tid] += Ainv_colk_shared[tid] * grad_lapl[2*row_stride+col];
+      ratio_prod[BS4+tid] += Ainv_colk_shared[tid] * grad_lapl[3*row_stride+col];
     }
     __syncthreads();
   }
@@ -1289,28 +1296,28 @@ calc_ratio_grad_lapl (T **Ainv_list, T **new_row_list, T **grad_lapl_list,
   {
     if (tid < s)
     {
-      ratio_prod[0][tid] += ratio_prod[0][tid + s]; // Value
-      ratio_prod[1][tid] += ratio_prod[1][tid + s]; // grad_x
-      ratio_prod[2][tid] += ratio_prod[2][tid + s]; // grad_y
-      ratio_prod[3][tid] += ratio_prod[3][tid + s]; // grad_z
-      ratio_prod[4][tid] += ratio_prod[4][tid + s]; // lapl
+      ratio_prod[tid] += ratio_prod[tid + s]; // Value
+      ratio_prod[BS1+tid] += ratio_prod[BS1 + tid + s]; // grad_x
+      ratio_prod[BS2+tid] += ratio_prod[BS2 + tid + s]; // grad_y
+      ratio_prod[BS3+tid] += ratio_prod[BS3 + tid + s]; // grad_z
+      ratio_prod[BS4+tid] += ratio_prod[BS4 + tid + s]; // lapl
     }
     __syncthreads();
   }
   // Subtract off gradient^2 from laplacian
   if (tid == 0)
   {
-    ratio_prod[4][0] -= (ratio_prod[1][0]*ratio_prod[1][0] +
-                         ratio_prod[2][0]*ratio_prod[2][0] +
-                         ratio_prod[3][0]*ratio_prod[3][0]);
+    ratio_prod[BS4] -= (ratio_prod[BS1]*ratio_prod[BS1] +
+                        ratio_prod[BS2]*ratio_prod[BS2] +
+                        ratio_prod[BS3]*ratio_prod[BS3]);
   }
   __syncthreads();
   // Present gradient and laplacian are w.r.t old position.  Divide by
   // ratio to make it w.r.t. new position
   if (tid < 4)
-    ratio_prod[tid+1][0] /= ratio_prod[0][0];
+    ratio_prod[(tid+1)*BS1] /= ratio_prod[0];
   if (tid < 5)
-    ratio_grad_lapl[5*blockIdx.x+tid] = ratio_prod[tid][0];
+    ratio_grad_lapl[5*blockIdx.x+tid] = ratio_prod[tid*BS1];
 }
 
 
@@ -1330,20 +1337,23 @@ calc_ratio_grad_lapl (T **Ainv_list, T **new_row_list, T **grad_lapl_list,
     grad_lapl = grad_lapl_list[blockIdx.x];
     elec = elec_list[blockIdx.x];
   }
+  __syncthreads();
+  const int BS1=BS+1;
+  const int BS2=2*BS1;
+  const int BS3=3*BS1;
+  const int BS4=4*BS1;
 #ifdef QMC_COMPLEX
-  __shared__ T Ainv_colk_shared[BS];
-  __shared__ T ratio_prod[5][BS+1];
-  __syncthreads();
+  __shared__ bulk::uninitialized_array<T,BS> Ainv_colk_shared;
+  __shared__ bulk::uninitialized_array<T,5*BS1> ratio_prod;
 #else
-  __syncthreads();
   __shared__ T Ainv_colk_shared[BS];
-  __shared__ T ratio_prod[5][BS+1];
+  __shared__ T ratio_prod[5*BS1];
 #endif
-  ratio_prod[0][tid] = 0.0f;
-  ratio_prod[1][tid] = 0.0f;
-  ratio_prod[2][tid] = 0.0f;
-  ratio_prod[3][tid] = 0.0f;
-  ratio_prod[4][tid] = 0.0f;
+  ratio_prod[tid] = 0.0f;
+  ratio_prod[BS1+tid] = 0.0f;
+  ratio_prod[BS2+tid] = 0.0f;
+  ratio_prod[BS3+tid] = 0.0f;
+  ratio_prod[BS4+tid] = 0.0f;
   // This is *highly* uncoallesced, but we just have to eat it to allow
   // other kernels to operate quickly.
   __syncthreads();
@@ -1355,11 +1365,11 @@ calc_ratio_grad_lapl (T **Ainv_list, T **new_row_list, T **grad_lapl_list,
     __syncthreads();
     if (col < N)
     {
-      ratio_prod[0][tid] += Ainv_colk_shared[tid] * new_row[col];
-      ratio_prod[1][tid] += Ainv_colk_shared[tid] * grad_lapl[0*row_stride+col];
-      ratio_prod[2][tid] += Ainv_colk_shared[tid] * grad_lapl[1*row_stride+col];
-      ratio_prod[3][tid] += Ainv_colk_shared[tid] * grad_lapl[2*row_stride+col];
-      ratio_prod[4][tid] += Ainv_colk_shared[tid] * grad_lapl[3*row_stride+col];
+      ratio_prod[tid] += Ainv_colk_shared[tid] * new_row[col];
+      ratio_prod[BS1+tid] += Ainv_colk_shared[tid] * grad_lapl[0*row_stride+col];
+      ratio_prod[BS2+tid] += Ainv_colk_shared[tid] * grad_lapl[1*row_stride+col];
+      ratio_prod[BS3+tid] += Ainv_colk_shared[tid] * grad_lapl[2*row_stride+col];
+      ratio_prod[BS4+tid] += Ainv_colk_shared[tid] * grad_lapl[3*row_stride+col];
     }
     __syncthreads();
   }
@@ -1368,28 +1378,28 @@ calc_ratio_grad_lapl (T **Ainv_list, T **new_row_list, T **grad_lapl_list,
   {
     if (tid < s)
     {
-      ratio_prod[0][tid] += ratio_prod[0][tid + s]; // Value
-      ratio_prod[1][tid] += ratio_prod[1][tid + s]; // grad_x
-      ratio_prod[2][tid] += ratio_prod[2][tid + s]; // grad_y
-      ratio_prod[3][tid] += ratio_prod[3][tid + s]; // grad_z
-      ratio_prod[4][tid] += ratio_prod[4][tid + s]; // lapl
+      ratio_prod[tid] += ratio_prod[tid + s]; // Value
+      ratio_prod[BS1+tid] += ratio_prod[BS1 + tid + s]; // grad_x
+      ratio_prod[BS2+tid] += ratio_prod[BS2 + tid + s]; // grad_y
+      ratio_prod[BS3+tid] += ratio_prod[BS3 + tid + s]; // grad_z
+      ratio_prod[BS4+tid] += ratio_prod[BS4 + tid + s]; // lapl
     }
     __syncthreads();
   }
   // Subtract off gradient^2 from laplacian
   if (tid == 0)
   {
-    ratio_prod[4][0] -= (ratio_prod[1][0]*ratio_prod[1][0] +
-                         ratio_prod[2][0]*ratio_prod[2][0] +
-                         ratio_prod[3][0]*ratio_prod[3][0]);
+    ratio_prod[BS4] -= (ratio_prod[BS1]*ratio_prod[BS1] +
+                        ratio_prod[BS2]*ratio_prod[BS2] +
+                        ratio_prod[BS3]*ratio_prod[BS3]);
   }
   __syncthreads();
   // Present gradient and laplacian are w.r.t old position.  Divide by
   // ratio to make it w.r.t. new position
   if (tid < 4)
-    ratio_prod[tid+1][0] /= ratio_prod[0][0];
+    ratio_prod[BS1*(tid+1)] /= ratio_prod[0];
   if (tid < 5)
-    ratio_grad_lapl[5*blockIdx.x+tid] = ratio_prod[tid][0];
+    ratio_grad_lapl[5*blockIdx.x+tid] = ratio_prod[tid*BS1];
 }
 
 
@@ -1532,18 +1542,19 @@ calc_grad_kernel (T **Ainv_list, T **grad_lapl_list,
     Ainv = Ainv_list[blockIdx.x];
     grad_lapl = grad_lapl_list[blockIdx.x] + 4*elec*row_stride;
   }
+  __syncthreads();
+  const int BS1=BS+1;
+  const int BS2=2*BS1;
 #ifdef QMC_COMPLEX
-  __shared__ T Ainv_colk_shared[BS];
-  __shared__ T ratio_prod[3][BS+1];
-  __syncthreads();
+  __shared__ bulk::uninitialized_array<T,BS> Ainv_colk_shared;
+  __shared__ bulk::uninitialized_array<T,3*BS1> ratio_prod;
 #else
-  __syncthreads();
   __shared__ T Ainv_colk_shared[BS];
-  __shared__ T ratio_prod[3][BS+1];
+  __shared__ T ratio_prod[3*BS1];
 #endif
-  ratio_prod[0][tid] = 0.0f;
-  ratio_prod[1][tid] = 0.0f;
-  ratio_prod[2][tid] = 0.0f;
+  ratio_prod[tid] = 0.0f;
+  ratio_prod[BS1+tid] = 0.0f;
+  ratio_prod[BS2+tid] = 0.0f;
   // This is *highly* uncoallesced, but we just have to eat it to allow
   // other kernels to operate quickly.
   __syncthreads();
@@ -1555,9 +1566,9 @@ calc_grad_kernel (T **Ainv_list, T **grad_lapl_list,
     __syncthreads();
     if (col < N)
     {
-      ratio_prod[0][tid] += Ainv_colk_shared[tid] * grad_lapl[0*row_stride+col];
-      ratio_prod[1][tid] += Ainv_colk_shared[tid] * grad_lapl[1*row_stride+col];
-      ratio_prod[2][tid] += Ainv_colk_shared[tid] * grad_lapl[2*row_stride+col];
+      ratio_prod[tid] += Ainv_colk_shared[tid] * grad_lapl[0*row_stride+col];
+      ratio_prod[BS1+tid] += Ainv_colk_shared[tid] * grad_lapl[1*row_stride+col];
+      ratio_prod[BS2+tid] += Ainv_colk_shared[tid] * grad_lapl[2*row_stride+col];
     }
     __syncthreads();
   }
@@ -1566,14 +1577,14 @@ calc_grad_kernel (T **Ainv_list, T **grad_lapl_list,
   {
     if (tid < s)
     {
-      ratio_prod[0][tid] += ratio_prod[0][tid + s]; // grad_x
-      ratio_prod[1][tid] += ratio_prod[1][tid + s]; // grad_y
-      ratio_prod[2][tid] += ratio_prod[2][tid + s]; // grad_z
+      ratio_prod[tid] += ratio_prod[tid + s]; // grad_x
+      ratio_prod[BS1+tid] += ratio_prod[BS1+tid + s]; // grad_y
+      ratio_prod[BS2+tid] += ratio_prod[BS2+tid + s]; // grad_z
     }
     __syncthreads();
   }
   if (tid < 3)
-    grad[3*blockIdx.x+tid] = ratio_prod[tid][0];
+    grad[3*blockIdx.x+tid] = ratio_prod[tid*BS1];
 }
 
 void
@@ -1724,15 +1735,21 @@ calc_many_ratios_kernel (T **Ainv_list, T **new_row_list,
   }
   __syncthreads();
   int NB = N/BS + ((N%BS) ? 1 : 0);
+#ifdef QMC_COMPLEX
+  __shared__ bulk::uninitialized_array<T,BS> Ainv_shared;
+#else
   __shared__ T Ainv_shared[BS];
+#endif
+  const int BS1=BS+1;
 //  __shared__ T row[BS];
   // We use BS+1 to avoid bank conflicts in the writing.
-  __shared__ T ratio_sum[MAX_RATIO_ROWS][BS+1];
 #ifdef QMC_COMPLEX
-  __syncthreads();
+  __shared__ bulk::uninitialized_array<T,MAX_RATIO_ROWS*BS1> ratio_sum;
+#else
+  __shared__ T ratio_sum[MAX_RATIO_ROWS*BS1];
 #endif
   for (int iratio=0; iratio<num_ratios; iratio++)
-    ratio_sum[iratio][tid] = (T)0.0;
+    ratio_sum[iratio*BS1+tid] = (T)0.0;
   __syncthreads();
   for (int block=0; block<NB; block++)
   {
@@ -1743,8 +1760,8 @@ calc_many_ratios_kernel (T **Ainv_list, T **new_row_list,
     __syncthreads();
     for (int iratio=0; iratio<num_ratios; iratio++)
       if (mask)
-        ratio_sum[iratio][tid] += Ainv_shared[tid] *
-                                  new_rows[iratio*row_stride + off];
+        ratio_sum[iratio*BS1+tid] += Ainv_shared[tid] *
+                                     new_rows[iratio*row_stride + off];
     __syncthreads();
   }
   // now, sum up ratios
@@ -1753,13 +1770,13 @@ calc_many_ratios_kernel (T **Ainv_list, T **new_row_list,
     for (int s=BS>>1; s>0; s>>=1)
     {
       if (tid < s)
-        ratio_sum[iratio][tid] += ratio_sum[iratio][tid+s];
+        ratio_sum[iratio*BS1+tid] += ratio_sum[iratio*BS1+tid+s];
       __syncthreads();
     }
   }
   // Store sums in parallel
   if (tid < num_ratios)
-    ratios[tid] = ratio_sum[tid][0];
+    ratios[tid] = ratio_sum[tid*BS1];
 }
 
 void
@@ -1944,8 +1961,13 @@ all_ratios_grad_lapl_kernel (T **Ainv_list, T **grad_lapl_list,
     out      = out_list[blockIdx.x];
   }
   __syncthreads();
-  __shared__ T Ainv_block[RATIO_BS][RATIO_BS+1];
-  __shared__ T grad_lapl_block[4][RATIO_BS][RATIO_BS+1];
+#ifdef QMC_COMPLEX
+  __shared__ bulk::uninitialized_array<T,RATIO_BS*(RATIO_BS+1)> Ainv_block;
+  __shared__ bulk::uninitialized_array<T,RATIO_BS*(RATIO_BS+1)> grad_lapl_block[4];
+#else
+  __shared__ T Ainv_block[RATIO_BS*(RATIO_BS+1)];
+  __shared__ T grad_lapl_block[4][RATIO_BS*(RATIO_BS+1)];
+#endif
   unsigned int numBlocks = N >> 4;
   if (N & 15)
     numBlocks++;
@@ -1953,10 +1975,10 @@ all_ratios_grad_lapl_kernel (T **Ainv_list, T **grad_lapl_list,
   for (unsigned int yBlock=0; yBlock<numBlocks; yBlock++)
   {
     __syncthreads();
-    grad_lapl_block[0][threadIdx.y][threadIdx.x] = 0.0f;
-    grad_lapl_block[1][threadIdx.y][threadIdx.x] = 0.0f;
-    grad_lapl_block[2][threadIdx.y][threadIdx.x] = 0.0f;
-    grad_lapl_block[3][threadIdx.y][threadIdx.x] = 0.0f;
+    grad_lapl_block[0][threadIdx.y*(RATIO_BS+1)+threadIdx.x] = 0.0f;
+    grad_lapl_block[1][threadIdx.y*(RATIO_BS+1)+threadIdx.x] = 0.0f;
+    grad_lapl_block[2][threadIdx.y*(RATIO_BS+1)+threadIdx.x] = 0.0f;
+    grad_lapl_block[3][threadIdx.y*(RATIO_BS+1)+threadIdx.x] = 0.0f;
     __syncthreads();
     for (unsigned int xBlock=0; xBlock<numBlocks; xBlock++)
     {
@@ -1964,7 +1986,7 @@ all_ratios_grad_lapl_kernel (T **Ainv_list, T **grad_lapl_list,
       unsigned int yIndex = xBlock * RATIO_BS + threadIdx.y;
       unsigned int index  = yIndex*row_stride + xIndex;
       if ((xIndex < N) && (yIndex < N))
-        Ainv_block[threadIdx.x][threadIdx.y] = Ainv[index];
+        Ainv_block[threadIdx.x*(RATIO_BS+1)+threadIdx.y] = Ainv[index];
       __syncthreads();
       xIndex = xBlock * RATIO_BS + threadIdx.x;
       yIndex = yBlock * RATIO_BS + threadIdx.y;
@@ -1972,64 +1994,64 @@ all_ratios_grad_lapl_kernel (T **Ainv_list, T **grad_lapl_list,
       __syncthreads();
       if ((xIndex < N) && (yIndex < N))
       {
-        grad_lapl_block[0][threadIdx.y][threadIdx.x] +=
-          gl_array[index+0*row_stride] * Ainv_block[threadIdx.y][threadIdx.x];
-        grad_lapl_block[1][threadIdx.y][threadIdx.x] +=
-          gl_array[index+1*row_stride] * Ainv_block[threadIdx.y][threadIdx.x];
-        grad_lapl_block[2][threadIdx.y][threadIdx.x] +=
-          gl_array[index+2*row_stride] * Ainv_block[threadIdx.y][threadIdx.x];
-        grad_lapl_block[3][threadIdx.y][threadIdx.x] +=
-          gl_array[index+3*row_stride] * Ainv_block[threadIdx.y][threadIdx.x];
+        grad_lapl_block[0][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+          gl_array[index+0*row_stride] * Ainv_block[threadIdx.y*(RATIO_BS+1)+threadIdx.x];
+        grad_lapl_block[1][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+          gl_array[index+1*row_stride] * Ainv_block[threadIdx.y*(RATIO_BS+1)+threadIdx.x];
+        grad_lapl_block[2][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+          gl_array[index+2*row_stride] * Ainv_block[threadIdx.y*(RATIO_BS+1)+threadIdx.x];
+        grad_lapl_block[3][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+          gl_array[index+3*row_stride] * Ainv_block[threadIdx.y*(RATIO_BS+1)+threadIdx.x];
       }
       __syncthreads();
     }
     // Now, we have to do the reduction across the lapl_blocks
     if (threadIdx.x < 8)
     {
-      grad_lapl_block[0][threadIdx.y][threadIdx.x] +=
-        grad_lapl_block[0][threadIdx.y][threadIdx.x+8];
-      grad_lapl_block[1][threadIdx.y][threadIdx.x] +=
-        grad_lapl_block[1][threadIdx.y][threadIdx.x+8];
-      grad_lapl_block[2][threadIdx.y][threadIdx.x] +=
-        grad_lapl_block[2][threadIdx.y][threadIdx.x+8];
-      grad_lapl_block[3][threadIdx.y][threadIdx.x] +=
-        grad_lapl_block[3][threadIdx.y][threadIdx.x+8];
+      grad_lapl_block[0][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+        grad_lapl_block[0][threadIdx.y*(RATIO_BS+1)+threadIdx.x+8];
+      grad_lapl_block[1][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+        grad_lapl_block[1][threadIdx.y*(RATIO_BS+1)+threadIdx.x+8];
+      grad_lapl_block[2][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+        grad_lapl_block[2][threadIdx.y*(RATIO_BS+1)+threadIdx.x+8];
+      grad_lapl_block[3][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+        grad_lapl_block[3][threadIdx.y*(RATIO_BS+1)+threadIdx.x+8];
     }
     __syncthreads();
     if (threadIdx.x < 4)
     {
-      grad_lapl_block[0][threadIdx.y][threadIdx.x] +=
-        grad_lapl_block[0][threadIdx.y][threadIdx.x+4];
-      grad_lapl_block[1][threadIdx.y][threadIdx.x] +=
-        grad_lapl_block[1][threadIdx.y][threadIdx.x+4];
-      grad_lapl_block[2][threadIdx.y][threadIdx.x] +=
-        grad_lapl_block[2][threadIdx.y][threadIdx.x+4];
-      grad_lapl_block[3][threadIdx.y][threadIdx.x] +=
-        grad_lapl_block[3][threadIdx.y][threadIdx.x+4];
+      grad_lapl_block[0][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+        grad_lapl_block[0][threadIdx.y*(RATIO_BS+1)+threadIdx.x+4];
+      grad_lapl_block[1][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+        grad_lapl_block[1][threadIdx.y*(RATIO_BS+1)+threadIdx.x+4];
+      grad_lapl_block[2][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+        grad_lapl_block[2][threadIdx.y*(RATIO_BS+1)+threadIdx.x+4];
+      grad_lapl_block[3][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+        grad_lapl_block[3][threadIdx.y*(RATIO_BS+1)+threadIdx.x+4];
     }
     __syncthreads();
     if (threadIdx.x < 2)
     {
-      grad_lapl_block[0][threadIdx.y][threadIdx.x] +=
-        grad_lapl_block[0][threadIdx.y][threadIdx.x+2];
-      grad_lapl_block[1][threadIdx.y][threadIdx.x] +=
-        grad_lapl_block[1][threadIdx.y][threadIdx.x+2];
-      grad_lapl_block[2][threadIdx.y][threadIdx.x] +=
-        grad_lapl_block[2][threadIdx.y][threadIdx.x+2];
-      grad_lapl_block[3][threadIdx.y][threadIdx.x] +=
-        grad_lapl_block[3][threadIdx.y][threadIdx.x+2];
+      grad_lapl_block[0][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+        grad_lapl_block[0][threadIdx.y*(RATIO_BS+1)+threadIdx.x+2];
+      grad_lapl_block[1][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+        grad_lapl_block[1][threadIdx.y*(RATIO_BS+1)+threadIdx.x+2];
+      grad_lapl_block[2][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+        grad_lapl_block[2][threadIdx.y*(RATIO_BS+1)+threadIdx.x+2];
+      grad_lapl_block[3][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+        grad_lapl_block[3][threadIdx.y*(RATIO_BS+1)+threadIdx.x+2];
     }
     __syncthreads();
     if (threadIdx.x < 1)
     {
-      grad_lapl_block[0][threadIdx.y][threadIdx.x] +=
-        grad_lapl_block[0][threadIdx.y][threadIdx.x+1];
-      grad_lapl_block[1][threadIdx.y][threadIdx.x] +=
-        grad_lapl_block[1][threadIdx.y][threadIdx.x+1];
-      grad_lapl_block[2][threadIdx.y][threadIdx.x] +=
-        grad_lapl_block[2][threadIdx.y][threadIdx.x+1];
-      grad_lapl_block[3][threadIdx.y][threadIdx.x] +=
-        grad_lapl_block[3][threadIdx.y][threadIdx.x+1];
+      grad_lapl_block[0][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+        grad_lapl_block[0][threadIdx.y*(RATIO_BS+1)+threadIdx.x+1];
+      grad_lapl_block[1][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+        grad_lapl_block[1][threadIdx.y*(RATIO_BS+1)+threadIdx.x+1];
+      grad_lapl_block[2][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+        grad_lapl_block[2][threadIdx.y*(RATIO_BS+1)+threadIdx.x+1];
+      grad_lapl_block[3][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+        grad_lapl_block[3][threadIdx.y*(RATIO_BS+1)+threadIdx.x+1];
     }
     __syncthreads();
     // unsigned int yIndex = yBlock * RATIO_BS + threadIdx.x;
@@ -2043,7 +2065,7 @@ all_ratios_grad_lapl_kernel (T **Ainv_list, T **grad_lapl_list,
     unsigned int ix = 16*threadIdx.y + threadIdx.x;
     unsigned int yIndex = RATIO_BS * yBlock + (ix >> 2);
     if (ix < 64 && yIndex < N)
-      out[64*yBlock + ix] = grad_lapl_block[ix&3][ix>>2][0];
+      out[64*yBlock + ix] = grad_lapl_block[ix&3][(ix>>2)*(RATIO_BS+1)];
     // IMPORTANT!!!
     __syncthreads();
   }
