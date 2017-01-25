@@ -941,7 +941,7 @@ two_body_gradient (double *R[], int first, int last, int iat,
 
 
 
-template<typename T, int BS>
+template<typename T, int BS, unsigned COMPLEX>
 __global__ void
 two_body_derivs_kernel(T **R, T **gradLogPsi,
                        int e1_first, int e1_last,
@@ -991,7 +991,7 @@ two_body_derivs_kernel(T **R, T **gradLogPsi,
         int outoff = i*BS+tid;
         int inoff  = outoff + 3*e1_first + 3*b1*BS;
         r1[0][outoff]    =    myR[inoff];//[3*e1_first + (3*b1+i)*BS + tid];
-        sGrad[0][outoff] = myGrad[inoff];
+        sGrad[0][outoff] = myGrad[inoff*COMPLEX];
       }
     __syncthreads();
     int ptcl1 = e1_first+b1*BS + tid;
@@ -1082,7 +1082,7 @@ two_body_derivs(float *R[], float *gradLogPsi[], int e1_first, int e1_last,
   const int BS=32;
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
-  two_body_derivs_kernel<float,BS><<<dimGrid,dimBlock>>>
+  two_body_derivs_kernel<float,BS,1><<<dimGrid,dimBlock>>>
   (R, gradLogPsi, e1_first, e1_last, e2_first, e2_last, numCoefs,
    rMax, derivs);
 }
@@ -1096,11 +1096,45 @@ two_body_derivs(double *R[], double *gradLogPsi[], int e1_first, int e1_last,
   const int BS=32;
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
-  two_body_derivs_kernel<double,BS><<<dimGrid,dimBlock>>>
+  two_body_derivs_kernel<double,BS,1><<<dimGrid,dimBlock>>>
   (R, gradLogPsi, e1_first, e1_last, e2_first, e2_last, numCoefs,
    rMax, derivs);
 }
 
+
+// Ye: use offset to recycle the old routines
+// block size can be further optimized.
+#ifdef QMC_COMPLEX
+void
+two_body_derivs(float *R[], std::complex<float> *gradLogPsi[], int e1_first, int e1_last,
+                int e2_first, int e2_last,
+                int numCoefs, float rMax,
+                float *derivs[], int numWalkers)
+{
+  const int BS=32;
+  dim3 dimBlock(BS);
+  dim3 dimGrid(numWalkers);
+
+  two_body_derivs_kernel<float,BS,2><<<dimGrid,dimBlock>>>
+  (R, (float**)gradLogPsi, e1_first, e1_last, e2_first, e2_last, numCoefs,
+   rMax, derivs);
+}
+
+void
+two_body_derivs(double *R[], std::complex<double> *gradLogPsi[], int e1_first, int e1_last,
+                int e2_first, int e2_last,
+                int numCoefs, double rMax,
+                double *derivs[], int numWalkers)
+{
+  const int BS=32;
+  dim3 dimBlock(BS);
+  dim3 dimGrid(numWalkers);
+
+  two_body_derivs_kernel<double,BS,2><<<dimGrid,dimBlock>>>
+  (R, (double**)gradLogPsi, e1_first, e1_last, e2_first, e2_last, numCoefs,
+   rMax, derivs);
+}
+#endif
 
 
 ////////////////////////////////////////////////////////////////
@@ -1892,7 +1926,7 @@ one_body_gradient (double *Rlist[], int iat, double C[], int first, int last,
 
 
 
-template<typename T, int BS>
+template<typename T, int BS, unsigned COMPLEX>
 __global__ void
 one_body_derivs_kernel(T* C, T **R, T **gradLogPsi,
                        int cfirst, int clast,
@@ -1939,7 +1973,7 @@ one_body_derivs_kernel(T* C, T **R, T **gradLogPsi,
         int outoff = i*BS+tid;
         int inoff  = outoff + 3*efirst + 3*be*BS;
         r[0][outoff]    =     myR[inoff];
-        sGrad[0][outoff] = myGrad[inoff];
+        sGrad[0][outoff] = myGrad[inoff*COMPLEX];
       }
     __syncthreads();
     int eptcl = efirst+be*BS + tid;
@@ -2023,7 +2057,7 @@ one_body_derivs(float C[], float *R[], float *gradLogPsi[],
   const int BS=32;
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
-  one_body_derivs_kernel<float,BS><<<dimGrid,dimBlock>>>
+  one_body_derivs_kernel<float,BS,1><<<dimGrid,dimBlock>>>
   (C, R, gradLogPsi, cfirst, clast, efirst, elast, numCoefs,
    rMax, derivs);
 }
@@ -2040,13 +2074,48 @@ one_body_derivs(double C[], double *R[], double *gradLogPsi[],
   const int BS=32;
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
-  one_body_derivs_kernel<double,BS><<<dimGrid,dimBlock>>>
+  one_body_derivs_kernel<double,BS,1><<<dimGrid,dimBlock>>>
   (C, R, gradLogPsi, cfirst, clast, efirst, elast, numCoefs,
    rMax, derivs);
 }
 
+// Ye: use offset to recycle the old routines
+// block size can be further optimized.
+#ifdef QMC_COMPLEX
+void
+one_body_derivs(float C[], float *R[], std::complex<float> *gradLogPsi[],
+                int cfirst, int clast,
+                int efirst, int elast,
+                int numCoefs, float rMax,
+                float *derivs[], int numWalkers)
+{
+  const int BS=32;
+  dim3 dimBlock(BS);
+  dim3 dimGrid(numWalkers);
+
+  one_body_derivs_kernel<float,BS,2><<<dimGrid,dimBlock>>>
+  (C, R, (float**)gradLogPsi, cfirst, clast, efirst, elast, numCoefs,
+   rMax, derivs);
+}
 
 
+void
+one_body_derivs(double C[], double *R[], std::complex<double> *gradLogPsi[],
+                int cfirst, int clast,
+                int efirst, int elast,
+                int numCoefs, double rMax,
+                double *derivs[], int numWalkers)
+{
+  const int BS=32;
+  dim3 dimBlock(BS);
+  dim3 dimGrid(numWalkers);
+
+  one_body_derivs_kernel<double,BS,2><<<dimGrid,dimBlock>>>
+  (C, R, (double**)gradLogPsi, cfirst, clast, efirst, elast, numCoefs,
+   rMax, derivs);
+}
+
+#endif
 
 void test()
 {
