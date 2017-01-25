@@ -20,8 +20,10 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/time.h>
+#ifdef QMC_COMPLEX
 #include <thrust/complex.h>
 #include <thrust/system/cuda/detail/bulk/uninitialized.hpp>
+#endif
 
 #include "determinant_update.h"
 #include "../../CUDA/gpu_misc.h"
@@ -324,7 +326,6 @@ void update_inverse_core2 (T * __restrict__ A,
                            int k, int N, int rowstride)
 {
   T delta_Ainv_shared;
-
 #ifdef QMC_COMPLEX
   __shared__ bulk::uninitialized_array<T,BS> Ainv_colk_shared;
 #else
@@ -378,7 +379,11 @@ void update_inverse_core2_subblock (T * __restrict__ A,
                            int k, int N, int rowstride)
 {
   T delta_Ainv_shared;
+#ifdef QMC_COMPLEX
+  __shared__ bulk::uninitialized_array<T,BS> Ainv_colk_shared;
+#else
   __shared__ T Ainv_colk_shared[BS];
+#endif
   T prefact;
   int tidx = threadIdx.x;
   int col_Ainv = blockIdx.y*BS + tidx;
@@ -391,7 +396,7 @@ void update_inverse_core2_subblock (T * __restrict__ A,
     delta_Ainv_shared = delta_Ainv[col_Ainv];
     A[k*rowstride + col_A] = u[col_A];
   }
-  prefact = -1.0f / (1.0f + delta_Ainv[k]);
+  prefact = (T) -1.0f / ((T) 1.0f + delta_Ainv[k]);
   const int blockStart = blockIdx.z * BS;
   int row_Ainv;
   row_Ainv = blockStart + tidx;
@@ -704,8 +709,8 @@ update_inverse_cuda(std::complex<float>**data, int iat,
                     int AinvDelta_off, int AinvColk_off,
                     int N, int rowstride, int numWalkers)
 {
-  const int BS1 = 32;
-  const int BS2 = 32;
+  const int BS1 = 128;
+  const int BS2 = 128;
   int NB1 = (N+BS1-1)/BS1;
   int NB2 = (N+BS2-1)/BS2;
   dim3 dimBlock1(BS1);
@@ -716,7 +721,13 @@ update_inverse_cuda(std::complex<float>**data, int iat,
   update_inverse_kernel1<thrust::complex<float>,BS1><<<dimGrid1,dimBlock1>>>
   ((thrust::complex<float>**)data, iat, A_off, Ainv_off, newRow_off, AinvDelta_off, AinvColk_off,
    N, rowstride);
+  /* reference implementation, replaced by _subblock version. Ye Luo
   update_inverse_kernel2<thrust::complex<float>,BS2><<<dimGrid2,dimBlock2>>>
+  ((thrust::complex<float>**)data, iat, A_off, Ainv_off, newRow_off, AinvDelta_off, AinvColk_off,
+   N, rowstride);
+  */
+  dim3 dimGrid3(numWalkers, NB2, NB2);
+  update_inverse_kernel2_subblock<thrust::complex<float>,BS2><<<dimGrid3,dimBlock2>>>
   ((thrust::complex<float>**)data, iat, A_off, Ainv_off, newRow_off, AinvDelta_off, AinvColk_off,
    N, rowstride);
   cudaError_t err = cudaGetLastError();
@@ -735,8 +746,8 @@ update_inverse_cuda(std::complex<double>**data, int iat,
                     int AinvDelta_off, int AinvColk_off,
                     int N, int rowstride, int numWalkers)
 {
-  const int BS1 = 16;
-  const int BS2 = 16;
+  const int BS1 = 64;
+  const int BS2 = 64;
   int NB1 = (N+BS1-1)/BS1;
   int NB2 = (N+BS2-1)/BS2;
   dim3 dimBlock1(BS1);
@@ -747,7 +758,13 @@ update_inverse_cuda(std::complex<double>**data, int iat,
   update_inverse_kernel1<thrust::complex<double>,BS1><<<dimGrid1,dimBlock1>>>
   ((thrust::complex<double>**)data, iat, A_off, Ainv_off, newRow_off, AinvDelta_off, AinvColk_off,
    N, rowstride);
+  /* reference implementation, replaced by _subblock version. Ye Luo
   update_inverse_kernel2<thrust::complex<double>,BS2><<<dimGrid2,dimBlock2>>>
+  ((thrust::complex<double>**)data, iat, A_off, Ainv_off, newRow_off, AinvDelta_off, AinvColk_off,
+   N, rowstride);
+  */
+  dim3 dimGrid3(numWalkers, NB2, NB2);
+  update_inverse_kernel2_subblock<thrust::complex<double>,BS2><<<dimGrid3,dimBlock2>>>
   ((thrust::complex<double>**)data, iat, A_off, Ainv_off, newRow_off, AinvDelta_off, AinvColk_off,
    N, rowstride);
   cudaError_t err = cudaGetLastError();
