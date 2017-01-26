@@ -31,7 +31,7 @@ echo --- Also check $qeurl is valid - perhaps the files have moved online.
 echo --- Please advise QMCPACK Developers via Google Groups if this problem persists
 else
 cd ${codename}
-patch -p1 -i ../add_pw2qmcpack_to_${codename}.diff
+patch -f -p1 -i ../add_pw2qmcpack_to_${codename}.diff
 cd ..
 if [ -e $codename/PP/src/pw2qmcpack.f90 ]; then
 echo --- SUCCESS: ${codename} patched for pw2qmcpack converter

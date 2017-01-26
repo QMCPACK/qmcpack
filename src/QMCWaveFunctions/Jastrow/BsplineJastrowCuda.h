@@ -14,6 +14,7 @@
 #ifndef BSPLINE_JASTROW_CUDA_H
 #define BSPLINE_JASTROW_CUDA_H
 
+#include <complex>
 #include "NLjobGPU.h"
 
 ///////////////////////
@@ -105,6 +106,19 @@ two_body_derivs(double *R[], double *gradLogPsi[], int e1_first, int e1_last,
                 int numCoefs, double rMax,
                 double *derivs[], int numWalkers);
 
+
+#ifdef QMC_COMPLEX
+void
+two_body_derivs(float *R[], std::complex<float> *gradLogPsi[], int e1_first, int e1_last,
+                int e2_first, int e2_last,
+                int numCoefs, float rMax,
+                float *derivs[], int numWalkers);
+void
+two_body_derivs(double *R[], std::complex<double> *gradLogPsi[], int e1_first, int e1_last,
+                int e2_first, int e2_last,
+                int numCoefs, double rMax,
+                double *derivs[], int numWalkers);
+#endif
 
 ///////////////////////
 // One-Body routines //
@@ -198,5 +212,23 @@ one_body_derivs(double C[], double *R[], double *gradLogPsi[],
                 int efirst, int elast,
                 int numCoefs, double rMax,
                 double *derivs[], int numWalkers);
+
+
+#ifdef QMC_COMPLEX
+void
+one_body_derivs(float C[], float *R[], std::complex<float> *gradLogPsi[],
+                int cfirst, int clast,
+                int efirst, int elast,
+                int numCoefs, float rMax,
+                float *derivs[], int numWalkers);
+
+void
+one_body_derivs(double C[], double *R[], std::complex<double> *gradLogPsi[],
+                int cfirst, int clast,
+                int efirst, int elast,
+                int numCoefs, double rMax,
+                double *derivs[], int numWalkers);
+
+#endif
 
 #endif

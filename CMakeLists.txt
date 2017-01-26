@@ -11,10 +11,10 @@ ENDIF(COMMAND cmake_policy)
 ######################################################################
 # Version 
 ######################################################################
-SET(QMCPLUSPLUS_VERSION_MAJOR 1)
-SET(QMCPLUSPLUS_VERSION_MINOR 0)
-SET(QMCPLUSPLUS_VERSION_PATCH 0)
-SET(QMCPLUSPLUS_VERSION "${QMCPLUSPLUS_VERSION_MAJOR}.${QMCPLUSPLUS_VERSION_MINOR}.${QMCPLUSPLUS_VERSION_PATCH}")
+SET(QMCPACK_VERSION_MAJOR 1)
+SET(QMCPACK_VERSION_MINOR 0)
+SET(QMCPACK_VERSION_PATCH 0)
+SET(QMCPACK_VERSION "${QMCPACK_VERSION_MAJOR}.${QMCPACK_VERSION_MINOR}.${QMCPACK_VERSION_PATCH}")
 
 ######################################################################
 # CTest 
@@ -151,11 +151,7 @@ INCLUDE(${CMAKE_ROOT}/Modules/CheckIncludeFile.cmake)
 INCLUDE(${CMAKE_ROOT}/Modules/CheckTypeSize.cmake)
 
 CHECK_FUNCTION_EXISTS(sincos HAVE_SINCOS)
-CHECK_FUNCTION_EXISTS(round HAVE_STD_ROUND)
-CHECK_FUNCTION_EXISTS(floor HAVE_FLOOR)
 CHECK_FUNCTION_EXISTS(posix_memalign HAVE_POSIX_MEMALIGN)
-CHECK_FUNCTION_EXISTS(pow HAVE_POW)
-CHECK_FUNCTION_EXISTS(sqrt HAVE_SQRT)
 
 CHECK_INCLUDE_FILE(dlfcn.h HAVE_DLFCN_H)
 CHECK_INCLUDE_FILE(inttypes.h HAVE_INTTYPES_H)
@@ -261,20 +257,16 @@ ENDIF(QMC_ADIOS)
 SET(QMCPACK_UNIT_TEST_DIR ${qmcpack_BINARY_DIR}/tests/bin)
 
 ######################################################
-# Get the current SVN version
+# Git information (see src/CMakeLists.txt for the
+# command to get repository information)
 ######################################################
-SET(QMCPLUSPLUS_SVN_LAST_CHANGED "2008-05-12")
-SET(QMCPLUSPLUS_BRANCH "00000") # Will be edited on export, do not edit. Exact match required.
-SET(QMCPLUSPLUS_LAST_CHANGED_DATE "2001-01-01") # Will be edited on export, do not edit. Exact match required.
-FIND_PACKAGE(Subversion) 
-IF(Subversion_FOUND) 
-  IF (EXISTS "${PROJECT_SOURCE_DIR}/.svn") # Avoid using svn with exported files
-    Subversion_WC_INFO(${PROJECT_SOURCE_DIR} my) 
-    MESSAGE(STATUS "Current revision : ${my_WC_REVISION} modified on ${Project_WC_LAST_CHANGED_DATE}") 
-    SET(QMCPLUSPLUS_BRANCH ${my_WC_REVISION}) 
-    SET(QMCPLUSPLUS_LAST_CHANGED_DATE ${my_WC_LAST_CHANGED_DATE}) 
-  ENDIF()
+FIND_PACKAGE(Git)
+
+SET(IS_GIT_PROJECT false)
+IF (EXISTS "${PROJECT_SOURCE_DIR}/.git")
+  SET(IS_GIT_PROJECT true)
 ENDIF()
+
 
 ######################################################
 #COMPILER choose one of the cmake files to customize the compiler options
@@ -653,6 +645,9 @@ IF(QMC_CUDA)
   else(CUDA_NVCC_FLAGS MATCHES "arch")
     # Automatically set the default NVCC flags
     SET(CUDA_NVCC_FLAGS "-Drestrict=__restrict__;-DNO_CUDA_MAIN")
+    if (QMC_COMPLEX)
+      SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-DQMC_COMPLEX")
+    endif()
     if ( CMAKE_BUILD_TYPE STREQUAL "DEBUG" )
       SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-g;-G")
     else()

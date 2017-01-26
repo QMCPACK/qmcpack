@@ -1,7 +1,8 @@
 #qmcpack variables
-QMCPLUSPLUS_VERSION    = @QMCPLUSPLUS_VERSION@
-QMCPLUSPLUS_BRANCH     = @QMCPLUSPLUS_BRANCH@
-LAST_CHANGED_DATE      = @QMCPLUSPLUS_LAST_CHANGED_DATE@
+QMCPACK_VERSION    = @QMCPACK_VERSION@
+# See qmcpack --version for the most up-to-date information about the
+# most recent git commit
+
 QMC_MPI                = @QMC_MPI@
 QMC_OMP                = @QMC_OMP@
 QMC_CUDA               = @QMC_CUDA@

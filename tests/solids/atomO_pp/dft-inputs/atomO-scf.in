@@ -1,0 +1,33 @@
+ &control
+    calculation = 'scf'
+    restart_mode='from_scratch',
+    prefix='atomO',
+    pseudo_dir = './',
+    outdir='./out',
+ /
+ &system
+    ibrav     = 0,
+    nat       = 1,
+    ntyp      = 1,
+    ecutwfc   = 200,
+    occupations = 'smearing'
+    smearing  = 'gauss'
+    degauss   = 0.001
+    nspin     = 2,
+    starting_magnetization(1) = 1.0
+ /
+ &electrons
+    mixing_beta = 0.7
+    conv_thr =  1.0d-8
+ /
+CELL_PARAMETERS bohr
+20 0 0
+0 20 0
+0 0 20
+ATOMIC_SPECIES
+ O  1.0  O.BFD.upf
+ATOMIC_POSITIONS crystal
+O  0.5 0.5 0.5
+K_POINTS crystal
+1
+0.0 0.0 0.0 1.0

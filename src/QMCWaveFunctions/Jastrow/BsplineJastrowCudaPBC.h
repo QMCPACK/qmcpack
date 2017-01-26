@@ -15,6 +15,7 @@
 #ifndef BSPLINE_JASTROW_CUDA_PBC_H
 #define BSPLINE_JASTROW_CUDA_PBC_H
 
+#include <complex>
 #include "NLjobGPU.h"
 
 ///////////////////////
@@ -115,6 +116,23 @@ two_body_derivs_PBC(double *R[], double *gradLogPsi[], int e1_first, int e1_last
                     int numCoefs, double rMax,
                     double lattice[], double latticeInv[], double sim_cell_radius,
                     double *derivs[], int numWalkers);
+
+
+
+#ifdef QMC_COMPLEX
+void
+two_body_derivs_PBC(float *R[], std::complex<float> *gradLogPsi[], int e1_first, int e1_last,
+                    int e2_first, int e2_last,
+                    int numCoefs, float rMax,
+                    float lattice[], float latticeInv[], float sim_cell_radius,
+                    float *derivs[], int numWalkers);
+void
+two_body_derivs_PBC(double *R[], std::complex<double> *gradLogPsi[], int e1_first, int e1_last,
+                    int e2_first, int e2_last,
+                    int numCoefs, double rMax,
+                    double lattice[], double latticeInv[], double sim_cell_radius,
+                    double *derivs[], int numWalkers);
+#endif
 
 
 ///////////////////////
@@ -221,5 +239,26 @@ one_body_derivs_PBC(double C[], double *R[], double *gradLogPsi[],
                     int numCoefs, double rMax,
                     double lattice[], double latticeInv[], double sim_cell_radius,
                     double *derivs[], int numWalkers);
+
+
+#ifdef QMC_COMPLEX
+
+void
+one_body_derivs_PBC(float C[], float *R[], std::complex<float> *gradLogPsi[],
+                    int cfirst, int clast,
+                    int efirst, int elast,
+                    int numCoefs, float rMax,
+                    float lattice[], float latticeInv[], float sim_cell_radius,
+                    float *derivs[], int numWalkers);
+
+void
+one_body_derivs_PBC(double C[], double *R[], std::complex<double> *gradLogPsi[],
+                    int cfirst, int clast,
+                    int efirst, int elast,
+                    int numCoefs, double rMax,
+                    double lattice[], double latticeInv[], double sim_cell_radius,
+                    double *derivs[], int numWalkers);
+
+#endif
 
 #endif

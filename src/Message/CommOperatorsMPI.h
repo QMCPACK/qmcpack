@@ -1025,7 +1025,7 @@ Communicate::gatherv(char* l, char* g, int n,
 {
 #if defined(_CRAYMPI)
   const int cray_short_msg_size=128000;
-  if(l.size()*sizeof(char)<cray_short_msg_size)
+  if(n*sizeof(char)<cray_short_msg_size)
     this->barrier();
 #endif
   int ierr = MPI_Gatherv(l, n, MPI_CHAR,
@@ -1214,7 +1214,7 @@ Communicate::scatterv(char* sb, char* rb, int n,
 {
 #if defined(_CRAYMPI)
   const int cray_short_msg_size=128000;
-  if(l.size()*sizeof(char)<cray_short_msg_size)
+  if(n*sizeof(char)<cray_short_msg_size)
     this->barrier();
 #endif
   int ierr = MPI_Scatterv(sb, &counts[0], &displ[0],  MPI_CHAR,
@@ -1228,7 +1228,7 @@ Communicate::scatterv(std::vector<char>& sb, std::vector<char>& rb,
 {
 #if defined(_CRAYMPI)
   const int cray_short_msg_size=128000;
-  if(l.size()*sizeof(char)<cray_short_msg_size)
+  if(rb.size()*sizeof(char)<cray_short_msg_size)
     this->barrier();
 #endif
   int ierr = MPI_Scatterv(&sb[0], &counts[0], &displ[0],  MPI_CHAR,
@@ -1242,7 +1242,7 @@ Communicate::gatherv(char* l, char* g, int n,
 {
 #if defined(_CRAYMPI)
   const int cray_short_msg_size=128000;
-  if(l.size()*sizeof(char)<cray_short_msg_size)
+  if(n*sizeof(char)<cray_short_msg_size)
     this->barrier();
 #endif
   int ierr = MPI_Gatherv(l, n, MPI_CHAR,

@@ -17,9 +17,9 @@
 
 #define MAX_SPLINES 100
 #include <stdio.h>
+#include <config.h>
 #include "BsplineJastrowCudaPBC.h"
 #include "../../CUDA/gpu_misc.h"
-#include <config.h>
 
 
 bool AisInitializedPBC = false;
@@ -1791,7 +1791,7 @@ two_body_gradient_PBC (double *R[], int first, int last, int iat,
 
 
 
-template<typename T, int BS>
+template<typename T, int BS, unsigned COMPLEX>
 __global__ void
 two_body_derivs_PBC_kernel(T **R, T **gradLogPsi,
                            int e1_first, int e1_last,
@@ -1848,7 +1848,7 @@ two_body_derivs_PBC_kernel(T **R, T **gradLogPsi,
         int outoff = i*BS+tid;
         int inoff  = outoff + 3*e1_first + 3*b1*BS;
         r1[0][outoff]    =    myR[inoff];//[3*e1_first + (3*b1+i)*BS + tid];
-        sGrad[0][outoff] = myGrad[inoff];
+        sGrad[0][outoff] = myGrad[inoff*COMPLEX];
       }
     __syncthreads();
     int ptcl1 = e1_first+b1*BS + tid;
@@ -1941,11 +1941,11 @@ two_body_derivs_PBC(float *R[], float *gradLogPsi[], int e1_first, int e1_last,
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
   if (sim_cell_radius >= rMax)
-    two_body_derivs_PBC_kernel<float,BS><<<dimGrid,dimBlock>>>
+    two_body_derivs_PBC_kernel<float,BS,1><<<dimGrid,dimBlock>>>
     (R, gradLogPsi, e1_first, e1_last, e2_first, e2_last, numCoefs,
      rMax, lattice, latticeInv, derivs);
   else
-    two_body_derivs_PBC_kernel<float,BS><<<dimGrid,dimBlock>>>
+    two_body_derivs_PBC_kernel<float,BS,1><<<dimGrid,dimBlock>>>
     (R, gradLogPsi, e1_first, e1_last, e2_first, e2_last, numCoefs,
      rMax, lattice, latticeInv, derivs);
 }
@@ -1961,16 +1961,62 @@ two_body_derivs_PBC(double *R[], double *gradLogPsi[], int e1_first, int e1_last
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
   if (sim_cell_radius >= rMax)
-    two_body_derivs_PBC_kernel<double,BS><<<dimGrid,dimBlock>>>
+    two_body_derivs_PBC_kernel<double,BS,1><<<dimGrid,dimBlock>>>
     (R, gradLogPsi, e1_first, e1_last, e2_first, e2_last, numCoefs,
      rMax, lattice, latticeInv, derivs);
   else
-    two_body_derivs_PBC_kernel<double,BS><<<dimGrid,dimBlock>>>
+    two_body_derivs_PBC_kernel<double,BS,1><<<dimGrid,dimBlock>>>
     (R, gradLogPsi, e1_first, e1_last, e2_first, e2_last, numCoefs,
      rMax, lattice, latticeInv, derivs);
 }
 
 
+// Ye: use offset to recycle the old routines
+// block size can be further optimized.
+#ifdef QMC_COMPLEX
+void
+two_body_derivs_PBC(float *R[], std::complex<float> *gradLogPsi[], int e1_first, int e1_last,
+                    int e2_first, int e2_last,
+                    int numCoefs, float rMax,
+                    float lattice[], float latticeInv[], float sim_cell_radius,
+                    float *derivs[], int numWalkers)
+{
+  const int BS=32;
+  dim3 dimBlock(BS);
+  dim3 dimGrid(numWalkers);
+
+  if (sim_cell_radius >= rMax)
+    two_body_derivs_PBC_kernel<float,BS,2><<<dimGrid,dimBlock>>>
+    (R, (float**)gradLogPsi, e1_first, e1_last, e2_first, e2_last, numCoefs,
+     rMax, lattice, latticeInv, derivs);
+  else
+    two_body_derivs_PBC_kernel<float,BS,2><<<dimGrid,dimBlock>>>
+    (R, (float**)gradLogPsi, e1_first, e1_last, e2_first, e2_last, numCoefs,
+     rMax, lattice, latticeInv, derivs);
+}
+
+void
+two_body_derivs_PBC(double *R[], std::complex<double> *gradLogPsi[], int e1_first, int e1_last,
+                    int e2_first, int e2_last,
+                    int numCoefs, double rMax,
+                    double lattice[], double latticeInv[], double sim_cell_radius,
+                    double *derivs[], int numWalkers)
+{
+  const int BS=32;
+  dim3 dimBlock(BS);
+  dim3 dimGrid(numWalkers);
+
+  if (sim_cell_radius >= rMax)
+    two_body_derivs_PBC_kernel<double,BS,2><<<dimGrid,dimBlock>>>
+    (R, (double**)gradLogPsi, e1_first, e1_last, e2_first, e2_last, numCoefs,
+     rMax, lattice, latticeInv, derivs);
+  else
+    two_body_derivs_PBC_kernel<double,BS,2><<<dimGrid,dimBlock>>>
+    (R, (double**)gradLogPsi, e1_first, e1_last, e2_first, e2_last, numCoefs,
+     rMax, lattice, latticeInv, derivs);
+}
+
+#endif
 
 ////////////////////////////////////////////////////////////////
 //                      One-body routines                     //
@@ -3310,7 +3356,7 @@ one_body_gradient_PBC (double *Rlist[], int iat, double C[], int first, int last
 
 
 
-template<typename T, int BS>
+template<typename T, int BS, unsigned COMPLEX>
 __global__ void
 one_body_derivs_PBC_kernel(T* C, T **R, T **gradLogPsi,
                            int cfirst, int clast,
@@ -3364,7 +3410,7 @@ one_body_derivs_PBC_kernel(T* C, T **R, T **gradLogPsi,
         int outoff = i*BS+tid;
         int inoff  = outoff + 3*efirst + 3*be*BS;
         r[0][outoff]    =     myR[inoff];
-        sGrad[0][outoff] = myGrad[inoff];
+        sGrad[0][outoff] = myGrad[inoff*COMPLEX];
       }
     __syncthreads();
     int eptcl = efirst+be*BS + tid;
@@ -3450,11 +3496,11 @@ one_body_derivs_PBC(float C[], float *R[], float *gradLogPsi[],
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
   if (sim_cell_radius >= rMax)
-    one_body_derivs_PBC_kernel<float,BS><<<dimGrid,dimBlock>>>
+    one_body_derivs_PBC_kernel<float,BS,1><<<dimGrid,dimBlock>>>
     (C, R, gradLogPsi, cfirst, clast, efirst, elast, numCoefs,
      rMax, lattice, latticeInv, derivs);
   else
-    one_body_derivs_PBC_kernel<float,BS><<<dimGrid,dimBlock>>>
+    one_body_derivs_PBC_kernel<float,BS,1><<<dimGrid,dimBlock>>>
     (C, R, gradLogPsi, cfirst, clast, efirst, elast, numCoefs,
      rMax, lattice, latticeInv, derivs);
 }
@@ -3473,16 +3519,65 @@ one_body_derivs_PBC(double C[], double *R[], double *gradLogPsi[],
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
   if (sim_cell_radius >= rMax)
-    one_body_derivs_PBC_kernel<double,BS><<<dimGrid,dimBlock>>>
+    one_body_derivs_PBC_kernel<double,BS,1><<<dimGrid,dimBlock>>>
     (C, R, gradLogPsi, cfirst, clast, efirst, elast, numCoefs,
      rMax, lattice, latticeInv, derivs);
   else
-    one_body_derivs_PBC_kernel<double,BS><<<dimGrid,dimBlock>>>
+    one_body_derivs_PBC_kernel<double,BS,1><<<dimGrid,dimBlock>>>
     (C, R, gradLogPsi, cfirst, clast, efirst, elast, numCoefs,
      rMax, lattice, latticeInv, derivs);
 }
 
 
+// Ye: use offset to recycle the old routines
+// block size can be further optimized.
+#ifdef QMC_COMPLEX
+void
+one_body_derivs_PBC(float C[], float *R[], std::complex<float> *gradLogPsi[],
+                    int cfirst, int clast,
+                    int efirst, int elast,
+                    int numCoefs, float rMax,
+                    float lattice[], float latticeInv[], float sim_cell_radius,
+                    float *derivs[], int numWalkers)
+{
+  const int BS=32;
+  dim3 dimBlock(BS);
+  dim3 dimGrid(numWalkers);
+
+  if (sim_cell_radius >= rMax)
+    one_body_derivs_PBC_kernel<float,BS,2><<<dimGrid,dimBlock>>>
+    (C, R, (float**)gradLogPsi, cfirst, clast, efirst, elast, numCoefs,
+     rMax, lattice, latticeInv, derivs);
+  else
+    one_body_derivs_PBC_kernel<float,BS,2><<<dimGrid,dimBlock>>>
+    (C, R, (float**)gradLogPsi, cfirst, clast, efirst, elast, numCoefs,
+     rMax, lattice, latticeInv, derivs);
+}
+
+
+
+void
+one_body_derivs_PBC(double C[], double *R[], std::complex<double> *gradLogPsi[],
+                    int cfirst, int clast,
+                    int efirst, int elast,
+                    int numCoefs, double rMax,
+                    double lattice[], double latticeInv[], double sim_cell_radius,
+                    double *derivs[], int numWalkers)
+{
+  const int BS=32;
+  dim3 dimBlock(BS);
+  dim3 dimGrid(numWalkers);
+
+  if (sim_cell_radius >= rMax)
+    one_body_derivs_PBC_kernel<double,BS,2><<<dimGrid,dimBlock>>>
+    (C, R, (double**)gradLogPsi, cfirst, clast, efirst, elast, numCoefs,
+     rMax, lattice, latticeInv, derivs);
+  else
+    one_body_derivs_PBC_kernel<double,BS,2><<<dimGrid,dimBlock>>>
+    (C, R, (double**)gradLogPsi, cfirst, clast, efirst, elast, numCoefs,
+     rMax, lattice, latticeInv, derivs);
+}
+#endif
 
 
 void testPBC()
