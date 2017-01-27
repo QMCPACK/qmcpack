@@ -1883,7 +1883,7 @@ class DatAnalyzer(QBase):
         for q,v in other.stats.iteritems():
             s = self.stats[q]
             s.mean  += weight*v.mean
-            s.error += weight*v.error**2
+            s.error += weight**2*v.error**2
             s.kappa += weight*v.kappa
             s.var   += weight*v.var
         #end for
