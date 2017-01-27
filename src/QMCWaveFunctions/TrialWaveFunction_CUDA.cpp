@@ -47,7 +47,7 @@ TrialWaveFunction::recompute
 
 void
 TrialWaveFunction::reserve
-(PointerPool<gpu::device_vector<CudaRealType> > &pool,
+(PointerPool<gpu::device_vector<CudaValueType> > &pool,
  bool onlyOptimizable)
 {
   for(int i=0; i<Z.size(); i++)
@@ -131,6 +131,8 @@ TrialWaveFunction::ratio (MCWalkerConfiguration &W, int iat,
     myTimers[ii]->stop();
   }
 }
+
+
 void
 TrialWaveFunction::calcRatio (MCWalkerConfiguration &W, int iat,
                               std::vector<ValueType> &psi_ratios,
@@ -149,6 +151,8 @@ TrialWaveFunction::calcRatio (MCWalkerConfiguration &W, int iat,
     myTimers[ii]->stop();
   }
 }
+
+
 void
 TrialWaveFunction::addRatio (MCWalkerConfiguration &W, int iat,
                              std::vector<ValueType> &psi_ratios,
@@ -166,7 +170,26 @@ TrialWaveFunction::addRatio (MCWalkerConfiguration &W, int iat,
   myTimers[1+TIMER_SKIP*(Z.size()-1)]->stop();
 }
 
+#if defined (QMC_COMPLEX)
+void
+TrialWaveFunction::convertRatiosFromComplexToReal (std::vector<ValueType> &psi_ratios,
+                                                   std::vector<RealType> &psi_ratios_real)
+{
+  RealType PhaseValue;
 
+  if (psi_ratios.size() != psi_ratios_real.size() ) {
+    std::cerr << "Error: In " << __FILE__ << " , line " << __LINE__ << " , "
+         << "input vector and output vector sizes unmatched." << std::endl; 
+    abort();
+  }
+
+  for (int iw=0; iw<psi_ratios.size(); iw++)
+  {
+    psi_ratios_real[iw] = evaluateLogAndPhase(psi_ratios[iw], PhaseValue);
+    psi_ratios_real[iw] = std::exp(psi_ratios_real[iw]);
+  }
+}
+#endif
 
 void
 TrialWaveFunction::ratio (std::vector<Walker_t*> &walkers, std::vector<int> &iatList,
@@ -378,8 +401,8 @@ TrialWaveFunction::evaluateOptimizableLog (MCWalkerConfiguration &W,
 void
 TrialWaveFunction::evaluateDerivatives (MCWalkerConfiguration &W,
                                         const opt_variables_type& optvars,
-                                        ValueMatrix_t &dlogpsi,
-                                        ValueMatrix_t &dhpsioverpsi)
+                                        RealMatrix_t &dlogpsi,
+                                        RealMatrix_t &dhpsioverpsi)
 {
   for (int i=0,ii=DERIVS_TIMER; i<Z.size(); i++,ii+=TIMER_SKIP)
   {

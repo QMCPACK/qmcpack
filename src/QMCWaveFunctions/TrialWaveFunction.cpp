@@ -31,7 +31,7 @@ typedef enum { V_TIMER, VGL_TIMER, ACCEPT_TIMER, NL_TIMER,
 
 TrialWaveFunction::TrialWaveFunction(Communicate* c)
   : MPIObjectBase(c)
-  , Ordered(true), NumPtcls(0), TotalDim(0), BufferCursor(0), BufferCursor_DP(0)
+  , Ordered(true), RecomputeNeedsDistanceTable(false), NumPtcls(0), TotalDim(0), BufferCursor(0), BufferCursor_DP(0)
   , PhaseValue(0.0),LogValue(0.0),OneOverM(1.0), PhaseDiff(0.0), FermionWF(0)
 {
   ClassName="TrialWaveFunction";
@@ -41,7 +41,7 @@ TrialWaveFunction::TrialWaveFunction(Communicate* c)
 ///private and cannot be used
 TrialWaveFunction::TrialWaveFunction()
   : MPIObjectBase(0)
-  , Ordered(true), NumPtcls(0), TotalDim(0), BufferCursor(0), BufferCursor_DP(0)
+  , Ordered(true), RecomputeNeedsDistanceTable(false), NumPtcls(0), TotalDim(0), BufferCursor(0), BufferCursor_DP(0)
   ,  PhaseValue(0.0),LogValue(0.0) ,OneOverM(1.0), PhaseDiff(0.0)
 {
   ClassName="TrialWaveFunction";
@@ -97,6 +97,8 @@ TrialWaveFunction::addOrbital(OrbitalBase* aterm, const std::string& aname, bool
     app_log() << "  FermionWF=" << aname << std::endl;
     FermionWF=dynamic_cast<FermionBase*>(aterm);
   }
+
+  if (aterm->RecomputeNeedsDistanceTable) RecomputeNeedsDistanceTable = true;
 
 //#if defined(QMC_CUDA)
   char name1[64],name2[64],name3[64],name4[64], name5[64], name6[64];

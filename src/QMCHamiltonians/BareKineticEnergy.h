@@ -372,9 +372,7 @@ struct BareKineticEnergy: public QMCHamiltonianBase
     for (int iw=0; iw<walkers.size(); iw++)
     {
       Walker_t &w = *(walkers[iw]);
-      RealType KE = 0.0;
-      for (int ptcl=0; ptcl<w.G.size(); ptcl++)
-        KE -= 0.5*(dot (w.G[ptcl],w.G[ptcl])  + w.L[ptcl]);
+      RealType KE = - OneOver2M * (Dot(w.G,w.G)+Sum(w.L));
       w.getPropertyBase()[NUMPROPERTIES+myIndex] = KE;
       LocalEnergy[iw] += KE;
     }
@@ -396,8 +394,8 @@ struct BareKineticEnergy: public QMCHamiltonianBase
 #endif
 
 /***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
+ * $RCSfile$   $Author: yingwai $
+ * $Revision: 7279 $   $Date: 2016-11-23 19:21:16 -0500 (Wed, 23 Nov 2016) $
+ * $Id: BareKineticEnergy.h 7279 2016-11-24 00:21:16Z yingwai $
  ***************************************************************************/
 

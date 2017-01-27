@@ -113,6 +113,7 @@ public:
   typedef OrbitalBase::CudaValueType   CudaValueType;
   typedef OrbitalBase::CudaGradType    CudaGradType;
   typedef OrbitalBase::CudaRealType    CudaRealType;
+  typedef OrbitalBase::RealMatrix_t    RealMatrix_t;
   typedef OrbitalBase::ValueMatrix_t   ValueMatrix_t;
   typedef OrbitalBase::GradMatrix_t    GradMatrix_t;
   typedef ParticleSet::Walker_t        Walker_t;
@@ -356,10 +357,16 @@ public:
     return FermionWF;
   }
 
+  inline bool needs_distance_table_for_recompute() { return RecomputeNeedsDistanceTable; }
+
 private:
 
   ///control how ratio is calculated
   bool Ordered;
+
+  ///true, if recompute needs precomputed distance tables
+  bool RecomputeNeedsDistanceTable;
+
   ///the size of ParticleSet
   int NumPtcls;
 
@@ -421,9 +428,8 @@ public:
 
   void recompute (MCWalkerConfiguration &W, bool firstTime=true);
 
-  void reserve (PointerPool<gpu::device_vector<CudaRealType> > &pool,
+  void reserve (PointerPool<gpu::device_vector<CudaValueType> > &pool,
                 bool onlyOptimizable=false);
-
   void getGradient (MCWalkerConfiguration &W, int iat,
                     std::vector<GradType> &grad);
   void calcGradient (MCWalkerConfiguration &W, int iat,
@@ -449,12 +455,16 @@ public:
                  std::vector<ValueType> &psi_ratios,
                  std::vector<GradType> &newG,
                  std::vector<ValueType> &newL);
-
+#ifdef QMC_COMPLEX
+  void convertRatiosFromComplexToReal (std::vector<ValueType> &psi_ratios,
+                                       std::vector<RealType> &psi_ratios_real);
+#endif
   void ratio (std::vector<Walker_t*> &walkers, std::vector<int> &iatList,
               std::vector<PosType> &rNew,
               std::vector<ValueType> &psi_ratios,
               std::vector<GradType> &newG,
               std::vector<ValueType> &newL);
+
   void NLratios (MCWalkerConfiguration &W,
                  gpu::device_vector<CUDA_PRECISION*> &Rlist,
                  gpu::device_vector<int*>            &ElecList,
@@ -462,6 +472,7 @@ public:
                  gpu::device_vector<CUDA_PRECISION*> &QuadPosList,
                  gpu::device_vector<CUDA_PRECISION*> &RatioList,
                  int numQuadPoints);
+
   void NLratios (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
                  std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios);
 
@@ -487,11 +498,10 @@ public:
                                GradMatrix_t&  optG,
                                ValueMatrix_t& optL);
 
-
   void evaluateDerivatives (MCWalkerConfiguration &W,
                             const opt_variables_type& optvars,
-                            ValueMatrix_t &dlogpsi,
-                            ValueMatrix_t &dhpsioverpsi);
+                            RealMatrix_t &dlogpsi,
+                            RealMatrix_t &dhpsioverpsi);
 
 #endif
 
@@ -501,7 +511,7 @@ public:
 }
 #endif
 /***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
+ * $RCSfile$   $Author: tillackaf $
+ * $Revision: 7408 $   $Date: 2017-01-10 13:29:49 -0500 (Tue, 10 Jan 2017) $
+ * $Id: TrialWaveFunction.h 7408 2017-01-10 18:29:49Z tillackaf $
  ***************************************************************************/
