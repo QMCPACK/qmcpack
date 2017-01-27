@@ -6,7 +6,7 @@ Notable changes to QMCPACK will be documented in this file.
 
 ### Notes
 
-We are adopting [Semantic Versioning](http://semver.org]) with this
+We are adopting [Semantic Versioning](http://semver.org) with this
 release. It is the first to be made from the git repository on GitHub,
 and the first named release since 2016-06-02 and subversion
 revision 6964. 
