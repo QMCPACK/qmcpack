@@ -110,12 +110,14 @@ The other memory objects which are distinct for each walker during random walk n
 \label{sec:gpurunning}
 
 The GPU version on the NVIDIA CUDA platform is fully incorporated into
-the main trunk. Currently some commonly used functionalities for
+the main source code. Commonly used functionalities for
 solid-state and molecular systems using B-spline single-particle
-orbitals is supported. A detailed description of the GPU
+orbitals are supported. Use of Gaussian basis sets and three-body
+Jastrow functions are not yet supported. A detailed description of the GPU
 implementation can be found in Ref. \cite{EslerKimCeperleyShulenburger2012}.
 
-Current GPU implementation assumes one MPI process per GPU.
+The current GPU implementation assumes one MPI process per GPU. To use
+nodes with multiple GPUs, use multiple MPI processes per node.
 Vectorization is achieved over walkers, that is, all walkers are
 propagated in parallel. In each GPU kernel, loops over electrons,
 atomic cores or orbitals are further vectorized to exploit an
@@ -140,8 +142,8 @@ additional level of parallelism and to allow coalesced memory access.
 
     \begin{enumerate}
 	\item Periodic and open boundary conditions are fully supported.
-	\item Twist-averaged boundary condition is supported for only real-valued wavefunctions.
-	\item Mixed boundary conditions and complex wavefunctions (e.g. fixed phase) are not yet supported.
+	\item Twist-averaged boundary conditions and complex wavefunctions are fully supported.
+	\item Mixed boundary conditions are not yet supported.
     \end{enumerate}
 
   \item Wavefunctions:
@@ -211,6 +213,13 @@ overwrite the default values. \\
 \begin{tabular}{l@{: }p{4.5in}}
 \courier{=0} (default) & no GPU support, build QMCPACK as a CPU code \\
 \courier{=1}               & build QMCPACK with GPU support \\
+\end{tabular} \\
+
+\item \courier{QMC\_COMPLEX}
+
+\begin{tabular}{l@{: }p{4.5in}}
+\courier{=0} (default) & as per the CPU code, build the real version \\
+\courier{=1}               & build the complex (general twist/k-point) version \\
 \end{tabular} \\
 
 \item \courier{QMC\_MIXED\_PRECISION} (when \courier{QMC\_CUDA=1})
