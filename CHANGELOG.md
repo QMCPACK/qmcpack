@@ -58,17 +58,17 @@ NEXUS updates are listed after QMCPACK updates.
 
 ### NEXUS updates
 
-1. General
-*  Nexus output now tracks time instead of poll number
-*  Reported memory use now includes child processes
+* General
+  *  Nexus output now tracks time instead of poll number
+  *  Reported memory use now includes child processes
 
-2. Tools
-*  qmca
-  *  Fix for twist averaging with user-provided weights
-*  qmcfit
-  * New command line tool for jack-knife fitting of QMCPACK data
-  * Timestep extrapolation currently supported
-  * General binding/equation of state fitting pending
+*  Tools
+  *  qmca
+    *  Fix for twist averaging with user-provided weights
+  *  qmcfit
+    * New command line tool for jack-knife fitting of QMCPACK data
+    * Timestep extrapolation currently supported
+    * General binding/equation of state fitting pending
 
 3. Supercomputing environments
 *  Native support for several supercomputing environments located at Sandia Nat. Labs
