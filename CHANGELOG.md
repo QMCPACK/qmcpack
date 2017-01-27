@@ -59,46 +59,39 @@ NEXUS updates are listed after QMCPACK updates.
 ### NEXUS updates
 
 * General
-  *  Nexus output now tracks time instead of poll number
-  *  Reported memory use now includes child processes
-
+  *  Nexus output now tracks time instead of poll number.
+  *  Reported memory use now includes child processes.
+* Workflow generator
+  *  Major new capability to generate simple to complex workflows involving QE, VASP, and QMCPACK.
+  *  Aim is to allow single notebook/worksheet describing all simulation workflows needed in a project.
+  *  Users can succinctly create any subchain of the workflow: relax->scf->nscf->orbital_conv->qmc.
+  *  Additional elements can be added to workflow chains over time as needed.
+  *  Scans of structural parameters and input parameters at any level of the chain are possible.
+  *  No programming constructs are required (for/if, etc).
+  *  Directory substructure is automatically generated in the case of scans. 
+  *  Native support for visualizing workflows via pydot is provided.
+  *  Documentation for this feature is pending.
+* Quantum Espresso workflows
+  *  Support for vdW functional input.
+  *  Fixes to SCF->NSCF workflows for QE 5.3.0+.
+  *  Support for automatic restarts of SCF runs.
+  *  Native support for workflows involving post-processing tools
+    * pp.x, dos.x, bands.x, projwfc.x, cppp.x, pw_export.x supported.
+    * Postprocessing and summary of Lowdin charge data from projwfc.x.
+* QMCPACK workflows
+  *  Fixes for QE/VASP structural relaxation -> QMCPACK workflows.
+  *  Fixed job bundling of twist averaged runs.
+  *  Support for partitioned sposet input.
+* Supercomputing environments
+  *  Native support for several supercomputing environments located at Sandia Nat. Labs.
+* Atomic structure manipulation
+  *  Ability to find optimal supercells, similar to getSupercell tool.
+  *  Robustness fixes to tiling operations.
 *  Tools
   *  qmca
-    *  Fix for twist averaging with user-provided weights
+    *  Fix for twist averaging with user-provided weights.
   *  qmcfit
-    * New command line tool for jack-knife fitting of QMCPACK data
-    * Timestep extrapolation currently supported
-    * General binding/equation of state fitting pending
-
-3. Supercomputing environments
-*  Native support for several supercomputing environments located at Sandia Nat. Labs
-
-4. Atomic structure manipulation
-*  Ability to find optimal supercells, similar to getSupercell tool
-*  Robustness fixes to tiling operations
-
-5. Quantum Espresso workflows
-*  Support for vdW functional input
-*  Fixes to SCF->NSCF workflows for QE 5.3.0+
-*  Support for automatic restarts of SCF runs
-*  Native support for workflows involving post-processing tools
-  * pp.x, dos.x, bands.x, projwfc.x, cppp.x, pw_export.x supported
-  * Postprocessing and summary of Lowdin charge data from projwfc.x
-
-6. QMCPACK workflows
-*  Fixes for QE/VASP structural relaxation -> QMCPACK workflows
-*  Fixed job bundling of twist averaged runs
-*  Support for partitioned sposet input
-
-7. Workflow generator
-*  Major new capability to generate simple to complex workflows involving QE, VASP, and QMCPACK
-*  Aim is to allow single notebook/worksheet describing all simulation workflows needed in a project
-*  Users can succinctly create any subchain of the workflow: relax->scf->nscf->orbital_conv->qmc
-*  Additional elements can be added to workflow chains over time as needed
-*  Scans of structural parameters and input parameters at any level of the chain are possible
-*  No programming constructs are required (for/if, etc)
-*  Directory substructure is automatically generated in the case of scans
-*  Native support for visualizing workflows via pydot is provided
-*  Documentation for this feature is pending
-
-
+    * New command line tool for jack-knife fitting of QMCPACK data.
+    * Timestep extrapolation currently supported.
+    * General binding/equation of state fitting pending.
+ 
