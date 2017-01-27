@@ -40,7 +40,7 @@ NEXUS updates are listed after QMCPACK updates.
 * Mixed precision CPU implementation.
 * Double precision GPU implementation, complementing existing
   mixed precision implementation.
-* GAMESS CI converter improved .
+* GAMESS CI converter improved.
 * C++11 detection and support.
 * Initial release of new optimizer, requires C++11 (contact Eric Neuscamman).
 * Initial release of orbital-based AFQMC code, requires C+11 and MKL (contact Miguel Morales).
@@ -100,9 +100,5 @@ NEXUS updates are listed after QMCPACK updates.
 *  Directory substructure is automatically generated in the case of scans
 *  Native support for visualizing workflows via pydot is provided
 *  Documentation for this feature is pending
-
-
-
-### QMCPACK updates
 
 
