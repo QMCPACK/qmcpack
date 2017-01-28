@@ -200,7 +200,10 @@ int WalkerControlBase::doNotBranch(int iter, MCWalkerConfiguration& W)
       r2_accepted+=(*it)->Properties(R2ACCEPTED);
       r2_proposed+=(*it)->Properties(R2PROPOSED);
       RealType e((*it)->Properties(LOCALENERGY));
-      RealType wgt=((*it)->Weight);
+      // This is a trick to estimate the number of walkers
+      // after the first iterration branching.
+      //RealType wgt=((*it)->Weight);
+      RealType wgt=RealType(nc);
       esum += wgt*e;
       e2sum += wgt*e*e;
       wsum += wgt;
@@ -226,7 +229,8 @@ int WalkerControlBase::doNotBranch(int iter, MCWalkerConfiguration& W)
   measureProperties(iter);
   trialEnergy=EnsembleProperty.Energy;
   W.EnsembleProperty=EnsembleProperty;
-  return W.getActiveWalkers();
+  //return W.getActiveWalkers();
+  return int(curData[WEIGHT_INDEX]);
 }
 
 int WalkerControlBase::branch(int iter, MCWalkerConfiguration& W, RealType trigger)

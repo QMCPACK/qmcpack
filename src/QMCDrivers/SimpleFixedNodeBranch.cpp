@@ -327,7 +327,7 @@ void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& walkers)
         vParam[B_ETRIAL]=(0.00*vParam[B_EREF]+1.0*vParam[B_ENOW])
                          +vParam[B_FEEDBACK]*(logN-std::log(pop_now))-std::log(WalkerController->EnsembleProperty.LivingFraction)/vParam[B_TAU];
       else
-        vParam[B_ETRIAL]=(0.00*vParam[B_EREF]+1.0*vParam[B_ENOW])+vParam[B_FEEDBACK]*(logN-std::log(pop_now));
+        vParam[B_ETRIAL]=vParam[B_ENOW]+(logN-std::log(pop_now))/vParam[B_TAU];
     }
     else
       vParam[B_ETRIAL]=vParam[B_EREF];
