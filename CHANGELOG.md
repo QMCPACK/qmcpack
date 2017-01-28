@@ -21,7 +21,7 @@ NEXUS updates are listed after QMCPACK updates.
 
 * IMPORTANT BUGFIX: Real-valued wavefunction code would occasionally make a numerically
   unstable choice for constructing real-valued periodic wavefunctions, leading to
-  large variances and poor energies. Algorithm for contructing
+  large variances and poor energies. Algorithm for constructing
   wavefunctions improved.
 * Fully parallel pw2qmcpack.x for QE 5.3, enables conversion of large
   wavefunctions and use of same parallel setup as pw.x runs.
@@ -37,9 +37,9 @@ NEXUS updates are listed after QMCPACK updates.
 * Complex implementation on GPUs, supports arbitrary twists and
   complex phase wavefunctions as per CPU code.
 * Flux estimator correct for complex wavefunctions.
-* Mixed precision CPU implementation.
+* Mixed precision CPU implementation, activated via -DQMC_MIXED_PRECISION=1.
 * Double precision GPU implementation, complementing existing
-  mixed precision implementation.
+  mixed precision implementation, activated via -DQMC_MIXED_PRECISION=0.
 * GAMESS CI converter improved.
 * C++11 detection and support.
 * Initial release of new optimizer, requires C++11 (contact Eric Neuscamman).
