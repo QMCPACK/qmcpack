@@ -353,7 +353,7 @@ void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& walkers)
       BranchMode.set(B_DMCSTAGE,1); //set BranchModex to main stage
       //reset the histogram
       EnergyHist.clear();
-      EnergyHist(vParam[B_EREF]);
+      EnergyHist(vParam[B_ENOW]);
       if(sParam[MIXDMCOPT]=="yes")
       {
         app_log() << "Switching to DMC with fluctuating populations" << std::endl;
@@ -477,7 +477,7 @@ void SimpleFixedNodeBranch::collect(int iter, MCWalkerConfiguration& W)
       BranchMode.set(B_RMCSTAGE,1); //set BranchModex to main stage
       //reset the histogram
       EnergyHist.clear();
-      EnergyHist(vParam[B_EREF]);
+      EnergyHist(vParam[B_ENOW]);
     }
   }
   //accumulate collectables and energies for scalar.dat
