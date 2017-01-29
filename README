@@ -26,7 +26,7 @@ variables.  When the libraries are installed in standard locations,
 e.g., /usr, /usr/local, there is no need to set environmental or cmake
 variables for the packages.
 
-See http://docs.qmcpack.org for build examples on Linux, Mac OS X etc.
+See the manual in manual/qmcpack_manual.pdf for build examples on Linux, Mac OS X etc.
 
 3.1. Quick build
 
@@ -205,7 +205,7 @@ Add extra include directories:
 
 4. Testing and validation of QMCPACK
 
-For more informaton, consult QMCPACK pages at http://www.qmcpack.org and http://docs.qmcpack.org
+For more informaton, consult QMCPACK pages at http://www.qmcpack.org and the manual.
 The tests currently use up to 16 cores in various combinations of MPI
 tasks and OpenMP threads. 
 
@@ -244,11 +244,11 @@ Individual tests can be run by specifying their name
 
   ctest -R name-of-test-to-run
 
-
 5. Documentation and support
 
-For more informaton, consult QMCPACK pages at http://www.qmcpack.org
-and http://docs.qmcpack.org
+For more informaton, consult QMCPACK pages at http://www.qmcpack.org,
+the linked documentation, and the local copy of the manual in
+manual/qmcpack_manual.pdf
 
-If you have trouble building or using QMCPACK, please post to the
-Google QMCPACK group or contact a developer.
+If you have trouble using or building QMCPACK, or have questions about
+its use, please post to the Google QMCPACK group or contact a developer.
