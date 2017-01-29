@@ -184,9 +184,7 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
   {
     //determine the branch cutoff to limit wild weights based on the sigma and sigmaBound
     EstimatorRealType sigma2=std::max(vParam[B_SIGMA2]*WalkerController->targetSigma,50.0);
-    vParam[B_BRANCHCUTOFF]=std::min(sigma2,2.5/tau);
-    vParam[B_BRANCHMAX]=vParam[B_BRANCHCUTOFF]*1.5;
-    vParam[B_BRANCHFILTER]=1.0/(vParam[B_BRANCHMAX]-vParam[B_BRANCHCUTOFF]);
+    setBranchCutoff(sigma2);
     vParam[B_TAUEFF]=tau*R2Accepted.result()/R2Proposed.result();
   }
   //reset controller
@@ -253,9 +251,7 @@ void SimpleFixedNodeBranch::initReptile(MCWalkerConfiguration& W)
   {
     //determine the branch cutoff to limit wild weights based on the sigma and sigmaBound
     EstimatorRealType sigma2=std::max(vParam[B_SIGMA2]*allowedFlux,50.0);
-    vParam[B_BRANCHCUTOFF]=std::min(sigma2,2.5/tau);
-    vParam[B_BRANCHMAX]=vParam[B_BRANCHCUTOFF]*1.5;
-    vParam[B_BRANCHFILTER]=1.0/(vParam[B_BRANCHMAX]-vParam[B_BRANCHCUTOFF]);
+    setBranchCutoff(sigma2);
     vParam[B_TAUEFF]=tau*R2Accepted.result()/R2Proposed.result();
   }
   //reset controller
@@ -336,9 +332,7 @@ void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& walkers)
     {
       vParam[B_SIGMA2]=VarianceHist.mean();
       EstimatorRealType sigma2=std::max(vParam[B_SIGMA2]*WalkerController->targetSigma,10.0);
-      vParam[B_BRANCHCUTOFF]=std::min(sigma2,2.5/vParam[B_TAU]);
-      vParam[B_BRANCHMAX]=vParam[B_BRANCHCUTOFF]*1.5;
-      vParam[B_BRANCHFILTER]=1.0/(vParam[B_BRANCHMAX]-vParam[B_BRANCHCUTOFF]);
+      setBranchCutoff(sigma2);
       app_log() << "\n Warmup is completed after " << iParam[B_WARMUPSTEPS] << std::endl;
       if(BranchMode[B_USETAUEFF])
         app_log() << "\n  TauEff     = " << vParam[B_TAUEFF] << "\n TauEff/Tau = " << vParam[B_TAUEFF]/vParam[B_TAU];
@@ -461,9 +455,7 @@ void SimpleFixedNodeBranch::collect(int iter, MCWalkerConfiguration& W)
       vParam[B_TAUEFF]=vParam[B_TAU]*R2Accepted.result()/R2Proposed.result();
       vParam[B_SIGMA2]=VarianceHist.mean();
       EstimatorRealType sigma2=std::max(vParam[B_SIGMA2]*vParam[B_FILTERSCALE],vParam[B_FILTERSCALE]);
-      vParam[B_BRANCHCUTOFF]=std::min(sigma2,2.5/vParam[B_TAU]);
-      vParam[B_BRANCHMAX]=vParam[B_BRANCHCUTOFF]*1.5;
-      vParam[B_BRANCHFILTER]=1.0/(vParam[B_BRANCHMAX]-vParam[B_BRANCHCUTOFF]);
+      setBranchCutoff(sigma2);
       app_log() << "\n Warmup is completed after " << iParam[B_WARMUPSTEPS] << " steps."<< std::endl;
       if(BranchMode[B_USETAUEFF])
         app_log() << "\n  TauEff     = " << vParam[B_TAUEFF] << "\n TauEff/Tau = " << vParam[B_TAUEFF]/vParam[B_TAU];

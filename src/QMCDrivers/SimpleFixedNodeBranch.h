@@ -420,7 +420,7 @@ struct SimpleFixedNodeBranch: public QMCTraits
   ///finalize the simulation
   void finalize(MCWalkerConfiguration& w);
 
-  void setRN (bool rn);
+  void setRN(bool rn);
 
 
 //     void storeConfigsForForwardWalking(MCWalkerConfiguration& w);
@@ -439,6 +439,13 @@ private:
   //void write(hid_t grp, bool append=false);
   //void read(hid_t grp);
 
+  ///set branch cutoff, max, filter
+  inline void setBranchCutoff(EstimatorRealType cutoff)
+  {
+    vParam[B_BRANCHCUTOFF]=std::min(cutoff,2.5/vParam[B_TAU]);
+    vParam[B_BRANCHMAX]=vParam[B_BRANCHCUTOFF]*1.5;
+    vParam[B_BRANCHFILTER]=1.0/(vParam[B_BRANCHMAX]-vParam[B_BRANCHCUTOFF]);
+  }
 };
 
 }
