@@ -113,8 +113,6 @@ struct NonLocalECPComponent: public QMCTraits
   void randomize_grid(ParticleSet::ParticlePos_t& sphere, bool randomize);
   template<typename T> void randomize_grid(std::vector<T> &sphere);
 
-  RealType evaluate(ParticleSet& W, int iat, TrialWaveFunction& Psi);
-
   RealType evaluateOne(ParticleSet& W, int iat, TrialWaveFunction& Psi, 
       int iel, RealType r, const PosType& dr, bool Tmove, std::vector<NonLocalData>& Txy) const;
 
@@ -123,10 +121,6 @@ struct NonLocalECPComponent: public QMCTraits
 
   RealType evaluate(ParticleSet& W, ParticleSet &ions, int iat, TrialWaveFunction& Psi,
                     PosType &force_iat, PosType &pulay_iat);
-
-
-  RealType
-  evaluate(ParticleSet& W, TrialWaveFunction& Psi,int iat, std::vector<NonLocalData>& Txy);
 
   RealType
   evaluate(ParticleSet& W, TrialWaveFunction& Psi,int iat, std::vector<NonLocalData>& Txy,
