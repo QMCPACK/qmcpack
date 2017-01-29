@@ -632,6 +632,7 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
   BranchMode[B_DMCSTAGE]=0;
   WalkerController->put(myNode);
   ToDoSteps=iParam[B_WARMUPSTEPS]=(iParam[B_WARMUPSTEPS])?iParam[B_WARMUPSTEPS]:10;
+  setBranchCutoff(vParam[B_SIGMA2]);
   WalkerController->setEnergyAndVariance(vParam[B_EREF],vParam[B_SIGMA2]);
   WalkerController->reset();
 #ifdef QMC_CUDA
