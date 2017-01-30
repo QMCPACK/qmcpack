@@ -57,9 +57,7 @@ public:
     :CenterRef(centers),NumVars(0)
   {
     NumPtcls=els.getTotalNum();
-    std::cout << "HELPME " << std::endl;
     myTableIndex=els.addTable(CenterRef,DT_SOA_PREFERRED);
-    std::cout << "HELPME " << std::endl;
   }
 
   ~DiffOneBodyJastrowOrbital()
