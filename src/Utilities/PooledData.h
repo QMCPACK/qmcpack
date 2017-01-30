@@ -34,12 +34,13 @@ template<class T>
 struct PooledData
 {
   typedef T value_type;
+  typedef OHMMS_PRECISION_FULL fp_value_type;
   typedef typename std::vector<T>::size_type size_type;
 
   size_type Current, Current_DP;
   std::vector<T> myData;
-  /// only active when T!=double
-  std::vector<double> myData_DP;
+  /// only active when T!=fp_value_type
+  std::vector<fp_value_type> myData_DP;
 
   ///default constructor
   inline PooledData(): Current(0), Current_DP(0) { }
@@ -48,13 +49,13 @@ struct PooledData
   inline PooledData(size_type n, size_type n1=0): Current(0), Current_DP(0)
   {
     myData.resize(n,T());
-    myData_DP.resize(n1,double());
+    myData_DP.resize(n1,fp_value_type());
   }
 
   ///return the size of the data
   inline size_type byteSize() const
   {
-    return sizeof(T)*myData.size() + sizeof(double)*myData_DP.size();
+    return sizeof(T)*myData.size() + sizeof(fp_value_type)*myData_DP.size();
   }
 
   ///return the size of the data
@@ -310,7 +311,7 @@ struct PooledData
   }
 
   /** return the address of the first DP element **/
-  inline double* data_DP()
+  inline fp_value_type* data_DP()
   {
     return &(myData_DP[0]);
   }

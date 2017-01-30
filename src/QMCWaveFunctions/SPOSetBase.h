@@ -57,8 +57,10 @@ public:
   int builder_index;
   ///true if C is an identity matrix
   bool Identity;
-  ///true if C is an identity matrix
+  ///true if SPO is optimizable
   bool Optimizable;
+  ///true if precomputed distance tables are needed
+  bool NeedsDistanceTable;
   ///flag to calculate ionic derivatives
   bool ionDerivs;
   ///total number of orbitals
@@ -89,6 +91,7 @@ public:
    */
   SPOSetBase()
     :Identity(false),TotalOrbitalSize(0),OrbitalSetSize(0),BasisSetSize(0),
+    NeedsDistanceTable(false),
     ActivePtcl(-1),Optimizable(false),ionDerivs(false),builder_index(-1)
   {
     className="invalid";
@@ -310,7 +313,7 @@ public:
   // Walker-parallel vectorized functions //
   //////////////////////////////////////////
   virtual void
-  reserve (PointerPool<gpu::device_vector<CudaRealType> > &pool) { }
+  reserve (PointerPool<gpu::device_vector<CudaValueType> > &pool) { }
 
   virtual void
   evaluate (std::vector<Walker_t*> &walkers, int iat, gpu::device_vector<CudaValueType*> &phi);
@@ -347,8 +350,8 @@ typedef SPOSetBase*                   SPOSetBasePtr;
 #endif
 
 /***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
+ * $RCSfile$   $Author: yingwai $
+ * $Revision: 7279 $   $Date: 2016-11-23 19:21:16 -0500 (Wed, 23 Nov 2016) $
+ * $Id: SPOSetBase.h 7279 2016-11-24 00:21:16Z yingwai $
  ***************************************************************************/
 

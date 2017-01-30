@@ -22,7 +22,8 @@
 namespace qmcplusplus
 {
 OrbitalBase::OrbitalBase():
-  IsOptimizing(false),Optimizable(true), UpdateMode(ORB_WALKER), //UseBuffer(true), //Counter(0),
+  IsOptimizing(false), Optimizable(true), UpdateMode(ORB_WALKER), //UseBuffer(true), //Counter(0),
+  RecomputeNeedsDistanceTable(false),
   LogValue(1.0),PhaseValue(0.0),OrbitalName("OrbitalBase"), derivsDone(false), parameterType(0)
 #if !defined(ENABLE_SMARTPOINTER)
   ,dPsi(0), ionDerivs(false)

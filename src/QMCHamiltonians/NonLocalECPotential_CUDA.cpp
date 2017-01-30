@@ -303,7 +303,11 @@ void NonLocalECPotential_CUDA::addEnergy(MCWalkerConfiguration &W,
           for (int iq=0; iq<numQuad; iq++)
           {
             RealType costheta = *(cos_ptr++);
+#ifdef QMC_COMPLEX
+            RealType ratio  = RatioList[ratioIndex++].real() * pp.sgridweight_m[iq]; // Abs(complex number)*cosine(phase of complex number) = Real part of said complex number
+#else
             RealType ratio  = RatioList[ratioIndex++] * pp.sgridweight_m[iq];
+#endif
             // if (std::isnan(ratio)) {
             // 	std::cerr << "NAN from ratio number " << ratioIndex-1 << "\n";
             // 	std::cerr << "RatioList.size() = " << RatioList.size() << std::endl;
@@ -422,7 +426,11 @@ void NonLocalECPotential_CUDA::addEnergy
           for (int iq=0; iq<numQuad; iq++)
           {
             RealType costheta = *(cos_ptr++);
+#ifdef QMC_COMPLEX
+            RealType ratio  = RatioList[ratioIndex++].real() * pp.sgridweight_m[iq]; // Abs(complex number)*cosine(phase of complex number) = Real part of said complex number
+#else
             RealType ratio  = RatioList[ratioIndex++] * pp.sgridweight_m[iq];
+#endif
             RealType lpolprev=0.0;
             lpol[0] = 1.0;
             for (int l=0 ; l< pp.lmax ; l++)

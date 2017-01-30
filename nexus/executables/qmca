@@ -1820,13 +1820,16 @@ class DatAnalyzer(QBase):
             stats.CorrectedEnergy = self.stat_value(v[nbe:])
         #end if
         if 'LocalEnergy' in data and 'BlockWeight' in data and 'BlockCPU' in data:
+            bc = data.BlockCPU[nbe:]
+            bw = data.BlockWeight[nbe:]
+
             e  = stats.LocalEnergy.error
             w  = stats.BlockWeight.mean
             t  = stats.BlockCPU.mean
-            wt = (data.BlockCPU*data.BlockWeight).sum()/3600
-            #tt = data.BlockCPU.sum()/3600
-            tt = data.BlockCPU.sum()
-            ts = data.BlockWeight.sum()
+            wt = (bc*bw).sum()/3600
+            #tt = bc.sum()/3600
+            tt = bc.sum()
+            ts = bw.sum()
 
             # def. of efficiency in energy.pl 
             #stats.Efficiency = obj(mean=w/t,var=0.0,error=0.0,kappa=1.0)
