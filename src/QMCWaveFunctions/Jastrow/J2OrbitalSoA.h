@@ -66,7 +66,7 @@ struct  J2OrbitalSoA : public OrbitalBase
   ///Used to compute correction
   bool FirstTime;
   ///diff value
-  RealType curAt, DiffVal;
+  RealType DiffVal;
   ///log value
   RealType LogValue;
   ///Correction
@@ -412,7 +412,7 @@ J2OrbitalSoA<FT>::ratio(ParticleSet& P, int iat)
   }
 
   const auto dist=d_table->Temp_r.data();
-  curAt=valT(0);
+  valT curAt(0);
   const int igt=P.GroupID[iat]*NumGroups;
   for(int jg=0; jg<NumGroups; ++jg)
   {
@@ -443,8 +443,7 @@ J2OrbitalSoA<FT>::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   posT gr=accumulateG(cur_du.data(),P.DistTables[0]->Temp_dr);
   grad_iat+=gr;
 
-  curAt=simd::accumulate_n(cur_u.data(),N,valT());
-  DiffVal=Uat[iat]-curAt;
+  DiffVal=Uat[iat]-simd::accumulate_n(cur_u.data(),N,valT());
   return std::exp(DiffVal);
 }
 
