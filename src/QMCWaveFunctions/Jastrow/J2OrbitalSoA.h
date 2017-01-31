@@ -72,12 +72,12 @@ struct  J2OrbitalSoA : public OrbitalBase
   ///Correction
   RealType KEcorr;
   ///\f$Uat[i] = sum_(j) u_{i,j}\f$
-  aligned_vector<RealType> Uat;
+  ParticleAttrib<RealType> Uat;
   ///\f$dUat[i] = sum_(j) du_{i,j}\f$
-  aligned_vector<PosType> dUat;
+  ParticleAttrib<PosType> dUat;
   RealType *FirstAddressOfdU, *LastAddressOfdU;
   ///\f$d2Uat[i] = sum_(j) d2u_{i,j}\f$
-  aligned_vector<RealType> d2Uat;
+  ParticleAttrib<RealType> d2Uat;
   aligned_vector<valT> cur_u, cur_du, cur_d2u;
   aligned_vector<valT> old_u, old_du, old_d2u;
   aligned_vector<valT> DistCompressed;
@@ -477,7 +477,7 @@ J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat)
       d2Uat[iat] += dl; d2Uat[jat] += dl;
     }
   }
-  
+
   LogValue+=DiffVal;
 }
 
@@ -489,7 +489,7 @@ J2OrbitalSoA<FT>::evaluateLog(ParticleSet& P,
 {
   const DistanceTableData* d_table=P.DistTables[0];
   constexpr valT czero(0);
-  valT utot=valT();
+  valT utot=czero;
   for(int ig=0; ig<NumGroups; ++ig)
   {
     const int igt=ig*NumGroups;
