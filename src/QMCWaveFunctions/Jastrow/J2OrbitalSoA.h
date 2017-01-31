@@ -429,13 +429,6 @@ template<typename FT>
 typename  J2OrbitalSoA<FT>::GradType 
 J2OrbitalSoA<FT>::evalGrad(ParticleSet& P, int iat)
 {
-  //std::cout << std::endl << "debug evalgrad" << std::endl << std::endl;
-  //std::cout << "debug evalgrad " << LogValue << "  " << dUat[iat][0] << "  " << dUat[iat][1] << "  " << dUat[iat][2] << std::endl;
-  //std::cout << "debug evalgrad accept " << LogValue << "  " << Uat[iat] << "  " << dUat[iat][0] << "  " << d2Uat[iat] << std::endl;
-  //std::cout << "Recompute " << std::endl;
-  //evaluateLog(P, P.G, P.L);
-  //std::cout << "debug evalgrad " << LogValue << "  " << dUat[iat][0] << "  " << dUat[iat][1] << "  " << dUat[iat][2] << std::endl;
-  //std::cout << "debug evalgrad accept " << LogValue << "  " << Uat[iat] << "  " << dUat[iat][0] << "  " << d2Uat[iat] << std::endl;
   return GradType(dUat[iat]);
 }
 
@@ -452,9 +445,6 @@ J2OrbitalSoA<FT>::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 
   curAt=simd::accumulate_n(cur_u.data(),N,valT());
   DiffVal=Uat[iat]-curAt;
-  //std::cout << "RATIOGRAD DiffVal " << DiffVal << std::endl;
-  //const DistanceTableData* d_table=P.DistTables[0];
-  //computeU3(P,iat,d_table->Distances[iat],old_u.data(),old_du.data(),old_d2u.data());
   return std::exp(DiffVal);
 }
 
@@ -490,14 +480,6 @@ J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat)
   }
   
   LogValue+=DiffVal;
-  //std::cout << "debug accept " << LogValue << "  " << Uat[iat] << "  " << dUat[iat][0] << "  " << d2Uat[iat] << std::endl;
-  //std::cout << std::endl << "debug accept " << std::endl << std::endl;
-  //std::cout << "debug " << LogValue << "  " << dUat[iat][0] << "  " << dUat[iat][1] << "  " << dUat[iat][2] << std::endl;
-  //std::cout << "debug accept " << LogValue << "  " << Uat[iat] << "  " << dUat[iat][0] << "  " << d2Uat[iat] << std::endl;
-  //std::cout << "Recompute " << std::endl;
-  //evaluateLog(P, P.G, P.L);
-  //std::cout << "debug " << LogValue << "  " << dUat[iat][0] << "  " << dUat[iat][1] << "  " << dUat[iat][2] << std::endl;
-  //std::cout << "debug accept " << LogValue << "  " << Uat[iat] << "  " << dUat[iat][0] << "  " << d2Uat[iat] << std::endl;
 }
 
 template<typename FT>
@@ -529,7 +511,6 @@ J2OrbitalSoA<FT>::evaluateLog(ParticleSet& P,
   constexpr valT mhalf(-0.5);
   LogValue=mhalf*utot;
 
-  //std::cout << "debug " << LogValue << std::endl;
   return LogValue;
 }
 
@@ -549,7 +530,6 @@ J2OrbitalSoA<FT>::evaluateGL(ParticleSet& P)
 
   constexpr valT mhalf(-0.5);
   LogValue=mhalf*LogValue;
-  //std::cout << "debug evaluateGL " << LogValue << std::endl;
 }
 
 }
