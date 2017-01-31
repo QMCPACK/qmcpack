@@ -219,7 +219,13 @@ struct  J2OrbitalSoA : public OrbitalBase
     return LogValue;
   }
 
-  inline RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf) { return LogValue;}
+  inline RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
+  {
+    buf.put(Uat.begin(), Uat.end());
+    buf.put(FirstAddressOfdU,LastAddressOfdU);
+    buf.put(d2Uat.begin(), d2Uat.end());
+    return LogValue;
+  }
 
   //to be removed from QMCPACK: these are not used anymore with PbyPFast
   void update(ParticleSet& P,
