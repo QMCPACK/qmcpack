@@ -318,8 +318,8 @@ void VMCUpdatePbyPWithDriftFast::advanceWalker(Walker_t& thisWalker, bool recomp
         {
           moved = true;
           ++nAccept;
-          W.acceptMove(iat);
           Psi.acceptMove(W,iat);
+          W.acceptMove(iat);
         }
         else
         {

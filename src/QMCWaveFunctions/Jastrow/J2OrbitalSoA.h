@@ -73,8 +73,13 @@ struct  J2OrbitalSoA : public OrbitalBase
   RealType KEcorr;
   ///\f$Uat[i] = sum_(j) u_{i,j}\f$
   aligned_vector<RealType> Uat;
-  Matrix<valT> U, dU, d2U;
+  ///\f$dUat[i] = sum_(j) du_{i,j}\f$
+  aligned_vector<PosType> dUat;
+  RealType *FirstAddressOfdU, *LastAddressOfdU;
+  ///\f$d2Uat[i] = sum_(j) d2u_{i,j}\f$
+  aligned_vector<RealType> d2Uat;
   aligned_vector<valT> cur_u, cur_du, cur_d2u;
+  aligned_vector<valT> old_u, old_du, old_d2u;
   aligned_vector<valT> DistCompressed;
   aligned_vector<int> DistIndice;
   ///Container for \f$F[ig*NumGroups+jg]\f$
@@ -192,14 +197,25 @@ struct  J2OrbitalSoA : public OrbitalBase
   inline RealType registerData(ParticleSet& P, PooledData<RealType>& buf)
   {
     evaluateLog(P,P.G,P.L);
+    buf.add(Uat.begin(), Uat.end());
+    buf.add(FirstAddressOfdU,LastAddressOfdU);
+    buf.add(d2Uat.begin(), d2Uat.end());
     return LogValue;
   }
 
-  inline void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) { }
+  inline void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+  {
+    buf.get(Uat.begin(), Uat.end());
+    buf.get(FirstAddressOfdU,LastAddressOfdU);
+    buf.get(d2Uat.begin(), d2Uat.end());
+  }
 
   RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false)
   {
     evaluateGL(P);
+    buf.put(Uat.begin(), Uat.end());
+    buf.put(FirstAddressOfdU,LastAddressOfdU);
+    buf.put(d2Uat.begin(), d2Uat.end());
     return LogValue;
   }
 
@@ -231,7 +247,7 @@ struct  J2OrbitalSoA : public OrbitalBase
 
       ASSUME_ALIGNED(du);
       ASSUME_ALIGNED(dX);
-#pragma omp simd reduction(+:s)
+      #pragma omp simd reduction(+:s)
       for(int jat=0; jat<N; ++jat) s+=du[jat]*dX[jat];
       grad[idim]=s;
     }
@@ -287,12 +303,16 @@ void J2OrbitalSoA<FT>::init(ParticleSet& p)
   N_padded=getAlignedSize<valT>(N);
 
   Uat.resize(N); 
-  U.resize(N,N_padded);  
-  dU.resize(N,N_padded); 
-  d2U.resize(N,N_padded);
+  dUat.resize(N);
+  FirstAddressOfdU = &(dUat[0][0]);
+  LastAddressOfdU = FirstAddressOfdU + dUat.size()*OHMMS_DIM;
+  d2Uat.resize(N);
   cur_u.resize(N);
   cur_du.resize(N);
   cur_d2u.resize(N);
+  old_u.resize(N);
+  old_du.resize(N);
+  old_d2u.resize(N);
   F.resize(NumGroups*NumGroups,nullptr);
   DistCompressed.resize(N);
   DistIndice.resize(N);
@@ -387,8 +407,8 @@ J2OrbitalSoA<FT>::ratio(ParticleSet& P, int iat)
   const DistanceTableData* d_table=P.DistTables[0];
   if(!P.Ready4Measure) //need to compute the current values
   { 
-    computeU3(P,iat,d_table->Distances[iat],U[iat],dU[iat],d2U[iat]);
-    Uat[iat]=simd::accumulate_n(U[iat],N,valT());
+    computeU3(P,iat,d_table->Distances[iat],cur_u.data(),cur_du.data(),cur_d2u.data());
+    Uat[iat]=simd::accumulate_n(cur_u.data(),N,valT());
   }
 
   const auto dist=d_table->Temp_r.data();
@@ -409,10 +429,14 @@ template<typename FT>
 typename  J2OrbitalSoA<FT>::GradType 
 J2OrbitalSoA<FT>::evalGrad(ParticleSet& P, int iat)
 {
-  computeU3(P,iat,P.DistTables[0]->Distances[iat],U[iat],dU[iat],d2U[iat]);
-  Uat[iat]=curAt=simd::accumulate_n(U[iat],N,valT());
-  posT gr=accumulateG(dU[iat],P.DistTables[0]->Displacements[iat]);
-  return GradType(gr);
+  //std::cout << std::endl << "debug evalgrad" << std::endl << std::endl;
+  //std::cout << "debug evalgrad " << LogValue << "  " << dUat[iat][0] << "  " << dUat[iat][1] << "  " << dUat[iat][2] << std::endl;
+  //std::cout << "debug evalgrad accept " << LogValue << "  " << Uat[iat] << "  " << dUat[iat][0] << "  " << d2Uat[iat] << std::endl;
+  //std::cout << "Recompute " << std::endl;
+  //evaluateLog(P, P.G, P.L);
+  //std::cout << "debug evalgrad " << LogValue << "  " << dUat[iat][0] << "  " << dUat[iat][1] << "  " << dUat[iat][2] << std::endl;
+  //std::cout << "debug evalgrad accept " << LogValue << "  " << Uat[iat] << "  " << dUat[iat][0] << "  " << d2Uat[iat] << std::endl;
+  return GradType(dUat[iat]);
 }
 
 template<typename FT>
@@ -428,6 +452,9 @@ J2OrbitalSoA<FT>::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 
   curAt=simd::accumulate_n(cur_u.data(),N,valT());
   DiffVal=Uat[iat]-curAt;
+  //std::cout << "RATIOGRAD DiffVal " << DiffVal << std::endl;
+  //const DistanceTableData* d_table=P.DistTables[0];
+  //computeU3(P,iat,d_table->Distances[iat],old_u.data(),old_du.data(),old_d2u.data());
   return std::exp(DiffVal);
 }
 
@@ -435,22 +462,42 @@ template<typename FT>
 void
 J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat)
 {
+  // get the old u, du, d2u
+  const DistanceTableData* d_table=P.DistTables[0];
+  computeU3(P,iat,d_table->Distances[iat],old_u.data(),old_du.data(),old_d2u.data());
   if(UpdateMode == ORB_PBYP_RATIO)
   {//ratio-only during the move; need to compute derivatives
-    const DistanceTableData* d_table=P.DistTables[0];
     const auto dist=d_table->Temp_r.data();
     computeU3(P,iat,dist,cur_u.data(),cur_du.data(),cur_d2u.data());
-    curAt=simd::accumulate_n(cur_u.data(),N,valT());
   }
 
-  Uat[iat]=curAt;
-
-  if ( iat ) { //only Lower T is updated
-    const int nupdate = getAlignedSize<valT>(iat);
-    simd::copy_n(cur_u.data(),nupdate,U[iat]);
-    simd::copy_n(cur_du.data(),nupdate,dU[iat]);
-    simd::copy_n(cur_d2u.data(),nupdate,d2U[iat]);
+  for(int jat=0; jat<N; jat++)
+  {
+    if (iat!=jat)
+    {
+      posT dg;
+      valT dl, du;
+      constexpr valT lapfac=OHMMS_DIM-RealType(1);
+      du = cur_u[jat] - old_u[jat];
+      for(int idim=0; idim<OHMMS_DIM; ++idim)
+        dg[idim] =  cur_du[jat]*d_table->Temp_dr.data(idim)[jat]
+                  - old_du[jat]*d_table->Displacements[iat].data(idim)[jat];
+      dl = old_d2u[jat] - cur_d2u[jat] + lapfac*(old_du[jat] - cur_du[jat]);
+      Uat[iat]   += du; Uat[jat]   += du;
+      dUat[iat]  += dg; dUat[jat]  -= dg;
+      d2Uat[iat] += dl; d2Uat[jat] += dl;
+    }
   }
+  
+  LogValue+=DiffVal;
+  //std::cout << "debug accept " << LogValue << "  " << Uat[iat] << "  " << dUat[iat][0] << "  " << d2Uat[iat] << std::endl;
+  //std::cout << std::endl << "debug accept " << std::endl << std::endl;
+  //std::cout << "debug " << LogValue << "  " << dUat[iat][0] << "  " << dUat[iat][1] << "  " << dUat[iat][2] << std::endl;
+  //std::cout << "debug accept " << LogValue << "  " << Uat[iat] << "  " << dUat[iat][0] << "  " << d2Uat[iat] << std::endl;
+  //std::cout << "Recompute " << std::endl;
+  //evaluateLog(P, P.G, P.L);
+  //std::cout << "debug " << LogValue << "  " << dUat[iat][0] << "  " << dUat[iat][1] << "  " << dUat[iat][2] << std::endl;
+  //std::cout << "debug accept " << LogValue << "  " << Uat[iat] << "  " << dUat[iat][0] << "  " << d2Uat[iat] << std::endl;
 }
 
 template<typename FT>
@@ -467,19 +514,22 @@ J2OrbitalSoA<FT>::evaluateLog(ParticleSet& P,
     const int igt=ig*NumGroups;
     for(int iat=P.first(ig),last=P.last(ig); iat<last; ++iat)
     {
-      computeU3(P,iat,d_table->Distances[iat],U[iat],dU[iat],d2U[iat]);
-      utot+=Uat[iat]=simd::accumulate_n(U[iat],N,valT());
+      computeU3(P,iat,d_table->Distances[iat],cur_u.data(),cur_du.data(),cur_d2u.data());
+      utot+=Uat[iat]=simd::accumulate_n(cur_u.data(),N,valT());
       posT grad;
       valT lap=czero;
-      accumulateGL(dU[iat],d2U[iat],d_table->Displacements[iat],grad,lap);
-      dL[iat]-=lap;
+      accumulateGL(cur_du.data(),cur_d2u.data(),d_table->Displacements[iat],grad,lap);
+      dUat[iat]=grad;
+      d2Uat[iat]=-lap;
       dG[iat]+=grad;
+      dL[iat]-=lap;
     }
   }
 
   constexpr valT mhalf(-0.5);
   LogValue=mhalf*utot;
 
+  //std::cout << "debug " << LogValue << std::endl;
   return LogValue;
 }
 
@@ -489,28 +539,17 @@ J2OrbitalSoA<FT>::evaluateGL(ParticleSet& P)
 {
   constexpr valT lapfac=OHMMS_DIM-RealType(1);
   const DistanceTableData* d_table=P.DistTables[0];
-  for(int iat=0; iat<N; ++iat) Uat[iat]=valT();
   LogValue=valT(0);
-  for(int iat=1; iat<N; ++iat)
+  for(int iat=0; iat<N; ++iat)
   {
-    const RealType* restrict u=U[iat];  //aligned
-    const RealType* restrict du=dU[iat]; //aligned
-    const RealType* restrict d2u=d2U[iat]; //aligned
-    const auto& dX=d_table->Displacements[iat];
-
-    for(int jat=0; jat<iat; ++jat)
-    {
-      LogValue -= u[jat];
-      Uat[iat] += u[jat]; //U[iat][jat]
-      Uat[jat] += u[jat]; //U[jat][iat]
-      RealType lap= d2u[jat]+lapfac*du[jat];
-      P.L[iat] -= lap;
-      P.L[jat] -= lap;
-      posT gr= du[jat]*dX[jat];
-      P.G[iat] += gr;
-      P.G[jat] -= gr;
-    }
+    LogValue += Uat[iat];
+    P.G[iat] += dUat[iat];
+    P.L[iat] += d2Uat[iat];
   }
+
+  constexpr valT mhalf(-0.5);
+  LogValue=mhalf*LogValue;
+  //std::cout << "debug evaluateGL " << LogValue << std::endl;
 }
 
 }

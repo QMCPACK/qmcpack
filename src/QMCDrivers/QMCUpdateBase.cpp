@@ -270,8 +270,8 @@ void QMCUpdateBase::randomize(Walker_t& awalker)
       RealType logGb = -oneover2tau*dot(dr,dr);
       if (RandomGen() < prob*std::exp(logGb-logGf))
       {
-        W.acceptMove(iat);
         Psi.acceptMove(W,iat);
+        W.acceptMove(iat);
       }
       else
       {
