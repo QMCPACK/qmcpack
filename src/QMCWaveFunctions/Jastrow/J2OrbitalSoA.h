@@ -405,12 +405,6 @@ J2OrbitalSoA<FT>::ratio(ParticleSet& P, int iat)
   UpdateMode=ORB_PBYP_RATIO;
 
   const DistanceTableData* d_table=P.DistTables[0];
-  if(!P.Ready4Measure) //need to compute the current values
-  { 
-    computeU3(P,iat,d_table->Distances[iat],cur_u.data(),cur_du.data(),cur_d2u.data());
-    Uat[iat]=simd::accumulate_n(cur_u.data(),N,valT());
-  }
-
   const auto dist=d_table->Temp_r.data();
   valT curAt(0);
   const int igt=P.GroupID[iat]*NumGroups;
