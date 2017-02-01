@@ -478,6 +478,9 @@ int ParticleSet::getTable(const ParticleSet& psrc)
 
 void ParticleSet::update(int iflag)
 {
+#if defined(ENABLE_AA_SOA)
+  RSoA.copyIn(R); 
+#endif
   for (int i=0; i< DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (SK)
@@ -489,6 +492,9 @@ void ParticleSet::update(int iflag)
 void ParticleSet::update(const ParticlePos_t& pos)
 {
   R = pos;
+#if defined(ENABLE_AA_SOA)
+  RSoA.copyIn(R); 
+#endif
   for (int i=0; i< DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (SK && !SK->DoUpdate)
@@ -600,6 +606,9 @@ bool ParticleSet::makeMove(const Walker_t& awalker
     for (int iat=0; iat<deltaR.size(); ++iat)
       R[iat]=awalker.R[iat]+dt*deltaR[iat];
   }
+#if defined(ENABLE_AA_SOA)
+  RSoA.copyIn(R); 
+#endif
   for (int i=0; i< DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (SK)
@@ -631,6 +640,9 @@ bool ParticleSet::makeMove(const Walker_t& awalker
     for (int iat=0; iat<deltaR.size(); ++iat)
       R[iat]=awalker.R[iat]+dt[iat]*deltaR[iat];
   }
+#if defined(ENABLE_AA_SOA)
+  RSoA.copyIn(R); 
+#endif
   for (int i=0; i< DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (SK)
@@ -670,6 +682,9 @@ bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker
     for (int iat=0; iat<deltaR.size(); ++iat)
       R[iat]=awalker.R[iat]+dt*deltaR[iat]+drift[iat];
   }
+#if defined(ENABLE_AA_SOA)
+  RSoA.copyIn(R); 
+#endif
   for (int i=0; i< DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (SK)
@@ -702,6 +717,11 @@ bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker
     for (int iat=0; iat<deltaR.size(); ++iat)
       R[iat]=awalker.R[iat]+dt[iat]*deltaR[iat]+drift[iat];
   }
+
+#if defined(ENABLE_AA_SOA)
+  RSoA.copyIn(R); 
+#endif
+
   for (int i=0; i< DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (SK)
