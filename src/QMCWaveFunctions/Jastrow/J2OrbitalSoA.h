@@ -174,6 +174,9 @@ struct  J2OrbitalSoA : public OrbitalBase
                        ParticleSet::ParticleGradient_t& G,
                        ParticleSet::ParticleLaplacian_t& L);
 
+  /** recompute internal data assuming distance table is fully ready */
+  void recompute2(ParticleSet& P);
+
   ValueType evaluate(ParticleSet& P,
                      ParticleSet::ParticleGradient_t& G,
                      ParticleSet::ParticleLaplacian_t& L)
@@ -479,33 +482,44 @@ J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat)
 }
 
 template<typename FT>
-typename J2OrbitalSoA<FT>::RealType
-J2OrbitalSoA<FT>::evaluateLog(ParticleSet& P,
-    ParticleSet::ParticleGradient_t& dG,
-    ParticleSet::ParticleLaplacian_t& dL )
+void
+J2OrbitalSoA<FT>::recompute2(ParticleSet& P)
 {
   const DistanceTableData* d_table=P.DistTables[0];
   constexpr valT czero(0);
-  valT utot=czero;
   for(int ig=0; ig<NumGroups; ++ig)
   {
     const int igt=ig*NumGroups;
     for(int iat=P.first(ig),last=P.last(ig); iat<last; ++iat)
     {
       computeU3(P,iat,d_table->Distances[iat],cur_u.data(),cur_du.data(),cur_d2u.data());
-      utot+=Uat[iat]=simd::accumulate_n(cur_u.data(),N,valT());
+      Uat[iat]=simd::accumulate_n(cur_u.data(),N,valT());
       posT grad;
       valT lap=czero;
       accumulateGL(cur_du.data(),cur_d2u.data(),d_table->Displacements[iat],grad,lap);
       dUat[iat]=grad;
       d2Uat[iat]=-lap;
-      dG[iat]+=grad;
-      dL[iat]-=lap;
     }
+  }
+}
+
+template<typename FT>
+typename J2OrbitalSoA<FT>::RealType
+J2OrbitalSoA<FT>::evaluateLog(ParticleSet& P,
+    ParticleSet::ParticleGradient_t& dG,
+    ParticleSet::ParticleLaplacian_t& dL )
+{
+  recompute2(P);
+  LogValue=valT(0);
+  for(int iat=0; iat<N; ++iat)
+  {
+    LogValue += Uat[iat];
+    dG[iat] += dUat[iat];
+    dL[iat] += d2Uat[iat];
   }
 
   constexpr valT mhalf(-0.5);
-  LogValue=mhalf*utot;
+  LogValue=mhalf*LogValue;
 
   return LogValue;
 }
@@ -514,8 +528,6 @@ template<typename FT>
 void
 J2OrbitalSoA<FT>::evaluateGL(ParticleSet& P)
 {
-  constexpr valT lapfac=OHMMS_DIM-RealType(1);
-  const DistanceTableData* d_table=P.DistTables[0];
   LogValue=valT(0);
   for(int iat=0; iat<N; ++iat)
   {
