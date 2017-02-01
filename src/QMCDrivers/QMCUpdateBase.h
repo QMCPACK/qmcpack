@@ -180,10 +180,6 @@ public:
    */
   void updateWalkers(WalkerIter_t it, WalkerIter_t it_end);
 
-  /** trigger the trial WF recompute
-   */
-  void recomputePsi(WalkerIter_t it, WalkerIter_t it_end);
-
   /** simple routine to test the performance
    */
   void benchMark(WalkerIter_t it, WalkerIter_t it_end, int ip);

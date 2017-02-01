@@ -289,9 +289,6 @@ bool DMCOMP::run()
         Movers[ip]->setMultiplicity(wit,wit_end);
         if(QMCDriverMode[QMC_UPDATE_MODE] && now%updatePeriod == 0)
           Movers[ip]->updateWalkers(wit, wit_end);
-        // recompute the accuracy critical part of Psi at the end of the last step.
-        if ( step+1 == nSteps && nBlocksBetweenRecompute && (1+block)%nBlocksBetweenRecompute == 0 )
-          Movers[ip]->recomputePsi(wit,wit_end);
 #endif
         wClones[ip]->resetCollectables();
         const size_t nw=W.getActiveWalkers();
