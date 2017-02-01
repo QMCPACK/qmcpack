@@ -41,7 +41,7 @@ namespace qmcplusplus
  * - support simd function
  * - double the loop counts
  * - UseBuffer is introduced. Default is false.
- * - Memory use is 3*N*N+3N. 
+ * - Memory use is O(N). 
  */
 template<class FT>
 struct  J2OrbitalSoA : public OrbitalBase
@@ -57,8 +57,6 @@ struct  J2OrbitalSoA : public OrbitalBase
 
   ///number of particles
   int N;
-  ///number of particles for alignment
-  int N_padded;
   ///number of groups of the target particleset
   int NumGroups;
   ///task id
@@ -306,7 +304,6 @@ void J2OrbitalSoA<FT>::init(ParticleSet& p)
 {
   N=p.getTotalNum();
   NumGroups=p.groups();
-  N_padded=getAlignedSize<valT>(N);
 
   Uat.resize(N); 
   dUat.resize(N);
