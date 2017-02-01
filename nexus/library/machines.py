@@ -1617,7 +1617,7 @@ class Supercomputer(Machine):
                     #end if
                 #end if
             #end for
-        if self.queue_querier=='llq':
+        elif self.queue_querier=='llq':
             if out is None:
                 out,err = Popen('sacct',shell=True,stdout=PIPE,stderr=PIPE,close_fds=True).communicate()
             #end if
