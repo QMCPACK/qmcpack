@@ -227,7 +227,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
 
     if (bc_sign & 1)
     {
-#pragma omp simd
+#pragma simd
       for(int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j)
       {
         psi[psiIndex]=-myV[j];
@@ -239,7 +239,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     }
     else
     {
-#pragma omp simd
+#pragma simd
       for(int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j)
       {
         psi[psiIndex]=myV[j];
@@ -287,7 +287,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
 
     if (bc_sign & 1)
     {
-#pragma omp simd
+#pragma simd
       for(int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j)
       {
         psi[psiIndex]=-myV[j];
@@ -299,7 +299,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     }
     else
     {
-#pragma omp simd
+#pragma simd
       for(int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j)
       {
         psi[psiIndex]=myV[j];

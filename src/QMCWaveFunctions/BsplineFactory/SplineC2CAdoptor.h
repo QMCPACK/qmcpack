@@ -208,7 +208,7 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
     }
 #else
     ST s, c;
-#pragma omp simd private(s,c)
+#pragma simd private(s,c)
     for (size_t j=0, psiIndex=first_spo; psiIndex<last_spo; j++,psiIndex++)
     {
       const ST val_r=myV[2*j  ];
@@ -263,7 +263,7 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
     }
 #endif
 
-#pragma omp simd 
+#pragma simd 
     for (size_t j=0, psiIndex=first_spo; psiIndex<last_spo; j++,psiIndex++)
     {
       const size_t jr=j<<1;
@@ -364,7 +364,7 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
     ComplexT* restrict vg_z=dpsi.data(2); ASSUME_ALIGNED(vg_z);
     ComplexT* restrict vl_l=dpsi.data(3); ASSUME_ALIGNED(vl_l);
 
-#pragma omp simd 
+#pragma simd 
     for (size_t j=0, psiIndex=first_spo; psiIndex<last_spo; j++,psiIndex++)
     {
       const size_t jr=j<<1;
