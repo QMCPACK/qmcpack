@@ -51,13 +51,10 @@ DMCUpdatePbyPWithRejectionFast::DMCUpdatePbyPWithRejectionFast(MCWalkerConfigura
 /// destructor
 DMCUpdatePbyPWithRejectionFast::~DMCUpdatePbyPWithRejectionFast() { }
 
-void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker)
+void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool recompute)
 {
   Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
   W.loadWalker(thisWalker,true);
-  //W.R = thisWalker.R;
-  //w_buffer.rewind();
-  //W.copyFromBuffer(w_buffer);
   Psi.copyFromBuffer(W,w_buffer);
   //create a 3N-Dimensional Gaussian with variance=1
   makeGaussRandomWithEngine(deltaR,RandomGen);
@@ -152,7 +149,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker)
     thisWalker.R = W.R;
     //w_buffer.rewind();
     //W.updateBuffer(w_buffer);
-    RealType logpsi = Psi.updateBuffer(W,w_buffer,false);
+    RealType logpsi = Psi.updateBuffer(W,w_buffer,recompute);
     W.saveWalker(thisWalker);
     myTimers[2]->stop();
     myTimers[3]->start();
@@ -226,6 +223,8 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker)
   //thisWalker.Weight *= branchEngine->branchWeight(enew,eold,nodecorr,nodecorr_oldi,odd);
   nAccept += nAcceptTemp;
   nReject += nRejectTemp;
+
+  setMultiplicity(thisWalker);
 }
 
 }

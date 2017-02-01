@@ -36,7 +36,7 @@ namespace qmcplusplus
 			     RandomGenerator_t & rg, std::vector < int >act,
 			     std::vector < int >tp);
      ~RMCUpdateAllWithDrift ();
-    void advanceWalker (Walker_t& thisWalker);
+    void advanceWalker (Walker_t& thisWalker, bool recompute);
     void advanceWalkers (WalkerIter_t it, WalkerIter_t it_end, bool measure);
     void advanceWalkersVMC ();
     void advanceWalkersRMC ();

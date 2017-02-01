@@ -83,7 +83,8 @@ bool VMCSingleOMP::run()
         Movers[ip]->set_step(now_loc);
         //collectables are reset, it is accumulated while advancing walkers
         wClones[ip]->resetCollectables();
-        Movers[ip]->advanceWalkers(wit,wit_end,false);
+        bool recompute=(nBlocksBetweenRecompute && (step+1) == nSteps && (1+block)%nBlocksBetweenRecompute == 0 );
+        Movers[ip]->advanceWalkers(wit,wit_end,recompute);
         if(has_collectables)
           wClones[ip]->Collectables *= cnorm;
         Movers[ip]->accumulate(wit,wit_end);
@@ -94,8 +95,9 @@ bool VMCSingleOMP::run()
 //           if(storeConfigs && (now_loc%storeConfigs == 0))
 //             ForwardWalkingHistory.storeConfigsForForwardWalking(*wClones[ip]);
       }
-      if ( nBlocksBetweenRecompute && (1+block)%nBlocksBetweenRecompute == 0 )
-        Movers[ip]->recomputePsi(wit,wit_end);
+
+      //if ( nBlocksBetweenRecompute && (1+block)%nBlocksBetweenRecompute == 0 )
+      //  Movers[ip]->recomputePsi(wit,wit_end);
       Movers[ip]->stopBlock(false);
     }//end-of-parallel for
     //Estimators->accumulateCollectables(wClones,nSteps);

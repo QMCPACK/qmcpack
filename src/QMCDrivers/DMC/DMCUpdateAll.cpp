@@ -45,7 +45,7 @@ DMCUpdateAllWithRejection::~DMCUpdateAllWithRejection() { }
  * When killnode==no, any move resulting in node-crossing is treated
  * as a normal rejection.
  */
-void DMCUpdateAllWithRejection::advanceWalker(Walker_t& thisWalker)
+void DMCUpdateAllWithRejection::advanceWalker(Walker_t& thisWalker, bool recompute)
 {
     W.loadWalker(thisWalker,false);
     //create a 3N-Dimensional Gaussian with variance=1
@@ -132,6 +132,8 @@ void DMCUpdateAllWithRejection::advanceWalker(Walker_t& thisWalker)
       ++nAccept;
     else
       ++nReject;
+
+    setMultiplicity(thisWalker);
 }
 
 /*
@@ -149,7 +151,7 @@ DMCUpdateAllWithKill::~DMCUpdateAllWithKill() { }
 
 /** advance all the walkers with killnode==yes
  */
-void DMCUpdateAllWithKill::advanceWalker(Walker_t& thisWalker)
+void DMCUpdateAllWithKill::advanceWalker(Walker_t& thisWalker, bool recompute)
 {
     W.loadWalker(thisWalker,false);
     //RealType nodecorr = setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
@@ -213,6 +215,8 @@ void DMCUpdateAllWithKill::advanceWalker(Walker_t& thisWalker)
       ++nAccept;
     else
       ++nReject;
+
+    setMultiplicity(thisWalker);
 }
 }
 

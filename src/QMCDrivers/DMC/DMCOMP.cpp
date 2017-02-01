@@ -278,6 +278,8 @@ bool DMCOMP::run()
         int ip=omp_get_thread_num();
         int now=CurrentStep;
         Movers[ip]->set_step(sample);
+        bool recompute=( step+1 == nSteps && nBlocksBetweenRecompute && (1+block)%nBlocksBetweenRecompute == 0 );
+#if 0
         MCWalkerConfiguration::iterator
         wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
         for(int interval = 0; interval<BranchInterval-1; ++interval,++now)
@@ -290,6 +292,16 @@ bool DMCOMP::run()
         // recompute the accuracy critical part of Psi at the end of the last step.
         if ( step+1 == nSteps && nBlocksBetweenRecompute && (1+block)%nBlocksBetweenRecompute == 0 )
           Movers[ip]->recomputePsi(wit,wit_end);
+#endif
+        wClones[ip]->resetCollectables();
+        const size_t nw=W.getActiveWalkers();
+#pragma omp for nowait
+        for(size_t iw=0;iw<nw; ++iw)
+        {
+          Walker_t& thisWalker(*W.getWalker(iw));
+          Movers[ip]->advanceWalker(thisWalker,recompute);
+          //Movers[ip]->setMultiplicity(thisWalker);
+        }
       }
 
       prof.pop(); //close dmc_advance

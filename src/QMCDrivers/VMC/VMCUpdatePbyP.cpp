@@ -52,11 +52,12 @@ VMCUpdatePbyP::~VMCUpdatePbyP()
 {
 }
 
-void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker)
+void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
 {
   W.loadWalker(thisWalker,true);
   Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
   Psi.copyFromBuffer(W,w_buffer);
+
   myTimers[1]->start();
   for (int iter=0; iter<nSubSteps; ++iter)
   {
@@ -110,7 +111,7 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker)
   //PAOps<RealType,OHMMS_DIM>::copy(W.G,thisWalker.Drift);
   //w_buffer.rewind();
   //W.updateBuffer(w_buffer);
-  RealType logpsi = Psi.updateBuffer(W,w_buffer,false);
+  RealType logpsi = Psi.updateBuffer(W,w_buffer,recompute);
   W.saveWalker(thisWalker);
   //W.copyToBuffer(w_buffer);
   //RealType logpsi = Psi.evaluate(W,w_buffer);
@@ -121,16 +122,6 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker)
   thisWalker.resetProperty(logpsi,Psi.getPhase(),eloc);
   H.auxHevaluate(W,thisWalker);
   H.saveProperty(thisWalker.getPropertyBase());
-}
-
-void VMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure)
-{
-  myTimers[0]->start();
-  for (; it != it_end; ++it)
-  {
-    advanceWalker(**it);
-  }
-  myTimers[0]->stop();
 }
 
 VMCUpdatePbyP::RealType VMCUpdatePbyP::advanceWalkerForEE(Walker_t& w1, std::vector<PosType>& dR, std::vector<int>& iats, std::vector<int>& rs, std::vector<RealType>& ratios)
@@ -274,11 +265,13 @@ VMCUpdatePbyPWithDriftFast::RealType VMCUpdatePbyPWithDriftFast::advanceWalkerFo
 }
 
 
-void VMCUpdatePbyPWithDriftFast::advanceWalker(Walker_t& thisWalker)
+void VMCUpdatePbyPWithDriftFast::advanceWalker(Walker_t& thisWalker, bool recompute)
 {
   Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
   W.loadWalker(thisWalker,true);
   Psi.copyFromBuffer(W,w_buffer);
+
+
   myTimers[1]->start();
   bool moved = false;
   CONSTEXPR RealType mhalf(-0.5);
@@ -341,7 +334,9 @@ void VMCUpdatePbyPWithDriftFast::advanceWalker(Walker_t& thisWalker)
   myTimers[1]->stop();
   myTimers[2]->start();
   W.donePbyP();
-  RealType logpsi = Psi.updateBuffer(W,w_buffer,false);
+
+  RealType logpsi = Psi.updateBuffer(W,w_buffer,recompute);
+
   W.saveWalker(thisWalker);
   myTimers[2]->stop();
   myTimers[3]->start();
@@ -357,16 +352,5 @@ void VMCUpdatePbyPWithDriftFast::advanceWalker(Walker_t& thisWalker)
   if(!moved)
     ++nAllRejected;
 }
-
-void VMCUpdatePbyPWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure)
-{
-  myTimers[0]->start();
-  for (; it != it_end; ++it)
-  {
-    advanceWalker(**it);
-  }
-  myTimers[0]->stop();
-}
-
 
 }

@@ -32,7 +32,7 @@ public:
   ///destructor
   ~DMCUpdatePbyPWithRejectionFast();
 
-  void advanceWalker(Walker_t& thisWalker);
+  void advanceWalker(Walker_t& thisWalker, bool recompute);
 
 private:
   std::vector<NewTimer*> myTimers;

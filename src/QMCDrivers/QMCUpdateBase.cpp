@@ -346,7 +346,6 @@ void QMCUpdateBase::recomputePsi(WalkerIter_t it, WalkerIter_t it_end)
     RealType logpsi=Psi.evaluateLog(W,w_buffer);
   }
 }
-
 void QMCUpdateBase::setReleasedNodeMultiplicity(WalkerIter_t it, WalkerIter_t it_end)
 {
   for (; it != it_end; ++it)
@@ -370,11 +369,11 @@ void QMCUpdateBase::setMultiplicity(WalkerIter_t it, WalkerIter_t it_end)
   }
 }
 
-void QMCUpdateBase::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure)
+void QMCUpdateBase::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool recompute)
 {
   for (; it != it_end; ++it)
   {
-    advanceWalker(**it);
+    advanceWalker(**it,recompute);
   }
 }
 

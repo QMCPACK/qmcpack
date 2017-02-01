@@ -153,6 +153,18 @@ public:
   /** set the multiplicity of the walkers to branch */
   void setMultiplicity(WalkerIter_t it, WalkerIter_t it_end);
 
+  inline void setMultiplicity(Walker_t& awalker) const
+  {
+    CONSTEXPR RealType onehalf(0.5);
+    CONSTEXPR RealType cone(1);
+    RealType M=awalker.Weight;
+    if (awalker.Age>MaxAge)
+      M = std::min(onehalf,M);
+    else
+      if (awalker.Age > 0) M = std::min(cone,M);
+    awalker.Multiplicity = M + RandomGen();
+  }
+
   /** set the multiplicity of the walkers to branch */
   void setReleasedNodeMultiplicity(WalkerIter_t it, WalkerIter_t it_end);
 
@@ -190,10 +202,10 @@ public:
    * Derived classes implement how to move walkers and accept/reject
    * moves.
    */
-  virtual void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+  virtual void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool recompute);
 
   ///move a walker
-  virtual void advanceWalker(Walker_t& thisWalker)=0;
+  virtual void advanceWalker(Walker_t& thisWalker, bool recompute)=0;
 
   virtual RealType advanceWalkerForEE(Walker_t& w1, std::vector<PosType>& dR, std::vector<int>& iats, std::vector<int>& rs, std::vector<RealType>& ratios)
   {

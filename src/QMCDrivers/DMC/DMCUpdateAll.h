@@ -29,7 +29,7 @@ public:
   ///destructor
   ~DMCUpdateAllWithRejection();
 
-  void advanceWalker(Walker_t& thisWalker);
+  void advanceWalker(Walker_t& thisWalker, bool recompute);
 
 #if (__cplusplus >= 201103L)
   DMCUpdateAllWithRejection(const DMCUpdateAllWithRejection& a)=delete;
@@ -56,7 +56,7 @@ public:
   ///destructor
   ~DMCUpdateAllWithKill();
 
-  void advanceWalker(Walker_t& thisWalker);
+  void advanceWalker(Walker_t& thisWalker, bool recompute);
 
 #if (__cplusplus >= 201103L)
   DMCUpdateAllWithKill(const DMCUpdateAllWithKill& a)=delete;

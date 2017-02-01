@@ -33,7 +33,7 @@ VMCUpdateAll::~VMCUpdateAll()
 {
 }
 
-void VMCUpdateAll::advanceWalker(Walker_t& thisWalker)
+void VMCUpdateAll::advanceWalker(Walker_t& thisWalker, bool recompute)
 {
     makeGaussRandomWithEngine(deltaR,RandomGen);
     //if (!W.makeMove(thisWalker,deltaR, m_sqrttau))
@@ -181,7 +181,7 @@ VMCUpdateAllWithDrift::~VMCUpdateAllWithDrift()
 {
 }
 
-void VMCUpdateAllWithDrift::advanceWalker(Walker_t& thisWalker)
+void VMCUpdateAllWithDrift::advanceWalker(Walker_t& thisWalker, bool recompute)
 {
     W.loadWalker(thisWalker,false);
   //  RealType nodecorr=setScaledDriftPbyPandNodeCorr(Tau,MassInvP,W.G,drift);

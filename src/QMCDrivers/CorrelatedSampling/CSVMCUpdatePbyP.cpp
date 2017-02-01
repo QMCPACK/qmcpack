@@ -38,7 +38,7 @@ CSVMCUpdatePbyP::CSVMCUpdatePbyP(MCWalkerConfiguration& w,
 
 CSVMCUpdatePbyP::~CSVMCUpdatePbyP() { }
 
-void CSVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker)
+void CSVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
 {
 }
 
@@ -72,6 +72,7 @@ void CSVMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool 
     bool moved = false;
     for(int iat=0; iat<W.getTotalNum(); iat++) //Particles loop
     {
+      W.setActive(iat);
       PosType dr = m_sqrttau*deltaR[iat];
       PosType newpos = W.makeMove(iat,dr);
       RealType ratio_check=1.0;
@@ -136,6 +137,9 @@ void CSVMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool 
           Psi1[ipsi]->rejectMove(iat);
       }
     }
+
+    W.donePbyP();
+
    if(moved)
     {
       //  The walker moved: Info are copied back to buffers:
@@ -184,7 +188,7 @@ CSVMCUpdatePbyPWithDriftFast::CSVMCUpdatePbyPWithDriftFast(MCWalkerConfiguration
 
 CSVMCUpdatePbyPWithDriftFast::~CSVMCUpdatePbyPWithDriftFast() { }
 
-void CSVMCUpdatePbyPWithDriftFast::advanceWalker(Walker_t& thisWalker)
+void CSVMCUpdatePbyPWithDriftFast::advanceWalker(Walker_t& thisWalker, bool recompute)
 {
 }
 
@@ -222,6 +226,8 @@ void CSVMCUpdatePbyPWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t 
       //Particles loop
 	    for (int iat=W.first(ig); iat<W.last(ig); ++iat)
 	    {
+              W.setActive(iat);
+
 	      double logGf(0.0), logGb(0.0); //logs of forward and backward greens functions respectively.  
 	 
 	      PosType dr;  //drift for iat.  
@@ -330,6 +336,9 @@ void CSVMCUpdatePbyPWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t 
 	      }
 	    }
     }
+
+    W.donePbyP();
+
    if(moved)
     {
      //  The walker moved: Info are copied back to buffers:
