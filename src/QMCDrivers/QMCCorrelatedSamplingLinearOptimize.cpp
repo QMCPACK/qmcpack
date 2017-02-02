@@ -72,7 +72,6 @@ QMCCorrelatedSamplingLinearOptimize::QMCCorrelatedSamplingLinearOptimize(MCWalke
   m_param.add(LambdaMax,"LambdaMax","double");
   m_param.add(nstabilizers,"nstabilizers","int");
   //Set parameters for line minimization:
-  this->add_timers(myTimers);
 }
 
 /** Clean up the vector */
@@ -129,7 +128,7 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
 //    {
   myTimers[4]->start();
   startCost = lastCost = optTarget->Cost(false);
-  myTimers[4]->start();
+  myTimers[4]->stop();
 //    }
   bool apply_inverse(true);
   if(apply_inverse)

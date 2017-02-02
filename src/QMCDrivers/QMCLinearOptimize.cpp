@@ -71,6 +71,7 @@ void QMCLinearOptimize::add_timers(std::vector<NewTimer*>& timers)
   timers.push_back(new NewTimer("QMCLinearOptimize::Initialize"));
   timers.push_back(new NewTimer("QMCLinearOptimize::Eigenvalue"));
   timers.push_back(new NewTimer("QMCLinearOptimize::Line_Minimization"));
+  timers.push_back(new NewTimer("QMCLinearOptimize::CostFunction"));
   for (int i=0; i<timers.size(); ++i)
     TimerManager.addTimer(timers[i]);
 }
@@ -157,8 +158,6 @@ void QMCLinearOptimize::finish()
 {
   MyCounter++;
   app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
-  TimerManager.print(myComm);
-  TimerManager.reset();
   app_log() << "  </log>" << std::endl;
   optTarget->reportParameters();
   int nw_removed=W.getActiveWalkers()-NumOfVMCWalkers;

@@ -33,10 +33,10 @@ namespace qmcplusplus
  */
 void add_vmc_timers(std::vector<NewTimer*>& timers)
 {
-  timers.push_back(new NewTimer("VMCUpdatePbyP::advance")); //timer for the walker loop
-  timers.push_back(new NewTimer("VMCUpdatePbyP::movePbyP")); //timer for MC, ratio etc
-  timers.push_back(new NewTimer("VMCUpdatePbyP::updateMBO")); //timer for measurements
-  timers.push_back(new NewTimer("VMCUpdatePbyP::energy")); //timer for measurements
+  timers.push_back(new NewTimer("VMCUpdatePbyP::advance",timer_level_medium)); //timer for the walker loop
+  timers.push_back(new NewTimer("VMCUpdatePbyP::movePbyP",timer_level_medium)); //timer for MC, ratio etc
+  timers.push_back(new NewTimer("VMCUpdatePbyP::updateMBO",timer_level_medium)); //timer for measurements
+  timers.push_back(new NewTimer("VMCUpdatePbyP::energy",timer_level_medium)); //timer for measurements
   for (int i=0; i<timers.size(); ++i)
     TimerManager.addTimer(timers[i]);
 }

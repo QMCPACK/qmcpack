@@ -17,6 +17,7 @@
     
     
 #include "QMCWaveFunctions/BasisSetFactory.h"
+#include "QMCWaveFunctions/SPOSetScanner.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
@@ -97,7 +98,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
 
   if (myBasisSetFactory == 0)
   {//always create one, using singleton and just to access the member functions
-    myBasisSetFactory = new BasisSetFactory(targetPtcl,targetPsi, ptclPool);
+    myBasisSetFactory = new BasisSetFactory(targetPtcl, targetPsi, ptclPool);
     myBasisSetFactory->setReportLevel(ReportLevel);
   }
 
@@ -220,11 +221,25 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
     APP_ABORT_TRACE(__FILE__,__LINE__," No sposet is found to build slaterdeterminant or multideterminant");
   }
 
+  // check if any of the SPO set requires distance tables
+  bool SPOSetNeedsDistanceTable = false;
+  for (std::map<std::string,SPOSetBasePtr>::iterator iter=spomap.begin(); iter!=spomap.end(); iter++)
+    if (iter->second->NeedsDistanceTable) SPOSetNeedsDistanceTable = true;
+  if (SPOSetNeedsDistanceTable) app_log() << "  At least one SPO Set requires precomputed distance tables." << std::endl;
+
   cur = curRoot->children;
   while (cur != NULL)//check the basis set
   {
     getNodeName(cname,cur);
-    if (cname == sd_tag)
+    if (cname == sposcanner_tag)
+    {
+      if(myComm->rank()==0)
+      {
+        SPOSetScanner ascanner(spomap, targetPtcl, ptclPool);
+        ascanner.put(cur);
+      }
+    }
+    else if (cname == sd_tag)
     {
       multiDet=false;
       if(slaterdet_0)
@@ -242,6 +257,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
       {
         slaterdet_0->add(iter->second,iter->first);
       }
+      if (slaterdet_0) slaterdet_0->RecomputeNeedsDistanceTable = SPOSetNeedsDistanceTable;
       int spin_group = 0;
       xmlNodePtr tcur = cur->children;
       while (tcur != NULL)
@@ -316,6 +332,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
         //
         //          multislaterdetfast_0->msd = new MultiSlaterDeterminant(targetPtcl,spo_up,spo_dn);
         //          success = createMSD(multislaterdetfast_0->msd,cur);
+        if (multislaterdetfast_0) multislaterdetfast_0->RecomputeNeedsDistanceTable = SPOSetNeedsDistanceTable;
       }
       else
       {
@@ -336,6 +353,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
           multislaterdet_0 = new MultiSlaterDeterminant(targetPtcl,spo_up,spo_dn);
           success = createMSD(multislaterdet_0,cur);
         }
+        if (multislaterdet_0) multislaterdet_0->RecomputeNeedsDistanceTable = SPOSetNeedsDistanceTable;
       }
     }
     cur = cur->next;

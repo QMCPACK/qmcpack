@@ -31,6 +31,7 @@
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Utilities/OhmmsInfo.h"
 #include "Utilities/Timer.h"
+#include "Utilities/NewTimer.h"
 #include "Particle/HDFWalkerIO.h"
 #include "QMCApp/InitMolecularSystem.h"
 #include "Particle/DistanceTable.h"
@@ -45,12 +46,19 @@
 #include "HDFVersion.h"
 #include "OhmmsData/AttributeSet.h"
 #include "qmc_common.h"
+#include "qmcpack_version.h"
 #ifdef HAVE_ADIOS
 #include "ADIOS/ADIOS_config.h"
 #include <adios_read.h>
 extern "C" {
 #include <adios_error.h>
 }
+#endif
+#ifdef BUILD_AFQMC
+#include "AFQMC/AFQMCFactory.h"
+#endif
+#ifdef BUILD_FCIQMC
+#include "FCIQMC/App/SQCFactory.h" 
 #endif
 
 #define STR_VAL(arg) #arg
@@ -68,11 +76,12 @@ QMCMain::QMCMain(Communicate* c)
   app_log()
       << "\n=====================================================\n"
       <<  "                    QMCPACK "
-      << QMCPLUSPLUS_VERSION_MAJOR << "." << QMCPLUSPLUS_VERSION_MINOR << "." << QMCPLUSPLUS_VERSION_PATCH << " \n"
+      << QMCPACK_VERSION_MAJOR << "." << QMCPACK_VERSION_MINOR << "." << QMCPACK_VERSION_PATCH << " \n"
       << "\n  (c) Copyright 2003-  QMCPACK developers            \n"
-#if defined(QMCPLUSPLUS_BRANCH)
-      << "\n  Subversion branch " << QMCPLUSPLUS_BRANCH
-      << "\n  Last modified     " << QMCPLUSPLUS_LAST_CHANGED_DATE
+#if defined(QMCPACK_GIT_BRANCH)
+      << "\n  Git branch: " << QMCPACK_GIT_BRANCH
+      << "\n  Last git commit: " << QMCPACK_GIT_HASH
+      << "\n  Last commit date: " << QMCPACK_GIT_COMMIT_LAST_CHANGED
 #endif
       << "\n=====================================================\n";
   qmc_common.print_options(app_log());
@@ -108,6 +117,72 @@ bool QMCMain::execute()
     ERRORMSG("No valid input file exists! Aborting QMCMain::execute")
     return false;
   }
+
+  std::string simulationType = "realspaceQMC";
+  {  // mmorales: is this necessary??? Don't want to leave xmlNodes lying around unused 
+    xmlNodePtr cur=XmlDocStack.top()->getRoot();
+    OhmmsAttributeSet simType;
+    simType.add (simulationType, "type");
+    simType.add (simulationType, "name");
+    simType.add (simulationType, "method");
+    simType.put(cur);
+  }
+
+#ifdef BUILD_AFQMC
+  if(simulationType == "afqmc") {
+    app_log() << std::endl << "/*************************************************\n"
+                      << " ********  This is an AFQMC calculation   ********\n"
+                      << " *************************************************" <<std::endl;
+    xmlNodePtr cur=XmlDocStack.top()->getRoot(); 
+
+    xmlXPathContextPtr m_context = XmlDocStack.top()->getXPathContext();
+    //initialize the random number generator
+    xmlNodePtr rptr = myRandomControl.initialize(m_context);
+
+    AFQMCFactory afqmc_fac(myComm,myRandomControl);
+    if(!afqmc_fac.parse(cur)) {
+      app_log()<<" Error in AFQMCFactory::parse() ." <<std::endl;
+      return false;
+    }
+    cur=XmlDocStack.top()->getRoot(); 
+    return afqmc_fac.execute(cur);
+  } else
+#else
+  if(simulationType == "afqmc") {
+    app_error()<<" Executable not compiled with AFQMC. Recompile with BUILD_AFQMC set to 1." <<std::endl; 
+    return false;
+  }
+#endif
+
+#ifdef BUILD_FCIQMC
+
+  if(simulationType == "fciqmc") {
+    app_log() << std::endl << "/*************************************************\n"
+                      << " ********  This is a FCIQMC calculation   ********\n"
+                      << " *************************************************" <<std::endl;
+
+    xmlNodePtr cur=XmlDocStack.top()->getRoot();
+
+    xmlXPathContextPtr m_context = XmlDocStack.top()->getXPathContext();
+    //initialize the random number generator
+    xmlNodePtr rptr = myRandomControl.initialize(m_context);
+
+    SQCFactory fciqmc_fac(myComm,myRandomControl);
+    if(!fciqmc_fac.parse(cur)) {
+      app_log()<<" Error in SQCFactory::parse() ." <<std::endl;
+      return false;
+    }
+    cur=XmlDocStack.top()->getRoot();
+    return fciqmc_fac.execute(cur);
+  }
+#else
+  if(simulationType == "fciqmc") {
+    app_error()<<" Executable not compiled with FCIQMC. Recompile with BUILD_FCIQMC set to 1." <<std::endl; 
+    return false;
+  }
+#endif
+
+
   //validate the input file
   bool success = validateXML();
   if(!success)
@@ -131,6 +206,9 @@ bool QMCMain::execute()
     APP_ABORT("QMCMain::execute");
   }
   Timer t1;
+  NewTimer *t2 = new NewTimer("Total", timer_level_coarse);
+  TimerManager.addTimer(t2);
+  t2->start();
   curMethod = std::string("invalid");
   qmc_common.qmc_counter=0;
   for(int qa=0; qa<m_qmcaction.size(); qa++)
@@ -167,6 +245,7 @@ bool QMCMain::execute()
     }
   }
   m_qmcaction.clear();
+  t2->stop();
   app_log() << "  Total Execution time = " << std::setprecision(4) << t1.elapsed() << " secs" << std::endl;
   if(is_manager())
   {
@@ -539,7 +618,11 @@ bool QMCMain::runQMC(xmlNodePtr cur)
     qmcDriver->process(cur);
     OhmmsInfo::flush();
     Timer qmcTimer;
+    NewTimer *t1 = new NewTimer(qmcDriver->getEngineName(), timer_level_coarse);
+    TimerManager.addTimer(t1);
+    t1->start();
     qmcDriver->run();
+    t1->stop();
     app_log() << "  QMC Execution time = " << std::setprecision(4) << qmcTimer.elapsed() << " secs " << std::endl;
     //keeps track of the configuration file
     PrevConfigFile = myProject.CurrentMainRoot();

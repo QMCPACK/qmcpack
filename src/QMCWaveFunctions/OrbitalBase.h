@@ -113,6 +113,8 @@ struct OrbitalBase: public QMCTraits
   bool derivsDone;
   /** true, if compute for the ratio instead of buffering */
   bool Need2Compute4PbyP;
+  /** true, if recompute needs precomputed distance tables */
+  bool RecomputeNeedsDistanceTable;
   /** define the level of storage in derivative buffer **/
   int DerivStorageType;
 

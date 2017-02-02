@@ -4,7 +4,6 @@
 // Put tests for src/config/stdlib functions here
 
 // Ensure that the backup "round" function is always defined
-#undef HAVE_STD_ROUND
 #include <config/stdlib/math.h>
 
 

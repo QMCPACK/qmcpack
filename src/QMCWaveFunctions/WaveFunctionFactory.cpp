@@ -183,7 +183,7 @@ bool WaveFunctionFactory::addFermionTerm(xmlNodePtr cur)
 //#if OHMMS_DIM == 3 && QMC_BUILD_LEVEL>1
     else if(orbtype == "PWBasis" || orbtype == "PW" || orbtype == "pw")
     {
-      detbuilder = new PWOrbitalBuilder(*targetPtcl,*targetPsi);
+      detbuilder = new PWOrbitalBuilder(*targetPtcl,*targetPsi,ptclPool);
     }
 //#endif /* QMC_BUILD_LEVEL>1 */
   else

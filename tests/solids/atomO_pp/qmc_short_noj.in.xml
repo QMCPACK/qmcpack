@@ -1,0 +1,68 @@
+<?xml version="1.0"?>
+<simulation>
+   <project id="qmc_short_noj" series="0">
+      <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
+   </project>
+   <qmcsystem>
+      <simulationcell>
+         <parameter name="lattice" units="bohr">
+                  20.0   0.0   0.0
+                   0.0  20.0   0.0
+                   0.0   0.0  20.0
+         </parameter>
+         <parameter name="bconds">
+            n n n
+         </parameter>
+         <parameter name="LR_dim_cutoff"       >    15                 </parameter>
+      </simulationcell>
+      <particleset name="ion0">
+         <group name="O" size="1" mass="29164.3928678">
+            <parameter name="charge"              >    6                     </parameter>
+            <parameter name="valence"             >    6                     </parameter>
+            <parameter name="atomicnumber"        >    8                     </parameter>
+            <parameter name="mass"                >    29164.3928678            </parameter>
+            <attrib name="position" datatype="posArray" condition="1">
+                     0.50000000        0.50000000       0.50000000
+            </attrib>
+         </group>
+      </particleset>
+      <particleset name="e" random="yes" randomsrc="ion0">>
+         <group name="u" size="4" mass="1.0">
+            <parameter name="charge"              >    -1                    </parameter>
+            <parameter name="mass"                >    1.0                   </parameter>
+         </group>
+         <group name="d" size="2" mass="1.0">
+            <parameter name="charge"              >    -1                    </parameter>
+            <parameter name="mass"                >    1.0                   </parameter>
+         </group>
+      </particleset>
+      <wavefunction name="psi0" target="e">
+         <determinantset type="einspline" href="atomO.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="double">
+            <slaterdeterminant>
+               <determinant id="updet" size="4">
+                  <occupation mode="ground" spindataset="0"/>
+               </determinant>
+               <determinant id="downdet" size="2">
+                  <occupation mode="ground" spindataset="1"/>
+               </determinant>
+            </slaterdeterminant>
+         </determinantset>
+      </wavefunction>
+      <hamiltonian name="h0" type="generic" target="e">
+         <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
+         <pairpot type="coulomb" name="IonIon" source="ion0" target="ion0"/>
+         <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
+            <pseudo elementType="O" href="O.BFD.xml"/>
+         </pairpot>
+         <estimator type="flux" name="Flux"/>
+      </hamiltonian>
+   </qmcsystem>
+   <qmc method="vmc" move="pbyp">
+      <parameter name="walkers"             >    16              </parameter>
+      <parameter name="blocks"              >    100            </parameter>
+      <parameter name="steps"               >    40             </parameter>
+      <parameter name="subSteps"            >    4               </parameter>
+      <parameter name="timestep"            >    0.3             </parameter>
+      <parameter name="warmupSteps"         >    100             </parameter>
+   </qmc>
+</simulation>

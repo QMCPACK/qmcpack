@@ -46,8 +46,8 @@ int  ParticleSet::PtclObjectCounter = 0;
 
 void add_p_timer(std::vector<NewTimer*>& timers)
 {
-  timers.push_back(new NewTimer("ParticleSet::makeMove")); //timer for MC, ratio etc
-  timers.push_back(new NewTimer("ParticleSet::makeMoveOnSphere")); //timer for the walker loop
+  timers.push_back(new NewTimer("ParticleSet::makeMove",timer_level_fine)); //timer for MC, ratio etc
+  timers.push_back(new NewTimer("ParticleSet::makeMoveOnSphere",timer_level_fine)); //timer for the walker loop
   TimerManager.addTimer(timers[0]);
   TimerManager.addTimer(timers[1]);
 }

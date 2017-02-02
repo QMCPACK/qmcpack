@@ -5074,9 +5074,9 @@ def generate_defect_structure(defect,structure,shape=None,element=None,
 #end def generate_defect_structure
 
 
-def read_structure(filepath,elem=None):
+def read_structure(filepath,elem=None,format=None):
     s = generate_structure('empty')
-    s.read(filepath,elem=elem)
+    s.read(filepath,elem=elem,format=format)
     return s
 #end def read_structure
 

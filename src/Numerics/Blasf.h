@@ -72,6 +72,13 @@
 #define dhgeqz dhgeqz_
 #define dtgexc dtgexc_
 #define dtgevc dtgevc_
+
+#define dsyevr dsyevr_
+#define zheevr zheevr_
+#define zhegvx zhegvx_
+#define zgeqrf zgeqrf_
+#define zungqr zungqr_
+
 #endif
 
 // declaring Fortran interfaces
@@ -217,6 +224,22 @@ extern "C" {
 
   void sggev(char *JOBVL, char *JOBVR, int *N, float *A, int *LDA, float *B, int *LDB,float *ALPHAR, float *ALPHAI,
              float *BETA, float *VL, int *LDVL, float *VR, int *LDVR, float *WORK, int *LWORK, int *INFO );
+
+  void dsyevr (char &JOBZ, char &RANGE, char &UPLO, int &N, double *A, int &LDA, double &VL, double &VU, int &IL, 
+             int &IU, double &ABSTOL, int &M, double *W, double* Z, int &LDZ, int* ISUPPZ, double *WORK, 
+             int &LWORK, int* IWORK, int &LIWORK, int &INFO);
+
+  void zheevr (char &JOBZ, char &RANGE, char &UPLO, int &N, std::complex<double> *A, int &LDA, double &VL, double &VU, 
+             int &IL, int &IU, double &ABSTOL, int &M, double *W, std::complex<double>* Z, int &LDZ, int* ISUPPZ, 
+             std::complex<double> *WORK, int &LWORK, double* RWORK, int &LRWORK, int* IWORK, int &LIWORK, int &INFO);
+
+  void zhegvx (int&, char &JOBZ, char &RANGE, char &UPLO, int &N, std::complex<double> *A, int &LDA, std::complex<double> *B, 
+             int &LDB, double &VL, double &VU, int &IL, int &IU, double &ABSTOL, int &M, double *W, std::complex<double>* Z, 
+             int &LDZ, std::complex<double> *WORK, int &LWORK, double* RWORK, int* IWORK, int* IFAIL, int &INFO);
+
+  void zgeqrf( const int *M, const int *N, std::complex<double> *A, const int *LDA, std::complex<double> *TAU, std::complex<double> *WORK, const int *LWORK, int *INFO );
+
+  void zungqr( const int *M, const int *N, const int *K, std::complex<double> *A, const int *LDA, std::complex<double> *TAU, std::complex<double> *WORK, const int *LWORK, int *INFO );
 
   void dger(const int* m, const int* n, const double* alpha
             , const double* x, const int* incx, const double* y, const int* incy

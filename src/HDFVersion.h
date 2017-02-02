@@ -56,7 +56,7 @@ struct HDFVersion//: public HDFAttribIOBase
   data_type version;
 
   inline HDFVersion():
-    version(QMCPLUSPLUS_VERSION_MAJOR,QMCPLUSPLUS_VERSION_MINOR)
+    version(QMCPACK_VERSION_MAJOR,QMCPACK_VERSION_MINOR)
   { }
 
   inline explicit HDFVersion(int m, int n):version(m,n)

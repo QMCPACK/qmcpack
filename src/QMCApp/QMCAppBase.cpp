@@ -87,6 +87,11 @@ void QMCAppBase::saveXml()
     XmlDocStack.top()->dump(newxml);
   }
 }
+
+std::string &QMCAppBase::getTitle()
+{
+  return myProject.m_title;
+}
 }
 /***************************************************************************
  * $RCSfile$   $Author$

@@ -718,6 +718,7 @@ pwf_input_defaults = obj(
 opt_workflow_keys = [
     'J2_run','J3_run','J_defaults',
     'struct_src','orb_src','J2_src','J3_src',
+    'use_J2',
     ]
 fixed_defaults = obj(
     J2_run     = False,
@@ -726,6 +727,7 @@ fixed_defaults = obj(
     orb_src    = None,
     J2_src     = None,
     J3_src     = None,
+    use_J2     = False,
     J_defaults = defaults_version,
     )
 opt_input_defaults = obj(
@@ -1916,6 +1918,8 @@ def gen_opt_chain(ch,loc):
         else:
             optJ3_dep = orbdep
         #end if
+    elif wf.use_J2:
+        optJ3_dep = orbdep + [('opt_J2','jastrow')]
     else:
         optJ3_dep = orbdep + [('opt_J3','jastrow')]
     #end if

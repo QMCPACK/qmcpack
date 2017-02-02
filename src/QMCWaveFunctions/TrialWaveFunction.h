@@ -359,10 +359,16 @@ public:
     return FermionWF;
   }
 
+  inline bool needs_distance_table_for_recompute() { return RecomputeNeedsDistanceTable; }
+
 private:
 
   ///control how ratio is calculated
   bool Ordered;
+
+  ///true, if recompute needs precomputed distance tables
+  bool RecomputeNeedsDistanceTable;
+
   ///the size of ParticleSet
   int NumPtcls;
 

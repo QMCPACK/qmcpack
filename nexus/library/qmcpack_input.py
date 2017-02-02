@@ -2127,7 +2127,8 @@ class structurefactor(QIxml):
 
 class force(QIxml):
     tag = 'estimator'
-    attributes = ['type','name','mode','source','species','target']
+    attributes = ['type','name','mode','source','species','target','addionion']
+    write_types= obj(addionion=yesno)
     parameters = ['rcut','nbasis','weightexp']
     identifier = 'name'
 #end class force

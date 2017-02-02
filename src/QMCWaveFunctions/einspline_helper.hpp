@@ -118,61 +118,7 @@ namespace qmcplusplus
    */
   template<typename T, typename T1, typename T2>
     inline void fix_phase_rotate_c2r(Array<std::complex<T>,3>& in
-    , Array<T1,3>& out, const TinyVector<T2,3>& twist
-    )
-    {
-      const T two_pi=-2.0*M_PI;
-      const int nx=in.size(0);
-      const int ny=in.size(1);
-      const int nz=in.size(2);
-      T nx_i=1.0/static_cast<T>(nx);
-      T ny_i=1.0/static_cast<T>(ny);
-      T nz_i=1.0/static_cast<T>(nz);
-
-      T rNorm=0.0, iNorm=0.0;
-#pragma omp parallel for reduction(+:rNorm,iNorm), firstprivate(nx_i,ny_i,nz_i)
-      for (int ix=0; ix<nx; ix++) 
-      {
-        T s, c;
-        std::complex<T>* restrict in_ptr=in.data()+ix*ny*nz;
-        T rux=static_cast<T>(ix)*nx_i*twist[0];
-        for (int iy=0; iy<ny; iy++)
-        {
-          T ruy=static_cast<T>(iy)*ny_i*twist[1];
-          for (int iz=0; iz<nz; iz++) 
-          {
-            T ruz=static_cast<T>(iz)*nz_i*twist[2];
-            sincos(two_pi*(rux+ruy+ruz), &s, &c);
-            std::complex<T> eikr(c,s);
-            *in_ptr *= eikr;
-            rNorm += in_ptr->real()*in_ptr->real();
-            iNorm += in_ptr->imag()*in_ptr->imag();
-            ++in_ptr;
-          }
-        }
-      }
-
-      T arg = std::atan2(iNorm, rNorm);
-      T phase_i,phase_r;
-      sincos(0.125*M_PI-0.5*arg, &phase_i, &phase_r);
-#pragma omp parallel for firstprivate(phase_r,phase_i)
-      for (int ix=0; ix<nx; ix++)
-      {
-        const std::complex<T>* restrict in_ptr=in.data()+ix*ny*nz;
-        T1* restrict out_ptr=out.data()+ix*ny*nz;
-        for (int iy=0; iy<ny; iy++)
-          for (int iz=0; iz<nz; iz++) 
-          {
-            *out_ptr=static_cast<T1>(phase_r*in_ptr->real()-phase_i*in_ptr->imag());
-            ++in_ptr;
-            ++out_ptr;
-          }
-      }
-    }
-
-  template<typename T, typename T1, typename T2>
-  inline void fix_phase_rotate_c2c(const Array<std::complex<T>,3>& in
-      , Array<std::complex<T1>,3>& out, const TinyVector<T2,3>& twist)
+    , Array<T1,3>& out, const TinyVector<T2,3>& twist)
   {
     const T two_pi=-2.0*M_PI;
     const int nx=in.size(0);
@@ -183,44 +129,62 @@ namespace qmcplusplus
     T nz_i=1.0/static_cast<T>(nz);
 
     T rNorm=0.0, iNorm=0.0, riNorm=0.0;
-#pragma omp parallel for reduction(+:rNorm,iNorm,riNorm), firstprivate(nx_i,ny_i,nz_i)
-    for (int ix=0; ix<nx; ++ix) 
+    #pragma omp parallel for reduction(+:rNorm,iNorm,riNorm)
+    for (int ix=0; ix<nx; ix++)
     {
-      T s, c, r, i;
-      const std::complex<T>* restrict in_ptr=in.data()+ix*ny*nz;
+      T s, c;
+      std::complex<T>* restrict in_ptr=in.data()+ix*ny*nz;
       T rux=static_cast<T>(ix)*nx_i*twist[0];
-      T rsum=0, isum=0,risum=0.0;
-      for (int iy=0; iy<ny; ++iy)
+      for (int iy=0; iy<ny; iy++)
       {
         T ruy=static_cast<T>(iy)*ny_i*twist[1];
-        for (int iz=0; iz<nz; ++iz)
+        for (int iz=0; iz<nz; iz++)
         {
           T ruz=static_cast<T>(iz)*nz_i*twist[2];
           sincos(two_pi*(rux+ruy+ruz), &s, &c);
-          r = c*in_ptr->real()-s*in_ptr->imag();
-          i = s*in_ptr->real()+c*in_ptr->imag();
+          std::complex<T> eikr(c,s);
+          *in_ptr *= eikr;
+          rNorm  += in_ptr->real()*in_ptr->real();
+          iNorm  += in_ptr->imag()*in_ptr->imag();
+          riNorm += in_ptr->real()*in_ptr->imag();
           ++in_ptr;
-          rsum += r*r;
-          isum += i*i;
-          risum+= r*i;
         }
       }
-      rNorm += rsum;
-      iNorm += isum;
-      riNorm+= risum;
     }
 
-//    T arg = std::atan2(iNorm, rNorm);
-//    //cerr << "Phase = " << arg/M_PI << " pi.\n";
-//    T phase_r, phase_i;
-//    sincos(0.5*(0.25*M_PI-arg), &phase_i, &phase_r);
-     T x=(rNorm-iNorm)/riNorm;
-     x=1.0/std::sqrt(x*x+4.0);
-     T phs=(x>0.5)? std::sqrt(0.5+x):std::sqrt(0.5-x);
-     T phase_r=phs*phs/(rNorm+iNorm);
-     T phase_i=(1.0-phs*phs)/(rNorm+iNorm);
+    T x = (rNorm-iNorm) / riNorm;
+    T y = 1.0/std::sqrt(x*x+4.0);
+    T phs = std::sqrt(0.5-y);
+    T phase_r = phs;
+    T phase_i = (x<0) ? std::sqrt(1.0-phs*phs) : -std::sqrt(1.0-phs*phs);
 
-#pragma omp parallel for firstprivate(phase_r,phase_i)
+    #pragma omp parallel for
+    for (int ix=0; ix<nx; ix++)
+    {
+      const std::complex<T>* restrict in_ptr=in.data()+ix*ny*nz;
+      T1* restrict out_ptr=out.data()+ix*ny*nz;
+      for (int iy=0; iy<ny; iy++)
+        for (int iz=0; iz<nz; iz++)
+        {
+          *out_ptr=static_cast<T1>(phase_r*in_ptr->real()-phase_i*in_ptr->imag());
+          ++in_ptr;
+          ++out_ptr;
+        }
+    }
+  }
+
+  template<typename T, typename T1, typename T2>
+    inline void fix_phase_rotate_c2c(const Array<std::complex<T>,3>& in
+      , Array<std::complex<T1>,3>& out, const TinyVector<T2,3>& twist)
+  {
+    const int nx=in.size(0);
+    const int ny=in.size(1);
+    const int nz=in.size(2);
+    T phase_r, phase_i;
+
+    compute_phase(in, twist, phase_r, phase_i);
+
+    #pragma omp parallel for
     for (int ix=0; ix<nx; ++ix)
     {
       const std::complex<T>* restrict in_ptr=in.data()+ix*ny*nz;
@@ -241,6 +205,38 @@ namespace qmcplusplus
   inline void fix_phase_rotate_c2c(const Array<std::complex<T>,3>& in
       , Array<T1,3>& out_r, Array<T1,3>& out_i, const TinyVector<T2,3>& twist)
   {
+    const int nx=in.size(0);
+    const int ny=in.size(1);
+    const int nz=in.size(2);
+    T phase_r, phase_i;
+
+    compute_phase(in, twist, phase_r, phase_i);
+ 
+    #pragma omp parallel for
+    for (int ix=0; ix<nx; ++ix)
+    {
+      const std::complex<T>* restrict in_ptr=in.data()+ix*ny*nz;
+      T1* restrict r_ptr=out_r.data()+ix*ny*nz;
+      T1* restrict i_ptr=out_i.data()+ix*ny*nz;
+      //std::complex<T1>* restrict out_ptr=out.data()+ix*ny*nz;
+      for (int iy=0; iy<ny; ++iy)
+        for (int iz=0; iz<nz; ++iz) 
+        {
+          *r_ptr++=static_cast<T1>(phase_r*in_ptr->real()-phase_i*in_ptr->imag());
+          *i_ptr++=static_cast<T1>(phase_i*in_ptr->real()+phase_r*in_ptr->imag());
+          ++in_ptr;
+        }
+    }
+  }
+
+  /** rotate the state after 3dfft
+   *
+   * Compute the phase factor for rotation. The algorithm aims at balacned real and imaginary parts.
+   *
+   */
+  template<typename T, typename T2>
+    inline void compute_phase(const Array<std::complex<T>,3>& in, const TinyVector<T2,3>& twist, T& phase_r, T& phase_i)
+  {
     const T two_pi=-2.0*M_PI;
     const int nx=in.size(0);
     const int ny=in.size(1);
@@ -250,7 +246,7 @@ namespace qmcplusplus
     T nz_i=1.0/static_cast<T>(nz);
 
     T rNorm=0.0, iNorm=0.0, riNorm=0.0;
-#pragma omp parallel for reduction(+:rNorm,iNorm,riNorm), firstprivate(nx_i,ny_i,nz_i)
+    #pragma omp parallel for reduction(+:rNorm,iNorm,riNorm)
     for (int ix=0; ix<nx; ++ix) 
     {
       T s, c, r, i;
@@ -277,72 +273,12 @@ namespace qmcplusplus
       riNorm+= risum;
     }
 
-//    T arg = std::atan2(iNorm, rNorm);
-//    //cerr << "Phase = " << arg/M_PI << " pi.\n";
-//    T phase_r, phase_i;
-//    sincos(0.5*(0.25*M_PI-arg), &phase_i, &phase_r);
-     T x=(rNorm-iNorm)/riNorm;
-     x=1.0/std::sqrt(x*x+4.0);
-     T phs=(x>0.5)? std::sqrt(0.5+x):std::sqrt(0.5-x);
-     T phase_r=phs*phs/(rNorm+iNorm);
-     T phase_i=(1.0-phs*phs)/(rNorm+iNorm);
-
-#pragma omp parallel for firstprivate(phase_r,phase_i)
-    for (int ix=0; ix<nx; ++ix)
-    {
-      const std::complex<T>* restrict in_ptr=in.data()+ix*ny*nz;
-      T1* restrict r_ptr=out_r.data()+ix*ny*nz;
-      T1* restrict i_ptr=out_i.data()+ix*ny*nz;
-      //std::complex<T1>* restrict out_ptr=out.data()+ix*ny*nz;
-      for (int iy=0; iy<ny; ++iy)
-        for (int iz=0; iz<nz; ++iz) 
-        {
-          *r_ptr++=static_cast<T1>(phase_r*in_ptr->real()-phase_i*in_ptr->imag());
-          *i_ptr++=static_cast<T1>(phase_i*in_ptr->real()+phase_r*in_ptr->imag());
-          ++in_ptr;
-        }
-    }
+    T x = (rNorm-iNorm) / riNorm;
+    T y = 1.0/std::sqrt(x*x+4.0);
+    T phs = std::sqrt(0.5-y);
+    phase_r = phs;
+    phase_i = (x<0) ? std::sqrt(1.0-phs*phs) : -std::sqrt(1.0-phs*phs);
   }
-
-  /** rotate the state after 3dfft
-   *
-   * Compute phase factor a a twist
-   *
-   */
-  template<typename T>
-    inline void compute_phase(const TinyVector<T,3>& twist, Array<std::complex<T>,3>& inout)
-    {
-//#pragma omp parallel 
-      {
-        const T two_pi=-2.0*M_PI;
-        const int nx=inout.size(0);
-        const int ny=inout.size(1);
-        const int nz=inout.size(2);
-        T nx_i=two_pi/static_cast<T>(nx)*twist[0];
-        T ny_i=two_pi/static_cast<T>(ny)*twist[1];
-        T nz_i=two_pi/static_cast<T>(nz)*twist[2];
-        T phase[nz],s,c;
-//#pragma omp for
-        for (int ix=0; ix<nx; ix++)
-        {
-          std::complex<T>* restrict in_ptr=inout.data()+ix*ny*nz;
-          T rux=static_cast<T>(ix)*nx_i;
-          for (int iy=0; iy<ny; iy++)
-          {
-            T ruy=static_cast<T>(iy)*ny_i+rux;
-            //for(int iz=0; iz<nz; ++iz)
-            //{
-            //  T phi=(ruy+(static_cast<T>(iz)*nz_i));
-            //  sincos(phi,&s,&c);
-            //  *in_ptr++= std::complex<T>(c,s);
-            //}
-            for(int iz=0; iz<nz;iz++) phase[iz]=(ruy+(static_cast<T>(iz)*nz_i));
-            eval_e2iphi(nz,phase,in_ptr);
-            in_ptr+=nz;
-          }
-        }
-      }
-    }
 
   /** rotate the state after 3dfft
    *

@@ -9,9 +9,9 @@
 ##   ./config/build_olcf_eos.sh                               ##
 ##                                                            ##
 ## Settings should be consistent with test scripts e.g.       ##
-##  ./tests/test_automation/night_ornl_olcf_eos.job           ##
+##  ./tests/test_automation/nightly_ornl_olcf_eos.job         ##
 ##                                                            ##
-## Last modified: Aug 3, 2016                                 ##
+## Last modified: Jan 6, 2017                                 ##
 ################################################################
 
 
@@ -21,7 +21,12 @@ if (echo $LOADEDMODULES | grep -q pgi)
 then
 module unload PrgEnv-pgi
 fi
+if (echo $LOADEDMODULES | grep -q gnu)
+then
+module unload PrgEnv-gnu
+fi
 module load PrgEnv-intel
+module load gcc
 module load cray-hdf5
 module load fftw
 module load boost

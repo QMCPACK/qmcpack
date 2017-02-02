@@ -59,8 +59,10 @@ public:
   int builder_index;
   ///true if C is an identity matrix
   bool Identity;
-  ///true if C is an identity matrix
+  ///true if SPO is optimizable
   bool Optimizable;
+  ///true if precomputed distance tables are needed
+  bool NeedsDistanceTable;
   ///flag to calculate ionic derivatives
   bool ionDerivs;
   ///total number of orbitals
@@ -91,6 +93,7 @@ public:
    */
   SPOSetBase()
     :Identity(false),TotalOrbitalSize(0),OrbitalSetSize(0),BasisSetSize(0),
+    NeedsDistanceTable(false),
     ActivePtcl(-1),Optimizable(false),ionDerivs(false),builder_index(-1)
   {
     className="invalid";

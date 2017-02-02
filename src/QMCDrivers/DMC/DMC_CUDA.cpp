@@ -33,7 +33,7 @@ DMCcuda::DMCcuda(MCWalkerConfiguration& w, TrialWaveFunction& psi,
                  QMCHamiltonian& h,WaveFunctionPool& ppool):
   QMCDriver(w,psi,h,ppool), myWarmupSteps(0), Mover(0),
   ResizeTimer("DMCcuda::resize"),
-  DriftDiffuseTimer("DMCcuda::Drift/Diffuse"),
+  DriftDiffuseTimer("DMCcuda::Drift_Diffuse"),
   BranchTimer("DMCcuda::Branch"),
   HTimer("DMCcuda::Hamiltonian")
 {
