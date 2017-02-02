@@ -78,4 +78,30 @@ TEST_CASE("gaussian random particle attrib array length 1", "[particle_base]")
   // assuming RNG input is 0.5
   REQUIRE(PA[0][0] == Approx(-1.1774100224305424));
 }
+
+TEST_CASE("gaussian random input one", "[particle_base]")
+{
+  FakeRandom rg;
+  rg.set_value(1.0);
+  std::vector<double> a(2);
+  assignGaussRand(a.data(), 2, rg);
+
+  // uniform RNG input is 1.0
+  // most uniform RNGs do not produce 1.0 exactly (open interval),
+  // but the code is there to prevent it, so a test.
+  REQUIRE(a[0] == Approx(8.49042441685));
+  REQUIRE(a[1] == Approx(0.0)); // ensure no overflow
+}
+
+TEST_CASE("gaussian random input zero", "[particle_base]")
+{
+  FakeRandom rg;
+  rg.set_value(0.0);
+  std::vector<double> a(2);
+  assignGaussRand(a.data(), 2, rg);
+
+  // uniform RNG input is 0.0
+  REQUIRE(a[0] == Approx(0.0));
+  REQUIRE(a[1] == Approx(0.0));
+}
 }

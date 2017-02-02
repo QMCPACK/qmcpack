@@ -284,11 +284,11 @@ int Uniform3DGridLayout::connectGrid(value_type int_rad, value_type con_rad)
         for(int ixyz=0; ixyz<RShell.size(); ixyz++)
         {
           SingleParticleIndex_t d0 = org+RShell[ixyz],d;
-          if(!BoxBConds[0] && d[0]<0 || d[0]>= NP[0])
+          if((!BoxBConds[0] && d[0]<0) || d[0]>= NP[0])
             continue;
-          if(!BoxBConds[1] && d[1]<0 || d[1]>= NP[1])
+          if((!BoxBConds[1] && d[1]<0) || d[1]>= NP[1])
             continue;
-          if(!BoxBConds[2] && d[2]<0 || d[2]>= NP[2])
+          if((!BoxBConds[2] && d[2]<0) || d[2]>= NP[2])
             continue;
           d[0]=d0[0]%NP[0];
           d[0]= (d[0]<0)?d[0]+NP[0] : d[0];

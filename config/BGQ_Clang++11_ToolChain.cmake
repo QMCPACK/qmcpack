@@ -1,19 +1,14 @@
+set(CMAKE_C_COMPILER mpiclang) 
+set(CMAKE_CXX_COMPILER mpiclang++11)
 
-set(CMAKE_C_COMPILER mpixlc_r)
-set(CMAKE_CXX_COMPILER mpixlcxx_r)
-
-set(AIX_ARCH "qp")
-SET(AIX_ARCH_FLAGS "-qarch=${AIX_ARCH} -qsmp=omp -DINLINE_ALL=inline -qthreaded -qstrict -qhot=level=1 -qtune=qp -qsimd=auto  -DHAVE_MASS -DHAVE_MASSV -DBGQPX -DSPLINEFLOAT -DUSE_REAL_STRUCT_FACTOR")
-
-SET(AIX_SUPPRESSED_WARN "-qsuppress=1540-0724:1540-0198:1540-1401:1540-0822:1540-0095:1540-1101:1500-010:1500-029")
-SET(AIX_CXX_COMMON_FLAGS "-g -O3 -qinline=auto:level=10 ${AIX_SUPPRESSED_WARN}")
-SET(AIX_OPT_FLAGS "-qmaxmem=-1")
-
-SET(CMAKE_CXX_FLAGS "${AIX_ARCH_FLAGS} ${AIX_OPT_FLAGS} ${AIX_CXX_COMMON_FLAGS}")
-SET(CMAKE_C_FLAGS "${AIX_ARCH_FLAGS} ${AIX_OPT_FLAGS}")
+set(GNU_OPTS "-O3 -g -ffast-math -fopenmp -fstrict-aliasing -Wno-deprecated -Wno-unused-value -Wno-type-safety") 
+set(GNU_FLAGS "-Drestrict=__restrict__ -DADD_ -DHAVE_MASS -DHAVE_MASSV -DSPLINEFLOAT -DBGQPX")
+set(CMAKE_CXX_FLAGS "${GNU_FLAGS} ${GNU_OPTS} -ftemplate-depth-60")
+set(CMAKE_C_FLAGS "${GNU_FLAGS} ${GNU_OPTS} -std=c99" )
+SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -Wl,--allow-multiple-definition")
 
 SET(QMC_CUDA 0)
-SET(QMC_COMPLEX 0)
+#SET(QMC_COMPLEX 0)
 SET(ENABLE_OPENMP 1)
 SET(HAVE_MPI 1)
 set(HAVE_CUDA 0)
@@ -23,7 +18,7 @@ SET(HAVE_EINSPLINE 1)
 SET(HAVE_EINSPLINE_EXT 0)
 SET(HAVE_ADIOS 0)
 SET(BUILD_QMCTOOLS 1)
-SET(BUILD_SANDBOX 1)
+#SET(BUILD_SANDBOX 1)
 
 SET(MPIEXEC "sh")
 SET(MPIEXEC_NUMPROC_FLAG "${qmcpack_SOURCE_DIR}/utils/bgrunjobhelper.sh")
@@ -33,18 +28,22 @@ SET(BOOST_ROOT /home/projects/qmcpack/boost_1_45_0)
 
 SET(CMAKE_FIND_ROOT_PATH
      /home/projects/qmcpack/libXML2-2.9.1
-     /soft/libraries/hdf5/1.8.14/cnk-xl/current
-     /soft/libraries/alcf/current/xl/FFTW3
-     /soft/libraries/alcf/current/xl/ZLIB
+     /soft/libraries/hdf5/1.8.14/cnk-gcc/current
+     /soft/libraries/alcf/current/gcc/FFTW3
+     /soft/libraries/alcf/current/gcc/ZLIB
 )
 
+include_directories($ENV{IBM_MAIN_DIR}/xlmass/bg/7.3/include)
+
 SET(LAPACK_LIBRARY /soft/libraries/alcf/current/xl/LAPACK/lib/liblapack.a)
-SET(BLAS_LIBRARY /soft/libraries/essl/current/essl/5.1/lib64/libesslsmpbg.a)
+SET(BLAS_LIBRARY /soft/libraries/essl/current/essl/5.1/lib64/libesslbg.a)
 SET(FORTRAN_LIBRARIES
 $ENV{IBM_MAIN_DIR}/xlmass/bg/7.3/bglib64/libmass.a 
 $ENV{IBM_MAIN_DIR}/xlmass/bg/7.3/bglib64/libmassv.a 
 $ENV{IBM_FCMP_DIR}/bglib64/libxlf90_r.a
 $ENV{IBM_FCMP_DIR}/bglib64/libxlopt.a
+$ENV{IBM_FCMP_DIR}/bglib64/libxl.a
+/soft/compilers/bgclang/xlsmp-nonconflicting/ibmcmp-feb2015/libxlsmp.a
 )
 
 #LINK_LIBRARIES(

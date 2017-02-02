@@ -326,7 +326,10 @@ void QMCUpdateBase::recomputePsi(WalkerIter_t it, WalkerIter_t it_end)
 {
   for (; it != it_end; ++it)
   {
-    Walker_t::Buffer_t& w_buffer((*it)->DataSet);
+    Walker_t& thisWalker(**it);
+    Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
+    // recomputing the determinants does not require distance tables. Thus choose false.
+    W.loadWalker(thisWalker,false);
     Psi.copyFromBuffer(W,w_buffer);
     Psi.recompute(W);
     //RealType logpsi=Psi.updateBuffer(W,w_buffer,false);

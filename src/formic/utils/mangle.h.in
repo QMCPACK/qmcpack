@@ -1,0 +1,6 @@
+#ifndef FORMIC_LAPACK_MANGLE_HEADER
+#define FORMIC_LAPACK_MANGLE_HEADER
+
+#include<${LAPACK_MANGLE_INC}>
+
+#endif

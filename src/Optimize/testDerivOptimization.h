@@ -222,7 +222,7 @@ public:
     for (int j = 0 ; j < NumParams ; j ++)
       gg += a_xi[j]*a_xi[j];
     a_gtyp = sqrt(gg / (1.0*NumParams));
-    for (int a_its = 0 ; ((a_its <= a_itmax)&(TargetFunc->IsValid)&(gg>CostTol)) ; ++a_its)
+    for (int a_its = 0 ; ((a_its <= a_itmax)&&(TargetFunc->IsValid)&(gg>CostTol)) ; ++a_its)
     {
       if (a_verbose > 0)
         printf("mac_it %d of %d : gg = %6.3g tol = %6.3g: \n", a_its , a_itmax , gg , CostTol) ;
@@ -351,7 +351,7 @@ public:
     }
     if (a_verbose > 0)
       printf("FINAL : gg = %6.3g tol = %6.3g: \n", gg , CostTol) ;
-    return ((TargetFunc->IsValid) & (gg <= CostTol));
+    return ((TargetFunc->IsValid) && (gg <= CostTol));
   }
 
 
@@ -369,13 +369,13 @@ public:
     int its(0);
     Return_t x = a_lastx / a_gtyp ;
     Return_t s = lineProduct(Parms , a_gx , x) ;
-    if (s < 0 & TargetFunc->IsValid)
+    if (s < 0 && TargetFunc->IsValid)
     {
       do
       {
         y = x * a_linmin_g1 ;
         t = lineProduct(Parms , a_gy , y) ;
-        if ((t >= 0.0) | (!TargetFunc->IsValid))
+        if ((t >= 0.0) || (!TargetFunc->IsValid))
         {
           if (a_verbose > 1)
             printf("s < 0: s = %6.3g: t = %6.3g; x = %6.3g y = %6.3g\n",s, t , x , y);
@@ -399,16 +399,16 @@ public:
         }
         its++ ;
       }
-      while ((its <= a_linmin_maxits)&(TargetFunc->IsValid)) ;
+      while ((its <= a_linmin_maxits)&&(TargetFunc->IsValid)) ;
     }
     else
-      if (s > 0 & TargetFunc->IsValid)
+      if (s > 0 && TargetFunc->IsValid)
       {
         do
         {
           y = x * a_linmin_g3 ;
           t = lineProduct(Parms , a_gy , y) ;
-          if ((t <= 0.0) | (!TargetFunc->IsValid))
+          if ((t <= 0.0) || (!TargetFunc->IsValid))
           {
             if (a_verbose > 1)
               printf("s > 0: s = %6.3g: t = %6.3g; x = %6.3g y = %6.3g\n",s, t , x , y);
@@ -432,7 +432,7 @@ public:
           }
           its ++ ;
         }
-        while ((its <= a_linmin_maxits)&(TargetFunc->IsValid)) ;
+        while ((its <= a_linmin_maxits)&&(TargetFunc->IsValid)) ;
       }
       else
       {
@@ -444,7 +444,7 @@ public:
     Return_t u(0.0);
     Return_t m(0.5*(x+y));
     int xyit(0);
-    if ((xyit<xycleanup) & (std::abs(s-t)>GradTol) & (s*t<0.0) &(TargetFunc->IsValid))
+    if ((xyit<xycleanup) && (std::abs(s-t)>GradTol) && (s*t<0.0) &&(TargetFunc->IsValid))
     {
       int XYBisectCounter=xybisect;
       do
@@ -464,9 +464,9 @@ public:
         u=lineProduct(Parms , a_gunused , m) ;
         if (a_verbose > 1)
           printf("xyit %d of %d : u = %6.3g m = %6.3g: \n", xyit ,xycleanup, u , m) ;
-        if ((u==u))
+        if (u==u)
         {
-          if (u*s >= 0.0  & TargetFunc->IsValid)
+          if (u*s >= 0.0  && TargetFunc->IsValid)
           {
             s=u;
             x=m;
@@ -475,7 +475,7 @@ public:
               printf("s = %6.3g: t = %6.3g; x = %6.3g y = %6.3g\n",s, t , x , y);
           }
           else
-            if (u*t >= 0.0  & TargetFunc->IsValid)
+            if (u*t >= 0.0 && TargetFunc->IsValid)
             {
               t=u;
               y=m;
@@ -499,10 +499,10 @@ public:
           }
         xyit++;
       }
-      while ((TargetFunc->IsValid) & (std::abs(s-t)>GradTol) & (xyit<xycleanup)) ;
+      while ((TargetFunc->IsValid) && (std::abs(s-t)>GradTol) && (xyit<xycleanup)) ;
     }
     else
-      if ((s*t>0.0) | (!TargetFunc->IsValid))
+      if ((s*t>0.0) || (!TargetFunc->IsValid))
       {
         return -1.0;
       }

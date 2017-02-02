@@ -33,12 +33,14 @@ const OOMPI_Group OOMPI_GROUP_NULL(MPI_GROUP_NULL);
 static int 
 Free_mpi_group(MPI_Group *ptr)
 {
-  if (ptr != 0 && *ptr != MPI_GROUP_NULL && *ptr != MPI_GROUP_EMPTY )
-    if (OOMPI_COMM_WORLD.Finalized()) 
+  if (ptr != 0 && *ptr != MPI_GROUP_NULL && *ptr != MPI_GROUP_EMPTY ) {
+    if (OOMPI_COMM_WORLD.Finalized()) {
       std::cerr << "Attempt to free group after finalize (ignored, probably resulting in memory leak)." 
 		<< std::endl;
-    else
+    } else {
       MPI_Group_free(ptr);
+    }
+  }
 
   return MPI_SUCCESS;
 }

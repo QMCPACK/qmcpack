@@ -110,8 +110,6 @@ SET(QMC_BITS 64 CACHE INTEGER "Select OS bit")
 SET(QMC_COMPLEX 0 CACHE INTEGER "Build for complex binary")
 SET(PRINT_DEBUG 0 CACHE BOOL "Enable/disable debug printing")
 SET(QMC_CUDA 0 CACHE BOOL "Build with GPU support through CUDA")
-SET(QMC_ADIOS 0 CACHE BOOL "Build with ADIOS")
-SET(BUILD_UNIT_TESTS 1 CACHE BOOL "Build unit tests")
 
 ######################################################################
 # set debug printout
@@ -176,6 +174,17 @@ CHECK_INCLUDE_FILE(unistd.h HAVE_UNISTD_H)
 # BUILD_SANDBOX    build test programs
 # MPIP_PROFILE     profile mpi performance
 ######################################################################
+SET(QMC_ADIOS 0 CACHE BOOL "Build with ADIOS")
+SET(BUILD_UNIT_TESTS 1 CACHE BOOL "Build unit tests")
+SET(BUILD_LMYENGINE_INTERFACE 1 CACHE BOOL "Build LMY engine")
+IF (QMC_CUDA AND BUILD_LMYENGINE_INTERFACE)
+  MESSAGE(STATUS "LMY engine is not compatiable with CUDA build! Disabling LMY engine")
+  SET(BUILD_LMYENGINE_INTERFACE 0)
+ENDIF()
+IF(MIXED_PRECISION AND BUILD_LMYENGINE_INTERFACE)
+  MESSAGE(STATUS "LMY engine is not compatiable with CPU mixed precision build! Disabling LMY engine")
+  SET(BUILD_LMYENGINE_INTERFACE 0)
+ENDIF()
 #SET(BUILD_QMCTOOLS 1 CACHE BOOL "Build tools for QMCPACK")
 #SET(BUILD_SANDBOX 0 CACHE BOOL "Build snadbox for testing")
 #SET(MPIP_PROFILE 0 CACHE BOOL "Build with mpip for mpi profile")
@@ -238,12 +247,12 @@ IF(QMC_ADIOS)
       LINK_LIBRARIES(${ADIOS_LIBRARIES})
       ADD_DEFINITIONS(-DHAVE_ADIOS)
     ELSE()
-      MESSAGE(STATUS "Couldn't find ADIOS")
+      MESSAGE(STATUS "Couldn't find required library ADIOS")
       MESSAGE(FATAL_ERROR "ADIOS_HOME: export ADIOS_HOME=/path/to/adios")
     ENDIF()
-	ELSE()
-		ADD_DEFINITIONS(-DHAVE_ADIOS)
-  endif()
+  ELSE()
+    ADD_DEFINITIONS(-DHAVE_ADIOS)
+  ENDIF()
 ENDIF(QMC_ADIOS)
 
 SET(QMCPACK_UNIT_TEST_DIR ${qmcpack_BINARY_DIR}/tests/bin)
@@ -270,8 +279,8 @@ ENDIF()
 #If the automatic detection does not work, comment out everything 
 #upto COMPILER MANUAL SELECTION and use one of the customized cmake file.
 ######################################################
-INCLUDE(${CMAKE_ROOT}/Modules/TestCXXAcceptsFlag.cmake)
 INCLUDE(${CMAKE_ROOT}/Modules/CheckCCompilerFlag.cmake)
+INCLUDE(${CMAKE_ROOT}/Modules/CheckCXXCompilerFlag.cmake)
 
 
 ######################################################
@@ -432,7 +441,7 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
    INCLUDE(CMake/FindMKL.cmake)
   ENDIF(INTEL_COMPILER)
   IF ( HAVE_MKL )
-    # We found mkl, add the link library
+    # We found MKL, add the link library
     SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${MKL_FLAGS}")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MKL_FLAGS}")
     SET(LAPACK_FOUND 1)
@@ -446,20 +455,49 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   ELSE()	 
     # Search for Blas/Lapack
     find_package(LAPACK)
+    # When cmake finds and sets up the MKL libraries with a non-Intel compiler, set the flag
+    # This should be tidied up when FindMKL.cmake supports non-Intel compilers.
+    IF("${LAPACK_LIBRARIES}" MATCHES "mkl")
+      MESSAGE(STATUS "MKL found via LAPACK/BLAS")
+      SET( MKL_FOUND 1 )
+    ENDIF()
   ENDIF()
   IF(LAPACK_FOUND)
     MESSAGE(STATUS "LAPACK libraries: ${LAPACK_LIBRARIES}")
     MESSAGE(STATUS "LAPACK linker flags: ${LAPACK_LINKER_FLAGS}")
     SET(LAPACK_LIBRARY ${LAPACK_LIBRARIES} ${LAPACK_LINKER_FLAGS})
   ELSE()
-    MESSAGE(FATAL_ERROR "LAPACK &/or BLAS not found") 
+    MESSAGE(FATAL_ERROR "Could not find required libraries LAPACK &/or BLAS") 
   ENDIF()
 
   INCLUDE(CMake/FindVectorMath.cmake)
 
 ENDIF(CMAKE_TOOLCHAIN_FILE)
 
-
+# check if C++11 is needed by QMCPACK features
+SET(CXX11_NEEDED FALSE)
+IF(BUILD_LMYENGINE_INTERFACE)
+  SET(CXX11_NEEDED TRUE)
+ENDIF()
+## add AFQMC checker here
+# once C++11 is needed
+IF(CXX11_NEEDED)
+  #check if the CXX compiler supports -std=c++11 option
+  include(CheckCXXCompilerFlag)
+  CHECK_CXX_COMPILER_FLAG(-std=c++11 CXX_COMPILER_SUPPORT_CXX11)
+  # Turn on C++11 for this code
+  IF (CXX_COMPILER_SUPPORT_CXX11)
+    # avoid repeated -std=c++11 flag
+    IF(NOT CMAKE_CXX_FLAGS MATCHES "-std=c\\+\\+11")
+      SET (CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
+    ENDIF()
+  ELSE()
+    MESSAGE(STATUS "Disabling features requring C++11 due to the lack of compiler support")
+    SET(BUILD_LMYENGINE_INTERFACE 0)
+    ## disable AFQMC here
+  ENDIF()
+ENDIF(CXX11_NEEDED)
+  
 # setup ctest variables
 IF ( HAVE_MPI )
   SET( USE_MPI 1 )
@@ -477,7 +515,6 @@ IF ( HAVE_MPI )
 
   MESSAGE(STATUS "MPI runner is ${MPIEXEC}")
 ENDIF(HAVE_MPI)
-
 
 MESSAGE(STATUS "CXX compiler flags: ${CMAKE_CXX_FLAGS}")
 MESSAGE(STATUS "CC  compiler flags: ${CMAKE_C_FLAGS}")
@@ -510,7 +547,8 @@ IF(FFTW_FOUND)
   SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${FFTW_LIBRARIES})
   MESSAGE(STATUS "Found FFTW")
 ELSE(FFTW_FOUND)
-  MESSAGE(STATUS "Disabling FFTW")
+#  MESSAGE(STATUS "Disabling FFTW")
+  MESSAGE(FATAL_ERROR "Could not find required library FFTW. Verify FFTW_HOME")
 ENDIF(FFTW_FOUND)
  
 SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${FORTRAN_LIBRARIES})
@@ -524,7 +562,7 @@ IF(LIBXML2_FOUND)
   SET(HAVE_LIBXML2 1)
   SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${LIBXML2_LIBRARIES})
 ELSE()
-  MESSAGE(FATAL_ERROR "Missing Libxml2")
+  MESSAGE(FATAL_ERROR "Could not find required library Libxml2")
 ENDIF(LIBXML2_FOUND)
 
 set(HDF5_USE_STATIC_LIBRARIES off)
@@ -672,6 +710,13 @@ if(build_einspline)
   INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/include)
   SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} einspline)
 endif()
+
+IF(BUILD_LMYENGINE_INTERFACE)
+  ADD_DEFINITIONS(-DHAVE_LMY_ENGINE)
+  SET(FORMIC_BINARY_DIR ${qmcpack_BINARY_DIR})
+  SUBDIRS(src/formic/utils)
+  SET(QMC_UTIL_LIBS formic_utils ${QMC_UTIL_LIBS})
+ENDIF(BUILD_LMYENGINE_INTERFACE)
 
 #include(ExternalProject)
 #  set(einspline_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/einspline")

@@ -80,14 +80,20 @@ public:
     delete_iter(gradLogPsi.begin(),gradLogPsi.end());
     delete_iter(lapLogPsi.begin(),lapLogPsi.end());
     if(Spin)
+    {
       for(int sg=0; sg<F.rows(); ++sg)
         for(int tg=0; tg<F.cols(); ++tg)
           if(F(sg,tg))
+          {
             delete F(sg,tg);
+          }
           else
+          {
             for(int sg=0; sg<F.rows(); ++sg)
               if(F(sg,0))
                 delete F(sg,0);
+          }
+    }
   }
 
   /** Add a radial functor for a group

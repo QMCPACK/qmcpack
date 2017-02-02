@@ -51,6 +51,7 @@ from unit_converter import convert
 from generic import obj
 from developer import DevBase,unavailable,error
 from basisset import process_gaussian_text,GaussianBasisSet
+from physical_system import PhysicalSystem
 from plotting import *
 from debug import *
 try:
@@ -60,6 +61,26 @@ except:
 #end try
 
 
+
+def pp_elem_label(filename,guard=False):
+    el = ''
+    for c in filename:
+        if c=='.' or c=='_' or c=='-':
+            break
+        #end if
+        el+=c
+    #end for
+    elem_label = el
+    is_elem,symbol = is_element(el,symbol=True)
+    if guard: 
+        if not is_elem:
+            error('cannot determine element for pseudopotential file: {0}\npseudopotential file names must be prefixed by an atomic symbol or label\n(e.g. Si, Si1, etc)'.format(filename))
+        #end if
+        return elem_label,symbol
+    else:
+        return elem_label,symbol,is_elem
+    #end if
+#end def pp_elem_label
 
 
 # basic interface for nexus, only gamess really needs this for now
@@ -72,8 +93,9 @@ class PseudoFile(DevBase):
         if filepath!=None:
             self.filename = os.path.basename(filepath)
             self.location = os.path.abspath(filepath)
-            elem_label = self.filename.split('.')[0]
-            is_elem,symbol = is_element(elem_label,symbol=True)
+            elem_label,symbol,is_elem = pp_elem_label(self.filename)
+            #elem_label = self.filename.split('.')[0]
+            #is_elem,symbol = is_element(elem_label,symbol=True)
             if not is_elem:
                 self.error('cannot determine element for pseudopotential file: {0}\npseudopotential file names must be prefixed by an atomic symbol or label\n(e.g. Si, Si1, etc)'.format(filepath))
             #end if
@@ -223,7 +245,104 @@ class Pseudopotentials(DevBase):
 
 
 
+# user interface to group sets of pseudopotentials together and refer to them by labels
+#   labeling should eliminate the need to provide lists of pseudopotential files to each 
+#   simulation object (e.g. via a generate_* call) separately
+class PPset(DevBase):
+    instance_counter = 0
 
+    known_codes = set('pwscf gamess vasp qmcpack'.split())
+
+    default_extensions = obj(
+        pwscf   = ['ncpp','upf'],
+        gamess  = ['gms'],
+        vasp    = ['potcar'],
+        qmcpack = ['xml'],
+        )
+
+    def __init__(self):
+        if PPset.instance_counter!=0:
+            self.error('cannot instantiate more than one PPset object\nintended use follows a singleton pattern')
+        #end if
+        PPset.instance_counter+=1
+        self.pseudos = obj()
+    #end def __init__
+
+    def supports_code(self,code):
+        return code in PPset.known_codes
+    #end def supports_code
+
+    def __call__(self,label,**code_pps):
+        if not isinstance(label,str):
+            self.error('incorrect use of ppset\nlabel provided must be a string\nreceived type instead: {0}\nwith value: {1}'.format(label.__class__.__name__,label))
+        #end if
+        if label in self.pseudos:
+            self.error('incorrect use of ppset\npseudopotentials with label "{0}" have already been added to ppset'.format(label))
+        #end if
+        pseudos = obj()
+        self.pseudos[label]=pseudos
+        for code,pps in code_pps.iteritems():
+            clow = code.lower()
+            if clow not in self.known_codes:
+                self.error('incorrect use of ppset\ninvalid simulation code "{0}" provided with set labeled "{1}"\nknown simulation codes are: {2}'.format(code,label,sorted(self.known_codes)))
+            #end if
+            if not isinstance(pps,(list,tuple)):
+                self.error('incorrect use of ppset\nmust provide a list of pseudopotentials for code "{0}" in set labeled "{1}"\ntype provided instead of list: {2}'.format(code,label,pps.__class__.__name__))
+            #end if
+            ppcoll = obj()
+            for pp in pps:
+                if not isinstance(pp,str):
+                    self.error('incorrect use of ppset\nnon-filename provided with set labeled "{0}" for simulation code "{1}"\neach pseudopential file name must be a string\nreceived type: {2}\nwith value: {3}'.format(label,code,pp.__class__.__name__,pp))
+                #end if
+                elem_label,symbol,is_elem = pp_elem_label(pp)
+                if not is_elem:
+                    self.error('invalid filename provided to ppset\ncannot determine element for pseudopotential file: {0}\npseudopotential file names must be prefixed by an atomic symbol or label\n(e.g. Si, Si1, etc)'.format(pp))
+                elif symbol in ppcoll:
+                    self.error('incorrect use of ppset\nmore than one pseudopotential file provided for element "{0}" for code "{1}" in set labeled "{2}"\nfirst file: {3}\nsecond file: {4}'.format(symbol,code,label,ppcoll[symbol],pp))
+                #end if
+                ppcoll[symbol] = pp
+            #end for
+            pseudos[clow] = ppcoll
+        #end for
+    #end def __call__
+
+    def has_set(self,label):
+        return label in self.pseudos
+    #end def has_set
+
+    def get(self,label,code,system):
+        if system is None or not system.pseudized:
+            return []
+        #end if
+        if not isinstance(system,PhysicalSystem):
+            self.error('system object must be of type PhysicalSystem')
+        #end if
+        species_labels,species = system.structure.species(symbol=True)
+        if not isinstance(label,str):
+            self.error('incorrect use of ppset\nlabel provided must be a string\nreceived type instead: {0}\nwith value: {1}'.format(label.__class__.__name__,label))
+        #end if
+        if not self.has_set(label):
+            self.error('incorrect use of ppset\npseudopotential set labeled "{0}" is not present in ppset\nset labels present: {1}\nplease either provide pseudopotentials with label "{0}" or correct the provided label'.format(label,sorted(self.pseudos.keys())))
+        #end if
+        pseudos = self.pseudos[label]
+        clow = code.lower()
+        if clow not in self.known_codes:
+            self.error('simulation code "{0}" is not known to ppset\nknown codes are: {1}'.format(code,sorted(self.known_codes)))
+        elif clow not in pseudos:
+            self.error('incorrect use of ppset\npseudopotentials were not provided for simulation code "{0}" in set labeled "{1}"\npseudopotentials are required for physical system with pseudo-elements: {2}\nplease add these pseudopotentials for code "{0}" in set "{1}"'.format(code,label,sorted(species)))
+        #end if
+        ppcoll = pseudos[clow]
+        pps = []
+        for symbol in species:
+            if symbol not in ppcoll:
+                self.error('incorrect use of ppset\npseudopotentials were not provided for element "{0}" code "{1}" in set labeled "{2}"\nphysical system encountered with pseudo-elements: {3}\nplease ensure that pseudopotentials are provided for these elements in set "{2}" for code "{1}"'.format(symbol,code,label,sorted(species)))
+            #end if
+            pps.append(ppcoll[symbol])
+        #end for
+        return pps
+    #end def get
+#end class PPset
+ppset = PPset()
 
 
 
@@ -325,6 +444,11 @@ class SemilocalPP(Pseudopotential):
     interpolatable = True
 
     formats = ['qmcpack']
+
+    channel_indices = obj()
+    for i,c in enumerate(l_channels):
+        channel_indices[c] = i
+    #end for
 
     def __init__(self,filepath=None,format=None,name=None,src=None):
         self.name = name
@@ -509,7 +633,7 @@ class SemilocalPP(Pseudopotential):
                 if self.name!=None:
                     lab = self.name+' '+lab
                 #end if
-                v = self.evaluate(r,c,with_local)
+                v = self.evaluate(r,c,with_local=with_local)
                 if metric=='r2':
                     v = r**2*v
                     if c==self.local:
@@ -518,6 +642,14 @@ class SemilocalPP(Pseudopotential):
                 elif metric!=None:
                     self.error('invalid metric for plotting: {0}\nvalid options are: r2'.format(metric))
                 #end if
+                #l = self.channel_indices[c]
+                #if l==0:
+                #    lmult = 1
+                #else:
+                #    lmult = (l*(l+1))
+                #vs = self.evaluate(r,'s',with_local=with_local)
+                #v-=vs
+                #v/=lmult
                 plot(r,v,color+linestyle,label=lab)
             #end for
         #end for
@@ -534,6 +666,39 @@ class SemilocalPP(Pseudopotential):
             #end if
         #end if
     #end def plot
+
+                
+    def plot_L2(self,show=True,fig=True,r=None,rmin=0.01,rmax=5.0,linestyle='-',title=None):
+        if r is None and self.numeric:
+            r = self.r
+        elif r is None:
+            r = linspace(rmin,rmax,1000)
+        #end if
+        vs = self.evaluate(r,'s',with_local=True)
+        channels = self.all_channels
+        for c in channels[2:]:
+            if c in self.channels:
+                color = self.channel_colors[c]
+                v = self.evaluate(r,c,with_local=True)
+                l = self.channel_indices[c]
+                vL2 = (v-vs)/(l*(l+1))
+                plot(r,vL2,color+linestyle,label='(v{0}-vs)/(l(l+1))'.format(c))
+            #end if
+        #end for
+        if fig:
+            xlim([0,rmax])
+            if title is None:
+                title = 'Semilocal {0} PP ({1} core)'.format(self.element,self.core)
+            #end if
+            set_title(title)
+            ylabel('vL2 for channels above s')
+            xlabel('r')
+            legend()
+            if show:
+                show_plots()
+            #end if
+        #end if 
+    #end def plot_L2
 
 
     def gaussian_fit(self,r=None,pmax=3,maxfev=100000,verbose=False,filepath=None,format=None,offset=0):

@@ -210,7 +210,8 @@ class Job(NexusCore):
                  procs        = None,
                  processes    = None,
                  processes_per_proc = None,
-                 processes_per_node = None
+                 processes_per_node = None,
+                 fake         = False,
                  ):
 
         self.directory   = directory
@@ -259,6 +260,7 @@ class Job(NexusCore):
         self.overtime    = False
         self.successful  = False
         self.finished    = False
+        self.fake_job    = fake
 
         if app != None:
             self.app_name = app
@@ -1364,11 +1366,14 @@ class Supercomputer(Machine):
 
 
     def process_job(self,job):
+        if job.fake_job:
+            return
+        #end if
         job.subfile = job.name+'.'+self.sub_launcher+'.in'
         no_cores = job.cores==None
         no_nodes = job.nodes==None
         if no_cores and no_nodes:
-            self.error('job did not specify cores or nodes\n  At least one must be provided')
+            self.error('job did not specify cores or nodes\nAt least one must be provided')
         elif no_cores:
             job.cores = self.cores_per_node*job.nodes
         elif no_nodes:
@@ -1379,7 +1384,11 @@ class Supercomputer(Machine):
         else:
             job.cores = min(job.cores,job.nodes*self.cores_per_node)
         #end if
-        job.processes = max(1,int(float(job.cores)/job.threads))
+        if job.processes_per_node!=None:
+            job.processes=job.nodes*job.processes_per_node
+        else:
+            job.processes = max(1,int(float(job.cores)/job.threads))
+        #end if
         job.tot_cores = job.nodes*self.cores_per_node
         job.procs = job.nodes*self.procs_per_node
 
@@ -2500,6 +2509,41 @@ class Mira(ALCF_Machine):
 #end class Mira
 
 
+class Cooley(Supercomputer):
+    name = 'cooley'
+    requires_account   = True
+    batch_capable      = True
+    executable_subfile = True
+
+    prefixed_output    = True
+    outfile_extension  = '.output'
+    errfile_extension  = '.error'
+
+    def process_job_extra(self,job):
+        if job.processes_per_node is None and job.threads!=1:
+            self.error('threads must be 1,2,3,4,6, or 12 on Cooley\nyou provided: {0}'.format(job.threads))
+        #end if
+
+        job.run_options.add(
+            f   = '-f $COBALT_NODEFILE',
+            ppn = '-ppn {0}'.format(job.processes_per_node),
+            )
+    #end def process_job_extra
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue = 'default'
+        #end if
+        c= '#!/bin/bash\n'
+        c+='#COBALT -q {0}\n'.format(job.queue)
+        c+='#COBALT -A {0}\n'.format(job.account)
+        c+='#COBALT -n {0}\n'.format(job.nodes)
+        c+='#COBALT -t {0}\n'.format(job.total_minutes())
+        c+='#COBALT -O {0}\n'.format(job.identifier)
+        return c
+    #end def write_job_header
+#end class Cooley
+
 
 class Lonestar(Supercomputer):  # Lonestar contribution from Paul Young
 
@@ -2677,6 +2721,7 @@ EOS(           744,   2,     8,   64, 1000,  'aprun',   'qsub',   'qstat',    'q
 Vesta(        2048,   1,    16,   16,   10, 'runjob',   'qsub',  'qstata',    'qdel')
 Cetus(        1024,   1,    16,   16,   10, 'runjob',   'qsub',  'qstata',    'qdel')
 Mira(        49152,   1,    16,   16,   10, 'runjob',   'qsub',  'qstata',    'qdel')
+Cooley(        126,   2,     6,  384,   10, 'mpirun',   'qsub',  'qstata',    'qdel')
 Lonestar(    22656,   2,     6,   12,  128,  'ibrun',   'qsub',   'qstat',    'qdel')
 Matisse(        20,   2,     8,   64,    2, 'mpirun', 'sbatch',   'sacct', 'scancel')
 Komodo(         24,   2,     6,   48,    2, 'mpirun', 'sbatch',   'sacct', 'scancel')

@@ -541,6 +541,7 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
     for(int ien=0; ien<SortBands.size(); ien++)
     {
       if((Occ[cnt] == SortBands[ien].TwistIndex)&&(Occ[cnt+1] == SortBands[ien].BandIndex))
+      {
         if(cnt<particle_hole_pairs*2)
         {
           gsOcc[ien]-=1;
@@ -553,6 +554,7 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
           app_log()<<"adding orbital "<<ien<< std::endl;
           cnt+=2;
         }
+      }
     }
     std::vector<BandInfo> ReOrderedBands;
     std::vector<BandInfo> RejectedBands;

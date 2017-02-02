@@ -46,6 +46,7 @@ struct CommunicatorTraits
   typedef int  status;
   typedef int  request;
   typedef int  intra_comm_type;
+  static const int MPI_REQUEST_NULL = 1;
 };
 
 #define APP_ABORT(msg) \

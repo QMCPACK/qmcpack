@@ -33,7 +33,7 @@ from project_manager import ProjectManager
 
 from structure       import Structure,generate_structure,generate_cell,read_structure
 from physical_system import PhysicalSystem,generate_physical_system
-from pseudopotential import Pseudopotential,Pseudopotentials
+from pseudopotential import Pseudopotential,Pseudopotentials,ppset
 from basisset        import BasisSets
 from bundle          import bundle
 
@@ -60,6 +60,8 @@ from qmcpack import loop,linear,cslinear,vmc,dmc
 from qmcpack import generate_jastrows,generate_jastrow,generate_jastrow1,generate_jastrow2,generate_jastrow3,generate_opt,generate_opts
 from qmcpack import generate_cusp_correction
 
+from qmcpack_workflows import qmcpack_workflow
+
 from debug import *
 
 
@@ -84,7 +86,7 @@ class Settings(NexusCore):
         status_only     generate_only   runs            results 
         pseudo_dir      sleep           local_directory remote_directory 
         monitor         skip_submit     load_images     stages          
-        verbose         debug           trace
+        verbose         debug           trace           progress_tty
         '''.split())
 
     core_process_vars = set('''
@@ -101,10 +103,14 @@ class Settings(NexusCore):
         ericfmt         mcppath
         '''.split())
     
+    pwscf_vars   = set('''                                                                              
+        vdw_table                                                                                       
+        '''.split())  
+
     nexus_core_vars    = core_assign_vars    | core_process_vars
     nexus_noncore_vars = noncore_assign_vars | noncore_process_vars
     nexus_vars         = nexus_core_vars     | nexus_noncore_vars
-    allowed_vars       = nexus_vars | machine_vars | gamess_vars 
+    allowed_vars       = nexus_vars | machine_vars | gamess_vars | pwscf_vars 
 
 
     @staticmethod
@@ -167,6 +173,7 @@ class Settings(NexusCore):
         kw        = Settings.kw_set(Settings.nexus_vars  ,kwargs)   
         mach_kw   = Settings.kw_set(Settings.machine_vars,kwargs)      
         gamess_kw = Settings.kw_set(Settings.gamess_vars ,kwargs)       
+        pwscf_kw  = Settings.kw_set(Settings.pwscf_vars  ,kwargs)
         if len(kwargs)>0:
             self.error('some settings keywords have not been accounted for\nleftover keywords: {0}\nthis is a developer error'.format(sorted(kwargs.keys())))
         #end if
@@ -175,6 +182,7 @@ class Settings(NexusCore):
         # copy input settings
         self.transfer_from(mach_kw.copy())
         self.transfer_from(gamess_kw.copy())
+        self.transfer_from(pwscf_kw.copy())
 
         # process machine settings
         self.process_machine_settings(mach_kw)
@@ -196,6 +204,9 @@ class Settings(NexusCore):
 
         # process gamess settings
         Gamess.settings(**gamess_kw)
+
+        # process pwscf settings                                                                        
+        Pwscf.settings(**pwscf_kw)   
 
         return
     #end def __call__

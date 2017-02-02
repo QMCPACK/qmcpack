@@ -23,7 +23,6 @@
 #endif /* M_PI */
 #endif /* TWOPI */
 
-
 #if (__cplusplus < 201103L)
 inline float round(float x)
 {

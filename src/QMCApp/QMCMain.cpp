@@ -167,7 +167,7 @@ bool QMCMain::execute()
     }
   }
   m_qmcaction.clear();
-  app_log() << "  Total Execution time = " << t1.elapsed() << " secs" << std::endl;
+  app_log() << "  Total Execution time = " << std::setprecision(4) << t1.elapsed() << " secs" << std::endl;
   if(is_manager())
   {
     //generate multiple files
@@ -540,7 +540,7 @@ bool QMCMain::runQMC(xmlNodePtr cur)
     OhmmsInfo::flush();
     Timer qmcTimer;
     qmcDriver->run();
-    app_log() << "  QMC Execution time = " << qmcTimer.elapsed() << " secs " << std::endl;
+    app_log() << "  QMC Execution time = " << std::setprecision(4) << qmcTimer.elapsed() << " secs " << std::endl;
     //keeps track of the configuration file
     PrevConfigFile = myProject.CurrentMainRoot();
     return true;

@@ -257,46 +257,6 @@ def kmesh(kaxes,dim,shift=None):
 #end def kmesh
 
 
-def tile_points(points,tilevec,axin):
-    if not isinstance(points,ndarray):
-        points = array(points)
-    #end if
-    if not isinstance(tilevec,ndarray):
-        tilevec = array(tilevec)
-    #end if
-    if not isinstance(axin,ndarray):
-        axin = array(axin)
-    #end if
-    t = tilevec
-    if len(points.shape)==1:
-        npoints,dim = len(points),1
-    else:
-        npoints,dim = points.shape
-    #end if
-    ntpoints = npoints*t.prod()
-    if ntpoints==0:
-        tpoints = array([])
-    else:
-        tpoints  = empty((ntpoints,dim))
-        ns=0
-        ne=npoints
-        for k in range(t[2]):
-            for j in range(t[1]):
-                for i in range(t[0]):
-                    v = dot(array([[i,j,k]]),axin)
-                    for d in range(dim):
-                        tpoints[ns:ne,d] = points[:,d]+v[0,d]
-                    #end for
-                    ns+=npoints 
-                    ne+=npoints
-                #end for
-            #end for
-        #end for
-    #end if
-    axes = dot(diag(t),axin)
-    return tpoints,axes
-#end def tile_points
-
 
 def reduce_tilematrix(tiling):
     tiling = array(tiling)
@@ -363,10 +323,12 @@ def reduce_tilematrix(tiling):
         if nondiagonal:
             Structure.class_error('could not find a diagonal tiling matrix for generating tiled coordinates')
         #end if
-        if noninteger:
-            Structure.class_error('calculated diagonal tiling matrix is non-integer\n  tiled coordinates cannot be determined')
-        #end if
-        tilevector = abs(t)
+        #non-integer tile vectors are handled directly by tile_points now
+        #if noninteger:
+        #    Structure.class_error('calculated diagonal tiling matrix is non-integer\n  tiled coordinates cannot be determined')
+        ##end if
+        #tilevector = abs(t)
+        tilevector = abs(tr)
     else:
         tilevector = t
         tilematrix = diag(t)
@@ -388,7 +350,7 @@ def tile_magnetization(mag,tilevec,mag_order,mag_prim):
     #  if magnetic primitive is requested, a small tiling vector should first be used
     #   (ie 221,212,122,222 periods all involve a 211 prim tiling w/ a simple reshaping/reassignment of the cell axes
     #  Structure should have a function providing labels to each magnetic species
-    mag = array(tilevec.prod()*list(mag),dtype=object)
+    mag = array(int(round( tilevec.prod() ))*list(mag),dtype=object)
     return mag
 #end def tile_magnetization
 
@@ -460,6 +422,7 @@ class Structure(Sobj):
                  magnetization=None,magnetic_order=None,magnetic_prim=True,
                  operations=None,background_charge=0,frozen=None,bconds=None,
                  posu=None):
+
         if center is None:
             if axes is not None:
                 center = array(axes,dtype=float).sum(0)/2
@@ -489,16 +452,16 @@ class Structure(Sobj):
         if mag is None:
             mag = len(elem)*[None]
         #end if
-        self.scale  = 1.
-        self.units  = units
-        self.dim    = dim
-        self.center = array(center,dtype=float)
-        self.axes   = array(axes,dtype=float)
+        self.scale    = 1.
+        self.units    = units
+        self.dim      = dim
+        self.center   = array(center,dtype=float)
+        self.axes     = array(axes,dtype=float)
         self.set_bconds(bconds)
         self.set_elem(elem)
-        self.pos    = array(pos,dtype=float)
-        self.frozen = None
-        self.mag    = array(mag,dtype=object)
+        self.pos      = array(pos,dtype=float)
+        self.frozen   = None
+        self.mag      = array(mag,dtype=object)
         self.kpoints  = empty((0,dim))            
         self.kweights = empty((0,))         
         self.background_charge = background_charge
@@ -674,6 +637,60 @@ class Structure(Sobj):
         #end if
     #end def reshape_axes
 
+    
+    def corners(self):
+        a = self.axes
+        c = array([(0,0,0),
+                   a[0],
+                   a[1],
+                   a[2],
+                   a[0]+a[1],
+                   a[1]+a[2],
+                   a[2]+a[0],
+                   a[0]+a[1]+a[2],
+                   ])
+        return c
+    #end def corners
+
+    
+    def miller_direction(self,h,k,l,normalize=False):
+        d = dot((h,k,l),self.axes)
+        if normalize:
+            d/=norm(d)
+        #end if
+        return d
+    #end def miller_direction
+
+    
+    def miller_normal(self,h,k,l,normalize=False):
+        d = dot((h,k,l),self.kaxes)
+        if normalize:
+            d/=norm(d)
+        #end if
+        return d
+    #end def miller_normal
+
+
+    def project_plane(self,a1,a2,points=None):
+        # a1/a2: in plane vectors
+        if points is None:
+            points = self.pos
+        #end if
+        a1n = norm(a1)
+        a2n = norm(a2)
+        a1/=a1n
+        a2/=a2n
+        n = cross(a1,a2)
+        plane_coords = []
+        for p in points:
+            p -= dot(n,p)*n # project point into plane
+            c1 = dot(a1,p)/a1n
+            c2 = dot(a2,p)/a2n
+            plane_coords.append((c1,c2))
+        #end for
+        return array(plane_coords,dtype=float)
+    #end def project_plane
+
         
     def bounding_box(self,scale=1.0,box='tight',recenter=False):
         pmin    = self.pos.min(0)
@@ -736,7 +753,7 @@ class Structure(Sobj):
             P[:,i] = pv[:]
         #end for
         self.center = dot(self.center,P)
-        if len(self.axes)>0:
+        if self.has_axes():
             self.axes = dot(self.axes,P)
         #end if
         if len(self.pos)>0:
@@ -798,19 +815,18 @@ class Structure(Sobj):
 
 
     def any_periodic(self):
-        has_cell    = len(self.axes)>0
-        has_kpoints = len(self.kpoints)>0
+        has_cell    = self.has_axes()
         pbc = False
         for bc in self.bconds:
             pbc |= bc=='p'
         #end if
-        periodic = has_cell and (pbc or has_kpoints)
+        periodic = has_cell and pbc
         return periodic
     #end def any_periodic
 
     
     def all_periodic(self):
-        has_cell = len(self.axes)>0
+        has_cell = self.has_axes()
         pbc = True
         for bc in self.bconds:
             pbc &= bc=='p'
@@ -839,7 +855,7 @@ class Structure(Sobj):
 
     
     def volume(self):
-        if len(self.axes)==0:
+        if not self.has_axes():
             return None
         else:
             return abs(det(self.axes))
@@ -883,6 +899,22 @@ class Structure(Sobj):
         #end for
         return radius
     #end def rinscribe
+
+
+    def rwigner_cube(self,*args,**kwargs):
+        cube = Structure()
+        a = self.volume()**(1./3)
+        cube.set_axes([[a,0,0],[0,a,0],[0,0,a]])
+        return cube.rwigner(*args,**kwargs)
+    #end def rwigner_cube
+
+
+    def rinscribe_cube(self,*args,**kwargs):
+        cube = Structure()
+        a = self.volume()**(1./3)
+        cube.set_axes([[a,0,0],[0,a,0],[0,0,a]])
+        return cube.rinscribe(*args,**kwargs)
+    #end def rinscribe_cube
 
 
     def rmin(self):
@@ -1038,7 +1070,7 @@ class Structure(Sobj):
             v = -v # preserve the normal direction for atom identification, but reverse the shift direction
         #end if
         self.recorner()  # want box contents to be static
-        if len(self.axes)>0:
+        if self.has_axes():
             components = 0
             dim = self.dim
             axes = self.axes
@@ -2565,7 +2597,7 @@ class Structure(Sobj):
 
         tilematrix,tilevector = reduce_tilematrix(tiling)
 
-        ncells = tilevector.prod()
+        ncells = int(round( abs(det(tilematrix)) ))
 
         if ncells==1 and abs(tilematrix-identity(self.dim)).sum()<1e-1:
             if in_place:
@@ -2578,14 +2610,11 @@ class Structure(Sobj):
         self.recenter()
 
         elem = array(ncells*list(self.elem))
-        pos,axes = tile_points(self.pos,tilevector,self.axes)
-        if matrix_tiling:
-            #axes = dot(self.axes,tilematrix)
-            axes = dot(tilematrix,self.axes)
-        #end if
+        pos  = self.tile_points(self.pos,self.axes,tilematrix,tilevector)
+        axes = dot(tilematrix,self.axes)
+
         center   = axes.sum(0)/2
         mag      = tile_magnetization(self.mag,tilevector,magnetic_order,magnetic_primitive)
-        #kaxes    = dot(inv(tilematrix),self.kaxes)
         kaxes    = dot(inv(tilematrix.T),self.kaxes)
         kpoints  = array(self.kpoints)
         kweights = array(self.kweights)
@@ -2621,13 +2650,76 @@ class Structure(Sobj):
     #end def tile
 
 
+    def tile_points(self,points,axes,tilemat,tilevec=None):
+        if tilevec is None:
+            tilemat,tilevec = reduce_tilematrix(tilemat)
+        #end if
+        if not isinstance(points,ndarray):
+            points = array(points)
+        #end if
+        if not isinstance(tilevec,ndarray):
+            tilevec = array(tilevec)
+        #end if
+        if not isinstance(axes,ndarray):
+            axes = array(axes)
+        #end if
+        t = tilevec
+        ti = array(around(t),dtype=int)
+        noninteger = abs(t-ti).sum()>1e-6
+        if len(points.shape)==1:
+            npoints,dim = len(points),1
+        else:
+            npoints,dim = points.shape
+        #end if
+        ntpoints = npoints*int(round( t.prod() ))
+        if not noninteger:
+            t = ti
+            if ntpoints==0:
+                tpoints = array([])
+            else:
+                tpoints  = empty((ntpoints,dim))
+                ns=0
+                ne=npoints
+                for k in range(t[2]):
+                    for j in range(t[1]):
+                        for i in range(t[0]):
+                            v = dot(array([[i,j,k]]),axes)
+                            for d in range(dim):
+                                tpoints[ns:ne,d] = points[:,d]+v[0,d]
+                            #end for
+                            ns+=npoints 
+                            ne+=npoints
+                        #end for
+                    #end for
+                #end for
+            #end if
+        else:
+            if abs(ntpoints-int(around(ntpoints)))>1e-6:
+                self.error('tiling vector does not correspond to an integer volume change\ntiling vector: {0}\nvolume change: {1}  {2}  {3}'.format(tilevec,tilevec.prod(),ntpoints,int(ntpoints)))
+            #end if
+            ntpoints = int(around(ntpoints))
+            # round up to larger tiling
+            t = array(ceil(t),dtype=int)
+            # get the tiled points
+            tpoints = self.tile_points(points,axes,tilemat,t)
+            # remove any that are not unique
+            taxes = dot(tilemat,axes)
+            tpoints,weights,pmap = self.unique_points(tpoints,taxes)
+            if len(tpoints)!=ntpoints:
+                self.error('tiling by non-integer tiling vector failed\npoints expected after tiling: {0}\npoints resulted from tiling: {1}'.format(ntpoints,len(tpoints)))
+            #end if
+        #end if
+        return tpoints
+    #end def tile_points
+
+
     def opt_tilematrix(self,volfac,dn=1,tol=1e-3):
         return optimal_tilematrix(self,volfac,dn,tol)
     #end def opt_tilematrix
 
 
     def tile_opt(self,volfac,dn=1,tol=1e-3):
-        Topt = self.opt_tilematrix(volfac,dn,tol)
+        Topt,ropt = self.opt_tilematrix(volfac,dn,tol)
         return self.tile(Topt)
     #end def tile_opt
 
@@ -2641,9 +2733,9 @@ class Structure(Sobj):
             tiling = tiling.T
         #end if
         tilematrix,tilevector = reduce_tilematrix(tiling)
-        ncells    = tilevector.prod()
-        kp,kaxnew = tile_points(kpoints,tilevector,self.kaxes)
-        kw        = array(ncells*list(kweights),dtype=float)/ncells
+        ncells = int(round( abs(det(tilematrix)) ))
+        kp     = self.tile_points(kpoints,self.kaxes,tilematrix,tilevector)
+        kw     = array(ncells*list(kweights),dtype=float)/ncells
         return kp,kw
     #end def kfold
 
@@ -2835,6 +2927,59 @@ class Structure(Sobj):
         #end if
     #end def inversion_symmetrize_kpoints
 
+
+    def unique_points(self,points,axes,weights=None,tol=1e-10):
+        pmap = obj()
+        npoints = len(points)
+        if npoints>0:
+            if weights is None:
+                weights = ones((npoints,),dtype=int)
+            #end if
+            ntable,dtable = self.neighbor_table(points,points,axes,distances=True)
+            keep = empty((npoints,),dtype=bool)
+            keep[:] = True
+            pmo = obj()
+            for i in xrange(npoints):
+                if keep[i]:
+                    pm = []
+                    jn=0
+                    while jn<npoints and dtable[i,jn]<tol:
+                        j = ntable[i,jn]
+                        pm.append(j)
+                        if j!=i and keep[j]:
+                            keep[j] = False
+                            weights[i] += weights[j]
+                        #end if
+                        jn+=1
+                    #end while
+                    pmo[i] = set(pm)
+                #end if
+            #end for
+            points  = points[keep]
+            weights = weights[keep]
+            j=0
+            for i in xrange(len(keep)):
+                if keep[i]:
+                    pmap[j] = pmo[i]
+                    j+=1
+                #end if
+            #end for
+        #end if
+        return points,weights,pmap
+    #end def unique_points
+
+
+    def unique_positions(self,tol=1e-10,folded=False):
+        pos,weights,pmap = self.unique_points(self.pos,self.axes)
+        if len(pos)!=len(self.pos):
+            self.pos = pos
+        #end if
+        if folded and self.folded_structure!=None:
+            self.folded_structure.unique_positions(tol)
+        #end if
+        return pmap
+    #end def unique_positions
+
         
     def unique_kpoints(self,tol=1e-10,folded=False):
         kmap = obj()
@@ -2846,7 +2991,7 @@ class Structure(Sobj):
             keep = empty((len(kp),),dtype=bool)
             keep[:] = True
             kmo = obj()
-            for i in range(npoints):
+            for i in xrange(npoints):
                 if keep[i]:
                     km = []
                     jn=0
@@ -2865,7 +3010,7 @@ class Structure(Sobj):
             self.kpoints  = self.kpoints[keep]
             self.kweights = self.kweights[keep]
             j=0
-            for i in range(len(keep)):
+            for i in xrange(len(keep)):
                 if keep[i]:
                     kmap[j] = kmo[i]
                     j+=1
@@ -3332,8 +3477,13 @@ class Structure(Sobj):
             self.read_poscar(filepath,elem=elem)
         elif format=='cif':
             self.read_cif(filepath,block=block,grammar=grammar,cell=cell)
+        elif format=='fhi-aims':
+            self.read_fhi_aims(filepath)
         else:
             self.error('cannot read structure from file\nunsupported file format: {0}'.format(format))
+        #end if
+        if self.has_axes():
+            self.set_bconds('ppp')
         #end if
     #end def read
 
@@ -3489,11 +3639,46 @@ class Structure(Sobj):
 
     def read_cif(self,filepath,block=None,grammar='1.1',cell='prim'):
         axes,elem,pos,units = read_cif(filepath,block,grammar,cell,args_only=True)
+        self.dim = 3
         self.set_axes(axes)
         self.set_elem(elem)
         self.pos = pos
         self.units = units
     #end def read_cif
+
+
+    def read_fhi_aims(self,filepath):
+        if os.path.exists(filepath):
+            lines = open(filepath,'r').read().splitlines()
+        else:
+            lines = filepath.splitlines() # "filepath" is contents
+        #end if
+        axes = []
+        posu = []
+        elem = []
+        for line in lines:
+            ls = line.strip()
+            if len(ls)>0 and ls[0]!='#':
+                tokens = ls.split()
+                if ls.startswith('lattice_vector'):
+                    axes.append(tokens[1:])
+                elif ls.startswith('atom_frac'):
+                    posu.append(tokens[1:4])
+                    elem.append(tokens[4])
+                else:
+                    None
+                    #self.error('unrecogonized or not yet supported token in fhi-aims geometry file: {0}'.format(tokens[0]))
+                #end if
+            #end if
+        #end for
+        axes = array(axes,dtype=float)
+        pos  = dot(array(posu,dtype=float),axes)
+        self.dim = 3
+        self.set_axes(axes)
+        self.set_elem(elem)
+        self.pos   = pos
+        self.units = 'A'
+    #end def read_fhi_aims
 
 
     def write(self,filepath=None,format=None):
@@ -3511,6 +3696,8 @@ class Structure(Sobj):
             c = self.write_xyz(filepath)
         elif format=='xsf':
             c = self.write_xsf(filepath)
+        elif format=='fhi-aims':
+            c = self.write_fhi_aims(filepath)
         else:
             self.error('file format {0} is unrecognized'.format(format))
         #end if
@@ -3576,6 +3763,25 @@ class Structure(Sobj):
         #end if
         return c
     #end def write_xsf
+
+
+    def write_fhi_aims(self,filepath=None):
+        s = self.copy()
+        s.change_units('A')
+        c = ''
+        c+='\n'
+        for a in s.axes:
+            c += 'lattice_vector   {0: 12.8f}  {1: 12.8f}  {2: 12.8f}\n'.format(*a)
+        #end for
+        c+='\n'
+        for p,e in zip(self.pos,self.elem):
+            c += 'atom_frac   {0: 12.8f}  {1: 12.8f}  {2: 12.8f}  {3}\n'.format(p[0],p[1],p[2],e)
+        #end for
+        if filepath!=None:
+            open(filepath,'w').write(c)
+        #end if
+        return c
+    #end def write_fhi_aims
 
 
     def plot2d_ax(self,ix,iy,*args,**kwargs):
@@ -4600,7 +4806,7 @@ def generate_structure(type='crystal',*args,**kwargs):
 
 
 
-def generate_atom_structure(atom=None,units='A',Lbox=None,skew=0,axes=None,kgrid=(1,1,1),kshift=(0,0,0),struct_type=Structure):
+def generate_atom_structure(atom=None,units='A',Lbox=None,skew=0,axes=None,kgrid=(1,1,1),kshift=(0,0,0),bconds=tuple('nnn'),struct_type=Structure):
     if atom is None:
         Structure.class_error('atom must be provided','generate_atom_structure')
     #end if
@@ -4608,16 +4814,17 @@ def generate_atom_structure(atom=None,units='A',Lbox=None,skew=0,axes=None,kgrid
         axes = [[Lbox*(1-skew),0,0],[0,Lbox,0],[0,0,Lbox*(1+skew)]]
     #end if
     if axes is None:
-        s = Structure(elem=[atom],pos=[[0,0,0]],units=units)
+        s = Structure(elem=[atom],pos=[[0,0,0]],units=units,bconds=bconds)
     else:
-        s = Structure(elem=[atom],pos=[[0,0,0]],axes=axes,kgrid=kgrid,kshift=kshift,units=units)
+        s = Structure(elem=[atom],pos=[[0,0,0]],axes=axes,kgrid=kgrid,kshift=kshift,bconds=bconds,units=units)
         s.center_molecule()
     #end if
+
     return s
 #end def generate_atom_structure
 
 
-def generate_dimer_structure(dimer=None,units='A',separation=None,Lbox=None,skew=0,axes=None,kgrid=(1,1,1),kshift=(0,0,0),struct_type=Structure,axis='x'):
+def generate_dimer_structure(dimer=None,units='A',separation=None,Lbox=None,skew=0,axes=None,kgrid=(1,1,1),kshift=(0,0,0),bconds=tuple('nnn'),struct_type=Structure,axis='x'):
     if dimer is None:
         Structure.class_error('dimer atoms must be provided to construct dimer','generate_dimer_structure')
     #end if
@@ -4637,9 +4844,9 @@ def generate_dimer_structure(dimer=None,units='A',separation=None,Lbox=None,skew
         Structure.class_error('dimer orientation axis must be x,y,z\n  you provided: {0}'.format(axis),'generate_dimer_structure')
     #end if
     if axes is None:
-        s = Structure(elem=dimer,pos=[[0,0,0],p2],units=units)
+        s = Structure(elem=dimer,pos=[[0,0,0],p2],units=units,bconds=bconds)
     else:
-        s = Structure(elem=dimer,pos=[[0,0,0],p2],axes=axes,kgrid=kgrid,kshift=kshift,units=units)
+        s = Structure(elem=dimer,pos=[[0,0,0],p2],axes=axes,kgrid=kgrid,kshift=kshift,units=units,bconds=bconds)
         s.center_molecule()
     #end if
     return s
@@ -4745,7 +4952,7 @@ def generate_crystal_structure(lattice=None,cell=None,centering=None,
 
     #interface for total manual specification
     # this is only here because 'crystal' is default and must handle other cases
-    if elem!=None and (pos!=None or posu!=None):  
+    if elem is not None and (pos is not None or posu is not None):  
         return Structure(
             axes           = axes,
             elem           = elem,
@@ -4919,9 +5126,14 @@ def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3):
     ropt = -1e99
     Topt = None
     Taxopt = None
+    vol_diff_min = 1e99
     for mat in mats:
         T = Tref + mat
-        if abs(abs(det(T))-volfac)<tol:
+        vol_diff = abs(abs(det(T))-volfac)
+        if vol_diff < vol_diff_min:
+            vol_diff_min = vol_diff
+        # end if
+        if vol_diff<tol:
             Taxes = dot(T,axes)
             rc1 = norm(cross(Taxes[0],Taxes[1]))
             rc2 = norm(cross(Taxes[1],Taxes[2]))
@@ -4934,6 +5146,9 @@ def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3):
             #end if
         #end if
     #end for
+    if Taxopt is None:
+        error("optimal tilematrix for volfac=%4.2f not found with tolerance %5.4f\n minimum volume difference was %5.4f" % (volfac,tol,vol_diff_min) )
+    # end if
     if det(Taxopt)<0:
         Topt = -Topt
     #end if

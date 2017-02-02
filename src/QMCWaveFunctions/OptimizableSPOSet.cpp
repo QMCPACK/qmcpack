@@ -230,20 +230,31 @@ OptimizableSPOSet::put (xmlNodePtr node, SPOPool_t &spo_pool)
         params.resize(asize,0.0);
         int ipm(0);
         if (t_params.size()>0)
+        {
           for (int ib=0; ib<M; ib++)
+          {
 #if defined(QMC_COMPLEX)
             if((allowedOrbs(state,ib).real()>0)&&(std::abs(t_params[ipm])>thr))
+            {
               params[ib]=t_params[ipm++];
 #else
             if((allowedOrbs(state,ib)>0)&&(std::abs(t_params[ipm])>thr))
+            {
               params[ib]=t_params[ipm++];
 #endif
+            }
             else
+            {
               params[ib]=0;
+            }
+          }
+        }
       }
       else
+      {
         if (params.size())
           asize=params.size();
+      }
 //    for (int i=0; i< params.size(); i++) {
       int indx=0;
       for (int i=0; i< M; i++)

@@ -30,6 +30,7 @@ SET(HAMSRCS
   DensityEstimator.cpp
   SkPot.cpp
   SkEstimator.cpp
+  SkAllEstimator.cpp
   MomentumEstimator.cpp
   ForceBase.cpp
   HamiltonianFactory.cpp

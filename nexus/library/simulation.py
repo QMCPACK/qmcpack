@@ -69,11 +69,12 @@ import os
 import shutil
 import string
 from subprocess import Popen,PIPE
-from developer import unavailable
+from developer import unavailable,ci
 from generic import obj
 from periodic_table import is_element
 from physical_system import PhysicalSystem
 from machines import Job
+from pseudopotential import ppset
 from nexus_base import NexusCore,nexus_core
 
  
@@ -257,7 +258,7 @@ class Simulation(NexusCore):
     allowed_inputs = set(['identifier','path','infile','outfile','errfile','imagefile',
                           'input','job','files','dependencies','analysis_request',
                           'block','block_subcascade','app_name','app_props','system',
-                          'skip_submit','force_write'])
+                          'skip_submit','force_write','simlabel','fake_sim'])
     sim_imagefile      = 'sim.p'
     input_imagefile    = 'input.p'
     analyzer_imagefile = 'analyzer.p'
@@ -266,12 +267,17 @@ class Simulation(NexusCore):
     is_bundle = False
 
     sim_count = 0
+    creating_fake_sims = False
 
     sim_directories = dict()
 
+    @classmethod
+    def code_name(cls):
+        return cls.generic_identifier
+    #end def code_name
 
-    @staticmethod
-    def separate_inputs(kwargs,overlapping_kw=-1,copy_pseudos=True):
+    @classmethod
+    def separate_inputs(cls,kwargs,overlapping_kw=-1,copy_pseudos=True):
         if overlapping_kw==-1:
             overlapping_kw = set(['system'])
         elif overlapping_kw is None:
@@ -286,6 +292,22 @@ class Simulation(NexusCore):
         inp_args.transfer_from(kwargs,inp_kw)
         if 'pseudos' in inp_args and inp_args.pseudos!=None:
             pseudos = inp_args.pseudos
+            # support ppset labels
+            if isinstance(pseudos,str):
+                code = cls.code_name()
+                if not ppset.supports_code(code):
+                    cls.class_error('ppset labeled pseudopotential groups are not supported for code "{0}"'.format(code))
+                #end if
+                if 'system' not in inp_args:
+                    cls.class_error('system must be provided when using a ppset label')
+                #end if
+                system = inp_args.system
+                pseudos = ppset.get(pseudos,code,system)
+                if 'pseudos' in sim_args:
+                    sim_args.pseudos = pseudos
+                #end if
+                inp_args.pseudos = pseudos
+            #end if
             if copy_pseudos:
                 if 'files' in sim_args:
                     sim_args.files = list(sim_args.files)
@@ -297,17 +319,17 @@ class Simulation(NexusCore):
             if 'system' in inp_args:
                 system = inp_args.system
                 if not isinstance(system,PhysicalSystem):
-                    Simulation.class_error('system object must be of type PhysicalSystem')
+                    cls.class_error('system object must be of type PhysicalSystem')
                 #end if
                 species_labels,species = system.structure.species(symbol=True)
                 pseudopotentials = nexus_core.pseudopotentials
                 for ppfile in pseudos:
                     if not ppfile in pseudopotentials:
-                        Simulation.class_error('pseudopotential file {0} cannot be found'.format(ppfile))
+                        cls.class_error('pseudopotential file {0} cannot be found'.format(ppfile))
                     #end if
                     pp = pseudopotentials[ppfile]
                     if not pp.element_label in species_labels and not pp.element in species:
-                        Simulation.class_error('the element {0} for pseudopotential file {1} is not in the physical system provided'.format(pp.element,ppfile))
+                        cls.class_error('the element {0} for pseudopotential file {1} is not in the physical system provided'.format(pp.element,ppfile))
                     #end if
                 #end for
             #end if
@@ -329,6 +351,7 @@ class Simulation(NexusCore):
         #variables determined by self
         self.identifier     = self.generic_identifier
         self.simid          = Simulation.sim_count
+        self.simlabel       = None
         Simulation.sim_count+=1
         self.files          = set()
         self.app_name       = self.application
@@ -364,6 +387,7 @@ class Simulation(NexusCore):
         self.errfile        = None
         self.bundled        = False
         self.bundler        = None
+        self.fake_sim       = Simulation.creating_fake_sims
 
         #variables determined by derived classes
         self.outputs = None  #object representing output data 
@@ -377,10 +401,13 @@ class Simulation(NexusCore):
             self.init_job()
         #end if
         self.post_init()
-        if self.system!=None:
-            self.system.check_folded_system()
-        #end if
+
     #end def __init__
+
+
+    def fake(self):
+        return self.fake_sim
+    #end def fake
 
 
     def init_job(self):
@@ -402,7 +429,12 @@ class Simulation(NexusCore):
             self.depends(*kw['dependencies'])
             del kw['dependencies']
         #end if
-        allowed = set(kw.keys()) & self.allowed_inputs
+        kwset = set(kw.keys())
+        invalid = kwset - self.allowed_inputs
+        if len(invalid)>0:
+            self.error('received invalid inputs\ninvalid inputs: {0}\nallowed inputs are: {1}'.format(sorted(invalid),sorted(self.allowed_inputs)))
+        #end if
+        allowed =  kwset & self.allowed_inputs
         for name in allowed:
             self[name] = kw[name]
         #end for
@@ -439,14 +471,18 @@ class Simulation(NexusCore):
         self.remdir = os.path.join(nexus_core.remote_directory,nexus_core.runs,self.path)
         self.resdir = os.path.join(nexus_core.local_directory,nexus_core.results,nexus_core.runs,self.path)
         
-        if not self.locdir in self.sim_directories:
-            self.sim_directories[self.locdir] = set([self.identifier])
-        else:
-            idset = self.sim_directories[self.locdir]
-            if not self.identifier in idset:
-                idset.add(self.identifier)
+        if not self.fake():
+            #print '  creating sim {0} in {1}'.format(self.simid,self.locdir)
+
+            if not self.locdir in self.sim_directories:
+                self.sim_directories[self.locdir] = set([self.identifier])
             else:
-                self.error('multiple simulations in a single directory have the same identifier\nplease assign unique identifiers to each simulation\nsimulation directory: {0}\nrepeated identifier: {1}\nother identifiers: {2}\nbetween the directory shown and the identifiers listed, it should be clear which simulations are involved\nmost likely, you described two simulations with identifier {3}'.format(self.locdir,self.identifier,sorted(idset),self.identifier))
+                idset = self.sim_directories[self.locdir]
+                if not self.identifier in idset:
+                    idset.add(self.identifier)
+                else:
+                    self.error('multiple simulations in a single directory have the same identifier\nplease assign unique identifiers to each simulation\nsimulation directory: {0}\nrepeated identifier: {1}\nother identifiers: {2}\nbetween the directory shown and the identifiers listed, it should be clear which simulations are involved\nmost likely, you described two simulations with identifier {3}'.format(self.locdir,self.identifier,sorted(idset),self.identifier))
+                #end if
             #end if
         #end if
 
@@ -658,6 +694,53 @@ class Simulation(NexusCore):
             #end if
         #end for
     #end def depends
+
+
+    def undo_depends(self,sim):
+        i=0
+        for dep in self.ordered_dependencies:
+            if dep.sim.simid==sim.simid:
+                break
+            #end if
+            i+=1
+        #end for
+        self.ordered_dependencies.pop(i)
+        del self.dependencies[sim.simid]
+        del sim.dependents[self.simid]
+        self.dependency_ids.remove(sim.simid)
+        if sim.simid in self.wait_ids:
+            self.wait_ids.remove(sim.simid)
+        #end if
+    #end def undo_depends
+
+
+    def acquire_dependents(self,sim):
+        # acquire the dependents from the other simulation
+        dsims = obj(sim.dependents)
+        for dsim in dsims:
+            dep = dsim.dependencies[sim.simid]
+            dsim.depends(self,*dep.result_names)
+        #end for
+        # eliminate the other simulation
+        #   this renders it void (fake) and removes all dependency relationships
+        sim.eliminate()
+    #end def acquire_dependents
+
+
+    def eliminate(self):
+        # reverse relationship of dependents (downstream)
+        dsims = obj(self.dependents)
+        for dsim in dsims:
+            dsim.undo_depends(self)
+        #end for
+        # reverse relationship of dependencies (upstream)
+        deps = obj(self.dependencies)
+        for dep in deps:
+            self.undo_depends(dep.sim)
+        #end for
+        # mark sim to be ignored in all future interactions
+        self.fake_sim = True
+    #end def eliminate
 
 
     def check_dependencies(self,result):
@@ -978,14 +1061,13 @@ class Simulation(NexusCore):
         if self.finished:
             self.enter(self.locdir,False,self.simid)
             self.log('analyzing'+self.idstr(),n=3)
-            analyzer = self.analyzer_type(self)
             if not nexus_core.generate_only:
+                analyzer = self.analyzer_type(self)
                 analyzer.analyze()
                 self.post_analyze(analyzer)
+                analyzer.save(os.path.join(self.imresdir,self.analyzer_image))
+                del analyzer
             #end if
-            analyzer.save(os.path.join(self.imresdir,self.analyzer_image))
-
-            del analyzer
             self.analyzed = True
             self.save_image()
         #end if
@@ -1541,16 +1623,25 @@ except:
     Image = unavailable('Image')
 #end try
 import tempfile
-def graph_sims(sims):
+exit_call = exit
+def graph_sims(sims,useid=False,exit=True,quants=True):
     graph = Dot(graph_type='digraph')
     graph.set_label('simulation workflows')
     graph.set_labelloc('t')
     nodes = obj()
     for sim in sims:
+        if 'fake_sim' in sim and sim.fake_sim:
+            continue
+        #end if
+        if sim.simlabel is not None and not useid:
+            nlabel = sim.simlabel+' '+str(sim.simid)
+        else:
+            nlabel = sim.identifier+' '+str(sim.simid)
+        #end if
         node = obj(
             id    = sim.simid,
             sim   = sim,
-            node  = Node(sim.identifier+' '+str(sim.simid),style='filled',shape='Mrecord'),
+            node  = Node(nlabel,style='filled',shape='Mrecord'),
             edges = obj(),
             )
         nodes[node.id] = node
@@ -1559,10 +1650,15 @@ def graph_sims(sims):
     for node in nodes:
         for simid,dep in node.sim.dependencies.iteritems():
             other = nodes[simid].node
-            for quantity in dep.result_names:
-                edge = Edge(other,node.node,label=quantity,fontsize='10.0')
+            if quants:
+                for quantity in dep.result_names:
+                    edge = Edge(other,node.node,label=quantity,fontsize='10.0')
+                    graph.add_edge(edge)
+                #end for
+            else:
+                edge = Edge(other,node.node)
                 graph.add_edge(edge)
-            #end for
+            #end if
         #end for
     #end for
 
@@ -1573,5 +1669,11 @@ def graph_sims(sims):
     image = Image.open(savefile)
     image.show()
 
-    exit()
+    if exit:
+        exit_call()
+    #end if
 #end def graph_sims
+
+
+
+#def write_sims(sims,

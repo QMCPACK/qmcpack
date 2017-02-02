@@ -63,6 +63,10 @@ struct LRHandlerBase
   
   //constructor
   explicit LRHandlerBase(mRealType kc):LR_kc(kc) {}
+
+  // virtual destructor
+  virtual ~LRHandlerBase() {}
+
   //return r cutoff
   inline mRealType get_rc() const
   {

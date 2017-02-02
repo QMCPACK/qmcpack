@@ -466,7 +466,7 @@ const char *particles =
   for (int iat=0;iat<num_src;iat++){
     for (int jat=0;jat<num_tar;jat++,idx++){
       double dist = dtable->r(dtable->loc(iat,jat));
-      REQUIRE( expect[idx] == dist );
+      REQUIRE( expect[idx] == Approx(dist) );
     }
   }
 

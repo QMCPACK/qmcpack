@@ -339,6 +339,7 @@ points to check to obtain highest performance and
 Section \ref{sec:troubleshoot} for troubleshooting hints.
 
 \subsection{Installing on Ubuntu Linux or other apt-get based distributions}
+\label{sec:buildubuntu}
 
 The following is designed to obtain a working QMCPACK build on e.g. a
 student laptop, starting from a basic Linux installation with none of
@@ -502,8 +503,8 @@ Mira/Cetus is a Blue Gene/Q supercomputer at Argonne National Laboratory's Argon
 
 \begin{verbatim}
 cd build
-cmake -DCMAKE_TOOLCHAIN_FILE=../config/BGQToolChain.cmake ..
-cmake -DCMAKE_TOOLCHAIN_FILE=../config/BGQToolChain.cmake ..
+cmake -DCMAKE_TOOLCHAIN_FILE=../config/BGQ_XL_ToolChain.cmake ..
+cmake -DCMAKE_TOOLCHAIN_FILE=../config/BGQ_XL_ToolChain.cmake ..
 make -j 16
 ls -l bin/qmcpack
 \end{verbatim}
@@ -662,6 +663,10 @@ Currently Loaded Modulefiles:
  14) xpmem/0.1-2.0502.64982.5.3.ari        28) boost/1.59                                     
 \end{verbatim}
 
+\subsection{Installing on Windows}
+Install the Windows Subsystem for Linux and Bash on Windows.
+Open a bash shell and follow the install directions for Ubuntu in Section \ref{sec:buildubuntu}.
+
 \section{Testing and validation of QMCPACK}
 \label{sec:testing}
 We \textbf{strongly encourage} running the included tests each time
@@ -770,8 +775,10 @@ unit    =   2.20 sec
 Total Test time (real) =   2.31 sec
 \end{verbatim}
 
-Individual unit test executables can be found in build/tests/bin.
-The source for the unit tests is located in the \texttt{tests} directory under each directory in \texttt{src} (e.g. src/QMCWavefunctions/tests).
+Individual unit test executables can be found in \texttt{build/tests/bin}.
+The source for the unit tests is located in the \texttt{tests} directory under each directory in \texttt{src} (e.g. \texttt{src/QMCWavefunctions/tests}).
+
+See Chapter \ref{chap:unit_testing} for more details about unit tests.
 
 
 \subsection{Automatic tests of QMCPACK}
