@@ -175,7 +175,7 @@ struct  J2OrbitalSoA : public OrbitalBase
                        ParticleSet::ParticleLaplacian_t& L);
 
   /** recompute internal data assuming distance table is fully ready */
-  void recompute2(ParticleSet& P);
+  void recompute(ParticleSet& P);
 
   ValueType evaluate(ParticleSet& P,
                      ParticleSet::ParticleGradient_t& G,
@@ -193,7 +193,9 @@ struct  J2OrbitalSoA : public OrbitalBase
 
   /** compute G and L after the sweep
    */
-  void evaluateGL(ParticleSet& P);
+  void evaluateGL(ParticleSet& P,
+                     ParticleSet::ParticleGradient_t& G,
+                     ParticleSet::ParticleLaplacian_t& L, bool fromscratch=false);
 
   inline RealType registerData(ParticleSet& P, PooledData<RealType>& buf)
   {
@@ -213,7 +215,8 @@ struct  J2OrbitalSoA : public OrbitalBase
 
   RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false)
   {
-    evaluateGL(P);
+    // currently has issue with recompute
+    evaluateGL(P, P.G, P.L, false);
     buf.put(Uat.begin(), Uat.end());
     buf.put(FirstAddressOfdU,LastAddressOfdU);
     buf.put(d2Uat.begin(), d2Uat.end());
@@ -483,7 +486,7 @@ J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat)
 
 template<typename FT>
 void
-J2OrbitalSoA<FT>::recompute2(ParticleSet& P)
+J2OrbitalSoA<FT>::recompute(ParticleSet& P)
 {
   const DistanceTableData* d_table=P.DistTables[0];
   constexpr valT czero(0);
@@ -507,33 +510,25 @@ template<typename FT>
 typename J2OrbitalSoA<FT>::RealType
 J2OrbitalSoA<FT>::evaluateLog(ParticleSet& P,
     ParticleSet::ParticleGradient_t& dG,
-    ParticleSet::ParticleLaplacian_t& dL )
+    ParticleSet::ParticleLaplacian_t& dL)
 {
-  recompute2(P);
-  LogValue=valT(0);
-  for(int iat=0; iat<N; ++iat)
-  {
-    LogValue += Uat[iat];
-    dG[iat] += dUat[iat];
-    dL[iat] += d2Uat[iat];
-  }
-
-  constexpr valT mhalf(-0.5);
-  LogValue=mhalf*LogValue;
-
+  evaluateGL(P,dG,dL,true);
   return LogValue;
 }
 
 template<typename FT>
 void
-J2OrbitalSoA<FT>::evaluateGL(ParticleSet& P)
+J2OrbitalSoA<FT>::evaluateGL(ParticleSet& P,
+    ParticleSet::ParticleGradient_t& G,
+    ParticleSet::ParticleLaplacian_t& L, bool fromscratch)
 {
+  if(fromscratch) recompute(P);
   LogValue=valT(0);
   for(int iat=0; iat<N; ++iat)
   {
     LogValue += Uat[iat];
-    P.G[iat] += dUat[iat];
-    P.L[iat] += d2Uat[iat];
+    G[iat] += dUat[iat];
+    L[iat] += d2Uat[iat];
   }
 
   constexpr valT mhalf(-0.5);
