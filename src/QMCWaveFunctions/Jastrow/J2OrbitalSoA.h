@@ -76,7 +76,7 @@ struct  J2OrbitalSoA : public OrbitalBase
   RealType *FirstAddressOfdU, *LastAddressOfdU;
   ///\f$d2Uat[i] = sum_(j) d2u_{i,j}\f$
   ParticleAttrib<valT> d2Uat;
-  valT cur_Uat, cur_d2Uat;
+  valT cur_Uat;
   posT cur_dUat;
   aligned_vector<valT> cur_u, cur_du, cur_d2u;
   aligned_vector<valT> old_u, old_du, old_d2u;
@@ -446,7 +446,7 @@ J2OrbitalSoA<FT>::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 
   computeU3(P,iat,P.DistTables[0]->Temp_r.data(), cur_u.data(),cur_du.data(),cur_d2u.data());
   cur_Uat=simd::accumulate_n(cur_u.data(),N,valT());
-  accumulateGL(cur_du.data(),cur_d2u.data(),P.DistTables[0]->Temp_dr,cur_dUat,cur_d2Uat);
+  cur_dUat=accumulateG(cur_du.data(),P.DistTables[0]->Temp_dr);
   grad_iat+=cur_dUat;
 
   DiffVal=Uat[iat]-cur_Uat;
@@ -464,26 +464,32 @@ J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat)
   {//ratio-only during the move; need to compute derivatives
     const auto dist=d_table->Temp_r.data();
     computeU3(P,iat,dist,cur_u.data(),cur_du.data(),cur_d2u.data());
-    accumulateGL(cur_du.data(),cur_d2u.data(),P.DistTables[0]->Temp_dr,cur_dUat,cur_d2Uat);
   }
 
+  valT cur_d2Uat(0);
+  if(UpdateMode == ORB_PBYP_RATIO) cur_dUat=posT();
   for(int jat=0; jat<N; jat++)
   {
-    posT dg;
-    valT dl, du;
+    posT dg, newg;
+    valT dl, newl, du;
     constexpr valT lapfac=OHMMS_DIM-RealType(1);
     du = cur_u[jat] - old_u[jat];
     for(int idim=0; idim<OHMMS_DIM; ++idim)
-      dg[idim] =  cur_du[jat]*d_table->Temp_dr.data(idim)[jat]
-                - old_du[jat]*d_table->Displacements[iat].data(idim)[jat];
-    dl = old_d2u[jat] - cur_d2u[jat] + lapfac*(old_du[jat] - cur_du[jat]);
+    {
+      newg[idim] = cur_du[jat]*d_table->Temp_dr.data(idim)[jat];
+      dg[idim]   = newg[idim] - old_du[jat]*d_table->Displacements[iat].data(idim)[jat];
+    }
+    newl = cur_d2u[jat] + lapfac*cur_du[jat];
+    dl   = old_d2u[jat] + lapfac*old_du[jat] - newl;
     Uat[jat]   += du;
     dUat[jat]  -= dg;
     d2Uat[jat] += dl;
+    cur_d2Uat  -= newl;
+    if(UpdateMode == ORB_PBYP_RATIO) cur_dUat += newg;
   }
   Uat[iat]   = cur_Uat;
   dUat[iat]  = cur_dUat;
-  d2Uat[iat] = -cur_d2Uat;
+  d2Uat[iat] = cur_d2Uat;
   LogValue+=DiffVal;
 }
 
