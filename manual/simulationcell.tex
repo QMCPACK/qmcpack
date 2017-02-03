@@ -1,3 +1,78 @@
 \section{Specifying the simulation cell}
 \label{sec:simulationcell}
 
+The \texttt{simulationcell} block specifies the geometry of the cell, how the boundary conditions should be handled, and how ewald summation should be broken up.
+
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l l }
+\hline
+\multicolumn{6}{l}{\texttt{simulationcell} element} \\
+\hline
+\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{qmcsystem}}\\
+\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{None}\\
+\multicolumn{2}{l}{attribute      :} & \multicolumn{4}{l}{}\\
+   &   \bfseries parameter name            & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
+\hline
+   &   \texttt{lattice}  & 9 floats & any float & Must be specified & Specification of \\
+   &                     &        &             &                   & lattice vectors. \\
+   &   \texttt{bconds}   & string & ``p'' or ``n''  & ``n n n'' & Boundary conditions \\
+   &                     &        &             &           & for each axis. \\
+   &   \texttt{LR\_dim\_cutoff} & float & float & 15        & Ewald breakup distance. \\
+\hline
+\end{tabularx}
+\end{center}
+\end{table}
+
+An example of a \texttt{simulationcell} block is given below:
+\begin{shade}
+ <simulationcell>
+ <parameter name="lattice">
+                 3.80000000       0.00000000       0.00000000
+                 0.00000000       3.80000000       0.00000000
+                 0.00000000       0.00000000       3.80000000
+         </parameter>
+         <parameter name="bconds">
+            p p p
+         </parameter>
+         <parameter name="LR_dim_cutoff">20</parameter>
+</simulationcell>
+\end{shade}
+
+Here, a cubic cell 3.8 bohr on a side will be used.
+This simulation will use periodic boundary conditions, and the maximum
+$k$ vector will be $20/r_{wigner-seitz}$ of the cell.
+
+
+\subsection{Lattice}
+The cell is specified using 3 lattice vectors.
+
+
+\subsection{Boundary conditions}
+QMCPACK offers the capability to use a mixture of open and periodic boundary conditions.
+The \texttt{bconds} parameter expects a single string of three characters separated by
+spaces, \textit{e.g.} ``p p p'' for purely periodic boundary conditions. These characters control
+the behavior of the $x$, $y$, and $z$, axes, respectively.
+Examples of valid \texttt{bconds} include:
+
+\begin{description}
+\item[``p p p''] Periodic boundary conditions. Corresponds to 3d crystal.
+\item[``n n n''] Open boundary conditions. Corresponds to isolated molecule in a vacuum.
+\item[``p p n''] Slab geometry. Corresponds to 2d crystal.
+\item[``p n n''] Wire geometry. Corresponds to 1d crystal.
+\end{description}
+
+
+\subsection{\texttt{LR\_dim\_cutoff}}
+When using periodic boundary conditions direct calculation of the Coulomb energy is
+not well behaved. As a result, QMCPACK uses an optimized Ewald summation technique
+to compute the Coulomb interaction. %% Reference: Natoli & Ceperley 1995 JCP.
+
+In the Ewald summation, the energy is broken into short- and long-ranged terms.
+The short-ranged term is computed directly in real space, while the long-ranged term is computed in reciprocal space.
+\texttt{LR\_dim\_cutoff} controls where the short-ranged term ends and the long-ranged term begins.
+The real-space cutoff, reciprocal-space cutoff, and \texttt{LR\_dim\_cutoff} are related via:
+\[
+\texttt{LR\_dim\_cutoff} = r_{c} \times k_{c}
+\]
+where $r_{c}$ is the Wigner-Seitz radius, and $k_{c}$ is the length of the maximum $k$-vector used in the long-ranged term.
