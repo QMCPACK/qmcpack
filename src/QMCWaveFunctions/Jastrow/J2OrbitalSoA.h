@@ -70,12 +70,14 @@ struct  J2OrbitalSoA : public OrbitalBase
   ///Correction
   RealType KEcorr;
   ///\f$Uat[i] = sum_(j) u_{i,j}\f$
-  ParticleAttrib<RealType> Uat;
+  ParticleAttrib<valT> Uat;
   ///\f$dUat[i] = sum_(j) du_{i,j}\f$
-  ParticleAttrib<PosType> dUat;
+  ParticleAttrib<posT> dUat;
   RealType *FirstAddressOfdU, *LastAddressOfdU;
   ///\f$d2Uat[i] = sum_(j) d2u_{i,j}\f$
-  ParticleAttrib<RealType> d2Uat;
+  ParticleAttrib<valT> d2Uat;
+  valT cur_Uat, cur_d2Uat;
+  posT cur_dUat;
   aligned_vector<valT> cur_u, cur_du, cur_d2u;
   aligned_vector<valT> old_u, old_du, old_d2u;
   aligned_vector<valT> DistCompressed;
@@ -215,7 +217,6 @@ struct  J2OrbitalSoA : public OrbitalBase
 
   RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false)
   {
-    // currently has issue with recompute
     evaluateGL(P, P.G, P.L, false);
     buf.put(Uat.begin(), Uat.end());
     buf.put(FirstAddressOfdU,LastAddressOfdU);
@@ -270,6 +271,7 @@ struct  J2OrbitalSoA : public OrbitalBase
       const RowContainer& displ, posT& grad, valT& lap) const
   {
     constexpr valT lapfac=OHMMS_DIM-RealType(1);
+    lap=valT(0);
 //#pragma omp simd reduction(+:lap)
     for(int jat=0; jat<N; ++jat)
       lap+=d2u[jat]+lapfac*du[jat];
@@ -415,17 +417,17 @@ J2OrbitalSoA<FT>::ratio(ParticleSet& P, int iat)
 
   const DistanceTableData* d_table=P.DistTables[0];
   const auto dist=d_table->Temp_r.data();
-  valT curAt(0);
+  cur_Uat=valT(0);
   const int igt=P.GroupID[iat]*NumGroups;
   for(int jg=0; jg<NumGroups; ++jg)
   {
     const FuncType& f2(*F[igt+jg]);
     int iStart = P.first(jg);
     int iEnd = P.last(jg);
-    curAt += f2.evaluateV( iStart, iEnd, dist, DistCompressed.data() );
+    cur_Uat += f2.evaluateV( iStart, iEnd, dist, DistCompressed.data() );
   }
 
-  return std::exp(Uat[iat]-curAt);
+  return std::exp(Uat[iat]-cur_Uat);
 }
 
 template<typename FT>
@@ -443,10 +445,11 @@ J2OrbitalSoA<FT>::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   UpdateMode=ORB_PBYP_PARTIAL;
 
   computeU3(P,iat,P.DistTables[0]->Temp_r.data(), cur_u.data(),cur_du.data(),cur_d2u.data());
-  posT gr=accumulateG(cur_du.data(),P.DistTables[0]->Temp_dr);
-  grad_iat+=gr;
+  cur_Uat=simd::accumulate_n(cur_u.data(),N,valT());
+  accumulateGL(cur_du.data(),cur_d2u.data(),P.DistTables[0]->Temp_dr,cur_dUat,cur_d2Uat);
+  grad_iat+=cur_dUat;
 
-  DiffVal=Uat[iat]-simd::accumulate_n(cur_u.data(),N,valT());
+  DiffVal=Uat[iat]-cur_Uat;
   return std::exp(DiffVal);
 }
 
@@ -461,26 +464,26 @@ J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat)
   {//ratio-only during the move; need to compute derivatives
     const auto dist=d_table->Temp_r.data();
     computeU3(P,iat,dist,cur_u.data(),cur_du.data(),cur_d2u.data());
+    accumulateGL(cur_du.data(),cur_d2u.data(),P.DistTables[0]->Temp_dr,cur_dUat,cur_d2Uat);
   }
 
   for(int jat=0; jat<N; jat++)
   {
-    if (iat!=jat)
-    {
-      posT dg;
-      valT dl, du;
-      constexpr valT lapfac=OHMMS_DIM-RealType(1);
-      du = cur_u[jat] - old_u[jat];
-      for(int idim=0; idim<OHMMS_DIM; ++idim)
-        dg[idim] =  cur_du[jat]*d_table->Temp_dr.data(idim)[jat]
-                  - old_du[jat]*d_table->Displacements[iat].data(idim)[jat];
-      dl = old_d2u[jat] - cur_d2u[jat] + lapfac*(old_du[jat] - cur_du[jat]);
-      Uat[iat]   += du; Uat[jat]   += du;
-      dUat[iat]  += dg; dUat[jat]  -= dg;
-      d2Uat[iat] += dl; d2Uat[jat] += dl;
-    }
+    posT dg;
+    valT dl, du;
+    constexpr valT lapfac=OHMMS_DIM-RealType(1);
+    du = cur_u[jat] - old_u[jat];
+    for(int idim=0; idim<OHMMS_DIM; ++idim)
+      dg[idim] =  cur_du[jat]*d_table->Temp_dr.data(idim)[jat]
+                - old_du[jat]*d_table->Displacements[iat].data(idim)[jat];
+    dl = old_d2u[jat] - cur_d2u[jat] + lapfac*(old_du[jat] - cur_du[jat]);
+    Uat[jat]   += du;
+    dUat[jat]  -= dg;
+    d2Uat[jat] += dl;
   }
-
+  Uat[iat]   = cur_Uat;
+  dUat[iat]  = cur_dUat;
+  d2Uat[iat] = -cur_d2Uat;
   LogValue+=DiffVal;
 }
 
@@ -489,7 +492,6 @@ void
 J2OrbitalSoA<FT>::recompute(ParticleSet& P)
 {
   const DistanceTableData* d_table=P.DistTables[0];
-  constexpr valT czero(0);
   for(int ig=0; ig<NumGroups; ++ig)
   {
     const int igt=ig*NumGroups;
@@ -498,7 +500,7 @@ J2OrbitalSoA<FT>::recompute(ParticleSet& P)
       computeU3(P,iat,d_table->Distances[iat],cur_u.data(),cur_du.data(),cur_d2u.data());
       Uat[iat]=simd::accumulate_n(cur_u.data(),N,valT());
       posT grad;
-      valT lap=czero;
+      valT lap;
       accumulateGL(cur_du.data(),cur_d2u.data(),d_table->Displacements[iat],grad,lap);
       dUat[iat]=grad;
       d2Uat[iat]=-lap;
