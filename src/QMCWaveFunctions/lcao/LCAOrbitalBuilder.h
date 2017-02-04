@@ -23,10 +23,10 @@
 #include "QMCWaveFunctions/lcao/SoaSphericalTensor.h"
 #include "QMCWaveFunctions/lcao/SoaSphericalBasisSet.h"
 #include "QMCWaveFunctions/lcao/SoaLocalizedBasisSet.h"
+#include "QMCWaveFunctions/lcao/NGFunctor.h"
 
 namespace qmcplusplus
 {
-
   /** BasisSetBuilder using new LCAOrbitalSet and Soa versions
    *
    * Reimplement MolecularBasisSetBuilder
@@ -35,7 +35,7 @@ namespace qmcplusplus
   struct LCAOrbitalBuilder: public BasisSetBuilder
   {
     //for now, use the same cubic spline: use BsplineFunctor later
-    typedef OneDimCubicSpline<real_type> RadFuncT;
+    typedef NGFunctor RadFuncT;
     typedef SoaSphericalBasisSet<RadFuncT,SoaCartesianTensor<RealType> > XYZCOT;
     typedef SoaSphericalBasisSet<RadFuncT,SoaSphericalTensor<RealType> > YlmCOT;
     typedef SoaLocalizedBasisSet<XYZCOT> XYZBasisT;
