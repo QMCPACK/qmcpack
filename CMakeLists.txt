@@ -11,7 +11,7 @@ ENDIF(COMMAND cmake_policy)
 ######################################################################
 # Version 
 ######################################################################
-SET(QMCPACK_VERSION_MAJOR 1)
+SET(QMCPACK_VERSION_MAJOR 3)
 SET(QMCPACK_VERSION_MINOR 0)
 SET(QMCPACK_VERSION_PATCH 0)
 SET(QMCPACK_VERSION "${QMCPACK_VERSION_MAJOR}.${QMCPACK_VERSION_MINOR}.${QMCPACK_VERSION_PATCH}")
@@ -648,6 +648,9 @@ IF(QMC_CUDA)
   else(CUDA_NVCC_FLAGS MATCHES "arch")
     # Automatically set the default NVCC flags
     SET(CUDA_NVCC_FLAGS "-Drestrict=__restrict__;-DNO_CUDA_MAIN")
+    if (QMC_COMPLEX)
+      SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-DQMC_COMPLEX")
+    endif()
     if ( CMAKE_BUILD_TYPE STREQUAL "DEBUG" )
       SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-g;-G")
     else()

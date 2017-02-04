@@ -316,6 +316,7 @@ OrbitalBasePtr SlaterDet::makeClone(ParticleSet& tqp) const
 {
   SlaterDet* myclone = new SlaterDet(tqp);
   myclone->Optimizable=Optimizable;
+  myclone->RecomputeNeedsDistanceTable=RecomputeNeedsDistanceTable;
   if (mySPOSet.size() > 1)
   {
     std::map<std::string,SPOSetBasePtr>::const_iterator Mit,Lit;

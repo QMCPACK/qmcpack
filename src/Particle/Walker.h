@@ -76,10 +76,16 @@ struct Walker
   /** typedef for value data type. */
   typedef typename t_traits::ValueType ValueType;
 #ifdef QMC_CUDA
-  /** typedef for real data type */
+  /** typedef for CUDA real data type */
   typedef typename t_traits::CudaRealType CudaRealType;
-  /** typedef for value data type. */
+  /** typedef for CUDA value data type. */
   typedef typename t_traits::CudaValueType CudaValueType;
+  /** array of particles */
+  typedef typename t_traits::CudaPosType CudaPosType;
+  /** array of gradients */
+  typedef typename t_traits::CudaGradType CudaGradType;
+  /** array of laplacians */
+  typedef typename t_traits::CudaValueType CudaLapType;
 #endif
   /** array of particles */
   typedef typename p_traits::ParticlePos_t ParticlePos_t;
@@ -143,13 +149,13 @@ struct Walker
   /// Data for GPU-vectorized versions
 #ifdef QMC_CUDA
   static int cuda_DataSize;
-  typedef gpu::device_vector<CUDA_PRECISION> cuda_Buffer_t;
+  typedef gpu::device_vector<CudaValueType> cuda_Buffer_t;
   cuda_Buffer_t cuda_DataSet;
   // Note that R_GPU has size N+1.  The last element contains the
   // proposed position for single-particle moves.
-  gpu::device_vector<TinyVector<CudaRealType,OHMMS_DIM> > R_GPU;
-  gpu::device_vector<TinyVector<CudaValueType,OHMMS_DIM> > Grad_GPU;
-  gpu::device_vector<CUDA_PRECISION> Lap_GPU;
+  gpu::device_vector<CudaPosType> R_GPU;
+  gpu::device_vector<CudaGradType> Grad_GPU;
+  gpu::device_vector<CudaLapType> Lap_GPU;
   gpu::device_vector<CUDA_PRECISION_FULL> Rhok_GPU;
   int k_species_stride;
   inline void resizeCuda(int size, int num_species, int num_k)
@@ -432,10 +438,10 @@ struct Walker
 
 #ifdef QMC_CUDA
     bsize += 3 *sizeof (int); // size and N and M
-    bsize += cuda_DataSize               * sizeof(CUDA_PRECISION); // cuda_DataSet
-    bsize += R.size()        * OHMMS_DIM * sizeof(CUDA_PRECISION); // R_GPU
-    bsize += R.size()        * OHMMS_DIM * sizeof(CudaValueType); // Grad_GPU
-    bsize += R.size()        * 1         * sizeof(CUDA_PRECISION); // Lap_GPU
+    bsize += cuda_DataSize               * sizeof(CudaValueType);          // cuda_DataSet
+    bsize += R.size()        * OHMMS_DIM * sizeof(CudaPosType);            // R_GPU
+    bsize += G.size()        * OHMMS_DIM * sizeof(CudaValueType);          // Grad_GPU
+    bsize += L.size()        * 1         * sizeof(CudaLapType);            // Lap_GPU
     bsize += Rhok_GPU.size()             * sizeof(CUDA_PRECISION_FULL); // Rhok
 #endif
     return bsize;
@@ -468,23 +474,30 @@ struct Walker
     m.Pack(&(PHindex[0]),PHindex.size());
 #ifdef QMC_CUDA
     // Pack GPU data
-    std::vector<CUDA_PRECISION> host_data;
+    std::vector<CudaValueType> host_data;
     std::vector<CUDA_PRECISION_FULL> host_rhok;
-    std::vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > R_host;
-    std::vector<TinyVector<CudaValueType,OHMMS_DIM> > Grad_host;
-    std::vector<CUDA_PRECISION> host_lapl;
+    std::vector<CudaPosType> R_host;
+    std::vector<CudaGradType> Grad_host;
+    std::vector<CudaLapType>  host_lapl;
+
     cuda_DataSet.copyFromGPU(host_data);
     R_GPU.copyFromGPU(R_host);
+    Grad_GPU.copyFromGPU(Grad_host);
+    Lap_GPU.copyFromGPU(host_lapl);
     int size = host_data.size();
     int N = R_host.size();
     m.Pack(size);
     m.Pack(N);
-    m.Pack(&(host_data[0]), host_data.size());
     m.Pack(&(R_host[0][0]), OHMMS_DIM*R_host.size());
-    Grad_GPU.copyFromGPU(Grad_host);
+#ifdef QMC_COMPLEX
+    m.Pack(reinterpret_cast<CudaRealType*>(&(host_data[0])), host_data.size()*2);
+    m.Pack(reinterpret_cast<CudaRealType*>(&(Grad_host[0][0])),OHMMS_DIM*Grad_host.size()*2);
+    m.Pack(reinterpret_cast<CudaRealType*>(&(host_lapl[0])), host_lapl.size()*2);
+#else
+    m.Pack(&(host_data[0]), host_data.size());
     m.Pack(&(Grad_host[0][0]), OHMMS_DIM*Grad_host.size());
-    Lap_GPU.copyFromGPU(host_lapl);
     m.Pack(&(host_lapl[0]), host_lapl.size());
+#endif
     Rhok_GPU.copyFromGPU(host_rhok);
     int M = host_rhok.size();
     m.Pack(M);
@@ -517,24 +530,33 @@ struct Walker
       m.Unpack(&(PropertyHistory[iat][0]),PropertyHistory[iat].size());
     m.Unpack(&(PHindex[0]),PHindex.size());
 #ifdef QMC_CUDA
-    // Pack GPU data
-    std::vector<CUDA_PRECISION> host_data;
+    // Unpack GPU data
+    std::vector<CudaValueType> host_data;
     std::vector<CUDA_PRECISION_FULL> host_rhok;
-    std::vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > R_host;
-    std::vector<CUDA_PRECISION> host_lapl;
+    std::vector<CudaPosType> R_host;
+    std::vector<CudaGradType> Grad_host;
+    std::vector<CudaLapType>  host_lapl;
+
     int size, N;
     m.Unpack(size);
     m.Unpack(N);
     host_data.resize(size);
     R_host.resize(N);
+    Grad_host.resize(N);
     host_lapl.resize(N);
-    m.Unpack(&(host_data[0]), size);
-    cuda_DataSet = host_data;
     m.Unpack(&(R_host[0][0]), OHMMS_DIM*N);
     R_GPU = R_host;
-    m.Unpack(&(R_host[0][0]), OHMMS_DIM*N);
-    Grad_GPU = R_host;
+#ifdef QMC_COMPLEX
+    m.Unpack(reinterpret_cast<CudaRealType*>(&(host_data[0])), size*2);
+    m.Unpack(reinterpret_cast<CudaRealType*>(&(Grad_host[0][0])),OHMMS_DIM*N*2);
+    m.Unpack(reinterpret_cast<CudaRealType*>(&(host_lapl[0])), N*2);
+#else
+    m.Unpack(&(host_data[0]), size);
+    m.Unpack(&(Grad_host[0][0]), OHMMS_DIM*N);
     m.Unpack(&(host_lapl[0]), N);
+#endif
+    cuda_DataSet = host_data;
+    Grad_GPU = Grad_host;
     Lap_GPU = host_lapl;
     int M;
     m.Unpack(M);
@@ -560,7 +582,7 @@ std::ostream& operator<<(std::ostream& out, const Walker<RealType,PA>& rhs)
 
 #endif
 /***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
+ * $RCSfile$   $Author: yingwai $
+ * $Revision: 7405 $   $Date: 2017-01-09 15:46:55 -0500 (Mon, 09 Jan 2017) $
+ * $Id: Walker.h 7405 2017-01-09 20:46:55Z yingwai $
  ***************************************************************************/

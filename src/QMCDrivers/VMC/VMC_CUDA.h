@@ -73,7 +73,7 @@ private:
 
   opt_variables_type dummy;
   int numParams;
-  Matrix<ValueType> d_logpsi_dalpha, d_hpsioverpsi_dalpha;
+  Matrix<RealType> d_logpsi_dalpha, d_hpsioverpsi_dalpha;
   RealType w_beta,w_alpha;
   RealType E_avg, V_avg;
   std::string GEVtype;
