@@ -23,8 +23,8 @@ namespace qmcplusplus
 {
 
 #if QMC_USE_GEMV_FOR_GL
-  template<typename T>
-  inline void computeGL(T* row, VectorSoaContainer<T,4>& gl_v, TinyVector<T,3>& grad, T& lap)
+  template<typename T, typename T2>
+  inline void computeGL(T* row, VectorSoaContainer<T,4>& gl_v, TinyVector<T2,3>& grad, T2& lap)
   {
     CONSTEXPR T czero(0);
     CONSTEXPR T cone(1);
@@ -55,8 +55,8 @@ namespace qmcplusplus
 #error "Cannot do complex yet with compute GL. Use GEMV\n"
 #else
   ///real version using simd: only for testing
-  template<typename T>
-  inline void computeGL(T* row, VectorSoaContainer<T,4>& gl_v, TinyVector<T,3>& grad, T& lap)
+  template<typename T, typename T2>
+  inline void computeGL(T* row, VectorSoaContainer<T,4>& gl_v, TinyVector<T2,3>& grad, T2& lap)
   {
     constexpr T czero(0);
     constexpr T cone(1);
@@ -64,7 +64,6 @@ namespace qmcplusplus
     const T* restrict gy_p=gl_v.data(1);
     const T* restrict gz_p=gl_v.data(2);
     const T* restrict l_p=gl_v.data(3);
-    lap=czero;
     T gx=czero, gy=czero, gz=czero,l=czero;
     const int n=gl_v.size();
 #pragma omp simd reduction(+:gx,gy,gz,l)

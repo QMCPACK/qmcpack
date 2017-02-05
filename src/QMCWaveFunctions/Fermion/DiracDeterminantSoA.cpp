@@ -135,8 +135,8 @@ namespace qmcplusplus
       }
     }
 
-    GradType grad;
-    ValueType lap;
+    mGradType grad;
+    mValueType lap;
     for(size_t i=0,iat=FirstIndex; i<NumPtcls; ++i,++iat)
     {
       computeGL(psiM[i],mGL[i],grad,lap);
@@ -211,8 +211,8 @@ namespace qmcplusplus
     DiracDeterminantSoA::evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
     {
       recompute(P);
-      GradType rv;
-      ValueType lap;
+      mGradType rv;
+      mValueType lap;
       for(size_t i=0,iat=FirstIndex; i<NumPtcls; ++i,++iat)
       {
         computeGL(psiM[i],mGL[i],rv,lap);
