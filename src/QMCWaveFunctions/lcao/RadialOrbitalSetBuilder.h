@@ -198,15 +198,14 @@ private:
           m_orbitals->Grids.push_back(input_grid);
           input_grid=0;
         }
-        else
-          if(gridtype == "linear")
-          {
-            app_log() << "    Using linear grid ri = " << ri << " rf = " << rf << " npts = " << npts << std::endl;
-            input_grid = new LinearGrid<RealType>;
-            input_grid->set(ri,rf,npts);
-            m_orbitals->Grids.push_back(input_grid);
-            input_grid=0;
-          }
+        else if(gridtype == "linear")
+        {
+          app_log() << "    Using linear grid ri = " << ri << " rf = " << rf << " npts = " << npts << std::endl;
+          input_grid = new LinearGrid<RealType>;
+          input_grid->set(ri,rf,npts);
+          m_orbitals->Grids.push_back(input_grid);
+          input_grid=0;
+        }
         //if(!input_grid)
         //{
         //  APP_ABORT("Grid is not defined.");
