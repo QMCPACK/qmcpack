@@ -208,6 +208,7 @@ void QMCUpdateBase::initWalkers(WalkerIter_t it, WalkerIter_t it_end)
   }
 }
 
+extern int print_mem(const char*);
 
 void QMCUpdateBase::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end)
 {
@@ -227,6 +228,8 @@ void QMCUpdateBase::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end)
     awalker.L=W.L;
     randomize(awalker);
   }
+  #pragma omp master
+  print_mem("Memory Usage after the buffer registration");
 }
 
 /** randomize a walker with a diffusion MC using gradients */
