@@ -59,6 +59,10 @@ namespace qmcplusplus
 #endif
     psiV.resize(NorbPad); 
 
+    //resize t_logpsi with the padding: this is used as a scratch array for the inversion after the transpose
+    //this can be used to store psi[i] for the delayed update
+    Phi->t_logpsi.resize(OrbitalSetSize,NorbPad);
+
     BlockSize=NorbPad*(OHMMS_DIM+1);
     memoryPool.resize(nel*BlockSize);
     mGL.resize(nel);
@@ -228,13 +232,13 @@ namespace qmcplusplus
       simd::copy_n(vVGL.data(1), BlockSize,  mGL[i].data());
     }
 #ifdef MIXED_PRECISION
-    simd::transpose(Phi->t_logpsi.data(), NumOrbitals, NumOrbitals, psiM_hp.data(), NumOrbitals, psiM_hp.cols());
+    simd::transpose(Phi->t_logpsi.data(), NumOrbitals, NorbPad, psiM_hp.data(), NumOrbitals, psiM_hp.cols());
     detEng_hp.invert(psiM_hp,true);
     LogValue  =static_cast<RealType>(detEng_hp.LogDet);
     PhaseValue=static_cast<RealType>(detEng_hp.Phase);
     psiM=psiM_hp;
 #else
-    simd::transpose(Phi->t_logpsi.data(), NumOrbitals, NumOrbitals, psiM.data(), NumOrbitals, psiM.cols());
+    simd::transpose(Phi->t_logpsi.data(), NumOrbitals, NorbPad, psiM.data(), NumOrbitals, psiM.cols());
     detEng.invert(psiM,true);
     LogValue  =detEng.LogDet;
     PhaseValue=detEng.Phase;
