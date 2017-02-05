@@ -170,6 +170,18 @@ public:
     return &(X[0]);
   }
 
+  // returns a const pointer of i-th row
+  inline const Type_t* data(size_type i) const
+  {
+    return &(X[0]) + i*D2;
+  }
+
+  /// returns a pointer of i-th row, g++ iterator problem
+  inline Type_t* data(size_type i)
+  {
+    return &(X[0]) + i*D2;
+  }
+
   inline pointer first_address()
   {
     return &(X[0]);

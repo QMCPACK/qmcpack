@@ -400,8 +400,8 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
 
   /** identical to assign_vgl but the output container is SoA container
    */
-  template<typename VV, typename GL>
-  inline void assign_vgl_soa(const PointType& r, int bc_sign, VV& psi, GL& dpsi)
+  template<typename VGL>
+  inline void assign_vgl_soa(const PointType& r, int bc_sign, VGL& vgl)
   {
     const int N=kPoints.size();
     CONSTEXPR ST zero(0);
@@ -434,13 +434,14 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     }
 #endif
 
-    TT* restrict vl_x=dpsi.data(0); ASSUME_ALIGNED(vl_x);
-    TT* restrict vl_y=dpsi.data(1); ASSUME_ALIGNED(vl_y);
-    TT* restrict vl_z=dpsi.data(2); ASSUME_ALIGNED(vl_z);
-    TT* restrict vl_l=dpsi.data(3); ASSUME_ALIGNED(vl_l);
+    TT* restrict psi =vgl.data(0)+first_spo; ASSUME_ALIGNED(psi);
+    TT* restrict vl_x=vgl.data(1)+first_spo; ASSUME_ALIGNED(vl_x);
+    TT* restrict vl_y=vgl.data(2)+first_spo; ASSUME_ALIGNED(vl_y);
+    TT* restrict vl_z=vgl.data(3)+first_spo; ASSUME_ALIGNED(vl_z);
+    TT* restrict vl_l=vgl.data(4)+first_spo; ASSUME_ALIGNED(vl_l);
 
 #pragma simd
-    for (size_t j=0, psiIndex=first_spo; j<nComplexBands; j++,psiIndex+=2)
+    for (size_t j=0; j<nComplexBands; j++)
     {
       const size_t jr=j<<1;
       const size_t ji=jr+1;
@@ -483,20 +484,20 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
 #endif
       
       //this will be fixed later
-      psi[psiIndex   ]=c*val_r-s*val_i;
-      psi[psiIndex+1 ]=c*val_i+s*val_r;
-      vl_x[psiIndex  ]=c*gX_r-s*gX_i;
-      vl_x[psiIndex+1]=c*gX_i+s*gX_r;
-      vl_y[psiIndex  ]=c*gY_r-s*gY_i;
-      vl_y[psiIndex+1]=c*gY_i+s*gY_r;
-      vl_z[psiIndex  ]=c*gZ_r-s*gZ_i;
-      vl_z[psiIndex+1]=c*gZ_i+s*gZ_r;
-      vl_l[psiIndex  ]=c*lap_r-s*lap_i;
-      vl_l[psiIndex+1]=c*lap_i+s*lap_r;
+      psi[jr]=c*val_r-s*val_i;
+      psi[ji]=c*val_i+s*val_r;
+      vl_x[jr]=c*gX_r-s*gX_i;
+      vl_x[ji]=c*gX_i+s*gX_r;
+      vl_y[jr]=c*gY_r-s*gY_i;
+      vl_y[ji]=c*gY_i+s*gY_r;
+      vl_z[jr]=c*gZ_r-s*gZ_i;
+      vl_z[ji]=c*gZ_i+s*gZ_r;
+      vl_l[jr]=c*lap_r-s*lap_i;
+      vl_l[ji]=c*lap_i+s*lap_r;
     }
 
 #pragma simd
-    for (size_t j=nComplexBands,psiIndex=first_spo+2*nComplexBands; j<N; j++,psiIndex++)
+    for (size_t j=nComplexBands, psiIndex=2*nComplexBands; j<N; j++,psiIndex++)
     {
       const size_t jr=j<<1;
       const size_t ji=jr+1;
@@ -536,12 +537,12 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
       const ST lap_r=lcart_r+mKK[j]*val_r+two*(kX*dX_i+kY*dY_i+kZ*dZ_i);
       const ST lap_i=lcart_i+mKK[j]*val_i-two*(kX*dX_r+kY*dY_r+kZ*dZ_r);
 #endif
-
-      psi[psiIndex   ]=c*val_r-s*val_i;
-      vl_x[psiIndex  ]=c*gX_r-s*gX_i;
-      vl_y[psiIndex  ]=c*gY_r-s*gY_i;
-      vl_z[psiIndex  ]=c*gZ_r-s*gZ_i;
-      vl_l[psiIndex  ]=c*lap_r-s*lap_i;
+      //const size_t psiIndex=j+nComplexBands;
+      psi [psiIndex]=c*val_r-s*val_i;
+      vl_x[psiIndex]=c*gX_r-s*gX_i;
+      vl_y[psiIndex]=c*gY_r-s*gY_i;
+      vl_z[psiIndex]=c*gZ_r-s*gZ_i;
+      vl_l[psiIndex]=c*lap_r-s*lap_i;
     }
   }
 
@@ -550,12 +551,12 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
    * @param psi value container
    * @param dpsi gradient-laplacian container
    */
-  template<typename VV, typename GL>
-  inline void evaluate_vgl_combo(const PointType& r, VV& psi, GL& dpsi)
+  template<typename VGL>
+  inline void evaluate_vgl_combo(const PointType& r, VGL& vgl)
   {
     PointType ru(PrimLattice.toUnit_floor(r));
     SplineInst->evaluate_vgh(ru,myV,myG,myH);
-    assign_vgl_soa(r,0,psi,dpsi);
+    assign_vgl_soa(r,0,vgl);
   }
 
   template<typename VV, typename GV, typename GGV>

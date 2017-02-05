@@ -27,13 +27,8 @@ namespace qmcplusplus
 
       ///size of the basis set
       size_t BasisSetSize;
-      ///index of the CurrentCenter
-      size_t CurrentCenter;
-      ///offset
-      size_t CurrentOffset;
       ///spherical harmonics
       SH Ylm;
-
       ///index of the corresponding real Spherical Harmonic with quantum numbers \f$ (l,m) \f$
       aligned_vector<int> LM;
       /**index of the corresponding radial orbital with quantum numbers \f$ (n,l) \f$ */
@@ -100,10 +95,7 @@ namespace qmcplusplus
 
       ///set the current offset
       inline void setCenter(int c, int offset)
-      {
-        CurrentCenter=c;
-        CurrentOffset=offset;
-      }
+      { }
 
 
       template<typename VGL>
@@ -121,14 +113,14 @@ namespace qmcplusplus
           T d2phi[nl_max];
 
           for(size_t nl=0; nl<nl_max; ++nl)
-            Rnl[nl]->evaluate2(r,phi[nl],dphi[nl],d2phi[nl]);
+            phi[nl]=Rnl[nl]->evaluate(r,dphi[nl],d2phi[nl]);
 
           //V,Gx,Gy,Gz,L
-          T* restrict psi   =vgl[0]+offset; const T* restrict ylm_v=Ylm[0]; //value
-          T* restrict dpsi_x=vgl[1]+offset; const T* restrict ylm_x=Ylm[1]; //gradX
-          T* restrict dpsi_y=vgl[2]+offset; const T* restrict ylm_y=Ylm[2]; //gradY
-          T* restrict dpsi_z=vgl[3]+offset; const T* restrict ylm_z=Ylm[3]; //gradZ
-          T* restrict d2psi =vgl[4]+offset; const T* restrict ylm_l=Ylm[4]; //lap
+          T* restrict psi   =vgl.data(0)+offset; const T* restrict ylm_v=Ylm[0]; //value
+          T* restrict dpsi_x=vgl.data(1)+offset; const T* restrict ylm_x=Ylm[1]; //gradX
+          T* restrict dpsi_y=vgl.data(2)+offset; const T* restrict ylm_y=Ylm[2]; //gradY
+          T* restrict dpsi_z=vgl.data(3)+offset; const T* restrict ylm_z=Ylm[3]; //gradZ
+          T* restrict d2psi =vgl.data(4)+offset; const T* restrict ylm_l=Ylm[4]; //lap
           const T rinv=cone/r;
           const size_t ib_max=NL.size();
           for(size_t ib=0; ib<ib_max; ++ib)
@@ -157,9 +149,8 @@ namespace qmcplusplus
         {
           CONSTEXPR T cone(1);
           CONSTEXPR T ctwo(2);
-          Ylm.evaluateV(dr[0],dr[1],dr[2]);
           const nl_max=Rnl.size();
-
+          Ylm.evaluateV(dr[0],dr[1],dr[2]);
           T phi_r[nl_max];
           for(size_t nl=0; nl<nl_max; ++nl)
             phi_r[nl]=Rnl[nl]->evaluate(r);

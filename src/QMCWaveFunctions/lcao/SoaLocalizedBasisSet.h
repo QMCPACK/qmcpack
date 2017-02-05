@@ -126,11 +126,11 @@ struct SoaLocalizedBasisSet: public BasisSetBase
    * @param vgl Matrix(5,BasisSetSize)
    * @param trialMove if true, use Temp_r/Temp_dr
    */
-  inline void evaluateVGL(const ParticleSet& P, int iat, Matrix<value_type>& vgl, bool trialMove)
+  inline void evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl, bool newp)
   {
     const DistanceTableData* d_table=P.DistTables[myTableIndex];
-    const value_type* restrict  dist = (trialMove)? d_table->Temp_r.data(): d_table->Distances[iat];
-    const auto&  displ= (trialMove)? d_table->Temp_dr: d_table->Displacements[iat];
+    const value_type* restrict  dist = (newp)? d_table->Temp_r.data(): d_table->Distances[iat];
+    const auto&  displ= (newp)? d_table->Temp_dr: d_table->Displacements[iat];
     for(int c=0; c<NumCenters; c++)
       LOBasisSet[IonID[c]]->evaluateVGL(dist[c],displ[c],BasisOffset[c],vgl);
   }

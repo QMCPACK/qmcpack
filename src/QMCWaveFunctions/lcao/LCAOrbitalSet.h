@@ -56,10 +56,10 @@ namespace qmcplusplus
     int ReportLevel;
     ///pointer to the basis set
     BS* myBasisSet;
-    ///Temp(2+DIM,BasisSetSize) : Row index=V,L,Gx,Gy,Gz
-    ValueMatrix_t Temp; 
-    ///Tempv(2+DIM,OrbitalSetSize) Tempv=C*Temp
-    ValueMatrix_t Tempv;
+    ///Temp(BasisSetSize) : Row index=V,Gx,Gy,Gz,L
+    VectorSoaContainer<ValueType,OHMMS_DIM+2> Temp; 
+    ///Tempv(OrbitalSetSize) Tempv=C*Temp
+    VectorSoaContainer<ValueType,OHMMS_DIM+2> Tempv; 
     /** constructor
      * @param bs pointer to the BasisSet
      * @param id identifier of this LCOrbitalSet
@@ -98,7 +98,7 @@ namespace qmcplusplus
     void setOrbitalSetSize(int norbs)
     {
       OrbitalSetSize=norbs;
-      Tempv.resize(OHMMS_DIM+2,OrbitalSetSize);
+      Tempv.resize(OrbitalSetSize);
     }
 
     /** set the basis set
@@ -107,7 +107,7 @@ namespace qmcplusplus
     {
       myBasisSet=bs;
       BasisSetSize=myBasisSet->getBasisSetSize();
-      Temp.resize(OHMMS_DIM+2,BasisSetSize);
+      Temp.resize(BasisSetSize);
     }
 
     /** return the size of the basis set
@@ -119,24 +119,54 @@ namespace qmcplusplus
 
     inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
     {
-      VectorViewer<value_type> vTemp(Temp[0],BasisSetSize);
+      VectorViewer<value_type> vTemp(Temp.data(0),BasisSetSize);
       myBasisSet->evaluateV(P,iat,vTemp);
-      simd::gemv(C,Temp[0],psi.data());
+      simd::gemv(C,Temp.data(0),psi.data());
     }
+
+    /** Find a better place for other user classes, Matrix should be padded as well */
+    template<typename T,unsigned D>
+      inline void Product_ABt(const VectorSoaContainer<T,D>& A, const Matrix<T>& B, VectorSoaContainer<T,D>& C)
+      {
+        CONSTEXPR char transa = 't';
+        CONSTEXPR char transb = 'n';
+        CONSTEXPR T zone(1);
+        CONSTEXPR T zero(0);
+        BLAS::gemm(transa, transb, B.rows(), D, B.cols(),
+            zone, B.data(), B.cols(), A.data(), A.capacity(),
+            zero, C.data(), C.capacity());
+      }
 
     inline void
       evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
       {
         const bool trialmove=true;
         BS->evaluateVGL(P,iat,Temp,trialmove);
-        MatrixOperators::product_ABt(Temp,C,Tempv);
-        simd::copy_n(Tempv[0],OrbitalSetSize,psi.data());
-        simd::copy_n(Tempv[1],OrbitalSetSize,d2psi.data());
+        Product_ABt(Temp,C,Tempv);
+        simd::copy_n(Tempv.data(0),OrbitalSetSize,psi.data());
+        const ValueType* restrict gx=Tempv.data(1);
+        const ValueType* restrict gy=Tempv.data(2);
+        const ValueType* restrict gz=Tempv.data(3);
         for(size_t j=0; j<OrbitalSetSize; j++)
         {
-          dpsi[j][0]=Tempv[2][j];
-          dpsi[j][1]=Tempv[3][j];
-          dpsi[j][2]=Tempv[4][j];
+          dpsi[j][0]=gx[j];
+          dpsi[j][1]=gy[j];
+          dpsi[j][2]=gz[j];
+        }
+        simd::copy_n(Tempv.data(4),OrbitalSetSize,d2psi.data());
+      }
+
+    inline void
+      evaluateVGL(const ParticleSet& P, int iat, VGLVector_t vgl, bool newpos)
+      {
+        if(Identity)
+        {
+          BS->evaluateVGL(P,iat,vgl,newpos);
+        }
+        else
+        {
+          BS->evaluateVGL(P,iat,Temp,newpos);
+          Product_ABt(Temp,C,vgl);
         }
       }
 
@@ -160,15 +190,18 @@ namespace qmcplusplus
       for(size_t i=0, iat=first; iat<last; i++,iat++)
       {
         BS->evaluateVGL(P,iat,Temp,curpos);
-        MatrixOperators::product_ABt(Temp,C,Tempv);
-        simd::copy_n(Tempv[0],OrbitalSetSize,logdet[i]);
-        simd::copy_n(Tempv[1],OrbitalSetSize,d2logdet[i]);
-        for(int j=0; j<OrbitalSetSize; j++)
+        Product_ABt(Temp,C,Tempv);
+        simd::copy_n(Tempv.data(0),OrbitalSetSize,logdet[i]);
+        const ValueType* restrict gx=Tempv.data(1);
+        const ValueType* restrict gy=Tempv.data(2);
+        const ValueType* restrict gz=Tempv.data(3);
+        for(size_t j=0; j<OrbitalSetSize; j++)
         {
-          dlogdet[i][j][0]=Tempv[2][j];
-          dlogdet[i][j][1]=Tempv[3][j];
-          dlogdet[i][j][2]=Tempv[4][j];
+          dlogdet[i][j][0]=gx[j];
+          dlogdet[i][j][1]=gy[j];
+          dlogdet[i][j][2]=gz[j];
         }
+        simd::copy_n(Tempv.data(4),OrbitalSetSize,d2logdet[i]);
       }
     }
 

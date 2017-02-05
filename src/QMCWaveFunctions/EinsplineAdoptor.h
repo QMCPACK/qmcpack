@@ -343,9 +343,9 @@ struct BsplineSet: public SPOSetBase, public SplineAdoptor
   }
 
   /** einspline does not need any other state data */
-  void evaluateVGL(const ParticleSet& P, int iat, RefVector_t& val, GLVector_t& gl, bool newp)
+  void evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl, bool newp)
   {
-    SplineAdoptor::evaluate_vgl_combo(P.R[iat],val,gl);
+    SplineAdoptor::evaluate_vgl_combo(P.R[iat],vgl);
   }
 
 };

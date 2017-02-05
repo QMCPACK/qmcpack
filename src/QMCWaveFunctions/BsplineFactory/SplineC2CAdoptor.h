@@ -324,8 +324,8 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
 
   /** identical to assign_vgl but the output container is SoA container
    */
-  template<typename VV, typename GL>
-  inline void assign_vgl_soa(const PointType& r, VV& psi, GL& dpsi)
+  template<typename VGL>
+  inline void assign_vgl_soa(const PointType& r, VGL& vgl)
   {
     typedef std::complex<TT> ComplexT;
     CONSTEXPR ST zero(0);
@@ -359,13 +359,14 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
     }
 #endif
 
-    ComplexT* restrict vg_x=dpsi.data(0); ASSUME_ALIGNED(vg_x);
-    ComplexT* restrict vg_y=dpsi.data(1); ASSUME_ALIGNED(vg_y);
-    ComplexT* restrict vg_z=dpsi.data(2); ASSUME_ALIGNED(vg_z);
-    ComplexT* restrict vl_l=dpsi.data(3); ASSUME_ALIGNED(vl_l);
+    ComplexT* restrict psi =vgl.data(0)+first_spo; ASSUME_ALIGNED(psi);
+    ComplexT* restrict vg_x=vgl.data(1)+first_spo; ASSUME_ALIGNED(vg_x);
+    ComplexT* restrict vg_y=vgl.data(2)+first_spo; ASSUME_ALIGNED(vg_y);
+    ComplexT* restrict vg_z=vgl.data(3)+first_spo; ASSUME_ALIGNED(vg_z);
+    ComplexT* restrict vl_l=vgl.data(4)+first_spo; ASSUME_ALIGNED(vl_l);
 
 #pragma simd 
-    for (size_t j=0, psiIndex=first_spo; psiIndex<last_spo; j++,psiIndex++)
+    for (size_t j=0; j<N; ++j)
     {
       const size_t jr=j<<1;
       const size_t ji=jr+1;
@@ -406,11 +407,11 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
       const ST lap_r=lcart_r+mKK[j]*val_r+two*(kX*dX_i+kY*dY_i+kZ*dZ_i);
       const ST lap_i=lcart_i+mKK[j]*val_i-two*(kX*dX_r+kY*dY_r+kZ*dZ_r);
 #endif
-      psi[psiIndex ]=ComplexT(c*val_r-s*val_i,c*val_i+s*val_r);
-      vg_x[psiIndex]=ComplexT(c*gX_r -s*gX_i, c*gX_i +s*gX_r);
-      vg_y[psiIndex]=ComplexT(c*gY_r -s*gY_i, c*gY_i +s*gY_r);
-      vg_z[psiIndex]=ComplexT(c*gZ_r -s*gZ_i, c*gZ_i +s*gZ_r);
-      vl_l[psiIndex]=ComplexT(c*lap_r-s*lap_i,c*lap_i+s*lap_r);
+      psi[j] =ComplexT(c*val_r-s*val_i,c*val_i+s*val_r);
+      vg_x[j]=ComplexT(c*gX_r -s*gX_i, c*gX_i +s*gX_r);
+      vg_y[j]=ComplexT(c*gY_r -s*gY_i, c*gY_i +s*gY_r);
+      vg_z[j]=ComplexT(c*gZ_r -s*gZ_i, c*gZ_i +s*gZ_r);
+      vl_l[j]=ComplexT(c*lap_r-s*lap_i,c*lap_i+s*lap_r);
     }
   }
 
@@ -419,12 +420,12 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
    * @param psi value container
    * @param dpsi gradient-laplacian container
    */
-  template<typename VV, typename GL>
-  inline void evaluate_vgl_combo(const PointType& r, VV& psi, GL& dpsi)
+  template<typename VGL>
+  inline void evaluate_vgl_combo(const PointType& r, VGL& vgl)
   {
     PointType ru(PrimLattice.toUnit_floor(r));
     SplineInst->evaluate_vgh(ru,myV,myG,myH);
-    assign_vgl_soa(r,psi,dpsi);
+    assign_vgl_soa(r,vgl);
   }
 
   template<typename VV, typename GV, typename GGV>

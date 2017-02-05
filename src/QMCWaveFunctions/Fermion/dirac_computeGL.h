@@ -49,6 +49,32 @@ namespace qmcplusplus
     return TinyVector<T,3>(y[0],y[1],y[2]);
   }
 
+  template<typename T>
+  inline void computeGL(T* row, VectorSoaContainer<T,5>& gl_v, TinyVector<T,3>& grad, T& lap)
+  {
+    CONSTEXPR T czero(0);
+    CONSTEXPR T cone(1);
+    int four=4;
+    int na=gl_v.size();
+    int lda=gl_v.capacity();
+    T y[]={czero,czero,czero,czero};
+    BLAS::gemv('T',na,four,cone,gl_v.data(1),lda,row,1,czero,y,1);
+    grad[0]=y[0]; grad[1]=y[1]; grad[2]=y[2]; lap=y[3];
+  }
+
+  template<typename T>
+  inline TinyVector<T,3> computeG(T* row, VectorSoaContainer<T,5>& gl_v)
+  {
+    constexpr T czero(0);
+    constexpr T cone(1);
+    int three=3;
+    int na=gl_v.size();
+    int lda=gl_v.capacity();
+    T y[]={czero,czero,czero,czero};
+    BLAS::gemv('T',na,three,cone,gl_v.data(1),lda,row,1,czero,y,1);
+    return TinyVector<T,3>(y[0],y[1],y[2]);
+  }
+
 #else
 
 #if QMC_COMPLEX
@@ -89,6 +115,53 @@ namespace qmcplusplus
     const T* restrict gx_p=gl_v.data(0);
     const T* restrict gy_p=gl_v.data(1);
     const T* restrict gz_p=gl_v.data(2);
+    T gx=czero, gy=czero, gz=czero;
+    const int n=gl_v.size();
+#pragma omp simd reduction(+:gx,gy,gz)
+    for(size_t i=0; i<n; ++i)
+    {
+      gx+=row[i]*gx_p[i];
+      gy+=row[i]*gy_p[i];
+      gz+=row[i]*gz_p[i];
+    }
+    return TinyVector<T,3>(gx,gy,gz);
+  }
+
+  ///real version using simd: only for testing
+  template<typename T>
+  inline void computeGL(T* row, VectorSoaContainer<T,5>& gl_v, TinyVector<T,3>& grad, T& lap)
+  {
+    constexpr T czero(0);
+    constexpr T cone(1);
+    const T* restrict gx_p=gl_v.data(1);
+    const T* restrict gy_p=gl_v.data(2);
+    const T* restrict gz_p=gl_v.data(3);
+    const T* restrict l_p=gl_v.data(4);
+    lap=czero;
+    T gx=czero, gy=czero, gz=czero,l=czero;
+    const int n=gl_v.size();
+#pragma omp simd reduction(+:gx,gy,gz,l)
+    for(size_t i=0; i<n; ++i)
+    {
+      gx +=row[i]*gx_p[i];
+      gy +=row[i]*gy_p[i];
+      gz +=row[i]*gz_p[i];
+      l+=row[i]*l_p[i];
+    }
+    grad[0]=gx;
+    grad[1]=gy;
+    grad[2]=gz;
+    lap=l;
+  }
+
+  template<typename T>
+  inline TinyVector<T,3> computeG(T* row, VectorSoaContainer<T,5>& gl_v)
+  {
+    constexpr T czero(0);
+    constexpr T cone(1);
+    const T* restrict gx_p=gl_v.data(1);
+    const T* restrict gy_p=gl_v.data(2);
+    const T* restrict gz_p=gl_v.data(3);
     T gx=czero, gy=czero, gz=czero;
     const int n=gl_v.size();
 #pragma omp simd reduction(+:gx,gy,gz)

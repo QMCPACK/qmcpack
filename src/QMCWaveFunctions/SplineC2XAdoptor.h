@@ -249,8 +249,8 @@ struct SplineC2CPackedAdoptor: public SplineAdoptorBase<ST,D>
     assign_vgh(r,0,psi,dpsi,grad_grad_psi);
   }
 
-  template<typename VV, typename GL>
-  void evaluate_vgl_combo(const PointType& r,VV& psi, GL& dpsi)
+  template<typename VGL>
+  void evaluate_vgl_combo(const PointType& r,VGL& dpsi)
   { }
 };
 
@@ -498,8 +498,8 @@ struct SplineC2RPackedAdoptor: public SplineAdoptorBase<ST,D>
     assign_vgh(r,0,psi,dpsi,grad_grad_psi);
   }
 
-  template<typename VV, typename GL>
-  void evaluate_vgl_combo(const PointType& r,VV& psi, GL& dpsi)
+  template<typename VGL>
+  void evaluate_vgl_combo(const PointType& r,VGL& dpsi)
   { }
 
 };
