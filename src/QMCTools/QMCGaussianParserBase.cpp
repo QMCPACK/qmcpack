@@ -507,7 +507,6 @@ QMCGaussianParserBase::createDeterminantSet()
   xmlNodePtr det_data
   = xmlNewTextChild(adet,NULL,(const xmlChar*)"coefficient",(const xmlChar*)eig.str().c_str());
   xmlNewProp(det_data,(const xmlChar*)"size",(const xmlChar*)b_size.str().c_str());
-  std::cout<<"B_size.str()="<<b_size.str()<<std::endl;
   xmlNewProp(det_data,(const xmlChar*)"id",(const xmlChar*)"updetC");
   xmlNodePtr cur = xmlAddChild(slaterdet,adet);
   adet = xmlNewNode(NULL,(const xmlChar*)"determinant");

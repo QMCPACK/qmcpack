@@ -261,6 +261,7 @@ bool SPOSetBase::putFromXML(xmlNodePtr coeff_ptr)
 bool SPOSetBase::putFromH5(const char* fname, xmlNodePtr coeff_ptr)
 {
 #if defined(HAVE_LIBHDF5)
+  bool file_id=false;
   int norbs=OrbitalSetSize;
   int neigs=BasisSetSize;
   std::string setname;
@@ -276,7 +277,11 @@ bool SPOSetBase::putFromH5(const char* fname, xmlNodePtr coeff_ptr)
   }
   Matrix<RealType> Ctemp(BasisSetSize,BasisSetSize);
   hdf_archive hin(0);
-  hin.open(fname);
+  file_id=hin.open(fname);
+  if (!file_id){
+      APP_ABORT("SPOSetBase::putFromH5 missing or incorrect path to H5 file.");
+  }
+
   hin.read(Ctemp,setname);
   int n=0,i=0;
   while(i<norbs)
