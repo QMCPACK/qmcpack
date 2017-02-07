@@ -218,6 +218,8 @@ int main(int argc, char **argv)
     parser->Title=prefix;
     parser->DoCusp=addCusp;
     parser->UseHDF5=usehdf5;
+    if (usehdf5)
+      parser->h5file=parser->Title+".eig.h5";
     parser->IonSystem.setName(ion_tag);
     parser->multideterminant=ci;
     parser->ci_threshold=thres;
@@ -231,6 +233,7 @@ int main(int argc, char **argv)
     parser->parse(in_file);
     parser->dump(psi_tag, ion_tag);
     OHMMS::Controller->finalize();
+    
 
   }
   return 0;

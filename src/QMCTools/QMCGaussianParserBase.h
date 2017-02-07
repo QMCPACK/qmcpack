@@ -29,6 +29,10 @@
 #include "OhmmsData/OhmmsElementBase.h"
 #include "Utilities/SimpleParser.h"
 #include "Particle/ParticleSet.h"
+#include "Numerics/HDFSTLAttrib.h"
+#include "OhmmsData/HDFStringAttrib.h"
+#include "io/hdf_archive.h"
+
 
 using namespace qmcplusplus;
 
@@ -80,6 +84,7 @@ struct QMCGaussianParserBase
   std::string CurrentCenter;
   std::string outputFile;
   std::string angular_type;
+  std::string h5file;
 
   ParticleSet IonSystem;
 
@@ -119,8 +124,11 @@ struct QMCGaussianParserBase
   xmlNodePtr createElectronSet();
   xmlNodePtr createIonSet();
   xmlNodePtr createBasisSet();
+  xmlNodePtr createBasisSetWithHDF5();
   xmlNodePtr createCenter(int iat, int _off);
+  void createCenterH5(int iat, int _off,hid_t basisset);
   void createShell(int n, int ig, int off_, xmlNodePtr abasis);
+  void createShellH5(int n, int ig, int off_, hid_t atomicBasisSet);
   xmlNodePtr createDeterminantSet();
   xmlNodePtr createMultiDeterminantSet();
   xmlNodePtr createMultiDeterminantSetVSVB();
