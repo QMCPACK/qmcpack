@@ -18,10 +18,25 @@ FUNCTION( COPY_DIRECTORY_USING_SYMLINK SRC_DIR DST_DIR )
     EXECUTE_PROCESS( COMMAND cp -as --remove-destination "${SRC_DIR}" -T "${DST_DIR}" )
 ENDFUNCTION()
 
+# Copy files, but symlink the *.h5 files (which are the large ones)
+FUNCTION( COPY_DIRECTORY_SYMLINK_H5 SRC_DIR DST_DIR)
+    # Copy everything but *.h5 files
+    FILE(COPY "${SRC_DIR}/" DESTINATION "${DST_DIR}" PATTERN "*.h5" EXCLUDE)
+
+    # Now find and symlink the *.h5 files
+    FILE(GLOB_RECURSE H5 "${SRC_DIR}/*.h5")
+    FOREACH(F IN LISTS H5)
+      FILE(RELATIVE_PATH R "${SRC_DIR}" "${F}")
+      #MESSAGE("Creating symlink from  ${SRC_DIR}/${R} to ${DST_DIR}/${R}")
+      EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E create_symlink "${SRC_DIR}/${R}" "${DST_DIR}/${R}")
+    ENDFOREACH()
+ENDFUNCTION()
+
 # Control copy vs. symlink with top-level variable
 FUNCTION( COPY_DIRECTORY_MAYBE_USING_SYMLINK SRC_DIR DST_DIR )
   IF (QMC_SYMLINK_TEST_FILES)
-    COPY_DIRECTORY_USING_SYMLINK("${SRC_DIR}" "${DST_DIR}")
+    #COPY_DIRECTORY_USING_SYMLINK("${SRC_DIR}" "${DST_DIR}")
+    COPY_DIRECTORY_SYMLINK_H5("${SRC_DIR}" "${DST_DIR}" )
   ELSE()
     COPY_DIRECTORY("${SRC_DIR}" "${DST_DIR}")
   ENDIF()
