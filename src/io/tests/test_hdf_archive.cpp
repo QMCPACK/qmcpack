@@ -11,14 +11,16 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#define CATCH_CONFIG_MAIN
-#include "catch.hpp"
+#include "Message/catch_mpi_main.hpp"
 
 #include "io/hdf_archive.h"
 #include <vector>
+#include <string>
+#include <sstream>
 
 
 using std::vector;
+using std::string;
 
 using namespace qmcplusplus;
 
@@ -160,4 +162,94 @@ TEST_CASE("hdf_archive_group", "[hdf]")
   REQUIRE(j3 == j);
 
   hd2.close();
+}
+
+TEST_CASE("hdf_archive_tiny_vector", "[hdf]")
+{
+  hdf_archive hd;
+  hd.create("test_tiny_vector.hdf");
+
+  TinyVector<double, 2> v(2);
+
+  v[0] = 1.2;
+  v[1] = 1.3;
+
+  bool okay = hd.write(v, "tiny_vector_double");
+  REQUIRE(okay);
+
+  hd.close();
+
+  hdf_archive hd2;
+  hd2.open("test_tiny_vector.hdf");
+
+  TinyVector<double, 2> v2;
+  okay = hd2.read(v2, "tiny_vector_double");
+  REQUIRE(okay);
+  for (int i = 0; i < v.size(); i++)
+  {
+    REQUIRE(v[i] == v2[i]);
+  }
+}
+
+TEST_CASE("hdf_archive_tensor", "[hdf]")
+{
+  hdf_archive hd;
+  hd.create("test_tensor.hdf");
+
+  Tensor<float, 2> v(2);
+
+  v(0,1) = 1.2f;
+  v(1,0) = 1.3f;
+  v(0,1) = -2.3f;
+  v(1,1) = 10.0f;
+
+  bool okay = hd.write(v, "tiny_tensor_float");
+  REQUIRE(okay);
+
+  hd.close();
+
+  hdf_archive hd2;
+  hd2.open("test_tensor.hdf");
+
+  Tensor<float, 2> v2;
+  okay = hd2.read(v2, "tiny_tensor_float");
+  REQUIRE(okay);
+  for (int i = 0; i < 2; i++)
+  {
+    for (int j = 0; j < 2; j++)
+    {
+      REQUIRE(v(i,j) == v2(i,j));
+    }
+  }
+}
+
+TEST_CASE("hdf_archive_string", "[hdf]")
+{
+  hdf_archive hd;
+  hd.create("test_string.hdf");
+
+  string s("this is a test");
+  bool okay = hd.write(s, "string");
+  REQUIRE(okay);
+
+
+  std::ostringstream o;
+  o << "Another test" << std::endl;
+  okay = hd.write(o, "ostringstream");
+  REQUIRE(okay);
+
+  hd.close();
+
+  hdf_archive hd2;
+  okay = hd2.open("test_string.hdf");
+  REQUIRE(okay);
+  string s2;
+  okay = hd2.read(s2, "string");
+  REQUIRE(okay);
+  REQUIRE(s == s2);
+
+  string o2;
+  okay = hd2.read(o2, "ostringstream");
+  REQUIRE(okay);
+  REQUIRE(o.str() == o2);
 }
