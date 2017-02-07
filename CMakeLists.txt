@@ -29,6 +29,8 @@ SET( DART_TESTING_TIMEOUT 3600 CACHE STRING "Maximum time for one test")
 ENABLE_TESTING()
 INCLUDE( CTest )
 
+SET( QMC_SYMLINK_TEST_FILES TRUE CACHE BOOL "Use symbolic links for test files to save space.  Set to false to copy files instead.")
+
 ######################################################################
 # Build level
 ######################################################################
