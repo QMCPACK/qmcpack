@@ -451,7 +451,7 @@ PseudoClass::WriteCASINO(string fname)
     fprintf (fout, "  %22.16e\n", r);
   }
   
-  for (int l=0; l<3; l++) {
+  for (int l=0; l<ChannelPotentials.size(); l++) {
     ChannelPotentialClass &pot = (l < ChannelPotentials.size()) ?
       ChannelPotentials[l] : ChannelPotentials[LocalChannel];
     if (l < ChannelPotentials.size() && l != pot.l) {
