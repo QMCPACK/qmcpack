@@ -615,7 +615,7 @@ PseudoClass::WriteUPF (string fileName)
 	   date.str().c_str());
 
 	   
-  fprintf (fout, "<PP_INFO/>\n");
+  fprintf (fout, "</PP_INFO>\n");
 
   // Write PP_HEADER section
   fprintf (fout, "<PP_HEADER>\n");
@@ -649,13 +649,13 @@ PseudoClass::WriteUPF (string fileName)
 	     ChannelPotentials[l].l,
 	     ChannelPotentials[l].Occupation);
     
-  fprintf (fout, "<PP_HEADER/>\n");
+  fprintf (fout, "</PP_HEADER>\n");
 
   // Write PP_MESH section
   fprintf (fout, "<PP_MESH>\n");
   fprintf (fout, "  <PP_R>\n");
   Write4Block (fout, PotentialGrid.Points());
-  fprintf (fout, "  <PP_R/>\n");
+  fprintf (fout, "  </PP_R>\n");
   fprintf (fout, "  <PP_RAB>\n");
   vector<double> dr(N);
   for (int i=1; i<(N-1); i++)
@@ -664,8 +664,8 @@ PseudoClass::WriteUPF (string fileName)
   dr[N-1] = 2.0*dr[N-2]-dr[N-3];
   
   Write4Block (fout, dr);
-  fprintf (fout, "  <PP_RAB/>\n");
-  fprintf (fout, "<PP_MESH/>\n");
+  fprintf (fout, "  </PP_RAB>\n");
+  fprintf (fout, "</PP_MESH>\n");
 
   // Write PP_LOCAL section
   fprintf (fout, "<PP_LOCAL>\n");
@@ -674,7 +674,7 @@ PseudoClass::WriteUPF (string fileName)
     vloc[i] = 2.0*ChannelPotentials[LocalChannel].Vl(i); // /PotentialGrid[i];
   //vloc[0] = 2.0*ChannelPotentials[LocalChannel].Vl(1.0e-7)/1.0e-7;
   Write4Block (fout, vloc);
-  fprintf (fout, "<PP_LOCAL/>\n");
+  fprintf (fout, "</PP_LOCAL>\n");
   
   // Write the nonlocal section
   fprintf (fout, "<PP_NONLOCAL>\n");
@@ -699,7 +699,7 @@ PseudoClass::WriteUPF (string fileName)
       fprintf (fout, "    %d %d             Beta L\n", betaNum, l);
       fprintf (fout, "    %d  \n", N);
       Write4Block (fout, beta, 4);
-      fprintf (fout, "  <PP_BETA/>\n");
+      fprintf (fout, "  </PP_BETA>\n");
       betaNum++;
     }
   // Write D_ij matrix
@@ -741,8 +741,8 @@ PseudoClass::WriteUPF (string fileName)
 	       l, betaNum, norm, Dij);
       betaNum++;
     }
-  fprintf (fout, "  <PP_DIJ/>\n");
-  fprintf (fout, "<PP_NONLOCAL/>\n");
+  fprintf (fout, "  </PP_DIJ>\n");
+  fprintf (fout, "</PP_NONLOCAL>\n");
   
   // Write PP_PSWFC section
   fprintf (fout, "<PP_PSWFC>\n");
@@ -755,7 +755,7 @@ PseudoClass::WriteUPF (string fileName)
       u[i] = pot.ul(i);
     Write4Block (fout, u);
   }
-  fprintf (fout, "<PP_PSWFC/>\n");
+  fprintf (fout, "</PP_PSWFC>\n");
 
   // Write PP_RHOATOM section
   fprintf (fout, "<PP_RHOATOM>\n");
@@ -774,7 +774,7 @@ PseudoClass::WriteUPF (string fileName)
   }
   Write4Block (fout, rho_at);
   
-  fprintf (fout, "<PP_RHOATOM/>\n");
+  fprintf (fout, "</PP_RHOATOM>\n");
 
   // Close the file
   fclose (fout);
