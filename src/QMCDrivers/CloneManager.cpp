@@ -35,6 +35,37 @@ typedef int TraceManager;
 namespace qmcplusplus
 {
 
+#ifdef BGQPX
+#include <spi/include/kernel/memory.h>
+#endif
+
+void print_mem(const char* title)
+{
+#ifdef BGQPX
+  uint64_t shared, persist, heapavail, stackavail, stack, heap, guard, mmap;
+  char msg[256];
+
+  Kernel_GetMemorySize(KERNEL_MEMSIZE_SHARED, &shared);
+  Kernel_GetMemorySize(KERNEL_MEMSIZE_PERSIST, &persist);
+  Kernel_GetMemorySize(KERNEL_MEMSIZE_HEAPAVAIL, &heapavail);
+  Kernel_GetMemorySize(KERNEL_MEMSIZE_STACKAVAIL, &stackavail);
+  Kernel_GetMemorySize(KERNEL_MEMSIZE_STACK, &stack);
+  Kernel_GetMemorySize(KERNEL_MEMSIZE_HEAP, &heap);
+  Kernel_GetMemorySize(KERNEL_MEMSIZE_GUARD, &guard);
+  Kernel_GetMemorySize(KERNEL_MEMSIZE_MMAP, &mmap);
+
+  sprintf(msg,"=========== %s ===========\n",title);
+  app_log()<<msg;
+  sprintf(msg,"Allocated heap: %.2f MB, avail. heap: %.2f MB\n", (double)heap/(1024*1024),(double)heapavail/(1024*1024));
+  app_log()<<msg;
+  sprintf(msg,"Allocated stack: %.2f MB, avail. stack: %.2f MB\n", (double)stack/(1024*1024), (double)stackavail/(1024*1024));
+  app_log()<<msg;
+  sprintf(msg,"Memory: shared: %.2f MB, persist: %.2f MB, guard: %.2f MB, mmap: %.2f MB\n", (double)shared/(1024*1024), (double)persist/(1024*1024), (double)guard/(1024*1024), (double)mmap/(1024*1024));
+  sprintf(msg,"==================================================================\n");
+  app_log()<<msg;
+#endif
+}
+
 //initialization of the static wClones
 std::vector<MCWalkerConfiguration*> CloneManager::wClones;
 //initialization of the static psiClones
@@ -88,6 +119,7 @@ void CloneManager::makeClones(MCWalkerConfiguration& w,
     return;
   app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for W/Psi/H." << std::endl;
   app_log() << "  Cloning methods for both Psi and H are used" << std::endl;
+  print_mem("Memory Usage before Cloning");
   OhmmsInfo::Log->turnoff();
   OhmmsInfo::Warn->turnoff();
 
@@ -104,6 +136,7 @@ void CloneManager::makeClones(MCWalkerConfiguration& w,
   }
   OhmmsInfo::Log->reset();
   OhmmsInfo::Warn->reset();
+  print_mem("Memory Usage After Cloning");
 }
 
 void CloneManager::makeClones(std::vector<MCWalkerConfiguration*>& wpool,
