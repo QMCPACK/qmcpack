@@ -61,7 +61,7 @@ namespace qmcplusplus
 
     //resize t_logpsi with the padding: this is used as a scratch array for the inversion after the transpose
     //this can be used to store psi[i] for the delayed update
-    Phi->t_logpsi.resize(OrbitalSetSize,NorbPad);
+    Phi->t_logpsi.resize(NumOrbitals,NorbPad);
 
     BlockSize=NorbPad*(OHMMS_DIM+1);
     memoryPool.resize(nel*BlockSize);
