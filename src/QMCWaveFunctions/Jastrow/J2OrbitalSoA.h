@@ -73,11 +73,10 @@ struct  J2OrbitalSoA : public OrbitalBase
   ParticleAttrib<valT> Uat;
   ///\f$dUat[i] = sum_(j) du_{i,j}\f$
   ParticleAttrib<posT> dUat;
-  RealType *FirstAddressOfdU, *LastAddressOfdU;
+  valT *FirstAddressOfdU, *LastAddressOfdU;
   ///\f$d2Uat[i] = sum_(j) d2u_{i,j}\f$
   ParticleAttrib<valT> d2Uat;
   valT cur_Uat;
-  posT cur_dUat;
   aligned_vector<valT> cur_u, cur_du, cur_d2u;
   aligned_vector<valT> old_u, old_du, old_d2u;
   aligned_vector<valT> DistCompressed;
@@ -446,10 +445,8 @@ J2OrbitalSoA<FT>::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 
   computeU3(P,iat,P.DistTables[0]->Temp_r.data(), cur_u.data(),cur_du.data(),cur_d2u.data());
   cur_Uat=simd::accumulate_n(cur_u.data(),N,valT());
-  cur_dUat=accumulateG(cur_du.data(),P.DistTables[0]->Temp_dr);
-  grad_iat+=cur_dUat;
-
   DiffVal=Uat[iat]-cur_Uat;
+  grad_iat+=accumulateG(cur_du.data(),P.DistTables[0]->Temp_dr);
   return std::exp(DiffVal);
 }
 
@@ -467,7 +464,7 @@ J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat)
   }
 
   valT cur_d2Uat(0);
-  if(UpdateMode == ORB_PBYP_RATIO) cur_dUat=posT();
+  posT cur_dUat;
   for(int jat=0; jat<N; jat++)
   {
     posT dg, newg;
@@ -484,8 +481,8 @@ J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat)
     Uat[jat]   += du;
     dUat[jat]  -= dg;
     d2Uat[jat] += dl;
+    cur_dUat += newg;
     cur_d2Uat  -= newl;
-    if(UpdateMode == ORB_PBYP_RATIO) cur_dUat += newg;
   }
   Uat[iat]   = cur_Uat;
   dUat[iat]  = cur_dUat;
