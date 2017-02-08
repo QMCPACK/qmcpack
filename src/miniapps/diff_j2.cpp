@@ -12,6 +12,9 @@
 /** @file j2debug.cpp
  * @brief Debugging J2OribitalSoA 
  */
+
+#define VERSION_YE
+
 #include <Configuration.h>
 #include <Particle/ParticleSet.h>
 #include <Particle/DistanceTable.h>
@@ -25,7 +28,11 @@
 #include <QMCWaveFunctions/Jastrow/BsplineFunctor.h>
 #include <QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h>
 #include <miniapps/BsplineFunctorSoA.h>
+#ifdef VERSION_YE
+#include <miniapps/J2OrbitalSoA.Ye.h>
+#else
 #include <miniapps/J2OrbitalSoA.h>
+#endif
 #include <getopt.h>
 
 using namespace std;
@@ -218,8 +225,8 @@ int main(int argc, char** argv)
 
         if(Random() < r_aos)
         {
-          els.acceptMove(iel);
           J.acceptMove(els,iel);
+          els.acceptMove(iel);
 
           els_aos.acceptMove(iel);
           J_aos.acceptMove(els_aos,iel);
@@ -242,7 +249,11 @@ int main(int argc, char** argv)
 
       els.G=czero;
       els.L=czero;
+#ifdef VERSION_YE
+      J.evaluateGL(els, els.G, els.L);
+#else
       J.evaluateGL(els);
+#endif
 
       els_aos.G=czero;
       els_aos.L=czero;
