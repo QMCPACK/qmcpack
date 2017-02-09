@@ -31,6 +31,14 @@ INCLUDE( CTest )
 
 SET( QMC_SYMLINK_TEST_FILES TRUE CACHE BOOL "Use symbolic links for test files to save space.  Set to false to copy files instead.")
 
+
+IF (QMC_SYMLINK_TEST_FILES)
+  SET(SYMLINK_MSG "Using symbolic links for large test files may cause test failures if the build is installed on a separate filesystem from the source.  For example, Titan at OLCF.")
+ELSE()
+  SET(SYMLINK_MSG "Copying large test files uses more disk space than using symbolic links.")
+ENDIF()
+MESSAGE(STATUS "QMC_SYMLINK_TEST_FILES = ${QMC_SYMLINK_TEST_FILES}.  ${SYMLINK_MSG}")
+
 ######################################################################
 # Build level
 ######################################################################
