@@ -432,19 +432,16 @@ J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat)
 
   valT cur_d2Uat(0);
   posT cur_dUat;
+  const auto& new_dr=d_table->Temp_dr;
+  const auto& old_dr=d_table->Displacements[iat];
   for(int jat=0; jat<N; jat++)
   {
-    posT dg, newg;
-    valT dl, newl, du;
     constexpr valT lapfac=OHMMS_DIM-RealType(1);
-    du = cur_u[jat] - old_u[jat];
-    for(int idim=0; idim<OHMMS_DIM; ++idim)
-    {
-      newg[idim] = cur_du[jat]*d_table->Temp_dr.data(idim)[jat];
-      dg[idim]   = newg[idim] - old_du[jat]*d_table->Displacements[iat].data(idim)[jat];
-    }
-    newl = cur_d2u[jat] + lapfac*cur_du[jat];
-    dl   = old_d2u[jat] + lapfac*old_du[jat] - newl;
+    valT du   = cur_u[jat] - old_u[jat];
+    posT newg = cur_du[jat] * new_dr[jat];
+    posT dg   = newg - old_du[jat]*old_dr[jat];
+    valT newl = cur_d2u[jat] + lapfac*cur_du[jat];
+    valT dl   = old_d2u[jat] + lapfac*old_du[jat] - newl;
     Uat[jat]   += du;
     dUat[jat]  -= dg;
     d2Uat[jat] += dl;
