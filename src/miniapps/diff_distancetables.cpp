@@ -144,10 +144,10 @@ int main(int argc, char** argv)
       els_aos.setActive(iel);    
 
       PosType dr=sqrttau*delta[iel];
-      els.makeMoveAndCheck(iel,dr); 
-      els_aos.makeMoveAndCheck(iel,dr); 
+      bool valid_move=els.makeMoveAndCheck(iel,dr); 
+      valid_move &= els_aos.makeMoveAndCheck(iel,dr); 
 
-      if(Random()<0.5)
+      if(valid_move && Random()<0.5)
       {
         els.rejectMove(iel);
         els_aos.rejectMove(iel);

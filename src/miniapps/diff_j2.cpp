@@ -208,16 +208,14 @@ int main(int argc, char** argv)
         g_eval+=sqrt(dot(grad_aos,grad_aos));
 
         PosType dr=sqrttau*delta[iel];
-
-        grad_soa=0;
         bool good_soa=els.makeMoveAndCheck(iel,dr); 
-
-        grad_aos=0;
         bool good_aos=els_aos.makeMoveAndCheck(iel,dr); 
 
         if(!good_soa) continue;
 
+        grad_soa=0;
         RealType r_soa=J.ratioGrad(els,iel,grad_soa);
+        grad_aos=0;
         RealType r_aos=J_aos.ratioGrad(els_aos,iel,grad_aos);
 
         grad_aos-=grad_soa;

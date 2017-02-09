@@ -71,12 +71,13 @@ struct SoaDistanceTableAA: public DTD_BConds<T,D,SC>, public DistanceTableData
   {
     activePtcl=jat;
     DTD_BConds<T,D,SC>::computeDistances(P.R[jat], P.RSoA, Distances[jat],Displacements[jat], 0, Ntargets);
+    Distances[jat][jat]=std::numeric_limits<T>::max(); //assign a big number
   }
 
   inline void moveOnSphere(const ParticleSet& P, const PosType& rnew, IndexType jat) 
   {
     DTD_BConds<T,D,SC>::computeDistances(rnew, P.RSoA, Temp_r.data(),Temp_dr, 0, Ntargets);
-    //Temp_r[jat]=std::numeric_limits<T>::max(); //assign a big number
+    Temp_r[jat]=std::numeric_limits<T>::max(); //assign a big number
   }
 
   ///evaluate the temporary pair relations
