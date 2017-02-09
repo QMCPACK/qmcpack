@@ -228,9 +228,9 @@ struct DTD_BConds<T,3,PPPG+SOA_OFFSET>
     T* restrict dy=temp_dr.data(1); ASSUME_ALIGNED(dy);
     T* restrict dz=temp_dr.data(2); ASSUME_ALIGNED(dz);
 
-    const T* restrict cellx=corners.data(0); ASSUME_ALIGNED(dx);
-    const T* restrict celly=corners.data(1); ASSUME_ALIGNED(dy);
-    const T* restrict cellz=corners.data(2); ASSUME_ALIGNED(dz);
+    const T* restrict cellx=corners.data(0); ASSUME_ALIGNED(cellx);
+    const T* restrict celly=corners.data(1); ASSUME_ALIGNED(celly);
+    const T* restrict cellz=corners.data(2); ASSUME_ALIGNED(cellz);
 
 #if (defined(__IBMCPP__)) && ( __IBMCPP__ <= 1210 )
 #else
@@ -242,18 +242,13 @@ struct DTD_BConds<T,3,PPPG+SOA_OFFSET>
       const T displ_1 =py[iat]-y0;
       const T displ_2 =pz[iat]-z0;
 
-      T ar_0=displ_0*g00+displ_1*g10+displ_2*g20;
-      T ar_1=displ_0*g01+displ_1*g11+displ_2*g21;
-      T ar_2=displ_0*g02+displ_1*g12+displ_2*g22;
+      const T ar_0=-std::floor(displ_0*g00+displ_1*g10+displ_2*g20);
+      const T ar_1=-std::floor(displ_0*g01+displ_1*g11+displ_2*g21);
+      const T ar_2=-std::floor(displ_0*g02+displ_1*g12+displ_2*g22);
 
-      //put them in the box
-      ar_0-=std::floor(ar_0);
-      ar_1-=std::floor(ar_1);
-      ar_2-=std::floor(ar_2);
-
-      const T delx = ar_0*r00+ar_1*r10+ar_2*r20;
-      const T dely = ar_0*r01+ar_1*r11+ar_2*r21;
-      const T delz = ar_0*r02+ar_1*r12+ar_2*r22;
+      const T delx = displ_0+ar_0*r00+ar_1*r10+ar_2*r20;
+      const T dely = displ_1+ar_0*r01+ar_1*r11+ar_2*r21;
+      const T delz = displ_2+ar_0*r02+ar_1*r12+ar_2*r22;
 
       T rmin=std::numeric_limits<T>::max();
       int ic=0;
@@ -264,9 +259,10 @@ struct DTD_BConds<T,3,PPPG+SOA_OFFSET>
         const T y=dely+celly[c];
         const T z=delz+cellz[c];
         const T r2=x*x+y*y+z*z;
-        ic=(r2<rmin)?c:ic;
+        ic=(r2<rmin)?   c:ic;
         rmin=(r2<rmin)?r2:rmin;
       }
+
       temp_r[iat]=std::sqrt(rmin);
       dx[iat] = delx+cellx[ic];
       dy[iat] = dely+celly[ic];

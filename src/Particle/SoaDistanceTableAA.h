@@ -70,10 +70,8 @@ struct SoaDistanceTableAA: public DTD_BConds<T,D,SC>, public DistanceTableData
   inline void evaluate(ParticleSet& P, IndexType jat)
   {
     activePtcl=jat;
-    moveOnSphere(P,P.R[jat],jat);
-    simd::copy_n(Temp_r.data(),Ntargets,Distances[jat]);
-    for(int idim=0;idim<D; ++idim)
-      simd::copy_n(Temp_dr.data(idim),Ntargets,Displacements[jat].data(idim));
+    DTD_BConds<T,D,SC>::computeDistances(P.R[jat], P.RSoA, Distances[jat],Displacements[jat], 0, Ntargets);
+    Distances[jat][jat]=std::numeric_limits<T>::max(); //assign a big number
   }
 
   inline void moveOnSphere(const ParticleSet& P, const PosType& rnew, IndexType jat) 

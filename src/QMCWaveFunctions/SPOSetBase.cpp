@@ -74,7 +74,7 @@ void SPOSetBase::evaluate(const ParticleSet& P, int first, int last,
   //transpose(t_logpsi.data(),logdet.data(),OrbitalSetSize);
 }
 
-void SPOSetBase::evaluateVGL(const ParticleSet& P, int iat, RefVector_t& psiv, GLVector_t& gl, bool newp)
+void SPOSetBase::evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl, bool newp)
 {
   APP_ABORT("SPOSetBase::evaluateVGL not implemented.");
 }

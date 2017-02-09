@@ -262,8 +262,8 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
 
   /** identical to assign_vgl but the output container is SoA container
    */
-  template<typename VV, typename GL>
-  inline void assign_vgl_soa(int bc_sign, VV& psi, GL& dpsi)
+  template<typename VGL>
+  inline void assign_vgl_soa(int bc_sign, VGL& vgl)
   {
     const ST g00=PrimLattice.G(0), g01=PrimLattice.G(1), g02=PrimLattice.G(2),
              g10=PrimLattice.G(3), g11=PrimLattice.G(4), g12=PrimLattice.G(5),
@@ -280,33 +280,35 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     const ST* restrict h12=myH.data(4);
     const ST* restrict h22=myH.data(5);
 
-    TT* restrict vg_x=dpsi.data(0); ASSUME_ALIGNED(vg_x);
-    TT* restrict vg_y=dpsi.data(1); ASSUME_ALIGNED(vg_y);
-    TT* restrict vg_z=dpsi.data(2); ASSUME_ALIGNED(vg_z);
-    TT* restrict vl_l=dpsi.data(3); ASSUME_ALIGNED(vl_l);
+    TT* restrict psi =vgl.data(0)+first_spo; ASSUME_ALIGNED(psi);
+    TT* restrict vg_x=vgl.data(1)+first_spo; ASSUME_ALIGNED(vg_x);
+    TT* restrict vg_y=vgl.data(2)+first_spo; ASSUME_ALIGNED(vg_y);
+    TT* restrict vg_z=vgl.data(3)+first_spo; ASSUME_ALIGNED(vg_z);
+    TT* restrict vl_l=vgl.data(4)+first_spo; ASSUME_ALIGNED(vl_l);
 
+    const size_t N=last_spo-first_spo;
     if (bc_sign & 1)
     {
-#pragma simd
-      for(int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j)
+#pragma omp simd
+      for(int j=0; j<N; ++j)
       {
-        psi[psiIndex]=-myV[j];
-        vg_x[psiIndex]=-(g00*g0[j]+g01*g1[j]+g02*g2[j]);
-        vg_y[psiIndex]=-(g10*g0[j]+g11*g1[j]+g12*g2[j]);
-        vg_z[psiIndex]=-(g20*g0[j]+g21*g1[j]+g22*g2[j]);
-        vl_l[psiIndex]=-SymTrace(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],symGG);
+        psi [j]=-myV[j];
+        vg_x[j]=-(g00*g0[j]+g01*g1[j]+g02*g2[j]);
+        vg_y[j]=-(g10*g0[j]+g11*g1[j]+g12*g2[j]);
+        vg_z[j]=-(g20*g0[j]+g21*g1[j]+g22*g2[j]);
+        vl_l[j]=-SymTrace(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],symGG);
       }
     }
     else
     {
-#pragma simd
-      for(int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j)
+#pragma omp simd
+      for(int j=0; j<N; ++j)
       {
-        psi[psiIndex]=myV[j];
-        vg_x[psiIndex]=(g00*g0[j]+g01*g1[j]+g02*g2[j]);
-        vg_y[psiIndex]=(g10*g0[j]+g11*g1[j]+g12*g2[j]);
-        vg_z[psiIndex]=(g20*g0[j]+g21*g1[j]+g22*g2[j]);
-        vl_l[psiIndex]=SymTrace(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],symGG);
+        psi [j]=myV[j];
+        vg_x[j]=(g00*g0[j]+g01*g1[j]+g02*g2[j]);
+        vg_y[j]=(g10*g0[j]+g11*g1[j]+g12*g2[j]);
+        vg_z[j]=(g20*g0[j]+g21*g1[j]+g22*g2[j]);
+        vl_l[j]=SymTrace(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],symGG);
       }
     }
   }
@@ -316,13 +318,13 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
    * @param psi value container
    * @param dpsi gradient-laplacian container
    */
-  template<typename VV, typename GL>
-  inline void evaluate_vgl_combo(const PointType& r, VV& psi, GL& dpsi)
+  template<typename VGL>
+  inline void evaluate_vgl_combo(const PointType& r, VGL& vgl)
   {
     PointType ru;
     int bc_sign=convertPos(r,ru);
     SplineInst->evaluate_vgh(ru,myV,myG,myH);
-    assign_vgl_soa(bc_sign,psi,dpsi);
+    assign_vgl_soa(bc_sign,vgl);
   }
 
   template<typename VV, typename GV, typename GGV>

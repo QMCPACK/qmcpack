@@ -26,16 +26,17 @@ class DiracDeterminantSoA: public DiracDeterminantBase
 
   public:
   
-  typedef OrbitalSetTraits<ValueType>::GLVector_t       GLVector_t;
+  typedef VectorSoaContainer<ValueType,DIM+1> GLVector_t;
+  typedef VectorSoaContainer<ValueType,DIM+2> VGLVector_t;
 
   bool ComputeDeterminant;
   /** full GL container to compute gradient and laplacian
    * 
    * mGL[i][j] returns (gx,gy,gz,lap) for Phi(i,j) SPO
    */
-  std::vector<GLVector_t> mGL;
+  aligned_vector<GLVector_t> mGL;
   /** a vector of (gx,gy,gz,lap) for the active particle */
-  GLVector_t vGL; 
+  VGLVector_t vVGL; 
   /** memory management for this object */
   aligned_vector<ValueType> memoryPool;
   /** size of Norb for alignment */
@@ -69,6 +70,7 @@ class DiracDeterminantSoA: public DiracDeterminantBase
               ParticleSet::ParticleGradient_t& G,
               ParticleSet::ParticleLaplacian_t& L) ;
 
+  /** recompute evaluate everything clean */
   void recompute(ParticleSet& P);
 
   void updateAfterSweep(ParticleSet& P,

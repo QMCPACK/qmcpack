@@ -121,6 +121,9 @@ int main(int argc, char** argv)
   DistanceTableData* d_ee=DistanceTable::add(els,DT_SOA);
   DistanceTableData* d_ie=DistanceTable::add(ions,els,DT_SOA);
 
+  d_ie->setRmax(els.Lattice.WignerSeitzRadius);
+  std::cout << "Setting 1-body cutoff " <<  d_ie->Rmax << std::endl;
+
   DistanceTableData* d_ee_aos=DistanceTable::add(els_aos,DT_AOS);
   DistanceTableData* d_ie_aos=DistanceTable::add(ions_aos,els_aos,DT_AOS);
 
@@ -141,10 +144,10 @@ int main(int argc, char** argv)
       els_aos.setActive(iel);    
 
       PosType dr=sqrttau*delta[iel];
-      els.makeMoveAndCheck(iel,dr); 
-      els_aos.makeMoveAndCheck(iel,dr); 
+      bool valid_move=els.makeMoveAndCheck(iel,dr); 
+      valid_move &= els_aos.makeMoveAndCheck(iel,dr); 
 
-      if(Random()<0.5)
+      if(valid_move && Random()<0.5)
       {
         els.rejectMove(iel);
         els_aos.rejectMove(iel);

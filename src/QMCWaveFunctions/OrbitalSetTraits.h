@@ -65,7 +65,7 @@ struct OrbitalSetTraits//: public OrbitalTraits<T>
   typedef Vector<GradHessType>  GradHessVector_t;
   typedef Matrix<GradHessType>  GradHessMatrix_t;
   typedef VectorViewer<ValueType>             RefVector_t;
-  typedef VectorSoaContainer<ValueType,DIM+1> GLVector_t;
+  typedef VectorSoaContainer<ValueType,DIM+2> VGLVector_t;
 };
 
 ///typedef for a set of variables that are varied during an optimization
