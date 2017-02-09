@@ -141,6 +141,7 @@ int main(int argc, char** argv)
     OneBodyJastrowOrbital<BsplineFunctor<RealType> > J_aos(ions,els_aos);
 
     DistanceTableData* d_ie=DistanceTable::add(ions,els,DT_SOA);
+    d_ie->setRmax(Rmax);
 
     buildJ1(J);
     cout << "Done with the J1 " << endl;
@@ -278,7 +279,6 @@ int main(int argc, char** argv)
       int nsphere=0;
       for(int iat=0; iat<nions; ++iat)
       {
-        const auto centerP=ions.R[iat];
         for(int nj=0, jmax=d_ie->nadj(iat); nj<jmax; ++nj)
         {
           const auto r=d_ie->distance(iat,nj);
