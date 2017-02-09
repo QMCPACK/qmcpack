@@ -6,6 +6,7 @@
 //
 // File developed by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp. 
 //                    Amrita Mathuriya, amrita.mathuriya@intel.com, Intel Corp.
+//                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
@@ -481,13 +482,12 @@ J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat)
     Uat[jat]   += du;
     dUat[jat]  -= dg;
     d2Uat[jat] += dl;
-    cur_dUat += newg;
+    cur_dUat   += newg;
     cur_d2Uat  -= newl;
   }
   Uat[iat]   = cur_Uat;
   dUat[iat]  = cur_dUat;
   d2Uat[iat] = cur_d2Uat;
-  LogValue+=DiffVal;
 }
 
 template<typename FT>
