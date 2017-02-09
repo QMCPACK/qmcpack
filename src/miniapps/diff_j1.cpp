@@ -24,8 +24,7 @@
 #include <miniapps/common.hpp>
 #include <QMCWaveFunctions/Jastrow/BsplineFunctor.h>
 #include <QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h>
-#include <miniapps/BsplineFunctorSoA.h>
-#include <miniapps/J1OrbitalSoA.h>
+#include <QMCWaveFunctions/Jastrow/J1OrbitalSoA.h>
 #include <getopt.h>
 
 using namespace std;
@@ -138,7 +137,7 @@ int main(int argc, char** argv)
     vector<RealType> ur(nels);
     random_th.generate_uniform(ur.data(),nels);
 
-    J1OrbitalSoA<BsplineFunctorSoA<RealType> > J(ions,els,ip);
+    J1OrbitalSoA<BsplineFunctor<RealType> > J(ions,els);
     OneBodyJastrowOrbital<BsplineFunctor<RealType> > J_aos(ions,els_aos);
 
     DistanceTableData* d_ie=DistanceTable::add(ions,els,DT_SOA);
@@ -160,7 +159,7 @@ int main(int argc, char** argv)
     {
       els.G=czero;
       els.L=czero;
-      J.evaluateLogAndStore(els,els.G,els.L);
+      J.evaluateLog(els,els.G,els.L);
 
       els_aos.G=czero;
       els_aos.L=czero;
@@ -208,15 +207,18 @@ int main(int argc, char** argv)
 
         PosType dr=sqrttau*delta[iel];
 
-        grad_soa=0;
-        els.makeMoveAndCheck(iel,dr); 
-        RealType r_soa=J.ratioGrad(els,iel,grad_soa);
+        bool good_soa=els.makeMoveAndCheck(iel,dr); 
+        bool good_aos=els_aos.makeMoveAndCheck(iel,dr); 
 
+        if(!good_soa) continue; //a bad move
+
+        grad_soa=0;
         grad_aos=0;
-        els_aos.makeMoveAndCheck(iel,dr); 
+        RealType r_soa=J.ratioGrad(els,iel,grad_soa);
         RealType r_aos=J_aos.ratioGrad(els_aos,iel,grad_aos);
 
         grad_aos-=grad_soa;
+
         g_ratio+=sqrt(dot(grad_aos,grad_aos));
         r_ratio += abs(r_soa/r_aos-1);
 

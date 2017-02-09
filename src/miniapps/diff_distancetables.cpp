@@ -121,6 +121,9 @@ int main(int argc, char** argv)
   DistanceTableData* d_ee=DistanceTable::add(els,DT_SOA);
   DistanceTableData* d_ie=DistanceTable::add(ions,els,DT_SOA);
 
+  d_ie->setRmax(els.Lattice.WignerSeitzRadius);
+  std::cout << "Setting 1-body cutoff " <<  d_ie->Rmax << std::endl;
+
   DistanceTableData* d_ee_aos=DistanceTable::add(els_aos,DT_AOS);
   DistanceTableData* d_ie_aos=DistanceTable::add(ions_aos,els_aos,DT_AOS);
 

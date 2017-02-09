@@ -81,7 +81,7 @@ struct LatticeAnalyzer<T,3>
   inline T calcWignerSeitzRadius(TinyVector<SingleParticlePos_t,3>& a)
   {
     T rMin = 0.5*std::numeric_limits<T>::max();
-    if(mySC == SUPERCELL_BULK) //bulk type
+    if(mySC == SUPERCELL_BULK || mySC == SUPERCELL_BULK+SOA_OFFSET) //bulk type
     {
       for (int i=-1; i<=1; i++)
         for (int j=-1; j<=1; j++)
@@ -92,7 +92,7 @@ struct LatticeAnalyzer<T,3>
               rMin=std::min(rMin,dot(L,L));
             }
     }
-    else if(mySC == SUPERCELL_SLAB)//slab type
+    else if(mySC == SUPERCELL_SLAB || mySC == SUPERCELL_SLAB+SOA_OFFSET)//slab type
     {
       for (int i=-1; i<=1; i++)
         for (int j=-1; j<=1; j++)
@@ -102,7 +102,7 @@ struct LatticeAnalyzer<T,3>
             rMin=std::min(rMin,dot(L,L));
           }
     }
-    else if(mySC == SUPERCELL_WIRE)//wire
+    else if(mySC == SUPERCELL_WIRE || mySC == SUPERCELL_WIRE+SOA_OFFSET)//wire
     {
       rMin=dot(a[0],a[0]);
     }
