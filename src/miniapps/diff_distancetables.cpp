@@ -122,6 +122,7 @@ int main(int argc, char** argv)
   DistanceTableData* d_ie=DistanceTable::add(ions,els,DT_SOA);
 
   d_ie->setRmax(els.Lattice.WignerSeitzRadius);
+  RealType Rsim=els.Lattice.WignerSeitzRadius;
   std::cout << "Setting 1-body cutoff " <<  d_ie->Rmax << std::endl;
 
   DistanceTableData* d_ee_aos=DistanceTable::add(els_aos,DT_AOS);
@@ -163,6 +164,7 @@ int main(int argc, char** argv)
   els.donePbyP();
   els_aos.donePbyP();
 
+  std::cout << "WignerSeitzRadius " <<  d_ie->Rmax << std::endl;
   {
     double r_err=0.0;
     for(int iat=0; iat<nels; ++iat)
@@ -188,52 +190,64 @@ int main(int argc, char** argv)
 
   {
     double dist_err=0.0;
+    double dist_all_err=0.0;
+    double disp_all_err=0.0;
+    double disp_err=0.0;
     int nn=0;
     for(int iel=0; iel<nels; ++iel)
       for(int jel=iel+1; jel<nels; ++jel)
       {
-        RealType d= std::abs(d_ee->Distances[jel][iel]-d_ee_aos->r(nn++));
-        dist_err += d;
+        RealType dref=d_ee_aos->r(nn);
+        RealType d= std::abs(d_ee->Distances[jel][iel]-dref);
+        PosType dr= (d_ee->Displacements[jel][iel]+d_ee_aos->dr(nn));
+        RealType d2=sqrt(dot(dr,dr));
+        dist_all_err+=d;
+        disp_all_err += d2;
+        if(dref<Rsim)
+        {
+          dist_err += d;
+          disp_err += d2;
+        }
+        ++nn;
       }
-    cout << "AA SoA-AoS in distance  = " << dist_err/nn << endl;
-  }
-  {
-    double dist_err=0.0;
-    int nn=0;
-    for(int iel=0; iel<nels; ++iel)
-      for(int jel=iel+1; jel<nels; ++jel)
-      {
-        PosType dr= (d_ee->Displacements[jel][iel]+d_ee_aos->dr(nn++));
-        RealType d=sqrt(dot(dr,dr));
-        dist_err += d;
-      }
-    cout << "AA SoA-AoS in displacement  = " << dist_err/nn << endl;
-  }
-
-  {
-    double dist_err=0.0;
-    int nn=0;
-    for(int i=0; i<nions; ++i)
-      for(int j=0; j<nels; ++j)
-      {
-        RealType d= std::abs(d_ie->Distances[j][i]-d_ie_aos->r(nn++));
-        dist_err += d;
-      }
-    cout << "AB SoA-AoS in distance  = " << dist_err/nn << endl;
+    cout << "---------------------------------" << endl;
+    cout << "AA SoA-AoS in distance     (ALL) = " << dist_all_err/nn << endl;
+    cout << "AA SoA-AoS in displacement (ALL) = " << disp_all_err/nn << endl;
+    cout << endl;
+    cout << "AA SoA-AoS in distance           = " << dist_err/nn << endl;
+    cout << "AA SoA-AoS in displacement       = " << disp_err/nn << endl;
   }
 
   {
     double dist_err=0.0;
+    double dist_all_err=0.0;
+    double disp_all_err=0.0;
+    double disp_err=0.0;
     int nn=0;
     for(int i=0; i<nions; ++i)
       for(int j=0; j<nels; ++j)
       {
-        PosType dr= (d_ie->Displacements[j][i]+d_ie_aos->dr(nn++));
-        RealType d=sqrt(dot(dr,dr));
-        dist_err += d;
+        RealType dref=d_ie_aos->r(nn);
+        RealType d= std::abs(d_ie->Distances[j][i]-dref);
+        PosType dr= (d_ie->Displacements[j][i]+d_ie_aos->dr(nn));
+        RealType d2=sqrt(dot(dr,dr));
+        dist_all_err += d;
+        disp_all_err += d2;
+        if(dref<Rsim)
+        {
+          dist_err += d;
+          disp_err += d2;
+        }
+        ++nn;
       }
-    cout << "AB SoA-AoS in displacement  = " << dist_err/nn << endl;
+    cout << "---------------------------------" << endl;
+    cout << "AB SoA-AoS in distance     (ALL) = " << dist_all_err/nn << endl;
+    cout << "AB SoA-AoS in displacement (ALL) = " << disp_all_err/nn << endl;
+    cout << endl;
+    cout << "AB SoA-AoS in distance           = " << dist_err/nn << endl;
+    cout << "AB SoA-AoS in displacement       = " << disp_err/nn << endl;
   }
+
 
   {
     double dist_err=0.0;
@@ -250,6 +264,7 @@ int main(int argc, char** argv)
         displ_err += sqrt(dot(diff_dr,diff_dr));
         nn++;
       }
+    cout << "---------------------------------" << endl;
     cout << "AB SoA-AoS compact = " << dist_err/nn << " " << displ_err/nn;
     cout << " Total number of nn = " << nn << " / " << nels*nions << endl;
   }
