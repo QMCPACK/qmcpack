@@ -25,8 +25,9 @@ namespace qmcplusplus
     d_ie=DistanceTable::add(ions,els,DT_AOS);
 
     int ip=omp_get_thread_num();
+    double r2_cut=std::min(6.4,double(els.Lattice.WignerSeitzRadius));
     J2=new J2OrbType(els,ip);
-    buildJ2(*J2);
+    buildJ2(*J2,r2_cut);
   }
 
   AoSWaveFunction::~AoSWaveFunction()

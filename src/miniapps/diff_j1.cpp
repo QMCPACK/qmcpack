@@ -143,9 +143,11 @@ int main(int argc, char** argv)
     DistanceTableData* d_ie=DistanceTable::add(ions,els,DT_SOA);
     d_ie->setRmax(Rmax);
 
-    buildJ1(J);
+    RealType r1_cut=std::min(RealType(6.4),els.Lattice.WignerSeitzRadius);
+
+    buildJ1(J,r1_cut);
     cout << "Done with the J1 " << endl;
-    buildJ1(J_aos);
+    buildJ1(J_aos,r1_cut);
     cout << "Done with the J1_aos " << endl;
 
     constexpr RealType czero(0);
