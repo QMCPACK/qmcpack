@@ -91,9 +91,10 @@ struct SoaDistanceTableAA: public DTD_BConds<T,D,SC>, public DistanceTableData
   ///update the iat-th row for iat=[0,iat-1)
   inline void update(IndexType iat)
   {
-    if(iat==0 || iat!=activePtcl) return;
+    //if(iat==0 || iat!=activePtcl) return;
     //update by a cache line
-    const int nupdate=getAlignedSize<T>(iat);
+    //const int nupdate=getAlignedSize<T>(iat);
+    const int nupdate=NumTargets;
     simd::copy_n(Temp_r.data(),nupdate,Distances[iat]);
     for(int idim=0;idim<D; ++idim)
       simd::copy_n(Temp_dr.data(idim),nupdate,Displacements[iat].data(idim));
