@@ -31,7 +31,7 @@ struct DTD_BConds<T,3,SUPERCELL_OPEN+SOA_OFFSET>
 
   template<typename PT, typename RSoA>
   void computeDistances(const PT& pos, const RSoA& R0, 
-      T* restrict temp_r, RSoA& temp_dr, int first, int last)
+      T* restrict temp_r, RSoA& temp_dr, int first, int last, int flip_ind=0)
   {
     const T x0=pos[0];
     const T y0=pos[1];
@@ -73,7 +73,7 @@ struct DTD_BConds<T,3,PPPO+SOA_OFFSET>
 
   template<typename PT, typename RSoA>
   void computeDistances(const PT& pos, const RSoA& R0, 
-      T* restrict temp_r, RSoA& temp_dr, int first, int last)
+      T* restrict temp_r, RSoA& temp_dr, int first, int last, int flip_ind=0)
   {
     const T x0=pos[0];
     const T y0=pos[1];
@@ -121,7 +121,7 @@ struct DTD_BConds<T,3,PPPS+SOA_OFFSET>
 
   template<typename PT, typename RSoA>
   void computeDistances(const PT& pos, const RSoA& R0, 
-      T* restrict temp_r, RSoA& temp_dr, int first, int last)
+      T* restrict temp_r, RSoA& temp_dr, int first, int last, int flip_ind=0)
   {
     const T x0=pos[0];
     const T y0=pos[1];
@@ -214,7 +214,7 @@ struct DTD_BConds<T,3,PPPG+SOA_OFFSET>
 
   template<typename PT, typename RSoA>
   void computeDistances(const PT& pos, const RSoA& R0, 
-      T* restrict temp_r, RSoA& temp_dr, int first, int last)
+      T* restrict temp_r, RSoA& temp_dr, int first, int last, int flip_ind=0)
   {
     const T x0=pos[0];
     const T y0=pos[1];
@@ -238,9 +238,12 @@ struct DTD_BConds<T,3,PPPG+SOA_OFFSET>
 #endif
     for(int iat=first; iat<last; ++iat)
     {
-      const T displ_0 =px[iat]-x0;
-      const T displ_1 =py[iat]-y0;
-      const T displ_2 =pz[iat]-z0;
+      CONSTEXPR T minusone(-1);
+      CONSTEXPR T one(1);
+      const T flip=iat<flip_ind?minusone:one;
+      const T displ_0 =(px[iat]-x0)*flip;
+      const T displ_1 =(py[iat]-y0)*flip;
+      const T displ_2 =(pz[iat]-z0)*flip;
 
       const T ar_0=-std::floor(displ_0*g00+displ_1*g10+displ_2*g20);
       const T ar_1=-std::floor(displ_0*g01+displ_1*g11+displ_2*g21);
@@ -264,9 +267,9 @@ struct DTD_BConds<T,3,PPPG+SOA_OFFSET>
       }
 
       temp_r[iat]=std::sqrt(rmin);
-      dx[iat] = delx+cellx[ic];
-      dy[iat] = dely+celly[ic];
-      dz[iat] = delz+cellz[ic];
+      dx[iat] = flip*(delx+cellx[ic]);
+      dy[iat] = flip*(dely+celly[ic]);
+      dz[iat] = flip*(delz+cellz[ic]);
     }
   }
 };
@@ -300,7 +303,7 @@ struct DTD_BConds<T,3,PPNG+SOA_OFFSET>
 
   template<typename PT, typename RSoA>
   void computeDistances(const PT& pos, const RSoA& R0, 
-      T* restrict temp_r, RSoA& temp_dr, int first, int last)
+      T* restrict temp_r, RSoA& temp_dr, int first, int last, int flip_ind=0)
   {
   }
 };
@@ -321,7 +324,7 @@ struct DTD_BConds<T,3,PPNO+SOA_OFFSET>
 
   template<typename PT, typename RSoA>
   void computeDistances(const PT& pos, const RSoA& R0, 
-      T* restrict temp_r, RSoA& temp_dr, int first, int last)
+      T* restrict temp_r, RSoA& temp_dr, int first, int last, int flip_ind=0)
   {
     const T x0=pos[0];
     const T y0=pos[1];
@@ -363,7 +366,7 @@ struct DTD_BConds<T,3,PPNS+SOA_OFFSET>
 
   template<typename PT, typename RSoA>
   void computeDistances(const PT& pos, const RSoA& R0, 
-      T* restrict temp_r, RSoA& temp_dr, int first, int last)
+      T* restrict temp_r, RSoA& temp_dr, int first, int last, int flip_ind=0)
   {
     const T x0=pos[0];
     const T y0=pos[1];
@@ -418,7 +421,7 @@ struct DTD_BConds<T,3,SUPERCELL_WIRE+SOA_OFFSET>
   }
   template<typename PT, typename RSoA>
   void computeDistances(const PT& pos, const RSoA& R0, 
-      T* restrict temp_r, RSoA& temp_dr, int first, int last)
+      T* restrict temp_r, RSoA& temp_dr, int first, int last, int flip_ind=0)
   {
     const T x0=pos[0];
     const T y0=pos[1];
@@ -483,7 +486,7 @@ struct DTD_BConds<T,3,PPPX+SOA_OFFSET>
 
   template<typename PT, typename RSoA>
   void computeDistances(const PT& pos, const RSoA& R0, 
-      T* restrict temp_r, RSoA& temp_dr, int first, int last)
+      T* restrict temp_r, RSoA& temp_dr, int first, int last, int flip_ind=0)
   {
     APP_ABORT("DTD_BConds<T,3,PPPX> not implemented");
   }
@@ -525,7 +528,7 @@ struct DTD_BConds<T,3,PPNX+SOA_OFFSET>
 
   template<typename PT, typename RSoA>
   void computeDistances(const PT& pos, const RSoA& R0, 
-      T* restrict temp_r, RSoA& temp_dr, int first, int last)
+      T* restrict temp_r, RSoA& temp_dr, int first, int last, int flip_ind=0)
   {
     APP_ABORT("DTD_BConds<T,3,PPNX> not implemented");
   }
