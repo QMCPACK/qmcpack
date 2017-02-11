@@ -373,13 +373,13 @@ struct BsplineFunctor: public OptimizableFunctorBase
 
   inline real_type f(real_type r)
   {
-    if (r>cutoff_radius)
+    if (r>=cutoff_radius)
       return 0.0;
     return evaluate(r);
   }
   inline real_type df(real_type r)
   {
-    if (r>cutoff_radius)
+    if (r>=cutoff_radius)
       return 0.0;
     real_type du, d2u;
     evaluate(r, du, d2u);
@@ -741,7 +741,7 @@ inline void BsplineFunctor<T>::evaluateVGL(const int iStart, const int iEnd,
 
 #pragma simd 
   for ( int j = 0; j < iLimit; j++ ) {
-    if ( distArray[j] > cutoff_radius ) {
+    if ( distArray[j] >= cutoff_radius ) {
       valArray[j] = cZero;
       gradArray[j] = cZero;
       laplArray[j] = cZero;
