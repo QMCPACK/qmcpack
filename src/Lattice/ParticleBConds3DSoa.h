@@ -240,7 +240,7 @@ struct DTD_BConds<T,3,PPPG+SOA_OFFSET>
     {
       CONSTEXPR T minusone(-1);
       CONSTEXPR T one(1);
-      const T flip=iat<flip_ind?minusone:one;
+      const T flip=iat<flip_ind?one:minusone;
       const T displ_0 =(px[iat]-x0)*flip;
       const T displ_1 =(py[iat]-y0)*flip;
       const T displ_2 =(pz[iat]-z0)*flip;
