@@ -97,7 +97,6 @@ vdeps(1,std::vector<double>()),
   m_param.add(num_shifts, "num_shifts", "int");
 
 #ifdef HAVE_LMY_ENGINE
-  //app_log() << "construct QMCFixedSampleLinearOptimize" << endl;
   std::vector<double> shift_scales(3, 1.0);
   EngineObj = new cqmc::engine::LMYEngine(&vdeps, 
                                           false, // exact sampling
@@ -420,7 +419,8 @@ QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
 
 #ifdef ENABLE_OPENMP
   if ( doAdaptiveThreeShift && (omp_get_max_threads() > 1) ) {
-        throw std::runtime_error("OpenMP threading not enabled with AdaptiveThreeShift optimizer.  Use MPI for parallelism instead, and set OMP_NUM_THREADS to 1.");
+        //throw std::runtime_error("OpenMP threading not enabled with AdaptiveThreeShift optimizer.  Use MPI for parallelism instead, and set OMP_NUM_THREADS to 1.");
+        app_log() << "test version of OpenMP threading with AdaptiveThreeShift optimizer" << std::endl;
   }
 #endif
 
@@ -902,9 +902,9 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
   this->finish();
 
   // reset the number of samples
-  this->optTarget->setNumSamples(nsamp_comp);
-  nTargetSamples = nsamp_comp;
-  app_log() << "# of sample before correlated sampling is " << nTargetSamples << std::endl;
+  //this->optTarget->setNumSamples(nsamp_comp);
+  //nTargetSamples = nsamp_comp;
+  //app_log() << "# of sample before correlated sampling is " << nTargetSamples << std::endl;
   //app_log() << "number of samples is" << this->optTarget->getNumSamples() << std::endl;
   app_log() << std::endl
             << "*************************************************************" << std::endl

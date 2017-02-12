@@ -166,13 +166,13 @@ private:
   double _tserr;
 
   /// \brief [in]vector that stores history of local energy
-  std::vector<double> _le_list;
+  std::vector<std::vector<double> > _le_list;
 
   /// \brief [in]vector that stores history of |value/guiding|^2
-  std::vector<double> _vg;
+  std::vector<std::vector<double> > _vg;
 
   /// \brief [in]vector that stores history of weight
-  std::vector<double> _weight;
+  std::vector<std::vector<double> > _weight;
 
   /// \brief [in]vector that stores the shift that we will be solving
   std::vector<double>  _shift_scale;
@@ -227,16 +227,16 @@ private:
   cqmc::engine::HamOvlpBuilderHD _mbuilder;
 
   /// \brief [out]Hamiltonian matrix constructed by block linear method's final basis
-  formic::Matrix<double> hh_block;
+  std::vector<formic::Matrix<double> > hh_block;
 
   /// \brief [out]overlap matrix constructed by block linear method's final basis
-  formic::Matrix<double> ss_block;
+  std::vector<formic::Matrix<double> > ss_block;
 
   /// \brief [out]compact der rat
-  formic::ColVec<double> drat_cmpct;
+  std::vector<formic::ColVec<double> > drat_cmpct;
 
   /// \brief [out]compact eng der
-  formic::ColVec<double> deng_cmpct;
+  std::vector<formic::ColVec<double> > deng_cmpct;
 
   /// \brief [in]output stream
   std::ostream & output;
@@ -468,10 +468,10 @@ public:
   formic::Matrix<double> & le_der() { return _le_der; }
 
   /// \brief function that returns the weight list 
-  const std::vector<double> & weight_list() { return _weight; }
+  const std::vector<double> & weight_list() { return _weight[0]; }
 
   /// \brief function that returns the |value/guiding|^2 list 
-  const std::vector<double> & vgs_list() { return _vg; }
+  const std::vector<double> & vgs_list() { return _vg[0]; }
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
   ///
