@@ -114,7 +114,7 @@ struct  J1OrbitalSoA : public OrbitalBase
     LogValue=valT();
     for(int iat=0; iat<n; ++iat)
     {
-      evaluateU3(P,iat,d_ie.Distances[iat]);
+      computeU3(P,iat,d_ie.Distances[iat]);
       LogValue-=Vat[iat]=simd::accumulate_n(U.data(),Nions,valT());
       Lap[iat]=accumulateGL(dU.data(),d2U.data(),d_ie.Displacements[iat],Grad[iat]);
       G[iat]+=Grad[iat];
@@ -155,7 +155,7 @@ struct  J1OrbitalSoA : public OrbitalBase
     }
     else
     {
-      evaluateU3(P,iat,P.DistTables[myTableID]->Temp_r.data());
+      computeU3(P,iat,P.DistTables[myTableID]->Temp_r.data());
       curLap=accumulateGL(dU.data(),d2U.data(),P.DistTables[myTableID]->Temp_dr,curGrad);
       curAt=simd::accumulate_n(U.data(),Nions,valT());
     }
@@ -196,8 +196,14 @@ struct  J1OrbitalSoA : public OrbitalBase
    * @param iat the moving particle
    * @param dist starting address of the distances of the ions wrt the iat-th particle
    */
-  inline void evaluateU3(ParticleSet& P, int iat, const valT* dist)
+  inline void computeU3(ParticleSet& P, int iat, const valT* dist)
   {
+    CONSTEXPR valT czero(0);
+
+    std::fill_n(U.data(),Nions,czero);
+    std::fill_n(dU.data(),Nions,czero);
+    std::fill_n(d2U.data(),Nions,czero);
+
     if(NumGroups>0)
     {//ions are grouped
       for(int jg=0; jg<NumGroups; ++jg)
@@ -229,7 +235,7 @@ struct  J1OrbitalSoA : public OrbitalBase
    */
   GradType evalGrad(ParticleSet& P, int iat)
   {
-    evaluateU3(P,iat,P.DistTables[myTableID]->Temp_r.data());
+    computeU3(P,iat,P.DistTables[myTableID]->Temp_r.data());
     Lap[iat]=accumulateGL(dU.data(),d2U.data(),P.DistTables[myTableID]->Temp_dr,Grad[iat]);
     Vat[iat]=simd::accumulate_n(U.data(),Nions,valT());
     return GradType(Grad[iat]);
@@ -243,7 +249,7 @@ struct  J1OrbitalSoA : public OrbitalBase
    */
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
-    evaluateU3(P,iat,P.DistTables[myTableID]->Temp_r.data());
+    computeU3(P,iat,P.DistTables[myTableID]->Temp_r.data());
     curLap=accumulateGL(dU.data(),d2U.data(),P.DistTables[myTableID]->Temp_dr,curGrad);
     curAt=simd::accumulate_n(U.data(),Nions,valT());
     grad_iat+=curGrad;

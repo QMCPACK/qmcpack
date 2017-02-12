@@ -695,9 +695,6 @@ inline void BsplineFunctor<T>::evaluateVGL(const int iStart, const int iEnd,
 
 #pragma vector always
   for ( int jat = 0; jat < iLimit; jat++ ) {
-    valArray[jat] = cZero;
-    gradArray[jat] = cZero;
-    laplArray[jat] = cZero;
     real_type r = distArray[jat];
     if ( r < cutoff_radius ) {
       distIndices[iCount] = jat;
