@@ -695,6 +695,9 @@ inline void BsplineFunctor<T>::evaluateVGL(const int iStart, const int iEnd,
 
 #pragma vector always
   for ( int jat = 0; jat < iLimit; jat++ ) {
+    valArray[jat] = cZero;
+    gradArray[jat] = cZero;
+    laplArray[jat] = cZero;
     real_type r = distArray[jat];
     if ( r < cutoff_radius ) {
       distIndices[iCount] = jat;
@@ -739,14 +742,6 @@ inline void BsplineFunctor<T>::evaluateVGL(const int iStart, const int iEnd,
         sCoef3*(A[12]*tp0 + A[13]*tp1 + A[14]*tp2 + A[15]));
   }
 
-#pragma simd 
-  for ( int j = 0; j < iLimit; j++ ) {
-    if ( distArray[j] >= cutoff_radius ) {
-      valArray[j] = cZero;
-      gradArray[j] = cZero;
-      laplArray[j] = cZero;
-    }
-  }
 }
 }
 #endif
