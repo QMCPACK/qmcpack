@@ -259,7 +259,7 @@ void VMCSingleOMP::resetRun()
 //       if (UseDrift != "rn")
 //       {
     for (int prestep=0; prestep<nWarmupSteps; ++prestep)
-      Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
+      Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],false);
     if (nWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
       Movers[ip]->updateWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
 //       }
