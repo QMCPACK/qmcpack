@@ -79,10 +79,7 @@ struct SoaDistanceTableBA: public DTD_BConds<T,D,SC>, public DistanceTableData
   inline void evaluate(ParticleSet& P, IndexType iat)
   {
     activePtcl=iat;
-    DTD_BConds<T,D,SC>::computeDistances(P.R[iat], Origin->RSoA, Temp_r.data(),Temp_dr, 0, Nsources);
-    simd::copy_n(Temp_r.data(),Nsources,Distances[iat]);
-    for(int idim=0;idim<D; ++idim)
-      simd::copy_n(Temp_dr.data(idim),Nsources,Displacements[iat].data(idim));
+    DTD_BConds<T,D,SC>::computeDistances(P.R[iat], Origin->RSoA, Distances[iat],Displacements[iat], 0, Nsources);
   }
 
   inline void moveOnSphere(const ParticleSet& P, const PosType& rnew, IndexType jat) 

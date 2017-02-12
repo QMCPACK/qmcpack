@@ -132,33 +132,33 @@ struct  J1OrbitalSoA : public OrbitalBase
   
   ValueType ratio(ParticleSet& P, int iat)
   {
+    UpdateMode=ORB_PBYP_RATIO;
     curAt = valT(0);
-    if(P.Ready4Measure)
+    const valT* restrict dist=P.DistTables[myTableID]->Temp_r.data();
+    if(NumGroups>0)
     {
-      const valT* restrict dist=P.DistTables[myTableID]->Temp_r.data();
-      if(NumGroups>0)
+      for(int jg=0; jg<NumGroups; ++jg)
       {
-        for(int jg=0; jg<NumGroups; ++jg)
-        {
-          if(F[jg]!=nullptr) 
-            curAt += F[jg]->evaluateV(Ions.first(jg), Ions.last(jg), dist, DistCompressed.data() );
-        }
-      }
-      else
-      {
-        for(int c=0; c<Nions; ++c)
-        {
-          int gid=Ions.GroupID[c];
-          if(F[gid]!=nullptr) curAt += F[gid]->evaluate(dist[c]);
-        }
+        if(F[jg]!=nullptr) 
+          curAt += F[jg]->evaluateV(Ions.first(jg), Ions.last(jg), dist, DistCompressed.data() );
       }
     }
     else
     {
-      computeU3(P,iat,P.DistTables[myTableID]->Temp_r.data());
-      curLap=accumulateGL(dU.data(),d2U.data(),P.DistTables[myTableID]->Temp_dr,curGrad);
-      curAt=simd::accumulate_n(U.data(),Nions,valT());
+      for(int c=0; c<Nions; ++c)
+      {
+        int gid=Ions.GroupID[c];
+        if(F[gid]!=nullptr) curAt += F[gid]->evaluate(dist[c]);
+      }
     }
+
+    if(!P.Ready4Measure)
+    {//need to compute per atom
+      computeU3(P,iat,P.DistTables[myTableID]->Distances[iat]);
+      Lap[iat]=accumulateGL(dU.data(),d2U.data(),P.DistTables[myTableID]->Displacements[iat],Grad[iat]);
+      Vat[iat]=simd::accumulate_n(U.data(),Nions,valT());
+    }
+
     return std::exp(Vat[iat]-curAt);
   }
 
@@ -198,14 +198,13 @@ struct  J1OrbitalSoA : public OrbitalBase
    */
   inline void computeU3(ParticleSet& P, int iat, const valT* dist)
   {
-    CONSTEXPR valT czero(0);
-
-    std::fill_n(U.data(),Nions,czero);
-    std::fill_n(dU.data(),Nions,czero);
-    std::fill_n(d2U.data(),Nions,czero);
-
     if(NumGroups>0)
     {//ions are grouped
+      CONSTEXPR valT czero(0);
+      std::fill_n(U.data(),Nions,czero);
+      std::fill_n(dU.data(),Nions,czero);
+      std::fill_n(d2U.data(),Nions,czero);
+
       for(int jg=0; jg<NumGroups; ++jg)
       {
         if(F[jg]==nullptr) continue;
@@ -230,13 +229,11 @@ struct  J1OrbitalSoA : public OrbitalBase
   /** compute the gradient during particle-by-particle update
    * @param P quantum particleset
    * @param iat particle index
-   *
-   * Using Temp_r. Vat[iat], Grad[iat] and Lap[iat] are computed.
    */
   GradType evalGrad(ParticleSet& P, int iat)
   {
-    computeU3(P,iat,P.DistTables[myTableID]->Temp_r.data());
-    Lap[iat]=accumulateGL(dU.data(),d2U.data(),P.DistTables[myTableID]->Temp_dr,Grad[iat]);
+    computeU3(P,iat,P.DistTables[myTableID]->Distances[iat]);
+    Lap[iat]=accumulateGL(dU.data(),d2U.data(),P.DistTables[myTableID]->Displacements[iat],Grad[iat]);
     Vat[iat]=simd::accumulate_n(U.data(),Nions,valT());
     return GradType(Grad[iat]);
   }
@@ -249,6 +246,8 @@ struct  J1OrbitalSoA : public OrbitalBase
    */
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
+    UpdateMode=ORB_PBYP_PARTIAL;
+
     computeU3(P,iat,P.DistTables[myTableID]->Temp_r.data());
     curLap=accumulateGL(dU.data(),d2U.data(),P.DistTables[myTableID]->Temp_dr,curGrad);
     curAt=simd::accumulate_n(U.data(),Nions,valT());
@@ -262,6 +261,13 @@ struct  J1OrbitalSoA : public OrbitalBase
   /** Accpted move. Update Vat[iat],Grad[iat] and Lap[iat] */
   void acceptMove(ParticleSet& P, int iat)
   {
+
+    if(UpdateMode == ORB_PBYP_RATIO)
+    {
+      computeU3(P,iat,P.DistTables[myTableID]->Temp_r.data());
+      curLap=accumulateGL(dU.data(),d2U.data(),P.DistTables[myTableID]->Temp_dr,curGrad);
+    }
+
     LogValue += Vat[iat]-curAt;
     Vat[iat]  = curAt;
     Grad[iat] = curGrad;
