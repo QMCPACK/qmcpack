@@ -69,34 +69,78 @@ inline int get_device_num()
   for (int i=0; i<size; i++)
     hostnames.push_back(&(host_list[i*MAX_LEN]));
   std::string myhostname = &myname[0];
+
   // calculate how many MPI ranks are ahead of the current one on the current node
-  int number_ranks = 0;
+  std::vector<int> number_ranks(1);
+  std::vector<int> rank_node(1);
+  std::vector<int> cuda_devices(1);
+  
+  cuda_devices[0]=get_num_appropriate_devices();
+  number_ranks[0] = 0;
   int curr_ranknum = 0;
+  int num_nodes=0;
+  std::string curr_host;
   for (int i=0; i<size; i++) // loop over all ranks
   {
+    // counts the number of different hostnames (in other words, how many nodes there are)
+    if (hostnames[i] != curr_host)
+    {
+      curr_host = hostnames[i];
+      num_nodes++;
+    }
     if (hostnames[i] == myhostname)
     {
-      number_ranks++; // count all ranks with the same host name as the current one
+      number_ranks[0]++; // count all ranks with the same host name as the current one
       if (i<rank)
         curr_ranknum++; // count only the ones schedule before the current one
     }
+    if (i==rank) rank_node[0]=num_nodes; // node number of current rank (NOTE: node numbers starts at 1)
   }
-  int num_cuda_devices=get_num_appropriate_devices();
-  if (curr_ranknum==0) // output some information if we're the first rank on a node
+
+  // gather all the information
+  std::vector<int> ranks_per_node(size+1); ranks_per_node[size]=-1;
+  OHMMS::Controller->allgather(number_ranks,ranks_per_node,1);
+  std::vector<int> num_cuda_devices(size+1); num_cuda_devices[size]=-1;
+  OHMMS::Controller->allgather(cuda_devices,num_cuda_devices,1);
+  std::vector<int> node_of_rank(size+1); node_of_rank[size]=num_nodes;
+  OHMMS::Controller->allgather(rank_node,node_of_rank,1);
+
+  int devnum=curr_ranknum % num_cuda_devices[rank];
+
+  // output information for every rank with a different configuration from the previous one (i.e. with all nodes equal this will only be the first rank)
+  if ((ranks_per_node[rank] != ranks_per_node[(rank+size)%(size+1)]) || (num_cuda_devices[rank] != num_cuda_devices[(rank+size)%(size+1)]))
   {
-    std::cerr << number_ranks << " MPI ranks on node " << myhostname << " with " << num_cuda_devices << " appropriate CUDA devices." << std::endl;
-    if(number_ranks<num_cuda_devices)
+    std::ostringstream out;
+    out << ranks_per_node[rank] << " MPI ranks on node(s) " << hostnames[rank];
+    // things get a tiny bit more complicated now that we want to output the other hostnames for which the current configuration information is true
+    int r=rank;
+    int curr_node=node_of_rank[rank];
+    // loop over successive ranks with same node configuration
+    while ((ranks_per_node[rank] == ranks_per_node[r]) && (num_cuda_devices[rank] == num_cuda_devices[r]))
     {
-      std::cerr << "WARNING: Less MPI ranks than Cuda devices. Some Cuda devices (device # >= " << number_ranks << ") will not be used." << std::endl;
+      if (node_of_rank[r] != curr_node) // when the node name changes, output the new one
+      {
+        out << ", " << hostnames[r];
+        curr_node=node_of_rank[r];
+      }
+      r++;
+      if (r>=size) break; // safety first
+    }
+    out << " with " << num_cuda_devices[rank] << " appropriate CUDA devices." << std::endl;
+    // Output sanity check information for the user
+    if(ranks_per_node[rank]<num_cuda_devices[rank])
+    {
+      out << "WARNING: Fewer MPI ranks than Cuda devices (" << num_cuda_devices[rank] << "). Some Cuda devices (device # >= " << ranks_per_node[rank] << ") will not be used." << std::endl;
     }
     else
     {
-      if(number_ranks%num_cuda_devices) // is only true (>0) when number of MPI ranks is not a multiple of Cuda device number
-        std::cerr << "WARNING: Number of MPI ranks is not a multiple of the number of Cuda devices." << std::endl;
+      if(ranks_per_node[rank]%num_cuda_devices[rank]) // is only true (>0) when number of MPI ranks is not a multiple of Cuda device number
+        out << "WARNING: Number of MPI ranks is not a multiple of the number of Cuda devices (" << num_cuda_devices[rank] << ")." << std::endl;
     }
+    std::cerr << out.str();
+    std::cerr.flush();
   }
   // return Cuda device number based on how many appropriate ones exist on the current rank's node
-  int devnum=curr_ranknum % num_cuda_devices;
   return devnum;
 }
 
@@ -121,7 +165,10 @@ inline void set_appropriate_device_num(int num)
       {
         cudaSetDevice (device);
         set_cuda_device=true;
-        std::cerr << "<- Rank " << OHMMS::Controller->rank() << " has acquired CUDA device #" << device << std::endl;
+        std::ostringstream out;
+        out << "<- Rank " << OHMMS::Controller->rank() << " has acquired CUDA device #" << device << std::endl;
+        std::cerr << out.str();
+        std::cerr.flush();
         break; // the device is set, nothing more to do here
       }
     }
@@ -154,7 +201,8 @@ inline void Init_CUDA()
   gpu::initCublas();
   gpu::MaxGPUSpineSizeMB = MAX_GPU_SPLINE_SIZE_MB;
   // Output maximum spline buffer size for first MPI rank
-  if(gpu::rank==0) std::cerr << "Default MAX_GPU_SPLINE_SIZE_MB is " << gpu::MaxGPUSpineSizeMB << " MB." << std::endl;
+  if(gpu::rank==0)
+    std::cerr << "Default MAX_GPU_SPLINE_SIZE_MB is " << gpu::MaxGPUSpineSizeMB << " MB." << std::endl;
   return;
 }
 #else
