@@ -245,7 +245,7 @@ void cqmc::engine::HamOvlpBuilderHD::finish_sample(const double total_weight)
   // compute the average 
   _hmat /= total_weight; 
   _smat /= total_weight;
-  std::cout << "total weight is " << total_weight << std::endl;
+  //std::cout << "total weight is " << total_weight << std::endl;
 
   if ( _ss_build ) 
     _ssmat /= total_weight;
