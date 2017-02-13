@@ -35,6 +35,7 @@ cqmc::engine::HamOvlpBuilderHD::HamOvlpBuilderHD(formic::Matrix<double> & der_ra
                                                  const std::vector<double> & vgs,
                                                  const std::vector<double> & weight,
                                                  const double hd_shift,
+                                                 const int num_params,
                                                  const int appro_degree,
                                                  const bool spam_use,
                                                  const bool ground_state,
@@ -48,6 +49,7 @@ _ls_der(ls_der),
 _vgs(vgs),
 _weight(weight),
 _hd_shift(hd_shift),
+_num_params(num_params),
 _appro_degree(appro_degree),
 _spam_use(spam_use),
 _ground_state(ground_state),
@@ -58,12 +60,27 @@ _print_matrix(print_matrix)
 {
   
   // number of threads
-  int NumThreads = omp_get_num_threads();
+  int NumThreads = omp_get_max_threads();
 
   // thread number 
   int myThread = omp_get_thread_num();
 
- 
+  // check if matrix vector size matched the number of threads 
+  _hmat_temp.resize(NumThreads);
+  _smat_temp.resize(NumThreads);
+  if ( _ss_build ) {
+    _ssmat_temp.resize(NumThreads);
+  }
+
+  // size the matrix correctly
+  int ndim = _num_params + 1;
+  for (int ip = 0; ip < NumThreads; ip++) {
+    _hmat_temp[ip].reset(ndim, ndim, 0.0);
+    _smat_temp[ip].reset(ndim, ndim, 0.0);
+    if ( _ss_build ) 
+      _ssmat_temp[ip].reset(ndim, ndim, 0.0);
+  }
+
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -71,6 +88,7 @@ _print_matrix(print_matrix)
 // 
 /////////////////////////////////////////////////////////////////////////////////////////////
 void cqmc::engine::HamOvlpBuilderHD::get_param(const double hd_shift, 
+                                               const int num_params,
                                                const int appro_degree, 
                                                const bool spam_use, 
                                                const bool ground_state, 
@@ -81,6 +99,7 @@ void cqmc::engine::HamOvlpBuilderHD::get_param(const double hd_shift,
   
   // get parameters
   _hd_shift = hd_shift; 
+  _num_params = num_params;
   _appro_degree = appro_degree; 
   _spam_use = spam_use; 
   _ground_state = ground_state; 
@@ -88,6 +107,18 @@ void cqmc::engine::HamOvlpBuilderHD::get_param(const double hd_shift,
   _build_lm_matrix = build_lm_matrix;
   _ss_build = ss_build; 
   _print_matrix = print_matrix;
+
+  // number of threads
+  int NumThreads = omp_get_max_threads();
+
+  // size the matrix correctly
+  int ndim = _num_params + 1;
+  for (int ip = 0; ip < NumThreads; ip++) {
+    _hmat_temp[ip].reset(ndim, ndim, 0.0);
+    _smat_temp[ip].reset(ndim, ndim, 0.0);
+    if ( _ss_build ) 
+      _ssmat_temp[ip].reset(ndim, ndim, 0.0);
+  }
 
 }
 
@@ -137,21 +168,6 @@ void cqmc::engine::HamOvlpBuilderHD::take_sample(std::vector<double> & der_rat_s
   // thread number 
   int myThread = omp_get_thread_num();
   //std::cout << boost::format("entering take_sample function in matrix build1") << std::endl;
-
-  # pragma omp critical 
-  {
-    // check if matrix vector size matched the number of threads 
-    if ( _hmat_temp.size() != NumThreads ) 
-      _hmat_temp.resize(NumThreads);
-    if ( _smat_temp.size() != NumThreads ) 
-      _smat_temp.resize(NumThreads);
-    if ( _ss_build ) {
-      if ( _ssmat_temp.size() != NumThreads ) 
-        _ssmat_temp.resize(NumThreads);
-    }
-  }
-  //std::cout << boost::format("NumThreads is") << NumThreads << std::endl;
-  //std::cout << boost::format("myThreads is") << myThread << std::endl;
 
   // check whether matrices are of the correct size and resize it if not 
   if ( _hmat_temp.at(myThread).rows() != _hmat_temp.at(myThread).cols() || _hmat_temp.at(myThread).rows() != der_rat_samp.size() ) 
@@ -217,6 +233,9 @@ void cqmc::engine::HamOvlpBuilderHD::finish_sample(const double total_weight)
   // get the number of threads 
   int NumThreads = omp_get_max_threads();
 
+  // get thread number 
+  int myThread = omp_get_thread_num();
+
   // sum over threads
   for (int ip = 1; ip < NumThreads; ip++) {
     _hmat_temp[0] += _hmat_temp[ip];
@@ -245,7 +264,7 @@ void cqmc::engine::HamOvlpBuilderHD::finish_sample(const double total_weight)
   // compute the average 
   _hmat /= total_weight; 
   _smat /= total_weight;
-  //std::cout << "total weight is " << total_weight << std::endl;
+  std::cout << "total weight is " << total_weight << std::endl;
 
   if ( _ss_build ) 
     _ssmat /= total_weight;
@@ -253,22 +272,22 @@ void cqmc::engine::HamOvlpBuilderHD::finish_sample(const double total_weight)
   //std::cout << "netering matrix build finish_sample4.5" << std::endl;
   // clear temporary matrices 
   for (int ip = 0; ip < NumThreads; ip++) {
-    _hmat_temp[ip].reset(0,  0, 0.0);
-    _smat_temp[ip].reset(0,  0, 0.0);
+    _hmat_temp[ip].reset(_hmat.rows(), _hmat.cols(), 0.0);
+    _smat_temp[ip].reset(_smat.rows(), _smat.cols(), 0.0);
       if ( _ss_build ) 
-       _ssmat_temp[ip].reset(0, 0, 0.0);
+       _ssmat_temp[ip].reset(_ssmat.rows(), _ssmat.cols(), 0.0);
   }
 
   //std::cout << "netering matrix build finish_sample5" << std::endl;
 
   // print the matrix if requested
-  if ( _print_matrix && my_rank == 0 || true ) {
+  if ( _print_matrix && my_rank == 0 ) {
 
     // hamiltonian 
-    //std::cout << _hmat.print("%12.6f", "hamiltonian");
+    std::cout << _hmat.print("%12.6f", "hamiltonian");
 
     // overlap
-    //std::cout << _smat.print("%12.6f", "overlap");
+    std::cout << _smat.print("%12.6f", "overlap");
   }
 }
 

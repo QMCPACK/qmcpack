@@ -59,6 +59,9 @@ namespace cqmc {
         /// \brief [in] approximate degree
         int _appro_degree;
 
+        /// \brief [in] number of optimizable parameters
+        int _num_params;
+
         /// \brief [in] bare derivative ratios (<n|psi^x> / <n|psi>)
         formic::Matrix<double> & _der_rat;
 
@@ -118,6 +121,7 @@ namespace cqmc {
                        const std::vector<double> & vgs,
                        const std::vector<double> & weight,
                        const double hd_shift,
+                       const int num_params,
                        const int appro_degree,
                        const bool spam_use,
                        const bool ground_state,
@@ -131,6 +135,7 @@ namespace cqmc {
       // 
       /////////////////////////////////////////////////////////////////////////////////////////////
       void get_param(const double hd_shift, 
+                     const int num_params,
                      const int appro_degree, 
                      const bool spam_use, 
                      const bool ground_state, 

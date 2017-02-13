@@ -50,6 +50,7 @@ cqmc::engine::LMYEngine::LMYEngine(const formic::VarDeps * dep_ptr,
                                    const bool jas_fixed,
                                    const bool block_lm,
                                    const int num_samp,
+                                   const int num_params,
                                    const int lm_krylov_iter,
                                    const int lm_spam_inner_iter,
                                    const int appro_degree,
@@ -68,7 +69,7 @@ cqmc::engine::LMYEngine::LMYEngine(const formic::VarDeps * dep_ptr,
                                    const double lm_max_update_abs,
                                    std::vector<double> shift_scale,
                                    std::ostream & output)
-:_mbuilder(_der_rat, _le_der, _spin_der, _vg[0], _weight[0], hd_lm_shift, appro_degree, spam, ground, variance_correction, build_lm_matrix, eom, matrix_print),
+:_mbuilder(_der_rat, _le_der, _spin_der, _vg[0], _weight[0], hd_lm_shift, num_params, appro_degree, spam, ground, variance_correction, build_lm_matrix, eom, matrix_print),
 _dep_ptr(dep_ptr),
 _exact_sampling(exact_sampling),
 _ground(ground),
@@ -86,6 +87,7 @@ _pm_ortho_first(pm_ortho_first),
 _jas_fixed(jas_fixed),
 _block_lm(block_lm),
 _num_samp(num_samp),
+_num_params(num_params),
 _lm_krylov_iter(lm_krylov_iter),
 _lm_spam_inner_iter(lm_spam_inner_iter),
 _appro_degree(appro_degree),
@@ -161,6 +163,7 @@ void cqmc::engine::LMYEngine::get_param(const formic::VarDeps * dep_ptr,
             const bool ssquare,
             const bool block_lm,
             const int num_samp,
+            const int num_params,
             const double hd_lm_shift,
             const double lm_max_e_change,
             const double lm_ham_shift_i,
@@ -194,7 +197,7 @@ void cqmc::engine::LMYEngine::get_param(const formic::VarDeps * dep_ptr,
   _sample_initialized=false, _block_lm=block_lm, _store_der_vec=false, _num_samp=num_samp, _samp_count=0, _lm_krylov_iter=lm_krylov_iter, _lm_spam_inner_iter=lm_spam_inner_iter;
   _appro_degree=appro_degree, _n_sites=n_sites, _n_pm=n_pm, _n_jas=n_jas, _hd_lm_shift=hd_lm_shift, _var_weight=var_weight, _lm_eigen_thresh=lm_eigen_thresh, _lm_min_S_eval=lm_min_S_eval;
   _init_cost=init_cost, _init_var=init_var, _lm_max_e_change=lm_max_e_change, _lm_ham_shift_i=lm_ham_shift_i, _lm_ham_shift_s=lm_ham_shift_s, _lm_max_update_abs=lm_max_update_abs;
-  _wfn_update=false, _nblocks=1, _energy=0.0, _esdev=0.0, _eserr=0.0, _target=0.0, _tserr=0.0, _shift_scale=shift_scale, _dep_ptr=dep_ptr;
+  _wfn_update=false, _nblocks=1, _energy=0.0, _esdev=0.0, _eserr=0.0, _target=0.0, _tserr=0.0, _shift_scale=shift_scale, _dep_ptr=dep_ptr, _num_params=num_params;
 
   // solve results
   _good_solve.resize(_shift_scale.size());
@@ -202,7 +205,7 @@ void cqmc::engine::LMYEngine::get_param(const formic::VarDeps * dep_ptr,
   std::fill(_good_solve.begin(), _good_solve.end(), false);
   std::fill(_solved_shifts.begin(), _solved_shifts.end(), false);
 
-  _mbuilder.get_param(hd_lm_shift, appro_degree, spam, ground, variance_correction, build_lm_matrix, eom, matrix_print);
+  _mbuilder.get_param(hd_lm_shift, num_params, appro_degree, spam, ground, variance_correction, build_lm_matrix, eom, matrix_print);
 
   _fully_initialized = true;
 
@@ -1183,6 +1186,7 @@ void cqmc::engine::LMYEngine::call_engine(const bool print_matrix,
                                                                                                    vg, 
                                                                                                    weight, 
                                                                                                    0.0, 
+                                                                                                   _num_params,
                                                                                                    100, 
                                                                                                    false, 
                                                                                                    true, 

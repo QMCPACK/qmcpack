@@ -115,6 +115,7 @@ vdeps(1,std::vector<double>()),
                                           false, // eom related
                                           false, // use block?
                                           120000, // number of samples
+                                          0,  // number of parameters
                                           60, // max krylov iter
                                           0, // max spam inner iter
                                           1, // spam appro degree
@@ -772,6 +773,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
                          false, // ssquare
                          block_lm, 
                          12000, 
+                         numParams,
                          omega_shift,
                          max_relative_cost_change,
                          shifts_i.at(central_index), 

@@ -96,6 +96,9 @@ private:
   /// \brief sample count 
   int _samp_count;
 
+  /// \brief number of optimizable parameters
+  int _num_params;
+
   /// \brief [in]maximum number of iteration allowed in the davidson solver
   int _lm_krylov_iter;
 
@@ -265,6 +268,7 @@ public:
             const bool jas_fixed,
             const bool block_lm,
             const int num_samp,
+            const int num_params,
             const int lm_krylov_iter,
             const int lm_spam_inner_iter,
             const int appro_degree,
@@ -297,6 +301,7 @@ public:
             const bool ssquare,
             const bool block_lm,
             const int num_samp,
+            const int num_params,
             const double hd_lm_shift,
             const double lm_max_e_change,
             const double lm_ham_shift_i,
