@@ -284,10 +284,10 @@ void cqmc::engine::HamOvlpBuilderHD::finish_sample(const double total_weight)
   if ( _print_matrix && my_rank == 0 ) {
 
     // hamiltonian 
-    std::cout << _hmat.print("%12.6f", "hamiltonian");
+    //output << _hmat.print("%12.6f", "hamiltonian");
 
     // overlap
-    std::cout << _smat.print("%12.6f", "overlap");
+    //output << _smat.print("%12.6f", "overlap");
   }
 }
 
