@@ -57,17 +57,15 @@ struct  J2OrbitalSoA : public OrbitalBase
   using RowContainer=DistanceTableData::RowContainer;
 
   ///number of particles
-  int N;
+  size_t N;
   ///number of groups of the target particleset
-  int NumGroups;
+  size_t NumGroups;
   ///task id
   int TaskID;
   ///Used to compute correction
   bool FirstTime;
   ///diff value
   RealType DiffVal;
-  ///log value
-  RealType LogValue;
   ///Correction
   RealType KEcorr;
   ///\f$Uat[i] = sum_(j) u_{i,j}\f$
@@ -394,6 +392,11 @@ inline void
 J2OrbitalSoA<FT>::computeU3(ParticleSet& P, int iat, const RealType* restrict dist,
     RealType* restrict u, RealType* restrict du, RealType* restrict d2u)
 {
+  constexpr valT czero(0);
+  std::fill_n(u,  N,czero);
+  std::fill_n(du, N,czero);
+  std::fill_n(d2u,N,czero);
+
   const int igt=P.GroupID[iat]*NumGroups;
   for(int jg=0; jg<NumGroups; ++jg)
   {
@@ -402,10 +405,9 @@ J2OrbitalSoA<FT>::computeU3(ParticleSet& P, int iat, const RealType* restrict di
     int iEnd = P.last(jg);
     f2.evaluateVGL(iStart, iEnd, dist, u, du, d2u, DistCompressed.data(), DistIndice.data());
   }
-  constexpr valT czero(0);
-  u[iat]=czero;
-  du[iat]=czero;
-  d2u[iat]=czero;
+  //u[iat]=czero;
+  //du[iat]=czero;
+  //d2u[iat]=czero;
 }
 
 template<typename FT>
