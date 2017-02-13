@@ -38,7 +38,8 @@
 
 
 import os
-from numpy import array,abs,empty,ndarray
+from numpy import array,abs,empty,ndarray,dot
+from numpy.linalg import inv
 from generic import obj
 from periodic_table import is_element
 from nexus_base import nexus_noncore
@@ -225,6 +226,14 @@ def assign_bool_array(a):
         raise ValueError('value must be a tuple, list, or array')
     #end if
 #end def assign_bool_array
+
+#utility functions to convert from VASP internal objects to 
+#nexus objects:
+def vasp_to_nexus_elem(elem,elem_count):
+  syselem=[]
+  for x,count in zip(elem,elem_count):
+    syselem+=[x for i in xrange(0,count)]
+  return array(syselem)
 
 
 read_value_functions = obj(
@@ -892,7 +901,40 @@ class Poscar(VFormattedFile):
         VFile.__init__(self,filepath)
     #end def __init__
 
+    def change_specifier(self,specifier,vasp_input_class):
+        axes=vasp_input_class.poscar.axes
+        scale=vasp_input_class.poscar.scale
+        unitcellvec=axes*scale
 
+      #units are in angstroms.  
+        pos=self.pos
+        spec=self.coord  #the current specifier
+        
+        if spec==specifier:
+            #do nothing
+            pass
+        else:
+        
+            if spec=="cartesian":
+                pass
+            elif spec=="direct":
+                pos=dot(pos,unitcellvec)
+            else:
+                raise Exception("Poscar.change_specifier():  %s is not a valid coordinate specifier"%(spec))
+                 
+            spec=specifier  #the new specifier
+
+            if spec=="cartesian":
+                pass # already in cartesian coordinates.   
+            elif spec=="direct":
+                pos=dot(pos,inv(axes))
+            else:
+                raise Exception("Poscar.change_specifier():  %s is not a valid coordinate specifier"%(spec))
+
+            self.coord=spec
+            self.pos=pos
+      
+        
     def read_text(self,text,filepath=''):
         lines = self.read_lines(text,remove_empty=False)
         nlines = len(lines)
@@ -1281,7 +1323,6 @@ class VaspInput(SimulationInput,Vobj):
         #end for
     #end def write
 
-
     def incorporate_system(self,system,incorp_kpoints=True,coord='cartesian'):
         structure = system.structure
 
@@ -1327,7 +1368,74 @@ class VaspInput(SimulationInput,Vobj):
 
         return species
     #end def incorporate_system
+    def return_system(self,**valency):
+        axes=self.poscar.axes
+        scale=self.poscar.scale
+        axes=scale*axes
+        scale=1.0
+ 
+        velem=self.poscar.elem
+        velem_count=self.poscar.elem_count
+        elem=vasp_to_nexus_elem(velem,velem_count)
+ 
+        self.poscar.change_specifier('cartesian',self)
+        pos=self.poscar.pos
+        
+        center=axes.sum(0)/2.0
+        
+        kpoints=None
+        kweights=None
+        kgrid=None
+        kshift=None
 
+        if self.kpoints.mode=="auto":
+         
+          kshift=self.kpoints.kshift
+          if self.kpoints.centering=="monkhorst-pack":
+            kshift=kshift+array([0.5,0.5,0.5])
+          elif self.kpoints.centering=="gamma":
+            pass
+          #end if
+        #endif   
+          kgrid=self.kpoints.kgrid
+         
+        else:
+          raise Exception("VaspInput.return_system:  Error, system generation doesn't currently\
+                                                          work with manually specified k-points")
+        structure = Structure(
+                      axes    = axes,
+                      elem    = elem,
+                      scale   = scale,
+                      pos     = pos,
+                      center  = center,
+                      kpoints = kpoints,
+                      kweights = kweights,
+                      kgrid   = kgrid,
+                      kshift  = kshift,
+                      units   = 'A',
+                      rescale = False
+            )
+         
+        structure.zero_corner()
+        structure.recenter()
+
+        ion_charge = 0
+        atoms   = list(elem)
+        for atom in atoms:
+            if not atom in valency:
+                self.error('valence charge for atom {0} has not been defined\nplease provide the valence charge as an argument to return_system()'.format(atom))
+            #end if
+            ion_charge += atoms.count(atom)*valency[atom]
+        #end for
+
+        ####WARNING:  Assuming that the netcharge and netspin are ZERO. 
+        net_charge=0
+        net_spin=0
+
+        system = PhysicalSystem(structure,net_charge,net_spin,**valency)
+ 
+        return system
+    #end def return_system
 
     def set_potcar(self,pseudos,species=None):
         if species is None:

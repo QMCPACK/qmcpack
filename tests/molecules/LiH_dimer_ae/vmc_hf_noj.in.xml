@@ -12042,5 +12042,6 @@ PROPERTY VALUES FOR THE ROHF  SELF-CONSISTENT FIELD WAVEFUNCTION
       <parameter name="subSteps"            >    3               </parameter>
       <parameter name="timestep"            >    0.4             </parameter>
       <parameter name="warmupSteps"         >    50              </parameter>
+      <parameter name="samples"             >    1600000         </parameter>
    </qmc>
 </simulation>

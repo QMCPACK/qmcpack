@@ -37,6 +37,7 @@ class Pwscf(Simulation):
     application_properties = set(['serial','mpi'])
     application_results    = set(['charge_density','orbitals','structure'])
 
+    supports_restarts = True # supports restartable, but not force restart yet
 
     vdw_table = None
 
@@ -190,6 +191,7 @@ class Pwscf(Simulation):
             relstruct = result.structure.copy()
             relstruct.change_units('B')
             self.system.structure = relstruct
+            self.system.remove_folded()
 
             #structure = self.system.structure
             #structure.change_units('B')
@@ -217,9 +219,20 @@ class Pwscf(Simulation):
         fobj = open(outfile,'r')
         output = fobj.read()
         fobj.close()
-        not_converged = 'convergence NOT achieved' in output
-        self.finished = 'JOB DONE' in output
-        self.failed = not_converged
+        not_converged = 'convergence NOT achieved'  in output
+        time_exceeded = 'Maximum CPU time exceeded' in output
+        user_stop     = 'Program stopped by user request' in output
+        run_finished  = 'JOB DONE' in output
+        restartable = not_converged or time_exceeded or user_stop
+        restart = run_finished and self.restartable and restartable
+        if restart:
+            self.save_attempt()
+            self.input.control.restart_mode = 'restart'
+            self.reset_indicators()
+        else:
+            self.finished = run_finished
+            self.failed   = restartable
+        #end if
     #end def check_sim_status
 
     def get_output_files(self):

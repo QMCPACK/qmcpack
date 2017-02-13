@@ -148,7 +148,6 @@ vdeps(1,std::vector<double>()),
 //   m_param.add(StabilizerMethod,"StabilizerMethod","string");
 //   m_param.add(LambdaMax,"LambdaMax","double");
   //Set parameters for line minimization:
-  this->add_timers(myTimers);
 }
 
 /** Clean up the vector */
@@ -205,7 +204,7 @@ bool QMCFixedSampleLinearOptimize::run()
       optTarget->Params(i) = currentParameters[i];
     myTimers[4]->start();
     RealType lastCost(optTarget->Cost(true));
-    myTimers[4]->start();
+    myTimers[4]->stop();
 //     if cost function is currently invalid continue
     Valid=optTarget->IsValid;
     if (!ValidCostFunction(Valid))

@@ -2,7 +2,7 @@
 <simulation>
   <project id="hf_vmc_LiH-gamma-drift" series="0">
   </project>
-  <random seed="49154"/>
+  <!--random seed="49154"/-->
 
   <qmcsystem>
    <wavefunction name="psi0" target="e">

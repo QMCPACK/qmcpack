@@ -11,10 +11,10 @@ ENDIF(COMMAND cmake_policy)
 ######################################################################
 # Version 
 ######################################################################
-SET(QMCPLUSPLUS_VERSION_MAJOR 1)
-SET(QMCPLUSPLUS_VERSION_MINOR 0)
-SET(QMCPLUSPLUS_VERSION_PATCH 0)
-SET(QMCPLUSPLUS_VERSION "${QMCPLUSPLUS_VERSION_MAJOR}.${QMCPLUSPLUS_VERSION_MINOR}.${QMCPLUSPLUS_VERSION_PATCH}")
+SET(QMCPACK_VERSION_MAJOR 3)
+SET(QMCPACK_VERSION_MINOR 0)
+SET(QMCPACK_VERSION_PATCH 0)
+SET(QMCPACK_VERSION "${QMCPACK_VERSION_MAJOR}.${QMCPACK_VERSION_MINOR}.${QMCPACK_VERSION_PATCH}")
 
 ######################################################################
 # CTest 
@@ -28,6 +28,16 @@ SET( DROP_SITE_CDASH TRUE )
 SET( DART_TESTING_TIMEOUT 3600 CACHE STRING "Maximum time for one test")
 ENABLE_TESTING()
 INCLUDE( CTest )
+
+SET( QMC_SYMLINK_TEST_FILES TRUE CACHE BOOL "Use symbolic links for test files to save space.  Set to false to copy files instead.")
+
+
+IF (QMC_SYMLINK_TEST_FILES)
+  SET(SYMLINK_MSG "Using symbolic links for large test files may cause test failures if the build is installed on a separate filesystem from the source.  For example, Titan at OLCF.")
+ELSE()
+  SET(SYMLINK_MSG "Copying large test files uses more disk space than using symbolic links.")
+ENDIF()
+MESSAGE(STATUS "QMC_SYMLINK_TEST_FILES = ${QMC_SYMLINK_TEST_FILES}.  ${SYMLINK_MSG}")
 
 ######################################################################
 # Build level
@@ -151,11 +161,7 @@ INCLUDE(${CMAKE_ROOT}/Modules/CheckIncludeFile.cmake)
 INCLUDE(${CMAKE_ROOT}/Modules/CheckTypeSize.cmake)
 
 CHECK_FUNCTION_EXISTS(sincos HAVE_SINCOS)
-CHECK_FUNCTION_EXISTS(round HAVE_STD_ROUND)
-CHECK_FUNCTION_EXISTS(floor HAVE_FLOOR)
 CHECK_FUNCTION_EXISTS(posix_memalign HAVE_POSIX_MEMALIGN)
-CHECK_FUNCTION_EXISTS(pow HAVE_POW)
-CHECK_FUNCTION_EXISTS(sqrt HAVE_SQRT)
 
 CHECK_INCLUDE_FILE(dlfcn.h HAVE_DLFCN_H)
 CHECK_INCLUDE_FILE(inttypes.h HAVE_INTTYPES_H)
@@ -187,6 +193,8 @@ IF(MIXED_PRECISION AND BUILD_LMYENGINE_INTERFACE)
   MESSAGE(STATUS "LMY engine is not compatiable with CPU mixed precision build! Disabling LMY engine")
   SET(BUILD_LMYENGINE_INTERFACE 0)
 ENDIF()
+SET(BUILD_AFQMC 0 CACHE BOOL "Build with AFQMC")
+SET(BUILD_FCIQMC 0 CACHE BOOL "Build with FCIQMC")
 #SET(BUILD_QMCTOOLS 1 CACHE BOOL "Build tools for QMCPACK")
 #SET(BUILD_SANDBOX 0 CACHE BOOL "Build snadbox for testing")
 #SET(MPIP_PROFILE 0 CACHE BOOL "Build with mpip for mpi profile")
@@ -194,6 +202,7 @@ ENDIF()
 #SET(BUILD_SANDBOX 0)
 #SET(MPIP_PROFILE 0)
 #option(QMC_BUILD_STATIC "Link to static libraries" OFF)
+SET(ENABLE_TIMERS 0 CACHE BOOL "Enable internal timers")
 
 ######################################################################
 # Performance-related macros
@@ -260,20 +269,16 @@ ENDIF(QMC_ADIOS)
 SET(QMCPACK_UNIT_TEST_DIR ${qmcpack_BINARY_DIR}/tests/bin)
 
 ######################################################
-# Get the current SVN version
+# Git information (see src/CMakeLists.txt for the
+# command to get repository information)
 ######################################################
-SET(QMCPLUSPLUS_SVN_LAST_CHANGED "2008-05-12")
-SET(QMCPLUSPLUS_BRANCH "00000") # Will be edited on export, do not edit. Exact match required.
-SET(QMCPLUSPLUS_LAST_CHANGED_DATE "2001-01-01") # Will be edited on export, do not edit. Exact match required.
-FIND_PACKAGE(Subversion) 
-IF(Subversion_FOUND) 
-  IF (EXISTS "${PROJECT_SOURCE_DIR}/.svn") # Avoid using svn with exported files
-    Subversion_WC_INFO(${PROJECT_SOURCE_DIR} my) 
-    MESSAGE(STATUS "Current revision : ${my_WC_REVISION} modified on ${Project_WC_LAST_CHANGED_DATE}") 
-    SET(QMCPLUSPLUS_BRANCH ${my_WC_REVISION}) 
-    SET(QMCPLUSPLUS_LAST_CHANGED_DATE ${my_WC_LAST_CHANGED_DATE}) 
-  ENDIF()
+FIND_PACKAGE(Git)
+
+SET(IS_GIT_PROJECT false)
+IF (EXISTS "${PROJECT_SOURCE_DIR}/.git")
+  SET(IS_GIT_PROJECT true)
 ENDIF()
+
 
 ######################################################
 #COMPILER choose one of the cmake files to customize the compiler options
@@ -462,6 +467,7 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
     IF("${LAPACK_LIBRARIES}" MATCHES "mkl")
       MESSAGE(STATUS "MKL found via LAPACK/BLAS")
       SET( MKL_FOUND 1 )
+      SET( HAVE_MKL 1 )
     ENDIF()
   ENDIF()
   IF(LAPACK_FOUND)
@@ -478,28 +484,59 @@ ENDIF(CMAKE_TOOLCHAIN_FILE)
 
 # check if C++11 is needed by QMCPACK features
 SET(CXX11_NEEDED FALSE)
-IF(BUILD_LMYENGINE_INTERFACE OR  BUILD_MINIAPPS)
+IF(BUILD_LMYENGINE_INTERFACE OR BUILD_MINIAPPS OR BUILD_AFQMC)
   SET(CXX11_NEEDED TRUE)
 ENDIF()
-## add AFQMC checker here
 # once C++11 is needed
 IF(CXX11_NEEDED)
+  SET(CXX11_FLAG "-std=c++11")
   #check if the CXX compiler supports -std=c++11 option
   include(CheckCXXCompilerFlag)
-  CHECK_CXX_COMPILER_FLAG(-std=c++11 CXX_COMPILER_SUPPORT_CXX11)
+  CHECK_CXX_COMPILER_FLAG(${CXX11_FLAG} CXX_COMPILER_SUPPORT_CXX11)
   # Turn on C++11 for this code
+
+  # Force the flag on Cray with Intel compiler, because the Cray wrapper
+  #  prints an warning that interferes with the flag detection code
+  #  with older versions of CMake.
+  IF($ENV{CRAYPE_VERSION} MATCHES ".")
+    IF( ${COMPILER} MATCHES "Intel" AND NOT CXX_COMPILER_SUPPORT_CXX11)
+      SET(CXX_COMPILER_SUPPORT_CXX11 TRUE)
+      MESSAGE(STATUS "Forcing C++11 support on Cray with Intel")
+    ENDIF()
+  ENDIF()
+
   IF (CXX_COMPILER_SUPPORT_CXX11)
     # avoid repeated -std=c++11 flag
-    IF(NOT CMAKE_CXX_FLAGS MATCHES "-std=c\\+\\+11")
-      SET (CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
+    STRING(REPLACE "++" "\\+\\+" CXX11_FLAG_MATCH ${CXX11_FLAG})
+    IF(NOT CMAKE_CXX_FLAGS MATCHES ${CXX11_FLAG_MATCH})
+      SET (CMAKE_CXX_FLAGS "${CXX11_FLAG} ${CMAKE_CXX_FLAGS}")
     ENDIF()
   ELSE()
     MESSAGE(STATUS "Disabling features requring C++11 due to the lack of compiler support")
     SET(BUILD_LMYENGINE_INTERFACE 0)
     SET(BUILD_MINIAPPS 0)
-    ## disable AFQMC here
+    SET(BUILD_AFQMC 0)
   ENDIF()
 ENDIF(CXX11_NEEDED)
+
+# AFQMC requires MKL sparse
+IF (BUILD_AFQMC AND NOT MKL_FOUND)
+  MESSAGE(STATUS "AFQMC requires MKL sparse libraries. Disabling AFQMC")
+  SET (BUILD_AFQMC 0)
+ENDIF()
+
+# AFQMC requires MPI
+If (BUILD_AFQMC AND NOT QMC_MPI)
+  MESSAGE(FATAL_ERROR "AFQMC requires building with MPI (QMC_MPI=1)")
+ENDIF()
+
+If (BUILD_AFQMC AND QMC_COMPLEX)
+  MESSAGE(STATUS "Warning: Complex wavefunctions are not yet supported by AFQMC.")
+ENDIF()
+
+IF (BUILD_AFQMC AND CMAKE_COMPILER_IS_GNUCXX AND MKL_FOUND)
+  LINK_LIBRARIES("rt")
+ENDIF()
   
 # setup ctest variables
 IF ( HAVE_MPI )
@@ -621,6 +658,9 @@ IF(QMC_CUDA)
   else(CUDA_NVCC_FLAGS MATCHES "arch")
     # Automatically set the default NVCC flags
     SET(CUDA_NVCC_FLAGS "-Drestrict=__restrict__;-DNO_CUDA_MAIN")
+    if (QMC_COMPLEX)
+      SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-DQMC_COMPLEX")
+    endif()
     if ( CMAKE_BUILD_TYPE STREQUAL "DEBUG" )
       SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-g;-G")
     else()
@@ -800,7 +840,7 @@ MESSAGE(STATUS "Ready to build qmcpack")
 #  -DMPICH_SKIP_MPICXX : disable C++ binding of MPICH
 ####################################################################
 
-ADD_DEFINITIONS(-DHAVE_CONFIG_H -DH5_USE_16_API -DDISABLE_TIMER=1 -DUSE_REAL_STRUCT_FACTOR -DINLINE_ALL=inline)
+ADD_DEFINITIONS(-DHAVE_CONFIG_H -DH5_USE_16_API -DUSE_REAL_STRUCT_FACTOR -DINLINE_ALL=inline)
 
 IF(CMAKE_COMPILER_IS_GNUCXX) 
   ADD_DEFINITIONS(-DADD_)

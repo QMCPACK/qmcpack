@@ -369,8 +369,6 @@ void QMCDriver::adiosCheckpoint(int block)
 void QMCDriver::adiosCheckpointFinal(int block, bool dumpwalkers)
 {
 #ifdef HAVE_ADIOS
-  TimerManager.print(myComm);
-  TimerManager.reset();
   int64_t adios_handle;
   //string group_name;
   //get the size of walker related data that we are writing to disk
@@ -458,8 +456,6 @@ bool QMCDriver::finalize(int block, bool dumpwalkers)
 
   if(ADIOS::useHDF5())
   {
-    TimerManager.print(myComm);
-    TimerManager.reset();
     if(DumpConfig && dumpwalkers) wOut->dump(W, block);
     delete wOut;
     wOut=0;

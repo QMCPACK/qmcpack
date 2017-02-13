@@ -265,16 +265,21 @@ ENDIF()
 
 
 # Plane wave test of bccH (no pp, so faster than typical solids)
-# Currently disabled since take 90s to run
-#  QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-vmc_sdj-pw
-#                    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
-#                    qmc_short_pw
-#                    qmc_short_pw.in.xml
-#                    1 16
-#                    BCC_H_SCALARS
-#                    0 # VMC
-#                    TRUE)
-
+# Reduced number of blocks and samples compared to other short bccH tests
+  LIST(APPEND BCC_H_PW_SCALARS "totenergy" "-1.834032 0.001")
+  LIST(APPEND BCC_H_PW_SCALARS "samples" "96000 0.0")
+  LIST(APPEND BCC_H_PW_SCALARS "flux" "0.0 0.1")
+  IF(NOT QMC_CUDA)
+# No GPU implementation. Would be fast if implemented
+  QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-vmc_sdj-pw
+                    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+                    qmc_short_pw
+                    qmc_short_pw.in.xml
+                    1 16
+                    BCC_H_PW_SCALARS
+                    0 # VMC
+                    TRUE)
+  ENDIF()
 
   LIST(APPEND DIAMOND_SCALARS "totenergy" "-10.491445 0.002")
   LIST(APPEND DIAMOND_SCALARS "kinetic" "11.434392 0.018")
@@ -362,7 +367,7 @@ ENDIF()
 
   LIST(APPEND MONO_O_SCALARS "totenergy" "-31.776596 0.006")
   LIST(APPEND MONO_O_SCALARS "samples" "64000 0.0")
-  LIST(APPEND HCP_BE_SCALARS "flux" "0.0 0.5")
+  LIST(APPEND MONO_O_SCALARS "flux" "0.0 0.5")
 
   QMC_RUN_AND_CHECK(short-monoO_1x1x1_pp-vmc_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/monoO_1x1x1_pp"

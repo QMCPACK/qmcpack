@@ -43,7 +43,7 @@ namespace MatrixOperators
 {
   /** static function to perform C=AB for real matrices
    *
-   * Call dgemm
+   * Call dgemm/zgemm/sgemm/cgemm via BLAS::gemm
    */
   template<typename T>
   inline void product(const Matrix<T>& A,
@@ -51,13 +51,12 @@ namespace MatrixOperators
   {
     const char transa = 'N';
     const char transb = 'N';
-    const T one=1.0;
-    const T zero=0.0;
+    const T one(1.0);
+    const T zero(0.0);
     BLAS::gemm(transa, transb, B.cols(), A.rows(), B.rows(),
           one, B.data(), B.cols(), A.data(), A.cols(),
           zero, C.data(), C.cols());
   }
-
 
   template<typename T>
   inline void product_ABt(const Matrix<T>& A,
@@ -65,10 +64,10 @@ namespace MatrixOperators
   {
     const char transa = 't';
     const char transb = 'n';
-    const T zone(1.0);
+    const T one(1.0);
     const T zero(0.0);
     BLAS::gemm(transa, transb, B.rows(), A.rows(), B.cols(),
-        zone, B.data(), B.cols(), A.data(), A.cols(),
+        one, B.data(), B.cols(), A.data(), A.cols(),
         zero, C.data(), C.cols());
   }
 
@@ -78,10 +77,10 @@ namespace MatrixOperators
   {
     const char transa = 'n';
     const char transb = 't';
-    const T zone(1.0);
+    const T one(1.0);
     const T zero(0.0);
     BLAS::gemm(transa, transb, B.cols(), A.cols(), B.rows(),
-        zone, B.data(), B.cols(), A.data(), A.cols(),
+        one, B.data(), B.cols(), A.data(), A.cols(),
         zero, C.data(), C.cols());
   }
 
@@ -136,38 +135,6 @@ namespace MatrixOperators
     simd::transpose(A.data(),B.data(),A.rows(),A.cols());
   }
 
-  /** static function to perform C=AB for complex matrices
-   *
-   * Call zgemm
-   */
-  inline void product(const Matrix<std::complex<double> >& A,
-                      const Matrix<std::complex<double> >& B, 
-                      Matrix<std::complex<double> >& C)
-  {
-    const char transa = 'N';
-    const char transb = 'N';
-    const std::complex<double> zone(1.0,0.0);
-    const std::complex<double> zero(0.0,0.0);
-    zgemm(transa, transb, B.cols(), A.rows(), B.rows(),
-          zone, B.data(), B.cols(), A.data(), A.cols(),
-          zero, C.data(), C.cols());
-  }
-
-
-  inline void product_AtB(const Matrix<std::complex<double> >& A,
-                          const Matrix<std::complex<double> >& B, 
-                          Matrix<std::complex<double> >& C)
-  {
-    const char transa = 'N';
-    const char transb = 'T';
-    const std::complex<double> zone(1.0,0.0);
-    const std::complex<double> zero(0.0,0.0);
-
-    zgemm(transa, transb, C.cols(), C.rows(), A.rows(),
-          zone, B.data(), B.cols(), A.data(), A.cols(),
-          zero, C.data(), C.cols());
-  }
-
 
   /// C = A*diag(B)
   template<typename T1,typename T2,typename T3>
@@ -216,8 +183,6 @@ namespace MatrixOperators
     //  C(ij)=A(ij%crows)*B(ij);
 
   }
-
-
 
 
   /** static function to perform C=AB for complex matrices

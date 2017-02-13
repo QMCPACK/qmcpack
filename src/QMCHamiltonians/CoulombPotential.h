@@ -126,7 +126,7 @@ struct CoulombPotential: public QMCHamiltonianBase
           const RealType* restrict dist=d->Distances[iat];
           T q=Z[iat];
           for(size_t j=0; j<iat; ++j)
-            res+=static_cast<RealType>(q*Z[j]/dist[j]);
+            res+=q*Z[j]/dist[j];
         }
       }
       else
@@ -137,7 +137,7 @@ struct CoulombPotential: public QMCHamiltonianBase
         {
           T q=Z[iat];
           for(int nn=M[iat]; nn<M[iat+1]; ++nn)
-            res+=static_cast<RealType>(q*Z[J[nn]]*d->rinv(nn));
+            res+=q*Z[J[nn]]*d->rinv(nn);
         }
       }
     }
@@ -176,7 +176,7 @@ struct CoulombPotential: public QMCHamiltonianBase
         {
           T q=Za[iat];
           for(int nn=M[iat]; nn<M[iat+1]; ++nn)
-            res+=static_cast<RealType>(q*Zb[J[nn]]*d->rinv(nn));
+            res+=q*Zb[J[nn]]*d->rinv(nn);
         }
       }
     }
@@ -191,7 +191,7 @@ struct CoulombPotential: public QMCHamiltonianBase
     const int* restrict M=d->M.data();
     const int* restrict J=d->J.data();
     T res=0.0;
-    RealType pairpot;
+    T pairpot;
     Array<RealType,1>& Va_samp = *Va_sample;
     Va_samp = 0.0;
     for(int iat=0; iat<nCenters; ++iat)
@@ -199,7 +199,7 @@ struct CoulombPotential: public QMCHamiltonianBase
       T q=Z[iat];
       for(int nn=M[iat],it=0; nn<M[iat+1]; ++nn,it++)
       {
-        pairpot = static_cast<RealType>(.5*q*Z[J[nn]]*d->rinv(nn));
+        pairpot = .5*q*Z[J[nn]]*d->rinv(nn);
         Va_samp(iat)+=pairpot;
         Va_samp(it) +=pairpot;
         res += 2.0*pairpot;
@@ -233,7 +233,7 @@ struct CoulombPotential: public QMCHamiltonianBase
     const int* restrict M=d->M.data();
     const int* restrict J=d->J.data();
     T res=0.0;
-    RealType pairpot;
+    T pairpot;
     Array<RealType,1>& Va_samp = *Va_sample;
     Array<RealType,1>& Vb_samp = *Vb_sample;
     Va_samp = 0.0;
@@ -243,18 +243,18 @@ struct CoulombPotential: public QMCHamiltonianBase
       T q=Za[iat];
       for(int nn=M[iat],it=0; nn<M[iat+1]; ++nn,it++)
       {
-        pairpot = static_cast<RealType>(.5*q*Zb[J[nn]]*d->rinv(nn));
+        pairpot = .5*q*Zb[J[nn]]*d->rinv(nn);
         Va_samp(iat)+=pairpot;
         Vb_samp(it) +=pairpot;
         res += 2.0*pairpot;
       }
     }
 #if defined(TRACE_CHECK)
-    RealType Vnow  = res;
-    RealType Vasum = Va_samp.sum();
-    RealType Vbsum = Vb_samp.sum();
-    RealType Vsum  = Vasum+Vbsum;
-    RealType Vorig = evaluateAB_orig(d,Za,Zb);
+    T Vnow  = res;
+    T Vasum = Va_samp.sum();
+    T Vbsum = Vb_samp.sum();
+    T Vsum  = Vasum+Vbsum;
+    T Vorig = evaluateAB_orig(d,Za,Zb);
     if(std::abs(Vsum-Vnow)>TraceManager::trace_tol)
     {
       app_log()<<"accumtest: CoulombPotential::evaluateAB()"<< std::endl;
@@ -293,7 +293,7 @@ struct CoulombPotential: public QMCHamiltonianBase
     {
       T q=Z[iat];
       for(int nn=M[iat]; nn<M[iat+1]; ++nn)
-        res+=static_cast<RealType>(q*Z[J[nn]]*d->rinv(nn));
+        res+=q*Z[J[nn]]*d->rinv(nn);
     }
     return res;
   }
@@ -308,7 +308,7 @@ struct CoulombPotential: public QMCHamiltonianBase
     {
       T q=Za[iat];
       for(int nn=M[iat]; nn<M[iat+1]; ++nn)
-        res+=static_cast<RealType>(q*Zb[J[nn]]*d->rinv(nn));
+        res+=q*Zb[J[nn]]*d->rinv(nn);
     }
     return res;
   }

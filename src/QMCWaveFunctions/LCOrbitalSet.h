@@ -46,7 +46,7 @@ public:
    * @param bs pointer to the BasisSet
    * @param id identifier of this LCOrbitalSet
    */
-  LCOrbitalSet(BS* bs=0,int rl=0): myBasisSet(0),ReportLevel(rl)
+  LCOrbitalSet(BS* bs=0,int rl=0): myBasisSet(0), ReportLevel(rl)
   {
     if(bs)
       setBasisSet(bs);
@@ -193,7 +193,7 @@ public:
    * @param bs pointer to the BasisSet
    * @param id identifier of this LCOrbitalSet
    */
-  LCOrbitalSet(BS* bs=0,int rl=0, std::string algorithm=""): myBasisSet(0),ReportLevel(rl)
+  LCOrbitalSet(BS* bs=0,int rl=0, std::string algorithm=""): myBasisSet(0), ReportLevel(rl)
   {
     if(algorithm=="legacy_gemv")
     {

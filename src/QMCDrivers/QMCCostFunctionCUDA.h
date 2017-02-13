@@ -54,13 +54,14 @@ public:
 
 protected:
   Matrix<Return_t> Records;
+  typedef TrialWaveFunction::RealMatrix_t  RealMatrix_t;
   typedef TrialWaveFunction::ValueMatrix_t ValueMatrix_t;
   typedef TrialWaveFunction::GradMatrix_t  GradMatrix_t;
   /** Temp derivative properties and Hderivative properties of all the walkers
   */
   std::vector<std::vector<Return_t> >  TempDerivRecords;
   std::vector<std::vector<Return_t> >  TempHDerivRecords;
-  ValueMatrix_t LogPsi_Derivs, LocE_Derivs;
+  RealMatrix_t LogPsi_Derivs, LocE_Derivs;
   ValueMatrix_t d2logPsi_opt, d2logPsi_fixed;
   GradMatrix_t   dlogPsi_opt,  dlogPsi_fixed;
 

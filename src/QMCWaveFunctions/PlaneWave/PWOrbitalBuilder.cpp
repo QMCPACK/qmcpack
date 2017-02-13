@@ -21,6 +21,7 @@
 #include "QMCWaveFunctions/PlaneWave/PWParameterSet.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/DummyBasisSet.h"
+#include "QMCWaveFunctions/SPOSetScanner.h"
 #include "OhmmsData/ParameterSet.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Numerics/HDFSTLAttrib.h"
@@ -30,8 +31,8 @@
 namespace qmcplusplus
 {
 
-PWOrbitalBuilder::PWOrbitalBuilder(ParticleSet& els, TrialWaveFunction& psi)
-  : OrbitalBuilderBase(els,psi),hfileID(-1), rootNode(NULL)
+PWOrbitalBuilder::PWOrbitalBuilder(ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets)
+  : OrbitalBuilderBase(els,psi), ptclPool(psets), hfileID(-1), rootNode(NULL)
 #if !defined(EANBLE_SMARTPOINTER)
   ,myBasisSet(0)
 #endif
@@ -73,27 +74,30 @@ bool PWOrbitalBuilder::put(xmlNodePtr cur)
       if(aptr != NULL)
         myParam->Ecut=atof((const char*)aptr);
     }
-    else
-      if(cname == "coefficients")
+    else if(cname == "coefficients")
+    {
+      //close
+      if(hfileID>0)
+        H5Fclose(hfileID);
+      hfileID=getH5(cur,"hdata");
+    }
+    else if(cname == sd_tag)
+    {
+      if(hfileID<0)
+        hfileID=getH5(cur,"href");
+      if(hfileID<0)
       {
-        //close
-        if(hfileID>0)
-          H5Fclose(hfileID);
-        hfileID=getH5(cur,"hdata");
+        app_error() << "  Cannot create a SlaterDet due to missing h5 file" << std::endl;
+        OHMMS::Controller->abort();
       }
-      else
-        if(cname == "slaterdeterminant")
-        {
-          if(hfileID<0)
-            hfileID=getH5(cur,"href");
-          if(hfileID<0)
-          {
-            app_error() << "  Cannot create a SlaterDet due to missing h5 file" << std::endl;
-            OHMMS::Controller->abort();
-          }
-          success = createPWBasis(cur);
-          success = putSlaterDet(cur);
-        }
+      success = createPWBasis(cur);
+      success = putSlaterDet(cur);
+    }
+    else if (cname == sposcanner_tag)
+    {
+      SPOSetScanner ascanner(spomap, targetPtcl, ptclPool);
+      ascanner.put(cur);
+    }
     cur=cur->next;
   }
   H5Fclose(hfileID);
@@ -108,7 +112,6 @@ bool PWOrbitalBuilder::putSlaterDet(xmlNodePtr cur)
   typedef SlaterDet SlaterDeterminant_t;
   typedef DiracDeterminantBase Det_t;
   SlaterDeterminant_t* sdet(new SlaterDeterminant_t(targetPtcl));
-  std::map<std::string,SPOSetBasePtr>& spo_ref(sdet->mySPOSet);
   int spin_group=0;
   cur=cur->children;
   while(cur != NULL)
@@ -126,20 +129,21 @@ bool PWOrbitalBuilder::putSlaterDet(xmlNodePtr cur)
       if(ref == "0")
         ref=id;
       int firstIndex=targetPtcl.first(spin_group);
-      std::map<std::string,SPOSetBasePtr>::iterator lit(spo_ref.find(ref));
+      std::map<std::string,SPOSetBasePtr>::iterator lit(spomap.find(ref));
       Det_t* adet=0;
       //int spin_group=0;
-      if(lit == spo_ref.end())
+      if(lit == spomap.end())
       {
         app_log() << "  Create a PWOrbitalSet" << std::endl;;
         SPOSetBasePtr psi(createPW(cur,spin_group));
         sdet->add(psi,ref);
-        adet= new Det_t(psi,firstIndex);
+        spomap[ref] = psi;
+        adet = new Det_t(psi,firstIndex);
       }
       else
       {
         app_log() << "  Reuse a PWOrbitalSet" << std::endl;
-        adet= new Det_t((*lit).second,firstIndex);
+        adet = new Det_t((*lit).second,firstIndex);
       }
       app_log()<< "    spin=" << spin_group  << " id=" << id << " ref=" << ref << std::endl;
       if(adet)

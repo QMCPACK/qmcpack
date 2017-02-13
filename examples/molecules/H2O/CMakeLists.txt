@@ -2,7 +2,7 @@
 
 IF(NOT QMC_CUDA AND NOT QMC_COMPLEX)
 
-  LIST(APPEND H2O_SCALARS "totenergy" "-17.25078 .006") # total energy
+  LIST(APPEND H2O_SCALARS "totenergy" "-17.26138 .006") # total energy
 
   QMC_RUN_AND_CHECK(example_H2O
                     "${CMAKE_SOURCE_DIR}/examples/molecules/H2O"

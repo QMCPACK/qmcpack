@@ -65,11 +65,11 @@ QMCCostFunctionCUDA::Return_t QMCCostFunctionCUDA::correlatedSampling(bool needD
   int numParams = OptVariablesForPsi.size();
   int numPtcl   = W.getTotalNum();
   std::vector<RealType> logpsi_new(nw), logpsi_fixed(nw), KE(nw);
-  TrialWaveFunction::ValueMatrix_t d_logpsi_dalpha, d_hpsioverpsi_dalpha;
-  TrialWaveFunction::GradMatrix_t  fixedG(nw, numPtcl);
-  TrialWaveFunction::ValueMatrix_t fixedL(nw, numPtcl);
-  TrialWaveFunction::GradMatrix_t  newG(nw, numPtcl);
-  TrialWaveFunction::ValueMatrix_t newL(nw, numPtcl);
+  RealMatrix_t d_logpsi_dalpha, d_hpsioverpsi_dalpha;
+  GradMatrix_t  fixedG(nw, numPtcl);
+  ValueMatrix_t fixedL(nw, numPtcl);
+  GradMatrix_t  newG(nw, numPtcl);
+  ValueMatrix_t newL(nw, numPtcl);
   if (needDerivs)
   {
     d_logpsi_dalpha.resize(nw, numParams);

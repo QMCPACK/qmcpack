@@ -91,23 +91,27 @@ public:
   // laplacians for each walker.  These vectors .data() is often
   // passed to GPU kernels.
 #ifdef QMC_CUDA
-  gpu::device_vector<CUDA_PRECISION*> RList_GPU, GradList_GPU, LapList_GPU;
+
+  gpu::device_vector<CudaRealType*>  RList_GPU;
+  gpu::device_vector<CudaValueType*> GradList_GPU, LapList_GPU;
   // First index is the species.  The second index is the walker
   std::vector<gpu::device_vector<CUDA_PRECISION_FULL*> > RhokLists_GPU;
-  gpu::device_vector<CUDA_PRECISION*> DataList_GPU;
-  gpu::device_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > Rnew_GPU;
-  gpu::host_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > Rnew_host;
+  gpu::device_vector<CudaValueType*>  DataList_GPU;
+  gpu::device_vector<CudaPosType>    Rnew_GPU;
+  gpu::host_vector<CudaPosType>      Rnew_host;
+  std::vector<PosType>                    Rnew;
+  gpu::device_vector<CudaRealType*>  NLlist_GPU;
+  gpu::host_vector<CudaRealType*>    NLlist_host;
+  gpu::host_vector<CudaRealType*>    hostlist;
+  gpu::host_vector<CudaValueType*>   hostlist_valueType;
+  gpu::host_vector<CUDA_PRECISION_FULL*> hostlist_AA; 
+  gpu::host_vector<CudaPosType>      R_host;
+  gpu::host_vector<CudaGradType>     Grad_host;
   gpu::device_vector<int> iatList_GPU;
   gpu::host_vector<int> iatList_host;
-  gpu::device_vector<CUDA_PRECISION*> NLlist_GPU;
-  gpu::host_vector<CUDA_PRECISION*> NLlist_host;
-  std::vector<PosType>                                    Rnew;
   gpu::device_vector<int> AcceptList_GPU;
   gpu::host_vector<int> AcceptList_host;
-  gpu::host_vector<CUDA_PRECISION*> hostlist;
-  gpu::host_vector<CUDA_PRECISION_FULL*> hostlist_AA;
-  gpu::host_vector<TinyVector<CUDA_PRECISION, OHMMS_DIM> > R_host;
-  gpu::host_vector<TinyVector<CudaValueType, OHMMS_DIM> > Grad_host;
+
   void allocateGPU(size_t buffersize);
   void copyWalkersToGPU(bool copyGrad=false);
   void copyWalkerGradToGPU();
@@ -416,7 +420,7 @@ private:
 }
 #endif
 /***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
+ * $RCSfile$   $Author: yingwai $
+ * $Revision: 7383 $   $Date: 2016-12-28 12:15:25 -0500 (Wed, 28 Dec 2016) $
+ * $Id: MCWalkerConfiguration.h 7383 2016-12-28 17:15:25Z yingwai $
  st***************************************************************************/

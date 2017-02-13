@@ -176,9 +176,14 @@ class Qmcpack(Simulation):
                 else:
                     self.error('could not incorporate pw2qmcpack/wfconvert orbitals\n  bspline sposet_builder and determinantset are both missing')
                 #end if
-                orb_elem.href = os.path.relpath(h5file,self.locdir)
-                if system.structure.folded_structure!=None:
-                    orb_elem.tilematrix = array(system.structure.tmatrix)
+                if 'href' in orb_elem and isinstance(orb_elem.href,str) and os.path.exists(orb_elem.href):
+                    # user specified h5 file for orbitals, bypass orbital dependency
+                    orb_elem.href = os.path.relpath(orb_elem.href,self.locdir)
+                else:
+                    orb_elem.href = os.path.relpath(h5file,self.locdir)
+                    if system.structure.folded_structure!=None:
+                        orb_elem.tilematrix = array(system.structure.tmatrix)
+                    #end if
                 #end if
                 defs = obj(
                     #twistnum   = 0,
@@ -360,11 +365,10 @@ class Qmcpack(Simulation):
                 self.error('incorporating particles from '+sim.__class__.__name__+' has not been implemented')
             # end if
         elif result_name=='structure':
-
-            structure = self.system.structure
-            relstruct = result.structure
-            structure.pos = relstruct.positions.copy()
-            structure.set_elem(relstruct.atoms)
+            relstruct = result.structure.copy()
+            relstruct.change_units('B')
+            self.system.structure = relstruct
+            self.system.remove_folded()
             self.input.incorporate_system(self.system)
 
         elif result_name=='cuspcorr':

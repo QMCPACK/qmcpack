@@ -20,6 +20,8 @@
 #ifndef QMCPLUSPLUS_GRIDBC_HANDLER_H
 #define QMCPLUSPLUS_GRIDBC_HANDLER_H
 
+#include <config/stdlib/math.h>
+
 namespace qmcplusplus
 {
 
@@ -84,15 +86,8 @@ struct GridBCond
   {
     if(periodic)
     {
-#if defined(HAVE_STD_ROUND)
       T x1=x*OneOverL;
       x=L*(x1-round(x1));
-#else
-      //T x1=std::fmod(x*OneOverL,1.0);
-      T dmy;
-      T x1=std::modf(x*OneOverL,&dmy);
-      x=L*(x1-static_cast<int>(2.0*x1));
-#endif
     }
   }
 

@@ -148,11 +148,14 @@ struct SplineR2RAdoptor: public SplineAdoptorBase<ST,D>
     ru=PrimLattice.toUnit(r);
     int bc_sign=0;
     for(int i=0; i<D; i++)
-    {
-      ST img = std::floor(ru[i]);
-      ru[i] -= img;
-      bc_sign += HalfG[i] * (int)img;
-    }
+      if( -std::numeric_limits<ST>::epsilon() < ru[i] && ru[i] < 0 )
+        ru[i] = ST(0.0);
+      else
+      {
+        ST img = std::floor(ru[i]);
+        ru[i] -= img;
+        bc_sign += HalfG[i] * (int)img;
+      }
     return bc_sign;
   }
 

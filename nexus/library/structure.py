@@ -508,6 +508,12 @@ class Structure(Sobj):
     #end def __init__
 
 
+
+    def set_axes(self,axes):
+        self.reset_axes(axes)
+    #end def set_axes
+
+
     def set_bconds(self,bconds):
         self.bconds = array(tuple(bconds),dtype=str)
     #end def bconds
@@ -516,6 +522,11 @@ class Structure(Sobj):
     def set_elem(self,elem):
         self.elem = array(elem,dtype=object)
     #end def set_elem
+
+    
+    def set_pos(self,pos):
+        self.pos = array(pos,dtype=float)
+    #end def set_pos
 
 
     def size(self):
@@ -611,11 +622,6 @@ class Structure(Sobj):
         self.kaxes = 2*pi*inv(axes).T
         self.center = axes.sum(0)/2
     #end def reset_axes
-
-
-    def set_axes(self,axes):
-        self.reset_axes(axes)
-    #end def set_axes
 
 
     def adjust_axes(self,axes):
@@ -2327,10 +2333,13 @@ class Structure(Sobj):
             for i in xrange(len(indices)):
                 nn = neighbors[i]
                 dn = dist[i]
-                smax = spec_max[self.elem[indices[i]]]
-                if len(nn)>smax:
-                    neighbors[i] = nn[:smax]
-                    dist[i]      = dn[:smax]
+                e = self.elem[indices[i]]
+                if e in spec_max:
+                    smax = spec_max[e]
+                    if len(nn)>smax:
+                        neighbors[i] = nn[:smax]
+                        dist[i]      = dn[:smax]
+                    #end if
                 #end if
             #end for
         else:
@@ -2844,7 +2853,7 @@ class Structure(Sobj):
     #end def fold
 
 
-    def tilematrix(self,small=None,tol=1e-6):
+    def tilematrix(self,small=None,tol=1e-6,status=False):
         if small==None:
             if self.folded_structure!=None:
                 small = self.folded_structure
@@ -2856,10 +2865,14 @@ class Structure(Sobj):
         tilemat = array(around(tm),dtype=int)
         error = abs(tilemat-tm).sum()
         non_integer_elements = error > tol
-        if non_integer_elements:
-            self.error('large cell cannot be constructed as an integer tiling of the small cell\n  large cell axes:  \n'+str(self.axes)+'\n  small cell axes:  \n'+str(small.axes)+'\n  large/small:  \n'+str(self.axes/small.axes)+'\n  tiling matrix:  \n'+str(tm)+'\n  integerized tiling matrix:  \n'+str(tilemat)+'\n  error: '+str(error)+'\n  tolerance: '+str(tol))
+        if status:
+            return tilemat,not non_integer_elements
+        else:
+            if non_integer_elements:
+                self.error('large cell cannot be constructed as an integer tiling of the small cell\nlarge cell axes:\n'+str(self.axes)+'\nsmall cell axes:  \n'+str(small.axes)+'\nlarge/small:\n'+str(self.axes/small.axes)+'\ntiling matrix:\n'+str(tm)+'\nintegerized tiling matrix:\n'+str(tilemat)+'\nerror: '+str(error)+'\ntolerance: '+str(tol))
+            #end if
+            return tilemat
         #end if
-        return tilemat
     #end def tilematrix
             
 
@@ -3068,6 +3081,64 @@ class Structure(Sobj):
         #end if
         return index
     #end def select_twist
+
+
+    def fold_pos(self,large,tol=0.001):
+        vratio = large.volume()/self.volume()
+        if abs(vratio-int(around(vratio)))>1e-6:
+            self.error('cannot fold positions from large cell into current one\nlarge cell volume is not an integer multiple of the current one\nlarge cell volume: {0}\ncurrent cell volume: {1}\nvolume ratio: {2}'.format(large.volume(),self.volume(),vratio))
+        T,success = large.tilematrix(self,status=True)
+        if not success:
+            self.error('cannot fold positions from large cell into current one\ncells are related by non-integer tilematrix')
+        #end if
+        nnearest = int(around(vratio))
+        self.elem = large.elem.copy() 
+        self.pos  = large.pos.copy()
+        self.recenter()
+        nt,dt = self.neighbor_table(distances=True)
+        nt = nt[:,:nnearest]
+        dt = dt[:,:nnearest]
+        if dt.ravel().max()>tol:
+            self.error('cannot fold positions from large cell into current one\npositions of equivalent atoms are further apart than the tolerance\nmax distance encountered: {0}\ntolerance: {1}'.format(dt.ravel().max(),tol))
+        #end if
+        counts = zeros((len(self.pos),),dtype=int)
+        for n in nt.ravel():
+            counts[n] += 1
+        #end for
+        if (counts!=nnearest).any():
+            self.error('cannot fold positions from large cell into current one\neach atom must have {0} equivalent positions\nsome atoms found with the following equivalent position counts: {1}'.format(nnearest,counts[counts!=nnearest]))
+        #end if
+        ind_visited = set()
+        neigh_map = obj()
+        keep = []
+        n=0
+        for nset in nt:
+            if n not in ind_visited:
+                neigh_map[n] = nset
+                keep.append(n)
+                for ind in nset:
+                    ind_visited.add(ind)
+                #end for
+            #end if
+            n+=1
+        #end for
+        if len(ind_visited)!=len(self.pos):
+            self.error('cannot fold positions from large cell into current one\nsome equivalent atoms could not be identified')
+        #end if
+        new_elem = []
+        new_pos  = []
+        for n in keep:
+            nset = neigh_map[n]
+            elist = list(set(self.elem[nset]))
+            if len(elist)!=1:
+                self.error('cannot fold positions from large cell into current one\nspecies of some equivalent atoms do not match')
+            #end if
+            new_elem.append(elist[0])
+            new_pos.append(self.pos[nset].mean(0))
+        #end for
+        self.set_elem(new_elem)
+        self.set_pos(new_pos)
+    #end def fold_pos
 
 
     def pos_unit(self,pos=None):
@@ -3654,25 +3725,34 @@ class Structure(Sobj):
             lines = filepath.splitlines() # "filepath" is contents
         #end if
         axes = []
-        posu = []
+        pos  = []
         elem = []
+        unit_pos = False
         for line in lines:
             ls = line.strip()
             if len(ls)>0 and ls[0]!='#':
                 tokens = ls.split()
-                if ls.startswith('lattice_vector'):
+                t0 = tokens[0]
+                if t0=='lattice_vector':
                     axes.append(tokens[1:])
-                elif ls.startswith('atom_frac'):
-                    posu.append(tokens[1:4])
+                elif t0=='atom_frac':
+                    pos.append(tokens[1:4])
+                    elem.append(tokens[4])
+                    unit_pos = True
+                elif t0=='atom':
+                    pos.append(tokens[1:4])
                     elem.append(tokens[4])
                 else:
-                    None
-                    #self.error('unrecogonized or not yet supported token in fhi-aims geometry file: {0}'.format(tokens[0]))
+                    #None
+                    self.error('unrecogonized or not yet supported token in fhi-aims geometry file: {0}'.format(t0))
                 #end if
             #end if
         #end for
         axes = array(axes,dtype=float)
-        pos  = dot(array(posu,dtype=float),axes)
+        pos  = array(pos,dtype=float)
+        if unit_pos:
+            pos  = dot(pos,axes)
+        #end if
         self.dim = 3
         self.set_axes(axes)
         self.set_elem(elem)
@@ -5074,9 +5154,9 @@ def generate_defect_structure(defect,structure,shape=None,element=None,
 #end def generate_defect_structure
 
 
-def read_structure(filepath,elem=None):
+def read_structure(filepath,elem=None,format=None):
     s = generate_structure('empty')
-    s.read(filepath,elem=elem)
+    s.read(filepath,elem=elem,format=format)
     return s
 #end def read_structure
 
