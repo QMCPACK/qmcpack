@@ -121,6 +121,19 @@ struct SoaDistanceTableBA: public DTD_BConds<T,D,SC>, public DistanceTableData
     return nn;
   }
 
+  int get_first_neighbor_temporal(int iat) const
+  {
+    RealType min_dist = std::numeric_limits<RealType>::max();
+    int index=-1;
+    for(int jat=0; jat<Nsources; ++jat)
+      if(Temp_r[jat]<min_dist)
+      {
+        min_dist = Temp_r[jat];
+        index    = jat;
+      }
+    return index;
+  }
+
   size_t get_neighbors(int iat, RealType rcut, RealType* restrict dist) const
   {
     size_t nn=0;

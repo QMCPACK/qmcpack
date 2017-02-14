@@ -381,6 +381,15 @@ struct DistanceTableData
     return 0;
   }
 
+  /** find the nearest neighbor
+   * @param iat source particle id
+   * @return the id of the nearest particle, -1 not found
+   */
+  virtual int get_first_neighbor_temporal(int iat) const
+  {
+    return -1;
+  }
+
   /** build a compact list of a neighbor for the iat source
    * @param iat source particle id
    * @param rcut cutoff radius
