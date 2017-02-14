@@ -42,6 +42,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   using BaseType=SplineAdoptorBase<ST,3>;
   using SplineType=typename bspline_traits<ST,3>::SplineType;
   using BCType=typename bspline_traits<ST,3>::BCType;
+  using DataType=ST;
   using PointType=typename BaseType::PointType; 
   using SingleSplineType=typename BaseType::SingleSplineType;
 
@@ -182,7 +183,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   }
 
   template<typename VV>
-  inline void assign_v(const PointType& r, int bc_sign, VV& psi)
+  inline void assign_v(const PointType& r, VV& psi)
   {
     const size_t N=kPoints.size();
     const ST x=r[0], y=r[1], z=r[2];
@@ -244,11 +245,11 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   {
     PointType ru(PrimLattice.toUnit_floor(r));
     SplineInst->evaluate(ru,myV);
-    assign_v(r,0,psi);
+    assign_v(r,psi);
   }
 
   template<typename VV, typename GV>
-  inline void assign_vgl(const PointType& r, int bc_sign, VV& psi, GV& dpsi, VV& d2psi)
+  inline void assign_vgl(const PointType& r, VV& psi, GV& dpsi, VV& d2psi)
   {
     CONSTEXPR ST zero(0);
     CONSTEXPR ST two(2);
@@ -395,13 +396,13 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   {
     PointType ru(PrimLattice.toUnit_floor(r));
     SplineInst->evaluate_vgh(ru,myV,myG,myH);
-    assign_vgl(r,0,psi,dpsi,d2psi);
+    assign_vgl(r,psi,dpsi,d2psi);
   }
 
   /** identical to assign_vgl but the output container is SoA container
    */
   template<typename VGL>
-  inline void assign_vgl_soa(const PointType& r, int bc_sign, VGL& vgl)
+  inline void assign_vgl_soa(const PointType& r, VGL& vgl)
   {
     const int N=kPoints.size();
     CONSTEXPR ST zero(0);
@@ -556,11 +557,11 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   {
     PointType ru(PrimLattice.toUnit_floor(r));
     SplineInst->evaluate_vgh(ru,myV,myG,myH);
-    assign_vgl_soa(r,0,vgl);
+    assign_vgl_soa(r,vgl);
   }
 
   template<typename VV, typename GV, typename GGV>
-  void assign_vgh(const PointType& r, int bc_sign, VV& psi, GV& dpsi, GGV& grad_grad_psi)
+  void assign_vgh(const PointType& r, VV& psi, GV& dpsi, GGV& grad_grad_psi)
   {
     //missing
   }
@@ -705,7 +706,7 @@ struct SplineC2RAdoptor: public SplineAdoptorBase<ST,D>
   }
 
   template<typename VV>
-  inline void assign_v(const PointType& r, int bc_sign, VV& psi)
+  inline void assign_v(const PointType& r, VV& psi)
   {
     const int N=kPoints.size();
     for(int j=0; j<N; ++j)
@@ -731,12 +732,12 @@ struct SplineC2RAdoptor: public SplineAdoptorBase<ST,D>
   {
     PointType ru(PrimLattice.toUnit_floor(r));
     einspline::evaluate(MultiSpline,ru,myV);
-    assign_v(r,0,psi);
+    assign_v(r,psi);
     //Shadow->evaluate_v(r,psi);
   }
 
   template<typename VV, typename GV>
-  inline void assign_vgl(const PointType& r, int bc_sign, VV& psi, GV& dpsi, VV& d2psi)
+  inline void assign_vgl(const PointType& r, VV& psi, GV& dpsi, VV& d2psi)
   {
     const size_t N=kPoints.size();
     CONSTEXPR ST zero(0);
@@ -786,12 +787,12 @@ struct SplineC2RAdoptor: public SplineAdoptorBase<ST,D>
 
     PointType ru(PrimLattice.toUnit_floor(r));
     einspline::evaluate_vgh(MultiSpline,ru,myV,myG,myH);
-    assign_vgl(r,0,psi,dpsi,d2psi);
+    assign_vgl(r,psi,dpsi,d2psi);
     //Shadow->evaluate_vgl(r,psi,dpsi,d2psi);
   }
 
   template<typename VV, typename GV, typename GGV>
-  void assign_vgh(const PointType& r, int bc_sign, VV& psi, GV& dpsi, GGV& grad_grad_psi)
+  void assign_vgh(const PointType& r, VV& psi, GV& dpsi, GGV& grad_grad_psi)
   {
     //convert to Cartesian G and Hess
     const size_t N=kPoints.size();
@@ -847,7 +848,7 @@ struct SplineC2RAdoptor: public SplineAdoptorBase<ST,D>
   {
     PointType ru(PrimLattice.toUnit_floor(r));
     einspline::evaluate_vgh(MultiSpline,ru,myV,myG,myH);
-    assign_vgh(r,0,psi,dpsi,grad_grad_psi);
+    assign_vgh(r,psi,dpsi,grad_grad_psi);
   }
 };
 #endif

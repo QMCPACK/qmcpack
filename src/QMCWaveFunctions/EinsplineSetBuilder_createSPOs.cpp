@@ -41,9 +41,9 @@ namespace qmcplusplus
   ///create R2R, real wavefunction in float
   BsplineReaderBase* createBsplineRealSingle(EinsplineSetBuilder* e, int numOrbs);
   ///create C2C or C2R, complex wavefunction in double
-  BsplineReaderBase* createBsplineComplexDouble(EinsplineSetBuilder* e, int numOrbs);
+  BsplineReaderBase* createBsplineComplexDouble(EinsplineSetBuilder* e, int numOrbs, bool hybrid_rep);
   ///create C2C or C2R, complex wavefunction in single
-  BsplineReaderBase* createBsplineComplexSingle(EinsplineSetBuilder* e, int numOrbs);
+  BsplineReaderBase* createBsplineComplexSingle(EinsplineSetBuilder* e, int numOrbs, bool hybrid_rep);
   ///disable truncated orbitals for now
   BsplineReaderBase* createTruncatedSingle(EinsplineSetBuilder* e, int numOrbs, int celltype)
   {
@@ -70,6 +70,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   std::string sourceName;
   std::string spo_prec("double");
   std::string truncate("no");
+  std::string hybrid_rep("no");
 #if defined(QMC_CUDA)
   std::string useGPU="yes";
 #else
@@ -87,6 +88,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     a.add (givenTwist,   "twist");
     a.add (sourceName, "source");
     a.add (MeshFactor, "meshfactor");
+    a.add (hybrid_rep, "hybridrep");
     a.add (useGPU,     "gpu");
     a.add (spo_prec,   "precision");
     a.add (truncate,   "truncate");
@@ -175,7 +177,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   truncate="no"; //overwrite
 #endif
 #if defined(MIXED_PRECISION)
-  app_log() << "\t  MIXED_PRECISION=1 Overwriting the precision of the einspline storage.\n";
+  app_log() << "\t  MIXED_PRECISION=1 Overwriting the einspline storage to single precision.\n";
   spo_prec="single"; //overwrite
 #endif
   H5OrbSet aset(H5FileName, spinSet, numOrbs);
@@ -301,9 +303,9 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
         app_log() << "  Truncated orbitals with multiple kpoints are not supported yet!" << std::endl;
       }
       if(use_single)
-        MixedSplineReader= createBsplineComplexSingle(this,numOrbs);
+        MixedSplineReader= createBsplineComplexSingle(this, numOrbs, hybrid_rep=="yes");
       else
-        MixedSplineReader= createBsplineComplexDouble(this,numOrbs);
+        MixedSplineReader= createBsplineComplexDouble(this, numOrbs, hybrid_rep=="yes");
     }
   }
 

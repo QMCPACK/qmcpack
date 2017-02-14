@@ -39,6 +39,7 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   using BaseType=SplineAdoptorBase<ST,3>;
   using SplineType=typename bspline_traits<ST,3>::SplineType;
   using BCType=typename bspline_traits<ST,3>::BCType;
+  using DataType=ST;
   using PointType=typename BaseType::PointType; 
   using SingleSplineType=typename BaseType::SingleSplineType;
 
@@ -186,7 +187,7 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   }
 
   template<typename VV>
-  inline void assign_v(const PointType& r, int bc_sign, VV& psi)
+  inline void assign_v(const PointType& r, VV& psi)
   {
     typedef std::complex<TT> ComplexT;
     const size_t N=kPoints.size();
@@ -224,7 +225,7 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   {
     PointType ru(PrimLattice.toUnit_floor(r));
     SplineInst->evaluate(ru,myV);
-    assign_v(r,0,psi);
+    assign_v(r,psi);
   }
 
   /** assign_vgl 
@@ -429,7 +430,7 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   }
 
   template<typename VV, typename GV, typename GGV>
-  void assign_vgh(const PointType& r, int bc_sign, VV& psi, GV& dpsi, GGV& grad_grad_psi)
+  void assign_vgh(const PointType& r, VV& psi, GV& dpsi, GGV& grad_grad_psi)
   {
     //missing
   }
