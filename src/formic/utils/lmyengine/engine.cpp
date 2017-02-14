@@ -15,7 +15,8 @@
 
 #include<boost/shared_ptr.hpp>
 
-#include<omp.h>
+#include<formic/utils/openmp.h>
+//#include<omp.h>
 
 #include <formic/utils/lmyengine/engine.h>
 #include <formic/utils/lmyengine/updater.h>

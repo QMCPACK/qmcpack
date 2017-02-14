@@ -13,7 +13,8 @@
 #include<algorithm>
 #include<cmath>
 #include<sstream>
-#include<omp.h>
+#include<formic/utils/openmp.h>
+//#include<omp.h>
 //#include<mpi.h>
 
 #include<boost/format.hpp>

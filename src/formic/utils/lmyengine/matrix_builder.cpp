@@ -15,7 +15,8 @@
 #include<boost/format.hpp>
 #include<boost/shared_ptr.hpp>
 
-#include<omp.h>
+#include<formic/utils/openmp.h>
+//#include<omp.h>
 
 #include<formic/utils/exception.h>
 #include<formic/utils/lapack_interface.h>
