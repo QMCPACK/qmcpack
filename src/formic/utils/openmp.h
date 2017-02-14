@@ -15,8 +15,8 @@
 
 
 
-#ifndef formic_OHMMS_OPENMP_H
-#define formic_OHMMS_OPENMP_H
+#ifndef FORMIC_OHMMS_OPENMP_H
+#define FORMIC_OHMMS_OPENMP_H
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -39,7 +39,7 @@ inline omp_int_t omp_get_num_threads()
   return 1;
 }
 #endif
-#endif // OHMMS_COMMUNICATE_H
+#endif // FORMIC_OHMMS_OPENMP_H
 /***************************************************************************
  * $RCSfile$   $Author$
  * $Revision$   $Date$

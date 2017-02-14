@@ -14,8 +14,6 @@
 #include<cmath>
 #include<sstream>
 #include<formic/utils/openmp.h>
-//#include<omp.h>
-//#include<mpi.h>
 
 #include<boost/format.hpp>
 #include<boost/shared_ptr.hpp>

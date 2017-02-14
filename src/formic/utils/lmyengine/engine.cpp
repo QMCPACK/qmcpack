@@ -8,7 +8,6 @@
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 #include<vector>
-//#include<mpi.h>
 #include<string>
 #include<algorithm>
 #include<utility>
@@ -16,7 +15,6 @@
 #include<boost/shared_ptr.hpp>
 
 #include<formic/utils/openmp.h>
-//#include<omp.h>
 
 #include <formic/utils/lmyengine/engine.h>
 #include <formic/utils/lmyengine/updater.h>
