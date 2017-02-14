@@ -149,7 +149,7 @@ int main(int argc, char **argv)
     return 1;
   }
   if (useGPU)
-    Init_CUDA(OHMMS::Controller->rank(), OHMMS::Controller->size());
+    Init_CUDA();
   //safe to move on
   Communicate* qmcComm=OHMMS::Controller;
   if(inputs.size()>1)
