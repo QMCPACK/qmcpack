@@ -63,24 +63,25 @@ inline int get_device_num()
   // copy current MPI rank's hostname to (shared) host_list
   for (int i=0; i<MAX_LEN; i++)
     host_list[rank*MAX_LEN+i] = myname[i];
-  OHMMS::Controller->allgather(myname, host_list, MAX_LEN); // wait till every rank finishes
+  OHMMS::Controller->allgather(myname, host_list, MAX_LEN); // gathering data from every rank
   // copy host_list to hostnames vector
   std::vector<std::string> hostnames;
   for (int i=0; i<size; i++)
     hostnames.push_back(&(host_list[i*MAX_LEN]));
   std::string myhostname = &myname[0];
 
-  // calculate how many MPI ranks are ahead of the current one on the current node
+  // calculate how many MPI ranks there on the current node, how many are ahead of the current one, and how many nodes are used in total
   std::vector<int> number_ranks(1);
-  std::vector<int> rank_node(1);
   std::vector<int> cuda_devices(1);
-  
-  cuda_devices[0]=get_num_appropriate_devices();
+  std::vector<int> rank_node(1);
+
   number_ranks[0] = 0;
-  int curr_ranknum = 0;
+  cuda_devices[0]=get_num_appropriate_devices();
+
+  int relative_ranknum = 0;
   int num_nodes=0;
   std::string curr_host;
-  for (int i=0; i<size; i++) // loop over all ranks
+  for (int i=0; i<size; i++)
   {
     // counts the number of different hostnames (in other words, how many nodes there are)
     if (hostnames[i] != curr_host)
@@ -92,9 +93,9 @@ inline int get_device_num()
     {
       number_ranks[0]++; // count all ranks with the same host name as the current one
       if (i<rank)
-        curr_ranknum++; // count only the ones schedule before the current one
+        relative_ranknum++; // count only the ones scheduled before the current one
     }
-    if (i==rank) rank_node[0]=num_nodes; // node number of current rank (NOTE: node numbers starts at 1)
+    if (i==rank) rank_node[0]=num_nodes; // node number of current rank (NOTE: node numbers start at 1)
   }
 
   // gather all the information
@@ -104,8 +105,6 @@ inline int get_device_num()
   OHMMS::Controller->allgather(cuda_devices,num_cuda_devices,1);
   std::vector<int> node_of_rank(size+1); node_of_rank[size]=num_nodes;
   OHMMS::Controller->allgather(rank_node,node_of_rank,1);
-
-  int devnum=curr_ranknum % num_cuda_devices[rank];
 
   // output information for every rank with a different configuration from the previous one (i.e. with all nodes equal this will only be the first rank)
   if ((ranks_per_node[rank] != ranks_per_node[(rank+size)%(size+1)]) || (num_cuda_devices[rank] != num_cuda_devices[(rank+size)%(size+1)]))
@@ -118,7 +117,7 @@ inline int get_device_num()
     // loop over successive ranks with same node configuration
     while ((ranks_per_node[rank] == ranks_per_node[r]) && (num_cuda_devices[rank] == num_cuda_devices[r]))
     {
-      if (node_of_rank[r] != curr_node) // when the node name changes, output the new one
+      if (node_of_rank[r] != curr_node) // when the node number changes, output the new node's host name
       {
         out << ", " << hostnames[r];
         curr_node=node_of_rank[r];
@@ -130,18 +129,18 @@ inline int get_device_num()
     // Output sanity check information for the user
     if(ranks_per_node[rank]<num_cuda_devices[rank])
     {
-      out << "WARNING: Fewer MPI ranks than Cuda devices (" << num_cuda_devices[rank] << "). Some Cuda devices (device # >= " << ranks_per_node[rank] << ") will not be used." << std::endl;
+      out << "WARNING: Fewer MPI ranks than CUDA devices (" << num_cuda_devices[rank] << "). Some CUDA devices (device # >= " << ranks_per_node[rank] << ") will not be used." << std::endl;
     }
     else
     {
       if(ranks_per_node[rank]%num_cuda_devices[rank]) // is only true (>0) when number of MPI ranks is not a multiple of Cuda device number
-        out << "WARNING: Number of MPI ranks is not a multiple of the number of Cuda devices (" << num_cuda_devices[rank] << ")." << std::endl;
+        out << "WARNING: Number of MPI ranks is not a multiple of the number of CUDA devices (" << num_cuda_devices[rank] << ")." << std::endl;
     }
     std::cerr << out.str();
     std::cerr.flush();
   }
-  // return Cuda device number based on how many appropriate ones exist on the current rank's node
-  return devnum;
+  // return CUDA device number based on how many appropriate ones exist on the current rank's node and what the relative rank number is
+  return relative_ranknum % num_cuda_devices[rank];
 }
 
 /** Sets the Cuda device of the current MPI rank from the pool of appropriate Cuda devices
