@@ -22,7 +22,10 @@
 #include "QMCWaveFunctions/MolecularOrbitals/AtomicBasisBuilder.h"
 #include "QMCWaveFunctions/LCOrbitalSet.h"
 #include "Utilities/ProgressReportEngine.h"
+#include "Numerics/HDFSTLAttrib.h"
+#include "OhmmsData/HDFStringAttrib.h"
 #include "OhmmsData/AttributeSet.h"
+#include "io/hdf_archive.h"
 #if QMC_BUILD_LEVEL>2
 #include "QMCWaveFunctions/Experimental/LCOrbitalSetWithCorrection.h"
 #endif
@@ -47,8 +50,8 @@ public:
    * \param els reference to the electrons
    * \param ions reference to the ions
    */
-  MolecularBasisBuilder(ParticleSet& els, ParticleSet& ions, bool cusp=false, std::string cusp_info=""):
-    targetPtcl(els), sourcePtcl(ions), thisBasisSet(0),cuspCorr(cusp),cuspInfo(cusp_info)
+  MolecularBasisBuilder(ParticleSet& els, ParticleSet& ions, bool cusp=false, std::string cusp_info="",bool H5Ref=false,std::string MOH5Ref=""):
+    targetPtcl(els), sourcePtcl(ions), thisBasisSet(0),cuspCorr(cusp),cuspInfo(cusp_info),h5Ref(H5Ref),h5_path(MOH5Ref)
   {
     ClassName="MolecularBasisBuilder";
   }
@@ -62,61 +65,152 @@ public:
   {
     if(thisBasisSet)
       return true;
-    ReportEngine PRE(ClassName,"put(xmlNodePtr)");
-    PRE.echo(cur);
-    //create the BasisSetType
-    thisBasisSet = new ThisBasisSetType(sourcePtcl,targetPtcl);
 
-    if(!is_same(cur->name,"basisset"))
-    {//heck to handle things like <sposet_builder>
-      xmlNodePtr cur1= cur->xmlChildrenNode;
-      while(cur1!=NULL)
+
+    //Reading from XML
+    if(h5Ref==false)
+    {  
+      ReportEngine PRE(ClassName,"put(xmlNodePtr)");
+      PRE.echo(cur);
+      //create the BasisSetType
+      thisBasisSet = new ThisBasisSetType(sourcePtcl,targetPtcl);
+      if(!is_same(cur->name,"basisset"))
+      {//heck to handle things like <sposet_builder>
+        xmlNodePtr cur1= cur->xmlChildrenNode;
+        while(cur1!=NULL)
+        {
+          if(is_same(cur1->name,"basisset")) cur=cur1;
+          cur1=cur1->next;
+        }
+      }
+ 
+      //create the basis set
+      //go thru the tree
+      cur = cur->xmlChildrenNode;
+      while(cur!=NULL)
       {
-        if(is_same(cur1->name,"basisset")) cur=cur1;
-        cur1=cur1->next;
+        std::string cname((const char*)(cur->name));
+        if(cname == "atomicBasisSet")
+        {
+          std::string elementType;
+          OhmmsAttributeSet att;
+          att.add(elementType,"elementType");
+          att.put(cur);
+          if(elementType.empty())
+            PRE.error("Missing elementType attribute of atomicBasisSet.",true);
+          std::map<std::string,BasisSetBuilder*>::iterator it = aoBuilders.find(elementType);
+          if(it == aoBuilders.end())
+          {
+            AtomicBasisBuilder<RFB>* any = new AtomicBasisBuilder<RFB>(elementType);
+            any->setReportLevel(ReportLevel);
+            any->put(cur);
+            COT* aoBasis= any->createAOSet(cur);
+            if(aoBasis)
+            {
+              //add the new atomic basis to the basis set
+              int activeCenter =sourcePtcl.getSpeciesSet().findSpecies(elementType);
+              thisBasisSet->add(activeCenter, aoBasis);
+            }
+            aoBuilders[elementType]=any;
+          }
+          else
+          {
+            PRE.warning("Species "+elementType+" is already initialized. Ignore the input.");
+          }
+        }
+        cur = cur->next;
       }
     }
-
-    //create the basis set
-    //go thru the tree
-    cur = cur->xmlChildrenNode;
-    while(cur!=NULL)
+    //Reading from H5 
+    else
     {
-      std::string cname((const char*)(cur->name));
-      if(cname == "atomicBasisSet")
-      {
-        std::string elementType;
-        OhmmsAttributeSet att;
-        att.add(elementType,"elementType");
-        att.put(cur);
-        if(elementType.empty())
-          PRE.error("Missing elementType attribute of atomicBasisSet.",true);
-        std::map<std::string,BasisSetBuilder*>::iterator it = aoBuilders.find(elementType);
-        if(it == aoBuilders.end())
-        {
-          AtomicBasisBuilder<RFB>* any = new AtomicBasisBuilder<RFB>(elementType);
-          any->setReportLevel(ReportLevel);
-          any->put(cur);
-          COT* aoBasis= any->createAOSet(cur);
-          if(aoBasis)
-          {
-            //add the new atomic basis to the basis set
-            int activeCenter =sourcePtcl.getSpeciesSet().findSpecies(elementType);
-            thisBasisSet->add(activeCenter, aoBasis);
-          }
-          aoBuilders[elementType]=any;
-        }
-        else
-        {
-          PRE.warning("Species "+elementType+" is already initialized. Ignore the input.");
-        }
+      ReportEngine PRE(ClassName,"put(xmlNodePtr)");
+      //create the BasisSetType
+      thisBasisSet = new ThisBasisSetType(sourcePtcl,targetPtcl);
+
+      app_log()<<"Reading BasisSet from HDF5 file:"<<h5_path<<std::endl;
+      
+      std::string basiset_name;
+      hid_t h_file,basisset,atomicBasisSet;
+
+
+      h_file= H5Fopen(h5_path.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
+      if(h_file<0){
+         std::cerr<<"Could not open H5 file"<<std::endl;
+         exit(0);
       }
-      cur = cur->next;
+      basisset= H5Gopen(h_file,"basisset");
+      if(basisset<0){
+         std::cerr<<"Could not open basisset group in H5; Probably Corrupt H5 file"<<std::endl;
+         exit(0);
+      }
+      atomicBasisSet= H5Gopen(basisset,"atomicBasisSet");
+      if(atomicBasisSet<0){
+         std::cerr<<"Could not open atomicBasisSet group in H5; Probably Corrupt H5 file"<<std::endl;
+         exit(0);
+      }
+ 
+      HDFAttribIO<std::string> basisname(basiset_name); 
+      basisname.read(basisset,"name");
+
+      int Nb_Elements(0);
+      HDFAttribIO<int> NumElement(Nb_Elements); 
+      NumElement.read(atomicBasisSet,"NumElemets");
+  
+      if(Nb_Elements<1)
+          PRE.error("Missing elementType attribute of atomicBasisSet.",true);
+
+
+      
+      for (int i=0;i<Nb_Elements;i++)
+      {
+          hid_t EleTycBasisSet;  
+          std::string elementType,dataset;
+          
+
+          std::stringstream tempElem;                                              
+          std::string ElemID0="Element",ElemType;
+          tempElem<<ElemID0<<i;
+          ElemType=tempElem.str();
+
+          EleTycBasisSet= H5Gopen(atomicBasisSet,ElemType.c_str());
+          if(atomicBasisSet<0){
+            std::cerr<<"Could not open  group EleTycBasisSet in H5; Probably Corrupt H5 file"<<std::endl;
+            exit(0);
+          }
+
+          HDFAttribIO<std::string> Elementname(elementType);
+          Elementname.read(EleTycBasisSet,"elementType");
+           
+          app_log()<<"BasisSet name: "<<basiset_name<<"    Number of Atoms="<<Nb_Elements<<"     elementType="<<elementType<<std::endl;
+
+          std::map<std::string,BasisSetBuilder*>::iterator it = aoBuilders.find(elementType);
+          if(it == aoBuilders.end())
+          {
+            AtomicBasisBuilder<RFB>* any = new AtomicBasisBuilder<RFB>(elementType);
+            any->setReportLevel(ReportLevel);
+            any->putH5(EleTycBasisSet);
+            COT* aoBasis= any->createAOSetH5(EleTycBasisSet);
+            if(aoBasis)
+            {
+              //add the new atomic basis to the basis set
+              int activeCenter =sourcePtcl.getSpeciesSet().findSpecies(elementType);
+              thisBasisSet->add(activeCenter, aoBasis);
+            }
+            aoBuilders[elementType]=any;
+          }
+          H5Gclose(EleTycBasisSet); 
+      }
+
+      H5Gclose(atomicBasisSet);
+      H5Gclose(basisset);
+      H5Fclose(h_file);
     }
     //resize the basis set
     thisBasisSet->setBasisSetSize(-1);
     return true;
   }
+
 
   SPOSetBase* createSPOSetFromXML(xmlNodePtr cur)
   {
@@ -183,6 +277,9 @@ private:
   ///apply cusp correction to molecular orbitals
   bool cuspCorr;
   std::string cuspInfo;
+  ///read wf info from hdf5
+  bool h5Ref;
+  std::string h5_path;
 };
 }
 #endif

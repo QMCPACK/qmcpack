@@ -346,13 +346,16 @@ xmlNodePtr QMCGaussianParserBase::createBasisSet()
 
 xmlNodePtr QMCGaussianParserBase::createBasisSetWithHDF5()
 {
+  int counter=0;
+
   xmlNodePtr bset = xmlNewNode(NULL,(const xmlChar*)"basisset");
   hid_t h_file =  H5Fcreate(h5file.c_str(),H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
   hid_t basisset = H5Gcreate(h_file,"basisset",0);
-  std::string BasisSetName("LCAOBSet");
+  std::string BasisSetName("LCAOBSet ");
   HDFAttribIO<std::string>  ah(BasisSetName);
   ah.write(basisset,"name");
-
+  hid_t atomicBasisSet = H5Gcreate(basisset,"atomicBasisSet",0);
+  
   std::map<int,int> species;
   int gtot = 0;
   for(int iat=0; iat<NumberOfAtoms; iat++)
@@ -367,7 +370,8 @@ xmlNodePtr QMCGaussianParserBase::createBasisSetWithHDF5()
         ng += gNumber[ig];
       }
       species[itype] = ng;
-      createCenterH5(iat,gtot,basisset);
+      createCenterH5(iat,gtot,counter);
+      counter++;
     }
     else
     {
@@ -375,8 +379,12 @@ xmlNodePtr QMCGaussianParserBase::createBasisSetWithHDF5()
     }
     gtot += ng;
   }
+  HDFAttribIO<int>  numElem(counter);
+  numElem.write(atomicBasisSet,"NumElemets");
+  
 
   H5Gclose(basisset);
+  H5Gclose(atomicBasisSet);
   H5Fclose(h_file);
 
   return bset;
@@ -389,7 +397,6 @@ QMCGaussianParserBase::createDeterminantSetWithHDF5()
   setOccupationNumbers();
   xmlNodePtr slaterdet = xmlNewNode(NULL,(const xmlChar*)"slaterdeterminant");
   std::ostringstream up_size, down_size, b_size;
-  //up_size <<NumberOfAlpha; down_size << NumberOfBeta; b_size<<SizeOfBasisSet;
   up_size <<NumberOfAlpha;
   down_size << NumberOfBeta;
   b_size<<numMO;
@@ -413,8 +420,11 @@ QMCGaussianParserBase::createDeterminantSetWithHDF5()
   xmlNodePtr cur = xmlAddChild(slaterdet,udet);
   std::vector<int> dim(2, SizeOfBasisSet);
   dim[numMO];
-  hid_t h_file = H5Fcreate(h5file.c_str(),H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
-  hid_t det_g = H5Gcreate(h_file,"determinant_0",0);
+  hid_t h_file,basisset;
+  h_file= H5Fopen(h5file.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
+  basisset= H5Gopen(h_file,"basisset");
+  
+  hid_t det_g = H5Gcreate(basisset,"determinant_0",0);
   HDFAttribIO<std::vector<double> > ah(EigVec,dim);
   ah.write(det_g,"eigenset_0");
   xmlNodePtr ddet;
@@ -995,38 +1005,78 @@ QMCGaussianParserBase::createMultiDeterminantSet()
   return multislaterdet;
 }
 
-void QMCGaussianParserBase::createCenterH5(int iat, int off_, hid_t basisset)
+void QMCGaussianParserBase::createCenterH5(int iat, int off_,int numelem)
 {
 
   CurrentCenter=GroupName[iat];
+  int numbasisgroups(0);
+  std::stringstream tempcenter;
+  std::string CenterID;
+  tempcenter<<CurrentCenter<<" ";
+  CenterID=tempcenter.str();
+  std::stringstream tempElem;
+  std::string ElemID0="Element",ElemID;
+  tempElem<<ElemID0<<numelem;
+  ElemID=tempElem.str();
 
-//  hid_t h_file =  H5Fcreate(h5file.c_str(),H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
-//  hid_t basisset = H5Gopen(h_file,"basisset");
-  hid_t basisset_element = H5Gcreate(basisset,CurrentCenter.c_str(),0);
-  hid_t atomicBasisSet = H5Gcreate(basisset_element,"atomicBasisSet",0);
+  std::cout<<"Elem="<<ElemID<<std::endl; 
+  hid_t h_file,basisset,atomicBasisSet,EleTycBasisSet;
+  h_file= H5Fopen(h5file.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
+  basisset= H5Gopen(h_file,"basisset");
+  atomicBasisSet= H5Gopen(basisset,"atomicBasisSet");
+
+  EleTycBasisSet = H5Gcreate(atomicBasisSet,ElemID.c_str(),0);
 
   HDFAttribIO<std::string>  aa(basisName);
-  aa.write(atomicBasisSet,"name");
+  aa.write(EleTycBasisSet,"name");
 
   HDFAttribIO<std::string>  ab(angular_type);
-  ab.write(atomicBasisSet,"angular");
+  ab.write(EleTycBasisSet,"angular");
 
   HDFAttribIO<std::string>  ac(basisType);
-  ac.write(atomicBasisSet,"type");
+  ac.write(EleTycBasisSet,"type");
 
-  HDFAttribIO<std::string>  ad(CurrentCenter);
-  ad.write(atomicBasisSet,"elementType");
+  HDFAttribIO<std::string>  ad(CenterID);
+  ad.write(EleTycBasisSet,"elementType");
 
   HDFAttribIO<std::string>  ae(Normalized);
-  ae.write(atomicBasisSet,"normalized");
+  ae.write(EleTycBasisSet,"normalized");
+
+  double ValgridFirst(1.e-6), ValgridLast(1.e2);
+  int Valnpts(1001);
+  std::string gridType("log ");
+  double gridFirst(ValgridFirst);
+  double gridLast(ValgridLast);
+  int gridSize(Valnpts);
+  
+  HDFAttribIO<std::string>  gridtype(gridType);
+  gridtype.write(EleTycBasisSet,"grid_type");
+
+  HDFAttribIO<double>  ri(gridFirst);
+  ri.write(EleTycBasisSet,"grid_ri");
+
+  HDFAttribIO<double>  rf(gridLast);
+  rf.write(EleTycBasisSet,"grid_rf");
+
+  HDFAttribIO<int>  npts(gridSize);
+  npts.write(EleTycBasisSet,"grid_npts");
 
   for(int ig=gBound[iat], n=0; ig< gBound[iat+1]; ig++,n++)
   {
-    createShellH5(n, ig, off_, atomicBasisSet);
+    createShellH5(n, ig, off_,numelem);
     off_ += gNumber[ig];
+    numbasisgroups=n+1;
   }
-  H5Gclose(basisset_element);
+  std::cout<<"numbasisgroups="<<numbasisgroups<<std::endl; 
+  
+  HDFAttribIO<int>  NbBasisGroups(numbasisgroups);
+  NbBasisGroups.write(EleTycBasisSet,"NbBasisGroups");
+
+   
+  H5Gclose(EleTycBasisSet);
   H5Gclose(atomicBasisSet);
+  H5Gclose(basisset);
+  H5Fclose(h_file);
 }
 
 
@@ -1055,7 +1105,7 @@ xmlNodePtr QMCGaussianParserBase::createCenter(int iat, int off_)
 
 
 void
-QMCGaussianParserBase::createShellH5(int n, int ig, int off_,  hid_t atomicBasisSet)
+QMCGaussianParserBase::createShellH5(int n, int ig, int off_,int numelem)
 {
   int gid(gShell[ig]);
   int ng(gNumber[ig]);
@@ -1063,7 +1113,7 @@ QMCGaussianParserBase::createShellH5(int n, int ig, int off_,  hid_t atomicBasis
 
 
   char l_name[4],n_name[4],a_name[32];
-  sprintf(a_name,"%s%d%d",CurrentCenter.c_str(),n,gShellID[gid]);
+  sprintf(a_name,"%s%d%d%s",CurrentCenter.c_str(),n,gShellID[gid]," ");
   sprintf(l_name,"%d",gShellID[gid]);
   sprintf(n_name,"%d",n);
 
@@ -1071,10 +1121,22 @@ QMCGaussianParserBase::createShellH5(int n, int ig, int off_,  hid_t atomicBasis
   std::string an_name(n_name);
   std::string al_name(l_name);
   std::string at_name("Gaussian");
-  std::string basisGroupID="basisGroup"+aa_name;
+  //std::string basisGroupID="basisGroup"+aa_name;
+  std::string basisGroupID="basisGroup"+an_name;
 
+  //std::cout << "basisGroupID="<<basisGroupID<<std::endl;
+  std::stringstream tempElem;
+  std::string ElemID0="Element",ElemID;
+  tempElem<<ElemID0<<numelem;
+  ElemID=tempElem.str();
+
+  hid_t h_file,basisset,atomicBasisSet,EleTycBasisSet;
+  h_file= H5Fopen(h5file.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
+  basisset= H5Gopen(h_file,"basisset");
+  atomicBasisSet= H5Gopen(basisset,"atomicBasisSet");
+  EleTycBasisSet = H5Gopen(atomicBasisSet,ElemID.c_str());
   
-  hid_t basisGroup = H5Gcreate(atomicBasisSet,basisGroupID.c_str(),0);
+  hid_t basisGroup = H5Gcreate(EleTycBasisSet,basisGroupID.c_str(),0);
   HDFAttribIO<std::string>  aa(aa_name);
   aa.write(basisGroup,"rid");
 
@@ -1092,10 +1154,13 @@ QMCGaussianParserBase::createShellH5(int n, int ig, int off_,  hid_t atomicBasis
   HDFAttribIO<int>  NBg(ng);
   NBg.write(basisGroup,"NbRadFunc");
 
+  hid_t radfunc = H5Gcreate(basisGroup,"radfunctions",0);
+
+
   if(gid == 2)
   {
     std::string basisGroupID2="basisGroup2"+aa_name;
-    hid_t basisGroup2 = H5Gcreate(atomicBasisSet,basisGroupID2.c_str(),0);
+    hid_t basisGroup2 = H5Gcreate(EleTycBasisSet,basisGroupID2.c_str(),0);
     HDFAttribIO<std::string>  aa(aa_name);
     aa.write(basisGroup2,"rid");
  
@@ -1111,45 +1176,54 @@ QMCGaussianParserBase::createShellH5(int n, int ig, int off_,  hid_t atomicBasis
 
     HDFAttribIO<int>  NBg(ng);
     NBg.write(basisGroup2,"NbRadFunc");
+    hid_t radfunc2 = H5Gcreate(basisGroup2,"radfunctions2",0);
+    H5Gclose(radfunc2);
     H5Gclose(basisGroup2);
   }
 
-
   for(int ig=0, i=off_; ig<ng; ig++, i++)
   {
-    std::stringstream radfuncID0; 
-    std::string radfuncID1="radfunc",radfuncID;
-    radfuncID0<<radfuncID1<<ig;    
-    radfuncID=radfuncID0.str();
-    hid_t radfunc = H5Gcreate(basisGroup,radfuncID.c_str(),0);
+    std::stringstream tempdata; 
+    std::string dataradID0="DataRad",dataradID;
+    tempdata<<dataradID0<<ig;    
+    dataradID=tempdata.str();
+    
+    hid_t datarad = H5Gcreate(radfunc,dataradID.c_str(),0);
 
     HDFAttribIO<double>  exp(gExp[i]);
-    exp.write(radfunc,"exponent");
+    exp.write(datarad,"exponent");
 
     HDFAttribIO<double>  contract(gC0[i]);
-    contract.write(radfunc,"contraction");
+    contract.write(datarad,"contraction");
 
-    H5Gclose(radfunc);
+    H5Gclose(datarad);
     if(gid == 2)
     {
        std::string basisGroupID2="basisGroup2"+aa_name;
-       hid_t basisGroup2 = H5Gopen(atomicBasisSet,basisGroupID2.c_str());
-       std::stringstream radfunc2ID0; 
-       std::string radfunc2ID1="radfuncGID",radfunc2ID;
-       radfunc2ID0<<radfunc2ID1<<ig;    
-       radfunc2ID=radfunc2ID0.str();
-       hid_t radfunc2 = H5Gcreate(basisGroup2,radfunc2ID.c_str(),0);
+       hid_t basisGroup2 = H5Gopen(EleTycBasisSet,basisGroupID2.c_str());
+       hid_t radfunc2 = H5Gopen(basisGroup2,"radfunctions2");
+       std::stringstream tempdata2; 
+       std::string datarad2ID0="DataRad2",datarad2ID;
+       tempdata2<<datarad2ID0<<ig;    
+       datarad2ID=tempdata2.str();
+    
+       hid_t datarad2 = H5Gcreate(2,datarad2ID.c_str(),0);
  
        HDFAttribIO<double>  exp2(gExp[i]);
-       exp2.write(radfunc2,"exponent");
+       exp2.write(datarad2,"exponent");
  
        HDFAttribIO<double>  contract2(gC1[i]);
-       contract2.write(radfunc2,"contraction");
-       H5Gclose(radfunc2);
+       contract2.write(datarad2,"contraction");
+       H5Gclose(datarad2);
        H5Gclose(basisGroup2);
     }
   }
+  H5Gclose(radfunc);
   H5Gclose(basisGroup);
+  H5Gclose(EleTycBasisSet);
+  H5Gclose(atomicBasisSet);
+  H5Gclose(basisset);
+  H5Fclose(h_file);
  
 }
 
@@ -1420,26 +1494,10 @@ void QMCGaussianParserBase::createGridNode(int argc, char** argv)
                 }
     ++iargc;
   }
-  if (UseHDF5)
-  {
-     //std::string h5file(Title);
-     //h5file.append(".eig.h5");
-     //hid_t h_file = H5Fcreate(h5file.c_str(),H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
-     //hid_t grid_g = H5Gcreate(h_file,"grid",0);
-     xmlNewProp(gridPtr,(const xmlChar*)"type",(const xmlChar*)gridType.c_str());
-     xmlNewProp(gridPtr,(const xmlChar*)"ri",(const xmlChar*)gridFirst.c_str());
-     xmlNewProp(gridPtr,(const xmlChar*)"rf",(const xmlChar*)gridLast.c_str());
-     xmlNewProp(gridPtr,(const xmlChar*)"npts",(const xmlChar*)gridSize.c_str());
-
-
-  }
-  else
-  {
-     xmlNewProp(gridPtr,(const xmlChar*)"type",(const xmlChar*)gridType.c_str());
-     xmlNewProp(gridPtr,(const xmlChar*)"ri",(const xmlChar*)gridFirst.c_str());
-     xmlNewProp(gridPtr,(const xmlChar*)"rf",(const xmlChar*)gridLast.c_str());
-     xmlNewProp(gridPtr,(const xmlChar*)"npts",(const xmlChar*)gridSize.c_str());
-  }
+  xmlNewProp(gridPtr,(const xmlChar*)"type",(const xmlChar*)gridType.c_str());
+  xmlNewProp(gridPtr,(const xmlChar*)"ri",(const xmlChar*)gridFirst.c_str());
+  xmlNewProp(gridPtr,(const xmlChar*)"rf",(const xmlChar*)gridLast.c_str());
+  xmlNewProp(gridPtr,(const xmlChar*)"npts",(const xmlChar*)gridSize.c_str());
 }
 
 void QMCGaussianParserBase::dump(const std::string& psi_tag,
@@ -1474,8 +1532,6 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag,
          xmlNewProp(detPtr,(const xmlChar*)"cuspCorrection",(const xmlChar*)"yes");
       if(UseHDF5)
       {
-        // std::string h5file(Title);
-        // h5file.append(".eig.h5");
          xmlNewProp(detPtr,(const xmlChar*)"href",(const xmlChar*)h5file.c_str());
       }
 
@@ -1483,7 +1539,6 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag,
         if(UseHDF5)
         {
           xmlNodePtr bsetPtr = createBasisSetWithHDF5();
-          //xmlAddChild(detPtr,bsetPtr);
         }
         else
         {

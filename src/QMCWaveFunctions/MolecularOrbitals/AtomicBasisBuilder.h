@@ -19,6 +19,7 @@
 
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
+#include "io/hdf_archive.h"
 
 namespace qmcplusplus
 {
@@ -49,6 +50,7 @@ struct AtomicBasisBuilder: public BasisSetBuilder
   AtomicBasisBuilder(const std::string& eName);
 
   bool put(xmlNodePtr cur);
+  bool putH5(hid_t EleTycBasisSet); 
 
   SPOSetBase* createSPOSetFromXML(xmlNodePtr cur)
   {
@@ -56,9 +58,13 @@ struct AtomicBasisBuilder: public BasisSetBuilder
   }
 
   COT* createAOSet(xmlNodePtr cur);
+  COT* createAOSetH5(hid_t EleTycBasisSet);
 
   int expandYlm(const std::string& rnl, const QuantumNumberType& nlms,
                 int num, COT* aos, xmlNodePtr cur1, int expandlm=DONOT_EXPAND);
+
+  int expandYlmH5(const std::string& rnl, const QuantumNumberType& nlms,
+                int num, COT* aos, hid_t basisGroup, int expandlm=DONOT_EXPAND);
 
 };
 
@@ -119,6 +125,71 @@ bool AtomicBasisBuilder<RFB>::put(xmlNodePtr cur)
   return radFuncBuilder.putCommon(cur);
 }
 
+
+template<class RFB>
+bool AtomicBasisBuilder<RFB>::putH5(hid_t EleTycBasisSet)
+{
+  
+
+
+
+
+  std::string CenterID, Normalized, basisName; 
+  HDFAttribIO<std::string>  aa(sph);
+  aa.read(EleTycBasisSet,"angular");
+
+  HDFAttribIO<std::string>  ab(basisType);
+  ab.read(EleTycBasisSet,"type");
+
+  Morder="Gamess";
+  //HDFAttribIO<std::string>  ac(Morder);
+  //ac.read(EleTycBasisSet,"expandYlm");
+
+  
+  HDFAttribIO<std::string>  ad(CenterID);
+  ad.read(EleTycBasisSet,"elementType");
+
+  HDFAttribIO<std::string>  ae(Normalized);
+  ae.read(EleTycBasisSet,"normalized");
+
+  HDFAttribIO<std::string>  af(basisName);
+  af.read(EleTycBasisSet,"name");
+
+  app_log()<<"node= atomicBasisSet name="<<basisName<<"  angular="<<sph<<"  type="<<basisType<<"  elementType="<<CenterID<<"  normalized="<<Normalized<<std::endl; 
+  bool tmp_addsignforM=addsignforM;
+  if(sph == "spherical")
+    addsignforM=1; //include (-1)^m
+  if(Morder == "gaussian")
+  {
+    expandlm = GAUSSIAN_EXPAND;
+  }
+  else if(Morder == "natural")
+  {
+    expandlm = NATURAL_EXPAND;
+  }
+  else if(Morder == "no")
+  {
+    expandlm = DONOT_EXPAND;
+  }
+  else if(Morder == "pyscf")
+  {
+    expandlm = MOD_NATURAL_EXPAND; 
+    addsignforM=tmp_addsignforM;
+    if(sph != "spherical") {
+      APP_ABORT(" Error: expandYlm='pwscf' only compatible with angular='spherical'. Aborting.\n");
+    }
+  }
+  if(sph == "cartesia" || Morder == "Gamess")
+  {
+    expandlm = CARTESIAN_EXPAND;
+    addsignforM=0;
+  }
+  
+  radFuncBuilder.Normalized=false;
+  radFuncBuilder.Normalized=(Normalized=="yes");
+  return true;
+}
+
 template<class RFB>
 typename AtomicBasisBuilder<RFB>::COT*
 AtomicBasisBuilder<RFB>::createAOSet(xmlNodePtr cur)
@@ -176,9 +247,7 @@ AtomicBasisBuilder<RFB>::createAOSet(xmlNodePtr cur)
     }
     else
       if(cname1 == "grid")
-      {
         gptr = cur1;
-      }
     cur1 = cur1->next;
   }
   //create a new set of atomic orbitals sharing a center with (Lmax, num)
@@ -227,6 +296,126 @@ AtomicBasisBuilder<RFB>::createAOSet(xmlNodePtr cur)
   return aos;
 }
 
+
+template<class RFB>
+typename AtomicBasisBuilder<RFB>::COT*
+AtomicBasisBuilder<RFB>::createAOSetH5(hid_t EleTycBasisSet)
+{
+  ReportEngine PRE("AtomicBasisBuilder","createAOSetH5(std::string)");
+  app_log() << "  AO BasisSet for " << elementType << "\n";
+  
+  if(expandlm!=CARTESIAN_EXPAND)
+  {
+    if(addsignforM )
+      app_log() << "   Spherical Harmonics contain (-1)^m factor" << std::endl;
+    else
+      app_log() << "   Spherical Harmonics  DO NOT contain (-1)^m factor" << std::endl;
+  }
+  switch(expandlm)
+  {
+  case(GAUSSIAN_EXPAND):
+    app_log() << "   Angular momentum m expanded according to Gaussian" << std::endl;
+    break;
+  case(NATURAL_EXPAND):
+    app_log() << "   Angular momentum m expanded as -l, ... ,l" << std::endl;
+    break;
+  case(MOD_NATURAL_EXPAND):
+    app_log() << "   Angular momentum m expanded as -l, ... ,l, with the exception of L=1 (1,-1,0)" << std::endl;
+    break;
+  case(CARTESIAN_EXPAND):
+    app_log() << "   Angular momentum expanded in cartesian functions x^lx y^ly z^lz according to Gamess" << std::endl;
+    break;
+  default:
+    app_log() << "   Angular momentum m is explicitly given." << std::endl;
+  }
+  
+  QuantumNumberType nlms;
+  std::string rnl;
+  int Lmax(0); //maxmimum angular momentum of this center
+  int num(0);//the number of localized basis functions of this center
+  
+  int numbasisgroups(0);
+
+  HDFAttribIO<int>  NbBasisGroups(numbasisgroups);
+  NbBasisGroups.read(EleTycBasisSet,"NbBasisGroups");
+
+
+
+  
+  for (int i=0; i<numbasisgroups;i++)
+  {
+    char n_name[4];
+    sprintf(n_name,"%d",i);
+    std::string an_name(n_name);
+    std::string basisGroupID="basisGroup"+an_name;
+    int l(0);
+    hid_t basisGroup=H5Gopen(EleTycBasisSet,basisGroupID.c_str()); 
+    HDFAttribIO<int>  lval(l);
+    lval.read(basisGroup,"l");
+      
+    Lmax = std::max(Lmax,l);
+    //expect that only Rnl is given
+    if(expandlm == CARTESIAN_EXPAND)
+      num += (l+1)*(l+2)/2;
+    else
+      if(expandlm)
+        num += 2*l+1;
+      else
+        num++;
+   H5Gclose(basisGroup);
+ }         
+
+  char n_name[4];
+  std::string basisGroupID;
+
+  COT* aos = new COT(Lmax,addsignforM,expandlm==CARTESIAN_EXPAND);
+  aos->LM.resize(num);
+  aos->NL.resize(num);
+  //Now, add distinct Radial Orbitals and (l,m) channels
+  num=0;
+  radFuncBuilder.setOrbitalSet(aos,elementType); //assign radial orbitals for the new center
+  radFuncBuilder.addGridH5(EleTycBasisSet); //assign a radial grid for the new center
+
+
+  for (int i=0; i<numbasisgroups;i++)
+  {
+
+
+
+    sprintf(n_name,"%d",i);
+    std::string aan_name(n_name);
+
+    basisGroupID="basisGroup"+aan_name;
+
+    hid_t basisGroup=H5Gopen(EleTycBasisSet,basisGroupID.c_str()); 
+     
+    HDFAttribIO<std::string>  rnlval(rnl);
+    rnlval.read(basisGroup,"rid");
+  
+    HDFAttribIO<int>  nlms0(nlms[0]);
+    nlms0.read(basisGroup,"n");
+
+    HDFAttribIO<int>  nlms1(nlms[1]);
+    nlms1.read(basisGroup,"l");
+
+ 
+    //add Ylm channels
+    app_log() << "   R(n,l,m,s) " << nlms[0] << " " << nlms[1] << " " << nlms[2] << " " << nlms[3] << std::endl;
+    num = expandYlmH5(rnl,nlms,num,aos,basisGroup,expandlm);
+
+
+    H5Gclose(basisGroup);
+
+  } 
+  
+  aos->setBasisSetSize(-1);
+  app_log() << "   Maximu Angular Momentum   = " << aos->Ylm.Lmax << std::endl
+            << "   Number of Radial functors = " << aos->Rnl.size() << std::endl
+            << "   Basis size                = " << aos->getBasisSetSize() << "\n\n";
+
+
+  return aos;
+}
 
 template<class RFB>
 int AtomicBasisBuilder<RFB>::expandYlm(const std::string& rnl, const QuantumNumberType& nlms, int num,
@@ -387,5 +576,45 @@ int AtomicBasisBuilder<RFB>::expandYlm(const std::string& rnl, const QuantumNumb
   return num;
 }
 
+
+template<class RFB>
+int AtomicBasisBuilder<RFB>::expandYlmH5(const std::string& rnl, const QuantumNumberType& nlms, int num,
+                                       COT* aos, hid_t basisGroup, int expandlm)
+{
+  
+  if(expandlm==CARTESIAN_EXPAND)
+  {
+    app_log() << "Expanding Ylm (angular function) according to Gamess using cartesian gaussians" << std::endl;
+    std::map<std::string,int>::iterator rnl_it = RnlID.find(rnl);
+    if(rnl_it == RnlID.end())
+    {
+      int nl = aos->Rnl.size();
+      if(radFuncBuilder.addRadialOrbitalH5(basisGroup,nlms))
+      {
+        
+
+        RnlID[rnl] = nl;
+        int l = nlms[q_l];
+        app_log() << "Adding " << (l+1)*(l+2)/2 << " cartesian gaussian orbitals for l= " << l<< std::endl;
+        int nbefore=0;
+        for(int i=0; i<l; i++)
+          nbefore += (i+1)*(i+2)/2;
+        for(int i=0; i<(l+1)*(l+2)/2; i++)
+        {
+          aos->LM[num] = nbefore+i;
+          aos->NL[num] = nl;
+          num++;
+        }
+     }
+   }
+  }
+  else
+  {
+     app_log()<<" NON CARTESIAN EXPAND OF BASIS SET NOT IMPLEMENTED WITH HDF5"<<std::endl;
+     exit(0);
+
+  }
+  return num;
+}
 }
 #endif

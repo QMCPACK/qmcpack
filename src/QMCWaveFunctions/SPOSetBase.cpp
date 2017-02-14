@@ -20,6 +20,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Message/Communicate.h"
 #include <simd/simd.hpp>
+#include "Utilities/ProgressReportEngine.h"  
 #include <io/hdf_archive.h>
 #include <limits>
 
@@ -113,8 +114,32 @@ SPOSetBase* SPOSetBase::makeClone() const
 /** Parse the xml file for information on the Dirac determinants.
  *@param cur the current xmlNode
  */
+//bool SPOSetBase::put(xmlNodePtr cur)
 bool SPOSetBase::put(xmlNodePtr cur)
 {
+  //Check if HDF5 present
+  ReportEngine PRE("SPOSetBase","put(xmlNodePtr)"); 
+  xmlNodePtr curtemp=cur->parent->parent;
+  std::string MOtype,MOhref;
+  bool H5file=false;
+  OhmmsAttributeSet H5checkAttrib;
+  H5checkAttrib.add(MOtype,"type");
+  H5checkAttrib.add(MOhref,"href");
+  H5checkAttrib.put(curtemp);
+  xmlChar* MOhreftemp;
+  if(MOtype=="MolecularOrbital" && MOhref!="")
+  {
+     std::cout<<"type="<<MOtype<<"   href="<<MOhref<<std::endl;  
+     MOhreftemp=xmlGetProp(curtemp, (xmlChar*)"href");
+     std::cout<<"MOhreftemp="<<MOhreftemp<<std::endl;  
+     H5file=true;
+     PRE.echo(curtemp);
+  }
+   
+  const char* MOhref2((const char*)MOhreftemp);
+
+
+
   //initialize the number of orbital by the basis set size
   int norb= BasisSetSize;
   std::string debugc("no");
@@ -150,10 +175,15 @@ bool SPOSetBase::put(xmlNodePtr cur)
     return setIdentity(true);
   }
   bool success=putOccupation(occ_ptr);
-  if(h == NULL)
+  if(h == NULL && H5file==false)
     success = putFromXML(coeff_ptr);
   else
-    success = putFromH5((const char*)h, coeff_ptr);
+      if(H5file!=true)
+          success = putFromH5((const char*)h, coeff_ptr,H5file);
+      else
+      {
+          success = putFromH5(MOhref2, coeff_ptr,H5file);
+      }
   bool success2 = transformSPOSet();
   if(debugc=="yes")
   {
@@ -258,39 +288,84 @@ bool SPOSetBase::putFromXML(xmlNodePtr coeff_ptr)
  * @param occ_ptr xmlnode for occupation
  * @param coeff_ptr xmlnode for coefficients
  */
-bool SPOSetBase::putFromH5(const char* fname, xmlNodePtr coeff_ptr)
+bool SPOSetBase::putFromH5(const char* fname, xmlNodePtr coeff_ptr,bool NewFormat)
 {
 #if defined(HAVE_LIBHDF5)
-  int norbs=OrbitalSetSize;
-  int neigs=BasisSetSize;
-  std::string setname;
-  OhmmsAttributeSet aAttrib;
-  aAttrib.add(setname,"dataset");
-  aAttrib.add(neigs,"size");
-  aAttrib.add(neigs,"orbitals");
-  aAttrib.put(coeff_ptr);
-  setIdentity(false);
-  if(setname.empty())
+  if(NewFormat!=true)
   {
-    APP_ABORT("SPOSetBase::putFromH5 missing dataset attribute");
-  }
-  Matrix<RealType> Ctemp(BasisSetSize,BasisSetSize);
-  hdf_archive hin(0);
-  hin.open(fname);
-  if (!hin.open(fname)){
-      APP_ABORT("SPOSetBase::putFromH5 missing or incorrect path to H5 file.");
-  }
-
-  hin.read(Ctemp,setname);
-  int n=0,i=0;
-  while(i<norbs)
-  {
-    if(Occ[n]>0.0)
+    int norbs=OrbitalSetSize;
+    int neigs=BasisSetSize;
+    std::string setname;
+    OhmmsAttributeSet aAttrib;
+    aAttrib.add(setname,"dataset");
+    aAttrib.add(neigs,"size");
+    aAttrib.add(neigs,"orbitals");
+    aAttrib.put(coeff_ptr);
+    setIdentity(false);
+    
+    if(setname.empty())
     {
-      std::copy(Ctemp[n],Ctemp[n+1],C[i]);
-      i++;
+      APP_ABORT("SPOSetBase::putFromH5 missing dataset attribute");
     }
-    n++;
+    Matrix<RealType> Ctemp(BasisSetSize,BasisSetSize);
+    hdf_archive hin(0);
+    hin.open(fname);
+    if (!hin.open(fname)){
+        APP_ABORT("SPOSetBase::putFromH5 missing or incorrect path to H5 file.");
+    }
+ 
+    hin.read(Ctemp,setname);
+    int n=0,i=0;
+    while(i<norbs)
+    {
+      if(Occ[n]>0.0)
+      {
+        std::copy(Ctemp[n],Ctemp[n+1],C[i]);
+        i++;
+      }
+      n++;
+    }
+  }
+  else
+  {
+    int norbs=OrbitalSetSize;
+    int neigs=BasisSetSize;
+    int setVal;
+    OhmmsAttributeSet aAttrib;
+    aAttrib.add(setVal,"spindataset");
+    aAttrib.add(neigs,"size");
+    aAttrib.add(neigs,"orbitals");
+    aAttrib.put(coeff_ptr);
+    setIdentity(false);
+    
+    char name[72];
+    sprintf(name,"%s%d","/basisset/determinant_0/eigenset_",setVal);
+    std::string setname(name);
+ 
+    std::cout<<"setname="<<setname<<std::endl;
+    if(setname.empty())
+    {
+      APP_ABORT("SPOSetBase::putFromH5 (New Format) missing dataset attribute");
+    }
+    Matrix<RealType> Ctemp(BasisSetSize,BasisSetSize);
+    hdf_archive hin(0);
+    hin.open(fname);
+    if (!hin.open(fname)){
+        APP_ABORT("SPOSetBase::putFromH5 missing or incorrect path to H5 file.");
+    }
+ 
+    hin.read(Ctemp,setname);
+    int n=0,i=0;
+    while(i<norbs)
+    {
+      if(Occ[n]>0.0)
+      {
+        std::copy(Ctemp[n],Ctemp[n+1],C[i]);
+        i++;
+      }
+      n++;
+    }
+
   }
 #else
   APP_ABORT("SPOSetBase::putFromH5 HDF5 is disabled.")

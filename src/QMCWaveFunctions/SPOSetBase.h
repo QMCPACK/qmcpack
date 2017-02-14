@@ -157,7 +157,7 @@ public:
   void checkObject();
 
   ///get C and Occ
-  bool put(xmlNodePtr cur);
+  bool put(xmlNodePtr cur );
 
   virtual bool put(xmlNodePtr cur, SPOPool_t &spo_pool)
   {
@@ -340,7 +340,7 @@ public:
 protected:
   bool putOccupation(xmlNodePtr occ_ptr);
   bool putFromXML(xmlNodePtr coeff_ptr);
-  bool putFromH5(const char* fname, xmlNodePtr coeff_ptr);
+  bool putFromH5(const char* fname, xmlNodePtr coeff_ptr,bool NewFormat);
 };
 
 #if defined(ENABLE_SMARTPOINTER)

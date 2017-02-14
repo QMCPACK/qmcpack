@@ -126,9 +126,9 @@ struct QMCGaussianParserBase
   xmlNodePtr createBasisSet();
   xmlNodePtr createBasisSetWithHDF5();
   xmlNodePtr createCenter(int iat, int _off);
-  void createCenterH5(int iat, int _off,hid_t basisset);
+  void createCenterH5(int iat, int _off,int numelem);
   void createShell(int n, int ig, int off_, xmlNodePtr abasis);
-  void createShellH5(int n, int ig, int off_, hid_t atomicBasisSet);
+  void createShellH5(int n, int ig, int off_,int numelem);
   xmlNodePtr createDeterminantSet();
   xmlNodePtr createMultiDeterminantSet();
   xmlNodePtr createMultiDeterminantSetVSVB();
