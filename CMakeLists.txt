@@ -867,7 +867,7 @@ SUBDIRS(tests/converter)
 SUBDIRS(tests/system)
 SUBDIRS(examples)
 
-SUBDIRS(tests/performance)
+SUBDIRS(tests/performance/NiO)
 
 IF(QE_BIN)
   MESSAGE(STATUS "QE binary path ${QE_BIN}")
