@@ -261,8 +261,8 @@ namespace qmcplusplus
           const T pre01 =   a[i]* db[j];
           const T pre02 =   a[i]*d2b[j];
 
-#if defined(__AVX512F__) && defined(QMC_PREFETCH)
-          const int iSplitPoint = std::min(0, num_splines - 32);
+#if defined(__AVX512F__) && defined(QMC_ES_PREFETCH)
+          const int iSplitPoint = std::max(0, num_splines - 32);
 #else
           const int iSplitPoint = num_splines;
 #endif
@@ -291,7 +291,7 @@ namespace qmcplusplus
             vals[n]+= pre00 * sum0;
 
           }
-#if defined(__INTEL_COMPILER) && defined(_PREFETCH)
+#if defined(__AVX512F__) && defined(QMC_ES_PREFETCH)
           {
             int pfi = (j==3) ? i+1:i;
             int pfj = (j+1)%4;
