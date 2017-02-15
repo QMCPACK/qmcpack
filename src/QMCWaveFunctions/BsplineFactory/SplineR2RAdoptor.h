@@ -330,13 +330,82 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   template<typename VV, typename GV, typename GGV>
   void assign_vgh(const PointType& r, int bc_sign, VV& psi, GV& dpsi, GGV& grad_grad_psi)
   {
-    //missing
+#if 0
+    const ST g00=PrimLattice.G(0), g01=PrimLattice.G(1), g02=PrimLattice.G(2),
+             g10=PrimLattice.G(3), g11=PrimLattice.G(4), g12=PrimLattice.G(5),
+             g20=PrimLattice.G(6), g21=PrimLattice.G(7), g22=PrimLattice.G(8);
+    const ST x=r[0], y=r[1], z=r[2];
+    const ST symGG[6]={GGt[0],GGt[1]+GGt[3],GGt[2]+GGt[6],GGt[4],GGt[5]+GGt[7],GGt[8]};
+
+    const ST* restrict k0=myKcart.data(0);
+    const ST* restrict k1=myKcart.data(1);
+    const ST* restrict k2=myKcart.data(2);
+
+    const ST* restrict g0=myG.data(0);
+    const ST* restrict g1=myG.data(1);
+    const ST* restrict g2=myG.data(2);
+    const ST* restrict h00=myH.data(0);
+    const ST* restrict h01=myH.data(1);
+    const ST* restrict h02=myH.data(2);
+    const ST* restrict h11=myH.data(3);
+    const ST* restrict h12=myH.data(4);
+    const ST* restrict h22=myH.data(5);
+
+    const size_t N=kPoints.size();
+    const size_t nsplines=myL.size();
+
+    ST* restrict psi =psi.data(0)+first_spo; ASSUME_ALIGNED(psi);
+    ST* restrict vg_x=dpsi.data(0)+first_spo; ASSUME_ALIGNED(vg_x);
+    ST* restrict vg_y=dpsi.data(1)+first_spo; ASSUME_ALIGNED(vg_y);
+    ST* restrict vg_z=dpsi.data(2)+first_spo; ASSUME_ALIGNED(vg_z);
+    ST* restrict gg_xx=grad_grad_psi.data(0)+first_spo; ASSUME_ALIGNED(gg_xx);
+    ST* restrict gg_xy=grad_grad_psi.data(1)+first_spo; ASSUME_ALIGNED(gg_xy);
+    ST* restrict gg_xz=grad_grad_psi.data(2)+first_spo; ASSUME_ALIGNED(gg_xz);
+    ST* restrict gg_yx=grad_grad_psi.data(3)+first_spo; ASSUME_ALIGNED(gg_yx);
+    ST* restrict gg_yy=grad_grad_psi.data(4)+first_spo; ASSUME_ALIGNED(gg_yy);
+    ST* restrict gg_yz=grad_grad_psi.data(5)+first_spo; ASSUME_ALIGNED(gg_yz);
+    ST* restrict gg_zx=grad_grad_psi.data(6)+first_spo; ASSUME_ALIGNED(gg_zx);
+    ST* restrict gg_zy=grad_grad_psi.data(7)+first_spo; ASSUME_ALIGNED(gg_zy);
+    ST* restrict gg_zz=grad_grad_psi.data(8)+first_spo; ASSUME_ALIGNED(gg_zz);
+
+    const ST cone = (bc_sign &1)? -1:1;
+#pragma simd 
+    for (size_t j=0; j<N; ++j)
+    {
+      const ST kX=k0[j];
+      const ST kY=k1[j];
+      const ST kZ=k2[j];
+      const ST val=myV[j];
+      const ST kkV=mKK[j]*val;
+
+      const ST gX = g00*g0[j]+g01*g1[j]+g02*g2[j];
+      const ST gY = g10*g0[j]+g11*g1[j]+g12*g2[j];
+      const ST gZ = g20*g0[j]+g21*g1[j]+g22*g2[j];
+
+      psi[j]  =cone*val;
+      vg_x[j] =cone*gX;
+      vg_y[j] =cone*gY;
+      vg_z[j] =cone*gZ;
+      gg_xx[j]=cone*(h00[j] + kkV + kX*gX); 
+      gg_xy[j]=cone*(h01[j] + kkV + kX*gY); 
+      gg_xz[j]=cone*(h02[j] + kkV + kX*gZ);
+      gg_yx[j]=cone*(h01[j] + kkV + kY*gX); 
+      gg_yy[j]=cone*(h11[j] + kkV + kY*gY); 
+      gg_yz[j]=cone*(h12[j] + kkV + kY*gZ);
+      gg_zx[j]=cone*(h02[j] + kkV + kz*gX); 
+      gg_zy[j]=cone*(h12[j] + kkV + kz*gY); 
+      gg_zz[j]=cone*(h22[j] + kkV + kz*gZ);
+    }
+#endif
   }
 
   template<typename VV, typename GV, typename GGV>
   void evaluate_vgh(const PointType& r, VV& psi, GV& dpsi, GGV& grad_grad_psi)
   {
-    //missing
+    PointType ru;
+    int bc_sign=convertPos(r,ru);
+    SplineInst->evaluate_vgh(ru,myV,myG,myH);
+    assign_vgl_soa(bc_sign,vgl);
   }
 };
 
