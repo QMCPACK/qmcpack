@@ -328,13 +328,12 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   }
 
   template<typename VV, typename GV, typename GGV>
-  void assign_vgh(const PointType& r, int bc_sign, VV& psi, GV& dpsi, GGV& grad_grad_psi)
+  void assign_vgh(int bc_sign, VV& psi, GV& dpsi, GGV& grad_grad_psi)
   {
 #if 0
     const ST g00=PrimLattice.G(0), g01=PrimLattice.G(1), g02=PrimLattice.G(2),
              g10=PrimLattice.G(3), g11=PrimLattice.G(4), g12=PrimLattice.G(5),
              g20=PrimLattice.G(6), g21=PrimLattice.G(7), g22=PrimLattice.G(8);
-    const ST x=r[0], y=r[1], z=r[2];
     const ST symGG[6]={GGt[0],GGt[1]+GGt[3],GGt[2]+GGt[6],GGt[4],GGt[5]+GGt[7],GGt[8]};
 
     const ST* restrict k0=myKcart.data(0);
@@ -405,7 +404,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     PointType ru;
     int bc_sign=convertPos(r,ru);
     SplineInst->evaluate_vgh(ru,myV,myG,myH);
-    assign_vgl_soa(bc_sign,vgl);
+    assign_vgh(bc_sign,psi,dpsi,grad_grad_psi);
   }
 };
 

@@ -697,7 +697,5 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   }
 };
 
-#endif
-
 }
 #endif
