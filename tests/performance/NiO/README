@@ -6,6 +6,11 @@ Initial benchmark set. Supercell size up to 256 (1024 atoms), but only checked u
 v.1
 Add J3 to CPU tests.
 
+v.2
+Add one more qmc section to each test,
+From I) VMC + no drift, III) DMC with constant population
+To   I) VMC + no drift, II) VMC + drift, III) DMC with constant population
+
 1. Before your run.
 Download the necessary NiO h5 orbital files of different sizes from the following link
 https://anl.box.com/s/pveyyzrc2wuvg5tmxjzzwxeo561vh3r0
