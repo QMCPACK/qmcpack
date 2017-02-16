@@ -1,0 +1,66 @@
+0. Benchmark Release Notes.
+
+v.0
+Initial benchmark set. Supercell size up to 256 (1024 atoms), but only checked up to 64 (256 atoms)
+
+v.1
+Add J3 to CPU tests.
+
+1. Before your run.
+Download the necessary NiO h5 orbital files of different sizes from the following link
+https://anl.box.com/s/pveyyzrc2wuvg5tmxjzzwxeo561vh3r0
+This link will be updated when the storage host is changed.
+You only need to download the sizes you would like to include in your benchmarking runs.
+
+Please check the md5 value of h5 files before starting any benchmarking.
+Only Linux distributions, md5sum tool is widely available
+$ md5sum *.h5
+6476972b54b58c89d15c478ed4e10317  NiO-fcc-supertwist111-supershift000-S8.h5
+b47f4be12f98f8a3d4b65d0ae048b837  NiO-fcc-supertwist111-supershift000-S16.h5
+ee1f6c6699a24e30d7e6c122cde55ac1  NiO-fcc-supertwist111-supershift000-S32.h5
+40ecaf05177aa4bbba7d3bf757994548  NiO-fcc-supertwist111-supershift000-S64.h5
+0a530594a3c7eec4f0155b5b2ca92eb0  NiO-fcc-supertwist111-supershift000-S128.h5
+cff0101debb11c8c215e9138658fbd21  NiO-fcc-supertwist111-supershift000-S256.h5
+
+2. Benchmarking with ctest.
+This is the simplest way to calibrate performance though with limitations.
+The current choice is using 1 MPI with 16 threads on a single node. If you need to change either of these numbers
+or you need to control more hardware behaviors such as thread affinity, please read the next section.
+To activate the ctest route, add the following option in your cmake command line when building your binary.
+-D QMC_DATA=YOUR_DATA_FOLDER
+YOUR_DATA_FOLDER contains a folder called NiO with h5 files in it.
+Running tests with command "ctest -R performance-NiO" after your building is complete.
+
+3. Running the benchmark manually.
+1) Copy the whole current folder to a work directory (WDIR) you would like to run the benchmark.
+2) Copy or softlink all the h5 files to your WDIR.
+3) prepare a job script for submitting a single calculation to the job queue system.
+   We provide two samples for CPU (qmcpack-cpu-cetus.sub) and GPU (qmcpack-gpu-cooley.sub) runs at ALCF Cetus and Cooley to give you basic ideas how to run qmcpack manually.
+   a) Customize the header based on your machine.
+   b) You always need to point the variable "exe" to the binary that you would like to benchmark.
+   c) "file_prefix" should not be changed and and the run script will update them by pointing to the right size.
+   d) Customize the mpirun based on the job dispatcher on your system and pick the MPI/THREADS as well as other controls you would like to add.
+  *If your system do not have a job queue, remove everything before $exe in that line.
+
+4) Customize run scripts.
+   The run_cpu.sh and run_gpu.sh run scripts provide a basic scan with a single run for each size.
+   These scripts create individual folder for each benchmark run and submit it to the job queue.
+   ATTENTION: the GPU run has default 32 walkers per MPI. You may adjust it in the run_gpu.sh based on your hardware capability.
+  *If your system do not have a job queue, use "subjob=sh" in the run script.
+
+5) Collect performance results.
+   A simple performance metric can be the time per block which reflects fast walkers are advancing.
+   It can be measured with qmca, an analysis tool shipped with QMCPACK.
+   In your WDIR, use
+   qmca -q bc -e 0 dmc*/*.scalar.dat to collect the timing for all the runs.
+   Or in each subfolder, you type
+   qmca -q bc -e 0 *.scalar.dat
+
+   The current benchmarks contains 3 run sections.
+     I) VMC + no drift
+    II) VMC + drift
+   III) DMC with constant population
+   So three timing are given per run.
+
+Please ask in QMCPACK google group if you have any questions.
+https://groups.google.com/forum/#!forum/qmcpack
