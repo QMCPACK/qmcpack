@@ -18,6 +18,7 @@
 #ifndef QMCPLUSPLUS_HYBRID_CPLX_SOA_ADOPTOR_H
 #define QMCPLUSPLUS_HYBRID_CPLX_SOA_ADOPTOR_H
 
+#include <QMCWaveFunctions/BsplineFactory/HybridAdoptorBase.h>
 namespace qmcplusplus
 {
 
@@ -25,7 +26,7 @@ namespace qmcplusplus
  *
  */
 template<typename BaseAdoptor>
-struct HybridCplxSoA: public BaseAdoptor
+struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename BaseAdoptor::DataType>
 {
   using ST               = typename BaseAdoptor::DataType;
   using PointType        = typename BaseAdoptor::PointType;
@@ -121,12 +122,6 @@ struct HybridCplxSoA: public BaseAdoptor
     PointType ru(PrimLattice.toUnit_floor(r));
     SplineInst->evaluate_vgh(ru,myV,myG,myH);
     BaseAdoptor::assign_vgl_soa(r,vgl);
-  }
-
-  template<typename VV, typename GV, typename GGV>
-  void assign_vgh(const PointType& r, int bc_sign, VV& psi, GV& dpsi, GGV& grad_grad_psi)
-  {
-    //missing
   }
 
   template<typename VV, typename GV, typename GGV>

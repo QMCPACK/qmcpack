@@ -42,6 +42,27 @@ namespace qmcplusplus
       typedef double value_type;
     };
 
+  /** specialization for 1D float */
+  template<>
+    struct bspline_traits<float,1>
+    {
+      typedef multi_UBspline_1d_s SplineType;
+      typedef UBspline_1d_s       SingleSplineType;
+      typedef BCtype_s            BCType;
+      typedef float               DataType;
+    };
+
+  /** specialization for 1D double */
+  template<>
+    struct bspline_traits<double,1>
+    {
+      typedef multi_UBspline_1d_d SplineType;
+      typedef UBspline_1d_d       SingleSplineType;
+      typedef BCtype_d            BCType;
+      typedef double              DataType;
+    };
+
+
   /** helper class to determine the value_type of einspline objects
    */
   template<typename ST> struct bspline_type {};
