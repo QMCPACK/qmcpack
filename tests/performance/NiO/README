@@ -8,7 +8,7 @@ Add J3 to CPU tests.
 
 v.2
 Add one more qmc section to each test,
-From I) VMC + no drift, III) DMC with constant population
+From I) VMC + no drift, II) DMC with constant population
 To   I) VMC + no drift, II) VMC + drift, III) DMC with constant population
 
 1. Before your run.
