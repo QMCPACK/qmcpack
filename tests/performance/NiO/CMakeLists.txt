@@ -5,6 +5,7 @@
 # QMC_DATA - NiO subdirectory should contain the *.h5 files
 
 FUNCTION(ADD_NIO_TEST TEST_NAME TEST_DIR INPUT_FILE H5_FILE)
+  MESSAGE("Adding test ${TEST_NAME}")
   SET (WDIR "${qmcpack_BINARY_DIR}/tests/performance/NiO/${TEST_DIR}")
   SET (SDIR "${CMAKE_SOURCE_DIR}/tests/performance/NiO/sample/${TEST_DIR}")
 
@@ -88,7 +89,7 @@ ELSE()
   FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/process_perf.py DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
   FOREACH(SIZE IN LISTS NIO_SIZES)
-    SET(PERF_TEST NiO-cpu-S${SIZE}-${COMPUTE_TYPE})
+    SET(PERF_TEST performance-NiO-${COMPUTE_TYPE}-S${SIZE}-1-1)
     SET(TEST_DIR dmc-S${SIZE}-${COMPUTE_TYPE})
     SET(INPUT_FILE NiO-fcc-S${SIZE}-dmc.xml)
     SET(H5_FILE NiO-fcc-supertwist111-supershift000-S${SIZE}.h5)
@@ -96,9 +97,24 @@ ELSE()
     IF (EXISTS ${H5_FULL_PATH})
       ADD_NIO_TEST(${PERF_TEST} ${TEST_DIR} ${INPUT_FILE} ${H5_FILE})
     ELSE()
-      MESSAGE("NiO test for size ${SIZE} not added because the corresponding h5 file not found: ${H5_FULL_PATH}")
+      MESSAGE("${PERF_TEST} not added because the corresponding h5 file not found: ${H5_FULL_PATH}")
     ENDIF()
   ENDFOREACH()
+
+  IF (NOT QMC_CUDA)
+    FOREACH(SIZE IN LISTS NIO_SIZES)
+      SET(PERF_TEST performance-NiO-${COMPUTE_TYPE}-S${SIZE}-J3-1-1)
+      SET(TEST_DIR dmc-S${SIZE}-${COMPUTE_TYPE}-J3)
+      SET(INPUT_FILE NiO-fcc-S${SIZE}-dmc.xml)
+      SET(H5_FILE NiO-fcc-supertwist111-supershift000-S${SIZE}.h5)
+      SET(H5_FULL_PATH "${QMC_DATA}/NiO/${H5_FILE}")
+      IF (EXISTS ${H5_FULL_PATH})
+        ADD_NIO_TEST(${PERF_TEST} ${TEST_DIR} ${INPUT_FILE} ${H5_FILE})
+      ELSE()
+        MESSAGE("${PERF_TEST} not added because the corresponding h5 file not found: ${H5_FULL_PATH}")
+      ENDIF()
+    ENDFOREACH()
+  ENDIF()
 
   # Example with SIZE and COMPUTE_TYPE expanded
   #SET(PERF_TEST NiO-cpu-S8-dmc)
