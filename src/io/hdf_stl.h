@@ -123,8 +123,6 @@ template<> struct h5data_proxy<std::string>
       }
       ref.resize(dim_out);
       herr_t ret = H5Dread(dataset, datatype, H5S_ALL, H5S_ALL, xfer_plist,&(ref[0]));
-      // Erase trailing null character
-      ref.erase (dim_out-1, 1);
       H5Tclose(datatype);
       H5Dclose(dataset);
       return ret != -1;

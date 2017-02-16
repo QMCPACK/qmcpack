@@ -132,6 +132,15 @@ IF(BUILD_LMYENGINE_INTERFACE)
                     H4_OPT_SCALARS
                     5 # OPT step 5
                     TRUE)
+
+  QMC_RUN_AND_CHECK(short-H4-opt-adaptive
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    H4-adaptive
+                    optm-adaptive.xml
+                    1 16
+                    H4_OPT_SCALARS
+                    5 # OPT step 5
+                    TRUE)
 ENDIF(BUILD_LMYENGINE_INTERFACE)
 
   QMC_RUN_AND_CHECK(short-H4-opt-OneShiftOnly
