@@ -9,14 +9,14 @@
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
     
-    
-
-
 
 #ifndef QMCPLUSPLUS_SOA_SPHERICAL_CARTESIAN_TENSOR_H
 #define QMCPLUSPLUS_SOA_SPHERICAL_CARTESIAN_TENSOR_H
 
 #include "OhmmsPETE/Tensor.h"
+
+namespace qmcplusplus
+{
 
 /** SoaSphericalTensor that evaluates the Real Spherical Harmonics
  *
@@ -38,15 +38,15 @@ struct SoaSphericalTensor
   ///maximum angular momentum for the center
   int Lmax;
   /// Normalization factors
-  aligned_vector<value_type> NormFactor;
+  aligned_vector<T> NormFactor;
   ///pre-evaluated factor \f$1/\sqrt{(l+m)\times(l+1-m)}\f$
-  aligned_vector<value_type> FactorLM;
+  aligned_vector<T> FactorLM;
   ///pre-evaluated factor \f$\sqrt{(2l+1)/(4\pi)}\f$
-  aligned_vector<value_type> FactorL;
+  aligned_vector<T> FactorL;
   ///pre-evaluated factor \f$(2l+1)/(2l-1)\f$
-  aligned_vector<value_type> Factor2L;
+  aligned_vector<T> Factor2L;
   ///composite 
-  VectorSoAContainer<T,5> cYlm;
+  VectorSoaContainer<T,5> cYlm;
 
   explicit SoaSphericalTensor(const int l_max, bool addsign=false);
 
@@ -131,7 +131,7 @@ inline SoaSphericalTensor<T>::SoaSphericalTensor(const int l_max, bool addsign) 
 {
   CONSTEXPR T czero(0);
   CONSTEXPR T cone(1);
-  CONSTEXPR value_type pi = 4.0*atan(1.0);
+  CONSTEXPR T pi = 4.0*atan(1.0);
   const int ntot = (Lmax+1)*(Lmax+1);
   cYlm.resize(ntot);
   cYlm=czero; 
@@ -178,7 +178,7 @@ inline SoaSphericalTensor<T>::SoaSphericalTensor(const int l_max, bool addsign) 
 }
 
 template<typename T>
-inline void SphericalTensorSoA<T>::evaluate_bare(T x, T y, T z, T* restrict Ylm)
+inline void SoaSphericalTensor<T>::evaluate_bare(T x, T y, T z, T* restrict Ylm) const
 {
   CONSTEXPR T czero(0);
   CONSTEXPR T cone(1);
@@ -269,7 +269,7 @@ inline void SphericalTensorSoA<T>::evaluate_bare(T x, T y, T z, T* restrict Ylm)
 }
 
 template<typename T>
-inline void SphericalTensorSoA<T>::evaluateVGL(T x, T y, T z)
+inline void SoaSphericalTensor<T>::evaluateVGL(T x, T y, T z)
 {
   T* restrict Ylm=cYlm.data(0);
   evaluate_bare(x,y,z,Ylm);
@@ -282,7 +282,7 @@ inline void SphericalTensorSoA<T>::evaluateVGL(T x, T y, T z)
   // Calculating Gradient now//
   for (int l=1; l<=Lmax; l++)
   {
-    //T fac = ((value_type) (2*l+1))/(2*l-1);
+    //T fac = ((T) (2*l+1))/(2*l-1);
     T fac = Factor2L[l];
     for (int m=-l; m<=l; m++)
     {
@@ -357,6 +357,5 @@ inline void SphericalTensorSoA<T>::evaluateVGL(T x, T y, T z)
 //for (int i=0; i<Ylm.size(); i++) gradYlm[i]*= NormFactor[i];
 }
 
-
-
+}
 #endif
