@@ -18,7 +18,8 @@
 #ifndef QMCPLUSPLUS_HYBRID_ADOPTOR_BASE_H
 #define QMCPLUSPLUS_HYBRID_ADOPTOR_BASE_H
 
-//#include <QMCWaveFunctions/lcao/SoaSphericalTensor.h>
+#include <Particle/DistanceTableData.h>
+#include <QMCWaveFunctions/lcao/SoaSphericalTensor.h>
 
 namespace qmcplusplus
 {
@@ -31,14 +32,14 @@ struct AtomicOrbitalSoA
   using AtomicBCType=typename bspline_traits<ST,1>::BCType;
   using AtomicSingleSplineType=UBspline_1d_d;
   using PointType=TinyVector<ST,D>;
+  using value_type=ST;
 
   ST cutoff;
-  //SoaSphericalTensor<ST> Ylm;
+  int lmax;
+  SoaSphericalTensor<ST> Ylm;
   AtomicSplineType* MultiSpline;
 
-  AtomicOrbitalSoA():MultiSpline(nullptr)
-  {
-  }
+  AtomicOrbitalSoA(int Lmax):Ylm(Lmax), MultiSpline(nullptr), lmax(Lmax) { }
 
   //~AtomicOrbitalSoA();
 
@@ -58,38 +59,30 @@ struct AtomicOrbitalSoA
   bool read_splines(hdf_archive& h5f)
   {
     //load spline coefficients
+    //cutoff, spline radius, spline points, check coeff size
   }
 
   bool write_splines(hdf_archive& h5f)
   {
-    //dump spline coefficients
+    //dump center info, including cutoff, spline radius, spline points, lm
+    //name, position, consistency
+    //dump spline coefficients    //dump spline coefficients
   }
 
   template<typename VV>
-  inline void evaluate_v(const PointType& r, VV& psi)
+  inline void evaluate_v(const PointType& r, VV& myV)
   {
     //evaluate only V
   }
 
   template<typename VV, typename GV>
-  inline void evaluate_vgl(const PointType& r, VV& psi, GV& dpsi, VV& d2psi)
-  {
-    //missing
-  }
-
-  /** evaluate VGL using VectorSoaContainer
-   * @param r position
-   * @param psi value container
-   * @param dpsi gradient-laplacian container
-   */
-  template<typename VGL>
-  inline void evaluate_vgl_combo(const PointType& r, VGL& vgl)
+  inline void evaluate_vgl(const PointType& r, VV& myV, GV& myG, VV& myH)
   {
     //missing
   }
 
   template<typename VV, typename GV, typename HT>
-  void evaluate_vgh(const PointType& r, VV& psi, GV& dpsi, HT& hess)
+  void evaluate_vgh(const PointType& r, VV& myV, GV& myG, HT& myH)
   {
     //Needed to do tensor product here
   }
@@ -101,53 +94,66 @@ struct AtomicOrbitalSoA
 template<typename ST>
 struct HybridAdoptorBase
 {
-  static const int D=3;
-  using PointType=TinyVector<ST,D>;
+  using PointType=typename AtomicOrbitalSoA<ST>::PointType;
 
   std::vector<AtomicOrbitalSoA<ST> > AtomicCenters;
+  // I-e distance table
+  DistanceTableData* ei_dist;
   //mapping supercell to primitive cell
+  std::vector<int> Super2Prim;
 
   HybridAdoptorBase() { }
 
   bool read_splines(hdf_archive& h5f)
   {
-    //load spline coefficients
-    //for each center
+    // for each center
+    // loop load center info, including name, position, check consistency
+    // Initial class with index
+    // call read_splines
+    // push to the vector
   }
 
   bool write_splines(hdf_archive& h5f)
   {
-    //dump spline coefficients
-    //for each center
+    //loop for each center
+    // write_splines
   }
 
   template<typename VV>
-  inline void evaluate_v(const PointType& r, VV& psi)
+  inline bool evaluate_v(VV& myV)
   {
     //evaluate only V
+    bool inAtom=false;
+    const int center_idx=ei_dist->get_first_neighbor_temporal();
+    if(center_idx<0) abort();
+    auto& myCenter=AtomicCenters[Super2Prim[center_idx]];
+    if ( ei_dist->Temp_r[center_idx] < myCenter.cutoff )
+    {
+      inAtom=true;
+      myCenter.evaluate_v(ei_dist->Temp_dr[center_idx], myV);
+    }
+    return inAtom;
   }
 
   template<typename VV, typename GV>
-  inline void evaluate_vgl(const PointType& r, VV& psi, GV& dpsi, VV& d2psi)
-  {
-    //missing
-  }
-
-  /** evaluate VGL using VectorSoaContainer
-   * @param r position
-   * @param psi value container
-   * @param dpsi gradient-laplacian container
-   */
-  template<typename VGL>
-  inline void evaluate_vgl_combo(const PointType& r, VGL& vgl)
+  inline bool evaluate_vgl(VV& myV, GV& myG, VV& myH)
   {
     //missing
   }
 
   template<typename VV, typename GV, typename HT>
-  void evaluate_vgh(const PointType& r, VV& psi, GV& dpsi, HT& hess)
+  inline bool evaluate_vgh(VV& myV, GV& myG, HT& myH)
   {
-    //Needed to do tensor product here
+    bool inAtom=false;
+    const int center_idx=ei_dist->get_first_neighbor_temporal();
+    if(center_idx<0) abort();
+    auto& myCenter=AtomicCenters[Super2Prim[center_idx]];
+    if ( ei_dist->Temp_r[center_idx] < myCenter.cutoff )
+    {
+      inAtom=true;
+      myCenter.evaluate_vgh(ei_dist->Temp_dr[center_idx], myV, myG, myH);
+    }
+    return inAtom;
   }
 };
 

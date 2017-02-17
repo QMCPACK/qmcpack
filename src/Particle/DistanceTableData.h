@@ -385,7 +385,7 @@ struct DistanceTableData
    * @param iat source particle id
    * @return the id of the nearest particle, -1 not found
    */
-  virtual int get_first_neighbor_temporal(int iat) const
+  virtual int get_first_neighbor_temporal() const
   {
     return -1;
   }

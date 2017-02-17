@@ -28,6 +28,7 @@ namespace qmcplusplus
 template<typename BaseAdoptor>
 struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename BaseAdoptor::DataType>
 {
+  using HybridBase       = HybridAdoptorBase<typename BaseAdoptor::DataType>;
   using ST               = typename BaseAdoptor::DataType;
   using PointType        = typename BaseAdoptor::PointType;
   using SingleSplineType = typename BaseAdoptor::SingleSplineType;
@@ -87,27 +88,33 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
 
   bool read_splines(hdf_archive& h5f)
   {
-    BaseAdoptor::read_splines(h5f);
+    return BaseAdoptor::read_splines(h5f) && HybridBase::read_splines(h5f);
   }
 
   bool write_splines(hdf_archive& h5f)
   {
-    BaseAdoptor::write_splines(h5f);
+    return BaseAdoptor::write_splines(h5f) && HybridBase::write_splines(h5f);
   }
 
   template<typename VV>
   inline void evaluate_v(const PointType& r, VV& psi)
   {
-    PointType ru(PrimLattice.toUnit_floor(r));
-    SplineInst->evaluate(ru,myV);
+    if(!HybridBase::evaluate_v(myV))
+    {
+      PointType ru(PrimLattice.toUnit_floor(r));
+      SplineInst->evaluate(ru,myV);
+    }
     BaseAdoptor::assign_v(r,psi);
   }
 
   template<typename VV, typename GV>
   inline void evaluate_vgl(const PointType& r, VV& psi, GV& dpsi, VV& d2psi)
   {
-    PointType ru(PrimLattice.toUnit_floor(r));
-    SplineInst->evaluate_vgh(ru,myV,myG,myH);
+    if(!HybridBase::evaluate_vgh(myV,myG,myH))
+    {
+      PointType ru(PrimLattice.toUnit_floor(r));
+      SplineInst->evaluate_vgh(ru,myV,myG,myH);
+    }
     BaseAdoptor::assign_vgl(r,psi,dpsi,d2psi);
   }
 
@@ -119,15 +126,23 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
   template<typename VGL>
   inline void evaluate_vgl_combo(const PointType& r, VGL& vgl)
   {
-    PointType ru(PrimLattice.toUnit_floor(r));
-    SplineInst->evaluate_vgh(ru,myV,myG,myH);
+    if(!HybridBase::evaluate_vgh(myV,myG,myH))
+    {
+      PointType ru(PrimLattice.toUnit_floor(r));
+      SplineInst->evaluate_vgh(ru,myV,myG,myH);
+    }
     BaseAdoptor::assign_vgl_soa(r,vgl);
   }
 
   template<typename VV, typename GV, typename GGV>
   void evaluate_vgh(const PointType& r, VV& psi, GV& dpsi, GGV& grad_grad_psi)
   {
-    //missing
+    if(!HybridBase::evaluate_vgh(myV,myG,myH))
+    {
+      PointType ru(PrimLattice.toUnit_floor(r));
+      SplineInst->evaluate_vgh(ru,myV,myG,myH);
+    }
+    BaseAdoptor::assign_vgh(r,psi,dpsi,grad_grad_psi);
   }
 };
 
