@@ -432,12 +432,124 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   template<typename VV, typename GV, typename GGV>
   void assign_vgh(const PointType& r, VV& psi, GV& dpsi, GGV& grad_grad_psi)
   {
-    //missing
+#if 0
+    typedef std::complex<TT> ComplexT;
+    CONSTEXPR ST zero(0);
+    CONSTEXPR ST two(2);
+    const ST g00=PrimLattice.G(0), g01=PrimLattice.G(1), g02=PrimLattice.G(2),
+             g10=PrimLattice.G(3), g11=PrimLattice.G(4), g12=PrimLattice.G(5),
+             g20=PrimLattice.G(6), g21=PrimLattice.G(7), g22=PrimLattice.G(8);
+    const ST x=r[0], y=r[1], z=r[2];
+    const ST symGG[6]={GGt[0],GGt[1]+GGt[3],GGt[2]+GGt[6],GGt[4],GGt[5]+GGt[7],GGt[8]};
+
+    const ST* restrict k0=myKcart.data(0);
+    const ST* restrict k1=myKcart.data(1);
+    const ST* restrict k2=myKcart.data(2);
+
+    const ST* restrict g0=myG.data(0);
+    const ST* restrict g1=myG.data(1);
+    const ST* restrict g2=myG.data(2);
+    const ST* restrict h00=myH.data(0);
+    const ST* restrict h01=myH.data(1);
+    const ST* restrict h02=myH.data(2);
+    const ST* restrict h11=myH.data(3);
+    const ST* restrict h12=myH.data(4);
+    const ST* restrict h22=myH.data(5);
+
+    const size_t N=kPoints.size();
+    const size_t nsplines=myL.size();
+
+    ComplexT* restrict psi =psi.data(0)+first_spo; ASSUME_ALIGNED(psi);
+    ComplexT* restrict vg_x=dpsi.data(0)+first_spo; ASSUME_ALIGNED(vg_x);
+    ComplexT* restrict vg_y=dpsi.data(1)+first_spo; ASSUME_ALIGNED(vg_y);
+    ComplexT* restrict vg_z=dpsi.data(2)+first_spo; ASSUME_ALIGNED(vg_z);
+    ComplexT* restrict gg_xx=grad_grad_psi.data(0)+first_spo; ASSUME_ALIGNED(gg_xx);
+    ComplexT* restrict gg_xy=grad_grad_psi.data(1)+first_spo; ASSUME_ALIGNED(gg_xy);
+    ComplexT* restrict gg_xz=grad_grad_psi.data(2)+first_spo; ASSUME_ALIGNED(gg_xz);
+    ComplexT* restrict gg_yx=grad_grad_psi.data(3)+first_spo; ASSUME_ALIGNED(gg_yx);
+    ComplexT* restrict gg_yy=grad_grad_psi.data(4)+first_spo; ASSUME_ALIGNED(gg_yy);
+    ComplexT* restrict gg_yz=grad_grad_psi.data(5)+first_spo; ASSUME_ALIGNED(gg_yz);
+    ComplexT* restrict gg_zx=grad_grad_psi.data(6)+first_spo; ASSUME_ALIGNED(gg_zx);
+    ComplexT* restrict gg_zy=grad_grad_psi.data(7)+first_spo; ASSUME_ALIGNED(gg_zy);
+    ComplexT* restrict gg_zz=grad_grad_psi.data(8)+first_spo; ASSUME_ALIGNED(gg_zz);
+
+#pragma simd 
+    for (size_t j=0; j<N; ++j)
+    {
+      int jr=j<<1;
+      int ji=jr+1;
+
+      const ST kX=k0[j];
+      const ST kY=k1[j];
+      const ST kZ=k2[j];
+      const ST val_r=myV[jr];
+      const ST val_i=myV[ji];
+
+      //phase
+      ST s, c;
+      sincos(-(x*kX+y*kY+z*kZ),&s,&c);
+
+      //dot(PrimLattice.G,myG[j])
+      const ST dX_r = g00*g0[jr]+g01*g1[jr]+g02*g2[jr];
+      const ST dY_r = g10*g0[jr]+g11*g1[jr]+g12*g2[jr];
+      const ST dZ_r = g20*g0[jr]+g21*g1[jr]+g22*g2[jr];
+
+      const ST dX_i = g00*g0[ji]+g01*g1[ji]+g02*g2[ji];
+      const ST dY_i = g10*g0[ji]+g11*g1[ji]+g12*g2[ji];
+      const ST dZ_i = g20*g0[ji]+g21*g1[ji]+g22*g2[ji];
+
+      // \f$\nabla \psi_r + {\bf k}\psi_i\f$
+      const ST gX_r=dX_r+val_i*kX;
+      const ST gY_r=dY_r+val_i*kY;
+      const ST gZ_r=dZ_r+val_i*kZ;
+      const ST gX_i=dX_i-val_r*kX;
+      const ST gY_i=dY_i-val_r*kY;
+      const ST gZ_i=dZ_i-val_r*kZ;
+
+      psi[j] =ComplexT(c*val_r-s*val_i,c*val_i+s*val_r);
+      vg_x[j]=ComplexT(c*gX_r -s*gX_i, c*gX_i +s*gX_r);
+      vg_y[j]=ComplexT(c*gY_r -s*gY_i, c*gY_i +s*gY_r);
+      vg_z[j]=ComplexT(c*gZ_r -s*gZ_i, c*gZ_i +s*gZ_r);
+
+      const ST kkV_r=mKK[j]*val_r; //kk*Vr
+      const ST kkV_i=mKK[j]*val_i; //kk*Vi
+      const ST h_xx_r=h00[jr]+kkV_r+kX*gX_r; 
+      const ST h_xy_r=h01[jr]+kkV_r+kX*gY_r; 
+      const ST h_xz_r=h02[jr]+kkV_r+kX*gZ_r;
+      const ST h_yx_r=h01[jr]+kkV_r+kY*gX_r; 
+      const ST h_yy_r=h11[jr]+kkV_r+kY*gY_r; 
+      const ST h_yz_r=h12[jr]+kkV_r+kY*gZ_r;
+      const ST h_zx_r=h02[jr]+kkV_r+kz*gX_r; 
+      const ST h_zy_r=h12[jr]+kkV_r+kz*gY_r; 
+      const ST h_zz_r=h22[jr]+kkV_r+kz*gZ_r;
+      const ST h_xy_i=h01[ji]+kkV_i+kX*gY_i; 
+      const ST h_xz_i=h02[ji]+kkV_i+kX*gZ_i;
+      const ST h_yx_i=h01[ji]+kkV_i+kY*gX_i; 
+      const ST h_yy_i=h11[ji]+kkV_i+kY*gY_i; 
+      const ST h_yz_i=h12[ji]+kkV_i+kY*gZ_i;
+      const ST h_zx_i=h02[ji]+kkV_i+kz*gX_i; 
+      const ST h_zy_i=h12[ji]+kkV_i+kz*gY_i; 
+      const ST h_zz_i=h22[ji]+kkV_i+kz*gZ_i;
+      
+      gg_xx[j]=ComplexT(c*h_xx_r-s*h_xx_i, c*h_xx_i+s*h_xx_r);
+      gg_xy[j]=ComplexT(c*h_xy_r-s*h_xy_i, c*h_xy_i+s*h_xy_r);
+      gg_xz[j]=ComplexT(c*h_xz_r-s*h_xz_i, c*h_xz_i+s*h_xz_r);
+      gg_yx[j]=ComplexT(c*h_yx_r-s*h_yx_i, c*h_yx_i+s*h_yx_r);
+      gg_yy[j]=ComplexT(c*h_yy_r-s*h_yy_i, c*h_yy_i+s*h_yy_r);
+      gg_yz[j]=ComplexT(c*h_yz_r-s*h_yz_i, c*h_yz_i+s*h_yz_r);
+      gg_zx[j]=ComplexT(c*h_zx_r-s*h_zx_i, c*h_zx_i+s*h_zx_r);
+      gg_zy[j]=ComplexT(c*h_zy_r-s*h_zy_i, c*h_zy_i+s*h_zy_r);
+      gg_zz[j]=ComplexT(c*h_zz_r-s*h_zz_i, c*h_zz_i+s*h_zz_r);
+    }
+#endif
   }
 
   template<typename VV, typename GV, typename GGV>
   void evaluate_vgh(const PointType& r, VV& psi, GV& dpsi, GGV& grad_grad_psi)
   {
+    PointType ru(PrimLattice.toUnit_floor(r));
+    SplineInst->evaluate_vgh(ru,myV,myG,myH);
+    assign_vgh(r,psi,dpsi,grad_grad_psi);
     //missing
   }
 };

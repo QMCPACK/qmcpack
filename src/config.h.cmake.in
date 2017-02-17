@@ -80,6 +80,9 @@
 /* Define to 1 if precision is mixed, only for the CPU code */
 #cmakedefine MIXED_PRECISION @MIXED_PRECISION@
 
+/* Use prefetching in Einspline routines */
+#cmakedefine QMC_ES_PREFETCH  @QMC_ES_PREFETCH@
+
 /* Define to 1 if complex wavefunctions are used */
 #cmakedefine QMC_COMPLEX @QMC_COMPLEX@
 

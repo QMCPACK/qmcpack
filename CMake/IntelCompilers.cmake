@@ -71,14 +71,19 @@ SET(HAVE_SSE 0)
 SET(SET_HAVE_SSE_FLAGS 0 CACHE BOOL "Use einspline routines with SSE intrinsics")
 
 #check if the user has already specified -x option for cross-compiling.
-if(CMAKE_CXX_FLAGS MATCHES "-x" OR CMAKE_C_FLAGS MATCHES "-x")
+if(CMAKE_CXX_FLAGS MATCHES "-x" OR CMAKE_C_FLAGS MATCHES "-x" OR
+    CMAKE_CXX_FLAGS MATCHES "-ax" OR CMAKE_C_FLAGS MATCHES "-ax")
   # make sure that the user specifies -x for both CMAKE_CXX_FLAGS and CMAKE_C_FLAGS.
   if(CMAKE_CXX_FLAGS MATCHES "-x" AND CMAKE_C_FLAGS MATCHES "-x")
     SET(SSE_OPT_SET TRUE)
-  else(CMAKE_CXX_FLAGS MATCHES "-x" AND CMAKE_C_FLAGS MATCHES "-x")
-    MESSAGE(FATAL_ERROR "if -xcode is specified by the user, it should be added in both CMAKE_CXX_FLAGS and CMAKE_C_FLAGS!")
-  endif(CMAKE_CXX_FLAGS MATCHES "-x" AND CMAKE_C_FLAGS MATCHES "-x")
-else(CMAKE_CXX_FLAGS MATCHES "-x" OR CMAKE_C_FLAGS MATCHES "-x")
+  else() #(CMAKE_CXX_FLAGS MATCHES "-x" AND CMAKE_C_FLAGS MATCHES "-x")
+    if(CMAKE_CXX_FLAGS MATCHES "-ax" AND CMAKE_C_FLAGS MATCHES "-ax")
+      SET(SSE_OPT_SET TRUE)
+    else()
+      MESSAGE(FATAL_ERROR "if -xcode is specified by the user, it should be added in both CMAKE_CXX_FLAGS and CMAKE_C_FLAGS!")
+    endif()
+  endif() #(CMAKE_CXX_FLAGS MATCHES "-x" AND CMAKE_C_FLAGS MATCHES "-x")
+else() #(CMAKE_CXX_FLAGS MATCHES "-x" OR CMAKE_C_FLAGS MATCHES "-x")
   #check if -xHost is accepted
   CHECK_C_COMPILER_FLAG( "-xHost" INTEL_CC_FLAGS )
   IF(INTEL_CC_FLAGS)
@@ -88,7 +93,7 @@ else(CMAKE_CXX_FLAGS MATCHES "-x" OR CMAKE_C_FLAGS MATCHES "-x")
   ELSE(INTEL_CC_FLAGS)
     SET(SSE_OPT_SET FALSE)
   ENDIF(INTEL_CC_FLAGS)
-endif(CMAKE_CXX_FLAGS MATCHES "-x" OR CMAKE_C_FLAGS MATCHES "-x")
+endif() #(CMAKE_CXX_FLAGS MATCHES "-x" OR CMAKE_C_FLAGS MATCHES "-x")
 
 #set all the HAVE_XXX flags based on /proc/cpuinfo
 #set the compiler option -xcode based on /proc/cpuinfo if -xhost is not accepted.
