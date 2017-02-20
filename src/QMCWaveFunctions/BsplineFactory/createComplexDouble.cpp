@@ -26,6 +26,7 @@
 #include <QMCWaveFunctions/einspline_helper.hpp>
 #include "QMCWaveFunctions/BsplineReaderBase.h"
 #include "QMCWaveFunctions/SplineAdoptorReaderP.h"
+#include "QMCWaveFunctions/SplineHybridAdoptorReaderP.h"
 
 namespace qmcplusplus
 {
@@ -41,7 +42,7 @@ namespace qmcplusplus
     if(numOrbs>1)
     {
       if(hybrid_rep)
-        aReader= new SplineAdoptorReader<HybridCplxSoA<SplineC2CSoA<double,RealType> > >(e);
+        aReader= new SplineHybridAdoptorReader<HybridCplxSoA<SplineC2CSoA<double,RealType> > >(e);
       else
         aReader= new SplineAdoptorReader<SplineC2CSoA<double,RealType> >(e);
     }

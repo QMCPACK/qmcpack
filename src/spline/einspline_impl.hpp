@@ -423,6 +423,52 @@ namespace qmcplusplus
       return res;
     }
 
+    // 1D spline
+    /** create spline for double */
+    template<typename GT, typename BCT>
+    multi_UBspline_1d_d*  create(multi_UBspline_1d_d* s, GT& grid , BCT& bc, int num_splines)
+    {
+      return create_multi_UBspline_1d_d(grid, bc, num_splines);
+    }
+
+    /** create spline for float */
+    template<typename GT, typename BCT>
+    multi_UBspline_1d_s*  create(multi_UBspline_1d_s* s, GT& grid , BCT& bc, int num_splines)
+    {
+      return create_multi_UBspline_1d_s(grid, bc, num_splines);
+    }
+
+    inline void  set(UBspline_1d_d* s, double* restrict data)
+    {
+      recompute_UBspline_1d_d(s,data);
+    }
+
+    inline void  set(multi_UBspline_1d_d* spline, int i, UBspline_1d_d* spline_in
+        , const int* offset, const int *N)
+    {
+      //YYY todo
+      //copy_UBspline_1d_d(spline, i, spline_in,offset,N);
+    }
+
+    inline void  set(multi_UBspline_1d_s* spline, int i, UBspline_1d_d* spline_in
+        , const int* offset, const int *N)
+    {
+      //YYY todo
+      //copy_UBspline_1d_d_s(spline, i, spline_in,offset,N);
+    }
+
+    /** evaluate values only using multi_UBspline_3d_d
+    */
+    template<typename PT, typename VT>
+      inline void  evaluate(multi_UBspline_1d_d *restrict spline, const PT& r, VT &psi)
+      { eval_multi_UBspline_1d_d (spline, r, psi.data()); }
+
+    /** evaluate values only using multi_UBspline_3d_s
+    */
+    template<typename PT, typename VT>
+      inline void  evaluate(multi_UBspline_1d_s *restrict spline, const PT& r, VT &psi)
+      { eval_multi_UBspline_1d_s (spline, r, psi.data()); }
+
   }
 }
 #endif

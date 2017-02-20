@@ -34,26 +34,35 @@ struct AtomicOrbitalSoA
   using PointType=TinyVector<ST,D>;
   using value_type=ST;
 
+  using vContainer_type=aligned_vector<ST>;
+
   ST cutoff;
-  int lmax;
+  const int lmax, lm_tot, NumBands, Npad;
   SoaSphericalTensor<ST> Ylm;
   AtomicSplineType* MultiSpline;
 
-  AtomicOrbitalSoA(int Lmax):Ylm(Lmax), MultiSpline(nullptr), lmax(Lmax) { }
+  vContainer_type localV, localG, localL;
+
+  AtomicOrbitalSoA(int Lmax, int Nb):
+  Ylm(Lmax), NumBands(nb), MultiSpline(nullptr), lmax(Lmax)
+  lm_tot((Lmax+1)*(Lmax+1)), Npad(getAlignedSize<ST>(Nb))
+  {
+    localV.resize(Npad);
+    localG.resize(Npad);
+    localL.resize(Npad);
+  }
 
   //~AtomicOrbitalSoA();
 
   template<typename GT, typename BCT>
-  void create_spline(GT& xyz_g, BCT& xyz_bc)
+  inline void create_spline(GT& grid, BCT& bc)
   {
+    einspline::create(MultiSpline, grid, bc, lm_tot*NumBands);
   }
 
-  inline void set_spline(AtomicSingleSplineType* spline_r, AtomicSingleSplineType* spline_i, int twist, int ispline, int level)
+  inline void set_spline(AtomicSingleSplineType* spline, int ispline)
   {
-  }
-
-  void set_spline(ST* restrict psi_r, ST* restrict psi_i, int twist, int ispline, int level)
-  {
+    einspline::set(MultiSpline, spine, ispline, &Npad);
   }
 
   bool read_splines(hdf_archive& h5f)
@@ -70,21 +79,33 @@ struct AtomicOrbitalSoA
   }
 
   template<typename VV>
-  inline void evaluate_v(const PointType& r, VV& myV)
+  inline void evaluate_v(const ST& r, const PointType& dr, VV& myV)
   {
     //evaluate only V
+    Ylm.evaluateV(dr[0], dr[1], dr[2]);
+    const ST* restrict Ylm_v=Ylm[0];
+    einspline::evaluate(MultiSpline,r,localV);
+    CONSTEXPR ST czero(0);
+    std::fill(myV.begin(),myV.end(),czero);
+    for(size_t lm=0; lm<lm_tot; lm++)
+    {
+      size_t offset=lm*Npad;
+      for(size_t ib=0; ib<myV.size(); ib++)
+        myV[ib]=Ylm_v[lm]*localV[offset+ib];
+    }
   }
 
   template<typename VV, typename GV>
-  inline void evaluate_vgl(const PointType& r, VV& myV, GV& myG, VV& myH)
+  inline void evaluate_vgl(const ST& r, const PointType& dr, VV& myV, GV& myG, VV& myH)
   {
     //missing
   }
 
   template<typename VV, typename GV, typename HT>
-  void evaluate_vgh(const PointType& r, VV& myV, GV& myG, HT& myH)
+  void evaluate_vgh(const ST& r, const PointType& dr, VV& myV, GV& myG, HT& myH)
   {
     //Needed to do tensor product here
+    //einspline::evaluate_vgh(MultiSpline,r,myV,myG,myH);
   }
 };
 
@@ -130,7 +151,7 @@ struct HybridAdoptorBase
     if ( ei_dist->Temp_r[center_idx] < myCenter.cutoff )
     {
       inAtom=true;
-      myCenter.evaluate_v(ei_dist->Temp_dr[center_idx], myV);
+      myCenter.evaluate_v(ei_dist->Temp_r[center_idx], ei_dist->Temp_dr[center_idx], myV);
     }
     return inAtom;
   }
@@ -151,7 +172,7 @@ struct HybridAdoptorBase
     if ( ei_dist->Temp_r[center_idx] < myCenter.cutoff )
     {
       inAtom=true;
-      myCenter.evaluate_vgh(ei_dist->Temp_dr[center_idx], myV, myG, myH);
+      myCenter.evaluate_vgh(ei_dist->Temp_r[center_idx], ei_dist->Temp_dr[center_idx], myV, myG, myH);
     }
     return inAtom;
   }
