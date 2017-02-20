@@ -61,16 +61,14 @@ namespace qmcplusplus
 }
 
 using namespace qmcplusplus;
-namespace mpi = boost::mpi;
 
 int main(int argc, char** argv)
 {
 
-  OHMMS::Controller->initialize(0, NULL);
-  OhmmsInfo("walker");
+  boost::mpi::environment env(boost::mpi::threading::funneled);
+  boost::mpi::communicator world;
 
-  mpi::environment env(boost::mpi::threading::funneled);
-  mpi::communicator world;
+  OhmmsInfo("walker");
 
   typedef QMCTraits::RealType           RealType;
   typedef ParticleSet::ParticlePos_t    ParticlePos_t;
@@ -172,21 +170,21 @@ int main(int argc, char** argv)
     walkers[0].R=els.R;
 
     //send the skeleton
-    broadcast(world, mpi::skeleton(walkers[0]), 0);
+    broadcast(world, boost::mpi::skeleton(walkers[0]), 0);
 
-    mpi::request reqs[2];
+    boost::mpi::request reqs[2];
     if(world.rank()!=0)
     {
-      mpi::content c = mpi::get_content(walkers[1]);
+      boost::mpi::content c = boost::mpi::get_content(walkers[1]);
       reqs[0]=world.irecv(0,911,c);
     }
     else
     {
-      mpi::content c = mpi::get_content(walkers[0]);
+      boost::mpi::content c = boost::mpi::get_content(walkers[0]);
       reqs[0]=world.isend(1,911,c);
     }
 
-    mpi::wait_any(reqs,reqs+1);
+    boost::mpi::wait_any(reqs,reqs+1);
 
     char fname[128];
     sprintf(fname,"debug.p%d",world.rank());
