@@ -66,7 +66,7 @@
 #include <boost/random/fisher_f_distribution.hpp>
 #include <boost/random/gamma_distribution.hpp>
 #include <boost/random/geometric_distribution.hpp>
-#include <boost/random/hyperexponential_distribution.hpp>
+//#include <boost/random/hyperexponential_distribution.hpp>
 #include <boost/random/laplace_distribution.hpp>
 #include <boost/random/lognormal_distribution.hpp>
 #include <boost/random/negative_binomial_distribution.hpp>
