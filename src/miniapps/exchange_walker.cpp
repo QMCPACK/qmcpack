@@ -28,6 +28,8 @@ using namespace std;
 namespace qmcplusplus
 {
 
+  namespace mpi=boost::mpi;
+
   /** dummy walker to show how boost::mpi and boost::serialization work
    */
   template<typename T, unsigned D>
@@ -40,7 +42,7 @@ namespace qmcplusplus
 
       DummyWalker() 
       {
-        Properties.resize(4,8);
+        Properties.resize(2,8);
       }
 
       DummyWalker(const DummyWalker&)=default;
@@ -58,15 +60,16 @@ namespace qmcplusplus
           ar & boost::serialization::make_array(Properties.data(),Properties.size());
         }
     };
+
 }
 
-using namespace qmcplusplus;
 
 int main(int argc, char** argv)
 {
+  using namespace qmcplusplus;
 
-  boost::mpi::environment env(boost::mpi::threading::funneled);
-  boost::mpi::communicator world;
+  mpi::environment env(mpi::threading::funneled);
+  mpi::communicator world;
 
   OhmmsInfo("walker");
 
@@ -164,31 +167,38 @@ int main(int argc, char** argv)
       walkers[i].resize(nptcl);
       walkers[i].ID=i;
       walkers[i].R=0;
-      walkers[i].Properties=i+world.rank()*10;
+      walkers[i].Properties=i*world.size()+world.rank();
     }
 
     walkers[0].R=els.R;
 
-    //send the skeleton
-    broadcast(world, boost::mpi::skeleton(walkers[0]), 0);
-
-    boost::mpi::request reqs[2];
-    if(world.rank()!=0)
-    {
-      boost::mpi::content c = boost::mpi::get_content(walkers[1]);
-      reqs[0]=world.irecv(0,911,c);
-    }
-    else
-    {
-      boost::mpi::content c = boost::mpi::get_content(walkers[0]);
-      reqs[0]=world.isend(1,911,c);
-    }
-
-    boost::mpi::wait_any(reqs,reqs+1);
-
     char fname[128];
     sprintf(fname,"debug.p%d",world.rank());
     ofstream fout(fname);
+
+    string message("dummy");
+    if(world.rank()==0) message="exchange_walker";
+    broadcast(world, message, 0);
+
+    fout << message << endl << endl;
+
+    //send the skeleton
+    broadcast(world, mpi::skeleton(walkers[0]), 0);
+
+    mpi::request reqs[2];
+    if(world.rank()%2==1)
+    {
+      int left=world.rank()-1;
+      mpi::content c = mpi::get_content(walkers[1]);
+      reqs[0]=world.irecv(left,911,c);
+    }
+    else
+    {
+      int right=world.rank()+1;
+      mpi::content c = mpi::get_content(walkers[0]);
+      reqs[0]=world.isend(right,911,c);
+    }
+    mpi::wait_any(reqs,reqs+1);
 
     fout << "Properties " << endl;
     fout << walkers[0].Properties << endl;
