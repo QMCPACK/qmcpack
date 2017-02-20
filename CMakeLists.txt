@@ -636,6 +636,8 @@ ENDIF(HDF5_FOUND)
 
 #make sure we can find boost if it's not in /usr
 set(Boost_NO_BOOST_CMAKE on)
+set(BOOST_ROOT ${qmcpack_SOURCE_DIR}/external_codes/boost_1_60_0)
+
 find_package(Boost REQUIRED)
 IF(Boost_FOUND)
   SET(HAVE_LIBBOOST 1)
