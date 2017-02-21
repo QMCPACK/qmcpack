@@ -38,8 +38,8 @@ a large enough supercell, the runs scale cubically in cost with the
 "electrons per spin".
 
 Two sets of wavefunction are tested: splined orbitals with a one and
-two body jastrow functions, and a more complex form with an additional
-three body jastrow function. The jastrows are the same for each run
+two body Jastrow functions, and a more complex form with an additional
+three body Jastrow function. The Jastrows are the same for each run
 and are not reoptimized, as might be done for research.
 
 On early 2017 era hardware and QMCPACK code, it is very likely that
@@ -83,7 +83,7 @@ The data files should be placed in a directory labeled NiO.
 A key result that can be extracted from the benchmarks is a throughput
 metric, or the "time to move one walker", as measured on a per step
 basis.  One can also compute the "walkers moved per second per node",
-factoring the hardware availability (threads, cores, GPUs).
+a throughput metric factoring the hardware availability (threads, cores, GPUs).
 
 Higher throughput measures are better. Note however that the  metric
 does not factor the equilibration period in the Monte Carlo or
@@ -130,7 +130,7 @@ their speed.
    d) Customize the mpirun based on the job dispatcher on your system
       and pick the MPI/THREADS as well as other controls you would like
       to add.
-      
+
 4) Customize scripts
 
    The files submit_cpu_cetus.sh and submit_gpu_cooley.sh are example
@@ -141,8 +141,8 @@ their speed.
    These scripts create individual folders for each benchmark run
    and submit it to the job queue.
    
-   ATTENTION: the GPU run has a default 32 walkers per MPI. You may
-   adjust it in the run_gpu.sh based on your hardware capability.
+   ATTENTION: the GPU run has a default 32 walkers per MPI rank. You may
+   adjust it in the submit_gpu_cooley.sh based on your hardware capability.
    Generally, more walkers leads to higher performance.
    
    *If your system does not have a job queue, use "subjob=sh" in the script.
