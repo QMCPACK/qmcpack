@@ -29,7 +29,7 @@
 import os
 from copy import deepcopy
 from random import randint
-from numpy import array,floor,empty,dot,diag,sqrt,pi,mgrid,exp,append,arange,ceil,cross,cos,sin,identity,ndarray,atleast_2d,around,ones,zeros,logical_not,flipud
+from numpy import array,floor,empty,dot,diag,sqrt,pi,mgrid,exp,append,arange,ceil,cross,cos,sin,identity,ndarray,atleast_2d,around,ones,zeros,logical_not,flipud,uint64
 from numpy.linalg import inv,det,norm
 from types import NoneType
 from unit_converter import convert
@@ -2708,12 +2708,13 @@ class Structure(Sobj):
             #end if
             ntpoints = int(around(ntpoints))
             # round up to larger tiling
-            t = array(ceil(t),dtype=int)
+            t = array(ceil(t),dtype=int)+1
             # get the tiled points
             tpoints = self.tile_points(points,axes,tilemat,t)
             # remove any that are not unique
             taxes = dot(tilemat,axes)
-            tpoints,weights,pmap = self.unique_points(tpoints,taxes)
+            #tpoints,weights,pmap = self.unique_points(tpoints,taxes)
+            tpoints,weights,pmap = self.unique_points_fast(tpoints,taxes)
             if len(tpoints)!=ntpoints:
                 self.error('tiling by non-integer tiling vector failed\npoints expected after tiling: {0}\npoints resulted from tiling: {1}'.format(ntpoints,len(tpoints)))
             #end if
@@ -2980,6 +2981,59 @@ class Structure(Sobj):
         #end if
         return points,weights,pmap
     #end def unique_points
+
+
+    def unique_points_fast(self,points,axes,weights=None,tol=1e-10):
+        # use an O(N) cell table instead of an O(N^2) neighbor table
+        pmap = obj()
+        points = array(points)
+        axes   = array(axes)
+        npoints = len(points)
+        if npoints>0:
+            if weights is None:
+                weights = ones((npoints,),dtype=int)
+            else:
+                weights = array(weights)
+            #end if
+            keep = ones((npoints,),dtype=bool)
+            # place all the points in the box, converted to unit coords
+            upoints = array(points)
+            axinv = inv(axes)
+            for i in range(len(points)):
+                u = dot(points[i],axinv)
+                upoints[i] = u-floor(u)
+            #end for
+            # create an integer array of cell indices
+            axmax = -1.0
+            for a in axes:
+                axmax = max(axmax,norm(a))
+            #end for
+            #   make an integer space corresponding to 1e-7 self.units spatial resolution
+            cmax = uint64(1e7)*uint64(ceil(axmax)) 
+            ipoints = array(around(cmax*upoints),dtype=uint64)
+            ipoints[ipoints==cmax] = 0 # make the outer boundary the same as the inner boundary
+            # load the cell table with point indices
+            #   points in the same cell are identical
+            ctable = obj()
+            i=0
+            for ip in ipoints:
+                ip = tuple(ip)
+                if ip not in ctable:
+                    ctable[ip] = i
+                    pmap[i] = [i]
+                else:
+                    j = ctable[ip]
+                    keep[i] = False
+                    weights[j] += weights[i]
+                    pmap[j].append(i)
+                #end if
+                i+=1
+            #end for
+            points  = points[keep]
+            weights = weights[keep]
+        #end if
+        return points,weights,pmap
+    #end def unique_points_fast
 
 
     def unique_positions(self,tol=1e-10,folded=False):
