@@ -153,7 +153,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
         }
         else
         {
-          app_log() << "Supercell ion " << i << " at " << SourcePtcl->R[j]
+          app_error() << "Supercell ion " << i << " at " << SourcePtcl->R[j]
                     << " was found twice in the primitive cell as ion "
                     << Super2Prim[i] << " and " << j << std::endl;
           abort();
@@ -162,7 +162,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
     }
     if(Super2Prim[i]<0)
     {
-      app_log() << "Supercell ion " << i << " not found in the primitive cell" << std::endl;
+      app_error() << "Supercell ion " << i << " not found in the primitive cell" << std::endl;
       abort();
     }
     else
@@ -174,7 +174,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
   for(int i=0; i<IonPos.size(); i++)
     if(prim_atom_counts[i]!=tiling_size)
     {
-      app_log() << "Primitive cell ion " << i << " was found only " << prim_atom_counts[i]
+      app_error() << "Primitive cell ion " << i << " was found only " << prim_atom_counts[i]
                 << " times in the supercell rather than " << tiling_size << std::endl;
       abort();
     }
