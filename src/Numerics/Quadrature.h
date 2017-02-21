@@ -16,6 +16,7 @@
 #define QMCPLUSPLUS_QUADRATURE_H
 
 #include "QMCHamiltonians/Ylm.h"
+#include "QMCWaveFunctions/lcao/SoaSphericalTensor.h"
 
 namespace qmcplusplus
 {
@@ -242,7 +243,10 @@ struct Quadrature3D
     }
     assert (std::abs(wSum - 1.0) < delta);
     // Check the quadrature rule
+    // using complex spherical harmonics
     CheckQuadratureRule(lexact);
+    // using real spherical harmonics
+    CheckQuadratureRuleReal(lexact);
   }
 
   void CheckQuadratureRule(int lexact)
@@ -272,6 +276,35 @@ struct Quadrature3D
             }
 //   	    fprintf (stderr, "(l1,m1,l2m,m2) = (%2d,%2d,%2d,%2d)  sum = (%20.16f %20.16f)\n",
 //   	     l1, m1, l2, m2, real(sum), imag(sum));
+          }
+  }
+
+  void CheckQuadratureRuleReal(int lexact)
+  {
+    std::vector<PosType> &grid = xyz_m;
+    std::vector<RealType> &w = weight_m;
+    SoaSphericalTensor<RealType> Ylm(lexact);
+    const RealType* restrict Ylm_v=Ylm[0];
+    for (int l1=0; l1<=lexact; l1++)
+      for (int l2=0; l2 <= (lexact-l1); l2++)
+        for (int m1=-l1; m1<=l1; m1++)
+          for (int m2=-l2; m2<=l2; m2++)
+          {
+            std::complex<mRealType> sum(0.0, 0.0);
+            for (int k=0; k<grid.size(); k++)
+            {
+              Ylm.evaluateV(grid[k][0],grid[k][1],grid[k][2]);
+              RealType v1 = Ylm_v[Ylm.index(l1, m1)];
+              RealType v2 = Ylm_v[Ylm.index(l2, m2)];
+              sum += 4.0*M_PI*w[k] * v1*v2;
+            }
+            if ((l1==l2) && (m1==m2))
+              sum -= 1.0;
+            if (std::abs(sum) > 5*std::numeric_limits<float>::epsilon())
+            {
+              app_error() << "Broken real spherical quadrature for " << grid.size() << "-point rule.\n" << std::endl;
+              APP_ABORT("Give up");
+            }
           }
   }
 };

@@ -202,11 +202,6 @@ void ECPComponentBuilder::SetQuadratureRule(int rule)
   pp_nonloc->sgridweight_m=myRule.weight_m;
   // Allocate storage for wave function ratios
   pp_nonloc->resize_warrays(myRule.nk,NumNonLocal,Lmax);
-  for(int mrule=1; mrule<8; mrule++)
-  {
-    std::cout << "debug rule " << mrule << std::endl;
-    Quadrature3D<RealType> myRule(mrule);
-  }
 }
 
 } // namespace qmcPlusPlus
