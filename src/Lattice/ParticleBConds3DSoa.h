@@ -26,6 +26,7 @@ namespace qmcplusplus
 template<class T>
 struct DTD_BConds<T,3,SUPERCELL_OPEN+SOA_OFFSET>
 {
+
   /** constructor: doing nothing */
   inline DTD_BConds(const CrystalLattice<T,3>& lat) {}
 
@@ -42,9 +43,9 @@ struct DTD_BConds<T,3,SUPERCELL_OPEN+SOA_OFFSET>
     T* restrict dx=temp_dr.data(0); ASSUME_ALIGNED(dx);
     T* restrict dy=temp_dr.data(1); ASSUME_ALIGNED(dy);
     T* restrict dz=temp_dr.data(2); ASSUME_ALIGNED(dz);
-#if (defined(__IBMCPP__)) && ( __IBMCPP__ <= 1210 )
-#else
-    #pragma omp simd
+    CONSTEXPR size_t simdLength=QMC_CLINE/sizeof(T);
+#if defined(__INTEL_COMPILER)
+    #pragma omp simd simdlen(simdLength)
 #endif
     for(int iat=first; iat<last; ++iat)
     {
@@ -75,6 +76,7 @@ struct DTD_BConds<T,3,PPPO+SOA_OFFSET>
   void computeDistances(const PT& pos, const RSoA& R0, 
       T* restrict temp_r, RSoA& temp_dr, int first, int last, int flip_ind=0)
   {
+
     const T x0=pos[0];
     const T y0=pos[1];
     const T z0=pos[2];
@@ -84,9 +86,9 @@ struct DTD_BConds<T,3,PPPO+SOA_OFFSET>
     T* restrict dx=temp_dr.data(0); ASSUME_ALIGNED(dx);
     T* restrict dy=temp_dr.data(1); ASSUME_ALIGNED(dy);
     T* restrict dz=temp_dr.data(2); ASSUME_ALIGNED(dz);
-#if (defined(__IBMCPP__)) && ( __IBMCPP__ <= 1210 )
-#else
-    #pragma omp simd
+    CONSTEXPR size_t simdLength=QMC_CLINE/sizeof(T);
+#if defined(__INTEL_COMPILER) && (__INTEL_COMPILER > 1500)
+    #pragma omp simd simdlen(simdLength)
 #endif
     for(int iat=first; iat<last; ++iat)
     {
@@ -135,9 +137,9 @@ struct DTD_BConds<T,3,PPPS+SOA_OFFSET>
     T* restrict dy=temp_dr.data(1); ASSUME_ALIGNED(dy);
     T* restrict dz=temp_dr.data(2); ASSUME_ALIGNED(dz);
 
-#if (defined(__IBMCPP__)) && ( __IBMCPP__ <= 1210 )
-#else
-    #pragma omp simd
+    CONSTEXPR size_t simdLength=QMC_CLINE/sizeof(T);
+#if defined(__INTEL_COMPILER) && (__INTEL_COMPILER > 1500)
+    #pragma omp simd simdlen(simdLength)
 #endif
     for(int iat=first; iat<last; ++iat)
     {
@@ -232,14 +234,14 @@ struct DTD_BConds<T,3,PPPG+SOA_OFFSET>
     const T* restrict celly=corners.data(1); ASSUME_ALIGNED(celly);
     const T* restrict cellz=corners.data(2); ASSUME_ALIGNED(cellz);
 
-#if (defined(__IBMCPP__)) && ( __IBMCPP__ <= 1210 )
-#else
-    #pragma omp simd
+    CONSTEXPR size_t simdLength=QMC_CLINE/sizeof(T);
+    CONSTEXPR T minusone(-1);
+    CONSTEXPR T one(1);
+#if defined(__INTEL_COMPILER) && (__INTEL_COMPILER > 1500)
+    #pragma omp simd simdlen(simdLength)
 #endif
     for(int iat=first; iat<last; ++iat)
     {
-      CONSTEXPR T minusone(-1);
-      CONSTEXPR T one(1);
       const T flip=iat<flip_ind?one:minusone;
       const T displ_0 =(px[iat]-x0)*flip;
       const T displ_1 =(py[iat]-y0)*flip;
@@ -335,9 +337,10 @@ struct DTD_BConds<T,3,PPNO+SOA_OFFSET>
     T* restrict dx=temp_dr.data(0); ASSUME_ALIGNED(dx);
     T* restrict dy=temp_dr.data(1); ASSUME_ALIGNED(dy);
     T* restrict dz=temp_dr.data(2); ASSUME_ALIGNED(dz);
-#if (defined(__IBMCPP__)) && ( __IBMCPP__ <= 1210 )
-#else
-    #pragma omp simd
+
+    CONSTEXPR size_t simdLength=QMC_CLINE/sizeof(T);
+#if defined(__INTEL_COMPILER) && (__INTEL_COMPILER > 1500)
+    #pragma omp simd simdlen(simdLength)
 #endif
     for(int iat=first; iat<last; ++iat)
     {
@@ -380,9 +383,9 @@ struct DTD_BConds<T,3,PPNS+SOA_OFFSET>
     T* restrict dy=temp_dr.data(1); ASSUME_ALIGNED(dy);
     T* restrict dz=temp_dr.data(2); ASSUME_ALIGNED(dz);
 
-#if (defined(__IBMCPP__)) && ( __IBMCPP__ <= 1210 )
-#else
-    #pragma omp simd
+    CONSTEXPR size_t simdLength=QMC_CLINE/sizeof(T);
+#if defined(__INTEL_COMPILER) && (__INTEL_COMPILER > 1500)
+    #pragma omp simd simdlen(simdLength)
 #endif
     for(int iat=first; iat<last; ++iat)
     {
@@ -432,9 +435,9 @@ struct DTD_BConds<T,3,SUPERCELL_WIRE+SOA_OFFSET>
     T* restrict dx=temp_dr.data(0); ASSUME_ALIGNED(dx);
     T* restrict dy=temp_dr.data(1); ASSUME_ALIGNED(dy);
     T* restrict dz=temp_dr.data(2); ASSUME_ALIGNED(dz);
-#if (defined(__IBMCPP__)) && ( __IBMCPP__ <= 1210 )
-#else
-    #pragma omp simd
+    CONSTEXPR size_t simdLength=QMC_CLINE/sizeof(T);
+#if defined(__INTEL_COMPILER) && (__INTEL_COMPILER > 1500)
+    #pragma omp simd simdlen(simdLength)
 #endif
     for(int iat=first; iat<last; ++iat)
     {
