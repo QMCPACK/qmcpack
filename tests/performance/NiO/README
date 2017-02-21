@@ -173,5 +173,12 @@ their speed.
    time per run section, e.g. all blocks of VMC with drift, while the
    fine grained timing information is printed at the end.
 
+7. Final words
+Keep in mind that mixed precision build carries a bit more computation than the full precision build to ensure numerical accuracy.
+One significant overhead is recomputing the inverse of the slater determinants at every block.
+It can be diluted by setting larger steps or substeps in the driver (VMC/DMC) block
+or completely disabled by adding the following line in each block.
+<parameter name="blocks_between_recompute"> 0 </parameter>
+
 Please ask in QMCPACK's google group if you have any questions.
 https://groups.google.com/forum/#!forum/qmcpack
