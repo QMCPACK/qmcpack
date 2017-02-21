@@ -73,6 +73,11 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
             SuperLattice(1,0), SuperLattice(1,1), SuperLattice(1,2),
             SuperLattice(2,0), SuperLattice(2,1), SuperLattice(2,2));
   CheckLattice();
+  // setup primitive cell and supercell
+  PrimCell.set(Lattice);
+  SuperCell.set(SuperLattice);
+  GGt=dot(transpose(PrimCell.G), PrimCell.G);
+
   app_log() << buff;
   for (int i=0; i<3; i++)
     for (int j=0; j<3; j++)
@@ -129,6 +134,50 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
   h_IonPos.read   (H5FileID, "/atoms/positions");
   for (int i=0; i<IonTypes.size(); i++)
     app_log() << "Atom type(" << i << ") = " << IonTypes(i) << std::endl;
+  // construct Super2Prim mapping.
+  Super2Prim.resize(SourcePtcl->R.size(),-1);
+  std::vector<int> prim_atom_counts;
+  prim_atom_counts.resize(IonPos.size(),0);
+  for (int i=0; i<SourcePtcl->R.size(); i++)
+  {
+    PosType ref=PrimCell.toUnit_floor(SourcePtcl->R[i]);
+    for (int j=0; j<IonPos.size(); j++)
+    {
+      PosType dr=PrimCell.toUnit_floor(IonPos[j])-ref;
+      if (dot(dr,dr)<MatchingTol)
+      {
+        if(Super2Prim[i]<0)
+        {
+          Super2Prim[i]=j;
+          prim_atom_counts[j]++;
+        }
+        else
+        {
+          app_log() << "Supercell ion " << i << " at " << SourcePtcl->R[j]
+                    << " was found twice in the primitive cell as ion "
+                    << Super2Prim[i] << " and " << j << std::endl;
+          abort();
+        }
+      }
+    }
+    if(Super2Prim[i]<0)
+    {
+      app_log() << "Supercell ion " << i << " not found in the primitive cell" << std::endl;
+      abort();
+    }
+    else
+    {
+      //app_log() << "Supercell ion " << i << " mapped to primitive cell ion " << Super2Prim[i] << std::endl;
+    }
+  }
+  const int tiling_size=det(TileMatrix);
+  for(int i=0; i<IonPos.size(); i++)
+    if(prim_atom_counts[i]!=tiling_size)
+    {
+      app_log() << "Primitive cell ion " << i << " was found only " << prim_atom_counts[i]
+                << " times in the supercell rather than " << tiling_size << std::endl;
+      abort();
+    }
   /////////////////////////////////////
   // Read atomic orbital information //
   /////////////////////////////////////
@@ -166,6 +215,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
     orb.set_cutoff (cutoff_radius);
     orb.set_spline (spline_radius, spline_points);
     orb.set_polynomial (polynomial_radius, polynomial_order);
+    orb.Lattice = Lattice;
   }
   ///////////////////////////
   // Read the twist angles //

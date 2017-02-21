@@ -228,6 +228,9 @@ public:
 
   Vector<int> IonTypes;
   Vector<TinyVector<double,OHMMS_DIM> > IonPos;
+  // mapping the ions in the supercell to the primitive cell
+  std::vector<int> Super2Prim;
+
   /////////////////////////////
   // Twist angle information //
   /////////////////////////////

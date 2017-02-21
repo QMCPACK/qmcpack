@@ -244,18 +244,13 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     app_log() <<  "TIMER  EinsplineSetBuilder::BroadcastOrbitalInfo " << mytimer.elapsed() << std::endl;
     app_log().flush();
 
-    // Now, analyze the k-point mesh to figure out the what k-points  are needed                                                    //
-    PrimCell.set(Lattice);
-    SuperCell.set(SuperLattice);
-    GGt=dot(transpose(PrimCell.G), PrimCell.G);
-
-    for (int iat=0; iat<AtomicOrbitals.size(); iat++)
-      AtomicOrbitals[iat].Lattice = Lattice;
     // Copy supercell into the ParticleSets
     // app_log() << "Overwriting XML lattice with that from the ESHDF file.\n";
     // PtclPoolType::iterator piter;
     // for(piter = ParticleSets.begin(); piter != ParticleSets.end(); piter++)
     //   piter->second->Lattice.copy(SuperCell);
+
+    // Now, analyze the k-point mesh to figure out the what k-points  are needed                                                    //
     TwistNum = TwistNum_inp;
     AnalyzeTwists2();
 
