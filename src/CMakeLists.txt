@@ -260,7 +260,6 @@ ENDIF(HAVE_OOMPI)
   #  ADD_LIBRARY(qmcbase SHARED ${PARTICLE}  ${PARTICLEIO})
   #ENDIF(QMC_BUILD_STATIC)
   #SUBDIRS(einspline)
-  SUBDIRS(boost)
 
   if(QMC_BUILD_LEVEL GREATER 4)
 
@@ -268,8 +267,6 @@ ENDIF(HAVE_OOMPI)
     SUBDIRS(miniapps)
 
   else() #{{{
-
-    SUBDIRS(miniapps)
 
   #############################
   # Creating ADIOS
