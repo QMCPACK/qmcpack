@@ -131,12 +131,12 @@ their speed.
       and pick the MPI/THREADS as well as other controls you would like
       to add.
       
-4) Customize run scripts
+4) Customize scripts
 
    The files submit_cpu_cetus.sh and submit_gpu_cooley.sh are example
-   job submission scripts that provide a basic scan with a single run
-   for each system size. We suggest making a customized version for
-   your benchmark machines.
+   scripts that provide a basic scan with a single run for each system
+   size by submitting a series of jobs. We suggest making a customized
+   versions for your benchmark machines.
    
    These scripts create individual folders for each benchmark run
    and submit it to the job queue.
@@ -173,12 +173,20 @@ their speed.
    time per run section, e.g. all blocks of VMC with drift, while the
    fine grained timing information is printed at the end.
 
-7. Final words
-Keep in mind that mixed precision build carries a bit more computation than the full precision build to ensure numerical accuracy.
-One significant overhead is recomputing the inverse of the slater determinants at every block.
-It can be diluted by setting larger steps or substeps in the driver (VMC/DMC) block
-or completely disabled by adding the following line in each block.
-<parameter name="blocks_between_recompute"> 0 </parameter>
+7. Additional considerations
 
-Please ask in QMCPACK's google group if you have any questions.
+When testing the mixed precision build, not that it performs more
+computation than the full precision build to ensure numerical
+accuracy.  One significant overhead is the recomputation of the
+inverse of the Slater determinants at every block.  It can be diluted
+by setting larger steps or substeps in the driver (VMC/DMC) block of
+the XML input file or completely disabled by adding the following line
+in each block.
+<parameter name="blocks_between_recompute">0</parameter>
+
+These settings will be revisited once performance data is obtained and
+analysed for a wide variety of platforms, with the goal of short but
+representative runs.
+
+Please ask in QMCPACK's Google group if you have any questions.
 https://groups.google.com/forum/#!forum/qmcpack
