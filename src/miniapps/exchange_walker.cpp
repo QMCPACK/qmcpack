@@ -9,8 +9,8 @@
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-/** @file j2debug.cpp
- * @brief Debugging J2OribitalSoA 
+/** @file exchange_walker.cpp
+ * @brief Test boost::mpi 
  */
 #include <Configuration.h>
 #include <Particle/ParticleSet.h>
@@ -70,6 +70,8 @@ int main(int argc, char** argv)
 
   mpi::environment env(mpi::threading::funneled);
   mpi::communicator world;
+  //create two MPI groups
+  mpi::communicator rows=world.split(world.rank()/2);
 
   OhmmsInfo("walker");
 
@@ -165,7 +167,7 @@ int main(int argc, char** argv)
     for(size_t i=0; i<nw; ++i)
     {
       walkers[i].resize(nptcl);
-      walkers[i].ID=i;
+      walkers[i].ID=world.rank();
       walkers[i].R=0;
       walkers[i].Properties=i*world.size()+world.rank();
     }
@@ -176,27 +178,31 @@ int main(int argc, char** argv)
     sprintf(fname,"debug.p%d",world.rank());
     ofstream fout(fname);
 
+    //bcast a string
     string message("dummy");
-    if(world.rank()==0) message="exchange_walker";
+    if(world.rank()==0) 
+    {
+      message="exchange_walker";
+      walkers[0].R=els.R;
+    }
     broadcast(world, message, 0);
 
     fout << message << endl << endl;
+    fout << world.rank() << " " << rows.rank() << " " << rows.size() << endl;
 
     //send the skeleton
     broadcast(world, mpi::skeleton(walkers[0]), 0);
 
     mpi::request reqs[2];
-    if(world.rank()%2==1)
+    if(rows.rank()==1)
     {
-      int left=world.rank()-1;
       mpi::content c = mpi::get_content(walkers[1]);
-      reqs[0]=world.irecv(left,911,c);
+      reqs[0]=rows.irecv(0,911,c);
     }
-    else
+    else if(rows.rank()==0)
     {
-      int right=world.rank()+1;
       mpi::content c = mpi::get_content(walkers[0]);
-      reqs[0]=world.isend(right,911,c);
+      reqs[0]=rows.isend(1,911,c);
     }
     mpi::wait_any(reqs,reqs+1);
 
