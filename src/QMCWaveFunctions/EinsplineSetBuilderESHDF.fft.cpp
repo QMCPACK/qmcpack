@@ -178,6 +178,32 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
                 << " times in the supercell rather than " << tiling_size << std::endl;
       abort();
     }
+  // construct primitive cell ion particle set
+  PrimSourcePtcl.Lattice.set(Lattice);
+  PrimSourcePtcl.create(IonPos.size());
+  PrimSourcePtcl.R.InUnit=0;
+  for (int i=0; i<IonPos.size(); i++)
+    PrimSourcePtcl.R[i]=IonPos[i];
+  PrimSourcePtcl.mySpecies=SourcePtcl->mySpecies;
+  int Zind=PrimSourcePtcl.mySpecies.getAttribute("atomicnumber");
+  // set GroupID for each ion
+  for (int i=0; i<PrimSourcePtcl.GroupID.size(); i++)
+  {
+    for (int j=0; j<Super2Prim.size(); j++)
+      if (Super2Prim[j]==i)
+      {
+        if(PrimSourcePtcl.mySpecies(Zind,SourcePtcl->GroupID[i])==IonTypes(i))
+          PrimSourcePtcl.GroupID[i] = SourcePtcl->GroupID[j];
+        else
+        {
+          app_error() << "Primitive cell ion " << i << " vs supercell ion " << j << " atomic number not matching: "
+                      << IonTypes(i) << " vs " << PrimSourcePtcl.mySpecies(Zind,SourcePtcl->GroupID[i]) << std::endl;
+          abort();
+        }
+        continue;
+      }
+    //app_log() << "debug atomic number " << PrimSourcePtcl.mySpecies(Zind,PrimSourcePtcl.GroupID[i]) << std::endl;
+  }
   /////////////////////////////////////
   // Read atomic orbital information //
   /////////////////////////////////////

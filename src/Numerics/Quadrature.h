@@ -290,7 +290,7 @@ struct Quadrature3D
         for (int m1=-l1; m1<=l1; m1++)
           for (int m2=-l2; m2<=l2; m2++)
           {
-            mRealType> sum(0.0);
+            mRealType sum(0.0);
             for (int k=0; k<grid.size(); k++)
             {
               Ylm.evaluateV(grid[k][0],grid[k][1],grid[k][2]);

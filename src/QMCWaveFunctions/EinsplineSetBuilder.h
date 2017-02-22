@@ -134,6 +134,8 @@ public:
   ParticleSet &TargetPtcl;
   ///ionic system
   ParticleSet *SourcePtcl;
+  ///primitive cell ionic system
+  ParticleSet PrimSourcePtcl;
   ///index for the ion-el distance table
   int myTableIndex;
 
