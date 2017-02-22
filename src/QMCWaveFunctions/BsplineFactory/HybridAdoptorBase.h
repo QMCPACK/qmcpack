@@ -44,7 +44,7 @@ struct AtomicOrbitalSoA
   vContainer_type localV, localG, localL;
 
   AtomicOrbitalSoA(int Lmax, int Nb):
-  Ylm(Lmax), NumBands(nb), MultiSpline(nullptr), lmax(Lmax)
+  Ylm(Lmax), NumBands(Nb), MultiSpline(nullptr), lmax(Lmax),
   lm_tot((Lmax+1)*(Lmax+1)), Npad(getAlignedSize<ST>(Nb))
   {
     localV.resize(Npad);
@@ -62,7 +62,7 @@ struct AtomicOrbitalSoA
 
   inline void set_spline(AtomicSingleSplineType* spline, int ispline)
   {
-    einspline::set(MultiSpline, spine, ispline, &Npad);
+    einspline::set(MultiSpline, spline, ispline, &Npad);
   }
 
   bool read_splines(hdf_archive& h5f)

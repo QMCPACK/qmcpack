@@ -61,7 +61,7 @@ struct SoaSphericalTensor
   inline void evaluateV(T x, T y, T z, T* Ylm) const
   {
     evaluate_bare(x,y,z,Ylm);
-    for (int i=0, nl=Ylm.size(); i<nl; i++)
+    for (int i=0, nl=cYlm.size(); i<nl; i++)
       Ylm[i]*= NormFactor[i];
   }
 
@@ -274,6 +274,7 @@ inline void SoaSphericalTensor<T>::evaluateVGL(T x, T y, T z)
   T* restrict Ylm=cYlm.data(0);
   evaluate_bare(x,y,z,Ylm);
 
+  CONSTEXPR T czero(0);
   CONSTEXPR T ahalf(0.5);
   T* restrict gYlmX=cYlm.data(1);
   T* restrict gYlmY=cYlm.data(2);

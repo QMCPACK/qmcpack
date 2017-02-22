@@ -54,7 +54,7 @@ namespace qmcplusplus
   #if defined(QMC_ENABLE_SOA_DET)
     if(numOrbs>1)
       if(hybrid_rep)
-        aReader= new SplineAdoptorReader<HybridCplxSoA<SplineC2RSoA<double,RealType> > >(e);
+        aReader= new SplineHybridAdoptorReader<HybridCplxSoA<SplineC2RSoA<double,RealType> > >(e);
       else
         aReader= new SplineAdoptorReader<SplineC2RSoA<double,RealType> >(e);
     else

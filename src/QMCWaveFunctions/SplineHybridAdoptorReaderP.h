@@ -27,8 +27,47 @@
 #define QMCPLUSPLUS_EINSPLINE_HYBRID_ADOPTOR_READERP_H
 #include <mpi/collectives.h>
 #include <mpi/point2point.h>
+#include <Numerics/Quadrature.h>
+#include <QMCWaveFunctions/BsplineFactory/HybridAdoptorBase.h>
+
 namespace qmcplusplus
 {
+
+template<typename ST, typename LT>
+struct SinglePWOrbital
+{
+  typedef TinyVector<ST,3> PosType;
+
+  const LT& Lattice;
+  const Vector<std::complex<double> >& cG;
+  const std::vector<TinyVector<int,3> >& gvecs;
+  std::vector<PosType>  gvecs_cart; //Cartesian.
+  const size_t NumPlaneWaves;
+
+  SinglePWOrbital(const Vector<std::complex<double> >& cG_in, const std::vector<TinyVector<int,3> >& gvecs_in, const LT& Lattice_in):
+  cG(cG_in), gvecs(gvecs_in), Lattice(Lattice_in), NumPlaneWaves(gvecs.size())
+  {
+    gvecs_cart.resize(NumPlaneWaves);
+    for(size_t i=0; i<NumPlaneWaves; i++)
+      gvecs_cart[i]=Lattice.k_cart(gvecs[i]);
+  }
+
+  std::complex<ST> evaluate(const PosType& pos)
+  {
+    std::complex<ST> val(0.0,0.0);
+    for(size_t ig=0; ig<NumPlaneWaves; ig++)
+    {
+      ST s,c;
+      sincos(dot(gvecs_cart[ig],pos),&s,&c);
+      std::complex<ST> pw0(c,s);
+      val+=cG[ig]*pw0;
+    }
+    return val;
+  }
+
+};
+
+
 /** General SplineHybridAdoptorReader to handle any unitcell
  */
 template<typename SA>
@@ -304,6 +343,74 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
     }
   }
 
+  inline int checkout_parameter_index(SpeciesSet& mySpecies, const std::string& name)
+  {
+    const int index=mySpecies.getAttribute(name);
+    if(index==mySpecies.TotalNum)
+    {
+      app_error() << "Parameter " << name << " need for each atom species to use hybrid representation." << std::endl;
+      abort();
+    }
+    return index;
+  }
+
+  inline void create_atomic_centers(Vector<std::complex<double> >& cG, int ti, int iorb)
+  {
+    //typedef TinyVector<double,3> mPosType;
+    typedef typename EinsplineSetBuilder::UnitCellType UnitCellType;
+
+    ParticleSet& PrimSourcePtcl=mybuilder->PrimSourcePtcl;
+    SpeciesSet& mySpecies=PrimSourcePtcl.mySpecies;
+
+    int cutoff_radius_ind=checkout_parameter_index(mySpecies,"cutoff_radius");
+    int spline_radius_ind=checkout_parameter_index(mySpecies,"spline_radius");
+    int spline_npoints_ind=checkout_parameter_index(mySpecies,"spline_npoints");
+    int lmax_ind=checkout_parameter_index(mySpecies,"lmax");
+    Quadrature3D<double> quad(7);
+    SinglePWOrbital<double, UnitCellType> one_band(cG, mybuilder->Gvecs[0], PrimSourcePtcl.Lattice);
+
+    #pragma omp parallel for
+    for(int center_idx=0; center_idx<PrimSourcePtcl.R.size(); center_idx++)
+    {
+      const int my_GroupID = PrimSourcePtcl.GroupID[center_idx];
+      double cutoff_radius = mySpecies(cutoff_radius_ind, my_GroupID);
+      double spline_radius = mySpecies(spline_radius_ind, my_GroupID);
+      int   spline_npoints = mySpecies(spline_npoints_ind, my_GroupID);
+      int             lmax = mySpecies(lmax_ind, my_GroupID);
+      double delta = spline_radius/static_cast<double>(spline_npoints);
+
+      SoaSphericalTensor<double> Ylm(lmax);
+      Array<double,2> Ylm_vals(quad.nk,Ylm.size());
+      for(int j=0; j<quad.nk; j++)
+        Ylm.evaluateV(quad.xyz_m[j][0], quad.xyz_m[j][1], quad.xyz_m[j][2], &Ylm_vals(j,0));
+      // vector splineData_r/i for each grid point
+      for(int lm=0; lm<Ylm.size(); lm++)
+      {
+        std::vector<std::complex<double> > vals;
+        vals.resize(spline_npoints, std::complex<double>(0.0,0.0));
+        for(int ip=0; ip<spline_npoints; ip++)
+        {
+          double r=delta*static_cast<double>(ip);
+          // sum up quadratures
+          for(int j=0; j<quad.nk; j++)
+          {
+            std::complex<double> psi=one_band.evaluate(quad.xyz_m[j]*r+PrimSourcePtcl.R[center_idx]);
+            vals[ip]+=Ylm_vals(j,lm)*psi*quad.weight_m[j];
+          }
+        }
+        app_log() << "debug center " << center_idx << " lm " << lm << std::endl;
+        //for(int ip=0; ip<spline_npoints; ip++)
+        //{
+        //  double r=delta*static_cast<double>(ip);
+        //  app_log() << "debug center " << center_idx << " lm " << lm << " r " << r << " val " << vals[ip].real() << " " << vals[ip].imag() << std::endl;
+        //}
+        //abort();
+      }
+      // fill it in the big table N bands
+      // push into class.
+    }
+  }
+
 
 #if 0
   void initialize_spline_slow(int spin, const BandInfoGroup& bandgroup)
@@ -355,6 +462,8 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       foundit &= h5f.read(cG,s);
       get_psi_g(ti,spin,cur_bands[iorb].BandIndex,cG);//bcast cG
       fft_spline(cG,ti,0);
+      create_atomic_centers(cG,ti,0);
+      app_log() << "debug*************" << std::endl;
       bspline->set_spline(spline_r[0],spline_i[0],cur_bands[iorb].TwistIndex,iorb,0);
     }
     return foundit;

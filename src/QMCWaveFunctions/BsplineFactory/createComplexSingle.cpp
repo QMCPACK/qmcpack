@@ -53,7 +53,7 @@ namespace qmcplusplus
     if(numOrbs>1)
     {
       if(hybrid_rep)
-        aReader= new SplineAdoptorReader<HybridCplxSoA<SplineC2RSoA<float,RealType> > >(e);
+        aReader= new SplineHybridAdoptorReader<HybridCplxSoA<SplineC2RSoA<float,RealType> > >(e);
       else
         aReader= new SplineAdoptorReader<SplineC2RSoA<float,RealType> >(e);
     }
