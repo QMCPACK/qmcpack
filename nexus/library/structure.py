@@ -2708,7 +2708,9 @@ class Structure(Sobj):
             #end if
             ntpoints = int(around(ntpoints))
             # round up to larger tiling
-            t = array(ceil(t),dtype=int)+1
+            #  +1 added for greater cell coverage
+            #  add more if error below is tripped w/ fewer points than expected
+            t = array(ceil(t),dtype=int)+1 
             # get the tiled points
             tpoints = self.tile_points(points,axes,tilemat,t)
             # remove any that are not unique
