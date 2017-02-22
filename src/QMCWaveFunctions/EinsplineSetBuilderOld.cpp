@@ -35,8 +35,8 @@ bool
 EinsplineSetBuilder::ReadOrbitalInfo()
 {
   update_token(__FILE__,__LINE__,"ReadOrbitalInfo");
-  H5FileID = H5Fopen(H5FileName.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
-//     H5FileID = H5Fopen(H5FileName.c_str(),H5F_ACC_RDONLY,H5P_DEFAULT);
+  //  H5FileID = H5Fopen(H5FileName.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
+  H5FileID = H5Fopen(H5FileName.c_str(),H5F_ACC_RDONLY,H5P_DEFAULT);
   if (H5FileID < 0)
   {
     app_error() << "Could not open HDF5 file \"" << H5FileName
