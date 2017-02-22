@@ -35,14 +35,21 @@ bool
 EinsplineSetBuilder::ReadOrbitalInfo()
 {
   update_token(__FILE__,__LINE__,"ReadOrbitalInfo");
-  //  H5FileID = H5Fopen(H5FileName.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
+  // Handle failed file open gracefully by temporarily replacing error handler
+  H5E_auto_t old_efunc;
+  void *old_efunc_data;
+  H5Eget_auto(&old_efunc, &old_efunc_data);
+  H5Eset_auto(NULL, NULL);
   H5FileID = H5Fopen(H5FileName.c_str(),H5F_ACC_RDONLY,H5P_DEFAULT);
+  //  H5FileID = H5Fopen(H5FileName.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
   if (H5FileID < 0)
   {
     app_error() << "Could not open HDF5 file \"" << H5FileName
-                << "\" in EinsplineSetBuilder::createSPOSet.  Aborting.\n";
+                << "\" in EinsplineSetBuilder::ReadOrbitalInfo.  Aborting.\n";
     APP_ABORT("EinsplineSetBuilder::ReadOrbitalInfo");
   }
+  H5Eset_auto(old_efunc,old_efunc_data);
+  
   // Read format
   std::string format;
   HDFAttribIO<std::string> h_format(format);
