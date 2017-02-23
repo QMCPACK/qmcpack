@@ -366,10 +366,10 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
     int spline_radius_ind=checkout_parameter_index(mySpecies,"spline_radius");
     int spline_npoints_ind=checkout_parameter_index(mySpecies,"spline_npoints");
     int lmax_ind=checkout_parameter_index(mySpecies,"lmax");
-    Quadrature3D<double> quad(7);
+    Quadrature3D<double> quad(5);
     SinglePWOrbital<double, UnitCellType> one_band(cG, mybuilder->Gvecs[0], PrimSourcePtcl.Lattice);
 
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for(int center_idx=0; center_idx<PrimSourcePtcl.R.size(); center_idx++)
     {
       const int my_GroupID = PrimSourcePtcl.GroupID[center_idx];
@@ -379,35 +379,71 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       int             lmax = mySpecies(lmax_ind, my_GroupID);
       double delta = spline_radius/static_cast<double>(spline_npoints);
 
+      char fname[20];
+      sprintf(fname, "band_%d_center_%d", iorb, center_idx);
+      FILE *fout  = fopen (fname, "w");
+      fprintf(fout, "# r vals(lm)\n");
+      std::vector<std::vector<std::complex<double> > > all_vals;
+
       SoaSphericalTensor<double> Ylm(lmax);
       Array<double,2> Ylm_vals(quad.nk,Ylm.size());
+      all_vals.resize(spline_npoints);
       for(int j=0; j<quad.nk; j++)
         Ylm.evaluateV(quad.xyz_m[j][0], quad.xyz_m[j][1], quad.xyz_m[j][2], &Ylm_vals(j,0));
       // vector splineData_r/i for each grid point
-      for(int lm=0; lm<Ylm.size(); lm++)
+      #pragma omp parallel for
+      for(int ip=0; ip<spline_npoints; ip++)
       {
-        std::vector<std::complex<double> > vals;
-        vals.resize(spline_npoints, std::complex<double>(0.0,0.0));
+        double r=delta*static_cast<double>(ip);
+        std::vector<std::complex<double> > vals(Ylm.size(), std::complex<double>(0.0,0.0));
+        // sum up quadratures
+        for(int j=0; j<quad.nk; j++)
+        {
+          std::complex<double> psi=one_band.evaluate(quad.xyz_m[j]*r+PrimSourcePtcl.R[center_idx]);
+          for(int lm=0; lm<Ylm.size(); lm++)
+          {
+            vals[lm]+=Ylm_vals(j,lm)*psi*quad.weight_m[j];
+          }
+        }
+        all_vals[ip]=vals;
+        for(int lm=0; lm<Ylm.size(); lm++)
+          all_vals[ip][lm]*=4.0*M_PI;
+      }
+      app_log() << "debug band " << iorb << " center " << center_idx << std::endl;
+
+#if 0
+      app_log() << "checking band " << iorb << " center " << center_idx << " at " << PrimSourcePtcl.R[center_idx] << std::endl;
+      for(int j=1; j<quad.nk; j++)
+      {
+        //print out error in each direction
         for(int ip=0; ip<spline_npoints; ip++)
         {
           double r=delta*static_cast<double>(ip);
-          // sum up quadratures
-          for(int j=0; j<quad.nk; j++)
+          std::complex<double> psi_ref=one_band.evaluate(quad.xyz_m[j]*r+PrimSourcePtcl.R[center_idx]);
+          std::complex<double> psi_sum(0.0,0.0);
+          app_log() << " quad " << j << " r " << r << "  " << real(psi_ref) << "  " << imag(psi_ref);
+          for(int l=0; l<=lmax; l++)
           {
-            std::complex<double> psi=one_band.evaluate(quad.xyz_m[j]*r+PrimSourcePtcl.R[center_idx]);
-            vals[ip]+=Ylm_vals(j,lm)*psi*quad.weight_m[j];
+            for(int lm=l*l; lm<(l+1)*(l+1); lm++)
+              psi_sum+=all_vals[ip][lm]*Ylm_vals(j,lm);
+            app_log() << "  " << real(psi_sum-psi_ref) << "  " << imag(psi_sum-psi_ref);
           }
+          app_log() << std::endl;
         }
-        app_log() << "debug center " << center_idx << " lm " << lm << std::endl;
-        //for(int ip=0; ip<spline_npoints; ip++)
-        //{
-        //  double r=delta*static_cast<double>(ip);
-        //  app_log() << "debug center " << center_idx << " lm " << lm << " r " << r << " val " << vals[ip].real() << " " << vals[ip].imag() << std::endl;
-        //}
-        //abort();
+        if( iorb==0 && center_idx==1 ) abort();
+      }
+#endif
+
+      for(int ip=0; ip<spline_npoints; ip++)
+      {
+        fprintf(fout, "%15.10lf  ", delta*static_cast<double>(ip));
+        for(int lm=0; lm<Ylm.size(); lm++)
+          fprintf(fout, "%15.10lf  %15.10lf  ", all_vals[ip][lm].real(), all_vals[ip][lm].imag());
+        fprintf(fout, "\n");
       }
       // fill it in the big table N bands
       // push into class.
+      fclose(fout);
     }
   }
 
@@ -462,8 +498,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       foundit &= h5f.read(cG,s);
       get_psi_g(ti,spin,cur_bands[iorb].BandIndex,cG);//bcast cG
       fft_spline(cG,ti,0);
-      create_atomic_centers(cG,ti,0);
-      app_log() << "debug*************" << std::endl;
+      create_atomic_centers(cG,ti,iorb);
       bspline->set_spline(spline_r[0],spline_i[0],cur_bands[iorb].TwistIndex,iorb,0);
     }
     return foundit;
