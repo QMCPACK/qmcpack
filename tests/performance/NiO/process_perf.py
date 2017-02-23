@@ -3,6 +3,7 @@ from __future__ import print_function
 import xml.etree.ElementTree as ET
 import os.path
 import sys
+import os
 
 # Read timing information from the .info.xml file and output highlights
 # in a form that can be read by CDash.
@@ -55,12 +56,19 @@ def get_info_file(fname):
     return fname
 
   info_fname = ''
-  tree = ET.parse(fname)
+  try:
+    tree = ET.parse(fname)
+  except IOError as e:
+    print('Assuming xml input file, unable to open:',fname)
+    print('  Error ',e)
+    return None
   node = tree.find('project')
   if node is not None:
     base = node.attrib.get('id')
     if base:
       info_fname = base + '.info.xml'
+  else:
+    print("project node in XML file node found")
   path = os.path.dirname(fname)
   return os.path.join(path, info_fname)
 
@@ -70,8 +78,19 @@ if __name__ == '__main__':
     print('Usage: process_perf.py <*.info.xml file>|<xml input file>')
     sys.exit(1)
 
-  info_fname = get_info_file(sys.argv[1])
+  fname = sys.argv[1]
+  if not os.path.exists(fname):
+    print('Input file not found: ', fname)
+    sys.exit(1)
+
+  info_fname = get_info_file(fname)
   if not info_fname:
-    print('Input file not found: ', sys.argv[1])
+    print('Info file not extracted from: ', fname)
+    sys.exit(1)
+
+  if not os.path.exists(info_fname):
+    print('Info file does not exist: %s'%info_fname)
+    print('  Current directory: %s'%os.getcwd())
+    sys.exit(1)
   vals = get_performance_info(info_fname)
   print_for_cdash(vals)
