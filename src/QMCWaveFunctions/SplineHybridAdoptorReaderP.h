@@ -34,28 +34,50 @@ namespace qmcplusplus
 {
 
 template<typename ST, typename LT>
-struct SinglePWOrbital
+struct Gvectors
 {
   typedef TinyVector<ST,3> PosType;
 
   const LT& Lattice;
-  const Vector<std::complex<double> >& cG;
   const std::vector<TinyVector<int,3> >& gvecs;
-  std::vector<PosType>  gvecs_cart; //Cartesian.
-  const size_t NumPlaneWaves;
+  ST                                     Gmag_max;
+  std::vector<PosType>                   gvecs_cart; //Cartesian.
+  std::vector<aligned_vector<ST> >       YlmG;
+  const size_t NumGvecs;
 
-  SinglePWOrbital(const Vector<std::complex<double> >& cG_in, const std::vector<TinyVector<int,3> >& gvecs_in, const LT& Lattice_in):
-  cG(cG_in), gvecs(gvecs_in), Lattice(Lattice_in), NumPlaneWaves(gvecs.size())
+  Gvectors(const std::vector<TinyVector<int,3> >& gvecs_in, const LT& Lattice_in):
+  gvecs(gvecs_in), Lattice(Lattice_in), NumGvecs(gvecs.size()), Gmag_max(0)
   {
-    gvecs_cart.resize(NumPlaneWaves);
-    for(size_t i=0; i<NumPlaneWaves; i++)
+    gvecs_cart.resize(NumGvecs);
+    for(size_t i=0; i<NumGvecs; i++)
       gvecs_cart[i]=Lattice.k_cart(gvecs[i]);
   }
 
-  std::complex<ST> evaluate(const PosType& pos)
+  void calc_YlmG(const int lmax)
+  {
+    SoaSphericalTensor<double> Ylm(lmax);
+    const int lm_tot=(lmax+1)*(lmax+1);
+    YlmG.resize(NumGvecs);
+    #pragma omp parallel for
+    for(size_t i=0; i<NumGvecs; i++)
+    {
+      PosType Ghat;
+      ST Gmag=std::sqrt(dot(gvecs_cart[i],gvecs_cart[i]));
+      if (Gmag>Gmag_max) Gmag_max=Gmag;
+      if (Gmag==0)
+        Ghat=PosType(0.0,0.0,1.0);
+      else
+        Ghat=gvecs_cart[i]/Gmag;
+      YlmG[i].resize(lm_tot);
+      Ylm.evaluateV(Ghat[0], Ghat[1], Ghat[2], YlmG[i].data());
+    }
+    //std::cout << "Calculated " << NumGvecs << " YlmG!" << std::endl;
+  }
+
+  std::complex<ST> evaluate_psi_r(const Vector<std::complex<double> >& cG, const PosType& pos)
   {
     std::complex<ST> val(0.0,0.0);
-    for(size_t ig=0; ig<NumPlaneWaves; ig++)
+    for(size_t ig=0; ig<NumGvecs; ig++)
     {
       ST s,c;
       sincos(dot(gvecs_cart[ig],pos),&s,&c);
@@ -354,7 +376,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
     return index;
   }
 
-  inline void create_atomic_centers(Vector<std::complex<double> >& cG, int ti, int iorb)
+  inline void create_atomic_centers_Gspace(Vector<std::complex<double> >& cG, int ti, int iorb)
   {
     //typedef TinyVector<double,3> mPosType;
     typedef typename EinsplineSetBuilder::UnitCellType UnitCellType;
@@ -366,8 +388,25 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
     int spline_radius_ind=checkout_parameter_index(mySpecies,"spline_radius");
     int spline_npoints_ind=checkout_parameter_index(mySpecies,"spline_npoints");
     int lmax_ind=checkout_parameter_index(mySpecies,"lmax");
+
+    // prepare Gvecs Ylm(G)
+    Gvectors<double, UnitCellType> Gvecs(mybuilder->Gvecs[0], PrimSourcePtcl.Lattice);
+    Gvecs.calc_YlmG(5);
+  }
+
+  inline void create_atomic_centers_Rspace(Vector<std::complex<double> >& cG, int ti, int iorb)
+  {
+    typedef typename EinsplineSetBuilder::UnitCellType UnitCellType;
+
+    ParticleSet& PrimSourcePtcl=mybuilder->PrimSourcePtcl;
+    SpeciesSet& mySpecies=PrimSourcePtcl.mySpecies;
+
+    int cutoff_radius_ind=checkout_parameter_index(mySpecies,"cutoff_radius");
+    int spline_radius_ind=checkout_parameter_index(mySpecies,"spline_radius");
+    int spline_npoints_ind=checkout_parameter_index(mySpecies,"spline_npoints");
+    int lmax_ind=checkout_parameter_index(mySpecies,"lmax");
     Quadrature3D<double> quad(5);
-    SinglePWOrbital<double, UnitCellType> one_band(cG, mybuilder->Gvecs[0], PrimSourcePtcl.Lattice);
+    Gvectors<double, UnitCellType> Gvecs(mybuilder->Gvecs[0], PrimSourcePtcl.Lattice);
 
     //#pragma omp parallel for
     for(int center_idx=0; center_idx<PrimSourcePtcl.R.size(); center_idx++)
@@ -399,7 +438,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
         // sum up quadratures
         for(int j=0; j<quad.nk; j++)
         {
-          std::complex<double> psi=one_band.evaluate(quad.xyz_m[j]*r+PrimSourcePtcl.R[center_idx]);
+          std::complex<double> psi=Gvecs.evaluate_psi_r(cG, quad.xyz_m[j]*r+PrimSourcePtcl.R[center_idx]);
           for(int lm=0; lm<Ylm.size(); lm++)
           {
             vals[lm]+=Ylm_vals(j,lm)*psi*quad.weight_m[j];
@@ -419,7 +458,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
         for(int ip=0; ip<spline_npoints; ip++)
         {
           double r=delta*static_cast<double>(ip);
-          std::complex<double> psi_ref=one_band.evaluate(quad.xyz_m[j]*r+PrimSourcePtcl.R[center_idx]);
+          std::complex<double> psi_ref=Gvecs.evaluate_psi_r(cG,quad.xyz_m[j]*r+PrimSourcePtcl.R[center_idx]);
           std::complex<double> psi_sum(0.0,0.0);
           app_log() << " quad " << j << " r " << r << "  " << real(psi_ref) << "  " << imag(psi_ref);
           for(int l=0; l<=lmax; l++)
@@ -498,7 +537,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       foundit &= h5f.read(cG,s);
       get_psi_g(ti,spin,cur_bands[iorb].BandIndex,cG);//bcast cG
       fft_spline(cG,ti,0);
-      create_atomic_centers(cG,ti,iorb);
+      create_atomic_centers_Gspace(cG,ti,iorb);
       bspline->set_spline(spline_r[0],spline_i[0],cur_bands[iorb].TwistIndex,iorb,0);
     }
     return foundit;
