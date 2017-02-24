@@ -30,6 +30,11 @@
 #include <Numerics/Quadrature.h>
 #include <QMCWaveFunctions/BsplineFactory/HybridAdoptorBase.h>
 
+namespace GSL
+{
+#include <gsl/gsl_sf_bessel.h>
+}
+
 namespace qmcplusplus
 {
 
@@ -40,38 +45,83 @@ struct Gvectors
 
   const LT& Lattice;
   const std::vector<TinyVector<int,3> >& gvecs;
-  ST                                     Gmag_max;
+  ST                                     gmag_max;
   std::vector<PosType>                   gvecs_cart; //Cartesian.
+  std::vector<ST>                        gmag;
   std::vector<aligned_vector<ST> >       YlmG;
   const size_t NumGvecs;
+  int mylmax;
 
   Gvectors(const std::vector<TinyVector<int,3> >& gvecs_in, const LT& Lattice_in):
-  gvecs(gvecs_in), Lattice(Lattice_in), NumGvecs(gvecs.size()), Gmag_max(0)
+  gvecs(gvecs_in), Lattice(Lattice_in), NumGvecs(gvecs.size()), gmag(0.0), mylmax(-1)
   {
     gvecs_cart.resize(NumGvecs);
+    gmag.resize(NumGvecs);
     for(size_t i=0; i<NumGvecs; i++)
+    {
       gvecs_cart[i]=Lattice.k_cart(gvecs[i]);
+      gmag[i]=std::sqrt(dot(gvecs_cart[i],gvecs_cart[i]));
+      if (gmag[i]>gmag_max) gmag_max=gmag[i];
+    }
   }
 
   void calc_YlmG(const int lmax)
   {
-    SoaSphericalTensor<double> Ylm(lmax);
+    mylmax=lmax;
+    SoaSphericalTensor<ST> Ylm(lmax);
     const int lm_tot=(lmax+1)*(lmax+1);
-    YlmG.resize(NumGvecs);
+    YlmG.resize(lm_tot);
+    for(size_t lm=0; lm<lm_tot; lm++)
+      YlmG[lm].resize(NumGvecs);
     #pragma omp parallel for
-    for(size_t i=0; i<NumGvecs; i++)
+    for(size_t ig=0; ig<NumGvecs; ig++)
     {
       PosType Ghat;
-      ST Gmag=std::sqrt(dot(gvecs_cart[i],gvecs_cart[i]));
-      if (Gmag>Gmag_max) Gmag_max=Gmag;
-      if (Gmag==0)
+      aligned_vector<ST> Ylm_vals(lm_tot);
+      if (gmag[ig]==0)
         Ghat=PosType(0.0,0.0,1.0);
       else
-        Ghat=gvecs_cart[i]/Gmag;
-      YlmG[i].resize(lm_tot);
-      Ylm.evaluateV(Ghat[0], Ghat[1], Ghat[2], YlmG[i].data());
+        Ghat=gvecs_cart[ig]/gmag[ig];
+      Ylm.evaluateV(Ghat[0], Ghat[1], Ghat[2], Ylm_vals.data());
+      for(size_t lm=0; lm<lm_tot; lm++)
+        YlmG[lm][ig]=Ylm_vals[lm];
     }
     //std::cout << "Calculated " << NumGvecs << " YlmG!" << std::endl;
+  }
+
+  void calc_jlm_G(const int lmax, ST& r, std::vector<aligned_vector<ST> >& j_lm_G)
+  {
+    if(lmax>mylmax)
+    {
+      app_error() << "Current Gvectors only has Ylm_G up to lmax = " << mylmax << " but asking for " << lmax << std::endl;
+      abort();
+    }
+
+    // allocate space for j_lm_G[lm][ig]
+    const int lm_tot=(lmax+1)*(lmax+1);
+    j_lm_G.resize(lm_tot);
+    for(size_t lm=0; lm<lm_tot; lm++)
+      j_lm_G[lm].resize(NumGvecs);
+
+    for(size_t ig=0; ig<NumGvecs; ig++)
+    {
+      std::vector<double> jl_vals(lmax+1,0.0);
+      GSL::gsl_sf_bessel_jl_steed_array(lmax, gmag[ig]*r, jl_vals.data());
+      for(size_t l=0; l<=lmax; l++)
+        for(size_t lm=l*l; lm<(l+1)*(l+1); lm++)
+          j_lm_G[lm][ig]=jl_vals[l];
+    }
+  }
+
+  void calc_phase_shift(const PosType& pos, aligned_vector<std::complex<ST> >& phase_shift)
+  {
+    phase_shift.resize(NumGvecs);
+    for(size_t ig=0; ig<NumGvecs; ig++)
+    {
+      ST s,c;
+      sincos(dot(gvecs_cart[ig],pos),&s,&c);
+      phase_shift[ig]=std::complex<ST>(c,s);
+    }
   }
 
   std::complex<ST> evaluate_psi_r(const Vector<std::complex<double> >& cG, const PosType& pos)
@@ -389,9 +439,94 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
     int spline_npoints_ind=checkout_parameter_index(mySpecies,"spline_npoints");
     int lmax_ind=checkout_parameter_index(mySpecies,"lmax");
 
+    Quadrature3D<double> quad(5);
     // prepare Gvecs Ylm(G)
     Gvectors<double, UnitCellType> Gvecs(mybuilder->Gvecs[0], PrimSourcePtcl.Lattice);
-    Gvecs.calc_YlmG(5);
+    const int lmax_limit=7;
+    Gvecs.calc_YlmG(lmax_limit);
+    std::vector<std::complex<double> > i_power;
+    std::complex<double> i_temp(1.0, 0.0);
+    for(size_t l=0; l<=lmax_limit; l++)
+    {
+      for(size_t lm=l*l; lm<(l+1)*(l+1); lm++)
+        i_power.push_back(i_temp);
+      i_temp*=std::complex<double>(0.0,1.0);
+    }
+
+    for(int center_idx=0; center_idx<PrimSourcePtcl.R.size(); center_idx++)
+    {
+      const int my_GroupID = PrimSourcePtcl.GroupID[center_idx];
+      double cutoff_radius = mySpecies(cutoff_radius_ind, my_GroupID);
+      double spline_radius = mySpecies(spline_radius_ind, my_GroupID);
+      int   spline_npoints = mySpecies(spline_npoints_ind, my_GroupID);
+      int             lmax = mySpecies(lmax_ind, my_GroupID);
+      double delta = spline_radius/static_cast<double>(spline_npoints-1);
+      const int lm_tot=(lmax+1)*(lmax+1);
+
+      char fname[20];
+      sprintf(fname, "band_%d_center_%d", iorb, center_idx);
+      FILE *fout  = fopen (fname, "w");
+      fprintf(fout, "# r vals(lm)\n");
+      std::vector<std::vector<std::complex<double> > > all_vals;
+      all_vals.resize(spline_npoints);
+      aligned_vector<std::complex<double> > phase_shift;
+      Gvecs.calc_phase_shift(PrimSourcePtcl.R[center_idx], phase_shift);
+
+      #pragma omp parallel for
+      for(int ip=0; ip<spline_npoints; ip++)
+      {
+        double r=delta*static_cast<double>(ip);
+        std::vector<std::complex<double> > vals(lm_tot, std::complex<double>(0.0,0.0));
+        std::vector<aligned_vector<double> > j_lm_G;
+        Gvecs.calc_jlm_G(lmax, r, j_lm_G);
+
+        for(int lm=0; lm<lm_tot; lm++)
+          for(size_t ig=0; ig<Gvecs.NumGvecs; ig++)
+          {
+            vals[lm]+=cG[ig]*phase_shift[ig]*j_lm_G[lm][ig]*Gvecs.YlmG[lm][ig];
+          }
+
+        all_vals[ip]=vals;
+        for(int lm=0; lm<lm_tot; lm++)
+          all_vals[ip][lm]*=4.0*M_PI*i_power[lm];
+      }
+      app_log() << "debug band " << iorb << " center " << center_idx << std::endl;
+#if 0
+      app_log() << "checking band " << iorb << " center " << center_idx << " at " << PrimSourcePtcl.R[center_idx] << std::endl;
+      SoaSphericalTensor<double> Ylm(lmax);
+      for(int j=1; j<quad.nk; j++)
+      {
+        std::vector<double> Ylm_vals(lm_tot);
+        Ylm.evaluateV(quad.xyz_m[j][0], quad.xyz_m[j][1], quad.xyz_m[j][2], Ylm_vals.data());
+        //print out error in each direction
+        for(int ip=0; ip<spline_npoints; ip++)
+        {
+          double r=delta*static_cast<double>(ip);
+          std::complex<double> psi_ref=Gvecs.evaluate_psi_r(cG,quad.xyz_m[j]*r+PrimSourcePtcl.R[center_idx]);
+          std::complex<double> psi_sum(0.0,0.0);
+          app_log() << " quad " << j << " r " << r << "  " << real(psi_ref) << "  " << imag(psi_ref);
+          for(int l=0; l<=lmax; l++)
+          {
+            for(int lm=l*l; lm<(l+1)*(l+1); lm++)
+              psi_sum+=all_vals[ip][lm]*Ylm_vals[lm];
+            app_log() << "  " << real(psi_sum-psi_ref) << "  " << imag(psi_sum-psi_ref);
+          }
+          app_log() << std::endl;
+        }
+        if( iorb==1 && center_idx==0 ) abort();
+      }
+#endif
+      for(int ip=0; ip<spline_npoints; ip++)
+      {
+        fprintf(fout, "%15.10lf  ", delta*static_cast<double>(ip));
+        for(int lm=0; lm<lm_tot; lm++)
+          fprintf(fout, "%15.10lf  %15.10lf  ", all_vals[ip][lm].real(), all_vals[ip][lm].imag());
+        fprintf(fout, "\n");
+      }
+      // fill it in the big table N bands
+      // push into class.
+      fclose(fout);
+    }
   }
 
   inline void create_atomic_centers_Rspace(Vector<std::complex<double> >& cG, int ti, int iorb)
@@ -423,10 +558,10 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       FILE *fout  = fopen (fname, "w");
       fprintf(fout, "# r vals(lm)\n");
       std::vector<std::vector<std::complex<double> > > all_vals;
+      all_vals.resize(spline_npoints);
 
       SoaSphericalTensor<double> Ylm(lmax);
       Array<double,2> Ylm_vals(quad.nk,Ylm.size());
-      all_vals.resize(spline_npoints);
       for(int j=0; j<quad.nk; j++)
         Ylm.evaluateV(quad.xyz_m[j][0], quad.xyz_m[j][1], quad.xyz_m[j][2], &Ylm_vals(j,0));
       // vector splineData_r/i for each grid point
