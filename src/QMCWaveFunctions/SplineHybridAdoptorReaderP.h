@@ -30,6 +30,7 @@
 #include <Numerics/Quadrature.h>
 #include <QMCWaveFunctions/BsplineFactory/HybridAdoptorBase.h>
 
+//#include <QMCHamiltonians/Ylm.h>
 namespace GSL
 {
 #include <gsl/gsl_sf_bessel.h>
@@ -439,7 +440,8 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
     int spline_npoints_ind=checkout_parameter_index(mySpecies,"spline_npoints");
     int lmax_ind=checkout_parameter_index(mySpecies,"lmax");
 
-    Quadrature3D<double> quad(5);
+    //Quadrature3D<double> quad(5);
+
     // prepare Gvecs Ylm(G)
     Gvectors<double, UnitCellType> Gvecs(mybuilder->Gvecs[0], PrimSourcePtcl.Lattice);
     const int lmax_limit=7;
@@ -452,6 +454,32 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
         i_power.push_back(i_temp);
       i_temp*=std::complex<double>(0.0,1.0);
     }
+
+#if 0
+    //checking Ylm
+    const int lm_limit_tot=(lmax_limit+1)*(lmax_limit+1);
+    SoaSphericalTensor<double> myYlm(lmax_limit,true);
+    for(int j=0; j<quad.nk; j++)
+    {
+      std::vector<double> Ylm_vals(lm_limit_tot);
+      myYlm.evaluateV(quad.xyz_m[j][0], quad.xyz_m[j][1], quad.xyz_m[j][2], Ylm_vals.data());
+      TinyVector<double,3> rotate(quad.xyz_m[j][2], quad.xyz_m[j][0], quad.xyz_m[j][1]);
+      app_log() << "*****************************" << std::endl;
+      app_log() << "checking quad " << quad.xyz_m[j] << std::endl;
+      for(int l=0; l<=lmax_limit; l++)
+      {
+        app_log() << "l,m " << l << ",0 " << Ylm_vals[l*(l+1)] << " " << real(Ylm(l,0,rotate)) << std::endl;
+        for(int m=1; m<=l; m++)
+        {
+          if(std::abs(Ylm_vals[l*(l+1)-m]-std::sqrt(2)*(m%2?-1:1)*imag(Ylm(l,m,rotate)))>1e-10) 
+            app_log() << "l,m " << l << "," << -m << " " << Ylm_vals[l*(l+1)-m] << " " << std::sqrt(2)*(m%2?-1:1)*imag(Ylm(l,m,rotate)) << std::endl;
+          if(std::abs(Ylm_vals[l*(l+1)+m]-std::sqrt(2)*(m%2?-1:1)*real(Ylm(l,m,rotate)))>1e-10) 
+            app_log() << "l,m " << l << "," << m << " " << Ylm_vals[l*(l+1)+m] << " " << std::sqrt(2)*(m%2?-1:1)*real(Ylm(l,m,rotate)) << std::endl;
+        }
+      }
+    }
+    abort();
+#endif
 
     for(int center_idx=0; center_idx<PrimSourcePtcl.R.size(); center_idx++)
     {
@@ -498,6 +526,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       {
         std::vector<double> Ylm_vals(lm_tot);
         Ylm.evaluateV(quad.xyz_m[j][0], quad.xyz_m[j][1], quad.xyz_m[j][2], Ylm_vals.data());
+        app_log() << "checking quad " << quad.xyz_m[j] << std::endl;
         //print out error in each direction
         for(int ip=0; ip<spline_npoints; ip++)
         {
