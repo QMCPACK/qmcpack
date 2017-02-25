@@ -28,13 +28,10 @@
 #include <mpi/collectives.h>
 #include <mpi/point2point.h>
 #include <Numerics/Quadrature.h>
+#include <Numerics/Bessel.h>
 #include <QMCWaveFunctions/BsplineFactory/HybridAdoptorBase.h>
 
 //#include <QMCHamiltonians/Ylm.h>
-namespace GSL
-{
-#include <gsl/gsl_sf_bessel.h>
-}
 
 namespace qmcplusplus
 {
@@ -107,7 +104,7 @@ struct Gvectors
     for(size_t ig=0; ig<NumGvecs; ig++)
     {
       std::vector<double> jl_vals(lmax+1,0.0);
-      GSL::gsl_sf_bessel_jl_steed_array(lmax, gmag[ig]*r, jl_vals.data());
+      bessel_steed_array_cpu(lmax, gmag[ig]*r, jl_vals.data());
       for(size_t l=0; l<=lmax; l++)
         for(size_t lm=l*l; lm<(l+1)*(l+1); lm++)
           j_lm_G[lm][ig]=jl_vals[l];
