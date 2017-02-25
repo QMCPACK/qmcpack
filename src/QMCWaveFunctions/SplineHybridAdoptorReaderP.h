@@ -539,8 +539,8 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
           }
           app_log() << std::endl;
         }
-        if( iorb==1 && center_idx==0 ) abort();
       }
+      if( iorb==1 && center_idx==0 ) abort();
 #endif
       for(int ip=0; ip<spline_npoints; ip++)
       {
@@ -566,7 +566,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
     int spline_radius_ind=checkout_parameter_index(mySpecies,"spline_radius");
     int spline_npoints_ind=checkout_parameter_index(mySpecies,"spline_npoints");
     int lmax_ind=checkout_parameter_index(mySpecies,"lmax");
-    Quadrature3D<double> quad(5);
+    Quadrature3D<double> quad(6);
     Gvectors<double, UnitCellType> Gvecs(mybuilder->Gvecs[0], PrimSourcePtcl.Lattice);
 
     //#pragma omp parallel for

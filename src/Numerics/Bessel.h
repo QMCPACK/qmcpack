@@ -34,9 +34,9 @@ void bessel_steed_array_cpu(const int lmax, const T x, T* jl_x) {
       double B = 2.0*FP + x_inv;
       double D = 1.0/B;
       double del = -D;
-      
+
       FP += del;
-      
+
       /* continued fraction */
       do {
 	 B += W;
@@ -45,9 +45,9 @@ void bessel_steed_array_cpu(const int lmax, const T x, T* jl_x) {
 	 FP += del;
 	 if(D < 0.0) F = -F;
       } while(fabs(del) >= fabs(FP) * 1.19209e-07);
-      
+
       FP *= F;
-      
+
       if(lmax > 0) {
 	 /* downward recursion */
 	 double XP2 = FP;
@@ -63,8 +63,8 @@ void bessel_steed_array_cpu(const int lmax, const T x, T* jl_x) {
 	    --L;
 	 }
 	 F = jl_x[0];
-      }  
-      
+      }
+
       /* normalization */
       W = x_inv / hypot(FP, F);
       jl_x[0] = W*F;

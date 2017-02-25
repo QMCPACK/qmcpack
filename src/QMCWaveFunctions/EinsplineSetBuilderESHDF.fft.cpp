@@ -135,74 +135,77 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
   for (int i=0; i<IonTypes.size(); i++)
     app_log() << "Atom type(" << i << ") = " << IonTypes(i) << std::endl;
   // construct Super2Prim mapping.
-  Super2Prim.resize(SourcePtcl->R.size(),-1);
-  std::vector<int> prim_atom_counts;
-  prim_atom_counts.resize(IonPos.size(),0);
-  for (int i=0; i<SourcePtcl->R.size(); i++)
+  if(Super2Prim.size()==0)
   {
-    PosType ref=PrimCell.toUnit_floor(SourcePtcl->R[i]);
-    for (int j=0; j<IonPos.size(); j++)
+    Super2Prim.resize(SourcePtcl->R.size(),-1);
+    std::vector<int> prim_atom_counts;
+    prim_atom_counts.resize(IonPos.size(),0);
+    for (int i=0; i<SourcePtcl->R.size(); i++)
     {
-      PosType dr=PrimCell.toUnit_floor(IonPos[j])-ref;
-      if (dot(dr,dr)<MatchingTol)
+      PosType ref=PrimCell.toUnit_floor(SourcePtcl->R[i]);
+      for (int j=0; j<IonPos.size(); j++)
       {
-        if(Super2Prim[i]<0)
+        PosType dr=PrimCell.toUnit_floor(IonPos[j])-ref;
+        if (dot(dr,dr)<MatchingTol)
         {
-          Super2Prim[i]=j;
-          prim_atom_counts[j]++;
-        }
-        else
-        {
-          app_error() << "Supercell ion " << i << " at " << SourcePtcl->R[j]
-                    << " was found twice in the primitive cell as ion "
-                    << Super2Prim[i] << " and " << j << std::endl;
-          abort();
+          if(Super2Prim[i]<0)
+          {
+            Super2Prim[i]=j;
+            prim_atom_counts[j]++;
+          }
+          else
+          {
+            app_error() << "Supercell ion " << i << " at " << SourcePtcl->R[j]
+                      << " was found twice in the primitive cell as ion "
+                      << Super2Prim[i] << " and " << j << std::endl;
+            abort();
+          }
         }
       }
-    }
-    if(Super2Prim[i]<0)
-    {
-      app_error() << "Supercell ion " << i << " not found in the primitive cell" << std::endl;
-      abort();
-    }
-    else
-    {
-      //app_log() << "Supercell ion " << i << " mapped to primitive cell ion " << Super2Prim[i] << std::endl;
-    }
-  }
-  const int tiling_size=det(TileMatrix);
-  for(int i=0; i<IonPos.size(); i++)
-    if(prim_atom_counts[i]!=tiling_size)
-    {
-      app_error() << "Primitive cell ion " << i << " was found only " << prim_atom_counts[i]
-                << " times in the supercell rather than " << tiling_size << std::endl;
-      abort();
-    }
-  // construct primitive cell ion particle set
-  PrimSourcePtcl.Lattice.set(Lattice);
-  PrimSourcePtcl.create(IonPos.size());
-  PrimSourcePtcl.R.InUnit=0;
-  for (int i=0; i<IonPos.size(); i++)
-    PrimSourcePtcl.R[i]=IonPos[i];
-  PrimSourcePtcl.mySpecies=SourcePtcl->mySpecies;
-  int Zind=PrimSourcePtcl.mySpecies.getAttribute("atomicnumber");
-  // set GroupID for each ion
-  for (int i=0; i<PrimSourcePtcl.GroupID.size(); i++)
-  {
-    for (int j=0; j<Super2Prim.size(); j++)
-      if (Super2Prim[j]==i)
+      if(Super2Prim[i]<0)
       {
-        if(PrimSourcePtcl.mySpecies(Zind,SourcePtcl->GroupID[i])==IonTypes(i))
-          PrimSourcePtcl.GroupID[i] = SourcePtcl->GroupID[j];
-        else
-        {
-          app_error() << "Primitive cell ion " << i << " vs supercell ion " << j << " atomic number not matching: "
-                      << IonTypes(i) << " vs " << PrimSourcePtcl.mySpecies(Zind,SourcePtcl->GroupID[i]) << std::endl;
-          abort();
-        }
-        continue;
+        app_error() << "Supercell ion " << i << " not found in the primitive cell" << std::endl;
+        abort();
       }
-    //app_log() << "debug atomic number " << PrimSourcePtcl.mySpecies(Zind,PrimSourcePtcl.GroupID[i]) << std::endl;
+      else
+      {
+        //app_log() << "Supercell ion " << i << " mapped to primitive cell ion " << Super2Prim[i] << std::endl;
+      }
+    }
+    const int tiling_size=det(TileMatrix);
+    for(int i=0; i<IonPos.size(); i++)
+      if(prim_atom_counts[i]!=tiling_size)
+      {
+        app_error() << "Primitive cell ion " << i << " was found only " << prim_atom_counts[i]
+                  << " times in the supercell rather than " << tiling_size << std::endl;
+        abort();
+      }
+    // construct primitive cell ion particle set
+    PrimSourcePtcl.Lattice.set(Lattice);
+    PrimSourcePtcl.create(IonPos.size());
+    PrimSourcePtcl.R.InUnit=0;
+    for (int i=0; i<IonPos.size(); i++)
+      PrimSourcePtcl.R[i]=IonPos[i];
+    PrimSourcePtcl.mySpecies=SourcePtcl->mySpecies;
+    int Zind=PrimSourcePtcl.mySpecies.getAttribute("atomicnumber");
+    // set GroupID for each ion
+    for (int i=0; i<PrimSourcePtcl.GroupID.size(); i++)
+    {
+      for (int j=0; j<Super2Prim.size(); j++)
+        if (Super2Prim[j]==i)
+        {
+          if(PrimSourcePtcl.mySpecies(Zind,SourcePtcl->GroupID[i])==IonTypes(i))
+            PrimSourcePtcl.GroupID[i] = SourcePtcl->GroupID[j];
+          else
+          {
+            app_error() << "Primitive cell ion " << i << " vs supercell ion " << j << " atomic number not matching: "
+                        << IonTypes(i) << " vs " << PrimSourcePtcl.mySpecies(Zind,SourcePtcl->GroupID[i]) << std::endl;
+            abort();
+          }
+          continue;
+        }
+      //app_log() << "debug atomic number " << PrimSourcePtcl.mySpecies(Zind,PrimSourcePtcl.GroupID[i]) << std::endl;
+    }
   }
   /////////////////////////////////////
   // Read atomic orbital information //
