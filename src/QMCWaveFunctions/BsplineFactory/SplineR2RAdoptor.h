@@ -69,7 +69,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     this->is_complex=false;
     this->is_soa_ready=true;
     this->AdoptorName="SplineR2RSoAAdoptor";
-    this->KeyWord="R2RSoA";
+    this->KeyWord="SplineR2RSoA";
   }
 
   ///** copy the base property */

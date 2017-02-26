@@ -87,15 +87,21 @@ struct AtomicOrbitalSoA
 
   bool read_splines(hdf_archive& h5f)
   {
-    //load spline coefficients
-    //cutoff, spline radius, spline points, check coeff size
+    einspline_engine<AtomicSplineType> bigtable(MultiSpline);
+    return h5f.read(bigtable,"radial_spline");
   }
 
   bool write_splines(hdf_archive& h5f)
   {
-    //dump center info, including cutoff, spline radius, spline points, lm
-    //name, position, consistency
-    //dump spline coefficients    //dump spline coefficients
+    bool success=true;
+    success = success && h5f.write(cutoff, "cutoff_radius");
+    success = success && h5f.write(spline_radius, "spline_radius");
+    success = success && h5f.write(spline_npoints, "spline_npoints");
+    success = success && h5f.write(lmax, "l_max");
+    success = success && h5f.write(pos, "position");
+    einspline_engine<AtomicSplineType> bigtable(MultiSpline);
+    success = success && h5f.write(bigtable,"radial_spline");
+    return success;
   }
 
   template<typename VV>
@@ -139,6 +145,7 @@ struct HybridAdoptorBase
 {
   using PointType=typename AtomicOrbitalSoA<ST>::PointType;
 
+  // atomic centers
   std::vector<AtomicOrbitalSoA<ST> > AtomicCenters;
   // I-e distance table
   DistanceTableData* ei_dist;
@@ -149,17 +156,61 @@ struct HybridAdoptorBase
 
   bool read_splines(hdf_archive& h5f)
   {
-    // for each center
-    // loop load center info, including name, position, check consistency
-    // Initial class with index
-    // call read_splines
-    // push to the vector
+    bool success=true;
+    size_t ncenter;
+    int Nb;
+
+    success = success && h5f.push("atomic_centers",false);
+    success = success && h5f.read(ncenter,"number_of_centers");
+    success = success && h5f.read(Nb,"number_of_bands_pad");
+    if(!success) return success;
+    // read splines of each center
+    for(int ic=0; ic<ncenter; ic++)
+    {
+      std::ostringstream gname;
+      gname << "center_" << ic;
+      success = success && h5f.push(gname.str().c_str(),false);
+
+      int lmax, spline_npoints;
+      PointType pos;
+      ST spline_radius, cutoff;
+      success = success && h5f.read(cutoff, "cutoff_radius");
+      success = success && h5f.read(spline_radius, "spline_radius");
+      success = success && h5f.read(spline_npoints, "spline_npoints");
+      success = success && h5f.read(pos, "position");
+      success = success && h5f.read(lmax, "l_max");
+      if(!success) return success;
+      AtomicOrbitalSoA<ST> one_center(lmax, Nb);
+      one_center.set_info(pos,cutoff,spline_radius,spline_npoints);
+      one_center.create_spline();
+      success = success && one_center.read_splines(h5f);
+      if(!success) return success;
+      AtomicCenters.push_back(one_center);
+
+      h5f.pop();
+    }
+    h5f.pop();
+    return success;
   }
 
   bool write_splines(hdf_archive& h5f)
   {
-    //loop for each center
-    // write_splines
+    bool success=true;
+    int ncenter=AtomicCenters.size();
+    success = success && h5f.push("atomic_centers",true);
+    success = success && h5f.write(ncenter,"number_of_centers");
+    success = success && h5f.write(AtomicCenters[0].Npad,"number_of_bands_pad");
+    // write splines of each center
+    for(int ic=0; ic<AtomicCenters.size(); ic++)
+    {
+      std::ostringstream gname;
+      gname << "center_" << ic;
+      success = success && h5f.push(gname.str().c_str(),true);
+      success = success && AtomicCenters[ic].write_splines(h5f);
+      h5f.pop();
+    }
+    h5f.pop();
+    return success;
   }
 
   template<typename VV>

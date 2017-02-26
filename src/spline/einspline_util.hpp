@@ -54,26 +54,52 @@ namespace qmcplusplus
     chunked_bcast(comm,buffer->coefs, buffer->coefs_size);
   }
 
+  template<unsigned DIM>
+  struct dim_traits {};
+
+  // for 3D multi
+  template<>
+  struct dim_traits<4>
+  {
+    template<typename data_type>
+    static void setdim(data_type& a, hsize_t* dims)
+    {
+      dims[0]=a.spliner->x_grid.num+3;
+      dims[1]=a.spliner->y_grid.num+3;
+      dims[2]=a.spliner->z_grid.num+3;
+      dims[3]=a.spliner->z_stride;
+    }
+  };
+
+  // for 1D multi
+  template<>
+  struct dim_traits<2>
+  {
+    template<typename data_type>
+    static void setdim(data_type& a, hsize_t* dims)
+    {
+      dims[0]=a.spliner->x_grid.num+2;
+      dims[1]=a.spliner->x_stride;
+    }
+  };
 
   /** specialization of h5data_proxy for einspline_engine
    */
   template<typename ENGT>
     struct h5data_proxy<einspline_engine<ENGT> >
-    : public h5_space_type<typename einspline_engine<ENGT>::value_type,4>
+    : public h5_space_type<typename einspline_engine<ENGT>::value_type, einspline_engine<ENGT>::D+1 >
   {
+    enum {D=einspline_engine<ENGT>::D};
     typedef typename einspline_engine<ENGT>::value_type value_type;
-    using h5_space_type<value_type,4>::dims;
-    using h5_space_type<value_type,4>::get_address;
+    using h5_space_type<value_type,D+1>::dims;
+    using h5_space_type<value_type,D+1>::get_address;
     typedef einspline_engine<ENGT> data_type;
 
     data_type& ref_;
 
     inline h5data_proxy(data_type& a): ref_(a)
     {
-      dims[0]=a.spliner->x_grid.num+3;
-      dims[1]=a.spliner->y_grid.num+3;
-      dims[2]=a.spliner->z_grid.num+3;
-      dims[3]=a.spliner->z_stride;
+      dim_traits<D+1>::setdim(a,dims);
     }
 
     inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
