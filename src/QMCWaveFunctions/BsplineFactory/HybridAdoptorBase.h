@@ -220,10 +220,11 @@ struct HybridAdoptorBase
   }
 
   template<typename VV>
-  inline bool evaluate_v(VV& myV)
+  inline bool evaluate_v(const ParticleSet& P, VV& myV)
   {
     //evaluate only V
     bool inAtom=false;
+    const auto* ei_dist=P.DistTables[myTableID];
     const int center_idx=ei_dist->get_first_neighbor_temporal();
     if(center_idx<0) abort();
     auto& myCenter=AtomicCenters[Super2Prim[center_idx]];
@@ -236,15 +237,16 @@ struct HybridAdoptorBase
   }
 
   template<typename VV, typename GV>
-  inline bool evaluate_vgl(VV& myV, GV& myG, VV& myH)
+  inline bool evaluate_vgl(const ParticleSet& P, VV& myV, GV& myG, VV& myH)
   {
     //missing
   }
 
   template<typename VV, typename GV, typename HT>
-  inline bool evaluate_vgh(VV& myV, GV& myG, HT& myH)
+  inline bool evaluate_vgh(const ParticleSet& P, VV& myV, GV& myG, HT& myH)
   {
     bool inAtom=false;
+    const auto* ei_dist=P.DistTables[myTableID];
     const int center_idx=ei_dist->get_first_neighbor_temporal();
     if(center_idx<0) abort();
     auto& myCenter=AtomicCenters[Super2Prim[center_idx]];
