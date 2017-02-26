@@ -419,10 +419,10 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
 
   inline int checkout_parameter_index(SpeciesSet& mySpecies, const std::string& name)
   {
-    const int index=mySpecies.getAttribute(name);
-    if(index==mySpecies.TotalNum)
+    const int index=mySpecies.findAttribute(name);
+    if(index<0)
     {
-      app_error() << "Parameter " << name << " need for each atom species to use hybrid representation." << std::endl;
+      app_error() << "Parameter " << name << " needed for each atom species to use hybrid representation." << std::endl;
       abort();
     }
     return index;

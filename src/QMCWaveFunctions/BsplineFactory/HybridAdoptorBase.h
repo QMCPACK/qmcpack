@@ -181,6 +181,7 @@ struct HybridAdoptorBase
       success = success && h5f.read(lmax, "l_max");
       if(!success) return success;
       AtomicOrbitalSoA<ST> one_center(lmax, Nb);
+      if(one_center.Npad!=Nb) success=false;
       one_center.set_info(pos,cutoff,spline_radius,spline_npoints);
       one_center.create_spline();
       success = success && one_center.read_splines(h5f);
