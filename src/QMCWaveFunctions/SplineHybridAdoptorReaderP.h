@@ -111,7 +111,8 @@ struct Gvectors
     }
   }
 
-  void calc_phase_shift(const PosType& pos, aligned_vector<std::complex<ST> >& phase_shift)
+  template<typename PT>
+  void calc_phase_shift(const PT& pos, aligned_vector<std::complex<ST> >& phase_shift)
   {
     phase_shift.resize(NumGvecs);
     for(size_t ig=0; ig<NumGvecs; ig++)
@@ -122,7 +123,8 @@ struct Gvectors
     }
   }
 
-  std::complex<ST> evaluate_psi_r(const Vector<std::complex<double> >& cG, const PosType& pos)
+  template<typename PT>
+  std::complex<ST> evaluate_psi_r(const Vector<std::complex<double> >& cG, const PT& pos)
   {
     std::complex<ST> val(0.0,0.0);
     for(size_t ig=0; ig<NumGvecs; ig++)
@@ -347,6 +349,8 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
             spline_i[i]=einspline::create(dummy,start,end,MeshSize,bspline->HalfG);
         }
 
+        initialize_atomic_centers(bspline->AtomicCenters);
+
         if(usingSerialIO)
         {
           now.restart();
@@ -424,23 +428,46 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
     return index;
   }
 
+  void initialize_atomic_centers(std::vector<AtomicOrbitalSoA<DataType> >& centers)
+  {
+    // load atomic center info only when it is not initialized
+    if(centers.size()==0)
+    {
+      ParticleSet& PrimSourcePtcl=mybuilder->PrimSourcePtcl;
+      SpeciesSet& mySpecies=PrimSourcePtcl.mySpecies;
+
+      int cutoff_radius_ind=checkout_parameter_index(mySpecies,"cutoff_radius");
+      int spline_radius_ind=checkout_parameter_index(mySpecies,"spline_radius");
+      int spline_npoints_ind=checkout_parameter_index(mySpecies,"spline_npoints");
+      int lmax_ind=checkout_parameter_index(mySpecies,"lmax");
+
+      app_log() << "Reading atomic center info for hybrid representation" << std::endl;
+      for(int center_idx=0; center_idx<PrimSourcePtcl.R.size(); center_idx++)
+      {
+        const int my_GroupID = PrimSourcePtcl.GroupID[center_idx];
+        double cutoff_radius = mySpecies(cutoff_radius_ind, my_GroupID);
+        double spline_radius = mySpecies(spline_radius_ind, my_GroupID);
+        int   spline_npoints = mySpecies(spline_npoints_ind, my_GroupID);
+        int             lmax = mySpecies(lmax_ind, my_GroupID);
+        const int npad=bspline->myV.size();
+        AtomicOrbitalSoA<DataType> oneCenter(lmax,npad);
+        oneCenter.set_info(PrimSourcePtcl.R[center_idx], cutoff_radius, spline_radius, spline_npoints);
+        centers.push_back(oneCenter);
+      }
+    }
+
+    // allocate the memory hosting the spline coefficients.
+    for(int center_idx=0; center_idx<centers.size(); center_idx++)
+      centers[center_idx].create_spline();
+  }
+
   inline void create_atomic_centers_Gspace(Vector<std::complex<double> >& cG, int ti, int iorb)
   {
-    //typedef TinyVector<double,3> mPosType;
     typedef typename EinsplineSetBuilder::UnitCellType UnitCellType;
-
-    ParticleSet& PrimSourcePtcl=mybuilder->PrimSourcePtcl;
-    SpeciesSet& mySpecies=PrimSourcePtcl.mySpecies;
-
-    int cutoff_radius_ind=checkout_parameter_index(mySpecies,"cutoff_radius");
-    int spline_radius_ind=checkout_parameter_index(mySpecies,"spline_radius");
-    int spline_npoints_ind=checkout_parameter_index(mySpecies,"spline_npoints");
-    int lmax_ind=checkout_parameter_index(mySpecies,"lmax");
-
     //Quadrature3D<double> quad(5);
 
     // prepare Gvecs Ylm(G)
-    Gvectors<double, UnitCellType> Gvecs(mybuilder->Gvecs[0], PrimSourcePtcl.Lattice);
+    Gvectors<double, UnitCellType> Gvecs(mybuilder->Gvecs[0], mybuilder->PrimSourcePtcl.Lattice);
     const int lmax_limit=7;
     Gvecs.calc_YlmG(lmax_limit);
     std::vector<std::complex<double> > i_power;
@@ -478,24 +505,29 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
     abort();
 #endif
 
-    for(int center_idx=0; center_idx<PrimSourcePtcl.R.size(); center_idx++)
+    std::vector<AtomicOrbitalSoA<DataType> >& centers=bspline->AtomicCenters;
+    for(int center_idx=0; center_idx<centers.size(); center_idx++)
     {
-      const int my_GroupID = PrimSourcePtcl.GroupID[center_idx];
-      double cutoff_radius = mySpecies(cutoff_radius_ind, my_GroupID);
-      double spline_radius = mySpecies(spline_radius_ind, my_GroupID);
-      int   spline_npoints = mySpecies(spline_npoints_ind, my_GroupID);
-      int             lmax = mySpecies(lmax_ind, my_GroupID);
-      double delta = spline_radius/static_cast<double>(spline_npoints-1);
+      AtomicOrbitalSoA<DataType>& mycenter=centers[center_idx];
+      const double cutoff_radius = mycenter.cutoff;
+      const double spline_radius = mycenter.spline_radius;
+      const int   spline_npoints = mycenter.spline_npoints;
+      const int             lmax = mycenter.lmax;
+      const double delta = spline_radius/static_cast<double>(spline_npoints-1);
       const int lm_tot=(lmax+1)*(lmax+1);
 
-      char fname[20];
-      sprintf(fname, "band_%d_center_%d", iorb, center_idx);
-      FILE *fout  = fopen (fname, "w");
-      fprintf(fout, "# r vals(lm)\n");
+      char fname[64];
+      sprintf(fname, "band_%d_center_%d_pw.dat", iorb, center_idx);
+      FILE *fout_pw  = fopen (fname, "w");
+      sprintf(fname, "band_%d_center_%d_spline.dat", iorb, center_idx);
+      FILE *fout_spline  = fopen (fname, "w");
+      fprintf(fout_pw, "# r vals(lm)\n");
+      fprintf(fout_spline, "# r vals(lm)\n");
+
       std::vector<std::vector<std::complex<double> > > all_vals;
       all_vals.resize(spline_npoints);
       aligned_vector<std::complex<double> > phase_shift;
-      Gvecs.calc_phase_shift(PrimSourcePtcl.R[center_idx], phase_shift);
+      Gvecs.calc_phase_shift(mycenter.pos, phase_shift);
 
       #pragma omp parallel for
       for(int ip=0; ip<spline_npoints; ip++)
@@ -517,7 +549,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       }
       app_log() << "debug band " << iorb << " center " << center_idx << std::endl;
 #if 0
-      app_log() << "checking band " << iorb << " center " << center_idx << " at " << PrimSourcePtcl.R[center_idx] << std::endl;
+      app_log() << "checking band " << iorb << " center " << center_idx << " at " << mycenter.pos << std::endl;
       SoaSphericalTensor<double> Ylm(lmax);
       for(int j=1; j<quad.nk; j++)
       {
@@ -528,7 +560,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
         for(int ip=0; ip<spline_npoints; ip++)
         {
           double r=delta*static_cast<double>(ip);
-          std::complex<double> psi_ref=Gvecs.evaluate_psi_r(cG,quad.xyz_m[j]*r+PrimSourcePtcl.R[center_idx]);
+          std::complex<double> psi_ref=Gvecs.evaluate_psi_r(cG,quad.xyz_m[j]*r+mycenter.pos);
           std::complex<double> psi_sum(0.0,0.0);
           app_log() << " quad " << j << " r " << r << "  " << real(psi_ref) << "  " << imag(psi_ref);
           for(int l=0; l<=lmax; l++)
@@ -542,16 +574,55 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       }
       if( iorb==1 && center_idx==0 ) abort();
 #endif
+
+      #pragma omp parallel for
+      for(int lm=0; lm<lm_tot; lm++)
+      {
+        aligned_vector<double> splineData_r(spline_npoints);
+        UBspline_1d_d* spline_r;
+        for(size_t ip=0; ip<spline_npoints; ip++)
+          splineData_r[ip]=real(all_vals[ip][lm]);
+        spline_r=einspline::create(spline_r, 0.0, spline_radius, spline_npoints);
+        einspline::set(spline_r,splineData_r.data());
+        if(!bspline->is_complex)
+        {
+          mycenter.set_spline(spline_r,lm,iorb);
+          einspline::destroy(spline_r);
+        }
+        else
+        {
+          aligned_vector<double> splineData_i(spline_npoints);
+          UBspline_1d_d* spline_i;
+          for(size_t ip=0; ip<spline_npoints; ip++)
+            splineData_i[ip]=imag(all_vals[ip][lm]);
+          spline_i=einspline::create(spline_i, 0.0, spline_radius, spline_npoints);
+          einspline::set(spline_i,splineData_i.data());
+          mycenter.set_spline(spline_r,lm,iorb*2);
+          mycenter.set_spline(spline_i,lm,iorb*2+1);
+          einspline::destroy(spline_r);
+          einspline::destroy(spline_i);
+        }
+      }
+
+      // write to file for plotting
       for(int ip=0; ip<spline_npoints; ip++)
       {
-        fprintf(fout, "%15.10lf  ", delta*static_cast<double>(ip));
+        double r=delta*static_cast<double>(ip);
+        fprintf(fout_pw, "%15.10lf  ", r);
+        fprintf(fout_spline, "%15.10lf  ", r);
+        einspline::evaluate(mycenter.MultiSpline,r,mycenter.localV);
         for(int lm=0; lm<lm_tot; lm++)
-          fprintf(fout, "%15.10lf  %15.10lf  ", all_vals[ip][lm].real(), all_vals[ip][lm].imag());
-        fprintf(fout, "\n");
+        {
+          fprintf(fout_pw, "%15.10lf  %15.10lf  ", all_vals[ip][lm].real(), all_vals[ip][lm].imag());
+          fprintf(fout_spline, "%15.10lf  %15.10lf  ", mycenter.localV[lm*mycenter.Npad+iorb*2], mycenter.localV[lm*mycenter.Npad+iorb*2+1]);
+        }
+        fprintf(fout_pw, "\n");
+        fprintf(fout_spline, "\n");
       }
       // fill it in the big table N bands
       // push into class.
-      fclose(fout);
+      fclose(fout_pw);
+      fclose(fout_spline);
     }
   }
 
@@ -559,30 +630,24 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
   {
     typedef typename EinsplineSetBuilder::UnitCellType UnitCellType;
 
-    ParticleSet& PrimSourcePtcl=mybuilder->PrimSourcePtcl;
-    SpeciesSet& mySpecies=PrimSourcePtcl.mySpecies;
-
-    int cutoff_radius_ind=checkout_parameter_index(mySpecies,"cutoff_radius");
-    int spline_radius_ind=checkout_parameter_index(mySpecies,"spline_radius");
-    int spline_npoints_ind=checkout_parameter_index(mySpecies,"spline_npoints");
-    int lmax_ind=checkout_parameter_index(mySpecies,"lmax");
     Quadrature3D<double> quad(6);
-    Gvectors<double, UnitCellType> Gvecs(mybuilder->Gvecs[0], PrimSourcePtcl.Lattice);
+    Gvectors<double, UnitCellType> Gvecs(mybuilder->Gvecs[0], mybuilder->PrimSourcePtcl.Lattice);
 
+    std::vector<AtomicOrbitalSoA<DataType> >& centers=bspline->AtomicCenters;
     //#pragma omp parallel for
-    for(int center_idx=0; center_idx<PrimSourcePtcl.R.size(); center_idx++)
+    for(int center_idx=0; center_idx<centers.size(); center_idx++)
     {
-      const int my_GroupID = PrimSourcePtcl.GroupID[center_idx];
-      double cutoff_radius = mySpecies(cutoff_radius_ind, my_GroupID);
-      double spline_radius = mySpecies(spline_radius_ind, my_GroupID);
-      int   spline_npoints = mySpecies(spline_npoints_ind, my_GroupID);
-      int             lmax = mySpecies(lmax_ind, my_GroupID);
-      double delta = spline_radius/static_cast<double>(spline_npoints);
+      AtomicOrbitalSoA<DataType>& mycenter=centers[center_idx];
+      const double cutoff_radius = mycenter.cutoff;
+      const double spline_radius = mycenter.spline_radius;
+      const int   spline_npoints = mycenter.spline_npoints;
+      const int             lmax = mycenter.lmax;
+      double delta = spline_radius/static_cast<double>(spline_npoints-1);
 
       char fname[20];
       sprintf(fname, "band_%d_center_%d", iorb, center_idx);
-      FILE *fout  = fopen (fname, "w");
-      fprintf(fout, "# r vals(lm)\n");
+      FILE *fout_pw  = fopen (fname, "w");
+      fprintf(fout_pw, "# r vals(lm)\n");
       std::vector<std::vector<std::complex<double> > > all_vals;
       all_vals.resize(spline_npoints);
 
@@ -599,7 +664,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
         // sum up quadratures
         for(int j=0; j<quad.nk; j++)
         {
-          std::complex<double> psi=Gvecs.evaluate_psi_r(cG, quad.xyz_m[j]*r+PrimSourcePtcl.R[center_idx]);
+          std::complex<double> psi=Gvecs.evaluate_psi_r(cG, quad.xyz_m[j]*r+mycenter.pos);
           for(int lm=0; lm<Ylm.size(); lm++)
           {
             vals[lm]+=Ylm_vals(j,lm)*psi*quad.weight_m[j];
@@ -612,14 +677,14 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       app_log() << "debug band " << iorb << " center " << center_idx << std::endl;
 
 #if 0
-      app_log() << "checking band " << iorb << " center " << center_idx << " at " << PrimSourcePtcl.R[center_idx] << std::endl;
+      app_log() << "checking band " << iorb << " center " << center_idx << " at " << mycenter.pos << std::endl;
       for(int j=1; j<quad.nk; j++)
       {
         //print out error in each direction
         for(int ip=0; ip<spline_npoints; ip++)
         {
           double r=delta*static_cast<double>(ip);
-          std::complex<double> psi_ref=Gvecs.evaluate_psi_r(cG,quad.xyz_m[j]*r+PrimSourcePtcl.R[center_idx]);
+          std::complex<double> psi_ref=Gvecs.evaluate_psi_r(cG,quad.xyz_m[j]*r+mycenter.pos);
           std::complex<double> psi_sum(0.0,0.0);
           app_log() << " quad " << j << " r " << r << "  " << real(psi_ref) << "  " << imag(psi_ref);
           for(int l=0; l<=lmax; l++)
@@ -636,14 +701,14 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
 
       for(int ip=0; ip<spline_npoints; ip++)
       {
-        fprintf(fout, "%15.10lf  ", delta*static_cast<double>(ip));
+        fprintf(fout_pw, "%15.10lf  ", delta*static_cast<double>(ip));
         for(int lm=0; lm<Ylm.size(); lm++)
-          fprintf(fout, "%15.10lf  %15.10lf  ", all_vals[ip][lm].real(), all_vals[ip][lm].imag());
-        fprintf(fout, "\n");
+          fprintf(fout_pw, "%15.10lf  %15.10lf  ", all_vals[ip][lm].real(), all_vals[ip][lm].imag());
+        fprintf(fout_pw, "\n");
       }
       // fill it in the big table N bands
       // push into class.
-      fclose(fout);
+      fclose(fout_pw);
     }
   }
 

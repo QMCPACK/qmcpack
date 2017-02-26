@@ -36,7 +36,9 @@ struct AtomicOrbitalSoA
 
   using vContainer_type=aligned_vector<ST>;
 
-  ST cutoff;
+  ST cutoff,spline_radius;
+  int spline_npoints, BaseN;
+  PointType pos;
   const int lmax, lm_tot, NumBands, Npad;
   SoaSphericalTensor<ST> Ylm;
   AtomicSplineType* MultiSpline;
@@ -47,22 +49,40 @@ struct AtomicOrbitalSoA
   Ylm(Lmax), NumBands(Nb), MultiSpline(nullptr), lmax(Lmax),
   lm_tot((Lmax+1)*(Lmax+1)), Npad(getAlignedSize<ST>(Nb))
   {
-    localV.resize(Npad);
-    localG.resize(Npad);
-    localL.resize(Npad);
+    localV.resize(Npad*lm_tot);
+    localG.resize(Npad*lm_tot);
+    localL.resize(Npad*lm_tot);
   }
 
   //~AtomicOrbitalSoA();
 
-  template<typename GT, typename BCT>
-  inline void create_spline(GT& grid, BCT& bc)
+  template<typename PT, typename VT>
+  inline void set_info(const PT& R, const VT& cutoff_in, const VT& spline_radius_in, const int& spline_npoints_in)
   {
-    einspline::create(MultiSpline, grid, bc, lm_tot*NumBands);
+    pos[0]=R[0];
+    pos[1]=R[1];
+    pos[2]=R[2];
+    cutoff=cutoff_in;
+    spline_radius=spline_radius_in;
+    spline_npoints=spline_npoints_in;
+    BaseN=spline_npoints+2;
   }
 
-  inline void set_spline(AtomicSingleSplineType* spline, int ispline)
+  inline void create_spline()
   {
-    einspline::set(MultiSpline, spline, ispline, &Npad);
+    BCtype_d bc;
+    bc.lCode = FLAT;
+    bc.rCode = NATURAL;
+    Ugrid grid;
+    grid.start = 0.0;
+    grid.end   = spline_radius;
+    grid.num   = spline_npoints;
+    MultiSpline = einspline::create(MultiSpline, grid, bc, lm_tot*Npad);
+  }
+
+  inline void set_spline(AtomicSingleSplineType* spline, int lm, int ispline)
+  {
+    einspline::set(MultiSpline, lm*Npad+ispline, spline, 0, BaseN);
   }
 
   bool read_splines(hdf_archive& h5f)
@@ -91,7 +111,7 @@ struct AtomicOrbitalSoA
     {
       size_t offset=lm*Npad;
       for(size_t ib=0; ib<myV.size(); ib++)
-        myV[ib]=Ylm_v[lm]*localV[offset+ib];
+        myV[ib]+=Ylm_v[lm]*localV[offset+ib];
     }
   }
 
@@ -106,6 +126,8 @@ struct AtomicOrbitalSoA
   {
     //Needed to do tensor product here
     //einspline::evaluate_vgh(MultiSpline,r,myV,myG,myH);
+    //cheating
+    evaluate_v(r, dr, myV);
   }
 };
 

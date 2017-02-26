@@ -424,50 +424,95 @@ namespace qmcplusplus
     }
 
     // 1D spline
+    /** create a single spline for double */
+    template<typename VT>
+    UBspline_1d_d* create(UBspline_1d_d* s, const VT& start, const VT& end, const int spline_npoints)
+    {
+      BCtype_d bc;
+      bc.lCode = FLAT;
+      bc.rCode = NATURAL;
+      Ugrid grid;
+      grid.start = start;
+      grid.end   = end;
+      grid.num   = spline_npoints;
+      return create_UBspline_1d_d(grid, bc, NULL);
+    }
+
+    /** recalculate spline coefficients */
+    inline void set(UBspline_1d_d* s, double* restrict data)
+    {
+      recompute_UBspline_1d_d(s,data);
+    }
+
+    /** spline evaluation */
+    template<typename PT>
+    inline double evaluate(UBspline_1d_d *restrict spline, const PT& r)
+    {
+      double res;
+      eval_UBspline_3d_d(spline,r,&res);
+      return res;
+    }
+
+    /** spline destroy */
+    template<typename SplineType>
+    inline void destroy(SplineType *restrict spline)
+    {
+      free(spline->coefs);
+      free(spline);
+    }
+
     /** create spline for double */
     template<typename GT, typename BCT>
-    multi_UBspline_1d_d*  create(multi_UBspline_1d_d* s, GT& grid , BCT& bc, int num_splines)
+    multi_UBspline_1d_d* create(multi_UBspline_1d_d* s, GT& grid , BCT& bc, int num_splines)
     {
       return create_multi_UBspline_1d_d(grid, bc, num_splines);
     }
 
     /** create spline for float */
     template<typename GT, typename BCT>
-    multi_UBspline_1d_s*  create(multi_UBspline_1d_s* s, GT& grid , BCT& bc, int num_splines)
+    multi_UBspline_1d_s* create(multi_UBspline_1d_s* s, GT& grid , BCT& bc_in, int num_splines)
     {
+      BCtype_s bc;
+      bc.lCode = bc_in.lCode;
+      bc.rCode = bc_in.rCode;
       return create_multi_UBspline_1d_s(grid, bc, num_splines);
     }
 
-    inline void  set(UBspline_1d_d* s, double* restrict data)
+    inline void set(multi_UBspline_1d_d* spline, int i, UBspline_1d_d* spline_in,
+         const int offset, const int N)
     {
-      recompute_UBspline_1d_d(s,data);
+      copy_UBspline_1d_d(spline, i, spline_in, offset, N);
     }
 
-    inline void  set(multi_UBspline_1d_d* spline, int i, UBspline_1d_d* spline_in
-        , const int* offset, const int *N)
+    inline void set(multi_UBspline_1d_s* spline, int i, UBspline_1d_d* spline_in,
+         const int offset, const int N)
     {
-      //YYY todo
-      //copy_UBspline_1d_d(spline, i, spline_in,offset,N);
+      copy_UBspline_1d_d_s(spline, i, spline_in, offset, N);
     }
 
-    inline void  set(multi_UBspline_1d_s* spline, int i, UBspline_1d_d* spline_in
-        , const int* offset, const int *N)
-    {
-      //YYY todo
-      //copy_UBspline_1d_d_s(spline, i, spline_in,offset,N);
-    }
-
-    /** evaluate values only using multi_UBspline_3d_d
+    /** evaluate values only using multi_UBspline_1d_d
     */
     template<typename PT, typename VT>
-      inline void  evaluate(multi_UBspline_1d_d *restrict spline, const PT& r, VT &psi)
+      inline void evaluate(multi_UBspline_1d_d *restrict spline, const PT& r, VT &psi)
       { eval_multi_UBspline_1d_d (spline, r, psi.data()); }
 
-    /** evaluate values only using multi_UBspline_3d_s
+    /** evaluate values only using multi_UBspline_1d_s
     */
     template<typename PT, typename VT>
-      inline void  evaluate(multi_UBspline_1d_s *restrict spline, const PT& r, VT &psi)
+      inline void evaluate(multi_UBspline_1d_s *restrict spline, const PT& r, VT &psi)
       { eval_multi_UBspline_1d_s (spline, r, psi.data()); }
+
+    /** evaluate values only using multi_UBspline_1d_d
+    */
+    template<typename PT, typename VT>
+      inline void evaluate(multi_UBspline_1d_d *restrict spline, const PT& r, VT &psi, VT &dpsi, VT &d2psi)
+      { eval_multi_UBspline_1d_d_vgl (spline, r, psi.data()); }
+
+    /** evaluate values only using multi_UBspline_1d_s
+    */
+    template<typename PT, typename VT>
+      inline void evaluate(multi_UBspline_1d_s *restrict spline, const PT& r, VT &psi, VT &dpsi, VT &d2psi)
+      { eval_multi_UBspline_1d_s_vgl (spline, r, psi.data()); }
 
   }
 }
