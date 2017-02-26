@@ -125,6 +125,7 @@ create_multi_UBspline_1d_s (Ugrid x_grid, BCtype_s xBC, int num_splines)
 #else
   posix_memalign ((void**)&spline->coefs, 64, (sizeof(float)*Nx*N));
 #endif
+  spline->coefs_size=(size_t)Nx*(size_t)N;
 #ifdef HAVE_SSE
   init_sse_data();    
 #endif
@@ -501,6 +502,7 @@ create_multi_UBspline_1d_c (Ugrid x_grid, BCtype_c xBC, int num_splines)
 #else
   posix_memalign ((void**)&spline->coefs, 64, 2*sizeof(float)*N*num_splines);
 #endif
+  spline->coefs_size=(size_t)N*(size_t)num_splines;
 #ifdef HAVE_SSE
   init_sse_data();    
 #endif
@@ -980,6 +982,7 @@ create_multi_UBspline_1d_d (Ugrid x_grid, BCtype_d xBC, int num_splines)
 #else
   posix_memalign ((void**)&spline->coefs, 64, sizeof(double)*Nx*N);
 #endif
+  spline->coefs_size=(size_t)Nx*(size_t)N;
 #ifdef HAVE_SSE2
   init_sse_data();
 #endif
@@ -1308,6 +1311,7 @@ create_multi_UBspline_1d_z (Ugrid x_grid, BCtype_z xBC, int num_splines)
 #else
   posix_memalign ((void**)&spline->coefs, 64, 2*sizeof(double)*Nx*num_splines);
 #endif
+  spline->coefs_size=(size_t)Nx*(size_t)num_splines;
 #ifdef HAVE_SSE2
   init_sse_data();   
 #endif

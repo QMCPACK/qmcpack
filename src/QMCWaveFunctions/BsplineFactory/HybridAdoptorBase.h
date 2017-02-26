@@ -147,12 +147,17 @@ struct HybridAdoptorBase
 
   // atomic centers
   std::vector<AtomicOrbitalSoA<ST> > AtomicCenters;
-  // I-e distance table
-  DistanceTableData* ei_dist;
+  ///table index
+  int myTableID;
   //mapping supercell to primitive cell
   std::vector<int> Super2Prim;
 
   HybridAdoptorBase() { }
+
+  void set_dist_table(const ParticleSet& ions, ParticleSet& els)
+  {
+     myTableID=els.addTable(ions,DT_SOA);
+  }
 
   bool read_splines(hdf_archive& h5f)
   {

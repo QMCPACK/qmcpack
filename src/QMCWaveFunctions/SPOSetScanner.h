@@ -158,7 +158,7 @@ namespace qmcplusplus
         target.makeMoveAndCheck(ind, zero_pos);
         mySPOSet->evaluate(target, ind, SPO_v, SPO_g, SPO_l);
         std::ostringstream o;
-        o << "x,y,z  " << std::fixed << std::setprecision(7) << target.R[ind][0] << " " << target.R[ind][1] << " " << target.R[ind][2] ;
+        o << "x_y_z  " << std::fixed << std::setprecision(7) << target.R[ind][0] << " " << target.R[ind][1] << " " << target.R[ind][2] ;
         output_v << o.str() << " : "  << std::scientific << std::setprecision(12);
         output_g << o.str() << " : "  << std::scientific << std::setprecision(12);
         output_l << o.str() << " : "  << std::scientific << std::setprecision(12);
