@@ -624,6 +624,29 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
         fprintf(fout_pw, "\n");
         fprintf(fout_spline, "\n");
       }
+
+#if 0
+      SoaSphericalTensor<double> Ylm(lmax);
+      std::vector<double> Ylm_vals(lm_tot);
+      if(center_idx==0)
+        Ylm.evaluateV(1.0,1.0,1.0, Ylm_vals.data());
+      else
+        Ylm.evaluateV(-1.0,-1.0,-1.0, Ylm_vals.data());
+      double mydelta=1.68658058/240;
+      std::cout << "# iorb " << iorb << std::endl;
+      for(int ip=0; ip<121; ip++)
+      {
+        double r=mydelta*ip;
+        TinyVector<double,3> mypos(r,r,r);
+        std::complex<double> psi_ref(0.0,0.0);
+        //psi_ref=Gvecs.evaluate_psi_r(cG,mypos)*i_power[0];
+        einspline::evaluate(mycenter.MultiSpline,r*std::sqrt(3.0),mycenter.localV);
+        for(int lm=0; lm<lm_tot; lm++)
+          psi_ref+=std::complex<double>(mycenter.localV[lm*mycenter.Npad+iorb*2]*Ylm_vals[lm],mycenter.localV[lm*mycenter.Npad+iorb*2+1]*Ylm_vals[lm]);
+        std::cout << "x_y_z " << r << " " << r << " " << r << " : " << psi_ref << std::endl;
+      }
+#endif
+
       // fill it in the big table N bands
       // push into class.
       fclose(fout_pw);
