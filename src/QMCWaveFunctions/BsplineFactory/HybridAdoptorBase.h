@@ -108,7 +108,10 @@ struct AtomicOrbitalSoA
   inline void evaluate_v(const ST& r, const PointType& dr, VV& myV)
   {
     //evaluate only V
-    Ylm.evaluateV(dr[0], dr[1], dr[2]);
+    if (r>0)
+      Ylm.evaluateV(-dr[0]/r, -dr[1]/r, -dr[2]/r);
+    else
+      Ylm.evaluateV(0,0,1);
     const ST* restrict Ylm_v=Ylm[0];
     einspline::evaluate(MultiSpline,r,localV);
     CONSTEXPR ST czero(0);
