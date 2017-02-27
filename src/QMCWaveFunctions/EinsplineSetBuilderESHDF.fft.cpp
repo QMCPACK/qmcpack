@@ -172,7 +172,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
         //app_log() << "Supercell ion " << i << " mapped to primitive cell ion " << Super2Prim[i] << std::endl;
       }
     }
-    const int tiling_size=det(TileMatrix);
+    const int tiling_size=std::abs(det(TileMatrix));
     for(int i=0; i<IonPos.size(); i++)
       if(prim_atom_counts[i]!=tiling_size)
       {
@@ -194,12 +194,12 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
       for (int j=0; j<Super2Prim.size(); j++)
         if (Super2Prim[j]==i)
         {
-          if ( (Zind<0) || (PrimSourcePtcl.mySpecies(Zind,SourcePtcl->GroupID[i])==IonTypes(i)) )
+          if ( (Zind<0) || (PrimSourcePtcl.mySpecies(Zind,SourcePtcl->GroupID[j])==IonTypes(i)) )
             PrimSourcePtcl.GroupID[i] = SourcePtcl->GroupID[j];
           else
           {
             app_error() << "Primitive cell ion " << i << " vs supercell ion " << j << " atomic number not matching: "
-                        << IonTypes(i) << " vs " << PrimSourcePtcl.mySpecies(Zind,SourcePtcl->GroupID[i]) << std::endl;
+                        << IonTypes(i) << " vs " << PrimSourcePtcl.mySpecies(Zind,SourcePtcl->GroupID[j]) << std::endl;
             abort();
           }
           continue;

@@ -56,11 +56,12 @@ struct Gvectors
   {
     gvecs_cart.resize(NumGvecs);
     gmag.resize(NumGvecs);
-    for(size_t i=0; i<NumGvecs; i++)
+    #pragma omp parallel for
+    for(size_t ig=0; ig<NumGvecs; ig++)
     {
-      gvecs_cart[i]=Lattice.k_cart(gvecs[i]);
-      gmag[i]=std::sqrt(dot(gvecs_cart[i],gvecs_cart[i]));
-      if (gmag[i]>gmag_max) gmag_max=gmag[i];
+      gvecs_cart[ig]=Lattice.k_cart(gvecs[ig]);
+      gmag[ig]=std::sqrt(dot(gvecs_cart[ig],gvecs_cart[ig]));
+      if (gmag[ig]>gmag_max) gmag_max=gmag[ig];
     }
   }
 
@@ -116,6 +117,7 @@ struct Gvectors
   void calc_phase_shift(const PT& pos, aligned_vector<std::complex<ST> >& phase_shift)
   {
     phase_shift.resize(NumGvecs);
+    #pragma omp parallel for
     for(size_t ig=0; ig<NumGvecs; ig++)
     {
       ST s,c;
