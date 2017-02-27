@@ -49,11 +49,14 @@ This file contains information similar to the \texttt{.scalar.dat} file, but als
 \item[NumOfWalkers] The number of walkers times the number of steps.
 \item[AvgSentWalkers] The average number of walkers sent. During a DMC simulation walkers may be created or destroyed. At every step, QMCPACK will do some load balancing to ensure that the walkers are evenly distributed across nodes.
 \item[TrialEnergy] The trial energy. See \ref{sec:dmc} for an explanation of the trial energy.
-\item[DiffEff] The ratio of the number of accepted moves to the number of proposed moves.
+\item[DiffEff] The diffusion efficiency.
 \item[LivingFraction] The fraction of the walker population from the previous step that survived to the current step.
 \end{description}
 
 
 \section{The .bandinfo.dat file}
 \label{sec:bandinfo_file}
-This file contains information about the band structure of the system, including the $k$-points in the irreducible Brillouin zone.
+This file contains information from the trial wavefunction about the band structure of the system,
+including the available $k$-points. This can
+be helpful in constructing trial wavefunctions.
+
