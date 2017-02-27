@@ -3,7 +3,7 @@
 
 %% Detail contents of output files.
 QMCPACK writes several output files which report information about the simulation (e.g. the physical properties such as the energy), as well as information about the computational aspects of the simulation, checkpoints, and restarts.
-The types of output files generated depend on the details of a calculation. The list below is not meant to be exhaustive, but rather to highlight some salient features of the more common filetypes. Further detail can be found in the description of the the estimator one is interested in computing.
+The types of output files generated depend on the details of a calculation. The list below is not meant to be exhaustive, but rather to highlight some salient features of the more common filetypes. Further detail can be found in the description of the estimator one is interested in computing.
 
 
 \section{The .scalar.dat file}
@@ -27,14 +27,15 @@ By default, the quantities reported in the \texttt{.scalar.dat} file include:
 \item[AcceptRatio] The acceptance ratio.
 \end{description}
 
+QMCPACK includes a python utility, \texttt{qmca}, which can be used to process these files. Details and examples are given in chapter~\ref{chap:analysing}.
 \section{The .opt.xml file}
 \label{sec:optxml_file}
-This file is generated after a VMC wave function optimization, and stores the optimized jastrow.
-Conveniently, this file is already formatted in .xml, so it can easily be incorporated into a DMC input file.
+This file is generated after a VMC wave function optimization, and contains the part of the input file which lists the optimized optimized jastrow factors.
+Conveniently, this file is already formatted such it can easily be incorporated into a DMC input file.
 
-\section{The .qmc file}
+\section{The .qmc.xml file}
 \label{sec:qmc_file}
-This file contains information about the computational aspects of the simulation, for example, which parts of the code are being executed when.
+This file contains information about the computational aspects of the simulation, for example, which parts of the code are being executed when. This file is only generated in an ensemble run in which qmcpack runs multiple input files.
 
 \section{The .dmc.dat file}
 \label{sec:dmc_file}
