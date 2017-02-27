@@ -154,9 +154,10 @@ struct HybridAdoptorBase
 
   HybridAdoptorBase() { }
 
-  void set_dist_table(const ParticleSet& ions, ParticleSet& els)
+  void set_info(const ParticleSet& ions, ParticleSet& els, const std::vector<int>& mapping)
   {
-     myTableID=els.addTable(ions,DT_SOA);
+    myTableID=els.addTable(ions,DT_SOA);
+    Super2Prim=mapping;
   }
 
   bool read_splines(hdf_archive& h5f)

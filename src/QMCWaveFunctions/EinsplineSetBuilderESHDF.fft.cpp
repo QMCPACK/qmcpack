@@ -187,14 +187,14 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
     for (int i=0; i<IonPos.size(); i++)
       PrimSourcePtcl.R[i]=IonPos[i];
     PrimSourcePtcl.mySpecies=SourcePtcl->mySpecies;
-    int Zind=PrimSourcePtcl.mySpecies.getAttribute("atomicnumber");
+    int Zind=PrimSourcePtcl.mySpecies.findAttribute("atomicnumber");
     // set GroupID for each ion
     for (int i=0; i<PrimSourcePtcl.GroupID.size(); i++)
     {
       for (int j=0; j<Super2Prim.size(); j++)
         if (Super2Prim[j]==i)
         {
-          if(PrimSourcePtcl.mySpecies(Zind,SourcePtcl->GroupID[i])==IonTypes(i))
+          if ( (Zind<0) || (PrimSourcePtcl.mySpecies(Zind,SourcePtcl->GroupID[i])==IonTypes(i)) )
             PrimSourcePtcl.GroupID[i] = SourcePtcl->GroupID[j];
           else
           {

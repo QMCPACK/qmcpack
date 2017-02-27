@@ -48,44 +48,6 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
     this->KeyWord="Hybrid"+this->KeyWord;
   }
 
-  HybridCplxSoA(const HybridCplxSoA& a):
-    BaseAdoptor(a)
-  {
-  }
-
-  ~HybridCplxSoA() 
-  { 
-    //if(MultiSpline != nullptr) delete SplineInst;
-  }
-
-  inline void resizeStorage(size_t n, size_t nvals)
-  {
-    BaseAdoptor::resizeStorage(n, nvals); 
-  }
-
-  template<typename GT, typename BCT>
-  void create_spline(GT& xyz_g, BCT& xyz_bc)
-  {
-    BaseAdoptor::create_spline(xyz_g, xyz_bc);
-  }
-
-  inline void set_spline(SingleSplineType* spline_r, SingleSplineType* spline_i, int twist, int ispline, int level)
-  {
-    BaseAdoptor::set_spline(spline_r, spline_i, twist, ispline, level);
-  }
-
-  void set_spline(ST* restrict psi_r, ST* restrict psi_i, int twist, int ispline, int level)
-  {
-    BaseAdoptor::set_spline(psi_r, psi_i, twist, ispline, level);
-  }
-
-
-  inline void set_spline_domain(SingleSplineType* spline_r, SingleSplineType* spline_i, 
-      int twist, int ispline, const int* offset_l, const int* mesh_l)
-  {
-    BaseAdoptor::set_spline_domain(spline_r, spline_i, twist, ispline, offset_l, mesh_l);
-  }
-
   bool read_splines(hdf_archive& h5f)
   {
     return BaseAdoptor::read_splines(h5f) && HybridBase::read_splines(h5f);

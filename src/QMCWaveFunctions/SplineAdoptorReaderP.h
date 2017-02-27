@@ -40,6 +40,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
 
   Array<std::complex<double>,3> FFTbox;
   Array<double,3> splineData_r, splineData_i;
+  double rotate_phase_r, rotate_phase_i;
   std::vector<UBspline_3d_d*> spline_r;
   std::vector<UBspline_3d_d*> spline_i;
   BsplineSet<adoptor_type>* bspline;
@@ -293,13 +294,13 @@ struct SplineAdoptorReader: public BsplineReaderBase
     fftw_execute (FFTplan);
     if(bspline->is_complex)
     {
-      fix_phase_rotate_c2c(FFTbox,splineData_r, splineData_i,mybuilder->TwistAngles[ti]);
+      fix_phase_rotate_c2c(FFTbox,splineData_r, splineData_i,mybuilder->TwistAngles[ti], rotate_phase_r, rotate_phase_i);
       einspline::set(spline_r[iorb],splineData_r.data());
       einspline::set(spline_i[iorb],splineData_i.data());
     }
     else
     {
-      fix_phase_rotate_c2r(FFTbox,splineData_r, mybuilder->TwistAngles[ti]);
+      fix_phase_rotate_c2r(FFTbox,splineData_r, mybuilder->TwistAngles[ti], rotate_phase_r, rotate_phase_i);
       einspline::set(spline_r[iorb],splineData_r.data());
     }
   }

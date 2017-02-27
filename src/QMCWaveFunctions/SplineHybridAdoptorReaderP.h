@@ -151,6 +151,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
 
   Array<std::complex<double>,3> FFTbox;
   Array<double,3> splineData_r, splineData_i;
+  double rotate_phase_r, rotate_phase_i;
   std::vector<UBspline_3d_d*> spline_r;
   std::vector<UBspline_3d_d*> spline_i;
   BsplineSet<adoptor_type>* bspline;
@@ -257,6 +258,9 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       app_log() << "  Using real einspline table" << std::endl;
     if(bspline->is_soa_ready)
       app_log() << "  Can use SoA implementation for mGL" << std::endl;
+
+    // set info for Hybrid
+    bspline->set_info(*(mybuilder->SourcePtcl), mybuilder->TargetPtcl, mybuilder->Super2Prim);
 
     //baseclass handles twists
     check_twists(bspline,bandgroup);
@@ -406,13 +410,13 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
     fftw_execute (FFTplan);
     if(bspline->is_complex)
     {
-      fix_phase_rotate_c2c(FFTbox,splineData_r, splineData_i,mybuilder->TwistAngles[ti]);
+      fix_phase_rotate_c2c(FFTbox,splineData_r, splineData_i,mybuilder->TwistAngles[ti], rotate_phase_r, rotate_phase_i);
       einspline::set(spline_r[iorb],splineData_r.data());
       einspline::set(spline_i[iorb],splineData_i.data());
     }
     else
     {
-      fix_phase_rotate_c2r(FFTbox,splineData_r, mybuilder->TwistAngles[ti]);
+      fix_phase_rotate_c2r(FFTbox,splineData_r, mybuilder->TwistAngles[ti], rotate_phase_r, rotate_phase_i);
       einspline::set(spline_r[iorb],splineData_r.data());
     }
   }
@@ -471,7 +475,8 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
     const int lmax_limit=7;
     Gvecs.calc_YlmG(lmax_limit);
     std::vector<std::complex<double> > i_power;
-    std::complex<double> i_temp(1.0, 0.0);
+    // rotate phase is introduced here.
+    std::complex<double> i_temp(rotate_phase_r, rotate_phase_i);
     for(size_t l=0; l<=lmax_limit; l++)
     {
       for(size_t lm=l*l; lm<(l+1)*(l+1); lm++)
