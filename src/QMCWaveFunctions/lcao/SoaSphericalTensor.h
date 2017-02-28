@@ -353,7 +353,7 @@ inline void SoaSphericalTensor<T>::evaluateVGL(T x, T y, T z)
       }
     }
   }
-  for (int i=0; i<Ylm.size(); i++)
+  for (int i=0; i<cYlm.size(); i++)
     Ylm[i]*= NormFactor[i];
 //for (int i=0; i<Ylm.size(); i++) gradYlm[i]*= NormFactor[i];
 }

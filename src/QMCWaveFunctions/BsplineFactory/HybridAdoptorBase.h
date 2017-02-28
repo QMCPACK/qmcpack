@@ -104,18 +104,21 @@ struct AtomicOrbitalSoA
     return success;
   }
 
+  //evaluate only V
   template<typename VV>
   inline void evaluate_v(const ST& r, const PointType& dr, VV& myV)
   {
-    //evaluate only V
     if (r>0)
       Ylm.evaluateV(-dr[0]/r, -dr[1]/r, -dr[2]/r);
     else
       Ylm.evaluateV(0,0,1);
     const ST* restrict Ylm_v=Ylm[0];
+
     einspline::evaluate(MultiSpline,r,localV);
+
     CONSTEXPR ST czero(0);
     std::fill(myV.begin(),myV.end(),czero);
+
     for(size_t lm=0; lm<lm_tot; lm++)
     {
       size_t offset=lm*Npad;
@@ -124,19 +127,62 @@ struct AtomicOrbitalSoA
     }
   }
 
+  //evaluate VGL
   template<typename VV, typename GV>
-  inline void evaluate_vgl(const ST& r, const PointType& dr, VV& myV, GV& myG, VV& myH)
+  inline void evaluate_vgl(const ST& r, const PointType& dr, VV& myV, GV& myG, VV& myL)
   {
-    //missing
+    ST rhatx, rhaty, rhatz, rinv;
+    if (r>0)
+    {
+      rinv=1.0/r;
+      rhatx=-dr[0]*rinv;
+      rhaty=-dr[1]*rinv;
+      rhatz=-dr[2]*rinv;
+    }
+    else
+    {
+      rhatx=0;
+      rhaty=0;
+      rhatz=1;
+    }
+
+    Ylm.evaluateVGL(rhatx, rhaty, rhatz);
+    const ST* restrict Ylm_v=Ylm[0];
+    const ST* restrict Ylm_gx=Ylm[1];
+    const ST* restrict Ylm_gy=Ylm[2];
+    const ST* restrict Ylm_gz=Ylm[3];
+
+    einspline::evaluate(MultiSpline,r,localV,localG,localL);
+
+    ST* restrict g0=myG.data(0);
+    ST* restrict g1=myG.data(1);
+    ST* restrict g2=myG.data(2);
+    CONSTEXPR ST czero(0);
+    std::fill(myV.begin(),myV.end(),czero);
+    std::fill(g0,g0+Npad,czero);
+    std::fill(g1,g1+Npad,czero);
+    std::fill(g2,g2+Npad,czero);
+    std::fill(myL.begin(),myL.end(),czero);
+
+    for(size_t lm=0; lm<lm_tot; lm++)
+    {
+      size_t offset=lm*Npad;
+      for(size_t ib=0; ib<myV.size(); ib++)
+      {
+        myV[ib]+=Ylm_v[lm]*localV[offset+ib];
+
+        ST rhat_dot_g = rhatx*g0[lm] + rhaty*g1[lm] + rhatz*g2[lm];
+
+        // to be complete.
+      }
+    }
   }
 
   template<typename VV, typename GV, typename HT>
   void evaluate_vgh(const ST& r, const PointType& dr, VV& myV, GV& myG, HT& myH)
   {
     //Needed to do tensor product here
-    //einspline::evaluate_vgh(MultiSpline,r,myV,myG,myH);
-    //cheating
-    evaluate_v(r, dr, myV);
+    APP_ABORT("AtomicOrbitalSoA::evaluate_vgh");
   }
 };
 
@@ -223,10 +269,10 @@ struct HybridAdoptorBase
     return success;
   }
 
+  //evaluate only V
   template<typename VV>
   inline bool evaluate_v(const ParticleSet& P, VV& myV)
   {
-    //evaluate only V
     bool inAtom=false;
     const auto* ei_dist=P.DistTables[myTableID];
     const int center_idx=ei_dist->get_first_neighbor_temporal();
@@ -240,12 +286,24 @@ struct HybridAdoptorBase
     return inAtom;
   }
 
+  //evaluate only VGL
   template<typename VV, typename GV>
-  inline bool evaluate_vgl(const ParticleSet& P, VV& myV, GV& myG, VV& myH)
+  inline bool evaluate_vgl(const ParticleSet& P, VV& myV, GV& myG, VV& myL)
   {
-    //missing
+    bool inAtom=false;
+    const auto* ei_dist=P.DistTables[myTableID];
+    const int center_idx=ei_dist->get_first_neighbor_temporal();
+    if(center_idx<0) abort();
+    auto& myCenter=AtomicCenters[Super2Prim[center_idx]];
+    if ( ei_dist->Temp_r[center_idx] < myCenter.cutoff )
+    {
+      inAtom=true;
+      myCenter.evaluate_vgl(ei_dist->Temp_r[center_idx], ei_dist->Temp_dr[center_idx], myV, myG, myL);
+    }
+    return inAtom;
   }
 
+  //evaluate only VGH
   template<typename VV, typename GV, typename HT>
   inline bool evaluate_vgh(const ParticleSet& P, VV& myV, GV& myG, HT& myH)
   {

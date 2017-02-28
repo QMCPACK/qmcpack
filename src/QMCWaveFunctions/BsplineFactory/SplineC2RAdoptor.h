@@ -249,6 +249,8 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     assign_v(r,psi);
   }
 
+  /** assign_vgl
+   */
   template<typename VV, typename GV>
   inline void assign_vgl(const PointType& r, VV& psi, GV& dpsi, VV& d2psi)
   {
@@ -388,6 +390,124 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
       const ST lap_r=lcart_r+mKK[j]*val_r+two*(kX*dX_i+kY*dY_i+kZ*dZ_i);
       const ST lap_i=lcart_i+mKK[j]*val_i-two*(kX*dX_r+kY*dY_r+kZ*dZ_r);
 #endif
+      d2psi[psiIndex  ]=c*lap_r-s*lap_i;
+    }
+  }
+
+  /** assign_vgl_from_l can be used when myL is precomputed
+   */
+  template<typename VV, typename GV>
+  inline void assign_vgl_from_l(const PointType& r, VV& psi, GV& dpsi, VV& d2psi)
+  {
+    CONSTEXPR ST zero(0);
+    CONSTEXPR ST two(2);
+    const ST g00=PrimLattice.G(0), g01=PrimLattice.G(1), g02=PrimLattice.G(2),
+             g10=PrimLattice.G(3), g11=PrimLattice.G(4), g12=PrimLattice.G(5),
+             g20=PrimLattice.G(6), g21=PrimLattice.G(7), g22=PrimLattice.G(8);
+    const ST x=r[0], y=r[1], z=r[2];
+
+    const ST* restrict k0=myKcart.data(0); ASSUME_ALIGNED(k0);
+    const ST* restrict k1=myKcart.data(1); ASSUME_ALIGNED(k1);
+    const ST* restrict k2=myKcart.data(2); ASSUME_ALIGNED(k2);
+
+    const ST* restrict g0=myG.data(0); ASSUME_ALIGNED(g0);
+    const ST* restrict g1=myG.data(1); ASSUME_ALIGNED(g1);
+    const ST* restrict g2=myG.data(2); ASSUME_ALIGNED(g2);
+
+    const size_t N=kPoints.size();
+    const size_t nsplines=myL.size();
+
+    #pragma simd
+    for (size_t j=0, psiIndex=first_spo; j<nComplexBands; j++,psiIndex+=2)
+    {
+      const size_t jr=j<<1;
+      const size_t ji=jr+1;
+
+      const ST kX=k0[j];
+      const ST kY=k1[j];
+      const ST kZ=k2[j];
+      const ST val_r=myV[jr];
+      const ST val_i=myV[ji];
+
+      //phase
+      ST s, c;
+      sincos(-(x*kX+y*kY+z*kZ),&s,&c);
+
+      //dot(PrimLattice.G,myG[j])
+      const ST dX_r = g00*g0[jr]+g01*g1[jr]+g02*g2[jr];
+      const ST dY_r = g10*g0[jr]+g11*g1[jr]+g12*g2[jr];
+      const ST dZ_r = g20*g0[jr]+g21*g1[jr]+g22*g2[jr];
+
+      const ST dX_i = g00*g0[ji]+g01*g1[ji]+g02*g2[ji];
+      const ST dY_i = g10*g0[ji]+g11*g1[ji]+g12*g2[ji];
+      const ST dZ_i = g20*g0[ji]+g21*g1[ji]+g22*g2[ji];
+
+      // \f$\nabla \psi_r + {\bf k}\psi_i\f$
+      const ST gX_r=dX_r+val_i*kX;
+      const ST gY_r=dY_r+val_i*kY;
+      const ST gZ_r=dZ_r+val_i*kZ;
+      const ST gX_i=dX_i-val_r*kX;
+      const ST gY_i=dY_i-val_r*kY;
+      const ST gZ_i=dZ_i-val_r*kZ;
+
+      const ST lap_r=myL[jr]+mKK[j]*val_r+two*(kX*dX_i+kY*dY_i+kZ*dZ_i);
+      const ST lap_i=myL[ji]+mKK[j]*val_i-two*(kX*dX_r+kY*dY_r+kZ*dZ_r);
+
+      //this will be fixed later
+      psi[psiIndex  ]=c*val_r-s*val_i;
+      psi[psiIndex+1]=c*val_i+s*val_r;
+      d2psi[psiIndex  ]=c*lap_r-s*lap_i;
+      d2psi[psiIndex+1]=c*lap_i+s*lap_r;
+      //this will go way with Determinant
+      dpsi[psiIndex  ][0]=c*gX_r-s*gX_i;
+      dpsi[psiIndex  ][1]=c*gY_r-s*gY_i;
+      dpsi[psiIndex  ][2]=c*gZ_r-s*gZ_i;
+      dpsi[psiIndex+1][0]=c*gX_i+s*gX_r;
+      dpsi[psiIndex+1][1]=c*gY_i+s*gY_r;
+      dpsi[psiIndex+1][2]=c*gZ_i+s*gZ_r;
+    }
+
+    const size_t nComputed=2*nComplexBands;
+    #pragma simd
+    for (size_t j=nComplexBands,psiIndex=first_spo+nComputed; j<N; j++,psiIndex++)
+    {
+      const size_t jr=j<<1;
+      const size_t ji=jr+1;
+
+      const ST kX=k0[j];
+      const ST kY=k1[j];
+      const ST kZ=k2[j];
+      const ST val_r=myV[jr];
+      const ST val_i=myV[ji];
+
+      //phase
+      ST s, c;
+      sincos(-(x*kX+y*kY+z*kZ),&s,&c);
+
+      //dot(PrimLattice.G,myG[j])
+      const ST dX_r = g00*g0[jr]+g01*g1[jr]+g02*g2[jr];
+      const ST dY_r = g10*g0[jr]+g11*g1[jr]+g12*g2[jr];
+      const ST dZ_r = g20*g0[jr]+g21*g1[jr]+g22*g2[jr];
+
+      const ST dX_i = g00*g0[ji]+g01*g1[ji]+g02*g2[ji];
+      const ST dY_i = g10*g0[ji]+g11*g1[ji]+g12*g2[ji];
+      const ST dZ_i = g20*g0[ji]+g21*g1[ji]+g22*g2[ji];
+
+      // \f$\nabla \psi_r + {\bf k}\psi_i\f$
+      const ST gX_r=dX_r+val_i*kX;
+      const ST gY_r=dY_r+val_i*kY;
+      const ST gZ_r=dZ_r+val_i*kZ;
+      const ST gX_i=dX_i-val_r*kX;
+      const ST gY_i=dY_i-val_r*kY;
+      const ST gZ_i=dZ_i-val_r*kZ;
+      psi[psiIndex  ]=c*val_r-s*val_i;
+      //this will be fixed later
+      dpsi[psiIndex  ][0]=c*gX_r-s*gX_i;
+      dpsi[psiIndex  ][1]=c*gY_r-s*gY_i;
+      dpsi[psiIndex  ][2]=c*gZ_r-s*gZ_i;
+
+      const ST lap_r=myL[jr]+mKK[j]*val_r+two*(kX*dX_i+kY*dY_i+kZ*dZ_i);
+      const ST lap_i=myL[ji]+mKK[j]*val_i-two*(kX*dX_r+kY*dY_r+kZ*dZ_r);
       d2psi[psiIndex  ]=c*lap_r-s*lap_i;
     }
   }

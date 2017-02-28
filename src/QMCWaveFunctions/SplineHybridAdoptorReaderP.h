@@ -607,8 +607,9 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
             splineData_i[ip]=imag(all_vals[ip][lm]);
           spline_i=einspline::create(spline_i, 0.0, spline_radius, spline_npoints);
           einspline::set(spline_i,splineData_i.data());
-          mycenter.set_spline(spline_r,lm,iorb*2);
-          mycenter.set_spline(spline_i,lm,iorb*2+1);
+          int iband=bspline->BandIndexMap.size()>0?bspline->BandIndexMap[iorb]:iorb;
+          mycenter.set_spline(spline_r,lm,iband*2);
+          mycenter.set_spline(spline_i,lm,iband*2+1);
           einspline::destroy(spline_r);
           einspline::destroy(spline_i);
         }

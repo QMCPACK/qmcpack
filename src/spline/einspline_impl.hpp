@@ -506,13 +506,13 @@ namespace qmcplusplus
     */
     template<typename PT, typename VT>
       inline void evaluate(multi_UBspline_1d_d *restrict spline, const PT& r, VT &psi, VT &dpsi, VT &d2psi)
-      { eval_multi_UBspline_1d_d_vgl (spline, r, psi.data()); }
+      { eval_multi_UBspline_1d_d_vgl (spline, r, psi.data(), dpsi.data(), d2psi.data()); }
 
     /** evaluate values only using multi_UBspline_1d_s
     */
     template<typename PT, typename VT>
       inline void evaluate(multi_UBspline_1d_s *restrict spline, const PT& r, VT &psi, VT &dpsi, VT &d2psi)
-      { eval_multi_UBspline_1d_s_vgl (spline, r, psi.data()); }
+      { eval_multi_UBspline_1d_s_vgl (spline, r, psi.data(), dpsi.data(), d2psi.data()); }
 
   }
 }

@@ -61,25 +61,25 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
   template<typename VV>
   inline void evaluate_v(const ParticleSet& P, const int iat, VV& psi)
   {
-    const PointType& r=P.R[iat];
-    if(!HybridBase::evaluate_v(P,myV))
+    if(HybridBase::evaluate_v(P,myV))
     {
-      PointType ru(PrimLattice.toUnit_floor(r));
-      SplineInst->evaluate(ru,myV);
+      const PointType& r=P.R[iat];
+      BaseAdoptor::assign_v(r,psi);
     }
-    BaseAdoptor::assign_v(r,psi);
+    else
+      BaseAdoptor::evaluate_v(P,iat,psi);
   }
 
   template<typename VV, typename GV>
   inline void evaluate_vgl(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, VV& d2psi)
   {
-    const PointType& r=P.R[iat];
-    if(!HybridBase::evaluate_vgh(P,myV,myG,myH))
+    if(HybridBase::evaluate_vgl(P,myV,myG,myL))
     {
-      PointType ru(PrimLattice.toUnit_floor(r));
-      SplineInst->evaluate_vgh(ru,myV,myG,myH);
+      const PointType& r=P.R[iat];
+      BaseAdoptor::assign_vgl_from_l(r,psi,dpsi,d2psi);
     }
-    BaseAdoptor::assign_vgl(r,psi,dpsi,d2psi);
+    else
+      BaseAdoptor::evaluate_vgl(P,iat,psi,dpsi,d2psi);
   }
 
   /** evaluate VGL using VectorSoaContainer
@@ -90,25 +90,25 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
   template<typename VGL>
   inline void evaluate_vgl_combo(const ParticleSet& P, const int iat, VGL& vgl)
   {
-    const PointType& r=P.R[iat];
-    if(!HybridBase::evaluate_vgh(P,myV,myG,myH))
+    if(HybridBase::evaluate_vgh(P,myV,myG,myH))
     {
-      PointType ru(PrimLattice.toUnit_floor(r));
-      SplineInst->evaluate_vgh(ru,myV,myG,myH);
+      const PointType& r=P.R[iat];
+      BaseAdoptor::assign_vgl_soa(r,vgl);
     }
-    BaseAdoptor::assign_vgl_soa(r,vgl);
+    else
+      BaseAdoptor::evaluate_vgl_combo(P,iat,vgl);
   }
 
   template<typename VV, typename GV, typename GGV>
-  void evaluate_vgh(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, GGV& grad_grad_psi)
+  inline void evaluate_vgh(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, GGV& grad_grad_psi)
   {
-    const PointType& r=P.R[iat];
-    if(!HybridBase::evaluate_vgh(P,myV,myG,myH))
+    if(HybridBase::evaluate_vgh(P,myV,myG,myH))
     {
-      PointType ru(PrimLattice.toUnit_floor(r));
-      SplineInst->evaluate_vgh(ru,myV,myG,myH);
+      const PointType& r=P.R[iat];
+      BaseAdoptor::assign_vgh(r,psi,dpsi,grad_grad_psi);
     }
-    BaseAdoptor::assign_vgh(r,psi,dpsi,grad_grad_psi);
+    else
+      BaseAdoptor::evaluate_vgh(P,iat,psi,dpsi,grad_grad_psi);
   }
 };
 
