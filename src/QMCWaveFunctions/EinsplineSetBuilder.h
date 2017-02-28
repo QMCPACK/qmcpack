@@ -217,7 +217,7 @@ public:
   UnitCellType SuperCell, PrimCell, PrimCellInv;
   int NumBands, NumElectrons, NumSpins, NumTwists, NumCoreStates;
   int MaxNumGvecs;
-  RealType MeshFactor;
+  double MeshFactor;
   RealType BufferLayer;
   RealType MatchingTol;
   TinyVector<int,3> MeshSize;
