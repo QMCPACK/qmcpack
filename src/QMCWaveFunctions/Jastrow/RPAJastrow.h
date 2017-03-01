@@ -88,6 +88,8 @@ struct RPAJastrow: public OrbitalBase
                   ParticleSet::ParticleLaplacian_t& dL);
 
   ValueType ratio(ParticleSet& P, int iat);
+  GradType evalGrad(ParticleSet& P, int iat);
+  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
 
   void acceptMove(ParticleSet& P, int iat);
 

@@ -310,6 +310,27 @@ RPAJastrow::ratio(ParticleSet& P, int iat)
   return r;
 }
 
+RPAJastrow::GradType
+RPAJastrow::evalGrad(ParticleSet& P, int iat)
+{
+  GradType grad;
+  ValueType r(1.0);
+  for(int i=0; i<Psi.size(); i++)
+    grad += Psi[i]->evalGrad(P,iat);
+  return grad;
+}
+
+RPAJastrow::ValueType
+RPAJastrow::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+{
+  ValueType r(1);
+  for(int i=0; i<Psi.size(); i++)
+  {
+    r *= Psi[i]->ratioGrad(P,iat,grad_iat);
+  }
+  return r;
+}
+
 //RPAJastrow::ValueType
 //  RPAJastrow::logRatio(ParticleSet& P, int iat,
 //      ParticleSet::ParticleGradient_t& dG,
