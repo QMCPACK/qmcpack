@@ -41,6 +41,7 @@ struct AtomicOrbitalSoA
   PointType pos;
   const int lmax, lm_tot, NumBands, Npad;
   SoaSphericalTensor<ST> Ylm;
+  vContainer_type l_vals;
   AtomicSplineType* MultiSpline;
 
   vContainer_type localV, localG, localL;
@@ -52,6 +53,10 @@ struct AtomicOrbitalSoA
     localV.resize(Npad*lm_tot);
     localG.resize(Npad*lm_tot);
     localL.resize(Npad*lm_tot);
+    l_vals.resize(lm_tot);
+    for(int l=0; l<=lmax; l++)
+      for(int m=-l; m<=l; m++)
+        l_vals[l*(l+1)+m] = l;
   }
 
   //~AtomicOrbitalSoA();
@@ -144,6 +149,7 @@ struct AtomicOrbitalSoA
       rhatx=0;
       rhaty=0;
       rhatz=1;
+      rinv=0;
     }
 
     Ylm.evaluateVGL(rhatx, rhaty, rhatz);
@@ -164,16 +170,29 @@ struct AtomicOrbitalSoA
     std::fill(g2,g2+Npad,czero);
     std::fill(myL.begin(),myL.end(),czero);
 
+    std::cout << "debug r " << r << " rx,ry,rz : " << -dr[0] << " " << -dr[1] << " " << -dr[2] << std::endl;
     for(size_t lm=0; lm<lm_tot; lm++)
     {
       size_t offset=lm*Npad;
+      std::cout << "debug lm " << lm << " YlmV : " << Ylm_v[lm] << " YlmG " << Ylm_gx[lm] << " " << Ylm_gy[lm] << " " << Ylm_gz[lm] << std::endl;
       for(size_t ib=0; ib<myV.size(); ib++)
       {
-        myV[ib]+=Ylm_v[lm]*localV[offset+ib];
+        // value
+        const ST Vpart = Ylm_v[lm]*localV[offset+ib];
+        myV[ib] += Vpart;
 
-        ST rhat_dot_g = rhatx*g0[lm] + rhaty*g1[lm] + rhatz*g2[lm];
+        // grad
+        g0[ib] += localG[offset+ib] * rhatx * Ylm_v[lm] + localV[offset+ib] * Ylm_gx[lm] - l_vals[lm] * rhatx * Vpart;
+        g1[ib] += localG[offset+ib] * rhaty * Ylm_v[lm] + localV[offset+ib] * Ylm_gy[lm] - l_vals[lm] * rhaty * Vpart;
+        g2[ib] += localG[offset+ib] * rhatz * Ylm_v[lm] + localV[offset+ib] * Ylm_gz[lm] - l_vals[lm] * rhatz * Vpart;
+        std::cout << "debug ib " << ib << " localV localG : " << localV[offset+ib] << " " << localG[offset+ib] << " " << localL[offset+ib]
+                  << " g_xyz " << g0[ib] <<" " << g1[ib] << " " << g2[ib] << std::endl;
 
-        // to be complete.
+        // laplacian
+        ST rhat_dot_G = rhatx*Ylm_gx[lm] + rhaty*Ylm_gy[lm] + rhatz*Ylm_gz[lm];
+        myL[ib] += (localL[offset+ib] + localG[offset+ib] * 2 * rinv) * Ylm_v[lm]
+                  + localG[offset+ib] * (rhat_dot_G - l_vals[lm] * Ylm_v[lm] )
+                  - localV[offset+ib] * l_vals[lm] * (Ylm_v[lm] + rhat_dot_G);
       }
     }
   }

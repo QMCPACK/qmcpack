@@ -394,16 +394,12 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     }
   }
 
-  /** assign_vgl_from_l can be used when myL is precomputed
+  /** assign_vgl_from_l can be used when myL is precomputed and myV,myG,myL in cartesian
    */
   template<typename VV, typename GV>
   inline void assign_vgl_from_l(const PointType& r, VV& psi, GV& dpsi, VV& d2psi)
   {
-    CONSTEXPR ST zero(0);
     CONSTEXPR ST two(2);
-    const ST g00=PrimLattice.G(0), g01=PrimLattice.G(1), g02=PrimLattice.G(2),
-             g10=PrimLattice.G(3), g11=PrimLattice.G(4), g12=PrimLattice.G(5),
-             g20=PrimLattice.G(6), g21=PrimLattice.G(7), g22=PrimLattice.G(8);
     const ST x=r[0], y=r[1], z=r[2];
 
     const ST* restrict k0=myKcart.data(0); ASSUME_ALIGNED(k0);
@@ -434,13 +430,13 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
       sincos(-(x*kX+y*kY+z*kZ),&s,&c);
 
       //dot(PrimLattice.G,myG[j])
-      const ST dX_r = g00*g0[jr]+g01*g1[jr]+g02*g2[jr];
-      const ST dY_r = g10*g0[jr]+g11*g1[jr]+g12*g2[jr];
-      const ST dZ_r = g20*g0[jr]+g21*g1[jr]+g22*g2[jr];
+      const ST dX_r = g0[jr];
+      const ST dY_r = g1[jr];
+      const ST dZ_r = g2[jr];
 
-      const ST dX_i = g00*g0[ji]+g01*g1[ji]+g02*g2[ji];
-      const ST dY_i = g10*g0[ji]+g11*g1[ji]+g12*g2[ji];
-      const ST dZ_i = g20*g0[ji]+g21*g1[ji]+g22*g2[ji];
+      const ST dX_i = g0[ji];
+      const ST dY_i = g1[ji];
+      const ST dZ_i = g2[ji];
 
       // \f$\nabla \psi_r + {\bf k}\psi_i\f$
       const ST gX_r=dX_r+val_i*kX;
@@ -485,13 +481,13 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
       sincos(-(x*kX+y*kY+z*kZ),&s,&c);
 
       //dot(PrimLattice.G,myG[j])
-      const ST dX_r = g00*g0[jr]+g01*g1[jr]+g02*g2[jr];
-      const ST dY_r = g10*g0[jr]+g11*g1[jr]+g12*g2[jr];
-      const ST dZ_r = g20*g0[jr]+g21*g1[jr]+g22*g2[jr];
+      const ST dX_r = g0[jr];
+      const ST dY_r = g1[jr];
+      const ST dZ_r = g2[jr];
 
-      const ST dX_i = g00*g0[ji]+g01*g1[ji]+g02*g2[ji];
-      const ST dY_i = g10*g0[ji]+g11*g1[ji]+g12*g2[ji];
-      const ST dZ_i = g20*g0[ji]+g21*g1[ji]+g22*g2[ji];
+      const ST dX_i = g0[ji];
+      const ST dY_i = g1[ji];
+      const ST dZ_i = g2[ji];
 
       // \f$\nabla \psi_r + {\bf k}\psi_i\f$
       const ST gX_r=dX_r+val_i*kX;
