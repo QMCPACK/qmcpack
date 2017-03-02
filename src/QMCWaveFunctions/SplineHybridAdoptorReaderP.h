@@ -528,10 +528,16 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       char fname[64];
       sprintf(fname, "band_%d_center_%d_pw.dat", iorb, center_idx);
       FILE *fout_pw  = fopen (fname, "w");
-      sprintf(fname, "band_%d_center_%d_spline.dat", iorb, center_idx);
-      FILE *fout_spline  = fopen (fname, "w");
+      sprintf(fname, "band_%d_center_%d_spline_v.dat", iorb, center_idx);
+      FILE *fout_spline_v  = fopen (fname, "w");
+      sprintf(fname, "band_%d_center_%d_spline_g.dat", iorb, center_idx);
+      FILE *fout_spline_g  = fopen (fname, "w");
+      sprintf(fname, "band_%d_center_%d_spline_l.dat", iorb, center_idx);
+      FILE *fout_spline_l  = fopen (fname, "w");
       fprintf(fout_pw, "# r vals(lm)\n");
-      fprintf(fout_spline, "# r vals(lm)\n");
+      fprintf(fout_spline_v, "# r vals(lm)\n");
+      fprintf(fout_spline_g, "# r grads(lm)\n");
+      fprintf(fout_spline_l, "# r lapls(lm)\n");
 #endif
 
       std::vector<std::vector<std::complex<double> > > all_vals;
@@ -621,15 +627,22 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       {
         double r=delta*static_cast<double>(ip);
         fprintf(fout_pw, "%15.10lf  ", r);
-        fprintf(fout_spline, "%15.10lf  ", r);
-        einspline::evaluate(mycenter.MultiSpline,r,mycenter.localV);
+        fprintf(fout_spline_v, "%15.10lf  ", r);
+        fprintf(fout_spline_g, "%15.10lf  ", r);
+        fprintf(fout_spline_l, "%15.10lf  ", r);
+        //einspline::evaluate(mycenter.MultiSpline,r,mycenter.localV);
+        einspline::evaluate(mycenter.MultiSpline,r,mycenter.localV,mycenter.localG,mycenter.localL);
         for(int lm=0; lm<lm_tot; lm++)
         {
           fprintf(fout_pw, "%15.10lf  %15.10lf  ", all_vals[ip][lm].real(), all_vals[ip][lm].imag());
-          fprintf(fout_spline, "%15.10lf  %15.10lf  ", mycenter.localV[lm*mycenter.Npad+iorb*2], mycenter.localV[lm*mycenter.Npad+iorb*2+1]);
+          fprintf(fout_spline_v, "%15.10lf  %15.10lf  ", mycenter.localV[lm*mycenter.Npad+iorb*2], mycenter.localV[lm*mycenter.Npad+iorb*2+1]);
+          fprintf(fout_spline_g, "%15.10lf  %15.10lf  ", mycenter.localG[lm*mycenter.Npad+iorb*2], mycenter.localG[lm*mycenter.Npad+iorb*2+1]);
+          fprintf(fout_spline_l, "%15.10lf  %15.10lf  ", mycenter.localL[lm*mycenter.Npad+iorb*2], mycenter.localL[lm*mycenter.Npad+iorb*2+1]);
         }
         fprintf(fout_pw, "\n");
-        fprintf(fout_spline, "\n");
+        fprintf(fout_spline_v, "\n");
+        fprintf(fout_spline_g, "\n");
+        fprintf(fout_spline_l, "\n");
       }
 #endif
 
@@ -675,7 +688,9 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
 
 #ifdef PRINT_RADIAL
       fclose(fout_pw);
-      fclose(fout_spline);
+      fclose(fout_spline_v);
+      fclose(fout_spline_g);
+      fclose(fout_spline_l);
 #endif
     }
   }

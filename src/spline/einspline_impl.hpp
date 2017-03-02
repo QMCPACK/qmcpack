@@ -429,7 +429,7 @@ namespace qmcplusplus
     UBspline_1d_d* create(UBspline_1d_d* s, const VT& start, const VT& end, const int spline_npoints)
     {
       BCtype_d bc;
-      bc.lCode = FLAT;
+      bc.lCode = NATURAL;
       bc.rCode = NATURAL;
       Ugrid grid;
       grid.start = start;
