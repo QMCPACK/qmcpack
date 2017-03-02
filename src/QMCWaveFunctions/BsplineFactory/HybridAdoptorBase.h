@@ -55,7 +55,6 @@ struct AtomicOrbitalSoA
     localG.resize(Npad*lm_tot);
     localL.resize(Npad*lm_tot);
     r_power_minus_l.resize(lm_tot);
-    r_power_minus_l[0]=ST(1);
     l_vals.resize(lm_tot);
     for(int l=0; l<=lmax; l++)
       for(int m=-l; m<=l; m++)
@@ -151,7 +150,7 @@ struct AtomicOrbitalSoA
     {
       rhatx=0;
       rhaty=0;
-      rhatz=0;
+      rhatz=1;
       rinv=0;
     }
 
@@ -166,46 +165,88 @@ struct AtomicOrbitalSoA
     ST* restrict g0=myG.data(0);
     ST* restrict g1=myG.data(1);
     ST* restrict g2=myG.data(2);
-    CONSTEXPR ST czero(0), cone(1);
+    CONSTEXPR ST czero(0), cone(1), chalf(0.5);
     std::fill(myV.begin(),myV.end(),czero);
     std::fill(g0,g0+Npad,czero);
     std::fill(g1,g1+Npad,czero);
     std::fill(g2,g2+Npad,czero);
     std::fill(myL.begin(),myL.end(),czero);
 
-    ST r_power_temp=cone;
-    for(int l=1; l<=lmax; l++)
+    if(r>2e-4)
     {
-      r_power_temp*=rinv;
-      for(int m=-l, lm=l*l; m<=l; m++,lm++)
-        r_power_minus_l[lm]=r_power_temp;
-    }
-
-    //std::cout << "debug r " << r << " rx,ry,rz : " << -dr[0] << " " << -dr[1] << " " << -dr[2] << std::endl;
-    for(size_t lm=0; lm<lm_tot; lm++)
-    {
-      size_t offset=lm*Npad;
-      ST l_val=l_vals[lm];
-      ST r_power=r_power_minus_l[lm];
-      //std::cout << "debug lm " << lm << " YlmV : " << Ylm_v[lm] << " YlmG " << Ylm_gx[lm] << " " << Ylm_gy[lm] << " " << Ylm_gz[lm] << std::endl;
-      for(size_t ib=0; ib<myV.size(); ib++)
+      // far from core
+      r_power_minus_l[0]=cone;
+      ST r_power_temp=cone;
+      for(int l=1; l<=lmax; l++)
       {
-        // value
-        const ST Vpart = Ylm_v[lm]*localV[offset+ib];
-        myV[ib] += Vpart;
+        r_power_temp*=rinv;
+        for(int m=-l, lm=l*l; m<=l; m++,lm++)
+          r_power_minus_l[lm]=r_power_temp;
+      }
 
-        // grad
-        g0[ib] += localG[offset+ib] * rhatx * Ylm_v[lm] + localV[offset+ib] * Ylm_gx[lm] * r_power - l_val * rhatx * Vpart * rinv;
-        g1[ib] += localG[offset+ib] * rhaty * Ylm_v[lm] + localV[offset+ib] * Ylm_gy[lm] * r_power - l_val * rhaty * Vpart * rinv;
-        g2[ib] += localG[offset+ib] * rhatz * Ylm_v[lm] + localV[offset+ib] * Ylm_gz[lm] * r_power - l_val * rhatz * Vpart * rinv;
-        //std::cout << "debug ib " << ib << " localVGL : " << localV[offset+ib] << " " << localG[offset+ib] << " " << localL[offset+ib]
-        //          << " v " << myV[ib] << " g_xyz " << g0[ib] <<" " << g1[ib] << " " << g2[ib] << std::endl;
+      //std::cout << "debug r " << r << " rx,ry,rz : " << -dr[0] << " " << -dr[1] << " " << -dr[2] << std::endl;
+      for(size_t lm=0; lm<lm_tot; lm++)
+      {
+        size_t offset=lm*Npad;
+        ST l_val=l_vals[lm];
+        ST r_power=r_power_minus_l[lm];
+        //std::cout << "debug lm " << lm << " YlmV : " << Ylm_v[lm] << " YlmG " << Ylm_gx[lm] << " " << Ylm_gy[lm] << " " << Ylm_gz[lm] << std::endl;
+        for(size_t ib=0; ib<myV.size(); ib++)
+        {
+          // value
+          const ST Vpart = Ylm_v[lm]*localV[offset+ib];
+          myV[ib] += Vpart;
 
-        // laplacian
-        ST rhat_dot_G = rhatx*Ylm_gx[lm] + rhaty*Ylm_gy[lm] + rhatz*Ylm_gz[lm];
-        myL[ib] += (localL[offset+ib] + localG[offset+ib] * 2 * rinv) * Ylm_v[lm]
-                  + localG[offset+ib] * (rhat_dot_G * r_power - l_val * Ylm_v[lm] * rinv )
-                  - localV[offset+ib] * l_val * rinv * (Ylm_v[lm] * rinv + rhat_dot_G * r_power );
+          // grad
+          g0[ib] += localG[offset+ib] * rhatx * Ylm_v[lm] + localV[offset+ib] * Ylm_gx[lm] * r_power - l_val * rhatx * Vpart * rinv;
+          g1[ib] += localG[offset+ib] * rhaty * Ylm_v[lm] + localV[offset+ib] * Ylm_gy[lm] * r_power - l_val * rhaty * Vpart * rinv;
+          g2[ib] += localG[offset+ib] * rhatz * Ylm_v[lm] + localV[offset+ib] * Ylm_gz[lm] * r_power - l_val * rhatz * Vpart * rinv;
+          //std::cout << "debug ib " << ib << " localVGL : " << localV[offset+ib] << " " << localG[offset+ib] << " " << localL[offset+ib]
+          //          << " v " << myV[ib] << " g_xyz " << g0[ib] <<" " << g1[ib] << " " << g2[ib] << std::endl;
+
+          // laplacian
+          ST rhat_dot_G = rhatx*Ylm_gx[lm] + rhaty*Ylm_gy[lm] + rhatz*Ylm_gz[lm];
+          myL[ib] += (localL[offset+ib] + localG[offset+ib] * 2 * rinv) * Ylm_v[lm]
+                    + localG[offset+ib] * (rhat_dot_G * r_power - l_val * Ylm_v[lm] * rinv )
+                    - localV[offset+ib] * l_val * rinv * (Ylm_v[lm] * rinv + rhat_dot_G * r_power );
+        }
+      }
+    }
+    else
+    {
+      // near core, kill divergence
+      r_power_minus_l[0]=r;
+      ST r_power_temp=cone;
+      for(int l=1; l<=lmax; l++)
+      {
+        for(int m=-l, lm=l*l; m<=l; m++,lm++)
+          r_power_minus_l[lm]=r_power_temp;
+        r_power_temp*=rinv;
+      }
+
+      //std::cout << "debug r " << r << " rx,ry,rz : " << -dr[0] << " " << -dr[1] << " " << -dr[2] << std::endl;
+      for(size_t lm=0; lm<lm_tot; lm++)
+      {
+        size_t offset=lm*Npad;
+        ST l_val=l_vals[lm];
+        ST r_power=r_power_minus_l[lm];
+        //std::cout << "debug lm " << lm << " YlmV : " << Ylm_v[lm] << " YlmG " << Ylm_gx[lm] << " " << Ylm_gy[lm] << " " << Ylm_gz[lm] << std::endl;
+        for(size_t ib=0; ib<myV.size(); ib++)
+        {
+          // value
+          myV[ib] += Ylm_v[lm]*localV[offset+ib];
+
+          // grad
+          g0[ib] += localG[offset+ib] * ( Ylm_gx[lm] * r_power + (cone-l_val) * rhatx * Ylm_v[lm] );
+          g1[ib] += localG[offset+ib] * ( Ylm_gy[lm] * r_power + (cone-l_val) * rhaty * Ylm_v[lm] );
+          g2[ib] += localG[offset+ib] * ( Ylm_gz[lm] * r_power + (cone-l_val) * rhatz * Ylm_v[lm] );
+          //std::cout << "debug ib " << ib << " localVGL : " << localV[offset+ib] << " " << localG[offset+ib] << " " << localL[offset+ib]
+          //          << " v " << myV[ib] << " g_xyz " << g0[ib] <<" " << g1[ib] << " " << g2[ib] << std::endl;
+
+          // laplacian
+          ST rhat_dot_G = rhatx*Ylm_gx[lm] + rhaty*Ylm_gy[lm] + rhatz*Ylm_gz[lm];
+          myL[ib] += localL[offset+ib] * ( static_cast<ST>(3) * Ylm_v[lm] + rhat_dot_G * r_power ) * (cone - chalf * l_val);
+        }
       }
     }
   }
