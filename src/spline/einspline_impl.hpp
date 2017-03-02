@@ -426,10 +426,13 @@ namespace qmcplusplus
     // 1D spline
     /** create a single spline for double */
     template<typename VT>
-    UBspline_1d_d* create(UBspline_1d_d* s, const VT& start, const VT& end, const int spline_npoints)
+    UBspline_1d_d* create(UBspline_1d_d* s, const VT& start, const VT& end, const int spline_npoints, bool lFlat)
     {
       BCtype_d bc;
-      bc.lCode = NATURAL;
+      if(lFlat)
+        bc.lCode = FLAT;
+      else
+        bc.lCode = NATURAL;
       bc.rCode = NATURAL;
       Ugrid grid;
       grid.start = start;
