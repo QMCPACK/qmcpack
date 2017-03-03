@@ -277,6 +277,12 @@ struct HybridAdoptorBase
   int myTableID;
   //mapping supercell to primitive cell
   std::vector<int> Super2Prim;
+  // r, dr for distance table
+  DistanceTableData::RealType dist_r;
+  DistanceTableData::PosType dist_dr;
+  // local r, dr
+  ST r;
+  PointType dr;
 
   HybridAdoptorBase() { }
 
@@ -348,51 +354,54 @@ struct HybridAdoptorBase
 
   //evaluate only V
   template<typename VV>
-  inline bool evaluate_v(const ParticleSet& P, VV& myV)
+  inline bool evaluate_v(const ParticleSet& P, const int iat, VV& myV)
   {
     bool inAtom=false;
     const auto* ei_dist=P.DistTables[myTableID];
-    const int center_idx=ei_dist->get_first_neighbor_temporal();
+    const int center_idx=ei_dist->get_first_neighbor(iat, dist_r, dist_dr);
     if(center_idx<0) abort();
+    r=dist_r; dr=dist_dr;
     auto& myCenter=AtomicCenters[Super2Prim[center_idx]];
-    if ( ei_dist->Temp_r[center_idx] < myCenter.cutoff )
+    if ( r < myCenter.cutoff )
     {
       inAtom=true;
-      myCenter.evaluate_v(ei_dist->Temp_r[center_idx], ei_dist->Temp_dr[center_idx], myV);
+      myCenter.evaluate_v(r, dr, myV);
     }
     return inAtom;
   }
 
   //evaluate only VGL
   template<typename VV, typename GV>
-  inline bool evaluate_vgl(const ParticleSet& P, VV& myV, GV& myG, VV& myL)
+  inline bool evaluate_vgl(const ParticleSet& P, const int iat, VV& myV, GV& myG, VV& myL)
   {
     bool inAtom=false;
     const auto* ei_dist=P.DistTables[myTableID];
-    const int center_idx=ei_dist->get_first_neighbor_temporal();
+    const int center_idx=ei_dist->get_first_neighbor(iat, dist_r, dist_dr);
     if(center_idx<0) abort();
+    r=dist_r; dr=dist_dr;
     auto& myCenter=AtomicCenters[Super2Prim[center_idx]];
-    if ( ei_dist->Temp_r[center_idx] < myCenter.cutoff )
+    if ( r < myCenter.cutoff )
     {
       inAtom=true;
-      myCenter.evaluate_vgl(ei_dist->Temp_r[center_idx], ei_dist->Temp_dr[center_idx], myV, myG, myL);
+      myCenter.evaluate_vgl(r, dr, myV, myG, myL);
     }
     return inAtom;
   }
 
   //evaluate only VGH
   template<typename VV, typename GV, typename HT>
-  inline bool evaluate_vgh(const ParticleSet& P, VV& myV, GV& myG, HT& myH)
+  inline bool evaluate_vgh(const ParticleSet& P, const int iat, VV& myV, GV& myG, HT& myH)
   {
     bool inAtom=false;
     const auto* ei_dist=P.DistTables[myTableID];
-    const int center_idx=ei_dist->get_first_neighbor_temporal();
+    const int center_idx=ei_dist->get_first_neighbor(iat, dist_r, dist_dr);
     if(center_idx<0) abort();
+    r=dist_r; dr=dist_dr;
     auto& myCenter=AtomicCenters[Super2Prim[center_idx]];
-    if ( ei_dist->Temp_r[center_idx] < myCenter.cutoff )
+    if ( r < myCenter.cutoff )
     {
       inAtom=true;
-      myCenter.evaluate_vgh(ei_dist->Temp_r[center_idx], ei_dist->Temp_dr[center_idx], myV, myG, myH);
+      myCenter.evaluate_vgh(r, dr, myV, myG, myH);
     }
     return inAtom;
   }

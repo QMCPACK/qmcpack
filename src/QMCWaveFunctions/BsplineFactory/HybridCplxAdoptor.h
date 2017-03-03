@@ -61,7 +61,7 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
   template<typename VV>
   inline void evaluate_v(const ParticleSet& P, const int iat, VV& psi)
   {
-    if(HybridBase::evaluate_v(P,myV))
+    if(HybridBase::evaluate_v(P,iat,myV))
     {
       const PointType& r=P.R[iat];
       BaseAdoptor::assign_v(r,psi);
@@ -73,7 +73,7 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
   template<typename VV, typename GV>
   inline void evaluate_vgl(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, VV& d2psi)
   {
-    if(HybridBase::evaluate_vgl(P,myV,myG,myL))
+    if(HybridBase::evaluate_vgl(P,iat,myV,myG,myL))
     {
       const PointType& r=P.R[iat];
       BaseAdoptor::assign_vgl_from_l(r,psi,dpsi,d2psi);
@@ -90,7 +90,7 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
   template<typename VGL>
   inline void evaluate_vgl_combo(const ParticleSet& P, const int iat, VGL& vgl)
   {
-    if(HybridBase::evaluate_vgh(P,myV,myG,myH))
+    if(HybridBase::evaluate_vgh(P,iat,myV,myG,myH))
     {
       const PointType& r=P.R[iat];
       BaseAdoptor::assign_vgl_soa(r,vgl);
@@ -102,7 +102,7 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
   template<typename VV, typename GV, typename GGV>
   inline void evaluate_vgh(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, GGV& grad_grad_psi)
   {
-    if(HybridBase::evaluate_vgh(P,myV,myG,myH))
+    if(HybridBase::evaluate_vgh(P,iat,myV,myG,myH))
     {
       const PointType& r=P.R[iat];
       BaseAdoptor::assign_vgh(r,psi,dpsi,grad_grad_psi);
