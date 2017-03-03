@@ -70,7 +70,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   std::string sourceName;
   std::string spo_prec("double");
   std::string truncate("no");
-  std::string hybrid_rep("yes");
+  std::string hybrid_rep("no");
 #if defined(QMC_CUDA)
   std::string useGPU="yes";
 #else
