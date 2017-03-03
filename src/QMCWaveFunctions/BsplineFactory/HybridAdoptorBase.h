@@ -138,23 +138,29 @@ struct AtomicOrbitalSoA
   template<typename VV, typename GV>
   inline void evaluate_vgl(const ST& r, const PointType& dr, VV& myV, GV& myG, VV& myL)
   {
-    ST rhatx, rhaty, rhatz, rinv;
+    ST drx, dry, drz, rhatx, rhaty, rhatz, rinv;
     if (r>0)
     {
       rinv=1.0/r;
-      rhatx=-dr[0]*rinv;
-      rhaty=-dr[1]*rinv;
-      rhatz=-dr[2]*rinv;
+      drx=-dr[0];
+      dry=-dr[1];
+      drz=-dr[2];
+      rhatx=drx*rinv;
+      rhaty=dry*rinv;
+      rhatz=drz*rinv;
     }
     else
     {
+      rinv=0;
+      drx=-dr[0];
+      dry=-dr[1];
+      drz=-dr[2];
       rhatx=0;
       rhaty=0;
       rhatz=1;
-      rinv=0;
     }
 
-    Ylm.evaluateVGL(rhatx, rhaty, rhatz);
+    Ylm.evaluateVGL(drx, dry, drz);
     const ST* restrict Ylm_v=Ylm[0];
     const ST* restrict Ylm_gx=Ylm[1];
     const ST* restrict Ylm_gy=Ylm[2];
@@ -172,7 +178,7 @@ struct AtomicOrbitalSoA
     std::fill(g2,g2+Npad,czero);
     std::fill(myL.begin(),myL.end(),czero);
 
-    if(r>2e-4)
+    if(r>0.0)
     {
       // far from core
       r_power_minus_l[0]=cone;
@@ -190,25 +196,26 @@ struct AtomicOrbitalSoA
         size_t offset=lm*Npad;
         ST l_val=l_vals[lm];
         ST r_power=r_power_minus_l[lm];
+        const ST Ylm_rescale=Ylm_v[lm]/r_power;
         //std::cout << "debug lm " << lm << " YlmV : " << Ylm_v[lm] << " YlmG " << Ylm_gx[lm] << " " << Ylm_gy[lm] << " " << Ylm_gz[lm] << std::endl;
         for(size_t ib=0; ib<myV.size(); ib++)
         {
           // value
-          const ST Vpart = Ylm_v[lm]*localV[offset+ib];
+          const ST Vpart = Ylm_rescale*localV[offset+ib];
           myV[ib] += Vpart;
 
           // grad
-          g0[ib] += localG[offset+ib] * rhatx * Ylm_v[lm] + localV[offset+ib] * Ylm_gx[lm] * r_power - l_val * rhatx * Vpart * rinv;
-          g1[ib] += localG[offset+ib] * rhaty * Ylm_v[lm] + localV[offset+ib] * Ylm_gy[lm] * r_power - l_val * rhaty * Vpart * rinv;
-          g2[ib] += localG[offset+ib] * rhatz * Ylm_v[lm] + localV[offset+ib] * Ylm_gz[lm] * r_power - l_val * rhatz * Vpart * rinv;
+          g0[ib] += localG[offset+ib] * rhatx * Ylm_rescale + localV[offset+ib] * Ylm_gx[lm] * r_power - l_val * rhatx * Vpart * rinv;
+          g1[ib] += localG[offset+ib] * rhaty * Ylm_rescale + localV[offset+ib] * Ylm_gy[lm] * r_power - l_val * rhaty * Vpart * rinv;
+          g2[ib] += localG[offset+ib] * rhatz * Ylm_rescale + localV[offset+ib] * Ylm_gz[lm] * r_power - l_val * rhatz * Vpart * rinv;
           //std::cout << "debug ib " << ib << " localVGL : " << localV[offset+ib] << " " << localG[offset+ib] << " " << localL[offset+ib]
           //          << " v " << myV[ib] << " g_xyz " << g0[ib] <<" " << g1[ib] << " " << g2[ib] << std::endl;
 
           // laplacian
           ST rhat_dot_G = rhatx*Ylm_gx[lm] + rhaty*Ylm_gy[lm] + rhatz*Ylm_gz[lm];
-          myL[ib] += (localL[offset+ib] + localG[offset+ib] * 2 * rinv) * Ylm_v[lm]
-                    + localG[offset+ib] * (rhat_dot_G * r_power - l_val * Ylm_v[lm] * rinv )
-                    - localV[offset+ib] * l_val * rinv * (Ylm_v[lm] * rinv + rhat_dot_G * r_power );
+          myL[ib] += (localL[offset+ib] + localG[offset+ib] * 2 * rinv) * Ylm_rescale
+                    + localG[offset+ib] * (rhat_dot_G * r_power - l_val * Ylm_rescale * rinv )
+                    - localV[offset+ib] * l_val * rinv * (Ylm_rescale * rinv + rhat_dot_G * r_power );
         }
       }
     }
