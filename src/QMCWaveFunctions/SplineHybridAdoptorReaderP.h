@@ -32,7 +32,7 @@
 #include <QMCWaveFunctions/BsplineFactory/HybridAdoptorBase.h>
 
 //#include <QMCHamiltonians/Ylm.h>
-#define PRINT_RADIAL
+//#define PRINT_RADIAL
 
 namespace qmcplusplus
 {
