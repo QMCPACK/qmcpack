@@ -32,7 +32,7 @@
 #include <QMCWaveFunctions/BsplineFactory/HybridAdoptorBase.h>
 
 //#include <QMCHamiltonians/Ylm.h>
-//#define PRINT_RADIAL
+#define PRINT_RADIAL
 
 namespace qmcplusplus
 {
@@ -598,7 +598,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
         UBspline_1d_d* spline_r;
         for(size_t ip=0; ip<spline_npoints; ip++)
           splineData_r[ip]=real(all_vals[ip][lm]);
-        spline_r=einspline::create(spline_r, 0.0, spline_radius, spline_npoints, lm==0);
+        spline_r=einspline::create(spline_r, 0.0, spline_radius, spline_npoints, ((lm==0)&&(lm>3)));
         einspline::set(spline_r,splineData_r.data());
         if(!bspline->is_complex)
         {
@@ -611,7 +611,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
           UBspline_1d_d* spline_i;
           for(size_t ip=0; ip<spline_npoints; ip++)
             splineData_i[ip]=imag(all_vals[ip][lm]);
-          spline_i=einspline::create(spline_i, 0.0, spline_radius, spline_npoints, lm==0);
+          spline_i=einspline::create(spline_i, 0.0, spline_radius, spline_npoints, ((lm==0)&&(lm>3)));
           einspline::set(spline_i,splineData_i.data());
           int iband=bspline->BandIndexMap.size()>0?bspline->BandIndexMap[iorb]:iorb;
           mycenter.set_spline(spline_r,lm,iband*2);

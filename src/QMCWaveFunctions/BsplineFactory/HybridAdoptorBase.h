@@ -138,9 +138,11 @@ struct AtomicOrbitalSoA
   template<typename VV, typename GV>
   inline void evaluate_vgl(const ST& r, const PointType& dr, VV& myV, GV& myG, VV& myL)
   {
-    ST drx, dry, drz, rhatx, rhaty, rhatz, rinv;
-    if (r>0)
+    const ST rmin=0;
+    ST drx, dry, drz, rhatx, rhaty, rhatz, rinv, r_reg;
+    if (r>rmin)
     {
+      r_reg=r;
       rinv=1.0/r;
       drx=-dr[0];
       dry=-dr[1];
@@ -151,6 +153,7 @@ struct AtomicOrbitalSoA
     }
     else
     {
+      r_reg=0;
       rinv=0;
       drx=-dr[0];
       dry=-dr[1];
@@ -166,7 +169,7 @@ struct AtomicOrbitalSoA
     const ST* restrict Ylm_gy=Ylm[2];
     const ST* restrict Ylm_gz=Ylm[3];
 
-    einspline::evaluate(MultiSpline,r,localV,localG,localL);
+    einspline::evaluate(MultiSpline,r_reg,localV,localG,localL);
 
     ST* restrict g0=myG.data(0);
     ST* restrict g1=myG.data(1);
@@ -178,7 +181,7 @@ struct AtomicOrbitalSoA
     std::fill(g2,g2+Npad,czero);
     std::fill(myL.begin(),myL.end(),czero);
 
-    if(r>0.0)
+    if(r_reg>0)
     {
       // far from core
       r_power_minus_l[0]=cone;
@@ -190,13 +193,13 @@ struct AtomicOrbitalSoA
           r_power_minus_l[lm]=r_power_temp;
       }
 
-      //std::cout << "debug r " << r << " rx,ry,rz : " << -dr[0] << " " << -dr[1] << " " << -dr[2] << std::endl;
+      //std::cout << "debug r " << r << " rx,ry,rz : " << drx << " " << dry << " " << drz << std::endl;
       for(size_t lm=0; lm<lm_tot; lm++)
       {
         size_t offset=lm*Npad;
-        ST l_val=l_vals[lm];
-        ST r_power=r_power_minus_l[lm];
-        const ST Ylm_rescale=Ylm_v[lm]/r_power;
+        const ST& l_val=l_vals[lm];
+        const ST& r_power=r_power_minus_l[lm];
+        const ST Ylm_rescale=Ylm_v[lm]*r_power;
         //std::cout << "debug lm " << lm << " YlmV : " << Ylm_v[lm] << " YlmG " << Ylm_gx[lm] << " " << Ylm_gy[lm] << " " << Ylm_gz[lm] << std::endl;
         for(size_t ib=0; ib<myV.size(); ib++)
         {
@@ -208,51 +211,45 @@ struct AtomicOrbitalSoA
           g0[ib] += localG[offset+ib] * rhatx * Ylm_rescale + localV[offset+ib] * Ylm_gx[lm] * r_power - l_val * rhatx * Vpart * rinv;
           g1[ib] += localG[offset+ib] * rhaty * Ylm_rescale + localV[offset+ib] * Ylm_gy[lm] * r_power - l_val * rhaty * Vpart * rinv;
           g2[ib] += localG[offset+ib] * rhatz * Ylm_rescale + localV[offset+ib] * Ylm_gz[lm] * r_power - l_val * rhatz * Vpart * rinv;
-          //std::cout << "debug ib " << ib << " localVGL : " << localV[offset+ib] << " " << localG[offset+ib] << " " << localL[offset+ib]
-          //          << " v " << myV[ib] << " g_xyz " << g0[ib] <<" " << g1[ib] << " " << g2[ib] << std::endl;
 
           // laplacian
-          ST rhat_dot_G = rhatx*Ylm_gx[lm] + rhaty*Ylm_gy[lm] + rhatz*Ylm_gz[lm];
+          ST rhat_dot_G = ( rhatx*Ylm_gx[lm] + rhaty*Ylm_gy[lm] + rhatz*Ylm_gz[lm] ) * r_power;
+          //std::cout << "debug " << Ylm_rescale << " rhat_dot_g " << rhat_dot_G << std::endl;
           myL[ib] += (localL[offset+ib] + localG[offset+ib] * 2 * rinv) * Ylm_rescale
-                    + localG[offset+ib] * (rhat_dot_G * r_power - l_val * Ylm_rescale * rinv )
-                    - localV[offset+ib] * l_val * rinv * (Ylm_rescale * rinv + rhat_dot_G * r_power );
+                    + localG[offset+ib] * (rhat_dot_G - l_val * Ylm_rescale * rinv )
+                    - localV[offset+ib] * l_val * rinv * (Ylm_rescale * rinv + rhat_dot_G );
+          //std::cout << "debug ib " << ib << " localVGL : " << localV[offset+ib] << " " << localG[offset+ib] << " " << localL[offset+ib]
+          //          << " v " << myV[ib] << " g_xyz " << g0[ib] <<" " << g1[ib] << " " << g2[ib] << " l " << myL[ib] << std::endl;
         }
       }
     }
     else
     {
       // near core, kill divergence
-      r_power_minus_l[0]=r;
-      ST r_power_temp=cone;
-      for(int l=1; l<=lmax; l++)
+      for(size_t ib=0; ib<myV.size(); ib++)
       {
-        for(int m=-l, lm=l*l; m<=l; m++,lm++)
-          r_power_minus_l[lm]=r_power_temp;
-        r_power_temp*=rinv;
+        // value
+        myV[ib] += Ylm_v[0]*localV[ib];
+
+        // laplacian
+        myL[ib] += localL[ib] * static_cast<ST>(3) * Ylm_v[0];
       }
-
-      //std::cout << "debug r " << r << " rx,ry,rz : " << -dr[0] << " " << -dr[1] << " " << -dr[2] << std::endl;
-      for(size_t lm=0; lm<lm_tot; lm++)
+      if(lm_tot>0)
       {
-        size_t offset=lm*Npad;
-        ST l_val=l_vals[lm];
-        ST r_power=r_power_minus_l[lm];
-        //std::cout << "debug lm " << lm << " YlmV : " << Ylm_v[lm] << " YlmG " << Ylm_gx[lm] << " " << Ylm_gy[lm] << " " << Ylm_gz[lm] << std::endl;
-        for(size_t ib=0; ib<myV.size(); ib++)
+        //std::cout << std::endl;
+        for(size_t lm=1; lm<4; lm++)
         {
-          // value
-          myV[ib] += Ylm_v[lm]*localV[offset+ib];
-
-          // grad
-          g0[ib] += localG[offset+ib] * ( Ylm_gx[lm] * r_power + (cone-l_val) * rhatx * Ylm_v[lm] );
-          g1[ib] += localG[offset+ib] * ( Ylm_gy[lm] * r_power + (cone-l_val) * rhaty * Ylm_v[lm] );
-          g2[ib] += localG[offset+ib] * ( Ylm_gz[lm] * r_power + (cone-l_val) * rhatz * Ylm_v[lm] );
-          //std::cout << "debug ib " << ib << " localVGL : " << localV[offset+ib] << " " << localG[offset+ib] << " " << localL[offset+ib]
-          //          << " v " << myV[ib] << " g_xyz " << g0[ib] <<" " << g1[ib] << " " << g2[ib] << std::endl;
-
-          // laplacian
-          ST rhat_dot_G = rhatx*Ylm_gx[lm] + rhaty*Ylm_gy[lm] + rhatz*Ylm_gz[lm];
-          myL[ib] += localL[offset+ib] * ( static_cast<ST>(3) * Ylm_v[lm] + rhat_dot_G * r_power ) * (cone - chalf * l_val);
+          size_t offset=lm*Npad;
+          //std::cout << "debug lm " << lm << " YlmV : " << Ylm_v[lm] << " YlmG " << Ylm_gx[lm] << " " << Ylm_gy[lm] << " " << Ylm_gz[lm] << std::endl;
+          for(size_t ib=0; ib<myV.size(); ib++)
+          {
+            // grad
+            g0[ib] += localG[offset+ib] * Ylm_gx[lm];
+            g1[ib] += localG[offset+ib] * Ylm_gy[lm];
+            g2[ib] += localG[offset+ib] * Ylm_gz[lm];
+            //std::cout << "debug ib " << ib << " localVGL : " << localV[offset+ib] << " " << localG[offset+ib] << " " << localL[offset+ib]
+            //          << " v " << myV[ib] << " g_xyz " << g0[ib] <<" " << g1[ib] << " " << g2[ib] << " l " << myL[ib] << std::endl;
+          }
         }
       }
     }
