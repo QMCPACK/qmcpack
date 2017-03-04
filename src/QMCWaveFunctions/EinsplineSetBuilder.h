@@ -134,8 +134,6 @@ public:
   ParticleSet &TargetPtcl;
   ///ionic system
   ParticleSet *SourcePtcl;
-  ///primitive cell ionic system
-  ParticleSet PrimSourcePtcl;
   ///index for the ion-el distance table
   int myTableIndex;
 
@@ -291,6 +289,26 @@ public:
   ////////////////////////////////
   std::vector<AtomicOrbital<std::complex<double> > > AtomicOrbitals;
 
+  struct CenterInfo
+  {
+    std::vector<int> lmax, spline_npoints, GroupID;
+    std::vector<double> spline_radius, cutoff;
+    std::vector<TinyVector<double,OHMMS_DIM> > ion_pos;
+    int Ncenters;
+
+    CenterInfo(): Ncenters(0) {};
+
+    void resize(int ncenters)
+    {
+      Ncenters=ncenters;
+      lmax.resize(ncenters, -1);
+      spline_npoints.resize(ncenters, -1);
+      GroupID.resize(ncenters);
+      spline_radius.resize(ncenters, -1.0);
+      cutoff.resize(ncenters, -1.0);
+      ion_pos.resize(ncenters);
+    }
+  } AtomicCentersInfo;
 
   // This returns the path in the HDF5 file to the group for orbital
   // with twist ti and band bi

@@ -424,40 +424,45 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
     }
   }
 
-  inline int checkout_parameter_index(SpeciesSet& mySpecies, const std::string& name)
-  {
-    const int index=mySpecies.findAttribute(name);
-    if(index<0)
-    {
-      app_error() << "Parameter " << name << " needed for each atom species to use hybrid representation." << std::endl;
-      abort();
-    }
-    return index;
-  }
-
   void initialize_atomic_centers(std::vector<AtomicOrbitalSoA<DataType> >& centers)
   {
     // load atomic center info only when it is not initialized
     if(centers.size()==0)
     {
-      ParticleSet& PrimSourcePtcl=mybuilder->PrimSourcePtcl;
-      SpeciesSet& mySpecies=PrimSourcePtcl.mySpecies;
-
-      int cutoff_radius_ind=checkout_parameter_index(mySpecies,"cutoff_radius");
-      int spline_radius_ind=checkout_parameter_index(mySpecies,"spline_radius");
-      int spline_npoints_ind=checkout_parameter_index(mySpecies,"spline_npoints");
-      int lmax_ind=checkout_parameter_index(mySpecies,"lmax");
-
+      const auto& AtomicCentersInfo=mybuilder->AtomicCentersInfo;
+      bool success=true;
       app_log() << "Reading atomic center info for hybrid representation" << std::endl;
-      for(int center_idx=0; center_idx<PrimSourcePtcl.R.size(); center_idx++)
+      for(int center_idx=0; center_idx<AtomicCentersInfo.Ncenters; center_idx++)
       {
-        const int my_GroupID = PrimSourcePtcl.GroupID[center_idx];
-        double cutoff_radius = mySpecies(cutoff_radius_ind, my_GroupID);
-        double spline_radius = mySpecies(spline_radius_ind, my_GroupID);
-        int   spline_npoints = mySpecies(spline_npoints_ind, my_GroupID);
-        int             lmax = mySpecies(lmax_ind, my_GroupID);
-        AtomicOrbitalSoA<DataType> oneCenter(lmax);
-        oneCenter.set_info(PrimSourcePtcl.R[center_idx], cutoff_radius, spline_radius, spline_npoints);
+        const int my_GroupID = AtomicCentersInfo.GroupID[center_idx];
+        if(AtomicCentersInfo.lmax[center_idx]<0)
+        {
+          app_error() << "Hybrid representation needs parameter 'lmax' for atom " << center_idx << std::endl;
+          success=false;
+        }
+        if(AtomicCentersInfo.cutoff[center_idx]<0)
+        {
+          app_error() << "Hybrid representation needs parameter 'cutoff_radius' for atom " << center_idx << std::endl;
+          success=false;
+        }
+        if(AtomicCentersInfo.spline_radius[center_idx]<0)
+        {
+          app_error() << "Hybrid representation needs parameter 'spline_radius' for atom " << center_idx << std::endl;
+          success=false;
+        }
+        if(AtomicCentersInfo.spline_npoints[center_idx]<0)
+        {
+          app_error() << "Hybrid representation needs parameter 'spline_npoints' for atom " << center_idx << std::endl;
+          success=false;
+        }
+      }
+      if(!success) abort();
+
+      for(int center_idx=0; center_idx<AtomicCentersInfo.Ncenters; center_idx++)
+      {
+        AtomicOrbitalSoA<DataType> oneCenter(AtomicCentersInfo.lmax[center_idx]);
+        oneCenter.set_info(AtomicCentersInfo.ion_pos[center_idx], AtomicCentersInfo.cutoff[center_idx], 
+                           AtomicCentersInfo.spline_radius[center_idx], AtomicCentersInfo.spline_npoints[center_idx]);
         centers.push_back(oneCenter);
       }
     }
@@ -469,7 +474,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
     //Quadrature3D<double> quad(5);
 
     // prepare Gvecs Ylm(G)
-    Gvectors<double, UnitCellType> Gvecs(mybuilder->Gvecs[0], mybuilder->PrimSourcePtcl.Lattice);
+    Gvectors<double, UnitCellType> Gvecs(mybuilder->Gvecs[0], mybuilder->PrimCell);
     const int lmax_limit=7;
     Gvecs.calc_YlmG(lmax_limit);
     std::vector<std::complex<double> > i_power;
@@ -695,7 +700,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
     typedef typename EinsplineSetBuilder::UnitCellType UnitCellType;
 
     Quadrature3D<double> quad(6);
-    Gvectors<double, UnitCellType> Gvecs(mybuilder->Gvecs[0], mybuilder->PrimSourcePtcl.Lattice);
+    Gvectors<double, UnitCellType> Gvecs(mybuilder->Gvecs[0], mybuilder->PrimCell);
 
     std::vector<AtomicOrbitalSoA<DataType> >& centers=bspline->AtomicCenters;
     //#pragma omp parallel for
