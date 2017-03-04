@@ -34,11 +34,11 @@ namespace cqmc {
 
         /// \brief [out] harmonic davidson hamiltonian matrix 
         formic::Matrix<double> _hmat;
-        formic::Matrix<double> _hmat_temp;
+        std::vector<formic::Matrix<double> > _hmat_temp;
 
         /// \brief [out] harmonic davidson overlap matrix 
         formic::Matrix<double> _smat;
-        formic::Matrix<double> _smat_temp;
+        std::vector<formic::Matrix<double> > _smat_temp;
 
         /// \brief [out] harmonic davidson approximate hamiltonian matrix used in SPAM algorithm 
         formic::Matrix<double> _hmat_appro;
@@ -48,7 +48,7 @@ namespace cqmc {
 
         /// \brief [out] S^2 matrix 
         formic::Matrix<double> _ssmat;
-        formic::Matrix<double> _ssmat_temp;
+        std::vector<formic::Matrix<double> > _ssmat_temp;
 
         /// \brief [out] normal linear method overlap matrix(only being built if the "variance correct" flag is set to be true
         formic::Matrix<double> _lsmat;
@@ -58,6 +58,9 @@ namespace cqmc {
 
         /// \brief [in] approximate degree
         int _appro_degree;
+
+        /// \brief [in] number of optimizable parameters
+        int _num_params;
 
         /// \brief [in] bare derivative ratios (<n|psi^x> / <n|psi>)
         formic::Matrix<double> & _der_rat;
@@ -118,6 +121,7 @@ namespace cqmc {
                        const std::vector<double> & vgs,
                        const std::vector<double> & weight,
                        const double hd_shift,
+                       const int num_params,
                        const int appro_degree,
                        const bool spam_use,
                        const bool ground_state,
@@ -131,6 +135,7 @@ namespace cqmc {
       // 
       /////////////////////////////////////////////////////////////////////////////////////////////
       void get_param(const double hd_shift, 
+                     const int num_params,
                      const int appro_degree, 
                      const bool spam_use, 
                      const bool ground_state, 

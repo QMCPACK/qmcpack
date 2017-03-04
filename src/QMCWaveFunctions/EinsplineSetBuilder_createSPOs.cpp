@@ -64,6 +64,9 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 #else
   std::string useGPU="no";
 #endif
+  NewTimer* spo_timer = new NewTimer("einspline::CreateSPOSetFromXML", timer_level_medium);
+  TimerManager.addTimer(spo_timer);
+  spo_timer->start();
 
   {
     OhmmsAttributeSet a;
@@ -428,6 +431,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     OrbitalSet->initGPU();
   }
 #endif
+  spo_timer->stop();
   return OrbitalSet;
 }
 
