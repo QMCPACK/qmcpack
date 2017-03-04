@@ -54,6 +54,12 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
     HybridBase::resizeStorage(myV.size());
   }
 
+  void bcast_tables(Communicate* comm)
+  {
+    BaseAdoptor::bcast_tables(comm);
+    HybridBase::bcast_tables(comm);
+  }
+
   bool read_splines(hdf_archive& h5f)
   {
     return BaseAdoptor::read_splines(h5f) && HybridBase::read_splines(h5f);

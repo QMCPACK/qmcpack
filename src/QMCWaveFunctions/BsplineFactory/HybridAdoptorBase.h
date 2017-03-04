@@ -69,7 +69,10 @@ struct AtomicOrbitalSoA
     create_spline();
   }
 
-  //~AtomicOrbitalSoA();
+  void bcast_tables(Communicate* comm)
+  {
+    chunked_bcast(comm, MultiSpline);
+  }
 
   template<typename PT, typename VT>
   inline void set_info(const PT& R, const VT& cutoff_in, const VT& spline_radius_in, const int& spline_npoints_in)
@@ -312,6 +315,12 @@ struct HybridAdoptorBase
   {
     for(int ic=0; ic<AtomicCenters.size(); ic++)
       AtomicCenters[ic].resizeStorage(Nb);
+  }
+
+  void bcast_tables(Communicate* comm)
+  {
+    for(int ic=0; ic<AtomicCenters.size(); ic++)
+      AtomicCenters[ic].bcast_tables(comm);
   }
 
   bool read_splines(hdf_archive& h5f)

@@ -115,6 +115,11 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     myH.resize(npad);
   }
 
+  void bcast_tables(Communicate* comm)
+  {
+    chunked_bcast(comm, MultiSpline);
+  }
+
   template<typename GT, typename BCT>
   void create_spline(GT& xyz_g, BCT& xyz_bc)
   {
