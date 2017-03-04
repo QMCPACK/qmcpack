@@ -627,10 +627,6 @@ void QMCCostFunctionOMP::engine_checkConfigurations(cqmc::engine::LMYEngine * En
       if(nlpp)
         saved[ENERGY_FIXED] -= nlpp->Value;
     }
-#ifdef HAVE_LMY_ENGINE
-    // engine finish taking samples 
-    EngineObj->sample_finish();
-#endif
 
     //add them all using reduction
     et_tot+=e0;
@@ -638,6 +634,11 @@ void QMCCostFunctionOMP::engine_checkConfigurations(cqmc::engine::LMYEngine * En
     // #pragma omp atomic
     //       eft_tot+=ef;
   }
+#ifdef HAVE_LMY_ENGINE
+  // engine finish taking samples 
+  EngineObj->sample_finish();
+#endif
+
   if ( EngineObj->block_first() ) {
     OptVariablesForPsi.setComputed();
     app_log() << "calling setComputed function" << std::endl;
