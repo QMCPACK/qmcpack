@@ -48,6 +48,12 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
     this->KeyWord="Hybrid"+this->KeyWord;
   }
 
+  inline void resizeStorage(size_t n, size_t nvals)
+  {
+    BaseAdoptor::resizeStorage(n,nvals);
+    HybridBase::resizeStorage(myV.size());
+  }
+
   bool read_splines(hdf_archive& h5f)
   {
     return BaseAdoptor::read_splines(h5f) && HybridBase::read_splines(h5f);

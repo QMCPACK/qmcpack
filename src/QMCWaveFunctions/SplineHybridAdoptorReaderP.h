@@ -264,6 +264,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
 
     // set info for Hybrid
     bspline->set_info(*(mybuilder->SourcePtcl), mybuilder->TargetPtcl, mybuilder->Super2Prim);
+    initialize_atomic_centers(bspline->AtomicCenters);
 
     //baseclass handles twists
     check_twists(bspline,bandgroup);
@@ -355,8 +356,6 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
           for(int i=0; i<spline_i.size(); ++i)
             spline_i[i]=einspline::create(dummy,start,end,MeshSize,bspline->HalfG);
         }
-
-        initialize_atomic_centers(bspline->AtomicCenters);
 
         if(usingSerialIO)
         {
@@ -456,16 +455,11 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
         double spline_radius = mySpecies(spline_radius_ind, my_GroupID);
         int   spline_npoints = mySpecies(spline_npoints_ind, my_GroupID);
         int             lmax = mySpecies(lmax_ind, my_GroupID);
-        const int npad=bspline->myV.size();
-        AtomicOrbitalSoA<DataType> oneCenter(lmax,npad);
+        AtomicOrbitalSoA<DataType> oneCenter(lmax);
         oneCenter.set_info(PrimSourcePtcl.R[center_idx], cutoff_radius, spline_radius, spline_npoints);
         centers.push_back(oneCenter);
       }
     }
-
-    // allocate the memory hosting the spline coefficients.
-    for(int center_idx=0; center_idx<centers.size(); center_idx++)
-      centers[center_idx].create_spline();
   }
 
   inline void create_atomic_centers_Gspace(Vector<std::complex<double> >& cG, int ti, int iorb)

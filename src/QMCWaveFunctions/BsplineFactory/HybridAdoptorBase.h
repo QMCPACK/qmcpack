@@ -38,8 +38,9 @@ struct AtomicOrbitalSoA
 
   ST cutoff,spline_radius;
   int spline_npoints, BaseN;
+  int NumBands, Npad;
   PointType pos;
-  const int lmax, lm_tot, NumBands, Npad;
+  const int lmax, lm_tot;
   SoaSphericalTensor<ST> Ylm;
   vContainer_type l_vals;
   vContainer_type r_power_minus_l;
@@ -47,18 +48,25 @@ struct AtomicOrbitalSoA
 
   vContainer_type localV, localG, localL;
 
-  AtomicOrbitalSoA(int Lmax, int Nb):
-  Ylm(Lmax), NumBands(Nb), MultiSpline(nullptr), lmax(Lmax),
-  lm_tot((Lmax+1)*(Lmax+1)), Npad(getAlignedSize<ST>(Nb))
+  AtomicOrbitalSoA(int Lmax):
+  Ylm(Lmax), MultiSpline(nullptr), lmax(Lmax),
+  lm_tot((Lmax+1)*(Lmax+1))
   {
-    localV.resize(Npad*lm_tot);
-    localG.resize(Npad*lm_tot);
-    localL.resize(Npad*lm_tot);
     r_power_minus_l.resize(lm_tot);
     l_vals.resize(lm_tot);
     for(int l=0; l<=lmax; l++)
       for(int m=-l; m<=l; m++)
         l_vals[l*(l+1)+m] = l;
+  }
+
+  inline void resizeStorage(size_t Nb)
+  {
+    NumBands=Nb;
+    Npad=getAlignedSize<ST>(Nb);
+    localV.resize(Npad*lm_tot);
+    localG.resize(Npad*lm_tot);
+    localL.resize(Npad*lm_tot);
+    create_spline();
   }
 
   //~AtomicOrbitalSoA();
@@ -95,13 +103,21 @@ struct AtomicOrbitalSoA
   bool read_splines(hdf_archive& h5f)
   {
     einspline_engine<AtomicSplineType> bigtable(MultiSpline);
-    return h5f.read(bigtable,"radial_spline");
+    int lmax_in, spline_npoints_in;
+    ST spline_radius_in;
+    bool success=true;
+    success = success && h5f.read(lmax_in, "l_max");
+    success = success && h5f.read(spline_radius_in, "spline_radius");
+    success = success && h5f.read(spline_npoints_in, "spline_npoints");
+    if(lmax_in!=lmax) return false;
+    if(spline_radius_in!=spline_radius) return false;
+    if(spline_npoints_in!=spline_npoints) return false;
+    return success && h5f.read(bigtable,"radial_spline");
   }
 
   bool write_splines(hdf_archive& h5f)
   {
     bool success=true;
-    success = success && h5f.write(cutoff, "cutoff_radius");
     success = success && h5f.write(spline_radius, "spline_radius");
     success = success && h5f.write(spline_npoints, "spline_npoints");
     success = success && h5f.write(lmax, "l_max");
@@ -292,40 +308,28 @@ struct HybridAdoptorBase
     Super2Prim=mapping;
   }
 
+  inline void resizeStorage(size_t Nb)
+  {
+    for(int ic=0; ic<AtomicCenters.size(); ic++)
+      AtomicCenters[ic].resizeStorage(Nb);
+  }
+
   bool read_splines(hdf_archive& h5f)
   {
     bool success=true;
     size_t ncenter;
-    int Nb;
 
     success = success && h5f.push("atomic_centers",false);
     success = success && h5f.read(ncenter,"number_of_centers");
-    success = success && h5f.read(Nb,"number_of_bands_pad");
     if(!success) return success;
+    if(ncenter!=AtomicCenters.size()) success=false;
     // read splines of each center
-    for(int ic=0; ic<ncenter; ic++)
+    for(int ic=0; ic<AtomicCenters.size(); ic++)
     {
       std::ostringstream gname;
       gname << "center_" << ic;
       success = success && h5f.push(gname.str().c_str(),false);
-
-      int lmax, spline_npoints;
-      PointType pos;
-      ST spline_radius, cutoff;
-      success = success && h5f.read(cutoff, "cutoff_radius");
-      success = success && h5f.read(spline_radius, "spline_radius");
-      success = success && h5f.read(spline_npoints, "spline_npoints");
-      success = success && h5f.read(pos, "position");
-      success = success && h5f.read(lmax, "l_max");
-      if(!success) return success;
-      AtomicOrbitalSoA<ST> one_center(lmax, Nb);
-      if(one_center.Npad!=Nb) success=false;
-      one_center.set_info(pos,cutoff,spline_radius,spline_npoints);
-      one_center.create_spline();
-      success = success && one_center.read_splines(h5f);
-      if(!success) return success;
-      AtomicCenters.push_back(one_center);
-
+      success = success && AtomicCenters[ic].read_splines(h5f);
       h5f.pop();
     }
     h5f.pop();
@@ -338,7 +342,6 @@ struct HybridAdoptorBase
     int ncenter=AtomicCenters.size();
     success = success && h5f.push("atomic_centers",true);
     success = success && h5f.write(ncenter,"number_of_centers");
-    success = success && h5f.write(AtomicCenters[0].Npad,"number_of_bands_pad");
     // write splines of each center
     for(int ic=0; ic<AtomicCenters.size(); ic++)
     {
