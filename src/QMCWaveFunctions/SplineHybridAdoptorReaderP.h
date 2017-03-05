@@ -564,32 +564,6 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
           all_vals[ip][lm]*=4.0*M_PI*i_power[lm];
       }
       app_log() << "Building band " << iorb << " at center " << center_idx << std::endl;
-#if 0
-      app_log() << "checking band " << iorb << " center " << center_idx << " at " << mycenter.pos << std::endl;
-      SoaSphericalTensor<double> Ylm(lmax);
-      for(int j=1; j<quad.nk; j++)
-      {
-        std::vector<double> Ylm_vals(lm_tot);
-        Ylm.evaluateV(quad.xyz_m[j][0], quad.xyz_m[j][1], quad.xyz_m[j][2], Ylm_vals.data());
-        app_log() << "checking quad " << quad.xyz_m[j] << std::endl;
-        //print out error in each direction
-        for(int ip=0; ip<spline_npoints; ip++)
-        {
-          double r=delta*static_cast<double>(ip);
-          std::complex<double> psi_ref=Gvecs.evaluate_psi_r(cG,quad.xyz_m[j]*r+mycenter.pos);
-          std::complex<double> psi_sum(0.0,0.0);
-          app_log() << " quad " << j << " r " << r << "  " << real(psi_ref) << "  " << imag(psi_ref);
-          for(int l=0; l<=lmax; l++)
-          {
-            for(int lm=l*l; lm<(l+1)*(l+1); lm++)
-              psi_sum+=all_vals[ip][lm]*Ylm_vals[lm];
-            app_log() << "  " << real(psi_sum-psi_ref) << "  " << imag(psi_sum-psi_ref);
-          }
-          app_log() << std::endl;
-        }
-      }
-      if( iorb==1 && center_idx==0 ) abort();
-#endif
 
       #pragma omp parallel for
       for(int lm=0; lm<lm_tot; lm++)
@@ -623,7 +597,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
 
 #ifdef PRINT_RADIAL
       // write to file for plotting
-      for(int ip=0; ip<spline_npoints; ip++)
+      for(int ip=0; ip<spline_npoints-1; ip++)
       {
         double r=delta*static_cast<double>(ip);
         fprintf(fout_pw, "%15.10lf  ", r);
@@ -643,46 +617,6 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
         fprintf(fout_spline_v, "\n");
         fprintf(fout_spline_g, "\n");
         fprintf(fout_spline_l, "\n");
-      }
-#endif
-
-#if 0
-      // check u(r)
-      SoaSphericalTensor<double> Ylm(lmax);
-      std::vector<double> Ylm_vals(lm_tot);
-      Ylm.evaluateV(0.0,1.0,0.0, Ylm_vals.data());
-      std::cout << "# iorb " << iorb << std::endl;
-      for(int ip=0; ip<spline_npoints; ip++)
-      {
-        double r=delta*static_cast<double>(ip);
-        std::complex<double> psi_ref(0.0,0.0);
-        for(int lm=0; lm<lm_tot; lm++)
-          psi_ref+=all_vals[ip][lm]*Ylm_vals[lm];
-        std::cout << "x_y_z " << 10.0 << " " << 10.0+r << " " << 10.0 << " : " << psi_ref << std::endl;
-      }
-#endif
-#if 0
-      SoaSphericalTensor<double> Ylm(lmax);
-      std::vector<double> Ylm_vals(lm_tot);
-      Ylm.evaluateV(0.0,1.0,0.0, Ylm_vals.data());
-      double mydelta=2.0/100;
-      std::cout << "# iorb " << iorb << std::endl;
-      for(int ip=0; ip<121; ip++)
-      {
-        double r=mydelta*ip;
-        TinyVector<double,3> mypos(10.0,10.0+r,10.0);
-        std::complex<double> psi_ref_0(0.0,0.0), psi_ref_1(0.0,0.0);
-        //psi_ref=Gvecs.evaluate_psi_r(cG,mypos)*i_power[0];
-        einspline::evaluate(mycenter.MultiSpline,r,mycenter.localV);
-        for(int lm=0; lm<lm_tot; lm++)
-        {
-          //psi_ref+=std::complex<double>(mycenter.localV[lm*mycenter.Npad+iorb*2]*Ylm_vals[lm],mycenter.localV[lm*mycenter.Npad+iorb*2+1]*Ylm_vals[lm]);
-          psi_ref_0+=std::complex<double>(mycenter.localV[lm*mycenter.Npad+0]*Ylm_vals[lm],mycenter.localV[lm*mycenter.Npad+1]*Ylm_vals[lm]);
-          psi_ref_1+=std::complex<double>(mycenter.localV[lm*mycenter.Npad+2]*Ylm_vals[lm],mycenter.localV[lm*mycenter.Npad+3]*Ylm_vals[lm]);
-          std::cout << "debug lm " << Ylm_vals[lm] << " " << mycenter.localV[lm*mycenter.Npad+0] << " " << mycenter.localV[lm*mycenter.Npad+1]
-                                                   << " " << mycenter.localV[lm*mycenter.Npad+2] << " " << mycenter.localV[lm*mycenter.Npad+3] << std::endl;
-        }
-        std::cout << "x_y_z " << 10.0 << " " << 10.0+r << " " << 10.0 << " : " << psi_ref_0 << psi_ref_1 << std::endl;
       }
 #endif
 
@@ -744,29 +678,6 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
           all_vals[ip][lm]*=4.0*M_PI;
       }
       app_log() << "debug band " << iorb << " center " << center_idx << std::endl;
-
-#if 0
-      app_log() << "checking band " << iorb << " center " << center_idx << " at " << mycenter.pos << std::endl;
-      for(int j=1; j<quad.nk; j++)
-      {
-        //print out error in each direction
-        for(int ip=0; ip<spline_npoints; ip++)
-        {
-          double r=delta*static_cast<double>(ip);
-          std::complex<double> psi_ref=Gvecs.evaluate_psi_r(cG,quad.xyz_m[j]*r+mycenter.pos);
-          std::complex<double> psi_sum(0.0,0.0);
-          app_log() << " quad " << j << " r " << r << "  " << real(psi_ref) << "  " << imag(psi_ref);
-          for(int l=0; l<=lmax; l++)
-          {
-            for(int lm=l*l; lm<(l+1)*(l+1); lm++)
-              psi_sum+=all_vals[ip][lm]*Ylm_vals(j,lm);
-            app_log() << "  " << real(psi_sum-psi_ref) << "  " << imag(psi_sum-psi_ref);
-          }
-          app_log() << std::endl;
-        }
-        if( iorb==0 && center_idx==1 ) abort();
-      }
-#endif
 
       for(int ip=0; ip<spline_npoints; ip++)
       {

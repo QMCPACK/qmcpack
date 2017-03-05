@@ -37,13 +37,13 @@ extern const float* restrict d3Af;
 /************************************************************/
 void
 eval_multi_UBspline_1d_s (const multi_UBspline_1d_s *spline,
-			  double x,
+			  float x,
 			  float* restrict vals)
 {
   x -= spline->x_grid.start;
   float ux = x*spline->x_grid.delta_inv;
   float ipartx, tx;
-  tx = modff (ux, &ipartx);  int ix = (int) ipartx;
+  tx = modff (ux, &ipartx);  int ix = std::min(std::max(0,(int) ipartx),spline->x_grid.num-1);
   
   float tpx[4], a[4];
   tpx[0] = tx*tx*tx;  tpx[1] = tx*tx;  tpx[2] = tx;  tpx[3] = 1.0;
@@ -115,7 +115,7 @@ eval_multi_UBspline_1d_s_vg (const multi_UBspline_1d_s *spline,
 
 void
 eval_multi_UBspline_1d_s_vgl (const multi_UBspline_1d_s *spline,
-			      double x,
+			      float x,
 			      float* restrict vals,
 			      float* restrict grads,
 			      float* restrict lapl)	  
@@ -123,7 +123,7 @@ eval_multi_UBspline_1d_s_vgl (const multi_UBspline_1d_s *spline,
   x -= spline->x_grid.start;
   float ux = x*spline->x_grid.delta_inv;
   float ipartx, tx;
-  tx = modff (ux, &ipartx);  int ix = (int) ipartx;
+  tx = modff (ux, &ipartx);  int ix = std::min(std::max(0,(int) ipartx),spline->x_grid.num-1);
   
   float tpx[4], a[4], da[4], d2a[4];
   tpx[0] = tx*tx*tx;  tpx[1] = tx*tx;  tpx[2] = tx;  tpx[3] = 1.0;
@@ -168,7 +168,7 @@ eval_multi_UBspline_1d_s_vgl (const multi_UBspline_1d_s *spline,
 
 void
 eval_multi_UBspline_1d_s_vgh (const multi_UBspline_1d_s *spline,
-			      double x,
+			      float x,
 			      float* restrict vals,
 			      float* restrict grads,
 			      float* restrict hess)
