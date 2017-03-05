@@ -73,11 +73,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
             SuperLattice(1,0), SuperLattice(1,1), SuperLattice(1,2),
             SuperLattice(2,0), SuperLattice(2,1), SuperLattice(2,2));
   CheckLattice();
-  // setup primitive cell and supercell
   PrimCell.set(Lattice);
-  SuperCell.set(SuperLattice);
-  GGt=dot(transpose(PrimCell.G), PrimCell.G);
-
   app_log() << buff;
   for (int i=0; i<3; i++)
     for (int j=0; j<3; j++)
@@ -263,7 +259,6 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
     orb.set_cutoff (cutoff_radius);
     orb.set_spline (spline_radius, spline_points);
     orb.set_polynomial (polynomial_radius, polynomial_order);
-    orb.Lattice = Lattice;
   }
   ///////////////////////////
   // Read the twist angles //
