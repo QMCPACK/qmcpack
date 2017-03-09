@@ -145,6 +145,9 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
       for (int j=0; j<IonPos.size(); j++)
       {
         PosType dr=PrimCell.toUnit_floor(IonPos[j])-ref;
+        for(int k=0; k<OHMMS_DIM; k++)
+          if( -std::numeric_limits<float>::epsilon() > dr[k] || dr[k] > 0 )
+            dr[k] -= std::floor(dr[k]);
         if (dot(dr,dr)<MatchingTol)
         {
           if(Super2Prim[i]<0)

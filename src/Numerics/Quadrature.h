@@ -300,7 +300,7 @@ struct Quadrature3D
             }
             if ((l1==l2) && (m1==m2))
               sum -= 1.0;
-            if (std::abs(sum) > 5*std::numeric_limits<float>::epsilon())
+            if (std::abs(sum) > 6*std::numeric_limits<float>::epsilon())
             {
               app_error() << "Broken real spherical quadrature for " << grid.size() << "-point rule.\n" << std::endl;
               APP_ABORT("Give up");
