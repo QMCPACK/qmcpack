@@ -36,7 +36,11 @@ struct AtomicOrbitalSoA
 
   using vContainer_type=aligned_vector<ST>;
 
-  ST cutoff,spline_radius;
+  // near core cutoff
+  ST rmin;
+  // far from core cutoff, rmin_sqrt>=rmin
+  ST rmin_sqrt;
+  ST cutoff, spline_radius;
   int spline_npoints, BaseN;
   int NumBands, Npad;
   PointType pos;
@@ -57,6 +61,9 @@ struct AtomicOrbitalSoA
     for(int l=0; l<=lmax; l++)
       for(int m=-l; m<=l; m++)
         l_vals[l*(l+1)+m] = l;
+    rmin = std::exp(std::log(std::numeric_limits<ST>::min())/std::max(Lmax,1));
+    rmin = std::max(rmin,std::numeric_limits<ST>::epsilon());
+    rmin_sqrt=std::max(rmin,std::sqrt(std::numeric_limits<ST>::epsilon()));
   }
 
   inline void resizeStorage(size_t Nb)
@@ -134,8 +141,8 @@ struct AtomicOrbitalSoA
   template<typename VV>
   inline void evaluate_v(const ST& r, const PointType& dr, VV& myV)
   {
-    if (r>0)
-      Ylm.evaluateV(-dr[0]/r, -dr[1]/r, -dr[2]/r);
+    if (r>std::numeric_limits<ST>::epsilon())
+      Ylm.evaluateV(dr[0]/r, dr[1]/r, dr[2]/r);
     else
       Ylm.evaluateV(0,0,1);
     const ST* restrict Ylm_v=Ylm[0];
@@ -157,29 +164,23 @@ struct AtomicOrbitalSoA
   template<typename VV, typename GV>
   inline void evaluate_vgl(const ST& r, const PointType& dr, VV& myV, GV& myG, VV& myL)
   {
-    const ST rmin=0;
-    ST drx, dry, drz, rhatx, rhaty, rhatz, rinv, r_reg;
+    ST drx, dry, drz, rhatx, rhaty, rhatz, rinv;
     if (r>rmin)
     {
-      r_reg=r;
       rinv=1.0/r;
-      drx=-dr[0];
-      dry=-dr[1];
-      drz=-dr[2];
+      drx=dr[0];
+      dry=dr[1];
+      drz=dr[2];
       rhatx=drx*rinv;
       rhaty=dry*rinv;
       rhatz=drz*rinv;
     }
     else
     {
-      r_reg=0;
       rinv=0;
-      drx=-dr[0];
-      dry=-dr[1];
-      drz=-dr[2];
-      rhatx=0;
-      rhaty=0;
-      rhatz=1;
+      drx=dr[0];
+      dry=dr[1];
+      drz=dr[2];
     }
 
     Ylm.evaluateVGL(drx, dry, drz);
@@ -188,7 +189,7 @@ struct AtomicOrbitalSoA
     const ST* restrict Ylm_gy=Ylm[2];
     const ST* restrict Ylm_gz=Ylm[3];
 
-    einspline::evaluate(MultiSpline,r_reg,localV,localG,localL);
+    einspline::evaluate(MultiSpline,r,localV,localG,localL);
 
     ST* restrict g0=myG.data(0);
     ST* restrict g1=myG.data(1);
@@ -200,7 +201,7 @@ struct AtomicOrbitalSoA
     std::fill(g2,g2+Npad,czero);
     std::fill(myL.begin(),myL.end(),czero);
 
-    if(r_reg>0)
+    if(r>rmin_sqrt)
     {
       // far from core
       r_power_minus_l[0]=cone;
@@ -212,14 +213,12 @@ struct AtomicOrbitalSoA
           r_power_minus_l[lm]=r_power_temp;
       }
 
-      //std::cout << "debug r " << r << " rx,ry,rz : " << drx << " " << dry << " " << drz << std::endl;
       for(size_t lm=0; lm<lm_tot; lm++)
       {
         size_t offset=lm*Npad;
         const ST& l_val=l_vals[lm];
         const ST& r_power=r_power_minus_l[lm];
         const ST Ylm_rescale=Ylm_v[lm]*r_power;
-        //std::cout << "debug lm " << lm << " YlmV : " << Ylm_v[lm] << " YlmG " << Ylm_gx[lm] << " " << Ylm_gy[lm] << " " << Ylm_gz[lm] << std::endl;
         for(size_t ib=0; ib<myV.size(); ib++)
         {
           // value
@@ -233,18 +232,53 @@ struct AtomicOrbitalSoA
 
           // laplacian
           ST rhat_dot_G = ( rhatx*Ylm_gx[lm] + rhaty*Ylm_gy[lm] + rhatz*Ylm_gz[lm] ) * r_power;
-          //std::cout << "debug " << Ylm_rescale << " rhat_dot_g " << rhat_dot_G << std::endl;
           myL[ib] += (localL[offset+ib] + localG[offset+ib] * 2 * rinv) * Ylm_rescale
                     + localG[offset+ib] * (rhat_dot_G - l_val * Ylm_rescale * rinv )
                     - localV[offset+ib] * l_val * rinv * (Ylm_rescale * rinv + rhat_dot_G );
-          //std::cout << "debug ib " << ib << " localVGL : " << localV[offset+ib] << " " << localG[offset+ib] << " " << localL[offset+ib]
-          //          << " v " << myV[ib] << " g_xyz " << g0[ib] <<" " << g1[ib] << " " << g2[ib] << " l " << myL[ib] << std::endl;
+        }
+      }
+    }
+    else if(r>rmin)
+    {
+      // the possibility of reaching here is very very low
+      std::cout << "Warning: an electron is very close to an ion, distance=" << r << " be careful!" << std::endl;
+      // near core, kill divergence in the laplacian
+      r_power_minus_l[0]=cone;
+      ST r_power_temp=cone;
+      for(int l=1; l<=lmax; l++)
+      {
+        r_power_temp*=rinv;
+        for(int m=-l, lm=l*l; m<=l; m++,lm++)
+          r_power_minus_l[lm]=r_power_temp;
+      }
+
+      for(size_t lm=0; lm<lm_tot; lm++)
+      {
+        size_t offset=lm*Npad;
+        const ST& l_val=l_vals[lm];
+        const ST& r_power=r_power_minus_l[lm];
+        const ST Ylm_rescale=Ylm_v[lm]*r_power;
+        for(size_t ib=0; ib<myV.size(); ib++)
+        {
+          // value
+          const ST Vpart = Ylm_rescale*localV[offset+ib];
+          myV[ib] += Vpart;
+
+          // grad
+          g0[ib] += localG[offset+ib] * rhatx * Ylm_rescale + localV[offset+ib] * Ylm_gx[lm] * r_power - l_val * rhatx * Vpart * rinv;
+          g1[ib] += localG[offset+ib] * rhaty * Ylm_rescale + localV[offset+ib] * Ylm_gy[lm] * r_power - l_val * rhaty * Vpart * rinv;
+          g2[ib] += localG[offset+ib] * rhatz * Ylm_rescale + localV[offset+ib] * Ylm_gz[lm] * r_power - l_val * rhatz * Vpart * rinv;
+
+          // laplacian
+          ST rhat_dot_G = (Ylm_gx[lm] * rhatx + Ylm_gy[lm] * rhaty + Ylm_gz[lm] * rhatz ) * r_power * r;
+          myL[ib] += localL[offset+ib] * (cone - chalf *l_val) * ( static_cast<ST>(3) * Ylm_rescale + rhat_dot_G );
         }
       }
     }
     else
     {
-      // near core, kill divergence
+      std::cout << "Warning: an electron is on top of an ion!" << std::endl;
+      // strictly zero
       for(size_t ib=0; ib<myV.size(); ib++)
       {
         // value
@@ -259,15 +293,12 @@ struct AtomicOrbitalSoA
         for(size_t lm=1; lm<4; lm++)
         {
           size_t offset=lm*Npad;
-          //std::cout << "debug lm " << lm << " YlmV : " << Ylm_v[lm] << " YlmG " << Ylm_gx[lm] << " " << Ylm_gy[lm] << " " << Ylm_gz[lm] << std::endl;
           for(size_t ib=0; ib<myV.size(); ib++)
           {
             // grad
             g0[ib] += localG[offset+ib] * Ylm_gx[lm];
             g1[ib] += localG[offset+ib] * Ylm_gy[lm];
             g2[ib] += localG[offset+ib] * Ylm_gz[lm];
-            //std::cout << "debug ib " << ib << " localVGL : " << localV[offset+ib] << " " << localG[offset+ib] << " " << localL[offset+ib]
-            //          << " v " << myV[ib] << " g_xyz " << g0[ib] <<" " << g1[ib] << " " << g2[ib] << " l " << myL[ib] << std::endl;
           }
         }
       }
@@ -372,7 +403,10 @@ struct HybridAdoptorBase
     const auto* ei_dist=P.DistTables[myTableID];
     const int center_idx=ei_dist->get_first_neighbor(iat, dist_r, dist_dr);
     if(center_idx<0) abort();
-    r=dist_r; dr=dist_dr;
+    r=dist_r;
+    dr[0]=-dist_dr[0];
+    dr[1]=-dist_dr[1];
+    dr[2]=-dist_dr[2];
     auto& myCenter=AtomicCenters[Super2Prim[center_idx]];
     if ( r < myCenter.cutoff )
     {
@@ -390,7 +424,10 @@ struct HybridAdoptorBase
     const auto* ei_dist=P.DistTables[myTableID];
     const int center_idx=ei_dist->get_first_neighbor(iat, dist_r, dist_dr);
     if(center_idx<0) abort();
-    r=dist_r; dr=dist_dr;
+    r=dist_r;
+    dr[0]=-dist_dr[0];
+    dr[1]=-dist_dr[1];
+    dr[2]=-dist_dr[2];
     auto& myCenter=AtomicCenters[Super2Prim[center_idx]];
     if ( r < myCenter.cutoff )
     {
@@ -408,7 +445,10 @@ struct HybridAdoptorBase
     const auto* ei_dist=P.DistTables[myTableID];
     const int center_idx=ei_dist->get_first_neighbor(iat, dist_r, dist_dr);
     if(center_idx<0) abort();
-    r=dist_r; dr=dist_dr;
+    r=dist_r;
+    dr[0]=-dist_dr[0];
+    dr[1]=-dist_dr[1];
+    dr[2]=-dist_dr[2];
     auto& myCenter=AtomicCenters[Super2Prim[center_idx]];
     if ( r < myCenter.cutoff )
     {
