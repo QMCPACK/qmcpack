@@ -4,7 +4,7 @@
 source /opt/intel/2017/parallel_studio_xe_2017.1.043/bin/psxevars.sh intel64
 
 # KNL NUMA + Memory Mode
-cat /var/run/hwloc/knl_memoryside_cache# KNL NUMA + Memory Mode
+cat /var/run/hwloc/knl_memoryside_cache # KNL NUMA + Memory Mode
 
 # timeout
 timeout=1800
@@ -33,6 +33,10 @@ echo --- Updating local QMCPACK git `date`
 git pull
 cd ..
 fi
+
+# Sanity check cmake config file present
+if [ -e qmcpack/CMakeLists.txt ]; then
+echo --- QMCPACK git repo contains CMakeLists.txt
 
 # Build Quantum Espresso
 # Compiled only once with the Intel Compiler
@@ -69,8 +73,7 @@ else
     echo -- Found existing QE ${QE_VERSION} executable
 fi
 
-# Sanity check cmake config file present
-if [ -e qmcpack/CMakeLists.txt ]; then
+
 
 echo --- Starting test builds and tests
 
@@ -144,7 +147,7 @@ fi # termination for if block which checks CMakeLists.txt
 
 
 else
-echo "ERROR: Unable to make test directory ${test_dir}"
+echo "ERROR: Unable to make test directory ${testdir}"
 exit 1
 fi # termination for if block which checks testing directory
 
