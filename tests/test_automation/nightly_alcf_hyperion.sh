@@ -58,11 +58,14 @@ cp -p ../qmcpack/external_codes/quantum_espresso/*${QE_VERSION}* .
 ./download_and_patch_qe${QE_VERSION}.sh
 cd espresso-${QE_VERSION}
 
-# Too many configure hacks to get QE to work on KNL.
+# Hack to get QE build to build and link against proper libraries on KNL
 # Copy make.sys that is known to work. 
+cp /data/ci/auxfiles/build-hyperion.sh .
 cp /data/ci/auxfiles/make.sys . 
-echo --- Building QE ${QE_VERISON}$
-make -j 4 pwall
+echo --- Configure QE ${QE_VERSION}$
+./build-hyperion.sh 
+echo --- Building QE ${QE_VERSION}$
+make -j 32 pwall
 
 
 # Make fault-tolerant, maybe QE did not download properly or there
