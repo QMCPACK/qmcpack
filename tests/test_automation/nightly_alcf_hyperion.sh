@@ -62,15 +62,16 @@ cd espresso-${QE_VERSION}
 # Copy make.sys that is known to work. 
 cp /data/ci/auxfiles/make.sys . 
 echo --- Building QE ${QE_VERISON}$
-make -j 24 pwall
+make -j 4 pwall
 
 
 # Make fault-tolerant, maybe QE did not download properly or there
 # was a build failure
-if [ ! -e ${QE_BIN}/pw.x ]; then
-    echo -- QE ${QE_VERSION} built properly
+if [ -e ${QE_BIN}/pw.x ]; then
+    echo -- QE ${QE_VERSION} was built properly.
 else
-    echo -- Found existing QE ${QE_VERSION} executable
+    echo -- QE ${QE_VERSION} failed to build.
+    exit 1
 fi
 
 
