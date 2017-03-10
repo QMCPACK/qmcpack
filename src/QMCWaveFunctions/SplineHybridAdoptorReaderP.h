@@ -373,7 +373,8 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
           //if(ntot>>22) //Using 4M as the cutoff, candidate for autotuning
           {
             now.restart();
-            initialize_spline_pio(spin,bandgroup);
+            //initialize_spline_pio(spin,bandgroup);
+            initialize_spline_pio_reduce(spin,bandgroup);
             app_log() << "  SplineHybridAdoptorReader initialize_spline_pio " << now.elapsed() << " sec" << std::endl;
           }
         }
@@ -563,7 +564,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
         for(int lm=0; lm<lm_tot; lm++)
           all_vals[ip][lm]*=4.0*M_PI*i_power[lm];
       }
-      app_log() << "Building band " << iorb << " at center " << center_idx << std::endl;
+      //app_log() << "Building band " << iorb << " at center " << center_idx << std::endl;
 
       #pragma omp parallel for
       for(int lm=0; lm<lm_tot; lm++)
@@ -736,6 +737,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
     Vector<std::complex<double> > cG(mybuilder->MaxNumGvecs);
     const std::vector<BandInfo>& cur_bands=bandgroup.myBands;
     bool foundit=true;
+    app_log() << "Start transforming 3D B-Splines and atomic orbitals for hybrid representation." << std::endl;
     for(size_t iorb=0; iorb<N; ++iorb)
     {
       int ti=cur_bands[iorb].TwistIndex;
@@ -747,6 +749,38 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       bspline->set_spline(spline_r[0],spline_i[0],cur_bands[iorb].TwistIndex,iorb,0);
     }
     return foundit;
+  }
+
+  void initialize_spline_pio_reduce(int spin, const BandInfoGroup& bandgroup)
+  {
+    int Nbands=bandgroup.getNumDistinctOrbitals();
+    const int Nprocs=myComm->size();
+    const int Nbandgroups=std::min(Nbands,Nprocs);
+    Communicate band_group_comm(*myComm, Nbandgroups);
+    std::vector<int> band_groups(Nbandgroups+1,0);
+    FairDivideLow(Nbands,Nbandgroups,band_groups);
+    int iorb_first=band_groups[band_group_comm.getGroupID()];
+    int iorb_last =band_groups[band_group_comm.getGroupID()+1];
+    app_log() << "Start transforming 3D B-Splines and atomic orbitals for hybrid representation." << std::endl;
+    if(band_group_comm.isGroupLeader())
+    {
+      hdf_archive h5f(&band_group_comm,false);
+      h5f.open(mybuilder->H5FileName,H5F_ACC_RDONLY);
+      Vector<std::complex<double> > cG(mybuilder->Gvecs[0].size());;
+      const std::vector<BandInfo>& cur_bands=bandgroup.myBands;
+      for(int ib=0, iorb=iorb_first; iorb<iorb_last; ib++, iorb++)
+      {
+        int ti=cur_bands[iorb].TwistIndex;
+        std::string s=psi_g_path(ti,spin,cur_bands[iorb].BandIndex);
+        if(!h5f.read(cG,s)) APP_ABORT("SplineHybridAdoptorReader Failed to read band(s) from h5!\n");
+        fft_spline(cG,ti,ib);
+        create_atomic_centers_Gspace(cG,ti,iorb);
+        bspline->set_spline(spline_r[ib],spline_i[ib],cur_bands[iorb].TwistIndex,iorb,0);
+      }
+      bspline->reduce_tables(band_group_comm.GroupLeaderComm);
+    }
+    myComm->barrier();
+    bspline->bcast_tables(myComm);
   }
 
   void initialize_spline_pio(int spin, const BandInfoGroup& bandgroup)

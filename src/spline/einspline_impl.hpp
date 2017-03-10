@@ -468,7 +468,9 @@ namespace qmcplusplus
     template<typename GT, typename BCT>
     multi_UBspline_1d_d* create(multi_UBspline_1d_d* s, GT& grid , BCT& bc, int num_splines)
     {
-      return create_multi_UBspline_1d_d(grid, bc, num_splines);
+      multi_UBspline_1d_d* newspline=create_multi_UBspline_1d_d(grid, bc, num_splines);
+      std::fill(newspline->coefs, newspline->coefs+newspline->coefs_size, 0.0);
+      return newspline;
     }
 
     /** create spline for float */
@@ -478,7 +480,9 @@ namespace qmcplusplus
       BCtype_s bc;
       bc.lCode = bc_in.lCode;
       bc.rCode = bc_in.rCode;
-      return create_multi_UBspline_1d_s(grid, bc, num_splines);
+      multi_UBspline_1d_s* newspline= create_multi_UBspline_1d_s(grid, bc, num_splines);
+      std::fill(newspline->coefs, newspline->coefs+newspline->coefs_size, 0.0f);
+      return newspline;
     }
 
     inline void set(multi_UBspline_1d_d* spline, int i, UBspline_1d_d* spline_in,

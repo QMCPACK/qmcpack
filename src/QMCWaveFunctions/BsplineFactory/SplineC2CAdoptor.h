@@ -128,6 +128,11 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
     chunked_bcast(comm, MultiSpline);
   }
 
+  void reduce_tables(Communicate* comm)
+  {
+    chunked_reduce(comm, MultiSpline);
+  }
+
   template<typename GT, typename BCT>
   void create_spline(GT& xyz_g, BCT& xyz_bc)
   {

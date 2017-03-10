@@ -47,7 +47,7 @@ Communicate* OHMMS::Controller = new Communicate;
 
 //default constructor: ready for a serial execution
 Communicate::Communicate():
-  myMPI(0), d_mycontext(0), d_ncontexts(1), d_groupid(0), d_ngroups(1)
+  myMPI(0), d_mycontext(0), d_ncontexts(1), d_groupid(0), d_ngroups(1), GroupLeaderComm(NULL)
 {
 }
 
@@ -59,6 +59,14 @@ Communicate::Communicate(int argc, char **argv)
 
 //exclusive:  OOMPI, MPI or Serial
 #ifdef HAVE_OOMPI
+
+Communicate::Communicate(const mpi_comm_type comm_input):
+  myMPI(comm_input), d_groupid(0), d_ngroups(1), GroupLeaderComm(NULL)
+{
+  myComm=OOMPI_Intra_comm(myMPI);
+  d_mycontext=myComm.Rank();
+  d_ncontexts=myComm.Size();
+}
 
 void
 Communicate::set_world()
@@ -74,12 +82,11 @@ Communicate::set_world()
 
 Communicate::Communicate(const Communicate& comm, int nparts)
 {
-  qmcplusplus::qmc_common.mpi_groups=nparts;
+  std::vector<int> nplist(nparts+1);
 
   //this is a workaround due to the OOMPI bug with split
   if(nparts>1)
   {
-    std::vector<int> nplist(nparts+1);
     int p=FairDivideLow(comm.rank(), comm.size(), nparts, nplist); //group
     int q=comm.rank()-nplist[p];//rank within a group
     //int n=comm.size()/nparts;
@@ -92,6 +99,7 @@ Communicate::Communicate(const Communicate& comm, int nparts)
   }
   else
   {
+    nplist[0]=0; nplist[1]=comm.size();
     myComm=OOMPI_Intra_comm(comm.getComm());
     d_groupid=0;
   }
@@ -99,6 +107,15 @@ Communicate::Communicate(const Communicate& comm, int nparts)
   d_mycontext=myComm.Rank();
   d_ncontexts=myComm.Size();
   d_ngroups=nparts;
+  // create a communicator among group leaders.
+  MPI_Group parent_group, leader_group;
+  MPI_Comm leader_comm;
+  MPI_Comm_group(comm.getMPI(), &parent_group);
+  MPI_Group_incl(parent_group, nparts, nplist.data(), &leader_group);
+  MPI_Comm_create(comm.getMPI(), leader_group, &leader_comm);
+  if(isGroupLeader()) GroupLeaderComm = new Communicate(leader_comm);
+  MPI_Group_free(&parent_group);
+  MPI_Group_free(&leader_group);
 }
 
 Communicate::Communicate(const Communicate& comm, const std::vector<int>& jobs)

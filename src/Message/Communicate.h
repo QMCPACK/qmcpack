@@ -84,6 +84,9 @@ public:
   Communicate(int argc, char **argv);
 
   ///constructor with communicator
+  Communicate(const mpi_comm_type comm_input);
+
+  ///constructor with communicator
   //Communicate(const intra_comm_type& c);
   Communicate(const Communicate& comm, int nparts);
 
@@ -171,6 +174,12 @@ public:
     return myName;
   }
 
+  ///return true if the current MPI rank is the group lead
+  inline bool isGroupLeader()
+  {
+    return d_mycontext==0;
+  }
+
   // MMORALES: leaving this here temprarily, but it doesn;t belong here.
   // MMORALES: FIX FIX FIX
 #ifdef HAVE_MPI
@@ -213,6 +222,7 @@ public:
   template<typename T> void allreduce(T&);
   template<typename T> void reduce(T&);
   template<typename T> void reduce(T* restrict, T* restrict, int n);
+  template<typename T> void reduce_in_place(T* restrict, int n);
   template<typename T> void bcast(T&);
   template<typename T> void bcast(T* restrict, int n);
   template<typename T> void send(int dest, int tag, T&);
@@ -254,13 +264,24 @@ public:
 
 protected:
 
+  /// Raw communicator
   mpi_comm_type myMPI;
+  /// OOMPI communicator
   intra_comm_type myComm;
+  /// Communicator name
   std::string myName;
+  /// Rank
   int d_mycontext;
+  /// Size
   int d_ncontexts;
+  /// Group ID of the current communicator in the parent communicator
   int d_groupid;
+  /// Total number of groups in the parent communicator
   int d_ngroups;
+
+public:
+  /// Group Lead Communicator
+  Communicate *GroupLeaderComm;
 };
 
 

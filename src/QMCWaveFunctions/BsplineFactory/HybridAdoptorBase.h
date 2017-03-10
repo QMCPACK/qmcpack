@@ -81,6 +81,11 @@ struct AtomicOrbitalSoA
     chunked_bcast(comm, MultiSpline);
   }
 
+  void reduce_tables(Communicate* comm)
+  {
+    chunked_reduce(comm, MultiSpline);
+  }
+
   template<typename PT, typename VT>
   inline void set_info(const PT& R, const VT& cutoff_in, const VT& spline_radius_in, const int& spline_npoints_in)
   {
@@ -352,6 +357,12 @@ struct HybridAdoptorBase
   {
     for(int ic=0; ic<AtomicCenters.size(); ic++)
       AtomicCenters[ic].bcast_tables(comm);
+  }
+
+  void reduce_atomic_tables(Communicate* comm)
+  {
+    for(int ic=0; ic<AtomicCenters.size(); ic++)
+      AtomicCenters[ic].reduce_tables(comm);
   }
 
   bool read_splines(hdf_archive& h5f)
