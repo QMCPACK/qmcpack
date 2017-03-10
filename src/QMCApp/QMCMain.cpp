@@ -130,6 +130,8 @@ bool QMCMain::execute()
 
 #ifdef BUILD_AFQMC
   if(simulationType == "afqmc") {
+    NewTimer *t2 = TimerManager.createTimer("Total", timer_level_coarse);
+    ScopedTimer t2_scope(t2);
     app_log() << std::endl << "/*************************************************\n"
                       << " ********  This is an AFQMC calculation   ********\n"
                       << " *************************************************" <<std::endl;
@@ -182,12 +184,10 @@ bool QMCMain::execute()
   }
 #endif
 
-  NewTimer *t2 = new NewTimer("Total", timer_level_coarse);
-  TimerManager.addTimer(t2);
+  NewTimer *t2 = TimerManager.createTimer("Total", timer_level_coarse);
   t2->start();
 
-  NewTimer *t3 = new NewTimer("Startup", timer_level_coarse);
-  TimerManager.addTimer(t3);
+  NewTimer *t3 = TimerManager.createTimer("Startup", timer_level_coarse);
   t3->start();
 
   //validate the input file
@@ -623,8 +623,7 @@ bool QMCMain::runQMC(xmlNodePtr cur)
     qmcDriver->process(cur);
     OhmmsInfo::flush();
     Timer qmcTimer;
-    NewTimer *t1 = new NewTimer(qmcDriver->getEngineName(), timer_level_coarse);
-    TimerManager.addTimer(t1);
+    NewTimer *t1 = TimerManager.createTimer(qmcDriver->getEngineName(), timer_level_coarse);
     t1->start();
     qmcDriver->run();
     t1->stop();
