@@ -155,10 +155,9 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
   Array<std::complex<double>,3> FFTbox;
   Array<double,3> splineData_r, splineData_i;
   double rotate_phase_r, rotate_phase_i;
-  std::vector<UBspline_3d_d*> spline_r;
-  std::vector<UBspline_3d_d*> spline_i;
+  UBspline_3d_d* spline_r;
+  UBspline_3d_d* spline_i;
   BsplineSet<adoptor_type>* bspline;
-  std::vector<int> OrbGroups;
   fftw_plan FFTplan;
 
   SplineHybridAdoptorReader(EinsplineSetBuilder* e)
@@ -172,21 +171,8 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
 
   void clear()
   {
-    for(int i=0; i<spline_r.size(); ++i)
-    {
-      free(spline_r[i]->coefs);
-      free(spline_r[i]);
-    }
-    for(int i=0; i<spline_i.size(); ++i)
-    {
-      if(spline_i[i]!=0)
-      {
-        free(spline_i[i]->coefs);
-        free(spline_i[i]);
-      }
-    }
-    spline_r.clear();
-    spline_i.clear();
+    einspline::destroy(spline_r);
+    einspline::destroy(spline_i);
     if(FFTplan!=NULL) fftw_destroy_plan(FFTplan);
     FFTplan=NULL;
   }
@@ -321,7 +307,6 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
     }
     else
     {
-      int N=bandgroup.getNumDistinctOrbitals();
       int nx=MeshSize[0];
       int ny=MeshSize[1];
       int nz=MeshSize[2];
@@ -335,49 +320,16 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
         splineData_r.resize(nx,ny,nz);
         if(bspline->is_complex) splineData_i.resize(nx,ny,nz);
 
-        bool usingSerialIO=(myComm->size()==1);
-
-        int np=std::min(N,myComm->size());
-        OrbGroups.resize(np+1,0);
-        FairDivideLow(N,np,OrbGroups);
-        int ip=myComm->rank();
-        int norbs_n=(ip<np)?OrbGroups[ip+1]-OrbGroups[ip]:0;
-        if(usingSerialIO)  norbs_n=0;
-
         TinyVector<double,3> start(0.0);
         TinyVector<double,3> end(1.0);
-        UBspline_3d_d* dummy=0;
-        spline_r.resize(norbs_n+1);
-        for(int i=0; i<spline_r.size(); ++i)
-          spline_r[i]=einspline::create(dummy,start,end,MeshSize,bspline->HalfG);
-
-        spline_i.resize(norbs_n+1,0);
+        spline_r=einspline::create(spline_r,start,end,MeshSize,bspline->HalfG);
         if(bspline->is_complex)
-        {
-          for(int i=0; i<spline_i.size(); ++i)
-            spline_i[i]=einspline::create(dummy,start,end,MeshSize,bspline->HalfG);
-        }
+          spline_i=einspline::create(spline_i,start,end,MeshSize,bspline->HalfG);
 
-        if(usingSerialIO)
-        {
-          now.restart();
-          initialize_spline_serial(spin, bandgroup);
-          app_log() << "  SplineHybridAdoptorReader initialize_spline_serial " << now.elapsed() << " sec" << std::endl;
-        }
-        else
-        {
-          //now.restart();
-          //initialize_spline_pio_bcast(spin);
-          //app_log() << "  SplineHybridAdoptorReader initialize_spline_pio_bcast " << now.elapsed() << " sec" << std::endl;
-          size_t ntot=size_t(nx*ny*nz)*size_t(N);
-          //if(ntot>>22) //Using 4M as the cutoff, candidate for autotuning
-          {
-            now.restart();
-            //initialize_spline_pio(spin,bandgroup);
-            initialize_spline_pio_reduce(spin,bandgroup);
-            app_log() << "  SplineHybridAdoptorReader initialize_spline_pio " << now.elapsed() << " sec" << std::endl;
-          }
-        }
+        now.restart();
+        //initialize_spline_pio(spin,bandgroup);
+        initialize_spline_pio_reduce(spin,bandgroup);
+        app_log() << "  SplineHybridAdoptorReader initialize_spline_pio " << now.elapsed() << " sec" << std::endl;
 
         fftw_destroy_plan(FFTplan);
         FFTplan=NULL;
@@ -406,22 +358,22 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
    * @param ti twist index
    * @param iorb orbital index
    *
-   * Perform FFT and spline to spline_r[iorb] and spline_i[iorb]
+   * Perform FFT and spline to spline_r and spline_i
    */
-  inline void fft_spline(Vector<std::complex<double> >& cG, int ti, int iorb)
+  inline void fft_spline(Vector<std::complex<double> >& cG, int ti)
   {
     unpack4fftw(cG,mybuilder->Gvecs[0],MeshSize,FFTbox);
     fftw_execute (FFTplan);
     if(bspline->is_complex)
     {
       fix_phase_rotate_c2c(FFTbox,splineData_r, splineData_i,mybuilder->TwistAngles[ti], rotate_phase_r, rotate_phase_i);
-      einspline::set(spline_r[iorb],splineData_r.data());
-      einspline::set(spline_i[iorb],splineData_i.data());
+      einspline::set(spline_r,splineData_r.data());
+      einspline::set(spline_i,splineData_i.data());
     }
     else
     {
       fix_phase_rotate_c2r(FFTbox,splineData_r, mybuilder->TwistAngles[ti], rotate_phase_r, rotate_phase_i);
-      einspline::set(spline_r[iorb],splineData_r.data());
+      einspline::set(spline_r,splineData_r.data());
     }
   }
 
@@ -472,7 +424,6 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
   inline void create_atomic_centers_Gspace(Vector<std::complex<double> >& cG, int ti, int iorb)
   {
     typedef typename EinsplineSetBuilder::UnitCellType UnitCellType;
-    //Quadrature3D<double> quad(5);
 
     // prepare Gvecs Ylm(G)
     Gvectors<double, UnitCellType> Gvecs(mybuilder->Gvecs[0], mybuilder->PrimCell);
@@ -487,32 +438,6 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
         i_power.push_back(i_temp);
       i_temp*=std::complex<double>(0.0,1.0);
     }
-
-#if 0
-    //checking Ylm
-    const int lm_limit_tot=(lmax_limit+1)*(lmax_limit+1);
-    SoaSphericalTensor<double> myYlm(lmax_limit,true);
-    for(int j=0; j<quad.nk; j++)
-    {
-      std::vector<double> Ylm_vals(lm_limit_tot);
-      myYlm.evaluateV(quad.xyz_m[j][0], quad.xyz_m[j][1], quad.xyz_m[j][2], Ylm_vals.data());
-      TinyVector<double,3> rotate(quad.xyz_m[j][2], quad.xyz_m[j][0], quad.xyz_m[j][1]);
-      app_log() << "*****************************" << std::endl;
-      app_log() << "checking quad " << quad.xyz_m[j] << std::endl;
-      for(int l=0; l<=lmax_limit; l++)
-      {
-        app_log() << "l,m " << l << ",0 " << Ylm_vals[l*(l+1)] << " " << real(Ylm(l,0,rotate)) << std::endl;
-        for(int m=1; m<=l; m++)
-        {
-          if(std::abs(Ylm_vals[l*(l+1)-m]-std::sqrt(2)*(m%2?-1:1)*imag(Ylm(l,m,rotate)))>1e-10) 
-            app_log() << "l,m " << l << "," << -m << " " << Ylm_vals[l*(l+1)-m] << " " << std::sqrt(2)*(m%2?-1:1)*imag(Ylm(l,m,rotate)) << std::endl;
-          if(std::abs(Ylm_vals[l*(l+1)+m]-std::sqrt(2)*(m%2?-1:1)*real(Ylm(l,m,rotate)))>1e-10) 
-            app_log() << "l,m " << l << "," << m << " " << Ylm_vals[l*(l+1)+m] << " " << std::sqrt(2)*(m%2?-1:1)*real(Ylm(l,m,rotate)) << std::endl;
-        }
-      }
-    }
-    abort();
-#endif
 
     std::vector<AtomicOrbitalSoA<DataType> >& centers=bspline->AtomicCenters;
     for(int center_idx=0; center_idx<centers.size(); center_idx++)
@@ -570,29 +495,29 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       for(int lm=0; lm<lm_tot; lm++)
       {
         aligned_vector<double> splineData_r(spline_npoints);
-        UBspline_1d_d* spline_r;
+        UBspline_1d_d* atomic_spline_r;
         for(size_t ip=0; ip<spline_npoints; ip++)
           splineData_r[ip]=real(all_vals[ip][lm]);
-        spline_r=einspline::create(spline_r, 0.0, spline_radius, spline_npoints, ((lm==0)||(lm>3)));
-        einspline::set(spline_r,splineData_r.data());
+        atomic_spline_r=einspline::create(atomic_spline_r, 0.0, spline_radius, spline_npoints, ((lm==0)||(lm>3)));
+        einspline::set(atomic_spline_r,splineData_r.data());
         if(!bspline->is_complex)
         {
-          mycenter.set_spline(spline_r,lm,iorb);
-          einspline::destroy(spline_r);
+          mycenter.set_spline(atomic_spline_r,lm,iorb);
+          einspline::destroy(atomic_spline_r);
         }
         else
         {
           aligned_vector<double> splineData_i(spline_npoints);
-          UBspline_1d_d* spline_i;
+          UBspline_1d_d* atomic_spline_i;
           for(size_t ip=0; ip<spline_npoints; ip++)
             splineData_i[ip]=imag(all_vals[ip][lm]);
-          spline_i=einspline::create(spline_i, 0.0, spline_radius, spline_npoints, ((lm==0)||(lm>3)));
-          einspline::set(spline_i,splineData_i.data());
+          atomic_spline_i=einspline::create(atomic_spline_i, 0.0, spline_radius, spline_npoints, ((lm==0)||(lm>3)));
+          einspline::set(atomic_spline_i,splineData_i.data());
           int iband=bspline->BandIndexMap.size()>0?bspline->BandIndexMap[iorb]:iorb;
-          mycenter.set_spline(spline_r,lm,iband*2);
-          mycenter.set_spline(spline_i,lm,iband*2+1);
-          einspline::destroy(spline_r);
-          einspline::destroy(spline_i);
+          mycenter.set_spline(atomic_spline_r,lm,iband*2);
+          mycenter.set_spline(atomic_spline_i,lm,iband*2+1);
+          einspline::destroy(atomic_spline_r);
+          einspline::destroy(atomic_spline_i);
         }
       }
 
@@ -693,64 +618,8 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
     }
   }
 
-
-#if 0
-  void initialize_spline_slow(int spin, const BandInfoGroup& bandgroup)
-  {
-    int N=bandgroup.getNumDistinctOrbitals();
-    int nx=MeshSize[0];
-    int ny=MeshSize[1];
-    int nz=MeshSize[2];
-    Array<DataType,3> data_r(nx,ny,nz), data_i;
-    if(bspline->is_complex)
-      data_i.resize(ny,ny,nz);
-    Vector<std::complex<double> > cG(mybuilder->MaxNumGvecs);
-    const std::vector<BandInfo>& cur_bands=bandgroup.myBands;
-    //this will be parallelized with OpenMP
-    for(int iorb=0; iorb<N; ++iorb)
-    {
-      int ti=cur_bands[iorb].TwistIndex;
-      get_psi_g(ti,spin,cur_bands[iorb].BandIndex,cG);//bcast cG
-      //fft_spline(cG,ti,0);
-      //bspline->set_spline(spline_r[0],spline_i[0],iorb);
-      unpack4fftw(cG,mybuilder->Gvecs[0],MeshSize,FFTbox);
-      fftw_execute (FFTplan);
-      if(bspline->is_complex)
-        fix_phase_rotate_c2c(FFTbox,data_r, data_i,mybuilder->TwistAngles[ti]);
-      else
-        fix_phase_rotate_c2r(FFTbox,data_r, mybuilder->TwistAngles[ti]);
-
-      bspline->set_spline(data_r.data(),data_i.data(),ti,iorb,0);
-    }
-  }
-
-#endif
-
-  /** initialize the set to minimize the memroy use
+  /** initialize the splines
    */
-  bool initialize_spline_serial(int spin, const BandInfoGroup& bandgroup)
-  {
-    hdf_archive h5f(myComm,false);
-    h5f.open(mybuilder->H5FileName,H5F_ACC_RDONLY);
-
-    const size_t N=bandgroup.getNumDistinctOrbitals();
-    Vector<std::complex<double> > cG(mybuilder->MaxNumGvecs);
-    const std::vector<BandInfo>& cur_bands=bandgroup.myBands;
-    bool foundit=true;
-    app_log() << "Start transforming 3D B-Splines and atomic orbitals for hybrid representation." << std::endl;
-    for(size_t iorb=0; iorb<N; ++iorb)
-    {
-      int ti=cur_bands[iorb].TwistIndex;
-      std::string s=psi_g_path(ti,spin,cur_bands[iorb].BandIndex);
-      foundit &= h5f.read(cG,s);
-      get_psi_g(ti,spin,cur_bands[iorb].BandIndex,cG);//bcast cG
-      fft_spline(cG,ti,0);
-      create_atomic_centers_Gspace(cG,ti,iorb);
-      bspline->set_spline(spline_r[0],spline_i[0],cur_bands[iorb].TwistIndex,iorb,0);
-    }
-    return foundit;
-  }
-
   void initialize_spline_pio_reduce(int spin, const BandInfoGroup& bandgroup)
   {
     int Nbands=bandgroup.getNumDistinctOrbitals();
@@ -773,136 +642,14 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
         int ti=cur_bands[iorb].TwistIndex;
         std::string s=psi_g_path(ti,spin,cur_bands[iorb].BandIndex);
         if(!h5f.read(cG,s)) APP_ABORT("SplineHybridAdoptorReader Failed to read band(s) from h5!\n");
-        fft_spline(cG,ti,ib);
+        fft_spline(cG,ti);
         create_atomic_centers_Gspace(cG,ti,iorb);
-        bspline->set_spline(spline_r[ib],spline_i[ib],cur_bands[iorb].TwistIndex,iorb,0);
+        bspline->set_spline(spline_r,spline_i,cur_bands[iorb].TwistIndex,iorb,0);
       }
       bspline->reduce_tables(band_group_comm.GroupLeaderComm);
     }
     myComm->barrier();
     bspline->bcast_tables(myComm);
-  }
-
-  void initialize_spline_pio(int spin, const BandInfoGroup& bandgroup)
-  {
-    int N=bandgroup.getNumDistinctOrbitals();
-    bool root=(myComm->rank()==0);
-    bool foundit=true;
-    int np=OrbGroups.size()-1;
-    if(myComm->rank()<np)
-    {
-      int iorb_first=OrbGroups[myComm->rank()];
-      int iorb_last =OrbGroups[myComm->rank()+1];
-      hdf_archive h5f(myComm,false);
-      h5f.open(mybuilder->H5FileName,H5F_ACC_RDONLY);
-      Vector<std::complex<double> > cG(mybuilder->Gvecs[0].size());;
-      const std::vector<BandInfo>& cur_bands=bandgroup.myBands;
-      for(int ib=0, iorb=iorb_first; iorb<iorb_last; ib++, iorb++)
-      {
-        int ti=cur_bands[iorb].TwistIndex;
-        std::string s=psi_g_path(ti,spin,cur_bands[iorb].BandIndex);
-        foundit &= h5f.read(cG,s);
-        fft_spline(cG,ti,ib);
-      }
-      if(root)
-      {
-        for(int iorb=OrbGroups[0],ib=0; iorb<OrbGroups[1]; ++iorb,++ib)
-        {
-          bspline->set_spline(spline_r[ib],spline_i[ib],cur_bands[iorb].TwistIndex,iorb,0);
-        }
-      }
-    }//root put splines to the big table
-    myComm->barrier();
-    myComm->bcast(foundit);
-    if(!foundit)
-      APP_ABORT("SplineHybridAdoptorReader Failed to read band(s)");
-    //mpi needs int
-    int ng_big=static_cast<int>(spline_r[0]->coefs_size);
-    //send back to zero  using synchronous send/recv
-    for(int ip=1; ip<np; ++ip)
-    {
-      int remote=0;
-      if(ip==myComm->rank())
-      {
-        for(int iorb=OrbGroups[ip],ib=0; iorb<OrbGroups[ip+1]; ++iorb,++ib)
-        {
-          mpi::send(*myComm,spline_r[ib]->coefs,ng_big,remote,iorb);
-          if(bspline->is_complex)
-            mpi::send(*myComm,spline_i[ib]->coefs,ng_big,remote,iorb+N);
-        }
-      }
-      else if(root)
-      {
-        for(int iorb=OrbGroups[ip],ib=0; iorb<OrbGroups[ip+1]; ++iorb,++ib)
-        {
-          mpi::recv(*myComm,spline_r[ib]->coefs,ng_big,ip,iorb);
-          if(bspline->is_complex)
-            mpi::recv(*myComm,spline_i[ib]->coefs,ng_big,ip,iorb+N);
-        }
-        const std::vector<BandInfo>& cur_bands=bandgroup.myBands;
-        for(int iorb=OrbGroups[ip],ib=0; iorb<OrbGroups[ip+1]; ++iorb,++ib)
-        {
-          bspline->set_spline(spline_r[ib],spline_i[ib],cur_bands[iorb].TwistIndex,iorb,0);
-        }
-      }
-    }
-    myComm->barrier();
-    chunked_bcast(myComm, bspline->MultiSpline);
-  }
-
-  void initialize_spline_pio_bcast(int spin, const BandInfoGroup& bandgroup)
-  {
-    bool root=(myComm->rank()==0);
-    int np=OrbGroups.size()-1;
-    bool foundit=true;
-    const std::vector<BandInfo>& cur_bands=bandgroup.myBands;
-
-    if(myComm->rank()<np)
-    {
-      int iorb_first=OrbGroups[myComm->rank()];
-      int iorb_last =OrbGroups[myComm->rank()+1];
-      hdf_archive h5f(myComm,false);
-      h5f.open(mybuilder->H5FileName,H5F_ACC_RDONLY);
-      Vector<std::complex<double> > cG(mybuilder->Gvecs[0].size());;
-      for(int ib=0, iorb=iorb_first; iorb<iorb_last; ib++, iorb++)
-      {
-        int ti=cur_bands[iorb].TwistIndex;
-        std::string s=psi_g_path(ti,spin,cur_bands[iorb].BandIndex);
-        foundit &= h5f.read(cG,s);
-        fft_spline(cG,ti,ib);
-      }
-    }
-    myComm->barrier();
-    myComm->bcast(foundit);
-    if(!foundit)
-      APP_ABORT("SplineHybridAdoptorReader Failed to read band(s)");
-    int ng_big=static_cast<int>(spline_r[0]->coefs_size);
-    //pointers to UBspline_3d_d for bcast without increaing mem
-    UBspline_3d_d *dense_r, *dense_i;
-    int iorb_target=(myComm->rank()<np)?(OrbGroups[myComm->rank()+1]-OrbGroups[myComm->rank()]):0;
-    for(int ip=0; ip<np; ++ip)
-    {
-      for(int iorb=OrbGroups[ip], ib=0; iorb<OrbGroups[ip+1]; ++iorb, ++ib)
-      {
-        if(ip==myComm->rank())
-        {
-          dense_r=spline_r[ib];
-          if(bspline->is_complex)
-            dense_i=spline_i[ib];
-        }
-        else
-        {
-          //everyone else
-          dense_r=spline_r[iorb_target];
-          if(bspline->is_complex)
-            dense_i=spline_i[iorb_target];
-        }
-        mpi::bcast(*myComm,dense_r->coefs,ng_big,ip);
-        if(bspline->is_complex)
-          mpi::bcast(*myComm,dense_i->coefs,ng_big,ip);
-        bspline->set_spline(dense_r,dense_i,cur_bands[iorb].TwistIndex,iorb,0);
-      }
-    }
   }
 
   void initialize_spline_psi_r(int spin, const BandInfoGroup& bandgroup)
