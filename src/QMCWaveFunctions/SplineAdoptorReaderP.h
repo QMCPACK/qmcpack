@@ -382,7 +382,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
       {
         int ti=cur_bands[iorb].TwistIndex;
         std::string s=psi_g_path(ti,spin,cur_bands[iorb].BandIndex);
-        if(!h5f.read(cG,s)) APP_ABORT("SplineHybridAdoptorReader Failed to read band(s) from h5!\n");
+        if(!h5f.read(cG,s)) APP_ABORT("SplineAdoptorReader Failed to read band(s) from h5!\n");
         fft_spline(cG,ti,ib);
         bspline->set_spline(spline_r[ib],spline_i[ib],cur_bands[iorb].TwistIndex,iorb,0);
       }
