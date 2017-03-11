@@ -161,7 +161,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
   fftw_plan FFTplan;
 
   SplineHybridAdoptorReader(EinsplineSetBuilder* e)
-    : BsplineReaderBase(e), bspline(0),FFTplan(NULL)
+    : BsplineReaderBase(e), spline_r(NULL), spline_i(NULL), bspline(0), FFTplan(NULL)
   {}
 
   ~SplineHybridAdoptorReader()

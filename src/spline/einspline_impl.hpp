@@ -460,8 +460,11 @@ namespace qmcplusplus
     template<typename SplineType>
     inline void destroy(SplineType *restrict spline)
     {
-      if(spline->coefs!=NULL) free(spline->coefs);
-      if(spline!=NULL) free(spline);
+      if(spline!=NULL)
+      {
+        if(spline->coefs!=NULL) free(spline->coefs);
+        free(spline);
+      }
     }
 
     /** create spline for double */
