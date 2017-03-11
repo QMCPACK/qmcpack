@@ -203,6 +203,9 @@ inline void SoaSphericalTensor<T>::evaluate_bare(T x, T y, T z, T* restrict Ylm)
   else
   {
     ctheta = z/r;
+    //protect ctheta, when ctheta is slightly >1 or <-1
+    if(ctheta>cone) ctheta=cone;
+    if(ctheta<-cone) ctheta=-cone;
     T rxyi = cone/std::sqrt(r2xy);
     cphi = x*rxyi;
     sphi = y*rxyi;
