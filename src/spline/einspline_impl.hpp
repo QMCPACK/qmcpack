@@ -464,6 +464,7 @@ namespace qmcplusplus
       {
         if(spline->coefs!=NULL) free(spline->coefs);
         free(spline);
+        spline=NULL;
       }
     }
 
