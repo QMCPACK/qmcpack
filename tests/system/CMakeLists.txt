@@ -348,6 +348,15 @@ ENDIF()
                     0 # VMC
                     TRUE)
 
+  QMC_RUN_AND_CHECK(short-diamondC_2x1x1_hybridrep_pp-vmc_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    qmc_short
+                    qmc_short_hybridrep.in.xml
+                    1 16
+                    DIAMOND2_SCALARS
+                    0 # VMC
+                    TRUE)
+
 # Reference DMC run in qmc-ref "-21.844975 0.001113"
   LIST(APPEND DIAMOND2_DMC_SCALARS "totenergy" "-21.844975 0.00779")
   QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-dmc_sdj
