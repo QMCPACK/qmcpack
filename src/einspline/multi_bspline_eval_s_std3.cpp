@@ -56,14 +56,13 @@ eval_multi_UBspline_1d_s (const multi_UBspline_1d_s *spline,
 
   intptr_t xs = spline->x_stride;
 
-  for (int n=0; n<spline->num_splines; n++) 
-    vals[n]  = 0.0;
+  float* restrict coefs0 = spline->coefs + ((ix  )*xs);
+  float* restrict coefs1 = spline->coefs + ((ix+1)*xs);
+  float* restrict coefs2 = spline->coefs + ((ix+2)*xs);
+  float* restrict coefs3 = spline->coefs + ((ix+3)*xs);
 
-  for (int i=0; i<4; i++) {
-    float* restrict coefs = spline->coefs + ((ix+i)*xs);
-    for (int n=0; n<spline->num_splines; n++) 
-      vals[n]  +=   a[i] * coefs[n];
-  }
+  for (int n=0; n<spline->num_splines; n++)
+    vals[n] = a[0] * coefs0[n] + a[1] * coefs1[n] + a[2] * coefs2[n] + a[3] * coefs3[n];
 }
 
 
@@ -143,28 +142,21 @@ eval_multi_UBspline_1d_s_vgl (const multi_UBspline_1d_s *spline,
   d2a[3] = (d2Af[12]*tpx[0] + d2Af[13]*tpx[1] + d2Af[14]*tpx[2] + d2Af[15]*tpx[3]);
 
   intptr_t xs = spline->x_stride;
-
-  for (int n=0; n<spline->num_splines; n++) {
-    vals[n]  = 0.0;
-    grads[n] = 0.0;
-    lapl[n]  = 0.0;
-  }
-
-  for (int i=0; i<4; i++) {      
-    float* restrict coefs = spline->coefs + ((ix+i)*xs);
-    for (int n=0; n<spline->num_splines; n++) {
-      vals[n]  +=   a[i] * coefs[n];
-      grads[n] +=  da[i] * coefs[n];
-      lapl[n]  += d2a[i] * coefs[n];
-    }
-  }
-
   float dxInv = spline->x_grid.delta_inv;
-  for (int n=0; n<spline->num_splines; n++) {
-    grads[n] *= dxInv;
-    lapl [n] *= dxInv*dxInv;
+
+  float* restrict coefs0 = spline->coefs + ((ix  )*xs);
+  float* restrict coefs1 = spline->coefs + ((ix+1)*xs);
+  float* restrict coefs2 = spline->coefs + ((ix+2)*xs);
+  float* restrict coefs3 = spline->coefs + ((ix+3)*xs);
+
+  for (int n=0; n<spline->num_splines; n++)
+  {
+    vals[n]  = a[0] * coefs0[n] + a[1] * coefs1[n] + a[2] * coefs2[n] + a[3] * coefs3[n];
+    grads[n] = (da[0] * coefs0[n] + da[1] * coefs1[n] + da[2] * coefs2[n] + da[3] * coefs3[n])*dxInv;
+    lapl[n]  = (d2a[0] * coefs0[n] + d2a[1] * coefs1[n] + d2a[2] * coefs2[n] + d2a[3] * coefs3[n])*dxInv*dxInv;
   }
 }
+
 
 void
 eval_multi_UBspline_1d_s_vgh (const multi_UBspline_1d_s *spline,
