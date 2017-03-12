@@ -49,6 +49,7 @@ struct AtomicOrbitalSoA
   vContainer_type l_vals;
   vContainer_type r_power_minus_l;
   AtomicSplineType* MultiSpline;
+  AtomicSplineType MultiSpline_onelm;
 
   vContainer_type localV, localG, localL;
 
@@ -70,9 +71,9 @@ struct AtomicOrbitalSoA
   {
     NumBands=Nb;
     Npad=getAlignedSize<ST>(Nb);
-    localV.resize(Npad*lm_tot);
-    localG.resize(Npad*lm_tot);
-    localL.resize(Npad*lm_tot);
+    localV.resize(Npad);
+    localG.resize(Npad);
+    localL.resize(Npad);
     create_spline();
   }
 
@@ -108,11 +109,20 @@ struct AtomicOrbitalSoA
     grid.end   = spline_radius;
     grid.num   = spline_npoints;
     MultiSpline = einspline::create(MultiSpline, grid, bc, lm_tot*Npad);
+    AtomicSplineType* temp=einspline::create(MultiSpline, grid, bc, Npad);
+    // safeguard big table and per lm table size.
+    if(MultiSpline->coefs_size!=temp->coefs_size*lm_tot) APP_ABORT("Padding issue in AtomicOrbitalSoA!\n");
+    // free coefs
+    free(temp->coefs); temp->coefs=NULL;
+    MultiSpline_onelm = *temp;
+    free(temp);
   }
 
   inline void set_spline(AtomicSingleSplineType* spline, int lm, int ispline)
   {
-    einspline::set(MultiSpline, lm*Npad+ispline, spline, 0, BaseN);
+    AtomicSplineType temp_onelm=MultiSpline_onelm;
+    temp_onelm.coefs = MultiSpline->coefs + temp_onelm.coefs_size*lm;
+    einspline::set(&temp_onelm, ispline, spline, 0, BaseN);
   }
 
   bool read_splines(hdf_archive& h5f)
@@ -152,16 +162,19 @@ struct AtomicOrbitalSoA
       Ylm.evaluateV(0,0,1);
     const ST* restrict Ylm_v=Ylm[0];
 
-    einspline::evaluate(MultiSpline,r,localV);
-
     CONSTEXPR ST czero(0);
+    ST* restrict val=myV.data();
+    ST* restrict local_val=localV.data();
     std::fill(myV.begin(),myV.end(),czero);
 
     for(size_t lm=0; lm<lm_tot; lm++)
     {
-      size_t offset=lm*Npad;
+      MultiSpline_onelm.coefs = MultiSpline->coefs + MultiSpline_onelm.coefs_size*lm;
+      einspline::evaluate(&MultiSpline_onelm,r,localV);
+
+      #pragma omp simd aligned(val,local_val)
       for(size_t ib=0; ib<myV.size(); ib++)
-        myV[ib]+=Ylm_v[lm]*localV[offset+ib];
+        val[ib]+=Ylm_v[lm]*local_val[ib];
     }
   }
 
@@ -194,8 +207,6 @@ struct AtomicOrbitalSoA
     const ST* restrict Ylm_gy=Ylm[2];
     const ST* restrict Ylm_gz=Ylm[3];
 
-    einspline::evaluate(MultiSpline,r,localV,localG,localL);
-
     ST* restrict g0=myG.data(0);
     ST* restrict g1=myG.data(1);
     ST* restrict g2=myG.data(2);
@@ -205,6 +216,11 @@ struct AtomicOrbitalSoA
     std::fill(g1,g1+Npad,czero);
     std::fill(g2,g2+Npad,czero);
     std::fill(myL.begin(),myL.end(),czero);
+    ST* restrict val=myV.data();
+    ST* restrict lapl=myL.data();
+    ST* restrict local_val=localV.data();
+    ST* restrict local_grad=localG.data();
+    ST* restrict local_lapl=localL.data();
 
     if(r>rmin_sqrt)
     {
@@ -220,26 +236,32 @@ struct AtomicOrbitalSoA
 
       for(size_t lm=0; lm<lm_tot; lm++)
       {
-        size_t offset=lm*Npad;
+        MultiSpline_onelm.coefs = MultiSpline->coefs + MultiSpline_onelm.coefs_size*lm;
+        einspline::evaluate(&MultiSpline_onelm,r,localV,localG,localL);
+
         const ST& l_val=l_vals[lm];
         const ST& r_power=r_power_minus_l[lm];
         const ST Ylm_rescale=Ylm_v[lm]*r_power;
+        #pragma omp simd aligned(val,g0,g1,g2,lapl,local_val,local_grad,local_lapl)
         for(size_t ib=0; ib<myV.size(); ib++)
         {
+          const ST local_v=local_val[ib];
+          const ST local_g=local_grad[ib];
+          const ST local_l=local_lapl[ib];
           // value
-          const ST Vpart = Ylm_rescale*localV[offset+ib];
-          myV[ib] += Vpart;
+          const ST Vpart = Ylm_rescale*local_v;
+          val[ib] += Vpart;
 
           // grad
-          g0[ib] += localG[offset+ib] * rhatx * Ylm_rescale + localV[offset+ib] * Ylm_gx[lm] * r_power - l_val * rhatx * Vpart * rinv;
-          g1[ib] += localG[offset+ib] * rhaty * Ylm_rescale + localV[offset+ib] * Ylm_gy[lm] * r_power - l_val * rhaty * Vpart * rinv;
-          g2[ib] += localG[offset+ib] * rhatz * Ylm_rescale + localV[offset+ib] * Ylm_gz[lm] * r_power - l_val * rhatz * Vpart * rinv;
+          g0[ib] += local_g * rhatx * Ylm_rescale + local_v * Ylm_gx[lm] * r_power - l_val * rhatx * Vpart * rinv;
+          g1[ib] += local_g * rhaty * Ylm_rescale + local_v * Ylm_gy[lm] * r_power - l_val * rhaty * Vpart * rinv;
+          g2[ib] += local_g * rhatz * Ylm_rescale + local_v * Ylm_gz[lm] * r_power - l_val * rhatz * Vpart * rinv;
 
           // laplacian
           ST rhat_dot_G = ( rhatx*Ylm_gx[lm] + rhaty*Ylm_gy[lm] + rhatz*Ylm_gz[lm] ) * r_power;
-          myL[ib] += (localL[offset+ib] + localG[offset+ib] * 2 * rinv) * Ylm_rescale
-                    + localG[offset+ib] * (rhat_dot_G - l_val * Ylm_rescale * rinv )
-                    - localV[offset+ib] * l_val * rinv * (Ylm_rescale * rinv + rhat_dot_G );
+          lapl[ib] += (local_l + local_g * 2 * rinv) * Ylm_rescale
+                    + local_g * (rhat_dot_G - l_val * Ylm_rescale * rinv )
+                    - local_v * l_val * rinv * (Ylm_rescale * rinv + rhat_dot_G );
         }
       }
     }
@@ -259,24 +281,30 @@ struct AtomicOrbitalSoA
 
       for(size_t lm=0; lm<lm_tot; lm++)
       {
-        size_t offset=lm*Npad;
+        MultiSpline_onelm.coefs = MultiSpline->coefs + MultiSpline_onelm.coefs_size*lm;
+        einspline::evaluate(&MultiSpline_onelm,r,localV,localG,localL);
+
         const ST& l_val=l_vals[lm];
         const ST& r_power=r_power_minus_l[lm];
         const ST Ylm_rescale=Ylm_v[lm]*r_power;
+        #pragma omp simd aligned(val,g0,g1,g2,lapl,local_val,local_grad,local_lapl)
         for(size_t ib=0; ib<myV.size(); ib++)
         {
+          const ST local_v=local_val[ib];
+          const ST local_g=local_grad[ib];
+          const ST local_l=local_lapl[ib];
           // value
-          const ST Vpart = Ylm_rescale*localV[offset+ib];
-          myV[ib] += Vpart;
+          const ST Vpart = Ylm_rescale*local_v;
+          val[ib] += Vpart;
 
           // grad
-          g0[ib] += localG[offset+ib] * rhatx * Ylm_rescale + localV[offset+ib] * Ylm_gx[lm] * r_power - l_val * rhatx * Vpart * rinv;
-          g1[ib] += localG[offset+ib] * rhaty * Ylm_rescale + localV[offset+ib] * Ylm_gy[lm] * r_power - l_val * rhaty * Vpart * rinv;
-          g2[ib] += localG[offset+ib] * rhatz * Ylm_rescale + localV[offset+ib] * Ylm_gz[lm] * r_power - l_val * rhatz * Vpart * rinv;
+          g0[ib] += local_g * rhatx * Ylm_rescale + local_v * Ylm_gx[lm] * r_power - l_val * rhatx * Vpart * rinv;
+          g1[ib] += local_g * rhaty * Ylm_rescale + local_v * Ylm_gy[lm] * r_power - l_val * rhaty * Vpart * rinv;
+          g2[ib] += local_g * rhatz * Ylm_rescale + local_v * Ylm_gz[lm] * r_power - l_val * rhatz * Vpart * rinv;
 
           // laplacian
           ST rhat_dot_G = (Ylm_gx[lm] * rhatx + Ylm_gy[lm] * rhaty + Ylm_gz[lm] * rhatz ) * r_power * r;
-          myL[ib] += localL[offset+ib] * (cone - chalf *l_val) * ( static_cast<ST>(3) * Ylm_rescale + rhat_dot_G );
+          lapl[ib] += local_l * (cone - chalf *l_val) * ( static_cast<ST>(3) * Ylm_rescale + rhat_dot_G );
         }
       }
     }
@@ -284,26 +312,34 @@ struct AtomicOrbitalSoA
     {
       std::cout << "Warning: an electron is on top of an ion!" << std::endl;
       // strictly zero
+
+      MultiSpline_onelm.coefs = MultiSpline->coefs;
+      einspline::evaluate(&MultiSpline_onelm,r,localV,localG,localL);
+      #pragma omp simd aligned(val,lapl,local_val,local_lapl)
       for(size_t ib=0; ib<myV.size(); ib++)
       {
         // value
-        myV[ib] += Ylm_v[0]*localV[ib];
+        val[ib] = Ylm_v[0]*local_val[ib];
 
         // laplacian
-        myL[ib] += localL[ib] * static_cast<ST>(3) * Ylm_v[0];
+        lapl[ib] = local_lapl[ib] * static_cast<ST>(3) * Ylm_v[0];
       }
       if(lm_tot>0)
       {
         //std::cout << std::endl;
         for(size_t lm=1; lm<4; lm++)
         {
-          size_t offset=lm*Npad;
+          MultiSpline_onelm.coefs = MultiSpline->coefs + MultiSpline_onelm.coefs_size*lm;
+          einspline::evaluate(&MultiSpline_onelm,r,localV,localG,localL);
+
+          #pragma omp simd aligned(g0,g1,g2,local_grad)
           for(size_t ib=0; ib<myV.size(); ib++)
           {
+            const ST local_g=local_grad[ib];
             // grad
-            g0[ib] += localG[offset+ib] * Ylm_gx[lm];
-            g1[ib] += localG[offset+ib] * Ylm_gy[lm];
-            g2[ib] += localG[offset+ib] * Ylm_gz[lm];
+            g0[ib] += local_g * Ylm_gx[lm];
+            g1[ib] += local_g * Ylm_gy[lm];
+            g2[ib] += local_g * Ylm_gz[lm];
           }
         }
       }
