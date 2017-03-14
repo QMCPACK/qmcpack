@@ -6,17 +6,25 @@
 //
 // File developed by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp. 
 //                    Amrita Mathuriya, amrita.mathuriya@intel.com, Intel Corp.
+//                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_MULTIEINSPLINE_VALUE_HPP
 #define QMCPLUSPLUS_MULTIEINSPLINE_VALUE_HPP
+
+#if defined(__xlC__) && defined(BGQPX)
+#include <builtins.h>
+#endif
+
 namespace qmcplusplus
 {
+
+#ifndef BGQPX
   /** define evaluate: common to any implementation */
   template<typename T>
-    inline void 
+    inline void
     MultiBspline<T>::evaluate_v_impl(T x, T y, T z, T* restrict vals, int first, int last) const
     {
       x -= spline_m->x_grid.start;
@@ -28,20 +36,20 @@ namespace qmcplusplus
       SplineBound<T>::get(y*spline_m->y_grid.delta_inv,ty,iy,spline_m->y_grid.num-1);
       SplineBound<T>::get(z*spline_m->z_grid.delta_inv,tz,iz,spline_m->z_grid.num-1);
       T a[4], b[4], c[4];
-      a[0] = ( ( A44[0]  * tx + A44[1] )  * tx + A44[2] )  * tx + A44[3]; 
-      a[1] = ( ( A44[4]  * tx + A44[5] )  * tx + A44[6] )  * tx + A44[7]; 
-      a[2] = ( ( A44[8]  * tx + A44[9] )  * tx + A44[10] ) * tx + A44[11]; 
-      a[3] = ( ( A44[12] * tx + A44[13] ) * tx + A44[14] ) * tx + A44[15]; 
+      a[0] = ( ( A44[0]  * tx + A44[1] )  * tx + A44[2] )  * tx + A44[3];
+      a[1] = ( ( A44[4]  * tx + A44[5] )  * tx + A44[6] )  * tx + A44[7];
+      a[2] = ( ( A44[8]  * tx + A44[9] )  * tx + A44[10] ) * tx + A44[11];
+      a[3] = ( ( A44[12] * tx + A44[13] ) * tx + A44[14] ) * tx + A44[15];
 
-      b[0] = ( ( A44[0]  * ty + A44[1] )    * ty + A44[2] )  * ty + A44[3]; 
-      b[1] = ( ( A44[4]  * ty + A44[5] )    * ty + A44[6] )  * ty + A44[7]; 
-      b[2] = ( ( A44[8]  * ty + A44[9] )    * ty + A44[10] ) * ty + A44[11]; 
-      b[3] = ( ( A44[12] * ty + A44[13] )   * ty + A44[14] ) * ty + A44[15]; 
+      b[0] = ( ( A44[0]  * ty + A44[1] )    * ty + A44[2] )  * ty + A44[3];
+      b[1] = ( ( A44[4]  * ty + A44[5] )    * ty + A44[6] )  * ty + A44[7];
+      b[2] = ( ( A44[8]  * ty + A44[9] )    * ty + A44[10] ) * ty + A44[11];
+      b[3] = ( ( A44[12] * ty + A44[13] )   * ty + A44[14] ) * ty + A44[15];
 
-      c[0] = ( ( A44[0]  * tz + A44[1] )  * tz + A44[2] )  * tz + A44[3]; 
-      c[1] = ( ( A44[4]  * tz + A44[5] )  * tz + A44[6] )  * tz + A44[7]; 
-      c[2] = ( ( A44[8]  * tz + A44[9] )  * tz + A44[10] ) * tz + A44[11]; 
-      c[3] = ( ( A44[12] * tz + A44[13] ) * tz + A44[14] ) * tz + A44[15]; 
+      c[0] = ( ( A44[0]  * tz + A44[1] )  * tz + A44[2] )  * tz + A44[3];
+      c[1] = ( ( A44[4]  * tz + A44[5] )  * tz + A44[6] )  * tz + A44[7];
+      c[2] = ( ( A44[8]  * tz + A44[9] )  * tz + A44[10] ) * tz + A44[11];
+      c[3] = ( ( A44[12] * tz + A44[13] ) * tz + A44[14] ) * tz + A44[15];
 
       const intptr_t xs = spline_m->x_stride;
       const intptr_t ys = spline_m->y_stride;
@@ -108,7 +116,85 @@ namespace qmcplusplus
 
         } // j loop
       } // i loop 
-#endif  
+#endif
     }
+#else
+// this is only experimental, not protected for general use.
+  template<typename T>
+    inline void
+    MultiBspline<T>::evaluate_v_impl(T x, T y, T z, T* restrict vals, int first, int last) const
+    {
+      x -= spline_m->x_grid.start;
+      y -= spline_m->y_grid.start;
+      z -= spline_m->z_grid.start;
+      T tx,ty,tz;
+      int ix,iy,iz;
+      SplineBound<T>::get(x*spline_m->x_grid.delta_inv,tx,ix,spline_m->x_grid.num-1);
+      SplineBound<T>::get(y*spline_m->y_grid.delta_inv,ty,iy,spline_m->y_grid.num-1);
+      SplineBound<T>::get(z*spline_m->z_grid.delta_inv,tz,iz,spline_m->z_grid.num-1);
+      T a[4], b[4], c[4];
+      a[0] = ( ( A44[0]  * tx + A44[1] )  * tx + A44[2] )  * tx + A44[3];
+      a[1] = ( ( A44[4]  * tx + A44[5] )  * tx + A44[6] )  * tx + A44[7];
+      a[2] = ( ( A44[8]  * tx + A44[9] )  * tx + A44[10] ) * tx + A44[11];
+      a[3] = ( ( A44[12] * tx + A44[13] ) * tx + A44[14] ) * tx + A44[15];
+
+      b[0] = ( ( A44[0]  * ty + A44[1] )    * ty + A44[2] )  * ty + A44[3];
+      b[1] = ( ( A44[4]  * ty + A44[5] )    * ty + A44[6] )  * ty + A44[7];
+      b[2] = ( ( A44[8]  * ty + A44[9] )    * ty + A44[10] ) * ty + A44[11];
+      b[3] = ( ( A44[12] * ty + A44[13] )   * ty + A44[14] ) * ty + A44[15];
+
+      c[0] = ( ( A44[0]  * tz + A44[1] )  * tz + A44[2] )  * tz + A44[3];
+      c[1] = ( ( A44[4]  * tz + A44[5] )  * tz + A44[6] )  * tz + A44[7];
+      c[2] = ( ( A44[8]  * tz + A44[9] )  * tz + A44[10] ) * tz + A44[11];
+      c[3] = ( ( A44[12] * tz + A44[13] ) * tz + A44[14] ) * tz + A44[15];
+
+      vector4double vec_c0 = vec_splats(c[0]);
+      vector4double vec_c1 = vec_splats(c[1]);
+      vector4double vec_c2 = vec_splats(c[2]);
+      vector4double vec_c3 = vec_splats(c[3]);
+
+      const intptr_t xs = spline_m->x_stride;
+      const intptr_t ys = spline_m->y_stride;
+      const intptr_t zs = spline_m->z_stride;
+
+      CONSTEXPR T zero(0);
+      const int num_splines=last-first;
+      std::fill(vals,vals+num_splines,zero);
+
+      for (int i=0; i<4; i++)
+        for (int j=0; j<4; j++)
+        {
+          const T pre00 =  a[i]*b[j];
+          vector4double vec_pre00 = vec_splats(pre00);
+          T* restrict coefs0 = spline_m->coefs + ((ix+i)*xs + (iy+j)*ys + iz*zs) + first;
+          T* restrict coefs1 = coefs0 +   zs;
+          T* restrict coefs2 = coefs0 + 2*zs;
+          T* restrict coefs3 = coefs0 + 3*zs;
+          for(int n=0, p=0; n<num_splines; n+=4, p+=4*sizeof(T))
+          {
+            vector4double vec_coef0, vec_coef1, vec_coef2, vec_coef3, vec_val;
+
+            __dcbt(&coefs0[n+8]);
+            __dcbt(&coefs1[n+8]);
+            __dcbt(&coefs2[n+8]);
+            __dcbt(&coefs3[n+8]);
+
+            vec_coef0 = vec_ld(p, coefs0);
+            vec_coef1 = vec_ld(p, coefs1);
+            vec_coef2 = vec_ld(p, coefs2);
+            vec_coef3 = vec_ld(p, coefs3);
+            vec_val = vec_ld(p, vals);
+
+            vec_coef0 = vec_mul(vec_c0, vec_coef0);
+            vec_coef0 = vec_madd(vec_c1, vec_coef1, vec_coef0);
+            vec_coef0 = vec_madd(vec_c2, vec_coef2, vec_coef0);
+            vec_coef0 = vec_madd(vec_c3, vec_coef3, vec_coef0);
+            vec_val = vec_madd(vec_pre00, vec_coef0, vec_val);
+            vec_st(vec_val, p, vals);
+          }
+        }
+    }
+#endif
+
 }
 #endif

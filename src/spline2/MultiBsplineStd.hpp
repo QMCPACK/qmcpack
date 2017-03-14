@@ -23,6 +23,10 @@
 #ifndef QMCPLUSPLUS_MULTIEINSPLINE_STD3_ENGINE_HPP
 #define QMCPLUSPLUS_MULTIEINSPLINE_STD3_ENGINE_HPP
 
+#if defined(__xlC__) && defined(BGQPX)
+#include <builtins.h>
+#endif
+
 namespace qmcplusplus
 {
 
@@ -364,10 +368,6 @@ namespace qmcplusplus
 #else
 
 // this is only experimental, not protected for general use.
-#ifdef __xlC__
-#include <builtins.h>
-#endif
-
   template<typename T>
     inline void
     MultiBspline<T>::evaluate_vgl_impl(T x, T y, T z,
@@ -408,13 +408,12 @@ namespace qmcplusplus
       out_offset=(out_offset)?out_offset:spline_m->num_splines;
       const int num_splines=last-first;
 
-      ASSUME_ALIGNED(vals);
-      T* restrict gx=grads;              ASSUME_ALIGNED(gx);
-      T* restrict gy=grads+  out_offset; ASSUME_ALIGNED(gy);
-      T* restrict gz=grads+2*out_offset; ASSUME_ALIGNED(gz);
-      T* restrict lx=lapl;               ASSUME_ALIGNED(lx);
-      T* restrict ly=lapl+  out_offset;  ASSUME_ALIGNED(ly);
-      T* restrict lz=lapl+2*out_offset;  ASSUME_ALIGNED(lz);
+      T* restrict gx=grads;
+      T* restrict gy=grads+  out_offset;
+      T* restrict gz=grads+2*out_offset;
+      T* restrict lx=lapl;
+      T* restrict ly=lapl+  out_offset;
+      T* restrict lz=lapl+2*out_offset;
 
       std::fill(vals,vals+num_splines,T());
       std::fill(gx,gx+num_splines,T());
@@ -568,17 +567,16 @@ namespace qmcplusplus
       out_offset=(out_offset)?out_offset:spline_m->num_splines;
       const int num_splines=last-first;
 
-      ASSUME_ALIGNED(vals);
-      T* restrict gx=grads             ; ASSUME_ALIGNED(gx);
-      T* restrict gy=grads  +out_offset; ASSUME_ALIGNED(gy);
-      T* restrict gz=grads+2*out_offset; ASSUME_ALIGNED(gz);
+      T* restrict gx=grads             ;
+      T* restrict gy=grads  +out_offset;
+      T* restrict gz=grads+2*out_offset;
 
-      T* restrict hxx=hess             ; ASSUME_ALIGNED(hxx);
-      T* restrict hxy=hess+  out_offset; ASSUME_ALIGNED(hxy);
-      T* restrict hxz=hess+2*out_offset; ASSUME_ALIGNED(hxz);
-      T* restrict hyy=hess+3*out_offset; ASSUME_ALIGNED(hyy);
-      T* restrict hyz=hess+4*out_offset; ASSUME_ALIGNED(hyz);
-      T* restrict hzz=hess+5*out_offset; ASSUME_ALIGNED(hzz);
+      T* restrict hxx=hess             ;
+      T* restrict hxy=hess+  out_offset;
+      T* restrict hxz=hess+2*out_offset;
+      T* restrict hyy=hess+3*out_offset;
+      T* restrict hyz=hess+4*out_offset;
+      T* restrict hzz=hess+5*out_offset;
 
       std::fill(vals,vals+num_splines,T());
       std::fill(gx,gx+num_splines,T());
