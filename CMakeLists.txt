@@ -531,7 +531,7 @@ If (BUILD_AFQMC AND QMC_COMPLEX)
   MESSAGE(STATUS "Warning: Complex wavefunctions are not yet supported by AFQMC.")
 ENDIF()
 
-IF (BUILD_AFQMC)
+IF (BUILD_AFQMC AND NOT APPLE)
   LINK_LIBRARIES("rt")
 ENDIF()
   
