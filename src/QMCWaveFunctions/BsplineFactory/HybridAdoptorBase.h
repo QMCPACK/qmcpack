@@ -249,19 +249,18 @@ struct AtomicOrbitalSoA
           const ST local_g=local_grad[ib];
           const ST local_l=local_lapl[ib];
           // value
-          const ST Vpart = Ylm_rescale*local_v;
-          val[ib] += Vpart;
+          const ST Vpart = l_val*rinv*local_v;
+          val[ib] += Ylm_rescale*local_v;
 
           // grad
-          g0[ib] += local_g * rhatx * Ylm_rescale + local_v * Ylm_gx[lm] * r_power - l_val * rhatx * Vpart * rinv;
-          g1[ib] += local_g * rhaty * Ylm_rescale + local_v * Ylm_gy[lm] * r_power - l_val * rhaty * Vpart * rinv;
-          g2[ib] += local_g * rhatz * Ylm_rescale + local_v * Ylm_gz[lm] * r_power - l_val * rhatz * Vpart * rinv;
+          g0[ib] += local_g * rhatx * Ylm_rescale + local_v * Ylm_gx[lm] * r_power - Vpart * rhatx * Ylm_rescale;
+          g1[ib] += local_g * rhaty * Ylm_rescale + local_v * Ylm_gy[lm] * r_power - Vpart * rhaty * Ylm_rescale;
+          g2[ib] += local_g * rhatz * Ylm_rescale + local_v * Ylm_gz[lm] * r_power - Vpart * rhatz * Ylm_rescale;
 
           // laplacian
           ST rhat_dot_G = ( rhatx*Ylm_gx[lm] + rhaty*Ylm_gy[lm] + rhatz*Ylm_gz[lm] ) * r_power;
-          lapl[ib] += (local_l + local_g * 2 * rinv) * Ylm_rescale
-                    + local_g * (rhat_dot_G - l_val * Ylm_rescale * rinv )
-                    - local_v * l_val * rinv * (Ylm_rescale * rinv + rhat_dot_G );
+          lapl[ib] += (local_l + ( local_g * (static_cast<ST>(2)-l_val) - Vpart ) * rinv) * Ylm_rescale
+                    + (local_g - Vpart ) * rhat_dot_G;
         }
       }
     }
