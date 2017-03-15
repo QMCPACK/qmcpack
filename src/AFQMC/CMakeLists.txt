@@ -34,5 +34,6 @@ ADD_LIBRARY(afqmc ${AFQMC_SRCS})
 IF (BUILD_UNIT_TESTS)
   INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/external_codes/catch)
   SUBDIRS(Matrix/tests)
+  SUBDIRS(Numerics/tests)
 ENDIF()
 
