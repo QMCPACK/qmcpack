@@ -347,6 +347,7 @@ bool DistWalkerHandler::setup(int cr, int nc, int tgn, MPI_Comm heads_comm, MPI_
 bool DistWalkerHandler::clean()
 {
   walkers.clear();
+  return true;
 }
 
 // called at the beginning of each executable section
@@ -627,13 +628,14 @@ void DistWalkerHandler::popControl()
         *(it+data_displ[INFO]) = minus;
       } else {
         ComplexType w0 = *(it+data_displ[WEIGHT]); 
-        if( std::abs(w0) < std::abs(min_weight)) 
+        if( std::abs(w0) < std::abs(min_weight)) {
           if( (int)(distribution(generator) + std::abs(w0)/reset_weight) == 0 ) { 
             *(it+data_displ[INFO]) = minus; 
             empty_spots.push_back(cnt);
           } else {
             *(it+data_displ[WEIGHT]) = reset_weight;
           } 
+        }
       }
     }
 

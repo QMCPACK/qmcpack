@@ -4,7 +4,9 @@
 #include<cassert>
 
 #include "AFQMC/config.h"
+#ifdef PRINT_FREE_MEMORY
 #include "sys/sysinfo.h"
+#endif
 
 #if defined(HAVE_MKL)
  #include "mkl.h"
@@ -468,10 +470,12 @@ bool sparseEigenSystem(RealSpMat &A, int& m0, RealType *eigval, RealType* eigVec
   std::cout<<"Problem size: " <<N <<std::endl;
   std::cout<<"Available memory: ";
 
+#ifdef PRINT_FREE_MEMORY
   struct sysinfo si;
   sysinfo(&si);
   si.freeram+=si.bufferram;
   std::cout<<int(si.freeram>>20) <<std::endl;
+#endif
 
   fpm[0] = 1;
   fpm[4] = 1;
