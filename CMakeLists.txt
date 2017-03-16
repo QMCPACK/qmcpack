@@ -405,7 +405,8 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   #-------------------------------------------------------------------
   IF(QMC_MPI)
     ## mpi compilers
-    if($ENV{CXX} MATCHES "mp")
+    GET_FILENAME_COMPONENT(BASE_CXX_COMPILER_NAME ${CMAKE_CXX_COMPILER} NAME)
+    if(${BASE_CXX_COMPILER_NAME} MATCHES "^mp")
       SET(HAVE_MPI 1)
       SET(HAVE_OOMPI 1)
       SET(MPI_FOUND TRUE)
@@ -425,6 +426,13 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
         #${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/testmpi.cxx
         #OUTPUT_VARIABLE OUTPUT)
         set(MPI_WORKS 1)
+        SET(MPI_WARNING_LIST
+            "Building MPI version without using MPI compiler wrappers.\n"
+            "This may not build qmcpack correctly. To ensure the correct version, specify the compiler wrappers to cmake.\n"
+            "For example: cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpic++\n"
+            "To build without MPI, pass '-DQMC_MPI=0' to cmake")
+        MESSAGE(WARNING ${MPI_WARNING_LIST})
+
         IF(MPI_WORKS)
           MESSAGE(STATUS "MPI is enabled")
           SET(HAVE_MPI 1)
@@ -436,7 +444,7 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
           SET(HAVE_OOMPI 0)
         ENDIF(MPI_WORKS)
       ENDIF(MPI_FOUND)
-    endif($ENV{CXX} MATCHES "mp")
+    ENDIF()
   ENDIF(QMC_MPI)
 
   #-------------------------------------------------------------------
