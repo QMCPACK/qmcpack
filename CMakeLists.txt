@@ -525,10 +525,9 @@ IF(CXX11_NEEDED)
   ENDIF()
 ENDIF(CXX11_NEEDED)
 
-# AFQMC requires MKL sparse
+# AFQMC requires MKL sparse for good performance (roughly a factor of 2x)
 IF (BUILD_AFQMC AND NOT MKL_FOUND)
-  MESSAGE(STATUS "AFQMC requires MKL sparse libraries. Disabling AFQMC")
-  SET (BUILD_AFQMC 0)
+  MESSAGE(WARNING "AFQMC - MKL not found, using simple sparse matrix routines.  Link with MKL sparse libraries for better performance.")
 ENDIF()
 
 # AFQMC requires MPI
