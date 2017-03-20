@@ -37,9 +37,9 @@ namespace qmcplusplus
 {
 
   ///create R2R, real wavefunction in double
-  BsplineReaderBase* createBsplineRealDouble(EinsplineSetBuilder* e, int numOrbs);
+  BsplineReaderBase* createBsplineRealDouble(EinsplineSetBuilder* e, int numOrbs, bool hybrid_rep);
   ///create R2R, real wavefunction in float
-  BsplineReaderBase* createBsplineRealSingle(EinsplineSetBuilder* e, int numOrbs);
+  BsplineReaderBase* createBsplineRealSingle(EinsplineSetBuilder* e, int numOrbs, bool hybrid_rep);
   ///create C2C or C2R, complex wavefunction in double
   BsplineReaderBase* createBsplineComplexDouble(EinsplineSetBuilder* e, int numOrbs, bool hybrid_rep);
   ///create C2C or C2R, complex wavefunction in single
@@ -292,9 +292,9 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
       else
       {
         if(use_single)
-          MixedSplineReader= createBsplineRealSingle(this,numOrbs);
+          MixedSplineReader= createBsplineRealSingle(this, numOrbs, hybrid_rep=="yes");
         else
-          MixedSplineReader= createBsplineRealDouble(this,numOrbs);
+          MixedSplineReader= createBsplineRealDouble(this, numOrbs, hybrid_rep=="yes");
       }
     }
   }

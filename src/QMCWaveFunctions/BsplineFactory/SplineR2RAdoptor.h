@@ -104,6 +104,16 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     IsGamma=( (HalfG[0]==0) && (HalfG[1]==0) && (HalfG[2]==0));
   }
 
+  void bcast_tables(Communicate* comm)
+  {
+    chunked_bcast(comm, MultiSpline);
+  }
+
+  void reduce_tables(Communicate* comm)
+  {
+    chunked_reduce(comm, MultiSpline);
+  }
+
   template<typename GT, typename BCT>
   void create_spline(GT& xyz_g, BCT& xyz_bc)
   {
@@ -179,11 +189,14 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     ru=PrimLattice.toUnit(r);
     int bc_sign=0;
     for(int i=0; i<D; i++)
-    {
-      ST img = std::floor(ru[i]);
-      ru[i] -= img;
-      bc_sign += HalfG[i] * (int)img;
-    }
+      if( -std::numeric_limits<ST>::epsilon() < ru[i] && ru[i] < 0 )
+        ru[i] = ST(0.0);
+      else
+      {
+        ST img = std::floor(ru[i]);
+        ru[i] -= img;
+        bc_sign += HalfG[i] * (int)img;
+      }
     return bc_sign;
   }
 
@@ -248,6 +261,41 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
         dpsi[psiIndex][1]=(g10*g0[j]+g11*g1[j]+g12*g2[j]);
         dpsi[psiIndex][2]=(g20*g0[j]+g21*g1[j]+g22*g2[j]);
         d2psi[psiIndex]=SymTrace(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],symGG);
+      }
+    }
+  }
+
+  /** assign_vgl_from_l can be used when myL is precomputed and myV,myG,myL in cartesian
+   */
+  template<typename VV, typename GV>
+  inline void assign_vgl_from_l(int bc_sign, VV& psi, GV& dpsi, VV& d2psi)
+  {
+    const ST* restrict g0=myG.data(0);
+    const ST* restrict g1=myG.data(1);
+    const ST* restrict g2=myG.data(2);
+
+    if (bc_sign & 1)
+    {
+      #pragma simd
+      for(int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j)
+      {
+        psi[psiIndex]=-myV[j];
+        dpsi[psiIndex][0]=-g0[j];
+        dpsi[psiIndex][1]=-g1[j];
+        dpsi[psiIndex][2]=-g2[j];
+        d2psi[psiIndex]=-myL[j];
+      }
+    }
+    else
+    {
+      #pragma simd
+      for(int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j)
+      {
+        psi[psiIndex]=myV[j];
+        dpsi[psiIndex][0]=g0[j];
+        dpsi[psiIndex][1]=g1[j];
+        dpsi[psiIndex][2]=g2[j];
+        d2psi[psiIndex]=myL[j];
       }
     }
   }

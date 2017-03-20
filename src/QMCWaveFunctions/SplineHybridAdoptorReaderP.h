@@ -51,7 +51,7 @@ struct Gvectors
   const size_t NumGvecs;
   int mylmax;
 
-  Gvectors(const std::vector<TinyVector<int,3> >& gvecs_in, const LT& Lattice_in):
+  Gvectors(const std::vector<TinyVector<int,3> >& gvecs_in, const LT& Lattice_in, const TinyVector<int,3>& HalfG):
   gvecs(gvecs_in), Lattice(Lattice_in), NumGvecs(gvecs.size()), gmag(0.0), mylmax(-1)
   {
     gvecs_cart.resize(NumGvecs);
@@ -59,7 +59,9 @@ struct Gvectors
     #pragma omp parallel for
     for(size_t ig=0; ig<NumGvecs; ig++)
     {
-      gvecs_cart[ig]=Lattice.k_cart(gvecs[ig]);
+      TinyVector<ST,3> gvec_shift;
+      gvec_shift=gvecs[ig]+HalfG*0.5;
+      gvecs_cart[ig]=Lattice.k_cart(gvec_shift);
       gmag[ig]=std::sqrt(dot(gvecs_cart[ig],gvecs_cart[ig]));
       if (gmag[ig]>gmag_max) gmag_max=gmag[ig];
     }
@@ -426,7 +428,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
     typedef typename EinsplineSetBuilder::UnitCellType UnitCellType;
 
     // prepare Gvecs Ylm(G)
-    Gvectors<double, UnitCellType> Gvecs(mybuilder->Gvecs[0], mybuilder->PrimCell);
+    Gvectors<double, UnitCellType> Gvecs(mybuilder->Gvecs[0], mybuilder->PrimCell, bspline->HalfG);
     const int lmax_limit=7;
     Gvecs.calc_YlmG(lmax_limit);
     std::vector<std::complex<double> > i_power;

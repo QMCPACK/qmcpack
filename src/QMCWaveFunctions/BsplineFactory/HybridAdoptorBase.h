@@ -359,6 +359,7 @@ struct AtomicOrbitalSoA
 template<typename ST>
 struct HybridAdoptorBase
 {
+  static const int D=3;
   using PointType=typename AtomicOrbitalSoA<ST>::PointType;
 
   // atomic centers
@@ -373,6 +374,7 @@ struct HybridAdoptorBase
   // local r, dr
   ST r;
   PointType dr;
+  PointType r_image;
 
   HybridAdoptorBase() { }
 
@@ -441,6 +443,17 @@ struct HybridAdoptorBase
     return success;
   }
 
+  inline int get_bc_sign(const PointType& r, TinyVector<int,D>& HalfG)
+  {
+    int bc_sign=0;
+    for(int i=0; i<D; i++)
+    {
+      ST img = round(r[i]-r_image[i]);
+      bc_sign += HalfG[i] * (int)img;
+    }
+    return bc_sign;
+  }
+
   //evaluate only V
   template<typename VV>
   inline bool evaluate_v(const ParticleSet& P, const int iat, VV& myV)
@@ -454,6 +467,7 @@ struct HybridAdoptorBase
     dr[1]=-dist_dr[1];
     dr[2]=-dist_dr[2];
     auto& myCenter=AtomicCenters[Super2Prim[center_idx]];
+    r_image=myCenter.pos+dr;
     if ( r < myCenter.cutoff )
     {
       inAtom=true;
@@ -475,6 +489,7 @@ struct HybridAdoptorBase
     dr[1]=-dist_dr[1];
     dr[2]=-dist_dr[2];
     auto& myCenter=AtomicCenters[Super2Prim[center_idx]];
+    r_image=myCenter.pos+dr;
     if ( r < myCenter.cutoff )
     {
       inAtom=true;
@@ -496,6 +511,7 @@ struct HybridAdoptorBase
     dr[1]=-dist_dr[1];
     dr[2]=-dist_dr[2];
     auto& myCenter=AtomicCenters[Super2Prim[center_idx]];
+    r_image=myCenter.pos+dr;
     if ( r < myCenter.cutoff )
     {
       inAtom=true;

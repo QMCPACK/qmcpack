@@ -11,12 +11,12 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-/** @file HybridCplxAdoptor.h
+/** @file HybridRealAdoptor.h
  *
- * Adoptor classes to handle complex hybrid orbitals with arbitrary precision
+ * Adoptor classes to handle real hybrid orbitals with arbitrary precision
  */
-#ifndef QMCPLUSPLUS_HYBRID_CPLX_SOA_ADOPTOR_H
-#define QMCPLUSPLUS_HYBRID_CPLX_SOA_ADOPTOR_H
+#ifndef QMCPLUSPLUS_HYBRID_REAL_SOA_ADOPTOR_H
+#define QMCPLUSPLUS_HYBRID_REAL_SOA_ADOPTOR_H
 
 #include <QMCWaveFunctions/BsplineFactory/HybridAdoptorBase.h>
 namespace qmcplusplus
@@ -26,7 +26,7 @@ namespace qmcplusplus
  *
  */
 template<typename BaseAdoptor>
-struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename BaseAdoptor::DataType>
+struct HybridRealSoA: public BaseAdoptor, public HybridAdoptorBase<typename BaseAdoptor::DataType>
 {
   using HybridBase       = HybridAdoptorBase<typename BaseAdoptor::DataType>;
   using ST               = typename BaseAdoptor::DataType;
@@ -38,7 +38,7 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
   using BaseAdoptor::myL;
   using BaseAdoptor::myH;
 
-  HybridCplxSoA(): BaseAdoptor()
+  HybridRealSoA(): BaseAdoptor()
   {
     this->AdoptorName="Hybrid"+this->AdoptorName;
     this->KeyWord="Hybrid"+this->KeyWord;
@@ -78,7 +78,8 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
     if(HybridBase::evaluate_v(P,iat,myV))
     {
       const PointType& r=P.R[iat];
-      BaseAdoptor::assign_v(r,psi);
+      int bc_sign=HybridBase::get_bc_sign(r, this->HalfG);
+      BaseAdoptor::assign_v(bc_sign,psi);
     }
     else
       BaseAdoptor::evaluate_v(P,iat,psi);
@@ -90,7 +91,8 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
     if(HybridBase::evaluate_vgl(P,iat,myV,myG,myL))
     {
       const PointType& r=P.R[iat];
-      BaseAdoptor::assign_vgl_from_l(r,psi,dpsi,d2psi);
+      int bc_sign=HybridBase::get_bc_sign(r, this->HalfG);
+      BaseAdoptor::assign_vgl_from_l(bc_sign,psi,dpsi,d2psi);
     }
     else
       BaseAdoptor::evaluate_vgl(P,iat,psi,dpsi,d2psi);
@@ -107,7 +109,8 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
     if(HybridBase::evaluate_vgh(P,iat,myV,myG,myH))
     {
       const PointType& r=P.R[iat];
-      BaseAdoptor::assign_vgl_soa(r,vgl);
+      int bc_sign=HybridBase::get_bc_sign(r, this->HalfG);
+      BaseAdoptor::assign_vgl_soa(bc_sign,vgl);
     }
     else
       BaseAdoptor::evaluate_vgl_combo(P,iat,vgl);
@@ -119,7 +122,8 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
     if(HybridBase::evaluate_vgh(P,iat,myV,myG,myH))
     {
       const PointType& r=P.R[iat];
-      BaseAdoptor::assign_vgh(r,psi,dpsi,grad_grad_psi);
+      int bc_sign=HybridBase::get_bc_sign(r, this->HalfG);
+      BaseAdoptor::assign_vgh(bc_sign,psi,dpsi,grad_grad_psi);
     }
     else
       BaseAdoptor::evaluate_vgh(P,iat,psi,dpsi,grad_grad_psi);
