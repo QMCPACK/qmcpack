@@ -562,7 +562,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
     typedef typename EinsplineSetBuilder::UnitCellType UnitCellType;
 
     Quadrature3D<double> quad(6);
-    Gvectors<double, UnitCellType> Gvecs(mybuilder->Gvecs[0], mybuilder->PrimCell);
+    Gvectors<double, UnitCellType> Gvecs(mybuilder->Gvecs[0], mybuilder->PrimCell, bspline->HalfG);
 
     std::vector<AtomicOrbitalSoA<DataType> >& centers=bspline->AtomicCenters;
     //#pragma omp parallel for
