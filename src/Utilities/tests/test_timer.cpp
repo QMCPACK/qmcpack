@@ -66,8 +66,10 @@ TEST_CASE("test_timer_scoped", "[utilities]")
   {
     ScopedTimer st(t1);
   }
+#if ENABLE_TIMERS
   REQUIRE(t1->get_total() == Approx(1.0));
   REQUIRE(t1->get_num_calls() == 1);
+#endif
 }
 
 TEST_CASE("test_timer_flat_profile", "[utilities]")
