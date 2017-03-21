@@ -426,7 +426,7 @@ namespace qmcplusplus
     // 1D spline
     /** create a single spline for double */
     template<typename VT>
-    UBspline_1d_d* create(UBspline_1d_d* s, const VT& start, const VT& end, const int spline_npoints, bool lFlat)
+    UBspline_1d_d* create(UBspline_1d_d* s, const VT& start, const VT& end, const int spline_npoints, double* indata, bool lFlat)
     {
       BCtype_d bc;
       if(lFlat)
@@ -438,13 +438,7 @@ namespace qmcplusplus
       grid.start = start;
       grid.end   = end;
       grid.num   = spline_npoints;
-      return create_UBspline_1d_d(grid, bc, NULL);
-    }
-
-    /** recalculate spline coefficients */
-    inline void set(UBspline_1d_d* s, double* restrict data)
-    {
-      recompute_UBspline_1d_d(s,data);
+      return create_UBspline_1d_d(grid, bc, indata);
     }
 
     /** spline evaluation */

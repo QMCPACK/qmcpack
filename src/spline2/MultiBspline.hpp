@@ -4,7 +4,7 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp. 
+// File developed by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //                    Amrita Mathuriya, amrita.mathuriya@intel.com, Intel Corp.
 //                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
@@ -46,8 +46,8 @@ namespace qmcplusplus
     }
   };
 
-  /** compute Trace(H*G) 
-   * 
+  /** compute Trace(H*G)
+   *
    * gg is symmetrized as
    *  gg[0]=GG(0,0)
    *  gg[1]=GG(0,1)+GG(1,0)
@@ -63,12 +63,46 @@ namespace qmcplusplus
     }
 
   template<typename T>
-    struct MultiBspline
+    struct MultiBsplineData
     {
       static const T   A44[16];
       static const T  dA44[16];
       static const T d2A44[16];
       static const T d3A44[16];
+
+      inline void compute_prefactors(T a[4], T tx) const
+      {
+        a[0] = ( ( A44[0]  * tx + A44[1] ) * tx + A44[2] ) * tx + A44[3];
+        a[1] = ( ( A44[4]  * tx + A44[5] ) * tx + A44[6] ) * tx + A44[7];
+        a[2] = ( ( A44[8]  * tx + A44[9] ) * tx + A44[10] ) * tx + A44[11];
+        a[3] = ( ( A44[12] * tx + A44[13] ) * tx + A44[14] ) * tx + A44[15];
+      }
+
+      inline void compute_prefactors(T a[4], T da[4], T d2a[4], T tx) const
+      {
+        a[0] = ( ( A44[0]  * tx + A44[1] ) * tx + A44[2] ) * tx + A44[3];
+        a[1] = ( ( A44[4]  * tx + A44[5] ) * tx + A44[6] ) * tx + A44[7];
+        a[2] = ( ( A44[8]  * tx + A44[9] ) * tx + A44[10] ) * tx + A44[11];
+        a[3] = ( ( A44[12] * tx + A44[13] ) * tx + A44[14] ) * tx + A44[15];
+        da[0] = ( ( dA44[0]  * tx + dA44[1] ) * tx + dA44[2] ) * tx + dA44[3];
+        da[1] = ( ( dA44[4]  * tx + dA44[5] ) * tx + dA44[6] ) * tx + dA44[7];
+        da[2] = ( ( dA44[8]  * tx + dA44[9] ) * tx + dA44[10] ) * tx + dA44[11];
+        da[3] = ( ( dA44[12] * tx + dA44[13] ) * tx + dA44[14] ) * tx + dA44[15];
+        d2a[0] = ( ( d2A44[0]  * tx + d2A44[1] ) * tx + d2A44[2] ) * tx + d2A44[3];
+        d2a[1] = ( ( d2A44[4]  * tx + d2A44[5] ) * tx + d2A44[6] ) * tx + d2A44[7];
+        d2a[2] = ( ( d2A44[8]  * tx + d2A44[9] ) * tx + d2A44[10] ) * tx + d2A44[11];
+        d2a[3] = ( ( d2A44[12] * tx + d2A44[13] ) * tx + d2A44[14] ) * tx + d2A44[15];
+      }
+    };
+
+  template<typename T>
+    struct MultiBspline: public MultiBsplineData<T>
+    {
+
+      using MultiBsplineData<T>::A44;
+      using MultiBsplineData<T>::dA44;
+      using MultiBsplineData<T>::d2A44;
+      using MultiBsplineData<T>::d3A44;
 
 #if (__cplusplus< 201103L)
       ///define the einsplie object type
@@ -104,7 +138,7 @@ namespace qmcplusplus
 
       ~MultiBspline()
       {
-        if(own_spline) 
+        if(own_spline)
         {
           myAllocator.destroy(spline_m);
         }
@@ -147,14 +181,14 @@ namespace qmcplusplus
         offset[nteams]=num_splines;
       }
 
-      int num_splines() const 
-      { 
-        return (spline_m==nullptr)?0:spline_m->num_splines; 
+      int num_splines() const
+      {
+        return (spline_m==nullptr)?0:spline_m->num_splines;
       }
 
       size_t sizeInByte() const
       {
-        return spline_m->coefs_size*sizeof(T);
+        return (spline_m==nullptr)?0:spline_m->coefs_size*sizeof(T);
       }
 
       template<typename CT>
@@ -181,68 +215,52 @@ namespace qmcplusplus
         os << std::endl;
       }
 
-      template<typename PT, typename VT> 
-        void evaluate(const PT& r, VT& psi) 
-        { 
+      template<typename PT, typename VT>
+        void evaluate(const PT& r, VT& psi)
+        {
           evaluate_v_impl(r[0],r[1],r[2],psi.data(),0,psi.size());
         }
 
-      template<typename PT, typename VT> 
-        void evaluate(const PT& r, VT& psi, int ip) 
-        { 
+      template<typename PT, typename VT>
+        void evaluate(const PT& r, VT& psi, int ip)
+        {
           const int first=offset[ip];
           evaluate_v_impl(r[0],r[1],r[2],psi.data()+first,first,offset[ip+1]);
         }
 
-      template<typename PT, typename VT, typename GT> 
+      template<typename PT, typename VT, typename GT>
         inline void evaluate(const PT& r, VT& psi, GT& grad)
-        { 
-          //einspline::evaluate(spliner,r,psi,grad); 
+        {
+          //einspline::evaluate(spliner,r,psi,grad);
         }
 
       template<typename PT, typename VT, typename GT, typename LT>
-        inline void evaluate_vgl(const PT& r, VT& psi, GT& grad, LT& lap) 
-        { 
+        inline void evaluate_vgl(const PT& r, VT& psi, GT& grad, LT& lap)
+        {
           evaluate_vgl_impl(r[0],r[1],r[2],psi.data(),grad.data(),lap.data(),0,psi.size());
         }
 
       template<typename PT, typename VT, typename GT, typename LT>
-        inline void evaluate_vgl(const PT& r, VT& psi, GT& grad, LT& lap, int ip) 
-        { 
+        inline void evaluate_vgl(const PT& r, VT& psi, GT& grad, LT& lap, int ip)
+        {
           const int first=offset[ip];
           evaluate_vgl_impl(r[0],r[1],r[2],psi.data()+first,grad.data()+first,lap.data()+first,first,offset[ip+1]);
         }
 
       template<typename PT, typename VT, typename GT, typename HT>
-        inline void evaluate_vgh(const PT& r, VT& psi, GT& grad, HT& hess) 
-        { 
-          evaluate_vgh_impl(r[0],r[1],r[2],psi.data(),grad.data(),hess.data(),0,psi.size()); 
+        inline void evaluate_vgh(const PT& r, VT& psi, GT& grad, HT& hess)
+        {
+          evaluate_vgh_impl(r[0],r[1],r[2],psi.data(),grad.data(),hess.data(),0,psi.size());
         }
 
       template<typename PT, typename VT, typename GT, typename HT>
-        inline void evaluate_vgh(const PT& r, VT& psi, GT& grad, HT& hess, int ip) 
-        { 
+        inline void evaluate_vgh(const PT& r, VT& psi, GT& grad, HT& hess, int ip)
+        {
           const int first=offset[ip];
-          evaluate_vgh_impl(r[0],r[1],r[2],psi.data()+first,grad.data()+first,hess.data()+first,first,offset[ip+1]); 
+          evaluate_vgh_impl(r[0],r[1],r[2],psi.data()+first,grad.data()+first,hess.data()+first,first,offset[ip+1]);
         }
 
-      inline void compute_prefactors(T a[4], T da[4], T d2a[4], T tx) const
-      {
-        a[0] = ( ( A44[0]  * tx + A44[1] ) * tx + A44[2] ) * tx + A44[3];
-        a[1] = ( ( A44[4]  * tx + A44[5] ) * tx + A44[6] ) * tx + A44[7];
-        a[2] = ( ( A44[8]  * tx + A44[9] ) * tx + A44[10] ) * tx + A44[11];
-        a[3] = ( ( A44[12] * tx + A44[13] ) * tx + A44[14] ) * tx + A44[15];
-        da[0] = ( ( dA44[0]  * tx + dA44[1] ) * tx + dA44[2] ) * tx + dA44[3];
-        da[1] = ( ( dA44[4]  * tx + dA44[5] ) * tx + dA44[6] ) * tx + dA44[7];
-        da[2] = ( ( dA44[8]  * tx + dA44[9] ) * tx + dA44[10] ) * tx + dA44[11];
-        da[3] = ( ( dA44[12] * tx + dA44[13] ) * tx + dA44[14] ) * tx + dA44[15];
-        d2a[0] = ( ( d2A44[0]  * tx + d2A44[1] ) * tx + d2A44[2] ) * tx + d2A44[3];
-        d2a[1] = ( ( d2A44[4]  * tx + d2A44[5] ) * tx + d2A44[6] ) * tx + d2A44[7];
-        d2a[2] = ( ( d2A44[8]  * tx + d2A44[9] ) * tx + d2A44[10] ) * tx + d2A44[11];
-        d2a[3] = ( ( d2A44[12] * tx + d2A44[13] ) * tx + d2A44[14] ) * tx + d2A44[15];
-      }
-
-      /** compute values vals[first,last) 
+      /** compute values vals[first,last)
        *
        * The base address for vals, grads and lapl are set by the callers, e.g., evaluate_vgh(r,psi,grad,hess,ip).
        */
@@ -258,7 +276,7 @@ namespace qmcplusplus
 ///include evaluate_v_impl
 #include <spline2/MultiBsplineValue.hpp>
 
-/** choose vgl/vgh, default MultiBsplineStd.hpp based on Ye's BGQ version 
+/** choose vgl/vgh, default MultiBsplineStd.hpp based on Ye's BGQ version
  * Only used by tests
  */
 #ifdef USE_EINSPLINE_UNROLLED
@@ -268,14 +286,14 @@ namespace qmcplusplus
 #elif USE_EINSPLINE_BASE
 #include <spline2/MultiBsplineBase.hpp>
 #elif USE_EINSPLINE_BLOCKED
-#include <spline2/MultiBsplineStd5.hpp>  
+#include <spline2/MultiBsplineStd5.hpp>
 #else
-#include <spline2/MultiBsplineStd.hpp> 
+#include <spline2/MultiBsplineStd.hpp>
 #endif
 
 #endif
 /***************************************************************************
  * $RCSfile$   $Author: jnkim $
  * $Revision: 1770 $   $Date: 2007-02-17 17:45:38 -0600 (Sat, 17 Feb 2007) $
- * $Id: OrbitalBase.h 1770 2007-02-17 23:45:38Z jnkim $ 
+ * $Id: OrbitalBase.h 1770 2007-02-17 23:45:38Z jnkim $
  ***************************************************************************/

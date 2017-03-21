@@ -101,7 +101,7 @@ struct AtomicOrbitalSoA
 
   inline void create_spline()
   {
-    BCtype_d bc;
+    AtomicBCType bc;
     bc.lCode = FLAT;
     bc.rCode = NATURAL;
     Ugrid grid;

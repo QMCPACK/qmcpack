@@ -47,45 +47,10 @@ namespace qmcplusplus
       SplineBound<T>::get(z*spline_m->z_grid.delta_inv,tz,iz,spline_m->z_grid.num-1);
 
       T a[4],b[4],c[4],da[4],db[4],dc[4],d2a[4],d2b[4],d2c[4];
-      a[0] = ( ( A44[0]  * tx + A44[1] ) * tx + A44[2] ) * tx + A44[3]; 
-      a[1] = ( ( A44[4]  * tx + A44[5] ) * tx + A44[6] ) * tx + A44[7]; 
-      a[2] = ( ( A44[8]  * tx + A44[9] ) * tx + A44[10] ) * tx + A44[11]; 
-      a[3] = ( ( A44[12] * tx + A44[13] ) * tx + A44[14] ) * tx + A44[15]; 
-      da[0] = ( ( dA44[0]  * tx + dA44[1] ) * tx + dA44[2] ) * tx + dA44[3]; 
-      da[1] = ( ( dA44[4]  * tx + dA44[5] ) * tx + dA44[6] ) * tx + dA44[7]; 
-      da[2] = ( ( dA44[8]  * tx + dA44[9] ) * tx + dA44[10] ) * tx + dA44[11]; 
-      da[3] = ( ( dA44[12] * tx + dA44[13] ) * tx + dA44[14] ) * tx + dA44[15]; 
-      d2a[0] = ( ( d2A44[0]  * tx + d2A44[1] ) * tx + d2A44[2] ) * tx + d2A44[3]; 
-      d2a[1] = ( ( d2A44[4]  * tx + d2A44[5] ) * tx + d2A44[6] ) * tx + d2A44[7]; 
-      d2a[2] = ( ( d2A44[8]  * tx + d2A44[9] ) * tx + d2A44[10] ) * tx + d2A44[11]; 
-      d2a[3] = ( ( d2A44[12] * tx + d2A44[13] ) * tx + d2A44[14] ) * tx + d2A44[15]; 
 
-      b[0] = ( ( A44[0]  * ty + A44[1] ) * ty + A44[2] ) * ty + A44[3]; 
-      b[1] = ( ( A44[4]  * ty + A44[5] ) * ty + A44[6] ) * ty + A44[7]; 
-      b[2] = ( ( A44[8]  * ty + A44[9] ) * ty + A44[10] ) * ty + A44[11]; 
-      b[3] = ( ( A44[12] * ty + A44[13] ) * ty + A44[14] ) * ty + A44[15]; 
-      db[0] = ( ( dA44[0]  * ty + dA44[1] ) * ty + dA44[2] ) * ty + dA44[3]; 
-      db[1] = ( ( dA44[4]  * ty + dA44[5] ) * ty + dA44[6] ) * ty + dA44[7]; 
-      db[2] = ( ( dA44[8]  * ty + dA44[9] ) * ty + dA44[10] ) * ty + dA44[11]; 
-      db[3] = ( ( dA44[12] * ty + dA44[13] ) * ty + dA44[14] ) * ty + dA44[15]; 
-      d2b[0] = ( ( d2A44[0]  * ty + d2A44[1] ) * ty + d2A44[2] ) * ty + d2A44[3]; 
-      d2b[1] = ( ( d2A44[4]  * ty + d2A44[5] ) * ty + d2A44[6] ) * ty + d2A44[7]; 
-      d2b[2] = ( ( d2A44[8]  * ty + d2A44[9] ) * ty + d2A44[10] ) * ty + d2A44[11]; 
-      d2b[3] = ( ( d2A44[12] * ty + d2A44[13] ) * ty + d2A44[14] ) * ty + d2A44[15]; 
-
-      c[0] = ( ( A44[0]  * tz + A44[1] ) * tz + A44[2] ) * tz + A44[3]; 
-      c[1] = ( ( A44[4]  * tz + A44[5] ) * tz + A44[6] ) * tz + A44[7]; 
-      c[2] = ( ( A44[8]  * tz + A44[9] ) * tz + A44[10] ) * tz + A44[11]; 
-      c[3] = ( ( A44[12] * tz + A44[13] ) * tz + A44[14] ) * tz + A44[15]; 
-      dc[0] = ( ( dA44[0]  * tz + dA44[1] ) * tz + dA44[2] ) * tz + dA44[3]; 
-      dc[1] = ( ( dA44[4]  * tz + dA44[5] ) * tz + dA44[6] ) * tz + dA44[7]; 
-      dc[2] = ( ( dA44[8]  * tz + dA44[9] ) * tz + dA44[10] ) * tz + dA44[11]; 
-      dc[3] = ( ( dA44[12] * tz + dA44[13] ) * tz + dA44[14] ) * tz + dA44[15]; 
-      d2c[0] = ( ( d2A44[0]  * tz + d2A44[1] ) * tz + d2A44[2] ) * tz + d2A44[3]; 
-      d2c[1] = ( ( d2A44[4]  * tz + d2A44[5] ) * tz + d2A44[6] ) * tz + d2A44[7]; 
-      d2c[2] = ( ( d2A44[8]  * tz + d2A44[9] ) * tz + d2A44[10] ) * tz + d2A44[11]; 
-      d2c[3] = ( ( d2A44[12] * tz + d2A44[13] ) * tz + d2A44[14] ) * tz + d2A44[15]; 
-
+      compute_prefactors(a, da, d2a, tx);
+      compute_prefactors(b, db, d2b, ty);
+      compute_prefactors(c, dc, d2c, tz);
 
       const intptr_t xs = spline_m->x_stride;
       const intptr_t ys = spline_m->y_stride;
@@ -181,45 +146,9 @@ namespace qmcplusplus
       SplineBound<T>::get(y*spline_m->y_grid.delta_inv,ty,iy,spline_m->y_grid.num-1);
       SplineBound<T>::get(z*spline_m->z_grid.delta_inv,tz,iz,spline_m->z_grid.num-1);
 
-      a[0] = ( ( A44[0]  * tx + A44[1] ) * tx + A44[2] ) * tx + A44[3]; 
-      a[1] = ( ( A44[4]  * tx + A44[5] ) * tx + A44[6] ) * tx + A44[7]; 
-      a[2] = ( ( A44[8]  * tx + A44[9] ) * tx + A44[10] ) * tx + A44[11]; 
-      a[3] = ( ( A44[12] * tx + A44[13] ) * tx + A44[14] ) * tx + A44[15]; 
-      da[0] = ( ( dA44[0]  * tx + dA44[1] ) * tx + dA44[2] ) * tx + dA44[3]; 
-      da[1] = ( ( dA44[4]  * tx + dA44[5] ) * tx + dA44[6] ) * tx + dA44[7]; 
-      da[2] = ( ( dA44[8]  * tx + dA44[9] ) * tx + dA44[10] ) * tx + dA44[11]; 
-      da[3] = ( ( dA44[12] * tx + dA44[13] ) * tx + dA44[14] ) * tx + dA44[15]; 
-      d2a[0] = ( ( d2A44[0]  * tx + d2A44[1] ) * tx + d2A44[2] ) * tx + d2A44[3]; 
-      d2a[1] = ( ( d2A44[4]  * tx + d2A44[5] ) * tx + d2A44[6] ) * tx + d2A44[7]; 
-      d2a[2] = ( ( d2A44[8]  * tx + d2A44[9] ) * tx + d2A44[10] ) * tx + d2A44[11]; 
-      d2a[3] = ( ( d2A44[12] * tx + d2A44[13] ) * tx + d2A44[14] ) * tx + d2A44[15]; 
-
-      b[0] = ( ( A44[0]  * ty + A44[1] ) * ty + A44[2] ) * ty + A44[3]; 
-      b[1] = ( ( A44[4]  * ty + A44[5] ) * ty + A44[6] ) * ty + A44[7]; 
-      b[2] = ( ( A44[8]  * ty + A44[9] ) * ty + A44[10] ) * ty + A44[11]; 
-      b[3] = ( ( A44[12] * ty + A44[13] ) * ty + A44[14] ) * ty + A44[15]; 
-      db[0] = ( ( dA44[0]  * ty + dA44[1] ) * ty + dA44[2] ) * ty + dA44[3]; 
-      db[1] = ( ( dA44[4]  * ty + dA44[5] ) * ty + dA44[6] ) * ty + dA44[7]; 
-      db[2] = ( ( dA44[8]  * ty + dA44[9] ) * ty + dA44[10] ) * ty + dA44[11]; 
-      db[3] = ( ( dA44[12] * ty + dA44[13] ) * ty + dA44[14] ) * ty + dA44[15]; 
-      d2b[0] = ( ( d2A44[0]  * ty + d2A44[1] ) * ty + d2A44[2] ) * ty + d2A44[3]; 
-      d2b[1] = ( ( d2A44[4]  * ty + d2A44[5] ) * ty + d2A44[6] ) * ty + d2A44[7]; 
-      d2b[2] = ( ( d2A44[8]  * ty + d2A44[9] ) * ty + d2A44[10] ) * ty + d2A44[11]; 
-      d2b[3] = ( ( d2A44[12] * ty + d2A44[13] ) * ty + d2A44[14] ) * ty + d2A44[15]; 
-
-      c[0] = ( ( A44[0]  * tz + A44[1] ) * tz + A44[2] ) * tz + A44[3]; 
-      c[1] = ( ( A44[4]  * tz + A44[5] ) * tz + A44[6] ) * tz + A44[7]; 
-      c[2] = ( ( A44[8]  * tz + A44[9] ) * tz + A44[10] ) * tz + A44[11]; 
-      c[3] = ( ( A44[12] * tz + A44[13] ) * tz + A44[14] ) * tz + A44[15]; 
-      dc[0] = ( ( dA44[0]  * tz + dA44[1] ) * tz + dA44[2] ) * tz + dA44[3]; 
-      dc[1] = ( ( dA44[4]  * tz + dA44[5] ) * tz + dA44[6] ) * tz + dA44[7]; 
-      dc[2] = ( ( dA44[8]  * tz + dA44[9] ) * tz + dA44[10] ) * tz + dA44[11]; 
-      dc[3] = ( ( dA44[12] * tz + dA44[13] ) * tz + dA44[14] ) * tz + dA44[15]; 
-      d2c[0] = ( ( d2A44[0]  * tz + d2A44[1] ) * tz + d2A44[2] ) * tz + d2A44[3]; 
-      d2c[1] = ( ( d2A44[4]  * tz + d2A44[5] ) * tz + d2A44[6] ) * tz + d2A44[7]; 
-      d2c[2] = ( ( d2A44[8]  * tz + d2A44[9] ) * tz + d2A44[10] ) * tz + d2A44[11]; 
-      d2c[3] = ( ( d2A44[12] * tz + d2A44[13] ) * tz + d2A44[14] ) * tz + d2A44[15]; 
-
+      compute_prefactors(a, da, d2a, tx);
+      compute_prefactors(b, db, d2b, ty);
+      compute_prefactors(c, dc, d2c, tz);
 
       const intptr_t xs = spline_m->x_stride;
       const intptr_t ys = spline_m->y_stride;

@@ -49,19 +49,6 @@ namespace qmcplusplus { namespace einspline {
   {
   }
 
-  void Allocator::destroy(multi_UBspline_3d_s* spline)
-  {
-    einspline_free(spline->coefs);
-    free(spline);
-  }
-
-  void Allocator::destroy(multi_UBspline_3d_d* spline)
-  {
-    einspline_free(spline->coefs);
-    free(spline);
-  }
-
-
   multi_UBspline_3d_s* 
     Allocator::allocateMultiBspline(Ugrid x_grid, Ugrid y_grid, Ugrid z_grid, 
         BCtype_s xBC, BCtype_s yBC, BCtype_s zBC, int num_splines)

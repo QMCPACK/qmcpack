@@ -500,8 +500,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
         UBspline_1d_d* atomic_spline_r;
         for(size_t ip=0; ip<spline_npoints; ip++)
           splineData_r[ip]=real(all_vals[ip][lm]);
-        atomic_spline_r=einspline::create(atomic_spline_r, 0.0, spline_radius, spline_npoints, ((lm==0)||(lm>3)));
-        einspline::set(atomic_spline_r,splineData_r.data());
+        atomic_spline_r=einspline::create(atomic_spline_r, 0.0, spline_radius, spline_npoints, splineData_r.data(), ((lm==0)||(lm>3)));
         if(!bspline->is_complex)
         {
           mycenter.set_spline(atomic_spline_r,lm,iorb);
@@ -513,8 +512,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
           UBspline_1d_d* atomic_spline_i;
           for(size_t ip=0; ip<spline_npoints; ip++)
             splineData_i[ip]=imag(all_vals[ip][lm]);
-          atomic_spline_i=einspline::create(atomic_spline_i, 0.0, spline_radius, spline_npoints, ((lm==0)||(lm>3)));
-          einspline::set(atomic_spline_i,splineData_i.data());
+          atomic_spline_i=einspline::create(atomic_spline_i, 0.0, spline_radius, spline_npoints, splineData_i.data(), ((lm==0)||(lm>3)));
           int iband=bspline->BandIndexMap.size()>0?bspline->BandIndexMap[iorb]:iorb;
           mycenter.set_spline(atomic_spline_r,lm,iband*2);
           mycenter.set_spline(atomic_spline_i,lm,iband*2+1);

@@ -36,20 +36,10 @@ namespace qmcplusplus
       SplineBound<T>::get(y*spline_m->y_grid.delta_inv,ty,iy,spline_m->y_grid.num-1);
       SplineBound<T>::get(z*spline_m->z_grid.delta_inv,tz,iz,spline_m->z_grid.num-1);
       T a[4], b[4], c[4];
-      a[0] = ( ( A44[0]  * tx + A44[1] )  * tx + A44[2] )  * tx + A44[3];
-      a[1] = ( ( A44[4]  * tx + A44[5] )  * tx + A44[6] )  * tx + A44[7];
-      a[2] = ( ( A44[8]  * tx + A44[9] )  * tx + A44[10] ) * tx + A44[11];
-      a[3] = ( ( A44[12] * tx + A44[13] ) * tx + A44[14] ) * tx + A44[15];
 
-      b[0] = ( ( A44[0]  * ty + A44[1] )    * ty + A44[2] )  * ty + A44[3];
-      b[1] = ( ( A44[4]  * ty + A44[5] )    * ty + A44[6] )  * ty + A44[7];
-      b[2] = ( ( A44[8]  * ty + A44[9] )    * ty + A44[10] ) * ty + A44[11];
-      b[3] = ( ( A44[12] * ty + A44[13] )   * ty + A44[14] ) * ty + A44[15];
-
-      c[0] = ( ( A44[0]  * tz + A44[1] )  * tz + A44[2] )  * tz + A44[3];
-      c[1] = ( ( A44[4]  * tz + A44[5] )  * tz + A44[6] )  * tz + A44[7];
-      c[2] = ( ( A44[8]  * tz + A44[9] )  * tz + A44[10] ) * tz + A44[11];
-      c[3] = ( ( A44[12] * tz + A44[13] ) * tz + A44[14] ) * tz + A44[15];
+      compute_prefactors(a, tx);
+      compute_prefactors(b, ty);
+      compute_prefactors(c, tz);
 
       const intptr_t xs = spline_m->x_stride;
       const intptr_t ys = spline_m->y_stride;
@@ -133,20 +123,10 @@ namespace qmcplusplus
       SplineBound<T>::get(y*spline_m->y_grid.delta_inv,ty,iy,spline_m->y_grid.num-1);
       SplineBound<T>::get(z*spline_m->z_grid.delta_inv,tz,iz,spline_m->z_grid.num-1);
       T a[4], b[4], c[4];
-      a[0] = ( ( A44[0]  * tx + A44[1] )  * tx + A44[2] )  * tx + A44[3];
-      a[1] = ( ( A44[4]  * tx + A44[5] )  * tx + A44[6] )  * tx + A44[7];
-      a[2] = ( ( A44[8]  * tx + A44[9] )  * tx + A44[10] ) * tx + A44[11];
-      a[3] = ( ( A44[12] * tx + A44[13] ) * tx + A44[14] ) * tx + A44[15];
 
-      b[0] = ( ( A44[0]  * ty + A44[1] )    * ty + A44[2] )  * ty + A44[3];
-      b[1] = ( ( A44[4]  * ty + A44[5] )    * ty + A44[6] )  * ty + A44[7];
-      b[2] = ( ( A44[8]  * ty + A44[9] )    * ty + A44[10] ) * ty + A44[11];
-      b[3] = ( ( A44[12] * ty + A44[13] )   * ty + A44[14] ) * ty + A44[15];
-
-      c[0] = ( ( A44[0]  * tz + A44[1] )  * tz + A44[2] )  * tz + A44[3];
-      c[1] = ( ( A44[4]  * tz + A44[5] )  * tz + A44[6] )  * tz + A44[7];
-      c[2] = ( ( A44[8]  * tz + A44[9] )  * tz + A44[10] ) * tz + A44[11];
-      c[3] = ( ( A44[12] * tz + A44[13] ) * tz + A44[14] ) * tz + A44[15];
+      compute_prefactors(a, tx);
+      compute_prefactors(b, ty);
+      compute_prefactors(c, tz);
 
       vector4double vec_c0 = vec_splats(c[0]);
       vector4double vec_c1 = vec_splats(c[1]);

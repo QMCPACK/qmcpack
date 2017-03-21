@@ -18,6 +18,7 @@
 #include <simd/allocator.hpp>
 #include <simd/simd.hpp>
 #include <spline2/bspline_traits.hpp>
+#include "spline2/einspline_allocator.h"
 
 namespace qmcplusplus { namespace einspline {
 
@@ -37,9 +38,12 @@ namespace qmcplusplus { namespace einspline {
     ///destructor
     ~Allocator();
 
-    void destroy(multi_UBspline_3d_s* spline);
-
-    void destroy(multi_UBspline_3d_d* spline);
+    template<typename SplineType>
+    void destroy(SplineType* spline)
+    {
+      einspline_free(spline->coefs);
+      free(spline);
+    }
 
     ///allocate a single multi-bspline
     multi_UBspline_3d_s* allocateMultiBspline(Ugrid x_grid, Ugrid y_grid, Ugrid z_grid, 
