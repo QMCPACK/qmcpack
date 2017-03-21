@@ -423,8 +423,22 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
     }
   }
 
-  inline void create_atomic_centers_Gspace(Vector<std::complex<double> >& cG, int ti, int iorb)
+  inline void create_atomic_centers_Gspace(Vector<std::complex<double> >& cG, Communicate& band_group_comm, int iorb)
   {
+    std::vector<AtomicOrbitalSoA<DataType> >& centers=bspline->AtomicCenters;
+    //distribute atomic centers over processor groups
+    int Ncenters=centers.size();
+    const int Nprocs=band_group_comm.size();
+    const int Ncentergroups=std::min(Ncenters,Nprocs);
+    Communicate center_group_comm(band_group_comm, Ncentergroups);
+    std::vector<int> center_groups(Ncentergroups+1,0);
+    FairDivideLow(Ncenters,Ncentergroups,center_groups);
+    int center_first=center_groups[center_group_comm.getGroupID()];
+    int center_last =center_groups[center_group_comm.getGroupID()+1];
+
+    // no workload case
+    if(!center_group_comm.isGroupLeader()) return;
+
     typedef typename EinsplineSetBuilder::UnitCellType UnitCellType;
 
     // prepare Gvecs Ylm(G)
@@ -441,8 +455,8 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       i_temp*=std::complex<double>(0.0,1.0);
     }
 
-    std::vector<AtomicOrbitalSoA<DataType> >& centers=bspline->AtomicCenters;
-    for(int center_idx=0; center_idx<centers.size(); center_idx++)
+    app_log() << "Transforming band " << iorb << " centers from " << center_first << " to " << center_last-1 << " on Rank 0" << std::endl;
+    for(int center_idx=center_first; center_idx<center_last; center_idx++)
     {
       AtomicOrbitalSoA<DataType>& mycenter=centers[center_idx];
       const double cutoff_radius = mycenter.cutoff;
@@ -555,6 +569,8 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       fclose(fout_spline_l);
 #endif
     }
+    // collect atomic orbitals from all the centers
+    bspline->reduce_atomic_tables(center_group_comm.GroupLeaderComm);
   }
 
   inline void create_atomic_centers_Rspace(Vector<std::complex<double> >& cG, int ti, int iorb)
@@ -624,6 +640,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
    */
   void initialize_spline_pio_reduce(int spin, const BandInfoGroup& bandgroup)
   {
+    //distribute bands over processor groups
     int Nbands=bandgroup.getNumDistinctOrbitals();
     const int Nprocs=myComm->size();
     const int Nbandgroups=std::min(Nbands,Nprocs);
@@ -632,25 +649,30 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
     FairDivideLow(Nbands,Nbandgroups,band_groups);
     int iorb_first=band_groups[band_group_comm.getGroupID()];
     int iorb_last =band_groups[band_group_comm.getGroupID()+1];
+
     app_log() << "Start transforming 3D B-Splines and atomic orbitals for hybrid representation." << std::endl;
+    hdf_archive h5f(&band_group_comm,false);
+    Vector<std::complex<double> > cG(mybuilder->Gvecs[0].size());;
+    const std::vector<BandInfo>& cur_bands=bandgroup.myBands;
     if(band_group_comm.isGroupLeader())
-    {
-      hdf_archive h5f(&band_group_comm,false);
       h5f.open(mybuilder->H5FileName,H5F_ACC_RDONLY);
-      Vector<std::complex<double> > cG(mybuilder->Gvecs[0].size());;
-      const std::vector<BandInfo>& cur_bands=bandgroup.myBands;
-      for(int ib=0, iorb=iorb_first; iorb<iorb_last; ib++, iorb++)
+    for(int iorb=iorb_first; iorb<iorb_last; iorb++)
+    {
+      if(band_group_comm.isGroupLeader())
       {
         int ti=cur_bands[iorb].TwistIndex;
         std::string s=psi_g_path(ti,spin,cur_bands[iorb].BandIndex);
         if(!h5f.read(cG,s)) APP_ABORT("SplineHybridAdoptorReader Failed to read band(s) from h5!\n");
         fft_spline(cG,ti);
-        create_atomic_centers_Gspace(cG,ti,iorb);
         bspline->set_spline(spline_r,spline_i,cur_bands[iorb].TwistIndex,iorb,0);
       }
-      bspline->reduce_tables(band_group_comm.GroupLeaderComm);
+      band_group_comm.bcast(rotate_phase_r);
+      band_group_comm.bcast(rotate_phase_i);
+      band_group_comm.bcast(cG);
+      create_atomic_centers_Gspace(cG, band_group_comm, iorb);
     }
-    myComm->barrier();
+    if(band_group_comm.isGroupLeader())
+      bspline->reduce_tables(band_group_comm.GroupLeaderComm);
     bspline->bcast_tables(myComm);
   }
 
