@@ -5208,7 +5208,7 @@ def generate_structure(type='crystal',*args,**kwargs):
     elif type=='basic':
         s = Structure(*args,**kwargs)
     else:
-        Structure.class_error(str(type)+' is not a valid structure type\n  options are crystal, defect, atom, dimer, trimer, jellium, empty, or basic')
+        Structure.class_error(str(type)+' is not a valid structure type\noptions are crystal, defect, atom, dimer, trimer, jellium, empty, or basic')
     #end if
     return s
 #end def generate_structure
@@ -5530,15 +5530,19 @@ def read_structure(filepath,elem=None,format=None):
 
 
 if __name__=='__main__':
-    a = convert(5.639,'A','B')
-
-    large = generate_structure('diamond','fcc','Ge',(2,2,2),a)
-    small = generate_structure('diamond','fcc','Ge',(1,1,1),a)
-
-    large.add_kmesh((1,1,1))
-
-    kmap = large.fold(small)
+    large = generate_structure(
+        type      = 'crystal',
+        structure = 'diamond',
+        cell      = 'fcc',
+        atoms     = 'Ge',
+        constants = 5.639,
+        units     = 'A',
+        tiling    = (2,2,2),
+        kgrid     = (1,1,1),
+        kshift    = (0,0,0),
+        )
+    
+    small = large.folded_structure
 
     print small.kpoints_unit()
-
 #end if
