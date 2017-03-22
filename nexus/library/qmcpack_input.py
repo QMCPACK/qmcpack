@@ -5066,7 +5066,6 @@ def generate_energydensity(
         ion_grids = None,
         system    = None,
         ):
-    type = 'EnergyDensity'
     if dynamic is None:
         dynamic = 'e'
     #end if
