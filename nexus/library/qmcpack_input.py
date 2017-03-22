@@ -517,7 +517,8 @@ class QIxml(Names):
             attr_types  = None,
             precision   = None,
             defaults    = obj(),
-            collection_id = None
+            collection_id = None,
+            exp_names   = None,
             )
         for v in ['attributes','elements','parameters','attribs','costs','h5tags']:
             names = cls.class_get(v)
@@ -535,6 +536,9 @@ class QIxml(Names):
             #end if
         #end for
         cls.plurals = cls.plurals_inv.inverse()
+        if cls.exp_names is not None:
+            cls.expanded_names = obj(Names.expanded_names,cls.exp_names)
+        #end if
     #end def init_class
 
 
@@ -1958,6 +1962,7 @@ class coefficients(QIxml):
     attributes = ['id','type','optimize','state','size','cusp','rcut']
     text       = 'coeff'
     write_types= obj(optimize=yesno)
+    exp_names  = obj(array='Array')
 #end class coefficients
 
 class coefficient(QIxml):  # this is bad!!! coefficients/coefficient
@@ -2187,6 +2192,12 @@ class gofr(QIxml):
     identifier = 'name'
 #end class gofr
 
+class flux(QIxml):
+    tag = 'estimator'
+    attributes = ['type','name']
+    identifier = 'name'
+#end class flux
+    
 estimator = QIxmlFactory(
     name  = 'estimator',
     types = dict(localenergy         = localenergy,
@@ -2206,6 +2217,7 @@ estimator = QIxmlFactory(
                  sk                  = sk,
                  skall               = skall,
                  gofr                = gofr,
+                 flux                = flux,
                  ),
     typekey  = 'type',
     typekey2 = 'name'
@@ -2435,7 +2447,7 @@ classes = [   #standard classes
     multideterminant,detlist,ci,mcwalkerset,csf,det,
     optimize,cg_optimizer,flex_optimizer,optimize_qmc,wftest,kspace_jastrow,
     header,local,force,forwardwalking,observable,record,rmc,pressure,dmccorrection,
-    nofk,mpc_est,distancetable,cpp,element,spline,setparams,
+    nofk,mpc_est,flux,distancetable,cpp,element,spline,setparams,
     backflow,transformation,cubicgrid,molecular_orbital_builder,cmc,sk,skall,gofr,
     host,date,user,
     ]
@@ -2510,7 +2522,7 @@ Names.set_expanded_names(
     elecelec         = 'ElecElec',
     pseudopot        = 'PseudoPot',
     posarray         = 'posArray',
-    array            = 'Array',
+    #array            = 'Array',  # handle separately, namespace collision
     atomicbasisset   = 'atomicBasisSet',
     basisgroup       = 'basisGroup',
     expandylm        = 'expandYlm',
@@ -4041,21 +4053,6 @@ def generate_particlesets(electrons = 'e',
     net_charge = system.net_charge
     net_spin   = system.net_spin
 
-    # not ordered consistently
-    #structure.group_atoms()
-    #elem = structure.elem
-    #pos  = structure.pos
-    #
-    #elns = particles.get_electrons()
-    #ions = particles.get_ions()
-    #eup  = elns.up_electron
-    #edn  = elns.down_electron
-
-    # maintain consistent order
-    ion_species,ion_counts = structure.order_by_species()
-    elem = structure.elem
-    pos  = structure.pos
-
     elns = particles.get_electrons()
     ions = particles.get_ions()
     eup  = elns.up_electron
@@ -4072,6 +4069,10 @@ def generate_particlesets(electrons = 'e',
         )
     particlesets.append(eps)
     if len(ions)>0:
+        # maintain consistent order
+        ion_species,ion_counts = structure.order_by_species()
+        elem = structure.elem
+        pos  = structure.pos
         if randomsrc:
             eps.randomsrc = iname
         #end if
@@ -4514,6 +4515,12 @@ def generate_hamiltonian(name         = 'h0',
                 #end if
             elif not isinstance(estimator,QIxml):
                 QmcpackInput.class_error('generate_hamiltonian received an invalid estimator\n  an estimator must either be a name or a QIxml object\n  inputted estimator type: {0}\n  inputted estimator contents: {1}'.format(estimator.__class__.__name__,estimator))
+            elif isinstance(estimator,energydensity):
+                est.set_optional(
+                    type = 'EnergyDensity',
+                    dynamic = ename,
+                    static  = iname,
+                    )
             elif isinstance(estimator,dm1b):
                 dm = estimator
                 reuse = False
@@ -5049,6 +5056,122 @@ def count_jastrow_params(jastrows):
 #end def count_jastrow_params
 
 
+def generate_energydensity(
+        name      = None,
+        dynamic   = None,
+        static    = None,
+        coord     = None,
+        grid      = None,
+        scale     = None,
+        ion_grids = None,
+        system    = None,
+        ):
+    type = 'EnergyDensity'
+    if dynamic is None:
+        dynamic = 'e'
+    #end if
+    if static is None:
+        static = 'ion0'
+    #end if
+    refp = None
+    sg = []
+    if coord is None:
+        QmcpackInput.class_error('coord must be provided','generate_energydensity')
+    elif coord=='voronoi':
+        if name is None:
+            name = 'EDvoronoi'
+        #end if
+        sg.append(spacegrid(coord=coord))
+    elif coord=='cartesian':
+        if name is None:
+            name = 'EDcell'
+        #end if
+        if grid is None:
+            QmcpackInput.class_error('grid must be provided for cartesian coordinates','generate_energydensity')
+        #end if
+        axes = [
+            axis(p1='a1',scale='.5',label='x'),
+            axis(p1='a2',scale='.5',label='y'),
+            axis(p1='a3',scale='.5',label='z'),
+            ]
+        n=0
+        for ax in axes:
+           ax.grid = '-1 ({0}) 1'.format(grid[n])
+           n+=1
+        #end for
+        sg.append(spacegrid(coord=coord,origin=origin(p1='zero'),axes=axes))
+    elif coord=='spherical':
+        if name is None:
+            name = 'EDatom'
+        #end if
+        if ion_grids is None:
+            QmcpackInput.class_error('ion_grids must be provided for spherical coordinates','generate_energydensity')
+        #end if
+        refp = reference_points(coord='cartesian',points='\nr1 1 0 0\nr2 0 1 0\nr3 0 0 1\n')
+        if system is None:
+            i=1
+            for scale,g1,g2,g3 in ion_grids:
+                grid = g1,g2,g3
+                axes = [
+                    axis(p1='r1',scale=scale,label='r'),
+                    axis(p1='r2',scale=scale,label='phi'),
+                    axis(p1='r3',scale=scale,label='theta'),
+                    ]
+                n=0
+                for ax in axes:
+                    ax.grid = '0 ({0}) 1'.format(grid[n])
+                    n+=1
+                #end for
+                sg.append(spacegrid(coord=coord,origin=origin(p1=static+str(i)),axes=axes))
+                i+=1
+            #end for
+        else:
+            ig = ion_grids
+            ion_grids = obj()
+            for e,s,g1,g2,g3 in ig:
+                ion_grids[e] = s,(g1,g2,g3)
+            #end for
+            missing = set(ion_grids.keys())
+            i=1
+            for e in system.structure.elem:
+                if e in ion_grids:
+                    scale,grid = ion_grids[e]
+                    axes = [
+                        axis(p1='r1',scale=scale,label='r'),
+                        axis(p1='r2',scale=scale,label='phi'),
+                        axis(p1='r3',scale=scale,label='theta'),
+                        ]
+                    n=0
+                    for ax in axes:
+                        ax.grid = '0 ({0}) 1'.format(grid[n])
+                        n+=1
+                    #end for
+                    sg.append(spacegrid(coord=coord,origin=origin(p1=static+str(i)),axes=axes))
+                    if e in missing:
+                        missing.remove(e)
+                    #end if
+                #end if
+                i+=1
+            #end for
+            if len(missing)>0:
+                QmcpackInput.class_error('ion species not found for spherical grid\nspecies not found: {0}\nspecies present: {1}'.format(sorted(missing),sorted(set(list(system.structure.elem)))),'generate_energydensity')
+            #end if
+        #end if
+    else:
+        QmcpackInput.class_error('unsupported coord type\ncoord type provided: {0}\nsupported coord types: voronoi, cartesian, spherical'.format(coord),'generate_energydensity')
+    #end if
+    ed = energydensity(
+        type       = 'EnergyDensity',
+        name       = name,
+        dynamic    = dynamic,
+        static     = static,
+        spacegrids = sg,
+        )
+    if refp is not None:
+        ed.reference_points = refp
+    #end if
+    return ed
+#end def generate_energydensity
 
 
 opt_map = dict(linear=linear,cslinear=cslinear)

@@ -29,7 +29,7 @@
 import os
 from copy import deepcopy
 from random import randint
-from numpy import array,floor,empty,dot,diag,sqrt,pi,mgrid,exp,append,arange,ceil,cross,cos,sin,identity,ndarray,atleast_2d,around,ones,zeros,logical_not,flipud,uint64
+from numpy import array,floor,empty,dot,diag,sqrt,pi,mgrid,exp,append,arange,ceil,cross,cos,sin,identity,ndarray,atleast_2d,around,ones,zeros,logical_not,flipud,uint64,sign
 from numpy.linalg import inv,det,norm
 from types import NoneType
 from unit_converter import convert
@@ -62,25 +62,23 @@ except (ImportError,RuntimeError):
 #   cif file support in Nexus currently requires two external libraries
 #     PyCifRW  - base interface to read cif files into object format: CifFile
 #     cif2cell - translation layer from CifFile object to cell reconstruction: CellData
-#   
-#   Nexus is currently compatible with PyCifRW-4.1.1 and cif2cell-1.2.7
-#     compatibility last tested: 7 Aug 2015
-# 
-#   installation of PyCifRW
-#     go to https://pypi.python.org/pypi/PyCifRW/4.1
-#     scroll down to bottom of page, download PyCifRW-4.1.1.tar.gz (md5) 
-#     unpack PyCifRW-4.1.1.tar.gz (tar -xzf PyCifRW-4.1.1.tar.gz)
-#     enter directory (cd PyCifRW-4.1.1)
-#     install with python (python setup.py install)  (sudo python setup.py install)
-#     check python installation (python;  from CifFile import CifFile)
+#     (note: cif2cell installation includes PyCifRW)
 #
-#  "installation" of cif2cell
+#  installation of cif2cell
 #    go to http://sourceforge.net/projects/cif2cell/
-#    click on Download (example: cif2cell-1.2.7.tar.gz)
-#    unpack directory (tar -xzf cif2cell-1.2.7.tar.gz)
-#    add directory to PYTHONPATH in .bashrc after Nexus (export PYTHONPATH=/your/path/to/nexus/library:/your/other/path/to/cif2cell-1.2.7)
-#    apparently an actual install of cif2cell (python setup.py install) will also install PyCifRW, so above install might be redundant
-#
+#    click on Download (example: cif2cell-1.2.10.tar.gz)
+#    unpack directory (tar -xzf cif2cell-1.2.10.tar.gz)
+#    enter directory (cd cif2cell-1.2.10)
+#    install cif2cell (python setup.py install)
+#    check python installation
+#      >python
+#      >>>from CifFile import CifFile
+#      >>>from uctools import CellData
+#   
+#   Nexus is currently compatible with
+#     cif2cell-1.2.10 and PyCifRW-3.3
+#     cif2cell-1.2.7  and PyCifRW-4.1.1 
+#     compatibility last tested: 20 Mar 2017
 #
 try:
     from CifFile import CifFile
@@ -198,7 +196,7 @@ def read_cif(filepath,block=None,grammar='1.1',cell='prim',args_only=False):
 
 # installation instructions for spglib interface
 #
-#  this is bootstrapped of of spglib's ASE Python interface
+#  this is bootstrapped off of spglib's ASE Python interface
 #
 #  installation of spglib
 #    go to http://sourceforge.net/projects/spglib/files/
@@ -393,6 +391,266 @@ def rotate_plane(plane,angle,points,units='degrees'):
     R = array(R,dtype=float)
     return dot(R,points.T).T
 #end def rotate_plane
+
+
+
+opt_tm_matrices    = obj()
+opt_tm_wig_indices = obj()
+
+def trivial_filter(T):
+    return True
+#end def trival_filter
+
+class MaskFilter(DevBase):
+    def set(self,mask,dim=3):
+        omask = array(mask)
+        mask  = array(mask,dtype=bool)
+        if mask.size==dim:
+            mvec = mask.ravel()
+            mask = empty((dim,dim),dtype=bool)
+            i=0
+            for mi in mvec:
+                j=0
+                for mj in mvec:
+                    mask[i,j] = mi==mj
+                    j+=1
+                #end for
+                i+=1
+            #end for
+        elif mask.shape!=(dim,dim):
+            error('shape of mask array must be {0},{0}\nshape received: {1},{2}\nmask array received: {3}'.format(dim,mask.shape[0],mask.shape[1],omask),'optimal_tilematrix')
+        #end if
+        self.mask = mask==False
+    #end def set
+
+    def __call__(self,T):
+        return (T[self.mask]==0).all()
+    #end def __call__
+#end class MaskFilter
+mask_filter = MaskFilter()
+            
+
+def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3,filter=trivial_filter,mask=None,nc=5):
+    if mask is not None:
+        mask_filter.set(mask)
+        filter = mask_filter
+    #end if
+    dim = 3
+    if isinstance(axes,Structure):
+        axes = axes.axes
+    else:
+        axes = array(axes,dtype=float)
+    #end if
+    if not isinstance(volfac,int):
+        volfac = int(around(volfac))
+    #end if
+    volume = abs(det(axes))*volfac
+    axinv  = inv(axes)
+    cube   = volume**(1./3)*identity(dim)
+    Tref   = array(around(dot(cube,axinv)),dtype=int)
+    # calculate and store all tiling matrix variations
+    if dn not in opt_tm_matrices:
+        mats = []
+        rng = tuple(range(-dn,dn+1))
+        for n1 in rng:
+            for n2 in rng:
+                for n3 in rng:
+                    for n4 in rng:
+                        for n5 in rng:
+                            for n6 in rng:
+                                for n7 in rng:
+                                    for n8 in rng:
+                                        for n9 in rng:
+                                            mats.append((n1,n2,n3,n4,n5,n6,n7,n8,n9))
+                                        #end for
+                                    #end for
+                                #end for
+                            #end for
+                        #end for
+                    #end for
+                #end for
+            #end for
+        #end for
+        mats = array(mats,dtype=int)
+        mats.shape = (2*dn+1)**(dim*dim),dim,dim
+        opt_tm_matrices[dn] = mats
+    else:
+        mats = opt_tm_matrices[dn]
+    #end if
+    # calculate and store all wigner image indices
+    if nc not in opt_tm_wig_indices:
+        inds = []
+        rng = tuple(range(-nc,nc+1))
+        for k in rng:
+            for j in rng:
+                for i in rng:
+                    if i!=0 or j!=0 or k!=0:
+                        inds.append((i,j,k))
+                    #end if
+                #end for
+            #end for
+        #end for
+        inds = array(inds,dtype=int)
+        opt_tm_wig_indices[nc] = inds
+    else:
+        inds = opt_tm_wig_indices[nc]
+    #end if
+    # track counts of tiling matrices
+    ntilings        = len(mats)
+    nequiv_volume   = 0
+    nfilter         = 0
+    nequiv_inscribe = 0
+    nequiv_wigner   = 0
+    nequiv_cubicity = 0
+    nequiv_shape    = 0
+    # try a faster search for cells w/ target volume
+    det_inds_p = [
+        [(0,0),(1,1),(2,2)],
+        [(0,1),(1,2),(2,0)],
+        [(0,2),(1,0),(2,1)]
+        ]
+    det_inds_m = [
+        [(0,0),(1,2),(2,1)],
+        [(0,1),(1,0),(2,2)],
+        [(0,2),(1,1),(2,0)]
+        ]
+    volfacs = zeros((len(mats),),dtype=int)
+    for (i1,j1),(i2,j2),(i3,j3) in det_inds_p:
+        volfacs += (Tref[i1,j1]+mats[:,i1,j1])*(Tref[i2,j2]+mats[:,i2,j2])*(Tref[i3,j3]+mats[:,i3,j3])
+    #end for
+    for (i1,j1),(i2,j2),(i3,j3) in det_inds_m:
+        volfacs -= (Tref[i1,j1]+mats[:,i1,j1])*(Tref[i2,j2]+mats[:,i2,j2])*(Tref[i3,j3]+mats[:,i3,j3])
+    #end for
+    Tmats = mats[abs(volfacs)==volfac]
+    nequiv_volume = len(Tmats)    
+    # find the set of cells with maximal inscribing radius
+    inscribe_tilings = []
+    rmax = -1e99
+    for mat in Tmats:
+        T = Tref + mat
+        if filter(T):
+            nfilter+=1
+            Taxes = dot(T,axes)
+            rc1 = norm(cross(Taxes[0],Taxes[1]))
+            rc2 = norm(cross(Taxes[1],Taxes[2]))
+            rc3 = norm(cross(Taxes[2],Taxes[0]))
+            r   = 0.5*volume/max(rc1,rc2,rc3) # inscribing radius
+            if r>rmax or abs(r-rmax)<tol:
+                inscribe_tilings.append((r,T,Taxes))
+                rmax = r
+            #end if
+        #end if
+    #end for
+    # find the set of cells w/ maximal wigner radius out of the inscribing set
+    wigner_tilings = []
+    rwmax = -1e99
+    for r,T,Taxes in inscribe_tilings:
+        if abs(r-rmax)<tol:
+            nequiv_inscribe+=1
+            rw = 1e99
+            for ind in inds:
+                rw = min(rw,0.5*norm(dot(ind,Taxes)))
+            #end for
+            if rw>rwmax or abs(rw-rwmax)<tol:
+                wigner_tilings.append((rw,T,Taxes))
+                rwmax = rw
+            #end if
+        #end if
+    #end for
+    # find the set of cells w/ maximal cubicity
+    # (minimum cube_deviation)
+    cube_tilings = []            
+    cmin = 1e99
+    for rw,T,Ta in wigner_tilings:
+        if abs(rw-rwmax)<tol:
+            nequiv_wigner+=1
+            dc = volume**(1./3)*sqrt(2.)
+            d1 = abs(norm(Ta[0]+Ta[1])-dc)
+            d2 = abs(norm(Ta[1]+Ta[2])-dc)
+            d3 = abs(norm(Ta[2]+Ta[0])-dc)
+            d4 = abs(norm(Ta[0]-Ta[1])-dc)
+            d5 = abs(norm(Ta[1]-Ta[2])-dc)
+            d6 = abs(norm(Ta[2]-Ta[0])-dc)
+            cube_dev = (d1+d2+d3+d4+d5+d6)/(6*dc)
+            if cube_dev<cmin or abs(cube_dev-cmin)<tol:
+                cube_tilings.append((cube_dev,rw,T,Ta))
+                cmin = cube_dev
+            #end if
+        #end if
+    #end for
+    # prioritize selection by "shapeliness" of tiling matrix
+    #   prioritize positive diagonal elements
+    #   penalize off-diagonal elements
+    #   penalize negative off-diagonal elements
+    shapely_tilings = []
+    smax = -1e99
+    for cd,rw,T,Taxes in cube_tilings:
+        if abs(cd-cmin)<tol:
+            nequiv_cubicity+=1
+            d = diag(T)
+            o = (T-diag(d)).ravel()
+            s = sign(d).sum()-(abs(o)>0).sum()-(o<0).sum()
+            if s>smax or abs(s-smax)<tol:
+                shapely_tilings.append((s,rw,T,Taxes))
+                smax = s
+            #end if
+        #end if
+    #end for
+    # prioritize selection by symmetry of tiling matrix
+    ropt   = -1e99
+    Topt   = None
+    Taxopt = None
+    diagonal      = []
+    symmetric     = []
+    antisymmetric = []
+    other         = []
+    for s,rw,T,Taxes in shapely_tilings:
+        if abs(s-smax)<tol:
+            nequiv_shape+=1
+            Td = diag(diag(T))
+            if abs(Td-T).sum()==0:
+                diagonal.append((rw,T,Taxes))
+            elif abs(T.T-T).sum()==0:
+                symmetric.append((rw,T,Taxes))
+            elif abs(T.T+T-2*Td).sum()==0:
+                antisymmetric.append((rw,T,Taxes))
+            else:
+                other.append((rw,T,Taxes))
+            #end if
+        #end if
+    #end for
+    s = 1
+    if len(diagonal)>0:
+        cells = diagonal
+    elif len(symmetric)>0:
+        cells = symmetric
+    elif len(antisymmetric)>0:
+        cells = antisymmetric
+        s = -1
+    elif len(other)>0:
+        cells = other
+    #end if
+    skew_min = 1e99
+    if len(cells)>0:
+        for rw,T,Taxes in cells:
+            Td = diag(diag(T))
+            skew = abs(T.T-s*T-(1-s)*Td).sum()
+            if skew<skew_min:
+                ropt = rw
+                Topt = T
+                Taxopt = Taxes
+                skew_min = skew
+            #end if
+        #end for
+    #end if
+    if Taxopt is None:
+        error('optimal tilematrix for volfac={0} not found with tolerance {1}\ndifference range (dn): {2}\ntiling matrices searched: {3}\ncells with target volume: {4}\ncells that passed the filter: {5}\ncells with equivalent inscribing radius: {6}\ncells with equivalent wigner radius: {7}\ncells with equivalent cubicity: {8}\nmatrices with equivalent shapeliness: {9}\nplease try again with dn={10}'.format(volfac,tol,dn,ntilings,nequiv_volume,nfilter,nequiv_inscribe,nequiv_wigner,nequiv_cubicity,nequiv_shape,dn+1))
+    #end if
+    if det(Taxopt)<0:
+        Topt = -Topt
+    #end if
+    return Topt,ropt
+#end def optimal_tilematrix
 
 
 
@@ -932,6 +1190,19 @@ class Structure(Sobj):
         return self.rinscribe()
     #end def rcell
 
+    # scale invariant measure of deviation from cube shape
+    #   based on deviation of face diagonals from cube
+    def cube_deviation(self):
+        a = self.axes
+        dc = self.volume()**(1./3)*sqrt(2.)
+        d1 = abs(norm(a[0]+a[1])-dc)
+        d2 = abs(norm(a[1]+a[2])-dc)
+        d3 = abs(norm(a[2]+a[0])-dc)
+        d4 = abs(norm(a[0]-a[1])-dc)
+        d5 = abs(norm(a[1]-a[2])-dc)
+        d6 = abs(norm(a[2]-a[0])-dc)
+        return (d1+d2+d3+d4+d5+d6)/(6*dc)
+    #end def cube_deviation
     
     # apply volume preserving shear-removing transformations to cell axes
     #   resulting unsheared cell has orthogonal axes
@@ -2725,13 +2996,13 @@ class Structure(Sobj):
     #end def tile_points
 
 
-    def opt_tilematrix(self,volfac,dn=1,tol=1e-3):
-        return optimal_tilematrix(self,volfac,dn,tol)
+    def opt_tilematrix(self,*args,**kwargs):
+        return optimal_tilematrix(self.axes,*args,**kwargs)
     #end def opt_tilematrix
 
 
-    def tile_opt(self,volfac,dn=1,tol=1e-3):
-        Topt,ropt = self.opt_tilematrix(volfac,dn,tol)
+    def tile_opt(self,*args,**kwargs):
+        Topt,ropt = self.opt_tilematrix(*args,**kwargs)
         return self.tile(Topt)
     #end def tile_opt
 
@@ -3798,6 +4069,8 @@ class Structure(Sobj):
                 elif t0=='atom':
                     pos.append(tokens[1:4])
                     elem.append(tokens[4])
+                elif t0.startswith('initial'):
+                    None
                 else:
                     #None
                     self.error('unrecogonized or not yet supported token in fhi-aims geometry file: {0}'.format(t0))
@@ -4841,7 +5114,8 @@ class Jellium(Structure):
     prefactors.transfer_from({1:2*pi,2:4*pi,3:4./3*pi})
 
     def __init__(self,charge=None,background_charge=None,cell=None,volume=None,density=None,rs=None,dim=3,
-                 axes=None,kpoints=None,kweights=None,kgrid=None,kshift=None,units=None):
+                 axes=None,kpoints=None,kweights=None,kgrid=None,kshift=None,units=None,tiling=None):
+        del tiling
         if rs!=None:
             if not dim in self.prefactors:
                 self.error('only 1,2, or 3 dimensional jellium is currently supported\n  you requested one with dimension {0}'.format(dim))
@@ -5217,79 +5491,6 @@ def read_structure(filepath,elem=None,format=None):
 #end def read_structure
 
 
-
-opt_tm_matrices = obj()
-
-def optimal_tilematrix(axes,volfac,dn=1,tol=1e-3):
-    dim = 3
-    if isinstance(axes,Structure):
-        axes = axes.axes
-    else:
-        axes = array(axes,dtype=float)
-    #end if
-    volume = abs(det(axes))*volfac
-    axinv  = inv(axes)
-    cube   = volume**(1./3)*identity(dim)
-    Tref   = array(around(dot(cube,axinv)),dtype=int)
-    rng = tuple(range(-dn,dn+1))
-    if dn not in opt_tm_matrices:
-        mats = []
-        for n1 in rng:
-            for n2 in rng:
-                for n3 in rng:
-                    for n4 in rng:
-                        for n5 in rng:
-                            for n6 in rng:
-                                for n7 in rng:
-                                    for n8 in rng:
-                                        for n9 in rng:
-                                            mats.append((n1,n2,n3,n4,n5,n6,n7,n8,n9))
-                                        #end for
-                                    #end for
-                                #end for
-                            #end for
-                        #end for
-                    #end for
-                #end for
-            #end for
-        #end for
-        mats = array(mats,dtype=int)
-        mats.shape = (2*dn+1)**(dim*dim),dim,dim
-        opt_tm_matrices[dn] = mats
-    else:
-        mats = opt_tm_matrices[dn]
-    #end if
-    ropt = -1e99
-    Topt = None
-    Taxopt = None
-    vol_diff_min = 1e99
-    for mat in mats:
-        T = Tref + mat
-        vol_diff = abs(abs(det(T))-volfac)
-        if vol_diff < vol_diff_min:
-            vol_diff_min = vol_diff
-        # end if
-        if vol_diff<tol:
-            Taxes = dot(T,axes)
-            rc1 = norm(cross(Taxes[0],Taxes[1]))
-            rc2 = norm(cross(Taxes[1],Taxes[2]))
-            rc3 = norm(cross(Taxes[2],Taxes[0]))
-            r   = 0.5*volume/max(rc1,rc2,rc3)
-            if r>ropt:
-                ropt = r
-                Topt = T
-                Taxopt = Taxes
-            #end if
-        #end if
-    #end for
-    if Taxopt is None:
-        error("optimal tilematrix for volfac=%4.2f not found with tolerance %5.4f\n minimum volume difference was %5.4f" % (volfac,tol,vol_diff_min) )
-    # end if
-    if det(Taxopt)<0:
-        Topt = -Topt
-    #end if
-    return Topt,ropt
-#end def optimal_tilematrix
 
 
 #if __name__=='__main__':
