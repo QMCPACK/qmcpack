@@ -20,6 +20,7 @@
 
 #include <Particle/DistanceTableData.h>
 #include <QMCWaveFunctions/lcao/SoaSphericalTensor.h>
+#include <spline2/MultiBspline.hpp>
 
 namespace qmcplusplus
 {
@@ -49,12 +50,13 @@ struct AtomicOrbitalSoA
   vContainer_type l_vals;
   vContainer_type r_power_minus_l;
   AtomicSplineType* MultiSpline;
-  AtomicSplineType MultiSpline_onelm;
+  MultiBspline1D<ST>* SplineInst;
+  MultiBspline1D<ST> SplineInst_onelm;
 
   vContainer_type localV, localG, localL;
 
   AtomicOrbitalSoA(int Lmax):
-  Ylm(Lmax), MultiSpline(nullptr), lmax(Lmax),
+  Ylm(Lmax), MultiSpline(nullptr), SplineInst(nullptr), lmax(Lmax),
   lm_tot((Lmax+1)*(Lmax+1))
   {
     r_power_minus_l.resize(lm_tot);
@@ -108,21 +110,19 @@ struct AtomicOrbitalSoA
     grid.start = 0.0;
     grid.end   = spline_radius;
     grid.num   = spline_npoints;
-    MultiSpline = einspline::create(MultiSpline, grid, bc, lm_tot*Npad);
-    AtomicSplineType* temp=einspline::create(MultiSpline, grid, bc, Npad);
+    SplineInst = new MultiBspline1D<ST>();
+    SplineInst->create(grid, bc, lm_tot*Npad);
+    MultiSpline=&(SplineInst->spline_m);
+    SplineInst_onelm.create(grid, bc, Npad, true);
     // safeguard big table and per lm table size.
-    if(MultiSpline->coefs_size!=temp->coefs_size*lm_tot) APP_ABORT("Padding issue in AtomicOrbitalSoA!\n");
-    // free coefs
-    free(temp->coefs); temp->coefs=NULL;
-    MultiSpline_onelm = *temp;
-    free(temp);
+    if(MultiSpline->coefs_size!=SplineInst_onelm.spline_m.coefs_size*lm_tot) APP_ABORT("Padding issue in AtomicOrbitalSoA!\n");
   }
 
   inline void set_spline(AtomicSingleSplineType* spline, int lm, int ispline)
   {
-    AtomicSplineType temp_onelm=MultiSpline_onelm;
-    temp_onelm.coefs = MultiSpline->coefs + temp_onelm.coefs_size*lm;
-    einspline::set(&temp_onelm, ispline, spline, 0, BaseN);
+    MultiBspline1D<ST> temp_onelm(SplineInst_onelm);
+    temp_onelm.spline_m.coefs = SplineInst->spline_m.coefs + temp_onelm.spline_m.coefs_size*lm;
+    temp_onelm.copy_spline(spline, ispline, 0, BaseN);
   }
 
   bool read_splines(hdf_archive& h5f)
@@ -169,8 +169,8 @@ struct AtomicOrbitalSoA
 
     for(size_t lm=0; lm<lm_tot; lm++)
     {
-      MultiSpline_onelm.coefs = MultiSpline->coefs + MultiSpline_onelm.coefs_size*lm;
-      einspline::evaluate(&MultiSpline_onelm,r,localV);
+      SplineInst_onelm.spline_m.coefs = SplineInst->spline_m.coefs + SplineInst_onelm.spline_m.coefs_size*lm;
+      SplineInst_onelm.evaluate(r,localV);
 
       #pragma omp simd aligned(val,local_val)
       for(size_t ib=0; ib<myV.size(); ib++)
@@ -236,8 +236,8 @@ struct AtomicOrbitalSoA
 
       for(size_t lm=0; lm<lm_tot; lm++)
       {
-        MultiSpline_onelm.coefs = MultiSpline->coefs + MultiSpline_onelm.coefs_size*lm;
-        einspline::evaluate(&MultiSpline_onelm,r,localV,localG,localL);
+        SplineInst_onelm.spline_m.coefs = SplineInst->spline_m.coefs + SplineInst_onelm.spline_m.coefs_size*lm;
+        SplineInst_onelm.evaluate_vgl(r,localV,localG,localL);
 
         const ST& l_val=l_vals[lm];
         const ST& r_power=r_power_minus_l[lm];
@@ -280,8 +280,8 @@ struct AtomicOrbitalSoA
 
       for(size_t lm=0; lm<lm_tot; lm++)
       {
-        MultiSpline_onelm.coefs = MultiSpline->coefs + MultiSpline_onelm.coefs_size*lm;
-        einspline::evaluate(&MultiSpline_onelm,r,localV,localG,localL);
+        SplineInst_onelm.spline_m.coefs = SplineInst->spline_m.coefs + SplineInst_onelm.spline_m.coefs_size*lm;
+        SplineInst_onelm.evaluate_vgl(r,localV,localG,localL);
 
         const ST& l_val=l_vals[lm];
         const ST& r_power=r_power_minus_l[lm];
@@ -312,8 +312,8 @@ struct AtomicOrbitalSoA
       std::cout << "Warning: an electron is on top of an ion!" << std::endl;
       // strictly zero
 
-      MultiSpline_onelm.coefs = MultiSpline->coefs;
-      einspline::evaluate(&MultiSpline_onelm,r,localV,localG,localL);
+      SplineInst_onelm.spline_m.coefs = SplineInst->spline_m.coefs;
+      SplineInst_onelm.evaluate_vgl(r,localV,localG,localL);
       #pragma omp simd aligned(val,lapl,local_val,local_lapl)
       for(size_t ib=0; ib<myV.size(); ib++)
       {
@@ -328,8 +328,8 @@ struct AtomicOrbitalSoA
         //std::cout << std::endl;
         for(size_t lm=1; lm<4; lm++)
         {
-          MultiSpline_onelm.coefs = MultiSpline->coefs + MultiSpline_onelm.coefs_size*lm;
-          einspline::evaluate(&MultiSpline_onelm,r,localV,localG,localL);
+          SplineInst_onelm.spline_m.coefs = SplineInst->spline_m.coefs + SplineInst_onelm.spline_m.coefs_size*lm;
+          SplineInst_onelm.evaluate_vgl(r,localV,localG,localL);
 
           #pragma omp simd aligned(g0,g1,g2,local_grad)
           for(size_t ib=0; ib<myV.size(); ib++)

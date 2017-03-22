@@ -50,6 +50,8 @@ namespace qmcplusplus
       typedef UBspline_1d_s       SingleSplineType;
       typedef BCtype_s            BCType;
       typedef float               DataType;
+      typedef float               real_type;
+      typedef float               value_type;
     };
 
   /** specialization for 1D double */
@@ -60,6 +62,8 @@ namespace qmcplusplus
       typedef UBspline_1d_d       SingleSplineType;
       typedef BCtype_d            BCType;
       typedef double              DataType;
+      typedef double              real_type;
+      typedef double              value_type;
     };
 
 

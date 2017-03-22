@@ -160,5 +160,17 @@ namespace qmcplusplus { namespace einspline {
         }
     }
 
+  void set(multi_UBspline_1d_d* spline, int i, UBspline_1d_d* spline_in,
+       const int offset, const int N);
+
+  void set(multi_UBspline_1d_s* spline, int i, UBspline_1d_d* spline_in,
+       const int offset, const int N);
+
+  /** create spline for double */
+  multi_UBspline_1d_d* create(multi_UBspline_1d_d* s, Ugrid& grid, BCtype_d& bc, int num_splines);
+
+  /** create spline for float */
+  multi_UBspline_1d_s* create(multi_UBspline_1d_s* s, Ugrid& grid, BCtype_s& bc, int num_splines);
+
 } }
 #endif

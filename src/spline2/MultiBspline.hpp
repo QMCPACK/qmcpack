@@ -99,11 +99,6 @@ namespace qmcplusplus
     struct MultiBspline: public MultiBsplineData<T>
     {
 
-      using MultiBsplineData<T>::A44;
-      using MultiBsplineData<T>::dA44;
-      using MultiBsplineData<T>::d2A44;
-      using MultiBsplineData<T>::d3A44;
-
 #if (__cplusplus< 201103L)
       ///define the einsplie object type
       typedef  typename bspline_traits<T,3>::SplineType spliner_type;
@@ -271,6 +266,98 @@ namespace qmcplusplus
       void evaluate_vgh_impl(T x, T y, T z, T* restrict vals, T* restrict grads, T* restrict hess, int first, int last, size_t out_offset=0) const;
     };
 
+  template<typename T>
+    struct MultiBspline1D: public MultiBsplineData<T>
+    {
+
+#if (__cplusplus< 201103L)
+      ///define the einsplie object type
+      typedef  typename bspline_traits<T,1>::SplineType spliner_type;
+      ///define the real type
+      typedef typename bspline_traits<T,1>::real_type real_type;
+#else
+      ///define the einsplie object type
+      using spliner_type=typename bspline_traits<T,1>::SplineType;
+      ///define the real type
+      using real_type=typename bspline_traits<T,1>::real_type;
+#endif
+      ///actual einspline multi-bspline object
+      spliner_type spline_m;
+      ///use allocator
+      //einspline::Allocator myAllocator;
+
+      MultiBspline1D()
+      {
+        spline_m.coefs=nullptr;
+        spline_m.num_splines=0;
+        spline_m.coefs_size=0;
+      }
+
+      /** create the einspline as used in the builder
+       */
+      template<typename GT, typename BCT>
+      void create(GT& grid, BCT& bc, int num_splines, const bool ishandle=false)
+      {
+        spliner_type* temp_spline;
+        temp_spline=einspline::create(temp_spline, grid, bc, num_splines);
+        if(ishandle)
+        {
+          free(temp_spline->coefs);
+          temp_spline->coefs=nullptr;
+        }
+        spline_m=*temp_spline;
+        free(temp_spline);
+      }
+
+      int num_splines() const
+      {
+        return spline_m.num_splines;
+      }
+
+      size_t sizeInByte() const
+      {
+        return spline_m.coefs_size*sizeof(T);
+      }
+
+      /** copy a single spline to the big table
+       * @param aSpline UBspline_3d_(d,s)
+       * @param int index of aSpline
+       * @param offset_ starting index for the case of multiple domains
+       * @param base_ number of bases
+       */
+      template<typename SingleSpline>
+      void copy_spline(SingleSpline* aSpline,int i, const int offset_, const int base_)
+      {
+        einspline::set(&spline_m,i,aSpline,offset_,base_);
+      }
+
+      template<typename PT, typename VT>
+        inline void evaluate(const PT& r, VT& psi)
+        {
+          //einspline::evaluate(&spline_m,r,psi);
+          evaluate_v_impl(r,psi.data());
+        }
+
+      template<typename PT, typename VT, typename GT, typename LT>
+        inline void evaluate_vgl(const PT& r, VT& psi, GT& grad, LT& lap)
+        {
+          //einspline::evaluate(&spline_m,r,psi,grad,lap);
+          evaluate_vgl_impl(r,psi.data(),grad.data(),lap.data());
+        }
+
+      template<typename PT, typename VT, typename GT, typename HT>
+        inline void evaluate_vgh(const PT& r, VT& psi, GT& grad, HT& hess)
+        {
+          //einspline::evaluate(&spline_m,r,psi,grad,hess);
+          evaluate_vgl_impl(r,psi.data(),grad.data(),hess.data());
+        }
+
+      /// compute values only.
+      void evaluate_v_impl(T r, T* restrict vals) const;
+      /// compute VGL.
+      void evaluate_vgl_impl(T r, T* restrict vals, T* restrict grads, T* restrict lapl) const;
+    };
+
 }/** qmcplusplus namespace */
 
 ///include evaluate_v_impl
@@ -290,6 +377,8 @@ namespace qmcplusplus
 #else
 #include <spline2/MultiBsplineStd.hpp>
 #endif
+
+#include <spline2/MultiBspline1D.hpp>
 
 #endif
 /***************************************************************************
