@@ -70,9 +70,13 @@ namespace qmcplusplus
       #pragma omp simd aligned(vals,grads,lapl,coefs0,coefs1,coefs2,coefs3)
       for (int n=0; n<spline_m.num_splines; n++)
       {
-        vals[n]  = a[0] * coefs0[n] + a[1] * coefs1[n] + a[2] * coefs2[n] + a[3] * coefs3[n];
-        grads[n] = (da[0] * coefs0[n] + da[1] * coefs1[n] + da[2] * coefs2[n] + da[3] * coefs3[n])*dxInv;
-        lapl[n]  = (d2a[0] * coefs0[n] + d2a[1] * coefs1[n] + d2a[2] * coefs2[n] + d2a[3] * coefs3[n])*dxInv*dxInv;
+        T coef_0=coefs0[n];
+        T coef_1=coefs1[n];
+        T coef_2=coefs2[n];
+        T coef_3=coefs3[n];
+        vals[n]  =    a[0] * coef_0 +   a[1] * coef_1 +   a[2] * coef_2 +   a[3] * coef_3;
+        grads[n] = ( da[0] * coef_0 +  da[1] * coef_1 +  da[2] * coef_2 +  da[3] * coef_3)*dxInv;
+        lapl[n]  = (d2a[0] * coef_0 + d2a[1] * coef_1 + d2a[2] * coef_2 + d2a[3] * coef_3)*dxInv*dxInv;
       }
     }
 
