@@ -204,11 +204,13 @@ namespace qmcplusplus
         myAllocator.copy(aSpline,spline_m,i,offset_,base_);
       }
 
+      /*
       void print(std::ostream& os)
       {
         std::copy(A44,A44+16,std::ostream_iterator<T>(std::cout," "));
         os << std::endl;
       }
+      */
 
       template<typename PT, typename VT>
         void evaluate(const PT& r, VT& psi)

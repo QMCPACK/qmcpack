@@ -37,9 +37,9 @@ namespace qmcplusplus
       SplineBound<T>::get(z*spline_m->z_grid.delta_inv,tz,iz,spline_m->z_grid.num-1);
       T a[4], b[4], c[4];
 
-      compute_prefactors(a, tx);
-      compute_prefactors(b, ty);
-      compute_prefactors(c, tz);
+      MultiBsplineData<T>::compute_prefactors(a, tx);
+      MultiBsplineData<T>::compute_prefactors(b, ty);
+      MultiBsplineData<T>::compute_prefactors(c, tz);
 
       const intptr_t xs = spline_m->x_stride;
       const intptr_t ys = spline_m->y_stride;
@@ -124,9 +124,9 @@ namespace qmcplusplus
       SplineBound<T>::get(z*spline_m->z_grid.delta_inv,tz,iz,spline_m->z_grid.num-1);
       T a[4], b[4], c[4];
 
-      compute_prefactors(a, tx);
-      compute_prefactors(b, ty);
-      compute_prefactors(c, tz);
+      MultiBsplineData<T>::compute_prefactors(a, tx);
+      MultiBsplineData<T>::compute_prefactors(b, ty);
+      MultiBsplineData<T>::compute_prefactors(c, tz);
 
       vector4double vec_c0 = vec_splats(c[0]);
       vector4double vec_c1 = vec_splats(c[1]);

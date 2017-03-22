@@ -48,9 +48,9 @@ namespace qmcplusplus
 
       T a[4],b[4],c[4],da[4],db[4],dc[4],d2a[4],d2b[4],d2c[4];
 
-      compute_prefactors(a, da, d2a, tx);
-      compute_prefactors(b, db, d2b, ty);
-      compute_prefactors(c, dc, d2c, tz);
+      MultiBsplineData<T>::compute_prefactors(a, da, d2a, tx);
+      MultiBsplineData<T>::compute_prefactors(b, db, d2b, ty);
+      MultiBsplineData<T>::compute_prefactors(c, dc, d2c, tz);
 
       const intptr_t xs = spline_m->x_stride;
       const intptr_t ys = spline_m->y_stride;
@@ -146,9 +146,9 @@ namespace qmcplusplus
       SplineBound<T>::get(y*spline_m->y_grid.delta_inv,ty,iy,spline_m->y_grid.num-1);
       SplineBound<T>::get(z*spline_m->z_grid.delta_inv,tz,iz,spline_m->z_grid.num-1);
 
-      compute_prefactors(a, da, d2a, tx);
-      compute_prefactors(b, db, d2b, ty);
-      compute_prefactors(c, dc, d2c, tz);
+      MultiBsplineData<T>::compute_prefactors(a, da, d2a, tx);
+      MultiBsplineData<T>::compute_prefactors(b, db, d2b, ty);
+      MultiBsplineData<T>::compute_prefactors(c, dc, d2c, tz);
 
       const intptr_t xs = spline_m->x_stride;
       const intptr_t ys = spline_m->y_stride;
@@ -313,9 +313,9 @@ namespace qmcplusplus
 
       T a[4],b[4],c[4],da[4],db[4],dc[4],d2a[4],d2b[4],d2c[4];
 
-      compute_prefactors(a, da, d2a, tx);
-      compute_prefactors(b, db, d2b, ty);
-      compute_prefactors(c, dc, d2c, tz);
+      MultiBsplineData<T>::compute_prefactors(a, da, d2a, tx);
+      MultiBsplineData<T>::compute_prefactors(b, db, d2b, ty);
+      MultiBsplineData<T>::compute_prefactors(c, dc, d2c, tz);
 
       vector4double vec_c0 = vec_splats(c[0]);
       vector4double vec_c1 = vec_splats(c[1]);
@@ -472,9 +472,9 @@ namespace qmcplusplus
 
       T a[4],b[4],c[4],da[4],db[4],dc[4],d2a[4],d2b[4],d2c[4];
 
-      compute_prefactors(a, da, d2a, tx);
-      compute_prefactors(b, db, d2b, ty);
-      compute_prefactors(c, dc, d2c, tz);
+      MultiBsplineData<T>::compute_prefactors(a, da, d2a, tx);
+      MultiBsplineData<T>::compute_prefactors(b, db, d2b, ty);
+      MultiBsplineData<T>::compute_prefactors(c, dc, d2c, tz);
 
       vector4double vec_c0 = vec_splats(c[0]);
       vector4double vec_c1 = vec_splats(c[1]);
