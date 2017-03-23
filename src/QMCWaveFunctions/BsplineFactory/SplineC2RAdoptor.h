@@ -12,8 +12,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 /** @file SplineC2RSoA.h
  *
  * Adoptor classes to handle complex-to-(real,complex) with arbitrary precision
@@ -43,7 +43,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   using SplineType=typename bspline_traits<ST,3>::SplineType;
   using BCType=typename bspline_traits<ST,3>::BCType;
   using DataType=ST;
-  using PointType=typename BaseType::PointType; 
+  using PointType=typename BaseType::PointType;
   using SingleSplineType=typename BaseType::SingleSplineType;
 
   using vContainer_type=aligned_vector<ST>;
@@ -93,15 +93,15 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   //}
 
   SplineC2RSoA(const SplineC2RSoA& a):
-    SplineAdoptorBase<ST,3>(a),SplineInst(a.SplineInst),MultiSpline(nullptr), 
+    SplineAdoptorBase<ST,3>(a),SplineInst(a.SplineInst),MultiSpline(nullptr),
     nComplexBands(a.nComplexBands),mKK(a.mKK), myKcart(a.myKcart)
   {
     const size_t n=a.myL.size();
     myV.resize(n); myG.resize(n); myL.resize(n); myH.resize(n);
   }
 
-  ~SplineC2RSoA() 
-  { 
+  ~SplineC2RSoA()
+  {
     if(MultiSpline != nullptr) delete SplineInst;
   }
 
@@ -171,7 +171,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   }
 
 
-  inline void set_spline_domain(SingleSplineType* spline_r, SingleSplineType* spline_i, 
+  inline void set_spline_domain(SingleSplineType* spline_r, SingleSplineType* spline_i,
       int twist, int ispline, const int* offset_l, const int* mesh_l)
   {
   }
@@ -205,13 +205,13 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
       ST* restrict KdotR=myH.data(0);
       ST* restrict CosV=myH.data(1);
       ST* restrict SinV=myH.data(2);
-#pragma omp simd 
+#pragma omp simd
       for(size_t j=0; j<N; ++j)
         KdotR[j]=-(x*kx[j]+y*ky[j]+z*kz[j]);
 
       eval_e2iphi(N,KdotR,CosV,SinV);
 
-#pragma omp simd 
+#pragma omp simd
       for (size_t j=0,psiIndex=first_spo; j<nComplexBands; j++, psiIndex+=2)
       {
         const ST val_r=myV[2*j  ];
@@ -219,7 +219,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
         psi[psiIndex  ] = val_r*CosV[j]-val_i*SinV[j];
         psi[psiIndex+1] = val_i*CosV[j]+val_r*SinV[j];
       }
-#pragma omp simd 
+#pragma omp simd
       for (size_t j=nComplexBands,psiIndex=first_spo+2*nComplexBands; j<N; j++,psiIndex++)
       {
         const ST val_r=myV[2*j  ];
@@ -336,7 +336,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
       const ST lcart_i=SymTrace(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],symGG);
       const ST lap_r=lcart_r+mKK[j]*val_r+two*(kX*dX_i+kY*dY_i+kZ*dZ_i);
       const ST lap_i=lcart_i+mKK[j]*val_i-two*(kX*dX_r+kY*dY_r+kZ*dZ_r);
-#endif  
+#endif
 
       //this will be fixed later
       psi[psiIndex  ]=c*val_r-s*val_i;
@@ -611,7 +611,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
       const ST lap_r=lcart_r+mKK[j]*val_r+two*(kX*dX_i+kY*dY_i+kZ*dZ_i);
       const ST lap_i=lcart_i+mKK[j]*val_i-two*(kX*dX_r+kY*dY_r+kZ*dZ_r);
 #endif
-      
+
       //this will be fixed later
       psi[jr]=c*val_r-s*val_i;
       psi[ji]=c*val_i+s*val_r;
@@ -734,7 +734,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     ComplexT* restrict gg_zy=grad_grad_psi.data(7)+first_spo; ASSUME_ALIGNED(gg_zy);
     ComplexT* restrict gg_zz=grad_grad_psi.data(8)+first_spo; ASSUME_ALIGNED(gg_zz);
 
-#pragma simd 
+#pragma simd
     for (size_t j=0; j<N; ++j)
     {
       int jr=j<<1;
@@ -774,24 +774,24 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
 
       const ST kkV_r=mKK[j]*val_r; //kk*Vr
       const ST kkV_i=mKK[j]*val_i; //kk*Vi
-      const ST h_xx_r=h00[jr]+kkV_r+kX*gX_r; 
-      const ST h_xy_r=h01[jr]+kkV_r+kX*gY_r; 
+      const ST h_xx_r=h00[jr]+kkV_r+kX*gX_r;
+      const ST h_xy_r=h01[jr]+kkV_r+kX*gY_r;
       const ST h_xz_r=h02[jr]+kkV_r+kX*gZ_r;
-      const ST h_yx_r=h01[jr]+kkV_r+kY*gX_r; 
-      const ST h_yy_r=h11[jr]+kkV_r+kY*gY_r; 
+      const ST h_yx_r=h01[jr]+kkV_r+kY*gX_r;
+      const ST h_yy_r=h11[jr]+kkV_r+kY*gY_r;
       const ST h_yz_r=h12[jr]+kkV_r+kY*gZ_r;
-      const ST h_zx_r=h02[jr]+kkV_r+kz*gX_r; 
-      const ST h_zy_r=h12[jr]+kkV_r+kz*gY_r; 
+      const ST h_zx_r=h02[jr]+kkV_r+kz*gX_r;
+      const ST h_zy_r=h12[jr]+kkV_r+kz*gY_r;
       const ST h_zz_r=h22[jr]+kkV_r+kz*gZ_r;
-      const ST h_xy_i=h01[ji]+kkV_i+kX*gY_i; 
+      const ST h_xy_i=h01[ji]+kkV_i+kX*gY_i;
       const ST h_xz_i=h02[ji]+kkV_i+kX*gZ_i;
-      const ST h_yx_i=h01[ji]+kkV_i+kY*gX_i; 
-      const ST h_yy_i=h11[ji]+kkV_i+kY*gY_i; 
+      const ST h_yx_i=h01[ji]+kkV_i+kY*gX_i;
+      const ST h_yy_i=h11[ji]+kkV_i+kY*gY_i;
       const ST h_yz_i=h12[ji]+kkV_i+kY*gZ_i;
-      const ST h_zx_i=h02[ji]+kkV_i+kz*gX_i; 
-      const ST h_zy_i=h12[ji]+kkV_i+kz*gY_i; 
+      const ST h_zx_i=h02[ji]+kkV_i+kz*gX_i;
+      const ST h_zy_i=h12[ji]+kkV_i+kz*gY_i;
       const ST h_zz_i=h22[ji]+kkV_i+kz*gZ_i;
-      
+
       size_t psiIndex=jr; //only correct for j<nComplexbands, CORRECT ME
       gg_xx[psiIndex]=c*h_xx_r-s*h_xx_i;
       gg_xy[psiIndex]=c*h_xy_r-s*h_xy_i;

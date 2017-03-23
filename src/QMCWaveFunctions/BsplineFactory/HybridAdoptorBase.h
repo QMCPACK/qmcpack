@@ -4,13 +4,12 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory 
+// File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
-
+//
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
 /** @file HybridAdoptorBase.h
  *
  * Hybrid adoptor base class
@@ -353,7 +352,7 @@ struct AtomicOrbitalSoA
   }
 };
 
-/** adoptor class to match 
+/** adoptor class to match
  *
  */
 template<typename ST>

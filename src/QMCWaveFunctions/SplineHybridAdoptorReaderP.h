@@ -544,14 +544,14 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
         fprintf(fout_spline_v, "%15.10lf  ", r);
         fprintf(fout_spline_g, "%15.10lf  ", r);
         fprintf(fout_spline_l, "%15.10lf  ", r);
-        //einspline::evaluate(mycenter.MultiSpline,r,mycenter.localV);
-        einspline::evaluate(mycenter.MultiSpline,r,mycenter.localV,mycenter.localG,mycenter.localL);
         for(int lm=0; lm<lm_tot; lm++)
         {
+          mycenter.SplineInst_onelm.spline_m.coefs = mycenter.SplineInst->spline_m.coefs + mycenter.SplineInst_onelm.spline_m.coefs_size*lm;
+          mycenter.SplineInst_onelm.evaluate_vgl(r,mycenter.localV,mycenter.localG,mycenter.localL);
           fprintf(fout_pw, "%15.10lf  %15.10lf  ", all_vals[ip][lm].real(), all_vals[ip][lm].imag());
-          fprintf(fout_spline_v, "%15.10lf  %15.10lf  ", mycenter.localV[lm*mycenter.Npad+iorb*2], mycenter.localV[lm*mycenter.Npad+iorb*2+1]);
-          fprintf(fout_spline_g, "%15.10lf  %15.10lf  ", mycenter.localG[lm*mycenter.Npad+iorb*2], mycenter.localG[lm*mycenter.Npad+iorb*2+1]);
-          fprintf(fout_spline_l, "%15.10lf  %15.10lf  ", mycenter.localL[lm*mycenter.Npad+iorb*2], mycenter.localL[lm*mycenter.Npad+iorb*2+1]);
+          fprintf(fout_spline_v, "%15.10lf  %15.10lf  ", mycenter.localV[iorb*2], mycenter.localV[iorb*2+1]);
+          fprintf(fout_spline_g, "%15.10lf  %15.10lf  ", mycenter.localG[iorb*2], mycenter.localG[iorb*2+1]);
+          fprintf(fout_spline_l, "%15.10lf  %15.10lf  ", mycenter.localL[iorb*2], mycenter.localL[iorb*2+1]);
         }
         fprintf(fout_pw, "\n");
         fprintf(fout_spline_v, "\n");

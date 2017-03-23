@@ -38,10 +38,10 @@ namespace qmcplusplus
       const intptr_t xs = spline_m.x_stride;
       const T dxInv = spline_m.x_grid.delta_inv;
 
-      T* restrict coefs0 = spline_m.coefs + ((ix  )*xs);
-      T* restrict coefs1 = spline_m.coefs + ((ix+1)*xs);
-      T* restrict coefs2 = spline_m.coefs + ((ix+2)*xs);
-      T* restrict coefs3 = spline_m.coefs + ((ix+3)*xs);
+      const T* restrict coefs0 = spline_m.coefs + ((ix  )*xs);
+      const T* restrict coefs1 = spline_m.coefs + ((ix+1)*xs);
+      const T* restrict coefs2 = spline_m.coefs + ((ix+2)*xs);
+      const T* restrict coefs3 = spline_m.coefs + ((ix+3)*xs);
 
       #pragma omp simd aligned(vals,coefs0,coefs1,coefs2,coefs3)
       for (int n=0; n<spline_m.num_splines; n++)
@@ -62,18 +62,18 @@ namespace qmcplusplus
       const intptr_t xs = spline_m.x_stride;
       const T dxInv = spline_m.x_grid.delta_inv;
 
-      T* restrict coefs0 = spline_m.coefs + ((ix  )*xs);
-      T* restrict coefs1 = spline_m.coefs + ((ix+1)*xs);
-      T* restrict coefs2 = spline_m.coefs + ((ix+2)*xs);
-      T* restrict coefs3 = spline_m.coefs + ((ix+3)*xs);
+      const T* restrict coefs0 = spline_m.coefs + ((ix  )*xs);
+      const T* restrict coefs1 = spline_m.coefs + ((ix+1)*xs);
+      const T* restrict coefs2 = spline_m.coefs + ((ix+2)*xs);
+      const T* restrict coefs3 = spline_m.coefs + ((ix+3)*xs);
 
       #pragma omp simd aligned(vals,grads,lapl,coefs0,coefs1,coefs2,coefs3)
       for (int n=0; n<spline_m.num_splines; n++)
       {
-        T coef_0=coefs0[n];
-        T coef_1=coefs1[n];
-        T coef_2=coefs2[n];
-        T coef_3=coefs3[n];
+        const T coef_0=coefs0[n];
+        const T coef_1=coefs1[n];
+        const T coef_2=coefs2[n];
+        const T coef_3=coefs3[n];
         vals[n]  =    a[0] * coef_0 +   a[1] * coef_1 +   a[2] * coef_2 +   a[3] * coef_3;
         grads[n] = ( da[0] * coef_0 +  da[1] * coef_1 +  da[2] * coef_2 +  da[3] * coef_3)*dxInv;
         lapl[n]  = (d2a[0] * coef_0 + d2a[1] * coef_1 + d2a[2] * coef_2 + d2a[3] * coef_3)*dxInv*dxInv;

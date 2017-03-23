@@ -4,13 +4,13 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory 
+// File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
-
+//
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 /** @file HybridRealAdoptor.h
  *
  * Adoptor classes to handle real hybrid orbitals with arbitrary precision
@@ -22,7 +22,7 @@
 namespace qmcplusplus
 {
 
-/** adoptor class to match 
+/** adoptor class to match
  *
  */
 template<typename BaseAdoptor>

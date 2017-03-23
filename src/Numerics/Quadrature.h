@@ -27,7 +27,7 @@ struct Quadrature3D
   typedef T                    RealType;
   typedef TinyVector<T,3>      PosType;
   typedef OHMMS_PRECISION_FULL mRealType;
-  
+
   int nk;
   typedef enum {SINGLE, TETRA, OCTA, ICOSA} SymmType;
   SymmType symmetry;

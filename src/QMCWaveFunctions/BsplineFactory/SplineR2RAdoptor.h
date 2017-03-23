@@ -10,8 +10,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_EINSPLINE_R2RSOA_ADOPTOR_H
 #define QMCPLUSPLUS_EINSPLINE_R2RSOA_ADOPTOR_H
 
@@ -37,7 +37,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   using BaseType=SplineAdoptorBase<ST,3>;
   using SplineType=typename bspline_traits<ST,3>::SplineType;
   using BCType=typename bspline_traits<ST,3>::BCType;
-  using PointType=typename BaseType::PointType; 
+  using PointType=typename BaseType::PointType;
   using SingleSplineType=typename BaseType::SingleSplineType;
 
   using vContainer_type=aligned_vector<ST>;
@@ -87,8 +87,8 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     myV.resize(n); myG.resize(n); myL.resize(n); myH.resize(n);
   }
 
-  ~SplineR2RSoA() 
-  { 
+  ~SplineR2RSoA()
+  {
     if(MultiSpline != nullptr) delete SplineInst;
   }
 
@@ -162,7 +162,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     SplineInst->set(ispline  ,v_r);
   }
 
-  inline void set_spline_domain(SingleSplineType* spline_r, SingleSplineType* spline_i, 
+  inline void set_spline_domain(SingleSplineType* spline_r, SingleSplineType* spline_i,
       int twist, int ispline, const int* offset_l, const int* mesh_l)
   {
   }
@@ -419,7 +419,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     ST* restrict gg_zz=grad_grad_psi.data(8)+first_spo; ASSUME_ALIGNED(gg_zz);
 
     const ST cone = (bc_sign &1)? -1:1;
-#pragma simd 
+#pragma simd
     for (size_t j=0; j<N; ++j)
     {
       const ST kX=k0[j];
@@ -436,14 +436,14 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
       vg_x[j] =cone*gX;
       vg_y[j] =cone*gY;
       vg_z[j] =cone*gZ;
-      gg_xx[j]=cone*(h00[j] + kkV + kX*gX); 
-      gg_xy[j]=cone*(h01[j] + kkV + kX*gY); 
+      gg_xx[j]=cone*(h00[j] + kkV + kX*gX);
+      gg_xy[j]=cone*(h01[j] + kkV + kX*gY);
       gg_xz[j]=cone*(h02[j] + kkV + kX*gZ);
-      gg_yx[j]=cone*(h01[j] + kkV + kY*gX); 
-      gg_yy[j]=cone*(h11[j] + kkV + kY*gY); 
+      gg_yx[j]=cone*(h01[j] + kkV + kY*gX);
+      gg_yy[j]=cone*(h11[j] + kkV + kY*gY);
       gg_yz[j]=cone*(h12[j] + kkV + kY*gZ);
-      gg_zx[j]=cone*(h02[j] + kkV + kz*gX); 
-      gg_zy[j]=cone*(h12[j] + kkV + kz*gY); 
+      gg_zx[j]=cone*(h02[j] + kkV + kz*gX);
+      gg_zy[j]=cone*(h12[j] + kkV + kz*gY);
       gg_zz[j]=cone*(h22[j] + kkV + kz*gZ);
     }
 #endif
