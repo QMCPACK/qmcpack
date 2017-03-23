@@ -416,6 +416,34 @@ private:
   NewTimer *timer;
 };
 
+// Helpers to make it easier to define a set of timers
+// See tests/test_timer.cpp for an example
+
+
+typedef std::vector<NewTimer *> TimerList_t;
+
+template <class T> struct TimerIDName_t
+{
+  T id;
+  const std::string name;
+};
+
+// C++ 11 type aliasing
+#if __cplusplus >= 201103L
+template <class T> using TimerNameList_t = std::vector<TimerIDName_t<T>>;
+
+template <class T> void setup_timers(TimerList_t &timers, TimerNameList_t<T> timer_list,
+                                     timer_levels timer_level = timer_level_fine)
+{
+  timers.resize(timer_list.size());
+  for (int i = 0; i < timer_list.size(); i++)
+  {
+    timers[timer_list[i].id] = TimerManager.createTimer(timer_list[i].name, timer_level);
+  }
+}
+#endif
+
+
 struct TimerComparator
 {
   inline bool operator()(const NewTimer *a, const NewTimer *b)

@@ -11,6 +11,7 @@
 
 #include "OhmmsData/libxmldefs.h"
 #include "io/hdf_archive.h"
+#include "Utilities/NewTimer.h"
 
 #include"AFQMC/config.h"
 #include"AFQMC/Walkers/WalkerHandlerBase.h"
@@ -316,6 +317,7 @@ class DistWalkerHandler: public WalkerHandlerBase
   std::vector<char> bufferall;
 
   myTimer* LocalTimer;
+  TimerList_t Timers;
 
 };
 }
