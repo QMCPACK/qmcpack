@@ -27,8 +27,8 @@ void product_SD(const IndexType K,
 
 template<class T>
 void product_SpMatV(int nrows,
-             T& A, 
-             ComplexType* B, 
+             const T& A,
+             const ComplexType* B,
              ComplexType* C );
 
 template<class T>

@@ -24,8 +24,8 @@
    &   \texttt{move}          &  text              &   pbyp, alle     & pbyp              & method used to move electrons \\
    &   \texttt{gpu}           &  text              &   yes, no        & dep.              & use the GPU\\
    &   \texttt{trace}         &  text              &                  & no                & ???                      \\
-   &   \texttt{checkpoints}   &  integer           &   -1, 0, n       & -1                & checkpoint frequency \\
-   &   \texttt{dumpconfig}    &  integer           &   n              & -1                & dump configuration every n step  \\
+   &   \texttt{checkpoint}   &  integer           &   -1, 0, n       & -1                & checkpoint frequency \\
+   &   \texttt{record}      &  integer           &   n              & 0                & save configuration every n steps  \\
    &   \texttt{target}        &  text              &                  &                   & ???  \\
    &   \texttt{completed}     &  text              &                  &                   & ???  \\
    &   \texttt{append}        &  text              &   yes, no        & yes               & ???  \\
@@ -39,38 +39,59 @@
 
 Additional information:
 \begin{itemize}
-\item \texttt{move}. There are two ways implemented to move electrons. The more used method is the particle-by-particle move. In this method, only one electron is moved for acception or rejection. The other method is the all-electron move, namely all the electrons are moved once for testing acception or rejection.
+\item \texttt{move}. There are two ways implemented to move electrons. The more used method is the particle-by-particle move. In this method, only one electron is moved for acceptance or rejection. The other method is the all-electron move, namely all the electrons are moved once for testing acceptance or rejection.
 
 \item \texttt{gpu}. When the executable is compiled with CUDA, the target computing device can be chosen by this switch. With a regular CPU only compilation, this option is not effective.
 
-\item \texttt{checkpoints}. If Checkpoint=``-1'' no checkpoint will be done (default setting). If Checkpoint=``0'' dump after the completion of a qmc section. When dumconfig=``n'' is present with Checkpoint=``0'', the configurations will be dumped at the end of the run (due to Checkpoint=``0''), but also at every n block. If Checkpoint=``n'', configurations will be dump every n block. 
+\item \texttt{checkpoint}.
+Enable or disable checkpointing and specify the frequency of output.  Possible values are:
+\begin{description}
+\item [-1] No checkpoint (default setting).
+\item [0] Dump after the completion of a qmc section.
+\item [n] Dump after every $n$ blocks.  Also dump at the end of the run.
+\end{description}
+%\item  ``-1'' No checkpoint (default setting).
+%\item ``0'' Dump after the completion of a qmc section.
+%\item ``n'' Dump after every $n$ blocks.  Also dump at the end of the run.
+%\end{itemize}
+%If Checkpoint=``-1'' no checkpoint will be done (default setting). If Checkpoint=``0'' dump after the completion of a qmc section. When dumconfig=``n'' is present with Checkpoint=``0'', the configurations will be dumped at the end of the run (due to Checkpoint=``0''), but also at every n block. If Checkpoint=``n'', configurations will be dump every n block. 
 
-All the dumped data will be written in a *.config.h5. The config.h5 file will contain the state of a population to continue a run including the random number sequences; the list of what is included in the .config.h5 is: number of walkers, status of the run, branch mode, energy dataset, ratio to accepted moves, ratio to proposed moves, variance dataset, vParam\{tau, taueff. E\_trial, E\_ref, Branch\_Max, BranchCutOff, BranchFilter, Sigma, Accepted\_Energy, Accepted\_Samples\}, IParam{warmumSteps, Energy\_Update\_Interval, Counter, targetwalkers, Maxwalkers, MinWalkers, Branching Interval}, Walker coordinates, Random number size, Random number sequence, version of the code.
+% TODO: Fill in more information about checkpoint/restart
+
+The particle configurations will be written to a \texttt{.config.h5} file.
+
+%Other sections of data needed for
+%restart include the random generator state, written to a \texttt{.random.xml} file.
+
+
+
+
+% I think this description refers to a previous version of the config.h5 file.  See HDFWalkerInput0.cpp.
+%All the dumped data will be written in a \texttt{*.config.h5} file. The \texttt{config.h5} file will contain the state of a population to continue a run. The list of what is included in the .config.h5 is: number of walkers, status of the run, branch mode, energy dataset, ratio to accepted moves, ratio to proposed moves, variance dataset, vParam\{tau, taueff. E\_trial, E\_ref, Branch\_Max, BranchCutOff, BranchFilter, Sigma, Accepted\_Energy, Accepted\_Samples\}, IParam{warmumSteps, Energy\_Update\_Interval, Counter, targetwalkers, Maxwalkers, MinWalkers, Branching Interval}, Walker coordinates, Random number size, Random number sequence, version of the code.
 
 \begin{lstlisting}[caption=The following is an example of running a simulation that can be restarted . ]
-  <qmc method="dmc" move="pbyp"  checkpoint="0" dumpconfig="5">
+  <qmc method="dmc" move="pbyp"  checkpoint="0"">
     <parameter name="timestep">         0.004  </parameter>
     <parameter name="blocks">           100   </parameter>
     <parameter name="steps">            400    </parameter>
   </qmc>
 \end{lstlisting}
 
-In this case, the there will be 
-The flags checkpoint and dumpconfig instructs qmcpack to output walker configurations.  This also
-works in variational Monte Carlo.  This will output an h5 file with the name "projectid"."run-number".config.h5.
+The checkpoint flag instructs qmcpack to output walker configurations.  This also
+works in Variational Monte Carlo.  This will output an h5 file with the name "projectid"."run-number".config.h5.
 Check that this file exists before attempting a restart.
 
-To continue a run, specify the following before your VM/DMC block:
-\begin{lstlisting}[caption=Restart (read wakers from previous run) ]
+To continue a run, specify the \texttt{mcwalkerset} element before your VMC/DMC block:
+\begin{lstlisting}[caption=Restart (read walkers from previous run) ]
  <mcwalkerset fileroot="BH.s002" version="0 6" collected="yes"/>
-  <qmc method="dmc" move="pbyp"  checkpoint="0" dumpconfig="5">
+  <qmc method="dmc" move="pbyp"  checkpoint="0">
     <parameter name="timestep">         0.004  </parameter>
     <parameter name="blocks">           100   </parameter>
     <parameter name="steps">            400    </parameter>
   </qmc>
 \end{lstlisting}
-where, BH is the project id and s002 is the calculation number to read in the walkers from the previous run.
+BH is the project id and s002 is the calculation number to read in the walkers from the previous run.
 
-In the project id section, make sure that the series number is different than any existing one to avoid rewriting on it. 
+In the project id section, make sure that the series number is different than any existing one to avoid overwriting it. 
 
 \end{itemize}

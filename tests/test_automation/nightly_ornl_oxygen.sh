@@ -59,7 +59,7 @@ case $sys in
 	export PATH=$HOME/apps/openmpi-2.0.2/bin/:$PATH
 	export LD_LIBRARY_PATH=$HOME/apps/openmpi-2.0.2/lib/:$LD_LIBRARY_PATH
 	export QMCPACK_TEST_SUBMIT_NAME=GCC-Release
-	ctest -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV -E 'long' --timeout 1800
+	ctest -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV -E 'long' --timeout 1800
 #	module unload mpi
 	export PATH=$OLD_PATH
 	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
@@ -98,7 +98,7 @@ case $sys in
 	export OLD_MKLROOT=$MKLROOT
 	source /opt/intel2017/bin/compilervars.sh intel64
 	export QMCPACK_TEST_SUBMIT_NAME=Intel2017-Release
-	ctest -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV -E 'long' --timeout 1800
+	ctest -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DBUILD_AFQMC=1 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV -E 'long' --timeout 1800
 	export PATH=$OLD_PATH
 	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
 	export MANPATH=$OLD_MANPATH

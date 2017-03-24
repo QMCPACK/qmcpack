@@ -48,15 +48,27 @@ TEST_CASE("test_timer_stack", "[utilities]")
   // Use a local version rather than the global TimerManager, otherwise
   //  changes will persist from test to test.
   TimerManagerClass tm;
-  NewTimer t1("timer1", timer_level_coarse);
-  tm.addTimer(&t1);
+  NewTimer *t1 = tm.createTimer("timer1", timer_level_coarse);
 #if ENABLE_TIMERS
 #ifdef USE_STACK_TIMERS
-  t1.start();
-  REQUIRE(tm.current_timer() == &t1);
-  t1.stop();
+  t1->start();
+  REQUIRE(tm.current_timer() == t1);
+  t1->stop();
   REQUIRE(tm.current_timer() == NULL);
 #endif
+#endif
+}
+
+TEST_CASE("test_timer_scoped", "[utilities]")
+{
+  TimerManagerClass tm;
+  NewTimer *t1 = tm.createTimer("timer1", timer_level_coarse);
+  {
+    ScopedTimer st(t1);
+  }
+#if ENABLE_TIMERS
+  REQUIRE(t1->get_total() == Approx(1.0));
+  REQUIRE(t1->get_num_calls() == 1);
 #endif
 }
 
