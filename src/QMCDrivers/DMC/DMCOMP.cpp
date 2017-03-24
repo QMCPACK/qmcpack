@@ -93,9 +93,7 @@ void DMCOMP::resetComponents(xmlNodePtr cur)
     traceClones[ip] = Traces->makeClone();
 #endif
   }
-#if !defined(BGP_BUG)
   #pragma omp parallel for
-#endif
   for(int ip=0; ip<NumThreads; ++ip)
   {
     if(QMCDriverMode[QMC_UPDATE_MODE])
@@ -158,9 +156,7 @@ void DMCOMP::resetUpdateEngines()
         o << "\n  DMC moves are rejected when a node crossing is detected";
       app_log() << o.str() << std::endl;
     }
-#if !defined(BGP_BUG)
     #pragma omp parallel for
-#endif
     for(int ip=0; ip<NumThreads; ++ip)
     {
       estimatorClones[ip]= new EstimatorManager(*Estimators);
@@ -193,9 +189,7 @@ void DMCOMP::resetUpdateEngines()
 #if !defined(REMOVE_TRACEMANAGER)
   else
   {
-#if !defined(BGP_BUG)
     #pragma omp parallel for
-#endif
     for(int ip=0; ip<NumThreads; ++ip)
     {
       traceClones[ip]->transfer_state_from(*Traces);
