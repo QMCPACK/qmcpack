@@ -205,16 +205,17 @@ namespace qmcplusplus
         return false;
       }
 
-      if(factorizedHamiltonian)
+      if(factorizedHamiltonian) {
         if(H1.size() != nOne || hij_core.size() != nOne_core) {
           app_error()<<"Error after readElementsFromFCIDUMP in readFCIDUMP, wrong number of elements.\n" <<std::endl;
           return false;
         }
-      else
+      } else {
         if(H1.size() != nOne || hij_core.size() != nOne_core  || V2.size()!=nTwo ||  Vijkl_core.size()!=nTwo_core ||  Vijkl_mixed.size()!=nTwo_mixed) {
           app_error()<<"Error after readElementsFromFCIDUMP in readFCIDUMP, wrong number of elements.\n" <<std::endl;
           return false;
         }
+      }
 
       Timer.stop("Generic");
       if(rnk==0) app_log()<<" -- Time to read ASCII integral file: " <<Timer.average("Generic") <<"\n";
@@ -3936,8 +3937,8 @@ namespace qmcplusplus
 
       v.push_back(Vijkl);
       if( jilk != ijkl ) v.push_back(std::make_tuple(j,i,l,k,V));  
-      if( klij != ijkl && klij != jilk ) v.push_back(std::make_tuple(k,l,i,j,std::conj(V)));   
-      if( lkji != ijkl && lkji != jilk && lkji != klij ) v.push_back(std::make_tuple(l,k,j,i,std::conj(V)));   
+      if( klij != ijkl && klij != jilk ) v.push_back(std::make_tuple(k,l,i,j,myconj(V)));
+      if( lkji != ijkl && lkji != jilk && lkji != klij ) v.push_back(std::make_tuple(l,k,j,i,myconj(V)));
       // order, not needed but good measure 
       std::sort (v.begin(), v.end(),mySort);
     } else {
@@ -3994,13 +3995,13 @@ namespace qmcplusplus
 
         // need to add klij as conj(V). How do I add it? 
         if(klij != lkji) {  // add once with factor of 2
-          v.push_back(std::make_tuple(k,l,i,j,std::conj(static_cast<RealType>(2.0)*V)));   
+          v.push_back(std::make_tuple(k,l,i,j,myconj(static_cast<RealType>(2.0)*V)));
           if(ijkl == lkji)  {
             std::cerr<<" Error in find_equivalent_OneBar_for_hamiltonian_generation: Not sure how you got here. (ijkl == lkji): " <<i <<" " <<j <<" " <<k <<" " <<l <<"  " <<V  <<std::endl;
             APP_ABORT("Error in find_equivalent_OneBar_for_hamiltonian_generation: Not sure how you got here. (ijkl == lkji) \n"); 
           }
         } else 
-          v.push_back(std::make_tuple(k,l,i,j,std::conj(V)));
+          v.push_back(std::make_tuple(k,l,i,j,myconj(V)));
 
       } else {
         // just checking
@@ -5113,14 +5114,14 @@ namespace qmcplusplus
           } 
           case 1: 
           { 
-            app_error()<<"Error in SparseGeneralHamiltonian::createHamiltonianForPureDeterminant(). Found sector 1 term in V2_2bar. Wy???? Bug Bug Bug ???!!! \n" <<std::endl; 
+            app_error()<<"Error in SparseGeneralHamiltonian::createHamiltonianForPureDeterminant(). Found sector 1 term in V2_2bar. Wy???? Bug Bug Bug !!! \n" <<std::endl; 
             return false;  
             APP_ABORT("");
             break;
           } 
           case 2: 
           { 
-            app_error()<<"Error in SparseGeneralHamiltonian::createHamiltonianForPureDeterminant(). Found sector 1 term in V2_2bar. Wy???? Bug Bug Bug ???!!! \n" <<std::endl; 
+            app_error()<<"Error in SparseGeneralHamiltonian::createHamiltonianForPureDeterminant(). Found sector 1 term in V2_2bar. Wy???? Bug Bug Bug !!! \n" <<std::endl; 
             return false;  
             APP_ABORT("");
             break;
@@ -5499,14 +5500,14 @@ namespace qmcplusplus
           } 
           case 1: 
           { 
-            app_error()<<"Error in SparseGeneralHamiltonian::createHamiltonianForPureDeterminant(). Found sector 1 term in V2_2bar. Wy???? Bug Bug Bug ???!!! \n" <<std::endl; 
+            app_error()<<"Error in SparseGeneralHamiltonian::createHamiltonianForPureDeterminant(). Found sector 1 term in V2_2bar. Wy???? Bug Bug Bug !!! \n" <<std::endl; 
             return false;  
             APP_ABORT("");
             break;
           } 
           case 2: 
           { 
-            app_error()<<"Error in SparseGeneralHamiltonian::createHamiltonianForPureDeterminant(). Found sector 1 term in V2_2bar. Wy???? Bug Bug Bug ???!!! \n" <<std::endl; 
+            app_error()<<"Error in SparseGeneralHamiltonian::createHamiltonianForPureDeterminant(). Found sector 1 term in V2_2bar. Wy???? Bug Bug Bug !!! \n" <<std::endl; 
             return false;  
             APP_ABORT("");
             break;
@@ -6345,6 +6346,7 @@ namespace qmcplusplus
       }
     }
 
+    return true;
   }
 
 /*

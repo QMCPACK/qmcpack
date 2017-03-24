@@ -292,6 +292,16 @@ class Simulation(NexusCore):
         inp_args = obj()
         sim_args.transfer_from(kwargs,sim_kw)
         inp_args.transfer_from(kwargs,inp_kw)
+        if 'system' in inp_args:
+            system = inp_args.system
+            if not isinstance(system,PhysicalSystem):
+                extra=''
+                if not isinstance(extra,obj):
+                    extra = '\nwith value: {0}'.format(system)
+                #end if
+                cls.class_error('invalid input for variable "system"\nsystem object must be of type PhysicalSystem\nyou provided type: {0}'.format(system.__class__.__name__)+extra)
+            #end if
+        #end if
         if 'pseudos' in inp_args and inp_args.pseudos!=None:
             pseudos = inp_args.pseudos
             # support ppset labels
@@ -320,9 +330,6 @@ class Simulation(NexusCore):
             #end if
             if 'system' in inp_args:
                 system = inp_args.system
-                if not isinstance(system,PhysicalSystem):
-                    cls.class_error('system object must be of type PhysicalSystem')
-                #end if
                 species_labels,species = system.structure.species(symbol=True)
                 pseudopotentials = nexus_core.pseudopotentials
                 for ppfile in pseudos:
@@ -417,6 +424,8 @@ class Simulation(NexusCore):
     def init_job(self):
         if self.job==None:
             self.error('job not provided.  Input field job must be set to a Job object.')
+        elif not isinstance(self.job,Job):
+            self.error('Input field job must be set to a Job object\nyou provided an object of type: {0}\nwith value: {1}'.format(self.job.__class__.__name__,self.job))
         #end if
         self.job = self.job.copy()
         self.job.initialize(self)
