@@ -33,7 +33,14 @@ inline float round(float x)
 #if defined(HAVE_SINCOS)
 inline void sincos(float a, float* s, float* c)
 {
+#ifdef BGQPX
+  // BGQ has no sincosf in libmass
+  double ds,dc;
+  sincos((double)a,&ds,&dc);
+  *s=ds; *c=dc;
+#else
   sincosf(a,s,c);
+#endif
 }
 #else
 template<typename T>
