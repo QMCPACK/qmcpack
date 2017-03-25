@@ -98,33 +98,18 @@ TrialWaveFunction::addOrbital(OrbitalBase* aterm, const std::string& aname, bool
     FermionWF=dynamic_cast<FermionBase*>(aterm);
   }
 
-//#if defined(QMC_CUDA)
-  char name1[64],name2[64],name3[64],name4[64], name5[64], name6[64];
-  sprintf(name1,"WaveFunction::%s_V",aname.c_str());
-  sprintf(name2,"WaveFunction::%s_VGL",aname.c_str());
-  sprintf(name3,"WaveFunction::%s_accept",aname.c_str());
-  sprintf(name4,"WaveFunction::%s_NLratio",aname.c_str());
-  sprintf(name5,"WaveFunction::%s_recompute",aname.c_str());
-  sprintf(name6,"WaveFunction::%s_derivs",aname.c_str());
-  NewTimer *vtimer=new NewTimer(name1);
-  NewTimer *vgltimer=new NewTimer(name2);
-  NewTimer *accepttimer=new NewTimer(name3);
-  NewTimer *NLtimer=new NewTimer(name4);
-  NewTimer *recomputetimer=new NewTimer(name5);
-  NewTimer *derivstimer=new NewTimer(name6);
-  myTimers.push_back(vtimer);
-  myTimers.push_back(vgltimer);
-  myTimers.push_back(accepttimer);
-  myTimers.push_back(NLtimer);
-  myTimers.push_back(recomputetimer);
-  myTimers.push_back(derivstimer);
-  TimerManager.addTimer(vtimer);
-  TimerManager.addTimer(vgltimer);
-  TimerManager.addTimer(accepttimer);
-  TimerManager.addTimer(NLtimer);
-  TimerManager.addTimer(recomputetimer);
-  TimerManager.addTimer(derivstimer);
-//#endif
+  std::vector<std::string> suffixes(6);
+  suffixes[0] = "_V";
+  suffixes[1] = "_VGL";
+  suffixes[2] = "_accept";
+  suffixes[3] = "_NLratio";
+  suffixes[4] = "_recompute";
+  suffixes[5] = "_derivs";
+  for (int i = 0; i < suffixes.size(); i++)
+  {
+    std::string name = "WaveFunction::" + aname + suffixes[i];
+    myTimers.push_back(TimerManager.createTimer(name));
+  }
 }
 
 

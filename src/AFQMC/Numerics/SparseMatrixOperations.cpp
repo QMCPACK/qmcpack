@@ -4,7 +4,9 @@
 #include<cassert>
 
 #include "AFQMC/config.h"
+#ifdef PRINT_FREE_MEMORY
 #include "sys/sysinfo.h"
+#endif
 
 #if defined(HAVE_MKL)
  #include "mkl.h"
@@ -103,8 +105,9 @@ void product_SpMatV(const int M, const int K,
     const int* rows = A.row_index();
     for(int nr=0; nr<M; nr++,C++,rows++) {
       *C*=beta;
-      for(int i=*rows; i<*(rows+1); i++,val++,cols++)
+      for(int i=*rows; i<*(rows+1); i++,val++,cols++) {
         *C += alpha * (*val) * ( *( B + (*cols) + disp) );
+      }
     }
   } else  {  // EESL: Compressed Matrix 
 
@@ -165,7 +168,14 @@ void product_SpMatV(const int M, const int K,
   matdes[3] = 'C';
   mkl_dcsrmv( &trans, &M, &K, &alpha, matdes, val , col,  row ,  row+1, B, &beta, C );
 #else
-APP_ABORT("ERROR: product_SpMatV only implemented with MKL. \n");
+  const int* cols = col;
+  int disp = 0;
+  const int* rows = row;
+  for(int nr=0; nr<M; nr++,C++,rows++) {
+    *C*=beta;
+    for(int i=*rows; i<*(rows+1); i++,val++,cols++)
+      *C += alpha * (*val) * ( *( B + (*cols) + disp) );
+  }
 #endif
 }
 
@@ -185,7 +195,14 @@ void product_SpMatV(const int M, const int K,
   matdes[3] = 'C';
   mkl_zcsrmv( &trans, &M, &K, &alpha, matdes, val , col,  row ,  row+1, B, &beta, C );
 #else
-APP_ABORT("ERROR: product_SpMatV only implemented with MKL. \n");
+  const int* cols = col;
+  int disp = 0;
+  const int* rows = row;
+  for(int nr=0; nr<M; nr++,C++,rows++) {
+    *C*=beta;
+    for(int i=*rows; i<*(rows+1); i++,val++,cols++)
+      *C += alpha * (*val) * ( *( B + (*cols) + disp) );
+  }
 #endif
 }
 
@@ -205,7 +222,18 @@ void product_SpMatTV(const int M, const int K,
   matdes[3] = 'C';
   mkl_zcsrmv( &trans, &M, &K, &alpha, matdes, val , col,  row ,  row+1, B, &beta, C );
 #else
-APP_ABORT("ERROR: product_SpMatV only implemented with MKL. \n");
+  const int* cols = col;
+  int disp = 0;
+  const int* rows = row;
+  for(int nr=0; nr<K; nr++)
+  {
+    C[nr] *= beta;
+  }
+  for(int nr=0; nr<M; nr++,rows++,B++) {
+    for(int i=*rows; i<*(rows+1); i++,val++,cols++) {
+      *(C + (*cols) + disp) += alpha * (*val) *  (*B);
+    }
+  }
 #endif
 }
 
@@ -227,17 +255,19 @@ void product_SpMatTV(const int M, const int K,
 
 #else
 
-APP_ABORT("ERROR: product_SpMatTV only implemented with MKL. \n");
   ComplexType zero = ComplexType(0,0);
   const ComplexType* val = A.values();
   const int* cols = A.column_data();
   int disp = (A.zero_base())?0:-1;
   if( A.format() == 0) {  // CSR
     const int* rows = A.row_index();
-    for(int nr=0; nr<M; nr++,C++,rows++) {
-      *C*=beta;
-      for(int i=*rows; i<*(rows+1); i++,val++,cols++)
-        *C += alpha * (*val) * ( *( B + (*cols) + disp) );
+    for(int nr=0; nr<K; nr++) {
+      C[nr] *= beta;
+    }
+    for(int nr=0; nr<M; nr++,rows++,B++) {
+      for(int i=*rows; i<*(rows+1); i++,val++,cols++) {
+        *(C + (*cols) + disp) += alpha * (*val) *  (*B);
+      }
     }
   } else  {  // EESL: Compressed Matrix 
 
@@ -263,7 +293,27 @@ void product_SpMatM(const int M, const int N, const int K,
 
 #else
 
-APP_ABORT("ERROR: product_SpMatM only implemented with MKL. \n");
+  ComplexType zero = ComplexType(0,0);
+  const ComplexType* val = A.values();
+  const int* cols = A.column_data();
+  int disp = (A.zero_base())?0:-1;
+  if( A.format() == 0) {  // CSR
+    const int* rows = A.row_index();
+    ComplexType *baseC = C;
+    const ComplexType *baseB = B;
+    for(int nr=0; nr<M; nr++,rows++,C+=ldc) {
+      for(int nn=0; nn<N; nn++) {
+        C[nn] *= beta;
+      }
+      for(int i=*rows; i<*(rows+1); i++,val++,cols++) {
+        for(int nn=0; nn<N; nn++) {
+          C[nn] += alpha*(*val) * ( *( B + nn + (*cols)*ldb + disp) );
+        }
+      }
+    }
+  } else  {  // EESL: Compressed Matrix
+
+  }
 
 #endif
 }
@@ -285,7 +335,24 @@ void product_SpMatM(const int M, const int N, const int K,
 
 #else
 
-APP_ABORT("ERROR: product_SpMatM only implemented with MKL. \n");
+  const RealType* val = A.values();
+  const int* cols = A.column_data();
+  int disp = (A.zero_base())?0:-1;
+  if( A.format() == 0) {  // CSR
+    const int* rows = A.row_index();
+    for(int nr=0; nr<M; nr++,rows++,C+=ldc) {
+      for(int nn=0; nn<N; nn++) {
+        C[nn] *= beta;
+      }
+      for(int i=*rows; i<*(rows+1); i++,val++,cols++) {
+        for(int nn=0; nn<N; nn++) {
+          C[nn] += alpha*(*val) * ( *( B + nn + (*cols)*ldb + disp) );
+        }
+      }
+    }
+  } else  {  // EESL: Compressed Matrix
+
+  }
 
 #endif
 }
@@ -307,7 +374,24 @@ void product_SpMatM(const int M, const int N, const int K,
 
 #else
 
-APP_ABORT("ERROR: product_SpMatM only implemented with MKL. \n");
+  const float* val = A.values();
+  const int* cols = A.column_data();
+  int disp = (A.zero_base())?0:-1;
+  if( A.format() == 0) {  // CSR
+    const int* rows = A.row_index();
+    for(int nr=0; nr<M; nr++,rows++,C+=ldc) {
+      for(int nn=0; nn<N; nn++) {
+        C[nn] *= beta;
+      }
+      for(int i=*rows; i<*(rows+1); i++,val++,cols++) {
+        for(int nn=0; nn<N; nn++) {
+          C[nn] += alpha*(*val) * ( *( B + nn + (*cols)*ldb + disp) );
+        }
+      }
+    }
+  } else  {  // EESL: Compressed Matrix
+
+  }
 
 #endif
 }
@@ -468,10 +552,12 @@ bool sparseEigenSystem(RealSpMat &A, int& m0, RealType *eigval, RealType* eigVec
   std::cout<<"Problem size: " <<N <<std::endl;
   std::cout<<"Available memory: ";
 
+#ifdef PRINT_FREE_MEMORY
   struct sysinfo si;
   sysinfo(&si);
   si.freeram+=si.bufferram;
   std::cout<<int(si.freeram>>20) <<std::endl;
+#endif
 
   fpm[0] = 1;
   fpm[4] = 1;
@@ -579,7 +665,7 @@ bool sparseEigenSystem(ComplexSpMat &A, int& m0, RealType *eigval, ComplexType* 
   return true;
 
 #else
-APP_ABORT("Error: sparseEigenSystem only implemented with MKL library. n");
+//APP_ABORT("Error: sparseEigenSystem only implemented with MKL library. n");
   return false;
 #endif
 
@@ -587,9 +673,15 @@ APP_ABORT("Error: sparseEigenSystem only implemented with MKL library. n");
 
 
 template
-void product_SpMatV<ComplexSpMat>(const int nrows, const ComplexSpMat& A, const ComplexType* B, ComplexType* C);
+void product_SpMatV<ComplexSpMat>(int nrows,
+                                  const ComplexSpMat &,
+                                  const ComplexType* B,
+                                  ComplexType* C);
 template
-void product_SpMatV<ComplexSMSpMat>(const int nrows, const ComplexSMSpMat& A, const ComplexType* B, ComplexType* C);
+void product_SpMatV<ComplexSMSpMat>(int nrows,
+                                    const ComplexSMSpMat& A,
+                                    const ComplexType* B,
+                                    ComplexType* C);
 
 template
 void product_SpMatV<ComplexSpMat>(const int M, const int K,

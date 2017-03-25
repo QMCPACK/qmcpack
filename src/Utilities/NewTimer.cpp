@@ -70,6 +70,14 @@ void TimerManagerClass::addTimer(NewTimer* t)
   }
 }
 
+NewTimer *TimerManagerClass::createTimer(const std::string& myname, timer_levels mytimer)
+{
+  NewTimer *t = new NewTimer(myname, mytimer);
+  addTimer(t);
+  return t;
+}
+
+
 void TimerManagerClass::reset()
 {
   for (int i=0; i<TimerList.size(); i++)

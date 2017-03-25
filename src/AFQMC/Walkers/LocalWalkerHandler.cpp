@@ -280,6 +280,7 @@ bool LocalWalkerHandler::clean()
 {
   for(int i=0; i<walkers.size(); i++) 
     walkers[i].clear();
+  return true;
 }
 
 // called at the beginning of each executable section

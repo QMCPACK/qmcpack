@@ -333,10 +333,19 @@ bool ParticleSet::get(std::ostream& os) const
   for (int i=0; i<SubPtcl.size(); i++)
     os << SubPtcl[i] << " ";
   os <<"\n\n    " << LocalNum << "\n\n";
-  for (int i=0; i<LocalNum; i++)
+  const int maxParticlesToPrint = 10;
+  int numToPrint = std::min(LocalNum, maxParticlesToPrint);
+
+  for (int i=0; i<numToPrint; i++)
   {
     os << "    " << mySpecies.speciesName[GroupID[i]]  << R[i] << std::endl;
   }
+
+  if (numToPrint < LocalNum)
+  {
+    os << "    (... and " << (LocalNum-numToPrint) << " more particle positions ...)" << std::endl;
+  }
+
   return true;
 }
 

@@ -80,6 +80,9 @@ public:
    tuple_iterator(FirstIter first_, SecondIter second_, ThirdIter third_) :
        first(first_), second(second_),third(third_){}
 
+    // Need default constructor for inplace_merge in some versions of the C++ std library
+    tuple_iterator() {}
+
     using difference_type = D;
     using reference = R;
 
