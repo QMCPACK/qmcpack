@@ -139,7 +139,7 @@ void CrystalLattice<T,D,ORTHO>::reset()
   SimulationCellRadius = ldesc.calcSimulationCellRadius(Rv);
   // set equal WignerSeitzRadius and SimulationCellRadius when they are very close.
   if ( WignerSeitzRadius > SimulationCellRadius &&
-       WignerSeitzRadius-SimulationCellRadius <= WignerSeitzRadius*std::numeric_limits<T>::epsilon() )
+       WignerSeitzRadius-SimulationCellRadius <= WignerSeitzRadius*std::numeric_limits<float>::epsilon()*2 )
     WignerSeitzRadius = SimulationCellRadius;
   CellRadiusSq=SimulationCellRadius*SimulationCellRadius;
   if(SuperCellEnum)
