@@ -39,10 +39,23 @@ namespace qmcplusplus
         )
   {
     fftbox=std::complex<T>();
+    const int upper_bound[3]={(maxg[0]-1)/2,(maxg[1]-1)/2,(maxg[2]-1)/2};
+    const int lower_bound[3]={upper_bound[0]-maxg[0]+1,upper_bound[1]-maxg[1]+1,upper_bound[2]-maxg[2]+1};
+    //only coefficient indices between [lower_bound,upper_bound] are taken for FFT.
     //this is rather unsafe
-//#pragma omp parallel for
+    //#pragma omp parallel for
     for (int iG=0; iG<cG.size(); iG++) 
     {
+      if ( gvecs[iG][0]>upper_bound[0] || gvecs[iG][0]<lower_bound[0] ||
+           gvecs[iG][1]>upper_bound[1] || gvecs[iG][1]<lower_bound[1] ||
+           gvecs[iG][2]>upper_bound[2] || gvecs[iG][2]<lower_bound[2] )
+      {
+        //std::cout << "Warning: cG out of bound "
+        //          << "x " << gvecs[iG][0]    << " y " << gvecs[iG][1]    << " z " << gvecs[iG][2] << std::endl
+        //          << "xu " << upper_bound[0] << " yu " << upper_bound[1] << " zu " << upper_bound[2] << std::endl
+        //          << "xd " << lower_bound[0] << " yd " << lower_bound[1] << " zd " << lower_bound[2] << std::endl;
+        continue;
+      }
       fftbox((gvecs[iG][0]+maxg[0])%maxg[0]
           ,(gvecs[iG][1]+maxg[1])%maxg[1]
           ,(gvecs[iG][2]+maxg[2])%maxg[2]) = cG[iG];
