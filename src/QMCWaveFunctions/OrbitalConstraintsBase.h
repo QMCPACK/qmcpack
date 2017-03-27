@@ -83,8 +83,3 @@ struct OrbitalConstraintsBase: public OrbitalBuilderBase
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

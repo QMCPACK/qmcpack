@@ -129,8 +129,3 @@ void HDFWalkerIOEngine::readAll(hid_t grp, const char* name, Communicate* comm)
   }
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 2303 $   $Date: 2007-11-19 13:25:50 -0600 (Mon, 19 Nov 2007) $
- * $Id: HDFWalkerOutput.cpp 2303 2007-11-19 19:25:50Z jnkim $
- ***************************************************************************/

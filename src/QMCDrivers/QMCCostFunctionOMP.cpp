@@ -1025,8 +1025,3 @@ QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matri
   return 1.0;
 }
 }
-/***************************************************************************
-* $RCSfile$   $Author: jnkim $
-* $Revision: 1898 $   $Date: 2007-04-17 10:07:34 -0500 (Tue, 17 Apr 2007) $
-* $Id: QMCCostFunctionOMP.cpp 1898 2007-04-17 15:07:34Z jnkim $
-***************************************************************************/

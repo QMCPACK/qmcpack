@@ -177,9 +177,4 @@ void ForwardWalking::addObservables(PropertySetType& plist, BufferType& collecta
   app_log()<<"ForwardWalking::Observables [" << myIndex << ", " << myIndex+nc << ")" << std::endl;
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1581 $   $Date: 2007-01-04 10:02:14 -0600 (Thu, 04 Jan 2007) $
- * $Id: ForwardWalking.cpp 1581 2007-01-04 16:02:14Z jnkim $
- ***************************************************************************/
 

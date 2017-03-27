@@ -521,8 +521,3 @@ void ECPComponentBuilder::CheckQuadratureRule(int lexact)
 }
 
 } // namespace qmcPlusPlus
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

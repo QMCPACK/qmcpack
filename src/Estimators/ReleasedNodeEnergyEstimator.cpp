@@ -64,8 +64,3 @@ void ReleasedNodeEnergyEstimator::add2Record(RecordListType& record)
 }
 
 }
-/***************************************************************************
- * $RCSfile$   $Author: jmcminis $
- * $Revision: 4163 $   $Date: 2009-08-31 05:47:46 -0500 (Mon, 31 Aug 2009) $
- * $Id: ReleasedNodeEnergyEstimator.cpp 4163 2009-08-31 10:47:46Z jmcminis $
- ***************************************************************************/

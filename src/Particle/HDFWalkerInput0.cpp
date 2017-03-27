@@ -304,8 +304,3 @@ void  HDFWalkerInput0::getRandomState(bool restart)
   ERRORMSG("HDF5 is disabled")
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

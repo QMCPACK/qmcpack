@@ -288,8 +288,3 @@ ReplicaControl::recv(ParticlePos_t& p, int& node, int btag)
 //      if(RightNode == NumReplica) RightNode = -1; // not periodic
 //    }
 //  }
-  /***************************************************************************
-   * $RCSfile$   $Author$
-   * $Revision$   $Date$
-   * $Id$
-   ***************************************************************************/

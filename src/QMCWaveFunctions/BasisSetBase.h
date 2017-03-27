@@ -202,8 +202,3 @@ struct BasisSetBuilder: public QMCTraits, public MPIObjectBase
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

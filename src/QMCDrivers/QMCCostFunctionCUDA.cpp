@@ -782,8 +782,3 @@ QMCCostFunctionCUDA::Return_t QMCCostFunctionCUDA::fillOverlapHamiltonianMatrice
 }
 
 }
-/***************************************************************************
- * $RCSfile$   $Author: esler $
- * $Revision: 1898 $   $Date: 2007-04-17 10:07:34 -0500 (Tue, 17 Apr 2007) $
- * $Id: QMCCostFunctionCUDA.cpp 1898 2007-04-17 15:07:34Z jnkim $
- ***************************************************************************/

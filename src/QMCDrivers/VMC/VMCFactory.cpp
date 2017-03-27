@@ -80,8 +80,3 @@ QMCDriver* VMCFactory::create(MCWalkerConfiguration& w, TrialWaveFunction& psi,
   return qmc;
 }
 }
-/***************************************************************************
- * $RCSfile: DMCFactory.cpp,v $   $Author: jnkim $
- * $Revision: 1.3 $   $Date: 2006/04/05 00:49:59 $
- * $Id: DMCFactory.cpp,v 1.3 2006/04/05 00:49:59 jnkim Exp $
- ***************************************************************************/

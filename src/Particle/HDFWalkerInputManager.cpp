@@ -108,8 +108,3 @@ void HDFWalkerInputManager::rewind(const std::string& h5root, int blocks)
 //   WO.rewind(targetW,blocks);
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

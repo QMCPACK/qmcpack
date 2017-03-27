@@ -852,8 +852,3 @@ bool QMCLinearOptimize::fitMappedStabilizers(std::vector<std::pair<RealType,Real
   return SuccessfulFit;
 }
 }
-/***************************************************************************
-* $RCSfile$   $Author: jnkim $
-* $Revision: 5774 $   $Date: 2013-04-15 11:36:19 -0700 (Mon, 15 Apr 2013) $
-* $Id: QMCLinearOptimize.cpp 5774 2013-04-15 18:36:19Z jnkim $
-***************************************************************************/

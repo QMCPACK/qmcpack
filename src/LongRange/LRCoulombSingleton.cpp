@@ -278,8 +278,3 @@ LRCoulombSingleton::createSpline4RbyVs(LRHandlerType* aLR, mRealType rcut,
 }
 
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

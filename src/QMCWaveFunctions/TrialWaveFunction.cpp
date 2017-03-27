@@ -1038,8 +1038,3 @@ void TrialWaveFunction::get_ratios(ParticleSet& P, std::vector<ValueType>& ratio
 }
 
 }
-/***************************************************************************
-* $RCSfile$   $Author$
-* $Revision$   $Date$
-* $Id$
-***************************************************************************/

@@ -292,8 +292,3 @@ void DistributedSPOSet::evaluate_notranspose(const ParticleSet& P, int first, in
   err=MPI_Waitall(NumRemoteNodes, sendPsi,statusPsi);
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1772 $   $Date: 2007-02-17 17:47:37 -0600 (Sat, 17 Feb 2007) $
- * $Id: DistributedSPOSet.cpp 1772 2007-02-17 23:47:37Z jnkim $
- ***************************************************************************/

@@ -373,8 +373,3 @@ ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur,
   return qp;
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

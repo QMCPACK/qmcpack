@@ -34,9 +34,4 @@ const std::complex<float> BLAS::czero = 0.0e0;
 const std::complex<double> BLAS::zone = 1.0e0;
 const std::complex<double> BLAS::zzero = 0.0e0;
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

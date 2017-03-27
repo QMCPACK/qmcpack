@@ -988,8 +988,3 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::LMYEngineCost(const bool need
 #endif
 
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1793 $   $Date: 2007-02-21 17:51:06 -0600 (Wed, 21 Feb 2007) $
- * $Id: QMCCostFunctionBase.cpp 1793 2007-02-21 23:51:06Z jnkim $
- ***************************************************************************/

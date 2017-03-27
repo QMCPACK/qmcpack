@@ -71,8 +71,3 @@ Communicate::gather(CONTAINER< CppType >&sb, CONTAINER< CppType >& rb, int dest)
 
 QMCPP_SCATTER(vector,uint32_t,MPI_UNSIGNED);
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 2458 $   $Date: 2008-02-20 10:45:51 -0500 (Wed, 20 Feb 2008) $
- * $Id: CommOperators.h 2458 2008-02-20 15:45:51Z jnkim $
- ***************************************************************************/

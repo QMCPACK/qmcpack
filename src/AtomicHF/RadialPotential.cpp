@@ -335,9 +335,4 @@ ExchangePotential::evaluate(const HFAtomicOrbitals& psi,
   return Eexchange;
 }
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

@@ -152,8 +152,3 @@ struct MakeReturn
 #endif // PETE_PETE_CREATELEAF_H
 
 // ACL:rcsinfo
-// ----------------------------------------------------------------------
-// $RCSfile$   $Author$
-// $Revision$   $Date$
-// ----------------------------------------------------------------------
-// ACL:rcsinfo

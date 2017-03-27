@@ -255,8 +255,3 @@ Communicate::Communicate(const Communicate& comm, const std::vector<int>& jobs)
 }
 
 #endif // !HAVE_OOMPI
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
