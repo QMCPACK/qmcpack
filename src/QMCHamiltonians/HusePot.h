@@ -176,9 +176,4 @@ struct HusePot: public QMCHamiltonianBase
 }
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author: jeongnim.kim $
- * $Revision: 4236 $   $Date: 2009-09-29 12:43:33 -0500 (Tue, 29 Sep 2009) $
- * $Id: CoulombPotential.h 4236 2009-09-29 17:43:33Z jeongnim.kim $
- ***************************************************************************/
 

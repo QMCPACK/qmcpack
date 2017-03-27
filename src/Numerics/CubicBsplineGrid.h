@@ -156,8 +156,3 @@ struct CubicBsplineGrid<T,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS>
 
 };
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1580 $   $Date: 2007-01-04 10:00:43 -0600 (Thu, 04 Jan 2007) $
- * $Id: TricubicBsplineSet.h 1580 2007-01-04 16:00:43Z jnkim $
- ***************************************************************************/

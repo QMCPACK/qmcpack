@@ -1217,8 +1217,3 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur, std::vector<ci_configuration>
 //   targetPsi.addOrbital(multidet,"MultiSlateDet");
 // }
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

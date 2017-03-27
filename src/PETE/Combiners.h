@@ -373,8 +373,3 @@ struct Combine2<int, int, Op, SumCombine>
 #endif // PETE_PETE_COMBINERS_H
 
 // ACL:rcsinfo
-// ----------------------------------------------------------------------
-// $RCSfile$   $Author$
-// $Revision$   $Date$
-// ----------------------------------------------------------------------
-// ACL:rcsinfo

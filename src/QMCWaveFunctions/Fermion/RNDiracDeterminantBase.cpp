@@ -573,8 +573,3 @@ RNDiracDeterminantBase::DiracDeterminantBase* RNDiracDeterminantBase::makeCopy(S
 
 
 }
-/***************************************************************************
- * $RCSfile$   $Author: jmcminis $
- * $Revision: 4433 $   $Date: 2009-12-02 15:58:06 -0600 (Wed, 02 Dec 2009) $
- * $Id: RNDiracDeterminantBase.cpp 4433 2009-12-02 21:58:06Z jmcminis $
- ***************************************************************************/

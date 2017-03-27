@@ -170,8 +170,3 @@ struct MultipleEnergyEstimator: public ScalarEstimatorBase
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

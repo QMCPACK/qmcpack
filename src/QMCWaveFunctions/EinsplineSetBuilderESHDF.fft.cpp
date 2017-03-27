@@ -969,8 +969,3 @@ void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<doub
 #endif
 }
 
-/***************************************************************************
- * $RCSfile$   $Author: jmcminis $
- * $Revision: 5343 $   $Date: 2011-08-18 21:44:30 -0400 (Thu, 18 Aug 2011) $
- * $Id: EinsplineSetBuilderESHDF.cpp 5343 2011-08-19 01:44:30Z jmcminis $
- ***************************************************************************/

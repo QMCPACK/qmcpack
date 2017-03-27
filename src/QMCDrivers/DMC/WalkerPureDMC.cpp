@@ -184,9 +184,4 @@ WalkerPureDMC::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
   return nwkept;
 }
 
-/***************************************************************************
- * $RCSfile: WalkerPureDMC.cpp,v $   $Author: jnkim $
- * $Revision: 3075 $   $Date: 2008-09-04 11:55:08 -0500 (Thu, 04 Sep 2008) $
- * $Id: WalkerPureDMC.cpp 3075 2008-09-04 16:55:08Z jnkim $
- ***************************************************************************/
 

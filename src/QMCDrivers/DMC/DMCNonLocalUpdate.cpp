@@ -340,8 +340,3 @@ void DMCNonLocalUpdatePbyPFast::advanceWalkers(WalkerIter_t it, WalkerIter_t it_
 }
 }
 
-/***************************************************************************
- * $RCSfile: DMCNonLocalUpdate.cpp,v $   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

@@ -381,8 +381,3 @@ bool operator!=(const PooledData<T>& a, const PooledData<T>& b)
   return false;
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

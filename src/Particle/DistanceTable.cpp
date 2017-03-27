@@ -218,8 +218,3 @@ DistanceTableData* DistanceTable::add(const ParticleSet& s, ParticleSet& t)
 }
 
 } //namespace qmcplusplus
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

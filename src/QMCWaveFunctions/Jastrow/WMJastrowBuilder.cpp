@@ -310,8 +310,3 @@ void WMJastrowBuilder::add2BasisGroup(BasisGroupType* curBG, xmlNodePtr cur)
 }
 
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 2930 $   $Date: 2008-07-31 10:30:42 -0500 (Thu, 31 Jul 2008) $
- * $Id: PadeConstraints.cpp 2930 2008-07-31 15:30:42Z jnkim $
- ***************************************************************************/

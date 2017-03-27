@@ -345,8 +345,3 @@ void PairCorrEstimator::setBound(RealType rmax, RealType dr)
 //  }
 }
 
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1415 $   $Date: 2006-10-23 11:51:53 -0500 (Mon, 23 Oct 2006) $
- * $Id: CompositeEstimatorBase.h 1415 2006-10-23 16:51:53Z jnkim $
- ***************************************************************************/

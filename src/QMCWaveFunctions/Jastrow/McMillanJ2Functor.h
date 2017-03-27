@@ -750,8 +750,3 @@ struct comboMcMillanJ2Functor: public OptimizableFunctorBase
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: dcyang2 $
- * $Revision: 2801 $   $Date: 2008-07-09 14:25:22 -0500 (Wed, 09 Jul 2008) $
- * $Id: McMillanJ2Functor.h 2801 2008-07-09 19:25:22Z dcyang2 $
- ***************************************************************************/

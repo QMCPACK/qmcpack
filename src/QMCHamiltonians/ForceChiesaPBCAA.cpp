@@ -425,8 +425,3 @@ QMCHamiltonianBase* ForceChiesaPBCAA::makeClone(ParticleSet& qp, TrialWaveFuncti
 //    //cerr << std::endl;
 //  }
 
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 3015 $   $Date: 2008-08-18 16:08:06 -0500 (Mon, 18 Aug 2008) $
- * $Id: ForceChiesaPBCAA.cpp 3015 2008-08-18 21:08:06Z jnkim $
- ***************************************************************************/

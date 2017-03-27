@@ -91,8 +91,3 @@ struct ScaledPadeConstraints: public OrbitalConstraintsBase
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

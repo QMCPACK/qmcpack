@@ -953,8 +953,3 @@ VMCLinearOptOMP::put(xmlNodePtr q)
 }
 }
 
-/***************************************************************************
- * $RCSfile: VMCLinearOptOMP.cpp,v $   $Author: jnkim $
- * $Revision: 1.25 $   $Date: 2006/10/18 17:03:05 $
- * $Id: VMCLinearOptOMP.cpp,v 1.25 2006/10/18 17:03:05 jnkim Exp $
- ***************************************************************************/

@@ -591,8 +591,3 @@ TricubicBsplineGridBC<T,PBC0,PBC1,PBC2>::Init(const Array<T,3>& data, Array<T,3>
     //abort();
   }
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 2106 $   $Date: 2007-06-25 23:23:32 -0500 (Mon, 25 Jun 2007) $
- * $Id: TricubicBsplineGridBC.cpp 2106 2007-06-26 04:23:32Z jnkim $
- ***************************************************************************/

@@ -145,8 +145,3 @@ void Any2GridBuilder::addPade(xmlNodePtr cur)
   //m_orbitals->RnlID.push_back(m_nlms);
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

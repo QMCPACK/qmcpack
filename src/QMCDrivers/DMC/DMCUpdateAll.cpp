@@ -231,8 +231,3 @@ void DMCUpdateAllWithKill::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
 }
 }
 
-/***************************************************************************
- * $RCSfile: DMCUpdateAll.cpp,v $   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

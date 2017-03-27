@@ -783,8 +783,3 @@ bool HamiltonianFactory::put(xmlNodePtr cur)
 
 void HamiltonianFactory::reset() { }
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

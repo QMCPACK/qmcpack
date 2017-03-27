@@ -526,9 +526,4 @@ public:
 }
 #include "QMCWaveFunctions/TwoBodyJastrowFunction.Shared.h"
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

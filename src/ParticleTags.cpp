@@ -64,8 +64,3 @@ std::string ParticleTags::size_tag="size";
 std::string ParticleTags::format_tag="format";
 std::string ParticleTags::role_tag="role";
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

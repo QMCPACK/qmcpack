@@ -184,9 +184,4 @@ WalkerControlBase* CreateWalkerController(
   return wc;
 }
 }
-/***************************************************************************
- * $RCSfile: WalkerControlFactory.cpp,v $   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 
