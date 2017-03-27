@@ -48,28 +48,28 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int
     {
       if(useSoA)
       {
-        o << "  Using SoaDistanceTableBA<T,D,PPPO> of SoA layout " << PPPO << std::endl;
-        dt = new  SoaDistanceTableBA<RealType,DIM,PPPO+SOA_OFFSET>(s,t);
+        o << "    PBC=bulk Orthorhombic=yes  Using SoaDistanceTableBA<T,D,PPPO> of SoA layout " << PPPO << std::endl;
+        dt = new SoaDistanceTableBA<RealType,DIM,PPPO+SOA_OFFSET>(s,t);
       }
       else
       {
-        o << "    PBC=bulk Orthorhombic=yes Using AsymmetricDTD<T,D,PPPO> " << PPPO << std::endl;
+        o << "    PBC=bulk Orthorhombic=yes  Using AsymmetricDTD<T,D,PPPO> " << PPPO << std::endl;
         dt = new AsymmetricDTD<RealType,DIM,PPPO>(s,t);
       }
     }
     else
     {
-      o << "    PBC=bulk Orthorhombic=no ";
+      o << "    PBC=bulk Orthorhombic=no";
       if(s.Lattice.WignerSeitzRadius>s.Lattice.SimulationCellRadius)
       {
         if(useSoA)
         {
           o << "  Using SoaDistanceTableBA<T,D,PPPG> of SoA layout " << PPPG << std::endl;
-          dt = new  SoaDistanceTableBA<RealType,DIM,PPPG+SOA_OFFSET>(s,t);
+          dt = new SoaDistanceTableBA<RealType,DIM,PPPG+SOA_OFFSET>(s,t);
         }
         else
         {
-          o << " Using AsymmetricDTD<T,D,PPPG> " << PPPG << std::endl;
+          o << "  Using AsymmetricDTD<T,D,PPPG> " << PPPG << std::endl;
           dt = new AsymmetricDTD<RealType,DIM,PPPG>(s,t);
         }
       }
@@ -77,12 +77,12 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int
       {
         if(useSoA)
         {
-          o << " Using SoaDistanceTableBA<T,D,PPPS> with SoA layout " << PPPS << std::endl;
+          o << "  Using SoaDistanceTableBA<T,D,PPPS> with SoA layout " << PPPS << std::endl;
           dt = new SoaDistanceTableBA<RealType,DIM,PPPS+SOA_OFFSET>(s,t);
         }
         else
         {
-          o << " Using AsymmetricDTD<T,D,PPPS> " << PPPS << std::endl;
+          o << "  Using AsymmetricDTD<T,D,PPPS> " << PPPS << std::endl;
           dt = new AsymmetricDTD<RealType,DIM,PPPS>(s,t);
         }
       }
@@ -93,35 +93,67 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int
   {
     if(s.Lattice.DiagonalOnly)
     {
-      o << "    PBC=slab Orthorhombic=yes Using AsymmetricDTD<T,D,PPNO> " << PPNO << std::endl;
-      dt = new AsymmetricDTD<RealType,DIM,PPNO>(s,t);
-    }
-    else
-    {
-      o << "    PBC=slab Orthorhombic=no ";
-      if(s.Lattice.WignerSeitzRadius>s.Lattice.SimulationCellRadius)
+      if(useSoA)
       {
-        o << " Using AsymmetricDTD<T,DIM,PPNX> " << PPNX << std::endl;
-        dt = new AsymmetricDTD<RealType,DIM,PPNX>(s,t);
+        o << "    PBC=bulk Orthorhombic=yes  Using SoaDistanceTableBA<T,D,PPNO> of SoA layout " << PPNO << std::endl;
+        dt = new SoaDistanceTableBA<RealType,DIM,PPNO+SOA_OFFSET>(s,t);
       }
       else
       {
-        o << " Using AsymmetricDTD<T,DIM,PPNS> " << PPNS << std::endl;
-        dt = new AsymmetricDTD<RealType,DIM,PPNS>(s,t);
+        o << "    PBC=slab Orthorhombic=yes  Using AsymmetricDTD<T,D,PPNO> " << PPNO << std::endl;
+        dt = new AsymmetricDTD<RealType,DIM,PPNO>(s,t);
+      }
+    }
+    else
+    {
+      o << "    PBC=slab Orthorhombic=no";
+      if(s.Lattice.WignerSeitzRadius>s.Lattice.SimulationCellRadius)
+      {
+        if(useSoA)
+        {
+          o << "  Using SoaDistanceTableBA<T,D,PPNX> of SoA layout " << PPNX << std::endl;
+          dt = new SoaDistanceTableBA<RealType,DIM,PPNX+SOA_OFFSET>(s,t);
+        }
+        else
+        {
+          o << "  Using AsymmetricDTD<T,DIM,PPNX> " << PPNX << std::endl;
+          dt = new AsymmetricDTD<RealType,DIM,PPNX>(s,t);
+        }
+      }
+      else
+      {
+        if(useSoA)
+        {
+          o << "  Using SoaDistanceTableBA<T,D,PPNS> of SoA layout " << PPNS << std::endl;
+          dt = new SoaDistanceTableBA<RealType,DIM,PPNS+SOA_OFFSET>(s,t);
+        }
+        else
+        {
+          o << "  Using AsymmetricDTD<T,DIM,PPNS> " << PPNS << std::endl;
+          dt = new AsymmetricDTD<RealType,DIM,PPNS>(s,t);
+        }
       }
     }
   }
   else if(sc == SUPERCELL_WIRE)
   {
-    o << "    PBC=wire Orthorhombic=NA\n";
-    dt = new AsymmetricDTD<RealType,DIM,SUPERCELL_WIRE>(s,t);
+    if(useSoA)
+    {
+      o << "    PBC=wire Orthorhombic=NA of SoA layout\n";
+      dt = new SoaDistanceTableBA<RealType,DIM,SUPERCELL_WIRE+SOA_OFFSET>(s,t);
+    }
+    else
+    {
+      o << "    PBC=wire Orthorhombic=NA\n";
+      dt = new AsymmetricDTD<RealType,DIM,SUPERCELL_WIRE>(s,t);
+    }
   }
   else  //open boundary condition
   {
     if(useSoA)
     {
       o << "  Using SoaDistanceTableBA<T,D,PPPG> of SoA layout " << SUPERCELL_OPEN << std::endl;
-      dt = new  SoaDistanceTableBA<RealType,DIM,SUPERCELL_OPEN+SOA_OFFSET>(s,t);
+      dt = new SoaDistanceTableBA<RealType,DIM,SUPERCELL_OPEN+SOA_OFFSET>(s,t);
     }
     else
     {
