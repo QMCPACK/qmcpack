@@ -583,6 +583,27 @@ make -j 8
 ls -l bin/qmcpack 
 \end{verbatim}
 
+\subsection{Installing on ORNL SummitDev}
+SummitDev is the development cluster for the next GPU accelerated
+supercomputer at Oak Ridge National Laboratory's Oak Ridge
+Leadership Computing Facility  (ORNL OLCF).
+\begin{verbatim}
+module load essl
+module load netlib-lapack 
+module load hdf5/1.8.18
+module load fftw
+export FFTW_HOME=$OLCF_FFTW_ROOT
+module load python
+module load cmake
+module load boost
+module load cuda
+mkdir build_summitdev
+cd build_summitdev
+cmake -DCMAKE_C_COMPILER="mpicc" -DCMAKE_C_FLAGS="-std=gnu11 -qsmp -O3" -DCMAKE_CXX_COMPILER="mpicxx" -DCMAKE_CXX_FLAGS="-std=gnu++11 -qnoxlcompatmacros -qsmp -O3 "  -DQMC_CUDA=1 ..
+make -j 8
+ls -l bin/qmcpack 
+\end{verbatim}
+
 \subsection{Installing on NERSC Edison Cray XC30}
 
 Edison is a Cray XC30 with dual 12-core Intel "Ivy Bridge" nodes 
