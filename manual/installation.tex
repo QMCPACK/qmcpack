@@ -587,6 +587,8 @@ ls -l bin/qmcpack
 SummitDev is the development cluster for the next GPU accelerated
 supercomputer at Oak Ridge National Laboratory's Oak Ridge
 Leadership Computing Facility  (ORNL OLCF).
+Please note that these build instructions are preliminary as the
+software environment is subject to change.
 \begin{verbatim}
 module load essl
 module load netlib-lapack 
@@ -599,7 +601,7 @@ module load boost
 module load cuda
 mkdir build_summitdev
 cd build_summitdev
-cmake -DCMAKE_C_COMPILER="mpicc" -DCMAKE_C_FLAGS="-std=gnu11 -qsmp -O3" -DCMAKE_CXX_COMPILER="mpicxx" -DCMAKE_CXX_FLAGS="-std=gnu++11 -qnoxlcompatmacros -qsmp -O3 "  -DQMC_CUDA=1 ..
+cmake -DCMAKE_C_COMPILER="mpicc" -DCMAKE_C_FLAGS="-std=gnu11 -qsmp -O3" -DCMAKE_CXX_COMPILER="mpicxx" -DCMAKE_CXX_FLAGS="-std=gnu++11 -qnoxlcompatmacros -qsmp -O3" -DQMC_CUDA=1 -DCUDA_NVCC_FLAGS="-arch=sm_60;-Drestrict=__restrict__;-DNO_CUDA_MAIN;-O3" ..
 make -j 8
 ls -l bin/qmcpack 
 \end{verbatim}
