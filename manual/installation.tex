@@ -585,8 +585,9 @@ ls -l bin/qmcpack
 
 \subsection{Installing on ORNL SummitDev}
 SummitDev is the development cluster for the next GPU accelerated
-supercomputer at Oak Ridge National Laboratory's Oak Ridge
-Leadership Computing Facility  (ORNL OLCF).
+supercomputer Summit at Oak Ridge National Laboratory's
+Leadership Computing Facility  (ORNL OLCF). It has IBM Power8 CPUs and NVIDIA Pascal GPUs.
+
 \subsubsection{Prerequisite: Libxml2 installation}
 As a prerequisite libxml2 needs to be installed somewhere in the home directory
 of the user. In the source directory of libxml2 (e.g. version 2.9.4) the following
@@ -599,10 +600,11 @@ export LD_LIBARY_PATH="$MYSOFTWARE_PATH/lib64:$MYSOFTWARE_PATH/lib:$LD_LIBRARY_P
 make -j 8
 make install
 \end{verbatim}
+
 \subsubsection{Building QMCPACK}
 Please note that these build instructions are preliminary as the
 software environment is subject to change. In order for both
-PKG_CONFIG_PATH and LD_LIBRARY_PATH to be properly set for libxml2
+PKG\_CONFIG\_PATH and LD\_LIBRARY\_PATH to be properly set for libxml2
 at compile and at runtime the following three lines should also be
 in either the submission script or in .bashrc:
 \begin{verbatim}
