@@ -583,7 +583,7 @@ make -j 8
 ls -l bin/qmcpack 
 \end{verbatim}
 
-\subsection{Installing on ORNL SummitDev}
+\subsection{Installing on ORNL OLCF SummitDev}
 SummitDev is the development cluster for the next GPU accelerated
 supercomputer Summit at Oak Ridge National Laboratory's
 Leadership Computing Facility  (ORNL OLCF). It has IBM Power8 CPUs and NVIDIA Pascal GPUs.
@@ -596,7 +596,8 @@ can be used to succesfully compile and install libxml2:
 export MYSOFTWARE_PATH="${HOME}/<path in home directory to install software>"
 export PKG_CONFIG_PATH="$MYSOFTWARE_PATH/lib/pkgconfig:$PKG_CONFIG_PATH"
 export LD_LIBARY_PATH="$MYSOFTWARE_PATH/lib64:$MYSOFTWARE_PATH/lib:$LD_LIBRARY_PATH"
-./configure --prefix=${MYSOFTWARE_PATH} --with-python-install-dir=${MYSOFTWARE_PATH}/lib/python
+./configure --prefix=${MYSOFTWARE_PATH} \
+            --with-python-install-dir=${MYSOFTWARE_PATH}/lib/python
 make -j 8
 make install
 \end{verbatim}
@@ -625,7 +626,13 @@ module load boost
 module load cuda
 mkdir build_summitdev
 cd build_summitdev
-cmake -DCMAKE_C_COMPILER="mpicc" -DCMAKE_C_FLAGS="-std=gnu11 -qsmp -O3" -DCMAKE_CXX_COMPILER="mpicxx" -DCMAKE_CXX_FLAGS="-std=gnu++11 -qnoxlcompatmacros -qsmp -O3" -DQMC_CUDA=1 -DCUDA_NVCC_FLAGS="-arch=sm_60;-Drestrict=__restrict__;-DNO_CUDA_MAIN;-O3" ..
+cmake -DCMAKE_C_COMPILER="mpicc" \
+      -DCMAKE_C_FLAGS="-std=gnu11 -qsmp -O3" \
+      -DCMAKE_CXX_COMPILER="mpicxx" \
+      -DCMAKE_CXX_FLAGS="-std=gnu++11 -qnoxlcompatmacros -qsmp -O3" \
+      -DQMC_CUDA=1 \
+      -DCUDA_NVCC_FLAGS="-arch=sm_60;-Drestrict=__restrict__;-DNO_CUDA_MAIN;-O3" \
+      ..
 make -j 8
 ls -l bin/qmcpack 
 \end{verbatim}
