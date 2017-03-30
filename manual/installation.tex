@@ -830,12 +830,15 @@ called or found. If the QMC runs appear to work but all the other
 tests fail it is possible that python is not working on your system -
 we suggest checking some of the test outputs in build/test/system/test\_name.
 
-Note that because the tests are very small, consisting of only a few
+Note that because most of these tests are very small, consisting of only a few
 electrons, the performance is not representative of larger
 calculations. For example, while the calculations might fit in cache,
 there will be essentially no vectorization due to the small electron
-counts. \textbf{The tests should not be used for any benchmarking or
-performance analysis}. Dedicated larger runs are required.
+counts. \textbf{These tests should therefore not be used for any benchmarking or
+performance analysis}. 
+
+Example runs that can be used for testing performance are described in
+Sec. \ref{sec:perftests}
 
 \subsection{Unit tests}
 
@@ -871,22 +874,99 @@ The source for the unit tests is located in the \texttt{tests} directory under e
 
 See Chapter \ref{chap:unit_testing} for more details about unit tests.
 
+\subsection{Integration tests with Quantum Espresso}
+As described in Sec. \ref{sec:buildqe}, it is possible to test entire
+workflows of trial wavefunction generation, conversion, and eventual
+QMC calculation. A patched QE must be installed so that the
+pw2qmcpack converter is available. 
 
-\subsection{Automatic tests of QMCPACK}
+By adding \texttt{-D QE\_BIN=your\_QE\_binary\_path} in the cmake command line when building your QMCPACK,
+tests named with ``qe-'' prefix will be included in the test set of your build.
+You can test the whole pw$\to$pw2qmcpack$\to$qmcpack workflow by
+\begin{verbatim}
+ctest -R qe
+\end{verbatim}
+This provides a very solid test of the entire QMC
+toolchain for planewave generated wavefunctions.  
+
+\subsection{Performance tests}
+\label{sec:perftests}
+Performance tests representative of real research runs are included in the
+tests/performance directory. They can be used for benchmarking, comparing machine
+performance, or assessing optimizations. This is in
+contrast to the majority of the conventional integration tests where the particle
+counts are too small to be representative. Care is still needed to
+remove initiallization, I/O, and compute a representative performance
+measure.
+
+The ctest integration is sufficient to run the benchmarks and measure
+relative performance from version to version of QMCPACK and assess
+proposed code changes. Performance tests are prefixed with
+``performance''. To obtain highest performance on a particular
+platform, you must run the benchmarks in a standalone manner and tune
+thread counts, placement, walker count (etc.) This is essential to
+fairly compare different machines. Check with the
+developers if you are unsure of what is a fair change.
+
+\subsubsection{NiO performance tests}
+
+Follow the instructions in tests/performance/NiO/README to 
+enable and run the NiO tests.
+
+The NiO tests are for bulk supercells of varying size. The QMC runs consist of short blocks of (i) VMC
+without drift (ii) VMC with drift term included (iii) DMC with
+constant population. The tests use spline wavefunctions that must be
+downloaded as described in the README due to their large size. You
+will need to set ``-DQMC\_DATA=YOUR\_DATA\_FOLDER -DENABLE\_TIMERS=1''
+when running cmake as
+described in the README. 
+ 
+Two sets of wavefunction are tested: splined orbitals with a one and
+two body Jastrow functions, and a more complex form with an additional
+three body Jastrow function. The Jastrows are the same for each run
+and are not reoptimized, as might be done for research purposes.  Runs
+in the hundreds of electrons up to low thousands of electrons are representative of
+research runs performed in 2017. The largest runs target
+future machines and require very large memory.
+
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{|c|c|c|c|}
+\hline
+\bfseries Name&  \bfseries Atoms& \bfseries Electrons&  \bfseries Electrons per spin \\ 
+\hline
+ S8  &  32  &    384  &   192 \\ 
+S16 &   64  &    768  &  384 \\  
+S32  & 128  &   1536 &           768 \\
+S64  & 256  &   3072 &     1536 \\ 
+S128  & 512  &   6144 &      3072 \\
+S256  & 1024 & 12288 &  6144 \\
+\hline
+\end{tabular}
+  \caption{System sizes for NiO performance tests}
+  \label{tab:niotests}
+\end{center}
+\end{table}
+
+\section{Automated testing of QMCPACK}
 
 The QMCPACK developers run automatic tests of QMCPACK on several
 different computer systems,  many on a continuous basis. We currently test
-the following combinations nights (workstation) or weekly (supercomputers):
+the following combinations nightly (workstations) and weekly (supercomputers):
 
 \begin{itemize}
-\item On a Red Hat Linux workstation:
+\item On a Linux Intel Xeon workstation:
   \begin{itemize}
   \item GCC 4.8.2 with OpenMPI and CUDA 7.0 (GPU build, run on NVIDIA K40s) 
   \item GCC 4.8.2 with OpenMPI with netlib BLAS
   \item GCC 4.8.2 with OpenMPI with Intel MKL
-  \item Intel 2016 with Intel MPI and MKL
+  \item Intel 2017 with Intel MPI and MKL
   \item Intel 2015 with Intel MPI and MKL and CUDA 7.0 (GPU build, run on NVIDIA K40s) 
   \item Intel 2015 with Intel MPI  and MKL
+  \end{itemize}
+\item On a Linux Intel Knight's Landing workstation:
+  \begin{itemize}
+  \item 
   \end{itemize}
 \item On Eos, a Cray XC30 Intel machine:
   \begin{itemize}
@@ -909,7 +989,9 @@ the following combinations nights (workstation) or weekly (supercomputers):
   \includegraphics[width=10cm]{figures/QMCPACK_CDash_CTest_Results_20160129.png}
   \caption{Example test results for QMCPACK, showing data for a
     workstation (Intel, GCC, both CPU and GPU builds) and for two ORNL
-    supercomputers. In this example, 4 errors were found.}
+    supercomputers. In this example, 4 errors were found. This
+    dashboard is not yet openly accessible, but the developers hope
+    to make it available at a later date.}
   \label{fig:cdash}
 \end{figure}
 
@@ -959,7 +1041,7 @@ cd espresso-5.3.0
 The complete process is described in external\_codes/quantum\_espresso/README.
 
 The tests involving pw.x and pw2qmcpack.x have been integrated in the test suite of QMCPACK.
-By add \texttt{-D QE\_BIN=your\_QE\_binary\_path} in the cmake command line when building your QMCPACK,
+By adding \texttt{-D QE\_BIN=your\_QE\_binary\_path} in the cmake command line when building your QMCPACK,
 tests named with ``qe-'' prefix will be included in the test set of your build.
 You can test the whole pw$\to$pw2qmcpack$\to$qmcpack workflow by
 \begin{verbatim}
