@@ -793,6 +793,8 @@ void ParticleSet::rejectMove(Index_t iat)
 {
   //restore the position by the saved activePos
   R[iat]=activePos;
+  for (int i=0; i< DistTables.size(); ++i)
+    DistTables[i]->activePtcl=-1;
 }
 
 void ParticleSet::donePbyP()
