@@ -328,6 +328,8 @@ void QMCUpdateBase::updateWalkers(WalkerIter_t it, WalkerIter_t it_end)
   {
     Walker_t& thisWalker(**it);
     W.loadWalker(thisWalker,UpdatePbyP);
+    //recompute distance tables
+    W.update();
     Walker_t::Buffer_t& w_buffer((*it)->DataSet);
     RealType logpsi=Psi.updateBuffer(W,w_buffer,true);
     W.saveWalker(thisWalker);
