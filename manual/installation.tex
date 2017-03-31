@@ -875,6 +875,7 @@ The source for the unit tests is located in the \texttt{tests} directory under e
 See Chapter \ref{chap:unit_testing} for more details about unit tests.
 
 \subsection{Integration tests with Quantum Espresso}
+\label{sec:integtestqe}
 As described in Sec. \ref{sec:buildqe}, it is possible to test entire
 workflows of trial wavefunction generation, conversion, and eventual
 QMC calculation. A patched QE must be installed so that the
@@ -1048,6 +1049,7 @@ You can test the whole pw$\to$pw2qmcpack$\to$qmcpack workflow by
 \begin{verbatim}
 ctest -R qe
 \end{verbatim}
+See Sec.\ref{sec:integtestqe} and the testing section for more details.
 
 \section{How to build the fastest executable version of QMCPACK}
 \label{sec:buildperformance}
