@@ -767,6 +767,12 @@ EinsplineSetBuilder::OccupyBands(int spin, int sortBands, int numOrbs)
 {
   update_token(__FILE__,__LINE__, "OccupyBands");
   if (myComm->rank() != 0) return;
+  if(spin>=NumSpins)
+  {
+    app_error() << "Invalid request for orbitals in spin group " << spin
+                << ". Current h5 file only contains spin groups " << "[0.." << NumSpins-1 << "]." << std::endl;
+    abort();
+  }
   if (Format == ESHDF)
   {
     OccupyBands_ESHDF (spin, sortBands, numOrbs);
