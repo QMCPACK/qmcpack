@@ -73,7 +73,6 @@ void LRTwoBodyJastrow::checkOutVariables(const opt_variables_type& active)
 
 void LRTwoBodyJastrow::resetParameters(const opt_variables_type& active)
 {
-//     if(handler) resetByHandler();
 }
 
 void LRTwoBodyJastrow::reportStatus(std::ostream& os)
@@ -82,14 +81,7 @@ void LRTwoBodyJastrow::reportStatus(std::ostream& os)
 
 void LRTwoBodyJastrow::resetTargetParticleSet(ParticleSet& P)
 {
-  // update handler as well, should there also be a reset?
   skRef=P.SK;
-  //Do not update handler and breakup
-  //if(handler)
-  //{
-  //  handler->initBreakup(P);
-  //  resetInternals();
-  //}
 }
 
 LRTwoBodyJastrow::RealType
@@ -99,7 +91,6 @@ LRTwoBodyJastrow::evaluateLog(ParticleSet& P,
 {
   RealType sum(0.0);
 #if defined(USE_REAL_STRUCT_FACTOR)
- // APP_ABORT("LRTwoBodyJastrow::evaluateLog ");
   std::copy(P.SK->rhok_r[0],P.SK->rhok_r[0]+MaxK,Rhok_r.data());
   std::copy(P.SK->rhok_i[0],P.SK->rhok_i[0]+MaxK,Rhok_i.data());
   
@@ -114,12 +105,6 @@ LRTwoBodyJastrow::evaluateLog(ParticleSet& P,
   for(int spec1=1; spec1<NumSpecies; spec1++)
     accumulate_elements(P.SK->rhok[spec1],P.SK->rhok[spec1]+MaxK,Rhok.data());
 #endif
-  //Rhok=0.0;
-  //for(int spec1=0; spec1<NumSpecies; spec1++)
-  //{
-  //  const ComplexType* restrict rhok(P.SK->rhok[spec1]);
-  //  for(int ki=0; ki<MaxK; ki++) Rhok[ki] += rhok[ki];
-  //}
   const KContainer::VContainer_t& Kcart(P.SK->KLists.kpts_cart);
   for(int iat=0; iat<NumPtcls; iat++)
   {
@@ -167,7 +152,6 @@ LRTwoBodyJastrow::evaluateLog(ParticleSet& P,
     L[iat]+=(d2U[iat]=l);
   }
   return 0.5*sum;
-  //return sum;
 }
 
 
@@ -180,7 +164,6 @@ LRTwoBodyJastrow::ratio(ParticleSet& P, int iat)
   //restore, if called should do nothing
   NeedToRestore=false;
 #if defined(USE_REAL_STRUCT_FACTOR)
-  //APP_ABORT("LRTwoBodyJastrow::ratio(ParticleSet& P, int iat)");
   const KContainer::VContainer_t& kpts(P.SK->KLists.kpts_cart);
   
   const RealType* restrict eikr_r_ptr(P.SK->eikr_r[iat]);
@@ -224,7 +207,6 @@ LRTwoBodyJastrow::ratio(ParticleSet& P, int iat)
       dd += c*(c+(*rhok_ptr).real()-(*eikr_ptr).real())
             + s*(s+(*rhok_ptr).imag()-(*eikr_ptr).imag());
     }
-    //DEBUG
     curVal += Fk_symm[ks]*dd;
   }
 #endif
@@ -309,7 +291,6 @@ LRTwoBodyJastrow::logRatio(ParticleSet& P, int iat,
       l += 1.0-rr;
       g += ii*kpts[ki];
     }
-    //debug
     curVal = Fk_symm[ks]*v;
     curGrad = Fk_symm[ks]*g;
     curLap = FkbyKK[ks]*l;
@@ -568,7 +549,6 @@ LRTwoBodyJastrow::registerData(ParticleSet& P, PooledData<RealType>& buf)
 {
   LogValue=evaluateLog(P,P.G,P.L);
 #if defined(USE_REAL_STRUCT_FACTOR)
-//  APP_ABORT("LRTwoBodyJastrow::registerData");
   eikr_r.resize(NumPtcls,MaxK);
   eikr_i.resize(NumPtcls,MaxK);
   eikr_new_r.resize(MaxK);
@@ -605,7 +585,6 @@ LRTwoBodyJastrow::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
 {
   LogValue=evaluateLog(P,P.G,P.L);
 #if defined(USE_REAL_STRUCT_FACTOR)
-//  APP_ABORT("LRTwoBodyJastrow::updateBuffer");
   for(int iat=0; iat<NumPtcls; iat++)
   {
     std::copy(P.SK->eikr_r[iat],P.SK->eikr_r[iat]+MaxK,eikr_r[iat]);
@@ -636,7 +615,6 @@ void LRTwoBodyJastrow::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
   buf.get(d2U.first_address(), d2U.last_address());
   buf.get(FirstAddressOfdU,LastAddressOfdU);
 #if defined(USE_REAL_STRUCT_FACTOR)
-//  APP_ABORT("LRTwoBodyJastrow::copyFromBuffer");
   for(int iat=0; iat<NumPtcls; iat++)
   {  
     std::copy(P.SK->eikr_r[iat],P.SK->eikr_r[iat]+MaxK,eikr_r[iat]);
@@ -687,7 +665,7 @@ void LRTwoBodyJastrow::resetByHandler(HandlerType* handler)
   int ish=0;
   while(ish<MaxKshell && ki<NumKpts)
   {
-    Fk_symm[ish]=Fk[ki];//-1.0*handler->Fk[ki];
+    Fk_symm[ish]=Fk[ki];
     FkbyKK[ish]=Fk_symm[ish]*skRef->KLists.ksq[ki];
     for(; ki<skRef->KLists.kshell[ish+1]; ki++)
       Fk[ki]=Fk_symm[ish];

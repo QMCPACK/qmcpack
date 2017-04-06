@@ -126,7 +126,7 @@ public:
     while(ksh<maxshell)
     {
       if(kk[ik]>kcsq)
-        break; //exit
+        break; 
       ik=skRef->KLists.kshell[++ksh];
     }
     MaxKshell=ksh;
@@ -140,7 +140,7 @@ public:
     RealType u0 = -4.0*M_PI/CellVolume;
     for(ksh=0,ik=0; ksh<MaxKshell; ksh++, ik++)
     {
-      RealType v=u0*uk(kk[ik]);//rpa=u0/kk[ik];
+      RealType v=u0*uk(kk[ik]);
       Fk_symm[ksh]=v;
       FkbyKK[ksh]=kk[ik]*v;
       for(; ik<skRef->KLists.kshell[ksh+1]; ik++)

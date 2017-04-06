@@ -36,8 +36,6 @@ struct RPAJastrow: public OrbitalBase
 {
   typedef LRHandlerBase HandlerType;
   typedef BsplineFunctor<RealType> FuncType;
-//  typedef CubicBspline<RealType,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS> SplineEngineType;
-//  typedef CubicSplineSingle<RealType,SplineEngineType> FuncType;
   typedef LinearGrid<RealType> GridType;
 
   RPAJastrow(ParticleSet& target, bool is_manager);

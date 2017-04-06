@@ -68,60 +68,7 @@ bool RPAJastrow::put(xmlNodePtr cur)
   params.add(Rs,"rs","double");
   params.add(Kc,"kc","double");
   params.put(cur);
-  app_log()<<"!!!KC = "<<Kc<<"\n";
   buildOrbital(MyName, useL, useS, rpafunc, Rs, Kc);
-//     app_log() << std::endl<<"   LongRangeForm is "<<rpafunc<< std::endl;
-//
-//     DropLongRange = (useL == "no");
-//     DropShortRange = (useS=="no");
-//
-//     app_log() << "    Rs can be optimized using ID=" << ID_Rs << std::endl;
-//     RealType tlen = std::pow(3.0/4.0/M_PI*targetPtcl.Lattice.Volume/ static_cast<RealType>(targetPtcl.getTotalNum()) ,1.0/3.0);
-//
-//     if(Rs<0) {
-//       if(targetPtcl.Lattice.SuperCellEnum) {
-//         Rs=tlen;
-//       } else {
-//         std::cout<<"  Error finding rs. Is this an open system?!"<< std::endl;
-//         Rs=100.0;
-//       }
-//     }
-//
-//     //Add Rs to optimizable list
-//     myVars.insert(ID_Rs,Rs,true);
-//
-//     int indx = targetPtcl.SK->KLists.ksq.size()-1;
-//     double Kc_max=std::pow(targetPtcl.SK->KLists.ksq[indx],0.5);
-//
-//     if(Kc<0){
-//       Kc = 2.0*  std::pow(2.25*M_PI,1.0/3.0)/tlen ;
-//     }
-//
-//     if(Kc>Kc_max){
-//       Kc=Kc_max;
-//       app_log() << "    Kc set too high. Resetting to the maximum value"<< std::endl;
-//     }
-//
-//     app_log() << "    RPAJastrowBuilder::addTwoBodyPart Rs = " << Rs <<  "  Kc= " << Kc << std::endl;
-//
-//     if (rpafunc=="Yukawa" || rpafunc=="breakup"){
-//       myHandler= new LRHandlerTemp<YukawaBreakup<RealType>,LPQHIBasis>(targetPtcl,Kc);
-//     } else if (rpafunc=="RPA"){
-//       myHandler= new LRRPAHandlerTemp<RPABreakup<RealType>,LPQHIBasis>(targetPtcl,Kc);
-//     } else if (rpafunc=="dYukawa"){
-//       myHandler= new LRHandlerTemp<DerivYukawaBreakup<RealType>,LPQHIBasis >(targetPtcl,Kc);
-//     } else if (rpafunc=="dRPA"){
-//       myHandler= new LRRPAHandlerTemp<DerivRPABreakup<RealType>,LPQHIBasis >(targetPtcl,Kc);
-//     }
-//
-//
-//     myHandler->Breakup(targetPtcl,Rs);
-//
-//     app_log() << "  Maximum K shell " << myHandler->MaxKshell << std::endl;
-//     app_log() << "  Number of k vectors " << myHandler->Fk.size() << std::endl;
-//
-//     if(!DropLongRange) makeLongRange();
-//     if(!DropShortRange) makeShortRange();
   return true;
 }
 
@@ -138,7 +85,6 @@ void RPAJastrow::buildOrbital(const std::string& name, const std::string& UL
   app_log() << std::endl<<"   LongRangeForm is "<<rpafunc<< std::endl;
   DropLongRange = (useL == "no");
   DropShortRange = (useS=="no");
-  app_log() << "    Rs can be optimized using ID=" << ID_Rs << std::endl;
   RealType tlen = std::pow(3.0/4.0/M_PI*targetPtcl.Lattice.Volume/ static_cast<RealType>(targetPtcl.getTotalNum()) ,1.0/3.0);
   if(Rs<0)
   {
@@ -152,8 +98,6 @@ void RPAJastrow::buildOrbital(const std::string& name, const std::string& UL
       Rs=100.0;
     }
   }
-  //Add Rs to optimizable list
-//     myVars.insert(ID_Rs,Rs,true);
   int indx = targetPtcl.SK->KLists.ksq.size()-1;
   double Kc_max=std::pow(targetPtcl.SK->KLists.ksq[indx],0.5);
   if(Kc<0)
@@ -213,14 +157,11 @@ void RPAJastrow::makeShortRange()
      app_log()<< "  Adding Short Range part of RPA function"<< std::endl;
   //short-range uses realHandler
   Rcut = myHandler->get_rc()-0.1;
-  //create numerical functor
+  //create numerical functor of type BsplineFunctor<RealType>.
   nfunc = new FuncType;
   SRA = new ShortRangePartAdapter<RealType>(myHandler);
   SRA->setRmax(Rcut);
-//This #if is from the SoA branch.  However, I'm going to force using the new Bspline forms unless
-//a good excuse exists.  I've commented out the if/else macros for future uncommenting.  
-//#if defined(USE_BSPLINE_FUNCTOR)
- // For when SoA branch gets merged.  
+  //This line is for the SoA branch, for whenever we eventually merge this code.  
  // J2OrbitalSoA<BsplineFunctor<RealType> > *j2 = new J2OrbitalSoA<BsplineFunctor<RealType> >(targetPtcl,IsManager);
   TwoBodyJastrowOrbital<BsplineFunctor<RealType> > *j2 = new TwoBodyJastrowOrbital<BsplineFunctor<RealType> >(targetPtcl,IsManager);
   size_t npts=12;
@@ -240,53 +181,24 @@ void RPAJastrow::makeShortRange()
   {
     X[i]=i*delta;
     Y[i]=SRA->evaluate(X[i]);
-    app_log()<<X[i]<<" "<<Y[i]<<" "<<nfunc->evaluate(X[i])<<"\n";
   }
-//#else 
-//  int npts=static_cast<int>(Rcut/0.01)+1;
-//  myGrid = new GridType;
-//  myGrid->set(0,Rcut,npts);
-//  nfunc->initialize(SRA, myGrid);
-  //create the numerical functor
-
-//  TwoBodyJastrowOrbital<FuncType> *j2 = new TwoBodyJastrowOrbital<FuncType>(targetPtcl,IsManager);
-//  app_log()<<"RPAJastrow:  Made a short range functor for RPA.\n";
-//#endif
   j2->addFunc(0,0,nfunc);
- // j2->addFunc(1,1,nfunc);
-//  j2->addFunc(0,1,nfunc);
   ShortRangeRPA=j2;
   Psi.push_back(ShortRangeRPA);
 }
 
 void RPAJastrow::resetParameters(const opt_variables_type& active)
 {
-  /*
-   int loc=myVars.where(0);
-   if(loc>=0) {
-     Rs=myVars[0]=active[loc];
-     ///Insert breakup etc.
-     myHandler->Breakup(targetPtcl,Rs);
-
-     if(!DropLongRange){
-       delete LongRangeRPA;
-       makeLongRange();
-     }
-     if(!DropShortRange){
-       delete ShortRangeRPA;
-       makeShortRange();
-     }
-   };*/
+  //This code was removed in April6, 2017.  To reimplement, please consult a revision 
+  //earlier than this.
 }
 
 void RPAJastrow::checkOutVariables(const opt_variables_type& active)
 {
-//     myVars.getIndex(active);
 }
 
 void RPAJastrow::checkInVariables(opt_variables_type& active)
 {
-//     active.insertFrom(myVars);
 }
 
 void RPAJastrow::reportStatus(std::ostream& os)
@@ -306,15 +218,8 @@ RPAJastrow::evaluateLog(ParticleSet& P,
                         ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
 {
   LogValue=0.0;
-//  app_log()<<"RPAJastrow.  Calling evaluateLog!\n";
   for(int i=0; i<Psi.size(); i++)
-  {
-//    app_log()<<"   "<<i<<" "<<LogValue<<"\n";
     LogValue += Psi[i]->evaluateLog(P,G,L);
-  }
-//    app_log()<<" Final : "<<LogValue<<"\n";
-//  app_log()<<"RPAJastrow.  Calling evaluateLog!\n";
-//  app_log()<<"  LogValue="<<LogValue<<"\n";
   return LogValue;
 }
 
@@ -326,7 +231,6 @@ RPAJastrow::ratio(ParticleSet& P, int iat,
   ValueType r(1.0);
   for(int i=0; i<Psi.size(); i++)
     r *= Psi[i]->ratio(P,iat,dG,dL);
-//  app_log()<<"RPAJastrow.  Calling ratio PGL!\n";
   return r;
 }
 
@@ -336,8 +240,6 @@ RPAJastrow::ratio(ParticleSet& P, int iat)
   ValueType r(1.0);
   for(int i=0; i<Psi.size(); i++)
     r *= Psi[i]->ratio(P,iat);
-//  app_log()<<"RPAJastrow.  Calling ratio!\n";
-//  app_log()<<"  ratio="<<r<<"\n";
   return r;
 }
 
@@ -349,7 +251,6 @@ RPAJastrow::ratioGrad(ParticleSet &P, int iat, GradType& g)
   {
     r*=Psi[i]->ratioGrad(P,iat,g);
   }
-//  app_log()<<"RPAJastrow.  Calling ratioGrad!\n";
   return r;
 }
 
@@ -359,18 +260,8 @@ RPAJastrow::evalGrad(ParticleSet &P, int iat)
   GradType g(0.0);
   for(int i=0; i<Psi.size(); i++)
     g+=Psi[i]->evalGrad(P,iat);
-//  app_log()<<"RPAJastrow.  Calling evalGrad!\n";
   return g;
 }
-//RPAJastrow::ValueType
-//  RPAJastrow::logRatio(ParticleSet& P, int iat,
-//      ParticleSet::ParticleGradient_t& dG,
-//      ParticleSet::ParticleLaplacian_t& dL) {
-//    ValueType r(0.0);
-//    for(int i=0; i<Psi.size(); i++)
-//      r += Psi[i]->logRatio(P,iat,dG,dL);
-//    return r;
-//  }
 
 void RPAJastrow::acceptMove(ParticleSet& P, int iat)
 {
@@ -424,7 +315,6 @@ RPAJastrow::evaluateLog(ParticleSet& P,BufferType& buf)
   LogValue=0.0;
   for(int i=0; i<Psi.size(); i++)
     LogValue += Psi[i]->evaluateLog(P,buf);
-//  app_log()<<"RPAJastrow:  evaluateLog (buffer)\n";
   return LogValue;
 }
 
