@@ -66,6 +66,21 @@ class LRTwoBodyJastrow: public OrbitalBase
   Vector<RealType> offU, offd2U;
   Vector<PosType> offdU;
 
+#if defined(USE_REAL_STRUCT_FACTOR)
+  Matrix<RealType> rokbyF_r;
+  Matrix<RealType> rokbyF_i;
+  Vector<RealType> Rhok_r;
+  Vector<RealType> Rhok_i;
+
+  ////Matrix<ComplexType> rhok;
+  Matrix<RealType> eikr_r;
+  Matrix<RealType> eikr_i;
+  Vector<RealType> eikr_new_r;
+  Vector<RealType> eikr_new_i;
+  Vector<RealType> delta_eikr_r;
+  Vector<RealType> delta_eikr_i;
+
+#else
   Matrix<ComplexType> rokbyF;
   Vector<ComplexType> Rhok;
 
@@ -73,7 +88,7 @@ class LRTwoBodyJastrow: public OrbitalBase
   Matrix<ComplexType> eikr;
   Vector<ComplexType> eikr_new;
   Vector<ComplexType> delta_eikr;
-
+#endif
   std::vector<int> Kshell;
   std::vector<RealType> FkbyKK;
   //vector<PosType>  Kcart;
@@ -126,7 +141,7 @@ public:
     while(ksh<maxshell)
     {
       if(kk[ik]>kcsq)
-        break; 
+        break; //exit
       ik=skRef->KLists.kshell[++ksh];
     }
     MaxKshell=ksh;
@@ -140,7 +155,7 @@ public:
     RealType u0 = -4.0*M_PI/CellVolume;
     for(ksh=0,ik=0; ksh<MaxKshell; ksh++, ik++)
     {
-      RealType v=u0*uk(kk[ik]);
+      RealType v=u0*uk(kk[ik]);//rpa=u0/kk[ik];
       Fk_symm[ksh]=v;
       FkbyKK[ksh]=kk[ik]*v;
       for(; ik<skRef->KLists.kshell[ksh+1]; ik++)
@@ -166,9 +181,13 @@ public:
     return std::exp(logRatio(P,iat,dG,dL));
   }
 
+  ValueType ratioGrad(ParticleSet& P, int iat, GradType & g);
+
   ValueType logRatio(ParticleSet& P, int iat,
                      ParticleSet::ParticleGradient_t& dG,
                      ParticleSet::ParticleLaplacian_t& dL);
+
+  GradType evalGrad(ParticleSet& P, int iat);
 
   void restore(int iat);
   void acceptMove(ParticleSet& P, int iat);
