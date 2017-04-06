@@ -57,7 +57,6 @@ class LRTwoBodyJastrow: public OrbitalBase
   RealType *LastAddressOfdU;
   StructFact* skRef;
   // handler used to do evalFk
-  //typedef RPALRHandler<RealType>::HandlerType HandlerType;
   typedef LRHandlerBase HandlerType;
   HandlerType* handler;
 
@@ -72,7 +71,6 @@ class LRTwoBodyJastrow: public OrbitalBase
   Vector<RealType> Rhok_r;
   Vector<RealType> Rhok_i;
 
-  ////Matrix<ComplexType> rhok;
   Matrix<RealType> eikr_r;
   Matrix<RealType> eikr_i;
   Vector<RealType> eikr_new_r;
@@ -84,14 +82,12 @@ class LRTwoBodyJastrow: public OrbitalBase
   Matrix<ComplexType> rokbyF;
   Vector<ComplexType> Rhok;
 
-  ////Matrix<ComplexType> rhok;
   Matrix<ComplexType> eikr;
   Vector<ComplexType> eikr_new;
   Vector<ComplexType> delta_eikr;
 #endif
   std::vector<int> Kshell;
   std::vector<RealType> FkbyKK;
-  //vector<PosType>  Kcart;
 
   void resetInternals();
   void resize();
@@ -141,7 +137,7 @@ public:
     while(ksh<maxshell)
     {
       if(kk[ik]>kcsq)
-        break; //exit
+        break; 
       ik=skRef->KLists.kshell[++ksh];
     }
     MaxKshell=ksh;
@@ -155,7 +151,7 @@ public:
     RealType u0 = -4.0*M_PI/CellVolume;
     for(ksh=0,ik=0; ksh<MaxKshell; ksh++, ik++)
     {
-      RealType v=u0*uk(kk[ik]);//rpa=u0/kk[ik];
+      RealType v=u0*uk(kk[ik]);
       Fk_symm[ksh]=v;
       FkbyKK[ksh]=kk[ik]*v;
       for(; ik<skRef->KLists.kshell[ksh+1]; ik++)
