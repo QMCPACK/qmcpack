@@ -291,7 +291,9 @@ ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur,
     if (h5 < 0)
     {
       app_error() << "Could not open HDF5 file \"" << h5name
-                  << "\" in ParticleSetPool::createESParticleSet.  Aborting.\n";
+                  << "\" in ParticleSetPool::createESParticleSet.  Aborting.\n"
+                  << "(Please ensure that your path is correct, the file exists, and that "
+                  << "you have read permissions.)\n";
       APP_ABORT("ParticleSetPool::createESParticleSet");
     }
     ESHDFIonsParser ap(*ions,h5,myComm);
