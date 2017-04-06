@@ -291,7 +291,7 @@ ENDIF()
 
 
 # Submit the results to oblivion
-SET( CTEST_DROP_METHOD "http" )
+SET( CTEST_DROP_METHOD "https" )
 SET( CTEST_DROP_SITE "cdash.qmcpack.org" )
 SET( CTEST_DROP_LOCATION "/CDash/submit.php?project=QMCPACK" )
 SET( CTEST_DROP_SITE_CDASH TRUE )
