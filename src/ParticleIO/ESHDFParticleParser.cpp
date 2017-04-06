@@ -109,7 +109,6 @@ bool ESHDFIonsParser::put(xmlNodePtr cur)
 
 void ESHDFIonsParser::readESHDF()
 {
-  app_log()<<"Uh Oh.  Made it to readESHDF\n";
   int nspecies=0;
   {
     HDFAttribIO<int> a(nspecies);
