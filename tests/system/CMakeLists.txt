@@ -329,6 +329,20 @@ ENDIF()
                     1 # DMC
                     TRUE)
 
+# Coverage test - shorter version of dmc test
+  SET(FULL_NAME "coverage-diamondC_1x1x1_pp-vmc_sdj-1-1")
+  SET(TEST_ADDED FALSE)
+  RUN_QMC_APP(${FULL_NAME}
+              "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+              1 1
+              TEST_ADDED
+              "qmc_short_vmc_dmc_coverage.in.xml")
+
+  IF (TEST_ADDED)
+    SET_PROPERTY(TEST ${FULL_NAME} APPEND PROPERTY LABELS "coverage")
+  ENDIF()
+
+
   LIST(APPEND DIAMOND2_SCALARS "totenergy" "-21.668293 0.007")
   LIST(APPEND DIAMOND2_SCALARS "kinetic" "20.065151 0.044")
   LIST(APPEND DIAMOND2_SCALARS "potential" "-41.733377 0.045")
