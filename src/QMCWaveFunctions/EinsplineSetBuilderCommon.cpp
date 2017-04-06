@@ -767,6 +767,14 @@ EinsplineSetBuilder::OccupyBands(int spin, int sortBands, int numOrbs)
 {
   update_token(__FILE__,__LINE__, "OccupyBands");
   if (myComm->rank() != 0) return;
+  if(spin>=NumSpins)
+  {
+    app_error() << "To developer: User is requesting for orbitals in an invalid spin group " << spin
+                << ". Current h5 file only contains spin groups " << "[0.." << NumSpins-1 << "]." << std::endl;
+    app_error() << "To user: Orbital H5 file contains no spin down data and is appropriate only for spin unpolarized calculations. "
+                << "If this is your intent, please replace 'spindataset=1' with 'spindataset=0' in the input file." << std::endl;
+    abort();
+  }
   if (Format == ESHDF)
   {
     OccupyBands_ESHDF (spin, sortBands, numOrbs);
