@@ -49,6 +49,10 @@ RPAJastrow::~RPAJastrow()
 bool RPAJastrow::put(xmlNodePtr cur)
 {
   ReportEngine PRE("RPAJastrow","put");
+  app_log()<<"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
+  app_log()<<"!!!  WARNING:  RPAJastrow is not fully tested for production !!!\n";
+  app_log()<<"!!!      level calculations.  Use at your own risk!          !!!\n";
+  app_log()<<"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
   xmlNodePtr myNode=xmlCopyNode(cur,1);
   //capture attribute jastrow/@name
   MyName="RPA_Jee";
