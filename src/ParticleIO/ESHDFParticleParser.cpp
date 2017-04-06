@@ -53,7 +53,7 @@ bool ESHDFIonsParser::put(xmlNodePtr cur)
   int iatnumber= tspecies.addAttribute(atomic_number_tag);
   int membersize= tspecies.addAttribute("membersize");
   int massind= tspecies.addAttribute(mass_tag);
-  if(myComm->rank()==0 && hfile_id>=-1)
+  if(myComm->rank()==0 && hfile_id>=0)
     readESHDF();
   if(myComm->size()==1)
     return true;
