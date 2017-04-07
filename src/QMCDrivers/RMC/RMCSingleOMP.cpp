@@ -261,9 +261,7 @@ namespace qmcplusplus
 	Rng.resize (NumThreads, 0);
 	//   W.loadEnsemble(wClones);
 	branchEngine->initReptile (W);
-#if !defined(BGP_BUG)
 #pragma omp parallel for
-#endif
 	for (int ip = 0; ip < NumThreads; ++ip)
 	  {
 	    std::ostringstream os;
@@ -307,9 +305,7 @@ namespace qmcplusplus
 #if !defined(REMOVE_TRACEMANAGER)
     else
       {
-#if !defined(BGP_BUG)
 #pragma omp parallel for
-#endif
 	for (int ip = 0; ip < NumThreads; ++ip)
 	  {
 	    traceClones[ip]->transfer_state_from (*Traces);
@@ -317,9 +313,7 @@ namespace qmcplusplus
       }
 #endif
     app_log ().flush ();
-#if !defined(BGP_BUG)
 #pragma omp parallel for
-#endif
     for (int ip = 0; ip < NumThreads; ++ip)
       {
 	Movers[ip]->put (qmcNode);
@@ -377,9 +371,7 @@ namespace qmcplusplus
     app_log()<<"Finished "<<prestepsVMC<<" VMC presteps\n";
     branchEngine->checkParameters (W);
 
-#if !defined(BGP_BUG)
 #pragma omp parallel for
-#endif
     for (int ip = 0; ip < NumThreads; ++ip)
       {
 	for (int prestep = 0; prestep < nWarmupSteps; ++prestep)

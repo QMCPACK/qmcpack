@@ -61,7 +61,7 @@ struct SoaSphericalTensor
   inline void evaluateV(T x, T y, T z, T* Ylm) const
   {
     evaluate_bare(x,y,z,Ylm);
-    for (int i=0, nl=Ylm.size(); i<nl; i++)
+    for (int i=0, nl=cYlm.size(); i<nl; i++)
       Ylm[i]*= NormFactor[i];
   }
 
@@ -70,7 +70,7 @@ struct SoaSphericalTensor
   {
     T* restrict Ylm=cYlm.data(0);
     evaluate_bare(x,y,z,Ylm);
-    for (int i=0, nl=Ylm.size(); i<nl; i++)
+    for (int i=0, nl=cYlm.size(); i<nl; i++)
       Ylm[i]*= NormFactor[i];
   }
 
@@ -131,12 +131,12 @@ inline SoaSphericalTensor<T>::SoaSphericalTensor(const int l_max, bool addsign) 
 {
   CONSTEXPR T czero(0);
   CONSTEXPR T cone(1);
-  CONSTEXPR T pi = 4.0*atan(1.0);
+  const T pi = 4.0*std::atan(1.0);
   const int ntot = (Lmax+1)*(Lmax+1);
   cYlm.resize(ntot);
   cYlm=czero; 
   NormFactor.resize(ntot,cone);
-  CONSTEXPR T sqrt2 = sqrt(2.0);
+  const T sqrt2 = std::sqrt(2.0);
   if(addsign)
   {
     for (int l=0; l<=Lmax; l++)
@@ -161,9 +161,9 @@ inline SoaSphericalTensor<T>::SoaSphericalTensor(const int l_max, bool addsign) 
     }
   }
   FactorL.resize(Lmax+1);
-  CONSTEXPR T omega = 1.0/sqrt(16.0*atan(1.0));
+  const T omega = 1.0/std::sqrt(16.0*std::atan(1.0));
   for(int l=1; l<=Lmax; l++)
-    FactorL[l] = sqrt(static_cast<T>(2*l+1))*omega;
+    FactorL[l] = std::sqrt(static_cast<T>(2*l+1))*omega;
   Factor2L.resize(Lmax+1);
   for(int l=1; l<=Lmax; l++)
     Factor2L[l] = static_cast<T>(2*l+1)/static_cast<T>(2*l-1);
@@ -171,7 +171,7 @@ inline SoaSphericalTensor<T>::SoaSphericalTensor(const int l_max, bool addsign) 
   for(int l=1; l<=Lmax; l++)
     for(int m=1; m<=l; m++)
     {
-      T fac2 = 1.0/sqrt(static_cast<T>((l+m)*(l+1-m)));
+      T fac2 = 1.0/std::sqrt(static_cast<T>((l+m)*(l+1-m)));
       FactorLM[index(l,m)]=fac2;
       FactorLM[index(l,-m)]=fac2;
     }
@@ -182,18 +182,19 @@ inline void SoaSphericalTensor<T>::evaluate_bare(T x, T y, T z, T* restrict Ylm)
 {
   CONSTEXPR T czero(0);
   CONSTEXPR T cone(1);
-  CONSTEXPR T pi = 4.0*atan(1.0);
-  CONSTEXPR T pi4 = 4.0*pi;
-  CONSTEXPR T omega = 1.0/sqrt(pi4);
-  CONSTEXPR T sqrt2 = sqrt(2.0);
+  const T pi = 4.0*std::atan(1.0);
+  const T pi4 = 4.0*pi;
+  const T omega = 1.0/std::sqrt(pi4);
+  const T sqrt2 = std::sqrt(2.0);
+  const T eps2 = std::numeric_limits<T>::epsilon()*std::numeric_limits<T>::epsilon();
 
   /*  Calculate r, cos(theta), sin(theta), cos(phi), sin(phi) from input
       coordinates. Check here the coordinate singularity at cos(theta) = +-1.
       This also takes care of r=0 case. */
   T cphi,sphi,ctheta;
   T r2xy=x*x+y*y;
-  T r=sqrt(r2xy+z*z);
-  if (r2xy<std::numeric_limits<T>::epsilon())
+  T r=std::sqrt(r2xy+z*z);
+  if (r2xy<eps2)
   {
     cphi = czero;
     sphi = cone;
@@ -202,11 +203,14 @@ inline void SoaSphericalTensor<T>::evaluate_bare(T x, T y, T z, T* restrict Ylm)
   else
   {
     ctheta = z/r;
-    T rxyi = cone/sqrt(r2xy);
+    //protect ctheta, when ctheta is slightly >1 or <-1
+    if(ctheta>cone) ctheta=cone;
+    if(ctheta<-cone) ctheta=-cone;
+    T rxyi = cone/std::sqrt(r2xy);
     cphi = x*rxyi;
     sphi = y*rxyi;
   }
-  T stheta = sqrt(cone-ctheta*ctheta);
+  T stheta = std::sqrt(cone-ctheta*ctheta);
   /* Now to calculate the associated legendre functions P_lm from the
      recursion relation from l=0 to Lmax. Conventions of J.D. Jackson,
      Classical Electrodynamics are used. */
@@ -274,6 +278,7 @@ inline void SoaSphericalTensor<T>::evaluateVGL(T x, T y, T z)
   T* restrict Ylm=cYlm.data(0);
   evaluate_bare(x,y,z,Ylm);
 
+  CONSTEXPR T czero(0);
   CONSTEXPR T ahalf(0.5);
   T* restrict gYlmX=cYlm.data(1);
   T* restrict gYlmY=cYlm.data(2);
@@ -289,9 +294,9 @@ inline void SoaSphericalTensor<T>::evaluateVGL(T x, T y, T z)
       int lm = index(l-1,0);
       T gx,gy,gz,dpr,dpi,dmr,dmi;
       const int ma = std::abs(m);
-      const T cp = sqrt(fac*(l-ma-1)*(l-ma));
-      const T cm = sqrt(fac*(l+ma-1)*(l+ma));
-      const T c0 = sqrt(fac*(l-ma)*(l+ma));
+      const T cp = std::sqrt(fac*(l-ma-1)*(l-ma));
+      const T cm = std::sqrt(fac*(l+ma-1)*(l+ma));
+      const T c0 = std::sqrt(fac*(l-ma)*(l+ma));
       gz = (l > ma) ? c0*Ylm[lm+m]:czero;
       if (l > ma+1)
       {
@@ -352,7 +357,7 @@ inline void SoaSphericalTensor<T>::evaluateVGL(T x, T y, T z)
       }
     }
   }
-  for (int i=0; i<Ylm.size(); i++)
+  for (int i=0; i<cYlm.size(); i++)
     Ylm[i]*= NormFactor[i];
 //for (int i=0; i<Ylm.size(); i++) gradYlm[i]*= NormFactor[i];
 }

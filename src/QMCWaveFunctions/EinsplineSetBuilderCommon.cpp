@@ -272,6 +272,32 @@ EinsplineSetBuilder::BroadcastOrbitalInfo()
       bbuffer.get  (orb.PolyRadius);
     }
   }
+  //buffer to bcast hybrid representation atomic orbital info
+  PooledData<RealType> cbuffer;
+  PooledData<int> cibuffer;
+  myComm->bcast(cbuffer);
+  myComm->bcast(cibuffer);
+  AtomicCentersInfo.resize(numIons);
+  Super2Prim.resize(SourcePtcl->R.size());
+  cbuffer.add(AtomicCentersInfo.cutoff.begin(), AtomicCentersInfo.cutoff.end());
+  cbuffer.add(AtomicCentersInfo.spline_radius.begin(), AtomicCentersInfo.spline_radius.end());
+  cibuffer.add(Super2Prim.begin(),Super2Prim.end());
+  cibuffer.add(AtomicCentersInfo.lmax.begin(), AtomicCentersInfo.lmax.end());
+  cibuffer.add(AtomicCentersInfo.spline_npoints.begin(), AtomicCentersInfo.spline_npoints.end());
+  myComm->bcast(cbuffer);
+  myComm->bcast(cibuffer);
+  if(myComm->rank())
+  {
+    cbuffer.rewind();
+    cibuffer.rewind();
+    cbuffer.get(AtomicCentersInfo.cutoff.begin(), AtomicCentersInfo.cutoff.end());
+    cbuffer.get(AtomicCentersInfo.spline_radius.begin(), AtomicCentersInfo.spline_radius.end());
+    cibuffer.get(Super2Prim.begin(),Super2Prim.end());
+    cibuffer.get(AtomicCentersInfo.lmax.begin(), AtomicCentersInfo.lmax.end());
+    cibuffer.get(AtomicCentersInfo.spline_npoints.begin(), AtomicCentersInfo.spline_npoints.end());
+    for (int i=0; i<numIons; i++)
+      AtomicCentersInfo.ion_pos[i]=IonPos[i];
+  }
 }
 
 ////////////////////////////////////////////////////////////////

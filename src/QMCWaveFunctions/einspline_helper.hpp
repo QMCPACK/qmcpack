@@ -39,10 +39,23 @@ namespace qmcplusplus
         )
   {
     fftbox=std::complex<T>();
+    const int upper_bound[3]={(maxg[0]-1)/2,(maxg[1]-1)/2,(maxg[2]-1)/2};
+    const int lower_bound[3]={upper_bound[0]-maxg[0]+1,upper_bound[1]-maxg[1]+1,upper_bound[2]-maxg[2]+1};
+    //only coefficient indices between [lower_bound,upper_bound] are taken for FFT.
     //this is rather unsafe
-//#pragma omp parallel for
+    //#pragma omp parallel for
     for (int iG=0; iG<cG.size(); iG++) 
     {
+      if ( gvecs[iG][0]>upper_bound[0] || gvecs[iG][0]<lower_bound[0] ||
+           gvecs[iG][1]>upper_bound[1] || gvecs[iG][1]<lower_bound[1] ||
+           gvecs[iG][2]>upper_bound[2] || gvecs[iG][2]<lower_bound[2] )
+      {
+        //std::cout << "Warning: cG out of bound "
+        //          << "x " << gvecs[iG][0]    << " y " << gvecs[iG][1]    << " z " << gvecs[iG][2] << std::endl
+        //          << "xu " << upper_bound[0] << " yu " << upper_bound[1] << " zu " << upper_bound[2] << std::endl
+        //          << "xd " << lower_bound[0] << " yd " << lower_bound[1] << " zd " << lower_bound[2] << std::endl;
+        continue;
+      }
       fftbox((gvecs[iG][0]+maxg[0])%maxg[0]
           ,(gvecs[iG][1]+maxg[1])%maxg[1]
           ,(gvecs[iG][2]+maxg[2])%maxg[2]) = cG[iG];
@@ -118,7 +131,7 @@ namespace qmcplusplus
    */
   template<typename T, typename T1, typename T2>
     inline void fix_phase_rotate_c2r(Array<std::complex<T>,3>& in
-    , Array<T1,3>& out, const TinyVector<T2,3>& twist)
+    , Array<T1,3>& out, const TinyVector<T2,3>& twist, T& phase_r, T& phase_i)
   {
     const T two_pi=-2.0*M_PI;
     const int nx=in.size(0);
@@ -155,8 +168,8 @@ namespace qmcplusplus
     const T x = (rNorm-iNorm) / riNorm;
     const T y = 1.0/std::sqrt(x*x+4.0);
     const T phs = std::sqrt(0.5-y);
-    const T phase_r = phs;
-    const T phase_i = (x<0) ? std::sqrt(1.0-phs*phs) : -std::sqrt(1.0-phs*phs);
+    phase_r = phs;
+    phase_i = (x<0) ? std::sqrt(1.0-phs*phs) : -std::sqrt(1.0-phs*phs);
 
     #pragma omp parallel for
     for (int ix=0; ix<nx; ix++)
@@ -203,12 +216,11 @@ namespace qmcplusplus
 
   template<typename T, typename T1, typename T2>
   inline void fix_phase_rotate_c2c(const Array<std::complex<T>,3>& in
-      , Array<T1,3>& out_r, Array<T1,3>& out_i, const TinyVector<T2,3>& twist)
+      , Array<T1,3>& out_r, Array<T1,3>& out_i, const TinyVector<T2,3>& twist, T& phase_r, T& phase_i)
   {
     const int nx=in.size(0);
     const int ny=in.size(1);
     const int nz=in.size(2);
-    T phase_r, phase_i;
 
     compute_phase(in, twist, phase_r, phase_i);
 

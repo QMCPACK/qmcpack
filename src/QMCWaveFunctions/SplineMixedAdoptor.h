@@ -164,8 +164,9 @@ struct SplineMixedAdoptor: public SplineR2RAdoptor<ST,TT,D>
   }
 
   template<typename VV>
-  inline void evaluate_v(const PointType& r, VV& psi)
+  inline void evaluate_v(const ParticleSet& P, const int iat, VV& psi)
   {
+    const PointType& r=P.R[iat];
     PointType ru;
     int bc_sign=this->convertPos(r,ru);
     if(ru[0]>Lower[0] && ru[0]<Upper[0] && ru[1]>Lower[1] && ru[1]<Upper[1] && ru[2]>Lower[2] && ru[2]<Upper[2])
@@ -176,8 +177,9 @@ struct SplineMixedAdoptor: public SplineR2RAdoptor<ST,TT,D>
   }
 
   template<typename VV, typename GV>
-  inline void evaluate_vgl(const PointType& r, VV& psi, GV& dpsi, VV& d2psi)
+  inline void evaluate_vgl(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, VV& d2psi)
   {
+    const PointType& r=P.R[iat];
     PointType ru;
     int bc_sign=this->convertPos(r,ru);
     if(ru[0]>Lower[0] && ru[0]<Upper[0] && ru[1]>Lower[1] && ru[1]<Upper[1] && ru[2]>Lower[2] && ru[2]<Upper[2])
@@ -188,8 +190,9 @@ struct SplineMixedAdoptor: public SplineR2RAdoptor<ST,TT,D>
   }
 
   template<typename VV, typename GV, typename GGV>
-  void evaluate_vgh(const PointType& r, VV& psi, GV& dpsi, GGV& grad_grad_psi)
+  void evaluate_vgh(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, GGV& grad_grad_psi)
   {
+    const PointType& r=P.R[iat];
     PointType ru;
     int bc_sign=this->convertPos(r,ru);
     if(ru[0]>Lower[0] && ru[0]<Upper[0] && ru[1]>Lower[1] && ru[1]<Upper[1] && ru[2]>Lower[2] && ru[2]<Upper[2])
@@ -200,8 +203,9 @@ struct SplineMixedAdoptor: public SplineR2RAdoptor<ST,TT,D>
   }
 
   template<typename VV, typename GL>
-  inline void evaluate_vgl_combo(const PointType& r,VV& psi, GL& dpsi)
+  inline void evaluate_vgl_combo(const ParticleSet& P, const int iat, VV& psi, GL& dpsi)
   {
+    const PointType& r=P.R[iat];
   }
 };
 
@@ -350,8 +354,9 @@ struct SplineOpenAdoptor: public SplineAdoptorBase<ST,D>
   }
 
   template<typename VV>
-  inline void evaluate_v(const PointType& r, VV& psi)
+  inline void evaluate_v(const ParticleSet& P, const int iat, VV& psi)
   {
+    const PointType& r=P.R[iat];
     TinyVector<ST,D> ru;
     convertPos(r,ru);
     if(ru[0]>Lower[0] && ru[0]<Upper[0] && ru[1]>Lower[1] && ru[1]<Upper[1] && ru[2]>Lower[2] && ru[2]<Upper[2])
@@ -363,8 +368,9 @@ struct SplineOpenAdoptor: public SplineAdoptorBase<ST,D>
   }
 
   template<typename VV, typename GV>
-  inline void evaluate_vgl(const PointType& r, VV& psi, GV& dpsi, VV& d2psi)
+  inline void evaluate_vgl(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, VV& d2psi)
   {
+    const PointType& r=P.R[iat];
     TinyVector<ST,D> ru;
     convertPos(r,ru);
     if(ru[0]>Lower[0] && ru[0]<Upper[0] && ru[1]>Lower[1] && ru[1]<Upper[1] && ru[2]>Lower[2] && ru[2]<Upper[2])
@@ -380,8 +386,9 @@ struct SplineOpenAdoptor: public SplineAdoptorBase<ST,D>
   }
 
   template<typename VV, typename GV, typename GGV>
-  void evaluate_vgh(const PointType& r, VV& psi, GV& dpsi, GGV& grad_grad_psi)
+  void evaluate_vgh(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, GGV& grad_grad_psi)
   {
+    const PointType& r=P.R[iat];
     TinyVector<ST,D> ru;
     convertPos(r,ru);
     if(ru[0]>Lower[0] && ru[0]<Upper[0] && ru[1]>Lower[1] && ru[1]<Upper[1] && ru[2]>Lower[2] && ru[2]<Upper[2])
@@ -398,8 +405,9 @@ struct SplineOpenAdoptor: public SplineAdoptorBase<ST,D>
   }
 
   template<typename VV, typename GL>
-  inline void evaluate_vgl_combo(const PointType& r,VV& psi, GL& dpsi)
+  inline void evaluate_vgl_combo(const ParticleSet& P, const int iat, VV& psi, GL& dpsi)
   {
+    const PointType& r=P.R[iat];
   }
 };
 

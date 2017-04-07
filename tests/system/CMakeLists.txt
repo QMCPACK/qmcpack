@@ -132,6 +132,15 @@ IF(BUILD_LMYENGINE_INTERFACE)
                     H4_OPT_SCALARS
                     5 # OPT step 5
                     TRUE)
+
+  QMC_RUN_AND_CHECK(short-H4-opt-adaptive
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    H4-adaptive
+                    optm-adaptive.xml
+                    1 16
+                    H4_OPT_SCALARS
+                    5 # OPT step 5
+                    TRUE)
 ENDIF(BUILD_LMYENGINE_INTERFACE)
 
   QMC_RUN_AND_CHECK(short-H4-opt-OneShiftOnly
@@ -197,6 +206,15 @@ ENDIF()
                     "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
                     hf_vmc_LiH-x
                     hf_vmc_LiH-x.xml
+                    1 16
+                    LIH_X_SCALARS
+                    0 # VMC
+                    TRUE)
+
+  QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_hybridrep_pp-x-vmc_hf_noj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+                    hf_vmc_LiH-x
+                    hf_vmc_LiH-x_hybridrep.xml
                     1 16
                     LIH_X_SCALARS
                     0 # VMC
@@ -300,6 +318,15 @@ ENDIF()
                     0 # VMC
                     TRUE)
 
+  QMC_RUN_AND_CHECK(short-diamondC_1x1x1_hybridrep_pp-vmc_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+                    qmc_short
+                    qmc_short_hybridrep.in.xml
+                    1 16
+                    DIAMOND_SCALARS
+                    0 # VMC
+                    TRUE)
+
   QMC_RUN_AND_CHECK(short-diamondC_1x1x1_pp-vmc_sdj-meshf
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
                     qmc_short-meshf
@@ -334,6 +361,15 @@ ENDIF()
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     qmc_short
                     qmc_short.in.xml
+                    1 16
+                    DIAMOND2_SCALARS
+                    0 # VMC
+                    TRUE)
+
+  QMC_RUN_AND_CHECK(short-diamondC_2x1x1_hybridrep_pp-vmc_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    qmc_short
+                    qmc_short_hybridrep.in.xml
                     1 16
                     DIAMOND2_SCALARS
                     0 # VMC

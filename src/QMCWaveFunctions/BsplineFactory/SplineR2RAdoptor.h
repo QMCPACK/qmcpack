@@ -10,8 +10,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_EINSPLINE_R2RSOA_ADOPTOR_H
 #define QMCPLUSPLUS_EINSPLINE_R2RSOA_ADOPTOR_H
 
@@ -37,7 +37,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   using BaseType=SplineAdoptorBase<ST,3>;
   using SplineType=typename bspline_traits<ST,3>::SplineType;
   using BCType=typename bspline_traits<ST,3>::BCType;
-  using PointType=typename BaseType::PointType; 
+  using PointType=typename BaseType::PointType;
   using SingleSplineType=typename BaseType::SingleSplineType;
 
   using vContainer_type=aligned_vector<ST>;
@@ -69,7 +69,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     this->is_complex=false;
     this->is_soa_ready=true;
     this->AdoptorName="SplineR2RSoAAdoptor";
-    this->KeyWord="R2RSoA";
+    this->KeyWord="SplineR2RSoA";
   }
 
   ///** copy the base property */
@@ -87,8 +87,8 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     myV.resize(n); myG.resize(n); myL.resize(n); myH.resize(n);
   }
 
-  ~SplineR2RSoA() 
-  { 
+  ~SplineR2RSoA()
+  {
     if(MultiSpline != nullptr) delete SplineInst;
   }
 
@@ -102,6 +102,16 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     myH.resize(npad);
 
     IsGamma=( (HalfG[0]==0) && (HalfG[1]==0) && (HalfG[2]==0));
+  }
+
+  void bcast_tables(Communicate* comm)
+  {
+    chunked_bcast(comm, MultiSpline);
+  }
+
+  void reduce_tables(Communicate* comm)
+  {
+    chunked_reduce(comm, MultiSpline);
   }
 
   template<typename GT, typename BCT>
@@ -152,7 +162,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     SplineInst->set(ispline  ,v_r);
   }
 
-  inline void set_spline_domain(SingleSplineType* spline_r, SingleSplineType* spline_i, 
+  inline void set_spline_domain(SingleSplineType* spline_r, SingleSplineType* spline_i,
       int twist, int ispline, const int* offset_l, const int* mesh_l)
   {
   }
@@ -179,11 +189,14 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     ru=PrimLattice.toUnit(r);
     int bc_sign=0;
     for(int i=0; i<D; i++)
-    {
-      ST img = std::floor(ru[i]);
-      ru[i] -= img;
-      bc_sign += HalfG[i] * (int)img;
-    }
+      if( -std::numeric_limits<ST>::epsilon() < ru[i] && ru[i] < 0 )
+        ru[i] = ST(0.0);
+      else
+      {
+        ST img = std::floor(ru[i]);
+        ru[i] -= img;
+        bc_sign += HalfG[i] * (int)img;
+      }
     return bc_sign;
   }
 
@@ -199,8 +212,9 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   }
 
   template<typename VV>
-  inline void evaluate_v(const PointType& r, VV& psi)
+  inline void evaluate_v(const ParticleSet& P, const int iat, VV& psi)
   {
+    const PointType& r=P.R[iat];
     PointType ru;
     int bc_sign=convertPos(r,ru);
     SplineInst->evaluate(ru,myV);
@@ -251,9 +265,45 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     }
   }
 
+  /** assign_vgl_from_l can be used when myL is precomputed and myV,myG,myL in cartesian
+   */
   template<typename VV, typename GV>
-  inline void evaluate_vgl(const PointType& r, VV& psi, GV& dpsi, VV& d2psi)
+  inline void assign_vgl_from_l(int bc_sign, VV& psi, GV& dpsi, VV& d2psi)
   {
+    const ST* restrict g0=myG.data(0);
+    const ST* restrict g1=myG.data(1);
+    const ST* restrict g2=myG.data(2);
+
+    if (bc_sign & 1)
+    {
+      #pragma simd
+      for(int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j)
+      {
+        psi[psiIndex]=-myV[j];
+        dpsi[psiIndex][0]=-g0[j];
+        dpsi[psiIndex][1]=-g1[j];
+        dpsi[psiIndex][2]=-g2[j];
+        d2psi[psiIndex]=-myL[j];
+      }
+    }
+    else
+    {
+      #pragma simd
+      for(int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j)
+      {
+        psi[psiIndex]=myV[j];
+        dpsi[psiIndex][0]=g0[j];
+        dpsi[psiIndex][1]=g1[j];
+        dpsi[psiIndex][2]=g2[j];
+        d2psi[psiIndex]=myL[j];
+      }
+    }
+  }
+
+  template<typename VV, typename GV>
+  inline void evaluate_vgl(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, VV& d2psi)
+  {
+    const PointType& r=P.R[iat];
     PointType ru;
     int bc_sign=convertPos(r,ru);
     SplineInst->evaluate_vgh(ru,myV,myG,myH);
@@ -319,8 +369,9 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
    * @param dpsi gradient-laplacian container
    */
   template<typename VGL>
-  inline void evaluate_vgl_combo(const PointType& r, VGL& vgl)
+  inline void evaluate_vgl_combo(const ParticleSet& P, const int iat, VGL& vgl)
   {
+    const PointType& r=P.R[iat];
     PointType ru;
     int bc_sign=convertPos(r,ru);
     SplineInst->evaluate_vgh(ru,myV,myG,myH);
@@ -368,7 +419,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     ST* restrict gg_zz=grad_grad_psi.data(8)+first_spo; ASSUME_ALIGNED(gg_zz);
 
     const ST cone = (bc_sign &1)? -1:1;
-#pragma simd 
+#pragma simd
     for (size_t j=0; j<N; ++j)
     {
       const ST kX=k0[j];
@@ -385,22 +436,23 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
       vg_x[j] =cone*gX;
       vg_y[j] =cone*gY;
       vg_z[j] =cone*gZ;
-      gg_xx[j]=cone*(h00[j] + kkV + kX*gX); 
-      gg_xy[j]=cone*(h01[j] + kkV + kX*gY); 
+      gg_xx[j]=cone*(h00[j] + kkV + kX*gX);
+      gg_xy[j]=cone*(h01[j] + kkV + kX*gY);
       gg_xz[j]=cone*(h02[j] + kkV + kX*gZ);
-      gg_yx[j]=cone*(h01[j] + kkV + kY*gX); 
-      gg_yy[j]=cone*(h11[j] + kkV + kY*gY); 
+      gg_yx[j]=cone*(h01[j] + kkV + kY*gX);
+      gg_yy[j]=cone*(h11[j] + kkV + kY*gY);
       gg_yz[j]=cone*(h12[j] + kkV + kY*gZ);
-      gg_zx[j]=cone*(h02[j] + kkV + kz*gX); 
-      gg_zy[j]=cone*(h12[j] + kkV + kz*gY); 
+      gg_zx[j]=cone*(h02[j] + kkV + kz*gX);
+      gg_zy[j]=cone*(h12[j] + kkV + kz*gY);
       gg_zz[j]=cone*(h22[j] + kkV + kz*gZ);
     }
 #endif
   }
 
   template<typename VV, typename GV, typename GGV>
-  void evaluate_vgh(const PointType& r, VV& psi, GV& dpsi, GGV& grad_grad_psi)
+  void evaluate_vgh(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, GGV& grad_grad_psi)
   {
+    const PointType& r=P.R[iat];
     PointType ru;
     int bc_sign=convertPos(r,ru);
     SplineInst->evaluate_vgh(ru,myV,myG,myH);

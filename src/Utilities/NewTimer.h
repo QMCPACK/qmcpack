@@ -140,6 +140,7 @@ public:
   TimerManagerClass():timer_threshold(timer_level_coarse),max_timer_id(1),
     max_timers_exceeded(false) {}
   void addTimer (NewTimer* t);
+  NewTimer *createTimer(const std::string& myname, timer_levels mytimer = timer_level_fine);
 
   void push_timer(NewTimer *t)
   {
@@ -398,6 +399,23 @@ public:
 #endif
 };
 
+// Wrapper for timer that starts on construction and stops on destruction
+class ScopedTimer
+{
+public:
+  ScopedTimer(NewTimer *t) : timer(t)
+  {
+    if (timer) timer->start();
+  }
+
+  ~ScopedTimer()
+  {
+    if (timer) timer->stop();
+  }
+private:
+  NewTimer *timer;
+};
+
 struct TimerComparator
 {
   inline bool operator()(const NewTimer *a, const NewTimer *b)
@@ -405,6 +423,7 @@ struct TimerComparator
     return a->get_name() < b->get_name();
   }
 };
+
 
 }
 

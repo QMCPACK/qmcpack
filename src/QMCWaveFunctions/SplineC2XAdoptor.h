@@ -158,8 +158,9 @@ struct SplineC2CPackedAdoptor: public SplineAdoptorBase<ST,D>
   }
 
   template<typename VV>
-  inline void evaluate_v(const PointType& r, VV& psi)
+  inline void evaluate_v(const ParticleSet& P, const int iat, VV& psi)
   {
+    const PointType& r=P.R[iat];
     PointType ru(PrimLattice.toUnit_floor(r));
     einspline::evaluate(MultiSpline,ru,myV);
     assign_v(r,0,psi);
@@ -203,8 +204,9 @@ struct SplineC2CPackedAdoptor: public SplineAdoptorBase<ST,D>
   }
 
   template<typename VV, typename GV>
-  inline void evaluate_vgl(const PointType& r, VV& psi, GV& dpsi, VV& d2psi)
+  inline void evaluate_vgl(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, VV& d2psi)
   {
+    const PointType& r=P.R[iat];
     PointType ru(PrimLattice.toUnit_floor(r));
     einspline::evaluate_vgh(MultiSpline,ru,myV,myG,myH);
     assign_vgl(r,0,psi,dpsi,d2psi);
@@ -242,16 +244,19 @@ struct SplineC2CPackedAdoptor: public SplineAdoptorBase<ST,D>
   }
 
   template<typename VV, typename GV, typename GGV>
-  void evaluate_vgh(const PointType& r, VV& psi, GV& dpsi, GGV& grad_grad_psi)
+  void evaluate_vgh(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, GGV& grad_grad_psi)
   {
+    const PointType& r=P.R[iat];
     PointType ru(PrimLattice.toUnit_floor(r));
     einspline::evaluate_vgh(MultiSpline,ru,myV,myG,myH);
     assign_vgh(r,0,psi,dpsi,grad_grad_psi);
   }
 
   template<typename VGL>
-  void evaluate_vgl_combo(const PointType& r,VGL& dpsi)
-  { }
+  void evaluate_vgl_combo(const ParticleSet& P, const int iat, VGL& dpsi)
+  {
+    const PointType& r=P.R[iat];
+  }
 };
 
 /** adoptor class to match std::complex<ST> spline with TT real SPOs
@@ -399,8 +404,9 @@ struct SplineC2RPackedAdoptor: public SplineAdoptorBase<ST,D>
   }
 
   template<typename VV>
-  inline void evaluate_v(const PointType& r, VV& psi)
+  inline void evaluate_v(const ParticleSet& P, const int iat, VV& psi)
   {
+    const PointType& r=P.R[iat];
     PointType ru(PrimLattice.toUnit_floor(r));
     einspline::evaluate(MultiSpline,ru,myV);
     assign_v(r,0,psi);
@@ -443,8 +449,9 @@ struct SplineC2RPackedAdoptor: public SplineAdoptorBase<ST,D>
   }
 
   template<typename VV, typename GV>
-  inline void evaluate_vgl(const PointType& r, VV& psi, GV& dpsi, VV& d2psi)
+  inline void evaluate_vgl(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, VV& d2psi)
   {
+    const PointType& r=P.R[iat];
     PointType ru(PrimLattice.toUnit_floor(r));
     einspline::evaluate_vgh(MultiSpline,ru,myV,myG,myH);
     assign_vgl(r,0,psi,dpsi,d2psi);
@@ -491,16 +498,19 @@ struct SplineC2RPackedAdoptor: public SplineAdoptorBase<ST,D>
   }
 
   template<typename VV, typename GV, typename GGV>
-  void evaluate_vgh(const PointType& r, VV& psi, GV& dpsi, GGV& grad_grad_psi)
+  void evaluate_vgh(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, GGV& grad_grad_psi)
   {
+    const PointType& r=P.R[iat];
     PointType ru(PrimLattice.toUnit_floor(r));
     einspline::evaluate_vgh(MultiSpline,ru,myV,myG,myH);
     assign_vgh(r,0,psi,dpsi,grad_grad_psi);
   }
 
   template<typename VGL>
-  void evaluate_vgl_combo(const PointType& r,VGL& dpsi)
-  { }
+  void evaluate_vgl_combo(const ParticleSet& P, const int iat, VGL& dpsi)
+  {
+    const PointType& r=P.R[iat];
+  }
 
 };
 

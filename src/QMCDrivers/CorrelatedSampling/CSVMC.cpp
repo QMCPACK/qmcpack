@@ -307,9 +307,7 @@ void CSVMC::resetRun()
     Rng.resize(NumThreads,0);
  
     
-#if !defined(BGP_BUG)
     #pragma omp parallel for
-#endif    
     for(int ip=0; ip<NumThreads; ++ip)
     {
 	  std::ostringstream os;
@@ -363,9 +361,7 @@ void CSVMC::resetRun()
 #if !defined(REMOVE_TRACEMANAGER)
   else
   {
-#if !defined(BGP_BUG)
     #pragma omp parallel for
-#endif
     for(int ip=0; ip<NumThreads; ++ip)
     {
       traceClones[ip]->transfer_state_from(*Traces);
@@ -382,9 +378,7 @@ void CSVMC::resetRun()
   //  app_log()  << "    Sample size for thread " <<ip<<" = " << samples_th[ip] << std::endl;
   app_log().flush();
   
-#if !defined(BGP_BUG)
   #pragma omp parallel for
-#endif
   for(int ip=0; ip<NumThreads; ++ip)
   {
     //int ip=omp_get_thread_num();

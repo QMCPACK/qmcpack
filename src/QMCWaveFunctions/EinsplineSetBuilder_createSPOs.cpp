@@ -37,13 +37,13 @@ namespace qmcplusplus
 {
 
   ///create R2R, real wavefunction in double
-  BsplineReaderBase* createBsplineRealDouble(EinsplineSetBuilder* e, int numOrbs);
+  BsplineReaderBase* createBsplineRealDouble(EinsplineSetBuilder* e, int numOrbs, bool hybrid_rep);
   ///create R2R, real wavefunction in float
-  BsplineReaderBase* createBsplineRealSingle(EinsplineSetBuilder* e, int numOrbs);
+  BsplineReaderBase* createBsplineRealSingle(EinsplineSetBuilder* e, int numOrbs, bool hybrid_rep);
   ///create C2C or C2R, complex wavefunction in double
-  BsplineReaderBase* createBsplineComplexDouble(EinsplineSetBuilder* e, int numOrbs);
+  BsplineReaderBase* createBsplineComplexDouble(EinsplineSetBuilder* e, int numOrbs, bool hybrid_rep);
   ///create C2C or C2R, complex wavefunction in single
-  BsplineReaderBase* createBsplineComplexSingle(EinsplineSetBuilder* e, int numOrbs);
+  BsplineReaderBase* createBsplineComplexSingle(EinsplineSetBuilder* e, int numOrbs, bool hybrid_rep);
   ///disable truncated orbitals for now
   BsplineReaderBase* createTruncatedSingle(EinsplineSetBuilder* e, int numOrbs, int celltype)
   {
@@ -70,11 +70,15 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   std::string sourceName;
   std::string spo_prec("double");
   std::string truncate("no");
+  std::string hybrid_rep("no");
 #if defined(QMC_CUDA)
   std::string useGPU="yes";
 #else
   std::string useGPU="no";
 #endif
+  NewTimer* spo_timer = new NewTimer("einspline::CreateSPOSetFromXML", timer_level_medium);
+  TimerManager.addTimer(spo_timer);
+  spo_timer->start();
 
   {
     OhmmsAttributeSet a;
@@ -87,6 +91,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     a.add (givenTwist,   "twist");
     a.add (sourceName, "source");
     a.add (MeshFactor, "meshfactor");
+    a.add (hybrid_rep, "hybridrep");
     a.add (useGPU,     "gpu");
     a.add (spo_prec,   "precision");
     a.add (truncate,   "truncate");
@@ -175,7 +180,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   truncate="no"; //overwrite
 #endif
 #if defined(MIXED_PRECISION)
-  app_log() << "\t  MIXED_PRECISION=1 Overwriting the precision of the einspline storage.\n";
+  app_log() << "\t  MIXED_PRECISION=1 Overwriting the einspline storage to single precision.\n";
   spo_prec="single"; //overwrite
 #endif
   H5OrbSet aset(H5FileName, spinSet, numOrbs);
@@ -242,18 +247,20 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     app_log() <<  "TIMER  EinsplineSetBuilder::BroadcastOrbitalInfo " << mytimer.elapsed() << std::endl;
     app_log().flush();
 
-    // Now, analyze the k-point mesh to figure out the what k-points  are needed                                                    //
+    // setup primitive cell and supercell
     PrimCell.set(Lattice);
     SuperCell.set(SuperLattice);
     GGt=dot(transpose(PrimCell.G), PrimCell.G);
-
     for (int iat=0; iat<AtomicOrbitals.size(); iat++)
       AtomicOrbitals[iat].Lattice = Lattice;
+
     // Copy supercell into the ParticleSets
     // app_log() << "Overwriting XML lattice with that from the ESHDF file.\n";
     // PtclPoolType::iterator piter;
     // for(piter = ParticleSets.begin(); piter != ParticleSets.end(); piter++)
     //   piter->second->Lattice.copy(SuperCell);
+
+    // Now, analyze the k-point mesh to figure out the what k-points  are needed                                                    //
     TwistNum = TwistNum_inp;
     AnalyzeTwists2();
 
@@ -285,9 +292,9 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
       else
       {
         if(use_single)
-          MixedSplineReader= createBsplineRealSingle(this,numOrbs);
+          MixedSplineReader= createBsplineRealSingle(this, numOrbs, hybrid_rep=="yes");
         else
-          MixedSplineReader= createBsplineRealDouble(this,numOrbs);
+          MixedSplineReader= createBsplineRealDouble(this, numOrbs, hybrid_rep=="yes");
       }
     }
   }
@@ -301,9 +308,9 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
         app_log() << "  Truncated orbitals with multiple kpoints are not supported yet!" << std::endl;
       }
       if(use_single)
-        MixedSplineReader= createBsplineComplexSingle(this,numOrbs);
+        MixedSplineReader= createBsplineComplexSingle(this, numOrbs, hybrid_rep=="yes");
       else
-        MixedSplineReader= createBsplineComplexDouble(this,numOrbs);
+        MixedSplineReader= createBsplineComplexDouble(this, numOrbs, hybrid_rep=="yes");
     }
   }
 
@@ -419,6 +426,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     OrbitalSet->initGPU();
   }
 #endif
+  spo_timer->stop();
   return OrbitalSet;
 }
 

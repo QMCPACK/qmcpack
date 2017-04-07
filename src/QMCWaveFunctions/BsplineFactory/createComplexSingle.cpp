@@ -4,7 +4,7 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: 
+// File developed by:
 //
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
@@ -19,16 +19,18 @@
 #if defined(QMC_ENABLE_SOA_DET)
 #include "QMCWaveFunctions/BsplineFactory/SplineC2RAdoptor.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineC2CAdoptor.h"
+#include "QMCWaveFunctions/BsplineFactory/HybridCplxAdoptor.h"
 #endif
 #include <fftw3.h>
 #include <QMCWaveFunctions/einspline_helper.hpp>
 #include "QMCWaveFunctions/BsplineReaderBase.h"
 #include "QMCWaveFunctions/SplineAdoptorReaderP.h"
+#include "QMCWaveFunctions/SplineHybridAdoptorReaderP.h"
 
 namespace qmcplusplus
 {
 
-  BsplineReaderBase* createBsplineComplexSingle(EinsplineSetBuilder* e, int numOrbs)
+  BsplineReaderBase* createBsplineComplexSingle(EinsplineSetBuilder* e, int numOrbs, bool hybrid_rep)
   {
     typedef OHMMS_PRECISION RealType;
     BsplineReaderBase* aReader=nullptr;
@@ -36,7 +38,12 @@ namespace qmcplusplus
 #if defined(QMC_COMPLEX)
   #if defined(QMC_ENABLE_SOA_DET)
     if(numOrbs>1)
-      aReader= new SplineAdoptorReader<SplineC2CSoA<float,RealType> >(e);
+    {
+      if(hybrid_rep)
+        aReader= new SplineHybridAdoptorReader<HybridCplxSoA<SplineC2CSoA<float,RealType> > >(e);
+      else
+        aReader= new SplineAdoptorReader<SplineC2CSoA<float,RealType> >(e);
+    }
     else
   #endif
       aReader= new SplineAdoptorReader<SplineC2CPackedAdoptor<float,RealType,3> >(e);
@@ -44,7 +51,12 @@ namespace qmcplusplus
 
   #if defined(QMC_ENABLE_SOA_DET)
     if(numOrbs>1)
-      aReader= new SplineAdoptorReader<SplineC2RSoA<float,RealType> >(e);
+    {
+      if(hybrid_rep)
+        aReader= new SplineHybridAdoptorReader<HybridCplxSoA<SplineC2RSoA<float,RealType> > >(e);
+      else
+        aReader= new SplineAdoptorReader<SplineC2RSoA<float,RealType> >(e);
+    }
     else
   #endif
       aReader= new SplineAdoptorReader<SplineC2RPackedAdoptor<float,RealType,3> >(e);

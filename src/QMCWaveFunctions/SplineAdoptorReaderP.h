@@ -40,6 +40,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
 
   Array<std::complex<double>,3> FFTbox;
   Array<double,3> splineData_r, splineData_i;
+  double rotate_phase_r, rotate_phase_i;
   std::vector<UBspline_3d_d*> spline_r;
   std::vector<UBspline_3d_d*> spline_i;
   BsplineSet<adoptor_type>* bspline;
@@ -253,7 +254,8 @@ struct SplineAdoptorReader: public BsplineReaderBase
           //if(ntot>>22) //Using 4M as the cutoff, candidate for autotuning
           {
             now.restart();
-            initialize_spline_pio(spin,bandgroup);
+            //initialize_spline_pio(spin,bandgroup);
+            initialize_spline_pio_reduce(spin,bandgroup);
             app_log() << "  SplineAdoptorReader initialize_spline_pio " << now.elapsed() << " sec" << std::endl;
           }
         }
@@ -293,13 +295,13 @@ struct SplineAdoptorReader: public BsplineReaderBase
     fftw_execute (FFTplan);
     if(bspline->is_complex)
     {
-      fix_phase_rotate_c2c(FFTbox,splineData_r, splineData_i,mybuilder->TwistAngles[ti]);
+      fix_phase_rotate_c2c(FFTbox,splineData_r, splineData_i,mybuilder->TwistAngles[ti], rotate_phase_r, rotate_phase_i);
       einspline::set(spline_r[iorb],splineData_r.data());
       einspline::set(spline_i[iorb],splineData_i.data());
     }
     else
     {
-      fix_phase_rotate_c2r(FFTbox,splineData_r, mybuilder->TwistAngles[ti]);
+      fix_phase_rotate_c2r(FFTbox,splineData_r, mybuilder->TwistAngles[ti], rotate_phase_r, rotate_phase_i);
       einspline::set(spline_r[iorb],splineData_r.data());
     }
   }
@@ -358,6 +360,36 @@ struct SplineAdoptorReader: public BsplineReaderBase
       bspline->set_spline(spline_r[0],spline_i[0],cur_bands[iorb].TwistIndex,iorb,0);
     }
     return foundit;
+  }
+
+  void initialize_spline_pio_reduce(int spin, const BandInfoGroup& bandgroup)
+  {
+    int Nbands=bandgroup.getNumDistinctOrbitals();
+    const int Nprocs=myComm->size();
+    const int Nbandgroups=std::min(Nbands,Nprocs);
+    Communicate band_group_comm(*myComm, Nbandgroups);
+    std::vector<int> band_groups(Nbandgroups+1,0);
+    FairDivideLow(Nbands,Nbandgroups,band_groups);
+    int iorb_first=band_groups[band_group_comm.getGroupID()];
+    int iorb_last =band_groups[band_group_comm.getGroupID()+1];
+    if(band_group_comm.isGroupLeader())
+    {
+      hdf_archive h5f(&band_group_comm,false);
+      h5f.open(mybuilder->H5FileName,H5F_ACC_RDONLY);
+      Vector<std::complex<double> > cG(mybuilder->Gvecs[0].size());;
+      const std::vector<BandInfo>& cur_bands=bandgroup.myBands;
+      for(int ib=0, iorb=iorb_first; iorb<iorb_last; ib++, iorb++)
+      {
+        int ti=cur_bands[iorb].TwistIndex;
+        std::string s=psi_g_path(ti,spin,cur_bands[iorb].BandIndex);
+        if(!h5f.read(cG,s)) APP_ABORT("SplineAdoptorReader Failed to read band(s) from h5!\n");
+        fft_spline(cG,ti,ib);
+        bspline->set_spline(spline_r[ib],spline_i[ib],cur_bands[iorb].TwistIndex,iorb,0);
+      }
+      chunked_reduce(band_group_comm.GroupLeaderComm, bspline->MultiSpline);
+    }
+    myComm->barrier();
+    chunked_bcast(myComm, bspline->MultiSpline);
   }
 
   void initialize_spline_pio(int spin, const BandInfoGroup& bandgroup)

@@ -4,11 +4,11 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: 
+// File developed by:
 //
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
-    
+
 #include "QMCWaveFunctions/BsplineFactory/macro.h"
 #include "Numerics/e2iphi.h"
 #include "simd/vmath.hpp"
@@ -20,16 +20,18 @@
 #if defined(QMC_ENABLE_SOA_DET)
 #include "QMCWaveFunctions/BsplineFactory/SplineC2RAdoptor.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineC2CAdoptor.h"
+#include "QMCWaveFunctions/BsplineFactory/HybridCplxAdoptor.h"
 #endif
 #include <fftw3.h>
 #include <QMCWaveFunctions/einspline_helper.hpp>
 #include "QMCWaveFunctions/BsplineReaderBase.h"
 #include "QMCWaveFunctions/SplineAdoptorReaderP.h"
+#include "QMCWaveFunctions/SplineHybridAdoptorReaderP.h"
 
 namespace qmcplusplus
 {
 
-  BsplineReaderBase* createBsplineComplexDouble(EinsplineSetBuilder* e, int numOrbs)
+  BsplineReaderBase* createBsplineComplexDouble(EinsplineSetBuilder* e, int numOrbs, bool hybrid_rep)
   {
     typedef OHMMS_PRECISION RealType;
     BsplineReaderBase* aReader=nullptr;
@@ -38,7 +40,12 @@ namespace qmcplusplus
 
   #if defined(QMC_ENABLE_SOA_DET)
     if(numOrbs>1)
-      aReader= new SplineAdoptorReader<SplineC2CSoA<double,RealType> >(e);
+    {
+      if(hybrid_rep)
+        aReader= new SplineHybridAdoptorReader<HybridCplxSoA<SplineC2CSoA<double,RealType> > >(e);
+      else
+        aReader= new SplineAdoptorReader<SplineC2CSoA<double,RealType> >(e);
+    }
     else
   #endif
       aReader= new SplineAdoptorReader<SplineC2CPackedAdoptor<double,RealType,3> >(e);
@@ -46,7 +53,10 @@ namespace qmcplusplus
 
   #if defined(QMC_ENABLE_SOA_DET)
     if(numOrbs>1)
-      aReader= new SplineAdoptorReader<SplineC2RSoA<double,RealType> >(e);
+      if(hybrid_rep)
+        aReader= new SplineHybridAdoptorReader<HybridCplxSoA<SplineC2RSoA<double,RealType> > >(e);
+      else
+        aReader= new SplineAdoptorReader<SplineC2RSoA<double,RealType> >(e);
     else
   #endif
       aReader= new SplineAdoptorReader<SplineC2RPackedAdoptor<double,RealType,3> >(e);

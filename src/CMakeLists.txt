@@ -43,12 +43,16 @@ IF (GIT_FOUND AND IS_GIT_PROJECT)
     OUTPUT ${GITREV_TMP}
     COMMAND ${CMAKE_COMMAND} -E echo_append "#define GIT_BRANCH_RAW " > ${GITREV_TMP}
     COMMAND ${GIT_EXECUTABLE} rev-parse --abbrev-ref HEAD >> ${GITREV_TMP}
+    COMMAND ${CMAKE_COMMAND} -E echo >> ${GITREV_TMP}
     COMMAND ${CMAKE_COMMAND} -E echo_append "#define GIT_HASH_RAW " >> ${GITREV_TMP}
     COMMAND ${GIT_EXECUTABLE} describe --always --dirty --abbrev=40 --match="NoTagWithThisName" >> ${GITREV_TMP}
+    COMMAND ${CMAKE_COMMAND} -E echo >> ${GITREV_TMP}
     COMMAND ${CMAKE_COMMAND} -E echo_append "#define GIT_COMMIT_LAST_CHANGED_RAW " >> ${GITREV_TMP}
     COMMAND ${GIT_EXECUTABLE} log -1 --format=%ad >> ${GITREV_TMP}
+    COMMAND ${CMAKE_COMMAND} -E echo >> ${GITREV_TMP}
     COMMAND ${CMAKE_COMMAND} -E echo_append "#define GIT_COMMIT_SUBJECT_RAW " >> ${GITREV_TMP}
-    COMMAND ${GIT_EXECUTABLE} log -1 --format=%s >> ${GITREV_TMP}
+    COMMAND ${GIT_EXECUTABLE} log -1 --format="%s" >> ${GITREV_TMP}
+    COMMAND ${CMAKE_COMMAND} -E echo >> ${GITREV_TMP}
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${GITREV_TMP} ${GITREV_FILE}
     COMMAND ${CMAKE_COMMAND} -E remove ${GITREV_TMP}
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}

@@ -250,7 +250,7 @@ struct BsplineSet: public SPOSetBase, public SplineAdoptor
 
   inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   {
-    SplineAdoptor::evaluate_v(P.R[iat],psi);
+    SplineAdoptor::evaluate_v(P,iat,psi);
   }
 
   inline void evaluateValues(const ParticleSet& P, ValueMatrix_t& psiM)
@@ -258,7 +258,7 @@ struct BsplineSet: public SPOSetBase, public SplineAdoptor
     ValueVector_t psi(psiM.cols());
     for(int iat=0; iat<P.getTotalNum(); ++iat)
     {
-      SplineAdoptor::evaluate_v(P.R[iat],psi);
+      SplineAdoptor::evaluate_v(P,iat,psi);
       copy(psi.begin(),psi.end(),psiM[iat]);
     }
   }
@@ -266,14 +266,14 @@ struct BsplineSet: public SPOSetBase, public SplineAdoptor
   inline void evaluate(const ParticleSet& P, int iat,
                        ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
   {
-    SplineAdoptor::evaluate_vgl(P.R[iat],psi,dpsi,d2psi);
+    SplineAdoptor::evaluate_vgl(P,iat,psi,dpsi,d2psi);
 
 #if 0
     //debug GL combo
     CONSTEXPR double eps=std::numeric_limits<float>::epsilon();
     ValueVector_t psi_copy(psi);
     GLVector_t gl(psi.size());
-    SplineAdoptor::evaluate_vgl_combo(P.R[iat],psi_copy,gl);
+    SplineAdoptor::evaluate_vgl_combo(P,iat,psi_copy,gl);
     auto gradX=gl.data(0);
     auto gradY=gl.data(1);
     auto gradZ=gl.data(2);
@@ -296,7 +296,7 @@ struct BsplineSet: public SPOSetBase, public SplineAdoptor
   inline void evaluate(const ParticleSet& P, int iat,
                        ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi)
   {
-    SplineAdoptor::evaluate_vgh(P.R[iat],psi,dpsi,grad_grad_psi);
+    SplineAdoptor::evaluate_vgh(P,iat,psi,dpsi,grad_grad_psi);
   }
 
   void resetParameters(const opt_variables_type& active)
@@ -323,7 +323,7 @@ struct BsplineSet: public SPOSetBase, public SplineAdoptor
       VectorViewer<value_type> v(logdet[i],OrbitalSetSize);
       VectorViewer<grad_type> g(dlogdet[i],OrbitalSetSize);
       VectorViewer<value_type> l(d2logdet[i],OrbitalSetSize);
-      SplineAdoptor::evaluate_vgl(P.R[iat],v,g,l);
+      SplineAdoptor::evaluate_vgl(P,iat,v,g,l);
     }
   }
 
@@ -338,14 +338,14 @@ struct BsplineSet: public SPOSetBase, public SplineAdoptor
       VectorViewer<value_type> v(logdet[i],OrbitalSetSize);
       VectorViewer<grad_type> g(dlogdet[i],OrbitalSetSize);
       VectorViewer<hess_type> h(grad_grad_logdet[i],OrbitalSetSize);
-      SplineAdoptor::evaluate_vgh(P.R[iat],v,g,h);
+      SplineAdoptor::evaluate_vgh(P,iat,v,g,h);
     }
   }
 
   /** einspline does not need any other state data */
   void evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl, bool newp)
   {
-    SplineAdoptor::evaluate_vgl_combo(P.R[iat],vgl);
+    SplineAdoptor::evaluate_vgl_combo(P,iat,vgl);
   }
 
 };
