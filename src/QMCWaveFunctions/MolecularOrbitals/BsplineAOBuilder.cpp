@@ -45,8 +45,3 @@ BsplineAOBuilder::addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms
 }
 
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1237 $   $Date: 2006-08-08 11:52:16 -0500 (Tue, 08 Aug 2006) $
- * $Id: BsplineAOBuilder.cpp 1237 2006-08-08 16:52:16Z jnkim $
- ***************************************************************************/

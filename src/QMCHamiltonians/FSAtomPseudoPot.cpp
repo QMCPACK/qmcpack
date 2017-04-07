@@ -143,8 +143,3 @@ bool FSAtomPseudoPot::put(xmlNodePtr cur)
   return true;
 }
 } // namespace qmcPlusPlus
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1737 $   $Date: 2007-02-12 10:42:06 -0600 (Mon, 12 Feb 2007) $
- * $Id: FSAtomPseudoPot.h 1737 2007-02-12 16:42:06Z jnkim $
- ***************************************************************************/

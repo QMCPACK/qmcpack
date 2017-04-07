@@ -84,8 +84,3 @@ void QMCCSLinearOptimizeWFmanagerOMP::resetPsi(bool final_reset)
 //       psiClones[i]->reportStatus(app_log());
 }
 }
-/***************************************************************************
-* $RCSfile$   $Author: jnkim $
-* $Revision: 1898 $   $Date: 2007-04-17 10:07:34 -0500 (Tue, 17 Apr 2007) $
-* $Id: QMCCSLinearOptimizeWFmanagerOMP.cpp 1898 2007-04-17 15:07:34Z jnkim $
-***************************************************************************/

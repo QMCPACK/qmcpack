@@ -871,9 +871,4 @@ void SimpleFixedNodeBranch::read(const std::string& fname)
 
 }
 
-/***************************************************************************
- * $RCSfile: SimpleFixedNodeBranch.cpp,v $   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

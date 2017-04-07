@@ -54,9 +54,4 @@ struct ECPotentialBuilder: public MPIObjectBase, public QMCTraits
 }
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

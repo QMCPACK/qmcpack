@@ -330,8 +330,3 @@ inline void find_reduced_basis(TinyVector<TinyVector<T,3>,3>& rb)
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1189 $   $Date: 2006-07-17 10:08:11 -0500 (Mon, 17 Jul 2006) $
- * $Id: DistanceTable.cpp 1189 2006-07-17 15:08:11Z jnkim $
- ***************************************************************************/

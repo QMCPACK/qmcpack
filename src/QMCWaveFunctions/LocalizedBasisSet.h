@@ -262,9 +262,4 @@ struct LocalizedBasisSet: public BasisSetBase<typename COT::value_type>
 }
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

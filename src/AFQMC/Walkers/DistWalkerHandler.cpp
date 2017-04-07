@@ -16,6 +16,20 @@
 namespace qmcplusplus
 {
 
+
+enum DistWalkerTimers {
+  LoadBalance_Setup,
+  LoadBalance_Resize,
+  LoadBalance_Exchange
+};
+
+TimerNameList_t<DistWalkerTimers> DistWalkerTimerNames =
+{
+  {LoadBalance_Setup, "WalkerHandler::loadBalance::setup"},
+  {LoadBalance_Resize, "WalkerHandler::loadBalance::resize"},
+  {LoadBalance_Exchange, "WalkerHandler::loadBalance::exchange"},
+};
+
 bool DistWalkerHandler::restartFromXML() 
 { 
   return true;
@@ -259,6 +273,7 @@ void DistWalkerHandler::setHF(const ComplexMatrix& HF)
 bool DistWalkerHandler::setup(int cr, int nc, int tgn, MPI_Comm heads_comm, MPI_Comm tg_comm, MPI_Comm node_comm, myTimer* timer)
 {
   LocalTimer=timer;
+  setup_timers(Timers, DistWalkerTimerNames);
 
   core_rank=cr;
   ncores_per_TG=nc; 
@@ -428,6 +443,7 @@ void DistWalkerHandler::loadBalance()
   MPI_Request request;
  
   LocalTimer->start("WalkerHandler::loadBalance::setup");
+  Timers[LoadBalance_Setup]->start();
   // determine new number of walkers
   if(head) {
 
@@ -472,14 +488,18 @@ void DistWalkerHandler::loadBalance()
 //MPI_Barrier(MPI_COMM_TG_LOCAL_HEADS);
 
   }
+  Timers[LoadBalance_Setup]->stop();
   LocalTimer->stop("WalkerHandler::loadBalance::setup");
 
+  Timers[LoadBalance_Setup]->start();
   LocalTimer->start("WalkerHandler::loadBalance::resize");
   // resize arrays if necessary. This requires all cores in a TG 
   walkers.share(&nw_new,1,head);
   if(nw_new > sz) walkers.resize(walker_size*(nw_new+extra_empty_spaces));
   LocalTimer->stop("WalkerHandler::loadBalance::resize");
+  Timers[LoadBalance_Resize]->stop();
 
+  Timers[LoadBalance_Exchange]->start();
   LocalTimer->start("WalkerHandler::loadBalance::exchange");
   if(load_balance_alg == "all") {
 
@@ -564,6 +584,7 @@ void DistWalkerHandler::loadBalance()
 
   }
   LocalTimer->stop("WalkerHandler::loadBalance::exchange");
+  Timers[LoadBalance_Exchange]->stop();
 
   walkers.barrier();
   tot_num_walkers=0;

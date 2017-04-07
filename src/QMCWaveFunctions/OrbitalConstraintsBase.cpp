@@ -109,8 +109,3 @@ void OrbitalConstraintsBase::setRadialGrid()
   app_log() << "  Radial Grid Rcut=" << Rcut << " Rmax=" << myGrid->rmax() << std::endl;
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

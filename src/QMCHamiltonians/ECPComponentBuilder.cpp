@@ -205,8 +205,3 @@ void ECPComponentBuilder::SetQuadratureRule(int rule)
 }
 
 } // namespace qmcPlusPlus
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

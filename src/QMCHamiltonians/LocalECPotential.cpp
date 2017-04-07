@@ -312,9 +312,4 @@ QMCHamiltonianBase* LocalECPotential::makeClone(ParticleSet& qp, TrialWaveFuncti
   return myclone;
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

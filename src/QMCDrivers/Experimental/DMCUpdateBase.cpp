@@ -138,8 +138,3 @@ void DMCUpdateBase::benchMark(WalkerIter_t it, WalkerIter_t it_end, int ip)
 
 }
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

@@ -44,9 +44,4 @@ WalkerControlBase* createWalkerController(int nwtot,
     Communicate* comm, xmlNodePtr cur, bool reconfig=false);
 }
 #endif
-/***************************************************************************
- * $RCSfile: WalkerControlFactory.h,v $   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

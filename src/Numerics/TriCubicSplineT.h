@@ -296,8 +296,3 @@ void TriCubicSplineT<T,Tg>::UpdateZ(int source, int target, bool periodic)
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

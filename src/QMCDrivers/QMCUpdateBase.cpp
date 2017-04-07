@@ -390,8 +390,3 @@ void QMCUpdateBase::benchMark(WalkerIter_t it, WalkerIter_t it_end, int ip)
 
 }
 
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1618 $   $Date: 2007-01-14 18:10:10 -0600 (Sun, 14 Jan 2007) $
- * $Id: QMCUpdateBase.cpp 1618 2007-01-15 00:10:10Z jnkim $
- ***************************************************************************/

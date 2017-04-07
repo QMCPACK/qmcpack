@@ -18,6 +18,7 @@
 
 #include "QMCWaveFunctions/OrbitalBase.h"
 #include "LongRange/LRHandlerBase.h"
+#include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/SplineFunctors.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
@@ -34,8 +35,7 @@ namespace qmcplusplus
 struct RPAJastrow: public OrbitalBase
 {
   typedef LRHandlerBase HandlerType;
-  typedef CubicBspline<RealType,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS> SplineEngineType;
-  typedef CubicSplineSingle<RealType,SplineEngineType> FuncType;
+  typedef BsplineFunctor<RealType> FuncType;
   typedef LinearGrid<RealType> GridType;
 
   RPAJastrow(ParticleSet& target, bool is_manager);
@@ -88,6 +88,10 @@ struct RPAJastrow: public OrbitalBase
                   ParticleSet::ParticleLaplacian_t& dL);
 
   ValueType ratio(ParticleSet& P, int iat);
+
+  ValueType ratioGrad(ParticleSet& P, int iat, GradType & g);
+
+  GradType evalGrad(ParticleSet& P, int iat);
 
   void acceptMove(ParticleSet& P, int iat);
 

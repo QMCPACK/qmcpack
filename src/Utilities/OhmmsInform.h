@@ -113,8 +113,3 @@ inline OhmmsInform& operator<<(OhmmsInform& o, const std::string& s)
 
 #endif//OHMMSINFO_H
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

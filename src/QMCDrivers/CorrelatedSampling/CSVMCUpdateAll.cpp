@@ -366,8 +366,3 @@ void CSVMCUpdateAllWithDrift::advanceWalker(Walker_t& thisWalker, bool recompute
 
 }
 
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1593 $   $Date: 2007-01-04 17:23:27 -0600 (Thu, 04 Jan 2007) $
- * $Id: VMCMultiple.cpp 1593 2007-01-04 23:23:27Z jnkim $
- ***************************************************************************/

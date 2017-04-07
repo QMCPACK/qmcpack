@@ -162,9 +162,4 @@ struct JelliumPotential: public QMCHamiltonianBase
 }
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 3105 $   $Date: 2008-09-12 15:05:29 -0500 (Fri, 12 Sep 2008) $
- * $Id: JelliumPotential.h 3105 2008-09-12 20:05:29Z jnkim $
- ***************************************************************************/
 

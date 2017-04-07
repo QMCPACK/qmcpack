@@ -114,8 +114,3 @@ public:
 
 #include "ScaleFunctors/CubicSplineFunctions.cpp"
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * POOMA_VERSION_ID: $Id$
- ***************************************************************************/

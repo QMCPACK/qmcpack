@@ -130,8 +130,3 @@ void SPOSetProxy::evaluate_notranspose(const ParticleSet& P, int first, int last
 }
 
 }
-/***************************************************************************
- * $RCSfile$   $Author: kesler $
- * $Revision: 3535 $   $Date: 2009-02-10 13:04:12 -0600 (Tue, 10 Feb 2009) $
- * $Id: SPOSetProxy.cpp 3535 2009-02-10 19:04:12Z kesler $
- ***************************************************************************/

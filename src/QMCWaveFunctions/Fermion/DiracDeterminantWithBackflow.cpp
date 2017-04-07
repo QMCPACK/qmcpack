@@ -1648,8 +1648,3 @@ void DiracDeterminantWithBackflow::dummyEvalLi(ValueType& L1, ValueType& L2, Val
 }
 
 }
-/***************************************************************************
- * $RCSfile$   $Author: jeongnim.kim $
- * $Revision: 4710 $   $Date: 2010-03-07 18:05:22 -0600 (Sun, 07 Mar 2010) $
- * $Id: DiracDeterminantWithBackflow.cpp 4710 2010-03-08 00:05:22Z jeongnim.kim $
- ***************************************************************************/

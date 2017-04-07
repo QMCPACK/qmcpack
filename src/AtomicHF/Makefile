@@ -58,7 +58,3 @@ include $(OHMMSDIR)/src/AtomicHF/Makefile
 
 #include $(HFDIR)/src/Particle/Makefile
 
-#  ---------------------------------------------------
-#  $RCSfile$Author$
-#  $Revision$Date: 2003/08/27 14:19:23 $
-#  ---------------------------------------------------

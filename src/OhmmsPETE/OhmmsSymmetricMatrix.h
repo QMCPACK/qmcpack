@@ -300,8 +300,3 @@ ostream& operator<<(std::ostream& out, const SymmetricMatrix<T,C>& rhs)
 
 #endif // OHMMS_PETE_MATRIX_H
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

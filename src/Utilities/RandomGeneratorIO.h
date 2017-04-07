@@ -56,8 +56,3 @@ struct HDFAttribIO<RandomGenerator_t>: public HDFAttribIOBase
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 894 $   $Date: 2006-02-03 10:52:38 -0600 (Fri, 03 Feb 2006) $
- * $Id: BoostRandom.h 894 2006-02-03 16:52:38Z jnkim $
- ***************************************************************************/
