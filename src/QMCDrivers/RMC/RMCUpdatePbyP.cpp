@@ -124,21 +124,25 @@ namespace qmcplusplus
 
     if (usedrift == true)
       {
-	app_log () << "  Using Umrigar scaled drift\n";
+        if (omp_get_thread_num()==0)
+	  app_log () << "  Using Umrigar scaled drift\n";
       }
     else
       {
-	app_log () << "  Using non-scaled drift\n";
+        if (omp_get_thread_num()==0)
+	  app_log () << "  Using non-scaled drift\n";
       }
 
     if (action == "DMC")
       {
 	actionType = DMC_ACTION;
-	app_log () << "  Using DMC link-action\n";
+        if (omp_get_thread_num()==0)
+	  app_log () << "  Using DMC link-action\n";
       }
     else
       {
-	app_log () << "  Using Symmetrized Link-Action\n";
+        if (omp_get_thread_num()==0)
+	  app_log () << "  Using Symmetrized Link-Action\n";
       }
 
     return true;
