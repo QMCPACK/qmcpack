@@ -384,40 +384,47 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
     // load atomic center info only when it is not initialized
     if(centers.size()==0)
     {
-      const auto& AtomicCentersInfo=mybuilder->AtomicCentersInfo;
+      const auto& ACInfo=mybuilder->AtomicCentersInfo;
       bool success=true;
       app_log() << "Reading atomic center info for hybrid representation" << std::endl;
-      for(int center_idx=0; center_idx<AtomicCentersInfo.Ncenters; center_idx++)
+      for(int center_idx=0; center_idx<ACInfo.Ncenters; center_idx++)
       {
-        const int my_GroupID = AtomicCentersInfo.GroupID[center_idx];
-        if(AtomicCentersInfo.lmax[center_idx]<0)
+        const int my_GroupID = ACInfo.GroupID[center_idx];
+        if(ACInfo.lmax[center_idx]<0)
         {
           app_error() << "Hybrid representation needs parameter 'lmax' for atom " << center_idx << std::endl;
           success=false;
         }
-        if(AtomicCentersInfo.cutoff[center_idx]<0)
+        if(ACInfo.cutoff[center_idx]<0)
         {
           app_error() << "Hybrid representation needs parameter 'cutoff_radius' for atom " << center_idx << std::endl;
           success=false;
         }
-        if(AtomicCentersInfo.spline_radius[center_idx]<0)
+        if(ACInfo.spline_radius[center_idx]<0)
         {
           app_error() << "Hybrid representation needs parameter 'spline_radius' for atom " << center_idx << std::endl;
           success=false;
         }
-        if(AtomicCentersInfo.spline_npoints[center_idx]<0)
+        if(ACInfo.spline_npoints[center_idx]<0)
         {
           app_error() << "Hybrid representation needs parameter 'spline_npoints' for atom " << center_idx << std::endl;
+          success=false;
+        }
+        double max_allowed_cutoff=ACInfo.spline_radius[center_idx]-2.0*ACInfo.spline_radius[center_idx]/(ACInfo.spline_npoints[center_idx]-1);
+        if(success && ACInfo.cutoff[center_idx]>max_allowed_cutoff)
+        {
+          app_error() << "Hybrid representation requires cutoff_radius<=" << max_allowed_cutoff
+                      << " calculated by spline_radius-2*spline_radius/(spline_npoints-1) for atom " << center_idx << std::endl;
           success=false;
         }
       }
       if(!success) abort();
 
-      for(int center_idx=0; center_idx<AtomicCentersInfo.Ncenters; center_idx++)
+      for(int center_idx=0; center_idx<ACInfo.Ncenters; center_idx++)
       {
-        AtomicOrbitalSoA<DataType> oneCenter(AtomicCentersInfo.lmax[center_idx]);
-        oneCenter.set_info(AtomicCentersInfo.ion_pos[center_idx], AtomicCentersInfo.cutoff[center_idx], 
-                           AtomicCentersInfo.spline_radius[center_idx], AtomicCentersInfo.spline_npoints[center_idx]);
+        AtomicOrbitalSoA<DataType> oneCenter(ACInfo.lmax[center_idx]);
+        oneCenter.set_info(ACInfo.ion_pos[center_idx], ACInfo.cutoff[center_idx],
+                           ACInfo.spline_radius[center_idx], ACInfo.spline_npoints[center_idx]);
         centers.push_back(oneCenter);
       }
     }
