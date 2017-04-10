@@ -356,8 +356,3 @@ bool ParticleAttrib<T>::put(xmlNodePtr cur)
 #endif // OHMMS_PARTICLEATTRIB_PEPE_H
 
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

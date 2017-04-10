@@ -136,8 +136,3 @@ void Bspline3DSet_MLW::evaluate_notranspose(const ParticleSet& e, int first, int
   }
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 2013 $   $Date: 2007-05-22 16:47:09 -0500 (Tue, 22 May 2007) $
- * $Id: TricubicBsplineSet.h 2013 2007-05-22 21:47:09Z jnkim $
- ***************************************************************************/

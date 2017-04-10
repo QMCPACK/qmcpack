@@ -297,8 +297,3 @@ struct HDFAttribIO<VectorEstimatorImpl<double> >
 }
 
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1931 $   $Date: 2007-04-21 11:56:27 -0500 (Sat, 21 Apr 2007) $
- * $Id: VectorEstimatorImpl.h 1931 2007-04-21 16:56:27Z jnkim $
- ***************************************************************************/

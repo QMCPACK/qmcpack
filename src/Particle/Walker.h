@@ -581,8 +581,3 @@ std::ostream& operator<<(std::ostream& out, const Walker<RealType,PA>& rhs)
 }
 
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: yingwai $
- * $Revision: 7405 $   $Date: 2017-01-09 15:46:55 -0500 (Mon, 09 Jan 2017) $
- * $Id: Walker.h 7405 2017-01-09 20:46:55Z yingwai $
- ***************************************************************************/

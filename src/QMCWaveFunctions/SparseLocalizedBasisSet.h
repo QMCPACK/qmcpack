@@ -295,9 +295,4 @@ struct SparseLocalizedBasisSet: public BasisSetBase<typename COT::value_type>
 }
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1817 $   $Date: 2007-02-26 12:37:58 -0600 (Mon, 26 Feb 2007) $
- * $Id: SparseLocalizsedBasisSet.h 1817 2007-02-26 18:37:58Z jnkim $
- ***************************************************************************/
 

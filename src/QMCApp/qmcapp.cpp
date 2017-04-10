@@ -224,8 +224,3 @@ void output_hardware_info(Communicate *comm, Libxml2Document &doc, xmlNodePtr ro
   doc.addChild(hardware, "gpu", using_gpu);
 
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

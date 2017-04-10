@@ -742,8 +742,3 @@ inline void BsplineFunctor<T>::evaluateVGL(const int iStart, const int iEnd,
 }
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1691 $   $Date: 2007-02-01 15:51:50 -0600 (Thu, 01 Feb 2007) $
- * $Id: BsplineFunctor.h 1691 2007-02-01 21:51:50Z jnkim $
- ***************************************************************************/

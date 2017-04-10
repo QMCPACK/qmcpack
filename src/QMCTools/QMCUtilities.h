@@ -133,10 +133,5 @@ determineNumOfElectrons(ParticleSet& el, xmlXPathContextPtr acontext)
 
 
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 
 

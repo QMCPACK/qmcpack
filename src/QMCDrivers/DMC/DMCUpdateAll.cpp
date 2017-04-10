@@ -220,8 +220,3 @@ void DMCUpdateAllWithKill::advanceWalker(Walker_t& thisWalker, bool recompute)
 }
 }
 
-/***************************************************************************
- * $RCSfile: DMCUpdateAll.cpp,v $   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

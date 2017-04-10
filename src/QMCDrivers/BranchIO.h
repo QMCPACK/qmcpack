@@ -57,9 +57,4 @@ struct BranchIO
 }
 #endif
 
-/***************************************************************************
- * $RCSfile: SimpleFixedNodeBranch.cpp,v $   $Author: jnkim $
- * $Revision: 2756 $   $Date: 2008-06-23 14:09:25 -0500 (Mon, 23 Jun 2008) $
- * $Id: SimpleFixedNodeBranch.cpp 2756 2008-06-23 19:09:25Z jnkim $
- ***************************************************************************/
 

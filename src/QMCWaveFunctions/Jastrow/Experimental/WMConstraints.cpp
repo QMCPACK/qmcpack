@@ -292,8 +292,3 @@ WMConstraints::createDefaultTwoBody(xmlNodePtr cur, const std::string& tname)
   return createCorrelation(corrNode,(*it).second);
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

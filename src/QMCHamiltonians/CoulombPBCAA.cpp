@@ -785,9 +785,4 @@ QMCHamiltonianBase* CoulombPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction& 
 }
 }
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

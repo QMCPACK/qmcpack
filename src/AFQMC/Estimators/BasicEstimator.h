@@ -10,6 +10,7 @@
 
 #include "io/hdf_archive.h"
 #include "OhmmsData/libxmldefs.h"
+#include "Utilities/NewTimer.h"
 
 #include "AFQMC/Hamiltonians/HamiltonianBase.h"
 #include "AFQMC/Wavefunctions/WavefunctionHandler.h"
@@ -43,6 +44,7 @@ class BasicEstimator: public EstimatorBase
     int nW = wlkBucket->numWalkers(true);
     ComplexType *sm,eloc,dum,oa,ob,w,ooa,oob;
     LocalTimer->start("Block::EstimatorEloc");
+    BlockTimer->start();
 
     if(EstimEloc) {
       wfn0->evaluateLocalEnergyAndOverlap("Estimator",-1,wlkBucket);
@@ -59,6 +61,7 @@ class BasicEstimator: public EstimatorBase
         }
       }
     }
+    BlockTimer->stop();
     LocalTimer->stop("Block::EstimatorEloc");
   }
 
@@ -295,6 +298,8 @@ class BasicEstimator: public EstimatorBase
     writer = (myComm->rank()==0);
     LocalTimer = timer;
 
+    BlockTimer = TimerManager.createTimer("Block::EstimatorEloc");
+
     MPI_COMM_TG_LOCAL_HEADS = heads_of_tg_comm;
     MPI_COMM_HEAD_OF_NODES = heads_comm;
     MPI_COMM_NODE_LOCAL = node_comm;
@@ -357,6 +362,8 @@ class BasicEstimator: public EstimatorBase
   ComplexType exactEnergy;
 
   myTimer* LocalTimer;
+
+  NewTimer *BlockTimer;
 
   int num_heads_tg;
   MPI_Comm MPI_COMM_HEAD_OF_NODES;

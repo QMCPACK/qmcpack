@@ -729,8 +729,3 @@ template void NonLocalECPComponent::randomize_grid(std::vector<double> &sphere);
 
 
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

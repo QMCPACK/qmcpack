@@ -178,8 +178,3 @@ QMCHamiltonianBase* LocalCorePolPotential::makeClone(ParticleSet& qp, TrialWaveF
 }
 
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

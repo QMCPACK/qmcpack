@@ -336,8 +336,3 @@ void CloneManager::makeClones(MCWalkerConfiguration& wg, TrialWaveFunction& guid
 
 }
 
-/***************************************************************************
- * $RCSfile: CloneManager.cpp,v $   $Author: jnkim $
- * $Revision: 1.5 $   $Date: 2006/10/18 17:23:35 $
- * $Id:CloneManagerDMCPbyPOMP.cpp,v 1.5 2006/10/18 17:23:35 jnkim Exp $
- ***************************************************************************/

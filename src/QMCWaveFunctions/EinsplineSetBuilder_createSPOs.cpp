@@ -196,6 +196,14 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 
   if(FullBands[spinSet]==0) FullBands[spinSet]=new std::vector<BandInfo>;
 
+  // Ensure the first SPO set must be spinSet==0
+  // to correctly initialize key data of EinsplineSetBuilder
+  if ( SPOSetMap.size()==0 && spinSet!=0 )
+  {
+    app_error() << "The first SPO set must have spindataset=\"0\"" << std::endl;
+    abort();
+  }
+
   Timer mytimer;
   if(spinSet==0)
   {

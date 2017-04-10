@@ -383,6 +383,7 @@ void QMCCostFunctionOMP::checkConfigurations()
       ParticleSet::Walker_t& thisWalker(*wRef[iw]);
       wRef.R=thisWalker.R;
       wRef.update();
+      wRef.donePbyP();
       Return_t* restrict saved=(*RecordsOnNode[ip])[iw];
       //          Return_t logpsi(0);
       //          psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg],*d2LogPsi[iwg]);
@@ -559,6 +560,7 @@ void QMCCostFunctionOMP::engine_checkConfigurations(cqmc::engine::LMYEngine * En
       ParticleSet::Walker_t& thisWalker(*wRef[iw]);
       wRef.R=thisWalker.R;
       wRef.update();
+      wRef.donePbyP();
       Return_t* restrict saved=(*RecordsOnNode[ip])[iw];
       //          Return_t logpsi(0);
       //          psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg],*d2LogPsi[iwg]);
@@ -1025,8 +1027,3 @@ QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matri
   return 1.0;
 }
 }
-/***************************************************************************
-* $RCSfile$   $Author: jnkim $
-* $Revision: 1898 $   $Date: 2007-04-17 10:07:34 -0500 (Tue, 17 Apr 2007) $
-* $Id: QMCCostFunctionOMP.cpp 1898 2007-04-17 15:07:34Z jnkim $
-***************************************************************************/

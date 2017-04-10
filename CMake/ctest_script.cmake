@@ -1,6 +1,6 @@
 # ctest script for building, running, and submitting the test results 
 # Usage:  ctest -s script,build
-#   build = debug / optimized / valgrind
+#   build = debug / optimized / valgrind / coverage
 # Note: this test will use use the number of processors defined in the variable N_PROCS,
 #   the enviornmental variable N_PROCS, or the number of processors availible (if not specified)
 
@@ -99,8 +99,6 @@ IF( NOT CTEST_SCRIPT_ARG )
     MESSAGE(FATAL_ERROR "No build specified: ctest -S /path/to/script,build (debug/optimized/valgrind")
 ELSEIF( ${CTEST_SCRIPT_ARG} STREQUAL "debug" )
     SET( CMAKE_BUILD_TYPE "Debug" )
-    SET( CTEST_COVERAGE_COMMAND ${COVERAGE_COMMAND} )
-    SET( ENABLE_GCOV "true" )
     SET( USE_VALGRIND FALSE )
     SET( USE_VALGRIND_MATLAB FALSE )
 ELSEIF( (${CTEST_SCRIPT_ARG} STREQUAL "optimized") OR (${CTEST_SCRIPT_ARG} STREQUAL "opt") OR (${CTEST_SCRIPT_ARG} STREQUAL "release") )
@@ -116,6 +114,18 @@ ELSEIF( ${CTEST_SCRIPT_ARG} STREQUAL "valgrind" )
     SET( USE_VALGRIND TRUE )
     SET( USE_VALGRIND_MATLAB FALSE )
     SET( USE_MATLAB 0 )
+ELSEIF( ${CTEST_SCRIPT_ARG} STREQUAL "coverage" )
+    SET( CMAKE_BUILD_TYPE "Debug" )
+    SET( CTEST_COVERAGE_COMMAND "gcov" )
+    SET( ENABLE_GCOV "true" )
+    SET( COVERAGE_OPTIONS
+  "-DCMAKE_CXX_FLAGS=--coverage"
+  "-DCMAKE_C_FLAGS=--coverage"
+  "-DCMAKE_EXE_LINKER_FLAGS=--coverage"
+  "-DCMAKE_SHARED_LINKER_FLAGS=--coverage"
+    )
+    SET( CTEST_BUILD_NAME "${CTEST_BUILD_NAME}-coverage" )
+
 ELSE()
     MESSAGE(FATAL_ERROR "Invalid build (${CTEST_SCRIPT_ARG}): ctest -S /path/to/script,build (debug/opt/valgrind")
 ENDIF()
@@ -234,6 +244,10 @@ IF ( QMC_OPTIONS )
     SET( CTEST_OPTIONS "${CTEST_OPTIONS};${QMC_OPTIONS}" )
 ENDIF()
 
+IF ( COVERAGE_OPTIONS )
+    SET( CTEST_OPTIONS "${CTEST_OPTIONS};${COVERAGE_OPTIONS}" )
+ENDIF()
+
 MESSAGE("Configure options:")
 MESSAGE("   ${CTEST_OPTIONS}")
 
@@ -250,6 +264,7 @@ CTEST_CONFIGURE(
     OPTIONS "${CTEST_OPTIONS}"
 )
 
+
 IF ( DEFINED CMAKE_TOOLCHAIN_FILE )
 #need to trigger the cmake configuration twice
 CTEST_CONFIGURE(
@@ -263,6 +278,8 @@ ENDIF()
 CTEST_BUILD()
 IF ( USE_VALGRIND )
     CTEST_MEMCHECK( EXCLUDE procs   PARALLEL_LEVEL ${N_PROCS} )
+ELSEIF (CTEST_COVERAGE_COMMAND)
+  # Skip the normal tests when doing coverage
 ELSE()
 #    CTEST_TEST( INCLUDE short PARALLEL_LEVEL ${N_PROCS} )
     IF( DEFINED TEST_PARALLEL_LEVEL )
@@ -271,19 +288,76 @@ ELSE()
          CTEST_TEST( PARALLEL_LEVEL ${N_PROCS} )
     ENDIF()
 ENDIF()
-IF( CTEST_COVERAGE_COMMAND )
-    CTEST_COVERAGE()
-ENDIF()
 
 
 # Submit the results to oblivion
-SET( CTEST_DROP_METHOD "http" )
+SET( CTEST_DROP_METHOD "https" )
 SET( CTEST_DROP_SITE "cdash.qmcpack.org" )
 SET( CTEST_DROP_LOCATION "/CDash/submit.php?project=QMCPACK" )
 SET( CTEST_DROP_SITE_CDASH TRUE )
 SET( DROP_SITE_CDASH TRUE )
 CTEST_SUBMIT()
 
+IF( CTEST_COVERAGE_COMMAND )
+  EXECUTE_PROCESS(COMMAND "pwd" OUTPUT_VARIABLE CURRENT_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
+  #MESSAGE("Using new code coverage path in ${CTEST_SOURCE_DIRECTORY}")
+  #MESSAGE("Using new code coverage path bin: ${CTEST_BINARY_DIRECTORY}")
+  INCLUDE("${CTEST_SOURCE_DIRECTORY}/CMake/compareGCOV.cmake")
+  # Base test
+  CLEAR_GCDA(${CTEST_BINARY_DIRECTORY})
+  CTEST_TEST(INCLUDE_LABEL coverage)
+  FILE(REMOVE_RECURSE ${CTEST_BINARY_DIRECTORY}/tgcov_base)
+  GENERATE_GCOV(${CTEST_BINARY_DIRECTORY} ${CTEST_BINARY_DIRECTORY}/tgcov_base tgcov_base)
+  # Generate gcov
+  CLEAR_GCDA(${CTEST_BINARY_DIRECTORY})
+  # Remove gcda files
+  CTEST_TEST(INCLUDE_LABEL unit)
+  # Generate gcov
+  FILE(REMOVE_RECURSE ${CTEST_BINARY_DIRECTORY}/tgcov_unit)
+  GENERATE_GCOV(${CTEST_BINARY_DIRECTORY} ${CTEST_BINARY_DIRECTORY}/tgcov_unit tgcov_unit)
+  # Generate diff
+  FILE(REMOVE_RECURSE ${CTEST_BINARY_DIRECTORY}/tgcov_diff)
+  COMPARE_GCOV(${CTEST_BINARY_DIRECTORY}/tgcov_base
+               ${CTEST_BINARY_DIRECTORY}/tgcov_unit
+               ${CTEST_BINARY_DIRECTORY}/tgcov_diff
+               tgcov_diff)
+
+  # create tar file
+  CREATE_GCOV_TAR(${CTEST_BINARY_DIRECTORY} tgcov_unit)
+  CREATE_GCOV_TAR(${CTEST_BINARY_DIRECTORY} tgcov_base)
+
+  FILE(GLOB DIFF_GCOV_FILES ${CTEST_BINARY_DIRECTORY}/tgcov_diff/*.gcov)
+
+
+  SET( CTEST_BUILD_NAME_ORIGINAL "${CTEST_BUILD_NAME}")
+  SET( CTEST_BUILD_NAME "${CTEST_BUILD_NAME_ORIGINAL}-diff" )
+  CTEST_START(${CTEST_DASHBOARD})
+  IF(EXISTS "${CTEST_BINARY_DIRECTORY}/gcov.tar")
+    MESSAGE("submitting ${CTEST_BINARY_DIRECTORY}/gcov.tar")
+    CTEST_SUBMIT(CDASH_UPLOAD "${CTEST_BINARY_DIRECTORY}/gcov.tar"
+      CDASH_UPLOAD_TYPE GcovTar)
+  ENDIF()
+
+  SET( CTEST_BUILD_NAME "${CTEST_BUILD_NAME_ORIGINAL}-base" )
+  CTEST_START(${CTEST_DASHBOARD})
+
+  IF(EXISTS "${CTEST_BINARY_DIRECTORY}/gcov_tgcov_base.tar")
+    MESSAGE("submitting ${CTEST_BINARY_DIRECTORY}/gcov_tgcov_base.tar")
+    CTEST_SUBMIT(CDASH_UPLOAD "${CTEST_BINARY_DIRECTORY}/gcov_tgcov_base.tar"
+      CDASH_UPLOAD_TYPE GcovTar)
+  ENDIF()
+
+  SET( CTEST_BUILD_NAME "${CTEST_BUILD_NAME_ORIGINAL}-unit" )
+  CTEST_START(${CTEST_DASHBOARD})
+
+
+  IF(EXISTS "${CTEST_BINARY_DIRECTORY}/gcov_tgcov_unit.tar")
+    MESSAGE("submitting ${CTEST_BINARY_DIRECTORY}/gcov_tgcov_unit.tar")
+    CTEST_SUBMIT(CDASH_UPLOAD "${CTEST_BINARY_DIRECTORY}/gcov_tgcov_unit.tar"
+      CDASH_UPLOAD_TYPE GcovTar)
+  ENDIF()
+
+ENDIF()
 
 # Clean up
 # exec_program("make distclean")

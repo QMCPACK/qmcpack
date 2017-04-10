@@ -29,8 +29,3 @@ namespace ohmmshf
 typedef YlmRnlSet<double> HFAtomicOrbitals;
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

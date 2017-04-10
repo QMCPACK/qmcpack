@@ -18,8 +18,28 @@
 
 namespace qmcplusplus {
 
+enum AFQMCTimers {
+  BlockTotal,
+  SubstepPropagate,
+  StepPopControl,
+  StepLoadBalance,
+  StepOrthogonalize
+};
+
+TimerNameList_t<AFQMCTimers> AFQMCTimerNames =
+{
+  {BlockTotal, "Block::Total"},
+  {SubstepPropagate, "Substep::Propagate"},
+  {StepPopControl, "Step:PopControl"},
+  {StepLoadBalance, "Step::LoadBalance"},
+  {StepOrthogonalize, "Step::Orthogonalize"}
+};
+
+
 bool AFQMCDriver::run()
 {
+  TimerList_t Timers;
+  setup_timers(Timers, AFQMCTimerNames, timer_level_medium);
 
   if(compare_libraries)
   {
@@ -49,14 +69,17 @@ bool AFQMCDriver::run()
   for (iBlock=block0; iBlock<nBlock; ++iBlock) {
 
     LocalTimer.start("Block::TOTAL");
+    Timers[BlockTotal]->start();
     for (int iStep=0; iStep<nStep; ++iStep, ++step_tot) {
 
       // propagate
       for (int iSubstep=0; iSubstep<nSubstep; ++iSubstep,++time) {
 
         LocalTimer.start("SubStep::Propagate");
+        Timers[SubstepPropagate]->start();
         prop0->Propagate(time,wlkBucket,Eshift,Eshift);
         LocalTimer.stop("SubStep::Propagate");        
+        Timers[SubstepPropagate]->stop();
 
         estim0->accumulate_substep(wlkBucket);
 
@@ -67,21 +90,27 @@ bool AFQMCDriver::run()
 
       if (step_tot != 0 && step_tot % nPopulationControl == 0) {
         LocalTimer.start("Step::PopControl");
+        Timers[StepPopControl]->start();
         wlkBucket->popControl();
         LocalTimer.stop("Step::PopControl");
+        Timers[StepPopControl]->stop();
       }
 
       if (step_tot != 0 && step_tot % nloadBalance == 0) {
         LocalTimer.start("Step::loadBalance");
+        Timers[StepLoadBalance]->start();
         wlkBucket->loadBalance();
         LocalTimer.stop("Step::loadBalance");
+        Timers[StepLoadBalance]->stop();
       }    
  
       if (step_tot != 0 && step_tot % nStabalize == 0) { // && it->alive) {
         LocalTimer.start("Step::Orthogonalize");
+        Timers[StepOrthogonalize]->start();
         wlkBucket->Orthogonalize();
         wfn0->evaluateOverlap("ImportanceSampling",-1,wlkBucket);
         LocalTimer.stop("Step::Orthogonalize");
+        Timers[StepOrthogonalize]->stop();
       }
 
       //Etav += estim0->getEloc_step();
@@ -115,6 +144,7 @@ bool AFQMCDriver::run()
     estim0->accumulate_block(wlkBucket);
 
     LocalTimer.stop("Block::TOTAL");
+    Timers[BlockTotal]->stop();
 
     estim0->print(iBlock+1,time*dt,Eshift,Etav,wlkBucket);
 

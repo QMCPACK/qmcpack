@@ -286,8 +286,8 @@ ENDFUNCTION()
 
 FUNCTION(QMC_RUN_AND_CHECK BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SCALAR_VALUES SERIES SHOULD_SUCCEED)
     # Map from name of check to appropriate flag for check_scalars.py
-    LIST(APPEND SCALAR_CHECK_TYPE "kinetic" "totenergy" "eeenergy" "samples" "potential" "ionion" "localecp" "nonlocalecp" "flux")
-    LIST(APPEND CHECK_SCALAR_FLAG "--ke"    "--le"      "--ee"     "--ts"    "--lp"      "--ii"       "--lpp"    "--nlpp"      "--fl")
+    LIST(APPEND SCALAR_CHECK_TYPE "kinetic" "totenergy" "eeenergy" "samples" "potential" "ionion" "localecp" "nonlocalecp" "flux" "kinetic_mixed" "kinetic_pure" "eeenergy_mixed" "eeenergy_pure" "potential_pure")
+    LIST(APPEND CHECK_SCALAR_FLAG "--ke"    "--le"      "--ee"     "--ts"    "--lp"      "--ii"       "--lpp"    "--nlpp" "--fl" "--ke_m" "--ke_p" "--ee_m" "--ee_p" "--lp_p")
 
     SET( TEST_ADDED FALSE )
     SET( FULL_NAME "${BASE_NAME}-${PROCS}-${THREADS}" )

@@ -716,8 +716,3 @@ void MCWalkerConfiguration::NLMove_GPU(std::vector<Walker_t*> &walkers,
 
 }
 
-/***************************************************************************
- * $RCSfile$   $Author: yingwai $
- * $Revision: 7279 $   $Date: 2016-11-23 19:21:16 -0500 (Wed, 23 Nov 2016) $
- * $Id: MCWalkerConfiguration.cpp 7279 2016-11-24 00:21:16Z yingwai $
- ***************************************************************************/

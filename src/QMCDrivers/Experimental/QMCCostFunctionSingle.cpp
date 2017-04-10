@@ -486,8 +486,3 @@ QMCCostFunctionSingle::Return_t QMCCostFunctionSingle::fillOverlapHamiltonianMat
 //  return true;
 //}
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

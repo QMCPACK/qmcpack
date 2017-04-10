@@ -288,8 +288,3 @@ void WalkerReconfigurationMPI::recvWalkers(MCWalkerConfiguration& W,
 }
 
 
-/***************************************************************************
- * $RCSfile: WalkerReconfigurationMPI.cpp,v $   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

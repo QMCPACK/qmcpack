@@ -11,6 +11,7 @@
 #include "AFQMC/Walkers/WalkerHandlerBase.h"
 #include "AFQMC/Walkers/LocalWalkerHandler.h"
 #include "AFQMC/Hamiltonians/HamiltonianBase.h"
+#include "Utilities/NewTimer.h"
 
 namespace qmcplusplus
 {

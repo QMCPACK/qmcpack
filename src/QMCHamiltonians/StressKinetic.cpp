@@ -81,9 +81,4 @@ QMCHamiltonianBase* StressKinetic::makeClone(ParticleSet& qp, TrialWaveFunction&
 }
 }
 
-/***************************************************************************
- * $RCSfile$   $Author: jtkrogel $
- * $Revision: 5976 $   $Date: 2013-09-13 13:39:44 -0500 (Fri, 13 Sep 2013) $
- * $Id: StressKinetic.cpp 5976 2013-09-13 18:39:44Z jtkrogel $
- ***************************************************************************/
 

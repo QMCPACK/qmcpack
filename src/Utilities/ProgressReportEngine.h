@@ -119,8 +119,3 @@ ReportEngine& operator<<(ReportEngine& o, const T& val)
 }
 }
 #endif // QMCPLUSPLUS_MPIOBJECTBASE_H
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 2468 $   $Date: 2008-02-22 09:27:30 -0500 (Fri, 22 Feb 2008) $
- * $Id: Communicate.h 2468 2008-02-22 14:27:30Z jnkim $
- ***************************************************************************/

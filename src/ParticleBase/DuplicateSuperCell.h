@@ -201,8 +201,3 @@ struct DuplicateSuperCell<CrystalLattice<T,3> >
 
 #endif // OHMMS_DUPLICATE_SUPERCELL_H
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

@@ -143,9 +143,4 @@ void OrbitalBase::evaluateDerivRatios(VirtualParticleSet& VP, const opt_variable
   evaluateRatios(VP,ratios);
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1770 $   $Date: 2007-02-17 17:45:38 -0600 (Sat, 17 Feb 2007) $
- * $Id: OrbitalBase.h 1770 2007-02-17 23:45:38Z jnkim $
- ***************************************************************************/
 

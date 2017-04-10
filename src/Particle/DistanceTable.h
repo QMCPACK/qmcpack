@@ -59,8 +59,3 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
