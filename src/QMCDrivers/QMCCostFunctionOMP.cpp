@@ -383,6 +383,7 @@ void QMCCostFunctionOMP::checkConfigurations()
       ParticleSet::Walker_t& thisWalker(*wRef[iw]);
       wRef.R=thisWalker.R;
       wRef.update();
+      wRef.donePbyP();
       Return_t* restrict saved=(*RecordsOnNode[ip])[iw];
       //          Return_t logpsi(0);
       //          psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg],*d2LogPsi[iwg]);
@@ -559,6 +560,7 @@ void QMCCostFunctionOMP::engine_checkConfigurations(cqmc::engine::LMYEngine * En
       ParticleSet::Walker_t& thisWalker(*wRef[iw]);
       wRef.R=thisWalker.R;
       wRef.update();
+      wRef.donePbyP();
       Return_t* restrict saved=(*RecordsOnNode[ip])[iw];
       //          Return_t logpsi(0);
       //          psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg],*d2LogPsi[iwg]);
