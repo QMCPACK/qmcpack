@@ -60,21 +60,21 @@ int main(int argc, char** argv)
   int ncrews=1;
   int nsubsteps=1;
   RealType Rmax(1.7);
-  bool useSoA=false;
+  bool useSoA=true;
 
   PrimeNumberSet<uint32_t> myPrimes;
 
   char *g_opt_arg;
   int opt;
-  while((opt = getopt(argc, argv, "hos:g:i:b:c:a:r:")) != -1)
+  while((opt = getopt(argc, argv, "hds:g:i:b:c:a:r:")) != -1)
   {
     switch(opt)
     {
       case 'h':
         printf("[-g \"n0 n1 n2\"]\n");
         return 1;
-      case 'o'://optimized method using SoA distance table and J2
-        useSoA=true;
+      case 'd'://down to AoS distance table -- broken most likely
+        useSoA=false;
         break;
       case 'g': //tiling1 tiling2 tiling3
         sscanf(optarg,"%d %d %d",&na,&nb,&nc);

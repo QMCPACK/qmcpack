@@ -20,9 +20,9 @@ TARGET_LINK_LIBRARIES(diff_wfs miniwfs qmcbase qmcutil ${QMC_UTIL_LIBS} ${MPI_LI
 
 endif()
 
-SET(boost_test exchange_walker)
-FOREACH(p ${boost_test})
-  ADD_EXECUTABLE( ${p}  ${p}.cpp)
-  TARGET_LINK_LIBRARIES(${p} qmcbase qmcutil ${QMC_UTIL_LIBS} boost ${MPI_LIBRARY})
-ENDFOREACH(p ${boost_test})
+#SET(boost_test exchange_walker)
+#FOREACH(p ${boost_test})
+#  ADD_EXECUTABLE( ${p}  ${p}.cpp)
+#  TARGET_LINK_LIBRARIES(${p} qmcbase qmcutil ${QMC_UTIL_LIBS} boost ${MPI_LIBRARY})
+#ENDFOREACH(p ${boost_test})
 
