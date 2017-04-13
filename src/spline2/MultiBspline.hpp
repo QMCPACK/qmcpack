@@ -318,7 +318,7 @@ namespace qmcplusplus
 
       size_t sizeInByte() const
       {
-        return spline_m.coefs_size*sizeof(T);
+        return (spline_m.coefs==nullptr)?0:spline_m.coefs_size*sizeof(T);
       }
 
       /** copy a single spline to the big table

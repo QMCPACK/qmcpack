@@ -75,6 +75,7 @@ struct AtomicOrbitalSoA
     localG.resize(Npad*lm_tot);
     localL.resize(Npad*lm_tot);
     create_spline();
+    qmc_common.memory_allocated += SplineInst->sizeInByte();
   }
 
   void bcast_tables(Communicate* comm)
