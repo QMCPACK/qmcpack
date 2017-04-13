@@ -766,6 +766,10 @@ IF(BUILD_LMYENGINE_INTERFACE)
   SET(QMC_UTIL_LIBS formic_utils ${QMC_UTIL_LIBS})
 ENDIF(BUILD_LMYENGINE_INTERFACE)
 
+IF (USE_VTUNE_TASKS)
+  LINK_LIBRARIES(ittnotify)
+ENDIF()
+
 #include(ExternalProject)
 #  set(einspline_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/einspline")
 #  set(einspline_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/einspline")
