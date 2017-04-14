@@ -32,24 +32,8 @@ std::string getDateAndTime();
  */
 std::string getDateAndTime(const char* format);
 
-#ifdef __linux__
-#include "sys/sysinfo.h"
+size_t freemem();
 
-inline size_t freemem()
-{
-  struct sysinfo si;
-  sysinfo(&si);
-  si.freeram+=si.bufferram;
-  return si.freeram>>20;
-  //return (si.freeram + si.bufferram);
-}
-#else
-
-inline size_t freemem()
-{
-  return 0;
-}
-
-#endif
+void print_mem(const char* title, std::ostream& log);
 
 #endif
