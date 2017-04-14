@@ -37,19 +37,19 @@ namespace qmcplusplus
 {
 
   ///create R2R, real wavefunction in double
-  BsplineReaderBase* createBsplineRealDouble(EinsplineSetBuilder* e, int numOrbs, bool hybrid_rep);
+  BsplineReaderBase* createBsplineRealDouble(EinsplineSetBuilder* e, bool hybrid_rep);
   ///create R2R, real wavefunction in float
-  BsplineReaderBase* createBsplineRealSingle(EinsplineSetBuilder* e, int numOrbs, bool hybrid_rep);
+  BsplineReaderBase* createBsplineRealSingle(EinsplineSetBuilder* e, bool hybrid_rep);
   ///create C2C or C2R, complex wavefunction in double
-  BsplineReaderBase* createBsplineComplexDouble(EinsplineSetBuilder* e, int numOrbs, bool hybrid_rep);
+  BsplineReaderBase* createBsplineComplexDouble(EinsplineSetBuilder* e, bool hybrid_rep);
   ///create C2C or C2R, complex wavefunction in single
-  BsplineReaderBase* createBsplineComplexSingle(EinsplineSetBuilder* e, int numOrbs, bool hybrid_rep);
+  BsplineReaderBase* createBsplineComplexSingle(EinsplineSetBuilder* e, bool hybrid_rep);
   ///disable truncated orbitals for now
-  BsplineReaderBase* createTruncatedSingle(EinsplineSetBuilder* e, int numOrbs, int celltype)
+  BsplineReaderBase* createTruncatedSingle(EinsplineSetBuilder* e, int celltype)
   {
     return nullptr;
   }
-  BsplineReaderBase* createTruncatedDouble(EinsplineSetBuilder* e, int numOrbs, int celltype)
+  BsplineReaderBase* createTruncatedDouble(EinsplineSetBuilder* e, int celltype)
   {
     return nullptr;
   }
@@ -293,16 +293,16 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
       if(truncate=="yes")
       {
         if(use_single)
-          MixedSplineReader=createTruncatedSingle(this,numOrbs,TargetPtcl.Lattice.SuperCellEnum);
+          MixedSplineReader=createTruncatedSingle(this,TargetPtcl.Lattice.SuperCellEnum);
         else
-          MixedSplineReader=createTruncatedDouble(this,numOrbs,TargetPtcl.Lattice.SuperCellEnum);
+          MixedSplineReader=createTruncatedDouble(this,TargetPtcl.Lattice.SuperCellEnum);
       }
       else
       {
         if(use_single)
-          MixedSplineReader= createBsplineRealSingle(this, numOrbs, hybrid_rep=="yes");
+          MixedSplineReader= createBsplineRealSingle(this, hybrid_rep=="yes");
         else
-          MixedSplineReader= createBsplineRealDouble(this, numOrbs, hybrid_rep=="yes");
+          MixedSplineReader= createBsplineRealDouble(this, hybrid_rep=="yes");
       }
     }
   }
@@ -316,9 +316,9 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
         app_log() << "  Truncated orbitals with multiple kpoints are not supported yet!" << std::endl;
       }
       if(use_single)
-        MixedSplineReader= createBsplineComplexSingle(this, numOrbs, hybrid_rep=="yes");
+        MixedSplineReader= createBsplineComplexSingle(this, hybrid_rep=="yes");
       else
-        MixedSplineReader= createBsplineComplexDouble(this, numOrbs, hybrid_rep=="yes");
+        MixedSplineReader= createBsplineComplexDouble(this, hybrid_rep=="yes");
     }
   }
 

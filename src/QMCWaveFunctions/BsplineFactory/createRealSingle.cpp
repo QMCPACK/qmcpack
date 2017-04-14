@@ -25,19 +25,18 @@
 namespace qmcplusplus
 {
 
-  BsplineReaderBase* createBsplineRealSingle(EinsplineSetBuilder* e, int numOrbs, bool hybrid_rep)
+  BsplineReaderBase* createBsplineRealSingle(EinsplineSetBuilder* e, bool hybrid_rep)
   {
     BsplineReaderBase* aReader=nullptr;
 
 #if defined(QMC_ENABLE_SOA_DET)
-    if(numOrbs>1)
-      if(hybrid_rep)
-        aReader= new SplineHybridAdoptorReader<HybridRealSoA<SplineR2RSoA<float,OHMMS_PRECISION> > >(e);
-      else
-        aReader= new SplineAdoptorReader<SplineR2RSoA<float,OHMMS_PRECISION> >(e);
+    if(hybrid_rep)
+      aReader= new SplineHybridAdoptorReader<HybridRealSoA<SplineR2RSoA<float,OHMMS_PRECISION> > >(e);
     else
+      aReader= new SplineAdoptorReader<SplineR2RSoA<float,OHMMS_PRECISION> >(e);
+#else
+    aReader= new SplineAdoptorReader<SplineR2RAdoptor<float,OHMMS_PRECISION,3> >(e);
 #endif
-      aReader= new SplineAdoptorReader<SplineR2RAdoptor<float,OHMMS_PRECISION,3> >(e);
     return aReader;
   }
 }
