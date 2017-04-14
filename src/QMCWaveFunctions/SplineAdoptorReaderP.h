@@ -188,7 +188,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
       if(foundspline)
       {
         bspline->read_splines(h5f);
-        app_log() << "  Time to read the table in " << splinefile << " = " << now.elapsed() << std::endl;;
+        if(foundspline) app_log() << "  Time to read the table in " << splinefile << " = " << now.elapsed() << std::endl;;
       }
     }
     myComm->bcast(foundspline);

@@ -114,6 +114,11 @@ struct AtomicOrbitalSoA
     MultiSpline=&(SplineInst->spline_m);
   }
 
+  inline void flush_zero()
+  {
+    SplineInst->flush_zero();
+  }
+
   inline void set_spline(AtomicSingleSplineType* spline, int lm, int ispline)
   {
     SplineInst->copy_spline(spline, lm*Npad+ispline, 0, BaseN);
@@ -395,6 +400,12 @@ struct HybridAdoptorBase
   {
     for(int ic=0; ic<AtomicCenters.size(); ic++)
       AtomicCenters[ic].reduce_tables(comm);
+  }
+
+  inline void flush_zero()
+  {
+    for(int ic=0; ic<AtomicCenters.size(); ic++)
+      AtomicCenters[ic].flush_zero();
   }
 
   bool read_splines(hdf_archive& h5f)

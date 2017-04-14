@@ -176,6 +176,11 @@ namespace qmcplusplus
         offset[nteams]=num_splines;
       }
 
+      void flush_zero() const
+      {
+        if(spline_m!=nullptr) std::fill(spline_m->coefs, spline_m->coefs+spline_m->coefs_size, T(0));
+      }
+
       int num_splines() const
       {
         return (spline_m==nullptr)?0:spline_m->num_splines;
@@ -309,6 +314,11 @@ namespace qmcplusplus
         }
         spline_m=*temp_spline;
         free(temp_spline);
+      }
+
+      void flush_zero() const
+      {
+        if(spline_m.coefs!=nullptr) std::fill(spline_m.coefs, spline_m.coefs+spline_m.coefs_size, T(0));
       }
 
       int num_splines() const
