@@ -382,7 +382,7 @@ void QMCCostFunctionOMP::checkConfigurations()
     {
       ParticleSet::Walker_t& thisWalker(*wRef[iw]);
       wRef.R=thisWalker.R;
-      wRef.update();
+      wRef.update(1);
       wRef.donePbyP();
       Return_t* restrict saved=(*RecordsOnNode[ip])[iw];
       //          Return_t logpsi(0);
@@ -559,7 +559,7 @@ void QMCCostFunctionOMP::engine_checkConfigurations(cqmc::engine::LMYEngine * En
     {
       ParticleSet::Walker_t& thisWalker(*wRef[iw]);
       wRef.R=thisWalker.R;
-      wRef.update();
+      wRef.update(1);
       wRef.donePbyP();
       Return_t* restrict saved=(*RecordsOnNode[ip])[iw];
       //          Return_t logpsi(0);
@@ -731,7 +731,7 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::correlatedSampling(bool needGra
     {
       ParticleSet::Walker_t& thisWalker(**it);
       wRef.R=thisWalker.R;
-      wRef.update();
+      wRef.update(1);
       Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
       // buffer for MultiSlaterDet data
       Return_t logpsi;

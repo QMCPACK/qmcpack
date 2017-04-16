@@ -214,7 +214,7 @@ void QMCUpdateBase::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end)
   {
     Walker_t& awalker(**it);
     W.R=awalker.R;
-    W.update();
+    W.update(1);
     //W.loadWalker(awalker,UpdatePbyP);
     if (awalker.DataSet.size())
       awalker.DataSet.clear();

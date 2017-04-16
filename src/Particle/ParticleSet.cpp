@@ -492,7 +492,7 @@ void ParticleSet::update(int iflag)
 #endif
   for (int i=0; i< DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
-  if (SK)
+  if (iflag==0 && SK)
     SK->UpdateAllPart(*this);
 
   Ready4Measure=true;
