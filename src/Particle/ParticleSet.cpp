@@ -485,14 +485,14 @@ int ParticleSet::getTable(const ParticleSet& psrc)
   return tid;
 }
 
-void ParticleSet::update(int iflag)
+void ParticleSet::update(bool skipSK)
 {
 #if defined(ENABLE_AA_SOA)
   RSoA.copyIn(R); 
 #endif
   for (int i=0; i< DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
-  if (iflag==0 && SK)
+  if (!skipSK && SK)
     SK->UpdateAllPart(*this);
 
   Ready4Measure=true;
@@ -797,11 +797,11 @@ void ParticleSet::rejectMove(Index_t iat)
     DistTables[i]->activePtcl=-1;
 }
 
-void ParticleSet::donePbyP()
+void ParticleSet::donePbyP(bool skipSK)
 {
   for (size_t i=0,nt=DistTables.size(); i< nt; i++)
     DistTables[i]->donePbyP();
-  if (SK && !SK->DoUpdate)
+  if (!skipSK && SK && !SK->DoUpdate)
     SK->UpdateAllPart(*this);
   Ready4Measure=true;
 }

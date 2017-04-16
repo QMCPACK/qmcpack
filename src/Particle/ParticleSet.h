@@ -294,9 +294,9 @@ public:
   }
 
   /** update the internal data
-   *@param iflag index for the update mode, 0 everthing, 1 only distance tables
+   *@param skip SK update if skipSK is true
    */
-  void update(int iflag=0);
+  void update(bool skipSK=false);
 
   /**update the internal data with new position
    *@param pos position vector assigned to R
@@ -465,8 +465,10 @@ public:
    */
   void loadWalker(Walker_t* awalker);
 
-  /** update the buffer */
-  void donePbyP();
+  /** update the buffer
+   *@param skip SK update if skipSK is true
+   */
+  void donePbyP(bool skipSK=false);
 
   //return the address of the values of Hamiltonian terms
   inline EstimatorRealType* restrict getPropertyBase()

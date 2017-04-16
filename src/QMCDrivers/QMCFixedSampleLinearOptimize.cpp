@@ -1064,8 +1064,8 @@ bool QMCFixedSampleLinearOptimize::one_shift_run() {
   std::vector<RealType> parameterDirections;
   parameterDirections.assign(N, 0.0);
 
-  // have the cost function prepare derivative vectors for the matrix build and compute the initial cost
-  const RealType initCost = optTarget->Cost(true);
+  // compute the initial cost
+  const RealType initCost = optTarget->Cost(false);
 
   // say what we are doing
   app_log() << std::endl
