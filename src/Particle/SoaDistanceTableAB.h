@@ -54,8 +54,8 @@ struct SoaDistanceTableAB: public DTD_BConds<T,D,SC>, public DistanceTableData
   SoaDistanceTableAB(const ParticleSet& source, ParticleSet& target)
     : DTD_BConds<T,D,SC>(source.Lattice), DistanceTableData(source,target)
   {
-    Nsources=source.getTotalNum();
-    Ntargets=target.getTotalNum();
+    N[SourceIndex]=Nsources=source.getTotalNum();
+    N[VisitorIndex]=Ntargets=target.getTotalNum();
     Ntargets_padded=getAlignedSize<T>(n);
     BlockSize=Ntargets_padded*D;
     Distances.resize(Nsources,Ntargets_padded);

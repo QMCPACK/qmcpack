@@ -47,6 +47,7 @@ TEST_CASE("Pade functor", "[wavefunction]")
   REQUIRE(u == Approx(2.232142857142857));
 }
 
+#ifndef ENABLE_AA_SOA
 TEST_CASE("Pade Jastrow", "[wavefunction]")
 {
 
@@ -116,5 +117,6 @@ const char *particles = \
   REQUIRE(logpsi == Approx(-1.862821769493147));
 
 }
+#endif
 }
 

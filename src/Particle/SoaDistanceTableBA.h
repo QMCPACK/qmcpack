@@ -33,8 +33,8 @@ struct SoaDistanceTableBA: public DTD_BConds<T,D,SC>, public DistanceTableData
 
   void resize(int ns, int nt)
   {
-    Nsources=ns;
-    Ntargets=nt;
+    N[SourceIndex]=Nsources=ns;
+    N[VisitorIndex]=Ntargets=nt;
     if(Nsources*Ntargets==0) return;
 
     int Ntargets_padded=getAlignedSize<T>(Ntargets);

@@ -21,7 +21,7 @@
 namespace qmcplusplus
 {
 
-  BsplineReaderBase* createBsplineRealDouble(EinsplineSetBuilder* e, int numOrbs, int celltype)
+  BsplineReaderBase* createBsplineRealDouble(EinsplineSetBuilder* e, int celltype)
   {
     typedef OHMMS_PRECISION RealType;
     BsplineReaderBase* aReader=nullptr;

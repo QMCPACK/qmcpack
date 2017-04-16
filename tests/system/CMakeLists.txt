@@ -211,6 +211,7 @@ ENDIF()
                     0 # VMC
                     TRUE)
 
+IF(ENABLE_AA_SOA)
   QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_hybridrep_pp-x-vmc_hf_noj
                     "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
                     hf_vmc_LiH-x
@@ -219,6 +220,7 @@ ENDIF()
                     LIH_X_SCALARS
                     0 # VMC
                     TRUE)
+ENDIF(ENABLE_AA_SOA)
 
 
 # Arbitrary k-point requires complex build to run. Ensure fails with real/non-complex build
@@ -338,6 +340,7 @@ ENDIF()
                     0 # VMC
                     TRUE)
 
+IF(ENABLE_AA_SOA)
   QMC_RUN_AND_CHECK(short-diamondC_1x1x1_hybridrep_pp-vmc_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
                     qmc_short
@@ -346,6 +349,7 @@ ENDIF()
                     DIAMOND_SCALARS
                     0 # VMC
                     TRUE)
+ENDIF(ENABLE_AA_SOA)
 
   QMC_RUN_AND_CHECK(short-diamondC_1x1x1_pp-vmc_sdj-meshf
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
@@ -400,6 +404,7 @@ ENDIF()
                     0 # VMC
                     TRUE)
 
+IF(ENABLE_AA_SOA)
   QMC_RUN_AND_CHECK(short-diamondC_2x1x1_hybridrep_pp-vmc_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     qmc_short
@@ -408,6 +413,7 @@ ENDIF()
                     DIAMOND2_SCALARS
                     0 # VMC
                     TRUE)
+ENDIF(ENABLE_AA_SOA)
 
 # Reference DMC run in qmc-ref "-21.844975 0.001113"
   LIST(APPEND DIAMOND2_DMC_SCALARS "totenergy" "-21.844975 0.00779")

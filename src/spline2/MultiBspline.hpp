@@ -176,6 +176,11 @@ namespace qmcplusplus
         offset[nteams]=num_splines;
       }
 
+      void flush_zero() const
+      {
+        if(spline_m!=nullptr) std::fill(spline_m->coefs, spline_m->coefs+spline_m->coefs_size, T(0));
+      }
+
       int num_splines() const
       {
         return (spline_m==nullptr)?0:spline_m->num_splines;
@@ -311,6 +316,11 @@ namespace qmcplusplus
         free(temp_spline);
       }
 
+      void flush_zero() const
+      {
+        if(spline_m.coefs!=nullptr) std::fill(spline_m.coefs, spline_m.coefs+spline_m.coefs_size, T(0));
+      }
+
       int num_splines() const
       {
         return spline_m.num_splines;
@@ -318,7 +328,7 @@ namespace qmcplusplus
 
       size_t sizeInByte() const
       {
-        return spline_m.coefs_size*sizeof(T);
+        return (spline_m.coefs==nullptr)?0:spline_m.coefs_size*sizeof(T);
       }
 
       /** copy a single spline to the big table

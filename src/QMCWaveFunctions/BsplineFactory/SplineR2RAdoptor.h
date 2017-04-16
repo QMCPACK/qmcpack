@@ -130,7 +130,6 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     qmc_common.memory_allocated += SplineInst->sizeInByte();
   }
 
-
   void create_spline(TinyVector<int,D>& mesh, int n)
   {
     Ugrid xyz_grid[D];
@@ -150,6 +149,10 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     qmc_common.memory_allocated += MultiSpline->coefs_size*sizeof(ST);
   }
 
+  inline void flush_zero()
+  {
+    SplineInst->flush_zero();
+  }
 
   inline void set_spline(SingleSplineType* spline_r, SingleSplineType* spline_i, int twist, int ispline, int level)
   {

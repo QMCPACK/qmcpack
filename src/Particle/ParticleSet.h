@@ -294,7 +294,7 @@ public:
   }
 
   /** update the internal data
-   *@param iflag index for the update mode
+   *@param iflag index for the update mode, 0 everthing, 1 only distance tables
    */
   void update(int iflag=0);
 

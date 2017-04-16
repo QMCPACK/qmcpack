@@ -75,6 +75,7 @@ struct AtomicOrbitalSoA
     localG.resize(Npad*lm_tot);
     localL.resize(Npad*lm_tot);
     create_spline();
+    qmc_common.memory_allocated += SplineInst->sizeInByte();
   }
 
   void bcast_tables(Communicate* comm)
@@ -111,6 +112,11 @@ struct AtomicOrbitalSoA
     SplineInst = new MultiBspline1D<ST>();
     SplineInst->create(grid, bc, lm_tot*Npad);
     MultiSpline=&(SplineInst->spline_m);
+  }
+
+  inline void flush_zero()
+  {
+    SplineInst->flush_zero();
   }
 
   inline void set_spline(AtomicSingleSplineType* spline, int lm, int ispline)
@@ -394,6 +400,12 @@ struct HybridAdoptorBase
   {
     for(int ic=0; ic<AtomicCenters.size(); ic++)
       AtomicCenters[ic].reduce_tables(comm);
+  }
+
+  inline void flush_zero()
+  {
+    for(int ic=0; ic<AtomicCenters.size(); ic++)
+      AtomicCenters[ic].flush_zero();
   }
 
   bool read_splines(hdf_archive& h5f)

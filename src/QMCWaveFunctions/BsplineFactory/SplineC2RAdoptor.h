@@ -141,6 +141,11 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     qmc_common.memory_allocated += SplineInst->sizeInByte();
   }
 
+  inline void flush_zero()
+  {
+    SplineInst->flush_zero();
+  }
+
   /** remap kPoints to pack the double copy */
   inline void resize_kpoints()
   {

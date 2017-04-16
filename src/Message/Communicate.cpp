@@ -177,7 +177,7 @@ void Communicate::initialize(int argc, char **argv)
   {
     if (OHMMS::Controller->rank() == proc)
     {
-      fprintf (stderr, "Rank = %4d  Free Memory = %5ld MB\n", proc, freemem());
+      fprintf (stderr, "Rank = %4d  Free Memory = %5zu MB\n", proc, freemem());
     }
     barrier();
   }

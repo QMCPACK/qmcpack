@@ -14,8 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-
-
+#include "Platforms/sysutil.h"
 #include "QMCDrivers/QMCUpdateBase.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
@@ -208,8 +207,6 @@ void QMCUpdateBase::initWalkers(WalkerIter_t it, WalkerIter_t it_end)
   }
 }
 
-extern int print_mem(const char*);
-
 void QMCUpdateBase::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end)
 {
   UpdatePbyP=true;
@@ -217,7 +214,7 @@ void QMCUpdateBase::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end)
   {
     Walker_t& awalker(**it);
     W.R=awalker.R;
-    W.update();
+    W.update(1);
     //W.loadWalker(awalker,UpdatePbyP);
     if (awalker.DataSet.size())
       awalker.DataSet.clear();
@@ -229,7 +226,7 @@ void QMCUpdateBase::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end)
     randomize(awalker);
   }
   #pragma omp master
-  print_mem("Memory Usage after the buffer registration");
+  print_mem("Memory Usage after the buffer registration", app_log());
 }
 
 /** randomize a walker with a diffusion MC using gradients */

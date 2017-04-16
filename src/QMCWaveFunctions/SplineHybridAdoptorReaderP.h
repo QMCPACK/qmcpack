@@ -309,6 +309,8 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
     }
     else
     {
+      bspline->flush_zero();
+
       int nx=MeshSize[0];
       int ny=MeshSize[1];
       int nz=MeshSize[2];

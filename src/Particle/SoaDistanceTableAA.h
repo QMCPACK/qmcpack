@@ -42,7 +42,7 @@ struct SoaDistanceTableAA: public DTD_BConds<T,D,SC>, public DistanceTableData
 
   void resize(int n)
   {
-    Ntargets=n;
+    N[SourceIndex]=N[VisitorIndex]=Ntargets=n;
     Ntargets_padded=getAlignedSize<T>(n);
     BlockSize=Ntargets_padded*D;
     Distances.resize(Ntargets,Ntargets_padded);

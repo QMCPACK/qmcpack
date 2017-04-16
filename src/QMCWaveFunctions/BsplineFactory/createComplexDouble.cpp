@@ -31,7 +31,7 @@
 namespace qmcplusplus
 {
 
-  BsplineReaderBase* createBsplineComplexDouble(EinsplineSetBuilder* e, int numOrbs, bool hybrid_rep)
+  BsplineReaderBase* createBsplineComplexDouble(EinsplineSetBuilder* e, bool hybrid_rep)
   {
     typedef OHMMS_PRECISION RealType;
     BsplineReaderBase* aReader=nullptr;
@@ -39,27 +39,23 @@ namespace qmcplusplus
 #if defined(QMC_COMPLEX)
 
   #if defined(QMC_ENABLE_SOA_DET)
-    if(numOrbs>1)
-    {
-      if(hybrid_rep)
-        aReader= new SplineHybridAdoptorReader<HybridCplxSoA<SplineC2CSoA<double,RealType> > >(e);
-      else
-        aReader= new SplineAdoptorReader<SplineC2CSoA<double,RealType> >(e);
-    }
+    if(hybrid_rep)
+      aReader= new SplineHybridAdoptorReader<HybridCplxSoA<SplineC2CSoA<double,RealType> > >(e);
     else
+      aReader= new SplineAdoptorReader<SplineC2CSoA<double,RealType> >(e);
+  #else
+    aReader= new SplineAdoptorReader<SplineC2CPackedAdoptor<double,RealType,3> >(e);
   #endif
-      aReader= new SplineAdoptorReader<SplineC2CPackedAdoptor<double,RealType,3> >(e);
 #else //QMC_COMPLEX
 
   #if defined(QMC_ENABLE_SOA_DET)
-    if(numOrbs>1)
-      if(hybrid_rep)
-        aReader= new SplineHybridAdoptorReader<HybridCplxSoA<SplineC2RSoA<double,RealType> > >(e);
-      else
-        aReader= new SplineAdoptorReader<SplineC2RSoA<double,RealType> >(e);
+    if(hybrid_rep)
+      aReader= new SplineHybridAdoptorReader<HybridCplxSoA<SplineC2RSoA<double,RealType> > >(e);
     else
+      aReader= new SplineAdoptorReader<SplineC2RSoA<double,RealType> >(e);
+  #else
+    aReader= new SplineAdoptorReader<SplineC2RPackedAdoptor<double,RealType,3> >(e);
   #endif
-      aReader= new SplineAdoptorReader<SplineC2RPackedAdoptor<double,RealType,3> >(e);
 #endif
 
     return aReader;

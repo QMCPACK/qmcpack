@@ -72,6 +72,12 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
     return BaseAdoptor::write_splines(h5f) && HybridBase::write_splines(h5f);
   }
 
+  inline void flush_zero()
+  {
+    BaseAdoptor::flush_zero();
+    HybridBase::flush_zero();
+  }
+
   template<typename VV>
   inline void evaluate_v(const ParticleSet& P, const int iat, VV& psi)
   {

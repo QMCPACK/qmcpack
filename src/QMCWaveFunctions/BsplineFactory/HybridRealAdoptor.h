@@ -62,6 +62,12 @@ struct HybridRealSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
     HybridBase::reduce_atomic_tables(comm);
   }
 
+  inline void flush_zero()
+  {
+    BaseAdoptor::flush_zero();
+    HybridBase::flush_zero();
+  }
+
   bool read_splines(hdf_archive& h5f)
   {
     return BaseAdoptor::read_splines(h5f) && HybridBase::read_splines(h5f);
