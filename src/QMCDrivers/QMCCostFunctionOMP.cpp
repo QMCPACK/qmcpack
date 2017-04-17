@@ -382,7 +382,7 @@ void QMCCostFunctionOMP::checkConfigurations()
     {
       ParticleSet::Walker_t& thisWalker(*wRef[iw]);
       wRef.R=thisWalker.R;
-      wRef.update(1);
+      wRef.update(true);
       wRef.donePbyP();
       Return_t* restrict saved=(*RecordsOnNode[ip])[iw];
       //          Return_t logpsi(0);
@@ -559,7 +559,7 @@ void QMCCostFunctionOMP::engine_checkConfigurations(cqmc::engine::LMYEngine * En
     {
       ParticleSet::Walker_t& thisWalker(*wRef[iw]);
       wRef.R=thisWalker.R;
-      wRef.update(1);
+      wRef.update(true);
       wRef.donePbyP();
       Return_t* restrict saved=(*RecordsOnNode[ip])[iw];
       //          Return_t logpsi(0);
@@ -710,6 +710,7 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::correlatedSampling(bool needGra
     hClones[ip]->setRandomGenerator(MoverRng[ip]);
   }
 
+  const bool nlpp = (includeNonlocalH != "no");
   Return_t wgt_tot=0.0;
   Return_t wgt_tot2=0.0;
   Return_t NSm1 = 1.0/NumSamples;
@@ -731,7 +732,8 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::correlatedSampling(bool needGra
     {
       ParticleSet::Walker_t& thisWalker(**it);
       wRef.R=thisWalker.R;
-      wRef.update(1);
+      wRef.update(true);
+      if(nlpp) wRef.donePbyP(true);
       Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
       // buffer for MultiSlaterDet data
       Return_t logpsi;
