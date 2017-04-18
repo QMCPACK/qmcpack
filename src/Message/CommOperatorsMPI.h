@@ -383,6 +383,16 @@ Communicate::allreduce(std::vector<double>& g)
 
 template<>
 inline void
+Communicate::allreduce(std::vector<std::complex<double>>& g)
+{
+  std::vector<std::complex<double>> gt(g.size(), std::complex<double>(0.0));
+  MPI_Allreduce(&(g[0]),&(gt[0]),2*g.size(),MPI_DOUBLE,MPI_SUM,
+                myMPI);
+  g = gt;
+}
+
+template<>
+inline void
 Communicate::allreduce(PooledData<float>& g)
 {
   PooledData<float> gt(g.size(), g.size_DP());
@@ -1002,9 +1012,9 @@ Communicate::gsum(std::vector<double>& g)
 }
 
 template<>
-inline void gsum(std::vector<complex<double> >& g, int gid)
+inline void gsum(std::vector<std::complex<double> >& g, int gid)
 {
-  std::vector<complex<double> > gt(g.size(), 0.0);
+  std::vector<std::complex<double> > gt(g.size(), 0.0);
   MPI_Allreduce(&(g[0]),&(gt[0]),2*g.size(),MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
   g = gt;
 }
@@ -1103,6 +1113,13 @@ Communicate::bcast(std::complex<double>* restrict x, int n, int rk, mpi_comm_typ
 
 template<>
 inline void
+Communicate::bcast(std::complex<float>* restrict x, int n, int rk, mpi_comm_type comm)
+{
+  MPI_Bcast(x,2*n,MPI_FLOAT,rk,comm);
+}
+
+template<>
+inline void
 Communicate::bcast(double* restrict x, int n, int rk, mpi_comm_type comm)
 {
   MPI_Bcast(x,n,MPI_DOUBLE,rk,comm);
@@ -1172,6 +1189,18 @@ Communicate::recv(double* restrict x, int n, int dest, int tag, mpi_comm_type co
 }
 
 template<> inline void
+Communicate::send(float* restrict x, int n, int dest, int tag, mpi_comm_type comm)
+{
+  MPI_Send(x,n,MPI_FLOAT,dest,tag,comm);
+}
+
+template<> inline void
+Communicate::recv(float* restrict x, int n, int dest, int tag, mpi_comm_type comm, MPI_Status* st)
+{
+  MPI_Recv(x,n,MPI_FLOAT,dest,tag,comm,st);
+}
+
+template<> inline void
 Communicate::send(uint32_t* restrict x, int n, int dest, int tag, mpi_comm_type comm)
 {
   MPI_Send(x,n,MPI_UNSIGNED,dest,tag,comm);
@@ -1207,18 +1236,47 @@ Communicate::recv(std::complex<double>* restrict x, int n, int dest, int tag, mp
   MPI_Recv(x,2*n,MPI_DOUBLE,dest,tag,comm,st);
 }
 
+template<> inline void
+Communicate::send(std::complex<float>* restrict x, int n, int dest, int tag, mpi_comm_type comm)
+{
+  MPI_Send(x,2*n,MPI_FLOAT,dest,tag,comm);
+}
+
+template<> inline void
+Communicate::recv(std::complex<float>* restrict x, int n, int dest, int tag, mpi_comm_type comm, MPI_Status* st)
+{
+  MPI_Recv(x,2*n,MPI_FLOAT,dest,tag,comm,st);
+}
+
 template<>
 inline void
 Communicate::scatterv(char* sb, char* rb, int n,
                      std::vector<int>& counts, std::vector<int>& displ, int source, MPI_Comm comm)
 {
-#if defined(_CRAYMPI)
-  const int cray_short_msg_size=128000;
-  if(n*sizeof(char)<cray_short_msg_size)
-    this->barrier();
-#endif
   int ierr = MPI_Scatterv(sb, &counts[0], &displ[0],  MPI_CHAR,
                          rb, n, MPI_CHAR, source, comm);
+}
+
+template<>
+inline void
+Communicate::scatterv(double* sb, double* rb, int n,
+                     std::vector<int>& counts, std::vector<int>& displ, int source, MPI_Comm comm)
+{
+  int ierr = MPI_Scatterv(sb, &counts[0], &displ[0],  MPI_DOUBLE,
+                         rb, n, MPI_DOUBLE, source, comm);
+}
+
+template<>
+inline void
+Communicate::scatterv(std::complex<double>* sb, std::complex<double>* rb, int n,
+                     std::vector<int>& counts, std::vector<int>& displ, int source, MPI_Comm comm)
+{
+  for(int i=0; i<counts.size(); i++) counts[i]*=2;
+  for(int i=0; i<displ.size(); i++) displ[i]*=2;
+  int ierr = MPI_Scatterv(sb, &counts[0], &displ[0],  MPI_DOUBLE,
+                         rb, 2*n, MPI_DOUBLE, source, comm);
+  for(int i=0; i<counts.size(); i++) counts[i]/=2;
+  for(int i=0; i<displ.size(); i++) displ[i]/=2;
 }
 
 template<>
@@ -1226,11 +1284,6 @@ inline void
 Communicate::scatterv(std::vector<char>& sb, std::vector<char>& rb,
                      std::vector<int>& counts, std::vector<int>& displ, int source)
 {
-#if defined(_CRAYMPI)
-  const int cray_short_msg_size=128000;
-  if(rb.size()*sizeof(char)<cray_short_msg_size)
-    this->barrier();
-#endif
   int ierr = MPI_Scatterv(&sb[0], &counts[0], &displ[0],  MPI_CHAR,
                          &rb[0], rb.size(), MPI_CHAR, source, myMPI);
 }
@@ -1240,13 +1293,48 @@ inline void
 Communicate::gatherv(char* l, char* g, int n,
                      std::vector<int>& counts, std::vector<int>& displ, int dest, MPI_Comm comm)
 {
-#if defined(_CRAYMPI)
-  const int cray_short_msg_size=128000;
-  if(n*sizeof(char)<cray_short_msg_size)
-    this->barrier();
-#endif
   int ierr = MPI_Gatherv(l, n, MPI_CHAR,
                          g, &counts[0], &displ[0], MPI_CHAR, dest, comm);
+}
+
+template<>
+inline void
+Communicate::gatherv(uint32_t* l, uint32_t* g, int n,
+                     std::vector<int>& counts, std::vector<int>& displ, int dest, MPI_Comm comm)
+{
+  int ierr = MPI_Gatherv(l, n, MPI_UNSIGNED,
+                         g, &counts[0], &displ[0], MPI_UNSIGNED, dest, comm);
+}
+
+template<>
+inline void
+Communicate::gatherv(int* l, int* g, int n,
+                     std::vector<int>& counts, std::vector<int>& displ, int dest, MPI_Comm comm)
+{
+  int ierr = MPI_Gatherv(l, n, MPI_INT,
+                         g, &counts[0], &displ[0], MPI_INT, dest, comm);
+}
+
+template<>
+inline void
+Communicate::gatherv(double* l, double* g, int n,
+                     std::vector<int>& counts, std::vector<int>& displ, int dest, MPI_Comm comm)
+{
+  int ierr = MPI_Gatherv(l, n, MPI_DOUBLE,
+                         g, &counts[0], &displ[0], MPI_DOUBLE, dest, comm);
+}
+
+template<>
+inline void
+Communicate::gatherv(std::complex<double>* l, std::complex<double>* g, int n,
+                     std::vector<int>& counts, std::vector<int>& displ, int dest, MPI_Comm comm)
+{
+  for(int i=0; i<counts.size(); i++) counts[i]*=2;
+  for(int i=0; i<displ.size(); i++) displ[i]*=2;
+  int ierr = MPI_Gatherv(l, 2*n, MPI_DOUBLE,
+                         g, &counts[0], &displ[0], MPI_DOUBLE, dest, comm);
+  for(int i=0; i<counts.size(); i++) counts[i]/=2;
+  for(int i=0; i<displ.size(); i++) displ[i]/=2;
 }
 
 template<>
@@ -1254,21 +1342,27 @@ inline void
 Communicate::allgather(std::vector<int>& sb,
                        std::vector<int>& rb, int count, mpi_comm_type comm)
 {
-#if defined(_CRAYMPI)
-  const int cray_short_msg_size=128000;
-  if(sb.size()*sizeof(int)<cray_short_msg_size)
-    this->barrier();
-#endif
   MPI_Allgather(&sb[0], count, MPI_INT, &rb[0], count, MPI_INT, comm);
 }
 
 template<>
 inline void
-Communicate::allreduce(qmcplusplus::Matrix<complex<double> >& g)
+Communicate::allreduce(qmcplusplus::Matrix<std::complex<double> >& g)
 {
-  std::vector<complex<double> > gt(g.size());
+  std::vector<std::complex<double> > gt(g.size());
   std::copy(g.begin(),g.end(),gt.begin());
   MPI_Allreduce(g.data(), &gt[0], 2*g.size(), MPI_DOUBLE, MPI_SUM,
+                myMPI);
+  std::copy(gt.begin(),gt.end(),g.data());
+}
+
+template<>
+inline void
+Communicate::allreduce(qmcplusplus::Matrix<std::complex<float> >& g)
+{
+  std::vector<std::complex<float> > gt(g.size());
+  std::copy(g.begin(),g.end(),gt.begin());
+  MPI_Allreduce(g.data(), &gt[0], 2*g.size(), MPI_FLOAT, MPI_SUM,
                 myMPI);
   std::copy(gt.begin(),gt.end(),g.data());
 }
@@ -1280,5 +1374,11 @@ Communicate::bcast(std::complex<double>& g)
   MPI_Bcast(&g,2,MPI_DOUBLE,0,myMPI);
 }
 
+template<>
+inline void
+Communicate::bcast(std::complex<float>& g)
+{
+  MPI_Bcast(&g,2,MPI_FLOAT,0,myMPI);
+}
 
 #endif
