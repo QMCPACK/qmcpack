@@ -21,13 +21,12 @@
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
 #include "Particle/SymmetricDistanceTableData.h"
-#include "QMCApp/ParticleSetPool.h"
 #include "QMCWaveFunctions/OrbitalBase.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/BsplineJastrowBuilder.h"
-
+#include "ParticleBase/ParticleAttribOps.h"
 
 #include <stdio.h>
 #include <string>
@@ -97,9 +96,6 @@ TEST_CASE("BSpline builder Jastrow", "[wavefunction]")
 
 
   TrialWaveFunction psi = TrialWaveFunction(c);
-  // Need 1 electron and 1 proton, somehow
-  //ParticleSet target = ParticleSet();
-  ParticleSetPool ptcl = ParticleSetPool(c);
 
 const char *particles = \
 "<tmp> \
@@ -130,6 +126,9 @@ const char *particles = \
 
   double logpsi = psi.evaluateLog(elec_);
   REQUIRE(logpsi == Approx(0.1012632641)); // note: number not validated
+
+  double KE = -0.5*(Dot(elec_.G,elec_.G)+Sum(elec_.L));
+  REQUIRE(KE == Approx(-0.1616624771)); // note: number not validated
   
 #if 0
   // write out values of the Bspline functor
