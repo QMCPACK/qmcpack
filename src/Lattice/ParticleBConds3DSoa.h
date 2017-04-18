@@ -42,10 +42,7 @@ struct DTD_BConds<T,3,SUPERCELL_OPEN+SOA_OFFSET>
     T* restrict dx=temp_dr.data(0); ASSUME_ALIGNED(dx);
     T* restrict dy=temp_dr.data(1); ASSUME_ALIGNED(dy);
     T* restrict dz=temp_dr.data(2); ASSUME_ALIGNED(dz);
-#if (defined(__IBMCPP__)) && ( __IBMCPP__ <= 1210 )
-#else
     #pragma omp simd
-#endif
     for(int iat=first; iat<last; ++iat)
     {
       dx[iat]=px[iat]-x0;
@@ -84,10 +81,7 @@ struct DTD_BConds<T,3,PPPO+SOA_OFFSET>
     T* restrict dx=temp_dr.data(0); ASSUME_ALIGNED(dx);
     T* restrict dy=temp_dr.data(1); ASSUME_ALIGNED(dy);
     T* restrict dz=temp_dr.data(2); ASSUME_ALIGNED(dz);
-#if (defined(__IBMCPP__)) && ( __IBMCPP__ <= 1210 )
-#else
     #pragma omp simd
-#endif
     for(int iat=first; iat<last; ++iat)
     {
       const T  x=(px[iat]-x0)*Linv0;
@@ -135,10 +129,7 @@ struct DTD_BConds<T,3,PPPS+SOA_OFFSET>
     T* restrict dy=temp_dr.data(1); ASSUME_ALIGNED(dy);
     T* restrict dz=temp_dr.data(2); ASSUME_ALIGNED(dz);
 
-#if (defined(__IBMCPP__)) && ( __IBMCPP__ <= 1210 )
-#else
     #pragma omp simd
-#endif
     for(int iat=first; iat<last; ++iat)
     {
       T displ_0 =px[iat]-x0;
@@ -232,10 +223,7 @@ struct DTD_BConds<T,3,PPPG+SOA_OFFSET>
     const T* restrict celly=corners.data(1); ASSUME_ALIGNED(celly);
     const T* restrict cellz=corners.data(2); ASSUME_ALIGNED(cellz);
 
-#if (defined(__IBMCPP__)) && ( __IBMCPP__ <= 1210 )
-#else
     #pragma omp simd
-#endif
     for(int iat=first; iat<last; ++iat)
     {
       CONSTEXPR T minusone(-1);
@@ -335,10 +323,7 @@ struct DTD_BConds<T,3,PPNO+SOA_OFFSET>
     T* restrict dx=temp_dr.data(0); ASSUME_ALIGNED(dx);
     T* restrict dy=temp_dr.data(1); ASSUME_ALIGNED(dy);
     T* restrict dz=temp_dr.data(2); ASSUME_ALIGNED(dz);
-#if (defined(__IBMCPP__)) && ( __IBMCPP__ <= 1210 )
-#else
     #pragma omp simd
-#endif
     for(int iat=first; iat<last; ++iat)
     {
       T  x=(px[iat]-x0)*Linv0; dx[iat]=L0*(x-round(x));
@@ -380,10 +365,7 @@ struct DTD_BConds<T,3,PPNS+SOA_OFFSET>
     T* restrict dy=temp_dr.data(1); ASSUME_ALIGNED(dy);
     T* restrict dz=temp_dr.data(2); ASSUME_ALIGNED(dz);
 
-#if (defined(__IBMCPP__)) && ( __IBMCPP__ <= 1210 )
-#else
     #pragma omp simd
-#endif
     for(int iat=first; iat<last; ++iat)
     {
       T displ_0 =px[iat]-x0;
@@ -432,10 +414,7 @@ struct DTD_BConds<T,3,SUPERCELL_WIRE+SOA_OFFSET>
     T* restrict dx=temp_dr.data(0); ASSUME_ALIGNED(dx);
     T* restrict dy=temp_dr.data(1); ASSUME_ALIGNED(dy);
     T* restrict dz=temp_dr.data(2); ASSUME_ALIGNED(dz);
-#if (defined(__IBMCPP__)) && ( __IBMCPP__ <= 1210 )
-#else
     #pragma omp simd
-#endif
     for(int iat=first; iat<last; ++iat)
     {
       T  x=(px[iat]-x0)*Linv0; dx[iat]=L0*(x-round(x));
