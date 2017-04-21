@@ -187,8 +187,8 @@ struct SplineAdoptorReader: public BsplineReaderBase
       }
       if(foundspline)
       {
-        bspline->read_splines(h5f);
-        if(foundspline) app_log() << "  Time to read the table in " << splinefile << " = " << now.elapsed() << std::endl;;
+        foundspline=bspline->read_splines(h5f);
+        if(foundspline) app_log() << "  Time to read the table in " << splinefile << " = " << now.elapsed() << std::endl;
       }
     }
     myComm->bcast(foundspline);
@@ -376,7 +376,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
     {
       hdf_archive h5f(&band_group_comm,false);
       h5f.open(mybuilder->H5FileName,H5F_ACC_RDONLY);
-      Vector<std::complex<double> > cG(mybuilder->Gvecs[0].size());;
+      Vector<std::complex<double> > cG(mybuilder->Gvecs[0].size());
       const std::vector<BandInfo>& cur_bands=bandgroup.myBands;
       for(int ib=0, iorb=iorb_first; iorb<iorb_last; ib++, iorb++)
       {
@@ -404,7 +404,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
       int iorb_last =OrbGroups[myComm->rank()+1];
       hdf_archive h5f(myComm,false);
       h5f.open(mybuilder->H5FileName,H5F_ACC_RDONLY);
-      Vector<std::complex<double> > cG(mybuilder->Gvecs[0].size());;
+      Vector<std::complex<double> > cG(mybuilder->Gvecs[0].size());
       const std::vector<BandInfo>& cur_bands=bandgroup.myBands;
       for(int ib=0, iorb=iorb_first; iorb<iorb_last; ib++, iorb++)
       {
@@ -472,7 +472,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
       int iorb_last =OrbGroups[myComm->rank()+1];
       hdf_archive h5f(myComm,false);
       h5f.open(mybuilder->H5FileName,H5F_ACC_RDONLY);
-      Vector<std::complex<double> > cG(mybuilder->Gvecs[0].size());;
+      Vector<std::complex<double> > cG(mybuilder->Gvecs[0].size());
       for(int ib=0, iorb=iorb_first; iorb<iorb_last; ib++, iorb++)
       {
         int ti=cur_bands[iorb].TwistIndex;

@@ -294,7 +294,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       if(foundspline)
       {
         foundspline=bspline->read_splines(h5f);
-        if(foundspline) app_log() << "  Time to read the table in " << splinefile << " = " << now.elapsed() << std::endl;;
+        if(foundspline) app_log() << "  Time to read the table in " << splinefile << " = " << now.elapsed() << std::endl;
       }
     }
     myComm->bcast(foundspline);
@@ -658,7 +658,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
 
     app_log() << "Start transforming 3D B-Splines and atomic orbitals for hybrid representation." << std::endl;
     hdf_archive h5f(&band_group_comm,false);
-    Vector<std::complex<double> > cG(mybuilder->Gvecs[0].size());;
+    Vector<std::complex<double> > cG(mybuilder->Gvecs[0].size());
     const std::vector<BandInfo>& cur_bands=bandgroup.myBands;
     if(band_group_comm.isGroupLeader())
       h5f.open(mybuilder->H5FileName,H5F_ACC_RDONLY);
@@ -677,9 +677,14 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       band_group_comm.bcast(cG);
       create_atomic_centers_Gspace(cG, band_group_comm, iorb);
     }
+
+    myComm->barrier();
+    Timer now;
+    now.restart();
     if(band_group_comm.isGroupLeader())
       bspline->reduce_tables(band_group_comm.GroupLeaderComm);
     bspline->bcast_tables(myComm);
+    app_log() << "  Time to reduce and bcast the table = " << now.elapsed() << std::endl;
   }
 
   void initialize_spline_psi_r(int spin, const BandInfoGroup& bandgroup)
