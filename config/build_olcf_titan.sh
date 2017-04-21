@@ -33,8 +33,8 @@ module load cmake/2.8.11.2
 # Set environment variables
 export FFTW_HOME=$FFTW_DIR/..
 
-CC=cc
-CXX=CC
+export CC=cc
+export CXX=CC
 XT_FLAGS="-march=bdver1 -DHAVE_FMA4=1 -DHAVE_AMDLIBM=1"
 
 # Set cmake variables, shared for cpu builds
