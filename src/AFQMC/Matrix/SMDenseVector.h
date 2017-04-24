@@ -8,7 +8,9 @@
 #include <cassert>
 #include<algorithm>
 #include<complex>
+#include<cmath>
 #include"AFQMC/config.0.h"
+#include"AFQMC/Utilities/Utils.h"
 
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <boost/interprocess/containers/vector.hpp>
@@ -312,9 +314,21 @@ class SMDenseVector
   // resize is probably the best way to setup the vector 
   inline void resize(int nnz, bool allow_reduce=false) 
   {
-    if(vals==NULL || (vals!=NULL && vals->capacity() < nnz) ) {
+    if(vals==NULL) {
       allocate(nnz,allow_reduce);
-    } else if(vals!=NULL && vals->capacity() > nnz && allow_reduce) {
+    } else if(vals->capacity() < nnz) {
+      std::vector<T> tmp;
+      int sz = vals->size();
+      if(head) {
+        tmp.resize(sz);
+        std::copy(vals->begin(),vals->begin()+sz,tmp.begin());
+      }
+      allocate(nnz,allow_reduce);
+      if(head) {
+        vals->resize(nnz);
+        std::copy(tmp.begin(),tmp.begin()+sz,vals->begin());
+      }
+    } else if(vals->capacity() > nnz && allow_reduce) {
       std::vector<T> tmp;
       if(head) {
         tmp.resize(nnz);
@@ -419,6 +433,139 @@ class SMDenseVector
     }
   }
 
+  inline void sort() {
+    if(!head) return;
+    if(vals==NULL) return;
+    std::sort(vals->begin(),vals->end());
+  }
+
+  template<class Compare>
+  inline void sort(Compare comp) {
+    if(!head) return;
+    if(vals==NULL) return;
+    std::sort(vals->begin(),vals->end(),comp);
+  }
+
+  template<class Compare>
+  inline void sort(Compare comp, MPI_Comm local_comm, bool inplace=true) {
+
+    double t1,t2,t3,t4;
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    t1 =  double(tv.tv_sec)+double(tv.tv_usec)/1000000.0;
+
+    int npr,rank;
+    MPI_Comm_rank(local_comm,&rank);
+    MPI_Comm_size(local_comm,&npr);
+
+    MPI_Barrier(local_comm);
+
+    gettimeofday(&tv, NULL);
+    t2 =  double(tv.tv_sec)+double(tv.tv_usec)/1000000.0;
+    app_log()<<" Time waiting: " <<t2-t1 <<std::endl;
+
+    if(vals==NULL) return;
+    if(vals->size() == 0) return;
+
+    int nlvl = static_cast<int>(  std::floor(std::log2(npr*1.0)) );
+    int nblk = pow(2,nlvl);
+
+    // sort equal segments in parallel
+    std::vector<int> pos(nblk+1);
+    // a core processes elements from pos[rank]-pos[rank+1]
+    FairDivide(vals->size(),nblk,pos);
+
+    // sort local segment
+    if(rank < nblk)
+      std::sort(vals->begin()+pos[rank], vals->begin()+pos[rank+1], comp);
+
+    MPI_Barrier(local_comm);
+
+    gettimeofday(&tv, NULL);
+    t1 =  double(tv.tv_sec)+double(tv.tv_usec)/1000000.0;
+    app_log()<<" Time sorting: " <<t1-t2 <<std::endl;
+
+/*
+    if(head) {
+
+      gettimeofday(&tv, NULL);
+      t4 =  double(tv.tv_sec)+double(tv.tv_usec)/1000000.0;
+
+      for(int i=0, mid=1, end=2; i<(nblk-1); i++,mid++,end++) {
+        std::inplace_merge( vals->begin()+pos[0], vals->begin()+pos[mid], vals->begin()+pos[end], comp); 
+
+        gettimeofday(&tv, NULL);
+        t3 =  double(tv.tv_sec)+double(tv.tv_usec)/1000000.0;
+        app_log()<<" Time merging: " <<i <<" " <<t3-t4 <<std::endl;
+        t4=t3;
+      }
+    }
+    MPI_Barrier(local_comm);
+*/
+
+    gettimeofday(&tv, NULL);
+    t4 =  double(tv.tv_sec)+double(tv.tv_usec)/1000000.0;
+
+
+    std::vector<T> temp;
+    if (!inplace && rank<nblk)
+      for(int i=0, sz=nblk; i<nlvl; i++,sz/=2) 
+        if( rank%sz==0 ) {
+          int nt=0;
+          int nb = pow(2,i);
+          for(int j=0; j<nb; j++)
+            nt = std::max(nt, pos[(j+1)*sz]-pos[j*sz]);
+          temp.resize(nt);  
+          break;
+        }
+    
+    for(int i=0, k=rank, sz=1; i<nlvl; i++, sz*=2 ) {
+      if(k%2==0 && rank<nblk) {
+        if(inplace) {
+          std::inplace_merge( vals->begin()+pos[rank], vals->begin()+pos[rank+sz], vals->begin()+pos[rank+sz*2], comp);  
+        } else { 
+          int nt = pos[rank+sz*2] - pos[rank];
+          temp.resize(nt); // just in case
+          std::merge( vals->begin()+pos[rank], vals->begin()+pos[rank+sz], vals->begin()+pos[rank+sz], vals->begin()+pos[rank+sz*2], temp.begin(), comp);  
+          std::copy(temp.begin(),temp.begin()+nt,vals->begin()+pos[rank]);
+        }
+        k/=2;
+      } else
+        k=1;  
+      MPI_Barrier(local_comm);
+    }
+
+
+
+// FIX FIX FIX
+// Why is this not working??????
+/*
+    for(int i=0; i<nlvl; i++) {
+      int np = std::pow(2,i+1);  // number of processors on each group 
+      int del = std::pow(2,i);   // number of "skips" on bounds array  
+      int beg = (rank/np)*np;
+      int mid = beg + del;
+      int end = mid + del;
+      int rk = rank%np;
+      T* ptr_b = &((*vals)[0])+pos[beg];
+      T* ptr_m = &((*vals)[0])+pos[mid];
+      T* ptr_e = &((*vals)[0])+pos[end];
+      if (rank < nblk)   
+        parallel_inplace_merge(np,rk,ptr_b,ptr_m,ptr_e,local_comm,comp);
+        //parallel_inplace_merge(np,rk,vals->begin()+pos[beg],vals->begin()+pos[mid],vals->begin()+pos[end],local_comm,comp);
+      else {
+        for(int k=0; k<3*(i+1); k++)
+         MPI_Barrier(local_comm); 
+      }
+    }
+*/
+
+    gettimeofday(&tv, NULL);
+    t2 =  double(tv.tv_sec)+double(tv.tv_usec)/1000000.0;
+    app_log()<<" Time merging + indexing: " <<t2-t1 <<std::endl;
+
+  }
+
   inline SMDenseVector<T>& operator*=(const RealType rhs ) 
   {
     if(!head) return *this; 
@@ -457,6 +604,14 @@ class SMDenseVector
     return mutex;
   } 
 
+  void setDims(int nr, int nc) {
+    dims = {nr,nc};  
+  }
+  
+  inline std::pair<int,int> getDims() { return dims; }
+  inline int rows() { return dims.first; }
+  inline int cols() { return dims.second; }
+
   private:
 
   boost::interprocess::interprocess_mutex *mutex;
@@ -466,6 +621,7 @@ class SMDenseVector
   std::string ID; 
   bool SMallocated;
   uint64_t memory=0;
+  std::pair<int, int> dims;   // kind of cheating, but allows me to use as a matrix when needed 
 
   boost::interprocess::managed_shared_memory *segment;
   ShmemAllocator<T> *alloc_T;

@@ -20,7 +20,7 @@ class HamiltonianBase: public MPIObjectBase, public AFQMCInfo
 
   public:
  
-  HamiltonianBase(Communicate *c):MPIObjectBase(c),TG(c,"HamiltonianTG"),name(""),filetype("undefined"),filename("undefined"),test_breakup(false),head_of_nodes(false),distribute_Ham(false),min_i(0),max_i(0),nnodes_per_TG(1)
+  HamiltonianBase(Communicate *c):MPIObjectBase(c),TG(c,"HamiltonianTG"),name(""),filetype("undefined"),filename("undefined"),test_breakup(false),head_of_nodes(false),distribute_Ham(false),min_i(0),max_i(0),number_of_TGs(1)
   {
     FrozenCoreEnergy = NuclearCoulombEnergy = ValueType(0.0);
   }
@@ -34,14 +34,23 @@ class HamiltonianBase: public MPIObjectBase, public AFQMCInfo
   inline int getNCB() { return NCB;}
   inline bool RHF() {return spinRestricted;}
   
-  bool init(std::vector<int>& TGdata, ComplexSMVector* TGbuff, MPI_Comm tg_comm, MPI_Comm node_comm )
+  // Note: 
+  //   TG distribution of the sparse hamiltonian works slightly different in philosophy than TGs other parts of the code.
+  //   In this case, the TG defines all the nodes and cores that share a continuous segment of the sparse hamiltonian.
+  //   All cores in a TG have the same min_i/max_i and share the work associated with these indexes. 
+  bool init(std::vector<int>& TGdata, SPComplexSMVector* TGbuff, MPI_Comm tg_comm, MPI_Comm node_comm )
   {
-    if(nnodes_per_TG > 1) distribute_Ham=true;
-    if(!TG.quick_setup(TGdata[4],nnodes_per_TG,TGdata[0],TGdata[1],TGdata[2],TGdata[3]))
+    // forcing ncores_per_TG to be equal to the total number of cores in the Hamiltonian TG
+    if(number_of_TGs > 1) distribute_Ham=true;
+                       // ncore, nnodes, node#, core#, tot_nodes, tot_cores
+    if( TGdata[2]%number_of_TGs != 0)
+      APP_ABORT("Error: number_of_TGs must divide the total number of processors. \n\n\n");
+    int nnodes = TGdata[2]/number_of_TGs;                   
+    if(!TG.quick_setup(TGdata[3],nnodes,TGdata[0],TGdata[1],TGdata[2],TGdata[3]))
       return false;
-    TG.setBuffer(TGbuff);
+//    TG.setBuffer(TGbuff);
     TG.setNodeCommLocal(node_comm);
-    TG.setTGCommLocal(tg_comm); 
+    TG.setTGCommLocal(node_comm); // NOTICE use of node_comm here!!!
 
     if(filetype == "fcidump" || filetype == "ascii")
       return initFromASCII(filename); 
@@ -55,15 +64,15 @@ class HamiltonianBase: public MPIObjectBase, public AFQMCInfo
     }
   } 
 
-  virtual void calculateHSPotentials(const RealType cut, const RealType dt, ComplexSMSpMat&, TaskGroup& TGprop, std::vector<int>& nvec_per_node, bool paral )=0; 
+  virtual void calculateHSPotentials(const RealType cut, const RealType dt, ComplexMatrix&, SPValueSMSpMat&, SPValueSMVector&, TaskGroup& TGprop, std::vector<int>& nvec_per_node, bool sparse, bool paral )=0; 
 
-  virtual void calculateHSPotentials_Diagonalization(const RealType cut, const RealType dt, ComplexSMSpMat&, TaskGroup& TGprop, std::vector<int>& nvec_per_node, bool paral)=0; 
+  virtual void calculateHSPotentials_Diagonalization(const RealType cut, const RealType dt, ComplexMatrix&, SPValueSMSpMat&, SPValueSMVector&, TaskGroup& TGprop, std::vector<int>& nvec_per_node, bool sparse, bool paral)=0; 
 
   virtual void calculateOneBodyPropagator(const RealType cut, const RealType dt, ComplexMatrix& Hadd, std::vector<s2D<ComplexType> >& Pkin)=0;
 
   virtual bool generateFullHamiltonianForME()=0; 
 
-  virtual bool getFullHam(std::vector<s1D<ValueType> >*& h, ComplexSMSpMat*& v)=0;
+  virtual bool getFullHam(std::vector<s1D<ValueType> >*& h, SPValueSMSpMat*& v)=0;
   
   // parse xml input node
   virtual bool parse(xmlNodePtr cur)=0; 
@@ -99,7 +108,7 @@ class HamiltonianBase: public MPIObjectBase, public AFQMCInfo
   // for hamiltonian distribution 
   
   TaskGroup TG; 
-  int nnodes_per_TG;
+  int number_of_TGs;
 
   std::string filetype;
   std::string filename;
