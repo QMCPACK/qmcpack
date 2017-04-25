@@ -787,8 +787,8 @@ void MultiPureSingleDeterminant::prepare_excitations()
           uniq_b.push_back(*(it_occ+NAEA+k)); 
         // count excitations
         int nex=0;
-        for(int i=0; i<NAEB; i++)
-          if(!std::binary_search(it_ref+NAEA,it_ref+NAEA+NAEB,*(it_occ+NAEA+i))) 
+        for(int k=0; k<NAEB; k++)
+          if(!std::binary_search(it_ref+NAEA,it_ref+NAEA+NAEB,*(it_occ+NAEA+k))) 
             nex++;
         if(nex > maxExb) maxExb=nex;
         cnter_uniq_b.push_back(std::make_tuple(nex,1,0));
@@ -854,8 +854,8 @@ void MultiPureSingleDeterminant::prepare_excitations()
         RealType psign=1.0;
         int nex = countExct(NAEA,it_ref,it_occ,true,loc.data(),ik.data(),ak.data(),psign); 
         assert(nex==std::get<0>(cnter_uniq_a[apos]));
-        for(int i=0; i<NAEA; i++)
-          *(it+i) = *(it_ref+i);  
+        for(int k=0; k<NAEA; k++)
+          *(it+k) = *(it_ref+k);  
         for(int k=0; k<nex; k++) 
           *(it + loc[k] ) = ak[k];
         it+=NAEA;
