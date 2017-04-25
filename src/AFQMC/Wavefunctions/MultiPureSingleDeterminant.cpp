@@ -883,8 +883,8 @@ void MultiPureSingleDeterminant::prepare_excitations()
         RealType psign=1.0;
         int nex = countExct(NAEB,it_ref+NAEA,it_occ+NAEA,true,loc.data(),ik.data(),ak.data(),psign); 
         assert(nex==std::get<0>(cnter_uniq_b[bpos]));
-        for(int i=0; i<NAEB; i++)
-          *(it+i) = *(it_ref+NAEA+i);  
+        for(int l=0; l<NAEB; l++)
+          *(it+i) = *(it_ref+NAEA+l);  
         for(int k=0; k<nex; k++) 
           *(it + loc[k] ) = ak[k];
         it+=NAEB;
