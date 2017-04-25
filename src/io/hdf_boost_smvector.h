@@ -1,18 +1,14 @@
-//////////////////////////////////////////////////////////////////
-// (c) Copyright 2007- by Jeongnim Kim
-//////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////
-//   National Center for Supercomputing Applications &
-//   Materials Computation Center
-//   University of Illinois, Urbana-Champaign
-//   Urbana, IL 61801
-//   e-mail: jnkim@ncsa.uiuc.edu
-//
-// Supported by
-//   National Center for Supercomputing Applications, UIUC
-//   Materials Computation Center, UIUC
-//////////////////////////////////////////////////////////////////
-// -*- C++ -*-
+//////////////////////////////////////////////////////////////////////////////////////
+//// This file is distributed under the University of Illinois/NCSA Open Source License.
+//// See LICENSE file in top directory for details.
+////
+//// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+////
+//// File developed by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory 
+////
+//// File created by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory 
+////////////////////////////////////////////////////////////////////////////////////////
+
 #ifndef QMCPLUSPLUS_HDF_BOOST_SMVector_INTERFACE_H
 #define QMCPLUSPLUS_HDF_BOOST_SMVector_INTERFACE_H
 #include <vector>
@@ -56,8 +52,3 @@ template<typename T> struct h5data_proxy<boost::interprocess::vector<T, boost::i
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 894 $   $Date: 2006-02-03 10:52:38 -0600 (Fri, 03 Feb 2006) $
- * $Id: hdf_stl.h 894 2006-02-03 16:52:38Z jnkim $
- ***************************************************************************/
