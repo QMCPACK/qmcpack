@@ -107,8 +107,8 @@ TEST_CASE("sparse_matrix_axpy_1x1", "[sparse_matrix]")
   B[0] = 1.0;
   C[0] = 3.0;
   int nrows = 1;
-  double alpha = 2.0;
-  double beta = 2.0;
+  complex<double> alpha = 2.0;
+  complex<double> beta = 2.0;
   SparseMatrixOperators::product_SpMatV(nrows, nrows, alpha, A.values(), A.column_data(), A.row_index(), B, beta, C);
 
   REQUIRE(C[0].real() == Approx(8.0));
@@ -136,8 +136,8 @@ TEST_CASE("sparse_matrix_zaxpy_2x2", "[sparse_matrix]")
   C[0] = 2.0;
   C[1] = 1.3;
   int nrows = 2;
-  double alpha = 2.0;
-  double beta = 2.0;
+  complex<double> alpha = 2.0;
+  complex<double> beta = 2.0;
   SparseMatrixOperators::product_SpMatV(nrows, nrows, alpha, A.values(), A.column_data(), A.row_index(), B, beta, C);
 
   REQUIRE(C[0].real() == Approx(44.0));
@@ -197,8 +197,8 @@ TEST_CASE("sparse_matrix_zaxpy_T_2x2", "[sparse_matrix]")
   C[0] = 2.0;
   C[1] = 1.3;
   int nrows = 2;
-  double alpha = 2.0;
-  double beta = 2.0;
+  complex<double> alpha = 2.0;
+  complex<double> beta = 2.0;
   SparseMatrixOperators::product_SpMatTV(nrows, nrows, alpha, A, B, beta, C);
 
   for (int i = 0; i < nrows; i++) {
@@ -249,8 +249,8 @@ TEST_CASE("sparse_matrix_mm_2x2", "[sparse_matrix]")
   C[2] = 1.3;
   C[3] = 1.3;
   int nrows = 2;
-  double alpha = 2.0;
-  double beta = 2.0;
+  complex<double> alpha = 2.0;
+  complex<double> beta = 2.0;
   SparseMatrixOperators::product_SpMatM(nrows, nrows, nrows, alpha, A, B, nrows, beta, C, nrows);
 
   //std::cout << C[0] << std::endl;

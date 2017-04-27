@@ -46,7 +46,7 @@ class EstimatorBase: public MPIObjectBase, public AFQMCInfo
 
   virtual bool parse(xmlNodePtr)=0;
 
-  virtual bool setup(std::vector<int>& TGdata, ComplexSMVector *v,HamiltonianBase*,WavefunctionHandler*,myTimer* LocalTimer, MPI_Comm heads_comm, MPI_Comm tg_comm, MPI_Comm node_comm, MPI_Comm cm)=0;
+  virtual bool setup(std::vector<int>& TGdata, SPComplexSMVector *v,HamiltonianBase*,WavefunctionHandler*,myTimer* LocalTimer, MPI_Comm heads_comm, MPI_Comm tg_comm, MPI_Comm node_comm, MPI_Comm cm)=0;
 
   virtual double getEloc() {return 0;}
 

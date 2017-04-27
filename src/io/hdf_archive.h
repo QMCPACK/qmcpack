@@ -21,6 +21,7 @@
 #include <io/hdf_pete.h>
 #include <io/hdf_stl.h>
 #include <io/hdf_hyperslab.h>
+#include <io/hdf_boost_smvector.h>
 #endif
 #include <stack>
 #include <bitset>

@@ -35,7 +35,6 @@ TimerNameList_t<AFQMCTimers> AFQMCTimerNames =
   {StepOrthogonalize, "Step::Orthogonalize"}
 };
 
-
 bool AFQMCDriver::run()
 {
   TimerList_t Timers;
@@ -78,12 +77,21 @@ bool AFQMCDriver::run()
         LocalTimer.start("SubStep::Propagate");
         Timers[SubstepPropagate]->start();
         prop0->Propagate(time,wlkBucket,Eshift,Eshift);
-        LocalTimer.stop("SubStep::Propagate");        
-        Timers[SubstepPropagate]->stop();
+        LocalTimer.stop("SubStep::Propagate");
+        Timers[SubstepPropagate]->stop();        
 
         estim0->accumulate_substep(wlkBucket);
 
       }  // iSubstep
+
+      if (step_tot != 0 && step_tot % nStabalize == 0) { 
+        LocalTimer.start("Step::Orthogonalize");
+        Timers[StepOrthogonalize]->start();
+        wlkBucket->Orthogonalize();
+        wfn0->evaluateOverlap("ImportanceSampling",-1,wlkBucket);
+        LocalTimer.stop("Step::Orthogonalize");
+        Timers[StepOrthogonalize]->stop();
+      }
 
       // quantities that are measured once per step 
       estim0->accumulate_step(wlkBucket);
@@ -104,14 +112,6 @@ bool AFQMCDriver::run()
         Timers[StepLoadBalance]->stop();
       }    
  
-      if (step_tot != 0 && step_tot % nStabalize == 0) { // && it->alive) {
-        LocalTimer.start("Step::Orthogonalize");
-        Timers[StepOrthogonalize]->start();
-        wlkBucket->Orthogonalize();
-        wfn0->evaluateOverlap("ImportanceSampling",-1,wlkBucket);
-        LocalTimer.stop("Step::Orthogonalize");
-        Timers[StepOrthogonalize]->stop();
-      }
 
       //Etav += estim0->getEloc_step();
       if(time*dt < 1.0)  
@@ -317,23 +317,6 @@ bool AFQMCDriver::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
   }   
 
   app_log()<<"\n****************************************************\n"
-           <<"             Initializating Walker Handler \n"
-           <<"****************************************************\n"
-           <<std::endl;
-
-  // walker set
-  wlkBucket->setup(TG.getCoreRank(),ncores_per_TG,TG.getTGNumber(),MPI_COMM_TG_LOCAL_HEADS,MPI_COMM_TG_LOCAL,MPI_COMM_NODE_LOCAL,&LocalTimer);
-  wlkBucket->setHF(wfn0->getHF());
-  if(restarted) { 
-    wlkBucket->restartFromHDF5(nWalkers,read,hdf_read_tag,set_nWalker_target);
-    app_log()<<"Number of walkers after restart: " <<wlkBucket->GlobalPopulation() <<std::endl;
-    wfn0->evaluateLocalEnergyAndOverlap("ImportanceSampling",-1,wlkBucket);
-  } else {
-    wlkBucket->initWalkers(nWalkers);
-    wfn0->evaluateLocalEnergyAndOverlap("ImportanceSampling",-1,wlkBucket);
-  }
-
-  app_log()<<"\n****************************************************\n"
            <<"              Initializating Propagator \n"
            <<"****************************************************\n"
            <<std::endl;
@@ -344,8 +327,29 @@ bool AFQMCDriver::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
     return false; 
   }   
 
+  // you will also need the Propagator's TG to handle the distibuted case 
+  wfn0->setupFactorizedHamiltonian(prop0->is_vn_sparse(),prop0->getSpvn(),prop0->getDvn(),dt,prop0->getTG());
+
+  app_log()<<"\n****************************************************\n"
+           <<"             Initializating Walker Handler \n"
+           <<"****************************************************\n"
+           <<std::endl;
+
+  // walker set
+  wlkBucket->setup(TG.getCoreRank(),ncores_per_TG,TG.getTGNumber(),MPI_COMM_TG_LOCAL_HEADS,MPI_COMM_TG_LOCAL,MPI_COMM_NODE_LOCAL,&LocalTimer);
+  wlkBucket->setHF(wfn0->getHF());
+  if(restarted) {
+    wlkBucket->restartFromHDF5(nWalkers,read,hdf_read_tag,set_nWalker_target);
+    app_log()<<"Number of walkers after restart: " <<wlkBucket->GlobalPopulation() <<std::endl;
+    wfn0->evaluateLocalEnergyAndOverlap("ImportanceSampling",-1,wlkBucket);
+  } else {
+    wlkBucket->initWalkers(nWalkers);
+    wfn0->evaluateLocalEnergyAndOverlap("ImportanceSampling",-1,wlkBucket);
+  }  
+
   if(myComm->rank() == 0) 
     read.close();
+
 
   app_log()<<"\n****************************************************\n"
            <<"              Initializating Estimators \n"
@@ -486,27 +490,48 @@ void AFQMCDriver::output_timers(std::ofstream& out_timers, int n)
 {
 
   if(n==0) out_timers<<"Propagate::applyHSPropagator  Propagate::calculateMixedMatrixElementOfOneBodyOperators  Propagate::eloc  Propagate::product_SD  Propagate::sampleGaussianFields  Propagate::apply_expvHS_Ohmms  Propagate::build_vHS  PureSingleDeterminant:calculateMixedMatrixElementOfOneBodyOperators  PureSingleDeterminant:evaluateLocalEnergy  PureSingleDeterminant:local_evaluateOneBodyMixedDensityMatrix " <<std::endl;
-  out_timers<<Timer.average("Propagate::applyHSPropagator") <<" "
-   <<Timer.average("Propagate::calculateMixedMatrixElementOfOneBodyOperators") <<" "
-   <<Timer.average("Propagate::eloc") <<" "
-   <<Timer.average("Propagate::eloc2") <<" "
-   <<Timer.average("Propagate::eloc3") <<" "
-   <<Timer.average("Propagate::product_SD") <<" "
+
+  
+   out_timers<<Timer.average("Propagate::product_SD") <<" "
    <<Timer.average("Propagate::sampleGaussianFields") <<" "
+   <<Timer.average("Propagate::calculateMixedMatrixElementOfOneBodyOperators") <<" "
+   <<Timer.average("Propagate::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer") <<" "
+   <<Timer.average("Propagate::applyHSPropagator") <<" "
    <<Timer.average("Propagate::apply_expvHS_Ohmms") <<" "
    <<Timer.average("Propagate::build_vHS") <<" "
+   <<Timer.average("Propagate::overlaps_and_or_eloc") <<" "
+   <<Timer.average("Propagate::evalG") <<" "
+   <<Timer.average("Propagate::addvHS") <<" "
+   <<Timer.average("Propagate::addvHS::shm_copy_vbias") <<" "
+   <<Timer.average("Propagate::build_CV0") <<" "
+   <<Timer.average("Propagate::addvHS::shm_copy_vHS") <<" "
+   <<Timer.average("Propagate::fullvHS") <<" "
+   <<Timer.average("Propagate::addvHS::setup") <<" "
+   <<Timer.average("Propagate::addvHS::barrier1") <<" "
+   <<Timer.average("Propagate::addvHS::barrier2") <<" "
+   <<Timer.average("PureSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer::setup") <<" "
    <<Timer.average("PureSingleDeterminant:calculateMixedMatrixElementOfOneBodyOperators") <<" "
    <<Timer.average("PureSingleDeterminant:evaluateLocalEnergy") <<" "
    <<Timer.average("PureSingleDeterminant:local_evaluateOneBodyMixedDensityMatrix") <<std::endl;
-   Timer.reset("Propagate::applyHSPropagator");
-   Timer.reset("Propagate::calculateMixedMatrixElementOfOneBodyOperators");
-   Timer.reset("Propagate::eloc");
-   Timer.reset("Propagate::eloc2");
-   Timer.reset("Propagate::eloc3");
+
    Timer.reset("Propagate::product_SD");
    Timer.reset("Propagate::sampleGaussianFields");
+   Timer.reset("Propagate::calculateMixedMatrixElementOfOneBodyOperators");
+   Timer.reset("Propagate::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer");
+   Timer.reset("Propagate::applyHSPropagator");
    Timer.reset("Propagate::apply_expvHS_Ohmms");
    Timer.reset("Propagate::build_vHS");
+   Timer.reset("Propagate::overlaps_and_or_eloc");
+   Timer.reset("Propagate::evalG");
+   Timer.reset("Propagate::addvHS");
+   Timer.reset("Propagate::addvHS::shm_copy_vbias");
+   Timer.reset("Propagate::build_CV0");
+   Timer.reset("Propagate::addvHS::shm_copy_vHS");
+   Timer.reset("Propagate::fullvHS");
+   Timer.reset("Propagate::addvHS::setup");
+   Timer.reset("Propagate::addvHS::barrier1");
+   Timer.reset("Propagate::addvHS::barrier2");
+   Timer.reset("PureSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer::setup");
    Timer.reset("PureSingleDeterminant:calculateMixedMatrixElementOfOneBodyOperators");
    Timer.reset("PureSingleDeterminant:evaluateLocalEnergy");
    Timer.reset("PureSingleDeterminant:local_evaluateOneBodyMixedDensityMatrix");

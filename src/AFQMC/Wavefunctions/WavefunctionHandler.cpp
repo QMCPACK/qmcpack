@@ -83,7 +83,7 @@ WavefunctionHandler::WfnPtr WavefunctionHandler::addWfn(xmlNodePtr cur)
 }
  
 
-bool WavefunctionHandler::init(std::vector<int>& TGdata, ComplexSMVector *v, hdf_archive& read, const std::string& tag, MPI_Comm tg_comm, MPI_Comm node_comm)
+bool WavefunctionHandler::init(std::vector<int>& TGdata, SPComplexSMVector *v, hdf_archive& read, const std::string& tag, MPI_Comm tg_comm, MPI_Comm node_comm)
 {
   for(int i=0; i<wfns.size(); i++) {
     wfns[i]->copyInfo(*this);

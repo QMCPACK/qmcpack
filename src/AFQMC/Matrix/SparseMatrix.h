@@ -11,13 +11,6 @@
 
 #define ASSERT_SPARSEMATRIX 
 
-#if defined(USE_EIGEN)
-namespace qmcplusplus
-{
-}
-
-#else  // In this case, use OhhmsPETE and your sparse matrix class
-
 namespace qmcplusplus
 {
 
@@ -597,43 +590,6 @@ class SparseMatrix
     for (int& i : rowIndex ) i++; 
   }
 
-/*
-  inline SparseMatrix<T>& operator+=(const SparseMatrix<T>& rhs ) 
-  {
-    this->DM += rhs.DM; 
-    return *this; 
-  }
-
-  inline SparseMatrix<T>& operator-=(const SparseMatrix<T>& rhs ) 
-  {
-    this->DM -= rhs.DM; 
-    return *this; 
-  }
-
-  inline SparseMatrix<T> operator+(const SparseMatrix<T>& opB) const {
-    return SparseMatrix<T>(*this) += opB;
-  }
-
-  inline SparseMatrix<T> operator-(const SparseMatrix<T>& opB) const {
-    return SparseMatrix<T>(*this) -= opB;
-  }
-
-  inline SparseMatrix<T> operator*(const SparseMatrix<T>& B) const {
-//#ifdef()
-//  assert(this->colms() == B.myrows());
-//#endif 
-    SparseMatrix<T> C(this->myrows(),B.colms());
-    const char transa = 'N';
-    const char transb = 'N';
-    const double one=1.0;
-    const double zero=0.0;
-    // C = A*B -> fortran -> C' = B'*A', 
-    BLAS::gemm(transa,transb, B.colms(), this->myrows(), this->colms(),
-               one, B.data(), B.colms(), this->data(), this->colms(),
-                         zero, C.data(), this->colms());
-    return C; 
-  }
-*/
   friend std::ostream& operator<<(std::ostream& out, const SparseMatrix<T>& rhs)
   {
     for(int i=0; i<rhs.vals.size(); i++)
@@ -684,32 +640,9 @@ class SparseMatrix
 
   _mySort_snD_ my_sort;
 
-/*
-   struct __mySort_snD__ {
-   bool operator() (const s1D<RealType>& lhs, const s1D<RealType>& rhs)
-   { return (bool)(std::get<0>(lhs) < std::get<0>(rhs));
-   }
-   bool operator() (const s2D<RealType>& lhs, const s2D<RealType>& rhs)
-   { return (bool)(std::get<0>(lhs) < std::get<0>(rhs)) ||
-            ( !(bool)(std::get<0>(rhs) < std::get<0>(lhs)) &&
-               (bool)(std::get<1>(lhs) < std::get<1>(rhs)) );
-   }
-   bool operator() (const s1D<std::complex<RealType> >& lhs, const s1D<std::complex<RealType> >& rhs)
-   { return (bool)(std::get<0>(lhs) < std::get<0>(rhs));
-   }
-   bool operator() (const s2D<std::complex<RealType> >& lhs, const s2D<std::complex<RealType> >& rhs)
-   { return (bool)(std::get<0>(lhs) < std::get<0>(rhs)) ||
-           ( !(bool)(std::get<0>(rhs) < std::get<0>(lhs)) &&
-              (bool)(std::get<1>(lhs) < std::get<1>(rhs)) );
-   }
-  } my_sort;
-*/
- 
-
 };
 
 
 }
 
-#endif
 #endif
