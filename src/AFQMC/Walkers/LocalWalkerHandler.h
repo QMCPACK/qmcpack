@@ -112,10 +112,10 @@ class LocalWalkerHandler: public WalkerHandlerBase
   }
 
   // load balancing algorithm
-  void loadBalance(); 
+  void loadBalance(MPI_Comm comm); 
 
   // population control algorithm
-  void popControl(); 
+  void popControl(MPI_Comm comm); 
 
   void setHF(const ComplexMatrix& HF);
 

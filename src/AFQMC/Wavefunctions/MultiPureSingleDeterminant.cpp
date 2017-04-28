@@ -34,6 +34,8 @@ bool MultiPureSingleDeterminant::parse(xmlNodePtr cur)
     if(cur == NULL)
       return false;
 
+    app_log()<<"\n\n --------------- Parsing MultiPureSD input ------------------ \n\n";
+
     xmlNodePtr curRoot=cur;
 
     std::string type("");

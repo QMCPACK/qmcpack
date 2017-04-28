@@ -12,6 +12,7 @@
 #include "Message/CommOperators.h"
 #include"AFQMC/Walkers/SlaterDetWalker.h"
 #include"AFQMC/Walkers/DistWalkerHandler.h"
+#include"AFQMC/Walkers/WalkerControl.hpp"
 
 namespace qmcplusplus
 {
@@ -224,6 +225,8 @@ bool DistWalkerHandler::parse(xmlNodePtr cur)
     if(cur == NULL)
       return false;
 
+    app_log()<<"\n\n --------------- Parsing DistWalkerHandler input ------------------ \n\n";
+
     xmlNodePtr curRoot=cur;
     OhmmsAttributeSet oAttrib;
     oAttrib.add(name,"name");
@@ -231,6 +234,7 @@ bool DistWalkerHandler::parse(xmlNodePtr cur)
     walkerType = "collinear";
 
     load_balance_alg = "all";
+    pop_control_type = "simple";
 
     ParameterSet m_param;
     m_param.add(reset_weight,"reset_weight","double");
@@ -238,18 +242,36 @@ bool DistWalkerHandler::parse(xmlNodePtr cur)
     m_param.add(min_weight,"min_weight","double");
     m_param.add(extra_empty_spaces,"extra_spaces","int");
     m_param.add(walkerType,"walker_type","std::string");
-    m_param.add(load_balance_alg,"algo","std::string");
+    m_param.add(load_balance_alg,"load_balance","std::string");
+    m_param.add(pop_control_type,"pop_control","std::string");
     m_param.put(cur);
 
-    if(load_balance_alg == "all")
-      app_log()<<" Using all-to-all (gather/scatter) load balancing algorithm. " <<std::endl;
-    else if(load_balance_alg == "iter" || load_balance_alg == "iterative" || load_balance_alg == "seq") {
-      load_balance_alg = "iter";
-      app_log()<<" Using iterative (1-to-1 communication based) load balancing algorithm. " <<std::endl;
+    std::for_each(load_balance_alg.begin(), load_balance_alg.end(), [](char & c){
+        c = ::tolower(c);
+    });
+    if(load_balance_alg.find("all")!=std::string::npos) {
+      app_log()<<" Using all-to-all (gather/scatter) load balancing algorithm.  \n";
+      app_log()<<"    This algorithm is slow, does not scale, and is not recommended. Use async if possible. \n";  
+    } else if(load_balance_alg.find("simple")!=std::string::npos) {
+      app_log()<<" Using blocking (1-1) swap load balancing algorithm. " <<"\n";
+    } else if(load_balance_alg.find("async")!=std::string::npos) {
+      app_log()<<" Using asynchronous non-blocking swap load balancing algorithm. " <<"\n";
     } else {
-      std::cerr<<" Error: Unknown load balancing algorithm: " <<load_balance_alg <<std::endl;
+      std::cerr<<" Error: Unknown load balancing algorithm: " <<load_balance_alg <<" \n";
       return false;  
     }  
+
+    std::for_each(pop_control_type.begin(), pop_control_type.end(), [](char & c){
+        c = ::tolower(c);
+    });
+    if(pop_control_type.find("simple")!=std::string::npos)
+      app_log()<<" Using simple population control algorithm with fluctuating polulation size. \n";
+    else if(pop_control_type.find("fixed")!=std::string::npos) {
+      app_log()<<" Using population control algorithm with a fixed number of walkers. \n"; 
+    } else {
+      std::cerr<<" Error: Unknown population control algorithm: " <<pop_control_type <<"\n"; 
+      return false;
+    }
 
     std::transform(walkerType.begin(),walkerType.end(),walkerType.begin(),(int (*)(int)) tolower);
     cur = curRoot->children;
@@ -259,7 +281,7 @@ bool DistWalkerHandler::parse(xmlNodePtr cur)
       }
       cur = cur->next;
     }
-
+    app_log()<<std::endl;
     return true;
 }
 
@@ -432,11 +454,68 @@ void DistWalkerHandler::resetNumberWalkers(int n, bool a, ComplexMatrix* S)
   nwalk_min = nwalk_max= tot_num_walkers;
 }
 
+// remove n walkers from the set and return their data
+void DistWalkerHandler::pop_walkers(int n, ComplexType* data) {
+
+  if(!head) {
+    tot_num_walkers -= n;
+    return;
+  }  
+  assert(tot_num_walkers >= n);
+  ComplexSMVector::iterator wlk = walkers.end()-walker_size;
+
+  int cnt = 0;
+  while( cnt < n ) {
+
+    while( (wlk+data_displ[INFO])->real() < 0 && wlk > walkers.begin() ) 
+      wlk -= walker_size;
+    if(wlk == walkers.begin() && ( (wlk+data_displ[INFO])->real() < 0 || (cnt+1 < n)  ))
+      APP_ABORT(" Error in DistWalkerHandler::pop_walkers. Could not find walkers. \n\n\n"); 
+
+    std::copy(wlk,wlk+walker_size,data); 
+    *(wlk+data_displ[INFO]) = ComplexType(-1.0,0.0); 
+    data += walker_size;
+    tot_num_walkers--;
+    cnt++; 
+
+  } 
+
+}
+
+// add n walkers to the set. There must be enough space since this is called in serial
+void DistWalkerHandler::push_walkers(int n, ComplexType* data) {
+
+  if(!head) {
+    tot_num_walkers += n;
+    return;
+  }  
+  assert(tot_num_walkers+n <= maximum_num_walkers);
+  ComplexSMVector::iterator wlk = walkers.begin();
+
+  int cnt = 0;
+  while( cnt < n ) {
+
+    while( (wlk+data_displ[INFO])->real() > 0 && wlk != walkers.end() ) 
+      wlk += walker_size;
+    if(wlk == walkers.end())
+      APP_ABORT(" Error in DistWalkerHandler::push_walkers. Could not find space. \n\n\n"); 
+
+    std::copy(data,data+walker_size,wlk);
+    data += walker_size;
+    tot_num_walkers++;
+    cnt++; 
+
+  } 
+
+}
+
 // load balancing algorithm
-void DistWalkerHandler::loadBalance() 
+//  CAREFUL!!!! This assumes a communicator of heads_of_TG!!!!
+//  Will give unexpected results for anything else!!!
+void DistWalkerHandler::loadBalance(MPI_Comm comm) 
 {
-#if defined(HAVE_MPI)
   
+#if defined(HAVE_MPI)
   nwalk_min = nwalk_max= tot_num_walkers;
   if(nproc_heads==1) return;
 
@@ -444,12 +523,20 @@ void DistWalkerHandler::loadBalance()
   int sz = size(), nw_new=0;
   MPI_Request request;
 
+  int npr,comm_rank; 
+  if(head) {
+    MPI_Comm_size(comm,&npr);
+    MPI_Comm_rank(comm,&comm_rank);
+    nwalk_counts_new.resize(npr);
+    nwalk_counts_old.resize(npr);
+  }
+
   LocalTimer->start("WalkerHandler::loadBalance::setup");
   Timers[LoadBalance_Setup]->start();
   // determine new number of walkers
   if(head) {
 
-    for(int i=0; i<nproc_heads; i++)
+    for(int i=0; i<npr; i++)
       nwalk_counts_old[i] = nwalk_counts_new[i] = 0;
     nwalk_counts_new[0] = nW;
     // in case iallgather is not available
@@ -457,7 +544,7 @@ void DistWalkerHandler::loadBalance()
 #define HAVE_MPI_IALLGATHER
 #endif
 #ifdef HAVE_MPI_IALLGATHER
-    MPI_Iallgather(nwalk_counts_new.data(), 1, MPI_INT, nwalk_counts_old.data(), 1, MPI_INT, MPI_COMM_TG_LOCAL_HEADS,&request); 
+    MPI_Iallgather(nwalk_counts_new.data(), 1, MPI_INT, nwalk_counts_old.data(), 1, MPI_INT, comm,&request); 
 
     // push empty spots to the end of the list 
     push_walkers_to_front();
@@ -465,19 +552,19 @@ void DistWalkerHandler::loadBalance()
     // wait for mpi_iallgather 
     MPI_Wait(&request, MPI_STATUS_IGNORE); 
 #else
-    MPI_Allgather(nwalk_counts_new.data(), 1, MPI_INT, nwalk_counts_old.data(), 1, MPI_INT, MPI_COMM_TG_LOCAL_HEADS);
+    MPI_Allgather(nwalk_counts_new.data(), 1, MPI_INT, nwalk_counts_old.data(), 1, MPI_INT, comm);
     push_walkers_to_front();
 #endif 
     nwalk_global=0;
-    for(int i=0; i<nproc_heads; i++) 
+    for(int i=0; i<npr; i++) 
       nwalk_global+=nwalk_counts_old[i];
-    for(int i=0; i<nproc_heads; i++) 
-      nwalk_counts_new[i] = nwalk_global/nproc_heads + ((i<nwalk_global%nproc_heads)?(1):(0));
+    for(int i=0; i<npr; i++) 
+      nwalk_counts_new[i] = nwalk_global/npr + ((i<nwalk_global%npr)?(1):(0));
     auto min_max = std::minmax_element(nwalk_counts_old.begin(),nwalk_counts_old.end());
     nwalk_min = *min_max.first;
     nwalk_max = *min_max.second;
 
-    nw_new = nwalk_counts_new[rank_heads];
+    nw_new = nwalk_counts_new[comm_rank];
 
   }
   Timers[LoadBalance_Setup]->stop();
@@ -496,24 +583,24 @@ void DistWalkerHandler::loadBalance()
 
   Timers[LoadBalance_Exchange]->start();
   LocalTimer->start("WalkerHandler::loadBalance::exchange");
-  if(load_balance_alg == "all") {
+  if(load_balance_alg.find("all")!=std::string::npos) {
 
     if(head) {
 
-      int ncomm = nW - nwalk_counts_new[rank_heads];
+      int ncomm = nW - nwalk_counts_new[comm_rank];
       int pos = 0, cnt=0;
       ComplexType *buffer=NULL; 
       if(ncomm > 0) 
-        buffer = walkers.values() + walker_size*nwalk_counts_new[rank_heads];
+        buffer = walkers.values() + walker_size*nwalk_counts_new[comm_rank];
        else 
         buffer = walkers.values() + walker_size*nW;
       
 
-      if(rank_heads==0) {
+      if(comm_rank==0) {
 
         // setup gatherv call 
         displ[0]=0;
-        for(int i=0; i<nproc_heads-1; i++)
+        for(int i=0; i<npr-1; i++)
           if(nwalk_counts_old[i] > nwalk_counts_new[i]) {
             counts[i] = (nwalk_counts_old[i]-nwalk_counts_new[i])*walker_size;
             displ[i+1] = displ[i]+counts[i];
@@ -521,18 +608,18 @@ void DistWalkerHandler::loadBalance()
             counts[i]=0;
             displ[i+1] = displ[i];
           }
-        if(nwalk_counts_old[nproc_heads-1] > nwalk_counts_new[nproc_heads-1]) 
-          counts[nproc_heads-1] = (nwalk_counts_old[nproc_heads-1]-nwalk_counts_new[nproc_heads-1])*walker_size;
+        if(nwalk_counts_old[npr-1] > nwalk_counts_new[npr-1]) 
+          counts[npr-1] = (nwalk_counts_old[npr-1]-nwalk_counts_new[npr-1])*walker_size;
         else
-          counts[nproc_heads-1]=0;
+          counts[npr-1]=0;
         commBuff.clear();
-        commBuff.resize(displ[nproc_heads-1]+counts[nproc_heads-1]);
+        commBuff.resize(displ[npr-1]+counts[npr-1]);
         int nn = walker_size*((ncomm>0)?ncomm:0); 
-        myComm->gatherv( buffer, commBuff.data(), nn , counts, displ, 0, MPI_COMM_TG_LOCAL_HEADS); 
+        myComm->gatherv( buffer, commBuff.data(), nn , counts, displ, 0, comm); 
 
         // setup scatterv call
         displ[0]=0;
-        for(int i=0; i<nproc_heads-1; i++)
+        for(int i=0; i<npr-1; i++)
           if(nwalk_counts_old[i] < nwalk_counts_new[i]) {
             counts[i] = (nwalk_counts_new[i]-nwalk_counts_old[i])*walker_size;
             displ[i+1] = displ[i]+counts[i];
@@ -540,56 +627,52 @@ void DistWalkerHandler::loadBalance()
             counts[i]=0;
             displ[i+1] = displ[i];
           }
-        if(nwalk_counts_old[nproc_heads-1] < nwalk_counts_new[nproc_heads-1])
-          counts[nproc_heads-1] = (nwalk_counts_new[nproc_heads-1]-nwalk_counts_old[nproc_heads-1])*walker_size;
+        if(nwalk_counts_old[npr-1] < nwalk_counts_new[npr-1])
+          counts[npr-1] = (nwalk_counts_new[npr-1]-nwalk_counts_old[npr-1])*walker_size;
         else
-          counts[nproc_heads-1]=0;    
+          counts[npr-1]=0;    
 
         nn = walker_size*((ncomm<0)?(std::abs(ncomm)):0); 
-        myComm->scatterv( commBuff.data(), buffer, nn, counts, displ, 0, MPI_COMM_TG_LOCAL_HEADS); 
+        myComm->scatterv( commBuff.data(), buffer, nn, counts, displ, 0, comm); 
 
         if(ncomm > 0) {
           register ComplexType minus = ComplexType(-1.0,0.0);
-          for(ComplexSMVector::iterator it=walkers.begin()+nwalk_counts_new[rank_heads]*walker_size; it<walkers.end(); it+=walker_size)
+          for(ComplexSMVector::iterator it=walkers.begin()+nwalk_counts_new[comm_rank]*walker_size; it<walkers.end(); it+=walker_size)
             *(it+data_displ[INFO]) = minus; 
         }
 
       } else {
 
-        int nw__2=0, icnt=0;
-        std::vector<int> pos_;
-        for(ComplexSMVector::iterator it=walkers.begin()+data_displ[INFO]; it<walkers.end(); it+=walker_size, icnt++)
-          if(it->real() > 0) { pos_.push_back(icnt); }
-
         int nn = walker_size*((ncomm>0)?ncomm:0);
-        myComm->gatherv( buffer, commBuff.data(), nn, counts, displ, 0, MPI_COMM_TG_LOCAL_HEADS);
+        myComm->gatherv( buffer, commBuff.data(), nn, counts, displ, 0, comm);
         nn = walker_size*((ncomm<0)?(std::abs(ncomm)):0);
-        myComm->scatterv( commBuff.data(), buffer, nn, counts, displ, 0, MPI_COMM_TG_LOCAL_HEADS); 
+        myComm->scatterv( commBuff.data(), buffer, nn, counts, displ, 0, comm); 
 
         if(ncomm > 0) {
           register ComplexType minus = ComplexType(-1.0,0.0);
-          for(ComplexSMVector::iterator it=walkers.begin()+nwalk_counts_new[rank_heads]*walker_size; it<walkers.end(); it+=walker_size)
+          for(ComplexSMVector::iterator it=walkers.begin()+nwalk_counts_new[comm_rank]*walker_size; it<walkers.end(); it+=walker_size)
             *(it+data_displ[INFO]) = minus; 
         }
 
       }
     } // head 
 
-  } else if(load_balance_alg == "iter") {
-  // 1. (only heads) exchange data directly into SM without need for temporary
-  //  - Implement both 1. stupid gather/scatter algorithm
-  //                   2. clever algorithm based on 1-1 communications
+  } else if(load_balance_alg.find("simple")!=std::string::npos) {
 
+    if(head) 
+      afqmc::swapWalkersSimple(*this,nwalk_counts_old,nwalk_counts_new,comm);
     
+  } else if(load_balance_alg.find("async")!=std::string::npos) {
+
+    if(head) 
+      afqmc::swapWalkersAsync(*this,nwalk_counts_old,nwalk_counts_new,comm);
 
   }
   LocalTimer->stop("WalkerHandler::loadBalance::exchange");
   Timers[LoadBalance_Exchange]->stop();
 
   walkers.barrier();
-  tot_num_walkers=0;
-  for(ComplexSMVector::iterator it=walkers.begin()+data_displ[INFO]; it<walkers.end(); it+=walker_size)
-    if(it->real() > 0) tot_num_walkers++;
+  reset_walker_count();
 
 #endif
 } 
@@ -627,7 +710,9 @@ void DistWalkerHandler::push_walkers_to_front()
 }
 
 // population control algorithm
-void DistWalkerHandler::popControl()
+//  CAREFUL!!!! This assumes a communicator of heads_of_TG!!!!
+//  Will give unexpected results for anything else!!!
+void DistWalkerHandler::popControl(MPI_Comm comm)
 {
   ComplexType minus = ComplexType(-1.0,0.0);
 
@@ -717,6 +802,10 @@ void DistWalkerHandler::popControl()
   tot_num_walkers=0;
   for(ComplexSMVector::iterator it=walkers.begin()+data_displ[INFO]; it<walkers.end(); it+=walker_size)
     if(it->real() > 0) tot_num_walkers++;
+
+  // load balance after population control events
+  loadBalance(MPI_COMM_TG_LOCAL_HEADS);  // testing for now
+  //loadBalance(comm);
 }
 
 }

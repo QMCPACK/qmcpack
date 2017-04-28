@@ -14,6 +14,7 @@
 #include "AFQMC/Wavefunctions/WavefunctionHandler.h" 
 //#include "AFQMC/Walkers/SlaterDetWalker.h"
 #include "AFQMC/Walkers/WalkerHandlerBase.h"
+#include "AFQMC/Estimators/EstimatorHandler.h"
 #include "Utilities/RandomGenerator.h"
 #include "AFQMC/Estimators/SlaterDetOperations.h"
 
@@ -33,7 +34,7 @@ class PropagatorBase: public MPIObjectBase, public AFQMCInfo
 
 //  virtual void Propagate(int n, SlaterDetWalker&, RealType& E1, const RealType E2=0)=0;
 
-  virtual void Propagate(int n, WalkerHandlerBase*, RealType& E1, const RealType E2=0)=0;
+  virtual void Propagate(int steps, int& steps_total, WalkerHandlerBase*, RealType& E1, EstimatorHandler* estim)=0;
 
   virtual bool parse(xmlNodePtr)=0;
 

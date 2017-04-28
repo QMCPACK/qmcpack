@@ -30,15 +30,13 @@ class phaseless_ImpSamp_ForceBias: public PropagatorBase
 
   public:
        
-  phaseless_ImpSamp_ForceBias(Communicate *c,  RandomGenerator_t* r) : PropagatorBase(c,r), substractMF(true),use_eig(false),first(true),max_weight(100),apply_constrain(true),save_memory(false),vbias_bound(3.0),imp_sampl(true),hybrid_method(false),test_library(false),eloc_from_Spvn(false),sizeOfG(0),walkerBlock(1),test_cnter(0),cutoff(1e-6)
+  phaseless_ImpSamp_ForceBias(Communicate *c,  RandomGenerator_t* r) : PropagatorBase(c,r), substractMF(true),use_eig(false),first(true),max_weight(100),apply_constrain(true),save_memory(false),vbias_bound(3.0),imp_sampl(true),hybrid_method(false),test_library(false),eloc_from_Spvn(false),sizeOfG(0),walkerBlock(1),test_cnter(0),cutoff(1e-6),fix_bias(0)
   {
   } 
 
   ~phaseless_ImpSamp_ForceBias() {}
 
-//  void Propagate(int n, SlaterDetWalker&, RealType& E1, const RealType E2=0);
-
-  void Propagate(int n, WalkerHandlerBase*, RealType& E1, const RealType E2=0);
+  void Propagate(int steps, int& steps_total, WalkerHandlerBase*, RealType& E1, EstimatorHandler* estim);
 
   bool setup(std::vector<int>&,SPComplexSMVector*,HamiltonianBase*,WavefunctionHandler*,RealType, hdf_archive&, const std::string&,MPI_Comm,MPI_Comm);
 
@@ -76,6 +74,8 @@ class phaseless_ImpSamp_ForceBias: public PropagatorBase
   bool save_memory;
 
   int test_library;
+
+  int fix_bias;
 
   std::ifstream in_rand;
 
@@ -172,13 +172,22 @@ class phaseless_ImpSamp_ForceBias: public PropagatorBase
   IndexType ik0, ikN;   //  minimum and maximum values of ik index in Spvn
   IndexType pik0, pikN;  // locations of bounds of [ik0,ikN] sector in Spvn  
 
-  void dist_Propagate(WalkerHandlerBase*);
+  void serial_propagation_single_step(WalkerHandlerBase*, RealType& E1);
+
+  void dist_propagation_single_step(WalkerHandlerBase*, RealType& E1);
+
+  // in this case, vbias is calculated for step 0 and fixed for all subsequent sub steps
+  void serial_propagation_multiple_steps(int steps, WalkerHandlerBase*, RealType& E1);
+
+  void dist_propagation_multiple_steps(int steps, WalkerHandlerBase*, RealType& E1);
 
   bool apply_constrain;
 
   void applyHSPropagator(ComplexMatrix&, ComplexMatrix&, ComplexType& factor, int order=-1, bool calculatevHS=true); 
 
   void addvHS(SPComplexSMVector *buff, int nw, int sz, WalkerHandlerBase* wset); 
+
+  void addvHS_multiple(int n, SPComplexSMVector *buff, int nw, int sz, WalkerHandlerBase* wset); 
 
   void sampleGaussianFields();
 

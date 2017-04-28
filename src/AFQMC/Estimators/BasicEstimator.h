@@ -15,7 +15,6 @@
 #include "AFQMC/Hamiltonians/HamiltonianBase.h"
 #include "AFQMC/Wavefunctions/WavefunctionHandler.h"
 #include "AFQMC/Walkers/WalkerHandlerBase.h"
-#include "AFQMC/Propagators/PropagatorBase.h"
 #include "AFQMC/Estimators/SlaterDetOperations.h"
 
 namespace qmcplusplus
@@ -28,7 +27,6 @@ class BasicEstimator: public EstimatorBase
 
   typedef HamiltonianBase* HamPtr;
   typedef WavefunctionHandler* WfnPtr;
-  typedef PropagatorBase* PropPtr;
   typedef WalkerHandlerBase* WSetPtr;
 
   BasicEstimator(Communicate *c):EstimatorBase(c),EstimEloc(false), timers(true), prtnwalk(true),

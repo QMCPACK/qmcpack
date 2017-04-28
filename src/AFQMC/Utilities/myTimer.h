@@ -84,21 +84,21 @@ class myTimer {
        int n = getPos(str);
        if(n >= 0) 
          return getTime()-std::get<1>(timer[n]);
-       return 0.0;
+       return -1;
      }
 
      double average(const std::string& str)  {
        int n = getPos(str);
        if(n >= 0)
          return (std::get<0>(timer[n])==0)?(0.0):(std::get<2>(timer[n])/static_cast<double>(std::get<0>(timer[n])));
-       return 0.0;
+       return -1;
      }
 
      double total(const std::string& str )  {
        int n = getPos(str);
        if(n >= 0)
          return std::get<2>(timer[n]); 
-       return 0.0;
+       return -1;
      }
 
      void reset(const std::string& str) {

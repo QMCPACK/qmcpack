@@ -6,7 +6,6 @@
 #include"AFQMC/Estimators/EstimatorBase.h"
 #include"AFQMC/Estimators/BasicEstimator.h"
 #include "AFQMC/Wavefunctions/WavefunctionHandler.h"
-#include "AFQMC/Propagators/PropagatorBase.h"
 #include "AFQMC/Walkers/WalkerHandlerBase.h"
 #include "AFQMC/Hamiltonians/HamiltonianBase.h"
 

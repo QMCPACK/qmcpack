@@ -114,10 +114,10 @@ class DistWalkerHandler: public WalkerHandlerBase
   }
 
   // load balancing algorithm
-  void loadBalance(); 
+  void loadBalance(MPI_Comm comm); 
 
   // population control algorithm
-  void popControl(); 
+  void popControl(MPI_Comm comm); 
 
   void setHF(const ComplexMatrix& HF);
 
@@ -275,6 +275,23 @@ class DistWalkerHandler: public WalkerHandlerBase
   } 
 
   void push_walkers_to_front();
+
+  // useful when consistency breaks in algorithm
+  void reset_walker_count() {
+    maximum_num_walkers == walkers.size()/walker_size;
+    tot_num_walkers=0;
+    for(ComplexSMVector::iterator it=walkers.begin()+data_displ[INFO]; it<walkers.end(); it+=walker_size)
+      if(it->real() > 0) tot_num_walkers++;
+  }
+
+  int single_walker_memory_usage() { return walker_memory_usage; } 
+  int single_walker_size() { return walker_size; } 
+
+  void pop_walkers(int n, ComplexType* data);
+  void push_walkers(int n, ComplexType* data);
+
+  void pop_walkers(int n, std::vector<ComplexType>& data) { pop_walkers(n,data.data()); }
+  void push_walkers(int n, std::vector<ComplexType>& data) { push_walkers(n,data.data()); }
 
   // Stored data [all assumed std::complex numbers]:
   //   - INFO:                 1  (e.g. alive, init, etc)  

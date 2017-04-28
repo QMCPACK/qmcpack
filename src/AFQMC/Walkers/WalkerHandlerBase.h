@@ -30,6 +30,7 @@ class WalkerHandlerBase: public MPIObjectBase, public AFQMCInfo
   /// constructor
   WalkerHandlerBase(Communicate* c, std::string type=""): MPIObjectBase(c),name("")
            ,load_balance_alg("all"),core_rank(0),ncores_per_TG(1),walkerType(type)
+           ,pop_control_type("simple")
   { }
 
   /// destructor
@@ -66,10 +67,10 @@ class WalkerHandlerBase: public MPIObjectBase, public AFQMCInfo
   virtual RealType GlobalWeight()=0; 
 
   // load balancing algorithm
-  virtual void loadBalance()=0; 
+  virtual void loadBalance(MPI_Comm comm)=0; 
 
   // population control algorithm
-  virtual void popControl()=0; 
+  virtual void popControl(MPI_Comm comm)=0; 
 
   virtual void setHF(const ComplexMatrix& HF)=0;
 
@@ -124,6 +125,8 @@ class WalkerHandlerBase: public MPIObjectBase, public AFQMCInfo
 
   // type of load balancing
   std::string load_balance_alg;
+
+  std::string pop_control_type;
 
   int core_rank;
   int ncores_per_TG; 

@@ -71,18 +71,13 @@ bool AFQMCDriver::run()
     Timers[BlockTotal]->start();
     for (int iStep=0; iStep<nStep; ++iStep, ++step_tot) {
 
-      // propagate
-      for (int iSubstep=0; iSubstep<nSubstep; ++iSubstep,++time) {
 
-        LocalTimer.start("SubStep::Propagate");
-        Timers[SubstepPropagate]->start();
-        prop0->Propagate(time,wlkBucket,Eshift,Eshift);
-        LocalTimer.stop("SubStep::Propagate");
-        Timers[SubstepPropagate]->stop();        
-
-        estim0->accumulate_substep(wlkBucket);
-
-      }  // iSubstep
+      // propagate nSubstep 
+      LocalTimer.start("SubStep::Propagate");
+      Timers[SubstepPropagate]->start();
+      prop0->Propagate(nSubstep,time,wlkBucket,Eshift,estim0);
+      LocalTimer.stop("SubStep::Propagate");
+      Timers[SubstepPropagate]->stop();        
 
       if (step_tot != 0 && step_tot % nStabalize == 0) { 
         LocalTimer.start("Step::Orthogonalize");
@@ -99,11 +94,12 @@ bool AFQMCDriver::run()
       if (step_tot != 0 && step_tot % nPopulationControl == 0) {
         LocalTimer.start("Step::PopControl");
         Timers[StepPopControl]->start();
-        wlkBucket->popControl();
+// temporarily setting communicator to COMM_WORLD, until I finish implementation of new pop. control alg
+        wlkBucket->popControl(MPI_COMM_WORLD);
         LocalTimer.stop("Step::PopControl");
         Timers[StepPopControl]->stop();
       }
-
+/*
       if (step_tot != 0 && step_tot % nloadBalance == 0) {
         LocalTimer.start("Step::loadBalance");
         Timers[StepLoadBalance]->start();
@@ -111,7 +107,7 @@ bool AFQMCDriver::run()
         LocalTimer.stop("Step::loadBalance");
         Timers[StepLoadBalance]->stop();
       }    
- 
+*/
 
       //Etav += estim0->getEloc_step();
       if(time*dt < 1.0)  

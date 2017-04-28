@@ -3953,6 +3953,8 @@ namespace qmcplusplus
   bool SparseGeneralHamiltonian::parse(xmlNodePtr cur)
   {
 
+    app_log()<<"\n\n --------------- Parsing Hamiltonian input ------------------ \n\n";
+
     if(cur == NULL)
       return false;
 

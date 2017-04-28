@@ -40,6 +40,8 @@ bool PureSingleDeterminant::parse(xmlNodePtr cur)
     if(cur == NULL)
       return false;
 
+    app_log()<<"\n\n --------------- Parsing PureSD input ------------------ \n\n";
+
     xmlNodePtr curRoot=cur;
    
     std::string type("");
@@ -1765,6 +1767,7 @@ void PureSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix(bool full)
         if(transposed) {
           APP_ABORT("Error: Transposed Spvn can not be used yet. \n\n\n");
         } else {
+
           DenseMatrixOperators::product_AtB( vn.cols(), walkerBlock, int(iN-i0), one, vn.values() + i0*vn.cols(), vn.cols(), 
                GF+GFi0*nW+i*walkerBlock,nW,zero,v.data(),nW);
           if(addBetaBeta && !closed_shell)

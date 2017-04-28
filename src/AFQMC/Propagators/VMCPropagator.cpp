@@ -277,7 +277,7 @@ bool VMCPropagator::setup(std::vector<int>& TGdata, SPComplexSMVector *v, Hamilt
 }
 
 // right now using local energy form of important sampling
-void VMCPropagator::Propagate(int n, WalkerHandlerBase* w, RealType& accept, const RealType dummy) 
+void VMCPropagator::Propagate(int steps, int& steps_total, WalkerHandlerBase*, RealType& E1, EstimatorHandler* estim)
 {
 /*
   int sz = NMO*NAEA;

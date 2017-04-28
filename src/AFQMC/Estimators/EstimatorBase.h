@@ -13,7 +13,6 @@
 #include "AFQMC/Hamiltonians/HamiltonianBase.h"
 #include "AFQMC/Wavefunctions/WavefunctionHandler.h"
 #include "AFQMC/Walkers/WalkerHandlerBase.h"
-#include "AFQMC/Propagators/PropagatorBase.h"
 
 namespace qmcplusplus
 {
@@ -25,7 +24,6 @@ class EstimatorBase: public MPIObjectBase, public AFQMCInfo
 
   typedef HamiltonianBase* HamPtr;
   typedef WavefunctionHandler* WfnPtr;
-  typedef PropagatorBase* PropPtr;
   typedef WalkerHandlerBase* WSetPtr;
 
   EstimatorBase(Communicate *c):MPIObjectBase(c) {}
@@ -67,8 +65,6 @@ class EstimatorBase: public MPIObjectBase, public AFQMCInfo
   HamPtr ham0;
 
   WfnPtr wfn0;
-
-  PropPtr prop0;
 
 };
 }

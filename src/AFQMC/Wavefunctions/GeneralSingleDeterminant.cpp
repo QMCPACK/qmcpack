@@ -37,6 +37,8 @@ bool GeneralSingleDeterminant::parse(xmlNodePtr cur)
     if(cur == NULL)
       return false;
 
+    app_log()<<"\n\n --------------- Parsing GenSD input ------------------ \n\n";
+
     xmlNodePtr curRoot=cur;
    
     std::string type("");
