@@ -74,14 +74,14 @@ size_t freemem()
 #endif
 }
 
-#ifdef BGQPX
+#ifdef __bgq__
 #include <spi/include/kernel/memory.h>
 #endif
 
 void print_mem(const char* title, std::ostream& log)
 {
   char msg[256];
-#ifdef BGQPX
+#ifdef __bgq__
   uint64_t shared, persist, heapavail, stackavail, stack, heap, guard, mmap;
 
   Kernel_GetMemorySize(KERNEL_MEMSIZE_SHARED, &shared);
