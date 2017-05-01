@@ -180,7 +180,9 @@ template<typename T> void test_matrix_invariant()
 
       for (int i = 0; i < m; i++) {
         for (int j = 0; j < n; j++) {
-          REQUIRE(M(i,j) == A[i*n+j]);
+          T tmp_M = M(i,j);
+          T tmp_A = A[i*n+j];
+          REQUIRE(tmp_M == tmp_A);
         }
       }
     }
