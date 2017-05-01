@@ -318,13 +318,30 @@ int main(int argc, char** argv)
   int nthreads=omp_get_max_threads();
   double omp_fac=1.0/nthreads;
 
-  cout << "miniqmc Init " << tInit*omp_fac  << " Tcomp " << t0*omp_fac 
-  << " diffusion_tot " << t_diffusion*omp_fac << " pseudo_tot  " << t_pseudo*omp_fac << endl;
+  double global_t[]={tInit*omp_fac,t0*omp_fac,t_diffusion*omp_fac,t_pseudo*omp_fac};
+  double global_t_max[]={0.0,0.0,0.0,0.0};
 
-  t_diffusion*=1.0/static_cast<double>(nsteps*nsubsteps*nthreads);
-  t_pseudo   *=1.0/static_cast<double>(nsteps*nthreads);
-  cout << "#per MC step steps " << nsteps << " substeps " << nsubsteps << endl;
-  cout << "diffusion_mc " << t_diffusion << " pseudo_mc  " << t_pseudo << endl;
+  MPI_Allreduce(global_t,global_t_max,4,MPI_DOUBLE,MPI_MAX,*mycomm);
+
+  if(ionode)
+  {
+    tInit      =global_t_max[0];
+    t0         =global_t_max[1];
+    t_diffusion=global_t_max[2];
+    t_pseudo   =global_t_max[3];
+    double FOM=mycomm->size()*nsteps*nthreads/(t_diffusion+t_pseudo);
+
+    cout << "================================== " << endl;
+    cout << "miniqmc Init " << tInit  << " Tcomp " << t0
+      << " diffusion_tot " << t_diffusion << " pseudo_tot  " << t_pseudo << endl;
+
+    t_diffusion*=1.0/static_cast<double>(nsteps*nsubsteps);
+    t_pseudo   *=1.0/static_cast<double>(nsteps);
+    cout << "#per MC step steps " << nsteps << " substeps " << nsubsteps << endl;
+    cout << "diffusion_mc " << t_diffusion << " pseudo_mc  " << t_pseudo << endl;
+    cout << "#   N MPI OMP FOM  " << endl;
+    cout << "FOM " << nptcl << " " << mycomm->size() << " " << nthreads << " " << FOM << endl << endl;
+  }
 
   OHMMS::Controller->finalize();
 
