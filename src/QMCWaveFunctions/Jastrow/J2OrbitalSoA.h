@@ -342,9 +342,21 @@ void J2OrbitalSoA<FT>::addFunc(int ia, int ib, FT* j)
   }
   else
   {
-    F[ia*NumGroups+ib]=j;
-    if(ia<ib)
-      F[ib*NumGroups+ia]=j;
+    if(N==2)
+    {
+      // a very special case, 1 up + 1 down
+      // uu/dd was prevented by the builder
+      for(int ig=0; ig<NumGroups; ++ig)
+        for(int jg=0; jg<NumGroups; ++jg)
+          F[ig*NumGroups+jg]=j;
+    }
+    else
+    {
+      // generic case
+      F[ia*NumGroups+ib]=j;
+      if(ia<ib)
+        F[ib*NumGroups+ia]=j;
+    }
   }
   std::stringstream aname;
   aname<<ia<<ib;

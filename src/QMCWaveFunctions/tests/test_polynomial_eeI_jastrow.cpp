@@ -95,9 +95,9 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
   //elec_.resetGroups();
 
 #ifdef ENABLE_AA_SOA
-  elec_.addTable(ions_,DT_AOS);
-#else
   elec_.addTable(ions_,DT_SOA);
+#else
+  elec_.addTable(ions_,DT_AOS);
 #endif
   elec_.update();
 
@@ -123,6 +123,7 @@ const char *particles = \
 
   xmlNodePtr jas_eeI = xmlFirstElementChild(root);
 
+#ifndef ENABLE_AA_SOA
   eeI_JastrowBuilder jastrow(elec_, psi, ions_);
   bool build_okay = jastrow.put(jas_eeI);
   REQUIRE(build_okay);
@@ -134,7 +135,6 @@ const char *particles = \
   J3Type *j3 = dynamic_cast<J3Type *>(orb);
   REQUIRE(j3 != NULL);
 
-#ifndef ENABLE_AA_SOA
   double logpsi = psi.evaluateLog(elec_);
   REQUIRE(logpsi == Approx(-1.193457749)); // note: number not validated
 
