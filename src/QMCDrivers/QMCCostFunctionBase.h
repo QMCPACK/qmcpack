@@ -163,12 +163,7 @@ public:
   bool lineoptimization(const std::vector<Return_t>& x0, const std::vector<Return_t>& gr, Return_t val0,
                         Return_t& dl, Return_t& val_proj, Return_t& lambda_max);
 
-  virtual Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& H2, Matrix<Return_t>& Hamiltonian, Matrix<Return_t>& Variance, Matrix<Return_t>& Overlap)=0;
-  virtual Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matrix<Return_t>& Right, Matrix<Return_t>& Overlap)
-  {
-    APP_ABORT("NOT IMPLEMENTED");
-    return 1;
-  }
+  virtual Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matrix<Return_t>& Right)=0;
 
 #ifdef HAVE_LMY_ENGINE
   Return_t LMYEngineCost(const bool needDeriv, cqmc::engine::LMYEngine * EngineObj);

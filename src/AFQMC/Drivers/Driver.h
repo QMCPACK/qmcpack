@@ -102,7 +102,7 @@ class Driver: public MPIObjectBase, public AFQMCInfo
 
     EstimatorHandler* estim0;
    
-    ComplexSMVector CommBuffer; 
+    SPComplexSMVector CommBuffer; 
 
     bool head_of_nodes;
     MPI_Comm MPI_COMM_HEAD_OF_NODES;

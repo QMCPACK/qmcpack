@@ -79,7 +79,8 @@ TEST_CASE("BSpline builder Jastrow", "[wavefunction]")
   ions_.R[0][2] = 0.0;
 
   elec_.setName("elec");
-  elec_.create(2);
+  std::vector<int> ud(2); ud[0]=ud[1]=1;
+  elec_.create(ud);
   elec_.R[0][0] = 1.00;
   elec_.R[0][1] = 0.0;
   elec_.R[0][2] = 0.0;
@@ -108,8 +109,8 @@ TEST_CASE("BSpline builder Jastrow", "[wavefunction]")
 const char *particles = \
 "<tmp> \
 <jastrow name=\"J2\" type=\"Two-Body\" function=\"Bspline\" print=\"yes\"> \
-   <correlation rcut=\"10\" size=\"10\" speciesA=\"u\" speciesB=\"u\"> \
-      <coefficients id=\"uu\" type=\"Array\"> 0.02904699284 -0.1004179 -0.1752703883 -0.2232576505 -0.2728029201 -0.3253286875 -0.3624525145 -0.3958223107 -0.4268582166 -0.4394531176</coefficients> \
+   <correlation rcut=\"10\" size=\"10\" speciesA=\"u\" speciesB=\"d\"> \
+      <coefficients id=\"ud\" type=\"Array\"> 0.02904699284 -0.1004179 -0.1752703883 -0.2232576505 -0.2728029201 -0.3253286875 -0.3624525145 -0.3958223107 -0.4268582166 -0.4394531176</coefficients> \
     </correlation> \
 </jastrow> \
 </tmp> \
