@@ -148,11 +148,10 @@ namespace qmcplusplus
   template<typename T1, typename T2>
     void PosAoS2SoA(int nrows, int ncols, const T1* restrict iptr, int lda, T2* restrict out, int ldb)
     { 
-      T2* restrict x=out      ; ASSUME_ALIGNED(x);
-      T2* restrict y=out+  ldb; ASSUME_ALIGNED(y);
-      T2* restrict z=out+2*ldb; ASSUME_ALIGNED(z);
-//#pragma vector nontemporal
-      #pragma omp simd
+      T2* restrict x=out      ;
+      T2* restrict y=out+  ldb;
+      T2* restrict z=out+2*ldb;
+      #pragma omp simd aligned(x,y,z)
       for(int i=0; i<nrows;++i)
       {
         x[i]=iptr[i*ncols  ]; //x[i]=in[i][0];
@@ -174,11 +173,10 @@ namespace qmcplusplus
   template<typename T1, typename T2>
     void PosSoA2AoS(int nrows, int ncols, const T1* restrict iptr, int lda, T2* restrict out, int ldb)
     { 
-      const T1* restrict x=iptr      ; ASSUME_ALIGNED(x);
-      const T1* restrict y=iptr+  lda; ASSUME_ALIGNED(y);
-      const T1* restrict z=iptr+2*lda; ASSUME_ALIGNED(z);
-//#pragma vector nontemporal
-      #pragma omp simd
+      const T1* restrict x=iptr      ;
+      const T1* restrict y=iptr+  lda;
+      const T1* restrict z=iptr+2*lda;
+      #pragma omp simd aligned(x,y,z)
       for(int i=0; i<nrows;++i)
       {
         out[i*ldb  ]=x[i]; //out[i][0]=x[i];

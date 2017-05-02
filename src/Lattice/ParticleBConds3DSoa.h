@@ -37,16 +37,13 @@ struct DTD_BConds<T,3,SUPERCELL_OPEN+SOA_OFFSET>
     const T x0=pos[0];
     const T y0=pos[1];
     const T z0=pos[2];
-    const T* restrict px=R0.data(0); ASSUME_ALIGNED(px);
-    const T* restrict py=R0.data(1); ASSUME_ALIGNED(py);
-    const T* restrict pz=R0.data(2); ASSUME_ALIGNED(pz);
-    T* restrict dx=temp_dr.data(0); ASSUME_ALIGNED(dx);
-    T* restrict dy=temp_dr.data(1); ASSUME_ALIGNED(dy);
-    T* restrict dz=temp_dr.data(2); ASSUME_ALIGNED(dz);
-    CONSTEXPR size_t simdLength=QMC_CLINE/sizeof(T);
-#if defined(__INTEL_COMPILER)
-    #pragma omp simd simdlen(simdLength)
-#endif
+    const T* restrict px=R0.data(0);
+    const T* restrict py=R0.data(1);
+    const T* restrict pz=R0.data(2);
+    T* restrict dx=temp_dr.data(0);
+    T* restrict dy=temp_dr.data(1);
+    T* restrict dz=temp_dr.data(2);
+    #pragma omp simd aligned(px,py,pz,dx,dy,dz)
     for(int iat=first; iat<last; ++iat)
     {
       dx[iat]=px[iat]-x0;
@@ -80,16 +77,13 @@ struct DTD_BConds<T,3,PPPO+SOA_OFFSET>
     const T x0=pos[0];
     const T y0=pos[1];
     const T z0=pos[2];
-    const T* restrict px=R0.data(0); ASSUME_ALIGNED(px);
-    const T* restrict py=R0.data(1); ASSUME_ALIGNED(py);
-    const T* restrict pz=R0.data(2); ASSUME_ALIGNED(pz);
-    T* restrict dx=temp_dr.data(0); ASSUME_ALIGNED(dx);
-    T* restrict dy=temp_dr.data(1); ASSUME_ALIGNED(dy);
-    T* restrict dz=temp_dr.data(2); ASSUME_ALIGNED(dz);
-    CONSTEXPR size_t simdLength=QMC_CLINE/sizeof(T);
-#if defined(__INTEL_COMPILER) && (__INTEL_COMPILER > 1500)
-    #pragma omp simd simdlen(simdLength)
-#endif
+    const T* restrict px=R0.data(0);
+    const T* restrict py=R0.data(1);
+    const T* restrict pz=R0.data(2);
+    T* restrict dx=temp_dr.data(0);
+    T* restrict dy=temp_dr.data(1);
+    T* restrict dz=temp_dr.data(2);
+    #pragma omp simd aligned(px,py,pz,dx,dy,dz)
     for(int iat=first; iat<last; ++iat)
     {
       const T  x=(px[iat]-x0)*Linv0;
@@ -129,18 +123,15 @@ struct DTD_BConds<T,3,PPPS+SOA_OFFSET>
     const T y0=pos[1];
     const T z0=pos[2];
 
-    const T* restrict px=R0.data(0); ASSUME_ALIGNED(px);
-    const T* restrict py=R0.data(1); ASSUME_ALIGNED(py);
-    const T* restrict pz=R0.data(2); ASSUME_ALIGNED(pz);
+    const T* restrict px=R0.data(0);
+    const T* restrict py=R0.data(1);
+    const T* restrict pz=R0.data(2);
 
-    T* restrict dx=temp_dr.data(0); ASSUME_ALIGNED(dx);
-    T* restrict dy=temp_dr.data(1); ASSUME_ALIGNED(dy);
-    T* restrict dz=temp_dr.data(2); ASSUME_ALIGNED(dz);
+    T* restrict dx=temp_dr.data(0);
+    T* restrict dy=temp_dr.data(1);
+    T* restrict dz=temp_dr.data(2);
 
-    CONSTEXPR size_t simdLength=QMC_CLINE/sizeof(T);
-#if defined(__INTEL_COMPILER) && (__INTEL_COMPILER > 1500)
-    #pragma omp simd simdlen(simdLength)
-#endif
+    #pragma omp simd aligned(px,py,pz,dx,dy,dz)
     for(int iat=first; iat<last; ++iat)
     {
       T displ_0 =px[iat]-x0;
@@ -222,24 +213,21 @@ struct DTD_BConds<T,3,PPPG+SOA_OFFSET>
     const T y0=pos[1];
     const T z0=pos[2];
 
-    const T* restrict px=R0.data(0); ASSUME_ALIGNED(px);
-    const T* restrict py=R0.data(1); ASSUME_ALIGNED(py);
-    const T* restrict pz=R0.data(2); ASSUME_ALIGNED(pz);
+    const T* restrict px=R0.data(0);
+    const T* restrict py=R0.data(1);
+    const T* restrict pz=R0.data(2);
 
-    T* restrict dx=temp_dr.data(0); ASSUME_ALIGNED(dx);
-    T* restrict dy=temp_dr.data(1); ASSUME_ALIGNED(dy);
-    T* restrict dz=temp_dr.data(2); ASSUME_ALIGNED(dz);
+    T* restrict dx=temp_dr.data(0);
+    T* restrict dy=temp_dr.data(1);
+    T* restrict dz=temp_dr.data(2);
 
     const T* restrict cellx=corners.data(0); ASSUME_ALIGNED(cellx);
     const T* restrict celly=corners.data(1); ASSUME_ALIGNED(celly);
     const T* restrict cellz=corners.data(2); ASSUME_ALIGNED(cellz);
 
-    CONSTEXPR size_t simdLength=QMC_CLINE/sizeof(T);
     CONSTEXPR T minusone(-1);
     CONSTEXPR T one(1);
-#if defined(__INTEL_COMPILER) && (__INTEL_COMPILER > 1500)
-    #pragma omp simd simdlen(simdLength)
-#endif
+    #pragma omp simd aligned(px,py,pz,dx,dy,dz)
     for(int iat=first; iat<last; ++iat)
     {
       const T flip=iat<flip_ind?one:minusone;
@@ -331,17 +319,14 @@ struct DTD_BConds<T,3,PPNO+SOA_OFFSET>
     const T x0=pos[0];
     const T y0=pos[1];
     const T z0=pos[2];
-    const T* restrict px=R0.data(0); ASSUME_ALIGNED(px);
-    const T* restrict py=R0.data(1); ASSUME_ALIGNED(py);
-    const T* restrict pz=R0.data(2); ASSUME_ALIGNED(pz);
-    T* restrict dx=temp_dr.data(0); ASSUME_ALIGNED(dx);
-    T* restrict dy=temp_dr.data(1); ASSUME_ALIGNED(dy);
-    T* restrict dz=temp_dr.data(2); ASSUME_ALIGNED(dz);
+    const T* restrict px=R0.data(0);
+    const T* restrict py=R0.data(1);
+    const T* restrict pz=R0.data(2);
+    T* restrict dx=temp_dr.data(0);
+    T* restrict dy=temp_dr.data(1);
+    T* restrict dz=temp_dr.data(2);
 
-    CONSTEXPR size_t simdLength=QMC_CLINE/sizeof(T);
-#if defined(__INTEL_COMPILER) && (__INTEL_COMPILER > 1500)
-    #pragma omp simd simdlen(simdLength)
-#endif
+    #pragma omp simd aligned(px,py,pz,dx,dy,dz)
     for(int iat=first; iat<last; ++iat)
     {
       T  x=(px[iat]-x0)*Linv0; dx[iat]=L0*(x-round(x));
@@ -375,18 +360,15 @@ struct DTD_BConds<T,3,PPNS+SOA_OFFSET>
     const T y0=pos[1];
     const T z0=pos[2];
 
-    const T* restrict px=R0.data(0); ASSUME_ALIGNED(px);
-    const T* restrict py=R0.data(1); ASSUME_ALIGNED(py);
-    const T* restrict pz=R0.data(2); ASSUME_ALIGNED(pz);
+    const T* restrict px=R0.data(0);
+    const T* restrict py=R0.data(1);
+    const T* restrict pz=R0.data(2);
 
-    T* restrict dx=temp_dr.data(0); ASSUME_ALIGNED(dx);
-    T* restrict dy=temp_dr.data(1); ASSUME_ALIGNED(dy);
-    T* restrict dz=temp_dr.data(2); ASSUME_ALIGNED(dz);
+    T* restrict dx=temp_dr.data(0);
+    T* restrict dy=temp_dr.data(1);
+    T* restrict dz=temp_dr.data(2);
 
-    CONSTEXPR size_t simdLength=QMC_CLINE/sizeof(T);
-#if defined(__INTEL_COMPILER) && (__INTEL_COMPILER > 1500)
-    #pragma omp simd simdlen(simdLength)
-#endif
+    #pragma omp simd aligned(px,py,pz,dx,dy,dz)
     for(int iat=first; iat<last; ++iat)
     {
       T displ_0 =px[iat]-x0;
@@ -429,16 +411,13 @@ struct DTD_BConds<T,3,SUPERCELL_WIRE+SOA_OFFSET>
     const T x0=pos[0];
     const T y0=pos[1];
     const T z0=pos[2];
-    const T* restrict px=R0.data(0); ASSUME_ALIGNED(px);
-    const T* restrict py=R0.data(1); ASSUME_ALIGNED(py);
-    const T* restrict pz=R0.data(2); ASSUME_ALIGNED(pz);
-    T* restrict dx=temp_dr.data(0); ASSUME_ALIGNED(dx);
-    T* restrict dy=temp_dr.data(1); ASSUME_ALIGNED(dy);
-    T* restrict dz=temp_dr.data(2); ASSUME_ALIGNED(dz);
-    CONSTEXPR size_t simdLength=QMC_CLINE/sizeof(T);
-#if defined(__INTEL_COMPILER) && (__INTEL_COMPILER > 1500)
-    #pragma omp simd simdlen(simdLength)
-#endif
+    const T* restrict px=R0.data(0);
+    const T* restrict py=R0.data(1);
+    const T* restrict pz=R0.data(2);
+    T* restrict dx=temp_dr.data(0);
+    T* restrict dy=temp_dr.data(1);
+    T* restrict dz=temp_dr.data(2);
+    #pragma omp simd aligned(px,py,pz,dx,dy,dz)
     for(int iat=first; iat<last; ++iat)
     {
       T  x=(px[iat]-x0)*Linv0; dx[iat]=L0*(x-round(x));

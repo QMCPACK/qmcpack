@@ -80,8 +80,7 @@ namespace qmcplusplus {
     template<typename T>
       inline void axpy(T alpha, const T* restrict in, T* restrict out, int n)
       {
-        ASSUME_ALIGNED(in); ASSUME_ALIGNED(out);
-        #pragma omp simd
+        #pragma omp simd aligned(in,out)
         for(int i=0; i<n; ++i)
           out[i]=alpha*in[i];
       }
@@ -89,8 +88,7 @@ namespace qmcplusplus {
     template<typename T>
       inline void scal(T alpha, T* restrict inout, int n)
       {
-        ASSUME_ALIGNED(inout);
-        #pragma omp simd
+        #pragma omp simd aligned(inout)
         for(int i=0; i<n; ++i)
           inout[i]*=alpha;
       }
