@@ -301,6 +301,7 @@ DiracDeterminantBase::ValueType DiracDeterminantBase::logRatio(ParticleSet& P, i
     ParticleSet::ParticleLaplacian_t& dL)
 {
   APP_ABORT("DiracDeterminantBase::logRatio should not be used ");
+  return 0;
 }
 /** dump the inverse to the buffer
 */
@@ -341,6 +342,7 @@ DiracDeterminantBase::ValueType DiracDeterminantBase::ratio(ParticleSet& P, int 
     ParticleSet::ParticleLaplacian_t& dL)
 {
   APP_ABORT("Forbidden to use DiracDeterminantBase::ratio(P,dG,dL)");
+  return 0;
 }
 
 void DiracDeterminantBase::evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)

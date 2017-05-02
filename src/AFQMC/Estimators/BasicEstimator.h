@@ -32,11 +32,10 @@ class BasicEstimator: public EstimatorBase
   typedef WalkerHandlerBase* WSetPtr;
 
   BasicEstimator(Communicate *c):EstimatorBase(c),EstimEloc(false), timers(true), prtnwalk(true),
-                                 overlap(false), diag(false), nstates(0),SDet(c) 
+                                 overlap(false), diag(false), nstates(0),SDet(c),EstimEloc_present(false) 
   {}
 
   ~BasicEstimator() {}
-
 
   void accumulate_block(WSetPtr wlkBucket)
   {
@@ -51,18 +50,17 @@ class BasicEstimator: public EstimatorBase
       if(core_rank==0) {
         for(int i=0, cnt=0; i<nW; i++) {
           if(!wlkBucket->isAlive(i) || std::abs(wlkBucket->getWeight(i)) <= 1e-6 || std::isnan(wlkBucket->getWeight(i).real())) continue;
-      
           sm = wlkBucket->getWalker(i,w,dum,ooa,oob);  // "impsampl"
           sm = wlkBucket->getWalker2(i,eloc,oa,ob);     // "estimator"
-          if(std::isnan(ooa.real()) || std::isnan(oob.real()) || std::abs(oa*ob) < 1e-8  || std::abs(ooa*oob) < 1e-8) w=0;
           dum = w*oa*ob/(ooa*oob);
+          if( (!std::isfinite(dum.real())) || (!std::isfinite((eloc*dum).real())) || std::abs(oa*ob) < 1e-8  || std::abs(ooa*oob) < 1e-8) continue; 
           edeno2 += dum; 
           enume2 += eloc*dum;
         }
       }
     }
-    BlockTimer->stop();
     LocalTimer->stop("Block::EstimatorEloc");
+    BlockTimer->stop();
   }
 
 
@@ -70,29 +68,31 @@ class BasicEstimator: public EstimatorBase
   {
 
     ncalls++;
-    int nw=0;
+    int nwlk=0;
     RealType instant_weight=0.0;
     if(core_rank==0) {
       int nW = wlkBucket->numWalkers(true);
       enume_sub = edeno_sub = 0.0;
       ComplexType w,oa,ob,eloc;
+      RealType sumo=0.0;
       for(int i=0; i<nW; i++) {
         ComplexType* dum = wlkBucket->getWalker(i,w,eloc,oa,ob);
-        if(!wlkBucket->isAlive(i) || std::abs(w) <= 1e-6) continue;
+        if( (!wlkBucket->isAlive(i)) || std::abs(w) <= 1e-6 || std::abs(oa*ob)<1e-8 || (!std::isfinite( std::abs(oa*ob) )) || (!std::isfinite( (w*eloc).real() )) ) continue;
         enume_sub += w*eloc;
         edeno_sub += w;
-        nw++;
+        nwlk++;
         instant_weight += std::abs(w);
+        sumo += std::abs(oa*ob);
       }
-      if(nw>nwalk_max) nwalk_max=nw;
-      if(nw<nwalk_min) nwalk_min=nw;
+      if(nwlk>nwalk_max) nwalk_max=nwlk;
+      if(nwlk<nwalk_min) nwalk_min=nwlk;
 
       data2[0] = enume_sub.real();
       data2[1] = edeno_sub.real();
       data2[4] = nwalk_sub/ncalls_substep;
       data2[5] = instant_weight; 
       data2[6] = weight_sub/ncalls_substep;
-      data2[7] = ovlp_sub/ncalls_substep;
+      data2[7] = sumo/nwlk; 
 
       myComm->allreduce(data2,MPI_COMM_TG_LOCAL_HEADS);
 
@@ -105,7 +105,7 @@ class BasicEstimator: public EstimatorBase
       enume += enume_sub*targetW/data2[5];
       edeno += edeno_sub*targetW/data2[5];
       weight += instant_weight; 
-      ovlp += ovlp_sub/ncalls_substep;
+      ovlp += sumo/nwlk;
 
       enume_sub=0.0;
       edeno_sub=0.0;
@@ -172,13 +172,17 @@ class BasicEstimator: public EstimatorBase
       data[3] = edeno2.real();
       data[4] = nwalk/ncalls;
       data[6] = weight/ncalls;
-      data[7] = ovlp/num_heads_tg;
+      data[7] = ovlp;
+      data[8] = 1;
 
       data[5] = 0.0;
       int nW = wlkBucket->numWalkers(true);
       for(int i=0; i<nW; i++) 
        if(wlkBucket->isAlive(i)) data[5] += std::abs(wlkBucket->getWeight(i));
       myComm->allreduce(data,MPI_COMM_TG_LOCAL_HEADS);
+
+      ovlp /= data[8];
+      data[7] /= data[8];
     }
 
     myComm->bcast(data,MPI_COMM_TG_LOCAL);
@@ -288,7 +292,7 @@ class BasicEstimator: public EstimatorBase
     return true;
   }
 
-  bool setup(std::vector<int>& TGdata, ComplexSMVector *v, HamiltonianBase* ham, WavefunctionHandler* wfn,myTimer* timer, MPI_Comm heads_comm, MPI_Comm tg_comm, MPI_Comm node_comm, MPI_Comm heads_of_tg_comm) 
+  bool setup(std::vector<int>& TGdata, SPComplexSMVector *v, HamiltonianBase* ham, WavefunctionHandler* wfn,myTimer* timer, MPI_Comm heads_comm, MPI_Comm tg_comm, MPI_Comm node_comm, MPI_Comm heads_of_tg_comm) 
   {
     ncores_per_TG=TGdata[4];
     core_rank = TGdata[1]%ncores_per_TG; 

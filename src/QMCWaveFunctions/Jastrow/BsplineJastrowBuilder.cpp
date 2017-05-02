@@ -285,6 +285,9 @@ bool BsplineJastrowBuilder::put(xmlNodePtr cur)
         {
           PRE.error("Failed. Species are incorrect.",true);
         }
+        // prevent adding uu/dd correlation if there is only 1 u/d electron.
+        if(ia==ib && (targetPtcl.last(ia)-targetPtcl.first(ia)==1))
+          PRE.error("Failed to add "+spA+spB+" correlation for only 1 "+spA+" particle. Please remove it from two-body Jastrow.",true);
         if(cusp<-1e6)
         {
           RealType qq=species(chargeInd,ia)*species(chargeInd,ib);

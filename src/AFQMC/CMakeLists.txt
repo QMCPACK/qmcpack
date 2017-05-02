@@ -28,7 +28,6 @@ SET (AFQMC_SRCS
   Utilities/Utils.cpp
   ) 
 
-INCLUDE_DIRECTORIES(/usr/gapps/qmc/libs/INTEL/eigen-eigen-10219c95fe65/)
 ADD_LIBRARY(afqmc ${AFQMC_SRCS})
 
 IF (BUILD_UNIT_TESTS)

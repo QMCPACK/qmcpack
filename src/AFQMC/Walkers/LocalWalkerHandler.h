@@ -40,8 +40,8 @@ class LocalWalkerHandler: public WalkerHandlerBase
   /// constructor
   LocalWalkerHandler(Communicate* c): WalkerHandlerBase(c,std::string("LocalWalkerHandler")), 
       walkerSizeForCommunication(0),walkerSizeForDump(0),
-      min_weight(0.1),max_weight(10.0)
-      ,reset_weight(5.0),extra_empty_spaces(10),distribution(0.0,1.0)
+      min_weight(0.05),max_weight(4.0)
+      ,reset_weight(1.0),extra_empty_spaces(10),distribution(0.0,1.0)
   { }
 
   /// destructor

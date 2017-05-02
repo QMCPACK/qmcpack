@@ -255,10 +255,10 @@ struct DTD_BConds<T,3,PPPG+SOA_OFFSET>
       const T dely = displ_1+ar_0*r01+ar_1*r11+ar_2*r21;
       const T delz = displ_2+ar_0*r02+ar_1*r12+ar_2*r22;
 
-      T rmin=std::numeric_limits<T>::max();
+      T rmin=delx*delx+dely*dely+delz*delz;
       int ic=0;
-#pragma unroll(8)
-      for(int c=0; c<8; ++c)
+      #pragma unroll(7)
+      for(int c=1; c<8; ++c)
       {
         const T x=delx+cellx[c];
         const T y=dely+celly[c];

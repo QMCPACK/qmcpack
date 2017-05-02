@@ -23,6 +23,7 @@
 #include <cstring>
 
 #ifdef ADD_
+#define caxpy caxpy_
 #define daxpy daxpy_
 #define saxpy saxpy_
 #define zaxpy zaxpy_
@@ -79,10 +80,20 @@
 #define zgeqrf zgeqrf_
 #define zungqr zungqr_
 
+#if defined(HAVE_MKL)
+#define dzgemv  dzgemv_
+#define scgemv  scgemv_
+#define dzgemm  dzgemm_
+#define scgemm  scgemm_
+#endif
+
 #endif
 
 // declaring Fortran interfaces
 extern "C" {
+
+  void caxpy(const int& n, const std::complex<float>&  da,  const std::complex<float> *dx,
+             const int& incx, std::complex<float> *dy, const int& incy);
 
   void daxpy(const int& n, const double& da,
              const double *dx, const int& incx, double *dy, const int& incy);
@@ -174,6 +185,30 @@ extern "C" {
              const std::complex<float>& alpha, const std::complex<float>* amat, const int& lda,
              const std::complex<float>* bv, const int& incx,
              const std::complex<float>& beta, std::complex<float>* cv, const int& incy);
+
+#if defined(HAVE_MKL)
+
+  void dzgemm(const char&, const char&,
+             const int&, const int&, const int&,
+             const std::complex<double>&, const double*, const int&, const std::complex<double>*, const int&,
+             const std::complex<double>&, std::complex<double>*, const int&);
+
+  void scgemm(const char&, const char&,
+             const int&, const int&, const int&,
+             const std::complex<float>&, const float*, const int&, const std::complex<float>*, const int&,
+             const std::complex<float>&, std::complex<float>*, const int&);
+
+  void dzgemv(const char& trans, const int& nr, const int& nc,
+             const std::complex<double>& alpha, const double* amat, const int& lda,
+             const std::complex<double>* bv, const int& incx,
+             const std::complex<double>& beta, std::complex<double>* cv, const int& incy);
+
+  void scgemv(const char& trans, const int& nr, const int& nc,
+             const std::complex<float>& alpha, const float* amat, const int& lda,
+             const std::complex<float>* bv, const int& incx,
+             const std::complex<float>& beta, std::complex<float>* cv, const int& incy);
+
+#endif
 
   void dsyrk(const char&, const char&, const int&, const int&,
              const double&, const double*, const int&,

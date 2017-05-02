@@ -21,16 +21,15 @@
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
 #include "Particle/SymmetricDistanceTableData.h"
-#include "QMCApp/ParticleSetPool.h"
 #include "QMCWaveFunctions/OrbitalBase.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/BsplineJastrowBuilder.h"
+#include "ParticleBase/ParticleAttribOps.h"
 #ifdef ENABLE_AA_SOA
 #include "QMCWaveFunctions/Jastrow/J2OrbitalSoA.h"
 #endif
-
 
 #include <stdio.h>
 #include <string>
@@ -80,7 +79,8 @@ TEST_CASE("BSpline builder Jastrow", "[wavefunction]")
   ions_.R[0][2] = 0.0;
 
   elec_.setName("elec");
-  elec_.create(2);
+  std::vector<int> ud(2); ud[0]=ud[1]=1;
+  elec_.create(ud);
   elec_.R[0][0] = 1.00;
   elec_.R[0][1] = 0.0;
   elec_.R[0][2] = 0.0;
@@ -105,15 +105,12 @@ TEST_CASE("BSpline builder Jastrow", "[wavefunction]")
 
 
   TrialWaveFunction psi = TrialWaveFunction(c);
-  // Need 1 electron and 1 proton, somehow
-  //ParticleSet target = ParticleSet();
-  ParticleSetPool ptcl = ParticleSetPool(c);
 
 const char *particles = \
 "<tmp> \
 <jastrow name=\"J2\" type=\"Two-Body\" function=\"Bspline\" print=\"yes\"> \
-   <correlation rcut=\"10\" size=\"10\" speciesA=\"u\" speciesB=\"u\"> \
-      <coefficients id=\"uu\" type=\"Array\"> 0.02904699284 -0.1004179 -0.1752703883 -0.2232576505 -0.2728029201 -0.3253286875 -0.3624525145 -0.3958223107 -0.4268582166 -0.4394531176</coefficients> \
+   <correlation rcut=\"10\" size=\"10\" speciesA=\"u\" speciesB=\"d\"> \
+      <coefficients id=\"ud\" type=\"Array\"> 0.02904699284 -0.1004179 -0.1752703883 -0.2232576505 -0.2728029201 -0.3253286875 -0.3624525145 -0.3958223107 -0.4268582166 -0.4394531176</coefficients> \
     </correlation> \
 </jastrow> \
 </tmp> \
@@ -142,6 +139,9 @@ const char *particles = \
 
   double logpsi = psi.evaluateLog(elec_);
   REQUIRE(logpsi == Approx(0.1012632641)); // note: number not validated
+
+  double KE = -0.5*(Dot(elec_.G,elec_.G)+Sum(elec_.L));
+  REQUIRE(KE == Approx(-0.1616624771)); // note: number not validated
   
 #if 0
   // write out values of the Bspline functor

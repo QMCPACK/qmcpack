@@ -1,2 +1,0 @@
-Do not wrap OhmmsPETE/Matrix,
-there seems to be no reason to use other libraries, 
