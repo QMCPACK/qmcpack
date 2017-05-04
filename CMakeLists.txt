@@ -337,7 +337,7 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
 
     IF(QMC_CUDA)
       IF(QMC_BUILD_STATIC)
-        MESSAGE(FATAL_ERROR "Static linking is prohibited with CUDA build!")
+        MESSAGE(FATAL_ERROR "Static linking is not supported with CUDA build. Set QMC_BUILD_STATIC=0 (default)!")
       ENDIF(QMC_BUILD_STATIC)
       MESSAGE(STATUS "Building GPU code. Linking dynamically.")
     ELSE(QMC_CUDA)
