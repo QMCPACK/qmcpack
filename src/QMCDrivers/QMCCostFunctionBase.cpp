@@ -491,6 +491,7 @@ QMCCostFunctionBase::put(xmlNodePtr q)
   m_param.add(omega_shift,"omega","double");
   m_param.add(NodelessEpsilon, "NodelessEpsilon", "double");
   m_param.add(NodelessEpsilon, "nodelessEpsilon", "double");
+  m_param.add(NodelessEpsilon, "nodelessepsilon", "double");
   m_param.put(q);
 
   tolower(targetExcitedStr);

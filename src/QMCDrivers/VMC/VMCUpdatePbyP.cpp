@@ -1413,7 +1413,9 @@ bool VMCUpdatePbyPNodeless::put(xmlNodePtr cur) {
       APP_ABORT("ERROR: Found no minimum distance centers while reading nodelessGuiding entry in xml input");
 
     // print what we have
-    if ( OHMMS::Controller->rank() == 0 ) {
+    if ( OHMMS::Controller->rank() == 0 && omp_get_thread_num() == 0 ) {
+      app_log() << std::endl;
+      app_log() << omp_get_num_threads() << " threads are running through VMCUpdatePbyPNodeless::put" << std::endl;
       app_log() << std::endl;
       app_log() << "NodelessEpsilon = " << NodelessEpsilon << std::endl;
       app_log() << std::endl;
@@ -1480,6 +1482,7 @@ void VMCUpdatePbyPNodeless::process_history(Communicate * const comm, const int 
     tfl_avg = sums[0] / sums[2];
     tfl_sdv = std::sqrt( sums[1] / sums[2] - tfl_avg * tfl_avg );
     app_log() << std::endl;
+    app_log() << "samples = " << sums[2] << std::endl;
     app_log() << "tfl_avg = " << tfl_avg << std::endl;
     app_log() << "tfl_sdv = " << tfl_sdv << std::endl;
     app_log() << std::endl;

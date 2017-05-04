@@ -846,6 +846,9 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
             << "*************************************************************************************************" << std::endl
             << std::endl;
 
+  //if ( OHMMS::Controller->rank() == 0 )
+  //  APP_ABORT("stopping here just for now");
+
   // prepare wavefunction update which does nothing if we do not use block lm
   EngineObj->wfn_update_prep();
 

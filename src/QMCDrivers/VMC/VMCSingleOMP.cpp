@@ -56,6 +56,7 @@ VMCSingleOMP::VMCSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMC
   m_param.add(UseDrift,"use_drift","string");
   m_param.add(NodelessEpsilon,"NodelessEpsilon","real");
   m_param.add(NodelessEpsilon,"nodelessEpsilon","real");
+  m_param.add(NodelessEpsilon,"nodelessepsilon","real");
   //m_param.add(NodelessAlpha,"NodelessAlpha","real");
   //m_param.add(NodelessBeta,"NodelessBeta","real");
 
