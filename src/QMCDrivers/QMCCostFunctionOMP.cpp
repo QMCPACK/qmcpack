@@ -23,6 +23,7 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Particle/HDFWalkerInputCollect.h"
 #include "Message/CommOperators.h"
+#include "QMCDrivers/VMC/VMCUpdatePbyP.h"
 //#define QMCCOSTFUNCTION_DEBUG
 
 
@@ -469,6 +470,10 @@ void QMCCostFunctionOMP::engine_checkConfigurations(cqmc::engine::LMYEngine * En
   without using a buffer because evaluateLog needs to be called to get the inverse of psiM
   This implies that isOptimizable must be set to true, which is risky. Fix this somehow
   */
+
+  // get whether we need parameter gradients
+  needGrads = EngineObj->do_update();
+
   StoreDerivInfo=false;
   DerivStorageLevel=-1;
   if(usebuffer == "yes" || usebuffer == "all")
@@ -518,7 +523,7 @@ void QMCCostFunctionOMP::engine_checkConfigurations(cqmc::engine::LMYEngine * En
   RealType e2_tot=0.0;
 #pragma omp parallel reduction(+:et_tot,e2_tot)
   {
-    int ip = omp_get_thread_num();
+    const int ip = omp_get_thread_num();
     MCWalkerConfiguration& wRef(*wClones[ip]);
     if (RecordsOnNode[ip] ==0)
     {
@@ -557,6 +562,10 @@ void QMCCostFunctionOMP::engine_checkConfigurations(cqmc::engine::LMYEngine * En
     for (int iw=0, iwg=wPerNode[ip]; iw<wRef.getActiveWalkers(); ++iw,++iwg)
     {
       ParticleSet::Walker_t& thisWalker(*wRef[iw]);
+
+      // extract the logarithm of the nodeless guiding function (not used if we are not doing nodeless guiding)
+      const RealType ng_logpsi = thisWalker.Properties(LOGPSI);
+
       wRef.R=thisWalker.R;
       wRef.update();
       Return_t* restrict saved=(*RecordsOnNode[ip])[iw];
@@ -583,14 +592,19 @@ void QMCCostFunctionOMP::engine_checkConfigurations(cqmc::engine::LMYEngine * En
       //           ef += saved[ENERGY_FIXED];
       saved[REWEIGHT]=thisWalker.Weight=1.0;
       //          thisWalker.resetProperty(logpsi,psiClones[ip]->getPhase(),x);
+
+      // compute the value-to-guiding square ratio
+      const RealType vgs = ( NodelessEpsilon > 0.0 ? std::exp( 2.0 * ( saved[LOGPSI_FIXED] + saved[LOGPSI_FREE] - ng_logpsi ) ) : 1.0 );
+
       Return_t etmp;
       if (needGrads)
       {
+
         //allocate vector
-        std::vector<Return_t> Dsaved(NumOptimizables,0.0);
-        std::vector<Return_t> HDsaved(NumOptimizables,0.0);
+        std::vector<Return_t> Dsaved(NumOptimizables, 0.0);
+        std::vector<Return_t> HDsaved(NumOptimizables, 0.0);
         psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
-        etmp =hClones[ip]->evaluateValueAndDerivatives(wRef,OptVariablesForPsi,Dsaved,HDsaved,compute_nlpp);
+        etmp = hClones[ip]->evaluateValueAndDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved, compute_nlpp);
         //std::copy(Dsaved.begin(),Dsaved.end(),(*DerivRecords[ip])[iw]);
         //std::copy(HDsaved.begin(),HDsaved.end(),(*HDerivRecords[ip])[iw]);
 
@@ -604,22 +618,22 @@ void QMCCostFunctionOMP::engine_checkConfigurations(cqmc::engine::LMYEngine * En
           der_rat_samp.at(i+1) = Dsaved.at(i);
 
         // evaluate local energy
-        etmp= hClones[ip]->evaluate(wRef);
+        etmp = hClones[ip]->evaluate(wRef);
         
         // energy dervivatives 
         le_der_samp.at(0) = etmp;
         for (int i = 0; i < HDsaved.size(); i++) 
           le_der_samp.at(i+1) = HDsaved.at(i) + etmp * Dsaved.at(i);
         
-#ifdef HAVE_LMY_ENGINE
         // pass into engine
-        EngineObj->take_sample(der_rat_samp, le_der_samp, le_der_samp, 1.0, saved[REWEIGHT]);
-#endif
+        EngineObj->take_sample(der_rat_samp, le_der_samp, le_der_samp, vgs, saved[REWEIGHT]);
 
-        //etmp= hClones[ip]->evaluate(wRef);
+      } else {
+
+        etmp = hClones[ip]->evaluate(wRef);
+        EngineObj->take_sample(etmp, vgs, saved[REWEIGHT]);
+
       }
-      else
-        etmp= hClones[ip]->evaluate(wRef);
 
       e0 += saved[ENERGY_TOT] = etmp;
       e2 += etmp*etmp;
@@ -634,10 +648,9 @@ void QMCCostFunctionOMP::engine_checkConfigurations(cqmc::engine::LMYEngine * En
     // #pragma omp atomic
     //       eft_tot+=ef;
   }
-#ifdef HAVE_LMY_ENGINE
+
   // engine finish taking samples 
   EngineObj->sample_finish();
-#endif
 
   if ( EngineObj->block_first() ) {
     OptVariablesForPsi.setComputed();

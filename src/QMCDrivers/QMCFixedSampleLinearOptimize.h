@@ -74,6 +74,7 @@ private:
                                    std::vector<std::vector<RealType> > & parameterDirections);
 
   #ifdef HAVE_LMY_ENGINE
+  RealType engine_process_sample(const bool blm_second_call);
   formic::VarDeps vdeps;
   cqmc::engine::LMYEngine * EngineObj;
   #endif

@@ -37,7 +37,8 @@ QMCCostFunctionBase::QMCCostFunctionBase(MCWalkerConfiguration& w, TrialWaveFunc
   w_en(0.0), w_var(1.0), w_abs(0.0),w_w(0.0),w_beta(0.0), GEVType("mixed"),
   CorrelationFactor(0.0), m_wfPtr(NULL), m_doc_out(NULL), msg_stream(0), debug_stream(0),
   SmallWeight(0),usebuffer("no"), includeNonlocalH("no"),needGrads(true), vmc_or_dmc(2.0),
-  StoreDerivInfo(true),DerivStorageLevel(-1), targetExcitedStr("no"), targetExcited(false), omega_shift(0.0)
+  StoreDerivInfo(true),DerivStorageLevel(-1), targetExcitedStr("no"), targetExcited(false), omega_shift(0.0),
+  NodelessEpsilon(0.0)
 {
   GEVType="mixed";
   //paramList.resize(10);
@@ -488,6 +489,8 @@ QMCCostFunctionBase::put(xmlNodePtr q)
   m_param.add(GEVType,"GEVMethod","string");
   m_param.add(targetExcitedStr,"targetExcited","string");
   m_param.add(omega_shift,"omega","double");
+  m_param.add(NodelessEpsilon, "NodelessEpsilon", "double");
+  m_param.add(NodelessEpsilon, "nodelessEpsilon", "double");
   m_param.put(q);
 
   tolower(targetExcitedStr);

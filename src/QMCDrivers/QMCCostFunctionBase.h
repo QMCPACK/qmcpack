@@ -263,6 +263,8 @@ protected:
   bool targetExcited;
   ///the shift to use when targeting an excited state
   double omega_shift;
+  ///the parameter controlling nodeless guiding function sampling
+  Return_t NodelessEpsilon;
   /** Rescaling factor to correct the target energy Etarget=(1+CorrelationFactor)*Etarget
    *
    * default CorrelationFactor=0.0;

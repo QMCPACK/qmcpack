@@ -402,6 +402,15 @@ void cqmc::engine::ETCompute::en_tar()
   // compute the average of energy^2 and its variance 
   cqmc::mpi_unbiased_ratio_of_means(_w_history.size(), &_w_history.at(0), &_lesv_history.at(0), &_vg_history.at(0), !_exact_sampling, _energy_s, _variance_s);
 
+  //if ( formic::mpi::rank() == 0 ) {
+  //  std::cout << boost::format("%12.6f = _variance   %12.6f = _energy_s - _energy * _energy")
+  //               % _variance % ( _energy_s - _energy * _energy )
+  //            << std::endl;
+  //}
+
+  // it seems the variance formula in ratio of means may not be right.  Use <H^2> - <H>^2 instead
+  _variance = _energy_s - _energy * _energy;
+
   // if we are doing excted state calculation, compute target function value
   if ( !_ground_state ) {
     cqmc::mpi_unbiased_ratio_of_means(_w_history.size(), &_w_history.at(0), &_tnv_history.at(0), &_tdv_history.at(0), !_exact_sampling, _target_fn_val, _target_fn_var);

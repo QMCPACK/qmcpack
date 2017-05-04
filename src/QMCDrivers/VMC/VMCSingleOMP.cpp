@@ -41,6 +41,10 @@ namespace qmcplusplus
 VMCSingleOMP::VMCSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
                            HamiltonianPool& hpool, WaveFunctionPool& ppool):
   QMCDriver(w,psi,h,ppool),  CloneManager(hpool),
+  NodelessEpsilon(0.0),
+  //NodelessAlpha(1.0),
+  //NodelessBeta(1.0),
+  ionSetPtr(0),
   UseDrift("yes") //, logoffset(2.0), logepsilon(0)
 {
   RootName = "vmc";
@@ -50,14 +54,48 @@ VMCSingleOMP::VMCSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMC
   m_param.add(UseDrift,"useDrift","string");
   m_param.add(UseDrift,"usedrift","string");
   m_param.add(UseDrift,"use_drift","string");
+  m_param.add(NodelessEpsilon,"NodelessEpsilon","real");
+  m_param.add(NodelessEpsilon,"nodelessEpsilon","real");
+  //m_param.add(NodelessAlpha,"NodelessAlpha","real");
+  //m_param.add(NodelessBeta,"NodelessBeta","real");
 
   prevSteps=nSteps;
   prevStepsBetweenSamples=nStepsBetweenSamples;
+
+  // nodeless guiding needs to get access to the ion positions
+  if ( ppool.getPool().size() > 0 ) {
+
+    // Some explaination for the cumbersome next two lines:
+    //   ppool holds a pool that maps strings to WaveFunctionFactory objects.
+    //   We access this pool via getPool.
+    //   Within the first WaveFunctionFactory in the pool (accessed through .begin()->second),
+    //   we search for a particle set named ion0 and check that it was found.
+    auto p_it = ppool.getPool().begin()->second->ptclPool.find("ion0");
+    if ( p_it == ppool.getPool().begin()->second->ptclPool.end() )
+      APP_ABORT("Nodeless guiding setup failed to find the particle set named ion0");
+
+    // get the pointer to the ion's particle set
+    ionSetPtr = p_it->second;
+    if ( !ionSetPtr )
+      APP_ABORT("ionSetPtr was NULL in Nodeless guiding setup");
+
+  } else
+    APP_ABORT("Nodeless guiding setup needed a WaveFunctionFactory to get the ion positions from");
+
 }
 
 bool VMCSingleOMP::run()
 {
+
+  // get statistics on the trial function logarithms from the previous sample
+  VMCUpdatePbyPNodeless::process_history(myComm, NumThreads);
+
+  // do the warmup, among other things
   resetRun();
+
+  // get statistics on the trial function logarithms from the warmup we just did
+  VMCUpdatePbyPNodeless::process_history(myComm, NumThreads);
+
   //start the main estimator
   Estimators->start(nBlocks);
   for (int ip=0; ip<NumThreads; ++ip)
@@ -186,7 +224,14 @@ void VMCSingleOMP::resetRun()
         //               // Movers[ip]=new VMCUpdatePbyPWithDrift(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
         //             }
         //             else
-        if (UseDrift == "yes")
+        if ( NodelessEpsilon != RealType(0) )
+        {
+          if ( UseDrift == "yes" )
+            APP_ABORT("Drift currently not implemented for nodeless guiding");
+          os <<"  PbyP moves with nodeless guiding, using VMCUpdatePbyPNodeless"<< std::endl;
+          Movers[ip] = new VMCUpdatePbyPNodeless(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip], *ionSetPtr, NodelessEpsilon);
+        }
+        else if (UseDrift == "yes")
         {
           os <<"  PbyP moves with drift, using VMCUpdatePbyPWithDriftFast"<< std::endl;
           Movers[ip]=new VMCUpdatePbyPWithDriftFast(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);

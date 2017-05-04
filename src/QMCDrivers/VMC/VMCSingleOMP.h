@@ -21,6 +21,8 @@
 namespace qmcplusplus
 {
 
+class ParticleSet;
+
 /** @ingroup QMCDrivers  ParticleByParticle
  * @brief Implements a VMC using particle-by-particle move. Threaded execution.
  */
@@ -39,8 +41,15 @@ private:
 
   ///Ways to set rn constant
   RealType logoffset,logepsilon;
+  ///coefficient for the laplacian term in the nodeless guiding function formula
+  RealType NodelessEpsilon;
+//  ///coefficient for the exponential damping in the nodeless guiding function formula
+//  RealType NodelessAlpha;
+//  RealType NodelessBeta;
   ///option to enable/disable drift equation or RN for VMC
   std::string UseDrift;
+  ///pointer to the ion particle set needed by nodeless guiding
+  ParticleSet * ionSetPtr;
   ///check the run-time environments
   void resetRun();
   ///copy constructor
