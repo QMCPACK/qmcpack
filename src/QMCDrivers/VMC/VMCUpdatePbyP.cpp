@@ -1478,9 +1478,10 @@ void VMCUpdatePbyPNodeless::reset_history(Communicate * const comm, const int nt
 ///
 /// \param[in,out]  comm     communicator for averaging over all processes
 /// \param[in]      nthread  number of threads per process
+/// \param[in]      record   whether the function is allowed to record tfl data
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-void VMCUpdatePbyPNodeless::process_history(Communicate * const comm, const int nthread)
+void VMCUpdatePbyPNodeless::process_history(Communicate * const comm, const int nthread, const bool record)
 {
 
   // compute the average and std dev of the trial function logpsi
@@ -1501,17 +1502,17 @@ void VMCUpdatePbyPNodeless::process_history(Communicate * const comm, const int 
     const RealType temp_avg = sums[0] / sums[2];
     const RealType temp_sdv = std::sqrt( sums[1] / sums[2] - temp_avg * temp_avg );
     app_log() << std::endl;
-    app_log() << "Estimating average of trial function logarithm for nodeless guiding: " << std::endl;
+    app_log() << "Statistics of |log(psi)|: " << std::endl;
     app_log() << "  samples = " << sums[2] << std::endl;
     app_log() << "  tfl_avg = " << temp_avg << std::endl;
     app_log() << "  tfl_sdv = " << temp_sdv << std::endl;
     app_log() << std::endl;
 
-    // only record the values if we don't have values already
-    if ( tfl_sdv < 0.0 ) {
+    // only record the values if requested and if we don't have values already
+    if ( record && tfl_sdv < 0.0 ) {
       tfl_avg = temp_avg;
       tfl_sdv = temp_sdv;
-      app_log() << "Nodeless guiding magnitude set based on this tfl_avg" << std::endl;
+      app_log() << "Nodeless guiding tfl_avg set to " << tfl_avg << std::endl;
       app_log() << std::endl;
     }
 

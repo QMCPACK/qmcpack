@@ -137,8 +137,7 @@ class VMCUpdatePbyPNodeless : public QMCUpdateBase {
     bool put(xmlNodePtr cur);
 
     static void reset_history(Communicate * const comm, const int nthread);
-    static void process_history(Communicate * const comm, const int nthread);
-
+    static void process_history(Communicate * const comm, const int nthread, const bool record);
     static void reset_tfl();
 
     template <typename T>

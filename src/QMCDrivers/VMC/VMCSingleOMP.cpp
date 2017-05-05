@@ -88,15 +88,20 @@ VMCSingleOMP::VMCSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMC
 bool VMCSingleOMP::run()
 {
 
-  //// get statistics on the trial function logarithms from the previous sample
-  //VMCUpdatePbyPNodeless::process_history(myComm, NumThreads);
+  // ensure the trial function logarithm history is empty before we start
   VMCUpdatePbyPNodeless::reset_history(myComm, NumThreads);
 
   // do the warmup, among other things
   resetRun();
 
-  // get statistics on the trial function logarithms from the warmup we just did
-  VMCUpdatePbyPNodeless::process_history(myComm, NumThreads);
+  // Get statistics on the trial function logarithms from the warmup we just did and record them
+  // if we don't already have statistics recorded.
+  VMCUpdatePbyPNodeless::process_history(myComm, NumThreads, true);
+
+  // NOTE:  If using nodeless guiding, we probably should do a second warmup here now that
+  //        the nodeless guiding function has been turned on.
+
+  // erase the trial function logarithm history from the warmup in preparation for the actual sample
   VMCUpdatePbyPNodeless::reset_history(myComm, NumThreads);
 
   //start the main estimator
@@ -165,8 +170,14 @@ bool VMCSingleOMP::run()
     if(wrotesamples)
       app_log() << "  samples are written to the config.h5" << std::endl;
   }
+
+  // get statistics on the trial function logarithms in the actual sample, but don't record them
+  VMCUpdatePbyPNodeless::process_history(myComm, NumThreads, false);
+  VMCUpdatePbyPNodeless::reset_history(myComm, NumThreads);
+
   //finalize a qmc section
   return finalize(nBlocks,!wrotesamples);
+
 }
 
 void VMCSingleOMP::resetRun()

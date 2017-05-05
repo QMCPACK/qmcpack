@@ -830,7 +830,10 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
   // reset the engine
   EngineObj->reset();
 
-  // set up so that the next sample taken will set the nodeless guiding mangitude
+  // Ensure that the trial functional logarithm statistics come from the warmup sample we are about to take.
+  // This means that the warmup is done with nodeless guiding turned off, which in principle
+  // could be an issue if it greatly changed the guiding function.
+  // Perhaps we should change the setup to do a second warmup run after nodeless guiding is set up.
   VMCUpdatePbyPNodeless::reset_tfl();
 
   // generate samples (possibly using a nodeless guiding function)
