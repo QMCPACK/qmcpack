@@ -43,7 +43,7 @@ struct DTD_BConds<T,3,SUPERCELL_OPEN+SOA_OFFSET>
     T* restrict dx=temp_dr.data(0);
     T* restrict dy=temp_dr.data(1);
     T* restrict dz=temp_dr.data(2);
-    #pragma omp simd aligned(px,py,pz,dx,dy,dz)
+    #pragma omp simd aligned(temp_r,px,py,pz,dx,dy,dz)
     for(int iat=first; iat<last; ++iat)
     {
       dx[iat]=px[iat]-x0;
@@ -83,7 +83,7 @@ struct DTD_BConds<T,3,PPPO+SOA_OFFSET>
     T* restrict dx=temp_dr.data(0);
     T* restrict dy=temp_dr.data(1);
     T* restrict dz=temp_dr.data(2);
-    #pragma omp simd aligned(px,py,pz,dx,dy,dz)
+    #pragma omp simd aligned(temp_r,px,py,pz,dx,dy,dz)
     for(int iat=first; iat<last; ++iat)
     {
       const T  x=(px[iat]-x0)*Linv0;
@@ -131,7 +131,7 @@ struct DTD_BConds<T,3,PPPS+SOA_OFFSET>
     T* restrict dy=temp_dr.data(1);
     T* restrict dz=temp_dr.data(2);
 
-    #pragma omp simd aligned(px,py,pz,dx,dy,dz)
+    #pragma omp simd aligned(temp_r,px,py,pz,dx,dy,dz)
     for(int iat=first; iat<last; ++iat)
     {
       T displ_0 =px[iat]-x0;
@@ -227,7 +227,7 @@ struct DTD_BConds<T,3,PPPG+SOA_OFFSET>
 
     CONSTEXPR T minusone(-1);
     CONSTEXPR T one(1);
-    #pragma omp simd aligned(px,py,pz,dx,dy,dz)
+    #pragma omp simd aligned(temp_r,px,py,pz,dx,dy,dz)
     for(int iat=first; iat<last; ++iat)
     {
       const T flip=iat<flip_ind?one:minusone;
@@ -295,6 +295,7 @@ struct DTD_BConds<T,3,PPNG+SOA_OFFSET>
   void computeDistances(const PT& pos, const RSoA& R0, 
       T* restrict temp_r, RSoA& temp_dr, int first, int last, int flip_ind=0)
   {
+    APP_ABORT("DTD_BConds<T,3,PPNG> not implemented");
   }
 };
 
@@ -326,7 +327,7 @@ struct DTD_BConds<T,3,PPNO+SOA_OFFSET>
     T* restrict dy=temp_dr.data(1);
     T* restrict dz=temp_dr.data(2);
 
-    #pragma omp simd aligned(px,py,pz,dx,dy,dz)
+    #pragma omp simd aligned(temp_r,px,py,pz,dx,dy,dz)
     for(int iat=first; iat<last; ++iat)
     {
       T  x=(px[iat]-x0)*Linv0; dx[iat]=L0*(x-round(x));
@@ -368,7 +369,7 @@ struct DTD_BConds<T,3,PPNS+SOA_OFFSET>
     T* restrict dy=temp_dr.data(1);
     T* restrict dz=temp_dr.data(2);
 
-    #pragma omp simd aligned(px,py,pz,dx,dy,dz)
+    #pragma omp simd aligned(temp_r,px,py,pz,dx,dy,dz)
     for(int iat=first; iat<last; ++iat)
     {
       T displ_0 =px[iat]-x0;
@@ -417,7 +418,7 @@ struct DTD_BConds<T,3,SUPERCELL_WIRE+SOA_OFFSET>
     T* restrict dx=temp_dr.data(0);
     T* restrict dy=temp_dr.data(1);
     T* restrict dz=temp_dr.data(2);
-    #pragma omp simd aligned(px,py,pz,dx,dy,dz)
+    #pragma omp simd aligned(temp_r,px,py,pz,dx,dy,dz)
     for(int iat=first; iat<last; ++iat)
     {
       T  x=(px[iat]-x0)*Linv0; dx[iat]=L0*(x-round(x));
