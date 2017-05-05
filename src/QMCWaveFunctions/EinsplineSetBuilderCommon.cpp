@@ -104,7 +104,11 @@ EinsplineSetBuilder::CheckLattice()
   double diff=0.0;
   for (int i=0; i<OHMMS_DIM; i++)
     for (int j=0; j<OHMMS_DIM; j++)
-      diff=std::max(diff,std::abs(SuperLattice(i,j) - TargetPtcl.Lattice.R(i,j)));
+    {
+      double max_abs=std::max(std::abs(SuperLattice(i,j)),static_cast<double>(std::abs(TargetPtcl.Lattice.R(i,j))));
+      if(max_abs>MatchingTol)
+        diff=std::max(diff,std::abs(SuperLattice(i,j) - TargetPtcl.Lattice.R(i,j))/max_abs);
+    }
 
   if(diff>MatchingTol)
   {
@@ -119,8 +123,8 @@ EinsplineSetBuilder::CheckLattice()
     o << TargetPtcl.Lattice.R << std::endl;
     o << " Difference " << std::endl;
     o << SuperLattice-TargetPtcl.Lattice.R << std::endl;
-    o << " Max difference = "<<diff<< std::endl;
-    o << " Tolerance      = "<<MatchingTol<< std::endl;
+    o << " Max relative error = "<< diff << std::endl;
+    o << " Tolerance      = "<< MatchingTol << std::endl;
     APP_ABORT(o.str());
   }
   return true;
