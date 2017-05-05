@@ -177,6 +177,37 @@ double cqmc::engine::ETCompute::recursive_blocking(std::ostream & fout, const bo
   std::vector<double> nmv(_lev_history);
   std::vector<double> dnv(_vg_history);
 
+  // first give a rough estimate for the uncertainty in the variance
+  if ( my_rank == 0 && print )
+    fout << std::endl;
+  std::vector<double> n2v(_vg_history.size());
+  for ( int i = 0; i < n2v.size(); i++)
+    n2v.at(i) = _vg_history.at(i) * _le_history.at(i) * _le_history.at(i);
+  const int nbb = 100;
+  const int bbl = nmv.size() / nbb;
+  std::vector<double> bbvars(nbb);
+  double bbv = 0.0;
+  double bbv2 = 0.0;
+  for (int i = 0; i < nbb; i++) {
+    double temp_e, temp_v;
+    cqmc::mpi_unbiased_ratio_of_means(bbl, &wtv.at(i*bbl), &_lev_history.at(i*bbl), &_vg_history.at(i*bbl), true,       temp_e, temp_v);
+    cqmc::mpi_unbiased_ratio_of_means(bbl, &wtv.at(i*bbl),          &n2v.at(i*bbl), &_vg_history.at(i*bbl), true, bbvars.at(i), temp_v);
+    bbvars.at(i) -= temp_e * temp_e;
+    bbv += bbvars.at(i) / nbb;
+    bbv2 += bbvars.at(i) * bbvars.at(i) / nbb;
+    if ( my_rank == 0 && print )
+      fout << boost::format("variance for block %4i  is  %20.12f") % i % bbvars.at(i) << std::endl;
+  }
+  const double bbvov = bbv2 - bbv * bbv;
+  if ( my_rank == 0 && print ) {
+    fout << std::endl;
+    fout << boost::format("Crude block analysis of variance gives:     variance = %20.12f") % bbv << std::endl;
+    fout << boost::format("                                         uncertainty = %20.12f") % std::sqrt( std::abs(bbvov) / nbb ) << std::endl;
+    fout << std::endl;
+    fout << boost::format("Now for a blocking analysis of energy uncertainty:") << std::endl;
+    fout << std::endl;
+  }
+
   // get vector to estimate of the errors at different blocking levels
   std::vector<double> estimates;
 
