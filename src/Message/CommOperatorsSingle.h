@@ -28,6 +28,9 @@ template<typename T> inline void Communicate::reduce(T& ) { }
 template<typename T>
 inline void Communicate::reduce(T* restrict , T* restrict, int n) { }
 
+template<typename T>
+inline void Communicate::reduce_in_place(T* restrict, int n) { }
+
 template<typename T> inline void Communicate::bcast(T& ) {  }
 
 template<typename T> inline void Communicate::bcast(T* restrict ,int n) { }

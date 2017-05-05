@@ -109,8 +109,8 @@ DistanceTableData* createDistanceTable(ParticleSet& s, int dt_type)
       {
         if(useSoA)
         {
-          o << "  Using SoaDistanceTableAA<T,D,PPNX> of SoA layout " << PPNX << std::endl;
-          dt = new SoaDistanceTableAA<RealType,DIM,PPNX+SOA_OFFSET>(s);
+          o << "  Using SoaDistanceTableAA<T,D,PPNG> of SoA layout " << PPNG << std::endl;
+          dt = new SoaDistanceTableAA<RealType,DIM,PPNG+SOA_OFFSET>(s);
         }
         else
         {

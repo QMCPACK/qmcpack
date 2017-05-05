@@ -160,9 +160,7 @@ struct  J2OrbitalSoA : public OrbitalBase
       const valT* restrict dX=displ.data(idim);
       valT s=valT();
 
-      ASSUME_ALIGNED(du);
-      ASSUME_ALIGNED(dX);
-#pragma omp simd reduction(+:s)
+      #pragma omp simd reduction(+:s) aligned(du,dX)
       for(int jat=0; jat<N; ++jat) s+=du[jat]*dX[jat];
       grad[idim]=s;
     }

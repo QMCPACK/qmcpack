@@ -98,6 +98,7 @@ ELSE()
   )
 ENDIF()
 
+
 ####################################
 # create liboompi
 ####################################
@@ -262,7 +263,6 @@ ENDIF(HAVE_OOMPI)
   #ELSE(QMC_BUILD_STATIC)
   #  ADD_LIBRARY(qmcbase SHARED ${PARTICLE}  ${PARTICLEIO})
   #ENDIF(QMC_BUILD_STATIC)
-
   #SUBDIRS(einspline)
 
   if(QMC_BUILD_LEVEL GREATER 4)

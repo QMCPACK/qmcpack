@@ -16,37 +16,27 @@
 
 #include <config.h>
 #include <vector>
+#include <cstdlib>
 
 #if (__cplusplus >= 201103L)
 #if defined(__INTEL_COMPILER)
  #include <tbb/cache_aligned_allocator.h>
-#else
- #if defined(HAVE_LIBBOOST)
-   #include <boost/align/aligned_allocator.hpp>
- #endif
 #endif
 
 namespace qmcplusplus
 {
-
 #if  defined(__INTEL_COMPILER)
   template<class T>
     using aligned_allocator=tbb::cache_aligned_allocator<T>;
 #else
- //#if defined(HAVE_LIBBOOST)
- // template<class T>
- //   using aligned_allocator=boost::alignment::aligned_allocator<T, QMC_CLINE>;
- //#else
   template<class T>
     using aligned_allocator=std::allocator<T>;
- //#endif
 #endif
    template<class T> 
      using aligned_vector = std::vector<T,aligned_allocator<T> >;
 
 }
 #else
-#include <cstdlib>
 namespace qmcplusplus
 {
   /** dummy inherited class to use aligned_vector<T> */
