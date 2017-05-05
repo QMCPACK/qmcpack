@@ -111,6 +111,10 @@ ELSE(QMC_CUDA)
   MESSAGE("   Full precision = ${OHMMS_PRECISION_FULL}")
 ENDIF(QMC_CUDA)
 
+# Code coverage
+SET(GCOV_SUPPORTED FALSE)
+SET(ENABLE_GCOV FALSE CACHE BOOL "Enable code coverage")
+
 ######################################################################
 # enable MPI and OPNEMP  if possible
 ######################################################################
@@ -494,6 +498,12 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   INCLUDE(CMake/FindVectorMath.cmake)
 
 ENDIF(CMAKE_TOOLCHAIN_FILE)
+
+IF (ENABLE_GCOV)
+  IF (NOT GCOV_SUPPORTED)
+    MESSAGE(FATAL_ERROR "ENABLE_GCOV was specified but compiler does not support GCC coverage flag")
+  ENDIF()
+ENDIF(ENABLE_GCOV)
 
 # check if C++11 is needed by QMCPACK features
 SET(CXX11_NEEDED FALSE)
