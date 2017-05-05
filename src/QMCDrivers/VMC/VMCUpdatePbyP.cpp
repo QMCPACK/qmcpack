@@ -1279,6 +1279,7 @@ void VMCUpdateRenyiWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t i
 std::vector<std::vector<VMCUpdatePbyPNodeless::RealType> > VMCUpdatePbyPNodeless::tfl_history;
 VMCUpdatePbyPNodeless::RealType VMCUpdatePbyPNodeless::tfl_avg = 0.0;
 VMCUpdatePbyPNodeless::RealType VMCUpdatePbyPNodeless::tfl_sdv = -1.0;
+//bool VMCUpdatePbyPNodeless::setNGMag = false;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  Constructor for the VMCUpdate class that uses particle-by-particle moves and a
@@ -1452,6 +1453,26 @@ bool VMCUpdatePbyPNodeless::put(xmlNodePtr cur) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
+/// \brief  Empties the history vectors and ensures they are the correct size.
+///
+/// \param[in,out]  comm     communicator for averaging over all processes
+/// \param[in]      nthread  number of threads per process
+///
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void VMCUpdatePbyPNodeless::reset_history(Communicate * const comm, const int nthread)
+{
+
+  // ensure there is one history vector per thread
+  if ( tfl_history.size() < nthread )
+    tfl_history.resize(nthread);
+
+  // empty the history vectors
+  for (int i = 0; i < tfl_history.size(); i++)
+    tfl_history.at(i).clear();
+
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  Computes and stores the average and standard deviations of the history of trial
 ///         funciton logarithms and then clears the history.
 ///
@@ -1461,10 +1482,6 @@ bool VMCUpdatePbyPNodeless::put(xmlNodePtr cur) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void VMCUpdatePbyPNodeless::process_history(Communicate * const comm, const int nthread)
 {
-
-  // create one history vector per thread
-  if ( tfl_history.size() < nthread )
-    tfl_history.resize(nthread);
 
   // compute the average and std dev of the trial function logpsi
   // values that will be used in nodeless guiding
@@ -1478,20 +1495,38 @@ void VMCUpdatePbyPNodeless::process_history(Communicate * const comm, const int 
     }
   }
   comm->allreduce(sums);
-  if ( sums[2] > 0.1 ) { // do nothing if we have no previous sample data to work with
-    tfl_avg = sums[0] / sums[2];
-    tfl_sdv = std::sqrt( sums[1] / sums[2] - tfl_avg * tfl_avg );
+  if ( sums[2] > 0.1 ) // do nothing if we have no previous sample data to work with
+  {
+
+    const RealType temp_avg = sums[0] / sums[2];
+    const RealType temp_sdv = std::sqrt( sums[1] / sums[2] - temp_avg * temp_avg );
     app_log() << std::endl;
-    app_log() << "samples = " << sums[2] << std::endl;
-    app_log() << "tfl_avg = " << tfl_avg << std::endl;
-    app_log() << "tfl_sdv = " << tfl_sdv << std::endl;
+    app_log() << "Estimating average of trial function logarithm for nodeless guiding: " << std::endl;
+    app_log() << "  samples = " << sums[2] << std::endl;
+    app_log() << "  tfl_avg = " << temp_avg << std::endl;
+    app_log() << "  tfl_sdv = " << temp_sdv << std::endl;
     app_log() << std::endl;
+
+    // only record the values if we don't have values already
+    if ( tfl_sdv < 0.0 ) {
+      tfl_avg = temp_avg;
+      tfl_sdv = temp_sdv;
+      app_log() << "Nodeless guiding magnitude set based on this tfl_avg" << std::endl;
+      app_log() << std::endl;
+    }
+
   }
 
-  // empty the history vectors
-  for (int i = 0; i < tfl_history.size(); i++)
-    tfl_history.at(i).clear();
+}
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+/// \brief  Resets info stored for trial function logarithm.
+///
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void VMCUpdatePbyPNodeless::reset_tfl()
+{
+  tfl_avg = 0.0;
+  tfl_sdv = -1.0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

@@ -88,14 +88,16 @@ VMCSingleOMP::VMCSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMC
 bool VMCSingleOMP::run()
 {
 
-  // get statistics on the trial function logarithms from the previous sample
-  VMCUpdatePbyPNodeless::process_history(myComm, NumThreads);
+  //// get statistics on the trial function logarithms from the previous sample
+  //VMCUpdatePbyPNodeless::process_history(myComm, NumThreads);
+  VMCUpdatePbyPNodeless::reset_history(myComm, NumThreads);
 
   // do the warmup, among other things
   resetRun();
 
   // get statistics on the trial function logarithms from the warmup we just did
   VMCUpdatePbyPNodeless::process_history(myComm, NumThreads);
+  VMCUpdatePbyPNodeless::reset_history(myComm, NumThreads);
 
   //start the main estimator
   Estimators->start(nBlocks);

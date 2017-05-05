@@ -136,7 +136,10 @@ class VMCUpdatePbyPNodeless : public QMCUpdateBase {
 
     bool put(xmlNodePtr cur);
 
+    static void reset_history(Communicate * const comm, const int nthread);
     static void process_history(Communicate * const comm, const int nthread);
+
+    static void reset_tfl();
 
     template <typename T>
     static void check_all_positive(const T & container, const std::string & name) {
@@ -220,6 +223,9 @@ class VMCUpdatePbyPNodeless : public QMCUpdateBase {
 
     /// \brief  standard deviation of trial function logarithms
     static RealType tfl_sdv;
+
+//    /// \brief  whether to record tfl_avg and tfl_sdv from the next sample
+//    static bool setNGMag;
 
 };
 

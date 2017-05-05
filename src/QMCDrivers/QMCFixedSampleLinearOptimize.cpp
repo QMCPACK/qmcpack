@@ -44,6 +44,7 @@
 #include "formic/utils/random.h"
 #include "formic/utils/lmyengine/var_dependencies.h"
 #endif
+#include "QMCDrivers/VMC/VMCUpdatePbyP.h"
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
@@ -828,6 +829,9 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
 
   // reset the engine
   EngineObj->reset();
+
+  // set up so that the next sample taken will set the nodeless guiding mangitude
+  VMCUpdatePbyPNodeless::reset_tfl();
 
   // generate samples (possibly using a nodeless guiding function)
   this->engine_start();
