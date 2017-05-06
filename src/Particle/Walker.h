@@ -119,6 +119,9 @@ struct Walker
    */
   RealType Multiplicity;
 
+  /// guiding function logarithm
+  RealType LogGuiding;
+
   /**the configuration vector (3N-dimensional vector to store
      the positions of all the particles for a single walker)*/
   ParticlePos_t R;
@@ -195,6 +198,7 @@ struct Walker
     Multiplicity=1.0;
     ReleasedNodeWeight=1.0;
     ReleasedNodeAge=0;
+    LogGuiding=0.0;
     Properties.resize(1,NUMPROPERTIES);
     if(nptcl>0)
       resize(nptcl);
@@ -291,6 +295,7 @@ struct Walker
     Multiplicity=a.Multiplicity;
     ReleasedNodeWeight=a.ReleasedNodeWeight;
     ReleasedNodeAge=a.ReleasedNodeAge;
+    LogGuiding=a.LogGuiding;
     if (R.size()!=a.R.size())
       resize(a.R.size());
     R = a.R;
@@ -352,6 +357,7 @@ struct Walker
     Properties(LOGPSI)=logpsi;
     Properties(SIGN)=sigN;
     Properties(LOCALENERGY) = ene;
+    LogGuiding = logpsi;
   }
 
   inline void resetReleasedNodeProperty(EstimatorRealType localenergy, EstimatorRealType alternateEnergy, EstimatorRealType altR)

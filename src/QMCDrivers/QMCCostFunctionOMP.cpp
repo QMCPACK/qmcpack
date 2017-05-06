@@ -561,10 +561,9 @@ void QMCCostFunctionOMP::engine_checkConfigurations(cqmc::engine::LMYEngine * En
     Return_t e2=0.0;
     for (int iw=0, iwg=wPerNode[ip]; iw<wRef.getActiveWalkers(); ++iw,++iwg)
     {
-      ParticleSet::Walker_t& thisWalker(*wRef[iw]);
 
-      // extract the logarithm of the nodeless guiding function (not used if we are not doing nodeless guiding)
-      const RealType ng_logpsi = thisWalker.Properties(LOGPSI);
+      // get reference to an object holding info about this configuration
+      ParticleSet::Walker_t& thisWalker(*wRef[iw]);
 
       wRef.R=thisWalker.R;
       wRef.update();
@@ -596,11 +595,12 @@ void QMCCostFunctionOMP::engine_checkConfigurations(cqmc::engine::LMYEngine * En
       // extract the logarithm of the trial function
       const RealType logpsi = saved[LOGPSI_FIXED] + saved[LOGPSI_FREE];
 
-      // record guiding function logarithm values (does nothing if we already have them)
-      EngineObj->record_gfl( NodelessEpsilon > 0.0 ? ng_logpsi : logpsi );
+      //// record guiding function logarithm values (does nothing if we already have them)
+      //EngineObj->record_gfl( NodelessEpsilon > 0.0 ? ng_logpsi : logpsi );
 
       // compute the value-to-guiding square ratio
-      const RealType vgs = std::exp( 2.0 * ( logpsi - EngineObj->get_gfl() ) );
+      const RealType vgs = std::exp( 2.0 * ( logpsi - thisWalker.LogGuiding ) );
+      //const RealType vgs = std::exp( 2.0 * ( logpsi - EngineObj->get_gfl() ) );
 
       Return_t etmp;
       if (needGrads)

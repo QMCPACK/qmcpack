@@ -1786,9 +1786,11 @@ void VMCUpdatePbyPNodeless::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
 
     //std::printf("psi^2 = %10.2e    g = %10.2e    eloc = %10.2e    toAvg = %10.2e\n", std::exp(2.0*logpsi), old_sqn, eloc, std::exp(2.0*logpsi) * eloc / old_sqn);
 
-    // Save some basic info about the underlying trial function.
-    // Note that here we save the logpsi value of the nodeless guiding function, NOT of the underlying trial function.
-    thisWalker.resetProperty(0.5*std::log(old_sqn), Psi.getPhase(), eloc);
+    // save some basic info about the underlying trial function
+    thisWalker.resetProperty(logpsi, Psi.getPhase(), eloc);
+
+    // save the logarithm of the guiding function
+    thisWalker.LogGuiding = 0.5 * std::log(old_sqn);
 
     // not sure what these do
     H.auxHevaluate(W, thisWalker);
