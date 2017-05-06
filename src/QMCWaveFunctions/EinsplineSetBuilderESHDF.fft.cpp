@@ -136,6 +136,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
   // construct Super2Prim mapping.
   if(Super2Prim.size()==0)
   {
+    SourcePtcl->convert2Cart(SourcePtcl->R);
     Super2Prim.resize(SourcePtcl->R.size(),-1);
     std::vector<int> prim_atom_counts;
     prim_atom_counts.resize(IonPos.size(),0);
