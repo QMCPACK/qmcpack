@@ -593,8 +593,14 @@ void QMCCostFunctionOMP::engine_checkConfigurations(cqmc::engine::LMYEngine * En
       saved[REWEIGHT]=thisWalker.Weight=1.0;
       //          thisWalker.resetProperty(logpsi,psiClones[ip]->getPhase(),x);
 
+      // extract the logarithm of the trial function
+      const RealType logpsi = saved[LOGPSI_FIXED] + saved[LOGPSI_FREE];
+
+      // record guiding function logarithm values (does nothing if we already have them)
+      EngineObj->record_gfl( NodelessEpsilon > 0.0 ? ng_logpsi : logpsi );
+
       // compute the value-to-guiding square ratio
-      const RealType vgs = ( NodelessEpsilon > 0.0 ? std::exp( 2.0 * ( saved[LOGPSI_FIXED] + saved[LOGPSI_FREE] - ng_logpsi ) ) : 1.0 );
+      const RealType vgs = std::exp( 2.0 * ( logpsi - EngineObj->get_gfl() ) );
 
       Return_t etmp;
       if (needGrads)

@@ -107,7 +107,7 @@ _shift_scale(shift_scale),
 output(output)
 {
   // get the number of threads being used 
-  int NumThreads = omp_get_max_threads();
+  const int NumThreads = omp_get_max_threads();
 
   // check the size of lists, resize it if not correct
   if ( _le_list.size() != NumThreads ) 
@@ -116,6 +116,8 @@ output(output)
     _vg.resize(NumThreads);
   if ( _weight.size() != NumThreads ) 
     _weight.resize(NumThreads);
+  if ( _gf_logs.size() != NumThreads ) 
+    _gf_logs.resize(NumThreads);
 
   // initialize the output quantities
   _wfn_update = false;
@@ -306,6 +308,37 @@ void cqmc::engine::LMYEngine::initialize(const int nblock,
     _block_ups.resize(nblock);
   }
 
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// \brief  Return the next guiding function logarithm value
+/// 
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+double cqmc::engine::LMYEngine::get_gfl() const
+{
+  const int ip = omp_get_thread_num();
+  return _gf_logs.at(ip).at(_vg.at(ip).size());
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// \brief  If we don't have a full set of guiding function logarithms already, record the next one
+/// 
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+void cqmc::engine::LMYEngine::record_gfl(const double gfl)
+{
+  const int ip = omp_get_thread_num();
+  if ( _gf_logs.at(ip).size() < _vg.at(ip).size() + 1 )
+    _gf_logs.at(ip).push_back(gfl);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// \brief  Empty the history of guiding function logarithms
+/// 
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+void cqmc::engine::LMYEngine::reset_gfl()
+{
+  for ( auto & v : _gf_logs )
+    v.clear();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -871,7 +904,7 @@ void cqmc::engine::LMYEngine::reset() {
   // set the sample count to be zero
   _samp_count = 0;
 
-  // clear local energy, vgs and weight list
+  // clear local energy, vgs and weight list, but NOT the guiding function logarithms
   for (int ip = 0; ip < NumThreads; ip++) {
     _le_list[ip].clear();
     _vg[ip].clear();

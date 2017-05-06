@@ -830,6 +830,9 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
   // reset the engine
   EngineObj->reset();
 
+  // ensure that the engine will extract the guiding function logarithms during the next call to engine_process_sample
+  EngineObj->reset_gfl();
+
   // Ensure that the trial functional logarithm statistics come from the warmup sample we are about to take.
   // This means that the warmup is done with nodeless guiding turned off, which in principle
   // could be an issue if it greatly changed the guiding function.
@@ -940,6 +943,9 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
 
   // reset the engine object 
   EngineObj->reset();
+
+  // ensure that the engine will extract the guiding function logarithms during the next call to engine_process_sample
+  EngineObj->reset_gfl();
 
   app_log() << std::endl
             << "*************************************************************" << std::endl
