@@ -51,7 +51,7 @@ struct MCSample
   ParticleSet::ParticlePos_t R;
   ParticleSet::ParticleGradient_t G;
   ParticleSet::ParticleLaplacian_t L;
-  ParticleSet::RealType LogPsi, Sign, PE, KE;
+  ParticleSet::RealType LogPsi, Sign, PE, KE, LogGuiding;
 
   inline MCSample(const Walker_t& w)
     :R(w.R), G(w.G), L(w.L)
@@ -60,6 +60,7 @@ struct MCSample
     Sign=w.Properties(SIGN);
     PE=w.Properties(LOCALPOTENTIAL);
     KE=w.Properties(LOCALENERGY)-PE;
+    LogGuiding=w.LogGuiding;
   }
 
   inline MCSample(int n)
@@ -78,6 +79,7 @@ struct MCSample
     Sign=w.Properties(SIGN);
     PE=w.Properties(LOCALPOTENTIAL);
     KE=w.Properties(LOCALENERGY)-PE;
+    LogGuiding=w.LogGuiding;
   }
 
   inline void get(Walker_t& w) const
@@ -89,6 +91,7 @@ struct MCSample
     w.Properties(SIGN)=Sign;
     w.Properties(LOCALPOTENTIAL)=PE;
     w.Properties(LOCALENERGY)=PE+KE;
+    w.LogGuiding=LogGuiding;
   }
 };
 
