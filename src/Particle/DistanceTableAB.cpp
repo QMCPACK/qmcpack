@@ -152,7 +152,7 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int
   {
     if(useSoA)
     {
-      o << "  Using SoaDistanceTableBA<T,D,PPPG> of SoA layout " << SUPERCELL_OPEN << std::endl;
+      o << "   PBC=open Orthorhombic=NA of SoA layout\n" << std::endl;
       dt = new SoaDistanceTableBA<RealType,DIM,SUPERCELL_OPEN+SOA_OFFSET>(s,t);
     }
     else
