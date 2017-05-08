@@ -232,17 +232,26 @@ class VMCUpdatePbyPNodeless : public QMCUpdateBase {
     /// \brief  vector containing the positions of the ions (i.e. the atomic nuclei)
     std::vector<ParticleSet::SingleParticlePos_t> IonPositions;
 
+    /// \brief  running totals for count averages
+    static std::vector<std::vector<RealType> > cga_hist;
+
+    /// \brief  running totals for count variances
+    static std::vector<std::vector<RealType> > cgv_hist;
+
     /// \brief  history of the sampled configurations' trial function logarithms
-    static std::vector<std::vector<RealType> > tfl_history;
+    static std::vector<RealType> tla_hist;
+
+    /// \brief  history of the square of the sampled configurations' trial function logarithms
+    static std::vector<RealType> tlv_hist;
+
+    /// \brief  running totals for number of samples;
+    static std::vector<RealType> nsp_hist;
 
     /// \brief  average of trial function logarithms
     static RealType tfl_avg;
 
     /// \brief  standard deviation of trial function logarithms
     static RealType tfl_sdv;
-
-//    /// \brief  whether to record tfl_avg and tfl_sdv from the next sample
-//    static bool setNGMag;
 
 };
 

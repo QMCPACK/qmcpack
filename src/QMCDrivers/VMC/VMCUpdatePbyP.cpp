@@ -24,11 +24,13 @@
 #include "Message/Communicate.h"
 #include "Message/CommOperatorsMPI.h"
 #include "OhmmsData/XMLcxx11Helper.h"
+#include "Numerics/Blasf.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #else
 typedef int TraceManager;
 #endif
+#include <boost/format.hpp>
 
 namespace qmcplusplus
 {
@@ -1276,10 +1278,13 @@ void VMCUpdateRenyiWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t i
 //   }
 
 // initialize static data members
-std::vector<std::vector<VMCUpdatePbyPNodeless::RealType> > VMCUpdatePbyPNodeless::tfl_history;
+std::vector<std::vector<VMCUpdatePbyPNodeless::RealType> > VMCUpdatePbyPNodeless::cga_hist;
+std::vector<std::vector<VMCUpdatePbyPNodeless::RealType> > VMCUpdatePbyPNodeless::cgv_hist;
+std::vector<VMCUpdatePbyPNodeless::RealType>               VMCUpdatePbyPNodeless::tla_hist;
+std::vector<VMCUpdatePbyPNodeless::RealType>               VMCUpdatePbyPNodeless::tlv_hist;
+std::vector<VMCUpdatePbyPNodeless::RealType>               VMCUpdatePbyPNodeless::nsp_hist;
 VMCUpdatePbyPNodeless::RealType VMCUpdatePbyPNodeless::tfl_avg = 0.0;
 VMCUpdatePbyPNodeless::RealType VMCUpdatePbyPNodeless::tfl_sdv = -1.0;
-//bool VMCUpdatePbyPNodeless::setNGMag = false;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  Constructor for the VMCUpdate class that uses particle-by-particle moves and a
@@ -1418,7 +1423,8 @@ bool VMCUpdatePbyPNodeless::put(xmlNodePtr cur) {
       APP_ABORT("ERROR: Found no minimum distance centers while reading nodelessGuiding entry in xml input");
 
     // print what we have
-    if ( OHMMS::Controller->rank() == 0 && omp_get_thread_num() == 0 ) {
+    const bool to_print = false;
+    if ( to_print && OHMMS::Controller->rank() == 0 && omp_get_thread_num() == 0 ) {
       app_log() << std::endl;
       app_log() << omp_get_num_threads() << " threads are running through VMCUpdatePbyPNodeless::put" << std::endl;
       app_log() << std::endl;
@@ -1466,13 +1472,12 @@ bool VMCUpdatePbyPNodeless::put(xmlNodePtr cur) {
 void VMCUpdatePbyPNodeless::reset_history(Communicate * const comm, const int nthread)
 {
 
-  // ensure there is one history vector per thread
-  if ( tfl_history.size() < nthread )
-    tfl_history.resize(nthread);
-
-  // empty the history vectors
-  for (int i = 0; i < tfl_history.size(); i++)
-    tfl_history.at(i).clear();
+  // reset running totals
+  cga_hist.assign(nthread, std::vector<RealType>());
+  cgv_hist.assign(nthread, std::vector<RealType>());
+  tla_hist.assign(nthread, 0.0);
+  tlv_hist.assign(nthread, 0.0);
+  nsp_hist.assign(nthread, 0.0);
 
 }
 
@@ -1488,37 +1493,53 @@ void VMCUpdatePbyPNodeless::reset_history(Communicate * const comm, const int nt
 void VMCUpdatePbyPNodeless::process_history(Communicate * const comm, const int nthread, const bool record)
 {
 
-  // compute the average and std dev of the trial function logpsi
-  // values that will be used in nodeless guiding
-  std::vector<RealType> sums(3, 0.0);
-  for (int i = 0; i < tfl_history.size(); i++) {
-    for (int j = 0; j < tfl_history[i].size(); j++) {
-      const RealType tfl = tfl_history[i][j];
-      sums[0] += tfl;
-      sums[1] += tfl * tfl;
-      sums[2] += 1.0;
-    }
+  // collect totals
+  const int nc = ( cga_hist.at(0).empty() ? 0 : cga_hist.at(0).size() );
+  std::vector<RealType> sums(2*nc+3, 0.0);
+  RealType & tla = sums.at(2*nc+0);
+  RealType & tlv = sums.at(2*nc+1);
+  RealType & nsp = *sums.rbegin();
+  for (int ip = 0; ip < cga_hist.size(); ip++) // loop over different threads' data
+  {
+    if ( nc ) daxpy(nc, 1.0, &cga_hist.at(ip).at(0), 1, &sums.at(0*nc), 1); // averages
+    if ( nc ) daxpy(nc, 1.0, &cgv_hist.at(ip).at(0), 1, &sums.at(1*nc), 1); // averages of squares
+    tla += tla_hist.at(ip); // trial logarithm average
+    tlv += tlv_hist.at(ip); // trial logarithm average of squares
+    nsp += nsp_hist.at(ip); // number of samples
   }
   comm->allreduce(sums);
-  if ( sums[2] > 0.1 ) // do nothing if we have no previous sample data to work with
+  dscal(sums.size()-1, 1.0 / nsp, &sums.at(0), 1);
+
+  if ( nsp > 0.1 ) // do nothing if we have no previous sample data to work with
   {
 
-    const RealType temp_avg = sums[0] / sums[2];
-    const RealType temp_sdv = std::sqrt( sums[1] / sums[2] - temp_avg * temp_avg );
+    // compute variance of trial function logarithm
+    tlv = std::sqrt( std::abs( tlv - tla * tla ) );
+
+    // print trial function logarithm stats
     app_log() << std::endl;
     app_log() << "Statistics of |log(psi)|: " << std::endl;
-    app_log() << "  samples = " << sums[2] << std::endl;
-    app_log() << "  tfl_avg = " << temp_avg << std::endl;
-    app_log() << "  tfl_sdv = " << temp_sdv << std::endl;
+    app_log() << boost::format("  samples = %11.0f") % nsp << std::endl;
+    app_log() << boost::format("  tfl_avg = %18.6f") % tla << std::endl;
+    app_log() << boost::format("  tfl_sdv = %18.6f") % tlv << std::endl;
     app_log() << std::endl;
 
     // only record the values if requested and if we don't have values already
     if ( record && tfl_sdv < 0.0 ) {
-      tfl_avg = temp_avg;
-      tfl_sdv = temp_sdv;
+      tfl_avg = tla;
+      tfl_sdv = tlv;
       app_log() << "Nodeless guiding tfl_avg set to " << tfl_avg << std::endl;
       app_log() << std::endl;
     }
+
+    // print counting group stats
+    for (int i = 0; i < nc; i++)
+    {
+      sums.at(nc+i) = std::sqrt( std::abs( sums.at(nc+i) - sums.at(i) * sums.at(i) ) );
+      app_log() << boost::format("count group %3i:  avg = %8.4f     sdev = %8.4f") % i % sums.at(i) % sums.at(nc+i) << std::endl;
+    }
+    if ( nc )
+      app_log() << std::endl;
 
   }
 
@@ -1553,8 +1574,8 @@ VMCUpdatePbyPNodeless::~VMCUpdatePbyPNodeless() {}
 VMCUpdatePbyPNodeless::RealType VMCUpdatePbyPNodeless::init_nodeless(const ParticleSet & P, const RealType tfl)
 {
 
-  // if we're not using nodeless guiding yet, return the usual |Psi|^2 guiding function
-  if ( tfl_sdv < 0.0 ) return std::exp( 2.0 * tfl );
+//  // if we're not using nodeless guiding yet, return the usual |Psi|^2 guiding function
+//  if ( tfl_sdv < 0.0 ) return std::exp( 2.0 * tfl );
 
   // if we don't need to initialize, just return the already saved guiding function value
   if ( nodelessInitialized ) return savedGF;
@@ -1613,8 +1634,13 @@ VMCUpdatePbyPNodeless::RealType VMCUpdatePbyPNodeless::init_nodeless(const Parti
   // penalize the nodeless adjustment by the min distance and counting group penalties
   nodelessAdj *= mdPenalty * std::exp(cgPenaltyExponent);
 
-  // remember the trial function square norm plus penalized nodeless adjustment
-  savedGF = std::exp( 2.0 * tfl ) + nodelessAdj;
+  // if we're not using nodeless guiding yet, ues the usual |Psi|^2 guiding function
+  if ( tfl_sdv < 0.0 )
+    savedGF = std::exp( 2.0 * tfl );
+
+  // otherwise, use the trial function square norm plus penalized nodeless adjustment
+  else
+    savedGF = std::exp( 2.0 * tfl ) + nodelessAdj;
 
   // record that we are now initialized
   nodelessInitialized = true;
@@ -1637,8 +1663,8 @@ VMCUpdatePbyPNodeless::RealType VMCUpdatePbyPNodeless::init_nodeless(const Parti
 VMCUpdatePbyPNodeless::RealType VMCUpdatePbyPNodeless::update_nodeless(const ParticleSet & P, const int iat, const RealType tfl)
 {
 
-  // if we're not using nodeless guiding yet, return the usual |Psi|^2 guiding function
-  if ( tfl_sdv < 0.0 ) return std::exp( 2.0 * tfl );
+//  // if we're not using nodeless guiding yet, return the usual |Psi|^2 guiding function
+//  if ( tfl_sdv < 0.0 ) return std::exp( 2.0 * tfl );
 
   // problem if we are not initialized
   if ( !nodelessInitialized )
@@ -1699,8 +1725,13 @@ VMCUpdatePbyPNodeless::RealType VMCUpdatePbyPNodeless::update_nodeless(const Par
   // penalize the nodeless adjustment by the min distance and counting group penalties
   nodelessAdj *= mdPenaltyTmp * std::exp(cgPenaltyExponentTmp);
 
+  // if we're not using nodeless guiding yet, ues the usual |Psi|^2 guiding function
+  if ( tfl_sdv < 0.0 )
+    savedGFTmp = std::exp( 2.0 * tfl );
+
   // remember the new the trial function square norm plus penalized nodeless adjustment
-  savedGFTmp = std::exp( 2.0 * tfl ) + nodelessAdj;
+  else
+    savedGFTmp = std::exp( 2.0 * tfl ) + nodelessAdj;
 
   // return the guiding function value
   return savedGFTmp;
@@ -1718,8 +1749,8 @@ VMCUpdatePbyPNodeless::RealType VMCUpdatePbyPNodeless::update_nodeless(const Par
 void VMCUpdatePbyPNodeless::nodeless_accept(const ParticleSet & P, const int iat, const RealType tfl)
 {
 
-  // nothing to do if we're not guiding with nodeless guiding yet
-  if ( tfl_sdv < 0.0 ) return;
+//  // nothing to do if we're not guiding with nodeless guiding yet
+//  if ( tfl_sdv < 0.0 ) return;
 
   // problem if we are not initialized
   if ( !nodelessInitialized )
@@ -1899,8 +1930,22 @@ void VMCUpdatePbyPNodeless::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
     if ( ++nw > 1 )
       APP_ABORT("VMCUpdatePbyPNodeless::advanceWalkers encountered more than one walker");
 
-    // save a history of the logarithm of the underlying trial function
-    tfl_history.at(omp_get_thread_num()).push_back(old_tfl);
+    // get thread number
+    const int ip = omp_get_thread_num();
+
+    // save running totals for trial funciton logarithm
+    tla_hist.at(ip) += old_tfl;
+    tlv_hist.at(ip) += old_tfl * old_tfl;
+    nsp_hist.at(ip) += 1.0;
+
+    // save running totals for counting groups
+    if ( cga_hist.at(ip).size() != cgCounts.size() ) cga_hist.at(ip).assign(cgCounts.size(), 0.0);
+    if ( cgv_hist.at(ip).size() != cgCounts.size() ) cgv_hist.at(ip).assign(cgCounts.size(), 0.0);
+    for (int i = 0; i < cgCounts.size(); i++)
+    {
+      cga_hist[ip][i] += cgCounts[i];
+      cgv_hist[ip][i] += cgCounts[i] * cgCounts[i];
+    }
 
     // save the trial wave function state
     const RealType logpsi = Psi.updateBuffer(W, w_buffer, false);
