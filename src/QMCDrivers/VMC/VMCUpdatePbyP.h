@@ -159,6 +159,8 @@ class VMCUpdatePbyPNodeless : public QMCUpdateBase {
 
     RealType update_nodeless(const ParticleSet & P, const int iat, const RealType tfl);
 
+    void nodeless_accept(const ParticleSet & P, const int iat, const RealType tfl);
+
     /// \brief  whether we need to re-initialize the nodeless guiding function
     bool nodelessInitialized;
 
@@ -171,24 +173,31 @@ class VMCUpdatePbyPNodeless : public QMCUpdateBase {
 
     /// \brief  saved value of the nodeless guiding function
     RealType savedGF;
+    RealType savedGFTmp;
 
     /// \brief  overall counting group penalty's exponent to the nodeless adjustment
     RealType cgPenaltyExponent;
+    RealType cgPenaltyExponentTmp;
 
     /// \brief  overall min distance penalty to the nodeless adjustment
     RealType mdPenalty;
+    RealType mdPenaltyTmp;
 
     /// \brief  min distance penalties for each particle
     std::vector<RealType> mdPenalties;
+    RealType mdPenaltiesTmp;
 
     /// \brief  particle number count for each counting region
     std::vector<RealType> cgCounts;
+    std::vector<RealType> cgCountsTmp;
 
     /// \brief  matrix of un-normalized counting function values at each particle position
     std::vector<RealType> cgUnormalized;
+    std::vector<RealType> cgUnormalizedTmp;
 
     /// \brief  vector of counting normalizations
     std::vector<RealType> cgNorms;
+    RealType cgNormTmp;
 
     /// \brief  standard deviations for the counting groups' count penalty
     std::vector<RealType> cgCountSigmas;

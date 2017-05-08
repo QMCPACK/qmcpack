@@ -1553,6 +1553,9 @@ VMCUpdatePbyPNodeless::~VMCUpdatePbyPNodeless() {}
 VMCUpdatePbyPNodeless::RealType VMCUpdatePbyPNodeless::init_nodeless(const ParticleSet & P, const RealType tfl)
 {
 
+  // if we're not using nodeless guiding yet, return the usual |Psi|^2 guiding function
+  if ( tfl_sdv < 0.0 ) return std::exp( 2.0 * tfl );
+
   // if we don't need to initialize, just return the already saved guiding function value
   if ( nodelessInitialized ) return savedGF;
 
@@ -1566,6 +1569,7 @@ VMCUpdatePbyPNodeless::RealType VMCUpdatePbyPNodeless::init_nodeless(const Parti
 
   // initialize un-normalized counting functions and their normalizing constants
   cgUnormalized.assign(np * nc, 0);
+  cgUnormalizedTmp.assign(nc, 0);
   cgNorms.assign(np, 0);
   for (int i = 0; i < np; i++) {
     for (int k = 0; k < nc; k++) {
@@ -1579,6 +1583,7 @@ VMCUpdatePbyPNodeless::RealType VMCUpdatePbyPNodeless::init_nodeless(const Parti
 
   // compute each counting group's total count
   cgCounts.assign(nc, 0);
+  cgCountsTmp.assign(nc, 0);
   for (int i = 0; i < np; i++)
     for (int k = 0; k < nc; k++)
       cgCounts.at(k) += cgUnormalized.at(k+i*nc) / cgNorms.at(i);
@@ -1608,14 +1613,8 @@ VMCUpdatePbyPNodeless::RealType VMCUpdatePbyPNodeless::init_nodeless(const Parti
   // penalize the nodeless adjustment by the min distance and counting group penalties
   nodelessAdj *= mdPenalty * std::exp(cgPenaltyExponent);
 
-  // If we don't have an average and standard deviation for a previously-taken set of
-  // trial function logarithms, use the un-adjusted square norm of the trial function
-  if ( tfl_sdv < 0.0 )
-    savedGF = std::exp( 2.0 * tfl );
-
-  // otherwise, use the trial function square norm plus the penalized nodeless adjustment
-  else
-    savedGF = std::exp( 2.0 * tfl ) + nodelessAdj;
+  // remember the trial function square norm plus penalized nodeless adjustment
+  savedGF = std::exp( 2.0 * tfl ) + nodelessAdj;
 
   // record that we are now initialized
   nodelessInitialized = true;
@@ -1638,6 +1637,9 @@ VMCUpdatePbyPNodeless::RealType VMCUpdatePbyPNodeless::init_nodeless(const Parti
 VMCUpdatePbyPNodeless::RealType VMCUpdatePbyPNodeless::update_nodeless(const ParticleSet & P, const int iat, const RealType tfl)
 {
 
+  // if we're not using nodeless guiding yet, return the usual |Psi|^2 guiding function
+  if ( tfl_sdv < 0.0 ) return std::exp( 2.0 * tfl );
+
   // problem if we are not initialized
   if ( !nodelessInitialized )
     APP_ABORT("VMCUpdatePbyPNodeless not initialized when we called update_nodeless");
@@ -1655,30 +1657,30 @@ VMCUpdatePbyPNodeless::RealType VMCUpdatePbyPNodeless::update_nodeless(const Par
 
   // remove the moved particle's old contribution to each count
   for (int k = 0; k < nc; k++)
-    cgCounts[k] -= cgUnormalized[k+iat_nc] / cgNorms[iat];
+    cgCountsTmp[k] = cgCounts[k] - cgUnormalized[k+iat_nc] / cgNorms[iat];
 
   // initialize un-normalized counting function and its norm for the moved particle
-  cgNorms[iat] = 0;
+  cgNormTmp = 0;
   for (int k = 0; k < nc; k++)
   {
-    cgUnormalized[k+iat_nc] = 0;
+    cgUnormalizedTmp[k] = 0;
     for (int l = cgGaussStarts[k]; l < cgGaussEnds[k]; l++)
     {
       tpp = cgGaussCenters[l] - P.R[iat];
-      cgUnormalized[k+iat_nc] += cgGaussAlphas[l] * std::exp( -dot(tpp,tpp) / ( 2.0 * cgGaussSigmas[l] * cgGaussSigmas[l] ) );
+      cgUnormalizedTmp[k] += cgGaussAlphas[l] * std::exp( -dot(tpp,tpp) / ( 2.0 * cgGaussSigmas[l] * cgGaussSigmas[l] ) );
     }
-    cgNorms[iat] += cgUnormalized[k+iat_nc];
+    cgNormTmp += cgUnormalizedTmp[k];
   }
 
   // add in the moved particle's new contribution to each count
   for (int k = 0; k < nc; k++)
-    cgCounts[k] += cgUnormalized[k+iat_nc] / cgNorms[iat];
+    cgCountsTmp[k] += cgUnormalizedTmp[k] / cgNormTmp;
 
   // get sum of counting group penalty exponents
-  cgPenaltyExponent = 0;
+  cgPenaltyExponentTmp = 0;
   for (int k = 0; k < nc; k++)
-    cgPenaltyExponent -=   ( cgCountNelecs[k] - cgCounts[k] ) * ( cgCountNelecs[k] - cgCounts[k] )
-                         / ( 2.0 * cgCountSigmas[k] * cgCountSigmas[k] );
+    cgPenaltyExponentTmp -=   ( cgCountNelecs[k] - cgCountsTmp[k] ) * ( cgCountNelecs[k] - cgCountsTmp[k] )
+                            / ( 2.0 * cgCountSigmas[k] * cgCountSigmas[k] );
 
   // update product of min distance penalties
   {
@@ -1687,27 +1689,63 @@ VMCUpdatePbyPNodeless::RealType VMCUpdatePbyPNodeless::update_nodeless(const Par
       tpp = mdCenters[k] - P.R[iat];
       max_val = std::max(max_val, 1.0 / ( 1.0 + std::exp( mdBetas[k] * ( std::sqrt( std::abs( dot(tpp,tpp) ) ) - mdDists[k] ) ) ) );
     }
-    mdPenalty *= max_val / mdPenalties[iat];
-    mdPenalties[iat] = max_val;
+    mdPenaltyTmp = mdPenalty * max_val / mdPenalties[iat];
+    mdPenaltiesTmp = max_val;
   }
 
   // initialize the nodeless adjustment as the epsilon-scaled "average" trial function value
   RealType nodelessAdj = NodelessEpsilon * std::exp( 2.0 * tfl_avg );
 
   // penalize the nodeless adjustment by the min distance and counting group penalties
-  nodelessAdj *= mdPenalty * std::exp(cgPenaltyExponent);
+  nodelessAdj *= mdPenaltyTmp * std::exp(cgPenaltyExponentTmp);
 
-  // If we don't have an average and standard deviation for a previously-taken set of
-  // trial function logarithms, use the un-adjusted square norm of the trial function
-  if ( tfl_sdv < 0.0 )
-    savedGF = std::exp( 2.0 * tfl );
-
-  // otherwise, use the trial function square norm plus the penalized nodeless adjustment
-  else
-    savedGF = std::exp( 2.0 * tfl ) + nodelessAdj;
+  // remember the new the trial function square norm plus penalized nodeless adjustment
+  savedGFTmp = std::exp( 2.0 * tfl ) + nodelessAdj;
 
   // return the guiding function value
-  return savedGF;
+  return savedGFTmp;
+
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+/// \brief  Upon accepting a move, permanantly record data for the new configuration
+///
+/// \param[in]      P        holds the configuration information
+/// \param[in]      iat      index of the moved particle
+/// \param[in]      tfl      trial function logarithm after the move
+///
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void VMCUpdatePbyPNodeless::nodeless_accept(const ParticleSet & P, const int iat, const RealType tfl)
+{
+
+  // nothing to do if we're not guiding with nodeless guiding yet
+  if ( tfl_sdv < 0.0 ) return;
+
+  // problem if we are not initialized
+  if ( !nodelessInitialized )
+    APP_ABORT("VMCUpdatePbyPNodeless not initialized when we called nodeless_accept");
+
+  // get dimensions
+  const int nc = cgCountSigmas.size(); // number of counting groups
+
+  // record the new counting region counts
+  std::copy(cgCountsTmp.begin(), cgCountsTmp.end(), cgCounts.begin());
+
+  // record new un-normalized counting function data
+  std::copy(cgUnormalizedTmp.begin(), cgUnormalizedTmp.end(), &cgUnormalized.at(iat*nc));
+
+  // record new norm
+  cgNorms[iat] = cgNormTmp;
+
+  // record new sum of counting group penalty exponents
+  cgPenaltyExponent = cgPenaltyExponentTmp;
+
+  // record new min distance penalty information
+  mdPenalties[iat] = mdPenaltiesTmp;
+  mdPenalty = mdPenaltyTmp;
+
+  // record new guiding function value
+  savedGF = savedGFTmp;
 
 }
 
@@ -1796,7 +1834,7 @@ void VMCUpdatePbyPNodeless::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
           //const RealType new_sqn = this->get_nodeless_gf_sqn(new_tfl, G, L);
           //const RealType new_sqn = this->get_nodeless_gf_sqn_new(new_tfl);
 
-          // update internal parameters to reflect the move and get the new square norm of the guiding function 
+          // compute what would happen to the nodeless guiding object if we accepted the move
           const RealType new_sqn = this->update_nodeless(W, iat, new_tfl);
 
           // if the ratio of square norms satisfies the Metropolis condition, accept the move
@@ -1810,6 +1848,9 @@ void VMCUpdatePbyPNodeless::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
             //W.L = L;
             old_tfl = new_tfl;
             old_sqn = new_sqn;
+
+            // record what happens to the nodeless guiding object now that the move is accepted
+            this->nodeless_accept(W, iat, old_tfl);
 
 //            {
 //              // get the sum of the laplacian and square gradient of log(Psi)
@@ -1832,9 +1873,6 @@ void VMCUpdatePbyPNodeless::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
             nReject++;
             W.rejectMove(iat);
             Psi.rejectMove(iat);
-
-            // undo the update
-            this->update_nodeless(W, iat, old_tfl);
 
           }
 
