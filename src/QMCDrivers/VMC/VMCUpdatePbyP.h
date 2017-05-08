@@ -172,6 +172,9 @@ class VMCUpdatePbyPNodeless : public QMCUpdateBase {
     /// \brief  overall min distance penalty to the nodeless adjustment
     RealType mdPenalty;
 
+    /// \brief  min distance penalties for each particle
+    std::vector<RealType> mdPenalties;
+
     /// \brief  particle number count for each counting region
     std::vector<RealType> cgCounts;
 

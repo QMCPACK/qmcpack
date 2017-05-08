@@ -1546,7 +1546,8 @@ VMCUpdatePbyPNodeless::~VMCUpdatePbyPNodeless() {}
 /// \return  the value of the overall guiding function after initialization
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-VMCUpdatePbyPNodeless::RealType VMCUpdatePbyPNodeless::init_nodeless(const ParticleSet & P, const RealType tfl) {
+VMCUpdatePbyPNodeless::RealType VMCUpdatePbyPNodeless::init_nodeless(const ParticleSet & P, const RealType tfl)
+{
 
   // get dimensions
   const int np = P.R.size(); // number of particles
@@ -1583,12 +1584,14 @@ VMCUpdatePbyPNodeless::RealType VMCUpdatePbyPNodeless::init_nodeless(const Parti
 
   // get product of min distance penalties
   mdPenalty = 1;
+  mdPenalties.assign(np, 1);
   for (int i = 0; i < np; i++) {
     RealType max_val = 0;
     for (int k = 0; k < nd; k++) {
       tpp = mdCenters.at(k) - P.R[i];
       max_val = std::max(max_val, 1.0 / ( 1.0 + std::exp( mdBetas.at(k) * ( std::sqrt( std::abs( dot(tpp,tpp) ) ) - mdDists.at(k) ) ) ) );
     }
+    mdPenalties.at(i) = max_val;
     mdPenalty *= max_val;
   }
 
@@ -1618,8 +1621,69 @@ VMCUpdatePbyPNodeless::RealType VMCUpdatePbyPNodeless::init_nodeless(const Parti
 /// \return  the value of the overall guiding function after the update
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-VMCUpdatePbyPNodeless::RealType VMCUpdatePbyPNodeless::update_nodeless(const ParticleSet & P, const int iat, const RealType tfl) {
-  return this->init_nodeless(P, tfl);
+VMCUpdatePbyPNodeless::RealType VMCUpdatePbyPNodeless::update_nodeless(const ParticleSet & P, const int iat, const RealType tfl)
+{
+
+  // get dimensions
+  const int np = P.R.size(); // number of particles
+  const int nc = cgCountSigmas.size(); // number of counting groups
+  const int nd = mdBetas.size(); // number of min distance centers
+
+  // get a temporary particle position that will be useful
+  ParticleSet::SingleParticlePos_t tpp;
+
+  // remove the moved particle's old contribution to each count
+  for (int k = 0; k < nc; k++)
+    cgCounts.at(k) -= cgUnormalized.at(k+iat*nc) / cgNorms.at(iat);
+
+  // initialize un-normalized counting function and its norm for the moved particle
+  cgNorms.at(iat) = 0;
+  for (int k = 0; k < nc; k++)
+  {
+    cgUnormalized.at(k+iat*nc) = 0;
+    for (int l = cgGaussStarts.at(k); l < cgGaussEnds.at(k); l++)
+    {
+      tpp = cgGaussCenters.at(l) - P.R[iat];
+      cgUnormalized.at(k+iat*nc) += cgGaussAlphas.at(l) * std::exp( -dot(tpp,tpp) / ( 2.0 * cgGaussSigmas.at(l) * cgGaussSigmas.at(l) ) );
+    }
+    cgNorms.at(iat) += cgUnormalized.at(k+iat*nc);
+  }
+
+  // add in the moved particle's new contribution to each count
+  for (int k = 0; k < nc; k++)
+    cgCounts.at(k) += cgUnormalized.at(k+iat*nc) / cgNorms.at(iat);
+
+  // get sum of counting group penalty exponents
+  cgPenaltyExponent = 0;
+  for (int k = 0; k < nc; k++)
+    cgPenaltyExponent -=   ( cgCountNelecs.at(k) - cgCounts.at(k) ) * ( cgCountNelecs.at(k) - cgCounts.at(k) )
+                         / ( 2.0 * cgCountSigmas.at(k) * cgCountSigmas.at(k) );
+
+  // update product of min distance penalties
+  {
+    RealType max_val = 0;
+    for (int k = 0; k < nd; k++) {
+      tpp = mdCenters.at(k) - P.R[iat];
+      max_val = std::max(max_val, 1.0 / ( 1.0 + std::exp( mdBetas.at(k) * ( std::sqrt( std::abs( dot(tpp,tpp) ) ) - mdDists.at(k) ) ) ) );
+    }
+    mdPenalty *= max_val / mdPenalties.at(iat);
+    mdPenalties.at(iat) = max_val;
+  }
+
+  // initialize the nodeless adjustment as the epsilon-scaled "average" trial function value
+  RealType nodelessAdj = NodelessEpsilon * std::exp( 2.0 * tfl_avg );
+
+  // penalize the nodeless adjustment by the min distance and counting group penalties
+  nodelessAdj *= mdPenalty * std::exp(cgPenaltyExponent);
+
+  // If we don't have an average and standard deviation for a previously-taken set of
+  // trial function logarithms, return the un-adjusted square norm of the trial function
+  if ( tfl_sdv < 0.0 )
+    return std::exp( 2.0 * tfl );
+
+  // otherwise, return the trial function square norm plus the penalized nodeless adjustment
+  return std::exp( 2.0 * tfl ) + nodelessAdj;
+
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
