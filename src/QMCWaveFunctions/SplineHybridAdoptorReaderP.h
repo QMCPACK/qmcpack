@@ -41,6 +41,7 @@ template<typename ST, typename LT>
 struct Gvectors
 {
   typedef TinyVector<ST,3> PosType;
+  typedef std::complex<ST> ValueType;
 
   const LT& Lattice;
   const std::vector<TinyVector<int,3> >& gvecs;
@@ -116,7 +117,7 @@ struct Gvectors
   }
 
   template<typename PT>
-  void calc_phase_shift(const PT& pos, aligned_vector<std::complex<ST> >& phase_shift)
+  void calc_phase_shift(const PT& pos, aligned_vector<ValueType>& phase_shift)
   {
     phase_shift.resize(NumGvecs);
     #pragma omp parallel for
@@ -124,22 +125,47 @@ struct Gvectors
     {
       ST s,c;
       sincos(dot(gvecs_cart[ig],pos),&s,&c);
-      phase_shift[ig]=std::complex<ST>(c,s);
+      phase_shift[ig]=ValueType(c,s);
     }
   }
 
   template<typename PT>
-  std::complex<ST> evaluate_psi_r(const Vector<std::complex<double> >& cG, const PT& pos)
+  ValueType evaluate_psi_r(const Vector<std::complex<double> >& cG, const PT& pos)
   {
+    assert(cG.size()==NumGvecs);
     std::complex<ST> val(0.0,0.0);
     for(size_t ig=0; ig<NumGvecs; ig++)
     {
       ST s,c;
       sincos(dot(gvecs_cart[ig],pos),&s,&c);
-      std::complex<ST> pw0(c,s);
+      ValueType pw0(c,s);
       val+=cG[ig]*pw0;
     }
     return val;
+  }
+
+  template<typename PT>
+  void evaluate_psi_r(const Vector<std::complex<double> >& cG, const PT& pos, ValueType& phi, ValueType& d2phi)
+  {
+    assert(cG.size()==NumGvecs);
+    d2phi=phi=0.0;
+    for(size_t ig=0; ig<NumGvecs; ig++)
+    {
+      ST s,c;
+      sincos(dot(gvecs_cart[ig],pos),&s,&c);
+      ValueType pw0(c,s);
+      phi+=cG[ig]*pw0;
+      d2phi+=cG[ig]*pw0*(-dot(gvecs_cart[ig],gvecs_cart[ig]));
+    }
+  }
+
+  double evaluate_KE(const Vector<std::complex<double> >& cG)
+  {
+    assert(cG.size()==NumGvecs);
+    double KE=0;
+    for(size_t ig=0; ig<NumGvecs; ig++)
+      KE+=dot(gvecs_cart[ig],gvecs_cart[ig])*(cG[ig].real()*cG[ig].real()+cG[ig].imag()*cG[ig].imag());
+    return KE/2.0;
   }
 
 };
@@ -161,6 +187,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
   UBspline_3d_d* spline_i;
   BsplineSet<adoptor_type>* bspline;
   fftw_plan FFTplan;
+  std::vector<std::vector<double> > mismatch_energy_AO_to_PW;
 
   SplineHybridAdoptorReader(EinsplineSetBuilder* e)
     : BsplineReaderBase(e), spline_r(NULL), spline_i(NULL), bspline(0), FFTplan(NULL)
@@ -381,12 +408,13 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
     }
   }
 
+  /** initialize basic parameters of atomic orbitals */
   void initialize_atomic_centers(std::vector<AtomicOrbitalSoA<DataType> >& centers)
   {
+    const auto& ACInfo=mybuilder->AtomicCentersInfo;
     // load atomic center info only when it is not initialized
     if(centers.size()==0)
     {
-      const auto& ACInfo=mybuilder->AtomicCentersInfo;
       bool success=true;
       app_log() << "Reading atomic center info for hybrid representation" << std::endl;
       for(int center_idx=0; center_idx<ACInfo.Ncenters; center_idx++)
@@ -422,6 +450,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       }
       if(!success) abort();
 
+      mismatch_energy_AO_to_PW.resize(ACInfo.Ncenters);
       for(int center_idx=0; center_idx<ACInfo.Ncenters; center_idx++)
       {
         AtomicOrbitalSoA<DataType> oneCenter(ACInfo.lmax[center_idx]);
@@ -430,8 +459,12 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
         centers.push_back(oneCenter);
       }
     }
+
+    for(int center_idx=0; center_idx<ACInfo.Ncenters; center_idx++)
+      mismatch_energy_AO_to_PW[center_idx].resize(std::max(ACInfo.spline_npoints[center_idx]-3,0),0.0);
   }
 
+  /** initialize construct atomic orbital radial functions from plane waves */
   inline void create_atomic_centers_Gspace(Vector<std::complex<double> >& cG, Communicate& band_group_comm, int iorb)
   {
     std::vector<AtomicOrbitalSoA<DataType> >& centers=bspline->AtomicCenters;
@@ -452,6 +485,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
 
     // prepare Gvecs Ylm(G)
     Gvectors<double, UnitCellType> Gvecs(mybuilder->Gvecs[0], mybuilder->PrimCell, bspline->HalfG);
+    // if(band_group_comm.isGroupLeader()) std::cout << "print band=" << iorb << " KE=" << Gvecs.evaluate_KE(cG) << std::endl;
     const int lmax_limit=7;
     Gvecs.calc_YlmG(lmax_limit);
     std::vector<std::complex<double> > i_power;
@@ -574,73 +608,77 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       fclose(fout_spline_g);
       fclose(fout_spline_l);
 #endif
-    }
-    // collect atomic orbitals from all the centers
-    bspline->reduce_atomic_tables(center_group_comm.GroupLeaderComm);
-  }
 
-  inline void create_atomic_centers_Rspace(Vector<std::complex<double> >& cG, int ti, int iorb)
-  {
-    typedef typename EinsplineSetBuilder::UnitCellType UnitCellType;
-
-    Quadrature3D<double> quad(6);
-    Gvectors<double, UnitCellType> Gvecs(mybuilder->Gvecs[0], mybuilder->PrimCell, bspline->HalfG);
-
-    std::vector<AtomicOrbitalSoA<DataType> >& centers=bspline->AtomicCenters;
-    //#pragma omp parallel for
-    for(int center_idx=0; center_idx<centers.size(); center_idx++)
-    {
-      AtomicOrbitalSoA<DataType>& mycenter=centers[center_idx];
-      const double cutoff_radius = mycenter.cutoff;
-      const double spline_radius = mycenter.spline_radius;
-      const int   spline_npoints = mycenter.spline_npoints;
-      const int             lmax = mycenter.lmax;
-      double delta = spline_radius/static_cast<double>(spline_npoints-1);
-
-      char fname[20];
-      sprintf(fname, "band_%d_center_%d", iorb, center_idx);
-      FILE *fout_pw  = fopen (fname, "w");
-      fprintf(fout_pw, "# r vals(lm)\n");
-      std::vector<std::vector<std::complex<double> > > all_vals;
-      all_vals.resize(spline_npoints);
-
-      SoaSphericalTensor<double> Ylm(lmax);
-      Array<double,2> Ylm_vals(quad.nk,Ylm.size());
-      for(int j=0; j<quad.nk; j++)
-        Ylm.evaluateV(quad.xyz_m[j][0], quad.xyz_m[j][1], quad.xyz_m[j][2], &Ylm_vals(j,0));
-      // vector splineData_r/i for each grid point
+      const int total_grid_size=mismatch_energy_AO_to_PW[center_idx].size();
+      Quadrature3D<double> quad(7);
       #pragma omp parallel for
-      for(int ip=0; ip<spline_npoints; ip++)
+      for(int ip=0; ip<total_grid_size; ip++)
       {
-        double r=delta*static_cast<double>(ip);
-        std::vector<std::complex<double> > vals(Ylm.size(), std::complex<double>(0.0,0.0));
+        double r=delta*static_cast<double>(ip+1);
+        double AO_to_PW(0.0);
+        int quad_counter=0;
         // sum up quadratures
         for(int j=0; j<quad.nk; j++)
         {
-          std::complex<double> psi=Gvecs.evaluate_psi_r(cG, quad.xyz_m[j]*r+mycenter.pos);
-          for(int lm=0; lm<Ylm.size(); lm++)
-          {
-            vals[lm]+=Ylm_vals(j,lm)*psi*quad.weight_m[j];
-          }
-        }
-        all_vals[ip]=vals;
-        for(int lm=0; lm<Ylm.size(); lm++)
-          all_vals[ip][lm]*=4.0*M_PI;
-      }
-      app_log() << "debug band " << iorb << " center " << center_idx << std::endl;
+          typedef TinyVector<DataType,3> PosType;
+          PosType pos_quad=quad.xyz_m[j]*r+mycenter.pos;
+          double PW_ene, AO_ene, PW_norm2, AO_norm2;
 
-      for(int ip=0; ip<spline_npoints; ip++)
-      {
-        fprintf(fout_pw, "%15.10lf  ", delta*static_cast<double>(ip));
-        for(int lm=0; lm<Ylm.size(); lm++)
-          fprintf(fout_pw, "%15.10lf  %15.10lf  ", all_vals[ip][lm].real(), all_vals[ip][lm].imag());
-        fprintf(fout_pw, "\n");
+          // Evaluate PW.
+          std::complex<double> PW_psi, PW_d2psi;
+          Gvecs.evaluate_psi_r(cG, pos_quad, PW_psi, PW_d2psi);
+          PW_psi*=std::complex<double>(rotate_phase_r, rotate_phase_i);
+          PW_d2psi*=std::complex<double>(rotate_phase_r, rotate_phase_i);
+          if(bspline->is_complex)
+          {
+            PW_ene  =PW_psi.real()*PW_d2psi.real()+PW_psi.imag()*PW_d2psi.imag();
+            PW_norm2=PW_psi.real()*  PW_psi.real()+PW_psi.imag()*  PW_psi.imag();
+          }
+          else
+          {
+            PW_ene  =PW_psi.real()*PW_d2psi.real();
+            PW_norm2=PW_psi.real()*  PW_psi.real();
+          }
+
+          // Evaluate AO. This is a lazy implementation.
+          // The evaluation goes over all the bands althought the results of only one band is used.
+          auto& myV=bspline->myV;
+          auto& myG=bspline->myG;
+          auto& myL=bspline->myL;
+          #pragma omp critical
+          mycenter.evaluate_vgl(r, quad.xyz_m[j]*r, myV, myG, myL);
+          if(bspline->is_complex)
+          {
+            AO_ene  =myV[iorb*2]*myL[iorb*2]+myV[iorb*2+1]*myL[iorb*2+1];
+            AO_norm2=myV[iorb*2]*myV[iorb*2]+myV[iorb*2+1]*myV[iorb*2+1];
+          }
+          else
+          {
+            AO_ene  =myV[iorb]*myL[iorb];
+            AO_norm2=myV[iorb]*myV[iorb];
+          }
+
+          //collect mismatch energy
+          if(AO_norm2>std::numeric_limits<float>::epsilon() && PW_norm2>std::numeric_limits<float>::epsilon())
+          {
+            quad_counter++;
+            AO_to_PW+=std::fabs(AO_ene-PW_ene)/2.0;
+          }
+
+          //std::cout << "debug PW KE " << PW_ene << std::endl;
+          //std::cout << "debug AO KE " << AO_ene << std::endl;
+        }
+        //std::cout << "debug iorb=" << iorb << " center=" << center_idx << " ip=" << ip << " r=" << r << " mismatch_energy_AO_to_PW=" << AO_to_PW/(quad_counter>0?quad_counter:1) << std::endl;
+        mismatch_energy_AO_to_PW[center_idx][ip]+=AO_to_PW/(quad_counter>0?quad_counter:1);
       }
-      // fill it in the big table N bands
-      // push into class.
-      fclose(fout_pw);
     }
+    // collect atomic orbitals from all the centers
+    bspline->reduce_atomic_tables(center_group_comm.GroupLeaderComm);
+    // collect mismatch_energy
+    for(int center_idx=0; center_idx<Ncenters; center_idx++)
+      mpi::reduce(*center_group_comm.GroupLeaderComm,mismatch_energy_AO_to_PW[center_idx]);
   }
+
 
   /** initialize the splines
    */
@@ -682,10 +720,68 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
     Timer now;
     now.restart();
     if(band_group_comm.isGroupLeader())
+    {
       bspline->reduce_tables(band_group_comm.GroupLeaderComm);
+      // collect mismatch_energy
+      for(int center_idx=0; center_idx<bspline->AtomicCenters.size(); center_idx++)
+        mpi::reduce(*band_group_comm.GroupLeaderComm,mismatch_energy_AO_to_PW[center_idx]);
+    }
     bspline->bcast_tables(myComm);
     app_log() << "  Time to reduce and bcast the table = " << now.elapsed() << std::endl;
+
+    if(!myComm->rank()) print_mismatch_scan(spin);
   }
+
+
+  /** print the mismatch energy between plane waves and AO */
+  void print_mismatch_scan(const int spin)
+  {
+    const auto& mySpecies=mybuilder->SourcePtcl->mySpecies;
+    int Nspecies=mySpecies.size();
+    std::vector<int> atom_counter(Nspecies,0),lmax_per_species(Nspecies,0.0);
+    std::vector<double> delta_per_species(Nspecies,0.0);
+    std::vector<std::vector<double> > mismatch_ene_species_AO_to_PW(Nspecies);
+    const auto& AtomicCenters=bspline->AtomicCenters;
+    // set proper size
+    for(int center_idx=0; center_idx<AtomicCenters.size(); center_idx++)
+    {
+      const int my_GroupID = mybuilder->AtomicCentersInfo.GroupID[center_idx];
+      if(mismatch_energy_AO_to_PW[center_idx].size()>mismatch_ene_species_AO_to_PW[my_GroupID].size())
+      {
+        mismatch_ene_species_AO_to_PW[my_GroupID].resize(mismatch_energy_AO_to_PW[center_idx].size(),0.0);
+        delta_per_species[my_GroupID]=AtomicCenters[center_idx].spline_radius/static_cast<double>(AtomicCenters[center_idx].spline_npoints-1);
+        lmax_per_species[my_GroupID]=AtomicCenters[center_idx].lmax;
+      }
+    }
+    // average per species
+    for(int center_idx=0; center_idx<AtomicCenters.size(); center_idx++)
+    {
+      //app_log() << " Yedebug center=" << center_idx << std::endl;
+      //for(int j=0; j<mismatch_energy_AO_to_PW[center_idx].size(); j++)
+      //  app_log() << " ip=" << j << " dis=" << (j+1)*AtomicCenters[center_idx].spline_radius/static_cast<double>(AtomicCenters[center_idx].spline_npoints-1)
+      //            << " mismatch=" << mismatch_energy_AO_to_PW[center_idx][j] << std::endl;
+      const int my_GroupID = mybuilder->AtomicCentersInfo.GroupID[center_idx];
+      for(int ip=0; ip<mismatch_energy_AO_to_PW[center_idx].size(); ip++)
+        mismatch_ene_species_AO_to_PW[my_GroupID][ip]+=mismatch_energy_AO_to_PW[center_idx][ip];
+      atom_counter[my_GroupID]++;
+    }
+    // print per species
+    for(int ispecies=0; ispecies<Nspecies; ispecies++)
+    {
+      std::ostringstream filename;
+      filename << "AO_to_PW.spin_" << spin << ".tw" << mybuilder->TwistNum << "." << mySpecies.speciesName[ispecies]
+               << ".lmax" << lmax_per_species[ispecies] << ".dat";
+      std::ofstream outfile(filename.str().c_str());
+      outfile << "# ip r abs(Ediff)" << std::endl;
+      for(int ip=0; ip<mismatch_ene_species_AO_to_PW[ispecies].size(); ip++)
+        outfile << ip << "  " << std::fixed << std::setprecision(4) << (ip+1)*delta_per_species[ispecies] << "  "
+                << std::setprecision(9)
+                << mismatch_ene_species_AO_to_PW[ispecies][ip]/(atom_counter[ispecies]>0?atom_counter[ispecies]:1)
+                << std::endl;
+      outfile.close();
+    }
+  }
+
 
   void initialize_spline_psi_r(int spin, const BandInfoGroup& bandgroup)
   {
