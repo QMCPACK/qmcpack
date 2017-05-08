@@ -33,6 +33,7 @@
 
 //#include <QMCHamiltonians/Ylm.h>
 //#define PRINT_RADIAL
+//#define REPORT_MISMATCH
 
 namespace qmcplusplus
 {
@@ -187,7 +188,9 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
   UBspline_3d_d* spline_i;
   BsplineSet<adoptor_type>* bspline;
   fftw_plan FFTplan;
+#ifdef REPORT_MISMATCH
   std::vector<std::vector<double> > mismatch_energy_AO_to_PW;
+#endif
 
   SplineHybridAdoptorReader(EinsplineSetBuilder* e)
     : BsplineReaderBase(e), spline_r(NULL), spline_i(NULL), bspline(0), FFTplan(NULL)
@@ -450,7 +453,9 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       }
       if(!success) abort();
 
+#ifdef REPORT_MISMATCH
       mismatch_energy_AO_to_PW.resize(ACInfo.Ncenters);
+#endif
       for(int center_idx=0; center_idx<ACInfo.Ncenters; center_idx++)
       {
         AtomicOrbitalSoA<DataType> oneCenter(ACInfo.lmax[center_idx]);
@@ -460,8 +465,10 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       }
     }
 
+#ifdef REPORT_MISMATCH
     for(int center_idx=0; center_idx<ACInfo.Ncenters; center_idx++)
       mismatch_energy_AO_to_PW[center_idx].resize(std::max(ACInfo.spline_npoints[center_idx]-3,0),0.0);
+#endif
   }
 
   /** initialize construct atomic orbital radial functions from plane waves */
@@ -609,6 +616,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       fclose(fout_spline_l);
 #endif
 
+#ifdef REPORT_MISMATCH
       const int total_grid_size=mismatch_energy_AO_to_PW[center_idx].size();
       Quadrature3D<double> quad(7);
       #pragma omp parallel for
@@ -671,12 +679,15 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
         //std::cout << "debug iorb=" << iorb << " center=" << center_idx << " ip=" << ip << " r=" << r << " mismatch_energy_AO_to_PW=" << AO_to_PW/(quad_counter>0?quad_counter:1) << std::endl;
         mismatch_energy_AO_to_PW[center_idx][ip]+=AO_to_PW/(quad_counter>0?quad_counter:1);
       }
+#endif
     }
     // collect atomic orbitals from all the centers
     bspline->reduce_atomic_tables(center_group_comm.GroupLeaderComm);
+#ifdef REPORT_MISMATCH
     // collect mismatch_energy
     for(int center_idx=0; center_idx<Ncenters; center_idx++)
       mpi::reduce(*center_group_comm.GroupLeaderComm,mismatch_energy_AO_to_PW[center_idx]);
+#endif
   }
 
 
@@ -722,17 +733,22 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
     if(band_group_comm.isGroupLeader())
     {
       bspline->reduce_tables(band_group_comm.GroupLeaderComm);
+#ifdef REPORT_MISMATCH
       // collect mismatch_energy
       for(int center_idx=0; center_idx<bspline->AtomicCenters.size(); center_idx++)
         mpi::reduce(*band_group_comm.GroupLeaderComm,mismatch_energy_AO_to_PW[center_idx]);
+#endif
     }
     bspline->bcast_tables(myComm);
     app_log() << "  Time to reduce and bcast the table = " << now.elapsed() << std::endl;
 
+#ifdef REPORT_MISMATCH
     if(!myComm->rank()) print_mismatch_scan(spin);
+#endif
   }
 
 
+#ifdef REPORT_MISMATCH
   /** print the mismatch energy between plane waves and AO */
   void print_mismatch_scan(const int spin)
   {
@@ -781,6 +797,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       outfile.close();
     }
   }
+#endif
 
 
   void initialize_spline_psi_r(int spin, const BandInfoGroup& bandgroup)
