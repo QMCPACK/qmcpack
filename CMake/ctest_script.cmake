@@ -118,19 +118,10 @@ ELSEIF( ${CTEST_SCRIPT_ARG} STREQUAL "coverage" )
     SET( CMAKE_BUILD_TYPE "Debug" )
     SET( CTEST_COVERAGE_COMMAND "gcov" )
     SET( ENABLE_GCOV "true" )
-    SET( COVERAGE_OPTIONS
-  "-DCMAKE_CXX_FLAGS=--coverage"
-  "-DCMAKE_C_FLAGS=--coverage"
-  "-DCMAKE_EXE_LINKER_FLAGS=--coverage"
-  "-DCMAKE_SHARED_LINKER_FLAGS=--coverage"
-    )
     SET( CTEST_BUILD_NAME "${CTEST_BUILD_NAME}-coverage" )
 
 ELSE()
     MESSAGE(FATAL_ERROR "Invalid build (${CTEST_SCRIPT_ARG}): ctest -S /path/to/script,build (debug/opt/valgrind")
-ENDIF()
-IF ( NOT COVERAGE_COMMAND )
-    SET( ENABLE_GCOV "false" )
 ENDIF()
 
 
@@ -242,10 +233,6 @@ ENDIF()
 
 IF ( QMC_OPTIONS )
     SET( CTEST_OPTIONS "${CTEST_OPTIONS};${QMC_OPTIONS}" )
-ENDIF()
-
-IF ( COVERAGE_OPTIONS )
-    SET( CTEST_OPTIONS "${CTEST_OPTIONS};${COVERAGE_OPTIONS}" )
 ENDIF()
 
 MESSAGE("Configure options:")
