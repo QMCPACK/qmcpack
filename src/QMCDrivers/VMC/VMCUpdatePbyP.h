@@ -159,12 +159,18 @@ class VMCUpdatePbyPNodeless : public QMCUpdateBase {
 
     RealType update_nodeless(const ParticleSet & P, const int iat, const RealType tfl);
 
+    /// \brief  whether we need to re-initialize the nodeless guiding function
+    bool nodelessInitialized;
+
     /// \brief  coefficient for the laplacian in the guiding function formula
     RealType NodelessEpsilon;
 
     /// \brief  coefficient for the exponential damping in the guiding function formula
     RealType NodelessAlpha;
     RealType NodelessBeta;
+
+    /// \brief  saved value of the nodeless guiding function
+    RealType savedGF;
 
     /// \brief  overall counting group penalty's exponent to the nodeless adjustment
     RealType cgPenaltyExponent;

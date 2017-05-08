@@ -1302,6 +1302,7 @@ VMCUpdatePbyPNodeless::VMCUpdatePbyPNodeless(MCWalkerConfiguration & w,
 : QMCUpdateBase(w,psi,h,rg)
 , NodelessEpsilon(eps)
 , IonPositions(ips.R.begin(), ips.R.end())
+, nodelessInitialized(false)
 {
 
   // ensure some sanity
@@ -1332,6 +1333,9 @@ bool VMCUpdatePbyPNodeless::put(xmlNodePtr cur) {
 
   // do the usual base class put
   const bool base_success = QMCUpdateBase::put(cur);
+
+  // we will no longer be initialized after this
+  nodelessInitialized = false;
 
   // find and process nodeless guiding node
   bool my_success = false;
@@ -1549,6 +1553,9 @@ VMCUpdatePbyPNodeless::~VMCUpdatePbyPNodeless() {}
 VMCUpdatePbyPNodeless::RealType VMCUpdatePbyPNodeless::init_nodeless(const ParticleSet & P, const RealType tfl)
 {
 
+  // if we don't need to initialize, just return the already saved guiding function value
+  if ( nodelessInitialized ) return savedGF;
+
   // get dimensions
   const int np = P.R.size(); // number of particles
   const int nc = cgCountSigmas.size(); // number of counting groups
@@ -1602,12 +1609,19 @@ VMCUpdatePbyPNodeless::RealType VMCUpdatePbyPNodeless::init_nodeless(const Parti
   nodelessAdj *= mdPenalty * std::exp(cgPenaltyExponent);
 
   // If we don't have an average and standard deviation for a previously-taken set of
-  // trial function logarithms, return the un-adjusted square norm of the trial function
+  // trial function logarithms, use the un-adjusted square norm of the trial function
   if ( tfl_sdv < 0.0 )
-    return std::exp( 2.0 * tfl );
+    savedGF = std::exp( 2.0 * tfl );
 
-  // otherwise, return the trial function square norm plus the penalized nodeless adjustment
-  return std::exp( 2.0 * tfl ) + nodelessAdj;
+  // otherwise, use the trial function square norm plus the penalized nodeless adjustment
+  else
+    savedGF = std::exp( 2.0 * tfl ) + nodelessAdj;
+
+  // record that we are now initialized
+  nodelessInitialized = true;
+
+  // return the guiding function value
+  return savedGF;
 
 }
 
@@ -1623,6 +1637,10 @@ VMCUpdatePbyPNodeless::RealType VMCUpdatePbyPNodeless::init_nodeless(const Parti
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 VMCUpdatePbyPNodeless::RealType VMCUpdatePbyPNodeless::update_nodeless(const ParticleSet & P, const int iat, const RealType tfl)
 {
+
+  // problem if we are not initialized
+  if ( !nodelessInitialized )
+    APP_ABORT("VMCUpdatePbyPNodeless not initialized when we called update_nodeless");
 
   // get dimensions
   const int np = P.R.size(); // number of particles
@@ -1646,9 +1664,7 @@ VMCUpdatePbyPNodeless::RealType VMCUpdatePbyPNodeless::update_nodeless(const Par
     cgUnormalized[k+iat_nc] = 0;
     for (int l = cgGaussStarts[k]; l < cgGaussEnds[k]; l++)
     {
-      //tpp = cgGaussCenters[l] - P.R[iat];
-      tpp = cgGaussCenters[l];
-      tpp -= P.R[iat];
+      tpp = cgGaussCenters[l] - P.R[iat];
       cgUnormalized[k+iat_nc] += cgGaussAlphas[l] * std::exp( -dot(tpp,tpp) / ( 2.0 * cgGaussSigmas[l] * cgGaussSigmas[l] ) );
     }
     cgNorms[iat] += cgUnormalized[k+iat_nc];
@@ -1668,9 +1684,7 @@ VMCUpdatePbyPNodeless::RealType VMCUpdatePbyPNodeless::update_nodeless(const Par
   {
     RealType max_val = 0;
     for (int k = 0; k < nd; k++) {
-      //tpp = mdCenters[k] - P.R[iat];
-      tpp = mdCenters[k];
-      tpp -= P.R[iat];
+      tpp = mdCenters[k] - P.R[iat];
       max_val = std::max(max_val, 1.0 / ( 1.0 + std::exp( mdBetas[k] * ( std::sqrt( std::abs( dot(tpp,tpp) ) ) - mdDists[k] ) ) ) );
     }
     mdPenalty *= max_val / mdPenalties[iat];
@@ -1684,12 +1698,16 @@ VMCUpdatePbyPNodeless::RealType VMCUpdatePbyPNodeless::update_nodeless(const Par
   nodelessAdj *= mdPenalty * std::exp(cgPenaltyExponent);
 
   // If we don't have an average and standard deviation for a previously-taken set of
-  // trial function logarithms, return the un-adjusted square norm of the trial function
+  // trial function logarithms, use the un-adjusted square norm of the trial function
   if ( tfl_sdv < 0.0 )
-    return std::exp( 2.0 * tfl );
+    savedGF = std::exp( 2.0 * tfl );
 
-  // otherwise, return the trial function square norm plus the penalized nodeless adjustment
-  return std::exp( 2.0 * tfl ) + nodelessAdj;
+  // otherwise, use the trial function square norm plus the penalized nodeless adjustment
+  else
+    savedGF = std::exp( 2.0 * tfl ) + nodelessAdj;
+
+  // return the guiding function value
+  return savedGF;
 
 }
 
