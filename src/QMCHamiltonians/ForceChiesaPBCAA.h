@@ -63,8 +63,6 @@ struct ForceChiesaPBCAA: public QMCHamiltonianBase, public ForceBase
   ///Always mave a radial functor for the bare coulomb
   RadFunctorType* V0;
 
-  int MaxGridPoints;
-  
   ///number of particles per species of A
   std::vector<int> NofSpeciesA;
   ///number of particles per species of B
