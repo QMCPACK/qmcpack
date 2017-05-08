@@ -272,6 +272,7 @@ ENDIF()
                     1 # DMC
                     TRUE)
 
+  IF(NOT QMC_CUDA)
   LIST(APPEND BCC_H_RMC_SCALARS "totenergy" "-1.8420 0.0011")
   #check RMC on 16 cores.  1 MPI
   QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-rmc_sdj
@@ -291,6 +292,7 @@ ENDIF()
                     BCC_H_RMC_SCALARS
                     1 #series#
                     TRUE)
+  ENDIF()
 
                      
 # Plane wave test of bccH (no pp, so faster than typical solids)
@@ -451,6 +453,7 @@ ENDIF()
                     1 # DMC
                     TRUE)
 
+  IF(NOT QMC_CUDA)
   LIST(APPEND LONG_BCC_H_RMC_SCALARS "totenergy" "-1.84150 0.00011")
   LIST(APPEND LONG_BCC_H_RMC_SCALARS "potential" "-2.01964 0.00072")
   LIST(APPEND LONG_BCC_H_RMC_SCALARS "potential_pure" "-2.01907 0.00085")
@@ -466,6 +469,7 @@ ENDIF()
                     LONG_BCC_H_RMC_SCALARS
                     1 # DMC
                     TRUE)
+  ENDIF()
 
  
   LIST(APPEND LONG_DIAMOND_SCALARS "totenergy" "-10.491445 0.000065")
