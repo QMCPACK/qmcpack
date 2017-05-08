@@ -30,6 +30,11 @@ namespace qmcplusplus
     int np = omp_get_max_threads ();
     //(SPACEWARP_MODE,MULTIPE_MODE,UPDATE_MODE)
     QMCDriver *qmc = 0;
+#ifdef QMC_CUDA
+    if (GPU)
+      APP_ABORT("RMC is not supported on GPU.\n");
+#endif
+
     if (RMCMode == 0 || RMCMode == 1)	//(0,0,0) (0,0,1) pbyp and all electron
       {
 	qmc = new RMCSingleOMP (w, psi, h, hpool, ppool);
