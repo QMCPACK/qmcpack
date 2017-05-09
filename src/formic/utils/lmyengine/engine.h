@@ -177,9 +177,6 @@ private:
   /// \brief [in]vector that stores history of weight
   std::vector<std::vector<double> > _weight;
 
-  /// \brief stores the history of guiding function logarithms
-  std::vector<std::vector<double> > _gf_logs;
-
   /// \brief [in]vector that stores the shift that we will be solving
   std::vector<double>  _shift_scale;
 
@@ -436,12 +433,6 @@ public:
   ///
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
   void reset();
-
-  void reset_gfl();
-
-  void record_gfl(const double gfl);
-
-  double get_gfl() const;
 
   void shift_update(std::vector<double> & new_shift);
 

@@ -195,8 +195,8 @@ double cqmc::engine::ETCompute::recursive_blocking(std::ostream & fout, const bo
     bbvars.at(i) -= temp_e * temp_e;
     bbv += bbvars.at(i) / nbb;
     bbv2 += bbvars.at(i) * bbvars.at(i) / nbb;
-    if ( my_rank == 0 && print )
-      fout << boost::format("variance for block %4i  is  %20.12f") % i % bbvars.at(i) << std::endl;
+    //if ( my_rank == 0 && print )
+    //  fout << boost::format("variance for block %4i  is  %20.12f") % i % bbvars.at(i) << std::endl;
   }
   const double bbvov = bbv2 - bbv * bbv;
   if ( my_rank == 0 && print ) {
