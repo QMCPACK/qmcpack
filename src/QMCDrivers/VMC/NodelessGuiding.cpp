@@ -59,7 +59,7 @@ VMCUpdatePbyPNodeless::VMCUpdatePbyPNodeless(MCWalkerConfiguration & w,
 {
 
   // set the flag to ensure we are using nodeless guiding
-  #pragma omp critical
+  #pragma omp single
   {
     usingNodelessGuiding = true;
   }
@@ -240,11 +240,14 @@ void VMCUpdatePbyPNodeless::reset_history(Communicate * const comm, const int nt
     return;
 
   // reset running totals
-  cga_hist.assign(nthread, std::vector<RealType>());
-  cgv_hist.assign(nthread, std::vector<RealType>());
-  tla_hist.assign(nthread, 0.0);
-  tlv_hist.assign(nthread, 0.0);
-  nsp_hist.assign(nthread, 0.0);
+  #pragma omp single
+  {
+    cga_hist.assign(nthread, std::vector<RealType>());
+    cgv_hist.assign(nthread, std::vector<RealType>());
+    tla_hist.assign(nthread, 0.0);
+    tlv_hist.assign(nthread, 0.0);
+    nsp_hist.assign(nthread, 0.0);
+  }
 
 }
 

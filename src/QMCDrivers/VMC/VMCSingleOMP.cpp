@@ -245,6 +245,7 @@ void VMCSingleOMP::resetRun()
             APP_ABORT("Drift currently not implemented for nodeless guiding");
           os <<"  PbyP moves with nodeless guiding, using VMCUpdatePbyPNodeless"<< std::endl;
           Movers[ip] = new VMCUpdatePbyPNodeless(*wClones[ip], *psiClones[ip], *hClones[ip], *Rng[ip], *ionSetPtr, NodelessEpsilon);
+          VMCUpdatePbyPNodeless::reset_history(myComm, NumThreads);
         }
         else if (UseDrift == "yes")
         {
