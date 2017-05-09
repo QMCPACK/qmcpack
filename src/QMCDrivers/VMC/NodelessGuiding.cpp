@@ -32,6 +32,7 @@ std::vector<VMCUpdatePbyPNodeless::RealType>               VMCUpdatePbyPNodeless
 std::vector<VMCUpdatePbyPNodeless::RealType>               VMCUpdatePbyPNodeless::nsp_hist;
 VMCUpdatePbyPNodeless::RealType VMCUpdatePbyPNodeless::tfl_avg = 0.0;
 VMCUpdatePbyPNodeless::RealType VMCUpdatePbyPNodeless::tfl_sdv = -1.0;
+bool VMCUpdatePbyPNodeless::usingNodelessGuiding = false;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  Constructor for the VMCUpdate class that uses particle-by-particle moves and a
@@ -56,6 +57,12 @@ VMCUpdatePbyPNodeless::VMCUpdatePbyPNodeless(MCWalkerConfiguration & w,
 , IonPositions(ips.R.begin(), ips.R.end())
 , nodelessInitialized(false)
 {
+
+  // set the flag to ensure we are using nodeless guiding
+  #pragma omp critical
+  {
+    usingNodelessGuiding = true;
+  }
 
   // ensure some sanity
   if ( NodelessEpsilon < RealType(0) )
@@ -228,6 +235,10 @@ bool VMCUpdatePbyPNodeless::put(xmlNodePtr cur)
 void VMCUpdatePbyPNodeless::reset_history(Communicate * const comm, const int nthread)
 {
 
+  // nothing to do if we are not using nodeless guiding
+  if ( !usingNodelessGuiding )
+    return;
+
   // reset running totals
   cga_hist.assign(nthread, std::vector<RealType>());
   cgv_hist.assign(nthread, std::vector<RealType>());
@@ -249,6 +260,10 @@ void VMCUpdatePbyPNodeless::reset_history(Communicate * const comm, const int nt
 void VMCUpdatePbyPNodeless::process_history(Communicate * const comm, const int nthread, const bool record)
 {
 
+  // nothing to do if we are not using nodeless guiding
+  if ( !usingNodelessGuiding )
+    return;
+
   // collect totals
   const int nc = ( cga_hist.at(0).empty() ? 0 : cga_hist.at(0).size() );
   std::vector<RealType> sums(2*nc+3, 0.0);
@@ -269,33 +284,47 @@ void VMCUpdatePbyPNodeless::process_history(Communicate * const comm, const int 
   if ( nsp > 0.1 ) // do nothing if we have no previous sample data to work with
   {
 
+    app_log() << std::endl
+              << " === Printing Statistics Related to Nodeless Guiding ===" << std::endl
+              << std::endl;
+
+    if ( record && tfl_sdv < 0.0 )
+      app_log() << std::endl
+                << " Note: these statistics are warmup statistics" << std::endl
+                << std::endl;
+
     // compute variance of trial function logarithm
     tlv = std::sqrt( std::abs( tlv - tla * tla ) );
 
     // print trial function logarithm stats
     app_log() << std::endl;
-    app_log() << "Statistics of |log(psi)|: " << std::endl;
-    app_log() << boost::format("  samples = %11.0f") % nsp << std::endl;
-    app_log() << boost::format("  tfl_avg = %18.6f") % tla << std::endl;
-    app_log() << boost::format("  tfl_sdv = %18.6f") % tlv << std::endl;
+    app_log() << "  Statistics of |log(psi)|: " << std::endl;
     app_log() << std::endl;
+    app_log() << boost::format("               samples = %11.0f") % nsp << std::endl;
+    app_log() << boost::format("               average = %18.6f") % tla << std::endl;
+    app_log() << boost::format("    standard deviation = %18.6f") % tlv << std::endl;
+    app_log() << std::endl;
+
+    // print counting group stats
+    if ( nc ) app_log() << "  Statistics of counting groups: " << std::endl;
+    if ( nc ) app_log() << std::endl;
+    for (int i = 0; i < nc; i++)
+    {
+      sums.at(nc+i) = std::sqrt( std::abs( sums.at(nc+i) - sums.at(i) * sums.at(i) ) );
+      app_log() << boost::format("  count group %3i:  avg = %8.4f     sdev = %8.4f") % i % sums.at(i) % sums.at(nc+i) << std::endl;
+    }
+    if ( nc ) app_log() << std::endl;
 
     // only record the values if requested and if we don't have values already
     if ( record && tfl_sdv < 0.0 ) {
       tfl_avg = tla;
       tfl_sdv = tlv;
-      app_log() << "Nodeless guiding tfl_avg set to " << tfl_avg << std::endl;
+      app_log() << boost::format("Note: after warmup, nodeless guiding tfl_avg was set to %.6f") % tfl_avg << std::endl;
       app_log() << std::endl;
     }
 
-    // print counting group stats
-    for (int i = 0; i < nc; i++)
-    {
-      sums.at(nc+i) = std::sqrt( std::abs( sums.at(nc+i) - sums.at(i) * sums.at(i) ) );
-      app_log() << boost::format("count group %3i:  avg = %8.4f     sdev = %8.4f") % i % sums.at(i) % sums.at(nc+i) << std::endl;
-    }
-    if ( nc )
-      app_log() << std::endl;
+    app_log() << " === Done Printing Statistics Related to Nodeless Guiding ===" << std::endl
+              << std::endl;
 
   }
 

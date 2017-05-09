@@ -205,6 +205,9 @@ class VMCUpdatePbyPNodeless : public QMCUpdateBase
     /// \brief  standard deviation of trial function logarithms
     static RealType tfl_sdv;
 
+    /// \brief  whether or not nodeless guiding is being used
+    static bool usingNodelessGuiding;
+
 };
 
 }
