@@ -292,20 +292,18 @@ void VMCUpdatePbyPNodeless::process_history(Communicate * const comm, const int 
               << std::endl;
 
     if ( record && tfl_sdv < 0.0 )
-      app_log() << std::endl
-                << " Note: these statistics are warmup statistics" << std::endl
+      app_log() << "  Note: these statistics are warmup statistics" << std::endl
                 << std::endl;
 
     // compute variance of trial function logarithm
     tlv = std::sqrt( std::abs( tlv - tla * tla ) );
 
     // print trial function logarithm stats
-    app_log() << std::endl;
     app_log() << "  Statistics of |log(psi)|: " << std::endl;
     app_log() << std::endl;
-    app_log() << boost::format("               samples = %11.0f") % nsp << std::endl;
-    app_log() << boost::format("               average = %18.6f") % tla << std::endl;
-    app_log() << boost::format("    standard deviation = %18.6f") % tlv << std::endl;
+    app_log() << boost::format("               samples = %14.0f") % nsp << std::endl;
+    app_log() << boost::format("               average = %14.6f") % tla << std::endl;
+    app_log() << boost::format("    standard deviation = %14.6f") % tlv << std::endl;
     app_log() << std::endl;
 
     // print counting group stats
@@ -322,7 +320,7 @@ void VMCUpdatePbyPNodeless::process_history(Communicate * const comm, const int 
     if ( record && tfl_sdv < 0.0 ) {
       tfl_avg = tla;
       tfl_sdv = tlv;
-      app_log() << boost::format("Note: after warmup, nodeless guiding tfl_avg was set to %.6f") % tfl_avg << std::endl;
+      app_log() << boost::format("  Note: after warmup, nodeless guiding tfl_avg was set to %.6f") % tfl_avg << std::endl;
       app_log() << std::endl;
     }
 
