@@ -25,6 +25,7 @@
 #include "QMCDrivers/QMCCostFunctionBase.h"
 #include "QMCDrivers/QMCCostFunctionOMP.h"
 #include "QMCDrivers/VMC/VMCSingleOMP.h"
+#include "QMCDrivers/VMC/NodelessGuiding.h"
 #if defined(ENABLE_OPENMP)
 #include "QMCDrivers/VMC/VMCSingleOMP.h"
 #include "QMCDrivers/QMCCostFunctionOMP.h"

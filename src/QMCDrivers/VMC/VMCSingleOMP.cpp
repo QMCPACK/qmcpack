@@ -21,6 +21,7 @@
 #include "QMCDrivers/VMC/VMCSingleOMP.h"
 #include "QMCDrivers/VMC/VMCUpdatePbyP.h"
 #include "QMCDrivers/VMC/VMCUpdateAll.h"
+#include "QMCDrivers/VMC/NodelessGuiding.h"
 #include "OhmmsApp/RandomNumberControl.h"
 #include "Message/OpenMP.h"
 #include "Message/CommOperators.h"

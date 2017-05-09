@@ -12,6 +12,7 @@
 #ifndef OHMMS_XMLCXX11HELPER_H
 #define OHMMS_XMLCXX11HELPER_H
 
+#include <list>
 #include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus {

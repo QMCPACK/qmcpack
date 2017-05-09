@@ -38,6 +38,7 @@ SET(QMCDRIVERS
   VMC/VMCUpdatePbyP.cpp
   VMC/VMCUpdateAll.cpp
   VMC/VMCFactory.cpp
+  VMC/NodelessGuiding.cpp
   DMC/DMCOMP.cpp
   DMC/DMCUpdateAll.cpp
   DMC/DMCUpdatePbyP.cpp
