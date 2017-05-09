@@ -45,7 +45,6 @@
 #include "formic/utils/random.h"
 #include "formic/utils/lmyengine/var_dependencies.h"
 #endif
-#include "QMCDrivers/VMC/VMCUpdatePbyP.h"
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
