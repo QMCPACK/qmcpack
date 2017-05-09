@@ -307,7 +307,7 @@ inline T product_SpVSpVc(const int n1,const  int* indx1, const T* A1, const int 
       else if( *(indx2+j) < *(indx1+i) )
         ++j;
       else {
-        res += *(A1+i) * (std::conj(*(A2+j)));
+        res += *(A1+i) * (myconj(*(A2+j)));
         ++i;++j;
       }
     }
