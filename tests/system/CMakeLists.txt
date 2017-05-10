@@ -340,6 +340,22 @@ ENDIF()
                     0 # VMC
                     TRUE)
 
+# Reference OPT run in qmc-ref
+  LIST(APPEND DIAMOND_OPT_SCALARS "totenergy"   "-10.49370 0.0024")
+  LIST(APPEND DIAMOND_OPT_SCALARS "kinetic"     "11.5504 0.021")
+  LIST(APPEND DIAMOND_OPT_SCALARS "localecp"    "-7.1979 0.023")
+  LIST(APPEND DIAMOND_OPT_SCALARS "nonlocalecp" "0.61540 0.0068")
+  LIST(APPEND DIAMOND_OPT_SCALARS "samples"     "128000 0.0")
+
+  QMC_RUN_AND_CHECK(short-diamondC_1x1x1_pp-opt_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+                    qmc_short
+                    qmc_short_opt.in.xml
+                    1 16
+                    DIAMOND_OPT_SCALARS
+                    3 # VMC
+                    TRUE)
+
 # Reference DMC run in qmc-ref "-10.531583 0.000265"
   LIST(APPEND DIAMOND_DMC_SCALARS "totenergy" "-10.531583 0.0024")
   QMC_RUN_AND_CHECK(short-diamondC_1x1x1_pp-dmc_sdj
