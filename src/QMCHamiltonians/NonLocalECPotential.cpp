@@ -161,7 +161,7 @@ NonLocalECPotential::evaluate(ParticleSet& P)
         const int* restrict J=myTable->J2[iat];
         const RealType* restrict dist=myTable->r_m2[iat];
         const PosType* restrict displ=myTable->dr_m2[iat];
-        for(size_t nj=0,nn=myTable->M[iat]; nj<nn; ++nj)
+        for(size_t nj=0; nj<myTable->M[iat]; ++nj)
         {
           if(dist[nj]<PP[iat]->Rmax)
             Value += PP[iat]->evaluateOne(P,iat,Psi,J[nj],dist[nj],displ[nj],false,Txy);
@@ -242,7 +242,7 @@ NonLocalECPotential::evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
         const int* restrict J=myTable->J2[iat];
         const RealType* restrict dist=myTable->r_m2[iat];
         const PosType* restrict displ=myTable->dr_m2[iat];
-        for(size_t nj=0,nn=myTable->M[iat]; nj<nn; ++nj)
+        for(size_t nj=0; nj<myTable->M[iat]; ++nj)
         {
           if(dist[nj]<PP[iat]->Rmax)
             Value += PP[iat]->evaluateOne(P,iat,Psi,J[nj],dist[nj],displ[nj],true,Txy);
