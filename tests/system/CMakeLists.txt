@@ -353,7 +353,7 @@ ENDIF()
                     qmc_short_opt.in.xml
                     1 16
                     DIAMOND_OPT_SCALARS
-                    5 # VMC
+                    3 # VMC
                     TRUE)
 
 # Reference DMC run in qmc-ref "-10.531583 0.000265"

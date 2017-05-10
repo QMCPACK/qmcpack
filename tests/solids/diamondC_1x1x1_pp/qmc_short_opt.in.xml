@@ -81,23 +81,14 @@
       </hamiltonian>
    </qmcsystem>
 
-   <qmc method="vmc" move="pbyp" gpu="yes">
-      <parameter name="walkers"             >    16              </parameter>
-      <parameter name="blocks"              >    100            </parameter>
-      <parameter name="steps"               >    40             </parameter>
-      <parameter name="subSteps"            >    4               </parameter>
-      <parameter name="timestep"            >    0.5             </parameter>
-      <parameter name="warmupSteps"         >    50             </parameter>
-      <estimator name="LocalEnergy" hdf5="no"/>
-   </qmc>
-<loop max="5">
+<loop max="4">
   <qmc method="linear" move="pbyp" checkpoint="-1" gpu="yes">
       <parameter name="walkers"             >    16              </parameter>
       <parameter name="blocks"              >    100            </parameter>
       <!--parameter name="steps"               >    40             </parameter-->
       <parameter name="subSteps"            >    2               </parameter>
       <parameter name="timestep"            >    0.5             </parameter>
-      <parameter name="warmupSteps"         >    100             </parameter>
+      <parameter name="warmupSteps"         >    50             </parameter>
       <parameter name="useDrift"            >    no              </parameter>
       <estimator name="LocalEnergy" hdf5="no"/>
       <parameter name="samples"             >    128000          </parameter>
