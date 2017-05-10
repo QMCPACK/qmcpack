@@ -91,8 +91,8 @@ Additional information:
 \item \texttt{maxWeight}. The default should be good.
 \item \texttt{usebuffer}. It saves a lot of computation especially with the `quartic' optimizer.
 \item \texttt{nonlocalpp}. It is recommended to enable it when 3 body Jastrow is on. GPU code has a implementation issue that large amount of memory is consumed with this option.
-\item \texttt{minwalkers}. A CRITICAL parameter. When the ratio of effective samples to actual number of walkers in a reweighting step, 
-the proposed set of parameters is unjustified. The last set of acceptable parameters are kept.
+\item \texttt{minwalkers}. A CRITICAL parameter. When the ratio of effective samples to actual number of samples in a reweighting step goes lower than \texttt{minwalkers},
+the proposed set of parameters is invalid. % The last set of acceptable parameters is kept.
 \end{itemize}
 
 The cost function consists of three components: energy, unreweighted variance and reweighted variance.
@@ -224,6 +224,17 @@ When the energy gradually converges, we can have a large \texttt{minwalkers} to 
   </qmc>
  </loop>
 \end{lstlisting}
+
+For each optimization step, you will see
+\begin{lstlisting}
+The new set of parameters is valid. Updating the trial wave function!
+\end{lstlisting}
+or
+\begin{lstlisting}
+The new set of parameters is not valid. Revert to the old set!
+\end{lstlisting}
+Occasional rejection is fine. Frequent rejection indicates potential problems and users should inspect the VMC calculation or change optimization strategy.
+To track the progress of optimization, using command ``qmca -q ev *.scalar.dat'' to look at the VMC energy and variance for each optimization step.
 
 \subsection{General recommendations}
 Here are a few reminders to make wavefunction easier.
