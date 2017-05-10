@@ -67,8 +67,8 @@ vdeps(1,std::vector<double>()),
   StabilizerMethod("best"), GEVSplit("no"), stepsize(0.25), doAdaptiveThreeShift(false),
   targetExcitedStr("no"), targetExcited(false), block_lmStr("no"), block_lm(false),
   bestShift_i(-1.0), bestShift_s(-1.0), shift_i_input(0.01), shift_s_input(1.00), doOneShiftOnly(false),
-  num_shifts(3), nblocks(1), nolds(1), nkept(1), nsamp_comp(0), omega_shift(0.0), max_param_change(0.5),
-  max_relative_cost_change(1.0), block_first(true), block_second(false), block_third(false)
+  num_shifts(3), nblocks(1), nolds(1), nkept(1), nsamp_comp(0), omega_shift(0.0), max_param_change(0.3),
+  max_relative_cost_change(10.0), block_first(true), block_second(false), block_third(false)
 {
   IsQMCDriver=false;
   //set the optimization flag
@@ -128,10 +128,10 @@ vdeps(1,std::vector<double>()),
                                           0.99, // minimum S singular val
                                           0.0, 
                                           0.0, 
-                                          0.0, // max change allowed
-                                          0.0, // identity shift
-                                          0.0, // overlap shift
-                                          0.0, // max parameter change
+                                          10.0, // max change allowed
+                                          1.00, // identity shift
+                                          1.00, // overlap shift
+                                          0.3, // max parameter change
                                           shift_scales, 
                                           app_log());
   #endif
