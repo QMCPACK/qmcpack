@@ -156,21 +156,25 @@ to 0 and do a single inner iteration (max its=1) per sample of configurations.}
 
 The default setting of the adaptive optimizer is to construct the linear method Hamiltonian and overlap matrices explicitly and add different shifts to the Hamiltonian matrix 
 as ``stablizers''. The generalized eigenvalue problem is solved for each shifted Hamiltonian and updates to wave function parameters are obtainted. Then a correlated sampling 
-is performed using the middle shift's updated wave function as the guiding function for each shift's updated wave function and initial trial wave function. The final step is 
-to compare different shift's cost function with the initial value and apply the best update to wave function parameters corresponding to the lowest cost function. 
+is performed (using the middle shift's updated wave function as the guiding function) for each shift's updated wave function and the initial trial wave function.
+The cost function for these wave functions is compared, and the update corresponding to the best cost function is selected.
+In the next iteration, the median magnitude of the stabilizers is set to that that generated the best update in the current iteration, thus adapting the magnitude of
+the stabilizers automatically.
 
-Thanks to the recently developed excited states variational principle, adaptive optimizer is also able to optimize individual excited states directly.  
-It tries to optimize the following functional: 
+Thanks to recently developments in excited state variational principles, the adaptive optimizer is also able to optimize individual excited states directly.  
+In this case, it tries to minimize the following function: 
 \begin{equation*}
 \Omega[\Psi]=\frac{\left<\Psi|\omega-H|\Psi\right>}{\left<\Psi|{\left(\omega-H\right)}^2|\Psi\right>}
 \end{equation*}
-The global minimal of this functional corresponds to the state whose energy lies right above the shift parameter $\omega$ in energy spectrum. Thus, suppose the initial 
-trial wave function's parameters are close to that of the first excited state, then by setting $\omega$ to be a value in between ground state and first excited state 
-energy would drive the trial wave function to represent the first excited state. 
+The global minimal of this functional corresponds to the state whose energy lies immediately above the shift parameter $\omega$ in the energy spectrum.
+For example, suppose the initial 
+trial wave function's parameters are taken as a guess for the first excited state.
+Then, by setting $\omega$ to be a value in between the ground state and first excited state 
+energies would cause the trial wave function to be optimized for the first excited state. 
 
-When the trial wave function contains more than tens of thousands of parameters, constructing and storing the linear method matrices become a memory bottleneck. 
+When the trial wave function contains more than tens of thousands of parameters, constructing and storing the linear method matrices may become a memory bottleneck. 
 To avoid explicit
-construction of these matrices, adaptive optimizer implements recently developed ``block linear method''. Block linear method (BLM) tries to find an approximate 
+construction of these matrices, the adaptive optimizer implements the recently developed ``block linear method''.  The block linear method (BLM) tries to find an approximate 
 solution $\vec{c}_{opt}$ to the standard LM generalized eigenvalue problem by (a) dividing the variable space into a number of blocks (b) making intelligent estimates for which 
 directions within those blocks will be most important for constructing $\vec{c}_{opt}$, and (c) estimating $\vec{c}_{opt}$ by solving a smaller, more memory-efficient 
 eigenproblem in the basis of these supposedly important block-wise directions. 
@@ -224,14 +228,14 @@ Additional information:
 Recommendations:
 \begin{itemize}
   \item Default shift\_i, shift\_s should be fine. 
-  \item In order to obtain an unbiased excitation energy, one would need to optimize ground state with excited state variational principle by setting
-        \texttt{omega} below ground state energy. Using ground state variational principle and excited state variational principle for ground and excited
-        state respectively would create a bias for ground state. 
-  \item Setting $\omega$ correctly is very important since a too low or too high $\omega$ will lead to a failure of the optimization. I recommend that one use
-        $\omega$ as $E-\sigma$, in which $E$ and $\sigma$ being energy and standard deviation of the unoptimized wave function. 
-  \item Block LM has a higher stochastic prefactor than standard LM. Thus it is not necessary to use it for less than 5,000 variables where memory is not a issue.  
-  \item If the wave function contains more than 10,000 variables, using BLM could significantly reduce memory requirements. 
-  \item For BLM, using a few hundred blocks and a handful of \texttt{nolds} and \texttt{nkept} would be enough to balance memory requirement and accuracy. 
+  \item In order to obtain an unbiased excitation energy, one should optimize the ground state with the excited state variational principle as well by setting
+        \texttt{omega} below the ground state energy.  Note that using the ground state variational principle for the ground state and the excited state variational
+        principle for the excited state creates a bias in favor of the ground state. 
+  \item Setting $\omega$ correctly is very important since a too low or too high $\omega$ will lead to a failure of the optimization. We recommend that one use
+        $\omega=E-\sigma$, in which $E$ is the desired excited state's energy and $\sigma^2$ is your approximate wave function's energy variance.
+  \item The BLM has a higher stochastic prefactor than the standard LM, and so we only advise its use when at least 5,000 variables are being optimized.
+  \item Although the BLM is very new, our short experience with it suggests that a few hundred blocks and a handful of \texttt{nolds} and \texttt{nkept}
+        often provide a good balance between memory use and accuracy.  In general, using fewer blocks should be more accurate but will require more memory.
 \end{itemize}
 
 \begin{lstlisting}
