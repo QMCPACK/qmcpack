@@ -96,7 +96,7 @@ vdeps(1,std::vector<double>()),
   m_param.add(shift_s_input, "shift_s", "double");
   m_param.add(num_shifts, "num_shifts", "int");
 
-#ifdef HAVE_LMY_ENGINE
+  #ifdef HAVE_LMY_ENGINE
   //app_log() << "construct QMCFixedSampleLinearOptimize" << endl;
   std::vector<double> shift_scales(3, 1.0);
   EngineObj = new cqmc::engine::LMYEngine(&vdeps, 
@@ -153,6 +153,9 @@ vdeps(1,std::vector<double>()),
 /** Clean up the vector */
 QMCFixedSampleLinearOptimize::~QMCFixedSampleLinearOptimize()
 {
+  #ifdef HAVE_LMY_ENGINE
+  delete EngineObj;
+  #endif
 }
 
 QMCFixedSampleLinearOptimize::RealType QMCFixedSampleLinearOptimize::Func(RealType dl)
