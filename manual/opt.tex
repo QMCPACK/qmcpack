@@ -50,7 +50,7 @@ A typical optimization block looks like the following. It starts with method=``l
 
 \subsection{VMC run for the optimization}
 The VMC calculation for the wavefunction optimization has a strict requirement 
-that samples or samplesperthread must be specified because of the optimizer needs for the stored samples.
+that \texttt{samples} or \texttt{samplesperthread} must be specified because of the optimizer needs for the stored samples.
 The input parameters of this part are identical to the VMC method.
 
 Recommendations:
@@ -91,8 +91,8 @@ Additional information:
 \item \texttt{maxWeight}. The default should be good.
 \item \texttt{usebuffer}. It saves a lot of computation especially with the `quartic' optimizer.
 \item \texttt{nonlocalpp}. It is recommended to enable it when 3 body Jastrow is on. GPU code has a implementation issue that large amount of memory is consumed with this option.
-\item \texttt{minwalkers}. A CRITICAL parameter. When the ratio of effective samples to actual number of walkers in a reweighting step, 
-the proposed set of parameters is unjustified. The last set of acceptable parameters are kept.
+\item \texttt{minwalkers}. A CRITICAL parameter. When the ratio of effective samples to actual number of samples in a reweighting step goes lower than \texttt{minwalkers},
+the proposed set of parameters is invalid. % The last set of acceptable parameters is kept.
 \end{itemize}
 
 The cost function consists of three components: energy, unreweighted variance and reweighted variance.
@@ -257,9 +257,10 @@ Recommendations:
 %To activate this optimizer, add ``-D BUILD\_LMYENGINE\_INTERFACE=1'' in the CMake command line.
 
 \subsubsection{OneShiftOnly}
-The OneShiftOnly optimizer targets a fast optimization by moving parameters more aggressively. It works with threading and can be considered for large solids.
-This method relies on ``minwalkers'' to justify a new set of parameters. If it is valid, the new set is taken no matter if the cost function value decreases or not.
-If a proposed set is rejected, the standard output prints the measured ratio of effective samples to actual number of walkers and adjustment on ``minwalkers''can be made if needed.
+The OneShiftOnly optimizer targets a fast optimization by moving parameters more aggressively. It works with OpenMP and GPU and can be considered for large systems.
+This method relies on \texttt{minwalkers} to justify a new set of parameters. If it is valid, the new set is taken no matter if the cost function value decreases or not.
+If a proposed set is rejected, the standard output prints the measured ratio of effective samples to the total number of samples
+and adjustment on \texttt{minwalkers} can be made if needed.
 
 \begin{table}[h]
 \begin{center}
@@ -287,14 +288,17 @@ Additional information:
 
 Recommendations:
 \begin{itemize}
-  \item Default shift\_i, shift\_s should be fine.
-  \item For hard cases, increasing shift\_i (factor of 5 or 10) can significantly stabilize the optimization by reducing the pace towards the optimal parameter set.
-  \item If the VMC energy of the last optimization iterations grows significantly, increase minwalkers closer to 1 and make the optimization stable.
+  \item Default \texttt{shift\_i}, \texttt{shift\_s} should be fine.
+  \item For hard cases, increasing \texttt{shift\_i} (factor of 5 or 10) can significantly stabilize the optimization by reducing the pace towards the optimal parameter set.
+  \item If the VMC energy of the last optimization iterations grows significantly, increase \texttt{minwalkers} closer to 1 and make the optimization stable.
   \item If the first iterations of optimization are rejected on a reasonable initial wavefunction, 
-        lower the minwalkers value based on the measured value printed in the standard output to accept the move.
+        lower the \texttt{minwalkers} value based on the measured value printed in the standard output to accept the move.
 \end{itemize}
 
-It is recommended to use this optimizer in two sections with a very small minwalkers in the first and very large value in the second like the following.
+It is recommended to use this optimizer in two sections with a very small \texttt{minwalkers} in the first and a large value in the second like the following.
+In the very beginning, parameters are far away form optimal values and large changes are proposed by the optimizer.
+Having a small \texttt{minwalkers} allows accepting these changes much easier.
+When the energy gradually converges, we can have a large \texttt{minwalkers} to guarantee a stable optimization.
 \begin{lstlisting}
  <loop max="6">
   <qmc method="linear" move="pbyp" gpu="yes">
@@ -319,6 +323,17 @@ It is recommended to use this optimizer in two sections with a very small minwal
   </qmc>
  </loop>
 \end{lstlisting}
+
+For each optimization step, you will see
+\begin{lstlisting}
+The new set of parameters is valid. Updating the trial wave function!
+\end{lstlisting}
+or
+\begin{lstlisting}
+The new set of parameters is not valid. Revert to the old set!
+\end{lstlisting}
+Occasional rejection is fine. Frequent rejection indicates potential problems and users should inspect the VMC calculation or change optimization strategy.
+To track the progress of optimization, using command ``qmca -q ev *.scalar.dat'' to look at the VMC energy and variance for each optimization step.
 
 \subsection{General recommendations}
 Here are a few reminders to make wavefunction easier.
