@@ -377,8 +377,3 @@ ECPComponentBuilder::doBreakUp(const std::vector<int>& angList,
 }
 
 } // namespace qmcPlusPlus
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1551 $   $Date: 2006-12-02 09:32:17 -0600 (Sat, 02 Dec 2006) $
- * $Id: ECPComponentBuilder.cpp 1551 2006-12-02 15:32:17Z jnkim $
- ***************************************************************************/

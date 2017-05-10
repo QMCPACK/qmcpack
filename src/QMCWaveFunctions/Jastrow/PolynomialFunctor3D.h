@@ -190,7 +190,7 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
           IndepVar[col] = true;
       }
       while (max_abs < 1.0e-6);
-#if ( ( __INTEL_COMPILER == 1700 ) && ( __INTEL_COMPILER_UPDATE == 1 ) && ( __cplusplus < 201103L ) )
+#if ( ( __INTEL_COMPILER == 1700 ) && ( __cplusplus < 201103L ) )
       // the swap_rows is sick with Intel compiler 17 update 1, c++11 off
       // manually swap the rows
       for(int ind_col=0; ind_col<ConstraintMatrix.size2(); ind_col++)
@@ -950,8 +950,3 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1691 $   $Date: 2007-02-01 15:51:50 -0600 (Thu, 01 Feb 2007) $
- * $Id: PolynomialFunctor3D.h 1691 2007-02-01 21:51:50Z jnkim $
- ***************************************************************************/

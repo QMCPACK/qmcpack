@@ -170,7 +170,7 @@ bool AFQMCFactory::parse(xmlNodePtr cur)
       obj->copyInfo(*InfoMap[info]);
     } else if(cname == "WalkerSet") {
 
-      std::string type("local");
+      std::string type("distributed");
       std::string info("info0");
       OhmmsAttributeSet oAttrib;
       oAttrib.add(info,"info");

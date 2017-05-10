@@ -166,9 +166,4 @@ void TrialDMCCorrection::addObservables(PropertySetType& plist, BufferType& coll
 }
 }
 
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1581 $   $Date: 2007-01-04 10:02:14 -0600 (Thu, 04 Jan 2007) $
- * $Id: trialDMCcorrection.h 1581 2007-01-04 16:02:14Z jnkim $
- ***************************************************************************/
 

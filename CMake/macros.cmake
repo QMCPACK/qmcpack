@@ -8,6 +8,51 @@ FUNCTION( COPY_DIRECTORY SRC_DIR DST_DIR )
     EXECUTE_PROCESS( COMMAND ${CMAKE_COMMAND} -E copy_directory "${SRC_DIR}" "${DST_DIR}" )
 ENDFUNCTION()
 
+# Function to copy a directory using symlinks for the files. This saves storage
+# space with large test files.
+# SRC_DIR must be an absolute path
+# The -s flag copies using symlinks
+# The -T ${DST_DIR} ensures the destination is copied as the directory, and not
+#  placed as a subdirectory if the destination already exists.
+FUNCTION( COPY_DIRECTORY_USING_SYMLINK SRC_DIR DST_DIR )
+    EXECUTE_PROCESS( COMMAND cp -as --remove-destination "${SRC_DIR}" -T "${DST_DIR}" )
+ENDFUNCTION()
+
+# Copy files, but symlink the *.h5 files (which are the large ones)
+FUNCTION( COPY_DIRECTORY_SYMLINK_H5 SRC_DIR DST_DIR)
+    # Copy everything but *.h5 files and pseudopotential files
+    FILE(COPY "${SRC_DIR}/" DESTINATION "${DST_DIR}"
+         PATTERN "*.h5" EXCLUDE
+         PATTERN "*.BFD.xml" EXCLUDE)
+
+    # Now find and symlink the *.h5 files and psuedopotential files
+    FILE(GLOB_RECURSE H5 "${SRC_DIR}/*.h5" "${SRC_DIR}/*.BFD.xml")
+    FOREACH(F IN LISTS H5)
+      FILE(RELATIVE_PATH R "${SRC_DIR}" "${F}")
+      #MESSAGE("Creating symlink from  ${SRC_DIR}/${R} to ${DST_DIR}/${R}")
+      EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E create_symlink "${SRC_DIR}/${R}" "${DST_DIR}/${R}")
+    ENDFOREACH()
+ENDFUNCTION()
+
+# Control copy vs. symlink with top-level variable
+FUNCTION( COPY_DIRECTORY_MAYBE_USING_SYMLINK SRC_DIR DST_DIR )
+  IF (QMC_SYMLINK_TEST_FILES)
+    #COPY_DIRECTORY_USING_SYMLINK("${SRC_DIR}" "${DST_DIR}")
+    COPY_DIRECTORY_SYMLINK_H5("${SRC_DIR}" "${DST_DIR}" )
+  ELSE()
+    COPY_DIRECTORY("${SRC_DIR}" "${DST_DIR}")
+  ENDIF()
+ENDFUNCTION()
+
+# Symlink or copy an individual file
+FUNCTION(MAYBE_SYMLINK SRC_DIR DST_DIR)
+  IF (QMC_SYMLINK_TEST_FILES)
+    EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E create_symlink "${SRC_DIR}" "${DST_DIR}")
+  ELSE()
+    EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${SRC_DIR}" "${DST_DIR}")
+  ENDIF()
+ENDFUNCTION()
+
 
 # Macro to add the dependencies and libraries to an executable
 MACRO( ADD_QMC_EXE_DEP EXE )
@@ -196,8 +241,7 @@ ENDMACRO()
 # Runs qmcpack
 #  Note that TEST_ADDED is an output variable
 FUNCTION( RUN_QMC_APP TESTNAME SRC_DIR PROCS THREADS TEST_ADDED ${ARGN} )
-    COPY_DIRECTORY( "${SRC_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME}" )
-    EXECUTE_PROCESS( COMMAND ${CMAKE_COMMAND} -E copy_directory "${SRC_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME}" )
+    COPY_DIRECTORY_MAYBE_USING_SYMLINK( "${SRC_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME}" )
     #MESSAGE("RUN_QMC_APP2: TESTNAME = ${TESTNAME} SRC_DIR=${SRC_DIR} PROCS = ${PROCS} THREADS = ${THREADS}")
     MATH( EXPR TOT_PROCS "${PROCS} * ${THREADS}" )
     SET( QMC_APP "${qmcpack_BINARY_DIR}/bin/qmcpack" )
@@ -242,8 +286,8 @@ ENDFUNCTION()
 
 FUNCTION(QMC_RUN_AND_CHECK BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SCALAR_VALUES SERIES SHOULD_SUCCEED)
     # Map from name of check to appropriate flag for check_scalars.py
-    LIST(APPEND SCALAR_CHECK_TYPE "kinetic" "totenergy" "eeenergy" "samples" "potential" "ionion" "localecp" "nonlocalecp" "flux")
-    LIST(APPEND CHECK_SCALAR_FLAG "--ke"    "--le"      "--ee"     "--ts"    "--lp"      "--ii"       "--lpp"    "--nlpp"      "--fl")
+    LIST(APPEND SCALAR_CHECK_TYPE "kinetic" "totenergy" "eeenergy" "samples" "potential" "ionion" "localecp" "nonlocalecp" "flux" "kinetic_mixed" "kinetic_pure" "eeenergy_mixed" "eeenergy_pure" "potential_pure")
+    LIST(APPEND CHECK_SCALAR_FLAG "--ke"    "--le"      "--ee"     "--ts"    "--lp"      "--ii"       "--lpp"    "--nlpp" "--fl" "--ke_m" "--ke_p" "--ee_m" "--ee_p" "--lp_p")
 
     SET( TEST_ADDED FALSE )
     SET( FULL_NAME "${BASE_NAME}-${PROCS}-${THREADS}" )

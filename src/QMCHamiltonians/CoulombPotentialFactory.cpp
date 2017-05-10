@@ -433,8 +433,3 @@ HamiltonianFactory::addCorePolPotential(xmlNodePtr cur)
 //  }
 
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 5831 $   $Date: 2013-05-10 08:38:08 -0400 (Fri, 10 May 2013) $
- * $Id: HamiltonianFactory.cpp 5831 2013-05-10 12:38:08Z jnkim $
- ***************************************************************************/

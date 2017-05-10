@@ -1,7 +1,7 @@
 \section{Wavefunction Optimization}
 Optimizing wavefunction is critical in all kinds of real-space quantum Monte Carlo calculations
 because it significantly improves both the accuracy and efficiency of computation.
-However, it is very difficult to incorporate directly deterministic minimization approaches due to the stochastic nature of evaluating quantities with Monte Carlo.
+However, it is very difficult to directly adopt deterministic minimization approaches due to the stochastic nature of evaluating quantities with Monte Carlo.
 Thanks to the algorithmic breakthrough during the first decade of this century and the tremendous computer power available, 
 it becomes feasible to optimize tens of thousands of parameters in a wavefunction for a solid or molecule.
 QMCPACK has multiple optimizers implemented based on the state-of-the-art linear method.
@@ -110,7 +110,7 @@ They can be switched among `rescale', `quartic' (default), `adaptive' and `OneSh
 \end{lstlisting}
 
 \subsubsection{quartic}
-The quartic optimizer fits a quartic polynomial to 4 values of the cost function obtained using reweighting along chosen direction and determines the optimal move.
+The quartic optimizer fits a quartic polynomial to 7 values of the cost function obtained using reweighting along chosen direction and determines the optimal move.
 This optimizer is very robust but a bit conservative to accept new steps especially when large parameters changes are proposed.
 \begin{table}[h]
 \begin{center}
@@ -322,7 +322,7 @@ Here are a few reminders to make wavefunction easier.
 \item All electron wavefunctions are more difficult to optimize than pseudopotential ones especially when the cusp is not removed.
 \item Two body Jastrow contributes the largest portion of correlation energy from bare Slater determinants. It's also the easiest part for optimizer and gains most. For this reason, the recommend order optimizing wavefunction components is two-body, one-body, three-body Jastrow factors and MSD coefficients.
 \item Never use all-zero two-body spline Jastrow and always start from a reasonable one. 
-      You might want to bang your head agaist a brick wall for a bad two-body Jastrow.
+      You might want to bang your head against a brick wall for a bad two-body Jastrow.
 \item One-body spline Jastrow from old calculations can be good starting point.
 \item Three-body polynomial Jastrow should start from zero.
 \end{itemize}

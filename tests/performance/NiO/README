@@ -1,0 +1,192 @@
+NiO QMC Performance Benchmarks
+
+1. Introduction
+
+These benchmarks for VMC and DMC represent real research runs and are
+large enough to be used for performance measurements. This is in
+contrast to the conventional integration tests where the particle
+counts are too small to be representative. Care is still needed to
+remove initialization, I/O, and compute a representative performance
+measure.
+
+The ctest integration is sufficient to run the benchmarks and measure
+relative performance from version to version of QMCPACK and assess
+proposed code changes. To obtain highest performance on a particular
+platform, you must run the benchmarks in a standalone manner and tune
+thread counts, placement, walker count (etc.)
+
+2. Simulated system and QMC methods tested
+
+The simulated systems consist of a number of repeats of a NiO
+primitive cell.
+
+Name  Atoms Electrons  Electrons per spin
+  S8    32      384            192
+ S16    64      768            384
+ S32   128     1536            768
+ S64   256     3072	      1536
+S128   512     6144	      3072
+S256  1024    12288	      6144
+
+Runs consist of a number of short blocks of (i) VMC without drift (ii)
+VMC with drift term included (iii) DMC with constant population.
+
+These different runs vary the ratio between value, gradient, and
+laplacian evaluations of the wavefunction. The most important
+performance is for DMC, which dominates supercomputer time usage. For
+a large enough supercell, the runs scale cubically in cost with the
+"electrons per spin".
+
+Two sets of wavefunction are tested: splined orbitals with a one and
+two body Jastrow functions, and a more complex form with an additional
+three body Jastrow function. The Jastrows are the same for each run
+and are not reoptimized, as might be done for research.
+
+On early 2017 era hardware and QMCPACK code, it is very likely that
+only the first 3 supercells are easily runnable due to memory
+limitations.
+
+3. Requirements
+
+Download the necessary NiO h5 orbital files of different sizes from
+the following link
+
+https://anl.box.com/s/pveyyzrc2wuvg5tmxjzzwxeo561vh3r0
+
+This link will be updated when a longer term storage host is
+identified. You only need to download the sizes you would like to
+include in your benchmarking runs.
+
+Please check the md5 value of h5 files before starting any
+benchmarking.
+
+$ md5sum *.h5
+6476972b54b58c89d15c478ed4e10317  NiO-fcc-supertwist111-supershift000-S8.h5
+b47f4be12f98f8a3d4b65d0ae048b837  NiO-fcc-supertwist111-supershift000-S16.h5
+ee1f6c6699a24e30d7e6c122cde55ac1  NiO-fcc-supertwist111-supershift000-S32.h5
+40ecaf05177aa4bbba7d3bf757994548  NiO-fcc-supertwist111-supershift000-S64.h5
+0a530594a3c7eec4f0155b5b2ca92eb0  NiO-fcc-supertwist111-supershift000-S128.h5
+cff0101debb11c8c215e9138658fbd21  NiO-fcc-supertwist111-supershift000-S256.h5
+
+$ ls -l *.h5
+ 275701688 NiO-fcc-supertwist111-supershift000-S8.h5 
+ 545483396 NiO-fcc-supertwist111-supershift000-S16.h5
+1093861616 NiO-fcc-supertwist111-supershift000-S32.h5  
+2180300396 NiO-fcc-supertwist111-supershift000-S64.h5
+4375340300 NiO-fcc-supertwist111-supershift000-S128.h5  
+8786322376 NiO-fcc-supertwist111-supershift000-S256.h5
+
+The data files should be placed in a directory labeled NiO.
+
+4. Throughput metric
+
+A key result that can be extracted from the benchmarks is a throughput
+metric, or the "time to move one walker", as measured on a per step
+basis.  One can also compute the "walkers moved per second per node",
+a throughput metric factoring the hardware availability (threads, cores, GPUs).
+
+Higher throughput measures are better. Note however that the  metric
+does not factor the equilibration period in the Monte Carlo or
+consider the reasonable minimum and maximum number of walkers usable
+for specific scientific calculation. Hence doubling the throughput
+does not automatically halve the time to scientific solution, although
+for many scenarios it will.
+
+5. Benchmarking with ctest
+
+This is the simplest way to calibrate performance though has some
+limitations.  The current choice is uses a fixed 1 MPI with 16 threads
+on a single node on CPU systems. If you need to change either of these
+numbers or you need to control more hardware behaviors such as thread
+affinity, please read the next section.
+
+To activate the ctest route, add the following option in your cmake
+command line before building your binary:
+
+-DQMC_DATA=YOUR_DATA_FOLDER -DENABLE_TIMERS=1
+
+YOUR_DATA_FOLDER contains a folder called NiO with the h5 files in it.
+Run tests with command "ctest -R performance-NiO" after building
+QMCPACK. Add "-VV" to capture the QMCPACK output. Enabling the timers
+is not essential, but activates fine grained timers and counters useful for
+analysis such as the number of times specific kernels are called and
+their speed.
+
+
+6. Running the benchmarks manually
+
+1) Copy the whole current folder (tests/performance/NiO) to a work
+   directory (WDIR) you would like to run the benchmark. 
+2) Copy or softlink all the h5 files to your WDIR.
+3) Prepare an example job script for submitting a single calculation
+   to a job queuing system. We provide two samples for CPU
+   (qmcpack-cpu-cetus.sub) and GPU (qmcpack-gpu-cooley.sub) runs at
+   ALCF Cetus and Cooley to give you basic ideas how to run QMCPACK manually.
+   
+   a) Customize the header based on your machine.
+   b) You always need to point the variable "exe" to the binary that you would like to benchmark.
+   c) "file_prefix" should not be changed and and the run script will
+      update them by pointing to the right size. 
+   d) Customize the mpirun based on the job dispatcher on your system
+      and pick the MPI/THREADS as well as other controls you would like
+      to add.
+
+4) Customize scripts
+
+   The files submit_cpu_cetus.sh and submit_gpu_cooley.sh are example
+   scripts that provide a basic scan with a single run for each system
+   size by submitting a series of jobs. We suggest making a customized
+   versions for your benchmark machines.
+   
+   These scripts create individual folders for each benchmark run
+   and submit it to the job queue.
+   
+   ATTENTION: the GPU run has a default 32 walkers per MPI rank. You may
+   adjust it in the submit_gpu_cooley.sh based on your hardware capability.
+   Generally, more walkers leads to higher performance.
+   
+   *If your system does not have a job queue, use "subjob=sh" in the script.
+
+5) Collect performance results
+
+   A simple performance metric can be the time per block which
+   reflects how fast walkers are advancing.
+   
+   It can be measured with qmca, an analysis tool shipped with
+   QMCPACK.
+   
+   In your WDIR, use
+   qmca -q bc -e 0 dmc*/*.scalar.dat to collect the timing for all the runs.
+
+   Or in each subfolder, you type
+   qmca -q bc -e 0 *.scalar.dat
+
+   The current benchmarks contains 3 run sections:
+   
+     I) VMC + no drift
+    II) VMC + drift
+   III) DMC with constant population
+   
+   So three timings are given per run.  Timing information is also
+   included in the standard output of QMCPACK and a *.info.xml produced
+   by each run. In the standard output, "QMC Execution time" is the
+   time per run section, e.g. all blocks of VMC with drift, while the
+   fine grained timing information is printed at the end.
+
+7. Additional considerations
+
+When testing the mixed precision build, note that it performs more
+computation than the full precision build to ensure numerical
+accuracy.  One significant overhead is the recomputation of the
+inverse of the Slater determinants at every block.  It can be diluted
+by setting larger steps or substeps in the driver (VMC/DMC) block of
+the XML input file or completely disabled by adding the following line
+in each block.
+<parameter name="blocks_between_recompute">0</parameter>
+
+These settings will be revisited once performance data is obtained and
+analyzed for a wide variety of platforms, with the goal of short but
+representative runs.
+
+Please ask in QMCPACK's Google group if you have any questions.
+https://groups.google.com/forum/#!forum/qmcpack

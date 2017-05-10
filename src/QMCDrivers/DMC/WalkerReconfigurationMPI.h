@@ -79,9 +79,4 @@ struct WalkerReconfigurationMPI: public WalkerControlBase
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile: WalkerReconfigurationMPI.h,v $   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

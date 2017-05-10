@@ -1,0 +1,169 @@
+<?xml version="1.0"?>
+<simulation xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.mcc.uiuc.edu/qmc/schema/molecu.xsd">
+  <project id="NiO-fcc-S8-dmc" series="1">
+    <application name="qmcapp" role="molecu" class="serial" version="0.2">
+      DMC for NiO-fcc-S8-tw0
+    </application>
+  </project>
+
+  <random seed="49154"/>
+  <qmcsystem>
+  <simulationcell>
+    <parameter name="lattice">
+      7.8811   7.8811   0
+      -7.8811   7.8811   0
+      0   0   15.7622
+    </parameter>
+    <parameter name="bconds">p p p </parameter>
+    <parameter name="LR_dim_cutoff">15</parameter>
+  </simulationcell>
+  </qmcsystem>
+  <particleset name="i" size="32">
+    <group name="O">
+      <parameter name="charge">6.000000</parameter>
+      <parameter name="valence">6.000000</parameter>
+      <parameter name="atomicnumber">8.000000</parameter>
+    </group>
+    <group name="Ni">
+      <parameter name="charge">18</parameter>
+      <parameter name="valence">18</parameter>
+      <parameter name="atomicnumber">28</parameter>
+    </group>
+    <attrib name="position" datatype="posArray" condition="1">
+    0.5   0   0.25
+    0   0   0.75
+    0.25   0.25   0.5
+    0.5   0.5   0.25
+    0.75   0.25   0
+    0   0.5   0.75
+    0.25   0.75   0.5
+    0.75   0.75   0
+    0   0   0.25
+    0.25   0.25   0
+    0.5   0   0.75
+    0.75   0.25   0.5
+    0   0.5   0.25
+    0.25   0.75   0
+    0.5   0.5   0.75
+    0.75   0.75   0.5
+    0   0   0
+    0   0.5   0
+    0.25   0.25   0.75
+    0.5   0   0.5
+    0.5   0.5   0.5
+    0.75   0.25   0.25
+    0.25   0.75   0.75
+    0.75   0.75   0.25
+    0.5   0   0
+    0   0   0.5
+    0.25   0.25   0.25
+    0.5   0.5   0
+    0.75   0.25   0.75
+    0   0.5   0.5
+    0.25   0.75   0.25
+    0.75   0.75   0.75
+    </attrib>
+    <attrib name="ionid" datatype="stringArray">
+      O  O  O  O  O  O  O  O  
+      O  O  O  O  O  O  O  O  
+      Ni  Ni  Ni  Ni  Ni  Ni  Ni  Ni  
+      Ni  Ni  Ni  Ni  Ni  Ni  Ni  Ni  
+    </attrib>
+  </particleset>
+  <particleset name="e" random="yes" randomsrc="i">
+    <group name="u" size="192">
+      <parameter name="charge">-1</parameter>
+    </group>
+    <group name="d" size="192">
+      <parameter name="charge">-1</parameter>
+    </group>
+  </particleset>
+  <wavefunction name="psi0" target="e">
+    <determinantset type="einspline" source="i" href="../NiO-fcc-supertwist111-supershift000-S8.h5" tilematrix="1 1 1 0 2 -2 1 -1 -1" twistnum="-1" gpu="yes" meshfactor="0.9" precision="single" twist="0  0  0">
+      <slaterdeterminant>
+        <determinant id="updet" size="192" ref="updet">
+          <occupation mode="ground" spindataset="0">
+          </occupation>
+        </determinant>
+        <determinant id="downdet" size="192" ref="downdet">
+          <occupation mode="ground" spindataset="1">
+          </occupation>
+        </determinant>
+      </slaterdeterminant>
+    </determinantset>
+    <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">
+      <correlation speciesA="u" speciesB="u" size="10" rcut="5.5727792532">
+        <coefficients id="uu" type="Array"> 0.3062333936 0.2068358231 0.1324267459 0.08673342451 0.05641590391 0.03626533946 0.02269217959 0.01331043612 0.006750919735 0.002827476478</coefficients>
+      </correlation>
+      <correlation speciesA="u" speciesB="d" size="10" rcut="5.5727792532">
+        <coefficients id="ud" type="Array"> 0.4397856796 0.2589475889 0.1516634434 0.08962897215 0.05676614496 0.03675758961 0.02294244601 0.01343860721 0.00681803725 0.002864695148</coefficients>
+      </correlation>
+    </jastrow>
+    <jastrow name="J1" type="One-Body" function="Bspline" print="yes" source="i">
+      <correlation elementType="O" cusp="0.0" size="10" rcut="4.8261684030">
+        <coefficients id="O" type="Array"> -1.060468469 -0.9741652012 -0.8785027166 -0.6350075366 -0.3276892194 -0.08646817952 -0.07340983171 -0.0377479213 -0.01507835571 -0.001101691898</coefficients>
+      </correlation>
+      <correlation elementType="Ni" cusp="0.0" size="10" rcut="4.8261684030">
+        <coefficients id="Ni" type="Array"> -3.058259288 -3.077898004 -2.51188807 -1.570208063 -0.6204423266 0.06272826611 0.06228214399 0.06665099211 0.03230352443 0.009254036239</coefficients>
+      </correlation>
+    </jastrow>
+    <jastrow name="J3" type="eeI" function="polynomial" source="i" print="yes">
+      <correlation ispecies="Ni" especies="u" isize="3" esize="3" rcut="4.8261684030">
+        <coefficients id="uuNi" type="Array" optimize="yes"> -0.003356164484 0.002412623253 0.01653623839 0.0008341346169 -0.002808360734 0.000710697475 0.01076942152 0.0009228283355 0.01576022161 -0.003585259096 0.003323106938 -0.02282975998 -0.002246144403 -0.007196992871 -0.00404316239 0.001465337212 0.02026982926 -0.03528735393 0.04594087928 -0.008776410679 -0.001552528476 -0.005554407743 0.001858594451 0.002001634408 0.0009302256139 -0.0006304447229</coefficients>
+      </correlation>
+      <correlation ispecies="Ni" especies1="u" especies2="d" isize="3" esize="3" rcut="4.8261684030">
+        <coefficients id="udNi" type="Array" optimize="yes"> -0.006861627197 0.003278047306 0.03324006545 0.003097361067 -0.004710623571 9.652180317e-06 0.02212708787 -0.003718893286 0.03390124932 -0.00710566395 0.008807743592 -0.04281661568 -0.008463011294 -0.01269994613 -0.002005229447 0.002186590944 0.03350196472 -0.05677253817 0.07810604648 -0.009629896208 -0.006372643712 -0.01056861605 0.002485188615 0.008392442289 1.073423014e-05 -0.0004812466328</coefficients>
+      </correlation>
+      <correlation ispecies="O" especies="u" isize="3" esize="3" rcut="4.8261684030">
+        <coefficients id="uuO" type="Array" optimize="yes"> -0.003775082438 -0.00169971229 0.02162925441 0.005674020544 -0.0008296047161 0.00128057705 0.005487203215 0.001637322446 0.02976838198 -0.0003207100945 0.01143855436 -0.05336741304 -0.00732359381 -0.01556942626 0.0001149478453 0.001838601199 0.02570154203 -0.0675325214 0.1080671614 -0.01258358969 0.001839834045 -0.02422400426 0.005154953014 0.003510582598 0.007464427016 -0.002454817757</coefficients>
+      </correlation>
+      <correlation ispecies="O" especies1="u" especies2="d" isize="3" esize="3" rcut="4.8261684030">
+        <coefficients id="udO" type="Array" optimize="yes"> -0.009590393593 0.002498010871 0.04225872633 0.00460311261 -0.01071033503 0.001253155062 0.02934351285 -0.01823794726 0.07224890393 -0.01020046849 0.006310807929 -0.05655009412 -0.0363775247 0.002062411388 0.02037856173 0.003372676617 0.03915277249 -0.02680556816 0.08648136635 0.01499088063 -0.02231984329 -0.02399792096 0.001105720128 0.02196005181 0.003162638982 -0.00119645772</coefficients>
+      </correlation>
+    </jastrow>
+  </wavefunction>
+  <hamiltonian name="h0" type="generic" target="e">
+    <pairpot type="pseudo" name="PseudoPot" source="i" wavefunction="psi0" format="xml">
+      <pseudo elementType="O" href="../O.xml"/>
+      <pseudo elementType="Ni" href="../Ni.opt.xml"/>
+    </pairpot>
+    <constant name="IonIon" type="coulomb" source="i" target="i"/>
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>
+    <estimator name="KEcorr" type="chiesa" source="e" psi="psi0"/>
+  </hamiltonian>
+
+
+  <qmc method="vmc" move="pbyp" gpu="yes">
+    <estimator name="LocalEnergy" hdf5="no" />
+    <parameter name="walkers">                1 </parameter>
+    <parameter name="stepsbetweensamples">    1 </parameter>
+    <parameter name="warmupSteps">            5 </parameter>
+    <parameter name="substeps">               5 </parameter>
+    <parameter name="steps">                  1 </parameter>
+    <parameter name="blocks">                 2 </parameter>
+    <parameter name="timestep">             1.0 </parameter>
+    <parameter name="usedrift">              no </parameter>
+  </qmc>
+  <qmc method="vmc" move="pbyp" gpu="yes">
+    <estimator name="LocalEnergy" hdf5="no" />
+    <parameter name="walkers">                1 </parameter>
+    <parameter name="stepsbetweensamples">    1 </parameter>
+    <parameter name="warmupSteps">            5 </parameter>
+    <parameter name="substeps">               5 </parameter>
+    <parameter name="steps">                  1 </parameter>
+    <parameter name="blocks">                 2 </parameter>
+    <parameter name="timestep">             1.0 </parameter>
+    <parameter name="usedrift">             yes </parameter>
+  </qmc>
+  <qmc method="dmc" move="pbyp" checkpoint="-1" gpu="yes">
+    <estimator name="LocalEnergy" hdf5="no" />
+    <!--parameter name="targetwalkers">  32000 </parameter-->
+    <!--parameter name="max_walkers">   0    </parameter-->
+    <parameter name="reconfiguration">      yes </parameter>
+    <parameter name="warmupSteps">          250 </parameter>
+    <parameter name="timestep">           0.001 </parameter>
+    <parameter name="steps">                  5 </parameter>
+    <parameter name="blocks">                 5 </parameter>
+    <parameter name="nonlocalmoves">        yes </parameter>
+  </qmc>
+</simulation>

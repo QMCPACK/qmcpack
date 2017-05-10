@@ -595,8 +595,3 @@ void MultiDiracDeterminantBase::registerTimers()
 
 
 }
-/***************************************************************************
- * $RCSfile$   $Author: kesler $
- * $Revision: 3582 $   $Date: 2009-02-20 18:07:41 -0600 (Fri, 20 Feb 2009) $
- * $Id: MultiDiracDeterminantBase.cpp 3582 2009-02-21 00:07:41Z kesler $
- ***************************************************************************/

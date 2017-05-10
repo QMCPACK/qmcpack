@@ -138,7 +138,6 @@ namespace qmcplusplus
 
      // setup SM objects 
      V2.setup(head_of_nodes,std::string("SparseGeneralHamiltonian_V2"),TG.getNodeCommLocal());
-     V2_2bar.setup(head_of_nodes,std::string("SparseGeneralHamiltonian_V2_2bar"),TG.getNodeCommLocal());
      V2_full.setup(head_of_nodes,std::string("SparseGeneralHamiltonian_V2_full"),TG.getNodeCommLocal());
 
      V2_fact.setup(head_of_nodes,"V2_fact",TG.getNodeCommLocal());
@@ -212,16 +211,17 @@ namespace qmcplusplus
         return false;
       }
 
-      if(factorizedHamiltonian)
+      if(factorizedHamiltonian ) {
         if(H1.size() != nOne || hij_core.size() != nOne_core) {
           app_error()<<"Error after readElementsFromFCIDUMP in readFCIDUMP, wrong number of elements.\n" <<std::endl;
           return false;
         }
-      else
+      } else {
         if(H1.size() != nOne || hij_core.size() != nOne_core  || V2.size()!=nTwo ||  Vijkl_core.size()!=nTwo_core ||  Vijkl_mixed.size()!=nTwo_mixed) {
           app_error()<<"Error after readElementsFromFCIDUMP in readFCIDUMP, wrong number of elements.\n" <<std::endl;
           return false;
         }
+      }
 
       Timer.stop("Generic");
       if(rnk==0) app_log()<<" -- Time to read ASCII integral file: " <<Timer.average("Generic") <<"\n";
@@ -654,7 +654,7 @@ namespace qmcplusplus
 
     bool printFockMatrix=false; 
     if(printFockMatrix) {
-      app_log()<<" Off-diagonal elements of the Fock matrix larger than " <<5*std::max(cutoff2bar,cutoff1bar) <<std::endl;
+      app_log()<<" Off-diagonal elements of the Fock matrix larger than " <<5*std::max(cutoff1bar,cutoff1bar) <<std::endl;
       for(IndexType i=0; i<NMO; i++) {
        for(IndexType j=i+1; j<NMO; j++) {
         ValueType fij = H(i,j);
@@ -662,7 +662,7 @@ namespace qmcplusplus
           fij += H_2bar(i,*it,j,*it);
         for(std::vector<IndexType>::iterator it = occup_beta.begin(); it<occup_beta.end(); it++) 
           fij += H(i,*it,j,*it);
-        if( std::abs(fij) > 5*std::max(cutoff2bar,cutoff1bar) )
+        if( std::abs(fij) > 5*std::max(cutoff1bar,cutoff1bar) )
           app_log()<<i <<"  " <<j <<"     " <<fij <<std::endl;
        }
       }
@@ -695,139 +695,16 @@ namespace qmcplusplus
 
     app_log()<<" Memory used by 2-el integral table: " <<sizeof(s4D<ValueType>)*V2.size()/1024/1024 <<" MB. " <<std::endl;
 
+    hdf_write();
     if(rnk == 0) {
-      hdf_write();
       ascii_write();
     }
 
-    return true;
-  }
+    MPI_Barrier(TG.getNodeCommLocal()); 
+    // generate IJ matrix to speedup table seaches
+    if(V2.size()>0)
+      generateIJ();
 
-  bool SparseGeneralHamiltonian::generate_V2_2bar() {
-
-    if(V2_2bar.size() != 0) return true;
-
-    if(factorizedHamiltonian) {
-      app_error()<<" Error in SparseGeneralHamiltonian::generate_V2_2bar will not generate 2bar integrals with factorized hamiltonian. \n\n\n";
-      return false;
-    }
-
-#ifdef AFQMC_DEBUG
-    app_log()<<" Generating sparse 2-bar integrals. " <<std::endl; 
-#endif
-
-    int cnt=0;
-    Timer.reset("Generic");
-    Timer.start("Generic");
-
-
-    // using dumbest algorithm right now, improve later
-    if(head_of_nodes) {
-
-      cnt=0; 
-      for(IndexType i=0; i<NMO; i++)  {  
-      for(IndexType j=i+1; j<NMO; j++)  {  
-      for(IndexType k=i; k<NMO; k++)  {  
-      for(IndexType l=k+1; l<NMO; l++)  {  
-        if( i==j || k==l ) continue;
-        s4D<ValueType> ijkl = std::make_tuple(i,j,k,l,static_cast<ValueType>(0.0)); 
-        s4D<ValueType> s = find_smaller_equivalent_TwoBar_for_integral_list(ijkl);
-        if(ijkl == s) { // found an element, now see if it is non-zero
-          ValueType v = H(i,j,k,l)-H(i,j,l,k);
-          if( std::abs(v) > cutoff2bar )
-            cnt++;  
-        }
-      }
-      }
-      }
-      }
-      if(!spinRestricted) {
-       for(IndexType i=NMO; i<2*NMO; i++)  {  
-       for(IndexType j=i+1; j<2*NMO; j++)  {  
-       for(IndexType k=i; k<2*NMO; k++)  {  
-       for(IndexType l=k+1; l<2*NMO; l++)  {  
-        if( i==j || k==l ) continue;
-         s4D<ValueType> ijkl = std::make_tuple(i,j,k,l,static_cast<ValueType>(0.0)); 
-         s4D<ValueType> s = find_smaller_equivalent_TwoBar_for_integral_list(ijkl);
-         if(ijkl == s) { // found an element, now see if it is non-zero
-           ValueType v = H(i,j,k,l)-H(i,j,l,k);
-           if( std::abs(v) > cutoff2bar )
-             cnt++;  
-         }
-       }
-       }
-       }
-       }
-      }
-
-    }
-
-    // allocate shared memory 
-    V2_2bar.reserve(cnt); 
-
-    if(head_of_nodes) {
-      for(IndexType i=0; i<NMO; i++)  {  
-      for(IndexType j=i+1; j<NMO; j++)  {  
-      for(IndexType k=i; k<NMO; k++)  {  
-      for(IndexType l=k+1; l<NMO; l++)  {  
-        if( i==j || k==l ) continue;
-        s4D<ValueType> ijkl = std::make_tuple(i,j,k,l,static_cast<ValueType>(0.0)); 
-        s4D<ValueType> s = find_smaller_equivalent_TwoBar_for_integral_list(ijkl);
-        if(ijkl == s) { // found an element, now see if it is non-zero
-          ValueType v = H(i,j,k,l)-H(i,j,l,k);
-          if( std::abs(v)>static_cast<RealType>(0.0) && std::abs(v) > cutoff2bar ) {
-            std::get<4>(ijkl) = v; 
-            V2_2bar.push_back(ijkl);
-          }
-        }
-      }
-      }
-      }
-      }
-      if(!spinRestricted) {
-        for(IndexType i=NMO; i<2*NMO; i++)  {  
-        for(IndexType j=i+1; j<2*NMO; j++)  {  
-        for(IndexType k=i; k<2*NMO; k++)  {  
-        for(IndexType l=k+1; l<2*NMO; l++)  {
-          if( i==j || k==l ) continue;
-          s4D<ValueType> ijkl = std::make_tuple(i,j,k,l,static_cast<ValueType>(0.0)); 
-          s4D<ValueType> s = find_smaller_equivalent_TwoBar_for_integral_list(ijkl);
-          if(ijkl == s) { // found an element, now see if it is non-zero
-            ValueType v = H(i,j,k,l)-H(i,j,l,k);
-            if( std::abs(v)>static_cast<RealType>(0.0) && std::abs(v) > cutoff2bar ) {
-              std::get<4>(ijkl) = v; 
-              V2_2bar.push_back(ijkl);
-            }
-          }
-        }
-        }
-        }
-        }
-      }
-    }
-    myComm->barrier();
-
-    Timer.stop("Generic");
-    app_log()<<" -- Time to sort generate sparse 2-bar integral tables: " <<Timer.average("Generic") <<"\n";
-
-#ifdef AFQMC_DEBUG
-    app_log()<<" 2bar list contains " <<V2_2bar.size() <<" (" <<cnt <<") elements. \n" <<std::endl; 
-    app_log()<<" Finished generating sparse 2-bar integrals. " <<std::endl; 
-    app_log()<<" Sorting 2-bar integrals. " <<std::endl; 
-#endif
-
-    Timer.reset("Generic");
-    Timer.start("Generic");
-
-    if(head_of_nodes) std::sort (V2_2bar.begin(), V2_2bar.end(),mySort);
-    myComm->barrier();
-
-    Timer.stop("Generic");
-    app_log()<<" -- Time to sort sparse 2-bar integral tables: " <<Timer.average("Generic") <<"\n";
-
-#ifdef AFQMC_DEBUG
-    app_log()<<" Finished sorting 2-bar integrals. " <<std::endl; 
-#endif
     return true;
   }
 
@@ -1288,7 +1165,7 @@ namespace qmcplusplus
  
          }
        } else if(a==0 && b==0 && c==0 && d==0) {
-         if( val==0.0 && !spinRestricted ) {
+         if( std::abs(val)==0 && !spinRestricted ) {
            uhf_block++;
          }
        } else if(a!=0 && b==0 && c==0 && d==0) {
@@ -1511,7 +1388,7 @@ namespace qmcplusplus
 // reserved for non c++11 compliant compiler
 #endif
        } else if(a==0 && b==0 && c==0 && d==0) {
-         if( val==0.0 && !spinRestricted ) {
+         if( std::abs(val)==0 && !spinRestricted ) {
            uhf_block++;
          } else {
            NuclearCoulombEnergy = val;
@@ -1548,7 +1425,6 @@ namespace qmcplusplus
     app_log()<<" Initializing Hamiltonian from file: " <<fileName <<std::endl;
 
     V2.setup(head_of_nodes,std::string("SparseGeneralHamiltonian_V2"),TG.getNodeCommLocal());
-    V2_2bar.setup(head_of_nodes,std::string("SparseGeneralHamiltonian_V2_2bar"),TG.getNodeCommLocal());
     V2_full.setup(head_of_nodes,std::string("SparseGeneralHamiltonian_V2_full"),TG.getNodeCommLocal());
     V2_fact.setup(head_of_nodes,"SparseGeneralHamiltonian_V2_fact",TG.getNodeCommLocal());
 
@@ -1592,8 +1468,12 @@ namespace qmcplusplus
       }
 
       std::vector<int> Idata(8);
-      if(!dump.read(Idata,"dims")) return false;
+      if(!dump.read(Idata,"dims")) {
+        app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading dims. \n"; 
+        return false;
+      } 
 
+      int int_blocks = Idata[2];
       if(NMO < 0) NMO = Idata[3];
       if(NAEA < 0) NAEA = Idata[4];
       if(NAEB < 0) NAEB = Idata[5];
@@ -1601,20 +1481,25 @@ namespace qmcplusplus
         app_error()<<" ERROR: NMO differs from value in integral file. \n"; 
         return false;
       }
+/*
       if(Idata[4] != NAEA) {
-        app_error()<<" ERROR: NMO differs from value in integral file. \n"; 
+        app_error()<<" ERROR: NAEA differs from value in integral file. \n"; 
         return false;
       }
       if(Idata[5] != NAEB) {
-        app_error()<<" ERROR: NMO differs from value in integral file. \n"; 
+        app_error()<<" ERROR: NAEA differs from value in integral file. \n"; 
         return false;
       }
+*/
       myComm->bcast(Idata);
       spinRestricted = (Idata[6]==0)?(true):(false);
       factorizedHamiltonian = (Idata[7]>0); 
       int nvecs = Idata[7];
 
       H1.resize(Idata[0]);
+
+      if(distribute_Ham && number_of_TGs > NMO) 
+        APP_ABORT("Error: number_of_TGs > NMO. \n\n\n");
 
       occup_alpha.resize(NAEA);
       occup_beta.resize(NAEB);
@@ -1641,22 +1526,34 @@ namespace qmcplusplus
 
       std::vector<OrbitalType> ivec;    
       ivec.resize(2*H1.size());
-      if(!dump.read(ivec,"H1_indx")) return false;
+      if(!dump.read(ivec,"H1_indx")) {
+        app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading H1_indx. \n";
+        return false;
+      } 
       for(int i=0, j=0; i<H1.size(); i++, j+=2)        
-        H1[i] = std::forward_as_tuple(ivec[j],ivec[j+1],0);  
+        H1[i] = std::make_tuple(ivec[j],ivec[j+1],0);  
 
       std::vector<ValueType> vvec;
       vvec.resize(H1.size());
-      if(!dump.read(vvec,"H1")) return false;
-      for(int i=0; i<H1.size(); i++)
-        std::get<2>(H1[i]) = vvec[i];
+      if(!dump.read(vvec,"H1")) {
+        app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading H1.  \n";
+        return false;
+      }
+      for(int i=0; i<H1.size(); i++) {
+        // keep i<=j by default
+        if(std::get<0>(H1[i]) <= std::get<1>(H1[i]))
+            std::get<2>(H1[i]) = vvec[i];
+        else
+            std::get<2>(H1[i]) = myconj(vvec[i]);
+      }
 
       std::sort (H1.begin(), H1.end(),mySort);
       myComm->bcast<char>(reinterpret_cast<char*>(H1.data()),H1.size()*sizeof(s2D<ValueType>));
 
-      // setup and communicate min_i/max_i here if nnodes_per_TG > 1
-
       if(factorizedHamiltonian) {
+
+        if(distribute_Ham) 
+            APP_ABORT("ERROR: distribute_Ham not implemented with factorized hamiltonian yet. \n\n\n");
 
         std::vector<double> residual(nvecs);
         if(!dump.read(residual,"V2fact_vec_residual")) {
@@ -1733,13 +1630,13 @@ namespace qmcplusplus
             Temp=0;
             for(int k=0; k<sz[i]; k++) 
               Temp(ivec[k]/NMO,ivec[k]%NMO) = vvec[k];
-            DenseMatrixOperators::product(NMO,NMO,NMO,Temp.data(),NMO,rotationMatrix.data(),NMO,Temp1.data(),NMO); 
+            DenseMatrixOperators::product(NMO,NMO,NMO,ValueType(1),Temp.data(),NMO,rotationMatrix.data(),NMO,ValueType(0),Temp1.data(),NMO); 
             DenseMatrixOperators::product_AhB(NMO,NMO,NMO,ValueType(1.0),rotationMatrix.data(),NMO,Temp1.data(),NMO,ValueType(0.0),Temp.data(),NMO); 
             ivec.clear();
             vvec.clear(); 
             for(int j=0; j<NMO; j++) 
              for(int k=0; k<NMO; k++) {
-               if(std::abs(Temp(j,k)) > cutoff2bar) {
+               if(std::abs(Temp(j,k)) > cutoff1bar) {
                  ivec.push_back(j*NMO+k);
                  vvec.push_back(Temp(j,k));
                } 
@@ -1750,21 +1647,23 @@ namespace qmcplusplus
 
           Timer.start("Generic4");
           myComm->bcast(ivec.data(),ivec.size(),MPI_COMM_HEAD_OF_NODES);
-          myComm->bcast(vvec.data(),vvec.size(),MPI_COMM_HEAD_OF_NODES);
+          myComm->bcast(vvec.data(),vvec.size(),0,MPI_COMM_HEAD_OF_NODES);
           Timer.stop("Generic4");
  
-//          if(nnodes_per_TG == 1 || (i>=min_i && i < max_i)) {
             for(int k=0; k<ivec.size(); k++) {
-              if(std::abs(vvec[k]) > cutoff2bar ) 
+              if(std::abs(vvec[k]) > cutoff1bar ) 
                 V2_fact.add(ivec[k],i,vvec[k],false);
             }
-//          }
 
         }
 
         Timer.reset("Generic2");
         Timer.start("Generic2");
+#ifndef QMC_COMPLEX        
         V2_fact.compress_parallel(TG.getNodeCommLocal());
+#else
+        V2_fact.compress();   // need to get this fixed for complex
+#endif
         Timer.stop("Generic2");
         app_log()<<" -- Average time to read std::vector from h5 file: " <<Timer.average("Generic3") <<"\n";
         app_log()<<" -- Average time to bcast std::vector: " <<Timer.average("Generic4") <<"\n";
@@ -1772,51 +1671,119 @@ namespace qmcplusplus
         app_log()<<" Memory used by factorized 2-el integral table: " <<V2_fact.memoryUsage()/1024.0/1024.0 <<" MB. " <<std::endl;
       } else {
         // now V2
-        Idata.resize(NMO); 
-        if(!dump.read(Idata,"V2_location_of_indexes")) {
-          app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading V2_location_of_indexes dataset. \n";
+        std::vector<int> ntpo(NMO);
+        Idata.resize(int_blocks);
+        // Idata[i]: number of terms per block
+        if(!dump.read(Idata,"V2_block_sizes")) {
+          app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading V2_block_sizes dataset. \n";
           return false;
-        } 
-        myComm->bcast(Idata);
-        int ntmax=Idata[0], nttot=0;
-        if(min_i == 0) nttot += Idata[0];
-        for(int i=1; i<NMO; i++) {
-          if( i >= min_i && i < max_i ) nttot += Idata[i]-Idata[i-1];    
-          if( Idata[i]-Idata[i-1] > ntmax) ntmax = Idata[i]-Idata[i-1];
         }
+
+        int ntmax = *std::max_element(Idata.begin(), Idata.end());
+        std::vector<IndexType> indxvec;
+        indxvec.reserve(2*ntmax);
+        vvec.reserve(ntmax);
+
+        // calculate number of terms witha given first index for partitioning
+        // just read indexes and count
+        for(int k=0; k<int_blocks; k++) {
+          if(Idata[k]==0) continue;
+          indxvec.clear();
+          indxvec.resize(2*Idata[k]);
+          vvec.clear();
+          vvec.resize(Idata[k]);
+          if(!dump.read(indxvec,std::string("V2_index_")+std::to_string(k))) {
+            app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading V2_index_" <<k <<" dataset. \n";
+            return false;
+          }
+          if(!dump.read(vvec,std::string("V2_vals_")+std::to_string(k))) {
+            app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading V2_vals_" <<k <<" dataset. \n";
+            return false;
+          }
+            
+          std::vector<IndexType>::iterator iti = indxvec.begin();
+          for(std::vector<ValueType>::iterator itv = vvec.begin(); itv < vvec.end(); itv++, iti+=2) {
+            if(std::abs(*itv) < cutoff1bar )
+                continue;
+            s4D<ValueType> ijkl = std::make_tuple(  static_cast<OrbitalType>((*iti)/NMO),
+                                                    static_cast<OrbitalType>((*(iti+1))/NMO),  
+                                                    static_cast<OrbitalType>((*iti)%NMO),
+                                                    static_cast<OrbitalType>((*(iti+1))%NMO), ValueType(0));     
+            find_smallest_permutation(ijkl); 
+            ntpo[std::get<0>(ijkl)]++;
+          }   
+        }
+        myComm->bcast(ntpo);
+
+        if(distribute_Ham) {
+          std::vector<int> nv(NMO+1);
+          nv[0]=0;
+          for(int i=0,cnt=0; i<NMO; i++) {
+            cnt+=ntpo[i];
+            nv[i+1]=cnt;
+          }
+          std::vector<int> sets(number_of_TGs+1);
+          balance_partition_ordered_set(NMO,nv.data(),sets);
+          myComm->bcast(sets);
+          min_i = sets[TG.getTGNumber()];
+          max_i = sets[TG.getTGNumber()+1];
+          app_log()<<" Hamiltonian partitioning: \n   Orbitals:        ";
+          for(int i=0; i<=number_of_TGs; i++) app_log()<<sets[i] <<" "; 
+          app_log()<<std::endl <<"   Terms per block: ";  
+          for(int i=0; i<number_of_TGs; i++) app_log()<<nv[sets[i+1]]-nv[sets[i]] <<" ";
+          app_log()<<std::endl;  
+        }
+        int nttot = std::accumulate(ntpo.begin()+min_i,ntpo.begin()+max_i,0);
         V2.resize(nttot);
         SMDenseVector<s4D<ValueType> >::iterator V2_it = V2.begin();
 
-        ivec.reserve(3*ntmax);
-        vvec.reserve(ntmax);
+        myComm->bcast(Idata);
 
-        for(int k=0; k<NMO; k++) {
-          int ik0 = (k==0)?0:Idata[k-1];
-          if(Idata[k]==ik0) continue;
-          ivec.clear();
-          ivec.resize(3*(Idata[k]-ik0));
-          if(!dump.read(ivec,std::string("V2_indx_")+std::to_string(k))) {
-            app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading V2_indx_ dataset. \n";
+        for(int k=0, cnt=0; k<int_blocks; k++) {
+          if(Idata[k]==0) continue;
+          indxvec.clear();
+          indxvec.resize(2*Idata[k]);
+          if(!dump.read(indxvec,std::string("V2_index_")+std::to_string(k))) {
+            app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading V2_index_" <<k <<" dataset. \n";
             return false;
           }
-          myComm->bcast(ivec.data(),ivec.size(),MPI_COMM_HEAD_OF_NODES);
+          myComm->bcast(indxvec.data(),indxvec.size(),MPI_COMM_HEAD_OF_NODES);
 
           vvec.clear();
-          vvec.resize(Idata[k]-ik0);
-          if(!dump.read(vvec,std::string("V2_")+std::to_string(k))) {
-            app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading V2_ dataset. \n";
+          vvec.resize(Idata[k]);
+          if(!dump.read(vvec,std::string("V2_vals_")+std::to_string(k))) {
+            app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading V2_vals_" <<k <<" dataset. \n";
             return false;
           }
-          myComm->bcast(vvec.data(),vvec.size(),MPI_COMM_HEAD_OF_NODES);
+          myComm->bcast(vvec.data(),vvec.size(),0,MPI_COMM_HEAD_OF_NODES);
 
-          if( k >= min_i && k < max_i) {
-            std::vector<OrbitalType>::iterator iti = ivec.begin(); 
-            for(std::vector<ValueType>::iterator itv = vvec.begin(); itv < vvec.end(); itv++, iti+=3)
-              *(V2_it++) = std::make_tuple(k,*(iti),*(iti+1),*(iti+2),*itv); 
-          }
+          std::vector<IndexType>::iterator iti = indxvec.begin(); 
+          for(std::vector<ValueType>::iterator itv = vvec.begin(); itv < vvec.end(); itv++, iti+=2) { 
+            if(std::abs(*itv) < cutoff1bar )
+                continue;
+            s4D<ValueType> ijkl = std::make_tuple(  static_cast<OrbitalType>((*iti)/NMO),
+                                                    static_cast<OrbitalType>((*(iti+1))/NMO),  
+                                                    static_cast<OrbitalType>((*iti)%NMO),
+                                                    static_cast<OrbitalType>((*(iti+1))%NMO), *itv);     
+            find_smallest_permutation(ijkl); 
+            if( std::get<0>(ijkl) >= min_i && std::get<0>(ijkl) < max_i) { 
+              if( cnt == nttot ) {
+                app_error()<<" Error, cnt, nttot: " <<cnt <<" " <<nttot <<std::endl;
+                APP_ABORT(" Error: Too many integrals. V2_nterms_per_first_orbital must be wrong. \n\n\n");
+              }  
+              *(V2_it++) = ijkl; 
+              cnt++;
+            }
+          }   
         }
-        std::sort (V2.begin(), V2.end(),mySort);
+        //std::sort (V2.begin(), V2.end(),mySort);
+        Timer.reset("Generic2");
+        Timer.start("Generic2");
+        V2.sort (mySort, TG.getNodeCommLocal(),inplace);
+        Timer.stop("Generic2");
+        app_log()<<" -- Time to compress Hamiltonian from h5 file: " <<Timer.average("Generic2") <<"\n";
         app_log()<<" Memory used by 2-el integral table: " <<V2.memoryUsage()/1024.0/1024.0 <<" MB. " <<std::endl;
+
       }
 
       dump.pop();
@@ -1829,6 +1796,7 @@ namespace qmcplusplus
 
       std::vector<int> Idata(8);
       myComm->bcast(Idata);
+      int int_blocks = Idata[2];
       spinRestricted = (Idata[6]==0)?(true):(false);
       if(NMO < 0) NMO = Idata[3];
       if(NAEA < 0) NAEA = Idata[4];
@@ -1863,8 +1831,6 @@ namespace qmcplusplus
 
       myComm->bcast<char>(reinterpret_cast<char*>(H1.data()),H1.size()*sizeof(s2D<ValueType>));
 
-      // recieve min_i/max_i here if nnodes_per_TG > 1
-
       if(factorizedHamiltonian) {
 
         int nvecs_after_cutoff;
@@ -1893,66 +1859,93 @@ namespace qmcplusplus
             vvec.resize(sz[i]);
           
             myComm->bcast(ivec.data(),ivec.size(),MPI_COMM_HEAD_OF_NODES);
-            myComm->bcast(vvec.data(),vvec.size(),MPI_COMM_HEAD_OF_NODES);
+            myComm->bcast(vvec.data(),vvec.size(),0,MPI_COMM_HEAD_OF_NODES);
  
-//            if(nnodes_per_TG == 1 || (i>=min_i && i < max_i)) {
               for(int k=0; k<ivec.size(); k++) {
-                if(std::abs(vvec[k]) > cutoff2bar ) 
+                if(std::abs(vvec[k]) > cutoff1bar ) 
                   V2_fact.add(ivec[k],i,vvec[k],false); 
               }
-//            }
 
           }
 
         }
+//#ifndef QMC_COMPLEX        
         V2_fact.compress_parallel(TG.getNodeCommLocal());
+//#else
+//        V2_fact.compress();   // need to get this fixed for complex
+//#endif
 
       } else {
 
         // now V2
         Idata.resize(NMO); 
         myComm->bcast(Idata);
-        int ntmax=Idata[0], nttot=0;
-        if(min_i == 0) nttot += Idata[0];
-        for(int i=1; i<NMO; i++) {
-          if( i >= min_i && i < max_i ) nttot += Idata[i]-Idata[i-1];    
-          if( Idata[i]-Idata[i-1] > ntmax) ntmax = Idata[i]-Idata[i-1];
+
+        if(distribute_Ham) {
+          std::vector<int> sets(number_of_TGs+1);
+          myComm->bcast(sets);
+          min_i = sets[TG.getTGNumber()];
+          max_i = sets[TG.getTGNumber()+1];
         }
+
+        int nttot = std::accumulate(Idata.begin()+min_i,Idata.begin()+max_i,0);
         V2.resize(nttot);
+
+        Idata.resize(int_blocks);
+        myComm->bcast(Idata);
+        int ntmax = *std::max_element(Idata.begin(), Idata.end());
 
         if(head_of_nodes) { 
           SMDenseVector<s4D<ValueType> >::iterator V2_it = V2.begin();
-          std::vector<OrbitalType> ivec;    
+          std::vector<IndexType> ivec;    
           std::vector<ValueType> vvec; 
-          ivec.reserve(3*ntmax);
+          ivec.reserve(2*ntmax);
           vvec.reserve(ntmax);
 
-          for(int k=0; k<NMO; k++) {
-            int ik0 = (k==0)?0:Idata[k-1];
-            if(Idata[k]==ik0) continue;
+          for(int k=0, cnt=0; k<int_blocks; k++) {
+            if(Idata[k]==0) continue;
             ivec.clear();
-            ivec.resize(3*(Idata[k]-ik0));
+            ivec.resize(2*Idata[k]);
             myComm->bcast(ivec.data(),ivec.size(),MPI_COMM_HEAD_OF_NODES);
         
             vvec.clear();
-            vvec.resize(Idata[k]-ik0);
-            myComm->bcast(vvec.data(),vvec.size(),MPI_COMM_HEAD_OF_NODES);
+            vvec.resize(Idata[k]);
+            myComm->bcast(vvec.data(),vvec.size(),0,MPI_COMM_HEAD_OF_NODES);
         
-            if( k >= min_i && k < max_i) {
-              std::vector<OrbitalType>::iterator iti = ivec.begin();
-              for(std::vector<ValueType>::iterator itv = vvec.begin(); itv < vvec.end(); itv++, iti+=3)
-                *(V2_it++) = std::make_tuple(k,*(iti),*(iti+1),*(iti+2),*itv);           
-            } 
+            std::vector<IndexType>::iterator iti = ivec.begin();
+            for(std::vector<ValueType>::iterator itv = vvec.begin(); itv < vvec.end(); itv++, iti+=2) {
+              if(std::abs(*itv) < cutoff1bar )
+                continue;
+              s4D<ValueType> ijkl = std::make_tuple(  static_cast<OrbitalType>((*iti)/NMO),
+                                                      static_cast<OrbitalType>((*(iti+1))/NMO),
+                                                      static_cast<OrbitalType>((*iti)%NMO),
+                                                      static_cast<OrbitalType>((*(iti+1))%NMO), *itv);
+              find_smallest_permutation(ijkl);  
+              if( std::get<0>(ijkl) >= min_i && std::get<0>(ijkl) < max_i) {
+                if( cnt == nttot ) {
+                  app_error()<<" Error, cnt, nttot: " <<cnt <<" " <<nttot <<std::endl;
+                  APP_ABORT(" Error: Too many integrals. V2_nterms_per_first_orbital must be wrong. \n\n\n");
+                }  
+                *(V2_it++) = ijkl;
+                cnt++;
+              }
+            }
           }
-          std::sort (V2.begin(), V2.end(),mySort);
         }
+        //std::sort (V2.begin(), V2.end(),mySort);
+        V2.sort (mySort, TG.getNodeCommLocal(),inplace);
       }
     }
     myComm->barrier();
 
+    // generate IJ matrix to speedup table seaches
+    if(V2.size()>0)
+      generateIJ();
+
     Timer.stop("Generic");
     app_log()<<" -- Time to initialize Hamiltonian from h5 file: " <<Timer.average("Generic") <<"\n";
 
+    hdf_write();
     if(rank() == 0) {
       ascii_write();
     }
@@ -1964,6 +1957,11 @@ namespace qmcplusplus
   void SparseGeneralHamiltonian::ascii_write() {
 
     if(ascii_write_file == std::string("")) return;
+
+    if(factorizedHamiltonian) {
+      app_log()<<" factorizedHamiltonian output not yet implemented " <<std::endl;
+      return;
+    }
  
     std::ofstream out(ascii_write_file.c_str());
     if(out.fail()) {
@@ -1995,6 +1993,7 @@ namespace qmcplusplus
     out.setf(std::ios::scientific, std::ios::floatfield);
     if(factorizedHamiltonian) {
       out<<" factorizedHamiltonian output not yet implemented " <<std::endl;
+      return;
     } else {
 
       SMDenseVector<s4D<ValueType> >::iterator it=V2.begin();
@@ -2034,6 +2033,30 @@ namespace qmcplusplus
 
     if(hdf_write_file == std::string("")) return;
 
+    bool writeFactorized = factorizedHamiltonian;
+    if(hdf_write_type!="default") {
+      if(factorizedHamiltonian) writeFactorized = (hdf_write_type == "factorized");
+      else writeFactorized = (hdf_write_type != "integrals");
+    }
+
+    // pseudo-hack to avoid a lot of indenting 
+    if(myComm->rank() > 0) {
+
+
+      // only parallelized path
+      if(!writeFactorized && factorizedHamiltonian) {
+        std::vector<OrbitalType> ivec; 
+        std::vector<ValueType> vvec;
+        for(int k=0; k<NMO; k++) {
+          ivec.clear();
+          vvec.clear();
+          SparseHamiltonianFromFactorization(k,ivec,vvec,cutoff1bar);
+        }
+      }
+  
+      return; 
+    }
+
     hdf_archive dump(myComm);
     if(!dump.create(hdf_write_file)) {
       app_error()<<" Error opening restart file in SparseGeneralHamiltonian. \n";
@@ -2049,7 +2072,9 @@ namespace qmcplusplus
     dump.push("Hamiltonian");
     dump.push("SparseGeneralHamiltonian");
 
+    int V2tot=0;
     std::vector<int> Idata(8);
+/* writing at the end since I don't have all the information necessarily
     Idata[0]=H1.size();
     if(factorizedHamiltonian)
       Idata[1]=V2_fact.size();
@@ -2064,6 +2089,7 @@ namespace qmcplusplus
     if(factorizedHamiltonian)
       Idata[7] = V2_fact.cols(); 
     dump.write(Idata,"dims");
+*/
 
     Idata.resize(NAEA+NAEB);
     for(int i=0; i<NAEA; i++) Idata[i] = occup_alpha[i];
@@ -2088,7 +2114,12 @@ namespace qmcplusplus
       std::tie (std::ignore,std::ignore,vvec[i]) = H1[i];
     dump.write(vvec,"H1");
 
-    if(factorizedHamiltonian) {
+    if(writeFactorized) {
+
+      if(!factorizedHamiltonian) {
+        app_error()<<" Error: Can only write factorized hamiltonian if input hamiltonian is already factorized. \n\n\n";
+        APP_ABORT(" Error: Can only write factorized hamiltonian if input hamiltonian is already factorized. \n\n\n");
+      }
 
       if(cholesky_residuals.size() != V2_fact.cols()) {
         app_error()<<"Error: Incorrect size of cholesky_residuals: " <<cholesky_residuals.size() <<" " <<V2_fact.cols() <<std::endl;  
@@ -2105,7 +2136,7 @@ namespace qmcplusplus
       int nmax = *std::max_element(sz.begin(),sz.end());
       dump.write(sz,std::string("V2fact_vec_sizes"));
       std::vector<IndexType> ivec;
-      std::vector<ComplexType> vvec;
+      std::vector<ValueType> vvec;
       ivec.reserve(nmax);
       vvec.reserve(nmax);
       for(ComplexSMSpMat::indxType i=0; i<nvecs; i++) {
@@ -2128,42 +2159,75 @@ namespace qmcplusplus
       Idata.resize(NMO);
       int ntmax=0;
       OrbitalType i0,j0,k0,l0,iold=0;
-      for(int i=0; i<V2.size(); i++) {
-        std::tie (i0,j0,k0,l0,std::ignore) = V2[i];
-        if(iold != i0) {
-          for(int k=iold; k<i0; k++) Idata[k]=i; 
-          iold=i0;
+
+      if(factorizedHamiltonian) {
+
+        for(int k=0; k<NMO; k++) {
+          ivec.clear();
+          vvec.clear();
+          SparseHamiltonianFromFactorization(k,ivec,vvec,cutoff1bar); 
+          Idata[k]= (k==0?0:Idata[k-1]+vvec.size());
+          V2tot+=vvec.size();
+          dump.write(ivec,std::string("V2_indx_")+std::to_string(k));
+          dump.write(vvec,std::string("V2_")+std::to_string(k));
         }
-      } 
-      for(int k=iold; k<NMO; k++)  Idata[k]=V2.size();
-      ntmax = Idata[0];
-      for(int i=1; i<NMO; i++) {
-        if(ntmax < (Idata[i]-Idata[i-1]))
-          ntmax = Idata[i]-Idata[i-1];
+
+        dump.write(Idata,"V2_location_of_indexes");
+
+      } else {
+        for(int i=0; i<V2.size(); i++) {
+          std::tie (i0,j0,k0,l0,std::ignore) = V2[i];
+          if(iold != i0) {
+            for(int k=iold; k<i0; k++) Idata[k]=i; 
+            iold=i0;
+          }
+        } 
+        for(int k=iold; k<NMO; k++)  Idata[k]=V2.size();
+        ntmax = Idata[0];
+        for(int i=1; i<NMO; i++) {
+          if(ntmax < (Idata[i]-Idata[i-1]))
+            ntmax = Idata[i]-Idata[i-1];
+        }
+
+        dump.write(Idata,"V2_location_of_indexes");
+
+        ivec.reserve(3*ntmax);
+        vvec.reserve(ntmax);
+
+        for(int k=0; k<NMO; k++) { 
+          int ik0 = (k==0)?0:Idata[k-1]; 
+          if(Idata[k]==ik0) continue; 
+          ivec.clear();
+          // no point in storing i
+          ivec.resize(3*(Idata[k]-ik0));
+          for (int i=ik0,jk=0; i<Idata[k]; i++,jk+=3) 
+            std::tie (i0,ivec[jk],ivec[jk+1],ivec[jk+2],std::ignore) = V2[i];   
+          dump.write(ivec,std::string("V2_indx_")+std::to_string(k));
+
+          vvec.clear();
+          vvec.resize(Idata[k]-ik0);
+          for(int i=ik0; i<Idata[k]; i++) 
+            std::tie (std::ignore,std::ignore,std::ignore,std::ignore,vvec[i-ik0]) = V2[i];
+          V2tot+=vvec.size();
+          dump.write(vvec,std::string("V2_")+std::to_string(k));
+        }
+ 
       }
 
-      dump.write(Idata,"V2_location_of_indexes");
-
-      ivec.reserve(3*ntmax);
-      vvec.reserve(ntmax);
-
-      for(int k=0; k<NMO; k++) { 
-        int ik0 = (k==0)?0:Idata[k-1]; 
-        if(Idata[k]==ik0) continue; 
-        ivec.clear();
-        // no point in storing i
-        ivec.resize(3*(Idata[k]-ik0));
-        for (int i=ik0,jk=0; i<Idata[k]; i++,jk+=3) 
-          std::tie (i0,ivec[jk],ivec[jk+1],ivec[jk+2],std::ignore) = V2[i];   
-        dump.write(ivec,std::string("V2_indx_")+std::to_string(k));
-
-        vvec.clear();
-        vvec.resize(Idata[k]-ik0);
-        for(int i=ik0; i<Idata[k]; i++) 
-          std::tie (std::ignore,std::ignore,std::ignore,std::ignore,vvec[i-ik0]) = V2[i];
-        dump.write(vvec,std::string("V2_")+std::to_string(k));
-      }
     }
+
+    Idata.resize(8);
+    Idata[0]=H1.size();
+    Idata[1]=V2tot;
+    Idata[2]=0;
+    Idata[3]=NMO;
+    Idata[4]=NAEA;
+    Idata[5]=NAEB;
+    Idata[6]=spinRestricted?(0):(1);
+    Idata[7]=0;
+    if(writeFactorized && factorizedHamiltonian)
+      Idata[7] = V2_fact.cols();
+    dump.write(Idata,"dims");
 
     dump.pop();
     dump.pop();
@@ -2182,6 +2246,7 @@ namespace qmcplusplus
     
     // v is the dense representation of H1+H1add+v0
     // 1. Hadd should be the contribution from mean-field substraction, otherwise zero  
+    //    Now also includes contribution from vn0 = -0.5* sum_{i,l,sigma} (sum_j <i_sigma,j_sigma|j_sigma,l_sigma> ) c+i_sigma cl_sigma
     for(int i=0; i<NMO; i++) { 
      v(i,i) = Hadd(i,i); 
      for(int j=i+1; j<NMO; j++) { 
@@ -2229,46 +2294,9 @@ namespace qmcplusplus
     }
 
 
-// FIX FIX FIX: Add this contribution to Hadd on the propagator. Make the hamiltonian return this 
-// during the construction of the HS potential and keep a copy with the prop. Call is v0 or something like that.
-// That way you do not need to read the 2-electron intehrals if reading wfn and prop from files. 
       // adding contribution from transformation of H2 into quadratic form
       // 3.  -0.5* sum_{i,l,sigma} (sum_j <i_sigma,j_sigma|j_sigma,l_sigma> ) c+i_sigma cl_sigma 
-      // NOTE: DO NOT SEE A REASON TO ADD PERMUTED CONTRIBUTION LIKE SHIWEI DOES, THEY ARE THE SAME # BY SYMMETRY 
-    if(factorizedHamiltonian) {
-      if(distribute_Ham) 
-        APP_ABORT("Error: distribute_Ham not yet implemented in SparseGeneralHamiltonian::calculateOneBodyPropagator. \n\n\n "); 
-      for(int i=0; i<NMO; i++)
-       for(int l=i; l<NMO; l++) {
-         ValueType vl = ValueType(0);
-         for(int j=0; j<NMO; j++) 
-           vl += H(i,j,j,l);  
-         v(i,l) -= 0.5*vl; 
-         if(i!=l) v(l,i) -= 0.5*myconj(vl); 
-         if(!spinRestricted) {
-           vl=ValueType(0);
-           for(int j=NMO; j<2*NMO; j++) 
-             vl += H(i+NMO,j,j,l+NMO);
-           v(i+NMO,Index2Col(l+NMO)) -= 0.5*vl; 
-           if(i!=l) v(l+NMO,Index2Col(l+NMO)) -= 0.5*myconj(vl); 
-         } 
-       }
-    } else { 
-      std::vector<s4D<ValueType> > v2sym; 
-      for(s4Dit it = V2.begin(); it != V2.end(); it++) {
-        // dumb and slow, but easy for now
-        find_equivalent_OneBar_for_integral_list(*it,v2sym); 
-        for(int n=0; n<v2sym.size(); n++) {   
-          IndexType i,j,k,l;
-          ValueType V;
-          std::tie (i,j,k,l,V) = v2sym[n];   
-          int sector = getSpinSector(i,j,k,l);
-          // <i,j | j,l> -> v(i,l)  
-          if( (sector==0 || sector==3) && j==k) 
-              v(i,Index2Col(l)) -= 0.5*V;
-        }
-      }  
-    }         
+      //   Calculated with HSPotential and included in Hadd!!!
 
       // 4. scale by -0.5*dt
       for(int i=0; i<NMO2; i++) 
@@ -2344,7 +2372,7 @@ namespace qmcplusplus
      for(int i=0; i<NAEA; i++) S(i,i)=1.0;
 
      for(int i=0; i<nterms; i++)
-       DenseMatrixOperators::product(NMO,NAEA,NMO,P.data(),NMO,S.data(),NAEA,Snew.data(),NAEA); 
+       DenseMatrixOperators::product(NMO,NAEA,NMO,ComplexType(1),P.data(),NMO,S.data(),NAEA,ComplexType(0),Snew.data(),NAEA); 
 
      Timer.stop("Generic2");
      app_log()<<" -- Average time for dense x dense MM product: " <<Timer.average("Generic2")/nterms <<"\n";
@@ -2361,17 +2389,45 @@ namespace qmcplusplus
 
   }
 
-  void SparseGeneralHamiltonian::calculateHSPotentials_Diagonalization(RealType cut, RealType dt, ComplexSMSpMat& Spvn, TaskGroup& TGprop, std::vector<int>& nvec_per_node,  bool parallel)
+  void SparseGeneralHamiltonian::calculateHSPotentials_Diagonalization(RealType cut, RealType dt, ComplexMatrix& vn0, SPValueSMSpMat& Spvn, SPValueSMVector& Dvn, TaskGroup& TGprop, std::vector<int>& nvec_per_node,  bool sparse, bool parallel)
   {
 
     if(factorizedHamiltonian) {
-      calculateHSPotentials_FactorizedHam(cut,dt,Spvn,TGprop,nvec_per_node,parallel);
+      calculateHSPotentials_FactorizedHam(cut,dt,vn0,Spvn,Dvn,TGprop,nvec_per_node,sparse,parallel);
       return;
     }
 
     if(parallel) {
       APP_ABORT("Error: calculateHSPotentials_Diagonalization not implemented in parallel. \n");
     }
+
+    // 3. vn0 = -0.5* sum_{i,l,sigma} (sum_j <i_sigma,j_sigma|j_sigma,l_sigma> ) c+i_sigma cl_sigma 
+    if(myComm->rank()==0) 
+    {  
+      if(distribute_Ham) {
+        APP_ABORT("Error: calculateHSPotentials_Diagonalization not implemented with distributed hamiltonian. \n\n\n"); 
+      }  
+      if(spinRestricted) 
+        assert(vn0.rows() >= NMO);
+      else
+        assert(vn0.rows() >= 2*NMO);
+      assert(vn0.cols() == NMO);
+      std::vector<s4D<ValueType> > v2sym; 
+      vn0 = ValueType(0);
+      for(s4Dit it = V2.begin(); it != V2.end(); it++) {
+        // dumb and slow, but easy for now
+        find_equivalent_OneBar_for_integral_list(*it,v2sym); 
+        for(int n=0; n<v2sym.size(); n++) {   
+          IndexType i,j,k,l;
+          ValueType V;
+          std::tie (i,j,k,l,V) = v2sym[n];   
+          int sector = getSpinSector(i,j,k,l);
+          // <i,j | j,l> -> v(i,l)  
+          if( (sector==0 || sector==3) && j==k) 
+              vn0(i,Index2Col(l)) -= 0.5*V;
+        }
+      }  
+    }         
 
     int rnk=0;
 #if defined(USE_MPI)
@@ -2425,44 +2481,45 @@ namespace qmcplusplus
        app_log()<<std::endl; 
       }
         
-
-/*
-      for(int i=0; i<NMO2; i++) { 
-        if(eigVal[i] < 0.0) {
-          app_log()<<"Found negative eigenvalue in calculateHSPotentials_Diagonalization: " <<eigVal[i] <<std::endl;
-        }
-      }        
-*/
-
+      // for dense storage, setting cut to 1e-8 mainly to avoid storing empty vectors
+      // with real integrals
+      if(!sparse) cut = 1e-8; 
+      else if(cut < 1e-12) cut=1e-12;
       int cnt1=0;
       int cnt2=0;
+      int cntn=0;
       for(int i=0; i<NMO2; i++) { 
        if(std::abs(eigVal[i]) > std::abs(cutoff_cholesky)) { 
-         ComplexType eig = std::sqrt( ComplexType( -0.25*dt*eigVal[i],0.0) );
+#ifndef QMC_COMPLEX
+         if(eigVal[i] < 0) {
+           app_log()<<" WARNING: Found negative eigenvalue in REAL build. Ignoring it: " <<i <<" " <<eigVal[i] <<"\n";
+           continue;
+         }
+#endif
+         ValueType eig = std::sqrt( 0.25*dt*eigVal[i] );
          int cnt3=0;
          for(int j=0; j<NMO; j++) 
-          for(int k=0; k<NMO; k++) { 
-            IndexType jk = j*NMO+k; 
-            IndexType kj = k*NMO+j; 
-            ComplexType V = eig*(eigVec(jk,i) + myconj(eigVec(kj,i)));
-            if(std::abs(V) > cut) cnt3++;
-            if(!spinRestricted) {
-              V = eig*(eigVec(NMO*NMO+jk,i) + myconj(eigVec(NMO+NMO+kj,i)));
-              if(std::abs(V) > cut) cnt3++;
-            }
-          }
+           for(int k=0; k<NMO; k++) { 
+             IndexType jk = j*NMO+k; 
+             IndexType kj = k*NMO+j; 
+             ValueType V = eig*(eigVec(jk,i) + myconj(eigVec(kj,i)));
+             if(std::abs(V) > cut) cnt3++;
+             if(!spinRestricted) {
+               V = eig*(eigVec(NMO*NMO+jk,i) + myconj(eigVec(NMO+NMO+kj,i)));
+               if(std::abs(V) > cut) cnt3++;
+             }
+           }
          if(cnt3 > 0) {
            cnt1++;
            cnt2 += cnt3;
          }
-
-         eig = std::sqrt( ComplexType( 0.25*dt*eigVal[i],0.0) );
+#if defined(QMC_COMPLEX)
          cnt3=0;
          for(int j=0; j<NMO; j++) 
           for(int k=0; k<NMO; k++) { 
             IndexType jk = j*NMO+k;
             IndexType kj = k*NMO+j;
-            ComplexType V = eig*(eigVec(jk,i) - myconj(eigVec(kj,i)));
+            ValueType V = eig*(eigVec(jk,i) - myconj(eigVec(kj,i)));
             if(std::abs(V) > cut) cnt3++;
             if(!spinRestricted) {
               V = eig*(eigVec(NMO*NMO+jk,i) - myconj(eigVec(NMO+NMO+kj,i)));
@@ -2470,109 +2527,81 @@ namespace qmcplusplus
             }
           }
          if(cnt3 > 0) {
+           cntn++;
            cnt1++;
            cnt2 += cnt3;
-         }
-       }
+         } 
+#endif
+        }
+      } 
+
+      if(sparse) {
+        Spvn.setDims(NMO2,cnt1);
+        Spvn.allocate_serial(cnt2);
+      } else {
+        Dvn.allocate_serial(NMO2*cnt1);
       }
 
-     // later on, instead of doing all ~M^4 terms, choose a few thousand randomly
-     if(test_breakup && false) {
-
-      if(rnk==0) app_log()<<" -- Testing Hamiltonian factorization. \n";
-      Timer.reset("Generic");
-      Timer.start("Generic");
-
-      RealType s=0.0;
-      RealType max=0.0;
-      for(IndexType i=0; i<2*NMO; i++)
-       for(IndexType j=0; j<2*NMO; j++) 
-        for(IndexType k=0; k<2*NMO; k++)
-         for(IndexType l=0; l<2*NMO; l++) {     
-           if(spinRestricted) { 
-            if((i>=NMO || j>=NMO || k>=NMO || l>=NMO ))
-             continue;
-           } else {
-            if(!goodSpinSector(i,j,k,l,NMO))
-             continue;   
-           }   
-           ValueType v2 = H(i,j,k,l);
-           ValueType v2c = 0.0;
-           int kp = Index2Col(k);
-           int jp = Index2Col(j);
-           for(int n=0; n<NMO2; n++) if(std::abs(eigVal[n]) > std::abs(cutoff_cholesky)) v2c += eigVal[n]*eigVec(i*NMO+kp,n)*myconj(eigVec(l*NMO+jp,n));
-           s+=std::abs(v2-v2c);
-           if( max < std::abs(v2-v2c) ) max = std::abs(v2-v2c);
-           if( std::abs(v2-v2c) > 10*cutoff_cholesky ) {
-             app_error()<<" Problems with H2 decomposition, i,j,k,l,H2,H2c: "
-                       <<i <<" "
-                       <<j <<" "
-                       <<k <<" "
-                       <<l <<" "
-                       <<v2 <<" "
-                       <<v2c <<std::endl;
-           }
-         }
-      double scl = spinRestricted?(1.0):(4.0);
-      app_log()<<"\n ********************************************\n Average error due to truncated eigenvalue factorization (in units of cutoff), max error : " <<s/cutoff_cholesky/NMO/NMO/NMO/NMO/scl <<" " <<max <<" \n ********************************************\n"<<std::endl; 
-
-       Timer.stop("Generic");
-       if(rnk==0) app_log()<<" -- Time to test eigenvalue factorization: " <<Timer.average("Generic") <<"\n";
-     }
-
-      Spvn.setDims(NMO2,cnt1);
-      Spvn.allocate_serial(cnt2);
-      
-      ComplexType isqrtdt = ComplexType(0.0,std::sqrt(dt)*0.5);
-      ComplexType sqrtdt = ComplexType(std::sqrt(dt)*0.5,0.0);
-
-
+#if defined(QMC_COMPLEX)
+      if(cntn>0) 
+        APP_ABORT("Found real Cholesky vectors with real integrals. This is not allowed with dense cholesky vectors. Run with sparse vectors or compile with complex integrals. \n\n\n");
+#endif 
+ 
+      int ncols=cnt1;
       cnt1=0;
-      int cntn=0;
+      cntn=0;
       for(int i=0; i<NMO2; i++) {
        if(std::abs(eigVal[i]) > std::abs(cutoff_cholesky)) {
-         ComplexType eig = std::sqrt( ComplexType( -0.25*dt*eigVal[i],0.0) );
+#ifndef QMC_COMPLEX
+         if(eigVal[i] < 0) continue; 
+#endif
+         ValueType eig = std::sqrt( 0.25*dt*eigVal[i] );
          int cnt3=0;
          for(int j=0; j<NMO; j++)
           for(int k=0; k<NMO; k++) {
             IndexType jk = j*NMO+k;
             IndexType kj = k*NMO+j;
-            ComplexType V = eig*(eigVec(jk,i) + myconj(eigVec(kj,i)));
+            ValueType V = eig*(eigVec(jk,i) + myconj(eigVec(kj,i)));
             if(std::abs(V) > cut) {
               cnt3++;
               //V*=isqrtdt;
-              Spvn.add(jk,cnt1,V);
+              if(sparse) Spvn.add(jk,cnt1,static_cast<SPValueType>(V));
+              else Dvn[jk*ncols+cnt1]=static_cast<SPValueType>(V);
             }
             if(!spinRestricted) {
               V = eig*(eigVec(NMO*NMO+jk,i) + myconj(eigVec(NMO*NMO+kj,i)));
               if(std::abs(V) > cut) {
                 cnt3++;
                 //V*=isqrtdt;
-                Spvn.add(NMO*NMO+jk,cnt1,V);
+                if(sparse) Spvn.add(NMO*NMO+jk,cnt1,static_cast<SPValueType>(V));
+                else Dvn[(jk+NMO*NMO)*ncols+cnt1]=static_cast<SPValueType>(V);
               }
             }
           }
          if(cnt3 > 0) {
            cnt1++; 
          }
-         eig = std::sqrt( ComplexType( 0.25*dt*eigVal[i],0.0) );
+#if defined(QMC_COMPLEX)
+         eig = ComplexType(0.0,-1.0)*std::sqrt( 0.25*dt*eigVal[i] );
          cnt3=0;
          for(int j=0; j<NMO; j++)
           for(int k=0; k<NMO; k++) {
             IndexType jk = j*NMO+k;
             IndexType kj = k*NMO+j;
-            ComplexType V = eig*(eigVec(jk,i) - myconj(eigVec(kj,i)));
+            ValueType V = eig*(eigVec(jk,i) - myconj(eigVec(kj,i)));
             if(std::abs(V) > cut) {
               cnt3++;
               //V*=sqrtdt;
-              Spvn.add(jk,cnt1,V);
+              if(sparse) Spvn.add(jk,cnt1,static_cast<SPValueType>(V));
+              else Dvn[jk*ncols+cnt1]=static_cast<SPValueType>(V); 
             }
             if(!spinRestricted) {
               V = eig*(eigVec(NMO*NMO+jk,i) - myconj(eigVec(NMO*NMO+kj,i)));
               if(std::abs(V) > cut) {
                 cnt3++;
                 //V*=sqrtdt;
-                Spvn.add(NMO*NMO+jk,cnt1,V);
+                if(sparse) Spvn.add(NMO*NMO+jk,cnt1,static_cast<SPValueType>(V));
+                else Dvn[(jk+NMO*NMO)*ncols+cnt1]=static_cast<SPValueType>(V); 
               }
             }
           }
@@ -2580,18 +2609,21 @@ namespace qmcplusplus
            cnt1++; 
            cntn++;
          }
+#endif
        }
       }
 
       app_log()<<"Number of positive and negative Cholesky std::vectors: " <<cnt1-cntn <<" " <<cntn <<std::endl; 
 
-      app_log()<<"Number of HS potentials: " <<Spvn.cols() <<std::endl;
-      app_log()<<"Number of terms in sparse representation of HS potentials: " <<Spvn.size() <<std::endl;
-      app_log()<<"Compressing Spvn. \n";
-      Spvn.compress();
-      app_log()<<"Done Compressing Spvn. \n";
+      app_log()<<"Number of HS potentials: " <<ncols <<std::endl;
+      if(sparse) {
+        app_log()<<"Number of terms in sparse representation of HS potentials: " <<Spvn.size() <<std::endl;
+        app_log()<<"Compressing Spvn. \n";
+        Spvn.compress();
+        app_log()<<"Done Compressing Spvn. \n";
+     }
 
-     if(test_breakup) {
+     if(test_breakup && sparse) {
 
       if(rnk==0) app_log()<<" -- Testing Hamiltonian factorization. \n";
       Timer.reset("Generic");
@@ -2600,12 +2632,16 @@ namespace qmcplusplus
       int* cols = Spvn.column_data();
       int* rows = Spvn.row_data();
       int* indx = Spvn.row_index();
-      ComplexType* vals = Spvn.values(); 
+      SPValueType* vals = Spvn.values(); 
 
-      ComplexMatrix v2prod(NMO2);
+      SPComplexMatrix v2prod(NMO2);
       for(int i=0; i<NMO2; i++) 
        for(int j=0; j<NMO2; j++) 
-        v2prod(i,j) = SparseMatrixOperators::product_SpVSpV<ComplexType>(indx[i+1]-indx[i],cols+indx[i],vals+indx[i],indx[j+1]-indx[j],cols+indx[j],vals+indx[j]);   
+#if defined(QMC_COMPLEX)
+        v2prod(i,j) = SparseMatrixOperators::product_SpVSpVc<SPValueType>(indx[i+1]-indx[i],cols+indx[i],vals+indx[i],indx[j+1]-indx[j],cols+indx[j],vals+indx[j]);   
+#else
+        v2prod(i,j) = SparseMatrixOperators::product_SpVSpV<SPValueType>(indx[i+1]-indx[i],cols+indx[i],vals+indx[i],indx[j+1]-indx[j],cols+indx[j],vals+indx[j]);   
+#endif
 
       RealType s=0.0;
       RealType max=0.0;
@@ -2620,8 +2656,8 @@ namespace qmcplusplus
             if(!goodSpinSector(i,j,k,l,NMO))
              continue;
            }
-           ComplexType v2 = -dt*H(i,j,k,l);
-           ComplexType v2c = v2prod( i*NMO+Index2Col(k) , l*NMO+Index2Col(j)   );
+           ComplexType v2 = dt*H(i,j,k,l);
+           ComplexType v2c = static_cast<ComplexType>(v2prod( i*NMO+Index2Col(k) , l*NMO+Index2Col(j)));
            s+=std::abs(v2-v2c);
            if( max < std::abs(v2-v2c) ) max = std::abs(v2-v2c);
            if( std::abs(v2-v2c) > 10*cutoff_cholesky ) {
@@ -2645,12 +2681,31 @@ namespace qmcplusplus
 
   }
 
-  void SparseGeneralHamiltonian::calculateHSPotentials_FactorizedHam(RealType cut, RealType dt, ComplexSMSpMat& Spvn, TaskGroup& TGprop, std::vector<int>& nvec_per_node, bool parallel)
+  void SparseGeneralHamiltonian::calculateHSPotentials_FactorizedHam(RealType cut, RealType dt, ComplexMatrix& vn0, SPValueSMSpMat& Spvn, SPValueSMVector& Dvn, TaskGroup& TGprop, std::vector<int>& nvec_per_node, bool sparse, bool parallel)
   {
 
-    if(nnodes_per_TG>1) {
-      APP_ABORT("Error: calculateHSPotentials_FactorizedHam not implemented with distributed Hamiltonian (nnodes_per_TG(hamiltonian)>1) . \n");
+    if(distribute_Ham) {
+      APP_ABORT("Error: calculateHSPotentials_FactorizedHam not implemented with distributed Hamiltonian. \n");
     }
+
+    assert(vn0.rows() >= NMO);
+    assert(vn0.cols() == NMO);
+    vn0 = ValueType(0);
+    for(int i=0; i<NMO; i++)
+     for(int l=i; l<NMO; l++) {
+       ValueType vl = ValueType(0);
+       for(int j=0; j<NMO; j++)
+         vl += H(i,j,j,l);
+       vn0(i,l) -= 0.5*vl;
+       if(i!=l) vn0(l,i) -= 0.5*myconj(vl);
+       if(!spinRestricted) {
+         vl=ValueType(0);
+         for(int j=NMO; j<2*NMO; j++)
+           vl += H(i+NMO,j,j,l+NMO);
+         vn0(i+NMO,Index2Col(l+NMO)) -= 0.5*vl;
+         if(i!=l) vn0(l+NMO,Index2Col(l+NMO)) -= 0.5*myconj(vl);
+       }
+     }
 
     /********************************************************************
     *  You get 2 potentials per Cholesky std::vector   
@@ -2658,8 +2713,7 @@ namespace qmcplusplus
     *    vn(+-)_{i,k} = sum_n 0.5*( L^n_{i,k} +- conj(L^n_{k,i}) )            
     ********************************************************************/
 
-    ComplexType isqrtdt = ComplexType(0.0,std::sqrt(dt)*0.5);
-    ComplexType sqrtdt = ComplexType(std::sqrt(dt)*0.5,0.0);
+    ValueType sqrtdt = std::sqrt(dt)*0.5;
     int NMO2 = NMO*NMO;
     if(!spinRestricted) NMO2*=2; 
 
@@ -2691,7 +2745,10 @@ namespace qmcplusplus
     std::vector<int> sz_per_node(nnodes);
     int node_number = TGprop.getLocalNodeNumber();
 
+    if(!sparse) cut=1e-8;
+    else if(cut < 1e-12) cut=1e-12;
     int cnt=0;
+    int cntn=0;
     // count terms and distribute std::vectors 
     if(rank()==0) {
       // generate sparse version
@@ -2721,6 +2778,7 @@ namespace qmcplusplus
         }
        cnt_per_vec[2*n] = np;
        cnt_per_vec[2*n+1] = nm;
+       if(nm>0) cntn++;
       }
     }
 
@@ -2728,15 +2786,18 @@ namespace qmcplusplus
       myComm->bcast(cnt_per_vec);
       int nvec = std::count_if(cnt_per_vec.begin(),cnt_per_vec.end(),
                [] (int i) { return i>0; } );
-      Spvn.setDims(NMO2,nvec);
-
+      if(sparse) Spvn.setDims(NMO2,nvec); 
 
       nvec_per_node.resize(nnodes);
       if(nnodes==1) {
         cv0=0;
         cvN=2*n3Vect;
         cnt = std::accumulate(cnt_per_vec.begin(),cnt_per_vec.end(),0);
-        Spvn.reserve(cnt);
+        if(sparse) Spvn.reserve(cnt);
+        else {
+          Dvn.allocate(NMO2*nvec);
+          Dvn.resize(NMO2*nvec);
+        }
         nvec_per_node[0] = nvec;
         sz_per_node[0] = cnt;
       } else {
@@ -2747,7 +2808,8 @@ namespace qmcplusplus
           blocks[0]=0;
           cnt=0;
           for(int i=0; i<2*n3Vect; i++) {
-            cnt+=cnt_per_vec[i];
+            if(sparse) cnt+=cnt_per_vec[i];
+            else cnt+= (cnt_per_vec[i]>0)?1:0;
             blocks[i+1] = cnt;
           }
           balance_partition_ordered_set(2*n3Vect,blocks.data(),sets);
@@ -2776,7 +2838,11 @@ namespace qmcplusplus
         }
         myComm->bcast(nvec_per_node);
         myComm->bcast(sz_per_node);
-        Spvn.reserve(sz_per_node[node_number]);
+        if(sparse) Spvn.reserve(sz_per_node[node_number]);
+        else {
+          Dvn.allocate(NMO2*nvec_per_node[node_number]);
+          Dvn.resize(NMO2*nvec_per_node[node_number]);
+        }
       }
     } else {
       int nvec=0;
@@ -2787,12 +2853,24 @@ namespace qmcplusplus
           nvec++;
         }
       nvec_per_node[0] = nvec;
-      Spvn.setDims(NMO2,nvec);
-      Spvn.allocate_serial(cnt);
+      if(sparse) {
+        Spvn.setDims(NMO2,nvec);
+        Spvn.allocate_serial(cnt);
+      } else {
+        Dvn.allocate_serial(NMO2*nvec);
+        Dvn.resize_serial(NMO2*nvec);
+      }
     }            
 
     if(parallel) MPI_Barrier(TGprop.getNodeCommLocal()); 
-     
+    int ncols = nvec_per_node[node_number];
+
+#ifndef QMC_COMPLEX
+    if(cntn>0)
+      APP_ABORT("Found real Cholesky vectors with real integrals. This is not allowed with dense cholesky vectors. Run with sparse vectors or compile with complex integrals. \n\n\n");
+#endif
+
+
     if(head_of_nodes) {
       cnt=std::accumulate(nvec_per_node.begin(),nvec_per_node.begin()+node_number,0);
       for(int n=0; n<n3Vect; n++) { 
@@ -2810,17 +2888,19 @@ namespace qmcplusplus
          // v+
          for(IndexType i=0; i<NMO; i++)
           for(IndexType k=0; k<NMO; k++) { 
-           ComplexType V = (Ln(i,k) + myconj(Ln(k,i))); 
+           ValueType V = (Ln(i,k) + myconj(Ln(k,i))); 
            if(std::abs(V) > cut) { 
-             V*=isqrtdt;
-             Spvn.add(i*NMO+k,cnt,V);
+             V*=sqrtdt;
+             if(sparse) Spvn.add(i*NMO+k,cnt,static_cast<SPValueType>(V));
+             else Dvn[(i*NMO+k)*ncols+cnt]=static_cast<SPValueType>(V);
              ++np;
            } 
            if(!spinRestricted) {
              V = (Ln(i+NMO,k) + myconj(Ln(k+NMO,i)));
              if(std::abs(V) > cut) {
-               V*=isqrtdt;
-               Spvn.add(NMO*NMO+i*NMO+k,cnt,V);
+               V*=sqrtdt;
+               if(sparse) Spvn.add(NMO*NMO+i*NMO+k,cnt,static_cast<SPValueType>(V));
+               else Dvn[(i*NMO+k+NMO*NMO)*ncols+cnt]=static_cast<SPValueType>(V);
                ++np;
              }
            }
@@ -2830,21 +2910,24 @@ namespace qmcplusplus
            APP_ABORT("Error: This should not happen. Found empty cholesky std::vector. \n");
        }
        if((2*n+1)>=cv0 && (2*n+1)<cvN && cnt_per_vec[2*n+1]>0) {
+#if defined(QMC_COMPLEX) 
          np=0;
          // v-
          for(IndexType i=0; i<NMO; i++)
           for(IndexType k=0; k<NMO; k++) {
            ComplexType V = (Ln(i,k) - myconj(Ln(k,i))); 
            if(std::abs(V) > cut) {
-             V*=sqrtdt;
-             Spvn.add(i*NMO+k,cnt,V);
+             V*=ComplexType(0.0,-1.0)*sqrtdt;
+             if(sparse) Spvn.add(i*NMO+k,cnt,static_cast<SPValueType>(V));
+             else Dvn[(i*NMO+k)*ncols+cnt]=static_cast<SPValueType>(V);
              ++np;
            }
            if(!spinRestricted) {
              V = (Ln(i+NMO,k) - myconj(Ln(k+NMO,i)));
              if(std::abs(V) > cut) {
-               V*=sqrtdt;
-               Spvn.add(NMO*NMO+i*NMO+k,cnt,V);
+               V*=ComplexType(0.0,-1.0)*sqrtdt;
+               if(sparse) Spvn.add(NMO*NMO+i*NMO+k,cnt,static_cast<SPValueType>(V));
+               else Dvn[(i*NMO+k+NMO*NMO)*ncols+cnt]=static_cast<SPValueType>(V);
                ++np;
              }
            }
@@ -2852,6 +2935,9 @@ namespace qmcplusplus
          ++cnt;
          if(np==0)
            APP_ABORT("Error: This should not happen. Found empty cholesky std::vector. \n");
+#else
+         APP_ABORT("Error: THIS SHOULD NOT HAPPEN. Found complex cholesky vector in real build. \n\n\n");
+#endif
        }
       }
     }
@@ -2864,23 +2950,27 @@ namespace qmcplusplus
         app_log()<<cnt <<" ";
       }
       app_log()<<std::endl;
-      app_log()<<" Number of terms in Spvn per node in TG: ";
-      for(int i : sz_per_node ) app_log()<<i <<" ";
-      app_log()<<std::endl;
+      if(sparse) {
+        app_log()<<" Number of terms in Spvn per node in TG: ";
+        for(int i : sz_per_node ) app_log()<<i <<" ";
+        app_log()<<std::endl;
+      }
     }
 
-    app_log()<<"Number of HS potentials: " <<Spvn.cols() <<std::endl;
-    app_log()<<"Number of terms in sparse representation of HS potentials: " <<Spvn.size() <<std::endl;
+    app_log()<<"Number of HS potentials: " <<ncols <<std::endl;
+    if(sparse) {
+      app_log()<<"Number of terms in sparse representation of HS potentials: " <<Spvn.size() <<std::endl;
 
-    app_log()<<"Compressing Spvn. \n";
+      app_log()<<"Compressing Spvn. \n";
 
-    if(parallel) MPI_Barrier(TGprop.getNodeCommLocal()); 
+      if(parallel) MPI_Barrier(TGprop.getNodeCommLocal()); 
 
-    Timer.reset("Generic");
-    Timer.start("Generic");
-    Spvn.compress();
-    Timer.stop("Generic");
-    app_log()<<" Time to compress Spvn in calculateHSPotentials_FactorizedHam(): " <<Timer.average("Generic") <<std::endl;
+      Timer.reset("Generic");
+      Timer.start("Generic");
+      Spvn.compress();
+      Timer.stop("Generic");
+      app_log()<<" Time to compress Spvn in calculateHSPotentials_FactorizedHam(): " <<Timer.average("Generic") <<std::endl;
+    }
 
     Timer.reset("Generic");
     Timer.start("Generic");
@@ -2892,13 +2982,16 @@ namespace qmcplusplus
 
   }
 
-
-  void SparseGeneralHamiltonian::calculateHSPotentials(RealType cut, RealType dt, ComplexSMSpMat& Spvn, TaskGroup& TGprop, std::vector<int>& nvec_per_node, bool parallel)
+  void SparseGeneralHamiltonian::calculateHSPotentials(RealType cut, RealType dt, ComplexMatrix& vn0, SPValueSMSpMat& Spvn, SPValueSMVector& Dvn, TaskGroup& TGprop, std::vector<int>& nvec_per_node, bool sparse, bool parallel)
   {
 
     if(factorizedHamiltonian) {
-      calculateHSPotentials_FactorizedHam(cut,dt,Spvn,TGprop,nvec_per_node,parallel);
+      calculateHSPotentials_FactorizedHam(cut,dt,vn0,Spvn,Dvn,TGprop,nvec_per_node,sparse,parallel);
       return;
+    }
+
+    if(distribute_Ham && !parallel) {
+        APP_ABORT("Error: Distributed hamiltonian requires parallel Cholesky factorization. \n\n\n");
     }
 
     int rnk=0;
@@ -2907,6 +3000,46 @@ namespace qmcplusplus
     cholesky_residuals.reserve(2*NMO*NMO);
 
     if(spinRestricted) {
+
+
+      // 0. vn0 = -0.5* sum_{i,l,sigma} (sum_j <i_sigma,j_sigma|j_sigma,l_sigma> ) c+i_sigma cl_sigma 
+      assert(vn0.rows() >= NMO);
+      assert(vn0.cols() == NMO);
+      std::vector<s4D<ValueType> > v2sym; 
+      vn0 = ValueType(0);
+      {
+        long nt=0,rk=0,npr=1; 
+        if(distribute_Ham) {
+          npr = static_cast<long>(TG.getTGSize());
+          rk = static_cast<long>(TG.getTGRank());
+        } else if(parallel) { 
+          npr = static_cast<long>(myComm->size());
+          rk = static_cast<long>(myComm->rank());
+        }
+        for(s4Dit it = V2.begin(); it != V2.end(); it++, nt++) {
+          if( nt%npr != rk) continue;
+          // dumb and slow, but easy for now
+          find_equivalent_OneBar_for_integral_list(*it,v2sym); 
+          for(int n=0; n<v2sym.size(); n++) {   
+            IndexType i,j,k,l;
+            ValueType V;
+            std::tie (i,j,k,l,V) = v2sym[n];   
+            int sector = getSpinSector(i,j,k,l);
+            // <i,j | j,l> -> v(i,l)  
+            if( (sector==0 || sector==3) && j==k) 
+              vn0(i,Index2Col(l)) -= 0.5*V;
+          }
+        }  
+        if(parallel) {
+          // since allreduce(vn0) somehow doesn't work
+          //myComm->allreduce(vn0);
+          std::vector<ComplexType> g(NMO*NMO);
+          std::copy(vn0.begin(),vn0.begin()+NMO*NMO,g.begin());
+          myComm->allreduce(g);
+          std::copy(g.begin(),g.end(),vn0.begin());
+        }
+      }
+             
 
       /********************************************************************
       *               Calculate Cholesky decomposition 
@@ -2919,18 +3052,14 @@ namespace qmcplusplus
      Timer.reset("Generic");
      Timer.start("Generic");
 
+     // used to split (i,k) space over all processors for the construction and storage of cholesky vectors
      int npr = myComm->size(), rk = myComm->rank(); 
      int ik0=0,ik1=NMO*NMO-1;
-     if(min_i != 0 || max_i != NMO ) {
-       APP_ABORT("Error: calculateHSPotentials doesn't work with distributed hamiltonian yet. \n\n\n");
-     }
+     // used for split of (i,k) space over the processors in a TG during the evaluation of H(i,kmax,k,imax) piece
+     // in case the Hamiltonian is distributed
+     int tg_npr = TG.getTGSize(), tg_rk = TG.getTGRank(); 
+     int tg_ik0=0,tg_ik1=NMO*NMO-1;
      if(parallel) {
-       // requirements during parallelization
-       // 1. ik0 >= min_i*NMO 
-       // 2. ik1 <= max_i*NMO 
- 
-       // only works with full sparse hamiltonian, make more generic later when distribution of 
-       // hamiltonian is well defined 
        int nt = (NMO*NMO)/npr, next = (NMO*NMO)%npr;
        if(rk < next) {
          ik0 = rk*(nt+1); 
@@ -2940,11 +3069,17 @@ namespace qmcplusplus
          ik1 = ik0 + nt - 1;
        } 
      }
-     if(ik0 < min_i*NMO || ik1 > max_i*NMO) {
-       APP_ABORT("Error: Problems in calculateHSPotentials. Distribution of hamiltonian is not consistent \nwith necessary distribution for parallel evaluation of Cholesky factorization. \n"); 
+     if(distribute_Ham) {
+       int nt = (NMO*NMO)/tg_npr, next = (NMO*NMO)%tg_npr;
+       if(tg_rk < next) {
+         tg_ik0 = tg_rk*(nt+1);
+         tg_ik1 = tg_ik0 + nt;
+       } else {
+         tg_ik0 = next*(nt+1) + (tg_rk-next)*nt;
+         tg_ik1 = tg_ik0 + nt - 1;
+       }       
      }
      int nterms = ik1-ik0+1; 
-
      if(nterms < 1) {
        APP_ABORT("Error: Too many processors in parallel calculation of HS potential. Try reducing the number of cores, calculating in serial or reading from a file. \n\n\n ");
      }
@@ -2959,20 +3094,74 @@ namespace qmcplusplus
      s2D<RealType> mymax;
      int maxloc=0;
 
+     std::vector<ValueType> Lcomm;
+     if(distribute_Ham) Lcomm.resize(NMO*NMO);
+
      // to store diagonal elements to avoid search, since they are used often 
      std::vector<ValueType> Duv(nterms);
-     for(IndexType i=0, nt=0, ik=0; i<NMO; i++) {
-      for(IndexType k=0; k<NMO; k++,nt++) {
-        if(nt<ik0 || nt>ik1) continue;
-        Duv[ik] = H(i,k,k,i);  
-        if(toComplex(Duv[ik]).real() < RealType(0.0)) {
-          app_log()<<" WARNING: Found negative Duv: " <<i <<" " <<k <<" " <<Duv[ik] <<std::endl;  
-          if(zero_bad_diag_2eints) 
-            Duv[ik] = ValueType(0);
-        }
-        ik++;
-      }
-      if(nt>ik1) break;
+     if(distribute_Ham) {
+       std::fill(Lcomm.begin(),Lcomm.end(),ValueType(0));
+       for(IndexType i=0, nt=0; i<NMO; i++) {
+         for(IndexType k=0; k<NMO; k++,nt++) {
+           if(nt<tg_ik0 || nt>tg_ik1) continue;
+           // <i,k|k,i> 
+           if( k<i ) {
+#if defined(QMC_COMPLEX)
+             // <k,i|i,k> 
+             if(k>=min_i && k<max_i) Lcomm[nt] = H(k,i,i,k);
+#else
+             // <k,k|i,i> 
+             if(k>=min_i && k<max_i) Lcomm[nt] = H(k,k,i,i);
+#endif
+           } else {
+#if defined(QMC_COMPLEX)
+             // <i,k|k,i> 
+             if(i>=min_i && i<max_i) Lcomm[nt] = H(i,k,k,i);
+#else
+             // <i,i|k,k> 
+             if(i>=min_i && i<max_i) Lcomm[nt] = H(i,i,k,k);
+#endif
+           }
+#if defined(QMC_COMPLEX)
+           if(Lcomm[nt].imag() > 1e-10 || Lcomm[nt].real() < RealType(0)) {
+             app_log()<<" WARNING: Found negative/complex Duv: " <<i <<" " <<k <<" " <<Lcomm[nt] <<std::endl;
+             if(zero_bad_diag_2eints)
+               Lcomm[nt] = ValueType(0);
+           }
+#else
+           if(Lcomm[nt] < ValueType(0)) {
+             app_log()<<" WARNING: Found negative Duv: " <<i <<" " <<k <<" " <<Lcomm[nt] <<std::endl;
+             if(zero_bad_diag_2eints)
+               Lcomm[nt] = ValueType(0);
+           }
+#endif
+         }
+         if(nt>tg_ik1) break;
+       }
+       myComm->allreduce(Lcomm); 
+       std::copy( Lcomm.begin()+ik0, Lcomm.begin()+ik1+1, Duv.begin() );
+     } else {
+       for(IndexType i=0, nt=0, ik=0; i<NMO; i++) {
+         for(IndexType k=0; k<NMO; k++,nt++) {
+           if(nt<ik0 || nt>ik1) continue;
+           Duv[ik] = H(i,k,k,i);  
+#ifndef QMC_COMPLEX
+           if(Duv[ik] < ValueType(0)) {
+             app_log()<<" WARNING: Found negative Duv: " <<i <<" " <<k <<" " <<Duv[ik] <<std::endl;  
+             if(zero_bad_diag_2eints) 
+               Duv[ik] = ValueType(0);
+           }
+#else
+           if(Duv[ik].imag() > 1e-10 || Duv[ik].real() < RealType(0)) {
+             app_log()<<" WARNING: Found negative/complex Duv: " <<i <<" " <<k <<" " <<Duv[ik] <<std::endl;
+             if(zero_bad_diag_2eints)
+               Duv[ik] = ValueType(0);
+           }
+#endif
+           ik++;
+         }
+         if(nt>ik1) break;
+       }
      }
 
      // D(ik,lj) = H(i,j,k,l) - sum_p Lp(ik) Lp*(lj)
@@ -3019,7 +3208,7 @@ namespace qmcplusplus
      Timer.reset("Generic1");
      Timer.reset("Generic2");
 
-     if(test_2eint && !parallel) {
+     if(test_2eint && !parallel && !distribute_Ham) {
 
        for(s4Dit it = V2.begin(); it != V2.end(); it++) {
          IndexType i,j,k,l;
@@ -3042,6 +3231,7 @@ namespace qmcplusplus
      RealType max_old;
      while(max > cutoff_cholesky) {
 
+       Timer.start("Generic1");
        RealType oneOverMax = 1/std::sqrt(std::abs(max));
 
        cholesky_residuals.push_back(std::abs(max));
@@ -3059,13 +3249,38 @@ namespace qmcplusplus
          myComm->bcast(Lnmax.data(),L.size()-1,maxloc,myComm->getMPI()); 
        }
 
-       Timer.start("Generic1");
-       for(IndexType i=0, ik=0, nt=0; i<NMO; i++) {
-         for(IndexType k=0; k<NMO; k++, nt++) {
-           if(nt<ik0 || nt>ik1) continue;
-           *(it++) = H(i,kk,k,ii);
+       if(distribute_Ham) {
+         std::fill(Lcomm.begin(),Lcomm.end(),ValueType(0));
+         s4D<ValueType> s;
+         for(IndexType i=0, nt=0; i<NMO; i++) {
+           for(IndexType k=0; k<NMO; k++, nt++) {
+             if(nt<tg_ik0 || nt>tg_ik1) continue;
+             s = std::make_tuple(i,kk,k,ii,ValueType(0));
+             bool cjgt = find_smallest_permutation(s);
+             if( std::get<0>(s) >= min_i && std::get<0>(s) < max_i ) {
+               s4Dit it_ = std::lower_bound( V2.begin(), V2.end(), s, mySort);
+               if (it_ != V2.end() &&  std::get<0>(*it_)==std::get<0>(s) &&  std::get<1>(*it_)==std::get<1>(s) && std::get<2>(*it_)==std::get<2>(s) && std::get<3>(*it_)==std::get<3>(s) ) {
+#if defined(QMC_COMPLEX)
+                 if(cjgt)
+                   Lcomm[nt] = std::conj(std::get<4>(*it_));
+                 else
+#endif
+                   Lcomm[nt] = std::get<4>(*it_);
+               }
+             } 
+           }
+           if(nt>tg_ik1) break;
          }
-         if(nt>ik1) break;
+         myComm->allreduce(Lcomm);
+         std::copy( Lcomm.begin()+ik0, Lcomm.begin()+ik1+1, it );         
+       } else { 
+         for(IndexType i=0, nt=0; i<NMO; i++) {
+           for(IndexType k=0; k<NMO; k++, nt++) {
+             if(nt<ik0 || nt>ik1) continue;
+             *(it++) = H(i,kk,k,ii);
+           }
+           if(nt>ik1) break;
+         }
        }
 
        for(int n=0; n<L.size()-1; n++) {
@@ -3079,7 +3294,6 @@ namespace qmcplusplus
        it = Ln.begin();
        for(IndexType i=0; i<nterms; i++)
          *(it++) *= oneOverMax;
-       it = Ln.begin();
        Timer.stop("Generic1");
        
        Timer.start("Generic2");
@@ -3145,7 +3359,7 @@ namespace qmcplusplus
      Timer.stop("Generic");
      if(rnk==0) app_log()<<" -- Time to generate Cholesky factorization: " <<Timer.average("Generic") <<"\n";
 
-     if(test_breakup && !parallel ) {
+     if(test_breakup && !parallel && !distribute_Ham) {
 
      if(rnk==0) app_log()<<" -- Testing Hamiltonian factorization. \n";
       Timer.reset("Generic");
@@ -3188,10 +3402,11 @@ namespace qmcplusplus
       *    vn(+-)_{i,k} = sum_n 0.5*( L^n_{i,k} +- conj(L^n_{k,i}) )            
       ********************************************************************/
 
-      ComplexType isqrtdt = ComplexType(0.0,std::sqrt(dt)*0.5);
-      ComplexType sqrtdt = ComplexType(std::sqrt(dt)*0.5,0.0);
+      Timer.reset("Generic");
+      Timer.start("Generic");
 
-      std::vector<ValueType> Lcomm;
+      ValueType sqrtdt = std::sqrt(dt)*0.5;
+
       std::vector<int> cnts,displ;
       std::vector<int> cnt_per_vec(2*L.size());
       if(parallel) {
@@ -3214,13 +3429,14 @@ namespace qmcplusplus
         } 
       }
 
-
-      int cnt=0;
+      if(!sparse) cut=1e-8;
+      else if(cut < 1e-12) cut=1e-12;
+      int cnt=0, cntn=0;
       // generate sparse version
       for(int n=0; n<L.size(); n++) { 
        ValueType* Ls; 
        if(parallel) {
-         myComm->gatherv(L[n],Lcomm,cnts,displ,0);
+         myComm->gatherv(L[n].data(),Lcomm.data(),L[n].size(),cnts,displ,0,myComm->getMPI());
          if(rank()==0) Ls = Lcomm.data();
        } else {
          Ls = L[n].data();
@@ -3240,6 +3456,7 @@ namespace qmcplusplus
           }
          cnt_per_vec[2*n] = np;
          cnt_per_vec[2*n+1] = nm;
+         if(nm>0) cntn++;
        } 
       }
 
@@ -3252,14 +3469,18 @@ namespace qmcplusplus
         myComm->bcast(cnt_per_vec);
         int nvec = std::count_if(cnt_per_vec.begin(),cnt_per_vec.end(),
                  [] (int i) { return i>0; } ); 
-        Spvn.setDims(NMO*NMO,nvec);
+        if(sparse) Spvn.setDims(NMO*NMO,nvec);
 
         nvec_per_node.resize(nnodes);
         if(nnodes==1) {
           cv0=0;
           cvN=2*L.size();
           cnt = std::accumulate(cnt_per_vec.begin(),cnt_per_vec.end(),0);
-          Spvn.reserve(cnt);
+          if(sparse) Spvn.reserve(cnt);
+          else {
+            Dvn.allocate(NMO*NMO*nvec);
+            Dvn.resize(NMO*NMO*nvec);
+          }
           nvec_per_node[0] = nvec; 
           sz_per_node[0] = cnt;
         } else {
@@ -3270,7 +3491,8 @@ namespace qmcplusplus
             blocks[0]=0;
             cnt=0;
             for(int i=0; i<2*L.size(); i++) {
-              cnt+=cnt_per_vec[i];
+              if(sparse) cnt+=cnt_per_vec[i];
+              else cnt+= (cnt_per_vec[i]>0)?1:0;
               blocks[i+1] = cnt; 
             }
             balance_partition_ordered_set(2*L.size(),blocks.data(),sets);
@@ -3292,7 +3514,11 @@ namespace qmcplusplus
           }
           myComm->bcast(nvec_per_node);  
           myComm->bcast(sz_per_node);  
-          Spvn.reserve(sz_per_node[node_number]); 
+          if(sparse) Spvn.reserve(sz_per_node[node_number]); 
+          else {
+            Dvn.allocate(NMO*NMO*nvec_per_node[node_number]);
+            Dvn.resize(NMO*NMO*nvec_per_node[node_number]);
+          }
         }
       } else {
         int nvec=0;
@@ -3303,20 +3529,31 @@ namespace qmcplusplus
             nvec++;
           } 
         nvec_per_node[0] = nvec;
-        Spvn.setDims(NMO*NMO,nvec);
-        Spvn.allocate_serial(cnt);
+        if(sparse) {
+          Spvn.setDims(NMO*NMO,nvec);
+          Spvn.allocate_serial(cnt);
+        } else {
+          Dvn.allocate_serial(NMO*NMO*nvec);
+          Dvn.resize_serial(NMO*NMO*nvec);
+        }
       } 
 
+      int ncols = nvec_per_node[node_number];
       if(parallel) myComm->barrier();
+
+#ifndef QMC_COMPLEX
+      if(cntn>0)
+        APP_ABORT("Found real Cholesky vectors with real integrals. This is not allowed with dense cholesky vectors. Run with sparse vectors or compile with complex integrals. \n\n\n");
+#endif
 
       cnt=std::accumulate(nvec_per_node.begin(),nvec_per_node.begin()+node_number,0);
       for(int n=0; n<L.size(); n++) { 
        if( cnt_per_vec[2*n]==0 && cnt_per_vec[2*n+1]==0 ) continue;
        ValueType* Ls;
        if(parallel) {
-         myComm->gatherv(L[n],Lcomm,cnts,displ,0);
+         myComm->gatherv(L[n].data(),Lcomm.data(),L[n].size(),cnts,displ,0,myComm->getMPI());
          if(head_of_nodes) {
-           myComm->bcast(Lcomm.data(),Lcomm.size(),MPI_COMM_HEAD_OF_NODES);
+           myComm->bcast(Lcomm.data(),Lcomm.size(),0,MPI_COMM_HEAD_OF_NODES);
            Ls = Lcomm.data();
          }
        } else {
@@ -3327,10 +3564,11 @@ namespace qmcplusplus
          // v+
          for(IndexType i=0; i<NMO; i++)
           for(IndexType k=0; k<NMO; k++) { 
-           ComplexType V = (Ls[i*NMO+k] + myconj(Ls[k*NMO+i])); 
+           ValueType V = (Ls[i*NMO+k] + myconj(Ls[k*NMO+i])); 
            if(std::abs(V) > cut) { 
-             V*=isqrtdt;
-             Spvn.add(i*NMO+k,cnt,V);
+             V*=sqrtdt;
+             if(sparse) Spvn.add(i*NMO+k,cnt,static_cast<SPValueType>(V));
+             else Dvn[(i*NMO+k)*ncols + cnt]=static_cast<SPValueType>(V);
              ++np;
            } 
          }
@@ -3339,22 +3577,32 @@ namespace qmcplusplus
            APP_ABORT("Error: This should not happen. Found empty cholesky std::vector. \n"); 
        }
        if(head_of_nodes && (2*n+1)>=cv0 && (2*n+1)<cvN && cnt_per_vec[2*n+1]>0) {
+#if defined(QMC_COMPLEX)
          int np=0;
          // v-
          for(IndexType i=0; i<NMO; i++)
           for(IndexType k=0; k<NMO; k++) { 
-           ComplexType V = (Ls[i*NMO+k] - myconj(Ls[k*NMO+i]));
+           ValueType V = (Ls[i*NMO+k] - myconj(Ls[k*NMO+i]));
            if(std::abs(V) > cut) {
-             V*=sqrtdt;
-             Spvn.add(i*NMO+k,cnt,V);
+             V*=ComplexType(0.0,-1.0)*sqrtdt;
+             if(sparse) Spvn.add(i*NMO+k,cnt,static_cast<SPValueType>(V));
+             else Dvn[(i*NMO+k)*ncols + cnt]=static_cast<SPValueType>(V);
              ++np;
            }
           }
          ++cnt;
          if(np==0) 
            APP_ABORT("Error: This should not happen. Found empty cholesky std::vector. \n"); 
+#else
+       APP_ABORT("Error: This should not happen. Found negative cholesky vector. \n"); 
+#endif
        }
+       // necessary to avoid the avalanche of messages to the root from cores that are not head_of_nodes
+       MPI_Barrier(TG.getNodeCommLocal()); 
       }
+
+      Timer.stop("Generic");
+      if(rnk==0) app_log()<<" -- Time to assemble Cholesky Matrix: " <<Timer.average("Generic") <<"\n";
 
       if(rank()==0 && nnodes>1 && parallel) { 
         app_log()<<" Partition of Cholesky Vectors: 0 ";
@@ -3364,21 +3612,38 @@ namespace qmcplusplus
           app_log()<<cnt <<" ";  
         }
         app_log()<<std::endl;
-        app_log()<<" Number of terms in Spvn per node in TG: ";
-        for(int i : sz_per_node ) app_log()<<i <<" "; 
-        app_log()<<std::endl;
+        if(sparse) {
+          app_log()<<" Number of terms in Spvn per node in TG: ";
+          for(int i : sz_per_node ) app_log()<<i <<" "; 
+          app_log()<<std::endl;
+        }
       }
 
-      app_log()<<"Number of HS potentials: " <<Spvn.cols() <<std::endl;
-      app_log()<<"Number of terms in sparse representation of HS potentials: " <<Spvn.size() <<std::endl;
-      app_log()<<"Compressing Spvn. \n";
-      if(head_of_nodes) Spvn.compress();
-      app_log()<<"Done Compressing Spvn. \n";
-      // setup communication if parallel  
+      app_log()<<"Number of HS potentials: " <<ncols <<std::endl;
+      if(sparse) {
+
+        app_log()<<"Number of terms in sparse representation of HS potentials: " <<Spvn.size() <<std::endl;
+        app_log()<<"Compressing Spvn. \n";
+
+        Timer.reset("Generic");
+        Timer.start("Generic");
+
+        if(parallel) Spvn.compress_parallel(TG.getNodeCommLocal());
+        else if(head_of_nodes) Spvn.compress();
+        //if(head_of_nodes) Spvn.compress();
+
+        Timer.stop("Generic");
+        app_log()<<"Done Compressing Spvn. \n";
+        if(rnk==0) app_log()<<" -- Time to Compress Cholesky Matrix: " <<Timer.average("Generic") <<"\n";
+
+      }
 
       if(parallel) myComm->barrier();
 
     } else {
+
+     // way behind in development, needs parallel and dense options 
+     APP_ABORT("Error: Cholesky factorization for unrestricted disabled. Finish implementation. \n\n\n");
 
       /********************************************************************
       *               Calculate Cholesky decomposition 
@@ -3544,8 +3809,7 @@ namespace qmcplusplus
       *    vn(+-)_{i,k} = sum_n 0.5*( L^n_{i,k} +- conj(L^n_{k,i}) )            
       ********************************************************************/
 
-      ComplexType isqrtdt = ComplexType(0.0,std::sqrt(dt)*0.5);
-      ComplexType sqrtdt = ComplexType(std::sqrt(dt)*0.5,0.0);
+      ValueType sqrtdt = std::sqrt(dt)*0.5;
 
       int cnt=0;
       int cntp=0, cntm=0;
@@ -3580,6 +3844,11 @@ namespace qmcplusplus
       Spvn.setDims(2*NMO*NMO,cntp+cntm);
       Spvn.allocate_serial(cnt);
 
+#ifndef QMC_COMPLEX
+      if(cntm>0) 
+        APP_ABORT("Error: Found negative cholesky vectors in REAL build. \n");
+#endif
+
       cnt=0;
       for(int n=0; n<L.size(); n++) { 
        int np=0;
@@ -3587,29 +3856,31 @@ namespace qmcplusplus
        for(IndexType i=0; i<NMO; i++)
         for(IndexType k=0; k<NMO; k++) { 
          if(std::abs( (L[n][i*NMO+k] + myconj(L[n][k*NMO+i])) ) > cut) { 
-           Spvn.add(i*NMO+k,cnt,isqrtdt*(L[n][i*NMO+k] + myconj(L[n][k*NMO+i])));
+           Spvn.add(i*NMO+k,cnt,static_cast<SPValueType>(sqrtdt*(L[n][i*NMO+k] + myconj(L[n][k*NMO+i]))));
            ++np;
          }
          if(std::abs( (L[n][NMO*NMO+i*NMO+k] + myconj(L[n][NMO*NMO+k*NMO+i])) ) > cut) {
-           Spvn.add(NMO*NMO+i*NMO+k,cnt,isqrtdt*(L[n][NMO*NMO+i*NMO+k] + myconj(L[n][NMO*NMO+k*NMO+i])));
+           Spvn.add(NMO*NMO+i*NMO+k,cnt,static_cast<SPValueType>(sqrtdt*(L[n][NMO*NMO+i*NMO+k] + myconj(L[n][NMO*NMO+k*NMO+i]))));
            ++np;
          }
         }
        if(np>0) ++cnt;
+#if defined(QMC_COMPLEX)
        np=0;
        // v-
        for(IndexType i=0; i<NMO; i++)
         for(IndexType k=0; k<NMO; k++) { 
          if(std::abs( (L[n][i*NMO+k] - myconj(L[n][k*NMO+i])) ) > cut) { 
-           Spvn.add(i*NMO+k,cnt,sqrtdt*(L[n][i*NMO+k] - myconj(L[n][k*NMO+i])));
+           Spvn.add(i*NMO+k,cnt,static_cast<SPValueType>(ComplexType(0,-1.0)*sqrtdt*(L[n][i*NMO+k] - myconj(L[n][k*NMO+i]))));
            ++np;
          }
          if(std::abs( (L[n][NMO*NMO+i*NMO+k] - myconj(L[n][NMO*NMO+k*NMO+i])) ) > cut) {
-           Spvn.add(NMO*NMO+i*NMO+k,cnt,sqrtdt*(L[n][NMO*NMO+i*NMO+k] - myconj(L[n][NMO*NMO+k*NMO+i])));
+           Spvn.add(NMO*NMO+i*NMO+k,cnt,static_cast<SPValueType>(ComplexType(0,-1.0)*sqrtdt*(L[n][NMO*NMO+i*NMO+k] - myconj(L[n][NMO*NMO+k*NMO+i]))));
            ++np;
          }
         }
        if(np>0) ++cnt;
+#endif
       }
 
       app_log()<<"Number of HS potentials: " <<Spvn.cols() <<std::endl;
@@ -3630,14 +3901,18 @@ namespace qmcplusplus
       int* cols = Spvn.column_data();
       int* rows = Spvn.row_data();
       int* indx = Spvn.row_index();
-      ComplexType* vals = Spvn.values();
+      SPValueType* vals = Spvn.values();
 
       int NMO2 = spinRestricted?(NMO*NMO):(2*NMO*NMO);
 
-      ComplexMatrix v2prod(NMO2);
+      SPValueMatrix v2prod(NMO2);
       for(int i=0; i<NMO2; i++)
        for(int j=0; j<NMO2; j++)
-        v2prod(i,j) = SparseMatrixOperators::product_SpVSpV<ComplexType>(indx[i+1]-indx[i],cols+indx[i],vals+indx[i],indx[j+1]-indx[j],cols+indx[j],vals+indx[j]);
+#if defined(QMC_COMPLEX)
+        v2prod(i,j) = SparseMatrixOperators::product_SpVSpVc<SPValueType>(indx[i+1]-indx[i],cols+indx[i],vals+indx[i],indx[j+1]-indx[j],cols+indx[j],vals+indx[j]);
+#else
+        v2prod(i,j) = SparseMatrixOperators::product_SpVSpV<SPValueType>(indx[i+1]-indx[i],cols+indx[i],vals+indx[i],indx[j+1]-indx[j],cols+indx[j],vals+indx[j]);
+#endif
 
       RealType s=0.0;
       RealType max=0.0;
@@ -3652,8 +3927,8 @@ namespace qmcplusplus
             if(!goodSpinSector(i,j,k,l,NMO))
              continue;
            }
-           ComplexType v2 = -dt*H(i,j,k,l);
-           ComplexType v2c = v2prod( i*NMO+Index2Col(k) , l*NMO+Index2Col(j)   );
+           ValueType v2 = dt*H(i,j,k,l);
+           ValueType v2c = static_cast<ValueType>(v2prod( i*NMO+Index2Col(k) , l*NMO+Index2Col(j)));
            s+=std::abs(v2-v2c);
            if( max < std::abs(v2-v2c) ) max = std::abs(v2-v2c);
            if( std::abs(v2-v2c) > 10*cutoff_cholesky ) {
@@ -3692,10 +3967,10 @@ namespace qmcplusplus
     std::string str2("no"); 
     std::string str3("no"); 
     std::string str4("yes"); 
+    std::string str5("yes"); 
     ParameterSet m_param;
     m_param.add(order,"orderStates","std::string");    
     m_param.add(cutoff1bar,"cutoff_1bar","double");
-    m_param.add(cutoff2bar,"cutoff_2bar","double");
     m_param.add(cutoff_cholesky,"cutoff_decomp","double");
     m_param.add(cutoff_cholesky,"cutoff_decomposition","double");
     m_param.add(cutoff_cholesky,"cutoff_factorization","double");
@@ -3703,32 +3978,35 @@ namespace qmcplusplus
     m_param.add(filetype,"filetype","std::string");
     m_param.add(filename,"filename","std::string");
     m_param.add(hdf_write_file,"hdf_write_file","std::string");
+    m_param.add(hdf_write_type,"hdf_write_type","std::string");
     m_param.add(ascii_write_file,"ascii_write_file","std::string");
     m_param.add(rotation,"rotation","std::string");
-    m_param.add(nnodes_per_TG,"nnodes_per_TG","int");
-    m_param.add(nnodes_per_TG,"nnodes","int");
-    m_param.add(nnodes_per_TG,"nodes","int");
+    m_param.add(number_of_TGs,"nblocks","int");
     m_param.add(bkp,"test_breakup","std::string");
     m_param.add(str1,"printEig","std::string");
     m_param.add(str2,"test_2eint","std::string");
     m_param.add(str3,"fix_2eint","std::string");
     m_param.add(str4,"test_algo","std::string");
+    m_param.add(str5,"inplace","std::string");
     m_param.put(cur);
 
     orderStates=false;
     std::transform(order.begin(),order.end(),order.begin(),(int (*)(int))tolower);
     std::transform(filetype.begin(),filetype.end(),filetype.begin(),(int (*)(int))tolower);
+    std::transform(hdf_write_type.begin(),hdf_write_type.end(),hdf_write_type.begin(),(int (*)(int))tolower);
     std::transform(bkp.begin(),bkp.end(),bkp.begin(),(int (*)(int))tolower);
     std::transform(str1.begin(),str1.end(),str1.begin(),(int (*)(int))tolower);
     std::transform(str2.begin(),str2.end(),str2.begin(),(int (*)(int))tolower);
     std::transform(str3.begin(),str3.end(),str3.begin(),(int (*)(int))tolower);
     std::transform(str4.begin(),str4.end(),str4.begin(),(int (*)(int))tolower);
+    std::transform(str5.begin(),str5.end(),str5.begin(),(int (*)(int))tolower);
     if(order == "yes" || order == "true") orderStates = true;  
     if(bkp == "yes" || bkp == "true") test_breakup = true;  
     if(str1 == "yes" || str1 == "true") printEig = true;  
     if(str2 == "yes" || str2 == "true") test_2eint = true;  
     if(str3 == "yes" || str3 == "true") zero_bad_diag_2eints = true;  
     if(str4 == "no" || str4 == "false") test_algo = false;  
+    if(str5 == "no" || str5 == "false") inplace = false;  
    
     cur = curRoot->children;
     while (cur != NULL) {
@@ -3755,50 +4033,65 @@ namespace qmcplusplus
   // J2 = <ij|lk>
   // J3 = <ik|jl> 
   //  routine currently assumes that ijkl is the smallest of the 3 non-symmetric terms 
-  void SparseGeneralHamiltonian::find_all_contributions_to_hamiltonian_closed_shell(OrbitalType i, OrbitalType j, OrbitalType k, OrbitalType l, ValueType J1, ValueType J2, ValueType J3, double cut, std::vector<s4D<ValueType> >& v)
+  //  For complex, there are 3 extra non-symmetric terms:
+  //  J1a = <il|kj>
+  //  J2a = <ik|lj>
+  //  J3a = <il|jk> 
+  //    In this case, make sure you use the fact that: <ij|kl> = conj( <kl|ij> )
+  void SparseGeneralHamiltonian::find_all_contributions_to_hamiltonian_closed_shell(bool aa_only, OrbitalType i, OrbitalType j, OrbitalType k, OrbitalType l, ValueType J1, ValueType J2, ValueType J3, ValueType J1a, ValueType J2a, ValueType J3a, double cut, std::vector<s4D<ValueType> >& v)
   {
     // simple algorithm for now
     // 1. add all contributions blindly
     // 2. check for repeated and remove
     // 3. apply symmetry elimination
    
+    if(aa_only)
+      APP_ABORT(" Error in SparseGeneralHamiltonian::find_all_contributions_to_hamiltonian_closed_shell(). aa_only is not allowed. \n\n\n");
+
     v.reserve(24);  
-    if( isComplex( J1 ) ) {
-      APP_ABORT("Not yet working for std::complex \n\n\n");
-    }
- 
-    ValueType J1J2 = 4*J1-2*J2;
+
+#ifndef QMC_COMPLEX 
+    J1a=J1;
+    J2a=J2;
+    J3a=J3;
+#endif
+
+    // <ij||kl> -> (ijkl)
+    // Symmetries:
+    //   (ijkl) = (jilk) = (klij)* = (lkji)* = -(ijlk) = -(jikl) = -(lkij)* = -(klji)* 
+
+    ValueType J1J2 = 4.0*J1-2.0*J2;
     if(std::abs(J1J2) > cut) {
       push_ijkl(i,j,k,l,J1J2,v);
-      push_ijkl(k,l,i,j,J1J2,v);  
+      push_ijkl(k,l,i,j,myconj(J1J2),v);
     }
-    ValueType J1J3 = 4*J1-2*J3;
+    ValueType J1J3 = 4.0*J1a-2.0*J3a;
     if(std::abs(J1J3) > cut) {
-      push_ijkl(i,l,k,j,J1J3,v);  
-      push_ijkl(j,k,l,i,J1J3,v);  
+      push_ijkl(i,l,k,j,J1J3,v);
+      push_ijkl(j,k,l,i,myconj(J1J3),v);
     }
 
-    ValueType J2J1 = 4*J2-2*J1;
+    ValueType J2J1 = 4.0*J2-2.0*J1;
     if(std::abs(J2J1) > cut) {
       push_ijkl(i,j,l,k,J2J1,v);
-      push_ijkl(k,l,j,i,J2J1,v);
+      push_ijkl(k,l,j,i,myconj(J2J1),v);
     }
-    ValueType J2J3 = 4*J2-2*J3;
+    ValueType J2J3 = 4.0*J2a-2.0*J3;
     if(std::abs(J2J3) > cut) {
       push_ijkl(i,k,l,j,J2J3,v);
-      push_ijkl(j,l,k,i,J2J3,v);
+      push_ijkl(j,l,k,i,myconj(J2J3),v);
     }
-       
-    ValueType J3J1 = 4*J3-2*J1;
+
+    ValueType J3J1 = 4.0*J3a-2.0*J1a;
     if(std::abs(J3J1) > cut) {
       push_ijkl(i,l,j,k,J3J1,v);
-      push_ijkl(k,j,l,i,J3J1,v);
-    }    
-    ValueType J3J2 = 4*J3-2*J2;
+      push_ijkl(k,j,l,i,myconj(J3J1),v);
+    }
+    ValueType J3J2 = 4.0*J3-2.0*J2a;
     if(std::abs(J3J2) > cut) {
       push_ijkl(i,k,j,l,J3J2,v);
-      push_ijkl(l,j,k,i,J3J2,v);
-    }    
+      push_ijkl(l,j,k,i,myconj(J3J2),v);
+    }
 
     // order to remove consecutive repreated 
     std::sort (v.begin(), v.end(), mySort);
@@ -3808,74 +4101,89 @@ namespace qmcplusplus
     // resize array, since unique does not remove elements
     // just reorders them  
     v.resize( std::distance(v.begin(),it) );
-
   }
 
-  void SparseGeneralHamiltonian::find_all_contributions_to_hamiltonian_spinRestricted(OrbitalType i, OrbitalType j, OrbitalType k, OrbitalType l, ValueType J1, ValueType J2, ValueType J3, double cut, std::vector<s4D<ValueType> >& v) 
+  // For a given quartet ijkl and the 3 (for real) different permutations 
+  // in the reduced list, add all possible contributions to the Hamiltonian
+  // taking into account cutoff and (ik)<->(jl) symmetry  
+  // J1 = <ij|kl>
+  // J2 = <ij|lk>
+  // J3 = <ik|jl> 
+  //  For complex, there are 3 extra non-symmetric terms:
+  //  J1a = <il|kj>
+  //  J2a = <ik|lj>
+  //  J3a = <il|jk> 
+  void SparseGeneralHamiltonian::find_all_contributions_to_hamiltonian_spinRestricted(bool aa_only, OrbitalType i, OrbitalType j, OrbitalType k, OrbitalType l, ValueType J1, ValueType J2, ValueType J3, ValueType J1a, ValueType J2a, ValueType J3a, double cut, std::vector<s4D<ValueType> >& v) 
   { 
     // simple algorithm for now
     // 1. add all contributions blindly
     // 2. check for repeated and remove
     // 3. apply symmetry elimination
+    // 4. if aa_only, only alpha/alpha component is added 
+    //
    
     v.reserve(48);  
     v.clear();
-    if( isComplex( J1 ) ) {
-      APP_ABORT("Not yet working for std::complex \n\n\n");
-    }
   
     int i2 = i+NMO; 
     int j2 = j+NMO; 
     int k2 = k+NMO; 
     int l2 = l+NMO; 
+#ifndef QMC_COMPLEX
+    J1a=J1;
+    J2a=J2;
+    J3a=J3;
+#else
+      APP_ABORT("Not yet working for std::complex \n\n\n");
+#endif
     // 2bar terms
     ValueType J1J2 = J1-J2;
     if(std::abs(J1J2) > cut) {
       push_ijkl(i,j,k,l,J1J2,v);
       push_ijkl(k,l,i,j,J1J2,v);  
-      push_ijkl(i2,j2,k2,l2,J1J2,v);
-      push_ijkl(k2,l2,i2,j2,J1J2,v);  
+      if(!aa_only) push_ijkl(i2,j2,k2,l2,J1J2,v);
+      if(!aa_only) push_ijkl(k2,l2,i2,j2,J1J2,v);  
     }
     ValueType J1J3 = J1-J3;
     if(std::abs(J1J3) > cut) {
       push_ijkl(i,l,k,j,J1J3,v);  
       push_ijkl(j,k,l,i,J1J3,v);  
-      push_ijkl(i2,l2,k2,j2,J1J3,v);  
-      push_ijkl(j2,k2,l2,i2,J1J3,v);  
+      if(!aa_only) push_ijkl(i2,l2,k2,j2,J1J3,v);  
+      if(!aa_only) push_ijkl(j2,k2,l2,i2,J1J3,v);  
     }
 
     ValueType J2J1 = J2-J1;
     if(std::abs(J2J1) > cut) {
       push_ijkl(i,j,l,k,J2J1,v);
       push_ijkl(k,l,j,i,J2J1,v);
-      push_ijkl(i2,j2,l2,k2,J2J1,v);
-      push_ijkl(k2,l2,j2,i2,J2J1,v);
+      if(!aa_only) push_ijkl(i2,j2,l2,k2,J2J1,v);
+      if(!aa_only) push_ijkl(k2,l2,j2,i2,J2J1,v);
     }
     ValueType J2J3 = J2-J3;
     if(std::abs(J2J3) > cut) {
       push_ijkl(i,k,l,j,J2J3,v);
       push_ijkl(j,l,k,i,J2J3,v);
-      push_ijkl(i2,k2,l2,j2,J2J3,v);
-      push_ijkl(j2,l2,k2,i2,J2J3,v);
+      if(!aa_only) push_ijkl(i2,k2,l2,j2,J2J3,v);
+      if(!aa_only) push_ijkl(j2,l2,k2,i2,J2J3,v);
     }
        
     ValueType J3J1 = J3-J1;
     if(std::abs(J3J1) > cut) {
       push_ijkl(i,l,j,k,J3J1,v);
       push_ijkl(k,j,l,i,J3J1,v);
-      push_ijkl(i2,l2,j2,k2,J3J1,v);
-      push_ijkl(k2,j2,l2,i2,J3J1,v);
+      if(!aa_only) push_ijkl(i2,l2,j2,k2,J3J1,v);
+      if(!aa_only) push_ijkl(k2,j2,l2,i2,J3J1,v);
     }    
     ValueType J3J2 = J3-J2;
     if(std::abs(J3J2) > cut) {
       push_ijkl(i,k,j,l,J3J2,v);
       push_ijkl(l,j,k,i,J3J2,v);
-      push_ijkl(i2,k2,j2,l2,J3J2,v);
-      push_ijkl(l2,j2,k2,i2,J3J2,v);
+      if(!aa_only) push_ijkl(i2,k2,j2,l2,J3J2,v);
+      if(!aa_only) push_ijkl(l2,j2,k2,i2,J3J2,v);
     }    
 
     // 1bar terms
-    if(std::abs(J1) > cut) {
+    if(std::abs(J1) > cut && !aa_only) {
       push_ijkl(i,j2,k,l2,J1,v);
       push_ijkl(k,l2,i,j2,J1,v);
       push_ijkl(i,l2,k,j2,J1,v);
@@ -3885,7 +4193,7 @@ namespace qmcplusplus
       push_ijkl(l,i2,j,k2,J1,v);
       push_ijkl(k,j2,i,l2,J1,v);
     }       
-    if(std::abs(J2) > cut) {
+    if(std::abs(J2) > cut && !aa_only) {
       push_ijkl(i,j2,l,k2,J2,v);
       push_ijkl(k,l2,j,i2,J2,v);
       push_ijkl(i,k2,l,j2,J2,v);
@@ -3895,7 +4203,7 @@ namespace qmcplusplus
       push_ijkl(k,i2,j,l2,J2,v);
       push_ijkl(l,j2,i,k2,J2,v);
     }    
-    if(std::abs(J3) > cut) {
+    if(std::abs(J3) > cut && !aa_only) {
       push_ijkl(i,l2,j,k2,J3,v);
       push_ijkl(k,j2,l,i2,J3,v);
       push_ijkl(i,k2,j,l2,J3,v);
@@ -3906,6 +4214,7 @@ namespace qmcplusplus
       push_ijkl(j,l2,i,k2,J3,v);
     }
 
+
     // order to remove consecutive repreated 
     std::sort (v.begin(), v.end(), mySort);
     // remove consecutive repeated
@@ -3917,9 +4226,187 @@ namespace qmcplusplus
 
   }
 
-  void SparseGeneralHamiltonian::find_all_contributions_to_hamiltonian_general(OrbitalType i, OrbitalType j, OrbitalType k, OrbitalType l, ValueType J1, ValueType J2, ValueType J3, double cut, std::vector<s4D<ValueType> >& v) 
+  // For a given quartet ijkl and the 3 (for real) different permutations 
+  // in the reduced list, add all possible contributions to the Hamiltonian
+  // taking into account cutoff and (ik)<->(jl) symmetry  
+  // J1 = <ij|kl>
+  // J2 = <ij|lk>
+  // J3 = <ik|jl> 
+  //  For complex, there are 3 extra non-symmetric terms:
+  //  J1a = <il|kj>
+  //  J2a = <ik|lj>
+  //  J3a = <il|jk> 
+  void SparseGeneralHamiltonian::find_all_contributions_to_hamiltonian_ghf(bool aa_only, OrbitalType i, OrbitalType j, OrbitalType k, OrbitalType l, ValueType J1, ValueType J2, ValueType J3, ValueType J1a, ValueType J2a, ValueType J3a, double cut, std::vector<s4D<ValueType> >& v) 
+  { 
+    // simple algorithm for now
+    // 1. add all contributions blindly
+    // 2. check for repeated and remove
+    // 3. apply symmetry elimination
+    //
+    // GHF: all terms from _spinRestricted routine plus: M_(i-alpha k-beta)_(j-beta l-alpha) = <ij|lk> 
+  
+    if(aa_only)
+      APP_ABORT(" Error in SparseGeneralHamiltonian::find_all_contributions_to_hamiltonian_ghf(). aa_only is not allowed. \n\n\n");
+ 
+    v.reserve(48);  
+    v.clear();
+  
+    int i2 = i+NMO; 
+    int j2 = j+NMO; 
+    int k2 = k+NMO; 
+    int l2 = l+NMO; 
+#ifndef QMC_COMPLEX
+    J1a=J1;
+    J2a=J2;
+    J3a=J3;
+#else
+      APP_ABORT("Not yet working for std::complex \n\n\n");
+#endif
+    // 2bar terms
+    ValueType J1J2 = J1-J2;
+    if(std::abs(J1J2) > cut) {
+      push_ijkl(i,j,k,l,J1J2,v,true);
+      push_ijkl(k,l,i,j,J1J2,v,true);  
+      push_ijkl(i2,j2,k2,l2,J1J2,v,true);
+      push_ijkl(k2,l2,i2,j2,J1J2,v,true);  
+    }
+    ValueType J1J3 = J1-J3;
+    if(std::abs(J1J3) > cut) {
+      push_ijkl(i,l,k,j,J1J3,v,true);  
+      push_ijkl(j,k,l,i,J1J3,v,true);  
+      push_ijkl(i2,l2,k2,j2,J1J3,v,true);  
+      push_ijkl(j2,k2,l2,i2,J1J3,v,true);  
+    }
+
+    ValueType J2J1 = J2-J1;
+    if(std::abs(J2J1) > cut) {
+      push_ijkl(i,j,l,k,J2J1,v,true);
+      push_ijkl(k,l,j,i,J2J1,v,true);
+      push_ijkl(i2,j2,l2,k2,J2J1,v,true);
+      push_ijkl(k2,l2,j2,i2,J2J1,v,true);
+    }
+    ValueType J2J3 = J2-J3;
+    if(std::abs(J2J3) > cut) {
+      push_ijkl(i,k,l,j,J2J3,v,true);
+      push_ijkl(j,l,k,i,J2J3,v,true);
+      push_ijkl(i2,k2,l2,j2,J2J3,v,true);
+      push_ijkl(j2,l2,k2,i2,J2J3,v,true);
+    }
+       
+    ValueType J3J1 = J3-J1;
+    if(std::abs(J3J1) > cut) {
+      push_ijkl(i,l,j,k,J3J1,v,true);
+      push_ijkl(k,j,l,i,J3J1,v,true);
+      push_ijkl(i2,l2,j2,k2,J3J1,v,true);
+      push_ijkl(k2,j2,l2,i2,J3J1,v,true);
+    }    
+    ValueType J3J2 = J3-J2;
+    if(std::abs(J3J2) > cut) {
+      push_ijkl(i,k,j,l,J3J2,v,true);
+      push_ijkl(l,j,k,i,J3J2,v,true);
+      push_ijkl(i2,k2,j2,l2,J3J2,v,true);
+      push_ijkl(l2,j2,k2,i2,J3J2,v,true);
+    }    
+
+    // 1bar terms: <alpha,beta|alpha,beta>
+    if(std::abs(J1) > cut) {
+      push_ijkl(i,j2,k,l2,J1,v,true);
+      push_ijkl(k,l2,i,j2,J1,v,true);
+      push_ijkl(i,l2,k,j2,J1,v,true);
+      push_ijkl(j,k2,l,i2,J1,v,true);
+      push_ijkl(j,i2,l,k2,J1,v,true);
+      push_ijkl(l,k2,j,i2,J1,v,true);
+      push_ijkl(l,i2,j,k2,J1,v,true);
+      push_ijkl(k,j2,i,l2,J1,v,true);
+    }       
+    if(std::abs(J2) > cut) {
+      push_ijkl(i,j2,l,k2,J2,v,true);
+      push_ijkl(k,l2,j,i2,J2,v,true);
+      push_ijkl(i,k2,l,j2,J2,v,true);
+      push_ijkl(j,l2,k,i2,J2,v,true);
+      push_ijkl(j,i2,k,l2,J2,v,true);
+      push_ijkl(l,k2,i,j2,J2,v,true);
+      push_ijkl(k,i2,j,l2,J2,v,true);
+      push_ijkl(l,j2,i,k2,J2,v,true);
+    }    
+    if(std::abs(J3) > cut) {
+      push_ijkl(i,l2,j,k2,J3,v,true);
+      push_ijkl(k,j2,l,i2,J3,v,true);
+      push_ijkl(i,k2,j,l2,J3,v,true);
+      push_ijkl(l,j2,k,i2,J3,v,true);
+      push_ijkl(l,i2,k,j2,J3,v,true);
+      push_ijkl(j,k2,i,l2,J3,v,true);
+      push_ijkl(k,i2,l,j2,J3,v,true);
+      push_ijkl(j,l2,i,k2,J3,v,true);
+    }
+
+    // GHF extra exchage terms: <alpha,beta|beta,alpha>
+    // M_iakb_jbla = <iajb|lakb> 
+    // J1 = <ij|kl>
+    // J2 = <ij|lk> 
+    // J3 = <ik|jl> 
+    J1*=RealType(-1); 
+    J2*=RealType(-1); 
+    J3*=RealType(-1); 
+    if(std::abs(J1) > cut) {
+      push_ijkl(i,j2,l2,k,J1,v,true);
+      push_ijkl(k,j2,l2,i,J1,v,true);
+      push_ijkl(i,l2,j2,k,J1,v,true);
+      push_ijkl(k,l2,j2,i,J1,v,true);
+      push_ijkl(j,i2,k2,l,J1,v,true);
+      push_ijkl(l,i2,k2,j,J1,v,true);
+      push_ijkl(j,k2,i2,l,J1,v,true);
+      push_ijkl(l,k2,i2,j,J1,v,true);
+    }       
+    if(std::abs(J2) > cut) {
+      push_ijkl(i,j2,k2,l,J2,v,true);
+      push_ijkl(l,j2,k2,i,J2,v,true);
+      push_ijkl(i,k2,j2,l,J2,v,true);
+      push_ijkl(l,k2,j2,i,J2,v,true);
+      push_ijkl(j,i2,l2,k,J2,v,true);
+      push_ijkl(k,i2,l2,j,J2,v,true);
+      push_ijkl(j,l2,i2,k,J2,v,true);
+      push_ijkl(k,l2,i2,j,J2,v,true);
+    }    
+    if(std::abs(J3) > cut) {
+      push_ijkl(i,k2,l2,j,J3,v,true);
+      push_ijkl(j,k2,l2,i,J3,v,true);
+      push_ijkl(i,l2,k2,j,J3,v,true);
+      push_ijkl(j,l2,k2,i,J3,v,true);
+      push_ijkl(k,i2,j2,l,J3,v,true);
+      push_ijkl(l,i2,j2,k,J3,v,true);
+      push_ijkl(k,j2,i2,l,J3,v,true);
+      push_ijkl(l,j2,i2,k,J3,v,true);
+    }
+
+
+    // order to remove consecutive repreated 
+    std::sort (v.begin(), v.end(), mySort);
+    // remove consecutive repeated
+    std::vector<s4D<ValueType> >::iterator it;
+    it = std::unique(v.begin(),v.end());
+    // resize array, since unique does not remove elements
+    // just reorders them  
+    v.resize( std::distance(v.begin(),it) );
+
+  }
+
+  // For a given quartet ijkl and the 3 (for real) different permutations 
+  // in the reduced list, add all possible contributions to the Hamiltonian
+  // taking into account cutoff and (ik)<->(jl) symmetry  
+  // J1 = <ij|kl>
+  // J2 = <ij|lk>
+  // J3 = <ik|jl> 
+  //  For complex, there are 3 extra non-symmetric terms:
+  //  J1a = <il|kj>
+  //  J2a = <ik|lj>
+  //  J3a = <il|jk> 
+  void SparseGeneralHamiltonian::find_all_contributions_to_hamiltonian_general(bool aa_only, OrbitalType i, OrbitalType j, OrbitalType k, OrbitalType l, ValueType J1, ValueType J2, ValueType J3, ValueType J1a, ValueType J2a, ValueType J3a, double cut, std::vector<s4D<ValueType> >& v) 
   {
     APP_ABORT("Finsigh implementation. \n\n\n");
+
+    if(aa_only)
+      APP_ABORT(" Error in SparseGeneralHamiltonian::find_all_contributions_to_hamiltonian_general(). aa_only is not allowed. \n\n\n");
   }
 
   // looks for all equivalent terms associated with Vijkl 
@@ -3943,8 +4430,8 @@ namespace qmcplusplus
 
       v.push_back(Vijkl);
       if( jilk != ijkl ) v.push_back(std::make_tuple(j,i,l,k,V));  
-      if( klij != ijkl && klij != jilk ) v.push_back(std::make_tuple(k,l,i,j,std::conj(V)));   
-      if( lkji != ijkl && lkji != jilk && lkji != klij ) v.push_back(std::make_tuple(l,k,j,i,std::conj(V)));   
+      if( klij != ijkl && klij != jilk ) v.push_back(std::make_tuple(k,l,i,j,myconj(V)));   
+      if( lkji != ijkl && lkji != jilk && lkji != klij ) v.push_back(std::make_tuple(l,k,j,i,myconj(V)));   
       // order, not needed but good measure 
       std::sort (v.begin(), v.end(),mySort);
     } else {
@@ -4001,13 +4488,13 @@ namespace qmcplusplus
 
         // need to add klij as conj(V). How do I add it? 
         if(klij != lkji) {  // add once with factor of 2
-          v.push_back(std::make_tuple(k,l,i,j,std::conj(static_cast<RealType>(2.0)*V)));   
+          v.push_back(std::make_tuple(k,l,i,j,myconj(static_cast<RealType>(2.0)*V)));   
           if(ijkl == lkji)  {
             std::cerr<<" Error in find_equivalent_OneBar_for_hamiltonian_generation: Not sure how you got here. (ijkl == lkji): " <<i <<" " <<j <<" " <<k <<" " <<l <<"  " <<V  <<std::endl;
             APP_ABORT("Error in find_equivalent_OneBar_for_hamiltonian_generation: Not sure how you got here. (ijkl == lkji) \n"); 
           }
         } else 
-          v.push_back(std::make_tuple(k,l,i,j,std::conj(V)));
+          v.push_back(std::make_tuple(k,l,i,j,myconj(V)));
 
       } else {
         // just checking
@@ -4193,6 +4680,51 @@ namespace qmcplusplus
 
   }
 
+  bool SparseGeneralHamiltonian::find_smallest_permutation(s4D<ValueType>& val) {
+
+#if defined(QMC_COMPLEX)
+    // jl < ik
+    if(  std::forward_as_tuple(std::get<1>(val),std::get<3>(val) ) < std::forward_as_tuple(std::get<0>(val),std::get<2>(val) )  ) {
+        std::swap(std::get<0>(val),std::get<1>(val));
+        std::swap(std::get<2>(val),std::get<3>(val));
+    }
+    // kl < ij
+    if(  std::forward_as_tuple(std::get<2>(val),std::get<3>(val) ) < std::forward_as_tuple(std::get<0>(val),std::get<1>(val) )  ) {
+      std::swap(std::get<0>(val),std::get<2>(val));
+      std::swap(std::get<1>(val),std::get<3>(val));
+      std::get<4>(val) = std::conj(std::get<4>(val));
+      // jl < ik again since ij<->kl swap occured  
+      if(  std::forward_as_tuple(std::get<1>(val),std::get<3>(val) ) < std::forward_as_tuple(std::get<0>(val),std::get<2>(val) )  ) {
+        std::swap(std::get<0>(val),std::get<1>(val));
+        std::swap(std::get<2>(val),std::get<3>(val));
+      }
+      return true;
+    } else {
+      // only possibility is that l < i, since I know that the current i is smaller than j and k
+      // 
+      if( std::forward_as_tuple(std::get<3>(val),std::get<2>(val) ) < std::forward_as_tuple(std::get<0>(val),std::get<1>(val) )  ) { 
+        std::swap(std::get<0>(val),std::get<3>(val));
+        std::swap(std::get<2>(val),std::get<1>(val));
+        std::get<4>(val) = std::conj(std::get<4>(val));
+        return true;
+      }
+      return false; 
+    }
+#else
+    // i < k
+    if( std::get<2>(val) < std::get<0>(val) ) std::swap(std::get<0>(val),std::get<2>(val) );    
+    // j < l
+    if( std::get<3>(val) < std::get<1>(val) ) std::swap(std::get<1>(val),std::get<3>(val) );    
+    // ik < jl
+    if( std::get<1>(val) < std::get<0>(val) ) { 
+        std::swap(std::get<0>(val),std::get<1>(val) ); 
+        std::swap(std::get<2>(val),std::get<3>(val) ); 
+    } else if( (std::get<1>(val) == std::get<0>(val)) && ( std::get<3>(val) < std::get<2>(val) )) 
+        std::swap(std::get<2>(val),std::get<3>(val) );    
+    return false;
+#endif
+
+  } 
   
 
   // looks for the indexes of all equivalent terms in V2 and returns
@@ -4215,16 +4747,145 @@ namespace qmcplusplus
     return v[0]; 
   }
 
-  bool SparseGeneralHamiltonian::createHamiltonianForPureDeterminant( std::map<IndexType,bool>& occ_a, std::map<IndexType,bool>& occ_b, std::vector<s1D<ValueType> >& hij, std::vector<s2D<ValueType> >& Vijkl, const RealType cut, bool closed_shell)
+  // generates all symmetry inequivalent integrals V2(indx,j,k,l) for a given indx.
+  // Vijkl is only meaningful for myComm->rank()==0.
+  bool SparseGeneralHamiltonian::SparseHamiltonianFromFactorization( int indx, std::vector<OrbitalType>& jkl, std::vector<ValueType>& intgs, const RealType cut)
   {
 
-    app_error()<<" Error:  SparseGeneralHamiltonian::createHamiltonianForPureDeterminant with s2D has been disabled. \n"; 
-    return false;
+    if(!spinRestricted) {
+      app_error()<<" Error: SparseGeneralHamiltonian::FullHamiltonianFromFactorization only implemented for spin restricted integrals. \n";
+      APP_ABORT("Error: SparseGeneralHamiltonian::FullHamiltonianFromFactorization only implemented for spin restricted integrals. \n");
+    }
 
+    if(!factorizedHamiltonian) {
+      app_error()<<" Error:  Calling SparseGeneralHamiltonian::FullHamiltonianFromFactorization without factorized hamiltonian. \n"; 
+      APP_ABORT("Error:  Calling SparseGeneralHamiltonian::FullHamiltonianFromFactorization without factorized hamiltonian. \n");
+    }
+
+    ValueType zero = ValueType(0);
+
+#if defined(QMC_COMPLEX)
+    APP_ABORT(" Error: SparseGeneralHamiltonian::SparseHamiltonianFromFactorization doesn't yet work for std::complex matrix elements. \n");
+#endif
+
+    intgs.reserve(NMO*NMO);  // reasonable guess
+    intgs.clear();
+    jkl.reserve(3*NMO*NMO);
+    jkl.clear();
+
+    long cnter=0, npr = myComm->size(), rk = myComm->rank();
+    ValueType J1;
+
+    if(DiagHam.size() == 0) {
+      DiagHam.resize(NMO,NMO);
+      for(OrbitalType i=0; i<NMO; i++)
+      for(OrbitalType k=i; k<NMO; k++, cnter++) {
+        if( cnter%npr != rk ) continue;
+        DiagHam(i,k) =  H(i,k,k,i);
+        DiagHam(k,i) = DiagHam(i,k); 
+#if defined(QMC_COMPLEX)
+        if(DiagHam(i,k).imag() > 1e-8) {
+            app_error()<<" Error: Found complex diagonal on hamiltonian. " <<i <<" " <<k <<" " <<DiagHam(i,k) <<std::endl;
+            APP_ABORT("Error: Found complex diagonal on hamiltonian.");
+        }
+#endif
+      }
+      myComm->allreduce(DiagHam);      
+    }  
+
+#if defined(QMC_COMPLEX)
+// don't know how to do this quickly in complex case
+    auto ijkl = std::make_tuple(indx,0,0,0); 
+    for(OrbitalType j=indx; j<NMO; j++)  {
+    for(OrbitalType k=indx; k<NMO; k++)  {
+    for(OrbitalType l=indx; l<NMO; l++, cnter++)  {
+      if( cnter%npr != rk ) continue;
+
+      // |<ij|kl>| <= sqrt( <ik|ki> * <lj|jl>  )  
+      if( std::sqrt( std::abs(DiagHam(indx,k)*DiagHam(l,j)) ) > cut ) {
+        std::get<1>(ijkl)=j;
+        std::get<2>(ijkl)=k;
+        std::get<3>(ijkl)=l;
+        // am I the smallest equivalent permutation?
+        if( ijkl <= std::forward_as_tuple(j,indx,l,k)  &&
+            ijkl <= std::forward_as_tuple(k,l,indx,j) &&
+            ijkl <= std::forward_as_tuple(l,k,j,indx) ) { 
+          J1 = H(indx,j,k,l);
+          if(std::abs(J1) > cut) {
+             jkl.push_back(j);
+             jkl.push_back(k);
+             jkl.push_back(l);
+             intgs.push_back(J1);
+          }
+        }
+      }
+
+    }
+    }
+    }
+#else
+    for(OrbitalType j=indx; j<NMO; j++)  {
+    for(OrbitalType k=indx; k<NMO; k++)  {
+      OrbitalType l0 = (j==indx)?k:j;  
+      for(OrbitalType l=l0; l<NMO; l++, cnter++)  {
+        if( cnter%npr != rk ) continue;
+
+        // |<ij|kl>| <= sqrt( <ik|ki> * <lj|jl>  )  
+        if( std::sqrt( std::abs(DiagHam(indx,k)*DiagHam(l,j)) ) > cut ) {
+          J1 = H(indx,j,k,l);
+          if(std::abs(J1) > cut) {
+             jkl.push_back(j);
+             jkl.push_back(k);
+             jkl.push_back(l);
+             intgs.push_back(J1);
+          }
+        }
+      
+      }
+    }
+    }
+#endif
+
+    std::vector<int> lnint(1);
+    std::vector<int> gnint, disp;
+    lnint[0] = intgs.size();
+    if(myComm->rank()==0) {
+      gnint.resize(npr);
+    }
+    myComm->gather(lnint,gnint,0);
+
+    if(myComm->rank() == 0) {
+
+      int ntot = 0;
+      for(int i=0; i<gnint.size(); i++) ntot += gnint[i];
+
+      disp.resize(npr);
+      disp[0]=disp[1]=0;
+      for(int i=2; i<npr; i++) 
+        disp[i] = disp[i-1] + gnint[i-1]; 
+
+      int nint0 = gnint[0];
+      gnint[0]=0; // no need to gather with myself, this way I avoid the need for a second vector
+      intgs.resize(ntot);
+      myComm->gatherv(intgs.data(), intgs.data()+nint0, 0, gnint, disp, 0, myComm->getMPI());
+      for(int i=2; i<npr; i++) disp[i] *= 3;
+      for(int i=1; i<npr; i++) gnint[i] *= 3;
+      jkl.resize(3*ntot);
+      myComm->gatherv(jkl.data(), jkl.data()+3*nint0, 0, gnint, disp, 0, myComm->getMPI());
+
+    } else {
+      myComm->gatherv(intgs.data(), intgs.data(), intgs.size(), gnint, disp, 0, myComm->getMPI());
+      myComm->gatherv(jkl.data(), jkl.data(), jkl.size(), gnint, disp, 0, myComm->getMPI());
+      intgs.clear();
+      jkl.clear();
+    }
   }
 
-  bool SparseGeneralHamiltonian::createHamiltonianForPureDeterminant( std::map<IndexType,bool>& occ_a, std::map<IndexType,bool>& occ_b, std::vector<s1D<ValueType> >& hij, ComplexSMSpMat& Vijkl, const RealType cut, bool closed_shell)
+  bool SparseGeneralHamiltonian::createHamiltonianForPureDeterminant(int walker_type, bool aa_only, std::map<IndexType,bool>& occ_a, std::map<IndexType,bool>& occ_b, std::vector<s1D<ValueType> >& hij, SPValueSMSpMat& Vijkl, const RealType cut)
   {
+
+    // walker_type: 0-closed_shell density matrix, 1-ROHF/UHF density matrix, 2-GHF density matrix
+   
 
     //  For alpha-alpha and beta-beta store two-bar integrals directly
     //  For alpha-beta and beta-alpha, store one bar integrals 
@@ -4232,6 +4893,8 @@ namespace qmcplusplus
     // Symmetries for real orbitals:
     //  For two-bar integrals: <ij||kl> = <ji||lk> = <kl||ij> = <lk||ji>  
     //                                  = -<ij||lk> = -<ji||kl> = -<kl||ji> = -<lk||ij> 
+    //
+    //                                    
     //  For one-bar integrals: <ij|kl> = <kj|il> = <il|kj> = <kl|ij>
     //                                 = <ji|lk> = <li|jk> = <jk|li> = <lk|ji> 
     //
@@ -4243,10 +4906,16 @@ namespace qmcplusplus
     // 
 
 #ifdef AFQMC_DEBUG
-    app_log()<<" In SparseGeneralHamiltonian::createHamiltonianForPureDeterminant." <<std::endl; 
+    app_log()<<" In SparseGeneralHamiltonian :: createHamiltonianForPureDeterminant." <<std::endl; 
 #endif
 
+    if(!spinRestricted && walker_type==2) {
+      APP_ABORT("Error: GHF density matrix only implemented with spinRestricted integrals. \n");
+    }
+
     hij.clear();
+
+    bool closed_shell = walker_type==0;
 
     ValueType V;
     std::vector<s4D<ValueType> > vs4D;  
@@ -4276,7 +4945,7 @@ namespace qmcplusplus
         } else { 
           if(occ_a[i] || occ_b[i]) cnt1++; 
           if(occ_a[j] || occ_b[j]) cnt1++; 
-    }
+        }  
       }
     }  
 
@@ -4292,28 +4961,28 @@ namespace qmcplusplus
       if(spinRestricted) {
         if(closed_shell) {
           if( i == j ) {  // ii alpha / ii beta 
-            if(occ_a[i]) *ith++ = std::make_tuple( i*NMO+i , 2*V );
+            if(occ_a[i]) *ith++ = std::make_tuple( i*NMO+i , ValueType(2.0)*V );
           } else  {  // ij/ji both (alpha/alpha) and (beta/beta)
-            if(occ_a[i]) *ith++ = std::make_tuple( i*NMO+j , 2*V );
-            if(occ_a[j]) *ith++ = std::make_tuple( j*NMO+i , 2*myconj(V) );
+            if(occ_a[i]) *ith++ = std::make_tuple( i*NMO+j , ValueType(2.0)*V );
+            if(occ_a[j]) *ith++ = std::make_tuple( j*NMO+i , ValueType(2.0)*myconj(V) );
           }
         } else {
           if( i == j ) {  // ii alpha / ii beta 
-            if(occ_a[i]) *ith++ = std::make_tuple( i*NMO+i , V );
-            if(occ_b[i+NMO]) *ith++ = std::make_tuple( NMO*NMO+i*NMO+i , V );
+            if(occ_a[i]) *ith++ = std::make_tuple( Index2Mat(i,i,walker_type==2) , V );
+            if(occ_b[i+NMO]) *ith++ = std::make_tuple(Index2Mat(i+NMO,i+NMO,walker_type==2), V );
           } else  {  // ij/ji both (alpha/alpha) and (beta/beta)
-            if(occ_a[i]) *ith++ = std::make_tuple( i*NMO+j , V );
-            if(occ_a[j]) *ith++ = std::make_tuple( j*NMO+i , myconj(V) );
-            if(occ_b[i+NMO]) *ith++ = std::make_tuple( NMO*NMO+i*NMO+j , V );
-            if(occ_b[j+NMO]) *ith++ = std::make_tuple( NMO*NMO+j*NMO+i , myconj(V) );
+            if(occ_a[i]) *ith++ = std::make_tuple( Index2Mat(i,j,walker_type==2), V );
+            if(occ_a[j]) *ith++ = std::make_tuple( Index2Mat(j,i,walker_type==2), myconj(V) );
+            if(occ_b[i+NMO]) *ith++ = std::make_tuple( Index2Mat(i+NMO,j+NMO,walker_type==2) , V );
+            if(occ_b[j+NMO]) *ith++ = std::make_tuple( Index2Mat(j+NMO,i+NMO,walker_type==2) , myconj(V) );
           }
         }
       } else {
         if( i == j ) {
-          if(occ_a[i] || occ_b[i]) *ith++ = std::make_tuple( Index2Mat(i,j), V );
+          if(occ_a[i] || occ_b[i]) *ith++ = std::make_tuple( Index2Mat(i,j,walker_type==2), V );
         } else {
-          if(occ_a[i] || occ_b[i]) *ith++ = std::make_tuple( Index2Mat(i,j), V );
-          if(occ_a[j] || occ_b[j]) *ith++ = std::make_tuple( Index2Mat(j,i), myconj(V) );
+          if(occ_a[i] || occ_b[i]) *ith++ = std::make_tuple( Index2Mat(i,j,walker_type==2), V );
+          if(occ_a[j] || occ_b[j]) *ith++ = std::make_tuple( Index2Mat(j,i,walker_type==2), myconj(V) );
         }
       }
     }
@@ -4333,10 +5002,6 @@ namespace qmcplusplus
     // add one-bar terms (mixed spin) 
     if(factorizedHamiltonian) {
 
-      if(test_algo) { 
-
-        app_log()<<"Testing new algorithm in createHamiltonian with factorizedHamiltonian=true. \n";
-
         Timer.reset("Generic");
         Timer.start("Generic");
 
@@ -4344,26 +5009,29 @@ namespace qmcplusplus
 
         std::vector<s4D<ValueType> > vs4D;
         vs4D.reserve(24);
-        if( isComplex(zero) ) {
-          APP_ABORT("New algorithm doesn't yet work for std::complex matrix elements. \n");
-        }
 
         cnt2=0; 
         long cnter=0, npr = myComm->size(), rk = myComm->rank();
         OrbitalType i,j,k,l,j1,k1,l1,j2,k2,l2;
-        ValueType J1,J2,J3,fct;
+        ValueType J1,J2,J3,J1a=zero,J2a=zero,J3a=zero,fct;
 
         if(!spinRestricted)
           APP_ABORT("Error: Need to finish implementation for !spinRestricted. \n\n\n");
 
-        ValueMatrix Diag(NMO,NMO); 
+        DiagHam.resize(NMO,NMO); 
         for(IndexType i=0; i<NMO; i++) 
         for(IndexType k=i; k<NMO; k++, cnter++) { 
           if( cnter%npr != rk ) continue;
-          Diag(i,k) =  H(i,k,i,k);
-          Diag(k,i) = Diag(i,k); 
+          DiagHam(i,k) =  H(i,k,k,i);
+          DiagHam(k,i) = DiagHam(i,k); 
+#if defined(QMC_COMPLEX)
+          if(DiagHam(i,k).imag() > 1e-8) {
+              app_error()<<" Error: Found complex diagonal on hamiltonian. " <<i <<" " <<k <<" " <<DiagHam(i,k) <<std::endl;
+              APP_ABORT("Error: Found complex diagonal on hamiltonian.");
+          }
+#endif
         }
-        myComm->allreduce(Diag);
+        myComm->allreduce(DiagHam);
 /*
         if( isComplex(Diag(0,0)) )
           MPI_Allreduce(MPI_IN_PLACE, Diag.data(),  2*Diag.size(), MPI_DOUBLE, MPI_SUM,
@@ -4373,54 +5041,126 @@ namespace qmcplusplus
                 myComm->getMPI());
 */
 
-        bool occi, occj, occk, occl; 
+        int occi, occj, occk, occl; 
         cnter=0;
         // Approximation: (similar to non factorized case)
-        //   - if <ij|kl>  <  cutoff2bar, set to zero 
+        //   - if <ij|kl>  <  cutoff1bar, set to zero 
         for(IndexType i=0; i<NMO; i++)  {
-         occi = occ_a[i]||occ_b[i];
         for(IndexType j=i; j<NMO; j++,cnter++)  {
          if( cnter%npr != rk ) continue;
-         occj = occ_a[j]||occ_b[j];
+         occi = (occ_a[i]||occ_b[i])?1:0;
+         occj = (occ_a[j]||occ_b[j])?1:0;
         for(IndexType k=j; k<NMO; k++)  {
-         occk = occ_a[k]||occ_b[k];
+         occk = (occ_a[k]||occ_b[k])?1:0;
         for(IndexType l=k; l<NMO; l++)  {
 
-            occl = occ_a[l]||occ_b[l];
-            if( ! (occi || occj || occk || occl) ) continue; 
+            occl = (occ_a[l]||occ_b[l])?1:0;
+            if( occi + occj + occk + occl < 2 ) continue; 
+
+            // NOTE NOTE NOTE:
+            // <ik|ik> can get a complex component due to truncation error, eliminate it here
 
             J1=J2=J3=zero; 
             // J1 = <ij|kl>   
-            // J1 < sqrt( <ik|ik> * <jl|jl> )  
-            if( std::sqrt( std::abs(Diag(i,k)*Diag(j,l)) ) > cutoff2bar ) 
+            // J1 < sqrt( <ik|ki> * <lj|jl> )  
+            if( std::sqrt( std::abs(DiagHam(i,k)*DiagHam(l,j)) ) > cutoff1bar ) { 
               J1 = H(i,j,k,l);  
+#if defined(QMC_COMPLEX)
+              if(i==k && j==l) J1 = ValueType(J1.real(),0);
+#endif
+            }
 
-            // J2 = <ij|lk> or <ik|lj>   
+            // J2 = <ij|lk> 
             if(i==j || l==k) {
               J2=J1; 
             } else { 
-              if( std::sqrt( std::abs(Diag(i,l)*Diag(j,k)) ) > cutoff2bar ) 
+              if( std::sqrt( std::abs(DiagHam(i,l)*DiagHam(k,j)) ) > cutoff1bar ) {
                 J2 = H(i,j,l,k);  
+#if defined(QMC_COMPLEX)
+                if(i==l && j==k) J2 = ValueType(J2.real(),0);
+#endif
+              }  
             }
 
-            // J3 = <ik|jl> or <il|jk>  
+            // J3 = <ik|jl> 
             if(j==k) {
               J3=J1; 
+            } else if(i==l) {
+              J3 = myconj(J1);
             } else { 
-              if( std::sqrt( std::abs(Diag(i,j)*Diag(k,l)) ) > cutoff2bar ) 
+              if( std::sqrt( std::abs(DiagHam(i,j)*DiagHam(l,k)) ) > cutoff1bar ) { 
                 J3 = H(i,k,j,l);  
+#if defined(QMC_COMPLEX)
+                if(i==j && k==l) J3 = ValueType(J3.real(),0); 
+#endif
+              }
             }
 
-            if( std::abs(J1)<cutoff2bar && std::abs(J2)<cutoff2bar && std::abs(J3)<cutoff2bar) continue; 
+#if defined(QMC_COMPLEX)
+            //  J2a = <ik|lj>
+            if(l==j) {
+              J2a=J3;
+            } else if(i==k) {
+              J2a=J3;
+            } else if(k==j) {
+              J2a=J2;
+            } else if(i==l) {
+              J2a=std::conj(J2);
+            } else {
+              if( std::sqrt( std::abs(DiagHam(i,l)*DiagHam(j,k)) ) > cutoff1bar )
+                J2a = H(i,k,l,j);
+            }
+            
+            //  J3a = <il|jk> 
+            if(l==j) {
+              J3a=J2;
+            } else if(i==k) {
+              J3a=std::conj(J2);
+            } else if(k==l) {
+              J3a=J3;
+            } else if(i==j) {
+              J3a=std::conj(J3);
+            } else {
+              if( std::sqrt( std::abs(DiagHam(i,j)*DiagHam(k,l)) ) > cutoff1bar )
+                J3a = H(i,l,j,k);
+            }
+
+            //  For complex, there are 3 extra non-symmetric terms:
+            //  J1a = <il|kj>
+            if(k==l) {
+              J1a=J2a;
+            } else if(i==j) {
+              J1a=std::conj(J2a);
+            } else if(j==k) {
+              J1a=J3a;
+            } else if(i==l) {
+              J1a=J3a;
+            } else if(l==j) {
+              J1a=J1;
+            } else if(i==k) {
+              J1a=std::conj(J1);
+            } else {
+              if( std::sqrt( std::abs(DiagHam(i,k)*DiagHam(j,l)) ) > cutoff1bar )
+                J1a = H(i,l,k,j);
+            }
+#endif
+
+
+
+            if( std::abs(J1)<cutoff1bar && std::abs(J2)<cutoff1bar && std::abs(J3)<cutoff1bar && std::abs(J1a)<cutoff1bar && std::abs(J2a)<cutoff1bar && std::abs(J3a)<cutoff1bar) continue; 
 
             vs4D.clear();
-            if(closed_shell) {
-              find_all_contributions_to_hamiltonian_closed_shell(i,j,k,l,J1,J2,J3,cut,vs4D); 
-            } else if(spinRestricted) {
-              find_all_contributions_to_hamiltonian_spinRestricted(i,j,k,l,J1,J2,J3,cut,vs4D); 
+            if(walker_type==0) {
+              find_all_contributions_to_hamiltonian_closed_shell(aa_only,i,j,k,l,J1,J2,J3,J1a,J2a,J3a,cut,vs4D); 
+            } else if(walker_type==1) {
+              if(spinRestricted) 
+                find_all_contributions_to_hamiltonian_spinRestricted(aa_only,i,j,k,l,J1,J2,J3,J1a,J2a,J3a,cut,vs4D); 
+              else 
+                find_all_contributions_to_hamiltonian_general(aa_only,i,j,k,l,J1,J2,J3,J1a,J2a,J3a,cut,vs4D); 
+            } else if(walker_type==2) {
+                find_all_contributions_to_hamiltonian_ghf(aa_only,i,j,k,l,J1,J2,J3,J1a,J2a,J3a,cut,vs4D); 
             } else {
-              find_all_contributions_to_hamiltonian_general(i,j,k,l,J1,J2,J3,cut,vs4D); 
-              APP_ABORT(" Error: Finish implementation \n\n\n");
+              APP_ABORT(" Error: Unknown walker type in createHamiltonianForPureDeterminant. \n"); 
             }
             cnt2+=count_allowed_terms(vs4D,occ_a,occ_b);                    
 
@@ -4437,53 +5177,121 @@ namespace qmcplusplus
 
         cnter=0;
         // Approximation: (similar to non factorized case)
-        //   - if <ij|kl>  <  cutoff2bar, set to zero 
+        //   - if <ij|kl>  <  cutoff1bar, set to zero 
         for(IndexType i=0; i<NMO; i++)  {
-         occi = occ_a[i]||occ_b[i];
         for(IndexType j=i; j<NMO; j++,cnter++)  {
          if( cnter%npr != rk ) continue;
-         occj = occ_a[j]||occ_b[j];
+         occi = (occ_a[i]||occ_b[i])?1:0;
+         occj = (occ_a[j]||occ_b[j])?1:0;
         for(IndexType k=j; k<NMO; k++)  {
-         occk = occ_a[k]||occ_b[k];
+         occk = (occ_a[k]||occ_b[k])?1:0;
         for(IndexType l=k; l<NMO; l++)  {
 
-            occl = occ_a[l]||occ_b[l];
-            if( ! (occi || occj || occk || occl) ) continue; 
+            occl = (occ_a[l]||occ_b[l])?1:0;
+            if( occi + occj + occk + occl < 2 ) continue; 
 
             J1=J2=J3=zero; 
             // J1 = <ij|kl>   
-            // J1 < sqrt( <ik|ik> * <jl|jl> )  
-            if( std::sqrt( std::abs(Diag(i,k)*Diag(j,l)) ) > cutoff2bar ) 
+            // J1 < sqrt( <ik|ki> * <lj|jl> )  
+            if( std::sqrt( std::abs(DiagHam(i,k)*DiagHam(l,j)) ) > cutoff1bar ) { 
               J1 = H(i,j,k,l);  
+#if defined(QMC_COMPLEX)
+              if(i==k && j==l) J1 = ValueType(J1.real(),0);
+#endif
+            }
 
-            // J2 = <ij|lk> or <ik|lj>   
+            // J2 = <ij|lk> 
             if(i==j || l==k) {
               J2=J1; 
             } else { 
-              if( std::sqrt( std::abs(Diag(i,l)*Diag(j,k)) ) > cutoff2bar ) 
-                J2 = H(i,j,l,k);  
+              if( std::sqrt( std::abs(DiagHam(i,l)*DiagHam(k,j)) ) > cutoff1bar ) { 
+                J2 = H(i,j,l,k); 
+#if defined(QMC_COMPLEX)
+                if(i==l && j==k) J2 = ValueType(J2.real(),0);
+#endif
+              } 
             }
 
-            // J3 = <ik|jl> or <il|jk>  
+            // J3 = <ik|jl> 
             if(j==k) {
               J3=J1; 
+            } else if(i==l) {
+              J3 = myconj(J1);
             } else { 
-              if( std::sqrt( std::abs(Diag(i,j)*Diag(k,l)) ) > cutoff2bar ) 
+              if( std::sqrt( std::abs(DiagHam(i,j)*DiagHam(l,k)) ) > cutoff1bar ) {
                 J3 = H(i,k,j,l);  
+#if defined(QMC_COMPLEX)
+                if(i==j && k==l) J3 = ValueType(J3.real(),0);
+#endif
+              }
             }
 
-            if( std::abs(J1)<cutoff2bar && std::abs(J2)<cutoff2bar && std::abs(J3)<cutoff2bar) continue; 
+#if defined(QMC_COMPLEX)
+            //  J2a = <ik|lj>
+            if(l==j) {
+              J2a=J3;
+            } else if(i==k) {
+              J2a=J3;
+            } else if(k==j) {
+              J2a=J2;
+            } else if(i==l) {
+              J2a=std::conj(J2);
+            } else {
+              if( std::sqrt( std::abs(DiagHam(i,l)*DiagHam(j,k)) ) > cutoff1bar )
+                J2a = H(i,k,l,j);
+            }
+            
+            //  J3a = <il|jk> 
+            if(l==j) {
+              J3a=J2;
+            } else if(i==k) {
+              J3a=std::conj(J2);
+            } else if(k==l) {
+              J3a=J3;
+            } else if(i==j) {
+              J3a=std::conj(J3);
+            } else {
+              if( std::sqrt( std::abs(DiagHam(i,j)*DiagHam(k,l)) ) > cutoff1bar )
+                J3a = H(i,l,j,k);
+            }
+
+            //  For complex, there are 3 extra non-symmetric terms:
+            //  J1a = <il|kj>
+            if(k==l) {
+              J1a=J2a;
+            } else if(i==j) {
+              J1a=std::conj(J2a);
+            } else if(j==k) {
+              J1a=J3a;
+            } else if(i==l) {
+              J1a=J3a;
+            } else if(l==j) {
+              J1a=J1;
+            } else if(i==k) {
+              J1a=std::conj(J1);
+            } else {
+              if( std::sqrt( std::abs(DiagHam(i,k)*DiagHam(j,l)) ) > cutoff1bar )
+                J1a = H(i,l,k,j);
+            }
+            
+#endif
+
+            if( std::abs(J1)<cutoff1bar && std::abs(J2)<cutoff1bar && std::abs(J3)<cutoff1bar && std::abs(J1a)<cutoff1bar && std::abs(J2a)<cutoff1bar && std::abs(J3a)<cutoff1bar) continue; 
 
             vs4D.clear();
-            if(closed_shell) {
-              find_all_contributions_to_hamiltonian_closed_shell(i,j,k,l,J1,J2,J3,cut,vs4D); 
-            } else if(spinRestricted) {
-              find_all_contributions_to_hamiltonian_spinRestricted(i,j,k,l,J1,J2,J3,cut,vs4D); 
+            if(walker_type==0) {
+              find_all_contributions_to_hamiltonian_closed_shell(aa_only,i,j,k,l,J1,J2,J3,J1a,J2a,J3a,cut,vs4D);
+            } else if(walker_type==1) {
+              if(spinRestricted)
+                find_all_contributions_to_hamiltonian_spinRestricted(aa_only,i,j,k,l,J1,J2,J3,J1a,J2a,J3a,cut,vs4D);
+              else
+                find_all_contributions_to_hamiltonian_general(aa_only,i,j,k,l,J1,J2,J3,J1a,J2a,J3a,cut,vs4D);
+            } else if(walker_type==2) {
+                find_all_contributions_to_hamiltonian_ghf(aa_only,i,j,k,l,J1,J2,J3,J1a,J2a,J3a,cut,vs4D);
             } else {
-              find_all_contributions_to_hamiltonian_general(i,j,k,l,J1,J2,J3,cut,vs4D); 
-              APP_ABORT(" Error: Finish implementation \n\n\n");
+              APP_ABORT(" Error: Unknown walker type in createHamiltonianForPureDeterminant. \n");
             }
-            cnt2+=add_allowed_terms(vs4D,occ_a,occ_b, Vijkl, true);                    
+            cnt2+=add_allowed_terms(vs4D,occ_a,occ_b, Vijkl, true, walker_type==2);                    
         }
         }
         }
@@ -4492,282 +5300,6 @@ namespace qmcplusplus
         Timer.stop("Generic");
         app_log()<<"Time to generate full Hamiltonian from factorized form: " <<Timer.total("Generic") <<std::endl; 
  
-      } else {
-
-        Timer.reset("Generic");
-        Timer.start("Generic");
-        // count number of terms
-        cnt2 = 0;
-        std::vector<s4D<ValueType> > vs4D;
-        vs4D.reserve(24);
-        std::vector<s4D<ValueType> > v2s4D;
-        v2s4D.reserve(24);
-        std::vector<s4D<ValueType> > v3s4D;
-        v3s4D.reserve(24);
-        // parallelize these loops later and reduce final count  
-        int cnter=0, npr = myComm->size(), rk = myComm->rank(); 
-        for(IndexType i=0; i<NMO; i++)  {
-        for(IndexType j=0; j<NMO; j++,cnter++)  {
-         if( cnter%npr != rk ) continue;  
-        for(IndexType k=0; k<NMO; k++)  {
-        for(IndexType l=0; l<NMO; l++)  {
-
-          if(closed_shell) {
-            // add 2*<ij|kl>-<ij|lk>          
-// THIS IS WRONG!!!!!!!!!!!!!!!!!!!!!         
-// closed_shell integrals have a different symmetry 
-            s4D<ValueType> ijkl = std::make_tuple(i,j,k,l,static_cast<ValueType>(0.0));
-            vs4D.clear();
-            find_equivalent_OneBar_for_integral_list(ijkl,vs4D);
-            std::sort (vs4D.begin(), vs4D.end(), mySort);
-            if(ijkl == vs4D[0]) {
-              ValueType v, v1 = H(i,j,k,l);
-              if(i!=j && k!=l) v = 2*v1 - H(i,j,l,k);
-              else v = v1; 
-              if(std::abs(v) > cut) { 
-                v2s4D.clear();
-                find_equivalent_OneBar_for_hamiltonian_generation(ijkl,v2s4D);
-                cnt2 += count_allowed_terms(v2s4D,occ_a,occ_a);
-              }
-            } 
-          } else if(spinRestricted) {
-            ValueType v1, v2, v3, v4;
-  
-            bool done=false;
-            // < i j | k l> , alpha/beta and beta/alpha sectors
-            s4D<ValueType> ijkl = std::make_tuple(i,j,k,l,static_cast<ValueType>(0.0));
-            vs4D.clear();
-            find_equivalent_OneBar_for_integral_list(ijkl,vs4D);
-            std::sort (vs4D.begin(), vs4D.end(), mySort);
-            if(ijkl == vs4D[0]) {
-              v1 = H(i,j,k,l);
-              done=true;
-              if(std::abs(v1) > cut)  {  
-                // transform into alpha/beta and beta/alpha sectors  
-                v2s4D.clear();
-                v3s4D.clear();
-                find_equivalent_OneBar_for_hamiltonian_generation(ijkl,v2s4D); 
-                for(int i=0; i<v2s4D.size(); i++) {
-                  v3s4D.push_back( std::forward_as_tuple(std::get<0>(v2s4D[i]),std::get<1>(v2s4D[i])+NMO,std::get<2>(v2s4D[i]),std::get<3>(v2s4D[i])+NMO,std::get<4>(v2s4D[i]))  );
-                  v3s4D.push_back( std::forward_as_tuple(std::get<0>(v2s4D[i])+NMO,std::get<1>(v2s4D[i]),std::get<2>(v2s4D[i])+NMO,std::get<3>(v2s4D[i]),std::get<4>(v2s4D[i]))  );
-                }
-                // eliminate unnecessary terms 
-                cnt2 += count_allowed_terms(v3s4D,occ_a,occ_b);
-              }
-            }
-          
-            // < i j || k l> , alpha and beta sectors  
-            if(i!=j && k!=l) {
-
-              vs4D.clear();
-              find_equivalent_TwoBar_for_integral_list(ijkl,vs4D);
-              std::sort (vs4D.begin(), vs4D.end(), mySort);
-              if(ijkl == vs4D[0]) {
-                if(done) v2 = v1 - H(i,j,l,k);
-                else v2 = H_2bar(i,j,k,l);
-                if(std::abs(v2) > cut)  {  
-                  // transform into alpha/beta and beta/alpha sectors  
-                  v2s4D.clear();
-                  find_equivalent_TwoBar_for_hamiltonian_generation(ijkl,v2s4D);
-                  cnt2 += count_allowed_terms(v2s4D,occ_a,occ_b);
-                  for(int i=0; i<v2s4D.size(); i++) {
-                    std::get<0>(v2s4D[i]) += NMO;
-                    std::get<1>(v2s4D[i]) += NMO;
-                    std::get<2>(v2s4D[i]) += NMO;
-                    std::get<3>(v2s4D[i]) += NMO;
-                  }
-                  cnt2 += count_allowed_terms(v2s4D,occ_a,occ_b);
-                }
-              }
-            }
-          } else {
-
-            // < i j | k l> , alpha/beta and beta/alpha sectors
-            s4D<ValueType> ijkl_ab = std::make_tuple(i,j+NMO,k,l+NMO,static_cast<ValueType>(0.0));
-            vs4D.clear();
-            find_equivalent_OneBar_for_integral_list(ijkl_ab,vs4D);
-            std::sort (vs4D.begin(), vs4D.end(), mySort);
-            if(ijkl_ab == vs4D[0]) {
-              ValueType v1 = H(i,j+NMO,k,l+NMO);
-              if(std::abs(v1) > cut)  {  
-                // transform into alpha/beta and beta/alpha sectors  
-                v2s4D.clear();
-                find_equivalent_OneBar_for_hamiltonian_generation(ijkl_ab,v2s4D); 
-                // eliminate unnecessary terms 
-                cnt2 += count_allowed_terms(v2s4D,occ_a,occ_b);
-              }
-            }
-
-            s4D<ValueType> ijkl = std::make_tuple(i,j,k,l,static_cast<ValueType>(0.0));
-            // < i j || k l> , alpha and beta sectors  
-            if(i!=j && k!=l) {
-
-              vs4D.clear();
-              find_equivalent_TwoBar_for_integral_list(ijkl,vs4D);
-              std::sort (vs4D.begin(), vs4D.end(), mySort);
-              if(ijkl == vs4D[0]) {
-                // alpha
-                ValueType v1 = H_2bar(i,j,k,l);
-                if(std::abs(v1) > cut)  {  
-                  v2s4D.clear();
-                  find_equivalent_TwoBar_for_hamiltonian_generation(ijkl,v2s4D);
-                  cnt2 += count_allowed_terms(v2s4D,occ_a,occ_b);
-                }
-                v1 = H_2bar(i+NMO,j+NMO,k+NMO,l+NMO);
-                if(std::abs(v1) > cut)  {  
-                  v2s4D.clear();
-                  find_equivalent_TwoBar_for_hamiltonian_generation(ijkl,v2s4D);
-                  cnt2 += count_allowed_terms(v2s4D,occ_a,occ_b);
-                }
-              }
-            }
-          } // closed_shell/spinRestricted/etc
-        }
-        }
-        }
-        }
-
-        std::cout.flush();
-        myComm->allreduce(cnt2);
-        number_of_terms = cnt2;
-        Vijkl.reserve(cnt2);
-
-        cnter = 0;
-        cnt2=0;
-        for(IndexType i=0; i<NMO; i++)  {
-        for(IndexType j=0; j<NMO; j++, cnter++)  {
-         if( cnter%npr != rk ) continue;  
-        for(IndexType k=0; k<NMO; k++)  {
-        for(IndexType l=0; l<NMO; l++)  {
-
-          if(closed_shell) {
-            // add 2*<ij|kl>-<ij|lk>          
-      APP_ABORT("ERROR: CLosed_shell hamiltonian not working. \n\n\n");      
-            s4D<ValueType> ijkl = std::make_tuple(i,j,k,l,static_cast<ValueType>(0.0));
-            vs4D.clear();
-            find_equivalent_OneBar_for_integral_list(ijkl,vs4D);
-            std::sort (vs4D.begin(), vs4D.end(), mySort);
-            if(ijkl == vs4D[0]) {
-              ValueType v, v1 = H(i,j,k,l);
-              if(i!=j && k!=l) v = 2*v1 - H(i,j,l,k);
-              else v = v1; 
-              if(std::abs(v) > cut) { 
-                v2s4D.clear();
-                std::get<4>(ijkl) = ValueType(v); 
-                find_equivalent_OneBar_for_hamiltonian_generation(ijkl,v2s4D);
-                cnt2+=add_allowed_terms(v2s4D,occ_a,occ_a,Vijkl,true);
-              }
-            } 
-          } else if(spinRestricted) {
-            ValueType v1, v2, v3, v4;
-
-            bool done=false;
-            // < i j | k l> , alpha/beta and beta/alpha sectors
-            s4D<ValueType> ijkl = std::make_tuple(i,j,k,l,static_cast<ValueType>(0.0));
-            vs4D.clear();
-            find_equivalent_OneBar_for_integral_list(ijkl,vs4D);
-            std::sort (vs4D.begin(), vs4D.end(), mySort);
-            if(ijkl == vs4D[0]) {
-              v1 = H(i,j,k,l);
-              done=true;
-              if(std::abs(v1) > cut)  {  
-                // transform into alpha/beta and beta/alpha sectors  
-                v2s4D.clear();
-                v3s4D.clear();
-                std::get<4>(ijkl) = ValueType(v1); 
-                find_equivalent_OneBar_for_hamiltonian_generation(ijkl,v2s4D); 
-                for(int i=0; i<v2s4D.size(); i++) {
-                  v3s4D.push_back( std::forward_as_tuple(std::get<0>(v2s4D[i]),std::get<1>(v2s4D[i])+NMO,std::get<2>(v2s4D[i]),std::get<3>(v2s4D[i])+NMO,std::get<4>(v2s4D[i]))  );
-                  v3s4D.push_back( std::forward_as_tuple(std::get<0>(v2s4D[i])+NMO,std::get<1>(v2s4D[i]),std::get<2>(v2s4D[i])+NMO,std::get<3>(v2s4D[i]),std::get<4>(v2s4D[i]))  );
-                }
-                // eliminate unnecessary terms 
-                cnt2+=add_allowed_terms(v3s4D,occ_a,occ_b,Vijkl,true);
-              }
-            }
-          
-            // < i j || k l> , alpha and beta sectors  
-            if(i!=j && k!=l) {
-              std::get<4>(ijkl) = ValueType(0);
-              vs4D.clear();
-              find_equivalent_TwoBar_for_integral_list(ijkl,vs4D);
-              std::sort (vs4D.begin(), vs4D.end(), mySort);
-              if(ijkl == vs4D[0]) {
-                if(done) v2 = v1 - H(i,j,l,k);
-                else v2 = H_2bar(i,j,k,l);
-                if(std::abs(v2) > cut)  {  
-                  // transform into alpha/beta and beta/alpha sectors  
-                  v2s4D.clear();
-                  std::get<4>(ijkl) = ValueType(v2);
-                  find_equivalent_TwoBar_for_hamiltonian_generation(ijkl,v2s4D);
-                  cnt2+=add_allowed_terms(v2s4D,occ_a,occ_b,Vijkl,true);
-                  for(int i=0; i<v2s4D.size(); i++) {
-                    std::get<0>(v2s4D[i]) += NMO;
-                    std::get<1>(v2s4D[i]) += NMO;
-                    std::get<2>(v2s4D[i]) += NMO;
-                    std::get<3>(v2s4D[i]) += NMO;
-                  }
-                  cnt2+=add_allowed_terms(v2s4D,occ_a,occ_b,Vijkl,true);
-                }
-              }
-            }
-          } else {
-
-            // < i j | k l> , alpha/beta and beta/alpha sectors
-            s4D<ValueType> ijkl_ab = std::make_tuple(i,j+NMO,k,l+NMO,static_cast<ValueType>(0.0));
-            vs4D.clear();
-            find_equivalent_OneBar_for_integral_list(ijkl_ab,vs4D);
-            std::sort (vs4D.begin(), vs4D.end(), mySort);
-            if(ijkl_ab == vs4D[0]) {
-              ValueType v1 = H(i,j+NMO,k,l+NMO);
-              if(std::abs(v1) > cut)  {  
-                // transform into alpha/beta and beta/alpha sectors  
-                v2s4D.clear();
-                std::get<4>(ijkl_ab) = ValueType(v1);
-                find_equivalent_OneBar_for_hamiltonian_generation(ijkl_ab,v2s4D); 
-                // eliminate unnecessary terms 
-                cnt2+=add_allowed_terms(v2s4D,occ_a,occ_b,Vijkl,true);
-              }
-            }
-
-            s4D<ValueType> ijkl = std::make_tuple(i,j,k,l,static_cast<ValueType>(0.0));
-            // < i j || k l> , alpha and beta sectors  
-            if(i!=j && k!=l) {
-
-              vs4D.clear();
-              find_equivalent_TwoBar_for_integral_list(ijkl,vs4D);
-              std::sort (vs4D.begin(), vs4D.end(), mySort);
-              if(ijkl == vs4D[0]) {
-                // alpha
-                ValueType v1 = H_2bar(i,j,k,l);
-                if(std::abs(v1) > cut)  {  
-                  v2s4D.clear();
-                  std::get<4>(ijkl) = ValueType(v1);
-                  find_equivalent_TwoBar_for_hamiltonian_generation(ijkl,v2s4D);
-                  cnt2+=add_allowed_terms(v2s4D,occ_a,occ_b,Vijkl,true);
-                }
-                v1 = H_2bar(i+NMO,j+NMO,k+NMO,l+NMO);
-                if(std::abs(v1) > cut)  {  
-                  v2s4D.clear();
-                  std::get<4>(ijkl) = ValueType(v1);
-                  find_equivalent_TwoBar_for_hamiltonian_generation(ijkl,v2s4D);
-                  cnt2+=add_allowed_terms(v2s4D,occ_a,occ_b,Vijkl,true);
-                }
-              }
-            }
-          } // closed_shell/spinRestricted/etc
-        }
-        }
-        }
-        }
-        myComm->barrier();
-        Timer.stop("Generic");
-        app_log()<<"Time to generate full Hamiltonian from factorized form: " <<Timer.total("Generic") <<std::endl; 
-
-        myComm->allreduce(cnt2);
-        app_log()<<"cnt2: " <<cnt2 <<std::endl;
-
-      } // test_algo
-
       myComm->barrier();
 
       Timer.reset("Generic");
@@ -4813,73 +5345,59 @@ namespace qmcplusplus
 
     } else {  //factorizedHamiltonian 
 
-// You do not need V2_2bar at all.
-// Notice that for every ijkl on the list, ijlk should also be on the list 
-// It should be the smallest member of its symmetry group (at least for real. 
-// Think it through for std::complex. !!!
-// So all you need to do is to generate the IJ array you used in the generalSD
-// case and for every ijkl, search the remainig ij** sector (which you will have in
-// the parallel case) for the exchange part. If it is non-zero it will be there.
-// Then add all the necessary permutations (including the term ijlk-ijkl )
-// This can be done in parallel with locks like the rest of the code does
-// This also works on the generalSD routine, avoids V2_full 
-
-
 // for parallel algorithm with distributed matrices, count the number of terms
 // in the hamiltonian and divide evenly among nodes on the TG.
 // Then the cores on the local node work on the local segment 
-
-     if(test_algo) {
-
-      app_log()<<"Testing new algorithm in createHamiltonian. \n";
 
       Timer.reset("Generic");
       Timer.start("Generic");
 
       std::vector<s4D<ValueType> > vs4D;  
-      vs4D.reserve(24);
+      vs4D.reserve(48);
       long N = spinRestricted?NMO:2*NMO;
-      if(IJ.size() == 0) {
-        if(spinRestricted)
-          IJ.resize(NMO*(NMO+1)/2+1);
-        else
-          IJ.resize(2*NMO*(2*NMO+1)/2+1);
-        long nt=0;
-        OrbitalType i,j,k,l;
-        OrbitalType i0=std::get<0>(V2[0]);
-        OrbitalType j0=std::get<1>(V2[0]);
-        long p2, p1 = mapUT(i0,j0,N);  
-        for(long ii=0; ii<=p1; ii++) IJ[ii]=0;
-        ValueType V;
-        for(s4Dit it = V2.begin(); it != V2.end(); it++, nt++) {
-          std::tie (i,j,k,l,V) = *it;
-          if(i!=i0 || j!=j0) {
-            p2 = mapUT(i,j,N);
-            for(long ii=p1+1; ii<=p2; ii++) IJ[ii]=nt;
-            i0=i;
-            j0=j;
-            p1=p2;
-          }
-        }
-        for(long ii=p1+1; ii<IJ.size(); ii++) IJ[ii]=nt;
-      }
+      // this should already exist, just in case
+      //if(IJ.size() == 0) 
+        //generateIJ();
 
 // right now, the algorithm will add all the terms associated with a given quartet (ijkl)
 // at once. For the given ijkl, 3 (6) possible combinations can appear in the list for real (complex)  
 //  Only do the smallest of the 3 (6) possible combinations to avoid duplicated 
 
-      if( isComplex( std::get<4>(*(V2.begin())) ) ) {
-        APP_ABORT("New algorithm doesn't yet work for std::complex matrix elements. \n");
-      }
+#if defined(QMC_COMPLEX)
+      std::vector<s4D<ValueType>> ineq_ijkl(6);
+      std::vector<bool> setJ(6);
+#else
+      std::vector<s4D<ValueType>> ineq_ijkl(3);
+      std::vector<bool> setJ(3);
+#endif
+
+      auto search_in_V2_IJ = [] (s4Dit it1, s4Dit it2,s4D<ValueType>& ijkl) { 
+          s4Dit first = std::lower_bound(it1,it2,ijkl,
+             [] (const s4D<ValueType>& a, const s4D<ValueType>& b)
+             {return (std::get<2>(a)<std::get<2>(b)) ||
+                     (!(std::get<2>(b)<std::get<2>(a))&&(std::get<3>(a)<std::get<3>(b)));} );
+          if (first!=it2 && (std::get<2>(ijkl)==std::get<2>(*first)) && (std::get<3>(ijkl)==std::get<3>(*first))) 
+            return std::make_tuple(std::get<4>(*first),true);
+          return std::make_tuple(ValueType(0),false);   
+      };  
 
       ValueType zero = ValueType(0);
       cnt2=0; 
       long npr = myComm->size(), rk = myComm->rank();
       OrbitalType i,j,k,l,j1,k1,l1,j2,k2,l2;
-      ValueType J1,J2,J3,fct;
-      // to avoid race conditions, only the smallest from the symmetry inequivalent terms 
-      // is treated directly  
-      for(long p=0, nt=0; p<IJ.size()-1; p++) {
+      ValueType J1,J2,J3,J1a=zero,J2a=zero,J3a=zero,fct;
+      long p_min=0, p_max=IJ.size()-1;
+// if integrals are distributed, 
+//   distribute work over min_i/max_i sector among processors in the Hamiltonian TG
+      if(distribute_Ham) {
+        p_min = mapUT(static_cast<long>(min_i),static_cast<long>(min_i),N);
+        if( max_i != NMO)   // FIX FIX FIX with SPIN_RESTRICTED 
+          p_max = mapUT(static_cast<long>(max_i),static_cast<long>(max_i),N);
+        // in this case, npr and rk are based on the extended TG (the one which includes all cores within a node)
+        npr = TG.getTGSize(); 
+        rk = TG.getTGRank(); 
+      }  
+      for(long p=p_min, nt=0; p<p_max; p++) {
         // from n->m, I have all non-zero (k,l) for a given (i,j), with i<=j  
         long n = IJ[p];
         long m = IJ[p+1];
@@ -4893,50 +5411,181 @@ namespace qmcplusplus
           // J3 = <ik|jl> or <il|jk>  
           std::tie (i,j,k,l,J1) = *it;        
 
-          s4D<ValueType> ijkl = std::make_tuple(i,j,k,l,J1); 
-          s4D<ValueType> ijlk = find_smaller_equivalent_OneBar_for_integral_list(std::forward_as_tuple(i,j,l,k,J1)); 
-          s4D<ValueType> ikjl = find_smaller_equivalent_OneBar_for_integral_list(std::forward_as_tuple(i,k,j,l,J1)); 
-          if( mySort(ijlk,ijkl) || mySort(ikjl,ijkl) ) continue; 
-          J2=J3=zero; 
-          // look for <ij|lk>
-          if(i==j || l==k) {
-            J2=J1; 
-          } else { 
-            long p0 = mapUT(i,std::get<1>(ijlk),N);
-            s4Dit it1 = V2.begin()+IJ[p0];
-            s4Dit it2 = V2.begin()+IJ[p0+1];
-            s4Dit first = std::lower_bound(it1,it2,ijlk,
-               [] (const s4D<ValueType>& a, const s4D<ValueType>& b) 
-               {return (std::get<2>(a)<std::get<2>(b)) || 
-                       (!(std::get<2>(b)<std::get<2>(a))&&(std::get<3>(a)<std::get<3>(b)));} );
-            if (first!=it2 && (std::get<2>(ijlk)==std::get<2>(*first)) && (std::get<3>(ijlk)==std::get<3>(*first))) {
-              J2 = std::get<4>(*first);           
+          IndexType occi,occj,occk,occl;
+          occi = (occ_a[i]||occ_b[i])?1:0;
+          occj = (occ_a[j]||occ_b[j])?1:0;
+          occk = (occ_a[k]||occ_b[k])?1:0;
+          occl = (occ_a[l]||occ_b[l])?1:0;
+          if( occi+occj+occk+occl < 2) continue;  
+
+// the smallest permutation will satisfy  i<=j<=k<=l
+// so need to generte smallest of the other sectors, as long as the smallest one is 
+// in the list. You need to make sure that the smallest one in the list is processed
+// Algorithm:
+//  1. If (i,j,k,l) is the smallest permutation, keep going
+//  2. If it is not, make a ordered list of all inequivalent permutations and record your position in the list 
+//      a. For every term in the list before yours, 
+//          i1. If the element is in the list, do nothing and continue to next element in V2.
+//          i2. If not in the list, set the value of the appropriate Jx to zero and test next element in permutation list  
+//  At the end you either do nothing because there is a permutationally inequivalent term smaller than you in the list, 
+//  or you process the current term with all previous Js set to zero to avoid recalculating them.         
+
+
+          if( i<=j && i<=k && i<=l && j<=k && j<=l && k<=l) {
+            ineq_ijkl[0] = *it;
+            setJ[0]=true;
+            std::fill(setJ.begin()+1,setJ.end(),false);
+#if defined(QMC_COMPLEX)
+            ineq_ijkl[1] = std::forward_as_tuple(i,j,l,k,zero);
+            ineq_ijkl[2] = std::forward_as_tuple(i,k,j,l,zero);
+            ineq_ijkl[3] = std::forward_as_tuple(i,k,l,j,zero);
+            ineq_ijkl[4] = std::forward_as_tuple(i,l,j,k,zero);
+            ineq_ijkl[5] = std::forward_as_tuple(i,l,k,j,zero);
+#else
+            ineq_ijkl[1] = (j<=k)?(std::forward_as_tuple(i,j,l,k,zero)):(std::forward_as_tuple(i,k,l,j,zero));    
+            ineq_ijkl[2] = (k<=l)?(std::forward_as_tuple(i,k,j,l,zero)):(std::forward_as_tuple(i,l,j,k,zero));    
+#endif             
+          } else {
+
+            // make sure there is a smaller one on the list
+            // 1. generate smallest permutation
+            OrbitalType i_=i,j_=j,k_=k,l_=l;
+            if(j_<i_) std::swap(i_,j_); 
+            if(k_<i_) std::swap(i_,k_); 
+            if(l_<i_) std::swap(i_,l_); 
+            if(k_<j_) std::swap(j_,k_); 
+            if(l_<j_) std::swap(j_,l_); 
+            if(l_<k_) std::swap(k_,l_); 
+            std::fill(setJ.begin(),setJ.end(),false);
+            ineq_ijkl[0] = std::forward_as_tuple(i_,j_,k_,l_,zero);
+#if defined(QMC_COMPLEX)
+            ineq_ijkl[1] = std::forward_as_tuple(i_,j_,l_,k_,zero);
+            ineq_ijkl[2] = std::forward_as_tuple(i_,k_,j_,l_,zero);
+            ineq_ijkl[3] = std::forward_as_tuple(i_,k_,l_,j_,zero);
+            ineq_ijkl[4] = std::forward_as_tuple(i_,l_,j_,k_,zero);
+            ineq_ijkl[5] = std::forward_as_tuple(i_,l_,k_,j_,zero);
+#else
+            ineq_ijkl[1] = (j_<=k_)?(std::forward_as_tuple(i_,j_,l_,k_,zero)):(std::forward_as_tuple(i_,k_,l_,j_,zero));
+            ineq_ijkl[2] = (k_<=l_)?(std::forward_as_tuple(i_,k_,j_,l_,zero)):(std::forward_as_tuple(i_,l_,j_,k_,zero));
+#endif
+            bool process=false;
+            for(int i=0; i<ineq_ijkl.size(); i++) {
+              if( myEqv(ineq_ijkl[i],*it) ) {
+                std::get<4>(ineq_ijkl[i])=J1;
+                setJ[i]=true;
+                process=true;
+                break; 
+              } else {  
+                long p0 = mapUT(std::get<0>(ineq_ijkl[i]),std::get<1>(ineq_ijkl[i]),N);
+                if(std::get<1>(search_in_V2_IJ(V2.begin()+IJ[p0], V2.begin()+IJ[p0+1], ineq_ijkl[i]))) {
+                  process=false;
+                  break;
+                } else {
+                  setJ[i]=true;
+                  std::get<4>(ineq_ijkl[i])=zero;  
+                }               
+              }  
             }
-          }
-          // look for <ik|jl>
-          if(j==k) {
-            J3=J1; 
-          } else { 
-            long p0 = mapUT(i,std::get<1>(ikjl),N);
-            s4Dit it1 = V2.begin()+IJ[p0];
-            s4Dit it2 = V2.begin()+IJ[p0+1];
-            s4Dit first = std::lower_bound(it1,it2,ikjl,
-             [] (const s4D<ValueType>& a, const s4D<ValueType>& b) 
-               {return (std::get<2>(a)<std::get<2>(b)) || 
-                       (!(std::get<2>(b)<std::get<2>(a))&&(std::get<3>(a)<std::get<3>(b)));} );
-            if (first!=it2 && (std::get<2>(ikjl)==std::get<2>(*first)) && (std::get<3>(ikjl)==std::get<3>(*first))) {
-              J3 = std::get<4>(*first); 
-            }
+            if(!process) continue;
           }
 
+          // at this point, I know that:
+          //    1. this is a term I must process 
+          //    2. the smallest permutation is in ineq_ijkl[0] with J1=std::get<4>(ineq_ijkl[0])
+          //    3. some values of Js might already be calculated based on setJ[k] 
+          std::tie (i,j,k,l,J1) = ineq_ijkl[0];
+
+          // look for <ij|lk>
+          if(setJ[1]) {    
+            J2 = std::get<4>(ineq_ijkl[1]);
+          } else if(i==j || l==k) {
+            J2=J1; 
+          } else { 
+            long p0 = mapUT(i,std::get<1>(ineq_ijkl[1]),N);
+            J2 = std::get<0>(search_in_V2_IJ(V2.begin()+IJ[p0], V2.begin()+IJ[p0+1], ineq_ijkl[1]));
+          }
+
+          // look for <ik|jl>
+          if(setJ[2]) {
+            J3 = std::get<4>(ineq_ijkl[2]);
+          } else if(j==k) {
+            J3=J1; 
+          } else if(i==l) {
+            J3 = myconj(J1);  
+          } else { 
+            long p0 = mapUT(i,std::get<1>(ineq_ijkl[2]),N);
+            J3 = std::get<0>(search_in_V2_IJ(V2.begin()+IJ[p0], V2.begin()+IJ[p0+1], ineq_ijkl[2]));
+          }
+
+#if defined(QMC_COMPLEX)
+              
+            //  J2a = <ik|lj>
+            if(setJ[3]) {
+              J2a = std::get<4>(ineq_ijkl[3]);
+            } else if(l==j) {
+              J2a=J3;
+            } else if(i==k) {
+              J2a=J3;
+            } else if(k==j) {
+              J2a=J2;
+            } else if(i==l) {
+              J2a=std::conj(J2);
+            } else {
+              long p0 = mapUT(i,std::get<1>(ineq_ijkl[3]),N);
+              J2a = std::get<0>(search_in_V2_IJ(V2.begin()+IJ[p0], V2.begin()+IJ[p0+1], ineq_ijkl[3]));
+            }
+            
+            //  J3a = <il|jk> 
+            if(setJ[4]) {
+              J3a = std::get<4>(ineq_ijkl[4]);
+            } else if(l==j) {
+              J3a=J2;
+            } else if(i==k) {
+              J3a=std::conj(J2);
+            } else if(k==l) {
+              J3a=J3;
+            } else if(i==j) {
+              J3a=std::conj(J3);
+            } else {
+              long p0 = mapUT(i,std::get<1>(ineq_ijkl[4]),N);
+              J3a = std::get<0>(search_in_V2_IJ(V2.begin()+IJ[p0], V2.begin()+IJ[p0+1], ineq_ijkl[4]));
+            }
+
+            //  For complex, there are 3 extra non-symmetric terms:
+            //  J1a = <il|kj>
+            if(setJ[5]) {
+              J1a = std::get<4>(ineq_ijkl[5]);
+            } else if(k==l) {
+              J1a=J2a;
+            } else if(i==j) {
+              J1a=std::conj(J2a);
+            } else if(j==k) {
+              J1a=J3a;
+            } else if(i==l) {
+              J1a=J3a;
+            } else if(l==j) {
+              J1a=J1;
+            } else if(i==k) {
+              J1a=std::conj(J1);
+            } else {
+              long p0 = mapUT(i,std::get<1>(ineq_ijkl[5]),N);
+              J1a = std::get<0>(search_in_V2_IJ(V2.begin()+IJ[p0], V2.begin()+IJ[p0+1], ineq_ijkl[5]));
+            }
+
+#endif
+
           vs4D.clear();
-          if(closed_shell) {
-            find_all_contributions_to_hamiltonian_closed_shell(i,j,k,l,J1,J2,J3,cut,vs4D); 
-          } else if(spinRestricted) {
-            find_all_contributions_to_hamiltonian_spinRestricted(i,j,k,l,J1,J2,J3,cut,vs4D); 
+          if(walker_type==0) {
+            find_all_contributions_to_hamiltonian_closed_shell(aa_only,i,j,k,l,J1,J2,J3,J1a,J2a,J3a,cut,vs4D);
+          } else if(walker_type==1) {
+            if(spinRestricted)
+              find_all_contributions_to_hamiltonian_spinRestricted(aa_only,i,j,k,l,J1,J2,J3,J1a,J2a,J3a,cut,vs4D);
+            else
+              find_all_contributions_to_hamiltonian_general(aa_only,i,j,k,l,J1,J2,J3,J1a,J2a,J3a,cut,vs4D);
+          } else if(walker_type==2) {
+              find_all_contributions_to_hamiltonian_ghf(aa_only,i,j,k,l,J1,J2,J3,J1a,J2a,J3a,cut,vs4D);
           } else {
-            find_all_contributions_to_hamiltonian_general(i,j,k,l,J1,J2,J3,cut,vs4D); 
-            APP_ABORT(" Error: Finish implementation \n\n\n");
+            APP_ABORT(" Error: Unknown walker type in createHamiltonianForPureDeterminant. \n");
           }
           cnt2+=count_allowed_terms(vs4D,occ_a,occ_b);                    
         }
@@ -4946,7 +5595,7 @@ namespace qmcplusplus
       Vijkl.allocate(cnt2+1000);
       cnt2=0; 
 
-      for(long p=0, nt=0; p<IJ.size()-1; p++) {
+      for(long p=p_min, nt=0; p<p_max; p++) {
         // from n->m, I have all non-zero (k,l) for a given (i,j), with i<=j  
         long n = IJ[p];
         long m = IJ[p+1];
@@ -4955,58 +5604,167 @@ namespace qmcplusplus
         if( nt%npr != rk ) continue;
         s4Dit end = V2.begin()+m; 
         for(s4Dit it = V2.begin()+n; it != end; it++) {
-          // J1 = <ij|kl>   
-          // J2 = <ij|lk>   
-          // J3 = <ik|jl>   
-          std::tie (i,j,k,l,J1) = *it;        
-          s4D<ValueType> ijkl = std::make_tuple(i,j,k,l,J1); 
-          // this can be made faster
-          s4D<ValueType> ijlk = find_smaller_equivalent_OneBar_for_integral_list(std::forward_as_tuple(i,j,l,k,J1)); 
-          // this can be made faster
-          s4D<ValueType> ikjl = find_smaller_equivalent_OneBar_for_integral_list(std::forward_as_tuple(i,k,j,l,J1)); 
-          if( mySort(ijlk,ijkl) || mySort(ikjl,ijkl) ) continue; 
-          J2=J3=zero; 
-          // look for <ij|lk>
-          if(i==j || l==k) {
-            J2=J1; 
-          } else { 
-            long p0 = mapUT(i,std::get<1>(ijlk),N);
-            s4Dit it1 = V2.begin()+IJ[p0];
-            s4Dit it2 = V2.begin()+IJ[p0+1];
-            s4Dit first = std::lower_bound(it1,it2,ijlk,
-               [] (const s4D<ValueType>& a, const s4D<ValueType>& b) 
-               {return (std::get<2>(a)<std::get<2>(b)) || 
-                       (!(std::get<2>(b)<std::get<2>(a))&&(std::get<3>(a)<std::get<3>(b)));} );
-            if (first!=it2 && (std::get<2>(ijlk)==std::get<2>(*first)) && (std::get<3>(ijlk)==std::get<3>(*first))) {
-              J2 = std::get<4>(*first);           
+
+          // for details see above
+          std::tie (i,j,k,l,J1) = *it;
+
+          IndexType occi,occj,occk,occl;
+          occi = (occ_a[i]||occ_b[i])?1:0;
+          occj = (occ_a[j]||occ_b[j])?1:0;
+          occk = (occ_a[k]||occ_b[k])?1:0;
+          occl = (occ_a[l]||occ_b[l])?1:0;
+          if( occi+occj+occk+occl < 2) continue;
+
+          if( i<=j && i<=k && i<=l && j<=k && j<=l && k<=l) {
+            ineq_ijkl[0] = *it;
+            setJ[0]=true;
+            std::fill(setJ.begin()+1,setJ.end(),false);
+#if defined(QMC_COMPLEX)
+            ineq_ijkl[1] = std::forward_as_tuple(i,j,l,k,zero);
+            ineq_ijkl[2] = std::forward_as_tuple(i,k,j,l,zero);
+            ineq_ijkl[3] = std::forward_as_tuple(i,k,l,j,zero);
+            ineq_ijkl[4] = std::forward_as_tuple(i,l,j,k,zero);
+            ineq_ijkl[5] = std::forward_as_tuple(i,l,k,j,zero);
+#else
+            ineq_ijkl[1] = (j<=k)?(std::forward_as_tuple(i,j,l,k,zero)):(std::forward_as_tuple(i,k,l,j,zero));    
+            ineq_ijkl[2] = (k<=l)?(std::forward_as_tuple(i,k,j,l,zero)):(std::forward_as_tuple(i,l,j,k,zero));    
+#endif             
+          } else {
+
+            OrbitalType i_=i,j_=j,k_=k,l_=l;
+            if(j_<i_) std::swap(i_,j_); 
+            if(k_<i_) std::swap(i_,k_); 
+            if(l_<i_) std::swap(i_,l_); 
+            if(k_<j_) std::swap(j_,k_); 
+            if(l_<j_) std::swap(j_,l_); 
+            if(l_<k_) std::swap(k_,l_); 
+            std::fill(setJ.begin(),setJ.end(),false);
+            ineq_ijkl[0] = std::forward_as_tuple(i_,j_,k_,l_,zero);
+#if defined(QMC_COMPLEX)
+            ineq_ijkl[1] = std::forward_as_tuple(i_,j_,l_,k_,zero);
+            ineq_ijkl[2] = std::forward_as_tuple(i_,k_,j_,l_,zero);
+            ineq_ijkl[3] = std::forward_as_tuple(i_,k_,l_,j_,zero);
+            ineq_ijkl[4] = std::forward_as_tuple(i_,l_,j_,k_,zero);
+            ineq_ijkl[5] = std::forward_as_tuple(i_,l_,k_,j_,zero);
+#else
+            ineq_ijkl[1] = (j_<=k_)?(std::forward_as_tuple(i_,j_,l_,k_,zero)):(std::forward_as_tuple(i_,k_,l_,j_,zero));
+            ineq_ijkl[2] = (k_<=l_)?(std::forward_as_tuple(i_,k_,j_,l_,zero)):(std::forward_as_tuple(i_,l_,j_,k_,zero));
+#endif
+            bool process=false;
+            for(int i=0; i<ineq_ijkl.size(); i++) {
+              if( myEqv(ineq_ijkl[i],*it) ) {
+                std::get<4>(ineq_ijkl[i])=J1;
+                setJ[i]=true;
+                process=true;
+                break; 
+              } else {  
+                long p0 = mapUT(std::get<0>(ineq_ijkl[i]),std::get<1>(ineq_ijkl[i]),N);
+                if(std::get<1>(search_in_V2_IJ(V2.begin()+IJ[p0], V2.begin()+IJ[p0+1], ineq_ijkl[i]))) {
+                  process=false;
+                  break;
+                } else {
+                  setJ[i]=true;
+                  std::get<4>(ineq_ijkl[i])=zero;  
+                }               
+              }  
             }
-          }
-          // look for <ik|jl>
-          if(j==k) {
-            J3=J1; 
-          } else { 
-            long p0 = mapUT(i,std::get<1>(ikjl),N);
-            s4Dit it1 = V2.begin()+IJ[p0];
-            s4Dit it2 = V2.begin()+IJ[p0+1];
-            s4Dit first = std::lower_bound(it1,it2,ikjl,
-             [] (const s4D<ValueType>& a, const s4D<ValueType>& b) 
-               {return (std::get<2>(a)<std::get<2>(b)) || 
-                       (!(std::get<2>(b)<std::get<2>(a))&&(std::get<3>(a)<std::get<3>(b)));} );
-            if (first!=it2 && (std::get<2>(ikjl)==std::get<2>(*first)) && (std::get<3>(ikjl)==std::get<3>(*first))) {
-              J3 = std::get<4>(*first); 
-            }
+            if(!process) continue;
           }
 
-          vs4D.clear();
-          if(closed_shell) {
-            find_all_contributions_to_hamiltonian_closed_shell(i,j,k,l,J1,J2,J3,cut,vs4D); 
-          } else if(spinRestricted) {
-            find_all_contributions_to_hamiltonian_spinRestricted(i,j,k,l,J1,J2,J3,cut,vs4D); 
-          } else {
-            find_all_contributions_to_hamiltonian_general(i,j,k,l,J1,J2,J3,cut,vs4D); 
-            APP_ABORT(" Error: Finish implementation \n\n\n");
+          std::tie (i,j,k,l,J1) = ineq_ijkl[0];
+
+          // look for <ij|lk>
+          if(setJ[1]) {    
+            J2 = std::get<4>(ineq_ijkl[1]);
+          } else if(i==j || l==k) {
+            J2=J1; 
+          } else { 
+            long p0 = mapUT(i,std::get<1>(ineq_ijkl[1]),N);
+            J2 = std::get<0>(search_in_V2_IJ(V2.begin()+IJ[p0], V2.begin()+IJ[p0+1], ineq_ijkl[1]));
           }
-          cnt2+=add_allowed_terms(vs4D,occ_a,occ_b, Vijkl, true);                    
+
+          // look for <ik|jl>
+          if(setJ[2]) {
+            J3 = std::get<4>(ineq_ijkl[2]);
+          } else if(j==k) {
+            J3=J1; 
+          } else if(i==l) {
+            J3 = myconj(J1);  
+          } else { 
+            long p0 = mapUT(i,std::get<1>(ineq_ijkl[2]),N);
+            J3 = std::get<0>(search_in_V2_IJ(V2.begin()+IJ[p0], V2.begin()+IJ[p0+1], ineq_ijkl[2]));
+          }
+
+#if defined(QMC_COMPLEX)
+            //  J2a = <ik|lj>
+            if(setJ[3]) {
+              J2a = std::get<4>(ineq_ijkl[3]);
+            } else if(l==j) {
+              J2a=J3;
+            } else if(i==k) {
+              J2a=J3;
+            } else if(k==j) {
+              J2a=J2;
+            } else if(i==l) {
+              J2a=std::conj(J2);
+            } else {
+              long p0 = mapUT(i,std::get<1>(ineq_ijkl[3]),N);
+              J2a = std::get<0>(search_in_V2_IJ(V2.begin()+IJ[p0], V2.begin()+IJ[p0+1], ineq_ijkl[3]));
+            }
+            
+            //  J3a = <il|jk> 
+            if(setJ[4]) {
+              J3a = std::get<4>(ineq_ijkl[4]);
+            } else if(l==j) {
+              J3a=J2;
+            } else if(i==k) {
+              J3a=std::conj(J2);
+            } else if(k==l) {
+              J3a=J3;
+            } else if(i==j) {
+              J3a=std::conj(J3);
+            } else {
+              long p0 = mapUT(i,std::get<1>(ineq_ijkl[4]),N);
+              J3a = std::get<0>(search_in_V2_IJ(V2.begin()+IJ[p0], V2.begin()+IJ[p0+1], ineq_ijkl[4]));
+            }
+
+            //  For complex, there are 3 extra non-symmetric terms:
+            //  J1a = <il|kj>
+            if(setJ[5]) {
+              J1a = std::get<4>(ineq_ijkl[5]);
+            } else if(k==l) {
+              J1a=J2a;
+            } else if(i==j) {
+              J1a=std::conj(J2a);
+            } else if(j==k) {
+              J1a=J3a;
+            } else if(i==l) {
+              J1a=J3a;
+            } else if(l==j) {
+              J1a=J1;
+            } else if(i==k) {
+              J1a=std::conj(J1);
+            } else {
+              long p0 = mapUT(i,std::get<1>(ineq_ijkl[5]),N);
+              J1a = std::get<0>(search_in_V2_IJ(V2.begin()+IJ[p0], V2.begin()+IJ[p0+1], ineq_ijkl[5]));
+            }
+#endif
+
+
+          vs4D.clear();
+          if(walker_type==0) {
+            find_all_contributions_to_hamiltonian_closed_shell(aa_only,i,j,k,l,J1,J2,J3,J1a,J2a,J3a,cut,vs4D);
+          } else if(walker_type==1) {
+            if(spinRestricted)
+              find_all_contributions_to_hamiltonian_spinRestricted(aa_only,i,j,k,l,J1,J2,J3,J1a,J2a,J3a,cut,vs4D);
+            else
+              find_all_contributions_to_hamiltonian_general(aa_only,i,j,k,l,J1,J2,J3,J1a,J2a,J3a,cut,vs4D);
+          } else if(walker_type==2) {
+              find_all_contributions_to_hamiltonian_ghf(aa_only,i,j,k,l,J1,J2,J3,J1a,J2a,J3a,cut,vs4D);
+          } else {
+            APP_ABORT(" Error: Unknown walker type in createHamiltonianForPureDeterminant. \n");
+          }
+          cnt2+=add_allowed_terms(vs4D,occ_a,occ_b, Vijkl, true, walker_type==2);                    
         }
       }
 
@@ -5014,260 +5772,10 @@ namespace qmcplusplus
 
       if(!communicate_Vijkl(Vijkl)) return false;
 
-
       Timer.stop("Generic");
       app_log()<<"Time to generate 2-body Hamiltonian: " <<Timer.total("Generic") <<std::endl;
 
   
-      } else {  // test_algo
-
-//*
-      s4Dit it2 = V2.begin();
-      std::vector<s4D<ValueType> > v2s4D;  
-      v2s4D.reserve(24);
-      if(!head_of_nodes) it2 = V2.end();
-      while(it2 != V2.end()) {
-       if( std::abs( std::get<4>(*it2) ) <= cut ) { it2++; continue; }
-       if(spinRestricted) {
-
-        vs4D.clear();
-        s = *it2++;
-        // generate alpha/alpha sector 
-        find_equivalent_OneBar_for_hamiltonian_generation(s,vs4D);
-        if(false && closed_shell) {
-//this is a possible problem, since both 1bar and 2 bar terms get combined into 1, so they will appear as repeated
-//and one of tjhem will be erased later on  
-          cnt2 += count_allowed_terms(vs4D,occ_a,occ_a);
-        } else {
-          // transform into alpha/beta and beta/alpha sectors  
-          v2s4D.clear();
-          for(int i=0; i<vs4D.size(); i++) {
-// in principle, this is adding extra terms, it is possible to add just i,j+N,k,l+N with a factor of 2
-            v2s4D.push_back( std::forward_as_tuple(std::get<0>(vs4D[i]),std::get<1>(vs4D[i])+NMO,std::get<2>(vs4D[i]),std::get<3>(vs4D[i])+NMO,std::get<4>(vs4D[i]))  ); 
-            v2s4D.push_back( std::forward_as_tuple(std::get<0>(vs4D[i])+NMO,std::get<1>(vs4D[i]),std::get<2>(vs4D[i])+NMO,std::get<3>(vs4D[i]),std::get<4>(vs4D[i]))  ); 
-          }
-          // eliminate unnecessary terms 
-          cnt2 += count_allowed_terms(v2s4D,occ_a,occ_b);
-        }  
-
-       } else {
-        int sector = getSpinSector(std::get<0>(*it2),std::get<1>(*it2),std::get<2>(*it2),std::get<3>(*it2));
-        switch(sector) { 
-          case 0:
-          { 
-            break;
-          } 
-          case 1: 
-          { 
-            vs4D.clear();
-            find_equivalent_OneBar_for_hamiltonian_generation(*it2,vs4D);
-            //cnt2 += vs4D.size();
-            cnt2 += count_allowed_terms(vs4D,occ_a,occ_b);
-            break;
-          } 
-          case 2: 
-          { 
-            app_error()<<"Error in SparseGeneralHamiltonian::createHamiltonianForPureDeterminant(). I should never get here. \n"; 
-            return false;  
-            break;
-          } 
-          case 3: 
-          { 
-            break;
-          } 
-        } 
-        it2++;
-       }
-      }
-
-      // for now, generating V2_2bar here.
-      // modify to avoid generation of V2_2bar, which is a waste of space 
-      if( !generate_V2_2bar() ) {
-        app_error()<<" Error generating 2bar integrals. \n";
-        return false;
-      }
-
-      it2 = V2_2bar.begin();
-      if(!head_of_nodes) it2 = V2_2bar.end();
-      // add two-bar terms (same spin) 
-      while(it2 != V2_2bar.end()) {
-       if( std::abs( std::get<4>(*it2) ) <= cut ) { it2++; continue; }
-       if(spinRestricted) {
-        vs4D.clear();
-        find_equivalent_TwoBar_for_hamiltonian_generation(*it2++,vs4D);
-        if(false && closed_shell) {
-          cnt2 += count_allowed_terms(vs4D,occ_a,occ_a);
-        } else {
-          cnt2 += count_allowed_terms(vs4D,occ_a,occ_b);
-          for(int i=0; i<vs4D.size(); i++) {
-            std::get<0>(vs4D[i]) += NMO;
-            std::get<1>(vs4D[i]) += NMO;
-            std::get<2>(vs4D[i]) += NMO;
-            std::get<3>(vs4D[i]) += NMO;
-          }
-          cnt2 += count_allowed_terms(vs4D,occ_a,occ_b);
-        }
-       } else {
-        int sector = getSpinSector(std::get<0>(*it2),std::get<1>(*it2),std::get<2>(*it2),std::get<3>(*it2));
-        switch(sector) { 
-          case 0:
-          { 
-            vs4D.clear();
-            find_equivalent_TwoBar_for_hamiltonian_generation(*it2,vs4D);
-            //cnt2 += vs4D.size();
-            cnt2 += count_allowed_terms(vs4D,occ_a,occ_b);
-            break;
-          } 
-          case 1: 
-          { 
-            app_error()<<"Error in SparseGeneralHamiltonian::createHamiltonianForPureDeterminant(). Found sector 1 term in V2_2bar. Wy???? Bug Bug Bug ???!!! \n" <<std::endl; 
-            return false;  
-            APP_ABORT("");
-            break;
-          } 
-          case 2: 
-          { 
-            app_error()<<"Error in SparseGeneralHamiltonian::createHamiltonianForPureDeterminant(). Found sector 1 term in V2_2bar. Wy???? Bug Bug Bug ???!!! \n" <<std::endl; 
-            return false;  
-            APP_ABORT("");
-            break;
-          } 
-          case 3: 
-          { 
-            vs4D.clear();
-            find_equivalent_TwoBar_for_hamiltonian_generation(*it2,vs4D);
-            //cnt2 += vs4D.size();
-            cnt2 += count_allowed_terms(vs4D,occ_a,occ_b);
-            break;
-          } 
-        } 
-        it2++;
-       }
-      }
-
-      Vijkl.allocate(cnt2);
-      it2 = V2.begin();
-      if(!head_of_nodes) it2 = V2.end();
-      while(it2 != V2.end()) {
-
-       if( std::abs( std::get<4>(*it2) ) <= cut ) { it2++; continue; }
-
-       if(false && closed_shell) {
-
-        vs4D.clear();
-        s = *it2++;
-        // generate alpha/alpha sector 
-        find_equivalent_OneBar_for_hamiltonian_generation(s,vs4D);
-        for(int i=0; i<vs4D.size(); i++) 
-          std::get<4>(vs4D[i]) *= 2.0;
-        // eliminate unnecessary terms 
-        add_allowed_terms(vs4D,occ_a,occ_a,Vijkl);
-
-       } else if(spinRestricted) {
-
-        vs4D.clear();
-        s = *it2++;
-        // generate alpha/alpha sector 
-        find_equivalent_OneBar_for_hamiltonian_generation(s,vs4D);
-        // transform into alpha/beta and beta/alpha sectors  
-        v2s4D.clear();
-        for(int i=0; i<vs4D.size(); i++) {
-          v2s4D.push_back( std::forward_as_tuple(std::get<0>(vs4D[i]),std::get<1>(vs4D[i])+NMO,std::get<2>(vs4D[i]),std::get<3>(vs4D[i])+NMO,std::get<4>(vs4D[i]))  ); 
-          v2s4D.push_back( std::forward_as_tuple(std::get<0>(vs4D[i])+NMO,std::get<1>(vs4D[i]),std::get<2>(vs4D[i])+NMO,std::get<3>(vs4D[i]),std::get<4>(vs4D[i]))  ); 
-        }
-        // eliminate unnecessary terms 
-        add_allowed_terms(v2s4D,occ_a,occ_b,Vijkl);
-
-
-       } else {
-        int sector = getSpinSector(std::get<0>(*it2),std::get<1>(*it2),std::get<2>(*it2),std::get<3>(*it2));
-        switch(sector) { 
-          case 0:
-          { 
-            break;
-          } 
-          case 1: 
-          { 
-            vs4D.clear();
-            find_equivalent_OneBar_for_hamiltonian_generation(*it2,vs4D);
-            add_allowed_terms(vs4D,occ_a,occ_b,Vijkl);
-            break;
-          } 
-          case 2: 
-          { 
-            app_error()<<"Error in SparseGeneralHamiltonian::createHamiltonianForPureDeterminant(). I should never get here. \n"; 
-            return false;  
-            break;
-          } 
-          case 3: 
-          { 
-            break;
-          } 
-        } 
-        it2++;
-       }
-      }
-
-      it2 = V2_2bar.begin();
-      if(!head_of_nodes) it2 = V2_2bar.end();
-      while(it2 != V2_2bar.end()) {
-
-       if( std::abs( std::get<4>(*it2) ) <= cut ) { it2++; continue; }
-
-       if(false && closed_shell) {
-
-        // gets alpha/alpha, add by hand beta/beta
-        vs4D.clear();
-        find_equivalent_TwoBar_for_hamiltonian_generation(*it2++,vs4D);
-        for(int i=0; i<vs4D.size(); i++) 
-          std::get<4>(vs4D[i]) *= 2.0;
-        add_allowed_terms(vs4D,occ_a,occ_a,Vijkl);
-      
-       } else if(spinRestricted) {
-
-        // gets alpha/alpha, add by hand beta/beta
-        vs4D.clear();
-        find_equivalent_TwoBar_for_hamiltonian_generation(*it2++,vs4D);
-        add_allowed_terms(vs4D,occ_a,occ_b,Vijkl);
-        for(int i=0; i<vs4D.size(); i++) { 
-          std::get<0>(vs4D[i]) += NMO;
-          std::get<1>(vs4D[i]) += NMO;
-          std::get<2>(vs4D[i]) += NMO;
-          std::get<3>(vs4D[i]) += NMO;
-        }
-        add_allowed_terms(vs4D,occ_a,occ_b,Vijkl);
-
-      } else {
-        int sector = getSpinSector(std::get<0>(*it2),std::get<1>(*it2),std::get<2>(*it2),std::get<3>(*it2));
-        switch(sector) { 
-          case 0:
-          { 
-            vs4D.clear();
-            find_equivalent_TwoBar_for_hamiltonian_generation(*it2,vs4D);
-            add_allowed_terms(vs4D,occ_a,occ_b,Vijkl);
-            break;
-          } 
-          case 1: 
-          { 
-            break;
-          } 
-          case 2: 
-          { 
-            break;
-          } 
-          case 3: 
-          { 
-            find_equivalent_TwoBar_for_hamiltonian_generation(*it2,vs4D);
-            add_allowed_terms(vs4D,occ_a,occ_b,Vijkl);
-            break;
-          } 
-        } 
-        it2++;
-       }
-      }
-     } // test_algo
-// */
-
     } // factrorizedHamiltonnian
 
 
@@ -5306,7 +5814,7 @@ namespace qmcplusplus
 
   }
 
-  bool SparseGeneralHamiltonian::communicate_Vijkl(ComplexSMSpMat& Vijkl) 
+  bool SparseGeneralHamiltonian::communicate_Vijkl(SPValueSMSpMat& Vijkl) 
   {
 
     myComm->barrier();
@@ -5345,358 +5853,54 @@ namespace qmcplusplus
     return true; 
   }
 
-  bool SparseGeneralHamiltonian::createHamiltonianForPureDeterminant( std::map<IndexType,bool>& occ_a, std::map<IndexType,bool>& occ_b, std::vector<s1D<ValueType> >& hij, ComplexSpMat& Vijkl, const RealType cut, bool closed_shell)
+#ifndef QMC_COMPLEX
+  bool SparseGeneralHamiltonian::communicate_Vijkl(SPComplexSMSpMat& Vijkl)
   {
 
-    if(factorizedHamiltonian) {
-      std::cerr<<" Error: Should not be here, SparseGeneralHamiltonian::createHamiltonianForPureDeterminant(ComplexSpMat Vijkl) has been disabled. " <<std::endl; 
-      return false;
+    myComm->barrier();
+
+    if(head_of_nodes) {
+
+      int rk,npr,ptr,n0;
+      MPI_Comm_rank(MPI_COMM_HEAD_OF_NODES,&rk);
+      MPI_Comm_size(MPI_COMM_HEAD_OF_NODES,&npr);
+      n0 = Vijkl.size(); // my number of terms, always from zero to n0
+      ptr = n0; // position to copy elements to 
+      std::vector<int> size(npr);
+      size[rk] = n0;
+      myComm->gsum(size,MPI_COMM_HEAD_OF_NODES);
+      int ntot = 0;
+      for(int i=0; i<npr; i++) ntot+=size[i];
+      if(ntot > Vijkl.capacity()) {
+        app_error()<<" Problems gathering hamiltonian. Capacity of std::vector is not sufficient: " <<ntot <<" " <<Vijkl.capacity() <<" \n";
+        return false;
+      }
+      Vijkl.resize_serial(ntot);
+      for(int i=0; i<npr; i++) {
+        if(i==rk) { // I send
+          myComm->bcast<int>(Vijkl.row_data(),n0,i,MPI_COMM_HEAD_OF_NODES);
+          myComm->bcast<int>(Vijkl.column_data(),n0,i,MPI_COMM_HEAD_OF_NODES);
+          myComm->bcast(Vijkl.values(),n0,i,MPI_COMM_HEAD_OF_NODES);
+        } else { // I reveive
+          myComm->bcast<int>(Vijkl.row_data()+ptr,size[i],i,MPI_COMM_HEAD_OF_NODES);
+          myComm->bcast<int>(Vijkl.column_data()+ptr,size[i],i,MPI_COMM_HEAD_OF_NODES);
+          myComm->bcast(Vijkl.values()+ptr,size[i],i,MPI_COMM_HEAD_OF_NODES);
+          ptr+=size[i];
+        }
+      }
     }
-
-
-// the compression is taking a very long time, possibly buggy. Check!!!! 
-    std::vector<s2D<ValueType> > Vijkl_;
-    createHamiltonianForPureDeterminant(occ_a,occ_b,hij,Vijkl_,cut, closed_shell);
-
-    Vijkl.initFroms2D(Vijkl_,true);
-     
+    myComm->barrier();
     return true;
-
-    //  For alpha-alpha and beta-beta store two-bar integrals directly
-    //  For alpha-beta and beta-alpha, store one bar integrals 
-    //
-    // Symmetries for real orbitals:
-    //  For two-bar integrals: <ij||kl> = <ji||lk> = <kl||ij> = <lk||ji>  
-    //                                  = -<ij||lk> = -<ji||kl> = -<kl||ji> = -<lk||ij> 
-    //  For one-bar integrals: <ij|kl> = <kj|il> = <il|kj> = <kl|ij>
-    //                                 = <ji|lk> = <li|jk> = <jk|li> = <lk|ji> 
-    //
-    // Symmetries for Complex orbitals:
-    //  For two-bar integrals: <ij||kl> = <ji||lk> = <kl||ij>* = <lk||ji>*  
-    //                                  = -<ij||lk> = -<ji||kl> = -<kl||ji>* = -<lk||ij>* 
-    //  For one-bar integrals: <ij|kl> = <ji|lk> = <kl|ij>* = <lk|ji>*
-    //  Notice that in this case:   <ij|kl> != <kj|il> and other permutations            
-    // 
-
-#ifdef AFQMC_DEBUG
-    app_log()<<" In SparseGeneralHamiltonian::createHamiltonianForPureDeterminant." <<std::endl; 
-#endif
-
-    hij.clear();
-    Vijkl.clear();
-
-    ValueType V;
-    std::vector<s4D<ValueType> > vs4D;  
-    s4D<ValueType> s;
- 
-    // First count how many elements we need
-    int cnt1=0, cnt2=0; 
-    s2Dit it1 = H1.begin();
-    while(it1 != H1.end()) {
-      IndexType i,j;
-      std::tie (i,j,V) = *it1++;
-      if( std::abs(V) <= cut ) continue; 
-      // I can assume that i<=j
-      if(spinRestricted) {
-        if( i == j ) {
-          if(occ_a[i]) cnt1++; 
-          if(occ_b[i+NMO]) cnt1++; 
-        } else {
-          if(occ_a[i]) cnt1++; 
-          if(occ_a[j]) cnt1++; 
-          if(occ_b[i+NMO]) cnt1++; 
-          if(occ_b[j+NMO]) cnt1++; 
-        }
-      } else { 
-        if( i == j ) { 
-          if(occ_a[i] || occ_b[i]) cnt1++; 
-        } else { 
-          if(occ_a[i] || occ_b[i]) cnt1++; 
-          if(occ_a[j] || occ_b[j]) cnt1++; 
-        }
-      }
-    }  
-
-    // add one-bar terms (mixed spin) 
-    s4Dit it2 = V2.begin();
-    std::vector<s4D<ValueType> > v2s4D;  
-    v2s4D.reserve(24);
-    while(it2 != V2.end()) {
-      if( std::abs( std::get<4>(*it2) ) <= cut ) { it2++; continue; }
-      if(spinRestricted) {
-
-        s = *it2++;
-        // generate alpha/alpha sector 
-        find_equivalent_OneBar_for_hamiltonian_generation(s,vs4D);
-        // transform into alpha/beta and beta/alpha sectors  
-        v2s4D.clear();
-        for(int i=0; i<vs4D.size(); i++) {
-          v2s4D.push_back( std::forward_as_tuple(std::get<0>(vs4D[i]),std::get<1>(vs4D[i])+NMO,std::get<2>(vs4D[i]),std::get<3>(vs4D[i])+NMO,std::get<4>(vs4D[i]))  ); 
-          v2s4D.push_back( std::forward_as_tuple(std::get<0>(vs4D[i])+NMO,std::get<1>(vs4D[i]),std::get<2>(vs4D[i])+NMO,std::get<3>(vs4D[i]),std::get<4>(vs4D[i]))  ); 
-        }
-        // eliminate unnecessary terms 
-        cnt2 += count_allowed_terms(v2s4D,occ_a,occ_b);
-
-      } else {
-        int sector = getSpinSector(std::get<0>(*it2),std::get<1>(*it2),std::get<2>(*it2),std::get<3>(*it2));
-        switch(sector) { 
-          case 0:
-          { 
-            break;
-          } 
-          case 1: 
-          { 
-            vs4D.clear();
-            find_equivalent_OneBar_for_hamiltonian_generation(*it2,vs4D);
-            //cnt2 += vs4D.size();
-            cnt2 += count_allowed_terms(vs4D,occ_a,occ_b);
-            break;
-          } 
-          case 2: 
-          { 
-            app_error()<<"Error in SparseGeneralHamiltonian::createHamiltonianForPureDeterminant(). I should never get here. \n"; 
-            return false;  
-            break;
-          } 
-          case 3: 
-          { 
-            break;
-          } 
-        } 
-        it2++;
-      }
-    }
-
-    // for now, generating V2_2bar here.
-    //       // modify to avoid generation of V2_2bar, which is a waste of space 
-    if( !generate_V2_2bar() ) {
-      app_error()<<" Error generating 2bar integrals. \n";
-      return false;
-    }
-
-    it2 = V2_2bar.begin();
-    // add two-bar terms (same spin) 
-    while(it2 != V2_2bar.end()) {
-      if( std::abs( std::get<4>(*it2) ) <= cut ) { it2++; continue; }
-      if(spinRestricted) {
-        vs4D.clear();
-        find_equivalent_TwoBar_for_hamiltonian_generation(*it2++,vs4D);
-        cnt2 += count_allowed_terms(vs4D,occ_a,occ_b);
-        for(int i=0; i<vs4D.size(); i++) {
-          std::get<0>(vs4D[i]) += NMO;
-          std::get<1>(vs4D[i]) += NMO;
-          std::get<2>(vs4D[i]) += NMO;
-          std::get<3>(vs4D[i]) += NMO;
-        }
-        cnt2 += count_allowed_terms(vs4D,occ_a,occ_b);
-        //for(int i=0; i<vs4D.size(); i++) { 
-        //  if( occ_a[get<0>(vs4D[i])] && occ_a[get<1>(vs4D[i])] ) cnt2++;
-        //  if( occ_b[get<0>(vs4D[i])+NMO] && occ_b[get<1>(vs4D[i])+NMO] ) cnt2++;
-        //}
-      } else {
-        int sector = getSpinSector(std::get<0>(*it2),std::get<1>(*it2),std::get<2>(*it2),std::get<3>(*it2));
-        switch(sector) { 
-          case 0:
-          { 
-            vs4D.clear();
-            find_equivalent_TwoBar_for_hamiltonian_generation(*it2,vs4D);
-            //cnt2 += vs4D.size();
-            cnt2 += count_allowed_terms(vs4D,occ_a,occ_b);
-            break;
-          } 
-          case 1: 
-          { 
-            app_error()<<"Error in SparseGeneralHamiltonian::createHamiltonianForPureDeterminant(). Found sector 1 term in V2_2bar. Wy???? Bug Bug Bug ???!!! \n" <<std::endl; 
-            return false;  
-            APP_ABORT("");
-            break;
-          } 
-          case 2: 
-          { 
-            app_error()<<"Error in SparseGeneralHamiltonian::createHamiltonianForPureDeterminant(). Found sector 1 term in V2_2bar. Wy???? Bug Bug Bug ???!!! \n" <<std::endl; 
-            return false;  
-            APP_ABORT("");
-            break;
-          } 
-          case 3: 
-          { 
-            vs4D.clear();
-            find_equivalent_TwoBar_for_hamiltonian_generation(*it2,vs4D);
-            //cnt2 += vs4D.size();
-            cnt2 += count_allowed_terms(vs4D,occ_a,occ_b);
-            break;
-          } 
-        } 
-        it2++;
-      }
-    }
-
-    // avoids constant resizing
-    hij.reserve(cnt1);
-    Vijkl.reserve(cnt2);
-
-    s1Dit ith = hij.begin();
-
-    it1 = H1.begin();
-    while(it1 != H1.end()) {
-      IndexType i,j;
-      std::tie (i,j,V) = *it1++;
-
-      if( std::abs(V) <= cut ) continue;
-
-      if(spinRestricted) {
-        if( i == j ) {  // ii alpha / ii beta 
-          if(occ_a[i]) *ith++ = std::make_tuple( i*NMO+i , V );
-          if(occ_b[i+NMO]) *ith++ = std::make_tuple( NMO*NMO+i*NMO+i , V );
-        } else  {  // ij/ji both (alpha/alpha) and (beta/beta)
-          if(occ_a[i]) *ith++ = std::make_tuple( i*NMO+j , V );
-          if(occ_a[j]) *ith++ = std::make_tuple( j*NMO+i , myconj(V) );
-          if(occ_b[i+NMO]) *ith++ = std::make_tuple( NMO*NMO+i*NMO+j , V );
-          if(occ_b[j+NMO]) *ith++ = std::make_tuple( NMO*NMO+j*NMO+i , myconj(V) );
-        }
-      } else {
-        if( i == j ) {
-          if(occ_a[i] || occ_b[i]) *ith++ = std::make_tuple( Index2Mat(i,j), V );
-        } else {
-          if(occ_a[i] || occ_b[i]) *ith++ = std::make_tuple( Index2Mat(i,j), V );
-          if(occ_a[j] || occ_b[j]) *ith++ = std::make_tuple( Index2Mat(j,i), myconj(V) );
-        }
-      }
-    }
-
-
-    it2 = V2.begin();
-    while(it2 != V2.end()) {
-
-      if( std::abs( std::get<4>(*it2) ) <= cut ) { it2++; continue; }
-
-      if(spinRestricted) {
-
-        vs4D.clear();
-        s = *it2++;
-        // generate alpha/alpha sector 
-        find_equivalent_OneBar_for_hamiltonian_generation(s,vs4D);
-        // transform into alpha/beta and beta/alpha sectors  
-        v2s4D.clear();
-        for(int i=0; i<vs4D.size(); i++) {
-          v2s4D.push_back( std::forward_as_tuple(std::get<0>(vs4D[i]),std::get<1>(vs4D[i])+NMO,std::get<2>(vs4D[i]),std::get<3>(vs4D[i])+NMO,std::get<4>(vs4D[i]))  ); 
-          v2s4D.push_back( std::forward_as_tuple(std::get<0>(vs4D[i])+NMO,std::get<1>(vs4D[i]),std::get<2>(vs4D[i])+NMO,std::get<3>(vs4D[i]),std::get<4>(vs4D[i]))  ); 
-        }
-        // eliminate unnecessary terms 
-        add_allowed_terms(v2s4D,occ_a,occ_b,Vijkl);
-
-
-      } else {
-        int sector = getSpinSector(std::get<0>(*it2),std::get<1>(*it2),std::get<2>(*it2),std::get<3>(*it2));
-        switch(sector) { 
-          case 0:
-          { 
-            break;
-          } 
-          case 1: 
-          { 
-            find_equivalent_OneBar_for_hamiltonian_generation(*it2,vs4D);
-            add_allowed_terms(vs4D,occ_a,occ_b,Vijkl);
-            break;
-          } 
-          case 2: 
-          { 
-            app_error()<<"Error in SparseGeneralHamiltonian::createHamiltonianForPureDeterminant(). I should never get here. \n"; 
-            return false;  
-            break;
-          } 
-          case 3: 
-          { 
-            break;
-          } 
-        } 
-
-      }
-    }
-
-    it2 = V2_2bar.begin();
-    while(it2 != V2_2bar.end()) {
-
-      if( std::abs( std::get<4>(*it2) ) <= cut ) { it2++; continue; }
-
-      if(spinRestricted) {
-
-        // gets alpha/alpha, add by hand beta/beta
-        vs4D.clear();
-        vs4D.clear();
-        find_equivalent_TwoBar_for_hamiltonian_generation(*it2++,vs4D);
-        add_allowed_terms(vs4D,occ_a,occ_b,Vijkl);
-        for(int i=0; i<vs4D.size(); i++) { 
-          std::get<0>(vs4D[i]) += NMO;
-          std::get<1>(vs4D[i]) += NMO;
-          std::get<2>(vs4D[i]) += NMO;
-          std::get<3>(vs4D[i]) += NMO;
-        }
-        add_allowed_terms(vs4D,occ_a,occ_b,Vijkl);
-
-      } else {
-        int sector = getSpinSector(std::get<0>(*it2),std::get<1>(*it2),std::get<2>(*it2),std::get<3>(*it2));
-        switch(sector) { 
-          case 0:
-          { 
-            vs4D.clear();
-            find_equivalent_TwoBar_for_hamiltonian_generation(*it2,vs4D);
-            add_allowed_terms(vs4D,occ_a,occ_b,Vijkl);
-            break;
-          } 
-          case 1: 
-          { 
-            break;
-          } 
-          case 2: 
-          { 
-            break;
-          } 
-          case 3: 
-          { 
-            find_equivalent_TwoBar_for_hamiltonian_generation(*it2,vs4D);
-            add_allowed_terms(vs4D,occ_a,occ_b,Vijkl);
-            break;
-          } 
-        } 
-        it2++;
-      }
-    }
-
-#ifdef AFQMC_DEBUG
-    app_log()<<" Done generating sparse hamiltonians. " <<std::endl; 
-    app_log()<<" Compressing sparse hamiltonians. " <<std::endl; 
-#endif
-
-    std::sort (hij.begin(), hij.end(),mySort);
-    ith = std::unique(hij.begin(),hij.end(),myEqv);
-    if(ith != hij.end()) {
-      app_log()<<" \n\n\n*************************************************************\n"
-               <<"  Error! Found repeated terms in construction of hij for Pure hamiltonian. \n"
-               <<"  This should only happen if the integral file contains symmetry equivalent terms. \n"
-               <<" *************************************************************\n\n\n";
-      return false;
-    }
-
-// fix bug on remove_repeated
-    if(!Vijkl.remove_repeated()) {
-      APP_ABORT("Error in call to SparseMatrix::remove_repeated(). \n");
-    }
-    Vijkl.compress();
-
-#ifdef AFQMC_DEBUG
-    app_log()<<" Done compressing sparse hamiltonians. " <<std::endl; 
-#endif
-    return true;  
-
   }
+#endif
 
-  bool SparseGeneralHamiltonian::createHamiltonianForGeneralDeterminant (int walker_type, const ComplexMatrix& A,std::vector<s1D<ComplexType> >& hij, ComplexSMSpMat& Vijkl, const RealType cut) 
+  bool SparseGeneralHamiltonian::createHamiltonianForGeneralDeterminant (int walker_type, const ComplexMatrix& A,std::vector<s1D<ComplexType> >& hij, SPComplexSMSpMat& Vijkl, const RealType cut) 
   {
 
     ComplexMatrix M,N;
     const ComplexType one = ComplexType(1.0);
     const ComplexType zero = ComplexType(0.0);
+    int npr = myComm->size(), rk = myComm->rank();
 
     if(!spinRestricted) {
       app_error()<<" Error: SparseGeneralHamiltonian::createHamiltonianForGeneralDeterminant not implemented for UHF matrix elements. \n"; 
@@ -5746,11 +5950,22 @@ namespace qmcplusplus
       while(it1 != H1.end()) {
         IndexType i,j;
         std::tie (i,j,V) = *it1++;
-        M(i,j) = 2*V; //
-        if( i!=j ) M(j,i) = 2*myconj(V);
+        M(i,j) = ValueType(2.0)*V; //
+        if( i!=j ) M(j,i) = ValueType(2.0)*myconj(V);
       }
       DenseMatrixOperators::product_AhB(NAEA,NMO,NMO,one,A.data(),NAEA,M.data(),NMO,zero,N.data(),NMO);
       int cnt=0;
+/*
+      for(int i=0; i<NMO; i++)
+       for(int j=0; j<NMO; j++)
+         std::cout<<i <<" " <<j <<" " <<M(i,j) <<"\n";
+      for(int i=0; i<NAEA; i++)
+       for(int j=0; j<NMO; j++)
+         std::cout<<i <<" " <<j <<" " <<N(i,j) <<"\n";
+      for(int i=0; i<NMO; i++)
+       for(int j=0; j<NAEA; j++)
+         std::cout<<i <<" " <<j <<" " <<A(i,j) <<"\n";
+*/
       for(int i=0; i<NAEA; i++)
        for(int j=0; j<NMO; j++)
         if( std::abs(N(i,j)) > cut ) cnt++;
@@ -5822,7 +6037,7 @@ namespace qmcplusplus
         if( std::abs(Q(i,j)) > cut ) *ith++ = std::make_tuple( NMO*NMO+i*NMO+j , Q(i,j) );  
 
     } else if(walker_type == 2) {
-
+        APP_ABORT("Error: TODO: createHamiltonianForGeneralDeterminant not implemented for GHF walker type yet. \n\n\n");
     }
 
     std::sort (hij.begin(), hij.end(),mySort);
@@ -5838,11 +6053,196 @@ namespace qmcplusplus
 
     if(factorizedHamiltonian) {
   
-      app_error()<<" Error: SparseGeneralHamiltonian::createHamiltonianForGeneralDeterminant not implemented with factorizedHamiltonian. \n";
-      return false;  
+      int ncvec = V2_fact.cols();
+      ComplexMatrix Qa, Qk, Rl;  
+      long cnter=0;
+
+      // <ab||kl> = sum_n Qk(a,n) * Rl(b,n) - Rl(a,n)*Qk(b,n),
+      // where:
+      //   Qk(a,n) = sum_i conj(Amat(i,a)) * V2_fact(ik,n)
+      //   Rl(a,n) = sum_i conj(Amat(i,a)) * conj(V2_fact(li,n))
+      // For real build, Qk=Rk
+
+
+      Timer.reset("Generic");
+      Timer.start("Generic");
+
+      if(walker_type == 0) {
+
+        Qk.resize(NAEA,ncvec);
+        Rl.resize(NAEA,ncvec);
+        Qa.resize(NAEA,NAEA);
+
+        for(int k=0, nt=0; k<NMO; k++) {
+        for(int l=k; l<NMO; l++, nt++) {
+        
+          // instead of round robin, use FairShare on NMO*(NMO+1)/2, since that allows reuse of Qk
+          if( nt%npr != rk ) continue;
+
+          // 1. check if Qk/Rl has been previously built. If not build and store it
+#if defined(QMC_COMPLEX)
+          ComplexType *Qkptr = Qk.data();
+          ComplexType *Rlptr = Rl.data();
+            
+#else
+          ComplexType *Qkptr = Qk.data();
+          ComplexType *Rlptr = Rl.data();
+
+          Qk=0;
+          for(int i=0; i<NMO; i++) {
+            int ik = i*NMO+k;
+            int n0 = *(V2_fact.row_index() + ik);  
+            int n1 = *(V2_fact.row_index() + ik+1);
+            if(n1==n0) continue;
+            int nv = n1-n0;  
+            ValueSMSpMat::pointer itLval = V2_fact.values() + n0;
+            ValueSMSpMat::indxPtr itLcol = V2_fact.column_data() + n0;
+            const ComplexType* itAia = A[i];
+            for(int a=0; a<NAEA; a++, itAia++) {
+              Qkptr = Qk[a];
+              for(int n=0; n<nv; n++)   
+                //*(Qkptr+(*(itLcol+n))) += std::conj(*itAia) * (*(itLval+n));
+                Qk(a,itLcol[n]) += std::conj(A(i,a)) * itLval[n]; 
+            }
+          }
+          Qkptr = Qk.data();
+
+          if(k==l) { 
+            Rlptr = Qk.data();
+          } else {
+            Rl=0;
+            for(int i=0; i<NMO; i++) {
+              int li = l*NMO+i;
+              int n0 = *(V2_fact.row_index() + li);
+              int n1 = *(V2_fact.row_index() + li+1);
+              if(n1==n0) continue;
+              int nv = n1-n0;
+              ValueSMSpMat::pointer itLval = V2_fact.values() + n0;
+              ValueSMSpMat::indxPtr itLcol = V2_fact.column_data() + n0;
+              const ComplexType* itAia = A[i];
+              for(int a=0; a<NAEA; a++, itAia++) {
+                Rlptr = Rl[a];
+                for(int n=0; n<nv; n++) 
+                  //*(Rlptr+(*(itLcol+n))) += std::conj(*itAia) * (*(itLval+n)); // conj(L) in complex
+                  Rl(a,itLcol[n]) += std::conj(A(i,a)) * itLval[n]; 
+              }
+            }
+            Rlptr = Rl.data();
+          }  
+#endif 
+
+          // 2. Qa(a,b) = <ab|||kl> = 4*Qk*Rl.T - 2*Rl*Qk.T
+          RealType fct = (k==l)?1.0:2.0;
+          DenseMatrixOperators::product_ABt(NAEA,NAEA,ncvec,ComplexType(4.0*fct,0.0),Qkptr,ncvec,Rlptr,ncvec,ComplexType(0),Qa.data(),NAEA);
+          DenseMatrixOperators::product_ABt(NAEA,NAEA,ncvec,ComplexType(-2.0*fct,0.0),Rlptr,ncvec,Qkptr,ncvec,ComplexType(1),Qa.data(),NAEA);
+
+          // Now I have Q(a,b,k0,l0);
+          for(int a=0; a<NAEA; a++)
+           for(int b=0; b<NAEA; b++) 
+             if(std::abs(Qa(a,b)) > cut) cnter++; 
+        }
+        }
+
+      } else if(walker_type == 1) {
+        APP_ABORT("Error: TODO: createHamiltonianForGeneralDeterminant not implemented for UHF walker type yet. \n\n\n");
+      } else if(walker_type == 2) {
+        APP_ABORT("Error: TODO: createHamiltonianForGeneralDeterminant not implemented for GHF walker type yet. \n\n\n");
+      }
+
+      myComm->allreduce(cnter);
+      Vijkl.allocate(cnter+1000);
+
+      if(walker_type == 0) {
+
+        for(int k=0, nt=0; k<NMO; k++) {
+        for(int l=k; l<NMO; l++, nt++) {
+        
+          // instead of round robin, use FairShare on NMO*(NMO+1)/2, since that allows reuse of Qk
+          if( nt%npr != rk ) continue;
+
+          // 1. check if Qk/Rl has been previously built. If not build and store it
+#if defined(QMC_COMPLEX)
+          ComplexType *Qkptr = Qk.data();
+          ComplexType *Rlptr = Rl.data();
+            
+#else
+          ComplexType *Qkptr = Qk.data();
+          ComplexType *Rlptr = Rl.data();
+
+          Qk=0;
+          for(int i=0; i<NMO; i++) {
+            int ik = i*NMO+k;
+            int n0 = *(V2_fact.row_index() + ik);  
+            int n1 = *(V2_fact.row_index() + ik+1);
+            if(n1==n0) continue;
+            int nv = n1-n0;  
+            ValueSMSpMat::pointer itLval = V2_fact.values() + n0;
+            ValueSMSpMat::indxPtr itLcol = V2_fact.column_data() + n0;
+            const ComplexType* itAia = A[i];
+            for(int a=0; a<NAEA; a++, itAia++) {
+              Qkptr = Qk[a];
+              for(int n=0; n<nv; n++)   
+                //*(Qkptr+(*(itLcol+n))) += std::conj(*itAia) * (*(itLval+n));
+                Qk(a,itLcol[n]) += std::conj(A(i,a)) * itLval[n];
+            }
+          }
+          Qkptr = Qk.data();
+
+          if(k==l) { 
+            Rlptr = Qk.data();
+          } else {
+            Rl=0;
+            for(int i=0; i<NMO; i++) {
+              int li = l*NMO+i;
+              int n0 = *(V2_fact.row_index() + li);
+              int n1 = *(V2_fact.row_index() + li+1);
+              if(n1==n0) continue;
+              int nv = n1-n0;
+              ValueSMSpMat::pointer itLval = V2_fact.values() + n0;
+              ValueSMSpMat::indxPtr itLcol = V2_fact.column_data() + n0;
+              const ComplexType* itAia = A[i];
+              for(int a=0; a<NAEA; a++, itAia++) {
+                Rlptr = Rl[a];
+                for(int n=0; n<nv; n++) 
+                  //*(Rlptr+(*(itLcol+n))) += std::conj(*itAia) * (*(itLval+n)); // conj(L) in complex
+                  Rl(a,itLcol[n]) += std::conj(A(i,a)) * itLval[n]; 
+              }
+            }
+            Rlptr = Rl.data();
+          }  
+#endif 
+
+          // 2. Qa(a,b) = <ab|||kl> = 4*Qk*Rl.T - 2*Rl*Qk.T
+          RealType fct = (k==l)?1.0:2.0;
+          DenseMatrixOperators::product_ABt(NAEA,NAEA,ncvec,ComplexType(4.0*fct,0.0),Qkptr,ncvec,Rlptr,ncvec,ComplexType(0),Qa.data(),NAEA);
+          DenseMatrixOperators::product_ABt(NAEA,NAEA,ncvec,ComplexType(-2.0*fct,0.0),Rlptr,ncvec,Qkptr,ncvec,ComplexType(1),Qa.data(),NAEA);
+
+          // Now I have Q(a,b,k0,l0);
+          for(int a=0; a<NAEA; a++)
+           for(int b=0; b<NAEA; b++) 
+             if(std::abs(Qa(a,b)) > cut)
+               Vijkl.add( a*NMO+k, b*NMO+l, static_cast<SPComplexType>(Qa(a,b)), true);
+        }
+        }
+
+      } else if(walker_type == 1) {
+        APP_ABORT("Error: TODO: createHamiltonianForGeneralDeterminant not implemented for UHF walker type yet. \n\n\n");
+      } else if(walker_type == 2) {
+        APP_ABORT("Error: TODO: createHamiltonianForGeneralDeterminant not implemented for GHF walker type yet. \n\n\n");
+      }
+
+      if(!communicate_Vijkl(Vijkl)) return false;
+      myComm->barrier();
+
+      Timer.stop("Generic");
+      app_log()<<"Time to generate 2-body Hamiltonian: " <<Timer.total("Generic") <<std::endl;
 
     } else {
 
+#if defined(QMC_COMPLEX)
+        app_log()<<"  WARNING WARNING WARNING!!!: createHamiltonianForGeneralDeterminant is not implemented for complex build yet. \n";
+        APP_ABORT("  WARNING WARNING WARNING!!!: createHamiltonianForGeneralDeterminant is not implemented for complex build yet. \n");
+#endif
 
         // Alg:
         // 0. Erase V2. Create full sparse hamiltonian (with symmetric terms)  
@@ -5971,7 +6371,6 @@ namespace qmcplusplus
          for(int j=NAEB; j<NAEA; j++)
           Ac(i,j) = ComplexType(0); 
       }
-      int npr = myComm->size(), rk = myComm->rank();
       double fct=1.0, fct2=1.0;        
       ComplexMatrix::iterator itQa,itQb,itQab, itQab2, itAia, itAib, itAja, itAjb; 
       ComplexMatrix::iterator itBia, itBib, itBja, itBjb; 
@@ -6000,8 +6399,8 @@ namespace qmcplusplus
             itAia = Ac.begin(i);
             itAja = Ac.begin(j);
             for(int a=0; a<NAEA; a++, itAia++, itAja++) {
-             s1 = fct*4*V*(*itAia);
-             s2 = fct*2*V*(*itAja);
+             s1 = fct*ValueType(4.0)*V*(*itAia);
+             s2 = fct*ValueType(2.0)*V*(*itAja);
              itQa = Qa.begin(a);
              itAib = Ac.begin(i);
              itAjb = Ac.begin(j);          
@@ -6082,8 +6481,8 @@ namespace qmcplusplus
             return false;
             if(k0 < NMO && l0 < NMO) { // aa 
               for(int a=0; a<NAEA; a++, itAia++, itAja++) {
-               s1 = fct*4*V*(*itAia);
-               s2 = fct*2*V*(*itAja);
+               s1 = fct*4.0*V*(*itAia);
+               s2 = fct*2.0*V*(*itAja);
                itQa = Qa.begin(a);
                itAib = Ac.begin(i);
                itAjb = Ac.begin(j);
@@ -6104,6 +6503,7 @@ namespace qmcplusplus
         } // KL loop
 
       } else if(walker_type == 2) {
+        APP_ABORT("Error: TODO: createHamiltonianForGeneralDeterminant not implemented for GHF walker type yet. \n\n\n");
       }
 
       myComm->allreduce(cnter);
@@ -6129,8 +6529,8 @@ namespace qmcplusplus
             itAia = Ac.begin(i);
             itAja = Ac.begin(j);
             for(int a=0; a<NAEA; a++, itAia++, itAja++) {
-             s1 = fct*4*V*(*itAia);
-             s2 = fct*2*V*(*itAja);
+             s1 = fct*4.0*V*(*itAia);
+             s2 = fct*2.0*V*(*itAja);
              itQa = Qa.begin(a);
              itAib = Ac.begin(i);
              itAjb = Ac.begin(j);
@@ -6142,7 +6542,7 @@ namespace qmcplusplus
           for(int a=0; a<NAEA; a++)
            for(int b=0; b<NAEA; b++) 
             if(std::abs(Qa(a,b)) > cut) 
-             Vijkl.add( a*NMO+k0, b*NMO+l0, Qa(a,b), true);
+             Vijkl.add( a*NMO+k0, b*NMO+l0, static_cast<SPComplexType>(Qa(a,b)), true);
         }
 
       } else if(walker_type == 1) {
@@ -6198,13 +6598,13 @@ namespace qmcplusplus
             for(int a=0; a<NAEA; a++)
              for(int b=0; b<NAEA; b++) { 
                if(std::abs(Qa(a,b)) > cut) 
-                 Vijkl.add( a*NMO+k0, b*NMO+l0, Qa(a,b), true);
+                 Vijkl.add( a*NMO+k0, b*NMO+l0, static_cast<SPComplexType>(Qa(a,b)), true);
                if(std::abs(Qb(a,b)) > cut) 
-                 Vijkl.add( NMO*NMO+a*NMO+k0, NMO*NMO+b*NMO+l0, Qb(a,b), true);
+                 Vijkl.add( NMO*NMO+a*NMO+k0, NMO*NMO+b*NMO+l0, static_cast<SPComplexType>(Qb(a,b)), true);
                if(std::abs(Qab(a,b)) > cut)
-                 Vijkl.add( a*NMO+k0, NMO*NMO+b*NMO+l0, Qab(a,b), true);
+                 Vijkl.add( a*NMO+k0, NMO*NMO+b*NMO+l0, static_cast<SPComplexType>(Qab(a,b)), true);
                if(std::abs(Qab2(a,b)) > cut && k0!=l0)
-                 Vijkl.add( a*NMO+l0, NMO*NMO+b*NMO+k0, Qab2(a,b), true);
+                 Vijkl.add( a*NMO+l0, NMO*NMO+b*NMO+k0, static_cast<SPComplexType>(Qab2(a,b)), true);
              }
 
           } else {
@@ -6212,8 +6612,8 @@ namespace qmcplusplus
             return false;
             if(k0 < NMO && l0 < NMO) { // aa 
               for(int a=0; a<NAEA; a++, itAia++, itAja++) {
-               s1 = fct*4*V*(*itAia);
-               s2 = fct*2*V*(*itAja);
+               s1 = fct*4.0*V*(*itAia);
+               s2 = fct*2.0*V*(*itAja);
                itQa = Qa.begin(a);
                itAib = Ac.begin(i);
                itAjb = Ac.begin(j);
@@ -6233,6 +6633,7 @@ namespace qmcplusplus
           } // spinRestricted
         } // KL loop
       } else if(walker_type == 2) {
+        APP_ABORT("Error: TODO: createHamiltonianForGeneralDeterminant not implemented for GHF walker type yet. \n\n\n");
       }
 
       if(!communicate_Vijkl(Vijkl)) return false;
@@ -6339,7 +6740,7 @@ namespace qmcplusplus
           } 
           case 2: 
           { 
-            app_error()<<"Error in SparseGeneralHamiltonian::createHamiltonianForPureDeterminant(). I should never get here. \n"; 
+            app_error()<<"Error in SparseGeneralHamiltonian :: createHamiltonianForPureDeterminant(). I should never get here. \n"; 
             return false;  
             break;
           } 

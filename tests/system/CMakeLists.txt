@@ -132,6 +132,15 @@ IF(BUILD_LMYENGINE_INTERFACE)
                     H4_OPT_SCALARS
                     5 # OPT step 5
                     TRUE)
+
+  QMC_RUN_AND_CHECK(short-H4-opt-adaptive
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                    H4-adaptive
+                    optm-adaptive.xml
+                    1 16
+                    H4_OPT_SCALARS
+                    5 # OPT step 5
+                    TRUE)
 ENDIF(BUILD_LMYENGINE_INTERFACE)
 
   QMC_RUN_AND_CHECK(short-H4-opt-OneShiftOnly
@@ -263,7 +272,29 @@ ENDIF()
                     1 # DMC
                     TRUE)
 
+  IF(NOT QMC_CUDA)
+  LIST(APPEND BCC_H_RMC_SCALARS "totenergy" "-1.8420 0.0011")
+  #check RMC on 16 cores.  1 MPI
+  QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-rmc_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+                    qmc_short_vmc_rmc
+                    qmc_short_vmc_rmc.in.xml
+                    1 16
+                    BCC_H_RMC_SCALARS
+                    1 #series# 
+                    TRUE)
+  #check RMC on 4 cores, 4 mpi
+  QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-rmc_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+                    qmc_short_vmc_rmc
+                    qmc_short_vmc_rmc.in.xml
+                    4 4
+                    BCC_H_RMC_SCALARS
+                    1 #series#
+                    TRUE)
+  ENDIF()
 
+                     
 # Plane wave test of bccH (no pp, so faster than typical solids)
 # Reduced number of blocks and samples compared to other short bccH tests
   LIST(APPEND BCC_H_PW_SCALARS "totenergy" "-1.834032 0.001")
@@ -319,6 +350,20 @@ ENDIF()
                     DIAMOND_DMC_SCALARS
                     1 # DMC
                     TRUE)
+
+# Coverage test - shorter version of dmc test
+  SET(FULL_NAME "coverage-diamondC_1x1x1_pp-vmc_sdj-1-1")
+  SET(TEST_ADDED FALSE)
+  RUN_QMC_APP(${FULL_NAME}
+              "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+              1 1
+              TEST_ADDED
+              "qmc_short_vmc_dmc_coverage.in.xml")
+
+  IF (TEST_ADDED)
+    SET_PROPERTY(TEST ${FULL_NAME} APPEND PROPERTY LABELS "coverage")
+  ENDIF()
+
 
   LIST(APPEND DIAMOND2_SCALARS "totenergy" "-21.668293 0.007")
   LIST(APPEND DIAMOND2_SCALARS "kinetic" "20.065151 0.044")
@@ -408,8 +453,25 @@ ENDIF()
                     1 # DMC
                     TRUE)
 
+  IF(NOT QMC_CUDA)
+  LIST(APPEND LONG_BCC_H_RMC_SCALARS "totenergy" "-1.84150 0.00011")
+  LIST(APPEND LONG_BCC_H_RMC_SCALARS "potential" "-2.01964 0.00072")
+  LIST(APPEND LONG_BCC_H_RMC_SCALARS "potential_pure" "-2.01907 0.00085")
+  LIST(APPEND LONG_BCC_H_RMC_SCALARS "kinetic_mixed" "0.17814 0.00073")
+  LIST(APPEND LONG_BCC_H_RMC_SCALARS "kinetic_pure" "0.17063 0.00086")
+  LIST(APPEND LONG_BCC_H_RMC_SCALARS "eeenergy_mixed" "-0.77991 0.00016")
+  LIST(APPEND LONG_BCC_H_RMC_SCALARS "eeenergy_pure" "-0.78335 0.00019")
+  QMC_RUN_AND_CHECK(long-bccH_1x1x1_ae-rmc_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+                    qmc_long_vmc_rmc
+                    qmc_long_vmc_rmc.in.xml
+                    1 16
+                    LONG_BCC_H_RMC_SCALARS
+                    1 # DMC
+                    TRUE)
+  ENDIF()
 
-
+ 
   LIST(APPEND LONG_DIAMOND_SCALARS "totenergy" "-10.491445 0.000065")
   LIST(APPEND LONG_DIAMOND_SCALARS "samples" "122880000 0.0")
   LIST(APPEND LONG_DIAMOND_SCALARS "flux" "0.0 0.03")

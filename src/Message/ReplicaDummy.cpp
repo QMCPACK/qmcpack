@@ -125,8 +125,3 @@ void ReplicaControl::reportTimeData(std::ostream& os,int i_trans)
 }
 
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * POOMA_VERSION_ID: $Id$
- ***************************************************************************/

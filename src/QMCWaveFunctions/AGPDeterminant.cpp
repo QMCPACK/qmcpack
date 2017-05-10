@@ -597,8 +597,3 @@ OrbitalBasePtr AGPDeterminant::makeClone(ParticleSet& tqp) const
   return myclone;
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

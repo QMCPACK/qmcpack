@@ -123,8 +123,3 @@ void QMCState::print_memory_change(const std::string& who, size_t before)
 QMCState qmc_common;
 
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 5388 $   $Date: 2011-12-02 08:45:44 -0500 (Fri, 02 Dec 2011) $
- * $Id: Configuration.h 5388 2011-12-02 13:45:44Z jnkim $
- ***************************************************************************/

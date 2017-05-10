@@ -63,8 +63,3 @@ void ForwardWalkingEstimator::add2Record(RecordListType& record)
 }
 
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 3503 $   $Date: 2009-02-02 11:24:37 -0600 (Mon, 02 Feb 2009) $
- * $Id: ForwardWalkingEstimator.cpp 3503 2009-02-02 17:24:37Z jnkim $
- ***************************************************************************/

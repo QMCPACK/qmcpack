@@ -814,8 +814,3 @@ VMCMultiRenyiOMP::put(xmlNodePtr q)
 }
 }
 
-/***************************************************************************
- * $RCSfile: VMCMultiRenyiOMP.cpp,v $   $Author: jnkim $
- * $Revision: 1.25 $   $Date: 2006/10/18 17:03:05 $
- * $Id: VMCMultiRenyiOMP.cpp,v 1.25 2006/10/18 17:03:05 jnkim Exp $
- ***************************************************************************/

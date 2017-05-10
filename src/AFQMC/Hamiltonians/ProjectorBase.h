@@ -44,8 +44,6 @@ class ProjectorBase: public MPIObjectBase, public AFQMCInfo
 
   virtual void calculateHSPotentials(ComplexSMSpMat&)=0; 
 
-  virtual void calculateHSPotentials_SparseDiagonalization(ComplexSMSpMat&)=0; 
-
   virtual void calculateHSPotentials_Diagonalization(ComplexSMSpMat&)=0; 
 
   // parse xml input node

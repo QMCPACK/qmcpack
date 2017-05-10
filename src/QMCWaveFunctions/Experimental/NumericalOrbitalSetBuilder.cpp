@@ -243,8 +243,3 @@ NumericalOrbitalSetBuilder::createSPOSet(xmlNodePtr cur, const std::string& ref,
   return psi;
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

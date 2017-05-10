@@ -106,7 +106,9 @@ class Qmcpack(Simulation):
 
     def pre_write_inputs(self,save_image):
         # fix to make twist averaged input file under generate_only
-        if nexus_core.generate_only:
+        if self.system is None:
+            self.should_twist_average = False
+        elif nexus_core.generate_only:
             twistnums = range(len(self.system.structure.kpoints))
             if self.should_twist_average:
                 self.twist_average(twistnums)

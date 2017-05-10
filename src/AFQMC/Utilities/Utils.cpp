@@ -12,10 +12,54 @@ namespace std{
     swap(std::get<1>(a), std::get<1>(b));
     swap(std::get<2>(a), std::get<2>(b));
   } 
+
+  void swap(std::tuple<int &, int &, std::complex<qmcplusplus::ValueType> &> const& a, std::tuple<int &, int &, std::complex<qmcplusplus::ValueType> &> const& b) {
+    using std::swap;
+    swap(std::get<0>(a), std::get<0>(b));
+    swap(std::get<1>(a), std::get<1>(b));
+    swap(std::get<2>(a), std::get<2>(b));
+  } 
  
 }
 
 namespace qmcplusplus { 
+
+// put compiler guards for serial execution
+/*
+template<class T, class Compare>
+void parallel_inplace_merge(int np, int rk, T beg, T mid, T end, MPI_Comm comm, Compare comp)
+{
+
+  if(np==1) {
+    std::inplace_merge(beg,mid,end,comp);
+    return;
+  }
+
+  MPI_Barrier(comm);
+
+  T p1, p2;
+  if( std::distance(beg,mid) >= std::distance(mid,end) ) {
+    p1 = beg + std::distance(beg,mid)/2;
+    auto it = std::lower_bound(mid,end,*p1,comp);
+    p2 = it;
+  } else {
+    p2 = mid + std::distance(mid,end)/2;
+    auto it = std::lower_bound(beg,mid,*p2,comp);
+    p1 = it;
+  }
+
+  MPI_Barrier(comm);
+  if(rk==0) std::rotate(p1,mid,p2);
+  MPI_Barrier(comm);
+
+  mid = p1 + std::distance(mid,p2);
+
+  if(rk < np/2)
+    parallel_inplace_merge(np/2,rk,beg,p1,mid,comm,comp);
+  else
+    parallel_inplace_merge(np/2,rk-np/2,mid,p2,end,comm,comp);
+}
+*/
 
 // given a list of (N+1) integers, this routine attempts to find a partitioning of n continuous subsets  
 // such that the sum of elements in each set is approximately homogeneous

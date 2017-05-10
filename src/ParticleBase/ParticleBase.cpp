@@ -580,9 +580,4 @@ void ParticleBase<PL>::update(const UpdateMode_t& ptclupdate) {
 //   return true;
 // }
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

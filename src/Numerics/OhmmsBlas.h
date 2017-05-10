@@ -80,6 +80,13 @@ struct BLAS
   }
 
   inline static
+  void axpy(int n, const std::complex<float> x, const std::complex<float>* a, int incx,
+            std::complex<float>* b, int incy)
+  {
+    caxpy(n, x, a, incx, b, incy);
+  }
+
+  inline static
   void axpy(int n, const std::complex<double> x, const std::complex<double>* a, int incx,
             std::complex<double>* b, int incy)
   {
@@ -196,6 +203,26 @@ struct BLAS
   {
     cgemv(trans_in, n, m, alpha, amat, lda, x, incx, beta, y, incy);
   }
+
+#if defined(HAVE_MKL)
+  inline static
+  void gemv(char trans_in, int n, int m
+            , const std::complex<double>& alpha, const double* restrict amat, int lda
+            , const std::complex<double>* restrict x, int incx, const std::complex<double>& beta
+            , std::complex<double>* y, int incy)
+  {
+    dzgemv(trans_in, n, m, alpha, amat, lda, x, incx, beta, y, incy);
+  }
+
+  inline static
+  void gemv(char trans_in, int n, int m
+            , const std::complex<float>& alpha, const float* restrict amat, int lda
+            , const std::complex<float>* restrict x, int incx, const std::complex<float>& beta
+            , std::complex<float>* y, int incy)
+  {
+    scgemv(trans_in, n, m, alpha, amat, lda, x, incx, beta, y, incy);
+  }
+#endif
 
   inline static
   void gemm (char Atrans, char Btrans, int M, int N, int K, double alpha,
@@ -504,10 +531,6 @@ struct LAPACK
   }
 
 };
-#endif // OHMMS_BLAS_H
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 
+
+#endif // OHMMS_BLAS_H

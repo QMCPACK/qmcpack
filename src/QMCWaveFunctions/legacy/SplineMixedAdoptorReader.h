@@ -426,8 +426,3 @@ struct SplineMixedAdoptorReader: public BsplineReaderBase
 }
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author: jeongnim.kim $
- * $Revision: 5260 $   $Date: 2011-06-18 07:45:58 -0400 (Sat, 18 Jun 2011) $
- * $Id: EinsplineSetBuilderESHDF.cpp 5260 2011-06-18 11:45:58Z jeongnim.kim $
- ***************************************************************************/

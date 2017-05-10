@@ -32,7 +32,7 @@ option is disabled.
   increase the size of the axis with the open boundary condition(s)
   by a factor \texttt{X}. The default value is 1,
   \textit{i.e.} no change to the specified axis. For more details
-  on boundary conditions, see \ref{sec:simulationcell}. }
+  on boundary conditions, see \ref{chap:simulationcell}. }
 \item[\texttt{-{}-version}]{ Print version information and optional arguments.
   Same as \texttt{-{}-help}. }
 \end{description}
@@ -42,28 +42,10 @@ option is disabled.
 
 \section{Input files}
 \label{sec:inputs}
-The input is one or more XML file(s), documented in section~\ref{chap:input_overview}.
+The input is one or more XML file(s), documented in chapter~\ref{chap:input_overview}.
 
 \section{Output files}
-QMCPACK generates multiple files which have the following suffixes:
-\label{sec:outputs}
-\begin{description}
-\item[\texttt{scalar.dat}]{ This file contains information about
-  the simulation such as the energy, variance, MC acceptance ratio, etc..
-  In many situations, this is the main output file you should use to process
-  the results of the simulation. QMCPACK includes a useful tool for easy
-  processing of these files, called \texttt{qmca}. It is located in the
-  \texttt{qmcpack/nexus/executables} directory.}
-\item[\texttt{dmc.dat}]{ This file contains information similar to the
-  \texttt{scalar.dat} file, but also includes extra information about the
-  details of a DMC calculation. For example, information about the
-  walker population. }
-\item[\texttt{stat.h5}]{ This file contains some of the information used to
-  generate the \texttt{scalar.dat} file.}
-\item[\texttt{config.h5}]{ This file contains the walker configurations.
-  Used for checkpointing.}
-  \item[\texttt{cont.xml}]{ This file is a copy of the input xml file. }
-\end{description}
+QMCPACK generates multiple files, documented in chapter~\ref{chap:output_overview}.
 
 \section{Running in parallel}
 \label{sec:parallelrunning}

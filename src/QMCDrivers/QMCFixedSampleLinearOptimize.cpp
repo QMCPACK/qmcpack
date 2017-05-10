@@ -116,6 +116,7 @@ vdeps(1,std::vector<double>()),
                                           false, // eom related
                                           false, // use block?
                                           120000, // number of samples
+                                          0,  // number of parameters
                                           60, // max krylov iter
                                           0, // max spam inner iter
                                           1, // spam appro degree
@@ -218,7 +219,8 @@ bool QMCFixedSampleLinearOptimize::run()
     Matrix<RealType> Right(N,N);
     Matrix<RealType> S(N,N);
 //     stick in wrong matrix to reduce the number of matrices we need by 1.( Left is actually stored in Right, & vice-versa)
-    optTarget->fillOverlapHamiltonianMatrices(Right,Left,S);
+    optTarget->fillOverlapHamiltonianMatrices(Right,Left);
+    S.copy(Left);
     bool apply_inverse(true);
     if(apply_inverse)
     {
@@ -423,7 +425,8 @@ QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
 
 #ifdef ENABLE_OPENMP
   if ( doAdaptiveThreeShift && (omp_get_max_threads() > 1) ) {
-        throw std::runtime_error("OpenMP threading not enabled with AdaptiveThreeShift optimizer.  Use MPI for parallelism instead, and set OMP_NUM_THREADS to 1.");
+        //throw std::runtime_error("OpenMP threading not enabled with AdaptiveThreeShift optimizer.  Use MPI for parallelism instead, and set OMP_NUM_THREADS to 1.");
+        app_log() << "test version of OpenMP threading with AdaptiveThreeShift optimizer" << std::endl;
   }
 #endif
 
@@ -653,7 +656,7 @@ void QMCFixedSampleLinearOptimize::solveShiftsWithoutLMYEngine(const std::vector
   Matrix<RealType> prdMat(N,N); prdMat = 0.0;
 
   // build the overlap and hamiltonian matrices
-  optTarget->fillOverlapHamiltonianMatrices(hamMat, ovlMat, invMat);
+  optTarget->fillOverlapHamiltonianMatrices(hamMat, ovlMat);
 
   //// print the hamiltonian matrix
   //app_log() << std::endl;
@@ -775,6 +778,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
                          false, // ssquare
                          block_lm, 
                          12000, 
+                         numParams,
                          omega_shift,
                          max_relative_cost_change,
                          shifts_i.at(central_index), 
@@ -905,9 +909,9 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
   this->finish();
 
   // reset the number of samples
-  this->optTarget->setNumSamples(nsamp_comp);
-  nTargetSamples = nsamp_comp;
-  app_log() << "# of sample before correlated sampling is " << nTargetSamples << std::endl;
+  //this->optTarget->setNumSamples(nsamp_comp);
+  //nTargetSamples = nsamp_comp;
+  //app_log() << "# of sample before correlated sampling is " << nTargetSamples << std::endl;
   //app_log() << "number of samples is" << this->optTarget->getNumSamples() << std::endl;
   app_log() << std::endl
             << "*************************************************************" << std::endl
@@ -1081,18 +1085,21 @@ bool QMCFixedSampleLinearOptimize::one_shift_run() {
   Matrix<RealType> prdMat(N,N); prdMat = 0.0;
 
   // build the overlap and hamiltonian matrices
-  optTarget->fillOverlapHamiltonianMatrices(hamMat, ovlMat, invMat);
-
-  // compute the inverse of the overlap matrix
+  optTarget->fillOverlapHamiltonianMatrices(hamMat, ovlMat);
   invMat.copy(ovlMat);
-  invert_matrix(invMat, false);
 
   // prepare vector to hold largest parameter change for each shift
   RealType max_change(0.0);
 
   // apply the identity shift
   for (int i=1; i<N; i++)
+  {
     hamMat(i,i) += bestShift_i;
+    invMat(i,i) += bestShift_i*bestShift_s;
+  }
+
+  // compute the inverse of the overlap matrix
+  invert_matrix(invMat, false);
 
   // apply the overlap shift
   for (int i=1; i<N; i++)
@@ -1147,17 +1154,14 @@ bool QMCFixedSampleLinearOptimize::one_shift_run() {
             << "******************************************************************************" << std::endl;
 
   if ( !optTarget->IsValid || std::isnan(newCost)) {
-    app_log() << "The new set of parameters is not valid. Revert to the old set!" << std::endl;
+    app_log() << std::endl << "The new set of parameters is not valid. Revert to the old set!" << std::endl;
     for (int i=0; i<numParams; i++)
       optTarget->Params(i) = currentParameters.at(i);
     bestShift_s=bestShift_s*4.0;
   } else {
     if ( bestShift_s > 1.0e-2 ) bestShift_s=bestShift_s/4.0;
     // say what we are doing
-    app_log() << std::endl
-              << "*****************************" << std::endl
-              << "Updating the guiding function" << std::endl
-              << "*****************************" << std::endl;
+    app_log() << std::endl << "The new set of parameters is valid. Updating the guiding function!" << std::endl;
   }
 
   app_log() << std::endl
@@ -1178,8 +1182,3 @@ bool QMCFixedSampleLinearOptimize::one_shift_run() {
 }
 
 }
-/***************************************************************************
-* $RCSfile$   $Author: jnkim $
-* $Revision: 1286 $   $Date: 2006-08-17 12:33:18 -0500 (Thu, 17 Aug 2006) $
-* $Id: QMCFixedSampleLinearOptimize.cpp 1286 2006-08-17 17:33:18Z jnkim $
-***************************************************************************/
