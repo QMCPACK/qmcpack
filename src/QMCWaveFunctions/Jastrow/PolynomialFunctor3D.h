@@ -343,9 +343,9 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
     }
   }
 
-  inline real_type evaluate(real_type r_12,
-                            real_type r_1I,
-                            real_type r_2I)
+  inline real_type evaluate(const real_type r_12,
+                            const real_type r_1I,
+                            const real_type r_2I) const
   {
     const real_type L = 0.5*cutoff_radius;
     if (r_1I >= L || r_2I >= L)
@@ -373,9 +373,9 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
   }
 
 
-  inline real_type evaluate(real_type r_12, real_type r_1I, real_type r_2I,
+  inline real_type evaluate(const real_type r_12, const real_type r_1I, const real_type r_2I,
                             TinyVector<real_type,3> &grad,
-                            Tensor<real_type,3> &hess)
+                            Tensor<real_type,3> &hess) const
   {
     const real_type L = 0.5*cutoff_radius;
     if (r_1I >= L || r_2I >= L)
@@ -450,7 +450,7 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
   }
 
 
-  inline real_type evaluate(real_type r_12, real_type r_1I, real_type r_2I,
+  inline real_type evaluate(const real_type r_12, const real_type r_1I, const real_type r_2I,
                             TinyVector<real_type,3> &grad,
                             Tensor<real_type,3> &hess,
                             TinyVector<Tensor<real_type,3>,3> &d3)
@@ -559,14 +559,14 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
   }
 
 
-  inline real_type evaluate(real_type r, real_type rinv)
+  inline real_type evaluate(const real_type r, const real_type rinv)
   {
     return 0.0;
   }
 
 
   inline bool
-  evaluateDerivativesFD (real_type r_12, real_type r_1I, real_type r_2I,
+  evaluateDerivativesFD (const real_type r_12, const real_type r_1I, const real_type r_2I,
                          std::vector<double> &d_vals,
                          std::vector<TinyVector<real_type,3> >& d_grads,
                          std::vector<Tensor<real_type,3> > &d_hess)
@@ -599,7 +599,7 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
 
 
   inline bool
-  evaluateDerivatives (real_type r_12, real_type r_1I, real_type r_2I,
+  evaluateDerivatives (const real_type r_12, const real_type r_1I, const real_type r_2I,
                        std::vector<real_type> &d_vals,
                        std::vector<TinyVector<real_type,3> >& d_grads,
                        std::vector<Tensor<real_type,3> > &d_hess)
