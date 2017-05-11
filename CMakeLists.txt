@@ -111,6 +111,10 @@ ELSE(QMC_CUDA)
   MESSAGE("   Full precision = ${OHMMS_PRECISION_FULL}")
 ENDIF(QMC_CUDA)
 
+# Code coverage
+SET(GCOV_SUPPORTED FALSE)
+SET(ENABLE_GCOV FALSE CACHE BOOL "Enable code coverage")
+
 ######################################################################
 # enable MPI and OPNEMP  if possible
 ######################################################################
@@ -497,6 +501,12 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
 
 ENDIF(CMAKE_TOOLCHAIN_FILE)
 
+IF (ENABLE_GCOV)
+  IF (NOT GCOV_SUPPORTED)
+    MESSAGE(FATAL_ERROR "ENABLE_GCOV was specified but compiler does not support GCC coverage flag")
+  ENDIF()
+ENDIF(ENABLE_GCOV)
+
 # check if C++11 is needed by QMCPACK features
 SET(CXX11_NEEDED FALSE)
 IF(BUILD_LMYENGINE_INTERFACE OR BUILD_MINIAPPS OR BUILD_AFQMC OR ENABLE_AA_SOA)
@@ -544,7 +554,7 @@ ENDIF()
 
 # AFQMC requires MPI
 If (BUILD_AFQMC AND NOT QMC_MPI)
-  MESSAGE(FATAL_ERROR "AFQMC requires building with MPI (QMC_MPI=1)")
+  MESSAGE(FATAL_ERROR "AFQMC requires building with MPI (QMC_MPI=1). Set BUILD_AFQMC=0 or configure MPI.")
 ENDIF()
 
 IF (BUILD_AFQMC AND NOT APPLE)

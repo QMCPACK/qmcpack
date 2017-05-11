@@ -283,6 +283,7 @@ ENDIF(ENABLE_AA_SOA)
                     1 # DMC
                     TRUE)
 
+  IF(NOT QMC_CUDA)
   LIST(APPEND BCC_H_RMC_SCALARS "totenergy" "-1.8420 0.0011")
   #check RMC on 16 cores.  1 MPI
   QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-rmc_sdj
@@ -302,6 +303,7 @@ ENDIF(ENABLE_AA_SOA)
                     BCC_H_RMC_SCALARS
                     1 #series#
                     TRUE)
+  ENDIF()
 
                      
 # Plane wave test of bccH (no pp, so faster than typical solids)
@@ -358,6 +360,22 @@ ENDIF(ENABLE_AA_SOA)
                     1 16
                     DIAMOND_SCALARS
                     0 # VMC
+                    TRUE)
+
+# Reference OPT run in qmc-ref
+  LIST(APPEND DIAMOND_OPT_SCALARS "totenergy"   "-10.49370 0.0024")
+  LIST(APPEND DIAMOND_OPT_SCALARS "kinetic"     "11.5504 0.021")
+  LIST(APPEND DIAMOND_OPT_SCALARS "localecp"    "-7.1979 0.023")
+  LIST(APPEND DIAMOND_OPT_SCALARS "nonlocalecp" "0.61540 0.0068")
+  LIST(APPEND DIAMOND_OPT_SCALARS "samples"     "128000 0.0")
+
+  QMC_RUN_AND_CHECK(short-diamondC_1x1x1_pp-opt_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+                    qmc_short
+                    qmc_short_opt.in.xml
+                    1 16
+                    DIAMOND_OPT_SCALARS
+                    3 # VMC
                     TRUE)
 
 # Reference DMC run in qmc-ref "-10.531583 0.000265"
@@ -484,6 +502,7 @@ ENDIF(ENABLE_AA_SOA)
                     1 # DMC
                     TRUE)
 
+  IF(NOT QMC_CUDA)
   LIST(APPEND LONG_BCC_H_RMC_SCALARS "totenergy" "-1.84150 0.00011")
   LIST(APPEND LONG_BCC_H_RMC_SCALARS "potential" "-2.01964 0.00072")
   LIST(APPEND LONG_BCC_H_RMC_SCALARS "potential_pure" "-2.01907 0.00085")
@@ -499,6 +518,7 @@ ENDIF(ENABLE_AA_SOA)
                     LONG_BCC_H_RMC_SCALARS
                     1 # DMC
                     TRUE)
+  ENDIF()
 
  
   LIST(APPEND LONG_DIAMOND_SCALARS "totenergy" "-10.491445 0.000065")
