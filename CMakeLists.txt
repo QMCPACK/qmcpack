@@ -548,7 +548,7 @@ ENDIF()
 
 # AFQMC requires MPI
 If (BUILD_AFQMC AND NOT QMC_MPI)
-  MESSAGE(FATAL_ERROR "AFQMC requires building with MPI (QMC_MPI=1)")
+  MESSAGE(FATAL_ERROR "AFQMC requires building with MPI (QMC_MPI=1). Set BUILD_AFQMC=0 or configure MPI.")
 ENDIF()
 
 IF (BUILD_AFQMC AND NOT APPLE)
