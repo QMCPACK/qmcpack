@@ -8,8 +8,8 @@
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_EEIJASTROW_OPTIMIZED_SOA_H
 #define QMCPLUSPLUS_EEIJASTROW_OPTIMIZED_SOA_H
 #include "Configuration.h"
@@ -248,7 +248,6 @@ public:
   }
 
 
-
   //evaluate the distance table with els
   void resetTargetParticleSet(ParticleSet& P) {}
 
@@ -265,7 +264,6 @@ public:
       (*it).second->checkInVariables(myVars);
       ++it;
     }
-//       reportStatus(app_log());
   }
 
   /** check out optimizable variables
@@ -334,22 +332,6 @@ public:
     }
   }
 
-
-  /**
-   *@param P input configuration containing N particles
-   *@param G a vector containing N gradients
-   *@param L a vector containing N laplacians
-   *@param G returns the gradient \f$G[i]={\bf \nabla}_i J({\bf R})\f$
-   *@param L returns the laplacian \f$L[i]=\nabla^2_i J({\bf R})\f$
-   *@return \f$exp(-J({\bf R}))\f$
-   *@brief While evaluating the value of the Jastrow for a set of
-   *particles add the gradient and laplacian contribution of the
-   *Jastrow to G(radient) and L(aplacian) for local energy calculations
-   *such that \f[ G[i]+={\bf \nabla}_i J({\bf R}) \f]
-   *and \f[ L[i]+=\nabla^2_i J({\bf R}). \f]
-   *@note The DistanceTableData contains only distinct pairs of the
-   *particles belonging to one set, e.g., SymmetricDTD.
-   */
   RealType evaluateLog(ParticleSet& P,
                        ParticleSet::ParticleGradient_t& G,
                        ParticleSet::ParticleLaplacian_t& L)
@@ -367,58 +349,13 @@ public:
 
   ValueType ratio(ParticleSet& P, int iat)
   {
-    // construct nearest ion list
-    // computeU3(u, gradu, hessu)
-    // accumulateG
     UpdateMode=ORB_PBYP_RATIO;
-#if 0
-    const DistanceTableData* ee_table=P.DistTables[0];
-    const DistanceTableData* eI_table=P.DistTables[myTableID];
-    curVal=0.0;
-    RealType newval = 0.0;
-    RealType oldval = 0.0;
-    int ee0 = ee_table->M[iat] - (iat+1);
-    for (int i=0; i<Nion; i++)
-    {
-      IonData &ion = IonDataList[i];
-      RealType r_Ii = eI_table->Temp[i].r1;
-      int nn0 = eI_table->M[i];
-      if (r_Ii < ion.cutoff_radius)
-      {
-        for (int j=0; j<ion.elecs_inside.size(); j++)
-        {
-          int jat = ion.elecs_inside[j];
-          if (jat != iat)
-          {
-            RealType r_ij = ee_table->Temp[jat].r1;
-            RealType r_Ij = eI_table->r(nn0+jat);
-            FT &func = *F(i, iat, jat);
-            RealType u = func.evaluate(r_ij, r_Ii, r_Ij);
-            curVal[jat] += u;
-            newval -= u;
-          }
-        }
-      }
-      //if (Fs[i]) curVal += Fs[i]->evaluate(d_table->Temp[i].r1);
-    }
-    for (int jat=0; jat<Nelec; jat++)
-      oldval -= U[iat*Nelec+jat];
-    DiffVal = newval - oldval;
+
+    const DistanceTableData& eI_table=(*P.DistTables[myTableID]);
+    const DistanceTableData& ee_table=(*P.DistTables[0]);
+    cur_Uat=computeU(P, iat, eI_table.Temp_r.data(), ee_table.Temp_r.data());
+    DiffVal=Uat[iat]-cur_Uat;
     return std::exp(DiffVal);
-    //return std::exp(U[iat]-curVal);
-    // DiffVal=0.0;
-    // const int* pairid(PairID[iat]);
-    // for(int jat=0, ij=iat*N; jat<N; jat++,ij++) {
-    //   if(jat == iat) {
-    //     curVal[jat]=0.0;
-    //   } else {
-    //     curVal[jat]=F[pairid[jat]]->evaluate(ee_table->Temp[jat].r1);
-    //     DiffVal += U[ij]-curVal[jat];
-    //     //DiffVal += U[ij]-F[pairid[jat]]->evaluate(ee_table->Temp[jat].r1);
-    //   }
-    // }
-    // return std::exp(DiffVal);
-#endif
   }
 
   //to be removed from QMCPACK: these are not used anymore with PbyPFast
@@ -442,7 +379,9 @@ public:
     UpdateMode=ORB_PBYP_PARTIAL;
 
     const DistanceTableData& eI_table=(*P.DistTables[myTableID]);
-    computeU3(P, iat, eI_table.Temp_r.data(), eI_table.Temp_dr, cur_Uat, cur_dUat, cur_d2Uat, newUk, newdUk, newd2Uk);
+    const DistanceTableData& ee_table=(*P.DistTables[0]);
+    computeU3(P, iat, eI_table.Temp_r.data(), eI_table.Temp_dr, ee_table.Temp_r.data(), ee_table.Temp_dr,
+              cur_Uat, cur_dUat, cur_d2Uat, newUk, newdUk, newd2Uk);
     DiffVal=Uat[iat]-cur_Uat;
     grad_iat+=cur_dUat;
     return std::exp(DiffVal);
@@ -453,11 +392,14 @@ public:
   void acceptMove(ParticleSet& P, int iat)
   {
     const DistanceTableData& eI_table=(*P.DistTables[myTableID]);
+    const DistanceTableData& ee_table=(*P.DistTables[0]);
     // get the old value, grad, lapl
-    computeU3(P, iat, eI_table.Distances[iat], eI_table.Displacements[iat], Uat[iat], dUat[iat], d2Uat[iat], oldUk, olddUk, oldd2Uk);
+    computeU3(P, iat, eI_table.Distances[iat], eI_table.Displacements[iat], ee_table.Distances[iat], ee_table.Displacements[iat],
+              Uat[iat], dUat[iat], d2Uat[iat], oldUk, olddUk, oldd2Uk);
     if(UpdateMode == ORB_PBYP_RATIO)
     {//ratio-only during the move; need to compute derivatives
-      computeU3(P, iat, eI_table.Temp_r.data(), eI_table.Temp_dr, cur_Uat, cur_dUat, cur_d2Uat, newUk, newdUk, newd2Uk);
+      computeU3(P, iat, eI_table.Temp_r.data(), eI_table.Temp_dr, ee_table.Temp_r.data(), ee_table.Temp_dr,
+                cur_Uat, cur_dUat, cur_d2Uat, newUk, newdUk, newd2Uk);
     }
 
     for(int jel=0; jel<Nelec; jel++)
@@ -475,9 +417,12 @@ public:
   inline void recompute(ParticleSet& P)
   {
     const DistanceTableData& eI_table=(*P.DistTables[myTableID]);
+    const DistanceTableData& ee_table=(*P.DistTables[0]);
     for(int jel=0; jel<Nelec; ++jel)
     {
-      computeU3(P, jel, eI_table.Distances[jel], eI_table.Displacements[jel], Uat[jel], dUat[jel], d2Uat[jel], newUk, newdUk, newd2Uk, true);
+      computeU3(P, jel, eI_table.Distances[jel], eI_table.Displacements[jel], ee_table.Distances[jel], ee_table.Displacements[jel],
+                Uat[jel], dUat[jel], d2Uat[jel], newUk, newdUk, newd2Uk, true);
+      // add the contribution from the upper triangle
       for(int kel=0; kel<jel; kel++)
       {
         Uat[kel] += newUk[kel];
@@ -487,7 +432,39 @@ public:
     }
   }
 
-  inline void computeU3(ParticleSet& P, int jel, const RealType* dist, const RowContainer& displ, valT& Uj, posT& dUj, valT& d2Uj,
+  inline valT computeU(ParticleSet& P, int jel,
+                        const RealType* distjI, const RealType* distjk)
+  {
+    valT Uj = valT(0);
+
+    const DistanceTableData& eI_table=(*P.DistTables[myTableID]);
+    const int jg=P.GroupID[jel];
+
+    for(int iat=0; iat<Nion; ++iat)
+      if(distjI[iat]<IonDataList[iat].cutoff_radius)
+      {
+        const int ig=Ions.GroupID[iat];
+        IonDataCompact &ion = IonDataList[iat];
+        const valT r_Ij     = distjI[iat];
+
+        for(int kel=0; kel<Nelec; kel++)
+          if(eI_table.Distances[kel][iat]<IonDataList[iat].cutoff_radius && kel!=jel)
+          {
+            const int kg=P.GroupID[kel];
+            const FT& feeI(*F(ig,jg,kg));
+
+            const valT r_Ik     = eI_table.Distances[kel][iat];
+            const valT r_jk     = distjk[kel];
+
+            Uj += feeI.evaluate(r_jk, r_Ij, r_Ik);
+          }
+      }
+  }
+
+  inline void computeU3(ParticleSet& P, int jel,
+                        const RealType* distjI, const RowContainer& displjI,
+                        const RealType* distjk, const RowContainer& displjk,
+                        valT& Uj, posT& dUj, valT& d2Uj,
                         ParticleAttrib<valT>& Uk, ParticleAttrib<posT>& dUk, ParticleAttrib<valT>& d2Uk, bool triangle=false)
   {
     constexpr valT czero(0);
@@ -499,7 +476,6 @@ public:
     dUj = posT();
     d2Uj = czero;
 
-    const DistanceTableData& ee_table=(*P.DistTables[0]);
     const DistanceTableData& eI_table=(*P.DistTables[myTableID]);
     const int jg=P.GroupID[jel];
 
@@ -512,12 +488,12 @@ public:
     }
 
     for(int iat=0; iat<Nion; ++iat)
-      if(dist[iat]<IonDataList[iat].cutoff_radius)
+      if(distjI[iat]<IonDataList[iat].cutoff_radius)
       {
         const int ig=Ions.GroupID[iat];
         IonDataCompact &ion = IonDataList[iat];
-        const valT r_Ij     = dist[iat];
-        const posT disp_Ij  = cminus*displ[iat];
+        const valT r_Ij     = distjI[iat];
+        const posT disp_Ij  = cminus*displjI[iat];
         const valT r_Ij_inv = cone/r_Ij;
 
         for(int kel=0; kel<kelmax; kel++)
@@ -530,8 +506,8 @@ public:
             const posT disp_Ik  = cminus*eI_table.Displacements[kel][iat];
             const valT r_Ik_inv = cone/r_Ik;
 
-            const valT r_jk     = ee_table.Distances[jel][kel];
-            const posT disp_jk  = ee_table.Displacements[jel][kel];
+            const valT r_jk     = distjk[kel];
+            const posT disp_jk  = displjk[kel];
             const valT r_jk_inv = cone/r_jk;
 
             TinyVector<valT,3> gradF;
@@ -612,6 +588,7 @@ public:
                            std::vector<RealType>& dlogpsi,
                            std::vector<RealType>& dhpsioverpsi)
   {
+    APP_ABORT("JeeIOrbitalSoA::evaluateDerivatives not implemented yet!");
 #if 0
     bool recalculate(false);
     std::vector<bool> rcsingles(myVars.size(),false);

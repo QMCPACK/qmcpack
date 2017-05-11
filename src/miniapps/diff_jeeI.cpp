@@ -4,9 +4,10 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: 
+// File developed by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
+//                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
-// File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
+// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 /** @file j2debug.cpp
@@ -254,7 +255,7 @@ int main(int argc, char** argv)
 
       els_aos.G=czero;
       els_aos.L=czero;
-      //J_aos.evaluateGL(els_aos);
+      J_aos.evaluateLog(els_aos,els_aos.G,els_aos.L);
 
       {
         double g_err=0.0;
@@ -284,7 +285,7 @@ int main(int argc, char** argv)
         for(int k=0; k<nknots;++k)
         {
           els.makeMoveOnSphere(iel,delta[k]);
-          RealType r_soa; //=J.ratio(els,iel);
+          RealType r_soa=J.ratio(els,iel);
           els.rejectMove(iel);
 
           els_aos.makeMoveOnSphere(iel,delta[k]);
