@@ -343,9 +343,9 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
     }
   }
 
-  inline real_type evaluate(const real_type r_12,
-                            const real_type r_1I,
-                            const real_type r_2I) const
+  inline real_type evaluate(real_type r_12,
+                            real_type r_1I,
+                            real_type r_2I) const
   {
     const real_type L = 0.5*cutoff_radius;
     if (r_1I >= L || r_2I >= L)
@@ -373,7 +373,7 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
   }
 
 
-  inline real_type evaluate(const real_type r_12, const real_type r_1I, const real_type r_2I,
+  inline real_type evaluate(real_type r_12, real_type r_1I, real_type r_2I,
                             TinyVector<real_type,3> &grad,
                             Tensor<real_type,3> &hess) const
   {

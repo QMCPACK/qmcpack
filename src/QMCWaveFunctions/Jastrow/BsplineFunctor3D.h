@@ -220,7 +220,7 @@ struct BsplineFunctor3D: public OptimizableFunctorBase
 
   inline real_type evaluate(real_type r_12,
                             real_type r_1I,
-                            real_type r_2I)
+                            real_type r_2I) const
   {
     if (r_12 >= cutoff_radius || r_1I >= 0.5*cutoff_radius ||
         r_2I >= 0.5*cutoff_radius)
@@ -273,7 +273,7 @@ struct BsplineFunctor3D: public OptimizableFunctorBase
 
   inline real_type evaluate(real_type r_12, real_type r_1I, real_type r_2I,
                             TinyVector<real_type,3> &grad,
-                            Tensor<real_type,3> &hess)
+                            Tensor<real_type,3> &hess) const
   {
     if (r_12 >= cutoff_radius || r_1I >= 0.5*cutoff_radius ||
         r_2I >= 0.5*cutoff_radius)
