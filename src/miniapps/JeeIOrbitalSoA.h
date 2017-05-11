@@ -68,16 +68,6 @@ class JeeIOrbitalSoA: public OrbitalBase
   //YYYY
   std::map<FT*,int> J3UniqueIndex;
 
-  struct IonDataCompact
-  {
-    std::vector<int> elecs_inside;
-    aligned_vector<RealType> elecs_dist;
-    RealType cutoff_radius;
-    IonDataCompact() : cutoff_radius(0.0) { }
-  };
-
-  std::vector<IonDataCompact> IonDataList;
-
   std::vector<valT> Ion_cutoff;
 
   // Used for evaluating derivatives with respect to the parameters
@@ -135,7 +125,7 @@ public:
 
     F.resize(iGroups,eGroups,eGroups);
     F=nullptr;
-    IonDataList.resize(Nion);
+    Ion_cutoff.resize(Nion);
   }
 
   void initUnique()
@@ -181,7 +171,7 @@ public:
       RealType rcut = 0.5 * j->cutoff_radius;
       for (int i=0; i<Nion; i++)
         if (Ions.GroupID[i] == iSpecies)
-          IonDataList[i].cutoff_radius = rcut;
+          Ion_cutoff[i] = rcut;
     }
     else
     {
@@ -222,7 +212,7 @@ public:
     {
       FT* f = F(Ions.GroupID[i],0,0);
       if(f!=0)
-        IonDataList[i].cutoff_radius = .5*f->cutoff_radius;
+        Ion_cutoff[i] = .5*f->cutoff_radius;
     }
     //then check radii
     bool all_radii_match = true;
@@ -289,7 +279,7 @@ public:
       int varoffset=myVars.Index[0];
       for (int i=0; i<Nion; i++)
       {
-        if(IonDataList[i].cutoff_radius>0.0)
+        if(Ion_cutoff[i]>0.0)
         {
           for (int j=0; j<Nelec; j++)
             for (int k=0; k<Nelec; k++)
@@ -441,14 +431,13 @@ public:
     const int jg=P.GroupID[jel];
 
     for(int iat=0; iat<Nion; ++iat)
-      if(distjI[iat]<IonDataList[iat].cutoff_radius)
+      if(distjI[iat]<Ion_cutoff[iat])
       {
         const int ig=Ions.GroupID[iat];
-        IonDataCompact &ion = IonDataList[iat];
         const valT r_Ij     = distjI[iat];
 
         for(int kel=0; kel<Nelec; kel++)
-          if(eI_table.Distances[kel][iat]<IonDataList[iat].cutoff_radius && kel!=jel)
+          if(eI_table.Distances[kel][iat]<Ion_cutoff[iat] && kel!=jel)
           {
             const int kg=P.GroupID[kel];
             const FT& feeI(*F(ig,jg,kg));
@@ -459,6 +448,7 @@ public:
             Uj += feeI.evaluate(r_jk, r_Ij, r_Ik);
           }
       }
+    return Uj;
   }
 
   inline void computeU3(ParticleSet& P, int jel,
@@ -488,16 +478,15 @@ public:
     }
 
     for(int iat=0; iat<Nion; ++iat)
-      if(distjI[iat]<IonDataList[iat].cutoff_radius)
+      if(distjI[iat]<Ion_cutoff[iat])
       {
         const int ig=Ions.GroupID[iat];
-        IonDataCompact &ion = IonDataList[iat];
         const valT r_Ij     = distjI[iat];
         const posT disp_Ij  = cminus*displjI[iat];
         const valT r_Ij_inv = cone/r_Ij;
 
         for(int kel=0; kel<kelmax; kel++)
-          if(eI_table.Distances[kel][iat]<IonDataList[iat].cutoff_radius && kel!=jel)
+          if(eI_table.Distances[kel][iat]<Ion_cutoff[iat] && kel!=jel)
           {
             const int kg=P.GroupID[kel];
             const FT& feeI(*F(ig,jg,kg));
