@@ -53,15 +53,14 @@ class JeeIOrbitalSoA: public OrbitalBase
   RealType DiffVal;
 
   ///\f$Uat[i] = sum_(j) u_{i,j}\f$
-  ParticleAttrib<valT> Uat;
+  ParticleAttrib<valT> Uat,oldUk,newUk;
   ///\f$dUat[i] = sum_(j) du_{i,j}\f$
-  ParticleAttrib<posT> dUat;
+  ParticleAttrib<posT> dUat,olddUk,newdUk;
   valT *FirstAddressOfdU, *LastAddressOfdU;
   ///\f$d2Uat[i] = sum_(j) d2u_{i,j}\f$
-  ParticleAttrib<valT> d2Uat;
-  valT cur_Uat;
-  aligned_vector<valT> cur_u, cur_du, cur_d2u;
-  aligned_vector<valT> old_u, old_du, old_d2u;
+  ParticleAttrib<valT> d2Uat,oldd2Uk,newd2Uk;
+  valT cur_Uat,cur_d2Uat;
+  posT cur_dUat;
   ///container for the Jastrow functions
   Array<FT*,3> F;
 
@@ -126,12 +125,13 @@ public:
     FirstAddressOfdU = &(dUat[0][0]);
     LastAddressOfdU = FirstAddressOfdU + dUat.size()*OHMMS_DIM;
     d2Uat.resize(Nelec);
-    cur_u.resize(Nelec);
-    cur_du.resize(Nelec);
-    cur_d2u.resize(Nelec);
-    old_u.resize(Nelec);
-    old_du.resize(Nelec);
-    old_d2u.resize(Nelec);
+
+    oldUk.resize(Nelec);
+    olddUk.resize(Nelec);
+    oldd2Uk.resize(Nelec);
+    newUk.resize(Nelec);
+    newdUk.resize(Nelec);
+    newd2Uk.resize(Nelec);
 
     F.resize(iGroups,eGroups,eGroups);
     F=nullptr;
@@ -370,6 +370,7 @@ public:
     // construct nearest ion list
     // computeU3(u, gradu, hessu)
     // accumulateG
+    UpdateMode=ORB_PBYP_RATIO;
 #if 0
     const DistanceTableData* ee_table=P.DistTables[0];
     const DistanceTableData* eI_table=P.DistTables[myTableID];
@@ -438,187 +439,120 @@ public:
 
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
-    // construct nearest ion list
-    // computeU3(u, gradu, hessu)
-    // accumulateG
-#if 0
-    curVal  = 0.0;
-    curGrad_i = PosType();
-    curLap_i  = 0.0;
-    curGrad_j = PosType();
-    curLap_j = 0.0;
-    const DistanceTableData* ee_table=P.DistTables[0];
-    const DistanceTableData* eI_table=P.DistTables[myTableID];
-    int ee0 = ee_table->M[iat] - (iat+1);
-    DiffVal = 0.0;
-    for (int i=0; i<Nion; i++)
-    {
-      IonData &ion = IonDataList[i];
-      RealType r_Ii     = eI_table->Temp[i].r1;
-      RealType r_Ii_inv = 1.0/r_Ii;
-      int nn0 = eI_table->M[i];
-      if (r_Ii < ion.cutoff_radius)
-      {
-        for (int j=0; j<ion.elecs_inside.size(); j++)
-        {
-          int jat = ion.elecs_inside[j];
-          if (jat != iat)
-          {
-            RealType r_ij = ee_table->Temp[jat].r1;
-            RealType r_ij_inv = 1.0/r_ij;
-            RealType r_Ij = eI_table->r(nn0+jat);
-            RealType r_Ij_inv = 1.0/r_Ij;
-            FT &func = *F(i, iat, jat);
-            PosType gradF;
-            Tensor<RealType,OHMMS_DIM> hessF;
-            RealType u = func.evaluate(r_ij, r_Ii, r_Ij, gradF, hessF);
-            PosType gr_ee =   -gradF[0]*r_ij_inv * ee_table->Temp[jat].dr1;
-            PosType du_i, du_j;
-            RealType d2u_i, d2u_j;
-            du_i = gradF[1]*r_Ii_inv * eI_table->Temp[i].dr1 - gr_ee;
-            du_j = gradF[2]*r_Ij_inv * eI_table->dr(nn0+jat) + gr_ee;
-            d2u_i = (hessF(0,0) + 2.0*r_ij_inv*gradF[0] + 2.0*hessF(0,1) *
-                     dot(ee_table->Temp[jat].dr1,
-                         eI_table->Temp[i].dr1)*r_ij_inv*r_Ii_inv
-                     + hessF(1,1) + 2.0*r_Ii_inv*gradF[1]);
-            d2u_j = (hessF(0,0) + 2.0*r_ij_inv*gradF[0] - 2.0*hessF(0,2) *
-                     dot(ee_table->Temp[jat].dr1,
-                         eI_table->dr(nn0+jat))*r_ij_inv*r_Ij_inv
-                     + hessF(2,2) + 2.0*r_Ij_inv*gradF[2]);
-            curVal   [jat] += u;
-            curGrad_j[jat] += du_j;
-            curLap_j [jat] += d2u_j;
-            curGrad_i[jat] += du_i;
-            curLap_i [jat] += d2u_i;
-            DiffVal -=   u;
-          }
-        }
-      }
-    }
-    for (int jat=0; jat<Nelec; jat++)
-    {
-      if (iat != jat)
-      {
-        int ij = iat*Nelec+jat;
-        DiffVal +=   U[ij];
-        grad_iat -= curGrad_i[jat];
-      }
-    }
+    UpdateMode=ORB_PBYP_PARTIAL;
+
+    const DistanceTableData& eI_table=(*P.DistTables[myTableID]);
+    computeU3(P, iat, eI_table.Temp_r.data(), eI_table.Temp_dr, cur_Uat, cur_dUat, cur_d2Uat, newUk, newdUk, newd2Uk);
+    DiffVal=Uat[iat]-cur_Uat;
+    grad_iat+=cur_dUat;
     return std::exp(DiffVal);
-#endif
   }
 
   inline void restore(int iat) {}
 
   void acceptMove(ParticleSet& P, int iat)
   {
-#if 0
-    const DistanceTableData* eI_table=P.DistTables[myTableID];
-    //      std::cerr << "acceptMove called.\n";
-    DiffValSum += DiffVal;
-    for(int jat=0,ij=iat*Nelec,ji=iat; jat<Nelec; jat++,ij++,ji+=Nelec)
-      if (jat != iat)
-      {
-        dU[ij]  = curGrad_i[jat];
-        dU[ji]  = curGrad_j[jat];
-        d2U[ij] = curLap_i[jat];
-        d2U[ji] = curLap_j[jat];
-        U[ij] =  U[ji] = curVal[jat];
-      }
-    // Now, update elecs_inside for each ion
-    for (int i=0; i < IonDataList.size(); i++)
-    {
-      IonData &ion = IonDataList[i];
-      bool inside = eI_table->Temp[i].r1 < ion.cutoff_radius;
-      IonData::eListType::iterator iter;
-      iter = find(ion.elecs_inside.begin(),
-                  ion.elecs_inside.end(), iat);
-      if (inside && iter == ion.elecs_inside.end())
-        ion.elecs_inside.push_back(iat);
-      else
-        if (!inside && iter != ion.elecs_inside.end())
-          ion.elecs_inside.erase(iter);
+    const DistanceTableData& eI_table=(*P.DistTables[myTableID]);
+    // get the old value, grad, lapl
+    computeU3(P, iat, eI_table.Distances[iat], eI_table.Displacements[iat], Uat[iat], dUat[iat], d2Uat[iat], oldUk, olddUk, oldd2Uk);
+    if(UpdateMode == ORB_PBYP_RATIO)
+    {//ratio-only during the move; need to compute derivatives
+      computeU3(P, iat, eI_table.Temp_r.data(), eI_table.Temp_dr, cur_Uat, cur_dUat, cur_d2Uat, newUk, newdUk, newd2Uk);
     }
-#endif
-  }
 
-  /** intenal function to compute \f$\sum_j u(r_j), du/dr, d2u/dr2\f$ */
-  inline void computeU3(ParticleSet& P, int jel, const RealType* restrict dist,
-    RealType* restrict u, RealType* restrict du, RealType* restrict d2u)
-  {
+    for(int jel=0; jel<Nelec; jel++)
+    {
+      Uat[jel]   += newUk[jel]-oldUk[jel];
+      dUat[jel]  += newdUk[jel]-olddUk[jel];
+      d2Uat[jel] += newd2Uk[jel]-oldd2Uk[jel];
+    }
+
+    Uat[iat]   = cur_Uat;
+    dUat[iat]  = cur_dUat;
+    d2Uat[iat] = cur_d2Uat;
   }
 
   inline void recompute(ParticleSet& P)
   {
-    constexpr RealType cone(1);
-    constexpr RealType cminus(-1);
-    constexpr RealType ctwo(2);
-    const DistanceTableData& ee_table=(*P.DistTables[0]);
     const DistanceTableData& eI_table=(*P.DistTables[myTableID]);
-
-    // First build a neighbour list for each ion
-    for (int iat=0; iat<Nion; iat++)
-    {
-      IonDataCompact &ion = IonDataList[iat];
-      ion.elecs_inside.clear();
-      ion.elecs_dist.clear();
-      if (ion.cutoff_radius>0)
-        for (int jel=0; jel<Nelec; jel++)
-        {
-          const RealType rij=eI_table.Distances[jel][iat];
-          if (rij < ion.cutoff_radius)
-          {
-            ion.elecs_inside.push_back(jel);
-            ion.elecs_dist.push_back(rij);
-          }
-        }
-    }
-
     for(int jel=0; jel<Nelec; ++jel)
     {
-      const int jg=P.GroupID[jel];
-      Uat[jel]   = 0;
-      dUat[jel]  = PosType();
-      d2Uat[jel] = 0;
-      for(int iat=0; iat<Nion; ++iat)
+      computeU3(P, jel, eI_table.Distances[jel], eI_table.Displacements[jel], Uat[jel], dUat[jel], d2Uat[jel], newUk, newdUk, newd2Uk, true);
+      for(int kel=0; kel<jel; kel++)
       {
-        if(eI_table.Distances[jel][iat]<IonDataList[iat].cutoff_radius)
-        {
-          const int ig=Ions.GroupID[iat];
-          IonDataCompact &ion = IonDataList[iat];
-          const RealType r_Ij     = eI_table.Distances[jel][iat];
-          const PosType disp_Ij   = cminus*eI_table.Displacements[jel][iat];
-          const RealType r_Ij_inv = cone/r_Ij;
+        Uat[kel] += newUk[kel];
+        dUat[kel] += newdUk[kel];
+        d2Uat[kel] += newd2Uk[kel];
+      }
+    }
+  }
 
-          for(int kelid=0; kelid<ion.elecs_inside.size(); kelid++)
+  inline void computeU3(ParticleSet& P, int jel, const RealType* dist, const RowContainer& displ, valT& Uj, posT& dUj, valT& d2Uj,
+                        ParticleAttrib<valT>& Uk, ParticleAttrib<posT>& dUk, ParticleAttrib<valT>& d2Uk, bool triangle=false)
+  {
+    constexpr valT czero(0);
+    constexpr valT cone(1);
+    constexpr valT cminus(-1);
+    constexpr valT ctwo(2);
+    constexpr valT lapfac=OHMMS_DIM-cone;
+    Uj = czero;
+    dUj = posT();
+    d2Uj = czero;
+
+    const DistanceTableData& ee_table=(*P.DistTables[0]);
+    const DistanceTableData& eI_table=(*P.DistTables[myTableID]);
+    const int jg=P.GroupID[jel];
+
+    const int kelmax=triangle?jel:Nelec;
+    for(int kel=0; kel<kelmax; kel++)
+    {
+      Uk[kel] = czero;
+      dUk[kel] = posT();
+      d2Uk[kel] = czero;
+    }
+
+    for(int iat=0; iat<Nion; ++iat)
+      if(dist[iat]<IonDataList[iat].cutoff_radius)
+      {
+        const int ig=Ions.GroupID[iat];
+        IonDataCompact &ion = IonDataList[iat];
+        const valT r_Ij     = dist[iat];
+        const posT disp_Ij  = cminus*displ[iat];
+        const valT r_Ij_inv = cone/r_Ij;
+
+        for(int kel=0; kel<kelmax; kel++)
+          if(eI_table.Distances[kel][iat]<IonDataList[iat].cutoff_radius && kel!=jel)
           {
-            const int kel=ion.elecs_inside[kelid];
-            if(jel==kel) continue;
             const int kg=P.GroupID[kel];
             const FT& feeI(*F(ig,jg,kg));
-            const RealType r_Ik     = ion.elecs_dist[kelid];
-            const RealType r_jk     = ee_table.Distances[jel][kel];
-            const PosType disp_jk   = ee_table.Displacements[jel][kel];
-            const RealType r_jk_inv = cone/r_jk;
 
-            // compute the contribution to jel
+            const valT r_Ik     = eI_table.Distances[kel][iat];
+            const posT disp_Ik  = cminus*eI_table.Displacements[kel][iat];
+            const valT r_Ik_inv = cone/r_Ik;
+
+            const valT r_jk     = ee_table.Distances[jel][kel];
+            const posT disp_jk  = ee_table.Displacements[jel][kel];
+            const valT r_jk_inv = cone/r_jk;
+
             TinyVector<valT,3> gradF;
             Tensor<valT,3> hessF;
 
             valT u = feeI.evaluate(r_jk, r_Ij, r_Ik, gradF, hessF);
-            // sign is flipped in gradient
-            PosType du_j = gradF[0]*r_jk_inv * disp_jk - gradF[1]*r_Ij_inv * disp_Ij;
-            RealType d2u_j = hessF(0,0) + hessF(1,1)
-                           + ctwo*r_jk_inv*gradF[0] + ctwo*r_Ij_inv*gradF[1]
-                           - ctwo*hessF(0,1)*dot(disp_jk,disp_Ij)*r_jk_inv*r_Ij_inv;
+            // compute the contribution to jel
+            Uj += u;
+            dUj += gradF[0]*r_jk_inv * disp_jk - gradF[1]*r_Ij_inv * disp_Ij;
+            d2Uj -= hessF(0,0) + hessF(1,1)
+                    + lapfac*r_jk_inv*gradF[0] + lapfac*r_Ij_inv*gradF[1]
+                    - ctwo*hessF(0,1)*dot(disp_jk,disp_Ij)*r_jk_inv*r_Ij_inv;
 
-            Uat[jel] += u;
-            dUat[jel] += du_j;
-            d2Uat[jel] -= d2u_j;
+            // compute the contribution to kel
+            Uk[kel] += u;
+            dUk[kel] += - gradF[0]*r_jk_inv * disp_jk - gradF[2]*r_Ik_inv * disp_Ik;
+            d2Uk[kel] -= hessF(0,0) + hessF(2,2)
+                         + lapfac*r_jk_inv*gradF[0] + lapfac*r_Ik_inv*gradF[2]
+                         + ctwo*hessF(0,2)*dot(disp_jk,disp_Ik)*r_jk_inv*r_Ik_inv;
           }
-        }
       }
-    }
   }
 
   inline RealType registerData(ParticleSet& P, PooledData<RealType>& buf)
@@ -658,7 +592,7 @@ public:
   void evaluateGL(ParticleSet& P,
              ParticleSet::ParticleGradient_t& G,
              ParticleSet::ParticleLaplacian_t& L,
-             bool fromscratch)
+             bool fromscratch=false)
   {
     if(fromscratch) recompute(P);
     LogValue=valT(0);

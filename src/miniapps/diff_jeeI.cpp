@@ -166,6 +166,7 @@ int main(int argc, char** argv)
       J_aos.evaluateLogAndStore(els_aos,els_aos.G,els_aos.L);
 
       cout << "Check values " << J.LogValue << " " << els.G[12] << " " << els.L[12] << endl;
+      cout << "Check values aos " << J_aos.LogValue << " " << els_aos.G[12] << " " << els_aos.L[12] << endl;
       cout << "evaluateLog::V Error = " << (J.LogValue-J_aos.LogValue)/nels<< endl;
       {
         double g_err=0.0;
@@ -196,13 +197,13 @@ int main(int argc, char** argv)
 
       els.G=czero;
       els.L=czero;
-      //J.evaluateLog(els,els.G,els.L);
+      J.evaluateLog(els,els.G,els.L);
       int naccepted=0;
 
       for(int iel=0; iel<nels; ++iel)
       {
         els.setActive(iel);
-        PosType grad_soa; //=J.evalGrad(els,iel);
+        PosType grad_soa=J.evalGrad(els,iel);
 
         els_aos.setActive(iel);
         PosType grad_aos=J_aos.evalGrad(els_aos,iel)-grad_soa;
@@ -215,7 +216,7 @@ int main(int argc, char** argv)
         if(!good_soa) continue;
 
         grad_soa=0;
-        RealType r_soa; //=J.ratioGrad(els,iel,grad_soa);
+        RealType r_soa=J.ratioGrad(els,iel,grad_soa);
         grad_aos=0;
         RealType r_aos=J_aos.ratioGrad(els_aos,iel,grad_aos);
 
@@ -225,7 +226,7 @@ int main(int argc, char** argv)
 
         if(Random() < r_aos)
         {
-          //J.acceptMove(els,iel);
+          J.acceptMove(els,iel);
           els.acceptMove(iel);
 
           els_aos.acceptMove(iel);
@@ -249,7 +250,7 @@ int main(int argc, char** argv)
 
       els.G=czero;
       els.L=czero;
-      //J.evaluateGL(els, els.G, els.L);
+      J.evaluateGL(els, els.G, els.L);
 
       els_aos.G=czero;
       els_aos.L=czero;
