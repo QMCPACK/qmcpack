@@ -89,9 +89,11 @@ public:
   ///alias FuncType
   using FuncType=FT;
 
-  JeeIOrbitalSoA(ParticleSet& ions, ParticleSet& elecs): Ions(ions), NumVars(0)
+  JeeIOrbitalSoA(ParticleSet& ions, ParticleSet& elecs, bool is_master=false)
+    : Ions(ions), NumVars(0)
   {
     myTableID=elecs.addTable(Ions,DT_SOA);
+    elecs.DistTables[myTableID]->Need_full_table_loadWalker=true;
     init(elecs);
   }
 
@@ -246,6 +248,7 @@ public:
    */
   void checkInVariables(opt_variables_type& active)
   {
+#if 0
     myVars.clear();
     typename std::map<std::string,FT*>::iterator it(J3Unique.begin()),it_end(J3Unique.end());
     while(it != it_end)
@@ -254,12 +257,14 @@ public:
       (*it).second->checkInVariables(myVars);
       ++it;
     }
+#endif
   }
 
   /** check out optimizable variables
    */
   void checkOutVariables(const opt_variables_type& active)
   {
+#if 0
     myVars.clear();
     typename std::map<std::string,FT*>::iterator it(J3Unique.begin()),it_end(J3Unique.end());
     while (it != it_end)
@@ -291,11 +296,13 @@ public:
         }
       }
     }
+#endif
   }
 
   ///reset the value of all the unique Two-Body Jastrow functions
   void resetParameters(const opt_variables_type& active)
   {
+#if 0
     if(!Optimizable)
       return;
     typename std::map<std::string,FT*>::iterator it(J3Unique.begin()),it_end(J3Unique.end());
@@ -309,17 +316,20 @@ public:
       if(ii>=0)
         myVars[i]= active[ii];
     }
+#endif
   }
 
   /** print the state, e.g., optimizables */
   void reportStatus(std::ostream& os)
   {
+#if 0
     typename std::map<std::string,FT*>::iterator it(J3Unique.begin()),it_end(J3Unique.end());
     while(it != it_end)
     {
       (*it).second->myVars.print(os);
       ++it;
     }
+#endif
   }
 
   RealType evaluateLog(ParticleSet& P,

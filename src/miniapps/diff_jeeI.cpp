@@ -26,7 +26,7 @@
 #include <miniapps/common.hpp>
 #include <QMCWaveFunctions/Jastrow/PolynomialFunctor3D.h>
 #include <QMCWaveFunctions/Jastrow/eeI_JastrowOrbital.h>
-#include <miniapps/JeeIOrbitalSoA.h>
+#include <QMCWaveFunctions/Jastrow/JeeIOrbitalSoA.h>
 #include <getopt.h>
 
 using namespace std;
