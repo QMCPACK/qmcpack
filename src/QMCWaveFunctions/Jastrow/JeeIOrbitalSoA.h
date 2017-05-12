@@ -70,6 +70,9 @@ class JeeIOrbitalSoA: public OrbitalBase
 
   std::vector<valT> Ion_cutoff;
 
+  /// compressed distances
+  aligned_vector<valT> Distjk_Compressed, DistkI_Compressed;
+
   // Used for evaluating derivatives with respect to the parameters
   int NumVars;
   Array<std::pair<int,int>,3> VarOffset;
@@ -154,6 +157,9 @@ public:
     F.resize(iGroups,eGroups,eGroups);
     F=nullptr;
     Ion_cutoff.resize(Nion);
+
+    DistkI_Compressed.resize(Nion);
+    Distjk_Compressed.resize(Nelec);
   }
 
   void initUnique()
@@ -472,17 +478,19 @@ public:
         const int ig=Ions.GroupID[iat];
         const valT r_Ij     = distjI[iat];
 
-        for(int kel=0; kel<Nelec; kel++)
-          if(eI_table.Distances[kel][iat]<Ion_cutoff[iat] && kel!=jel)
-          {
-            const int kg=P.GroupID[kel];
-            const FT& feeI(*F(ig,jg,kg));
-
-            const valT r_Ik     = eI_table.Distances[kel][iat];
-            const valT r_jk     = distjk[kel];
-
-            Uj += feeI.evaluate(r_jk, r_Ij, r_Ik);
-          }
+        for(int kg=0; kg<eGroups; ++kg)
+        {
+          const FT& feeI(*F(ig,jg,kg));
+          int kel_counter=0;
+          for(int kel=P.first(kg); kel<P.last(kg); kel++)
+            if(eI_table.Distances[kel][iat]<Ion_cutoff[iat] && kel!=jel)
+            {
+              DistkI_Compressed[kel_counter]=eI_table.Distances[kel][iat];
+              Distjk_Compressed[kel_counter]=distjk[kel];
+              kel_counter++;
+            }
+          Uj += feeI.evaluateV(kel_counter, Distjk_Compressed.data(), r_Ij, DistkI_Compressed.data());
+        }
       }
     return Uj;
   }

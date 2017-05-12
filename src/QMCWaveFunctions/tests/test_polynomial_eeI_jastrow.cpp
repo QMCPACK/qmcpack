@@ -25,6 +25,7 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/Jastrow/PolynomialFunctor3D.h"
 #include "QMCWaveFunctions/Jastrow/eeI_JastrowOrbital.h"
+#include "QMCWaveFunctions/Jastrow/JeeIOrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/eeI_JastrowBuilder.h"
 #include "ParticleBase/ParticleAttribOps.h"
 
@@ -68,6 +69,7 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
   ions_.R[1][2] = 0.0;
   SpeciesSet& source_species(ions_.getSpeciesSet());
   source_species.addSpecies("O");
+  ions_.RSoA=ions_.R;
   //ions_.resetGroups();
 
   elec_.setName("elec");
@@ -123,15 +125,17 @@ const char *particles = \
 
   xmlNodePtr jas_eeI = xmlFirstElementChild(root);
 
-#ifndef ENABLE_AA_SOA
   eeI_JastrowBuilder jastrow(elec_, psi, ions_);
   bool build_okay = jastrow.put(jas_eeI);
   REQUIRE(build_okay);
 
   OrbitalBase *orb = psi.getOrbitals()[0];
 
+#ifdef ENABLE_AA_SOA
+  typedef JeeIOrbitalSoA<PolynomialFunctor3D> J3Type;
+#else
   typedef eeI_JastrowOrbital<PolynomialFunctor3D> J3Type;
-
+#endif
   J3Type *j3 = dynamic_cast<J3Type *>(orb);
   REQUIRE(j3 != NULL);
 
@@ -140,7 +144,6 @@ const char *particles = \
 
   double KE = -0.5*(Dot(elec_.G,elec_.G)+Sum(elec_.L));
   REQUIRE(KE == Approx(-0.058051245)); // note: number not validated
-#endif
 
 }
 }

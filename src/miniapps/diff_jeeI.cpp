@@ -142,7 +142,7 @@ int main(int argc, char** argv)
     JeeIOrbitalSoA<PolynomialFunctor3D> J(ions,els);
     eeI_JastrowOrbital<PolynomialFunctor3D> J_aos(ions,els_aos,ip);
 
-    RealType r_cut=std::min(RealType(4.0),els.Lattice.WignerSeitzRadius);
+    RealType r_cut=std::min(RealType(6.0),els.Lattice.WignerSeitzRadius);
     buildJeeI(J,r_cut);
     cout << "Done with the JeeI " << endl;
     buildJeeI(J_aos,r_cut);

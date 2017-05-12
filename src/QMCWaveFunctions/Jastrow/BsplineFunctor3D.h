@@ -270,6 +270,15 @@ struct BsplineFunctor3D: public OptimizableFunctorBase
     return val;
   }
 
+  inline real_type evaluateV(int Nptcl, const real_type* restrict r_12_array,
+                            const real_type r_1I,
+                            const real_type* restrict r_2I_array) const
+  {
+    real_type val_tot(0);
+    for(int ptcl=0; ptcl<Nptcl; ptcl++)
+      val_tot+=evaluate(r_12_array[ptcl],r_1I,r_2I_array[ptcl]);
+    return val_tot;
+  }
 
   inline real_type evaluate(real_type r_12, real_type r_1I, real_type r_2I,
                             TinyVector<real_type,3> &grad,
