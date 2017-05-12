@@ -410,8 +410,9 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
         }
         r2l *= r_1I;
       }
+      const real_type both_minus_L = (r_2I - L) * (r_1I - L);
       for (int i=0; i<C; i++)
-        val *= (r_1I - L)*(r_2I - L);
+        val *= both_minus_L;
       val_tot += val;
     }
 
@@ -446,44 +447,54 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
         real_type r2n(cone), r2n_1(czero), r2n_2(czero), nf(czero);
         for (int n=0; n<=N_ee; n++)
         {
-          real_type g = gamma(l,m,n);
-          val += g*r2l*r2m*r2n;
-          grad[0] += nf * g *r2l   * r2m   * r2n_1;
-          grad[1] += lf * g *r2l_1 * r2m   * r2n  ;
-          grad[2] += mf * g *r2l   * r2m_1 * r2n  ;
-          hess(0,0) += nf*(nf-cone) * g * r2l   * r2m   * r2n_2  ;
-          hess(0,1) += nf*lf        * g * r2l_1 * r2m   * r2n_1  ;
-          hess(0,2) += nf*mf        * g * r2l   * r2m_1 * r2n_1  ;
-          hess(1,1) += lf*(lf-cone) * g * r2l_2 * r2m   * r2n    ;
-          hess(1,2) += lf*mf        * g * r2l_1 * r2m_1 * r2n    ;
-          hess(2,2) += mf*(mf-cone) * g * r2l   * r2m_2 * r2n    ;
-          r2n_2 = r2n_1;
-          r2n_1 = r2n;
-          r2n *= r_12;
+          const real_type g = gamma(l,m,n);
+          const real_type g00x = g * r2l   * r2m  ;
+          const real_type g10x = g * r2l_1 * r2m  ;
+          const real_type g01x = g * r2l   * r2m_1;
+          const real_type gxx0 = g * r2n;
+
+          val += g00x * r2n;
+          grad[0] += g00x * r2n_1;
+          grad[1] += g10x * r2n  ;
+          grad[2] += g01x * r2n  ;
+          hess(0,0) += g00x * r2n_2;
+          hess(0,1) += g10x * r2n_1;
+          hess(0,2) += g01x * r2n_1;
+          hess(1,1) += gxx0 * r2l_2 * r2m  ;
+          hess(1,2) += gxx0 * r2l_1 * r2m_1;
+          hess(2,2) += gxx0 * r2l   * r2m_2;
           nf += cone;
+          r2n_2 = r2n_1 * nf;
+          r2n_1 = r2n * nf;
+          r2n *= r_12;
         }
-        r2m_2 = r2m_1;
-        r2m_1 = r2m;
-        r2m *= r_2I;
         mf += cone;
+        r2m_2 = r2m_1 * mf;
+        r2m_1 = r2m * mf;
+        r2m *= r_2I;
       }
-      r2l_2 = r2l_1;
-      r2l_1 = r2l;
-      r2l *= r_1I;
       lf += cone;
+      r2l_2 = r2l_1 * lf;
+      r2l_1 = r2l * lf;
+      r2l *= r_1I;
     }
+
+    const real_type r_2I_minus_L = r_2I - L;
+    const real_type r_1I_minus_L = r_1I - L;
+    const real_type both_minus_L = r_2I_minus_L * r_1I_minus_L;
     for (int i=0; i<C; i++)
     {
-      hess(0,0)=(r_1I - L)*(r_2I - L)*hess(0,0);
-      hess(0,1)=(r_1I - L)*(r_2I - L)*hess(0,1)+ (r_2I - L)*grad[0];
-      hess(0,2)=(r_1I - L)*(r_2I - L)*hess(0,2)+ (r_1I - L)*grad[0];
-      hess(1,1)=(r_1I - L)*(r_2I - L)*hess(1,1)+ ctwo*(r_2I - L)*grad[1];
-      hess(1,2)=(r_1I - L)*(r_2I - L)*hess(1,2)+ (r_1I - L)*grad[1] + (r_2I - L)*grad[2] +  val;
-      hess(2,2)=(r_1I - L)*(r_2I - L)*hess(2,2)+ ctwo*(r_1I - L)*grad[2];
-      grad[0] = (r_1I - L)*(r_2I - L)*grad[0];
-      grad[1] = (r_1I - L)*(r_2I - L)*grad[1] + (r_2I - L) * val;
-      grad[2] = (r_1I - L)*(r_2I - L)*grad[2] + (r_1I - L) * val;
-      val *= (r_1I - L)*(r_2I - L);
+
+      hess(0,0)=both_minus_L*hess(0,0);
+      hess(0,1)=both_minus_L*hess(0,1)+ r_2I_minus_L*grad[0];
+      hess(0,2)=both_minus_L*hess(0,2)+ r_1I_minus_L*grad[0];
+      hess(1,1)=both_minus_L*hess(1,1)+ ctwo*r_2I_minus_L*grad[1];
+      hess(1,2)=both_minus_L*hess(1,2)+ r_1I_minus_L*grad[1] + r_2I_minus_L*grad[2] + val;
+      hess(2,2)=both_minus_L*hess(2,2)+ ctwo*r_1I_minus_L*grad[2];
+      grad[0] = both_minus_L*grad[0];
+      grad[1] = both_minus_L*grad[1] + r_2I_minus_L * val;
+      grad[2] = both_minus_L*grad[2] + r_1I_minus_L * val;
+      val *= both_minus_L;
     }
     hess(1,0) = hess(0,1);
     hess(2,0) = hess(0,2);
