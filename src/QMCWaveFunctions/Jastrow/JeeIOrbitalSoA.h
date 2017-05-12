@@ -89,9 +89,10 @@ public:
   ///alias FuncType
   using FuncType=FT;
 
-  JeeIOrbitalSoA(ParticleSet& ions, ParticleSet& elecs, bool is_master=false)
+  JeeIOrbitalSoA(const ParticleSet& ions, ParticleSet& elecs, bool is_master=false)
     : Ions(ions), NumVars(0)
   {
+    OrbitalName = "JeeIOrbitalSoA";
     myTableID=elecs.addTable(Ions,DT_SOA);
     elecs.DistTables[myTableID]->Need_full_table_loadWalker=true;
     init(elecs);
@@ -99,9 +100,34 @@ public:
 
   ~JeeIOrbitalSoA() { }
 
-  OrbitalBasePtr makeClone(ParticleSet& tqp) const
+  OrbitalBasePtr makeClone(ParticleSet& elecs) const
   {
-    JeeIOrbitalSoA<FT>* eeIcopy=new JeeIOrbitalSoA<FT>(*this);
+    JeeIOrbitalSoA<FT>* eeIcopy= new JeeIOrbitalSoA<FT>(Ions, elecs, false);
+    std::map<const FT*,FT*> fcmap;
+    for (int iG=0; iG<iGroups; iG++)
+      for (int eG1=0; eG1<eGroups; eG1++)
+        for (int eG2=0; eG2<eGroups; eG2++)
+        {
+          if(F(iG,eG1,eG2)==0)
+            continue;
+          typename std::map<const FT*,FT*>::iterator fit=fcmap.find(F(iG,eG1,eG2));
+          if(fit == fcmap.end())
+          {
+            FT* fc=new FT(*F(iG,eG1,eG2));
+            eeIcopy->addFunc(iG, eG1, eG2, fc);
+            fcmap[F(iG,eG1,eG2)]=fc;
+          }
+        }
+#if 0
+    eeIcopy->myVars.clear();
+    eeIcopy->myVars.insertFrom(myVars);
+    eeIcopy->NumVars=NumVars;
+    eeIcopy->dLogPsi.resize(NumVars);
+    eeIcopy->gradLogPsi.resize(NumVars,Nelec);
+    eeIcopy->lapLogPsi.resize(NumVars,Nelec);
+    eeIcopy->VarOffset=VarOffset;
+    eeIcopy->Optimizable = Optimizable;
+#endif
     return eeIcopy;
   }
 
