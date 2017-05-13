@@ -385,6 +385,23 @@ struct BsplineFunctor3D: public OptimizableFunctorBase
     return val;
   }
 
+  // assume r_1I < L && r_2I < L, compression and screening is handled outside
+  inline void evaluateVGL(int Nptcl, const real_type* restrict r_12_array,
+                          const real_type r_1I,
+                          const real_type* restrict r_2I_array,
+                          real_type* restrict val_array,
+                          real_type* restrict grad0_array,
+                          real_type* restrict grad1_array,
+                          real_type* restrict grad2_array,
+                          real_type* restrict hess00_array,
+                          real_type* restrict hess11_array,
+                          real_type* restrict hess22_array,
+                          real_type* restrict hess01_array,
+                          real_type* restrict hess02_array) const
+  {
+    APP_ABORT("BsplineFunctor3D::evaluateVGL not implemented yet!");
+  }
+
   inline real_type evaluate(real_type r_12, real_type r_1I, real_type r_2I,
                             TinyVector<real_type,3> &grad,
                             Tensor<real_type,3> &hess,

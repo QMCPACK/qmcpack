@@ -502,6 +502,112 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
     return val;
   }
 
+  // assume r_1I < L && r_2I < L, compression and screening is handled outside
+  inline void evaluateVGL(int Nptcl, const real_type* restrict r_12_array,
+                          const real_type r_1I,
+                          const real_type* restrict r_2I_array,
+                          real_type* restrict val_array,
+                          real_type* restrict grad0_array,
+                          real_type* restrict grad1_array,
+                          real_type* restrict grad2_array,
+                          real_type* restrict hess00_array,
+                          real_type* restrict hess11_array,
+                          real_type* restrict hess22_array,
+                          real_type* restrict hess01_array,
+                          real_type* restrict hess02_array) const
+  {
+    constexpr real_type czero(0);
+    constexpr real_type cone(1);
+    constexpr real_type chalf(0.5);
+    constexpr real_type ctwo(2);
+
+    const real_type L = chalf*cutoff_radius;
+    #pragma omp simd aligned(r_12_array,r_2I_array,val_array, \
+      grad0_array,grad1_array,grad2_array, \
+      hess00_array,hess11_array,hess22_array,hess01_array,hess02_array)
+    for(int ptcl=0; ptcl<Nptcl; ptcl++)
+    {
+      const real_type r_12 = r_12_array[ptcl];
+      const real_type r_2I = r_2I_array[ptcl];
+
+      real_type val(czero);
+      real_type grad0(czero);
+      real_type grad1(czero);
+      real_type grad2(czero);
+      real_type hess00(czero);
+      real_type hess11(czero);
+      real_type hess22(czero);
+      real_type hess01(czero);
+      real_type hess02(czero);
+
+      real_type r2l(cone), r2l_1(czero), r2l_2(czero), lf(czero);
+      for (int l=0; l<=N_eI; l++)
+      {
+        real_type r2m(cone), r2m_1(czero), r2m_2(czero), mf(czero);
+        for (int m=0; m<=N_eI; m++)
+        {
+          real_type r2n(cone), r2n_1(czero), r2n_2(czero), nf(czero);
+          for (int n=0; n<=N_ee; n++)
+          {
+            const real_type g = gamma(l,m,n);
+            const real_type g00x = g * r2l   * r2m  ;
+            const real_type g10x = g * r2l_1 * r2m  ;
+            const real_type g01x = g * r2l   * r2m_1;
+            const real_type gxx0 = g * r2n;
+
+            val += g00x * r2n;
+            grad0 += g00x * r2n_1;
+            grad1 += g10x * r2n  ;
+            grad2 += g01x * r2n  ;
+            hess00 += g00x * r2n_2;
+            hess01 += g10x * r2n_1;
+            hess02 += g01x * r2n_1;
+            hess11 += gxx0 * r2l_2 * r2m  ;
+            hess22 += gxx0 * r2l   * r2m_2;
+            nf += cone;
+            r2n_2 = r2n_1 * nf;
+            r2n_1 = r2n * nf;
+            r2n *= r_12;
+          }
+          mf += cone;
+          r2m_2 = r2m_1 * mf;
+          r2m_1 = r2m * mf;
+          r2m *= r_2I;
+        }
+        lf += cone;
+        r2l_2 = r2l_1 * lf;
+        r2l_1 = r2l * lf;
+        r2l *= r_1I;
+      }
+
+      const real_type r_2I_minus_L = r_2I - L;
+      const real_type r_1I_minus_L = r_1I - L;
+      const real_type both_minus_L = r_2I_minus_L * r_1I_minus_L;
+      for (int i=0; i<C; i++)
+      {
+        hess00=both_minus_L*hess00;
+        hess01=both_minus_L*hess01 + r_2I_minus_L*grad0;
+        hess02=both_minus_L*hess02 + r_1I_minus_L*grad0;
+        hess11=both_minus_L*hess11 + ctwo*r_2I_minus_L*grad1;
+        hess22=both_minus_L*hess22 + ctwo*r_1I_minus_L*grad2;
+        grad0 = both_minus_L*grad0;
+        grad1 = both_minus_L*grad1 + r_2I_minus_L * val;
+        grad2 = both_minus_L*grad2 + r_1I_minus_L * val;
+        val *= both_minus_L;
+      }
+
+      val_array[ptcl] = val;
+      grad0_array[ptcl] = grad0/r_12;
+      grad1_array[ptcl] = grad1/r_1I;
+      grad2_array[ptcl] = grad2/r_2I;
+      hess00_array[ptcl] = hess00;
+      hess11_array[ptcl] = hess11;
+      hess22_array[ptcl] = hess22;
+      hess01_array[ptcl] = hess01/(r_12*r_1I);
+      hess02_array[ptcl] = hess02/(r_12*r_2I);
+    }
+  }
+
 
   inline real_type evaluate(const real_type r_12, const real_type r_1I, const real_type r_2I,
                             TinyVector<real_type,3> &grad,

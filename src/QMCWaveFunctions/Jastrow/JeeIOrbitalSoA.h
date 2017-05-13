@@ -72,6 +72,10 @@ class JeeIOrbitalSoA: public OrbitalBase
 
   /// compressed distances
   aligned_vector<valT> Distjk_Compressed, DistkI_Compressed;
+  std::vector<int> DistIndice;
+
+  using VGL_type=VectorSoaContainer<valT,9>;
+  VGL_type mVGL;
 
   // Used for evaluating derivatives with respect to the parameters
   int NumVars;
@@ -158,8 +162,10 @@ public:
     F=nullptr;
     Ion_cutoff.resize(Nion);
 
-    DistkI_Compressed.resize(Nion);
+    mVGL.resize(Nelec);
+    DistkI_Compressed.resize(Nelec);
     Distjk_Compressed.resize(Nelec);
+    DistIndice.resize(Nelec);
   }
 
   void initUnique()
@@ -521,6 +527,16 @@ public:
       d2Uk[kel] = czero;
     }
 
+    valT* restrict val=mVGL.data(0);
+    valT* restrict gradF0=mVGL.data(1);
+    valT* restrict gradF1=mVGL.data(2);
+    valT* restrict gradF2=mVGL.data(3);
+    valT* restrict hessF00=mVGL.data(4);
+    valT* restrict hessF11=mVGL.data(5);
+    valT* restrict hessF22=mVGL.data(6);
+    valT* restrict hessF01=mVGL.data(7);
+    valT* restrict hessF02=mVGL.data(8);
+
     for(int iat=0; iat<Nion; ++iat)
       if(distjI[iat]<Ion_cutoff[iat])
       {
@@ -529,38 +545,43 @@ public:
         const posT disp_Ij  = cminus*displjI[iat];
         const valT r_Ij_inv = cone/r_Ij;
 
-        for(int kel=0; kel<kelmax; kel++)
-          if(eI_table.Distances[kel][iat]<Ion_cutoff[iat] && kel!=jel)
+        for(int kg=0; kg<eGroups; ++kg)
+        {
+          const FT& feeI(*F(ig,jg,kg));
+          int kel_counter=0;
+          for(int kel=P.first(kg); kel<std::min(P.last(kg),kelmax); kel++)
+            if(eI_table.Distances[kel][iat]<Ion_cutoff[iat] && kel!=jel)
+            {
+              DistkI_Compressed[kel_counter]=eI_table.Distances[kel][iat];
+              Distjk_Compressed[kel_counter]=distjk[kel];
+              DistIndice[kel_counter]=kel;
+              kel_counter++;
+            }
+
+          feeI.evaluateVGL(kel_counter, Distjk_Compressed.data(), r_Ij, DistkI_Compressed.data(),
+                           val, gradF0, gradF1, gradF2, hessF00, hessF11, hessF22, hessF01, hessF02);
+
+          for(int kel_index=0; kel_index<kel_counter; kel_index++)
           {
-            const int kg=P.GroupID[kel];
-            const FT& feeI(*F(ig,jg,kg));
-
-            const valT r_Ik     = eI_table.Distances[kel][iat];
+            int kel=DistIndice[kel_index];
             const posT disp_Ik  = cminus*eI_table.Displacements[kel][iat];
-            const valT r_Ik_inv = cone/r_Ik;
-
-            const valT r_jk     = distjk[kel];
             const posT disp_jk  = displjk[kel];
-            const valT r_jk_inv = cone/r_jk;
 
-            TinyVector<valT,3> gradF;
-            Tensor<valT,3> hessF;
-
-            valT u = feeI.evaluate(r_jk, r_Ij, r_Ik, gradF, hessF);
             // compute the contribution to jel
-            Uj += u;
-            dUj += gradF[0]*r_jk_inv * disp_jk - gradF[1]*r_Ij_inv * disp_Ij;
-            d2Uj -= hessF(0,0) + hessF(1,1)
-                    + lapfac*r_jk_inv*gradF[0] + lapfac*r_Ij_inv*gradF[1]
-                    - ctwo*hessF(0,1)*dot(disp_jk,disp_Ij)*r_jk_inv*r_Ij_inv;
+            Uj += val[kel_index];
+            dUj += gradF0[kel_index] * disp_jk - gradF1[kel_index] * disp_Ij;
+            d2Uj -= hessF00[kel_index] + hessF11[kel_index]
+                    + lapfac*(gradF0[kel_index] + gradF1[kel_index])
+                    - ctwo*hessF01[kel_index]*dot(disp_jk,disp_Ij);
 
             // compute the contribution to kel
-            Uk[kel] += u;
-            dUk[kel] += - gradF[0]*r_jk_inv * disp_jk - gradF[2]*r_Ik_inv * disp_Ik;
-            d2Uk[kel] -= hessF(0,0) + hessF(2,2)
-                         + lapfac*r_jk_inv*gradF[0] + lapfac*r_Ik_inv*gradF[2]
-                         + ctwo*hessF(0,2)*dot(disp_jk,disp_Ik)*r_jk_inv*r_Ik_inv;
+            Uk[kel] += val[kel_index];
+            dUk[kel] += - gradF0[kel_index] * disp_jk - gradF2[kel_index] * disp_Ik;
+            d2Uk[kel] -= hessF00[kel_index] + hessF22[kel_index]
+                         + lapfac*(gradF0[kel_index] + gradF2[kel_index])
+                         + ctwo*hessF02[kel_index]*dot(disp_jk,disp_Ik);
           }
+        }
       }
   }
 
