@@ -210,9 +210,15 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   // settings to the ParticleSet
   elec.resetGroups();
 
+#ifdef ENABLE_AA_SOA
+  elec.addTable(ions,DT_SOA);
+  ions.addTable(ions,DT_SOA);
+#else
   elec.addTable(ions,DT_AOS);
-  elec.update();
   ions.addTable(ions,DT_AOS);
+#endif
+
+  elec.update();
   ions.update();
 
   ForceChiesaPBCAA force(ions, elec);
@@ -306,9 +312,15 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
   // settings to the ParticleSet
   elec.resetGroups();
 
+#ifdef ENABLE_AA_SOA
+  elec.addTable(ions,DT_SOA);
+  ions.addTable(ions,DT_SOA);
+#else
   elec.addTable(ions,DT_AOS);
-  elec.update();
   ions.addTable(ions,DT_AOS);
+#endif
+
+  elec.update();
   ions.update();
 
   ForceCeperley force(ions, elec);

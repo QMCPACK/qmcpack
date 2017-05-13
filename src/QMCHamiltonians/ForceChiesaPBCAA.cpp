@@ -41,7 +41,7 @@ ForceChiesaPBCAA::ForceChiesaPBCAA(ParticleSet& ions, ParticleSet& elns, bool fi
   
   //This sets up the long range breakups. 
   kcdifferent=false;
-  myTableIndex=elns.addTable(ions,DT_AOS);
+  myTableIndex=elns.addTable(ions,DT_SOA_PREFERRED);
   initBreakup(elns);
  // app_log()<< "IonIon Force" << std::endl;
  // app_log()<<forces_IonIon<< std::endl; 
@@ -178,52 +178,90 @@ void ForceChiesaPBCAA::evaluateLR(ParticleSet& P)
 void ForceChiesaPBCAA::evaluateSR(ParticleSet& P)
 {
   const DistanceTableData &d_ab(*P.DistTables[myTableIndex]);
-  //RealType res=0.0;
-  //Loop over distinct eln-ion pairs
-  for(int iat=0; iat<NptclA; iat++)
+  if(d_ab.DTType == DT_SOA)
   {
-    //RealType esum = 0.0;
-    //app_log()<<"Long Range force calculation for ion..."<< std::endl;
-    for(int nn=d_ab.M[iat], jat=0; nn<d_ab.M[iat+1]; ++nn,++jat)
+    // WARNNING not checked
+    for(size_t b=0; b<NptclB; ++b)
     {
-      RealType V;
-      RealType g_f=g_filter(d_ab.r(nn));
-      //rV = rVs->splint(d_ab.r(nn), d_rV_dr, d2_rV_dr2);
-      V = -AB->srDf(d_ab.r(nn),d_ab.rinv(nn));
-     // std::stringstream wee;
-    //  wee<<"srDf() #"<<omp_get_thread_num()<<" V= "<<V<<" "<<iat<<" "<<nn<< std::endl;
-      
-    //  std::cout <<wee.str();
-      
-      PosType drhat = d_ab.rinv(nn) * d_ab.dr(nn);
-      //esum += Qat[jat]*d_ab.rinv(nn)*rV;
-    //  app_log()<<"iat="<<iat<<" elec="<<jat<< std::endl;
-    //  app_log()<<"dr = "<<d_ab.dr(nn)<< std::endl;
-    //  app_log()<<"force = "<<-g_f*Zat[iat]*Qat[jat] * V * drhat<< std::endl;
-      forces[iat] += -g_f*Zat[iat]*Qat[jat] * V * drhat;
+      const RealType* restrict dist=d_ab.Distances[b];
+
+      for(size_t a=0; a<NptclA; ++a)
+      {
+        RealType g_f = g_filter(dist[a]);
+        RealType V = -AB->srDf(dist[a],1.0/dist[a]);
+        PosType drhat = dist[a]*d_ab.Displacements[b][a];
+        forces[a] += -g_f*Zat[a]*Qat[b]*V*drhat;
+      }
+    }
+    //for(size_t a=0; a<NptclA; ++a)
+    //  std::cout << "debug evaluateSR " << forces[a] << std::endl;
+  }
+  else
+  {
+    //RealType res=0.0;
+    //Loop over distinct eln-ion pairs
+    for(int iat=0; iat<NptclA; iat++)
+    {
+      //RealType esum = 0.0;
+      //app_log()<<"Long Range force calculation for ion..."<< std::endl;
+      for(int nn=d_ab.M[iat], jat=0; nn<d_ab.M[iat+1]; ++nn,++jat)
+      {
+        RealType V;
+        RealType g_f=g_filter(d_ab.r(nn));
+        //rV = rVs->splint(d_ab.r(nn), d_rV_dr, d2_rV_dr2);
+        V = -AB->srDf(d_ab.r(nn),d_ab.rinv(nn));
+       // std::stringstream wee;
+      //  wee<<"srDf() #"<<omp_get_thread_num()<<" V= "<<V<<" "<<iat<<" "<<nn<< std::endl;
+      //  std::cout <<wee.str();
+        PosType drhat = d_ab.rinv(nn) * d_ab.dr(nn);
+        //esum += Qat[jat]*d_ab.rinv(nn)*rV;
+      //  app_log()<<"iat="<<iat<<" elec="<<jat<< std::endl;
+      //  app_log()<<"dr = "<<d_ab.dr(nn)<< std::endl;
+      //  app_log()<<"force = "<<-g_f*Zat[iat]*Qat[jat] * V * drhat<< std::endl;
+        forces[iat] += -g_f*Zat[iat]*Qat[jat] * V * drhat;
+      }
+      //std::cout << "debug evaluateSR " << forces[iat] << std::endl;
     }
   }
-    
-   
 }
 
 void ForceChiesaPBCAA::evaluateSR_AA()
 {
   const DistanceTableData &d_aa(*PtclA.DistTables[0]);
-  //RealType res=0.0;
-  //Loop over distinct eln-ion pairs
- for(int ipart=0; ipart<NptclA; ipart++)
+  if(d_aa.DTType == DT_SOA)
   {
-    RealType esum = 0.0;
-    for(int nn=d_aa.M[ipart],jpart=ipart+1; nn<d_aa.M[ipart+1]; nn++,jpart++)
+    // WARNNING not checked
+    for(size_t ipart=1; ipart<NptclA; ipart++)
     {
-      RealType V = -AB->srDf(d_aa.r(nn),d_aa.rinv(nn));
-      PosType grad = -Zat[jpart]*Zat[ipart]*V*d_aa.rinv(nn)*d_aa.dr(nn);
-      forces_IonIon[ipart] += grad;
-      forces_IonIon[jpart] -= grad;
-   //   app_log()<<"ShortRange Ion Ion component"<< std::endl;
-   //   app_log() <<"grad[" <<ipart<< "] = "<<grad<< std::endl;
-   //   app_log() <<"Zat[" <<ipart<< "] = "<<Zat[ipart]<< std::endl;
+      const RealType* restrict dist=d_aa.Distances[ipart];
+      for(size_t jpart=0; jpart<ipart; ++jpart)
+      {
+        RealType V = -AB->srDf(dist[jpart],1.0/dist[jpart]);
+        PosType grad = -Zat[jpart]*Zat[ipart]*V*dist[jpart]*d_aa.Displacements[ipart][jpart];
+        forces_IonIon[ipart] += grad;
+        forces_IonIon[jpart] -= grad;
+      }
+    }
+    for(size_t ipart=0; ipart<NptclA; ++ipart)
+      std::cout << "debug evaluateSR_AA " << forces_IonIon[ipart] << std::endl;
+  }
+  else
+  {
+    //RealType res=0.0;
+    //Loop over distinct eln-ion pairs
+    for(int ipart=0; ipart<NptclA; ipart++)
+    {
+      for(int nn=d_aa.M[ipart],jpart=ipart+1; nn<d_aa.M[ipart+1]; nn++,jpart++)
+      {
+        RealType V = -AB->srDf(d_aa.r(nn),d_aa.rinv(nn));
+        PosType grad = -Zat[jpart]*Zat[ipart]*V*d_aa.rinv(nn)*d_aa.dr(nn);
+        forces_IonIon[ipart] += grad;
+        forces_IonIon[jpart] -= grad;
+     //   app_log()<<"ShortRange Ion Ion component"<< std::endl;
+     //   app_log() <<"grad[" <<ipart<< "] = "<<grad<< std::endl;
+     //   app_log() <<"Zat[" <<ipart<< "] = "<<Zat[ipart]<< std::endl;
+      }
+      std::cout << "debug evaluateSR_AA " << forces_IonIon[ipart] << std::endl;
     }
   }
 }
