@@ -440,14 +440,12 @@ class SMDenseVector
   }
 
   template<class Compare>
-  inline void sort(Compare comp) {
-    if(!head) return;
-    if(vals==NULL) return;
-    std::sort(vals->begin(),vals->end(),comp);
-  }
+  inline void sort(Compare comp, MPI_Comm local_comm=MPI_COMM_SELF, bool inplace=true) {
 
-  template<class Compare>
-  inline void sort(Compare comp, MPI_Comm local_comm, bool inplace=true) {
+    if(vals==NULL) return;
+    if(local_comm==MPI_COMM_SELF) {
+      std::sort(vals->begin(),vals->end(),comp);
+    }
 
     double t1,t2,t3,t4;
     struct timeval tv;
@@ -508,16 +506,17 @@ class SMDenseVector
 
 
     std::vector<T> temp;
-    if (!inplace && rank<nblk)
-      for(int i=0, sz=nblk; i<nlvl; i++,sz/=2) 
-        if( rank%sz==0 ) {
-          int nt=0;
-          int nb = pow(2,i);
-          for(int j=0; j<nb; j++)
-            nt = std::max(nt, pos[(j+1)*sz]-pos[j*sz]);
-          temp.resize(nt);  
-          break;
-        }
+    if (!inplace && rank<nblk) {
+      int nt=0;
+      for(int i=0, k=rank, sz=1; i<nlvl; i++, sz*=2 ) {
+        if(k%2==0 && rank<nblk) {
+          nt = std::max(nt,pos[rank+sz*2] - pos[rank]);
+          k/=2;
+        } else
+          k=1;
+      }
+      temp.resize(nt);
+    }
     
     for(int i=0, k=rank, sz=1; i<nlvl; i++, sz*=2 ) {
       if(k%2==0 && rank<nblk) {
@@ -525,7 +524,7 @@ class SMDenseVector
           std::inplace_merge( vals->begin()+pos[rank], vals->begin()+pos[rank+sz], vals->begin()+pos[rank+sz*2], comp);  
         } else { 
           int nt = pos[rank+sz*2] - pos[rank];
-          temp.resize(nt); // just in case
+           assert( temp.size() >= nt );  
           std::merge( vals->begin()+pos[rank], vals->begin()+pos[rank+sz], vals->begin()+pos[rank+sz], vals->begin()+pos[rank+sz*2], temp.begin(), comp);  
           std::copy(temp.begin(),temp.begin()+nt,vals->begin()+pos[rank]);
         }
@@ -534,7 +533,6 @@ class SMDenseVector
         k=1;  
       MPI_Barrier(local_comm);
     }
-
 
 
 // FIX FIX FIX

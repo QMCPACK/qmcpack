@@ -48,9 +48,10 @@ bool AFQMCDriver::run()
 
   if(!restarted) {
     Eshift=wlkBucket->getEloc(0).real();
-    Etav=wlkBucket->getEloc(0).real();
     step0=block0=0;
   }
+
+  std::vector<ComplexType> curData; 
 
   RealType w0 = wlkBucket->GlobalWeight();
   int nwalk_ini = wlkBucket->GlobalPopulation();
@@ -71,11 +72,10 @@ bool AFQMCDriver::run()
     Timers[BlockTotal]->start();
     for (int iStep=0; iStep<nStep; ++iStep, ++step_tot) {
 
-
       // propagate nSubstep 
       LocalTimer.start("SubStep::Propagate");
       Timers[SubstepPropagate]->start();
-      prop0->Propagate(nSubstep,time,wlkBucket,Eshift,estim0);
+      prop0->Propagate(nSubstep,time,wlkBucket,Eshift);
       LocalTimer.stop("SubStep::Propagate");
       Timers[SubstepPropagate]->stop();        
 
@@ -88,32 +88,18 @@ bool AFQMCDriver::run()
         Timers[StepOrthogonalize]->stop();
       }
 
-      // quantities that are measured once per step 
-      estim0->accumulate_step(wlkBucket);
-
-      if (step_tot != 0 && step_tot % nPopulationControl == 0) {
+//      if (step_tot != 0 && step_tot % nPopulationControl == 0) 
+      {
         LocalTimer.start("Step::PopControl");
         Timers[StepPopControl]->start();
-// temporarily setting communicator to COMM_WORLD, until I finish implementation of new pop. control alg
-        wlkBucket->popControl(MPI_COMM_WORLD);
+        // temporarily setting communicator to COMM_WORLD, 
+        // until I finish implementation of new pop. control alg
+        wlkBucket->popControl(MPI_COMM_WORLD,curData);
         LocalTimer.stop("Step::PopControl");
         Timers[StepPopControl]->stop();
-      }
-/*
-      if (step_tot != 0 && step_tot % nloadBalance == 0) {
-        LocalTimer.start("Step::loadBalance");
-        Timers[StepLoadBalance]->start();
-        wlkBucket->loadBalance();
-        LocalTimer.stop("Step::loadBalance");
-        Timers[StepLoadBalance]->stop();
-      }    
-*/
 
-      //Etav += estim0->getEloc_step();
-      if(time*dt < 1.0)  
-        Etav = estim0->getEloc_step();
-      else
-        Etav += dShift*0.1*(estim0->getEloc_step()-Etav);
+        estim0->accumulate_step(wlkBucket,curData);
+      }
 
       if(time*dt < 1.0)  
         Eshift = estim0->getEloc_step();
@@ -142,7 +128,7 @@ bool AFQMCDriver::run()
     LocalTimer.stop("Block::TOTAL");
     Timers[BlockTotal]->stop();
 
-    estim0->print(iBlock+1,time*dt,Eshift,Etav,wlkBucket);
+    estim0->print(iBlock+1,time*dt,Eshift,Eshift,wlkBucket);
 
     if(print_timers > 0 && myComm->rank()==0 && iBlock%print_timers == 0) output_timers(out_timers,iBlock); 
 
@@ -280,9 +266,9 @@ bool AFQMCDriver::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
   myComm->bcast(restarted);
   if(restarted) {
     app_log()<<" Restarted from file. Block, step: " <<block0 <<" " <<step0 <<std::endl; 
-    app_log()<<"                      Eshift, Etav: " <<Eshift <<" " <<Etav <<std::endl;
+    app_log()<<"                      Eshift: " <<Eshift <<std::endl;
     myComm->bcast(Eshift);
-    myComm->bcast(Etav);
+    myComm->bcast(Eshift);
     myComm->bcast(block0);
     myComm->bcast(step0);
   }
@@ -390,7 +376,7 @@ bool AFQMCDriver::checkpoint(int block, int step)
 
     std::vector<RealType> Rdata(2);
     Rdata[0]=Eshift;
-    Rdata[1]=Etav;
+    Rdata[1]=Eshift;
 
     std::vector<IndexType> Idata(2);
     Idata[0]=block;
@@ -466,7 +452,6 @@ bool AFQMCDriver::restart(hdf_archive& read)
   if(!read.read(Rdata,"DriverReals")) return false;
 
   Eshift = Rdata[0];
-  Etav = Rdata[1];
 
   block0=Idata[0];
   step0=Idata[1];

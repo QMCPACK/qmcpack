@@ -29,7 +29,7 @@ class VMCPropagator: public PropagatorBase
 
   ~VMCPropagator() {}
 
-  void Propagate(int steps, int& steps_total, WalkerHandlerBase*, RealType& E1, EstimatorHandler* estim);
+  void Propagate(int steps, int& steps_total, WalkerHandlerBase*, RealType& E1);
 
   bool parse(xmlNodePtr);
 

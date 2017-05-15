@@ -9,6 +9,7 @@
 
 #include "OhmmsData/libxmldefs.h"
 #include "io/hdf_archive.h"
+#include "Utilities/RandomGenerator.h"
 
 #include"AFQMC/config.h"
 #include <Message/MPIObjectBase.h>
@@ -28,7 +29,7 @@ class WalkerHandlerBase: public MPIObjectBase, public AFQMCInfo
   public:
 
   /// constructor
-  WalkerHandlerBase(Communicate* c, std::string type=""): MPIObjectBase(c),name("")
+  WalkerHandlerBase(Communicate* c, RandomGenerator_t* r, std::string type=""): MPIObjectBase(c),rng(r),name("")
            ,load_balance_alg("all"),core_rank(0),ncores_per_TG(1),walkerType(type)
            ,pop_control_type("simple")
   { }
@@ -70,7 +71,7 @@ class WalkerHandlerBase: public MPIObjectBase, public AFQMCInfo
   virtual void loadBalance(MPI_Comm comm)=0; 
 
   // population control algorithm
-  virtual void popControl(MPI_Comm comm)=0; 
+  virtual void popControl(MPI_Comm comm, std::vector<ComplexType>& curData)=0; 
 
   virtual void setHF(const ComplexMatrix& HF)=0;
 
@@ -120,7 +121,9 @@ class WalkerHandlerBase: public MPIObjectBase, public AFQMCInfo
   // type of walker
   std::string walkerType;
 
-  int nwalk_global, nwalk_min, nwalk_max;
+  RandomGenerator_t* rng;
+
+  int nwalk_global, nwalk_min, nwalk_max, targetN;
   std::vector<int> nwalk_counts_old, nwalk_counts_new;
 
   // type of load balancing

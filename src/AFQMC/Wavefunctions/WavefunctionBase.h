@@ -23,7 +23,7 @@ class WavefunctionBase: public MPIObjectBase, public AFQMCInfo
     WavefunctionBase(Communicate *c):MPIObjectBase(c),readHamFromFile(false),
        hdf_write_file(""),hdf_read_tag(""),hdf_write_tag(""),wfn_role(""),closed_shell(false),
        filetype(""),TG(c,"WavefunctionTG"),distribute_Ham(false),min_ik(-1),max_ik(-1),ncores_per_TG(1),
-       core_rank(0),nnodes_per_TG(1),parallel(false),dm_type(1),walker_type(1),wfn_type(1),
+       core_rank(0),nnodes_per_TG(1),parallel(false),dm_type(0),walker_type(1),wfn_type(0),
        useFacHam(false),sparse_vn(false),dt(1.0)
     {
     }

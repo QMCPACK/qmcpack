@@ -695,6 +695,20 @@ Communicate::bcast(std::vector<double>& g)
 
 template<>
 inline void
+Communicate::bcast(std::vector<std::complex<double>>& g)
+{
+  MPI_Bcast(&(g[0]),2*g.size(),MPI_DOUBLE,0,myMPI);
+}
+
+template<>
+inline void
+Communicate::bcast(std::vector<std::complex<float>>& g)
+{
+  MPI_Bcast(&(g[0]),2*g.size(),MPI_FLOAT,0,myMPI);
+}
+
+template<>
+inline void
 Communicate::bcast(std::vector<float>& g)
 {
   MPI_Bcast(&(g[0]),g.size(),MPI_FLOAT,0,myMPI);

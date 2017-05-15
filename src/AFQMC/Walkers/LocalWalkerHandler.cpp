@@ -545,7 +545,7 @@ app_log()<<std::endl;
 } 
 
 // population control algorithm
-void LocalWalkerHandler::popControl(MPI_Comm comm)
+void LocalWalkerHandler::popControl(MPI_Comm comm, std::vector<ComplexType>& curData)
 {
 
   for(WalkerIterator it=walkers.begin(); it!=walkers.end(); ) 
@@ -559,7 +559,7 @@ void LocalWalkerHandler::popControl(MPI_Comm comm)
     // if below cutoff, flip a coin and kill walker if necessary
     // check if this is correct, do I reset the weight to min_weight if successful??? 
     if( it->alive && std::abs(it->weight) < std::abs(min_weight) ) { 
-      if( (int)(distribution(generator) + std::abs(it->weight)/std::abs(reset_weight)) == 0  ) {
+      if( (int)((*rng)() + std::abs(it->weight)/std::abs(reset_weight)) == 0  ) {
          it=walkers.erase(it);
       } else {
         (it++)->weight = reset_weight;
@@ -577,7 +577,7 @@ void LocalWalkerHandler::popControl(MPI_Comm comm)
       RealType w = std::abs(it->weight);
       int n = (int) (w/std::abs(reset_weight));
       RealType rem = w-n*std::abs(reset_weight);
-      if( ( (int)(distribution(generator) + std::abs(rem/reset_weight) ) ) != 0 ) n++;      
+      if( ( (int)((*rng)() + std::abs(rem/reset_weight) ) ) != 0 ) n++;      
       it->weight *= reset_weight/w; 
       for(int i=0; i<n-1; i++) {
         w_.push_back(SlaterDetWalker(*it));

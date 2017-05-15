@@ -30,22 +30,12 @@ class EstimatorHandler: public MPIObjectBase, public AFQMCInfo
     return estimators[0]->getEloc_step();
   } 
 
-  double getWeight() 
-  {
-    return estimators[0]->getWeight();
-  } 
-
-  double getWeight_step() 
-  {
-    return estimators[0]->getWeight_step();
-  } 
-
   // meant for very cheap accumulations
-  void accumulate_substep(WalkerHandlerBase* wlks) 
-  {
+  //void accumulate_substep(WalkerHandlerBase* wlks) 
+  //{
     // only on basic for now
-    estimators[0]->accumulate_substep(wlks); 
-  }
+  //  estimators[0]->accumulate_substep(wlks); 
+  //}
 
   void print(int block, double time, double Es, double Eav,  WalkerHandlerBase* wlks)
   {
@@ -58,10 +48,10 @@ class EstimatorHandler: public MPIObjectBase, public AFQMCInfo
   }
 
   // 1) acumulates estimators over steps, and 2) reduces and accumulates substep estimators 
-  void accumulate_step(WalkerHandlerBase* wlks) 
+  void accumulate_step(WalkerHandlerBase* wlks, std::vector<ComplexType>& curData) 
   {
     for(std::vector<EstimatorBase*>::iterator it=estimators.begin(); it!=estimators.end(); it++)
-      (*it)->accumulate_step(wlks);
+      (*it)->accumulate_step(wlks,curData);
   } 
 
   // 1) acumulates estimators over steps, and 2) reduces and accumulates substep estimators 
@@ -95,7 +85,7 @@ class EstimatorHandler: public MPIObjectBase, public AFQMCInfo
         OhmmsAttributeSet oAttrib;
         oAttrib.add(name,"name");
         oAttrib.put(cur);  
-        if(name == "basic" || name == "Basic" || name == "starndard" ) {
+        if(name == "basic" || name == "Basic" || name == "standard" ) {
           if(!estimators[0]->parse(cur)) return false;
         } else {
           // create and parse new estimators 

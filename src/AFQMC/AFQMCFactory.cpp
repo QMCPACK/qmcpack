@@ -179,10 +179,11 @@ bool AFQMCFactory::parse(xmlNodePtr cur)
 
       WalkerHandlerBase* obj;
       if(type == "distributed" || type == "dist") 
-        obj = (WalkerHandlerBase*) new DistWalkerHandler(myComm); 
-      else if(type=="local") 
-        obj = (WalkerHandlerBase*) new LocalWalkerHandler(myComm); 
-      else {
+        obj = (WalkerHandlerBase*) new DistWalkerHandler(myComm,RandomNumberControl::Children[0]); 
+      else if(type=="local") { 
+        APP_ABORT(" Error: local walker handler has been temporarily disabled. Use type=distributed.");
+        obj = (WalkerHandlerBase*) new LocalWalkerHandler(myComm,RandomNumberControl::Children[0]); 
+      } else {
         app_error()<<"Unknown WalkerSet type: " <<type <<std::endl;
         return false;
       }

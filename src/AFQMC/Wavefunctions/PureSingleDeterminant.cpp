@@ -163,7 +163,7 @@ bool PureSingleDeterminant::initFromAscii(std::string fileName)
         switch(wfn_type) {
           case 0:
           {
-            app_log()<<"Using a RHF-type trial wave-function in lSlaterDeterminant. \n";
+            app_log()<<"Using a RHF-type trial wave-function in SlaterDeterminant. \n";
             break;
           }
           case 1:
@@ -447,8 +447,6 @@ bool PureSingleDeterminant::setup_local()
     occup_beta.resize(NAEB);
     for(int i=0; i<NAEA; i++) occup_alpha[i]=i;
     for(int i=0; i<NAEB; i++) occup_beta[i]=NMO+i;
-    if(NAEA==NAEB)
-      wfn_type = 0;
   } else {
     if((occup_alpha.size() != NAEA ) || (occup_beta.size() != NAEB)) {
       app_error()<<"ERROR in PureSingleDeterminant::initFromAscii. occup_alpha/occup_beta wrongly defined. " <<std::endl;  
@@ -516,18 +514,20 @@ bool PureSingleDeterminant::getHamiltonian(HamPtr h)
   if(NCA==NCB && NAEA == NAEB && occup_alpha.size() == occup_beta.size() && spinRestricted && wfn_type==0 ) {
     closed_shell = true;
     for(int i=0; i<occup_alpha.size(); i++)
-      if( occup_alpha[i]+NMO != occup_beta[i] )
+      if( occup_alpha[i]+NMO != occup_beta[i] ) 
         closed_shell = false;
-  } else
+  } else 
     closed_shell = false;
 
   // walker_type will come from WalkerHandler, but for now only ROHF/UHF is implemented correctly.
   walker_type=1; 
   dm_type = std::max(wfn_type,1); 
   if(closed_shell) {
-    app_log()<<"Found closed shell system. " <<std::endl;
+    app_log()<<" Found closed shell system. " <<std::endl;
     dm_type=0;
-  }  
+  } else {
+    app_log()<<" System is not closed shell. " <<std::endl;
+  } 
 
   if(useFacHam) {
     APP_ABORT(" Error: Use of factorized hamiltonian is not implemented in PureSD. \n\n\n");
@@ -619,13 +619,13 @@ bool PureSingleDeterminant::hdf_write()
   std::vector<int> Idata(8);
   Idata[0]=hij.size();
   if(rotated_hamiltonian) { 
-   Idata[1]=SMSpHijkl.size();
-   Idata[2]=SMSpHijkl.rows();
-   Idata[3]=SMSpHijkl.cols();
-  } else {
    Idata[1]=SMSpHabkl.size();
    Idata[2]=SMSpHabkl.rows();
    Idata[3]=SMSpHabkl.cols();
+  } else {
+   Idata[1]=SMSpHijkl.size();
+   Idata[2]=SMSpHijkl.rows();
+   Idata[3]=SMSpHijkl.cols();
   }
   Idata[4]=NMO;
   Idata[5]=NAEA;
@@ -758,7 +758,7 @@ bool PureSingleDeterminant::initFromHDF5(hdf_archive& read,const std::string& ta
     }
 
     if(rotated_hamiltonian) {
-     std::vector<ValueType> vvec;
+     std::vector<ComplexType> vvec;
      vvec.resize(haj.size());
      if(!read.read(vvec,"hij")) return false;
      for(int i=0; i<haj.size(); i++)
@@ -1560,6 +1560,7 @@ void PureSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix(bool full)
     const SPValueType zero = SPValueType(0.0);
     const SPComplexType czero = SPComplexType(0.0,0.0);
     if(closed_shell) one = SPValueType(2.0);      
+
     Timer.start("PureSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer::setup");
     if(!rotated_hamiltonian) {  
       // check if there is any work to be done
@@ -1607,10 +1608,12 @@ void PureSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix(bool full)
       GFi0=l0;
       // GFi02 is the location of i0+NMO*NMO in the reduced matrix
       GFi02=nW*(jN-j0+1)*NMO+l0;
+
       for(int i=0; i<NAEA; i++, buff+=nW*NMO) { 
         if(occup_alpha[i] >= j0 && occup_alpha[i] <= jN)  
           std::copy(buff,buff+nW*NMO,cGF.begin()+(occup_alpha[i]-j0)*NMO*nW); 
       }
+
       if(!closed_shell) {  
         if(addBetaBeta) {
           for(int i=0; i<NAEB; i++,buff+=nW*NMO)
@@ -1623,6 +1626,7 @@ void PureSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix(bool full)
         }
       }
       GF = cGF.data();
+
     }
     Timer.stop("PureSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer::setup");
 
@@ -1632,9 +1636,9 @@ void PureSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix(bool full)
       if(transposed) {      
         APP_ABORT("Error: Transposed Spvn can not be used yet. \n\n\n");
       } else {
-        SparseMatrixOperators::product_SpMatTV( int(iN-i0), vn.cols(), one, vn.values() + pi0, vn.column_data() + pi0, vn.row_index()+i0, GF+i0, zero, v.data());
+        SparseMatrixOperators::product_SpMatTV( int(iN-i0), vn.cols(), one, vn.values() + pi0, vn.column_data() + pi0, vn.row_index()+i0, GF+GFi0, zero, v.data());
         if(addBetaBeta && !closed_shell)
-          SparseMatrixOperators::product_SpMatTV( int(iN-i0), vn.cols(), one, vn.values() + pi0, vn.column_data() + pi0, vn.row_index()+i0, GF+NMO*NMO+i0, one, v.data());
+          SparseMatrixOperators::product_SpMatTV( int(iN-i0), vn.cols(), one, vn.values() + pi0, vn.column_data() + pi0, vn.row_index()+i0, GF+GFi02, one, v.data());
       }
 
     } else {
@@ -1649,9 +1653,9 @@ void PureSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix(bool full)
         if(transposed) {
           APP_ABORT("Error: Transposed vn can not be used yet. \n\n\n");
         } else {
-          SparseMatrixOperators::product_SpMatTM( int(iN-i0), walkerBlock , vn.cols(), one, vn.values() + pi0, vn.column_data() + pi0, vn.row_index()+i0, GF+i0*nW+i*walkerBlock, nW, zero, v.data(), nW);
+          SparseMatrixOperators::product_SpMatTM( int(iN-i0), walkerBlock , vn.cols(), one, vn.values() + pi0, vn.column_data() + pi0, vn.row_index()+i0, GF+GFi0*nW+i*walkerBlock, nW, zero, v.data(), nW);
           if(addBetaBeta && !closed_shell)
-            SparseMatrixOperators::product_SpMatTM( int(iN-i0), walkerBlock , vn.cols(), one, vn.values() + pi0, vn.column_data() + pi0, vn.row_index()+i0, GF+(i0+NMO*NMO)*nW+i*walkerBlock, nW, one, v.data(), nW);
+            SparseMatrixOperators::product_SpMatTM( int(iN-i0), walkerBlock , vn.cols(), one, vn.values() + pi0, vn.column_data() + pi0, vn.row_index()+i0, GF+GFi02*nW+i*walkerBlock, nW, one, v.data(), nW);
         } 
  
       }
@@ -1660,13 +1664,14 @@ void PureSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix(bool full)
         if(transposed) {
           APP_ABORT("Error: Transposed Spvn can not be used yet. \n\n\n");
         } else {
-          SparseMatrixOperators::product_SpMatTM( int(iN-i0), nextra , vn.cols(), one, vn.values() + pi0, vn.column_data() + pi0, vn.row_index()+i0, GF+i0*nW+nblk*walkerBlock, nW, zero, v.data(), nW);
+          SparseMatrixOperators::product_SpMatTM( int(iN-i0), nextra , vn.cols(), one, vn.values() + pi0, vn.column_data() + pi0, vn.row_index()+i0, GF+GFi0*nW+nblk*walkerBlock, nW, zero, v.data(), nW);
           if(addBetaBeta && !closed_shell)
             SparseMatrixOperators::product_SpMatTM( int(iN-i0), nextra , vn.cols(), one, vn.values
-() + pi0, vn.column_data() + pi0, vn.row_index()+i0, GF+(i0+NMO*NMO)*nW+nblk*walkerBlock, nW, one, v.data(), nW);
+() + pi0, vn.column_data() + pi0, vn.row_index()+i0, GF+GFi02*nW+nblk*walkerBlock, nW, one, v.data(), nW);
         }
       }           
     }
+
   }
 
   // buf is a matrix of walker information which includes the green's function. This matrix

@@ -32,9 +32,9 @@ class EstimatorBase: public MPIObjectBase, public AFQMCInfo
 
   virtual void accumulate_block(WSetPtr wlks)=0;
 
-  virtual void accumulate_step(WSetPtr wlks)=0;
+  virtual void accumulate_step(WSetPtr wlks, std::vector<ComplexType>& curData)=0;
 
-  virtual void accumulate_substep(WSetPtr wlks){};
+  //virtual void accumulate_substep(WSetPtr wlks){};
 
   virtual void print(std::ofstream& out,WalkerHandlerBase* wlks)=0; 
 
@@ -50,10 +50,6 @@ class EstimatorBase: public MPIObjectBase, public AFQMCInfo
 
   virtual double getEloc_step() {return 0;}
 
-  virtual double getWeight() {return 0;}
-
-  virtual double getWeight_step() {return 0;}
-  
   virtual void setTargetWeight(RealType w0) {} 
 
   protected:

@@ -30,13 +30,13 @@ class phaseless_ImpSamp_ForceBias: public PropagatorBase
 
   public:
        
-  phaseless_ImpSamp_ForceBias(Communicate *c,  RandomGenerator_t* r) : PropagatorBase(c,r), substractMF(true),use_eig(false),first(true),max_weight(100),apply_constrain(true),save_memory(false),vbias_bound(3.0),imp_sampl(true),hybrid_method(false),test_library(false),eloc_from_Spvn(false),sizeOfG(0),walkerBlock(1),test_cnter(0),cutoff(1e-6),fix_bias(0)
+  phaseless_ImpSamp_ForceBias(Communicate *c,  RandomGenerator_t* r) : PropagatorBase(c,r), substractMF(true),use_eig(false),first(true),max_weight(100),apply_constrain(true),save_memory(false),vbias_bound(3.0),imp_sampl(true),hybrid_method(false),test_library(false),eloc_from_Spvn(false),sizeOfG(0),walkerBlock(0),test_cnter(0),cutoff(1e-6),fix_bias(0)
   {
   } 
 
   ~phaseless_ImpSamp_ForceBias() {}
 
-  void Propagate(int steps, int& steps_total, WalkerHandlerBase*, RealType& E1, EstimatorHandler* estim);
+  void Propagate(int steps, int& steps_total, WalkerHandlerBase*, RealType& E1);
 
   bool setup(std::vector<int>&,SPComplexSMVector*,HamiltonianBase*,WavefunctionHandler*,RealType, hdf_archive&, const std::string&,MPI_Comm,MPI_Comm);
 

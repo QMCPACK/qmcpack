@@ -558,100 +558,76 @@ class SMSparseMatrix
 //    }
   }
 
-  inline bool remove_repeated_and_compress() 
+  inline bool remove_repeated_and_compress(MPI_Comm local_comm=MPI_COMM_SELF) 
   {
 #ifdef ASSERT_SPARSEMATRIX
     assert(myrows->size() == colms->size() && myrows->size() == vals->size());
 #endif
 
-    compressed=true;
-    if(!head) return true;
     if(myrows->size() <= 1) return true;
+    compress(local_comm);
 
-    // first order arrays
-    // order along myrows
-    int n=myrows->size(); 
-    sort_rows(0,n-1);
-    if(!std::is_sorted(myrows->begin(),myrows->end())) 
-      std::cout<<"ERROR: list is not sorted. \n" <<std::endl;
+    if(head) {
+      int_iterator first_r=myrows->begin(), last_r=myrows->end(); 
+      int_iterator first_c=colms->begin(), last_c=colms->end(); 
+      iterator first_v=vals->begin(), last_v = vals->end(); 
+      int_iterator result_r = first_r;
+      int_iterator result_c = first_c;
+      iterator result_v = first_v;
 
-    // define rowIndex
-    rowIndex->resize(nr+1);
-    int curr=-1;
-    for(int n=0; n<myrows->size(); n++) {
-      if( (*myrows)[n] != curr ) {
-        int old = curr;
-        curr = (*myrows)[n];
-        for(int i=old+1; i<=curr; i++) (*rowIndex)[i] = n;
-      }
-    }
-    for(int i=myrows->back()+1; i<rowIndex->size(); i++)
-      (*rowIndex)[i] = vals->size();
-   
-    // order within each rowIndex block
-    for(int k=0; k<nr; k++) {
-      if((*rowIndex)[k] == (*rowIndex)[k+1]) continue;       
-      sort_colms((*rowIndex)[k],(*rowIndex)[k+1]-1);
-    } 
-   
-    int_iterator first_r=myrows->begin(), last_r=myrows->end(); 
-    int_iterator first_c=colms->begin(), last_c=colms->end(); 
-    iterator first_v=vals->begin(), last_v = vals->end(); 
-    int_iterator result_r = first_r;
-    int_iterator result_c = first_c;
-    iterator result_v = first_v;
-
-    while ( ( (first_r+1) != last_r)  )
-    {
-      ++first_r; 
-      ++first_c; 
-      ++first_v; 
-      if (!( (*result_r == *first_r) && (*result_c == *first_c) ) ) { 
-        *(++result_r)=*first_r;
-        *(++result_c)=*first_c;
-        *(++result_v)=*first_v;
-      } else {
-        if( std::abs(*result_v - *first_v) > 1e-8 ) { //*result_v != *first_v) {
-          app_error()<<" Error in call to SMSparseMatrix::remove_repeate_and_compressd. Same indexes with different values. \n";
-          app_error()<<"ri, ci, vi: "
-                     <<*result_r <<" "
-                     <<*result_c <<" "
-                     <<*result_v <<" "
-                     <<"rj, cj, vj: "
-                     <<*first_r <<" "
-                     <<*first_c <<" "
-                     <<*first_v <<std::endl;
-          return false;
+      while ( ( (first_r+1) != last_r)  )
+      {
+        ++first_r; 
+        ++first_c; 
+        ++first_v; 
+        if (!( (*result_r == *first_r) && (*result_c == *first_c) ) ) { 
+          *(++result_r)=*first_r;
+          *(++result_c)=*first_c;
+          *(++result_v)=*first_v;
+        } else {
+          if( std::abs(*result_v - *first_v) > 1e-8 ) { //*result_v != *first_v) {
+            app_error()<<" Error in call to SMSparseMatrix::remove_repeate_and_compressd. Same indexes with different values. \n";
+            app_error()<<"ri, ci, vi: "
+                       <<*result_r <<" "
+                       <<*result_c <<" "
+                       <<*result_v <<" "
+                       <<"rj, cj, vj: "
+                       <<*first_r <<" "
+                       <<*first_c <<" "
+                       <<*first_v <<std::endl;
+            return false;
+          }
         }
       }
-    }
-    ++result_r;
-    ++result_c;
-    ++result_v;
+      ++result_r;
+      ++result_c;
+      ++result_v;
 
-    int sz1 = std::distance(myrows->begin(),result_r); 
-    int sz2 = std::distance(colms->begin(),result_c); 
-    int sz3 = std::distance(vals->begin(),result_v); 
-    if(sz1 != sz2 || sz1 != sz2) {
-      std::cerr<<"Error: Different number of erased elements in SMSparseMatrix::remove_repeate_and_compressed. \n" <<std::endl;  
-      return false;
-    }
-  
-    myrows->resize(sz1);
-    colms->resize(sz1);
-    vals->resize(sz1);
-
-    // define rowIndex
-    curr=-1;
-    for(int n=0; n<myrows->size(); n++) {
-      if( (*myrows)[n] != curr ) {
-        int old = curr;
-        curr = (*myrows)[n];
-        for(int i=old+1; i<=curr; i++) (*rowIndex)[i] = n;
+      int sz1 = std::distance(myrows->begin(),result_r); 
+      int sz2 = std::distance(colms->begin(),result_c); 
+      int sz3 = std::distance(vals->begin(),result_v); 
+      if(sz1 != sz2 || sz1 != sz2) {
+        std::cerr<<"Error: Different number of erased elements in SMSparseMatrix::remove_repeate_and_compressed. \n" <<std::endl;  
+        return false;
       }
+  
+      myrows->resize(sz1);
+      colms->resize(sz1);
+      vals->resize(sz1);
+
+      // define rowIndex
+      int curr=-1;
+      for(int n=0; n<myrows->size(); n++) {
+        if( (*myrows)[n] != curr ) {
+          int old = curr;
+          curr = (*myrows)[n];
+          for(int i=old+1; i<=curr; i++) (*rowIndex)[i] = n;
+        }
+      }
+      for(int i=myrows->back()+1; i<rowIndex->size(); i++)
+        (*rowIndex)[i] = vals->size();
     }
-    for(int i=myrows->back()+1; i<rowIndex->size(); i++)
-      (*rowIndex)[i] = vals->size();
+    MPI_Barrier(local_comm);
 
     return true;
   }
@@ -670,8 +646,29 @@ class SMSparseMatrix
   //   - the parallel inplace_merge proceeds by performing iteratively block swap calls to break up the 2 sorted subsets into 2^(i+1) sorted consecutive subsets which can be inplace_merged serially by each working core. 
   //   While it is not ideal, you can use MPI_Barrier() to synchronize the work until you find something better. 
   //
-  inline void compress_parallel(MPI_Comm local_comm)
+  inline void compress(MPI_Comm local_comm=MPI_COMM_SELF)
   {
+
+    auto comp = [](std::tuple<indxType, indxType, value_type> const& a, std::tuple<indxType, indxType, value_type> const& b){return std::get<0>(a) < std::get<0>(b) || (!(std::get<0>(b) < std::get<0>(a)) && std::get<1>(a) < std::get<1>(b));};
+
+    if(local_comm==MPI_COMM_SELF) {
+      std::sort(make_tuple_iterator<int_iterator,int_iterator,iterator>(myrows->begin(),colms->begin(),vals->begin()),
+                make_tuple_iterator<int_iterator,int_iterator,iterator>(myrows->end(),colms->end(),vals->end()),
+                comp);
+      // define rowIndex
+      rowIndex->resize(nr+1);
+      int curr=-1; 
+      for(int n=0; n<myrows->size(); n++) {
+        if( (*myrows)[n] != curr ) {
+          int old = curr;
+          curr = (*myrows)[n];
+          for(int i=old+1; i<=curr; i++) (*rowIndex)[i] = n;
+        }
+      }
+      for(int i=myrows->back()+1; i<rowIndex->size(); i++)
+        (*rowIndex)[i] = vals->size();
+      compressed=true;   
+    }
 
     double t1,t2,t3,t4;
     struct timeval tv;
@@ -691,37 +688,36 @@ class SMSparseMatrix
     assert(myrows->size() == colms->size() && myrows->size() == vals->size());
     if(vals->size() == 0) return;
 
+    int nlvl = static_cast<int>(  std::floor(std::log2(npr*1.0)) );
+    int nblk = pow(2,nlvl);
+
     // sort equal segments in parallel
-    std::vector<int> pos(npr+1);     
+    std::vector<int> pos(nblk+1);     
     // a core processes elements from pos[rank]-pos[rank+1]
-    FairDivide(vals->size(),npr,pos); 
+    FairDivide(vals->size(),nblk,pos); 
     
-    std::sort(make_tuple_iterator<int_iterator,int_iterator,iterator>(myrows->begin()+pos[rank],colms->begin()+pos[rank],vals->begin()+pos[rank]),
-              make_tuple_iterator<int_iterator,int_iterator,iterator>(myrows->begin()+pos[rank+1],colms->begin()+pos[rank+1],vals->begin()+pos[rank+1]),
-              [](std::tuple<indxType, indxType, value_type> const& a, std::tuple<indxType, indxType, value_type> const& b){return std::get<0>(a) < std::get<0>(b) || (!(std::get<0>(b) < std::get<0>(a)) && std::get<1>(a) < std::get<1>(b));} 
-             );
+    // sort local segment
+    if(rank < nblk)   
+      std::sort(make_tuple_iterator<int_iterator,int_iterator,iterator>(myrows->begin()+pos[rank],colms->begin()+pos[rank],vals->begin()+pos[rank]),
+          make_tuple_iterator<int_iterator,int_iterator,iterator>(myrows->begin()+pos[rank+1],colms->begin()+pos[rank+1],vals->begin()+pos[rank+1]),
+          comp);
     MPI_Barrier(local_comm);
 
     gettimeofday(&tv, NULL);
     t1 =  double(tv.tv_sec)+double(tv.tv_usec)/1000000.0;
     app_log()<<" Time sorting: " <<t1-t2 <<std::endl;
 
-
-    // merging in serial for now 
-    // only head merges and creates index table
-    if(head) {
-
       gettimeofday(&tv, NULL);
       t4 =  double(tv.tv_sec)+double(tv.tv_usec)/1000000.0;
 
+/*
       int mid=1;
       int end=2;
       for(int i=0; i<(npr-1); i++) {
         std::inplace_merge( make_tuple_iterator<int_iterator,int_iterator,iterator>(myrows->begin()+pos[0],colms->begin()+pos[0],vals->begin()+pos[0]),
-                            make_tuple_iterator<int_iterator,int_iterator,iterator>(myrows->begin()+pos[mid],colms->begin()+pos[mid],vals->begin()+pos[mid]),
-                            make_tuple_iterator<int_iterator,int_iterator,iterator>(myrows->begin()+pos[end],colms->begin()+pos[end],vals->begin()+pos[end]),
-                            [](std::tuple<indxType, indxType, value_type> const& a, std::tuple<indxType, indxType, value_type> const& b){return std::get<0>(a) < std::get<0>(b) || (!(std::get<0>(b) < std::get<0>(a)) && std::get<1>(a) < std::get<1>(b));}
-            );
+          make_tuple_iterator<int_iterator,int_iterator,iterator>(myrows->begin()+pos[mid],colms->begin()+pos[mid],vals->begin()+pos[mid]),
+          make_tuple_iterator<int_iterator,int_iterator,iterator>(myrows->begin()+pos[end],colms->begin()+pos[end],vals->begin()+pos[end]),
+          comp);
         mid++;
         end++;
 
@@ -729,12 +725,25 @@ class SMSparseMatrix
         t3 =  double(tv.tv_sec)+double(tv.tv_usec)/1000000.0;
         app_log()<<" Time merging: " <<i <<" " <<t3-t4 <<std::endl;
         t4=t3;
+
       }
+*/
 
+    for(int i=0, k=rank, sz=1; i<nlvl; i++, sz*=2 ) {
+      if(k%2==0 && rank<nblk) {
+        //std::inplace_merge( vals->begin()+pos[rank], vals->begin()+pos[rank+sz], vals->begin()+pos[rank+sz*2], comp);
+        std::inplace_merge( 
+           make_tuple_iterator<int_iterator,int_iterator,iterator>(myrows->begin()+pos[rank],colms->begin()+pos[rank],vals->begin()+pos[rank]),
+           make_tuple_iterator<int_iterator,int_iterator,iterator>(myrows->begin()+pos[rank+sz],colms->begin()+pos[rank+sz],vals->begin()+pos[rank+sz]),
+           make_tuple_iterator<int_iterator,int_iterator,iterator>(myrows->begin()+pos[rank+sz*2],colms->begin()+pos[rank+sz*2],vals->begin()+pos[rank+sz*2]),
+           comp);
+        k/=2;
+      } else
+        k=1;
+      MPI_Barrier(local_comm);
+    }
 
-      //if(!std::is_sorted(myrows->begin(),myrows->end())) 
-      //  std::cout<<"ERROR: list is not sorted. \n" <<std::endl;
-
+    if(head) {
       // define rowIndex
       rowIndex->resize(nr+1);
       int curr=-1; 
@@ -748,6 +757,9 @@ class SMSparseMatrix
       for(int i=myrows->back()+1; i<rowIndex->size(); i++)
         (*rowIndex)[i] = vals->size();
     
+    } else {
+      if(local_comm==MPI_COMM_SELF)
+        APP_ABORT("Error in SMSparseMatrix::compress: Calling with MPI_COMM_SELF from node that is not head of node. \n\n\n");
     }
     MPI_Barrier(local_comm);
     compressed=true;   
@@ -757,7 +769,7 @@ class SMSparseMatrix
     app_log()<<" Time merging + indexing: " <<t2-t1 <<std::endl;
   }
 
-  inline void compress() 
+  inline void compress_old() 
   {
     if(!(myrows->size() == colms->size() && myrows->size() == vals->size()))
       std::cout<<"problem: " <<myrows->size() <<" " <<colms->size() <<" " <<vals->size() <<std::endl; 
@@ -842,17 +854,7 @@ class SMSparseMatrix
       sort_colms(i, right);
   }
   
-  inline void transpose(bool paral=false) {
-    if(!head) return;
-    if(!SMallocated) return;
-    assert(myrows->size() == colms->size() && myrows->size() == vals->size());
-    for(int_iterator itR=myrows->begin(),itC=colms->begin(); itR!=myrows->end(); ++itR,++itC)
-      std::swap(*itR,*itC);
-    std::swap(nr,nc); 
-    compress();
-  }
-
-  inline void transpose_parallel(MPI_Comm local_comm)   
+  inline void transpose(MPI_Comm local_comm=MPI_COMM_SELF)   
   {
     if(!SMallocated) return;
     assert(myrows->size() == colms->size() && myrows->size() == vals->size());
@@ -860,9 +862,12 @@ class SMSparseMatrix
       // can parallelize this if you want
       for(int_iterator itR=myrows->begin(),itC=colms->begin(); itR!=myrows->end(); ++itR,++itC)
         std::swap(*itR,*itC);
+    } else {
+      if(local_comm == MPI_COMM_SELF)
+        APP_ABORT(" Error in SMSparseMatrix::transpose: Calling with MPI_COMM_SELF from node that is not head of node. \n\n\n");
     }
     std::swap(nr,nc);
-    compress_parallel(local_comm);
+    compress(local_comm);
   }
 
   inline void initFroms1D(std::vector<std::tuple<IndexType,RealType> >& V, bool sorted)

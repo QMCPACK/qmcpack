@@ -36,7 +36,7 @@ class SparseGeneralHamiltonian: public HamiltonianBase
 
   public:
  
-  SparseGeneralHamiltonian(Communicate *c):HamiltonianBase(c),orderStates(false),cutoff1bar(1e-8),cutoff_cholesky(1e-6),has_full_hamiltonian_for_matrix_elements(false),NMAX(-1),ascii_write_file(""),hdf_write_file(""),printEig(false),factorizedHamiltonian(false),v2full_transposed(false),test_2eint(false),zero_bad_diag_2eints(false),test_algo(true),has_hamiltonian_for_selCI(false),rotation(""),hdf_write_type("default"),inplace(true)
+  SparseGeneralHamiltonian(Communicate *c):HamiltonianBase(c),orderStates(false),cutoff1bar(1e-8),cutoff_cholesky(1e-6),has_full_hamiltonian_for_matrix_elements(false),NMAX(-1),ascii_write_file(""),hdf_write_file(""),printEig(false),factorizedHamiltonian(false),v2full_transposed(false),test_2eint(false),zero_bad_diag_2eints(false),test_algo(true),has_hamiltonian_for_selCI(false),rotation(""),hdf_write_type("default"),inplace(true),skip_V2(false)
   {
   }
 
@@ -312,6 +312,7 @@ if(cjgt)
   bool zero_bad_diag_2eints;
   bool test_algo; 
   bool inplace;  
+  bool skip_V2;
 
   // stores one body integrals in s2D format 
   std::vector<s2D<ValueType> > H1;

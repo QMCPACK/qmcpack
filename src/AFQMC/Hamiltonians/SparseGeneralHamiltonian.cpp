@@ -1481,7 +1481,7 @@ namespace qmcplusplus
         app_error()<<" ERROR: NMO differs from value in integral file. \n"; 
         return false;
       }
-/*
+
       if(Idata[4] != NAEA) {
         app_error()<<" ERROR: NAEA differs from value in integral file. \n"; 
         return false;
@@ -1490,7 +1490,7 @@ namespace qmcplusplus
         app_error()<<" ERROR: NAEA differs from value in integral file. \n"; 
         return false;
       }
-*/
+
       myComm->bcast(Idata);
       spinRestricted = (Idata[6]==0)?(true):(false);
       factorizedHamiltonian = (Idata[7]>0); 
@@ -1550,7 +1550,9 @@ namespace qmcplusplus
       std::sort (H1.begin(), H1.end(),mySort);
       myComm->bcast<char>(reinterpret_cast<char*>(H1.data()),H1.size()*sizeof(s2D<ValueType>));
 
-      if(factorizedHamiltonian) {
+      if(skip_V2) {
+        // must anything be done???
+      } else if(factorizedHamiltonian) {
 
         if(distribute_Ham) 
             APP_ABORT("ERROR: distribute_Ham not implemented with factorized hamiltonian yet. \n\n\n");
@@ -1659,12 +1661,9 @@ namespace qmcplusplus
 
         Timer.reset("Generic2");
         Timer.start("Generic2");
-#ifndef QMC_COMPLEX        
-        V2_fact.compress_parallel(TG.getNodeCommLocal());
-#else
-        V2_fact.compress();   // need to get this fixed for complex
-#endif
+        V2_fact.compress(TG.getNodeCommLocal());
         Timer.stop("Generic2");
+
         app_log()<<" -- Average time to read std::vector from h5 file: " <<Timer.average("Generic3") <<"\n";
         app_log()<<" -- Average time to bcast std::vector: " <<Timer.average("Generic4") <<"\n";
         app_log()<<" -- Time to compress factorized Hamiltonian from h5 file: " <<Timer.average("Generic2") <<"\n";
@@ -1807,13 +1806,13 @@ namespace qmcplusplus
         return false;
       }
       if(Idata[4] != NAEA) {
-        app_error()<<" ERROR: NMO differs from value in integral file. \n";
-        APP_ABORT(" ERROR: NMO differs from value in integral file. \n");
+        app_error()<<" ERROR: NAEA differs from value in integral file. \n";
+        APP_ABORT(" ERROR: NAEA differs from value in integral file. \n");
         return false;
       }
       if(Idata[5] != NAEB) {
-        app_error()<<" ERROR: NMO differs from value in integral file. \n";
-        APP_ABORT(" ERROR: NMO differs from value in integral file. \n");
+        app_error()<<" ERROR: NAEB differs from value in integral file. \n";
+        APP_ABORT(" ERROR: NAEB differs from value in integral file. \n");
         return false;
       }
       factorizedHamiltonian = (Idata[7]>0); 
@@ -1831,7 +1830,9 @@ namespace qmcplusplus
 
       myComm->bcast<char>(reinterpret_cast<char*>(H1.data()),H1.size()*sizeof(s2D<ValueType>));
 
-      if(factorizedHamiltonian) {
+      if(skip_V2) {
+        // must anything be done???
+      } else if(factorizedHamiltonian) {
 
         int nvecs_after_cutoff;
         myComm->bcast(nvecs_after_cutoff);
@@ -1869,11 +1870,7 @@ namespace qmcplusplus
           }
 
         }
-//#ifndef QMC_COMPLEX        
-        V2_fact.compress_parallel(TG.getNodeCommLocal());
-//#else
-//        V2_fact.compress();   // need to get this fixed for complex
-//#endif
+        V2_fact.compress(TG.getNodeCommLocal());
 
       } else {
 
@@ -1939,14 +1936,14 @@ namespace qmcplusplus
     myComm->barrier();
 
     // generate IJ matrix to speedup table seaches
-    if(V2.size()>0)
+    if(!skip_V2 && V2.size()>0)
       generateIJ();
 
     Timer.stop("Generic");
     app_log()<<" -- Time to initialize Hamiltonian from h5 file: " <<Timer.average("Generic") <<"\n";
 
-    hdf_write();
-    if(rank() == 0) {
+    if(!skip_V2) hdf_write();
+    if(rank() == 0 && !skip_V2) {
       ascii_write();
     }
 
@@ -3354,14 +3351,14 @@ namespace qmcplusplus
          }
        }
      }
-     app_log()<<" Found: " <<L.size() <<" Cholesky std::vectors with a cutoff of: " <<cutoff_cholesky <<std::endl;   
+     app_log()<<" Found: " <<L.size() <<" Cholesky std::vectors with a cutoff of: " <<cutoff_cholesky <<"\n";   
 
      Timer.stop("Generic");
-     if(rnk==0) app_log()<<" -- Time to generate Cholesky factorization: " <<Timer.average("Generic") <<"\n";
+     app_log()<<" -- Time to generate Cholesky factorization: " <<Timer.average("Generic") <<std::endl;
 
      if(test_breakup && !parallel && !distribute_Ham) {
 
-     if(rnk==0) app_log()<<" -- Testing Hamiltonian factorization. \n";
+      app_log()<<" -- Testing Hamiltonian factorization. \n";
       Timer.reset("Generic");
       Timer.start("Generic");
 
@@ -3429,6 +3426,8 @@ namespace qmcplusplus
         } 
       }
 
+      Timer.reset("Generic2");
+      Timer.start("Generic2");
       if(!sparse) cut=1e-8;
       else if(cut < 1e-12) cut=1e-12;
       int cnt=0, cntn=0;
@@ -3458,6 +3457,8 @@ namespace qmcplusplus
          cnt_per_vec[2*n+1] = nm;
          if(nm>0) cntn++;
        } 
+       // needed to avoid avalanche of messages on head node
+       myComm->barrier(); 
       }
 
       int nnodes = TGprop.getNNodesPerTG();
@@ -3541,6 +3542,12 @@ namespace qmcplusplus
       int ncols = nvec_per_node[node_number];
       if(parallel) myComm->barrier();
 
+      Timer.stop("Generic2");
+      if(rnk==0) app_log()<<"     -- setup: " <<Timer.average("Generic2") <<"\n";
+
+      Timer.reset("Generic2");
+      Timer.reset("Generic3");
+
 #ifndef QMC_COMPLEX
       if(cntn>0)
         APP_ABORT("Found real Cholesky vectors with real integrals. This is not allowed with dense cholesky vectors. Run with sparse vectors or compile with complex integrals. \n\n\n");
@@ -3550,6 +3557,7 @@ namespace qmcplusplus
       for(int n=0; n<L.size(); n++) { 
        if( cnt_per_vec[2*n]==0 && cnt_per_vec[2*n+1]==0 ) continue;
        ValueType* Ls;
+       Timer.start("Generic2");
        if(parallel) {
          myComm->gatherv(L[n].data(),Lcomm.data(),L[n].size(),cnts,displ,0,myComm->getMPI());
          if(head_of_nodes) {
@@ -3559,6 +3567,8 @@ namespace qmcplusplus
        } else {
          Ls = L[n].data();
        }
+       Timer.stop("Generic2");
+       Timer.start("Generic3");
        if(head_of_nodes && 2*n>=cv0 && 2*n<cvN && cnt_per_vec[2*n]>0) {
          int np=0;
          // v+
@@ -3598,11 +3608,14 @@ namespace qmcplusplus
 #endif
        }
        // necessary to avoid the avalanche of messages to the root from cores that are not head_of_nodes
-       MPI_Barrier(TG.getNodeCommLocal()); 
+       myComm->barrier(); 
+       Timer.stop("Generic3");
       }
+      app_log()<<"     -- av comm time: " <<Timer.average("Generic2") <<"\n";
+      app_log()<<"     -- av insert time: " <<Timer.average("Generic3") <<"\n";
 
       Timer.stop("Generic");
-      if(rnk==0) app_log()<<" -- Time to assemble Cholesky Matrix: " <<Timer.average("Generic") <<"\n";
+      app_log()<<" -- Time to assemble Cholesky Matrix: " <<Timer.average("Generic") <<"\n";
 
       if(rank()==0 && nnodes>1 && parallel) { 
         app_log()<<" Partition of Cholesky Vectors: 0 ";
@@ -3628,7 +3641,7 @@ namespace qmcplusplus
         Timer.reset("Generic");
         Timer.start("Generic");
 
-        if(parallel) Spvn.compress_parallel(TG.getNodeCommLocal());
+        if(parallel) Spvn.compress(TG.getNodeCommLocal());
         else if(head_of_nodes) Spvn.compress();
         //if(head_of_nodes) Spvn.compress();
 
@@ -3970,6 +3983,7 @@ namespace qmcplusplus
     std::string str3("no"); 
     std::string str4("yes"); 
     std::string str5("yes"); 
+    std::string str6("no"); 
     ParameterSet m_param;
     m_param.add(order,"orderStates","std::string");    
     m_param.add(cutoff1bar,"cutoff_1bar","double");
@@ -3990,6 +4004,7 @@ namespace qmcplusplus
     m_param.add(str3,"fix_2eint","std::string");
     m_param.add(str4,"test_algo","std::string");
     m_param.add(str5,"inplace","std::string");
+    m_param.add(str6,"skip_V2","std::string");
     m_param.put(cur);
 
     orderStates=false;
@@ -4002,6 +4017,7 @@ namespace qmcplusplus
     std::transform(str3.begin(),str3.end(),str3.begin(),(int (*)(int))tolower);
     std::transform(str4.begin(),str4.end(),str4.begin(),(int (*)(int))tolower);
     std::transform(str5.begin(),str5.end(),str5.begin(),(int (*)(int))tolower);
+    std::transform(str6.begin(),str6.end(),str6.begin(),(int (*)(int))tolower);
     if(order == "yes" || order == "true") orderStates = true;  
     if(bkp == "yes" || bkp == "true") test_breakup = true;  
     if(str1 == "yes" || str1 == "true") printEig = true;  
@@ -4009,6 +4025,10 @@ namespace qmcplusplus
     if(str3 == "yes" || str3 == "true") zero_bad_diag_2eints = true;  
     if(str4 == "no" || str4 == "false") test_algo = false;  
     if(str5 == "no" || str5 == "false") inplace = false;  
+    if(str6 == "yes" || str6 == "true") skip_V2 = true;  
+
+    if(skip_V2) 
+      app_log()<<" Skipping 2 electron integrals. Only correct if other objects are initialized from hdf5 files. \n";
    
     cur = curRoot->children;
     while (cur != NULL) {
@@ -5302,48 +5322,6 @@ namespace qmcplusplus
         Timer.stop("Generic");
         app_log()<<"Time to generate full Hamiltonian from factorized form: " <<Timer.total("Generic") <<std::endl; 
  
-      myComm->barrier();
-
-      Timer.reset("Generic");
-      Timer.start("Generic");
-      if(head_of_nodes) {
-
-        int rk,npr,ptr,n0;
-        MPI_Comm_rank(MPI_COMM_HEAD_OF_NODES,&rk); 
-        MPI_Comm_size(MPI_COMM_HEAD_OF_NODES,&npr); 
-        n0 = Vijkl.size(); // my number of terms, always from zero to n0
-        ptr = n0; // position to copy elements to
-        std::vector<int> size(npr);
-        size[rk] = n0;
-        myComm->gsum(size,MPI_COMM_HEAD_OF_NODES);
-        int ntot = 0; 
-        for(int i=0; i<npr; i++) ntot+=size[i];
-        if(ntot != number_of_terms) { 
-          app_error()<<" Problems setting up hamiltonian for wavefunction from factorized form. Inconsistent number of terms. " <<std::endl;
-          return false; 
-        }
-        if( Vijkl.capacity() < ntot) {  
-          app_error()<<" Problems setting up hamiltonian for wavefunction from factorized form. Inconsistent std::vector capacity. " <<Vijkl.capacity() <<" " <<ntot <<std::endl;
-          return false; 
-        }
-        Vijkl.resize_serial(number_of_terms);
-        for(int i=0; i<npr; i++) {
-          if(i==rk) { // I send
-            myComm->bcast<int>(Vijkl.row_data(),n0,i,MPI_COMM_HEAD_OF_NODES);
-            myComm->bcast<int>(Vijkl.column_data(),n0,i,MPI_COMM_HEAD_OF_NODES);
-            myComm->bcast(Vijkl.values(),n0,i,MPI_COMM_HEAD_OF_NODES);
-          } else { // I reveive
-            myComm->bcast<int>(Vijkl.row_data()+ptr,size[i],i,MPI_COMM_HEAD_OF_NODES);
-            myComm->bcast<int>(Vijkl.column_data()+ptr,size[i],i,MPI_COMM_HEAD_OF_NODES);
-            myComm->bcast(Vijkl.values()+ptr,size[i],i,MPI_COMM_HEAD_OF_NODES);
-            ptr+=size[i]; 
-          }
-        }
-        std::cout<<"rank, size: " <<rk <<" " <<Vijkl.size() <<std::endl;
-      }
-      myComm->barrier();
-      Timer.stop("Generic");
-      app_log()<<"Time to communicate Hamiltonian: " <<Timer.total("Generic") <<std::endl; 
 
     } else {  //factorizedHamiltonian 
 
@@ -5771,46 +5749,27 @@ namespace qmcplusplus
       }
 
       myComm->barrier();
-
-      if(!communicate_Vijkl(Vijkl)) return false;
-
       Timer.stop("Generic");
       app_log()<<"Time to generate 2-body Hamiltonian: " <<Timer.total("Generic") <<std::endl;
 
   
     } // factrorizedHamiltonnian
 
+    Timer.reset("Generic");
+    Timer.start("Generic");
+    if(!communicate_Vijkl(Vijkl)) return false;
+    Timer.stop("Generic");
+    app_log()<<"Time to communicate Hamiltonian: " <<Timer.total("Generic") <<std::endl; 
 
-#ifdef AFQMC_DEBUG
-    app_log()<<" Done generating sparse hamiltonians. " <<std::endl; 
-    app_log()<<" Compressing sparse hamiltonians. " <<std::endl; 
-#endif
+    Timer.reset("Generic");
+    Timer.start("Generic");
 
-    if(head_of_nodes) {
-
-      Timer.reset("Generic");
-      Timer.start("Generic");
-
-      if(!Vijkl.remove_repeated_and_compress()) {
-        APP_ABORT("Error in call to SparseMatrix::remove_repeated(). \n");
-      }
-
-      Timer.stop("Generic");
-      app_log()<<"Time to remove_repeated_and_compress Hamiltonian: " <<Timer.total("Generic") <<std::endl;
-
-
-#ifdef AFQMC_DEBUG
-      app_log()<<" Done compressing sparse hamiltonians. " <<std::endl; 
-#endif
-
-      myComm->barrier();
-      myComm->barrier();
-
-    } else {
-      myComm->barrier();
-      if(!Vijkl.initializeChildren()) return false;
-      myComm->barrier();
+    if(!Vijkl.remove_repeated_and_compress(TG.getNodeCommLocal())) {
+      APP_ABORT("Error in call to SparseMatrix::remove_repeated(). \n");
     }
+
+    Timer.stop("Generic");
+    app_log()<<"Time to remove_repeated_and_compress Hamiltonian: " <<Timer.total("Generic") <<std::endl;
 
     return true;  
 
@@ -6651,16 +6610,14 @@ namespace qmcplusplus
     app_log()<<" Compressing sparse hamiltonians. " <<std::endl;
 #endif
 
-    if(head_of_nodes) {
-
-      if(!Vijkl.remove_repeated_and_compress()) {
-        APP_ABORT("Error in call to SparseMatrix::remove_repeated(). \n");
-      }
+    if(!Vijkl.remove_repeated_and_compress(TG.getNodeCommLocal())) {
+      APP_ABORT("Error in call to SparseMatrix::remove_repeated(). \n");
+    }
 
 #ifdef AFQMC_DEBUG
       app_log()<<" Done compressing sparse hamiltonians. " <<std::endl;
 #endif
-    }
+    
     myComm->barrier();
     return true;
   }

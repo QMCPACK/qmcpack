@@ -34,7 +34,7 @@ class PropagatorBase: public MPIObjectBase, public AFQMCInfo
 
 //  virtual void Propagate(int n, SlaterDetWalker&, RealType& E1, const RealType E2=0)=0;
 
-  virtual void Propagate(int steps, int& steps_total, WalkerHandlerBase*, RealType& E1, EstimatorHandler* estim)=0;
+  virtual void Propagate(int steps, int& steps_total, WalkerHandlerBase*, RealType& E1)=0;
 
   virtual bool parse(xmlNodePtr)=0;
 
