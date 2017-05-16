@@ -163,7 +163,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     }
   }
 
-  app_log() << "Checking THIS " << std::endl;
+  //app_log() << "Checking THIS " << std::endl;
   //DEV::OPTIMIZE_SOA
   int tid=targetPtcl.addTable(IonConfig,DT_SOA_PREFERRED);
   targetPtcl.DistTables[tid]->setRmax(rcore_max); //For the optimization only

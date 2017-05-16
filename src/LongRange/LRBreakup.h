@@ -355,7 +355,7 @@ LRBreakup<BreakupBasis>::SetupKVecs(mRealType kc, mRealType kcont, mRealType kma
       ks++;
   }
   size_t maxkshell=ks;
-  int numk =kexact.numk-kexact.kshell[ks];
+  size_t numk =kexact.numk-kexact.kshell[ks];
   for(; ks<kexact.kshell.size()-1; ks++)
     AddKToList(std::sqrt(kexact.ksq[kexact.kshell[ks]]), kexact.kshell[ks+1]-kexact.kshell[ks]);
   ////Add these vectors to the internal list
