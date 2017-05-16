@@ -85,10 +85,12 @@ ParticleSet::ParticleSet(const ParticleSet& p)
   if(p.DistTables.size())
   {
     app_log() << "  Cloning distance tables. It has " << p.DistTables.size() << std::endl;
-    addTable(*this,p.DistTables[0]->DTType); //first is always for this-this paier
+    addTable(*this,p.DistTables[0]->DTType); //first is always for this-this pair
     for (int i=1; i<p.DistTables.size(); ++i)
       addTable(p.DistTables[i]->origin(),p.DistTables[i]->DTType);
   }
+  for(int i=0; i<p.DistTables.size(); ++i)
+    DistTables[i]->Need_full_table_loadWalker = p.DistTables[i]->Need_full_table_loadWalker;
   if(p.SK)
   {
     LRBox=p.LRBox; //copy LRBox
@@ -841,10 +843,9 @@ void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
 #endif
   if (pbyp)
   {
-    //for (size_t i=0,nt=DistTables.sie(); i< nt; i++)
-    //{
-    //  if(DistTables[i]!= DT_SOA) DistTables[i]->evaluate(*this);
-    //}
+    // in certain cases, full tables must be ready
+    for (int i=0; i< DistTables.size(); i++)
+      if(DistTables[i]->Need_full_table_loadWalker) DistTables[i]->evaluate(*this);
     //computed so that other objects can use them, e.g., kSpaceJastrow
     if(SK && SK->DoUpdate)
       SK->UpdateAllPart(*this);

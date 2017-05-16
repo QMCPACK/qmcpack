@@ -115,7 +115,7 @@ LocalECPotential::evaluate(ParticleSet& P)
         if(ppot==nullptr) continue;
         RealType esum(0);
         const RealType* restrict dist=d_table.r_m2[iat];
-        for(int nj=0, jmax=d_table.nadj(iat); nj<jmax; ++nj)
+        for(int nj=0; nj<d_table.M[iat]; ++nj)
         {
           esum += ppot->splint(dist[nj])/dist[nj];
         }

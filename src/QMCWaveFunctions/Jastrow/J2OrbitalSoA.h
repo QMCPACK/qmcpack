@@ -41,7 +41,6 @@ namespace qmcplusplus
  * - loops over the groups: elminated PairID
  * - support simd function
  * - double the loop counts
- * - UseBuffer is introduced. Default is false.
  * - Memory use is O(N). 
  */
 template<class FT>

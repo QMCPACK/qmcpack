@@ -200,13 +200,16 @@ struct DistanceTableData
 
   /** temp_dr */
   RowContainer Temp_dr;
+
+  /** true, if full table is needed at loadWalker */
+  bool Need_full_table_loadWalker;
   /*@}*/
 
   ///name of the table
   std::string Name;
   ///constructor using source and target ParticleSet
   DistanceTableData(const ParticleSet& source, const ParticleSet& target)
-    : Origin(&source), N(0), NeedDisplacement(false)
+    : Origin(&source), N(0), NeedDisplacement(false), Need_full_table_loadWalker(false)
   {  
     Rmax=0; //set 0
     //Rmax=source.Lattice.WignerSeitzRadius;   
