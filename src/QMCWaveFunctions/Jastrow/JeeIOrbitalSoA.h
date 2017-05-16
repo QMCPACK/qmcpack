@@ -125,7 +125,7 @@ public:
             fcmap[F(iG,eG1,eG2)]=fc;
           }
         }
-#if 0
+    // Ye: I don't like the following memory allocated by default.
     eeIcopy->myVars.clear();
     eeIcopy->myVars.insertFrom(myVars);
     eeIcopy->NumVars=NumVars;
@@ -134,7 +134,6 @@ public:
     eeIcopy->lapLogPsi.resize(NumVars,Nelec);
     eeIcopy->VarOffset=VarOffset;
     eeIcopy->Optimizable = Optimizable;
-#endif
     return eeIcopy;
   }
 
@@ -286,7 +285,6 @@ public:
    */
   void checkInVariables(opt_variables_type& active)
   {
-#if 0
     myVars.clear();
     typename std::map<std::string,FT*>::iterator it(J3Unique.begin()),it_end(J3Unique.end());
     while(it != it_end)
@@ -295,14 +293,12 @@ public:
       (*it).second->checkInVariables(myVars);
       ++it;
     }
-#endif
   }
 
   /** check out optimizable variables
    */
   void checkOutVariables(const opt_variables_type& active)
   {
-#if 0
     myVars.clear();
     typename std::map<std::string,FT*>::iterator it(J3Unique.begin()),it_end(J3Unique.end());
     while (it != it_end)
@@ -318,29 +314,22 @@ public:
       dLogPsi.resize(NumVars);
       gradLogPsi.resize(NumVars,Nelec);
       lapLogPsi.resize(NumVars,Nelec);
-      VarOffset.resize(Nion, Nelec, Nelec);
+      VarOffset.resize(iGroups, eGroups, eGroups);
       int varoffset=myVars.Index[0];
-      for (int i=0; i<Nion; i++)
-      {
-        if(Ion_cutoff[i]>0.0)
-        {
-          for (int j=0; j<Nelec; j++)
-            for (int k=0; k<Nelec; k++)
-            {
-              FT &func_ijk = *F(i, j, k);
-              VarOffset(i,j,k).first  = func_ijk.myVars.Index.front()-varoffset;
-              VarOffset(i,j,k).second = func_ijk.myVars.Index.size()+VarOffset(i,j,k).first;
-            }
-        }
-      }
+      for (int ig=0; ig<iGroups; ig++)
+        for (int jg=0; jg<eGroups; jg++)
+          for (int kg=0; kg<eGroups; kg++)
+          {
+            FT &func_ijk = *F(ig, jg, kg);
+            VarOffset(ig,jg,kg).first  = func_ijk.myVars.Index.front()-varoffset;
+            VarOffset(ig,jg,kg).second = func_ijk.myVars.Index.size()+VarOffset(ig,jg,kg).first;
+          }
     }
-#endif
   }
 
   ///reset the value of all the unique Two-Body Jastrow functions
   void resetParameters(const opt_variables_type& active)
   {
-#if 0
     if(!Optimizable)
       return;
     typename std::map<std::string,FT*>::iterator it(J3Unique.begin()),it_end(J3Unique.end());
@@ -354,20 +343,17 @@ public:
       if(ii>=0)
         myVars[i]= active[ii];
     }
-#endif
   }
 
   /** print the state, e.g., optimizables */
   void reportStatus(std::ostream& os)
   {
-#if 0
     typename std::map<std::string,FT*>::iterator it(J3Unique.begin()),it_end(J3Unique.end());
     while(it != it_end)
     {
       (*it).second->myVars.print(os);
       ++it;
     }
-#endif
   }
 
   RealType evaluateLog(ParticleSet& P,
@@ -543,7 +529,6 @@ public:
         const int ig=Ions.GroupID[iat];
         const valT r_Ij     = distjI[iat];
         const posT disp_Ij  = cminus*displjI[iat];
-        const valT r_Ij_inv = cone/r_Ij;
 
         for(int kg=0; kg<eGroups; ++kg)
         {
@@ -642,8 +627,6 @@ public:
                            std::vector<RealType>& dlogpsi,
                            std::vector<RealType>& dhpsioverpsi)
   {
-    APP_ABORT("JeeIOrbitalSoA::evaluateDerivatives not implemented yet!");
-#if 0
     bool recalculate(false);
     std::vector<bool> rcsingles(myVars.size(),false);
     for (int k=0; k<myVars.size(); ++k)
@@ -655,84 +638,85 @@ public:
         recalculate=true;
       rcsingles[k]=true;
     }
+
     if (recalculate)
     {
-      const DistanceTableData* ee_table=P.DistTables[0];
-      const DistanceTableData* eI_table=P.DistTables[myTableID];
-      // First, create lists of electrons within the sphere of each ion
-      for (int i=0; i<Nion; i++)
-      {
-        IonData &ion = IonDataList[i];
-        ion.elecs_inside.clear();
-        int iel=0;
-        if (ion.cutoff_radius > 0.0)
-          for (int nn=eI_table->M[i]; nn<eI_table->M[i+1]; nn++, iel++)
-            if (eI_table->r(nn) < ion.cutoff_radius)
-              ion.elecs_inside.push_back(iel);
-      }
-      dLogPsi=0.0;
+      constexpr valT czero(0);
+      constexpr valT cone(1);
+      constexpr valT cminus(-1);
+      constexpr valT ctwo(2);
+      constexpr valT lapfac=OHMMS_DIM-cone;
+
+      const DistanceTableData& ee_table=(*P.DistTables[0]);
+      const DistanceTableData& eI_table=(*P.DistTables[myTableID]);
+
+      dLogPsi=czero;
       gradLogPsi = PosType();
-      lapLogPsi = 0.0;
-      RealType u;
-      PosType gradF;
-      Tensor<RealType,3> hessF;
-      // Now, evaluate three-body term for each ion
-      for (int i=0; i<Nion; i++)
+      lapLogPsi = czero;
+
+      for(int jel=0; jel<Nelec; ++jel)
       {
-        IonData &ion = IonDataList[i];
-        int nn0 = eI_table->M[i];
-        for (int j=0; j<ion.elecs_inside.size(); j++)
-        {
-          int jel = ion.elecs_inside[j];
-          RealType r_Ij     = eI_table->r(nn0+jel);
-          RealType r_Ij_inv = eI_table->rinv(nn0+jel);
-          int ee0 = ee_table->M[jel]-(jel+1);
-          for (int k=j+1; k<ion.elecs_inside.size(); k++)
+        const int jg=P.GroupID[jel];
+        for(int iat=0; iat<Nion; ++iat)
+          if(eI_table.Distances[jel][iat]<Ion_cutoff[iat])
           {
-            int kel = ion.elecs_inside[k];
-            RealType r_Ik     = eI_table->r(nn0+kel);
-            RealType r_Ik_inv = eI_table->rinv(nn0+kel);
-            RealType r_jk     = ee_table->r(ee0+kel);
-            RealType r_jk_inv = ee_table->rinv(ee0+kel);
-            FT &func = *F(i, jel, kel);
-            int idx = J3UniqueIndex[F(i, jel, kel)];
-            func.evaluateDerivatives(r_jk, r_Ij, r_Ik, du_dalpha[idx],
+            const int ig=Ions.GroupID[iat];
+            const valT r_Ij     = eI_table.Distances[jel][iat];
+            const posT disp_Ij  = cminus*eI_table.Displacements[jel][iat];
+            const valT r_Ij_inv = cone/r_Ij;
+
+            for(int kel=0; kel<jel; kel++)
+              if(eI_table.Distances[kel][iat]<Ion_cutoff[iat])
+              {
+                const int kg=P.GroupID[kel];
+                const FT& feeI(*F(ig,jg,kg));
+
+                const valT r_Ik     = eI_table.Distances[kel][iat];
+                const posT disp_Ik  = cminus*eI_table.Displacements[kel][iat];
+                const valT r_Ik_inv = cone/r_Ik;
+
+                const valT r_jk     = ee_table.Distances[jel][kel];
+                const posT disp_jk  = ee_table.Displacements[jel][kel];
+                const valT r_jk_inv = cone/r_jk;
+
+                FT &func = *F(ig, jg, kg);
+                int idx = J3UniqueIndex[F(ig, jg, kg)];
+                func.evaluateDerivatives(r_jk, r_Ij, r_Ik, du_dalpha[idx],
                                      dgrad_dalpha[idx], dhess_dalpha[idx]);
-            u = func.evaluate (r_jk, r_Ij, r_Ik, gradF, hessF);
-            LogValue -= u;
-            // Save for ratio
-            U[jel*Nelec+kel] += u;
-            U[kel*Nelec+jel] += u;
-            int first = VarOffset(i,jel,kel).first;
-            int last  = VarOffset(i,jel,kel).second;
-            std::vector<RealType> &dlog = du_dalpha[idx];
-            std::vector<PosType>  &dgrad = dgrad_dalpha[idx];
-            std::vector<Tensor<RealType,3> > &dhess = dhess_dalpha[idx];
-            for (int p=first,ip=0; p<last; p++,ip++)
-            {
-              RealType dval =  dlog[ip];
-              PosType dg  = dgrad[ip];
-              Tensor<RealType,3> dh  = dhess[ip];
-              PosType gr_ee =    dg[0]*r_jk_inv * ee_table->dr(ee0+kel);
-              PosType du_j, du_k;
-              RealType d2u_j, d2u_k;
-              du_j = dg[1]*r_Ij_inv * eI_table->dr(nn0+jel) - gr_ee;
-              du_k = dg[2]*r_Ik_inv * eI_table->dr(nn0+kel) + gr_ee;
-              d2u_j = (dh(0,0) + 2.0*r_jk_inv*dg[0] -
-                       2.0*dh(0,1)*dot(ee_table->dr(ee0+kel),eI_table->dr(nn0+jel))*r_jk_inv*r_Ij_inv
-                       + dh(1,1) + 2.0*r_Ij_inv*dg[1]);
-              d2u_k = (dh(0,0) + 2.0*r_jk_inv*dg[0] +
-                       2.0*dh(0,2)*dot(ee_table->dr(ee0+kel),eI_table->dr(nn0+kel))*r_jk_inv*r_Ik_inv
-                       + dh(2,2) + 2.0*r_Ik_inv*dg[2]);
-              dLogPsi[p] -= dval;
-              gradLogPsi(p,jel) -= du_j;
-              gradLogPsi(p,kel) -= du_k;
-              lapLogPsi(p,jel)  -= d2u_j;
-              lapLogPsi(p,kel)  -= d2u_k;
-            }
+                int first = VarOffset(ig,jg,kg).first;
+                int last  = VarOffset(ig,jg,kg).second;
+                std::vector<RealType> &dlog = du_dalpha[idx];
+                std::vector<PosType>  &dgrad = dgrad_dalpha[idx];
+                std::vector<Tensor<RealType,3> > &dhess = dhess_dalpha[idx];
+
+                for (int p=first,ip=0; p<last; p++,ip++)
+                {
+                  RealType& dval = dlog[ip];
+                  PosType& dg = dgrad[ip];
+                  Tensor<RealType,3>& dh = dhess[ip];
+
+                  dg[0]*=r_jk_inv;
+                  dg[1]*=r_Ij_inv;
+                  dg[2]*=r_Ik_inv;
+
+                  PosType gr_ee = dg[0] * disp_jk;
+
+                  gradLogPsi(p,jel) -= dg[1] * disp_Ij - gr_ee;
+                  lapLogPsi(p,jel)  -= (dh(0,0) + lapfac*dg[0] -
+                       ctwo*dh(0,1)*dot(disp_jk,disp_Ij)*r_jk_inv*r_Ij_inv
+                       + dh(1,1) + lapfac*dg[1]);
+
+                  gradLogPsi(p,kel) -= dg[2] * disp_Ik + gr_ee;
+                  lapLogPsi(p,kel)  -= (dh(0,0) + lapfac*dg[0] +
+                       ctwo*dh(0,2)*dot(disp_jk,disp_Ik)*r_jk_inv*r_Ik_inv
+                       + dh(2,2) + lapfac*dg[2]);
+
+                  dLogPsi[p] -= dval;
+                }
+              }
           }
-        }
       }
+
       for (int k=0; k<myVars.size(); ++k)
       {
         int kk=myVars.where(k);
@@ -753,7 +737,6 @@ public:
         dhpsioverpsi[kk] = sum;
       }
     }
-#endif
   }
 };
 

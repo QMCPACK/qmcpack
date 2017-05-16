@@ -145,6 +145,25 @@ const char *particles = \
   double KE = -0.5*(Dot(elec_.G,elec_.G)+Sum(elec_.L));
   REQUIRE(KE == Approx(-0.058051245)); // note: number not validated
 
+  opt_variables_type optvars;
+  std::vector<OrbitalBase::RealType> dlogpsi;
+  std::vector<OrbitalBase::RealType> dhpsioverpsi;
+
+  psi.checkInVariables(optvars);
+  optvars.resetIndex();
+  const int NumOptimizables(optvars.size());
+  psi.checkOutVariables(optvars);
+  dlogpsi.resize(NumOptimizables);
+  dhpsioverpsi.resize(NumOptimizables);
+  psi.evaluateDerivatives(elec_, optvars, dlogpsi, dhpsioverpsi);
+
+  std::cout << std::endl << "reporting dlogpsi and dhpsioverpsi" << std::scientific << std::endl;
+  for(int iparam=0; iparam<NumOptimizables; iparam++)
+    std::cout << "param=" << iparam << " : " << dlogpsi[iparam] << "  " << dhpsioverpsi[iparam] << std::endl;
+
+  REQUIRE(dlogpsi[43] == Approx(1.3358726814e+05));
+  REQUIRE(dhpsioverpsi[43] == Approx(-2.3246270644e+05));
+
 }
 }
 
