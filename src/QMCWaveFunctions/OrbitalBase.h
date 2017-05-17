@@ -192,6 +192,7 @@ struct OrbitalBase: public QMCTraits
    */
   virtual void resetParameters(const opt_variables_type& active)=0;
 
+  virtual void putParametersInStandardForm(opt_variables_type & active, const bool copy_back);
   /** print the state, e.g., optimizables */
   virtual void reportStatus(std::ostream& os)=0;
 
