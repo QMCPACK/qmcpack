@@ -525,7 +525,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
   }
 
 
-  if (!multiDet && !slaterdet_0)
+  if (!multiDet && !slaterdet_0 && !optslaterdet_up && !optslaterdet_dn )
   {
     //fatal
     PRE.error("Failed to create a SlaterDeterminant.",true);
