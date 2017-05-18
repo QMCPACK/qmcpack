@@ -132,5 +132,18 @@ void OrbitalBase::evaluateDerivRatios(VirtualParticleSet& VP, const opt_variable
   //default is only ratios and zero derivatives
   evaluateRatios(VP,ratios);
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+/// \brief  By default, trial function components just copy the supplied parameters into
+///         themselves via the resetParameters function.
+///         Children of this class may override this virtual function.
+///
+/// \param[in,out]  active         the supplied variable set
+/// \param[in]      copy_back      whether to copy parameters back to the variable set at the end
+///
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void OrbitalBase::putParametersInStandardForm(opt_variables_type & active, const bool copy_back) {
+  this->resetParameters(active);
+}
 }
 

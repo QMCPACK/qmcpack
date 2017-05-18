@@ -160,7 +160,7 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
   targetPsi->checkInVariables(dummy);
   dummy.resetIndex();
   targetPsi->checkOutVariables(dummy);
-  targetPsi->resetParameters(dummy);
+  targetPsi->putParametersInStandardForm(dummy, true);
   return success;
 }
 

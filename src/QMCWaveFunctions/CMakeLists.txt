@@ -174,6 +174,7 @@ SET(FERMION_SRCS ${FERMION_SRCS}
   Fermion/MultiSlaterDeterminant.cpp
   Fermion/MultiSlaterDeterminantFast.cpp
   Fermion/MultiDiracDeterminantBase.cpp
+  Fermion/SlaterDetOpt.cpp
   Fermion/BackflowBuilder.cpp 
   Fermion/DiracDeterminantWithBackflow.cpp
   Fermion/SlaterDetWithBackflow.cpp

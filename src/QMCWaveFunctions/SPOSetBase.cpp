@@ -33,6 +33,15 @@ inline void transpose(const T* restrict in, T* restrict out, int m)
       out[ii++]=in[jj];
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+/// \brief  returns any trial function component that this object depends on
+///
+///////////////////////////////////////////////////////////////////////////////////////////////////
+OrbitalBase * SPOSetBase::tf_component() {
+  app_error() << "this particular single particle orbital set has no trial function component\n";
+  abort();
+  return 0;
+}
 void SPOSetBase::evaluate(const ParticleSet& P, int first, int last,
                           ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
 {
@@ -100,10 +109,12 @@ bool SPOSetBase::put(xmlNodePtr cur)
   //initialize the number of orbital by the basis set size
   int norb= BasisSetSize;
   std::string debugc("no");
+  double orbital_mix_magnitude = 0.0;
   OhmmsAttributeSet aAttrib;
   aAttrib.add(norb,"orbitals");
   aAttrib.add(norb,"size");
   aAttrib.add(debugc,"debug");
+  aAttrib.add(orbital_mix_magnitude, "orbital_mix_magnitude");
   aAttrib.put(cur);
   setOrbitalSetSize(norb);
   TotalOrbitalSize=norb;
@@ -142,7 +153,16 @@ bool SPOSetBase::put(xmlNodePtr cur)
     app_log() << "   Single-particle orbital coefficients dims=" << C.rows() << " x " << C.cols() << std::endl;
     app_log() << C << std::endl;
   }
+
+  // if requested, set the factor by which to mix the orbitals
+  if ( orbital_mix_magnitude != 0.0 )
+    this->set_orbital_mixing_factor(orbital_mix_magnitude);
+
   return success && success2;
+}
+
+void SPOSetBase::set_orbital_mixing_factor(const double factor) {
+  APP_ABORT("This single particle orbital set does not support a nonzero orbital_mix_magnitude");
 }
 
 void SPOSetBase::checkObject()
