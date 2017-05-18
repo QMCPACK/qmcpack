@@ -103,6 +103,7 @@ public:
   }
   ///reset the wavefunction
   virtual void resetPsi(bool final_reset=false)=0;
+  virtual void putParametersInStandardForm() {}
   ///reset Walkers before loadEnsemble
   virtual void resetWalkers()=0;
 

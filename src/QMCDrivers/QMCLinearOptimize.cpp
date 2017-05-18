@@ -160,6 +160,7 @@ void QMCLinearOptimize::finish()
   app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
   app_log() << "  </log>" << std::endl;
   optTarget->reportParameters();
+  optTarget->putParametersInStandardForm();
   int nw_removed=W.getActiveWalkers()-NumOfVMCWalkers;
   app_log() << "   Restore the number of walkers to " << NumOfVMCWalkers << ", removing " << nw_removed << " walkers." << std::endl;
   if(nw_removed>0)

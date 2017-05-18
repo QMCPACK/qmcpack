@@ -1073,4 +1073,18 @@ void TrialWaveFunction::get_ratios(ParticleSet& P, std::vector<ValueType>& ratio
   }
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+/// \brief  For each component of the trial function, copy the object's parameters from the
+///         supplied variable set, convert the object's parameters to a standard form (for objects
+///         that need this, most don't) and then optionally copy the standard form parameters back
+///         into the supplied variable set if they are different than what was copied in.
+///
+/// \param[in,out]  active         the supplied variable set
+/// \param[in]      copy_back      whether to copy parameters back to the variable set at the end
+///
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void TrialWaveFunction::putParametersInStandardForm(opt_variables_type & active, const bool copy_back) {
+  for (int i=0; i<Z.size(); ++i)
+    Z[i]->putParametersInStandardForm(active, copy_back);
+}
 }

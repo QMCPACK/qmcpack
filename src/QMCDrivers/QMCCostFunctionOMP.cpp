@@ -709,6 +709,36 @@ void QMCCostFunctionOMP::resetPsi(bool final_reset)
     psiClones[i]->resetParameters(OptVariablesForPsi);
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+/// \brief  For each component of the trial function, copy that component's optimizable parameters
+///         into it, convert the parameters to a standard form (for objects that need this, most
+///         don't) and then optionally copy the standard form parameters back.
+///
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void QMCCostFunctionOMP::putParametersInStandardForm() {
+
+  // check that assumptions are satisfied
+  if ( OptVariables.size() != OptVariablesForPsi.size() )
+    throw std::runtime_error("digestParameters currently only working when OptVariables.size() == OptVariablesForPsi.size()");
+
+  // TO FIX: make this part work when OptVariables.size() != OptVariablesForPsi.size()
+  // copy current parameters into object that we will send to the trial funciton
+  for (int i=0; i<OptVariables.size(); ++i)
+    OptVariablesForPsi[i] = OptVariables[i];
+
+  // give parameters to any trial function clones and have them convert to standard form
+  for (int i=0; i<psiClones.size(); ++i)
+    psiClones[i]->putParametersInStandardForm(OptVariablesForPsi, false);
+
+  // give parameters to trial function Psi, have it convert to standard form, and have it overwrite the parameters in OptVariablesForPsi with the standard form parameters
+  Psi.putParametersInStandardForm(OptVariablesForPsi, true);
+
+  // TO FIX: make this part work when OptVariables.size() != OptVariablesForPsi.size()
+  // record any changes in the parameters after converting to standard form
+  for (int i=0; i<OptVariables.size(); ++i)
+    OptVariables[i] = OptVariablesForPsi[i];
+
+}
 QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::correlatedSampling(bool needGrad)
 {
   for(int ip=0; ip<NumThreads; ++ip)
