@@ -301,7 +301,7 @@ public:
 
   RealType registerData(ParticleSet& P, BufferType& buf);
   RealType registerDataForDerivatives(ParticleSet& P, BufferType& buf, int storageType=0);
-  void memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only,long& orbs, long& invs, long& dets);
+  void memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only,long& orbs, long& invs, long& dets, bool zero_vars=true);
   RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
   void copyFromBuffer(ParticleSet& P, BufferType& buf);
   RealType evaluateLog(ParticleSet& P, BufferType& buf);
