@@ -70,33 +70,33 @@ namespace qmcplusplus {
     // of the FDLR wave function with respect to the optimizable parameters
     // (i.e., w.r.t. z=x+d, *not* with respect to x and d separately). This
     // derivative is therefore evaluated at x+d.
-    vector<RealType> dlogpsi_xpd;
+    std::vector<RealType> dlogpsi_xpd;
     // Same as above, but for the derivatives of \frac{H \psi_+}{\psi_+} w.r.t
     // the same optimizable parameters.
-    vector<RealType> dhpsioverpsi_xpd;
+    std::vector<RealType> dhpsioverpsi_xpd;
 
     // Vector to hold the derivatives of the logarithm of the "x-d" part
     // of the FDLR wave function with respect to the optimizable parameters
     // (i.e., w.r.t. z=x-d, *not* with respect to x and d separately). This
     // is the same as dlogpsi_xpd, but now evaluated at x-d.
-    vector<RealType> dlogpsi_xmd;
+    std::vector<RealType> dlogpsi_xmd;
     // Same as above, but for the derivatives of \frac{H \psi_-}{\psi_-} w.r.t
     // the same optimizable parameters.
-    vector<RealType> dhpsioverpsi_xmd;
+    std::vector<RealType> dhpsioverpsi_xmd;
 
     // These two vectors are only used if x parameters are being optimized.
     // Vector to hold the derivatives of the logarithm of the FDLR wave
     // function w.r.t the "x" FDLR parameters.
-    vector<RealType> dlogpsi_fdlr_x;
+    std::vector<RealType> dlogpsi_fdlr_x;
     // Same as above, but for the derivatives of
     // \frac{H \Psi_{FDLR}}{\{Psi_{FDLR}}.
-    vector<RealType> dhpsioverpsi_fdlr_x;
+    std::vector<RealType> dhpsioverpsi_fdlr_x;
 
     // These two vectors are the same the above two, but derivatives are taken
     // w.r.t the "d" FDLR parameters. Only used if d parameters are being
     // optimized.
-    vector<RealType> dlogpsi_fdlr_d;
-    vector<RealType> dhpsioverpsi_fdlr_d;
+    std::vector<RealType> dlogpsi_fdlr_d;
+    std::vector<RealType> dhpsioverpsi_fdlr_d;
 
     // Temporary particleset
     ParticleSet* tempP;
@@ -234,9 +234,9 @@ namespace qmcplusplus {
 
       // Loop over OrbitalBase objects in the TrialWavefunction object, and
       // check that they are allowed.
-      vector<OrbitalBase*>& Orbitals_plus = m_wfn_xpd->getOrbitals();
-      vector<OrbitalBase*>::iterator it_plus(Orbitals_plus.begin());
-      vector<OrbitalBase*>::iterator it_plus_end(Orbitals_plus.end());
+      std::vector<OrbitalBase*>& Orbitals_plus = m_wfn_xpd->getOrbitals();
+      std::vector<OrbitalBase*>::iterator it_plus(Orbitals_plus.begin());
+      std::vector<OrbitalBase*>::iterator it_plus_end(Orbitals_plus.end());
 
       for (; it_plus!=it_plus_end; ++it_plus)
       {
@@ -253,9 +253,9 @@ namespace qmcplusplus {
 
       // Loop over OrbitalBase objects in the TrialWavefunction object, and
       // check that they are allowed.
-      vector<OrbitalBase*>& Orbitals_minus = m_wfn_xmd->getOrbitals();
-      vector<OrbitalBase*>::iterator it_minus(Orbitals_minus.begin());
-      vector<OrbitalBase*>::iterator it_minus_end(Orbitals_minus.end());
+      std::vector<OrbitalBase*>& Orbitals_minus = m_wfn_xmd->getOrbitals();
+      std::vector<OrbitalBase*>::iterator it_minus(Orbitals_minus.begin());
+      std::vector<OrbitalBase*>::iterator it_minus_end(Orbitals_minus.end());
 
       for (; it_minus!=it_minus_end; ++it_minus)
       {
@@ -468,7 +468,7 @@ namespace qmcplusplus {
       m_wfn_xmd->putParametersInStandardForm(xmd_vars, copy_back);
     }
 
-    void reportStatus(ostream& os) {
+    void reportStatus(std::ostream& os) {
       throw std::runtime_error("FDLRWfn::reportStatus not yet implemented");
     }
 
@@ -509,9 +509,9 @@ namespace qmcplusplus {
       m_wfn_xmd->L = 0.0;
 
       // Iterator over all OrbitalBase objects within the "x+d" wave function.
-      vector<OrbitalBase*>& Orbitals_plus = m_wfn_xpd->getOrbitals();
-      vector<OrbitalBase*>::iterator it_plus(Orbitals_plus.begin());
-      vector<OrbitalBase*>::iterator it_plus_end(Orbitals_plus.end());
+      std::vector<OrbitalBase*>& Orbitals_plus = m_wfn_xpd->getOrbitals();
+      std::vector<OrbitalBase*>::iterator it_plus(Orbitals_plus.begin());
+      std::vector<OrbitalBase*>::iterator it_plus_end(Orbitals_plus.end());
 
       for (; it_plus!=it_plus_end; ++it_plus)
       {
@@ -524,9 +524,9 @@ namespace qmcplusplus {
       // Now do the same as above for the "x-d" wave function.
 
       // Iterator over all OrbitalBase objects within the "x-d" wave function.
-      vector<OrbitalBase*>& Orbitals_minus = m_wfn_xmd->getOrbitals();
-      vector<OrbitalBase*>::iterator it_minus(Orbitals_minus.begin());
-      vector<OrbitalBase*>::iterator it_minus_end(Orbitals_minus.end());
+      std::vector<OrbitalBase*>& Orbitals_minus = m_wfn_xmd->getOrbitals();
+      std::vector<OrbitalBase*>::iterator it_minus(Orbitals_minus.begin());
+      std::vector<OrbitalBase*>::iterator it_minus_end(Orbitals_minus.end());
 
       for (; it_minus!=it_minus_end; ++it_minus)
       {
@@ -977,7 +977,7 @@ namespace qmcplusplus {
     ///
     ///////////////////////////////////////////////////////////////////////////////////////////////
     void evaluateDerivatives(ParticleSet& P, const opt_variables_type& optvars,
-        vector<RealType>& dlogpsi, vector<RealType>& dhpsioverpsi)
+        std::vector<RealType>& dlogpsi, std::vector<RealType>& dhpsioverpsi)
     {
       //if (!Optimizable)
       //  return;
@@ -1153,52 +1153,52 @@ namespace qmcplusplus {
       // Print debugging info
       if ( false ) {
 
-        app_log() << "scaling_fac_1:  " << scaling_fac_1 << endl;
-        app_log() << "scaling_fac_2:  " << scaling_fac_2 << endl << endl;
+        app_log() << "scaling_fac_1:  " << scaling_fac_1 << std::endl;
+        app_log() << "scaling_fac_2:  " << scaling_fac_2 << std::endl << std::endl;
 
-        app_log() << "kinetic_plus:  " << kinetic_plus << endl;
-        app_log() << "kinetic_minus:  " << kinetic_minus << endl;
-        app_log() << "kinetic_FDLR:  " << kinetic_FDLR << endl << endl;
+        app_log() << "kinetic_plus:  " << kinetic_plus << std::endl;
+        app_log() << "kinetic_minus:  " << kinetic_minus << std::endl;
+        app_log() << "kinetic_FDLR:  " << kinetic_FDLR << std::endl << std::endl;
 
         app_log() << "dlogpsi_xpd: ";
         for (std::vector<double>::const_iterator i = dlogpsi_xpd.begin(); i != dlogpsi_xpd.end(); ++i)
           app_log() << *i << ' ';
-        app_log() << endl << endl;
+        app_log() << std::endl << std::endl;
 
         app_log() << "dlogpsi_xmd: ";
         for (std::vector<double>::const_iterator i = dlogpsi_xmd.begin(); i != dlogpsi_xmd.end(); ++i)
           app_log() << *i << ' ';
-        app_log() << endl << endl;
+        app_log() << std::endl << std::endl;
 
         app_log() << "dhpsioverpsi_xpd: ";
         for (std::vector<double>::const_iterator i = dhpsioverpsi_xpd.begin(); i != dhpsioverpsi_xpd.end(); ++i)
           app_log() << *i << ' ';
-        app_log() << endl << endl;
+        app_log() << std::endl << std::endl;
 
         app_log() << "dhpsioverpsi_xmd: ";
         for (std::vector<double>::const_iterator i = dhpsioverpsi_xmd.begin(); i != dhpsioverpsi_xmd.end(); ++i)
           app_log() << *i << ' ';
-        app_log() << endl << endl;
+        app_log() << std::endl << std::endl;
 
         app_log() << "dlogpsi_fdlr_x: ";
         for (std::vector<double>::const_iterator i = dlogpsi_fdlr_x.begin(); i != dlogpsi_fdlr_x.end(); ++i)
           app_log() << *i << ' ';
-        app_log() << endl << endl;
+        app_log() << std::endl << std::endl;
 
         app_log() << "dlogpsi_fdlr_d: ";
         for (std::vector<double>::const_iterator i = dlogpsi_fdlr_d.begin(); i != dlogpsi_fdlr_d.end(); ++i)
           app_log() << *i << ' ';
-        app_log() << endl;
+        app_log() << std::endl;
 
         app_log() << "dhpsioverpsi_fdlr_x: ";
         for (std::vector<double>::const_iterator i = dhpsioverpsi_fdlr_x.begin(); i != dhpsioverpsi_fdlr_x.end(); ++i)
           app_log() << *i << ' ';
-        app_log() << endl << endl;
+        app_log() << std::endl << std::endl;
 
         app_log() << "dhpsioverpsi_fdlr_d: ";
         for (std::vector<double>::const_iterator i = dhpsioverpsi_fdlr_d.begin(); i != dhpsioverpsi_fdlr_d.end(); ++i)
           app_log() << *i << ' ';
-        app_log() << endl << endl << endl << endl << endl;
+        app_log() << std::endl << std::endl << std::endl << std::endl << std::endl;
 
       } // End of printing debugging info
 
@@ -1286,18 +1286,18 @@ namespace qmcplusplus {
 
     void copyFromDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf)
     {
-      vector<OrbitalBase*>& Orbitals_plus = m_wfn_xpd->getOrbitals();
-      vector<OrbitalBase*>::iterator it_plus(Orbitals_plus.begin());
-      vector<OrbitalBase*>::iterator it_plus_end(Orbitals_plus.end());
+      std::vector<OrbitalBase*>& Orbitals_plus = m_wfn_xpd->getOrbitals();
+      std::vector<OrbitalBase*>::iterator it_plus(Orbitals_plus.begin());
+      std::vector<OrbitalBase*>::iterator it_plus_end(Orbitals_plus.end());
 
       for (; it_plus!=it_plus_end; ++it_plus)
       {
         (*it_plus)->copyFromDerivativeBuffer(P,buf);
       }
 
-      vector<OrbitalBase*>& Orbitals_minus = m_wfn_xmd->getOrbitals();
-      vector<OrbitalBase*>::iterator it_minus(Orbitals_minus.begin());
-      vector<OrbitalBase*>::iterator it_minus_end(Orbitals_minus.end());
+      std::vector<OrbitalBase*>& Orbitals_minus = m_wfn_xmd->getOrbitals();
+      std::vector<OrbitalBase*>::iterator it_minus(Orbitals_minus.begin());
+      std::vector<OrbitalBase*>::iterator it_minus_end(Orbitals_minus.end());
 
       for (; it_minus!=it_minus_end; ++it_minus)
       {
@@ -1306,7 +1306,7 @@ namespace qmcplusplus {
     }
 
     void evaluateDerivRatios(VirtualParticleSet& VP, const opt_variables_type& optvars,
-        vector<ValueType>& ratios, Matrix<ValueType>& dratios) {
+        std::vector<ValueType>& ratios, Matrix<ValueType>& dratios) {
       throw std::runtime_error("FDLRWfn::evaluateDerivRatios not yet implemented");
     }
 
