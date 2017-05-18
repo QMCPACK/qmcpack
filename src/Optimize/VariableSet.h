@@ -275,6 +275,21 @@ struct VariableSet
    */
   void insertFrom(const VariableSet& input);
 
+  /** sum together the values of the optimizable parameter values in
+   *  two VariableSet objects, and set this object's values to equal them.
+   *  @param first set of input variables
+   *  @param second set of input variables
+   */
+  void insertFromSum(const VariableSet& input_1, const VariableSet& input_2);
+
+  /** take the difference (input_1-input_2) of values of the optimizable
+   *  parameter values in two VariableSet objects, and set this object's
+   *  values to equal them.
+   *  @param first set of input variables
+   *  @param second set of input variables
+   */
+  void insertFromDiff(const VariableSet& input_1, const VariableSet& input_2);
+
   /** activate variables for optimization
    * @param first iterator of the first name
    * @param last iterator of the last name
