@@ -136,6 +136,10 @@ public:
   {
     return PhaseValue;
   }
+  inline void setPhase(RealType PhaseValue_new)
+  {
+    PhaseValue = PhaseValue_new;
+  }
   void getLogs(std::vector<RealType>& lvals);
   void getPhases(std::vector<RealType>& pvals);
 
@@ -174,6 +178,10 @@ public:
   inline RealType getLogPsi() const
   {
     return LogValue;
+  }
+  inline void setLogPsi(RealType LogPsi_new)
+  {
+    LogValue = LogPsi_new;
   }
 
   ///Add an OrbitalBase
