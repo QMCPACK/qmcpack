@@ -164,8 +164,7 @@ In the next iteration, the median magnitude of the stabilizers is set to that th
 the stabilizers automatically.
 
 When the trial wave function contains more than ten thousand parameters, constructing and storing the linear method matrices may become a memory bottleneck. 
-To avoid explicit construction of these matrices, the adaptive optimizer implements the block linear method (BLM) approach
-(see J. Chem. Theory Comput. DOI: 10.1021/acs.jctc.7b00119).
+To avoid explicit construction of these matrices, the adaptive optimizer implements the block linear method (BLM) approach. \cite{Zhao:2017:blocked_lm}
 The BLM tries to find an approximate 
 solution $\vec{c}_{opt}$ to the standard LM generalized eigenvalue problem by dividing the variable space into a number of blocks
 and making intelligent estimates for which directions within those blocks will be most important for constructing $\vec{c}_{opt}$.
@@ -237,7 +236,7 @@ Recommendations:
 \end{lstlisting}
 %To activate this optimizer, add ``-D BUILD\_LMYENGINE\_INTERFACE=1'' in the CMake command line.
 
-The adaptive optimizer is also able to optimize individual excited states directly (see  J. Chem. Theory Comput. 12, 3436).  
+The adaptive optimizer is also able to optimize individual excited states directly. \cite{Zhao:2016:dir_tar}
 In this case, it tries to minimize the following function: 
 \begin{equation*}
 \Omega[\Psi]=\frac{\left<\Psi|\omega-H|\Psi\right>}{\left<\Psi|{\left(\omega-H\right)}^2|\Psi\right>}
