@@ -216,7 +216,7 @@ Additional information:
 Recommendations:
 \begin{itemize}
   \item Default shift\_i, shift\_s should be fine. 
-  \item The BLM has a higher stochastic prefactor than the standard LM, and so we only advise its use when at least 5,000 variables are being optimized.
+  \item When there are fewer than about 5,000 variables being optimized, the traditional LM is preferred as it has a lower overhead than the BLM when the number of variables is small.
   \item Initial experience with the BLM suggests that a few hundred blocks and a handful of \texttt{nolds} and \texttt{nkept}
         often provide a good balance between memory use and accuracy.  In general, using fewer blocks should be more accurate but will require more memory.
 \end{itemize}
