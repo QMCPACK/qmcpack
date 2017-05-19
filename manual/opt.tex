@@ -163,7 +163,7 @@ The cost function for these wave functions is compared, and the update correspon
 In the next iteration, the median magnitude of the stabilizers is set to that that generated the best update in the current iteration, thus adapting the magnitude of
 the stabilizers automatically.
 
-Thanks to recently developments in excited state variational principles, the adaptive optimizer is also able to optimize individual excited states directly.  
+The adaptive optimizer is also able to optimize individual excited states directly (see  J. Chem. Theory Comput. 12, 3436).  
 In this case, it tries to minimize the following function: 
 \begin{equation*}
 \Omega[\Psi]=\frac{\left<\Psi|\omega-H|\Psi\right>}{\left<\Psi|{\left(\omega-H\right)}^2|\Psi\right>}
