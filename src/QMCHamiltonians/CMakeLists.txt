@@ -39,6 +39,8 @@ SET(HAMSRCS
   StaticStructureFactor.cpp
   OrbitalImages.cpp
   SpinDensity.cpp
+  SpeciesKineticEnergy.cpp
+  LatticeDeviationEstimator.cpp
   )
 #  FSAtomPseudoPot.cpp
 
