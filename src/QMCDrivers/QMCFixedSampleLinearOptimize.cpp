@@ -423,6 +423,10 @@ QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   doAdaptiveThreeShift = ( MinMethod == "adaptive" );
   doOneShiftOnly = ( MinMethod == "OneShiftOnly" );
 
+  // sanity check
+  if ( targetExcited && !doAdaptiveThreeShift )
+    APP_ABORT("targetExcited = \"yes\" requires that MinMethod = \"adaptive\"");
+
 #ifdef ENABLE_OPENMP
   if ( doAdaptiveThreeShift && (omp_get_max_threads() > 1) ) {
         //throw std::runtime_error("OpenMP threading not enabled with AdaptiveThreeShift optimizer.  Use MPI for parallelism instead, and set OMP_NUM_THREADS to 1.");
