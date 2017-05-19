@@ -155,8 +155,10 @@ to 0 and do a single inner iteration (max its=1) per sample of configurations.}
 \subsubsection{adaptive}
 
 The default setting of the adaptive optimizer is to construct the linear method Hamiltonian and overlap matrices explicitly and add different shifts to the Hamiltonian matrix 
-as ``stabilizers''. The generalized eigenvalue problem is solved for each shifted Hamiltonian and updates to wave function parameters are obtained. Then a correlated sampling 
-is performed (using the middle shift's updated wave function as the guiding function) for each shift's updated wave function and the initial trial wave function.
+as ``stabilizers''.
+The generalized eigenvalue problem is solved for each shift to obtain updates to the wave function parameters.
+Then a correlated sampling is performed for each shift's updated wave function and the initial trial wave function
+using the middle shift's updated wave function as the guiding function.
 The cost function for these wave functions is compared, and the update corresponding to the best cost function is selected.
 In the next iteration, the median magnitude of the stabilizers is set to that that generated the best update in the current iteration, thus adapting the magnitude of
 the stabilizers automatically.
