@@ -16,6 +16,7 @@
 
 #include "Optimize/VariableSet.h"
 #include <map>
+#include <stdexcept>
 
 namespace optimize
 {
