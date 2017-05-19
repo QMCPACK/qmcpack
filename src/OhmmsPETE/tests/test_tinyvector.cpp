@@ -41,14 +41,6 @@ void test_tiny_vector()
     REQUIRE(v2[i] == Approx(1.0));
   }
 
-  if (D > 1) {
-    vec_t v3(1.0, 2.0);
-    REQUIRE(v3[0] == Approx(1.0));
-    REQUIRE(v3[1] == Approx(2.0));
-    // problem: elements past those explicitly set are undefined
-    // in this case, vectors with D > 2 will have undefined elements.
-  }
-
   // TODO: add optional bounds checks to element access methods
   vec_t v4;
   double sum = 0;
@@ -62,6 +54,16 @@ void test_tiny_vector()
   REQUIRE(sum == Approx(dotp));
 }
 
+template <unsigned int D>
+void test_tiny_vector_size_two()
+{
+  typedef TinyVector<double, D> vec_t;
+  vec_t v3(1.0, 2.0);
+  REQUIRE(v3[0] == Approx(1.0));
+  REQUIRE(v3[1] == Approx(2.0));
+  // problem: elements past those explicitly set are undefined
+  // in this case, vectors with D > 2 will have undefined elements.
+}
 
 TEST_CASE("tiny vector", "[OhmmsPETE]")
 {
@@ -69,6 +71,9 @@ TEST_CASE("tiny vector", "[OhmmsPETE]")
   test_tiny_vector<2>();
   test_tiny_vector<3>();
   test_tiny_vector<4>();
+  test_tiny_vector_size_two<2>();
+  test_tiny_vector_size_two<3>();
+  test_tiny_vector_size_two<4>();
 }
 
 }
