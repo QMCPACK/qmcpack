@@ -209,9 +209,8 @@ Additional information:
   \item \texttt{nolds}.     In BLM, the inter-block correlation is accounted for by including a small number of wave function update vectors
                             outside the block. Larger \texttt{nolds} would include more inter-block correlation and more accurate results, but 
                             also higher memory requirements. 
-  \item \texttt{nkept}.     This is the number of update directions taken from each block in BLM. If all directions are taken in each block, 
-                            BLM becomes standard LM and no approximation is made. Normally taking less than 5 directions in each block would 
-                            be sufficient. 
+  \item \texttt{nkept}.     This is the number of update directions retained from each block in the BLM. If all directions are retained in each block, 
+                            then the BLM becomes equivalent to the standard LM.  Retaining 5 or fewer directions per block is often sufficient.
 \end{itemize}
 
 Recommendations:
