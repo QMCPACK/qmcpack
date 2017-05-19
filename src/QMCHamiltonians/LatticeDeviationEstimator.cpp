@@ -15,18 +15,14 @@
 namespace qmcplusplus
 {
 
-LatticeDeviationEstimator::LatticeDeviationEstimator(ParticleSet& P,ParticleSet& sP, std::string tgroup_in, std::string sgroup_in): 
-  tspecies(P.getSpeciesSet()), sspecies(sP.getSpeciesSet()), spset(sP), tpset(P)
+LatticeDeviationEstimator::LatticeDeviationEstimator(ParticleSet& P,ParticleSet& sP, const std::string& tgroup_in, const std::string& sgroup_in): 
+  tspecies(P.getSpeciesSet()), sspecies(sP.getSpeciesSet()), spset(sP), tpset(P),
+  tgroup(tgroup_in), sgroup(sgroup_in), hdf5_out(false), per_xyz(false)
 { 
   // get the distance table from quantum particle set
   // !!!! YY: use addTable instead of getTable b/c cloned ParticleSet may not have initialized distance table with source particle set ( this is true even for the master thread, why? )
   int tid   = P.addTable(sP); // getTable(sP) does not work with threads
-
   d_table   = P.DistTables[tid];
-  tgroup    = tgroup_in;
-  sgroup    = sgroup_in;
-  hdf5_out  = false;
-  per_xyz   = false;
   
   // calculate number of source particles to use as lattice sites
   int src_species_id = sspecies.findSpecies(sgroup);

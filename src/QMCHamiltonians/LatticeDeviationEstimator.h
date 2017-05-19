@@ -43,7 +43,7 @@ class LatticeDeviationEstimator: public QMCHamiltonianBase
 {
 public:
 
-  LatticeDeviationEstimator(ParticleSet& P, ParticleSet& sP, std::string tgroup, std::string sgroup);
+  LatticeDeviationEstimator(ParticleSet& P, ParticleSet& sP, const std::string& tgroup, const std::string& sgroup);
   ~LatticeDeviationEstimator() { }
 
   bool put(xmlNodePtr cur);         // read input xml node, required
