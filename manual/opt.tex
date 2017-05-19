@@ -198,10 +198,12 @@ eigenproblem in the basis of these supposedly important block-wise directions.
 
 Additional information:
 \begin{itemize}
-  \item \texttt{shift\_i}.  This is the initial value of direct term added to the diagonal of the Hamiltonian matrix. 
-                            More stable but slower optimization with a large value. The used value is auto-adjusted by the optimizer. 
-  \item \texttt{shift\_s}.  This is the initial value of the stabilizer based on the overlap matrix added to the Hamiltonian matrix. 
-                            More stable but slower optimization with a large value. The used value is auto-adjusted by the optimizer. 
+  \item \texttt{shift\_i}.  This is the initial coefficient used to scale the diagonal stabilizer.
+                            More stable but slower optimization is expected with a large value.
+                            The adaptive method will automatically adjust this value after each linear method iteration.
+  \item \texttt{shift\_s}.  This is the initial coefficient used to scale the overlap-based stabilizer.
+                            More stable but slower optimization is expected with a large value.
+                            The adaptive method will automatically adjust this value after each linear method iteration.
   \item \texttt{nblocks}.   This is the number of blocks used in block LM. The amount of memory required to store LM matrices decreases
                             with increased number of blocks. But the error introduced by BLM would increase with number of blocks.  
   \item \texttt{nolds}.     In BLM, the inter-block correlation is accounted for by including a small number of wave function update vectors
