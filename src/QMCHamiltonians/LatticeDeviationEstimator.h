@@ -1,19 +1,14 @@
-//////////////////////////////////////////////////////////////////
-// (c) Copyright 2003  by Jeongnim Kim
-//////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////
-//   National Center for Supercomputing Applications &
-//   Materials Computation Center
-//   University of Illinois, Urbana-Champaign
-//   Urbana, IL 61801
-//   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
 //
-// Supported by
-//   National Center for Supercomputing Applications, UIUC
-//   Materials Computation Center, UIUC
-//////////////////////////////////////////////////////////////////
-// -*- C++ -*-
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: Yubo Yang, paul.young.0414@gmail.com, University of Illinois at Urbana-Champaign
+//
+// File created by: Yubo Yang, paul.young.0414@gmail.com, University of Illinois at Urbana-Champaign
+//////////////////////////////////////////////////////////////////////////////////////
+
 #ifndef QMCPLUSPLUS_LATTICEDEVIATION_H
 #define QMCPLUSPLUS_LATTICEDEVIATION_H
 
@@ -89,10 +84,3 @@ private:
 
 } // namespace qmcplusplus
 #endif
-
-/***************************************************************************
- * $RCSfile$   $Author: yyang $
- * $Revision: 7049 $   $Date: 2016-08-04 11:26:23 -0500 (Thur, 4 Aug 2017) $
- * $Id: LatticeDeviationEstimator.h 7049 2017-08-04 11:26:23 yyang $
- ***************************************************************************/
-

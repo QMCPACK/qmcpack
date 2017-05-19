@@ -1,19 +1,14 @@
-//////////////////////////////////////////////////////////////////
-// (c) Copyright 2003  by Jeongnim Kim
-//////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////
-//   National Center for Supercomputing Applications &
-//   Materials Computation Center
-//   University of Illinois, Urbana-Champaign
-//   Urbana, IL 61801
-//   e-mail: jnkim@ncsa.uiuc.edu
-//   Tel:    217-244-6319 (NCSA) 217-333-3324 (MCC)
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
 //
-// Supported by
-//   National Center for Supercomputing Applications, UIUC
-//   Materials Computation Center, UIUC
-//////////////////////////////////////////////////////////////////
-// -*- C++ -*-
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: Yubo Yang, paul.young.0414@gmail.com, University of Illinois at Urbana-Champaign
+//
+// File created by: Yubo Yang, paul.young.0414@gmail.com, University of Illinois at Urbana-Champaign
+//////////////////////////////////////////////////////////////////////////////////////
+
 #ifndef QMCPLUSPLUS_SPECIESKINETICENERGY_H
 #define QMCPLUSPLUS_SPECIESKINETICENERGY_H
 
@@ -26,8 +21,8 @@ namespace qmcplusplus
 /** SpeciesKineticEnergy evaluate the kinetic energy of each species in the target
  * particle set separately instead of sum over every particle in the set such as BareKinetic
  *  <estimator type="specieskinetic" name="skinetic"/>
- * By default skinetic_u, skinetic_d, etc. columns will be added to scalar.dat, turn off
- *  using scalar="no". If hdf5="yes", then data will be added to stat.h5 as well.
+ * By default skinetic_u, skinetic_d, etc. columns will be added to scalar.dat.
+ *  If hdf5="yes", then data will be added to stat.h5 as well.
  * The sum of every column that starts with skinetic should be equivalent to the Kinetic column.
  */
 class SpeciesKineticEnergy: public QMCHamiltonianBase
@@ -70,10 +65,3 @@ private:
 
 } // namespace qmcplusplus
 #endif
-
-/***************************************************************************
- * $RCSfile$   $Author: yyang $
- * $Revision: 7049 $   $Date: 2016-08-03 20:47:23 -0500 (Wed, 3 Aug 2017) $
- * $Id: SpeciesKineticEnergy.h 7049 2017-08-03 20:47:23 yyang $
- ***************************************************************************/
-
