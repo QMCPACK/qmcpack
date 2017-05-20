@@ -1066,7 +1066,7 @@ bool QMCFixedSampleLinearOptimize::one_shift_run() {
   parameterDirections.assign(N, 0.0);
 
   // compute the initial cost
-  const RealType initCost = optTarget->Cost(false);
+  const RealType initCost = optTarget->computedCost();
 
   // say what we are doing
   app_log() << std::endl

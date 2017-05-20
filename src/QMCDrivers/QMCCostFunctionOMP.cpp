@@ -423,7 +423,7 @@ void QMCCostFunctionOMP::checkConfigurations()
       else
         etmp= hClones[ip]->evaluate(wRef);
 
-      e0 += saved[ENERGY_TOT] = etmp;
+      e0 += saved[ENERGY_TOT] = saved[ENERGY_NEW] = etmp;
       e2 += etmp*etmp;
       saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential();
       if(nlpp)
@@ -448,11 +448,19 @@ void QMCCostFunctionOMP::checkConfigurations()
   app_log() << "  VMC Eavg = " << Etarget << std::endl;
   app_log() << "  VMC Evar = " << etemp[2]/etemp[1]-Etarget*Etarget << std::endl;
   app_log() << "  Total weights = " << etemp[1] << std::endl;
-
   app_log().flush();
-
   setTargetEnergy(Etarget);
   ReportCounter=0;
+
+  //collect SumValue for computedCost
+  NumWalkersEff = etemp[1];
+  SumValue[SUM_WGT] = etemp[1];
+  SumValue[SUM_WGTSQ] = etemp[1];
+  SumValue[SUM_E_WGT] = etemp[0];
+  SumValue[SUM_ESQ_WGT] = etemp[2];
+  SumValue[SUM_E_BARE] = etemp[0];
+  SumValue[SUM_ESQ_BARE] = etemp[2];
+  SumValue[SUM_ABSE_BARE] = 0.0;
 }
 
 #ifdef HAVE_LMY_ENGINE
