@@ -254,8 +254,8 @@ struct SplineAdoptorReader: public BsplineReaderBase
           //if(ntot>>22) //Using 4M as the cutoff, candidate for autotuning
           {
             now.restart();
-            //initialize_spline_pio(spin,bandgroup);
-            initialize_spline_pio_reduce(spin,bandgroup);
+            initialize_spline_pio(spin,bandgroup);
+            //initialize_spline_pio_reduce(spin,bandgroup);
             app_log() << "  SplineAdoptorReader initialize_spline_pio " << now.elapsed() << " sec" << std::endl;
           }
         }
