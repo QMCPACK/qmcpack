@@ -61,7 +61,6 @@ void NonLocalECPComponent::add(int l, RadialPotentialType* pp)
 
 void NonLocalECPComponent::resize_warrays(int n,int m,int l)
 {
-  app_log() << "  NonLocalECPComponent::resize_warrays " << std::endl;
   psiratio.resize(n);
   psigrad.resize(n);
   psigrad_source.resize(n);

@@ -15,7 +15,9 @@
 #ifndef QMCPLUSPLUS_QUADRATURE_H
 #define QMCPLUSPLUS_QUADRATURE_H
 
-#include "QMCHamiltonians/Ylm.h"
+#include <assert.h>
+#include "Numerics/Ylm.h"
+#include "type_traits/scalar_traits.h"
 #include "QMCWaveFunctions/lcao/SoaSphericalTensor.h"
 
 namespace qmcplusplus
@@ -35,8 +37,10 @@ struct Quadrature3D
   RealType A, B, C, D;
   std::vector<PosType>  xyz_m;
   std::vector<RealType> weight_m;
+  bool quad_ok;
+  const bool fail_abort;
 
-  Quadrature3D(int rule)
+  Quadrature3D(int rule, bool request_abort=true): quad_ok(true), fail_abort(request_abort)
   {
     A = B = C = D = 0;
     switch (rule)
@@ -269,10 +273,12 @@ struct Quadrature3D
             mRealType im = imag (sum);
             if ((l1==l2) && (m1==m2))
               re -= 1.0;
-            if ((std::abs(im) > 5*std::numeric_limits<float>::epsilon()) || (std::abs(re) > 5*std::numeric_limits<float>::epsilon()))
+            if ((std::abs(im) > 7*std::numeric_limits<float>::epsilon()) || (std::abs(re) > 7*std::numeric_limits<float>::epsilon()))
             {
               app_error() << "Broken spherical quadrature for " << grid.size() << "-point rule.\n" << std::endl;
-              APP_ABORT("Give up");
+              app_error() << "  Should be zero:  Real part = " << re << " Imaginary part = " << im << std::endl;
+              quad_ok = false;
+              if(fail_abort) APP_ABORT("Give up");
             }
 //   	    fprintf (stderr, "(l1,m1,l2m,m2) = (%2d,%2d,%2d,%2d)  sum = (%20.16f %20.16f)\n",
 //   	     l1, m1, l2, m2, real(sum), imag(sum));
@@ -300,10 +306,12 @@ struct Quadrature3D
             }
             if ((l1==l2) && (m1==m2))
               sum -= 1.0;
-            if (std::abs(sum) > 6*std::numeric_limits<float>::epsilon())
+            if (std::abs(sum) > 12*std::numeric_limits<float>::epsilon())
             {
               app_error() << "Broken real spherical quadrature for " << grid.size() << "-point rule.\n" << std::endl;
-              APP_ABORT("Give up");
+              app_error() << "  Should be zero:  " << sum << std::endl;
+              quad_ok = false;
+              if(fail_abort) APP_ABORT("Give up");
             }
           }
   }

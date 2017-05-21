@@ -13,6 +13,7 @@
 #ifndef QMCPLUSPLUS_SOA_SPHERICAL_CARTESIAN_TENSOR_H
 #define QMCPLUSPLUS_SOA_SPHERICAL_CARTESIAN_TENSOR_H
 
+#include "OhmmsSoA/VectorSoaContainer.h"
 #include "OhmmsPETE/Tensor.h"
 
 namespace qmcplusplus

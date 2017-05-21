@@ -18,6 +18,7 @@
 #define QMCPLUSPLUS_VECTOR_SOA_H
 #include <simd/allocator.hpp>
 #include <simd/algorithm.hpp>
+#include <ParticleBase/ParticleAttrib.h>
 
 namespace qmcplusplus
 {
