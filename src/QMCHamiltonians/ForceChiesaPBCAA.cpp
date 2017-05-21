@@ -180,17 +180,18 @@ void ForceChiesaPBCAA::evaluateSR(ParticleSet& P)
   const DistanceTableData &d_ab(*P.DistTables[myTableIndex]);
   if(d_ab.DTType == DT_SOA)
   {
-    // WARNNING not checked
-    for(size_t b=0; b<NptclB; ++b)
+    for(size_t jat=0; jat<NptclB; ++jat)
     {
-      const RealType* restrict dist=d_ab.Distances[b];
+      const RealType* restrict dist=d_ab.Distances[jat];
 
-      for(size_t a=0; a<NptclA; ++a)
+      for(size_t iat=0; iat<NptclA; ++iat)
       {
-        RealType g_f = g_filter(dist[a]);
-        RealType V = -AB->srDf(dist[a],1.0/dist[a]);
-        PosType drhat = dist[a]*d_ab.Displacements[b][a];
-        forces[a] += -g_f*Zat[a]*Qat[b]*V*drhat;
+        const RealType r = dist[iat];
+        const RealType rinv = RealType(1)/r;
+        RealType g_f = g_filter(r);
+        RealType V = -AB->srDf(r,rinv);
+        PosType drhat = rinv*d_ab.Displacements[jat][iat];
+        forces[iat] += g_f*Zat[iat]*Qat[jat]*V*drhat;
       }
     }
     //for(size_t a=0; a<NptclA; ++a)
@@ -230,13 +231,12 @@ void ForceChiesaPBCAA::evaluateSR_AA()
   const DistanceTableData &d_aa(*PtclA.DistTables[0]);
   if(d_aa.DTType == DT_SOA)
   {
-    // WARNNING not checked
     for(size_t ipart=1; ipart<NptclA; ipart++)
     {
       const RealType* restrict dist=d_aa.Distances[ipart];
       for(size_t jpart=0; jpart<ipart; ++jpart)
       {
-        RealType V = -AB->srDf(dist[jpart],1.0/dist[jpart]);
+        RealType V = -AB->srDf(dist[jpart],RealType(1)/dist[jpart]);
         PosType grad = -Zat[jpart]*Zat[ipart]*V*dist[jpart]*d_aa.Displacements[ipart][jpart];
         forces_IonIon[ipart] += grad;
         forces_IonIon[jpart] -= grad;
