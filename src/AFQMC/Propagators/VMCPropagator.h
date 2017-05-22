@@ -39,7 +39,7 @@ class VMCPropagator: public PropagatorBase
 
   bool hdf_read(hdf_archive&,const std::string&);
 
-  void benchmark() {};
+  void benchmark(std::string&,int,int,int,WalkerHandlerBase*) {}
 
   SPValueSMVector* getDvn() { return NULL; } 
 

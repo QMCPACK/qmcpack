@@ -6,14 +6,14 @@
 
 namespace std{ 
 
-  void swap(std::tuple<int &, int &, qmcplusplus::ValueType &> const& a, std::tuple<int &, int &, qmcplusplus::ValueType &> const& b) {
+  void swap(std::tuple<int &, int &, qmcplusplus::RealType &> const& a, std::tuple<int &, int &, qmcplusplus::RealType &> const& b) {
     using std::swap;
     swap(std::get<0>(a), std::get<0>(b));
     swap(std::get<1>(a), std::get<1>(b));
     swap(std::get<2>(a), std::get<2>(b));
   } 
 
-  void swap(std::tuple<int &, int &, std::complex<qmcplusplus::ValueType> &> const& a, std::tuple<int &, int &, std::complex<qmcplusplus::ValueType> &> const& b) {
+  void swap(std::tuple<int &, int &, std::complex<qmcplusplus::RealType> &> const & a, std::tuple<int &, int &, std::complex<qmcplusplus::RealType> &> const& b) {
     using std::swap;
     swap(std::get<0>(a), std::get<0>(b));
     swap(std::get<1>(a), std::get<1>(b));

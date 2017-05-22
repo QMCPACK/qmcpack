@@ -517,24 +517,35 @@ class SMSparseMatrix
     return *this;
   }  
 
-  inline int find_element(int i, int j) {
-    return 0;
+  inline int find_element(int i, int j) const {
+    for (int k = (*rowIndex)[i]; k<(*rowIndex)[i+1]; k++) {
+      if ((*colms)[k] == j) return k;
+    }
+    return -1;
   }
 
+/*
   inline Type_t& operator()(int i, int j)
   {
 #ifdef ASSERT_SPARSEMATRIX
     assert(i>=0 && i<nr && j>=0 && j<nc && compressed); 
 #endif
-    return (*vals)[find_element(i,j)]; 
+    int idx = find_element(i,j);
+    // this should really return an exception if idx==-1
+    if (idx == -1) 
+      APP_ABORT("  Error: SMSparseMatrix::operator()->Type_t&: element does not exists. \n\n\n");
+    return (*vals)[idx]; 
   }
+*/
 
   inline Type_t operator()( int i, int j) const
   {
 #ifdef ASSERT_SPARSEMATRIX
     assert(i>=0 && i<nr && j>=0 && j<nc && compressed); 
 #endif
-    return (*vals)[find_element(i,j)]; 
+    int idx = find_element(i,j);
+    if (idx == -1) return T(0);
+    return (*vals)[idx]; 
   }
 
   inline void add(const int i, const int j, const T& v, bool needs_locks=false) 
@@ -728,6 +739,8 @@ class SMSparseMatrix
 
       }
 */
+
+    // 
 
     for(int i=0, k=rank, sz=1; i<nlvl; i++, sz*=2 ) {
       if(k%2==0 && rank<nblk) {

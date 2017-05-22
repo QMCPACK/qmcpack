@@ -28,32 +28,36 @@ template<class WlkBucket,
 // eventually generalize MPI_Comm to a MPI wrapper
 inline void BasicWalkerData(WlkBucket& wlk, DVec& curData, MPI_Comm comm)
 {
-  assert(curData.size() >= 6);
-  std::fill(curData.begin(),curData.begin()+6,0);
+  assert(curData.size() >= 7);
+  std::fill(curData.begin(),curData.begin()+7,0);
   int nW = wlk.numWalkers(true);
   ComplexType enume = 0, edeno = 0;
-  std::vector<double> data(14,0);
+  std::vector<double> data(16,0);
   ComplexType w,oa,ob,eloc;
   RealType sumo=0.0;
   for(int i=0; i<nW; i++) {
     ComplexType* dum = wlk.getWalker(i,w,eloc,oa,ob);
-    if( (!wlk.isAlive(i)) || std::abs(w) <= 1e-6 || std::abs(oa*ob)<1e-8 || (!std::isfinite( std::abs(oa*ob) )) || (!std::isfinite( (w*eloc).real() )) ) continue;
+    if( !wlk.isAlive(i) ) continue; 
+    data[6]++;   // all walkers
+    //if( std::abs(w) <= 1e-6 || std::abs(oa*ob)<1e-8 || (!std::isfinite( std::abs(oa*ob) )) || (!std::isfinite( (w*eloc).real() )) ) continue;
+    if( std::abs(w) <= 1e-6 || (!std::isfinite( std::abs(oa*ob) )) || (!std::isfinite( (w*eloc).real() )) ) continue;
     data[0] += (w*eloc).real();
     data[1] += (w*eloc).imag();
     data[2] += w.real();
     data[3] += w.imag();
     data[4] += std::abs(w);
     data[5] += std::abs(oa*ob);
-    data[6]++;
+    data[7]++;   // healthy walkers
   }
   
-  MPI_Allreduce(data.data(),data.data()+7,7,MPI_DOUBLE,MPI_SUM,comm);
-  curData[0] = ComplexType(data[11]/static_cast<RealType>(wlk.get_global_target_population()),0.0);
-  curData[1] = ComplexType(data[7]/data[13],data[8]/data[13]);
-  curData[2] = ComplexType(data[9]/data[13],data[10]/data[13]);
-  curData[3] = data[11];
-  curData[4] = data[12]/data[13];
-  curData[5] = data[13];
+  MPI_Allreduce(data.data(),data.data()+8,8,MPI_DOUBLE,MPI_SUM,comm);
+  curData[0] = ComplexType(data[12]/static_cast<RealType>(wlk.get_global_target_population()),0.0);
+  curData[1] = ComplexType(data[8]/data[14],data[9]/data[14]);
+  curData[2] = ComplexType(data[10]/data[14],data[11]/data[14]);
+  curData[3] = data[12];
+  curData[4] = data[13]/data[14];
+  curData[5] = data[14];
+  curData[6] = data[15];
 
 }
 

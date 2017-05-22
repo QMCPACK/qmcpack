@@ -254,11 +254,11 @@ class WavefunctionBase: public MPIObjectBase, public AFQMCInfo
 
     virtual void evaluateTwoBodyMixedDensityMatrix()=0;
 
-    virtual void calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const SPComplexType* GG, SPValueSMSpMat&, std::vector<SPComplexType>& v, bool transposed, bool needsG, const int n=-1)=0;
-    virtual void calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const SPComplexType* GG, SPValueSMVector&, std::vector<SPComplexType>& v, bool transposed, bool needsG, const int n=-1)=0;
+    virtual void calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const SPComplexType* GG, SPValueSMSpMat&, SPComplexSMSpMat&, std::vector<SPComplexType>& v, bool transposed, bool needsG, const int n=-1)=0;
+    virtual void calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const SPComplexType* GG, SPValueSMVector&, SPComplexSMVector&, std::vector<SPComplexType>& v, bool transposed, bool needsG, const int n=-1)=0;
 
-    virtual void calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const SPComplexType* buff, int ik0, int ikN, int pik0, SPValueSMSpMat&, std::vector<SPComplexType>& v, int walkerBlock, int nW, bool transposed, bool needsG, const int n=-1)=0;
-    virtual void calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const SPComplexType* buff, int ik0, int ikN, int pik0, SPValueSMVector&, std::vector<SPComplexType>& v, int walkerBlock, int nW, bool transposed, bool needsG, const int n=-1)=0;
+    virtual void calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const SPComplexType* buff, int ik0, int ikN, SPValueSMSpMat&, SPComplexSMSpMat&, std::vector<SPComplexType>& v, int walkerBlock, int nW, bool transposed, bool needsG, const int n=-1)=0;
+    virtual void calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const SPComplexType* buff, int ik0, int ikN, SPValueSMVector&, SPComplexSMVector&, std::vector<SPComplexType>& v, int walkerBlock, int nW, bool transposed, bool needsG, const int n=-1)=0;
 
 
     // Two body operators: Not used yet
@@ -269,12 +269,51 @@ class WavefunctionBase: public MPIObjectBase, public AFQMCInfo
 
     virtual bool check_occ_orbs() {return true; } 
 
-    virtual bool isOccupAlpha( int i) { return true; }
-    virtual bool isOccupBeta(int i) { return true; }
-
     void setCommBuffer(SPComplexSMVector& bf)
     {
         //commBuff = bf;
+    }
+
+    // generate transposed of Spvn
+    // done here since storage of density matrix is dependent on wavefunction type 
+    // base class implementation creates an exact transpose without modification 
+    virtual void generateTransposedOneBodyOperator(bool addBetaBeta, SPValueSMVector& Dvn, SPComplexSMVector& DvnT ) {
+
+      if(!addBetaBeta)
+        APP_ABORT("  Error: generateTransposedOneBodyOperator not implemented with UHF integrals.");      
+      DvnT.setup(head_of_nodes,"DvnT",TG.getNodeCommLocal());
+      DvnT.setDims(Dvn.cols(), Dvn.rows());
+      DvnT.resize(Dvn.cols()*Dvn.rows());
+
+      if(head_of_nodes) {
+        int nr = DvnT.rows(); // == Dvn.cols() 
+        int nc = DvnT.cols(); // == Dvn.rows()
+        for(int i=0, ii=0; i<nr; i++)
+          for(int j=0; j<nc; j++, ii++)
+            DvnT[ii] = Dvn[j*nr+i]; // DvnT(i,j) = Dvn(j,i)
+      }
+      MPI_Barrier(TG.getNodeCommLocal());
+
+    }
+
+    // base class implementation creates an (almost) exact transpose without modification 
+    // The number of columns is NMO*NMO, instead of the default 2*NMO*NMO
+    virtual void generateTransposedOneBodyOperator(bool addBetaBeta, SPValueSMSpMat& Spvn, SPComplexSMSpMat& SpvnT) {
+
+      assert(Spvn.size() > 0);
+      if(!addBetaBeta)
+        APP_ABORT("  Error: generateTransposedOneBodyOperator not implemented with UHF integrals.");
+      SpvnT.setup(head_of_nodes,"SpvnT",TG.getNodeCommLocal());
+      int NMO2 = NMO*NMO;
+      SpvnT.setDims(Spvn.cols(),NMO2);
+      SpvnT.resize(Spvn.size());
+      if(head_of_nodes) {
+        std::copy(Spvn.vals_begin(),Spvn.vals_end(),SpvnT.vals_begin());
+        std::copy(Spvn.rows_begin(),Spvn.rows_end(),SpvnT.cols_begin());
+        std::copy(Spvn.cols_begin(),Spvn.cols_end(),SpvnT.rows_begin());
+      }
+      app_log()<<" Compressing transposed Cholesky matrix. \n";
+      SpvnT.compress(TG.getNodeCommLocal());
     }
 
   protected:

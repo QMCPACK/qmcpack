@@ -74,6 +74,9 @@ class DistWalkerHandler: public WalkerHandlerBase
   // called at the beginning of each executable section
   void resetNumberWalkers(int n, bool a=true, ComplexMatrix* S=NULL); 
 
+  // perform and report tests/timings
+  void benchmark(std::string& blist,int maxnW,int delnW,int repeat);
+
   inline bool initWalkers(int n) {
    targetN_per_TG = n;
    // if working with a fixed number of walkers, set extra_empty_spaces to 2*targetN_per_TG 

@@ -46,10 +46,7 @@ class phaseless_ImpSamp_ForceBias: public PropagatorBase
 
   bool hdf_read(hdf_archive&, const std::string&);
 
-  void benchmark(){
-    //PureSingleDeterminant* sd = dynamic_cast<PureSingleDeterminant*>(wfn->ImpSampWfn);
-    //compare_libraries(NMO,NAEA,NAEB,Propg_H1,Propg_H1_indx,sd->Vijkl,vn,vn_indx);
-  }
+  void benchmark(std::string&,int,int,int,WalkerHandlerBase*);
 
   SPValueSMVector* getDvn() { return &Dvn; }
 
@@ -111,17 +108,17 @@ class phaseless_ImpSamp_ForceBias: public PropagatorBase
 
   ComplexMatrix vn0;
   SPValueSMSpMat Spvn; 
-  SPValueSMSpMat SpvnT; 
+  SPComplexSMSpMat SpvnT; 
   // this is a pointer to either Spvn or SpvnT, to avoid extra logic in code  
-  SPValueSMSpMat *Spvn_for_onebody; 
+  SPComplexSMSpMat *Spvn_for_onebody; 
 
   // storing cholesky vectors in dense format as a vector,
   // to avoid having to write a shared memory matrix class.
   // I only use this through library routines that take the vector,
   // so it is ok
   SPValueSMVector Dvn;
-  SPValueSMVector DvnT;
-  SPValueSMVector *Dvn_for_onebody;
+  SPComplexSMVector DvnT;
+  SPComplexSMVector *Dvn_for_onebody;
 
   // storage for fields
   std::vector<SPRealType> sigma;
@@ -164,7 +161,8 @@ class phaseless_ImpSamp_ForceBias: public PropagatorBase
 
   int sizeOfG;
   int nCholVecs;  // total number of Cholesky Vectors in the calculation  
-  int cvec0,cvecN; // index of first and last+1 Cholesky Vector of this core 
+  int cvec0,cvecN; // index of first and last+1 Cholesky Vector of this TG 
+  int cvec0_loc,cvecN_loc; // if save_memory=false index of first and last+1 Cholesky Vector (relative to cvec0) of this core 
   int vHS_size;
   std::vector<int> walker_per_node;
 

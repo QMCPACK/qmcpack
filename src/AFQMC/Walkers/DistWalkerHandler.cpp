@@ -561,6 +561,10 @@ void DistWalkerHandler::loadBalance(MPI_Comm comm)
   LocalTimer->stop("WalkerHandler::loadBalance::resize");
   Timers[LoadBalance_Setup]->stop();
 
+// trying to understand the actual cost of exchanging walkers,
+// remove this when algorithm works as expected
+myComm->barrier();
+
   Timers[LoadBalance_Exchange]->start();
   LocalTimer->start("WalkerHandler::loadBalance::exchange");
   if(load_balance_alg.find("all")!=std::string::npos) {
@@ -650,6 +654,11 @@ void DistWalkerHandler::loadBalance(MPI_Comm comm)
       afqmc::swapWalkersAsync(*this,nwalk_counts_old,nwalk_counts_new,comm);
 
   }
+
+// trying to understand the actual cost of exchanging walkers,
+// remove this when algorithm works as expected
+myComm->barrier();
+
   LocalTimer->stop("WalkerHandler::loadBalance::exchange");
   Timers[LoadBalance_Exchange]->stop();
 
@@ -769,6 +778,7 @@ void DistWalkerHandler::branch(RealType w, int n, int num)
   setWeight(n,ComplexType(w,0.0));
   ComplexSMVector::iterator itn=walkers.begin()+walker_size*n;
   ComplexSMVector::iterator it=walkers.begin();
+  assert( (itn+data_displ[INFO])->real() > 0 );
   for(int i=0; i<num; i++) {
     while( it < walkers.end() ) {
       if( (it+data_displ[INFO])->real() < 0 ) break;
@@ -791,6 +801,7 @@ void DistWalkerHandler::branch(RealType w, int n, int num)
 //  3: sum_i abs(w_i)       (where w_i is the unnormalized weight)
 //  4: sum_i abs(<psi_T|phi_i>)
 //  5: total number of walkers  
+//  6: total number of "healthy" walkers (those with weight > 1e-6, ovlp>1e-8, etc) 
 void DistWalkerHandler::popControl(MPI_Comm comm, std::vector<ComplexType>& curData)
 {
   ComplexType minus = ComplexType(-1.0,0.0);
@@ -799,8 +810,8 @@ void DistWalkerHandler::popControl(MPI_Comm comm, std::vector<ComplexType>& curD
   // temporarily
   comm = MPI_COMM_TG_LOCAL_HEADS;
 
-  curData.resize(6);
-  std::fill(curData.begin(),curData.begin()+6,ComplexType(0));
+  curData.resize(7);
+  std::fill(curData.begin(),curData.begin()+7,ComplexType(0));
 
 // trying to understand time spend idle
   LocalTimer->start("WalkerHandler::popControl::idle");
@@ -995,6 +1006,7 @@ void DistWalkerHandler::popControl(MPI_Comm comm, std::vector<ComplexType>& curD
         bufferall.resize(1);
       bufferlocal.resize(targetN_per_TG*(sizeof(double)+sizeof(int)));  
       push_walkers_to_front();
+
       for(int i=0,sz=0; i<tot_num_walkers; i++) {
         double e = static_cast<double>(getWeight(i).real());
         std::memcpy(bufferlocal.data()+sz,&(e),sizeof(double));
@@ -1032,19 +1044,27 @@ void DistWalkerHandler::popControl(MPI_Comm comm, std::vector<ComplexType>& curD
 #endif
 
       if(rk==0) {
+        int nbranch=0;
         for(int i=0, sz=0; i<npr; i++) {  
           int cnt=0;
           for(int k=0; k<targetN_per_TG; k++) { 
             int n;
+            double e;
+            std::memcpy(&e,bufferall.data()+sz,sizeof(double));
             sz += sizeof(double);
             std::memcpy(&(n),bufferall.data()+sz,sizeof(int));
             sz += sizeof(int);
             cnt += n;
+            if(n==0) nbranch++; 
           }
           nwalk_counts_old[i]=cnt;
+          max_nexch = std::max(max_nexch,std::abs(targetN_per_TG-cnt)); 
         }
+        max_nbranch = std::max(max_nbranch,nbranch);
         if(targetN!=std::accumulate(nwalk_counts_old.begin(),nwalk_counts_old.end(),0)) {
-          app_log()<<" Error: targetN != nwold: " <<targetN <<" " <<std::accumulate(nwalk_counts_old.begin(),nwalk_counts_old.end(),0) <<std::endl;
+          app_log()<<" Error: targetN != nwold: " <<targetN <<" " 
+                   <<std::accumulate(nwalk_counts_old.begin(),nwalk_counts_old.end(),0) 
+                   <<std::endl;
         } 
         assert(targetN==std::accumulate(nwalk_counts_old.begin(),nwalk_counts_old.end(),0));
       }
@@ -1100,6 +1120,7 @@ void DistWalkerHandler::popControl(MPI_Comm comm, std::vector<ComplexType>& curD
     } else {
 
       // if resizing is needed, to it here  
+      assert(tot_num_walkers==targetN_per_TG);
 
     }
 
@@ -1168,6 +1189,73 @@ void DistWalkerHandler::popControl(MPI_Comm comm, std::vector<ComplexType>& curD
 #endif 
   LocalTimer->stop("WalkerHandler::popControl::bcast");
 
+}
+
+void DistWalkerHandler::benchmark(std::string& blist,int maxnW,int delnW,int repeat)
+{
+
+  if(blist.find("comm")!=std::string::npos) {
+
+    app_log()<<" Testing communication times in WalkerHandler. This should be done using a single TG per node, to avoid timing communication between cores on the same node. \n";
+    std::ofstream out;
+    if(myComm->rank() == 0)
+      out.open(myComm->getName()+".icomm.dat");  
+
+    MPI_Comm_size(MPI_COMM_TG_LOCAL_HEADS,&nproc_heads);
+    MPI_Comm_rank(MPI_COMM_TG_LOCAL_HEADS,&rank_heads);
+    assert(nproc_heads > 1);
+
+    std::vector<std::string> tags(3);
+    tags[0]="M1";
+    tags[1]="M2";
+    tags[2]="M3";
+
+    for( std::string& str: tags) Timer.reset(str);
+
+    int nw=1;
+    while(nw <= maxnW) {
+
+      if(head && (rank_heads==0 || rank_heads==1)) {
+        int sz = nw*walker_size; 
+        std::vector<ComplexType> Cbuff(sz);
+        MPI_Request req;
+        MPI_Status st;    
+        MPI_Barrier(MPI_COMM_TG_LOCAL_HEADS);
+        for(int i=0; i<repeat; i++) {
+
+          if(rank_heads==0) {
+            Timer.start("M1");
+            MPI_Isend(Cbuff.data(),2*Cbuff.size(),MPI_DOUBLE,1,999,MPI_COMM_TG_LOCAL_HEADS,&req);  
+            MPI_Wait(&req,&st);
+            Timer.stop("M1");
+          } else {
+            MPI_Irecv(Cbuff.data(),2*Cbuff.size(),MPI_DOUBLE,0,999,MPI_COMM_TG_LOCAL_HEADS,&req);  
+            MPI_Wait(&req,&st);
+          }
+
+        }
+
+        if(rank_heads == 0) {
+          out<<nw <<" " ;
+          for( std::string& str: tags) out<<Timer.total(str)/double(repeat) <<" ";
+          out<<std::endl;
+        }
+      } else if(head) {
+        MPI_Barrier(MPI_COMM_TG_LOCAL_HEADS);
+      }
+
+      if(delnW <=0) nw *= 2;
+      else nw += delnW;
+    }
+
+
+  } else if(blist.find("comm")!=std::string::npos) {
+    std::ofstream out;
+    if(myComm->rank() == 0)
+      out.open(myComm->getName()+".comm.dat"); 
+
+  }
+ 
 }
 
 }

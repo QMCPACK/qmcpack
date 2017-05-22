@@ -37,12 +37,12 @@ class EstimatorHandler: public MPIObjectBase, public AFQMCInfo
   //  estimators[0]->accumulate_substep(wlks); 
   //}
 
-  void print(int block, double time, double Es, double Eav,  WalkerHandlerBase* wlks)
+  void print(int block, double time, double Es, WalkerHandlerBase* wlks)
   {
     out<<block <<" " <<time <<" ";
     for(std::vector<EstimatorBase*>::iterator it=estimators.begin(); it!=estimators.end(); it++)
       (*it)->print(out,wlks);
-    out<<std::setprecision(12) <<Es <<" " <<Eav;
+    out<<std::setprecision(12) <<Es;
     out<<std::endl;
     if( (block+1)%10==0 ) out.flush();
   }
@@ -101,6 +101,10 @@ class EstimatorHandler: public MPIObjectBase, public AFQMCInfo
   // Estimator does not use TGs right now
   bool setup(std::vector<int>& TGdata, SPComplexSMVector* v, HamiltonianBase* ham0, WavefunctionHandler* wfn0, myTimer* LocalTimer, MPI_Comm heads_comm, MPI_Comm tg_comm, MPI_Comm node_comm, MPI_Comm head_tgs) 
   {
+
+    for(std::vector<EstimatorBase*>::iterator it=estimators.begin(); it!=estimators.end(); it++)
+      (*it)->setup(TGdata,v,ham0,wfn0,LocalTimer,heads_comm,tg_comm,node_comm,head_tgs);
+
     if(myComm->rank() == 0) {
       filename = myComm->getName()+".scalar.dat";
       //out.open(filename.c_str(),std::ios_base::app | std::ios_base::out);
@@ -112,12 +116,10 @@ class EstimatorHandler: public MPIObjectBase, public AFQMCInfo
       out<<"# block  time  ";
       for(std::vector<EstimatorBase*>::iterator it=estimators.begin(); it!=estimators.end(); it++)
         (*it)->tags(out);
-      out<<"Eshift Ebound  ";
+      out<<"Eshift ";
       out<<std::endl;
     }
 
-    for(std::vector<EstimatorBase*>::iterator it=estimators.begin(); it!=estimators.end(); it++)
-      (*it)->setup(TGdata,v,ham0,wfn0,LocalTimer,heads_comm,tg_comm,node_comm,head_tgs);
 
     return true;
   }

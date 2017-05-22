@@ -2146,7 +2146,7 @@ app_log()<<"info: " <<ne <<" " <<nd <<std::endl;
    
   }
 
-  void MultiPureSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const SPComplexType* GG, SPValueSMSpMat& vn, std::vector<SPComplexType>& v, bool transposed, bool needsG, const int n)
+  void MultiPureSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const SPComplexType* GG, SPValueSMSpMat& vn, SPComplexSMSpMat& vnT, std::vector<SPComplexType>& v, bool transposed, bool needsG, const int n)
   {
 
 #ifdef AFQMC_TIMER
@@ -2161,14 +2161,17 @@ app_log()<<"info: " <<ne <<" " <<nd <<std::endl;
     Timer.start("MultiPureSingleDeterminant:product_Spvn_x_DMfull");
 #endif
 
-    SPValueType one = SPValueType(1.0);
-    SPValueType zero = SPValueType(0.0);
-    if(closed_shell) one = SPValueType(2.0);
     if(transposed) {
-      SparseMatrixOperators::product_SpMatV(vn.rows(),vn.cols(),one,vn.values(),vn.column_data(),vn.row_index(),full_mixed_density_matrix.data(),zero,v.data());
+      SPComplexType one = SPComplexType(1.0);
+      const SPComplexType zero = SPComplexType(0.0);
+      if(closed_shell) one = SPComplexType(2.0);
+      SparseMatrixOperators::product_SpMatV(vnT.rows(),vnT.cols(),one,vnT.values(),vnT.column_data(),vnT.row_index(),full_mixed_density_matrix.data(),zero,v.data());
       if(addBetaBeta && ! closed_shell)
-        SparseMatrixOperators::product_SpMatV(vn.rows(),vn.cols(),one,vn.values(),vn.column_data(),vn.row_index(),full_mixed_density_matrix.data()+NMO*NMO,one,v.data());
+        SparseMatrixOperators::product_SpMatV(vnT.rows(),vnT.cols(),one,vnT.values(),vnT.column_data(),vnT.row_index(),full_mixed_density_matrix.data()+NMO*NMO,one,v.data());
     } else {
+      SPValueType one = SPValueType(1.0);
+      SPValueType zero = SPValueType(0.0);
+      if(closed_shell) one = SPValueType(2.0);
       SparseMatrixOperators::product_SpMatTV(vn.rows(),vn.cols(),one,vn.values(),vn.column_data(),vn.row_index(),full_mixed_density_matrix.data(),zero,v.data());
       if(addBetaBeta && !closed_shell)
         SparseMatrixOperators::product_SpMatTV(vn.rows(),vn.cols(),one,vn.values(),vn.column_data(),vn.row_index(),full_mixed_density_matrix.data()+NMO*NMO,one,v.data());
@@ -2181,7 +2184,7 @@ app_log()<<"info: " <<ne <<" " <<nd <<std::endl;
 
   }
 
-  void MultiPureSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const SPComplexType* GG, SPValueSMVector& vn, std::vector<SPComplexType>& v, bool transposed, bool needsG, const int n)
+  void MultiPureSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const SPComplexType* GG, SPValueSMVector& vn, SPComplexSMVector& vnT, std::vector<SPComplexType>& v, bool transposed, bool needsG, const int n)
   {
 
 #ifdef AFQMC_TIMER
@@ -2196,14 +2199,17 @@ app_log()<<"info: " <<ne <<" " <<nd <<std::endl;
     Timer.start("MultiPureSingleDeterminant:product_Spvn_x_DMfull");
 #endif
 
-    SPValueType one = SPValueType(1.0);
-    SPValueType zero = SPValueType(0.0);
-    if(closed_shell) one = SPValueType(2.0);
     if(transposed) {
-      DenseMatrixOperators::product_Ax(vn.rows(),vn.cols(),one,vn.values(),vn.cols(),full_mixed_density_matrix.data(),zero,v.data());
+      SPComplexType one = SPComplexType(1.0);
+      const SPComplexType zero = SPComplexType(0.0);
+      if(closed_shell) one = SPComplexType(2.0);
+      DenseMatrixOperators::product_Ax(vnT.rows(),vnT.cols(),one,vnT.values(),vnT.cols(),full_mixed_density_matrix.data(),zero,v.data());
       if(addBetaBeta && !closed_shell)
-        DenseMatrixOperators::product_Ax(vn.rows(),vn.cols(),one,vn.values(),vn.cols(),full_mixed_density_matrix.data()+NMO*NMO,one,v.data());
+        DenseMatrixOperators::product_Ax(vnT.rows(),vnT.cols(),one,vnT.values(),vnT.cols(),full_mixed_density_matrix.data()+NMO*NMO,one,v.data());
     } else {
+      SPValueType one = SPValueType(1.0);
+      SPValueType zero = SPValueType(0.0);
+      if(closed_shell) one = SPValueType(2.0);
       DenseMatrixOperators::product_Atx(vn.rows(),vn.cols(),one,vn.values(),vn.cols(),full_mixed_density_matrix.data(),zero,v.data());
       if(addBetaBeta && !closed_shell)
         DenseMatrixOperators::product_Atx(vn.rows(),vn.cols(),one,vn.values(),vn.cols(),full_mixed_density_matrix.data()+NMO*NMO,one,v.data());
@@ -2216,26 +2222,37 @@ app_log()<<"info: " <<ne <<" " <<nd <<std::endl;
 
   }
 
-  void MultiPureSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const SPComplexType* buff, int i0, int iN, int pi0, SPValueSMSpMat& vn, std::vector<SPComplexType>& v, int walkerBlock, int nW, bool transposed, bool needsG, const int n)
+  void MultiPureSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const SPComplexType* buff, int i0, int iN, SPValueSMSpMat& vn, SPComplexSMSpMat& vnT, std::vector<SPComplexType>& v, int walkerBlock, int nW, bool transposed, bool needsG, const int n)
   {
-    assert(v.size() >= nW*vn.cols());
+    if(transposed)
+      assert(v.size() >= nW*(iN-i0));
+    else
+      assert(v.size() >= nW*vn.cols());
     const SPComplexType *GF = buff+1*nW;
     int GFi0 = i0;
     int GFi02 = NMO*NMO+i0;
     SPValueType one = SPValueType(1.0);
     const SPValueType zero = SPValueType(0.0);
-    const SPComplexType czero = SPComplexType(0.0,0.0);
     if(closed_shell) one = SPValueType(2.0);
-
+    const SPComplexType czero = SPComplexType(0.0,0.0);
+    SPComplexType cone = SPComplexType(1.0);
+    if(closed_shell) cone = SPComplexType(2.0);
+    long p_;
+    if(transposed)
+      p_ = static_cast<long>(*(vnT.row_index()+i0));
+    else
+      p_ = static_cast<long>(*(vn.row_index()+i0));
     // walkerBlock implies MatV
     if(walkerBlock==1) {
 
       if(transposed) {
-        APP_ABORT("Error: Transposed Spvn can not be used yet. \n\n\n");
-      } else {
-        SparseMatrixOperators::product_SpMatTV( int(iN-i0), vn.cols(), one, vn.values() + pi0, vn.column_data() + pi0, vn.row_index()+i0, GF+i0, zero, v.data());
+        SparseMatrixOperators::product_SpMatV( int(iN-i0), vnT.cols(), cone, vnT.values() + p_, vnT.column_data() + p_, vnT.row_index()+i0, GF, czero, v.data());
         if(addBetaBeta && !closed_shell)
-          SparseMatrixOperators::product_SpMatTV( int(iN-i0), vn.cols(), one, vn.values() + pi0, vn.column_data() + pi0, vn.row_index()+i0, GF+NMO*NMO+i0, one, v.data());
+          SparseMatrixOperators::product_SpMatV( int(iN-i0), vnT.cols(), cone, vnT.values() + p_, vnT.column_data() + p_, vnT.row_index()+i0, GF+NMO*NMO, cone, v.data());
+      } else {
+        SparseMatrixOperators::product_SpMatTV( int(iN-i0), vn.cols(), one, vn.values() + p_, vn.column_data() + p_, vn.row_index()+i0, GF+i0, zero, v.data());
+        if(addBetaBeta && !closed_shell)
+          SparseMatrixOperators::product_SpMatTV( int(iN-i0), vn.cols(), one, vn.values() + p_, vn.column_data() + p_, vn.row_index()+i0, GF+NMO*NMO+i0, one, v.data());
       }
 
     } else {    
@@ -2247,44 +2264,54 @@ app_log()<<"info: " <<ne <<" " <<nd <<std::endl;
       for(int i=0; i<nblk; i++) {
 
         if(transposed) {
-          APP_ABORT("Error: Transposed vn can not be used yet. \n\n\n");
-        } else {
-          SparseMatrixOperators::product_SpMatTM( int(iN-i0), walkerBlock , vn.cols(), one, vn.values() + pi0, vn.column_data() + pi0, vn.row_index()+i0, GF+i0*nW+i*walkerBlock, nW, zero, v.data(), nW);
+          SparseMatrixOperators::product_SpMatM( int(iN-i0), walkerBlock , vnT.cols(), cone, vnT.values() + p_, vnT.column_data() + p_, vnT.row_index()+i0, GF+i*walkerBlock, nW, czero, v.data()+i*walkerBlock, nW);
           if(addBetaBeta && !closed_shell)
-            SparseMatrixOperators::product_SpMatTM( int(iN-i0), walkerBlock , vn.cols(), one, vn.values() + pi0, vn.column_data() + pi0, vn.row_index()+i0, GF+(i0+NMO*NMO)*nW+i*walkerBlock, nW, one, v.data(), nW);
+            SparseMatrixOperators::product_SpMatM( int(iN-i0), walkerBlock , vnT.cols(), cone, vnT.values() + p_, vnT.column_data() + p_, vnT.row_index()+i0, GF+(NMO*NMO)*nW+i*walkerBlock, nW, cone, v.data()+i*walkerBlock, nW);
+        } else {
+          SparseMatrixOperators::product_SpMatTM( int(iN-i0), walkerBlock , vn.cols(), one, vn.values() + p_, vn.column_data() + p_, vn.row_index()+i0, GF+i0*nW+i*walkerBlock, nW, zero, v.data()+i*walkerBlock, nW);
+          if(addBetaBeta && !closed_shell)
+            SparseMatrixOperators::product_SpMatTM( int(iN-i0), walkerBlock , vn.cols(), one, vn.values() + p_, vn.column_data() + p_, vn.row_index()+i0, GF+(i0+NMO*NMO)*nW+i*walkerBlock, nW, one, v.data()+i*walkerBlock, nW);
         }
 
       }
       // perform remaining walkers. Should I pad this to the closest power of 2???
       if(nextra > 0) {
         if(transposed) {
-          APP_ABORT("Error: Transposed Spvn can not be used yet. \n\n\n");
-        } else {
-          SparseMatrixOperators::product_SpMatTM( int(iN-i0), nextra , vn.cols(), one, vn.values() + pi0, vn.column_data() + pi0, vn.row_index()+i0, GF+i0*nW+nblk*walkerBlock, nW, zero, v.data(), nW);
+          SparseMatrixOperators::product_SpMatM( int(iN-i0), nextra , vnT.cols(), cone, vnT.values() + p_, vnT.column_data() + p_, vnT.row_index()+i0, GF+nblk*walkerBlock, nW, czero, v.data()+nblk*walkerBlock, nW);
           if(addBetaBeta && !closed_shell)
-            SparseMatrixOperators::product_SpMatTM( int(iN-i0), nextra , vn.cols(), one, vn.values
-() + pi0, vn.column_data() + pi0, vn.row_index()+i0, GF+(i0+NMO*NMO)*nW+nblk*walkerBlock, nW, one, v.data(), nW);
+            SparseMatrixOperators::product_SpMatM( int(iN-i0), nextra , vnT.cols(), cone, vnT.values() + p_, vnT.column_data() + p_, vnT.row_index()+i0, GF+NMO*NMO*nW+nblk*walkerBlock, nW, cone, v.data()+nblk*walkerBlock, nW);
+        } else {
+          SparseMatrixOperators::product_SpMatTM( int(iN-i0), nextra , vn.cols(), one, vn.values() + p_, vn.column_data() + p_, vn.row_index()+i0, GF+i0*nW+nblk*walkerBlock, nW, zero, v.data()+nblk*walkerBlock, nW);
+          if(addBetaBeta && !closed_shell)
+            SparseMatrixOperators::product_SpMatTM( int(iN-i0), nextra , vn.cols(), one, vn.values() + p_, vn.column_data() + p_, vn.row_index()+i0, GF+(i0+NMO*NMO)*nW+nblk*walkerBlock, nW, one, v.data()+nblk*walkerBlock, nW);
         }
       }
     }
   }      
 
-  void MultiPureSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const SPComplexType* buff, int i0, int iN, int pi0, SPValueSMVector& vn, std::vector<SPComplexType>& v, int walkerBlock, int nW, bool transposed, bool needsG, const int n)
+  void MultiPureSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const SPComplexType* buff, int i0, int iN, SPValueSMVector& vn, SPComplexSMVector& vnT, std::vector<SPComplexType>& v, int walkerBlock, int nW, bool transposed, bool needsG, const int n)
   {
 
-    assert(v.size() >= nW*vn.cols());
+    if(transposed)
+      assert(v.size() >= nW*(iN-i0));
+    else
+      assert(v.size() >= nW*vn.cols());
     const SPComplexType *GF = buff+2*nW;
     int GFi0 = i0;
     int GFi02 = NMO*NMO+i0;
     SPValueType one = SPValueType(1.0);
     const SPValueType zero = SPValueType(0.0);
-    const SPComplexType czero = SPComplexType(0.0,0.0);
     if(closed_shell) one = SPValueType(2.0);
+    const SPComplexType czero = SPComplexType(0.0,0.0);
+    SPComplexType cone = SPComplexType(1.0);
+    if(closed_shell) cone = SPComplexType(2.0);
 
     // walkerBlock implies MatV
     if(walkerBlock==1) {
       if(transposed) {
-          APP_ABORT("Error: Transposed Dvn can not be used yet. \n\n\n");
+        DenseMatrixOperators::product_Ax( int(iN-i0), vnT.cols(), cone, vnT.values() + i0*vnT.cols(), vnT.cols(), GF, czero, v.data());
+        if(addBetaBeta && !closed_shell)
+          DenseMatrixOperators::product_Ax( int(iN-i0), vnT.cols(), cone, vnT.values() + i0*vnT.cols(), vnT.cols(), GF+NMO*NMO, cone, v.data());
       } else {
         DenseMatrixOperators::product_Atx( int(iN-i0), vn.cols(), one, vn.values() + i0*vn.cols(), vn.cols(), GF+GFi0, zero, v.data());
         if(addBetaBeta && !closed_shell)
@@ -2299,26 +2326,34 @@ app_log()<<"info: " <<ne <<" " <<nd <<std::endl;
 
       for(int i=0; i<nblk; i++) {
         if(transposed) {
-          APP_ABORT("Error: Transposed Spvn can not be used yet. \n\n\n");
+          DenseMatrixOperators::product( int(iN-i0), walkerBlock, vnT.cols(), cone, vnT.values() + i0*vnT.cols(), vnT.cols(),
+               GF+i*walkerBlock,nW,czero,v.data()+i*walkerBlock,nW);
+          if(addBetaBeta && !closed_shell)
+            DenseMatrixOperators::product( int(iN-i0), walkerBlock, vnT.cols(), cone, vnT.values() + i0*vnT.cols(), vnT.cols(),
+               GF+NMO*NMO*nW+i*walkerBlock,nW,cone,v.data()+i*walkerBlock,nW);
         } else {
           DenseMatrixOperators::product_AtB( vn.cols(), walkerBlock, int(iN-i0), one, vn.values() + i0*vn.cols(), vn.cols(),
-               GF+GFi0*nW+i*walkerBlock,nW,zero,v.data(),nW);
+               GF+GFi0*nW+i*walkerBlock,nW,zero,v.data()+i*walkerBlock,nW);
           if(addBetaBeta && !closed_shell)
             DenseMatrixOperators::product_AtB( vn.cols(), walkerBlock, int(iN-i0), one, vn.values() + i0*vn.cols(), vn.cols(),
-               GF+GFi02*nW+i*walkerBlock,nW,one,v.data(),nW);
+               GF+GFi02*nW+i*walkerBlock,nW,one,v.data()+i*walkerBlock,nW);
         }
 
       }
       // perform remaining walkers. Should I pad this to the closest power of 2???
       if(nextra > 0) {
         if(transposed) {
-          APP_ABORT("Error: Transposed Spvn can not be used yet. \n\n\n");
+          DenseMatrixOperators::product(int(iN-i0), nextra, vnT.cols(), cone, vnT.values() + i0*vnT.cols(), vnT.cols(),
+               GF+nblk*walkerBlock,nW,czero,v.data()+nblk*walkerBlock,nW);
+          if(addBetaBeta && !closed_shell)
+            DenseMatrixOperators::product(int(iN-i0), nextra, vnT.cols(), cone, vnT.values() + i0*vnT.cols(), vnT.cols(),
+               GF+NMO*NMO*nW+nblk*walkerBlock,nW,cone,v.data()+nblk*walkerBlock,nW);
         } else {
           DenseMatrixOperators::product_AtB(vn.cols(), nextra, int(iN-i0), one, vn.values() + i0*vn.cols(), vn.cols(),
-               GF+GFi0*nW+nblk*walkerBlock,nW,zero,v.data(),nW);
+               GF+GFi0*nW+nblk*walkerBlock,nW,zero,v.data()+nblk*walkerBlock,nW);
           if(addBetaBeta && !closed_shell)
             DenseMatrixOperators::product_AtB(vn.cols(), nextra, int(iN-i0), one, vn.values() + i0*vn.cols(), vn.cols(),
-               GF+GFi02*nW+nblk*walkerBlock,nW,one,v.data(),nW);
+               GF+GFi02*nW+nblk*walkerBlock,nW,one,v.data()+nblk*walkerBlock,nW);
         }
       }
     }

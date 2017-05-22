@@ -30,7 +30,7 @@ class BasicEstimator: public EstimatorBase
   typedef WavefunctionHandler* WfnPtr;
   typedef WalkerHandlerBase* WSetPtr;
 
-  BasicEstimator(Communicate *c):EstimatorBase(c),EstimEloc(false), timers(true), prtnwalk(true),
+  BasicEstimator(Communicate *c):EstimatorBase(c),EstimEloc(false), timers(true), prtnwalk(false),
                                  overlap(false), diag(false), nstates(0),SDet(c),EstimEloc_present(false) 
   {}
 
@@ -52,7 +52,8 @@ class BasicEstimator: public EstimatorBase
           sm = wlkBucket->getWalker(i,w,dum,ooa,oob);  // "impsampl"
           sm = wlkBucket->getWalker2(i,eloc,oa,ob);     // "estimator"
           dum = weight_product*w*oa*ob/(ooa*oob);
-          if( (!std::isfinite(dum.real())) || (!std::isfinite((eloc*dum).real())) || std::abs(oa*ob) < 1e-8  || std::abs(ooa*oob) < 1e-8) continue; 
+          //if( (!std::isfinite(dum.real())) || (!std::isfinite((eloc*dum).real())) || std::abs(oa*ob) < 1e-8  || std::abs(ooa*oob) < 1e-8) continue; 
+          if( (!std::isfinite(dum.real())) || (!std::isfinite((eloc*dum).real())) ) continue; 
           edeno2 += dum; 
           enume2 += eloc*dum;
         }
@@ -75,6 +76,7 @@ class BasicEstimator: public EstimatorBase
   //  3: sum_i abs(w_i)       (where w_i is the normalized weight)
   //  4: 1/nW * sum_i abs(<psi_T|phi_i>)
   //  5: nW                          (total number of walkers)  
+  //  6: "healthy" nW                (total number of "healthy" walkers)  
   void accumulate_step(WSetPtr wlkBucket, std::vector<ComplexType>& curData)
   {
 
@@ -97,13 +99,19 @@ class BasicEstimator: public EstimatorBase
     weight += curData[3].real(); 
     ovlp += curData[4].real();
     nwalk += static_cast<int>(std::floor(curData[5].real())); 
+    nwalk_good += static_cast<int>(std::floor(curData[6].real())); 
   }
 
   void tags(std::ofstream& out) 
   {
     if(myComm->rank() == 0) {
-      out<<"nWalkers weight  Eloc_nume Eloc_deno  "; 
-      if(EstimEloc) out<<"ElocEstim_nume ElocEstim_deno  ";
+      if(nwfacts>0) {
+        out<<"nWalkers weight  Eloc_nume Eloc_deno  "; 
+        if(EstimEloc) out<<"ElocEstim_nume ElocEstim_deno  ";
+      } else {
+        out<<"nWalkers weight  Eloc  "; 
+        if(EstimEloc) out<<"ElocEstim ";
+      }
       out<<"Ovlp "; 
       if(diag && nstates>0) {
         for(int i=0; i<nstates; i++) out<<"Ediag_" <<i <<" ";
@@ -113,7 +121,7 @@ class BasicEstimator: public EstimatorBase
       }
       if(timers && EstimEloc) out<<"TimeEstimEloc  "; 
       if(timers) out<<"TimePropg  TimePopControl TimeOrtho TimeBranching TimeIdle TimeCommExch MaxTimeCommExch TimeBlock "; 
-      if(prtnwalk) out<<"nWmin nWmax ";
+      if(prtnwalk) out<<"MaxBranch MaxExch ";
     }
   }
 
@@ -123,15 +131,21 @@ class BasicEstimator: public EstimatorBase
     data[0] = enume.real()/ncalls;
     data[1] = edeno.real()/ncalls;    
 
-    double max_exch=0;
+    double max_exch_time=0;
     if(timers) { 
       double t = LocalTimer->total("WalkerHandler::loadBalance::exchange");
-      MPI_Reduce(&t,&max_exch,1,MPI_DOUBLE,MPI_MAX,0,MPI_COMM_WORLD);
+      MPI_Reduce(&t,&max_exch_time,1,MPI_DOUBLE,MPI_MAX,0,MPI_COMM_WORLD);
     }
 
     if(writer) {
-      out<<std::setprecision(6) <<nwalk/ncalls <<" " <<weight/ncalls <<" " <<std::setprecision(16) <<enume.real()/ncalls <<" " <<edeno.real()/ncalls <<" ";
-      if(EstimEloc) out<<enume2.real()*weight_product/edeno2.real() <<" " <<weight_product <<" ";
+      out<<std::setprecision(6) <<nwalk/ncalls <<" " <<weight/ncalls <<" " <<std::setprecision(16);
+      if(nwfacts>0) {
+        out<<enume.real()/ncalls <<" " <<edeno.real()/ncalls <<" ";
+        if(EstimEloc) out<<data3[0] <<" " <<data3[1] <<" ";
+      } else {
+        out<<enume.real()/ncalls <<" ";
+        if(EstimEloc) out<<data3[0] <<" ";
+      }
       out<<ovlp/ncalls <<" ";
       if(diag && nstates>0) {
         for(int i=0; i<nstates; i++) out<<eigVal[i] <<" ";
@@ -150,9 +164,9 @@ class BasicEstimator: public EstimatorBase
                     <<LocalTimer->total("WalkerHandler::popControl") <<" " 
                     <<LocalTimer->total("WalkerHandler::popControl::idle") <<" " 
                     <<LocalTimer->total("WalkerHandler::loadBalance::exchange") <<" " 
-                    <<max_exch <<" " 
+                    <<max_exch_time <<" " 
                     <<LocalTimer->total("Block::TOTAL") <<" "; 
-      if(prtnwalk) out<<wlkBucket->nwalk_min <<" " <<wlkBucket->nwalk_max <<std::setprecision(12) <<" ";
+      if(prtnwalk) out<<wlkBucket->max_nbranch <<" " <<wlkBucket->max_nexch <<std::setprecision(12) <<" ";
     }
 
     enume=0.0;
@@ -162,10 +176,13 @@ class BasicEstimator: public EstimatorBase
     edeno2=0.0;
     ncalls=0;
     nwalk=0;
+    nwalk_good=0;
     nwalk_min=1000000;
     nwalk_max=0;
     wlkBucket->nwalk_min=0;
     wlkBucket->nwalk_max=0;
+    wlkBucket->max_nexch=0;
+    wlkBucket->max_nbranch=0;
     ovlp=0;
 
     LocalTimer->reset("SubStep::Propagate");
@@ -228,8 +245,8 @@ class BasicEstimator: public EstimatorBase
       EstimEloc = true;
     if(str2 == "no" || str2 == "false")
       timers = false;
-    if(str3 == "no" || str3 == "false")
-      prtnwalk = false;
+    if(str3 == "yes" || str3 == "true")
+      prtnwalk = true;
     if(str1 != "") EstimEloc_present=true; 
     if(str4 == "yes" || str4 == "true") overlap=true;
     if(str5 == "yes" || str5 == "true") diag=true;
@@ -275,6 +292,7 @@ class BasicEstimator: public EstimatorBase
     weight=0.0;
     weight_sub=0.0;
     nwalk = 0;
+    nwalk_good = 0;
     nwalk_sub = 0;
     ncalls=0;
     ncalls_substep=0;
@@ -299,7 +317,7 @@ class BasicEstimator: public EstimatorBase
   ComplexType enume2=0.0,edeno2=0.0;
   RealType weight, weight_sub, ovlp, ovlp_sub;
   RealType targetW=1;
-  int nwalk, ncalls, ncalls_substep, nwalk_sub, nwalk_min, nwalk_max; 
+  int nwalk_good, nwalk, ncalls, ncalls_substep, nwalk_sub, nwalk_min, nwalk_max; 
   int core_rank;
   int ncores_per_TG;
 

@@ -63,7 +63,8 @@ inline void parallel_inplace_merge(int np, int rk, Iter* beg, Iter* mid, Iter* e
 
 namespace std{
 
-void swap(std::tuple<int &, int &, qmcplusplus::ValueType &> const& a, std::tuple<int &, int &, qmcplusplus::ValueType &> const& b); 
+  void swap(std::tuple<int &, int &, qmcplusplus::RealType &> const& a, std::tuple<int &, int &, qmcplusplus::RealType &> const& b); 
+  void swap(std::tuple<int &, int &, std::complex<qmcplusplus::RealType> &> const& a, std::tuple<int &, int &, std::complex<qmcplusplus::RealType> &> const& b); 
 
 }
 #endif

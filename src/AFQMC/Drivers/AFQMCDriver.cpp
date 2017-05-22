@@ -40,12 +40,6 @@ bool AFQMCDriver::run()
   TimerList_t Timers;
   setup_timers(Timers, AFQMCTimerNames, timer_level_medium);
 
-  if(compare_libraries)
-  {
-    prop0->benchmark();
-    return true;
-  }
-
   if(!restarted) {
     Eshift=wlkBucket->getEloc(0).real();
     step0=block0=0;
@@ -72,10 +66,21 @@ bool AFQMCDriver::run()
     Timers[BlockTotal]->start();
     for (int iStep=0; iStep<nStep; ++iStep, ++step_tot) {
 
+
+// trying to understand the actual cost of exchanging walkers,
+// // remove this when algorithm works as expected
+myComm->barrier();
+
+
       // propagate nSubstep 
       LocalTimer.start("SubStep::Propagate");
       Timers[SubstepPropagate]->start();
       prop0->Propagate(nSubstep,time,wlkBucket,Eshift);
+
+// trying to understand the actual cost of exchanging walkers,
+// // remove this when algorithm works as expected
+myComm->barrier();
+
       LocalTimer.stop("SubStep::Propagate");
       Timers[SubstepPropagate]->stop();        
 
@@ -84,6 +89,11 @@ bool AFQMCDriver::run()
         Timers[StepOrthogonalize]->start();
         wlkBucket->Orthogonalize();
         wfn0->evaluateOverlap("ImportanceSampling",-1,wlkBucket);
+
+// trying to understand the actual cost of exchanging walkers,
+// // remove this when algorithm works as expected
+myComm->barrier();
+
         LocalTimer.stop("Step::Orthogonalize");
         Timers[StepOrthogonalize]->stop();
       }
@@ -95,6 +105,11 @@ bool AFQMCDriver::run()
         // temporarily setting communicator to COMM_WORLD, 
         // until I finish implementation of new pop. control alg
         wlkBucket->popControl(MPI_COMM_WORLD,curData);
+
+// trying to understand the actual cost of exchanging walkers,
+// // remove this when algorithm works as expected
+myComm->barrier();
+
         LocalTimer.stop("Step::PopControl");
         Timers[StepPopControl]->stop();
 
@@ -128,7 +143,7 @@ bool AFQMCDriver::run()
     LocalTimer.stop("Block::TOTAL");
     Timers[BlockTotal]->stop();
 
-    estim0->print(iBlock+1,time*dt,Eshift,Eshift,wlkBucket);
+    estim0->print(iBlock+1,time*dt,Eshift,wlkBucket);
 
     if(print_timers > 0 && myComm->rank()==0 && iBlock%print_timers == 0) output_timers(out_timers,iBlock); 
 
@@ -187,7 +202,6 @@ bool AFQMCDriver::parse(xmlNodePtr cur)
   m_param.put(cur);
 
   min_total_weight = std::max( std::min(min_total_weight , 1.0), 0.1 );
-  if(cmp_lib != 0) compare_libraries=true; 
   if(deb_prop != 0) debug=true;
 
   std::transform(str1.begin(),str1.end(),str1.begin(),(int (*)(int)) tolower);
@@ -470,52 +484,35 @@ bool AFQMCDriver::clear()
 void AFQMCDriver::output_timers(std::ofstream& out_timers, int n)
 {
 
-  if(n==0) out_timers<<"Propagate::applyHSPropagator  Propagate::calculateMixedMatrixElementOfOneBodyOperators  Propagate::eloc  Propagate::product_SD  Propagate::sampleGaussianFields  Propagate::apply_expvHS_Ohmms  Propagate::build_vHS  PureSingleDeterminant:calculateMixedMatrixElementOfOneBodyOperators  PureSingleDeterminant:evaluateLocalEnergy  PureSingleDeterminant:local_evaluateOneBodyMixedDensityMatrix " <<std::endl;
+  if(timer_first_call) {
+    timer_first_call=false;
+    tags.resize(17);
+    tags[0]="Benchmark_tot";
+    tags[1]="Benchmark_wait";
+    tags[2]="Propagate::setup";
+    tags[3]="Propagate::evalG";
+    tags[4]="Propagate::sampleGaussianFields";
+    tags[5]="Propagate::addvHS";
+    tags[6]="Propagate::propg";
+    tags[7]="Propagate::overlaps_and_or_eloc";
+    tags[8]="Propagate::finish_step";
+    tags[9]="Propagate::idle";
+    tags[10]="Propagate::addvHS::setup";
+    tags[11]="Propagate::addvHS::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer";
+    tags[12]="Propagate::addvHS::build_CV0";
+    tags[13]="Propagate::addvHS::shm_copy";
+    tags[14]="Propagate::addvHS::build_vHS";
+    tags[15]="Propagate::addvHS::idle";
+    tags[16]="PureSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer::setup";
+    for( std::string& str: tags) out_timers<<str <<" ";
+    out_timers<<std::endl;    
+  } 
 
-  
-   out_timers<<Timer.average("Propagate::product_SD") <<" "
-   <<Timer.average("Propagate::sampleGaussianFields") <<" "
-   <<Timer.average("Propagate::calculateMixedMatrixElementOfOneBodyOperators") <<" "
-   <<Timer.average("Propagate::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer") <<" "
-   <<Timer.average("Propagate::applyHSPropagator") <<" "
-   <<Timer.average("Propagate::apply_expvHS_Ohmms") <<" "
-   <<Timer.average("Propagate::build_vHS") <<" "
-   <<Timer.average("Propagate::overlaps_and_or_eloc") <<" "
-   <<Timer.average("Propagate::evalG") <<" "
-   <<Timer.average("Propagate::addvHS") <<" "
-   <<Timer.average("Propagate::addvHS::shm_copy_vbias") <<" "
-   <<Timer.average("Propagate::build_CV0") <<" "
-   <<Timer.average("Propagate::addvHS::shm_copy_vHS") <<" "
-   <<Timer.average("Propagate::fullvHS") <<" "
-   <<Timer.average("Propagate::addvHS::setup") <<" "
-   <<Timer.average("Propagate::addvHS::barrier1") <<" "
-   <<Timer.average("Propagate::addvHS::barrier2") <<" "
-   <<Timer.average("PureSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer::setup") <<" "
-   <<Timer.average("PureSingleDeterminant:calculateMixedMatrixElementOfOneBodyOperators") <<" "
-   <<Timer.average("PureSingleDeterminant:evaluateLocalEnergy") <<" "
-   <<Timer.average("PureSingleDeterminant:local_evaluateOneBodyMixedDensityMatrix") <<std::endl;
-
-   Timer.reset("Propagate::product_SD");
-   Timer.reset("Propagate::sampleGaussianFields");
-   Timer.reset("Propagate::calculateMixedMatrixElementOfOneBodyOperators");
-   Timer.reset("Propagate::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer");
-   Timer.reset("Propagate::applyHSPropagator");
-   Timer.reset("Propagate::apply_expvHS_Ohmms");
-   Timer.reset("Propagate::build_vHS");
-   Timer.reset("Propagate::overlaps_and_or_eloc");
-   Timer.reset("Propagate::evalG");
-   Timer.reset("Propagate::addvHS");
-   Timer.reset("Propagate::addvHS::shm_copy_vbias");
-   Timer.reset("Propagate::build_CV0");
-   Timer.reset("Propagate::addvHS::shm_copy_vHS");
-   Timer.reset("Propagate::fullvHS");
-   Timer.reset("Propagate::addvHS::setup");
-   Timer.reset("Propagate::addvHS::barrier1");
-   Timer.reset("Propagate::addvHS::barrier2");
-   Timer.reset("PureSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer::setup");
-   Timer.reset("PureSingleDeterminant:calculateMixedMatrixElementOfOneBodyOperators");
-   Timer.reset("PureSingleDeterminant:evaluateLocalEnergy");
-   Timer.reset("PureSingleDeterminant:local_evaluateOneBodyMixedDensityMatrix");
+  for( std::string& str: tags) {
+    out_timers<<Timer.total(str) <<" ";
+    Timer.reset(str);
+  }
+  out_timers<<std::endl;
 
 }
 

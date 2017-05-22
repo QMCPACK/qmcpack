@@ -79,6 +79,8 @@ class WalkerHandlerBase: public MPIObjectBase, public AFQMCInfo
 
   virtual void Orthogonalize()=0; 
 
+  virtual void benchmark(std::string&,int,int,int)=0;
+
   virtual ComplexType* getSM(int n)=0; 
   virtual ComplexType getWeight(int n)=0; 
   virtual ComplexType getEloc(int n)=0;
@@ -133,6 +135,10 @@ class WalkerHandlerBase: public MPIObjectBase, public AFQMCInfo
 
   int core_rank;
   int ncores_per_TG; 
+
+  // temporary data for testing/debugging/printing
+  double max_comm_time=0;
+  int max_nexch=0, max_nbranch=0; 
 
 };
 }

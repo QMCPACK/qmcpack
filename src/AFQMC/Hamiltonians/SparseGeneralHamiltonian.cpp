@@ -1543,8 +1543,10 @@ namespace qmcplusplus
         // keep i<=j by default
         if(std::get<0>(H1[i]) <= std::get<1>(H1[i]))
             std::get<2>(H1[i]) = vvec[i];
-        else
+        else {
+            std::swap(std::get<0>(H1[i]),std::get<1>(H1[i]));
             std::get<2>(H1[i]) = myconj(vvec[i]);
+        }
       }
 
       std::sort (H1.begin(), H1.end(),mySort);
@@ -1947,6 +1949,41 @@ namespace qmcplusplus
       ascii_write();
     }
 
+/*   Meant for debugging integral codes, remove for released code
+    if(rank() == 0 ) {
+      std::vector<ValueType> eig(NMO);
+      for(IndexType i=0; i<NMO; i++) {
+        eig[i] = H(i,i);
+        for(std::vector<IndexType>::iterator it = occup_alpha.begin(); it<occup_alpha.end(); it++)
+          eig[i] += H_2bar(i,*it,i,*it);
+        for(std::vector<IndexType>::iterator it = occup_beta.begin(); it<occup_beta.end(); it++)
+          eig[i] += H(i,*it,i,*it);
+        app_log()<<i <<"   " <<eig[i] <<std::endl;
+      }
+      isOcc_alpha.clear();
+      isOcc_beta.clear();
+      for(IndexType i=0; i<2*NMO; i++) isOcc_alpha[i]=false;
+      for(IndexType i=0; i<2*NMO; i++) isOcc_beta[i]=false;
+      for(int i=0; i<occup_alpha.size(); i++) isOcc_alpha[ occup_alpha[i] ]=true;
+      for(int i=0; i<occup_beta.size(); i++) isOcc_beta[ occup_beta[i] ]=true;
+      virtual_alpha.clear();
+      virtual_beta.clear();
+      virtual_alpha.reserve(NMO-NAEA);
+      virtual_beta.reserve(NMO-NAEB);
+      for(IndexType i=0; i<NMO; i++)
+        if(!isOcc_alpha[i]) virtual_alpha.push_back(i);
+      for(IndexType i=NMO; i<2*NMO; i++)
+        if(!isOcc_beta[i]) virtual_beta.push_back(i);
+      ValueType Emp2=0;  
+      std::vector<IndexType>::iterator iti,itj,ita,itb;
+      for(iti=occup_alpha.begin(); iti<occup_alpha.end(); iti++)
+      for(itj=occup_alpha.begin(); itj<occup_alpha.end(); itj++)
+      for(ita=virtual_alpha.begin(); ita<virtual_alpha.end(); ita++)
+      for(itb=virtual_alpha.begin(); itb<virtual_alpha.end(); itb++)
+        Emp2 += H(*iti,*itj,*ita,*itb)*(2.0*H(*ita,*itb,*iti,*itj) - H(*ita,*itb,*itj,*iti))/(eig[*iti]+eig[*itj]-eig[*ita]-eig[*itb]);
+      app_log()<<" Emp2: " <<Emp2 <<std::endl;
+    }
+*/
     return true;
 
   }
@@ -2579,7 +2616,7 @@ namespace qmcplusplus
            cnt1++; 
          }
 #if defined(QMC_COMPLEX)
-         eig = ComplexType(0.0,-1.0)*std::sqrt( 0.25*dt*eigVal[i] );
+         eig = ComplexType(0.0,1.0)*std::sqrt( 0.25*dt*eigVal[i] );
          cnt3=0;
          for(int j=0; j<NMO; j++)
           for(int k=0; k<NMO; k++) {
@@ -2634,11 +2671,7 @@ namespace qmcplusplus
       SPComplexMatrix v2prod(NMO2);
       for(int i=0; i<NMO2; i++) 
        for(int j=0; j<NMO2; j++) 
-#if defined(QMC_COMPLEX)
-        v2prod(i,j) = SparseMatrixOperators::product_SpVSpVc<SPValueType>(indx[i+1]-indx[i],cols+indx[i],vals+indx[i],indx[j+1]-indx[j],cols+indx[j],vals+indx[j]);   
-#else
         v2prod(i,j) = SparseMatrixOperators::product_SpVSpV<SPValueType>(indx[i+1]-indx[i],cols+indx[i],vals+indx[i],indx[j+1]-indx[j],cols+indx[j],vals+indx[j]);   
-#endif
 
       RealType s=0.0;
       RealType max=0.0;
@@ -2654,7 +2687,7 @@ namespace qmcplusplus
              continue;
            }
            ComplexType v2 = dt*H(i,j,k,l);
-           ComplexType v2c = static_cast<ComplexType>(v2prod( i*NMO+Index2Col(k) , l*NMO+Index2Col(j)));
+           ComplexType v2c = static_cast<ComplexType>(v2prod( i*NMO+Index2Col(k) , j*NMO+Index2Col(l)));
            s+=std::abs(v2-v2c);
            if( max < std::abs(v2-v2c) ) max = std::abs(v2-v2c);
            if( std::abs(v2-v2c) > 10*cutoff_cholesky ) {
@@ -2720,8 +2753,8 @@ namespace qmcplusplus
     // transpose V2_fact here and again at the end
     Timer.reset("Generic");
     Timer.start("Generic");
-    if(head_of_nodes) 
-      V2_fact.transpose(); 
+    if(parallel) V2_fact.transpose(TGprop.getNodeCommLocal());
+    else if(head_of_nodes) V2_fact.transpose(); 
     Timer.stop("Generic");
     app_log()<<" Time to transpose V2_fact inside calculateHSPotentials_FactorizedHam(): " <<Timer.average("Generic") <<std::endl;
 
@@ -2914,7 +2947,7 @@ namespace qmcplusplus
           for(IndexType k=0; k<NMO; k++) {
            ComplexType V = (Ln(i,k) - myconj(Ln(k,i))); 
            if(std::abs(V) > cut) {
-             V*=ComplexType(0.0,-1.0)*sqrtdt;
+             V*=ComplexType(0.0,1.0)*sqrtdt;
              if(sparse) Spvn.add(i*NMO+k,cnt,static_cast<SPValueType>(V));
              else Dvn[(i*NMO+k)*ncols+cnt]=static_cast<SPValueType>(V);
              ++np;
@@ -2922,7 +2955,7 @@ namespace qmcplusplus
            if(!spinRestricted) {
              V = (Ln(i+NMO,k) - myconj(Ln(k+NMO,i)));
              if(std::abs(V) > cut) {
-               V*=ComplexType(0.0,-1.0)*sqrtdt;
+               V*=ComplexType(0.0,1.0)*sqrtdt;
                if(sparse) Spvn.add(NMO*NMO+i*NMO+k,cnt,static_cast<SPValueType>(V));
                else Dvn[(i*NMO+k+NMO*NMO)*ncols+cnt]=static_cast<SPValueType>(V);
                ++np;
@@ -2964,14 +2997,16 @@ namespace qmcplusplus
 
       Timer.reset("Generic");
       Timer.start("Generic");
-      Spvn.compress();
+      if(parallel) Spvn.compress(TGprop.getNodeCommLocal());
+      else if(head_of_nodes) Spvn.compress();
       Timer.stop("Generic");
       app_log()<<" Time to compress Spvn in calculateHSPotentials_FactorizedHam(): " <<Timer.average("Generic") <<std::endl;
     }
 
     Timer.reset("Generic");
     Timer.start("Generic");
-    if(head_of_nodes) V2_fact.transpose(); 
+    if(parallel) V2_fact.transpose(TGprop.getNodeCommLocal());
+    else if(head_of_nodes) V2_fact.transpose(); 
     Timer.stop("Generic");
     app_log()<<" Time to transpose V2_fact inside calculateHSPotentials_FactorizedHam(): " <<Timer.average("Generic") <<std::endl;
 
@@ -3594,7 +3629,7 @@ namespace qmcplusplus
           for(IndexType k=0; k<NMO; k++) { 
            ValueType V = (Ls[i*NMO+k] - myconj(Ls[k*NMO+i]));
            if(std::abs(V) > cut) {
-             V*=ComplexType(0.0,-1.0)*sqrtdt;
+             V*=ComplexType(0.0,1.0)*sqrtdt;
              if(sparse) Spvn.add(i*NMO+k,cnt,static_cast<SPValueType>(V));
              else Dvn[(i*NMO+k)*ncols + cnt]=static_cast<SPValueType>(V);
              ++np;
@@ -3884,11 +3919,11 @@ namespace qmcplusplus
        for(IndexType i=0; i<NMO; i++)
         for(IndexType k=0; k<NMO; k++) { 
          if(std::abs( (L[n][i*NMO+k] - myconj(L[n][k*NMO+i])) ) > cut) { 
-           Spvn.add(i*NMO+k,cnt,static_cast<SPValueType>(ComplexType(0,-1.0)*sqrtdt*(L[n][i*NMO+k] - myconj(L[n][k*NMO+i]))));
+           Spvn.add(i*NMO+k,cnt,static_cast<SPValueType>(ComplexType(0,1.0)*sqrtdt*(L[n][i*NMO+k] - myconj(L[n][k*NMO+i]))));
            ++np;
          }
          if(std::abs( (L[n][NMO*NMO+i*NMO+k] - myconj(L[n][NMO*NMO+k*NMO+i])) ) > cut) {
-           Spvn.add(NMO*NMO+i*NMO+k,cnt,static_cast<SPValueType>(ComplexType(0,-1.0)*sqrtdt*(L[n][NMO*NMO+i*NMO+k] - myconj(L[n][NMO*NMO+k*NMO+i]))));
+           Spvn.add(NMO*NMO+i*NMO+k,cnt,static_cast<SPValueType>(ComplexType(0,1.0)*sqrtdt*(L[n][NMO*NMO+i*NMO+k] - myconj(L[n][NMO*NMO+k*NMO+i]))));
            ++np;
          }
         }
@@ -3918,15 +3953,6 @@ namespace qmcplusplus
 
       int NMO2 = spinRestricted?(NMO*NMO):(2*NMO*NMO);
 
-      SPValueMatrix v2prod(NMO2);
-      for(int i=0; i<NMO2; i++)
-       for(int j=0; j<NMO2; j++)
-#if defined(QMC_COMPLEX)
-        v2prod(i,j) = SparseMatrixOperators::product_SpVSpVc<SPValueType>(indx[i+1]-indx[i],cols+indx[i],vals+indx[i],indx[j+1]-indx[j],cols+indx[j],vals+indx[j]);
-#else
-        v2prod(i,j) = SparseMatrixOperators::product_SpVSpV<SPValueType>(indx[i+1]-indx[i],cols+indx[i],vals+indx[i],indx[j+1]-indx[j],cols+indx[j],vals+indx[j]);
-#endif
-
       RealType s=0.0;
       RealType max=0.0;
       for(IndexType i=0; i<2*NMO; i++)
@@ -3940,8 +3966,10 @@ namespace qmcplusplus
             if(!goodSpinSector(i,j,k,l,NMO))
              continue;
            }
-           ValueType v2 = dt*H(i,j,k,l);
-           ValueType v2c = static_cast<ValueType>(v2prod( i*NMO+Index2Col(k) , l*NMO+Index2Col(j)));
+           ValueType v2 = H(i,j,k,l);
+           int ik = i*NMO+k;
+           int jl = j*NMO+l;
+           ValueType v2c = SparseMatrixOperators::product_SpVSpV<ValueType>(indx[ik+1]-indx[ik],cols+indx[ik],vals+indx[ik],indx[jl+1]-indx[jl],cols+indx[jl],vals+indx[jl]) / dt;
            s+=std::abs(v2-v2c);
            if( max < std::abs(v2-v2c) ) max = std::abs(v2-v2c);
            if( std::abs(v2-v2c) > 10*cutoff_cholesky ) {

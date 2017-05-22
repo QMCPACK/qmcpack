@@ -117,6 +117,8 @@ class LocalWalkerHandler: public WalkerHandlerBase
   // population control algorithm
   void popControl(MPI_Comm comm, std::vector<ComplexType>& curData); 
 
+  void benchmark(std::string& blist,int maxnW,int delnW,int repeat) {}
+
   void setHF(const ComplexMatrix& HF);
 
   inline void Orthogonalize(int i) {

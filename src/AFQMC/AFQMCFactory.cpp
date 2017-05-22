@@ -44,6 +44,7 @@
 #include"AFQMC/Drivers/Driver.h"
 #include"AFQMC/Drivers/selectedCI.h"
 #include"AFQMC/Drivers/AFQMCDriver.h"
+#include"AFQMC/Drivers/BenchmarkDriver.h"
 //#include"AFQMC/Drivers/AFQMCDistDriver.h"
 #include"AFQMC/Drivers/VMCDriver.h"
 
@@ -291,6 +292,8 @@ bool AFQMCFactory::execute(xmlNodePtr cur)
       oAttrib.put(cur);       
       if(type == "afqmc") 
           driver = (Driver*) new AFQMCDriver(myComm);
+      else if(type == "benchmark")  
+        driver = (Driver*) new BenchmarkDriver(myComm);
       else if(type == "vmc")  
         driver = (Driver*) new VMCDriver(myComm);
       else if(type == "selectedCI" || type == "selectedci" || type == "selCI" || type == "selci") 

@@ -26,7 +26,7 @@ class PropagatorBase: public MPIObjectBase, public AFQMCInfo
 {
   public:
        
-  PropagatorBase(Communicate *c, RandomGenerator_t* r): MPIObjectBase(c),TG(c,"PropagatorTG"),rng(r),Order_Taylor_Expansion(6),name(""),hdf_write_tag(""),hdf_write_file(""),hdf_read_tag(""),hdf_read_file(""),parallel_factorization(true),ncores_per_TG(1),nnodes_per_TG(1),parallelPropagation(false),distributeSpvn(false),core_rank(0),sparsePropagator(true) 
+  PropagatorBase(Communicate *c, RandomGenerator_t* r): MPIObjectBase(c),TG(c,"PropagatorTG"),rng(r),Order_Taylor_Expansion(6),name(""),hdf_write_tag(""),hdf_write_file(""),hdf_read_tag(""),hdf_read_file(""),parallel_factorization(true),ncores_per_TG(1),nnodes_per_TG(1),parallelPropagation(true),distributeSpvn(false),core_rank(0),sparsePropagator(true) 
   {
   }
 
@@ -52,7 +52,7 @@ class PropagatorBase: public MPIObjectBase, public AFQMCInfo
 
   virtual SPValueSMSpMat* getSpvn()=0;
 
-  virtual void benchmark()=0;
+  virtual void benchmark(std::string&,int,int,int,WalkerHandlerBase*)=0;
 
   void setHeadComm(bool hd, MPI_Comm comm) {
     head_of_nodes=hd;

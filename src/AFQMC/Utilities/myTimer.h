@@ -80,6 +80,15 @@ class myTimer {
        }
      }
 
+     // add a time interval to the total time without incrementing the counter
+     void add_time(const std::string& str) {
+       double tm=getTime();
+       int n = getPos(str);
+       if(n >= 0) {
+         std::get<2>(timer[n]) += (tm-std::get<1>(timer[n]));
+       }
+     }
+
      double elapsed(const std::string& str) {
        int n = getPos(str);
        if(n >= 0) 
@@ -110,6 +119,13 @@ class myTimer {
        }
        std::get<0>(timer[n])=0;
        std::get<1>(timer[n])=std::get<2>(timer[n])=0.0;
+     }
+
+     void reset_all() {
+       for( TimeData& t: timer) { 
+         std::get<0>(t)=0;
+         std::get<1>(t)=std::get<2>(t)=0.0; 
+       }
      }
 
      void print_elapsed(const std::string& str, std::ostream& out)
