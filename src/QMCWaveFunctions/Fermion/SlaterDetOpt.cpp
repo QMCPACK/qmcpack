@@ -716,9 +716,9 @@ void SlaterDetOpt::evaluateDerivatives(ParticleSet& P,
   // construct temporary Y matrix
   RealType * const Ymat = &m_work.at(0);
   for (int b = 0; b < m_nel; b++) { // loop over particles
-    //const OrbitalBase::GradType g = P.G[m_first+b] - simd::dot(m_orb_inv_mat[b], m_orb_der_mat[b], m_nel);
+    const OrbitalBase::GradType g = P.G[m_first+b] - simd::dot(m_orb_inv_mat[b], m_orb_der_mat[b], m_nel);
     for (int q = 0; q < m_nel; q++) // loop over orbitals
-      Ymat[q+b*m_nel] = 0.5 * m_orb_lap_mat(b,q);// + qmcplusplus::dot(m_orb_der_mat(b,q), g);
+      Ymat[q+b*m_nel] = 0.5 * m_orb_lap_mat(b,q) + qmcplusplus::dot(m_orb_der_mat(b,q), g);
   }
 
   // contract Y with inverse matrices to get contribution of local energy derivatives w.r.t. orbital values
@@ -731,12 +731,12 @@ void SlaterDetOpt::evaluateDerivatives(ParticleSet& P,
     m_dh0(b,q) = m_work[ q + b * m_nel ];
 
   // fill matrices of contributions to local energy derivatives w.r.t. orbital first derivatives
-  //for (int a = 0; a < m_nel; a++) { // loop over particles
-  //  const OrbitalBase::GradType g = simd::dot(m_orb_inv_mat[a], m_orb_der_mat[a], m_nel) - P.G[m_first+a];
-  //  for (int v = 0; v < 3; v++) // loop over particle coordinates x,y,z
-  //  for (int p = 0; p < m_nel; p++) // loop over orbitals
-  //    m_dh1(a+v*m_nel,p) = m_orb_inv_mat(a,p) * g[v];
-  //}
+  for (int a = 0; a < m_nel; a++) { // loop over particles
+    const OrbitalBase::GradType g = simd::dot(m_orb_inv_mat[a], m_orb_der_mat[a], m_nel) - P.G[m_first+a];
+    for (int v = 0; v < 3; v++) // loop over particle coordinates x,y,z
+    for (int p = 0; p < m_nel; p++) // loop over orbitals
+      m_dh1(a+v*m_nel,p) = m_orb_inv_mat(a,p) * g[v];
+  }
 
   // fill matrix of contributions to local energy derivatives w.r.t. orbital second derivatives
   for (int a = 0; a < m_nel; a++) // loop over particles
@@ -750,13 +750,8 @@ void SlaterDetOpt::evaluateDerivatives(ParticleSet& P,
     m_work[ p + a*m_nmo + k*m_nmo*m_nel ] = m_orb_der_mat_all(a,p)[k];
 
   // add this determinant's contribution to the orbital linear combinations' derivatives
-  //this->tfc_ptr("SlaterDetOpt::evaluateDerivatives")->add_derivatives(m_nmo, m_nel, m_dp0.data(), m_dh0.data(), m_dh1.data(), m_dh2.data(),
-  //                                                                    m_orb_val_mat_all.data(), &m_work.at(0), m_orb_lap_mat_all.data());
-
-
-  this->tfc_ptr("SlaterDetOpt::evaluateDerivatives")->add_derivatives(m_nmo, m_nel, m_dp0.data(), m_dh0.data(), m_dh2.data(),
-                                                                      m_orb_val_mat_all.data(), m_orb_lap_mat_all.data());
-
+  this->tfc_ptr("SlaterDetOpt::evaluateDerivatives")->add_derivatives(m_nmo, m_nel, m_dp0.data(), m_dh0.data(), m_dh1.data(), m_dh2.data(),
+                                                                      m_orb_val_mat_all.data(), &m_work.at(0), m_orb_lap_mat_all.data());
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

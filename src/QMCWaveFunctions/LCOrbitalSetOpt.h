@@ -278,10 +278,10 @@ class LCOrbitalSetOptTrialFunc : public OrbitalBase {
                          const int np,
                          const RealType * const dp0,
                          const RealType * const dh0,
-                         //const RealType * const dh1,
+                         const RealType * const dh1,
                          const RealType * const dh2,
                          const RealType * const Bchi,
-                         //const RealType * const dBchi,
+                         const RealType * const dBchi,
                          const RealType * const d2Bchi) {
 
       // ensure the number of linear combinations is correct
@@ -312,8 +312,8 @@ class LCOrbitalSetOptTrialFunc : public OrbitalBase {
 
       // compute products of ( H Psi ) / Psi derivatives with linear combination values and their derivatives and add results to energy derivatives w.r.t. the matrix C
       BLAS::gemm('N', 'T', nl, nl, np, RealType(1.0), dh0, nl, Bchi, nl, RealType(1.0), &m_hder_mat.at(0), nl);
-      //for (int i = 0; i < 3; i++)
-      //  BLAS::gemm('N', 'T', nl, nl, np, RealType(1.0), dh1+i*nl*np, nl, dBchi+i*nl*np, nl, RealType(1.0), &m_hder_mat.at(0), nl);
+      for (int i = 0; i < 3; i++)
+        BLAS::gemm('N', 'T', nl, nl, np, RealType(1.0), dh1+i*nl*np, nl, dBchi+i*nl*np, nl, RealType(1.0), &m_hder_mat.at(0), nl);
       BLAS::gemm('N', 'T', nl, nl, np, RealType(1.0), dh2, nl, d2Bchi, nl, RealType(1.0), &m_hder_mat.at(0), nl);
 
     }
