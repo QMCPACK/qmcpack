@@ -244,6 +244,69 @@ ENDIF()
                     0 # VMC
                     ${LIH_ARB_SUCCEED})
 
+# DMC tests for LiH, locality and non-local (t-moves) variants
+
+  LIST(APPEND LIH_GAMMA_DMC_SCALARS "totenergy" "-8.54823 0.004")
+  QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-gamma-dmc-hf_noj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+                    hf_vmc_dmc_short_LiH-gamma
+                    hf_vmc_dmc_short_LiH-gamma.xml
+                    1 16
+                    LIH_GAMMA_DMC_SCALARS
+                    1 # DMC
+                    TRUE)
+
+  LIST(APPEND LIH_X_DMC_SCALARS "totenergy" "-8.31413 0.004")
+  QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-x-dmc-hf_noj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+                    hf_vmc_dmc_short_LiH-x
+                    hf_vmc_dmc_short_LiH-x.xml
+                    1 16
+                    LIH_X_DMC_SCALARS
+                    1 # DMC
+                    TRUE)
+
+  LIST(APPEND LIH_ARB_DMC_SCALARS "totenergy" "-8.45401 0.004")
+  QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-arb-dmc-hf_noj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+                    hf_vmc_dmc_short_LiH-arb
+                    hf_vmc_dmc_short_LiH-arb.xml
+                    1 16
+                    LIH_ARB_DMC_SCALARS
+                    1 # DMC
+                    ${LIH_ARB_SUCCEED})
+
+  LIST(APPEND LIH_GAMMA_DMCNL_SCALARS "totenergy" "-8.54979 0.004")
+  QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-gamma-dmcnl-hf_noj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+                    hf_vmc_dmcnl_short_LiH-gamma
+                    hf_vmc_dmcnl_short_LiH-gamma.xml
+                    1 16
+                    LIH_GAMMA_DMCNL_SCALARS
+                    1 # DMC
+                    TRUE)
+
+  LIST(APPEND LIH_X_DMCNL_SCALARS "totenergy" "-8.31369 0.004")
+  QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-x-dmcnl-hf_noj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+                    hf_vmc_dmcnl_short_LiH-x
+                    hf_vmc_dmcnl_short_LiH-x.xml
+                    1 16
+                    LIH_X_DMCNL_SCALARS
+                    1 # DMC
+                    TRUE)
+
+  LIST(APPEND LIH_ARB_DMCNL_SCALARS "totenergy" "-8.45174 0.004")
+  QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-arb-dmcnl-hf_noj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+                    hf_vmc_dmcnl_short_LiH-arb
+                    hf_vmc_dmcnl_short_LiH-arb.xml
+                    1 16
+                    LIH_ARB_DMCNL_SCALARS
+                    1 # DMC
+                    ${LIH_ARB_SUCCEED})
+
+
 #
 # Short tests, about 2-3 seconds on 16 cores
 #
