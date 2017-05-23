@@ -35,11 +35,7 @@ When \verb|OpenMP| threads are spawned, the estimator will be cloned by the \ver
 #pragma omp parallel for shared(w,psi,ham)
 for(int ip=1; ip<NumThreads; ++ip)
 {
-#if defined(USE_PARTCILESET_CLONE)
-  wClones[ip]=dynamic_cast<MCWalkerConfiguration*>(w.get_clone(ip));
-#else
   wClones[ip]=new MCWalkerConfiguration(w);
-#endif
   psiClones[ip]=psi.makeClone(*wClones[ip]);
   hClones[ip]=ham.makeClone(*wClones[ip],*psiClones[ip]);
 }
@@ -56,11 +52,8 @@ If memory is allocated during estimator construction (usually when parsing the x
 \begin{lstlisting}
 QMCHamiltonianBase* LatticeDeviationEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  // default constructor does not work with threads
-  //LatticeDeviationEstimator* myclone = new LatticeDeviationEstimator(*this); 
   LatticeDeviationEstimator* myclone = new LatticeDeviationEstimator(qp,spset,tgroup,sgroup);
   myclone->put(input_xml);
-
   return myclone;
 }
 \end{lstlisting}
