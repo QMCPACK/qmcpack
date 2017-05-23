@@ -28,6 +28,43 @@ Almost all observables in QMCPACK are implemented as specialized derived classes
 \subsubsection{Initialization}
 When an \verb|<estimator type="est_type" name="est_name" other_stuff="value"/>| tag is present in the \verb|<hamiltonian/>| section, it is first read by HamiltonianFactory. In general, the \verb|type| of the estimator will determine which specialization of QMCHamiltonianBase to be instantiated, and a derived class with \verb|myName="est_name"| will be constructed. Then, the put() method of this specific class will be called to read any other parameters in the \verb|<estimator/>| xml node. Sometimes these parameters will be read by HamiltonianFactory instead, because it can access more objects than QMCHamiltonianBase.
 
+\subsubsection{Cloning}
+When \verb|OpenMP| threads are spawned, the estimator will be cloned by the \verb|CloneManager|, which is a parent class of many QMC drivers. 
+\begin{lstlisting}
+// In CloneManager.cpp
+#pragma omp parallel for shared(w,psi,ham)
+for(int ip=1; ip<NumThreads; ++ip)
+{
+#if defined(USE_PARTCILESET_CLONE)
+  wClones[ip]=dynamic_cast<MCWalkerConfiguration*>(w.get_clone(ip));
+#else
+  wClones[ip]=new MCWalkerConfiguration(w);
+#endif
+  psiClones[ip]=psi.makeClone(*wClones[ip]);
+  hClones[ip]=ham.makeClone(*wClones[ip],*psiClones[ip]);
+}
+\end{lstlisting}
+In the above snippet, \verb|ham| is the reference to the estimator on the master thread. If the implemented estimator does not allocate memory for any array, then the default constructor should suffice for the \verb|makeClone| method.
+\begin{lstlisting}
+// In SpeciesKineticEnergy.cpp
+QMCHamiltonianBase* SpeciesKineticEnergy::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+{
+  return new SpeciesKineticEnergy(*this);
+}
+\end{lstlisting}
+If memory is allocated during estimator construction (usually when parsing the xml node in the \verb|put| method), then the \verb|makeClone| method should perform the same initialization on each thread.
+\begin{lstlisting}
+QMCHamiltonianBase* LatticeDeviationEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+{
+  // default constructor does not work with threads
+  //LatticeDeviationEstimator* myclone = new LatticeDeviationEstimator(*this); 
+  LatticeDeviationEstimator* myclone = new LatticeDeviationEstimator(qp,spset,tgroup,sgroup);
+  myclone->put(input_xml);
+
+  return myclone;
+}
+\end{lstlisting}
+
 \subsubsection{Evaluate}
 After the observable class (derived class of QMCHamiltonianBase) is constructed and prepared (by the put() method), it is ready to be used in a QMCDriver. A QMCDriver will call \verb|H.auxHevaluate(W,thisWalker)| after every accepted move, where H is the QMCHamiltonian that holds all main and auxiliary Hamiltonian elements, W is a MCWalkerConfiguration and thisWalker is a pointer to the current walker being worked on. As shown below, this function goes through each auxiliary Hamiltonian element and evaluate it using the current walker configuration. Under the hood, observables are calculated and dumped to the main particle set's property list for later collection.
 

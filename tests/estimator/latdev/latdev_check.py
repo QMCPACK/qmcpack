@@ -25,11 +25,23 @@ if __name__ == '__main__':
     lat_cols = [col for col in df.columns if col.startswith('latdev')]
     slatdir  = df.loc[:,lat_cols].values
 
+    passed = True
+    # check h5 against scalar.dat
     if not np.allclose(latdir,slatdir):
         print "lattice deviation estimator test failed"
+        passed = False
 
-        import matplotlib.pyplot as plt
-        fig,ax = plt.subplots(1,1)
-        ax.plot(latdir,ls='--',lw=2)
-        ax.plot(slatdir)
-        plt.show()
+        #import matplotlib.pyplot as plt
+        #fig,ax = plt.subplots(1,1)
+        #ax.plot(latdir,ls='--',lw=2)
+        #ax.plot(slatdir)
+        #plt.show()
+    # end if
+
+    if passed:
+        exit(0)
+    else:
+        exit(1)
+    # end if
+
+# end __main__
