@@ -327,3 +327,27 @@ FUNCTION(QMC_RUN_AND_CHECK BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SC
         ENDFOREACH(SCALAR_CHECK)
     ENDIF()
 ENDFUNCTION()
+
+function(SIMPLE_RUN_AND_CHECK base_name base_dir prefix input_file procs threads check_script)
+
+  # build test name
+  set(full_name "${base_name}-${procs}-${threads}")
+  message("Adding test ${full_name}")
+
+  # try to add test run
+  set (test_added false)
+  RUN_QMC_APP(${full_name} ${base_dir} ${procs} ${threads} test_added ${input_file})
+  if ( NOT test_added)
+    message(fatal_error "test ${full_name} cannot be added")
+  endif()
+
+  # set up command to run check, assume check_script is in the same folder as input
+  set(check_cmd ${CMAKE_CURRENT_BINARY_DIR}/${full_name}/${check_script})
+
+  # add test
+  add_test(test_name "${full_name}-${check_script}"
+    command ${check_cmd}
+    working_directory "${CMAKE_CURRENT_BINARY_DIR}/${full_name}"
+  )
+
+endfunction()

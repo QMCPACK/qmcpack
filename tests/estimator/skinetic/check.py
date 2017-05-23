@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from sys import exit
 import numpy as np
 import h5py
 import xml.etree.ElementTree as ET
@@ -77,4 +78,4 @@ if __name__ == '__main__':
         ax.plot(sim_time,ktot,ls='--',lw=3,label='')
         ax.plot(sim_time,ktot_ref,lw=1,c='k')
         plt.show()
-
+    exit(1)
