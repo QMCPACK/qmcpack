@@ -1,0 +1,36 @@
+#############################################################
+# Add tests to ctest
+#############################################################
+
+message("Adding estimator tests for QMCPACK")
+
+IF (NOT TEST_MAX_PROCS )
+SET ( TEST_MAX_PROCS 16 )
+message ("TEST_MAX_PROCS was unset. Set to 16")
+ENDIF ()
+
+set(QMCAPP_ERR "")
+if((NOT ${TEST_MAX_PROCS}) OR (${TEST_MAX_PROCS} STREQUAL ""))
+    set(QMCAPP_ERR "${QMCAPP_ERR}  TEST_MAX_PROCS not set: '${TEST_MAX_PROCS}'\n")
+endif()
+#
+#
+if(NOT ${QMCAPP_ERR} STREQUAL "")
+  message("${QMCAPP_ERR}  skipping tests")
+else()
+  INCLUDE( "${qmcpack_SOURCE_DIR}/CMake/macros.cmake" )
+endif()
+
+SIMPLE_RUN_AND_CHECK(estimator-skinetic
+  "${CMAKE_SOURCE_DIR}/tests/estimator/skinetic"
+  vmc.xml
+  1 16
+  skinetic_check.py
+)
+
+SIMPLE_RUN_AND_CHECK(estimator-latdev
+  "${CMAKE_SOURCE_DIR}/tests/estimator/latdev"
+  vmc.xml
+  1 16
+  latdev_check.py
+)

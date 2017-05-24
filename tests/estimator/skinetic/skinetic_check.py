@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from sys import exit
 import numpy as np
 import h5py
 import xml.etree.ElementTree as ET
@@ -59,22 +60,36 @@ if __name__ == '__main__':
     # read stat.h5 for skinetic entry
     stat_entry = grab_stat_entries(fstat,est_name)[0] # only 1 skinetic
     h5_data = stat_entry['value']
+
+    passed = True
     
+    # test h5 entries against scalar.dat entries
     if not np.allclose(h5_data,data[:,skinetic_idx]):
-        print "species kinetic energy estimator h5 test failed"
-        import matplotlib.pyplot as plt
-        plt.plot(data[:,skinetic_idx],lw=1,c='k',label='scalar')
-        plt.plot(h5_data,ls='--',lw=3,label='h5')
-        plt.show()
+        print "Species kinetic energy estimator failed - the values in the HDF file do not match the values in the .scalar.dat file"
+        passed = False
+        #import matplotlib.pyplot as plt
+        #plt.plot(data[:,skinetic_idx],lw=1,c='k',label='scalar')
+        #plt.plot(h5_data,ls='--',lw=3,label='h5')
+        #plt.show()
+    # end if
 
-    # test against 
+    # test scalar.dat entries against Kinetic column (from BareKinetic)
     if not np.allclose(ktot,ktot_ref):
-        print "species kinetic energy estimator test failed!"
-        import matplotlib.pyplot as plt
-        fig,ax = plt.subplots(1,1)
-        ax.set_xlabel('simulation time (ha$^{-1}$)',fontsize=16)
-        ax.set_ylabel('total kinetic (ha)',fontsize=16)
-        ax.plot(sim_time,ktot,ls='--',lw=3,label='')
-        ax.plot(sim_time,ktot_ref,lw=1,c='k')
-        plt.show()
+        print "Species kinetic energy estimator failed - the sum of kinetic energies of all species does not agree with total kinetic energy"
+        passed = False
+        #import matplotlib.pyplot as plt
+        #fig,ax = plt.subplots(1,1)
+        #ax.set_xlabel('simulation time (ha$^{-1}$)',fontsize=16)
+        #ax.set_ylabel('total kinetic (ha)',fontsize=16)
+        #ax.plot(sim_time,ktot,ls='--',lw=3,label='')
+        #ax.plot(sim_time,ktot_ref,lw=1,c='k')
+        #plt.show()
+    # end if
 
+    if passed:
+        exit(0)
+    else:
+        exit(1)
+    # end if
+
+# end __main__
