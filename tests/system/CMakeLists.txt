@@ -353,7 +353,6 @@ ENDIF()
                     BCC_H_SCALARS
                     0 # VMC
                     TRUE)
-  LIST(APPEND BCC_H_RMC_SCALARS "totenergy" "-1.8420 0.0011")
 
 # Check DMCUpdateAllWithRejection driver using all-particle updates
   QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-dmc-all_sdj
@@ -365,6 +364,7 @@ ENDIF()
                     1 # DMC
                     TRUE)
 
+  LIST(APPEND BCC_H_RMC_SCALARS "totenergy" "-1.8420 0.0011")
   #check RMC on 16 cores.  1 MPI
   QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-rmc_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
