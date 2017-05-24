@@ -24,13 +24,13 @@ endif()
 SIMPLE_RUN_AND_CHECK(estimator-skinetic
   "${CMAKE_SOURCE_DIR}/tests/estimator/skinetic"
   vmc.xml
-  8 2
+  1 16
   skinetic_check.py
 )
 
 SIMPLE_RUN_AND_CHECK(estimator-latdev
   "${CMAKE_SOURCE_DIR}/tests/estimator/latdev"
   vmc.xml
-  8 2
+  1 16
   latdev_check.py
 )
