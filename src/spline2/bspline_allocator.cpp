@@ -21,22 +21,6 @@
 
 extern "C" {
 
-  multi_UBspline_3d_s*
-    einspline_create_multi_UBspline_3d_s (Ugrid x_grid, Ugrid y_grid, Ugrid z_grid,
-        BCtype_s xBC, BCtype_s yBC, BCtype_s zBC, int num_splines);
-
-  UBspline_3d_s*
-    einspline_create_UBspline_3d_s (Ugrid x_grid, Ugrid y_grid, Ugrid z_grid,
-        BCtype_s xBC, BCtype_s yBC, BCtype_s zBC, float *data);
-
-  multi_UBspline_3d_d*
-    einspline_create_multi_UBspline_3d_d (Ugrid x_grid, Ugrid y_grid, Ugrid z_grid,
-        BCtype_d xBC, BCtype_d yBC, BCtype_d zBC, int num_splines);
-
-  UBspline_3d_d*
-    einspline_create_UBspline_3d_d (Ugrid x_grid, Ugrid y_grid, Ugrid z_grid,
-        BCtype_d xBC, BCtype_d yBC, BCtype_d zBC, double *data);
-
   void set_multi_UBspline_3d_d (multi_UBspline_3d_d *spline, int spline_num, double *data);
 
   void set_multi_UBspline_3d_s (multi_UBspline_3d_s *spline, int spline_num, float *data); 

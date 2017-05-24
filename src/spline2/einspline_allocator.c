@@ -42,6 +42,67 @@ void solve_antiperiodic_interp_1d_s (float bands[], float coefs[], int M, int
 void find_coefs_1d_s (Ugrid grid, BCtype_s bc, float *data,  intptr_t dstride,
     float *coefs, intptr_t cstride);
 
+
+#if defined(__INTEL_COMPILER)
+
+inline void *
+einspline_alloc (size_t size, size_t alignment)
+{
+  return _mm_malloc(size,alignment);
+}
+
+inline void
+einspline_free (void *ptr)
+{
+  _mm_free(ptr);
+}
+
+#elif defined(HAVE_POSIX_MEMALIGN)
+
+int posix_memalign(void **memptr, size_t alignment, size_t size);
+
+inline void *
+einspline_alloc (size_t size, size_t alignment)
+{
+  void *ptr;
+  posix_memalign (&ptr, alignment, size);
+  return ptr;
+}
+
+inline void
+einspline_free (void *ptr)
+{
+  free (ptr);
+}
+
+#else
+
+inline void *
+einspline_alloc (size_t size, size_t alignment)
+{
+  size += (alignment-1)+sizeof(void*);
+  void *ptr = malloc (size);
+  if (ptr == NULL)
+    return NULL;
+  else
+  {
+    void *shifted = ptr + sizeof(void*);
+    size_t offset = alignment - (size_t)shifted%(size_t)alignment;
+    void *aligned = shifted + offset;
+    *((void**)aligned-1) = ptr;
+    return aligned;
+  }
+}
+
+inline void
+einspline_free (void *aligned)
+{
+  void *ptr = *((void**)aligned-1);
+  free (ptr);
+}
+#endif
+
+
 multi_UBspline_3d_s*
 einspline_create_multi_UBspline_3d_s (Ugrid x_grid, Ugrid y_grid, Ugrid z_grid,
 			    BCtype_s xBC, BCtype_s yBC, BCtype_s zBC,
