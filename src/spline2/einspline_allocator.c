@@ -86,9 +86,9 @@ einspline_alloc (size_t size, size_t alignment)
     return NULL;
   else
   {
-    void *shifted = ptr + sizeof(void*);
+    void *shifted = (char *)ptr + sizeof(void*); // make room to save original pointer
     size_t offset = alignment - (size_t)shifted%(size_t)alignment;
-    void *aligned = shifted + offset;
+    void *aligned = (char *)shifted + offset;
     *((void**)aligned-1) = ptr;
     return aligned;
   }
