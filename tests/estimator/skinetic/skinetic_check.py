@@ -65,7 +65,7 @@ if __name__ == '__main__':
     
     # test h5 entries against scalar.dat entries
     if not np.allclose(h5_data,data[:,skinetic_idx]):
-        print "species kinetic energy estimator h5 test failed"
+        print "Species kinetic energy estimator failed - the values in the HDF file do not match the values in the .scalar.dat file"
         passed = False
         #import matplotlib.pyplot as plt
         #plt.plot(data[:,skinetic_idx],lw=1,c='k',label='scalar')
@@ -75,7 +75,7 @@ if __name__ == '__main__':
 
     # test scalar.dat entries against Kinetic column (from BareKinetic)
     if not np.allclose(ktot,ktot_ref):
-        print "species kinetic energy estimator test failed!"
+        print "Species kinetic energy estimator failed - the sum of kinetic energies of all species does not agree with total kinetic energy"
         passed = False
         #import matplotlib.pyplot as plt
         #fig,ax = plt.subplots(1,1)

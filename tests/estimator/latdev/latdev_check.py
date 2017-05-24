@@ -28,7 +28,7 @@ if __name__ == '__main__':
     passed = True
     # check h5 against scalar.dat
     if not np.allclose(latdir,slatdir):
-        print "lattice deviation estimator test failed"
+        print "lattice deviation estimator test failed - the values in the HDF file do not match the values in the .scalar.dat file"
         passed = False
 
         #import matplotlib.pyplot as plt
