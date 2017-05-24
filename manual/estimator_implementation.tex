@@ -1,26 +1,4 @@
-\documentclass[aps,prl,preprint]{revtex4-1}
-\usepackage{amsmath,amsfonts,amssymb}
-\usepackage{graphicx}
-\usepackage{comment}
-
-\usepackage{listings}
-\lstset{language=C++,
-                basicstyle=\ttfamily \scriptsize,
-                keywordstyle=\color{blue}\ttfamily,
-                stringstyle=\color{red}\ttfamily,
-                commentstyle=\color{gray}\ttfamily,
-                morecomment=[l][\color{magenta}]{\#},
-}
-
-\newcommand{\bs}{\boldsymbol}
-
-\usepackage{xcolor,framed}
-\definecolor{shadecolor}{gray}{0.95}
-% \verb|ax.plot(x,y)| for inline code
-% \begin{shaded}\begin{verbatim} for block code
-
-\begin{document}
-\section{QMCPACK Scalar Estimator Implementation}
+\section{Scalar Estimator Implementation}
 \subsection{Introduction: Life of a Specialized QMCHamiltonianBase}
 
 Almost all observables in QMCPACK are implemented as specialized derived classes of the QMCHamiltonianBase base class. Each observable is instantiated in HamiltonianFactory and added to QMCHamiltonian for tracking. QMCHamiltonian tracks two types of observables: main and auxiliary. Main observables contribute to the local energy. These observables are elements of the simulated Hamiltonian such as kinetic or potential energy. auxiliary observables are expectation values of matrix elements that do not contribute to the local energy. These Hamiltonians do not affect the dynamics of the simulation. In the code, the main observables are labeled by ``physical'' flag, the auxiliary observables have ``physical'' set to false.
@@ -496,4 +474,4 @@ That should be it. There should now be a new entry in the stat.h5 file containin
 \item disable output to scalar.dat when ``hdf5\_out'' flag is on
 \end{enumerate}
 
-\end{document}
+
