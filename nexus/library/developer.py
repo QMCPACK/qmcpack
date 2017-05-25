@@ -366,3 +366,13 @@ def unavailable(module,*items):
         return voids
     #end if
 #end def unavailable
+
+
+def available(*items):
+    for item in items:
+        if isinstance(item,Void):
+            return False
+        #end if
+    #end for
+    return True
+#end def available

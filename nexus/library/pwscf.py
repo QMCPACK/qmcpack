@@ -96,9 +96,9 @@ class Pwscf(Simulation):
         if result_name=='charge_density':
             calculating_result = True
         elif result_name=='orbitals':
-            calculating_result = 'wf_collect' in control and control.wf_collect
+            calculating_result = 'calculation' not in control or 'scf' in control.calculation.lower()
         elif result_name=='structure':
-            calculating_result = 'relax' in control.calculation.lower()
+            calculating_result = 'calculation' in control and 'relax' in control.calculation.lower()
         else:
             calculating_result = False
         #end if
