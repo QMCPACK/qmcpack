@@ -311,6 +311,10 @@ ENDIF()
 # Short tests, about 2-3 seconds on 16 cores
 #
   LIST(APPEND BCC_H_SCALARS "totenergy" "-1.834032 0.0003")
+  LIST(APPEND BCC_H_SCALARS "kinetic" "0.186673807952 0.003")
+  LIST(APPEND BCC_H_SCALARS "potential" "-2.02070672998 0.003")
+  LIST(APPEND BCC_H_SCALARS "eeenergy" "-0.775870180954 0.003")
+  LIST(APPEND BCC_H_SCALARS "ionion" "-0.96289961022 0.001")
   LIST(APPEND BCC_H_SCALARS "samples" "960000 0.0")
   LIST(APPEND BCC_H_SCALARS "flux" "0.0 0.03")
 
@@ -326,6 +330,9 @@ ENDIF()
 # qmc_ref_vmc_dmc  series 1  -1.84143
 # qmc_short_vmc_dmc  series 1  -1.844059 +/- 0.001850
   LIST(APPEND BCC_H_DMC_SCALARS "totenergy" "-1.841430 0.001850")
+  LIST(APPEND BCC_H_DMC_SCALARS "potential" "-2.02228454514 0.005")
+  LIST(APPEND BCC_H_DMC_SCALARS "kinetic" "0.180980043026 0.005")
+  LIST(APPEND BCC_H_DMC_SCALARS "eeenergy" "-0.781244 0.0014")
   QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-dmc_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
                     qmc_short_vmc_dmc
@@ -336,6 +343,37 @@ ENDIF()
                     TRUE)
 
   IF(NOT QMC_CUDA)
+
+# Check VMCUpdateAll driver using all-particle updates
+  QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-vmc-all-nodrift_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+                    qmc_short_vmc_all_nodrift
+                    qmc_short_vmc_all_nodrift.in.xml
+                    1 16
+                    BCC_H_SCALARS
+                    0 # VMC
+                    TRUE)
+
+# Check VMCUpdateAllWithDrift driver using all-particle updates
+  QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-vmc-all_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+                    qmc_short_vmc_all
+                    qmc_short_vmc_all.in.xml
+                    1 16
+                    BCC_H_SCALARS
+                    0 # VMC
+                    TRUE)
+
+# Check DMCUpdateAllWithRejection driver using all-particle updates
+  QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-dmc-all_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+                    qmc_short_vmc_dmc_all
+                    qmc_short_vmc_dmc_all.in.xml
+                    1 16
+                    BCC_H_DMC_SCALARS
+                    1 # DMC
+                    TRUE)
+
   LIST(APPEND BCC_H_RMC_SCALARS "totenergy" "-1.8420 0.0011")
   #check RMC on 16 cores.  1 MPI
   QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-rmc_sdj
