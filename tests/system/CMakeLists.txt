@@ -344,6 +344,16 @@ ENDIF()
 
   IF(NOT QMC_CUDA)
 
+# Check VMCUpdateAll driver using all-particle updates
+  QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-vmc-all-nodrift_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+                    qmc_short_vmc_all_nodrift
+                    qmc_short_vmc_all_nodrift.in.xml
+                    1 16
+                    BCC_H_SCALARS
+                    0 # VMC
+                    TRUE)
+
 # Check VMCUpdateAllWithDrift driver using all-particle updates
   QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-vmc-all_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
