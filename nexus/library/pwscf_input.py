@@ -55,6 +55,7 @@ from generic import obj
 from structure import Structure,kmesh
 from physical_system import PhysicalSystem
 from developer import DevBase,warn
+from pseudopotential import pp_elem_label
 from simulation import SimulationInput
 from debug import *
 
@@ -1747,7 +1748,8 @@ def generate_any_pwscf_input(**kwargs):
     pseudopotentials = obj()
     atoms = []
     for ppname in pseudos:
-        element = ppname[0:2].strip('.')
+        #element = ppname[0:2].strip('.')
+        label,element = pp_elem_label(ppname,guard=True)
         atoms.append(element)
         pseudopotentials[element] = ppname
     #end for

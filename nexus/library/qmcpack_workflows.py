@@ -1963,7 +1963,10 @@ def gen_vmc(simlabel,ch,depset,J,test=0,loc=''):
     else:
         qmcjob = wf.job
     #end if
-    if J=='J0':
+    other_inputs = obj(task.inputs)
+    if 'jastrows' in other_inputs:
+        jastrows = other_inputs.delete('jastrows')
+    elif J=='J0':
         jastrows = []
     elif J=='J2':
         jastrows = jastrow_factor(**task.J2_inputs)
@@ -1976,7 +1979,7 @@ def gen_vmc(simlabel,ch,depset,J,test=0,loc=''):
         jastrows     = jastrows,
         calculations = vmc_sections(test=test,J0=J=='J0',**task.sec_inputs),
         dependencies = deps,
-        **task.inputs
+        **other_inputs
         )
     sims[simlabel] = qmc
 #end def gen_vmc
@@ -2031,14 +2034,16 @@ def gen_dmc(simlabel,ch,depset,J,nlmove=None,test=0,loc=''):
     else:
         qmcjob = wf.job
     #end if
-    if J=='J0':
+    other_inputs = obj(task.inputs)
+    if 'jastrows' in other_inputs:
+        jastrows = other_inputs.delete('jastrows')    
+    elif J=='J0':
         jastrows = []
     elif J=='J2':
         jastrows = jastrow_factor(**task.J2_inputs)
     elif J=='J3':
         jastrows = jastrow_factor(**task.J3_inputs)
     #end if
-    other_inputs = obj(task.inputs)
     if 'calculations' not in other_inputs:
         other_inputs.calculations = dmc_sections(nlmove=nlmove,test=test,J0=J=='J0',**task.sec_inputs)
     #end if

@@ -330,6 +330,22 @@ class ProjectManager(NexusCore):
     #end def write_cascade_status
 
 
+    def write_sim_dependencies(self,idkey=None):
+        for simid in sorted(self.simulations.keys()):
+            sim = self.simulations[simid]
+            if idkey is None or sim.identifier==idkey:
+                self.log('\n{0} {1} {2}'.format(sim.identifier,simid,sim.locdir))
+                for did in sorted(sim.dependencies.keys()):
+                    dep = sim.dependencies[did]
+                    dsim  = dep.sim
+                    names = dep.result_names
+                    self.log('  {0} {1} {2} {3}'.format(dsim.identifier,dsim.simid,names,dsim.locdir))
+                #end for
+            #end if
+        #end for
+    #end def write_sim_dependencies
+
+
     def write_cascade_dependents(self):
         self.log('cascade dependents',n=1)
         for cascade in self.cascades:
@@ -411,7 +427,7 @@ class ProjectManager(NexusCore):
             cascade.reset_wait_ids()
         #end for
         for cid,cascade in progressing_cascades.iteritems():
-            if not cascade.bundled:
+            if not cascade.bundled or cascade.bundler.finished:
                 cascade.progress()
             #end if
             cascade.check_subcascade()
