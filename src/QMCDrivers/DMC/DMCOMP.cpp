@@ -164,6 +164,12 @@ void DMCOMP::resetUpdateEngines()
         o << "\n  Walkers are killed when a node crossing is detected";
       else
         o << "\n  DMC moves are rejected when a node crossing is detected";
+  
+      if(NonLocalMove == "yes")
+        o << "\n  Non-local T-moves are enabled.";
+      else
+        o << "\n  Non-local T-moves are disabled.";
+
       app_log() << o.str() << std::endl;
     }
 #if !defined(BGP_BUG)
