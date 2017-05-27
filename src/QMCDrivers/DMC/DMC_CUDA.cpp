@@ -77,9 +77,9 @@ bool DMCcuda::run()
   bool NLmove = NonLocalMove == "yes";
   bool scaleweight = ScaleWeight == "yes";
   if (NLmove)
-    app_log() << "  Using Casula nonlocal moves in DMCcuda.\n";
+    app_log() << "  Using Non-local T-moves in DMCcuda.\n";
   if (scaleweight)
-    app_log() << "  Scaling weight per Umrigar/Nightengale.\n";
+    app_log() << "  Scaling weight per Umrigar/Nightingale.\n";
   resetRun();
   Mover->MaxAge = 1;
   IndexType block = 0;
