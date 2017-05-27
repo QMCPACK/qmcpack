@@ -194,7 +194,7 @@ class SimulationBundle(Simulation):
 
 
     def progress(self,dependency_id=None):
-        if dependency_id!=None:
+        if dependency_id!=None and dependency_id in self.wait_ids:
             self.wait_ids.remove(dependency_id)
         #end if
         if len(self.wait_ids)==0 and not self.block and not self.failed:

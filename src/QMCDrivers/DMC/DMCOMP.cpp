@@ -272,7 +272,7 @@ bool DMCOMP::run()
         int ip=omp_get_thread_num();
         int now=CurrentStep;
         Movers[ip]->set_step(sample);
-        bool recompute=( step+1 == nSteps && nBlocksBetweenRecompute && (1+block)%nBlocksBetweenRecompute == 0 );
+        bool recompute=( step+1 == nSteps && nBlocksBetweenRecompute && (1+block)%nBlocksBetweenRecompute == 0 && QMCDriverMode[QMC_UPDATE_MODE] );
 #if 0
         MCWalkerConfiguration::iterator
         wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);

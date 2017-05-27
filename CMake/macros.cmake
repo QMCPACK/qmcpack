@@ -327,3 +327,39 @@ FUNCTION(QMC_RUN_AND_CHECK BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SC
         ENDFOREACH(SCALAR_CHECK)
     ENDIF()
 ENDFUNCTION()
+
+function(SIMPLE_RUN_AND_CHECK base_name base_dir input_file procs threads check_script)
+  
+  # "simple run and check" function does 2 things:
+  #  1. run qmcpack executable on $input_file located in $base_dir
+  #  2. run $check_script located in the same folder ($base_dir)
+  # note: NAME, COMMAND, and WORKING_DIRECTORY must be upper case in add_test!
+
+  # build test name
+  set(full_name "${base_name}-${procs}-${threads}")
+  message("Adding test ${full_name}")
+
+  # add run (task 1)
+  set (test_added false)
+  RUN_QMC_APP(${full_name} ${base_dir} ${procs} ${threads} test_added ${input_file})
+  if ( NOT test_added)
+    message(FATAL_ERROR "test ${full_name} cannot be added")
+  endif()
+
+  # set up command to run check, assume check_script is in the same folder as input
+  set(check_cmd ${CMAKE_CURRENT_BINARY_DIR}/${full_name}/${check_script})
+  #message(${check_cmd})
+
+  # add test (task 2)
+  set(test_name "${full_name}-check") # hard-code for single test
+  set(work_dir "${CMAKE_CURRENT_BINARY_DIR}/${full_name}")
+  #message(${work_dir})
+  add_test(NAME "${test_name}"
+    COMMAND "${check_cmd}"
+    WORKING_DIRECTORY "${work_dir}"
+  )
+
+  # make test depend on the run
+  set_property(TEST ${test_name} APPEND PROPERTY DEPENDS ${full_name})
+
+endfunction()

@@ -1,32 +1,40 @@
-\documentclass[aps,prl,preprint]{revtex4-1}
-\usepackage{amsmath,amsfonts,amssymb}
-\usepackage{graphicx}
-\usepackage{comment}
-
-\usepackage{listings}
-\lstset{language=C++,
-                basicstyle=\ttfamily \scriptsize,
-                keywordstyle=\color{blue}\ttfamily,
-                stringstyle=\color{red}\ttfamily,
-                commentstyle=\color{gray}\ttfamily,
-                morecomment=[l][\color{magenta}]{\#},
-}
-
-\newcommand{\bs}{\boldsymbol}
-
-\usepackage{xcolor,framed}
-\definecolor{shadecolor}{gray}{0.95}
-% \verb|ax.plot(x,y)| for inline code
-% \begin{shaded}\begin{verbatim} for block code
-
-\begin{document}
-\section{QMCPACK Scalar Estimator Implementation}
+\section{Scalar Estimator Implementation}
 \subsection{Introduction: Life of a Specialized QMCHamiltonianBase}
 
 Almost all observables in QMCPACK are implemented as specialized derived classes of the QMCHamiltonianBase base class. Each observable is instantiated in HamiltonianFactory and added to QMCHamiltonian for tracking. QMCHamiltonian tracks two types of observables: main and auxiliary. Main observables contribute to the local energy. These observables are elements of the simulated Hamiltonian such as kinetic or potential energy. auxiliary observables are expectation values of matrix elements that do not contribute to the local energy. These Hamiltonians do not affect the dynamics of the simulation. In the code, the main observables are labeled by ``physical'' flag, the auxiliary observables have ``physical'' set to false.
 
 \subsubsection{Initialization}
 When an \verb|<estimator type="est_type" name="est_name" other_stuff="value"/>| tag is present in the \verb|<hamiltonian/>| section, it is first read by HamiltonianFactory. In general, the \verb|type| of the estimator will determine which specialization of QMCHamiltonianBase to be instantiated, and a derived class with \verb|myName="est_name"| will be constructed. Then, the put() method of this specific class will be called to read any other parameters in the \verb|<estimator/>| xml node. Sometimes these parameters will be read by HamiltonianFactory instead, because it can access more objects than QMCHamiltonianBase.
+
+\subsubsection{Cloning}
+When \verb|OpenMP| threads are spawned, the estimator will be cloned by the \verb|CloneManager|, which is a parent class of many QMC drivers. 
+\begin{lstlisting}
+// In CloneManager.cpp
+#pragma omp parallel for shared(w,psi,ham)
+for(int ip=1; ip<NumThreads; ++ip)
+{
+  wClones[ip]=new MCWalkerConfiguration(w);
+  psiClones[ip]=psi.makeClone(*wClones[ip]);
+  hClones[ip]=ham.makeClone(*wClones[ip],*psiClones[ip]);
+}
+\end{lstlisting}
+In the above snippet, \verb|ham| is the reference to the estimator on the master thread. If the implemented estimator does not allocate memory for any array, then the default constructor should suffice for the \verb|makeClone| method.
+\begin{lstlisting}
+// In SpeciesKineticEnergy.cpp
+QMCHamiltonianBase* SpeciesKineticEnergy::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+{
+  return new SpeciesKineticEnergy(*this);
+}
+\end{lstlisting}
+If memory is allocated during estimator construction (usually when parsing the xml node in the \verb|put| method), then the \verb|makeClone| method should perform the same initialization on each thread.
+\begin{lstlisting}
+QMCHamiltonianBase* LatticeDeviationEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+{
+  LatticeDeviationEstimator* myclone = new LatticeDeviationEstimator(qp,spset,tgroup,sgroup);
+  myclone->put(input_xml);
+  return myclone;
+}
+\end{lstlisting}
 
 \subsubsection{Evaluate}
 After the observable class (derived class of QMCHamiltonianBase) is constructed and prepared (by the put() method), it is ready to be used in a QMCDriver. A QMCDriver will call \verb|H.auxHevaluate(W,thisWalker)| after every accepted move, where H is the QMCHamiltonian that holds all main and auxiliary Hamiltonian elements, W is a MCWalkerConfiguration and thisWalker is a pointer to the current walker being worked on. As shown below, this function goes through each auxiliary Hamiltonian element and evaluate it using the current walker configuration. Under the hood, observables are calculated and dumped to the main particle set's property list for later collection.
@@ -466,4 +474,4 @@ That should be it. There should now be a new entry in the stat.h5 file containin
 \item disable output to scalar.dat when ``hdf5\_out'' flag is on
 \end{enumerate}
 
-\end{document}
+

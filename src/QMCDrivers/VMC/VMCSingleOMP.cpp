@@ -83,7 +83,7 @@ bool VMCSingleOMP::run()
         Movers[ip]->set_step(now_loc);
         //collectables are reset, it is accumulated while advancing walkers
         wClones[ip]->resetCollectables();
-        bool recompute=(nBlocksBetweenRecompute && (step+1) == nSteps && (1+block)%nBlocksBetweenRecompute == 0 );
+        bool recompute=(nBlocksBetweenRecompute && (step+1) == nSteps && (1+block)%nBlocksBetweenRecompute == 0 && QMCDriverMode[QMC_UPDATE_MODE] );
         Movers[ip]->advanceWalkers(wit,wit_end,recompute);
         if(has_collectables)
           wClones[ip]->Collectables *= cnorm;

@@ -386,6 +386,7 @@ def run_project(*args,**kwargs):
     pm = ProjectManager()
     pm.add_simulations(*args,**kwargs)
     pm.run_project()
+    return pm
 #end def run_project
 
 

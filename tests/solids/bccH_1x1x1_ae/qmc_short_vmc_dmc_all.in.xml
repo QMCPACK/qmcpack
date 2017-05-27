@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <simulation>
-   <project id="bcc" series="0">
+   <project id="qmc_short_vmc_dmc_all" series="0">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
    </project>
    <qmcsystem>
@@ -37,15 +37,8 @@
             </attrib>
          </group>
       </particleset>
-      <particleset name="wf_center">
-         <group name="origin" size="1">
-            <attrib name="position" datatype="posArray" condition="0">
-                     0.00000000        0.00000000        0.00000000
-            </attrib>
-         </group>
-      </particleset>
       <wavefunction name="psi0" target="e">
-        <determinantset type="einspline" href="pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="float">
+         <determinantset type="einspline" href="pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="float">
             <slaterdeterminant>
                <determinant id="updet" size="1">
                   <occupation mode="ground" spindataset="0"/>
@@ -76,14 +69,30 @@
          <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
          <pairpot type="coulomb" name="IonIon" source="ion0" target="ion0"/>
          <pairpot type="coulomb" name="ElecIon" source="ion0" target="e"/>
-         <estimator type="latticedeviation" name="latdev" hdf5="yes" per_xyz="yes" 
-					 source="wf_center" sgroup="origin" target="e" tgroup="u"/>
+         <estimator type="flux" name="Flux"/>
       </hamiltonian>
    </qmcsystem>
-   <qmc method="vmc" move="pbyp">
-      <parameter name="blocks"              >    100          </parameter>
-      <parameter name="steps"               >    1            </parameter>
-      <parameter name="timestep"            >    1.0          </parameter>
-      <parameter name="warmupsteps"         >    0            </parameter>
+
+    <qmc method="vmc" move="wbyw">
+     <estimator name="LocalEnergy" hdf5="no"/>
+     <parameter name="walkers">      256 </parameter>
+     <parameter name="substeps">       1 </parameter>
+     <parameter name="warmupsteps">  100 </parameter>
+     <parameter name="usedrift">     yes </parameter>
+     <parameter name="timestep">     1.0 </parameter>
+     <parameter name="steps">          1 </parameter>
+     <parameter name="blocks">        20 </parameter>
    </qmc>
+
+   <qmc method="dmc" move="wbyw" checkpoint="-1">
+     <estimator name="LocalEnergy" hdf5="no"/>
+     <parameter name="targetwalkers">    256 </parameter>
+     <parameter name="nonlocalmoves">     no </parameter>
+     <parameter name="reconfiguration">   no </parameter>
+     <parameter name="warmupsteps">      100 </parameter>
+     <parameter name="timestep">        0.01 </parameter>
+     <parameter name="steps">            100 </parameter>
+     <parameter name="blocks">           100 </parameter>
+   </qmc>
+   
 </simulation>

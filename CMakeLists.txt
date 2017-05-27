@@ -891,6 +891,7 @@ SUBDIRS(src)
 
 SUBDIRS(tests/converter)
 SUBDIRS(tests/system)
+SUBDIRS(tests/estimator)
 SUBDIRS(examples)
 
 SUBDIRS(tests/performance)
