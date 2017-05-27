@@ -755,6 +755,65 @@ void SlaterDetOpt::evaluateDerivatives(ParticleSet& P,
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
+/// \brief  Evaluate the derivatives (with respect to optimizable parameters) of the gradient of
+///         the logarithm of the optimizable determinant wave function. The dot product of this
+///         object is then taken (with respect to the gradient vector components) with the
+///         input G_in gradient vector. The resulting object is a vector in the optimizable
+///         parameter components, which is returned by this function in dgradlogpsi.
+///
+/// \param[in]  G_in         Some gradient vector to be dotted with d(\grad(\textrm{log}(\psi)))
+///                          where \psi is just the optimiziable determinant.
+/// \param[out] dgradlogpsi  The dot product of G_in with d(\grad(\textrm{log}(\psi)))
+///                          (not calculated here but in the evaluateGradDerivatives function in
+///                          LCOrbitalSetOpt.h, for this particular wave function ansatz).
+///
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void SlaterDetOpt::evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
+                        std::vector<RealType>& dgradlogpsi) {
+
+  // construct temporary Y matrix
+  RealType * const Ymat = &m_work.at(0);
+
+  for (int b = 0; b < m_nel; b++) { // loop over particles
+    const OrbitalBase::GradType g = G_in[m_first+b];
+    for (int q = 0; q < m_nel; q++) // loop over orbitals
+      Ymat[q+b*m_nel] = - qmcplusplus::dot(m_orb_der_mat(b,q), g);
+  }
+
+  // contract Y with inverse matrices to get contribution of gradient
+  // derivatives w.r.t. orbital values
+  BLAS::gemm('N', 'T', m_nel, m_nel, m_nel, 1.0,    m_orb_inv_mat.data(), m_nel,                 Ymat, m_nel, 0.0, &m_work.at(m_nel*m_nel), m_nel);
+  BLAS::gemm('N', 'N', m_nel, m_nel, m_nel, 1.0, &m_work.at(m_nel*m_nel), m_nel, m_orb_inv_mat.data(), m_nel, 0.0,           &m_work.at(0), m_nel);
+
+  // fill result of contraction into top of gradient derivatives w.r.t.
+  // molecular orbital value matrix (derivatives w.r.t. virtual orbitals are
+  // zero and so we leave the bottom of the matrix alone)
+  for (int b = 0; b < m_nel; b++) // loop over particles
+  for (int q = 0; q < m_nel; q++) // loop over orbitals
+    m_dh0(b,q) = m_work[ q + b * m_nel ];
+
+  // fill matrices of contributions to gradient derivatives w.r.t. orbital
+  // first derivatives
+  for (int a = 0; a < m_nel; a++) { // loop over particles
+    const OrbitalBase::GradType g = G_in[m_first+a];
+    for (int v = 0; v < 3; v++) // loop over particle coordinates x,y,z
+      for (int p = 0; p < m_nel; p++) // loop over orbitals
+        m_dh1(a+v*m_nel,p) = m_orb_inv_mat(a,p) * g[v];
+  }
+
+  // use the work matrix to arrange the molecular orbital derivative data in
+  // the order needed
+  for (int a = 0; a < m_nel; a++) // loop over particles
+    for (int p = 0; p < m_nmo; p++) // loop over orbitals
+      for (int k = 0; k < 3; k++) // loop over particle coordinates x,y,z
+        m_work[ p + a*m_nmo + k*m_nmo*m_nel ] = m_orb_der_mat_all(a,p)[k];
+
+  // add this determinant's contribution to the orbital linear combinations' derivatives
+  this->tfc_ptr("SlaterDetOpt::evaluateDerivatives")->add_grad_derivatives(m_nmo, m_nel, m_dh0.data(), m_dh1.data(),
+                                                                           m_orb_val_mat_all.data(), &m_work.at(0));
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  Return a pointer to the single particle orbital set's trial function component.
 ///
 /// \param[in]      calling_func   name of calling function for use in error reporting
