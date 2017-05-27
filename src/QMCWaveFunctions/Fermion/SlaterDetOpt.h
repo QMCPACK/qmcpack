@@ -206,6 +206,9 @@ class SlaterDetOpt : public DiracDeterminantBase {
                              std::vector<RealType>& dlogpsi,
                              std::vector<RealType>& dhpsioverpsi);
 
+    void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
+                                 std::vector<RealType>& dgradlogpsi);
+
 };
 
 }
