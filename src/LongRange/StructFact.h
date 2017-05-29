@@ -57,7 +57,6 @@ public:
   ///1-D container for the phase
   Vector<RealType> phiV;
   ///2-D container for the phase
-  Matrix<RealType> phiM;
 #if defined(USE_REAL_STRUCT_FACTOR)
   Matrix<RealType> rhok_r, rhok_i;
   Matrix<RealType> eikr_r, eikr_i;

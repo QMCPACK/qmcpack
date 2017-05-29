@@ -56,7 +56,6 @@ StructFact::UpdateNewCell(ParticleSet& P, RealType kc)
 void StructFact::resize(int ns, int nptcl, int nkpts)
 {
   phiV.resize(nkpts);
-  phiM.resize(nptcl,nkpts);
 #if defined(USE_REAL_STRUCT_FACTOR)
   rhok_r.resize(ns,nkpts);
   rhok_i.resize(ns,nkpts);
