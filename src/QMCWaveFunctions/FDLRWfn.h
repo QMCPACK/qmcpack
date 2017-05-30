@@ -84,6 +84,23 @@ namespace qmcplusplus {
     // the same optimizable parameters.
     std::vector<RealType> dhpsioverpsi_xmd;
 
+    // Vector to hold the derivatives of the gradient of the logarithm of
+    // the "x+d" part of the FDLR wave function with respect to the
+    // optimizable parameters. These objects are actually used to hold the dot
+    // product of the above gradient with (P.G - G_FDLR), where P.G is the
+    // total gradient of the wave function, and G_FDLR is the gradient of the
+    // FDLR wave function specifically. This makes it smaller to store, and is
+    // what is needed to calculate the dhpsioverpsi_fdlr vectors.
+    std::vector<RealType> dgradlogpsi_xpd;
+    // Same as above but for the "x-d" part of the FDLR wave function.
+    std::vector<RealType> dgradlogpsi_xmd;
+
+    // As above for dgradlogpsi_xpd and dgradlogpsi_xmd, but these vectors
+    // hold the equivalent derivatives of the total FDLR wave function with
+    // respect to the "x" and "d" parameters, respectively.
+    std::vector<RealType> dgradlogpsi_fdlr_d;
+    std::vector<RealType> dgradlogpsi_fdlr_x;
+
     // These two vectors are only used if x parameters are being optimized.
     // Vector to hold the derivatives of the logarithm of the FDLR wave
     // function w.r.t the "x" FDLR parameters.
@@ -208,14 +225,18 @@ namespace qmcplusplus {
       dlogpsi_xmd.resize(xmd_vars.size(), 0.0);
       dhpsioverpsi_xpd.resize(xpd_vars.size(), 0.0);
       dhpsioverpsi_xmd.resize(xpd_vars.size(), 0.0);
+      dgradlogpsi_xpd.resize(xpd_vars.size(), 0.0);
+      dgradlogpsi_xmd.resize(xmd_vars.size(), 0.0);
 
       if (opt_x_vars) {
         dlogpsi_fdlr_x.resize(x_vars_driver.size(), 0.0);
         dhpsioverpsi_fdlr_x.resize(x_vars_driver.size(), 0.0);
+        dgradlogpsi_fdlr_x.resize(x_vars_driver.size(), 0.0);
       }
       if (opt_d_vars) {
         dlogpsi_fdlr_d.resize(d_vars_driver.size(), 0.0);
         dhpsioverpsi_fdlr_d.resize(d_vars_driver.size(), 0.0);
+        dgradlogpsi_fdlr_d.resize(d_vars_driver.size(), 0.0);
       }
     };
 
@@ -982,6 +1003,10 @@ namespace qmcplusplus {
       //if (!Optimizable)
       //  return;
 
+      // The number of "x" parameters, which is also the number of "d"
+      // parameters, hence the name!
+      int nvars_x_or_d;
+
       // Set xpd_vars and xmd_vars using the input optvars variables.
       opt_variables_type xpd_vars, xmd_vars;
       extract_xpd_and_xmd_vars(optvars, xpd_vars, xmd_vars);
@@ -996,6 +1021,16 @@ namespace qmcplusplus {
       std::fill(dlogpsi_xmd.begin(), dlogpsi_xmd.begin()+xmd_vars.size(), 0.0);
       std::fill(dhpsioverpsi_xpd.begin(), dhpsioverpsi_xpd.begin()+xpd_vars.size(), 0.0);
       std::fill(dhpsioverpsi_xmd.begin(), dhpsioverpsi_xmd.begin()+xmd_vars.size(), 0.0);
+
+      std::fill(dgradlogpsi_xpd.begin(), dgradlogpsi_xpd.begin()+xpd_vars.size(), 0.0);
+      std::fill(dgradlogpsi_xmd.begin(), dgradlogpsi_xmd.begin()+xmd_vars.size(), 0.0);
+
+      // Gradient of the FDLR wave function.
+      ParticleSet::ParticleGradient_t G_FDLR;
+      G_FDLR.create(P.G.size());
+      // DIfference between the total FDLR wave function gradients.
+      ParticleSet::ParticleGradient_t G_diff;
+      G_diff.create(P.G.size());
 
       // Store the total FDLR wave function's G and L values in a temporary
       // particle set, because we will need to set P's G and L to equal those
@@ -1013,23 +1048,6 @@ namespace qmcplusplus {
       P.L = m_wfn_xmd->L;
       m_wfn_xmd->evaluateDerivatives(P, xmd_vars, dlogpsi_xmd, dhpsioverpsi_xmd);
 
-      // To enforce singlet symmetry, we need to add together the derivatives
-      // coming from both the up and down determinants, because now the same
-      // optimizable parameters appear in both determinants, so the derivative
-      // w.r.t those parameters is a sum, by the product rule.
-      if (singlet)
-      {
-        int nvars_x_or_d = xpd_vars.size()/2;
-
-        for (int i=0; i<nvars_x_or_d; i++)
-        {
-          dlogpsi_xpd[i] += dlogpsi_xpd[i+nvars_x_or_d];
-          dlogpsi_xmd[i] += dlogpsi_xmd[i+nvars_x_or_d];
-          dhpsioverpsi_xpd[i] += dhpsioverpsi_xpd[i+nvars_x_or_d];
-          dhpsioverpsi_xmd[i] += dhpsioverpsi_xmd[i+nvars_x_or_d];
-        }
-      }
-
       // Return G and L to their original values for the entire FDLR wave
       // function.
       P.G = tempP->G;
@@ -1042,6 +1060,64 @@ namespace qmcplusplus {
       ValueType logpsi_minus = m_wfn_xmd->getLogPsi();
       RealType phasevalue_plus = m_wfn_xpd->getPhase();
       RealType phasevalue_minus = m_wfn_xmd->getPhase();
+
+      // Calculate the wave function values for "x+d" and "x-d" parts.
+      ValueType psi_plus = std::exp(logpsi_plus)*std::cos(phasevalue_plus);
+      ValueType psi_minus = std::exp(logpsi_minus)*std::cos(phasevalue_minus);
+
+      // Equal to \frac{\psi_+}{\psi_-}.
+      ValueType plus = psi_plus/psi_minus;
+      //ValueType plus = std::exp(logpsi_plus - logpsi_minus);
+
+      // Equal to \frac{\psi_-}{\psi_+}.
+      ValueType minus = psi_minus/psi_plus;
+      //ValueType minus = std::exp(logpsi_minus - logpsi_plus);
+
+      ValueType scaling_fac_1 = 1/(1 - minus);
+      ValueType scaling_fac_2 = 1/(plus - 1);
+
+      G_FDLR = scaling_fac_1*m_wfn_xpd->G - scaling_fac_2*m_wfn_xmd->G;
+      G_diff = P.G - G_FDLR;
+
+      m_wfn_xpd->evaluateGradDerivatives(G_diff, dgradlogpsi_xpd);
+      m_wfn_xmd->evaluateGradDerivatives(G_diff, dgradlogpsi_xmd);
+
+      // To enforce singlet symmetry, we need to add together the derivatives
+      // coming from both the up and down determinants, because now the same
+      // optimizable parameters appear in both determinants, so the derivative
+      // w.r.t those parameters is a sum, by the product rule.
+      if (singlet)
+      {
+        nvars_x_or_d = xpd_vars.size()/2;
+
+        for (int i=0; i<nvars_x_or_d; i++)
+        {
+          dlogpsi_xpd[i] += dlogpsi_xpd[i+nvars_x_or_d];
+          dlogpsi_xmd[i] += dlogpsi_xmd[i+nvars_x_or_d];
+          dhpsioverpsi_xpd[i] += dhpsioverpsi_xpd[i+nvars_x_or_d];
+          dhpsioverpsi_xmd[i] += dhpsioverpsi_xmd[i+nvars_x_or_d];
+          dgradlogpsi_xpd[i] += dgradlogpsi_xpd[i+nvars_x_or_d];
+          dgradlogpsi_xmd[i] += dgradlogpsi_xmd[i+nvars_x_or_d];
+        }
+      } else {
+        nvars_x_or_d = xpd_vars.size();
+      }
+
+      ValueType grad_dot_plus = 0.0;
+      ValueType grad_dot_minus = 0.0;
+      ValueType grad_dot_FDLR = 0.0;
+
+      for (int i=0; i < m_wfn_xpd->G.size(); i++)
+        grad_dot_plus += dot(G_diff[i], m_wfn_xpd->G[i]);
+      for (int i=0; i < m_wfn_xmd->G.size(); i++)
+        grad_dot_minus += dot(G_diff[i], m_wfn_xmd->G[i]);
+
+      grad_dot_FDLR = scaling_fac_1*grad_dot_plus - scaling_fac_2*grad_dot_minus;
+
+      for (int i=0; i<nvars_x_or_d; i++)
+        dgradlogpsi_xpd[i] += grad_dot_plus * dlogpsi_xpd[i];
+      for (int i=0; i<nvars_x_or_d; i++)
+        dgradlogpsi_xmd[i] += grad_dot_minus * dlogpsi_xmd[i];
 
       // Calculate the kinetic energy of the "x+d", "x-d" and total FDLR
       // wave functions.
@@ -1092,21 +1168,6 @@ namespace qmcplusplus {
       kinetic_plus *= -0.5;
       kinetic_minus *= -0.5;
 
-      // Calculate the wave function values for "x+d" and "x-d" parts.
-      ValueType psi_plus = std::exp(logpsi_plus)*std::cos(phasevalue_plus);
-      ValueType psi_minus = std::exp(logpsi_minus)*std::cos(phasevalue_minus);
-
-      // Equal to \frac{\psi_+}{\psi_-}.
-      ValueType plus = psi_plus/psi_minus;
-      //ValueType plus = std::exp(logpsi_plus - logpsi_minus);
-
-      // Equal to \frac{\psi_-}{\psi_+}.
-      ValueType minus = psi_minus/psi_plus;
-      //ValueType minus = std::exp(logpsi_minus - logpsi_plus);
-
-      ValueType scaling_fac_1 = 1/(1 - minus);
-      ValueType scaling_fac_2 = 1/(plus - 1);
-
       // The local kinetic energy for the FDLR wave function.
       ValueType kinetic_FDLR = scaling_fac_1*kinetic_plus - scaling_fac_2*kinetic_minus;
 
@@ -1117,22 +1178,28 @@ namespace qmcplusplus {
       {
         for (int i=0; i < x_vars_driver.size(); i++)
         {
+          dgradlogpsi_fdlr_x[i] = scaling_fac_1*dgradlogpsi_xpd[i] - scaling_fac_2*dgradlogpsi_xmd[i];
+
           dlogpsi_fdlr_x[i] = scaling_fac_1 * dlogpsi_xpd[i] - scaling_fac_2 * dlogpsi_xmd[i];
 
           dhpsioverpsi_fdlr_x[i] = scaling_fac_1 * (dhpsioverpsi_xpd[i] + kinetic_plus*dlogpsi_xpd[i])
                                  - scaling_fac_2 * (dhpsioverpsi_xmd[i] + kinetic_minus*dlogpsi_xmd[i])
-                                 - kinetic_FDLR  * dlogpsi_fdlr_x[i];
+                                 - kinetic_FDLR  * dlogpsi_fdlr_x[i]
+                                 - dgradlogpsi_fdlr_x[i] + grad_dot_FDLR * dlogpsi_fdlr_x[i];
         }
       }
       if (opt_d_vars)
       {
         for (int i=0; i < d_vars_driver.size(); i++)
         {
+          dgradlogpsi_fdlr_d[i] = scaling_fac_1*dgradlogpsi_xpd[i] + scaling_fac_2*dgradlogpsi_xmd[i];
+
           dlogpsi_fdlr_d[i] = scaling_fac_1 * dlogpsi_xpd[i] + scaling_fac_2 * dlogpsi_xmd[i];
 
           dhpsioverpsi_fdlr_d[i] = scaling_fac_1 * (dhpsioverpsi_xpd[i] + kinetic_plus*dlogpsi_xpd[i])
                                  + scaling_fac_2 * (dhpsioverpsi_xmd[i] + kinetic_minus*dlogpsi_xmd[i])
-                                 - kinetic_FDLR  * dlogpsi_fdlr_d[i];
+                                 - kinetic_FDLR  * dlogpsi_fdlr_d[i]
+                                 - dgradlogpsi_fdlr_d[i] + grad_dot_FDLR * dlogpsi_fdlr_d[i];
         }
       }
 
