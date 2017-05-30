@@ -93,7 +93,7 @@ public:
    * @param active index of the moved particle
    * @param gid group id of the active particle
    */
-  void acceptMove(int active, int gid);
+  void acceptMove(int active, int gid, const PosType& rold);
   /** discard any temporary data
    * @param active index of the moved particle
    * @param gid group id of the active particle
