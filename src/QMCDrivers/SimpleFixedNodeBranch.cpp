@@ -533,7 +533,6 @@ void SimpleFixedNodeBranch::reset()
     {
       //logN = Feedback*std::log(static_cast<RealType>(iParam[B_TARGETWALKERS]));
       logN = std::log(static_cast<EstimatorRealType>(iParam[B_TARGETWALKERS]));
-      vParam[B_FEEDBACK]=1.0;
     }
     else
     {
