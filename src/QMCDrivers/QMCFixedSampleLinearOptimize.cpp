@@ -1091,7 +1091,7 @@ bool QMCFixedSampleLinearOptimize::one_shift_run() {
   for (int i=1; i<N; i++)
   {
     hamMat(i,i) += bestShift_i;
-    invMat(i,i) += bestShift_i*bestShift_s;
+    if(invMat(i,i)==0) invMat(i,i) = bestShift_i*bestShift_s;
   }
 
   // compute the inverse of the overlap matrix
@@ -1130,8 +1130,8 @@ bool QMCFixedSampleLinearOptimize::one_shift_run() {
   RealType bigVec(0);
   for (int i=0; i<numParams; i++)
     bigVec = std::max(bigVec,std::abs(parameterDirections.at(i+1)));
-  app_log() << std::endl
-            << "Largest LM parameter change : "
+  app_log() << std::endl << "Among totally " << numParams << " optimized parameters, "
+            << "largest LM parameter change : "
             << bigVec << std::endl;
 
   // compute the new cost
@@ -1157,7 +1157,7 @@ bool QMCFixedSampleLinearOptimize::one_shift_run() {
   } else {
     if ( bestShift_s > 1.0e-2 ) bestShift_s=bestShift_s/4.0;
     // say what we are doing
-    app_log() << std::endl << "The new set of parameters is valid. Updating the guiding function!" << std::endl;
+    app_log() << std::endl << "The new set of parameters is valid. Updating the trial wave function!" << std::endl;
   }
 
   app_log() << std::endl

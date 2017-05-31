@@ -72,9 +72,9 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
             SuperLattice(0,0), SuperLattice(0,1), SuperLattice(0,2),
             SuperLattice(1,0), SuperLattice(1,1), SuperLattice(1,2),
             SuperLattice(2,0), SuperLattice(2,1), SuperLattice(2,2));
+  app_log() << buff;
   CheckLattice();
   PrimCell.set(Lattice);
-  app_log() << buff;
   for (int i=0; i<3; i++)
     for (int j=0; j<3; j++)
       LatticeInv(i,j) = RecipLattice(i,j)/(2.0*M_PI);
@@ -136,6 +136,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
   // construct Super2Prim mapping.
   if(Super2Prim.size()==0)
   {
+    SourcePtcl->convert2Cart(SourcePtcl->R);
     Super2Prim.resize(SourcePtcl->R.size(),-1);
     std::vector<int> prim_atom_counts;
     prim_atom_counts.resize(IonPos.size(),0);

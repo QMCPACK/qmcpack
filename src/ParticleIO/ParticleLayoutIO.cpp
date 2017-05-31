@@ -46,6 +46,7 @@ bool LatticeParser::put(xmlNodePtr cur)
   std::size_t mpigrid = ParticleLayout_t::MPI_GRID;
 
   Tensor<OHMMS_PRECISION_FULL,DIM> lattice_in;
+  bool lattice_in_not_defined=true;
 
   cur = cur->xmlChildrenNode;
   while (cur != NULL)
@@ -61,6 +62,7 @@ bool LatticeParser::put(xmlNodePtr cur)
       else if(aname == "lattice")
       {
         putContent(lattice_in,cur);
+        lattice_in_not_defined=false;
         //putContent(ref_.R,cur);
       }
       else if(aname == "grid")
@@ -92,12 +94,12 @@ bool LatticeParser::put(xmlNodePtr cur)
             boxsum++;
           }
         }
-        if(boxsum==0)
+        if(boxsum==0&&lattice_in_not_defined)
         {
+          app_log() << "  Lattice is not specified for the Open BC. Add a huge box." << std::endl;
           lattice_in=0;
           for(int idir=0; idir<DIM; idir++)
-            lattice_in(idir,idir)=1e6;
-          ref_.SimulationCellRadius=1e3; //1000 bohr is far enough
+            lattice_in(idir,idir)=1e5;
         }
         //if(boxsum>0 && boxsum<DIM)
         //{
