@@ -11,19 +11,28 @@
 // -*- C++ -*-
 /** @file Mallocator.hpp
  */
+#ifndef QMCPLUSPLUS_ALIGNED_ALLOCATOR_H
+#define QMCPLUSPLUS_ALIGNED_ALLOCATOR_H
 
-#include "spline2/einspline_allocator.h"
+#include <cstdlib>
 
 namespace qmcplusplus
 {
+  template<typename T, size_t Align>
+  struct Mallocator
+  {
+    typedef T value_type;
+    typedef size_t size_type;
+    Mallocator() = default;
+    template <class U> Mallocator(const Mallocator<U,Align>&) {}
 
-template <class T>
-struct Mallocator {
-  typedef T value_type;
-  Mallocator() = default;
-  template <class U> Mallocator(const Mallocator<U>&) {}
-  T* allocate(std::size_t n) { return static_cast<T*>(einspline_alloc(n*sizeof(T), QMC_CLINE)); }
-  void deallocate(T* p, std::size_t) { einspline_free(p); }
-};
+    template <class U> struct rebind { typedef Mallocator<U, Align> other; };
 
+    T* allocate(std::size_t n) { return static_cast<T*>(aligned_alloc(Align,n*sizeof(T))); }
+    void deallocate(T* p, std::size_t) { free(p); }
+  };
 }
+
+//  template<class T>
+//   using aligned_allocator=Mallocator<T,QMC_CLINE>;
+#endif

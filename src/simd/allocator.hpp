@@ -33,7 +33,7 @@ namespace qmcplusplus
 #elif __bgq__
     using aligned_allocator=std::allocator<T>;
 #else
-    using aligned_allocator=qmcplusplus::Mallocator<T>;
+    using aligned_allocator=qmcplusplus::Mallocator<T, QMC_CLINE>;
 #endif
   template<class T>
     using aligned_vector = std::vector<T,aligned_allocator<T> >;
