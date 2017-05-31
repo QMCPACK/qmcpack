@@ -21,19 +21,22 @@
 #if (__cplusplus >= 201103L)
 #if defined(__INTEL_COMPILER)
  #include <tbb/cache_aligned_allocator.h>
+#else
+ #include "simd/Mallocator.hpp"
 #endif
 
 namespace qmcplusplus
 {
-#if  defined(__INTEL_COMPILER)
   template<class T>
+#if defined(__INTEL_COMPILER)
     using aligned_allocator=tbb::cache_aligned_allocator<T>;
-#else
-  template<class T>
+#elif __bgq__
     using aligned_allocator=std::allocator<T>;
+#else
+    using aligned_allocator=qmcplusplus::Mallocator<T>;
 #endif
-   template<class T> 
-     using aligned_vector = std::vector<T,aligned_allocator<T> >;
+  template<class T>
+    using aligned_vector = std::vector<T,aligned_allocator<T> >;
 
 }
 #else
