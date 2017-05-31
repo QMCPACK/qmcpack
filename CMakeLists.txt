@@ -367,7 +367,7 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   #------------------------------------
   IF( $ENV{CXX} MATCHES "icpc" )
     SET( COMPILER Intel )
-  ELSEIF($ENV{CXX} MATCHES "xlC")
+  ELSEIF($ENV{CXX} MATCHES "xlC" OR CMAKE_C_COMPILER_ID MATCHES "XL")
     SET( COMPILER IBM )
   ELSEIF ( CMAKE_C_COMPILER_WORKS OR CMAKE_C_COMPILER_WORKS )
     IF( CMAKE_COMPILE_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX )
@@ -393,7 +393,12 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
     MESSAGE(WARNING "No compiler identified")
   ENDIF()
   MESSAGE(STATUS "Compiler: ${COMPILER}")
-  MESSAGE(STATUS "Compiler Version: ${CMAKE_CXX_COMPILER_VERSION}")
+  # Workaround for not properly identified CXX compiler in case of IBM XL compiler
+  IF( ${COMPILER} MATCHES "IBM" )
+    MESSAGE(STATUS "Compiler Version: ${CMAKE_C_COMPILER_VERSION}")
+  ELSE()
+    MESSAGE(STATUS "Compiler Version: ${CMAKE_CXX_COMPILER_VERSION}")
+  ENDIF()
 
   #------------------------------------
   # Include compiler-specific cmake file
