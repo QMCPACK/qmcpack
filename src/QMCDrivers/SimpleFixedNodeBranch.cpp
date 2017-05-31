@@ -533,7 +533,7 @@ void SimpleFixedNodeBranch::reset()
     {
       //logN = Feedback*std::log(static_cast<RealType>(iParam[B_TARGETWALKERS]));
       logN = std::log(static_cast<EstimatorRealType>(iParam[B_TARGETWALKERS]));
-      vParam[B_FEEDBACK]=1.0;
+      if (vParam[B_FEEDBACK]==0.0) vParam[B_FEEDBACK] = 1.0;
     }
     else
     {
@@ -640,7 +640,7 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
     if(BranchMode[B_POPCONTROL])
     {
       vParam[B_ETRIAL]=vParam[B_EREF];
-      vParam[B_FEEDBACK]=1.0;
+      if (vParam[B_FEEDBACK]==0.0) vParam[B_FEEDBACK]=1.0;
     }
   }
 
