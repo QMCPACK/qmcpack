@@ -57,10 +57,5 @@ struct PolarizationPotential: public QMCHamiltonianBase
 }
 #endif
 
-/************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id: PolarizationPotential.h,v 1.1.1.1 2004/08/24 19:21:11 jnkim
- * Exp $
 ************************************************************************/
 

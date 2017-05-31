@@ -63,6 +63,9 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 #else
   std::string useGPU="no";
 #endif
+  NewTimer* spo_timer = new NewTimer("einspline::CreateSPOSetFromXML", timer_level_medium);
+  TimerManager.addTimer(spo_timer);
+  spo_timer->start();
 
   {
     OhmmsAttributeSet a;
@@ -174,6 +177,14 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   }
 
   if(FullBands[spinSet]==0) FullBands[spinSet]=new std::vector<BandInfo>;
+
+  // Ensure the first SPO set must be spinSet==0
+  // to correctly initialize key data of EinsplineSetBuilder
+  if ( SPOSetMap.size()==0 && spinSet!=0 )
+  {
+    app_error() << "The first SPO set must have spindataset=\"0\"" << std::endl;
+    abort();
+  }
 
   Timer mytimer;
   if(spinSet==0)
@@ -427,6 +438,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     OrbitalSet->initGPU();
   }
 #endif
+  spo_timer->stop();
   return OrbitalSet;
 }
 

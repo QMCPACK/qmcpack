@@ -22,6 +22,7 @@
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Message/CommOperators.h"
 #include "QMCDrivers/DriftOperators.h"
+#include "type_traits/scalar_traits.h"
 #include "qmc_common.h"
 
 namespace qmcplusplus
@@ -63,6 +64,9 @@ void VMCcuda::advanceWalkers()
   std::vector<PosType>   delpos(nw);
   std::vector<PosType>   newpos(nw);
   std::vector<ValueType> ratios(nw);
+#ifdef QMC_COMPLEX
+  std::vector<RealType> ratios_real(nw);
+#endif
   std::vector<GradType>  newG(nw);
   std::vector<ValueType> newL(nw);
   std::vector<Walker_t*> accepted(nw);
@@ -75,19 +79,29 @@ void VMCcuda::advanceWalkers()
       makeGaussRandomWithEngine(delpos,Random);
       for(int iw=0; iw<nw; ++iw)
       {
-        PosType G = W[iw]->G[iat];
+        GradType G = W[iw]->G[iat];
         newpos[iw]=W[iw]->R[iat] + m_sqrttau*delpos[iw];
         ratios[iw] = 1.0;
+#ifdef QMC_COMPLEX
+        ratios_real[iw] = 1.0;
+#endif
       }
       W.proposeMove_GPU(newpos, iat);
       Psi.ratio(W,iat,ratios,newG, newL);
+#ifdef QMC_COMPLEX
+      Psi.convertRatiosFromComplexToReal(ratios, ratios_real);
+#endif
       accepted.clear();
       std::vector<bool> acc(nw, true);
       if (W.UseBoundBox)
         checkBounds (newpos, acc);
       for(int iw=0; iw<nw; ++iw)
       {
+#ifdef QMC_COMPLEX
+        if(acc[iw] && ratios_real[iw]*ratios_real[iw] > Random())
+#else
         if(acc[iw] && ratios[iw]*ratios[iw] > Random())
+#endif
         {
           accepted.push_back(W[iw]);
           nAccept++;
@@ -224,7 +238,10 @@ void VMCcuda::advanceWalkersWithDrift()
   std::vector<PosType>   dr(nw);
   std::vector<PosType>   newpos(nw);
   std::vector<ValueType> ratios(nw);
-  std::vector<PosType>   oldG(nw), newG(nw);
+#ifdef QMC_COMPLEX
+  std::vector<RealType>  ratios_real(nw);
+#endif
+  std::vector<GradType>  oldG(nw), newG(nw);
   std::vector<ValueType> oldL(nw), newL(nw);
   std::vector<Walker_t*> accepted(nw);
 
@@ -239,9 +256,17 @@ void VMCcuda::advanceWalkersWithDrift()
       for(int iw=0; iw<nw; iw++)
       {
         oldScale[iw] = getDriftScale(m_tauovermass,oldG[iw]);
+#ifdef QMC_COMPLEX
+        convert(oldScale[iw]*oldG[iw], dr[iw]);
+        dr[iw] += m_sqrttau * delpos[iw];
+#else
         dr[iw] = (m_sqrttau*delpos[iw]) + (oldScale[iw]*oldG[iw]);
+#endif
         newpos[iw]=W[iw]->R[iat] + dr[iw];
         ratios[iw] = 1.0;
+#ifdef QMC_COMPLEX
+        ratios_real[iw] = 1.0;
+#endif
       }
       W.proposeMove_GPU(newpos, iat);
       Psi.calcRatio(W,iat,ratios,newG, newL);
@@ -253,22 +278,41 @@ void VMCcuda::advanceWalkersWithDrift()
       std::vector<RealType> rand_v(nw);
       for(int iw=0; iw<nw; ++iw)
       {
+#ifdef QMC_COMPLEX
+        PosType drOld = 0.0;
+        convert(oldScale[iw] * oldG[iw], drOld);
+        drOld = newpos[iw] - (W[iw]->R[iat] + drOld);
+#else
         PosType drOld =
           newpos[iw] - (W[iw]->R[iat] + oldScale[iw]*oldG[iw]);
+#endif
         logGf_v[iw] = -m_oneover2tau * dot(drOld, drOld);
         rand_v[iw] = Random();
       }
       Psi.addRatio(W, iat, ratios, newG, newL);
+#ifdef QMC_COMPLEX
+      Psi.convertRatiosFromComplexToReal(ratios, ratios_real);
+#endif
       for(int iw=0; iw<nw; ++iw)
       {
         newScale[iw]   = getDriftScale(m_tauovermass,newG[iw]);
+#ifdef QMC_COMPLEX
+        PosType drNew = 0.0;
+        convert(newScale[iw] * newG[iw], drNew);
+        drNew += newpos[iw] - W[iw]->R[iat];
+#else
         PosType drNew  =
           (newpos[iw] + newScale[iw]*newG[iw]) - W[iw]->R[iat];
+#endif
         // if (dot(drNew, drNew) > 25.0)
         //   std::cerr << "Large drift encountered!  Drift = " << drNew << std::endl;
         RealType logGb =  -m_oneover2tau * dot(drNew, drNew);
         RealType x = logGb - logGf_v[iw];
+#ifdef QMC_COMPLEX
+        RealType prob = ratios_real[iw]*ratios_real[iw]*std::exp(x);
+#else
         RealType prob = ratios[iw]*ratios[iw]*std::exp(x);
+#endif
         if(acc[iw] && rand_v[iw] < prob)
         {
           accepted.push_back(W[iw]);
@@ -413,7 +457,7 @@ void VMCcuda::resetRun()
   PointerPool<Walker_t::cuda_Buffer_t > pool;
   app_log() << "Starting VMCcuda::resetRun() " << std::endl;
   Psi.reserve (pool);
-  app_log() << "Each walker requires " << pool.getTotalSize() * sizeof(CudaRealType)
+  app_log() << "Each walker requires " << pool.getTotalSize() * sizeof(CudaValueType)
             << " bytes in GPU memory.\n";
   // Now allocate memory on the GPU card for each walker
   // for (int iw=0; iw<W.WalkerList.size(); iw++) {
@@ -628,8 +672,3 @@ VMCcuda::RealType VMCcuda::fillOverlapHamiltonianMatrices(Matrix<RealType>& Left
 
 }
 
-/***************************************************************************
- * $RCSfile: VMCParticleByParticle.cpp,v $   $Author: jnkim $
- * $Revision: 1.25 $   $Date: 2006/10/18 17:03:05 $
- * $Id: VMCParticleByParticle.cpp,v 1.25 2006/10/18 17:03:05 jnkim Exp $
- ***************************************************************************/

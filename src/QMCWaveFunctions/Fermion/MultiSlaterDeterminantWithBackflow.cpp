@@ -61,6 +61,7 @@ OrbitalBasePtr MultiSlaterDeterminantWithBackflow::makeClone(ParticleSet& tqp) c
     clone->dets_dn.push_back(dclne);
   }
   clone->Optimizable=Optimizable;
+  clone->RecomputeNeedsDistanceTable=RecomputeNeedsDistanceTable;
   clone->C=C;
   clone->myVars=myVars;
   clone->resetTargetParticleSet(tr->QP);
@@ -1049,8 +1050,3 @@ void MultiSlaterDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
 }
 
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 3416 $   $Date: 2008-12-07 11:34:49 -0600 (Sun, 07 Dec 2008) $
- * $Id: MultiSlaterDeterminantWithBackflow.cpp 3416 2008-12-07 17:34:49Z jnkim $
- ***************************************************************************/

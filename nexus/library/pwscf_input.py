@@ -55,6 +55,7 @@ from generic import obj
 from structure import Structure,kmesh
 from physical_system import PhysicalSystem
 from developer import DevBase,warn
+from pseudopotential import pp_elem_label
 from simulation import SimulationInput
 from debug import *
 
@@ -336,6 +337,7 @@ class Section(Element):
     #end def read
 
     def write(self,parent):
+        cls = self.__class__
         c='&'+self.name.upper()+'\n'
         vars = list(self.keys())
         vars.sort()
@@ -363,6 +365,9 @@ class Section(Element):
                 vname = self.section_aliases[var]
             else:
                 vname = var
+            #end if
+            if vname in cls.case_map:
+                vname = cls.case_map[vname]
             #end if
             #c+='   '+vname+' = '+sval+'\n'
             c+='   '+'{0:<15} = {1}\n'.format(vname,sval)
@@ -552,6 +557,7 @@ class system(Section):
 
     # specialized write for odd handling of hubbard U
     def write(self,parent):
+        cls = self.__class__
         c='&'+self.name.upper()+'\n'
         vars = list(self.keys())
         vars.sort()
@@ -598,6 +604,9 @@ class system(Section):
                     vname = self.section_aliases[var]
                 else:
                     vname = var
+                #end if
+                if vname in cls.case_map:
+                    vname = cls.case_map[vname]
                 #end if
                 #c+='   '+vname+' = '+sval+'\n'
                 c+='   '+'{0:<15} = {1}\n'.format(vname,sval)
@@ -1358,7 +1367,7 @@ class PwscfInput(SimulationInput):
         for name,a in atoms.iteritems():
             masses[name] = convert(a.mass,'me','amu')
         #end for
-        self.atomic_species.atoms  = list(atoms.keys())
+        self.atomic_species.atoms  = list(sorted(atoms.keys()))
         self.atomic_species.masses = masses
         # set pseudopotentials for renamed atoms (e.g. Cu3 is same as Cu)
         pp = self.atomic_species.pseudopotentials
@@ -1655,7 +1664,13 @@ generate_any_defaults = obj(
 
 def generate_any_pwscf_input(**kwargs):
     #move values into a more convenient representation
-    kwargs = obj(**kwargs)
+    #kwargs = obj(**kwargs)
+    # enforce lowercase internally, but remain case insensitive to user input
+    kw_in = kwargs
+    kwargs = obj()
+    for name,value in kw_in.iteritems():
+        kwargs[name.lower()] = value
+    #end for
 
     # setup for k-point symmetry run
     #   ecutwfc is set to 1 so that pwscf will crash after initialization
@@ -1733,7 +1748,8 @@ def generate_any_pwscf_input(**kwargs):
     pseudopotentials = obj()
     atoms = []
     for ppname in pseudos:
-        element = ppname[0:2].strip('.')
+        #element = ppname[0:2].strip('.')
+        label,element = pp_elem_label(ppname,guard=True)
         atoms.append(element)
         pseudopotentials[element] = ppname
     #end for

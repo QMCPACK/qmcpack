@@ -163,12 +163,7 @@ public:
   bool lineoptimization(const std::vector<Return_t>& x0, const std::vector<Return_t>& gr, Return_t val0,
                         Return_t& dl, Return_t& val_proj, Return_t& lambda_max);
 
-  virtual Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& H2, Matrix<Return_t>& Hamiltonian, Matrix<Return_t>& Variance, Matrix<Return_t>& Overlap)=0;
-  virtual Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matrix<Return_t>& Right, Matrix<Return_t>& Overlap)
-  {
-    APP_ABORT("NOT IMPLEMENTED");
-    return 1;
-  }
+  virtual Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matrix<Return_t>& Right)=0;
 
 #ifdef HAVE_LMY_ENGINE
   Return_t LMYEngineCost(const bool needDeriv, cqmc::engine::LMYEngine * EngineObj);
@@ -368,8 +363,3 @@ protected:
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1792 $   $Date: 2007-02-21 17:44:40 -0600 (Wed, 21 Feb 2007) $
- * $Id: QMCCostFunctionBase.h 1792 2007-02-21 23:44:40Z jnkim $
- ***************************************************************************/

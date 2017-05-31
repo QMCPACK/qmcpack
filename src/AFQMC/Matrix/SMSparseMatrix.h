@@ -698,7 +698,7 @@ class SMSparseMatrix
     
     std::sort(make_tuple_iterator<int_iterator,int_iterator,iterator>(myrows->begin()+pos[rank],colms->begin()+pos[rank],vals->begin()+pos[rank]),
               make_tuple_iterator<int_iterator,int_iterator,iterator>(myrows->begin()+pos[rank+1],colms->begin()+pos[rank+1],vals->begin()+pos[rank+1]),
-              [](std::tuple<int, int, T> const& a, std::tuple<int, int, T> const& b){return std::get<0>(a) < std::get<0>(b) || (!(std::get<0>(b) < std::get<0>(a)) && std::get<1>(a) < std::get<1>(b));} 
+              [](std::tuple<indxType, indxType, value_type> const& a, std::tuple<indxType, indxType, value_type> const& b){return std::get<0>(a) < std::get<0>(b) || (!(std::get<0>(b) < std::get<0>(a)) && std::get<1>(a) < std::get<1>(b));} 
              );
     MPI_Barrier(local_comm);
 
@@ -719,7 +719,9 @@ class SMSparseMatrix
       for(int i=0; i<(npr-1); i++) {
         std::inplace_merge( make_tuple_iterator<int_iterator,int_iterator,iterator>(myrows->begin()+pos[0],colms->begin()+pos[0],vals->begin()+pos[0]),
                             make_tuple_iterator<int_iterator,int_iterator,iterator>(myrows->begin()+pos[mid],colms->begin()+pos[mid],vals->begin()+pos[mid]),
-                            make_tuple_iterator<int_iterator,int_iterator,iterator>(myrows->begin()+pos[end],colms->begin()+pos[end],vals->begin()+pos[end]));
+                            make_tuple_iterator<int_iterator,int_iterator,iterator>(myrows->begin()+pos[end],colms->begin()+pos[end],vals->begin()+pos[end]),
+                            [](std::tuple<indxType, indxType, value_type> const& a, std::tuple<indxType, indxType, value_type> const& b){return std::get<0>(a) < std::get<0>(b) || (!(std::get<0>(b) < std::get<0>(a)) && std::get<1>(a) < std::get<1>(b));}
+            );
         mid++;
         end++;
 

@@ -16,6 +16,19 @@
 namespace qmcplusplus
 {
 
+enum DistWalkerTimers {
+  LoadBalance_Setup,
+  LoadBalance_Resize,
+  LoadBalance_Exchange
+};
+
+TimerNameList_t<DistWalkerTimers> DistWalkerTimerNames =
+{
+  {LoadBalance_Setup, "WalkerHandler::loadBalance::setup"},
+  {LoadBalance_Resize, "WalkerHandler::loadBalance::resize"},
+  {LoadBalance_Exchange, "WalkerHandler::loadBalance::exchange"},
+};
+
 bool DistWalkerHandler::restartFromXML() 
 { 
   return true;
@@ -259,6 +272,7 @@ void DistWalkerHandler::setHF(const ComplexMatrix& HF)
 bool DistWalkerHandler::setup(int cr, int nc, int tgn, MPI_Comm heads_comm, MPI_Comm tg_comm, MPI_Comm node_comm, myTimer* timer)
 {
   LocalTimer=timer;
+  setup_timers(Timers, DistWalkerTimerNames);
 
   core_rank=cr;
   ncores_per_TG=nc; 
@@ -347,6 +361,7 @@ bool DistWalkerHandler::setup(int cr, int nc, int tgn, MPI_Comm heads_comm, MPI_
 bool DistWalkerHandler::clean()
 {
   walkers.clear();
+  maximum_num_walkers=tot_num_walkers=0;
 }
 
 // called at the beginning of each executable section
@@ -358,17 +373,18 @@ void DistWalkerHandler::resetNumberWalkers(int n, bool a, ComplexMatrix* S)
     ComplexMatrix* S0 = S;
     if(S0==NULL) S0 = &HFMat;
     // assuming everything is alive
-    int ns = size(); 
+    int ns = maximum_num_walkers; //size(); 
     if(n+extra_empty_spaces > ns) {
       std::vector<ComplexType> tmp(tot_num_walkers*walker_size); // store old walker info
       int cnt=0;
-      for(int i=0; i<tot_num_walkers; i++)
+      for(int i=0; i<maximum_num_walkers; i++)
         if(walkers[walker_size*i+data_displ[INFO]].real() > 0) 
           std::copy(walkers.begin()+walker_size*i,walkers.begin()+walker_size*(i+1),tmp.begin()+(cnt++)*walker_size);
       walkers.resize((n+extra_empty_spaces)*walker_size);
+      maximum_num_walkers = n+extra_empty_spaces;
       tot_num_walkers = std::min(n,cnt); 
       std::copy(tmp.begin(),tmp.begin()+walker_size*tot_num_walkers,walkers.begin());
-      for(int i=tot_num_walkers; i<n+extra_empty_spaces; i++)
+      for(int i=tot_num_walkers; i<maximum_num_walkers; i++)
         walkers[walker_size*i+data_displ[INFO]] = ComplexType(-1.0);   
     }
 
@@ -377,7 +393,7 @@ void DistWalkerHandler::resetNumberWalkers(int n, bool a, ComplexMatrix* S)
     if(tot_num_walkers < n) {
       // adding walkers
       int cnt=tot_num_walkers;  
-      for(int i=0; i<size(); i++) {
+      for(int i=0; i<maximum_num_walkers; i++) {
         if(walkers[walker_size*i+data_displ[INFO]].real() < 0) {   
           walkers[walker_size*i+data_displ[INFO]] = ComplexType(1.0);
           std::copy(S0->begin(),S0->end(),walkers.begin()+walker_size*i+data_displ[SM]);
@@ -393,7 +409,7 @@ void DistWalkerHandler::resetNumberWalkers(int n, bool a, ComplexMatrix* S)
     } else if(tot_num_walkers > n) { 
       // removing walkers
       int cnt=tot_num_walkers;
-      for(int i=size()-1; i>=0; i--) {
+      for(int i=maximum_num_walkers-1; i>=0; i--) {
         if(walkers[walker_size*i+data_displ[INFO]].real() > 0) {  
           walkers[walker_size*i+data_displ[INFO]] = ComplexType(-1.0);
           cnt--;
@@ -405,13 +421,15 @@ void DistWalkerHandler::resetNumberWalkers(int n, bool a, ComplexMatrix* S)
 
 
   } else {
-    int ns = size(); 
-    if(n+extra_empty_spaces > ns) 
+    int ns = maximum_num_walkers; //size(); 
+    if(n+extra_empty_spaces > ns) { 
       walkers.resize((n+extra_empty_spaces)*walker_size);
+      maximum_num_walkers = n+extra_empty_spaces;
+    }
   }
   walkers.barrier(); 
-  maximum_num_walkers = n+extra_empty_spaces;
   tot_num_walkers = n; 
+  nwalk_min = nwalk_max= tot_num_walkers;
 }
 
 // load balancing algorithm
@@ -425,8 +443,9 @@ void DistWalkerHandler::loadBalance()
   int nW = numWalkers();
   int sz = size(), nw_new=0;
   MPI_Request request;
- 
+
   LocalTimer->start("WalkerHandler::loadBalance::setup");
+  Timers[LoadBalance_Setup]->start();
   // determine new number of walkers
   if(head) {
 
@@ -434,7 +453,6 @@ void DistWalkerHandler::loadBalance()
       nwalk_counts_old[i] = nwalk_counts_new[i] = 0;
     nwalk_counts_new[0] = nW;
     // in case iallgather is not available
-    //myComm->allgather(nwalk_counts_new,nwalk_counts_old,1,MPI_COMM_TG_LOCAL_HEADS);
 #if MPI_VERSION >= 3
 #define HAVE_MPI_IALLGATHER
 #endif
@@ -447,10 +465,9 @@ void DistWalkerHandler::loadBalance()
     // wait for mpi_iallgather 
     MPI_Wait(&request, MPI_STATUS_IGNORE); 
 #else
-    MPI_Allgather(nwalk_counts_new.data(), 1, MPI_INT, nwalk_counts_old.data(), 1, MPI_INT, MPI_COMM_TG_LOCAL_HEADS); 
+    MPI_Allgather(nwalk_counts_new.data(), 1, MPI_INT, nwalk_counts_old.data(), 1, MPI_INT, MPI_COMM_TG_LOCAL_HEADS);
     push_walkers_to_front();
-#endif
-      
+#endif 
     nwalk_global=0;
     for(int i=0; i<nproc_heads; i++) 
       nwalk_global+=nwalk_counts_old[i];
@@ -462,23 +479,22 @@ void DistWalkerHandler::loadBalance()
 
     nw_new = nwalk_counts_new[rank_heads];
 
-//if(rank()==0)
-//  for(int i=0; i<nproc_heads; i++)
-//    app_log()<<i <<" " <<nwalk_counts_old[i] <<" " <<nwalk_min <<" " <<nwalk_max <<" " <<nw_new <<std::endl; 
-
-//app_log()<<" Before: " <<std::endl;
-//cout<<rank() <<" " <<nW <<" " <<nw_new <<" " <<nwalk_global <<std::endl;
-//MPI_Barrier(MPI_COMM_TG_LOCAL_HEADS);
-
   }
+  Timers[LoadBalance_Setup]->stop();
   LocalTimer->stop("WalkerHandler::loadBalance::setup");
 
+  Timers[LoadBalance_Setup]->start();
   LocalTimer->start("WalkerHandler::loadBalance::resize");
   // resize arrays if necessary. This requires all cores in a TG 
   walkers.share(&nw_new,1,head);
-  if(nw_new > sz) walkers.resize(walker_size*(nw_new+extra_empty_spaces));
+  if(nw_new > sz) {
+    walkers.resize(walker_size*(nw_new+extra_empty_spaces));
+    maximum_num_walkers = nw_new+extra_empty_spaces; 
+  }
   LocalTimer->stop("WalkerHandler::loadBalance::resize");
+  Timers[LoadBalance_Setup]->stop();
 
+  Timers[LoadBalance_Exchange]->start();
   LocalTimer->start("WalkerHandler::loadBalance::exchange");
   if(load_balance_alg == "all") {
 
@@ -486,11 +502,11 @@ void DistWalkerHandler::loadBalance()
 
       int ncomm = nW - nwalk_counts_new[rank_heads];
       int pos = 0, cnt=0;
-      char *buffer; 
+      ComplexType *buffer=NULL; 
       if(ncomm > 0) 
-        buffer = reinterpret_cast<char*>( &( *(walkers.begin() + walker_size*nwalk_counts_new[rank_heads]) ) );
+        buffer = walkers.values() + walker_size*nwalk_counts_new[rank_heads];
        else 
-        buffer = reinterpret_cast<char*>( &( *(walkers.begin() + walker_size*nW) ) );
+        buffer = walkers.values() + walker_size*nW;
       
 
       if(rank_heads==0) {
@@ -509,11 +525,11 @@ void DistWalkerHandler::loadBalance()
           counts[nproc_heads-1] = (nwalk_counts_old[nproc_heads-1]-nwalk_counts_new[nproc_heads-1])*walker_size;
         else
           counts[nproc_heads-1]=0;
-        bufferall.clear();
-        bufferall.resize(displ[nproc_heads-1]+counts[nproc_heads-1]);
+        commBuff.clear();
+        commBuff.resize(displ[nproc_heads-1]+counts[nproc_heads-1]);
         int nn = walker_size*((ncomm>0)?ncomm:0); 
-        myComm->gatherv( buffer, bufferall.data(), nn , counts, displ, 0, MPI_COMM_TG_LOCAL_HEADS); 
-  
+        myComm->gatherv( buffer, commBuff.data(), nn , counts, displ, 0, MPI_COMM_TG_LOCAL_HEADS); 
+
         // setup scatterv call
         displ[0]=0;
         for(int i=0; i<nproc_heads-1; i++)
@@ -530,25 +546,30 @@ void DistWalkerHandler::loadBalance()
           counts[nproc_heads-1]=0;    
 
         nn = walker_size*((ncomm<0)?(std::abs(ncomm)):0); 
-        myComm->scatterv( bufferall.data(), buffer, nn, counts, displ, 0, MPI_COMM_TG_LOCAL_HEADS); 
+        myComm->scatterv( commBuff.data(), buffer, nn, counts, displ, 0, MPI_COMM_TG_LOCAL_HEADS); 
 
         if(ncomm > 0) {
-          register ComplexType zero = ComplexType(-1.0,0.0);
+          register ComplexType minus = ComplexType(-1.0,0.0);
           for(ComplexSMVector::iterator it=walkers.begin()+nwalk_counts_new[rank_heads]*walker_size; it<walkers.end(); it+=walker_size)
-            *(it+data_displ[INFO]) = zero; 
+            *(it+data_displ[INFO]) = minus; 
         }
 
       } else {
 
+        int nw__2=0, icnt=0;
+        std::vector<int> pos_;
+        for(ComplexSMVector::iterator it=walkers.begin()+data_displ[INFO]; it<walkers.end(); it+=walker_size, icnt++)
+          if(it->real() > 0) { pos_.push_back(icnt); }
+
         int nn = walker_size*((ncomm>0)?ncomm:0);
-        myComm->gatherv( buffer, bufferall.data(), nn, counts, displ, 0, MPI_COMM_TG_LOCAL_HEADS);
+        myComm->gatherv( buffer, commBuff.data(), nn, counts, displ, 0, MPI_COMM_TG_LOCAL_HEADS);
         nn = walker_size*((ncomm<0)?(std::abs(ncomm)):0);
-        myComm->scatterv( bufferall.data(), buffer, nn, counts, displ, 0, MPI_COMM_TG_LOCAL_HEADS); 
+        myComm->scatterv( commBuff.data(), buffer, nn, counts, displ, 0, MPI_COMM_TG_LOCAL_HEADS); 
 
         if(ncomm > 0) {
-          register ComplexType zero = ComplexType(-1.0,0.0);
+          register ComplexType minus = ComplexType(-1.0,0.0);
           for(ComplexSMVector::iterator it=walkers.begin()+nwalk_counts_new[rank_heads]*walker_size; it<walkers.end(); it+=walker_size)
-            *(it+data_displ[INFO]) = zero; 
+            *(it+data_displ[INFO]) = minus; 
         }
 
       }
@@ -563,17 +584,13 @@ void DistWalkerHandler::loadBalance()
 
   }
   LocalTimer->stop("WalkerHandler::loadBalance::exchange");
+  Timers[LoadBalance_Exchange]->stop();
 
   walkers.barrier();
   tot_num_walkers=0;
   for(ComplexSMVector::iterator it=walkers.begin()+data_displ[INFO]; it<walkers.end(); it+=walker_size)
     if(it->real() > 0) tot_num_walkers++;
 
-//if(head) {
-//app_log()<<" After: " <<std::endl;
-//cout<<rank() <<" " <<tot_num_walkers <<std::endl;
-//MPI_Barrier(MPI_COMM_TG_LOCAL_HEADS);
-//}
 #endif
 } 
 
@@ -588,7 +605,7 @@ void DistWalkerHandler::push_walkers_to_front()
   // 2. find next empty from front
   // 3. swap 
 
-  while( wlk < empty ) {
+  while( wlk > empty ) {
 
     // 1. find next walker 
     while( (wlk+data_displ[INFO])->real() < 0 && wlk > empty ) 
@@ -616,7 +633,6 @@ void DistWalkerHandler::popControl()
 
   // do I need to sync here?
   walkers.barrier();
-  int buff_reset = 0; 
   if( head ) { 
     int max=size(), nw=0, cnt=0;   
     empty_spots.clear();
@@ -627,13 +643,14 @@ void DistWalkerHandler::popControl()
         *(it+data_displ[INFO]) = minus;
       } else {
         ComplexType w0 = *(it+data_displ[WEIGHT]); 
-        if( std::abs(w0) < std::abs(min_weight)) 
+        if( std::abs(w0) < std::abs(min_weight)) { 
           if( (int)(distribution(generator) + std::abs(w0)/reset_weight) == 0 ) { 
             *(it+data_displ[INFO]) = minus; 
             empty_spots.push_back(cnt);
           } else {
             *(it+data_displ[WEIGHT]) = reset_weight;
           } 
+        }
       }
     }
 
@@ -650,24 +667,24 @@ void DistWalkerHandler::popControl()
         num_new += std::floor( std::abs( *(it+data_displ[WEIGHT]) ) / std::abs(reset_weight) );  // since I only need n-1 copies 
 
     if( num_new > empty_spots.size() ) {
-      buff_reset = 1; // reset SHM pointers when done
       int ntot = nw + num_new + extra_empty_spaces; 
       std::vector<ComplexType> tmp(nw*walker_size); // store old walker info
       cnt=0;
       for(ComplexSMVector::iterator it=walkers.begin(); it<walkers.end(); it+=walker_size) 
         if( (it+data_displ[INFO])->real() > 0 )
           std::copy( it, it+walker_size, tmp.begin()+(cnt++)*walker_size);
+      assert(nw==cnt);
       int nn = ntot*walker_size;
-      walkers.share(&nn,1,head);
-      walkers.resize(ntot*walker_size,false);
+      walkers.share(&ntot,1,head);
+      walkers.resize(nn,false);
+      maximum_num_walkers = ntot;
       std::copy(tmp.begin(),tmp.begin()+walker_size*nw,walkers.begin());
       for(ComplexSMVector::iterator it=walkers.begin()+nw*walker_size; it<walkers.end(); it+=walker_size) 
         *(it+data_displ[INFO]) = minus; 
 
       empty_spots.clear();
-      int newsz = size();
-      empty_spots.reserve( newsz-nw );
-      for(int i=nw; i<newsz; i++) empty_spots.push_back(i);
+      empty_spots.reserve( maximum_num_walkers-nw );
+      for(int i=nw; i<maximum_num_walkers; i++) empty_spots.push_back(i);
     } else {
       int nn=0;
       walkers.share<int>(&nn,1,head);
@@ -689,10 +706,12 @@ void DistWalkerHandler::popControl()
     empty_spots.clear();
      
   } else {
-    int nn; 
-    walkers.share<int>(&nn,1,head);
-    if(nn > 0)
-      walkers.resize(nn,false);
+    int ntot; 
+    walkers.share<int>(&ntot,1,head);
+    if(ntot > 0) {
+      walkers.resize(ntot*walker_size,false);
+      maximum_num_walkers = ntot;
+    }
   }
   walkers.barrier();
   tot_num_walkers=0;

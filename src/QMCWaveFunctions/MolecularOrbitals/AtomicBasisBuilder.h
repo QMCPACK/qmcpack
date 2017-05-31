@@ -389,8 +389,3 @@ int AtomicBasisBuilder<RFB>::expandYlm(const std::string& rnl, const QuantumNumb
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

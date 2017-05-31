@@ -194,6 +194,7 @@ OrbitalBasePtr SlaterDetWithBackflow::makeClone(ParticleSet& tqp) const
 //    tr->resetTargetParticleSet(tqp);
   SlaterDetWithBackflow* myclone=new SlaterDetWithBackflow(tqp,tr);
   myclone->Optimizable=Optimizable;
+  myclone->RecomputeNeedsDistanceTable=RecomputeNeedsDistanceTable;
   if(mySPOSet.size()>1)//each determinant owns its own set
   {
     for(int i=0; i<Dets.size(); ++i)
@@ -347,8 +348,3 @@ void SlaterDetWithBackflow::evaluateDerivatives(ParticleSet& P,
 
 
 }
-/***************************************************************************
- * $RCSfile$   $Author: kpesler $
- * $Revision: 4721 $   $Date: 2010-03-12 17:11:47 -0600 (Fri, 12 Mar 2010) $
- * $Id: SlaterDetWithBackflow.cpp 4721 2010-03-12 23:11:47Z kpesler $
- ***************************************************************************/

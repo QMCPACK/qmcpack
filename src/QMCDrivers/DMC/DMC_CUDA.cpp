@@ -23,6 +23,7 @@
 #include "Utilities/RandomGenerator.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "QMCDrivers/DriftOperators.h"
+#include "type_traits/scalar_traits.h"
 
 
 namespace qmcplusplus
@@ -91,8 +92,13 @@ bool DMCcuda::run()
   std::vector<PosType>   delpos(nw);
   std::vector<PosType>   dr(nw);
   std::vector<PosType>   newpos(nw);
-  std::vector<ValueType> ratios(nw), rplus(nw), rminus(nw), R2prop(nw), R2acc(nw);
-  std::vector<PosType>  oldG(nw), newG(nw);
+  //std::vector<ValueType> ratios(nw), rplus(nw), rminus(nw), R2prop(nw), R2acc(nw);
+  std::vector<ValueType> ratios(nw), rplus(nw), rminus(nw);
+  std::vector<RealType>  R2prop(nw), R2acc(nw);
+#ifdef QMC_COMPLEX
+  std::vector<RealType>  ratios_real(nw);
+#endif
+  std::vector<GradType>  oldG(nw), newG(nw);
   std::vector<ValueType> oldL(nw), newL(nw);
   std::vector<Walker_t*> accepted(nw);
   Matrix<ValueType> lapl(nw, nat);
@@ -119,6 +125,9 @@ bool DMCcuda::run()
       dr.resize(nw);
       newpos.resize(nw);
       ratios.resize(nw);
+#ifdef QMC_COMPLEX
+      ratios_real.resize(nw);
+#endif
       rplus.resize(nw);
       rminus.resize(nw);
       oldG.resize(nw);
@@ -156,9 +165,17 @@ bool DMCcuda::run()
         {
           delpos[iw] *= m_sqrttau;
           oldScale[iw] = getDriftScale(m_tauovermass,oldG[iw]);
+#ifdef QMC_COMPLEX
+          convert(oldScale[iw] * oldG[iw], dr[iw]);
+          dr[iw] += delpos[iw];
+#else
           dr[iw] = delpos[iw] + (oldScale[iw]*oldG[iw]);
+#endif
           newpos[iw]=W[iw]->R[iat] + dr[iw];
           ratios[iw] = 1.0;
+#ifdef QMC_COMPLEX
+          ratios_real[iw] = 1.0;
+#endif
           R2prop[iw] += dot(delpos[iw], delpos[iw]);
         }
         W.proposeMove_GPU(newpos, iat);
@@ -171,21 +188,42 @@ bool DMCcuda::run()
         std::vector<RealType> rand_v(nw);
         for(int iw=0; iw<nw; ++iw)
         {
+#ifdef QMC_COMPLEX
+          PosType drOld = 0.0;
+          convert(oldScale[iw] * oldG[iw], drOld);
+          drOld = newpos[iw] - (W[iw]->R[iat] + drOld);
+#else
           PosType drOld =
             newpos[iw] - (W[iw]->R[iat] + oldScale[iw]*oldG[iw]);
+#endif
           logGf_v[iw] = -m_oneover2tau * dot(drOld, drOld);
           rand_v[iw] = Random();
         }
-        Psi.addRatio(W,iat,ratios, newG, newL);
+        Psi.addRatio(W, iat, ratios, newG, newL);
+#ifdef QMC_COMPLEX
+        Psi.convertRatiosFromComplexToReal(ratios, ratios_real);
+#endif
         for(int iw=0; iw<nw; ++iw)
         {
           newScale[iw]   = getDriftScale(m_tauovermass,newG[iw]);
+#ifdef QMC_COMPLEX
+          PosType drNew  = 0.0;
+          convert(newScale[iw] * newG[iw], drNew);
+          drNew += newpos[iw] - W[iw]->R[iat];
+#else
           PosType drNew  =
             (newpos[iw] + newScale[iw]*newG[iw]) - W[iw]->R[iat];
+#endif
           RealType logGb =  -m_oneover2tau * dot(drNew, drNew);
           RealType x = logGb - logGf_v[iw];
+
+#ifdef QMC_COMPLEX
+          RealType prob = ratios_real[iw]*ratios_real[iw]*std::exp(x);
+          if(acc[iw] && rand_v[iw] < prob && ratios_real[iw] > 0.0)
+#else
           RealType prob = ratios[iw]*ratios[iw]*std::exp(x);
           if(acc[iw] && rand_v[iw] < prob && ratios[iw] > 0.0)
+#endif
           {
             accepted.push_back(W[iw]);
             nAccept++;
@@ -284,10 +322,20 @@ bool DMCcuda::run()
         RealType v2=0.0, v2bar=0.0;
         for(int iat=0; iat<nat; iat++)
         {
+#ifdef QMC_COMPLEX
+          v2 += dot_real(W.G[iat],W.G[iat]);
+#else
+          // should be removed when things work fine
           v2 += dot(W.G[iat],W.G[iat]);
+#endif
           RealType newscale = getDriftScale(m_tauovermass,newG[iw]);
+#ifdef QMC_COMPLEX
+          v2 += m_tauovermass * m_tauovermass * dot_real(newG[iw],newG[iw]);
+          v2bar +=  newscale * newscale * dot_real(newG[iw],newG[iw]);
+#else
           v2 += m_tauovermass * m_tauovermass * dot(newG[iw],newG[iw]);
           v2bar +=  newscale * newscale * dot(newG[iw],newG[iw]);
+#endif
         }
         //RealType scNew = std::sqrt(V2bar[iw] / V2[iw]);
         RealType scNew = std::sqrt(v2bar/v2);
@@ -346,8 +394,13 @@ bool DMCcuda::runWithNonlocal()
   std::vector<PosType>   delpos(nw);
   std::vector<PosType>   dr(nw);
   std::vector<PosType>   newpos(nw);
-  std::vector<ValueType> ratios(nw), rplus(nw), rminus(nw), R2prop(nw), R2acc(nw);
-  std::vector<PosType>  oldG(nw), newG(nw);
+  //std::vector<ValueType> ratios(nw), rplus(nw), rminus(nw), R2prop(nw), R2acc(nw);
+  std::vector<ValueType> ratios(nw), rplus(nw), rminus(nw);
+  std::vector<RealType>  R2prop(nw), R2acc(nw);
+#ifdef QMC_COMPLEX
+  std::vector<RealType>  ratios_real(nw);
+#endif
+  std::vector<GradType>  oldG(nw), newG(nw);
   std::vector<ValueType> oldL(nw), newL(nw);
   std::vector<Walker_t*> accepted(nw);
   Matrix<ValueType> lapl(nw, nat);
@@ -372,6 +425,9 @@ bool DMCcuda::runWithNonlocal()
       dr.resize(nw);
       newpos.resize(nw);
       ratios.resize(nw);
+#ifdef QMC_COMPLEX
+      ratios_real.resize(nw);
+#endif
       rplus.resize(nw);
       rminus.resize(nw);
       oldG.resize(nw);
@@ -401,7 +457,12 @@ bool DMCcuda::runWithNonlocal()
         {
           delpos[iw] *= m_sqrttau;
           oldScale[iw] = getDriftScale(m_tauovermass,oldG[iw]);
+#ifdef QMC_COMPLEX
+          convert(oldScale[iw] * oldG[iw], dr[iw]);
+          dr[iw] += delpos[iw];
+#else
           dr[iw] = delpos[iw] + (oldScale[iw]*oldG[iw]);
+#endif
           newpos[iw]=W[iw]->R[iat] + dr[iw];
           ratios[iw] = 1.0;
           R2prop[iw] += dot(delpos[iw], delpos[iw]);
@@ -414,21 +475,41 @@ bool DMCcuda::runWithNonlocal()
         std::vector<RealType> rand_v(nw);
         for(int iw=0; iw<nw; ++iw)
         {
+#ifdef QMC_COMPLEX
+          PosType drOld = 0.0;
+          convert(oldScale[iw] * oldG[iw], drOld);
+          drOld = newpos[iw] - (W[iw]->R[iat] + drOld);
+#else
           PosType drOld =
             newpos[iw] - (W[iw]->R[iat] + oldScale[iw]*oldG[iw]);
+#endif
           logGf_v[iw] = -m_oneover2tau * dot(drOld, drOld);
           rand_v[iw] = Random();
         }
-        Psi.addRatio(W,iat,ratios,newG, newL);
+        Psi.addRatio(W, iat, ratios, newG, newL);
+#ifdef QMC_COMPLEX
+        Psi.convertRatiosFromComplexToReal(ratios, ratios_real);
+#endif
         for(int iw=0; iw<nw; ++iw)
         {
           newScale[iw]   = getDriftScale(m_tauovermass,newG[iw]);
+#ifdef QMC_COMPLEX
+          PosType drNew = 0.0;
+          convert(newScale[iw] * newG[iw], drNew);
+          drNew += newpos[iw] - W[iw]->R[iat];
+#else
           PosType drNew  =
             (newpos[iw] + newScale[iw]*newG[iw]) - W[iw]->R[iat];
+#endif
           RealType logGb =  -m_oneover2tau * dot(drNew, drNew);
           RealType x = logGb - logGf_v[iw];
+#ifdef QMC_COMPLEX
+          RealType prob = ratios_real[iw]*ratios_real[iw]*std::exp(x);
+          if(rand_v[iw] < prob && ratios_real[iw] > 0.0)
+#else
           RealType prob = ratios[iw]*ratios[iw]*std::exp(x);
           if(rand_v[iw] < prob && ratios[iw] > 0.0)
+#endif
           {
             accepted.push_back(W[iw]);
             nAccept++;
@@ -558,7 +639,7 @@ void DMCcuda::resetRun()
   PointerPool<Walker_t::cuda_Buffer_t > pool;
   Psi.reserve (pool);
   app_log() << "Each walker requires "
-            << pool.getTotalSize() * sizeof(CudaRealType)
+            << pool.getTotalSize() * sizeof(CudaValueType)
             << " bytes in GPU memory.\n";
   app_log() << "Preparing to allocate " << W.WalkerList.size()
             << " walkers.\n";
@@ -597,8 +678,3 @@ DMCcuda::put(xmlNodePtr q)
 }
 }
 
-/***************************************************************************
- * $RCSfile: DMCParticleByParticle.cpp,v $   $Author: jnkim $
- * $Revision: 1.25 $   $Date: 2006/10/18 17:03:05 $
- * $Id: DMCcuda.cpp,v 1.25 2006/10/18 17:03:05 jnkim Exp $
- ***************************************************************************/

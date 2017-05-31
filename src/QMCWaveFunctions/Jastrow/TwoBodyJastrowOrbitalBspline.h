@@ -109,8 +109,8 @@ public:
   void
   evaluateDerivatives (MCWalkerConfiguration &W,
                        const opt_variables_type& optvars,
-                       ValueMatrix_t &dlogpsi,
-                       ValueMatrix_t &dlapl_over_psi);
+                       RealMatrix_t &dlogpsi,
+                       RealMatrix_t &dlapl_over_psi);
 
   //TwoBodyJastrowOrbitalBspline(ParticleSet& pset, bool is_master) :
   //  TwoBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> > (pset, is_master),

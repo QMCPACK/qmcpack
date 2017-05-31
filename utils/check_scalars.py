@@ -171,6 +171,12 @@ def read_command_line():
             bw   = 'BlockWeight',
             ts   = 'TotalSamples',
             fl   = 'Flux',
+#now for some RMC estimators
+            ke_m = "Kinetic_m",
+            ke_p = "Kinetic_p",
+            ee_m = "ElecElec_m",
+            ee_p = "ElecElec_p",
+            lp_p = "LocalPotential_pure"
             )
 
         for qshort in sorted(quantities.keys()):

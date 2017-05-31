@@ -95,8 +95,9 @@ struct OrbitalBase: public QMCTraits
   typedef ParticleAttrib<GradType>  GradVectorType;
   typedef PooledData<RealType>      BufferType;
   typedef ParticleSet::Walker_t     Walker_t;
-  typedef OrbitalSetTraits<ValueType>::ValueMatrix_t ValueMatrix_t;
-  typedef OrbitalSetTraits<ValueType>::GradMatrix_t  GradMatrix_t;
+  typedef OrbitalSetTraits<RealType>::ValueMatrix_t       RealMatrix_t;
+  typedef OrbitalSetTraits<ValueType>::ValueMatrix_t      ValueMatrix_t;
+  typedef OrbitalSetTraits<ValueType>::GradMatrix_t       GradMatrix_t;
   typedef OrbitalSetTraits<ValueType>::HessType           HessType;
   typedef OrbitalSetTraits<ValueType>::HessVector_t       HessVector_t;
 
@@ -502,7 +503,7 @@ struct OrbitalBase: public QMCTraits
   virtual void recompute(MCWalkerConfiguration &W, bool firstTime)
   { }
 
-  virtual void reserve (PointerPool<gpu::device_vector<CudaRealType> > &pool)
+  virtual void reserve (PointerPool<gpu::device_vector<CudaValueType> > &pool)
   { }
 
   /** Evaluate the log of the WF for all walkers
@@ -645,8 +646,8 @@ struct OrbitalBase: public QMCTraits
   virtual void
   evaluateDerivatives (MCWalkerConfiguration &W,
                        const opt_variables_type& optvars,
-                       ValueMatrix_t &dgrad_logpsi,
-                       ValueMatrix_t &dhpsi_over_psi)
+                       RealMatrix_t &dgrad_logpsi,
+                       RealMatrix_t &dhpsi_over_psi)
   {
     app_error() << "Need specialization of OrbitalBase::evaluateDerivatives.\n";
     abort();
@@ -655,9 +656,4 @@ struct OrbitalBase: public QMCTraits
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

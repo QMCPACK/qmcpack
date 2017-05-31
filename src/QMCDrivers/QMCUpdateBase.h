@@ -234,10 +234,12 @@ public:
 
   inline RealType logBackwardGF(const ParticleSet::ParticlePos_t& displ)
   {
-    RealType t=0.5/Tau;
     RealType logGb=0.0;
     for(int iat=0; iat<W.getTotalNum(); ++iat)
-      logGb += t*MassInvP[iat]*dot(displ[iat],displ[iat]);
+    {
+      RealType mass_over_tau = 1.0/(SqrtTauOverMass[iat]*SqrtTauOverMass[iat]);
+      logGb += 0.5*dot(displ[iat],displ[iat])*mass_over_tau;
+    }
     return -logGb;
   }
 
@@ -319,8 +321,3 @@ private:
 }
 
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1592 $   $Date: 2007-01-04 16:48:00 -0600 (Thu, 04 Jan 2007) $
- * $Id: QMCUpdateBase.h 1592 2007-01-04 22:48:00Z jnkim $
- ***************************************************************************/

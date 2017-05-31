@@ -313,7 +313,7 @@ public:
   // Walker-parallel vectorized functions //
   //////////////////////////////////////////
   virtual void
-  reserve (PointerPool<gpu::device_vector<CudaRealType> > &pool) { }
+  reserve (PointerPool<gpu::device_vector<CudaValueType> > &pool) { }
 
   virtual void
   evaluate (std::vector<Walker_t*> &walkers, int iat, gpu::device_vector<CudaValueType*> &phi);
@@ -349,9 +349,4 @@ typedef SPOSetBase*                   SPOSetBasePtr;
 }
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

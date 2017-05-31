@@ -376,8 +376,3 @@ void RandomNumberControl::write(const std::string& fname, Communicate* comm)
   }
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

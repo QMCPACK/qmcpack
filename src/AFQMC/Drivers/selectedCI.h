@@ -53,7 +53,7 @@ class selectedCI: public Driver
     double cutoff_diag;
     std::string output_filename;
     bool build_full_hamiltonian; 
-    RealType NuclearCoulombEnergy; 
+    ValueType NuclearCoulombEnergy; 
 
     std::vector<IndexType> occ_orbs;
     std::vector<ValueType> ci;

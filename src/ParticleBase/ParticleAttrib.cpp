@@ -1160,8 +1160,3 @@ std::ostream& operator<<(std::ostream& out, const ParticleAttrib<T>& rhs)
 #endif // OHMMS_PARTICLEATTRIB_PEPE_OPERATORS_H
 
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

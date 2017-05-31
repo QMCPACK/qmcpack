@@ -99,6 +99,7 @@ OrbitalBasePtr MultiSlaterDeterminant::makeClone(ParticleSet& tqp) const
     clone->dets_dn.push_back(adet);
   }
   clone->Optimizable=Optimizable;
+  clone->RecomputeNeedsDistanceTable=RecomputeNeedsDistanceTable;
   clone->C=C;
   clone->myVars=myVars;
   return clone;
@@ -1051,8 +1052,3 @@ void MultiSlaterDeterminant::registerTimers()
 }
 
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 3416 $   $Date: 2008-12-07 11:34:49 -0600 (Sun, 07 Dec 2008) $
- * $Id: MultiSlaterDeterminant.cpp 3416 2008-12-07 17:34:49Z jnkim $
- ***************************************************************************/

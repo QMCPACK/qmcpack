@@ -565,31 +565,37 @@ void MCWalkerConfiguration::updateLists_GPU()
     DataList_GPU.resize(nw);
   }
   hostlist.resize(nw);
+  hostlist_valueType.resize(nw);
   hostlist_AA.resize(nw);
+
   for (int iw=0; iw<nw; iw++)
   {
     if (WalkerList[iw]->R_GPU.size() != R.size())
       std::cerr << "Error in R_GPU size for iw = " << iw << "!\n";
-    hostlist[iw] = (CUDA_PRECISION*)WalkerList[iw]->R_GPU.data();
+    hostlist[iw] = (CudaRealType*)WalkerList[iw]->R_GPU.data();
   }
   RList_GPU = hostlist;
+
   for (int iw=0; iw<nw; iw++)
   {
     if (WalkerList[iw]->Grad_GPU.size() != R.size())
       std::cerr << "Error in Grad_GPU size for iw = " << iw << "!\n";
-    hostlist[iw] = (CUDA_PRECISION*)WalkerList[iw]->Grad_GPU.data();
+    hostlist_valueType[iw] = (CudaValueType*)WalkerList[iw]->Grad_GPU.data();
   }
-  GradList_GPU = hostlist;
+  GradList_GPU = hostlist_valueType;
+
   for (int iw=0; iw<nw; iw++)
   {
     if (WalkerList[iw]->Lap_GPU.size() != R.size())
       std::cerr << "Error in Lap_GPU size for iw = " << iw << "!\n";
-    hostlist[iw] = (CUDA_PRECISION*)WalkerList[iw]->Lap_GPU.data();
+    hostlist_valueType[iw] = (CudaValueType*)WalkerList[iw]->Lap_GPU.data();
   }
-  LapList_GPU = hostlist;
+  LapList_GPU = hostlist_valueType;
+
   for (int iw=0; iw<nw; iw++)
-    hostlist[iw] = WalkerList[iw]->cuda_DataSet.data();
-  DataList_GPU = hostlist;
+    hostlist_valueType[iw] = WalkerList[iw]->cuda_DataSet.data();
+  DataList_GPU = hostlist_valueType;
+
   for (int isp=0; isp<NumSpecies; isp++)
   {
     for (int iw=0; iw<nw; iw++)
@@ -629,10 +635,9 @@ void MCWalkerConfiguration::copyWalkersToGPU(bool copyGrad)
     copyWalkerGradToGPU();
 }
 
-
 void MCWalkerConfiguration::copyWalkerGradToGPU()
 {
-  Grad_host.resize(WalkerList[0]->R.size());
+  Grad_host.resize(WalkerList[0]->G.size());
   for (int iw=0; iw<WalkerList.size(); iw++)
   {
     for (int i=0; i<WalkerList[iw]->size(); i++)
@@ -641,7 +646,6 @@ void MCWalkerConfiguration::copyWalkerGradToGPU()
     WalkerList[iw]->Grad_GPU = Grad_host;
   }
 }
-
 
 void MCWalkerConfiguration::proposeMove_GPU
 (std::vector<PosType> &newPos, int iat)
@@ -712,8 +716,3 @@ void MCWalkerConfiguration::NLMove_GPU(std::vector<Walker_t*> &walkers,
 
 }
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

@@ -47,9 +47,4 @@ struct WalkerPureDMC: public WalkerControlBase
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile: WalkerReconfiguration.h,v $   $Author: jnkim $
- * $Revision: 2284 $   $Date: 2007-11-07 10:29:32 -0600 (Wed, 07 Nov 2007) $
- * $Id: WalkerReconfiguration.h 2284 2007-11-07 16:29:32Z jnkim $
- ***************************************************************************/
 

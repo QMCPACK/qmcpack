@@ -20,10 +20,13 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/time.h>
+#ifdef QMC_COMPLEX
+#include <thrust/complex.h>
+#include <thrust/system/cuda/detail/bulk/uninitialized.hpp>
+#endif
 
 #include "determinant_update.h"
 #include "../../CUDA/gpu_misc.h"
-
 
 template<typename T, int BS>
 __global__ void
@@ -188,7 +191,11 @@ void update_dot (T a, T b, T sum, T corr, T *new_sum, T *new_corr)
   T h, l, t, r, s;
   // 2ProdFMA: h + l = a * b
   h = a * b;
+#ifdef QMC_COMPLEX
+  l = a * b - h;
+#else
   l = fma (a, b, -h);
+#endif
   // 2Sum: s + r = sum + h
   s = sum + h;
   t = s - h;
@@ -223,7 +230,11 @@ void update_inverse_core1 (const T * __restrict__ A,
                            T * __restrict__ Ainv_colk,
                            int k, int N, int rowstride)
 {
+#ifdef QMC_COMPLEX
+  __shared__ bulk::uninitialized_array<T,BS> Ainv_colk_shared, delta;
+#else
   __shared__ T Ainv_colk_shared[BS], delta[BS];
+#endif
   T sum = (T)0, corr = (T)0;// compensated dot-product delta*Ainv(*,col_Ainv)
   int tidx = threadIdx.x;
   int col_Ainv = blockIdx.x*BS + tidx;
@@ -315,7 +326,11 @@ void update_inverse_core2 (T * __restrict__ A,
                            int k, int N, int rowstride)
 {
   T delta_Ainv_shared;
+#ifdef QMC_COMPLEX
+  __shared__ bulk::uninitialized_array<T,BS> Ainv_colk_shared;
+#else
   __shared__ T Ainv_colk_shared[BS];
+#endif
   T prefact;
   int tidx = threadIdx.x;
   int col_Ainv = blockIdx.x*BS + tidx;
@@ -328,7 +343,7 @@ void update_inverse_core2 (T * __restrict__ A,
     delta_Ainv_shared = delta_Ainv[col_Ainv];
     A[k*rowstride + col_A] = u[col_A];
   }
-  prefact = -1.0f / (1.0f + delta_Ainv[k]);
+  prefact = (T) -1.0f / ((T) 1.0f + delta_Ainv[k]);
   for (int block = 0; block < numBlocks; block++)
   {
     int blockStart = block * BS;
@@ -364,7 +379,11 @@ void update_inverse_core2_subblock (T * __restrict__ A,
                            int k, int N, int rowstride)
 {
   T delta_Ainv_shared;
+#ifdef QMC_COMPLEX
+  __shared__ bulk::uninitialized_array<T,BS> Ainv_colk_shared;
+#else
   __shared__ T Ainv_colk_shared[BS];
+#endif
   T prefact;
   int tidx = threadIdx.x;
   int col_Ainv = blockIdx.y*BS + tidx;
@@ -377,7 +396,7 @@ void update_inverse_core2_subblock (T * __restrict__ A,
     delta_Ainv_shared = delta_Ainv[col_Ainv];
     A[k*rowstride + col_A] = u[col_A];
   }
-  prefact = -1.0f / (1.0f + delta_Ainv[k]);
+  prefact = (T) -1.0f / ((T) 1.0f + delta_Ainv[k]);
   const int blockStart = blockIdx.z * BS;
   int row_Ainv;
   row_Ainv = blockStart + tidx;
@@ -496,6 +515,72 @@ update_inverse_cuda(double **data, int iat[],
     abort();
   }
 }
+
+#ifdef QMC_COMPLEX
+
+void
+update_inverse_cuda(std::complex<float> **data, int iat[],
+                    int A_off, int Ainv_off, int newRow_off,
+                    int AinvDelta_off, int AinvColk_off,
+                    int N, int rowstride, int numWalkers)
+{
+  const int BS1 = 128;
+  const int BS2 = 128;
+  int NB1 = (N+BS1-1)/BS1;
+  int NB2 = (N+BS2-1)/BS2;
+  dim3 dimBlock1(BS1);
+  dim3 dimGrid1(NB1, numWalkers);
+  dim3 dimBlock2(BS2);
+  dim3 dimGrid2(NB2, numWalkers);
+
+  update_inverse_kernel1<thrust::complex<float>,BS1><<<dimGrid1,dimBlock1>>>
+  ((thrust::complex<float>**)data, iat, A_off, Ainv_off, newRow_off, AinvDelta_off, AinvColk_off,
+   N, rowstride);
+  update_inverse_kernel2<thrust::complex<float>,BS2><<<dimGrid2,dimBlock2>>>
+  ((thrust::complex<float>**)data, iat, A_off, Ainv_off, newRow_off, AinvDelta_off, AinvColk_off,
+   N, rowstride);
+  cudaError_t err = cudaGetLastError();
+  if (err != cudaSuccess)
+  {
+    fprintf (stderr, "CUDA error in update_inverse_cuda:\n  %s\n",
+             cudaGetErrorString(err));
+    abort();
+  }
+}
+
+void
+update_inverse_cuda(std::complex<double> **data, int iat[],
+                    int A_off, int Ainv_off, int newRow_off,
+                    int AinvDelta_off, int AinvColk_off,
+                    int N, int rowstride, int numWalkers)
+{
+  const int BS1 = 32;
+  const int BS2 = 32;
+  int NB1 = (N+BS1-1)/BS1;
+  int NB2 = (N+BS2-1)/BS2;
+  dim3 dimBlock1(BS1);
+  dim3 dimGrid1(NB1, numWalkers);
+  dim3 dimBlock2(BS2);
+  dim3 dimGrid2(NB2, numWalkers);
+
+  update_inverse_kernel1<thrust::complex<double>,BS1><<<dimGrid1,dimBlock1>>>
+  ((thrust::complex<double>**)data, iat, A_off, Ainv_off, newRow_off, AinvDelta_off, AinvColk_off,
+   N, rowstride);
+  update_inverse_kernel2<thrust::complex<double>,BS2><<<dimGrid2,dimBlock2>>>
+  ((thrust::complex<double>**)data, iat, A_off, Ainv_off, newRow_off, AinvDelta_off, AinvColk_off,
+   N, rowstride);
+  cudaError_t err = cudaGetLastError();
+  if (err != cudaSuccess)
+  {
+    fprintf (stderr, "CUDA error in update_inverse_cuda:\n  %s\n",
+             cudaGetErrorString(err));
+    abort();
+  }
+}
+
+
+#endif
+
 
 template<typename T, int BS>
 __global__ void
@@ -617,6 +702,82 @@ update_inverse_cuda(double **data, int iat,
   }
 }
 
+#ifdef QMC_COMPLEX
+void
+update_inverse_cuda(std::complex<float>**data, int iat,
+                    int A_off, int Ainv_off, int newRow_off,
+                    int AinvDelta_off, int AinvColk_off,
+                    int N, int rowstride, int numWalkers)
+{
+  const int BS1 = 128;
+  const int BS2 = 128;
+  int NB1 = (N+BS1-1)/BS1;
+  int NB2 = (N+BS2-1)/BS2;
+  dim3 dimBlock1(BS1);
+  dim3 dimGrid1(NB1, numWalkers);
+  dim3 dimBlock2(BS2);
+  dim3 dimGrid2(NB2, numWalkers);
+
+  update_inverse_kernel1<thrust::complex<float>,BS1><<<dimGrid1,dimBlock1>>>
+  ((thrust::complex<float>**)data, iat, A_off, Ainv_off, newRow_off, AinvDelta_off, AinvColk_off,
+   N, rowstride);
+  /* reference implementation, replaced by _subblock version. Ye Luo
+  update_inverse_kernel2<thrust::complex<float>,BS2><<<dimGrid2,dimBlock2>>>
+  ((thrust::complex<float>**)data, iat, A_off, Ainv_off, newRow_off, AinvDelta_off, AinvColk_off,
+   N, rowstride);
+  */
+  dim3 dimGrid3(numWalkers, NB2, NB2);
+  update_inverse_kernel2_subblock<thrust::complex<float>,BS2><<<dimGrid3,dimBlock2>>>
+  ((thrust::complex<float>**)data, iat, A_off, Ainv_off, newRow_off, AinvDelta_off, AinvColk_off,
+   N, rowstride);
+  cudaError_t err = cudaGetLastError();
+  if (err != cudaSuccess)
+  {
+    fprintf (stderr, "CUDA error in update_inverse_cuda:\n  %s\n",
+             cudaGetErrorString(err));
+    abort();
+  }
+
+}
+
+void
+update_inverse_cuda(std::complex<double>**data, int iat,
+                    int A_off, int Ainv_off, int newRow_off,
+                    int AinvDelta_off, int AinvColk_off,
+                    int N, int rowstride, int numWalkers)
+{
+  const int BS1 = 64;
+  const int BS2 = 64;
+  int NB1 = (N+BS1-1)/BS1;
+  int NB2 = (N+BS2-1)/BS2;
+  dim3 dimBlock1(BS1);
+  dim3 dimGrid1(NB1, numWalkers);
+  dim3 dimBlock2(BS2);
+  dim3 dimGrid2(NB2, numWalkers);
+
+  update_inverse_kernel1<thrust::complex<double>,BS1><<<dimGrid1,dimBlock1>>>
+  ((thrust::complex<double>**)data, iat, A_off, Ainv_off, newRow_off, AinvDelta_off, AinvColk_off,
+   N, rowstride);
+  /* reference implementation, replaced by _subblock version. Ye Luo
+  update_inverse_kernel2<thrust::complex<double>,BS2><<<dimGrid2,dimBlock2>>>
+  ((thrust::complex<double>**)data, iat, A_off, Ainv_off, newRow_off, AinvDelta_off, AinvColk_off,
+   N, rowstride);
+  */
+  dim3 dimGrid3(numWalkers, NB2, NB2);
+  update_inverse_kernel2_subblock<thrust::complex<double>,BS2><<<dimGrid3,dimBlock2>>>
+  ((thrust::complex<double>**)data, iat, A_off, Ainv_off, newRow_off, AinvDelta_off, AinvColk_off,
+   N, rowstride);
+  cudaError_t err = cudaGetLastError();
+  if (err != cudaSuccess)
+  {
+    fprintf (stderr, "CUDA error in update_inverse_cuda:\n  %s\n",
+             cudaGetErrorString(err));
+    abort();
+  }
+
+}
+
+#endif
 
 // The first kernel just computes AinvT * u and also stores the kth
 // col of Ainv in global memory
@@ -768,7 +929,7 @@ __global__ void
 update_inverse_transpose_cuda(T **A_g, T **AinvT_g, T **u_g,
                               int N, int row_stride, int elec)
 {
-  __shared__ float AinvT_row[MAXN], Ainv_colk[MAXN], delta[MAXN];
+  __shared__ T AinvT_row[MAXN], Ainv_colk[MAXN], delta[MAXN];
   int numBlocks = N/blockDim.x + ((N%blockDim.x) ? 1 : 0);
   //int numBlocks = 4;
   __shared__ T *A, *AinvT, *u;
@@ -836,7 +997,7 @@ __global__ void
 update_inverse_transpose_cuda_2pass(T **A_g, T **AinvT_g, T **u_g,
                                     int N, int row_stride, int elec)
 {
-  __shared__ float Ainv_colk[MAXN], delta[MAXN];
+  __shared__ T Ainv_colk[MAXN], delta[MAXN];
   int numBlocks = N/blockDim.x + ((N%blockDim.x) ? 1 : 0);
   //int numBlocks = 4;
   __shared__ T *A, *AinvT, *u;
@@ -911,15 +1072,15 @@ calc_ratios_transpose (T **AinvT_list, T **new_row_list,
                        T *ratio_out, int N, int row_stride, int elec,
                        int numMats)
 {
-  __shared__ float *AinvT[BS], *new_row[BS];
+  __shared__ T *AinvT[BS], *new_row[BS];
   int matNum = blockIdx.x*BS + threadIdx.x;
   if (matNum < numMats)
   {
     AinvT[threadIdx.x]  = AinvT_list[matNum] + row_stride * BS;
     new_row[threadIdx.x] = new_row_list[matNum];
   }
-  __shared__ float AinvT_phi[BS][BS+1];
-  __shared__ float ratio[BS];
+  __shared__ T AinvT_phi[BS][BS+1];
+  __shared__ T ratio[BS];
   ratio[threadIdx.x] = 0.0;
   int numBlocks = N / BS;
   if (numBlocks*BS < N)
@@ -955,16 +1116,28 @@ calc_ratios (T **Ainv_list, T **new_row_list,
     new_row = new_row_list[blockIdx.x];
   }
   __syncthreads();
+#ifdef QMC_COMPLEX
+  __shared__ bulk::uninitialized_array<T,BS> new_row_shared;
+#else
   __shared__ T new_row_shared[BS];
+#endif
   if (col < N)
     new_row_shared[tid] = new_row[tid];
+#ifdef QMC_COMPLEX
+  __shared__ bulk::uninitialized_array<T,BS> Ainv_colk_shared;
+#else
   __shared__ T Ainv_colk_shared[BS];
+#endif
   // This is *highly* uncoallesced, but we just have to eat it to allow
   // other kernels to operate quickly.
   if (col < N)
     Ainv_colk_shared[tid] = Ainv[col*row_stride + elec];
   __syncthreads();
+#ifdef QMC_COMPLEX
+  __shared__ bulk::uninitialized_array<T,BS> Ainv_new_row;
+#else
   __shared__ T Ainv_new_row[BS];
+#endif
   if (col < N)
     Ainv_new_row[tid] = Ainv_colk_shared[tid] * new_row_shared[tid];
   __syncthreads();
@@ -1029,6 +1202,61 @@ determinant_ratios_cuda (double *Ainv_list[], double *new_row_list[],
   }
 }
 
+#ifdef QMC_COMPLEX
+void
+determinant_ratios_cuda (std::complex<float> *Ainv_list[], std::complex<float> *new_row_list[],
+                         std::complex<float> *ratios, int N, int row_stride, int iat,
+                         int numWalkers)
+{
+  dim3 dimBlock(N);
+  dim3 dimGrid(numWalkers);
+
+  if (N <= 32)
+    calc_ratios<thrust::complex<float>,32><<<dimGrid,dimBlock>>>((thrust::complex<float>**)Ainv_list, (thrust::complex<float>**)new_row_list, (thrust::complex<float>*)ratios, N, row_stride, iat);
+  else if (N <= 64)
+    calc_ratios<thrust::complex<float>,64><<<dimGrid,dimBlock>>>((thrust::complex<float>**)Ainv_list, (thrust::complex<float>**)new_row_list, (thrust::complex<float>*)ratios, N, row_stride, iat);
+  else if (N <= 128)
+    calc_ratios<thrust::complex<float>,128><<<dimGrid,dimBlock>>>((thrust::complex<float>**)Ainv_list, (thrust::complex<float>**)new_row_list, (thrust::complex<float>*)ratios, N, row_stride, iat);
+  else if (N <= 256)
+    calc_ratios<thrust::complex<float>,256><<<dimGrid,dimBlock>>>((thrust::complex<float>**)Ainv_list, (thrust::complex<float>**)new_row_list, (thrust::complex<float>*)ratios, N, row_stride, iat);
+  else if (N <= 512)
+    calc_ratios<thrust::complex<float>,512><<<dimGrid,dimBlock>>>((thrust::complex<float>**)Ainv_list, (thrust::complex<float>**)new_row_list, (thrust::complex<float>*)ratios, N, row_stride, iat);
+  else if (N <= 1024)
+    calc_ratios<thrust::complex<float>,1024><<<dimGrid,dimBlock>>>((thrust::complex<float>**)Ainv_list, (thrust::complex<float>**)new_row_list, (thrust::complex<float>*)ratios, N, row_stride, iat);
+  else
+  {
+    fprintf (stdout, "Error:  N too large for CUDA evaluation.\n");
+    abort();
+  }
+}
+
+void
+determinant_ratios_cuda (std::complex<double> *Ainv_list[],
+                         std::complex<double> *new_row_list[],
+                         std::complex<double> *ratios, int N, int row_stride, int iat,
+                         int numWalkers)
+{
+  dim3 dimBlock(N);
+  dim3 dimGrid(numWalkers);
+
+  if (N <= 32)
+    calc_ratios<thrust::complex<double>,32><<<dimGrid,dimBlock>>>((thrust::complex<double>**)Ainv_list, (thrust::complex<double>**)new_row_list, (thrust::complex<double>*)ratios, N, row_stride, iat);
+  else if (N <= 64)
+    calc_ratios<thrust::complex<double>,64><<<dimGrid,dimBlock>>>((thrust::complex<double>**)Ainv_list, (thrust::complex<double>**)new_row_list, (thrust::complex<double>*)ratios, N, row_stride, iat);
+  else if (N <= 128)
+    calc_ratios<thrust::complex<double>,128><<<dimGrid,dimBlock>>>((thrust::complex<double>**)Ainv_list, (thrust::complex<double>**)new_row_list, (thrust::complex<double>*)ratios, N, row_stride, iat);
+  else if (N <= 256)
+    calc_ratios<thrust::complex<double>,256><<<dimGrid,dimBlock>>>((thrust::complex<double>**)Ainv_list, (thrust::complex<double>**)new_row_list, (thrust::complex<double>*)ratios, N, row_stride, iat);
+  else if (N <= 512)
+    calc_ratios<thrust::complex<double>,512><<<dimGrid,dimBlock>>>((thrust::complex<double>**)Ainv_list, (thrust::complex<double>**)new_row_list, (thrust::complex<double>*)ratios, N, row_stride, iat);
+  else
+  {
+    fprintf (stdout, "Error:  N too large for CUDA evaluation.\n");
+    abort();
+  }
+}
+#endif
+
 
 template<typename T, int BS>
 __global__ void
@@ -1044,14 +1272,23 @@ calc_ratio_grad_lapl (T **Ainv_list, T **new_row_list, T **grad_lapl_list,
     new_row = new_row_list[blockIdx.x];
     grad_lapl = grad_lapl_list[blockIdx.x];
   }
+  const int BS1=BS+1;
+  const int BS2=2*BS1;
+  const int BS3=3*BS1;
+  const int BS4=4*BS1;
   __syncthreads();
+#ifdef QMC_COMPLEX
+  __shared__ bulk::uninitialized_array<T,BS> Ainv_colk_shared;
+  __shared__ bulk::uninitialized_array<T,5*BS1> ratio_prod;
+#else
   __shared__ T Ainv_colk_shared[BS];
-  __shared__ T ratio_prod[5][BS+1];
-  ratio_prod[0][tid] = 0.0f;
-  ratio_prod[1][tid] = 0.0f;
-  ratio_prod[2][tid] = 0.0f;
-  ratio_prod[3][tid] = 0.0f;
-  ratio_prod[4][tid] = 0.0f;
+  __shared__ T ratio_prod[5*BS1];
+#endif
+  ratio_prod[tid] = 0.0f;
+  ratio_prod[BS1+tid] = 0.0f;
+  ratio_prod[BS2+tid] = 0.0f;
+  ratio_prod[BS3+tid] = 0.0f;
+  ratio_prod[BS4+tid] = 0.0f;
   // This is *highly* uncoallesced, but we just have to eat it to allow
   // other kernels to operate quickly.
   __syncthreads();
@@ -1063,11 +1300,11 @@ calc_ratio_grad_lapl (T **Ainv_list, T **new_row_list, T **grad_lapl_list,
     __syncthreads();
     if (col < N)
     {
-      ratio_prod[0][tid] += Ainv_colk_shared[tid] * new_row[col];
-      ratio_prod[1][tid] += Ainv_colk_shared[tid] * grad_lapl[0*row_stride+col];
-      ratio_prod[2][tid] += Ainv_colk_shared[tid] * grad_lapl[1*row_stride+col];
-      ratio_prod[3][tid] += Ainv_colk_shared[tid] * grad_lapl[2*row_stride+col];
-      ratio_prod[4][tid] += Ainv_colk_shared[tid] * grad_lapl[3*row_stride+col];
+      ratio_prod[tid] += Ainv_colk_shared[tid] * new_row[col];
+      ratio_prod[BS1+tid] += Ainv_colk_shared[tid] * grad_lapl[0*row_stride+col];
+      ratio_prod[BS2+tid] += Ainv_colk_shared[tid] * grad_lapl[1*row_stride+col];
+      ratio_prod[BS3+tid] += Ainv_colk_shared[tid] * grad_lapl[2*row_stride+col];
+      ratio_prod[BS4+tid] += Ainv_colk_shared[tid] * grad_lapl[3*row_stride+col];
     }
     __syncthreads();
   }
@@ -1076,28 +1313,28 @@ calc_ratio_grad_lapl (T **Ainv_list, T **new_row_list, T **grad_lapl_list,
   {
     if (tid < s)
     {
-      ratio_prod[0][tid] += ratio_prod[0][tid + s]; // Value
-      ratio_prod[1][tid] += ratio_prod[1][tid + s]; // grad_x
-      ratio_prod[2][tid] += ratio_prod[2][tid + s]; // grad_y
-      ratio_prod[3][tid] += ratio_prod[3][tid + s]; // grad_z
-      ratio_prod[4][tid] += ratio_prod[4][tid + s]; // lapl
+      ratio_prod[tid] += ratio_prod[tid + s]; // Value
+      ratio_prod[BS1+tid] += ratio_prod[BS1 + tid + s]; // grad_x
+      ratio_prod[BS2+tid] += ratio_prod[BS2 + tid + s]; // grad_y
+      ratio_prod[BS3+tid] += ratio_prod[BS3 + tid + s]; // grad_z
+      ratio_prod[BS4+tid] += ratio_prod[BS4 + tid + s]; // lapl
     }
     __syncthreads();
   }
   // Subtract off gradient^2 from laplacian
   if (tid == 0)
   {
-    ratio_prod[4][0] -= (ratio_prod[1][0]*ratio_prod[1][0] +
-                         ratio_prod[2][0]*ratio_prod[2][0] +
-                         ratio_prod[3][0]*ratio_prod[3][0]);
+    ratio_prod[BS4] -= (ratio_prod[BS1]*ratio_prod[BS1] +
+                        ratio_prod[BS2]*ratio_prod[BS2] +
+                        ratio_prod[BS3]*ratio_prod[BS3]);
   }
   __syncthreads();
   // Present gradient and laplacian are w.r.t old position.  Divide by
   // ratio to make it w.r.t. new position
   if (tid < 4)
-    ratio_prod[tid+1][0] /= ratio_prod[0][0];
+    ratio_prod[(tid+1)*BS1] /= ratio_prod[0];
   if (tid < 5)
-    ratio_grad_lapl[5*blockIdx.x+tid] = ratio_prod[tid][0];
+    ratio_grad_lapl[5*blockIdx.x+tid] = ratio_prod[tid*BS1];
 }
 
 
@@ -1118,13 +1355,22 @@ calc_ratio_grad_lapl (T **Ainv_list, T **new_row_list, T **grad_lapl_list,
     elec = elec_list[blockIdx.x];
   }
   __syncthreads();
+  const int BS1=BS+1;
+  const int BS2=2*BS1;
+  const int BS3=3*BS1;
+  const int BS4=4*BS1;
+#ifdef QMC_COMPLEX
+  __shared__ bulk::uninitialized_array<T,BS> Ainv_colk_shared;
+  __shared__ bulk::uninitialized_array<T,5*BS1> ratio_prod;
+#else
   __shared__ T Ainv_colk_shared[BS];
-  __shared__ T ratio_prod[5][BS+1];
-  ratio_prod[0][tid] = 0.0f;
-  ratio_prod[1][tid] = 0.0f;
-  ratio_prod[2][tid] = 0.0f;
-  ratio_prod[3][tid] = 0.0f;
-  ratio_prod[4][tid] = 0.0f;
+  __shared__ T ratio_prod[5*BS1];
+#endif
+  ratio_prod[tid] = 0.0f;
+  ratio_prod[BS1+tid] = 0.0f;
+  ratio_prod[BS2+tid] = 0.0f;
+  ratio_prod[BS3+tid] = 0.0f;
+  ratio_prod[BS4+tid] = 0.0f;
   // This is *highly* uncoallesced, but we just have to eat it to allow
   // other kernels to operate quickly.
   __syncthreads();
@@ -1136,11 +1382,11 @@ calc_ratio_grad_lapl (T **Ainv_list, T **new_row_list, T **grad_lapl_list,
     __syncthreads();
     if (col < N)
     {
-      ratio_prod[0][tid] += Ainv_colk_shared[tid] * new_row[col];
-      ratio_prod[1][tid] += Ainv_colk_shared[tid] * grad_lapl[0*row_stride+col];
-      ratio_prod[2][tid] += Ainv_colk_shared[tid] * grad_lapl[1*row_stride+col];
-      ratio_prod[3][tid] += Ainv_colk_shared[tid] * grad_lapl[2*row_stride+col];
-      ratio_prod[4][tid] += Ainv_colk_shared[tid] * grad_lapl[3*row_stride+col];
+      ratio_prod[tid] += Ainv_colk_shared[tid] * new_row[col];
+      ratio_prod[BS1+tid] += Ainv_colk_shared[tid] * grad_lapl[0*row_stride+col];
+      ratio_prod[BS2+tid] += Ainv_colk_shared[tid] * grad_lapl[1*row_stride+col];
+      ratio_prod[BS3+tid] += Ainv_colk_shared[tid] * grad_lapl[2*row_stride+col];
+      ratio_prod[BS4+tid] += Ainv_colk_shared[tid] * grad_lapl[3*row_stride+col];
     }
     __syncthreads();
   }
@@ -1149,30 +1395,29 @@ calc_ratio_grad_lapl (T **Ainv_list, T **new_row_list, T **grad_lapl_list,
   {
     if (tid < s)
     {
-      ratio_prod[0][tid] += ratio_prod[0][tid + s]; // Value
-      ratio_prod[1][tid] += ratio_prod[1][tid + s]; // grad_x
-      ratio_prod[2][tid] += ratio_prod[2][tid + s]; // grad_y
-      ratio_prod[3][tid] += ratio_prod[3][tid + s]; // grad_z
-      ratio_prod[4][tid] += ratio_prod[4][tid + s]; // lapl
+      ratio_prod[tid] += ratio_prod[tid + s]; // Value
+      ratio_prod[BS1+tid] += ratio_prod[BS1 + tid + s]; // grad_x
+      ratio_prod[BS2+tid] += ratio_prod[BS2 + tid + s]; // grad_y
+      ratio_prod[BS3+tid] += ratio_prod[BS3 + tid + s]; // grad_z
+      ratio_prod[BS4+tid] += ratio_prod[BS4 + tid + s]; // lapl
     }
     __syncthreads();
   }
   // Subtract off gradient^2 from laplacian
   if (tid == 0)
   {
-    ratio_prod[4][0] -= (ratio_prod[1][0]*ratio_prod[1][0] +
-                         ratio_prod[2][0]*ratio_prod[2][0] +
-                         ratio_prod[3][0]*ratio_prod[3][0]);
+    ratio_prod[BS4] -= (ratio_prod[BS1]*ratio_prod[BS1] +
+                        ratio_prod[BS2]*ratio_prod[BS2] +
+                        ratio_prod[BS3]*ratio_prod[BS3]);
   }
   __syncthreads();
   // Present gradient and laplacian are w.r.t old position.  Divide by
   // ratio to make it w.r.t. new position
   if (tid < 4)
-    ratio_prod[tid+1][0] /= ratio_prod[0][0];
+    ratio_prod[BS1*(tid+1)] /= ratio_prod[0];
   if (tid < 5)
-    ratio_grad_lapl[5*blockIdx.x+tid] = ratio_prod[tid][0];
+    ratio_grad_lapl[5*blockIdx.x+tid] = ratio_prod[tid*BS1];
 }
-
 
 
 
@@ -1204,6 +1449,41 @@ determinant_ratios_grad_lapl_cuda (double *Ainv_list[], double *new_row_list[],
 
 
 
+#ifdef QMC_COMPLEX
+void
+determinant_ratios_grad_lapl_cuda
+(std::complex<float> *Ainv_list[], std::complex<float> *new_row_list[],
+ std::complex<float> *grad_lapl_list[], std::complex<float> ratios_grad_lapl[],
+ int N, int row_stride, int iat, int numWalkers)
+{
+  const int BS = 32;
+  dim3 dimBlock(BS);
+  dim3 dimGrid(numWalkers);
+
+  calc_ratio_grad_lapl<thrust::complex<float>,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
+  ((thrust::complex<float>**)Ainv_list, (thrust::complex<float>**)new_row_list, (thrust::complex<float>**)grad_lapl_list, (thrust::complex<float>*)ratios_grad_lapl, N, row_stride, iat);
+
+}
+
+
+void
+determinant_ratios_grad_lapl_cuda
+(std::complex<double> *Ainv_list[], std::complex<double> *new_row_list[],
+ std::complex<double> *grad_lapl_list[], std::complex<double> ratios_grad_lapl[], 
+ int N, int row_stride, int iat, int numWalkers)
+{
+  const int BS = 32;
+  dim3 dimBlock(BS);
+  dim3 dimGrid(numWalkers);
+
+  calc_ratio_grad_lapl<thrust::complex<double>,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
+  ((thrust::complex<double>**)Ainv_list, (thrust::complex<double>**)new_row_list, (thrust::complex<double>**)grad_lapl_list, (thrust::complex<double>*)ratios_grad_lapl, N, row_stride, iat);
+
+}
+#endif
+
+
+
 void
 determinant_ratios_grad_lapl_cuda (float *Ainv_list[], float *new_row_list[],
                                    float *grad_lapl_list[], float ratios_grad_lapl[],
@@ -1230,6 +1510,39 @@ determinant_ratios_grad_lapl_cuda (double *Ainv_list[], double *new_row_list[],
   (Ainv_list, new_row_list, grad_lapl_list, ratios_grad_lapl, N, row_stride, iat_list);
 }
 
+
+
+#ifdef QMC_COMPLEX
+void
+determinant_ratios_grad_lapl_cuda
+(std::complex<float> *Ainv_list[], std::complex<float> *new_row_list[],
+ std::complex<float> *grad_lapl_list[], std::complex<float> ratios_grad_lapl[], 
+ int N, int row_stride, int iat_list[], int numWalkers)
+{
+  const int BS = 32;
+  dim3 dimBlock(BS);
+  dim3 dimGrid(numWalkers);
+
+  calc_ratio_grad_lapl<thrust::complex<float>,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
+  ((thrust::complex<float>**)Ainv_list, (thrust::complex<float>**)new_row_list, (thrust::complex<float>**)grad_lapl_list, (thrust::complex<float>*)ratios_grad_lapl, N, row_stride, iat_list);
+
+}
+
+
+void
+determinant_ratios_grad_lapl_cuda
+(std::complex<double> *Ainv_list[], std::complex<double> *new_row_list[], 
+ std::complex<double> *grad_lapl_list[], std::complex<double> ratios_grad_lapl[], 
+ int N, int row_stride, int iat_list[], int numWalkers)
+{
+  const int BS = 32;
+  dim3 dimBlock(BS);
+  dim3 dimGrid(numWalkers);
+
+  calc_ratio_grad_lapl<thrust::complex<double>,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
+  ((thrust::complex<double>**)Ainv_list, (thrust::complex<double>**)new_row_list, (thrust::complex<double>**)grad_lapl_list, (thrust::complex<double>*)ratios_grad_lapl, N, row_stride, iat_list);
+}
+#endif
 
 
 
@@ -1247,11 +1560,18 @@ calc_grad_kernel (T **Ainv_list, T **grad_lapl_list,
     grad_lapl = grad_lapl_list[blockIdx.x] + 4*elec*row_stride;
   }
   __syncthreads();
+  const int BS1=BS+1;
+  const int BS2=2*BS1;
+#ifdef QMC_COMPLEX
+  __shared__ bulk::uninitialized_array<T,BS> Ainv_colk_shared;
+  __shared__ bulk::uninitialized_array<T,3*BS1> ratio_prod;
+#else
   __shared__ T Ainv_colk_shared[BS];
-  __shared__ T ratio_prod[3][BS+1];
-  ratio_prod[0][tid] = 0.0f;
-  ratio_prod[1][tid] = 0.0f;
-  ratio_prod[2][tid] = 0.0f;
+  __shared__ T ratio_prod[3*BS1];
+#endif
+  ratio_prod[tid] = 0.0f;
+  ratio_prod[BS1+tid] = 0.0f;
+  ratio_prod[BS2+tid] = 0.0f;
   // This is *highly* uncoallesced, but we just have to eat it to allow
   // other kernels to operate quickly.
   __syncthreads();
@@ -1263,9 +1583,9 @@ calc_grad_kernel (T **Ainv_list, T **grad_lapl_list,
     __syncthreads();
     if (col < N)
     {
-      ratio_prod[0][tid] += Ainv_colk_shared[tid] * grad_lapl[0*row_stride+col];
-      ratio_prod[1][tid] += Ainv_colk_shared[tid] * grad_lapl[1*row_stride+col];
-      ratio_prod[2][tid] += Ainv_colk_shared[tid] * grad_lapl[2*row_stride+col];
+      ratio_prod[tid] += Ainv_colk_shared[tid] * grad_lapl[0*row_stride+col];
+      ratio_prod[BS1+tid] += Ainv_colk_shared[tid] * grad_lapl[1*row_stride+col];
+      ratio_prod[BS2+tid] += Ainv_colk_shared[tid] * grad_lapl[2*row_stride+col];
     }
     __syncthreads();
   }
@@ -1274,14 +1594,14 @@ calc_grad_kernel (T **Ainv_list, T **grad_lapl_list,
   {
     if (tid < s)
     {
-      ratio_prod[0][tid] += ratio_prod[0][tid + s]; // grad_x
-      ratio_prod[1][tid] += ratio_prod[1][tid + s]; // grad_y
-      ratio_prod[2][tid] += ratio_prod[2][tid + s]; // grad_z
+      ratio_prod[tid] += ratio_prod[tid + s]; // grad_x
+      ratio_prod[BS1+tid] += ratio_prod[BS1+tid + s]; // grad_y
+      ratio_prod[BS2+tid] += ratio_prod[BS2+tid + s]; // grad_z
     }
     __syncthreads();
   }
   if (tid < 3)
-    grad[3*blockIdx.x+tid] = ratio_prod[tid][0];
+    grad[3*blockIdx.x+tid] = ratio_prod[tid*BS1];
 }
 
 void
@@ -1308,6 +1628,33 @@ calc_gradient (double *Ainv_list[], double *grad_lapl_list[],
   (Ainv_list, grad_lapl_list, grad, N, row_stride, elec);
 }
 
+#ifdef QMC_COMPLEX
+void
+calc_gradient (std::complex<float> *Ainv_list[], std::complex<float> *grad_lapl_list[],
+               std::complex<float> grad[], int N, int row_stride, int elec,
+               int numWalkers)
+{
+  const int BS = 32;
+  dim3 dimBlock(BS);
+  dim3 dimGrid(numWalkers);
+
+  calc_grad_kernel<thrust::complex<float>,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
+  ((thrust::complex<float>**)Ainv_list, (thrust::complex<float>**)grad_lapl_list, (thrust::complex<float>*)grad, N, row_stride, elec);
+}
+
+void
+calc_gradient (std::complex<double> *Ainv_list[], std::complex<double> *grad_lapl_list[],
+               std::complex<double> grad[], int N, int row_stride, int elec,
+               int numWalkers)
+{
+  const int BS = 32;
+  dim3 dimBlock(BS);
+  dim3 dimGrid(numWalkers);
+
+  calc_grad_kernel<thrust::complex<double>,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
+  ((thrust::complex<double>**)Ainv_list, (thrust::complex<double>**)grad_lapl_list, (thrust::complex<double>*)grad, N, row_stride, elec);
+}
+#endif
 
 
 #define RATIO_BS 16
@@ -1324,9 +1671,9 @@ all_ratios_kernel (T **Ainv_list, T **new_mat_list,
     new_mat = new_mat_list[blockIdx.x];
     ratio   = ratio_list[blockIdx.x];
   }
-  __shared__ float Ainv_block[RATIO_BS][RATIO_BS+1];
-  // __shared__ float new_block[RATIO_BS][RATIO_BS+1];
-  __shared__ float ratio_block[RATIO_BS][RATIO_BS+1];
+  __shared__ T Ainv_block[RATIO_BS][RATIO_BS+1];
+  // __shared__ T new_block[RATIO_BS][RATIO_BS+1];
+  __shared__ T ratio_block[RATIO_BS][RATIO_BS+1];
   unsigned int numBlocks = N >> 4;
   if (N & 15)
     numBlocks++;
@@ -1405,12 +1752,21 @@ calc_many_ratios_kernel (T **Ainv_list, T **new_row_list,
   }
   __syncthreads();
   int NB = N/BS + ((N%BS) ? 1 : 0);
+#ifdef QMC_COMPLEX
+  __shared__ bulk::uninitialized_array<T,BS> Ainv_shared;
+#else
   __shared__ T Ainv_shared[BS];
+#endif
+  const int BS1=BS+1;
 //  __shared__ T row[BS];
   // We use BS+1 to avoid bank conflicts in the writing.
-  __shared__ T ratio_sum[MAX_RATIO_ROWS][BS+1];
+#ifdef QMC_COMPLEX
+  __shared__ bulk::uninitialized_array<T,MAX_RATIO_ROWS*BS1> ratio_sum;
+#else
+  __shared__ T ratio_sum[MAX_RATIO_ROWS*BS1];
+#endif
   for (int iratio=0; iratio<num_ratios; iratio++)
-    ratio_sum[iratio][tid] = (T)0.0;
+    ratio_sum[iratio*BS1+tid] = (T)0.0;
   __syncthreads();
   for (int block=0; block<NB; block++)
   {
@@ -1421,8 +1777,8 @@ calc_many_ratios_kernel (T **Ainv_list, T **new_row_list,
     __syncthreads();
     for (int iratio=0; iratio<num_ratios; iratio++)
       if (mask)
-        ratio_sum[iratio][tid] += Ainv_shared[tid] *
-                                  new_rows[iratio*row_stride + off];
+        ratio_sum[iratio*BS1+tid] += Ainv_shared[tid] *
+                                     new_rows[iratio*row_stride + off];
     __syncthreads();
   }
   // now, sum up ratios
@@ -1431,13 +1787,13 @@ calc_many_ratios_kernel (T **Ainv_list, T **new_row_list,
     for (int s=BS>>1; s>0; s>>=1)
     {
       if (tid < s)
-        ratio_sum[iratio][tid] += ratio_sum[iratio][tid+s];
+        ratio_sum[iratio*BS1+tid] += ratio_sum[iratio*BS1+tid+s];
       __syncthreads();
     }
   }
   // Store sums in parallel
   if (tid < num_ratios)
-    ratios[tid] = ratio_sum[tid][0];
+    ratios[tid] = ratio_sum[tid*BS1];
 }
 
 void
@@ -1469,11 +1825,45 @@ calc_many_ratios (double *Ainv_list[], double *new_row_list[],
 }
 
 
+#ifdef QMC_COMPLEX
+void
+calc_many_ratios (std::complex<float> *Ainv_list[], std::complex<float> *new_row_list[],
+                  std::complex<float>* ratio_list[], int num_ratio_list[],
+                  int N, int row_stride, int elec_list[],
+                  int numWalkers)
+{
+  const int BS=32;
+  dim3 dimBlock(BS);
+  dim3 dimGrid (numWalkers);
+
+  calc_many_ratios_kernel<thrust::complex<float>,BS><<<dimGrid,dimBlock>>>
+  ((thrust::complex<float>**)(Ainv_list), (thrust::complex<float>**)new_row_list, (thrust::complex<float>**)ratio_list, num_ratio_list,
+   N, row_stride, elec_list);
+}
+
+
+
+void
+calc_many_ratios (std::complex<double> *Ainv_list[], std::complex<double> *new_row_list[],
+                  std::complex<double>* ratio_list[], int num_ratio_list[],
+                  int N, int row_stride, int elec_list[],
+                  int numWalkers)
+{
+  const int BS=32;
+  dim3 dimBlock(BS);
+  dim3 dimGrid (numWalkers);
+
+  calc_many_ratios_kernel<thrust::complex<double>,BS><<<dimGrid,dimBlock>>>
+  ((thrust::complex<double>**)Ainv_list, (thrust::complex<double>**)new_row_list, (thrust::complex<double>**)ratio_list, num_ratio_list,
+   N, row_stride, elec_list);
+}
+#endif
+
 
 
 #define SCALE_BS 64
 
-__constant__ float GGt[3][3];
+//__constant__ float GGt[3][3];
 
 
 template<typename T>
@@ -1481,11 +1871,11 @@ __global__ void
 scale_grad_lapl_kernel (T **grad_list, T **hess_list,
                         T **grad_lapl_list, T *Linv, int N)
 {
-  __shared__ float gradBlock[3][SCALE_BS];
-  __shared__ float hessBlock[6][SCALE_BS];
+  __shared__ T gradBlock[3][SCALE_BS];
+  __shared__ T hessBlock[6][SCALE_BS];
   //  __shared__ float outBlock [4][SCALE_BS];
-  __shared__ float G[3][3], GGt[3][3];
-  __shared__ float *grad, *hess, *out;
+  __shared__ T G[3][3], GGt[3][3];
+  __shared__ T *grad, *hess, *out;
   if (threadIdx.x == 0)
   {
     grad = grad_list[blockIdx.y];
@@ -1519,7 +1909,7 @@ scale_grad_lapl_kernel (T **grad_list, T **hess_list,
   // dimensioned gradients and laplacians from the
   // dimensionless gradients and Hessians.
   int row = blockIdx.x*SCALE_BS;
-  float val;
+  T val;
   // x component of gradient
   val = (G[0][0]*gradBlock[0][threadIdx.x] +
          G[0][1]*gradBlock[1][threadIdx.x] +
@@ -1588,8 +1978,13 @@ all_ratios_grad_lapl_kernel (T **Ainv_list, T **grad_lapl_list,
     out      = out_list[blockIdx.x];
   }
   __syncthreads();
-  __shared__ float Ainv_block[RATIO_BS][RATIO_BS+1];
-  __shared__ float grad_lapl_block[4][RATIO_BS][RATIO_BS+1];
+#ifdef QMC_COMPLEX
+  __shared__ bulk::uninitialized_array<T,RATIO_BS*(RATIO_BS+1)> Ainv_block;
+  __shared__ bulk::uninitialized_array<T,RATIO_BS*(RATIO_BS+1)> grad_lapl_block[4];
+#else
+  __shared__ T Ainv_block[RATIO_BS*(RATIO_BS+1)];
+  __shared__ T grad_lapl_block[4][RATIO_BS*(RATIO_BS+1)];
+#endif
   unsigned int numBlocks = N >> 4;
   if (N & 15)
     numBlocks++;
@@ -1597,10 +1992,10 @@ all_ratios_grad_lapl_kernel (T **Ainv_list, T **grad_lapl_list,
   for (unsigned int yBlock=0; yBlock<numBlocks; yBlock++)
   {
     __syncthreads();
-    grad_lapl_block[0][threadIdx.y][threadIdx.x] = 0.0f;
-    grad_lapl_block[1][threadIdx.y][threadIdx.x] = 0.0f;
-    grad_lapl_block[2][threadIdx.y][threadIdx.x] = 0.0f;
-    grad_lapl_block[3][threadIdx.y][threadIdx.x] = 0.0f;
+    grad_lapl_block[0][threadIdx.y*(RATIO_BS+1)+threadIdx.x] = 0.0f;
+    grad_lapl_block[1][threadIdx.y*(RATIO_BS+1)+threadIdx.x] = 0.0f;
+    grad_lapl_block[2][threadIdx.y*(RATIO_BS+1)+threadIdx.x] = 0.0f;
+    grad_lapl_block[3][threadIdx.y*(RATIO_BS+1)+threadIdx.x] = 0.0f;
     __syncthreads();
     for (unsigned int xBlock=0; xBlock<numBlocks; xBlock++)
     {
@@ -1608,7 +2003,7 @@ all_ratios_grad_lapl_kernel (T **Ainv_list, T **grad_lapl_list,
       unsigned int yIndex = xBlock * RATIO_BS + threadIdx.y;
       unsigned int index  = yIndex*row_stride + xIndex;
       if ((xIndex < N) && (yIndex < N))
-        Ainv_block[threadIdx.x][threadIdx.y] = Ainv[index];
+        Ainv_block[threadIdx.x*(RATIO_BS+1)+threadIdx.y] = Ainv[index];
       __syncthreads();
       xIndex = xBlock * RATIO_BS + threadIdx.x;
       yIndex = yBlock * RATIO_BS + threadIdx.y;
@@ -1616,64 +2011,64 @@ all_ratios_grad_lapl_kernel (T **Ainv_list, T **grad_lapl_list,
       __syncthreads();
       if ((xIndex < N) && (yIndex < N))
       {
-        grad_lapl_block[0][threadIdx.y][threadIdx.x] +=
-          gl_array[index+0*row_stride] * Ainv_block[threadIdx.y][threadIdx.x];
-        grad_lapl_block[1][threadIdx.y][threadIdx.x] +=
-          gl_array[index+1*row_stride] * Ainv_block[threadIdx.y][threadIdx.x];
-        grad_lapl_block[2][threadIdx.y][threadIdx.x] +=
-          gl_array[index+2*row_stride] * Ainv_block[threadIdx.y][threadIdx.x];
-        grad_lapl_block[3][threadIdx.y][threadIdx.x] +=
-          gl_array[index+3*row_stride] * Ainv_block[threadIdx.y][threadIdx.x];
+        grad_lapl_block[0][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+          gl_array[index+0*row_stride] * Ainv_block[threadIdx.y*(RATIO_BS+1)+threadIdx.x];
+        grad_lapl_block[1][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+          gl_array[index+1*row_stride] * Ainv_block[threadIdx.y*(RATIO_BS+1)+threadIdx.x];
+        grad_lapl_block[2][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+          gl_array[index+2*row_stride] * Ainv_block[threadIdx.y*(RATIO_BS+1)+threadIdx.x];
+        grad_lapl_block[3][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+          gl_array[index+3*row_stride] * Ainv_block[threadIdx.y*(RATIO_BS+1)+threadIdx.x];
       }
       __syncthreads();
     }
     // Now, we have to do the reduction across the lapl_blocks
     if (threadIdx.x < 8)
     {
-      grad_lapl_block[0][threadIdx.y][threadIdx.x] +=
-        grad_lapl_block[0][threadIdx.y][threadIdx.x+8];
-      grad_lapl_block[1][threadIdx.y][threadIdx.x] +=
-        grad_lapl_block[1][threadIdx.y][threadIdx.x+8];
-      grad_lapl_block[2][threadIdx.y][threadIdx.x] +=
-        grad_lapl_block[2][threadIdx.y][threadIdx.x+8];
-      grad_lapl_block[3][threadIdx.y][threadIdx.x] +=
-        grad_lapl_block[3][threadIdx.y][threadIdx.x+8];
+      grad_lapl_block[0][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+        grad_lapl_block[0][threadIdx.y*(RATIO_BS+1)+threadIdx.x+8];
+      grad_lapl_block[1][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+        grad_lapl_block[1][threadIdx.y*(RATIO_BS+1)+threadIdx.x+8];
+      grad_lapl_block[2][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+        grad_lapl_block[2][threadIdx.y*(RATIO_BS+1)+threadIdx.x+8];
+      grad_lapl_block[3][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+        grad_lapl_block[3][threadIdx.y*(RATIO_BS+1)+threadIdx.x+8];
     }
     __syncthreads();
     if (threadIdx.x < 4)
     {
-      grad_lapl_block[0][threadIdx.y][threadIdx.x] +=
-        grad_lapl_block[0][threadIdx.y][threadIdx.x+4];
-      grad_lapl_block[1][threadIdx.y][threadIdx.x] +=
-        grad_lapl_block[1][threadIdx.y][threadIdx.x+4];
-      grad_lapl_block[2][threadIdx.y][threadIdx.x] +=
-        grad_lapl_block[2][threadIdx.y][threadIdx.x+4];
-      grad_lapl_block[3][threadIdx.y][threadIdx.x] +=
-        grad_lapl_block[3][threadIdx.y][threadIdx.x+4];
+      grad_lapl_block[0][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+        grad_lapl_block[0][threadIdx.y*(RATIO_BS+1)+threadIdx.x+4];
+      grad_lapl_block[1][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+        grad_lapl_block[1][threadIdx.y*(RATIO_BS+1)+threadIdx.x+4];
+      grad_lapl_block[2][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+        grad_lapl_block[2][threadIdx.y*(RATIO_BS+1)+threadIdx.x+4];
+      grad_lapl_block[3][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+        grad_lapl_block[3][threadIdx.y*(RATIO_BS+1)+threadIdx.x+4];
     }
     __syncthreads();
     if (threadIdx.x < 2)
     {
-      grad_lapl_block[0][threadIdx.y][threadIdx.x] +=
-        grad_lapl_block[0][threadIdx.y][threadIdx.x+2];
-      grad_lapl_block[1][threadIdx.y][threadIdx.x] +=
-        grad_lapl_block[1][threadIdx.y][threadIdx.x+2];
-      grad_lapl_block[2][threadIdx.y][threadIdx.x] +=
-        grad_lapl_block[2][threadIdx.y][threadIdx.x+2];
-      grad_lapl_block[3][threadIdx.y][threadIdx.x] +=
-        grad_lapl_block[3][threadIdx.y][threadIdx.x+2];
+      grad_lapl_block[0][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+        grad_lapl_block[0][threadIdx.y*(RATIO_BS+1)+threadIdx.x+2];
+      grad_lapl_block[1][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+        grad_lapl_block[1][threadIdx.y*(RATIO_BS+1)+threadIdx.x+2];
+      grad_lapl_block[2][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+        grad_lapl_block[2][threadIdx.y*(RATIO_BS+1)+threadIdx.x+2];
+      grad_lapl_block[3][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+        grad_lapl_block[3][threadIdx.y*(RATIO_BS+1)+threadIdx.x+2];
     }
     __syncthreads();
     if (threadIdx.x < 1)
     {
-      grad_lapl_block[0][threadIdx.y][threadIdx.x] +=
-        grad_lapl_block[0][threadIdx.y][threadIdx.x+1];
-      grad_lapl_block[1][threadIdx.y][threadIdx.x] +=
-        grad_lapl_block[1][threadIdx.y][threadIdx.x+1];
-      grad_lapl_block[2][threadIdx.y][threadIdx.x] +=
-        grad_lapl_block[2][threadIdx.y][threadIdx.x+1];
-      grad_lapl_block[3][threadIdx.y][threadIdx.x] +=
-        grad_lapl_block[3][threadIdx.y][threadIdx.x+1];
+      grad_lapl_block[0][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+        grad_lapl_block[0][threadIdx.y*(RATIO_BS+1)+threadIdx.x+1];
+      grad_lapl_block[1][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+        grad_lapl_block[1][threadIdx.y*(RATIO_BS+1)+threadIdx.x+1];
+      grad_lapl_block[2][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+        grad_lapl_block[2][threadIdx.y*(RATIO_BS+1)+threadIdx.x+1];
+      grad_lapl_block[3][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
+        grad_lapl_block[3][threadIdx.y*(RATIO_BS+1)+threadIdx.x+1];
     }
     __syncthreads();
     // unsigned int yIndex = yBlock * RATIO_BS + threadIdx.x;
@@ -1687,7 +2082,7 @@ all_ratios_grad_lapl_kernel (T **Ainv_list, T **grad_lapl_list,
     unsigned int ix = 16*threadIdx.y + threadIdx.x;
     unsigned int yIndex = RATIO_BS * yBlock + (ix >> 2);
     if (ix < 64 && yIndex < N)
-      out[64*yBlock + ix] = grad_lapl_block[ix&3][ix>>2][0];
+      out[64*yBlock + ix] = grad_lapl_block[ix&3][(ix>>2)*(RATIO_BS+1)];
     // IMPORTANT!!!
     __syncthreads();
   }
@@ -1713,6 +2108,33 @@ calc_grad_lapl (double *Ainv_list[], double *grad_lapl_list[],
   all_ratios_grad_lapl_kernel<double><<<dimGrid,dimBlock>>>
   (Ainv_list, grad_lapl_list, out_list, N, row_stride);
 }
+
+
+#ifdef QMC_COMPLEX
+void
+calc_grad_lapl (std::complex<float> *Ainv_list[], std::complex<float> *grad_lapl_list[],
+                std::complex<float> *out_list[], int N, int row_stride, int num_mats)
+{
+  dim3 dimBlock(RATIO_BS, RATIO_BS);
+  dim3 dimGrid (num_mats);
+
+  all_ratios_grad_lapl_kernel<thrust::complex<float> > <<<dimGrid,dimBlock>>>
+  ((thrust::complex<float>**)Ainv_list, (thrust::complex<float>**)grad_lapl_list, (thrust::complex<float>**)out_list, N, row_stride);
+}
+
+
+void
+calc_grad_lapl (std::complex<double> *Ainv_list[], std::complex<double> *grad_lapl_list[],
+                std::complex<double> *out_list[], int N, int row_stride, int num_mats)
+{
+  dim3 dimBlock(RATIO_BS, RATIO_BS);
+  dim3 dimGrid (num_mats);
+
+  all_ratios_grad_lapl_kernel<thrust::complex<double> > <<<dimGrid,dimBlock>>>
+  ((thrust::complex<double>**)Ainv_list, (thrust::complex<double>**)grad_lapl_list, (thrust::complex<double>**)out_list, N, row_stride);
+}
+#endif
+
 
 #define COPY_BS 256
 
@@ -1772,6 +2194,28 @@ multi_copy (double *dest[], double *src[], int len, int num)
 
 
 
+#ifdef QMC_COMPLEX
+void
+multi_copy (std::complex<float> *dest[], std::complex<float> *src[], int len, int num)
+{
+  dim3 dimBlock(COPY_BS);
+  dim3 dimGrid ((len+COPY_BS-1)/COPY_BS, num);
+
+  multi_copy<thrust::complex<float> ><<<dimGrid,dimBlock>>>((thrust::complex<float>**)dest, (thrust::complex<float>**)src, len);
+}
+
+void
+multi_copy (std::complex<double> *dest[], std::complex<double> *src[], int len, int num)
+{
+  dim3 dimBlock(COPY_BS);
+  dim3 dimGrid ((len+COPY_BS-1)/COPY_BS, num);
+
+  multi_copy<thrust::complex<double> ><<<dimGrid,dimBlock>>>((thrust::complex<double>**)dest, (thrust::complex<double>**)src, len);
+}
+#endif
+
+
+
 void
 multi_copy (float *buff[], int dest_off, int src_off, int len, int num)
 {
@@ -1789,6 +2233,27 @@ multi_copy (double *buff[], int dest_off, int src_off, int len, int num)
     dimGrid.x++;
   multi_copy<double><<<dimGrid,dimBlock>>>(buff, dest_off, src_off, len);
 }
+
+
+#ifdef QMC_COMPLEX
+void
+multi_copy (std::complex<float> *buff[], int dest_off, int src_off, int len, int num)
+{
+  dim3 dimBlock(COPY_BS);
+  dim3 dimGrid ((len+COPY_BS-1)/COPY_BS, num);
+
+  multi_copy<thrust::complex<float> > <<< dimGrid,dimBlock >>> ((thrust::complex<float>**)buff, dest_off, src_off, len);
+}
+
+void
+multi_copy (std::complex<double> *buff[], int dest_off, int src_off, int len, int num)
+{
+  dim3 dimBlock(COPY_BS);
+  dim3 dimGrid ((len+COPY_BS-1)/COPY_BS, num);
+
+  multi_copy<thrust::complex<double> > <<< dimGrid,dimBlock >>> ((thrust::complex<double>**)buff, dest_off, src_off, len);
+}
+#endif
 
 
 
@@ -1837,8 +2302,8 @@ test_all_ratios_kernel()
     calc_all_ratios (Ainv_list_d, A_list_d, ratio_list_d, N, N, numMats);
   clock_t end = clock();
   double time = (double)(end-start)/(double)CLOCKS_PER_SEC;
-  fprintf (stderr, "start = %d\n", start);
-  fprintf (stderr, "end = %d\n", end);
+  fprintf (stderr, "start = %ld\n", start);
+  fprintf (stderr, "end = %ld\n", end);
   double rate = 1000.0/time;
   fprintf (stderr, "Rate = %1.2f generations per second.\n", rate);
   cudaMemcpy (ratio, ratio_d, N*sizeof(float), cudaMemcpyDeviceToHost);
@@ -2234,9 +2699,6 @@ woodbury_update_32 (T** Ainv_trans, T** delta,
 
 
 #ifdef CUDA_TEST_MAIN
-
-
-
 // Replaces A with its inverse by gauss-jordan elimination with full pivoting
 // Adapted from Numerical Recipes in C
 void GJInverse (double *A, int n)
@@ -2736,16 +3198,18 @@ test_woodbury()
 
 
 
+// Note: compile with:
+// nvcc -o determinant_update -DCUDA_TEST_MAIN -arch=sm_35 determinant_update.cu ../../CUDA/gpu_misc.cpp -I../../../build_titan_cuda_real/src -lcublas -Xcompiler -fopenmp
 
-// Compile with:
-// nvcc -o test_all_ratios -DCUDA_TEST_MAIN ../src/QMCWaveFunctions/Fermion/determinant_update.cu
-main()
+int main()
 {
   //test_all_ratios_kernel();
   // test_all_grad_lapl_kernel();
   test_update();
   // test_update_transpose();
   test_woodbury();
+
+  return 0;
 }
 
 

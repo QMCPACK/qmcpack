@@ -85,9 +85,4 @@ WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodeP
 
 
 }
-/***************************************************************************
- * $RCSfile: WalkerControlFactory.cpp,v $   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

@@ -306,7 +306,7 @@ public:
       Dets[id]->recompute(W, firstTime);
   }
 
-  void reserve (PointerPool<gpu::device_vector<CudaRealType> > &pool)
+  void reserve (PointerPool<gpu::device_vector<CudaValueType> > &pool)
   {
     for (int id=0; id<Dets.size(); id++)
       Dets[id]->reserve(pool);
@@ -380,8 +380,3 @@ private:
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

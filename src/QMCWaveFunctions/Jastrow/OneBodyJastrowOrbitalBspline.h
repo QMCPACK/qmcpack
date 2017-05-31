@@ -108,8 +108,8 @@ public:
                  std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios);
   void evaluateDerivatives (MCWalkerConfiguration &W,
                             const opt_variables_type& optvars,
-                            ValueMatrix_t &dlogpsi,
-                            ValueMatrix_t &dlapl_over_psi);
+                            RealMatrix_t &dlogpsi,
+                            RealMatrix_t &dlapl_over_psi);
   OneBodyJastrowOrbitalBspline(ParticleSet &centers, ParticleSet& elecs) :
     OneBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> > (centers,elecs),
     ElecRef(elecs),

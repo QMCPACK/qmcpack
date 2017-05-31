@@ -10,6 +10,7 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
     
+INCLUDE("${qmcpack_SOURCE_DIR}/CMake/macros.cmake")
     
 
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
@@ -25,14 +26,12 @@ SET(UTEST_HDF_INPUT2 ${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae/pwscf.pwsc
 SET(UTEST_HDF_INPUT3 ${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp/LiH-arb.pwscf.h5)
 
 EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
-EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy ${UTEST_HDF_INPUT} ${UTEST_DIR})
-EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy ${UTEST_HDF_INPUT2} ${UTEST_DIR}/bccH.pwscf.h5)
-EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy ${UTEST_HDF_INPUT3} ${UTEST_DIR}/LiH-arb.pwscf.h5)
+MAYBE_SYMLINK(${UTEST_HDF_INPUT} ${UTEST_DIR}/pwscf.pwscf.h5)
+MAYBE_SYMLINK(${UTEST_HDF_INPUT2} ${UTEST_DIR}/bccH.pwscf.h5)
+MAYBE_SYMLINK(${UTEST_HDF_INPUT3} ${UTEST_DIR}/LiH-arb.pwscf.h5)
 
-ADD_EXECUTABLE(${UTEST_EXE} test_wf.cpp test_bspline_jastrow.cpp test_einset.cpp test_pw.cpp)
+ADD_EXECUTABLE(${UTEST_EXE} test_wf.cpp test_bspline_jastrow.cpp test_einset.cpp test_pw.cpp test_polynomial_eeI_jastrow.cpp)
 TARGET_LINK_LIBRARIES(${UTEST_EXE} qmc qmcwfs qmcbase qmcutil ${QMC_UTIL_LIBS} ${MPI_LIBRARY})
 
-#ADD_TEST(NAME ${UTEST_NAME} COMMAND "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}" WORKING_DIRECTORY ${UTEST_DIR})
-#SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES LABELS "unit")
 ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
 SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES LABELS "unit" WORKING_DIRECTORY ${UTEST_DIR})

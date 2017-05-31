@@ -38,7 +38,7 @@ class TaskGroup: public MPIObjectBase, public AFQMCInfo {
   {}
   ~TaskGroup() {};
 
-  void setBuffer(ComplexSMVector* buf) { commBuff = buf; }
+  void setBuffer(SPComplexSMVector* buf) { commBuff = buf; }
 
   // right now using std::vector and std::string to make the initial implementatino
   //   easier, but this is not efficient and can lead to memory fragmentation for large 
@@ -349,7 +349,7 @@ class TaskGroup: public MPIObjectBase, public AFQMCInfo {
         myComm->recv(local_buffer.data(),local_buffer.size(),prev_core_root,1001,MPI_COMM_TG,&status);
         // assuming doubles for now, FIX FIX FIX
         MPI_Get_count(&status,MPI_DOUBLE,&nblock);
-        nblock = nblock/2/block_size; // since I'm communicating std::complex
+        nblock = nblock/(block_size*(sizeof(SPComplexType)/sizeof(double))); 
         myComm->send(commBuff->values(),n0*block_size,next_core_root,1002,MPI_COMM_TG);
         std::copy(local_buffer.begin(),local_buffer.begin()+nblock*block_size,commBuff->begin());
       }
@@ -364,6 +364,8 @@ class TaskGroup: public MPIObjectBase, public AFQMCInfo {
   int getTGNumber() { return TG_number; }
 
   int getTGRank() { return TG_rank; }
+
+  int getTGSize() { return TG_nproc; }
 
   int getNCoresPerTG() { return ncores_per_TG; }
 
@@ -385,7 +387,7 @@ class TaskGroup: public MPIObjectBase, public AFQMCInfo {
   }
  
   // must be setup externally to be able to reuse between different TG 
-  ComplexSMVector* commBuff;  
+  SPComplexSMVector* commBuff;  
 
   std::string tgname;
 
@@ -408,7 +410,7 @@ class TaskGroup: public MPIObjectBase, public AFQMCInfo {
   MPI_Comm MPI_COMM_TG;   // Communicator over all cores in a given TG 
   MPI_Comm MPI_COMM_TG_LOCAL;   // Communicator over all cores in a given TG that reside in the given node 
   MPI_Comm MPI_COMM_NODE_LOCAL; // Communicator over all cores of a node. Must be created externally. Same above
-  std::vector<ComplexType> local_buffer;
+  std::vector<SPComplexType> local_buffer;
 
   int ncores_per_TG;  // total number of cores in all nodes must be a multiple 
   int nnodes_per_TG;  // total number of nodes in communicator must be a multiple  

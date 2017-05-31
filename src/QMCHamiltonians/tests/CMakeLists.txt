@@ -18,7 +18,8 @@ SET(SRC_DIR hamiltonian)
 SET(UTEST_EXE test_${SRC_DIR})
 SET(UTEST_NAME unit_test_${SRC_DIR})
 
-SET(SRCS test_bare_kinetic.cpp test_coulomb_pbcAB.cpp test_coulomb_pbcAA.cpp)
+SET(SRCS test_bare_kinetic.cpp test_coulomb_pbcAB.cpp test_coulomb_pbcAA.cpp
+         test_force.cpp test_ecp.cpp)
 IF(HAVE_CUDA)
   SET(SRCS ${SRCS}
       test_coulomb_CUDA.cpp 

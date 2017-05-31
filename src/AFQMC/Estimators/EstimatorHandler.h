@@ -110,7 +110,7 @@ class EstimatorHandler: public MPIObjectBase, public AFQMCInfo
   }
 
   // Estimator does not use TGs right now
-  bool setup(std::vector<int>& TGdata, ComplexSMVector* v, HamiltonianBase* ham0, WavefunctionHandler* wfn0, myTimer* LocalTimer, MPI_Comm heads_comm, MPI_Comm tg_comm, MPI_Comm node_comm, MPI_Comm head_tgs) 
+  bool setup(std::vector<int>& TGdata, SPComplexSMVector* v, HamiltonianBase* ham0, WavefunctionHandler* wfn0, myTimer* LocalTimer, MPI_Comm heads_comm, MPI_Comm tg_comm, MPI_Comm node_comm, MPI_Comm head_tgs) 
   {
     if(myComm->rank() == 0) {
       filename = myComm->getName()+".scalar.dat";

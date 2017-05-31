@@ -16,7 +16,7 @@
 #include "QMCHamiltonians/ECPComponentBuilder.h"
 #include "Numerics/GaussianTimesRN.h"
 #include "Numerics/Transform2GridFunctor.h"
-#include "QMCHamiltonians/Ylm.h"
+#include "Numerics/Ylm.h"
 #include "QMCHamiltonians/FSAtomPseudoPot.h"
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/SimpleParser.h"
@@ -148,7 +148,11 @@ bool ECPComponentBuilder::put(xmlNodePtr cur)
   }
   if(pp_nonloc)
   {
-    SetQuadratureRule(Nrule);
+    bool quad_okay = SetQuadratureRule(Nrule);
+    if (!quad_okay)
+    {
+      APP_ABORT("Setting up spherical quadrature for non-local pseudopotential failed");
+    }
     app_log() << "    Non-local pseudopotential parameters" << std::endl;
     pp_nonloc->print(app_log());
     app_log() << "    Maximum cutoff radius " << pp_nonloc->Rmax << std::endl;
@@ -194,7 +198,7 @@ void ECPComponentBuilder::printECPTable()
   }
 }
 
-void ECPComponentBuilder::SetQuadratureRule(int rule)
+bool ECPComponentBuilder::SetQuadratureRule(int rule)
 {
     int nk;
   RealType w;
@@ -256,7 +260,7 @@ void ECPComponentBuilder::SetQuadratureRule(int rule)
     break;
   default:
     ERRORMSG("Unrecognized spherical quadrature rule " << rule << ".");
-    abort();
+    return false;
   }
   // First, build a_i, b_i, and c_i points
   std::vector<PosType> a, b, c, d;
@@ -405,7 +409,7 @@ void ECPComponentBuilder::SetQuadratureRule(int rule)
   }
   assert (std::abs(wSum - 1.0) < delta);
   // Check the quadrature rule
-  CheckQuadratureRule(lexact);
+  return CheckQuadratureRule(lexact);
 }
 
 //   double ECPComponentBuilder::AssociatedLegendre(int l, int m, double x)
@@ -490,7 +494,7 @@ void ECPComponentBuilder::SetQuadratureRule(int rule)
 //     return prefactor * Pl * e2imphi;
 //   }
 
-void ECPComponentBuilder::CheckQuadratureRule(int lexact)
+bool ECPComponentBuilder::CheckQuadratureRule(int lexact)
 {
   std::vector<PosType> &grid = pp_nonloc->sgridxyz_m;
   std::vector<RealType> &w = pp_nonloc->sgridweight_m;
@@ -510,19 +514,16 @@ void ECPComponentBuilder::CheckQuadratureRule(int lexact)
           double im = imag (sum);
           if ((l1==l2) && (m1==m2))
             re -= 1.0;
-          if ((std::abs(im) > 5*std::numeric_limits<RealType>::epsilon()) || (std::abs(re) > 5*std::numeric_limits<RealType>::epsilon()))
+          if ((std::abs(im) > 7*std::numeric_limits<RealType>::epsilon()) || (std::abs(re) > 7*std::numeric_limits<RealType>::epsilon()))
           {
             app_error() << "Broken spherical quadrature for " << grid.size() << "-point rule.\n" << std::endl;
-            APP_ABORT("Give up");
+            app_error() << "  Should be zero:  Real part = " << re << " Imaginary part = " << im << std::endl;
+            return false;
           }
 // 	    fprintf (stderr, "(l1,m1,l2m,m2) = (%2d,%2d,%2d,%2d)  sum = (%20.16f %20.16f)\n",
 // 	     l1, m1, l2, m2, real(sum), imag(sum));
         }
+  return true;
 }
 
 } // namespace qmcPlusPlus
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

@@ -101,8 +101,3 @@ struct TricubicBsplineGridBC: public OrbitalTraits<T>
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 2109 $   $Date: 2007-06-26 20:53:50 -0500 (Tue, 26 Jun 2007) $
- * $Id: TricubicBsplineGridBC.h 2109 2007-06-27 01:53:50Z jnkim $
- ***************************************************************************/

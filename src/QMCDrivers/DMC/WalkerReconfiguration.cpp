@@ -187,9 +187,4 @@ WalkerReconfiguration::branch(int iter, MCWalkerConfiguration& W, RealType trigg
   return nwkept;
 }
 
-/***************************************************************************
- * $RCSfile: WalkerReconfiguration.cpp,v $   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

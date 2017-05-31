@@ -13,7 +13,7 @@
 #include<algorithm>
 #include<cmath>
 #include<sstream>
-//#include<mpi.h>
+#include<formic/utils/openmp.h>
 
 #include<boost/format.hpp>
 #include<boost/shared_ptr.hpp>
@@ -39,6 +39,7 @@
 void cqmc::engine::LMBlocker::acc(const double d, const std::vector<double> & dr, const std::vector<double> & er, const bool ground, const double hd_lm_shift) {
   
   // adds up total weight
+  # pragma omp critical
   m_tw += d;
 
   // accumulate hamiltonian data

@@ -126,8 +126,3 @@ xmlNodePtr WaveFunctionPool::getWaveFunctionNode(const std::string& id)
   }
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

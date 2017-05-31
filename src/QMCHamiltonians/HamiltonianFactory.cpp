@@ -26,6 +26,8 @@
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCHamiltonians/BareKineticEnergy.h"
 #include "QMCHamiltonians/ConservedEnergy.h"
+#include "QMCHamiltonians/SpeciesKineticEnergy.h"
+#include "QMCHamiltonians/LatticeDeviationEstimator.h"
 #include "QMCHamiltonians/NumericalRadialPotential.h"
 #include "QMCHamiltonians/MomentumEstimator.h"
 #include "QMCHamiltonians/Pressure.h"
@@ -327,6 +329,42 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       if(potType =="flux")
       {
         targetH->addOperator(new ConservedEnergy,potName,false);
+      }
+      else if(potType =="specieskinetic")
+      {
+        SpeciesKineticEnergy* apot = new SpeciesKineticEnergy(*targetPtcl);
+        apot->put(cur);
+        targetH->addOperator(apot,potName,false);
+      }
+      else if(potType =="latticedeviation")
+      {
+        // find target particle set
+        PtclPoolType::iterator pit(ptclPool.find(targetInp));
+        if(pit == ptclPool.end())
+        {
+          APP_ABORT("Unknown target \"" + targetInp + "\" for LatticeDeviation.");
+        }
+        ParticleSet* target_particle_set = (*pit).second;
+
+        // find source particle set
+        PtclPoolType::iterator spit(ptclPool.find(sourceInp));
+        if(spit == ptclPool.end())
+        {
+          APP_ABORT("Unknown source \"" + sourceInp + "\" for LatticeDeviation.");
+        }
+        ParticleSet* source_particle_set = (*spit).second;
+
+        // read xml node
+        OhmmsAttributeSet local_attrib;
+        std::string target_group,source_group;
+        local_attrib.add(target_group,"tgroup");
+        local_attrib.add(source_group,"sgroup");
+        local_attrib.put(cur);
+
+        LatticeDeviationEstimator* apot = new LatticeDeviationEstimator(*target_particle_set
+          ,*source_particle_set,target_group,source_group);
+        apot->put(cur);
+        targetH->addOperator(apot,potName,false);
       }
       else if(potType == "Force")
       {
@@ -783,8 +821,3 @@ bool HamiltonianFactory::put(xmlNodePtr cur)
 
 void HamiltonianFactory::reset() { }
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

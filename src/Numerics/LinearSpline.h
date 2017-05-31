@@ -220,8 +220,3 @@ struct LinearSpline: public LinearSplineGrid<T,GRIDTYPE,BC>
   }
 };
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1583 $   $Date: 2007-01-04 13:54:05 -0600 (Thu, 04 Jan 2007) $
- * $Id: OneDimLinearSpline.h 1583 2007-01-04 19:54:05Z jnkim $
- ***************************************************************************/
