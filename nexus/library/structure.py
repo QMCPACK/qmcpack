@@ -5387,6 +5387,9 @@ def generate_crystal_structure(lattice=None,cell=None,centering=None,
         if kgrid!=None:
             structure.add_kmesh(kgrid,kshift)
         #end if        
+        if tiling!=None:
+            structure = structure.tile(tiling)
+        #end if
         return structure
     #end if
 
