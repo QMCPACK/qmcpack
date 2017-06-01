@@ -828,6 +828,18 @@ class Simulation(NexusCore):
     #end def get_dependencies
         
 
+    def downstream_simids(self,simids=None):
+        if simids is None:
+            simids = set()
+        #end if
+        for sim in self.dependents:
+            simids.add(sim.simid)
+            sim.downstream_simids(simids)
+        #end for
+        return simids
+    #end def downstream_simids
+
+
     def copy_file(self,sourcefile,dest):
         src = os.path.dirname(os.path.abspath(sourcefile))
         dst = os.path.abspath(dest)
