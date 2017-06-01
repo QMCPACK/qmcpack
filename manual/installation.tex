@@ -594,33 +594,11 @@ SummitDev is the development cluster for the next GPU accelerated
 supercomputer Summit at Oak Ridge National Laboratory's
 Leadership Computing Facility  (ORNL OLCF). It has IBM Power8 CPUs and NVIDIA Pascal GPUs.
 
-\subsubsection{Prerequisite: Libxml2 installation}
-As a prerequisite libxml2 needs to be installed somewhere in the home directory
-of the user. In the source directory of libxml2 (e.g. version 2.9.4) the following
-can be used to succesfully compile and install libxml2:
-\begin{verbatim}
-export MYSOFTWARE_PATH="${HOME}/<path in home directory to install software>"
-export PKG_CONFIG_PATH="$MYSOFTWARE_PATH/lib/pkgconfig:$PKG_CONFIG_PATH"
-export LD_LIBARY_PATH="$MYSOFTWARE_PATH/lib64:$MYSOFTWARE_PATH/lib:$LD_LIBRARY_PATH"
-./configure --prefix=${MYSOFTWARE_PATH} \
-            --with-python-install-dir=${MYSOFTWARE_PATH}/lib/python
-make -j 8
-make install
-\end{verbatim}
-
 \subsubsection{Building QMCPACK}
 Please note that these build instructions are preliminary as the
-software environment is subject to change. In order for both
-PKG\_CONFIG\_PATH and LD\_LIBRARY\_PATH to be properly set for libxml2
-at compile and at runtime the following three lines should also be
-in either the submission script or in .bashrc:
+software environment is subject to change. QMCPACK can be build with the following commands:
 \begin{verbatim}
-export MYSOFTWARE_PATH="${HOME}/<path in home directory to install software>"
-export PKG_CONFIG_PATH="$MYSOFTWARE_PATH/lib/pkgconfig:$PKG_CONFIG_PATH"
-export LD_LIBARY_PATH="$MYSOFTWARE_PATH/lib64:$MYSOFTWARE_PATH/lib:$LD_LIBRARY_PATH"
-\end{verbatim}
-Now QMCPACK can be build with the following commands:
-\begin{verbatim}
+module load xl
 module load essl
 module load netlib-lapack
 module load hdf5/1.8.18
@@ -632,12 +610,11 @@ module load boost
 module load cuda
 mkdir build_summitdev
 cd build_summitdev
-cmake -DCMAKE_C_COMPILER="mpicc" \
-      -DCMAKE_C_FLAGS="-std=gnu11 -qsmp -O3" \
-      -DCMAKE_CXX_COMPILER="mpicxx" \
-      -DCMAKE_CXX_FLAGS="-std=gnu++11 -qnoxlcompatmacros -qsmp -O3" \
+cmake -DCMAKE_C_COMPILER="mpixlc" \
+      -DCMAKE_CXX_COMPILER="mpixlC" \
+      -DBUILD_LMYENGINE_INTERFACE=0 \
       -DQMC_CUDA=1 \
-      -DCUDA_NVCC_FLAGS="-arch=sm_60;-Drestrict=__restrict__;-DNO_CUDA_MAIN;-O3" \
+      -DCUDA_ARCH="sm_60" \
       ..
 make -j 8
 ls -l bin/qmcpack
