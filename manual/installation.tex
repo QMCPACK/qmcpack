@@ -614,7 +614,7 @@ cmake -DCMAKE_C_COMPILER="mpixlc" \
       -DCMAKE_CXX_COMPILER="mpixlC" \
       -DBUILD_LMYENGINE_INTERFACE=0 \
       -DQMC_CUDA=1 \
-      -DCUDA_NVCC_FLAGS="-arch=sm_60;-Drestrict=__restrict__;-DNO_CUDA_MAIN;-O3" \
+      -DCUDA_ARCH="sm_60" \
       ..
 make -j 8
 ls -l bin/qmcpack

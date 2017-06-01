@@ -393,12 +393,6 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
     MESSAGE(WARNING "No compiler identified")
   ENDIF()
   MESSAGE(STATUS "Compiler: ${COMPILER}")
-  # Workaround for not properly identified CXX compiler in case of IBM XL compiler
-  IF( ${COMPILER} MATCHES "IBM" )
-    MESSAGE(STATUS "Compiler Version: ${CMAKE_C_COMPILER_VERSION}")
-  ELSE()
-    MESSAGE(STATUS "Compiler Version: ${CMAKE_CXX_COMPILER_VERSION}")
-  ENDIF()
 
   #------------------------------------
   # Include compiler-specific cmake file
