@@ -694,7 +694,9 @@ def generate_physical_system(**kwargs):
         if extensive:
             ncells = int(round(structure.volume()/folded_structure.volume()))
             net_charge = ncells*net_charge
-            net_spin   = ncells*net_spin
+            if not isinstance(net_spin,str):
+                net_spin   = ncells*net_spin
+            #end if
         #end if
         if tiled_spin!=None:
             net_spin = tiled_spin
