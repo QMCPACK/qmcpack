@@ -183,8 +183,8 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
   if(fromscratch)
   {
     //determine the branch cutoff to limit wild weights based on the sigma and sigmaBound
-    EstimatorRealType sigma2=std::max(vParam[B_SIGMA2]*WalkerController->targetSigma,50.0);
-    setBranchCutoff(sigma2);
+    EstimatorRealType cutoff=std::max(std::sqrt(vParam[B_SIGMA2])*WalkerController->targetSigma,50.0);
+    setBranchCutoff(cutoff);
     vParam[B_TAUEFF]=tau*R2Accepted.result()/R2Proposed.result();
   }
   //reset controller
@@ -250,8 +250,8 @@ void SimpleFixedNodeBranch::initReptile(MCWalkerConfiguration& W)
   if(fromscratch)
   {
     //determine the branch cutoff to limit wild weights based on the sigma and sigmaBound
-    EstimatorRealType sigma2=std::max(vParam[B_SIGMA2]*allowedFlux,50.0);
-    setBranchCutoff(sigma2);
+    EstimatorRealType cutoff=std::max(std::sqrt(vParam[B_SIGMA2])*allowedFlux,50.0);
+    setBranchCutoff(cutoff);
     vParam[B_TAUEFF]=tau*R2Accepted.result()/R2Proposed.result();
   }
   //reset controller
@@ -331,8 +331,8 @@ void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& walkers)
     if(ToDoSteps==0)  //warmup is done
     {
       vParam[B_SIGMA2]=VarianceHist.mean();
-      EstimatorRealType sigma2=std::max(vParam[B_SIGMA2]*WalkerController->targetSigma,10.0);
-      setBranchCutoff(sigma2);
+      EstimatorRealType cutoff=std::max(std::sqrt(vParam[B_SIGMA2])*WalkerController->targetSigma,10.0);
+      setBranchCutoff(cutoff);
       app_log() << "\n Warmup is completed after " << iParam[B_WARMUPSTEPS] << std::endl;
       if(BranchMode[B_USETAUEFF])
         app_log() << "\n  TauEff     = " << vParam[B_TAUEFF] << "\n TauEff/Tau = " << vParam[B_TAUEFF]/vParam[B_TAU];
@@ -454,8 +454,8 @@ void SimpleFixedNodeBranch::collect(int iter, MCWalkerConfiguration& W)
     {
       vParam[B_TAUEFF]=vParam[B_TAU]*R2Accepted.result()/R2Proposed.result();
       vParam[B_SIGMA2]=VarianceHist.mean();
-      EstimatorRealType sigma2=std::max(vParam[B_SIGMA2]*vParam[B_FILTERSCALE],vParam[B_FILTERSCALE]);
-      setBranchCutoff(sigma2);
+      EstimatorRealType cutoff=std::max(std::sqrt(vParam[B_SIGMA2])*vParam[B_FILTERSCALE],vParam[B_FILTERSCALE]);
+      setBranchCutoff(cutoff);
       app_log() << "\n Warmup is completed after " << iParam[B_WARMUPSTEPS] << " steps."<< std::endl;
       if(BranchMode[B_USETAUEFF])
         app_log() << "\n  TauEff     = " << vParam[B_TAUEFF] << "\n TauEff/Tau = " << vParam[B_TAUEFF]/vParam[B_TAU];
@@ -632,7 +632,7 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
   BranchMode[B_DMCSTAGE]=0;
   WalkerController->put(myNode);
   ToDoSteps=iParam[B_WARMUPSTEPS]=(iParam[B_WARMUPSTEPS])?iParam[B_WARMUPSTEPS]:10;
-  setBranchCutoff(vParam[B_SIGMA2]);
+  setBranchCutoff(std::max(std::sqrt(vParam[B_SIGMA2])*WalkerController->targetSigma,10.0));
   WalkerController->setEnergyAndVariance(vParam[B_EREF],vParam[B_SIGMA2]);
   WalkerController->reset();
 #ifdef QMC_CUDA
