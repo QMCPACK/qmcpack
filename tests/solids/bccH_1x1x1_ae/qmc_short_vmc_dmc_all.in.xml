@@ -91,7 +91,7 @@
      <parameter name="reconfiguration">   no </parameter>
      <parameter name="warmupsteps">      100 </parameter>
      <parameter name="timestep">        0.01 </parameter>
-     <parameter name="steps">            100 </parameter>
+     <parameter name="steps">            400 </parameter>
      <parameter name="blocks">           100 </parameter>
    </qmc>
    

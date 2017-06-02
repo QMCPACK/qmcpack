@@ -88,8 +88,8 @@
      <parameter name="targetwalkers"> 256 </parameter>
      <parameter name="reconfiguration">   no </parameter>
      <parameter name="warmupSteps">  100 </parameter>
-     <parameter name="timestep">  0.01 </parameter>
-     <parameter name="steps">   100 </parameter>
+     <parameter name="timestep">  0.001 </parameter>
+     <parameter name="steps">   400 </parameter>
      <parameter name="blocks">  100 </parameter>
      <parameter name="nonlocalmoves">  no </parameter>
    </qmc>
