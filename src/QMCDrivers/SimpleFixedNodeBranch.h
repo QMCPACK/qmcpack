@@ -440,9 +440,10 @@ private:
   //void read(hid_t grp);
 
   ///set branch cutoff, max, filter
-  inline void setBranchCutoff(EstimatorRealType cutoff)
+  inline void setBranchCutoff(EstimatorRealType variance, RealType targetSigma)
   {
-    vParam[B_BRANCHCUTOFF]=std::min(cutoff,2.5/vParam[B_TAU]);
+    //vParam[B_BRANCHCUTOFF]=std::min(std::sqrt(variance)*static_cast<EstimatorRealType>(targetSigma), 2.5/vParam[B_TAU]);
+    vParam[B_BRANCHCUTOFF]=std::sqrt(variance)*std::min(static_cast<EstimatorRealType>(targetSigma), std::sqrt(1.0/vParam[B_TAU]));
     vParam[B_BRANCHMAX]=vParam[B_BRANCHCUTOFF]*1.5;
     vParam[B_BRANCHFILTER]=1.0/(vParam[B_BRANCHMAX]-vParam[B_BRANCHCUTOFF]);
   }
