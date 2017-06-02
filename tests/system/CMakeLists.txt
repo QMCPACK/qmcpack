@@ -327,12 +327,12 @@ ENDIF()
                     0 # VMC
                     TRUE)
 
-# qmc_ref_vmc_dmc  series 1  -1.84143
-# qmc_short_vmc_dmc  series 1  -1.844059 +/- 0.001850
-  LIST(APPEND BCC_H_DMC_SCALARS "totenergy" "-1.841430 0.000925")
-  LIST(APPEND BCC_H_DMC_SCALARS "potential" "-2.02228454514 0.0025")
-  LIST(APPEND BCC_H_DMC_SCALARS "kinetic" "0.180980043026 0.0025")
-  LIST(APPEND BCC_H_DMC_SCALARS "eeenergy" "-0.781244 0.0007")
+# qmc_ref_vmc_dmc  series 1  -1.841352 +/- 0.000078
+# qmc_short_vmc_dmc  series 1  -1.84196 +/- 0.00073
+  LIST(APPEND BCC_H_DMC_SCALARS "totenergy" "-1.84196 0.00073")
+  LIST(APPEND BCC_H_DMC_SCALARS "potential" "-2.0187  0.0033")
+  LIST(APPEND BCC_H_DMC_SCALARS "kinetic"    "0.1767  0.0035")
+  LIST(APPEND BCC_H_DMC_SCALARS "eeenergy"  "-0.77985 0.00069")
   QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-dmc_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
                     qmc_short_vmc_dmc
@@ -558,9 +558,9 @@ ENDIF()
                     TRUE)
 
 
-# qmc_ref_vmc_dmc  series 1  -1.84143
-# qmc_long_vmc_dmc  series 1  -1.842355 +/- 0.000778
-  LIST(APPEND LONG_BCC_H_DMC_SCALARS "totenergy" "-1.841430 0.000778")
+# qmc_ref_vmc_dmc  series 1  -1.841352 +/- 0.000078
+# qmc_long_vmc_dmc  series 1   -1.841204 +/- 0.000285
+  LIST(APPEND LONG_BCC_H_DMC_SCALARS "totenergy" "-1.841204 0.000285")
   QMC_RUN_AND_CHECK(long-bccH_1x1x1_ae-dmc_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
                     qmc_long_vmc_dmc
