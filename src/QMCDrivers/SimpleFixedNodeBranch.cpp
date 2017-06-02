@@ -39,7 +39,7 @@ namespace qmcplusplus
 {
 
 ///enum to yes/no options saved in sParam
-enum {COMBOPT, USETAUOPT, MIXDMCOPT,DUMMYOPT};
+enum {COMBOPT, USETAUOPT, MIXDMCOPT, DUMMYOPT};
 
 SimpleFixedNodeBranch::SimpleFixedNodeBranch(RealType tau, int nideal)
   : vParam(1.0), WalkerController(0), BackupWalkerController(0),
@@ -66,6 +66,8 @@ SimpleFixedNodeBranch::SimpleFixedNodeBranch(RealType tau, int nideal)
   iParam[B_COUNTER]=-1;
   //default is no
   sParam.resize(DUMMYOPT,"no");
+  //default is classic
+  branching_cutoff_scheme="classic";
   registerParameters();
   reset();
 }
@@ -79,7 +81,8 @@ SimpleFixedNodeBranch::SimpleFixedNodeBranch(const SimpleFixedNodeBranch& abranc
   iParam(abranch.iParam),
   vParam(abranch.vParam),
   WalkerController(0), MyEstimator(0),
-  sParam(abranch.sParam)
+  sParam(abranch.sParam),
+  branching_cutoff_scheme(abranch.branching_cutoff_scheme)
 {
   registerParameters();
   reset();
@@ -109,7 +112,7 @@ void SimpleFixedNodeBranch::registerParameters()
   //turn on/off effective tau onl for time-step error comparisons
   m_param.add(sParam[USETAUOPT],"useBareTau","option");
   m_param.add(sParam[MIXDMCOPT],"warmupByReconfiguration","opt");
-
+  m_param.add(branching_cutoff_scheme,"BranchingCutoffScheme","option");
 }
 
 void SimpleFixedNodeBranch::start(const std::string& froot, bool append)
@@ -183,7 +186,7 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
   if(fromscratch)
   {
     //determine the branch cutoff to limit wild weights based on the sigma and sigmaBound
-    setBranchCutoff(vParam[B_SIGMA2],WalkerController->targetSigma);
+    setBranchCutoff(vParam[B_SIGMA2],WalkerController->targetSigma,50,walkers.R.size());
     vParam[B_TAUEFF]=tau*R2Accepted.result()/R2Proposed.result();
   }
   //reset controller
@@ -198,6 +201,7 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
   app_log() << "  Feedback = " << vParam[B_FEEDBACK] <<  std::endl;
   app_log() << "  reference variance = " << vParam[B_SIGMA2] << std::endl;
   app_log() << "  target walkers = " << iParam[B_TARGETWALKERS] << std::endl;
+  app_log() << "  branching cutoff scheme " << branching_cutoff_scheme << std::endl;
   app_log() << "  branch cutoff = " <<  vParam[B_BRANCHCUTOFF] << " " << vParam[B_BRANCHMAX] << std::endl;
   app_log() << "  Max and mimum walkers per node= " << iParam[B_MAXWALKERS] << " " << iParam[B_MINWALKERS] << std::endl;
   app_log() << "  QMC Status (BranchMode) = " << BranchMode << std::endl;
@@ -249,7 +253,7 @@ void SimpleFixedNodeBranch::initReptile(MCWalkerConfiguration& W)
   if(fromscratch)
   {
     //determine the branch cutoff to limit wild weights based on the sigma and sigmaBound
-    setBranchCutoff(vParam[B_SIGMA2],allowedFlux);
+    setBranchCutoff(vParam[B_SIGMA2],allowedFlux,50,W.R.size());
     vParam[B_TAUEFF]=tau*R2Accepted.result()/R2Proposed.result();
   }
   //reset controller
@@ -259,6 +263,7 @@ void SimpleFixedNodeBranch::initReptile(MCWalkerConfiguration& W)
   app_log() << "  reference energy = " << vParam[B_EREF] << std::endl;
   app_log() << "  Feedback = " << vParam[B_FEEDBACK] <<  std::endl;
   app_log() << "  reference variance = " << vParam[B_SIGMA2] << std::endl;
+  app_log() << "  branching cutoff scheme " << branching_cutoff_scheme << std::endl;
   app_log() << "  branch cutoff = " <<  vParam[B_BRANCHCUTOFF] << " " << vParam[B_BRANCHMAX] << std::endl;
   app_log() << "  QMC Status (BranchMode) = " << BranchMode << std::endl;
 }
@@ -329,7 +334,7 @@ void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& walkers)
     if(ToDoSteps==0)  //warmup is done
     {
       vParam[B_SIGMA2]=VarianceHist.mean();
-      setBranchCutoff(vParam[B_SIGMA2],WalkerController->targetSigma);
+      setBranchCutoff(vParam[B_SIGMA2],WalkerController->targetSigma,10,walkers.R.size());
       app_log() << "\n Warmup is completed after " << iParam[B_WARMUPSTEPS] << std::endl;
       if(BranchMode[B_USETAUEFF])
         app_log() << "\n  TauEff     = " << vParam[B_TAUEFF] << "\n TauEff/Tau = " << vParam[B_TAUEFF]/vParam[B_TAU];
@@ -451,7 +456,7 @@ void SimpleFixedNodeBranch::collect(int iter, MCWalkerConfiguration& W)
     {
       vParam[B_TAUEFF]=vParam[B_TAU]*R2Accepted.result()/R2Proposed.result();
       vParam[B_SIGMA2]=VarianceHist.mean();
-      setBranchCutoff(vParam[B_SIGMA2],vParam[B_FILTERSCALE]);
+      setBranchCutoff(vParam[B_SIGMA2],vParam[B_FILTERSCALE],vParam[B_FILTERSCALE],W.R.size());
       app_log() << "\n Warmup is completed after " << iParam[B_WARMUPSTEPS] << " steps."<< std::endl;
       if(BranchMode[B_USETAUEFF])
         app_log() << "\n  TauEff     = " << vParam[B_TAUEFF] << "\n TauEff/Tau = " << vParam[B_TAUEFF]/vParam[B_TAU];
@@ -600,6 +605,7 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
     app_log().flush();
     return 1;
   }
+
   if(WalkerController==0)
   {
     APP_ABORT("SimpleFixedNodeBranch::resetRun cannot initialize WalkerController");
@@ -628,7 +634,7 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
   BranchMode[B_DMCSTAGE]=0;
   WalkerController->put(myNode);
   ToDoSteps=iParam[B_WARMUPSTEPS]=(iParam[B_WARMUPSTEPS])?iParam[B_WARMUPSTEPS]:10;
-  setBranchCutoff(vParam[B_SIGMA2],WalkerController->targetSigma);
+  setBranchCutoff(vParam[B_SIGMA2],WalkerController->targetSigma,10);
   WalkerController->setEnergyAndVariance(vParam[B_EREF],vParam[B_SIGMA2]);
   WalkerController->reset();
 #ifdef QMC_CUDA
@@ -644,7 +650,11 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
   app_log() << " iParam (new): "  <<iParam << std::endl;
   app_log() << " vParam (old): "  <<vparam_old << std::endl;
   app_log() << " vParam (new): "  <<vParam << std::endl;
+
+  app_log() << std::endl << " Using branching cutoff scheme " << branching_cutoff_scheme << std::endl;
+
   app_log().flush();
+
   //  return static_cast<int>(iParam[B_TARGETWALKERS]*1.01/static_cast<double>(nw_target));
   return static_cast<int>(round(static_cast<double>(iParam[B_TARGETWALKERS]/static_cast<double>(nw_target))));
 }
@@ -841,6 +851,34 @@ void SimpleFixedNodeBranch::read(const std::string& fname)
 //       }
 //     }
 //   }
+
+void SimpleFixedNodeBranch::setBranchCutoff(EstimatorRealType variance, EstimatorRealType targetSigma, EstimatorRealType maxSigma, int Nelec)
+{
+  if(branching_cutoff_scheme=="UNR")
+  {
+    vParam[B_BRANCHCUTOFF]=2.0/std::sqrt(vParam[B_TAU]);
+  }
+  else if(branching_cutoff_scheme=="ZSGMA")
+  {
+    // do nothing if Nelec is not passed in.
+    if(Nelec>0)
+      vParam[B_BRANCHCUTOFF]=0.2*std::sqrt(Nelec/vParam[B_TAU]);
+  }
+  else if(branching_cutoff_scheme=="YL")
+  {
+    vParam[B_BRANCHCUTOFF]=std::sqrt(variance)*std::min(targetSigma, std::sqrt(1.0/vParam[B_TAU]));
+  }
+  else if(branching_cutoff_scheme=="classic")
+  {
+    // default QMCPACK choice.
+    vParam[B_BRANCHCUTOFF]=std::min(std::max(variance*targetSigma, maxSigma), 2.5/vParam[B_TAU]);
+  }
+  else
+    APP_ABORT("SimpleFixedNodeBranch::setBranchCutoff unknown branching cutoff scheme "+branching_cutoff_scheme);
+
+  vParam[B_BRANCHMAX]=vParam[B_BRANCHCUTOFF]*1.5;
+  vParam[B_BRANCHFILTER]=1.0/(vParam[B_BRANCHMAX]-vParam[B_BRANCHCUTOFF]);
+}
 
 }
 
