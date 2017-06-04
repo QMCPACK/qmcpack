@@ -16,7 +16,7 @@ SET(UTEST_EXE test_${SRC_DIR})
 SET(UTEST_NAME unit_test_${SRC_DIR})
 
 # Directory where input file is copied to, and working directory for unit test
-SET(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/io)
+SET(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/io/tmp)
 
 ADD_EXECUTABLE(${UTEST_EXE} test_hdf_archive.cpp)
 TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcutil ${QMC_UTIL_LIBS} ${MPI_LIBRARY} )
