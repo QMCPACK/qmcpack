@@ -955,6 +955,12 @@ S256  & 1024 & 12288 &  6144 \\
 \end{center}
 \end{table}
 
+\subsection{Troubleshooting tests}
+ctest reports briefly pass or fail of tests in printout and also collects all the standard outputs to help investigating how tests fail.
+If the ctest execution is completed, look at \texttt{Testing/Temporary/LastTest.log}.
+If you manually stop the testing (ctrl+c), look at \texttt{Testing/Temporary/LastTest.log.tmp}.
+You can locate the failing tests by searching for the key word `Fail'.
+
 \section{Automated testing of QMCPACK}
 
 The QMCPACK developers run automatic tests of QMCPACK on several
