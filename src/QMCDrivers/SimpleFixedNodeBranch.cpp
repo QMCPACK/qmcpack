@@ -112,7 +112,7 @@ void SimpleFixedNodeBranch::registerParameters()
   //turn on/off effective tau onl for time-step error comparisons
   m_param.add(sParam[USETAUOPT],"useBareTau","option");
   m_param.add(sParam[MIXDMCOPT],"warmupByReconfiguration","opt");
-  m_param.add(branching_cutoff_scheme,"BranchingCutoffScheme","option");
+  m_param.add(branching_cutoff_scheme,"branching_cutoff_scheme","option");
 }
 
 void SimpleFixedNodeBranch::start(const std::string& froot, bool append)
