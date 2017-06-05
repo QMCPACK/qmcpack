@@ -50,46 +50,77 @@ bool ECPComponentBuilder::parse(const std::string& fname, xmlNodePtr cur)
   const xmlChar* rptr=xmlGetProp(cur,(const xmlChar*)"cutoff");
   if(rptr != NULL)
     RcutMax = atof((const char*)rptr);
-  int length=0;
-  char* cbuffer=0;
-  std::ifstream *fin=0;
-  int missing_xml=0;
-  if(myComm->rank()==0)
+
+  return read_pp_file(fname);
+}
+
+int get_file_length(std::ifstream *fin)
+{
+    fin->seekg (0, std::ios::end);
+    int length = fin->tellg();
+    fin->seekg (0, std::ios::beg);
+    return length;
+}
+
+bool ReadFileBuffer::open_file(const std::string &fname)
+{
+  if (myComm == NULL || myComm->rank() == 0)
   {
     fin = new std::ifstream(fname.c_str());
-    if (!fin->is_open())
-      missing_xml=1;
+    if (fin->is_open())
+      is_open=true;
   }
-  myComm->bcast(missing_xml);
-  if(missing_xml)
+  if (myComm) myComm->bcast(is_open);
+  return is_open;
+}
+
+bool ReadFileBuffer::read_contents()
+{
+  if (!is_open)
+    return false;
+
+  if(myComm == NULL || myComm->rank() == 0)
+  {
+    length = get_file_length(fin);
+  }
+  if (myComm) myComm->bcast(length);
+
+  cbuffer = new char[length];
+
+  if (myComm == NULL || myComm->rank() == 0)
+    fin->read (cbuffer,length);
+
+  if (myComm != NULL)
+    myComm->bcast(cbuffer,length);
+
+  return true;
+}
+
+
+bool ECPComponentBuilder::read_pp_file(const std::string &fname)
+{
+  ReadFileBuffer buf(myComm);
+  bool okay = buf.open_file(fname);
+  if(!okay)
   {
     APP_ABORT("ECPComponentBuilder::parse  Missing PP file " + fname +"\n");
   }
-  if(myComm->rank()==0)
+
+  okay = buf.read_contents();
+  if(!okay)
   {
-    fin->seekg (0, std::ios::end);
-    length = fin->tellg();
-    fin->seekg (0, std::ios::beg);
+    APP_ABORT("ECPComponentBuilder::parse Unable to read PP file " + fname +"\n");
   }
-  myComm->bcast(length);
-  cbuffer = new char[length];
-  if(myComm->rank()==0)
-    fin->read (cbuffer,length);
-  myComm->bcast(cbuffer,length);
-  xmlDocPtr m_doc = xmlReadMemory(cbuffer,length,NULL,NULL,0);
-  if(fin)
-    delete fin;
-  if(cbuffer)
-    delete [] cbuffer;
-  // build an XML tree from a the file;
-  //xmlDocPtr m_doc = xmlParseFile(fname.c_str());
+
+  xmlDocPtr m_doc = xmlReadMemory(buf.contents(),buf.length,NULL,NULL,0);
+
   if (m_doc == NULL)
   {
     xmlFreeDoc(m_doc);
     APP_ABORT("ECPComponentBuilder::parse xml file "+fname+" is invalid");
   }
   // Check the document is of the right kind
-  cur = xmlDocGetRootElement(m_doc);
+  xmlNodePtr cur = xmlDocGetRootElement(m_doc);
   if (cur == NULL)
   {
     xmlFreeDoc(m_doc);
