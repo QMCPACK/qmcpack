@@ -85,7 +85,8 @@ bool ReadFileBuffer::read_contents()
   }
   if (myComm) myComm->bcast(length);
 
-  cbuffer = new char[length];
+  cbuffer = new char[length+1];
+  cbuffer[length] = '\0';
 
   if (myComm == NULL || myComm->rank() == 0)
     fin->read (cbuffer,length);
