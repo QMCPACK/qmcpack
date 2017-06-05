@@ -856,21 +856,25 @@ void SimpleFixedNodeBranch::setBranchCutoff(EstimatorRealType variance, Estimato
 {
   if(branching_cutoff_scheme=="UNR")
   {
+    // eq.(3), J. Chem. Phys. 89, 3629 (1988).
+    // eq.(9), J. Chem. Phys. 99, 2865 (1993).
     vParam[B_BRANCHCUTOFF]=2.0/std::sqrt(vParam[B_TAU]);
   }
   else if(branching_cutoff_scheme=="ZSGMA")
   {
+    // eq.(6), Phys. Rev. B 93, 241118(R) (2016)
     // do nothing if Nelec is not passed in.
     if(Nelec>0)
       vParam[B_BRANCHCUTOFF]=0.2*std::sqrt(Nelec/vParam[B_TAU]);
   }
   else if(branching_cutoff_scheme=="YL")
   {
+    // a scheme from Ye Luo.
     vParam[B_BRANCHCUTOFF]=std::sqrt(variance)*std::min(targetSigma, std::sqrt(1.0/vParam[B_TAU]));
   }
   else if(branching_cutoff_scheme=="classic")
   {
-    // default QMCPACK choice.
+    // default QMCPACK choice which is the same as v3.0.0 and before.
     vParam[B_BRANCHCUTOFF]=std::min(std::max(variance*targetSigma, maxSigma), 2.5/vParam[B_TAU]);
   }
   else
