@@ -879,17 +879,9 @@ ENDIF(QMC_ADIOS)
 
 SUBDIRS(src)
 
-SUBDIRS(tests/converter)
-SUBDIRS(tests/system)
-SUBDIRS(tests/estimator)
+SUBDIRS(tests)
 SUBDIRS(examples)
 
-SUBDIRS(tests/performance)
-
-IF(QE_BIN)
-  MESSAGE(STATUS "QE binary path ${QE_BIN}")
-  SUBDIRS(tests/pw2qmcpack)
-ENDIF()
 #ADD_CUSTOM_TARGET(print_settings ALL
 #      ${CMAKE_COMMAND} -E echo "Print build settings"
 #          VERBATIM)
