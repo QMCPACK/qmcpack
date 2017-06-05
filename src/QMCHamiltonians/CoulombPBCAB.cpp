@@ -142,7 +142,7 @@ CoulombPBCAB::evaluate_sp(ParticleSet& P)
 {
   RealType  Vsr = 0.0;
   RealType  Vlr = 0.0;
-  RealType& Vc  = myConst;
+  mRealType& Vc  = myConst;
   Array<RealType,1>& Ve_samp = *Ve_sample;
   Array<RealType,1>& Vi_samp = *Vi_sample;
   Ve_samp = 0.0;

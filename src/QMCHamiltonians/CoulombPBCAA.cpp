@@ -64,7 +64,7 @@ void CoulombPBCAA::update_source(ParticleSet& s)
 {
   if(s.tag() == SourceID || s.parent() == SourceID)
   {
-    RealType eL(0.0), eS(0.0);
+    mRealType eL(0.0), eS(0.0);
     if (ComputeForces)
     {
       forces = 0.0;
@@ -137,7 +137,7 @@ CoulombPBCAA::evaluate_sp(ParticleSet& P)
 {
   RealType  Vsr = 0.0;
   RealType  Vlr = 0.0;
-  RealType& Vc  = myConst;
+  mRealType& Vc  = myConst;
   Array<RealType,1>& V_samp = *V_sample;
   V_samp = 0.0;
   {
