@@ -233,6 +233,11 @@ BasisSetBuilder* BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  root
   }
 #endif //!QMC_COMPLEX
 #endif  //OHMMS_DIM==3
+  else
+  {
+    APP_ABORT("BasisSetFactory::createSPOSet cannot build basis set of unknown type "+type
+      + "\n If you see this after SlaterDetBuilder::put, please build basis set in sposet_builder instead of determinantset.");
+  }
   PRE.flush();
 
   if(bb==0)
