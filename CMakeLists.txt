@@ -369,7 +369,7 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   #------------------------------------
   IF( $ENV{CXX} MATCHES "icpc" )
     SET( COMPILER Intel )
-  ELSEIF($ENV{CXX} MATCHES "xlC")
+  ELSEIF($ENV{CXX} MATCHES "xlC" OR CMAKE_C_COMPILER_ID MATCHES "XL")
     SET( COMPILER IBM )
   ELSEIF ( CMAKE_C_COMPILER_WORKS OR CMAKE_C_COMPILER_WORKS )
     IF( CMAKE_COMPILE_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX )
@@ -395,7 +395,6 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
     MESSAGE(WARNING "No compiler identified")
   ENDIF()
   MESSAGE(STATUS "Compiler: ${COMPILER}")
-  MESSAGE(STATUS "Compiler Version: ${CMAKE_CXX_COMPILER_VERSION}")
 
   #------------------------------------
   # Include compiler-specific cmake file
@@ -691,11 +690,8 @@ IF(QMC_CUDA)
       # SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-O3;-use_fast_math")
       SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-O3")
     ENDIF()
-    if(CUDA_VERSION VERSION_GREATER 6.5 OR CUDA_VERSION VERSION_EQUAL 6.5)
-      SET(CUDA_NVCC_FLAGS "-arch=sm_35;${CUDA_NVCC_FLAGS}")
-    else()
-      SET(CUDA_NVCC_FLAGS "-arch=sm_20;${CUDA_NVCC_FLAGS}")
-    endif()
+    SET( CUDA_ARCH sm_35 CACHE STRING "CUDA architecture sm_XX")
+    SET(CUDA_NVCC_FLAGS "-arch=${CUDA_ARCH};${CUDA_NVCC_FLAGS}")
   endif(CUDA_NVCC_FLAGS MATCHES "arch")
   set(HAVE_CUDA 1)
   MESSAGE("   CUDA_NVCC_FLAGS=${CUDA_NVCC_FLAGS}")
@@ -889,17 +885,9 @@ ENDIF(QMC_ADIOS)
 
 SUBDIRS(src)
 
-SUBDIRS(tests/converter)
-SUBDIRS(tests/system)
-SUBDIRS(tests/estimator)
+SUBDIRS(tests)
 SUBDIRS(examples)
 
-SUBDIRS(tests/performance)
-
-IF(QE_BIN)
-  MESSAGE(STATUS "QE binary path ${QE_BIN}")
-  SUBDIRS(tests/pw2qmcpack)
-ENDIF()
 #ADD_CUSTOM_TARGET(print_settings ALL
 #      ${CMAKE_COMMAND} -E echo "Print build settings"
 #          VERBATIM)
