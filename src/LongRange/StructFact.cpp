@@ -28,7 +28,7 @@ namespace qmcplusplus
 
 //Constructor - pass arguments to KLists' constructor
 StructFact::StructFact(ParticleSet& P, RealType kc):
-  DoUpdate(false),SuperCellEnum(SUPERCELL_BULK)
+  DoUpdate(false), StorePerParticle(false), SuperCellEnum(SUPERCELL_BULK)
 {
   if(qmc_common.use_ewald && P.LRBox.SuperCellEnum == SUPERCELL_SLAB)
   {
@@ -59,7 +59,7 @@ void StructFact::resize(int ns, int nptcl, int nkpts)
 #if defined(USE_REAL_STRUCT_FACTOR)
   rhok_r.resize(ns,nkpts);
   rhok_i.resize(ns,nkpts);
-  if(false) // streaming particle
+  if(StorePerParticle)
   {
     eikr_r.resize(nptcl,nkpts);
     eikr_i.resize(nptcl,nkpts);
@@ -122,7 +122,7 @@ StructFact::FillRhok(ParticleSet& P)
   rhok_i=0.0;
   //algorithmA
   const int nk=KLists.numk;
-  if(false) // streaming particle
+  if(StorePerParticle)
   {
     // save per particle and species value
     for(int i=0; i<npart; ++i)
@@ -197,7 +197,7 @@ void StructFact::makeMove(int active, const PosType& pos)
 void StructFact::acceptMove(int active, int gid, const PosType& rold)
 {
 #if defined(USE_REAL_STRUCT_FACTOR)
-  if(false) // streaming particle
+  if(StorePerParticle)
   {
     RealType* restrict eikr_ptr_r=eikr_r[active];
     RealType* restrict eikr_ptr_i=eikr_i[active];
@@ -249,4 +249,19 @@ void StructFact::rejectMove(int active, int gid)
 {
   //do nothing
 }
+
+void StructFact::turnOnStorePerParticle(ParticleSet& P)
+{
+#if defined(USE_REAL_STRUCT_FACTOR)
+  if(!StorePerParticle)
+  {
+    StorePerParticle=true;
+    const int nptcl=P.getTotalNum();
+    eikr_r.resize(nptcl,KLists.numk);
+    eikr_i.resize(nptcl,KLists.numk);
+    FillRhok(P);
+  }
+#endif
+}
+
 }

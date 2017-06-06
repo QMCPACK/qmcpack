@@ -307,6 +307,10 @@ public:
    */
   void createSK();
 
+  /** Turn on per particle storage in Structure Factor
+   */
+  void turnOnPerParticleSK();
+
   ///retrun the SpeciesSet of this particle set
   inline SpeciesSet& getSpeciesSet()
   {

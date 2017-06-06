@@ -123,6 +123,14 @@ void ParticleSet::createSK()
   RSoA=R;
 }
 
+void ParticleSet::turnOnPerParticleSK()
+{
+  if(SK)
+    SK->turnOnStorePerParticle(*this);
+  else
+    APP_ABORT("ParticleSet::turnOnPerParticleSK trying to turn on per particle storage in SK but SK has not been created.");
+}
+
 void ParticleSet::convert(const ParticlePos_t& pin, ParticlePos_t& pout)
 {
   if(pin.getUnit() == pout.getUnit())

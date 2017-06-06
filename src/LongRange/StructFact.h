@@ -47,6 +47,8 @@ public:
    * unless Hamiltonian uses pbyp.
    */
   bool DoUpdate;
+  /// default false, the per particle data is not saved
+  bool StorePerParticle;
   /** enumeration for the methods to handle mixed bconds
    *
    * Allow overwriting lattice::SuperCellEnum to use D-dim k-point sets with mixed BC
@@ -172,6 +174,12 @@ public:
     buf.get(eikr.first_address(),eikr.last_address());
 #endif
   }
+
+  /** @brief switch on the storage per particle
+   *
+   * allocate the memory and precompute the data
+   */
+  void turnOnStorePerParticle(ParticleSet& P);
 
 private:
   ///data for recursive evaluation for a given position

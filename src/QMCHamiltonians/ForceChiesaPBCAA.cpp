@@ -38,7 +38,7 @@ ForceChiesaPBCAA::ForceChiesaPBCAA(ParticleSet& ions, ParticleSet& elns, bool fi
   forces_ShortRange.resize(Nnuc);
   forces_ShortRange = 0.0;
   forces_IonIon=0.0;
-  
+  ions.turnOnPerParticleSK();
   //This sets up the long range breakups. 
   kcdifferent=false;
   myTableIndex=elns.addTable(ions,DT_SOA_PREFERRED);
