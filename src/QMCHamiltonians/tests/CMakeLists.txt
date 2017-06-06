@@ -20,7 +20,7 @@ SET(UTEST_NAME unit_test_${SRC_DIR})
 SET(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/hamiltonians)
 
 SET(SRCS test_bare_kinetic.cpp test_coulomb_pbcAB.cpp test_coulomb_pbcAA.cpp
-         test_force.cpp test_quad.cpp)
+         test_force.cpp test_ecp.cpp)
 IF(HAVE_CUDA)
   SET(SRCS ${SRCS}
       test_coulomb_CUDA.cpp 

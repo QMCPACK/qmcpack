@@ -15,6 +15,7 @@
 
 #include "Configuration.h"
 #include "Numerics/Quadrature.h"
+#include "QMCHamiltonians/ECPComponentBuilder.h"
 
 namespace qmcplusplus
 {
