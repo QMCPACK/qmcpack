@@ -42,7 +42,7 @@ function(RUN_RESTART_AND_CHECK base_name base_dir input_file procs threads check
     )
 
     # make test depend on the restart run
-    set_property(TEST ${test_name} APPEND PROPERTY DEPENDS ${full_name})
+    set_property(TEST ${test_name} APPEND PROPERTY DEPENDS ${full_name}-restart)
 
   endif()
 

@@ -74,7 +74,31 @@ struct ECPComponentBuilder: public MPIObjectBase, public QMCTraits
                  RealType rmax, mRealType Vprefactor=1.0);
 
   void printECPTable();
+  bool read_pp_file(const std::string &fname);
 };
+
+// Read a file into a memory buffer.
+// Under MPI, it reads the file with one node and broadcasts the contents to all the other nodes.
+
+class ReadFileBuffer
+{
+  char *cbuffer;
+  std::ifstream *fin;
+  Communicate *myComm;
+public:
+  bool is_open;
+  int length;
+  ReadFileBuffer(Communicate *c) : cbuffer(NULL), fin(NULL), myComm(c), length(0) {}
+  bool open_file(const std::string &fname);
+  bool read_contents();
+  char *contents() { return cbuffer; }
+
+  ~ReadFileBuffer() {
+      delete[] cbuffer;
+      if (fin) delete fin;
+   }
+};
+
 
 }
 #endif

@@ -29,4 +29,58 @@ TEST_CASE("CheckSphericalIntegration", "[hamiltonian]")
   }
 }
 
+TEST_CASE("ReadFileBuffer_no_file","[hamiltonian]")
+{
+  ReadFileBuffer buf(NULL);
+  bool open_okay = buf.open_file("does_not_exist");
+  REQUIRE(open_okay == false);
+}
+
+TEST_CASE("ReadFileBuffer_simple_serial","[hamiltonian]")
+{
+  // Initializing with no Communicate pointer under MPI,
+  //   this will read the file on every node.  Should be okay
+  //   for testing purposes.
+  ReadFileBuffer buf(NULL);
+  bool open_okay = buf.open_file("simple.txt");
+  REQUIRE(open_okay == true);
+
+  bool read_okay = buf.read_contents();
+  REQUIRE(read_okay);
+  REQUIRE(buf.length == 14);
+  REQUIRE(std::string("File contents\n") == buf.contents());
+}
+
+TEST_CASE("ReadFileBuffer_simple_mpi","[hamiltonian]")
+{
+  OHMMS::Controller->initialize(0, NULL);
+  Communicate *c = OHMMS::Controller;
+  OhmmsInfo("testlogfile");
+
+  ReadFileBuffer buf(c);
+  bool open_okay = buf.open_file("simple.txt");
+  REQUIRE(open_okay == true);
+
+  bool read_okay = buf.read_contents();
+  REQUIRE(read_okay);
+  REQUIRE(buf.length == 14);
+  REQUIRE(std::string("File contents\n") == buf.contents());
+}
+
+TEST_CASE("ReadFileBuffer_ecp","[hamiltonian]")
+{
+  OHMMS::Controller->initialize(0, NULL);
+  Communicate *c = OHMMS::Controller;
+  OhmmsInfo("testlogfile");
+
+  ECPComponentBuilder ecp("test_read_ecp",c);
+
+  bool okay = ecp.read_pp_file("C.BFD.xml");
+  REQUIRE(okay);
+
+  REQUIRE(ecp.Zeff == 4);
+
+  // TODO: add more checks that pseudopotential file was read correctly
+}
+
 }
