@@ -86,10 +86,12 @@ class ReadFileBuffer
   char *cbuffer;
   std::ifstream *fin;
   Communicate *myComm;
+  int get_file_length(std::ifstream *f);
+
 public:
   bool is_open;
   int length;
-  ReadFileBuffer(Communicate *c) : cbuffer(NULL), fin(NULL), myComm(c), length(0) {}
+  ReadFileBuffer(Communicate *c) : cbuffer(NULL), fin(NULL), myComm(c), is_open(false), length(0) {}
   bool open_file(const std::string &fname);
   bool read_contents();
   char *contents() { return cbuffer; }

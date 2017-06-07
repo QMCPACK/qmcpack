@@ -54,12 +54,12 @@ bool ECPComponentBuilder::parse(const std::string& fname, xmlNodePtr cur)
   return read_pp_file(fname);
 }
 
-int get_file_length(std::ifstream *fin)
+int ReadFileBuffer::get_file_length(std::ifstream *f)
 {
-    fin->seekg (0, std::ios::end);
-    int length = fin->tellg();
-    fin->seekg (0, std::ios::beg);
-    return length;
+    f->seekg (0, std::ios::end);
+    int len = f->tellg();
+    f->seekg (0, std::ios::beg);
+    return len;
 }
 
 bool ReadFileBuffer::open_file(const std::string &fname)
@@ -104,13 +104,13 @@ bool ECPComponentBuilder::read_pp_file(const std::string &fname)
   bool okay = buf.open_file(fname);
   if(!okay)
   {
-    APP_ABORT("ECPComponentBuilder::parse  Missing PP file " + fname +"\n");
+    APP_ABORT("ECPComponentBuilder::read_pp_file  Missing PP file " + fname +"\n");
   }
 
   okay = buf.read_contents();
   if(!okay)
   {
-    APP_ABORT("ECPComponentBuilder::parse Unable to read PP file " + fname +"\n");
+    APP_ABORT("ECPComponentBuilder::read_pp_file Unable to read PP file " + fname +"\n");
   }
 
   xmlDocPtr m_doc = xmlReadMemory(buf.contents(),buf.length,NULL,NULL,0);
@@ -118,7 +118,7 @@ bool ECPComponentBuilder::read_pp_file(const std::string &fname)
   if (m_doc == NULL)
   {
     xmlFreeDoc(m_doc);
-    APP_ABORT("ECPComponentBuilder::parse xml file "+fname+" is invalid");
+    APP_ABORT("ECPComponentBuilder::read_pp_file xml file "+fname+" is invalid");
   }
   // Check the document is of the right kind
   xmlNodePtr cur = xmlDocGetRootElement(m_doc);
