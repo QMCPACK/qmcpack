@@ -84,4 +84,25 @@ TEST_CASE("ReadFileBuffer_ecp","[hamiltonian]")
   // TODO: add more checks that pseudopotential file was read correctly
 }
 
+TEST_CASE("ReadFileBuffer_reopen","[hamiltonian]")
+{
+  // Initializing with no Communicate pointer under MPI,
+  //   this will read the file on every node.  Should be okay
+  //   for testing purposes.
+  ReadFileBuffer buf(NULL);
+  bool open_okay = buf.open_file("simple.txt");
+  REQUIRE(open_okay == true);
+
+  bool read_okay = buf.read_contents();
+  REQUIRE(read_okay);
+  REQUIRE(buf.length == 14);
+
+  open_okay = buf.open_file("C.BFD.xml");
+  REQUIRE(open_okay == true);
+
+  read_okay = buf.read_contents();
+  REQUIRE(read_okay);
+  REQUIRE(buf.length > 14);
+}
+
 }
