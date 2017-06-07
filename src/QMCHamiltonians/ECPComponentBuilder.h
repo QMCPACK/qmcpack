@@ -86,7 +86,7 @@ class ReadFileBuffer
   char *cbuffer;
   std::ifstream *fin;
   Communicate *myComm;
-  int get_file_length(std::ifstream *f);
+  int get_file_length(std::ifstream *f) const;
 
 public:
   bool is_open;
@@ -95,6 +95,7 @@ public:
   bool open_file(const std::string &fname);
   bool read_contents();
   char *contents() { return cbuffer; }
+  void reset();
 
   ~ReadFileBuffer() {
       delete[] cbuffer;

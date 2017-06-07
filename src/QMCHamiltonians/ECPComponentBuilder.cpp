@@ -54,7 +54,7 @@ bool ECPComponentBuilder::parse(const std::string& fname, xmlNodePtr cur)
   return read_pp_file(fname);
 }
 
-int ReadFileBuffer::get_file_length(std::ifstream *f)
+int ReadFileBuffer::get_file_length(std::ifstream *f) const
 {
     f->seekg (0, std::ios::end);
     int len = f->tellg();
@@ -62,8 +62,27 @@ int ReadFileBuffer::get_file_length(std::ifstream *f)
     return len;
 }
 
+void ReadFileBuffer::reset()
+{
+  if (is_open)
+  {
+    if(myComm == NULL || myComm->rank() == 0)
+    {
+      delete fin;
+      fin = NULL;
+    }
+    delete[] cbuffer;
+    cbuffer = NULL;
+    is_open = false;
+    length = 0;
+  }
+}
+
 bool ReadFileBuffer::open_file(const std::string &fname)
 {
+
+  reset();
+
   if (myComm == NULL || myComm->rank() == 0)
   {
     fin = new std::ifstream(fname.c_str());
