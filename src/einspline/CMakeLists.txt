@@ -51,34 +51,14 @@ SET(SRCS ${SRCS}
   multi_bspline_copy.c
 )
 
-#do not compiler c functions
-IF(HAVE_SSE41)
-  SET(SRCS ${SRCS}
-    multi_bspline_eval_s_sse.cpp
-    )
-else()
-  SET(SRCS ${SRCS}
-    multi_bspline_eval_s_std3.cpp
-    )
-endif()
-
-IF(HAVE_SSE2)
-  set(SRCS ${SRCS}
-    bspline_eval_d_sse.cpp
-    nubspline_eval_d_sse.cpp
-    multi_bspline_eval_d_sse.cpp
-    multi_bspline_eval_z_sse.cpp
-    multi_nubspline_eval_z_sse.cpp
-    )
-else()
-  SET(SRCS ${SRCS}
-    bspline_eval_d_std.cpp
-    nubspline_eval_d_std.cpp
-    multi_bspline_eval_d_std3.cpp
-    multi_bspline_eval_z_std3.cpp
-    multi_nubspline_eval_z_std.cpp
-    )
-endif()
+SET(SRCS ${SRCS}
+  bspline_eval_d_std.cpp
+  nubspline_eval_d_std.cpp
+  multi_bspline_eval_s_std3.cpp
+  multi_bspline_eval_d_std3.cpp
+  multi_bspline_eval_z_std3.cpp
+  multi_nubspline_eval_z_std.cpp
+)
 
 
 if(HAVE_CUDA)
