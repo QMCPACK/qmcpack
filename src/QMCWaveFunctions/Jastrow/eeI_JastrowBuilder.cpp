@@ -61,14 +61,26 @@ bool eeI_JastrowBuilder::putkids (xmlNodePtr kids, J3type &J3)
       int eNum1 = eSet.findSpecies (eSpecies1);
       int eNum2 = eSet.findSpecies (eSpecies2);
       functor->put (kids);
-      if (functor->cutoff_radius < 1.0e-6)
+      if (sourcePtcl->Lattice.SuperCellEnum != SUPERCELL_OPEN)
       {
-        app_log()  << "  eeI functor rcut is currently zero.\n"
-                   << "  Setting to Wigner-Seitz radius = "
-                   << sourcePtcl->Lattice.WignerSeitzRadius << std::endl;
-        functor->cutoff_radius = sourcePtcl->Lattice.WignerSeitzRadius;
-        functor->reset();
+        if (functor->cutoff_radius > sourcePtcl->Lattice.WignerSeitzRadius)
+        {
+          APP_ABORT("  The eeI Jastrow cutoff specified should not be larger than Wigner-Seitz radius.");
+        }
+        if (functor->cutoff_radius < 1.0e-6)
+        {
+          app_log()  << "  eeI functor rcut is currently zero.\n"
+                     << "  Setting to Wigner-Seitz radius = "
+                     << sourcePtcl->Lattice.WignerSeitzRadius << std::endl;
+          functor->cutoff_radius = sourcePtcl->Lattice.WignerSeitzRadius;
+          functor->reset();
+        }
       }
+      else
+        if (functor->cutoff_radius < 1.0e-6)
+        {
+          APP_ABORT("  eeI Jastrow cutoff unspecified.  Cutoff must be given when using open boundary conditions");
+        }
       J3.addFunc(iNum, eNum1, eNum2, functor);
     }
     kids = kids->next;
