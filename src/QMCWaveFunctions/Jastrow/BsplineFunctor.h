@@ -369,17 +369,19 @@ struct BsplineFunctor: public OptimizableFunctorBase
     rAttrib.add(radius,      "cutoff");
     rAttrib.put(cur);
     if (radius < 0.0)
-      if(periodic)
-      {
-        app_log() << "  Jastrow cutoff unspecified.  Setting to Wigner-Seitz radius = "
-                  << cutoff_radius << ".\n";
-      }
+      if (periodic)
+        app_log() << "  Jastrow cutoff unspecified.  Setting to Wigner-Seitz radius = " << cutoff_radius << ".\n";
       else
       {
-        APP_ABORT("  Jastrow cutoff unspecified.  Cutoff must be given when not using periodic boundary conditions");
+        APP_ABORT("  Jastrow cutoff unspecified.  Cutoff must be given when using open boundary conditions");
       }
     else
-      cutoff_radius = radius;
+      if (periodic && radius > cutoff_radius)
+      {
+        APP_ABORT("  The Jastrow cutoff specified should not be larger than Wigner-Seitz radius.");
+      }
+      else
+        cutoff_radius = radius;
     if (NumParams == 0)
     {
       PRE.error("You must specify a positive number of parameters for the Bspline jastrow function.",true);
