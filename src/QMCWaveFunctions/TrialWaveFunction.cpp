@@ -763,9 +763,11 @@ TrialWaveFunction::RealType TrialWaveFunction::registerDataForDerivatives(Partic
   return 1.0;
 }
 
-void TrialWaveFunction::memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only,long& orbs, long& invs, long& dets)
+void TrialWaveFunction::memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only,long& orbs, long& invs, long& dets, bool zero_vars)
 {
-  orbs_only=orbs=invs=dets=0;
+  if (zero_vars)
+    orbs_only=orbs=invs=dets=0;
+
   std::vector<OrbitalBase*>::iterator it(Z.begin());
   std::vector<OrbitalBase*>::iterator it_end(Z.end());
   for (; it!=it_end; ++it)
@@ -1013,6 +1015,13 @@ void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
     RealType psiValue=std::exp(-LogValue)*std::cos(PhaseValue);
     for (int i=0; i<dlogpsi.size(); i++)
       dlogpsi[i] *= psiValue;
+  }
+}
+
+void TrialWaveFunction::evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
+                                                std::vector<RealType>& dgradlogpsi) {
+  for (int i=0; i<Z.size(); i++) {
+    Z[i]->evaluateGradDerivatives(G_in, dgradlogpsi);
   }
 }
 

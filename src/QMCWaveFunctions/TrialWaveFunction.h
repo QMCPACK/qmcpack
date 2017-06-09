@@ -124,6 +124,9 @@ public:
   ///differential laplacians
   ParticleSet::ParticleLaplacian_t L;
 
+  ///the size of gradient component (QMCTraits::DIM)*the number of particles
+  int TotalDim;
+
   TrialWaveFunction(Communicate* c);
 
   ~TrialWaveFunction();
@@ -135,6 +138,10 @@ public:
   inline RealType getPhase() const
   {
     return PhaseValue;
+  }
+  inline void setPhase(RealType PhaseValue_new)
+  {
+    PhaseValue = PhaseValue_new;
   }
   void getLogs(std::vector<RealType>& lvals);
   void getPhases(std::vector<RealType>& pvals);
@@ -174,6 +181,10 @@ public:
   inline RealType getLogPsi() const
   {
     return LogValue;
+  }
+  inline void setLogPsi(RealType LogPsi_new)
+  {
+    LogValue = LogPsi_new;
   }
 
   ///Add an OrbitalBase
@@ -290,7 +301,7 @@ public:
 
   RealType registerData(ParticleSet& P, BufferType& buf);
   RealType registerDataForDerivatives(ParticleSet& P, BufferType& buf, int storageType=0);
-  void memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only,long& orbs, long& invs, long& dets);
+  void memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only,long& orbs, long& invs, long& dets, bool zero_vars=true);
   RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
   void copyFromBuffer(ParticleSet& P, BufferType& buf);
   RealType evaluateLog(ParticleSet& P, BufferType& buf);
@@ -311,6 +322,9 @@ public:
                            std::vector<RealType>& dlogpsi,
                            std::vector<RealType>& dhpsioverpsi,
                            BufferType& buf);
+
+  void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
+                               std::vector<RealType>& dgradlogpsi);
 
   /** evalaute the values of the wavefunction, gradient and laplacian  for all the walkers */
   //void evaluate(WalkerSetRef& W, OrbitalBase::ValueVectorType& psi);
@@ -371,9 +385,6 @@ private:
 
   ///the size of ParticleSet
   int NumPtcls;
-
-  ///the size of gradient component (QMCTraits::DIM)*the number of particles
-  int TotalDim;
 
   ///index of the active particle
   int WorkingPtcl;
