@@ -319,6 +319,52 @@ class LCOrbitalSetOptTrialFunc : public OrbitalBase {
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
+    /// \brief  add to the \grad(\textrm{log}(Psi)) derivatives
+    ///
+    /// \param[in]      nl         The number of molecular orbitals.
+    /// \param[in]      np         The number of particles over which to sum derivative contributions.
+    /// \param[in]      dh0        An nl by np column-major-ordered matrix of the derivatives
+    ///                            of \grad(\textrm{log}(Psi)) with respect to the values of the
+    ///                            molecular orbitals at each particle's position.
+    /// \param[in]      dh1        Three nl by np column-major-ordered matrices (stored contiguously
+    ///                            one after the other) of the derivatives of
+    ///                            of \grad(\textrm{log}(Psi)) with respect to the values of the
+    ///                            molecular orbitals' first position derivatives (w.r.t. x,y,z)
+    ///                            at each particle's position.
+    /// \param[in]      Bchi       An nl by np column-major-ordered matrix of the values of the
+    ///                            molecular orbitals at each particle's position.
+    /// \param[in]      dBchi      Three nl by np column-major-ordered matrices (stored contiguously
+    ///                            one after the other) of the first position derivatives of the
+    ///                            molecular orbitals at each particle's position.
+    ///
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    void add_grad_derivatives(const int nl,
+                              const int np,
+                              const RealType * const dh0,
+                              const RealType * const dh1,
+                              const RealType * const Bchi,
+                              const RealType * const dBchi) {
+
+      // ensure the number of linear combinations is correct
+      if ( nl != m_nlc ) {
+        std::stringstream error_msg;
+        error_msg << "supplied number of linear combinations (" << nl << ") does not match that held internally (" << m_nlc << ") in LCOrbitalSetOptTrialFunc::add_derivatives";
+        throw std::runtime_error(error_msg.str());
+      }
+
+      // ensure orbital derivative matrices are the correct size
+      if ( m_hder_mat.size() != nl * nl ) {
+        std::stringstream error_msg;
+        error_msg << "nl (" << nl << ") does not match size of m_hder_mat (" << m_hder_mat.size() << ") in LCOrbitalSetOptTrialFunc::add_derivatives";
+        throw std::runtime_error(error_msg.str());
+      }
+
+      BLAS::gemm('N', 'T', nl, nl, np, RealType(1.0), dh0, nl, Bchi, nl, RealType(1.0), &m_hder_mat.at(0), nl);
+      for (int i = 0; i < 3; i++)
+        BLAS::gemm('N', 'T', nl, nl, np, RealType(1.0), dh1+i*nl*np, nl, dBchi+i*nl*np, nl, RealType(1.0), &m_hder_mat.at(0), nl);
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
     /// \brief  Exponentiates a matrix
     ///
     /// \param[in]      n              matrix dimensions
@@ -672,6 +718,56 @@ class LCOrbitalSetOptTrialFunc : public OrbitalBase {
       }
       ////app_log() << std::endl;
       ////throw std::runtime_error("STOPPING HERE");
+
+      // reset the internally stored derivatives to zero in preperation for the next sample
+      this->initialize_matrices();
+
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    /// \brief  Evaluate the derivatives (with respect to optimizable parameters) of the gradient of
+    ///         the logarithm of the optimizable determinant wave function. The dot product of this
+    ///         G_in gradient vector. The resulting object is a vector in the optimizable
+    ///         parameter components, which is returned by this function in dgradlogpsi.
+    ///         Note that the majority of the above operations to do this are performed in the
+    ///         Fermion/SlaterDetOpt class' instance of this method. The evaluateGradDerivatives
+    ///         is called from a TrialWavefunction object, which in turn calls
+    ///         evaluateGradDerivatives for both the SlaterDetOpt and LCOrbitalSetOpt OrbitalBase
+    ///         objects, both of which are present for optimizable orbital determinants.
+    ///
+    /// \param[in]  G_in         Not used here but rather in evaluateGradDerivatives for the
+    ///                          Fermion/SlaterDetOpt class, which in turn is used to create the
+    ///                          m_hder_mat, used in this function.
+    /// \param[out] dgradlogpsi  The dot product of G_in with d(\grad(\textrm{log}(\psi)))
+    ///                          (not calculated here but in the evaluateGradDerivatives function in
+    ///                          LCOrbitalSetOpt.h, for this particular wave function ansatz).
+    ///
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
+                                           std::vector<RealType>& dgradlogpsi) {
+
+      // check that we have the position of the first of our variables in the
+      // overall list.
+      if ( myVars.size() > 0 && m_first_var_pos < 0 )
+        throw std::runtime_error("position of first variable was not set on entry to "
+                                  "LCOrbitalSetOptTrialFunc::evaluateGradDerivatives");
+
+      // check that my number of variables is consistent with the
+      // number of active rotations.
+      if ( myVars.size() != m_act_rot_inds.size() ) {
+        std::stringstream error_msg;
+        error_msg << "mismatch between myVars.size() (" << myVars.size()
+                  << ") and m_act_rot_inds.size() (" << m_act_rot_inds.size()
+                  << ") in LCOrbitalSetOptTrialFunc::evaluateGradDerivatives";
+        throw std::runtime_error(error_msg.str());
+      }
+
+      // add derivatives to totals.
+      for (int i = 0; i < m_act_rot_inds.size(); i++) {
+        const int p = m_act_rot_inds.at(i).first;
+        const int q = m_act_rot_inds.at(i).second;
+        dgradlogpsi.at(m_first_var_pos+i) += m_hder_mat.at(p+q*m_nlc) - m_hder_mat.at(q+p*m_nlc);
+      }
 
       // reset the internally stored derivatives to zero in preperation for the next sample
       this->initialize_matrices();

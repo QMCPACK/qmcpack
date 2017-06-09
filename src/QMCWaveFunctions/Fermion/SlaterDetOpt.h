@@ -178,6 +178,9 @@ class SlaterDetOpt: public OrbitalBase, public FermionBase {
                              std::vector<RealType>& dlogpsi,
                              std::vector<RealType>& dhpsioverpsi);
 
+    void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
+                                 std::vector<RealType>& dgradlogpsi);
+
     virtual void memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only,long& orbs, long& invs, long& dets)
     {
       //Dets[0]->memoryUsage_DataForDerivatives(P,orbs_only,orbs,invs,dets);
