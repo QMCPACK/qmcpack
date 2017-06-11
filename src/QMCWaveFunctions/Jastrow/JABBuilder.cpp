@@ -47,7 +47,7 @@ bool JABBuilder::createJAB(xmlNodePtr cur, const std::string& jname)
     sourcePtcl = (*pa_it).second;
     ng=sourcePtcl->getSpeciesSet().getTotalNum();
     for (int i=0; i<ng; i++)
-      jastrow.push_back(0);
+      jastrow.push_back(nullptr);
   }
   cur = cur->xmlChildrenNode;
   while (cur != NULL)
@@ -63,7 +63,7 @@ bool JABBuilder::createJAB(xmlNodePtr cur, const std::string& jname)
       ng=sourcePtcl->getSpeciesSet().getTotalNum();
       XMLReport("Number of sources " << ng)
       for (int i=0; i<ng; i++)
-        jastrow.push_back(0);
+        jastrow.push_back(nullptr);
     }
     else
       if (cname == corr_tag)

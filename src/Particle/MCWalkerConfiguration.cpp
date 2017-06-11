@@ -286,8 +286,8 @@ MCWalkerConfiguration::copyWalkerRefs(Walker_t* head, Walker_t* tail)
   }
   if(WalkerList.size()<2)
   {
-    WalkerList.push_back(0);
-    WalkerList.push_back(0);
+    WalkerList.push_back(nullptr);
+    WalkerList.push_back(nullptr);
   }
   WalkerList[0]=head;
   WalkerList[1]=tail;

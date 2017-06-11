@@ -241,7 +241,7 @@ void QMCDriverFactory::createQMCDriver(xmlNodePtr cur)
       else
       {
         app_warning() << " qmcsystem does not have wavefunction. Assign 0" << std::endl;
-        targetPsi.push(0);
+        targetPsi.push(nullptr);
       }
       t= xmlGetProp(tcur,(const xmlChar*)"hamiltonian");
       if(t != NULL)
@@ -251,7 +251,7 @@ void QMCDriverFactory::createQMCDriver(xmlNodePtr cur)
       else
       {
         app_warning() << " qmcsystem does not have hamiltonian. Assign 0" << std::endl;
-        targetH.push(0);
+        targetH.push(nullptr);
       }
     }
     tcur=tcur->next;

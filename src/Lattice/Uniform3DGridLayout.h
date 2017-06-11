@@ -85,7 +85,7 @@ public:
       Grid[i] = SingleParticleIndex_t(1);
     SuperGrid.reserve(GridLevel);
     for(int i=0; i<GridLevel; i++)
-      SuperGrid.push_back(NULL);
+      SuperGrid.push_back(nullptr);
   }
 
   ///**copy constructor
