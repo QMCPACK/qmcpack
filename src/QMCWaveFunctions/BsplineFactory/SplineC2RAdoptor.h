@@ -162,7 +162,12 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
 
   inline void set_spline(SingleSplineType* spline_r, SingleSplineType* spline_i, int twist, int ispline, int level)
   {
+#ifdef QMC_CUDA
+    // GPU code needs the old ordering.
+    int iband=ispline;
+#else
     int iband=this->BandIndexMap[ispline];
+#endif
     SplineInst->copy_spline(spline_r,2*iband  ,BaseOffset, BaseN);
     SplineInst->copy_spline(spline_i,2*iband+1,BaseOffset, BaseN);
   }
@@ -170,7 +175,12 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   void set_spline(ST* restrict psi_r, ST* restrict psi_i, int twist, int ispline, int level)
   {
     VectorViewer<ST> v_r(psi_r,0), v_i(psi_i,0);
+#ifdef QMC_CUDA
+    // GPU code needs the old ordering.
+    int iband=ispline;
+#else
     int iband=this->BandIndexMap[ispline];
+#endif
     SplineInst->set(2*iband  ,v_r);
     SplineInst->set(2*iband+1,v_i);
   }
