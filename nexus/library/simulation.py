@@ -474,6 +474,11 @@ class Simulation(NexusCore):
         #end if
         if isinstance(self.system,PhysicalSystem):
             self.system = self.system.copy()
+            consistent,msg = self.system.check_consistent(exit=False,message=True)
+            if not consistent:
+                locdir = os.path.join(nexus_core.local_directory,nexus_core.runs,self.path)
+                self.error('user provided physical system is not internally consistent\nsimulation identifier: {0}\nlocal directory: {1}\nmore details on the user error are given below\n\n{2}'.format(self.identifier,locdir,msg))
+            #end if
         elif self.system!=None:
             self.error('system must be a PhysicalSystem object\nyou provided an object of type: {0}'.format(self.system.__class__.__name__))
         #end if
