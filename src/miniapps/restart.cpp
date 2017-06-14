@@ -9,13 +9,16 @@
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-/** @file j2debug.cpp
- * @brief Debugging J2OribitalSoA 
+/** @file restart.cpp
+ * @brief developing restart IO
  */
 
 #include <Configuration.h>
 #include <Message/CommOperators.h>
 #include <Particle/MCWalkerConfiguration.h>
+#include <Particle/HDFWalkerOutput.h>
+#include <HDFVersion.h>
+#include <Particle/HDFWalkerInput_0_4.h>
 #include <OhmmsApp/RandomNumberControl.h>
 #include <random/random.hpp>
 #include <miniapps/graphite.hpp>
@@ -27,12 +30,24 @@
 using namespace std;
 using namespace qmcplusplus;
 
+void setWalkerOffsets(MCWalkerConfiguration& W, Communicate* myComm)
+{
+  std::vector<int> nw(myComm->size(),0),nwoff(myComm->size()+1,0);
+  nw[myComm->rank()]=W.getActiveWalkers();
+  myComm->allreduce(nw);
+  for(int ip=0; ip<myComm->size(); ip++)
+    nwoff[ip+1]=nwoff[ip]+nw[ip];
+  W.setGlobalNumWalkers(nwoff[myComm->size()]);
+  W.setWalkerOffsets(nwoff);
+}
+
 int main(int argc, char** argv)
 {
 
   OHMMS::Controller->initialize(0, NULL);
-  OhmmsInfo("j2debuglogfile");
-  Communicate* mycomm=OHMMS::Controller;
+  OhmmsInfo("restart");
+  Communicate* myComm=OHMMS::Controller;
+  myComm->setName("restart");
 
   typedef QMCTraits::RealType           RealType;
   typedef ParticleSet::ParticlePos_t    ParticlePos_t;
@@ -93,7 +108,7 @@ int main(int argc, char** argv)
   Tensor<int,3> tmat(na,0,0,0,nb,0,0,0,nc);
 
   //turn off output
-  if(NumThreads>1)
+  if(myComm->rank())
   {
     OhmmsInfo::Log->turnoff();
     OhmmsInfo::Warn->turnoff();
@@ -104,14 +119,15 @@ int main(int argc, char** argv)
 
   RandomNumberControl::make_seeds();
   std::vector<RandomGenerator_t> myRNG(NumThreads);
+  std::vector<MCWalkerConfiguration> elecs(NumThreads);
 
   #pragma omp parallel reduction(+:t0)
   {
-    ParticleSet ions;
-    MCWalkerConfiguration els;
-    OHMMS_PRECISION scale=1.0;
-
     int ip=omp_get_thread_num();
+
+    ParticleSet ions;
+    MCWalkerConfiguration& els=elecs[ip];
+    OHMMS_PRECISION scale=1.0;
 
     //create generator within the thread
     myRNG[ip]=*RandomNumberControl::Children[ip];
@@ -138,12 +154,16 @@ int main(int argc, char** argv)
 
     // save random seeds and electron configurations.
     *RandomNumberControl::Children[ip]=myRNG[ip];
-    MCWalkerConfiguration els_save(els);
+    //MCWalkerConfiguration els_save(els);
 
   } //end of omp parallel
 
+  elecs[0].createWalkers(nwtot);
+  setWalkerOffsets(elecs[0], myComm);
+
   // dump random seeds
-  RandomNumberControl::write("restart",mycomm);
+  RandomNumberControl::write("restart",myComm);
+  myComm->barrier();
   // flush random seeds to zero
   #pragma omp parallel
   {
@@ -154,7 +174,7 @@ int main(int argc, char** argv)
   }
 
   // load random seeds
-  RandomNumberControl::read("restart",mycomm);
+  RandomNumberControl::read("restart",myComm);
 
   // validate random seeds
   int mismatch_count=0;
@@ -170,9 +190,9 @@ int main(int argc, char** argv)
       if(vt_orig[i]!=vt_load[i]) mismatch_count++;
   }
 
-  mycomm->allreduce(mismatch_count);
+  myComm->allreduce(mismatch_count);
 
-  if(!mycomm->rank())
+  if(!myComm->rank())
   {
     if(mismatch_count!=0)
       std::cout << "Fail: random seeds mismatch between write and read!\n"
@@ -180,6 +200,26 @@ int main(int argc, char** argv)
     else
       std::cout << "Pass: random seeds match exactly between write and read!\n";
   }
+
+  // dump electron coordinates.
+  HDFWalkerOutput wOut(elecs[0],"restart",myComm);
+  wOut.dump(elecs[0],1);
+  myComm->barrier();
+
+  const char *restart_input = \
+"<tmp> \
+  <mcwalkerset fileroot=\"restart\" node=\"-1\" version=\"3 0\" collected=\"yes\"/> \
+</tmp> \
+";
+
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(restart_input);
+  xmlNodePtr root = doc.getRoot();
+  xmlNodePtr restart_leaf = xmlFirstElementChild(root);
+
+  HDFVersion in_version(0,4);
+  HDFWalkerInput_0_4 wIn(elecs[0],myComm,in_version);
+  wIn.put(restart_leaf);
   
   OHMMS::Controller->finalize();
 
