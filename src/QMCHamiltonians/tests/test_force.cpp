@@ -320,8 +320,8 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
   ions.addTable(ions,DT_AOS);
 #endif
 
-  elec.update();
   ions.update();
+  elec.update();
 
   ForceCeperley force(ions, elec);
   force.InitMatrix();
