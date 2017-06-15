@@ -766,6 +766,26 @@ class Structure(Sobj):
     #end def __init__
 
 
+    def check_consistent(self,tol=1e-8,exit=True,message=False):
+        msg = ''
+        if self.has_axes():
+            kaxes = 2*pi*inv(self.axes).T
+            abs_diff = abs(self.kaxes-kaxes).sum()
+            if abs_diff>tol:
+                msg += 'direct and reciprocal space axes are not consistent\naxes present:\n{0}\nkaxes present:\n{1}\nconsistent kaxes:\n{2}\nabsolute difference: {3}\n'.format(self.axes,self.kaxes,kaxes,abs_diff)
+            #end if
+        #end if
+        consistent = len(msg)==0
+        if not consistent and exit:
+            self.error(msg)
+        #end if
+        if not message:
+            return consistent
+        else:
+            return consistent,msg
+        #end if
+    #end def check_consistent
+
 
     def set_axes(self,axes):
         self.reset_axes(axes)
@@ -3181,8 +3201,11 @@ class Structure(Sobj):
     #end def add_kmesh
 
     
-    def kpoints_unit(self):
-        return dot(self.kpoints,inv(self.kaxes))
+    def kpoints_unit(self,kpoints=None):
+        if kpoints is None:
+            kpoints = self.kpoints
+        #end if
+        return dot(kpoints,inv(self.kaxes))
     #end def kpoints_unit
 
 
