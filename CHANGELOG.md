@@ -39,7 +39,7 @@ since the last release.
 
 
 ### Known problems
-
+* Real valued wavefunction GPU code gives incorrect results in DMC for some non-gamma twists, e.g. X point. VMC runs are correct. Complex code (QMC_COMPLEX=1) gives correct results and should be used instead until this bug is fixed.
 * AFQMC without MKL will fail, e.g. short-afqmc-N2_vdz-4-1 test fails.
 
 ### NEXUS updates
