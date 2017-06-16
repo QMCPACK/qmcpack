@@ -21,7 +21,7 @@ since the last release.
 * Added test of real space QMC restart capabilities
 * Added tests for several estimators
 * Added unit test for DMC walker propagation, effective core potentials, OhmmsPETE
-* To avoid filesystem limitations, QMC_SYMLINK_TEST_FILES can be set to 
+* To avoid filesystem limitations, QMC_SYMLINK_TEST_FILES can be set to symlink (1) or copy test files (0)
 * Status of t-moves now printed
 * Fixed mixed precision Ceperley force evaluation
 * Many updated tests to improve statistical reliability. Removed flux estimator from short tests because they were not reliable enough
