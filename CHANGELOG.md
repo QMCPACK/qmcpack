@@ -11,7 +11,7 @@ since the last release.
 
 ### QMCPACK updates
 
-* Improved population control during DMC enquilibration. Reduces variance on larger runs.
+* Improved population control during DMC equilibration. Reduces variance on larger runs.
 * All particle move VMC and DMC algorithms enabled, tests added
 * Reptation Monte Carlo (RMC) enabled, tests added
 * Significantly improved AFQMC implementation
