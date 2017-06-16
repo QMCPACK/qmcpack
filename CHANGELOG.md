@@ -22,14 +22,13 @@ since the last release.
 * Added tests for several estimators.
 * Added unit test for DMC walker propagation, effective core potentials, OhmmsPETE.
 * To avoid filesystem limitations, QMC_SYMLINK_TEST_FILES can be set to symlink (1) or copy test files (0).
-* Status of t-moves now printed.
 * Fixed mixed precision Ceperley force evaluation.
 * Many updated tests to improve statistical reliability. Removed flux estimator from short tests because they were not reliable enough.
 * Tests that rely on non-standard python modules that are not available are skipped.
 * Error trap jastrow factors with cutoff radii larger than Wigner Seitz radius.
-* Bugfix: 2-body jastrow on GPU with no alternate spin particles.
+* Bugfix: Prevent users from adding correlation terms on non-existing electron pairs, e.g. up-down correlation terms when only upspin particles present
 * Support for measuring test coverage and performing coverage runs with cmake and ctest.
-* Support for GCC7 and IBM XL compiler.
+* Support for GCC7 and IBM XL (non Blue Gene) compiler.
 * SummitDev IBM Minsky build recipe (Power8 + NVIDIA Pascal P100 GPUs).
 * Significantly updated optimizer description in manual, including excited state optimization.
 * Added description of using Intel MKL with non-Intel compilers in manual.
