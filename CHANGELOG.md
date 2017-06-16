@@ -12,42 +12,44 @@ since the last release.
 ### QMCPACK updates
 
 * Improved population control during DMC equilibration. Reduces variance on larger runs.
-* All particle move VMC and DMC algorithms enabled, tests added.
-* Reptation Monte Carlo (RMC) enabled, tests added.
-* Significantly improved AFQMC implementation.
-* Added NiO based VMC and DMC performance tests and description in manual. Wavefunction files accessed via QMC_DATA.
-* Added DMC tests with locality and t-moves aapproximations.
-* Added AFQMC tests.
-* Added test of real space QMC restart capabilities.
-* Added tests for several estimators.
-* Added unit test for DMC walker propagation, effective core potentials, OhmmsPETE.
-* To avoid filesystem limitations, QMC_SYMLINK_TEST_FILES can be set to symlink (1) or copy test files (0).
-* Status of t-moves now printed.
-* Fixed mixed precision Ceperley force evaluation.
-* Many updated tests to improve statistical reliability. Removed flux estimator from short tests because they were not reliable enough.
-* Tests that rely on non-standard python modules that are not available are skipped.
-* Error trap jastrow factors with cutoff radii larger than Wigner Seitz radius.
-* Bugfix: 2-body jastrow on GPU with no alternate spin particles.
-* Support for measuring test coverage and performing coverage runs with cmake and ctest.
-* Support for GCC7 and IBM XL compiler.
-* SummitDev IBM Minsky build recipe (Power8 + NVIDIA Pascal P100 GPUs).
-* Significantly updated optimizer description in manual, including excited state optimization.
-* Added description of using Intel MKL with non-Intel compilers in manual.
-* Added description of MPIEXEC and MPIEXEC_NUMPROCS_FLAG to manual for systems where MPI runner is non-standard.
-* Updated labs with correct pseudopotentials, basis set files. 
-* Many updated error messages and warnings.
+* All particle move VMC and DMC algorithms enabled, tests added
+* Reptation Monte Carlo (RMC) enabled, tests added
+* Significantly improved AFQMC implementation
+* Added NiO based VMC and DMC performance tests and description in manual. Files accessed via QMC_DATA
+* Added DMC tests with locality and t-moves aapproximations
+* Added AFQMC tests
+* Added test of real space QMC restart capabilities
+* Added tests for several estimators
+* Added unit test for DMC walker propagation, effective core potentials, OhmmsPETE
+* To avoid filesystem limitations, QMC_SYMLINK_TEST_FILES can be set to symlink (1) or copy test files (0)
+* Status of t-moves now printed
+* Fixed mixed precision Ceperley force evaluation
+* Many updated tests to improve statistical reliability. Removed flux estimator from short tests because they were not reliable enough
+* Tests that rely on non-standard python modules that are not available are skipped
+* Error trap jastrow factors with cutoff radii larger than Wigner Seitz radius
+* Bugfix: 2-body jastrow on GPU with no alternate spin particles
+* Support for measuring test coverage and performing coverage runs with cmake and ctest
+* Support for GCC7 and IBM XL compiler
+* SummitDev IBM Minsky build recipe (Power8 + NVIDIA Pascal P100 GPUs)
+* Significantly updated optimizer description in manual, including excited state optimization
+* Added description of using Intel MKL with non-Intel compilers in manual
+* Added description of MPIEXEC and MPIEXEC_NUMPROCS_FLAG to manual for systems where MPI runner is non-standard
+* Updated labs with correct pseudopotentials, basis set files 
+* Many updated error messages and warnings
 
 ### Known problems
 
-* AFQMC without MKL will fail. e.g. short-afqmc-N2_vdz-4-1 test fails.
+* AFQMC without MKL will fail, e.g. short-afqmc-N2_vdz-4-1 test fails.
 
 ### NEXUS updates
 
-* Improved tilematrix implementation for improved cell selection amongst possible supercells.
-* Better consistency checks.
-* Bugfix: forbid bundling simulations that depend on each other.
-* Bugfix: fix for net_spin="low" in generate_physical_system.
-* Bugfix: parallel pw2qmcpack workflows.
+* Improved selection algorithm to obtain optimally tiled supercells
+* Support for parallel pw2qmcpack workflows
+* Support for HPC resources at the Leibniz Supercomputing Center
+* Better consistency checks for the Structure class
+* Bugfix: forbid job bundling for simulations that depend on each other
+* Bugfix: correctly select low spin polarization in primitive and tiled (net_spin="low" option)
+
 
 ## [3.0.0] - 2017-01-30
 
