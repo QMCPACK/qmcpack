@@ -16,7 +16,7 @@ since the last release.
 * Reptation Monte Carlo (RMC) enabled, tests added.
 * Significantly improved AFQMC implementation.
 * Added NiO based VMC and DMC performance tests and description in manual. Wavefunction files accessed via QMC_DATA.
-* Added DMC tests with locality and t-moves aapproximations.
+* Added DMC tests with locality and t-moves approximations.
 * Added AFQMC tests.
 * Added test of real space QMC restart capabilities.
 * Added tests for several estimators.
@@ -29,6 +29,7 @@ since the last release.
 * Bugfix: Prevent users from adding correlation terms on non-existing electron pairs, e.g. up-down correlation terms when only upspin particles present
 * Support for measuring test coverage and performing coverage runs with cmake and ctest.
 * Support for GCC7 and IBM XL (non Blue Gene) compiler.
+* Support selecting GPU microarchitecture via -DCUDA_ARCH=sm_35(default).
 * SummitDev IBM Minsky build recipe (Power8 + NVIDIA Pascal P100 GPUs).
 * Significantly updated optimizer description in manual, including excited state optimization.
 * Added description of using Intel MKL with non-Intel compilers in manual.
