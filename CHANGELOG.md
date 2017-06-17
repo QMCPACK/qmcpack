@@ -6,8 +6,7 @@ Notable changes to QMCPACK will be documented in this file.
 
 ### Notes
 
-This section describes improvements made to the the development branch
-since the last release.
+This section describes improvements made to the development branch since the last release.
 
 ### QMCPACK updates
 
@@ -26,7 +25,7 @@ since the last release.
 * Many updated tests to improve statistical reliability. Removed flux estimator from short tests because they were not reliable enough.
 * Tests that rely on non-standard python modules that are not available are skipped.
 * Error trap jastrow factors with cutoff radii larger than Wigner Seitz radius.
-* Bugfix: Prevent users from adding correlation terms on non-existing electron pairs, e.g. up-down correlation terms when only upspin particles present
+* Bugfix: Prevent users from adding correlation terms on non-existing electron pairs, e.g. up-down correlation terms when only up-spin particles are present.
 * Support for measuring test coverage and performing coverage runs with cmake and ctest.
 * Support for GCC7 and IBM XL (non Blue Gene) compiler.
 * Support selecting GPU microarchitecture via -DCUDA_ARCH=sm_35(default).
@@ -37,19 +36,19 @@ since the last release.
 * Updated labs with correct pseudopotentials, basis set files. 
 * Many updated error messages and warnings.
 
-
 ### Known problems
+
 * Real valued wavefunction GPU code gives incorrect results in DMC for some non-gamma twists, e.g. X point. VMC runs are correct. Complex code (QMC_COMPLEX=1) gives correct results and should be used instead until this bug is fixed.
 * AFQMC without MKL will fail, e.g. short-afqmc-N2_vdz-4-1 test fails.
 
 ### NEXUS updates
 
-* Improved selection algorithm to obtain optimally tiled supercells
-* Support for parallel pw2qmcpack workflows
-* Support for HPC resources at the Leibniz Supercomputing Center
-* Better consistency checks for the Structure class
-* Bugfix: forbid job bundling for simulations that depend on each other
-* Bugfix: correctly select low spin polarization in primitive and tiled (net_spin="low" option)
+* Improved selection algorithm to obtain optimally tiled supercells.
+* Support for parallel pw2qmcpack workflows.
+* Support for HPC resources at the Leibniz Supercomputing Center.
+* Better consistency checks for the Structure class.
+* Bugfix: forbid job bundling for simulations that depend on each other.
+* Bugfix: correctly select low spin polarization in primitive and tiled (net_spin="low" option).
 
 
 ## [3.0.0] - 2017-01-30
