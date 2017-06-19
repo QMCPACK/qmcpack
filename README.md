@@ -110,13 +110,15 @@ make -j 8
                                         CMAKE_CXX_FLAGS_RELWITHDEBINFO
 ```
  
-   * Key QMC build options
+ * Key QMC build options
+   
 ```
      QMC_CUDA            Enable CUDA and GPU acceleration (1:yes, 0:no)
      QMC_COMPLEX         Build the complex (general twist/k-point) version (1:yes, 0:no)
 ```
      
-	 * Additional QMC options
+ * Additional QMC options
+	 
 ```	 
      QMC_DATA            Specify data directory for QMCPACK (currently unused, but 
                          likely to be used for performance tests)
@@ -125,13 +127,14 @@ make -j 8
      QMC_BUILD_STATIC    Add -static flags to build
 ```
      
-	 * libxml
+  * libxml
+  
 ```	 
      Libxml2_INCLUDE_DIRS  Specify include directories for libxml2
      Libxml2_LIBRARY_DIRS  Specify library directories for libxml2
 ```
 	 
-	 * FFTW
+  * FFTW
 ```	 
      FFTW_INCLUDE_DIRS   Specify include directories for FFTW
      FFTW_LIBRARY_DIRS   Specify library directories for FFTW
